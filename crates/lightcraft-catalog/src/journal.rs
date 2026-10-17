@@ -86,7 +86,10 @@ pub struct SnapshotPolicy {
 
 impl Default for SnapshotPolicy {
     fn default() -> Self {
-        SnapshotPolicy { max_records: 2000, max_bytes: 16 << 20 }
+        SnapshotPolicy {
+            max_records: 2000,
+            max_bytes: 16 << 20,
+        }
     }
 }
 
@@ -245,7 +248,9 @@ fn decode_line(line: &str) -> Line {
         let body = rest.strip_suffix('}')?;
         Some((seq.parse::<u64>().ok()?, crc.parse::<u32>().ok()?, body))
     };
-    let Some((seq, crc, body)) = parts() else { return Line::Bad };
+    let Some((seq, crc, body)) = parts() else {
+        return Line::Bad;
+    };
     if crc32fast::hash(body.as_bytes()) != crc {
         return Line::Bad;
     }
@@ -257,7 +262,9 @@ fn decode_line(line: &str) -> Line {
 
 /// The error for a library written by a newer LightCraft.
 fn newer(what: String) -> CatalogError {
-    CatalogError::Newer(format!("{what}; this version reads catalog format v{VERSION} and older"))
+    CatalogError::Newer(format!(
+        "{what}; this version reads catalog format v{VERSION} and older"
+    ))
 }
 
 /// A line that doesn't decode but ends with a whole record: a fragment of a failed append followed
@@ -266,17 +273,26 @@ fn newer(what: String) -> CatalogError {
 /// The record's CRC must match, so damage is never mistaken for it.
 fn resync(line: &[u8], last: u64) -> Option<(usize, (u64, Op))> {
     const START: &[u8] = b"{\"seq\":";
-    (1..line.len().saturating_sub(START.len() - 1)).filter(|&i| line[i..].starts_with(START)).find_map(|i| {
-        let rec = std::str::from_utf8(&line[i..]).ok().map(|l| l.trim_end_matches('\r')).and_then(decode_record)?;
-        (rec.0 <= last + 1).then_some((i, rec))
-    })
+    (1..line.len().saturating_sub(START.len() - 1))
+        .filter(|&i| line[i..].starts_with(START))
+        .find_map(|i| {
+            let rec = std::str::from_utf8(&line[i..])
+                .ok()
+                .map(|l| l.trim_end_matches('\r'))
+                .and_then(decode_record)?;
+            (rec.0 <= last + 1).then_some((i, rec))
+        })
 }
 
 /// Write `catalog.snap` for the state after op `seq`, streaming the JSON into the store (no
 /// whole-file string). The bytes are exactly
 /// `{"format":"lightcraft-catalog","version":1,"seq":N,"catalog":<serde_json of the catalog>}\n`,
 /// as before streaming. Fills in the serialise / write+sync times and the size.
-fn write_snapshot(store: &mut dyn Store, seq: u64, catalog: &Catalog) -> std::io::Result<SnapshotTiming> {
+fn write_snapshot(
+    store: &mut dyn Store,
+    seq: u64,
+    catalog: &Catalog,
+) -> std::io::Result<SnapshotTiming> {
     let t0 = web_time::Instant::now();
     let mut serialize_ms = 0.0;
     let bytes = store.write_atomic_with(SNAPSHOT, &mut |w| {
@@ -285,14 +301,22 @@ fn write_snapshot(store: &mut dyn Store, seq: u64, catalog: &Catalog) -> std::io
         // serde_json emits many tiny writes: buffer them in a concrete writer (inlined), so only
         // 1 MiB chunks go through the store's `dyn Write`
         let mut b = std::io::BufWriter::with_capacity(1 << 20, w);
-        write!(b, "{{\"format\":\"{FORMAT}\",\"version\":{VERSION},\"seq\":{seq},\"catalog\":")?;
+        write!(
+            b,
+            "{{\"format\":\"{FORMAT}\",\"version\":{VERSION},\"seq\":{seq},\"catalog\":"
+        )?;
         serde_json::to_writer(&mut b, catalog).map_err(std::io::Error::other)?;
         b.write_all(b"}\n")?;
         b.flush()?;
         serialize_ms = ms_since(t);
         Ok(())
     })?;
-    Ok(SnapshotTiming { serialize_ms, write_sync_ms: (ms_since(t0) - serialize_ms).max(0.0), bytes, ..Default::default() })
+    Ok(SnapshotTiming {
+        serialize_ms,
+        write_sync_ms: (ms_since(t0) - serialize_ms).max(0.0),
+        bytes,
+        ..Default::default()
+    })
 }
 
 /// Just the identification of `catalog.snap` (read before the catalog itself).
@@ -320,14 +344,22 @@ impl Journal {
         let (mut catalog, snapshot_seq, snapshot_version) = match snap {
             Some(bytes) => {
                 // the header first: a newer snapshot may not parse as this version's catalog
-                let h: SnapHeader = serde_json::from_slice(&bytes).map_err(|e| CatalogError::Corrupt(format!("{SNAPSHOT}: {e}")))?;
+                let h: SnapHeader = serde_json::from_slice(&bytes)
+                    .map_err(|e| CatalogError::Corrupt(format!("{SNAPSHOT}: {e}")))?;
                 if h.format != FORMAT {
-                    return Err(CatalogError::Corrupt(format!("{SNAPSHOT}: not a LightCraft catalog (format {:?})", h.format)));
+                    return Err(CatalogError::Corrupt(format!(
+                        "{SNAPSHOT}: not a LightCraft catalog (format {:?})",
+                        h.format
+                    )));
                 }
                 if h.version > VERSION {
-                    return Err(newer(format!("{SNAPSHOT} is catalog format v{}", h.version)));
+                    return Err(newer(format!(
+                        "{SNAPSHOT} is catalog format v{}",
+                        h.version
+                    )));
                 }
-                let s: SnapFile = serde_json::from_slice(&bytes).map_err(|e| CatalogError::Corrupt(format!("{SNAPSHOT}: {e}")))?;
+                let s: SnapFile = serde_json::from_slice(&bytes)
+                    .map_err(|e| CatalogError::Corrupt(format!("{SNAPSHOT}: {e}")))?;
                 (s.catalog, s.seq, Some(h.version))
             }
             None => (Catalog::new(), 0, None),
@@ -357,7 +389,9 @@ impl Journal {
                 Some(i) => (pos + i, pos + i + 1, true),
                 None => (log.len(), log.len(), false),
             };
-            let line = std::str::from_utf8(&log[pos..line_end]).ok().map(|l| l.trim_end_matches('\r'));
+            let line = std::str::from_utf8(&log[pos..line_end])
+                .ok()
+                .map(|l| l.trim_end_matches('\r'));
             if line.is_some_and(|l| l.trim().is_empty()) {
                 pos = next;
                 good_end = next;
@@ -369,14 +403,18 @@ impl Journal {
             {
                 // the torn start of a failed append, then the retried records (older builds
                 // appended them right after the fragment)
-                log::warn!("catalog log: skipped a partial record ({at} bytes) left by a failed write");
+                log::warn!(
+                    "catalog log: skipped a partial record ({at} bytes) left by a failed write"
+                );
                 report.torn_fragments += 1;
                 record = Some(r);
             }
             if record.is_none()
                 && let Some(Line::Newer(seq)) = line.map(decode_line)
             {
-                return Err(newer(format!("{LOG} record {seq} holds a change this version doesn't know")));
+                return Err(newer(format!(
+                    "{LOG} record {seq} holds a change this version doesn't know"
+                )));
             }
             match record {
                 Some((seq, op)) if seq <= j.seq => {
@@ -396,10 +434,15 @@ impl Journal {
                     // bad record (or a gap): torn tail if nothing good follows, else damage
                     let mut rest_has_good = false;
                     for l in log[next..].split(|b| *b == b'\n') {
-                        match std::str::from_utf8(l).map(|l| decode_line(l.trim_end_matches('\r'))) {
+                        match std::str::from_utf8(l).map(|l| decode_line(l.trim_end_matches('\r')))
+                        {
                             Ok(Line::Record(..)) => rest_has_good = true,
                             // refused before anything is modified
-                            Ok(Line::Newer(seq)) => return Err(newer(format!("{LOG} record {seq} holds a change this version doesn't know"))),
+                            Ok(Line::Newer(seq)) => {
+                                return Err(newer(format!(
+                                    "{LOG} record {seq} holds a change this version doesn't know"
+                                )));
+                            }
                             Ok(Line::Bad) | Err(_) => {}
                         }
                     }
@@ -418,13 +461,19 @@ impl Journal {
         if let Some(at) = damaged_at {
             let name = format!("{LOG}.damaged-{}", j.seq);
             j.store.write_atomic(&name, &log).map_err(io)?;
-            log::warn!("catalog log damaged at byte {at}; kept as {name}; state recovered up to op {}", j.seq);
+            log::warn!(
+                "catalog log damaged at byte {at}; kept as {name}; state recovered up to op {}",
+                j.seq
+            );
             report.damaged = Some(name);
             j.snapshot(&catalog)?;
         } else {
             if good_end < log.len() {
                 report.torn_bytes = (log.len() - good_end) as u64;
-                log::warn!("catalog log: dropped a torn final record ({} bytes)", report.torn_bytes);
+                log::warn!(
+                    "catalog log: dropped a torn final record ({} bytes)",
+                    report.torn_bytes
+                );
                 j.store.truncate(LOG, good_end as u64).map_err(io)?;
                 j.log_bytes = good_end as u64;
             } else if needs_newline {
@@ -439,7 +488,10 @@ impl Journal {
         // instead of misreading ops or dropping fields they don't know.
         if report.created {
             // tiny: written directly, not counted as a compaction
-            let empty = format!("{{\"format\":\"{FORMAT}\",\"version\":{VERSION},\"seq\":0,\"catalog\":{}}}\n", catalog.to_snapshot());
+            let empty = format!(
+                "{{\"format\":\"{FORMAT}\",\"version\":{VERSION},\"seq\":0,\"catalog\":{}}}\n",
+                catalog.to_snapshot()
+            );
             if let Err(e) = j.store.write_atomic(SNAPSHOT, empty.as_bytes()) {
                 log::warn!("catalog: can't write the new library's snapshot: {e}");
             }
@@ -498,7 +550,11 @@ impl Journal {
         self.stats.last_append_ms = ms;
         self.stats.max_append_ms = self.stats.max_append_ms.max(ms);
         if profiling() {
-            eprintln!("catalog: append {} op(s), {} B: {ms:.2} ms", ops.len(), buf.len());
+            eprintln!(
+                "catalog: append {} op(s), {} B: {ms:.2} ms",
+                ops.len(),
+                buf.len()
+            );
         }
         Ok(())
     }
@@ -556,10 +612,14 @@ impl Journal {
             return Ok(());
         }
         let t0 = web_time::Instant::now();
-        let Some(mut writer) = self.store.background_writer() else { return self.snapshot(catalog) };
+        let Some(mut writer) = self.store.background_writer() else {
+            return self.snapshot(catalog);
+        };
         let copy = catalog.clone();
         let seq = self.seq;
-        let spawned = std::thread::Builder::new().name("catalog-snapshot".into()).spawn(move || write_snapshot(writer.as_mut(), seq, &copy));
+        let spawned = std::thread::Builder::new()
+            .name("catalog-snapshot".into())
+            .spawn(move || write_snapshot(writer.as_mut(), seq, &copy));
         let worker = match spawned {
             Ok(w) => w,
             Err(e) => {
@@ -567,8 +627,15 @@ impl Journal {
                 return self.snapshot(catalog);
             }
         };
-        self.pending =
-            Some(Pending { seq, tail: Vec::new(), tail_records: 0, records: self.log_records, started: t0, start_ms: ms_since(t0), worker });
+        self.pending = Some(Pending {
+            seq,
+            tail: Vec::new(),
+            tail_records: 0,
+            records: self.log_records,
+            started: t0,
+            start_ms: ms_since(t0),
+            worker,
+        });
         Ok(())
     }
 
@@ -576,7 +643,11 @@ impl Journal {
     /// finished. An error means the snapshot failed: nothing was lost (the log is whole), and
     /// compaction is retried once the log has grown by another [`SnapshotPolicy::max_records`].
     pub fn poll(&mut self) -> Result<bool> {
-        if !self.pending.as_ref().is_some_and(|p| p.worker.is_finished()) {
+        if !self
+            .pending
+            .as_ref()
+            .is_some_and(|p| p.worker.is_finished())
+        {
             return Ok(false);
         }
         self.finish().map(|()| true)
@@ -597,14 +668,21 @@ impl Journal {
 
     /// The background worker is done (its result not yet applied by [`Journal::poll`]).
     pub fn snapshot_written(&self) -> bool {
-        self.pending.as_ref().is_some_and(|p| p.worker.is_finished())
+        self.pending
+            .as_ref()
+            .is_some_and(|p| p.worker.is_finished())
     }
 
     /// Join the worker; on success replace the log with the records appended meanwhile.
     fn finish(&mut self) -> Result<()> {
-        let Some(p) = self.pending.take() else { return Ok(()) };
+        let Some(p) = self.pending.take() else {
+            return Ok(());
+        };
         let t0 = web_time::Instant::now();
-        let written = p.worker.join().unwrap_or_else(|_| Err(std::io::Error::other("snapshot thread panicked")));
+        let written = p
+            .worker
+            .join()
+            .unwrap_or_else(|_| Err(std::io::Error::other("snapshot thread panicked")));
         let mut timing = match written {
             Ok(t) => t,
             Err(e) => {
@@ -660,14 +738,18 @@ impl Journal {
 
     /// Where persistence time went so far.
     pub fn stats(&self) -> PersistStats {
-        PersistStats { snapshot_running: self.pending.is_some(), ..self.stats }
+        PersistStats {
+            snapshot_running: self.pending.is_some(),
+            ..self.stats
+        }
     }
 
     /// The log is long enough to be worth compacting.
     pub fn wants_snapshot(&self) -> bool {
         self.pending.is_none()
             && self.log_records >= self.retry_at_records
-            && (self.log_records >= self.policy.max_records || self.log_bytes >= self.policy.max_bytes)
+            && (self.log_records >= self.policy.max_records
+                || self.log_bytes >= self.policy.max_bytes)
     }
 
     pub fn seq(&self) -> u64 {

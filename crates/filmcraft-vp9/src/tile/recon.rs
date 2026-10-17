@@ -22,12 +22,21 @@ impl<'a> TileDecoder<'a> {
     pub(super) fn residual(&mut self, bd: &mut BoolDecoder, b: &mut Blk) {
         let bsize = b.size.max(BLOCK_8X8) as usize;
         let (ssx, ssy) = (self.ss_x, self.ss_y);
-        let uv_tx = if b.size < BLOCK_8X8 { 0 } else { b.tx_size.min(MAX_TXSIZE[SS_SIZE_LOOKUP[b.size as usize][ssx][ssy] as usize]) };
+        let uv_tx = if b.size < BLOCK_8X8 {
+            0
+        } else {
+            b.tx_size
+                .min(MAX_TXSIZE[SS_SIZE_LOOKUP[b.size as usize][ssx][ssy] as usize])
+        };
         for plane in 0..3 {
             let tx_sz = if plane > 0 { uv_tx } else { b.tx_size };
             let step = 1usize << tx_sz;
             let (sx, sy) = if plane > 0 { (ssx, ssy) } else { (0, 0) };
-            let plane_sz = if plane > 0 { SS_SIZE_LOOKUP[bsize][ssx][ssy] as usize } else { bsize };
+            let plane_sz = if plane > 0 {
+                SS_SIZE_LOOKUP[bsize][ssx][ssy] as usize
+            } else {
+                bsize
+            };
             let n4w = NUM_4X4_WIDE[plane_sz] as usize;
             let n4h = NUM_4X4_HIGH[plane_sz] as usize;
             let base_x = (b.c * 8) >> sx;
@@ -36,7 +45,15 @@ impl<'a> TileDecoder<'a> {
                 if b.size < BLOCK_8X8 {
                     for y in 0..n4h {
                         for x in 0..n4w {
-                            self.predict_inter(b, plane, base_x + 4 * x, base_y + 4 * y, 4, 4, y * n4w + x);
+                            self.predict_inter(
+                                b,
+                                plane,
+                                base_x + 4 * x,
+                                base_y + 4 * y,
+                                4,
+                                4,
+                                y * n4w + x,
+                            );
                         }
                     }
                 } else {
@@ -70,15 +87,26 @@ impl<'a> TileDecoder<'a> {
                                 max_y: max_y - 1,
                                 bit_depth: self.bit_depth,
                             };
-                            let (stride, x_off) = (self.strip.strides[plane], self.strip.x_off[plane]);
-                            intra::predict(&mut self.strip.planes[plane], stride, x_off, start_x, start_y, mode, &edge);
+                            let (stride, x_off) =
+                                (self.strip.strides[plane], self.strip.x_off[plane]);
+                            intra::predict(
+                                &mut self.strip.planes[plane],
+                                stride,
+                                x_off,
+                                start_x,
+                                start_y,
+                                mode,
+                                &edge,
+                            );
                         }
                         if !b.skip {
-                            let (eob, rows) = self.tokens(bd, b, plane, start_x, start_y, tx_sz, tx_type);
+                            let (eob, rows) =
+                                self.tokens(bd, b, plane, start_x, start_y, tx_sz, tx_type);
                             nonzero = eob > 0;
                             b.eob_total += nonzero as u32;
                             if eob > 0 {
-                                let (stride, x_off) = (self.strip.strides[plane], self.strip.x_off[plane]);
+                                let (stride, x_off) =
+                                    (self.strip.strides[plane], self.strip.x_off[plane]);
                                 let o = start_y * stride + start_x - x_off;
                                 transform::inverse_transform_add(
                                     &self.coefs,
@@ -117,7 +145,15 @@ impl<'a> TileDecoder<'a> {
         if plane > 0 || tx_sz == TX_32X32 {
             DCT_DCT
         } else if tx_sz == TX_4X4 {
-            if self.h.lossless || b.is_inter { DCT_DCT } else { MODE2TXFM[if b.size < BLOCK_8X8 { b.sub_modes[block_idx] } else { b.y_mode } as usize] }
+            if self.h.lossless || b.is_inter {
+                DCT_DCT
+            } else {
+                MODE2TXFM[if b.size < BLOCK_8X8 {
+                    b.sub_modes[block_idx]
+                } else {
+                    b.y_mode
+                } as usize]
+            }
         } else {
             MODE2TXFM[b.y_mode as usize]
         }
@@ -126,15 +162,32 @@ impl<'a> TileDecoder<'a> {
     /// tokens (6.4.24): reads and dequantizes the coefficients into `self.coefs`. Returns the end
     /// of block position and the number of leading coefficient rows that may be non-zero.
     #[allow(clippy::too_many_arguments)]
-    fn tokens(&mut self, bd: &mut BoolDecoder, b: &Blk, plane: usize, start_x: usize, start_y: usize, tx_sz: u8, tx_type: u8) -> (usize, usize) {
+    fn tokens(
+        &mut self,
+        bd: &mut BoolDecoder,
+        b: &Blk,
+        plane: usize,
+        start_x: usize,
+        start_y: usize,
+        tx_sz: u8,
+        tx_type: u8,
+    ) -> (usize, usize) {
         let seg_eob = 16usize << (tx_sz << 1);
         let sc = scan(tx_sz, tx_type);
         let nb = neighbors(tx_sz, tx_type);
-        let bands: &[u8] = if tx_sz == 0 { &COEFBAND_4X4 } else { &COEFBAND_8X8PLUS };
+        let bands: &[u8] = if tx_sz == 0 {
+            &COEFBAND_4X4
+        } else {
+            &COEFBAND_8X8PLUS
+        };
         let ptype = (plane > 0) as usize;
         let rtype = b.is_inter as usize;
         let probs = &self.fc.coef[tx_sz as usize][ptype][rtype];
-        let (sx, sy) = if plane > 0 { (self.ss_x, self.ss_y) } else { (0, 0) };
+        let (sx, sy) = if plane > 0 {
+            (self.ss_x, self.ss_y)
+        } else {
+            (0, 0)
+        };
         let max_x4 = (2 * self.mi_cols) >> sx;
         let max_y4 = (2 * self.mi_rows) >> sy;
         let n = 1usize << tx_sz;
@@ -252,18 +305,37 @@ impl<'a> TileDecoder<'a> {
 
     /// Inter prediction process (8.5.2) for one block region.
     #[allow(clippy::too_many_arguments)]
-    fn predict_inter(&mut self, b: &Blk, plane: usize, x: usize, y: usize, w: usize, h: usize, block_idx: usize) {
+    fn predict_inter(
+        &mut self,
+        b: &Blk,
+        plane: usize,
+        x: usize,
+        y: usize,
+        w: usize,
+        h: usize,
+        block_idx: usize,
+    ) {
         let is_compound = b.ref_frame[1] > INTRA_FRAME;
-        let (sx, sy) = if plane > 0 { (self.ss_x, self.ss_y) } else { (0, 0) };
+        let (sx, sy) = if plane > 0 {
+            (self.ss_x, self.ss_y)
+        } else {
+            (0, 0)
+        };
         for rl in 0..1 + is_compound as usize {
             // Motion vector selection (8.5.2.1).
             let bm = &b.block_mvs[rl];
             let mv = if plane == 0 || b.size >= BLOCK_8X8 || (sx == 0 && sy == 0) {
                 bm[block_idx]
             } else if sx == 0 && sy == 1 {
-                Mv::new(round_q2(bm[block_idx].row as i32 + bm[block_idx + 2].row as i32), round_q2(bm[block_idx].col as i32 + bm[block_idx + 2].col as i32))
+                Mv::new(
+                    round_q2(bm[block_idx].row as i32 + bm[block_idx + 2].row as i32),
+                    round_q2(bm[block_idx].col as i32 + bm[block_idx + 2].col as i32),
+                )
             } else if sx == 1 && sy == 0 {
-                Mv::new(round_q2(bm[block_idx].row as i32 + bm[block_idx + 1].row as i32), round_q2(bm[block_idx].col as i32 + bm[block_idx + 1].col as i32))
+                Mv::new(
+                    round_q2(bm[block_idx].row as i32 + bm[block_idx + 1].row as i32),
+                    round_q2(bm[block_idx].col as i32 + bm[block_idx + 1].col as i32),
+                )
             } else {
                 let sr: i32 = bm.iter().map(|m| m.row as i32).sum();
                 let sc: i32 = bm.iter().map(|m| m.col as i32).sum();
@@ -281,38 +353,83 @@ impl<'a> TileDecoder<'a> {
             let spel_right = spel_left - 16;
             let spel_top = (INTERP_EXTEND + ((bh * 8) >> sy)) << 4;
             let spel_bottom = spel_top - 16;
-            let cmv_row = ((2 * mv.row as i32) >> sy).clamp(to_top - spel_top, (to_bottom + spel_bottom).max(to_top - spel_top));
-            let cmv_col = ((2 * mv.col as i32) >> sx).clamp(to_left - spel_left, (to_right + spel_right).max(to_left - spel_left));
+            let cmv_row = ((2 * mv.row as i32) >> sy).clamp(
+                to_top - spel_top,
+                (to_bottom + spel_bottom).max(to_top - spel_top),
+            );
+            let cmv_col = ((2 * mv.col as i32) >> sx).clamp(
+                to_left - spel_left,
+                (to_right + spel_right).max(to_left - spel_left),
+            );
             let ri = (b.ref_frame[rl] - 1).clamp(0, 2) as usize;
             let Some(rf) = &self.s.refs[ri] else {
                 if self.error.is_none() {
-                    self.error = Some(Error::MissingReference(format!("block uses unusable reference {}", b.ref_frame[rl])));
+                    self.error = Some(Error::MissingReference(format!(
+                        "block uses unusable reference {}",
+                        b.ref_frame[rl]
+                    )));
                 }
-                let out = if rl == 0 { &mut self.pred } else { &mut self.pred2 };
+                let out = if rl == 0 {
+                    &mut self.pred
+                } else {
+                    &mut self.pred2
+                };
                 out[..w * h].fill(1 << (self.bit_depth - 1));
                 continue;
             };
             // Motion vector scaling (8.5.2.3).
             let (x_scale, y_scale) = (rf.x_scale as i64, rf.y_scale as i64);
-            let (start_x, start_y, step_x, step_y) = if rf.x_step == 16 && rf.y_step == 16 && x_scale == 1 << 14 && y_scale == 1 << 14 {
-                (((x as i32) << 4) + cmv_col, ((y as i32) << 4) + cmv_row, 16, 16)
-            } else {
-                self.strip.scaled_blocks += 1;
-                let base_x = (x as i64 * x_scale) >> 14;
-                let base_y = (y as i64 * y_scale) >> 14;
-                let luma_x = (x << sx) as i64;
-                let luma_y = (y << sy) as i64;
-                let frac_x = ((16 * luma_x * x_scale) >> 14) & 15;
-                let frac_y = ((16 * luma_y * y_scale) >> 14) & 15;
-                let dx = ((cmv_col as i64 * x_scale) >> 14) + frac_x;
-                let dy = ((cmv_row as i64 * y_scale) >> 14) + frac_y;
-                (((base_x << 4) + dx) as i32, ((base_y << 4) + dy) as i32, rf.x_step, rf.y_step)
-            };
+            let (start_x, start_y, step_x, step_y) =
+                if rf.x_step == 16 && rf.y_step == 16 && x_scale == 1 << 14 && y_scale == 1 << 14 {
+                    (
+                        ((x as i32) << 4) + cmv_col,
+                        ((y as i32) << 4) + cmv_row,
+                        16,
+                        16,
+                    )
+                } else {
+                    self.strip.scaled_blocks += 1;
+                    let base_x = (x as i64 * x_scale) >> 14;
+                    let base_y = (y as i64 * y_scale) >> 14;
+                    let luma_x = (x << sx) as i64;
+                    let luma_y = (y << sy) as i64;
+                    let frac_x = ((16 * luma_x * x_scale) >> 14) & 15;
+                    let frac_y = ((16 * luma_y * y_scale) >> 14) & 15;
+                    let dx = ((cmv_col as i64 * x_scale) >> 14) + frac_x;
+                    let dy = ((cmv_row as i64 * y_scale) >> 14) + frac_y;
+                    (
+                        ((base_x << 4) + dx) as i32,
+                        ((base_y << 4) + dy) as i32,
+                        rf.x_step,
+                        rf.y_step,
+                    )
+                };
             let f = rf.frame;
-            let rp =
-                RefPlane { frame: f, plane, last_x: ((f.info.width as i32 + sx as i32) >> sx) - 1, last_y: ((f.info.height as i32 + sy as i32) >> sy) - 1 };
-            let out = if rl == 0 { &mut self.pred } else { &mut self.pred2 };
-            inter::predict(&rp, start_x, start_y, step_x, step_y, w, h, b.interp_filter, self.bit_depth, out, &mut self.mc_tmp, &mut self.mc_win);
+            let rp = RefPlane {
+                frame: f,
+                plane,
+                last_x: ((f.info.width as i32 + sx as i32) >> sx) - 1,
+                last_y: ((f.info.height as i32 + sy as i32) >> sy) - 1,
+            };
+            let out = if rl == 0 {
+                &mut self.pred
+            } else {
+                &mut self.pred2
+            };
+            inter::predict(
+                &rp,
+                start_x,
+                start_y,
+                step_x,
+                step_y,
+                w,
+                h,
+                b.interp_filter,
+                self.bit_depth,
+                out,
+                &mut self.mc_tmp,
+                &mut self.mc_win,
+            );
         }
         let (stride, x_off) = (self.strip.strides[plane], self.strip.x_off[plane]);
         let dst = &mut self.strip.planes[plane];
@@ -320,7 +437,11 @@ impl<'a> TileDecoder<'a> {
             let o = (y + i) * stride + x - x_off;
             let row = &mut dst[o..o + w];
             if is_compound {
-                for ((d, &a), &bb) in row.iter_mut().zip(&self.pred[i * w..i * w + w]).zip(&self.pred2[i * w..i * w + w]) {
+                for ((d, &a), &bb) in row
+                    .iter_mut()
+                    .zip(&self.pred[i * w..i * w + w])
+                    .zip(&self.pred2[i * w..i * w + w])
+                {
                     *d = ((a as u32 + bb as u32 + 1) >> 1) as u16;
                 }
             } else {

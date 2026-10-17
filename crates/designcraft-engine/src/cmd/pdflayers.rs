@@ -37,7 +37,12 @@ pub fn specs() -> Vec<CommandSpec> {
                 let hidden: Vec<String> = p
                     .get("hidden")
                     .and_then(Value::as_array)
-                    .map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect())
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(Value::as_str)
+                            .map(str::to_string)
+                            .collect()
+                    })
                     .unwrap_or_default();
                 if ids.iter().all(|id| placed_pdf(s, *id).is_none()) {
                     return Err(bad("object.layerOptions", "select a placed PDF"));
@@ -63,7 +68,8 @@ pub(crate) mod tests {
 
     /// A one-page PDF (100×100 pt) with two layers: "Blue" (left half) and "Red" (right half).
     pub(crate) fn two_layer_pdf() -> Vec<u8> {
-        let content = "/OC /a BDC 0 0 1 rg 0 0 50 100 re f EMC /OC /b BDC 1 0 0 rg 50 0 50 100 re f EMC";
+        let content =
+            "/OC /a BDC 0 0 1 rg 0 0 50 100 re f EMC /OC /b BDC 1 0 0 rg 50 0 50 100 re f EMC";
         let objs = [
             "<</Type/Catalog/Pages 2 0 R/OCProperties<</OCGs[5 0 R 6 0 R]/D<</Order[5 0 R 6 0 R]>>>>>>".to_string(),
             "<</Type/Pages/Kids[3 0 R]/Count 1>>".to_string(),
@@ -83,7 +89,10 @@ pub(crate) mod tests {
         for o in offs {
             t.push_str(&format!("{o:010} 00000 n\r\n"));
         }
-        t.push_str(&format!("trailer\n<</Size {}/Root 1 0 R>>\nstartxref\n{x}\n%%EOF\n", objs.len() + 1));
+        t.push_str(&format!(
+            "trailer\n<</Size {}/Root 1 0 R>>\nstartxref\n{x}\n%%EOF\n",
+            objs.len() + 1
+        ));
         out.extend_from_slice(t.as_bytes());
         out
     }
@@ -104,16 +113,38 @@ pub(crate) mod tests {
             let d = s.doc().unwrap().doc.clone();
             let mut rr = designcraft_render::Renderer::new();
             rr.threads = 0;
-            rr.render_page(&d, &s.cache, 0, 1.0, false, &Default::default()).unwrap().pixel(x, 150)
+            rr.render_page(&d, &s.cache, 0, 1.0, false, &Default::default())
+                .unwrap()
+                .pixel(x, 150)
         };
-        assert!(px(&s, 125)[2] > 200 && px(&s, 175)[0] > 200, "both layers show");
-        s.execute("object.layerOptions", &json!({"ids": [id], "hidden": ["Red"]})).unwrap();
+        assert!(
+            px(&s, 125)[2] > 200 && px(&s, 175)[0] > 200,
+            "both layers show"
+        );
+        s.execute(
+            "object.layerOptions",
+            &json!({"ids": [id], "hidden": ["Red"]}),
+        )
+        .unwrap();
         let right = px(&s, 175);
-        assert!(right[0] > 200 && right[1] > 200 && right[2] > 200, "the red layer is hidden: {right:?}");
+        assert!(
+            right[0] > 200 && right[1] > 200 && right[2] > 200,
+            "the red layer is hidden: {right:?}"
+        );
         assert!(px(&s, 125)[2] > 200, "blue still shows");
-        assert_eq!(s.execute("object.pdfLayers", &json!({"id": id})).unwrap()[1]["visible"], false);
+        assert_eq!(
+            s.execute("object.pdfLayers", &json!({"id": id})).unwrap()[1]["visible"],
+            false
+        );
         // PDF export carries the choice (the graphic goes out as an image).
         let r = s.execute("file.exportPdf", &json!({})).unwrap();
-        assert!(r["warnings"].as_array().unwrap().iter().any(|w| w.as_str().unwrap().contains("layer")), "{r}");
+        assert!(
+            r["warnings"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|w| w.as_str().unwrap().contains("layer")),
+            "{r}"
+        );
     }
 }

@@ -14,8 +14,20 @@ use crate::layers_drag_tests::Ui;
 fn press(u: &mut Ui, key: Key) {
     let modifiers = Modifiers::NONE;
     u.frame(vec![
-        Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers },
-        Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: false,
+            repeat: false,
+            modifiers,
+        },
     ]);
 }
 
@@ -37,12 +49,31 @@ fn page_colour(u: &Ui) -> Color {
 #[test]
 fn enter_edits_a_selected_text_with_all_of_it_selected_and_escape_keeps_the_layer_selected() {
     let mut s = Session::new();
-    let t = NodeId(s.execute("text.create", &json!({"text": "Hello world", "x": 20, "y": 20})).unwrap()["id"].as_u64().unwrap());
+    let t = NodeId(
+        s.execute(
+            "text.create",
+            &json!({"text": "Hello world", "x": 20, "y": 20}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
     s.execute("select.set", &json!({"ids": [t]})).unwrap();
     let mut u = Ui::new(s);
     press(&mut u, Key::Enter);
-    let te = u.app.session.ds().unwrap().text_edit.clone().expect("Enter starts editing");
-    assert_eq!((te.id, te.anchor.min(te.caret), te.anchor.max(te.caret)), (t, 0, 11), "all of the text is selected");
+    let te = u
+        .app
+        .session
+        .ds()
+        .unwrap()
+        .text_edit
+        .clone()
+        .expect("Enter starts editing");
+    assert_eq!(
+        (te.id, te.anchor.min(te.caret), te.anchor.max(te.caret)),
+        (t, 0, 11),
+        "all of the text is selected"
+    );
     // Typing replaces the selection, as after a double-click into the text.
     u.frame(vec![Event::Text("Bye".into())]);
     assert_eq!(text(&u, t), "Bye");
@@ -64,16 +95,32 @@ fn a_new_file_takes_the_page_colour_of_the_theme_and_keeps_it() {
     let mut s = Session::new();
     s.prefs.theme = "dark".into();
     let mut u = Ui::new(s);
-    assert_eq!(page_colour(&u), Color::DARK_PAGE, "the file the app opened with, untouched");
+    assert_eq!(
+        page_colour(&u),
+        Color::DARK_PAGE,
+        "the file the app opened with, untouched"
+    );
     u.app.run("file.new", json!({}));
     assert_eq!(page_colour(&u), Color::DARK_PAGE);
     u.app.run("view.themeLight", json!({}));
     u.frame(vec![]);
-    assert_eq!(page_colour(&u), Color::DARK_PAGE, "a change of theme leaves the page alone");
+    assert_eq!(
+        page_colour(&u),
+        Color::DARK_PAGE,
+        "a change of theme leaves the page alone"
+    );
     u.app.run("file.new", json!({}));
-    assert_eq!(page_colour(&u), Color::DEFAULT_PAGE, "a file made in the light theme");
+    assert_eq!(
+        page_colour(&u),
+        Color::DEFAULT_PAGE,
+        "a file made in the light theme"
+    );
     u.app.run("view.themeDark", json!({}));
     u.frame(vec![]);
     u.app.run("page.add", json!({}));
-    assert_eq!(page_colour(&u), Color::DARK_PAGE, "a page added in the dark theme");
+    assert_eq!(
+        page_colour(&u),
+        Color::DARK_PAGE,
+        "a page added in the dark theme"
+    );
 }

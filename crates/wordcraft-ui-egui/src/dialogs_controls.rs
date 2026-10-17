@@ -43,7 +43,11 @@ impl ControlForm {
         let at = v.get("start").cloned().unwrap_or(Value::Null);
         // The content starts just after the start marker.
         let at = match serde_json::from_value::<wordcraft_doc::Pos>(at) {
-            Ok(p) => serde_json::to_value(wordcraft_doc::Pos { off: p.off + wordcraft_doc::para::OBJ.len_utf8(), ..p }).unwrap_or(Value::Null),
+            Ok(p) => serde_json::to_value(wordcraft_doc::Pos {
+                off: p.off + wordcraft_doc::para::OBJ.len_utf8(),
+                ..p
+            })
+            .unwrap_or(Value::Null),
             Err(_) => Value::Null,
         };
         let items = v
@@ -52,8 +56,16 @@ impl ControlForm {
             .map(|a| {
                 a.iter()
                     .map(|i| Entry {
-                        display: i.get("display").and_then(Value::as_str).unwrap_or("").to_string(),
-                        value: i.get("value").and_then(Value::as_str).unwrap_or("").to_string(),
+                        display: i
+                            .get("display")
+                            .and_then(Value::as_str)
+                            .unwrap_or("")
+                            .to_string(),
+                        value: i
+                            .get("value")
+                            .and_then(Value::as_str)
+                            .unwrap_or("")
+                            .to_string(),
                     })
                     .collect()
             })
@@ -113,19 +125,25 @@ impl ControlForm {
 /// Draws the dialog; returns true to close it.
 pub fn body(app: &mut WordApp, ui: &mut Ui, f: &mut ControlForm) -> bool {
     ui.set_width(420.0);
-    egui::Grid::new("cc_props").num_columns(2).spacing([10.0, 6.0]).show(ui, |ui| {
-        ui.label(tl!("Title"));
-        ui.add(egui::TextEdit::singleline(&mut f.title).desired_width(280.0));
-        ui.end_row();
-        ui.label(tl!("Tag"));
-        ui.add(egui::TextEdit::singleline(&mut f.tag).desired_width(280.0));
-        ui.end_row();
-        if !matches!(f.kind.as_str(), "checkBox" | "picture" | "repeatingSection" | "repeatingSectionItem") {
-            ui.label(tl!("Placeholder text"));
-            ui.add(egui::TextEdit::singleline(&mut f.placeholder).desired_width(280.0));
+    egui::Grid::new("cc_props")
+        .num_columns(2)
+        .spacing([10.0, 6.0])
+        .show(ui, |ui| {
+            ui.label(tl!("Title"));
+            ui.add(egui::TextEdit::singleline(&mut f.title).desired_width(280.0));
             ui.end_row();
-        }
-    });
+            ui.label(tl!("Tag"));
+            ui.add(egui::TextEdit::singleline(&mut f.tag).desired_width(280.0));
+            ui.end_row();
+            if !matches!(
+                f.kind.as_str(),
+                "checkBox" | "picture" | "repeatingSection" | "repeatingSectionItem"
+            ) {
+                ui.label(tl!("Placeholder text"));
+                ui.add(egui::TextEdit::singleline(&mut f.placeholder).desired_width(280.0));
+                ui.end_row();
+            }
+        });
     ui.add_space(6.0);
     ui.checkbox(&mut f.lock_delete, tl!("Can't be deleted"));
     ui.checkbox(&mut f.lock_edit, tl!("Contents can't be edited"));
@@ -164,10 +182,14 @@ pub fn body(app: &mut WordApp, ui: &mut Ui, f: &mut ControlForm) -> bool {
     ui.add_space(8.0);
     ui.horizontal(|ui| {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(tl!("Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+            if ui.button(tl!("Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape))
+            {
                 done = true;
             }
-            if ui.button(egui::RichText::new(tl!("OK")).color(egui::Color32::WHITE)).clicked() {
+            if ui
+                .button(egui::RichText::new(tl!("OK")).color(egui::Color32::WHITE))
+                .clicked()
+            {
                 match app.run("developer.properties", f.params()) {
                     Ok(_) => done = true,
                     Err(e) => app.status(e),
@@ -182,19 +204,22 @@ fn entries(ui: &mut Ui, f: &mut ControlForm) {
     ui.add_space(6.0);
     ui.label(egui::RichText::new(tl!("List entries")).font(semibold(12.0)));
     let mut remove = None;
-    egui::Grid::new("cc_entries").num_columns(3).spacing([6.0, 4.0]).show(ui, |ui| {
-        ui.label(egui::RichText::new(tl!("Display text")).small());
-        ui.label(egui::RichText::new(tl!("Value")).small());
-        ui.end_row();
-        for (i, e) in f.items.iter_mut().enumerate() {
-            ui.add(egui::TextEdit::singleline(&mut e.display).desired_width(170.0));
-            ui.add(egui::TextEdit::singleline(&mut e.value).desired_width(140.0));
-            if ui.small_button(tl!("Remove")).clicked() {
-                remove = Some(i);
-            }
+    egui::Grid::new("cc_entries")
+        .num_columns(3)
+        .spacing([6.0, 4.0])
+        .show(ui, |ui| {
+            ui.label(egui::RichText::new(tl!("Display text")).small());
+            ui.label(egui::RichText::new(tl!("Value")).small());
             ui.end_row();
-        }
-    });
+            for (i, e) in f.items.iter_mut().enumerate() {
+                ui.add(egui::TextEdit::singleline(&mut e.display).desired_width(170.0));
+                ui.add(egui::TextEdit::singleline(&mut e.value).desired_width(140.0));
+                if ui.small_button(tl!("Remove")).clicked() {
+                    remove = Some(i);
+                }
+                ui.end_row();
+            }
+        });
     if let Some(i) = remove
         && i < f.items.len()
     {

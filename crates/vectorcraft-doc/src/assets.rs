@@ -30,14 +30,23 @@ impl Document {
 
     /// The name of the next unnamed asset: one more than the highest `Asset N` so far.
     pub fn next_asset_name(&self) -> String {
-        let n = self.assets.iter().filter_map(|a| a.name.strip_prefix(ASSET)?.parse::<u64>().ok()).max().unwrap_or(0);
+        let n = self
+            .assets
+            .iter()
+            .filter_map(|a| a.name.strip_prefix(ASSET)?.parse::<u64>().ok())
+            .max()
+            .unwrap_or(0);
         format!("{ASSET}{}", n.saturating_add(1))
     }
 
     /// Forget the objects of assets that are no longer in the document, and the assets left with
     /// none (after every edit).
     pub fn prune_assets(&mut self) {
-        if self.assets.iter().all(|a| a.nodes.iter().all(|id| self.node(*id).is_some())) {
+        if self
+            .assets
+            .iter()
+            .all(|a| a.nodes.iter().all(|id| self.node(*id).is_some()))
+        {
             return;
         }
         let mut assets = std::mem::take(&mut self.assets);
@@ -52,7 +61,10 @@ impl Document {
     pub fn paint_order(&self, ids: impl IntoIterator<Item = NodeId>) -> Vec<NodeId> {
         let ids: Vec<NodeId> = ids.into_iter().collect();
         let paths = self.index_paths(ids.iter().copied());
-        let mut v: Vec<(Vec<usize>, NodeId)> = ids.into_iter().filter_map(|id| paths.get(&id).map(|p| (p.clone(), id))).collect();
+        let mut v: Vec<(Vec<usize>, NodeId)> = ids
+            .into_iter()
+            .filter_map(|id| paths.get(&id).map(|p| (p.clone(), id)))
+            .collect();
         v.sort();
         v.into_iter().map(|(_, id)| id).collect()
     }

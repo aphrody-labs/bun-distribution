@@ -25,7 +25,9 @@ fn report(e: &mut Engine, _: &Value) -> Result<Value> {
         for (index, playlist) in track.playlists.iter().enumerate() {
             let active = index == track.active_playlist;
             for clip in &playlist.clips {
-                let ClipContent::Audio { source, offset } = clip.content else { continue };
+                let ClipContent::Audio { source, offset } = clip.content else {
+                    continue;
+                };
                 clips += 1;
                 if active {
                     active_end = active_end.max(clip.end());
@@ -38,7 +40,10 @@ fn report(e: &mut Engine, _: &Value) -> Result<Value> {
                         "source_id": source.0, "path": metadata.map(|m| m.path.as_str())}));
                 };
                 if metadata.is_none() {
-                    add("missing_source", "Source metadata is missing. Reimport the audio and replace this clip.");
+                    add(
+                        "missing_source",
+                        "Source metadata is missing. Reimport the audio and replace this clip.",
+                    );
                 }
                 let Some(audio) = audio else {
                     add(
@@ -48,34 +53,57 @@ fn report(e: &mut Engine, _: &Value) -> Result<Value> {
                     continue;
                 };
                 if audio.buffer.sample_rate != s.sample_rate.hz() {
-                    add("sample_rate_mismatch", "Loaded audio differs from the session sample rate. Reimport it to convert to the session rate.");
+                    add(
+                        "sample_rate_mismatch",
+                        "Loaded audio differs from the session sample rate. Reimport it to convert to the session rate.",
+                    );
                 }
                 if audio.buffer.channels.is_empty() || audio.frames() == 0 {
-                    add("empty_audio", "Loaded audio has no playable frames. Reimport a valid audio file.");
+                    add(
+                        "empty_audio",
+                        "Loaded audio has no playable frames. Reimport a valid audio file.",
+                    );
                     continue;
                 }
-                if audio.buffer.channels.iter().any(|channel| channel.len() != audio.frames()) {
+                if audio
+                    .buffer
+                    .channels
+                    .iter()
+                    .any(|channel| channel.len() != audio.frames())
+                {
                     add(
                         "uneven_channels",
                         "Loaded audio channels have different lengths. Reimport a valid audio file; bounds below use the shortest channel.",
                     );
                 }
                 if !clip.stretch.is_finite() || clip.stretch <= 0.0 || clip.length <= 0 {
-                    add("invalid_clip", "Clip length or stretch is invalid. Replace this clip.");
+                    add(
+                        "invalid_clip",
+                        "Clip length or stretch is invalid. Replace this clip.",
+                    );
                 }
-                let stretch = if clip.stretch.is_finite() && clip.stretch > 0.0 { clip.stretch } else { 1.0 };
+                let stretch = if clip.stretch.is_finite() && clip.stretch > 0.0 {
+                    clip.stretch
+                } else {
+                    1.0
+                };
                 // Match the mixer's last requested source sample, including elastic playback.
                 let last = offset as f64 + clip.length.saturating_sub(1).max(0) as f64 / stretch;
                 if offset < 0 || last >= audio.frames() as f64 {
-                    add("source_bounds", "Clip extends outside the loaded audio; part will be silent. Trim the clip or replace its source.");
+                    add(
+                        "source_bounds",
+                        "Clip extends outside the loaded audio; part will be silent. Trim the clip or replace its source.",
+                    );
                 }
             }
         }
     }
-    Ok(json!({"audio_clips": clips, "active_audio_end_samples": active_end,
+    Ok(
+        json!({"audio_clips": clips, "active_audio_end_samples": active_end,
         "active_audio_end_seconds": (s.sample_rate.hz() != 0).then(|| active_end as f64 / f64::from(s.sample_rate.hz())),
         "issue_count": issues.len(), "healthy": issues.is_empty(), "issues": issues,
-        "scope": "All playlists; loaded audio availability and clip bounds only. Does not check files on disk, signal levels, plugins or routing."}))
+        "scope": "All playlists; loaded audio availability and clip bounds only. Does not check files on disk, signal levels, plugins or routing."}),
+    )
 }
 
 #[cfg(test)]
@@ -110,7 +138,14 @@ mod tests {
         let mut e = crate::demo::demo_engine();
         let t = e.session_mut().tracks.first_mut().unwrap();
         let mut p = soundcraft_model::Playlist::new("Alternate take");
-        p.clips.push(Clip::audio(ClipId(999), "Lost take", SourceId(999), 0, 0, 10));
+        p.clips.push(Clip::audio(
+            ClipId(999),
+            "Lost take",
+            SourceId(999),
+            0,
+            0,
+            10,
+        ));
         t.playlists.push(p);
         let r = check(&mut e);
         assert_eq!(r["issue_count"], 2);
@@ -124,7 +159,9 @@ mod tests {
         let mut e = crate::demo::demo_engine();
         let id = e.session().sources.first().unwrap().id;
         let sr = e.session().sample_rate.hz();
-        e.session_mut().pool.insert(id, Arc::new(SourceAudio::new(AudioBuffer::new(sr, 1, 10))));
+        e.session_mut()
+            .pool
+            .insert(id, Arc::new(SourceAudio::new(AudioBuffer::new(sr, 1, 10))));
         let t = e.session_mut().tracks.first_mut().unwrap();
         t.playlists.clear();
         let mut p = soundcraft_model::Playlist::new("Bounds");
@@ -139,7 +176,10 @@ mod tests {
         let clip = &mut e.session_mut().tracks.first_mut().unwrap().playlists[0].clips[0];
         clip.length = i64::MAX;
         clip.stretch = f64::NAN;
-        clip.content = ClipContent::Audio { source: id, offset: i64::MAX };
+        clip.content = ClipContent::Audio {
+            source: id,
+            offset: i64::MAX,
+        };
         let r = check(&mut e);
         assert_eq!(r["issues"][0]["code"], "invalid_clip");
         assert_eq!(r["issues"][1]["code"], "source_bounds");
@@ -149,10 +189,24 @@ mod tests {
     fn malformed_and_empty_audio_are_reported_without_panicking() {
         let mut e = crate::demo::demo_engine();
         let id = e.session().sources.first().unwrap().id;
-        e.session_mut().pool.insert(id, Arc::new(SourceAudio::new(AudioBuffer::new(1, 0, 0))));
+        e.session_mut()
+            .pool
+            .insert(id, Arc::new(SourceAudio::new(AudioBuffer::new(1, 0, 0))));
         let r = check(&mut e);
-        assert!(r["issues"].as_array().unwrap().iter().any(|i| i["code"] == "empty_audio"));
-        assert!(r["issues"].as_array().unwrap().iter().any(|i| i["code"] == "sample_rate_mismatch"));
+        assert!(
+            r["issues"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|i| i["code"] == "empty_audio")
+        );
+        assert!(
+            r["issues"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|i| i["code"] == "sample_rate_mismatch")
+        );
     }
 
     #[test]
@@ -160,11 +214,28 @@ mod tests {
         let mut e = crate::demo::demo_engine();
         let id = e.session().sources.first().unwrap().id;
         let sr = e.session().sample_rate.hz();
-        let audio = AudioBuffer { sample_rate: sr, channels: vec![vec![0.0; 10], vec![0.0; 5]] };
-        e.session_mut().pool.insert(id, Arc::new(SourceAudio::new(audio)));
+        let audio = AudioBuffer {
+            sample_rate: sr,
+            channels: vec![vec![0.0; 10], vec![0.0; 5]],
+        };
+        e.session_mut()
+            .pool
+            .insert(id, Arc::new(SourceAudio::new(audio)));
         let r = check(&mut e);
-        assert!(r["issues"].as_array().unwrap().iter().any(|i| i["code"] == "uneven_channels"));
-        assert!(r["issues"].as_array().unwrap().iter().any(|i| i["code"] == "source_bounds"));
+        assert!(
+            r["issues"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|i| i["code"] == "uneven_channels")
+        );
+        assert!(
+            r["issues"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|i| i["code"] == "source_bounds")
+        );
         e.session_mut().sample_rate = serde_json::from_value(json!(0)).unwrap();
         let r = check(&mut e);
         assert!(r["active_audio_end_seconds"].is_null());

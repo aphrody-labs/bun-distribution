@@ -59,11 +59,28 @@ pub(crate) enum Tag {
     /// Load the model and encode the photo ahead of the first click.
     Prepare,
     /// Object clicks on component `comp` of mask `mask`.
-    Clicks { photo: PhotoId, mask: u32, comp: usize, hint: Vec<Point>, exclude: Vec<Point> },
+    Clicks {
+        photo: PhotoId,
+        mask: u32,
+        comp: usize,
+        hint: Vec<Point>,
+        exclude: Vec<Point>,
+    },
     /// A Describe selection: a new mask (`mask: None`) or a component combined by `op`.
-    NewPrompt { photo: PhotoId, mask: Option<u32>, op: String, name: Option<String>, text: String },
+    NewPrompt {
+        photo: PhotoId,
+        mask: Option<u32>,
+        op: String,
+        name: Option<String>,
+        text: String,
+    },
     /// A zoomed-in pass for a component, computed from `shape` (without its detail).
-    Detail { photo: PhotoId, mask: u32, comp: usize, shape: MaskShape },
+    Detail {
+        photo: PhotoId,
+        mask: u32,
+        comp: usize,
+        shape: MaskShape,
+    },
 }
 
 /// The model input: 8-bit RGB.
@@ -130,7 +147,10 @@ pub struct Segmenter {
     #[cfg(feature = "sam")]
     download: download::Downloader,
     #[cfg(feature = "sam")]
-    results: (std::sync::mpsc::Sender<worker::Outcome>, std::sync::mpsc::Receiver<worker::Outcome>),
+    results: (
+        std::sync::mpsc::Sender<worker::Outcome>,
+        std::sync::mpsc::Receiver<worker::Outcome>,
+    ),
 }
 
 // (derivable only without the `sam` feature: the results channel has no Default)
@@ -215,7 +235,14 @@ impl Segmenter {
         #[cfg(feature = "sam")]
         {
             let s = self.download.status();
-            DownloadStatus { running: s.running, done: s.done, total: s.total, file: s.file, error: s.error, finished: s.finished }
+            DownloadStatus {
+                running: s.running,
+                done: s.done,
+                total: s.total,
+                file: s.file,
+                error: s.error,
+                finished: s.finished,
+            }
         }
         #[cfg(not(feature = "sam"))]
         DownloadStatus::default()
@@ -241,7 +268,10 @@ impl Segmenter {
         if lightcraft_segment::remote::configured().is_some() {
             return Ok(PathBuf::new());
         }
-        let dir = self.dir.clone().ok_or("no folder is set for the SAM 3 model")?;
+        let dir = self
+            .dir
+            .clone()
+            .ok_or("no folder is set for the SAM 3 model")?;
         if self.installed() {
             return Ok(dir);
         }
@@ -263,7 +293,10 @@ impl Segmenter {
         if !Self::AVAILABLE {
             return Err("AI masks are not available in this build".into());
         }
-        let dir = self.dir.clone().ok_or("no folder is set for the SAM 3 model")?;
+        let dir = self
+            .dir
+            .clone()
+            .ok_or("no folder is set for the SAM 3 model")?;
         if self.installed() {
             return Ok(false);
         }
@@ -273,7 +306,14 @@ impl Segmenter {
             if mirrors.is_empty() {
                 return Err(lightcraft_segment::fetch::no_mirrors_message());
             }
-            self.download.start(lightcraft_segment::fetch::SAM3_FILES, mirrors, dir, lightcraft_segment::fetch::options(), activity, "SAM 3")
+            self.download.start(
+                lightcraft_segment::fetch::SAM3_FILES,
+                mirrors,
+                dir,
+                lightcraft_segment::fetch::options(),
+                activity,
+                "SAM 3",
+            )
         }
         #[cfg(not(feature = "sam"))]
         {
@@ -325,7 +365,11 @@ pub fn detail_region(seg: &SegMask, aspect: f64) -> Option<[f64; 4]> {
         return None;
     }
     // in units of the photo's height: x × aspect
-    let a = if aspect.is_finite() { aspect.clamp(0.1, 10.0) } else { 1.0 };
+    let a = if aspect.is_finite() {
+        aspect.clamp(0.1, 10.0)
+    } else {
+        1.0
+    };
     let (cx, cy) = ((bx0 + bx1) / 2.0 * a, (by0 + by1) / 2.0);
     let size = ((bx1 - bx0) * a).max(by1 - by0);
     let m = 0.25 * size;
@@ -344,7 +388,9 @@ pub fn detail_region(seg: &SegMask, aspect: f64) -> Option<[f64; 4]> {
 #[cfg_attr(not(feature = "sam"), allow(dead_code))]
 fn strip_detail(mut shape: MaskShape) -> MaskShape {
     // (nor its edge setting: moving the slider meanwhile keeps the pass)
-    if let MaskShape::Object { detail, edge, .. } | MaskShape::Prompt { detail, edge, .. } = &mut shape {
+    if let MaskShape::Object { detail, edge, .. } | MaskShape::Prompt { detail, edge, .. } =
+        &mut shape
+    {
         detail.clear();
         *edge = 0.0;
     }
@@ -352,7 +398,17 @@ fn strip_detail(mut shape: MaskShape) -> MaskShape {
 }
 
 fn clicks_of(include: &[Point], exclude: &[Point]) -> Vec<Click> {
-    include.iter().map(|p| Click { at: *p, include: true }).chain(exclude.iter().map(|p| Click { at: *p, include: false })).collect()
+    include
+        .iter()
+        .map(|p| Click {
+            at: *p,
+            include: true,
+        })
+        .chain(exclude.iter().map(|p| Click {
+            at: *p,
+            include: false,
+        }))
+        .collect()
 }
 
 impl Session {
@@ -374,7 +430,14 @@ impl Session {
     /// Clicks (in normalized photo coordinates) for the model.
     #[cfg(feature = "sam")]
     fn model_clicks(clicks: &[Click]) -> Vec<lightcraft_segment::Click> {
-        clicks.iter().map(|c| lightcraft_segment::Click { x: c.at.x as f32, y: c.at.y as f32, positive: c.include }).collect()
+        clicks
+            .iter()
+            .map(|c| lightcraft_segment::Click {
+                x: c.at.x as f32,
+                y: c.at.y as f32,
+                positive: c.include,
+            })
+            .collect()
     }
 
     /// A worker request about photo `id` (the render job for its model input goes along; the
@@ -393,30 +456,52 @@ impl Session {
         let (key, mut d) = self.segment_key(id).ok_or("no such photo")?;
         let p = self.catalog.photo(id).ok_or("no such photo")?.clone();
         let missing = match &p.source {
-            lightcraft_catalog::Source::File { path } if !std::path::Path::new(path).exists() => Some(path.clone()),
+            lightcraft_catalog::Source::File { path } if !std::path::Path::new(path).exists() => {
+                Some(path.clone())
+            }
             _ => None,
         };
         let render = match region {
-            None => self.preview_job(id, INPUT_EDGE, INPUT_EDGE, false, &d).ok_or("no such photo")?,
+            None => self
+                .preview_job(id, INPUT_EDGE, INPUT_EDGE, false, &d)
+                .ok_or("no such photo")?,
             Some(region) => {
-                d.crop.geometry =
-                    lightcraft_geom::CropGeometry { rect: lightcraft_geom::Rect::new(region[0], region[1], region[2], region[3]), angle: 0.0 };
+                d.crop.geometry = lightcraft_geom::CropGeometry {
+                    rect: lightcraft_geom::Rect::new(region[0], region[1], region[2], region[3]),
+                    angle: 0.0,
+                };
                 d.crop.flip_h = false;
                 d.crop.flip_v = false;
                 d.geometry.constrain_crop = false;
-                let mut job = self.preview_job(id, INPUT_EDGE, INPUT_EDGE, true, &d).ok_or("no such photo")?;
+                let mut job = self
+                    .preview_job(id, INPUT_EDGE, INPUT_EDGE, true, &d)
+                    .ok_or("no such photo")?;
                 let frac = (region[2] - region[0]).max(region[3] - region[1]).max(0.01);
-                job.level = crate::media::SourceLevel::for_size((INPUT_EDGE as f64 / frac) as usize);
+                job.level =
+                    crate::media::SourceLevel::for_size((INPUT_EDGE as f64 / frac) as usize);
                 job.source = self.media.source_ref(&p, job.level);
                 job
             }
         };
-        Ok(worker::Job { dir, key: if region.is_some() { 0 } else { key }, render: Some(render), missing, kind, tag, reply })
+        Ok(worker::Job {
+            dir,
+            key: if region.is_some() { 0 } else { key },
+            render: Some(render),
+            missing,
+            kind,
+            tag,
+            reply,
+        })
     }
 
     /// Send a request and wait for its result (CLI, MCP, tests; or when not in background mode).
     #[cfg(feature = "sam")]
-    fn segment_wait(&mut self, id: PhotoId, kind: worker::Kind, region: Option<[f64; 4]>) -> Result<Option<SegMask>, String> {
+    fn segment_wait(
+        &mut self,
+        id: PhotoId,
+        kind: worker::Kind,
+        region: Option<[f64; 4]>,
+    ) -> Result<Option<SegMask>, String> {
         let (tx, rx) = std::sync::mpsc::channel();
         let job = self.segment_job(id, kind, Tag::Wait, tx, region)?;
         self.segmenter.worker.submit(job)?;
@@ -428,7 +513,13 @@ impl Session {
 
     /// Send a request whose result [`Session::segment_poll`] applies.
     #[cfg(feature = "sam")]
-    fn segment_queue(&mut self, id: PhotoId, kind: worker::Kind, tag: Tag, region: Option<[f64; 4]>) -> Result<(), String> {
+    fn segment_queue(
+        &mut self,
+        id: PhotoId,
+        kind: worker::Kind,
+        tag: Tag,
+        region: Option<[f64; 4]>,
+    ) -> Result<(), String> {
         let reply = self.segmenter.results.0.clone();
         let job = self.segment_job(id, kind, tag, reply, region)?;
         self.segmenter.worker.submit(job)
@@ -458,7 +549,8 @@ impl Session {
         }
         #[cfg(feature = "sam")]
         {
-            self.segment_wait(id, worker::Kind::Clicks(Self::model_clicks(clicks)), None)?.ok_or_else(|| "nothing was selected".to_string())
+            self.segment_wait(id, worker::Kind::Clicks(Self::model_clicks(clicks)), None)?
+                .ok_or_else(|| "nothing was selected".to_string())
         }
         #[cfg(not(feature = "sam"))]
         {
@@ -488,7 +580,14 @@ impl Session {
 
     /// Background mode: queue Object clicks for component `comp` of mask `mask`; the result
     /// (clicks and segmentation, one undo step) is applied by [`Session::segment_poll`].
-    pub(crate) fn segment_clicks_later(&mut self, id: PhotoId, mask: u32, comp: usize, hint: Vec<Point>, exclude: Vec<Point>) -> Result<(), String> {
+    pub(crate) fn segment_clicks_later(
+        &mut self,
+        id: PhotoId,
+        mask: u32,
+        comp: usize,
+        hint: Vec<Point>,
+        exclude: Vec<Point>,
+    ) -> Result<(), String> {
         self.segmenter.model_dir()?;
         if hint.is_empty() {
             return Err("click the object to include it first".into());
@@ -496,9 +595,21 @@ impl Session {
         #[cfg(feature = "sam")]
         {
             let clicks = Self::model_clicks(&clicks_of(&hint, &exclude));
-            let tag = Tag::Clicks { photo: id, mask, comp, hint: hint.clone(), exclude: exclude.clone() };
+            let tag = Tag::Clicks {
+                photo: id,
+                mask,
+                comp,
+                hint: hint.clone(),
+                exclude: exclude.clone(),
+            };
             self.segment_queue(id, worker::Kind::Clicks(clicks), tag, None)?;
-            self.segmenter.pending = Some(PendingClicks { photo: id, mask, comp, hint, exclude });
+            self.segmenter.pending = Some(PendingClicks {
+                photo: id,
+                mask,
+                comp,
+                hint,
+                exclude,
+            });
             Ok(())
         }
         #[cfg(not(feature = "sam"))]
@@ -510,7 +621,14 @@ impl Session {
 
     /// Background mode: queue a Describe selection; the mask (or component, combined by `op`
     /// into mask `mask`) is created by [`Session::segment_poll`] when something matches.
-    pub(crate) fn segment_text_later(&mut self, id: PhotoId, mask: Option<u32>, op: &str, name: Option<String>, text: &str) -> Result<(), String> {
+    pub(crate) fn segment_text_later(
+        &mut self,
+        id: PhotoId,
+        mask: Option<u32>,
+        op: &str,
+        name: Option<String>,
+        text: &str,
+    ) -> Result<(), String> {
         self.segmenter.model_dir()?;
         let text = text.trim();
         if text.is_empty() {
@@ -518,7 +636,13 @@ impl Session {
         }
         #[cfg(feature = "sam")]
         {
-            let tag = Tag::NewPrompt { photo: id, mask, op: op.to_string(), name, text: text.to_string() };
+            let tag = Tag::NewPrompt {
+                photo: id,
+                mask,
+                op: op.to_string(),
+                name,
+                text: text.to_string(),
+            };
             self.segment_queue(id, worker::Kind::Text(text.to_string()), tag, None)
         }
         #[cfg(not(feature = "sam"))]
@@ -536,23 +660,49 @@ impl Session {
     pub fn segment_detail(&mut self, id: PhotoId, mask: u32, comp: usize) -> Result<bool, String> {
         self.segmenter.model_dir()?;
         let d = self.develop_of(id).ok_or("no such photo")?;
-        let shape = d.masks.iter().find(|m| m.id == mask).and_then(|m| m.components.get(comp)).map(|c| c.shape.clone()).ok_or("no such mask")?;
+        let shape = d
+            .masks
+            .iter()
+            .find(|m| m.id == mask)
+            .and_then(|m| m.components.get(comp))
+            .map(|c| c.shape.clone())
+            .ok_or("no such mask")?;
         let (seg, prompt) = match &shape {
             // (a document with absurdly many clicks isn't run through the model)
-            MaskShape::Object { hint, exclude, seg: Some(seg), .. } if !hint.is_empty() && hint.len() + exclude.len() <= MAX_CLICKS => {
+            MaskShape::Object {
+                hint,
+                exclude,
+                seg: Some(seg),
+                ..
+            } if !hint.is_empty() && hint.len() + exclude.len() <= MAX_CLICKS => {
                 (seg.clone(), Prompt::Clicks(clicks_of(hint, exclude)))
             }
-            MaskShape::Prompt { text, seg: Some(seg), .. } => (seg.clone(), Prompt::Text(text.clone())),
+            MaskShape::Prompt {
+                text,
+                seg: Some(seg),
+                ..
+            } => (seg.clone(), Prompt::Text(text.clone())),
             _ => return Ok(false),
         };
         let p = self.catalog.photo(id).ok_or("no such photo")?;
         let (pw, ph) = (f64::from(p.width.max(1)), f64::from(p.height.max(1)));
-        let aspect = if d.orientation.swaps_axes() { ph / pw } else { pw / ph };
-        let Some(region) = detail_region(&seg, aspect) else { return Ok(false) };
+        let aspect = if d.orientation.swaps_axes() {
+            ph / pw
+        } else {
+            pw / ph
+        };
+        let Some(region) = detail_region(&seg, aspect) else {
+            return Ok(false);
+        };
         #[cfg(feature = "sam")]
         {
             let kind = worker::Kind::Detail { prompt, region };
-            let tag = Tag::Detail { photo: id, mask, comp, shape: strip_detail(shape) };
+            let tag = Tag::Detail {
+                photo: id,
+                mask,
+                comp,
+                shape: strip_detail(shape),
+            };
             if self.segmenter.background {
                 if self.segmenter.detail_busy() {
                     return Ok(false);
@@ -560,7 +710,11 @@ impl Session {
                 self.segment_queue(id, kind, tag, Some(region))?;
             } else {
                 let patch = self.segment_wait(id, kind, Some(region))?;
-                let outcome = worker::Outcome { tag, result: Ok(patch), superseded: false };
+                let outcome = worker::Outcome {
+                    tag,
+                    result: Ok(patch),
+                    superseded: false,
+                };
                 let mut polled = Polled::default();
                 self.apply_outcome(outcome, &mut polled);
             }
@@ -577,7 +731,10 @@ impl Session {
     /// their messages. Cheap when nothing is pending: call it every frame.
     pub fn segment_poll(&mut self) -> Polled {
         #[cfg_attr(not(feature = "sam"), allow(unused_mut))]
-        let mut polled = Polled { messages: std::mem::take(&mut self.segmenter.messages), ..Default::default() };
+        let mut polled = Polled {
+            messages: std::mem::take(&mut self.segmenter.messages),
+            ..Default::default()
+        };
         #[cfg(feature = "sam")]
         {
             // (before draining: a worker that is idle now has sent everything)
@@ -606,8 +763,20 @@ impl Session {
                     polled.messages.push(e);
                 }
             }
-            Tag::Clicks { photo, mask, comp, hint, exclude } => {
-                let latest = PendingClicks { photo, mask, comp, hint, exclude };
+            Tag::Clicks {
+                photo,
+                mask,
+                comp,
+                hint,
+                exclude,
+            } => {
+                let latest = PendingClicks {
+                    photo,
+                    mask,
+                    comp,
+                    hint,
+                    exclude,
+                };
                 if self.segmenter.pending.as_ref() != Some(&latest) {
                     return; // newer clicks are on their way
                 }
@@ -617,11 +786,28 @@ impl Session {
                     Ok(None) => return,
                     Err(e) => return polled.messages.push(e),
                 };
-                let Some(d) = self.develop_of(photo) else { return };
+                let Some(d) = self.develop_of(photo) else {
+                    return;
+                };
                 let mut d = (*d).clone();
-                let Some(c) = d.masks.iter_mut().find(|m| m.id == mask).and_then(|m| m.components.get_mut(comp)) else { return };
-                let MaskShape::Object { edge, .. } = c.shape else { return };
-                c.shape = MaskShape::Object { hint: latest.hint, exclude: latest.exclude, seg: Some(seg), detail: vec![], edge };
+                let Some(c) = d
+                    .masks
+                    .iter_mut()
+                    .find(|m| m.id == mask)
+                    .and_then(|m| m.components.get_mut(comp))
+                else {
+                    return;
+                };
+                let MaskShape::Object { edge, .. } = c.shape else {
+                    return;
+                };
+                c.shape = MaskShape::Object {
+                    hint: latest.hint,
+                    exclude: latest.exclude,
+                    seg: Some(seg),
+                    detail: vec![],
+                    edge,
+                };
                 match self.set_develop(photo, d, "Object Mask") {
                     Ok(()) => {
                         polled.changed = true;
@@ -630,16 +816,30 @@ impl Session {
                     Err(e) => polled.messages.push(e.to_string()),
                 }
             }
-            Tag::NewPrompt { photo, mask, op, name, text } => {
+            Tag::NewPrompt {
+                photo,
+                mask,
+                op,
+                name,
+                text,
+            } => {
                 let seg = match o.result {
                     Ok(Some(seg)) => seg,
-                    Ok(None) => return polled.messages.push(format!("Nothing matching “{text}” was found in this photo.")),
+                    Ok(None) => {
+                        return polled.messages.push(format!(
+                            "Nothing matching “{text}” was found in this photo."
+                        ));
+                    }
                     Err(e) => return polled.messages.push(e),
                 };
                 if self.active() != Some(photo) {
-                    return polled.messages.push(format!("The photo changed before “{text}” was found; try again."));
+                    return polled.messages.push(format!(
+                        "The photo changed before “{text}” was found; try again."
+                    ));
                 }
-                let Ok(seg) = serde_json::to_value(seg) else { return };
+                let Ok(seg) = serde_json::to_value(seg) else {
+                    return;
+                };
                 let mut p = serde_json::json!({"kind": "prompt", "text": text, "seg": seg});
                 if let Some(n) = name {
                     p["name"] = serde_json::json!(n);
@@ -647,8 +847,13 @@ impl Session {
                 let r = match mask {
                     None => self.execute("mask.add", &p),
                     Some(m) => {
-                        if !self.develop_of(photo).is_some_and(|d| d.masks.iter().any(|x| x.id == m)) {
-                            return polled.messages.push("The mask was removed before the selection was found.".into());
+                        if !self
+                            .develop_of(photo)
+                            .is_some_and(|d| d.masks.iter().any(|x| x.id == m))
+                        {
+                            return polled.messages.push(
+                                "The mask was removed before the selection was found.".into(),
+                            );
                         }
                         self.active_mask = Some(m);
                         p["op"] = serde_json::json!(op);
@@ -663,20 +868,36 @@ impl Session {
                     Err(e) => polled.messages.push(e.to_string()),
                 }
             }
-            Tag::Detail { photo, mask, comp, shape } => {
+            Tag::Detail {
+                photo,
+                mask,
+                comp,
+                shape,
+            } => {
                 let patch = match o.result {
                     Ok(Some(p)) => p,
                     Ok(None) => return,
                     Err(e) => return log::warn!("SAM 3 detail pass: {e}"),
                 };
-                let Some(d) = self.develop_of(photo) else { return };
+                let Some(d) = self.develop_of(photo) else {
+                    return;
+                };
                 let mut d = (*d).clone();
-                let Some(c) = d.masks.iter_mut().find(|m| m.id == mask).and_then(|m| m.components.get_mut(comp)) else { return };
+                let Some(c) = d
+                    .masks
+                    .iter_mut()
+                    .find(|m| m.id == mask)
+                    .and_then(|m| m.components.get_mut(comp))
+                else {
+                    return;
+                };
                 if strip_detail(c.shape.clone()) != shape {
                     return; // clicked again meanwhile: a newer pass will follow
                 }
                 match &mut c.shape {
-                    MaskShape::Object { detail, .. } | MaskShape::Prompt { detail, .. } => *detail = vec![patch],
+                    MaskShape::Object { detail, .. } | MaskShape::Prompt { detail, .. } => {
+                        *detail = vec![patch]
+                    }
                     _ => return,
                 }
                 match self.set_develop(photo, d, "AI Mask Detail") {
@@ -693,8 +914,15 @@ mod tests {
     use super::*;
 
     fn seg_box(side: usize, x0: usize, y0: usize, x1: usize, y1: usize) -> SegMask {
-        let l: Vec<f32> =
-            (0..side * side).map(|i| if (x0..x1).contains(&(i % side)) && (y0..y1).contains(&(i / side)) { 8.0 } else { -8.0 }).collect();
+        let l: Vec<f32> = (0..side * side)
+            .map(|i| {
+                if (x0..x1).contains(&(i % side)) && (y0..y1).contains(&(i / side)) {
+                    8.0
+                } else {
+                    -8.0
+                }
+            })
+            .collect();
         SegMask::from_logits(side, &l)
     }
 
@@ -702,7 +930,10 @@ mod tests {
     fn detail_region_frames_the_selection_with_a_margin() {
         // a small object in the middle of a square photo
         let r = detail_region(&seg_box(100, 40, 45, 50, 55), 1.0).unwrap();
-        assert!(r[0] < 0.4 && r[2] > 0.5 && r[1] < 0.45 && r[3] > 0.55, "contains it: {r:?}");
+        assert!(
+            r[0] < 0.4 && r[2] > 0.5 && r[1] < 0.45 && r[3] > 0.55,
+            "contains it: {r:?}"
+        );
         assert!(r[2] - r[0] < 0.25 && r[3] - r[1] < 0.25, "zoomed in: {r:?}");
         assert!(r.iter().all(|v| (0.0..=1.0).contains(v)));
         // at the corner: shifted inside the photo, not cut
@@ -713,14 +944,21 @@ mod tests {
         let (w, h) = ((r[2] - r[0]) * 1.5, r[3] - r[1]);
         assert!(w / h <= 2.0 + 1e-9, "{w} × {h}");
         // a hostile aspect ratio stays sane
-        assert!(detail_region(&seg_box(100, 40, 45, 50, 55), f64::NAN).is_some_and(|r| r.iter().all(|v| v.is_finite())));
+        assert!(
+            detail_region(&seg_box(100, 40, 45, 50, 55), f64::NAN)
+                .is_some_and(|r| r.iter().all(|v| v.is_finite()))
+        );
     }
 
     #[test]
     fn no_region_for_nothing_or_most_of_the_photo() {
         assert!(detail_region(&seg_box(50, 0, 0, 0, 0), 1.0).is_none());
         assert!(detail_region(&seg_box(50, 2, 2, 48, 48), 1.0).is_none());
-        let damaged = SegMask { side: 50, data: "?".into(), rect: None };
+        let damaged = SegMask {
+            side: 50,
+            data: "?".into(),
+            rect: None,
+        };
         assert!(detail_region(&damaged, 1.0).is_none());
     }
 }

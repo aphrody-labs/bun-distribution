@@ -121,7 +121,11 @@ impl Submesh {
     /// Stride effectif déclaré : le champ historique s'il est renseigné, sinon le champ réel.
     #[must_use]
     pub fn declared_stride(&self) -> usize {
-        if self.stride > 0 { self.stride as usize } else { self.vertex_stride as usize }
+        if self.stride > 0 {
+            self.stride as usize
+        } else {
+            self.vertex_stride as usize
+        }
     }
 }
 
@@ -195,7 +199,10 @@ impl G4md {
     /// Attribut `vtype` dans le layout propre à la sous-maille.
     #[must_use]
     pub fn find_attribute_of(&self, sm: &Submesh, vtype: u8) -> Option<VertexAttribute> {
-        self.layout_of(sm).iter().copied().find(|a| a.vtype == vtype)
+        self.layout_of(sm)
+            .iter()
+            .copied()
+            .find(|a| a.vtype == vtype)
     }
 
     /// Taille en octets occupée par un attribut dans le vertex : jusqu'à l'attribut suivant du
@@ -249,7 +256,11 @@ impl G4md {
         let name = self.mesh_name_at(index)?;
         let pos = name.rfind("_LOD")?;
         let digits = &name[pos + 4..];
-        if digits.is_empty() { Some(1) } else { digits.parse().ok() }
+        if digits.is_empty() {
+            Some(1)
+        } else {
+            digits.parse().ok()
+        }
     }
 
     /// Index de matériau à utiliser pour une sous-maille : le champ réel (+0x43) si la table
@@ -257,15 +268,25 @@ impl G4md {
     /// sinon le champ historique.
     #[must_use]
     pub fn material_index_of(&self, sm: &Submesh) -> u8 {
-        if self.material_slots_plausible() { sm.material_slot } else { sm.material_index }
+        if self.material_slots_plausible() {
+            sm.material_slot
+        } else {
+            sm.material_index
+        }
     }
 
     /// Vrai si les `material_slot` (+0x43) forment une table exploitable.
     #[must_use]
     pub fn material_slots_plausible(&self) -> bool {
-        let n = self.material_base_names.len().max(self.header.material_count as usize);
+        let n = self
+            .material_base_names
+            .len()
+            .max(self.header.material_count as usize);
         n > 0
-            && self.submeshes.iter().all(|s| (s.material_slot as usize) < n)
+            && self
+                .submeshes
+                .iter()
+                .all(|s| (s.material_slot as usize) < n)
             && self.submeshes.iter().any(|s| s.material_slot != 0)
     }
 }
@@ -288,7 +309,10 @@ pub fn is_g4md(data: &[u8]) -> bool {
 /// - [`FormatError::BadMagic`] si le magic n'est pas G4MD.
 pub fn parse(data: &[u8]) -> Result<G4md, FormatError> {
     if data.len() < 0x60 {
-        return Err(FormatError::TooShort { got: data.len(), need: 0x60 });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: 0x60,
+        });
     }
     let le = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
     let big_endian = match le {
@@ -320,7 +344,10 @@ pub fn parse(data: &[u8]) -> Result<G4md, FormatError> {
         read_offset_table_names(data, &header, 0x86, header.material_count as usize);
     let material_base_names =
         if material_names.len() == header.material_count as usize && !material_names.is_empty() {
-            material_names.iter().map(|n| n.strip_suffix('M').unwrap_or(n).to_string()).collect()
+            material_names
+                .iter()
+                .map(|n| n.strip_suffix('M').unwrap_or(n).to_string())
+                .collect()
         } else {
             extract_material_base_names(data, header.material_count as usize)
         };
@@ -366,7 +393,10 @@ fn read_offset_table_names(
         if start >= data.len() {
             return Vec::new();
         }
-        let end = data[start..].iter().position(|&b| b == 0).map_or(data.len(), |p| start + p);
+        let end = data[start..]
+            .iter()
+            .position(|&b| b == 0)
+            .map_or(data.len(), |p| start + p);
         let bytes = &data[start..end];
         if bytes.is_empty() || !bytes.iter().all(|b| (0x20..=0x7E).contains(b)) {
             return Vec::new();
@@ -412,7 +442,9 @@ fn read_joint_hashes(data: &[u8], header: &G4mdHeader, submeshes: &[Submesh]) ->
     if count == 0 {
         return Vec::new();
     }
-    (0..count).filter_map(|i| read_u32(data, base + i * 4, header.big_endian).ok()).collect()
+    (0..count)
+        .filter_map(|i| read_u32(data, base + i * 4, header.big_endian).ok())
+        .collect()
 }
 
 /// Table de palette d'os (`u16 @0x82`). Sa longueur n'est pas stockée : c'est le plus grand
@@ -438,7 +470,9 @@ fn read_joint_palette(data: &[u8], header: &G4mdHeader, submeshes: &[Submesh]) -
     if base + needed * 2 > limit {
         return Vec::new();
     }
-    (0..needed).filter_map(|i| read_u16(data, base + i * 2, header.big_endian).ok()).collect()
+    (0..needed)
+        .filter_map(|i| read_u16(data, base + i * 2, header.big_endian).ok())
+        .collect()
 }
 
 /// Lit **tous** les layouts vertex : `vlayout_count` blocs consécutifs à
@@ -471,7 +505,11 @@ fn read_vertex_layouts(data: &[u8], header: &G4mdHeader) -> Vec<Vec<VertexAttrib
             }
             let offset = u16::from_le_bytes([data[o + 1], data[o + 2]]);
             let datatype = u32::from_le_bytes([data[o + 4], data[o + 5], data[o + 6], data[o + 7]]);
-            attrs.push(VertexAttribute { vtype, offset, datatype });
+            attrs.push(VertexAttribute {
+                vtype,
+                offset,
+                datatype,
+            });
         }
         // Un layout dont la première entrée n'est pas la position à 0 n'est pas une table
         // d'attributs : on s'arrête là plutôt que d'inventer la suite.
@@ -514,7 +552,11 @@ fn parse_submeshes(data: &[u8], header: &G4mdHeader) -> Vec<Submesh> {
             lod_id: read_u16(data, off + 0x34, be).unwrap_or(0xFF),
             name_index: read_u16(data, off + 0x38, be).unwrap_or(0),
             palette_offset: read_u16(data, off + 0x3A, be).unwrap_or(0),
-            palette_len: if flags0 & 0x100 != 0 { (flags0 & 0xFF) as u8 } else { 0 },
+            palette_len: if flags0 & 0x100 != 0 {
+                (flags0 & 0xFF) as u8
+            } else {
+                0
+            },
             vertex_stride: (flags1 & 0xFF) as u8,
             layout_index: data.get(off + 0x42).copied().unwrap_or(0),
             material_slot: data.get(off + 0x43).copied().unwrap_or(0),
@@ -551,7 +593,11 @@ fn read_vertex_attributes(data: &[u8], header: &G4mdHeader) -> Vec<VertexAttribu
         }
         let offset = u16::from_le_bytes([data[o + 1], data[o + 2]]);
         let datatype = u32::from_le_bytes([data[o + 4], data[o + 5], data[o + 6], data[o + 7]]);
-        attrs.push(VertexAttribute { vtype, offset, datatype });
+        attrs.push(VertexAttribute {
+            vtype,
+            offset,
+            datatype,
+        });
     }
     attrs
 }
@@ -716,7 +762,9 @@ fn is_material_name(s: &str) -> bool {
     if bytes.len() < 3 || !bytes[0].is_ascii_alphabetic() {
         return false;
     }
-    bytes.iter().all(|&c| c.is_ascii_alphanumeric() || c == b'_')
+    bytes
+        .iter()
+        .all(|&c| c.is_ascii_alphanumeric() || c == b'_')
 }
 
 fn read_u16(data: &[u8], off: usize, big_endian: bool) -> Result<u16, FormatError> {
@@ -724,7 +772,11 @@ fn read_u16(data: &[u8], off: usize, big_endian: bool) -> Result<u16, FormatErro
         .get(off..off + 2)
         .and_then(|s| s.try_into().ok())
         .ok_or(FormatError::Corrupt("G4MD : lecture u16 hors limites"))?;
-    Ok(if big_endian { u16::from_be_bytes(b) } else { u16::from_le_bytes(b) })
+    Ok(if big_endian {
+        u16::from_be_bytes(b)
+    } else {
+        u16::from_le_bytes(b)
+    })
 }
 
 fn read_u32(data: &[u8], off: usize, big_endian: bool) -> Result<u32, FormatError> {
@@ -732,7 +784,11 @@ fn read_u32(data: &[u8], off: usize, big_endian: bool) -> Result<u32, FormatErro
         .get(off..off + 4)
         .and_then(|s| s.try_into().ok())
         .ok_or(FormatError::Corrupt("G4MD : lecture u32 hors limites"))?;
-    Ok(if big_endian { u32::from_be_bytes(b) } else { u32::from_le_bytes(b) })
+    Ok(if big_endian {
+        u32::from_be_bytes(b)
+    } else {
+        u32::from_le_bytes(b)
+    })
 }
 
 #[cfg(test)]
@@ -820,9 +876,30 @@ mod tests {
         let g = parse(&buf).unwrap();
         // Layout réel chr/_uniform : pos float@0, normale short@12, uv ushort@64.
         assert_eq!(g.attributes.len(), 3);
-        assert_eq!(g.attributes[0], VertexAttribute { vtype: 1, offset: 0, datatype: 3 });
-        assert_eq!(g.attributes[1], VertexAttribute { vtype: 2, offset: 12, datatype: 18 });
-        assert_eq!(g.attributes[2], VertexAttribute { vtype: 10, offset: 64, datatype: 14 });
+        assert_eq!(
+            g.attributes[0],
+            VertexAttribute {
+                vtype: 1,
+                offset: 0,
+                datatype: 3
+            }
+        );
+        assert_eq!(
+            g.attributes[1],
+            VertexAttribute {
+                vtype: 2,
+                offset: 12,
+                datatype: 18
+            }
+        );
+        assert_eq!(
+            g.attributes[2],
+            VertexAttribute {
+                vtype: 10,
+                offset: 64,
+                datatype: 14
+            }
+        );
         // 1er attribut toujours position offset 0.
         assert_eq!(g.find_attribute(1).unwrap().offset, 0);
         assert_eq!(g.find_attribute(2).unwrap().offset, 12);
@@ -834,7 +911,10 @@ mod tests {
         let buf = build_uniform_like();
         let g = parse(&buf).unwrap();
         // 1 matériau → base = seconde moitié du run = ["u11130090_10"].
-        assert_eq!(g.material_base_names, alloc::vec![String::from("u11130090_10")]);
+        assert_eq!(
+            g.material_base_names,
+            alloc::vec![String::from("u11130090_10")]
+        );
     }
 
     #[test]

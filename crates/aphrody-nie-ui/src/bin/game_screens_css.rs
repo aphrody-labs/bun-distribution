@@ -31,21 +31,24 @@ fn main() -> ExitCode {
                     genere.lines().count()
                 );
                 ExitCode::SUCCESS
-            },
+            }
             Err(e) => {
                 eprintln!("{} : {e}", chemin.display());
                 ExitCode::FAILURE
-            },
+            }
         },
         Some("--verify") => match std::fs::read(&chemin) {
             Ok(livre) if livre == genere.as_bytes() => {
                 eprintln!("{} conforme — {} octets", chemin.display(), livre.len());
                 ExitCode::SUCCESS
-            },
+            }
             Ok(livre) => {
                 let livre_txt = String::from_utf8_lossy(&livre);
-                let premiere =
-                    livre_txt.lines().zip(genere.lines()).position(|(a, b)| a != b).map_or_else(
+                let premiere = livre_txt
+                    .lines()
+                    .zip(genere.lines())
+                    .position(|(a, b)| a != b)
+                    .map_or_else(
                         || {
                             format!(
                                 "longueurs : {} livres, {} engendres",
@@ -55,21 +58,24 @@ fn main() -> ExitCode {
                         },
                         |n| format!("premiere divergence ligne {}", n + 1),
                     );
-                eprintln!("{} DIVERGE — {premiere}. Regenerer : --write", chemin.display());
+                eprintln!(
+                    "{} DIVERGE — {premiere}. Regenerer : --write",
+                    chemin.display()
+                );
                 ExitCode::FAILURE
-            },
+            }
             Err(e) => {
                 eprintln!("{} : {e}", chemin.display());
                 ExitCode::FAILURE
-            },
+            }
         },
         Some("--print") => {
             print!("{genere}");
             ExitCode::SUCCESS
-        },
+        }
         _ => {
             print!("{AIDE}");
             ExitCode::FAILURE
-        },
+        }
     }
 }

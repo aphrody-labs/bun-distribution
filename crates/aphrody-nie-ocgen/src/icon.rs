@@ -141,7 +141,10 @@ pub fn encode_icon(spec: &IconSpec, sheets: &[&Sheet]) -> Result<(Vec<u8>, IconR
             .ok_or_else(|| Error::Palette(format!("planche \u{ab} {name} \u{bb} absente")))
     };
 
-    let names = [format!("{}_1_l00", spec.internal_code), format!("{}_2_l00", spec.internal_code)];
+    let names = [
+        format!("{}_1_l00", spec.internal_code),
+        format!("{}_2_l00", spec.internal_code),
+    ];
     let crops = [&spec.first, &spec.second];
     let mut payloads = Vec::with_capacity(2);
     for crop in crops {
@@ -157,15 +160,17 @@ pub fn encode_icon(spec: &IconSpec, sheets: &[&Sheet]) -> Result<(Vec<u8>, IconR
         .iter()
         .zip(&payloads)
         .enumerate()
-        .map(|(index, (name, dds))| aphrody_nie_formats::g4tx_encode::TextureAEcrire {
-            name: name.as_str(),
-            // The reference's ids were not measured; the rank is the only value that is not an
-            // invention, and it is what `parse` reads back.
-            id: u8::try_from(index).unwrap_or(0),
-            width: side,
-            height: side,
-            dds: dds.as_slice(),
-        })
+        .map(
+            |(index, (name, dds))| aphrody_nie_formats::g4tx_encode::TextureAEcrire {
+                name: name.as_str(),
+                // The reference's ids were not measured; the rank is the only value that is not an
+                // invention, and it is what `parse` reads back.
+                id: u8::try_from(index).unwrap_or(0),
+                width: side,
+                height: side,
+                dds: dds.as_slice(),
+            },
+        )
         .collect();
 
     let bytes = aphrody_nie_formats::g4tx_encode::encode_g4tx_multi_texture(&textures, &[])
@@ -174,7 +179,10 @@ pub fn encode_icon(spec: &IconSpec, sheets: &[&Sheet]) -> Result<(Vec<u8>, IconR
     let relu = aphrody_nie_formats::g4tx::parse(&bytes)
         .map_err(|error| Error::Format(format!("le G4TX produit ne se relit pas : {error:?}")))?;
     if relu.textures.len() != 2 {
-        return Err(Error::Format(format!("{} textures relues, 2 attendues", relu.textures.len())));
+        return Err(Error::Format(format!(
+            "{} textures relues, 2 attendues",
+            relu.textures.len()
+        )));
     }
     for (index, expected) in names.iter().enumerate() {
         let texture = &relu.textures[index];
@@ -196,7 +204,11 @@ pub fn encode_icon(spec: &IconSpec, sheets: &[&Sheet]) -> Result<(Vec<u8>, IconR
         internal_code: spec.internal_code.clone(),
         vfs_path: icon_vfs_path(&spec.internal_code),
         bytes: bytes.len(),
-        textures: relu.textures.iter().map(|texture| texture.name.clone()).collect(),
+        textures: relu
+            .textures
+            .iter()
+            .map(|texture| texture.name.clone())
+            .collect(),
     };
     Ok((bytes, report))
 }

@@ -8,13 +8,19 @@ use common::*;
 #[ignore]
 fn adhoc_compare() {
     let Some(ff) = ffmpeg_dav1d() else { return };
-    let Some(path) = std::env::var_os("AV1_IVF") else { return };
+    let Some(path) = std::env::var_os("AV1_IVF") else {
+        return;
+    };
     let path = std::path::PathBuf::from(path);
     let pics = decode_all(&path).unwrap();
     let pix = pix_fmt_for(&pics[0]).to_string();
     let raw = reference(&ff, &path, &pix);
     let per = picture_samples(&pics[0]);
-    println!("{} pictures, reference has {} frames", pics.len(), raw.len() / per);
+    println!(
+        "{} pictures, reference has {} frames",
+        pics.len(),
+        raw.len() / per
+    );
     for (i, p) in pics.iter().enumerate() {
         if (i + 1) * per > raw.len() {
             break;

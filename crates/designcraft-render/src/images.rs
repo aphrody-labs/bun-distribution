@@ -58,12 +58,20 @@ fn store(bytes: &Arc<Vec<u8>>, page: u32, level: u8, pm: Arc<Pixmap>) {
         c.clock += 1;
         let key = (Arc::as_ptr(bytes) as usize, page, level);
         let n = size_of(&pm);
-        if let Some(old) = c.map.insert(key, Entry { _bytes: bytes.clone(), pm, stamp: c.clock }) {
+        if let Some(old) = c.map.insert(
+            key,
+            Entry {
+                _bytes: bytes.clone(),
+                pm,
+                stamp: c.clock,
+            },
+        ) {
             c.bytes -= size_of(&old.pm);
         }
         c.bytes += n;
         if c.bytes > BUDGET {
-            let mut v: Vec<(u64, (usize, u32, u8))> = c.map.iter().map(|(k, e)| (e.stamp, *k)).collect();
+            let mut v: Vec<(u64, (usize, u32, u8))> =
+                c.map.iter().map(|(k, e)| (e.stamp, *k)).collect();
             v.sort_unstable();
             for (_, k) in v {
                 if c.bytes <= BUDGET * 3 / 4 {
@@ -111,7 +119,11 @@ pub fn mip(bytes: &Arc<Vec<u8>>, page: u32, width_pt: f64, on_screen: f64) -> Op
     let id = Arc::as_ptr(bytes) as usize;
     let mut pm = full;
     let mut level = 0u8;
-    while ppt / (1u64 << (level + 1)) as f64 >= on_screen * 1.2 && pm.width() > 64 && pm.height() > 64 && level < 8 {
+    while ppt / (1u64 << (level + 1)) as f64 >= on_screen * 1.2
+        && pm.width() > 64
+        && pm.height() > 64
+        && level < 8
+    {
         level += 1;
         pm = match lookup((id, page, level)) {
             Some(p) => p,

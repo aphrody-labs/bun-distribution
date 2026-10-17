@@ -73,7 +73,10 @@ pub struct UsnJournalData {
 /// (`PermissionDenied` without elevation).
 pub fn open_volume(drive: char) -> io::Result<Handle> {
     if !drive.is_ascii_alphabetic() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "drive must be an ASCII letter"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "drive must be an ASCII letter",
+        ));
     }
     let path: Vec<u16> = format!(r"\\.\{}:", drive.to_ascii_uppercase())
         .encode_utf16()
@@ -110,7 +113,10 @@ fn query_journal(handle: &Handle) -> io::Result<UsnJournalData> {
             None,
         )
     }?;
-    Ok(UsnJournalData { journal_id: data.UsnJournalID, next_usn: data.NextUsn })
+    Ok(UsnJournalData {
+        journal_id: data.UsnJournalID,
+        next_usn: data.NextUsn,
+    })
 }
 
 fn create_journal(handle: &Handle) -> io::Result<()> {
@@ -150,7 +156,7 @@ pub fn query_or_create_journal(handle: &Handle) -> io::Result<UsnJournalData> {
         {
             create_journal(handle)?;
             query_journal(handle)
-        },
+        }
         other => other,
     }
 }

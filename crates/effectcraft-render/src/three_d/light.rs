@@ -40,11 +40,17 @@ pub struct LightState {
 impl LightState {
     /// Evaluate a light layer.
     pub fn from_layer(ctx: &EvalCtx, layer: &Layer) -> Option<LightState> {
-        let effectcraft_project::LayerSource::Light { kind } = layer.source else { return None };
+        let effectcraft_project::LayerSource::Light { kind } = layer.source else {
+            return None;
+        };
         let g = layer.props.sub("lightOptions")?;
         let intensity = ctx.f(layer, g, "intensity", 100.0) / 100.0;
         let c = ctx.color(layer, g, "color");
-        let color = [(c[0] as f64 * intensity) as f32, (c[1] as f64 * intensity) as f32, (c[2] as f64 * intensity) as f32];
+        let color = [
+            (c[0] as f64 * intensity) as f32,
+            (c[1] as f64 * intensity) as f32,
+            (c[2] as f64 * intensity) as f32,
+        ];
         let (pos, fwd, _) = layer_frame(ctx, layer);
         // Spot/parallel lights aim at their point of interest (auto-orient), then rotate.
         let dir = fwd;
@@ -71,7 +77,11 @@ impl LightState {
             _ => {
                 let d = self.pos - p;
                 let len = d.length();
-                if len < 1e-9 { (vec3(0.0, 0.0, -1.0), 0.0) } else { (d / len, len) }
+                if len < 1e-9 {
+                    (vec3(0.0, 0.0, -1.0), 0.0)
+                } else {
+                    (d / len, len)
+                }
             }
         }
     }
@@ -93,7 +103,11 @@ impl LightState {
             }
             2 if dist.is_finite() => {
                 // Inverse square, clamped to 1 inside Radius.
-                if dist <= self.radius || self.radius <= 0.0 && dist <= 1.0 { 1.0 } else { (self.radius.max(1.0) / dist).powi(2) }
+                if dist <= self.radius || self.radius <= 0.0 && dist <= 1.0 {
+                    1.0
+                } else {
+                    (self.radius.max(1.0) / dist).powi(2)
+                }
             }
             _ => 1.0,
         };
@@ -125,7 +139,10 @@ pub fn lights_at(ctx: &EvalCtx) -> Vec<LightState> {
             l.is_light()
                 && l.switches.video
                 && l.is_active_at(ctx.time)
-                && l.source != (effectcraft_project::LayerSource::Light { kind: LightKind::Environment })
+                && l.source
+                    != (effectcraft_project::LayerSource::Light {
+                        kind: LightKind::Environment,
+                    })
         })
         .filter_map(|l| LightState::from_layer(ctx, l))
         .collect()
@@ -167,14 +184,25 @@ impl Default for Material {
 
 impl Material {
     pub fn of(ctx: &EvalCtx, layer: &Layer) -> Material {
-        let Some(g) = layer.props.sub("materialOptions") else { return Material::default() };
+        let Some(g) = layer.props.sub("materialOptions") else {
+            return Material::default();
+        };
         let d = Material::default();
         let pct = |m: &str, def: f32| (ctx.f(layer, g, m, def as f64 * 100.0) / 100.0) as f32;
         Material {
-            casts_shadows: g.get("castsShadows").map(|p| ctx.value(layer, p).as_enum()).unwrap_or(d.casts_shadows),
+            casts_shadows: g
+                .get("castsShadows")
+                .map(|p| ctx.value(layer, p).as_enum())
+                .unwrap_or(d.casts_shadows),
             light_transmission: pct("lightTransmission", d.light_transmission).clamp(0.0, 1.0),
-            accepts_shadows: g.get("acceptsShadows").map(|p| ctx.value(layer, p).as_enum()).unwrap_or(d.accepts_shadows),
-            accepts_lights: g.get("acceptsLights").map(|p| ctx.value(layer, p).as_bool()).unwrap_or(true),
+            accepts_shadows: g
+                .get("acceptsShadows")
+                .map(|p| ctx.value(layer, p).as_enum())
+                .unwrap_or(d.accepts_shadows),
+            accepts_lights: g
+                .get("acceptsLights")
+                .map(|p| ctx.value(layer, p).as_bool())
+                .unwrap_or(true),
             ambient: pct("ambient", d.ambient),
             diffuse: pct("diffuse", d.diffuse),
             specular: pct("specularIntensity", d.specular),
@@ -225,11 +253,19 @@ pub fn shade(
         let (lv, _) = l.to_light(p);
         let ndl = n.dot(lv);
         let front = ndl > 0.0;
-        let lambert = if front { ndl } else { -ndl * mat.light_transmission as f64 };
+        let lambert = if front {
+            ndl
+        } else {
+            -ndl * mat.light_transmission as f64
+        };
         if lambert <= 0.0 {
             continue;
         }
-        let sh = if l.casts_shadows && mat.accepts_shadows != 0 { shadow(i, p) } else { [1.0; 3] };
+        let sh = if l.casts_shadows && mat.accepts_shadows != 0 {
+            shadow(i, p)
+        } else {
+            [1.0; 3]
+        };
         shadow_amt = shadow_amt.max(1.0 - (sh[0] + sh[1] + sh[2]) / 3.0);
         let kd = (lambert * k) as f32;
         for c in 0..3 {

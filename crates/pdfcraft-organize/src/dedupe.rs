@@ -25,25 +25,53 @@ use std::hash::{Hash, Hasher};
 
 use pdfcraft_cos::{Document, ObjRef, Object};
 
-const RESOURCE_TYPES: &[&[u8]] = &[b"Font", b"FontDescriptor", b"ExtGState", b"Pattern", b"Encoding", b"CMap", b"Halftone"];
-const COLOR_SPACE_FAMILIES: &[&[u8]] = &[b"ICCBased", b"Indexed", b"Separation", b"DeviceN", b"CalRGB", b"CalGray", b"Lab", b"Pattern"];
+const RESOURCE_TYPES: &[&[u8]] = &[
+    b"Font",
+    b"FontDescriptor",
+    b"ExtGState",
+    b"Pattern",
+    b"Encoding",
+    b"CMap",
+    b"Halftone",
+];
+const COLOR_SPACE_FAMILIES: &[&[u8]] = &[
+    b"ICCBased",
+    b"Indexed",
+    b"Separation",
+    b"DeviceN",
+    b"CalRGB",
+    b"CalGray",
+    b"Lab",
+    b"Pattern",
+];
 
 fn is_resource(o: &Object) -> bool {
     match o {
-        Object::Stream(s) => !matches!(s.dict.get(b"Type"), Some(Object::Name(n)) if n == b"XRef" || n == b"ObjStm"),
+        Object::Stream(s) => {
+            !matches!(s.dict.get(b"Type"), Some(Object::Name(n)) if n == b"XRef" || n == b"ObjStm")
+        }
         Object::Dict(d) => {
             matches!(d.get(b"Type"), Some(Object::Name(n)) if RESOURCE_TYPES.contains(&n.as_slice()))
                 || d.contains(b"ShadingType")
                 || d.contains(b"FunctionType")
         }
-        Object::Array(a) => matches!(a.first(), Some(Object::Name(n)) if COLOR_SPACE_FAMILIES.contains(&n.as_slice())),
+        Object::Array(a) => {
+            matches!(a.first(), Some(Object::Name(n)) if COLOR_SPACE_FAMILIES.contains(&n.as_slice()))
+        }
         _ => false,
     }
 }
 
 /// Resource dictionary categories whose entries are shareable resources. `/Properties` is left
 /// out on purpose: it names optional content groups, whose identity matters.
-const RESOURCE_CATEGORIES: &[&[u8]] = &[b"ExtGState", b"ColorSpace", b"Pattern", b"Shading", b"XObject", b"Font"];
+const RESOURCE_CATEGORIES: &[&[u8]] = &[
+    b"ExtGState",
+    b"ColorSpace",
+    b"Pattern",
+    b"Shading",
+    b"XObject",
+    b"Font",
+];
 
 /// References listed in any `/Resources` dictionary reachable inside `o` (pages, forms, Type 3
 /// fonts, annotation appearances), including the `/Resources` dictionary itself when indirect.
@@ -69,7 +97,13 @@ fn collect_resource_refs(doc: &Document, o: &Object, out: &mut HashSet<ObjRef>) 
                 for cat in RESOURCE_CATEGORIES {
                     let entries = res.get(cat).map(|c| doc.resolve(c));
                     if let Some(entries) = entries.as_ref().and_then(|e| e.as_dict()) {
-                        out.extend(entries.iter().filter_map(|(_, v)| if let Object::Ref(r) = v { Some(*r) } else { None }));
+                        out.extend(entries.iter().filter_map(|(_, v)| {
+                            if let Object::Ref(r) = v {
+                                Some(*r)
+                            } else {
+                                None
+                            }
+                        }));
                     }
                 }
             }
@@ -91,7 +125,11 @@ fn canon(map: &HashMap<ObjRef, ObjRef>, mut r: ObjRef) -> ObjRef {
 /// means that value wherever it is used, whichever object holds it (#878).
 fn plain_value(doc: &Document, r: ObjRef) -> Option<std::sync::Arc<Object>> {
     let o = doc.get(r);
-    matches!(*o, Object::Bool(_) | Object::Int(_) | Object::Real(_) | Object::Name(_) | Object::String(_)).then_some(o)
+    matches!(
+        *o,
+        Object::Bool(_) | Object::Int(_) | Object::Real(_) | Object::Name(_) | Object::String(_)
+    )
+    .then_some(o)
 }
 
 fn hash_obj(o: &Object, doc: &Document, map: &HashMap<ObjRef, ObjRef>, h: &mut impl Hasher) {
@@ -136,7 +174,13 @@ fn hash_obj(o: &Object, doc: &Document, map: &HashMap<ObjRef, ObjRef>, h: &mut i
 
 fn eq_obj(a: &Object, b: &Object, doc: &Document, map: &HashMap<ObjRef, ObjRef>) -> bool {
     // Plain values behind references compare as the values (as `hash_obj` hashes them).
-    let plain = |o: &Object| if let Object::Ref(r) = o { plain_value(doc, canon(map, *r)) } else { None };
+    let plain = |o: &Object| {
+        if let Object::Ref(r) = o {
+            plain_value(doc, canon(map, *r))
+        } else {
+            None
+        }
+    };
     match (plain(a), plain(b)) {
         (Some(x), Some(y)) => return eq_obj(&x, &y, doc, map),
         (Some(x), None) => return eq_obj(&x, b, doc, map),
@@ -144,9 +188,23 @@ fn eq_obj(a: &Object, b: &Object, doc: &Document, map: &HashMap<ObjRef, ObjRef>)
         (None, None) => {}
     }
     match (a, b) {
-        (Object::Array(x), Object::Array(y)) => x.len() == y.len() && x.iter().zip(y).all(|(p, q)| eq_obj(p, q, doc, map)),
-        (Object::Dict(x), Object::Dict(y)) => x.len() == y.len() && x.iter().all(|(k, v)| y.get(k).is_some_and(|w| eq_obj(v, w, doc, map))),
-        (Object::Stream(x), Object::Stream(y)) => x.raw == y.raw && eq_obj(&Object::Dict(x.dict.clone()), &Object::Dict(y.dict.clone()), doc, map),
+        (Object::Array(x), Object::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(p, q)| eq_obj(p, q, doc, map))
+        }
+        (Object::Dict(x), Object::Dict(y)) => {
+            x.len() == y.len()
+                && x.iter()
+                    .all(|(k, v)| y.get(k).is_some_and(|w| eq_obj(v, w, doc, map)))
+        }
+        (Object::Stream(x), Object::Stream(y)) => {
+            x.raw == y.raw
+                && eq_obj(
+                    &Object::Dict(x.dict.clone()),
+                    &Object::Dict(y.dict.clone()),
+                    doc,
+                    map,
+                )
+        }
         (Object::Ref(x), Object::Ref(y)) => canon(map, *x) == canon(map, *y),
         (Object::Real(x), Object::Real(y)) => x.to_bits() == y.to_bits(),
         (Object::String(x), Object::String(y)) => x.bytes == y.bytes,
@@ -209,8 +267,10 @@ pub fn dedupe_resources(doc: &mut Document, candidates: &[ObjRef], index_existin
     for (_, o) in &all {
         collect_resource_refs(doc, o, &mut listed);
     }
-    let universe: Vec<(ObjRef, std::sync::Arc<Object>)> =
-        all.into_iter().filter(|(r, o)| is_resource(o) || (listed.contains(r) && !matches!(**o, Object::Null))).collect();
+    let universe: Vec<(ObjRef, std::sync::Arc<Object>)> = all
+        .into_iter()
+        .filter(|(r, o)| is_resource(o) || (listed.contains(r) && !matches!(**o, Object::Null)))
+        .collect();
 
     let mut map: HashMap<ObjRef, ObjRef> = HashMap::new();
     // A fixpoint: each round can make referring objects equal. Depth is small in practice.
@@ -224,7 +284,11 @@ pub fn dedupe_resources(doc: &mut Document, candidates: &[ObjRef], index_existin
             let mut h = std::collections::hash_map::DefaultHasher::new();
             hash_obj(o, doc, &map, &mut h);
             let bucket = buckets.entry(h.finish()).or_default();
-            let target = bucket.iter().map(|j| &universe[*j]).find(|(_, other)| eq_obj(o, other, doc, &map)).map(|(t, _)| *t);
+            let target = bucket
+                .iter()
+                .map(|j| &universe[*j])
+                .find(|(_, other)| eq_obj(o, other, doc, &map))
+                .map(|(t, _)| *t);
             match target {
                 Some(t) if cand.contains(r) => {
                     map.insert(*r, t);
@@ -262,7 +326,10 @@ mod tests {
     use pdfcraft_cos::{Dict, Stream};
 
     fn stream(data: &[u8]) -> Object {
-        Object::Stream(Stream { dict: Dict::new(), raw: data.to_vec().into() })
+        Object::Stream(Stream {
+            dict: Dict::new(),
+            raw: data.to_vec().into(),
+        })
     }
 
     fn font(doc: &mut Document, file: ObjRef, name: &str) -> ObjRef {
@@ -287,15 +354,28 @@ mod tests {
         let n1 = doc.add(Object::Dict(annot.clone()));
         let n2 = doc.add(Object::Dict(annot));
         let mut page = Dict::new();
-        page.set(b"Fonts".to_vec(), Object::Array(vec![Object::Ref(a), Object::Ref(b), Object::Ref(c)]));
+        page.set(
+            b"Fonts".to_vec(),
+            Object::Array(vec![Object::Ref(a), Object::Ref(b), Object::Ref(c)]),
+        );
         let p = doc.add(Object::Dict(page));
         let removed = dedupe_resources(&mut doc, &[f1, f2, f3, a, b, c, n1, n2, p], false);
         assert_eq!(removed, 2);
         let page = doc.get(p);
-        let fonts = page.as_dict().unwrap().get(b"Fonts").unwrap().as_array().unwrap().clone();
+        let fonts = page
+            .as_dict()
+            .unwrap()
+            .get(b"Fonts")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .clone();
         assert_eq!(fonts, vec![Object::Ref(a), Object::Ref(a), Object::Ref(c)]);
         assert!(!doc.object_numbers().contains(&f2.num) && !doc.object_numbers().contains(&b.num));
-        assert!(doc.object_numbers().contains(&n2.num), "annotations are never merged");
+        assert!(
+            doc.object_numbers().contains(&n2.num),
+            "annotations are never merged"
+        );
     }
 
     #[test]
@@ -321,15 +401,25 @@ mod tests {
         assert_eq!(dedupe_resources(&mut doc, &[g1, g2, g3, p1, p2], false), 1);
         assert!(doc.object_numbers().contains(&g3.num));
         let nums = doc.object_numbers();
-        assert!(nums.contains(&p1.num) && nums.contains(&p2.num), "pages are never merged");
-        assert_eq!(doc.get(p1), doc.get(p2), "both pages now use the one graphics state");
+        assert!(
+            nums.contains(&p1.num) && nums.contains(&p2.num),
+            "pages are never merged"
+        );
+        assert_eq!(
+            doc.get(p1),
+            doc.get(p2),
+            "both pages now use the one graphics state"
+        );
     }
 
     fn image(doc: &mut Document, colour_space: Object) -> ObjRef {
         let mut d = Dict::new();
         d.set(b"Subtype".to_vec(), Object::name("Image"));
         d.set(b"ColorSpace".to_vec(), colour_space);
-        doc.add(Object::Stream(Stream { dict: d, raw: b"pixels".to_vec().into() }))
+        doc.add(Object::Stream(Stream {
+            dict: d,
+            raw: b"pixels".to_vec().into(),
+        }))
     }
 
     #[test]
@@ -344,14 +434,30 @@ mod tests {
         let c = image(&mut doc, Object::name("DeviceRGB")); // written directly: the same image
         let d = image(&mut doc, Object::Ref(grey)); // same pixels, another colour space
         let mut page = Dict::new();
-        page.set(b"Images".to_vec(), Object::Array([a, b, c, d].map(Object::Ref).to_vec()));
+        page.set(
+            b"Images".to_vec(),
+            Object::Array([a, b, c, d].map(Object::Ref).to_vec()),
+        );
         let p = doc.add(Object::Dict(page));
-        assert_eq!(dedupe_resources(&mut doc, &[rgb1, rgb2, grey, a, b, c, d, p], false), 2);
+        assert_eq!(
+            dedupe_resources(&mut doc, &[rgb1, rgb2, grey, a, b, c, d, p], false),
+            2
+        );
         let page = doc.get(p);
-        let images = page.as_dict().unwrap().get(b"Images").unwrap().as_array().unwrap().clone();
+        let images = page
+            .as_dict()
+            .unwrap()
+            .get(b"Images")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .clone();
         assert_eq!(images, [a, a, a, d].map(Object::Ref).to_vec());
         let nums = doc.object_numbers();
-        assert!(nums.contains(&rgb1.num) && nums.contains(&rgb2.num), "the values themselves are never merged");
+        assert!(
+            nums.contains(&rgb1.num) && nums.contains(&rgb2.num),
+            "the values themselves are never merged"
+        );
     }
 
     #[test]
@@ -360,11 +466,17 @@ mod tests {
         let old = doc.add(stream(b"icc"));
         let new = doc.add(stream(b"icc"));
         let mut holder = Dict::new();
-        holder.set(b"CS".to_vec(), Object::Array(vec![Object::name("ICCBased"), Object::Ref(new)]));
+        holder.set(
+            b"CS".to_vec(),
+            Object::Array(vec![Object::name("ICCBased"), Object::Ref(new)]),
+        );
         let h = doc.add(Object::Dict(holder));
         assert_eq!(dedupe_resources(&mut doc, &[new, h], true), 1);
         assert!(doc.object_numbers().contains(&old.num));
         let cs = doc.get(h).as_dict().unwrap().get(b"CS").unwrap().clone();
-        assert_eq!(cs, Object::Array(vec![Object::name("ICCBased"), Object::Ref(old)]));
+        assert_eq!(
+            cs,
+            Object::Array(vec![Object::name("ICCBased"), Object::Ref(old)])
+        );
     }
 }

@@ -5,7 +5,10 @@
 use effectcraft_color::Label;
 use effectcraft_keyframe::Value;
 use effectcraft_project::build::{self, Ids};
-use effectcraft_project::{AlphaMode, BitDepth, Comp, Footage, FootageKind, FrameBlend, ItemId, ItemKind, LayerSource, Project};
+use effectcraft_project::{
+    AlphaMode, BitDepth, Comp, Footage, FootageKind, FrameBlend, ItemId, ItemKind, LayerSource,
+    Project,
+};
 use effectcraft_render::{FootageSource, Image, RenderOpts, Renderer};
 use effectcraft_time::{FrameRate, Tick};
 use std::sync::Arc;
@@ -36,7 +39,12 @@ fn scene(detail: Option<f64>) -> (Project, ItemId) {
     let mut p = Project::default();
     p.settings.bit_depth = BitDepth::Bpc32;
     let comp = Comp::new(64, 48, FrameRate::FPS_25, Tick::from_seconds_f64(0.8));
-    let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.clone().into()));
+    let cid = p.add_item(
+        "Comp",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.clone().into()),
+    );
     let footage = Footage {
         path: "generated.mov".into(),
         kind: FootageKind::Video,
@@ -52,13 +60,21 @@ fn scene(detail: Option<f64>) -> (Project, ItemId) {
         ..Default::default()
     };
     let fid = p.add_item("Clip", Label::Aqua, None, ItemKind::Footage(footage));
-    let mut layer = build::layer(&mut p, &comp, "Clip", LayerSource::Footage { item: fid }, (64, 48), None);
+    let mut layer = build::layer(
+        &mut p,
+        &comp,
+        "Clip",
+        LayerSource::Footage { item: fid },
+        (64, 48),
+        None,
+    );
     layer.switches.frame_blend = FrameBlend::Off;
     layer.switches.motion_blur = false;
     if let Some(detail) = detail {
         let spec = effectcraft_effects::find("ec.time.pixelmotionblur").unwrap();
         let mut next = p.next_id;
-        let mut effect = effectcraft_effects::instantiate(spec, &mut Ids(&mut next), spec.name, [64.0, 48.0]);
+        let mut effect =
+            effectcraft_effects::instantiate(spec, &mut Ids(&mut next), spec.name, [64.0, 48.0]);
         for (name, value) in [
             ("shutterControl", Value::Enum(1)),
             ("shutterAngle", Value::Scalar(180.0)),
@@ -68,7 +84,12 @@ fn scene(detail: Option<f64>) -> (Project, ItemId) {
             effect.prop_mut(name).unwrap().value = value;
         }
         p.next_id = next;
-        layer.props.sub_mut("effects").unwrap().children.push(effect.into());
+        layer
+            .props
+            .sub_mut("effects")
+            .unwrap()
+            .children
+            .push(effect.into());
     }
     p.comp_mut(cid).unwrap().layers.push(layer);
     (p, cid)
@@ -79,7 +100,11 @@ fn render(p: &Project, cid: ItemId, time: f64) -> Image {
 }
 
 fn difference(a: &Image, b: &Image) -> f64 {
-    a.data.iter().zip(&b.data).flat_map(|(p, q)| (0..4).map(move |c| (p[c] - q[c]).abs() as f64)).sum()
+    a.data
+        .iter()
+        .zip(&b.data)
+        .flat_map(|(p, q)| (0..4).map(move |c| (p[c] - q[c]).abs() as f64))
+        .sum()
 }
 
 #[test]
@@ -91,10 +116,23 @@ fn pixel_motion_blur_synthesizes_from_motion_vectors() {
     let (high, high_id) = scene(Some(100.0));
     let a = render(&low, low_id, 0.4);
     let b = render(&high, high_id, 0.4);
-    assert!(difference(&b, &still) > 1.0, "the blur equals the still frame");
-    assert!(difference(&b, &average) > 1.0, "the blur is just the plain overlay of the two decoded positions");
-    assert!((24..32).any(|x| b.get(x, 24)[0] > 0.2), "no motion trail behind the moving block: {:?}", (18..46).map(|x| b.get(x, 24)[0]).collect::<Vec<f32>>());
-    assert!(difference(&a, &b) > 0.5, "Vector Detail is inert: the motion field does not change with it");
+    assert!(
+        difference(&b, &still) > 1.0,
+        "the blur equals the still frame"
+    );
+    assert!(
+        difference(&b, &average) > 1.0,
+        "the blur is just the plain overlay of the two decoded positions"
+    );
+    assert!(
+        (24..32).any(|x| b.get(x, 24)[0] > 0.2),
+        "no motion trail behind the moving block: {:?}",
+        (18..46).map(|x| b.get(x, 24)[0]).collect::<Vec<f32>>()
+    );
+    assert!(
+        difference(&a, &b) > 0.5,
+        "Vector Detail is inert: the motion field does not change with it"
+    );
 }
 
 fn average_of(p: &Project, cid: ItemId) -> Image {

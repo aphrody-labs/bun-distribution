@@ -61,7 +61,10 @@ impl TrophyReward {
     /// Parse un nœud `TROPHY_REWARD_N`.
     #[must_use]
     pub fn from_node(node: Node<'_>) -> Self {
-        Self { reward_id: node.hash(0), count: node.int(1) }
+        Self {
+            reward_id: node.hash(0),
+            count: node.int(1),
+        }
     }
 }
 
@@ -258,7 +261,10 @@ impl TrophyConfig {
 /// Trouve le premier nœud racine `entries[]` dont le nom commence par `prefix`.
 fn find_entry<'a>(root: &'a Value, prefix: &str) -> Option<Node<'a>> {
     let entries = root.get("entries")?.as_array()?;
-    entries.iter().map(Node::new).find(|n| n.name().starts_with(prefix))
+    entries
+        .iter()
+        .map(Node::new)
+        .find(|n| n.name().starts_with(prefix))
 }
 
 /// Parse un `trophy_config_*.cfg.bin.json` complet.
@@ -270,8 +276,9 @@ fn find_entry<'a>(root: &'a Value, prefix: &str) -> Option<Node<'a>> {
 /// 384 récompenses, 436 paliers, 230 trophées.
 #[must_use]
 pub fn parse_trophy_config(root: &Value) -> TrophyConfig {
-    let texture_base_path =
-        find_entry(root, "TEXTURE_BASE_PATH").map(|n| owned(n.string(0))).unwrap_or_default();
+    let texture_base_path = find_entry(root, "TEXTURE_BASE_PATH")
+        .map(|n| owned(n.string(0)))
+        .unwrap_or_default();
 
     let rewards = find_entry(root, "TROPHY_REWARD_LIST_BEG")
         .map(|list| {
@@ -286,7 +293,12 @@ pub fn parse_trophy_config(root: &Value) -> TrophyConfig {
     let tiers = parse_tiers(root);
     let infos = parse_infos(root);
 
-    TrophyConfig { texture_base_path, rewards, tiers, infos }
+    TrophyConfig {
+        texture_base_path,
+        rewards,
+        tiers,
+        infos,
+    }
 }
 
 /// Résout le **nom localisé** d'un trophée via une liste `trophy_text` (issue de

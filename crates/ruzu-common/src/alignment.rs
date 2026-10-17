@@ -5,7 +5,11 @@
 #[inline]
 pub const fn align_up(value: u64, size: u64) -> u64 {
     let remainder = value % size;
-    if remainder == 0 { value } else { value.wrapping_sub(remainder).wrapping_add(size) }
+    if remainder == 0 {
+        value
+    } else {
+        value.wrapping_sub(remainder).wrapping_add(size)
+    }
 }
 
 /// Align up using signed arithmetic, matching the C++ template for signed types.

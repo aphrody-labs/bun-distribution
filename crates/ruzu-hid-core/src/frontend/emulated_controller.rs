@@ -280,10 +280,14 @@ fn trigger_on_change(
     {
         let mut pending = context.deferred_input_callbacks.lock();
         if let Some(pending) = pending.as_mut() {
-            pending.extend(callbacks.into_iter().map(|callback| DeferredControllerCallback {
-                callback,
-                trigger_type,
-            }));
+            pending.extend(
+                callbacks
+                    .into_iter()
+                    .map(|callback| DeferredControllerCallback {
+                        callback,
+                        trigger_type,
+                    }),
+            );
             return;
         }
     }
@@ -682,8 +686,7 @@ fn set_button(
     if should_connect && !event_context.is_connected.load(Ordering::Relaxed) {
         let supported =
             is_controller_supported(npad_type, *event_context.supported_style_tag.lock());
-        if supported && !event_context.is_connected.swap(true, Ordering::Relaxed)
-        {
+        if supported && !event_context.is_connected.swap(true, Ordering::Relaxed) {
             trigger_on_change(event_context, ControllerTriggerType::Connected, true);
         }
     }
@@ -956,7 +959,10 @@ impl ControllerButtonStateReader {
             return Default::default();
         }
         (
-            NpadButtonState { raw: status.npad_button_state.raw & EmulatedController::get_turbo_button_mask(&status) },
+            NpadButtonState {
+                raw: status.npad_button_state.raw
+                    & EmulatedController::get_turbo_button_mask(&status),
+            },
             status.home_button_state,
             status.capture_button_state,
         )
@@ -1768,11 +1774,19 @@ impl EmulatedController {
     ) -> (R, Vec<DeferredControllerCallback>) {
         {
             let mut pending = self.event_context.deferred_input_callbacks.lock();
-            assert!(pending.is_none(), "controller notifications are already being retained");
+            assert!(
+                pending.is_none(),
+                "controller notifications are already being retained"
+            );
             *pending = Some(Vec::new());
         }
         let result = f(self);
-        let callbacks = self.event_context.deferred_input_callbacks.lock().take().unwrap();
+        let callbacks = self
+            .event_context
+            .deferred_input_callbacks
+            .lock()
+            .take()
+            .unwrap();
         (result, callbacks)
     }
 
@@ -1987,7 +2001,9 @@ impl EmulatedController {
 
     /// Borrow-independent view of the existing button getters for callbacks.
     pub fn button_state_reader(&self) -> ControllerButtonStateReader {
-        ControllerButtonStateReader { status: Arc::clone(&self.status) }
+        ControllerButtonStateReader {
+            status: Arc::clone(&self.status),
+        }
     }
 
     /// Port of EmulatedController::GetHomeButtons.
@@ -2505,7 +2521,9 @@ mod tests {
         let (tx, rx) = std::sync::mpsc::channel();
         let callback_reader = reader.clone();
         let key = owner.lock().set_callback(ControllerUpdateCallback {
-            on_change: Arc::new(move |_| { tx.send(callback_reader.read()).unwrap(); }),
+            on_change: Arc::new(move |_| {
+                tx.send(callback_reader.read()).unwrap();
+            }),
             is_npad_service: false,
         });
         let worker_owner = Arc::clone(&owner);
@@ -2516,8 +2534,16 @@ mod tests {
             controller.status.lock().npad_button_state.raw = NpadButton::empty();
             controller.trigger_on_change(ControllerTriggerType::Button, true);
         });
-        assert_eq!(rx.recv_timeout(Duration::from_secs(2)).unwrap().0.raw, NpadButton::A);
-        assert!(rx.recv_timeout(Duration::from_secs(2)).unwrap().0.raw.is_empty());
+        assert_eq!(
+            rx.recv_timeout(Duration::from_secs(2)).unwrap().0.raw,
+            NpadButton::A
+        );
+        assert!(rx
+            .recv_timeout(Duration::from_secs(2))
+            .unwrap()
+            .0
+            .raw
+            .is_empty());
         worker.join().unwrap();
         owner.lock().delete_callback(key);
         drop(owner);
@@ -2556,11 +2582,16 @@ mod tests {
     #[test]
     fn six_axis_publishes_both_motion_sources_and_forwards_drift_mode() {
         use crate::hid_core::HIDCore;
-        use crate::resources::{applet_resource::AppletResource,
-            shared_memory_holder::KSharedMemoryBacking, six_axis::six_axis::SixAxis};
+        use crate::resources::{
+            applet_resource::AppletResource, shared_memory_holder::KSharedMemoryBacking,
+            six_axis::six_axis::SixAxis,
+        };
         struct Backing;
         impl KSharedMemoryBacking for Backing {
-            fn create(&self, size: usize) -> Option<(*mut u8, Arc<dyn std::any::Any + Send + Sync>)> {
+            fn create(
+                &self,
+                size: usize,
+            ) -> Option<(*mut u8, Arc<dyn std::any::Any + Send + Sync>)> {
                 let mut words = vec![0u64; size.div_ceil(8)].into_boxed_slice();
                 Some((words.as_mut_ptr().cast(), Arc::new(words)))
             }
@@ -2585,7 +2616,9 @@ mod tests {
         }
         let mut resource = AppletResource::new();
         resource.set_shared_memory_backing(Arc::new(Backing));
-        assert!(resource.register_applet_resource_user_id(0x52, true).is_success());
+        assert!(resource
+            .register_applet_resource_user_id(0x52, true)
+            .is_success());
         assert!(resource.create_applet_resource(0x52).is_success());
         let resource = Arc::new(Mutex::new(resource));
         let mut six_axis = SixAxis::new(&hid);
@@ -2593,8 +2626,19 @@ mod tests {
         six_axis.activation.activate();
         six_axis.on_update();
         let resource = resource.lock();
-        let memory = &resource.get_shared_memory_format(0x52).unwrap().npad.npad_entry[0].internal_state;
-        for (index, lifo) in [&memory.sixaxis_dual_left_lifo, &memory.sixaxis_dual_right_lifo].into_iter().enumerate() {
+        let memory = &resource
+            .get_shared_memory_format(0x52)
+            .unwrap()
+            .npad
+            .npad_entry[0]
+            .internal_state;
+        for (index, lifo) in [
+            &memory.sixaxis_dual_left_lifo,
+            &memory.sixaxis_dual_right_lifo,
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let value = (index + 1) as f32;
             let state = &lifo.lifo.read_current_entry().state;
             assert_eq!(state.accel.x, value);
@@ -2604,11 +2648,18 @@ mod tests {
         }
         assert!(!six_axis.controller_data[0].sixaxis_at_rest);
         let handle = SixAxisSensorHandle {
-            npad_type: NpadStyleIndex::JoyconDual, npad_id: 0,
-            device_index: DeviceIndex::Left, ..Default::default()
+            npad_type: NpadStyleIndex::JoyconDual,
+            npad_id: 0,
+            device_index: DeviceIndex::Left,
+            ..Default::default()
         };
-        assert!(six_axis.set_gyroscope_zero_drift_mode(&handle, GyroscopeZeroDriftMode::Tight).is_success());
-        assert_eq!(device.lock().status.lock().motion_sensitivity, IS_AT_REST_TIGHT);
+        assert!(six_axis
+            .set_gyroscope_zero_drift_mode(&handle, GyroscopeZeroDriftMode::Tight)
+            .is_success());
+        assert_eq!(
+            device.lock().status.lock().motion_sensitivity,
+            IS_AT_REST_TIGHT
+        );
     }
 
     #[test]
@@ -2621,9 +2672,13 @@ mod tests {
             }
         }
         impl InputDevice for Device {
-            fn set_callback(&mut self, callback: InputCallback) { self.0 = callback; }
+            fn set_callback(&mut self, callback: InputCallback) {
+                self.0 = callback;
+            }
             fn trigger_on_change(&self, status: &CallbackStatus) {
-                if let Some(callback) = &self.0.on_change { callback(status); }
+                if let Some(callback) = &self.0.on_change {
+                    callback(status);
+                }
             }
             fn force_update(&mut self) {
                 if let Some(callback) = &self.0.on_change {
@@ -2635,7 +2690,9 @@ mod tests {
         common::input::register_input_factory(ENGINE, Arc::new(Factory));
         struct Cleanup;
         impl Drop for Cleanup {
-            fn drop(&mut self) { common::input::unregister_input_factory(ENGINE); }
+            fn drop(&mut self) {
+                common::input::unregister_input_factory(ENGINE);
+            }
         }
         let _cleanup = Cleanup;
         let owner = Arc::new(Mutex::new(EmulatedController::new(NpadIdType::Player1)));
@@ -2648,7 +2705,9 @@ mod tests {
             controller.set_callback(ControllerUpdateCallback {
                 on_change: Arc::new(move |_| {
                     let owner = weak.upgrade().unwrap();
-                    let _controller = owner.try_lock().expect("callback re-entered a locked controller");
+                    let _controller = owner
+                        .try_lock()
+                        .expect("callback re-entered a locked controller");
                     calls.fetch_add(1, Ordering::SeqCst);
                 }),
                 is_npad_service: false,
@@ -2658,8 +2717,13 @@ mod tests {
             let before = calls.load(Ordering::SeqCst);
             let callbacks = owner.lock().reload_input_deferred();
             assert_eq!(calls.load(Ordering::SeqCst), before);
-            assert!(!callbacks.is_empty(), "ForceUpdate must retain notifications");
-            for callback in callbacks { callback.dispatch(); }
+            assert!(
+                !callbacks.is_empty(),
+                "ForceUpdate must retain notifications"
+            );
+            for callback in callbacks {
+                callback.dispatch();
+            }
             assert!(calls.load(Ordering::SeqCst) > before);
         }
         let mut player = settings_input::PlayerInput::default();
@@ -2667,8 +2731,10 @@ mod tests {
         for _ in 0..4 {
             let before = calls.load(Ordering::SeqCst);
             EmulatedController::reload_from_player(&owner, &player);
-            assert!(calls.load(Ordering::SeqCst) > before,
-                "configuration reload must deliver ForceUpdate outside the owner lock");
+            assert!(
+                calls.load(Ordering::SeqCst) > before,
+                "configuration reload must deliver ForceUpdate outside the owner lock"
+            );
         }
         // Normal driver notifications remain immediate outside a reload.
         let context = Arc::clone(&owner.lock().event_context);
@@ -3016,17 +3082,30 @@ mod tests {
         ] {
             for configured in [false, true] {
                 let index = crate::hid_util::npad_id_type_to_index(id);
-                common::settings::values_mut().players.get_value_mut()[index].connected = configured;
+                common::settings::values_mut().players.get_value_mut()[index].connected =
+                    configured;
                 let status = Arc::new(Mutex::new(ControllerStatus::new()));
                 status.lock().npad_type = style;
                 let events = event_context(id);
-                set_button(&status, &events, &button_callback(true), NB::A as usize, UUID::new());
+                set_button(
+                    &status,
+                    &events,
+                    &button_callback(true),
+                    NB::A as usize,
+                    UUID::new(),
+                );
                 assert_eq!(events.is_connected.load(Ordering::Relaxed), configured);
                 // An already connected controller is not forcibly disconnected
                 // when its configuration flag changes during a button event.
                 events.is_connected.store(true, Ordering::Relaxed);
                 common::settings::values_mut().players.get_value_mut()[index].connected = false;
-                set_button(&status, &events, &button_callback(false), NB::A as usize, UUID::new());
+                set_button(
+                    &status,
+                    &events,
+                    &button_callback(false),
+                    NB::A as usize,
+                    UUID::new(),
+                );
                 assert!(events.is_connected.load(Ordering::Relaxed));
             }
         }

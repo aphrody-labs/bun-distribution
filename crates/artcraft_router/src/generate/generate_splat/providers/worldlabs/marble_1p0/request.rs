@@ -5,13 +5,16 @@ use crate::generate::generate_splat::providers::worldlabs::request_common::World
 
 #[derive(Clone, Debug)]
 pub struct WorldLabsMarble1p0RequestState {
-  /// Final materialized request; ready to fire. Media references (if any)
-  /// have been uploaded as World Labs media assets by the draft phase.
-  pub request: WorldLabsSplatRequest,
+    /// Final materialized request; ready to fire. Media references (if any)
+    /// have been uploaded as World Labs media assets by the draft phase.
+    pub request: WorldLabsSplatRequest,
 }
 
 impl WorldLabsMarble1p0RequestState {
-  pub async fn send(&self, client: &RouterWorldLabsClient) -> Result<GenerateSplatResponse, ArtcraftRouterError> {
-    self.request.send(client).await
-  }
+    pub async fn send(
+        &self,
+        client: &RouterWorldLabsClient,
+    ) -> Result<GenerateSplatResponse, ArtcraftRouterError> {
+        self.request.send(client).await
+    }
 }

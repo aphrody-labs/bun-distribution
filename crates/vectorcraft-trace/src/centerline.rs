@@ -82,7 +82,9 @@ pub(crate) fn lines(
         if widest > max_width {
             continue;
         }
-        let Some(line) = trace_line(&comp, w, max_width, img, ink, style) else { continue };
+        let Some(line) = trace_line(&comp, w, max_width, img, ink, style) else {
+            continue;
+        };
         for &i in &comp {
             thin[i] = true;
         }
@@ -94,10 +96,20 @@ pub(crate) fn lines(
 /// The 8 neighbours of pixel `i` inside the `w` × `h` image.
 fn neighbours(i: usize, w: usize, h: usize) -> impl Iterator<Item = usize> {
     let (x, y) = ((i % w) as i64, (i / w) as i64);
-    const AROUND: [(i64, i64); 8] = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)];
+    const AROUND: [(i64, i64); 8] = [
+        (-1, -1),
+        (0, -1),
+        (1, -1),
+        (-1, 0),
+        (1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 1),
+    ];
     AROUND.into_iter().filter_map(move |(dx, dy)| {
         let (nx, ny) = (x + dx, y + dy);
-        (nx >= 0 && ny >= 0 && nx < w as i64 && ny < h as i64).then(|| ny as usize * w + nx as usize)
+        (nx >= 0 && ny >= 0 && nx < w as i64 && ny < h as i64)
+            .then(|| ny as usize * w + nx as usize)
     })
 }
 
@@ -106,15 +118,28 @@ fn neighbours(i: usize, w: usize, h: usize) -> impl Iterator<Item = usize> {
 fn distance(mask: &impl Fn(usize) -> bool, w: usize, h: usize) -> Vec<u16> {
     let mut d = vec![0u16; w * h];
     let at = |d: &[u16], x: i64, y: i64| {
-        if x < 0 || y < 0 || x >= w as i64 || y >= h as i64 { 0 } else { d.get(y as usize * w + x as usize).copied().unwrap_or(0) }
+        if x < 0 || y < 0 || x >= w as i64 || y >= h as i64 {
+            0
+        } else {
+            d.get(y as usize * w + x as usize).copied().unwrap_or(0)
+        }
     };
     for y in 0..h {
         for x in 0..w {
             let i = y * w + x;
             if mask(i) {
                 let (x, y) = (x as i64, y as i64);
-                let steps = [(x - 1, y, 3), (x - 1, y - 1, 4), (x, y - 1, 3), (x + 1, y - 1, 4)];
-                d[i] = steps.iter().map(|&(nx, ny, c)| at(&d, nx, ny).saturating_add(c)).min().unwrap_or(0);
+                let steps = [
+                    (x - 1, y, 3),
+                    (x - 1, y - 1, 4),
+                    (x, y - 1, 3),
+                    (x + 1, y - 1, 4),
+                ];
+                d[i] = steps
+                    .iter()
+                    .map(|&(nx, ny, c)| at(&d, nx, ny).saturating_add(c))
+                    .min()
+                    .unwrap_or(0);
             }
         }
     }
@@ -123,8 +148,17 @@ fn distance(mask: &impl Fn(usize) -> bool, w: usize, h: usize) -> Vec<u16> {
             let i = y * w + x;
             if mask(i) {
                 let (xi, yi) = (x as i64, y as i64);
-                let steps = [(xi + 1, yi, 3), (xi + 1, yi + 1, 4), (xi, yi + 1, 3), (xi - 1, yi + 1, 4)];
-                let v = steps.iter().map(|&(nx, ny, c)| at(&d, nx, ny).saturating_add(c)).min().unwrap_or(0);
+                let steps = [
+                    (xi + 1, yi, 3),
+                    (xi + 1, yi + 1, 4),
+                    (xi, yi + 1, 3),
+                    (xi - 1, yi + 1, 4),
+                ];
+                let v = steps
+                    .iter()
+                    .map(|&(nx, ny, c)| at(&d, nx, ny).saturating_add(c))
+                    .min()
+                    .unwrap_or(0);
                 d[i] = d[i].min(v);
             }
         }
@@ -147,7 +181,16 @@ impl Grid {
     fn ring(&self, i: usize) -> [bool; 8] {
         let w = self.w;
         let g = |j: usize| self.on.get(j).copied().unwrap_or(false);
-        [g(i - w), g(i - w + 1), g(i + 1), g(i + w + 1), g(i + w), g(i + w - 1), g(i - 1), g(i - w - 1)]
+        [
+            g(i - w),
+            g(i - w + 1),
+            g(i + 1),
+            g(i + w + 1),
+            g(i + w),
+            g(i + w - 1),
+            g(i - 1),
+            g(i - w - 1),
+        ]
     }
     fn interior(&self) -> impl Iterator<Item = usize> + use<> {
         let (w, h) = (self.w, self.h);
@@ -155,14 +198,28 @@ impl Grid {
     }
     fn neighbours(&self, i: usize) -> impl Iterator<Item = usize> + '_ {
         let w = self.w;
-        [i - w, i - w + 1, i + 1, i + w + 1, i + w, i + w - 1, i - 1, i - w - 1].into_iter().filter(|&j| self.on.get(j).copied().unwrap_or(false))
+        [
+            i - w,
+            i - w + 1,
+            i + 1,
+            i + w + 1,
+            i + w,
+            i + w - 1,
+            i - 1,
+            i - w - 1,
+        ]
+        .into_iter()
+        .filter(|&j| self.on.get(j).copied().unwrap_or(false))
     }
     fn degree(&self, i: usize) -> usize {
         self.neighbours(i).count()
     }
     /// The centre of pixel `i` in image coordinates.
     fn centre(&self, i: usize) -> Point {
-        Point::new((self.x0 + (i % self.w) as i64) as f64 + 0.5, (self.y0 + (i / self.w) as i64) as f64 + 0.5)
+        Point::new(
+            (self.x0 + (i % self.w) as i64) as f64 + 0.5,
+            (self.y0 + (i / self.w) as i64) as f64 + 0.5,
+        )
     }
 }
 
@@ -186,7 +243,11 @@ fn thin(g: &mut Grid) {
                 }
                 let p = g.ring(i);
                 let (n, e, s, w) = (p[0], p[2], p[4], p[6]);
-                let side = if step == 0 { !(e && s && (n || w)) } else { !(n && w && (e || s)) };
+                let side = if step == 0 {
+                    !(e && s && (n || w))
+                } else {
+                    !(n && w && (e || s))
+                };
                 if side && removable(&p) {
                     picked.push(i);
                 }
@@ -214,7 +275,10 @@ fn thin(g: &mut Grid) {
             // x1 = E, x2 = NE, x3 = N, x4 = NW, x5 = W, x6 = SW, x7 = S, x8 = SE.
             let x = [p[2], p[1], p[0], p[7], p[6], p[5], p[4], p[3]];
             let off = |k: usize| !x[k % 8];
-            let c8: usize = [0, 2, 4, 6].iter().map(|&k| usize::from(off(k)) - usize::from(off(k) && off(k + 1) && off(k + 2))).sum();
+            let c8: usize = [0, 2, 4, 6]
+                .iter()
+                .map(|&k| usize::from(off(k)) - usize::from(off(k) && off(k + 1) && off(k + 2)))
+                .sum();
             if c8 == 1 {
                 g.on[i] = false;
                 changed = true;
@@ -236,18 +300,41 @@ struct Run {
 
 impl Run {
     fn length(&self) -> f64 {
-        self.pts.windows(2).map(|p| p[0].distance(p[1])).sum::<f64>()
-            + if self.closed { self.pts.first().zip(self.pts.last()).map_or(0.0, |(a, b)| a.distance(*b)) } else { 0.0 }
+        self.pts
+            .windows(2)
+            .map(|p| p[0].distance(p[1]))
+            .sum::<f64>()
+            + if self.closed {
+                self.pts
+                    .first()
+                    .zip(self.pts.last())
+                    .map_or(0.0, |(a, b)| a.distance(*b))
+            } else {
+                0.0
+            }
     }
 }
 
 /// The centre lines of one line component (pixel indices of the `w`-wide image).
-fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64; 3], style: &Style) -> Option<Line> {
+fn trace_line(
+    comp: &[usize],
+    w: usize,
+    max_width: f64,
+    img: &Raster,
+    ink: [f64; 3],
+    style: &Style,
+) -> Option<Line> {
     let xs = comp.iter().map(|&i| i % w);
     let ys = comp.iter().map(|&i| i / w);
     let (x0, x1, y0, y1) = (xs.clone().min()?, xs.max()?, ys.clone().min()?, ys.max()?);
     let (gw, gh) = (x1 - x0 + 3, y1 - y0 + 3);
-    let mut g = Grid { on: vec![false; gw * gh], w: gw, h: gh, x0: x0 as i64 - 1, y0: y0 as i64 - 1 };
+    let mut g = Grid {
+        on: vec![false; gw * gh],
+        w: gw,
+        h: gh,
+        x0: x0 as i64 - 1,
+        y0: y0 as i64 - 1,
+    };
     for &i in comp {
         g.on[(i / w - y0 + 1) * gw + (i % w - x0 + 1)] = true;
     }
@@ -279,8 +366,13 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
                 }
             }
         }
-        let sum = members.iter().fold(Point::ZERO, |s, &m| s + g.centre(m).to_vec2());
-        centres.push(Point::new(sum.x / members.len() as f64, sum.y / members.len() as f64));
+        let sum = members
+            .iter()
+            .fold(Point::ZERO, |s, &m| s + g.centre(m).to_vec2());
+        centres.push(Point::new(
+            sum.x / members.len() as f64,
+            sum.y / members.len() as f64,
+        ));
     }
     // Runs from each node, then the rings left.
     let mut used: HashSet<(usize, usize)> = HashSet::new();
@@ -294,7 +386,12 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
             let mut pts = vec![centres[node[p]], g.centre(q)];
             let (mut prev, mut cur) = (p, q);
             while node[cur] == usize::MAX {
-                let Some(next) = g.neighbours(cur).find(|&n| n != prev && !used.contains(&edge(cur, n))) else { break };
+                let Some(next) = g
+                    .neighbours(cur)
+                    .find(|&n| n != prev && !used.contains(&edge(cur, n)))
+                else {
+                    break;
+                };
                 used.insert(edge(cur, next));
                 pts.push(g.centre(next));
                 (prev, cur) = (cur, next);
@@ -303,7 +400,11 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
             if let (Some(e), Some(last)) = (end, pts.last_mut()) {
                 *last = centres[e];
             }
-            runs.push(Run { pts, ends: [Some(node[p]), end], closed: false });
+            runs.push(Run {
+                pts,
+                ends: [Some(node[p]), end],
+                closed: false,
+            });
         }
     }
     for &s in &skeleton {
@@ -313,7 +414,10 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
         let mut pts = vec![g.centre(s)];
         let (mut prev, mut cur) = (usize::MAX, s);
         let mut closed = false;
-        while let Some(next) = g.neighbours(cur).find(|&n| n != prev && !used.contains(&edge(cur, n))) {
+        while let Some(next) = g
+            .neighbours(cur)
+            .find(|&n| n != prev && !used.contains(&edge(cur, n)))
+        {
             used.insert(edge(cur, next));
             if next == s {
                 closed = true;
@@ -322,7 +426,11 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
             pts.push(g.centre(next));
             (prev, cur) = (cur, next);
         }
-        runs.push(Run { pts, ends: [None, None], closed });
+        runs.push(Run {
+            pts,
+            ends: [None, None],
+            closed,
+        });
     }
     // The line's mean width: its pixels over its length (the skeleton stops about half a width
     // short of each end).
@@ -335,7 +443,11 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
     let runs = join(prune(runs, centres.len(), spur), centres.len());
     let mut runs = runs;
     let coarse = width(&runs);
-    let ink = Ink { img, color: ink, reach: (max_width / 2.0).ceil().clamp(1.0, 64.0) as i64 + 2 };
+    let ink = Ink {
+        img,
+        color: ink,
+        reach: (max_width / 2.0).ceil().clamp(1.0, 64.0) as i64 + 2,
+    };
     // How many runs end at each node: one is an end of the line.
     let mut meet = vec![0usize; centres.len()];
     for e in runs.iter().flat_map(|r| r.ends.iter().flatten()) {
@@ -357,14 +469,25 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
             if end.is_some_and(|e| meet[e] > 1) {
                 continue;
             }
-            let (a, b) = if r.closed { (old[(i + n - 2 % n) % n], old[(i + 2) % n]) } else { (old[i.saturating_sub(2)], old[(i + 2).min(n - 1)]) };
+            let (a, b) = if r.closed {
+                (old[(i + n - 2 % n) % n], old[(i + 2) % n])
+            } else {
+                (old[i.saturating_sub(2)], old[(i + 2).min(n - 1)])
+            };
             let d = b - a;
             if d.hypot() < 1e-9 {
                 continue;
             }
             let upright = d.x.abs() >= d.y.abs();
-            let Some(across) = ink.across(old[i], upright) else { continue };
-            r.pts[i] = old[i] + if upright { kurbo::Vec2::new(0.0, across.middle) } else { kurbo::Vec2::new(across.middle, 0.0) };
+            let Some(across) = ink.across(old[i], upright) else {
+                continue;
+            };
+            r.pts[i] = old[i]
+                + if upright {
+                    kurbo::Vec2::new(0.0, across.middle)
+                } else {
+                    kurbo::Vec2::new(across.middle, 0.0)
+                };
             widths.push(across.width * if upright { d.x.abs() } else { d.y.abs() } / d.hypot());
             read += 1;
             soft += usize::from(across.soft);
@@ -373,7 +496,11 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
     // The stroke is as wide as the ink at the line's middle point (where no ink could be read, as
     // wide as its pixels make it).
     widths.sort_by(f64::total_cmp);
-    let width = widths.get(widths.len() / 2).copied().unwrap_or(coarse).clamp(0.25, max_width.max(1.0));
+    let width = widths
+        .get(widths.len() / 2)
+        .copied()
+        .unwrap_or(coarse)
+        .clamp(0.25, max_width.max(1.0));
     // Each end goes where the ink ends, less the half width its round cap adds.
     for r in runs.iter_mut().filter(|r| !r.closed && r.pts.len() >= 2) {
         for k in 0..2 {
@@ -381,7 +508,11 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
                 continue;
             }
             let n = r.pts.len();
-            let (tip, inner) = if k == 0 { (r.pts[0], r.pts[3.min(n - 1)]) } else { (r.pts[n - 1], r.pts[n - 1 - 3.min(n - 1)]) };
+            let (tip, inner) = if k == 0 {
+                (r.pts[0], r.pts[3.min(n - 1)])
+            } else {
+                (r.pts[n - 1], r.pts[n - 1 - 3.min(n - 1)])
+            };
             let d = tip - inner;
             if d.hypot() < 1e-9 {
                 continue;
@@ -389,7 +520,11 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
             let more = ink.beyond(tip, d / d.hypot()) - width / 2.0;
             if more.abs() > 0.05 && more > -1.0 {
                 let to = tip + d / d.hypot() * more;
-                if k == 0 { r.pts[0] = to } else { r.pts[n - 1] = to }
+                if k == 0 {
+                    r.pts[0] = to
+                } else {
+                    r.pts[n - 1] = to
+                }
             }
         }
     }
@@ -403,13 +538,21 @@ fn trace_line(comp: &[usize], w: usize, max_width: f64, img: &Raster, ink: [f64;
     let subs: Vec<_> = runs
         .iter()
         .filter_map(|r| {
-            if r.closed { fit::subpath(&fit::fit_closed(&r.pts, &style)?, true) } else { fit::subpath(&fit::fit_piece(&r.pts, &style, false), false) }
+            if r.closed {
+                fit::subpath(&fit::fit_closed(&r.pts, &style)?, true)
+            } else {
+                fit::subpath(&fit::fit_piece(&r.pts, &style, false), false)
+            }
         })
         .collect();
     if subs.is_empty() {
         return None;
     }
-    Some(Line { path: PathData::new(subs), width, pixels: comp.len() })
+    Some(Line {
+        path: PathData::new(subs),
+        width,
+        pixels: comp.len(),
+    })
 }
 
 /// What the image says of a line's ink.
@@ -438,12 +581,20 @@ impl Ink<'_> {
         }
         let at = (y * w + x) as usize * 4;
         let p = self.img.rgba.get(at..at + 3)?;
-        Some((0..3).map(|k| (f64::from(p[k]) - self.color[k]).powi(2)).sum::<f64>().sqrt())
+        Some(
+            (0..3)
+                .map(|k| (f64::from(p[k]) - self.color[k]).powi(2))
+                .sum::<f64>()
+                .sqrt(),
+        )
     }
     /// How far the paper's colour is from the line's around pixel `(x, y)`: the farthest colour
     /// within reach, along its row and its column.
     fn paper(&self, x: i64, y: i64) -> f64 {
-        (-self.reach..=self.reach).flat_map(|k| [self.far(x + k, y), self.far(x, y + k)]).flatten().fold(0.0, f64::max)
+        (-self.reach..=self.reach)
+            .flat_map(|k| [self.far(x + k, y), self.far(x, y + k)])
+            .flatten()
+            .fold(0.0, f64::max)
     }
     /// The ink across the line through the pixel `p` lies in: along its column (`upright`) or row.
     fn across(&self, p: Point, upright: bool) -> Option<Across> {
@@ -453,10 +604,19 @@ impl Ink<'_> {
         if paper < 24.0 {
             return None;
         }
-        let tone = |k: i64| (if upright { self.far(x, y + k) } else { self.far(x + k, y) }).map_or(0.0, |d| (1.0 - d / paper).clamp(0.0, 1.0));
+        let tone = |k: i64| {
+            (if upright {
+                self.far(x, y + k)
+            } else {
+                self.far(x + k, y)
+            })
+            .map_or(0.0, |d| (1.0 - d / paper).clamp(0.0, 1.0))
+        };
         // From the pixel with most ink near the skeleton's (thinning leaves it up to a pixel or two
         // off the line's darkest row) out to where the ink ends, or rises again (another line).
-        let peak = [0, -1, 1, -2, 2].into_iter().fold(0, |best, k| if tone(k) > tone(best) + 1e-9 { k } else { best });
+        let peak = [0, -1, 1, -2, 2].into_iter().fold(0, |best, k| {
+            if tone(k) > tone(best) + 1e-9 { k } else { best }
+        });
         let here = tone(peak);
         let (mut sum, mut moment, mut soft) = (here, here * peak as f64, here > 0.1 && here < 0.9);
         for side in [-1, 1] {
@@ -473,8 +633,16 @@ impl Ink<'_> {
             }
         }
         // The pixel's centre is at `p`'s own half-pixel; the middle is measured from `p`.
-        let centre = if upright { y as f64 + 0.5 - p.y } else { x as f64 + 0.5 - p.x };
-        (sum > 0.0).then(|| Across { middle: centre + moment / sum, width: sum, soft })
+        let centre = if upright {
+            y as f64 + 0.5 - p.y
+        } else {
+            x as f64 + 0.5 - p.x
+        };
+        (sum > 0.0).then(|| Across {
+            middle: centre + moment / sum,
+            width: sum,
+            soft,
+        })
     }
     /// How much ink (pixels) lies beyond `tip`, going `dir` (a unit vector).
     fn beyond(&self, tip: Point, dir: kurbo::Vec2) -> f64 {
@@ -485,7 +653,9 @@ impl Ink<'_> {
         let mut sum = 0.0;
         for step in 1..=4 * (self.reach + 2) {
             let q = tip + dir * (step as f64 * 0.25);
-            let t = self.far(q.x.floor() as i64, q.y.floor() as i64).map_or(0.0, |d| (1.0 - d / paper).clamp(0.0, 1.0));
+            let t = self
+                .far(q.x.floor() as i64, q.y.floor() as i64)
+                .map_or(0.0, |d| (1.0 - d / paper).clamp(0.0, 1.0));
             if t < 0.04 {
                 break;
             }
@@ -515,7 +685,10 @@ fn prune(runs: Vec<Run>, nodes: usize, width: f64) -> Vec<Run> {
             degree[fork] -= 1;
         }
     }
-    runs.into_iter().zip(keep).filter_map(|(r, k)| k.then_some(r)).collect()
+    runs.into_iter()
+        .zip(keep)
+        .filter_map(|(r, k)| k.then_some(r))
+        .collect()
 }
 
 /// The runs joined through every node exactly two of them meet at (a run meeting itself closes).
@@ -525,7 +698,13 @@ fn join(runs: Vec<Run>, nodes: usize) -> Vec<Run> {
         let at: Vec<(usize, usize)> = runs
             .iter()
             .enumerate()
-            .flat_map(|(i, r)| r.iter().flat_map(move |r| (0..2).filter(move |&k| r.ends[k] == Some(n)).map(move |k| (i, k))))
+            .flat_map(|(i, r)| {
+                r.iter().flat_map(move |r| {
+                    (0..2)
+                        .filter(move |&k| r.ends[k] == Some(n))
+                        .map(move |k| (i, k))
+                })
+            })
             .collect();
         let [(i, ki), (j, kj)] = at[..] else { continue };
         if i == j {
@@ -536,7 +715,9 @@ fn join(runs: Vec<Run>, nodes: usize) -> Vec<Run> {
             }
             continue;
         }
-        let (Some(mut a), Some(mut b)) = (runs[i].take(), runs[j].take()) else { continue };
+        let (Some(mut a), Some(mut b)) = (runs[i].take(), runs[j].take()) else {
+            continue;
+        };
         // a ends at n, b starts at n.
         if ki == 0 {
             a.pts.reverse();

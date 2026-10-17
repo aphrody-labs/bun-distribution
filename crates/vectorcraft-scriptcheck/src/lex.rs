@@ -9,7 +9,9 @@
 //! limit.
 
 use crate::catalog;
-use crate::report::{TOO_DEEP, UNTERMINATED_COMMENT, UNTERMINATED_REGEXP, UNTERMINATED_STRING, UNTERMINATED_TEMPLATE};
+use crate::report::{
+    TOO_DEEP, UNTERMINATED_COMMENT, UNTERMINATED_REGEXP, UNTERMINATED_STRING, UNTERMINATED_TEMPLATE,
+};
 
 /// What a token is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -67,8 +69,9 @@ pub(crate) struct Breaks {
 /// Punctuators, longest first: ECMAScript 3's, E4X's (`..`, `.@`, `::`, `@`) and later ones (`=>`,
 /// `...`, `?.`, `??`, `**` and the assignments built on them), which the analysis reports.
 const PUNCTS: &[&str] = &[
-    ">>>=", "===", "!==", ">>>", "<<=", ">>=", "**=", "...", "&&=", "||=", "??=", "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=",
-    "/=", "%=", "&=", "|=", "^=", "<<", ">>", "=>", "**", "?.", "??", "::", "..", ".@", "{", "}", "(", ")", "[", "]", ";", ",", "<", ">", "+", "-",
+    ">>>=", "===", "!==", ">>>", "<<=", ">>=", "**=", "...", "&&=", "||=", "??=", "==", "!=", "<=",
+    ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<", ">>", "=>",
+    "**", "?.", "??", "::", "..", ".@", "{", "}", "(", ")", "[", "]", ";", ",", "<", ">", "+", "-",
     "*", "/", "%", "&", "|", "^", "!", "~", "?", ":", "=", ".", "@",
 ];
 
@@ -150,7 +153,20 @@ fn xml_start(c: char) -> bool {
 /// property's name, a keyword included ([`Lexer::member`]), none starts.
 pub(crate) fn expr_after(kind: T, text: &str) -> bool {
     match kind {
-        T::Ident => matches!(text, "return" | "typeof" | "instanceof" | "in" | "new" | "delete" | "void" | "throw" | "case" | "do" | "else"),
+        T::Ident => matches!(
+            text,
+            "return"
+                | "typeof"
+                | "instanceof"
+                | "in"
+                | "new"
+                | "delete"
+                | "void"
+                | "throw"
+                | "case"
+                | "do"
+                | "else"
+        ),
         T::Number | T::Str | T::Template | T::RegExp => false,
         T::Punct => !matches!(text, ")" | "]" | "++" | "--"),
         _ => true,
@@ -159,9 +175,13 @@ pub(crate) fn expr_after(kind: T, text: &str) -> bool {
 
 /// `rest`, the text after `//@`, starts with a directive's name.
 fn names_directive(rest: &str) -> bool {
-    let end = rest.find(|c: char| !c.is_ascii_alphabetic()).unwrap_or(rest.len());
+    let end = rest
+        .find(|c: char| !c.is_ascii_alphabetic())
+        .unwrap_or(rest.len());
     let name = rest.get(..end).unwrap_or_default();
-    catalog::DIRECTIVES.iter().any(|d| d.eq_ignore_ascii_case(name))
+    catalog::DIRECTIVES
+        .iter()
+        .any(|d| d.eq_ignore_ascii_case(name))
 }
 
 /// Where in its markup an XML literal is read.
@@ -345,8 +365,11 @@ impl<'s> Lexer<'s> {
                     self.bump('.');
                     self.digits(|c| c.is_ascii_digit());
                 }
-                let signed = matches!(self.peek_at(1), Some('+' | '-')) && self.peek_at(2).is_some_and(|c| c.is_ascii_digit());
-                if matches!(self.peek(), Some('e' | 'E')) && (self.peek_at(1).is_some_and(|c| c.is_ascii_digit()) || signed) {
+                let signed = matches!(self.peek_at(1), Some('+' | '-'))
+                    && self.peek_at(2).is_some_and(|c| c.is_ascii_digit());
+                if matches!(self.peek(), Some('e' | 'E'))
+                    && (self.peek_at(1).is_some_and(|c| c.is_ascii_digit()) || signed)
+                {
                     self.skip(if signed { 2 } else { 1 });
                     self.digits(|c| c.is_ascii_digit());
                 }
@@ -481,7 +504,14 @@ impl<'s> Lexer<'s> {
     /// [`TOO_DEEP`]. When the text ends first, the literal is left unclosed
     /// ([`Lexer::unclosed_xml`]). `stmt`: a statement may start at the token; `expr`: an expression
     /// may start at it.
-    fn markup_token(&mut self, start: usize, line: usize, kind: T, stmt: bool, expr: bool) -> Token<'s> {
+    fn markup_token(
+        &mut self,
+        start: usize,
+        line: usize,
+        kind: T,
+        stmt: bool,
+        expr: bool,
+    ) -> Token<'s> {
         let mut problem = None;
         while let Some(&Level::Xml { mut open, mut at }) = self.xml.last() {
             let step = self.markup(&mut open, &mut at);
@@ -522,7 +552,15 @@ impl<'s> Lexer<'s> {
         self.cond = false;
         self.restricted = false;
         self.member = false;
-        Token { kind, text: self.src.get(start..self.pos).unwrap_or_default(), line, problem, stmt, expr, start }
+        Token {
+            kind,
+            text: self.src.get(start..self.pos).unwrap_or_default(),
+            line,
+            problem,
+            stmt,
+            expr,
+            start,
+        }
     }
 
     /// A little more of an XML literal's markup, `open` of its elements open and `at` where in it:
@@ -567,7 +605,11 @@ impl<'s> Lexer<'s> {
                     }
                     Some(q @ ('"' | '\'')) => {
                         self.bump(q);
-                        return if self.past(if q == '"' { "\"" } else { "'" }) { Step::On } else { Step::End };
+                        return if self.past(if q == '"' { "\"" } else { "'" }) {
+                            Step::On
+                        } else {
+                            Step::End
+                        };
                     }
                     Some('{') => return Step::Code,
                     Some(c) => {
@@ -606,7 +648,10 @@ impl<'s> Lexer<'s> {
     fn punct(&self) -> Option<&'static str> {
         let rest = self.rest();
         // `?.` before a digit is `?` and a number (`a ?.5 : 1`).
-        PUNCTS.iter().copied().find(|p| rest.starts_with(p) && !(*p == "?." && rest.as_bytes().get(2).is_some_and(u8::is_ascii_digit)))
+        PUNCTS.iter().copied().find(|p| {
+            rest.starts_with(p)
+                && !(*p == "?." && rest.as_bytes().get(2).is_some_and(u8::is_ascii_digit))
+        })
     }
 
     /// The parentheses after the punctuator `punct`: `(` opens one, a condition when `cond` is set,
@@ -675,7 +720,9 @@ impl<'s> Lexer<'s> {
         if self.deeper_questions > 0 {
             return false;
         }
-        let Some(open) = self.questions.last_mut() else { return false };
+        let Some(open) = self.questions.last_mut() else {
+            return false;
+        };
         match punct {
             "?" => *open = open.saturating_add(1),
             ":" if *open > 0 => {
@@ -721,7 +768,8 @@ impl<'s> Iterator for Lexer<'s> {
             }
             T::Space
         } else if self.starts("//") {
-            let directive = self.line_start && self.rest().strip_prefix("//@").is_some_and(names_directive);
+            let directive =
+                self.line_start && self.rest().strip_prefix("//@").is_some_and(names_directive);
             self.until_line_break();
             if directive { T::Directive } else { T::Comment }
         } else if self.starts("/*") {
@@ -749,7 +797,10 @@ impl<'s> Iterator for Lexer<'s> {
                 if self.xml.is_empty() {
                     self.xml_line = line;
                 }
-                self.xml.push(Level::Xml { open: 0, at: At::Markup });
+                self.xml.push(Level::Xml {
+                    open: 0,
+                    at: At::Markup,
+                });
                 return Some(self.markup_token(start, line, T::Xml, stmt, expr));
             }
             // An XML literal more levels deep than are kept: its `<` is read as an operator.
@@ -765,7 +816,9 @@ impl<'s> Iterator for Lexer<'s> {
         } else if ident_start(c) || (c == '\\' && self.peek_at(1) == Some('u')) {
             self.name();
             T::Ident
-        } else if c.is_ascii_digit() || (c == '.' && self.peek_at(1).is_some_and(|d| d.is_ascii_digit())) {
+        } else if c.is_ascii_digit()
+            || (c == '.' && self.peek_at(1).is_some_and(|d| d.is_ascii_digit()))
+        {
             self.number();
             T::Number
         } else if let Some(p) = self.punct() {
@@ -799,7 +852,11 @@ impl<'s> Iterator for Lexer<'s> {
                 let condition = kind == T::Punct && self.paren(text);
                 // A statement may also start after the `}` of a block. After the `}` of an object
                 // literal or of a function expression's body, `/` divides.
-                let brace = if kind == T::Punct { self.brace(text) } else { None };
+                let brace = if kind == T::Punct {
+                    self.brace(text)
+                } else {
+                    None
+                };
                 self.expr = condition
                     || match (text, brace) {
                         ("}", Some(brace)) => brace == Brace::Block,
@@ -827,10 +884,20 @@ impl<'s> Iterator for Lexer<'s> {
                     }
                     || kind == T::Directive
                     || (kind == T::Punct && matches!(text, ";" | "=>"))
-                    || (kind == T::Punct && text == ":" && !ternary && self.braces.last() != Some(&Brace::Object))
-                    || (kind == T::Ident && !property && matches!(text, "else" | "do" | "try" | "finally"));
-                self.cond = kind == T::Ident && !property && (matches!(text, "if" | "while" | "for" | "with") || (text == "each" && self.cond));
-                self.restricted = kind == T::Ident && !property && matches!(text, "return" | "throw" | "break" | "continue");
+                    || (kind == T::Punct
+                        && text == ":"
+                        && !ternary
+                        && self.braces.last() != Some(&Brace::Object))
+                    || (kind == T::Ident
+                        && !property
+                        && matches!(text, "else" | "do" | "try" | "finally"));
+                self.cond = kind == T::Ident
+                    && !property
+                    && (matches!(text, "if" | "while" | "for" | "with")
+                        || (text == "each" && self.cond));
+                self.restricted = kind == T::Ident
+                    && !property
+                    && matches!(text, "return" | "throw" | "break" | "continue");
                 self.member = kind == T::Punct && matches!(text, "." | ".." | ".@" | "::");
                 // The braces inside the code of an XML literal.
                 if kind == T::Punct
@@ -844,6 +911,14 @@ impl<'s> Iterator for Lexer<'s> {
                 }
             }
         }
-        Some(Token { kind, text, line, problem, stmt, expr, start })
+        Some(Token {
+            kind,
+            text,
+            line,
+            problem,
+            stmt,
+            expr,
+            start,
+        })
     }
 }

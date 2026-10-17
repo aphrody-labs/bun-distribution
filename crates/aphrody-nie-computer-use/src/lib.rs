@@ -171,22 +171,36 @@ impl ReSession {
     }
 
     pub fn rva_to_va(&self, rva: u64) -> Result<u64> {
-        anyhow::ensure!(rva < self.target.size_bytes, "RVA 0x{rva:x} outside indexed image");
-        self.target.image_base.checked_add(rva).context("RVA to VA overflow")
+        anyhow::ensure!(
+            rva < self.target.size_bytes,
+            "RVA 0x{rva:x} outside indexed image"
+        );
+        self.target
+            .image_base
+            .checked_add(rva)
+            .context("RVA to VA overflow")
     }
 
     pub fn va_to_rva(&self, va: u64) -> Result<u64> {
         anyhow::ensure!(va >= self.target.image_base, "VA 0x{va:x} below image base");
         let rva = va - self.target.image_base;
-        anyhow::ensure!(rva < self.target.size_bytes, "VA 0x{va:x} outside indexed image");
+        anyhow::ensure!(
+            rva < self.target.size_bytes,
+            "VA 0x{va:x} outside indexed image"
+        );
         Ok(rva)
     }
 
     /// Read a bounded slice from the reference executable.
     pub fn read_file(&self, offset: u64, length: usize) -> Result<Vec<u8>> {
-        anyhow::ensure!(length <= MAX_READ_BYTES, "read length {length} exceeds {MAX_READ_BYTES}");
         anyhow::ensure!(
-            offset.checked_add(length as u64).is_some_and(|end| end <= self.target.size_bytes),
+            length <= MAX_READ_BYTES,
+            "read length {length} exceeds {MAX_READ_BYTES}"
+        );
+        anyhow::ensure!(
+            offset
+                .checked_add(length as u64)
+                .is_some_and(|end| end <= self.target.size_bytes),
             "read outside indexed image"
         );
         Ok(self.validated_bytes[offset as usize..offset as usize + length].to_vec())
@@ -195,7 +209,9 @@ impl ReSession {
     /// Write/patch a slice in the loaded executable memory image (YOLO read-and-write mode).
     pub fn write_file(&mut self, offset: u64, bytes: &[u8]) -> Result<()> {
         anyhow::ensure!(
-            offset.checked_add(bytes.len() as u64).is_some_and(|end| end <= self.target.size_bytes),
+            offset
+                .checked_add(bytes.len() as u64)
+                .is_some_and(|end| end <= self.target.size_bytes),
             "write outside indexed image"
         );
         self.validated_bytes[offset as usize..offset as usize + bytes.len()].copy_from_slice(bytes);
@@ -217,7 +233,10 @@ impl ReSession {
     /// Save the modified binary in place.
     pub fn save(&self) -> Result<()> {
         std::fs::write(&self.target.executable, &self.validated_bytes).with_context(|| {
-            format!("save binary in place to {}", self.target.executable.display())
+            format!(
+                "save binary in place to {}",
+                self.target.executable.display()
+            )
         })
     }
 }
@@ -268,7 +287,10 @@ impl NieComputerUse {
         length: usize,
     ) -> Result<Vec<u8>, aphrody_nie_trace::MemError> {
         if length > MAX_READ_BYTES {
-            return Err(aphrody_nie_trace::MemError::InvalidLength { length, max: MAX_READ_BYTES });
+            return Err(aphrody_nie_trace::MemError::InvalidLength {
+                length,
+                max: MAX_READ_BYTES,
+            });
         }
         aphrody_nie_trace::read_exact(pid, address, length)
     }
@@ -295,7 +317,10 @@ impl NieComputerUse {
     }
 
     pub fn scan_aob(pid: i32, module: &str, pattern: &str, limit: usize) -> Result<Vec<LiveHit>> {
-        anyhow::ensure!(limit <= MAX_SCAN_HITS, "scan limit {limit} exceeds {MAX_SCAN_HITS}");
+        anyhow::ensure!(
+            limit <= MAX_SCAN_HITS,
+            "scan limit {limit} exceeds {MAX_SCAN_HITS}"
+        );
         let parsed = aphrody_nie_trace::Pattern::parse(pattern)
             .map_err(|error| anyhow::anyhow!(error.to_string()))?;
         let base = aphrody_nie_trace::find_module_base(pid, module);
@@ -307,7 +332,11 @@ impl NieComputerUse {
             limit,
         )
         .into_iter()
-        .map(|hit| LiveHit { address: hit.addr, rva: hit.rva, permissions: hit.perms })
+        .map(|hit| LiveHit {
+            address: hit.addr,
+            rva: hit.rva,
+            permissions: hit.perms,
+        })
         .collect())
     }
 
@@ -412,7 +441,7 @@ impl FromStr for Surface {
             "ghidra" => Ok(Self::Ghidra),
             other => {
                 anyhow::bail!("unknown Computer Use surface `{other}`; expected nie-exe or ghidra")
-            },
+            }
         }
     }
 }
@@ -452,9 +481,14 @@ pub fn probe(request: &ProbeRequest) -> Result<ProbeResult> {
                 surface: Surface::NieExe,
                 available,
                 target: target.into(),
-                detail: if available { "executable exists" } else { "executable not found" }.into(),
+                detail: if available {
+                    "executable exists"
+                } else {
+                    "executable not found"
+                }
+                .into(),
             })
-        },
+        }
         Surface::Ghidra => {
             let url = &request.ghidra_url;
             let response = std::process::Command::new("curl")
@@ -479,7 +513,7 @@ pub fn probe(request: &ProbeRequest) -> Result<ProbeResult> {
                 target: url.clone(),
                 detail: format!("HTTP status {code}"),
             })
-        },
+        }
     }
 }
 
@@ -491,7 +525,11 @@ pub fn probe_json(request: &ProbeRequest) -> Result<String> {
 /// Parse the stable CLI spelling and return the JSON probe response.
 #[cfg(feature = "host")]
 pub fn probe_cli(surface: &str, executable: Option<String>, ghidra_url: String) -> Result<String> {
-    let request = ProbeRequest { surface: surface.parse()?, executable, ghidra_url };
+    let request = ProbeRequest {
+        surface: surface.parse()?,
+        executable,
+        ghidra_url,
+    };
     probe_json(&request)
 }
 
@@ -572,7 +610,8 @@ mod tests {
         let db_path = dir.join("re.sqlite");
         std::fs::write(&exe, b"actual").unwrap();
         let db = aphrody_nie_index::Db::open(&db_path).unwrap();
-        db.upsert_binary("nie.exe", "wrong", "x86_64", 64, 0x140000000, 6, None, None).unwrap();
+        db.upsert_binary("nie.exe", "wrong", "x86_64", 64, 0x140000000, 6, None, None)
+            .unwrap();
         drop(db);
         assert!(ReSession::open(&exe, &db_path, None).is_err());
         let _ = std::fs::remove_dir_all(dir);
@@ -581,7 +620,10 @@ mod tests {
     #[test]
     fn live_reads_reject_unbounded_lengths_before_backend() {
         let error = NieComputerUse::read_memory(0, 0, MAX_READ_BYTES + 1).unwrap_err();
-        assert!(matches!(error, aphrody_nie_trace::MemError::InvalidLength { .. }));
+        assert!(matches!(
+            error,
+            aphrody_nie_trace::MemError::InvalidLength { .. }
+        ));
     }
 
     #[test]

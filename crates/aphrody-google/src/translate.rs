@@ -78,7 +78,11 @@ pub struct TranslateOptions {
 
 impl Default for TranslateOptions {
     fn default() -> Self {
-        Self { timeout: Duration::from_secs(8), concurrency: 8, cookie_header: None }
+        Self {
+            timeout: Duration::from_secs(8),
+            concurrency: 8,
+            cookie_header: None,
+        }
     }
 }
 
@@ -150,10 +154,10 @@ impl GoogleTranslateClient {
                                 });
                             }
                             failures.push("RPC response had no translation".to_owned());
-                        },
+                        }
                         Err(_) => failures.push("RPC response was not JSON".to_owned()),
                     }
-                },
+                }
                 Ok(response) => failures.push(format!("RPC HTTP {}", response.status())),
                 Err(error) => failures.push(format!("RPC request failed: {error}")),
             }
@@ -162,7 +166,11 @@ impl GoogleTranslateClient {
         let request = self
             .client
             .get(MOBILE_ENDPOINT)
-            .query(&[("sl", source.unwrap_or("auto")), ("tl", target), ("q", text.trim())])
+            .query(&[
+                ("sl", source.unwrap_or("auto")),
+                ("tl", target),
+                ("q", text.trim()),
+            ])
             .timeout(options.timeout);
         let request = if let Some(cookie) = &options.cookie_header {
             request.header(reqwest::header::COOKIE, cookie)
@@ -189,11 +197,14 @@ impl GoogleTranslateClient {
                     });
                 }
                 failures.push("mobile response had no translation".to_owned());
-            },
+            }
             Ok(response) => failures.push(format!("mobile HTTP {}", response.status())),
             Err(error) => failures.push(format!("mobile request failed: {error}")),
         }
-        Err(format!("Google Translate transports failed: {}", failures.join("; ")))
+        Err(format!(
+            "Google Translate transports failed: {}",
+            failures.join("; ")
+        ))
     }
 
     /// Reuse a caller-owned Gemini client if both Google web transports fail.
@@ -219,7 +230,9 @@ impl GoogleTranslateClient {
                     .map_err(|error| format!("{primary_error}; Gemini fallback failed: {error}"))?;
                 let translated_text = answer.trim();
                 if translated_text.is_empty() {
-                    return Err(format!("{primary_error}; Gemini fallback returned empty text"));
+                    return Err(format!(
+                        "{primary_error}; Gemini fallback returned empty text"
+                    ));
                 }
                 Ok(TranslationV2Item {
                     translated_text: translated_text.to_owned(),
@@ -230,7 +243,7 @@ impl GoogleTranslateClient {
                     ),
                     model: Some("gemini".to_owned()),
                 })
-            },
+            }
         }
     }
 
@@ -243,7 +256,11 @@ impl GoogleTranslateClient {
         if options.concurrency == 0 {
             return Err("Google Translate concurrency must be at least 1".to_owned());
         }
-        if request.format.as_deref().is_some_and(|format| !matches!(format, "text" | "html")) {
+        if request
+            .format
+            .as_deref()
+            .is_some_and(|format| !matches!(format, "text" | "html"))
+        {
             return Err("Google Translate format must be text or html".to_owned());
         }
         use futures::StreamExt as _;
@@ -262,15 +279,19 @@ impl GoogleTranslateClient {
         while let Some(result) = window.next().await {
             translations.push(result?);
         }
-        Ok(TranslateV2Response { data: TranslateV2Data { translations } })
+        Ok(TranslateV2Response {
+            data: TranslateV2Data { translations },
+        })
     }
 }
 
 /// Extract the joined text segments and the detected source language from RPC JSON.
 pub fn parse_translation(data: &Value) -> Option<(String, Option<String>)> {
     let parts = data.get(0)?.as_array()?;
-    let translated =
-        parts.iter().filter_map(|item| item.get(0).and_then(Value::as_str)).collect::<String>();
+    let translated = parts
+        .iter()
+        .filter_map(|item| item.get(0).and_then(Value::as_str))
+        .collect::<String>();
     if translated.is_empty() {
         return None;
     }

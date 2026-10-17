@@ -55,7 +55,10 @@ mod tests {
                 s.write_all(banner).await.unwrap();
             }
         });
-        assert_eq!(probe(&addr, Duration::from_secs(2)).await.unwrap(), "RFB 003.008");
+        assert_eq!(
+            probe(&addr, Duration::from_secs(2)).await.unwrap(),
+            "RFB 003.008"
+        );
         assert!(probe(&addr, Duration::from_secs(2)).await.is_err());
     }
 }

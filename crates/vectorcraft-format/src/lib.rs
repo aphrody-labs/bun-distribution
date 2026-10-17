@@ -83,7 +83,10 @@ pub fn is_native_ext(ext: &str) -> bool {
 
 /// Does the file name or path end in a native document extension?
 pub fn is_native_name(name: &str) -> bool {
-    std::path::Path::new(name).extension().and_then(|e| e.to_str()).is_some_and(is_native_ext)
+    std::path::Path::new(name)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(is_native_ext)
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -96,7 +99,9 @@ pub enum FormatError {
     BadImage(String),
     #[error("can't save version {0}: VectorCraft writes versions {MIN_VERSION} to {VERSION}")]
     BadVersion(u32),
-    #[error("version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files")]
+    #[error(
+        "version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files"
+    )]
     CompressedTooOld(u32),
     #[error("the compressed file unpacks to more than VectorCraft reads ({} MB of document, {} MB per image)", MAX_JSON >> 20, MAX_BLOB >> 20)]
     TooBig,
@@ -147,20 +152,37 @@ impl<'a> Blobs<'a> {
             let at = self.at;
             self.at += len;
             self.tail.push((bytes, is_packed(mime)));
-            return Image { mime: mime.into(), data: String::new(), blob: Some([at, len]), proxy };
+            return Image {
+                mime: mime.into(),
+                data: String::new(),
+                blob: Some([at, len]),
+                proxy,
+            };
         }
-        Image { mime: mime.into(), data: base64_encode(bytes), blob: None, proxy }
+        Image {
+            mime: mime.into(),
+            data: base64_encode(bytes),
+            blob: None,
+            proxy,
+        }
     }
 }
 
 /// Is data of this MIME type compressed already (no use compressing it again)?
 fn is_packed(mime: &str) -> bool {
-    matches!(mime, "image/jpeg" | "image/png" | "image/gif" | "image/webp")
+    matches!(
+        mime,
+        "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+    )
 }
 
 /// The MIME type of a preview's bytes (JPEG or PNG).
 fn preview_mime(bytes: &[u8]) -> &'static str {
-    if bytes.starts_with(&[0xff, 0xd8]) { "image/jpeg" } else { vectorcraft_doc::links::PROXY_MIME }
+    if bytes.starts_with(&[0xff, 0xd8]) {
+        "image/jpeg"
+    } else {
+        vectorcraft_doc::links::PROXY_MIME
+    }
 }
 
 /// The JSON of a file and the data after it (v4), split at [`BLOB_MAGIC`] after the first JSON
@@ -175,17 +197,27 @@ fn split_tail(text: &[u8]) -> (&[u8], &[u8]) {
     };
     if let Some(at) = nul.checked_sub(1)
         && text.get(at..).is_some_and(|r| r.starts_with(BLOB_MAGIC))
-        && at.checked_sub(1).and_then(|k| text.get(k)).is_some_and(|b| matches!(b, b'}' | b']' | b'"'))
+        && at
+            .checked_sub(1)
+            .and_then(|k| text.get(k))
+            .is_some_and(|b| matches!(b, b'}' | b']' | b'"'))
     {
-        return (text.get(..at).unwrap_or(text), text.get(at + BLOB_MAGIC.len()..).unwrap_or_default());
+        return (
+            text.get(..at).unwrap_or(text),
+            text.get(at + BLOB_MAGIC.len()..).unwrap_or_default(),
+        );
     }
-    let mut values = serde_json::Deserializer::from_slice(text).into_iter::<serde::de::IgnoredAny>();
+    let mut values =
+        serde_json::Deserializer::from_slice(text).into_iter::<serde::de::IgnoredAny>();
     if values.next().is_some_and(|v| v.is_ok()) {
         let end = values.byte_offset();
         if let Some(rest) = text.get(end..)
             && rest.starts_with(BLOB_MAGIC)
         {
-            return (text.get(..end).unwrap_or(text), rest.get(BLOB_MAGIC.len()..).unwrap_or_default());
+            return (
+                text.get(..end).unwrap_or(text),
+                rest.get(BLOB_MAGIC.len()..).unwrap_or_default(),
+            );
         }
     }
     (text, &[])
@@ -223,7 +255,15 @@ pub struct SaveOptions {
 
 impl Default for SaveOptions {
     fn default() -> Self {
-        Self { pretty: false, compress: false, version: VERSION, preview: None, include_linked: false, profiles: BTreeMap::new(), pdf: None }
+        Self {
+            pretty: false,
+            compress: false,
+            version: VERSION,
+            preview: None,
+            include_linked: false,
+            profiles: BTreeMap::new(),
+            pdf: None,
+        }
     }
 }
 
@@ -247,7 +287,10 @@ impl SaveOptions {
     /// [`PRETTY_MAX_BYTES`]).
     pub fn for_doc(doc: &Document) -> Self {
         let objects: usize = doc.layers.iter().map(|l| l.count()).sum();
-        Self { pretty: objects <= PRETTY_MAX_OBJECTS && compact_size_at_most(doc, PRETTY_MAX_BYTES), ..Self::default() }
+        Self {
+            pretty: objects <= PRETTY_MAX_OBJECTS && compact_size_at_most(doc, PRETTY_MAX_BYTES),
+            ..Self::default()
+        }
     }
 }
 
@@ -259,7 +302,10 @@ fn compact_size_at_most(doc: &Document, limit: usize) -> bool {
     }
     impl Write for Capped {
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.left = self.left.checked_sub(buf.len()).ok_or_else(|| std::io::Error::other("over the limit"))?;
+            self.left = self
+                .left
+                .checked_sub(buf.len())
+                .ok_or_else(|| std::io::Error::other("over the limit"))?;
             Ok(buf.len())
         }
         fn flush(&mut self) -> std::io::Result<()> {
@@ -272,7 +318,14 @@ fn compact_size_at_most(doc: &Document, limit: usize) -> bool {
 /// Serialize a document (pretty = human-diffable) in the current version. Editing-mode working
 /// copies are left out ([`Document::without_edit_modes`]).
 pub fn save(doc: &Document, pretty: bool) -> Vec<u8> {
-    save_with(doc, &SaveOptions { pretty, ..SaveOptions::default() }).unwrap_or_default()
+    save_with(
+        doc,
+        &SaveOptions {
+            pretty,
+            ..SaveOptions::default()
+        },
+    )
+    .unwrap_or_default()
 }
 
 /// Documents up to this many objects are saved pretty-printed (readable, diffable); larger ones
@@ -329,8 +382,16 @@ pub fn save_to(doc: &Document, o: &SaveOptions, w: impl Write) -> Result<(), For
     } else {
         None
     };
-    let entries = Entries { blobs: &blobs, linked: &linked, include_linked: o.include_linked };
-    let mut out_blobs = Blobs { tail: vec![], at: 0, outside: o.version >= 4 };
+    let entries = Entries {
+        blobs: &blobs,
+        linked: &linked,
+        include_linked: o.include_linked,
+    };
+    let mut out_blobs = Blobs {
+        tail: vec![],
+        at: 0,
+        outside: o.version >= 4,
+    };
     // Images are only referenced by image objects' `key` (wherever the objects are: layers,
     // symbols, patterns, masks, or foreign data). The data after the JSON has the images first,
     // then the profiles and the PDF, which the file lists before the document: with those, the
@@ -338,18 +399,54 @@ pub fn save_to(doc: &Document, o: &SaveOptions, w: impl Write) -> Result<(), For
     let mut images = None;
     if !blobs.is_empty() && (!o.profiles.is_empty() || o.pdf.is_some()) {
         let mut scan = KeyScan::new(std::io::sink());
-        write_body(std::io::BufWriter::with_capacity(JSON_CHUNK, &mut scan), v1.as_ref(), &d, pretty)?;
+        write_body(
+            std::io::BufWriter::with_capacity(JSON_CHUNK, &mut scan),
+            v1.as_ref(),
+            &d,
+            pretty,
+        )?;
         images = Some(entries.images(&scan.keys, &mut out_blobs));
     }
-    let profiles: BTreeMap<&str, Image> = o.profiles.iter().map(|(name, icc)| (name.as_str(), out_blobs.image(ICC_MIME, icc, false))).collect();
-    let pdf = o.pdf.as_deref().map(|p| out_blobs.image("application/pdf", p, false));
-    let blob = |mime: &str, bytes: &[u8]| Image { mime: mime.into(), data: base64_encode(bytes), blob: None, proxy: false };
-    let mut out = if o.compress { Out::Gz(Box::new(Gz::new(w).map_err(encode_err)?)) } else { Out::Plain(w) };
-    let mut env = Envelope { pretty, first: true };
+    let profiles: BTreeMap<&str, Image> = o
+        .profiles
+        .iter()
+        .map(|(name, icc)| (name.as_str(), out_blobs.image(ICC_MIME, icc, false)))
+        .collect();
+    let pdf = o
+        .pdf
+        .as_deref()
+        .map(|p| out_blobs.image("application/pdf", p, false));
+    let blob = |mime: &str, bytes: &[u8]| Image {
+        mime: mime.into(),
+        data: base64_encode(bytes),
+        blob: None,
+        proxy: false,
+    };
+    let mut out = if o.compress {
+        Out::Gz(Box::new(Gz::new(w).map_err(encode_err)?))
+    } else {
+        Out::Plain(w)
+    };
+    let mut env = Envelope {
+        pretty,
+        first: true,
+    };
     // Older apps only know the name from before the rename.
-    env.field(&mut out, "format", &if o.version < 3 { LEGACY_EXTENSION } else { EXTENSION })?;
+    env.field(
+        &mut out,
+        "format",
+        &if o.version < 3 {
+            LEGACY_EXTENSION
+        } else {
+            EXTENSION
+        },
+    )?;
     env.field(&mut out, "version", &o.version)?;
-    env.field(&mut out, "generator", &format!("VectorCraft {}", env!("CARGO_PKG_VERSION")))?;
+    env.field(
+        &mut out,
+        "generator",
+        &format!("VectorCraft {}", env!("CARGO_PKG_VERSION")),
+    )?;
     if let Some(png) = &o.preview {
         env.field(&mut out, "preview", &blob("image/png", png))?;
     }
@@ -360,7 +457,10 @@ pub fn save_to(doc: &Document, o: &SaveOptions, w: impl Write) -> Result<(), For
         env.field(&mut out, "pdf", pdf)?;
     }
     env.key(&mut out, "document")?;
-    let mut scan = KeyScan::new(Indent { inner: &mut out, on: pretty });
+    let mut scan = KeyScan::new(Indent {
+        inner: &mut out,
+        on: pretty,
+    });
     // Without blobs no key matters.
     scan.active = images.is_none() && !blobs.is_empty();
     let mut buffered = std::io::BufWriter::with_capacity(JSON_CHUNK, &mut scan);
@@ -375,13 +475,25 @@ pub fn save_to(doc: &Document, o: &SaveOptions, w: impl Write) -> Result<(), For
         let json = out.written().unwrap_or(0);
         let tail: Vec<u64> = out_blobs.tail.iter().map(|(b, _)| b.len() as u64).collect();
         if json > MAX_JSON {
-            return Err(FormatError::TooBigToCompress(format!("{} MB of document, at most {} MB", json >> 20, MAX_JSON >> 20)));
+            return Err(FormatError::TooBigToCompress(format!(
+                "{} MB of document, at most {} MB",
+                json >> 20,
+                MAX_JSON >> 20
+            )));
         }
         if let Some(big) = tail.iter().find(|&&n| n > MAX_BLOB) {
-            return Err(FormatError::TooBigToCompress(format!("an image of {} MB, at most {} MB", big >> 20, MAX_BLOB >> 20)));
+            return Err(FormatError::TooBigToCompress(format!(
+                "an image of {} MB, at most {} MB",
+                big >> 20,
+                MAX_BLOB >> 20
+            )));
         }
         if out_blobs.at > MAX_BLOBS {
-            return Err(FormatError::TooBigToCompress(format!("{} MB of images, at most {} MB", out_blobs.at >> 20, MAX_BLOBS >> 20)));
+            return Err(FormatError::TooBigToCompress(format!(
+                "{} MB of images, at most {} MB",
+                out_blobs.at >> 20,
+                MAX_BLOBS >> 20
+            )));
         }
     }
     if !out_blobs.tail.is_empty() {
@@ -410,7 +522,8 @@ impl<'a> Entries<'a> {
             .filter(|(k, _)| used.contains(k.as_str()))
             .map(|(k, b)| {
                 // Include Linked Files keeps the file's bytes whenever they are loaded.
-                let preview_only = self.linked.contains(k) && (!self.include_linked || b.is_proxy());
+                let preview_only =
+                    self.linked.contains(k) && (!self.include_linked || b.is_proxy());
                 let image = match b.proxy.as_ref().filter(|_| preview_only) {
                     Some(p) => out.image(preview_mime(p), p, true),
                     None => out.image(&b.mime, &b.bytes, false),
@@ -426,12 +539,22 @@ fn encode_err(e: impl std::fmt::Display) -> FormatError {
 }
 
 fn to_json(v: &impl Serialize, pretty: bool) -> Result<Vec<u8>, FormatError> {
-    if pretty { serde_json::to_vec_pretty(v) } else { serde_json::to_vec(v) }.map_err(encode_err)
+    if pretty {
+        serde_json::to_vec_pretty(v)
+    } else {
+        serde_json::to_vec(v)
+    }
+    .map_err(encode_err)
 }
 
 /// The document's JSON: its version 1 form `v1`, else `d` (generic, not `dyn Write`: serde_json
 /// writes token by token).
-fn write_body(w: impl Write, v1: Option<&serde_json::Value>, d: &Document, pretty: bool) -> Result<(), FormatError> {
+fn write_body(
+    w: impl Write,
+    v1: Option<&serde_json::Value>,
+    d: &Document,
+    pretty: bool,
+) -> Result<(), FormatError> {
     match v1 {
         Some(v) => write_json(w, v, pretty),
         None => write_json(w, d, pretty),
@@ -439,7 +562,12 @@ fn write_body(w: impl Write, v1: Option<&serde_json::Value>, d: &Document, prett
 }
 
 fn write_json(w: impl Write, v: &impl Serialize, pretty: bool) -> Result<(), FormatError> {
-    if pretty { serde_json::to_writer_pretty(w, v) } else { serde_json::to_writer(w, v) }.map_err(encode_err)
+    if pretty {
+        serde_json::to_writer_pretty(w, v)
+    } else {
+        serde_json::to_writer(w, v)
+    }
+    .map_err(encode_err)
 }
 
 /// The file's top-level object, written member by member (the document is streamed in).
@@ -449,23 +577,41 @@ struct Envelope {
 }
 
 impl Envelope {
-    fn field(&mut self, out: &mut impl Write, key: &str, value: &impl Serialize) -> Result<(), FormatError> {
+    fn field(
+        &mut self,
+        out: &mut impl Write,
+        key: &str,
+        value: &impl Serialize,
+    ) -> Result<(), FormatError> {
         let json = to_json(value, self.pretty)?;
         self.key(out, key)?;
-        Indent { inner: out, on: self.pretty }.write_all(&json).map_err(encode_err)
+        Indent {
+            inner: out,
+            on: self.pretty,
+        }
+        .write_all(&json)
+        .map_err(encode_err)
     }
 
     /// The start of member `key` (a plain name): its value follows, indented one level when
     /// pretty (as serde_json would: see [`Indent`]).
     fn key(&mut self, out: &mut impl Write, key: &str) -> Result<(), FormatError> {
-        let sep: &[u8] = if std::mem::take(&mut self.first) { b"{" } else { b"," };
+        let sep: &[u8] = if std::mem::take(&mut self.first) {
+            b"{"
+        } else {
+            b","
+        };
         let indent: &[u8] = if self.pretty { b"\n  " } else { b"" };
         let colon: &[u8] = if self.pretty { b"\": " } else { b"\":" };
-        [sep, indent, b"\"", key.as_bytes(), colon].iter().try_for_each(|part| out.write_all(part)).map_err(encode_err)
+        [sep, indent, b"\"", key.as_bytes(), colon]
+            .iter()
+            .try_for_each(|part| out.write_all(part))
+            .map_err(encode_err)
     }
 
     fn finish(self, out: &mut impl Write) -> Result<(), FormatError> {
-        out.write_all(if self.pretty { b"\n}" } else { b"}" }).map_err(encode_err)
+        out.write_all(if self.pretty { b"\n}" } else { b"}" })
+            .map_err(encode_err)
     }
 }
 
@@ -511,15 +657,24 @@ pub fn load_info(bytes: &[u8]) -> Result<(Document, FileInfo), FormatError> {
 /// [`load`], with everything else the file carries.
 pub fn load_file(bytes: &[u8]) -> Result<NativeFile, FormatError> {
     let file = unpack::Unpacked::new(bytes)?;
-    let f: File = serde_json::from_slice(file.json()).map_err(|e| FormatError::NotVectorcraft(e.to_string()))?;
+    let f: File = serde_json::from_slice(file.json())
+        .map_err(|e| FormatError::NotVectorcraft(e.to_string()))?;
     if f.format != EXTENSION && f.format != LEGACY_EXTENSION {
-        return Err(FormatError::NotVectorcraft(format!("format is `{}`", f.format)));
+        return Err(FormatError::NotVectorcraft(format!(
+            "format is `{}`",
+            f.format
+        )));
     }
     if f.version > VERSION {
         return Err(FormatError::TooNew(f.version));
     }
     // The bytes after the JSON, read in one pass: the images' first, then the profiles'.
-    let entries: Vec<[u64; 2]> = f.images.values().chain(f.profiles.values()).filter_map(|i| i.blob).collect();
+    let entries: Vec<[u64; 2]> = f
+        .images
+        .values()
+        .chain(f.profiles.values())
+        .filter_map(|i| i.blob)
+        .collect();
     let mut tail = file.entries(&entries)?.into_iter();
     let mut bytes_of = |img: &Image| match img.blob {
         Some(_) => tail.next().flatten(),
@@ -545,8 +700,19 @@ pub fn load_file(bytes: &[u8]) -> Result<NativeFile, FormatError> {
     // Untrusted: capped, named and pointing at objects the file has.
     doc.tidy_saved_selections();
     doc.tidy_graph_designs();
-    let profiles = f.profiles.into_iter().filter_map(|(name, icc)| Some((name, bytes_of(&icc)?))).collect();
-    Ok(NativeFile { doc, info: FileInfo { version: f.version, legacy: f.format == LEGACY_EXTENSION }, profiles })
+    let profiles = f
+        .profiles
+        .into_iter()
+        .filter_map(|(name, icc)| Some((name, bytes_of(&icc)?)))
+        .collect();
+    Ok(NativeFile {
+        doc,
+        info: FileInfo {
+            version: f.version,
+            legacy: f.format == LEGACY_EXTENSION,
+        },
+        profiles,
+    })
 }
 
 /// The members of a native file besides its document (which is skipped, not decoded).
@@ -585,14 +751,17 @@ pub fn sniff(bytes: &[u8]) -> bool {
     let head: Cow<'_, [u8]> = if is_compressed(bytes) {
         let mut head = Vec::with_capacity(HEAD);
         // A damaged stream may still unpack its start: judge what came out.
-        let _ = flate2::read::GzDecoder::new(bytes).take(HEAD as u64).read_to_end(&mut head);
+        let _ = flate2::read::GzDecoder::new(bytes)
+            .take(HEAD as u64)
+            .read_to_end(&mut head);
         Cow::Owned(head)
     } else {
         Cow::Borrowed(bytes.get(..HEAD).unwrap_or(bytes))
     };
     // The cut may split a character.
     let s = String::from_utf8_lossy(&head);
-    s.trim_start().starts_with('{') && (s.contains("\"vectorcraft\"") || s.contains("\"drawcraft\""))
+    s.trim_start().starts_with('{')
+        && (s.contains("\"vectorcraft\"") || s.contains("\"drawcraft\""))
 }
 
 const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -600,11 +769,21 @@ const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 pub fn base64_encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for c in data.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         out.push(B64[(n >> 18) as usize & 63] as char);
         out.push(B64[(n >> 12) as usize & 63] as char);
-        out.push(if c.len() > 1 { B64[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if c.len() > 2 { B64[n as usize & 63] as char } else { '=' });
+        out.push(if c.len() > 1 {
+            B64[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if c.len() > 2 {
+            B64[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     out
 }
@@ -645,11 +824,22 @@ mod tests {
     #[test]
     fn files_from_before_the_rename_still_open() {
         let d = Document::new(100.0, 50.0);
-        let legacy = String::from_utf8(save(&d, false)).unwrap().replacen("\"format\":\"vectorcraft\"", "\"format\":\"drawcraft\"", 1);
+        let legacy = String::from_utf8(save(&d, false)).unwrap().replacen(
+            "\"format\":\"vectorcraft\"",
+            "\"format\":\"drawcraft\"",
+            1,
+        );
         assert!(legacy.contains("\"drawcraft\""));
         assert!(sniff(legacy.as_bytes()));
-        assert_eq!(load(legacy.as_bytes()).unwrap().artboards[0].rect, d.artboards[0].rect);
-        assert!(is_native_name("old/Poster.DrawCraft") && is_native_name("new.vectorcraft") && !is_native_name("x.svg"));
+        assert_eq!(
+            load(legacy.as_bytes()).unwrap().artboards[0].rect,
+            d.artboards[0].rect
+        );
+        assert!(
+            is_native_name("old/Poster.DrawCraft")
+                && is_native_name("new.vectorcraft")
+                && !is_native_name("x.svg")
+        );
         assert!(load(br#"{"format":"other","version":1,"document":{}}"#).is_err());
     }
 
@@ -657,13 +847,25 @@ mod tests {
     fn file_info_tells_old_files() {
         let d = Document::new(10.0, 10.0);
         let current = save(&d, false);
-        assert_eq!(load_info(&current).unwrap().1, FileInfo { version: VERSION, legacy: false });
+        assert_eq!(
+            load_info(&current).unwrap().1,
+            FileInfo {
+                version: VERSION,
+                legacy: false
+            }
+        );
         assert!(!load_info(&current).unwrap().1.is_old());
         let text = String::from_utf8(current).unwrap();
         let legacy = text.replacen("\"format\":\"vectorcraft\"", "\"format\":\"drawcraft\"", 1);
         assert!(load_info(legacy.as_bytes()).unwrap().1.is_old());
         let v1 = text.replacen(&format!("\"version\":{VERSION}"), "\"version\":1", 1);
-        assert_eq!(load_info(v1.as_bytes()).unwrap().1, FileInfo { version: 1, legacy: false });
+        assert_eq!(
+            load_info(v1.as_bytes()).unwrap().1,
+            FileInfo {
+                version: 1,
+                legacy: false
+            }
+        );
         assert!(load_info(v1.as_bytes()).unwrap().1.is_old());
     }
     use vectorcraft_doc::{Appearance, ImageObject, Node, NodeKind};
@@ -674,18 +876,39 @@ mod tests {
         let mut d = Document::new(100.0, 100.0);
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(id, shapes::ellipse(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art())).unwrap();
-        d.images.insert("k".into(), ImageBlob::new("image/png", vec![1, 2, 3, 250]));
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                id,
+                shapes::ellipse(Rect::new(0.0, 0.0, 10.0, 10.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
+        d.images
+            .insert("k".into(), ImageBlob::new("image/png", vec![1, 2, 3, 250]));
         // Only images in use are saved.
         let img = d.alloc_id();
-        let im = ImageObject { key: "k".into(), width: 1, height: 1, xf: Affine::IDENTITY, link: None, placement: Default::default() };
-        d.insert(Some(l), 1, Node::new(img, NodeKind::Image(Box::new(im)))).unwrap();
+        let im = ImageObject {
+            key: "k".into(),
+            width: 1,
+            height: 1,
+            xf: Affine::IDENTITY,
+            link: None,
+            placement: Default::default(),
+        };
+        d.insert(Some(l), 1, Node::new(img, NodeKind::Image(Box::new(im))))
+            .unwrap();
         let bytes = save(&d, true);
         assert!(sniff(&bytes));
         let back = load(&bytes).unwrap();
         assert_eq!(back.node_count(), d.node_count());
         assert_eq!(back.images["k"].bytes.as_slice(), &[1, 2, 3, 250]);
-        assert_eq!(back.node(id).unwrap().path_data(), d.node(id).unwrap().path_data());
+        assert_eq!(
+            back.node(id).unwrap().path_data(),
+            d.node(id).unwrap().path_data()
+        );
     }
 
     #[test]
@@ -694,7 +917,10 @@ mod tests {
         let d = Document::new(1.0, 1.0);
         let mut v: serde_json::Value = serde_json::from_slice(&save(&d, false)).unwrap();
         v["version"] = 99.into();
-        assert!(matches!(load(&serde_json::to_vec(&v).unwrap()), Err(FormatError::TooNew(99))));
+        assert!(matches!(
+            load(&serde_json::to_vec(&v).unwrap()),
+            Err(FormatError::TooNew(99))
+        ));
     }
 
     #[test]

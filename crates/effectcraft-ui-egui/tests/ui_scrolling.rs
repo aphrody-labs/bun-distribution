@@ -11,7 +11,9 @@ use serde_json::json;
 fn harness(w: f32, h: f32) -> Harness<'static, EffectcraftApp> {
     let mut s = Session::default();
     s.execute("file.openDemoProject", json!({})).unwrap();
-    let mut h = Harness::builder().with_size(vec2(w, h)).build_eframe(|_| EffectcraftApp::new(s));
+    let mut h = Harness::builder()
+        .with_size(vec2(w, h))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(3);
     h
 }
@@ -23,9 +25,19 @@ fn rect(h: &Harness<'_, EffectcraftApp>, id: &str) -> Rect {
 
 fn click_at(h: &mut Harness<'_, EffectcraftApp>, p: Pos2) {
     h.input_mut().events.push(Event::PointerMoved(p));
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(2);
 }
 
@@ -46,35 +58,77 @@ fn wheel(h: &mut Harness<'_, EffectcraftApp>, at: Pos2, dy: f32) {
 #[test]
 fn a_menu_taller_than_the_window_scrolls() {
     let mut h = harness(1200.0, 520.0);
-    assert!(!h.ctx.global_style().spacing.scroll.floating, "scroll bars show without hovering the list");
+    assert!(
+        !h.ctx.global_style().spacing.scroll.floating,
+        "scroll bars show without hovering the list"
+    );
     let edit = rect(&h, "menu.Edit");
     click_at(&mut h, edit.center());
-    let last = h.query_by_label_contains("Keyboard Shortcuts").expect("the Edit menu is open").rect();
-    assert!(last.max.y > 520.0, "Edit is taller than the window ({last:?})");
-    let first = h.query_by_label_contains("Quick Apply").expect("Quick Apply").rect();
+    let last = h
+        .query_by_label_contains("Keyboard Shortcuts")
+        .expect("the Edit menu is open")
+        .rect();
+    assert!(
+        last.max.y > 520.0,
+        "Edit is taller than the window ({last:?})"
+    );
+    let first = h
+        .query_by_label_contains("Quick Apply")
+        .expect("Quick Apply")
+        .rect();
     wheel(&mut h, first.center(), -2000.0);
-    let last = h.query_by_label_contains("Keyboard Shortcuts").expect("still open").rect();
-    assert!(last.min.y >= 0.0 && last.max.y <= 520.0, "scrolled into the window ({last:?})");
+    let last = h
+        .query_by_label_contains("Keyboard Shortcuts")
+        .expect("still open")
+        .rect();
+    assert!(
+        last.min.y >= 0.0 && last.max.y <= 520.0,
+        "scrolled into the window ({last:?})"
+    );
     click_at(&mut h, last.center());
-    assert_eq!(h.state().dialog, Some(effectcraft_ui_egui::Dialog::Shortcuts), "the entry takes the click");
+    assert_eq!(
+        h.state().dialog,
+        Some(effectcraft_ui_egui::Dialog::Shortcuts),
+        "the entry takes the click"
+    );
 }
 
 fn drag(h: &mut Harness<'_, EffectcraftApp>, from: Pos2, to: Pos2) {
     h.input_mut().events.push(Event::PointerMoved(from));
-    h.input_mut().events.push(Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
     for i in 1..=8 {
-        h.input_mut().events.push(Event::PointerMoved(from + (to - from) * (i as f32 / 8.0)));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(from + (to - from) * (i as f32 / 8.0)));
         h.step();
     }
-    h.input_mut().events.push(Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(2);
 }
 
 /// A scroll bar's "scroll/max" automation label.
 fn scrolled(h: &Harness<'_, EffectcraftApp>, id: &str) -> (f32, f32) {
-    let label = h.state().auto.find(id).unwrap_or_else(|| panic!("no {id}")).label.clone();
-    let (s, max) = label.split_once('/').unwrap_or_else(|| panic!("{id}: {label}"));
+    let label = h
+        .state()
+        .auto
+        .find(id)
+        .unwrap_or_else(|| panic!("no {id}"))
+        .label
+        .clone();
+    let (s, max) = label
+        .split_once('/')
+        .unwrap_or_else(|| panic!("{id}: {label}"));
     (s.parse().unwrap(), max.parse().unwrap())
 }
 
@@ -100,9 +154,16 @@ fn panels_taller_than_their_space_have_a_scroll_bar_to_drag() {
         let mut h = harness(1200.0, height);
         let app = h.state_mut();
         let lid = app.session.active_comp().unwrap().layers[0].id.0;
-        app.session.execute("layer.select", json!({"layers": [lid]})).unwrap();
+        app.session
+            .execute("layer.select", json!({"layers": [lid]}))
+            .unwrap();
         for e in ["slider", "angle", "checkbox", "color", "point"] {
-            app.session.execute("effect.apply", json!({"effect": format!("ec.control.{e}"), "layers": [lid]})).unwrap();
+            app.session
+                .execute(
+                    "effect.apply",
+                    json!({"effect": format!("ec.control.{e}"), "layers": [lid]}),
+                )
+                .unwrap();
         }
         for _ in 0..6 {
             app.session.execute("renderQueue.add", json!({})).unwrap();
@@ -117,7 +178,11 @@ fn panels_taller_than_their_space_have_a_scroll_bar_to_drag() {
         // last); then the thumb drags to the end.
         click_at(&mut h, pos2(bar.center().x, bar.min.y + 2.0));
         assert_eq!(scrolled(&h, id).0, 0.0, "{id}: at the top");
-        drag(&mut h, pos2(bar.center().x, bar.min.y + 6.0), pos2(bar.center().x, bar.max.y + 40.0));
+        drag(
+            &mut h,
+            pos2(bar.center().x, bar.min.y + 6.0),
+            pos2(bar.center().x, bar.max.y + 40.0),
+        );
         assert_eq!(scrolled(&h, id).0, max, "{id}: dragged to the end");
     }
 }
@@ -130,18 +195,50 @@ fn effect_values_stay_clear_of_the_keyframe_navigator() {
     let mut h = harness(1600.0, 1000.0);
     let app = h.state_mut();
     let lid = app.session.active_comp().unwrap().layers[0].id.0;
-    app.session.execute("layer.select", json!({"layers": [lid]})).unwrap();
-    app.session.execute("effect.apply", json!({"effect": "ec.control.point", "layers": [lid]})).unwrap();
+    app.session
+        .execute("layer.select", json!({"layers": [lid]}))
+        .unwrap();
+    app.session
+        .execute(
+            "effect.apply",
+            json!({"effect": "ec.control.point", "layers": [lid]}),
+        )
+        .unwrap();
     let path = "effects/#1/point";
-    app.session.execute("prop.toggleAnimation", json!({"layer": lid, "path": path})).unwrap();
-    app.session.execute("prop.set", json!({"layer": lid, "path": path, "value": [123456.7, 123456.7]})).unwrap();
-    let uid = app.session.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(lid)).unwrap().props.prop(path).unwrap().uid;
+    app.session
+        .execute("prop.toggleAnimation", json!({"layer": lid, "path": path}))
+        .unwrap();
+    app.session
+        .execute(
+            "prop.set",
+            json!({"layer": lid, "path": path, "value": [123456.7, 123456.7]}),
+        )
+        .unwrap();
+    let uid = app
+        .session
+        .active_comp()
+        .unwrap()
+        .layer(effectcraft_engine::project::LayerId(lid))
+        .unwrap()
+        .props
+        .prop(path)
+        .unwrap()
+        .uid;
     assert!(app.edit_layout(|l| l.float(PanelKind::EffectControls, [300.0, 150.0, 330.0, 500.0])));
     h.run_steps(3);
     let value = rect(&h, &format!("effectControls.prop.{uid}.value.1"));
     let nav = rect(&h, &format!("effectControls.prop.{uid}.prevKey"));
-    assert!(value.max.x <= nav.min.x, "the value ({value:?}) ends before the navigator ({nav:?})");
-    assert!(value.min.x > rect(&h, &format!("effectControls.prop.{uid}.stopwatch")).max.x, "and after the stopwatch");
+    assert!(
+        value.max.x <= nav.min.x,
+        "the value ({value:?}) ends before the navigator ({nav:?})"
+    );
+    assert!(
+        value.min.x
+            > rect(&h, &format!("effectControls.prop.{uid}.stopwatch"))
+                .max
+                .x,
+        "and after the stopwatch"
+    );
 }
 
 /// The Settings dialog fits its width: its page column was wider than the dialog, so the whole
@@ -150,10 +247,18 @@ fn effect_values_stay_clear_of_the_keyframe_navigator() {
 fn settings_dialog_does_not_scroll_sideways() {
     let mut h = harness(1400.0, 900.0);
     let ctx = h.ctx.clone();
-    effectcraft_ui_egui::menus::invoke(h.state_mut(), &ctx, "app.settings", json!({"page": "general"})).unwrap();
+    effectcraft_ui_egui::menus::invoke(
+        h.state_mut(),
+        &ctx,
+        "app.settings",
+        json!({"page": "general"}),
+    )
+    .unwrap();
     h.run_steps(3);
     let (ok, page) = (rect(&h, "settings.ok"), rect(&h, "settings.page.general"));
-    h.input_mut().events.push(Event::PointerMoved(page.center()));
+    h.input_mut()
+        .events
+        .push(Event::PointerMoved(page.center()));
     h.input_mut().events.push(Event::MouseWheel {
         unit: egui::MouseWheelUnit::Point,
         delta: vec2(-400.0, 0.0),
@@ -161,5 +266,9 @@ fn settings_dialog_does_not_scroll_sideways() {
         phase: egui::TouchPhase::Move,
     });
     h.run_steps(20);
-    assert_eq!((rect(&h, "settings.ok"), rect(&h, "settings.page.general")), (ok, page), "nothing moved sideways");
+    assert_eq!(
+        (rect(&h, "settings.ok"), rect(&h, "settings.page.general")),
+        (ok, page),
+        "nothing moved sideways"
+    );
 }

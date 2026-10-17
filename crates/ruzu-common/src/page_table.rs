@@ -411,6 +411,9 @@ mod tests {
         assert_eq!(pt.current_page_bits, 12);
         assert_eq!(pt.entries.size(), 1 << 24);
         // Fresh entries read as unmapped without committing anything.
-        assert_eq!(pt.entries[123].pointer_type_block(false), (0, PageType::Unmapped, 0));
+        assert_eq!(
+            pt.entries[123].pointer_type_block(false),
+            (0, PageType::Unmapped, 0)
+        );
     }
 }

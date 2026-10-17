@@ -41,7 +41,10 @@ pub(crate) fn table_cells(html: &str) -> Vec<Vec<HtmlCell>> {
         }
         rest = rest.get(lt..).unwrap_or_default();
         if let Some(after) = rest.strip_prefix("<!--") {
-            rest = after.find("-->").and_then(|e| after.get(e + 3..)).unwrap_or_default();
+            rest = after
+                .find("-->")
+                .and_then(|e| after.get(e + 3..))
+                .unwrap_or_default();
             continue;
         }
         let Some(gt) = tag_end(rest) else { break };
@@ -49,14 +52,21 @@ pub(crate) fn table_cells(html: &str) -> Vec<Vec<HtmlCell>> {
         rest = rest.get(gt + 1..).unwrap_or_default();
         let closing = tag.starts_with('/');
         let body = tag.trim_start_matches('/');
-        let name_end = body.find(|c: char| c.is_whitespace() || c == '/').unwrap_or(body.len());
-        let name = body.get(..name_end).unwrap_or_default().to_ascii_lowercase();
+        let name_end = body
+            .find(|c: char| c.is_whitespace() || c == '/')
+            .unwrap_or(body.len());
+        let name = body
+            .get(..name_end)
+            .unwrap_or_default()
+            .to_ascii_lowercase();
         let attrs = body.get(name_end..).unwrap_or_default();
         match (name.as_str(), closing) {
             ("style" | "script", false) => {
                 // Raw text: skip to the closing tag.
                 let end = format!("</{name}");
-                rest = find_ci(rest, &end).and_then(|i| rest.get(i..)).unwrap_or_default();
+                rest = find_ci(rest, &end)
+                    .and_then(|i| rest.get(i..))
+                    .unwrap_or_default();
             }
             ("table", false) => {
                 if in_table {
@@ -80,9 +90,21 @@ pub(crate) fn table_cells(html: &str) -> Vec<Vec<HtmlCell>> {
                 if rows.is_empty() {
                     rows.push(Vec::new());
                 }
-                let num = attr(attrs, "x:num").or_else(|| attr(attrs, "sdval")).and_then(|v| v.trim().parse::<f64>().ok()).filter(|n| n.is_finite());
-                let span = attr(attrs, "colspan").and_then(|v| v.trim().parse::<usize>().ok()).unwrap_or(1).clamp(1, MAX_SPAN);
-                cell = Some((HtmlCell { text: String::new(), num }, span));
+                let num = attr(attrs, "x:num")
+                    .or_else(|| attr(attrs, "sdval"))
+                    .and_then(|v| v.trim().parse::<f64>().ok())
+                    .filter(|n| n.is_finite());
+                let span = attr(attrs, "colspan")
+                    .and_then(|v| v.trim().parse::<usize>().ok())
+                    .unwrap_or(1)
+                    .clamp(1, MAX_SPAN);
+                cell = Some((
+                    HtmlCell {
+                        text: String::new(),
+                        num,
+                    },
+                    span,
+                ));
             }
             ("td" | "th", true) | ("tr", true) => finish(&mut rows, &mut cell),
             ("br", _) => {
@@ -99,7 +121,9 @@ pub(crate) fn table_cells(html: &str) -> Vec<Vec<HtmlCell>> {
 
 /// Closes the open cell (if any) into the last row, decoding its text.
 fn finish(rows: &mut Vec<Vec<HtmlCell>>, cell: &mut Option<(HtmlCell, usize)>) {
-    let Some((mut c, span)) = cell.take() else { return };
+    let Some((mut c, span)) = cell.take() else {
+        return;
+    };
     c.text = decode(&c.text);
     if rows.is_empty() {
         rows.push(Vec::new());
@@ -107,7 +131,10 @@ fn finish(rows: &mut Vec<Vec<HtmlCell>>, cell: &mut Option<(HtmlCell, usize)>) {
     if let Some(row) = rows.last_mut() {
         row.push(c);
         let room = MAX_SPAN.saturating_sub(row.len());
-        row.extend(std::iter::repeat_n(HtmlCell::default(), span.saturating_sub(1).min(room)));
+        row.extend(std::iter::repeat_n(
+            HtmlCell::default(),
+            span.saturating_sub(1).min(room),
+        ));
     }
 }
 
@@ -133,7 +160,10 @@ fn find_ci(hay: &str, needle: &str) -> Option<usize> {
     if n.is_empty() || h.len() < n.len() {
         return None;
     }
-    (0..=h.len() - n.len()).find(|&i| h.get(i..i + n.len()).is_some_and(|w| w.eq_ignore_ascii_case(n)))
+    (0..=h.len() - n.len()).find(|&i| {
+        h.get(i..i + n.len())
+            .is_some_and(|w| w.eq_ignore_ascii_case(n))
+    })
 }
 
 /// The value of attribute `name` in a tag's attribute text (quoted or bare). A bare attribute
@@ -145,7 +175,9 @@ fn attr<'a>(attrs: &'a str, name: &str) -> Option<&'a str> {
         if s.is_empty() {
             return None;
         }
-        let key_end = s.find(|c: char| c.is_whitespace() || c == '=' || c == '/').unwrap_or(s.len());
+        let key_end = s
+            .find(|c: char| c.is_whitespace() || c == '=' || c == '/')
+            .unwrap_or(s.len());
         let key = s.get(..key_end).unwrap_or_default();
         s = s.get(key_end..).unwrap_or_default().trim_start();
         let mut value = None;
@@ -155,11 +187,17 @@ fn attr<'a>(attrs: &'a str, name: &str) -> Option<&'a str> {
                 Some(q @ ('"' | '\'')) => {
                     let inner = after.get(1..).unwrap_or_default();
                     let end = inner.find(q).unwrap_or(inner.len());
-                    (inner.get(..end).unwrap_or_default(), inner.get(end + 1..).unwrap_or_default())
+                    (
+                        inner.get(..end).unwrap_or_default(),
+                        inner.get(end + 1..).unwrap_or_default(),
+                    )
                 }
                 _ => {
                     let end = after.find(char::is_whitespace).unwrap_or(after.len());
-                    (after.get(..end).unwrap_or_default(), after.get(end..).unwrap_or_default())
+                    (
+                        after.get(..end).unwrap_or_default(),
+                        after.get(end..).unwrap_or_default(),
+                    )
                 }
             };
             value = Some(v);
@@ -233,7 +271,10 @@ fn decode(raw: &str) -> String {
 
 /// Same-looking text: non-breaking spaces as spaces, whitespace runs collapsed, trimmed.
 pub(crate) fn normalized(s: &str) -> String {
-    s.replace('\u{a0}', " ").split_whitespace().collect::<Vec<_>>().join(" ")
+    s.replace('\u{a0}', " ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// A number format that shows `n` exactly as `shown` ("Rp10,000.00" for 10000 →
@@ -246,7 +287,10 @@ pub(crate) fn format_for(shown: &str, n: f64) -> Option<String> {
     let core = shown.get(start..end)?;
     let mut prefix = shown.get(..start)?.to_string();
     let suffix = shown.get(end..)?;
-    if core.chars().any(|c| !(c.is_ascii_digit() || c == ',' || c == '.')) {
+    if core
+        .chars()
+        .any(|c| !(c.is_ascii_digit() || c == ',' || c == '.'))
+    {
         return None;
     }
     if n < 0.0 {
@@ -255,7 +299,13 @@ pub(crate) fn format_for(shown: &str, n: f64) -> Option<String> {
     }
     let decimals = core.split_once('.').map_or(0, |(_, f)| f.len());
     let mut code = String::new();
-    let quote = |s: &str| if s.is_empty() { String::new() } else { format!("\"{}\"", s.replace('"', "")) };
+    let quote = |s: &str| {
+        if s.is_empty() {
+            String::new()
+        } else {
+            format!("\"{}\"", s.replace('"', ""))
+        }
+    };
     code.push_str(&quote(&prefix));
     code.push_str(if core.contains(',') { "#,##0" } else { "0" });
     if decimals > 0 {
@@ -263,7 +313,12 @@ pub(crate) fn format_for(shown: &str, n: f64) -> Option<String> {
         code.push_str(&"0".repeat(decimals.min(30)));
     }
     code.push_str(&quote(suffix));
-    let rendered = gridcraft_numfmt::text_function(&gridcraft_core::Value::number(n), &code, gridcraft_core::date::DateSystem::D1900).ok()?;
+    let rendered = gridcraft_numfmt::text_function(
+        &gridcraft_core::Value::number(n),
+        &code,
+        gridcraft_core::date::DateSystem::D1900,
+    )
+    .ok()?;
     (normalized(&rendered) == shown).then_some(code)
 }
 
@@ -278,18 +333,46 @@ mod tests {
             <tr><td colspan=2 x:num="2.5">2.50 &amp; up</td><td>x</td></tr><!--EndFragment--></table></body></html>"#;
         let rows = table_cells(excel);
         assert_eq!(rows.len(), 2);
-        assert_eq!(rows[0][0], HtmlCell { text: "Rp10,000.00".into(), num: Some(10000.0) });
-        assert_eq!(rows[0][1], HtmlCell { text: "Name".into(), num: None });
-        assert_eq!(rows[1].len(), 3, "colspan keeps the next cell in its column");
+        assert_eq!(
+            rows[0][0],
+            HtmlCell {
+                text: "Rp10,000.00".into(),
+                num: Some(10000.0)
+            }
+        );
+        assert_eq!(
+            rows[0][1],
+            HtmlCell {
+                text: "Name".into(),
+                num: None
+            }
+        );
+        assert_eq!(
+            rows[1].len(),
+            3,
+            "colspan keeps the next cell in its column"
+        );
         assert_eq!(rows[1][0].text, "2.50 & up");
         assert_eq!(rows[1][2].text, "x");
 
         let calc = r#"<table cellspacing="0" border="0"><colgroup width="85"></colgroup><tr>
             <td height="17" align="right" sdval="10000" sdnum="1033;0;[$Rp-421]#,##0.00"><font face="Liberation Sans">Rp10,000.00</font></td></tr></table>"#;
-        assert_eq!(table_cells(calc), vec![vec![HtmlCell { text: "Rp10,000.00".into(), num: Some(10000.0) }]]);
+        assert_eq!(
+            table_cells(calc),
+            vec![vec![HtmlCell {
+                text: "Rp10,000.00".into(),
+                num: Some(10000.0)
+            }]]
+        );
 
         let quoted_gt = r#"<table><tr><td style='mso-number-format:"\[>=1000\]0"' x:num="1500">1500</td></tr></table>"#;
-        assert_eq!(table_cells(quoted_gt), vec![vec![HtmlCell { text: "1500".into(), num: Some(1500.0) }]]);
+        assert_eq!(
+            table_cells(quoted_gt),
+            vec![vec![HtmlCell {
+                text: "1500".into(),
+                num: Some(1500.0)
+            }]]
+        );
     }
 
     #[test]
@@ -308,15 +391,32 @@ mod tests {
         ] {
             let _ = table_cells(html);
         }
-        assert_eq!(table_cells("<table><td x:num='1e999'>1</td></table>")[0][0].num, None);
-        assert!(table_cells("<table><tr><td colspan=999999999>a</td></tr></table>")[0].len() <= MAX_SPAN);
+        assert_eq!(
+            table_cells("<table><td x:num='1e999'>1</td></table>")[0][0].num,
+            None
+        );
+        assert!(
+            table_cells("<table><tr><td colspan=999999999>a</td></tr></table>")[0].len()
+                <= MAX_SPAN
+        );
     }
 
     #[test]
     fn infers_a_format_that_shows_the_same_text() {
-        assert_eq!(format_for("Rp10,000.00", 10000.0).as_deref(), Some("\"Rp\"#,##0.00"));
-        assert_eq!(format_for("1 234 kr", 1234.0), None, "space grouping is not reproduced");
-        assert_eq!(format_for("10.000,00 €", 10000.0), None, "comma decimals don't render back in en-US");
+        assert_eq!(
+            format_for("Rp10,000.00", 10000.0).as_deref(),
+            Some("\"Rp\"#,##0.00")
+        );
+        assert_eq!(
+            format_for("1 234 kr", 1234.0),
+            None,
+            "space grouping is not reproduced"
+        );
+        assert_eq!(
+            format_for("10.000,00 €", 10000.0),
+            None,
+            "comma decimals don't render back in en-US"
+        );
         assert_eq!(format_for("-Rp5", -5.0).as_deref(), Some("\"Rp\"0"));
         assert_eq!(format_for("12 EUR", 12.0).as_deref(), Some("0\" EUR\""));
     }

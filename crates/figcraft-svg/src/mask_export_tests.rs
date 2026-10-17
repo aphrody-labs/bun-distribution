@@ -10,14 +10,35 @@ use super::*;
 fn masked(kind: MaskType) -> (Document, NodeId) {
     let mut d = Document::new("masks");
     let p = d.first_page().unwrap();
-    let g = d.create(p, NodeKind::Group, "G", 0.0, 0.0, 100.0, 100.0).unwrap();
-    let m = d.create(g, NodeKind::Rectangle, "M", 0.0, 0.0, 50.0, 100.0).unwrap();
-    let stops = vec![ColorStop { position: 0.0, color: Color::WHITE }, ColorStop { position: 1.0, color: Color::new(0.0, 0.0, 0.0, 0.0) }];
+    let g = d
+        .create(p, NodeKind::Group, "G", 0.0, 0.0, 100.0, 100.0)
+        .unwrap();
+    let m = d
+        .create(g, NodeKind::Rectangle, "M", 0.0, 0.0, 50.0, 100.0)
+        .unwrap();
+    let stops = vec![
+        ColorStop {
+            position: 0.0,
+            color: Color::WHITE,
+        },
+        ColorStop {
+            position: 1.0,
+            color: Color::new(0.0, 0.0, 0.0, 0.0),
+        },
+    ];
     let node = d.get_mut(m).unwrap();
-    node.fills = vec![Paint::gradient(Gradient { kind: GradientKind::Linear, stops, from: (0.0, 0.5), to: (1.0, 0.5), width: (0.0, 1.0) })];
+    node.fills = vec![Paint::gradient(Gradient {
+        kind: GradientKind::Linear,
+        stops,
+        from: (0.0, 0.5),
+        to: (1.0, 0.5),
+        width: (0.0, 1.0),
+    })];
     node.is_mask = true;
     node.mask_type = kind;
-    let r = d.create(g, NodeKind::Rectangle, "R", 0.0, 0.0, 100.0, 100.0).unwrap();
+    let r = d
+        .create(g, NodeKind::Rectangle, "R", 0.0, 0.0, 100.0, 100.0)
+        .unwrap();
     d.get_mut(r).unwrap().fills = vec![Paint::solid(Color::from_hex("FF0000").unwrap())];
     (d, g)
 }
@@ -35,12 +56,24 @@ fn each_mask_type_exports_as_it_masks() {
         export_svg(&d, &[g], &SvgOptions::default()).unwrap()
     };
     let vector = export(MaskType::Vector);
-    assert!(vector.contains("<clipPath") && vector.contains("clip-path=\"url(#clip") && !vector.contains("<mask"), "{vector}");
+    assert!(
+        vector.contains("<clipPath")
+            && vector.contains("clip-path=\"url(#clip")
+            && !vector.contains("<mask"),
+        "{vector}"
+    );
     let luminance = export(MaskType::Luminance);
-    assert!(luminance.contains("<linearGradient") && mask_def(&luminance).contains("url(#"), "{luminance}");
+    assert!(
+        luminance.contains("<linearGradient") && mask_def(&luminance).contains("url(#"),
+        "{luminance}"
+    );
     assert!(!mask_def(&luminance).contains("mask-type"), "{luminance}");
     let alpha = export(MaskType::Alpha);
-    assert!(mask_def(&alpha).contains("style=\"mask-type:alpha\"") && mask_def(&alpha).contains("url(#"), "{alpha}");
+    assert!(
+        mask_def(&alpha).contains("style=\"mask-type:alpha\"")
+            && mask_def(&alpha).contains("url(#"),
+        "{alpha}"
+    );
     // The mask layer itself isn't drawn outside its mask.
     assert_eq!(alpha.matches("url(#paint").count(), 1, "{alpha}");
 }
@@ -53,7 +86,12 @@ fn masks_survive_export_and_import() {
         let mut d2 = Document::new("back");
         let p = d2.first_page().unwrap();
         let f = import_svg(&mut d2, svg.as_bytes(), p, 0.0, 0.0, "x").unwrap();
-        let mask = d2.subtree(f).into_iter().filter_map(|i| d2.node(i)).find(|n| n.is_mask).unwrap();
+        let mask = d2
+            .subtree(f)
+            .into_iter()
+            .filter_map(|i| d2.node(i))
+            .find(|n| n.is_mask)
+            .unwrap();
         assert_eq!(mask.mask_type, kind);
     }
 }

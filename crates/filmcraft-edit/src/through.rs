@@ -19,7 +19,12 @@ const MEDIA_SLACK: i64 = 2;
 /// Whether the cut between adjacent items `a` (left) and `b` (right) is a through edit: same
 /// source, same speed and direction, and `b` continues `a` in media time.
 pub fn is_through_edit(a: &TrackItem, b: &TrackItem) -> bool {
-    if a.end() != b.start || a.item != b.item || a.speed != b.speed || a.reverse != b.reverse || a.multicam != b.multicam {
+    if a.end() != b.start
+        || a.item != b.item
+        || a.speed != b.speed
+        || a.reverse != b.reverse
+        || a.multicam != b.multicam
+    {
         return false;
     }
     match (a.frame_hold, b.frame_hold) {
@@ -27,7 +32,11 @@ pub fn is_through_edit(a: &TrackItem, b: &TrackItem) -> bool {
         (Some(x), Some(y)) => return x == y,
         _ => return false,
     }
-    let diff = if a.reverse { b.source_out() - a.source_in } else { b.source_in - a.source_out() };
+    let diff = if a.reverse {
+        b.source_out() - a.source_in
+    } else {
+        b.source_in - a.source_out()
+    };
     diff.0.abs() <= MEDIA_SLACK
 }
 
@@ -46,7 +55,12 @@ pub fn track_through_edits(track: &Track) -> Vec<ThroughEdit> {
         .items
         .windows(2)
         .filter(|w| is_through_edit(&w[0], &w[1]))
-        .map(|w| ThroughEdit { track: track.id, left: w[0].id, right: w[1].id, time: w[1].start })
+        .map(|w| ThroughEdit {
+            track: track.id,
+            left: w[0].id,
+            right: w[1].id,
+            time: w[1].start,
+        })
         .collect()
 }
 
@@ -59,11 +73,16 @@ pub fn through_edits(seq: &Sequence) -> Vec<ThroughEdit> {
 /// piece is listed. The left piece absorbs the right one (keeping its own effects and attributes);
 /// a transition sitting on the cut is removed. Returns the number of edits joined.
 pub fn join_through_edits(seq: &mut Sequence, only: &[ClipId]) -> usize {
-    join_through_edits_where(seq, |a, b| only.is_empty() || only.contains(&a) || only.contains(&b))
+    join_through_edits_where(seq, |a, b| {
+        only.is_empty() || only.contains(&a) || only.contains(&b)
+    })
 }
 
 /// Join the through edits on unlocked tracks whose (left, right) pieces `wanted` accepts.
-pub fn join_through_edits_where(seq: &mut Sequence, wanted: impl Fn(ClipId, ClipId) -> bool) -> usize {
+pub fn join_through_edits_where(
+    seq: &mut Sequence,
+    wanted: impl Fn(ClipId, ClipId) -> bool,
+) -> usize {
     let mut n = 0;
     for tr in seq.all_tracks_mut() {
         if tr.locked {
@@ -85,7 +104,8 @@ pub fn join_through_edits_where(seq: &mut Sequence, wanted: impl Fn(ClipId, Clip
                 left.source_in = b_source_in;
             }
             tr.items.remove(i + 1);
-            tr.transitions.retain(|t| !(t.from == Some(aid) && t.to == Some(bid)));
+            tr.transitions
+                .retain(|t| !(t.from == Some(aid) && t.to == Some(bid)));
             for t in &mut tr.transitions {
                 if t.from == Some(bid) {
                     t.from = Some(aid);
@@ -110,7 +130,10 @@ pub fn track_gaps(track: &Track) -> Vec<TimeRange> {
 /// Gaps of the whole sequence: time where no video or audio track has material, followed by
 /// material.
 pub fn sequence_gaps(seq: &Sequence) -> Vec<TimeRange> {
-    let mut spans: Vec<TimeRange> = seq.all_tracks().flat_map(|t| t.items.iter().map(TrackItem::range)).collect();
+    let mut spans: Vec<TimeRange> = seq
+        .all_tracks()
+        .flat_map(|t| t.items.iter().map(TrackItem::range))
+        .collect();
     spans.sort_by_key(|r| r.start);
     gaps_of(spans.into_iter())
 }
@@ -198,7 +221,12 @@ mod tests {
     }
 
     fn ctx(next: &mut u64) -> EditCtx<'_> {
-        EditCtx { next_id: next, media_duration: &|_| None, media_start: &|_| Tick::ZERO, min_duration: Tick(1) }
+        EditCtx {
+            next_id: next,
+            media_duration: &|_| None,
+            media_start: &|_| Tick::ZERO,
+            min_duration: Tick(1),
+        }
     }
 
     #[test]
@@ -223,11 +251,20 @@ mod tests {
             let mut q = seq_with(vec![it.clone()]);
             let mut n = 1000;
             razor(&mut q, &[], Tick(37), &mut ctx(&mut n));
-            assert_eq!(through_edits(&q).len(), 1, "speed {speed} reverse {reverse}");
+            assert_eq!(
+                through_edits(&q).len(),
+                1,
+                "speed {speed} reverse {reverse}"
+            );
             join_through_edits(&mut q, &[]);
             let j = &q.video_tracks[0].items[0];
             assert_eq!((j.start, j.duration), (it.start, it.duration));
-            assert!((j.source_in - it.source_in).0.abs() <= MEDIA_SLACK, "speed {speed} reverse {reverse}: {:?} vs {:?}", j.source_in, it.source_in);
+            assert!(
+                (j.source_in - it.source_in).0.abs() <= MEDIA_SLACK,
+                "speed {speed} reverse {reverse}: {:?} vs {:?}",
+                j.source_in,
+                it.source_in
+            );
         }
     }
 
@@ -243,7 +280,11 @@ mod tests {
 
     #[test]
     fn join_only_listed_edits() {
-        let mut q = seq_with(vec![item(10, 0, 30, 0), item(11, 30, 30, 30), item(12, 60, 30, 60)]);
+        let mut q = seq_with(vec![
+            item(10, 0, 30, 0),
+            item(11, 30, 30, 30),
+            item(12, 60, 30, 60),
+        ]);
         assert_eq!(join_through_edits(&mut q, &[ClipId(12)]), 1);
         assert_eq!(q.video_tracks[0].items.len(), 2);
         assert_eq!(q.video_tracks[0].items[1].duration, Tick(60));
@@ -253,8 +294,17 @@ mod tests {
     fn gaps_on_tracks_and_sequence() {
         let mut q = seq_with(vec![item(10, 10, 20, 0), item(11, 50, 10, 0)]);
         q.audio_tracks[0].items = vec![item(20, 0, 15, 0), item(21, 40, 15, 0)];
-        assert_eq!(track_gaps(&q.video_tracks[0]), vec![TimeRange::from_bounds(Tick(0), Tick(10)), TimeRange::from_bounds(Tick(30), Tick(50))]);
-        assert_eq!(sequence_gaps(&q), vec![TimeRange::from_bounds(Tick(30), Tick(40))]);
+        assert_eq!(
+            track_gaps(&q.video_tracks[0]),
+            vec![
+                TimeRange::from_bounds(Tick(0), Tick(10)),
+                TimeRange::from_bounds(Tick(30), Tick(50))
+            ]
+        );
+        assert_eq!(
+            sequence_gaps(&q),
+            vec![TimeRange::from_bounds(Tick(30), Tick(40))]
+        );
         assert_eq!(q.audio_tracks[0].kind, TrackKind::Audio);
     }
 
@@ -262,7 +312,10 @@ mod tests {
     fn clip_to_range_keeps_frames_in_place() {
         let it = item(10, 100, 100, 1000);
         let c = clip_item_to(&it, TimeRange::from_bounds(Tick(120), Tick(150))).unwrap();
-        assert_eq!((c.start, c.duration, c.source_in), (Tick(120), Tick(30), Tick(1020)));
+        assert_eq!(
+            (c.start, c.duration, c.source_in),
+            (Tick(120), Tick(30), Tick(1020))
+        );
         assert_eq!(c.source_time_at(Tick(130)), it.source_time_at(Tick(130)));
         let mut r = it.clone();
         r.reverse = true;

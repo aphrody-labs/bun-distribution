@@ -21,12 +21,13 @@ pub enum ViewAs {
     AnotherUser,
 }
 
-
 impl_enum_display_and_debug_using_to_str!(ViewAs);
 impl_mysql_from_row!(ViewAs);
 
 impl Default for ViewAs {
-    fn default() -> Self { Self::AnotherUser }
+    fn default() -> Self {
+        Self::AnotherUser
+    }
 }
 
 /// NB: Legacy API for older code.
@@ -51,13 +52,12 @@ impl ViewAs {
 
 #[cfg(test)]
 mod tests {
-  use crate::common::view_as::ViewAs;
-  use crate::test_helpers::assert_serialization;
+    use crate::common::view_as::ViewAs;
+    use crate::test_helpers::assert_serialization;
 
-  #[test]
+    #[test]
     fn test_default() {
         assert_eq!(ViewAs::default(), ViewAs::AnotherUser);
-
     }
 
     #[test]
@@ -78,14 +78,17 @@ mod tests {
     fn test_from_str() {
         assert_eq!(ViewAs::from_str("author").unwrap(), ViewAs::Author);
         assert_eq!(ViewAs::from_str("moderator").unwrap(), ViewAs::Moderator);
-        assert_eq!(ViewAs::from_str("another_user").unwrap(), ViewAs::AnotherUser);
+        assert_eq!(
+            ViewAs::from_str("another_user").unwrap(),
+            ViewAs::AnotherUser
+        );
         assert!(ViewAs::from_str("foo").is_err());
     }
 
     mod traits {
-      use crate::common::view_as::ViewAs;
+        use crate::common::view_as::ViewAs;
 
-      #[test]
+        #[test]
         fn display() {
             let view_as = ViewAs::Moderator;
             assert_eq!(format!("{}", view_as), "moderator".to_string());
@@ -105,11 +108,11 @@ mod tests {
     }
 
     mod serde_serialization {
-      use crate::common::view_as::ViewAs;
+        use crate::common::view_as::ViewAs;
 
-      use super::CompositeType;
+        use super::CompositeType;
 
-      #[test]
+        #[test]
         fn serialize() {
             let expected = "\"author\"".to_string(); // NB: Quoted
 
@@ -121,18 +124,21 @@ mod tests {
 
         #[test]
         fn nested_serialize() {
-            let value = CompositeType { view_as: ViewAs::Moderator, string: "bar".to_string() };
+            let value = CompositeType {
+                view_as: ViewAs::Moderator,
+                string: "bar".to_string(),
+            };
             let expected = r#"{"view_as":"moderator","string":"bar"}"#.to_string();
             assert_eq!(expected, serde_json::to_string(&value).unwrap());
         }
     }
 
     mod serde_deserialization {
-      use crate::common::view_as::ViewAs;
+        use crate::common::view_as::ViewAs;
 
-      use super::CompositeType;
+        use super::CompositeType;
 
-      #[test]
+        #[test]
         fn deserialize() {
             let payload = "\"another_user\""; // NB: Quoted
             let value: ViewAs = serde_json::from_str(payload).unwrap();
@@ -147,7 +153,10 @@ mod tests {
                 string: "bar".to_string(),
             };
 
-            assert_eq!(expected, serde_json::from_str::<CompositeType>(&payload).unwrap());
+            assert_eq!(
+                expected,
+                serde_json::from_str::<CompositeType>(&payload).unwrap()
+            );
         }
     }
 }

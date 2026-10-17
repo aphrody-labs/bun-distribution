@@ -40,8 +40,9 @@ pub fn default(model: Model) -> BoxedByteSlice {
 
     firmware.write_le(0x28, 0xFFFF_u16);
 
-    for (i, user_settings_bounds) in
-        [(len - 0x200, len - 0x100), (len - 0x100, len)].into_iter().enumerate()
+    for (i, user_settings_bounds) in [(len - 0x200, len - 0x100), (len - 0x100, len)]
+        .into_iter()
+        .enumerate()
     {
         let user_settings = &mut firmware[user_settings_bounds.0..user_settings_bounds.1];
 
@@ -71,7 +72,11 @@ pub fn default(model: Model) -> BoxedByteSlice {
 
         user_settings.write_le(
             0x64,
-            if matches!(model, Model::Ds | Model::Ique) { 0xFC01_u16 } else { 0xFC11 },
+            if matches!(model, Model::Ds | Model::Ique) {
+                0xFC01_u16
+            } else {
+                0xFC11
+            },
         );
         user_settings[0x66] = 6;
         user_settings[0x67] = 0x7F;

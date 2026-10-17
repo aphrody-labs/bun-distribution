@@ -16,7 +16,9 @@ pub struct AccountUserSettings {
 }
 
 impl Default for AccountUserSettings {
-    fn default() -> Self { Self { data: [0; 0x40] } }
+    fn default() -> Self {
+        Self { data: [0; 0x40] }
+    }
 }
 
 const _: () = assert!(std::mem::size_of::<AccountUserSettings>() == 0x40);

@@ -7,16 +7,19 @@ use crate::generate::generate_video::providers::artcraft::request_common::send_a
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftSeedance2p5UltraRequestState {
-  pub request: OmniGenVideoCostAndGenerateRequest,
+    pub request: OmniGenVideoCostAndGenerateRequest,
 
-  /// Calculation-only: total seconds of reference video input, billed on top
-  /// of the output duration when reference videos are attached. Not part of
-  /// the omni request wire shape.
-  pub total_input_seconds: Option<u16>,
+    /// Calculation-only: total seconds of reference video input, billed on top
+    /// of the output duration when reference videos are attached. Not part of
+    /// the omni request wire shape.
+    pub total_input_seconds: Option<u16>,
 }
 
 impl ArtcraftSeedance2p5UltraRequestState {
-  pub async fn send(&self, client: &RouterArtcraftClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-    send_artcraft_omni_video_request(&self.request, client).await
-  }
+    pub async fn send(
+        &self,
+        client: &RouterArtcraftClient,
+    ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+        send_artcraft_omni_video_request(&self.request, client).await
+    }
 }

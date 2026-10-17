@@ -1,12 +1,26 @@
 use std::time::Instant;
 fn main() {
-    let t: usize = std::env::args().nth(1).map(|s| s.parse().unwrap()).unwrap_or(512);
-    let threads: usize = std::env::args().nth(2).map(|s| s.parse().unwrap()).unwrap_or(1);
+    let t: usize = std::env::args()
+        .nth(1)
+        .map(|s| s.parse().unwrap())
+        .unwrap_or(512);
+    let threads: usize = std::env::args()
+        .nth(2)
+        .map(|s| s.parse().unwrap())
+        .unwrap_or(1);
     let (inp, out) = (384usize, 1536usize);
-    let x: Vec<f32> = (0..t * inp).map(|i| ((i * 7919) % 1000) as f32 / 1000.0 - 0.5).collect();
-    let w: Vec<f32> = (0..out * inp).map(|i| ((i * 104729) % 1000) as f32 / 1000.0 - 0.5).collect();
+    let x: Vec<f32> = (0..t * inp)
+        .map(|i| ((i * 7919) % 1000) as f32 / 1000.0 - 0.5)
+        .collect();
+    let w: Vec<f32> = (0..out * inp)
+        .map(|i| ((i * 104729) % 1000) as f32 / 1000.0 - 0.5)
+        .collect();
     let mut y = vec![0f32; t * out];
-    let par = if threads > 1 { gemm::Parallelism::Rayon(threads) } else { gemm::Parallelism::None };
+    let par = if threads > 1 {
+        gemm::Parallelism::Rayon(threads)
+    } else {
+        gemm::Parallelism::None
+    };
     for _ in 0..3 {
         unsafe {
             gemm::gemm(

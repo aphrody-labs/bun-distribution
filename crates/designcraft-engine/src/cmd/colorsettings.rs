@@ -21,7 +21,8 @@ fn set(p: &Value) -> Result<Value> {
         st.cmyk = v.to_string();
     }
     if let Some(v) = str_param(p, "intent") {
-        st.intent = Intent::parse(v).ok_or_else(|| bad("color.settings", format!("unknown intent `{v}`")))?;
+        st.intent = Intent::parse(v)
+            .ok_or_else(|| bad("color.settings", format!("unknown intent `{v}`")))?;
     }
     if let Some(v) = p.get("bpc").and_then(Value::as_bool) {
         st.bpc = v;
@@ -87,15 +88,36 @@ mod tests {
         let cyan = json!({"color": {"model": "cmyk", "c": 1.0, "m": 0.0, "y": 0.0, "k": 0.0}, "to": "rgb"});
         let rgb = s.execute("color.convert", &cyan).unwrap();
         assert_eq!(rgb["model"], "rgb");
-        assert!(rgb["r"].as_f64().unwrap() < 0.3 && rgb["b"].as_f64().unwrap() > 0.7, "{rgb}");
-        let lab = s.execute("color.convert", &json!({"color": {"model": "rgb", "r": 0.0, "g": 1.0, "b": 0.0}, "to": "lab"})).unwrap();
-        assert_eq!(lab["outOfGamut"], true, "pure RGB green is outside the press gamut");
+        assert!(
+            rgb["r"].as_f64().unwrap() < 0.3 && rgb["b"].as_f64().unwrap() > 0.7,
+            "{rgb}"
+        );
+        let lab = s
+            .execute(
+                "color.convert",
+                &json!({"color": {"model": "rgb", "r": 0.0, "g": 1.0, "b": 0.0}, "to": "lab"}),
+            )
+            .unwrap();
+        assert_eq!(
+            lab["outOfGamut"], true,
+            "pure RGB green is outside the press gamut"
+        );
         let again = s
             .execute("color.settings", &json!({"rgb": before["rgb"], "cmyk": before["cmyk"], "intent": before["intent"], "bpc": before["bpc"]}))
             .unwrap();
         assert_eq!(again["cmyk"], before["cmyk"]);
-        assert!(s.execute("color.settings", &json!({"cmyk": "Nope"})).is_err());
-        assert!(s.execute("color.settings", &json!({"intent": "sideways"})).is_err());
-        assert_eq!(s.execute("color.settings", &json!({})).unwrap()["cmyk"], before["cmyk"], "a failed change leaves the settings");
+        assert!(
+            s.execute("color.settings", &json!({"cmyk": "Nope"}))
+                .is_err()
+        );
+        assert!(
+            s.execute("color.settings", &json!({"intent": "sideways"}))
+                .is_err()
+        );
+        assert_eq!(
+            s.execute("color.settings", &json!({})).unwrap()["cmyk"],
+            before["cmyk"],
+            "a failed change leaves the settings"
+        );
     }
 }

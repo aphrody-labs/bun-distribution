@@ -123,97 +123,100 @@ pub fn run(
     let total_cpks = cpk_groups.len();
     eprintln!("predecode {total_cpks} CPK distincts");
 
-    cpk_groups.into_par_iter().for_each(|(cpk_name, sprite_paths)| {
-        let cpk_path = packs_dir.join(&cpk_name);
-        let cpk_data = match std::fs::read(&cpk_path) {
-            Ok(d) => d,
-            Err(e) => {
-                eprintln!("error: lecture CPK {cpk_name}: {e}");
-                failed.fetch_add(sprite_paths.len() as u32, Ordering::Relaxed);
-                return;
-            },
-        };
+    cpk_groups
+        .into_par_iter()
+        .for_each(|(cpk_name, sprite_paths)| {
+            let cpk_path = packs_dir.join(&cpk_name);
+            let cpk_data = match std::fs::read(&cpk_path) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("error: lecture CPK {cpk_name}: {e}");
+                    failed.fetch_add(sprite_paths.len() as u32, Ordering::Relaxed);
+                    return;
+                }
+            };
 
-        let reader = match CpkReader::new(&cpk_data, &cpk_name) {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("error: parse CPK {cpk_name}: {e}");
-                failed.fetch_add(sprite_paths.len() as u32, Ordering::Relaxed);
-                return;
-            },
-        };
+            let reader = match CpkReader::new(&cpk_data, &cpk_name) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("error: parse CPK {cpk_name}: {e}");
+                    failed.fetch_add(sprite_paths.len() as u32, Ordering::Relaxed);
+                    return;
+                }
+            };
 
-        // Index par chemin logique (directory + "/" + filename).
-        let entry_map: HashMap<String, usize> = reader
-            .entries
-            .iter()
-            .enumerate()
-            .map(|(i, e)| {
-                let logical = if e.directory.is_empty() {
-                    e.filename.clone()
-                } else {
-                    format!("{}/{}", e.directory, e.filename)
+            // Index par chemin logique (directory + "/" + filename).
+            let entry_map: HashMap<String, usize> = reader
+                .entries
+                .iter()
+                .enumerate()
+                .map(|(i, e)| {
+                    let logical = if e.directory.is_empty() {
+                        e.filename.clone()
+                    } else {
+                        format!("{}/{}", e.directory, e.filename)
+                    };
+                    (logical, i)
+                })
+                .collect();
+
+            for sprite_path in &sprite_paths {
+                // sprite_path = "dx11/menu/..."
+                let png_out =
+                    dump_root.join(format!("{}.png", sprite_path.trim_end_matches(".g4tx")));
+
+                // Idempotent : skip si le PNG existe et est non-vide.
+                if png_out.exists() {
+                    let meta = std::fs::metadata(&png_out).ok();
+                    if meta.is_some_and(|m| m.len() > 0) {
+                        skipped.fetch_add(1, Ordering::Relaxed);
+                        continue;
+                    }
+                }
+
+                // Rechercher l'entrée dans le CPK.
+                // Le chemin dans le CPK est "data/<sprite_path>".
+                let cpk_inner = format!("data/{sprite_path}");
+                let entry_idx = entry_map.get(&cpk_inner).copied().or_else(|| {
+                    // Fallback : juste le chemin sans "data/"
+                    entry_map.get(sprite_path).copied()
+                });
+
+                let entry_idx = match entry_idx {
+                    Some(i) => i,
+                    None => {
+                        eprintln!("warn: entrée introuvable dans CPK {cpk_name}: {cpk_inner}");
+                        failed.fetch_add(1, Ordering::Relaxed);
+                        continue;
+                    }
                 };
-                (logical, i)
-            })
-            .collect();
 
-        for sprite_path in &sprite_paths {
-            // sprite_path = "dx11/menu/..."
-            let png_out = dump_root.join(format!("{}.png", sprite_path.trim_end_matches(".g4tx")));
+                let entry = &reader.entries[entry_idx];
+                let g4tx_bytes = match reader.extract(&cpk_data, entry) {
+                    Ok(b) => b,
+                    Err(e) => {
+                        eprintln!("error: extraction {sprite_path}: {e}");
+                        failed.fetch_add(1, Ordering::Relaxed);
+                        continue;
+                    }
+                };
 
-            // Idempotent : skip si le PNG existe et est non-vide.
-            if png_out.exists() {
-                let meta = std::fs::metadata(&png_out).ok();
-                if meta.is_some_and(|m| m.len() > 0) {
-                    skipped.fetch_add(1, Ordering::Relaxed);
-                    continue;
+                match g4tx_to_png(&g4tx_bytes, sprite_path) {
+                    Ok(png_bytes) => {
+                        if let Err(e) = write_png(&png_out, &png_bytes) {
+                            eprintln!("error: écriture PNG {}: {e}", png_out.display());
+                            failed.fetch_add(1, Ordering::Relaxed);
+                        } else {
+                            decoded.fetch_add(1, Ordering::Relaxed);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("error: décodage {sprite_path}: {e}");
+                        failed.fetch_add(1, Ordering::Relaxed);
+                    }
                 }
             }
-
-            // Rechercher l'entrée dans le CPK.
-            // Le chemin dans le CPK est "data/<sprite_path>".
-            let cpk_inner = format!("data/{sprite_path}");
-            let entry_idx = entry_map.get(&cpk_inner).copied().or_else(|| {
-                // Fallback : juste le chemin sans "data/"
-                entry_map.get(sprite_path).copied()
-            });
-
-            let entry_idx = match entry_idx {
-                Some(i) => i,
-                None => {
-                    eprintln!("warn: entrée introuvable dans CPK {cpk_name}: {cpk_inner}");
-                    failed.fetch_add(1, Ordering::Relaxed);
-                    continue;
-                },
-            };
-
-            let entry = &reader.entries[entry_idx];
-            let g4tx_bytes = match reader.extract(&cpk_data, entry) {
-                Ok(b) => b,
-                Err(e) => {
-                    eprintln!("error: extraction {sprite_path}: {e}");
-                    failed.fetch_add(1, Ordering::Relaxed);
-                    continue;
-                },
-            };
-
-            match g4tx_to_png(&g4tx_bytes, sprite_path) {
-                Ok(png_bytes) => {
-                    if let Err(e) = write_png(&png_out, &png_bytes) {
-                        eprintln!("error: écriture PNG {}: {e}", png_out.display());
-                        failed.fetch_add(1, Ordering::Relaxed);
-                    } else {
-                        decoded.fetch_add(1, Ordering::Relaxed);
-                    }
-                },
-                Err(e) => {
-                    eprintln!("error: décodage {sprite_path}: {e}");
-                    failed.fetch_add(1, Ordering::Relaxed);
-                },
-            }
-        }
-    });
+        });
 
     Ok(PredecodeStats {
         decoded: decoded.load(Ordering::Relaxed),
@@ -238,14 +241,16 @@ fn g4tx_to_png(data: &[u8], debug_path: &str) -> anyhow::Result<Vec<u8>> {
         .first()
         .ok_or_else(|| anyhow::anyhow!("g4tx vide (aucune texture) : {debug_path}"))?;
 
-    let payload = data.get(tex.data_offset..tex.data_offset + tex.data_size).ok_or_else(|| {
-        anyhow::anyhow!(
-            "payload DDS hors limites offset={} size={} total={} : {debug_path}",
-            tex.data_offset,
-            tex.data_size,
-            data.len()
-        )
-    })?;
+    let payload = data
+        .get(tex.data_offset..tex.data_offset + tex.data_size)
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "payload DDS hors limites offset={} size={} total={} : {debug_path}",
+                tex.data_offset,
+                tex.data_size,
+                data.len()
+            )
+        })?;
 
     // Décode le DDS en RgbaImage via image_dds.
     let dds = Dds::read(Cursor::new(payload)).with_context(|| format!("parse DDS {debug_path}"))?;

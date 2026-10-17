@@ -141,8 +141,10 @@ fn build_pe64(target_len: usize, section_count: usize) -> Vec<u8> {
 
     // Distribute the remaining bytes across the sections, each file-aligned.
     let body_budget = target_len.saturating_sub(size_of_headers);
-    let per_section_raw =
-        align_up((body_budget / section_count).max(FILE_ALIGNMENT), FILE_ALIGNMENT);
+    let per_section_raw = align_up(
+        (body_budget / section_count).max(FILE_ALIGNMENT),
+        FILE_ALIGNMENT,
+    );
 
     let total_len = size_of_headers + per_section_raw * section_count;
     let mut img = vec![0u8; total_len];
@@ -208,7 +210,7 @@ fn build_pe64(target_len: usize, section_count: usize) -> Vec<u8> {
                 n[2] = b'0' + ((i / 10) % 10) as u8;
                 n[3] = b'0' + (i % 10) as u8;
                 n
-            },
+            }
         };
         img[ent..ent + 8].copy_from_slice(&name);
 

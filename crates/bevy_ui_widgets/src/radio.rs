@@ -10,8 +10,8 @@ use bevy_ecs::{
     reflect::ReflectComponent,
     system::{Commands, Query},
 };
-use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input::ButtonState;
+use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input_focus::FocusedInput;
 use bevy_picking::events::{
     PointerCancel, PointerClick, PointerDragEnd, PointerPress, PointerRelease,
@@ -373,7 +373,7 @@ mod tests {
     use super::*;
     use bevy_app::App;
     use bevy_input::InputPlugin;
-    use bevy_input_focus::{tab_navigation::TabNavigationPlugin, InputFocusPlugin};
+    use bevy_input_focus::{InputFocusPlugin, tab_navigation::TabNavigationPlugin};
     use bevy_math::Vec2;
     use bevy_picking::backend::HitData;
     use bevy_picking::events::Pointer;

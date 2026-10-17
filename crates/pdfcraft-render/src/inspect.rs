@@ -15,7 +15,8 @@ use hayro::hayro_syntax::LoadPdfError;
 use hayro::hayro_syntax::Pdf;
 use lopdf::{Dictionary, Document, LoadOptions, Object, ObjectId};
 use pdfcraft_cos::page_labels::{
-    MAX_LABEL_BYTES, MAX_LABEL_TOTAL_BYTES, MAX_LABEL_TREE_DEPTH, MAX_LABEL_TREE_WORK, MAX_PREFIX_BYTES, MAX_PREFIX_TOTAL_BYTES, alpha, roman,
+    MAX_LABEL_BYTES, MAX_LABEL_TOTAL_BYTES, MAX_LABEL_TREE_DEPTH, MAX_LABEL_TREE_WORK,
+    MAX_PREFIX_BYTES, MAX_PREFIX_TOTAL_BYTES, alpha, roman,
 };
 
 use crate::OpenError;
@@ -44,7 +45,11 @@ const OUTLINE_WINDOW: usize = 10_000;
 const OUTLINE_DEPTH: usize = 32;
 
 fn load_options(password: Option<&str>) -> LoadOptions {
-    LoadOptions { password: password.map(str::to_owned), max_decompressed_size: Some(LOAD_STREAM_LIMIT), ..LoadOptions::default() }
+    LoadOptions {
+        password: password.map(str::to_owned),
+        max_decompressed_size: Some(LOAD_STREAM_LIMIT),
+        ..LoadOptions::default()
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -120,7 +125,10 @@ impl PageInfo {
     /// PDF user space → view space (the inverse of [`Self::view_to_user`]).
     pub fn user_to_view(&self, x: f32, y: f32) -> [f32; 2] {
         let [cx0, cy0, cx1, cy1] = self.crop;
-        let (u, v) = ((x - cx0) / (cx1 - cx0).max(1e-3), (cy1 - y) / (cy1 - cy0).max(1e-3));
+        let (u, v) = (
+            (x - cx0) / (cx1 - cx0).max(1e-3),
+            (cy1 - y) / (cy1 - cy0).max(1e-3),
+        );
         let (a, b) = match self.rotation {
             90 => (1.0 - v, u),
             180 => (1.0 - u, 1.0 - v),
@@ -136,9 +144,20 @@ impl PageInfo {
     /// turned a quarter, the user `x` decides the displayed `y` and vice versa, so each output
     /// is `None` when the input it comes from is (or is not finite). Points off the page are
     /// clamped to its edge.
-    pub fn dest_fraction(&self, x: Option<f32>, y: Option<f32>, view_rotation: u16) -> [Option<f32>; 2] {
+    pub fn dest_fraction(
+        &self,
+        x: Option<f32>,
+        y: Option<f32>,
+        view_rotation: u16,
+    ) -> [Option<f32>; 2] {
         let [cx0, cy0, cx1, cy1] = self.crop;
-        let frac = |v: f32| if v.is_finite() { Some(v.clamp(0.0, 1.0)) } else { None };
+        let frac = |v: f32| {
+            if v.is_finite() {
+                Some(v.clamp(0.0, 1.0))
+            } else {
+                None
+            }
+        };
         // Unrotated fractions across (u, from the crop's left) and down (v, from its top).
         let u = x.and_then(|x| frac((x - cx0) / (cx1 - cx0).max(1e-3)));
         let v = y.and_then(|y| frac((cy1 - y) / (cy1 - cy0).max(1e-3)));
@@ -156,14 +175,22 @@ impl PageInfo {
     /// so a view rectangle's top-left is not in general the user rectangle's `[x0, y1]`.
     pub fn view_rect_to_user(&self, r: [f32; 4]) -> [f32; 4] {
         let (a, b) = (self.view_to_user(r[0], r[1]), self.view_to_user(r[2], r[3]));
-        [a[0].min(b[0]), a[1].min(b[1]), a[0].max(b[0]), a[1].max(b[1])]
+        [
+            a[0].min(b[0]),
+            a[1].min(b[1]),
+            a[0].max(b[0]),
+            a[1].max(b[1]),
+        ]
     }
 
     /// A view-space rectangle as a text-markup quad in user space: top-left, top-right,
     /// bottom-left, bottom-right as read on screen.
     pub fn view_rect_to_quad(&self, r: [f32; 4]) -> [f64; 8] {
         let mut q = [0.0; 8];
-        for (i, (x, y)) in [(r[0], r[1]), (r[2], r[1]), (r[0], r[3]), (r[2], r[3])].into_iter().enumerate() {
+        for (i, (x, y)) in [(r[0], r[1]), (r[2], r[1]), (r[0], r[3]), (r[2], r[3])]
+            .into_iter()
+            .enumerate()
+        {
             let [ux, uy] = self.view_to_user(x, y);
             q[2 * i] = ux as f64;
             q[2 * i + 1] = uy as f64;
@@ -229,7 +256,11 @@ pub enum DestView {
     Top,
     /// `/XYZ left top zoom`: the point (left, top) at the window's upper-left corner, at `zoom`
     /// (1.0 = 100%; 0 or null keeps the current zoom).
-    Xyz { left: Option<f32>, top: Option<f32>, zoom: Option<f32> },
+    Xyz {
+        left: Option<f32>,
+        top: Option<f32>,
+        zoom: Option<f32>,
+    },
     /// `/Fit`, and `/FitB` (fit the page's content box; read as the whole page).
     Fit,
     /// `/FitH top`, and `/FitBH`: fit the width, with `top` at the window's top edge.
@@ -248,12 +279,18 @@ impl DestView {
     pub fn from_operands(kind: Option<&[u8]>, operands: &[Option<f32>]) -> Self {
         let n = |i: usize| operands.get(i).copied().flatten().filter(|v| v.is_finite());
         match kind {
-            Some(b"XYZ") => Self::Xyz { left: n(0), top: n(1), zoom: n(2).filter(|z| *z > 0.0) },
+            Some(b"XYZ") => Self::Xyz {
+                left: n(0),
+                top: n(1),
+                zoom: n(2).filter(|z| *z > 0.0),
+            },
             Some(b"Fit" | b"FitB") => Self::Fit,
             Some(b"FitH" | b"FitBH") => Self::FitH { top: n(0) },
             Some(b"FitV" | b"FitBV") => Self::FitV { left: n(0) },
             Some(b"FitR") => match (n(0), n(1), n(2), n(3)) {
-                (Some(x0), Some(y0), Some(x1), Some(y1)) => Self::FitR { rect: [x0.min(x1), y0.min(y1), x0.max(x1), y0.max(y1)] },
+                (Some(x0), Some(y0), Some(x1), Some(y1)) => Self::FitR {
+                    rect: [x0.min(x1), y0.min(y1), x0.max(x1), y0.max(y1)],
+                },
                 _ => Self::Top,
             },
             _ => Self::Top,
@@ -371,24 +408,45 @@ pub struct FontInfo {
 /// count matches. Content-only edits skip the full [`inspect`] (seconds on very large files)
 /// but must still catch an edit that produced something the viewer cannot display, so the
 /// caller can roll it back. Never panics: parser crashes are caught and reported.
-pub fn check_pages(bytes: Arc<Vec<u8>>, password: Option<&str>, expected: usize) -> Result<(), OpenError> {
-    let pdf = catch_unwind(AssertUnwindSafe(|| Pdf::new_with_password(bytes, password.unwrap_or(""))))
-        .map_err(|p| OpenError::Invalid(format!("the parser crashed: {}", crate::raster::panic_message(&p))))?
-        .map_err(|e| match e {
-            LoadPdfError::Decryption(DecryptionError::PasswordProtected) => {
-                if password.is_some() {
-                    OpenError::WrongPassword
-                } else {
-                    OpenError::NeedsPassword
-                }
+pub fn check_pages(
+    bytes: Arc<Vec<u8>>,
+    password: Option<&str>,
+    expected: usize,
+) -> Result<(), OpenError> {
+    let pdf = catch_unwind(AssertUnwindSafe(|| {
+        Pdf::new_with_password(bytes, password.unwrap_or(""))
+    }))
+    .map_err(|p| {
+        OpenError::Invalid(format!(
+            "the parser crashed: {}",
+            crate::raster::panic_message(&p)
+        ))
+    })?
+    .map_err(|e| match e {
+        LoadPdfError::Decryption(DecryptionError::PasswordProtected) => {
+            if password.is_some() {
+                OpenError::WrongPassword
+            } else {
+                OpenError::NeedsPassword
             }
-            LoadPdfError::Decryption(other) => OpenError::Unsupported(format!("encryption not supported: {other:?}")),
-            LoadPdfError::Invalid => OpenError::Invalid("no readable page tree or cross-reference data was found".into()),
-        })?;
-    let pages = catch_unwind(AssertUnwindSafe(|| pdf.pages().len()))
-        .map_err(|p| OpenError::Invalid(format!("the page tree could not be read: {}", crate::raster::panic_message(&p))))?;
+        }
+        LoadPdfError::Decryption(other) => {
+            OpenError::Unsupported(format!("encryption not supported: {other:?}"))
+        }
+        LoadPdfError::Invalid => {
+            OpenError::Invalid("no readable page tree or cross-reference data was found".into())
+        }
+    })?;
+    let pages = catch_unwind(AssertUnwindSafe(|| pdf.pages().len())).map_err(|p| {
+        OpenError::Invalid(format!(
+            "the page tree could not be read: {}",
+            crate::raster::panic_message(&p)
+        ))
+    })?;
     if pages != expected {
-        return Err(OpenError::Invalid(format!("the edit changed the page count from {expected} to {pages}")));
+        return Err(OpenError::Invalid(format!(
+            "the edit changed the page count from {expected} to {pages}"
+        )));
     }
     Ok(())
 }
@@ -396,20 +454,35 @@ pub fn check_pages(bytes: Arc<Vec<u8>>, password: Option<&str>, expected: usize)
 /// Inspect a document. Fails only if the renderer itself cannot open the file (or needs a
 /// password). Never panics: parser crashes are caught and reported.
 pub fn inspect(bytes: Arc<Vec<u8>>, password: Option<&str>) -> Result<DocInfo, OpenError> {
-    let pdf = catch_unwind(AssertUnwindSafe(|| Pdf::new_with_password(bytes.clone(), password.unwrap_or(""))))
-        .map_err(|p| OpenError::Invalid(format!("the parser crashed: {}", crate::raster::panic_message(&p))))?
-        .map_err(|e| match e {
-            LoadPdfError::Decryption(DecryptionError::PasswordProtected) => {
-                if password.is_some() {
-                    OpenError::WrongPassword
-                } else {
-                    OpenError::NeedsPassword
-                }
+    let pdf = catch_unwind(AssertUnwindSafe(|| {
+        Pdf::new_with_password(bytes.clone(), password.unwrap_or(""))
+    }))
+    .map_err(|p| {
+        OpenError::Invalid(format!(
+            "the parser crashed: {}",
+            crate::raster::panic_message(&p)
+        ))
+    })?
+    .map_err(|e| match e {
+        LoadPdfError::Decryption(DecryptionError::PasswordProtected) => {
+            if password.is_some() {
+                OpenError::WrongPassword
+            } else {
+                OpenError::NeedsPassword
             }
-            LoadPdfError::Decryption(other) => OpenError::Unsupported(format!("encryption not supported: {other:?}")),
-            LoadPdfError::Invalid => OpenError::Invalid("no readable page tree or cross-reference data was found".into()),
-        })?;
-    let mut info = DocInfo { file_size: bytes.len(), pdf_version: version_label(&format!("{:?}", pdf.version())), ..Default::default() };
+        }
+        LoadPdfError::Decryption(other) => {
+            OpenError::Unsupported(format!("encryption not supported: {other:?}"))
+        }
+        LoadPdfError::Invalid => {
+            OpenError::Invalid("no readable page tree or cross-reference data was found".into())
+        }
+    })?;
+    let mut info = DocInfo {
+        file_size: bytes.len(),
+        pdf_version: version_label(&format!("{:?}", pdf.version())),
+        ..Default::default()
+    };
     let pages = catch_unwind(AssertUnwindSafe(|| {
         let mut out = Vec::new();
         for (i, page) in pdf.pages().iter().enumerate() {
@@ -423,14 +496,29 @@ pub fn inspect(bytes: Arc<Vec<u8>>, password: Option<&str>) -> Result<DocInfo, O
             };
             let crop = [c.x0 as f32, c.y0 as f32, c.x1 as f32, c.y1 as f32];
             // Degenerate boxes still get a usable placeholder size so layout never divides by zero.
-            let (w, h) = if w.is_finite() && h.is_finite() && w >= 1.0 && h >= 1.0 { (w, h) } else { (612.0, 792.0) };
-            out.push(PageInfo { width: w, height: h, label: (i + 1).to_string(), crop, rotation });
+            let (w, h) = if w.is_finite() && h.is_finite() && w >= 1.0 && h >= 1.0 {
+                (w, h)
+            } else {
+                (612.0, 792.0)
+            };
+            out.push(PageInfo {
+                width: w,
+                height: h,
+                label: (i + 1).to_string(),
+                crop,
+                rotation,
+            });
         }
         out
     }));
     match pages {
         Ok(p) => info.pages = p,
-        Err(p) => return Err(OpenError::Invalid(format!("the page tree could not be read: {}", crate::raster::panic_message(&p)))),
+        Err(p) => {
+            return Err(OpenError::Invalid(format!(
+                "the page tree could not be read: {}",
+                crate::raster::panic_message(&p)
+            )));
+        }
     }
     let options = load_options(password);
     // Geometry no longer needs the renderer parser. Do not overlap its allocations with
@@ -441,7 +529,10 @@ pub fn inspect(bytes: Arc<Vec<u8>>, password: Option<&str>) -> Result<DocInfo, O
         // page tree or an object a panel needs. No partial result is published.
         let lazy = catch_unwind(AssertUnwindSafe(|| {
             let doc = LazyStructure::new(bytes.clone(), password).ok()?;
-            let mut t = DocInfo { pages: tmp.pages.clone(), ..Default::default() };
+            let mut t = DocInfo {
+                pages: tmp.pages.clone(),
+                ..Default::default()
+            };
             let inspector = Inspector::new(&doc);
             if inspector.page_index.len() != t.pages.len() {
                 return None;
@@ -468,7 +559,10 @@ pub fn inspect(bytes: Arc<Vec<u8>>, password: Option<&str>) -> Result<DocInfo, O
 // Commit auxiliary metadata only after inspection succeeds; renderer geometry is the fallback.
 fn inspect_structure(info: &mut DocInfo, fill: impl FnOnce(&mut DocInfo) -> Result<(), String>) {
     let structure = catch_unwind(AssertUnwindSafe(|| {
-        let mut tmp = DocInfo { pages: info.pages.clone(), ..Default::default() };
+        let mut tmp = DocInfo {
+            pages: info.pages.clone(),
+            ..Default::default()
+        };
         fill(&mut tmp)?;
         Ok::<_, String>(tmp)
     }));
@@ -478,9 +572,14 @@ fn inspect_structure(info: &mut DocInfo, fill: impl FnOnce(&mut DocInfo) -> Resu
             filled.pdf_version = std::mem::take(&mut info.pdf_version);
             *info = filled;
         }
-        Ok(Err(e)) => info.warnings.push(format!("Some document structure (bookmarks, comments, fields) could not be read: {e}")),
+        Ok(Err(e)) => info.warnings.push(format!(
+            "Some document structure (bookmarks, comments, fields) could not be read: {e}"
+        )),
         Err(p) => {
-            info.warnings.push(format!("Document structure inspection crashed and was skipped: {}", crate::raster::panic_message(&p)));
+            info.warnings.push(format!(
+                "Document structure inspection crashed and was skipped: {}",
+                crate::raster::panic_message(&p)
+            ));
         }
     }
 }
@@ -497,11 +596,26 @@ struct Inspector<'a> {
 impl<'a> Inspector<'a> {
     fn new(doc: &'a dyn Structure) -> Self {
         let page_ids = doc.page_ids();
-        let page_index = page_ids.iter().copied().enumerate().map(|(index, id)| (id, index)).collect();
-        let mut me = Self { doc, page_ids, page_index, named: HashMap::new() };
+        let page_index = page_ids
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(index, id)| (id, index))
+            .collect();
+        let mut me = Self {
+            doc,
+            page_ids,
+            page_index,
+            named: HashMap::new(),
+        };
         let mut named = HashMap::new();
-        if let Some(tree) =
-            doc.catalog().ok().and_then(|c| c.get(b"Names").ok()).and_then(|o| me.dict(o)).and_then(|n| n.get(b"Dests").ok()).and_then(|o| me.dict(o))
+        if let Some(tree) = doc
+            .catalog()
+            .ok()
+            .and_then(|c| c.get(b"Names").ok())
+            .and_then(|o| me.dict(o))
+            .and_then(|n| n.get(b"Dests").ok())
+            .and_then(|o| me.dict(o))
         {
             me.name_tree_raw(tree, &mut HashSet::new(), 0, &mut named);
         }
@@ -512,7 +626,13 @@ impl<'a> Inspector<'a> {
     fn fill(&self, info: &mut DocInfo) {
         // lopdf drops /Encrypt from the trailer once it has decrypted the file.
         info.encrypted = self.doc.encrypted();
-        if let Some(d) = self.doc.trailer().get(b"Info").ok().and_then(|o| self.dict(o)) {
+        if let Some(d) = self
+            .doc
+            .trailer()
+            .get(b"Info")
+            .ok()
+            .and_then(|o| self.dict(o))
+        {
             info.title = self.text(d, b"Title");
             info.author = self.text(d, b"Author");
             info.subject = self.text(d, b"Subject");
@@ -520,7 +640,9 @@ impl<'a> Inspector<'a> {
             info.creator = self.text(d, b"Creator");
             info.producer = self.text(d, b"Producer");
         }
-        let Ok(catalog) = self.doc.catalog() else { return };
+        let Ok(catalog) = self.doc.catalog() else {
+            return;
+        };
         info.tagged = catalog
             .get(b"MarkInfo")
             .ok()
@@ -529,10 +651,21 @@ impl<'a> Inspector<'a> {
             .and_then(|o| o.as_bool().ok())
             .unwrap_or(false);
         match self.page_labels(catalog, &mut info.pages) {
-            Ok(notes) => info.warnings.extend(notes.into_iter().map(|note| format!("Page labels: {note}."))),
-            Err(reason) => info.warnings.push(format!("Page labels were skipped: {reason}; using physical page numbers.")),
+            Ok(notes) => info.warnings.extend(
+                notes
+                    .into_iter()
+                    .map(|note| format!("Page labels: {note}.")),
+            ),
+            Err(reason) => info.warnings.push(format!(
+                "Page labels were skipped: {reason}; using physical page numbers."
+            )),
         }
-        if let Some(first) = catalog.get(b"Outlines").ok().and_then(|o| self.dict(o)).and_then(|d| d.get(b"First").ok()) {
+        if let Some(first) = catalog
+            .get(b"Outlines")
+            .ok()
+            .and_then(|o| self.dict(o))
+            .and_then(|d| d.get(b"First").ok())
+        {
             (info.outline, info.outline_more) = self.outline_window(first);
         }
         self.annotations(info);
@@ -547,8 +680,13 @@ impl<'a> Inspector<'a> {
         // Widgets no `/Fields` entry reaches are fields too (Acrobat and the browsers fill them);
         // each is adopted through its topmost unlisted `/Parent`, so a split field stays one.
         for &pid in &self.page_ids {
-            let Ok(page_dict) = self.doc.get_dictionary(pid) else { continue };
-            let Ok(Object::Array(annots)) = page_dict.get(b"Annots").map(|o| self.resolve(o)) else { continue };
+            let Ok(page_dict) = self.doc.get_dictionary(pid) else {
+                continue;
+            };
+            let Ok(Object::Array(annots)) = page_dict.get(b"Annots").map(|o| self.resolve(o))
+            else {
+                continue;
+            };
             for a in annots {
                 let Some(d) = self.dict(a) else { continue };
                 if self.name(d, b"Subtype").as_deref() != Some("Widget")
@@ -559,14 +697,33 @@ impl<'a> Inspector<'a> {
                 if let Object::Reference(id) = a
                     && let Some(root) = self.unlisted_field(*id, &field_seen)
                 {
-                    self.field(&Object::Reference(root), None, &mut info.fields, &mut field_seen, 0);
+                    self.field(
+                        &Object::Reference(root),
+                        None,
+                        &mut info.fields,
+                        &mut field_seen,
+                        0,
+                    );
                 }
             }
         }
         info.has_javascript |= info.fields.iter().any(|f| f.has_actions);
-        let needs_rendering = catalog.get(b"NeedsRendering").ok().and_then(|o| self.resolve(o).as_bool().ok()).unwrap_or(false);
-        if catalog.get(b"AcroForm").ok().and_then(|o| self.dict(o)).is_some_and(|form| form.get(b"XFA").is_ok()) {
-            info.xfa = Some(if needs_rendering || info.fields.is_empty() { Xfa::Dynamic } else { Xfa::Static });
+        let needs_rendering = catalog
+            .get(b"NeedsRendering")
+            .ok()
+            .and_then(|o| self.resolve(o).as_bool().ok())
+            .unwrap_or(false);
+        if catalog
+            .get(b"AcroForm")
+            .ok()
+            .and_then(|o| self.dict(o))
+            .is_some_and(|form| form.get(b"XFA").is_ok())
+        {
+            info.xfa = Some(if needs_rendering || info.fields.is_empty() {
+                Xfa::Dynamic
+            } else {
+                Xfa::Static
+            });
         }
         self.layers(catalog, &mut info.layers);
         info.layer_groups = self.layer_groups(catalog);
@@ -575,7 +732,11 @@ impl<'a> Inspector<'a> {
             if let Some(ef) = names.get(b"EmbeddedFiles").ok().and_then(|o| self.dict(o)) {
                 let mut seen = HashSet::new();
                 for (name, spec) in self.name_tree(ef, &mut seen, 0) {
-                    info.attachments.push(self.attachment(name.clone(), spec, AttachmentSource::Document { key: name }));
+                    info.attachments.push(self.attachment(
+                        name.clone(),
+                        spec,
+                        AttachmentSource::Document { key: name },
+                    ));
                 }
             }
             info.has_javascript |= names.get(b"JavaScript").is_ok();
@@ -608,13 +769,21 @@ impl<'a> Inspector<'a> {
     }
 
     fn name(&self, d: &Dictionary, key: &[u8]) -> Option<String> {
-        self.resolve(d.get(key).ok()?).as_name().ok().map(|n| String::from_utf8_lossy(n).into_owned())
+        self.resolve(d.get(key).ok()?)
+            .as_name()
+            .ok()
+            .map(|n| String::from_utf8_lossy(n).into_owned())
     }
 
     /// Whether an annotation is a Fill & Sign mark. Keep in step with
     /// `pdfcraft_annot::is_fill_sign`, which the engine's comment list uses.
     fn is_fill_sign(&self, d: &Dictionary, subtype: &str) -> bool {
-        let yes = |key: &[u8]| matches!(d.get(key).map(|o| self.resolve(o)), Ok(Object::Boolean(true)));
+        let yes = |key: &[u8]| {
+            matches!(
+                d.get(key).map(|o| self.resolve(o)),
+                Ok(Object::Boolean(true))
+            )
+        };
         if yes(b"PCFillSign") {
             return true;
         }
@@ -650,12 +819,22 @@ impl<'a> Inspector<'a> {
         match self.resolve(dest) {
             Object::Array(a) => {
                 let page = a.first().and_then(|p| self.page_of(p))?;
-                let kind = a.get(1).map(|k| self.resolve(k)).and_then(|k| k.as_name().ok());
-                let operands: Vec<Option<f32>> = a.iter().skip(2).take(4).map(|o| self.resolve(o).as_float().ok()).collect();
+                let kind = a
+                    .get(1)
+                    .map(|k| self.resolve(k))
+                    .and_then(|k| k.as_name().ok());
+                let operands: Vec<Option<f32>> = a
+                    .iter()
+                    .skip(2)
+                    .take(4)
+                    .map(|o| self.resolve(o).as_float().ok())
+                    .collect();
                 Some((page, DestView::from_operands(kind, &operands)))
             }
             Object::Dictionary(d) => d.get(b"D").ok().and_then(|d| self.dest(d, depth + 1)),
-            Object::String(key, _) | Object::Name(key) => self.named_dest(key).and_then(|d| self.dest(d, depth + 1)),
+            Object::String(key, _) | Object::Name(key) => {
+                self.named_dest(key).and_then(|d| self.dest(d, depth + 1))
+            }
             _ => None,
         }
     }
@@ -666,11 +845,21 @@ impl<'a> Inspector<'a> {
             return Some(v);
         }
         // PDF 1.1 style /Dests dictionary.
-        catalog.get(b"Dests").ok().and_then(|o| self.dict(o)).and_then(|d| d.get(key).ok())
+        catalog
+            .get(b"Dests")
+            .ok()
+            .and_then(|o| self.dict(o))
+            .and_then(|d| d.get(key).ok())
     }
 
     /// A name tree's leaves keyed by their raw key bytes (first occurrence wins).
-    fn name_tree_raw(&self, node: &'a Dictionary, seen: &mut HashSet<*const Dictionary>, depth: u32, out: &mut HashMap<Vec<u8>, &'a Object>) {
+    fn name_tree_raw(
+        &self,
+        node: &'a Dictionary,
+        seen: &mut HashSet<*const Dictionary>,
+        depth: u32,
+        out: &mut HashMap<Vec<u8>, &'a Object>,
+    ) {
         if depth > 32 || !seen.insert(node as *const _) {
             return;
         }
@@ -695,7 +884,12 @@ impl<'a> Inspector<'a> {
         }
     }
 
-    fn name_tree(&self, node: &'a Dictionary, seen: &mut HashSet<*const Dictionary>, depth: u32) -> Vec<(String, &'a Object)> {
+    fn name_tree(
+        &self,
+        node: &'a Dictionary,
+        seen: &mut HashSet<*const Dictionary>,
+        depth: u32,
+    ) -> Vec<(String, &'a Object)> {
         let mut out = Vec::new();
         if depth > 32 || !seen.insert(node as *const _) {
             return out;
@@ -734,7 +928,9 @@ impl<'a> Inspector<'a> {
         let mut levels: Vec<Option<&'a Object>> = vec![Some(first)];
         let mut more = false;
         while let Some(depth) = levels.len().checked_sub(1) {
-            let Some(slot) = levels.get_mut(depth) else { break };
+            let Some(slot) = levels.get_mut(depth) else {
+                break;
+            };
             let Some(o) = slot.take() else {
                 levels.pop();
                 continue;
@@ -754,16 +950,35 @@ impl<'a> Inspector<'a> {
                 .get(b"Dest")
                 .ok()
                 .and_then(|dest| self.dest(dest, 0))
-                .or_else(|| d.get(b"A").ok().and_then(|a| self.dict(a)).and_then(|a| a.get(b"D").ok()).and_then(|dest| self.dest(dest, 0)));
+                .or_else(|| {
+                    d.get(b"A")
+                        .ok()
+                        .and_then(|a| self.dict(a))
+                        .and_then(|a| a.get(b"D").ok())
+                        .and_then(|dest| self.dest(dest, 0))
+                });
             let (page, view) = dest.map_or((None, DestView::Top), |(p, v)| (Some(p), v));
             match d.get(b"First").ok() {
                 Some(child) if depth < OUTLINE_DEPTH => levels.push(Some(child)),
                 Some(_) => more = true,
                 None => {}
             }
-            let open = d.get(b"Count").ok().and_then(|c| c.as_i64().ok()).is_some_and(|c| c > 0);
+            let open = d
+                .get(b"Count")
+                .ok()
+                .and_then(|c| c.as_i64().ok())
+                .is_some_and(|c| c > 0);
             let title = self.text(d, b"Title").unwrap_or_default();
-            listed.push((depth, OutlineItem { title, page, view, children: Vec::new(), open }));
+            listed.push((
+                depth,
+                OutlineItem {
+                    title,
+                    page,
+                    view,
+                    children: Vec::new(),
+                    open,
+                },
+            ));
         }
         (nest_outline(listed), more)
     }
@@ -771,7 +986,10 @@ impl<'a> Inspector<'a> {
     // ── page labels (ISO 32000-2 §12.4.2) ───────────────────────────────────────────────────
 
     fn label_object(&self, object: &'a Object) -> Result<&'a Object, &'static str> {
-        self.doc.dereference(object).map(|(_, o)| o).map_err(|_| "a number tree reference is missing or cyclic")
+        self.doc
+            .dereference(object)
+            .map(|(_, o)| o)
+            .map_err(|_| "a number tree reference is missing or cyclic")
     }
 
     fn label_dict(&self, object: &'a Object) -> Result<Option<&'a Dictionary>, &'static str> {
@@ -785,10 +1003,18 @@ impl<'a> Inspector<'a> {
     /// Apply `/PageLabels` to `pages`. `Err`: the tree is unusable and no label is applied.
     /// `Ok(notes)`: labels applied, with what was repaired on the way (a duplicated start page,
     /// a range whose labels are too long to show).
-    fn page_labels(&self, catalog: &Dictionary, pages: &mut [PageInfo]) -> Result<Vec<String>, &'static str> {
+    fn page_labels(
+        &self,
+        catalog: &Dictionary,
+        pages: &mut [PageInfo],
+    ) -> Result<Vec<String>, &'static str> {
         let mut notes = Vec::new();
-        let Ok(tree) = catalog.get(b"PageLabels") else { return Ok(notes) };
-        let Some(tree) = self.label_dict(tree)? else { return Ok(notes) };
+        let Ok(tree) = catalog.get(b"PageLabels") else {
+            return Ok(notes);
+        };
+        let Some(tree) = self.label_dict(tree)? else {
+            return Ok(notes);
+        };
         let mut ranges: BTreeMap<usize, &Dictionary> = BTreeMap::new();
         let mut stack = vec![(tree, 0usize)];
         let mut seen = HashSet::new();
@@ -807,12 +1033,16 @@ impl<'a> Inspector<'a> {
                 label_work(&mut left, nums.len().div_ceil(2))?;
                 for pair in nums.chunks(2) {
                     if let [k, v] = pair
-                        && let (Ok(start), Some(d)) = (self.label_object(k)?.as_i64(), self.label_dict(v)?)
+                        && let (Ok(start), Some(d)) =
+                            (self.label_object(k)?.as_i64(), self.label_dict(v)?)
                         && let Ok(start) = usize::try_from(start)
                         && ranges.insert(start, d).is_some()
                     {
                         // The later range wins, as in readers that overwrite.
-                        notes.push(format!("a range starts on page {} twice; the later one is used", start.saturating_add(1)));
+                        notes.push(format!(
+                            "a range starts on page {} twice; the later one is used",
+                            start.saturating_add(1)
+                        ));
                     }
                 }
             }
@@ -837,7 +1067,12 @@ impl<'a> Inspector<'a> {
         let mut specs = BTreeMap::new();
         let mut prefix_total = 0usize;
         for (start, d) in ranges {
-            let first = d.get(b"St").ok().and_then(|o| self.resolve(o).as_i64().ok()).unwrap_or(1).max(1) as u64;
+            let first = d
+                .get(b"St")
+                .ok()
+                .and_then(|o| self.resolve(o).as_i64().ok())
+                .unwrap_or(1)
+                .max(1) as u64;
             let prefix = match d.get(b"P").ok().map(|o| self.resolve(o)) {
                 Some(Object::String(raw, _) | Object::Name(raw)) => {
                     if raw.len() > MAX_PREFIX_BYTES {
@@ -855,13 +1090,18 @@ impl<'a> Inspector<'a> {
             if prefix_total > MAX_PREFIX_TOTAL_BYTES {
                 return Err("decoded prefixes exceed 4 MiB in total");
             }
-            let style = d.get(b"S").ok().and_then(|o| self.resolve(o).as_name().ok());
+            let style = d
+                .get(b"S")
+                .ok()
+                .and_then(|o| self.resolve(o).as_name().ok());
             specs.insert(start, (first, prefix, style));
         }
         let mut staged = Vec::new();
         let mut total = 0usize;
         for (i, _) in pages.iter().enumerate() {
-            let Some((&start, (first, prefix, style))) = specs.range(..=i).next_back() else { continue };
+            let Some((&start, (first, prefix, style))) = specs.range(..=i).next_back() else {
+                continue;
+            };
             let n = if matches!(*style, Some(b"D" | b"R" | b"r" | b"A" | b"a")) {
                 let offset = u64::try_from(i - start).map_err(|_| "a page number is too large")?;
                 first.checked_add(offset).ok_or("a page number overflows")?
@@ -895,7 +1135,9 @@ impl<'a> Inspector<'a> {
             if label.is_empty() {
                 continue; // Keep the existing physical number for an empty custom label.
             }
-            total = total.checked_add(label.len()).ok_or("the total label size overflows")?;
+            total = total
+                .checked_add(label.len())
+                .ok_or("the total label size overflows")?;
             if total > MAX_LABEL_TOTAL_BYTES {
                 return Err("custom labels exceed 4 MiB in total");
             }
@@ -914,16 +1156,29 @@ impl<'a> Inspector<'a> {
 
     fn annotations(&self, info: &mut DocInfo) {
         for (&id, &page) in &self.page_index {
-            let Ok(page_dict) = self.doc.get_dictionary(id) else { continue };
-            let Ok(Object::Array(annots)) = page_dict.get(b"Annots").map(|o| self.resolve(o)) else { continue };
+            let Ok(page_dict) = self.doc.get_dictionary(id) else {
+                continue;
+            };
+            let Ok(Object::Array(annots)) = page_dict.get(b"Annots").map(|o| self.resolve(o))
+            else {
+                continue;
+            };
             for (index, a) in annots.iter().enumerate() {
                 let Some(d) = self.dict(a) else { continue };
-                let Some(subtype) = self.name(d, b"Subtype") else { continue };
+                let Some(subtype) = self.name(d, b"Subtype") else {
+                    continue;
+                };
                 if subtype == "FileAttachment"
                     && let Ok(fs) = d.get(b"FS")
                 {
-                    let name = self.text(d, b"Contents").unwrap_or_else(|| "attachment".into());
-                    info.attachments.push(self.attachment(name, fs, AttachmentSource::Annotation { page, index }));
+                    let name = self
+                        .text(d, b"Contents")
+                        .unwrap_or_else(|| "attachment".into());
+                    info.attachments.push(self.attachment(
+                        name,
+                        fs,
+                        AttachmentSource::Annotation { page, index },
+                    ));
                 }
                 if subtype == "Link" {
                     if let Some(link) = self.link(page, index, d) {
@@ -937,8 +1192,18 @@ impl<'a> Inspector<'a> {
                 // Not comments: form widgets, pop-ups and non-markup annotations such as the
                 // Screen annotation that drives a LaTeX `animate` player (keep in step with
                 // `pdfcraft_annot::is_comment_subtype`).
-                if matches!(subtype.as_str(), "Widget" | "Popup" | "Screen" | "Movie" | "RichMedia" | "3D" | "PrinterMark" | "TrapNet" | "Watermark")
-                {
+                if matches!(
+                    subtype.as_str(),
+                    "Widget"
+                        | "Popup"
+                        | "Screen"
+                        | "Movie"
+                        | "RichMedia"
+                        | "3D"
+                        | "PrinterMark"
+                        | "TrapNet"
+                        | "Watermark"
+                ) {
                     continue;
                 }
                 let rect = rect4(self.resolve(d.get(b"Rect").unwrap_or(&Object::Null)));
@@ -968,7 +1233,11 @@ impl<'a> Inspector<'a> {
                     }
                     _ => Vec::new(),
                 };
-                let in_reply_to = d.get(b"IRT").ok().and_then(|o| self.dict(o)).and_then(|p| self.text(p, b"NM"));
+                let in_reply_to = d
+                    .get(b"IRT")
+                    .ok()
+                    .and_then(|o| self.dict(o))
+                    .and_then(|p| self.text(p, b"NM"));
                 let fill_sign = self.is_fill_sign(d, &subtype);
                 info.annotations.push(Annotation {
                     page,
@@ -976,7 +1245,9 @@ impl<'a> Inspector<'a> {
                     author: self.text(d, b"T"),
                     // Acrobat ends lines with CR, which the interface would draw as nothing (keep
                     // in step with `pdfcraft_annot::summaries`).
-                    contents: self.text(d, b"Contents").map(|s| s.replace("\r\n", "\n").replace('\r', "\n")),
+                    contents: self
+                        .text(d, b"Contents")
+                        .map(|s| s.replace("\r\n", "\n").replace('\r', "\n")),
                     modified: self.text(d, b"M").map(|m| pretty_date(&m)),
                     name: self.text(d, b"NM"),
                     in_reply_to,
@@ -985,13 +1256,20 @@ impl<'a> Inspector<'a> {
                     index,
                     state: self.text(d, b"State"),
                     quads,
-                    locked: d.get(b"F").ok().and_then(|f| self.resolve(f).as_i64().ok()).unwrap_or(0) & 128 != 0,
+                    locked: d
+                        .get(b"F")
+                        .ok()
+                        .and_then(|f| self.resolve(f).as_i64().ok())
+                        .unwrap_or(0)
+                        & 128
+                        != 0,
                     intent: self.name(d, b"IT"),
                     fill_sign,
                 });
             }
         }
-        info.annotations.sort_by(|a, b| a.page.cmp(&b.page).then(b.rect[3].total_cmp(&a.rect[3])));
+        info.annotations
+            .sort_by(|a, b| a.page.cmp(&b.page).then(b.rect[3].total_cmp(&a.rect[3])));
     }
 
     fn link(&self, page: usize, index: usize, d: &Dictionary) -> Option<Link> {
@@ -1006,16 +1284,26 @@ impl<'a> Inspector<'a> {
                     let (page, view) = self.dest(a.get(b"D").ok()?, 0)?;
                     LinkTarget::Page(page, view)
                 }
-                Some("URI") => {
-                    LinkTarget::Uri(a.get(b"URI").ok().and_then(|u| self.resolve(u).as_str().ok()).map(|b| String::from_utf8_lossy(b).into_owned())?)
-                }
+                Some("URI") => LinkTarget::Uri(
+                    a.get(b"URI")
+                        .ok()
+                        .and_then(|u| self.resolve(u).as_str().ok())
+                        .map(|b| String::from_utf8_lossy(b).into_owned())?,
+                ),
                 Some("SetOCGState") => self.layer_state(a),
-                Some("GoToR") => self.remote_go_to(a).unwrap_or_else(|| LinkTarget::Other("GoToR".into())),
+                Some("GoToR") => self
+                    .remote_go_to(a)
+                    .unwrap_or_else(|| LinkTarget::Other("GoToR".into())),
                 Some(other) => LinkTarget::Other(other.to_string()),
                 None => return None,
             }
         };
-        Some(Link { page, index, rect, target })
+        Some(Link {
+            page,
+            index,
+            rect,
+            target,
+        })
     }
 
     fn remote_go_to(&self, action: &Dictionary) -> Option<LinkTarget> {
@@ -1031,7 +1319,11 @@ impl<'a> Inspector<'a> {
                 spec.get(b"UF")
                     .ok()
                     .and_then(|o| self.pdf_text(o, MAX_REMOTE_FILE_SPEC_BYTES))
-                    .or_else(|| spec.get(b"F").ok().and_then(|o| self.pdf_text(o, MAX_REMOTE_FILE_SPEC_BYTES)))?
+                    .or_else(|| {
+                        spec.get(b"F")
+                            .ok()
+                            .and_then(|o| self.pdf_text(o, MAX_REMOTE_FILE_SPEC_BYTES))
+                    })?
             }
             _ => return None,
         };
@@ -1042,10 +1334,23 @@ impl<'a> Inspector<'a> {
             Err(_) => RemoteDestination::Default,
             Ok(o) => match self.resolve(o) {
                 Object::Array(items) => {
-                    let page = items.first().and_then(|o| self.resolve(o).as_i64().ok()).and_then(|n| usize::try_from(n).ok())?;
-                    let kind = items.get(1).map(|o| self.resolve(o)).and_then(|o| o.as_name().ok());
-                    let operands: [Option<f32>; 4] = std::array::from_fn(|i| items.get(i + 2).and_then(|o| self.resolve(o).as_float().ok()));
-                    RemoteDestination::Page { page, view: DestView::from_operands(kind, &operands) }
+                    let page = items
+                        .first()
+                        .and_then(|o| self.resolve(o).as_i64().ok())
+                        .and_then(|n| usize::try_from(n).ok())?;
+                    let kind = items
+                        .get(1)
+                        .map(|o| self.resolve(o))
+                        .and_then(|o| o.as_name().ok());
+                    let operands: [Option<f32>; 4] = std::array::from_fn(|i| {
+                        items
+                            .get(i + 2)
+                            .and_then(|o| self.resolve(o).as_float().ok())
+                    });
+                    RemoteDestination::Page {
+                        page,
+                        view: DestView::from_operands(kind, &operands),
+                    }
                 }
                 Object::Name(name) if name.len() <= MAX_REMOTE_DESTINATION_NAME_BYTES => {
                     let name = String::from_utf8_lossy(name).into_owned();
@@ -1068,7 +1373,11 @@ impl<'a> Inspector<'a> {
             Ok(Object::Boolean(value)) => Some(*value),
             _ => None,
         };
-        Some(LinkTarget::RemoteGoTo { file, destination, new_window })
+        Some(LinkTarget::RemoteGoTo {
+            file,
+            destination,
+            new_window,
+        })
     }
 
     fn pdf_text(&self, o: &Object, max_bytes: usize) -> Option<String> {
@@ -1099,8 +1408,14 @@ impl<'a> Inspector<'a> {
                 }
             }
         }
-        let preserve_rb = !matches!(a.get(b"PreserveRB").map(|o| self.resolve(o)), Ok(Object::Boolean(false)));
-        LinkTarget::SetLayers { changes, preserve_rb }
+        let preserve_rb = !matches!(
+            a.get(b"PreserveRB").map(|o| self.resolve(o)),
+            Ok(Object::Boolean(false))
+        );
+        LinkTarget::SetLayers {
+            changes,
+            preserve_rb,
+        }
     }
 
     // ── form fields ─────────────────────────────────────────────────────────────────────────
@@ -1130,13 +1445,20 @@ impl<'a> Inspector<'a> {
             (None, _) => parent_name.to_string(),
         };
         let ft = self.name(d, b"FT").or(parent_ft);
-        let ff = d.get(b"Ff").ok().and_then(|x| x.as_i64().ok()).or(parent_ff);
+        let ff = d
+            .get(b"Ff")
+            .ok()
+            .and_then(|x| x.as_i64().ok())
+            .or(parent_ff);
         // Non-terminal: has kids that are fields (they carry /T). Widgets-only kids are terminal.
         let kids = match d.get(b"Kids").map(|k| self.resolve(k)) {
             Ok(Object::Array(k)) => k.as_slice(),
             _ => &[],
         };
-        let field_kids: Vec<_> = kids.iter().filter(|k| self.dict(k).is_some_and(|kd| kd.get(b"T").is_ok())).collect();
+        let field_kids: Vec<_> = kids
+            .iter()
+            .filter(|k| self.dict(k).is_some_and(|kd| kd.get(b"T").is_ok()))
+            .collect();
         if !field_kids.is_empty() {
             for k in field_kids {
                 self.field(k, Some((&full, ft.clone(), ff)), out, seen, depth + 1);
@@ -1170,23 +1492,51 @@ impl<'a> Inspector<'a> {
             _ => None,
         };
         // The widget is either this dict (merged field/widget) or its first kid.
-        let widget = if d.get(b"Rect").is_ok() { Some(d) } else { kids.first().and_then(|k| self.dict(k)) };
-        let page = widget.and_then(|w| w.get(b"P").ok()).and_then(|p| self.page_of(p)).or_else(|| self.find_widget_page(o, kids));
-        let has_actions = d.get(b"AA").is_ok() || widget.is_some_and(|w| w.get(b"AA").is_ok() || w.get(b"A").is_ok());
-        let rect = widget.and_then(|w| w.get(b"Rect").ok()).map(|r| rect4(self.resolve(r)));
-        out.push(Field { name: full, kind, value, page, tooltip: self.text(d, b"TU"), has_actions, rect });
+        let widget = if d.get(b"Rect").is_ok() {
+            Some(d)
+        } else {
+            kids.first().and_then(|k| self.dict(k))
+        };
+        let page = widget
+            .and_then(|w| w.get(b"P").ok())
+            .and_then(|p| self.page_of(p))
+            .or_else(|| self.find_widget_page(o, kids));
+        let has_actions = d.get(b"AA").is_ok()
+            || widget.is_some_and(|w| w.get(b"AA").is_ok() || w.get(b"A").is_ok());
+        let rect = widget
+            .and_then(|w| w.get(b"Rect").ok())
+            .map(|r| rect4(self.resolve(r)));
+        out.push(Field {
+            name: full,
+            kind,
+            value,
+            page,
+            tooltip: self.text(d, b"TU"),
+            has_actions,
+            rect,
+        });
     }
 
     fn find_widget_page(&self, field: &Object, kids: &[Object]) -> Option<usize> {
-        let targets: HashSet<ObjectId> =
-            std::iter::once(field).chain(kids.iter()).filter_map(|o| if let Object::Reference(id) = o { Some(*id) } else { None }).collect();
+        let targets: HashSet<ObjectId> = std::iter::once(field)
+            .chain(kids.iter())
+            .filter_map(|o| {
+                if let Object::Reference(id) = o {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect();
         if targets.is_empty() {
             return None;
         }
         self.page_index.iter().find_map(|(&pid, &idx)| {
             let annots = self.doc.get_dictionary(pid).ok()?.get(b"Annots").ok()?;
             let arr = self.resolve(annots).as_array().ok()?;
-            arr.iter().any(|a| matches!(a, Object::Reference(id) if targets.contains(id))).then_some(idx)
+            arr.iter()
+                .any(|a| matches!(a, Object::Reference(id) if targets.contains(id)))
+                .then_some(idx)
         })
     }
 
@@ -1218,7 +1568,9 @@ impl<'a> Inspector<'a> {
     // ── optional content ────────────────────────────────────────────────────────────────────
 
     fn layers(&self, catalog: &Dictionary, out: &mut Vec<Layer>) {
-        let Some(props) = catalog.get(b"OCProperties").ok().and_then(|o| self.dict(o)) else { return };
+        let Some(props) = catalog.get(b"OCProperties").ok().and_then(|o| self.dict(o)) else {
+            return;
+        };
         let config = props.get(b"D").ok().and_then(|o| self.dict(o));
         let off: HashSet<ObjectId> = config
             .and_then(|c| c.get(b"OFF").ok())
@@ -1231,7 +1583,9 @@ impl<'a> Inspector<'a> {
             .and_then(|o| self.resolve(o).as_array().ok())
             .map(|a| a.iter().filter_map(|x| x.as_reference().ok()).collect())
             .unwrap_or_default();
-        let Ok(Object::Array(ocgs)) = props.get(b"OCGs").map(|o| self.resolve(o)) else { return };
+        let Ok(Object::Array(ocgs)) = props.get(b"OCGs").map(|o| self.resolve(o)) else {
+            return;
+        };
         for g in ocgs {
             let Some(d) = self.dict(g) else { continue };
             let id = g.as_reference().ok();
@@ -1241,7 +1595,11 @@ impl<'a> Inspector<'a> {
                 _ => !base_off,
             };
             let Some(id) = id else { continue };
-            out.push(Layer { id, name: self.text(d, b"Name").unwrap_or_else(|| "Layer".into()), visible });
+            out.push(Layer {
+                id,
+                name: self.text(d, b"Name").unwrap_or_else(|| "Layer".into()),
+                visible,
+            });
         }
     }
 
@@ -1258,8 +1616,14 @@ impl<'a> Inspector<'a> {
         let mut left = MAX_LAYER_GROUP_ENTRIES;
         let mut out = Vec::new();
         for g in groups.into_iter().flatten() {
-            let Ok(members) = self.resolve(g).as_array() else { continue };
-            let group: Vec<ObjectId> = members.iter().filter_map(|x| x.as_reference().ok()).take(left).collect();
+            let Ok(members) = self.resolve(g).as_array() else {
+                continue;
+            };
+            let group: Vec<ObjectId> = members
+                .iter()
+                .filter_map(|x| x.as_reference().ok())
+                .take(left)
+                .collect();
             left = left.saturating_sub(group.len());
             if group.len() > 1 {
                 out.push(group);
@@ -1274,7 +1638,9 @@ impl<'a> Inspector<'a> {
     fn fonts(&self, out: &mut Vec<FontInfo>) {
         let mut seen = HashSet::new();
         for &pid in &self.page_ids {
-            let Ok(fonts) = self.doc.get_page_fonts(pid) else { continue };
+            let Ok(fonts) = self.doc.get_page_fonts(pid) else {
+                continue;
+            };
             for (_, f) in fonts {
                 let base = f
                     .get(b"BaseFont")
@@ -1290,7 +1656,12 @@ impl<'a> Inspector<'a> {
                     _ => None,
                 };
                 // Embedded: FontFile/2/3 in the descriptor (for Type0, in the descendant font).
-                let descriptor_of = |d: &Dictionary| d.get(b"FontDescriptor").ok().and_then(|o| self.dict(o)).cloned();
+                let descriptor_of = |d: &Dictionary| {
+                    d.get(b"FontDescriptor")
+                        .ok()
+                        .and_then(|o| self.dict(o))
+                        .cloned()
+                };
                 let desc = descriptor_of(f).or_else(|| {
                     f.get(b"DescendantFonts")
                         .ok()
@@ -1299,11 +1670,23 @@ impl<'a> Inspector<'a> {
                         .and_then(|o| self.dict(o))
                         .and_then(descriptor_of)
                 });
-                let embedded =
-                    kind == "Type3" || desc.is_some_and(|d| d.get(b"FontFile").is_ok() || d.get(b"FontFile2").is_ok() || d.get(b"FontFile3").is_ok());
-                let subset = base.len() > 7 && base.as_bytes()[6] == b'+' && base[..6].bytes().all(|b| b.is_ascii_uppercase());
+                let embedded = kind == "Type3"
+                    || desc.is_some_and(|d| {
+                        d.get(b"FontFile").is_ok()
+                            || d.get(b"FontFile2").is_ok()
+                            || d.get(b"FontFile3").is_ok()
+                    });
+                let subset = base.len() > 7
+                    && base.as_bytes()[6] == b'+'
+                    && base[..6].bytes().all(|b| b.is_ascii_uppercase());
                 let name = if subset { base[7..].to_string() } else { base };
-                let info = FontInfo { name, kind, embedded, subset, encoding };
+                let info = FontInfo {
+                    name,
+                    kind,
+                    embedded,
+                    subset,
+                    encoding,
+                };
                 if seen.insert((info.name.clone(), info.kind.clone(), info.embedded)) {
                     out.push(info);
                 }
@@ -1314,23 +1697,31 @@ impl<'a> Inspector<'a> {
 
     fn attachment(&self, name: String, spec: &Object, source: AttachmentSource) -> Attachment {
         let d = self.dict(spec);
-        let size =
-            d.and_then(|d| d.get(b"EF").ok()).and_then(|o| self.dict(o)).and_then(|ef| ef.get(b"F").ok().or_else(|| ef.get(b"UF").ok())).and_then(
-                |f| match self.resolve(f) {
-                    Object::Stream(s) => s
-                        .dict
-                        .get(b"Params")
-                        .ok()
-                        .and_then(|p| self.dict(p))
-                        .and_then(|p| p.get(b"Size").ok())
-                        .and_then(|s| s.as_i64().ok())
-                        .map(|s| s as usize)
-                        .or(Some(s.content.len())),
-                    _ => None,
-                },
-            );
-        let display = d.and_then(|d| self.text(d, b"UF").or_else(|| self.text(d, b"F"))).unwrap_or(name);
-        Attachment { name: display, description: d.and_then(|d| self.text(d, b"Desc")), size, source }
+        let size = d
+            .and_then(|d| d.get(b"EF").ok())
+            .and_then(|o| self.dict(o))
+            .and_then(|ef| ef.get(b"F").ok().or_else(|| ef.get(b"UF").ok()))
+            .and_then(|f| match self.resolve(f) {
+                Object::Stream(s) => s
+                    .dict
+                    .get(b"Params")
+                    .ok()
+                    .and_then(|p| self.dict(p))
+                    .and_then(|p| p.get(b"Size").ok())
+                    .and_then(|s| s.as_i64().ok())
+                    .map(|s| s as usize)
+                    .or(Some(s.content.len())),
+                _ => None,
+            });
+        let display = d
+            .and_then(|d| self.text(d, b"UF").or_else(|| self.text(d, b"F")))
+            .unwrap_or(name);
+        Attachment {
+            name: display,
+            description: d.and_then(|d| self.text(d, b"Desc")),
+            size,
+            source,
+        }
     }
 }
 
@@ -1379,14 +1770,21 @@ fn rect4(o: &Object) -> [f32; 4] {
     match o {
         Object::Array(a) if a.len() == 4 => {
             let v: Vec<f32> = a.iter().map(|x| x.as_float().unwrap_or(0.0)).collect();
-            [v[0].min(v[2]), v[1].min(v[3]), v[0].max(v[2]), v[1].max(v[3])]
+            [
+                v[0].min(v[2]),
+                v[1].min(v[3]),
+                v[0].max(v[2]),
+                v[1].max(v[3]),
+            ]
         }
         _ => [0.0; 4],
     }
 }
 
 fn label_work(left: &mut usize, count: usize) -> Result<(), &'static str> {
-    *left = left.checked_sub(count).ok_or("the number tree has too many entries")?;
+    *left = left
+        .checked_sub(count)
+        .ok_or("the number tree has too many entries")?;
     Ok(())
 }
 
@@ -1394,45 +1792,103 @@ fn label_work(left: &mut usize, count: usize) -> Result<(), &'static str> {
 /// A PDF date (`D:20261001123000Z`) as "2026-10-01 12:30"; other strings unchanged.
 pub fn pretty_date(s: &str) -> String {
     let d = s.trim_start_matches("D:");
-    if let Some(d) = d.get(..12).filter(|d| d.bytes().all(|b| b.is_ascii_digit())) {
+    if let Some(d) = d
+        .get(..12)
+        .filter(|d| d.bytes().all(|b| b.is_ascii_digit()))
+    {
         // Twelve ASCII digits make every slice below a UTF-8 character boundary.
-        format!("{}-{}-{} {}:{}", &d[0..4], &d[4..6], &d[6..8], &d[8..10], &d[10..12])
+        format!(
+            "{}-{}-{} {}:{}",
+            &d[0..4],
+            &d[4..6],
+            &d[6..8],
+            &d[8..10],
+            &d[10..12]
+        )
     } else {
         s.to_string()
     }
 }
 
 /// Fetch an attachment's bytes (decoded). Capped at 1 GiB to defuse decompression bombs.
-pub fn attachment_data(bytes: &[u8], password: Option<&str>, att: &Attachment) -> Result<Vec<u8>, String> {
+pub fn attachment_data(
+    bytes: &[u8],
+    password: Option<&str>,
+    att: &Attachment,
+) -> Result<Vec<u8>, String> {
     let run = || -> Result<Vec<u8>, String> {
         let options = load_options(password);
         let doc = Document::load_mem_with_options(bytes, options).map_err(|e| e.to_string())?;
         let insp = Inspector::new(&doc);
         let spec: &Object = match &att.source {
             AttachmentSource::Document { key } => {
-                let names = doc.catalog().ok().and_then(|c| c.get(b"Names").ok()).and_then(|o| insp.dict(o)).ok_or("no /Names")?;
-                let ef = names.get(b"EmbeddedFiles").ok().and_then(|o| insp.dict(o)).ok_or("no /EmbeddedFiles")?;
+                let names = doc
+                    .catalog()
+                    .ok()
+                    .and_then(|c| c.get(b"Names").ok())
+                    .and_then(|o| insp.dict(o))
+                    .ok_or("no /Names")?;
+                let ef = names
+                    .get(b"EmbeddedFiles")
+                    .ok()
+                    .and_then(|o| insp.dict(o))
+                    .ok_or("no /EmbeddedFiles")?;
                 let mut seen = HashSet::new();
-                insp.name_tree(ef, &mut seen, 0).into_iter().find(|(k, _)| k == key).map(|(_, v)| v).ok_or("attachment not found")?
+                insp.name_tree(ef, &mut seen, 0)
+                    .into_iter()
+                    .find(|(k, _)| k == key)
+                    .map(|(_, v)| v)
+                    .ok_or("attachment not found")?
             }
             AttachmentSource::Annotation { page, index } => {
-                let (&pid, _) = insp.page_index.iter().find(|(_, i)| **i == *page).ok_or("page not found")?;
-                let annots = doc.get_dictionary(pid).map_err(|e| e.to_string())?.get(b"Annots").map_err(|e| e.to_string())?;
-                let a = insp.resolve(annots).as_array().map_err(|e| e.to_string())?.get(*index).ok_or("annotation not found")?;
-                insp.dict(a).and_then(|d| d.get(b"FS").ok()).ok_or("annotation has no file")?
+                let (&pid, _) = insp
+                    .page_index
+                    .iter()
+                    .find(|(_, i)| **i == *page)
+                    .ok_or("page not found")?;
+                let annots = doc
+                    .get_dictionary(pid)
+                    .map_err(|e| e.to_string())?
+                    .get(b"Annots")
+                    .map_err(|e| e.to_string())?;
+                let a = insp
+                    .resolve(annots)
+                    .as_array()
+                    .map_err(|e| e.to_string())?
+                    .get(*index)
+                    .ok_or("annotation not found")?;
+                insp.dict(a)
+                    .and_then(|d| d.get(b"FS").ok())
+                    .ok_or("annotation has no file")?
             }
         };
         let fs = insp.dict(spec).ok_or("bad file specification")?;
-        let ef = fs.get(b"EF").ok().and_then(|o| insp.dict(o)).ok_or("the file is not embedded (external reference)")?;
-        let stream = ef.get(b"UF").ok().or_else(|| ef.get(b"F").ok()).map(|o| insp.resolve(o)).ok_or("no embedded stream")?;
+        let ef = fs
+            .get(b"EF")
+            .ok()
+            .and_then(|o| insp.dict(o))
+            .ok_or("the file is not embedded (external reference)")?;
+        let stream = ef
+            .get(b"UF")
+            .ok()
+            .or_else(|| ef.get(b"F").ok())
+            .map(|o| insp.resolve(o))
+            .ok_or("no embedded stream")?;
         let stream = stream.as_stream().map_err(|e| e.to_string())?;
         if stream.dict.get(b"Filter").is_ok() {
-            stream.decompressed_content_with_limit(1 << 30).map_err(|e| e.to_string())
+            stream
+                .decompressed_content_with_limit(1 << 30)
+                .map_err(|e| e.to_string())
         } else {
             Ok(stream.content.clone())
         }
     };
-    catch_unwind(AssertUnwindSafe(run)).unwrap_or_else(|p| Err(format!("reading the attachment crashed: {}", crate::raster::panic_message(&p))))
+    catch_unwind(AssertUnwindSafe(run)).unwrap_or_else(|p| {
+        Err(format!(
+            "reading the attachment crashed: {}",
+            crate::raster::panic_message(&p)
+        ))
+    })
 }
 
 #[cfg(test)]
@@ -1444,14 +1900,21 @@ mod tests {
         let e = lopdf::filters::png::decode_frame(&[2, 0, 0, 0], 1, 64 << 20).unwrap_err();
         assert!(e.to_string().contains("longer than the data"), "{e}");
         // A real frame still decodes: two 3-byte rows, the second Up-filtered.
-        assert_eq!(lopdf::filters::png::decode_frame(&[0, 1, 2, 3, 2, 1, 1, 1], 1, 3).unwrap(), [1, 2, 3, 2, 3, 4]);
+        assert_eq!(
+            lopdf::filters::png::decode_frame(&[0, 1, 2, 3, 2, 1, 1, 1], 1, 3).unwrap(),
+            [1, 2, 3, 2, 3, 4]
+        );
     }
 
     #[test]
     fn empty_png_predictor_frames_do_not_allocate_rows() {
         // usize::MAX cannot be reserved, so the old code safely errors before allocating.
         // An empty frame needs no rows regardless of the declared width.
-        assert!(lopdf::filters::png::decode_frame(&[], 1, usize::MAX).unwrap().is_empty());
+        assert!(
+            lopdf::filters::png::decode_frame(&[], 1, usize::MAX)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     fn tiff_predictor_stream(data: Vec<u8>, columns: i64, colors: i64, bits: i64) -> lopdf::Stream {
@@ -1464,7 +1927,10 @@ mod tests {
         dict.set("DecodeParms", params);
         let mut stream = lopdf::Stream::new(dict, data);
         stream.compress().unwrap();
-        assert_eq!(stream.dict.get(b"Filter").unwrap().as_name().unwrap(), b"FlateDecode");
+        assert_eq!(
+            stream.dict.get(b"Filter").unwrap().as_name().unwrap(),
+            b"FlateDecode"
+        );
         stream
     }
 
@@ -1474,7 +1940,12 @@ mod tests {
         for bits in [1, 2, 4] {
             let stream = tiff_predictor_stream(vec![0; 64], i64::MAX, 3, bits);
             assert!(
-                matches!(stream.decompressed_content_with_limit(64), Err(lopdf::Error::Decompress(lopdf::DecompressError::Predictor(_)))),
+                matches!(
+                    stream.decompressed_content_with_limit(64),
+                    Err(lopdf::Error::Decompress(lopdf::DecompressError::Predictor(
+                        _
+                    )))
+                ),
                 "{bits}-bit row"
             );
         }
@@ -1486,8 +1957,13 @@ mod tests {
         // reject the capacity before allocating. A partial row has no preceding pixel.
         for bits in [1, 2] {
             let data = vec![0b1010_0110; 64];
-            let stream = tiff_predictor_stream(data.clone(), 1, i64::try_from(isize::MAX).unwrap(), bits);
-            assert_eq!(stream.decompressed_content_with_limit(64).unwrap(), data, "{bits}-bit row");
+            let stream =
+                tiff_predictor_stream(data.clone(), 1, i64::try_from(isize::MAX).unwrap(), bits);
+            assert_eq!(
+                stream.decompressed_content_with_limit(64).unwrap(),
+                data,
+                "{bits}-bit row"
+            );
         }
     }
 
@@ -1502,7 +1978,11 @@ mod tests {
             (2, 2, 4, vec![18, 34], vec![18, 52]),
         ] {
             let stream = tiff_predictor_stream(encoded.repeat(32), columns, colors, bits);
-            assert_eq!(stream.decompressed_content_with_limit(128).unwrap(), decoded.repeat(32), "{bits}-bit, {colors} colours");
+            assert_eq!(
+                stream.decompressed_content_with_limit(128).unwrap(),
+                decoded.repeat(32),
+                "{bits}-bit, {colors} colours"
+            );
         }
     }
 
@@ -1510,7 +1990,10 @@ mod tests {
     // `containers` lists compressed (id, container, index) entries and `objects` the other objects in the file.
     fn compressed_length_pdf(containers: &[(u32, u32, u16)], objects: &[(u32, &[u8])]) -> Vec<u8> {
         let mut pdf = b"%PDF-1.7\n".to_vec();
-        let ids = containers.iter().flat_map(|&(id, container, _)| [id, container]).chain(objects.iter().map(|&(id, _)| id));
+        let ids = containers
+            .iter()
+            .flat_map(|&(id, container, _)| [id, container])
+            .chain(objects.iter().map(|&(id, _)| id));
         let xref_id = ids.max().unwrap_or(3) + 1;
         let mut records = vec![[0u8; 7]; (xref_id + 1) as usize];
         records[0] = [0, 0, 0, 0, 0, 255, 255];
@@ -1541,7 +2024,9 @@ mod tests {
         for record in records {
             pdf.extend_from_slice(&record);
         }
-        pdf.extend_from_slice(format!("\nendstream\nendobj\nstartxref\n{xref_offset}\n%%EOF\n").as_bytes());
+        pdf.extend_from_slice(
+            format!("\nendstream\nendobj\nstartxref\n{xref_offset}\n%%EOF\n").as_bytes(),
+        );
         pdf
     }
 
@@ -1549,7 +2034,13 @@ mod tests {
     // link's /Length is direct. Compressed: link k is the integer 3 + 2k (the length it measures) alone in the object
     // stream 4 + 2k, whose own /Length is link k + 1. Plain: link k is the stream 3 + k, whose /Length is link k + 1.
     fn length_chain_pdf(hops: u32, compressed: bool) -> Vec<u8> {
-        let length = |hop: u32, next: u32, data: &str| if hop + 1 < hops { format!("{next} 0 R") } else { data.len().to_string() };
+        let length = |hop: u32, next: u32, data: &str| {
+            if hop + 1 < hops {
+                format!("{next} 0 R")
+            } else {
+                data.len().to_string()
+            }
+        };
         let (mut containers, mut objects) = (Vec::new(), Vec::new());
         let mut value = 5; // the length of stream 2's data, "hello"
         for hop in 0..hops {
@@ -1557,15 +2048,31 @@ mod tests {
                 let (id, container) = (3 + 2 * hop, 4 + 2 * hop);
                 let index = format!("{id} 0 ");
                 let data = format!("{index}{value}");
-                let dict = format!("/Type /ObjStm /N 1 /First {} /Length {}", index.len(), length(hop, id + 2, &data));
-                objects.push((container, format!("<< {dict} >>\nstream\n{data}\nendstream")));
+                let dict = format!(
+                    "/Type /ObjStm /N 1 /First {} /Length {}",
+                    index.len(),
+                    length(hop, id + 2, &data)
+                );
+                objects.push((
+                    container,
+                    format!("<< {dict} >>\nstream\n{data}\nendstream"),
+                ));
                 containers.push((id, container, 0));
                 value = data.len();
             } else {
-                objects.push((3 + hop, format!("<< /Length {} >>\nstream\n\nendstream", length(hop, 4 + hop, ""))));
+                objects.push((
+                    3 + hop,
+                    format!(
+                        "<< /Length {} >>\nstream\n\nendstream",
+                        length(hop, 4 + hop, "")
+                    ),
+                ));
             }
         }
-        let objects: Vec<_> = objects.iter().map(|(id, body)| (*id, body.as_bytes())).collect();
+        let objects: Vec<_> = objects
+            .iter()
+            .map(|(id, body)| (*id, body.as_bytes()))
+            .collect();
         compressed_length_pdf(&containers, &objects)
     }
 
@@ -1574,7 +2081,14 @@ mod tests {
     fn load_without_stream_2_data(pdf: &[u8]) -> Document {
         let doc = Document::load_mem(pdf).unwrap();
         assert!(doc.catalog().unwrap().has_type(b"Catalog"));
-        assert!(doc.get_object((2, 0)).unwrap().as_stream().unwrap().content.is_empty());
+        assert!(
+            doc.get_object((2, 0))
+                .unwrap()
+                .as_stream()
+                .unwrap()
+                .content
+                .is_empty()
+        );
         doc
     }
 
@@ -1593,20 +2107,46 @@ mod tests {
 
     #[test]
     fn object_stream_length_cycle_does_not_recurse() {
-        let pdf = compressed_length_pdf(&[(3, 4, 0)], &[(4, b"<< /Type /ObjStm /N 1 /First 4 /Length 3 0 R >>\nstream\n3 0 5\nendstream")]);
+        let pdf = compressed_length_pdf(
+            &[(3, 4, 0)],
+            &[(
+                4,
+                b"<< /Type /ObjStm /N 1 /First 4 /Length 3 0 R >>\nstream\n3 0 5\nendstream",
+            )],
+        );
         let doc = load_without_stream_2_data(&pdf);
         // The container's /Length is the object it holds: the container is kept without data, so 3 never loads.
-        assert!(doc.get_object((4, 0)).unwrap().as_stream().unwrap().content.is_empty());
+        assert!(
+            doc.get_object((4, 0))
+                .unwrap()
+                .as_stream()
+                .unwrap()
+                .content
+                .is_empty()
+        );
         assert!(doc.get_object((3, 0)).is_err());
     }
 
     #[test]
     fn compressed_object_container_chain_does_not_recurse() {
         let containers: Vec<_> = (3..100_003).map(|id| (id, id + 1, 0)).collect();
-        let pdf = compressed_length_pdf(&containers, &[(100_003, b"<< /Type /ObjStm /N 1 /First 4 /Length 5 >>\nstream\n3 0 5\nendstream")]);
+        let pdf = compressed_length_pdf(
+            &containers,
+            &[(
+                100_003,
+                b"<< /Type /ObjStm /N 1 /First 4 /Length 5 >>\nstream\n3 0 5\nendstream",
+            )],
+        );
         let doc = load_without_stream_2_data(&pdf);
         // The object stream in the file loads, but the xref puts 3 in the compressed container 4, which is refused.
-        assert_eq!(doc.get_object((100_003, 0)).unwrap().as_stream().unwrap().content, b"3 0 5");
+        assert_eq!(
+            doc.get_object((100_003, 0))
+                .unwrap()
+                .as_stream()
+                .unwrap()
+                .content,
+            b"3 0 5"
+        );
         assert!(doc.get_object((3, 0)).is_err());
     }
 
@@ -1616,22 +2156,50 @@ mod tests {
             &[(3, 4, 0), (5, 4, 1)],
             &[(4, b"<< /Type /ObjStm /N 2 /First 8 /Length 17 >>\nstream\n3 0 5 2 5 (value)\nendstream")],
         );
-        let doc = Document::load_mem_with_options(&pdf, LoadOptions { strict: true, ..Default::default() }).unwrap();
+        let doc = Document::load_mem_with_options(
+            &pdf,
+            LoadOptions {
+                strict: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(doc.get_object((3, 0)).unwrap().as_i64().unwrap(), 5);
         assert_eq!(doc.get_object((5, 0)).unwrap().as_str().unwrap(), b"value");
-        assert_eq!(doc.get_object((2, 0)).unwrap().as_stream().unwrap().content, b"hello");
+        assert_eq!(
+            doc.get_object((2, 0)).unwrap().as_stream().unwrap().content,
+            b"hello"
+        );
     }
 
     #[test]
     fn compressed_length_in_a_container_with_an_indirect_length_still_loads() {
         // Two hops, as in a valid file: stream 2's /Length (3) is compressed in container 4, whose own /Length (5) is
         // a plain indirect integer.
-        let pdf =
-            compressed_length_pdf(&[(3, 4, 0)], &[(4, b"<< /Type /ObjStm /N 1 /First 4 /Length 5 0 R >>\nstream\n3 0 5\nendstream"), (5, b"5")]);
-        let doc = Document::load_mem_with_options(&pdf, LoadOptions { strict: true, ..Default::default() }).unwrap();
+        let pdf = compressed_length_pdf(
+            &[(3, 4, 0)],
+            &[
+                (
+                    4,
+                    b"<< /Type /ObjStm /N 1 /First 4 /Length 5 0 R >>\nstream\n3 0 5\nendstream",
+                ),
+                (5, b"5"),
+            ],
+        );
+        let doc = Document::load_mem_with_options(
+            &pdf,
+            LoadOptions {
+                strict: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(doc.get_object((3, 0)).unwrap().as_i64().unwrap(), 5);
         assert_eq!(doc.get_object((5, 0)).unwrap().as_i64().unwrap(), 5);
-        assert_eq!(doc.get_object((2, 0)).unwrap().as_stream().unwrap().content, b"hello");
+        assert_eq!(
+            doc.get_object((2, 0)).unwrap().as_stream().unwrap().content,
+            b"hello"
+        );
     }
 
     #[test]
@@ -1643,7 +2211,12 @@ mod tests {
         let hops = 5_000;
         let doc = load_without_stream_2_data(&length_chain_pdf(hops, true));
         assert!(doc.get_object((3, 0)).is_err());
-        assert!(doc.get_object((3 + 2 * (hops - 1), 0)).unwrap().as_i64().is_ok());
+        assert!(
+            doc.get_object((3 + 2 * (hops - 1), 0))
+                .unwrap()
+                .as_i64()
+                .is_ok()
+        );
         // The cap itself: loading link j reads its container's /Length, a chain of 2 * (hops - 1 - j) lookups, and
         // 16 are allowed, so the 9th link from the end loads and the 10th does not.
         assert!(doc.get_object((3 + 2 * (hops - 9), 0)).is_ok());
@@ -1656,7 +2229,10 @@ mod tests {
         // overflowed within 200 hops). A stream is no length, so every link is kept as a stream without data.
         let hops = 5_000;
         let doc = load_without_stream_2_data(&length_chain_pdf(hops, false));
-        assert!((3..3 + hops).all(|id| doc.get_object((id, 0)).is_ok_and(|link| link.as_stream().is_ok_and(|s| s.content.is_empty()))));
+        assert!((3..3 + hops).all(|id| {
+            doc.get_object((id, 0))
+                .is_ok_and(|link| link.as_stream().is_ok_and(|s| s.content.is_empty()))
+        }));
     }
 
     fn indexed_object_stream(pairs: &[(u32, usize)], members: &[u8]) -> lopdf::Stream {
@@ -1684,9 +2260,27 @@ mod tests {
         pairs.extend([(200, 31), (201, 31)]);
         let stream = indexed_object_stream(&pairs, &members);
         let parsed = lopdf::ObjectStream::new_with_limit(&stream, Some(2 << 20)).unwrap();
-        assert_eq!(parsed.objects.get(&(100, 0)).unwrap().as_str().unwrap().len(), 1 << 20);
-        let total: usize = parsed.objects.values().filter_map(|object| object.as_str().ok()).map(<[u8]>::len).sum();
-        assert!(total <= stream.content.len(), "owned {total} string bytes from {} decoded bytes", stream.content.len());
+        assert_eq!(
+            parsed
+                .objects
+                .get(&(100, 0))
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .len(),
+            1 << 20
+        );
+        let total: usize = parsed
+            .objects
+            .values()
+            .filter_map(|object| object.as_str().ok())
+            .map(<[u8]>::len)
+            .sum();
+        assert!(
+            total <= stream.content.len(),
+            "owned {total} string bytes from {} decoded bytes",
+            stream.content.len()
+        );
         assert!(!parsed.objects.contains_key(&(200, 0)));
         assert!(!parsed.objects.contains_key(&(201, 0)));
     }
@@ -1698,27 +2292,70 @@ mod tests {
         let pairs = [(9, 0), (12, 21), (10, 5), (11, 12), (9, 41)];
         let parsed = lopdf::ObjectStream::new(&indexed_object_stream(&pairs, members)).unwrap();
         assert_eq!(parsed.objects.len(), 4);
-        assert_eq!(parsed.objects.get(&(9, 0)).unwrap().as_str().unwrap(), b"last");
-        assert_eq!(parsed.objects.get(&(10, 0)).unwrap().as_name().unwrap(), b"Name");
-        assert_eq!(parsed.objects.get(&(11, 0)).unwrap().as_array().unwrap(), &[Object::Boolean(true), Object::Integer(7)]);
-        assert_eq!(parsed.objects.get(&(12, 0)).unwrap().as_dict().unwrap().get(b"Key").unwrap().as_str().unwrap(), b"value");
+        assert_eq!(
+            parsed.objects.get(&(9, 0)).unwrap().as_str().unwrap(),
+            b"last"
+        );
+        assert_eq!(
+            parsed.objects.get(&(10, 0)).unwrap().as_name().unwrap(),
+            b"Name"
+        );
+        assert_eq!(
+            parsed.objects.get(&(11, 0)).unwrap().as_array().unwrap(),
+            &[Object::Boolean(true), Object::Integer(7)]
+        );
+        assert_eq!(
+            parsed
+                .objects
+                .get(&(12, 0))
+                .unwrap()
+                .as_dict()
+                .unwrap()
+                .get(b"Key")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            b"value"
+        );
     }
 
     #[test]
     fn view_and_user_space_round_trip_for_every_rotation() {
         for rotation in [0u16, 90, 180, 270] {
-            let (w, h) = if rotation % 180 == 0 { (200.0, 300.0) } else { (300.0, 200.0) };
-            let p = super::PageInfo { width: w, height: h, label: String::new(), crop: [10.0, 20.0, 210.0, 320.0], rotation };
+            let (w, h) = if rotation % 180 == 0 {
+                (200.0, 300.0)
+            } else {
+                (300.0, 200.0)
+            };
+            let p = super::PageInfo {
+                width: w,
+                height: h,
+                label: String::new(),
+                crop: [10.0, 20.0, 210.0, 320.0],
+                rotation,
+            };
             for (x, y) in [(0.0, 0.0), (15.0, 40.0), (w, h)] {
                 let [ux, uy] = p.view_to_user(x, y);
                 let [vx, vy] = p.user_to_view(ux, uy);
-                assert!((vx - x).abs() < 1e-3 && (vy - y).abs() < 1e-3, "{rotation}: {x},{y} → {ux},{uy} → {vx},{vy}");
+                assert!(
+                    (vx - x).abs() < 1e-3 && (vy - y).abs() < 1e-3,
+                    "{rotation}: {x},{y} → {ux},{uy} → {vx},{vy}"
+                );
             }
         }
         // Unrotated: the view's top-left is the crop box's top-left.
-        let p = super::PageInfo { width: 200.0, height: 300.0, label: String::new(), crop: [10.0, 20.0, 210.0, 320.0], rotation: 0 };
+        let p = super::PageInfo {
+            width: 200.0,
+            height: 300.0,
+            label: String::new(),
+            crop: [10.0, 20.0, 210.0, 320.0],
+            rotation: 0,
+        };
         assert_eq!(p.view_to_user(0.0, 0.0), [10.0, 320.0]);
-        assert_eq!(p.view_rect_to_quad([0.0, 0.0, 10.0, 5.0]), [10.0, 320.0, 20.0, 320.0, 10.0, 315.0, 20.0, 315.0]);
+        assert_eq!(
+            p.view_rect_to_quad([0.0, 0.0, 10.0, 5.0]),
+            [10.0, 320.0, 20.0, 320.0, 10.0, 315.0, 20.0, 315.0]
+        );
     }
 
     use super::*;
@@ -1746,7 +2383,13 @@ mod tests {
         doc.trailer.set("Root", Object::Reference((1, 0)));
         let mut info = DocInfo {
             pages: (1..=3)
-                .map(|n| PageInfo { width: 200.0, height: 300.0, crop: [0.0, 0.0, 200.0, 300.0], rotation: 0, label: n.to_string() })
+                .map(|n| PageInfo {
+                    width: 200.0,
+                    height: 300.0,
+                    crop: [0.0, 0.0, 200.0, 300.0],
+                    rotation: 0,
+                    label: n.to_string(),
+                })
                 .collect(),
             ..Default::default()
         };
@@ -1757,16 +2400,33 @@ mod tests {
     fn label_spec(style: &str, prefix: Vec<u8>, first: i64) -> Object {
         let mut d = Dictionary::new();
         d.set("S", Object::Name(style.as_bytes().to_vec()));
-        d.set("P", Object::String(prefix, lopdf::StringFormat::Hexadecimal));
+        d.set(
+            "P",
+            Object::String(prefix, lopdf::StringFormat::Hexadecimal),
+        );
         d.set("St", first);
         Object::Dictionary(d)
     }
 
     fn assert_label_fallback(info: &DocInfo) {
-        assert_eq!(info.pages.iter().map(|p| p.label.as_str()).collect::<Vec<_>>(), ["1", "2", "3"]);
+        assert_eq!(
+            info.pages
+                .iter()
+                .map(|p| p.label.as_str())
+                .collect::<Vec<_>>(),
+            ["1", "2", "3"]
+        );
         assert_eq!(info.warnings.len(), 1, "{:?}", info.warnings);
-        assert!(info.warnings[0].contains("Page labels"), "{:?}", info.warnings);
-        assert!(info.warnings[0].contains("physical page numbers"), "{:?}", info.warnings);
+        assert!(
+            info.warnings[0].contains("Page labels"),
+            "{:?}",
+            info.warnings
+        );
+        assert!(
+            info.warnings[0].contains("physical page numbers"),
+            "{:?}",
+            info.warnings
+        );
     }
 
     #[test]
@@ -1777,8 +2437,17 @@ mod tests {
             ("a", 26, ["z", "aa", "bb"]),
             ("A", 52, ["ZZ", "AAA", "BBB"]),
         ] {
-            let info = label_info(vec![Object::Integer(0), label_spec(style, Vec::new(), first)], Vec::new());
-            assert_eq!(info.pages.iter().map(|p| p.label.as_str()).collect::<Vec<_>>(), expected);
+            let info = label_info(
+                vec![Object::Integer(0), label_spec(style, Vec::new(), first)],
+                Vec::new(),
+            );
+            assert_eq!(
+                info.pages
+                    .iter()
+                    .map(|p| p.label.as_str())
+                    .collect::<Vec<_>>(),
+                expected
+            );
             assert!(info.warnings.is_empty(), "{:?}", info.warnings);
         }
     }
@@ -1786,7 +2455,12 @@ mod tests {
     #[test]
     fn page_label_limits_reject_long_prefixes_without_partial_labels() {
         for prefix in [vec![b'x'; 1025], vec![b'x'; 2051]] {
-            let nums = vec![Object::Integer(0), label_spec("D", b"ok-".to_vec(), 1), Object::Integer(1), label_spec("D", prefix, 1)];
+            let nums = vec![
+                Object::Integer(0),
+                label_spec("D", b"ok-".to_vec(), 1),
+                Object::Integer(1),
+                label_spec("D", prefix, 1),
+            ];
             assert_label_fallback(&label_info(nums, Vec::new()));
         }
     }
@@ -1797,14 +2471,20 @@ mod tests {
         for _ in 0..342 {
             prefix.extend_from_slice(&0x2022u16.to_be_bytes());
         }
-        assert_label_fallback(&label_info(vec![Object::Integer(0), label_spec("", prefix, 1)], Vec::new()));
+        assert_label_fallback(&label_info(
+            vec![Object::Integer(0), label_spec("", prefix, 1)],
+            Vec::new(),
+        ));
     }
 
     #[test]
     fn page_label_limits_bound_roman_and_alpha_output() {
         // Just 1025 output bytes on the old path, so RED does not consume excessive memory.
         for (style, first) in [("r", 1_025_000), ("a", 26 * 1024 + 1)] {
-            assert_label_fallback(&label_info(vec![Object::Integer(0), label_spec(style, Vec::new(), first)], Vec::new()));
+            assert_label_fallback(&label_info(
+                vec![Object::Integer(0), label_spec(style, Vec::new(), first)],
+                Vec::new(),
+            ));
         }
     }
 
@@ -1820,7 +2500,10 @@ mod tests {
         for _ in 0..1023 {
             prefix.extend_from_slice(&u16::from(b'x').to_be_bytes());
         }
-        let info = label_info(vec![Object::Integer(0), label_spec("D", prefix, 1)], Vec::new());
+        let info = label_info(
+            vec![Object::Integer(0), label_spec("D", prefix, 1)],
+            Vec::new(),
+        );
         assert!(info.warnings.is_empty(), "{:?}", info.warnings);
         assert_eq!(info.pages[0].label, format!("{}1", "x".repeat(1023)));
         assert!(info.pages.iter().all(|p| p.label.len() == MAX_LABEL_BYTES));
@@ -1829,10 +2512,16 @@ mod tests {
     #[test]
     fn page_label_limits_refuse_hostile_numbers_before_allocating() {
         for style in ["r", "R", "a", "A"] {
-            assert_label_fallback(&label_info(vec![Object::Integer(0), label_spec(style, Vec::new(), i64::MAX)], Vec::new()));
+            assert_label_fallback(&label_info(
+                vec![Object::Integer(0), label_spec(style, Vec::new(), i64::MAX)],
+                Vec::new(),
+            ));
         }
         // Decimal labels remain small even when their first number exceeds 32-bit usize.
-        let info = label_info(vec![Object::Integer(0), label_spec("D", Vec::new(), i64::MAX)], Vec::new());
+        let info = label_info(
+            vec![Object::Integer(0), label_spec("D", Vec::new(), i64::MAX)],
+            Vec::new(),
+        );
         assert_eq!(info.pages[0].label, i64::MAX.to_string());
         assert_eq!(info.pages[1].label, (i64::MAX as u64 + 1).to_string());
         assert!(info.warnings.is_empty());
@@ -1840,9 +2529,14 @@ mod tests {
 
     #[test]
     fn page_label_limits_bound_wide_number_trees() {
-        assert_label_fallback(&label_info(Vec::new(), vec![Object::Null; MAX_LABEL_TREE_WORK + 1]));
+        assert_label_fallback(&label_info(
+            Vec::new(),
+            vec![Object::Null; MAX_LABEL_TREE_WORK + 1],
+        ));
         let pair = [Object::Integer(0), label_spec("D", Vec::new(), 1)];
-        let nums = (0..MAX_LABEL_TREE_WORK).flat_map(|_| pair.clone()).collect();
+        let nums = (0..MAX_LABEL_TREE_WORK)
+            .flat_map(|_| pair.clone())
+            .collect();
         assert_label_fallback(&label_info(nums, Vec::new()));
     }
 
@@ -1850,19 +2544,40 @@ mod tests {
     fn page_label_limits_bound_total_custom_output_atomically() {
         let doc = Document::with_version("1.7");
         let mut tree = Dictionary::new();
-        tree.set("Nums", vec![Object::Integer(0), label_spec("", vec![b'x'; MAX_LABEL_BYTES], 1)]);
+        tree.set(
+            "Nums",
+            vec![
+                Object::Integer(0),
+                label_spec("", vec![b'x'; MAX_LABEL_BYTES], 1),
+            ],
+        );
         let mut catalog = Dictionary::new();
         catalog.set("PageLabels", Object::Dictionary(tree));
         let count = MAX_LABEL_TOTAL_BYTES / MAX_LABEL_BYTES + 1;
         let mut pages: Vec<_> = (1..=count)
-            .map(|n| PageInfo { width: 200.0, height: 300.0, crop: [0.0, 0.0, 200.0, 300.0], rotation: 0, label: n.to_string() })
+            .map(|n| PageInfo {
+                width: 200.0,
+                height: 300.0,
+                crop: [0.0, 0.0, 200.0, 300.0],
+                rotation: 0,
+                label: n.to_string(),
+            })
             .collect();
-        let err = Inspector::new(&doc).page_labels(&catalog, &mut pages).unwrap_err();
+        let err = Inspector::new(&doc)
+            .page_labels(&catalog, &mut pages)
+            .unwrap_err();
         assert!(err.contains("4 MiB"), "{err}");
-        assert!(pages.iter().enumerate().all(|(i, p)| p.label == (i + 1).to_string()));
+        assert!(
+            pages
+                .iter()
+                .enumerate()
+                .all(|(i, p)| p.label == (i + 1).to_string())
+        );
         // Exact aggregate boundary remains supported.
         pages.pop();
-        Inspector::new(&doc).page_labels(&catalog, &mut pages).unwrap();
+        Inspector::new(&doc)
+            .page_labels(&catalog, &mut pages)
+            .unwrap();
         assert!(pages.iter().all(|p| p.label.len() == MAX_LABEL_BYTES));
     }
 
@@ -1871,48 +2586,89 @@ mod tests {
         // `ranges` ranges naming one shared prefix object of `prefix` bytes, without a style.
         let shared = |ranges: i64, prefix: usize| {
             let mut doc = Document::with_version("1.7");
-            doc.objects.insert((7, 0), Object::String(vec![b'x'; prefix], lopdf::StringFormat::Literal));
+            doc.objects.insert(
+                (7, 0),
+                Object::String(vec![b'x'; prefix], lopdf::StringFormat::Literal),
+            );
             let mut spec = Dictionary::new();
             spec.set("P", Object::Reference((7, 0)));
             doc.objects.insert((8, 0), Object::Dictionary(spec));
             let mut tree = Dictionary::new();
-            tree.set("Nums", (0..ranges).flat_map(|i| [Object::Integer(i), Object::Reference((8, 0))]).collect::<Vec<_>>());
+            tree.set(
+                "Nums",
+                (0..ranges)
+                    .flat_map(|i| [Object::Integer(i), Object::Reference((8, 0))])
+                    .collect::<Vec<_>>(),
+            );
             let mut catalog = Dictionary::new();
             catalog.set("PageLabels", Object::Dictionary(tree));
             (doc, catalog)
         };
-        let mut pages: Vec<_> =
-            (1..=3).map(|n| PageInfo { width: 200.0, height: 300.0, crop: [0.0, 0.0, 200.0, 300.0], rotation: 0, label: n.to_string() }).collect();
+        let mut pages: Vec<_> = (1..=3)
+            .map(|n| PageInfo {
+                width: 200.0,
+                height: 300.0,
+                crop: [0.0, 0.0, 200.0, 300.0],
+                rotation: 0,
+                label: n.to_string(),
+            })
+            .collect();
         // Each range decodes its prefix, so a small file sharing one prefix object asks for a
         // copy per range: 5,000 ranges and a 1,000-byte prefix make 5 MB, past the 4 MiB total.
         // Three pages make three labels, far below the label total: the prefixes alone refuse it.
         let (doc, catalog) = shared(5000, 1000);
-        let err = Inspector::new(&doc).page_labels(&catalog, &mut pages).unwrap_err();
+        let err = Inspector::new(&doc)
+            .page_labels(&catalog, &mut pages)
+            .unwrap_err();
         assert!(err.contains("prefixes exceed 4 MiB"), "{err}");
-        assert!(pages.iter().enumerate().all(|(i, p)| p.label == (i + 1).to_string()));
+        assert!(
+            pages
+                .iter()
+                .enumerate()
+                .all(|(i, p)| p.label == (i + 1).to_string())
+        );
         // Exactly 4 MiB of prefixes is still read.
-        let (doc, catalog) = shared((MAX_PREFIX_TOTAL_BYTES / MAX_LABEL_BYTES) as i64, MAX_LABEL_BYTES);
-        Inspector::new(&doc).page_labels(&catalog, &mut pages).unwrap();
+        let (doc, catalog) = shared(
+            (MAX_PREFIX_TOTAL_BYTES / MAX_LABEL_BYTES) as i64,
+            MAX_LABEL_BYTES,
+        );
+        Inspector::new(&doc)
+            .page_labels(&catalog, &mut pages)
+            .unwrap();
         assert!(pages.iter().all(|p| p.label.len() == MAX_LABEL_BYTES));
     }
 
     #[test]
     fn page_label_limits_handle_prefix_only_and_reference_cycles() {
-        let info = label_info(vec![Object::Integer(0), label_spec("", b"prefix".to_vec(), i64::MAX)], Vec::new());
+        let info = label_info(
+            vec![
+                Object::Integer(0),
+                label_spec("", b"prefix".to_vec(), i64::MAX),
+            ],
+            Vec::new(),
+        );
         assert!(info.warnings.is_empty());
         assert!(info.pages.iter().all(|p| p.label == "prefix"));
         let mut doc = Document::with_version("1.7");
         doc.objects.insert((6, 0), Object::Reference((6, 0)));
         let mut catalog = Dictionary::new();
         catalog.set("PageLabels", Object::Reference((6, 0)));
-        assert!(Inspector::new(&doc).page_labels(&catalog, &mut []).unwrap_err().contains("cyclic"));
+        assert!(
+            Inspector::new(&doc)
+                .page_labels(&catalog, &mut [])
+                .unwrap_err()
+                .contains("cyclic")
+        );
     }
 
     #[test]
     fn page_label_limits_bound_depth_and_count_combined_work() {
         for depth in [MAX_LABEL_TREE_DEPTH, MAX_LABEL_TREE_DEPTH + 1] {
             let mut child = Dictionary::new();
-            child.set("Nums", vec![Object::Integer(0), label_spec("D", b"custom-".to_vec(), 1)]);
+            child.set(
+                "Nums",
+                vec![Object::Integer(0), label_spec("D", b"custom-".to_vec(), 1)],
+            );
             let mut child = Object::Dictionary(child);
             for _ in 1..depth {
                 let mut parent = Dictionary::new();
@@ -1930,15 +2686,28 @@ mod tests {
         // Each array alone fits: their combined work still must be bounded.
         let half = MAX_LABEL_TREE_WORK / 2;
         let spec = label_spec("D", Vec::new(), 1);
-        let nums = (0..half).flat_map(|i| [Object::Integer(i as i64), spec.clone()]).collect();
+        let nums = (0..half)
+            .flat_map(|i| [Object::Integer(i as i64), spec.clone()])
+            .collect();
         assert_label_fallback(&label_info(nums, vec![Object::Null; half]));
     }
 
     #[test]
     fn page_label_limits_keep_the_later_of_duplicate_ranges() {
-        let nums = vec![Object::Integer(0), label_spec("D", b"first-".to_vec(), 1), Object::Integer(0), label_spec("D", b"last-".to_vec(), 1)];
+        let nums = vec![
+            Object::Integer(0),
+            label_spec("D", b"first-".to_vec(), 1),
+            Object::Integer(0),
+            label_spec("D", b"last-".to_vec(), 1),
+        ];
         let info = label_info(nums, Vec::new());
-        assert_eq!(info.pages.iter().map(|p| p.label.as_str()).collect::<Vec<_>>(), ["last-1", "last-2", "last-3"]);
+        assert_eq!(
+            info.pages
+                .iter()
+                .map(|p| p.label.as_str())
+                .collect::<Vec<_>>(),
+            ["last-1", "last-2", "last-3"]
+        );
         assert_eq!(info.warnings.len(), 1, "{:?}", info.warnings);
         assert!(info.warnings[0].contains("twice"), "{:?}", info.warnings);
     }
@@ -1946,11 +2715,26 @@ mod tests {
     #[test]
     fn page_label_limits_keep_other_ranges_when_one_is_too_long() {
         // Page 1 is labelled normally; pages 2–3 would need over 1024 bytes of roman numerals.
-        let nums = vec![Object::Integer(0), label_spec("D", b"ok-".to_vec(), 1), Object::Integer(1), label_spec("r", Vec::new(), 1_025_000)];
+        let nums = vec![
+            Object::Integer(0),
+            label_spec("D", b"ok-".to_vec(), 1),
+            Object::Integer(1),
+            label_spec("r", Vec::new(), 1_025_000),
+        ];
         let info = label_info(nums, Vec::new());
-        assert_eq!(info.pages.iter().map(|p| p.label.as_str()).collect::<Vec<_>>(), ["ok-1", "2", "3"]);
+        assert_eq!(
+            info.pages
+                .iter()
+                .map(|p| p.label.as_str())
+                .collect::<Vec<_>>(),
+            ["ok-1", "2", "3"]
+        );
         assert_eq!(info.warnings.len(), 1, "{:?}", info.warnings);
-        assert!(info.warnings[0].contains("physical page numbers"), "{:?}", info.warnings);
+        assert!(
+            info.warnings[0].contains("physical page numbers"),
+            "{:?}",
+            info.warnings
+        );
     }
 
     const ATTACHMENTS: &[u8] = b"%PDF-1.7
@@ -1975,13 +2759,29 @@ trailer << /Root 1 0 R >>
         let bytes = Arc::new(ATTACHMENTS.to_vec());
         let info = inspect(bytes.clone(), None).expect("opens");
         let names: Vec<_> = info.attachments.iter().map(|a| a.name.as_str()).collect();
-        assert!(names.contains(&"notes.txt") && names.contains(&"data.csv"), "{names:?}");
+        assert!(
+            names.contains(&"notes.txt") && names.contains(&"data.csv"),
+            "{names:?}"
+        );
         for a in &info.attachments {
             let data = attachment_data(&bytes, None, a).expect("extracts");
-            let expected: &[u8] = if a.name == "notes.txt" { b"hello notes" } else { b"a,b,c" };
+            let expected: &[u8] = if a.name == "notes.txt" {
+                b"hello notes"
+            } else {
+                b"a,b,c"
+            };
             assert_eq!(data, expected, "{}", a.name);
         }
-        assert_eq!(info.fonts, vec![FontInfo { name: "Helvetica".into(), kind: "Type1".into(), embedded: false, subset: true, encoding: None }]);
+        assert_eq!(
+            info.fonts,
+            vec![FontInfo {
+                name: "Helvetica".into(),
+                kind: "Type1".into(),
+                embedded: false,
+                subset: true,
+                encoding: None
+            }]
+        );
     }
 
     const LAYERS: &[u8] = b"%PDF-1.7
@@ -2001,10 +2801,24 @@ trailer << /Root 1 0 R >>
     #[test]
     fn radio_button_layer_groups_are_read() {
         let info = inspect(Arc::new(LAYERS.to_vec()), None).expect("opens");
-        let layers: Vec<_> = info.layers.iter().map(|l| (l.id, l.name.as_str(), l.visible)).collect();
-        assert_eq!(layers, [((5, 0), "Red", true), ((6, 0), "Green", false), ((7, 0), "Blue", true)]);
+        let layers: Vec<_> = info
+            .layers
+            .iter()
+            .map(|l| (l.id, l.name.as_str(), l.visible))
+            .collect();
+        assert_eq!(
+            layers,
+            [
+                ((5, 0), "Red", true),
+                ((6, 0), "Green", false),
+                ((7, 0), "Blue", true)
+            ]
+        );
         // A group of one constrains nothing; an indirect group is read.
-        assert_eq!(info.layer_groups, [vec![(5, 0), (6, 0)], vec![(6, 0), (7, 0)]]);
+        assert_eq!(
+            info.layer_groups,
+            [vec![(5, 0), (6, 0)], vec![(6, 0), (7, 0)]]
+        );
     }
 
     const ORPHAN_FIELDS: &[u8] = b"%PDF-1.7
@@ -2020,8 +2834,17 @@ trailer << /Root 1 0 R >>
     #[test]
     fn fields_listed_only_on_the_pages_are_listed() {
         let info = inspect(Arc::new(ORPHAN_FIELDS.to_vec()), None).expect("opens");
-        let listed: Vec<_> = info.fields.iter().map(|f| (f.name.as_str(), f.value.as_deref(), f.page)).collect();
-        assert_eq!(listed, [("alpha", Some("one"), Some(0)), ("beta", None, Some(0))], "{:?}", info.fields);
+        let listed: Vec<_> = info
+            .fields
+            .iter()
+            .map(|f| (f.name.as_str(), f.value.as_deref(), f.page))
+            .collect();
+        assert_eq!(
+            listed,
+            [("alpha", Some("one"), Some(0)), ("beta", None, Some(0))],
+            "{:?}",
+            info.fields
+        );
     }
 
     #[test]
@@ -2029,7 +2852,14 @@ trailer << /Root 1 0 R >>
         // Each fixture as lopdf writes it, and with its objects in object streams.
         let packed = |bytes: &[u8]| {
             let doc = pdfcraft_cos::Document::open(Arc::new(bytes.to_vec())).unwrap();
-            pdfcraft_cos::write_full(&doc, &pdfcraft_cos::SaveOptions { object_streams: true, ..Default::default() }).unwrap()
+            pdfcraft_cos::write_full(
+                &doc,
+                &pdfcraft_cos::SaveOptions {
+                    object_streams: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
         };
         let fixtures = [ATTACHMENTS, LAYERS, DESTS].into_iter().flat_map(|bytes| {
             let mut original = Document::load_mem(bytes).unwrap();
@@ -2042,8 +2872,14 @@ trailer << /Root 1 0 R >>
             let lazy = LazyStructure::new(Arc::new(bytes.clone()), None).unwrap();
             let eager = Document::load_mem(&bytes).unwrap();
             let mut a = inspect(Arc::new(bytes), None).unwrap();
-            let mut b = DocInfo { pages: a.pages.clone(), ..Default::default() };
-            let mut c = DocInfo { pages: a.pages.clone(), ..Default::default() };
+            let mut b = DocInfo {
+                pages: a.pages.clone(),
+                ..Default::default()
+            };
+            let mut c = DocInfo {
+                pages: a.pages.clone(),
+                ..Default::default()
+            };
             Inspector::new(&lazy).fill(&mut b);
             Inspector::new(&eager).fill(&mut c);
             assert!(!lazy.failed());
@@ -2064,9 +2900,15 @@ trailer << /Root 1 0 R >>
             [
                 // Groups before the first name or after an unknown one are skipped, and so is
                 // anything that isn't a group.
-                LinkTarget::SetLayers { changes: vec![(On, (6, 0)), (Toggle, (5, 0)), (Toggle, (7, 0))], preserve_rb: false },
+                LinkTarget::SetLayers {
+                    changes: vec![(On, (6, 0)), (Toggle, (5, 0)), (Toggle, (7, 0))],
+                    preserve_rb: false
+                },
                 // An indirect /State; /PreserveRB defaults to true.
-                LinkTarget::SetLayers { changes: vec![(Off, (5, 0))], preserve_rb: true },
+                LinkTarget::SetLayers {
+                    changes: vec![(Off, (5, 0))],
+                    preserve_rb: true
+                },
             ]
         );
     }
@@ -2096,7 +2938,11 @@ trailer << /Root 1 0 R >>
              trailer << /Root 1 0 R >>\n%%EOF"
         );
         let info = inspect(Arc::new(pdf.into_bytes()), None).expect("opens");
-        let targets: Vec<_> = info.links.iter().map(|l| (l.index, l.target.clone())).collect();
+        let targets: Vec<_> = info
+            .links
+            .iter()
+            .map(|l| (l.index, l.target.clone()))
+            .collect();
         let huge_page_target = usize::try_from(i64::MAX)
             .map(|page| LinkTarget::RemoteGoTo {
                 file: "chapter.pdf".into(),
@@ -2111,7 +2957,14 @@ trailer << /Root 1 0 R >>
                     1,
                     LinkTarget::RemoteGoTo {
                         file: "chapters/remote.pdf".into(),
-                        destination: RemoteDestination::Page { page: 2, view: Xyz { left: Some(10.0), top: Some(20.0), zoom: Some(1.5) } },
+                        destination: RemoteDestination::Page {
+                            page: 2,
+                            view: Xyz {
+                                left: Some(10.0),
+                                top: Some(20.0),
+                                zoom: Some(1.5)
+                            }
+                        },
                         new_window: Some(true),
                     }
                 ),
@@ -2123,11 +2976,32 @@ trailer << /Root 1 0 R >>
                         new_window: Some(false),
                     }
                 ),
-                (3, LinkTarget::RemoteGoTo { file: "remote.pdf".into(), destination: RemoteDestination::Default, new_window: None }),
-                (4, LinkTarget::RemoteGoTo { file: "chapter.pdf".into(), destination: RemoteDestination::Named("chapter".into()), new_window: None }),
+                (
+                    3,
+                    LinkTarget::RemoteGoTo {
+                        file: "remote.pdf".into(),
+                        destination: RemoteDestination::Default,
+                        new_window: None
+                    }
+                ),
+                (
+                    4,
+                    LinkTarget::RemoteGoTo {
+                        file: "chapter.pdf".into(),
+                        destination: RemoteDestination::Named("chapter".into()),
+                        new_window: None
+                    }
+                ),
                 (5, LinkTarget::Other("GoToR".into())),
                 (6, LinkTarget::Other("GoToR".into())),
-                (7, LinkTarget::RemoteGoTo { file: "chapter.pdf".into(), destination: RemoteDestination::Named("chapter".into()), new_window: None }),
+                (
+                    7,
+                    LinkTarget::RemoteGoTo {
+                        file: "chapter.pdf".into(),
+                        destination: RemoteDestination::Named("chapter".into()),
+                        new_window: None
+                    }
+                ),
                 (8, LinkTarget::Other("GoToR".into())),
                 (9, LinkTarget::Other("GoToR".into())),
                 (10, huge_page_target),
@@ -2142,8 +3016,22 @@ trailer << /Root 1 0 R >>
         use DestView::*;
         let v = |kind: &[u8], ops: &[Option<f32>]| DestView::from_operands(Some(kind), ops);
         // ISO 32000-2 Table 149, each type.
-        assert_eq!(v(b"XYZ", &[Some(0.0), Some(420.0), Some(0.0)]), Xyz { left: Some(0.0), top: Some(420.0), zoom: None });
-        assert_eq!(v(b"XYZ", &[Some(72.0), Some(500.0), Some(1.5)]), Xyz { left: Some(72.0), top: Some(500.0), zoom: Some(1.5) });
+        assert_eq!(
+            v(b"XYZ", &[Some(0.0), Some(420.0), Some(0.0)]),
+            Xyz {
+                left: Some(0.0),
+                top: Some(420.0),
+                zoom: None
+            }
+        );
+        assert_eq!(
+            v(b"XYZ", &[Some(72.0), Some(500.0), Some(1.5)]),
+            Xyz {
+                left: Some(72.0),
+                top: Some(500.0),
+                zoom: Some(1.5)
+            }
+        );
         assert_eq!(v(b"Fit", &[]), Fit);
         assert_eq!(v(b"FitB", &[]), Fit);
         assert_eq!(v(b"FitH", &[Some(250.0)]), FitH { top: Some(250.0) });
@@ -2151,16 +3039,58 @@ trailer << /Root 1 0 R >>
         assert_eq!(v(b"FitV", &[Some(120.0)]), FitV { left: Some(120.0) });
         assert_eq!(v(b"FitBV", &[Some(5.0)]), FitV { left: Some(5.0) });
         // FitR's corners are normalized.
-        assert_eq!(v(b"FitR", &[Some(110.0), Some(220.0), Some(10.0), Some(20.0)]), FitR { rect: [10.0, 20.0, 110.0, 220.0] });
+        assert_eq!(
+            v(b"FitR", &[Some(110.0), Some(220.0), Some(10.0), Some(20.0)]),
+            FitR {
+                rect: [10.0, 20.0, 110.0, 220.0]
+            }
+        );
         // Missing operands are null; so are non-finite ones, and a zoom that isn't positive.
-        assert_eq!(v(b"XYZ", &[]), Xyz { left: None, top: None, zoom: None });
-        assert_eq!(v(b"XYZ", &[Some(f32::NAN), Some(f32::INFINITY), Some(f32::NEG_INFINITY)]), Xyz { left: None, top: None, zoom: None });
-        assert_eq!(v(b"XYZ", &[None, Some(-5.0), Some(-1.0)]), Xyz { left: None, top: Some(-5.0), zoom: None });
-        assert_eq!(v(b"XYZ", &[None, None, Some(f32::NAN)]), Xyz { left: None, top: None, zoom: None });
+        assert_eq!(
+            v(b"XYZ", &[]),
+            Xyz {
+                left: None,
+                top: None,
+                zoom: None
+            }
+        );
+        assert_eq!(
+            v(
+                b"XYZ",
+                &[Some(f32::NAN), Some(f32::INFINITY), Some(f32::NEG_INFINITY)]
+            ),
+            Xyz {
+                left: None,
+                top: None,
+                zoom: None
+            }
+        );
+        assert_eq!(
+            v(b"XYZ", &[None, Some(-5.0), Some(-1.0)]),
+            Xyz {
+                left: None,
+                top: Some(-5.0),
+                zoom: None
+            }
+        );
+        assert_eq!(
+            v(b"XYZ", &[None, None, Some(f32::NAN)]),
+            Xyz {
+                left: None,
+                top: None,
+                zoom: None
+            }
+        );
         assert_eq!(v(b"FitH", &[Some(f32::NAN)]), FitH { top: None });
         // A FitR without four usable numbers, an unknown type or no type: the top of the page.
         assert_eq!(v(b"FitR", &[Some(1.0), Some(2.0)]), Top);
-        assert_eq!(v(b"FitR", &[Some(1.0), Some(2.0), Some(f32::INFINITY), Some(4.0)]), Top);
+        assert_eq!(
+            v(
+                b"FitR",
+                &[Some(1.0), Some(2.0), Some(f32::INFINITY), Some(4.0)]
+            ),
+            Top
+        );
         assert_eq!(v(b"Zoom", &[Some(3.0)]), Top);
         assert_eq!(v(b"xyz", &[Some(3.0)]), Top);
         assert_eq!(DestView::from_operands(None, &[Some(1.0)]), Top);
@@ -2196,20 +3126,62 @@ trailer << /Root 1 0 R >>
     fn bookmarks_and_links_keep_their_destination_view() {
         use DestView::*;
         let info = inspect(Arc::new(DESTS.to_vec()), None).expect("opens");
-        let outline: Vec<_> = info.outline.iter().map(|o| (o.title.as_str(), o.page, o.view)).collect();
+        let outline: Vec<_> = info
+            .outline
+            .iter()
+            .map(|o| (o.title.as_str(), o.page, o.view))
+            .collect();
         assert_eq!(
             outline,
             [
-                ("xyz", Some(1), Xyz { left: Some(0.0), top: Some(420.0), zoom: None }),
+                (
+                    "xyz",
+                    Some(1),
+                    Xyz {
+                        left: Some(0.0),
+                        top: Some(420.0),
+                        zoom: None
+                    }
+                ),
                 ("fith", Some(1), FitH { top: Some(250.0) }),
-                ("named", Some(1), Xyz { left: None, top: Some(300.0), zoom: Some(2.0) }),
+                (
+                    "named",
+                    Some(1),
+                    Xyz {
+                        left: None,
+                        top: Some(300.0),
+                        zoom: Some(2.0)
+                    }
+                ),
                 ("old named", Some(1), FitV { left: Some(120.0) }),
-                ("action", Some(1), FitR { rect: [10.0, 20.0, 110.0, 220.0] }),
+                (
+                    "action",
+                    Some(1),
+                    FitR {
+                        rect: [10.0, 20.0, 110.0, 220.0]
+                    }
+                ),
                 // Hostile operands fall back without failing the bookmark.
-                ("wrong types", Some(1), Xyz { left: None, top: None, zoom: None }),
+                (
+                    "wrong types",
+                    Some(1),
+                    Xyz {
+                        left: None,
+                        top: None,
+                        zoom: None
+                    }
+                ),
                 ("short", Some(1), Top),
                 ("no type", Some(1), Top),
-                ("huge", Some(1), Xyz { left: Some(1e12), top: Some(-5.0), zoom: None }),
+                (
+                    "huge",
+                    Some(1),
+                    Xyz {
+                        left: Some(1e12),
+                        top: Some(-5.0),
+                        zoom: None
+                    }
+                ),
                 ("no page", None, Top),
             ]
         );
@@ -2217,8 +3189,22 @@ trailer << /Root 1 0 R >>
         assert_eq!(
             links,
             [
-                LinkTarget::Page(1, Xyz { left: Some(72.0), top: Some(500.0), zoom: Some(1.5) }),
-                LinkTarget::Page(1, Xyz { left: None, top: Some(300.0), zoom: Some(2.0) }),
+                LinkTarget::Page(
+                    1,
+                    Xyz {
+                        left: Some(72.0),
+                        top: Some(500.0),
+                        zoom: Some(1.5)
+                    }
+                ),
+                LinkTarget::Page(
+                    1,
+                    Xyz {
+                        left: None,
+                        top: Some(300.0),
+                        zoom: Some(2.0)
+                    }
+                ),
                 LinkTarget::Page(1, FitH { top: Some(100.0) }),
                 LinkTarget::Page(1, Fit),
             ]
@@ -2245,7 +3231,10 @@ trailer << /Root 1 0 R >>
         let titles: Vec<_> = info.outline.iter().map(|o| o.title.as_str()).collect();
         // UTF-16BE, UTF-8 with BOM, invalid UTF-8 after a BOM (lossy, not dropped), BOM-less
         // raw UTF-8, PDFDocEncoding Latin-1, and a doubled BOM.
-        assert_eq!(titles, ["第一章", "目录", "A\u{FFFD}B", "概述", "Café", "A"]);
+        assert_eq!(
+            titles,
+            ["第一章", "目录", "A\u{FFFD}B", "概述", "Café", "A"]
+        );
     }
 
     /// A file whose objects are `bodies` in order (object 1 first), with a cross-reference table.
@@ -2257,11 +3246,19 @@ trailer << /Root 1 0 R >>
             out.extend_from_slice(format!("{} 0 obj\n{body}\nendobj\n", i + 1).as_bytes());
         }
         let xref = out.len();
-        out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", bodies.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f \n", bodies.len() + 1).as_bytes(),
+        );
         for o in offsets {
             out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
         }
-        out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", bodies.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+                bodies.len() + 1
+            )
+            .as_bytes(),
+        );
         out
     }
 
@@ -2279,7 +3276,16 @@ trailer << /Root 1 0 R >>
 
     /// The titles of `items`, with children in brackets (`Parent[Child]`).
     fn shape(items: &[OutlineItem]) -> Vec<String> {
-        items.iter().map(|o| if o.children.is_empty() { o.title.clone() } else { format!("{}[{}]", o.title, shape(&o.children).join(",")) }).collect()
+        items
+            .iter()
+            .map(|o| {
+                if o.children.is_empty() {
+                    o.title.clone()
+                } else {
+                    format!("{}[{}]", o.title, shape(&o.children).join(","))
+                }
+            })
+            .collect()
     }
 
     #[test]
@@ -2287,17 +3293,34 @@ trailer << /Root 1 0 R >>
         const COUNT: usize = OUTLINE_WINDOW + 5;
         let items: Vec<String> = (0..COUNT)
             .map(|k| {
-                let prev = if k == 0 { String::new() } else { format!(" /Prev {} 0 R", 4 + k) };
-                let next = if k + 1 == COUNT { String::new() } else { format!(" /Next {} 0 R", 6 + k) };
+                let prev = if k == 0 {
+                    String::new()
+                } else {
+                    format!(" /Prev {} 0 R", 4 + k)
+                };
+                let next = if k + 1 == COUNT {
+                    String::new()
+                } else {
+                    format!(" /Next {} 0 R", 6 + k)
+                };
                 format!("<< /Title (Item {k}) /Parent 4 0 R{prev}{next} /Dest [3 0 R /Fit] >>")
             })
             .collect();
         let info = inspect(Arc::new(outline_file(&items)), None).expect("opens");
         assert_eq!(info.outline.len(), OUTLINE_WINDOW);
-        assert_eq!(info.outline.last().map(|o| o.title.as_str()), Some("Item 9999"));
+        assert_eq!(
+            info.outline.last().map(|o| o.title.as_str()),
+            Some("Item 9999")
+        );
         assert!(info.outline_more);
 
-        let one = inspect(Arc::new(outline_file(&["<< /Title (Only) /Parent 4 0 R /Dest [3 0 R /Fit] >>".into()])), None).expect("opens");
+        let one = inspect(
+            Arc::new(outline_file(&[
+                "<< /Title (Only) /Parent 4 0 R /Dest [3 0 R /Fit] >>".into(),
+            ])),
+            None,
+        )
+        .expect("opens");
         assert_eq!(shape(&one.outline), ["Only"]);
         assert!(!one.outline_more);
     }
@@ -2308,7 +3331,11 @@ trailer << /Root 1 0 R >>
         let items: Vec<String> = (0..40)
             .map(|k| {
                 let parent = if k == 0 { 4 } else { 4 + k };
-                let first = if k + 1 == 40 { String::new() } else { format!(" /First {} 0 R", 6 + k) };
+                let first = if k + 1 == 40 {
+                    String::new()
+                } else {
+                    format!(" /First {} 0 R", 6 + k)
+                };
                 format!("<< /Title (Deep {k}) /Parent {parent} 0 R{first} /Dest [3 0 R /Fit] >>")
             })
             .collect();
@@ -2327,40 +3354,109 @@ trailer << /Root 1 0 R >>
     fn outline_window_ends_cycles_and_broken_links_without_looping() {
         let listed = |items: &[&str]| {
             let items: Vec<String> = items.iter().map(|s| s.to_string()).collect();
-            shape(&inspect(Arc::new(outline_file(&items)), None).expect("opens").outline)
+            shape(
+                &inspect(Arc::new(outline_file(&items)), None)
+                    .expect("opens")
+                    .outline,
+            )
         };
-        assert_eq!(listed(&["<< /Title (Self) /Parent 4 0 R /Next 5 0 R >>"]), ["Self"]);
-        assert_eq!(listed(&["<< /Title (Self) /Parent 4 0 R /First 5 0 R >>"]), ["Self"]);
-        assert_eq!(listed(&["<< /Title (A) /Parent 4 0 R /Next 6 0 R >>", "<< /Title (B) /Parent 4 0 R /Next 5 0 R >>"]), ["A", "B"]);
-        assert_eq!(listed(&["<< /Title (A) /Parent 4 0 R /First 6 0 R >>", "<< /Title (B) /Parent 5 0 R /First 5 0 R >>"]), ["A[B]"]);
-        assert_eq!(listed(&["<< /Title (A) /Parent 4 0 R /Next 99 0 R >>"]), ["A"]);
-        assert_eq!(listed(&["<< /Title (A) /Parent 4 0 R /Next 6 0 R >>", "42"]), ["A"]);
+        assert_eq!(
+            listed(&["<< /Title (Self) /Parent 4 0 R /Next 5 0 R >>"]),
+            ["Self"]
+        );
+        assert_eq!(
+            listed(&["<< /Title (Self) /Parent 4 0 R /First 5 0 R >>"]),
+            ["Self"]
+        );
+        assert_eq!(
+            listed(&[
+                "<< /Title (A) /Parent 4 0 R /Next 6 0 R >>",
+                "<< /Title (B) /Parent 4 0 R /Next 5 0 R >>"
+            ]),
+            ["A", "B"]
+        );
+        assert_eq!(
+            listed(&[
+                "<< /Title (A) /Parent 4 0 R /First 6 0 R >>",
+                "<< /Title (B) /Parent 5 0 R /First 5 0 R >>"
+            ]),
+            ["A[B]"]
+        );
+        assert_eq!(
+            listed(&["<< /Title (A) /Parent 4 0 R /Next 99 0 R >>"]),
+            ["A"]
+        );
+        assert_eq!(
+            listed(&["<< /Title (A) /Parent 4 0 R /Next 6 0 R >>", "42"]),
+            ["A"]
+        );
     }
 
     #[test]
     fn destination_points_map_to_the_displayed_page() {
         // A crop box away from the origin: x 100..400, y 50..450.
-        let mut p = PageInfo { width: 300.0, height: 400.0, label: "1".into(), crop: [100.0, 50.0, 400.0, 450.0], rotation: 0 };
-        assert_eq!(p.dest_fraction(Some(100.0), Some(450.0), 0), [Some(0.0), Some(0.0)]);
-        assert_eq!(p.dest_fraction(Some(250.0), Some(350.0), 0), [Some(0.5), Some(0.25)]);
+        let mut p = PageInfo {
+            width: 300.0,
+            height: 400.0,
+            label: "1".into(),
+            crop: [100.0, 50.0, 400.0, 450.0],
+            rotation: 0,
+        };
+        assert_eq!(
+            p.dest_fraction(Some(100.0), Some(450.0), 0),
+            [Some(0.0), Some(0.0)]
+        );
+        assert_eq!(
+            p.dest_fraction(Some(250.0), Some(350.0), 0),
+            [Some(0.5), Some(0.25)]
+        );
         // Unspecified stays unspecified; off-page and huge values are clamped to the page.
         assert_eq!(p.dest_fraction(None, Some(350.0), 0), [None, Some(0.25)]);
-        assert_eq!(p.dest_fraction(Some(-1e30), Some(1e30), 0), [Some(0.0), Some(0.0)]);
-        assert_eq!(p.dest_fraction(Some(f32::INFINITY), Some(f32::NAN), 0), [None, None]);
+        assert_eq!(
+            p.dest_fraction(Some(-1e30), Some(1e30), 0),
+            [Some(0.0), Some(0.0)]
+        );
+        assert_eq!(
+            p.dest_fraction(Some(f32::INFINITY), Some(f32::NAN), 0),
+            [None, None]
+        );
         // /Rotate 90 (clockwise): user y runs left to right across the displayed page, user x
         // top to bottom. A view rotation adds to it.
         p.rotation = 90;
-        assert_eq!(p.dest_fraction(Some(250.0), Some(350.0), 0), [Some(0.75), Some(0.5)]);
+        assert_eq!(
+            p.dest_fraction(Some(250.0), Some(350.0), 0),
+            [Some(0.75), Some(0.5)]
+        );
         assert_eq!(p.dest_fraction(None, Some(350.0), 0), [Some(0.75), None]);
-        assert_eq!(p.dest_fraction(Some(250.0), Some(350.0), 90), [Some(0.5), Some(0.75)]);
+        assert_eq!(
+            p.dest_fraction(Some(250.0), Some(350.0), 90),
+            [Some(0.5), Some(0.75)]
+        );
         p.rotation = 180;
-        assert_eq!(p.dest_fraction(Some(250.0), Some(350.0), 0), [Some(0.5), Some(0.75)]);
+        assert_eq!(
+            p.dest_fraction(Some(250.0), Some(350.0), 0),
+            [Some(0.5), Some(0.75)]
+        );
         p.rotation = 270;
-        assert_eq!(p.dest_fraction(Some(250.0), Some(350.0), 0), [Some(0.25), Some(0.5)]);
-        assert_eq!(p.dest_fraction(Some(250.0), Some(350.0), 90), [Some(0.5), Some(0.25)]);
+        assert_eq!(
+            p.dest_fraction(Some(250.0), Some(350.0), 0),
+            [Some(0.25), Some(0.5)]
+        );
+        assert_eq!(
+            p.dest_fraction(Some(250.0), Some(350.0), 90),
+            [Some(0.5), Some(0.25)]
+        );
         // A degenerate crop box never divides by zero.
-        let flat = PageInfo { crop: [0.0, 0.0, 0.0, 0.0], rotation: 0, ..p };
-        assert!(flat.dest_fraction(Some(5.0), Some(-5.0), 0).iter().all(|f| f.is_some_and(|f| (0.0..=1.0).contains(&f))));
+        let flat = PageInfo {
+            crop: [0.0, 0.0, 0.0, 0.0],
+            rotation: 0,
+            ..p
+        };
+        assert!(
+            flat.dest_fraction(Some(5.0), Some(-5.0), 0)
+                .iter()
+                .all(|f| f.is_some_and(|f| (0.0..=1.0).contains(&f)))
+        );
     }
 
     #[test]
@@ -2369,7 +3465,13 @@ trailer << /Root 1 0 R >>
             let mut info = DocInfo {
                 file_size: 321,
                 pdf_version: "1.7".into(),
-                pages: vec![PageInfo { width: 300.0, height: 200.0, label: "1".into(), crop: [10.0, 20.0, 210.0, 320.0], rotation: 90 }],
+                pages: vec![PageInfo {
+                    width: 300.0,
+                    height: 200.0,
+                    label: "1".into(),
+                    crop: [10.0, 20.0, 210.0, 320.0],
+                    rotation: 90,
+                }],
                 ..Default::default()
             };
             inspect_structure(&mut info, |tmp| {
@@ -2383,7 +3485,16 @@ trailer << /Root 1 0 R >>
 
             assert_eq!(info.pages.len(), 1);
             let page = &info.pages[0];
-            assert_eq!((page.width, page.height, page.label.as_str(), page.crop, page.rotation), (300.0, 200.0, "1", [10.0, 20.0, 210.0, 320.0], 90));
+            assert_eq!(
+                (
+                    page.width,
+                    page.height,
+                    page.label.as_str(),
+                    page.crop,
+                    page.rotation
+                ),
+                (300.0, 200.0, "1", [10.0, 20.0, 210.0, 320.0], 90)
+            );
             assert_eq!(info.file_size, 321);
             assert_eq!(info.pdf_version, "1.7");
             assert!(info.title.is_none());
@@ -2403,7 +3514,11 @@ trailer << /Root 1 0 R >>
         for character in ['é', '€', '😀'] {
             for prefix_len in 0..12 {
                 let input = format!("D:{}{character}123456789012", "1".repeat(prefix_len));
-                assert_eq!(pretty_date(&input), input, "{character} after {prefix_len} digits");
+                assert_eq!(
+                    pretty_date(&input),
+                    input,
+                    "{character} after {prefix_len} digits"
+                );
             }
         }
     }
@@ -2470,14 +3585,20 @@ trailer << /Root 1 0 R >>
             "MediaBox" => vec![0.into(), 0.into(), 200.into(), 300.into()],
             "Annots" => vec![annot_id.into()],
         });
-        doc.objects.insert(pages_id, dictionary! { "Type" => "Pages", "Kids" => vec![page_id.into()], "Count" => 1 }.into());
+        doc.objects.insert(
+            pages_id,
+            dictionary! { "Type" => "Pages", "Kids" => vec![page_id.into()], "Count" => 1 }.into(),
+        );
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
         doc.trailer.set("Root", catalog_id);
         let mut bytes = Vec::new();
         doc.save_to(&mut bytes).expect("write synthetic fixture");
 
         let info = inspect(Arc::new(bytes), None).expect("opens");
-        assert_eq!(info.annotations[0].contents.as_deref(), Some("one\n\ntwo\nthree"));
+        assert_eq!(
+            info.annotations[0].contents.as_deref(),
+            Some("one\n\ntwo\nthree")
+        );
     }
 
     #[test]
@@ -2497,8 +3618,16 @@ trailer << /Root 1 0 R >>
         let info = inspect(std::sync::Arc::new(pdf.to_vec()), None).expect("opens");
         assert_eq!(info.pages.len(), 1);
         let p = &info.pages[0];
-        assert!((p.width - 3874.96).abs() < 0.1, "width expected ~3874.96, got {}", p.width);
-        assert!((p.height - 5493.54).abs() < 0.1, "height expected ~5493.54, got {}", p.height);
+        assert!(
+            (p.width - 3874.96).abs() < 0.1,
+            "width expected ~3874.96, got {}",
+            p.width
+        );
+        assert!(
+            (p.height - 5493.54).abs() < 0.1,
+            "height expected ~5493.54, got {}",
+            p.height
+        );
     }
 }
 

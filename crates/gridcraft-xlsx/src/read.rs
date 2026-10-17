@@ -3,7 +3,9 @@
 use std::sync::Arc;
 
 use gridcraft_core::{DateSystem, RangeRef};
-use gridcraft_model::{CalcMode, CellPicture, DefinedName, Sheet, Style, StyleId, StyleTable, Visibility, Workbook};
+use gridcraft_model::{
+    CalcMode, CellPicture, DefinedName, Sheet, Style, StyleId, StyleTable, Visibility, Workbook,
+};
 
 use crate::package::{Package, Rel};
 use crate::styles::{StylesIn, read_styles};
@@ -43,7 +45,8 @@ impl Ctx<'_> {
         id
     }
     pub fn style(&self, xf: Option<u32>) -> StyleId {
-        xf.and_then(|i| self.xf_map.get(i as usize).copied()).unwrap_or_default()
+        xf.and_then(|i| self.xf_map.get(i as usize).copied())
+            .unwrap_or_default()
     }
     /// Reads and parses an optional part: problems other than size limits become warnings.
     pub fn optional_xml(&mut self, part: &str) -> Result<Option<El>, IoError> {
@@ -84,28 +87,39 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
         cf_ext_ids: vec![],
     };
     let root_rels = cx.pkg.rels("")?;
-    let wb_part = find_rel(&root_rels, "officeDocument").map(|r| r.target.clone()).unwrap_or_else(|| "xl/workbook.xml".into());
+    let wb_part = find_rel(&root_rels, "officeDocument")
+        .map(|r| r.target.clone())
+        .unwrap_or_else(|| "xl/workbook.xml".into());
     let wb_xml = match cx.pkg.read_xml(&wb_part)? {
         Some(x) => x,
         None => {
             if cx.pkg.has("xl/workbook.xml") && wb_part != "xl/workbook.xml" {
-                cx.pkg.read_xml("xl/workbook.xml")?.ok_or_else(|| IoError::Format("no workbook part".into()))?
+                cx.pkg
+                    .read_xml("xl/workbook.xml")?
+                    .ok_or_else(|| IoError::Format("no workbook part".into()))?
             } else if cx.pkg.has("content.xml") {
-                return Err(IoError::Format("this is an OpenDocument file, not XLSX".into()));
+                return Err(IoError::Format(
+                    "this is an OpenDocument file, not XLSX".into(),
+                ));
             } else {
                 return Err(IoError::Format("no workbook part".into()));
             }
         }
     };
     if wb_xml.name != "workbook" {
-        return Err(IoError::Format(format!("unexpected root element <{}> in workbook part", wb_xml.name)));
+        return Err(IoError::Format(format!(
+            "unexpected root element <{}> in workbook part",
+            wb_xml.name
+        )));
     }
     let wb_rels = cx.pkg.rels(&wb_part)?;
     let mut kept = crate::passthrough::KeptReader::new(&mut cx);
     cx.cell_pictures = match crate::richdata::read(&mut cx, &wb_rels) {
         Ok(pictures) => pictures,
         Err(error) => {
-            cx.warn(format!("cell-picture data could not be read ({error}); scalar fallbacks were retained"));
+            cx.warn(format!(
+                "cell-picture data could not be read ({error}); scalar fallbacks were retained"
+            ));
             vec![]
         }
     };
@@ -121,13 +135,32 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
     }
     if let Some(r) = find_rel(&wb_rels, "styles").cloned() {
         if let Some(x) = cx.optional_xml(&r.target)? {
-            let StylesIn { xfs, dxfs, palette, named, num_fmts } = read_styles(&x, &checkboxes);
+            let StylesIn {
+                xfs,
+                dxfs,
+                palette,
+                named,
+                num_fmts,
+            } = read_styles(&x, &checkboxes);
             cx.num_fmts = num_fmts;
             // Cell format 0 is the Normal style: its font is what every unformatted cell shows.
             if let Some(normal) = xfs.first() {
-                cx.styles = StyleTable::with_default(Style { font: normal.font.clone(), ..Style::default() });
+                cx.styles = StyleTable::with_default(Style {
+                    font: normal.font.clone(),
+                    ..Style::default()
+                });
             }
-            cx.xf_map = xfs.into_iter().enumerate().map(|(i, s)| if i == 0 { StyleId::DEFAULT } else { cx.styles.intern(s) }).collect();
+            cx.xf_map = xfs
+                .into_iter()
+                .enumerate()
+                .map(|(i, s)| {
+                    if i == 0 {
+                        StyleId::DEFAULT
+                    } else {
+                        cx.styles.intern(s)
+                    }
+                })
+                .collect();
             cx.dxfs = dxfs;
             cx.palette = palette;
             wb.cell_styles = named;
@@ -150,7 +183,10 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
                     Ok(())
                 });
                 if let Err(e) = res {
-                    cx.warn(format!("shared strings are damaged ({e}); kept {} strings", sst.len()));
+                    cx.warn(format!(
+                        "shared strings are damaged ({e}); kept {} strings",
+                        sst.len()
+                    ));
                 }
                 cx.sst = sst;
             }
@@ -192,17 +228,30 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
     }
     if let Some(p) = wb_xml.child("workbookProtection") {
         wb.protected_structure = p.flag("lockStructure", false);
-        wb.structure_password = if wb.protected_structure { crate::sheet_read::read_password(p, "workbook") } else { None };
+        wb.structure_password = if wb.protected_structure {
+            crate::sheet_read::read_password(p, "workbook")
+        } else {
+            None
+        };
     }
-    let active_tab = wb_xml.path(&["bookViews", "workbookView"]).and_then(|v| v.attr_u32("activeTab")).unwrap_or(0) as usize;
+    let active_tab = wb_xml
+        .path(&["bookViews", "workbookView"])
+        .and_then(|v| v.attr_u32("activeTab"))
+        .unwrap_or(0) as usize;
 
     // Sheets. `file_to_model[i]` maps the i-th <sheet> to a model sheet index.
     let mut file_to_model: Vec<Option<usize>> = vec![];
     let mut pivot_caches = crate::pivot::CachesIn::new(&wb_xml, &wb_rels);
-    let sheet_els: Vec<El> = wb_xml.child("sheets").map(|s| s.kids("sheet").cloned().collect()).unwrap_or_default();
+    let sheet_els: Vec<El> = wb_xml
+        .child("sheets")
+        .map(|s| s.kids("sheet").cloned().collect())
+        .unwrap_or_default();
     for (i, se) in sheet_els.iter().enumerate() {
         let name = se.attr("name").unwrap_or("").to_string();
-        let rel = se.attr("id").and_then(|id| wb_rels.iter().find(|r| r.id == id)).cloned();
+        let rel = se
+            .attr("id")
+            .and_then(|id| wb_rels.iter().find(|r| r.id == id))
+            .cloned();
         let Some(rel) = rel else {
             cx.warn(format!("sheet \"{name}\" has no part; skipped"));
             file_to_model.push(None);
@@ -214,7 +263,10 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
             continue;
         }
         if rel.kind != "worksheet" {
-            cx.warn(format!("sheet \"{name}\" is a {} and was skipped", rel.kind));
+            cx.warn(format!(
+                "sheet \"{name}\" is a {} and was skipped",
+                rel.kind
+            ));
             file_to_model.push(None);
             continue;
         }
@@ -230,7 +282,9 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
         match crate::pivot::read_pivots(&mut cx, &mut pivot_caches, &rel.target, &name) {
             Ok(p) => sheet.pivots = p,
             Err(IoError::TooLarge(m)) => return Err(IoError::TooLarge(m)),
-            Err(e) => cx.warn(format!("PivotTables on sheet \"{name}\" could not be read: {e}")),
+            Err(e) => cx.warn(format!(
+                "PivotTables on sheet \"{name}\" could not be read: {e}"
+            )),
         }
         sheet.preserved = kept.sheet(&mut cx, &rel.target, &name);
         sheet.visibility = match se.attr("state") {
@@ -245,7 +299,11 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
         cx.warn("the workbook has no worksheets; added an empty sheet");
         wb.sheets.push(Arc::new(Sheet::new("Sheet1")));
     }
-    wb.active_sheet = file_to_model.get(active_tab).copied().flatten().unwrap_or(0);
+    wb.active_sheet = file_to_model
+        .get(active_tab)
+        .copied()
+        .flatten()
+        .unwrap_or(0);
 
     // Defined names. Chartex parts refer to their data through hidden `_xlchart.*` names.
     let mut chart_names: Vec<(String, String)> = vec![];
@@ -323,7 +381,10 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
     if let Some(r) = find_rel(&root_rels, "extended-properties").cloned()
         && let Ok(Some(x)) = cx.pkg.read_xml(&r.target)
     {
-        wb.props.company = x.child("Company").map(|e| e.text.clone()).unwrap_or_default();
+        wb.props.company = x
+            .child("Company")
+            .map(|e| e.text.clone())
+            .unwrap_or_default();
     }
 
     // A VBA project is carried through unchanged: GridCraft never runs macros, but preserving the
@@ -336,7 +397,9 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
             }
             Ok(None) => cx.warn("macros (VBA project) reference a missing part and were dropped"),
             Err(IoError::TooLarge(m)) => return Err(IoError::TooLarge(m)),
-            Err(e) => cx.warn(format!("macros (VBA project) could not be read and were dropped: {e}")),
+            Err(e) => cx.warn(format!(
+                "macros (VBA project) could not be read and were dropped: {e}"
+            )),
         }
     }
     wb.preserved = kept.workbook(&mut cx, &wb_part, &wb_xml, &file_to_model);
@@ -347,14 +410,21 @@ pub fn read_xlsx(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
 }
 
 pub(crate) fn unique_name(wb: &Workbook, name: &str, i: usize) -> String {
-    let mut base: String = name.chars().filter(|c| !matches!(c, ':' | '\\' | '/' | '?' | '*' | '[' | ']')).take(31).collect();
+    let mut base: String = name
+        .chars()
+        .filter(|c| !matches!(c, ':' | '\\' | '/' | '?' | '*' | '[' | ']'))
+        .take(31)
+        .collect();
     if base.trim().is_empty() {
         base = format!("Sheet{}", i + 1);
     }
     if wb.sheet_index(&base).is_none() {
         return base;
     }
-    (2..).map(|n| format!("{} ({n})", base.chars().take(25).collect::<String>())).find(|n| wb.sheet_index(n).is_none()).unwrap_or(base)
+    (2..)
+        .map(|n| format!("{} ({n})", base.chars().take(25).collect::<String>()))
+        .find(|n| wb.sheet_index(n).is_none())
+        .unwrap_or(base)
 }
 
 /// Strips a sheet qualifier (`'My Sheet'!$A$1` → `$A$1`).
@@ -376,13 +446,17 @@ pub fn parse_print_titles(text: &str) -> (Option<(u32, u32)>, Option<(u32, u32)>
     let mut cols = None;
     for part in text.split(',') {
         let p = strip_sheet(part.trim()).replace('$', "");
-        let Some((a, b)) = p.split_once(':') else { continue };
+        let Some((a, b)) = p.split_once(':') else {
+            continue;
+        };
         if let (Ok(r0), Ok(r1)) = (a.parse::<u32>(), b.parse::<u32>()) {
             if r0 >= 1 && r1 >= r0 && r1 <= gridcraft_core::MAX_ROWS {
                 rows = Some((r0 - 1, r1 - 1));
             }
-        } else if let (Some(c0), Some(c1)) = (gridcraft_core::letters_to_col(a), gridcraft_core::letters_to_col(b))
-            && c1 >= c0
+        } else if let (Some(c0), Some(c1)) = (
+            gridcraft_core::letters_to_col(a),
+            gridcraft_core::letters_to_col(b),
+        ) && c1 >= c0
         {
             cols = Some((c0, c1));
         }

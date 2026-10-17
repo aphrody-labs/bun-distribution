@@ -38,17 +38,23 @@ pub struct LayerMaskView {
 }
 
 fn bad(msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: ID.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: ID.into(),
+        msg: msg.into(),
+    }
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 /// The mask view of `st` when it is live: its layer is the active layer and still has a mask.
 pub fn current(st: &DocState) -> Option<LayerMaskView> {
     let v = st.channel_view.layer_mask?;
-    let live = st.active_layer == Some(v.layer) && st.doc.layer(v.layer).is_some_and(|l| l.mask.is_some());
+    let live =
+        st.active_layer == Some(v.layer) && st.doc.layer(v.layer).is_some_and(|l| l.mask.is_some());
     live.then_some(v)
 }
 
@@ -84,8 +90,13 @@ fn set_view(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let layer = match p.get("layer") {
-        None | Some(Value::Null) => st.active_layer.ok_or_else(|| bad("no layer given and no active layer"))?,
-        Some(v) => LayerId(v.as_u64().ok_or_else(|| bad("`layer` must be a layer id"))?),
+        None | Some(Value::Null) => st
+            .active_layer
+            .ok_or_else(|| bad("no layer given and no active layer"))?,
+        Some(v) => LayerId(
+            v.as_u64()
+                .ok_or_else(|| bad("`layer` must be a layer id"))?,
+        ),
     };
     let l = st.doc.layer(layer).ok_or(EngineError::NoLayer(layer))?;
     let has_mask = l.mask.is_some();
@@ -97,7 +108,11 @@ fn set_view(s: &mut Session, p: &Value) -> Result<Value> {
         "overlay" => Some(MaskViewMode::Overlay),
         "toggleGray" => (shown != Some(MaskViewMode::Gray)).then_some(MaskViewMode::Gray),
         "toggleOverlay" => (shown != Some(MaskViewMode::Overlay)).then_some(MaskViewMode::Overlay),
-        other => return Err(bad(format!("unknown mode `{other}` (off|gray|overlay|toggleGray|toggleOverlay)"))),
+        other => {
+            return Err(bad(format!(
+                "unknown mode `{other}` (off|gray|overlay|toggleGray|toggleOverlay)"
+            )));
+        }
     };
     if want.is_some() && !has_mask {
         return Err(bad(format!("layer \"{name}\" has no layer mask")));
@@ -129,8 +144,15 @@ fn set_view(s: &mut Session, p: &Value) -> Result<Value> {
 /// `\` needs a layer mask on the active layer; without one Photoshop's key does nothing.
 fn active_has_mask(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    let layer = st.active_layer.and_then(|id| st.doc.layer(id)).ok_or("no active layer")?;
-    if layer.mask.is_some() { Ok(()) } else { Err(format!("layer \"{}\" has no layer mask", layer.name)) }
+    let layer = st
+        .active_layer
+        .and_then(|id| st.doc.layer(id))
+        .ok_or("no active layer")?;
+    if layer.mask.is_some() {
+        Ok(())
+    } else {
+        Err(format!("layer \"{}\" has no layer mask", layer.name))
+    }
 }
 
 /// `{"layer":id?}`: [`ID`] with mode `toggleOverlay` (a `mode` param is ignored).
@@ -138,7 +160,12 @@ fn toggle_overlay(s: &mut Session, p: &Value) -> Result<Value> {
     let layer = match p {
         Value::Object(m) => m.get("layer").cloned().unwrap_or(Value::Null),
         Value::Null => Value::Null,
-        _ => return Err(EngineError::BadParams { cmd: OVERLAY_ID.into(), msg: "expected an object".into() }),
+        _ => {
+            return Err(EngineError::BadParams {
+                cmd: OVERLAY_ID.into(),
+                msg: "expected an object".into(),
+            });
+        }
     };
     set_view(s, &json!({"layer": layer, "mode": "toggleOverlay"}))
 }

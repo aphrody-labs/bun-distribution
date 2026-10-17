@@ -18,9 +18,17 @@ fn enabled(s: &Session) -> std::result::Result<(), String> {
 
 fn trap(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "image.trap";
-    let width = p.get("width").and_then(Value::as_f64).unwrap_or(1.0).round().max(0.0) as usize;
+    let width = p
+        .get("width")
+        .and_then(Value::as_f64)
+        .unwrap_or(1.0)
+        .round()
+        .max(0.0) as usize;
     if s.active().ok_or(EngineError::NoDocument)?.doc.mode != ColorMode::Cmyk {
-        return Err(EngineError::BadParams { cmd: cmd.into(), msg: "Trap needs a CMYK document".into() });
+        return Err(EngineError::BadParams {
+            cmd: cmd.into(),
+            msg: "Trap needs a CMYK document".into(),
+        });
     }
     s.edit("Trap", |doc, active| {
         let id = active.ok_or(EngineError::NoDocument)?;
@@ -29,7 +37,11 @@ fn trap(s: &mut Session, p: &Value) -> Result<Value> {
         let LayerContent::Raster(surf) = &mut l.content else {
             return Err(EngineError::BadParams {
                 cmd: cmd.into(),
-                msg: format!("Trap needs a pixel layer (active layer is {} {})", l.content.article(), l.content.kind_name()),
+                msg: format!(
+                    "Trap needs a pixel layer (active layer is {} {})",
+                    l.content.article(),
+                    l.content.kind_name()
+                ),
             });
         };
         if bounds.is_empty() {
@@ -66,7 +78,8 @@ mod tests {
     #[test]
     fn traps_a_cmyk_document() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 4, "mode": "cmyk"})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 4, "mode": "cmyk"}))
+            .unwrap();
         // Paint cyan | magenta halves on the Background.
         s.edit("paint", |doc, active| {
             let id = active.unwrap();
@@ -106,13 +119,17 @@ mod tests {
             assert!(d[4 * ch] > 0.5, "cyan trapped into the magenta edge");
         }
         // One history step.
-        assert_eq!(st.history.entries().last().map(|e| e.as_str()), Some("Trap"));
+        assert_eq!(
+            st.history.entries().last().map(|e| e.as_str()),
+            Some("Trap")
+        );
     }
 
     #[test]
     fn rejects_non_cmyk() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 4, "mode": "rgb"})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 4, "mode": "rgb"}))
+            .unwrap();
         assert!(s.execute("image.trap", json!({"width": 1})).is_err());
     }
 }

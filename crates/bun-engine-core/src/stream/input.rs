@@ -43,7 +43,11 @@ fn packet(channel: u8, reliable: bool, magic: u32, body: &[u8]) -> InputPacket {
     payload.extend_from_slice(&((4 + body.len()) as u32).to_be_bytes());
     payload.extend_from_slice(&magic.to_le_bytes());
     payload.extend_from_slice(body);
-    InputPacket { channel, reliable, payload }
+    InputPacket {
+        channel,
+        reliable,
+        payload,
+    }
 }
 
 /// Keyboard event: Windows virtual-key code with Moonlight's 0x8000 flag.
@@ -52,7 +56,12 @@ pub fn key(vk: u8, pressed: bool, modifiers: u8) -> InputPacket {
     let mut body = [0u8; 6];
     body[1..3].copy_from_slice(&code.to_le_bytes());
     body[3] = modifiers;
-    packet(channel::KEYBOARD, true, if pressed { KEY_DOWN } else { KEY_UP }, &body)
+    packet(
+        channel::KEYBOARD,
+        true,
+        if pressed { KEY_DOWN } else { KEY_UP },
+        &body,
+    )
 }
 
 pub fn mouse_move(dx: i16, dy: i16) -> InputPacket {
@@ -71,7 +80,16 @@ pub fn mouse_button(button: MouseButton, pressed: bool) -> Option<InputPacket> {
         MouseButton::Forward => 5,
         MouseButton::Other(_) => return None,
     };
-    Some(packet(channel::MOUSE, true, if pressed { MOUSE_BUTTON_DOWN } else { MOUSE_BUTTON_UP }, &[id]))
+    Some(packet(
+        channel::MOUSE,
+        true,
+        if pressed {
+            MOUSE_BUTTON_DOWN
+        } else {
+            MOUSE_BUTTON_UP
+        },
+        &[id],
+    ))
 }
 
 /// Vertical scroll in WHEEL_DELTA units (120 per notch).
@@ -93,7 +111,12 @@ pub fn controller_arrival(index: u8) -> InputPacket {
     body[1] = 0x01; // Xbox
     body[2..4].copy_from_slice(&0x03u16.to_le_bytes());
     body[4..8].copy_from_slice(&0x0000_FFFFu32.to_le_bytes());
-    packet(channel::GAMEPAD_BASE + index, true, CONTROLLER_ARRIVAL, &body)
+    packet(
+        channel::GAMEPAD_BASE + index,
+        true,
+        CONTROLLER_ARRIVAL,
+        &body,
+    )
 }
 
 /// Full gamepad state (`NV_MULTI_CONTROLLER_PACKET`).
@@ -106,7 +129,12 @@ pub fn gamepad(index: u8, active_mask: u16, pad: &Pad) -> InputPacket {
     body.extend_from_slice(&pad.buttons.to_le_bytes());
     body.push(pad.left_trigger);
     body.push(pad.right_trigger);
-    for v in [pad.left_stick.0, pad.left_stick.1, pad.right_stick.0, pad.right_stick.1] {
+    for v in [
+        pad.left_stick.0,
+        pad.left_stick.1,
+        pad.right_stick.0,
+        pad.right_stick.1,
+    ] {
         body.extend_from_slice(&v.to_le_bytes());
     }
     body.extend_from_slice(&0x009Cu16.to_le_bytes());

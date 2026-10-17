@@ -28,12 +28,42 @@ struct Companion {
 }
 
 const COMPANIONS: &[Companion] = &[
-    Companion { tool: "find", repository: "uutils-findutils", binary: "find", prefix: &[] },
-    Companion { tool: "locate", repository: "uutils-findutils", binary: "locate", prefix: &[] },
-    Companion { tool: "updatedb", repository: "uutils-findutils", binary: "updatedb", prefix: &[] },
-    Companion { tool: "xargs", repository: "uutils-findutils", binary: "xargs", prefix: &[] },
-    Companion { tool: "grep", repository: "uutils-grep", binary: "grep", prefix: &[] },
-    Companion { tool: "sed", repository: "uutils-sed", binary: "sed", prefix: &[] },
+    Companion {
+        tool: "find",
+        repository: "uutils-findutils",
+        binary: "find",
+        prefix: &[],
+    },
+    Companion {
+        tool: "locate",
+        repository: "uutils-findutils",
+        binary: "locate",
+        prefix: &[],
+    },
+    Companion {
+        tool: "updatedb",
+        repository: "uutils-findutils",
+        binary: "updatedb",
+        prefix: &[],
+    },
+    Companion {
+        tool: "xargs",
+        repository: "uutils-findutils",
+        binary: "xargs",
+        prefix: &[],
+    },
+    Companion {
+        tool: "grep",
+        repository: "uutils-grep",
+        binary: "grep",
+        prefix: &[],
+    },
+    Companion {
+        tool: "sed",
+        repository: "uutils-sed",
+        binary: "sed",
+        prefix: &[],
+    },
     Companion {
         tool: "cmp",
         repository: "uutils-diffutils",
@@ -46,7 +76,12 @@ const COMPANIONS: &[Companion] = &[
         binary: "diffutils",
         prefix: &["diff"],
     },
-    Companion { tool: "tar", repository: "uutils-tar", binary: "tarapp", prefix: &["tar"] },
+    Companion {
+        tool: "tar",
+        repository: "uutils-tar",
+        binary: "tarapp",
+        prefix: &["tar"],
+    },
 ];
 
 #[derive(Debug)]
@@ -76,14 +111,22 @@ async fn read_capped<R: AsyncRead + Unpin>(
 }
 
 fn default_binary() -> PathBuf {
-    let binary = if cfg!(windows) { "coreutils.exe" } else { "coreutils" };
+    let binary = if cfg!(windows) {
+        "coreutils.exe"
+    } else {
+        "coreutils"
+    };
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../../target/aphrody-uutils/coreutils/bin")
         .join(binary)
 }
 
 fn platform_binary(binary: &str) -> String {
-    if cfg!(windows) { format!("{binary}.exe") } else { binary.to_owned() }
+    if cfg!(windows) {
+        format!("{binary}.exe")
+    } else {
+        binary.to_owned()
+    }
 }
 
 fn coreutils_binary() -> PathBuf {
@@ -93,11 +136,15 @@ fn coreutils_binary() -> PathBuf {
 /// Companions are installed next to the multicall binary (`scripts/build/os/build-uutils-coreutils.ts`).
 fn companion_binary(companion: &Companion) -> PathBuf {
     let name = platform_binary(companion.binary);
-    coreutils_binary().parent().map_or_else(|| PathBuf::from(&name), |dir| dir.join(&name))
+    coreutils_binary()
+        .parent()
+        .map_or_else(|| PathBuf::from(&name), |dir| dir.join(&name))
 }
 
 fn companion(utility: &str) -> Option<&'static Companion> {
-    COMPANIONS.iter().find(|companion| companion.tool == utility)
+    COMPANIONS
+        .iter()
+        .find(|companion| companion.tool == utility)
 }
 
 fn resolve_binary() -> Result<PathBuf, String> {
@@ -173,7 +220,10 @@ fn bounded_u64(
 }
 
 fn output_format(value: &Value) -> Result<&str, SubsystemError> {
-    let format = value.get("output_format").and_then(Value::as_str).unwrap_or("text");
+    let format = value
+        .get("output_format")
+        .and_then(Value::as_str)
+        .unwrap_or("text");
     match format {
         "text" | "json" | "jsonl" => Ok(format),
         _ => Err(SubsystemError::InvalidArguments(
@@ -187,7 +237,10 @@ fn decode_output(format: &str, bytes: &[u8]) -> (Value, Option<String>) {
         "text" => (Value::Null, None),
         "json" => match serde_json::from_slice(bytes) {
             Ok(value) => (value, None),
-            Err(error) => (Value::Null, Some(format!("stdout is not valid JSON: {error}"))),
+            Err(error) => (
+                Value::Null,
+                Some(format!("stdout is not valid JSON: {error}")),
+            ),
         },
         "jsonl" => {
             let mut rows = Vec::new();
@@ -200,13 +253,16 @@ fn decode_output(format: &str, bytes: &[u8]) -> (Value, Option<String>) {
                     Err(error) => {
                         return (
                             Value::Null,
-                            Some(format!("stdout line {} is not valid JSON: {error}", index + 1)),
+                            Some(format!(
+                                "stdout line {} is not valid JSON: {error}",
+                                index + 1
+                            )),
                         );
-                    },
+                    }
                 }
             }
             (Value::Array(rows), None)
-        },
+        }
         _ => unreachable!("output_format validates accepted values"),
     }
 }
@@ -215,7 +271,11 @@ fn installed_utilities() -> Vec<String> {
     let Ok(binary) = resolve_binary() else {
         return Vec::new();
     };
-    let Ok(output) = std::process::Command::new(binary).no_window().arg("--list").output() else {
+    let Ok(output) = std::process::Command::new(binary)
+        .no_window()
+        .arg("--list")
+        .output()
+    else {
         return Vec::new();
     };
     if !output.status.success() {
@@ -332,7 +392,7 @@ impl CoreutilsSubsystem {
                         })?,
                         true,
                     )
-                },
+                }
             };
         let stdout = stdout_task
             .await
@@ -365,7 +425,8 @@ impl CoreutilsSubsystem {
     async fn run(&self, arguments: Value) -> Result<Value, SubsystemError> {
         let utility = utility_name(&arguments)?.to_owned();
         let binary = resolve_binary().map_err(SubsystemError::Failed)?;
-        self.execute(&utility, binary, arguments, vec![OsString::from(&utility)]).await
+        self.execute(&utility, binary, arguments, vec![OsString::from(&utility)])
+            .await
     }
 
     async fn run_companion(
@@ -440,11 +501,16 @@ impl SystemSubsystem for CoreutilsSubsystem {
                 command_schema(false),
             ));
         }
-        for companion in COMPANIONS.iter().filter(|companion| companion_binary(companion).is_file())
+        for companion in COMPANIONS
+            .iter()
+            .filter(|companion| companion_binary(companion).is_file())
         {
             tools.push(ToolDefinition::new(
                 format!("uutils_{}", companion.tool),
-                format!("Run uutils {} through the local Aphrody kernel", companion.tool),
+                format!(
+                    "Run uutils {} through the local Aphrody kernel",
+                    companion.tool
+                ),
                 command_schema(false),
             ));
         }
@@ -458,13 +524,16 @@ impl SystemSubsystem for CoreutilsSubsystem {
                 let result = self
                     .run(json!({ "utility": "--list", "max_output_bytes": MAX_OUTPUT_BYTES }))
                     .await?;
-                let stdout = result.get("stdout").and_then(Value::as_str).unwrap_or_default();
+                let stdout = result
+                    .get("stdout")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
                 let utilities: Vec<_> = stdout.lines().filter(|line| !line.is_empty()).collect();
                 let count = utilities.len();
                 Ok(
                     json!({ "utilities": utilities, "count": count, "upstream": "uutils/coreutils", "version": "0.12.0" }),
                 )
-            },
+            }
             "uutils_catalog" => Ok(json!({
                 "utilities": COMPANIONS.iter().map(|companion| json!({
                     "utility": companion.tool,
@@ -494,10 +563,13 @@ impl SystemSubsystem for CoreutilsSubsystem {
             "uutils_run" => {
                 let utility = utility_name(&arguments)?.to_owned();
                 self.run_companion(&utility, arguments).await
-            },
+            }
             tool if tool.starts_with("coreutils_") => {
                 let utility = tool.trim_start_matches("coreutils_");
-                if !installed_utilities().iter().any(|available| available == utility) {
+                if !installed_utilities()
+                    .iter()
+                    .any(|available| available == utility)
+                {
                     return Err(SubsystemError::UnknownTool(tool.to_owned()));
                 }
                 let mut arguments = arguments.as_object().cloned().ok_or_else(|| {
@@ -505,10 +577,11 @@ impl SystemSubsystem for CoreutilsSubsystem {
                 })?;
                 arguments.insert("utility".to_owned(), Value::String(utility.to_owned()));
                 self.run(Value::Object(arguments)).await
-            },
+            }
             tool if tool.starts_with("uutils_") => {
-                self.run_companion(tool.trim_start_matches("uutils_"), arguments).await
-            },
+                self.run_companion(tool.trim_start_matches("uutils_"), arguments)
+                    .await
+            }
             _ => Err(SubsystemError::UnknownTool(tool.to_owned())),
         }
     }
@@ -524,37 +597,60 @@ mod tests {
     #[tokio::test]
     async fn exposes_only_the_upstream_multicall_contract() {
         let subsystem = CoreutilsSubsystem::new();
-        let names: Vec<_> = subsystem.tools().into_iter().map(|tool| tool.name).collect();
+        let names: Vec<_> = subsystem
+            .tools()
+            .into_iter()
+            .map(|tool| tool.name)
+            .collect();
         assert!(names.starts_with(&[
             "coreutils_run".to_owned(),
             "coreutils_status".to_owned(),
             "coreutils_catalog".to_owned(),
         ]));
-        assert!(subsystem.call("coreutils_not_a_real_command", json!({})).await.is_err());
+        assert!(
+            subsystem
+                .call("coreutils_not_a_real_command", json!({}))
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
     async fn rejects_shell_syntax_in_utility_name() {
         let subsystem = CoreutilsSubsystem::new();
-        let result = subsystem.call("coreutils_run", json!({ "utility": "ls;rm" })).await;
+        let result = subsystem
+            .call("coreutils_run", json!({ "utility": "ls;rm" }))
+            .await;
         assert!(result.is_err());
     }
 
     #[test]
     fn companions_resolve_next_to_the_multicall_binary() {
-        let sed = super::COMPANIONS.iter().find(|companion| companion.tool == "sed").unwrap();
-        assert_eq!(super::companion_binary(sed).parent(), super::coreutils_binary().parent());
+        let sed = super::COMPANIONS
+            .iter()
+            .find(|companion| companion.tool == "sed")
+            .unwrap();
+        assert_eq!(
+            super::companion_binary(sed).parent(),
+            super::coreutils_binary().parent()
+        );
     }
 
     #[tokio::test]
     async fn runs_an_installed_companion() {
-        let sed = super::COMPANIONS.iter().find(|companion| companion.tool == "sed").unwrap();
+        let sed = super::COMPANIONS
+            .iter()
+            .find(|companion| companion.tool == "sed")
+            .unwrap();
         if !super::companion_binary(sed).is_file() {
             eprintln!("uutils sed not installed: bun scripts/build/os/build-uutils-coreutils.ts");
             return;
         }
         let result = CoreutilsSubsystem::new()
-            .call("uutils_run", json!({ "utility": "sed", "args": ["--version"] }))
+            .call(
+                "uutils_run",
+                json!({ "utility": "sed", "args": ["--version"] }),
+            )
             .await
             .unwrap();
         assert_eq!(result["exit_code"], 0, "{result}");

@@ -62,7 +62,10 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
 pub enum Source {
     File(PathBuf),
     /// Downloaded once into `cache`; a `cache.missing` marker records a 404.
-    Remote { url: String, cache: PathBuf },
+    Remote {
+        url: String,
+        cache: PathBuf,
+    },
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
@@ -142,9 +145,7 @@ fn decode(path: &Path) -> Option<Decoded> {
     } else {
         img
     };
-    let small = img
-        .thumbnail(112, 112)
-        .to_rgba8();
+    let small = img.thumbnail(112, 112).to_rgba8();
     let seed = aphrody_m3_tokens::image::source_color_from_rgba8(small.as_raw());
     let rgba = img.to_rgba8();
     Some(Decoded {

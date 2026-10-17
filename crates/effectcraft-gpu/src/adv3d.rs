@@ -22,12 +22,17 @@ use crate::context::{Enc, GpuContext, GpuImage};
 pub(crate) struct Pipes {
     /// (opaque, transparent); `None` when the adapter can't rasterise ([`raster_unsupported`]):
     /// scenes then render on the CPU.
-    raster: Option<(wgpu::BindGroupLayout, wgpu::RenderPipeline, wgpu::RenderPipeline)>,
+    raster: Option<(
+        wgpu::BindGroupLayout,
+        wgpu::RenderPipeline,
+        wgpu::RenderPipeline,
+    )>,
     post: Post,
 }
 
 fn pipes(g: &GpuContext) -> &Pipes {
-    g.adv3d.get_or_init(|| Pipes::new(&g.device, g.adv3d_raster))
+    g.adv3d
+        .get_or_init(|| Pipes::new(&g.device, g.adv3d_raster))
 }
 
 const COLOR: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
@@ -43,21 +48,32 @@ const VERTEX_SIZE: u64 = 52;
 /// would be a validation error, which release builds only log (and then draw nothing), so the
 /// caller keeps the scenes on the CPU instead.
 pub(crate) fn raster_unsupported(adapter: &wgpu::Adapter) -> Option<String> {
-    raster_capability_reason(adapter.get_downlevel_capabilities().flags, |format| adapter.get_texture_format_features(format))
+    raster_capability_reason(adapter.get_downlevel_capabilities().flags, |format| {
+        adapter.get_texture_format_features(format)
+    })
 }
 
-fn raster_capability_reason(flags: wgpu::DownlevelFlags, features: impl Fn(wgpu::TextureFormat) -> wgpu::TextureFormatFeatures) -> Option<String> {
+fn raster_capability_reason(
+    flags: wgpu::DownlevelFlags,
+    features: impl Fn(wgpu::TextureFormat) -> wgpu::TextureFormatFeatures,
+) -> Option<String> {
     use wgpu::TextureFormatFeatureFlags as F;
     use wgpu::TextureUsages as U;
     if !flags.contains(wgpu::DownlevelFlags::FRAGMENT_STORAGE) {
         return Some("no fragment storage buffers".into());
     }
     let targets = U::RENDER_ATTACHMENT | U::TEXTURE_BINDING | U::COPY_SRC;
-    let needs = [(COLOR, targets, F::BLENDABLE), (DEPTH_OUT, targets, F::empty()), (DEPTH, U::RENDER_ATTACHMENT, F::empty())];
+    let needs = [
+        (COLOR, targets, F::BLENDABLE),
+        (DEPTH_OUT, targets, F::empty()),
+        (DEPTH, U::RENDER_ATTACHMENT, F::empty()),
+    ];
     for (format, usages, required_flags) in needs {
         let f = features(format);
         if !f.allowed_usages.contains(usages) || !f.flags.contains(required_flags) {
-            return Some(format!("{format:?} lacks raster usages {usages:?} or flags {required_flags:?}"));
+            return Some(format!(
+                "{format:?} lacks raster usages {usages:?} or flags {required_flags:?}"
+            ));
         }
     }
     // The transparent pipeline blends colour and masks the depth target off.
@@ -75,7 +91,12 @@ fn buffer_bytes(count: u64, stride: u64, limit: u64) -> Option<u64> {
 
 /// Sizes of exactly the arrays serialized by pack, including its empty storage padding.
 /// Checking these before serialization bounds host packing as well as the GPU uploads.
-fn packed_bytes(counts: [u64; 6], uniform_limit: u64, storage_limit: u64, buffer_limit: u64) -> Option<[u64; 7]> {
+fn packed_bytes(
+    counts: [u64; 6],
+    uniform_limit: u64,
+    storage_limit: u64,
+    buffer_limit: u64,
+) -> Option<[u64; 7]> {
     let mut sizes = [0; 7];
     sizes[0] = buffer_bytes(40, 4, uniform_limit.min(buffer_limit))?;
     for (index, (count, stride)) in counts.into_iter().zip([96, 16, 16, 80, 80, 4]).enumerate() {
@@ -92,8 +113,16 @@ mod capability_tests {
     fn supported(format: wgpu::TextureFormat) -> wgpu::TextureFormatFeatures {
         let rt = wgpu::TextureUsages::RENDER_ATTACHMENT;
         wgpu::TextureFormatFeatures {
-            allowed_usages: if format == DEPTH { rt } else { rt | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_SRC },
-            flags: if format == COLOR { wgpu::TextureFormatFeatureFlags::BLENDABLE } else { wgpu::TextureFormatFeatureFlags::empty() },
+            allowed_usages: if format == DEPTH {
+                rt
+            } else {
+                rt | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_SRC
+            },
+            flags: if format == COLOR {
+                wgpu::TextureFormatFeatureFlags::BLENDABLE
+            } else {
+                wgpu::TextureFormatFeatureFlags::empty()
+            },
         }
     }
 
@@ -108,7 +137,10 @@ mod capability_tests {
 
     #[test]
     fn fragment_storage_and_independent_blending_are_required() {
-        for flag in [wgpu::DownlevelFlags::FRAGMENT_STORAGE, wgpu::DownlevelFlags::INDEPENDENT_BLEND] {
+        for flag in [
+            wgpu::DownlevelFlags::FRAGMENT_STORAGE,
+            wgpu::DownlevelFlags::INDEPENDENT_BLEND,
+        ] {
             assert!(raster_capability_reason(downlevel() - flag, supported).is_some());
         }
     }
@@ -116,7 +148,11 @@ mod capability_tests {
     #[test]
     fn color_and_integer_depth_require_their_actual_texture_usages() {
         for target in [COLOR, DEPTH_OUT] {
-            for usage in [wgpu::TextureUsages::RENDER_ATTACHMENT, wgpu::TextureUsages::TEXTURE_BINDING, wgpu::TextureUsages::COPY_SRC] {
+            for usage in [
+                wgpu::TextureUsages::RENDER_ATTACHMENT,
+                wgpu::TextureUsages::TEXTURE_BINDING,
+                wgpu::TextureUsages::COPY_SRC,
+            ] {
                 assert!(
                     raster_capability_reason(downlevel(), |format| {
                         let mut features = supported(format);
@@ -139,9 +175,13 @@ mod capability_tests {
                     let mut features = supported(format);
                     if format == target {
                         if target == COLOR {
-                            features.flags.remove(wgpu::TextureFormatFeatureFlags::BLENDABLE);
+                            features
+                                .flags
+                                .remove(wgpu::TextureFormatFeatureFlags::BLENDABLE);
                         } else {
-                            features.allowed_usages.remove(wgpu::TextureUsages::RENDER_ATTACHMENT);
+                            features
+                                .allowed_usages
+                                .remove(wgpu::TextureUsages::RENDER_ATTACHMENT);
                         }
                     }
                     features
@@ -164,8 +204,14 @@ mod capability_tests {
 
     #[test]
     fn packed_arrays_preflight_exact_strides_and_empty_padding() {
-        assert_eq!(packed_bytes([0; 6], 160, 16, 160), Some([160, 16, 16, 16, 16, 16, 16]));
-        assert_eq!(packed_bytes([2; 6], 160, 192, 192), Some([160, 192, 32, 32, 160, 160, 16]));
+        assert_eq!(
+            packed_bytes([0; 6], 160, 16, 160),
+            Some([160, 16, 16, 16, 16, 16, 16])
+        );
+        assert_eq!(
+            packed_bytes([2; 6], 160, 192, 192),
+            Some([160, 192, 32, 32, 160, 160, 16])
+        );
         assert!(packed_bytes([0; 6], 159, 16, 160).is_none());
         assert!(packed_bytes([0; 6], 160, 15, 160).is_none());
         assert!(packed_bytes([2; 6], 160, 192, 191).is_none());
@@ -181,7 +227,13 @@ mod capability_tests {
         use effectcraft_render::three_d::adv::{Light, Material, ShadowMap, TexInfo};
         let scene = Scene {
             materials: vec![Material::default()],
-            textures: vec![TexInfo { offset: 0, width: 1, height: 1, wrap_u: 0, wrap_v: 0 }],
+            textures: vec![TexInfo {
+                offset: 0,
+                width: 1,
+                height: 1,
+                wrap_u: 0,
+                wrap_v: 0,
+            }],
             texels: vec![[0.0; 4]],
             lights: vec![Light {
                 kind: 0,
@@ -197,7 +249,15 @@ mod capability_tests {
                 shadow_darkness: 0.0,
                 shadow_diffusion: 0.0,
             }],
-            shadows: vec![ShadowMap { view: [[0.0; 4]; 3], focal: 0.0, ortho: false, size: 1, offset: 0, bias: 0.0, radius: 0.0 }],
+            shadows: vec![ShadowMap {
+                view: [[0.0; 4]; 3],
+                focal: 0.0,
+                ortho: false,
+                size: 1,
+                offset: 0,
+                bias: 0.0,
+                radius: 0.0,
+            }],
             shadow_texels: vec![0.0],
             ..Scene::default()
         };
@@ -212,7 +272,11 @@ fn storage(binding: u32) -> wgpu::BindGroupLayoutEntry {
     wgpu::BindGroupLayoutEntry {
         binding,
         visibility: wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None },
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Storage { read_only: true },
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        },
         count: None,
     }
 }
@@ -227,33 +291,68 @@ impl Pipes {
             let mut entries = vec![wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
                 count: None,
             }];
             entries.extend((1..=6).map(storage));
-            let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { label: Some("advanced 3d"), entries: &entries });
+            let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("advanced 3d"),
+                entries: &entries,
+            });
             let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("advanced 3d"),
                 bind_group_layouts: &[Some(&bgl)],
                 immediate_size: 0,
             });
             let attrs = [
-                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 0, shader_location: 0 },
-                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x3, offset: 12, shader_location: 1 },
-                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x2, offset: 24, shader_location: 2 },
-                wgpu::VertexAttribute { format: wgpu::VertexFormat::Float32x4, offset: 32, shader_location: 3 },
-                wgpu::VertexAttribute { format: wgpu::VertexFormat::Uint32, offset: 48, shader_location: 4 },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x3,
+                    offset: 0,
+                    shader_location: 0,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x3,
+                    offset: 12,
+                    shader_location: 1,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x2,
+                    offset: 24,
+                    shader_location: 2,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x4,
+                    offset: 32,
+                    shader_location: 3,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Uint32,
+                    offset: 48,
+                    shader_location: 4,
+                },
             ];
             let make = |transparent: bool| {
                 let blend = transparent.then_some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING);
                 device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: Some(if transparent { "advanced 3d transparent" } else { "advanced 3d opaque" }),
+                    label: Some(if transparent {
+                        "advanced 3d transparent"
+                    } else {
+                        "advanced 3d opaque"
+                    }),
                     layout: Some(&layout),
                     vertex: wgpu::VertexState {
                         module: &module,
                         entry_point: Some("vs"),
                         compilation_options: Default::default(),
-                        buffers: &[Some(wgpu::VertexBufferLayout { array_stride: VERTEX_SIZE, step_mode: wgpu::VertexStepMode::Vertex, attributes: &attrs })],
+                        buffers: &[Some(wgpu::VertexBufferLayout {
+                            array_stride: VERTEX_SIZE,
+                            step_mode: wgpu::VertexStepMode::Vertex,
+                            attributes: &attrs,
+                        })],
                     },
                     primitive: wgpu::PrimitiveState {
                         topology: wgpu::PrimitiveTopology::TriangleList,
@@ -274,11 +373,19 @@ impl Pipes {
                         entry_point: Some("fs"),
                         compilation_options: Default::default(),
                         targets: &[
-                            Some(wgpu::ColorTargetState { format: COLOR, blend, write_mask: wgpu::ColorWrites::ALL }),
+                            Some(wgpu::ColorTargetState {
+                                format: COLOR,
+                                blend,
+                                write_mask: wgpu::ColorWrites::ALL,
+                            }),
                             Some(wgpu::ColorTargetState {
                                 format: DEPTH_OUT,
                                 blend: None,
-                                write_mask: if transparent { wgpu::ColorWrites::empty() } else { wgpu::ColorWrites::ALL },
+                                write_mask: if transparent {
+                                    wgpu::ColorWrites::empty()
+                                } else {
+                                    wgpu::ColorWrites::ALL
+                                },
                             }),
                         ],
                     }),
@@ -290,7 +397,10 @@ impl Pipes {
             let transparent = make(true);
             (bgl, opaque, transparent)
         });
-        Pipes { raster, post: Post::new(device) }
+        Pipes {
+            raster,
+            post: Post::new(device),
+        }
     }
 }
 
@@ -313,14 +423,39 @@ fn pack(s: &Scene) -> [Vec<u8>; 7] {
     }
     globals.extend(s.view[2]);
     globals.extend([s.eye[0], s.eye[1], s.eye[2], s.ortho as u32 as f32]);
-    globals.extend([s.cam_fwd[0], s.cam_fwd[1], s.cam_fwd[2], s.lights.len() as f32]);
-    globals.extend([s.ambient[0], s.ambient[1], s.ambient[2], s.env.is_some() as u32 as f32]);
-    let e = s.env.unwrap_or(effectcraft_render::three_d::adv::EnvInfo { radiance: 0, mips: 1, irradiance: 0, intensity: 0.0, rotation: 0.0 });
-    globals.extend([e.radiance as f32, e.mips as f32, e.irradiance as f32, e.intensity]);
+    globals.extend([
+        s.cam_fwd[0],
+        s.cam_fwd[1],
+        s.cam_fwd[2],
+        s.lights.len() as f32,
+    ]);
+    globals.extend([
+        s.ambient[0],
+        s.ambient[1],
+        s.ambient[2],
+        s.env.is_some() as u32 as f32,
+    ]);
+    let e = s.env.unwrap_or(effectcraft_render::three_d::adv::EnvInfo {
+        radiance: 0,
+        mips: 1,
+        irradiance: 0,
+        intensity: 0.0,
+        rotation: 0.0,
+    });
+    globals.extend([
+        e.radiance as f32,
+        e.mips as f32,
+        e.irradiance as f32,
+        e.intensity,
+    ]);
     let lit = !(s.lights.is_empty() && s.env.is_none() && s.ambient == [0.0; 3]);
     globals.extend([e.rotation, lit as u32 as f32, 0.0, 0.0]);
     let mats = s.materials.iter().flat_map(|m| {
-        let flags = (m.double_sided as u32) | (m.unlit as u32) << 1 | (m.accepts_lights as u32) << 2 | (m.receives_shadows as u32) << 3 | (m.alpha_mode << 8);
+        let flags = (m.double_sided as u32)
+            | (m.unlit as u32) << 1
+            | (m.accepts_lights as u32) << 2
+            | (m.receives_shadows as u32) << 3
+            | (m.alpha_mode << 8);
         [
             m.base[0],
             m.base[1],
@@ -348,7 +483,12 @@ fn pack(s: &Scene) -> [Vec<u8>; 7] {
             0.0,
         ]
     });
-    let mut tex: Vec<u8> = s.textures.iter().flat_map(|t| [t.offset, t.width, t.height, t.wrap_u | t.wrap_v << 8]).flat_map(u32::to_le_bytes).collect();
+    let mut tex: Vec<u8> = s
+        .textures
+        .iter()
+        .flat_map(|t| [t.offset, t.width, t.height, t.wrap_u | t.wrap_v << 8])
+        .flat_map(u32::to_le_bytes)
+        .collect();
     while tex.len() < 16 {
         tex.push(0);
     }
@@ -379,10 +519,27 @@ fn pack(s: &Scene) -> [Vec<u8>; 7] {
     });
     let shadows = s.shadows.iter().flat_map(|m| {
         let mut v: Vec<f32> = m.view.iter().flatten().copied().collect();
-        v.extend([m.focal, m.ortho as u32 as f32, f32::from_bits(m.size), f32::from_bits(m.offset), m.bias, m.radius, 0.0, 0.0]);
+        v.extend([
+            m.focal,
+            m.ortho as u32 as f32,
+            f32::from_bits(m.size),
+            f32::from_bits(m.offset),
+            m.bias,
+            m.radius,
+            0.0,
+            0.0,
+        ]);
         v
     });
-    [f32s(globals), f32s(mats), tex, texels, f32s(lights), f32s(shadows), f32s(s.shadow_texels.iter().copied())]
+    [
+        f32s(globals),
+        f32s(mats),
+        tex,
+        texels,
+        f32s(lights),
+        f32s(shadows),
+        f32s(s.shadow_texels.iter().copied()),
+    ]
 }
 
 fn half_to_f32(h: u16) -> f32 {
@@ -411,24 +568,50 @@ fn raster_into(e: &mut Enc, s: &Scene) -> Option<(wgpu::Texture, wgpu::Texture)>
         return None;
     }
     let limits = g.device.limits();
-    buffer_bytes(u64::try_from(s.vertices.len()).ok()?, VERTEX_SIZE, limits.max_buffer_size)?;
-    buffer_bytes(u64::try_from(s.indices.len()).ok()?, 4, limits.max_buffer_size)?;
+    buffer_bytes(
+        u64::try_from(s.vertices.len()).ok()?,
+        VERTEX_SIZE,
+        limits.max_buffer_size,
+    )?;
+    buffer_bytes(
+        u64::try_from(s.indices.len()).ok()?,
+        4,
+        limits.max_buffer_size,
+    )?;
     let n = u32::try_from(s.indices.len()).ok()?;
     if s.opaque_count > n {
         return None;
     }
-    let counts = [s.materials.len(), s.textures.len(), s.texels.len(), s.lights.len(), s.shadows.len(), s.shadow_texels.len()];
+    let counts = [
+        s.materials.len(),
+        s.textures.len(),
+        s.texels.len(),
+        s.lights.len(),
+        s.shadows.len(),
+        s.shadow_texels.len(),
+    ];
     let mut checked_counts = [0; 6];
     for (out, count) in checked_counts.iter_mut().zip(counts) {
         *out = u64::try_from(count).ok()?;
     }
-    let expected_sizes = packed_bytes(checked_counts, limits.max_uniform_buffer_binding_size, limits.max_storage_buffer_binding_size, limits.max_buffer_size)?;
+    let expected_sizes = packed_bytes(
+        checked_counts,
+        limits.max_uniform_buffer_binding_size,
+        limits.max_storage_buffer_binding_size,
+        limits.max_buffer_size,
+    )?;
     let bufs = pack(s);
-    if bufs.iter().zip(expected_sizes).any(|(bytes, expected)| bytes.len() as u64 != expected) {
+    if bufs
+        .iter()
+        .zip(expected_sizes)
+        .any(|(bytes, expected)| bytes.len() as u64 != expected)
+    {
         return None;
     }
     let p = pipes(g);
-    let Some((bgl, opaque, transparent)) = &p.raster else { return None };
+    let Some((bgl, opaque, transparent)) = &p.raster else {
+        return None;
+    };
     let dev = &g.device;
     let vb: Vec<u8> = s
         .vertices
@@ -446,16 +629,33 @@ fn raster_into(e: &mut Enc, s: &Scene) -> Option<(wgpu::Texture, wgpu::Texture)>
     let ib: Vec<u8> = s.indices.iter().flat_map(|i| i.to_le_bytes()).collect();
     let ibuf = g.buffer_init(Some("adv3d indices"), &ib, wgpu::BufferUsages::INDEX);
     let ub = g.buffer_init(Some("adv3d globals"), &bufs[0], wgpu::BufferUsages::UNIFORM);
-    let sbs: Vec<wgpu::Buffer> = bufs[1..].iter().map(|b| g.buffer_init(Some("adv3d data"), b, wgpu::BufferUsages::STORAGE)).collect();
-    let mut entries = vec![wgpu::BindGroupEntry { binding: 0, resource: ub.as_entire_binding() }];
+    let sbs: Vec<wgpu::Buffer> = bufs[1..]
+        .iter()
+        .map(|b| g.buffer_init(Some("adv3d data"), b, wgpu::BufferUsages::STORAGE))
+        .collect();
+    let mut entries = vec![wgpu::BindGroupEntry {
+        binding: 0,
+        resource: ub.as_entire_binding(),
+    }];
     for (i, b) in sbs.iter().enumerate() {
-        entries.push(wgpu::BindGroupEntry { binding: i as u32 + 1, resource: b.as_entire_binding() });
+        entries.push(wgpu::BindGroupEntry {
+            binding: i as u32 + 1,
+            resource: b.as_entire_binding(),
+        });
     }
-    let bg = dev.create_bind_group(&wgpu::BindGroupDescriptor { label: Some("adv3d"), layout: bgl, entries: &entries });
+    let bg = dev.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("adv3d"),
+        layout: bgl,
+        entries: &entries,
+    });
     let tex = |format: wgpu::TextureFormat, usage: wgpu::TextureUsages| {
         dev.create_texture(&wgpu::TextureDescriptor {
             label: Some("adv3d target"),
-            size: wgpu::Extent3d { width: s.width, height: s.height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: s.width,
+                height: s.height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -464,11 +664,17 @@ fn raster_into(e: &mut Enc, s: &Scene) -> Option<(wgpu::Texture, wgpu::Texture)>
             view_formats: &[],
         })
     };
-    let rt = wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::TEXTURE_BINDING;
+    let rt = wgpu::TextureUsages::RENDER_ATTACHMENT
+        | wgpu::TextureUsages::COPY_SRC
+        | wgpu::TextureUsages::TEXTURE_BINDING;
     let color = tex(COLOR, rt);
     let zout = tex(DEPTH_OUT, rt);
     let depth = tex(DEPTH, wgpu::TextureUsages::RENDER_ATTACHMENT);
-    let (cv, zv, dv) = (color.create_view(&Default::default()), zout.create_view(&Default::default()), depth.create_view(&Default::default()));
+    let (cv, zv, dv) = (
+        color.create_view(&Default::default()),
+        zout.create_view(&Default::default()),
+        depth.create_view(&Default::default()),
+    );
     let enc = e.encoder();
     {
         let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -478,18 +684,32 @@ fn raster_into(e: &mut Enc, s: &Scene) -> Option<(wgpu::Texture, wgpu::Texture)>
                     view: &cv,
                     depth_slice: None,
                     resolve_target: None,
-                    ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT), store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+                        store: wgpu::StoreOp::Store,
+                    },
                 }),
                 Some(wgpu::RenderPassColorAttachment {
                     view: &zv,
                     depth_slice: None,
                     resolve_target: None,
-                    ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color { r: NO_DEPTH, g: 0.0, b: 0.0, a: 0.0 }), store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: NO_DEPTH,
+                            g: 0.0,
+                            b: 0.0,
+                            a: 0.0,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
                 }),
             ],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: &dv,
-                depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(0.0), store: wgpu::StoreOp::Store }),
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(0.0),
+                    store: wgpu::StoreOp::Store,
+                }),
                 stencil_ops: None,
             }),
             timestamp_writes: None,
@@ -532,8 +752,20 @@ pub(crate) fn render(g: &GpuContext, s: &Scene) -> Option<Target> {
                 (Ready(c), Ready(z)) => (c?.bytes, z?.bytes),
                 (Absent, Absent) => {
                     let (color, zout) = raster_into(&mut e, s)?;
-                    e.read_texture_async(&color, s.width, s.height, 8, d.start(kc, s.width, s.height, [0.0; 2], 1.0));
-                    e.read_texture_async(&zout, s.width, s.height, 4, d.start(kz, s.width, s.height, [0.0; 2], 1.0));
+                    e.read_texture_async(
+                        &color,
+                        s.width,
+                        s.height,
+                        8,
+                        d.start(kc, s.width, s.height, [0.0; 2], 1.0),
+                    );
+                    e.read_texture_async(
+                        &zout,
+                        s.width,
+                        s.height,
+                        4,
+                        d.start(kz, s.width, s.height, [0.0; 2], 1.0),
+                    );
                     d.miss();
                     return Some(empty_target(s.width, s.height));
                 }
@@ -545,13 +777,23 @@ pub(crate) fn render(g: &GpuContext, s: &Scene) -> Option<Target> {
         }
         None => {
             let (color, zout) = raster_into(&mut e, s)?;
-            (e.read_texture(&color, s.width, s.height, 8)?, e.read_texture(&zout, s.width, s.height, 4)?)
+            (
+                e.read_texture(&color, s.width, s.height, 8)?,
+                e.read_texture(&zout, s.width, s.height, 4)?,
+            )
         }
     };
-    if cb.len() != (s.width * s.height * 8) as usize || zb.len() != (s.width * s.height * 4) as usize {
+    if cb.len() != (s.width * s.height * 8) as usize
+        || zb.len() != (s.width * s.height * 4) as usize
+    {
         return None;
     }
-    let color = cb.as_chunks::<8>().0.iter().map(|c| [0, 1, 2, 3].map(|k| half_to_f32(u16::from_le_bytes([c[2 * k], c[2 * k + 1]])))).collect();
+    let color = cb
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|c| [0, 1, 2, 3].map(|k| half_to_f32(u16::from_le_bytes([c[2 * k], c[2 * k + 1]]))))
+        .collect();
     let depth = zb
         .as_chunks::<4>()
         .0
@@ -561,13 +803,23 @@ pub(crate) fn render(g: &GpuContext, s: &Scene) -> Option<Target> {
             if z < 0.0 { f32::INFINITY } else { z }
         })
         .collect();
-    Some(Target { width: s.width, height: s.height, color, depth })
+    Some(Target {
+        width: s.width,
+        height: s.height,
+        color,
+        depth,
+    })
 }
 
 /// A placeholder target (a pass whose readbacks are in flight).
 fn empty_target(w: u32, h: u32) -> Target {
     let n = (w * h) as usize;
-    Target { width: w, height: h, color: vec![[0.0; 4]; n], depth: vec![f32::INFINITY; n] }
+    Target {
+        width: w,
+        height: h,
+        color: vec![[0.0; 4]; n],
+        depth: vec![f32::INFINITY; n],
+    }
 }
 
 /// Everything that determines a scene's pixels, for deferred readback keys: the packed
@@ -589,7 +841,12 @@ fn key_scene(k: &mut crate::deferred::Key, s: &Scene) {
         v.extend_from_slice(&x.material.to_le_bytes());
     }
     k.bytes(&v);
-    k.bytes(&s.indices.iter().flat_map(|i| i.to_le_bytes()).collect::<Vec<u8>>());
+    k.bytes(
+        &s.indices
+            .iter()
+            .flat_map(|i| i.to_le_bytes())
+            .collect::<Vec<u8>>(),
+    );
 }
 
 // ---------------------------------------------------------------- after the rasteriser
@@ -607,7 +864,16 @@ pub(crate) struct Post {
     dummy_out: wgpu::TextureView,
 }
 
-const KERNELS: &[&str] = &["resolve", "radius_of", "boost", "prefix_rows", "gather", "finish", "wire", "occlude"];
+const KERNELS: &[&str] = &[
+    "resolve",
+    "radius_of",
+    "boost",
+    "prefix_rows",
+    "gather",
+    "finish",
+    "wire",
+    "occlude",
+];
 
 impl Post {
     fn new(device: &wgpu::Device) -> Post {
@@ -618,20 +884,32 @@ impl Post {
         let tex = |binding, sample_type| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Texture { sample_type, view_dimension: wgpu::TextureViewDimension::D2, multisampled: false },
+            ty: wgpu::BindingType::Texture {
+                sample_type,
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
             count: None,
         };
         let buf = |binding, read_only| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only }, has_dynamic_offset: false, min_binding_size: None },
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Storage { read_only },
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
             count: None,
         };
         let entries = [
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
                 count: None,
             },
             tex(1, wgpu::TextureSampleType::Float { filterable: false }),
@@ -654,7 +932,10 @@ impl Post {
                 count: None,
             },
         ];
-        let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { label: Some("advanced 3d post"), entries: &entries });
+        let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("advanced 3d post"),
+            entries: &entries,
+        });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("advanced 3d post"),
             bind_group_layouts: &[Some(&bgl)],
@@ -688,7 +969,11 @@ impl Post {
             device
                 .create_texture(&wgpu::TextureDescriptor {
                     label: Some("adv3d dummy"),
-                    size: wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+                    size: wgpu::Extent3d {
+                        width: 1,
+                        height: 1,
+                        depth_or_array_layers: 1,
+                    },
                     mip_level_count: 1,
                     sample_count: 1,
                     dimension: wgpu::TextureDimension::D2,
@@ -731,20 +1016,44 @@ fn params(u0: [u32; 4], f0: [f32; 4]) -> Vec<u8> {
 fn dispatch(e: &mut Enc, kernel: &str, u0: [u32; 4], f0: [f32; 4], b: Binds, groups: (u32, u32)) {
     let g = e.g;
     let post = &pipes(g).post;
-    let Some((_, pipe)) = post.kernels.iter().find(|(k, _)| *k == kernel) else { return };
+    let Some((_, pipe)) = post.kernels.iter().find(|(k, _)| *k == kernel) else {
+        return;
+    };
     let ub = g.buffer_init(None, &params(u0, f0), wgpu::BufferUsages::UNIFORM);
     let mut entries = vec![
-        wgpu::BindGroupEntry { binding: 0, resource: ub.as_entire_binding() },
-        wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(b.color.unwrap_or(&post.dummy_color)) },
-        wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::TextureView(b.z.unwrap_or(&post.dummy_z)) },
+        wgpu::BindGroupEntry {
+            binding: 0,
+            resource: ub.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 1,
+            resource: wgpu::BindingResource::TextureView(b.color.unwrap_or(&post.dummy_color)),
+        },
+        wgpu::BindGroupEntry {
+            binding: 2,
+            resource: wgpu::BindingResource::TextureView(b.z.unwrap_or(&post.dummy_z)),
+        },
     ];
     for (i, buf) in b.bufs.iter().enumerate() {
-        entries.push(wgpu::BindGroupEntry { binding: 3 + i as u32, resource: buf.unwrap_or(&post.dummy_bufs[i]).as_entire_binding() });
+        entries.push(wgpu::BindGroupEntry {
+            binding: 3 + i as u32,
+            resource: buf.unwrap_or(&post.dummy_bufs[i]).as_entire_binding(),
+        });
     }
-    entries.push(wgpu::BindGroupEntry { binding: 10, resource: wgpu::BindingResource::TextureView(b.out.unwrap_or(&post.dummy_out)) });
-    let bg = g.device.create_bind_group(&wgpu::BindGroupDescriptor { label: Some(kernel), layout: &post.bgl, entries: &entries });
+    entries.push(wgpu::BindGroupEntry {
+        binding: 10,
+        resource: wgpu::BindingResource::TextureView(b.out.unwrap_or(&post.dummy_out)),
+    });
+    let bg = g.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some(kernel),
+        layout: &post.bgl,
+        entries: &entries,
+    });
     let enc = e.encoder();
-    let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor { label: Some(kernel), timestamp_writes: None });
+    let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor {
+        label: Some(kernel),
+        timestamp_writes: None,
+    });
     pass.set_pipeline(pipe);
     pass.set_bind_group(0, &bg, &[]);
     pass.dispatch_workgroups(groups.0.max(1), groups.1.max(1), 1);
@@ -758,7 +1067,9 @@ fn storage_buf(g: &GpuContext, size: u64, label: &str) -> wgpu::Buffer {
     g.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some(label),
         size: size.max(16),
-        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+        usage: wgpu::BufferUsages::STORAGE
+            | wgpu::BufferUsages::COPY_SRC
+            | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     })
 }
@@ -781,7 +1092,10 @@ fn read_buffer(e: &mut Enc, buf: &wgpu::Buffer, size: u64) -> Option<Vec<u8>> {
     });
     e.encoder().copy_buffer_to_buffer(buf, 0, &rb, 0, size);
     e.submit();
-    let out = e.g.read_buffer(&rb, row, row, 1).map_err(|e| log::error!("gpu 3d readback: {e}")).ok()?;
+    let out =
+        e.g.read_buffer(&rb, row, row, 1)
+            .map_err(|e| log::error!("gpu 3d readback: {e}"))
+            .ok()?;
     Some(out)
 }
 
@@ -808,7 +1122,9 @@ pub(crate) fn resolve_run(e: &mut Enc, prep: &Prepared) -> Option<Option<Resolve
     }
     let px = w as u64 * h as u64;
     let limits = g.device.limits();
-    let max = limits.max_storage_buffer_binding_size.min(limits.max_buffer_size);
+    let max = limits
+        .max_storage_buffer_binding_size
+        .min(limits.max_buffer_size);
     let acc_bytes = buffer_bytes(px, 16, max)?;
     let depth_bytes = buffer_bytes(px, 4, max)?;
     let acc = storage_buf(g, acc_bytes, "adv3d acc");
@@ -821,13 +1137,30 @@ pub(crate) fn resolve_run(e: &mut Enc, prep: &Prepared) -> Option<Option<Resolve
         if s.indices.is_empty() {
             continue;
         }
-        if Some(s.width) != w.checked_mul(s.ssaa.max(1)) || Some(s.height) != h.checked_mul(s.ssaa.max(1)) {
+        if Some(s.width) != w.checked_mul(s.ssaa.max(1))
+            || Some(s.height) != h.checked_mul(s.ssaa.max(1))
+        {
             return None;
         }
         let (color, zout) = raster_into(e, &s)?;
-        let (cv, zv) = (color.create_view(&Default::default()), zout.create_view(&Default::default()));
-        let b = Binds { color: Some(&cv), z: Some(&zv), bufs: [Some(&acc), Some(&depth), None, None, None, None, None], out: None };
-        dispatch(e, "resolve", [w, h, s.ssaa.max(1), first as u32], [weight, 0.0, 0.0, 0.0], b, pixel_groups(w, h));
+        let (cv, zv) = (
+            color.create_view(&Default::default()),
+            zout.create_view(&Default::default()),
+        );
+        let b = Binds {
+            color: Some(&cv),
+            z: Some(&zv),
+            bufs: [Some(&acc), Some(&depth), None, None, None, None, None],
+            out: None,
+        };
+        dispatch(
+            e,
+            "resolve",
+            [w, h, s.ssaa.max(1), first as u32],
+            [weight, 0.0, 0.0, 0.0],
+            b,
+            pixel_groups(w, h),
+        );
         first = false;
         // One sub-sample's targets alive at a time.
         e.submit();
@@ -838,16 +1171,30 @@ pub(crate) fn resolve_run(e: &mut Enc, prep: &Prepared) -> Option<Option<Resolve
     if let Some(dof) = &prep.dof {
         depth_of_field(e, &acc, &depth, (w, h), dof, prep.scale)?;
     }
-    Some(Some(Resolved { acc, depth, width: w, height: h }))
+    Some(Some(Resolved {
+        acc,
+        depth,
+        width: w,
+        height: h,
+    }))
 }
 
 /// `adv::depth_of_field` on the resolved buffers: radii, highlights, prefix sums, the iris
 /// gather at the levels around each pixel's radius. The result replaces `acc`.
-fn depth_of_field(e: &mut Enc, acc: &wgpu::Buffer, depth: &wgpu::Buffer, (w, h): (u32, u32), dof: &Dof, scale: f64) -> Option<()> {
+fn depth_of_field(
+    e: &mut Enc,
+    acc: &wgpu::Buffer,
+    depth: &wgpu::Buffer,
+    (w, h): (u32, u32),
+    dof: &Dof,
+    scale: f64,
+) -> Option<()> {
     let g = e.g;
     let px = w as u64 * h as u64;
     let limits = g.device.limits();
-    let max = limits.max_storage_buffer_binding_size.min(limits.max_buffer_size);
+    let max = limits
+        .max_storage_buffer_binding_size
+        .min(limits.max_buffer_size);
     let prefix_bytes = buffer_bytes((u64::from(w) + 1).checked_mul(u64::from(h))?, 16, max)?;
     buffer_bytes(1, 16, max)?;
     let radius = storage_buf(g, px * 4, "adv3d radius");
@@ -855,9 +1202,29 @@ fn depth_of_field(e: &mut Enc, acc: &wgpu::Buffer, depth: &wgpu::Buffer, (w, h):
     for v in [f32::INFINITY.to_bits(), 0, 0, 0] {
         init.extend_from_slice(&v.to_le_bytes());
     }
-    let range = g.buffer_init(Some("adv3d radius range"), &init, wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC);
-    let f0 = [dof.focus as f32, dof.aperture as f32, dof.blur_level as f32, scale as f32];
-    let b = Binds { bufs: [None, Some(depth), None, None, Some(&radius), Some(&range), None], ..Default::default() };
+    let range = g.buffer_init(
+        Some("adv3d radius range"),
+        &init,
+        wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+    );
+    let f0 = [
+        dof.focus as f32,
+        dof.aperture as f32,
+        dof.blur_level as f32,
+        scale as f32,
+    ];
+    let b = Binds {
+        bufs: [
+            None,
+            Some(depth),
+            None,
+            None,
+            Some(&radius),
+            Some(&range),
+            None,
+        ],
+        ..Default::default()
+    };
     dispatch(e, "radius_of", [w, h, 0, 0], f0, b, pixel_groups(w, h));
     let rb = read_buffer(e, &range, 16)?;
     let lo = f32::from_bits(u32::from_le_bytes([rb[0], rb[1], rb[2], rb[3]]));
@@ -865,7 +1232,9 @@ fn depth_of_field(e: &mut Enc, acc: &wgpu::Buffer, depth: &wgpu::Buffer, (w, h):
     if hi < 0.5 {
         return Some(());
     }
-    let Some(levels) = bokeh::blur_levels(&[lo, hi]) else { return Some(()) };
+    let Some(levels) = bokeh::blur_levels(&[lo, hi]) else {
+        return Some(());
+    };
     // Level headers, then every level's weighted spans.
     let mut heads: Vec<[f32; 4]> = vec![];
     let mut spans: Vec<[f32; 4]> = vec![];
@@ -874,7 +1243,10 @@ fn depth_of_field(e: &mut Enc, acc: &wgpu::Buffer, depth: &wgpu::Buffer, (w, h):
             Some((kernels, norm)) => {
                 let first = levels.len() + spans.len();
                 for (wt, sp) in &kernels {
-                    spans.extend(sp.iter().map(|&(dy, x0, x1)| [dy as f32, x0 as f32, x1 as f32, *wt]));
+                    spans.extend(
+                        sp.iter()
+                            .map(|&(dy, x0, x1)| [dy as f32, x0 as f32, x1 as f32, *wt]),
+                    );
                 }
                 let count = levels.len() + spans.len() - first;
                 heads.push([first as f32, count as f32, 1.0 / norm, 0.0]);
@@ -882,7 +1254,12 @@ fn depth_of_field(e: &mut Enc, acc: &wgpu::Buffer, depth: &wgpu::Buffer, (w, h):
             None => heads.push([0.0, 0.0, 0.0, 1.0]),
         }
     }
-    let table: Vec<u8> = heads.iter().chain(&spans).flatten().flat_map(|x| x.to_le_bytes()).collect();
+    let table: Vec<u8> = heads
+        .iter()
+        .chain(&spans)
+        .flatten()
+        .flat_map(|x| x.to_le_bytes())
+        .collect();
     if table.len() as u64 > max {
         return None;
     }
@@ -890,23 +1267,83 @@ fn depth_of_field(e: &mut Enc, acc: &wgpu::Buffer, depth: &wgpu::Buffer, (w, h):
     let src = storage_buf(g, px * 16, "adv3d dof source");
     let prefix = storage_buf(g, prefix_bytes, "adv3d prefix");
     let hl = dof.highlight;
-    let b = Binds { bufs: [Some(acc), None, Some(&src), None, Some(&radius), None, None], ..Default::default() };
-    dispatch(e, "boost", [w, h, 0, 0], [hl.gain as f32, hl.threshold as f32, hl.saturation as f32, 0.0], b, pixel_groups(w, h));
-    let b = Binds { bufs: [None, None, Some(&src), None, None, None, Some(&prefix)], ..Default::default() };
-    dispatch(e, "prefix_rows", [w, h, 0, 0], [0.0; 4], b, (h.div_ceil(64), 1));
-    let b = Binds { bufs: [Some(acc), None, Some(&src), Some(&table), Some(&radius), None, Some(&prefix)], ..Default::default() };
-    dispatch(e, "gather", [w, h, levels.len() as u32, 0], [lo, hi, 0.0, 0.0], b, pixel_groups(w, h));
+    let b = Binds {
+        bufs: [Some(acc), None, Some(&src), None, Some(&radius), None, None],
+        ..Default::default()
+    };
+    dispatch(
+        e,
+        "boost",
+        [w, h, 0, 0],
+        [
+            hl.gain as f32,
+            hl.threshold as f32,
+            hl.saturation as f32,
+            0.0,
+        ],
+        b,
+        pixel_groups(w, h),
+    );
+    let b = Binds {
+        bufs: [None, None, Some(&src), None, None, None, Some(&prefix)],
+        ..Default::default()
+    };
+    dispatch(
+        e,
+        "prefix_rows",
+        [w, h, 0, 0],
+        [0.0; 4],
+        b,
+        (h.div_ceil(64), 1),
+    );
+    let b = Binds {
+        bufs: [
+            Some(acc),
+            None,
+            Some(&src),
+            Some(&table),
+            Some(&radius),
+            None,
+            Some(&prefix),
+        ],
+        ..Default::default()
+    };
+    dispatch(
+        e,
+        "gather",
+        [w, h, levels.len() as u32, 0],
+        [lo, hi, 0.0, 0.0],
+        b,
+        pixel_groups(w, h),
+    );
     e.submit();
     Some(())
 }
 
 /// The resolved run as an image in the canvas's encoding, composited over `canvas` when given.
-pub(crate) fn finish(e: &mut Enc, r: &Resolved, encode: bool, canvas: Option<&GpuImage>) -> GpuImage {
+pub(crate) fn finish(
+    e: &mut Enc,
+    r: &Resolved,
+    encode: bool,
+    canvas: Option<&GpuImage>,
+) -> GpuImage {
     let out = e.image(r.width, r.height);
     let ov = out.texture.create_view(&Default::default());
     let cv = canvas.map(|c| c.texture.create_view(&Default::default()));
-    let b = Binds { color: cv.as_ref(), bufs: [Some(&r.acc), None, None, None, None, None, None], out: Some(&ov), ..Default::default() };
-    dispatch(e, "finish", [r.width, r.height, encode as u32, canvas.is_some() as u32], [0.0; 4], b, pixel_groups(r.width, r.height));
+    let b = Binds {
+        color: cv.as_ref(),
+        bufs: [Some(&r.acc), None, None, None, None, None, None],
+        out: Some(&ov),
+        ..Default::default()
+    };
+    dispatch(
+        e,
+        "finish",
+        [r.width, r.height, encode as u32, canvas.is_some() as u32],
+        [0.0; 4],
+        b,
+        pixel_groups(r.width, r.height),
+    );
     out
 }
 
@@ -920,7 +1357,9 @@ pub(crate) fn render_prepared(g: &GpuContext, prep: &Prepared) -> Option<Rendere
         return render_prepared_deferred(g, &d, prep);
     }
     let mut e = Enc::new(g);
-    let Some(r) = resolve_run(&mut e, prep)? else { return Some(None) };
+    let Some(r) = resolve_run(&mut e, prep)? else {
+        return Some(None);
+    };
     let img = finish(&mut e, &r, !prep.linear, None);
     let img = e.download(&img)?;
     let px = r.width as u64 * r.height as u64;
@@ -941,13 +1380,21 @@ pub(crate) fn render_prepared(g: &GpuContext, prep: &Prepared) -> Option<Rendere
 /// run's key (every sub-sample's scene, the output size and encoding). A depth of field needs a
 /// readback in the middle of the run: such runs go to the CPU path (whose scenes still
 /// rasterise here, [`render`]).
-fn render_prepared_deferred(g: &GpuContext, d: &std::sync::Arc<crate::deferred::Deferred>, prep: &Prepared) -> Option<Rendered> {
+fn render_prepared_deferred(
+    g: &GpuContext,
+    d: &std::sync::Arc<crate::deferred::Deferred>,
+    prep: &Prepared,
+) -> Option<Rendered> {
     use crate::deferred::Lookup::*;
     if prep.dof.is_some() {
         return None;
     }
     let (w, h) = prep.out;
-    let size = buffer_bytes(u64::from(w).checked_mul(u64::from(h))?, 4, g.device.limits().max_buffer_size)?;
+    let size = buffer_bytes(
+        u64::from(w).checked_mul(u64::from(h))?,
+        4,
+        g.device.limits().max_buffer_size,
+    )?;
     let row = usize::try_from(size).ok()?;
     let mut k = crate::deferred::Key::new(5);
     k.u64(w as u64);
@@ -994,7 +1441,9 @@ fn render_prepared_deferred(g: &GpuContext, d: &std::sync::Arc<crate::deferred::
         }
     }
     let mut e = Enc::new(g);
-    let Some(r) = resolve_run(&mut e, prep)? else { return Some(None) };
+    let Some(r) = resolve_run(&mut e, prep)? else {
+        return Some(None);
+    };
     let img = finish(&mut e, &r, !prep.linear, None);
     let _ = e.read_keyed(&img, ki, [0.0; 2], 1.0);
     let rb = g.device.create_buffer(&wgpu::BufferDescriptor {
@@ -1006,7 +1455,9 @@ fn render_prepared_deferred(g: &GpuContext, d: &std::sync::Arc<crate::deferred::
     e.encoder().copy_buffer_to_buffer(&r.depth, 0, &rb, 0, size);
     e.submit();
     let done = d.start(kz, w, h, [0.0; 2], 1.0);
-    g.map_readback(&rb, row, row, 1, move |r| done(r.map_err(|e| log::error!("gpu depth readback: {e}")).ok()));
+    g.map_readback(&rb, row, row, 1, move |r| {
+        done(r.map_err(|e| log::error!("gpu depth readback: {e}")).ok())
+    });
     #[cfg(not(target_arch = "wasm32"))]
     let _ = g.poll_readbacks(wgpu::PollType::Poll);
     d.miss();
@@ -1031,9 +1482,24 @@ pub(crate) fn occluded(e: &mut Enc, iso: &Resolved, main: &Resolved, encode: boo
     let img = finish(e, iso, encode, None);
     let (w, h) = (iso.width, iso.height);
     let out = e.image(w, h);
-    let (iv, ov) = (img.texture.create_view(&Default::default()), out.texture.create_view(&Default::default()));
-    let b =
-        Binds { color: Some(&iv), bufs: [None, Some(&iso.depth), Some(&main.acc), None, Some(&main.depth), None, None], out: Some(&ov), ..Default::default() };
+    let (iv, ov) = (
+        img.texture.create_view(&Default::default()),
+        out.texture.create_view(&Default::default()),
+    );
+    let b = Binds {
+        color: Some(&iv),
+        bufs: [
+            None,
+            Some(&iso.depth),
+            Some(&main.acc),
+            None,
+            Some(&main.depth),
+            None,
+            None,
+        ],
+        out: Some(&ov),
+        ..Default::default()
+    };
     dispatch(e, "occlude", [w, h, 0, 0], [0.0; 4], b, pixel_groups(w, h));
     out
 }
@@ -1042,15 +1508,29 @@ pub(crate) fn occluded(e: &mut Enc, iso: &Resolved, main: &Resolved, encode: boo
 pub(crate) const SKY_KERNELS: &[&str] = &["adv_sky"];
 
 /// An Environment Light Background layer drawn over `canvas` (`three_d::compose::draw_sky`).
-pub(crate) fn sky(e: &mut Enc, sky: &effectcraft_render::three_d::SkyDraw, canvas: &GpuImage) -> Option<GpuImage> {
+pub(crate) fn sky(
+    e: &mut Enc,
+    sky: &effectcraft_render::three_d::SkyDraw,
+    canvas: &GpuImage,
+) -> Option<GpuImage> {
     let img = e.g.upload_buf(&sky.buf)?;
     let f3 = |v: [f64; 3], w: f64| [v[0] as f32, v[1] as f32, v[2] as f32, w as f32];
     let mut p = crate::context::Params::default();
     p.f[0] = f3(sky.fwd, sky.zoom);
     p.f[1] = f3(sky.right, sky.ortho as u32 as f64);
-    p.f[2] = [sky.down[0] as f32, sky.down[1] as f32, sky.down[2] as f32, sky.rotation];
+    p.f[2] = [
+        sky.down[0] as f32,
+        sky.down[1] as f32,
+        sky.down[2] as f32,
+        sky.rotation,
+    ];
     let s = sky.scale;
-    p.f[3] = [(sky.roi.0 / s - sky.view.0 / 2.0) as f32, (sky.roi.1 / s - sky.view.1 / 2.0) as f32, (1.0 / s) as f32, sky.opacity];
+    p.f[3] = [
+        (sky.roi.0 / s - sky.view.0 / 2.0) as f32,
+        (sky.roi.1 / s - sky.view.1 / 2.0) as f32,
+        (1.0 / s) as f32,
+        sky.opacity,
+    ];
     p.f[4] = [img.width as f32, img.height as f32, 0.0, 0.0];
     let out = e.scratch(canvas.width, canvas.height);
     e.pixels("adv_sky", &p, canvas, Some(&img), &out, None);
@@ -1065,10 +1545,18 @@ pub(crate) fn wireframe(e: &mut Enc, canvas: &GpuImage, pixels: &[(u32, u32)]) -
     if pixels.is_empty() {
         return out;
     }
-    let table: Vec<u8> = pixels.iter().flat_map(|&(x, y)| [x as f32, y as f32, 0.0, 0.0]).flat_map(f32::to_le_bytes).collect();
+    let table: Vec<u8> = pixels
+        .iter()
+        .flat_map(|&(x, y)| [x as f32, y as f32, 0.0, 0.0])
+        .flat_map(f32::to_le_bytes)
+        .collect();
     let table = e.bytes(table);
     let ov = out.texture.create_view(&Default::default());
-    let b = Binds { bufs: [None, None, None, Some(&table), None, None, None], out: Some(&ov), ..Default::default() };
+    let b = Binds {
+        bufs: [None, None, None, Some(&table), None, None, None],
+        out: Some(&ov),
+        ..Default::default()
+    };
     let n = pixels.len() as u32;
     dispatch(e, "wire", [n, 0, 0, 0], [0.0; 4], b, (n.div_ceil(64), 1));
     out

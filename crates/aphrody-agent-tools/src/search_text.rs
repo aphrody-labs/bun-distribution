@@ -30,7 +30,9 @@ pub struct SearchTextTool {
 impl SearchTextTool {
     #[must_use]
     pub fn new() -> Self {
-        Self { definition: definition() }
+        Self {
+            definition: definition(),
+        }
     }
 }
 
@@ -47,25 +49,43 @@ impl ToolExecutor for SearchTextTool {
     }
 
     async fn handle(&self, arguments: serde_json::Value) -> Result<ToolOutput, ToolError> {
-        let args: SearchArgs = serde_json::from_value(arguments).map_err(|error| {
-            ToolError::InvalidArguments { tool: "search_text".into(), message: error.to_string() }
-        })?;
+        let args: SearchArgs =
+            serde_json::from_value(arguments).map_err(|error| ToolError::InvalidArguments {
+                tool: "search_text".into(),
+                message: error.to_string(),
+            })?;
         if args.pattern.trim().is_empty() {
             return Ok(ToolOutput::error("search_text: pattern must not be empty"));
         }
         let mut command = tokio::process::Command::new("rg").no_window();
-        command.args(["--line-number", "--color", "never", "--hidden", "--glob", "!.git"]);
+        command.args([
+            "--line-number",
+            "--color",
+            "never",
+            "--hidden",
+            "--glob",
+            "!.git",
+        ]);
         if let Some(glob) = args.glob {
             command.args(["--glob", &glob]);
         }
-        command.current_dir(args.cwd.as_deref().unwrap_or_else(|| std::path::Path::new(".")));
-        command
-            .arg(&args.pattern)
-            .arg(args.path.as_deref().unwrap_or_else(|| std::path::Path::new(".")));
-        let output = command.output().await.map_err(|error| ToolError::Execution {
-            tool: "search_text".into(),
-            message: format!("failed to start rg: {error}"),
-        })?;
+        command.current_dir(
+            args.cwd
+                .as_deref()
+                .unwrap_or_else(|| std::path::Path::new(".")),
+        );
+        command.arg(&args.pattern).arg(
+            args.path
+                .as_deref()
+                .unwrap_or_else(|| std::path::Path::new(".")),
+        );
+        let output = command
+            .output()
+            .await
+            .map_err(|error| ToolError::Execution {
+                tool: "search_text".into(),
+                message: format!("failed to start rg: {error}"),
+            })?;
         let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
         if text.len() > MAX_OUTPUT_BYTES {
             text.truncate(MAX_OUTPUT_BYTES);
@@ -84,16 +104,23 @@ impl ToolExecutor for SearchTextTool {
 
 fn definition() -> ToolDefinition {
     let mut properties = BTreeMap::new();
-    properties.insert("pattern".into(), JsonSchema::string(Some("Regex pattern to find.".into())));
-    properties
-        .insert("path".into(), JsonSchema::string(Some("Optional file or directory root.".into())));
+    properties.insert(
+        "pattern".into(),
+        JsonSchema::string(Some("Regex pattern to find.".into())),
+    );
+    properties.insert(
+        "path".into(),
+        JsonSchema::string(Some("Optional file or directory root.".into())),
+    );
     properties.insert(
         "glob".into(),
         JsonSchema::string(Some("Optional file glob, for example **/*.rs.".into())),
     );
     properties.insert(
         "cwd".into(),
-        JsonSchema::string(Some("Optional workspace root for relative searches.".into())),
+        JsonSchema::string(Some(
+            "Optional workspace root for relative searches.".into(),
+        )),
     );
     ToolDefinition::new(
         "search_text",
@@ -117,8 +144,12 @@ mod tests {
     #[tokio::test]
     async fn searches_with_cwd_and_glob() {
         let dir = tempfile::tempdir().unwrap();
-        tokio::fs::write(dir.path().join("one.rs"), "needle here").await.unwrap();
-        tokio::fs::write(dir.path().join("two.txt"), "needle elsewhere").await.unwrap();
+        tokio::fs::write(dir.path().join("one.rs"), "needle here")
+            .await
+            .unwrap();
+        tokio::fs::write(dir.path().join("two.txt"), "needle elsewhere")
+            .await
+            .unwrap();
         let output = SearchTextTool::new()
             .handle(json!({ "pattern": "needle", "cwd": dir.path(), "glob": "*.rs" }))
             .await
@@ -130,7 +161,10 @@ mod tests {
 
     #[tokio::test]
     async fn empty_pattern_is_rejected() {
-        let output = SearchTextTool::new().handle(json!({"pattern": "  "})).await.unwrap();
+        let output = SearchTextTool::new()
+            .handle(json!({"pattern": "  "}))
+            .await
+            .unwrap();
         assert!(output.is_error);
         assert!(output.content.contains("must not be empty"));
     }

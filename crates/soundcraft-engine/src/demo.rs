@@ -4,7 +4,9 @@
 use crate::Engine;
 use soundcraft_audio_io::{AudioBuffer, FileFormat};
 use soundcraft_midi::{Note, Sequence};
-use soundcraft_model::{ChannelFormat, Clip, Fade, FadeShape, Insert, MarkerKind, Route, SendSlot, Session, TrackKind};
+use soundcraft_model::{
+    ChannelFormat, Clip, Fade, FadeShape, Insert, MarkerKind, Route, SendSlot, Session, TrackKind,
+};
 use soundcraft_time::{SampleRate, TICKS_PER_QUARTER};
 
 const BPM: f64 = 104.0;
@@ -43,7 +45,11 @@ fn kick(sr: f64, frames: usize, out: &mut [f32], at: usize, vel: f32) {
         let f = 48.0 + 110.0 * (-t * 28.0).exp();
         phase += 2.0 * std::f64::consts::PI * f / sr;
         let env = (-t * 7.5).exp() as f32;
-        let click = if i < 64 { (64 - i) as f32 / 64.0 * 0.3 } else { 0.0 };
+        let click = if i < 64 {
+            (64 - i) as f32 / 64.0 * 0.3
+        } else {
+            0.0
+        };
         if let Some(o) = out.get_mut(at + i) {
             *o += ((phase.sin() as f32) * env + click) * vel * 0.9;
         }
@@ -91,7 +97,11 @@ fn drums(sr: f64, frames: usize) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
         // Intro: hats only for 4 bars.
         let full = bar >= 4;
         if full {
-            for (pos, vel) in [(0usize, 1.0f32), (2 * beat + beat / 2, 0.8), (3 * beat, 0.6)] {
+            for (pos, vel) in [
+                (0usize, 1.0f32),
+                (2 * beat + beat / 2, 0.8),
+                (3 * beat, 0.6),
+            ] {
                 kick(sr, frames, &mut k, b0 + pos, vel);
             }
             for pos in [beat, 3 * beat] {
@@ -99,19 +109,39 @@ fn drums(sr: f64, frames: usize) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
             }
             if bar % 4 == 3 {
                 snare(sr, frames, &mut s, b0 + 3 * beat + beat / 2, 0.5, &mut rng);
-                snare(sr, frames, &mut s, b0 + 3 * beat + 3 * beat / 4, 0.7, &mut rng);
+                snare(
+                    sr,
+                    frames,
+                    &mut s,
+                    b0 + 3 * beat + 3 * beat / 4,
+                    0.7,
+                    &mut rng,
+                );
             }
         }
         for i in 0..8 {
             let open = full && i == 7;
-            hat(sr, frames, &mut h, b0 + i * beat / 2, if i % 2 == 0 { 1.0 } else { 0.6 }, open, &mut rng);
+            hat(
+                sr,
+                frames,
+                &mut h,
+                b0 + i * beat / 2,
+                if i % 2 == 0 { 1.0 } else { 0.6 },
+                open,
+                &mut rng,
+            );
         }
     }
     (k, s, h)
 }
 
 /// Chord roots per bar (A minor, F, C, G progression), as MIDI notes.
-const PROG: [[u8; 4]; 4] = [[57, 60, 64, 69], [53, 57, 60, 65], [48, 52, 55, 60], [55, 59, 62, 67]];
+const PROG: [[u8; 4]; 4] = [
+    [57, 60, 64, 69],
+    [53, 57, 60, 65],
+    [48, 52, 55, 60],
+    [55, 59, 62, 67],
+];
 
 fn bass(sr: f64, frames: usize) -> Vec<f32> {
     let mut out = vec![0.0; frames];
@@ -119,7 +149,13 @@ fn bass(sr: f64, frames: usize) -> Vec<f32> {
     let mut lp = 0.0f64;
     for bar in 4..BARS {
         let root = f64::from(PROG[bar % 4][0]) - 24.0;
-        let pattern = [(0usize, 0.0f64, 1.5f64), (2, 0.0, 0.5), (3, 12.0, 0.5), (5, 0.0, 0.5), (6, 7.0, 1.0)];
+        let pattern = [
+            (0usize, 0.0f64, 1.5f64),
+            (2, 0.0, 0.5),
+            (3, 12.0, 0.5),
+            (5, 0.0, 0.5),
+            (6, 7.0, 1.0),
+        ];
         for (eighth, semi, beats) in pattern {
             let at = bar * beat * 4 + eighth * beat / 2;
             let len = (beats * beat as f64) as usize;
@@ -132,7 +168,12 @@ fn bass(sr: f64, frames: usize) -> Vec<f32> {
                 let t = i as f64 / sr;
                 let cutoff = 0.02 + 0.12 * (-t * 9.0).exp();
                 lp += cutoff * (saw - lp);
-                let env = (1.0 - (-t * 200.0).exp()) * if i + 400 > len { (len - i) as f64 / 400.0 } else { 1.0 };
+                let env = (1.0 - (-t * 200.0).exp())
+                    * if i + 400 > len {
+                        (len - i) as f64 / 400.0
+                    } else {
+                        1.0
+                    };
                 *o += (lp * env * 0.55) as f32;
             }
         }
@@ -167,7 +208,14 @@ fn pad(sr: f64, frames: usize) -> (Vec<f32>, Vec<f32>) {
 }
 
 fn note(pitch: u8, start: i64, len: i64, vel: u8) -> Note {
-    Note { pitch, velocity: vel, release_velocity: 64, channel: 0, start, length: len }
+    Note {
+        pitch,
+        velocity: vel,
+        release_velocity: 64,
+        channel: 0,
+        start,
+        length: len,
+    }
 }
 
 fn keys_sequence() -> Sequence {
@@ -189,12 +237,23 @@ fn keys_sequence() -> Sequence {
 fn lead_sequence() -> Sequence {
     let q = TICKS_PER_QUARTER;
     let e = q / 2;
-    let phrase: [(u8, i64, i64); 10] =
-        [(76, 0, 3), (74, 3, 1), (72, 4, 2), (74, 6, 2), (76, 8, 4), (79, 12, 2), (77, 14, 2), (76, 16, 6), (72, 22, 2), (74, 24, 8)];
+    let phrase: [(u8, i64, i64); 10] = [
+        (76, 0, 3),
+        (74, 3, 1),
+        (72, 4, 2),
+        (74, 6, 2),
+        (76, 8, 4),
+        (79, 12, 2),
+        (77, 14, 2),
+        (76, 16, 6),
+        (72, 22, 2),
+        (74, 24, 8),
+    ];
     let mut seq = Sequence::default();
     for rep in 0..2i64 {
         for (p, st, ln) in phrase {
-            seq.notes.push(note(p, rep * 32 * e + st * e, ln * e - 30, 100));
+            seq.notes
+                .push(note(p, rep * 32 * e + st * e, ln * e - 30, 100));
         }
     }
     seq.sort();
@@ -215,10 +274,26 @@ pub fn demo_session() -> Session {
     let verb_bus = s.add_bus("Verb", ChannelFormat::Stereo);
     // Exact bar positions from the tempo map (bar index 0 = bar 1).
     let tempo = s.tempo.clone();
-    let bar_at = move |n: usize| tempo.samples_at_bar_beat(soundcraft_time::BarBeat { bar: n as i64 + 1, beat: 1, tick: 0 }, sr);
-    let add_audio = |s: &mut Session, name: &str, chans: Vec<Vec<f32>>, start_bar: usize, color: Option<usize>| {
+    let bar_at = move |n: usize| {
+        tempo.samples_at_bar_beat(
+            soundcraft_time::BarBeat {
+                bar: n as i64 + 1,
+                beat: 1,
+                tick: 0,
+            },
+            sr,
+        )
+    };
+    let add_audio = |s: &mut Session,
+                     name: &str,
+                     chans: Vec<Vec<f32>>,
+                     start_bar: usize,
+                     color: Option<usize>| {
         let fmt = ChannelFormat::for_channels(chans.len());
-        let buf = AudioBuffer { sample_rate: sr.hz(), channels: chans };
+        let buf = AudioBuffer {
+            sample_rate: sr.hz(),
+            channels: chans,
+        };
         let src = crate::io::add_source(s, name, buf, None, FileFormat::Wav);
         let t = s.add_track(TrackKind::Audio, fmt, Some(name));
         if let (Some(c), Some(tr)) = (color, s.track_mut(t)) {
@@ -228,7 +303,10 @@ pub fn demo_session() -> Session {
         let len = total as i64 - start;
         let cid = s.new_clip_id();
         let mut clip = Clip::audio(cid, name, src, start, start, len - (srf * 1.5) as i64);
-        clip.fade_out = Fade { len: (srf * 0.5) as i64, shape: FadeShape::SCurve };
+        clip.fade_out = Fade {
+            len: (srf * 0.5) as i64,
+            shape: FadeShape::SCurve,
+        };
         crate::edit::place_clip(s, t, clip);
         t
     };
@@ -249,7 +327,10 @@ pub fn demo_session() -> Session {
     // Instrument tracks with MIDI.
     let keys = s.add_track(TrackKind::Instrument, ChannelFormat::Stereo, Some("Keys"));
     let lead = s.add_track(TrackKind::Instrument, ChannelFormat::Stereo, Some("Lead"));
-    for (t, seq, start_bar, bars, color) in [(keys, keys_sequence(), 4usize, BARS - 4, 2usize), (lead, lead_sequence(), 12, 8, 9)] {
+    for (t, seq, start_bar, bars, color) in [
+        (keys, keys_sequence(), 4usize, BARS - 4, 2usize),
+        (lead, lead_sequence(), 12, 8, 9),
+    ] {
         let start = bar_at(start_bar);
         let len = bar_at(start_bar + bars) - start;
         let cid = s.new_clip_id();
@@ -277,7 +358,13 @@ pub fn demo_session() -> Session {
         }
     }
     // Mix moves.
-    for (t, db, pan) in [(tk, -3.0f32, 0.0f32), (ts, -4.0, 0.0), (th, -10.0, 0.35), (tb, -5.0, 0.0), (tp, -8.0, 0.0)] {
+    for (t, db, pan) in [
+        (tk, -3.0f32, 0.0f32),
+        (ts, -4.0, 0.0),
+        (th, -10.0, 0.35),
+        (tb, -5.0, 0.0),
+        (tp, -8.0, 0.0),
+    ] {
         if let Some(tr) = s.track_mut(t) {
             tr.mixer.volume_db = db;
             if tr.mixer.pan.len() == 1 {
@@ -308,7 +395,14 @@ pub fn demo_session() -> Session {
     }
     // Markers.
     for (name, at) in [("Intro", 1i64), ("Verse", 5), ("Chorus", 13), ("Outro", 21)] {
-        let pos = s.tempo.samples_at_bar_beat(soundcraft_time::BarBeat { bar: at, beat: 1, tick: 0 }, sr);
+        let pos = s.tempo.samples_at_bar_beat(
+            soundcraft_time::BarBeat {
+                bar: at,
+                beat: 1,
+                tick: 0,
+            },
+            sr,
+        );
         s.add_marker(name, MarkerKind::Marker, pos, pos);
     }
     s.edit.selected_tracks = vec![tk];
@@ -340,7 +434,10 @@ mod tests {
         let sr = s.sample_rate;
         let r = soundcraft_time::Range::new(sr.samples(10.0), sr.samples(12.0));
         let out = soundcraft_mix::render_range(&s, r, 1024);
-        let pk = out.iter().flat_map(|c| c.iter()).fold(0.0f32, |m, v| m.max(v.abs()));
+        let pk = out
+            .iter()
+            .flat_map(|c| c.iter())
+            .fold(0.0f32, |m, v| m.max(v.abs()));
         assert!(pk > 0.05, "demo should be audible, peak {pk}");
         assert!(pk <= 1.5, "demo should not be wildly clipping, peak {pk}");
     }

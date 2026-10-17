@@ -5,9 +5,9 @@ use crate::_bsn::types::{
 };
 use bevy_macro_utils::{fq_std::FQDefault, path_to_string};
 use proc_macro2::{Delimiter, Group, Span, TokenStream, TokenTree};
-use quote::{format_ident, quote, quote_spanned, ToTokens};
-use std::collections::{hash_map::Entry, HashMap, HashSet};
-use syn::{parse::Parse, ExprTuple, Ident, Lit, Member, Path};
+use quote::{ToTokens, format_ident, quote, quote_spanned};
+use std::collections::{HashMap, HashSet, hash_map::Entry};
+use syn::{ExprTuple, Ident, Lit, Member, Path, parse::Parse};
 
 /// Tracks named entity references and assigns them unique, sequential indices
 /// during the code generation process.
@@ -1048,9 +1048,11 @@ mod tests {
 
         assert!(res.is_ok());
         assert_eq!(ctx.errors.len(), 1);
-        assert!(ctx.errors[0]
-            .to_string()
-            .contains("Duplicate field `x` found in BSN struct"));
+        assert!(
+            ctx.errors[0]
+                .to_string()
+                .contains("Duplicate field `x` found in BSN struct")
+        );
     }
 
     #[test]
@@ -1079,9 +1081,11 @@ mod tests {
 
         assert!(res.is_ok());
         assert_eq!(ctx.errors.len(), 1);
-        assert!(ctx.errors[0]
-            .to_string()
-            .contains("Duplicate field `x` found in BSN struct"));
+        assert!(
+            ctx.errors[0]
+                .to_string()
+                .contains("Duplicate field `x` found in BSN struct")
+        );
     }
 
     #[test]
@@ -1111,9 +1115,11 @@ mod tests {
 
         assert!(res.is_ok());
         assert_eq!(ctx.errors.len(), 1);
-        assert!(ctx.errors[0]
-            .to_string()
-            .contains("Field `x` is missing a value"));
+        assert!(
+            ctx.errors[0]
+                .to_string()
+                .contains("Field `x` is missing a value")
+        );
     }
 
     #[test]
@@ -1173,9 +1179,11 @@ mod tests {
         // Assert
         assert!(res.is_ok());
         assert_eq!(ctx.errors.len(), 1);
-        assert!(ctx.errors[0]
-            .to_string()
-            .contains("Duplicate field `x` found in BSN enum variant"));
+        assert!(
+            ctx.errors[0]
+                .to_string()
+                .contains("Duplicate field `x` found in BSN enum variant")
+        );
     }
 
     #[test]

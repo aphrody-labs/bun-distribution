@@ -32,30 +32,36 @@ impl DesktopTheme {
     /// first answer is sent straight away, so the caller does not have to ask for it separately.
     pub fn start() -> Self {
         let (tx, rx) = channel();
-        let started = std::thread::Builder::new().name("gridcraft-desktop-theme".into()).spawn(move || {
-            let mut last = read();
-            if tx.send(last).is_err() {
-                return;
-            }
-            loop {
-                std::thread::sleep(POLL);
-                let now = read();
-                if now != last {
-                    last = now;
-                    if tx.send(now).is_err() {
-                        return;
+        let started = std::thread::Builder::new()
+            .name("gridcraft-desktop-theme".into())
+            .spawn(move || {
+                let mut last = read();
+                if tx.send(last).is_err() {
+                    return;
+                }
+                loop {
+                    std::thread::sleep(POLL);
+                    let now = read();
+                    if now != last {
+                        last = now;
+                        if tx.send(now).is_err() {
+                            return;
+                        }
                     }
                 }
-            }
-        });
-        Self { changes: started.ok().map(|_| rx) }
+            });
+        Self {
+            changes: started.ok().map(|_| rx),
+        }
     }
 
     /// The desktop's new answer if it changed since the last call, to be polled once a frame.
     /// Several changes in one frame collapse to the newest, and a desktop that stops answering
     /// leaves the last answer in place.
     pub fn take_change(&mut self) -> Option<bool> {
-        let Some(changes) = &self.changes else { return None };
+        let Some(changes) = &self.changes else {
+            return None;
+        };
         let mut newest = None;
         loop {
             match changes.try_recv() {
@@ -72,13 +78,24 @@ impl DesktopTheme {
 fn read() -> Option<bool> {
     const PORTAL: &str = "org.freedesktop.portal.Desktop";
     const SETTINGS: &str = "org.freedesktop.portal.Settings";
-    const SCHEMAS: [(&str, &str); 2] = [("org.gnome.desktop.interface", "color-scheme"), ("org.freedesktop.interface.color-scheme", "color-scheme")];
+    const SCHEMAS: [(&str, &str); 2] = [
+        ("org.gnome.desktop.interface", "color-scheme"),
+        ("org.freedesktop.interface.color-scheme", "color-scheme"),
+    ];
     let connection = zbus::blocking::Connection::session().ok()?;
     for (schema, key) in SCHEMAS {
-        let Ok(reply) = connection.call_method(Some(PORTAL), "/org/freedesktop/portal/desktop", Some(SETTINGS), "ReadOne", &(schema, key)) else {
+        let Ok(reply) = connection.call_method(
+            Some(PORTAL),
+            "/org/freedesktop/portal/desktop",
+            Some(SETTINGS),
+            "ReadOne",
+            &(schema, key),
+        ) else {
             continue;
         };
-        let Ok((answer,)) = reply.body().deserialize::<(zbus::zvariant::OwnedValue,)>() else { continue };
+        let Ok((answer,)) = reply.body().deserialize::<(zbus::zvariant::OwnedValue,)>() else {
+            continue;
+        };
         if let Ok(scheme) = String::try_from(&*answer) {
             return parse(&scheme);
         }

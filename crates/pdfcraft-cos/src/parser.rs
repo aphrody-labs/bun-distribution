@@ -17,7 +17,10 @@ pub fn is_whitespace(b: u8) -> bool {
 }
 
 pub(crate) fn is_delimiter(b: u8) -> bool {
-    matches!(b, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%')
+    matches!(
+        b,
+        b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+    )
 }
 
 fn is_regular(b: u8) -> bool {
@@ -32,7 +35,10 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(data: &'a [u8], pos: usize) -> Self {
-        Self { data, pos: pos.min(data.len()) }
+        Self {
+            data,
+            pos: pos.min(data.len()),
+        }
     }
 
     fn peek(&self) -> Option<u8> {
@@ -70,7 +76,9 @@ impl<'a> Lexer<'a> {
     pub fn eat_keyword(&mut self, kw: &[u8]) -> bool {
         self.skip_ws();
         let end = self.pos + kw.len();
-        if self.data.get(self.pos..end) == Some(kw) && self.data.get(end).is_none_or(|b| !is_regular(*b)) {
+        if self.data.get(self.pos..end) == Some(kw)
+            && self.data.get(end).is_none_or(|b| !is_regular(*b))
+        {
             self.pos = end;
             true
         } else {
@@ -79,7 +87,10 @@ impl<'a> Lexer<'a> {
     }
 
     fn err(&self, what: &str) -> CosError {
-        CosError::Syntax { offset: self.pos, detail: what.to_string() }
+        CosError::Syntax {
+            offset: self.pos,
+            detail: what.to_string(),
+        }
     }
 
     /// Parse one direct object. References `N G R` are recognised.
@@ -92,7 +103,9 @@ impl<'a> Lexer<'a> {
             return Err(self.err("nesting too deep"));
         }
         self.skip_ws();
-        let Some(b) = self.peek() else { return Err(self.err("unexpected end of data")) };
+        let Some(b) = self.peek() else {
+            return Err(self.err("unexpected end of data"));
+        };
         match b {
             b'/' => {
                 self.pos += 1;
@@ -100,7 +113,10 @@ impl<'a> Lexer<'a> {
             }
             b'(' => {
                 self.pos += 1;
-                Ok(Object::String(PdfString { bytes: self.literal_string()?, hex: false }))
+                Ok(Object::String(PdfString {
+                    bytes: self.literal_string()?,
+                    hex: false,
+                }))
             }
             b'<' if self.data.get(self.pos + 1) == Some(&b'<') => {
                 self.pos += 2;
@@ -108,7 +124,10 @@ impl<'a> Lexer<'a> {
             }
             b'<' => {
                 self.pos += 1;
-                Ok(Object::String(PdfString { bytes: self.hex_string()?, hex: true }))
+                Ok(Object::String(PdfString {
+                    bytes: self.hex_string()?,
+                    hex: true,
+                }))
             }
             b'[' => {
                 self.pos += 1;
@@ -144,9 +163,15 @@ impl<'a> Lexer<'a> {
                     b"null" => Ok(Object::Null),
                     b"" => {
                         self.pos = start + 1;
-                        Err(CosError::Syntax { offset: start, detail: format!("unexpected byte 0x{b:02x}") })
+                        Err(CosError::Syntax {
+                            offset: start,
+                            detail: format!("unexpected byte 0x{b:02x}"),
+                        })
                     }
-                    other => Err(CosError::Syntax { offset: start, detail: format!("unexpected keyword {:?}", String::from_utf8_lossy(other)) }),
+                    other => Err(CosError::Syntax {
+                        offset: start,
+                        detail: format!("unexpected keyword {:?}", String::from_utf8_lossy(other)),
+                    }),
                 }
             }
         }
@@ -160,7 +185,10 @@ impl<'a> Lexer<'a> {
             }
             self.pos += 1;
             if b == b'#'
-                && let (Some(h), Some(l)) = (self.data.get(self.pos).and_then(|c| hexval(*c)), self.data.get(self.pos + 1).and_then(|c| hexval(*c)))
+                && let (Some(h), Some(l)) = (
+                    self.data.get(self.pos).and_then(|c| hexval(*c)),
+                    self.data.get(self.pos + 1).and_then(|c| hexval(*c)),
+                )
             {
                 out.push(h << 4 | l);
                 self.pos += 2;
@@ -247,7 +275,9 @@ impl<'a> Lexer<'a> {
             if is_whitespace(b) {
                 continue;
             }
-            let Some(v) = hexval(b) else { return Err(self.err("invalid hex digit")) };
+            let Some(v) = hexval(b) else {
+                return Err(self.err("invalid hex digit"));
+            };
             match hi.take() {
                 None => hi = Some(v),
                 Some(h) => out.push(h << 4 | v),
@@ -304,9 +334,15 @@ impl<'a> Lexer<'a> {
                 let gstart = self.pos;
                 let g = self.token();
                 if g.iter().all(u8::is_ascii_digit) && self.eat_keyword(b"R") {
-                    let generation = std::str::from_utf8(g).ok().and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
+                    let generation = std::str::from_utf8(g)
+                        .ok()
+                        .and_then(|s| s.parse::<u32>().ok())
+                        .unwrap_or(0);
                     if n <= u32::MAX as i64 {
-                        return Ok(Object::Ref(ObjRef::new(n as u32, generation.min(u16::MAX as u32) as u16)));
+                        return Ok(Object::Ref(ObjRef::new(
+                            n as u32,
+                            generation.min(u16::MAX as u32) as u16,
+                        )));
                     }
                 }
                 let _ = gstart;
@@ -341,7 +377,12 @@ impl<'a> Lexer<'a> {
             Ok(v) => Ok(Object::Int(v)),
             Err(_) => {
                 // Out-of-range integers are treated as reals (§7.3.3 allows implementation limits).
-                s.parse::<f64>().map(Object::Real).map_err(|_| CosError::Syntax { offset: start, detail: format!("bad number {s:?}") })
+                s.parse::<f64>()
+                    .map(Object::Real)
+                    .map_err(|_| CosError::Syntax {
+                        offset: start,
+                        detail: format!("bad number {s:?}"),
+                    })
             }
         }
     }
@@ -358,7 +399,11 @@ fn hexval(b: u8) -> Option<u8> {
 
 /// Parse an indirect object at `offset`: `N G obj <object> [stream…endstream] endobj`.
 /// `resolve_length` resolves an indirect `/Length`. Returns the object and its (num, gen).
-pub fn parse_indirect(data: &[u8], offset: usize, resolve_length: &dyn Fn(ObjRef) -> Option<i64>) -> Result<(ObjRef, Object), CosError> {
+pub fn parse_indirect(
+    data: &[u8],
+    offset: usize,
+    resolve_length: &dyn Fn(ObjRef) -> Option<i64>,
+) -> Result<(ObjRef, Object), CosError> {
     parse_indirect_in(data, None, offset, resolve_length)
 }
 
@@ -383,14 +428,27 @@ fn parse_indirect_in(
     let num_tok = lx.token();
     lx.skip_ws();
     let gen_tok = lx.token();
-    let parse_u = |t: &[u8]| std::str::from_utf8(t).ok().and_then(|s| s.parse::<u64>().ok());
+    let parse_u = |t: &[u8]| {
+        std::str::from_utf8(t)
+            .ok()
+            .and_then(|s| s.parse::<u64>().ok())
+    };
     let (Some(num), Some(generation)) = (parse_u(num_tok), parse_u(gen_tok)) else {
-        return Err(CosError::Syntax { offset, detail: "expected object header".into() });
+        return Err(CosError::Syntax {
+            offset,
+            detail: "expected object header".into(),
+        });
     };
     if !lx.eat_keyword(b"obj") {
-        return Err(CosError::Syntax { offset: lx.pos, detail: "expected 'obj'".into() });
+        return Err(CosError::Syntax {
+            offset: lx.pos,
+            detail: "expected 'obj'".into(),
+        });
     }
-    let id = ObjRef::new(num.min(u32::MAX as u64) as u32, generation.min(u16::MAX as u64) as u16);
+    let id = ObjRef::new(
+        num.min(u32::MAX as u64) as u32,
+        generation.min(u16::MAX as u64) as u16,
+    );
     let obj = match lx.object() {
         Ok(o) => o,
         // "N G obj endobj" (empty) is treated as null.
@@ -427,14 +485,22 @@ fn parse_indirect_in(
         let len = match declared {
             Some(l) if valid(l) => l as usize,
             // Wrong or missing /Length: search for "endstream" (§7.3.8.1 recovery).
-            _ => find_endstream(data, start).ok_or_else(|| CosError::Syntax { offset: start, detail: "stream without endstream".into() })? - start,
+            _ => {
+                find_endstream(data, start).ok_or_else(|| CosError::Syntax {
+                    offset: start,
+                    detail: "stream without endstream".into(),
+                })? - start
+            }
         };
         let range = start..start + len;
         let raw = match shared {
             Some(buf) => Bytes::view(buf, range),
             None => data.get(range).map(|r| Bytes::from(r.to_vec())),
         }
-        .ok_or_else(|| CosError::Syntax { offset: start, detail: "stream data past the end of the file".into() })?;
+        .ok_or_else(|| CosError::Syntax {
+            offset: start,
+            detail: "stream data past the end of the file".into(),
+        })?;
         let mut dict = dict.clone();
         dict.set(b"Length".to_vec(), Object::Int(raw.len() as i64));
         return Ok((id, Object::Stream(Stream { dict, raw })));
@@ -463,16 +529,23 @@ mod tests {
     #[test]
     fn numbers_with_multibyte_garbage_do_not_panic() {
         // From `cargo xtask fuzz`: "2 0 obj\n.\u{2014}" (an em dash after a dot).
-        let doc = crate::Document::open(std::sync::Arc::new("2 0 obj\n.\u{2014}\n".as_bytes().to_vec()));
+        let doc = crate::Document::open(std::sync::Arc::new(
+            "2 0 obj\n.\u{2014}\n".as_bytes().to_vec(),
+        ));
         assert!(doc.is_err());
         for t in [".\u{2014}", "1.\u{e9}5", "-.\u{1F600}", "+.5\u{2014}"] {
             let _ = Lexer::new(t.as_bytes(), 0).object();
         }
-        assert_eq!(Lexer::new("1.5\u{2014}".as_bytes(), 0).object().unwrap(), Object::Real(1.5));
+        assert_eq!(
+            Lexer::new("1.5\u{2014}".as_bytes(), 0).object().unwrap(),
+            Object::Real(1.5)
+        );
     }
 
     fn obj(s: &str) -> Object {
-        Lexer::new(s.as_bytes(), 0).object().unwrap_or_else(|e| panic!("{s}: {e}"))
+        Lexer::new(s.as_bytes(), 0)
+            .object()
+            .unwrap_or_else(|e| panic!("{s}: {e}"))
     }
 
     #[test]
@@ -485,7 +558,11 @@ mod tests {
         assert_eq!(obj("4."), Object::Real(4.0));
         assert_eq!(obj("99999999999999999999"), Object::Real(1e20));
         assert_eq!(obj("12 0 R"), Object::Ref(ObjRef::new(12, 0)));
-        assert_eq!(obj("12 0 obj").as_int(), Some(12), "12 followed by 0 obj is not a reference");
+        assert_eq!(
+            obj("12 0 obj").as_int(),
+            Some(12),
+            "12 followed by 0 obj is not a reference"
+        );
     }
 
     #[test]
@@ -514,17 +591,25 @@ mod tests {
 
     #[test]
     fn arrays_and_dicts() {
-        let o = obj("<< /Type /Page /Kids [1 0 R 2 0 R] /Box [0 0 612.5 792] /Nested << /A true >> /Empty >>");
+        let o = obj(
+            "<< /Type /Page /Kids [1 0 R 2 0 R] /Box [0 0 612.5 792] /Nested << /A true >> /Empty >>",
+        );
         let d = o.as_dict().unwrap();
         assert_eq!(d.name(b"Type"), Some(&b"Page"[..]));
         assert_eq!(d.get(b"Kids").unwrap().as_array().unwrap().len(), 2);
-        assert_eq!(d.get(b"Box").unwrap().as_array().unwrap()[2], Object::Real(612.5));
+        assert_eq!(
+            d.get(b"Box").unwrap().as_array().unwrap()[2],
+            Object::Real(612.5)
+        );
         assert_eq!(d.get(b"Empty"), Some(&Object::Null));
     }
 
     #[test]
     fn comments_are_whitespace() {
-        assert_eq!(obj("% hello\n  [1 % two\n 3]"), Object::Array(vec![Object::Int(1), Object::Int(3)]));
+        assert_eq!(
+            obj("% hello\n  [1 % two\n 3]"),
+            Object::Array(vec![Object::Int(1), Object::Int(3)])
+        );
     }
 
     #[test]
@@ -532,7 +617,9 @@ mod tests {
         let data = b"7 0 obj\n<< /Length 999 >>\nstream\nHELLO\nendstream\nendobj\n";
         let (id, o) = parse_indirect(data, 0, &|_| None).unwrap();
         assert_eq!(id, ObjRef::new(7, 0));
-        let Object::Stream(s) = o else { panic!("stream expected") };
+        let Object::Stream(s) = o else {
+            panic!("stream expected")
+        };
         assert_eq!(&s.raw[..], b"HELLO");
         assert_eq!(s.dict.int(b"Length"), Some(5));
     }
@@ -547,7 +634,10 @@ mod tests {
 
     #[test]
     fn garbage_never_panics() {
-        for input in ["<<", "[", "(", "<", "<< /A", "[1 2", ")", "]", ">>", "<<>>>", "1 0", "\0\0", "/A#", "<zz>", "((("] {
+        for input in [
+            "<<", "[", "(", "<", "<< /A", "[1 2", ")", "]", ">>", "<<>>>", "1 0", "\0\0", "/A#",
+            "<zz>", "(((",
+        ] {
             let _ = Lexer::new(input.as_bytes(), 0).object();
         }
         let deep = "[".repeat(10_000);

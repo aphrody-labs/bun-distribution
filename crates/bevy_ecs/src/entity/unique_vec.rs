@@ -21,9 +21,9 @@ use alloc::{
 use bevy_platform::sync::Arc;
 
 use super::{
-    unique_slice::{self, UniqueEntityEquivalentSlice},
     Entity, EntityEquivalent, EntitySet, FromEntitySetIterator, UniqueEntityEquivalentArray,
     UniqueEntityIter,
+    unique_slice::{self, UniqueEntityEquivalentSlice},
 };
 
 /// A `Vec` that contains only unique entities.

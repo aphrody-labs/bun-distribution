@@ -18,8 +18,10 @@ fn frame(app: &mut crate::VectorcraftApp) {
 #[test]
 fn output_and_advanced_choices_reach_the_pdf() {
     let (mut app, written) = app("/tmp/unused.pdf");
-    app.run("text.create", json!({"x": 10, "y": 70, "text": "Proof"})).unwrap();
-    app.run("ui.savePdfDialog", json!({"path": "/tmp/press.pdf"})).unwrap();
+    app.run("text.create", json!({"x": 10, "y": 70, "text": "Proof"}))
+        .unwrap();
+    app.run("ui.savePdfDialog", json!({"path": "/tmp/press.pdf"}))
+        .unwrap();
     let fields = &mut app.ui.dialog.as_mut().unwrap().fields;
     fields.insert("__section".into(), json!("Output"));
     fields.insert(
@@ -42,8 +44,14 @@ fn output_and_advanced_choices_reach_the_pdf() {
     d.fields.insert("__section".into(), json!("Advanced"));
     frame(&mut app);
     dialogs::confirm(&mut app).unwrap();
-    assert!(app.ui.status.starts_with("Saved /tmp/press.pdf") && !app.ui.status.contains("note"), "{}", app.ui.status);
+    assert!(
+        app.ui.status.starts_with("Saved /tmp/press.pdf") && !app.ui.status.contains("note"),
+        "{}",
+        app.ui.status
+    );
     let pdf = String::from_utf8_lossy(&written.borrow()[0].1).into_owned();
-    assert!(pdf.contains("/S/GTS_PDFX") && pdf.contains("/Trapped/True") && pdf.contains("/ICCBased"));
+    assert!(
+        pdf.contains("/S/GTS_PDFX") && pdf.contains("/Trapped/True") && pdf.contains("/ICCBased")
+    );
     assert!(pdf.contains("/ToUnicode"), "real text");
 }

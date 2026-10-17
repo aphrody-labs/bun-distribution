@@ -1,22 +1,22 @@
 use crate::{
+    Asset, AssetIndex, AssetLoadError, AssetServer, AssetServerMode, Assets, ErasedAssetIndex,
+    Handle, UntypedAssetId, UntypedHandle,
     io::{AssetReaderError, MissingAssetSourceError, MissingProcessedAssetReaderError, Reader},
     loader_builders::NestedLoadBuilder,
     meta::{AssetHash, AssetMeta, AssetMetaDyn, ProcessedInfo, ProcessedInfoMinimal, Settings},
     path::AssetPath,
-    Asset, AssetIndex, AssetLoadError, AssetServer, AssetServerMode, Assets, ErasedAssetIndex,
-    Handle, UntypedAssetId, UntypedHandle,
 };
 use alloc::{boxed::Box, string::ToString, vec::Vec};
 use atomicow::CowArc;
 use bevy_ecs::{error::BevyError, world::World};
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
 use bevy_reflect::TypePath;
 use bevy_tasks::{BoxedFuture, ConditionalSendFuture};
 use core::{
     any::{Any, TypeId},
     convert::Infallible,
 };
-use downcast_rs::{impl_downcast, Downcast};
+use downcast_rs::{Downcast, impl_downcast};
 use ron::error::SpannedError;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -348,7 +348,9 @@ pub enum LoadDirectError {
     /// Loading an asset path with a subasset at the end is unsupported. See issue [#18291].
     ///
     /// [#18291]: https://github.com/bevyengine/bevy/issues/18291
-    #[error("Requested to load an asset path ({0:?}) with a subasset, but this is unsupported. See issue #18291")]
+    #[error(
+        "Requested to load an asset path ({0:?}) with a subasset, but this is unsupported. See issue #18291"
+    )]
     RequestedSubasset(AssetPath<'static>),
     /// A general [`AssetLoadError`] for an asset dependency.
     #[error("Failed to load dependency {dependency:?} {error}")]
@@ -714,6 +716,8 @@ pub enum ReadAssetBytesError {
         path: PathBuf,
         source: std::io::Error,
     },
-    #[error("The LoadContext for this read_asset_bytes call requires hash metadata, but it was not provided. This is likely an internal implementation error.")]
+    #[error(
+        "The LoadContext for this read_asset_bytes call requires hash metadata, but it was not provided. This is likely an internal implementation error."
+    )]
     MissingAssetHash,
 }

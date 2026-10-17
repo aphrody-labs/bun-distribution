@@ -111,7 +111,11 @@ pub fn rgb_to_hsl(c: [f32; 3]) -> [f32; 3] {
     let min = c[0].min(c[1]).min(c[2]);
     let d = max - min;
     let l = (max + min) / 2.0;
-    let s = if d == 0.0 { 0.0 } else { d / (1.0 - (2.0 * l - 1.0).abs()).max(1e-9) };
+    let s = if d == 0.0 {
+        0.0
+    } else {
+        d / (1.0 - (2.0 * l - 1.0).abs()).max(1e-9)
+    };
     [hue_of(c, max, d), s, l]
 }
 
@@ -142,17 +146,28 @@ mod tests {
     #[test]
     fn oklab_white_and_grey() {
         let w = oklab_from_2020([1.0, 1.0, 1.0]);
-        assert!((w[0] - 1.0).abs() < 2e-3 && w[1].abs() < 2e-3 && w[2].abs() < 2e-3, "{w:?}");
+        assert!(
+            (w[0] - 1.0).abs() < 2e-3 && w[1].abs() < 2e-3 && w[2].abs() < 2e-3,
+            "{w:?}"
+        );
         let g = oklab_from_2020([0.18, 0.18, 0.18]);
         assert!(g[1].abs() < 2e-3 && g[2].abs() < 2e-3);
     }
 
     #[test]
     fn oklab_roundtrip() {
-        for c in [[0.1, 0.5, 0.9], [1.0, 0.0, 0.0], [0.02, 0.03, 0.01], [2.0, 1.5, 0.3]] {
+        for c in [
+            [0.1, 0.5, 0.9],
+            [1.0, 0.0, 0.0],
+            [0.02, 0.03, 0.01],
+            [2.0, 1.5, 0.3],
+        ] {
             let back = oklab_to_2020(oklab_from_2020(c));
             for i in 0..3 {
-                assert!((back[i] - c[i]).abs() < 1e-4 * c[i].max(1.0), "{c:?} {back:?}");
+                assert!(
+                    (back[i] - c[i]).abs() < 1e-4 * c[i].max(1.0),
+                    "{c:?} {back:?}"
+                );
             }
         }
         let lch = lab_to_lch([0.5, 0.1, -0.05]);
@@ -162,13 +177,21 @@ mod tests {
 
     #[test]
     fn hsv_hsl_roundtrip() {
-        for c in [[0.2, 0.4, 0.6], [1.0, 0.0, 0.0], [0.5, 0.5, 0.5], [0.9, 0.8, 0.1]] {
+        for c in [
+            [0.2, 0.4, 0.6],
+            [1.0, 0.0, 0.0],
+            [0.5, 0.5, 0.5],
+            [0.9, 0.8, 0.1],
+        ] {
             let h = rgb_to_hsv(c);
             let r = hsv_to_rgb(h[0], h[1], h[2]);
             let l = rgb_to_hsl(c);
             let r2 = hsl_to_rgb(l[0], l[1], l[2]);
             for i in 0..3 {
-                assert!((r[i] - c[i]).abs() < 1e-5 && (r2[i] - c[i]).abs() < 1e-5, "{c:?}");
+                assert!(
+                    (r[i] - c[i]).abs() < 1e-5 && (r2[i] - c[i]).abs() < 1e-5,
+                    "{c:?}"
+                );
             }
         }
         assert_eq!(rgb_to_hsv([0.0, 1.0, 0.0])[0], 120.0);

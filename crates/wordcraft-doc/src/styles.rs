@@ -3,7 +3,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::props::{Align, Border, BorderStyle, Borders, CharProps, LineSpacing, ParaProps, Rgb, TabAlign, TabLeader, TabStop, TextColor, Underline};
+use crate::props::{
+    Align, Border, BorderStyle, Borders, CharProps, LineSpacing, ParaProps, Rgb, TabAlign,
+    TabLeader, TabStop, TextColor, Underline,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -168,13 +171,24 @@ fn color(c: Rgb) -> Option<TextColor> {
 
 impl StyleSheet {
     pub fn empty() -> Self {
-        StyleSheet { default_chr: CharProps::default(), default_para: ParaProps::default(), default_para_present: true, styles: Vec::new() }
+        StyleSheet {
+            default_chr: CharProps::default(),
+            default_para: ParaProps::default(),
+            default_para_present: true,
+            styles: Vec::new(),
+        }
     }
 
     /// The built-in style set used for new documents.
     pub fn builtin() -> Self {
         let mut s = StyleSheet {
-            default_chr: CharProps { font: Some(BODY_FONT.into()), size: Some(12.0), kern: Some(1.0), lang: Some("en-US".into()), ..chr() },
+            default_chr: CharProps {
+                font: Some(BODY_FONT.into()),
+                size: Some(12.0),
+                kern: Some(1.0),
+                lang: Some("en-US".into()),
+                ..chr()
+            },
             default_para: ParaProps {
                 space_after: Some(8.0),
                 space_before: Some(0.0),
@@ -186,7 +200,13 @@ impl StyleSheet {
             styles: Vec::new(),
         };
         let mut add = |st: Style| s.styles.push(st);
-        add(Style { id: "Normal".into(), name: "Normal".into(), priority: Some(0), quick: true, ..p_style() });
+        add(Style {
+            id: "Normal".into(),
+            name: "Normal".into(),
+            priority: Some(0),
+            quick: true,
+            ..p_style()
+        });
         add(Style {
             id: "DefaultParagraphFont".into(),
             name: "Default Paragraph Font".into(),
@@ -200,7 +220,11 @@ impl StyleSheet {
             id: "NoSpacing".into(),
             name: "No Spacing".into(),
             based_on: Some("Normal".into()),
-            para: ParaProps { space_after: Some(0.0), line_spacing: Some(LineSpacing::Multiple(1.0)), ..para() },
+            para: ParaProps {
+                space_after: Some(0.0),
+                line_spacing: Some(LineSpacing::Multiple(1.0)),
+                ..para()
+            },
             priority: Some(1),
             quick: true,
             ..p_style()
@@ -232,7 +256,13 @@ impl StyleSheet {
                     outline_level: Some(i as u8),
                     ..para()
                 },
-                chr: CharProps { font: Some(font.into()), size: Some(size), italic, color: color(c), ..chr() },
+                chr: CharProps {
+                    font: Some(font.into()),
+                    size: Some(size),
+                    italic,
+                    color: color(c),
+                    ..chr()
+                },
                 priority: Some(9 + n as u32),
                 quick: n <= 3,
                 ..p_style()
@@ -243,8 +273,19 @@ impl StyleSheet {
             name: "Title".into(),
             based_on: Some("Normal".into()),
             next: Some("Normal".into()),
-            para: ParaProps { space_after: Some(4.0), contextual_spacing: Some(true), line_spacing: Some(LineSpacing::Multiple(1.0)), ..para() },
-            chr: CharProps { font: Some(HEADING_FONT.into()), size: Some(28.0), spacing: Some(-0.5), kern: Some(14.0), ..chr() },
+            para: ParaProps {
+                space_after: Some(4.0),
+                contextual_spacing: Some(true),
+                line_spacing: Some(LineSpacing::Multiple(1.0)),
+                ..para()
+            },
+            chr: CharProps {
+                font: Some(HEADING_FONT.into()),
+                size: Some(28.0),
+                spacing: Some(-0.5),
+                kern: Some(14.0),
+                ..chr()
+            },
             priority: Some(10),
             quick: true,
             ..p_style()
@@ -254,7 +295,12 @@ impl StyleSheet {
             name: "Subtitle".into(),
             based_on: Some("Normal".into()),
             next: Some("Normal".into()),
-            chr: CharProps { size: Some(14.0), spacing: Some(0.75), color: color(Rgb(0x59, 0x59, 0x59)), ..chr() },
+            chr: CharProps {
+                size: Some(14.0),
+                spacing: Some(0.75),
+                color: color(Rgb(0x59, 0x59, 0x59)),
+                ..chr()
+            },
             priority: Some(11),
             quick: true,
             ..p_style()
@@ -270,22 +316,69 @@ impl StyleSheet {
             builtin: true,
             ..Default::default()
         };
-        add(c_style("SubtleEmphasis", "Subtle Emphasis", 19, CharProps { italic: Some(true), color: color(Rgb(0x40, 0x40, 0x40)), ..chr() }));
-        add(c_style("Emphasis", "Emphasis", 20, CharProps { italic: Some(true), ..chr() }));
-        add(c_style("IntenseEmphasis", "Intense Emphasis", 21, CharProps { italic: Some(true), color: color(HEADING_BLUE), ..chr() }));
-        add(c_style("Strong", "Strong", 22, CharProps { bold: Some(true), ..chr() }));
+        add(c_style(
+            "SubtleEmphasis",
+            "Subtle Emphasis",
+            19,
+            CharProps {
+                italic: Some(true),
+                color: color(Rgb(0x40, 0x40, 0x40)),
+                ..chr()
+            },
+        ));
+        add(c_style(
+            "Emphasis",
+            "Emphasis",
+            20,
+            CharProps {
+                italic: Some(true),
+                ..chr()
+            },
+        ));
+        add(c_style(
+            "IntenseEmphasis",
+            "Intense Emphasis",
+            21,
+            CharProps {
+                italic: Some(true),
+                color: color(HEADING_BLUE),
+                ..chr()
+            },
+        ));
+        add(c_style(
+            "Strong",
+            "Strong",
+            22,
+            CharProps {
+                bold: Some(true),
+                ..chr()
+            },
+        ));
         add(Style {
             id: "Quote".into(),
             name: "Quote".into(),
             based_on: Some("Normal".into()),
             next: Some("Normal".into()),
-            para: ParaProps { align: Some(Align::Center), space_before: Some(8.0), ..para() },
-            chr: CharProps { italic: Some(true), color: color(Rgb(0x40, 0x40, 0x40)), ..chr() },
+            para: ParaProps {
+                align: Some(Align::Center),
+                space_before: Some(8.0),
+                ..para()
+            },
+            chr: CharProps {
+                italic: Some(true),
+                color: color(Rgb(0x40, 0x40, 0x40)),
+                ..chr()
+            },
             priority: Some(29),
             quick: true,
             ..p_style()
         });
-        let blue_line = Border { style: BorderStyle::Single, width: 0.5, color: Some(HEADING_BLUE), space: 10.0 };
+        let blue_line = Border {
+            style: BorderStyle::Single,
+            width: 0.5,
+            color: Some(HEADING_BLUE),
+            space: 10.0,
+        };
         add(Style {
             id: "IntenseQuote".into(),
             name: "Intense Quote".into(),
@@ -297,33 +390,78 @@ impl StyleSheet {
                 space_after: Some(18.0),
                 indent_left: Some(43.2),
                 indent_right: Some(43.2),
-                borders: Some(Borders { top: Some(blue_line), bottom: Some(blue_line), ..Default::default() }),
+                borders: Some(Borders {
+                    top: Some(blue_line),
+                    bottom: Some(blue_line),
+                    ..Default::default()
+                }),
                 ..para()
             },
-            chr: CharProps { italic: Some(true), color: color(HEADING_BLUE), ..chr() },
+            chr: CharProps {
+                italic: Some(true),
+                color: color(HEADING_BLUE),
+                ..chr()
+            },
             priority: Some(30),
             quick: true,
             ..p_style()
         });
-        add(c_style("SubtleReference", "Subtle Reference", 31, CharProps { small_caps: Some(true), color: color(Rgb(0x5A, 0x5A, 0x5A)), ..chr() }));
+        add(c_style(
+            "SubtleReference",
+            "Subtle Reference",
+            31,
+            CharProps {
+                small_caps: Some(true),
+                color: color(Rgb(0x5A, 0x5A, 0x5A)),
+                ..chr()
+            },
+        ));
         add(c_style(
             "IntenseReference",
             "Intense Reference",
             32,
-            CharProps { bold: Some(true), small_caps: Some(true), spacing: Some(0.25), color: color(HEADING_BLUE), ..chr() },
+            CharProps {
+                bold: Some(true),
+                small_caps: Some(true),
+                spacing: Some(0.25),
+                color: color(HEADING_BLUE),
+                ..chr()
+            },
         ));
-        add(c_style("BookTitle", "Book Title", 33, CharProps { bold: Some(true), italic: Some(true), spacing: Some(0.25), ..chr() }));
+        add(c_style(
+            "BookTitle",
+            "Book Title",
+            33,
+            CharProps {
+                bold: Some(true),
+                italic: Some(true),
+                spacing: Some(0.25),
+                ..chr()
+            },
+        ));
         add(Style {
             id: "ListParagraph".into(),
             name: "List Paragraph".into(),
             based_on: Some("Normal".into()),
-            para: ParaProps { indent_left: Some(36.0), contextual_spacing: Some(true), ..para() },
+            para: ParaProps {
+                indent_left: Some(36.0),
+                contextual_spacing: Some(true),
+                ..para()
+            },
             priority: Some(34),
             quick: true,
             ..p_style()
         });
-        let mut hl =
-            c_style("Hyperlink", "Hyperlink", 99, CharProps { color: color(Rgb(0x46, 0x78, 0x86)), underline: Some(Underline::Single), ..chr() });
+        let mut hl = c_style(
+            "Hyperlink",
+            "Hyperlink",
+            99,
+            CharProps {
+                color: color(Rgb(0x46, 0x78, 0x86)),
+                underline: Some(Underline::Single),
+                ..chr()
+            },
+        );
         hl.quick = false;
         add(hl);
         add(Style {
@@ -331,8 +469,17 @@ impl StyleSheet {
             name: "Caption".into(),
             based_on: Some("Normal".into()),
             next: Some("Normal".into()),
-            para: ParaProps { space_after: Some(10.0), line_spacing: Some(LineSpacing::Multiple(1.0)), ..para() },
-            chr: CharProps { italic: Some(true), size: Some(9.0), color: color(Rgb(0x0E, 0x28, 0x41)), ..chr() },
+            para: ParaProps {
+                space_after: Some(10.0),
+                line_spacing: Some(LineSpacing::Multiple(1.0)),
+                ..para()
+            },
+            chr: CharProps {
+                italic: Some(true),
+                size: Some(9.0),
+                color: color(Rgb(0x0E, 0x28, 0x41)),
+                ..chr()
+            },
             priority: Some(35),
             ..p_style()
         });
@@ -345,8 +492,16 @@ impl StyleSheet {
                     space_after: Some(0.0),
                     line_spacing: Some(LineSpacing::Multiple(1.0)),
                     tabs: Some(vec![
-                        TabStop { pos: 234.0, align: TabAlign::Center, leader: TabLeader::None },
-                        TabStop { pos: 468.0, align: TabAlign::Right, leader: TabLeader::None },
+                        TabStop {
+                            pos: 234.0,
+                            align: TabAlign::Center,
+                            leader: TabLeader::None,
+                        },
+                        TabStop {
+                            pos: 468.0,
+                            align: TabAlign::Right,
+                            leader: TabLeader::None,
+                        },
                     ]),
                     ..para()
                 },
@@ -358,26 +513,54 @@ impl StyleSheet {
             id: "FootnoteText".into(),
             name: "Footnote Text".into(),
             based_on: Some("Normal".into()),
-            para: ParaProps { space_after: Some(0.0), line_spacing: Some(LineSpacing::Multiple(1.0)), ..para() },
-            chr: CharProps { size: Some(10.0), ..chr() },
+            para: ParaProps {
+                space_after: Some(0.0),
+                line_spacing: Some(LineSpacing::Multiple(1.0)),
+                ..para()
+            },
+            chr: CharProps {
+                size: Some(10.0),
+                ..chr()
+            },
             priority: Some(99),
             ..p_style()
         });
-        let mut fr =
-            c_style("FootnoteReference", "Footnote Reference", 99, CharProps { vert_align: Some(crate::props::VertAlign::Superscript), ..chr() });
+        let mut fr = c_style(
+            "FootnoteReference",
+            "Footnote Reference",
+            99,
+            CharProps {
+                vert_align: Some(crate::props::VertAlign::Superscript),
+                ..chr()
+            },
+        );
         fr.quick = false;
         add(fr);
         add(Style {
             id: "EndnoteText".into(),
             name: "Endnote Text".into(),
             based_on: Some("Normal".into()),
-            para: ParaProps { space_after: Some(0.0), line_spacing: Some(LineSpacing::Multiple(1.0)), ..para() },
-            chr: CharProps { size: Some(10.0), ..chr() },
+            para: ParaProps {
+                space_after: Some(0.0),
+                line_spacing: Some(LineSpacing::Multiple(1.0)),
+                ..para()
+            },
+            chr: CharProps {
+                size: Some(10.0),
+                ..chr()
+            },
             priority: Some(99),
             ..p_style()
         });
-        let mut er =
-            c_style("EndnoteReference", "Endnote Reference", 99, CharProps { vert_align: Some(crate::props::VertAlign::Superscript), ..chr() });
+        let mut er = c_style(
+            "EndnoteReference",
+            "Endnote Reference",
+            99,
+            CharProps {
+                vert_align: Some(crate::props::VertAlign::Superscript),
+                ..chr()
+            },
+        );
         er.quick = false;
         add(er);
         add(Style {
@@ -385,7 +568,11 @@ impl StyleSheet {
             name: "TOC Heading".into(),
             based_on: Some("Heading1".into()),
             next: Some("Normal".into()),
-            para: ParaProps { outline_level: Some(9), space_before: Some(12.0), ..para() },
+            para: ParaProps {
+                outline_level: Some(9),
+                space_before: Some(12.0),
+                ..para()
+            },
             priority: Some(39),
             ..p_style()
         });
@@ -395,7 +582,11 @@ impl StyleSheet {
                 name: format!("TOC {n}"),
                 based_on: Some("Normal".into()),
                 next: Some("Normal".into()),
-                para: ParaProps { space_after: Some(5.0), indent_left: Some(12.0 * (n - 1) as f32), ..para() },
+                para: ParaProps {
+                    space_after: Some(5.0),
+                    indent_left: Some(12.0 * (n - 1) as f32),
+                    ..para()
+                },
                 priority: Some(39),
                 ..p_style()
             });
@@ -404,10 +595,17 @@ impl StyleSheet {
             id: "TableGrid".into(),
             name: "Table Grid".into(),
             kind: StyleKind::Table,
-            para: ParaProps { space_after: Some(0.0), line_spacing: Some(LineSpacing::Multiple(1.0)), ..para() },
+            para: ParaProps {
+                space_after: Some(0.0),
+                line_spacing: Some(LineSpacing::Multiple(1.0)),
+                ..para()
+            },
             priority: Some(59),
             builtin: true,
-            table: Some(TableStyleParts { borders: Some(Borders::all(Border::single(0.5))), ..Default::default() }),
+            table: Some(TableStyleParts {
+                borders: Some(Borders::all(Border::single(0.5))),
+                ..Default::default()
+            }),
             ..Default::default()
         });
         s.styles.extend(table_styles());
@@ -422,11 +620,19 @@ impl StyleSheet {
     }
     /// Find by display name (case-insensitive) or id.
     pub fn find(&self, name_or_id: &str) -> Option<&Style> {
-        self.get(name_or_id).or_else(|| self.styles.iter().find(|s| s.name.eq_ignore_ascii_case(name_or_id)))
+        self.get(name_or_id).or_else(|| {
+            self.styles
+                .iter()
+                .find(|s| s.name.eq_ignore_ascii_case(name_or_id))
+        })
     }
     /// The Quick Styles gallery, in priority order.
     pub fn gallery(&self) -> Vec<&Style> {
-        let mut v: Vec<&Style> = self.styles.iter().filter(|s| s.quick && !s.hidden && s.kind != StyleKind::Table).collect();
+        let mut v: Vec<&Style> = self
+            .styles
+            .iter()
+            .filter(|s| s.quick && !s.hidden && s.kind != StyleKind::Table)
+            .collect();
         v.sort_by_key(|s| (s.priority.unwrap_or(99), s.name.clone()));
         v
     }
@@ -451,16 +657,30 @@ impl StyleSheet {
     /// list). `(false, false)` when no style in the chain gives a list.
     pub fn indents_over_list(&self, id: &str) -> (bool, bool) {
         let chain = self.chain(id);
-        let Some(k) = chain.iter().rposition(|s| s.para.numbering.is_some()) else { return (false, false) };
-        let set = |v: Option<f32>, chars: Option<f32>| v.is_some() || chars.is_some_and(|c| c != 0.0);
-        chain.get(k..).unwrap_or_default().iter().fold((false, false), |(l, f), s| {
-            (l || set(s.para.indent_left, s.para.indent_left_chars), f || set(s.para.indent_first, s.para.indent_first_chars))
-        })
+        let Some(k) = chain.iter().rposition(|s| s.para.numbering.is_some()) else {
+            return (false, false);
+        };
+        let set =
+            |v: Option<f32>, chars: Option<f32>| v.is_some() || chars.is_some_and(|c| c != 0.0);
+        chain
+            .get(k..)
+            .unwrap_or_default()
+            .iter()
+            .fold((false, false), |(l, f), s| {
+                (
+                    l || set(s.para.indent_left, s.para.indent_left_chars),
+                    f || set(s.para.indent_first, s.para.indent_first_chars),
+                )
+            })
     }
     /// Table style `id` with its based-on chain merged, base styles first (`None` when there is no
     /// such table style). Styles of other kinds in the chain are skipped.
     pub fn table_style(&self, id: &str) -> Option<TableStyleProps> {
-        let chain: Vec<&Style> = self.chain(id).into_iter().filter(|s| s.kind == StyleKind::Table).collect();
+        let chain: Vec<&Style> = self
+            .chain(id)
+            .into_iter()
+            .filter(|s| s.kind == StyleKind::Table)
+            .collect();
         if chain.last().is_none_or(|s| s.id != id) {
             return None;
         }
@@ -505,27 +725,47 @@ impl StyleSheet {
     /// An id not used yet, derived from a display name.
     pub fn new_id(&self, name: &str) -> String {
         let base: String = name.chars().filter(|c| c.is_alphanumeric()).collect();
-        let base = if base.is_empty() { "Style".to_string() } else { base };
+        let base = if base.is_empty() {
+            "Style".to_string()
+        } else {
+            base
+        };
         if self.get(&base).is_none() {
             return base;
         }
-        (1..10_000).map(|i| format!("{base}{i}")).find(|id| self.get(id).is_none()).unwrap_or(base)
+        (1..10_000)
+            .map(|i| format!("{base}{i}"))
+            .find(|id| self.get(id).is_none())
+            .unwrap_or(base)
     }
 }
 
 fn p_style() -> Style {
-    Style { kind: StyleKind::Paragraph, builtin: true, ..Default::default() }
+    Style {
+        kind: StyleKind::Paragraph,
+        builtin: true,
+        ..Default::default()
+    }
 }
 
 /// A few table styles of our own (grid, plain, light/medium accents).
 fn table_styles() -> Vec<Style> {
-    let thin = |c: Rgb| Border { style: BorderStyle::Single, width: 0.5, color: Some(c), space: 0.0 };
+    let thin = |c: Rgb| Border {
+        style: BorderStyle::Single,
+        width: 0.5,
+        color: Some(c),
+        space: 0.0,
+    };
     let mk = |id: &str, name: &str, parts: TableStyleParts| Style {
         id: id.into(),
         name: name.into(),
         kind: StyleKind::Table,
         based_on: Some("TableNormal".into()),
-        para: ParaProps { space_after: Some(0.0), line_spacing: Some(LineSpacing::Multiple(1.0)), ..ParaProps::default() },
+        para: ParaProps {
+            space_after: Some(0.0),
+            line_spacing: Some(LineSpacing::Multiple(1.0)),
+            ..ParaProps::default()
+        },
         priority: Some(60),
         builtin: true,
         table: Some(parts),
@@ -538,15 +778,28 @@ fn table_styles() -> Vec<Style> {
         ("Purple", Rgb(0x71, 0x2E, 0x8D), Rgb(0xE5, 0xD2, 0xEE)),
     ];
     let mut v = vec![
-        Style { id: "TableNormal".into(), name: "Normal Table".into(), kind: StyleKind::Table, hidden: true, builtin: true, ..Default::default() },
+        Style {
+            id: "TableNormal".into(),
+            name: "Normal Table".into(),
+            kind: StyleKind::Table,
+            hidden: true,
+            builtin: true,
+            ..Default::default()
+        },
         mk(
             "PlainTable1",
             "Plain Table 1",
             TableStyleParts {
                 borders: Some(Borders::all(thin(Rgb(0xBF, 0xBF, 0xBF)))),
-                header_chr: CharProps { bold: Some(true), ..CharProps::default() },
+                header_chr: CharProps {
+                    bold: Some(true),
+                    ..CharProps::default()
+                },
                 band_fill: Some(Rgb(0xF2, 0xF2, 0xF2)),
-                first_col_chr: CharProps { bold: Some(true), ..CharProps::default() },
+                first_col_chr: CharProps {
+                    bold: Some(true),
+                    ..CharProps::default()
+                },
                 ..Default::default()
             },
         ),
@@ -555,8 +808,14 @@ fn table_styles() -> Vec<Style> {
             "Grid Table 1 Light",
             TableStyleParts {
                 borders: Some(Borders::all(thin(Rgb(0x99, 0x99, 0x99)))),
-                header_chr: CharProps { bold: Some(true), ..CharProps::default() },
-                first_col_chr: CharProps { bold: Some(true), ..CharProps::default() },
+                header_chr: CharProps {
+                    bold: Some(true),
+                    ..CharProps::default()
+                },
+                first_col_chr: CharProps {
+                    bold: Some(true),
+                    ..CharProps::default()
+                },
                 ..Default::default()
             },
         ),
@@ -568,9 +827,16 @@ fn table_styles() -> Vec<Style> {
             TableStyleParts {
                 borders: Some(Borders::all(thin(light))),
                 header_fill: Some(dark),
-                header_chr: CharProps { bold: Some(true), color: Some(TextColor::Rgb(Rgb::WHITE)), ..CharProps::default() },
+                header_chr: CharProps {
+                    bold: Some(true),
+                    color: Some(TextColor::Rgb(Rgb::WHITE)),
+                    ..CharProps::default()
+                },
                 band_fill: Some(light),
-                first_col_chr: CharProps { bold: Some(true), ..CharProps::default() },
+                first_col_chr: CharProps {
+                    bold: Some(true),
+                    ..CharProps::default()
+                },
                 ..Default::default()
             },
         ));
@@ -580,7 +846,11 @@ fn table_styles() -> Vec<Style> {
             TableStyleParts {
                 borders: Some(Borders::box_(thin(dark))),
                 header_fill: Some(dark),
-                header_chr: CharProps { bold: Some(true), color: Some(TextColor::Rgb(Rgb::WHITE)), ..CharProps::default() },
+                header_chr: CharProps {
+                    bold: Some(true),
+                    color: Some(TextColor::Rgb(Rgb::WHITE)),
+                    ..CharProps::default()
+                },
                 total_border_top: Some(thin(dark)),
                 ..Default::default()
             },
@@ -596,7 +866,17 @@ mod tests {
     #[test]
     fn builtins_present() {
         let s = StyleSheet::builtin();
-        for id in ["Normal", "Heading1", "Heading9", "Title", "Strong", "TableGrid", "TOC3", "Hyperlink", "ListParagraph"] {
+        for id in [
+            "Normal",
+            "Heading1",
+            "Heading9",
+            "Title",
+            "Strong",
+            "TableGrid",
+            "TOC3",
+            "Hyperlink",
+            "ListParagraph",
+        ] {
             assert!(s.get(id).is_some(), "{id}");
         }
         assert_eq!(s.find("heading 2").map(|s| s.id.as_str()), Some("Heading2"));
@@ -613,7 +893,8 @@ mod tests {
         assert!(sheet.default_para_present);
         let mut omitted = sheet;
         omitted.default_para_present = false;
-        let again: StyleSheet = serde_json::from_str(&serde_json::to_string(&omitted).unwrap()).unwrap();
+        let again: StyleSheet =
+            serde_json::from_str(&serde_json::to_string(&omitted).unwrap()).unwrap();
         assert_eq!(again, omitted);
     }
 
@@ -638,20 +919,35 @@ mod tests {
             id: "RedGrid".into(),
             kind: StyleKind::Table,
             based_on: Some("TableGrid".into()),
-            chr: CharProps { bold: Some(true), color: color(red), ..chr() },
+            chr: CharProps {
+                bold: Some(true),
+                color: color(red),
+                ..chr()
+            },
             table: Some(TableStyleParts {
-                borders: Some(Borders { top: Some(thick), ..Default::default() }),
+                borders: Some(Borders {
+                    top: Some(thick),
+                    ..Default::default()
+                }),
                 header_fill: Some(red),
                 ..Default::default()
             }),
             ..Default::default()
         });
         let t = s.table_style("RedGrid").unwrap();
-        assert_eq!((t.para.space_after, t.para.line_spacing), (Some(0.0), Some(LineSpacing::Multiple(1.0))), "from Table Grid");
+        assert_eq!(
+            (t.para.space_after, t.para.line_spacing),
+            (Some(0.0), Some(LineSpacing::Multiple(1.0))),
+            "from Table Grid"
+        );
         assert_eq!((t.chr.bold, t.chr.color), (Some(true), color(red)));
         let b = t.parts.borders.unwrap();
         assert_eq!(b.top, Some(thick));
-        assert_eq!(b.left, Some(Border::single(0.5)), "Table Grid's other edges");
+        assert_eq!(
+            b.left,
+            Some(Border::single(0.5)),
+            "Table Grid's other edges"
+        );
         assert_eq!(t.parts.header_fill, Some(red));
         // Not a table style, unknown, or a based-on loop: no panic.
         assert!(s.table_style("Normal").is_none());

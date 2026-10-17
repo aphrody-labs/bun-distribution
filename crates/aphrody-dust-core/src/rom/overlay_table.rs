@@ -14,7 +14,10 @@ pub struct OverlayTable<'a> {
 impl<'a> OverlayTable<'a> {
     /// Creates a new [`OverlayTable`].
     pub fn new(overlays: Vec<Overlay<'a>>) -> Self {
-        Self { overlays, signature: None }
+        Self {
+            overlays,
+            signature: None,
+        }
     }
 
     /// Returns a reference to the overlays of this [`OverlayTable`].
@@ -53,7 +56,10 @@ impl<'a> OverlayTable<'a> {
             .map(|overlay| Overlay::parse_arm9(overlay, rom, arm9))
             .collect::<Result<Vec<_>, _>>()?;
         let signature = raw.signature();
-        Ok(Self { overlays, signature })
+        Ok(Self {
+            overlays,
+            signature,
+        })
     }
 
     /// Parses an [`OverlayTable`] from the given raw ARM7 overlay table.
@@ -68,13 +74,19 @@ impl<'a> OverlayTable<'a> {
             .map(|overlay| Overlay::parse_arm7(overlay, rom))
             .collect::<Result<Vec<_>, _>>()?;
         let signature = raw.signature();
-        Ok(Self { overlays, signature })
+        Ok(Self {
+            overlays,
+            signature,
+        })
     }
 
     /// Builds a raw overlay table.
     pub fn build(&self) -> raw::OverlayTable<'a> {
-        let overlays: Vec<raw::Overlay> =
-            self.overlays.iter().map(super::overlay::Overlay::build).collect();
+        let overlays: Vec<raw::Overlay> = self
+            .overlays
+            .iter()
+            .map(super::overlay::Overlay::build)
+            .collect();
         let signature = self.signature;
         raw::OverlayTable::new(overlays, signature)
     }

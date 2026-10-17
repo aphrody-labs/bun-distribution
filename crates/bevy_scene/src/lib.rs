@@ -889,9 +889,9 @@
 pub mod prelude {
     #[expect(deprecated, reason = "easier migrations")]
     pub use crate::{
-        bsn, bsn_list, on, template_value, CommandsSceneExt, EntityCommandsSceneExt,
-        EntityWorldMutSceneExt, PatchFromTemplate, PatchTemplate, Scene, SceneComponent, SceneList,
-        ScenePatchInstance, SpawnListSystem, SpawnSystem, WorldSceneExt,
+        CommandsSceneExt, EntityCommandsSceneExt, EntityWorldMutSceneExt, PatchFromTemplate,
+        PatchTemplate, Scene, SceneComponent, SceneList, ScenePatchInstance, SpawnListSystem,
+        SpawnSystem, WorldSceneExt, bsn, bsn_list, on, template_value,
     };
 }
 
@@ -958,7 +958,7 @@ pub struct Ready {
 #[cfg(test)]
 mod tests {
     use crate::{self as bevy_scene, Ready, ScenePlugin};
-    use crate::{prelude::*, ScenePatch};
+    use crate::{ScenePatch, prelude::*};
     use alloc::sync::Arc;
     use bevy_app::{App, TaskPoolPlugin};
     use bevy_asset::io::memory::{Dir, MemoryAssetReader};
@@ -968,7 +968,7 @@ mod tests {
     use bevy_ecs::name::Name;
     use bevy_ecs::prelude::*;
     use bevy_ecs::relationship::Relationship;
-    use bevy_ecs::system::{system_value, SystemHandle};
+    use bevy_ecs::system::{SystemHandle, system_value};
     use bevy_ecs::world::DeferredWorld;
     use bevy_reflect::TypePath;
     use bevy_scene_macros::SceneComponent;
@@ -991,11 +991,13 @@ mod tests {
         let mut app = test_app();
         let world = app.world_mut();
 
-        assert!(world
-            .spawn_scene(bsn! {
-              ::bevy_ecs::prelude::Children[]
-            })
-            .is_ok());
+        assert!(
+            world
+                .spawn_scene(bsn! {
+                  ::bevy_ecs::prelude::Children[]
+                })
+                .is_ok()
+        );
     }
 
     #[test]

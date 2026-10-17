@@ -21,8 +21,9 @@ pub fn finalize_commands(output: &mut [u32], used: usize) -> Result<usize, Comma
     if used & 1 != 0 {
         return Err(CommandError::UnalignedCommandOffset);
     }
-    let end =
-        used.checked_add(if used & 3 == 0 { 4 } else { 2 }).ok_or(CommandError::LengthOverflow)?;
+    let end = used
+        .checked_add(if used & 3 == 0 { 4 } else { 2 })
+        .ok_or(CommandError::LengthOverflow)?;
     if end > output.len() {
         return Err(CommandError::BufferTooSmall);
     }
@@ -111,7 +112,12 @@ pub struct RegisterWrites<'a> {
 
 impl<'a> RegisterWrites<'a> {
     pub const fn new(words: &'a [u32]) -> Self {
-        Self { words, header: 0, parameter: 0, count: 0 }
+        Self {
+            words,
+            header: 0,
+            parameter: 0,
+            count: 0,
+        }
     }
 }
 
@@ -145,7 +151,11 @@ impl Iterator for RegisterWrites<'_> {
             0
         });
         self.parameter += 1;
-        let result = RegisterWrite { register, byte_mask: ((self.header >> 16) & 15) as u8, value };
+        let result = RegisterWrite {
+            register,
+            byte_mask: ((self.header >> 16) & 15) as u8,
+            value,
+        };
         if self.parameter == self.count {
             self.words = &self.words[(self.count + 2) & !1..];
             self.count = 0;
@@ -175,7 +185,10 @@ mod tests {
     fn sdk_chunk_boundary_and_padding() {
         let params = core::array::from_fn::<_, 257, _>(|i| i as u32);
         let mut output = [0xffffffff; 260];
-        assert_eq!(encode_writes(&mut output, 0x100, 15, true, &params), Ok(260));
+        assert_eq!(
+            encode_writes(&mut output, 0x100, 15, true, &params),
+            Ok(260)
+        );
         assert_eq!(output[1], 0x8fff0100);
         assert_eq!(output[257], 0);
         assert_eq!(output[258], 256);
@@ -205,7 +218,11 @@ mod tests {
     #[test]
     fn all_byte_masks_preserve_disabled_bytes() {
         for mask in 0..16 {
-            let write = RegisterWrite { register: 0, byte_mask: mask, value: 0x44332211 };
+            let write = RegisterWrite {
+                register: 0,
+                byte_mask: mask,
+                value: 0x44332211,
+            };
             let result = write.apply(0xaabbccdd).to_le_bytes();
             for (i, byte) in result.iter().enumerate() {
                 assert_eq!(

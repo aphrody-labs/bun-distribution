@@ -23,7 +23,14 @@ pub struct DateTime {
 
 impl DateTime {
     pub fn new(year: i32, month: u32, day: u32, hour: u32, minute: u32, second: u32) -> Self {
-        DateTime { year, month, day, hour, minute, second }
+        DateTime {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+        }
     }
 
     /// The local date and time now (the user's time zone); `None` where there is no clock (wasm).
@@ -32,7 +39,14 @@ impl DateTime {
         {
             use chrono::{Datelike, Timelike};
             let n = chrono::Local::now();
-            Some(DateTime::new(n.year(), n.month(), n.day(), n.hour(), n.minute(), n.second()))
+            Some(DateTime::new(
+                n.year(),
+                n.month(),
+                n.day(),
+                n.hour(),
+                n.minute(),
+                n.second(),
+            ))
         }
         #[cfg(target_arch = "wasm32")]
         {
@@ -50,12 +64,20 @@ impl DateTime {
             2 => 28,
             _ => return false,
         };
-        (1..=9999).contains(&self.year) && (1..=days).contains(&self.day) && self.hour < 24 && self.minute < 60 && self.second < 61
+        (1..=9999).contains(&self.year)
+            && (1..=days).contains(&self.day)
+            && self.hour < 24
+            && self.minute < 60
+            && self.second < 61
     }
 
     /// Day of the week, 0 = Sunday (days since 1970-01-01, Howard Hinnant's algorithm).
     fn weekday(&self) -> usize {
-        let (y, m, d) = (i64::from(self.year), i64::from(self.month), i64::from(self.day));
+        let (y, m, d) = (
+            i64::from(self.year),
+            i64::from(self.month),
+            i64::from(self.day),
+        );
         let y = if m <= 2 { y - 1 } else { y };
         let era = y.div_euclid(400);
         let yoe = y - era * 400;
@@ -66,8 +88,29 @@ impl DateTime {
     }
 }
 
-const MONTHS: [&str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+const DAYS: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 
 /// Is field `kind` a date/time field?
 pub fn is_date_field(kind: &str) -> bool {
@@ -81,7 +124,11 @@ pub fn field_text(kind: &str, lang: Option<&str>, now: DateTime) -> Option<Strin
     if !now.is_valid() {
         return None;
     }
-    let lang = lang.map(str::trim).filter(|l| !l.is_empty()).unwrap_or("en-US").to_ascii_lowercase();
+    let lang = lang
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .unwrap_or("en-US")
+        .to_ascii_lowercase();
     let english = lang == "en" || lang.starts_with("en-");
     let month = MONTHS.get(now.month.checked_sub(1)? as usize)?;
     let mon = month.get(..3)?;
@@ -126,7 +173,8 @@ fn short_date(lang: &str, t: DateTime) -> String {
     }
     match primary {
         "fr" | "es" | "it" | "pt" | "el" | "ca" | "vi" => format!("{d:02}/{m:02}/{y}"),
-        "de" | "ru" | "pl" | "cs" | "sk" | "tr" | "fi" | "nb" | "nn" | "no" | "da" | "uk" | "ro" => format!("{d:02}.{m:02}.{y}"),
+        "de" | "ru" | "pl" | "cs" | "sk" | "tr" | "fi" | "nb" | "nn" | "no" | "da" | "uk"
+        | "ro" => format!("{d:02}.{m:02}.{y}"),
         "nl" => format!("{d}-{m}-{y}"),
         "ja" | "zh" => format!("{y}/{m}/{d}"),
         "ko" | "sv" | "lt" => format!("{y}-{m:02}-{d:02}"),
@@ -138,7 +186,14 @@ fn short_date(lang: &str, t: DateTime) -> String {
 mod tests {
     use super::*;
 
-    const FRI: DateTime = DateTime { year: 2026, month: 10, day: 9, hour: 20, minute: 5, second: 7 };
+    const FRI: DateTime = DateTime {
+        year: 2026,
+        month: 10,
+        day: 9,
+        hour: 20,
+        minute: 5,
+        second: 7,
+    };
 
     #[test]
     fn english_formats_of_every_type() {
@@ -159,22 +214,49 @@ mod tests {
         assert_eq!(f("datetimeFigureOut").as_deref(), Some("10/9/2026"));
         assert_eq!(f("datetime").as_deref(), Some("10/9/2026"));
         // No language: US English. Midnight and noon are 12 on the clock.
-        assert_eq!(field_text("datetime12", None, DateTime::new(2024, 2, 29, 0, 0, 0)).as_deref(), Some("12:00 AM"));
-        assert_eq!(field_text("datetime12", None, DateTime::new(2024, 2, 29, 12, 30, 0)).as_deref(), Some("12:30 PM"));
-        assert_eq!(field_text("datetime2", None, DateTime::new(2000, 1, 1, 0, 0, 0)).as_deref(), Some("Saturday, January 1, 2000"));
+        assert_eq!(
+            field_text("datetime12", None, DateTime::new(2024, 2, 29, 0, 0, 0)).as_deref(),
+            Some("12:00 AM")
+        );
+        assert_eq!(
+            field_text("datetime12", None, DateTime::new(2024, 2, 29, 12, 30, 0)).as_deref(),
+            Some("12:30 PM")
+        );
+        assert_eq!(
+            field_text("datetime2", None, DateTime::new(2000, 1, 1, 0, 0, 0)).as_deref(),
+            Some("Saturday, January 1, 2000")
+        );
     }
 
     #[test]
     fn language_orders_numeric_dates_and_keeps_names_english_only() {
-        assert_eq!(field_text("datetime1", Some("en-GB"), FRI).as_deref(), Some("09/10/2026"));
-        assert_eq!(field_text("datetimeFigureOut", Some("de-DE"), FRI).as_deref(), Some("09.10.2026"));
-        assert_eq!(field_text("datetime1", Some("ja-JP"), FRI).as_deref(), Some("2026/10/9"));
-        assert_eq!(field_text("datetime1", Some("sv-SE"), FRI).as_deref(), Some("2026-10-09"));
-        assert_eq!(field_text("datetime10", Some("fr-FR"), FRI).as_deref(), Some("20:05"));
+        assert_eq!(
+            field_text("datetime1", Some("en-GB"), FRI).as_deref(),
+            Some("09/10/2026")
+        );
+        assert_eq!(
+            field_text("datetimeFigureOut", Some("de-DE"), FRI).as_deref(),
+            Some("09.10.2026")
+        );
+        assert_eq!(
+            field_text("datetime1", Some("ja-JP"), FRI).as_deref(),
+            Some("2026/10/9")
+        );
+        assert_eq!(
+            field_text("datetime1", Some("sv-SE"), FRI).as_deref(),
+            Some("2026-10-09")
+        );
+        assert_eq!(
+            field_text("datetime10", Some("fr-FR"), FRI).as_deref(),
+            Some("20:05")
+        );
         // Month names in another language: not computed (the field keeps its saved text).
         assert_eq!(field_text("datetime2", Some("de-DE"), FRI), None);
         assert_eq!(field_text("datetime12", Some("fr-FR"), FRI), None);
-        assert_eq!(field_text("datetime4", Some("en-GB"), FRI).as_deref(), Some("October 9, 2026"));
+        assert_eq!(
+            field_text("datetime4", Some("en-GB"), FRI).as_deref(),
+            Some("October 9, 2026")
+        );
     }
 
     #[test]

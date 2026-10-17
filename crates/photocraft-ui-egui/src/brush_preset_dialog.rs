@@ -19,13 +19,18 @@ pub fn owns(fields: &Map<String, Value>) -> bool {
 /// ("Soft Round 1"), so OK never overwrites a preset; "Brush N" when the brush isn't a preset's.
 pub fn suggested_name(presets: &[BrushPreset], current: Option<&str>) -> String {
     match current.filter(|n| presets.iter().any(|p| p.name.eq_ignore_ascii_case(n))) {
-        Some(base) => (1..).map(|n| format!("{base} {n}")).find(|n| !taken(presets, n)).unwrap_or_else(|| base.to_string()),
+        Some(base) => (1..)
+            .map(|n| format!("{base} {n}"))
+            .find(|n| !taken(presets, n))
+            .unwrap_or_else(|| base.to_string()),
         None => crate::brush_panel::new_preset_name(presets),
     }
 }
 
 fn taken(presets: &[BrushPreset], name: &str) -> bool {
-    presets.iter().any(|p| p.name.eq_ignore_ascii_case(name.trim()))
+    presets
+        .iter()
+        .any(|p| p.name.eq_ignore_ascii_case(name.trim()))
 }
 
 /// Open the dialog for the tool's brush, or for `brush` (the Brush Settings panel's copy, which
@@ -35,7 +40,13 @@ pub fn open(app: &mut PhotocraftApp, brush: Option<&BrushSettings>) -> u64 {
     let mut fields = Map::new();
     fields.insert(MARK.into(), json!(true));
     fields.insert("__label".into(), json!("New Brush Preset…"));
-    fields.insert("name".into(), json!(suggested_name(&tools.presets, tools.current_preset.as_deref())));
+    fields.insert(
+        "name".into(),
+        json!(suggested_name(
+            &tools.presets,
+            tools.current_preset.as_deref()
+        )),
+    );
     fields.insert("captureSize".into(), json!(true));
     fields.insert("toolSettings".into(), json!(false));
     fields.insert("color".into(), json!(false));
@@ -72,18 +83,41 @@ fn check(ui: &mut egui::Ui, f: &mut Map<String, Value>, key: &str, label: &str) 
 }
 
 /// The dialog's three columns; it owns its OK and Cancel, so they stand in their own column.
-pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>, interactive: bool) -> Option<bool> {
+pub fn body(
+    app: &PhotocraftApp,
+    ui: &mut egui::Ui,
+    f: &mut Map<String, Value>,
+    interactive: bool,
+) -> Option<bool> {
     let t = Tokens::get(ui.ctx());
     let mut outcome = None;
-    let brush: BrushSettings = f.get("brush").and_then(|b| serde_json::from_value(b.clone()).ok()).unwrap_or_else(|| app.session.tools.brush.clone());
+    let brush: BrushSettings = f
+        .get("brush")
+        .and_then(|b| serde_json::from_value(b.clone()).ok())
+        .unwrap_or_else(|| app.session.tools.brush.clone());
     ui.horizontal_top(|ui| {
         // The tip as the preset cards draw it, and the size under it.
         let (r, _) = ui.allocate_exact_size(vec2(PREVIEW, PREVIEW), egui::Sense::hover());
         ui.painter().rect_filled(r, t.radius_sm, t.field);
-        let tip = crate::brush_preview::tip_texture(ui.ctx(), "new-preset-tip", &brush.tip, (brush.hardness, brush.angle, brush.roundness), 64, t.text);
+        let tip = crate::brush_preview::tip_texture(
+            ui.ctx(),
+            "new-preset-tip",
+            &brush.tip,
+            (brush.hardness, brush.angle, brush.roundness),
+            64,
+            t.text,
+        );
         let side = (PREVIEW - 30.0) * crate::brush_sections::thumb_scale(brush.size);
-        let tr = egui::Rect::from_center_size(pos2(r.center().x, r.top() + 8.0 + (PREVIEW - 30.0) / 2.0), vec2(side, side));
-        ui.painter().image(tip.id(), tr, egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        let tr = egui::Rect::from_center_size(
+            pos2(r.center().x, r.top() + 8.0 + (PREVIEW - 30.0) / 2.0),
+            vec2(side, side),
+        );
+        ui.painter().image(
+            tip.id(),
+            tr,
+            egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
         ui.painter().text(
             pos2(r.center().x, r.bottom() - 5.0),
             egui::Align2::CENTER_BOTTOM,
@@ -95,7 +129,11 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>, 
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 ui.label(tl!("Name:"));
-                let mut text = f.get("name").and_then(Value::as_str).unwrap_or("").to_string();
+                let mut text = f
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
                 let id = ui.id().with("new-brush-preset-name");
                 let r = widgets::text_field(ui, id, &mut text, "", 220.0, false);
                 // Photoshop opens on the name, all of it selected, so typing replaces it.
@@ -117,7 +155,9 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>, 
             // Include Color belongs to the tool settings: only with them, as in Photoshop.
             ui.horizontal(|ui| {
                 ui.add_space(20.0);
-                ui.add_enabled_ui(on(f, "toolSettings"), |ui| check(ui, f, "color", tl!("Include Color")));
+                ui.add_enabled_ui(on(f, "toolSettings"), |ui| {
+                    check(ui, f, "color", tl!("Include Color"))
+                });
             });
             if let Some(why) = problem(app, f).filter(|_| !name(f).is_empty()) {
                 ui.add_space(4.0);
@@ -127,7 +167,11 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>, 
         ui.add_space(14.0);
         ui.vertical(|ui| {
             let ok = problem(app, f).is_none();
-            if ui.add_enabled_ui(ok, |ui| widgets::primary_button(ui, tl!("OK"), 84.0)).inner.clicked() {
+            if ui
+                .add_enabled_ui(ok, |ui| widgets::primary_button(ui, tl!("OK"), 84.0))
+                .inner
+                .clicked()
+            {
                 outcome = Some(true);
             }
             ui.add_space(4.0);
@@ -136,7 +180,11 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>, 
             }
         });
     });
-    if outcome.is_none() && interactive && problem(app, f).is_none() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+    if outcome.is_none()
+        && interactive
+        && problem(app, f).is_none()
+        && ui.input(|i| i.key_pressed(egui::Key::Enter))
+    {
         outcome = Some(true);
     }
     outcome

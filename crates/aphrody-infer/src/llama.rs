@@ -65,7 +65,11 @@ impl LlamaTool {
     /// Platform file name.
     #[must_use]
     pub fn file_name(self) -> String {
-        if cfg!(windows) { format!("{}.exe", self.stem()) } else { self.stem().to_owned() }
+        if cfg!(windows) {
+            format!("{}.exe", self.stem())
+        } else {
+            self.stem().to_owned()
+        }
     }
 
     /// Every tool, in declaration order.
@@ -148,7 +152,10 @@ pub fn resolve(tool: LlamaTool) -> Option<LlamaSource> {
 
     // A distribution package (Bun OS: extra/llama-cpp) wins over the managed
     // download, so the system copy is the one kept up to date by pacman.
-    if let Some(found) = SYSTEM_BIN_DIRS.iter().find_map(|dir| in_dir(Path::new(dir), tool)) {
+    if let Some(found) = SYSTEM_BIN_DIRS
+        .iter()
+        .find_map(|dir| in_dir(Path::new(dir), tool))
+    {
         return Some(LlamaSource::Path(found));
     }
 
@@ -160,16 +167,26 @@ pub fn resolve(tool: LlamaTool) -> Option<LlamaSource> {
 }
 
 /// System binary directories probed before the managed runtimes.
-const SYSTEM_BIN_DIRS: &[&str] = if cfg!(unix) { &["/usr/bin", "/usr/local/bin"] } else { &[] };
+const SYSTEM_BIN_DIRS: &[&str] = if cfg!(unix) {
+    &["/usr/bin", "/usr/local/bin"]
+} else {
+    &[]
+};
 
 /// System library directories probed before the managed runtimes.
-pub(crate) const SYSTEM_LIB_DIRS: &[&str] =
-    if cfg!(unix) { &["/usr/lib", "/usr/lib64", "/usr/local/lib"] } else { &[] };
+pub(crate) const SYSTEM_LIB_DIRS: &[&str] = if cfg!(unix) {
+    &["/usr/lib", "/usr/lib64", "/usr/local/lib"]
+} else {
+    &[]
+};
 
 /// Which tools are available, for a capability report.
 #[must_use]
 pub fn available() -> Vec<(LlamaTool, LlamaSource)> {
-    LlamaTool::all().iter().filter_map(|tool| resolve(*tool).map(|src| (*tool, src))).collect()
+    LlamaTool::all()
+        .iter()
+        .filter_map(|tool| resolve(*tool).map(|src| (*tool, src)))
+        .collect()
 }
 
 fn non_empty_env(var: &str) -> Option<String> {
@@ -196,7 +213,9 @@ pub fn find_managed_in(root: &Path, tool: LlamaTool) -> Option<PathBuf> {
         .map(|entry| entry.path())
         .filter(|path| {
             path.is_dir()
-                && path.file_name().is_some_and(|name| name.to_string_lossy().starts_with("llama-"))
+                && path
+                    .file_name()
+                    .is_some_and(|name| name.to_string_lossy().starts_with("llama-"))
         })
         .collect();
 
@@ -330,7 +349,13 @@ fn build_of(dir: &Path) -> Option<u32> {
 fn library_dir_in(root: &Path) -> Option<PathBuf> {
     LIBRARY_SUBDIRS
         .iter()
-        .map(|sub| if sub.is_empty() { root.to_path_buf() } else { root.join(sub) })
+        .map(|sub| {
+            if sub.is_empty() {
+                root.to_path_buf()
+            } else {
+                root.join(sub)
+            }
+        })
         .find(|dir| dir.join(LIBRARY_NAME).is_file())
 }
 
@@ -356,12 +381,16 @@ pub fn find_managed_library_in(root: &Path) -> Option<LlamaLibrary> {
         .map(|entry| entry.path())
         .filter(|path| {
             path.is_dir()
-                && path.file_name().is_some_and(|name| name.to_string_lossy().starts_with("llama-"))
+                && path
+                    .file_name()
+                    .is_some_and(|name| name.to_string_lossy().starts_with("llama-"))
         })
         .collect();
     // Same ordering argument as `find_managed_in`: build numbers only grow.
     candidates.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
-    candidates.into_iter().find_map(|dir| library_in(&dir, LibraryOrigin::Managed))
+    candidates
+        .into_iter()
+        .find_map(|dir| library_in(&dir, LibraryOrigin::Managed))
 }
 
 /// Locate a directory holding the llama.cpp shared libraries.
@@ -393,8 +422,9 @@ pub fn resolve_library() -> Option<LlamaLibrary> {
     {
         return Some(found);
     }
-    if let Some(found) =
-        SYSTEM_LIB_DIRS.iter().find_map(|dir| library_in(Path::new(dir), LibraryOrigin::System))
+    if let Some(found) = SYSTEM_LIB_DIRS
+        .iter()
+        .find_map(|dir| library_in(Path::new(dir), LibraryOrigin::System))
     {
         return Some(found);
     }
@@ -428,20 +458,33 @@ mod tests {
             touch(&dir.path().join(build).join(LlamaTool::Server.file_name()));
         }
         let found = find_managed_in(dir.path(), LlamaTool::Server).unwrap();
-        assert!(found.to_string_lossy().contains("b10549"), "{}", found.display());
+        assert!(
+            found.to_string_lossy().contains("b10549"),
+            "{}",
+            found.display()
+        );
     }
 
     #[test]
     fn managed_scan_also_looks_in_a_bin_subdirectory() {
         let dir = tempfile::tempdir().unwrap();
-        touch(&dir.path().join("llama-b1").join("bin").join(LlamaTool::Cli.file_name()));
+        touch(
+            &dir.path()
+                .join("llama-b1")
+                .join("bin")
+                .join(LlamaTool::Cli.file_name()),
+        );
         assert!(find_managed_in(dir.path(), LlamaTool::Cli).is_some());
     }
 
     #[test]
     fn managed_scan_ignores_unrelated_directories() {
         let dir = tempfile::tempdir().unwrap();
-        touch(&dir.path().join("onnxruntime-win-x64-1.29.0").join(LlamaTool::Cli.file_name()));
+        touch(
+            &dir.path()
+                .join("onnxruntime-win-x64-1.29.0")
+                .join(LlamaTool::Cli.file_name()),
+        );
         assert!(find_managed_in(dir.path(), LlamaTool::Cli).is_none());
     }
 
@@ -465,7 +508,10 @@ mod tests {
         let managed = LlamaSource::Managed(PathBuf::from("/x/llama-cli"));
         assert!(managed.label().contains("managed"));
         assert_eq!(managed.path(), Path::new("/x/llama-cli"));
-        assert_eq!(LlamaSource::Path(PathBuf::from("/usr/bin/llama-cli")).label(), "PATH");
+        assert_eq!(
+            LlamaSource::Path(PathBuf::from("/usr/bin/llama-cli")).label(),
+            "PATH"
+        );
     }
 
     #[test]
@@ -483,7 +529,14 @@ mod tests {
         assert_eq!(parse_build("llama-b10903-bin-ubuntu-x64"), Some(10903));
         assert_eq!(parse_build("b1"), Some(1));
         // No tag segment: not a build.
-        for name in ["llama-latest", "bin", "build", "llama-b", "llama-bx10", "llama-b10x"] {
+        for name in [
+            "llama-latest",
+            "bin",
+            "build",
+            "llama-b",
+            "llama-bx10",
+            "llama-b10x",
+        ] {
             assert_eq!(parse_build(name), None, "{name}");
         }
     }
@@ -495,8 +548,16 @@ mod tests {
             let root = dir.path().join("llama-b10903");
             touch(&root.join(sub).join(LIBRARY_NAME));
             let found = library_in(&root, LibraryOrigin::Managed).expect(sub);
-            assert!(found.dir.ends_with(if sub.is_empty() { "llama-b10903" } else { sub }));
-            assert_eq!(found.build, Some(10903), "{sub}: the build is read through ancestors");
+            assert!(
+                found
+                    .dir
+                    .ends_with(if sub.is_empty() { "llama-b10903" } else { sub })
+            );
+            assert_eq!(
+                found.build,
+                Some(10903),
+                "{sub}: the build is read through ancestors"
+            );
             assert!(!found.mtmd, "{sub}: no multimodal library was written");
         }
     }
@@ -515,7 +576,11 @@ mod tests {
     #[test]
     fn a_binary_only_install_has_no_library() {
         let dir = tempfile::tempdir().unwrap();
-        touch(&dir.path().join("llama-b1").join(LlamaTool::Server.file_name()));
+        touch(
+            &dir.path()
+                .join("llama-b1")
+                .join(LlamaTool::Server.file_name()),
+        );
         assert!(find_managed_library_in(dir.path()).is_none());
         assert!(library_in(&dir.path().join("llama-b1"), LibraryOrigin::EnvDir).is_none());
     }

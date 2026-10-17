@@ -1,5 +1,5 @@
 use bevy_app::{App, Plugin};
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, embedded_asset, load_embedded_asset};
 use bevy_camera::Exposure;
 use bevy_ecs::{
     prelude::{Component, Entity},
@@ -12,6 +12,7 @@ use bevy_light::Skybox;
 use bevy_log::warn_once;
 use bevy_math::Mat4;
 use bevy_render::{
+    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     extract_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
     render_asset::RenderAssets,
     render_resource::{
@@ -23,7 +24,6 @@ use bevy_render::{
     sync_world::RenderEntity,
     texture::GpuImage,
     view::{ExtractedView, Msaa, ViewUniform, ViewUniforms},
-    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_shader::Shader;
 use bevy_transform::components::Transform;

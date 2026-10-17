@@ -33,9 +33,15 @@ impl Format {
 
     /// Identify `image` from its header bytes.
     pub fn detect(image: &[u8]) -> Option<Format> {
-        let u16_at = |at: usize| image.get(at..at + 2).map(|b| u16::from_le_bytes([b[0], b[1]]));
+        let u16_at = |at: usize| {
+            image
+                .get(at..at + 2)
+                .map(|b| u16::from_le_bytes([b[0], b[1]]))
+        };
         let u32_at = |at: usize| {
-            image.get(at..at + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            image
+                .get(at..at + 4)
+                .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
         };
         if image.get(..4) == Some(b"3DSX") {
             return Some(Format::ThreeDsx);
@@ -50,7 +56,9 @@ impl Format {
             return Some(Format::Cia);
         }
         // NDS: Nintendo logo CRC16 (0xCF56) at 0x15C and an ARM9 image after the header.
-        if image.len() >= 0x200 && u16_at(0x15C) == Some(0xCF56) && u32_at(0x20).is_some_and(|o| o >= 0x200)
+        if image.len() >= 0x200
+            && u16_at(0x15C) == Some(0xCF56)
+            && u32_at(0x20).is_some_and(|o| o >= 0x200)
         {
             return Some(Format::Nds);
         }

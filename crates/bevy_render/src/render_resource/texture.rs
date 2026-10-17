@@ -1,4 +1,4 @@
-use crate::renderer::{wgpu_wrapper, RenderDevice, RenderQueue};
+use crate::renderer::{RenderDevice, RenderQueue, wgpu_wrapper};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     resource::Resource,

@@ -110,7 +110,11 @@ impl Emblem {
     /// Nom d'affichage : `emblem_name` s'il est non vide, sinon `emblem_id` (port inagle `name`).
     #[must_use]
     pub fn display_name(&self) -> &str {
-        if self.emblem_name.is_empty() { &self.emblem_id } else { &self.emblem_name }
+        if self.emblem_name.is_empty() {
+            &self.emblem_id
+        } else {
+            &self.emblem_name
+        }
     }
 
     /// Réinterprète `emblem_id` (chaîne hex `"0x..."`) en [`HashId`]. [`HashId::ZERO`] si invalide.
@@ -201,7 +205,11 @@ pub fn parse_emblem_resources(root: &Value) -> EmblemResourceDatabase {
         .map_or_else(String::new, owned);
 
     let emblems = list_values(root, "m_EmblemResourceInfoList")
-        .map(|vals| vals.iter().map(|v| Emblem::from_value(v, &base_path)).collect())
+        .map(|vals| {
+            vals.iter()
+                .map(|v| Emblem::from_value(v, &base_path))
+                .collect()
+        })
         .unwrap_or_default();
 
     EmblemResourceDatabase { emblems, base_path }

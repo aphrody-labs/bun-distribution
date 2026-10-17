@@ -1,5 +1,5 @@
-mod a32_translate;
 mod a32_crc32;
+mod a32_translate;
 pub mod asimd;
 pub mod asimd_three_regs;
 pub mod asimd_two_regs_misc;

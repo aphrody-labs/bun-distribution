@@ -51,7 +51,11 @@ pub(crate) fn num(v: f64) -> String {
     }
     let s = format!("{v:.6}");
     let s = s.trim_end_matches('0').trim_end_matches('.');
-    if s == "-0" || s.is_empty() { "0".into() } else { s.into() }
+    if s == "-0" || s.is_empty() {
+        "0".into()
+    } else {
+        s.into()
+    }
 }
 
 /// Text as a DXF string value: one line, `^` escaped, and before DXF 2007 (which reads UTF-8)
@@ -81,7 +85,10 @@ pub(crate) struct Codes {
 
 impl Codes {
     pub fn new(v: DxfVersion) -> Self {
-        Self { v, out: String::new() }
+        Self {
+            v,
+            out: String::new(),
+        }
     }
 
     pub fn into_string(self) -> String {
@@ -196,7 +203,15 @@ pub(crate) struct EntityStyle {
 impl Codes {
     /// The start of an entity of `kind` owned by `owner` (model space, or a polyline for its
     /// vertices) on `layer` with its style, ending with `subclass` (none when empty).
-    pub fn entity(&mut self, kind: &str, h: Handle, owner: Handle, layer: &str, style: &EntityStyle, subclass: &str) {
+    pub fn entity(
+        &mut self,
+        kind: &str,
+        h: Handle,
+        owner: Handle,
+        layer: &str,
+        style: &EntityStyle,
+        subclass: &str,
+    ) {
         self.object(kind, h, owner, "AcDbEntity");
         self.str(8, layer);
         if let Some(lt) = &style.linetype {
@@ -305,20 +320,36 @@ impl Drawing {
                 c.end_table();
             }
             c.table("APPID", fixed::APPID_TABLE, 1);
-            c.record("APPID", fixed::ACAD_APPID, fixed::APPID_TABLE, "AcDbRegAppTableRecord");
+            c.record(
+                "APPID",
+                fixed::ACAD_APPID,
+                fixed::APPID_TABLE,
+                "AcDbRegAppTableRecord",
+            );
             c.raw(2, "ACAD");
             c.int(70, 0);
             c.end_table();
             c.table("DIMSTYLE", fixed::DIMSTYLE_TABLE, 1);
-            c.record("DIMSTYLE", fixed::STANDARD_DIMSTYLE, fixed::DIMSTYLE_TABLE, "AcDbDimStyleTableRecord");
+            c.record(
+                "DIMSTYLE",
+                fixed::STANDARD_DIMSTYLE,
+                fixed::DIMSTYLE_TABLE,
+                "AcDbDimStyleTableRecord",
+            );
             c.raw(2, "Standard");
             c.int(70, 0);
             c.end_table();
             c.table("BLOCK_RECORD", fixed::BLOCK_RECORD_TABLE, 2);
-            for (name, h, layout) in
-                [("*Model_Space", fixed::MODEL_RECORD, fixed::MODEL_LAYOUT), ("*Paper_Space", fixed::PAPER_RECORD, fixed::PAPER_LAYOUT)]
-            {
-                c.record("BLOCK_RECORD", h, fixed::BLOCK_RECORD_TABLE, "AcDbBlockTableRecord");
+            for (name, h, layout) in [
+                ("*Model_Space", fixed::MODEL_RECORD, fixed::MODEL_LAYOUT),
+                ("*Paper_Space", fixed::PAPER_RECORD, fixed::PAPER_LAYOUT),
+            ] {
+                c.record(
+                    "BLOCK_RECORD",
+                    h,
+                    fixed::BLOCK_RECORD_TABLE,
+                    "AcDbBlockTableRecord",
+                );
                 c.raw(2, name);
                 if v.r2000() {
                     c.handle(340, layout);
@@ -333,8 +364,18 @@ impl Drawing {
         if v.handles() {
             c.section("BLOCKS");
             for (name, record, begin, end) in [
-                ("*Model_Space", fixed::MODEL_RECORD, fixed::MODEL_BLOCK, fixed::MODEL_END),
-                ("*Paper_Space", fixed::PAPER_RECORD, fixed::PAPER_BLOCK, fixed::PAPER_END),
+                (
+                    "*Model_Space",
+                    fixed::MODEL_RECORD,
+                    fixed::MODEL_BLOCK,
+                    fixed::MODEL_END,
+                ),
+                (
+                    "*Paper_Space",
+                    fixed::PAPER_RECORD,
+                    fixed::PAPER_BLOCK,
+                    fixed::PAPER_END,
+                ),
             ] {
                 c.object("BLOCK", begin, record, "AcDbEntity");
                 c.raw(8, "0");
@@ -399,8 +440,20 @@ impl Drawing {
         let mut classes: Vec<(&str, &str, &str, i64, bool)> = vec![];
         if self.version.r2000() {
             classes.extend([
-                ("ACDBDICTIONARYWDFLT", "AcDbDictionaryWithDefault", "ObjectDBX Classes", 0, false),
-                ("ACDBPLACEHOLDER", "AcDbPlaceHolder", "ObjectDBX Classes", 0, false),
+                (
+                    "ACDBDICTIONARYWDFLT",
+                    "AcDbDictionaryWithDefault",
+                    "ObjectDBX Classes",
+                    0,
+                    false,
+                ),
+                (
+                    "ACDBPLACEHOLDER",
+                    "AcDbPlaceHolder",
+                    "ObjectDBX Classes",
+                    0,
+                    false,
+                ),
                 ("LAYOUT", "AcDbLayout", "ObjectDBX Classes", 0, false),
             ]);
         }
@@ -409,7 +462,13 @@ impl Drawing {
                 ("RASTERVARIABLES", "AcDbRasterVariables", "ISM", 0, false),
                 ("IMAGE", "AcDbRasterImage", "ISM", 2175, true),
                 ("IMAGEDEF", "AcDbRasterImageDef", "ISM", 0, false),
-                ("IMAGEDEF_REACTOR", "AcDbRasterImageDefReactor", "ISM", 1, false),
+                (
+                    "IMAGEDEF_REACTOR",
+                    "AcDbRasterImageDefReactor",
+                    "ISM",
+                    1,
+                    false,
+                ),
             ]);
         }
         c.section("CLASSES");
@@ -432,8 +491,20 @@ impl Drawing {
     fn vport(&self, c: &mut Codes) {
         let [x0, y0, x1, y1] = self.extents;
         c.table("VPORT", fixed::VPORT_TABLE, 1);
-        c.record("VPORT", fixed::ACTIVE_VPORT, fixed::VPORT_TABLE, "AcDbViewportTableRecord");
-        c.raw(2, if self.version.handles() { "*Active" } else { "*ACTIVE" });
+        c.record(
+            "VPORT",
+            fixed::ACTIVE_VPORT,
+            fixed::VPORT_TABLE,
+            "AcDbViewportTableRecord",
+        );
+        c.raw(
+            2,
+            if self.version.handles() {
+                "*Active"
+            } else {
+                "*ACTIVE"
+            },
+        );
         c.int(70, 0);
         c.xy(10, 0.0, 0.0);
         c.xy(11, 1.0, 1.0);
@@ -453,7 +524,16 @@ impl Drawing {
         c.num(44, 0.0);
         c.num(50, 0.0);
         c.num(51, 0.0);
-        for (code, value) in [(71, 0), (72, 1000), (73, 1), (74, 3), (75, 0), (76, 0), (77, 0), (78, 0)] {
+        for (code, value) in [
+            (71, 0),
+            (72, 1000),
+            (73, 1),
+            (74, 3),
+            (75, 0),
+            (76, 0),
+            (77, 0),
+            (78, 0),
+        ] {
             c.int(code, value);
         }
         if self.version.r2000() {
@@ -466,10 +546,23 @@ impl Drawing {
 
     fn ltypes(&self, c: &mut Codes, base: u32) {
         c.table("LTYPE", fixed::LTYPE_TABLE, 3 + self.linetypes.len());
-        let solid = [("ByBlock", ""), ("ByLayer", ""), ("Continuous", "Solid line")];
-        let rows = solid.iter().map(|(n, d)| (*n, *d, &[][..])).chain(self.linetypes.iter().map(|l| (l.name.as_str(), "", l.pattern.as_slice())));
+        let solid = [
+            ("ByBlock", ""),
+            ("ByLayer", ""),
+            ("Continuous", "Solid line"),
+        ];
+        let rows = solid.iter().map(|(n, d)| (*n, *d, &[][..])).chain(
+            self.linetypes
+                .iter()
+                .map(|l| (l.name.as_str(), "", l.pattern.as_slice())),
+        );
         for (i, (name, desc, pattern)) in rows.enumerate() {
-            c.record("LTYPE", Handle(base.saturating_add(i as u32)), fixed::LTYPE_TABLE, "AcDbLinetypeTableRecord");
+            c.record(
+                "LTYPE",
+                Handle(base.saturating_add(i as u32)),
+                fixed::LTYPE_TABLE,
+                "AcDbLinetypeTableRecord",
+            );
             c.str(2, name);
             c.int(70, 0);
             c.str(3, if pattern.is_empty() { desc } else { "Dashed" });
@@ -487,10 +580,21 @@ impl Drawing {
     }
 
     fn layer_table(&self, c: &mut Codes, base: u32) {
-        let zero = Layer { name: "0".into(), aci: 7, off: false, locked: false, plot: true };
+        let zero = Layer {
+            name: "0".into(),
+            aci: 7,
+            off: false,
+            locked: false,
+            plot: true,
+        };
         c.table("LAYER", fixed::LAYER_TABLE, 1 + self.layers.len());
         for (i, l) in std::iter::once(&zero).chain(&self.layers).enumerate() {
-            c.record("LAYER", Handle(base.saturating_add(i as u32)), fixed::LAYER_TABLE, "AcDbLayerTableRecord");
+            c.record(
+                "LAYER",
+                Handle(base.saturating_add(i as u32)),
+                fixed::LAYER_TABLE,
+                "AcDbLayerTableRecord",
+            );
             c.str(2, &l.name);
             c.int(70, if l.locked { 4 } else { 0 });
             // A negative colour switches the layer off.
@@ -510,7 +614,12 @@ impl Drawing {
         c.table("STYLE", fixed::STYLE_TABLE, 1 + self.styles.len());
         let standard = (STANDARD_STYLE.to_string(), String::new());
         for (i, (name, family)) in std::iter::once(&standard).chain(&self.styles).enumerate() {
-            c.record("STYLE", Handle(base.saturating_add(i as u32)), fixed::STYLE_TABLE, "AcDbTextStyleTableRecord");
+            c.record(
+                "STYLE",
+                Handle(base.saturating_add(i as u32)),
+                fixed::STYLE_TABLE,
+                "AcDbTextStyleTableRecord",
+            );
             c.str(2, name);
             c.int(70, 0);
             c.num(40, 0.0);
@@ -548,32 +657,65 @@ impl Drawing {
         };
         let mut root = vec![("ACAD_GROUP", fixed::GROUPS)];
         if images {
-            root.extend([("ACAD_IMAGE_DICT", fixed::IMAGE_DICT), ("ACAD_IMAGE_VARS", fixed::IMAGE_VARS)]);
+            root.extend([
+                ("ACAD_IMAGE_DICT", fixed::IMAGE_DICT),
+                ("ACAD_IMAGE_VARS", fixed::IMAGE_VARS),
+            ]);
         }
         if v.r2000() {
-            root.extend([("ACAD_LAYOUT", fixed::LAYOUTS), ("ACAD_PLOTSTYLENAME", fixed::PLOT_STYLES)]);
+            root.extend([
+                ("ACAD_LAYOUT", fixed::LAYOUTS),
+                ("ACAD_PLOTSTYLENAME", fixed::PLOT_STYLES),
+            ]);
         }
         dict(c, fixed::ROOT, Handle(0), &root);
         dict(c, fixed::GROUPS, fixed::ROOT, &[]);
         if v.r2000() {
-            dict(c, fixed::LAYOUTS, fixed::ROOT, &[("Layout1", fixed::PAPER_LAYOUT), ("Model", fixed::MODEL_LAYOUT)]);
-            c.object("ACDBDICTIONARYWDFLT", fixed::PLOT_STYLES, fixed::ROOT, "AcDbDictionary");
+            dict(
+                c,
+                fixed::LAYOUTS,
+                fixed::ROOT,
+                &[
+                    ("Layout1", fixed::PAPER_LAYOUT),
+                    ("Model", fixed::MODEL_LAYOUT),
+                ],
+            );
+            c.object(
+                "ACDBDICTIONARYWDFLT",
+                fixed::PLOT_STYLES,
+                fixed::ROOT,
+                "AcDbDictionary",
+            );
             c.int(281, 1);
             c.raw(3, "Normal");
             c.handle(350, fixed::PLOT_NORMAL);
             c.raw(100, "AcDbDictionaryWithDefault");
             c.handle(340, fixed::PLOT_NORMAL);
-            c.object("ACDBPLACEHOLDER", fixed::PLOT_NORMAL, fixed::PLOT_STYLES, "AcDbPlaceHolder");
+            c.object(
+                "ACDBPLACEHOLDER",
+                fixed::PLOT_NORMAL,
+                fixed::PLOT_STYLES,
+                "AcDbPlaceHolder",
+            );
             self.layout(c, fixed::MODEL_LAYOUT, "Model", 0, fixed::MODEL_RECORD);
             self.layout(c, fixed::PAPER_LAYOUT, "Layout1", 1, fixed::PAPER_RECORD);
         }
         if images {
-            c.object("RASTERVARIABLES", fixed::IMAGE_VARS, fixed::ROOT, "AcDbRasterVariables");
+            c.object(
+                "RASTERVARIABLES",
+                fixed::IMAGE_VARS,
+                fixed::ROOT,
+                "AcDbRasterVariables",
+            );
             c.int(90, 0);
             c.int(70, 0);
             c.int(71, 1);
             c.int(72, 0);
-            let entries: Vec<(&str, Handle)> = self.images.iter().map(|i| (i.name.as_str(), i.handle)).collect();
+            let entries: Vec<(&str, Handle)> = self
+                .images
+                .iter()
+                .map(|i| (i.name.as_str(), i.handle))
+                .collect();
             dict(c, fixed::IMAGE_DICT, fixed::ROOT, &entries);
             for img in &self.images {
                 c.raw(0, "IMAGEDEF");
@@ -593,7 +735,12 @@ impl Drawing {
                 c.int(280, 1);
                 c.int(281, 0);
                 for (reactor, image) in &img.reactors {
-                    c.object("IMAGEDEF_REACTOR", *reactor, *image, "AcDbRasterImageDefReactor");
+                    c.object(
+                        "IMAGEDEF_REACTOR",
+                        *reactor,
+                        *image,
+                        "AcDbRasterImageDefReactor",
+                    );
                     c.int(90, 2);
                     c.handle(330, *image);
                 }

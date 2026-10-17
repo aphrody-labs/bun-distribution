@@ -36,7 +36,10 @@ impl Model {
 
 fn centroid(p: &[[f64; 2]]) -> [f64; 2] {
     let n = p.len().max(1) as f64;
-    [p.iter().map(|q| q[0]).sum::<f64>() / n, p.iter().map(|q| q[1]).sum::<f64>() / n]
+    [
+        p.iter().map(|q| q[0]).sum::<f64>() / n,
+        p.iter().map(|q| q[1]).sum::<f64>() / n,
+    ]
 }
 
 /// Least-squares fit of `model` taking `src` to `dst` (`None` when degenerate).
@@ -60,12 +63,19 @@ pub fn least_squares(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]]) -> Option
             if ss < 1e-12 {
                 return None;
             }
-            let (a, b) = if model == Model::Similarity { (dot / ss, cross / ss) } else { (dot / ss, 0.0) };
+            let (a, b) = if model == Model::Similarity {
+                (dot / ss, cross / ss)
+            } else {
+                (dot / ss, 0.0)
+            };
             if a.hypot(b) < 1e-9 {
                 return None;
             }
             // q = R p + t with R = [[a, -b], [b, a]].
-            let t = [cd[0] - (a * cs[0] - b * cs[1]), cd[1] - (b * cs[0] + a * cs[1])];
+            let t = [
+                cd[0] - (a * cs[0] - b * cs[1]),
+                cd[1] - (b * cs[0] + a * cs[1]),
+            ];
             Homography([[a, -b, t[0]], [b, a, t[1]], [0.0, 0.0, 1.0]])
         }
         Model::Affine => {
@@ -84,14 +94,25 @@ pub fn least_squares(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]]) -> Option
             let x = solve_linear(m, rx)?;
             let y = solve_linear(m, ry)?;
             // q - cd = A (p - cs) + t'
-            let t = [cd[0] + x[2] - x[0] * cs[0] - x[1] * cs[1], cd[1] + y[2] - y[0] * cs[0] - y[1] * cs[1]];
+            let t = [
+                cd[0] + x[2] - x[0] * cs[0] - x[1] * cs[1],
+                cd[1] + y[2] - y[0] * cs[0] - y[1] * cs[1],
+            ];
             Homography([[x[0], x[1], t[0]], [y[0], y[1], t[1]], [0.0, 0.0, 1.0]])
         }
         Model::Homography => {
             // Normalised DLT with h33 = 1 (normal equations).
             let norm = |p: &[[f64; 2]], c: [f64; 2]| {
-                let d = p.iter().map(|q| (q[0] - c[0]).hypot(q[1] - c[1])).sum::<f64>() / p.len() as f64;
-                if d > 1e-12 { std::f64::consts::SQRT_2 / d } else { 1.0 }
+                let d = p
+                    .iter()
+                    .map(|q| (q[0] - c[0]).hypot(q[1] - c[1]))
+                    .sum::<f64>()
+                    / p.len() as f64;
+                if d > 1e-12 {
+                    std::f64::consts::SQRT_2 / d
+                } else {
+                    1.0
+                }
             };
             let (ks, kd) = (norm(src, cs), norm(dst, cd));
             let mut a = [[0.0; 8]; 8];
@@ -99,7 +120,10 @@ pub fn least_squares(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]]) -> Option
             for (p, q) in src.iter().zip(dst) {
                 let (x, y) = ((p[0] - cs[0]) * ks, (p[1] - cs[1]) * ks);
                 let (u, v) = ((q[0] - cd[0]) * kd, (q[1] - cd[1]) * kd);
-                let rows = [([x, y, 1.0, 0.0, 0.0, 0.0, -u * x, -u * y], u), ([0.0, 0.0, 0.0, x, y, 1.0, -v * x, -v * y], v)];
+                let rows = [
+                    ([x, y, 1.0, 0.0, 0.0, 0.0, -u * x, -u * y], u),
+                    ([0.0, 0.0, 0.0, x, y, 1.0, -v * x, -v * y], v),
+                ];
                 for (r, t) in rows {
                     for i in 0..8 {
                         b[i] += r[i] * t;
@@ -111,8 +135,16 @@ pub fn least_squares(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]]) -> Option
             }
             let h = solve_linear(a, b)?;
             let hn = Homography([[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1.0]]);
-            let ts = Homography([[ks, 0.0, -ks * cs[0]], [0.0, ks, -ks * cs[1]], [0.0, 0.0, 1.0]]);
-            let td_inv = Homography([[1.0 / kd, 0.0, cd[0]], [0.0, 1.0 / kd, cd[1]], [0.0, 0.0, 1.0]]);
+            let ts = Homography([
+                [ks, 0.0, -ks * cs[0]],
+                [0.0, ks, -ks * cs[1]],
+                [0.0, 0.0, 1.0],
+            ]);
+            let td_inv = Homography([
+                [1.0 / kd, 0.0, cd[0]],
+                [0.0, 1.0 / kd, cd[1]],
+                [0.0, 0.0, 1.0],
+            ]);
             let m = td_inv.then_after(&hn.then_after(&ts));
             if m.0[2][2].abs() < 1e-12 {
                 return None;
@@ -159,7 +191,14 @@ impl Fit {
 }
 
 /// RANSAC fit of `model` with inlier `threshold` (pixels) and at most `iterations` samples.
-pub fn ransac(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]], threshold: f64, iterations: usize, seed: u64) -> Option<Fit> {
+pub fn ransac(
+    model: Model,
+    src: &[[f64; 2]],
+    dst: &[[f64; 2]],
+    threshold: f64,
+    iterations: usize,
+    seed: u64,
+) -> Option<Fit> {
     let n = src.len().min(dst.len());
     let k = model.min_points();
     if n < k {
@@ -210,7 +249,9 @@ pub fn ransac(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]], threshold: f64, 
                 ss[m] = src[i];
                 sd[m] = dst[i];
             }
-            let Some(h) = least_squares(model, &ss, &sd) else { continue };
+            let Some(h) = least_squares(model, &ss, &sd) else {
+                continue;
+            };
             let (c, e) = count(&h);
             let better = match &best {
                 None => true,
@@ -236,7 +277,8 @@ pub fn ransac(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]], threshold: f64, 
     // Refine on the consensus set (twice: the set can grow after the first refit).
     let mut inl: Vec<bool> = (0..n).map(|i| residual2(&h, src[i], dst[i]) < t2).collect();
     for _ in 0..2 {
-        let (s2, d2): (Vec<[f64; 2]>, Vec<[f64; 2]>) = (0..n).filter(|i| inl[*i]).map(|i| (src[i], dst[i])).unzip();
+        let (s2, d2): (Vec<[f64; 2]>, Vec<[f64; 2]>) =
+            (0..n).filter(|i| inl[*i]).map(|i| (src[i], dst[i])).unzip();
         if s2.len() < k {
             break;
         }
@@ -246,8 +288,19 @@ pub fn ransac(model: Model, src: &[[f64; 2]], dst: &[[f64; 2]], threshold: f64, 
         inl = (0..n).map(|i| residual2(&h, src[i], dst[i]) < t2).collect();
     }
     let c = inl.iter().filter(|b| **b).count();
-    let e: f64 = (0..n).filter(|i| inl[*i]).map(|i| residual2(&h, src[i], dst[i])).sum();
-    Some(Fit { h, inliers: inl, rms: if c > 0 { (e / c as f64).sqrt() } else { f64::INFINITY } })
+    let e: f64 = (0..n)
+        .filter(|i| inl[*i])
+        .map(|i| residual2(&h, src[i], dst[i]))
+        .sum();
+    Some(Fit {
+        h,
+        inliers: inl,
+        rms: if c > 0 {
+            (e / c as f64).sqrt()
+        } else {
+            f64::INFINITY
+        },
+    })
 }
 
 #[cfg(test)]
@@ -258,9 +311,13 @@ mod tests {
         let mut v = vec![];
         let mut s = 12345u64;
         for _ in 0..80 {
-            s = s.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s = s
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             let x = (s >> 33) as f64 / (1u64 << 31) as f64 * 300.0;
-            s = s.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s = s
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             let y = (s >> 33) as f64 / (1u64 << 31) as f64 * 200.0;
             v.push([x, y]);
         }
@@ -271,10 +328,26 @@ mod tests {
     fn ransac_rejects_outliers_for_every_model() {
         let truth = [
             (Model::Translation, Homography::translation([5.0, -3.0])),
-            (Model::TranslationScale, Homography([[1.1, 0.0, -4.0], [0.0, 1.1, 2.0], [0.0, 0.0, 1.0]])),
-            (Model::Similarity, Homography([[0.98, -0.17, 12.0], [0.17, 0.98, -6.0], [0.0, 0.0, 1.0]])),
-            (Model::Affine, Homography([[1.05, 0.12, 3.0], [-0.04, 0.93, 1.0], [0.0, 0.0, 1.0]])),
-            (Model::Homography, Homography([[1.02, 0.05, 4.0], [-0.03, 0.97, 2.0], [0.0004, -0.0003, 1.0]])),
+            (
+                Model::TranslationScale,
+                Homography([[1.1, 0.0, -4.0], [0.0, 1.1, 2.0], [0.0, 0.0, 1.0]]),
+            ),
+            (
+                Model::Similarity,
+                Homography([[0.98, -0.17, 12.0], [0.17, 0.98, -6.0], [0.0, 0.0, 1.0]]),
+            ),
+            (
+                Model::Affine,
+                Homography([[1.05, 0.12, 3.0], [-0.04, 0.93, 1.0], [0.0, 0.0, 1.0]]),
+            ),
+            (
+                Model::Homography,
+                Homography([
+                    [1.02, 0.05, 4.0],
+                    [-0.03, 0.97, 2.0],
+                    [0.0004, -0.0003, 1.0],
+                ]),
+            ),
         ];
         for (m, h) in truth {
             let src = pts();
@@ -290,14 +363,21 @@ mod tests {
             assert_eq!(f.inlier_count(), 56, "{m:?}");
             for p in [[0.0, 0.0], [150.0, 100.0], [300.0, 200.0]] {
                 let (a, b) = (f.h.apply(p), h.apply(p));
-                assert!((a[0] - b[0]).abs() < 1e-6 && (a[1] - b[1]).abs() < 1e-6, "{m:?} {a:?} {b:?}");
+                assert!(
+                    (a[0] - b[0]).abs() < 1e-6 && (a[1] - b[1]).abs() < 1e-6,
+                    "{m:?} {a:?} {b:?}"
+                );
             }
         }
     }
 
     #[test]
     fn inverse_and_compose() {
-        let h = Homography([[1.02, 0.05, 4.0], [-0.03, 0.97, 2.0], [0.0004, -0.0003, 1.0]]);
+        let h = Homography([
+            [1.02, 0.05, 4.0],
+            [-0.03, 0.97, 2.0],
+            [0.0004, -0.0003, 1.0],
+        ]);
         let i = h.inverse().unwrap();
         let p = [123.0, 45.0];
         let q = i.apply(h.apply(p));

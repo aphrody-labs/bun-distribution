@@ -188,7 +188,7 @@ impl Hit {
         match (self.module.as_deref(), self.rva) {
             (Some(name), Some(rva)) if name.eq_ignore_ascii_case(module) => {
                 image_base.checked_add(rva)
-            },
+            }
             _ => None,
         }
     }
@@ -215,11 +215,11 @@ impl DumpSource {
             Self::File { file, .. } => {
                 file.seek(SeekFrom::Start(off))?;
                 file.read_exact(buf)?;
-            },
+            }
             Self::Bytes(cursor) => {
                 cursor.set_position(off);
                 cursor.read_exact(buf)?;
-            },
+            }
         }
         Ok(())
     }
@@ -241,12 +241,23 @@ fn u32le(b: &[u8], o: usize) -> u32 {
     u32::from_le_bytes([b[o], b[o + 1], b[o + 2], b[o + 3]])
 }
 fn u64le(b: &[u8], o: usize) -> u64 {
-    u64::from_le_bytes([b[o], b[o + 1], b[o + 2], b[o + 3], b[o + 4], b[o + 5], b[o + 6], b[o + 7]])
+    u64::from_le_bytes([
+        b[o],
+        b[o + 1],
+        b[o + 2],
+        b[o + 3],
+        b[o + 4],
+        b[o + 5],
+        b[o + 6],
+        b[o + 7],
+    ])
 }
 
 fn checked_span(off: u64, len: usize, source_len: u64) -> Result<()> {
     let len = u64::try_from(len).map_err(|_| DumpError::Invalid("byte range too large"))?;
-    let end = off.checked_add(len).ok_or(DumpError::Invalid("byte range overflow"))?;
+    let end = off
+        .checked_add(len)
+        .ok_or(DumpError::Invalid("byte range overflow"))?;
     if end > source_len {
         return Err(DumpError::Invalid("byte range outside minidump"));
     }
@@ -255,7 +266,9 @@ fn checked_span(off: u64, len: usize, source_len: u64) -> Result<()> {
 
 fn checked_table_len(count: u64, record_size: usize) -> Result<usize> {
     let count = usize::try_from(count).map_err(|_| DumpError::Invalid("record count too large"))?;
-    count.checked_mul(record_size).ok_or(DumpError::Invalid("record table too large"))
+    count
+        .checked_mul(record_size)
+        .ok_or(DumpError::Invalid("record table too large"))
 }
 
 fn read_at(source: &mut DumpSource, off: u64, len: usize) -> Result<Vec<u8>> {
@@ -267,9 +280,16 @@ fn read_at(source: &mut DumpSource, off: u64, len: usize) -> Result<Vec<u8>> {
 
 /// Demangles an MSVC RTTI type name (`.?AVFoo@bar@@` -> `bar::Foo`).
 fn demangle(n: &str) -> String {
-    let rest = n.strip_prefix(".?AV").or_else(|| n.strip_prefix(".?AU")).unwrap_or(n);
+    let rest = n
+        .strip_prefix(".?AV")
+        .or_else(|| n.strip_prefix(".?AU"))
+        .unwrap_or(n);
     let rest = rest.strip_suffix("@@").unwrap_or(rest);
-    rest.split('@').filter(|p| !p.is_empty()).rev().collect::<Vec<_>>().join("::")
+    rest.split('@')
+        .filter(|p| !p.is_empty())
+        .rev()
+        .collect::<Vec<_>>()
+        .join("::")
 }
 
 impl Minidump {
@@ -335,7 +355,7 @@ impl Minidump {
                 STREAM_MODULE_LIST => module_loc = Some((rva, size)),
                 STREAM_MEMORY64_LIST => mem64_loc = Some((rva, size)),
                 STREAM_MEMORY_INFO_LIST => info_loc = Some((rva, size)),
-                _ => {},
+                _ => {}
             }
         }
 
@@ -354,7 +374,14 @@ impl Minidump {
         regions.sort_by_key(|r| r.base);
         let region_starts = regions.iter().map(|r| r.base).collect();
 
-        Ok(Self { source, modules, ranges, starts, regions, region_starts })
+        Ok(Self {
+            source,
+            modules,
+            ranges,
+            starts,
+            regions,
+            region_starts,
+        })
     }
 
     fn parse_modules(
@@ -372,8 +399,9 @@ impl Minidump {
             return Err(DumpError::Invalid("module count exceeds safety limit"));
         }
         let records_len = checked_table_len(count, MODULE_RECORD_SIZE)?;
-        let required_len =
-            4usize.checked_add(records_len).ok_or(DumpError::Invalid("module list too large"))?;
+        let required_len = 4usize
+            .checked_add(records_len)
+            .ok_or(DumpError::Invalid("module list too large"))?;
         if required_len > size {
             return Err(DumpError::Invalid("truncated module list"));
         }
@@ -393,8 +421,9 @@ impl Minidump {
             if nlen > MAX_MODULE_NAME_BYTES || !nlen.is_multiple_of(2) {
                 return Err(DumpError::Invalid("invalid module name length"));
             }
-            let name_data_rva =
-                name_rva.checked_add(4).ok_or(DumpError::Invalid("module name offset overflow"))?;
+            let name_data_rva = name_rva
+                .checked_add(4)
+                .ok_or(DumpError::Invalid("module name offset overflow"))?;
             checked_span(name_data_rva, nlen, source_len)?;
             let name_bytes = read_at(source, name_data_rva, nlen)?;
             let units: Vec<u16> = name_bytes
@@ -405,7 +434,11 @@ impl Minidump {
                 .collect();
             let full = String::from_utf16_lossy(&units);
             let name = full.rsplit(['\\', '/']).next().unwrap_or(&full).to_string();
-            mods.push(Module { base, size: isize, name });
+            mods.push(Module {
+                base,
+                size: isize,
+                name,
+            });
         }
         Ok(mods)
     }
@@ -422,7 +455,9 @@ impl Minidump {
         let head = read_at(source, rva, 16)?;
         let count = u64le(&head, 0);
         if count > MAX_MEMORY_RANGE_COUNT {
-            return Err(DumpError::Invalid("memory range count exceeds safety limit"));
+            return Err(DumpError::Invalid(
+                "memory range count exceeds safety limit",
+            ));
         }
         let base_rva = u64le(&head, 8);
         let desc_len = checked_table_len(count, 16)?;
@@ -432,8 +467,9 @@ impl Minidump {
         if required_len > stream_size {
             return Err(DumpError::Invalid("truncated memory range table"));
         }
-        let desc_rva =
-            rva.checked_add(16).ok_or(DumpError::Invalid("memory range table offset overflow"))?;
+        let desc_rva = rva
+            .checked_add(16)
+            .ok_or(DumpError::Invalid("memory range table offset overflow"))?;
         let descs = read_at(source, desc_rva, desc_len)?;
         let count = usize::try_from(count)
             .map_err(|_| DumpError::Invalid("memory range count too large"))?;
@@ -443,11 +479,16 @@ impl Minidump {
             let o = i * 16;
             let va = u64le(&descs, o);
             let dsz = u64le(&descs, o + 8);
-            va.checked_add(dsz).ok_or(DumpError::Invalid("virtual memory range overflow"))?;
+            va.checked_add(dsz)
+                .ok_or(DumpError::Invalid("virtual memory range overflow"))?;
             let dsz_usize = usize::try_from(dsz)
                 .map_err(|_| DumpError::Invalid("captured memory range too large"))?;
             checked_span(off, dsz_usize, source_len)?;
-            ranges.push(Range { va, size: dsz, file_off: off });
+            ranges.push(Range {
+                va,
+                size: dsz,
+                file_off: off,
+            });
             off = off
                 .checked_add(dsz)
                 .ok_or(DumpError::Invalid("captured memory offset overflow"))?;
@@ -488,8 +529,9 @@ impl Minidump {
         {
             return Err(DumpError::Invalid("truncated memory info table"));
         }
-        let table_rva =
-            rva.checked_add(soh).ok_or(DumpError::Invalid("memory info table offset overflow"))?;
+        let table_rva = rva
+            .checked_add(soh)
+            .ok_or(DumpError::Invalid("memory info table offset overflow"))?;
         checked_span(table_rva, table_len, source_len)?;
         let buf = read_at(source, table_rva, table_len)?;
         let count = usize::try_from(count)
@@ -500,7 +542,8 @@ impl Minidump {
             // u64 Base, u64 Alloc, u32 AllocProt, u32 a1, u64 RegionSize, u32 State, u32 Protect, u32 Type, u32 a2
             let base = u64le(&buf, o);
             let size = u64le(&buf, o + 24);
-            base.checked_add(size).ok_or(DumpError::Invalid("virtual memory region overflow"))?;
+            base.checked_add(size)
+                .ok_or(DumpError::Invalid("virtual memory region overflow"))?;
             out.push(Region {
                 base,
                 size,
@@ -515,7 +558,9 @@ impl Minidump {
     /// Module (name, base, size) by file name, ASCII case-insensitive.
     #[must_use]
     pub fn module(&self, name: &str) -> Option<&Module> {
-        self.modules.iter().find(|m| m.name.eq_ignore_ascii_case(name))
+        self.modules
+            .iter()
+            .find(|m| m.name.eq_ignore_ascii_case(name))
     }
 
     /// Total captured memory bytes across all ranges.
@@ -700,7 +745,10 @@ impl Minidump {
     /// # Errors
     /// Propagates dump read errors.
     pub fn scan(&mut self, pattern: &Pattern) -> Result<Vec<Hit>> {
-        Ok(self.scan_many(std::slice::from_ref(pattern))?.pop().unwrap_or_default())
+        Ok(self
+            .scan_many(std::slice::from_ref(pattern))?
+            .pop()
+            .unwrap_or_default())
     }
 
     /// Scans several patterns in **one pass** over the dump (each range is read once).
@@ -802,8 +850,10 @@ mod tests {
         let module_rva = bytes.len();
         bytes.resize(module_rva + 4 + MODULE_RECORD_SIZE, 0);
 
-        let module_name: Vec<u8> =
-            r"C:\game\app.exe".encode_utf16().flat_map(u16::to_le_bytes).collect();
+        let module_name: Vec<u8> = r"C:\game\app.exe"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
         let module_name_rva = bytes.len();
         bytes.extend_from_slice(&(module_name.len() as u32).to_le_bytes());
         bytes.extend_from_slice(&module_name);
@@ -824,7 +874,11 @@ mod tests {
 
         let module_directory = HEADER_SIZE;
         put_u32(&mut bytes, module_directory, STREAM_MODULE_LIST);
-        put_u32(&mut bytes, module_directory + 4, (4 + MODULE_RECORD_SIZE) as u32);
+        put_u32(
+            &mut bytes,
+            module_directory + 4,
+            (4 + MODULE_RECORD_SIZE) as u32,
+        );
         put_u32(&mut bytes, module_directory + 8, module_rva as u32);
 
         let memory_directory = module_directory + DIRECTORY_RECORD_SIZE;
@@ -834,7 +888,11 @@ mod tests {
 
         let info_directory = memory_directory + DIRECTORY_RECORD_SIZE;
         put_u32(&mut bytes, info_directory, STREAM_MEMORY_INFO_LIST);
-        put_u32(&mut bytes, info_directory + 4, (16 + MEMORY_INFO_RECORD_SIZE) as u32);
+        put_u32(
+            &mut bytes,
+            info_directory + 4,
+            (16 + MEMORY_INFO_RECORD_SIZE) as u32,
+        );
         put_u32(&mut bytes, info_directory + 8, memory_info_rva as u32);
 
         put_u32(&mut bytes, module_rva, 1);
@@ -849,7 +907,11 @@ mod tests {
         put_u64(&mut bytes, memory_list_rva + 24, captured.len() as u64);
 
         put_u32(&mut bytes, memory_info_rva, 16);
-        put_u32(&mut bytes, memory_info_rva + 4, MEMORY_INFO_RECORD_SIZE as u32);
+        put_u32(
+            &mut bytes,
+            memory_info_rva + 4,
+            MEMORY_INFO_RECORD_SIZE as u32,
+        );
         put_u64(&mut bytes, memory_info_rva + 8, 1);
         let region = memory_info_rva + 16;
         put_u64(&mut bytes, region, TEST_MODULE_BASE);
@@ -885,14 +947,24 @@ mod tests {
 
     #[test]
     fn static_address_translates_rva_in_the_named_module() {
-        let h = Hit { va: 0, module: Some("app.exe".to_string()), rva: Some(0xD7_2145) };
-        assert_eq!(h.static_address("APP.EXE", 0x1_4000_0000), Some(0x1_40D7_2145));
+        let h = Hit {
+            va: 0,
+            module: Some("app.exe".to_string()),
+            rva: Some(0xD7_2145),
+        };
+        assert_eq!(
+            h.static_address("APP.EXE", 0x1_4000_0000),
+            Some(0x1_40D7_2145)
+        );
         assert_eq!(h.static_address("other.dll", 0x1_4000_0000), None);
     }
 
     #[test]
     fn demangle_msvc_rtti() {
-        assert_eq!(demangle(".?AVCUniformBlock@lives@@"), "lives::CUniformBlock");
+        assert_eq!(
+            demangle(".?AVCUniformBlock@lives@@"),
+            "lives::CUniformBlock"
+        );
         assert_eq!(demangle(".?AUFoo@@"), "Foo");
         assert_eq!(demangle(".?AVCObjLua@game@@"), "game::CObjLua");
     }
@@ -907,7 +979,10 @@ mod tests {
             mtype: MEM_PRIVATE,
         };
         assert!(r.is_heap());
-        let img = Region { mtype: 0x1000000, ..r };
+        let img = Region {
+            mtype: 0x1000000,
+            ..r
+        };
         assert!(!img.is_heap());
     }
 
@@ -918,10 +993,18 @@ mod tests {
 
         assert_eq!(
             dump.summary(),
-            DumpSummary { module_count: 1, range_count: 1, region_count: 1, mapped_bytes: 6 }
+            DumpSummary {
+                module_count: 1,
+                range_count: 1,
+                region_count: 1,
+                mapped_bytes: 6
+            }
         );
         assert_eq!(dump.module("APP.EXE").unwrap().base, TEST_MODULE_BASE);
-        assert_eq!(dump.read(TEST_MODULE_BASE + 1, 4).unwrap(), [0xDE, 0xAD, 0xBE, 0xEF]);
+        assert_eq!(
+            dump.read(TEST_MODULE_BASE + 1, 4).unwrap(),
+            [0xDE, 0xAD, 0xBE, 0xEF]
+        );
         assert!(dump.region_of(TEST_MODULE_BASE).unwrap().is_heap());
     }
 
@@ -934,7 +1017,10 @@ mod tests {
         assert_eq!(hits[0].va, TEST_MODULE_BASE + 1);
         assert_eq!(hits[0].module.as_deref(), Some("app.exe"));
         assert_eq!(hits[0].rva, Some(1));
-        assert_eq!(hits[0].static_address("app.exe", TEST_MODULE_BASE), Some(TEST_MODULE_BASE + 1));
+        assert_eq!(
+            hits[0].static_address("app.exe", TEST_MODULE_BASE),
+            Some(TEST_MODULE_BASE + 1)
+        );
     }
 
     #[test]

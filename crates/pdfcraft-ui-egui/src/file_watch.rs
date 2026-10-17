@@ -43,7 +43,12 @@ impl Stamp {
         #[cfg(unix)]
         let extra = {
             use std::os::unix::fs::MetadataExt;
-            [meta.dev(), meta.ino(), meta.ctime().cast_unsigned(), meta.ctime_nsec().cast_unsigned()]
+            [
+                meta.dev(),
+                meta.ino(),
+                meta.ctime().cast_unsigned(),
+                meta.ctime_nsec().cast_unsigned(),
+            ]
         };
         #[cfg(windows)]
         let extra = {
@@ -52,12 +57,19 @@ impl Stamp {
         };
         #[cfg(not(any(unix, windows)))]
         let extra = [0; 4];
-        Self { len: meta.len(), modified: meta.modified().ok(), extra }
+        Self {
+            len: meta.len(),
+            modified: meta.modified().ok(),
+            extra,
+        }
     }
 
     /// The file at `path` now; `None` when it is missing, not a file or can't be read.
     pub fn at(path: &str) -> Option<Self> {
-        std::fs::metadata(path).ok().filter(Metadata::is_file).map(|m| Self::of(&m))
+        std::fs::metadata(path)
+            .ok()
+            .filter(Metadata::is_file)
+            .map(|m| Self::of(&m))
     }
 }
 
@@ -101,7 +113,12 @@ impl Watcher {
             .into_iter()
             .map(|w| {
                 let prev = old.iter().find(|e| e.doc == w.doc && e.path == w.path);
-                Entry { known: w.known.or(prev.and_then(|e| e.known)), pending: prev.and_then(|e| e.pending), doc: w.doc, path: w.path }
+                Entry {
+                    known: w.known.or(prev.and_then(|e| e.known)),
+                    pending: prev.and_then(|e| e.pending),
+                    doc: w.doc,
+                    path: w.path,
+                }
             })
             .collect();
     }
@@ -132,7 +149,11 @@ impl Watcher {
             match read_whole_pdf(&e.path, now) {
                 Version::Ready(bytes) => {
                     e.known = Some(now);
-                    found.push(Changed { doc: e.doc, stamp: now, bytes });
+                    found.push(Changed {
+                        doc: e.doc,
+                        stamp: now,
+                        bytes,
+                    });
                 }
                 // Not a whole PDF in this version (a build that failed or paused): wait for the
                 // next one.
@@ -159,15 +180,21 @@ enum Version {
 /// KiB, read first). The whole file is then read into a buffer of exactly its size.
 fn read_whole_pdf(path: &str, stamp: Stamp) -> Version {
     // Windows refuses to open a file its writer holds exclusively: not ready yet.
-    let Ok(mut file) = File::open(path) else { return Version::Busy };
-    let Ok(meta) = file.metadata() else { return Version::Busy };
+    let Ok(mut file) = File::open(path) else {
+        return Version::Busy;
+    };
+    let Ok(meta) = file.metadata() else {
+        return Version::Busy;
+    };
     if Stamp::of(&meta) != stamp {
         return Version::Busy;
     }
     let len = meta.len();
     let mut end = [0u8; TAIL];
     let tail = usize::try_from(len).map_or(TAIL, |l| l.min(TAIL));
-    let (Some(end), Ok(back)) = (end.get_mut(..tail), i64::try_from(tail)) else { return Version::Incomplete };
+    let (Some(end), Ok(back)) = (end.get_mut(..tail), i64::try_from(tail)) else {
+        return Version::Incomplete;
+    };
     if file.seek(SeekFrom::End(-back)).is_err() || file.read_exact(end).is_err() {
         return Version::Busy;
     }
@@ -176,7 +203,9 @@ fn read_whole_pdf(path: &str, stamp: Stamp) -> Version {
     }
     let mut bytes = Vec::new();
     // Too big to hold: the open version stays.
-    let Ok(size) = usize::try_from(len) else { return Version::Incomplete };
+    let Ok(size) = usize::try_from(len) else {
+        return Version::Incomplete;
+    };
     if bytes.try_reserve_exact(size).is_err() {
         return Version::Incomplete;
     }
@@ -215,7 +244,9 @@ fn run(inbox: mpsc::Receiver<Vec<Watched>>, out: Arc<Mutex<Vec<Changed>>>, ctx: 
         }
         let (found, settling) = watcher.tick();
         if !found.is_empty() {
-            out.lock().unwrap_or_else(PoisonError::into_inner).extend(found);
+            out.lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .extend(found);
             ctx.request_repaint();
         }
         wait = Some(if settling { SETTLE } else { IDLE });
@@ -257,10 +288,13 @@ impl FileWatch {
 impl PdfCraftApp {
     /// The documents to watch: every open one with a file, while the preference is on.
     fn watched(&self) -> impl Iterator<Item = (DocId, &str, Option<Stamp>)> {
-        self.views.iter().filter(|_| self.reload_changed_files).filter_map(|v| {
-            let path = self.session.get(v.id)?.path.as_deref()?;
-            Some((v.id, path, self.watch.known.get(&v.id).copied()))
-        })
+        self.views
+            .iter()
+            .filter(|_| self.reload_changed_files)
+            .filter_map(|v| {
+                let path = self.session.get(v.id)?.path.as_deref()?;
+                Some((v.id, path, self.watch.known.get(&v.id).copied()))
+            })
     }
 
     /// Every frame: tell the watcher about files opened, closed or saved (without allocating
@@ -270,10 +304,19 @@ impl PdfCraftApp {
             self.reload_from_disk(id);
         }
         let mut sent = self.watch.sent.iter();
-        let unchanged = self.watched().all(|(doc, path, known)| sent.next().is_some_and(|w| w.doc == doc && w.path == path && w.known == known))
-            && sent.next().is_none();
+        let unchanged = self.watched().all(|(doc, path, known)| {
+            sent.next()
+                .is_some_and(|w| w.doc == doc && w.path == path && w.known == known)
+        }) && sent.next().is_none();
         if !unchanged {
-            let list: Vec<Watched> = self.watched().map(|(doc, path, known)| Watched { doc, path: path.to_owned(), known }).collect();
+            let list: Vec<Watched> = self
+                .watched()
+                .map(|(doc, path, known)| Watched {
+                    doc,
+                    path: path.to_owned(),
+                    known,
+                })
+                .collect();
             let open: Vec<DocId> = self.views.iter().map(|v| v.id).collect();
             self.watch.known.retain(|doc, _| open.contains(doc));
             if self.send_to_watcher(list.clone()) {
@@ -282,9 +325,19 @@ impl PdfCraftApp {
         }
         if self.run_inline {
             let (found, _) = self.watch.inline.tick();
-            self.watch.found.lock().unwrap_or_else(PoisonError::into_inner).extend(found);
+            self.watch
+                .found
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .extend(found);
         }
-        let found = std::mem::take(&mut *self.watch.found.lock().unwrap_or_else(PoisonError::into_inner));
+        let found = std::mem::take(
+            &mut *self
+                .watch
+                .found
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner),
+        );
         for c in found {
             self.file_changed(c);
         }
@@ -301,15 +354,25 @@ impl PdfCraftApp {
             if list.is_empty() {
                 return true;
             }
-            let Some(ctx) = self.ctx.clone() else { return false };
+            let Some(ctx) = self.ctx.clone() else {
+                return false;
+            };
             let (tx, rx) = mpsc::channel();
             let out = self.watch.found.clone();
-            if std::thread::Builder::new().name("pdfcraft-watch".into()).spawn(move || run(rx, out, ctx)).is_err() {
+            if std::thread::Builder::new()
+                .name("pdfcraft-watch".into())
+                .spawn(move || run(rx, out, ctx))
+                .is_err()
+            {
                 return false;
             }
             self.watch.inbox = Some(tx);
         }
-        let delivered = self.watch.inbox.as_ref().is_some_and(|tx| tx.send(list).is_ok());
+        let delivered = self
+            .watch
+            .inbox
+            .as_ref()
+            .is_some_and(|tx| tx.send(list).is_ok());
         if !delivered {
             // The worker ended (it panicked): start a new one next frame.
             self.watch.inbox = None;
@@ -320,7 +383,9 @@ impl PdfCraftApp {
     /// A watched file has a new version: reload its document, or ask first when it has unsaved
     /// changes.
     fn file_changed(&mut self, c: Changed) {
-        let Some(i) = self.views.iter().position(|v| v.id == c.doc) else { return };
+        let Some(i) = self.views.iter().position(|v| v.id == c.doc) else {
+            return;
+        };
         // PdfCraft wrote this version itself (a save), or it was handled already.
         if self.watch.known.get(&c.doc) == Some(&c.stamp) {
             return;
@@ -338,8 +403,12 @@ impl PdfCraftApp {
     /// The notice bar's Reload: read the file now and replace the document, unsaved changes and
     /// all.
     fn reload_from_disk(&mut self, doc: DocId) {
-        let Some(i) = self.views.iter().position(|v| v.id == doc) else { return };
-        let Some(path) = self.session.get(doc).and_then(|d| d.path.clone()) else { return };
+        let Some(i) = self.views.iter().position(|v| v.id == doc) else {
+            return;
+        };
+        let Some(path) = self.session.get(doc).and_then(|d| d.path.clone()) else {
+            return;
+        };
         let stamp = Stamp::at(&path);
         match std::fs::read(&path) {
             Ok(bytes) => {
@@ -347,8 +416,15 @@ impl PdfCraftApp {
                 self.reload_view(i, Arc::new(bytes));
             }
             Err(e) => {
-                let name = self.session.get(doc).map(|d| d.name.clone()).unwrap_or_default();
-                self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                let name = self
+                    .session
+                    .get(doc)
+                    .map(|d| d.name.clone())
+                    .unwrap_or_default();
+                self.notify_fmt(
+                    "Couldn't read {name}: {e}",
+                    &[("name", &name), ("e", &e.to_string())],
+                );
             }
         }
     }
@@ -356,7 +432,9 @@ impl PdfCraftApp {
     /// Open `bytes` in place of tab `i`'s document, keeping the tab and the reader's place. A
     /// version that can't be opened leaves the document as it was, and says so.
     fn reload_view(&mut self, i: usize, bytes: Arc<Vec<u8>>) {
-        let Some(id) = self.views.get(i).map(|v| v.id) else { return };
+        let Some(id) = self.views.get(i).map(|v| v.id) else {
+            return;
+        };
         match self.session.reload(id, bytes) {
             Ok(()) => {
                 // Whatever was unsaved is gone, so there is nothing left to recover.
@@ -369,8 +447,15 @@ impl PdfCraftApp {
                 self.handle_js(id, out);
             }
             Err(e) => {
-                let name = self.session.get(id).map(|d| d.name.clone()).unwrap_or_default();
-                self.notify_fmt("Couldn't reload {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                let name = self
+                    .session
+                    .get(id)
+                    .map(|d| d.name.clone())
+                    .unwrap_or_default();
+                self.notify_fmt(
+                    "Couldn't reload {name}: {e}",
+                    &[("name", &name), ("e", &e.to_string())],
+                );
             }
         }
     }

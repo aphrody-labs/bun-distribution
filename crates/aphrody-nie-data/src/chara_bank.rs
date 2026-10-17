@@ -117,7 +117,9 @@ impl SoccerClubRoomConfig {
     /// ```
     #[must_use]
     pub fn find_by_character(&self, character_id: HashId) -> Option<&CharaRestrictionInfo> {
-        self.restrictions.iter().find(|e| e.character_id == character_id)
+        self.restrictions
+            .iter()
+            .find(|e| e.character_id == character_id)
     }
 }
 

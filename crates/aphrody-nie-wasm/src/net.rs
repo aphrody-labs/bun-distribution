@@ -15,7 +15,9 @@ use wasm_bindgen::prelude::*;
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 #[must_use]
 pub fn input_command_for_key(key: &str) -> String {
-    aphrody_nie_app::input::command_for_name(key).unwrap_or_default().to_string()
+    aphrody_nie_app::input::command_for_name(key)
+        .unwrap_or_default()
+        .to_string()
 }
 
 /// Formats a raw string into canonical Inacode format (`INA-XXXX`).
@@ -29,7 +31,9 @@ pub fn net_format_inacode(raw: &str) -> String {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 #[must_use]
 pub fn net_generate_inacode(seed: f64) -> String {
-    aphrody_nie_net::Inacode::generate_from_seed(seed as u64).as_str().to_string()
+    aphrody_nie_net::Inacode::generate_from_seed(seed as u64)
+        .as_str()
+        .to_string()
 }
 
 /// Returns rank tier details (index, name_fr, name_en, min_ap, win_k, loss_k) as JSON.
@@ -63,8 +67,16 @@ pub fn net_compute_elo(rating_a: u32, rating_b: u32, score_a: f64) -> String {
         aphrody_nie_net::compute_match_elo(rating_b, rating_a, aphrody_nie_net::DEFAULT_K_FACTOR)
     };
 
-    let delta_a = if is_win_a { res.winner_gain as i32 } else { -(res.loser_loss as i32) };
-    let delta_b = if is_win_a { -(res.loser_loss as i32) } else { res.winner_gain as i32 };
+    let delta_a = if is_win_a {
+        res.winner_gain as i32
+    } else {
+        -(res.loser_loss as i32)
+    };
+    let delta_b = if is_win_a {
+        -(res.loser_loss as i32)
+    } else {
+        res.winner_gain as i32
+    };
 
     let tier_a = aphrody_nie_net::RankTier::from_ap(rating_a);
     let tier_b = aphrody_nie_net::RankTier::from_ap(rating_b);
@@ -106,7 +118,9 @@ pub fn net_generate_challenge_code(seed: f64) -> String {
         let mut s = seed as u64;
         let mut chars = [0u8; 8];
         for b in &mut chars {
-            s = s.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s = s
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             *b = alphabet[(s as usize) % alphabet.len()];
         }
         std::str::from_utf8(&chars).unwrap_or(&c.code).to_string()
@@ -139,7 +153,7 @@ pub fn net_verify_scores(home_a: u32, away_a: u32, home_b: u32, away_b: u32) -> 
         aphrody_nie_net::ranked::ScoreOutcome::Agree { s1, s2 } => (false, s1 as u32, s2 as u32),
         aphrody_nie_net::ranked::ScoreOutcome::Forfeit { s1, s2, .. } => {
             (false, s1 as u32, s2 as u32)
-        },
+        }
         aphrody_nie_net::ranked::ScoreOutcome::Dispute => (true, home_a, away_a),
         aphrody_nie_net::ranked::ScoreOutcome::Wait => (false, 0, 0),
     };

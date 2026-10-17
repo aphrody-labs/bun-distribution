@@ -1,6 +1,6 @@
 use super::{
-    bind_group::BindGroupCacheState, instances::InstanceState, tlas_build, BlasManager,
-    RaytracingSceneBindings,
+    BlasManager, RaytracingSceneBindings, bind_group::BindGroupCacheState,
+    instances::InstanceState, tlas_build,
 };
 use bevy_asset::load_embedded_asset;
 use bevy_ecs::{
@@ -11,12 +11,12 @@ use bevy_ecs::{
 use bevy_render::{
     diagnostic::RecordDiagnostics,
     render_resource::{
-        binding_types::{storage_buffer_read_only_sized, storage_buffer_sized},
         AccelerationStructureFlags, AccelerationStructureUpdateMode, BindGroup, BindGroupEntries,
         BindGroupLayoutDescriptor, BindGroupLayoutEntries, Buffer, BufferDescriptor, BufferId,
         BufferUsages, CachedComputePipelineId, CommandEncoderDescriptor, ComputePassDescriptor,
         ComputePipelineDescriptor, CreateTlasDescriptor, PipelineCache, ShaderStages, Tlas,
         TlasInstance,
+        binding_types::{storage_buffer_read_only_sized, storage_buffer_sized},
     },
     renderer::{RenderContext, RenderDevice},
 };
@@ -522,7 +522,7 @@ fn build_tlas_through_wgpu_core(
 
 #[cfg(test)]
 mod tests {
-    use super::{tlas_capacity_for, TLAS_MIN_CAPACITY};
+    use super::{TLAS_MIN_CAPACITY, tlas_capacity_for};
 
     #[test]
     fn tlas_capacity_grows_geometrically_at_boundaries() {

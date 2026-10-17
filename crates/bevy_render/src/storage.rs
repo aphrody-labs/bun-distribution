@@ -4,10 +4,10 @@
 use alloc::borrow::Cow;
 
 use crate::{
+    Render, RenderApp, RenderSystems,
     render_asset::{AssetExtractionError, PrepareAssetError, RenderAsset, RenderAssetPlugin},
     render_resource::{Buffer, BufferUsages},
     renderer::{RenderDevice, RenderQueue},
-    Render, RenderApp, RenderSystems,
 };
 use bevy_app::{App, Plugin};
 use bevy_asset::{Asset, AssetApp, AssetId, RenderAssetUsages};
@@ -16,12 +16,12 @@ use bevy_ecs::{
     resource::Resource,
     schedule::IntoScheduleConfigs as _,
     system::{
-        lifetimeless::{SRes, SResMut},
         ResMut, SystemParamItem,
+        lifetimeless::{SRes, SResMut},
     },
 };
 use bevy_platform::collections::{AlignedVec, HashSet};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_utils::default;
 use wgpu_types::BufferDescriptor;
 
@@ -426,7 +426,7 @@ mod tests {
     use alloc::vec;
 
     use bevy_ecs::{
-        system::{lifetimeless::SRes, SystemState},
+        system::{SystemState, lifetimeless::SRes},
         world::World,
     };
 

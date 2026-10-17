@@ -6,23 +6,22 @@ use crate::generate::generate_video::video_generation_request::VideoGenerationRe
 
 #[derive(Debug, Clone)]
 pub enum VideoGenerationDraftOrRequest {
-  Draft(VideoGenerationDraftRequest),
-  Request(VideoGenerationRequest),
+    Draft(VideoGenerationDraftRequest),
+    Request(VideoGenerationRequest),
 }
 
 impl VideoGenerationDraftOrRequest {
-
-  pub fn get_provider(&self) -> RouterProvider {
-    match self {
-      Self::Draft(draft) => draft.get_provider(),
-      Self::Request(request) => request.get_provider(),
+    pub fn get_provider(&self) -> RouterProvider {
+        match self {
+            Self::Draft(draft) => draft.get_provider(),
+            Self::Request(request) => request.get_provider(),
+        }
     }
-  }
 
-  pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
-    match self {
-      VideoGenerationDraftOrRequest::Draft(draft) => draft.estimate_cost(),
-      VideoGenerationDraftOrRequest::Request(request) => request.estimate_cost(),
+    pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
+        match self {
+            VideoGenerationDraftOrRequest::Draft(draft) => draft.estimate_cost(),
+            VideoGenerationDraftOrRequest::Request(request) => request.estimate_cost(),
+        }
     }
-  }
 }

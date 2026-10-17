@@ -14,18 +14,27 @@ use designcraft_ui_egui::{ControlRequest, DesignApp, Services};
 static READY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 fn main() {
-    let path = std::env::args().nth(1).expect("usage: ui_shot script.jsonl");
+    let path = std::env::args()
+        .nth(1)
+        .expect("usage: ui_shot script.jsonl");
     let script = std::fs::read_to_string(&path).expect("read script");
     let services = Services {
-        write: Some(Box::new(|p: &str, b: &[u8]| std::fs::write(p, b).map_err(|e| e.to_string()))),
-        read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
+        write: Some(Box::new(|p: &str, b: &[u8]| {
+            std::fs::write(p, b).map_err(|e| e.to_string())
+        })),
+        read: Some(Box::new(|p: &str| {
+            std::fs::read(p).map_err(|e| e.to_string())
+        })),
         ..Default::default()
     };
     let (tx, rx) = std::sync::mpsc::channel::<ControlRequest>();
     let mut app = DesignApp::new(Session::new(), services).with_control(rx);
     app.integrated_titlebar = true;
-    let lines: Vec<serde_json::Value> =
-        script.lines().filter(|l| !l.trim().is_empty()).map(|l| serde_json::from_str(l).expect("json line")).collect();
+    let lines: Vec<serde_json::Value> = script
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("json line"))
+        .collect();
     if lines.first().is_none_or(|l| l.get("empty").is_none()) {
         let _ = app.run("file.newSample", serde_json::json!({}));
     }

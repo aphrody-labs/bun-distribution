@@ -2,6 +2,10 @@ mod info;
 mod loaders;
 
 use crate::{
+    Asset, AssetEvent, AssetHandleProvider, AssetId, AssetIndex, AssetLoadFailedEvent,
+    AssetMetaCheck, Assets, DeserializeMetaError, ErasedAssetIndex, ErasedLoadedAsset, Handle,
+    LoadedUntypedAsset, UnapprovedPathMode, UntypedAssetId, UntypedAssetLoadFailedEvent,
+    UntypedHandle, VisitAssetDependencies,
     folder::LoadedFolder,
     io::{
         AssetReaderError, AssetSource, AssetSourceEvent, AssetSourceId, AssetSources,
@@ -10,14 +14,10 @@ use crate::{
     },
     loader::{AssetLoader, ErasedAssetLoader, LoadContext, LoadedAsset},
     meta::{
-        loader_settings_meta_transform, AssetActionMinimal, AssetMetaDyn, AssetMetaMinimal,
-        MetaTransform, Settings,
+        AssetActionMinimal, AssetMetaDyn, AssetMetaMinimal, MetaTransform, Settings,
+        loader_settings_meta_transform,
     },
     path::AssetPath,
-    Asset, AssetEvent, AssetHandleProvider, AssetId, AssetIndex, AssetLoadFailedEvent,
-    AssetMetaCheck, Assets, DeserializeMetaError, ErasedAssetIndex, ErasedLoadedAsset, Handle,
-    LoadedUntypedAsset, UnapprovedPathMode, UntypedAssetId, UntypedAssetLoadFailedEvent,
-    UntypedHandle, VisitAssetDependencies,
 };
 use alloc::{borrow::ToOwned, boxed::Box, vec, vec::Vec};
 use alloc::{
@@ -34,7 +34,7 @@ use bevy_platform::{
 };
 use bevy_tasks::IoTaskPool;
 use core::{
-    any::{type_name, TypeId},
+    any::{TypeId, type_name},
     future::Future,
     panic::AssertUnwindSafe,
     task::Poll,
@@ -1427,12 +1427,12 @@ impl AssetServer {
                         AssetActionMinimal::Process { .. } => {
                             return Err(AssetLoadError::CannotLoadProcessedAsset {
                                 path: asset_path.clone_owned(),
-                            })
+                            });
                         }
                         AssetActionMinimal::Ignore => {
                             return Err(AssetLoadError::CannotLoadIgnoredAsset {
                                 path: asset_path.clone_owned(),
-                            })
+                            });
                         }
                     };
                     let loader = self.get_asset_loader_with_type_name(&loader_name).await?;
@@ -1675,10 +1675,10 @@ impl AssetServer {
                 // The meta file couldn't be found so just fall through.
             }
             Err(AssetReaderError::Io(err)) => {
-                return Err(WriteDefaultMetaError::IoErrorFromExistingMetaCheck(err))
+                return Err(WriteDefaultMetaError::IoErrorFromExistingMetaCheck(err));
             }
             Err(AssetReaderError::HttpError(err)) => {
-                return Err(WriteDefaultMetaError::HttpErrorFromExistingMetaCheck(err))
+                return Err(WriteDefaultMetaError::HttpErrorFromExistingMetaCheck(err));
             }
         }
 
@@ -1769,7 +1769,9 @@ impl<'a> LoadBuilder<'a> {
     #[must_use = "the load doesn't start until LoadBuilder has been consumed"]
     pub fn with_guard(mut self, guard: impl Send + Sync + 'static) -> Self {
         if self.guard.is_some() {
-            warn!("Adding a second guard to a LoadBuilder drops the first guard! This is likely a mistake.");
+            warn!(
+                "Adding a second guard to a LoadBuilder drops the first guard! This is likely a mistake."
+            );
         }
         // If guard is already a box, then we might end up double-boxing, which is sad. But this is
         // almost certainly not worth caring about.
@@ -2217,7 +2219,9 @@ impl RecursiveDependencyLoadState {
 
 /// An error that occurs when the requested handle type doesn't match the actual loaded asset type.
 #[derive(Error, Debug, Clone)]
-#[error("Requested handle of type {requested:?} for asset '{path}' does not match actual asset type '{actual_asset_name}', which used loader '{loader_name}'")]
+#[error(
+    "Requested handle of type {requested:?} for asset '{path}' does not match actual asset type '{actual_asset_name}', which used loader '{loader_name}'"
+)]
 pub struct RequestedHandleTypeMismatchError {
     /// The path of the asset.
     pub path: AssetPath<'static>,
@@ -2242,7 +2246,9 @@ pub enum AssetLoadError {
     UnapprovedPath(AssetPath<'static>),
     #[error(transparent)]
     RequestedHandleTypeMismatch(#[from] Box<RequestedHandleTypeMismatchError>),
-    #[error("Could not find an asset loader matching: Asset Type: {asset_type_id:?}; Path: {asset_path:?};")]
+    #[error(
+        "Could not find an asset loader matching: Asset Type: {asset_type_id:?}; Path: {asset_path:?};"
+    )]
     MissingAssetLoader {
         asset_type_id: Option<TypeId>,
         asset_path: String,

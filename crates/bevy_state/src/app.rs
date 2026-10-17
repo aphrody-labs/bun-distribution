@@ -5,9 +5,9 @@ use log::warn;
 
 use crate::{
     state::{
-        setup_state_transitions_in_world, ComputedStates, FreelyMutableState, NextState,
-        PreviousState, State, StateTransition, StateTransitionEvent, StateTransitionSystems,
-        States, SubStates,
+        ComputedStates, FreelyMutableState, NextState, PreviousState, State, StateTransition,
+        StateTransitionEvent, StateTransitionSystems, States, SubStates,
+        setup_state_transitions_in_world,
     },
     state_scoped::{
         despawn_entities_on_enter_state, despawn_entities_on_exit_state,
@@ -247,7 +247,9 @@ fn enable_state_scoped_entities<S: States>(app: &mut SubApp) {
         .contains_resource::<Messages<StateTransitionEvent<S>>>()
     {
         let name = core::any::type_name::<S>();
-        warn!("State scoped entities are enabled for state `{name}`, but the state wasn't initialized in the app!");
+        warn!(
+            "State scoped entities are enabled for state `{name}`, but the state wasn't initialized in the app!"
+        );
     }
 
     // Note: We work with `StateTransition` in set

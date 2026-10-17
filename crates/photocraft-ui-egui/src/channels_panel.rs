@@ -65,15 +65,23 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let ctx = ui.ctx().clone();
     let thumbs = app.channel_thumbs(&ctx);
     // The active layer's mask (Photoshop lists it, in italics, below the colour channels).
-    let masked = active_layer.and_then(|id| doc.layer(id)).filter(|l| l.mask.is_some());
-    let mask_tex = masked.as_ref().and_then(|l| Some(app.mask_thumb(&ctx, &doc, l.id, l.mask.as_ref()?)));
+    let masked = active_layer
+        .and_then(|id| doc.layer(id))
+        .filter(|l| l.mask.is_some());
+    let mask_tex = masked
+        .as_ref()
+        .and_then(|l| Some(app.mask_thumb(&ctx, &doc, l.id, l.mask.as_ref()?)));
     let mask_targeted = masked.is_some()
         && (app.ui.mask_target || view.target == ChannelTarget::LayerMask)
         && (view.target == ChannelTarget::Composite || view.target == ChannelTarget::LayerMask)
         && !quick;
     // Multichannel images are their ink channels only (no composite or colour rows).
     let multichannel = doc.mode == photocraft_doc::ColorMode::Multichannel;
-    let mut rows = if multichannel { Vec::new() } else { vec![Row::Composite] };
+    let mut rows = if multichannel {
+        Vec::new()
+    } else {
+        vec![Row::Composite]
+    };
     if colors > 1 && !multichannel {
         rows.extend((0..colors).map(Row::Color));
     }
@@ -89,7 +97,11 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     // The buttons sit in a footer at the panel's bottom, like Photoshop's.
     let footer = widgets::footer_height(ui) + ui.spacing().item_spacing.y;
     let fill = ui.available_height() > footer + 60.0;
-    let rows_h = if fill { ui.available_height() - footer } else { f32::INFINITY };
+    let rows_h = if fill {
+        ui.available_height() - footer
+    } else {
+        f32::INFINITY
+    };
     let mut mask_click = None;
     let mut drawn = Vec::new();
     egui::ScrollArea::vertical().max_height(rows_h).min_scrolled_height(if fill { rows_h } else { 0.0 }).auto_shrink([false, !fill]).show(ui, |ui| {
@@ -325,12 +337,29 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
             actions.push(("channel.new".into(), json!({})));
         }
         actions.extend(drop(ui, &new, Footer::New));
-        if icons::button(ui, "square-dashed", 26.0, false, tl!("Save selection as channel")).clicked() {
+        if icons::button(
+            ui,
+            "square-dashed",
+            26.0,
+            false,
+            tl!("Save selection as channel"),
+        )
+        .clicked()
+        {
             actions.push(("select.saveSelection".into(), json!({})));
         }
-        let load = icons::button(ui, "circle-dashed", 26.0, false, tl!("Load channel as selection"));
+        let load = icons::button(
+            ui,
+            "circle-dashed",
+            26.0,
+            false,
+            tl!("Load channel as selection"),
+        );
         if load.clicked() {
-            actions.push(("select.loadSelection".into(), json!({ "channel": target_ref })));
+            actions.push((
+                "select.loadSelection".into(),
+                json!({ "channel": target_ref }),
+            ));
         }
         actions.extend(drop(ui, &load, Footer::Load));
     });
@@ -343,7 +372,12 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
         if id == "ui.renameChannel" {
             if let Some(i) = p.as_u64().and_then(|i| doc.channels.get(i as usize)) {
                 let row = Row::Alpha(p.as_u64().unwrap_or(0) as usize);
-                ctx.data_mut(|d| d.insert_temp(egui::Id::new(("chan-rename", doc.id.0, format!("{:?}", row.reference()))), i.name.clone()));
+                ctx.data_mut(|d| {
+                    d.insert_temp(
+                        egui::Id::new(("chan-rename", doc.id.0, format!("{:?}", row.reference()))),
+                        i.name.clone(),
+                    )
+                });
             }
             continue;
         }
@@ -374,17 +408,37 @@ enum Footer {
 /// What dropping `row` (named `name`) on a footer button does, as in Photoshop; `None` where
 /// Photoshop does nothing either (colour channels can't be deleted here). `mask_layer` is the
 /// layer whose mask the temporary mask row shows.
-fn drop_action(row: Row, name: &str, mask_layer: Option<u64>, on: Footer) -> Option<(String, Value)> {
+fn drop_action(
+    row: Row,
+    name: &str,
+    mask_layer: Option<u64>,
+    on: Footer,
+) -> Option<(String, Value)> {
     match (on, row) {
         (Footer::Delete, Row::Alpha(i)) => Some(("channel.delete".into(), json!({ "channel": i }))),
         // Asks "Apply mask to layer before removing?", like dropping the mask's Layers thumbnail.
-        (Footer::Delete, Row::LayerMask) => Some(crate::mask_trash_prompt::drop_action(mask_layer?, crate::mask_thumbs_ui::MaskKind::Pixel)),
+        (Footer::Delete, Row::LayerMask) => Some(crate::mask_trash_prompt::drop_action(
+            mask_layer?,
+            crate::mask_thumbs_ui::MaskKind::Pixel,
+        )),
         (Footer::Delete, _) => None,
         // The engine would name a mask's copy after the composite; Photoshop says "Layer 1 Mask copy".
-        (Footer::New, Row::LayerMask) => Some(("channel.duplicate".into(), json!({ "channel": "mask", "name": format!("{name} copy") }))),
-        (Footer::New, _) => Some(("channel.duplicate".into(), json!({ "channel": row.reference() }))),
-        (Footer::Load, Row::LayerMask) => Some(("select.loadSelection".into(), json!({ "channel": "mask", "layer": mask_layer? }))),
-        (Footer::Load, _) => Some(("select.loadSelection".into(), json!({ "channel": row.reference() }))),
+        (Footer::New, Row::LayerMask) => Some((
+            "channel.duplicate".into(),
+            json!({ "channel": "mask", "name": format!("{name} copy") }),
+        )),
+        (Footer::New, _) => Some((
+            "channel.duplicate".into(),
+            json!({ "channel": row.reference() }),
+        )),
+        (Footer::Load, Row::LayerMask) => Some((
+            "select.loadSelection".into(),
+            json!({ "channel": "mask", "layer": mask_layer? }),
+        )),
+        (Footer::Load, _) => Some((
+            "select.loadSelection".into(),
+            json!({ "channel": row.reference() }),
+        )),
     }
 }
 
@@ -419,11 +473,34 @@ fn item(ui: &mut egui::Ui, actions: &mut Vec<(String, Value)>, label: &str, cmd:
 }
 
 /// Channel Options › Color Indicates.
-fn indicates_items(ui: &mut egui::Ui, actions: &mut Vec<(String, Value)>, channel: Value, current: ColorIndicates) {
+fn indicates_items(
+    ui: &mut egui::Ui,
+    actions: &mut Vec<(String, Value)>,
+    channel: Value,
+    current: ColorIndicates,
+) {
     let masked = current == ColorIndicates::MaskedAreas;
-    let check = |on: bool, s: &str| if on { format!("✓ {s}") } else { s.to_string() };
-    item(ui, actions, &check(masked, "Color Indicates Masked Areas"), "channel.options", json!({ "channel": channel.clone(), "indicates": "masked" }));
-    item(ui, actions, &check(!masked, "Color Indicates Selected Areas"), "channel.options", json!({ "channel": channel, "indicates": "selected" }));
+    let check = |on: bool, s: &str| {
+        if on {
+            format!("✓ {s}")
+        } else {
+            s.to_string()
+        }
+    };
+    item(
+        ui,
+        actions,
+        &check(masked, "Color Indicates Masked Areas"),
+        "channel.options",
+        json!({ "channel": channel.clone(), "indicates": "masked" }),
+    );
+    item(
+        ui,
+        actions,
+        &check(!masked, "Color Indicates Selected Areas"),
+        "channel.options",
+        json!({ "channel": channel, "indicates": "selected" }),
+    );
 }
 
 /// Overlay colour presets (Channel Options › Color) and opacity.
@@ -438,7 +515,10 @@ fn overlay_colors(ui: &mut egui::Ui, actions: &mut Vec<(String, Value)>, channel
             (tl!("Yellow"), "#f0d000"),
         ] {
             if ui.button(tl!(&label)).clicked() {
-                actions.push(("channel.options".into(), json!({ "channel": channel.clone(), "color": hex })));
+                actions.push((
+                    "channel.options".into(),
+                    json!({ "channel": channel.clone(), "color": hex }),
+                ));
                 ui.close();
             }
         }
@@ -446,7 +526,10 @@ fn overlay_colors(ui: &mut egui::Ui, actions: &mut Vec<(String, Value)>, channel
     ui.menu_button(tl!("Overlay Opacity"), |ui| {
         for o in [25, 50, 75, 100] {
             if ui.button(format!("{o}%")).clicked() {
-                actions.push(("channel.options".into(), json!({ "channel": channel.clone(), "opacity": o })));
+                actions.push((
+                    "channel.options".into(),
+                    json!({ "channel": channel.clone(), "opacity": o }),
+                ));
                 ui.close();
             }
         }
@@ -459,7 +542,12 @@ mod tests {
 
     #[test]
     fn modifier_operations() {
-        let m = |shift, alt| egui::Modifiers { command: true, shift, alt, ..Default::default() };
+        let m = |shift, alt| egui::Modifiers {
+            command: true,
+            shift,
+            alt,
+            ..Default::default()
+        };
         assert_eq!(load_operation(m(false, false)), "new");
         assert_eq!(load_operation(m(true, false)), "add");
         assert_eq!(load_operation(m(false, true)), "subtract");
@@ -468,21 +556,38 @@ mod tests {
 
     #[test]
     fn rename_field_interrupts_the_ime_only_when_it_takes_focus() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 32, "height": 32})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 32, "height": 32}))
+            .unwrap();
         app.run("channel.new", json!({})).unwrap();
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(Default::default(), |_| {})
+            .textures_delta
+            .clear();
         let doc = app.session.active().unwrap().doc.id.0;
         let name = app.session.active().unwrap().doc.channels[0].name.clone();
-        ctx.data_mut(|d| d.insert_temp(egui::Id::new(("chan-rename", doc, format!("{:?}", Row::Alpha(0).reference()))), name));
+        ctx.data_mut(|d| {
+            d.insert_temp(
+                egui::Id::new((
+                    "chan-rename",
+                    doc,
+                    format!("{:?}", Row::Alpha(0).reference()),
+                )),
+                name,
+            )
+        });
         // The field takes focus on the first pass and owns the IME from the second on (#585).
         let interrupts: Vec<Option<bool>> = (0..4)
             .map(|_| {
                 let mut out = ctx.run_ui(Default::default(), |ui| show(&mut app, ui));
                 out.textures_delta.clear();
-                out.platform_output.ime.map(|ime| ime.should_interrupt_composition)
+                out.platform_output
+                    .ime
+                    .map(|ime| ime.should_interrupt_composition)
             })
             .collect();
         assert_eq!(interrupts, [None, Some(false), Some(false), Some(false)]);
@@ -490,13 +595,22 @@ mod tests {
 
     #[test]
     fn channel_thumbs_honours_show_channels_in_color() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 16, "height": 16})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
         let ctx = egui::Context::default();
         let thumbs_gray = app.channel_thumbs(&ctx);
         assert!(!thumbs_gray.is_empty());
 
-        app.session.execute("prefs.set", json!({"values": {"interface.showChannelsInColor": true}})).unwrap();
+        app.session
+            .execute(
+                "prefs.set",
+                json!({"values": {"interface.showChannelsInColor": true}}),
+            )
+            .unwrap();
         let thumbs_color = app.channel_thumbs(&ctx);
         assert_eq!(thumbs_gray.len(), thumbs_color.len());
     }
@@ -505,8 +619,12 @@ mod tests {
     /// textures rather than new ones (#4518).
     #[test]
     fn channel_thumbs_skip_selection_steps_and_reuse_textures() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 64, "height": 48})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 64, "height": 48}))
+            .unwrap();
         let ctx = egui::Context::default();
         // Texture uploads one pass makes (new textures and updates both count).
         let pass = |app: &mut PhotocraftApp| {
@@ -519,8 +637,16 @@ mod tests {
         };
         let (first, uploads) = pass(&mut app);
         assert!(uploads > 0);
-        app.run("select.rect", json!({"x": 4, "y": 4, "width": 20, "height": 20})).unwrap();
-        assert_eq!(pass(&mut app), (first.clone(), 0), "a marquee changes no pixels");
+        app.run(
+            "select.rect",
+            json!({"x": 4, "y": 4, "width": 20, "height": 20}),
+        )
+        .unwrap();
+        assert_eq!(
+            pass(&mut app),
+            (first.clone(), 0),
+            "a marquee changes no pixels"
+        );
         app.run("select.deselect", json!({})).unwrap();
         assert_eq!(pass(&mut app), (first.clone(), 0), "neither does Deselect");
         app.run("edit.fill", json!({"color": "#336699"})).unwrap();
@@ -533,14 +659,23 @@ mod tests {
     /// mask on "Masked" and one alpha channel.
     fn channels_harness() -> (egui_kittest::Harness<'static, PhotocraftApp>, u64) {
         let mut s = photocraft_engine::Session::new();
-        s.execute("file.new", json!({"width": 64, "height": 48})).unwrap();
-        let masked = s.execute("layer.new.layer", json!({"name": "Masked"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("layer.layerMask.revealAll", json!({"layer": masked})).unwrap();
+        s.execute("file.new", json!({"width": 64, "height": 48}))
+            .unwrap();
+        let masked = s
+            .execute("layer.new.layer", json!({"name": "Masked"}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute("layer.layerMask.revealAll", json!({"layer": masked}))
+            .unwrap();
         s.execute("channel.new", json!({})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(vec2(1440.0, 1000.0)).with_max_steps(64).build_eframe(move |cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            PhotocraftApp::new(s, crate::Services::default())
-        });
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(vec2(1440.0, 1000.0))
+            .with_max_steps(64)
+            .build_eframe(move |cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                PhotocraftApp::new(s, crate::Services::default())
+            });
         let ctx = h.ctx.clone();
         let (req, _rx) = crate::control::ControlRequest::new(
             "ui.set",
@@ -556,7 +691,12 @@ mod tests {
         use egui::accesskit::Role;
         use egui_kittest::kittest::{NodeT, Queryable};
         h.query_all_by_label(label)
-            .find(|n| matches!(n.accesskit_node().role(), Role::Button | Role::ListBoxOption | Role::Label) && n.rect().height() > 20.0)
+            .find(|n| {
+                matches!(
+                    n.accesskit_node().role(),
+                    Role::Button | Role::ListBoxOption | Role::Label
+                ) && n.rect().height() > 20.0
+            })
             .unwrap_or_else(|| panic!("no row or button {label}"))
             .rect()
             .center()
@@ -567,13 +707,23 @@ mod tests {
         use egui::{Modifiers, PointerButton};
         h.hover_at(from);
         h.run_steps(1);
-        h.event(egui::Event::PointerButton { pos: from, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: from,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(1);
         for i in 1..=6 {
             h.hover_at(from + (to - from) * (i as f32 / 6.0));
             h.run_steps(1);
         }
-        h.event(egui::Event::PointerButton { pos: to, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: to,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(3);
     }
 
@@ -584,7 +734,15 @@ mod tests {
     }
 
     fn alphas(h: &egui_kittest::Harness<'_, PhotocraftApp>) -> Vec<String> {
-        h.state().session.active().unwrap().doc.channels.iter().map(|c| c.name.clone()).collect()
+        h.state()
+            .session
+            .active()
+            .unwrap()
+            .doc
+            .channels
+            .iter()
+            .map(|c| c.name.clone())
+            .collect()
     }
 
     /// #4689: as in Photoshop, a channel dropped on New is duplicated, on Delete deleted, and on
@@ -597,22 +755,35 @@ mod tests {
 
         drag_to(&mut h, "Alpha 1", "Create new channel");
         assert_eq!(alphas(&h), ["Alpha 1", "Alpha 1 copy"]);
-        assert_eq!(h.state().session.active().unwrap().history.past_len(), steps + 1, "one history step");
+        assert_eq!(
+            h.state().session.active().unwrap().history.past_len(),
+            steps + 1,
+            "one history step"
+        );
         drag_to(&mut h, "Red", "Create new channel");
         assert_eq!(alphas(&h), ["Alpha 1", "Alpha 1 copy", "Red copy"]);
         drag_to(&mut h, "Masked Mask", "Create new channel");
-        assert_eq!(alphas(&h), ["Alpha 1", "Alpha 1 copy", "Red copy", "Masked Mask copy"]);
+        assert_eq!(
+            alphas(&h),
+            ["Alpha 1", "Alpha 1 copy", "Red copy", "Masked Mask copy"]
+        );
 
         drag_to(&mut h, "Alpha 1 copy", "Delete current channel");
         assert_eq!(alphas(&h), ["Alpha 1", "Red copy", "Masked Mask copy"]);
         // Colour channels stay: Photoshop would turn the image into Multichannel.
         drag_to(&mut h, "Green", "Delete current channel");
         assert_eq!(alphas(&h), ["Alpha 1", "Red copy", "Masked Mask copy"]);
-        assert_eq!(h.state().session.active().unwrap().doc.mode, photocraft_doc::ColorMode::Rgb);
+        assert_eq!(
+            h.state().session.active().unwrap().doc.mode,
+            photocraft_doc::ColorMode::Rgb
+        );
 
         assert!(h.state().session.active().unwrap().doc.selection.is_none());
         drag_to(&mut h, "Red copy", "Load channel as selection");
-        assert!(h.state().session.active().unwrap().doc.selection.is_some(), "the white channel selects everything");
+        assert!(
+            h.state().session.active().unwrap().doc.selection.is_some(),
+            "the white channel selects everything"
+        );
     }
 
     /// A plain click on a row still targets it, and a drag released elsewhere does nothing.
@@ -622,19 +793,41 @@ mod tests {
         let p = at(&h, "Alpha 1");
         h.hover_at(p);
         h.run_steps(1);
-        h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+        h.event(egui::Event::PointerButton {
+            pos: p,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: Default::default(),
+        });
         h.run_steps(1);
-        h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+        h.event(egui::Event::PointerButton {
+            pos: p,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: Default::default(),
+        });
         h.run_steps(3);
-        assert_eq!(h.state().session.active().unwrap().channel_view.target, ChannelTarget::Alpha(0));
+        assert_eq!(
+            h.state().session.active().unwrap().channel_view.target,
+            ChannelTarget::Alpha(0)
+        );
 
         let steps = h.state().session.active().unwrap().history.past_len();
         let (from, to) = (at(&h, "Alpha 1"), at(&h, "Blue"));
         drag(&mut h, from, to);
         drag_to(&mut h, "Alpha 1", "Save selection as channel");
         assert_eq!(alphas(&h), ["Alpha 1"]);
-        assert_eq!(h.state().session.active().unwrap().history.past_len(), steps, "nothing ran");
-        assert!(h.ctx.data(|d| d.get_temp::<(Row, String)>(drag_id())).is_none(), "the drag ended");
+        assert_eq!(
+            h.state().session.active().unwrap().history.past_len(),
+            steps,
+            "nothing ran"
+        );
+        assert!(
+            h.ctx
+                .data(|d| d.get_temp::<(Row, String)>(drag_id()))
+                .is_none(),
+            "the drag ended"
+        );
     }
 
     /// The layer mask's row asks "Apply mask to layer before removing?", like its Layers thumbnail.
@@ -642,8 +835,22 @@ mod tests {
     fn the_layer_mask_row_on_the_trash_asks_first() {
         let (mut h, masked) = channels_harness();
         drag_to(&mut h, "Masked Mask", "Delete current channel");
-        assert!(h.state().ui.dialogs.iter().any(|d| crate::mask_trash_prompt::owns(&d.fields)), "the prompt is open");
+        assert!(
+            h.state()
+                .ui
+                .dialogs
+                .iter()
+                .any(|d| crate::mask_trash_prompt::owns(&d.fields)),
+            "the prompt is open"
+        );
         let st = h.state().session.active().unwrap();
-        assert!(st.doc.layer(photocraft_doc::LayerId(masked)).unwrap().mask.is_some(), "nothing deleted yet");
+        assert!(
+            st.doc
+                .layer(photocraft_doc::LayerId(masked))
+                .unwrap()
+                .mask
+                .is_some(),
+            "nothing deleted yet"
+        );
     }
 }

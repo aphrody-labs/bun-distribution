@@ -3,8 +3,8 @@ use bevy_utils::prelude::DebugName;
 use crate::{
     change_detection::{CheckChangeTicks, Tick},
     error::Result,
-    system::{input::SystemIn, BoxedSystem, RunSystemError, System, SystemAccess, SystemInput},
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, FromWorld, World},
+    system::{BoxedSystem, RunSystemError, System, SystemAccess, SystemInput, input::SystemIn},
+    world::{DeferredWorld, FromWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 use super::{IntoSystem, SystemStateFlags};

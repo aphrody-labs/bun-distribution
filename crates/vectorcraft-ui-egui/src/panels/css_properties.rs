@@ -53,7 +53,11 @@ fn params(opts: &CssOptions, scope: &str) -> Value {
 
 /// The CSS rules as a code view: selectors and braces strong, property names dim.
 fn highlight(rules: &[&str], t: &Tokens, font: FontId) -> LayoutJob {
-    let fmt = |color| TextFormat { font_id: font.clone(), color, ..Default::default() };
+    let fmt = |color| TextFormat {
+        font_id: font.clone(),
+        color,
+        ..Default::default()
+    };
     let mut job = LayoutJob::default();
     for (i, rule) in rules.iter().enumerate() {
         if i > 0 {
@@ -83,14 +87,46 @@ fn shown(app: &mut VectorcraftApp, ui: &Ui, opts: &CssOptions, all: bool) -> Opt
     let key = Some((st.uid, st.revision, all, opts.clone(), t.dark));
     let mut c: Cache = pstate(ui.ctx(), "css-cache");
     if c.key != key {
-        let (id, scope) = if all { ("css.generate", "all") } else { ("css.selection", "selection") };
-        let out = app.session.execute(id, &params(opts, scope)).unwrap_or_default();
-        let rules: Vec<&str> = out["rules"].as_array().into_iter().flatten().filter_map(|r| r["css"].as_str()).collect();
-        let warnings = out["warnings"].as_array().into_iter().flatten().filter_map(Value::as_str).map(str::to_string).collect();
-        let job = (!rules.is_empty())
-            .then(|| Arc::new(highlight(rules.get(..MAX_SHOWN).unwrap_or(&rules), &t, egui::TextStyle::Monospace.resolve(ui.style()))));
+        let (id, scope) = if all {
+            ("css.generate", "all")
+        } else {
+            ("css.selection", "selection")
+        };
+        let out = app
+            .session
+            .execute(id, &params(opts, scope))
+            .unwrap_or_default();
+        let rules: Vec<&str> = out["rules"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|r| r["css"].as_str())
+            .collect();
+        let warnings = out["warnings"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect();
+        let job = (!rules.is_empty()).then(|| {
+            Arc::new(highlight(
+                rules.get(..MAX_SHOWN).unwrap_or(&rules),
+                &t,
+                egui::TextStyle::Monospace.resolve(ui.style()),
+            ))
+        });
         let skipped = out["skipped"].as_u64().unwrap_or(0);
-        c = Cache { key, shown: Arc::new(Shown { job, rules: rules.len(), more: rules.len().saturating_sub(MAX_SHOWN), skipped, warnings }) };
+        c = Cache {
+            key,
+            shown: Arc::new(Shown {
+                job,
+                rules: rules.len(),
+                more: rules.len().saturating_sub(MAX_SHOWN),
+                skipped,
+                warnings,
+            }),
+        };
         set_pstate(ui.ctx(), "css-cache", c.clone());
     }
     Some(c.shown)
@@ -99,7 +135,9 @@ fn shown(app: &mut VectorcraftApp, ui: &Ui, opts: &CssOptions, all: bool) -> Opt
 /// `w` as a sentence: capitalised, with a full stop.
 fn sentence(w: &str) -> String {
     let mut c = w.chars();
-    c.next().map(|f| f.to_uppercase().chain(c).chain(['.']).collect()).unwrap_or_default()
+    c.next()
+        .map(|f| f.to_uppercase().chain(c).chain(['.']).collect())
+        .unwrap_or_default()
 }
 
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
@@ -110,7 +148,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     };
     let opts: CssOptions = pstate(&ctx, OPTIONS);
     let all = !selected && pstate::<bool>(&ctx, ALL);
-    let Some(shown) = shown(app, ui, &opts, all) else { return };
+    let Some(shown) = shown(app, ui, &opts, all) else {
+        return;
+    };
     widgets::list_box(ui, |ui| {
         egui::ScrollArea::both().id_salt("css-properties-scroll").max_height(300.0).auto_shrink([false, true]).show(ui, |ui| {
             ui.set_min_height(120.0);
@@ -156,9 +196,17 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         )
         .clicked();
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let tip = if all { tl!("Export All…") } else { tl!("Export Selected CSS…") };
+            let tip = if all {
+                tl!("Export All…")
+            } else {
+                tl!("Export Selected CSS…")
+            };
             export = widgets::icon_button_enabled(ui, "save", tip, false, has_css, 24.0).clicked();
-            let tip = if all { tl!("Copy All Styles") } else { tl!("Copy Selected Style") };
+            let tip = if all {
+                tl!("Copy All Styles")
+            } else {
+                tl!("Copy Selected Style")
+            };
             copy = widgets::icon_button_enabled(ui, "copy", tip, false, has_css, 24.0).clicked();
         });
     });
@@ -176,9 +224,17 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// `css.copy {scope?, …css.selection options}`: copy the CSS of the selection (or with scope
 /// `all` the document's) → `{css, rules}`.
 pub(crate) fn copy(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
-    let id = if p.get("scope").and_then(Value::as_str) == Some("all") { "css.generate" } else { "css.selection" };
+    let id = if p.get("scope").and_then(Value::as_str) == Some("all") {
+        "css.generate"
+    } else {
+        "css.selection"
+    };
     let r = app.session.execute(id, p).map_err(|e| e.to_string())?;
-    let css = r["css"].as_str().filter(|c| !c.is_empty()).ok_or("no CSS to copy: select objects with CSS of their own")?.to_string();
+    let css = r["css"]
+        .as_str()
+        .filter(|c| !c.is_empty())
+        .ok_or("no CSS to copy: select objects with CSS of their own")?
+        .to_string();
     let rules = r["rules"].as_array().map_or(0, Vec::len);
     app.clipboard_out = Some(css.clone());
     app.status(format!("Copied the CSS of {rules} object(s)"));
@@ -189,16 +245,34 @@ pub(crate) fn copy(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String>
 /// a picked file (the web downloads it), its pictures next to it → `{path, rules, images}`.
 pub(crate) fn export_file(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
     let mut q = p.clone();
-    let path = q.as_object_mut().and_then(|o| o.remove("path")).and_then(|v| v.as_str().map(str::to_string));
-    let r = app.session.execute("css.export", &q).map_err(|e| e.to_string())?;
+    let path = q
+        .as_object_mut()
+        .and_then(|o| o.remove("path"))
+        .and_then(|v| v.as_str().map(str::to_string));
+    let r = app
+        .session
+        .execute("css.export", &q)
+        .map_err(|e| e.to_string())?;
     let path = io::target_path(app, path, "css")?;
-    io::write_to(&mut app.services, &path, r["data"].as_str().unwrap_or_default().as_bytes())?;
-    let folder = std::path::Path::new(&path).parent().map(std::path::Path::to_path_buf);
+    io::write_to(
+        &mut app.services,
+        &path,
+        r["data"].as_str().unwrap_or_default().as_bytes(),
+    )?;
+    let folder = std::path::Path::new(&path)
+        .parent()
+        .map(std::path::Path::to_path_buf);
     let mut images = Vec::new();
     for im in r["images"].as_array().into_iter().flatten() {
-        let (Some(name), Some(data)) = (im["name"].as_str(), im["dataBase64"].as_str()) else { continue };
-        let bytes = vectorcraft_format::base64_decode(data).ok_or("the export returned unreadable data")?;
-        let at = folder.as_ref().map_or_else(|| name.to_string(), |f| f.join(name).to_string_lossy().into_owned());
+        let (Some(name), Some(data)) = (im["name"].as_str(), im["dataBase64"].as_str()) else {
+            continue;
+        };
+        let bytes =
+            vectorcraft_format::base64_decode(data).ok_or("the export returned unreadable data")?;
+        let at = folder.as_ref().map_or_else(
+            || name.to_string(),
+            |f| f.join(name).to_string_lossy().into_owned(),
+        );
         io::write_to(&mut app.services, &at, &bytes)?;
         images.push(at);
     }
@@ -209,7 +283,9 @@ pub(crate) fn export_file(app: &mut VectorcraftApp, p: &Value) -> Result<Value, 
 /// The panel (≡) menu: copy and export, Generate CSS and the export options.
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let ctx = ui.ctx().clone();
-    let Some(selected) = app.session.active().map(|st| !st.selection.is_empty()) else { return };
+    let Some(selected) = app.session.active().map(|st| !st.selection.is_empty()) else {
+        return;
+    };
     let mut opts: CssOptions = pstate(&ctx, OPTIONS);
     let all: bool = pstate(&ctx, ALL);
     if menu_item(ui, tl!("Copy Selected Style"), selected, false) {
@@ -227,13 +303,19 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     ui.separator();
     let before = opts.clone();
-    ui.menu_button(format!("   {}", crate::i18n::fmt(tl!("Units: {units}"), &[("units", opts.units.name())])), |ui| {
-        for u in CssUnits::ALL {
-            if menu_item(ui, u.name(), true, opts.units == u) {
-                opts.units = u;
+    ui.menu_button(
+        format!(
+            "   {}",
+            crate::i18n::fmt(tl!("Units: {units}"), &[("units", opts.units.name())])
+        ),
+        |ui| {
+            for u in CssUnits::ALL {
+                if menu_item(ui, u.name(), true, opts.units == u) {
+                    opts.units = u;
+                }
             }
-        }
-    });
+        },
+    );
     for (label, on) in [
         (tl!("Absolute Position"), &mut opts.position),
         (tl!("Width and Height"), &mut opts.dimensions),

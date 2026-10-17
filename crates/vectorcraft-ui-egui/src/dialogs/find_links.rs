@@ -44,26 +44,44 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 
 /// The rows of field `key` of `d` (`missing`, `modified`, `picks`…).
 fn rows(d: &Dialog, key: &str) -> Vec<Value> {
-    d.fields.get(key).and_then(Value::as_array).cloned().unwrap_or_default()
+    d.fields
+        .get(key)
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
 }
 
 /// The ids in `rows` (`[{ids}]`).
 fn ids(rows: &[Value]) -> Vec<Value> {
-    rows.iter().flat_map(|r| r["ids"].as_array().cloned().unwrap_or_default()).collect()
+    rows.iter()
+        .flat_map(|r| r["ids"].as_array().cloned().unwrap_or_default())
+        .collect()
 }
 
 /// A Find Linked Files dialog for the `missing` files of the active document.
-fn dialog(app: &VectorcraftApp, missing: Vec<Value>, modified: Vec<Value>, back: bool) -> Result<Dialog, String> {
-    let uid = app.session.active().map(|d| d.uid).ok_or("no document open")?;
+fn dialog(
+    app: &VectorcraftApp,
+    missing: Vec<Value>,
+    modified: Vec<Value>,
+    back: bool,
+) -> Result<Dialog, String> {
+    let uid = app
+        .session
+        .active()
+        .map(|d| d.uid)
+        .ok_or("no document open")?;
     let picks = vec![Value::Null; missing.len()];
-    let fields =
-        json!({ "document": uid, "missing": missing, "modified": modified, "back": back, "state": "", "picks": picks, "touched": [], "copy": false });
+    let fields = json!({ "document": uid, "missing": missing, "modified": modified, "back": back, "state": "", "picks": picks, "touched": [], "copy": false });
     Ok(Dialog::new(KIND, fields))
 }
 
 /// Linked File Not Found's Find in Folder… (`d`, the `missingLinks` dialog): `d` becomes Find
 /// Linked Files, searching `folder` for every file `d` still asks about.
-pub(super) fn from_missing_links(app: &mut VectorcraftApp, d: &mut Dialog, folder: &str) -> Result<(), String> {
+pub(super) fn from_missing_links(
+    app: &mut VectorcraftApp,
+    d: &mut Dialog,
+    folder: &str,
+) -> Result<(), String> {
     let mut find = dialog(app, rows(d, "missing"), rows(d, "modified"), true)?;
     start_search(app, &mut find, folder)?;
     *d = find;
@@ -72,7 +90,9 @@ pub(super) fn from_missing_links(app: &mut VectorcraftApp, d: &mut Dialog, folde
 
 /// The selected linked images and placed documents of the active document.
 fn selected_linked(app: &VectorcraftApp) -> Vec<Value> {
-    let Some(st) = app.session.active() else { return vec![] };
+    let Some(st) = app.session.active() else {
+        return vec![];
+    };
     let linked = |id: &vectorcraft_doc::NodeId| {
         st.doc.node(*id).is_some_and(|n| match &n.kind {
             vectorcraft_doc::NodeKind::Image(im) => im.link.is_some(),
@@ -80,16 +100,30 @@ fn selected_linked(app: &VectorcraftApp) -> Vec<Value> {
             _ => false,
         })
     };
-    st.selection.objects.iter().filter(|id| linked(id)).map(|id| json!(id.0)).collect()
+    st.selection
+        .objects
+        .iter()
+        .filter(|id| linked(id))
+        .map(|id| json!(id.0))
+        .collect()
 }
 
 /// `ui.findLinksInFolder` (the Links panel's Find in Folder…): ask for a folder (or take `folder`),
 /// then open Find Linked Files searching it for the files of linked objects `ids` (default: the
 /// selected linked images and placed documents, else the files that are missing).
-pub(crate) fn find_in_folder_command(app: &mut VectorcraftApp, folder: Option<String>, ids: Option<Vec<Value>>) -> Result<Value, String> {
-    let ids = ids.filter(|ids| !ids.is_empty()).or_else(|| Some(selected_linked(app)).filter(|ids| !ids.is_empty()));
+pub(crate) fn find_in_folder_command(
+    app: &mut VectorcraftApp,
+    folder: Option<String>,
+    ids: Option<Vec<Value>>,
+) -> Result<Value, String> {
+    let ids = ids
+        .filter(|ids| !ids.is_empty())
+        .or_else(|| Some(selected_linked(app)).filter(|ids| !ids.is_empty()));
     let all = ids.is_some();
-    let r = app.session.execute("links.check", &json!({ "ids": ids })).map_err(|e| e.to_string())?;
+    let r = app
+        .session
+        .execute("links.check", &json!({ "ids": ids }))
+        .map_err(|e| e.to_string())?;
     let missing: Vec<Value> = r["links"]
         .as_array()
         .into_iter()
@@ -115,7 +149,8 @@ pub(crate) fn find_in_folder_command(app: &mut VectorcraftApp, folder: Option<St
 fn is_image(app: &VectorcraftApp, id: &Value) -> bool {
     let Some(id) = id.as_u64() else { return false };
     let st = app.session.active();
-    st.and_then(|st| st.doc.node(vectorcraft_doc::NodeId(id))).is_some_and(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Image(_)))
+    st.and_then(|st| st.doc.node(vectorcraft_doc::NodeId(id)))
+        .is_some_and(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Image(_)))
 }
 
 /// Make the dialog's document the active one: it may be another tab's.
@@ -124,19 +159,38 @@ fn activate(app: &mut VectorcraftApp, d: &Dialog) -> Result<(), String> {
     if app.session.active().map(|st| st.uid) == uid {
         return Ok(());
     }
-    let index = app.session.documents().iter().position(|doc| Some(doc.uid) == uid).ok_or("that document is no longer open")?;
-    app.run("document.activate", json!({ "index": index })).map(|_| ())
+    let index = app
+        .session
+        .documents()
+        .iter()
+        .position(|doc| Some(doc.uid) == uid)
+        .ok_or("that document is no longer open")?;
+    app.run("document.activate", json!({ "index": index }))
+        .map(|_| ())
 }
 
 /// Start looking in `folder` for the files of the dialog's rows; what an earlier search found, and
 /// the files chosen from it, are dropped.
 fn start_search(app: &mut VectorcraftApp, d: &mut Dialog, folder: &str) -> Result<(), String> {
     activate(app, d)?;
-    let r = app.run("links.findFiles", json!({ "folder": folder, "ids": ids(&rows(d, "missing")) }))?;
-    for k in ["found", "searched", "skipped", "unreadable", "stopped", "error"] {
+    let r = app.run(
+        "links.findFiles",
+        json!({ "folder": folder, "ids": ids(&rows(d, "missing")) }),
+    )?;
+    for k in [
+        "found",
+        "searched",
+        "skipped",
+        "unreadable",
+        "stopped",
+        "error",
+    ] {
         d.fields.remove(k);
     }
-    d.fields.insert("picks".into(), json!(vec![Value::Null; rows(d, "missing").len()]));
+    d.fields.insert(
+        "picks".into(),
+        json!(vec![Value::Null; rows(d, "missing").len()]),
+    );
     d.fields.insert("touched".into(), json!([]));
     d.fields.insert("search".into(), r["id"].clone());
     d.fields.insert("folder".into(), json!(folder));
@@ -148,7 +202,11 @@ fn start_search(app: &mut VectorcraftApp, d: &mut Dialog, folder: &str) -> Resul
 /// The files a search found for `row` (`{path, ids}`), best first: the answer's `links` row with
 /// the same path and ids.
 fn files_for<'a>(found: &'a [Value], row: &Value) -> &'a [Value] {
-    found.iter().find(|r| r["path"] == row["path"] && r["ids"] == row["ids"]).and_then(|r| r["files"].as_array()).map_or(&[], Vec::as_slice)
+    found
+        .iter()
+        .find(|r| r["path"] == row["path"] && r["ids"] == row["ids"])
+        .and_then(|r| r["files"].as_array())
+        .map_or(&[], Vec::as_slice)
 }
 
 /// The file chosen at the start among `files`: the only one that is the same file, else the only
@@ -171,12 +229,21 @@ fn update(d: &mut Dialog, r: &Value) {
     let found = r["links"].as_array().map_or(&[][..], Vec::as_slice);
     for (i, (row, pick)) in missing.iter().zip(picks.iter_mut()).enumerate() {
         if !touched.contains(&json!(i)) {
-            *pick = first_pick(files_for(found, row)).cloned().unwrap_or(Value::Null);
+            *pick = first_pick(files_for(found, row))
+                .cloned()
+                .unwrap_or(Value::Null);
         }
     }
     d.fields.insert("picks".into(), json!(picks));
     d.fields.insert("found".into(), r["links"].clone());
-    for k in ["state", "searched", "skipped", "unreadable", "stopped", "error"] {
+    for k in [
+        "state",
+        "searched",
+        "skipped",
+        "unreadable",
+        "stopped",
+        "error",
+    ] {
         match r.get(k) {
             Some(v) => d.fields.insert(k.into(), v.clone()),
             None => d.fields.remove(k),
@@ -188,7 +255,9 @@ fn update(d: &mut Dialog, r: &Value) {
 /// stopped this one.
 fn follow(app: &mut VectorcraftApp, d: &mut Dialog) {
     // Polled through `session.execute`.
-    let Ok(r) = app.session.execute("links.findFiles", &json!({})) else { return };
+    let Ok(r) = app.session.execute("links.findFiles", &json!({})) else {
+        return;
+    };
     if d.fields.get("search") != Some(&r["id"]) {
         d.fields.insert("state".into(), json!("stopped"));
         return;
@@ -201,8 +270,12 @@ fn follow(app: &mut VectorcraftApp, d: &mut Dialog) {
 
 /// Stop the search the dialog started once the dialog is gone (closed, or another in its place).
 pub(super) fn stop_when_closed(app: &mut VectorcraftApp) {
-    let Some(id) = app.ui.links_search else { return };
-    let open = app.ui.dialog.as_ref().is_some_and(|d| d.kind == KIND && d.fields.get("search").and_then(Value::as_u64) == Some(id));
+    let Some(id) = app.ui.links_search else {
+        return;
+    };
+    let open = app.ui.dialog.as_ref().is_some_and(|d| {
+        d.kind == KIND && d.fields.get("search").and_then(Value::as_u64) == Some(id)
+    });
     if !open {
         app.ui.links_search = None;
         vectorcraft_engine::cmd::linkfiles::stop(&mut app.session, id);
@@ -212,8 +285,16 @@ pub(super) fn stop_when_closed(app: &mut VectorcraftApp) {
 /// The folder of the dialog's document, when it was saved.
 fn document_folder(app: &VectorcraftApp, d: &Dialog) -> Option<String> {
     let uid = d.fields.get("document").and_then(Value::as_u64)?;
-    let path = app.session.documents().iter().find(|doc| doc.uid == uid)?.path.clone()?;
-    std::path::Path::new(&path).parent().map(|p| p.to_string_lossy().into_owned())
+    let path = app
+        .session
+        .documents()
+        .iter()
+        .find(|doc| doc.uid == uid)?
+        .path
+        .clone()?;
+    std::path::Path::new(&path)
+        .parent()
+        .map(|p| p.to_string_lossy().into_owned())
 }
 
 /// A button of the dialog's.
@@ -230,7 +311,12 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     }
     let state = d.str("state");
     let searching = state == "searching";
-    widgets::dim_label(ui, tl!("Choose the file to relink each linked file to. Files with the size and contents saved with the link come first."));
+    widgets::dim_label(
+        ui,
+        tl!(
+            "Choose the file to relink each linked file to. Files with the size and contents saved with the link come first."
+        ),
+    );
     ui.add_space(8.0);
     let missing = rows(d, "missing");
     let found = rows(d, "found");
@@ -238,62 +324,100 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     picks.resize(missing.len(), Value::Null);
     let mut touched = rows(d, "touched");
     widgets::list_box(ui, |ui| {
-        egui::ScrollArea::vertical().max_height(280.0).show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            for (i, (row, pick)) in missing.iter().zip(picks.iter_mut()).enumerate() {
-                ui.horizontal(|ui| {
-                    ui.add_space(6.0);
-                    ui.vertical(|ui| {
-                        ui.add_space(3.0);
-                        ui.label(egui::RichText::new(row["name"].as_str().unwrap_or_default()).font(theme::semibold(12.0)).color(t.text_strong));
-                        let path = row["path"].as_str().unwrap_or_default();
-                        ui.add(egui::Label::new(egui::RichText::new(path).size(11.0).color(t.text_dim)).truncate()).on_hover_text(path);
-                        let files = files_for(&found, row);
-                        let mut chose = None;
-                        for f in files {
-                            let file = f["path"].as_str().unwrap_or_default();
-                            let p = std::path::Path::new(file);
-                            ui.horizontal(|ui| {
-                                let name = p.file_name().map_or_else(|| file.to_string(), |n| n.to_string_lossy().into_owned());
-                                if widgets::radio(ui, &name, *pick == f["path"], true) {
-                                    chose = Some(f["path"].clone());
-                                }
-                                let tag = match f["match"].as_str() {
-                                    Some("same") => tl!("Same file"),
-                                    Some("size") => tl!("Same size"),
-                                    _ => "",
-                                };
-                                if !tag.is_empty() {
-                                    ui.label(egui::RichText::new(tag).size(11.0).color(t.accent));
-                                }
-                            });
-                            let folder = p.parent().map_or_else(String::new, |f| f.to_string_lossy().into_owned());
-                            ui.add(egui::Label::new(egui::RichText::new(folder).size(11.0).color(t.text_dim)).truncate()).on_hover_text(file);
-                        }
-                        if !files.is_empty() && widgets::radio(ui, tl!("Don't Relink"), pick.is_null(), true) {
-                            chose = Some(Value::Null);
-                        }
-                        if let Some(c) = chose {
-                            *pick = c;
-                            if !touched.contains(&json!(i)) {
-                                touched.push(json!(i));
+        egui::ScrollArea::vertical()
+            .max_height(280.0)
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                for (i, (row, pick)) in missing.iter().zip(picks.iter_mut()).enumerate() {
+                    ui.horizontal(|ui| {
+                        ui.add_space(6.0);
+                        ui.vertical(|ui| {
+                            ui.add_space(3.0);
+                            ui.label(
+                                egui::RichText::new(row["name"].as_str().unwrap_or_default())
+                                    .font(theme::semibold(12.0))
+                                    .color(t.text_strong),
+                            );
+                            let path = row["path"].as_str().unwrap_or_default();
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(path).size(11.0).color(t.text_dim),
+                                )
+                                .truncate(),
+                            )
+                            .on_hover_text(path);
+                            let files = files_for(&found, row);
+                            let mut chose = None;
+                            for f in files {
+                                let file = f["path"].as_str().unwrap_or_default();
+                                let p = std::path::Path::new(file);
+                                ui.horizontal(|ui| {
+                                    let name = p.file_name().map_or_else(
+                                        || file.to_string(),
+                                        |n| n.to_string_lossy().into_owned(),
+                                    );
+                                    if widgets::radio(ui, &name, *pick == f["path"], true) {
+                                        chose = Some(f["path"].clone());
+                                    }
+                                    let tag = match f["match"].as_str() {
+                                        Some("same") => tl!("Same file"),
+                                        Some("size") => tl!("Same size"),
+                                        _ => "",
+                                    };
+                                    if !tag.is_empty() {
+                                        ui.label(
+                                            egui::RichText::new(tag).size(11.0).color(t.accent),
+                                        );
+                                    }
+                                });
+                                let folder = p
+                                    .parent()
+                                    .map_or_else(String::new, |f| f.to_string_lossy().into_owned());
+                                ui.add(
+                                    egui::Label::new(
+                                        egui::RichText::new(folder).size(11.0).color(t.text_dim),
+                                    )
+                                    .truncate(),
+                                )
+                                .on_hover_text(file);
                             }
-                        }
-                        if files.is_empty() && !state.is_empty() {
-                            widgets::dim_label(ui, if searching { tl!("Searching…") } else { tl!("Not found") });
-                        }
-                        ui.add_space(3.0);
+                            if !files.is_empty()
+                                && widgets::radio(ui, tl!("Don't Relink"), pick.is_null(), true)
+                            {
+                                chose = Some(Value::Null);
+                            }
+                            if let Some(c) = chose {
+                                *pick = c;
+                                if !touched.contains(&json!(i)) {
+                                    touched.push(json!(i));
+                                }
+                            }
+                            if files.is_empty() && !state.is_empty() {
+                                widgets::dim_label(
+                                    ui,
+                                    if searching {
+                                        tl!("Searching…")
+                                    } else {
+                                        tl!("Not found")
+                                    },
+                                );
+                            }
+                            ui.add_space(3.0);
+                        });
                     });
-                });
-            }
-        });
+                }
+            });
     });
     d.fields.insert("picks".into(), json!(picks));
     d.fields.insert("touched".into(), json!(touched));
     ui.add_space(10.0);
     let mut act = None;
     ui.horizontal(|ui| {
-        if crate::picks::can(app, &PickRequest::Folder) && ui.add_enabled(!searching, egui::Button::new(tl!("Find in Folder…"))).clicked() {
+        if crate::picks::can(app, &PickRequest::Folder)
+            && ui
+                .add_enabled(!searching, egui::Button::new(tl!("Find in Folder…")))
+                .clicked()
+        {
             act = Some(Act::Pick);
         }
         if searching {
@@ -307,16 +431,26 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     if let Some(folder) = document_folder(app, d) {
         ui.add_space(8.0);
         let copy = d.bool("copy");
-        if widgets::check_tip(ui, tl!("Copy into the document's folder"), copy, true, &folder) {
+        if widgets::check_tip(
+            ui,
+            tl!("Copy into the document's folder"),
+            copy,
+            true,
+            &folder,
+        ) {
             d.fields.insert("copy".into(), json!(!copy));
         }
     }
     let r = match act {
-        Some(Act::Pick) => crate::picks::in_dialog(app, d, |app, d| match crate::picks::folder(app) {
-            Some(folder) => start_search(app, d, &folder),
-            None => Ok(()),
-        }),
-        Some(Act::Stop) => app.run("links.findFiles", json!({ "stop": true })).map(|_| follow(app, d)),
+        Some(Act::Pick) => {
+            crate::picks::in_dialog(app, d, |app, d| match crate::picks::folder(app) {
+                Some(folder) => start_search(app, d, &folder),
+                None => Ok(()),
+            })
+        }
+        Some(Act::Stop) => app
+            .run("links.findFiles", json!({ "stop": true }))
+            .map(|_| follow(app, d)),
         None => Ok(()),
     };
     if let Err(e) = r {
@@ -354,7 +488,11 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         };
         let mut params = json!({ "ids": row["ids"], "path": path });
         // A placed document is relinked where its file is.
-        if d.bool("copy") && row["ids"].as_array().is_some_and(|ids| ids.iter().all(|id| is_image(app, id))) {
+        if d.bool("copy")
+            && row["ids"]
+                .as_array()
+                .is_some_and(|ids| ids.iter().all(|id| is_image(app, id)))
+        {
             params["copy"] = json!(true);
         }
         match app.run("links.relink", params) {
@@ -369,8 +507,13 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let n = relinked.len();
     match failed.first() {
         Some(f) => {
-            let (name, reason) = (f["name"].as_str().unwrap_or_default(), f["error"].as_str().unwrap_or_default());
-            app.status(format!("Relinked {n} image(s); {name} couldn't be relinked: {reason}"));
+            let (name, reason) = (
+                f["name"].as_str().unwrap_or_default(),
+                f["error"].as_str().unwrap_or_default(),
+            );
+            app.status(format!(
+                "Relinked {n} image(s); {name} couldn't be relinked: {reason}"
+            ));
         }
         None if n > 0 => app.status(format!("Relinked {n} image(s)")),
         None => {}
@@ -407,9 +550,14 @@ mod tests {
     /// on two threads.
     fn app_for(root: &Path) -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.services.read = Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string())));
+        app.services.read = Some(Box::new(|p: &str| {
+            std::fs::read(p).map_err(|e| e.to_string())
+        }));
         app.services.pick_folder = Some(Box::new(|| None));
-        app.session.search_rules = Some(Rules { user_content: vec![root.to_path_buf()], ..Rules::default() });
+        app.session.search_rules = Some(Rules {
+            user_content: vec![root.to_path_buf()],
+            ..Rules::default()
+        });
         app.session.search_threads = Some(2);
         app
     }
@@ -436,7 +584,8 @@ mod tests {
     /// A document linking to files `names` in `root/orig`, saved as `root/doc/doc.vectorcraft`; the
     /// files are then deleted and the document opened again → each file's bytes.
     fn opened_without(app: &mut VectorcraftApp, root: &Path, names: &[&str]) -> Vec<Vec<u8>> {
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
         let mut files = vec![];
         for (n, name) in (0..).zip(names) {
             let path = root.join("orig").join(name);
@@ -455,7 +604,13 @@ mod tests {
     /// Draw the dialog until its search ends (10 seconds at most).
     fn searched(app: &mut VectorcraftApp) {
         let until = Instant::now() + Duration::from_secs(10);
-        while app.ui.dialog.as_ref().is_some_and(|d| d.str("state") == "searching") && Instant::now() < until {
+        while app
+            .ui
+            .dialog
+            .as_ref()
+            .is_some_and(|d| d.str("state") == "searching")
+            && Instant::now() < until
+        {
             frame(app);
             std::thread::sleep(Duration::from_millis(5));
         }
@@ -467,7 +622,12 @@ mod tests {
 
     /// The pick of the row named `name`.
     fn pick<'a>(d: &'a Dialog, name: &str) -> &'a Value {
-        let i = d.fields["missing"].as_array().unwrap().iter().position(|r| r["name"] == name).unwrap();
+        let i = d.fields["missing"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|r| r["name"] == name)
+            .unwrap();
         &d.fields["picks"][i]
     }
 
@@ -485,17 +645,35 @@ mod tests {
         write(&b, &bytes[1]);
         write(&at(&root, "found/other/b.png"), b"another file");
         // What Find in Folder… does with the folder picked.
-        app.ui.dialog.as_mut().unwrap().fields.insert("searchFolder".into(), json!(root.join("found")));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("searchFolder".into(), json!(root.join("found")));
         let r = super::super::confirm(&mut app).unwrap();
-        assert!(matches!(r["state"].as_str(), Some("searching" | "done")), "{r}");
+        assert!(
+            matches!(r["state"].as_str(), Some("searching" | "done")),
+            "{r}"
+        );
         assert_eq!(kind(&app), Some(KIND));
         searched(&mut app);
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.str("state"), pick(d, "a.png"), pick(d, "b.png")), ("done".to_string(), &json!(a), &json!(b)));
+        assert_eq!(
+            (d.str("state"), pick(d, "a.png"), pick(d, "b.png")),
+            ("done".to_string(), &json!(a), &json!(b))
+        );
         let text = frame(&mut app);
-        for label in
-            ["Find Linked Files", "a.png", "b.png", "Same file", "Don't Relink", "Find in Folder…", "Copy into the document's folder", "Relink"]
-        {
+        for label in [
+            "Find Linked Files",
+            "a.png",
+            "b.png",
+            "Same file",
+            "Don't Relink",
+            "Find in Folder…",
+            "Copy into the document's folder",
+            "Relink",
+        ] {
             assert!(text.contains(label), "{label} in {text}");
         }
         super::super::confirm(&mut app).unwrap();
@@ -513,19 +691,44 @@ mod tests {
         let bytes = opened_without(&mut app, &root, &["a.png", "b.png", "c.png"]);
         write(&at(&root, "found/a.png"), &bytes[0]);
         write(&at(&root, "found/b.png"), b"not an image");
-        app.ui.dialog.as_mut().unwrap().fields.insert("searchFolder".into(), json!(root.join("found")));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("searchFolder".into(), json!(root.join("found")));
         super::super::confirm(&mut app).unwrap();
         searched(&mut app);
         let d = app.ui.dialog.as_ref().unwrap();
         // b.png's only file is chosen, c.png has none.
-        assert_eq!((pick(d, "b.png"), pick(d, "c.png")), (&json!(at(&root, "found/b.png")), &Value::Null));
+        assert_eq!(
+            (pick(d, "b.png"), pick(d, "c.png")),
+            (&json!(at(&root, "found/b.png")), &Value::Null)
+        );
         assert!(frame(&mut app).contains("Not found"));
         super::super::confirm(&mut app).unwrap();
-        assert!(app.ui.status.starts_with("Relinked 1 image(s); b.png couldn't be relinked: "), "{}", app.ui.status);
+        assert!(
+            app.ui
+                .status
+                .starts_with("Relinked 1 image(s); b.png couldn't be relinked: "),
+            "{}",
+            app.ui.status
+        );
         let d = app.ui.dialog.as_ref().expect("Linked File Not Found again");
-        let names: Vec<&str> = d.fields["missing"].as_array().unwrap().iter().map(|r| r["name"].as_str().unwrap()).collect();
-        assert_eq!((d.kind.as_str(), names.len()), (super::super::missing_links::KIND, 2));
-        assert!(names.contains(&"b.png") && names.contains(&"c.png"), "{names:?}");
+        let names: Vec<&str> = d.fields["missing"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            (d.kind.as_str(), names.len()),
+            (super::super::missing_links::KIND, 2)
+        );
+        assert!(
+            names.contains(&"b.png") && names.contains(&"c.png"),
+            "{names:?}"
+        );
         super::super::cancel(&mut app);
         assert_eq!(app.run("links.check", json!({})).unwrap()["missing"], 2);
     }
@@ -535,7 +738,10 @@ mod tests {
     #[test]
     fn a_file_is_chosen_only_when_the_choice_is_clear() {
         let row = |p: &str| json!({"name": "a.png", "path": p, "ids": [1]});
-        let mut d = Dialog::new(KIND, json!({"missing": [row("/x/a.png"), row("/y/a.png"), row("/z/a.png")], "picks": [], "touched": []}));
+        let mut d = Dialog::new(
+            KIND,
+            json!({"missing": [row("/x/a.png"), row("/y/a.png"), row("/z/a.png")], "picks": [], "touched": []}),
+        );
         let file = |p: &str, m: &str| json!({"path": p, "match": m});
         let answer = |y: Vec<Value>| {
             json!({"state": "searching", "links": [
@@ -548,9 +754,13 @@ mod tests {
         assert_eq!(d.fields["picks"], json!(["/f/a.png", "/f/a.png", null]));
         // Don't Relink chosen for the first row: the next answer leaves it, and the second row has
         // two files now.
-        d.fields.insert("picks".into(), json!([null, "/f/a.png", null]));
+        d.fields
+            .insert("picks".into(), json!([null, "/f/a.png", null]));
         d.fields.insert("touched".into(), json!([0]));
-        update(&mut d, &answer(vec![file("/f/a.png", "name"), file("/g/a.png", "name")]));
+        update(
+            &mut d,
+            &answer(vec![file("/f/a.png", "name"), file("/g/a.png", "name")]),
+        );
         assert_eq!(d.fields["picks"], json!([null, null, null]));
     }
 
@@ -566,18 +776,29 @@ mod tests {
         write(&at(&root, "one/a.png"), b"one file");
         write(&at(&root, "one/x/a.png"), b"another file");
         std::fs::create_dir_all(root.join("two")).unwrap();
-        app.run("ui.findLinksInFolder", json!({"folder": root.join("one")})).unwrap();
+        app.run("ui.findLinksInFolder", json!({"folder": root.join("one")}))
+            .unwrap();
         searched(&mut app);
-        assert_eq!(app.ui.dialog.as_ref().unwrap().fields["found"][0]["files"].as_array().map(Vec::len), Some(2));
+        assert_eq!(
+            app.ui.dialog.as_ref().unwrap().fields["found"][0]["files"]
+                .as_array()
+                .map(Vec::len),
+            Some(2)
+        );
         // The second file chosen, then another folder searched, which has no file of the name.
         let d = app.ui.dialog.as_mut().unwrap();
-        d.fields.insert("picks".into(), json!([at(&root, "one/x/a.png")]));
+        d.fields
+            .insert("picks".into(), json!([at(&root, "one/x/a.png")]));
         d.fields.insert("touched".into(), json!([0]));
-        d.fields.insert("searchFolder".into(), json!(root.join("two")));
+        d.fields
+            .insert("searchFolder".into(), json!(root.join("two")));
         super::super::confirm(&mut app).unwrap();
         searched(&mut app);
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((pick(d, "a.png"), &d.fields["touched"]), (&Value::Null, &json!([])));
+        assert_eq!(
+            (pick(d, "a.png"), &d.fields["touched"]),
+            (&Value::Null, &json!([]))
+        );
     }
 
     #[test]
@@ -593,9 +814,13 @@ mod tests {
         app.session.search_threads = Some(1);
         opened_without(&mut app, &root, &["a.png"]);
         super::super::cancel(&mut app);
-        app.run("ui.findLinksInFolder", json!({"folder": root.join("tree")})).unwrap();
+        app.run("ui.findLinksInFolder", json!({"folder": root.join("tree")}))
+            .unwrap();
         let id = app.ui.links_search.expect("the dialog's search");
-        assert_eq!((kind(&app), app.ui.dialog.as_ref().unwrap().bool("back")), (Some(KIND), false));
+        assert_eq!(
+            (kind(&app), app.ui.dialog.as_ref().unwrap().bool("back")),
+            (Some(KIND), false)
+        );
         super::super::cancel(&mut app);
         assert!(app.ui.dialog.is_none() && app.ui.links_search.is_none());
         // Stopped by the close, unless the walker finished the folders first.
@@ -615,21 +840,49 @@ mod tests {
         let bytes = opened_without(&mut app, &root, &["a.png"]);
         super::super::cancel(&mut app);
         write(&at(&root, "found/a.png"), &bytes[0]);
-        app.run("ui.findLinksInFolder", json!({"folder": root.join("found")})).unwrap();
+        app.run(
+            "ui.findLinksInFolder",
+            json!({"folder": root.join("found")}),
+        )
+        .unwrap();
         searched(&mut app);
         assert!(frame(&mut app).contains("Copy into the document's folder"));
-        app.ui.dialog.as_mut().unwrap().fields.insert("copy".into(), json!(true));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("copy".into(), json!(true));
         let r = super::super::confirm(&mut app).unwrap();
-        assert_eq!((r["relinked"].as_array().unwrap().len(), app.ui.dialog.is_none()), (1, true), "{r}");
+        assert_eq!(
+            (
+                r["relinked"].as_array().unwrap().len(),
+                app.ui.dialog.is_none()
+            ),
+            (1, true),
+            "{r}"
+        );
         let copy = at(&root, "doc/a.png");
         assert_eq!(std::fs::read(&copy).unwrap(), bytes[0]);
         let c = app.run("links.check", json!({})).unwrap();
-        assert_eq!((c["missing"].as_u64(), c["links"][0]["path"].as_str()), (Some(0), Some(&*copy.to_string_lossy())), "{c}");
+        assert_eq!(
+            (c["missing"].as_u64(), c["links"][0]["path"].as_str()),
+            (Some(0), Some(&*copy.to_string_lossy())),
+            "{c}"
+        );
         // An unsaved document has no folder to copy into.
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        let id = app.run("file.place", json!({"path": at(&root, "found/a.png")})).unwrap()["ids"][0].clone();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
+        let id = app
+            .run("file.place", json!({"path": at(&root, "found/a.png")}))
+            .unwrap()["ids"][0]
+            .clone();
         app.run("select.set", json!({"ids": [id]})).unwrap();
-        app.run("ui.findLinksInFolder", json!({"folder": root.join("found")})).unwrap();
+        app.run(
+            "ui.findLinksInFolder",
+            json!({"folder": root.join("found")}),
+        )
+        .unwrap();
         searched(&mut app);
         assert!(!frame(&mut app).contains("Copy into the document's folder"));
     }
@@ -639,28 +892,51 @@ mod tests {
     fn copy_leaves_placed_documents_where_they_are() {
         let root = folder("placed");
         let mut app = app_for(&root);
-        app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 50})).unwrap();
+        app.run("file.new", json!({"width": 100, "height": 100}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 50, "height": 50}),
+        )
+        .unwrap();
         let badge = at(&root, "orig/badge.vectorcraft");
         std::fs::create_dir_all(badge.parent().unwrap()).unwrap();
         app.run("document.save", json!({"path": badge})).unwrap();
         let found = at(&root, "found/badge.vectorcraft");
         write(&found, &std::fs::read(&badge).unwrap());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        app.run("file.place", json!({"path": badge, "link": true})).unwrap();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
+        app.run("file.place", json!({"path": badge, "link": true}))
+            .unwrap();
         let doc = at(&root, "doc/doc.vectorcraft");
         std::fs::create_dir_all(doc.parent().unwrap()).unwrap();
         app.run("document.save", json!({"path": doc})).unwrap();
         std::fs::remove_dir_all(root.join("orig")).unwrap();
         crate::io::open_path(&mut app, &doc.to_string_lossy()).unwrap();
         super::super::cancel(&mut app);
-        app.run("ui.findLinksInFolder", json!({"folder": root.join("found")})).unwrap();
+        app.run(
+            "ui.findLinksInFolder",
+            json!({"folder": root.join("found")}),
+        )
+        .unwrap();
         searched(&mut app);
-        app.ui.dialog.as_mut().unwrap().fields.insert("copy".into(), json!(true));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("copy".into(), json!(true));
         let r = super::super::confirm(&mut app).unwrap();
-        assert_eq!((r["relinked"].as_array().unwrap().len(), &r["failed"]), (1, &json!([])), "{r}");
+        assert_eq!(
+            (r["relinked"].as_array().unwrap().len(), &r["failed"]),
+            (1, &json!([])),
+            "{r}"
+        );
         assert!(!at(&root, "doc/badge.vectorcraft").exists());
-        assert_eq!(app.run("links.check", json!({})).unwrap()["links"][0]["path"], json!(found));
+        assert_eq!(
+            app.run("links.check", json!({})).unwrap()["links"][0]["path"],
+            json!(found)
+        );
     }
 
     /// The Links panel's Find in Folder… (`ui.findLinksInFolder`): the selected linked files, else
@@ -670,14 +946,21 @@ mod tests {
         let root = folder("panel");
         let mut app = app_for(&root);
         app.services.pick_folder = None;
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        assert!(!crate::menus::enabled(&app, "ui.findLinksInFolder"), "no folder picker (the web)");
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
+        assert!(
+            !crate::menus::enabled(&app, "ui.findLinksInFolder"),
+            "no folder picker (the web)"
+        );
         let picked = root.join("found").to_string_lossy().into_owned();
         let answer = picked.clone();
         app.services.pick_folder = Some(Box::new(move || Some(answer.clone())));
         assert!(crate::menus::enabled(&app, "ui.findLinksInFolder"));
         // Nothing to look for: no folder is asked for.
-        assert_eq!(app.run("ui.findLinksInFolder", json!({})).err().as_deref(), Some("No linked files to look for"));
+        assert_eq!(
+            app.run("ui.findLinksInFolder", json!({})).err().as_deref(),
+            Some("No linked files to look for")
+        );
         let here = at(&root, "found/here.png");
         write(&here, &png(1));
         let id = app.run("file.place", json!({"path": here})).unwrap()["ids"][0].clone();
@@ -686,11 +969,21 @@ mod tests {
         assert!(menu.contains("Find in Folder…"), "{menu}");
         app.run("ui.findLinksInFolder", json!({})).unwrap();
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.kind.as_str(), d.fields["missing"][0]["name"].as_str(), d.str("folder")), (KIND, Some("here.png"), picked));
+        assert_eq!(
+            (
+                d.kind.as_str(),
+                d.fields["missing"][0]["name"].as_str(),
+                d.str("folder")
+            ),
+            (KIND, Some("here.png"), picked)
+        );
         // here.png isn't missing: the dialog asks about linked files.
         assert!(frame(&mut app).contains("Choose the file to relink each linked file to."));
         searched(&mut app);
-        assert_eq!(pick(app.ui.dialog.as_ref().unwrap(), "here.png"), &json!(here));
+        assert_eq!(
+            pick(app.ui.dialog.as_ref().unwrap(), "here.png"),
+            &json!(here)
+        );
     }
 
     /// The Links panel's Find in Folder… asks for the folder off the UI thread (#867): Find Linked
@@ -700,21 +993,30 @@ mod tests {
         let root = folder("later");
         let mut app = app_for(&root);
         let (shown, _) = crate::tests_picks::off_the_ui_thread(&mut app.services);
-        app.services.read = Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string())));
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.services.read = Some(Box::new(|p: &str| {
+            std::fs::read(p).map_err(|e| e.to_string())
+        }));
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
         let here = at(&root, "found/here.png");
         write(&here, &png(1));
         let id = app.run("file.place", json!({"path": here})).unwrap()["ids"][0].clone();
         app.run("select.set", json!({"ids": [id]})).unwrap();
         // Nothing opens until the picker answers.
         assert!(app.run("ui.findLinksInFolder", json!({})).is_err());
-        assert_eq!((shown.requests(), kind(&app)), (vec![PickRequest::Folder], None));
+        assert_eq!(
+            (shown.requests(), kind(&app)),
+            (vec![PickRequest::Folder], None)
+        );
         let found = root.join("found").to_string_lossy().into_owned();
         shown.answer(&[found.as_str()]);
         crate::picks::poll(&mut app, &egui::Context::default());
         let d = app.ui.dialog.as_ref().expect("Find Linked Files");
         assert_eq!((d.kind.as_str(), d.str("folder")), (KIND, found));
         searched(&mut app);
-        assert_eq!(pick(app.ui.dialog.as_ref().unwrap(), "here.png"), &json!(here));
+        assert_eq!(
+            pick(app.ui.dialog.as_ref().unwrap(), "here.png"),
+            &json!(here)
+        );
     }
 }

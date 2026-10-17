@@ -76,10 +76,7 @@ impl SystemClockCore {
     ///
     /// Corresponds to upstream `m_context_writer = writer;` in the
     /// ServiceManager setup code.
-    pub fn set_context_writer<T: ContextWriter + Send + 'static>(
-        &mut self,
-        writer: Arc<Mutex<T>>,
-    ) {
+    pub fn set_context_writer<T: ContextWriter + Send + 'static>(&mut self, writer: Arc<Mutex<T>>) {
         self.context_writer = Some(writer);
     }
 

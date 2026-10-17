@@ -1,11 +1,11 @@
 use core::f32::consts::FRAC_PI_2;
 use core::mem;
 
-use crate::{primitives::dim3::triangle3d, Indices, Mesh, PerimeterSegment, VertexAttributeValues};
+use crate::{Indices, Mesh, PerimeterSegment, VertexAttributeValues, primitives::dim3::triangle3d};
 use bevy_asset::RenderAssetUsages;
 
 use super::{Extrudable, MeshBuilder, Meshable};
-use bevy_math::{ops, FloatExt, Vec2, Vec3};
+use bevy_math::{FloatExt, Vec2, Vec3, ops};
 use bevy_reflect::prelude::*;
 use bevy_shape::{
     Annulus, Capsule2d, Circle, CircularSector, CircularSegment, ConvexPolygon, Ellipse,
@@ -1446,7 +1446,9 @@ where
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
             .with_inserted_indices(Indices::U32(indices))
         } else {
-            panic!("The inner and outer meshes should have the same number of vertices, and have required attributes");
+            panic!(
+                "The inner and outer meshes should have the same number of vertices, and have required attributes"
+            );
         }
     }
 }

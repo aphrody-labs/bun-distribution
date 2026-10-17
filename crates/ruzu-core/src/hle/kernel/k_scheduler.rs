@@ -363,9 +363,8 @@ mod tests {
         let switch = Fiber::new(Box::new(move || {
             let scheduler = scheduler_weak.upgrade().unwrap();
             // Both locks must be available while the caller is suspended.
-            let this_fiber = Arc::downgrade(
-                scheduler.try_lock().unwrap().switch_fiber.as_ref().unwrap(),
-            );
+            let this_fiber =
+                Arc::downgrade(scheduler.try_lock().unwrap().switch_fiber.as_ref().unwrap());
             drop(scheduler);
             assert_eq!(
                 original_weak
@@ -1061,7 +1060,13 @@ mod tests {
         let _ = KScheduler::update_highest_priority_threads_impl(&mut schedulers, &mut gsc);
         gsc.m_scheduler_lock.unlock();
 
-        assert!(!*current_thread.lock().unwrap().dummy_thread_wait.0.lock().unwrap());
+        assert!(!*current_thread
+            .lock()
+            .unwrap()
+            .dummy_thread_wait
+            .0
+            .lock()
+            .unwrap());
 
         crate::hle::kernel::kernel::set_current_emu_thread(None);
     }

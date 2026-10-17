@@ -107,7 +107,9 @@ pub enum DsProtVersionNumber {
 const DSPROT_VERSIONS: &[DsProtVersion] = &[
     DsProtVersion {
         number: DsProtVersionNumber::V1_00,
-        detect_signature: [0xe3527270, 0xbafe77fc, 0xe59e0989, 0xe1c2f9af, 0xea018a51, 0xeb004ae2],
+        detect_signature: [
+            0xe3527270, 0xbafe77fc, 0xe59e0989, 0xe1c2f9af, 0xea018a51, 0xeb004ae2,
+        ],
         algo: &DsProtAlgoV1 {
             encrypted_range_start_signature: [
                 0xe92d0001, 0xe1a0000f, 0xe2800010, 0xe8bd0001, 0xea000000,
@@ -116,7 +118,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_05,
-        detect_signature: [0xbafe0f18, 0xe59caf7a, 0xe2861884, 0xe1c5da54, 0xea018a6b, 0xeb0070c2],
+        detect_signature: [
+            0xbafe0f18, 0xe59caf7a, 0xe2861884, 0xe1c5da54, 0xea018a6b, 0xeb0070c2,
+        ],
         algo: &DsProtAlgoV1 {
             encrypted_range_start_signature: [
                 0xe92d0001, 0xe3a0000c, 0xe080000f, 0xe8bd0001, 0xea000000,
@@ -125,7 +129,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_06,
-        detect_signature: [0xbafe9b10, 0xe59cfa77, 0xe2862a71, 0xe1c54e3d, 0xea01879d, 0xeb005fdf],
+        detect_signature: [
+            0xbafe9b10, 0xe59cfa77, 0xe2862a71, 0xe1c54e3d, 0xea01879d, 0xeb005fdf,
+        ],
         algo: &DsProtAlgoV1 {
             encrypted_range_start_signature: [
                 0xe92d000f, 0xe3a0100c, 0xe081000f, 0xe8bd000f, 0xea000000,
@@ -134,7 +140,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_08,
-        detect_signature: [0xbafe4040, 0xe59c2300, 0xe2852226, 0xe1c5cbe8, 0xea01612f, 0xeb004979],
+        detect_signature: [
+            0xbafe4040, 0xe59c2300, 0xe2852226, 0xe1c5cbe8, 0xea01612f, 0xeb004979,
+        ],
         algo: &DsProtAlgoV1 {
             encrypted_range_start_signature: [
                 0xe92d00ff, 0xe1a0000f, 0xe2800010, 0xe8bd00ff, 0xea000000,
@@ -143,7 +151,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_10,
-        detect_signature: [0xbafe29a2, 0xe59cc95b, 0xe285d70a, 0xe1c5442c, 0xea01fd7e, 0xeb001cfc],
+        detect_signature: [
+            0xbafe29a2, 0xe59cc95b, 0xe285d70a, 0xe1c5442c, 0xea01fd7e, 0xeb001cfc,
+        ],
         algo: &DsProtAlgoV1 {
             encrypted_range_start_signature: [
                 0xe92d00ff, 0xe3a00006, 0xe08f0080, 0xe8bd00ff, 0xea000000,
@@ -152,7 +162,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_20,
-        detect_signature: [0xe3580f00, 0xbafe7df8, 0xe284dff9, 0xe1c2059d, 0xea014de4, 0xeb002f0c],
+        detect_signature: [
+            0xe3580f00, 0xbafe7df8, 0xe284dff9, 0xe1c2059d, 0xea014de4, 0xeb002f0c,
+        ],
         algo: &DsProtAlgoV1 {
             encrypted_range_start_signature: [
                 0xe92d03ff, 0xe3a00006, 0xe08f0080, 0xe8bd03ff, 0xea000000,
@@ -161,7 +173,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_22,
-        detect_signature: [0xe3581567, 0xbafee339, 0xe284dad2, 0xe1c27622, 0xea017231, 0xeb0037ee],
+        detect_signature: [
+            0xe3581567, 0xbafee339, 0xe284dad2, 0xe1c27622, 0xea017231, 0xeb0037ee,
+        ],
         algo: &DsProtAlgoV1 {
             encrypted_range_start_signature: [
                 0xe92d03ff, 0xe3a00003, 0xe08f0100, 0xe8bd03ff, 0xea000000,
@@ -170,57 +184,109 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_23,
-        detect_signature: [0xebaa0113, 0xe4064ec7, 0xef013596, 0xe5212f83, 0xe7ee335b, 0xe83b197c],
-        algo: &DsProtAlgoV2 { reference_offset: 0x1300, unkeyed_encryption_xor: 0xf0566556 },
+        detect_signature: [
+            0xebaa0113, 0xe4064ec7, 0xef013596, 0xe5212f83, 0xe7ee335b, 0xe83b197c,
+        ],
+        algo: &DsProtAlgoV2 {
+            reference_offset: 0x1300,
+            unkeyed_encryption_xor: 0xf0566556,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_23Z,
-        detect_signature: [0xebaa0114, 0x40064eb7, 0x5f013696, 0xe5211f83, 0xe7ef335b, 0xe84b197c],
-        algo: &DsProtAlgoV2 { reference_offset: 0x1400, unkeyed_encryption_xor: 0xd0685665 },
+        detect_signature: [
+            0xebaa0114, 0x40064eb7, 0x5f013696, 0xe5211f83, 0xe7ef335b, 0xe84b197c,
+        ],
+        algo: &DsProtAlgoV2 {
+            reference_offset: 0x1400,
+            unkeyed_encryption_xor: 0xd0685665,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_25,
-        detect_signature: [0xebb6df66, 0xe42f6211, 0xef56b5aa, 0xe5b903fd, 0xe7d29154, 0xe859697c],
-        algo: &DsProtAlgoV3 { reference_offset: 0x1500, unkeyed_encryption_xor: 0xf0556655 },
+        detect_signature: [
+            0xebb6df66, 0xe42f6211, 0xef56b5aa, 0xe5b903fd, 0xe7d29154, 0xe859697c,
+        ],
+        algo: &DsProtAlgoV3 {
+            reference_offset: 0x1500,
+            unkeyed_encryption_xor: 0xf0556655,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_26,
-        detect_signature: [0xeb8fbc31, 0xe4ec10cf, 0xef73e592, 0xe59a0b7e, 0xe78cb309, 0xe87f3ed1],
-        algo: &DsProtAlgoV4 { reference_offset: 0x1200, unkeyed_encryption_xor: 0xf03852cb },
+        detect_signature: [
+            0xeb8fbc31, 0xe4ec10cf, 0xef73e592, 0xe59a0b7e, 0xe78cb309, 0xe87f3ed1,
+        ],
+        algo: &DsProtAlgoV4 {
+            reference_offset: 0x1200,
+            unkeyed_encryption_xor: 0xf03852cb,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_27,
-        detect_signature: [0xe8dffe17, 0xe43df0de, 0x2ae8335c, 0x0ac09826, 0xe7a838dc, 0xe891a6fc],
-        algo: &DsProtAlgoV4 { reference_offset: 0x1600, unkeyed_encryption_xor: 0xf0618c46 },
+        detect_signature: [
+            0xe8dffe17, 0xe43df0de, 0x2ae8335c, 0x0ac09826, 0xe7a838dc, 0xe891a6fc,
+        ],
+        algo: &DsProtAlgoV4 {
+            reference_offset: 0x1600,
+            unkeyed_encryption_xor: 0xf0618c46,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V1_28,
-        detect_signature: [0xe2ed720b, 0xef69d1b1, 0x2ec32a41, 0x1aa3e665, 0xe9e1c153, 0xe49e8d9c],
-        algo: &DsProtAlgoV4 { reference_offset: 0x1000, unkeyed_encryption_xor: 0xf0b9a2ea },
+        detect_signature: [
+            0xe2ed720b, 0xef69d1b1, 0x2ec32a41, 0x1aa3e665, 0xe9e1c153, 0xe49e8d9c,
+        ],
+        algo: &DsProtAlgoV4 {
+            reference_offset: 0x1000,
+            unkeyed_encryption_xor: 0xf0b9a2ea,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_00,
-        detect_signature: [0x0819ff33, 0xe4a1ef1c, 0x5a85a2b3, 0xea0d2a0f, 0xe0d6bd78, 0xe29d9377],
-        algo: &DsProtAlgoV5 { reference_offset: 0x1700, unkeyed_encryption_xor: 0xa5ca49b3 },
+        detect_signature: [
+            0x0819ff33, 0xe4a1ef1c, 0x5a85a2b3, 0xea0d2a0f, 0xe0d6bd78, 0xe29d9377,
+        ],
+        algo: &DsProtAlgoV5 {
+            reference_offset: 0x1700,
+            unkeyed_encryption_xor: 0xa5ca49b3,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_00Instant,
-        detect_signature: [0x0849ea8b, 0xe33b6243, 0x53b2d501, 0xe6847168, 0xebd886d7, 0xee3c09c0],
-        algo: &DsProtAlgoV5 { reference_offset: 0x1700, unkeyed_encryption_xor: 0xa5ca49b3 },
+        detect_signature: [
+            0x0849ea8b, 0xe33b6243, 0x53b2d501, 0xe6847168, 0xebd886d7, 0xee3c09c0,
+        ],
+        algo: &DsProtAlgoV5 {
+            reference_offset: 0x1700,
+            unkeyed_encryption_xor: 0xa5ca49b3,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_01,
-        detect_signature: [0x08d5310e, 0xe41bdb46, 0x5a3d9627, 0xeaf8fc79, 0xe016c9e7, 0xe2eb8130],
-        algo: &DsProtAlgoV5 { reference_offset: 0x2100, unkeyed_encryption_xor: 0x7fec9df1 },
+        detect_signature: [
+            0x08d5310e, 0xe41bdb46, 0x5a3d9627, 0xeaf8fc79, 0xe016c9e7, 0xe2eb8130,
+        ],
+        algo: &DsProtAlgoV5 {
+            reference_offset: 0x2100,
+            unkeyed_encryption_xor: 0x7fec9df1,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_01Instant,
-        detect_signature: [0x08637dd1, 0xe3618cb3, 0x5356f520, 0xe6b110ca, 0xeb4c1e5c, 0xeed91028],
-        algo: &DsProtAlgoV5 { reference_offset: 0x2100, unkeyed_encryption_xor: 0x7fec9df1 },
+        detect_signature: [
+            0x08637dd1, 0xe3618cb3, 0x5356f520, 0xe6b110ca, 0xeb4c1e5c, 0xeed91028,
+        ],
+        algo: &DsProtAlgoV5 {
+            reference_offset: 0x2100,
+            unkeyed_encryption_xor: 0x7fec9df1,
+        },
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_03,
-        detect_signature: [0x08b76046, 0xe4177f2f, 0x5ab21c99, 0xea2af4b1, 0xe0fe885a, 0xe202fc9e],
+        detect_signature: [
+            0x08b76046, 0xe4177f2f, 0x5ab21c99, 0xea2af4b1, 0xe0fe885a, 0xe202fc9e,
+        ],
         algo: &DsProtAlgoV6 {
             reference_offset: 0x3200,
             unkeyed_encryption_xor: 0x0976afcc,
@@ -231,7 +297,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_03Instant,
-        detect_signature: [0x08b76046, 0xe4177f2f, 0x5ab21c99, 0xea2af4b1, 0xe0fe885a, 0xe2029efc],
+        detect_signature: [
+            0x08b76046, 0xe4177f2f, 0x5ab21c99, 0xea2af4b1, 0xe0fe885a, 0xe2029efc,
+        ],
         algo: &DsProtAlgoV6 {
             reference_offset: 0x3200,
             unkeyed_encryption_xor: 0x0976afcc,
@@ -242,7 +310,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_05,
-        detect_signature: [0x08a27510, 0xe47ab3c3, 0x5a289302, 0xeaa6cac8, 0xe00d75d5, 0xe2d2fe01],
+        detect_signature: [
+            0x08a27510, 0xe47ab3c3, 0x5a289302, 0xeaa6cac8, 0xe00d75d5, 0xe2d2fe01,
+        ],
         algo: &DsProtAlgoV6 {
             reference_offset: 0x2200,
             unkeyed_encryption_xor: 0x0a471abb,
@@ -253,7 +323,9 @@ const DSPROT_VERSIONS: &[DsProtVersion] = &[
     },
     DsProtVersion {
         number: DsProtVersionNumber::V2_05Instant,
-        detect_signature: [0x08a27510, 0xe47ab3c3, 0x5a289302, 0xeaa6cac8, 0xe00d75d5, 0xe2d2fe00],
+        detect_signature: [
+            0x08a27510, 0xe47ab3c3, 0x5a289302, 0xeaa6cac8, 0xe00d75d5, 0xe2d2fe00,
+        ],
         algo: &DsProtAlgoV6 {
             reference_offset: 0x2200,
             unkeyed_encryption_xor: 0x0a471abb,
@@ -368,7 +440,10 @@ impl DsProtInfo {
 
         for version in DSPROT_VERSIONS {
             // Identify if DS Protect might exist
-            if !words.windows(6).any(|window| window == version.detect_signature) {
+            if !words
+                .windows(6)
+                .any(|window| window == version.detect_signature)
+            {
                 continue;
             }
 
@@ -499,7 +574,12 @@ trait DsProtAlgo {
             &mut unkeyed_encrypted_functions,
             &mut relocations,
         )?;
-        self.decrypt_wrappers(options, words, &mut keyed_encrypted_functions, &mut relocations)?;
+        self.decrypt_wrappers(
+            options,
+            words,
+            &mut keyed_encrypted_functions,
+            &mut relocations,
+        )?;
 
         relocations.sort_unstable_by_key(|r| r.from_address);
         relocations.dedup_by_key(|r| r.from_address);
@@ -550,7 +630,7 @@ trait DsProtAlgo {
                         *ins = new_ins;
                         xor = new_xor;
                     }
-                },
+                }
                 EncryptionType::Keyed(seed_key) => {
                     let mut rc4 = self.init_rc4(seed_key, function.size);
                     let mut prev_ins = 0;
@@ -558,7 +638,7 @@ trait DsProtAlgo {
                         *ins = self.encrypt_instruction(&mut rc4, *ins, prev_ins);
                         prev_ins = *ins;
                     }
-                },
+                }
             }
         }
 
@@ -668,36 +748,42 @@ trait DsProtAlgo {
         let mut function_tables = Vec::new();
         for (i, window) in words.windows(4).enumerate() {
             let address = base_address + i as u32 * 4;
-            let (pool_offset, fn_offset, primary_decoder) = if window[0..2]
-                == [0xe38f0000, 0xe2900004]
-                && window[2] >> 24 == 0x1a
-            {
-                let (fn_offset, primary_decoder) = if words[i - 1] == 0xe8a007fe {
-                    let fn_offset =
-                        words[..=i].iter().rev().position(|&word| word == 0xe92d4000).ok_or_else(
-                            || TableDecoderStartNotFoundSnafu { near_address: address }.build(),
-                        )? as u32;
-                    (fn_offset * 4, true)
+            let (pool_offset, fn_offset, primary_decoder) =
+                if window[0..2] == [0xe38f0000, 0xe2900004] && window[2] >> 24 == 0x1a {
+                    let (fn_offset, primary_decoder) = if words[i - 1] == 0xe8a007fe {
+                        let fn_offset = words[..=i]
+                            .iter()
+                            .rev()
+                            .position(|&word| word == 0xe92d4000)
+                            .ok_or_else(|| {
+                                TableDecoderStartNotFoundSnafu {
+                                    near_address: address,
+                                }
+                                .build()
+                            })? as u32;
+                        (fn_offset * 4, true)
+                    } else {
+                        (0, false)
+                    };
+                    (0xc, fn_offset, primary_decoder)
+                } else if window[0..2] == [0xe92d4000, 0xe28f0004]
+                    && window[2] >> 24 == 0xeb
+                    && window[3] == 0xe8bd8000
+                {
+                    (0x10, 0, false)
                 } else {
-                    (0, false)
+                    continue;
                 };
-                (0xc, fn_offset, primary_decoder)
-            } else if window[0..2] == [0xe92d4000, 0xe28f0004]
-                && window[2] >> 24 == 0xeb
-                && window[3] == 0xe8bd8000
-            {
-                (0x10, 0, false)
-            } else {
-                continue;
-            };
 
             let pool_address = address + pool_offset;
             let pool_position = (pool_address - base_address) as usize / 4;
             let mut pool_iter = words[pool_position..].iter().copied().enumerate();
             let table_end_address = loop {
                 let Some((i, word)) = pool_iter.next() else {
-                    return DecoderTableEndNotFoundSnafu { decoder_address: address - fn_offset }
-                        .fail();
+                    return DecoderTableEndNotFoundSnafu {
+                        decoder_address: address - fn_offset,
+                    }
+                    .fail();
                 };
                 if word == 0 && matches!(pool_iter.next(), Some((_, 0))) {
                     break pool_address + i as u32 * 4 + 8;
@@ -733,7 +819,7 @@ trait DsProtAlgo {
                             // Points to .text, so this must be a different unrelated pointer
                             (None, None)
                         }
-                    },
+                    }
                     // Primary without garbage address
                     (true, Some(overwrite_address), None) => (None, Some(overwrite_address)),
                     // Primary with garbage address
@@ -745,7 +831,7 @@ trait DsProtAlgo {
                             // Points to .text, so this must be a different unrelated pointer
                             (None, None)
                         }
-                    },
+                    }
                 };
 
             // Primary decoder always overwrites itself after it runs
@@ -767,7 +853,11 @@ trait DsProtAlgo {
                 // return instruction literal (0xe12fff1e <bx lr>)
                 pool_size: Some(length * 8 + has_garbage as u32 * 4 + has_overwrite as u32 * 8),
                 encryption: EncryptionType::None,
-                function_table: Some(FunctionTable { length, has_garbage, has_overwrite }),
+                function_table: Some(FunctionTable {
+                    length,
+                    has_garbage,
+                    has_overwrite,
+                }),
             });
         }
 
@@ -782,11 +872,17 @@ trait DsProtAlgo {
         unkeyed_encrypted_functions: &mut [DsProtFunction],
         relocations: &mut Vec<DsProtRelocation>,
     ) -> Result<Vec<DsProtFunction>, DsProtError> {
-        let AlgoDecryptOptions { base_address, end_address, .. } = *options;
+        let AlgoDecryptOptions {
+            base_address,
+            end_address,
+            ..
+        } = *options;
 
         let mut decryption_wrappers = Vec::new();
         for function in unkeyed_encrypted_functions {
-            let EncryptionType::Unkeyed = function.encryption else { continue };
+            let EncryptionType::Unkeyed = function.encryption else {
+                continue;
+            };
 
             let func_offset = ((function.address - base_address) / 4) as usize;
             let function_end_address = function.address + function.size;
@@ -1191,12 +1287,19 @@ trait DsProtAlgo {
         function_tables: &[DsProtFunction],
         relocations: &mut Vec<DsProtRelocation>,
     ) -> Result<Vec<DsProtFunction>, DsProtError> {
-        let AlgoDecryptOptions { base_address, end_address, .. } = *options;
+        let AlgoDecryptOptions {
+            base_address,
+            end_address,
+            ..
+        } = *options;
 
         let mut functions = Vec::new();
         for function in function_tables {
-            let Some(FunctionTable { length, has_garbage, has_overwrite }) =
-                function.function_table
+            let Some(FunctionTable {
+                length,
+                has_garbage,
+                has_overwrite,
+            }) = function.function_table
             else {
                 continue;
             };
@@ -1257,25 +1360,23 @@ trait DsProtAlgo {
             }
 
             let mut current_address = function_table_address + length * 8;
-            if has_garbage
-                && let Some(pool_word) = pool_iter.next() {
-                    let garbage_address = pool_word - self.reference_offset();
-                    relocations.push(DsProtRelocation {
-                        from_address: current_address,
-                        to_address: garbage_address,
-                        addend: self.reference_offset(),
-                    });
-                    current_address += 4;
-                }
-            if has_overwrite
-                && let Some(pool_word) = pool_iter.next() {
-                    let overwrite_address = pool_word - self.reference_offset();
-                    relocations.push(DsProtRelocation {
-                        from_address: current_address,
-                        to_address: overwrite_address,
-                        addend: self.reference_offset(),
-                    });
-                }
+            if has_garbage && let Some(pool_word) = pool_iter.next() {
+                let garbage_address = pool_word - self.reference_offset();
+                relocations.push(DsProtRelocation {
+                    from_address: current_address,
+                    to_address: garbage_address,
+                    addend: self.reference_offset(),
+                });
+                current_address += 4;
+            }
+            if has_overwrite && let Some(pool_word) = pool_iter.next() {
+                let overwrite_address = pool_word - self.reference_offset();
+                relocations.push(DsProtRelocation {
+                    from_address: current_address,
+                    to_address: overwrite_address,
+                    addend: self.reference_offset(),
+                });
+            }
         }
         Ok(functions)
     }
@@ -1287,7 +1388,11 @@ trait DsProtAlgo {
         decryption_wrappers: &mut [DsProtFunction],
         relocations: &mut Vec<DsProtRelocation>,
     ) -> Result<(), DsProtError> {
-        let AlgoDecryptOptions { base_address, end_address, .. } = *options;
+        let AlgoDecryptOptions {
+            base_address,
+            end_address,
+            ..
+        } = *options;
 
         for function in decryption_wrappers {
             let EncryptionType::Keyed(seed_key) = function.encryption else {
@@ -1468,7 +1573,11 @@ trait DsProtAlgo {
         words: &mut [u32],
         relocations: &[DsProtRelocation],
     ) -> Result<(), DsProtError> {
-        let &AlgoDecryptOptions { base_address, end_address, .. } = options;
+        let &AlgoDecryptOptions {
+            base_address,
+            end_address,
+            ..
+        } = options;
         for relocation in relocations {
             let Some(relocated_value) =
                 words.get_mut((relocation.from_address - base_address) as usize / 4)
@@ -1691,7 +1800,11 @@ impl DsProtAlgo for DsProtAlgoV1 {
         words: &mut [u32],
         options: &AlgoDecryptOptions,
     ) -> Result<DsProtDecryptResult, DsProtError> {
-        let AlgoDecryptOptions { base_address, version, .. } = *options;
+        let AlgoDecryptOptions {
+            base_address,
+            version,
+            ..
+        } = *options;
 
         // Find the starts and keys of all encrypted code ranges
         let encrypted_range_starts: Vec<(u32, u32)> = words
@@ -1756,7 +1869,7 @@ impl DsProtAlgo for DsProtAlgoV2 {
         let new_ins = match InstructionCategory::new(ins) {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 encrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             InstructionCategory::B => encrypt_branch_1(self.reference_offset, ins),
             InstructionCategory::Other => ins ^ xor,
         };
@@ -1767,7 +1880,7 @@ impl DsProtAlgo for DsProtAlgoV2 {
         let new_ins = match InstructionCategory::new(ins) {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 decrypt_branch_1(self.reference_offset, ins)
-            },
+            }
             InstructionCategory::B => decrypt_branch_2(self.reference_offset, ins),
             InstructionCategory::Other => ins ^ xor,
         };
@@ -1778,7 +1891,7 @@ impl DsProtAlgo for DsProtAlgoV2 {
         match InstructionCategory::new(ins) {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 decrypt_branch_1(self.reference_offset, ins)
-            },
+            }
             InstructionCategory::B => decrypt_branch_2(self.reference_offset, ins),
             InstructionCategory::Other => {
                 let bytes = ins.to_le_bytes();
@@ -1788,7 +1901,7 @@ impl DsProtAlgo for DsProtAlgoV2 {
                     bytes[2] ^ 1,
                     bytes[3],
                 ])
-            },
+            }
         }
     }
 
@@ -1796,7 +1909,7 @@ impl DsProtAlgo for DsProtAlgoV2 {
         match InstructionCategory::new(ins) {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 encrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             InstructionCategory::B => encrypt_branch_1(self.reference_offset, ins),
             InstructionCategory::Other => {
                 let bytes = ins.to_le_bytes();
@@ -1806,7 +1919,7 @@ impl DsProtAlgo for DsProtAlgoV2 {
                     bytes[2] ^ 1,
                     bytes[3],
                 ])
-            },
+            }
         }
     }
 
@@ -1834,15 +1947,15 @@ impl DsProtAlgo for DsProtAlgoV3 {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 let new_ins = encrypt_branch_2(self.reference_offset, ins);
                 (new_ins, xor)
-            },
+            }
             InstructionCategory::B => {
                 let new_ins = ins ^ xor ^ 0x01000000; // flip link bit
                 (new_ins, (xor << 1).wrapping_add(ins) & 0xffffff)
-            },
+            }
             InstructionCategory::Other => {
                 let new_ins = ins ^ xor;
                 (new_ins, (xor << 1).wrapping_add(ins) & 0xffffff)
-            },
+            }
         }
     }
 
@@ -1851,15 +1964,15 @@ impl DsProtAlgo for DsProtAlgoV3 {
             InstructionCategory::BlxImm | InstructionCategory::B => {
                 let new_ins = decrypt_branch_2(self.reference_offset, ins);
                 (new_ins, xor)
-            },
+            }
             InstructionCategory::Bl => {
                 let new_ins = ins ^ xor ^ 0x01000000; // flip link bit
                 (new_ins, (xor << 1).wrapping_add(new_ins) & 0xffffff)
-            },
+            }
             InstructionCategory::Other => {
                 let new_ins = ins ^ xor;
                 (new_ins, (xor << 1).wrapping_add(new_ins) & 0xffffff)
-            },
+            }
         }
     }
 
@@ -1867,7 +1980,7 @@ impl DsProtAlgo for DsProtAlgoV3 {
         match InstructionCategory::new(ins) {
             InstructionCategory::BlxImm | InstructionCategory::B => {
                 decrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             category => {
                 let bytes = ins.to_le_bytes();
                 u32::from_le_bytes([
@@ -1880,7 +1993,7 @@ impl DsProtAlgo for DsProtAlgoV3 {
                         bytes[3]
                     },
                 ])
-            },
+            }
         }
     }
 
@@ -1888,7 +2001,7 @@ impl DsProtAlgo for DsProtAlgoV3 {
         match InstructionCategory::new(ins) {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 encrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             category => {
                 let bytes = ins.to_le_bytes();
                 u32::from_le_bytes([
@@ -1901,7 +2014,7 @@ impl DsProtAlgo for DsProtAlgoV3 {
                         bytes[3]
                     },
                 ])
-            },
+            }
         }
     }
 
@@ -1929,15 +2042,15 @@ impl DsProtAlgo for DsProtAlgoV4 {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 let new_ins = encrypt_branch_2(self.reference_offset, ins);
                 (new_ins, (xor ^ (ins >> 24)) & 0xffffff)
-            },
+            }
             InstructionCategory::B => {
                 let new_ins = ins ^ xor ^ 0x01000000; // flip link bit
                 (new_ins, (xor ^ ins ^ (ins >> 8)) & 0xffffff)
-            },
+            }
             InstructionCategory::Other => {
                 let new_ins = ins ^ xor;
                 (new_ins, (xor ^ ins ^ (ins >> 8)) & 0xffffff)
-            },
+            }
         }
     }
 
@@ -1946,15 +2059,15 @@ impl DsProtAlgo for DsProtAlgoV4 {
             InstructionCategory::BlxImm | InstructionCategory::B => {
                 let new_ins = decrypt_branch_2(self.reference_offset, ins);
                 (new_ins, (xor ^ (new_ins >> 24)) & 0xffffff)
-            },
+            }
             InstructionCategory::Bl => {
                 let new_ins = ins ^ xor ^ 0x01000000; // flip link bit
                 (new_ins, (xor ^ new_ins ^ (new_ins >> 8)) & 0xffffff)
-            },
+            }
             InstructionCategory::Other => {
                 let new_ins = ins ^ xor;
                 (new_ins, (xor ^ new_ins ^ (new_ins >> 8)) & 0xffffff)
-            },
+            }
         }
     }
 
@@ -1963,7 +2076,7 @@ impl DsProtAlgo for DsProtAlgoV4 {
             InstructionCategory::BlxImm | InstructionCategory::B => {
                 rc4.update_x(|x| x.wrapping_add((ins >> 24) as u8));
                 decrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             category => {
                 let bytes = ins.to_le_bytes();
                 let result = u32::from_le_bytes([
@@ -1978,7 +2091,7 @@ impl DsProtAlgo for DsProtAlgoV4 {
                 ]);
                 rc4.update_x(|x| bytes[2].wrapping_mul(x).wrapping_sub(bytes[3]));
                 result
-            },
+            }
         }
     }
 
@@ -1988,7 +2101,7 @@ impl DsProtAlgo for DsProtAlgoV4 {
                 let new_ins = encrypt_branch_2(self.reference_offset, ins);
                 rc4.update_x(|x| x.wrapping_add((new_ins >> 24) as u8));
                 new_ins
-            },
+            }
             category => {
                 let bytes = ins.to_le_bytes();
                 let new_bytes = [
@@ -2004,7 +2117,7 @@ impl DsProtAlgo for DsProtAlgoV4 {
                 let result = u32::from_le_bytes(new_bytes);
                 rc4.update_x(|x| new_bytes[2].wrapping_mul(x).wrapping_sub(new_bytes[3]));
                 result
-            },
+            }
         }
     }
 
@@ -2044,7 +2157,7 @@ impl DsProtAlgo for DsProtAlgoV5 {
             InstructionCategory::BlxImm | InstructionCategory::B => {
                 rc4.update_x(|x| x.wrapping_add((ins >> 24) as u8));
                 decrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             category => {
                 let bytes = ins.to_le_bytes();
                 let result = u32::from_le_bytes([
@@ -2059,7 +2172,7 @@ impl DsProtAlgo for DsProtAlgoV5 {
                 ]);
                 rc4.update_x(|x| x.wrapping_sub(bytes[3]));
                 result
-            },
+            }
         }
     }
 
@@ -2069,7 +2182,7 @@ impl DsProtAlgo for DsProtAlgoV5 {
                 let new_ins = encrypt_branch_2(self.reference_offset, ins);
                 rc4.update_x(|x| x.wrapping_add((new_ins >> 24) as u8));
                 new_ins
-            },
+            }
             category => {
                 let bytes = ins.to_le_bytes();
                 let new_bytes = [
@@ -2085,7 +2198,7 @@ impl DsProtAlgo for DsProtAlgoV5 {
                 let result = u32::from_le_bytes(new_bytes);
                 rc4.update_x(|x| x.wrapping_sub(new_bytes[3]));
                 result
-            },
+            }
         }
     }
 
@@ -2129,7 +2242,7 @@ impl DsProtAlgo for DsProtAlgoV6 {
         let new_ins = match category {
             InstructionCategory::BlxImm | InstructionCategory::B => {
                 decrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             InstructionCategory::Bl | InstructionCategory::Other => {
                 let bytes = ins.to_le_bytes();
                 u32::from_le_bytes([
@@ -2138,7 +2251,7 @@ impl DsProtAlgo for DsProtAlgoV6 {
                     rc4.decrypt_byte(bytes[2]),
                     bytes[3],
                 ])
-            },
+            }
         };
         rc4.update_x(|x| x.wrapping_sub(opcode));
         match category {
@@ -2153,7 +2266,7 @@ impl DsProtAlgo for DsProtAlgoV6 {
         let new_ins = match category {
             InstructionCategory::BlxImm | InstructionCategory::Bl => {
                 encrypt_branch_2(self.reference_offset, ins)
-            },
+            }
             InstructionCategory::B | InstructionCategory::Other => {
                 let bytes = ins.to_le_bytes();
                 u32::from_le_bytes([
@@ -2162,7 +2275,7 @@ impl DsProtAlgo for DsProtAlgoV6 {
                     rc4.encrypt_byte(bytes[2]),
                     bytes[3],
                 ])
-            },
+            }
         };
         let new_ins = match category {
             // flip link bit
@@ -2209,7 +2322,10 @@ pub struct DsProtDecryptResult {
 impl DsProtDecryptResult {
     /// Returns a [`DisplayDsProtDecryptResult`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayDsProtDecryptResult<'_> {
-        DisplayDsProtDecryptResult { inner: self, indent }
+        DisplayDsProtDecryptResult {
+            inner: self,
+            indent,
+        }
     }
 
     pub(crate) fn encrypt(
@@ -2253,7 +2369,11 @@ impl Display for DisplayDsProtDecryptResult<'_> {
         if !inner.encrypted_ranges.is_empty() {
             writeln!(f, "{i}Encrypted ranges ........... :")?;
             for range in &inner.encrypted_ranges {
-                writeln!(f, "{i}  {:#010x}..{:#010x}", range.start_address, range.end_address)?;
+                writeln!(
+                    f,
+                    "{i}  {:#010x}..{:#010x}",
+                    range.start_address, range.end_address
+                )?;
             }
         }
         if let Some(bss_variable) = inner.bss_variable {
@@ -2268,20 +2388,28 @@ impl Display for DisplayDsProtDecryptResult<'_> {
                 match function.encryption {
                     EncryptionType::None => {
                         writeln!(f, "None")?;
-                    },
+                    }
                     EncryptionType::Unkeyed => {
                         writeln!(f, "Unkeyed")?;
-                    },
+                    }
                     EncryptionType::Keyed(seed_key) => {
                         writeln!(f, "Keyed ({seed_key:#x})")?;
-                    },
+                    }
                 }
                 write!(f, "{i}  Function table .. : ")?;
                 if let Some(function_table) = &function.function_table {
                     writeln!(f)?;
                     writeln!(f, "{i}    Length ......... : {}", function_table.length)?;
-                    writeln!(f, "{i}    Has garbage .... : {}", function_table.has_garbage)?;
-                    writeln!(f, "{i}    Has overwrite .. : {}", function_table.has_overwrite)?;
+                    writeln!(
+                        f,
+                        "{i}    Has garbage .... : {}",
+                        function_table.has_garbage
+                    )?;
+                    writeln!(
+                        f,
+                        "{i}    Has overwrite .. : {}",
+                        function_table.has_overwrite
+                    )?;
                 } else {
                     writeln!(f, "None")?;
                 }

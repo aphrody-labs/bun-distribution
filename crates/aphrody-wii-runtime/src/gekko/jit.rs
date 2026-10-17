@@ -63,7 +63,7 @@ fn signature_checksum<const SYSTEM: SystemId>(sys: &System<SYSTEM>, start: u32, 
                 if matches!(op2, 0 | 8 | 16 | 21 | 22) {
                     op3 = opcode & 0x7C0;
                 }
-            },
+            }
             7 | 8 | 10..=15 => op2 = opcode & 0x03FF_0000,
             19 | 31 | 63 => op2 = opcode & 0x7FF,
             59 => {
@@ -72,9 +72,9 @@ fn signature_checksum<const SYSTEM: SystemId>(sys: &System<SYSTEM>, start: u32, 
                 if op2 < 16 {
                     op3 = opcode & 0x7C0;
                 }
-            },
+            }
             32..=55 => op2 = opcode & 0x03FF_0000,
-            _ => {},
+            _ => {}
         }
 
         sum = sum.rotate_left(17) ^ (op | op2 | op3);
@@ -160,10 +160,16 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         flag_builder.set("enable_verifier", "false").unwrap();
         flag_builder.set("enable_probestack", "false").unwrap();
         flag_builder.set("unwind_info", "false").unwrap();
-        flag_builder.set("enable_heap_access_spectre_mitigation", "false").unwrap();
-        flag_builder.set("enable_table_access_spectre_mitigation", "false").unwrap();
+        flag_builder
+            .set("enable_heap_access_spectre_mitigation", "false")
+            .unwrap();
+        flag_builder
+            .set("enable_table_access_spectre_mitigation", "false")
+            .unwrap();
         let isa_builder = cranelift_native::builder().expect("host ISA");
-        let isa = isa_builder.finish(settings::Flags::new(flag_builder)).expect("ISA finish");
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .expect("ISA finish");
 
         let mut jit_builder = JITBuilder::with_isa(isa, default_libcall_names());
 
@@ -253,13 +259,22 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                 do_stswi: ("gecko_jit_do_stswi_gc", runtime::do_stswi_gc as *const u8),
                 do_lswx: ("gecko_jit_do_lswx_gc", runtime::do_lswx_gc as *const u8),
                 do_stswx: ("gecko_jit_do_stswx_gc", runtime::do_stswx_gc as *const u8),
-                do_psq_load: ("gecko_jit_do_psq_load_gc", runtime::do_psq_load_gc as *const u8),
-                do_psq_store: ("gecko_jit_do_psq_store_gc", runtime::do_psq_store_gc as *const u8),
+                do_psq_load: (
+                    "gecko_jit_do_psq_load_gc",
+                    runtime::do_psq_load_gc as *const u8,
+                ),
+                do_psq_store: (
+                    "gecko_jit_do_psq_store_gc",
+                    runtime::do_psq_store_gc as *const u8,
+                ),
                 read_timebase: (
                     "gecko_jit_read_timebase_gc",
                     runtime::read_timebase_gc as *const u8,
                 ),
-                cause_icbi: ("gecko_jit_cause_icbi_gc", runtime::cause_icbi_gc as *const u8),
+                cause_icbi: (
+                    "gecko_jit_cause_icbi_gc",
+                    runtime::cause_icbi_gc as *const u8,
+                ),
                 mark_memory_writeback: (
                     "gecko_jit_mark_memory_writeback_gc",
                     runtime::mark_memory_writeback_gc as *const u8,
@@ -283,15 +298,33 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                 read_u16: ("gecko_jit_read_u16_wii", runtime::read_u16_wii as *const u8),
                 read_u32: ("gecko_jit_read_u32_wii", runtime::read_u32_wii as *const u8),
                 write_u8: ("gecko_jit_write_u8_wii", runtime::write_u8_wii as *const u8),
-                write_u16: ("gecko_jit_write_u16_wii", runtime::write_u16_wii as *const u8),
-                write_u32: ("gecko_jit_write_u32_wii", runtime::write_u32_wii as *const u8),
+                write_u16: (
+                    "gecko_jit_write_u16_wii",
+                    runtime::write_u16_wii as *const u8,
+                ),
+                write_u32: (
+                    "gecko_jit_write_u32_wii",
+                    runtime::write_u32_wii as *const u8,
+                ),
                 read_f32: ("gecko_jit_read_f32_wii", runtime::read_f32_wii as *const u8),
                 read_f64: ("gecko_jit_read_f64_wii", runtime::read_f64_wii as *const u8),
-                write_f32: ("gecko_jit_write_f32_wii", runtime::write_f32_wii as *const u8),
-                write_f64: ("gecko_jit_write_f64_wii", runtime::write_f64_wii as *const u8),
-                write_msr: ("gecko_jit_write_msr_wii", runtime::write_msr_wii as *const u8),
+                write_f32: (
+                    "gecko_jit_write_f32_wii",
+                    runtime::write_f32_wii as *const u8,
+                ),
+                write_f64: (
+                    "gecko_jit_write_f64_wii",
+                    runtime::write_f64_wii as *const u8,
+                ),
+                write_msr: (
+                    "gecko_jit_write_msr_wii",
+                    runtime::write_msr_wii as *const u8,
+                ),
                 read_spr: ("gecko_jit_read_spr_wii", runtime::read_spr_wii as *const u8),
-                write_spr: ("gecko_jit_write_spr_wii", runtime::write_spr_wii as *const u8),
+                write_spr: (
+                    "gecko_jit_write_spr_wii",
+                    runtime::write_spr_wii as *const u8,
+                ),
                 read_sr: ("gecko_jit_read_sr_wii", runtime::read_sr_wii as *const u8),
                 write_sr: ("gecko_jit_write_sr_wii", runtime::write_sr_wii as *const u8),
                 cause_trap_exception: (
@@ -319,7 +352,10 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                 do_stswi: ("gecko_jit_do_stswi_wii", runtime::do_stswi_wii as *const u8),
                 do_lswx: ("gecko_jit_do_lswx_wii", runtime::do_lswx_wii as *const u8),
                 do_stswx: ("gecko_jit_do_stswx_wii", runtime::do_stswx_wii as *const u8),
-                do_psq_load: ("gecko_jit_do_psq_load_wii", runtime::do_psq_load_wii as *const u8),
+                do_psq_load: (
+                    "gecko_jit_do_psq_load_wii",
+                    runtime::do_psq_load_wii as *const u8,
+                ),
                 do_psq_store: (
                     "gecko_jit_do_psq_store_wii",
                     runtime::do_psq_store_wii as *const u8,
@@ -328,7 +364,10 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                     "gecko_jit_read_timebase_wii",
                     runtime::read_timebase_wii as *const u8,
                 ),
-                cause_icbi: ("gecko_jit_cause_icbi_wii", runtime::cause_icbi_wii as *const u8),
+                cause_icbi: (
+                    "gecko_jit_cause_icbi_wii",
+                    runtime::cause_icbi_wii as *const u8,
+                ),
                 mark_memory_writeback: (
                     "gecko_jit_mark_memory_writeback_wii",
                     runtime::mark_memory_writeback_wii as *const u8,
@@ -483,7 +522,11 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                 .declare_function(syms.cause_trap_exception.0, Linkage::Import, &deadline_sig)
                 .expect("declare cause_trap_exception"),
             cause_syscall_interrupt: module
-                .declare_function(syms.cause_syscall_interrupt.0, Linkage::Import, &deadline_sig)
+                .declare_function(
+                    syms.cause_syscall_interrupt.0,
+                    Linkage::Import,
+                    &deadline_sig,
+                )
                 .expect("declare cause_syscall_interrupt"),
             do_rfi: module
                 .declare_function(syms.do_rfi.0, Linkage::Import, &deadline_sig)
@@ -564,9 +607,15 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
 
         let trampoline_fn = build_trampoline(&mut module, call_conv, pointer_type, &block_sig);
 
-        let block_lookup_table =
-            vec![BlockLookupSlot { pc: 0, _pad: 0, entry: 0 }; BLOCK_LOOKUP_TABLE_SIZE]
-                .into_boxed_slice();
+        let block_lookup_table = vec![
+            BlockLookupSlot {
+                pc: 0,
+                _pad: 0,
+                entry: 0
+            };
+            BLOCK_LOOKUP_TABLE_SIZE
+        ]
+        .into_boxed_slice();
         let block_lookup_table_addr = Box::leak(block_lookup_table).as_mut_ptr() as usize;
 
         Self {
@@ -594,10 +643,14 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
 
     #[inline]
     fn target_slot_addr(&self, target_pc: u32) -> usize {
-        *self.target_slots.borrow_mut().entry(target_pc).or_insert_with(|| {
-            let slot: &'static mut usize = Box::leak(Box::new(0usize));
-            slot as *mut usize as usize
-        })
+        *self
+            .target_slots
+            .borrow_mut()
+            .entry(target_pc)
+            .or_insert_with(|| {
+                let slot: &'static mut usize = Box::leak(Box::new(0usize));
+                slot as *mut usize as usize
+            })
     }
 
     pub fn block_lookup_table_addr(&self) -> usize {
@@ -711,11 +764,16 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
     }
 
     fn register_block(&mut self, mmio: &mut crate::mmio::Mmio<SYSTEM>, pc: u32) {
-        let Some(spec) = self.block_specs.get(&pc) else { return };
+        let Some(spec) = self.block_specs.get(&pc) else {
+            return;
+        };
 
         let tracked_pcs = if let Some(&size) = self.hle_code_sizes.get(&pc) {
             std::borrow::Cow::Owned(
-                (0..size).step_by(4).map(|offset| pc.wrapping_add(offset)).collect::<Vec<_>>(),
+                (0..size)
+                    .step_by(4)
+                    .map(|offset| pc.wrapping_add(offset))
+                    .collect::<Vec<_>>(),
             )
         } else {
             std::borrow::Cow::Borrowed(spec.pcs.as_slice())
@@ -742,7 +800,10 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
 
         let tracked_pcs = if let Some(size) = self.hle_code_sizes.remove(&pc) {
             std::borrow::Cow::Owned(
-                (0..size).step_by(4).map(|offset| pc.wrapping_add(offset)).collect::<Vec<_>>(),
+                (0..size)
+                    .step_by(4)
+                    .map(|offset| pc.wrapping_add(offset))
+                    .collect::<Vec<_>>(),
             )
         } else {
             std::borrow::Cow::Borrowed(spec.pcs.as_slice())
@@ -886,11 +947,17 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
 
         let disasm_path = path.with_file_name(format!(
             "{}-disasm.txt",
-            path.file_stem().and_then(|s| s.to_str()).unwrap_or("ppc-heatmap")
+            path.file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("ppc-heatmap")
         ));
 
         crate::profile::write_file_atomic(&disasm_path, |dfile| {
-            writeln!(dfile, "# top {} hot PPC blocks (instructions)", top_k.min(entries.len()))?;
+            writeln!(
+                dfile,
+                "# top {} hot PPC blocks (instructions)",
+                top_k.min(entries.len())
+            )?;
 
             for (rank, (pc, exec, hits, len, term, idle)) in entries.iter().take(top_k).enumerate()
             {
@@ -1041,9 +1108,13 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         #[cfg(feature = "jit-stats")]
         {
             let slot = builder.ins().iconst(types::I64, entry_counter_addr as i64);
-            let count = builder.ins().load(types::I64, translator::vmctx_flags(), slot, 0);
+            let count = builder
+                .ins()
+                .load(types::I64, translator::vmctx_flags(), slot, 0);
             let next = builder.ins().iadd_imm(count, 1);
-            builder.ins().store(translator::vmctx_flags(), next, slot, 0);
+            builder
+                .ins()
+                .store(translator::vmctx_flags(), next, slot, 0);
         }
 
         let load_gpr = |builder: &mut FunctionBuilder, index: usize| {
@@ -1077,7 +1148,9 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         builder.append_block_param(merge_block, types::I64);
 
         let rhs_zero = builder.ins().icmp_imm(IntCC::Equal, rhs, 0);
-        builder.ins().brif(rhs_zero, zero_block, &[], nonzero_block, &[]);
+        builder
+            .ins()
+            .brif(rhs_zero, zero_block, &[], nonzero_block, &[]);
 
         builder.switch_to_block(zero_block);
         builder.seal_block(zero_block);
@@ -1089,7 +1162,9 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         let lhs_min = builder.ins().icmp_imm(IntCC::Equal, lhs, i64::MIN);
         let rhs_neg_one = builder.ins().icmp_imm(IntCC::Equal, rhs, -1);
         let overflows = builder.ins().band(lhs_min, rhs_neg_one);
-        builder.ins().brif(overflows, overflow_block, &[], divide_block, &[]);
+        builder
+            .ins()
+            .brif(overflows, overflow_block, &[], divide_block, &[]);
 
         builder.switch_to_block(overflow_block);
         builder.seal_block(overflow_block);
@@ -1120,9 +1195,13 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         );
 
         let cycles_off = abi::cycles_offset::<SYSTEM>() as i32;
-        let cycles = builder.ins().load(types::I64, translator::vmctx_flags(), ctx_ptr, cycles_off);
+        let cycles = builder
+            .ins()
+            .load(types::I64, translator::vmctx_flags(), ctx_ptr, cycles_off);
         let cycles = builder.ins().iadd_imm(cycles, 300);
-        builder.ins().store(translator::vmctx_flags(), cycles, ctx_ptr, cycles_off);
+        builder
+            .ins()
+            .store(translator::vmctx_flags(), cycles, ctx_ptr, cycles_off);
 
         let lr = builder.ins().load(
             types::I32,
@@ -1133,8 +1212,12 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         builder.ins().return_(&[lr]);
         builder.finalize();
 
-        self.module.define_function(func_id, &mut self.ctx).expect("define __div2i intrinsic");
-        self.module.finalize_definitions().expect("finalize __div2i intrinsic");
+        self.module
+            .define_function(func_id, &mut self.ctx)
+            .expect("define __div2i intrinsic");
+        self.module
+            .finalize_definitions()
+            .expect("finalize __div2i intrinsic");
         let entry = self.module.get_finalized_function(func_id) as usize;
 
         let slot_addr = self.target_slot_addr(pc);
@@ -1199,7 +1282,9 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
 
         drop(chain);
 
-        self.module.define_function(func_id, &mut self.ctx).expect("define block");
+        self.module
+            .define_function(func_id, &mut self.ctx)
+            .expect("define block");
 
         self.module.finalize_definitions().expect("finalize");
         let entry = self.module.get_finalized_function(func_id) as usize;
@@ -1258,7 +1343,11 @@ fn looks_like_polling_shape(spec: &block::BlockSpec, body_cap: usize) -> bool {
     let bd = (((raw >> 2) & 0x3FFF) as i32) << 18 >> 18;
     let bd_bytes = bd << 2;
     let term_pc = spec.start_pc.wrapping_add((last_idx as u32) * 4);
-    let target = if aa { bd_bytes as u32 } else { term_pc.wrapping_add_signed(bd_bytes) };
+    let target = if aa {
+        bd_bytes as u32
+    } else {
+        term_pc.wrapping_add_signed(bd_bytes)
+    };
 
     target == spec.start_pc
 }
@@ -1295,13 +1384,17 @@ fn build_trampoline(
         let block_ptr = builder.block_params(entry)[1];
         let no_host_return = builder.ins().iconst(types::I32, u32::MAX as i64);
         let call =
-            builder.ins().call_indirect(block_sig_ref, block_ptr, &[ctx_ptr, no_host_return]);
+            builder
+                .ins()
+                .call_indirect(block_sig_ref, block_ptr, &[ctx_ptr, no_host_return]);
         let result = builder.inst_results(call)[0];
         builder.ins().return_(&[result]);
         builder.finalize();
     }
 
-    module.define_function(func_id, &mut ctx).expect("define trampoline");
+    module
+        .define_function(func_id, &mut ctx)
+        .expect("define trampoline");
     module.finalize_definitions().expect("finalize trampoline");
 
     let ptr = module.get_finalized_function(func_id);

@@ -17,7 +17,10 @@ use crate::PhotocraftApp;
 pub const PRESET_EXTS: &[&str] = &["abr", "grd", "pat", "aco", "ase", "kys", "psp"];
 
 fn ext(name: &str) -> String {
-    std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default()
+    std::path::Path::new(name)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default()
 }
 
 /// Is `name` a preset file this module imports?
@@ -31,7 +34,8 @@ pub(crate) fn import_gradients_dialog(app: &mut PhotocraftApp) {
         if ext(&name) != "grd" {
             return Err(tl!("Choose a gradient file (.grd).").into());
         }
-        open(app, &name, &bytes).ok_or_else(|| tl!("Choose a gradient file (.grd).").to_string())??;
+        open(app, &name, &bytes)
+            .ok_or_else(|| tl!("Choose a gradient file (.grd).").to_string())??;
         Ok(Value::Null)
     });
     if let Err(error) = result
@@ -58,11 +62,16 @@ pub fn open(app: &mut PhotocraftApp, name: &str, bytes: &[u8]) -> Option<Result<
         "abr" => ("brush.presets.importAbr", "brushes"),
         "grd" => ("gradient.presets.importGrd", "gradients"),
         "pat" => ("pattern.import", "patterns"),
-        "aco" | "ase" => return Some(crate::swatches_ui::import_bytes(app, name, bytes, false).map(|_| ())),
+        "aco" | "ase" => {
+            return Some(crate::swatches_ui::import_bytes(app, name, bytes, false).map(|_| ()));
+        }
         "kys" | "psp" => return Some(crate::kys_import::open_bytes(app, name, bytes).map(|_| ())),
         _ => return None,
     };
-    let stem = std::path::Path::new(name).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| tl!("Imported").into());
+    let stem = std::path::Path::new(name)
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| tl!("Imported").into());
     let mut p = source(name, bytes);
     p["group"] = json!(stem);
     if what == "brushes" {
@@ -73,22 +82,45 @@ pub fn open(app: &mut PhotocraftApp, name: &str, bytes: &[u8]) -> Option<Result<
         if r.get("pending").and_then(Value::as_bool) == Some(true) {
             app.ui.status_error = false;
             let template = "Importing {what} from {file}…";
-            app.ui.status = crate::i18n::fmt(tl!(template), &[("what", tl!(what)), ("file", &stem)]);
+            app.ui.status =
+                crate::i18n::fmt(tl!(template), &[("what", tl!(what)), ("file", &stem)]);
             return;
         }
         let n = r.get("count").and_then(Value::as_u64).unwrap_or(0);
-        let warnings: Vec<String> = r.get("warnings").and_then(|w| serde_json::from_value(w.clone()).ok()).unwrap_or_default();
+        let warnings: Vec<String> = r
+            .get("warnings")
+            .and_then(|w| serde_json::from_value(w.clone()).ok())
+            .unwrap_or_default();
         app.ui.status_error = false;
         let (one, other) = match what {
-            "brushes" => ("Imported {n} brush from {file}", "Imported {n} brushes from {file}"),
-            "patterns" => ("Imported {n} pattern from {file}", "Imported {n} patterns from {file}"),
-            _ => ("Imported {n} gradient from {file}", "Imported {n} gradients from {file}"),
+            "brushes" => (
+                "Imported {n} brush from {file}",
+                "Imported {n} brushes from {file}",
+            ),
+            "patterns" => (
+                "Imported {n} pattern from {file}",
+                "Imported {n} patterns from {file}",
+            ),
+            _ => (
+                "Imported {n} gradient from {file}",
+                "Imported {n} gradients from {file}",
+            ),
         };
-        let imported = crate::i18n::fmt(&crate::i18n::trn(crate::i18n::current(), n, one, other), &[("file", &stem)]);
+        let imported = crate::i18n::fmt(
+            &crate::i18n::trn(crate::i18n::current(), n, one, other),
+            &[("file", &stem)],
+        );
         app.ui.status = match warnings.first() {
             Some(warning) => {
                 let template = "{message} (notes: {n}; {warning})";
-                crate::i18n::fmt(tl!(template), &[("message", &imported), ("n", &warnings.len().to_string()), ("warning", warning)])
+                crate::i18n::fmt(
+                    tl!(template),
+                    &[
+                        ("message", &imported),
+                        ("n", &warnings.len().to_string()),
+                        ("warning", warning),
+                    ],
+                )
             }
             None => imported,
         };

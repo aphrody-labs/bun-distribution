@@ -23,19 +23,34 @@ fn kjoin(j: Join) -> kurbo::Join {
 }
 
 fn stroke_bez(bp: &BezPath, width: f64, join: Join, miter_limit: f64) -> BezPath {
-    let style = Stroke::new(width).with_join(kjoin(join)).with_caps(kurbo::Cap::Butt).with_miter_limit(miter_limit.max(1.0));
-    crate::boolean::close_subpaths(&kurbo::stroke(bp.iter(), &style, &StrokeOpts::default(), STROKE_TOL))
+    let style = Stroke::new(width)
+        .with_join(kjoin(join))
+        .with_caps(kurbo::Cap::Butt)
+        .with_miter_limit(miter_limit.max(1.0));
+    crate::boolean::close_subpaths(&kurbo::stroke(
+        bp.iter(),
+        &style,
+        &StrokeOpts::default(),
+        STROKE_TOL,
+    ))
 }
 
 /// Split a path into its closed and open subpaths.
 fn split_closed(p: &BezPath) -> (BezPath, BezPath) {
     let (mut closed, mut open) = (BezPath::new(), BezPath::new());
     for sp in p.subpaths() {
-        let n = sp.iter().filter(|e| !matches!(e, PathEl::MoveTo(_) | PathEl::ClosePath)).count();
+        let n = sp
+            .iter()
+            .filter(|e| !matches!(e, PathEl::MoveTo(_) | PathEl::ClosePath))
+            .count();
         if n == 0 {
             continue;
         }
-        let dst = if matches!(sp.last(), Some(PathEl::ClosePath)) { &mut closed } else { &mut open };
+        let dst = if matches!(sp.last(), Some(PathEl::ClosePath)) {
+            &mut closed
+        } else {
+            &mut open
+        };
         dst.extend(sp.iter().copied());
     }
     (closed, open)
@@ -53,21 +68,45 @@ pub fn offset_path(path: &BezPath, delta: f64, join: Join, miter_limit: f64) -> 
     }
     let (closed, open) = split_closed(path);
     let d = delta.abs();
-    let ring = if closed.elements().is_empty() { BezPath::new() } else { stroke_bez(&closed, 2.0 * d, join, miter_limit) };
-    let open_bp = if open.elements().is_empty() { BezPath::new() } else { stroke_bez(&open, 2.0 * d, join, miter_limit) };
-    let Some(arr) = Arrangement::new(&[(closed, FillRule::NonZero), (ring, FillRule::NonZero), (open_bp, FillRule::NonZero)]) else {
+    let ring = if closed.elements().is_empty() {
+        BezPath::new()
+    } else {
+        stroke_bez(&closed, 2.0 * d, join, miter_limit)
+    };
+    let open_bp = if open.elements().is_empty() {
+        BezPath::new()
+    } else {
+        stroke_bez(&open, 2.0 * d, join, miter_limit)
+    };
+    let Some(arr) = Arrangement::new(&[
+        (closed, FillRule::NonZero),
+        (ring, FillRule::NonZero),
+        (open_bp, FillRule::NonZero),
+    ]) else {
         return BezPath::new();
     };
-    let c = if delta >= 0.0 { arr.contours(|m| m[0] || m[1] || m[2]) } else { arr.contours(|m| m[0] && !m[1]) };
+    let c = if delta >= 0.0 {
+        arr.contours(|m| m[0] || m[1] || m[2])
+    } else {
+        arr.contours(|m| m[0] && !m[1])
+    };
     let tidy = Tidy::free(DEFAULT_PRECISION);
     // When `d` exceeds a curvature radius the stroker's inner offset inverts and its loops cancel
     // winding, leaving faces uncovered that are really within `d` of the path. A contour is
     // spurious iff a point deep inside it lies closer than `d`: holes when growing, islands when
     // insetting.
     let drop_outer = delta < 0.0;
-    let spurious: Vec<bool> =
-        c.contours().map(|k| k.outer == drop_outer && deep_point(&k.path).is_some_and(|p| dist_to(path, p) < d * (1.0 - 1e-4) - 1e-6)).collect();
-    let keep: Vec<&BezPath> = (0..spurious.len()).filter(|&i| !has_marked_ancestor(&c, i, &spurious)).map(|i| &c[ContourIdx(i)].path).collect();
+    let spurious: Vec<bool> = c
+        .contours()
+        .map(|k| {
+            k.outer == drop_outer
+                && deep_point(&k.path).is_some_and(|p| dist_to(path, p) < d * (1.0 - 1e-4) - 1e-6)
+        })
+        .collect();
+    let keep: Vec<&BezPath> = (0..spurious.len())
+        .filter(|&i| !has_marked_ancestor(&c, i, &spurious))
+        .map(|i| &c[ContourIdx(i)].path)
+        .collect();
     contours_to_path(keep, &tidy)
 }
 
@@ -102,25 +141,29 @@ fn deep_point(bp: &BezPath) -> Option<kurbo::Point> {
                 xs.push(a.x + (y - a.y) / (b.y - a.y) * (b.x - a.x));
             }
         };
-        kurbo::flatten(bp.iter(), 0.01 * r.width().min(r.height()).max(1e-6), |el| match el {
-            PathEl::MoveTo(p) => {
-                start = p;
-                prev = Some(p);
-            }
-            PathEl::LineTo(p) => {
-                if let Some(a) = prev {
-                    edge(a, p, &mut xs);
+        kurbo::flatten(
+            bp.iter(),
+            0.01 * r.width().min(r.height()).max(1e-6),
+            |el| match el {
+                PathEl::MoveTo(p) => {
+                    start = p;
+                    prev = Some(p);
                 }
-                prev = Some(p);
-            }
-            PathEl::ClosePath => {
-                if let Some(a) = prev {
-                    edge(a, start, &mut xs);
+                PathEl::LineTo(p) => {
+                    if let Some(a) = prev {
+                        edge(a, p, &mut xs);
+                    }
+                    prev = Some(p);
                 }
-                prev = Some(start);
-            }
-            _ => {}
-        });
+                PathEl::ClosePath => {
+                    if let Some(a) = prev {
+                        edge(a, start, &mut xs);
+                    }
+                    prev = Some(start);
+                }
+                _ => {}
+            },
+        );
         xs.sort_by(f64::total_cmp);
         for w in xs.as_chunks::<2>().0 {
             let span = w[1] - w[0];
@@ -134,5 +177,8 @@ fn deep_point(bp: &BezPath) -> Option<kurbo::Point> {
 
 fn dist_to(bp: &BezPath, p: kurbo::Point) -> f64 {
     use kurbo::ParamCurveNearest;
-    bp.segments().map(|s| s.nearest(p, 1e-6).distance_sq).fold(f64::INFINITY, f64::min).sqrt()
+    bp.segments()
+        .map(|s| s.nearest(p, 1e-6).distance_sq)
+        .fold(f64::INFINITY, f64::min)
+        .sqrt()
 }

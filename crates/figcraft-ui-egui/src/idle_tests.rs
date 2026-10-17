@@ -26,18 +26,28 @@ pub(crate) struct Harness {
 
 impl Harness {
     pub(crate) fn new(s: Session) -> Self {
-        Self { ctx: egui::Context::default(), app: FigApp::new(s, Box::new(NoServices)), time: 0.0 }
+        Self {
+            ctx: egui::Context::default(),
+            app: FigApp::new(s, Box::new(NoServices)),
+            time: 0.0,
+        }
     }
 
     /// One frame with `events`, 1/60 s after the last; returns the repaint delay it asked for.
     fn frame(&mut self, events: Vec<Event>) -> Duration {
         self.time += 1.0 / 60.0;
-        let input =
-            RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0))), time: Some(self.time), events, ..Default::default() };
+        let input = RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0))),
+            time: Some(self.time),
+            events,
+            ..Default::default()
+        };
         let app = &mut self.app;
         let mut out = self.ctx.run_ui(input, |ui| app.ui(ui));
         out.textures_delta.clear();
-        out.viewport_output.get(&ViewportId::ROOT).map_or(Duration::MAX, |v| v.repaint_delay)
+        out.viewport_output
+            .get(&ViewportId::ROOT)
+            .map_or(Duration::MAX, |v| v.repaint_delay)
     }
 
     /// Draw frames with no input until the UI is idle: no render in flight and three frames in a
@@ -48,12 +58,19 @@ impl Harness {
         for _ in 0..2000 {
             let delay = self.frame(vec![]);
             let rendering = wait_for_render(&self.app);
-            quiet = if delay >= IDLE && !rendering { quiet + 1 } else { 0 };
+            quiet = if delay >= IDLE && !rendering {
+                quiet + 1
+            } else {
+                0
+            };
             if quiet >= 3 {
                 return delay;
             }
         }
-        panic!("still asking for frames after 2000 with no input: {:?}", self.ctx.repaint_causes());
+        panic!(
+            "still asking for frames after 2000 with no input: {:?}",
+            self.ctx.repaint_causes()
+        );
     }
 
     fn run(&mut self, cmd: &str, params: Value) -> Value {
@@ -67,7 +84,11 @@ impl Harness {
         self.settle();
         for _ in 0..10 {
             let delay = self.frame(vec![]);
-            assert!(delay >= IDLE, "{what}: asked for a repaint in {delay:?}: {:?}", self.ctx.repaint_causes());
+            assert!(
+                delay >= IDLE,
+                "{what}: asked for a repaint in {delay:?}: {:?}",
+                self.ctx.repaint_causes()
+            );
         }
     }
 }
@@ -77,8 +98,15 @@ impl Harness {
 pub(crate) fn wait_for_render(app: &FigApp) -> bool {
     let start = Instant::now();
     let mut waited = false;
-    while app.worker.as_ref().is_some_and(crate::render_worker::Worker::in_flight) {
-        assert!(start.elapsed() < Duration::from_secs(120), "the render thread never finished");
+    while app
+        .worker
+        .as_ref()
+        .is_some_and(crate::render_worker::Worker::in_flight)
+    {
+        assert!(
+            start.elapsed() < Duration::from_secs(120),
+            "the render thread never finished"
+        );
         std::thread::sleep(Duration::from_millis(2));
         waited = true;
     }
@@ -88,9 +116,20 @@ pub(crate) fn wait_for_render(app: &FigApp) -> bool {
 /// A page with a rectangle, an ellipse and a text layer; returns the text's id.
 fn document() -> (Harness, Value) {
     let mut s = Session::new();
-    s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 200, "height": 120})).unwrap();
-    s.execute("shape.ellipse", &json!({"x": 300, "y": 40, "width": 120, "height": 120})).unwrap();
-    let text = s.execute("text.create", &json!({"x": 40, "y": 220, "text": "Idle"})).unwrap()["id"].clone();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 10, "y": 10, "width": 200, "height": 120}),
+    )
+    .unwrap();
+    s.execute(
+        "shape.ellipse",
+        &json!({"x": 300, "y": 40, "width": 120, "height": 120}),
+    )
+    .unwrap();
+    let text = s
+        .execute("text.create", &json!({"x": 40, "y": 220, "text": "Idle"}))
+        .unwrap()["id"]
+        .clone();
     s.execute("select.set", &json!({"ids": []})).unwrap();
     (Harness::new(s), text)
 }
@@ -113,7 +152,10 @@ fn a_selected_text_layer_draws_no_frames_while_idle() {
 #[test]
 fn the_comments_panel_draws_no_frames_while_idle() {
     let (mut h, _) = document();
-    h.run("comment.add", json!({"x": 50, "y": 50, "text": "Looks good", "author": "Ada", "anchor": true}));
+    h.run(
+        "comment.add",
+        json!({"x": 50, "y": 50, "text": "Looks good", "author": "Ada", "anchor": true}),
+    );
     h.run("tool.comment", json!({}));
     h.assert_idle("the comments panel");
 }
@@ -121,9 +163,23 @@ fn the_comments_panel_draws_no_frames_while_idle() {
 #[test]
 fn the_prototype_curve_preview_plays_then_rests() {
     let mut s = Session::new();
-    let a = id(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 200, "height": 300})).unwrap());
-    let b = id(&s.execute("frame.create", &json!({"x": 300, "y": 0, "width": 200, "height": 300})).unwrap());
-    s.execute("proto.interaction.add", &json!({"id": a, "dest": b, "transition": {"type": "dissolve"}, "durationMs": 300})).unwrap();
+    let a = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 200, "height": 300}),
+        )
+        .unwrap());
+    let b = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 300, "y": 0, "width": 200, "height": 300}),
+        )
+        .unwrap());
+    s.execute(
+        "proto.interaction.add",
+        &json!({"id": a, "dest": b, "transition": {"type": "dissolve"}, "durationMs": 300}),
+    )
+    .unwrap();
     s.execute("select.set", &json!({"ids": [a]})).unwrap();
     let mut h = Harness::new(s);
     h.app.ui.right_tab = crate::RightTab::Prototype;
@@ -131,7 +187,10 @@ fn the_prototype_curve_preview_plays_then_rests() {
     // It plays when it shows (the dot moves: frames at animation pace) …
     h.frame(vec![]);
     h.frame(vec![]);
-    assert!(h.frame(vec![]) < Duration::from_millis(50), "the curve preview plays when it opens");
+    assert!(
+        h.frame(vec![]) < Duration::from_millis(50),
+        "the curve preview plays when it opens"
+    );
     // … then rests …
     h.assert_idle("the interaction editor");
     // … and plays again when it shows again.
@@ -140,14 +199,22 @@ fn the_prototype_curve_preview_plays_then_rests() {
     crate::proto_panel::open_editor(&h.ctx, Some((a, 0)));
     h.frame(vec![]);
     h.frame(vec![]);
-    assert!(h.frame(vec![]) < Duration::from_millis(50), "the curve preview plays when it shows again");
+    assert!(
+        h.frame(vec![]) < Duration::from_millis(50),
+        "the curve preview plays when it shows again"
+    );
     h.assert_idle("the interaction editor, again");
 }
 
 #[test]
 fn presenting_a_still_frame_draws_no_frames_while_idle() {
     let mut s = Session::new();
-    let a = id(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 200, "height": 300})).unwrap());
+    let a = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 200, "height": 300}),
+        )
+        .unwrap());
     let mut h = Harness::new(s);
     h.run("proto.present", json!({"start": a}));
     assert!(h.app.ui.present.is_some());
@@ -157,22 +224,62 @@ fn presenting_a_still_frame_draws_no_frames_while_idle() {
 #[test]
 fn an_after_delay_wakes_the_presenter_when_due_even_under_an_overlay() {
     let mut s = Session::new();
-    let a = id(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 200, "height": 300})).unwrap());
-    let b = id(&s.execute("frame.create", &json!({"x": 300, "y": 0, "width": 200, "height": 300})).unwrap());
-    let o = id(&s.execute("frame.create", &json!({"x": 600, "y": 0, "width": 100, "height": 100})).unwrap());
+    let a = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 200, "height": 300}),
+        )
+        .unwrap());
+    let b = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 300, "y": 0, "width": 200, "height": 300}),
+        )
+        .unwrap());
+    let o = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 600, "y": 0, "width": 100, "height": 100}),
+        )
+        .unwrap());
     let delay = |ms: u64, action: Value| json!({"id": a, "trigger": {"type": "afterDelay", "ms": ms}, "action": action});
-    s.execute("proto.interaction.add", &delay(2000, json!({"type": "navigate", "dest": b}))).unwrap();
-    s.execute("proto.interaction.add", &delay(100, json!({"type": "openOverlay", "dest": o}))).unwrap();
+    s.execute(
+        "proto.interaction.add",
+        &delay(2000, json!({"type": "navigate", "dest": b})),
+    )
+    .unwrap();
+    s.execute(
+        "proto.interaction.add",
+        &delay(100, json!({"type": "openOverlay", "dest": o})),
+    )
+    .unwrap();
     let mut h = Harness::new(s);
     h.run("proto.present", json!({"start": a}));
     h.settle();
-    let presenter = || h.app.ui.present.as_ref().map(crate::present::Presenter::inspect).unwrap();
-    assert_eq!(presenter()["overlays"], json!([o]), "the overlay opened after 100 ms");
+    let presenter = || {
+        h.app
+            .ui
+            .present
+            .as_ref()
+            .map(crate::present::Presenter::inspect)
+            .unwrap()
+    };
+    assert_eq!(
+        presenter()["overlays"],
+        json!([o]),
+        "the overlay opened after 100 ms"
+    );
     // The 2 s timer belongs to the frame under the overlay, which can't fire it while the overlay
     // is open: once it's past due the presenter doesn't spin waiting for it.
     h.time += 3.0;
     h.assert_idle("an overlay over a frame with a pending delay");
-    let presenter = h.app.ui.present.as_ref().map(crate::present::Presenter::inspect).unwrap();
+    let presenter = h
+        .app
+        .ui
+        .present
+        .as_ref()
+        .map(crate::present::Presenter::inspect)
+        .unwrap();
     assert_eq!(presenter["current"], json!(a), "{presenter}");
 }
 
@@ -183,7 +290,10 @@ fn a_toast_wakes_the_ui_only_to_go_away() {
     h.app.toast("Saved");
     // Once it has faded in, the next frame it asks for is the one that hides it.
     let delay = h.settle();
-    assert!(delay > Duration::from_secs(2) && delay <= Duration::from_secs(3), "{delay:?}");
+    assert!(
+        delay > Duration::from_secs(2) && delay <= Duration::from_secs(3),
+        "{delay:?}"
+    );
     assert!(h.app.ui.toast.is_some());
     h.time += 3.0;
     h.frame(vec![]);
@@ -199,13 +309,22 @@ fn a_finished_background_render_wakes_the_ui() {
         w.fetch_add(1, Ordering::SeqCst);
     });
     let mut s = Session::new();
-    s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 100, "height": 100})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": 100, "height": 100}),
+    )
+    .unwrap();
     let ds = s.ds().unwrap();
     let mut worker = crate::render_worker::Worker::new(ctx.clone());
     worker.submit(crate::render_worker::Job {
         doc: ds.doc.clone(),
         page: ds.page,
-        view: figcraft_render::View { origin: (0.0, 0.0), scale: 1.0, width: 120, height: 120 },
+        view: figcraft_render::View {
+            origin: (0.0, 0.0),
+            scale: 1.0,
+            width: 120,
+            height: 120,
+        },
         outline: false,
         outline_extras: Default::default(),
         outlined: vec![],
@@ -215,7 +334,10 @@ fn a_finished_background_render_wakes_the_ui() {
     });
     let start = Instant::now();
     while wakes.load(Ordering::SeqCst) == 0 {
-        assert!(start.elapsed() < Duration::from_secs(20), "the render thread never woke the UI");
+        assert!(
+            start.elapsed() < Duration::from_secs(20),
+            "the render thread never woke the UI"
+        );
         std::thread::sleep(Duration::from_millis(2));
     }
     assert!(worker.poll().is_some(), "the woken frame finds the image");
@@ -227,20 +349,38 @@ fn control_requests_and_screenshots_wake_an_idle_ui() {
     h.settle();
     // A request is answered in the next frame, which asks for one more to show its effect.
     let (tx, rx) = std::sync::mpsc::channel();
-    h.app.control_queue.push(ControlRequest { id: json!(1), method: "ui.inspect".into(), params: json!({}), reply: tx.clone() });
+    h.app.control_queue.push(ControlRequest {
+        id: json!(1),
+        method: "ui.inspect".into(),
+        params: json!({}),
+        reply: tx.clone(),
+    });
     assert_eq!(h.frame(vec![]), Duration::ZERO);
     assert!(rx.try_recv().unwrap().result.is_ok());
     h.assert_idle("after a control request");
     // A screenshot keeps frames coming until the window delivers it, then the UI rests again.
     let path = std::env::temp_dir().join(format!("figcraft-idle-shot-{}.png", std::process::id()));
     let params = json!({"path": path.to_string_lossy()});
-    h.app.control_queue.push(ControlRequest { id: json!(2), method: "ui.screenshot".into(), params, reply: tx });
+    h.app.control_queue.push(ControlRequest {
+        id: json!(2),
+        method: "ui.screenshot".into(),
+        params,
+        reply: tx,
+    });
     for _ in 0..5 {
-        assert_eq!(h.frame(vec![]), Duration::ZERO, "waiting for the screenshot");
+        assert_eq!(
+            h.frame(vec![]),
+            Duration::ZERO,
+            "waiting for the screenshot"
+        );
     }
     assert!(rx.try_recv().is_err(), "not delivered yet");
     let image = Arc::new(egui::ColorImage::filled([4, 4], egui::Color32::RED));
-    h.frame(vec![Event::Screenshot { viewport_id: ViewportId::ROOT, user_data: egui::UserData::default(), image }]);
+    h.frame(vec![Event::Screenshot {
+        viewport_id: ViewportId::ROOT,
+        user_data: egui::UserData::default(),
+        image,
+    }]);
     let reply = rx.try_recv().unwrap();
     assert_eq!(reply.result.unwrap()["width"], json!(4));
     let _ = std::fs::remove_file(&path);
@@ -256,9 +396,15 @@ fn animated_gif() -> String {
         let mut enc = GifEncoder::new(&mut out);
         enc.set_repeat(Repeat::Infinite).unwrap();
         let frame = |c: [u8; 4]| {
-            image::Frame::from_parts(image::RgbaImage::from_pixel(8, 8, image::Rgba(c)), 0, 0, image::Delay::from_numer_denom_ms(100, 1))
+            image::Frame::from_parts(
+                image::RgbaImage::from_pixel(8, 8, image::Rgba(c)),
+                0,
+                0,
+                image::Delay::from_numer_denom_ms(100, 1),
+            )
         };
-        enc.encode_frames([frame([255, 0, 0, 255]), frame([0, 255, 0, 255])]).unwrap();
+        enc.encode_frames([frame([255, 0, 0, 255]), frame([0, 255, 0, 255])])
+            .unwrap();
     }
     base64::engine::general_purpose::STANDARD.encode(out)
 }
@@ -266,7 +412,12 @@ fn animated_gif() -> String {
 #[test]
 fn an_animated_gif_wakes_only_the_presenter_and_only_at_its_frames() {
     let mut s = Session::new();
-    let a = id(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 200, "height": 200})).unwrap());
+    let a = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 200, "height": 200}),
+        )
+        .unwrap());
     s.execute("image.place", &json!({"data": animated_gif(), "parent": a, "x": 10, "y": 10, "width": 100, "height": 100})).unwrap();
     s.execute("select.set", &json!({"ids": []})).unwrap();
     let mut h = Harness::new(s);
@@ -278,7 +429,10 @@ fn an_animated_gif_wakes_only_the_presenter_and_only_at_its_frames() {
     for d in &delays[5..] {
         assert!(*d <= Duration::from_millis(100 + 17), "{delays:?}");
     }
-    assert!(delays[5..].iter().any(|d| *d > Duration::from_millis(20)), "it doesn't draw every frame: {delays:?}");
+    assert!(
+        delays[5..].iter().any(|d| *d > Duration::from_millis(20)),
+        "it doesn't draw every frame: {delays:?}"
+    );
     h.app.ui.present = None;
     h.assert_idle("the presenter closed");
 }

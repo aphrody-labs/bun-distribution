@@ -22,8 +22,24 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             super::newdoc::file_new
         ),
-        cmd!("file.close", "Close", ["File"], Some("Cmd+W"), "{index?}", has_doc, file_close),
-        cmd!("document.activate", "Activate Document", [], None, "{index}", always, doc_activate),
+        cmd!(
+            "file.close",
+            "Close",
+            ["File"],
+            Some("Cmd+W"),
+            "{index?}",
+            has_doc,
+            file_close
+        ),
+        cmd!(
+            "document.activate",
+            "Activate Document",
+            [],
+            None,
+            "{index}",
+            always,
+            doc_activate
+        ),
         cmd!(query "document.inspect", "Inspect Document", [], None, "{depth?, childLimit?} → layer tree (each node: id, name, kind, visible, locked, bounds, opacity when below 1, blend when not Normal, fill, stroke and strokeWidth of objects and compound paths; a compound path's members have compoundMember: true instead of paint, which is the compound's), artboards, selection, history (a sliced tree reports childCount)", has_doc, |s, p| Ok(inspect::document_opts(s, slice_opts(p, "document.inspect")?))),
         cmd!(query "document.node", "Inspect Object", [], None, "{id, summary?: compact summary, depth?: child levels in the summary (default all), childLimit?: children shown per node (default all; a level that shows fewer reports childCount)} → one object", has_doc, doc_node),
         cmd!(query "document.find", "Find Objects", [], None, "{name?: substring of the Layers panel name, kind?: panel label such as Group; Path; Type or Image (exact), text?: substring of type content, limit?: max matches (default 100, 0 counts only)} → {matches: [{id, name, kind, path}], total}", has_doc, doc_find),
@@ -56,8 +72,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             reset_ruler_origin
         ),
-        cmd!("edit.undo", "Undo", ["Edit"], Some("Cmd+Z"), "{}", can_undo, undo),
-        cmd!("edit.redo", "Redo", ["Edit"], Some("Cmd+Shift+Z"), "{}", can_redo, redo),
+        cmd!(
+            "edit.undo",
+            "Undo",
+            ["Edit"],
+            Some("Cmd+Z"),
+            "{}",
+            can_undo,
+            undo
+        ),
+        cmd!(
+            "edit.redo",
+            "Redo",
+            ["Edit"],
+            Some("Cmd+Shift+Z"),
+            "{}",
+            can_redo,
+            redo
+        ),
         cmd!(
             "edit.undoGroup.begin",
             "Begin Undo Group",
@@ -76,8 +108,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             undo_group_end
         ),
-        cmd!("edit.cut", "Cut", ["Edit"], Some("Cmd+X"), "{} (the Artboard tool chosen: artboard.cut)", has_selection_or_artboard_tool, cut),
-        cmd!("edit.copy", "Copy", ["Edit"], Some("Cmd+C"), "{} (the Artboard tool chosen: artboard.copy)", has_selection_or_artboard_tool, copy),
+        cmd!(
+            "edit.cut",
+            "Cut",
+            ["Edit"],
+            Some("Cmd+X"),
+            "{} (the Artboard tool chosen: artboard.cut)",
+            has_selection_or_artboard_tool,
+            cut
+        ),
+        cmd!(
+            "edit.copy",
+            "Copy",
+            ["Edit"],
+            Some("Cmd+C"),
+            "{} (the Artboard tool chosen: artboard.copy)",
+            has_selection_or_artboard_tool,
+            copy
+        ),
         cmd!(
             "edit.paste",
             "Paste",
@@ -145,7 +193,12 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn file_close(s: &mut Session, p: &Value) -> Result<Value> {
-    let i = p.get("index").and_then(Value::as_u64).map(|v| v as usize).or(s.active_index()).ok_or(EngineError::NoDocument)?;
+    let i = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .map(|v| v as usize)
+        .or(s.active_index())
+        .ok_or(EngineError::NoDocument)?;
     if !s.close_document(i) {
         return Err(bad("file.close", "no such document"));
     }
@@ -153,8 +206,15 @@ fn file_close(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn doc_activate(s: &mut Session, p: &Value) -> Result<Value> {
-    let i = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad("document.activate", "missing index"))? as usize;
-    if s.set_active(i) { ok() } else { Err(bad("document.activate", "no such document")) }
+    let i = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad("document.activate", "missing index"))? as usize;
+    if s.set_active(i) {
+        ok()
+    } else {
+        Err(bad("document.activate", "no such document"))
+    }
 }
 
 fn doc_node(s: &mut Session, p: &Value) -> Result<Value> {
@@ -164,17 +224,31 @@ fn doc_node(s: &mut Session, p: &Value) -> Result<Value> {
     if !summary && (opts.depth.is_some() || opts.child_limit.is_some()) {
         // The full object JSON is never truncated: a slice without `summary` would
         // otherwise silently return the whole subtree.
-        return Err(bad("document.node", "`depth` and `childLimit` slice the summary: pass `summary: true`"));
+        return Err(bad(
+            "document.node",
+            "`depth` and `childLimit` slice the summary: pass `summary: true`",
+        ));
     }
     let doc = &s.doc()?.doc;
     let n = doc.node(id).ok_or(EngineError::NoNode(id))?;
-    opts.compound_member = doc.parent_of(id).and_then(|p| doc.node(p)).is_some_and(|p| matches!(p.kind, vectorcraft_doc::NodeKind::Compound { .. }));
-    if summary { Ok(inspect::node_summary_opts(n, opts)) } else { Ok(serde_json::to_value(n).unwrap_or(Value::Null)) }
+    opts.compound_member = doc
+        .parent_of(id)
+        .and_then(|p| doc.node(p))
+        .is_some_and(|p| matches!(p.kind, vectorcraft_doc::NodeKind::Compound { .. }));
+    if summary {
+        Ok(inspect::node_summary_opts(n, opts))
+    } else {
+        Ok(serde_json::to_value(n).unwrap_or(Value::Null))
+    }
 }
 
 /// `depth` / `childLimit` for a summary read: absent (or null) means no limit.
 fn slice_opts(p: &Value, cmd: &str) -> Result<inspect::SummaryOpts> {
-    Ok(inspect::SummaryOpts { depth: opt_u64(p, cmd, "depth")?, child_limit: opt_u64(p, cmd, "childLimit")?, compound_member: false })
+    Ok(inspect::SummaryOpts {
+        depth: opt_u64(p, cmd, "depth")?,
+        child_limit: opt_u64(p, cmd, "childLimit")?,
+        compound_member: false,
+    })
 }
 
 /// An optional count: absent (or null) is `None`; a present value that is not a
@@ -182,7 +256,10 @@ fn slice_opts(p: &Value, cmd: &str) -> Result<inspect::SummaryOpts> {
 fn opt_u64(p: &Value, cmd: &str, key: &str) -> Result<Option<u64>> {
     match p.get(key) {
         None | Some(Value::Null) => Ok(None),
-        Some(v) => v.as_u64().map(Some).ok_or_else(|| bad(cmd, format!("`{key}` must be a non-negative integer"))),
+        Some(v) => v
+            .as_u64()
+            .map(Some)
+            .ok_or_else(|| bad(cmd, format!("`{key}` must be a non-negative integer"))),
     }
 }
 
@@ -193,9 +270,16 @@ fn doc_find(s: &mut Session, p: &Value) -> Result<Value> {
         Some(Value::String(v)) => Ok(Some(v.to_lowercase()).filter(|v| !v.is_empty())),
         Some(_) => Err(bad("document.find", format!("`{key}` must be a string"))),
     };
-    let filter = inspect::FindFilter { name: needle("name")?, kind: needle("kind")?, text: needle("text")? };
+    let filter = inspect::FindFilter {
+        name: needle("name")?,
+        kind: needle("kind")?,
+        text: needle("text")?,
+    };
     if filter.is_empty() {
-        return Err(bad("document.find", "give at least one of `name`, `kind`, `text`"));
+        return Err(bad(
+            "document.find",
+            "give at least one of `name`, `kind`, `text`",
+        ));
     }
     let limit = opt_u64(p, "document.find", "limit")?.unwrap_or(100);
     let (matches, total) = inspect::find_nodes(&s.doc()?.doc, &filter, limit);
@@ -204,7 +288,9 @@ fn doc_find(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Document Setup's units (also `document.setup {units}`).
 fn set_units(s: &mut Session, p: &Value) -> Result<Value> {
-    let u = str_param(p, "units").and_then(Unit::named).ok_or_else(|| bad("document.setUnits", "unknown units"))?;
+    let u = str_param(p, "units")
+        .and_then(Unit::named)
+        .ok_or_else(|| bad("document.setUnits", "unknown units"))?;
     s.set_document_units(u)?;
     ok()
 }
@@ -219,15 +305,26 @@ fn reset_ruler_origin(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "document.resetRulerOrigin";
     let index = match p.get("artboard") {
         None => 0,
-        Some(v) => v.as_u64().and_then(|n| usize::try_from(n).ok()).ok_or_else(|| bad(C, "index out of range"))?,
+        Some(v) => v
+            .as_u64()
+            .and_then(|n| usize::try_from(n).ok())
+            .ok_or_else(|| bad(C, "index out of range"))?,
     };
-    let ab = s.doc()?.doc.artboards.get(index).ok_or_else(|| bad(C, "index out of range"))?;
+    let ab = s
+        .doc()?
+        .doc
+        .artboards
+        .get(index)
+        .ok_or_else(|| bad(C, "index out of range"))?;
     change_ruler_origin(s, Point::new(ab.rect.x0, ab.rect.y0), "Reset Ruler Origin")
 }
 
 fn change_ruler_origin(s: &mut Session, origin: Point, label: &str) -> Result<Value> {
-    if !origin.is_finite() || origin.x.abs() > crate::MAX_COORD || origin.y.abs() > crate::MAX_COORD {
-        return Err(EngineError::Other("result would exceed the canvas (coordinates out of range)".into()));
+    if !origin.is_finite() || origin.x.abs() > crate::MAX_COORD || origin.y.abs() > crate::MAX_COORD
+    {
+        return Err(EngineError::Other(
+            "result would exceed the canvas (coordinates out of range)".into(),
+        ));
     }
     if s.doc()?.doc.ruler_origin != origin {
         s.edit(label, |d, _| {
@@ -240,15 +337,24 @@ fn change_ruler_origin(s: &mut Session, origin: Point, label: &str) -> Result<Va
 
 /// A typing session in progress (the Type tool previews the whole session as one interaction).
 pub(crate) fn typing_in_progress(s: &Session) -> bool {
-    s.active().and_then(|d| d.interaction.as_ref()).is_some_and(|it| it.label == "Typing" && it.preview.is_some())
+    s.active()
+        .and_then(|d| d.interaction.as_ref())
+        .is_some_and(|it| it.label == "Typing" && it.preview.is_some())
 }
 
 fn undo_group_begin(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "edit.undoGroup.begin";
     let label = match p.get("label") {
         None | Some(Value::Null) => None,
-        Some(Value::String(l)) if !l.trim().is_empty() && l.chars().count() <= 200 => Some(l.trim().to_string()),
-        Some(_) => return Err(bad(C, "`label` must be a non-empty name of at most 200 characters")),
+        Some(Value::String(l)) if !l.trim().is_empty() && l.chars().count() <= 200 => {
+            Some(l.trim().to_string())
+        }
+        Some(_) => {
+            return Err(bad(
+                C,
+                "`label` must be a non-empty name of at most 200 characters",
+            ));
+        }
     };
     s.begin_named_undo_group(label);
     ok()
@@ -270,14 +376,20 @@ fn undo(s: &mut Session, _: &Value) -> Result<Value> {
         s.set_tool_option("endTyping", &Value::Bool(true));
     }
     let st = s.doc_mut()?;
-    let e = st.history.undo.pop().ok_or_else(|| EngineError::Other("nothing to undo".into()))?;
+    let e = st
+        .history
+        .undo
+        .pop()
+        .ok_or_else(|| EngineError::Other("nothing to undo".into()))?;
     let label = e.label.clone();
     let costs = e.costs();
     let editing = st.doc.mask_edit.map(|m| m.layer);
     let doc = std::mem::replace(&mut st.doc, e.doc);
     let selection = std::mem::replace(&mut st.selection, Arc::unwrap_or_clone(e.selection));
     let selection = shared_selection(selection, st.history.redo.last());
-    st.history.redo.push(crate::HistoryEntry::turned(e.label, doc, selection, &st.doc, costs));
+    st.history.redo.push(crate::HistoryEntry::turned(
+        e.label, doc, selection, &st.doc, costs,
+    ));
     st.history.trim();
     st.revision += 1;
     st.selection.prune(&st.doc);
@@ -287,14 +399,20 @@ fn undo(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn redo(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc_mut()?;
-    let e = st.history.redo.pop().ok_or_else(|| EngineError::Other("nothing to redo".into()))?;
+    let e = st
+        .history
+        .redo
+        .pop()
+        .ok_or_else(|| EngineError::Other("nothing to redo".into()))?;
     let label = e.label.clone();
     let costs = e.costs();
     let editing = st.doc.mask_edit.map(|m| m.layer);
     let doc = std::mem::replace(&mut st.doc, e.doc);
     let selection = std::mem::replace(&mut st.selection, Arc::unwrap_or_clone(e.selection));
     let selection = shared_selection(selection, st.history.undo.last());
-    st.history.undo.push(crate::HistoryEntry::turned(e.label, doc, selection, &st.doc, costs));
+    st.history.undo.push(crate::HistoryEntry::turned(
+        e.label, doc, selection, &st.doc, costs,
+    ));
     st.history.trim();
     st.revision += 1;
     st.selection.prune(&st.doc);
@@ -303,7 +421,10 @@ fn redo(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 /// `selection` for an undo (redo) step, sharing that of `like`, the step beside it, when the same.
-fn shared_selection(selection: vectorcraft_doc::Selection, like: Option<&crate::HistoryEntry>) -> Arc<vectorcraft_doc::Selection> {
+fn shared_selection(
+    selection: vectorcraft_doc::Selection,
+    like: Option<&crate::HistoryEntry>,
+) -> Arc<vectorcraft_doc::Selection> {
     match like {
         Some(l) if *l.selection == selection => l.selection.clone(),
         _ => Arc::new(selection),
@@ -326,9 +447,14 @@ pub(crate) fn roots_of(doc: &Document, ids: Vec<NodeId>) -> Vec<NodeId> {
         .into_iter()
         .map(|id| {
             let path = paths.get(&id);
-            let parent = path.and_then(|p| p.split_last()).map(|(_, up)| up).filter(|up| !up.is_empty());
+            let parent = path
+                .and_then(|p| p.split_last())
+                .map(|(_, up)| up)
+                .filter(|up| !up.is_empty());
             match parent.and_then(|up| doc.node_at(up).map(|n| (up, n))) {
-                Some((up, n)) if matches!(n.kind, vectorcraft_doc::NodeKind::Compound { .. }) => (n.id, Some(up.to_vec())),
+                Some((up, n)) if matches!(n.kind, vectorcraft_doc::NodeKind::Compound { .. }) => {
+                    (n.id, Some(up.to_vec()))
+                }
                 _ => (id, path.cloned()),
             }
         })
@@ -337,10 +463,19 @@ pub(crate) fn roots_of(doc: &Document, ids: Vec<NodeId>) -> Vec<NodeId> {
     let listed: std::collections::HashSet<NodeId> = sel.iter().map(|(id, _)| *id).collect();
     sel.iter()
         .filter(|(_, path)| {
-            let anc = path.as_deref().and_then(|p| doc.ancestry_at(p)).unwrap_or_default();
-            !anc[..anc.len().saturating_sub(1)].iter().any(|a| listed.contains(a))
+            let anc = path
+                .as_deref()
+                .and_then(|p| doc.ancestry_at(p))
+                .unwrap_or_default();
+            !anc[..anc.len().saturating_sub(1)]
+                .iter()
+                .any(|a| listed.contains(a))
         })
-        .filter(|(_, path)| path.as_deref().and_then(|p| doc.node_at(p)).is_some_and(|n| !n.is_layer()))
+        .filter(|(_, path)| {
+            path.as_deref()
+                .and_then(|p| doc.node_at(p))
+                .is_some_and(|n| !n.is_layer())
+        })
         .map(|(id, _)| *id)
         .collect()
 }
@@ -363,11 +498,19 @@ fn cut(s: &mut Session, p: &Value) -> Result<Value> {
     // copied, while Clear on its own deletes exactly the selected members.
     let ids = selected_roots(s)?;
     copy(s, p)?;
-    if s.doc()?.selection.anchors.is_empty() { clear(s, &json!({ "ids": ids })) } else { clear(s, &json!({})) }
+    if s.doc()?.selection.anchors.is_empty() {
+        clear(s, &json!({ "ids": ids }))
+    } else {
+        clear(s, &json!({}))
+    }
 }
 
 fn clear(s: &mut Session, p: &Value) -> Result<Value> {
-    let explicit = if p.get("ids").is_some() { Some(checked_ids_param(s, p, "ids", "edit.clear")?) } else { None };
+    let explicit = if p.get("ids").is_some() {
+        Some(checked_ids_param(s, p, "ids", "edit.clear")?)
+    } else {
+        None
+    };
     // Direct-selected anchors or segments: remove those components instead of whole objects.
     if explicit.is_none() && !s.doc()?.selection.anchors.is_empty() {
         return super::path::delete_anchors(s, p);
@@ -382,11 +525,22 @@ fn clear(s: &mut Session, p: &Value) -> Result<Value> {
     let targets = explicit.unwrap_or_else(|| st.selection.in_paint_order(&st.doc));
     // Keep the selected ids themselves, without promoting compound members. Delete a selected
     // ancestor just once; its selected descendants leave with it. Layers themselves are kept.
-    let targets: BTreeSet<_> = targets.into_iter().filter(|id| st.doc.node(*id).is_some_and(|n| !n.is_layer())).collect();
+    let targets: BTreeSet<_> = targets
+        .into_iter()
+        .filter(|id| st.doc.node(*id).is_some_and(|n| !n.is_layer()))
+        .collect();
     let ids: Vec<_> = targets
         .iter()
         .copied()
-        .filter(|id| !st.doc.ancestry(*id).unwrap_or_default().iter().rev().skip(1).any(|ancestor| targets.contains(ancestor)))
+        .filter(|id| {
+            !st.doc
+                .ancestry(*id)
+                .unwrap_or_default()
+                .iter()
+                .rev()
+                .skip(1)
+                .any(|ancestor| targets.contains(ancestor))
+        })
         .collect();
     if ids.is_empty() {
         return ok();
@@ -439,23 +593,43 @@ fn paste(s: &mut Session, p: &Value, mode: PasteMode) -> Result<Value> {
 /// Place the objects of `clip` (a library graphic) into the active document centred on `center`,
 /// as one undo step: their resources come along as a paste's do, a swatch whose name the document
 /// gives another colour merged into the document's.
-pub(crate) fn place_clip(s: &mut Session, clip: &Clipboard, center: vectorcraft_geom::Point) -> Result<Value> {
+pub(crate) fn place_clip(
+    s: &mut Session,
+    clip: &Clipboard,
+    center: vectorcraft_geom::Point,
+) -> Result<Value> {
     let choices = SwatchChoices::parse(PasteMode::Library.label(), &json!({}))?;
-    paste_clip(s, &json!({ "center": [center.x, center.y] }), PasteMode::Library, clip, &choices)
+    paste_clip(
+        s,
+        &json!({ "center": [center.x, center.y] }),
+        PasteMode::Library,
+        clip,
+        &choices,
+    )
 }
 
 /// Paste in Place, in Front or in Back onto artboard `artboard` (the active one, #693): where the
 /// objects were on the artboard they were copied from, on that one; without it (or a copy from no
 /// artboard), where they were.
 fn onto_artboard(doc: &Document, p: &Value, clip: &Clipboard) -> Affine {
-    let target = p.get("artboard").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok()).and_then(|i| doc.artboards.get(i));
+    let target = p
+        .get("artboard")
+        .and_then(Value::as_u64)
+        .and_then(|i| usize::try_from(i).ok())
+        .and_then(|i| doc.artboards.get(i));
     match (target, clip.source_artboard) {
         (Some(t), Some(src)) => Affine::translate(t.rect.origin() - src.origin()),
         _ => Affine::IDENTITY,
     }
 }
 
-fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, choices: &SwatchChoices) -> Result<Value> {
+fn paste_clip(
+    s: &mut Session,
+    p: &Value,
+    mode: PasteMode,
+    clip: &Clipboard,
+    choices: &SwatchChoices,
+) -> Result<Value> {
     let off = s.prefs.paste_offset;
     let st = s.doc()?;
     let same_doc = clip.source_doc == Some(st.uid);
@@ -466,16 +640,30 @@ fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, cho
         .artboard
         .as_ref()
         .filter(|_| mode != PasteMode::AllArtboards)
-        .map(|a| (a, if mode == PasteMode::Offset { super::panelcmds::beside_artboards(&st.doc, a.rect) } else { Vec2::ZERO }));
+        .map(|a| {
+            (
+                a,
+                if mode == PasteMode::Offset {
+                    super::panelcmds::beside_artboards(&st.doc, a.rect)
+                } else {
+                    Vec2::ZERO
+                },
+            )
+        });
     // Paste Remembers Layers (not while isolating a group: pastes stay in it); an artboard's art
     // always goes back into its layers.
-    let remember = (st.doc.paste_remembers_layers || board.is_some()) && parent.is_some_and(|p| st.doc.node(p).is_some_and(Node::is_layer));
+    let remember = (st.doc.paste_remembers_layers || board.is_some())
+        && parent.is_some_and(|p| st.doc.node(p).is_some_and(Node::is_layer));
     // Front/back: relative to the selection (top-most / bottom-most selected object); with
     // nothing selected, the top / bottom of the current layer.
     let anchor = match mode {
         PasteMode::Front | PasteMode::Back => {
             let order = st.selection.in_paint_order(&st.doc);
-            let a = if mode == PasteMode::Front { order.last() } else { order.first() };
+            let a = if mode == PasteMode::Front {
+                order.last()
+            } else {
+                order.first()
+            };
             a.and_then(|id| st.doc.position(*id))
         }
         _ => None,
@@ -483,12 +671,22 @@ fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, cho
     let placements: Vec<Affine> = match (mode, board) {
         (_, Some((_, dv))) => vec![Affine::translate(dv)],
         (PasteMode::Offset | PasteMode::Library, None) => vec![match point_param(p, "center") {
-            Some(c) => clip.bounds().map_or(Affine::IDENTITY, |b| Affine::translate(c - b.center())),
+            Some(c) => clip
+                .bounds()
+                .map_or(Affine::IDENTITY, |b| Affine::translate(c - b.center())),
             None => Affine::translate((f64_or(p, "dx", off), f64_or(p, "dy", off))),
         }],
         (PasteMode::AllArtboards, None) => {
-            let src = clip.source_artboard.or_else(|| st.doc.artboards.first().map(|a| a.rect)).map(|r| r.origin()).unwrap_or_default();
-            st.doc.artboards.iter().map(|a| Affine::translate(a.rect.origin() - src)).collect()
+            let src = clip
+                .source_artboard
+                .or_else(|| st.doc.artboards.first().map(|a| a.rect))
+                .map(|r| r.origin())
+                .unwrap_or_default();
+            st.doc
+                .artboards
+                .iter()
+                .map(|a| Affine::translate(a.rect.origin() - src))
+                .collect()
         }
         // In place, in front, in back: onto the active artboard when the UI names it.
         _ => vec![onto_artboard(&st.doc, p, clip)],
@@ -508,18 +706,34 @@ fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, cho
                     c.transform(xf, false);
                 }
                 let layer = match clip.source_layers.get(k) {
-                    Some(Some(name)) if remember => Some(*layers.entry(name).or_insert_with(|| layer_named(d, name))),
+                    Some(Some(name)) if remember => {
+                        Some(*layers.entry(name).or_insert_with(|| layer_named(d, name)))
+                    }
                     _ => None,
                 };
                 let (par, idx) = match (anchor, layer) {
                     // Next to the anchor, unless the object goes back to another layer.
                     (Some((par, i, _)), l) if l.is_none() || l == par => {
                         let k = placed.get(&par).copied().unwrap_or(0);
-                        (par, if mode == PasteMode::Front { i + 1 + k } else { i + k })
+                        (
+                            par,
+                            if mode == PasteMode::Front {
+                                i + 1 + k
+                            } else {
+                                i + k
+                            },
+                        )
                     }
                     (_, l) => {
                         let par = l.or(parent);
-                        (par, if mode == PasteMode::Back { placed.get(&par).copied().unwrap_or(0) } else { usize::MAX })
+                        (
+                            par,
+                            if mode == PasteMode::Back {
+                                placed.get(&par).copied().unwrap_or(0)
+                            } else {
+                                usize::MAX
+                            },
+                        )
                     }
                 };
                 *placed.entry(par).or_default() += 1;
@@ -562,13 +776,20 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let roots = selected_roots(s)?;
     let dx = f64_or(p, "dx", 0.0);
     let dy = f64_or(p, "dy", 0.0);
-    let ids = s.edit("Duplicate", |d, sel| duplicate_in(d, sel, &roots, Affine::translate((dx, dy))))?;
+    let ids = s.edit("Duplicate", |d, sel| {
+        duplicate_in(d, sel, &roots, Affine::translate((dx, dy)))
+    })?;
     Ok(json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>() }))
 }
 
 /// Duplicate `roots` directly above each original, transform the copies, select them
 /// ([`copy_above`]).
-pub(crate) fn duplicate_in(d: &mut Document, sel: &mut vectorcraft_doc::Selection, roots: &[NodeId], xf: Affine) -> Result<Vec<NodeId>> {
+pub(crate) fn duplicate_in(
+    d: &mut Document,
+    sel: &mut vectorcraft_doc::Selection,
+    roots: &[NodeId],
+    xf: Affine,
+) -> Result<Vec<NodeId>> {
     let out = copy_above(d, roots, |_, _, c| c.transform(xf, true))?;
     sel.set(out.iter().copied());
     Ok(out)
@@ -579,26 +800,39 @@ pub(crate) fn duplicate_in(d: &mut Document, sel: &mut vectorcraft_doc::Selectio
 /// tree as it is. The copies take new ids in the order of `roots`. Roots listed twice, or inside
 /// another root, are copied one at a time: each copy is made from the document as the copies
 /// before it left it.
-pub(crate) fn copy_above(d: &mut Document, roots: &[NodeId], mut change: impl FnMut(&mut Document, &Node, &mut Node)) -> Result<Vec<NodeId>> {
+pub(crate) fn copy_above(
+    d: &mut Document,
+    roots: &[NodeId],
+    mut change: impl FnMut(&mut Document, &Node, &mut Node),
+) -> Result<Vec<NodeId>> {
     let paths = d.index_paths(roots.iter().copied());
     let mut found: Vec<_> = roots.iter().filter_map(|id| paths.get(id)).collect();
     found.sort_unstable();
     let out = if found.windows(2).all(|w| !w[1].starts_with(w[0])) {
         let mut copies = Vec::with_capacity(roots.len());
         for id in roots {
-            let Some(n) = paths.get(id).and_then(|p| d.node_at(p)).cloned() else { continue };
+            let Some(n) = paths.get(id).and_then(|p| d.node_at(p)).cloned() else {
+                continue;
+            };
             let mut c = d.reid(&n);
             change(d, &n, &mut c);
             copies.push((*id, vec![c]));
         }
-        let out: Vec<NodeId> = copies.iter().flat_map(|(_, c)| c.iter().map(|n| n.id)).collect();
+        let out: Vec<NodeId> = copies
+            .iter()
+            .flat_map(|(_, c)| c.iter().map(|n| n.id))
+            .collect();
         d.insert_beside(copies, false)?;
         out
     } else {
         let mut out = vec![];
         for id in roots {
-            let Some((par, idx, _)) = d.position(*id) else { continue };
-            let Some(n) = d.node(*id).cloned() else { continue };
+            let Some((par, idx, _)) = d.position(*id) else {
+                continue;
+            };
+            let Some(n) = d.node(*id).cloned() else {
+                continue;
+            };
             let mut c = d.reid(&n);
             change(d, &n, &mut c);
             out.push(d.insert(par, idx + 1, c)?);

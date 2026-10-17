@@ -24,7 +24,14 @@
 //!   Bulgarian syllable rules, heuristic.
 //!
 //! [`check_text`] checks a paragraph whose runs are in different languages.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod affix;
 pub mod bg;
@@ -54,7 +61,11 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options { ignore_uppercase: true, ignore_numbers: true, ignore_internet: true }
+        Options {
+            ignore_uppercase: true,
+            ignore_numbers: true,
+            ignore_internet: true,
+        }
     }
 }
 
@@ -90,14 +101,21 @@ static DICTIONARY_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 /// Add a word to the user dictionary ("Add to Dictionary"). It applies to every language.
 pub fn add_word(w: &str) {
-    if user_words().write().unwrap_or_else(|e| e.into_inner()).insert(w.to_lowercase()) {
+    if user_words()
+        .write()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(w.to_lowercase())
+    {
         DICTIONARY_GENERATION.fetch_add(1, Ordering::Relaxed);
     }
 }
 
 /// Take a word out of the user dictionary (File › Options › Proofing). Returns whether it was there.
 pub fn remove_word(w: &str) -> bool {
-    let removed = user_words().write().unwrap_or_else(|e| e.into_inner()).remove(&w.to_lowercase());
+    let removed = user_words()
+        .write()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&w.to_lowercase());
     if removed {
         DICTIONARY_GENERATION.fetch_add(1, Ordering::Relaxed);
     }
@@ -112,7 +130,11 @@ fn ignored_words() -> &'static RwLock<HashSet<String>> {
 /// Ignore a word everywhere until the app closes ("Ignore All"). Unlike [`add_word`] it isn't
 /// part of the user dictionary: it is never listed, saved or loaded, as in Word.
 pub fn ignore_word(w: &str) {
-    if ignored_words().write().unwrap_or_else(|e| e.into_inner()).insert(w.to_lowercase()) {
+    if ignored_words()
+        .write()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(w.to_lowercase())
+    {
         DICTIONARY_GENERATION.fetch_add(1, Ordering::Relaxed);
     }
 }
@@ -124,12 +146,20 @@ pub fn dictionary_generation() -> u64 {
 
 /// Is `lower` (a lower-case word) in the user dictionary?
 pub(crate) fn in_user_dictionary(lower: &str) -> bool {
-    user_words().read().unwrap_or_else(|e| e.into_inner()).contains(lower)
+    user_words()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .contains(lower)
 }
 
 /// Words in the user dictionary.
 pub fn user_dictionary() -> Vec<String> {
-    let mut v: Vec<String> = user_words().read().unwrap_or_else(|e| e.into_inner()).iter().cloned().collect();
+    let mut v: Vec<String> = user_words()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .cloned()
+        .collect();
     v.sort();
     v
 }
@@ -149,7 +179,8 @@ pub fn custom_word(w: &str) -> Option<String> {
     let w = w.trim();
     if w.is_empty()
         || w.chars().count() > MAX_CUSTOM_WORD_CHARS
-        || w.chars().any(|c| c.is_whitespace() || c.is_control() || c == char::REPLACEMENT_CHARACTER)
+        || w.chars()
+            .any(|c| c.is_whitespace() || c.is_control() || c == char::REPLACEMENT_CHARACTER)
     {
         return None;
     }
@@ -162,14 +193,24 @@ pub fn custom_word(w: &str) -> Option<String> {
 fn read_dictionary_file(path: &std::path::Path) -> Vec<String> {
     use std::io::Read;
     let mut bytes = Vec::new();
-    let Ok(file) = std::fs::File::open(path) else { return Vec::new() };
+    let Ok(file) = std::fs::File::open(path) else {
+        return Vec::new();
+    };
     // `take` bounds the read itself, so a huge file is never read whole.
-    if file.take(MAX_CUSTOM_FILE_BYTES).read_to_end(&mut bytes).is_err() {
+    if file
+        .take(MAX_CUSTOM_FILE_BYTES)
+        .read_to_end(&mut bytes)
+        .is_err()
+    {
         return Vec::new();
     }
     // Lossy: a cut multi-byte tail becomes U+FFFD and is skipped by validation below,
     // instead of discarding the whole file.
-    String::from_utf8_lossy(&bytes).lines().filter_map(custom_word).take(MAX_CUSTOM_WORDS).collect()
+    String::from_utf8_lossy(&bytes)
+        .lines()
+        .filter_map(custom_word)
+        .take(MAX_CUSTOM_WORDS)
+        .collect()
 }
 
 /// Read custom-dictionary words from a file into the user dictionary (one word per line;
@@ -228,7 +269,10 @@ pub fn save_user_dictionary(path: &std::path::Path, removed: &[String]) -> std::
     if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty()) {
         std::fs::create_dir_all(dir)?;
     }
-    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "custom-dictionary.txt".into());
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "custom-dictionary.txt".into());
     let tmp = path.with_file_name(format!(".{name}.{}.tmp", std::process::id()));
     let written = std::fs::write(&tmp, out).and_then(|()| std::fs::rename(&tmp, path));
     if written.is_err() {
@@ -246,7 +290,13 @@ const EXTRA_EN: &str = include_str!("../../../assets/wordcraft/spelling/en-extra
 
 fn extra_words() -> &'static HashSet<&'static str> {
     static E: OnceLock<HashSet<&'static str>> = OnceLock::new();
-    E.get_or_init(|| EXTRA_EN.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).collect())
+    E.get_or_init(|| {
+        EXTRA_EN
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .collect()
+    })
 }
 
 /// A base form in the dictionary or the supplement.
@@ -259,7 +309,15 @@ fn known_core(w: &str) -> bool {
     if base_known(d, w) || COMMON.split(' ').any(|c| c == w) {
         return true;
     }
-    if user_words().read().unwrap_or_else(|e| e.into_inner()).contains(w) || ignored_words().read().unwrap_or_else(|e| e.into_inner()).contains(w) {
+    if user_words()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .contains(w)
+        || ignored_words()
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .contains(w)
+    {
         return true;
     }
     // Inflections.
@@ -334,7 +392,9 @@ pub fn is_correct(word: &str) -> bool {
 /// letters, words with digits (Ignore words that contain numbers) and words in capitals
 /// (Ignore words in UPPERCASE).
 fn accepted_by_options(word: &str, opts: &Options) -> bool {
-    let w = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '\'').trim_matches('\'');
+    let w = word
+        .trim_matches(|c: char| !c.is_alphanumeric() && c != '\'')
+        .trim_matches('\'');
     w.chars().count() <= 1
         || !w.chars().any(char::is_alphabetic)
         || (opts.ignore_numbers && w.chars().any(|c| c.is_ascii_digit()))
@@ -372,7 +432,11 @@ pub fn suggest(word: &str, max: usize) -> Vec<String> {
     let d = dict::Dictionary::en_us();
     let mut scored: Vec<(usize, i64, String)> = Vec::new();
     let target: Vec<char> = lower.chars().collect();
-    for w in d.iter().map(|(w, _)| w).chain(extra_words().iter().copied()) {
+    for w in d
+        .iter()
+        .map(|(w, _)| w)
+        .chain(extra_words().iter().copied())
+    {
         let wn = w.chars().count();
         if wn + 2 < n || wn > n + 2 {
             continue;
@@ -383,7 +447,11 @@ pub fn suggest(word: &str, max: usize) -> Vec<String> {
             scored.push((dist, if same_first { 0 } else { 1 }, w.to_string()));
         }
     }
-    scored.sort_by(|a, b| (a.0, a.1, a.2.len().abs_diff(n)).cmp(&(b.0, b.1, b.2.len().abs_diff(n))).then(a.2.cmp(&b.2)));
+    scored.sort_by(|a, b| {
+        (a.0, a.1, a.2.len().abs_diff(n))
+            .cmp(&(b.0, b.1, b.2.len().abs_diff(n)))
+            .then(a.2.cmp(&b.2))
+    });
     let cap = word.chars().next().is_some_and(char::is_uppercase);
     let upper = word.chars().all(|c| !c.is_lowercase());
     scored
@@ -394,7 +462,9 @@ pub fn suggest(word: &str, max: usize) -> Vec<String> {
                 w.to_uppercase()
             } else if cap {
                 let mut c = w.chars();
-                c.next().map(|f| f.to_uppercase().chain(c).collect()).unwrap_or(w)
+                c.next()
+                    .map(|f| f.to_uppercase().chain(c).collect())
+                    .unwrap_or(w)
             } else {
                 w
             }
@@ -473,7 +543,10 @@ pub fn check_spelling(text: &str) -> Vec<Issue> {
 
 /// [`check_spelling`] with the File › Options › Proofing choices.
 pub fn check_spelling_with(text: &str, opts: &Options) -> Vec<Issue> {
-    words(text).into_iter().filter_map(|(a, b)| spelling_issue(text, a, b, ProofLang::En, opts)).collect()
+    words(text)
+        .into_iter()
+        .filter_map(|(a, b)| spelling_issue(text, a, b, ProofLang::En, opts))
+        .collect()
 }
 
 /// Spelling issues in a paragraph of text in `lang` (none for a language without a dictionary;
@@ -482,15 +555,32 @@ pub fn check_spelling_in(text: &str, lang: ProofLang) -> Vec<Issue> {
     if !lang.is_proofed() {
         return Vec::new();
     }
-    words(text).into_iter().filter_map(|(a, b)| spelling_issue(text, a, b, lang, &Options::default())).collect()
+    words(text)
+        .into_iter()
+        .filter_map(|(a, b)| spelling_issue(text, a, b, lang, &Options::default()))
+        .collect()
 }
 
 /// The spelling issue of the word at `a..b` of `text`, if it is misspelled in `lang`. Words in
 /// web and e-mail addresses are skipped (unless `opts` says otherwise).
-fn spelling_issue(text: &str, a: usize, b: usize, lang: ProofLang, opts: &Options) -> Option<Issue> {
+fn spelling_issue(
+    text: &str,
+    a: usize,
+    b: usize,
+    lang: ProofLang,
+    opts: &Options,
+) -> Option<Issue> {
     let w = text.get(a..b)?;
-    let ts = text.get(..a).and_then(|t| t.rfind(char::is_whitespace)).map(|i| i + 1).unwrap_or(0);
-    let te = text.get(b..).and_then(|t| t.find(char::is_whitespace)).map(|i| b + i).unwrap_or(text.len());
+    let ts = text
+        .get(..a)
+        .and_then(|t| t.rfind(char::is_whitespace))
+        .map(|i| i + 1)
+        .unwrap_or(0);
+    let te = text
+        .get(b..)
+        .and_then(|t| t.find(char::is_whitespace))
+        .map(|i| b + i)
+        .unwrap_or(text.len());
     let token = text.get(ts..te).unwrap_or("");
     let internet = token.contains("://") || token.contains('@') || token.starts_with("www.");
     if (opts.ignore_internet && internet) || is_correct_in_with(w, lang, opts) {
@@ -501,7 +591,14 @@ fn spelling_issue(text: &str, a: usize, b: usize, lang: ProofLang, opts: &Option
         ProofLang::Pt => "Possível erro de ortografia",
         _ => "Possible spelling mistake",
     };
-    Some(Issue { start: a, end: b, kind: IssueKind::Spelling, message: message.into(), suggestions: Vec::new(), lang })
+    Some(Issue {
+        start: a,
+        end: b,
+        kind: IssueKind::Spelling,
+        message: message.into(),
+        suggestions: Vec::new(),
+        lang,
+    })
 }
 
 /// Is `word` spelled correctly in `lang`? Always true in a language without a dictionary.
@@ -553,9 +650,15 @@ pub fn check_text(text: &str, spans: &[(Range<usize>, ProofLang)]) -> Vec<Issue>
 
 /// [`check_text`] with the File › Options › Proofing choices: what spelling skips, and whether
 /// grammar is checked at all.
-pub fn check_text_with(text: &str, spans: &[(Range<usize>, ProofLang)], opts: &Options, grammar: bool) -> Vec<Issue> {
+pub fn check_text_with(
+    text: &str,
+    spans: &[(Range<usize>, ProofLang)],
+    opts: &Options,
+    grammar: bool,
+) -> Vec<Issue> {
     // Sorted, empty ones dropped, neighbours of one language merged.
-    let mut sorted: Vec<&(Range<usize>, ProofLang)> = spans.iter().filter(|(r, _)| r.start < r.end).collect();
+    let mut sorted: Vec<&(Range<usize>, ProofLang)> =
+        spans.iter().filter(|(r, _)| r.start < r.end).collect();
     sorted.sort_by_key(|s| s.0.start);
     let mut merged: Vec<(Range<usize>, ProofLang)> = Vec::new();
     for (r, l) in sorted {
@@ -566,9 +669,15 @@ pub fn check_text_with(text: &str, spans: &[(Range<usize>, ProofLang)], opts: &O
     }
     let lang_at = |i: usize| -> ProofLang {
         let k = merged.partition_point(|(r, _)| r.end <= i);
-        merged.get(k).filter(|(r, _)| r.start <= i).map_or(ProofLang::En, |s| s.1)
+        merged
+            .get(k)
+            .filter(|(r, _)| r.start <= i)
+            .map_or(ProofLang::En, |s| s.1)
     };
-    let mut v: Vec<Issue> = words(text).into_iter().filter_map(|(a, b)| spelling_issue(text, a, b, lang_at(a), opts)).collect();
+    let mut v: Vec<Issue> = words(text)
+        .into_iter()
+        .filter_map(|(a, b)| spelling_issue(text, a, b, lang_at(a), opts))
+        .collect();
     if !grammar {
         v.sort_by_key(|i| (i.start, i.end));
         return v;
@@ -587,7 +696,11 @@ pub fn check_text_with(text: &str, spans: &[(Range<usize>, ProofLang)], opts: &O
     langs.sort();
     langs.dedup();
     for lang in langs {
-        v.extend(check_grammar_in(text, lang).into_iter().filter(|i| lang_at(i.start) == lang));
+        v.extend(
+            check_grammar_in(text, lang)
+                .into_iter()
+                .filter(|i| lang_at(i.start) == lang),
+        );
     }
     v.sort_by_key(|i| (i.start, i.end));
     v
@@ -599,7 +712,11 @@ pub fn check_grammar(text: &str) -> Vec<Issue> {
     let ws = words(text);
     for pair in ws.windows(2) {
         let [(a0, b0), (a1, b1)] = pair else { continue };
-        let (Some(w0), Some(w1), Some(gap)) = (text.get(*a0..*b0), text.get(*a1..*b1), text.get(*b0..*a1)) else { continue };
+        let (Some(w0), Some(w1), Some(gap)) =
+            (text.get(*a0..*b0), text.get(*a1..*b1), text.get(*b0..*a1))
+        else {
+            continue;
+        };
         if gap.trim().is_empty()
             && w0.eq_ignore_ascii_case(w1)
             && w0.chars().all(char::is_alphabetic)
@@ -614,7 +731,11 @@ pub fn check_grammar(text: &str) -> Vec<Issue> {
                 lang: ProofLang::En,
             });
         }
-        if gap == " " && (w0 == "a" || w0 == "A") && w1.chars().next().is_some_and(|c| "aeiouAEIOU".contains(c)) && !starts_consonant_sound(w1) {
+        if gap == " "
+            && (w0 == "a" || w0 == "A")
+            && w1.chars().next().is_some_and(|c| "aeiouAEIOU".contains(c))
+            && !starts_consonant_sound(w1)
+        {
             v.push(Issue {
                 start: *a0,
                 end: *b0,
@@ -626,7 +747,10 @@ pub fn check_grammar(text: &str) -> Vec<Issue> {
         }
         if gap == " "
             && (w0 == "an" || w0 == "An")
-            && w1.chars().next().is_some_and(|c| c.is_alphabetic() && !"aeiouAEIOUhH".contains(c))
+            && w1
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_alphabetic() && !"aeiouAEIOUhH".contains(c))
             && !w1.chars().all(|c| c.is_uppercase())
         {
             v.push(Issue {
@@ -640,8 +764,15 @@ pub fn check_grammar(text: &str) -> Vec<Issue> {
         }
     }
     // Space before punctuation; doubled spaces.
-    for (i, _) in text.match_indices(" ,").chain(text.match_indices(" .")).chain(text.match_indices(" ;")) {
-        if text.get(i + 2..).is_some_and(|r| r.starts_with('.') || r.starts_with(',')) {
+    for (i, _) in text
+        .match_indices(" ,")
+        .chain(text.match_indices(" ."))
+        .chain(text.match_indices(" ;"))
+    {
+        if text
+            .get(i + 2..)
+            .is_some_and(|r| r.starts_with('.') || r.starts_with(','))
+        {
             continue; // "..." or numbers like " .5"
         }
         v.push(Issue {
@@ -670,8 +801,15 @@ pub fn check_grammar(text: &str) -> Vec<Issue> {
     let mut after_end = true;
     for (a, b) in &ws {
         let Some(w) = text.get(*a..*b) else { continue };
-        if after_end && w.chars().next().is_some_and(char::is_lowercase) && w.chars().all(char::is_alphabetic) {
-            let fixed: String = w.chars().next().map(|f| f.to_uppercase().chain(w.chars().skip(1)).collect()).unwrap_or_default();
+        if after_end
+            && w.chars().next().is_some_and(char::is_lowercase)
+            && w.chars().all(char::is_alphabetic)
+        {
+            let fixed: String = w
+                .chars()
+                .next()
+                .map(|f| f.to_uppercase().chain(w.chars().skip(1)).collect())
+                .unwrap_or_default();
             v.push(Issue {
                 start: *a,
                 end: *b,
@@ -687,7 +825,9 @@ pub fn check_grammar(text: &str) -> Vec<Issue> {
         // A Unicode ellipsis (U+2026) does not match sentence-ending punctuation either.
         after_end = matches!(punctuation.chars().next(), Some('.' | '!' | '?'))
             && !punctuation.starts_with("..")
-            && punctuation.trim_start_matches(['.', '!', '?', '"', '”', ')']).starts_with(' ');
+            && punctuation
+                .trim_start_matches(['.', '!', '?', '"', '”', ')'])
+                .starts_with(' ');
     }
     v.sort_by_key(|i| i.start);
     v
@@ -695,7 +835,11 @@ pub fn check_grammar(text: &str) -> Vec<Issue> {
 
 fn starts_consonant_sound(w: &str) -> bool {
     let l = w.to_lowercase();
-    ["uni", "use", "usu", "eu", "one", "once", "ubiq", "uti", "ure", "uro"].iter().any(|p| l.starts_with(p))
+    [
+        "uni", "use", "usu", "eu", "one", "once", "ubiq", "uti", "ure", "uro",
+    ]
+    .iter()
+    .any(|p| l.starts_with(p))
 }
 
 #[cfg(test)]
@@ -767,17 +911,32 @@ mod tests {
         for w in ["dekstop", "laptp", "dowload", "spreadshet"] {
             assert!(!is_correct(w), "{w}");
         }
-        assert!(suggest("dekstop", 5).contains(&"desktop".to_string()), "{:?}", suggest("dekstop", 5));
+        assert!(
+            suggest("dekstop", 5).contains(&"desktop".to_string()),
+            "{:?}",
+            suggest("dekstop", 5)
+        );
         assert!(check_spelling("My desktop and laptop download email online.").is_empty());
     }
 
     /// The supplement stays a sorted list of lowercase base forms.
     #[test]
     fn supplement_is_sorted_lowercase() {
-        let words: Vec<&str> = EXTRA_EN.lines().filter(|l| !l.is_empty() && !l.starts_with('#')).collect();
+        let words: Vec<&str> = EXTRA_EN
+            .lines()
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .collect();
         assert!(words.len() > 100);
-        assert!(words.windows(2).all(|p| p[0] < p[1]), "not sorted / duplicate");
-        assert!(words.iter().all(|w| w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')), "not lowercase");
+        assert!(
+            words.windows(2).all(|p| p[0] < p[1]),
+            "not sorted / duplicate"
+        );
+        assert!(
+            words
+                .iter()
+                .all(|w| w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')),
+            "not lowercase"
+        );
     }
 
     #[test]
@@ -799,7 +958,11 @@ mod tests {
         assert!(msgs.iter().any(|m| m.contains("space before")), "{msgs:?}");
         assert!(msgs.iter().any(|m| m.contains("Capitalize")), "{msgs:?}");
         assert!(msgs.iter().any(|m| m.contains("Extra space")), "{msgs:?}");
-        assert!(check_grammar("A university is an hour away.").is_empty(), "{:?}", check_grammar("A university is an hour away."));
+        assert!(
+            check_grammar("A university is an hour away.").is_empty(),
+            "{:?}",
+            check_grammar("A university is an hour away.")
+        );
     }
 
     #[test]
@@ -811,14 +974,23 @@ mod tests {
             "I saw... \"a figure\" right outside.",
             "I saw… “a figure” right outside.",
         ] {
-            let capitals: Vec<_> =
-                check_grammar(text).into_iter().filter(|issue| issue.message == "Capitalize the first word of a sentence").collect();
+            let capitals: Vec<_> = check_grammar(text)
+                .into_iter()
+                .filter(|issue| issue.message == "Capitalize the first word of a sentence")
+                .collect();
             assert!(capitals.is_empty(), "{text}: {capitals:?}");
         }
 
-        for text in ["I saw. a figure.", "I saw! a figure.", "I saw? a figure.", "I saw.\" a figure."] {
-            let capitals: Vec<_> =
-                check_grammar(text).into_iter().filter(|issue| issue.message == "Capitalize the first word of a sentence").collect();
+        for text in [
+            "I saw. a figure.",
+            "I saw! a figure.",
+            "I saw? a figure.",
+            "I saw.\" a figure.",
+        ] {
+            let capitals: Vec<_> = check_grammar(text)
+                .into_iter()
+                .filter(|issue| issue.message == "Capitalize the first word of a sentence")
+                .collect();
             assert_eq!(capitals.len(), 1, "{text}: {capitals:?}");
             assert_eq!(capitals[0].suggestions, ["A"], "{text}");
         }
@@ -834,7 +1006,8 @@ mod tests {
     /// #40: the user dictionary survives a save and a fresh load.
     #[test]
     fn user_dictionary_persists_through_a_file() {
-        let dir = std::env::temp_dir().join(format!("wc-dict-{}-{}", std::process::id(), "persist"));
+        let dir =
+            std::env::temp_dir().join(format!("wc-dict-{}-{}", std::process::id(), "persist"));
         let _ = std::fs::remove_dir_all(&dir);
         // The folder is created on the first save.
         let path = dir.join("sub/custom-dictionary.txt");
@@ -842,9 +1015,16 @@ mod tests {
         add_word("zxqpersisttwo");
         save_user_dictionary(&path, &[]).expect("save works");
         let saved = std::fs::read_to_string(&path).unwrap();
-        assert!(saved.lines().any(|w| w == "zxqpersistone") && saved.lines().any(|w| w == "zxqpersisttwo"), "{saved}");
+        assert!(
+            saved.lines().any(|w| w == "zxqpersistone")
+                && saved.lines().any(|w| w == "zxqpersisttwo"),
+            "{saved}"
+        );
         // Written atomically: no temporary file is left beside it.
-        let names: Vec<_> = std::fs::read_dir(dir.join("sub")).unwrap().map(|e| e.unwrap().file_name()).collect();
+        let names: Vec<_> = std::fs::read_dir(dir.join("sub"))
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
         assert_eq!(names, ["custom-dictionary.txt"]);
         remove_word("zxqpersistone");
         assert!(!is_correct("zxqpersistone"));
@@ -856,7 +1036,8 @@ mod tests {
     /// #40: a hostile file is capped: invalid lines are skipped, and only the first megabyte is read.
     #[test]
     fn hostile_dictionary_files_are_capped() {
-        let dir = std::env::temp_dir().join(format!("wc-dict-{}-{}", std::process::id(), "hostile"));
+        let dir =
+            std::env::temp_dir().join(format!("wc-dict-{}-{}", std::process::id(), "hostile"));
         let _ = std::fs::create_dir_all(&dir);
         let path = dir.join("custom-dictionary.txt");
         let mut hostile = vec![0xff, 0xfe, b'\n'];
@@ -868,9 +1049,21 @@ mod tests {
         hostile.extend(b"zxqhostilepastcap\n");
         std::fs::write(&path, &hostile).unwrap();
         let added = load_user_dictionary(&path);
-        assert!(added.contains(&"zxqhostileok".to_string()) && added.contains(&"zxqhostiletrim".to_string()), "{added:?}");
-        assert!(!added.iter().any(|w| w.contains("space") || w.contains("bell") || w.chars().count() > MAX_CUSTOM_WORD_CHARS), "{added:?}");
-        assert!(!is_correct("zxqhostilepastcap"), "the file is read only up to the cap");
+        assert!(
+            added.contains(&"zxqhostileok".to_string())
+                && added.contains(&"zxqhostiletrim".to_string()),
+            "{added:?}"
+        );
+        assert!(
+            !added.iter().any(|w| w.contains("space")
+                || w.contains("bell")
+                || w.chars().count() > MAX_CUSTOM_WORD_CHARS),
+            "{added:?}"
+        );
+        assert!(
+            !is_correct("zxqhostilepastcap"),
+            "the file is read only up to the cap"
+        );
         assert_eq!(read_dictionary_file(&path).len(), 2);
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -885,9 +1078,15 @@ mod tests {
         add_word("zxqmergemine");
         save_user_dictionary(&path, &["zxqmergegone".to_string()]).unwrap();
         let saved = std::fs::read_to_string(&path).unwrap();
-        assert!(saved.lines().any(|w| w == "zxqmergeother"), "the other process's word is kept: {saved}");
+        assert!(
+            saved.lines().any(|w| w == "zxqmergeother"),
+            "the other process's word is kept: {saved}"
+        );
         assert!(saved.lines().any(|w| w == "zxqmergemine"), "{saved}");
-        assert!(!saved.lines().any(|w| w == "zxqmergegone"), "a removed word stays out: {saved}");
+        assert!(
+            !saved.lines().any(|w| w == "zxqmergegone"),
+            "a removed word stays out: {saved}"
+        );
         assert!(is_correct("zxqmergeother") && !is_correct("zxqmergegone"));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -904,10 +1103,21 @@ mod tests {
     #[test]
     fn custom_words_are_single_short_words() {
         assert_eq!(custom_word("  Hello "), Some("hello".into()));
-        for bad in ["", "   ", "two words", "tab\tbed", "bell\u{7}", "bad\u{FFFD}", &"x".repeat(MAX_CUSTOM_WORD_CHARS + 1)] {
+        for bad in [
+            "",
+            "   ",
+            "two words",
+            "tab\tbed",
+            "bell\u{7}",
+            "bad\u{FFFD}",
+            &"x".repeat(MAX_CUSTOM_WORD_CHARS + 1),
+        ] {
             assert_eq!(custom_word(bad), None, "{bad:?}");
         }
-        assert!(custom_word(&"é".repeat(MAX_CUSTOM_WORD_CHARS)).is_some(), "the cap counts characters, not bytes");
+        assert!(
+            custom_word(&"é".repeat(MAX_CUSTOM_WORD_CHARS)).is_some(),
+            "the cap counts characters, not bytes"
+        );
     }
 
     /// #40: a missing file loads as empty, never an error.
@@ -922,16 +1132,36 @@ mod tests {
     /// and skipped otherwise.
     #[test]
     fn dictionary_lang_tags() {
-        for l in [None, Some(""), Some("  "), Some("en"), Some("en-US"), Some("en-GB"), Some("EN-us"), Some("en_US")] {
+        for l in [
+            None,
+            Some(""),
+            Some("  "),
+            Some("en"),
+            Some("en-US"),
+            Some("en-GB"),
+            Some("EN-us"),
+            Some("en_US"),
+        ] {
             assert!(has_dictionary(l), "{l:?}");
         }
-        for l in [Some("lt-LT"), Some("fr-FR"), Some("de"), Some("uk"), Some("es"), Some("-US"), Some("e")] {
+        for l in [
+            Some("lt-LT"),
+            Some("fr-FR"),
+            Some("de"),
+            Some("uk"),
+            Some("es"),
+            Some("-US"),
+            Some("e"),
+        ] {
             assert!(!has_dictionary(l), "{l:?}");
         }
         // The gate follows the dictionaries, not English: every proofed language is proofed.
         for d in ProofLang::PROOFED.map(ProofLang::code) {
             assert!(has_dictionary(Some(d)), "{d}");
-            assert!(has_dictionary(Some(&format!("{}-XX", d.to_ascii_uppercase()))), "{d}");
+            assert!(
+                has_dictionary(Some(&format!("{}-XX", d.to_ascii_uppercase()))),
+                "{d}"
+            );
         }
     }
 
@@ -942,8 +1172,14 @@ mod tests {
             assert!(is_correct_for(w, Some("lt-LT")), "{w}");
             assert!(is_correct_for(w, Some("fr-FR")), "{w}");
         }
-        assert!(!is_correct_for("helo", Some("en-US")), "English typos still flagged");
-        assert!(!is_correct_for("helo", None), "default language still proofed");
+        assert!(
+            !is_correct_for("helo", Some("en-US")),
+            "English typos still flagged"
+        );
+        assert!(
+            !is_correct_for("helo", None),
+            "default language still proofed"
+        );
         assert!(is_correct_for("hello", Some("en-US")));
     }
 
@@ -951,41 +1187,86 @@ mod tests {
     #[test]
     fn ignore_options_decide_what_is_checked() {
         let t = "SENTENSE helo2 www.exampel.org";
-        let bad = |o: Options| check_spelling_with(t, &o).iter().map(|i| t[i.start..i.end].to_string()).collect::<Vec<_>>();
-        assert!(bad(Options::default()).is_empty(), "Word's defaults skip all three");
-        let all = Options { ignore_uppercase: false, ignore_numbers: false, ignore_internet: false };
+        let bad = |o: Options| {
+            check_spelling_with(t, &o)
+                .iter()
+                .map(|i| t[i.start..i.end].to_string())
+                .collect::<Vec<_>>()
+        };
+        assert!(
+            bad(Options::default()).is_empty(),
+            "Word's defaults skip all three"
+        );
+        let all = Options {
+            ignore_uppercase: false,
+            ignore_numbers: false,
+            ignore_internet: false,
+        };
         assert_eq!(bad(all), ["SENTENSE", "helo2", "www", "exampel"]);
-        assert_eq!(bad(Options { ignore_uppercase: false, ..Options::default() }), ["SENTENSE"]);
-        assert!(is_correct_with("NASA", &all), "capitals that are a word stay correct");
+        assert_eq!(
+            bad(Options {
+                ignore_uppercase: false,
+                ..Options::default()
+            }),
+            ["SENTENSE"]
+        );
+        assert!(
+            is_correct_with("NASA", &all),
+            "capitals that are a word stay correct"
+        );
     }
 
     #[test]
     fn hyphenation() {
         let l = hyphen::Limits::default();
-        assert!(hyphen::hyphenate_word("hyphenation", &l).matches('-').count() >= 2);
+        assert!(
+            hyphen::hyphenate_word("hyphenation", &l)
+                .matches('-')
+                .count()
+                >= 2
+        );
     }
 
     fn flagged(t: &str, v: &[Issue]) -> Vec<String> {
-        v.iter().filter(|i| i.kind == IssueKind::Spelling).map(|i| t[i.start..i.end].to_string()).collect()
+        v.iter()
+            .filter(|i| i.kind == IssueKind::Spelling)
+            .map(|i| t[i.start..i.end].to_string())
+            .collect()
     }
 
     #[test]
     fn each_language_uses_its_own_tools() {
         pl::test_dict::install();
         let pl = "Zażółć gęślą jaźń, chrząszcz brzmi w trzcinie.";
-        assert!(check_spelling_in(pl, ProofLang::Pl).is_empty(), "{:?}", check_spelling_in(pl, ProofLang::Pl));
-        assert!(check_spelling_in(pl, ProofLang::En).len() >= 3, "Polish words are English misspellings");
+        assert!(
+            check_spelling_in(pl, ProofLang::Pl).is_empty(),
+            "{:?}",
+            check_spelling_in(pl, ProofLang::Pl)
+        );
+        assert!(
+            check_spelling_in(pl, ProofLang::En).len() >= 3,
+            "Polish words are English misspellings"
+        );
         assert!(check_spelling_in("Nous écrivons en français.", ProofLang::Other).is_empty());
         assert!(check_grammar_in("this is is wrong", ProofLang::Other).is_empty());
-        assert!(is_correct_in("anything", ProofLang::Other) && suggest_in("xyzzy", 5, ProofLang::Other).is_empty());
+        assert!(
+            is_correct_in("anything", ProofLang::Other)
+                && suggest_in("xyzzy", 5, ProofLang::Other).is_empty()
+        );
         let v = check_spelling_in("Płynie żeka.", ProofLang::Pl);
         assert_eq!(flagged("Płynie żeka.", &v), ["żeka"]);
-        assert_eq!((v[0].lang, v[0].message.as_str()), (ProofLang::Pl, "Możliwy błąd pisowni"));
+        assert_eq!(
+            (v[0].lang, v[0].message.as_str()),
+            (ProofLang::Pl, "Możliwy błąd pisowni")
+        );
         assert!(suggest_in("żeka", 5, ProofLang::Pl).contains(&"rzeka".to_string()));
         assert!(suggest_in("recieve", 5, ProofLang::En).contains(&"receive".to_string()));
         // Polish grammar speaks Polish and has no English a/an rule.
         let g = check_grammar_in("Wiem że to jest a apple.", ProofLang::Pl);
-        assert!(g.iter().any(|i| i.message == "Brak przecinka przed „że”"), "{g:?}");
+        assert!(
+            g.iter().any(|i| i.message == "Brak przecinka przed „że”"),
+            "{g:?}"
+        );
         assert!(!g.iter().any(|i| i.message.contains("\"an\"")), "{g:?}");
     }
 
@@ -995,17 +1276,38 @@ mod tests {
         // A Polish paragraph quoting English: English spelling and rules inside the quote only.
         let t = "Napisał „the quick brown fox is is here” i poszedł spać, bo żeka wylała.";
         let (a, b) = (t.find("the").unwrap(), t.find('”').unwrap());
-        let spans = [(0..a, ProofLang::Pl), (a..b, ProofLang::En), (b..t.len(), ProofLang::Pl)];
+        let spans = [
+            (0..a, ProofLang::Pl),
+            (a..b, ProofLang::En),
+            (b..t.len(), ProofLang::Pl),
+        ];
         let v = check_text(t, &spans);
         assert_eq!(flagged(t, &v), ["żeka"], "{v:?}");
         let rep = v.iter().find(|i| i.kind == IssueKind::Grammar).unwrap();
-        assert_eq!((rep.lang, rep.message.as_str()), (ProofLang::En, "Repeated word: \"is\""), "{v:?}");
+        assert_eq!(
+            (rep.lang, rep.message.as_str()),
+            (ProofLang::En, "Repeated word: \"is\""),
+            "{v:?}"
+        );
         // The English rules don't run over the Polish text (no "Capitalize" for the lower-case
         // Polish words), and the Polish rules don't run over the English quote.
-        assert!(v.iter().all(|i| i.lang == ProofLang::Pl || (a..b).contains(&i.start)), "{v:?}");
+        assert!(
+            v.iter()
+                .all(|i| i.lang == ProofLang::Pl || (a..b).contains(&i.start)),
+            "{v:?}"
+        );
         // Text outside every span is English; no spans at all is English.
-        assert_eq!(flagged("helo świat", &check_text("helo świat", &[])), ["helo", "świat"]);
-        assert_eq!(flagged("helo świat", &check_text("helo świat", &[(5..12, ProofLang::Pl)])), ["helo"]);
+        assert_eq!(
+            flagged("helo świat", &check_text("helo świat", &[])),
+            ["helo", "świat"]
+        );
+        assert_eq!(
+            flagged(
+                "helo świat",
+                &check_text("helo świat", &[(5..12, ProofLang::Pl)])
+            ),
+            ["helo"]
+        );
         // A language without tools: nothing flagged there.
         assert!(check_text("Bonjour mes amis", &[(0..16, ProofLang::Other)]).is_empty());
         // Portuguese checks in their span only, with the Portuguese message.
@@ -1013,7 +1315,11 @@ mod tests {
         let t = "Ele disse que coraçao e frequencia existem.";
         let v = check_text(t, &[(0..t.len(), ProofLang::Pt)]);
         assert_eq!(flagged(t, &v), ["coraçao", "frequencia"], "{v:?}");
-        assert!(v.iter().all(|i| i.lang == ProofLang::Pt && i.message == "Possível erro de ortografia"), "{v:?}");
+        assert!(
+            v.iter()
+                .all(|i| i.lang == ProofLang::Pt && i.message == "Possível erro de ortografia"),
+            "{v:?}"
+        );
     }
 
     proptest::proptest! {

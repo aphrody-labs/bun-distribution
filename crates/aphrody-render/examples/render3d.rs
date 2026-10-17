@@ -23,7 +23,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = PathBuf::from(args.next().unwrap_or_else(|| ".".into()));
     std::fs::create_dir_all(&out_dir)?;
     // The exact scene, for the browser lane (`md-3d-scene src=...`).
-    std::fs::write(out_dir.join("render3d-scene.json"), serde_json::to_vec_pretty(&scene)?)?;
+    std::fs::write(
+        out_dir.join("render3d-scene.json"),
+        serde_json::to_vec_pretty(&scene)?,
+    )?;
 
     let start = Instant::now();
     let prepared = scene.prepare()?;
@@ -67,9 +70,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     frame.adapter.name, frame.adapter.backend
                 );
                 let gpu_path = out_dir.join("render3d-gpu.png");
-                std::fs::write(&gpu_path, encode_png(frame.width, frame.height, &frame.rgba)?)?;
+                std::fs::write(
+                    &gpu_path,
+                    encode_png(frame.width, frame.height, &frame.rgba)?,
+                )?;
                 println!("wrote {}", gpu_path.display());
-            },
+            }
             Err(err) => println!("gpu: skipped ({err})"),
         }
     }

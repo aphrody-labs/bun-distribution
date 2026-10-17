@@ -34,7 +34,10 @@ const EVENT_BUDGET_MS: u64 = 5_000;
 fn limits_for(activity: &str) -> pdfcraft_js::Limits {
     match activity {
         "click" | "change" | "exit" | "enter" => pdfcraft_js::Limits::default(),
-        _ => pdfcraft_js::Limits { loop_iterations: 100_000, recursion: 64 },
+        _ => pdfcraft_js::Limits {
+            loop_iterations: 100_000,
+            recursion: 64,
+        },
     }
 }
 
@@ -105,15 +108,24 @@ impl Changes {
     /// "3 values, 1 row" — what changed, for a note.
     pub fn describe(&self) -> String {
         let mut parts = Vec::new();
-        let n = |k: usize, one: &str, many: &str| format!("{k} {}", if k == 1 { one } else { many });
+        let n =
+            |k: usize, one: &str, many: &str| format!("{k} {}", if k == 1 { one } else { many });
         if self.values > 0 {
             parts.push(n(self.values, "field value", "field values"));
         }
         if self.rows > 0 {
-            parts.push(n(self.rows, "added or removed row", "added or removed rows"));
+            parts.push(n(
+                self.rows,
+                "added or removed row",
+                "added or removed rows",
+            ));
         }
         if self.visibility > 0 {
-            parts.push(n(self.visibility, "shown, hidden or locked object", "shown, hidden or locked objects"));
+            parts.push(n(
+                self.visibility,
+                "shown, hidden or locked object",
+                "shown, hidden or locked objects",
+            ));
         }
         parts.join(", ")
     }
@@ -159,20 +171,33 @@ fn find_container<'a>(n: &'a FormNode, som: &str, depth: usize) -> Option<&'a Fo
     if n.som == som && n.kind != Some(NodeKind::Field) {
         return Some(n);
     }
-    n.children.iter().find_map(|c| find_container(c, som, depth + 1))
+    n.children
+        .iter()
+        .find_map(|c| find_container(c, som, depth + 1))
 }
 
 fn count_instances(root: &FormNode, parent_som: &str, name: &str) -> usize {
-    let parent = if parent_som.is_empty() { Some(root) } else { find_container(root, parent_som, 0) };
+    let parent = if parent_som.is_empty() {
+        Some(root)
+    } else {
+        find_container(root, parent_som, 0)
+    };
     parent.map_or(0, |p| p.children.iter().filter(|c| c.name == name).count())
 }
 
 /// An instance SOM (`…table[0].row[2]`) split into its parent's data path (areas left out,
 /// see [`pdfcraft_xfa::data_path`]) and SOM, its name and its index.
-fn split_instance(tpl: &Template, som: &str) -> Option<(pdfcraft_xfa::DataPath, String, String, usize)> {
+fn split_instance(
+    tpl: &Template,
+    som: &str,
+) -> Option<(pdfcraft_xfa::DataPath, String, String, usize)> {
     let mut path = pdfcraft_xfa::data_path(tpl, som);
     let (name, index) = path.pop()?;
-    let parent_som = som.rsplit_once('.').map(|(p, _)| p).unwrap_or("").to_string();
+    let parent_som = som
+        .rsplit_once('.')
+        .map(|(p, _)| p)
+        .unwrap_or("")
+        .to_string();
     Some((path, parent_som, name, index))
 }
 
@@ -196,7 +221,10 @@ fn plain_som(som: &str) -> String {
 fn som_matches(som: &str, name: &str) -> bool {
     let plain = plain_som(som);
     let n = plain_som(name.trim());
-    let n = n.strip_prefix("xfa.form.").or_else(|| n.strip_prefix("$form.")).unwrap_or(&n);
+    let n = n
+        .strip_prefix("xfa.form.")
+        .or_else(|| n.strip_prefix("$form."))
+        .unwrap_or(&n);
     let want: Vec<&str> = n.split('.').filter(|s| !s.is_empty()).collect();
     let have: Vec<&str> = plain.split('.').filter(|s| !s.is_empty()).collect();
     !want.is_empty() && have.windows(want.len()).any(|w| w == want.as_slice())
@@ -216,9 +244,22 @@ fn field_infos(doc: &pdfcraft_cos::Document) -> HashMap<String, FieldInfo> {
     pdfcraft_forms::fields(doc)
         .into_iter()
         .map(|f| {
-            let on_state = f.widgets.first().and_then(|w| w.on_state.clone()).unwrap_or_else(|| "1".into());
-            let multi = f.kind == pdfcraft_forms::FieldKind::List && f.has(pdfcraft_forms::flags::MULTI_SELECT);
-            (f.name, FieldInfo { kind: f.kind, value: f.value, on_state, multi })
+            let on_state = f
+                .widgets
+                .first()
+                .and_then(|w| w.on_state.clone())
+                .unwrap_or_else(|| "1".into());
+            let multi = f.kind == pdfcraft_forms::FieldKind::List
+                && f.has(pdfcraft_forms::flags::MULTI_SELECT);
+            (
+                f.name,
+                FieldInfo {
+                    kind: f.kind,
+                    value: f.value,
+                    on_state,
+                    multi,
+                },
+            )
         })
         .collect()
 }
@@ -271,7 +312,12 @@ struct Runner<'a, 'b> {
 }
 
 impl<'a, 'b> Runner<'a, 'b> {
-    fn new(doc: &'a mut pdfcraft_cos::Document, tpl: &'a Template, run: &'a mut XfaRun<'b>, budget_ms: u64) -> Self {
+    fn new(
+        doc: &'a mut pdfcraft_cos::Document,
+        tpl: &'a Template,
+        run: &'a mut XfaRun<'b>,
+        budget_ms: u64,
+    ) -> Self {
         let data = pdfcraft_xfa::data_of(doc);
         let ov = pdfcraft_xfa::overrides(doc);
         Runner {
@@ -307,8 +353,13 @@ impl<'a, 'b> Runner<'a, 'b> {
 
     /// The script engine for this event.
     fn session(&mut self) -> &mut XfaSession {
-        let doc_info = XfaDoc { file_name: String::new(), page: 0, page_count: self.run.page_count };
-        self.session.get_or_insert_with(|| XfaSession::new(doc_info))
+        let doc_info = XfaDoc {
+            file_name: String::new(),
+            page: 0,
+            page_count: self.run.page_count,
+        };
+        self.session
+            .get_or_insert_with(|| XfaSession::new(doc_info))
     }
 
     /// Give the object at `som` the value `text` in the data and in the live form (refreshed
@@ -319,7 +370,10 @@ impl<'a, 'b> Runner<'a, 'b> {
         self.data.get_or_insert_with(Default::default).apply(&op);
         self.pending.push(op);
         let refreshed = match self.cached.as_mut() {
-            Some(live) => pdfcraft_xfa::refresh_value(&mut live.root, self.tpl, self.data.as_ref(), som).is_some(),
+            Some(live) => {
+                pdfcraft_xfa::refresh_value(&mut live.root, self.tpl, self.data.as_ref(), som)
+                    .is_some()
+            }
             None => true,
         };
         if !refreshed {
@@ -347,7 +401,10 @@ impl<'a, 'b> Runner<'a, 'b> {
             let by_som = pdfcraft_xfa::fields_by_som(self.doc);
             let mut by_path: HashMap<pdfcraft_xfa::DataPath, Vec<String>> = HashMap::new();
             for (som, name) in &by_som {
-                by_path.entry(pdfcraft_xfa::data_path(self.tpl, som)).or_default().push(name.clone());
+                by_path
+                    .entry(pdfcraft_xfa::data_path(self.tpl, som))
+                    .or_default()
+                    .push(name.clone());
             }
             for names in by_path.values_mut() {
                 names.sort();
@@ -361,7 +418,11 @@ impl<'a, 'b> Runner<'a, 'b> {
     /// The widgets bound to the data node at `path`, in name order.
     fn widgets_at(&mut self, path: &pdfcraft_xfa::DataPath) -> Vec<String> {
         self.by_som();
-        self.by_path.as_ref().and_then(|m| m.get(path)).cloned().unwrap_or_default()
+        self.by_path
+            .as_ref()
+            .and_then(|m| m.get(path))
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn fields(&mut self) -> &mut HashMap<String, FieldInfo> {
@@ -414,11 +475,17 @@ impl<'a, 'b> Runner<'a, 'b> {
         let names = self.widgets_at(&path);
         // The data text: the widget at `som` says how its kind writes the value; without one,
         // the first widget bound to the node, else the value itself.
-        let primary = self.by_som().get(som).cloned().or_else(|| names.first().cloned());
+        let primary = self
+            .by_som()
+            .get(som)
+            .cloned()
+            .or_else(|| names.first().cloned());
         let mut text = value.to_string();
         let mut changed = false;
         for name in &names {
-            let Some(info) = self.fields().get(name).cloned() else { continue };
+            let Some(info) = self.fields().get(name).cloned() else {
+                continue;
+            };
             let new_value: Vec<String> = match info.kind {
                 K::CheckBox => {
                     if pdfcraft_xfa::data::is_on(value, &info.on_state) || value == info.on_state {
@@ -429,12 +496,21 @@ impl<'a, 'b> Runner<'a, 'b> {
                 }
                 K::Radio => {
                     let v = value.trim();
-                    if v.is_empty() { Vec::new() } else { vec![v.to_string()] }
+                    if v.is_empty() {
+                        Vec::new()
+                    } else {
+                        vec![v.to_string()]
+                    }
                 }
                 // Read-only fields still take values from scripts (calculated totals are
                 // read-only); buttons and signatures hold none.
                 K::PushButton | K::Signature => continue,
-                K::List if info.multi => value.lines().map(str::trim).filter(|l| !l.is_empty()).map(str::to_string).collect(),
+                K::List if info.multi => value
+                    .lines()
+                    .map(str::trim)
+                    .filter(|l| !l.is_empty())
+                    .map(str::to_string)
+                    .collect(),
                 _ => vec![value.to_string()],
             };
             let same = match info.kind {
@@ -443,7 +519,10 @@ impl<'a, 'b> Runner<'a, 'b> {
                 K::List if info.multi => info.value == new_value,
                 _ => info.value.first().map_or(value.is_empty(), |v| v == value),
             };
-            let updated = FieldInfo { value: new_value.clone(), ..info };
+            let updated = FieldInfo {
+                value: new_value.clone(),
+                ..info
+            };
             if primary.as_deref() == Some(name.as_str()) {
                 text = data_text(&updated);
             }
@@ -454,7 +533,13 @@ impl<'a, 'b> Runner<'a, 'b> {
             self.field_changes.insert(name.clone(), new_value);
             changed = true;
         }
-        if self.data.as_ref().and_then(|d| d.text_at(&path)).unwrap_or("") != text {
+        if self
+            .data
+            .as_ref()
+            .and_then(|d| d.text_at(&path))
+            .unwrap_or("")
+            != text
+        {
             self.value_op(som, path, text);
             changed = true;
         }
@@ -470,7 +555,8 @@ impl<'a, 'b> Runner<'a, 'b> {
         let mut wrote = false;
         if !self.pending.is_empty() {
             let ops = std::mem::take(&mut self.pending);
-            let r = pdfcraft_xfa::write_data_ops(self.doc, &ops, self.run.datasets).map_err(|e| e.to_string())?;
+            let r = pdfcraft_xfa::write_data_ops(self.doc, &ops, self.run.datasets)
+                .map_err(|e| e.to_string())?;
             if r.stream.is_some() {
                 self.run.datasets = r.stream;
             }
@@ -480,9 +566,18 @@ impl<'a, 'b> Runner<'a, 'b> {
         if !self.field_changes.is_empty() {
             let changes: Vec<pdfcraft_forms::FieldChange> = std::mem::take(&mut self.field_changes)
                 .into_iter()
-                .map(|(name, value)| pdfcraft_forms::FieldChange { name, value: Some(value), ..Default::default() })
+                .map(|(name, value)| pdfcraft_forms::FieldChange {
+                    name,
+                    value: Some(value),
+                    ..Default::default()
+                })
                 .collect();
-            pdfcraft_forms::apply_script_changes(self.doc, &changes, &mut pdfcraft_forms::NoScripts).map_err(|e| e.to_string())?;
+            pdfcraft_forms::apply_script_changes(
+                self.doc,
+                &changes,
+                &mut pdfcraft_forms::NoScripts,
+            )
+            .map_err(|e| e.to_string())?;
             self.fields = None;
         }
         if self.ov_dirty {
@@ -528,7 +623,13 @@ impl<'a, 'b> Runner<'a, 'b> {
         let listed: Option<Vec<String>> = if names.is_empty() {
             None
         } else {
-            Some(by_som.iter().filter(|(som, _)| names.iter().any(|n| som_matches(som, n))).map(|(_, f)| f.clone()).collect())
+            Some(
+                by_som
+                    .iter()
+                    .filter(|(som, _)| names.iter().any(|n| som_matches(som, n)))
+                    .map(|(_, f)| f.clone())
+                    .collect(),
+            )
         };
         if listed.as_ref().is_some_and(|l| l.is_empty()) {
             return Ok(());
@@ -540,13 +641,24 @@ impl<'a, 'b> Runner<'a, 'b> {
             if listed.as_ref().is_some_and(|l| !l.contains(name)) {
                 continue;
             }
-            let Some(info) = infos.get(name) else { continue };
-            if matches!(info.kind, pdfcraft_forms::FieldKind::PushButton | pdfcraft_forms::FieldKind::Signature) {
+            let Some(info) = infos.get(name) else {
+                continue;
+            };
+            if matches!(
+                info.kind,
+                pdfcraft_forms::FieldKind::PushButton | pdfcraft_forms::FieldKind::Signature
+            ) {
                 continue;
             }
             let path = pdfcraft_xfa::data_path(self.tpl, som);
             let text = data_text(info);
-            if self.data.as_ref().and_then(|d| d.text_at(&path)).unwrap_or("") != text {
+            if self
+                .data
+                .as_ref()
+                .and_then(|d| d.text_at(&path))
+                .unwrap_or("")
+                != text
+            {
                 self.data_op(pdfcraft_xfa::DataOp::Value { path, text });
                 self.changes.values += 1;
             }
@@ -579,7 +691,10 @@ impl<'a, 'b> Runner<'a, 'b> {
             if let Some(what) = click_only(e)
                 && ev.activity != "click"
             {
-                let note = format!("{} ({}): a script may only {what} when a button is clicked; ignored", ev.som, ev.activity);
+                let note = format!(
+                    "{} ({}): a script may only {what} when a button is clicked; ignored",
+                    ev.som, ev.activity
+                );
                 self.console([note]);
                 continue;
             }
@@ -588,7 +703,13 @@ impl<'a, 'b> Runner<'a, 'b> {
                     self.set_value(som, value);
                 }
                 XfaEffect::SetPresence { som, presence } => {
-                    if self.ov.presence.insert(som.clone(), presence.clone()).as_ref() != Some(presence) {
+                    if self
+                        .ov
+                        .presence
+                        .insert(som.clone(), presence.clone())
+                        .as_ref()
+                        != Some(presence)
+                    {
                         self.ov_dirty = true;
                         self.changes.visibility += 1;
                         self.invalidate();
@@ -604,16 +725,27 @@ impl<'a, 'b> Runner<'a, 'b> {
                     }
                 }
                 XfaEffect::AddInstance { som } | XfaEffect::RemoveInstance { som } => {
-                    let Some((parent, parent_som, name, index)) = split_instance(self.tpl, som) else { continue };
+                    let Some((parent, parent_som, name, index)) = split_instance(self.tpl, som)
+                    else {
+                        continue;
+                    };
                     let key = (parent_som, name.clone());
                     let have = counts.get(&key).copied().unwrap_or(0);
                     if matches!(e, XfaEffect::AddInstance { .. }) {
                         counts.insert(key, have + 1);
-                        self.data_op(pdfcraft_xfa::DataOp::Instances { parent, name, count: (index + 1).max(have + 1) });
+                        self.data_op(pdfcraft_xfa::DataOp::Instances {
+                            parent,
+                            name,
+                            count: (index + 1).max(have + 1),
+                        });
                     } else {
                         // The data holds every shown instance before one is taken out.
                         counts.insert(key, have.saturating_sub(1));
-                        self.data_op(pdfcraft_xfa::DataOp::Instances { parent: parent.clone(), name: name.clone(), count: have });
+                        self.data_op(pdfcraft_xfa::DataOp::Instances {
+                            parent: parent.clone(),
+                            name: name.clone(),
+                            count: have,
+                        });
                         let mut path = parent;
                         path.push((name, index));
                         self.data_op(pdfcraft_xfa::DataOp::Remove(path));
@@ -625,7 +757,9 @@ impl<'a, 'b> Runner<'a, 'b> {
                 XfaEffect::ResetData(names) => self.reset(names)?,
                 XfaEffect::Print => self.run.out.requests.push(Request::Print),
                 XfaEffect::SaveAs => self.run.out.requests.push(Request::SaveAs),
-                XfaEffect::LaunchUrl(u) => self.run.out.requests.push(Request::LaunchUrl(u.clone())),
+                XfaEffect::LaunchUrl(u) => {
+                    self.run.out.requests.push(Request::LaunchUrl(u.clone()))
+                }
                 XfaEffect::SetFocus(som) => {
                     if let Some(name) = self.by_som().get(som).cloned() {
                         self.run.out.requests.push(Request::Focus(name));
@@ -641,7 +775,11 @@ impl<'a, 'b> Runner<'a, 'b> {
 
     /// Run one event script against the form as it is now. `None`: it was skipped (the
     /// event's budget is spent).
-    fn run(&mut self, ev: &ScriptEvent, new_text: &str) -> Result<Option<pdfcraft_js::xfa::XfaOutcome>, String> {
+    fn run(
+        &mut self,
+        ev: &ScriptEvent,
+        new_text: &str,
+    ) -> Result<Option<pdfcraft_js::xfa::XfaOutcome>, String> {
         if self.runs >= MAX_SCRIPTS_PER_EVENT || self.clock.spent() || self.run.ran_away {
             self.skipped += 1;
             return Ok(None);
@@ -649,7 +787,12 @@ impl<'a, 'b> Runner<'a, 'b> {
         self.runs += 1;
         #[cfg(test)]
         self.check_live();
-        let event = XfaEvent { activity: ev.activity.clone(), target: ev.som.clone(), new_text: new_text.to_string(), prev_text: String::new() };
+        let event = XfaEvent {
+            activity: ev.activity.clone(),
+            target: ev.som.clone(),
+            new_text: new_text.to_string(),
+            prev_text: String::new(),
+        };
         let root = to_js(&self.live().root);
         let script = Script {
             source: ev.script.clone(),
@@ -682,10 +825,20 @@ impl<'a, 'b> Runner<'a, 'b> {
     /// Every calculate script, in document order: the field takes the script's result unless
     /// the script set a value itself.
     fn calculates(&mut self) -> Result<(), String> {
-        let events: Vec<ScriptEvent> = self.live().events.iter().filter(|e| e.activity == "calculate").cloned().collect();
+        let events: Vec<ScriptEvent> = self
+            .live()
+            .events
+            .iter()
+            .filter(|e| e.activity == "calculate")
+            .cloned()
+            .collect();
         for ev in &events {
             let Some(o) = self.run(ev, "")? else { continue };
-            if o.error.is_some() || o.effects.iter().any(|e| matches!(e, XfaEffect::SetValue { som, .. } if *som == ev.som)) {
+            if o.error.is_some()
+                || o.effects
+                    .iter()
+                    .any(|e| matches!(e, XfaEffect::SetValue { som, .. } if *som == ev.som))
+            {
                 continue;
             }
             if let Some(result) = o.result {
@@ -696,7 +849,12 @@ impl<'a, 'b> Runner<'a, 'b> {
     }
 
     fn events_of(&mut self, som: &str, activity: &str) -> Vec<ScriptEvent> {
-        self.live().events.iter().filter(|e| e.som == som && e.activity == activity).cloned().collect()
+        self.live()
+            .events
+            .iter()
+            .filter(|e| e.som == som && e.activity == activity)
+            .cloned()
+            .collect()
     }
 
     /// End the event: write what is left, lay the form out if a capped relayout is owed, and
@@ -717,12 +875,21 @@ impl<'a, 'b> Runner<'a, 'b> {
             } else if self.runs >= MAX_SCRIPTS_PER_EVENT {
                 format!("more than {MAX_SCRIPTS_PER_EVENT} scripts ran")
             } else {
-                format!("the scripts took more than {} seconds", self.clock.budget_ms / 1000)
+                format!(
+                    "the scripts took more than {} seconds",
+                    self.clock.budget_ms / 1000
+                )
             };
-            self.run.out.errors.push(format!("The form's scripts were stopped: {why}; {} more were skipped", self.skipped));
+            self.run.out.errors.push(format!(
+                "The form's scripts were stopped: {why}; {} more were skipped",
+                self.skipped
+            ));
         }
         if self.dropped_output > 0 {
-            self.run.out.errors.push(format!("The form's scripts produced too much output; {} more messages were left out", self.dropped_output));
+            self.run.out.errors.push(format!(
+                "The form's scripts produced too much output; {} more messages were left out",
+                self.dropped_output
+            ));
         }
         Ok(self.changes)
     }
@@ -736,15 +903,27 @@ impl Runner<'_, '_> {
     /// script error the test might not look at.
     #[cfg(test)]
     fn check_live(&mut self) {
-        let Some(live) = self.cached.as_ref() else { return };
+        let Some(live) = self.cached.as_ref() else {
+            return;
+        };
         let fresh = pdfcraft_xfa::form_tree(self.tpl, self.data.as_ref(), &self.ov);
         let (mut have, mut want) = (Vec::new(), Vec::new());
         collect_fields(&live.root, &mut have, 0);
         collect_fields(&fresh.root, &mut want, 0);
         if have != want {
-            let differ: Vec<String> =
-                have.iter().zip(want.iter()).filter(|(a, b)| a != b).take(5).map(|(a, b)| format!("live {a:?} vs fresh {b:?}")).collect();
-            eprintln!("the live form diverged from a fresh build ({} vs {} fields): {}", have.len(), want.len(), differ.join("; "));
+            let differ: Vec<String> = have
+                .iter()
+                .zip(want.iter())
+                .filter(|(a, b)| a != b)
+                .take(5)
+                .map(|(a, b)| format!("live {a:?} vs fresh {b:?}"))
+                .collect();
+            eprintln!(
+                "the live form diverged from a fresh build ({} vs {} fields): {}",
+                have.len(),
+                want.len(),
+                differ.join("; ")
+            );
             std::process::abort();
         }
     }
@@ -757,7 +936,12 @@ fn collect_fields(n: &FormNode, out: &mut Vec<(String, String, String, String)>,
         return;
     }
     if n.kind == Some(NodeKind::Field) {
-        out.push((n.som.clone(), n.value.clone(), n.presence.clone(), n.access.clone()));
+        out.push((
+            n.som.clone(),
+            n.value.clone(),
+            n.presence.clone(),
+            n.access.clone(),
+        ));
     }
     for c in &n.children {
         collect_fields(c, out, depth + 1);
@@ -765,9 +949,19 @@ fn collect_fields(n: &FormNode, out: &mut Vec<(String, String, String, String)>,
 }
 
 /// On open: initialize scripts, then calculations. Returns what they changed.
-pub(crate) fn on_open(doc: &mut pdfcraft_cos::Document, tpl: &Template, run: &mut XfaRun) -> Result<Changes, String> {
+pub(crate) fn on_open(
+    doc: &mut pdfcraft_cos::Document,
+    tpl: &Template,
+    run: &mut XfaRun,
+) -> Result<Changes, String> {
     let mut r = Runner::new(doc, tpl, run, OPEN_BUDGET_MS);
-    let events: Vec<ScriptEvent> = r.live().events.iter().filter(|e| e.activity == "initialize" || e.activity == "docReady").cloned().collect();
+    let events: Vec<ScriptEvent> = r
+        .live()
+        .events
+        .iter()
+        .filter(|e| e.activity == "initialize" || e.activity == "docReady")
+        .cloned()
+        .collect();
     for ev in &events {
         r.run(ev, "")?;
     }
@@ -779,19 +973,42 @@ pub(crate) fn on_open(doc: &mut pdfcraft_cos::Document, tpl: &Template, run: &mu
 /// the calculations once (or only those, after a reset). A validate script that answers false,
 /// or fails, shows its message; the value stays, as Acrobat marks the field invalid rather
 /// than reverting it.
-pub(crate) fn on_changes(doc: &mut pdfcraft_cos::Document, tpl: &Template, names: &[String], run: &mut XfaRun) -> Result<(), String> {
+pub(crate) fn on_changes(
+    doc: &mut pdfcraft_cos::Document,
+    tpl: &Template,
+    names: &[String],
+    run: &mut XfaRun,
+) -> Result<(), String> {
     let mut r = Runner::new(doc, tpl, run, OPEN_BUDGET_MS);
     for name in names {
-        let som = r.by_som().iter().find(|(_, f)| *f == name).map(|(s, _)| s.clone());
+        let som = r
+            .by_som()
+            .iter()
+            .find(|(_, f)| *f == name)
+            .map(|(s, _)| s.clone());
         let Some(som) = som else { continue };
-        let value = r.fields().get(name).map(|f| f.value.join("\n")).unwrap_or_default();
-        for ev in r.events_of(&som, "change").into_iter().chain(r.events_of(&som, "exit")) {
+        let value = r
+            .fields()
+            .get(name)
+            .map(|f| f.value.join("\n"))
+            .unwrap_or_default();
+        for ev in r
+            .events_of(&som, "change")
+            .into_iter()
+            .chain(r.events_of(&som, "exit"))
+        {
             r.run(&ev, &value)?;
         }
         for ev in r.events_of(&som, "validate") {
-            let Some(o) = r.run(&ev, &value)? else { continue };
+            let Some(o) = r.run(&ev, &value)? else {
+                continue;
+            };
             if (o.result_bool == Some(false) || o.error.is_some()) && !value.trim().is_empty() {
-                r.alert(ev.message.clone().unwrap_or_else(|| format!("{name}: the value is not valid")));
+                r.alert(
+                    ev.message
+                        .clone()
+                        .unwrap_or_else(|| format!("{name}: the value is not valid")),
+                );
             }
         }
     }
@@ -801,7 +1018,12 @@ pub(crate) fn on_changes(doc: &mut pdfcraft_cos::Document, tpl: &Template, names
 
 /// The form's data changed outside its scripts (a data file imported, a picture chosen): lay
 /// the form out again from the data, then, when `calculate`, run every calculation.
-pub(crate) fn on_data_replaced(doc: &mut pdfcraft_cos::Document, tpl: &Template, calculate: bool, run: &mut XfaRun) -> Result<(), String> {
+pub(crate) fn on_data_replaced(
+    doc: &mut pdfcraft_cos::Document,
+    tpl: &Template,
+    calculate: bool,
+    run: &mut XfaRun,
+) -> Result<(), String> {
     let mut r = Runner::new(doc, tpl, run, OPEN_BUDGET_MS);
     r.relayout()?;
     if calculate {
@@ -811,7 +1033,13 @@ pub(crate) fn on_data_replaced(doc: &mut pdfcraft_cos::Document, tpl: &Template,
 }
 
 /// A button's click script (or any event, by SOM path and activity), then calculations.
-pub(crate) fn on_event(doc: &mut pdfcraft_cos::Document, tpl: &Template, som: &str, activity: &str, run: &mut XfaRun) -> Result<(), String> {
+pub(crate) fn on_event(
+    doc: &mut pdfcraft_cos::Document,
+    tpl: &Template,
+    som: &str,
+    activity: &str,
+    run: &mut XfaRun,
+) -> Result<(), String> {
     let mut r = Runner::new(doc, tpl, run, EVENT_BUDGET_MS);
     let events = r.events_of(som, activity);
     if events.is_empty() {
@@ -828,27 +1056,51 @@ pub(crate) fn on_event(doc: &mut pdfcraft_cos::Document, tpl: &Template, som: &s
 
 /// The SOM path of field `name` when PdfCraft generated it from an XFA template and the
 /// template has a click script for it (a button with a native action has none).
-pub(crate) fn clickable_som(doc: &pdfcraft_cos::Document, tpl: &Template, name: &str) -> Option<String> {
-    let som = pdfcraft_xfa::fields_by_som(doc).into_iter().find(|(_, f)| f == name).map(|(s, _)| s)?;
-    let live = pdfcraft_xfa::form_tree(tpl, pdfcraft_xfa::data_of(doc).as_ref(), &pdfcraft_xfa::overrides(doc));
-    live.events.iter().any(|e| e.som == som && e.activity == "click").then_some(som)
+pub(crate) fn clickable_som(
+    doc: &pdfcraft_cos::Document,
+    tpl: &Template,
+    name: &str,
+) -> Option<String> {
+    let som = pdfcraft_xfa::fields_by_som(doc)
+        .into_iter()
+        .find(|(_, f)| f == name)
+        .map(|(s, _)| s)?;
+    let live = pdfcraft_xfa::form_tree(
+        tpl,
+        pdfcraft_xfa::data_of(doc).as_ref(),
+        &pdfcraft_xfa::overrides(doc),
+    );
+    live.events
+        .iter()
+        .any(|e| e.som == som && e.activity == "click")
+        .then_some(som)
 }
 
 /// The parsed template of a laid-out XFA form, kept for the document's life, when it has
 /// scripts to run (`None` otherwise: nothing about the form is scripted).
 pub(crate) fn template(doc: &pdfcraft_cos::Document) -> Option<Arc<Template>> {
-    pdfcraft_xfa::template_of(doc).ok().filter(pdfcraft_xfa::has_scripts).map(Arc::new)
+    pdfcraft_xfa::template_of(doc)
+        .ok()
+        .filter(pdfcraft_xfa::has_scripts)
+        .map(Arc::new)
 }
 
 /// Push buttons PdfCraft generated for XFA click scripts carry no PDF action (the script is
 /// XFA's, not Acrobat JavaScript): give them one that runs the script by the field's SOM path.
-pub(crate) fn mark_script_buttons(doc: &pdfcraft_cos::Document, fields: &mut [pdfcraft_forms::Field]) {
+pub(crate) fn mark_script_buttons(
+    doc: &pdfcraft_cos::Document,
+    fields: &mut [pdfcraft_forms::Field],
+) {
     for f in fields.iter_mut() {
         if f.kind == pdfcraft_forms::FieldKind::PushButton
             && f.button.is_none()
             && std::iter::once(f.obj)
                 .chain(f.widgets.iter().map(|w| w.obj))
-                .any(|r| doc.get(r).as_dict().is_some_and(|d| d.contains(pdfcraft_xfa::CLICK_KEY)))
+                .any(|r| {
+                    doc.get(r)
+                        .as_dict()
+                        .is_some_and(|d| d.contains(pdfcraft_xfa::CLICK_KEY))
+                })
         {
             f.button = Some(pdfcraft_forms::af::ButtonAction::Script(String::new()));
         }
@@ -863,12 +1115,23 @@ mod tests {
     fn script_names_match_indexed_som_paths() {
         assert!(som_matches("form[0].page1[0].qty[0]", "qty"));
         assert!(som_matches("form[0].page1[0].qty[0]", "page1.qty"));
-        assert!(som_matches("form[0].page1[0].qty[0]", "xfa.form.form.page1.qty"));
-        assert!(som_matches("form[0].page1[0].table[0].row[2].amount[0]", "table"));
+        assert!(som_matches(
+            "form[0].page1[0].qty[0]",
+            "xfa.form.form.page1.qty"
+        ));
+        assert!(som_matches(
+            "form[0].page1[0].table[0].row[2].amount[0]",
+            "table"
+        ));
         assert!(!som_matches("form[0].page1[0].qty[0]", "qt"));
         assert!(!som_matches("form[0].page1[0].price[0]", "qty"));
         assert_eq!(
-            split_instance(&Template::default(), "form[0].table[0].row[2]").map(|(p, ps, n, i)| (p.len(), ps, n, i)),
+            split_instance(&Template::default(), "form[0].table[0].row[2]").map(|(p, ps, n, i)| (
+                p.len(),
+                ps,
+                n,
+                i
+            )),
             Some((2, "form[0].table[0]".into(), "row".into(), 2))
         );
     }

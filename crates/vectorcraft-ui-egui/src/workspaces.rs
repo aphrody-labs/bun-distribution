@@ -56,7 +56,10 @@ pub const ESSENTIALS: &str = "Essentials";
 pub fn builtins() -> Vec<Workspace> {
     let base = Workspace::default();
     let w = |name: &str, f: &dyn Fn(&mut Workspace)| {
-        let mut x = Workspace { name: name.into(), ..base.clone() };
+        let mut x = Workspace {
+            name: name.into(),
+            ..base.clone()
+        };
         f(&mut x);
         x
     };
@@ -161,8 +164,17 @@ pub fn apply(ui: &mut UiState, w: &Workspace) {
     ui.docking_generation = ui.docking_generation.wrapping_add(1);
     ui.docking = w.docking.clone().filter(crate::panel_docking::valid);
     ui.docking_hidden = w.docking_hidden.clone();
-    ui.docking_icons =
-        w.docking_icons.iter().filter(|id| crate::state::ICON_PANELS.iter().any(|entry| entry.0 == id.as_str())).take(64).cloned().collect();
+    ui.docking_icons = w
+        .docking_icons
+        .iter()
+        .filter(|id| {
+            crate::state::ICON_PANELS
+                .iter()
+                .any(|entry| entry.0 == id.as_str())
+        })
+        .take(64)
+        .cloned()
+        .collect();
     ui.toolbar_pos = w.toolbar_pos;
     FloatingPanels::sanitize(&mut ui.floating_panels, &mut ui.toolbar_pos);
     ui.flyout = None;
@@ -175,12 +187,20 @@ pub fn find(ui: &UiState, name: &str) -> Option<Workspace> {
         .iter()
         .find(|w| w.name.eq_ignore_ascii_case(name))
         .cloned()
-        .or_else(|| builtins().into_iter().find(|w| w.name.eq_ignore_ascii_case(name)))
+        .or_else(|| {
+            builtins()
+                .into_iter()
+                .find(|w| w.name.eq_ignore_ascii_case(name))
+        })
 }
 
 /// Every workspace name: built-ins then user workspaces.
 pub fn names(ui: &UiState) -> Vec<String> {
-    builtins().into_iter().map(|w| w.name).chain(ui.custom_workspaces.iter().map(|w| w.name.clone())).collect()
+    builtins()
+        .into_iter()
+        .map(|w| w.name)
+        .chain(ui.custom_workspaces.iter().map(|w| w.name.clone()))
+        .collect()
 }
 
 /// Save the current layout as `name` (replacing a user workspace of that name).
@@ -190,7 +210,9 @@ pub fn save_as(ui: &mut UiState, name: &str) -> Result<(), String> {
         return Err("workspace name can't be empty".into());
     }
     if is_builtin(name) {
-        return Err(format!("`{name}` is a built-in workspace; choose another name"));
+        return Err(format!(
+            "`{name}` is a built-in workspace; choose another name"
+        ));
     }
     let w = capture(ui, name);
     match ui.custom_workspaces.iter_mut().find(|x| x.name == name) {
@@ -205,7 +227,11 @@ pub fn delete(ui: &mut UiState, name: &str) -> Result<(), String> {
     let before = ui.custom_workspaces.len();
     ui.custom_workspaces.retain(|w| w.name != name);
     if ui.custom_workspaces.len() == before {
-        return Err(if is_builtin(name) { format!("`{name}` is built in and can't be deleted") } else { format!("no workspace `{name}`") });
+        return Err(if is_builtin(name) {
+            format!("`{name}` is built in and can't be deleted")
+        } else {
+            format!("no workspace `{name}`")
+        });
     }
     if ui.workspace == name {
         ui.workspace = ESSENTIALS.into();
@@ -218,7 +244,11 @@ pub fn rename(ui: &mut UiState, from: &str, to: &str) -> Result<(), String> {
     if to.is_empty() || is_builtin(to) || ui.custom_workspaces.iter().any(|w| w.name == to) {
         return Err(format!("`{to}` is not an available name"));
     }
-    let w = ui.custom_workspaces.iter_mut().find(|w| w.name == from).ok_or_else(|| format!("no user workspace `{from}`"))?;
+    let w = ui
+        .custom_workspaces
+        .iter_mut()
+        .find(|w| w.name == from)
+        .ok_or_else(|| format!("no user workspace `{from}`"))?;
     w.name = to.into();
     if ui.workspace == from {
         ui.workspace = to.into();
@@ -234,11 +264,20 @@ crate::shortcut_editor::ui_mirror!(fn names_store() -> Vec<&'static str>);
 pub fn sync(ui: &UiState) {
     let same = names_store()
         .read()
-        .map(|v| v.len() == ui.custom_workspaces.len() && v.iter().zip(&ui.custom_workspaces).all(|(a, b)| *a == b.name))
+        .map(|v| {
+            v.len() == ui.custom_workspaces.len()
+                && v.iter()
+                    .zip(&ui.custom_workspaces)
+                    .all(|(a, b)| *a == b.name)
+        })
         .unwrap_or(true);
     if !same {
         if let Ok(mut v) = names_store().write() {
-            *v = ui.custom_workspaces.iter().map(|w| crate::shortcut_editor::intern(&w.name)).collect();
+            *v = ui
+                .custom_workspaces
+                .iter()
+                .map(|w| crate::shortcut_editor::intern(&w.name))
+                .collect();
         }
         crate::shortcut_editor::GENERATION.fetch_add(1, Ordering::Relaxed);
     }
@@ -247,17 +286,41 @@ pub fn sync(ui: &UiState) {
 /// Window → Workspace submenu items.
 pub fn menu_items() -> Vec<crate::menus::Item> {
     use crate::menus::Item;
-    let mut v: Vec<Item> =
-        builtins().into_iter().map(|w| Item::Cmd(crate::shortcut_editor::intern(&w.name), "window.workspace", json!({"name": w.name}))).collect();
+    let mut v: Vec<Item> = builtins()
+        .into_iter()
+        .map(|w| {
+            Item::Cmd(
+                crate::shortcut_editor::intern(&w.name),
+                "window.workspace",
+                json!({"name": w.name}),
+            )
+        })
+        .collect();
     let custom = names_store().read().map(|v| v.clone()).unwrap_or_default();
     if !custom.is_empty() {
         v.push(Item::Sep);
-        v.extend(custom.into_iter().map(|n| Item::Cmd(n, "window.workspace", json!({"name": n}))));
+        v.extend(
+            custom
+                .into_iter()
+                .map(|n| Item::Cmd(n, "window.workspace", json!({"name": n}))),
+        );
     }
     v.push(Item::Sep);
-    v.push(Item::Cmd("Reset Essentials", "window.workspace.reset", Value::Null));
-    v.push(Item::Cmd("New Workspace…", "window.workspace.new", Value::Null));
-    v.push(Item::Cmd("Manage Workspaces…", "window.workspace.manage", Value::Null));
+    v.push(Item::Cmd(
+        "Reset Essentials",
+        "window.workspace.reset",
+        Value::Null,
+    ));
+    v.push(Item::Cmd(
+        "New Workspace…",
+        "window.workspace.new",
+        Value::Null,
+    ));
+    v.push(Item::Cmd(
+        "Manage Workspaces…",
+        "window.workspace.manage",
+        Value::Null,
+    ));
     v
 }
 
@@ -279,7 +342,10 @@ pub fn popup(app: &mut VectorcraftApp, ui: &mut egui::Ui) {
                     Some(false) => format!("     {label}"),
                     None => format!("     {label}"),
                 };
-                if ui.add(egui::Button::new(text).min_size(egui::vec2(220.0, 0.0))).clicked() {
+                if ui
+                    .add(egui::Button::new(text).min_size(egui::vec2(220.0, 0.0)))
+                    .clicked()
+                {
                     clicked = Some((id, if p.is_null() { json!({}) } else { p }));
                     ui.close();
                 }
@@ -302,7 +368,10 @@ pub fn run_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Resu
                 apply(&mut app.ui, &w);
                 Ok(json!({"workspace": w.name}))
             }
-            None => Err(format!("unknown workspace (one of {})", names(&app.ui).join(", "))),
+            None => Err(format!(
+                "unknown workspace (one of {})",
+                names(&app.ui).join(", ")
+            )),
         },
         "window.workspace.reset" => {
             let w = find(&app.ui, &app.ui.workspace.clone()).unwrap_or_default();
@@ -312,18 +381,33 @@ pub fn run_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Resu
         "window.workspace.new" => match s("name") {
             Some(n) => save_as(&mut app.ui, &n).map(|_| json!({"workspace": n})),
             None => {
-                let n = (1..).map(|i| format!("Workspace {i}")).find(|n| find(&app.ui, n).is_none()).unwrap_or_default();
+                let n = (1..)
+                    .map(|i| format!("Workspace {i}"))
+                    .find(|n| find(&app.ui, n).is_none())
+                    .unwrap_or_default();
                 app.ui.dialog = Some(Dialog::new("newWorkspace", json!({"name": n})));
                 Ok(Value::Null)
             }
         },
         "window.workspace.manage" => {
-            app.ui.dialog = Some(Dialog::new("manageWorkspaces", json!({"selected": "", "name": ""})));
+            app.ui.dialog = Some(Dialog::new(
+                "manageWorkspaces",
+                json!({"selected": "", "name": ""}),
+            ));
             Ok(Value::Null)
         }
-        "window.workspace.delete" => delete(&mut app.ui, &s("name").unwrap_or_default()).map(|_| Value::Null),
-        "window.workspace.rename" => rename(&mut app.ui, &s("name").unwrap_or_default(), &s("to").unwrap_or_default()).map(|_| Value::Null),
-        "window.workspace.list" => Ok(json!({"current": app.ui.workspace, "workspaces": names(&app.ui), "custom": app.ui.custom_workspaces})),
+        "window.workspace.delete" => {
+            delete(&mut app.ui, &s("name").unwrap_or_default()).map(|_| Value::Null)
+        }
+        "window.workspace.rename" => rename(
+            &mut app.ui,
+            &s("name").unwrap_or_default(),
+            &s("to").unwrap_or_default(),
+        )
+        .map(|_| Value::Null),
+        "window.workspace.list" => Ok(
+            json!({"current": app.ui.workspace, "workspaces": names(&app.ui), "custom": app.ui.custom_workspaces}),
+        ),
         _ => return None,
     };
     Some(r)
@@ -331,7 +415,9 @@ pub fn run_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Resu
 
 /// OK in New Workspace / Manage Workspaces.
 pub fn confirm(app: &mut VectorcraftApp) -> Result<Value, String> {
-    let Some(d) = app.ui.dialog.clone() else { return Err("no dialog open".into()) };
+    let Some(d) = app.ui.dialog.clone() else {
+        return Err("no dialog open".into());
+    };
     let r = match d.kind.as_str() {
         "newWorkspace" => save_as(&mut app.ui, &d.str("name")).map(|_| Value::Null),
         _ => Ok(Value::Null),
@@ -343,70 +429,110 @@ pub fn confirm(app: &mut VectorcraftApp) -> Result<Value, String> {
 }
 
 pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.dialog.clone() else { return };
+    let Some(mut d) = app.ui.dialog.clone() else {
+        return;
+    };
     let t = Tokens::get(ctx);
     let (mut ok, mut cancel) = (false, false);
     let mut action: Option<(&str, Value)> = None;
     let manage = d.kind == "manageWorkspaces";
-    crate::dialogs::modal::show(ctx, "Workspace", egui::Id::new("dialog-workspace"), -40.0, 22, |ui| {
-        ui.set_width(340.0);
-        crate::dialogs::modal::heading(ui, if manage { tl!("Manage Workspaces") } else { tl!("New Workspace") });
-        ui.add_space(12.0);
-        if manage {
-            egui::Frame::NONE.fill(t.input).stroke(egui::Stroke::new(1.0, t.input_border)).inner_margin(egui::Margin::same(4)).show(ui, |ui| {
-                ui.set_min_height(140.0);
-                ui.set_width(ui.available_width());
-                for n in names(&app.ui) {
-                    let builtin = is_builtin(&n);
-                    let shown = crate::panels::label_or_name(&n, builtin);
-                    let text = if builtin { egui::RichText::new(shown).color(t.text_dim) } else { egui::RichText::new(shown).color(t.text) };
-                    if ui.selectable_label(d.str("selected") == n, text).clicked() && !builtin {
-                        d.fields.insert("selected".into(), json!(n));
-                        d.fields.insert("name".into(), json!(n));
+    crate::dialogs::modal::show(
+        ctx,
+        "Workspace",
+        egui::Id::new("dialog-workspace"),
+        -40.0,
+        22,
+        |ui| {
+            ui.set_width(340.0);
+            crate::dialogs::modal::heading(
+                ui,
+                if manage {
+                    tl!("Manage Workspaces")
+                } else {
+                    tl!("New Workspace")
+                },
+            );
+            ui.add_space(12.0);
+            if manage {
+                egui::Frame::NONE
+                    .fill(t.input)
+                    .stroke(egui::Stroke::new(1.0, t.input_border))
+                    .inner_margin(egui::Margin::same(4))
+                    .show(ui, |ui| {
+                        ui.set_min_height(140.0);
+                        ui.set_width(ui.available_width());
+                        for n in names(&app.ui) {
+                            let builtin = is_builtin(&n);
+                            let shown = crate::panels::label_or_name(&n, builtin);
+                            let text = if builtin {
+                                egui::RichText::new(shown).color(t.text_dim)
+                            } else {
+                                egui::RichText::new(shown).color(t.text)
+                            };
+                            if ui.selectable_label(d.str("selected") == n, text).clicked()
+                                && !builtin
+                            {
+                                d.fields.insert("selected".into(), json!(n));
+                                d.fields.insert("name".into(), json!(n));
+                            }
+                        }
+                    });
+                ui.add_space(8.0);
+                let sel = d.str("selected");
+                ui.horizontal(|ui| {
+                    let mut name = d.str("name");
+                    if ui
+                        .add(egui::TextEdit::singleline(&mut name).desired_width(180.0))
+                        .changed()
+                    {
+                        d.fields.insert("name".into(), json!(name));
                     }
-                }
-            });
-            ui.add_space(8.0);
-            let sel = d.str("selected");
-            ui.horizontal(|ui| {
-                let mut name = d.str("name");
-                if ui.add(egui::TextEdit::singleline(&mut name).desired_width(180.0)).changed() {
-                    d.fields.insert("name".into(), json!(name));
-                }
-                if ui.button(tl!("New")).on_hover_text(tl!("Save the current layout under this name")).clicked() {
-                    action = Some(("window.workspace.new", json!({"name": d.str("name")})));
-                }
-                ui.add_enabled_ui(!sel.is_empty(), |ui| {
-                    if ui.button(tl!("Rename")).clicked() {
-                        action = Some(("window.workspace.rename", json!({"name": sel, "to": d.str("name")})));
+                    if ui
+                        .button(tl!("New"))
+                        .on_hover_text(tl!("Save the current layout under this name"))
+                        .clicked()
+                    {
+                        action = Some(("window.workspace.new", json!({"name": d.str("name")})));
                     }
-                    if ui.button(tl!("Delete")).clicked() {
-                        action = Some(("window.workspace.delete", json!({"name": sel})));
+                    ui.add_enabled_ui(!sel.is_empty(), |ui| {
+                        if ui.button(tl!("Rename")).clicked() {
+                            action = Some((
+                                "window.workspace.rename",
+                                json!({"name": sel, "to": d.str("name")}),
+                            ));
+                        }
+                        if ui.button(tl!("Delete")).clicked() {
+                            action = Some(("window.workspace.delete", json!({"name": sel})));
+                        }
+                    });
+                });
+            } else {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new(tl!("Name:")).color(t.text_dim));
+                    let mut name = d.str("name");
+                    let r = ui.add(egui::TextEdit::singleline(&mut name).desired_width(240.0));
+                    if r.changed() {
+                        d.fields.insert("name".into(), json!(name));
                     }
                 });
-            });
-        } else {
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(tl!("Name:")).color(t.text_dim));
-                let mut name = d.str("name");
-                let r = ui.add(egui::TextEdit::singleline(&mut name).desired_width(240.0));
-                if r.changed() {
-                    d.fields.insert("name".into(), json!(name));
+                ui.label(
+                    egui::RichText::new(tl!("Saves the current bars, toolbar and panel layout."))
+                        .color(t.text_dim)
+                        .size(11.0),
+                );
+            }
+            ui.add_space(16.0);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if widgets::primary_button(ui, tl!("OK")).clicked() {
+                    ok = true;
+                }
+                ui.add_space(8.0);
+                if !manage && widgets::secondary_button(ui, tl!("Cancel")).clicked() {
+                    cancel = true;
                 }
             });
-            ui.label(egui::RichText::new(tl!("Saves the current bars, toolbar and panel layout.")).color(t.text_dim).size(11.0));
-        }
-        ui.add_space(16.0);
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if widgets::primary_button(ui, tl!("OK")).clicked() {
-                ok = true;
-            }
-            ui.add_space(8.0);
-            if !manage && widgets::secondary_button(ui, tl!("Cancel")).clicked() {
-                cancel = true;
-            }
-        });
-    });
+        },
+    );
     if !manage && ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
         ok = true;
     }
@@ -441,7 +567,10 @@ mod tests {
 
     #[test]
     fn apply_classic_then_reset_to_essentials_keeps_brightness() {
-        let mut ui = UiState { brightness: crate::theme::Brightness::Light, ..Default::default() };
+        let mut ui = UiState {
+            brightness: crate::theme::Brightness::Light,
+            ..Default::default()
+        };
         let w = find(&ui, "Essentials Classic").unwrap();
         apply(&mut ui, &w);
         assert!(ui.control_bar && ui.view.rulers && ui.toolbar_advanced);
@@ -455,14 +584,23 @@ mod tests {
 
     #[test]
     fn save_apply_round_trip() {
-        let mut ui = UiState { control_bar: true, dock_tab: DockTab::Layers, open_panel: Some("stroke".into()), ..Default::default() };
+        let mut ui = UiState {
+            control_bar: true,
+            dock_tab: DockTab::Layers,
+            open_panel: Some("stroke".into()),
+            ..Default::default()
+        };
         save_as(&mut ui, "Mine").unwrap();
         let w = find(&ui, ESSENTIALS).unwrap();
         apply(&mut ui, &w);
         assert!(!ui.control_bar);
         let w = find(&ui, "Mine").unwrap();
         apply(&mut ui, &w);
-        assert!(ui.control_bar && ui.dock_tab == DockTab::Layers && ui.open_panel.as_deref() == Some("stroke"));
+        assert!(
+            ui.control_bar
+                && ui.dock_tab == DockTab::Layers
+                && ui.open_panel.as_deref() == Some("stroke")
+        );
         // Survives the UiState JSON round trip.
         let back: UiState = serde_json::from_value(serde_json::to_value(&ui).unwrap()).unwrap();
         assert_eq!(back.custom_workspaces, ui.custom_workspaces);
@@ -486,7 +624,16 @@ mod tests {
     #[test]
     fn all_requested_workspaces_exist() {
         let ui = UiState::default();
-        for n in ["Essentials", "Essentials Classic", "Painting", "Typography", "Layout", "Tracing", "Web", "Automation"] {
+        for n in [
+            "Essentials",
+            "Essentials Classic",
+            "Painting",
+            "Typography",
+            "Layout",
+            "Tracing",
+            "Web",
+            "Automation",
+        ] {
             assert!(find(&ui, n).is_some(), "{n}");
         }
     }

@@ -41,7 +41,7 @@ use bevy_render::{
     occlusion_culling::OcclusionCulling,
     render_phase::{PhaseItemBatchSetKey, ViewRangefinder3d},
     texture::{CachedTexture, DepthStencilAttachment},
-    view::{prepare_view_targets, NoIndirectDrawing, RetainedViewEntity},
+    view::{NoIndirectDrawing, RetainedViewEntity, prepare_view_targets},
 };
 use indexmap::IndexMap;
 pub use main_opaque_pass_3d_node::*;
@@ -56,13 +56,14 @@ use bevy_log::warn;
 use bevy_math::{FloatOrd, Vec3};
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_render::{
+    Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
     camera::ExtractedCamera,
     extract_component::ExtractComponentPlugin,
     prelude::Msaa,
     render_phase::{
-        sort_phase_system, BinnedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId,
-        DrawFunctions, PhaseItem, PhaseItemExtraIndex, SortedPhaseItem, ViewBinnedRenderPhases,
-        ViewSortedRenderPhases,
+        BinnedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem,
+        PhaseItemExtraIndex, SortedPhaseItem, ViewBinnedRenderPhases, ViewSortedRenderPhases,
+        sort_phase_system,
     },
     render_resource::{
         CachedRenderPipelineId, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -71,7 +72,6 @@ use bevy_render::{
     sync_world::{MainEntity, RenderEntity},
     texture::{ColorAttachment, TextureCache},
     view::{ExtractedView, ViewDepthStencilTexture},
-    Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
 };
 use nonmax::NonMaxU32;
 
@@ -81,20 +81,20 @@ use crate::prepass::node::{early_prepass, late_prepass};
 use crate::tonemapping::tonemapping;
 use crate::upscaling::upscaling;
 use crate::{
+    Core3dSystems,
     deferred::{
-        AlphaMask3dDeferred, Opaque3dDeferred, DEFERRED_LIGHTING_PASS_ID_FORMAT,
-        DEFERRED_PREPASS_FORMAT,
+        AlphaMask3dDeferred, DEFERRED_LIGHTING_PASS_ID_FORMAT, DEFERRED_PREPASS_FORMAT,
+        Opaque3dDeferred,
     },
     prepass::{
         AlphaMask3dPrepass, DeferredPrepass, DeferredPrepassDoubleBuffer, DepthPrepass,
-        DepthPrepassDoubleBuffer, MotionVectorPrepass, NormalPrepass, Opaque3dPrepass,
-        OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey, ViewPrepassTextures,
-        MOTION_VECTOR_PREPASS_FORMAT, NORMAL_PREPASS_FORMAT,
+        DepthPrepassDoubleBuffer, MOTION_VECTOR_PREPASS_FORMAT, MotionVectorPrepass,
+        NORMAL_PREPASS_FORMAT, NormalPrepass, Opaque3dPrepass, OpaqueNoLightmap3dBatchSetKey,
+        OpaqueNoLightmap3dBinKey, ViewPrepassTextures,
     },
     schedule::Core3d,
     skybox::SkyboxPlugin,
     tonemapping::{DebandDither, Tonemapping},
-    Core3dSystems,
 };
 
 pub struct Core3dPlugin;

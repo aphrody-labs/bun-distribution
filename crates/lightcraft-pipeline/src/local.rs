@@ -32,18 +32,28 @@ pub fn wb_matrix_for(info: &SourceInfo, s: &DevelopSettings) -> Option<[[f32; 3]
     if (t - info.as_shot_temp).abs() < 1e-6 && (tint - info.as_shot_tint).abs() < 1e-6 {
         return None;
     }
-    if let Some(cc) = info.camera_color.as_deref().filter(|_| info.raw && !info.relative_wb)
-        && let Some(m) = lightcraft_raw::color::rebalance(&cc.tags, cc.developed_for, temp_tint_to_xy(t, tint))
+    if let Some(cc) = info
+        .camera_color
+        .as_deref()
+        .filter(|_| info.raw && !info.relative_wb)
+        && let Some(m) =
+            lightcraft_raw::color::rebalance(&cc.tags, cc.developed_for, temp_tint_to_xy(t, tint))
     {
         return Some(m.to_f32());
     }
     let set = wb_matrix(&REC2020, effective_white(info, s));
-    let shot = wb_matrix(&REC2020, temp_tint_to_xy(info.as_shot_temp, info.as_shot_tint));
+    let shot = wb_matrix(
+        &REC2020,
+        temp_tint_to_xy(info.as_shot_temp, info.as_shot_tint),
+    );
     let m = set.mul(&shot.inverse().unwrap_or(lightcraft_color::Mat3::IDENTITY));
     // Normalize so neutral luminance is preserved (WB shouldn't change exposure).
     let g = m.apply([1.0, 1.0, 1.0]);
     let y = g[0] * 0.2627 + g[1] * 0.6780 + g[2] * 0.0593;
-    Some(m.mul(&lightcraft_color::Mat3::diag(1.0 / y, 1.0 / y, 1.0 / y)).to_f32())
+    Some(
+        m.mul(&lightcraft_color::Mat3::diag(1.0 / y, 1.0 / y, 1.0 / y))
+            .to_f32(),
+    )
 }
 
 fn wb_gain(img: &mut Rgb32f, info: &SourceInfo, s: &DevelopSettings, gain: f32) {
@@ -59,7 +69,11 @@ fn wb_gain(img: &mut Rgb32f, info: &SourceInfo, s: &DevelopSettings, gain: f32) 
                     m[2][0] * c[0] + m[2][1] * c[1] + m[2][2] * c[2],
                 ];
             }
-            *p = [(c[0] * gain).max(0.0), (c[1] * gain).max(0.0), (c[2] * gain).max(0.0)];
+            *p = [
+                (c[0] * gain).max(0.0),
+                (c[1] * gain).max(0.0),
+                (c[2] * gain).max(0.0),
+            ];
         }
     });
 }
@@ -71,7 +85,9 @@ pub fn effective_wb(info: &SourceInfo, s: &DevelopSettings) -> (f64, f64) {
     use lightcraft_develop::WbMode;
     match s.wb.mode {
         WbMode::AsShot => (info.as_shot_temp, info.as_shot_tint),
-        _ if legacy_wb(info, s) => legacy_to_kelvin(s.wb.temp, s.wb.tint, (info.as_shot_temp, info.as_shot_tint)),
+        _ if legacy_wb(info, s) => {
+            legacy_to_kelvin(s.wb.temp, s.wb.tint, (info.as_shot_temp, info.as_shot_tint))
+        }
         m if info.raw && !info.relative_wb => m.preset().unwrap_or((s.wb.temp, s.wb.tint)),
         _ => (s.wb.temp, s.wb.tint),
     }
@@ -93,7 +109,10 @@ fn effective_white(info: &SourceInfo, s: &DevelopSettings) -> lightcraft_color::
 
 /// Whether `s` holds a white balance written on the relative scale for a source that is edited in Kelvin today.
 fn legacy_wb(info: &SourceInfo, s: &DevelopSettings) -> bool {
-    info.raw && !info.relative_wb && info.legacy_relative_wb && s.wb.scale == lightcraft_develop::WbScale::Legacy
+    info.raw
+        && !info.relative_wb
+        && info.legacy_relative_wb
+        && s.wb.scale == lightcraft_develop::WbScale::Legacy
 }
 
 /// The white that renders exactly as `(temp, tint)` did on the relative scale, where 6500 K / 0 meant *as shot* and
@@ -111,7 +130,11 @@ pub fn legacy_white(temp: f64, tint: f64, as_shot: (f64, f64)) -> Option<lightcr
         return None;
     }
     let cones = |t: f64, tint: f64| BRADFORD.apply(temp_tint_to_xy(t, tint).to_xyz());
-    let (old, reference, shot) = (cones(temp, tint), cones(6500.0, 0.0), cones(as_shot.0, as_shot.1));
+    let (old, reference, shot) = (
+        cones(temp, tint),
+        cones(6500.0, 0.0),
+        cones(as_shot.0, as_shot.1),
+    );
     let inverse = BRADFORD.inverse()?;
     let mut new = [0.0; 3];
     for i in 0..3 {
@@ -152,7 +175,8 @@ pub fn normalize_wb(d: &mut DevelopSettings, info: &SourceInfo) {
         return;
     }
     if legacy_wb(info, d) && d.wb.mode != WbMode::AsShot {
-        let (t, tint) = legacy_to_kelvin(d.wb.temp, d.wb.tint, (info.as_shot_temp, info.as_shot_tint));
+        let (t, tint) =
+            legacy_to_kelvin(d.wb.temp, d.wb.tint, (info.as_shot_temp, info.as_shot_tint));
         d.wb.temp = t;
         d.wb.tint = tint;
         d.wb.mode = WbMode::Custom;
@@ -183,7 +207,11 @@ fn guided_apply(p: &Plane, a: &Plane, b: &Plane) -> Plane {
     let mut q = Plane::new(p.width, p.height);
     let w = p.width;
     for_rows(&mut q.data, w, |y, row| {
-        for ((v, pv), (av, bv)) in row.iter_mut().zip(p.row(y)).zip(a.row(y).iter().zip(b.row(y))) {
+        for ((v, pv), (av, bv)) in row
+            .iter_mut()
+            .zip(p.row(y))
+            .zip(a.row(y).iter().zip(b.row(y)))
+        {
             *v = av * pv + bv;
         }
     });
@@ -214,7 +242,9 @@ pub fn median_hv(p: &Plane, r: usize) -> Plane {
     }
     let rows = |src: &Plane| {
         let mut out = Plane::new(src.width, src.height);
-        for_rows(&mut out.data, src.width, |y, row| median_row(src.row(y), row, r));
+        for_rows(&mut out.data, src.width, |y, row| {
+            median_row(src.row(y), row, r)
+        });
         out
     };
     transpose(&rows(&transpose(&rows(p))))
@@ -235,9 +265,13 @@ fn median_row(src: &[f32], out: &mut [f32], r: usize) {
         *o = win[r];
         let (old, new) = (at(x as isize - r_), at(x as isize + r_ + 1));
         if old.to_bits() != new.to_bits() {
-            let i = win.binary_search_by(|v| v.total_cmp(&old)).unwrap_or_else(|i| i.min(win.len() - 1));
+            let i = win
+                .binary_search_by(|v| v.total_cmp(&old))
+                .unwrap_or_else(|i| i.min(win.len() - 1));
             win.remove(i);
-            let j = win.binary_search_by(|v| v.total_cmp(&new)).unwrap_or_else(|j| j);
+            let j = win
+                .binary_search_by(|v| v.total_cmp(&new))
+                .unwrap_or_else(|j| j);
             win.insert(j, new);
         }
     }
@@ -307,18 +341,31 @@ pub struct NrColor {
 }
 
 /// Noise-reduction parameters at an output long edge of `out_long` px (see [`denoise`]).
-pub fn nr_params(s: &DevelopSettings, src_long: usize, out_long: usize) -> (Option<NrLum>, Option<NrColor>) {
+pub fn nr_params(
+    s: &DevelopSettings,
+    src_long: usize,
+    out_long: usize,
+) -> (Option<NrLum>, Option<NrColor>) {
     let lum = (s.detail.nr_luminance / 100.0) as f32;
     let col = (s.detail.nr_color / 100.0) as f32;
     let scale = (out_long as f32 / src_long.max(1) as f32).clamp(0.05, 1.0);
     let l = (lum > 0.0).then(|| {
         let detail = (s.detail.nr_detail / 100.0) as f32;
-        NrLum { sigma: (1.0 + 2.5 * lum) * scale.max(0.4), eps: 0.002 + lum * lum * 0.25 * (1.0 - 0.7 * detail), k: lum.sqrt() }
+        NrLum {
+            sigma: (1.0 + 2.5 * lum) * scale.max(0.4),
+            eps: 0.002 + lum * lum * 0.25 * (1.0 - 0.7 * detail),
+            k: lum.sqrt(),
+        }
     });
     let c = (col > 0.0).then(|| {
-        let sigma = (1.5 + 6.0 * col) * scale.max(0.35) * (1.0 + (s.detail.nr_color_smoothness / 100.0) as f32);
+        let sigma = (1.5 + 6.0 * col)
+            * scale.max(0.35)
+            * (1.0 + (s.detail.nr_color_smoothness / 100.0) as f32);
         let keep = (s.detail.nr_color_detail / 100.0) as f32 * 0.5;
-        NrColor { sigma, t: col * (1.0 - keep) }
+        NrColor {
+            sigma,
+            t: col * (1.0 - keep),
+        }
     });
     (l, c)
 }
@@ -342,7 +389,10 @@ pub fn denoise(img: &mut Rgb32f, s: &DevelopSettings, src_long: usize, out_long:
             }
         });
         if let Some(t) = _t {
-            eprintln!("    nr luminance: {:.1} ms", t.elapsed().as_secs_f64() * 1e3);
+            eprintln!(
+                "    nr luminance: {:.1} ms",
+                t.elapsed().as_secs_f64() * 1e3
+            );
         }
     }
     if let Some(nr) = col {
@@ -394,7 +444,13 @@ impl Planes {
     /// enough for a draft: the wide blurs (base, clarity, dehaze, chromaticity). Its `key` matches
     /// no image, so only another draft takes them.
     pub fn for_other_nr(self) -> Planes {
-        Planes { key: 0, pre_nr: self.pre_nr, log_l: None, texture: None, ..self }
+        Planes {
+            key: 0,
+            pre_nr: self.pre_nr,
+            log_l: None,
+            texture: None,
+            ..self
+        }
     }
 }
 
@@ -410,7 +466,11 @@ pub fn base_key(s: &DevelopSettings, sigma: f32, detail: usize) -> BaseKey {
 
 /// Reuse `slot` if it was computed with `key` (a radius's `f32` bits, or a [`BaseKey`]), else
 /// compute and store it.
-pub fn plane_at<K: Copy + PartialEq, P>(slot: &mut Option<(K, Arc<P>)>, key: K, f: impl FnOnce() -> P) -> Arc<P> {
+pub fn plane_at<K: Copy + PartialEq, P>(
+    slot: &mut Option<(K, Arc<P>)>,
+    key: K,
+    f: impl FnOnce() -> P,
+) -> Arc<P> {
     match slot {
         Some((k, p)) if *k == key => p.clone(),
         _ => {
@@ -454,17 +514,27 @@ pub struct PlaneSigmas {
 
 pub fn plane_sigmas(s: &DevelopSettings, px_per_long: f64, q: Quality) -> PlaneSigmas {
     let ppl = px_per_long as f32;
-    let local_any = |f: fn(&lightcraft_develop::LocalAdjustments) -> f64| s.masks.iter().any(|m| f(&m.adjust) != 0.0);
-    let tone_active =
-        s.light.highlights != 0.0 || s.light.shadows != 0.0 || s.masks.iter().any(|m| m.adjust.highlights != 0.0 || m.adjust.shadows != 0.0);
+    let local_any = |f: fn(&lightcraft_develop::LocalAdjustments) -> f64| {
+        s.masks.iter().any(|m| f(&m.adjust) != 0.0)
+    };
+    let tone_active = s.light.highlights != 0.0
+        || s.light.shadows != 0.0
+        || s.masks
+            .iter()
+            .any(|m| m.adjust.highlights != 0.0 || m.adjust.shadows != 0.0);
     // Edge-aware base at ~1.5% of the long edge (EV² epsilon: edges of > ~0.6 EV are preserved)
     // From V2 it is taken of the median at 0.15%: lines and texture finer than that are detail,
     // not tone (#632).
     let base = tone_active.then(|| {
         let sigma = (0.015 * ppl).max(1.0);
-        if q == Quality::Draft { sigma.min(24.0) } else { sigma }
+        if q == Quality::Draft {
+            sigma.min(24.0)
+        } else {
+            sigma
+        }
     });
-    let clarity = (s.effects.clarity != 0.0 || local_any(|a| a.clarity)).then(|| (0.012 * ppl).max(1.0));
+    let clarity =
+        (s.effects.clarity != 0.0 || local_any(|a| a.clarity)).then(|| (0.012 * ppl).max(1.0));
     // local Noise and Defringe read the fine detail band too
     let texture = (s.effects.texture != 0.0
         || s.detail.sharpen_amount != 0.0
@@ -474,9 +544,21 @@ pub fn plane_sigmas(s: &DevelopSettings, px_per_long: f64, q: Quality) -> PlaneS
         || s.masks.iter().any(|m| m.adjust.defringe > 0.0))
     .then(|| (0.0018 * ppl).max(0.6));
     let dark = (s.effects.dehaze != 0.0 || local_any(|a| a.dehaze)).then(|| (0.02 * ppl).max(1.0));
-    let chroma = (local_any(|a| a.moire) || s.masks.iter().any(|m| m.adjust.noise > 0.0)).then(|| (CHROMA_SIGMA * ppl).max(1.0));
-    let base_detail = if base.is_some() { tone_base_detail(s, px_per_long) } else { 0 };
-    PlaneSigmas { base, base_detail, clarity, texture, dark, chroma }
+    let chroma = (local_any(|a| a.moire) || s.masks.iter().any(|m| m.adjust.noise > 0.0))
+        .then(|| (CHROMA_SIGMA * ppl).max(1.0));
+    let base_detail = if base.is_some() {
+        tone_base_detail(s, px_per_long)
+    } else {
+        0
+    };
+    PlaneSigmas {
+        base,
+        base_detail,
+        clarity,
+        texture,
+        dark,
+        chroma,
+    }
 }
 
 /// The spatial planes the per-pixel stage needs for `img` (white-balanced, before exposure),
@@ -492,33 +574,69 @@ pub(crate) fn prepare(
     planes: &mut Planes,
     mattes: Option<&masks::Mattes>,
 ) -> Prepared {
-    let log_l = planes.log_l.get_or_insert_with(|| Arc::new(timed("log_l", || img.map(log_lum)))).clone();
-    let PlaneSigmas { base: base_sigma, base_detail, clarity: clarity_sigma, texture: texture_sigma, dark: dark_sigma, chroma: chroma_sigma } =
-        plane_sigmas(s, px_per_long, q);
+    let log_l = planes
+        .log_l
+        .get_or_insert_with(|| Arc::new(timed("log_l", || img.map(log_lum))))
+        .clone();
+    let PlaneSigmas {
+        base: base_sigma,
+        base_detail,
+        clarity: clarity_sigma,
+        texture: texture_sigma,
+        dark: dark_sigma,
+        chroma: chroma_sigma,
+    } = plane_sigmas(s, px_per_long, q);
 
-    let Planes { base: sb, clarity: sc, texture: st, dark: sd, chroma: sch, .. } = planes;
+    let Planes {
+        base: sb,
+        clarity: sc,
+        texture: st,
+        dark: sd,
+        chroma: sch,
+        ..
+    } = planes;
     let chroma_blur = chroma_sigma.map(|sg| match sch {
         Some((k, c)) if *k == sg.to_bits() => c.clone(),
         _ => {
-            let c = timed("chroma", || Arc::new(gaussian(&img.map(masks::chromaticity), sg)));
+            let c = timed("chroma", || {
+                Arc::new(gaussian(&img.map(masks::chromaticity), sg))
+            });
             *sch = Some((sg.to_bits(), c.clone()));
             c
         }
     });
     let l = &log_l;
     let (base, (clarity_blur, (texture_blur, dark))) = par_join(
-        || base_sigma.map(|sg| plane_at(sb, base_key(s, sg, base_detail), || timed("base", || tone_base(l, sg, base_detail)))),
+        || {
+            base_sigma.map(|sg| {
+                plane_at(sb, base_key(s, sg, base_detail), || {
+                    timed("base", || tone_base(l, sg, base_detail))
+                })
+            })
+        },
         || {
             par_join(
-                || clarity_sigma.map(|sg| plane_at(sc, sg.to_bits(), || timed("clarity", || guided_fast(l, sg, CLARITY_EPS)))),
+                || {
+                    clarity_sigma.map(|sg| {
+                        plane_at(sc, sg.to_bits(), || {
+                            timed("clarity", || guided_fast(l, sg, CLARITY_EPS))
+                        })
+                    })
+                },
                 || {
                     par_join(
-                        || texture_sigma.map(|sg| plane_at(st, sg.to_bits(), || timed("texture", || gaussian(l, sg)))),
+                        || {
+                            texture_sigma.map(|sg| {
+                                plane_at(st, sg.to_bits(), || timed("texture", || gaussian(l, sg)))
+                            })
+                        },
                         || {
                             dark_sigma.map(|sg| match sd {
                                 Some((k, d, air)) if *k == sg.to_bits() => (d.clone(), *air),
                                 _ => {
-                                    let d = timed("dehaze", || Arc::new(gaussian(&img.map(dark_of), sg)));
+                                    let d = timed("dehaze", || {
+                                        Arc::new(gaussian(&img.map(dark_of), sg))
+                                    });
                                     let air = airlight(&d);
                                     *sd = Some((sg.to_bits(), d.clone(), air));
                                     (d, air)
@@ -536,13 +654,35 @@ pub(crate) fn prepare(
         None => (None, 1.0),
     };
     let ev = s.light.exposure as f32;
-    let masks = timed("masks", || masks::evaluate(&s.masks, frame, img.width, img.height, &img, &log_l, ev, mattes));
-    Prepared { img, log_l, base, clarity_blur, texture_blur, dark, chroma_blur, air, masks, px_per_long }
+    let masks = timed("masks", || {
+        masks::evaluate(
+            &s.masks, frame, img.width, img.height, &img, &log_l, ev, mattes,
+        )
+    });
+    Prepared {
+        img,
+        log_l,
+        base,
+        clarity_blur,
+        texture_blur,
+        dark,
+        chroma_blur,
+        air,
+        masks,
+        px_per_long,
+    }
 }
 
 /// The airlight of the whole output frame, estimated on a small render of it (`proxy_w` px wide):
 /// a windowed render must dehaze with the frame's airlight, not that of the pixels it holds.
-pub(crate) fn frame_airlight(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, frame: &Frame, proxy_w: usize, proxy_h: usize) -> f32 {
+pub(crate) fn frame_airlight(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    frame: &Frame,
+    proxy_w: usize,
+    proxy_h: usize,
+) -> f32 {
     let mut img = frame.sample(src, proxy_w, proxy_h);
     white_balance(&mut img, info, s);
     let sigma = (0.02 * frame.px_per_long(proxy_w)).max(1.0) as f32;
@@ -574,7 +714,11 @@ mod tests {
 
     #[test]
     fn guided_preserves_step_edges_and_flattens_texture() {
-        let p = Plane::from_fn(80, 20, |x, y| if x < 40 { -2.0 } else { 2.0 } + if (x + y) % 2 == 0 { 0.05 } else { -0.05 });
+        let p = Plane::from_fn(
+            80,
+            20,
+            |x, y| if x < 40 { -2.0 } else { 2.0 } + if (x + y) % 2 == 0 { 0.05 } else { -0.05 },
+        );
         let q = guided(&p, 4.0, 0.3);
         // edge kept
         assert!(q.get(35, 10) < -1.5 && q.get(45, 10) > 1.5);
@@ -616,10 +760,19 @@ mod fast_tests {
 
     #[test]
     fn fast_guided_close_to_reference() {
-        let p = Plane::from_fn(160, 120, |x, y| ((x as f32 * 0.13).sin() + (y as f32 * 0.07).cos()) * 2.0 + if x > 80 { 1.5 } else { 0.0 });
+        let p = Plane::from_fn(160, 120, |x, y| {
+            ((x as f32 * 0.13).sin() + (y as f32 * 0.07).cos()) * 2.0
+                + if x > 80 { 1.5 } else { 0.0 }
+        });
         let a = guided(&p, 12.0, 0.3);
         let b = guided_fast(&p, 12.0, 0.3);
-        let err: f32 = a.data.iter().zip(&b.data).map(|(u, v)| (u - v).abs()).sum::<f32>() / a.len() as f32;
+        let err: f32 = a
+            .data
+            .iter()
+            .zip(&b.data)
+            .map(|(u, v)| (u - v).abs())
+            .sum::<f32>()
+            / a.len() as f32;
         assert!(err < 0.08, "{err}");
     }
 }
@@ -636,7 +789,10 @@ mod nr_tests {
         });
         let var = |im: &Rgb32f| {
             let m = im.data.iter().map(|p| p[1]).sum::<f32>() / im.len() as f32;
-            (im.data.iter().map(|p| (p[1] - m).powi(2)).sum::<f32>() / im.len() as f32, m)
+            (
+                im.data.iter().map(|p| (p[1] - m).powi(2)).sum::<f32>() / im.len() as f32,
+                m,
+            )
         };
         let (v0, m0) = var(&img);
         let mut s = DevelopSettings::default();

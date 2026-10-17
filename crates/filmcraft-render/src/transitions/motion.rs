@@ -3,7 +3,10 @@
 use std::f32::consts::{FRAC_PI_2, PI};
 
 use super::cards::{Card, V3, eye, focal_for};
-use super::{Tx, bell, ease_in, ease_in_out, ease_out, hash, line_blur, mid_mix, mix, over, paint, scale4, shutter, smoothstep, temporal, zoom_blur};
+use super::{
+    Tx, bell, ease_in, ease_in_out, ease_out, hash, line_blur, mid_mix, mix, over, paint, scale4,
+    shutter, smoothstep, temporal, zoom_blur,
+};
 use crate::image::Image;
 
 /// One textured card in a 3D scene.
@@ -23,7 +26,15 @@ pub(crate) struct Layer<'a> {
 
 impl<'a> Layer<'a> {
     pub fn new(card: Card, front: &'a Image) -> Self {
-        Layer { card, front, back: None, mirror_y: false, clip: [0.0, 0.0, front.w as f32, front.h as f32], shade: false, opacity: 1.0 }
+        Layer {
+            card,
+            front,
+            back: None,
+            mirror_y: false,
+            clip: [0.0, 0.0, front.w as f32, front.h as f32],
+            shade: false,
+            opacity: 1.0,
+        }
     }
     fn with_back(mut self, back: &'a Image, mirror_y: bool) -> Self {
         self.back = Some(back);
@@ -46,7 +57,9 @@ pub(crate) fn composite(layers: &[Layer], eye: V3, x: f32, y: f32) -> [f32; 4] {
     let mut hits = [(0.0f32, [0.0f32; 4]); MAX];
     let mut nh = 0;
     for l in layers {
-        let Some((lx, ly, depth, front)) = l.card.hit(eye, x, y) else { continue };
+        let Some((lx, ly, depth, front)) = l.card.hit(eye, x, y) else {
+            continue;
+        };
         let [x0, y0, x1, y1] = l.clip;
         let edge = (lx - x0).min(x1 - lx).min(ly - y0).min(y1 - ly);
         let cov = (edge + 0.5).clamp(0.0, 1.0);
@@ -56,7 +69,11 @@ pub(crate) fn composite(layers: &[Layer], eye: V3, x: f32, y: f32) -> [f32; 4] {
         let (img, sx, sy) = if front {
             (l.front, lx, ly)
         } else if let Some(b) = l.back {
-            if l.mirror_y { (b, lx, b.h as f32 - ly) } else { (b, b.w as f32 - lx, ly) }
+            if l.mirror_y {
+                (b, lx, b.h as f32 - ly)
+            } else {
+                (b, b.w as f32 - lx, ly)
+            }
         } else {
             continue;
         };
@@ -81,13 +98,28 @@ pub(crate) fn composite(layers: &[Layer], eye: V3, x: f32, y: f32) -> [f32; 4] {
 }
 
 fn cross(a: V3, b: V3) -> V3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 /// Render a card scene built for each motion-blur time sample.
-fn scene<'a>(t: &Tx<'a>, focal: f32, blur: (f32, usize), build: impl Fn(f32) -> Vec<Layer<'a>> + Sync) -> Image {
+fn scene<'a>(
+    t: &Tx<'a>,
+    focal: f32,
+    blur: (f32, usize),
+    build: impl Fn(f32) -> Vec<Layer<'a>> + Sync,
+) -> Image {
     let (sh, n) = blur;
-    let qs: Vec<f32> = if n <= 1 || sh <= 0.0 { vec![t.p] } else { (0..n).map(|i| (t.p + (i as f32 / (n - 1) as f32 - 0.5) * sh).clamp(0.0, 1.0)).collect() };
+    let qs: Vec<f32> = if n <= 1 || sh <= 0.0 {
+        vec![t.p]
+    } else {
+        (0..n)
+            .map(|i| (t.p + (i as f32 / (n - 1) as f32 - 0.5) * sh).clamp(0.0, 1.0))
+            .collect()
+    };
     let scenes: Vec<Vec<Layer>> = qs.iter().map(|&q| build(q)).collect();
     let e = eye(t.wf, t.hf, focal);
     let inv = 1.0 / scenes.len() as f32;
@@ -135,21 +167,40 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
         "push" => scene(t, far, shutter(t, 0.12), |q| {
             let e = ease_in_out(q);
             vec![
-                Layer::new(Card::flat().translate([dx * travel * e, dy * travel * e, 0.0]), t.a),
-                Layer::new(Card::flat().translate([dx * travel * (e - 1.0), dy * travel * (e - 1.0), 0.0]), t.b),
+                Layer::new(
+                    Card::flat().translate([dx * travel * e, dy * travel * e, 0.0]),
+                    t.a,
+                ),
+                Layer::new(
+                    Card::flat().translate([dx * travel * (e - 1.0), dy * travel * (e - 1.0), 0.0]),
+                    t.b,
+                ),
             ]
         }),
         "slide" => scene(t, far, shutter(t, 0.12), |q| {
             let e = ease_in_out(q);
-            vec![Layer::new(Card::flat(), t.a), Layer::new(Card::flat().translate([dx * travel * (e - 1.0), dy * travel * (e - 1.0), 0.0]), t.b)]
+            vec![
+                Layer::new(Card::flat(), t.a),
+                Layer::new(
+                    Card::flat().translate([dx * travel * (e - 1.0), dy * travel * (e - 1.0), 0.0]),
+                    t.b,
+                ),
+            ]
         }),
         "split" => {
             let vertical_cut = t.choice("orientation") == 0;
             scene(t, far, shutter(t, 0.12), move |q| {
                 let e = ease_in_out(q);
-                let (half_l, half_r) =
-                    if vertical_cut { ([0.0, 0.0, w / 2.0, h], [w / 2.0, 0.0, w, h]) } else { ([0.0, 0.0, w, h / 2.0], [0.0, h / 2.0, w, h]) };
-                let (ox, oy) = if vertical_cut { (w / 2.0 * e, 0.0) } else { (0.0, h / 2.0 * e) };
+                let (half_l, half_r) = if vertical_cut {
+                    ([0.0, 0.0, w / 2.0, h], [w / 2.0, 0.0, w, h])
+                } else {
+                    ([0.0, 0.0, w, h / 2.0], [0.0, h / 2.0, w, h])
+                };
+                let (ox, oy) = if vertical_cut {
+                    (w / 2.0 * e, 0.0)
+                } else {
+                    (0.0, h / 2.0 * e)
+                };
                 vec![
                     Layer::new(Card::flat(), t.b),
                     Layer::new(Card::flat().translate([-ox, -oy, -0.01]), t.a).clipped(half_l),
@@ -166,8 +217,18 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             };
             let pushed = scene(t, far, (0.0, 1), |_| {
                 vec![
-                    Layer::new(Card::flat().translate([dx * travel * e, dy * travel * e, 0.0]), t.a),
-                    Layer::new(Card::flat().translate([dx * travel * (e - 1.0), dy * travel * (e - 1.0), 0.0]), t.b),
+                    Layer::new(
+                        Card::flat().translate([dx * travel * e, dy * travel * e, 0.0]),
+                        t.a,
+                    ),
+                    Layer::new(
+                        Card::flat().translate([
+                            dx * travel * (e - 1.0),
+                            dy * travel * (e - 1.0),
+                            0.0,
+                        ]),
+                        t.b,
+                    ),
                 ]
             });
             let len = t.frac("blur") * bell(t.p) * travel * 0.18;
@@ -175,18 +236,27 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 pushed
             } else {
                 let n = super::taps(len * 2.0);
-                paint(t.w, t.h, |x, y| line_blur(&pushed, x, y, dx * len, dy * len, n))
+                paint(t.w, t.h, |x, y| {
+                    line_blur(&pushed, x, y, dx * len, dy * len, n)
+                })
             }
         }
         "roll" => {
             // A and B ride a big wheel whose hub sits below (or beside) the frame.
             let r = if horiz { h * 2.0 } else { w * 2.0 };
-            let hub: V3 = if horiz { [w / 2.0, h / 2.0 + r, 0.0] } else { [w / 2.0 - r, h / 2.0, 0.0] };
+            let hub: V3 = if horiz {
+                [w / 2.0, h / 2.0 + r, 0.0]
+            } else {
+                [w / 2.0 - r, h / 2.0, 0.0]
+            };
             let gap = (if horiz { w } else { h }) * 1.15 / r;
             let sign = if horiz { dx.signum() } else { dy.signum() };
             scene(t, far, shutter(t, 0.1), move |q| {
                 let a = ease_in_out(q) * gap * sign;
-                vec![Layer::new(Card::flat().rot_z(hub, a), t.a), Layer::new(Card::flat().rot_z(hub, a - gap * sign), t.b)]
+                vec![
+                    Layer::new(Card::flat().rot_z(hub, a), t.a),
+                    Layer::new(Card::flat().rot_z(hub, a - gap * sign), t.b),
+                ]
             })
         }
         "roll_3d" => {
@@ -198,10 +268,20 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             scene(t, focal, (0.0, 1), move |q| {
                 let a = ease_in_out(q) * FRAC_PI_2 * sign;
                 let back = side * 0.45 * bell(q);
-                let rot = |k: Card, ang: f32| if horiz { k.rot_y(cc, ang) } else { k.rot_x(cc, ang) };
+                let rot = |k: Card, ang: f32| {
+                    if horiz {
+                        k.rot_y(cc, ang)
+                    } else {
+                        k.rot_x(cc, ang)
+                    }
+                };
                 vec![
                     Layer::new(rot(Card::flat(), a).translate([0.0, 0.0, back]), t.a).shaded(),
-                    Layer::new(rot(rot(Card::flat(), -FRAC_PI_2 * sign), a).translate([0.0, 0.0, back]), t.b).shaded(),
+                    Layer::new(
+                        rot(rot(Card::flat(), -FRAC_PI_2 * sign), a).translate([0.0, 0.0, back]),
+                        t.b,
+                    )
+                    .shaded(),
                 ]
             })
         }
@@ -244,7 +324,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             paint(t.w, t.h, |x, y| {
                 let s = if axis_x { x } else { y };
                 let (in_b, local) = if fwd {
-                    if s < split { (true, s / split.max(1e-3) * len) } else { (false, (s - split) / (len - split).max(1e-3) * len) }
+                    if s < split {
+                        (true, s / split.max(1e-3) * len)
+                    } else {
+                        (false, (s - split) / (len - split).max(1e-3) * len)
+                    }
                 } else if s >= split {
                     (true, (s - split) / (len - split).max(1e-3) * len)
                 } else {
@@ -264,7 +348,8 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let seed = 17;
             paint(t.w, t.h, |x, y| {
                 temporal(x, y, t.p, sh, n, &|x, y, q| {
-                    let (along, across, len_al, len_ac) = if horiz { (x, y, w, h) } else { (y, x, h, w) };
+                    let (along, across, len_al, len_ac) =
+                        if horiz { (x, y, w, h) } else { (y, x, h, w) };
                     let sgn = if horiz { dx } else { dy };
                     let lane = (across / len_ac * lanes).floor().clamp(0.0, lanes - 1.0);
                     let cell_len = len_al / cells;
@@ -274,7 +359,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                     let mut has_b = false;
                     for ci in 0..cells as i32 {
                         // leading blocks (towards the exit side) leave first
-                        let order = if sgn > 0.0 { (cells as i32 - 1 - ci) as f32 } else { ci as f32 } / cells;
+                        let order = if sgn > 0.0 {
+                            (cells as i32 - 1 - ci) as f32
+                        } else {
+                            ci as f32
+                        } / cells;
                         let delay = 0.6 * (0.6 * order + 0.4 * hash(ci, lane as i32, seed));
                         let qi = ((q - delay) / (1.0 - 0.6)).clamp(0.0, 1.0);
                         let e = ease_in_out(qi);
@@ -306,12 +395,23 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             scene(t, focal, blur, move |q| {
                 let (e, back) = if flip {
                     // ease in, then settle with a small overshoot
-                    (if q < 0.5 { ease_in(q * 2.0) * 0.5 } else { 0.5 + back_out(q * 2.0 - 1.0, 1.2) * 0.5 }, 0.25 * bell(q))
+                    (
+                        if q < 0.5 {
+                            ease_in(q * 2.0) * 0.5
+                        } else {
+                            0.5 + back_out(q * 2.0 - 1.0, 1.2) * 0.5
+                        },
+                        0.25 * bell(q),
+                    )
                 } else {
                     (ease_in_out(q), 0.8 * bell(q))
                 };
                 let a = e * PI * sign;
-                let card = if horiz { Card::flat().rot_y(c, a) } else { Card::flat().rot_x(c, a) };
+                let card = if horiz {
+                    Card::flat().rot_y(c, a)
+                } else {
+                    Card::flat().rot_x(c, a)
+                };
                 let card = card.translate([0.0, 0.0, back * w.max(h)]);
                 vec![Layer::new(card, t.a).with_back(t.b, !horiz).shaded()]
             })
@@ -324,11 +424,19 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let z = depth * w.max(h) * 1.5 * bell(q);
                 if q < 0.5 {
                     let a = ease_in(q * 2.0) * FRAC_PI_2 * sign;
-                    let k = if horiz { Card::flat().rot_x(c, a) } else { Card::flat().rot_y(c, a) };
+                    let k = if horiz {
+                        Card::flat().rot_x(c, a)
+                    } else {
+                        Card::flat().rot_y(c, a)
+                    };
                     vec![Layer::new(k.translate([0.0, 0.0, z]), t.a).shaded()]
                 } else {
                     let a = -(1.0 - ease_out((q - 0.5) * 2.0)) * FRAC_PI_2 * sign;
-                    let k = if horiz { Card::flat().rot_x(c, a) } else { Card::flat().rot_y(c, a) };
+                    let k = if horiz {
+                        Card::flat().rot_x(c, a)
+                    } else {
+                        Card::flat().rot_y(c, a)
+                    };
                     vec![Layer::new(k.translate([0.0, 0.0, z]), t.b).shaded()]
                 }
             })
@@ -353,13 +461,26 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             scene(t, focal, (0.0, 1), move |q| {
                 let phi = PI * ease_in_out((q * 2.0).min(1.0)) * sg;
                 let psi = FRAC_PI_2 * ease_in(((q - 0.5) * 2.0).clamp(0.0, 1.0)) * sg;
-                let rot = |k: Card, axis: V3, a: f32| if horiz { k.rot_y(axis, a) } else { k.rot_x(axis, -a) };
-                let flap = rot(rot(Card::flat().translate([0.0, 0.0, -0.5]), mid_axis, phi), exit_axis, psi);
+                let rot = |k: Card, axis: V3, a: f32| {
+                    if horiz {
+                        k.rot_y(axis, a)
+                    } else {
+                        k.rot_x(axis, -a)
+                    }
+                };
+                let flap = rot(
+                    rot(Card::flat().translate([0.0, 0.0, -0.5]), mid_axis, phi),
+                    exit_axis,
+                    psi,
+                );
                 let base = rot(Card::flat(), exit_axis, psi);
                 vec![
                     Layer::new(Card::flat().translate([0.0, 0.0, 1.0]), t.b),
                     Layer::new(base, t.a).clipped(exit).shaded(),
-                    Layer::new(flap, t.a).with_back(t.a, !horiz).clipped(entry).shaded(),
+                    Layer::new(flap, t.a)
+                        .with_back(t.a, !horiz)
+                        .clipped(entry)
+                        .shaded(),
                 ]
             })
         }
@@ -371,7 +492,12 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let sb = back_out(qb, s).max(0.0);
                 let mut la = Layer::new(Card::flat().scale_about(c, sa), t.a);
                 la.opacity = 1.0 - smoothstep(0.35, 0.8, q);
-                let mut lb = Layer::new(Card::flat().scale_about(c, sb.max(1e-3)).translate([0.0, 0.0, -0.01]), t.b);
+                let mut lb = Layer::new(
+                    Card::flat()
+                        .scale_about(c, sb.max(1e-3))
+                        .translate([0.0, 0.0, -0.01]),
+                    t.b,
+                );
                 lb.opacity = smoothstep(0.1, 0.3, q);
                 vec![la, lb]
             })
@@ -380,19 +506,44 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let e = ease_in_out(q);
             let s = 1.0 - 0.25 * bell(q);
             vec![
-                Layer::new(Card::flat().scale_about(c, s).translate([dx * travel * e, dy * travel * e, 0.0]), t.a),
-                Layer::new(Card::flat().scale_about(c, s).translate([dx * travel * (e - 1.0), dy * travel * (e - 1.0), 0.0]), t.b),
+                Layer::new(
+                    Card::flat().scale_about(c, s).translate([
+                        dx * travel * e,
+                        dy * travel * e,
+                        0.0,
+                    ]),
+                    t.a,
+                ),
+                Layer::new(
+                    Card::flat().scale_about(c, s).translate([
+                        dx * travel * (e - 1.0),
+                        dy * travel * (e - 1.0),
+                        0.0,
+                    ]),
+                    t.b,
+                ),
             ]
         }),
         "spin_motion" => {
-            let turn = t.num("rotation").to_radians() * if t.choice("spin") == 1 { -1.0 } else { 1.0 };
+            let turn =
+                t.num("rotation").to_radians() * if t.choice("spin") == 1 { -1.0 } else { 1.0 };
             scene(t, far, shutter(t, 0.06), move |q| {
                 if q < 0.5 {
                     let k = ease_in(q * 2.0);
-                    vec![Layer::new(Card::flat().rot_z(c, turn * 0.5 * k).scale_about(c, (1.0 - k).max(1e-3)), t.a)]
+                    vec![Layer::new(
+                        Card::flat()
+                            .rot_z(c, turn * 0.5 * k)
+                            .scale_about(c, (1.0 - k).max(1e-3)),
+                        t.a,
+                    )]
                 } else {
                     let k = ease_out((q - 0.5) * 2.0);
-                    vec![Layer::new(Card::flat().rot_z(c, -turn * 0.5 * (1.0 - k)).scale_about(c, k.max(1e-3)), t.b)]
+                    vec![Layer::new(
+                        Card::flat()
+                            .rot_z(c, -turn * 0.5 * (1.0 - k))
+                            .scale_about(c, k.max(1e-3)),
+                        t.b,
+                    )]
                 }
             })
         }
@@ -401,8 +552,18 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             scene(t, far, shutter(t, 0.08), move |q| {
                 let e = spring(q, bounce);
                 vec![
-                    Layer::new(Card::flat().translate([dx * travel * e, dy * travel * e, 0.0]), t.a),
-                    Layer::new(Card::flat().translate([dx * travel * (e - 1.0), dy * travel * (e - 1.0), 0.0]), t.b),
+                    Layer::new(
+                        Card::flat().translate([dx * travel * e, dy * travel * e, 0.0]),
+                        t.a,
+                    ),
+                    Layer::new(
+                        Card::flat().translate([
+                            dx * travel * (e - 1.0),
+                            dy * travel * (e - 1.0),
+                            0.0,
+                        ]),
+                        t.b,
+                    ),
                 ]
             })
         }
@@ -413,8 +574,18 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let s = 1.0 - zoom * bell(q);
                 let pan = step * ease_in_out(q);
                 vec![
-                    Layer::new(Card::flat().translate([dx * pan, dy * pan, 0.0]).scale_about(c, s), t.a),
-                    Layer::new(Card::flat().translate([dx * (pan - step), dy * (pan - step), 0.0]).scale_about(c, s), t.b),
+                    Layer::new(
+                        Card::flat()
+                            .translate([dx * pan, dy * pan, 0.0])
+                            .scale_about(c, s),
+                        t.a,
+                    ),
+                    Layer::new(
+                        Card::flat()
+                            .translate([dx * (pan - step), dy * (pan - step), 0.0])
+                            .scale_about(c, s),
+                        t.b,
+                    ),
                 ]
             })
         }
@@ -477,7 +648,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 }
                 let src = mid + if co > 0.0 { local } else { -local };
                 let (sx, sy) = if horizontal_slats { (x, src) } else { (src, y) };
-                let c = if co > 0.0 { t.sac(sx, sy) } else { t.sbc(sx, sy) };
+                let c = if co > 0.0 {
+                    t.sac(sx, sy)
+                } else {
+                    t.sbc(sx, sy)
+                };
                 let light = 0.5 + 0.5 * co.abs();
                 [c[0] * light, c[1] * light, c[2] * light, c[3]]
             })
@@ -503,7 +678,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let d = s - e;
                 if d < refl {
                     let m = e - d; // mirror of s about the moving line
-                    let (sx, sy) = if horiz { (if neg { w - m } else { m }, y) } else { (x, if neg { h - m } else { m }) };
+                    let (sx, sy) = if horiz {
+                        (if neg { w - m } else { m }, y)
+                    } else {
+                        (x, if neg { h - m } else { m })
+                    };
                     let r = t.sbc(sx, sy);
                     return mix(a, r, 0.75 * (1.0 - d / refl));
                 }
@@ -528,7 +707,9 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let (sh, ns) = shutter(t, 0.08);
             paint(t.w, t.h, |x, y| {
                 temporal(x, y, t.p, sh, ns, &|x, y, q| {
-                    let i = (((x * px_ + y * py_) - lo) / span * n).floor().clamp(0.0, n - 1.0);
+                    let i = (((x * px_ + y * py_) - lo) / span * n)
+                        .floor()
+                        .clamp(0.0, n - 1.0);
                     let sign = if (i as i32) % 2 == 0 { 1.0 } else { -1.0 };
                     let qi = ((q - 0.3 * i / n.max(1.0)) / 0.7).clamp(0.0, 1.0);
                     let off = sign * dist * ease_in(qi);
@@ -537,7 +718,9 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                     let b = t.sbc((x - w / 2.0) / zb + w / 2.0, (y - h / 2.0) / zb + h / 2.0);
                     if sx >= 0.0 && sx < w && sy >= 0.0 && sy < h {
                         // keep the slice's own band only (slices do not bleed into each other)
-                        let j = (((sx * px_ + sy * py_) - lo) / span * n).floor().clamp(0.0, n - 1.0);
+                        let j = (((sx * px_ + sy * py_) - lo) / span * n)
+                            .floor()
+                            .clamp(0.0, n - 1.0);
                         if j == i {
                             return over(b, t.sac(sx, sy));
                         }
@@ -565,7 +748,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let across = if horiz { y } else { x };
                 let near = (-((s - e) / band).powi(2)).exp();
                 let disp = amp * env * near * (2.0 * PI * (across / lambda) - t.p * 6.0).sin();
-                let (sx, sy) = if horiz { (x + disp, y + disp * 0.3) } else { (x + disp * 0.3, y + disp) };
+                let (sx, sy) = if horiz {
+                    (x + disp, y + disp * 0.3)
+                } else {
+                    (x + disp * 0.3, y + disp)
+                };
                 let k = 1.0 - smoothstep(-band * 0.3, band * 0.3, s - e);
                 mix(t.sac(sx, sy), t.sbc(sx, sy), k)
             })
@@ -579,7 +766,10 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let k = mid_mix(p);
             // A pushes in and turns; B arrives from the same push, settling to rest
             let (za, ra) = (1.0 + zoom * ease_in(p.min(0.7) / 0.7), rot * ease_in(p));
-            let (zb, rb) = (1.0 + zoom * (1.0 - ease_out(((p - 0.3) / 0.7).clamp(0.0, 1.0))), -rot * (1.0 - ease_out(p)));
+            let (zb, rb) = (
+                1.0 + zoom * (1.0 - ease_out(((p - 0.3) / 0.7).clamp(0.0, 1.0))),
+                -rot * (1.0 - ease_out(p)),
+            );
             let blur = mb * bell(p) * 0.35;
             let n = super::taps(blur * w * 0.3);
             paint(t.w, t.h, |x, y| {
@@ -589,8 +779,16 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                     let (lx, ly) = (ux * co - uy * s + w / 2.0, ux * s + uy * co + h / 2.0);
                     zoom_blur(img, lx, ly, w / 2.0, h / 2.0, blur, n)
                 };
-                let a = if k < 1.0 { sample(t.a, za, ra) } else { [0.0; 4] };
-                let b = if k > 0.0 { sample(t.b, zb, rb) } else { [0.0; 4] };
+                let a = if k < 1.0 {
+                    sample(t.a, za, ra)
+                } else {
+                    [0.0; 4]
+                };
+                let b = if k > 0.0 {
+                    sample(t.b, zb, rb)
+                } else {
+                    [0.0; 4]
+                };
                 mix(a, b, k)
             })
         }
@@ -668,7 +866,11 @@ fn page_peel(t: &Tx) -> Image {
         // 4. revealed incoming clip, with a soft shadow along the curl
         let b = t.pb(x, y);
         if shadow {
-            let k = 1.0 - 0.45 * (-(d - r).max(0.0) / (r * 1.5)).exp() * smoothstep(0.0, 0.05, t.p) * (1.0 - smoothstep(0.9, 1.0, t.p));
+            let k = 1.0
+                - 0.45
+                    * (-(d - r).max(0.0) / (r * 1.5)).exp()
+                    * smoothstep(0.0, 0.05, t.p)
+                    * (1.0 - smoothstep(0.9, 1.0, t.p));
             return [b[0] * k, b[1] * k, b[2] * k, b[3]];
         }
         b

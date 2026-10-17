@@ -137,7 +137,11 @@ fn column_expression(column: &str, available: &std::collections::BTreeSet<String
         }
         return "NULL".into();
     }
-    if available.contains(column) { character_text_sql(column) } else { "NULL".into() }
+    if available.contains(column) {
+        character_text_sql(column)
+    } else {
+        "NULL".into()
+    }
 }
 
 fn playable_expression(available: &std::collections::BTreeSet<String>) -> String {
@@ -189,10 +193,17 @@ fn without_column(clauses: &[FilterClause], excluded: Option<&str>) -> (String, 
     } else {
         format!(
             " WHERE {}",
-            retained.iter().map(|clause| clause.sql.as_str()).collect::<Vec<_>>().join(" AND ")
+            retained
+                .iter()
+                .map(|clause| clause.sql.as_str())
+                .collect::<Vec<_>>()
+                .join(" AND ")
         )
     };
-    let params = retained.iter().flat_map(|clause| clause.params.iter().cloned()).collect();
+    let params = retained
+        .iter()
+        .flat_map(|clause| clause.params.iter().cloned())
+        .collect();
     (sql, params)
 }
 
@@ -218,11 +229,22 @@ fn build_clauses(
     let mut clauses = Vec::new();
     let mut applied = AppliedCharacterFilters::default();
 
-    if let Some(query) = request.query.as_deref().map(str::trim).filter(|q| !q.is_empty()) {
+    if let Some(query) = request
+        .query
+        .as_deref()
+        .map(str::trim)
+        .filter(|q| !q.is_empty())
+    {
         let pattern = if request.legacy_selection {
             format!("%{query}%")
         } else {
-            format!("%{}%", query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"))
+            format!(
+                "%{}%",
+                query
+                    .replace('\\', "\\\\")
+                    .replace('%', "\\%")
+                    .replace('_', "\\_")
+            )
         };
         clauses.push(FilterClause {
             column: None,
@@ -245,7 +267,11 @@ fn build_clauses(
         ("rarity", &request.rarity, &request.rarity_in),
         ("series", &request.series, &request.series_in),
     ] {
-        if let Some(value) = value.as_deref().map(str::trim).filter(|value| !value.is_empty()) {
+        if let Some(value) = value
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
             clauses.push(FilterClause {
                 column: Some(column),
                 sql: format!(
@@ -268,8 +294,9 @@ fn build_clauses(
 
         let values = list_values(list.as_ref());
         if !values.is_empty() {
-            let placeholders =
-                std::iter::repeat_n("?", values.len()).collect::<Vec<_>>().join(", ");
+            let placeholders = std::iter::repeat_n("?", values.len())
+                .collect::<Vec<_>>()
+                .join(", ");
             clauses.push(FilterClause {
                 column: Some(column),
                 sql: format!("\"{column}\" IN ({placeholders})"),
@@ -332,20 +359,36 @@ pub fn query_character_catalog(
                 };
             }
         }
-        let placeholders = std::iter::repeat_n("?", values.len()).collect::<Vec<_>>().join(", ");
-        let mut expression =
-            format!("{} IN ({placeholders})", column_expression(column, &available));
+        let placeholders = std::iter::repeat_n("?", values.len())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let mut expression = format!(
+            "{} IN ({placeholders})",
+            column_expression(column, &available)
+        );
         if column == "team_id" && available.contains("teams") {
             expression = format!(
                 "({expression} OR EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(teams) THEN teams ELSE '[]' END) AS membership WHERE json_extract(membership.value, '$.id') IN ({placeholders})))"
             );
             values.extend(values.clone());
         }
-        clauses.push(FilterClause { column: Some(column), sql: expression, params: values });
+        clauses.push(FilterClause {
+            column: Some(column),
+            sql: expression,
+            params: values,
+        });
     }
     for (name, value, expression) in [
-        ("playable", request.playable, playable_expression(&available)),
-        ("incomplete", request.incomplete, incomplete_expression(&available)),
+        (
+            "playable",
+            request.playable,
+            playable_expression(&available),
+        ),
+        (
+            "incomplete",
+            request.incomplete,
+            incomplete_expression(&available),
+        ),
     ] {
         if let Some(value) = value {
             clauses.push(FilterClause {
@@ -369,8 +412,10 @@ pub fn query_character_catalog(
     let mut facets = BTreeMap::new();
     for column in CHARACTER_FACETS {
         let (facet_where, facet_params) = without_column(&clauses, Some(column));
-        let facet_bound: Vec<&dyn ToSql> =
-            facet_params.iter().map(|value| value as &dyn ToSql).collect();
+        let facet_bound: Vec<&dyn ToSql> = facet_params
+            .iter()
+            .map(|value| value as &dyn ToSql)
+            .collect();
         let expression = column_expression(column, &available);
         let sql = format!(
             "SELECT {expression}, count(*) FROM \"{CHARACTER_TABLE}\"{facet_where} \
@@ -404,7 +449,9 @@ pub fn query_character_catalog(
         character_text_sql("internal_code")
     );
     let requested_sort = request.sort.as_deref().map(str::trim).unwrap_or_default();
-    let selected = CHARACTER_SORTS.iter().find(|(public_name, _)| *public_name == requested_sort);
+    let selected = CHARACTER_SORTS
+        .iter()
+        .find(|(public_name, _)| *public_name == requested_sort);
     let order_sql = match selected {
         Some((public_name, column)) => {
             filters.sort = (*public_name).to_owned();
@@ -417,11 +464,11 @@ pub fn query_character_catalog(
                 "CASE WHEN {expression} IS NULL THEN 1 ELSE 0 END, {expression} {direction}, {}",
                 character_text_sql("internal_code")
             )
-        },
+        }
         None => {
             filters.sort = "zukan".to_owned();
             default_order
-        },
+        }
     };
 
     let sql = format!(
@@ -544,7 +591,11 @@ mod tests {
         assert_eq!(page.facets["playstyle"][0].value, "Freedom");
         let incomplete = query_character_catalog(
             &connection,
-            &CharacterCatalogRequest { incomplete: Some(true), limit: 10, ..Default::default() },
+            &CharacterCatalogRequest {
+                incomplete: Some(true),
+                limit: 10,
+                ..Default::default()
+            },
         )
         .unwrap();
         assert_eq!(incomplete.total, 1);
@@ -567,7 +618,11 @@ mod tests {
 
         let page = query_character_catalog(
             &fixture(),
-            &CharacterCatalogRequest { limit: 1, offset: 1, ..CharacterCatalogRequest::default() },
+            &CharacterCatalogRequest {
+                limit: 1,
+                offset: 1,
+                ..CharacterCatalogRequest::default()
+            },
         )
         .unwrap();
         assert_eq!(page.total, 3);
@@ -594,19 +649,29 @@ mod tests {
 
         let page = query_character_catalog(
             &connection,
-            &CharacterCatalogRequest { limit: 10, ..CharacterCatalogRequest::default() },
+            &CharacterCatalogRequest {
+                limit: 10,
+                ..CharacterCatalogRequest::default()
+            },
         )
         .unwrap();
 
         assert_eq!(
-            page.records.iter().map(|record| record.internal_code.as_deref()).collect::<Vec<_>>(),
+            page.records
+                .iter()
+                .map(|record| record.internal_code.as_deref())
+                .collect::<Vec<_>>(),
             [Some("c2"), Some("c10"), Some("cx")]
         );
         assert_eq!(page.records[0].zukan_order, Some(2));
         assert_eq!(page.records[1].zukan_order, Some(10));
         assert_eq!(page.records[2].zukan_order, None);
         assert_eq!(page.records[2].name_en, None);
-        assert!(page.facets["element"].iter().all(|facet| facet.value != "\\\\N"));
+        assert!(
+            page.facets["element"]
+                .iter()
+                .all(|facet| facet.value != "\\\\N")
+        );
     }
 
     #[test]
@@ -658,7 +723,11 @@ mod tests {
     fn public_sort_tokens_only_reference_projected_columns() {
         assert_eq!(CHARACTER_COLUMNS.len(), 12);
         assert!(!CHARACTER_COLUMNS.contains(&"*"));
-        assert!(CHARACTER_SORTS.iter().all(|(_, column)| CHARACTER_COLUMNS.contains(column)));
+        assert!(
+            CHARACTER_SORTS
+                .iter()
+                .all(|(_, column)| CHARACTER_COLUMNS.contains(column))
+        );
         assert_eq!(CHARACTER_FACETS.len(), 9);
     }
 

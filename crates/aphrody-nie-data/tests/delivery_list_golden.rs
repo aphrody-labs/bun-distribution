@@ -29,7 +29,11 @@ fn load_real() -> Option<Vec<DeliveryListInfo>> {
 #[test]
 fn compte_livraisons_et_contenus() {
     let Some(infos) = load_real() else { return };
-    assert_eq!(infos.len(), 20, "20 DELIVERY_INFO sous DELIVERY_INFO_LIST_BEG_0");
+    assert_eq!(
+        infos.len(),
+        20,
+        "20 DELIVERY_INFO sous DELIVERY_INFO_LIST_BEG_0"
+    );
     let total_data: usize = infos.iter().map(|i| i.data.len()).sum();
     assert_eq!(total_data, 74, "74 DELIVERY_INFO_DATA au total");
 }

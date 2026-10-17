@@ -84,10 +84,16 @@ impl PkcePair {
     /// Generate a fresh PKCE pair using the operating-system RNG.
     #[must_use]
     pub fn generate() -> Self {
-        let verifier: String =
-            rand::rng().sample_iter(Alphanumeric).take(VERIFIER_LEN).map(char::from).collect();
+        let verifier: String = rand::rng()
+            .sample_iter(Alphanumeric)
+            .take(VERIFIER_LEN)
+            .map(char::from)
+            .collect();
         let challenge = Self::challenge_for(&verifier);
-        Self { verifier, challenge }
+        Self {
+            verifier,
+            challenge,
+        }
     }
 
     /// Compute the `S256` challenge for a given verifier.
@@ -119,8 +125,16 @@ fn percent_encode(value: &str) -> String {
             out.push(b as char);
         } else {
             out.push('%');
-            out.push(char::from_digit((u32::from(b) >> 4) & 0xF, 16).unwrap().to_ascii_uppercase());
-            out.push(char::from_digit(u32::from(b) & 0xF, 16).unwrap().to_ascii_uppercase());
+            out.push(
+                char::from_digit((u32::from(b) >> 4) & 0xF, 16)
+                    .unwrap()
+                    .to_ascii_uppercase(),
+            );
+            out.push(
+                char::from_digit(u32::from(b) & 0xF, 16)
+                    .unwrap()
+                    .to_ascii_uppercase(),
+            );
         }
     }
     out
@@ -189,7 +203,11 @@ pub async fn login_with_timeout(timeout_secs: u64) -> Result<OAuthToken, SdkErro
     use tokio::time::{Duration, timeout};
 
     let pkce = PkcePair::generate();
-    let state: String = rand::rng().sample_iter(Alphanumeric).take(32).map(char::from).collect();
+    let state: String = rand::rng()
+        .sample_iter(Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
 
     let url = authorize_url(&pkce, &state);
 
@@ -200,16 +218,22 @@ pub async fn login_with_timeout(timeout_secs: u64) -> Result<OAuthToken, SdkErro
 
     // Best-effort browser launch; if it fails the user can paste the URL.
     open_in_browser(&url);
-    eprintln!("Ouvrez cette URL dans votre navigateur pour vous connecter :\n\n  {}\n", url);
+    eprintln!(
+        "Ouvrez cette URL dans votre navigateur pour vous connecter :\n\n  {}\n",
+        url
+    );
     eprintln!(
         "Note : Si vous utilisez un serveur distant (VPS), configurez d'abord un tunnel SSH pour \
          rediriger le port 9109 :\n  ssh -L 9109:127.0.0.1:9109 <votre-serveur>\n"
     );
     tracing::info!("Opened Google sign-in in your browser. Complete the consent screen.");
 
-    let callback = timeout(Duration::from_secs(timeout_secs), accept_callback(&listener))
-        .await
-        .map_err(|_| SdkError::OAuthTimeout(timeout_secs))??;
+    let callback = timeout(
+        Duration::from_secs(timeout_secs),
+        accept_callback(&listener),
+    )
+    .await
+    .map_err(|_| SdkError::OAuthTimeout(timeout_secs))??;
 
     if callback.state != state {
         return Err(SdkError::OAuthFlow(
@@ -289,7 +313,9 @@ async fn accept_callback(listener: &tokio::net::TcpListener) -> Result<Callback,
 fn parse_callback_target(target: &str) -> Result<Callback, SdkError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     if path != CALLBACK_PATH {
-        return Err(SdkError::OAuthFlow(format!("unexpected callback path: {path}")));
+        return Err(SdkError::OAuthFlow(format!(
+            "unexpected callback path: {path}"
+        )));
     }
 
     let mut code: Option<String> = None;
@@ -301,7 +327,7 @@ fn parse_callback_target(target: &str) -> Result<Callback, SdkError> {
             "code" => code = Some(percent_decode(v)),
             "state" => state = Some(percent_decode(v)),
             "error" => error = Some(percent_decode(v)),
-            _ => {},
+            _ => {}
         }
     }
 
@@ -331,15 +357,15 @@ fn percent_decode(value: &str) -> String {
                     out.push(b'%');
                     i += 1;
                 }
-            },
+            }
             b'+' => {
                 out.push(b' ');
                 i += 1;
-            },
+            }
             other => {
                 out.push(other);
                 i += 1;
-            },
+            }
         }
     }
     String::from_utf8_lossy(&out).into_owned()
@@ -367,7 +393,10 @@ async fn exchange_code(code: &str, verifier: &str) -> Result<OAuthToken, SdkErro
     let status = response.status();
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
-        return Err(SdkError::OAuthServer { status: status.as_u16(), body });
+        return Err(SdkError::OAuthServer {
+            status: status.as_u16(),
+            body,
+        });
     }
 
     #[derive(serde::Deserialize)]
@@ -436,7 +465,9 @@ pub fn persist(token: &OAuthToken) -> Result<(), SdkError> {
     #[cfg(not(any(target_os = "windows", unix)))]
     {
         let _ = token;
-        Err(SdkError::Unsupported("no token persistence backend on this platform"))
+        Err(SdkError::Unsupported(
+            "no token persistence backend on this platform",
+        ))
     }
 }
 
@@ -523,8 +554,10 @@ mod windows_persist {
         let json = token_envelope_json(token)?;
         let blob = json.into_bytes();
 
-        let mut target: Vec<u16> =
-            CRED_TARGET.encode_utf16().chain(std::iter::once(0u16)).collect();
+        let mut target: Vec<u16> = CRED_TARGET
+            .encode_utf16()
+            .chain(std::iter::once(0u16))
+            .collect();
 
         let cred = CREDENTIALW {
             Flags: 0,
@@ -616,7 +649,10 @@ mod tests {
         let url = authorize_url(&pkce, "the-state");
 
         assert!(url.starts_with("https://accounts.google.com/o/oauth2/v2/auth?"));
-        assert!(url.contains(&format!("client_id={}", percent_encode(ANTIGRAVITY_CLIENT_ID))));
+        assert!(url.contains(&format!(
+            "client_id={}",
+            percent_encode(ANTIGRAVITY_CLIENT_ID)
+        )));
         assert!(url.contains("response_type=code"));
         assert!(url.contains("access_type=offline"));
         assert!(url.contains("prompt=consent"));
@@ -634,7 +670,10 @@ mod tests {
         // Scopes joined by space → %20, and contains the cloud-platform scope.
         assert!(url.contains("scope="));
         assert!(url.contains("cloud-platform%20"));
-        assert!(!url.contains("scope=https://"), "scope value must be percent-encoded");
+        assert!(
+            !url.contains("scope=https://"),
+            "scope value must be percent-encoded"
+        );
     }
 
     #[test]

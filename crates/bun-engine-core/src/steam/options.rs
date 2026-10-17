@@ -44,7 +44,11 @@ pub fn takes_value(flag: &str) -> bool {
 
 /// Parses the `--steam*` flags collected by the `run` command.
 pub fn parse(args: &[String]) -> Result<RunOptions, String> {
-    let mut options = RunOptions { cloud: true, input: true, ..RunOptions::default() };
+    let mut options = RunOptions {
+        cloud: true,
+        input: true,
+        ..RunOptions::default()
+    };
     let mut it = args.iter();
     let secs = |v: Option<&String>| -> Result<Duration, String> {
         v.and_then(|v| v.parse::<f64>().ok())
@@ -56,7 +60,11 @@ pub fn parse(args: &[String]) -> Result<RunOptions, String> {
         match flag.as_str() {
             "--steam" => {}
             "--steam-appid" => {
-                options.app_id = Some(it.next().and_then(|v| v.parse().ok()).ok_or("--steam-appid needs a number")?)
+                options.app_id = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--steam-appid needs a number")?,
+                )
             }
             "--steam-title" => options.title = it.next().cloned(),
             "--steam-no-cloud" => options.cloud = false,

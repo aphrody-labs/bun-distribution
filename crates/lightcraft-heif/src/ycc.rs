@@ -59,7 +59,9 @@ impl Planes<'_> {
 
     fn chroma_row(&self, cr: bool, r: usize, dst: &mut [u16]) -> Option<()> {
         match self {
-            Planes::Picture(f) => copy_row(if cr { &f.cr } else { &f.cb }, f.c_stride as usize, r, dst),
+            Planes::Picture(f) => {
+                copy_row(if cr { &f.cr } else { &f.cb }, f.c_stride as usize, r, dst)
+            }
             Planes::Grid(m) => m.chroma_row(cr, r, dst),
         }
     }
@@ -79,7 +81,12 @@ enum Matrix {
     /// 8: YCgCo.
     YCgCo,
     /// Every Kr/Kb matrix: R = Y + `cr_r`·Cr, G = Y − `cb_g`·Cb − `cr_g`·Cr, B = Y + `cb_b`·Cb.
-    Kr { cr_r: f32, cb_g: f32, cr_g: f32, cb_b: f32 },
+    Kr {
+        cr_r: f32,
+        cb_g: f32,
+        cr_g: f32,
+        cb_b: f32,
+    },
 }
 
 impl Matrix {
@@ -96,7 +103,12 @@ impl Matrix {
             _ => (0.299, 0.114),
         };
         let kg = 1.0 - kr - kb;
-        Matrix::Kr { cr_r: 2.0 * (1.0 - kr), cb_g: 2.0 * kb * (1.0 - kb) / kg, cr_g: 2.0 * kr * (1.0 - kr) / kg, cb_b: 2.0 * (1.0 - kb) }
+        Matrix::Kr {
+            cr_r: 2.0 * (1.0 - kr),
+            cb_g: 2.0 * kb * (1.0 - kb) / kg,
+            cr_g: 2.0 * kr * (1.0 - kr) / kg,
+            cb_b: 2.0 * (1.0 - kb),
+        }
     }
 }
 
@@ -116,7 +128,15 @@ pub enum Upsampling {
 }
 
 /// One chroma row brought to the full width `w` of luma row `y`.
-fn chroma_at(planes: &Planes<'_>, cr: bool, y: usize, w: usize, mode: Upsampling, buf: &mut [u16], next: &mut [u16]) -> Option<Vec<u16>> {
+fn chroma_at(
+    planes: &Planes<'_>,
+    cr: bool,
+    y: usize,
+    w: usize,
+    mode: Upsampling,
+    buf: &mut [u16],
+    next: &mut [u16],
+) -> Option<Vec<u16>> {
     let chroma = planes.chroma();
     let (xs, ys) = (chroma.x_shift(), chroma.y_shift());
     let (wf, hf) = planes.size();
@@ -139,7 +159,11 @@ fn chroma_at(planes: &Planes<'_>, cr: bool, y: usize, w: usize, mode: Upsampling
     (0..w)
         .map(|x| {
             let cx = x >> 1;
-            let nx = if x % 2 == 0 { cx.saturating_sub(1) } else { (cx + 1).min(last) };
+            let nx = if x % 2 == 0 {
+                cx.saturating_sub(1)
+            } else {
+                (cx + 1).min(last)
+            };
             let (a, an) = (u32::from(*buf.get(cx)?), u32::from(*buf.get(nx)?));
             let v = if ys == 0 {
                 (3 * a + an + 2) >> 2
@@ -154,7 +178,12 @@ fn chroma_at(planes: &Planes<'_>, cr: bool, y: usize, w: usize, mode: Upsampling
 
 /// Converts `planes` to interleaved 16-bit RGB, or RGBA with room left for alpha (filled with
 /// 65535 here). `None` when the planes can't supply a row they promised (a malformed grid).
-pub fn to_rgb16(planes: &Planes<'_>, signal: Signal, alpha: bool, mode: Upsampling) -> Option<Vec<u16>> {
+pub fn to_rgb16(
+    planes: &Planes<'_>,
+    signal: Signal,
+    alpha: bool,
+    mode: Upsampling,
+) -> Option<Vec<u16>> {
     let (w, h) = planes.size();
     let ch = if alpha { 4 } else { 3 };
     let bd = u32::from(planes.bit_depth());
@@ -165,8 +194,11 @@ pub fn to_rgb16(planes: &Planes<'_>, signal: Signal, alpha: bool, mode: Upsampli
     let half = (1u32 << (bd - 1)) as f32;
     let scale = (1u32 << (bd - 8)) as f32;
     // Normalised Y = (v − y_off)·y_mul, Cb/Cr = (v − half)·c_mul.
-    let (y_off, y_mul, c_mul) =
-        if signal.full_range { (0.0, 1.0 / max, 1.0 / max) } else { (16.0 * scale, 1.0 / (219.0 * scale), 1.0 / (224.0 * scale)) };
+    let (y_off, y_mul, c_mul) = if signal.full_range {
+        (0.0, 1.0 / max, 1.0 / max)
+    } else {
+        (16.0 * scale, 1.0 / (219.0 * scale), 1.0 / (224.0 * scale))
+    };
     let matrix = Matrix::from_code(signal.matrix);
     let mono = planes.chroma() == ChromaFormat::Monochrome;
     let cw = planes.chroma_width();
@@ -179,7 +211,10 @@ pub fn to_rgb16(planes: &Planes<'_>, signal: Signal, alpha: bool, mode: Upsampli
             (Vec::new(), Vec::new())
         } else {
             let (mut buf, mut next) = (vec![0u16; cw], vec![0u16; cw]);
-            (chroma_at(planes, false, y, w, mode, &mut buf, &mut next)?, chroma_at(planes, true, y, w, mode, &mut buf, &mut next)?)
+            (
+                chroma_at(planes, false, y, w, mode, &mut buf, &mut next)?,
+                chroma_at(planes, true, y, w, mode, &mut buf, &mut next)?,
+            )
         };
         for (x, (px, &yv)) in dst.chunks_exact_mut(ch).zip(&luma).enumerate() {
             let rgb = if mono {
@@ -189,14 +224,31 @@ pub fn to_rgb16(planes: &Planes<'_>, signal: Signal, alpha: bool, mode: Upsampli
                 let (u, v) = (f32::from(*cb.get(x)?), f32::from(*cr.get(x)?));
                 match matrix {
                     // G, B, R all read like luma.
-                    Matrix::Identity => [(v - y_off) * y_mul, (f32::from(yv) - y_off) * y_mul, (u - y_off) * y_mul],
+                    Matrix::Identity => [
+                        (v - y_off) * y_mul,
+                        (f32::from(yv) - y_off) * y_mul,
+                        (u - y_off) * y_mul,
+                    ],
                     Matrix::YCgCo => {
-                        let (yn, cg, co) = ((f32::from(yv) - y_off) * y_mul, (u - half) * c_mul, (v - half) * c_mul);
+                        let (yn, cg, co) = (
+                            (f32::from(yv) - y_off) * y_mul,
+                            (u - half) * c_mul,
+                            (v - half) * c_mul,
+                        );
                         let t = yn - cg;
                         [t + co, yn + cg, t - co]
                     }
-                    Matrix::Kr { cr_r, cb_g, cr_g, cb_b } => {
-                        let (yn, u, v) = ((f32::from(yv) - y_off) * y_mul, (u - half) * c_mul, (v - half) * c_mul);
+                    Matrix::Kr {
+                        cr_r,
+                        cb_g,
+                        cr_g,
+                        cb_b,
+                    } => {
+                        let (yn, u, v) = (
+                            (f32::from(yv) - y_off) * y_mul,
+                            (u - half) * c_mul,
+                            (v - half) * c_mul,
+                        );
                         [yn + cr_r * v, yn - cb_g * u - cr_g * v, yn + cb_b * u]
                     }
                 }
@@ -214,10 +266,15 @@ pub fn to_rgb16(planes: &Planes<'_>, signal: Signal, alpha: bool, mode: Upsampli
     #[cfg(not(target_arch = "wasm32"))]
     let ok = {
         use rayon::prelude::*;
-        out.par_chunks_mut(row_len).enumerate().all(|(y, dst)| row(y, dst).is_some())
+        out.par_chunks_mut(row_len)
+            .enumerate()
+            .all(|(y, dst)| row(y, dst).is_some())
     };
     #[cfg(target_arch = "wasm32")]
-    let ok = out.chunks_mut(row_len).enumerate().all(|(y, dst)| row(y, dst).is_some());
+    let ok = out
+        .chunks_mut(row_len)
+        .enumerate()
+        .all(|(y, dst)| row(y, dst).is_some());
     ok.then_some(out)
 }
 
@@ -257,24 +314,64 @@ mod tests {
     }
 
     fn rgb(f: &Frame, matrix: u16, full_range: bool) -> [u16; 3] {
-        let v = to_rgb16(&Planes::Picture(f), Signal { matrix, full_range }, false, Upsampling::Nearest).unwrap();
+        let v = to_rgb16(
+            &Planes::Picture(f),
+            Signal { matrix, full_range },
+            false,
+            Upsampling::Nearest,
+        )
+        .unwrap();
         [v[0], v[1], v[2]]
     }
 
     #[test]
     fn neutral_and_primaries_convert_exactly() {
         // Full-range grey stays grey; limited-range black and white reach the ends.
-        assert_eq!(rgb(&frame(4, 4, 8, ChromaFormat::Yuv420, 128, 128, 128), 6, true), [128 * 257; 3]);
-        assert_eq!(rgb(&frame(4, 4, 8, ChromaFormat::Yuv420, 16, 128, 128), 1, false), [0; 3]);
-        assert_eq!(rgb(&frame(4, 4, 8, ChromaFormat::Yuv420, 235, 128, 128), 1, false), [65535; 3]);
-        assert_eq!(rgb(&frame(4, 4, 10, ChromaFormat::Yuv420, 940, 512, 512), 9, false), [65535; 3]);
+        assert_eq!(
+            rgb(
+                &frame(4, 4, 8, ChromaFormat::Yuv420, 128, 128, 128),
+                6,
+                true
+            ),
+            [128 * 257; 3]
+        );
+        assert_eq!(
+            rgb(
+                &frame(4, 4, 8, ChromaFormat::Yuv420, 16, 128, 128),
+                1,
+                false
+            ),
+            [0; 3]
+        );
+        assert_eq!(
+            rgb(
+                &frame(4, 4, 8, ChromaFormat::Yuv420, 235, 128, 128),
+                1,
+                false
+            ),
+            [65535; 3]
+        );
+        assert_eq!(
+            rgb(
+                &frame(4, 4, 10, ChromaFormat::Yuv420, 940, 512, 512),
+                9,
+                false
+            ),
+            [65535; 3]
+        );
         // BT.601 full-range pure red: Y = 76.245, Cb = 84.97, Cr = 255.5 → (255, 0, 0) within rounding.
         let red = rgb(&frame(2, 2, 8, ChromaFormat::Yuv444, 76, 85, 255), 6, true);
         assert!(red[0] > 65000 && red[1] < 300 && red[2] < 300, "{red:?}");
         // Identity: the channels are G, B, R.
-        assert_eq!(rgb(&frame(2, 2, 8, ChromaFormat::Yuv444, 10, 20, 30), 0, true), [30 * 257, 10 * 257, 20 * 257]);
+        assert_eq!(
+            rgb(&frame(2, 2, 8, ChromaFormat::Yuv444, 10, 20, 30), 0, true),
+            [30 * 257, 10 * 257, 20 * 257]
+        );
         // Monochrome.
-        assert_eq!(rgb(&frame(2, 2, 8, ChromaFormat::Monochrome, 51, 0, 0), 6, true), [51 * 257; 3]);
+        assert_eq!(
+            rgb(&frame(2, 2, 8, ChromaFormat::Monochrome, 51, 0, 0), 6, true),
+            [51 * 257; 3]
+        );
     }
 
     #[test]
@@ -282,9 +379,21 @@ mod tests {
         // 4:2:0, 4×2 luma, chroma 2×1: the left chroma sample covers columns 0–1 only.
         let mut f = frame(4, 2, 8, ChromaFormat::Yuv420, 128, 128, 128);
         f.cr = vec![200, 128];
-        let v = to_rgb16(&Planes::Picture(&f), Signal { matrix: 6, full_range: true }, false, Upsampling::Nearest).unwrap();
+        let v = to_rgb16(
+            &Planes::Picture(&f),
+            Signal {
+                matrix: 6,
+                full_range: true,
+            },
+            false,
+            Upsampling::Nearest,
+        )
+        .unwrap();
         let red: Vec<u16> = v.chunks(3).map(|p| p[0]).collect();
-        assert!(red[0] == red[1] && red[1] == red[4] && red[0] > red[2] && red[2] == 128 * 257, "{red:?}");
+        assert!(
+            red[0] == red[1] && red[1] == red[4] && red[0] > red[2] && red[2] == 128 * 257,
+            "{red:?}"
+        );
     }
 
     #[test]
@@ -294,29 +403,61 @@ mod tests {
         f.cr = vec![200, 128, 128, 128];
         let p = Planes::Picture(&f);
         let (mut buf, mut next) = (vec![0; 2], vec![0; 2]);
-        let rows: Vec<Vec<u16>> = (0..4).map(|y| chroma_at(&p, true, y, 4, Upsampling::Bilinear, &mut buf, &mut next).unwrap()).collect();
+        let rows: Vec<Vec<u16>> = (0..4)
+            .map(|y| chroma_at(&p, true, y, 4, Upsampling::Bilinear, &mut buf, &mut next).unwrap())
+            .collect();
         // Row 0 sits nearest chroma row 0 (and clamps upward); row 1 blends a quarter of row 1.
         assert_eq!(rows[0], [200, 182, 146, 128]);
         assert_eq!(rows[1], [182, 169, 142, 128]);
         assert_eq!(rows[2], [146, 142, 133, 128]);
         assert_eq!(rows[3], [128; 4]);
-        assert_eq!(chroma_at(&p, true, 1, 4, Upsampling::Nearest, &mut buf, &mut next).unwrap(), [200, 200, 128, 128]);
+        assert_eq!(
+            chroma_at(&p, true, 1, 4, Upsampling::Nearest, &mut buf, &mut next).unwrap(),
+            [200, 200, 128, 128]
+        );
     }
 
     #[test]
     fn alpha_and_bad_planes() {
         let f = frame(2, 2, 8, ChromaFormat::Yuv420, 128, 128, 128);
-        let mut v = to_rgb16(&Planes::Picture(&f), Signal { matrix: 6, full_range: true }, true, Upsampling::Nearest).unwrap();
+        let mut v = to_rgb16(
+            &Planes::Picture(&f),
+            Signal {
+                matrix: 6,
+                full_range: true,
+            },
+            true,
+            Upsampling::Nearest,
+        )
+        .unwrap();
         assert_eq!(v[3], 65535);
-        put_alpha(&Planes::Picture(&frame(2, 2, 8, ChromaFormat::Monochrome, 51, 0, 0)), &mut v).unwrap();
+        put_alpha(
+            &Planes::Picture(&frame(2, 2, 8, ChromaFormat::Monochrome, 51, 0, 0)),
+            &mut v,
+        )
+        .unwrap();
         assert_eq!(v[3], 51 * 257);
         let mut short = frame(4, 4, 8, ChromaFormat::Yuv420, 128, 128, 128);
         short.y.truncate(5);
-        assert!(to_rgb16(&Planes::Picture(&short), Signal { matrix: 6, full_range: true }, false, Upsampling::Bilinear).is_none());
+        assert!(
+            to_rgb16(
+                &Planes::Picture(&short),
+                Signal {
+                    matrix: 6,
+                    full_range: true
+                },
+                false,
+                Upsampling::Bilinear
+            )
+            .is_none()
+        );
         assert!(
             to_rgb16(
                 &Planes::Picture(&frame(2, 2, 7, ChromaFormat::Yuv420, 0, 0, 0)),
-                Signal { matrix: 6, full_range: true },
+                Signal {
+                    matrix: 6,
+                    full_range: true
+                },
                 false,
                 Upsampling::Nearest
             )

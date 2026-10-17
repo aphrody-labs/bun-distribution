@@ -12,8 +12,13 @@ fn basis() -> &'static [[f32; 8]; 8] {
         let mut m = [[0f32; 8]; 8];
         for (x, row) in m.iter_mut().enumerate() {
             for (u, v) in row.iter_mut().enumerate() {
-                let c = if u == 0 { std::f64::consts::FRAC_1_SQRT_2 } else { 1.0 };
-                *v = (c / 2.0 * (((2 * x + 1) * u) as f64 * std::f64::consts::PI / 16.0).cos()) as f32;
+                let c = if u == 0 {
+                    std::f64::consts::FRAC_1_SQRT_2
+                } else {
+                    1.0
+                };
+                *v = (c / 2.0 * (((2 * x + 1) * u) as f64 * std::f64::consts::PI / 16.0).cos())
+                    as f32;
             }
         }
         m
@@ -81,12 +86,22 @@ mod tests {
     }
 
     fn c(u: usize) -> f64 {
-        if u == 0 { std::f64::consts::FRAC_1_SQRT_2 } else { 1.0 }
+        if u == 0 {
+            std::f64::consts::FRAC_1_SQRT_2
+        } else {
+            1.0
+        }
     }
 
     fn cosv(a: usize, b: usize) -> f64 {
         static T: OnceLock<[[f64; 8]; 8]> = OnceLock::new();
-        T.get_or_init(|| std::array::from_fn(|a| std::array::from_fn(|b| (((2 * a + 1) * b) as f64 * std::f64::consts::PI / 16.0).cos())))[a][b]
+        T.get_or_init(|| {
+            std::array::from_fn(|a| {
+                std::array::from_fn(|b| {
+                    (((2 * a + 1) * b) as f64 * std::f64::consts::PI / 16.0).cos()
+                })
+            })
+        })[a][b]
     }
 
     /// Separable double-precision 1-D passes (exact up to f64 rounding).
@@ -94,7 +109,11 @@ mod tests {
         let mut t = [0f64; 64];
         for y in 0..8 {
             for u in 0..8 {
-                t[y * 8 + u] = (0..8).map(|x| p[y * 8 + x] as f64 * cosv(x, u)).sum::<f64>() * c(u) / 2.0;
+                t[y * 8 + u] = (0..8)
+                    .map(|x| p[y * 8 + x] as f64 * cosv(x, u))
+                    .sum::<f64>()
+                    * c(u)
+                    / 2.0;
             }
         }
         let mut out = [0i64; 64];
@@ -111,13 +130,19 @@ mod tests {
         let mut t = [0f64; 64];
         for v in 0..8 {
             for x in 0..8 {
-                t[v * 8 + x] = (0..8).map(|u| c(u) * f[v * 8 + u] as f64 * cosv(x, u)).sum::<f64>() / 2.0;
+                t[v * 8 + x] = (0..8)
+                    .map(|u| c(u) * f[v * 8 + u] as f64 * cosv(x, u))
+                    .sum::<f64>()
+                    / 2.0;
             }
         }
         let mut out = [0i64; 64];
         for y in 0..8 {
             for x in 0..8 {
-                let s = (0..8).map(|v| c(v) * t[v * 8 + x] * cosv(y, v)).sum::<f64>() / 2.0;
+                let s = (0..8)
+                    .map(|v| c(v) * t[v * 8 + x] * cosv(y, v))
+                    .sum::<f64>()
+                    / 2.0;
                 out[y * 8 + x] = (s.round() as i64).clamp(-256, 255);
             }
         }
@@ -128,7 +153,11 @@ mod tests {
     /// square error ≤ 0.06, overall ≤ 0.02, per-pixel mean error ≤ 0.015, overall ≤ 0.0015.
     #[test]
     fn ieee_1180_accuracy() {
-        let blocks = if cfg!(debug_assertions) { 2_000 } else { 10_000 };
+        let blocks = if cfg!(debug_assertions) {
+            2_000
+        } else {
+            10_000
+        };
         for (l, h) in [(256i64, 255i64), (5, 5), (300, 300)] {
             for sign in [1i64, -1] {
                 let mut rng = Rand(1);

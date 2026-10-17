@@ -48,7 +48,9 @@ impl Session {
     /// The unit lengths of kind `m` show in and bare numbers typed for them are read in.
     pub fn unit(&self, m: Measure) -> Unit {
         match m {
-            Measure::General => self.active().map_or_else(|| self.default_units(), |d| d.doc.units),
+            Measure::General => self
+                .active()
+                .map_or_else(|| self.default_units(), |d| d.doc.units),
             Measure::Stroke => pref_unit(&self.prefs.units_stroke),
             Measure::Type => pref_unit(&self.prefs.units_type),
         }

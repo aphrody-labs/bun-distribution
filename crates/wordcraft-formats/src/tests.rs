@@ -12,7 +12,8 @@ use crate::{export, import};
 fn png() -> Vec<u8> {
     let img = image::RgbaImage::from_fn(8, 4, |x, _| image::Rgba([(x * 30) as u8, 80, 160, 255]));
     let mut buf = Vec::new();
-    img.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png).unwrap();
+    img.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png)
+        .unwrap();
     buf
 }
 
@@ -22,41 +23,86 @@ fn sample() -> Document {
     d.core.title = "Sample Title".into();
     d.core.creator = "Ada Writer".into();
     let mut blocks = Vec::new();
-    blocks.push(para_block(Paragraph::with_text("Main Heading", CharProps::default()).styled("Heading1")));
+    blocks.push(para_block(
+        Paragraph::with_text("Main Heading", CharProps::default()).styled("Heading1"),
+    ));
     let mut p = Paragraph::with_text("Plain ", CharProps::default());
     let n = p.len();
-    p.insert_text(n, "bold", &CharProps { bold: Some(true), ..Default::default() }).unwrap();
+    p.insert_text(
+        n,
+        "bold",
+        &CharProps {
+            bold: Some(true),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let n = p.len();
     p.insert_text(n, " and ", &CharProps::default()).unwrap();
     let n = p.len();
-    p.insert_text(n, "italic", &CharProps { italic: Some(true), ..Default::default() }).unwrap();
+    p.insert_text(
+        n,
+        "italic",
+        &CharProps {
+            italic: Some(true),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let n = p.len();
     p.insert_text(n, " then ", &CharProps::default()).unwrap();
     let n = p.len();
-    p.insert_text(n, "a link", &CharProps { link: Some("https://example.com/x".into()), ..Default::default() }).unwrap();
+    p.insert_text(
+        n,
+        "a link",
+        &CharProps {
+            link: Some("https://example.com/x".into()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let n = p.len();
     p.insert_text(n, ".", &CharProps::default()).unwrap();
     blocks.push(para_block(p));
-    blocks.push(para_block(Paragraph::with_text("Second Level", CharProps::default()).styled("Heading2")));
+    blocks.push(para_block(
+        Paragraph::with_text("Second Level", CharProps::default()).styled("Heading2"),
+    ));
     let bul = d.numbering.add_list(wordcraft_doc::ListKind::Bullet);
     let num = d.numbering.add_list(wordcraft_doc::ListKind::Numbered);
-    for (t, nm, lvl) in [("first bullet", bul, 0u8), ("second bullet", bul, 0), ("nested bullet", bul, 1)] {
+    for (t, nm, lvl) in [
+        ("first bullet", bul, 0u8),
+        ("second bullet", bul, 0),
+        ("nested bullet", bul, 1),
+    ] {
         let mut q = Paragraph::with_text(t, CharProps::default()).styled("ListParagraph");
-        q.props.numbering = Some(wordcraft_doc::props::NumRef { num: nm, level: lvl });
+        q.props.numbering = Some(wordcraft_doc::props::NumRef {
+            num: nm,
+            level: lvl,
+        });
         blocks.push(para_block(q));
     }
-    blocks.push(para_block(Paragraph::with_text("Between lists", CharProps::default())));
+    blocks.push(para_block(Paragraph::with_text(
+        "Between lists",
+        CharProps::default(),
+    )));
     for t in ["step one", "step two"] {
         let mut q = Paragraph::with_text(t, CharProps::default()).styled("ListParagraph");
         q.props.numbering = Some(wordcraft_doc::props::NumRef { num, level: 0 });
         blocks.push(para_block(q));
     }
     let mut t = Table::new(2, 2, 400.0);
-    for (r, c, s) in [(0, 0, "Name"), (0, 1, "Value"), (1, 0, "alpha"), (1, 1, "42")] {
+    for (r, c, s) in [
+        (0, 0, "Name"),
+        (0, 1, "Value"),
+        (1, 0, "alpha"),
+        (1, 1, "42"),
+    ] {
         t.rows[r].cells[c].blocks = vec![para_block(Paragraph::with_text(s, CharProps::default()))];
     }
     blocks.push(Arc::new(Block::Table(t)));
-    blocks.push(para_block(Paragraph::with_text("A wise quote", CharProps::default()).styled("Quote")));
+    blocks.push(para_block(
+        Paragraph::with_text("A wise quote", CharProps::default()).styled("Quote"),
+    ));
     let mut c = Paragraph::with_text("Centered text", CharProps::default());
     c.props.align = Some(Align::Center);
     blocks.push(para_block(c));
@@ -65,12 +111,23 @@ fn sample() -> Document {
     let n = ip.len();
     ip.insert_object(
         n,
-        InlineObject::Image { media: key, w: 60.0, h: 30.0, alt: "tiny".into(), float: Default::default(), crop: [0.0; 4], ole: None },
+        InlineObject::Image {
+            media: key,
+            w: 60.0,
+            h: 30.0,
+            alt: "tiny".into(),
+            float: Default::default(),
+            crop: [0.0; 4],
+            ole: None,
+        },
         &CharProps::default(),
     )
     .unwrap();
     blocks.push(para_block(ip));
-    blocks.push(para_block(Paragraph::with_text("The end", CharProps::default())));
+    blocks.push(para_block(Paragraph::with_text(
+        "The end",
+        CharProps::default(),
+    )));
     d.body = blocks;
     d
 }
@@ -114,7 +171,9 @@ fn find_para<'a>(b: &'a [FBlock], text: &str) -> Option<&'a model::Para> {
 fn check_round_trip(ext: &str, rich: bool) {
     let d = sample();
     let bytes = export(ext, &d).expect("handled").expect("export");
-    let back = import(ext, &bytes).expect("handled").unwrap_or_else(|e| panic!("{ext}: {e}"));
+    let back = import(ext, &bytes)
+        .expect("handled")
+        .unwrap_or_else(|e| panic!("{ext}: {e}"));
     let texts = para_texts(&back);
     for want in [
         "Main Heading",
@@ -132,35 +191,96 @@ fn check_round_trip(ext: &str, rich: bool) {
         "Centered text",
         "The end",
     ] {
-        assert!(texts.iter().any(|t| if rich { t.ends_with(want) } else { t.contains(want) }), "{ext}: missing {want:?} in {texts:?}");
+        assert!(
+            texts.iter().any(|t| if rich {
+                t.ends_with(want)
+            } else {
+                t.contains(want)
+            }),
+            "{ext}: missing {want:?} in {texts:?}"
+        );
     }
     let joined = texts.join("\n");
-    assert!(joined.contains("Plain bold and italic then a link."), "{ext}: {joined}");
+    assert!(
+        joined.contains("Plain bold and italic then a link."),
+        "{ext}: {joined}"
+    );
     if !rich {
         return;
     }
     let b = flat(&back);
-    assert_eq!(find_para(&b, "Main Heading").map(|p| p.kind), Some(Kind::Heading(1)), "{ext}");
-    assert_eq!(find_para(&b, "Second Level").map(|p| p.kind), Some(Kind::Heading(2)), "{ext}");
-    assert_eq!(find_para(&b, "A wise quote").map(|p| p.kind), Some(Kind::Quote), "{ext}");
+    assert_eq!(
+        find_para(&b, "Main Heading").map(|p| p.kind),
+        Some(Kind::Heading(1)),
+        "{ext}"
+    );
+    assert_eq!(
+        find_para(&b, "Second Level").map(|p| p.kind),
+        Some(Kind::Heading(2)),
+        "{ext}"
+    );
+    assert_eq!(
+        find_para(&b, "A wise quote").map(|p| p.kind),
+        Some(Kind::Quote),
+        "{ext}"
+    );
     if ext != "md" {
-        assert_eq!(find_para(&b, "Centered text").and_then(|p| p.align), Some(Align::Center), "{ext}");
+        assert_eq!(
+            find_para(&b, "Centered text").and_then(|p| p.align),
+            Some(Align::Center),
+            "{ext}"
+        );
     }
-    let fb = find_para(&b, "first bullet").and_then(|p| p.list).expect("list");
+    let fb = find_para(&b, "first bullet")
+        .and_then(|p| p.list)
+        .expect("list");
     assert!(!fb.ordered && fb.level == 0, "{ext}");
-    let nb = find_para(&b, "nested bullet").and_then(|p| p.list).expect("nested");
+    let nb = find_para(&b, "nested bullet")
+        .and_then(|p| p.list)
+        .expect("nested");
     assert_eq!(nb.level, 1, "{ext}");
-    let s1 = find_para(&b, "step one").and_then(|p| p.list).expect("numbered");
+    let s1 = find_para(&b, "step one")
+        .and_then(|p| p.list)
+        .expect("numbered");
     assert!(s1.ordered, "{ext}");
-    assert!(find_para(&b, "Between lists").is_some_and(|p| p.list.is_none()), "{ext}");
+    assert!(
+        find_para(&b, "Between lists").is_some_and(|p| p.list.is_none()),
+        "{ext}"
+    );
     let body = find_para(&b, "Plain bold and italic then a link.").expect("para");
-    let has = |t: &str, f: &dyn Fn(&model::Fmt) -> bool| body.inlines.iter().any(|i| matches!(i, model::Inline::Text(x, fm) if x == t && f(fm)));
-    assert!(has("bold", &|f| f.bold && !f.italic), "{ext}: {:?}", body.inlines);
+    let has = |t: &str, f: &dyn Fn(&model::Fmt) -> bool| {
+        body.inlines
+            .iter()
+            .any(|i| matches!(i, model::Inline::Text(x, fm) if x == t && f(fm)))
+    };
+    assert!(
+        has("bold", &|f| f.bold && !f.italic),
+        "{ext}: {:?}",
+        body.inlines
+    );
     assert!(has("italic", &|f| f.italic && !f.bold), "{ext}");
-    assert!(has("a link", &|f| f.link.as_deref() == Some("https://example.com/x")), "{ext}: {:?}", body.inlines);
-    let table = b.iter().find_map(|x| if let FBlock::Table(t) = x { Some(t) } else { None }).expect("table");
+    assert!(
+        has("a link", &|f| f.link.as_deref()
+            == Some("https://example.com/x")),
+        "{ext}: {:?}",
+        body.inlines
+    );
+    let table = b
+        .iter()
+        .find_map(|x| {
+            if let FBlock::Table(t) = x {
+                Some(t)
+            } else {
+                None
+            }
+        })
+        .expect("table");
     assert_eq!(table.rows.len(), 2, "{ext}");
-    assert_eq!(table.rows[1].iter().map(|c| c.text()).collect::<Vec<_>>(), vec!["alpha", "42"], "{ext}");
+    assert_eq!(
+        table.rows[1].iter().map(|c| c.text()).collect::<Vec<_>>(),
+        vec!["alpha", "42"],
+        "{ext}"
+    );
 }
 
 /// Two bullets directly followed by two numbered items.
@@ -169,7 +289,12 @@ fn bullets_then_numbers() -> Document {
     let bul = d.numbering.add_list(wordcraft_doc::ListKind::Bullet);
     let num = d.numbering.add_list(wordcraft_doc::ListKind::Numbered);
     let mut blocks = Vec::new();
-    for (t, nm) in [("dot one", bul), ("dot two", bul), ("num one", num), ("num two", num)] {
+    for (t, nm) in [
+        ("dot one", bul),
+        ("dot two", bul),
+        ("num one", num),
+        ("num two", num),
+    ] {
         let mut q = Paragraph::with_text(t, CharProps::default()).styled("ListParagraph");
         q.props.numbering = Some(wordcraft_doc::props::NumRef { num: nm, level: 0 });
         blocks.push(para_block(q));
@@ -191,7 +316,10 @@ fn numbered_list_after_bullets_keeps_its_kind() {
         assert_eq!(kind("num two"), Some(true), "{ext}");
     }
     let md = String::from_utf8(export("md", &d).expect("handled").expect("export")).unwrap();
-    assert!(md.contains("1. num one") && md.contains("2. num two"), "{md}");
+    assert!(
+        md.contains("1. num one") && md.contains("2. num two"),
+        "{md}"
+    );
 }
 
 #[test]
@@ -212,7 +340,9 @@ fn html_round_trip() {
 #[test]
 fn rtf_round_trip() {
     check_round_trip("rtf", true);
-    let back = import("rtf", &export("rtf", &sample()).unwrap().unwrap()).unwrap().unwrap();
+    let back = import("rtf", &export("rtf", &sample()).unwrap().unwrap())
+        .unwrap()
+        .unwrap();
     assert_eq!(back.media.len(), 1, "picture survives");
     assert_eq!(back.core.title, "Sample Title");
     assert_eq!(back.core.creator, "Ada Writer");
@@ -223,7 +353,11 @@ fn odt_round_trip() {
     check_round_trip("odt", true);
     let bytes = export("odt", &sample()).unwrap().unwrap();
     assert!(bytes.starts_with(b"PK"));
-    assert_eq!(bytes.get(30..38), Some(&b"mimetype"[..]), "mimetype is the first entry");
+    assert_eq!(
+        bytes.get(30..38),
+        Some(&b"mimetype"[..]),
+        "mimetype is the first entry"
+    );
     let back = import("odt", &bytes).unwrap().unwrap();
     assert_eq!(back.media.len(), 1, "picture survives");
     assert_eq!(back.core.title, "Sample Title");
@@ -234,34 +368,73 @@ fn odt_round_trip() {
 fn latex_round_trip() {
     check_round_trip("tex", true);
     let tex = String::from_utf8(export("tex", &sample()).unwrap().unwrap()).unwrap();
-    assert!(tex.starts_with("% Written by WordCraft") && tex.contains("\\documentclass{article}"), "{tex}");
-    assert!(tex.contains("\\section*{Main Heading}") && tex.contains("\\subsection*{Second Level}"), "{tex}");
-    assert!(tex.contains("\\textbf{bold}") && tex.contains("\\textit{italic}"), "{tex}");
-    assert!(tex.contains("\\href{https://example.com/x}{a link}"), "{tex}");
-    assert!(tex.contains("\\begin{itemize}") && tex.contains("\\begin{enumerate}") && tex.contains("\\begin{quote}"), "{tex}");
-    assert!(tex.contains("\\begin{tabular}") && tex.contains("\\begin{center}"), "{tex}");
-    assert!(tex.contains("\\textit{[Picture: tiny]}"), "pictures leave their alternative text: {tex}");
-    assert!(tex.contains("pdftitle={Sample Title}") && tex.contains("pdfauthor={Ada Writer}"), "{tex}");
+    assert!(
+        tex.starts_with("% Written by WordCraft") && tex.contains("\\documentclass{article}"),
+        "{tex}"
+    );
+    assert!(
+        tex.contains("\\section*{Main Heading}") && tex.contains("\\subsection*{Second Level}"),
+        "{tex}"
+    );
+    assert!(
+        tex.contains("\\textbf{bold}") && tex.contains("\\textit{italic}"),
+        "{tex}"
+    );
+    assert!(
+        tex.contains("\\href{https://example.com/x}{a link}"),
+        "{tex}"
+    );
+    assert!(
+        tex.contains("\\begin{itemize}")
+            && tex.contains("\\begin{enumerate}")
+            && tex.contains("\\begin{quote}"),
+        "{tex}"
+    );
+    assert!(
+        tex.contains("\\begin{tabular}") && tex.contains("\\begin{center}"),
+        "{tex}"
+    );
+    assert!(
+        tex.contains("\\textit{[Picture: tiny]}"),
+        "pictures leave their alternative text: {tex}"
+    );
+    assert!(
+        tex.contains("pdftitle={Sample Title}") && tex.contains("pdfauthor={Ada Writer}"),
+        "{tex}"
+    );
     assert!(tex.trim_end().ends_with("\\end{document}"));
     // Exported LaTeX parses back to the same metadata.
     let back = import("tex", tex.as_bytes()).unwrap().unwrap();
     assert_eq!(back.core.title, "", "pdftitle isn't \\title");
     for ext in ["tex", "latex", "ltx", ".TEX"] {
-        assert!(import(ext, b"x").is_some() && export(ext, &Document::new()).is_some(), "{ext}");
+        assert!(
+            import(ext, b"x").is_some() && export(ext, &Document::new()).is_some(),
+            "{ext}"
+        );
     }
 }
 
 #[test]
 fn page_break_char_splits_paragraph() {
     let mut d = Document::new();
-    d.body = vec![para_block(Paragraph::with_text("num two\u{c}Page two", CharProps::default()))];
+    d.body = vec![para_block(Paragraph::with_text(
+        "num two\u{c}Page two",
+        CharProps::default(),
+    ))];
     let b = flat(&d);
-    assert!(matches!(&b[..], [FBlock::Para(a), FBlock::Para(c)] if a.text() == "num two" && !a.page_break && c.text() == "Page two" && c.page_break));
+    assert!(
+        matches!(&b[..], [FBlock::Para(a), FBlock::Para(c)] if a.text() == "num two" && !a.page_break && c.text() == "Page two" && c.page_break)
+    );
     let txt = String::from_utf8(export("txt", &d).unwrap().unwrap()).unwrap();
     assert!(!txt.contains("twoPage"), "{txt:?}");
-    let odt = import("odt", &export("odt", &d).unwrap().unwrap()).unwrap().unwrap();
+    let odt = import("odt", &export("odt", &d).unwrap().unwrap())
+        .unwrap()
+        .unwrap();
     let b = flat(&odt);
-    assert!(b.iter().any(|x| matches!(x, FBlock::Para(p) if p.text().trim() == "Page two" && p.page_break)));
+    assert!(
+        b.iter()
+            .any(|x| matches!(x, FBlock::Para(p) if p.text().trim() == "Page two" && p.page_break))
+    );
 }
 
 #[test]
@@ -274,16 +447,42 @@ fn txt_round_trip() {
     for u in "héllo".encode_utf16() {
         u16le.extend(u.to_le_bytes());
     }
-    assert_eq!(import("txt", &u16le).unwrap().unwrap().plain_text(Default::default()), "héllo");
-    let raw: Vec<u8> = "hello world".encode_utf16().flat_map(|u| u.to_be_bytes()).collect();
-    assert_eq!(import("txt", &raw).unwrap().unwrap().plain_text(Default::default()), "hello world");
-    assert_eq!(import("txt", &[0x63, 0x61, 0x66, 0xE9, 0x80]).unwrap().unwrap().plain_text(Default::default()), "café€");
+    assert_eq!(
+        import("txt", &u16le)
+            .unwrap()
+            .unwrap()
+            .plain_text(Default::default()),
+        "héllo"
+    );
+    let raw: Vec<u8> = "hello world"
+        .encode_utf16()
+        .flat_map(|u| u.to_be_bytes())
+        .collect();
+    assert_eq!(
+        import("txt", &raw)
+            .unwrap()
+            .unwrap()
+            .plain_text(Default::default()),
+        "hello world"
+    );
+    assert_eq!(
+        import("txt", &[0x63, 0x61, 0x66, 0xE9, 0x80])
+            .unwrap()
+            .unwrap()
+            .plain_text(Default::default()),
+        "café€"
+    );
 }
 
 #[test]
 fn txt_export_writes_symbol_font_text_as_unicode() {
     let mut d = Document::from_text("Done J\u{F0FC}");
-    d.format_range(&wordcraft_doc::Pos::body(0, 5), &wordcraft_doc::Pos::body(0, 9), &|c| c.font = Some("Wingdings".into())).unwrap();
+    d.format_range(
+        &wordcraft_doc::Pos::body(0, 5),
+        &wordcraft_doc::Pos::body(0, 9),
+        &|c| c.font = Some("Wingdings".into()),
+    )
+    .unwrap();
     let out = export("txt", &d).unwrap().unwrap();
     assert_eq!(String::from_utf8(out).unwrap(), "Done \u{263A}\u{2713}");
 }
@@ -294,16 +493,25 @@ fn txt_export_writes_symbol_font_text_as_unicode() {
 fn text_sniffing() {
     use crate::txt::is_text;
     assert!(is_text(b""));
-    assert!(is_text(b"#EXTM3U\r\n#EXTINF:123,Artist - Title\r\nC:\\Music\\song.mp3\r\n"));
-    assert!(is_text("#EXTM3U\n#EXTINF:-1,Мелодия — ünïcødé\nhttp://x/y.mp3\n".as_bytes()));
+    assert!(is_text(
+        b"#EXTM3U\r\n#EXTINF:123,Artist - Title\r\nC:\\Music\\song.mp3\r\n"
+    ));
+    assert!(is_text(
+        "#EXTM3U\n#EXTINF:-1,Мелодия — ünïcødé\nhttp://x/y.mp3\n".as_bytes()
+    ));
     assert!(is_text(&[0x23, 0x45, 0x58, 0x54, 0xE9, 0x0D, 0x0A, 0x1A])); // Windows-1252, DOS ^Z
     assert!(is_text(&[0xEF, 0xBB, 0xBF, b'a']));
-    let u16le: Vec<u8> = "#EXTM3U\r\n".encode_utf16().flat_map(|u| u.to_le_bytes()).collect();
+    let u16le: Vec<u8> = "#EXTM3U\r\n"
+        .encode_utf16()
+        .flat_map(|u| u.to_le_bytes())
+        .collect();
     assert!(is_text(&u16le));
     assert!(!is_text(b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR"));
     assert!(!is_text(b"PK\x03\x04\x14\0\x06\0"));
     assert!(!is_text(b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n"));
-    assert!(!is_text(&[0x7F, b'E', b'L', b'F', 2, 1, 1, 3, 4, 5, 6, 7, 8]));
+    assert!(!is_text(&[
+        0x7F, b'E', b'L', b'F', 2, 1, 1, 3, 4, 5, 6, 7, 8
+    ]));
     // Odd-length bytes with zeros mixed in: binary, not UTF-16.
     assert!(!is_text(&[1, 0, 2, 0, 3]));
 }
@@ -319,17 +527,32 @@ fn dispatch_unknown() {
 fn rtf_merged_cells_and_lists() {
     let mut d = Document::new();
     let mut t = Table::new(3, 2, 300.0);
-    t.rows[0].cells[0].blocks = vec![para_block(Paragraph::with_text("tall", CharProps::default()))];
+    t.rows[0].cells[0].blocks = vec![para_block(Paragraph::with_text(
+        "tall",
+        CharProps::default(),
+    ))];
     t.rows[0].cells[0].props.vmerge = wordcraft_doc::props::VMerge::Restart;
     t.rows[1].cells[0].props.vmerge = wordcraft_doc::props::VMerge::Continue;
     d.body = vec![Arc::new(Block::Table(t))];
     d.ensure_nonempty();
     for ext in ["rtf", "html", "odt"] {
-        let back = import(ext, &export(ext, &d).unwrap().unwrap()).unwrap().unwrap();
-        let Some(Block::Table(bt)) = back.body.first().map(|b| &**b) else { panic!("{ext}: no table") };
+        let back = import(ext, &export(ext, &d).unwrap().unwrap())
+            .unwrap()
+            .unwrap();
+        let Some(Block::Table(bt)) = back.body.first().map(|b| &**b) else {
+            panic!("{ext}: no table")
+        };
         assert_eq!(bt.rows.len(), 3, "{ext}");
-        assert_eq!(bt.rows[0].cells[0].props.vmerge, wordcraft_doc::props::VMerge::Restart, "{ext}");
-        assert_eq!(bt.rows[1].cells[0].props.vmerge, wordcraft_doc::props::VMerge::Continue, "{ext}");
+        assert_eq!(
+            bt.rows[0].cells[0].props.vmerge,
+            wordcraft_doc::props::VMerge::Restart,
+            "{ext}"
+        );
+        assert_eq!(
+            bt.rows[1].cells[0].props.vmerge,
+            wordcraft_doc::props::VMerge::Continue,
+            "{ext}"
+        );
     }
 }
 
@@ -339,7 +562,11 @@ fn markdown_text_shapes() {
     assert!(md.contains("# Main Heading"));
     assert!(md.contains("**bold**") && md.contains("*italic*"));
     assert!(md.contains("[a link](https://example.com/x)"));
-    assert!(md.contains("- first bullet") && md.contains("    - nested bullet") && md.contains("1. step one"));
+    assert!(
+        md.contains("- first bullet")
+            && md.contains("    - nested bullet")
+            && md.contains("1. step one")
+    );
     assert!(md.contains("| Name | Value |"));
     assert!(md.contains("> A wise quote"));
     assert!(md.contains("![tiny]("));
@@ -347,16 +574,29 @@ fn markdown_text_shapes() {
 
 #[test]
 fn code_blocks_and_rules() {
-    let d = import("md", b"```\nfn main() {}\n  indented\n```\n\n***\n\nafter").unwrap().unwrap();
+    let d = import("md", b"```\nfn main() {}\n  indented\n```\n\n***\n\nafter")
+        .unwrap()
+        .unwrap();
     let b = flat(&d);
     assert!(matches!(&b[0], FBlock::Para(p) if p.kind == Kind::Code && p.text() == "fn main() {}"));
     assert!(matches!(&b[1], FBlock::Para(p) if p.kind == Kind::Code && p.text() == "  indented"));
     assert!(matches!(&b[2], FBlock::Para(p) if p.kind == Kind::Rule));
     for ext in ["md", "html", "rtf", "odt", "tex"] {
-        let back = import(ext, &export(ext, &d).unwrap().unwrap()).unwrap().unwrap();
+        let back = import(ext, &export(ext, &d).unwrap().unwrap())
+            .unwrap()
+            .unwrap();
         let bb = flat(&back);
-        assert!(bb.iter().any(|x| matches!(x, FBlock::Para(p) if p.kind == Kind::Code && p.text() == "  indented")), "{ext}: {bb:?}");
-        assert!(bb.iter().any(|x| matches!(x, FBlock::Para(p) if p.kind == Kind::Rule)), "{ext}: {bb:?}");
+        assert!(
+            bb.iter().any(
+                |x| matches!(x, FBlock::Para(p) if p.kind == Kind::Code && p.text() == "  indented")
+            ),
+            "{ext}: {bb:?}"
+        );
+        assert!(
+            bb.iter()
+                .any(|x| matches!(x, FBlock::Para(p) if p.kind == Kind::Rule)),
+            "{ext}: {bb:?}"
+        );
     }
 }
 
@@ -365,72 +605,149 @@ fn deep_nesting_is_bounded() {
     let html = "<div><table><tr><td>".repeat(5000) + "x";
     let d = import("html", html.as_bytes()).unwrap().unwrap();
     assert!(d.plain_text(Default::default()).contains('x'));
-    let rtf = format!("{{\\rtf1 {}x{}}}", "{\\b ".repeat(100_000), "}".repeat(100_000));
+    let rtf = format!(
+        "{{\\rtf1 {}x{}}}",
+        "{\\b ".repeat(100_000),
+        "}".repeat(100_000)
+    );
     let d = import("rtf", rtf.as_bytes()).unwrap().unwrap();
     assert!(d.plain_text(Default::default()).contains('x'));
     let md = ">".repeat(10_000) + " deep";
     assert!(import("md", md.as_bytes()).unwrap().is_ok());
-    let md = (0..200).map(|i| format!("{}- item", "  ".repeat(i))).collect::<Vec<_>>().join("\n");
+    let md = (0..200)
+        .map(|i| format!("{}- item", "  ".repeat(i)))
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(import("md", md.as_bytes()).unwrap().is_ok());
     let md = "[".repeat(5000) + &"](x)".repeat(5000);
     assert!(import("md", md.as_bytes()).unwrap().is_ok());
     let md = "*a ".repeat(20_000);
     assert!(import("md", md.as_bytes()).unwrap().is_ok());
     let tex = "{\\textbf{".repeat(50_000) + "x";
-    assert!(import("tex", tex.as_bytes()).unwrap().unwrap().plain_text(Default::default()).contains('x'));
+    assert!(
+        import("tex", tex.as_bytes())
+            .unwrap()
+            .unwrap()
+            .plain_text(Default::default())
+            .contains('x')
+    );
     let tex = "\\begin{itemize}\\item ".repeat(10_000) + "deep";
-    assert!(import("tex", tex.as_bytes()).unwrap().unwrap().plain_text(Default::default()).contains("deep"));
+    assert!(
+        import("tex", tex.as_bytes())
+            .unwrap()
+            .unwrap()
+            .plain_text(Default::default())
+            .contains("deep")
+    );
     let tex = "\\begin{tabular}{l}".repeat(2_000) + "cell";
     assert!(import("tex", tex.as_bytes()).unwrap().is_ok());
     let tex = format!("${}x{}$", "\\frac{".repeat(10_000), "}".repeat(10_000));
     assert!(import("tex", tex.as_bytes()).unwrap().is_ok());
     // `*{n}{…}` column specs: nested 100k deep (the repeat recursed without a limit and overflowed
     // the stack), and repeats multiplying past what a table holds (64^30 columns).
-    let tex = format!("\\begin{{tabular}}{{{}l{}}}x\\end{{tabular}}", "*{1}{".repeat(100_000), "}".repeat(100_000));
-    assert!(import("tex", tex.as_bytes()).unwrap().unwrap().plain_text(Default::default()).contains('x'));
-    let tex = format!("\\begin{{tabular}}{{{}p{{1cm}}{}}}x\\end{{tabular}}", "*{64}{".repeat(30), "}".repeat(30));
-    assert!(import("tex", tex.as_bytes()).unwrap().unwrap().plain_text(Default::default()).contains('x'));
+    let tex = format!(
+        "\\begin{{tabular}}{{{}l{}}}x\\end{{tabular}}",
+        "*{1}{".repeat(100_000),
+        "}".repeat(100_000)
+    );
+    assert!(
+        import("tex", tex.as_bytes())
+            .unwrap()
+            .unwrap()
+            .plain_text(Default::default())
+            .contains('x')
+    );
+    let tex = format!(
+        "\\begin{{tabular}}{{{}p{{1cm}}{}}}x\\end{{tabular}}",
+        "*{64}{".repeat(30),
+        "}".repeat(30)
+    );
+    assert!(
+        import("tex", tex.as_bytes())
+            .unwrap()
+            .unwrap()
+            .plain_text(Default::default())
+            .contains('x')
+    );
     // An equation of unmatched `(`: finding each group rescanned to the end of the input, so
     // exporting it was quadratic (50k took seconds; 200k would take minutes).
     let started = std::time::Instant::now();
     let latex = crate::latex::linear_to_latex(&"(".repeat(200_000));
     assert_eq!(latex.len(), 200_000);
-    assert!(started.elapsed() < std::time::Duration::from_secs(10), "{:?}", started.elapsed());
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "{:?}",
+        started.elapsed()
+    );
     // Brackets that do match, nested 100k deep: each group was copied out before looking for
     // the `/` of a fraction, which was quadratic as well.
     let started = std::time::Instant::now();
     let nested = format!("{}x{}", "(".repeat(100_000), ")".repeat(100_000));
     assert_eq!(crate::latex::linear_to_latex(&nested).len(), 200_001);
-    assert!(started.elapsed() < std::time::Duration::from_secs(10), "{:?}", started.elapsed());
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "{:?}",
+        started.elapsed()
+    );
     assert_eq!(crate::latex::linear_to_latex("(a)/(b)"), "\\frac{a}{b}");
-    assert_eq!(crate::latex::linear_to_latex("((a)/(b))/(c)"), "\\frac{\\frac{a}{b}}{c}");
+    assert_eq!(
+        crate::latex::linear_to_latex("((a)/(b))/(c)"),
+        "\\frac{\\frac{a}{b}}{c}"
+    );
     // `\begin{` never closed: the name was looked for through the whole rest of the file.
     let started = std::time::Instant::now();
     let tex = "\\begin{".repeat(300_000);
     assert!(import("tex", tex.as_bytes()).unwrap().is_ok());
-    assert!(started.elapsed() < std::time::Duration::from_secs(10), "{:?}", started.elapsed());
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "{:?}",
+        started.elapsed()
+    );
 }
 
 /// What a document says in an equation or a bookmark name is not written to the exported file as
 /// TeX commands: compiling the export must not read files or run programs the document names.
 #[test]
 fn latex_export_carries_no_commands_from_the_document() {
-    let tex = crate::latex::linear_to_latex("\\input secret.txt \\immediate\\write18\\bgroup id\\egroup \\csname x\\endcsname");
-    for cmd in ["\\input", "\\immediate", "\\write", "\\bgroup", "\\egroup", "\\csname", "\\endcsname"] {
+    let tex = crate::latex::linear_to_latex(
+        "\\input secret.txt \\immediate\\write18\\bgroup id\\egroup \\csname x\\endcsname",
+    );
+    for cmd in [
+        "\\input",
+        "\\immediate",
+        "\\write",
+        "\\bgroup",
+        "\\egroup",
+        "\\csname",
+        "\\endcsname",
+    ] {
         assert!(!tex.contains(cmd), "{cmd} in {tex}");
     }
     assert!(tex.contains("\\backslash input"), "{tex}");
     // `^^5c` is how TeX spells a backslash: two carets never come out side by side.
-    for linear in ["a^^5cinput secret.txt ", "a^^^^5cinput", "x^(^^5cinput)", "^^5cinput"] {
-        assert!(!crate::latex::linear_to_latex(linear).contains("^^"), "{linear}");
+    for linear in [
+        "a^^5cinput secret.txt ",
+        "a^^^^5cinput",
+        "x^(^^5cinput)",
+        "^^5cinput",
+    ] {
+        assert!(
+            !crate::latex::linear_to_latex(linear).contains("^^"),
+            "{linear}"
+        );
     }
     let deep = format!("{}^^5cinput x{}", "x^(".repeat(40), ")".repeat(40));
     assert!(!crate::latex::linear_to_latex(&deep).contains("^^"));
     // Symbols, functions and font switches are still commands.
-    assert_eq!(crate::latex::linear_to_latex("\\alpha+\\sin x+\\mathbb R"), "\\alpha+\\sin x+\\mathbb R");
+    assert_eq!(
+        crate::latex::linear_to_latex("\\alpha+\\sin x+\\mathbb R"),
+        "\\alpha+\\sin x+\\mathbb R"
+    );
     assert_eq!(crate::latex::linear_to_latex("x^2^3"), "x^2^3");
     // The same through a whole file, and for a bookmark name.
-    let d = crate::latex::import("Text $\\input secret.txt $ and \\hypertarget{^^5cinput secret.txt ^^5c}{here}.".as_bytes());
+    let d = crate::latex::import(
+        "Text $\\input secret.txt $ and \\hypertarget{^^5cinput secret.txt ^^5c}{here}.".as_bytes(),
+    );
     let out = String::from_utf8(export("tex", &d).unwrap().unwrap()).unwrap();
     assert!(!out.contains("\\input") && !out.contains("^^"), "{out}");
 }
@@ -441,20 +758,40 @@ fn latex_export_carries_no_commands_from_the_document() {
 #[test]
 fn latex_labels_in_a_row_are_read_in_linear_time() {
     let started = std::time::Instant::now();
-    for src in ["\\label{a} ".repeat(100_000) + "x", "\\label{a}".repeat(100_000) + "x", "\\hypertarget{a}{} ".repeat(100_000)] {
+    for src in [
+        "\\label{a} ".repeat(100_000) + "x",
+        "\\label{a}".repeat(100_000) + "x",
+        "\\hypertarget{a}{} ".repeat(100_000),
+    ] {
         let d = crate::latex::import(src.as_bytes());
         assert!(d.body.len() <= 2);
     }
-    assert!(started.elapsed() < std::time::Duration::from_secs(10), "{:?}", started.elapsed());
-    let d = crate::latex::import("\\label{one}First \\label{two}second \\label{three}third.".as_bytes());
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "{:?}",
+        started.elapsed()
+    );
+    let d = crate::latex::import(
+        "\\label{one}First \\label{two}second \\label{three}third.".as_bytes(),
+    );
     let p = d.para_at(&wordcraft_doc::Pos::body(0, 0)).unwrap();
     let names: Vec<&str> = p
         .objects
         .iter()
-        .filter_map(|o| if let wordcraft_doc::InlineObject::BookmarkStart { name } = o { Some(name.as_str()) } else { None })
+        .filter_map(|o| {
+            if let wordcraft_doc::InlineObject::BookmarkStart { name } = o {
+                Some(name.as_str())
+            } else {
+                None
+            }
+        })
         .collect();
     assert_eq!(names, ["one", "two", "three"]);
-    assert_eq!(d.plain_text(wordcraft_doc::StoryRef::Body).replace('\u{FFFC}', ""), "First second third.");
+    assert_eq!(
+        d.plain_text(wordcraft_doc::StoryRef::Body)
+            .replace('\u{FFFC}', ""),
+        "First second third."
+    );
 }
 
 #[test]
@@ -481,7 +818,8 @@ fn garbage_never_panics() {
     }
     // A zip that is not an ODF text document.
     let mut z = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    z.start_file("mimetype", zip::write::SimpleFileOptions::default()).unwrap();
+    z.start_file("mimetype", zip::write::SimpleFileOptions::default())
+        .unwrap();
     std::io::Write::write_all(&mut z, b"application/zip").unwrap();
     let bytes = z.finish().unwrap().into_inner();
     assert!(import("odt", &bytes).unwrap().is_err());
@@ -562,20 +900,39 @@ fn html_img_sources_go_through_the_loader() {
     assert_eq!(*seen.borrow(), ["logo.png", "gone.png"]);
     assert_eq!(d.media.len(), 1);
     let text = d.plain_text(wordcraft_doc::StoryRef::Body);
-    assert!(text.contains("Missing") && !text.contains("Sample Logo"), "{text:?}");
+    assert!(
+        text.contains("Missing") && !text.contains("Sample Logo"),
+        "{text:?}"
+    );
     // Without a loader only data: URIs load.
-    assert!(import("html", html.as_bytes()).unwrap().unwrap().media.is_empty());
+    assert!(
+        import("html", html.as_bytes())
+            .unwrap()
+            .unwrap()
+            .media
+            .is_empty()
+    );
 }
 
 #[test]
 fn chart_alt_text_is_an_image_alt_never_body_text() {
     let mut p = Paragraph::with_text("See below", CharProps::default());
-    let chart = InlineObject::Graphic { w: 100.0, h: 50.0, alt: "Sales".into(), float: Default::default(), graphic: Arc::new(Default::default()) };
+    let chart = InlineObject::Graphic {
+        w: 100.0,
+        h: 50.0,
+        alt: "Sales".into(),
+        float: Default::default(),
+        graphic: Arc::new(Default::default()),
+    };
     p.insert_object(4, chart, &CharProps::default()).unwrap();
     let mut d = Document::new();
     d.body = vec![para_block(p)];
     let text = |ext: &str| String::from_utf8(export(ext, &d).unwrap().unwrap()).unwrap();
-    assert!(text("html").contains(r#"<img alt="Sales">"#), "{}", text("html"));
+    assert!(
+        text("html").contains(r#"<img alt="Sales">"#),
+        "{}",
+        text("html")
+    );
     assert!(text("md").contains("![Sales]()"), "{}", text("md"));
     for ext in ["txt", "rtf", "tex"] {
         assert!(!text(ext).contains("Sales"), "{ext}: {}", text(ext));
@@ -599,7 +956,12 @@ fn hostile_importer_input_takes_linear_time() {
         let t = Instant::now();
         let d = import(ext, text.as_bytes()).unwrap().unwrap();
         let _ = d.plain_text(Default::default());
-        assert!(t.elapsed() < Duration::from_secs(5), "{ext} {:?}... took {:?}", &text[..8], t.elapsed());
+        assert!(
+            t.elapsed() < Duration::from_secs(5),
+            "{ext} {:?}... took {:?}",
+            &text[..8],
+            t.elapsed()
+        );
     }
 }
 
@@ -611,11 +973,22 @@ fn bounded_scans_keep_ordinary_markdown_and_entities() {
     let text = md.plain_text(Default::default());
     assert!(text.contains("the docs"), "{text}");
     assert!(text.contains("& &"), "{text}");
-    let html = import("html", "<p>&lt;&amp;&#65;&eacute; &nosuchentity; &#x41;</p>".as_bytes()).unwrap().unwrap();
-    assert_eq!(html.plain_text(Default::default()).trim(), "<&Aé &nosuchentity; A");
+    let html = import(
+        "html",
+        "<p>&lt;&amp;&#65;&eacute; &nosuchentity; &#x41;</p>".as_bytes(),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(
+        html.plain_text(Default::default()).trim(),
+        "<&Aé &nosuchentity; A"
+    );
     // An entity name longer than the scan window is left alone, as before.
     let long = format!("<p>&{};</p>", "a".repeat(40));
-    let t = import("html", long.as_bytes()).unwrap().unwrap().plain_text(Default::default());
+    let t = import("html", long.as_bytes())
+        .unwrap()
+        .unwrap()
+        .plain_text(Default::default());
     assert!(t.contains(&"a".repeat(40)), "{t}");
 }
 
@@ -638,7 +1011,15 @@ fn exported_links_keep_only_safe_targets() {
     let mut p = Paragraph::with_text("", CharProps::default());
     for (text, l) in links {
         let n = p.len();
-        p.insert_text(n, text, &CharProps { link: Some(l.to_string()), ..Default::default() }).unwrap();
+        p.insert_text(
+            n,
+            text,
+            &CharProps {
+                link: Some(l.to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         let n = p.len();
         p.insert_text(n, " ", &CharProps::default()).unwrap();
     }
@@ -647,14 +1028,20 @@ fn exported_links_keep_only_safe_targets() {
     let md = String::from_utf8(export("md", &d).unwrap().unwrap()).unwrap();
     for bad in ["javascript", "vbscript", "data:"] {
         assert!(!html.to_ascii_lowercase().contains(bad), "html: {html}");
-        assert!(!md.to_ascii_lowercase().replace('\n', "").contains(bad), "md: {md}");
+        assert!(
+            !md.to_ascii_lowercase().replace('\n', "").contains(bad),
+            "md: {md}"
+        );
     }
     for (text, _) in links {
         assert!(html.contains(text), "html keeps the text {text:?}: {html}");
         assert!(md.contains(text), "md keeps the text {text:?}: {md}");
     }
     for (text, l) in &links[4..] {
-        assert!(html.contains(&format!("<a href=\"{l}\">{text}</a>")), "html: {html}");
+        assert!(
+            html.contains(&format!("<a href=\"{l}\">{text}</a>")),
+            "html: {html}"
+        );
         assert!(md.contains(&format!("[{text}]({l})")), "md: {md}");
     }
     for text in ["script", "split", "vb", "data"] {

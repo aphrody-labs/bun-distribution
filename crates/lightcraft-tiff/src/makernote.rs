@@ -46,20 +46,38 @@ pub struct MakerNote {
 /// Locate and parse the maker note stored at absolute `offset` (length `len`) inside `data`, the buffer whose
 /// start is the enclosing TIFF header. `order` is the enclosing stream's byte order. `make` (the Exif Make) is
 /// used only as a hint for header-less notes. Returns `None` for unknown or unparsable notes.
-pub fn parse_makernote(data: &[u8], offset: u64, len: u64, order: ByteOrder, make: &str) -> Option<MakerNote> {
+pub fn parse_makernote(
+    data: &[u8],
+    offset: u64,
+    len: u64,
+    order: ByteOrder,
+    make: &str,
+) -> Option<MakerNote> {
     let start = usize::try_from(offset).ok()?;
-    let end = start.checked_add(usize::try_from(len).ok()?)?.min(data.len());
+    let end = start
+        .checked_add(usize::try_from(len).ok()?)?
+        .min(data.len());
     let note = data.get(start..end)?;
     let order_at = |i: usize| match note.get(i..i + 2) {
         Some(b"II") => Some(ByteOrder::Little),
         Some(b"MM") => Some(ByteOrder::Big),
         _ => None,
     };
-    let opts = ParseOptions { max_ifds: 64, max_depth: 3, ..Default::default() };
-    let try_parse = |kind: MakerNoteKind, ifd_at: u64, base: u64, ord: ByteOrder| -> Option<MakerNote> {
-        let (ifd, _) = parse_ifd_at(data, ifd_at, ord, base, false, &opts).ok()?;
-        (!ifd.entries.is_empty()).then_some(MakerNote { kind, order: ord, base, ifd })
+    let opts = ParseOptions {
+        max_ifds: 64,
+        max_depth: 3,
+        ..Default::default()
     };
+    let try_parse =
+        |kind: MakerNoteKind, ifd_at: u64, base: u64, ord: ByteOrder| -> Option<MakerNote> {
+            let (ifd, _) = parse_ifd_at(data, ifd_at, ord, base, false, &opts).ok()?;
+            (!ifd.entries.is_empty()).then_some(MakerNote {
+                kind,
+                order: ord,
+                base,
+                ifd,
+            })
+        };
     if note.starts_with(b"Nikon\0") {
         if note.get(6) == Some(&1) {
             return try_parse(MakerNoteKind::NikonV1, offset + 8, 0, order);
@@ -71,10 +89,19 @@ pub fn parse_makernote(data: &[u8], offset: u64, len: u64, order: ByteOrder, mak
     }
     if note.starts_with(b"FUJIFILM") || note.starts_with(b"GENERALE") {
         let rel = ByteOrder::Little.read_u32(note, 8)? as u64;
-        return try_parse(MakerNoteKind::Fujifilm, offset + rel, offset, ByteOrder::Little);
+        return try_parse(
+            MakerNoteKind::Fujifilm,
+            offset + rel,
+            offset,
+            ByteOrder::Little,
+        );
     }
     if note.starts_with(b"OLYMPUS\0") || note.starts_with(b"OM SYSTEM\0") {
-        let (ord_at, ifd_at) = if note.starts_with(b"OM SYSTEM\0") { (12, 16) } else { (8, 12) };
+        let (ord_at, ifd_at) = if note.starts_with(b"OM SYSTEM\0") {
+            (12, 16)
+        } else {
+            (8, 12)
+        };
         let ord = order_at(ord_at).unwrap_or(order);
         return try_parse(MakerNoteKind::OlympusNew, offset + ifd_at, offset, ord);
     }
@@ -115,7 +142,12 @@ mod tests {
         let mut ifd0 = IfdBuilder::new();
         ifd0.set(tags::MAKE, Value::Ascii("Test".into()));
         ifd0.set_child(tags::EXIF_IFD, exif);
-        let bytes = TiffWriter { order, bigtiff: false }.write(&[ifd0]).unwrap();
+        let bytes = TiffWriter {
+            order,
+            bigtiff: false,
+        }
+        .write(&[ifd0])
+        .unwrap();
         let t = crate::Tiff::parse(&bytes).unwrap();
         let e = t.exif().unwrap().get(tags::MAKER_NOTE).unwrap();
         let (off, len) = (e.offset, e.count() as u64);
@@ -144,7 +176,11 @@ mod tests {
         for order in [ByteOrder::Little, ByteOrder::Big] {
             let mut note = b"Nikon\0\x02\x10\0\0".to_vec();
             let hdr_at = note.len();
-            note.extend_from_slice(if order == ByteOrder::Little { b"II" } else { b"MM" });
+            note.extend_from_slice(if order == ByteOrder::Little {
+                b"II"
+            } else {
+                b"MM"
+            });
             order.put_u16(&mut note, 42);
             order.put_u32(&mut note, 8);
             // IFD at +8 (relative to embedded header), values after IFD: 8 + 2 + 24 + 4 = 38

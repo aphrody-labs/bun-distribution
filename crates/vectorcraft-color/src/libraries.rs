@@ -9,7 +9,9 @@ use std::sync::{Arc, OnceLock};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint, Swatch, SwatchGroup};
+use crate::{
+    Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint, Swatch, SwatchGroup,
+};
 
 /// A library: its name, its ungrouped swatches and its colour groups.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -24,7 +26,9 @@ pub struct SwatchLibrary {
 impl SwatchLibrary {
     /// Every swatch: the ungrouped ones first, then each group's in order.
     pub fn iter(&self) -> impl Iterator<Item = &Swatch> {
-        self.swatches.iter().chain(self.groups.iter().flat_map(|g| g.swatches.iter()))
+        self.swatches
+            .iter()
+            .chain(self.groups.iter().flat_map(|g| g.swatches.iter()))
     }
     /// The number of swatches.
     pub fn len(&self) -> usize {
@@ -50,7 +54,11 @@ pub struct BuiltinLibrary {
 
 macro_rules! lib {
     ($id:literal, $name:literal, $make:expr) => {
-        BuiltinLibrary { id: $id, name: $name, make: $make }
+        BuiltinLibrary {
+            id: $id,
+            name: $name,
+            make: $make,
+        }
     };
 }
 
@@ -69,7 +77,11 @@ pub const SWATCH_LIBRARIES: &[BuiltinLibrary] = &[
 
 /// The built-in gradient libraries (Window → Swatch Libraries → Gradients), in menu order.
 pub const GRADIENT_LIBRARIES: &[BuiltinLibrary] = &[
-    lib!("spectrum-gradients", "Spectrum Gradients", spectrum_gradients),
+    lib!(
+        "spectrum-gradients",
+        "Spectrum Gradients",
+        spectrum_gradients
+    ),
     lib!("sky-gradients", "Sky Gradients", sky_gradients),
     lib!("neutral-gradients", "Neutral Gradients", neutral_gradients),
     lib!("duotone-gradients", "Duotone Gradients", duotone_gradients),
@@ -88,7 +100,11 @@ pub fn builtin_library(id: &str) -> Option<Arc<SwatchLibrary>> {
         builtins()
             .map(|b| {
                 let (swatches, groups) = (b.make)();
-                Arc::new(SwatchLibrary { name: b.name.into(), swatches, groups })
+                Arc::new(SwatchLibrary {
+                    name: b.name.into(),
+                    swatches,
+                    groups,
+                })
             })
             .collect()
     });
@@ -108,14 +124,24 @@ fn oklab_to_srgb(l: f64, a: f64, b: f64) -> [f64; 3] {
         -1.268_438_004_6 * l3 + 2.609_757_401_1 * m3 - 0.341_319_396_5 * s3,
         -0.004_196_086_3 * l3 - 0.703_418_614_7 * m3 + 1.707_614_701_0 * s3,
     ];
-    lin.map(|v| if v <= 0.003_130_8 { 12.92 * v } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 })
+    lin.map(|v| {
+        if v <= 0.003_130_8 {
+            12.92 * v
+        } else {
+            1.055 * v.powf(1.0 / 2.4) - 0.055
+        }
+    })
 }
 
 /// OKLab `[l, a, b]` of a colour's display RGB.
 pub fn to_oklab(c: &Color) -> [f64; 3] {
     let [r, g, b] = c.to_rgb_uncalibrated().map(|v| {
         let v = f64::from(v);
-        if v <= 0.040_45 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+        if v <= 0.040_45 {
+            v / 12.92
+        } else {
+            ((v + 0.055) / 1.055).powf(2.4)
+        }
     });
     let l = (0.412_221_470_8 * r + 0.536_332_536_3 * g + 0.051_445_992_9 * b).cbrt();
     let m = (0.211_903_498_2 * r + 0.680_699_545_1 * g + 0.107_396_956_6 * b).cbrt();
@@ -161,26 +187,54 @@ fn lab(l: f64, c: f64, h: f64) -> [f64; 3] {
 }
 
 fn solid(name: impl Into<String>, color: Color) -> Swatch {
-    Swatch { name: name.into(), paint: Paint::solid(color), global: false, spot: false }
+    Swatch {
+        name: name.into(),
+        paint: Paint::solid(color),
+        global: false,
+        spot: false,
+    }
 }
 
 fn group(name: &str, swatches: Vec<Swatch>) -> SwatchGroup {
-    SwatchGroup { name: name.into(), swatches }
+    SwatchGroup {
+        name: name.into(),
+        swatches,
+    }
 }
 
 /// A gradient swatch through `stops` of (offset, colour, opacity).
 pub(crate) fn gradient(name: &str, kind: GradientKind, stops: &[(f32, Color, f32)]) -> Swatch {
-    let stops = stops.iter().map(|&(offset, color, opacity)| GradientStop { opacity, ..GradientStop::new(offset, color) }).collect();
-    Swatch { name: name.into(), paint: Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind, stops }))), global: false, spot: false }
+    let stops = stops
+        .iter()
+        .map(|&(offset, color, opacity)| GradientStop {
+            opacity,
+            ..GradientStop::new(offset, color)
+        })
+        .collect();
+    Swatch {
+        name: name.into(),
+        paint: Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind, stops }))),
+        global: false,
+        spot: false,
+    }
 }
 
 /// `n` steps of OKLCH lightness from `l0` to `l1`, chroma `c(t)` and hue `h(t)` (`t` in 0..=1),
 /// named "`name` 1"…
-fn ramp(name: &str, n: usize, (l0, l1): (f64, f64), c: impl Fn(f64) -> f64, h: impl Fn(f64) -> f64) -> SwatchGroup {
+fn ramp(
+    name: &str,
+    n: usize,
+    (l0, l1): (f64, f64),
+    c: impl Fn(f64) -> f64,
+    h: impl Fn(f64) -> f64,
+) -> SwatchGroup {
     let swatches = (0..n)
         .map(|i| {
             let t = i as f64 / (n - 1).max(1) as f64;
-            solid(format!("{name} {}", i + 1), oklch(l0 + (l1 - l0) * t, c(t), h(t)))
+            solid(
+                format!("{name} {}", i + 1),
+                oklch(l0 + (l1 - l0) * t, c(t), h(t)),
+            )
         })
         .collect();
     group(name, swatches)
@@ -204,7 +258,12 @@ const HUES: [(&str, f64); 12] = [
 
 /// One group of the twelve hues at OKLCH lightness `l` and chroma `c`, named "`prefix` Red"…
 fn hue_row(prefix: &str, l: f64, c: f64) -> SwatchGroup {
-    group(prefix, HUES.iter().map(|(n, h)| solid(format!("{prefix} {n}"), oklch(l, c, *h))).collect())
+    group(
+        prefix,
+        HUES.iter()
+            .map(|(n, h)| solid(format!("{prefix} {n}"), oklch(l, c, *h)))
+            .collect(),
+    )
 }
 
 // ---------- the libraries ----------
@@ -224,7 +283,9 @@ fn web_safe() -> (Vec<Swatch>, Vec<SwatchGroup>) {
 }
 
 fn grays_neutrals() -> (Vec<Swatch>, Vec<SwatchGroup>) {
-    let grays = (0..=20).map(|i| solid(format!("K={}", i * 5), Color::gray(i as f32 / 20.0))).collect();
+    let grays = (0..=20)
+        .map(|i| solid(format!("K={}", i * 5), Color::gray(i as f32 / 20.0)))
+        .collect();
     let tinted = |name: &str, c: f64, h: f64| ramp(name, 9, (0.95, 0.25), |_| c, |_| h);
     let neutrals = [
         ("Ivory", 0.96, 0.02, 95.0),
@@ -236,8 +297,16 @@ fn grays_neutrals() -> (Vec<Swatch>, Vec<SwatchGroup>) {
         ("Slate", 0.48, 0.025, 250.0),
         ("Charcoal", 0.30, 0.01, 260.0),
     ];
-    let neutrals = neutrals.iter().map(|&(n, l, c, h)| solid(n, oklch(l, c, h))).collect();
-    let groups = vec![group("Grays", grays), tinted("Warm Gray", 0.012, 70.0), tinted("Cool Gray", 0.015, 250.0), group("Neutrals", neutrals)];
+    let neutrals = neutrals
+        .iter()
+        .map(|&(n, l, c, h)| solid(n, oklch(l, c, h)))
+        .collect();
+    let groups = vec![
+        group("Grays", grays),
+        tinted("Warm Gray", 0.012, 70.0),
+        tinted("Cool Gray", 0.015, 250.0),
+        group("Neutrals", neutrals),
+    ];
     (vec![], groups)
 }
 
@@ -252,24 +321,57 @@ fn earth_tones() -> (Vec<Swatch>, Vec<SwatchGroup>) {
         ("Moss", 0.07, 130.0),
     ];
     // Chroma peaks mid-ramp, as earth pigments do.
-    let groups = families.iter().map(|&(n, c, h)| ramp(n, 6, (0.86, 0.34), |t| c * (0.6 + 0.4 * (1.0 - (2.0 * t - 1.0).powi(2))), |_| h)).collect();
+    let groups = families
+        .iter()
+        .map(|&(n, c, h)| {
+            ramp(
+                n,
+                6,
+                (0.86, 0.34),
+                |t| c * (0.6 + 0.4 * (1.0 - (2.0 * t - 1.0).powi(2))),
+                |_| h,
+            )
+        })
+        .collect();
     (vec![], groups)
 }
 
 fn skin_tones() -> (Vec<Swatch>, Vec<SwatchGroup>) {
-    let ramps = [("Rosy", 0.075, 35.0), ("Neutral", 0.07, 55.0), ("Golden", 0.08, 70.0), ("Olive", 0.06, 85.0)];
+    let ramps = [
+        ("Rosy", 0.075, 35.0),
+        ("Neutral", 0.07, 55.0),
+        ("Golden", 0.08, 70.0),
+        ("Olive", 0.06, 85.0),
+    ];
     // Light tones are paler; deep tones keep warmth but lose a little chroma.
-    let groups = ramps.iter().map(|&(n, c, h)| ramp(n, 8, (0.93, 0.32), |t| c * (0.45 + 0.75 * t - 0.35 * t * t), |t| h - 8.0 * t)).collect();
+    let groups = ramps
+        .iter()
+        .map(|&(n, c, h)| {
+            ramp(
+                n,
+                8,
+                (0.93, 0.32),
+                |t| c * (0.45 + 0.75 * t - 0.35 * t * t),
+                |t| h - 8.0 * t,
+            )
+        })
+        .collect();
     (vec![], groups)
 }
 
 fn pastels() -> (Vec<Swatch>, Vec<SwatchGroup>) {
-    (vec![], vec![hue_row("Pastel", 0.91, 0.055), hue_row("Soft", 0.84, 0.085)])
+    (
+        vec![],
+        vec![hue_row("Pastel", 0.91, 0.055), hue_row("Soft", 0.84, 0.085)],
+    )
 }
 
 fn brights() -> (Vec<Swatch>, Vec<SwatchGroup>) {
     // Chroma beyond sRGB: each hue lands on the gamut edge at that lightness.
-    (vec![], vec![hue_row("Vivid", 0.72, 0.4), hue_row("Deep", 0.52, 0.4)])
+    (
+        vec![],
+        vec![hue_row("Vivid", 0.72, 0.4), hue_row("Deep", 0.52, 0.4)],
+    )
 }
 
 fn metallic() -> (Vec<Swatch>, Vec<SwatchGroup>) {
@@ -286,11 +388,20 @@ fn metallic() -> (Vec<Swatch>, Vec<SwatchGroup>) {
         ("Pewter", 0.60, 0.01, 200.0),
     ];
     // Light, base, shadow, highlight, base: the banding of polished metal.
-    let bands: [(f32, f64); 5] = [(0.0, 0.16), (0.3, 0.0), (0.5, -0.2), (0.72, 0.12), (1.0, -0.06)];
+    let bands: [(f32, f64); 5] = [
+        (0.0, 0.16),
+        (0.3, 0.0),
+        (0.5, -0.2),
+        (0.72, 0.12),
+        (1.0, -0.06),
+    ];
     let s = metals
         .iter()
         .map(|&(n, l, c, h)| {
-            let stops: Vec<(f32, Color, f32)> = bands.iter().map(|&(at, dl)| (at, oklch((l + dl).clamp(0.05, 0.98), c, h), 1.0)).collect();
+            let stops: Vec<(f32, Color, f32)> = bands
+                .iter()
+                .map(|&(at, dl)| (at, oklch((l + dl).clamp(0.05, 0.98), c, h), 1.0))
+                .collect();
             gradient(n, GradientKind::Linear, &stops)
         })
         .collect();
@@ -303,7 +414,11 @@ type Anchors = &'static [(f64, f64, f64)];
 /// A linear gradient through evenly spaced, opaque `colors`.
 fn even(name: &str, kind: GradientKind, colors: &[Color]) -> Swatch {
     let last = (colors.len() - 1).max(1) as f32;
-    let stops: Vec<(f32, Color, f32)> = colors.iter().enumerate().map(|(i, c)| (i as f32 / last, *c, 1.0)).collect();
+    let stops: Vec<(f32, Color, f32)> = colors
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (i as f32 / last, *c, 1.0))
+        .collect();
     gradient(name, kind, &stops)
 }
 
@@ -314,42 +429,107 @@ fn lch(points: &[(f64, f64, f64)]) -> Vec<Color> {
 
 /// Full-hue sweeps and hue-neighbour blends.
 fn spectrum_gradients() -> (Vec<Swatch>, Vec<SwatchGroup>) {
-    let wheel: Vec<Color> = (0..=6).map(|i| oklch(0.72, 0.4, 25.0 + i as f64 * 60.0)).collect();
+    let wheel: Vec<Color> = (0..=6)
+        .map(|i| oklch(0.72, 0.4, 25.0 + i as f64 * 60.0))
+        .collect();
     let mut s = vec![
         even("Spectrum", GradientKind::Linear, &wheel),
-        even("Soft Spectrum", GradientKind::Linear, &lch(&[(0.88, 0.08, 25.0), (0.9, 0.08, 145.0), (0.86, 0.08, 265.0), (0.88, 0.08, 25.0)])),
+        even(
+            "Soft Spectrum",
+            GradientKind::Linear,
+            &lch(&[
+                (0.88, 0.08, 25.0),
+                (0.9, 0.08, 145.0),
+                (0.86, 0.08, 265.0),
+                (0.88, 0.08, 25.0),
+            ]),
+        ),
     ];
     // Each hue to the one two steps round the wheel.
     s.extend((0..HUES.len()).map(|i| {
         let ((a, ha), (b, hb)) = (HUES[i], HUES[(i + 2) % HUES.len()]);
-        even(&format!("{a} to {b}"), GradientKind::Linear, &[oklch(0.7, 0.4, ha), oklch(0.7, 0.4, hb)])
+        even(
+            &format!("{a} to {b}"),
+            GradientKind::Linear,
+            &[oklch(0.7, 0.4, ha), oklch(0.7, 0.4, hb)],
+        )
     }));
     (s, vec![])
 }
 
 fn sky_gradients() -> (Vec<Swatch>, Vec<SwatchGroup>) {
     let skies: [(&str, Anchors); 6] = [
-        ("Dawn", &[(0.45, 0.08, 280.0), (0.72, 0.12, 350.0), (0.9, 0.09, 75.0)]),
-        ("Noon", &[(0.55, 0.13, 250.0), (0.78, 0.09, 235.0), (0.95, 0.03, 220.0)]),
-        ("Sunset", &[(0.35, 0.09, 300.0), (0.62, 0.18, 20.0), (0.85, 0.15, 70.0)]),
-        ("Dusk", &[(0.25, 0.07, 275.0), (0.48, 0.1, 310.0), (0.7, 0.1, 30.0)]),
+        (
+            "Dawn",
+            &[(0.45, 0.08, 280.0), (0.72, 0.12, 350.0), (0.9, 0.09, 75.0)],
+        ),
+        (
+            "Noon",
+            &[
+                (0.55, 0.13, 250.0),
+                (0.78, 0.09, 235.0),
+                (0.95, 0.03, 220.0),
+            ],
+        ),
+        (
+            "Sunset",
+            &[(0.35, 0.09, 300.0), (0.62, 0.18, 20.0), (0.85, 0.15, 70.0)],
+        ),
+        (
+            "Dusk",
+            &[(0.25, 0.07, 275.0), (0.48, 0.1, 310.0), (0.7, 0.1, 30.0)],
+        ),
         ("Night", &[(0.15, 0.04, 270.0), (0.3, 0.07, 265.0)]),
         ("Overcast", &[(0.62, 0.015, 240.0), (0.86, 0.01, 230.0)]),
     ];
-    (skies.iter().map(|(n, p)| even(n, GradientKind::Linear, &lch(p))).collect(), vec![])
+    (
+        skies
+            .iter()
+            .map(|(n, p)| even(n, GradientKind::Linear, &lch(p)))
+            .collect(),
+        vec![],
+    )
 }
 
 fn neutral_gradients() -> (Vec<Swatch>, Vec<SwatchGroup>) {
     let (white, black) = (Color::gray(0.0), Color::gray(1.0));
     let s = vec![
         even("White to Black", GradientKind::Linear, &[white, black]),
-        even("Light Grays", GradientKind::Linear, &[white, Color::gray(0.4)]),
-        even("Dark Grays", GradientKind::Linear, &[Color::gray(0.6), black]),
-        even("Warm Grays", GradientKind::Linear, &lch(&[(0.95, 0.012, 70.0), (0.3, 0.012, 70.0)])),
-        even("Cool Grays", GradientKind::Linear, &lch(&[(0.95, 0.015, 250.0), (0.3, 0.015, 250.0)])),
-        gradient("Fade to Transparent", GradientKind::Linear, &[(0.0, black, 1.0), (1.0, black, 0.0)]),
-        gradient("White Fade", GradientKind::Linear, &[(0.0, white, 1.0), (1.0, white, 0.0)]),
-        gradient("Vignette", GradientKind::Radial, &[(0.0, black, 0.0), (0.6, black, 0.0), (1.0, black, 0.7)]),
+        even(
+            "Light Grays",
+            GradientKind::Linear,
+            &[white, Color::gray(0.4)],
+        ),
+        even(
+            "Dark Grays",
+            GradientKind::Linear,
+            &[Color::gray(0.6), black],
+        ),
+        even(
+            "Warm Grays",
+            GradientKind::Linear,
+            &lch(&[(0.95, 0.012, 70.0), (0.3, 0.012, 70.0)]),
+        ),
+        even(
+            "Cool Grays",
+            GradientKind::Linear,
+            &lch(&[(0.95, 0.015, 250.0), (0.3, 0.015, 250.0)]),
+        ),
+        gradient(
+            "Fade to Transparent",
+            GradientKind::Linear,
+            &[(0.0, black, 1.0), (1.0, black, 0.0)],
+        ),
+        gradient(
+            "White Fade",
+            GradientKind::Linear,
+            &[(0.0, white, 1.0), (1.0, white, 0.0)],
+        ),
+        gradient(
+            "Vignette",
+            GradientKind::Radial,
+            &[(0.0, black, 0.0), (0.6, black, 0.0), (1.0, black, 0.7)],
+        ),
     ];
     (s, vec![])
 }
@@ -365,7 +545,13 @@ fn duotone_gradients() -> (Vec<Swatch>, Vec<SwatchGroup>) {
     ];
     let s = pairs
         .iter()
-        .map(|&(a, la, ha, b, lb, hb)| even(&format!("{a} and {b}"), GradientKind::Linear, &[oklch(la, 0.15, ha), oklch(lb, 0.15, hb)]))
+        .map(|&(a, la, ha, b, lb, hb)| {
+            even(
+                &format!("{a} and {b}"),
+                GradientKind::Linear,
+                &[oklch(la, 0.15, ha), oklch(lb, 0.15, hb)],
+            )
+        })
         .collect();
     (s, vec![])
 }
@@ -376,7 +562,11 @@ fn radial_glows() -> (Vec<Swatch>, Vec<SwatchGroup>) {
         .iter()
         .map(|(n, h)| {
             let c = oklch(0.78, 0.2, *h);
-            gradient(&format!("{n} Glow"), GradientKind::Radial, &[(0.0, Color::WHITE, 1.0), (0.25, c, 1.0), (1.0, c, 0.0)])
+            gradient(
+                &format!("{n} Glow"),
+                GradientKind::Radial,
+                &[(0.0, Color::WHITE, 1.0), (0.25, c, 1.0), (1.0, c, 0.0)],
+            )
         })
         .collect();
     (s, vec![])
@@ -384,9 +574,22 @@ fn radial_glows() -> (Vec<Swatch>, Vec<SwatchGroup>) {
 
 /// The sequential scales of [`perceptual`]: name and anchors of rising lightness.
 const SEQUENTIAL: [(&str, Anchors); 5] = [
-    ("Ember", &[(0.22, 0.10, 300.0), (0.55, 0.18, 30.0), (0.93, 0.15, 100.0)]),
-    ("Lagoon", &[(0.25, 0.07, 265.0), (0.60, 0.12, 200.0), (0.93, 0.12, 130.0)]),
-    ("Dusk", &[(0.20, 0.08, 280.0), (0.60, 0.15, 330.0), (0.92, 0.07, 60.0)]),
+    (
+        "Ember",
+        &[(0.22, 0.10, 300.0), (0.55, 0.18, 30.0), (0.93, 0.15, 100.0)],
+    ),
+    (
+        "Lagoon",
+        &[
+            (0.25, 0.07, 265.0),
+            (0.60, 0.12, 200.0),
+            (0.93, 0.12, 130.0),
+        ],
+    ),
+    (
+        "Dusk",
+        &[(0.20, 0.08, 280.0), (0.60, 0.15, 330.0), (0.92, 0.07, 60.0)],
+    ),
     ("Moss", &[(0.25, 0.05, 150.0), (0.92, 0.07, 110.0)]),
     ("Ink", &[(0.20, 0.02, 260.0), (0.96, 0.01, 260.0)]),
 ];
@@ -399,7 +602,10 @@ fn scale(name: &str, n: usize, anchors: &[(f64, f64, f64)]) -> SwatchGroup {
         .map(|i| {
             let t = i as f64 / (n - 1) as f64 * segs;
             let k = (t.floor() as usize).min(pts.len() - 2);
-            solid(format!("{name} {}", i + 1), mix(pts[k], pts[k + 1], t - k as f64))
+            solid(
+                format!("{name} {}", i + 1),
+                mix(pts[k], pts[k + 1], t - k as f64),
+            )
         })
         .collect();
     group(name, swatches)
@@ -408,16 +614,34 @@ fn scale(name: &str, n: usize, anchors: &[(f64, f64, f64)]) -> SwatchGroup {
 /// Scales whose lightness rises evenly (sequential) plus two diverging ones.
 fn perceptual() -> (Vec<Swatch>, Vec<SwatchGroup>) {
     let mut groups: Vec<SwatchGroup> = SEQUENTIAL.iter().map(|(n, a)| scale(n, 9, a)).collect();
-    groups.push(scale("Clay to Teal", 9, &[(0.45, 0.12, 40.0), (0.96, 0.01, 80.0), (0.45, 0.09, 200.0)]));
-    groups.push(scale("Plum to Olive", 9, &[(0.40, 0.11, 330.0), (0.96, 0.01, 90.0), (0.45, 0.09, 120.0)]));
+    groups.push(scale(
+        "Clay to Teal",
+        9,
+        &[(0.45, 0.12, 40.0), (0.96, 0.01, 80.0), (0.45, 0.09, 200.0)],
+    ));
+    groups.push(scale(
+        "Plum to Olive",
+        9,
+        &[(0.40, 0.11, 330.0), (0.96, 0.01, 90.0), (0.45, 0.09, 120.0)],
+    ));
     (vec![], groups)
 }
 
 /// Colour-wheel harmonies of a few base colours (the Color Guide's rules).
 fn harmony_sets() -> (Vec<Swatch>, Vec<SwatchGroup>) {
     use crate::harmony::Harmony;
-    let bases = [("Coral", Color::from_hsb(8.0, 0.68, 0.94)), ("Teal", Color::from_hsb(176.0, 0.72, 0.62))];
-    let rules = [Harmony::Complementary, Harmony::SplitComplementary, Harmony::Analogous, Harmony::Triad, Harmony::Tetrad, Harmony::Pentagram];
+    let bases = [
+        ("Coral", Color::from_hsb(8.0, 0.68, 0.94)),
+        ("Teal", Color::from_hsb(176.0, 0.72, 0.62)),
+    ];
+    let rules = [
+        Harmony::Complementary,
+        Harmony::SplitComplementary,
+        Harmony::Analogous,
+        Harmony::Triad,
+        Harmony::Tetrad,
+        Harmony::Pentagram,
+    ];
     let mut groups = vec![];
     for (bn, base) in bases {
         for rule in rules {
@@ -458,7 +682,12 @@ mod tests {
         lib.iter()
             .flat_map(|s| match &s.paint {
                 Paint::Solid { color, .. } => comps(color),
-                Paint::Gradient(g) => g.gradient.stops.iter().flat_map(|st| comps(&st.color)).collect(),
+                Paint::Gradient(g) => g
+                    .gradient
+                    .stops
+                    .iter()
+                    .flat_map(|st| comps(&st.color))
+                    .collect(),
                 _ => vec![],
             })
             .collect()
@@ -473,14 +702,30 @@ mod tests {
             assert!(lib.len() >= 5, "{} has {}", b.id, lib.len());
             // Recomputing gives the same library.
             let (s, g) = (b.make)();
-            assert_eq!((s, g), (lib.swatches.clone(), lib.groups.clone()), "{} is deterministic", b.id);
+            assert_eq!(
+                (s, g),
+                (lib.swatches.clone(), lib.groups.clone()),
+                "{} is deterministic",
+                b.id
+            );
             // Swatch and group names share one namespace, as in a document.
             let mut names = std::collections::HashSet::new();
-            for n in lib.iter().map(|s| &s.name).chain(lib.groups.iter().map(|g| &g.name)) {
+            for n in lib
+                .iter()
+                .map(|s| &s.name)
+                .chain(lib.groups.iter().map(|g| &g.name))
+            {
                 assert!(names.insert(n.clone()), "{}: duplicate name {n}", b.id);
             }
-            assert!(components(&lib).iter().all(|v| (0.0..=1.0).contains(v)), "{} out of range", b.id);
-            assert!(lib.iter().all(|s| !s.paint.is_none() && !s.global && !s.spot));
+            assert!(
+                components(&lib).iter().all(|v| (0.0..=1.0).contains(v)),
+                "{} out of range",
+                b.id
+            );
+            assert!(
+                lib.iter()
+                    .all(|s| !s.paint.is_none() && !s.global && !s.spot)
+            );
         }
     }
 
@@ -488,10 +733,17 @@ mod tests {
     fn web_safe_has_the_216_web_colours() {
         let lib = builtin_library("web-safe-216").unwrap();
         assert_eq!(lib.len(), 216);
-        let mut hex: Vec<String> = lib.iter().map(|s| s.paint.color().unwrap().to_hex()).collect();
+        let mut hex: Vec<String> = lib
+            .iter()
+            .map(|s| s.paint.color().unwrap().to_hex())
+            .collect();
         hex.dedup();
         assert_eq!(hex.len(), 216);
-        assert!(lib.iter().all(|s| s.paint.color().unwrap().to_rgba8(1.0)[..3].iter().all(|v| v % 0x33 == 0)));
+        assert!(lib.iter().all(|s| {
+            s.paint.color().unwrap().to_rgba8(1.0)[..3]
+                .iter()
+                .all(|v| v % 0x33 == 0)
+        }));
         assert_eq!(lib.swatches[0].name, "#000000");
         assert_eq!(lib.swatches[215].name, "#FFFFFF");
     }
@@ -500,7 +752,13 @@ mod tests {
     fn sequential_scales_rise_in_lightness() {
         let lib = builtin_library("perceptual-scales").unwrap();
         for (name, _) in SEQUENTIAL {
-            let l: Vec<f64> = lib.group(name).unwrap().swatches.iter().map(|s| to_oklab(&s.paint.color().unwrap())[0]).collect();
+            let l: Vec<f64> = lib
+                .group(name)
+                .unwrap()
+                .swatches
+                .iter()
+                .map(|s| to_oklab(&s.paint.color().unwrap())[0])
+                .collect();
             assert!(l.windows(2).all(|w| w[1] > w[0] + 0.03), "{name}: {l:?}");
         }
     }
@@ -509,7 +767,10 @@ mod tests {
     fn oklch_round_trips_in_gamut_colours() {
         let c = oklch(0.7, 0.1, 150.0);
         let [l, a, b] = to_oklab(&c);
-        assert!((l - 0.7).abs() < 0.01 && (a.hypot(b) - 0.1).abs() < 0.01, "{l} {a} {b}");
+        assert!(
+            (l - 0.7).abs() < 0.01 && (a.hypot(b) - 0.1).abs() < 0.01,
+            "{l} {a} {b}"
+        );
         // Out-of-gamut chroma is clipped to the gamut edge, keeping lightness.
         let v = oklch(0.72, 0.4, 25.0);
         assert!((to_oklab(&v)[0] - 0.72).abs() < 0.02);
@@ -519,14 +780,24 @@ mod tests {
     fn gradient_libraries_have_sorted_stops() {
         for b in GRADIENT_LIBRARIES {
             let lib = builtin_library(b.id).unwrap();
-            assert!(lib.iter().all(|s| matches!(s.paint, Paint::Gradient(_))), "{} holds gradients only", b.id);
+            assert!(
+                lib.iter().all(|s| matches!(s.paint, Paint::Gradient(_))),
+                "{} holds gradients only",
+                b.id
+            );
         }
         for lib in all() {
             for s in lib.iter() {
                 if let Paint::Gradient(g) = &s.paint {
                     let st = &g.gradient.stops;
-                    assert!(st.len() >= 2 && st.windows(2).all(|w| w[0].offset <= w[1].offset), "{}", s.name);
-                    assert!(st.iter().all(|s| (0.0..=1.0).contains(&s.offset) && (0.0..=1.0).contains(&s.opacity)));
+                    assert!(
+                        st.len() >= 2 && st.windows(2).all(|w| w[0].offset <= w[1].offset),
+                        "{}",
+                        s.name
+                    );
+                    assert!(st.iter().all(
+                        |s| (0.0..=1.0).contains(&s.offset) && (0.0..=1.0).contains(&s.opacity)
+                    ));
                 }
             }
         }

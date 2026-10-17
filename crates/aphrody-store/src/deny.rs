@@ -7,12 +7,35 @@ const COMMON_DIRS: &[&str] = &[".ssh", ".gnupg", ".aws", "node_modules", "target
 
 /// Directories that hold secrets or heavy private state when the root is an agent home
 /// (`~/.aphrody`); they are ordinary source folders in a repository (`crates/os/ostd/secrets`).
-const HOME_DIRS: &[&str] =
-    &["cookies", "credentials", "secrets", "private", "models", "services", "drive-sync", "ocr"];
+const HOME_DIRS: &[&str] = &[
+    "cookies",
+    "credentials",
+    "secrets",
+    "private",
+    "models",
+    "services",
+    "drive-sync",
+    "ocr",
+];
 
 const DENY_EXTENSIONS: &[&str] = &[
-    "sqlite", "sqlite3", "db", "db-wal", "db-shm", "lance", "pem", "key", "p12", "pfx", "kdbx",
-    "gguf", "safetensors", "onnx", "bin", "pt", "ckpt",
+    "sqlite",
+    "sqlite3",
+    "db",
+    "db-wal",
+    "db-shm",
+    "lance",
+    "pem",
+    "key",
+    "p12",
+    "pfx",
+    "kdbx",
+    "gguf",
+    "safetensors",
+    "onnx",
+    "bin",
+    "pt",
+    "ckpt",
 ];
 
 const DENY_NAMES: &[&str] = &[
@@ -53,7 +76,8 @@ pub fn is_denied(rel_path: &str, policy: DenyPolicy) -> bool {
             return true;
         }
         if is_last {
-            if lower == ".env" || lower.starts_with(".env.") || DENY_NAMES.contains(&lower.as_str()) {
+            if lower == ".env" || lower.starts_with(".env.") || DENY_NAMES.contains(&lower.as_str())
+            {
                 return true;
             }
             if let Some((_, ext)) = lower.rsplit_once('.')
@@ -88,8 +112,14 @@ mod tests {
             ".git/config",
             "a\\.ssh\\config",
         ] {
-            assert!(is_denied(path, DenyPolicy::Repo), "{path} must be denied in a repo");
-            assert!(is_denied(path, DenyPolicy::Home), "{path} must be denied in a home");
+            assert!(
+                is_denied(path, DenyPolicy::Repo),
+                "{path} must be denied in a repo"
+            );
+            assert!(
+                is_denied(path, DenyPolicy::Home),
+                "{path} must be denied in a home"
+            );
         }
     }
 
@@ -103,10 +133,19 @@ mod tests {
             "services/supabase/x",
             "models",
         ] {
-            assert!(is_denied(path, DenyPolicy::Home), "{path} must be denied in a home");
+            assert!(
+                is_denied(path, DenyPolicy::Home),
+                "{path} must be denied in a home"
+            );
         }
-        assert!(!is_denied("crates/os/ostd/secrets/src/lib.rs", DenyPolicy::Repo));
-        assert!(!is_denied("crates/ai/models/src/store.rs", DenyPolicy::Repo));
+        assert!(!is_denied(
+            "crates/os/ostd/secrets/src/lib.rs",
+            DenyPolicy::Repo
+        ));
+        assert!(!is_denied(
+            "crates/ai/models/src/store.rs",
+            DenyPolicy::Repo
+        ));
     }
 
     #[test]

@@ -26,7 +26,8 @@ enum Class {
 
 /// Letters, marks and punctuation of the right-to-left scripts' blocks (digits excepted).
 pub(crate) fn is_rtl(c: char) -> bool {
-    !is_digit(c) && matches!(u32::from(c), 0x0590..=0x08FF | 0xFB1D..=0xFDFF | 0xFE70..=0xFEFC | 0x1_0800..=0x1_0FFF | 0x1_E800..=0x1_EFFF)
+    !is_digit(c)
+        && matches!(u32::from(c), 0x0590..=0x08FF | 0xFB1D..=0xFDFF | 0xFE70..=0xFEFC | 0x1_0800..=0x1_0FFF | 0x1_E800..=0x1_EFFF)
 }
 
 /// The Hebrew block and the Hebrew presentation forms.
@@ -98,7 +99,10 @@ impl Cluster {
         let mut chars = self.text.chars();
         let mut text: String = chars.next().map(mirrored).into_iter().collect();
         text.extend(chars);
-        Cluster { text, class: self.class }
+        Cluster {
+            text,
+            class: self.class,
+        }
     }
 }
 
@@ -107,7 +111,10 @@ fn clusters(s: &str) -> Vec<Cluster> {
     for c in s.chars() {
         match out.last_mut() {
             Some(last) if is_mark(c) => last.text.push(c),
-            _ => out.push(Cluster { text: c.to_string(), class: class(c) }),
+            _ => out.push(Cluster {
+                text: c.to_string(),
+                class: class(c),
+            }),
         }
     }
     out
@@ -129,7 +136,11 @@ pub(crate) fn rtl_base(text: &str) -> bool {
 }
 
 /// Maximal ranges that start and end with a `member` and hold only members and `bridge`s.
-fn runs(cl: &[Cluster], member: impl Fn(&Cluster) -> bool, bridge: impl Fn(&[Cluster], usize) -> bool) -> Vec<std::ops::Range<usize>> {
+fn runs(
+    cl: &[Cluster],
+    member: impl Fn(&Cluster) -> bool,
+    bridge: impl Fn(&[Cluster], usize) -> bool,
+) -> Vec<std::ops::Range<usize>> {
     let mut out = Vec::new();
     let mut i = 0;
     while i < cl.len() {
@@ -155,8 +166,14 @@ fn runs(cl: &[Cluster], member: impl Fn(&Cluster) -> bool, bridge: impl Fn(&[Clu
 
 /// One separator between two digits (`1,000`, `12:30`, `3.5`, `1/2`, `5-6`) keeps a number whole.
 fn number_separator(cl: &[Cluster], j: usize) -> bool {
-    let digit = |k: Option<usize>| k.and_then(|k| cl.get(k)).is_some_and(|c| c.class == Class::Number);
-    cl.get(j).is_some_and(|c| matches!(c.text.as_str(), "." | "," | ":" | "/" | "-" | "+")) && digit(j.checked_sub(1)) && digit(Some(j + 1))
+    let digit = |k: Option<usize>| {
+        k.and_then(|k| cl.get(k))
+            .is_some_and(|c| c.class == Class::Number)
+    };
+    cl.get(j)
+        .is_some_and(|c| matches!(c.text.as_str(), "." | "," | ":" | "/" | "-" | "+"))
+        && digit(j.checked_sub(1))
+        && digit(Some(j + 1))
 }
 
 fn reverse_mirrored(cl: &mut [Cluster]) {
@@ -175,8 +192,10 @@ fn reading(visual: &[Cluster], rtl: bool, wide: bool) -> String {
         // Everything reads right to left, except left-to-right words and numbers.
         reverse_mirrored(&mut cl);
         let ltr = |c: &Cluster| matches!(c.class, Class::Ltr | Class::Number);
-        let bridge =
-            |cl: &[Cluster], j: usize| cl.get(j).is_some_and(|c| c.class == Class::Neutral) && (wide || !neutral_between_word_and_number(cl, j));
+        let bridge = |cl: &[Cluster], j: usize| {
+            cl.get(j).is_some_and(|c| c.class == Class::Neutral)
+                && (wide || !neutral_between_word_and_number(cl, j))
+        };
         for r in runs(&cl, ltr, bridge) {
             if let Some(run) = cl.get_mut(r) {
                 reverse_mirrored(run);
@@ -185,7 +204,10 @@ fn reading(visual: &[Cluster], rtl: bool, wide: bool) -> String {
     } else {
         // Left to right, except right-to-left stretches; numbers inside those read left to right.
         let rtl_member = |c: &Cluster| c.class == Class::Rtl;
-        let bridge = |cl: &[Cluster], j: usize| cl.get(j).is_some_and(|c| c.class == Class::Neutral || (wide && c.class == Class::Number));
+        let bridge = |cl: &[Cluster], j: usize| {
+            cl.get(j)
+                .is_some_and(|c| c.class == Class::Neutral || (wide && c.class == Class::Number))
+        };
         for r in runs(&cl, rtl_member, bridge) {
             if let Some(run) = cl.get_mut(r) {
                 reverse_mirrored(run);
@@ -212,7 +234,10 @@ fn neutral_between_word_and_number(cl: &[Cluster], j: usize) -> bool {
             }
         }
     };
-    matches!((strong(j, -1), strong(j, 1)), (Some(Class::Ltr), Some(Class::Number)) | (Some(Class::Number), Some(Class::Ltr)))
+    matches!(
+        (strong(j, -1), strong(j, 1)),
+        (Some(Class::Ltr), Some(Class::Number)) | (Some(Class::Number), Some(Class::Ltr))
+    )
 }
 
 /// A line read from a content stream (drawn left to right), in logical order.
@@ -226,11 +251,19 @@ pub fn to_logical(visual: &str) -> String {
     // Readings that draw back exactly as the page did; of those, one whose brackets pair up
     // (`12 (PDF)`, not `PDF) 12)`), else the first.
     let exact: Vec<&String> = readings.iter().filter(|r| to_visual(r) == visual).collect();
-    let chosen = exact.iter().find(|r| balanced(r)).or(exact.first()).map_or_else(|| readings[0].clone(), |r| (*r).clone());
+    let chosen = exact
+        .iter()
+        .find(|r| balanced(r))
+        .or(exact.first())
+        .map_or_else(|| readings[0].clone(), |r| (*r).clone());
     // Some producers (LibreOffice) map a bracket drawn in a right-to-left run to the character it
     // stands for, not the shape drawn, so mirroring it again turns it inside out: `)טיוטה(`.
     let swapped: String = chosen.chars().map(mirrored).collect();
-    if !balanced(&chosen) && balanced(&swapped) { swapped } else { chosen }
+    if !balanced(&chosen) && balanced(&swapped) {
+        swapped
+    } else {
+        chosen
+    }
 }
 
 /// Whether every closing bracket closes an open one.
@@ -253,7 +286,11 @@ pub fn to_visual(logical: &str) -> String {
     if !text.chars().any(is_rtl) {
         return text;
     }
-    let level = if rtl_base(&text) { Level::rtl() } else { Level::ltr() };
+    let level = if rtl_base(&text) {
+        Level::rtl()
+    } else {
+        Level::ltr()
+    };
     let info = BidiInfo::new(&text, Some(level));
     let mut out = String::with_capacity(text.len());
     for para in &info.paragraphs {
@@ -312,15 +349,29 @@ mod tests {
         ] {
             let visual = drawn(logical);
             assert_ne!(visual, logical, "{logical:?} should be reordered");
-            assert_eq!(to_visual(&to_logical(&visual)), visual, "{logical:?} drawn as {visual:?}");
-            assert_eq!(to_logical(&visual), logical, "{logical:?} drawn as {visual:?}");
+            assert_eq!(
+                to_visual(&to_logical(&visual)),
+                visual,
+                "{logical:?} drawn as {visual:?}"
+            );
+            assert_eq!(
+                to_logical(&visual),
+                logical,
+                "{logical:?} drawn as {visual:?}"
+            );
         }
     }
 
     #[test]
     fn ambiguous_lines_still_draw_back_the_same() {
         // "abc 12 םולש" is both "abc שלום 12" and "abc 12 שלום"; either must draw the same.
-        for logical in ["abc שלום 12", "שלום 12 abc", "a (ב) c", "דוח Report 2026", "(1) שלום"] {
+        for logical in [
+            "abc שלום 12",
+            "שלום 12 abc",
+            "a (ב) c",
+            "דוח Report 2026",
+            "(1) שלום",
+        ] {
             let visual = drawn(logical);
             assert_eq!(to_visual(&to_logical(&visual)), visual, "{logical:?}");
         }
@@ -355,7 +406,16 @@ mod tests {
     #[test]
     fn controls_are_not_drawn_and_hostile_input_does_not_panic() {
         assert_eq!(to_visual("\u{200F}שלום\u{202B}"), "םולש");
-        for s in ["\u{05B8}", "\u{05B8}\u{05B8}א", "(((", "א\u{0300}", "1-", "-1א", "א\n\tב", "\u{202E}abc"] {
+        for s in [
+            "\u{05B8}",
+            "\u{05B8}\u{05B8}א",
+            "(((",
+            "א\u{0300}",
+            "1-",
+            "-1א",
+            "א\n\tב",
+            "\u{202E}abc",
+        ] {
             let _ = to_visual(&to_logical(s));
         }
         let long = "שלום 12 abc (x) ".repeat(2_000);

@@ -13,12 +13,31 @@ const SIZE: u32 = 200;
 /// 120 pt `text` with its baseline at (40, 150), on a white 200×200 page.
 fn render_text(text: &str, style: CharStyle, items: Vec<AppearanceItem>) -> Rendered {
     let mut d = Document::new(SIZE as f64, SIZE as f64);
-    let mut n = Node::new(NodeId(0), NodeKind::Text(Box::new(TextObject::point(Point::new(40.0, 150.0), text, CharStyle { size: 120.0, ..style }))));
+    let mut n = Node::new(
+        NodeId(0),
+        NodeKind::Text(Box::new(TextObject::point(
+            Point::new(40.0, 150.0),
+            text,
+            CharStyle {
+                size: 120.0,
+                ..style
+            },
+        ))),
+    );
     n.appearance.items = items;
     n.id = d.alloc_id();
     let l = d.layers[0].id;
     d.insert(Some(l), 0, n).unwrap();
-    Renderer::new().render(&d, SIZE, SIZE, Affine::IDENTITY, &RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() })
+    Renderer::new().render(
+        &d,
+        SIZE,
+        SIZE,
+        Affine::IDENTITY,
+        &RenderOptions {
+            background: Some([255, 255, 255, 255]),
+            ..Default::default()
+        },
+    )
 }
 
 fn dark(img: &Rendered, x: u32, y: u32) -> bool {
@@ -40,7 +59,12 @@ fn ink(img: &Rendered) -> (u32, u32, u32, u32) {
 }
 
 fn stroked(join: LineJoin) -> CharStyle {
-    CharStyle { stroke: Paint::solid(Color::BLACK), stroke_width: 16.0, stroke_join: join, ..Default::default() }
+    CharStyle {
+        stroke: Paint::solid(Color::BLACK),
+        stroke_width: 16.0,
+        stroke_join: join,
+        ..Default::default()
+    }
 }
 
 #[test]
@@ -50,25 +74,57 @@ fn round_joined_character_strokes_have_no_miter_spikes() {
     let glyph = ink(&render_text("A", CharStyle::default(), vec![]));
     let round = ink(&render_text("A", stroked(LineJoin::Round), vec![]));
     let miter = ink(&render_text("A", stroked(LineJoin::Miter), vec![]));
-    let reach = |b: (u32, u32, u32, u32)| (glyph.0 - b.0).max(glyph.1 - b.1).max(b.2 - glyph.2).max(b.3 - glyph.3);
-    assert!(reach(round) <= 9, "round joins stay within half the weight: {glyph:?} → {round:?}");
-    assert!(reach(miter) > reach(round) + 2, "miter joins spike: {miter:?} vs {round:?}");
+    let reach = |b: (u32, u32, u32, u32)| {
+        (glyph.0 - b.0)
+            .max(glyph.1 - b.1)
+            .max(b.2 - glyph.2)
+            .max(b.3 - glyph.3)
+    };
+    assert!(
+        reach(round) <= 9,
+        "round joins stay within half the weight: {glyph:?} → {round:?}"
+    );
+    assert!(
+        reach(miter) > reach(round) + 2,
+        "miter joins spike: {miter:?} vs {round:?}"
+    );
 }
 
 #[test]
 fn character_and_object_strokes_on_type_are_dashed() {
     // An "I" without a fill: its outline drawn with 8/8 dashes breaks up along the left stem edge.
-    let none = CharStyle { fill: Paint::None, ..Default::default() };
-    let dash = Some(Dash { pattern: vec![8.0, 8.0], ..Default::default() });
+    let none = CharStyle {
+        fill: Paint::None,
+        ..Default::default()
+    };
+    let dash = Some(Dash {
+        pattern: vec![8.0, 8.0],
+        ..Default::default()
+    });
     let transitions = |img: &Rendered| {
         let (x0, y0, _, y1) = ink(img);
         let col = x0 + 1;
-        (y0..y1).filter(|y| dark(img, col, *y) != dark(img, col, y + 1)).count()
+        (y0..y1)
+            .filter(|y| dark(img, col, *y) != dark(img, col, y + 1))
+            .count()
     };
-    let solid = CharStyle { stroke: Paint::solid(Color::BLACK), stroke_width: 3.0, ..none.clone() };
-    assert!(transitions(&render_text("I", solid.clone(), vec![])) <= 2, "a solid stroke is continuous");
-    let chars = CharStyle { stroke_dash: dash.clone(), ..solid };
-    assert!(transitions(&render_text("I", chars, vec![])) >= 6, "character dashes");
+    let solid = CharStyle {
+        stroke: Paint::solid(Color::BLACK),
+        stroke_width: 3.0,
+        ..none.clone()
+    };
+    assert!(
+        transitions(&render_text("I", solid.clone(), vec![])) <= 2,
+        "a solid stroke is continuous"
+    );
+    let chars = CharStyle {
+        stroke_dash: dash.clone(),
+        ..solid
+    };
+    assert!(
+        transitions(&render_text("I", chars, vec![])) >= 6,
+        "character dashes"
+    );
     let mut st = vectorcraft_doc::StrokeLayer::new(Paint::solid(Color::BLACK), 3.0);
     st.dash = dash;
     let object = render_text("I", none, vec![AppearanceItem::Stroke(st.clone())]);
@@ -76,8 +132,18 @@ fn character_and_object_strokes_on_type_are_dashed() {
     // And its opacity.
     st.opacity = 0.5;
     st.dash = None;
-    let half = render_text("I", CharStyle { fill: Paint::None, ..Default::default() }, vec![AppearanceItem::Stroke(st)]);
+    let half = render_text(
+        "I",
+        CharStyle {
+            fill: Paint::None,
+            ..Default::default()
+        },
+        vec![AppearanceItem::Stroke(st)],
+    );
     let (x0, y0, _, y1) = ink(&render_text("I", CharStyle::default(), vec![]));
     let p = half.pixel(x0, (y0 + y1) / 2);
-    assert!(p[0] > 90 && p[0] < 200, "a half-opaque stroke is grey: {p:?}");
+    assert!(
+        p[0] > 90 && p[0] < 200,
+        "a half-opaque stroke is grey: {p:?}"
+    );
 }

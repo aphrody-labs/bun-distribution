@@ -1669,7 +1669,6 @@ impl GraphicsPipeline {
                     ))
                     .alpha_blend_op(maxwell_to_vk::blend_equation(attachment.equation_alpha()))
                     .color_write_mask(write_mask)
-                    
             })
             .collect::<Vec<_>>();
         let color_blend = vk::PipelineColorBlendStateCreateInfo::default()
@@ -1690,8 +1689,8 @@ impl GraphicsPipeline {
             alpha_to_one_enable: device.supports_dynamic_state3_alpha_to_one_enable(),
         };
         let dynamic_states = dynamic_states_for_fixed_state(fixed_state, dynamic_support);
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
 
         let mut flags = vk::PipelineCreateFlags::empty();
         if device.is_khr_pipeline_executable_properties_enabled()

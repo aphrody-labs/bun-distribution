@@ -15,11 +15,16 @@
 
 use std::sync::{Once, OnceLock};
 
-use filmcraft_export::{BitrateMode, EncodedPacket, EncoderFrame, ExportError, ExportSettings, Format, H264Pass, H264Profile, HardwareEncoding, VideoEncoder};
+use filmcraft_export::{
+    BitrateMode, EncodedPacket, EncoderFrame, ExportError, ExportSettings, Format, H264Pass,
+    H264Profile, HardwareEncoding, VideoEncoder,
+};
 use filmcraft_isobmff::{AvcConfig, HevcConfig, SampleEntry};
 use filmcraft_time::FrameRate;
 
-use crate::videotoolbox_encode::{ParamSets, VtCodec, VtConfig, VtEncoder, VtPacket, VtProfile, VtRate};
+use crate::videotoolbox_encode::{
+    ParamSets, VtCodec, VtConfig, VtEncoder, VtPacket, VtProfile, VtRate,
+};
 
 /// The hardware encoder's configuration for an export, or why it is not used for it.
 pub fn config_for(w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Result<VtConfig, String> {
@@ -45,17 +50,29 @@ pub fn config_for(w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Result
     if s.pixel_aspect.is_some_and(|(n, d)| n != d) {
         return Err("non-square pixels".into());
     }
-    let timescale = u32::try_from(rate.num).ok().filter(|n| *n > 0).ok_or("invalid frame rate")?;
-    let frame_duration = u32::try_from(rate.den).ok().filter(|d| *d > 0).ok_or("invalid frame rate")?;
+    let timescale = u32::try_from(rate.num)
+        .ok()
+        .filter(|n| *n > 0)
+        .ok_or("invalid frame rate")?;
+    let frame_duration = u32::try_from(rate.den)
+        .ok()
+        .filter(|d| *d > 0)
+        .ok_or("invalid frame rate")?;
     let kbps = s.bitrate_kbps.max(100);
-    let max_kbps = s.max_bitrate_kbps.filter(|m| *m >= kbps).unwrap_or(kbps.saturating_mul(3) / 2);
+    let max_kbps = s
+        .max_bitrate_kbps
+        .filter(|m| *m >= kbps)
+        .unwrap_or(kbps.saturating_mul(3) / 2);
     let fps = f64::from(timescale) / f64::from(frame_duration);
     Ok(VtConfig {
         width: w,
         height: h,
         timescale,
         frame_duration,
-        keyframe_interval: s.keyframe_distance.filter(|k| *k > 0).unwrap_or_else(|| (fps * 2.0).round().max(1.0) as u32),
+        keyframe_interval: s
+            .keyframe_distance
+            .filter(|k| *k > 0)
+            .unwrap_or_else(|| (fps * 2.0).round().max(1.0) as u32),
         profile: match (hevc, s.h264_profile) {
             (true, _) => VtProfile::HevcMain,
             (false, H264Profile::Baseline) => VtProfile::Baseline,
@@ -64,7 +81,10 @@ pub fn config_for(w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Result
         },
         rate: match s.bitrate_mode {
             BitrateMode::Cbr => VtRate::Cbr { kbps },
-            _ => VtRate::Vbr { target_kbps: kbps, max_kbps },
+            _ => VtRate::Vbr {
+                target_kbps: kbps,
+                max_kbps,
+            },
         },
     })
 }
@@ -83,7 +103,10 @@ pub fn hevc_available() -> bool {
             frame_duration: 1,
             keyframe_interval: 30,
             profile: VtProfile::HevcMain,
-            rate: VtRate::Vbr { target_kbps: 2000, max_kbps: 3000 },
+            rate: VtRate::Vbr {
+                target_kbps: 2000,
+                max_kbps: 3000,
+            },
         };
         let result = VtEncoder::new(probe);
         if let Err(why) = &result {
@@ -105,9 +128,11 @@ pub fn hevc_probed() -> bool {
 pub fn warm_hevc_probe() {
     static STARTED: Once = Once::new();
     STARTED.call_once(|| {
-        let spawned = std::thread::Builder::new().name("filmcraft-hevc-probe".into()).spawn(|| {
-            let _ = std::panic::catch_unwind(hevc_available);
-        });
+        let spawned = std::thread::Builder::new()
+            .name("filmcraft-hevc-probe".into())
+            .spawn(|| {
+                let _ = std::panic::catch_unwind(hevc_available);
+            });
         if let Err(why) = spawned {
             log::info!("HEVC probe not started ahead of time: {why}");
         }
@@ -140,7 +165,13 @@ pub fn videotoolbox_encoder_factory(
     match VtEncoder::new(config) {
         Ok(vt) => {
             filmcraft_export::note_hw_encode_session();
-            Some(Ok(Box::new(HardwareEncoder { vt, y: Vec::new(), u: Vec::new(), v: Vec::new(), decoded: 0 })))
+            Some(Ok(Box::new(HardwareEncoder {
+                vt,
+                y: Vec::new(),
+                u: Vec::new(),
+                v: Vec::new(),
+                decoded: 0,
+            })))
         }
         Err(why) => {
             log::info!("hardware {name} encoding declined: {why}");
@@ -152,10 +183,16 @@ pub fn videotoolbox_encoder_factory(
 
 /// The `hvcC` configuration of an HEVC stream: VideoToolbox's own record when it wrote one.
 fn hevc_config(p: &ParamSets) -> Result<HevcConfig, String> {
-    let record = p.hvcc.as_deref().ok_or("VideoToolbox wrote no hvcC record for the stream")?;
+    let record = p
+        .hvcc
+        .as_deref()
+        .ok_or("VideoToolbox wrote no hvcC record for the stream")?;
     let cfg = HevcConfig::parse(record).map_err(|e| format!("unreadable hvcC record: {e}"))?;
-    if cfg.vps().is_empty() || cfg.sps().is_empty() || cfg.pps().is_empty() || cfg.length_size != 4 {
-        return Err("the hvcC record lacks a parameter set or does not use 4-byte NAL lengths".into());
+    if cfg.vps().is_empty() || cfg.sps().is_empty() || cfg.pps().is_empty() || cfg.length_size != 4
+    {
+        return Err(
+            "the hvcC record lacks a parameter set or does not use 4-byte NAL lengths".into(),
+        );
     }
     Ok(cfg)
 }
@@ -188,7 +225,12 @@ impl HardwareEncoder {
                     n.saturating_mul(i64::from(duration))
                 )));
             }
-            out.push(EncodedPacket { data: p.data, key: p.key, duration, composition_offset: 0 });
+            out.push(EncodedPacket {
+                data: p.data,
+                key: p.key,
+                duration,
+                composition_offset: 0,
+            });
         }
         Ok(out)
     }
@@ -197,14 +239,23 @@ impl HardwareEncoder {
 impl VideoEncoder for HardwareEncoder {
     fn sample_entry(&self) -> SampleEntry {
         let c = self.vt.config();
-        let (w, h) = (c.width.min(u32::from(u16::MAX)) as u16, c.height.min(u32::from(u16::MAX)) as u16);
+        let (w, h) = (
+            c.width.min(u32::from(u16::MAX)) as u16,
+            c.height.min(u32::from(u16::MAX)) as u16,
+        );
         match (c.profile.codec(), self.vt.parameter_sets()) {
             (VtCodec::H264, p) => {
                 let (sps, pps) = p.map(|p| (p.sps, p.pps)).unwrap_or_default();
                 SampleEntry::avc(AvcConfig::new(sps, pps, 4), w, h)
             }
             // `encode` refuses to go on without a usable record, so a stream that got this far has one
-            (VtCodec::Hevc, p) => SampleEntry::hevc(p.as_ref().and_then(|p| hevc_config(p).ok()).unwrap_or_default(), w, h),
+            (VtCodec::Hevc, p) => SampleEntry::hevc(
+                p.as_ref()
+                    .and_then(|p| hevc_config(p).ok())
+                    .unwrap_or_default(),
+                w,
+                h,
+            ),
         }
     }
 
@@ -216,21 +267,37 @@ impl VideoEncoder for HardwareEncoder {
         let c = self.vt.config();
         let codec = c.profile.codec();
         if f.hdr.is_some() {
-            return Err(ExportError::Unsupported("hardware encoding does not take HDR pictures".into()));
+            return Err(ExportError::Unsupported(
+                "hardware encoding does not take HDR pictures".into(),
+            ));
         }
         if (f.width, f.height) != (c.width, c.height) {
-            return Err(ExportError::Encode(format!("picture is {}x{}, the encoder was created for {}x{}", f.width, f.height, c.width, c.height)));
+            return Err(ExportError::Encode(format!(
+                "picture is {}x{}, the encoder was created for {}x{}",
+                f.width, f.height, c.width, c.height
+            )));
         }
         let (w, h) = (f.width as usize, f.height as usize);
         if f.rgba.len() < w.saturating_mul(h).saturating_mul(4) {
-            return Err(ExportError::Encode("the RGBA picture is smaller than its size".into()));
+            return Err(ExportError::Encode(
+                "the RGBA picture is smaller than its size".into(),
+            ));
         }
-        filmcraft_export::timed(filmcraft_export::Stage::Convert, || filmcraft_export::rgba_to_yuv420_8(f.rgba, w, h, &mut self.y, &mut self.u, &mut self.v));
-        let packets = self.vt.encode(f.index, &self.y, &self.u, &self.v).map_err(ExportError::Encode)?;
+        filmcraft_export::timed(filmcraft_export::Stage::Convert, || {
+            filmcraft_export::rgba_to_yuv420_8(f.rgba, w, h, &mut self.y, &mut self.u, &mut self.v)
+        });
+        let packets = self
+            .vt
+            .encode(f.index, &self.y, &self.u, &self.v)
+            .map_err(ExportError::Encode)?;
         filmcraft_export::note_hw_encode_frame();
         // the muxer needs the parameter sets after the first group of pictures
         if f.index == 0 {
-            let params = self.vt.parameter_sets().ok_or_else(|| ExportError::Encode("VideoToolbox returned no parameter sets for the first frame".into()))?;
+            let params = self.vt.parameter_sets().ok_or_else(|| {
+                ExportError::Encode(
+                    "VideoToolbox returned no parameter sets for the first frame".into(),
+                )
+            })?;
             if codec == VtCodec::Hevc {
                 hevc_config(&params).map_err(ExportError::Encode)?;
             }

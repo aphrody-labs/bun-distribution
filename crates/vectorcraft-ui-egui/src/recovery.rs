@@ -49,7 +49,10 @@ pub fn frame(app: &mut VectorcraftApp, now: f64) -> Option<f64> {
     }
     let interval = f64::from(app.session.prefs.autosave_interval.max(1)) * 60.0;
     let next = app.recovery.last.map(|t| t + interval - now)?;
-    Some(next.min(app.recovery.beat + recovery::HEARTBEAT_EVERY - now).max(1.0))
+    Some(
+        next.min(app.recovery.beat + recovery::HEARTBEAT_EVERY - now)
+            .max(1.0),
+    )
 }
 
 /// Ask about the copies a crash left behind, if any (the Recover Documents dialog). → whether it
@@ -58,9 +61,17 @@ pub fn offer(app: &mut VectorcraftApp) -> bool {
     if recovery::store(&app.session).is_none() || app.ui.dialog.is_some() {
         return false;
     }
-    let Ok(r) = app.session.execute("file.recovery.list", &json!({})) else { return false };
+    let Ok(r) = app.session.execute("file.recovery.list", &json!({})) else {
+        return false;
+    };
     // Neither this app's own nor kept by another VectorCraft that is running.
-    let left: Vec<Value> = r["copies"].as_array().into_iter().flatten().filter(|c| c["open"] == false && c["running"] == false).cloned().collect();
+    let left: Vec<Value> = r["copies"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|c| c["open"] == false && c["running"] == false)
+        .cloned()
+        .collect();
     if left.is_empty() {
         return false;
     }
@@ -91,11 +102,18 @@ pub fn tick(app: &mut VectorcraftApp, now: f64) -> usize {
 
 /// Start a recovery copy of every document that needs one and `pick` picks (by uid) → how many
 /// were started.
-fn write(app: &mut VectorcraftApp, store: &Arc<dyn RecoveryStore>, pick: impl Fn(u64) -> bool) -> usize {
+fn write(
+    app: &mut VectorcraftApp,
+    store: &Arc<dyn RecoveryStore>,
+    pick: impl Fn(u64) -> bool,
+) -> usize {
     recovery::forget_clean(&mut app.session);
     let jobs = match recovery::jobs(&mut app.session, store) {
         // A document whose save or last copy is still being written waits for the next round.
-        Ok((jobs, _)) => jobs.into_iter().filter(|j| pick(j.uid) && !app.background.busy_with(j.uid)).collect::<Vec<_>>(),
+        Ok((jobs, _)) => jobs
+            .into_iter()
+            .filter(|j| pick(j.uid) && !app.background.busy_with(j.uid))
+            .collect::<Vec<_>>(),
         Err(e) => {
             app.status(format!("Couldn't save recovery data: {e}"));
             return 0;
@@ -103,7 +121,11 @@ fn write(app: &mut VectorcraftApp, store: &Arc<dyn RecoveryStore>, pick: impl Fn
     };
     let mut started = 0;
     for job in jobs {
-        let (uid, label, title) = (job.uid, format!("Saving recovery data for {}", job.title), job.title.clone());
+        let (uid, label, title) = (
+            job.uid,
+            format!("Saving recovery data for {}", job.title),
+            job.title.clone(),
+        );
         let (done, store) = (job.clone(), store.clone());
         let work = move |_: Writer| job.write(store.as_ref());
         let then = move |app: &mut VectorcraftApp, r: Result<Value, String>| {
@@ -124,9 +146,20 @@ fn write(app: &mut VectorcraftApp, store: &Arc<dyn RecoveryStore>, pick: impl Fn
 /// The startup dialog's OK (Restore) or Discard: every copy it lists.
 pub fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     app.ui.dialog = None;
-    let id = if d.bool("discard") { "file.recovery.discard" } else { "file.recovery.restore" };
-    let files: Vec<String> =
-        d.fields.get("copies").and_then(Value::as_array).into_iter().flatten().filter_map(|c| c["file"].as_str()).map(str::to_string).collect();
+    let id = if d.bool("discard") {
+        "file.recovery.discard"
+    } else {
+        "file.recovery.restore"
+    };
+    let files: Vec<String> = d
+        .fields
+        .get("copies")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|c| c["file"].as_str())
+        .map(str::to_string)
+        .collect();
     let (mut done, mut errors) = (vec![], vec![]);
     for file in files {
         match app.run(id, json!({ "file": file })) {
@@ -144,7 +177,10 @@ pub fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     }
     app.status(match id {
         "file.recovery.discard" => format!("Discarded {} recovered document(s)", done.len()),
-        _ => format!("Restored {} recovered document(s): save them to keep them", done.len()),
+        _ => format!(
+            "Restored {} recovered document(s): save them to keep them",
+            done.len()
+        ),
     });
     Ok(json!(done))
 }

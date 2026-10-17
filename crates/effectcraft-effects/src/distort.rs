@@ -9,8 +9,21 @@ use rayon::prelude::*;
 use crate::util::layer_rect;
 use crate::{Buf, EffectCtx, EffectSpec, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Distort", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Distort",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 /// Resample through `f(x, y) -> source point` (pixel coordinates, centres at +0.5).
@@ -19,7 +32,11 @@ fn remap(src: &Image, repeat: bool, f: impl Fn(f64, f64) -> (f64, f64) + Sync) -
     out.rows_mut().for_each(|(y, row)| {
         for (x, px) in row.iter_mut().enumerate() {
             let (sx, sy) = f(x as f64 + 0.5, y as f64 + 0.5);
-            *px = if repeat { src.sample_bilinear_clamped(sx, sy) } else { src.sample_bilinear(sx, sy) };
+            *px = if repeat {
+                src.sample_bilinear_clamped(sx, sy)
+            } else {
+                src.sample_bilinear(sx, sy)
+            };
         }
     });
     out
@@ -28,7 +45,8 @@ fn remap(src: &Image, repeat: bool, f: impl Fn(f64, f64) -> (f64, f64) + Sync) -
 fn twirl(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let ang = ctx.params.f("angle").to_radians();
     // Twirl Radius is a percentage of the layer's larger dimension: 50 reaches the edges.
-    let r = (ctx.params.f("radius") / 100.0 * b.layer_w(ctx).max(b.layer_h(ctx)) * b.scale).max(1.0);
+    let r =
+        (ctx.params.f("radius") / 100.0 * b.layer_w(ctx).max(b.layer_h(ctx)) * b.scale).max(1.0);
     let c = b.to_px(ctx.params.v2("center"));
     b.img = remap(&b.img, false, |x, y| {
         let (dx, dy) = (x - c.0, y - c.1);
@@ -130,16 +148,38 @@ fn wave_shape(kind: u32, t: f64, seed: u32) -> f64 {
     }
 }
 
-pub(crate) const WAVE_TYPES: [&str; 9] = ["Sine", "Square", "Triangle", "Sawtooth", "Circle", "Semicircle", "Uncircle", "Noise", "Smooth Noise"];
-pub(crate) const WAVE_PINNING: [&str; 9] =
-    ["None", "All Edges", "Center", "Left Edge", "Top Edge", "Right Edge", "Bottom Edge", "Horizontal Edges", "Vertical Edges"];
+pub(crate) const WAVE_TYPES: [&str; 9] = [
+    "Sine",
+    "Square",
+    "Triangle",
+    "Sawtooth",
+    "Circle",
+    "Semicircle",
+    "Uncircle",
+    "Noise",
+    "Smooth Noise",
+];
+pub(crate) const WAVE_PINNING: [&str; 9] = [
+    "None",
+    "All Edges",
+    "Center",
+    "Left Edge",
+    "Top Edge",
+    "Right Edge",
+    "Bottom Edge",
+    "Horizontal Edges",
+    "Vertical Edges",
+];
 
 /// Wave Warp pinning weight (0 = pinned, 1 = free) at buffer pixel (x, y) of the layer
 /// rectangle `(x0, y0, w, h)`.
 fn wave_pin(pin: u32, x: f64, y: f64, rect: (f64, f64, f64, f64)) -> f64 {
     let (x0, y0, w, h) = rect;
     // Measured between the outermost pixel centres, so pinned edges stay exactly in place.
-    let (u, v) = (((x - x0 - 0.5) / (w - 1.0).max(1.0)).clamp(0.0, 1.0), ((y - y0 - 0.5) / (h - 1.0).max(1.0)).clamp(0.0, 1.0));
+    let (u, v) = (
+        ((x - x0 - 0.5) / (w - 1.0).max(1.0)).clamp(0.0, 1.0),
+        ((y - y0 - 0.5) / (h - 1.0).max(1.0)).clamp(0.0, 1.0),
+    );
     let horiz = (v.min(1.0 - v) * 2.0).clamp(0.0, 1.0);
     let vert = (u.min(1.0 - u) * 2.0).clamp(0.0, 1.0);
     match pin {
@@ -173,7 +213,9 @@ fn wave_warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
     b.img = remap(&b.img, false, |x, y| {
         // Waves travel along `dir`; displacement is perpendicular to it.
         let along = x * dx + y * dy;
-        let disp = wave_shape(kind, along / w * std::f64::consts::TAU + phase, seed) * h * wave_pin(pin, x, y, rect);
+        let disp = wave_shape(kind, along / w * std::f64::consts::TAU + phase, seed)
+            * h
+            * wave_pin(pin, x, y, rect);
         (x + dy * disp, y - dx * disp)
     });
     b
@@ -181,12 +223,14 @@ fn wave_warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 fn ripple(ctx: &EffectCtx, mut b: Buf) -> Buf {
     // Radius is a percentage of the layer: 100 from the layer centre reaches the edge.
-    let r = (ctx.params.f("radius") / 100.0 * b.layer_w(ctx).max(b.layer_h(ctx)) * 0.5 * b.scale).max(1.0);
+    let r = (ctx.params.f("radius") / 100.0 * b.layer_w(ctx).max(b.layer_h(ctx)) * 0.5 * b.scale)
+        .max(1.0);
     let asymmetric = ctx.params.e("conversion") == 0;
     let c = b.to_px(ctx.params.v2("center"));
     let w = (ctx.params.f("waveWidth") * b.scale).max(1.0);
     let h = ctx.params.f("waveHeight") * b.scale;
-    let phase = ctx.params.f("phase").to_radians() - ctx.time * ctx.params.f("speed") * std::f64::consts::TAU;
+    let phase = ctx.params.f("phase").to_radians()
+        - ctx.time * ctx.params.f("speed") * std::f64::consts::TAU;
     b.img = remap(&b.img, false, |x, y| {
         let (dx, dy) = (x - c.0, y - c.1);
         let d = (dx * dx + dy * dy).sqrt();
@@ -197,7 +241,11 @@ fn ripple(ctx: &EffectCtx, mut b: Buf) -> Buf {
         let arg = d / w * std::f64::consts::TAU + phase;
         let o = arg.sin() * h * fall;
         // Asymmetric ripples also move sideways (a quarter wave out of step).
-        let t = if asymmetric { arg.cos() * h * fall * 0.5 } else { 0.0 };
+        let t = if asymmetric {
+            arg.cos() * h * fall * 0.5
+        } else {
+            0.0
+        };
         let (ux, uy) = (dx / d, dy / d);
         (x + ux * o - uy * t, y + uy * o + ux * t)
     });
@@ -210,7 +258,11 @@ fn mirror(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let n = (a.cos(), a.sin());
     b.img = remap(&b.img, false, |x, y| {
         let d = (x - c.0) * n.0 + (y - c.1) * n.1;
-        if d > 0.0 { (x - 2.0 * d * n.0, y - 2.0 * d * n.1) } else { (x, y) }
+        if d > 0.0 {
+            (x - 2.0 * d * n.0, y - 2.0 * d * n.1)
+        } else {
+            (x, y)
+        }
     });
     b
 }
@@ -222,7 +274,9 @@ fn offset(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let (cx, cy) = (w / 2.0, h / 2.0);
     let (sx, sy) = b.to_px(shift);
     let orig = b.img.clone();
-    let mut o = remap(&b.img, false, |x, y| ((x - (sx - cx)).rem_euclid(w), (y - (sy - cy)).rem_euclid(h)));
+    let mut o = remap(&b.img, false, |x, y| {
+        ((x - (sx - cx)).rem_euclid(w), (y - (sy - cy)).rem_euclid(h))
+    });
     if blend > 0.0 {
         for (p, q) in o.data.iter_mut().zip(&orig.data) {
             for i in 0..4 {
@@ -276,7 +330,11 @@ fn transform_matrix(pr: &crate::Params, b: &Buf) -> Mat3 {
     let anchor = b.to_px(pr.v2("anchor"));
     let pos = b.to_px(pr.v2("position"));
     let sh = pr.f("scaleHeight");
-    let sw = if pr.b("uniform") { sh } else { pr.f("scaleWidth") };
+    let sw = if pr.b("uniform") {
+        sh
+    } else {
+        pr.f("scaleWidth")
+    };
     Mat3::translate(vec2(pos.0, pos.1))
         * Mat3::rotate_deg(pr.f("rotation"))
         * Mat3::skew_deg(pr.f("skew"), pr.f("skewAxis"))
@@ -289,12 +347,20 @@ fn transform(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let pos = b.to_px(ctx.params.v2("position"));
     let uniform = ctx.params.b("uniform");
     let sh = ctx.params.f("scaleHeight");
-    let sw = if uniform { sh } else { ctx.params.f("scaleWidth") };
+    let sw = if uniform {
+        sh
+    } else {
+        ctx.params.f("scaleWidth")
+    };
     let skew = ctx.params.f("skew");
     let skew_axis = ctx.params.f("skewAxis");
     let rot = ctx.params.f("rotation");
     let opacity = ctx.params.f("opacity") as f32 / 100.0;
-    let sampling = if ctx.params.e("sampling") == 1 { effectcraft_raster::Sampling::Bicubic } else { effectcraft_raster::Sampling::Bilinear };
+    let sampling = if ctx.params.e("sampling") == 1 {
+        effectcraft_raster::Sampling::Bicubic
+    } else {
+        effectcraft_raster::Sampling::Bilinear
+    };
     // Motion blur: the transform at Samples instants across the shutter, averaged (the
     // transform at other times comes from the host; without one the frame renders sharp).
     if let Some((angle, phase, n)) = transform_shutter(ctx)
@@ -305,20 +371,31 @@ fn transform(ctx: &EffectCtx, mut b: Buf) -> Buf {
         let mut count = 0.0f32;
         for k in 0..n {
             let t = ctx.time + (phase + angle * k as f64 / (n - 1) as f64) / 360.0 * fd;
-            let Some(pr) = host.params_at(t) else { continue };
+            let Some(pr) = host.params_at(t) else {
+                continue;
+            };
             let mut one = Image::new(b.img.width, b.img.height);
             let op = pr.f("opacity") as f32 / 100.0;
             effectcraft_raster::composite_warp(
                 &mut one,
                 &b.img,
                 &transform_matrix(&pr, &b),
-                &effectcraft_raster::WarpOpts { opacity: op, sampling, ..Default::default() },
+                &effectcraft_raster::WarpOpts {
+                    opacity: op,
+                    sampling,
+                    ..Default::default()
+                },
             );
-            acc.data.iter_mut().zip(&one.data).for_each(|(a, o)| (0..4).for_each(|c| a[c] += o[c]));
+            acc.data
+                .iter_mut()
+                .zip(&one.data)
+                .for_each(|(a, o)| (0..4).for_each(|c| a[c] += o[c]));
             count += 1.0;
         }
         if count > 0.0 {
-            acc.data.iter_mut().for_each(|p| p.iter_mut().for_each(|v| *v /= count));
+            acc.data
+                .iter_mut()
+                .for_each(|p| p.iter_mut().for_each(|v| *v /= count));
             b.img = acc;
             return b;
         }
@@ -329,7 +406,16 @@ fn transform(ctx: &EffectCtx, mut b: Buf) -> Buf {
         * Mat3::scale(vec2(sw / 100.0, sh / 100.0))
         * Mat3::translate(vec2(-anchor.0, -anchor.1));
     let mut out = Image::new(b.img.width, b.img.height);
-    effectcraft_raster::composite_warp(&mut out, &b.img, &m, &effectcraft_raster::WarpOpts { opacity, sampling, ..Default::default() });
+    effectcraft_raster::composite_warp(
+        &mut out,
+        &b.img,
+        &m,
+        &effectcraft_raster::WarpOpts {
+            opacity,
+            sampling,
+            ..Default::default()
+        },
+    );
     b.img = out;
     b
 }
@@ -342,7 +428,9 @@ fn corner_pin(ctx: &EffectCtx, mut b: Buf) -> Buf {
     });
     let quad = Mat3::square_to_quad(q);
     let o = b.to_px([0.0, 0.0]);
-    let m = quad * Mat3::scale(vec2(1.0 / (w * b.scale), 1.0 / (h * b.scale))) * Mat3::translate(vec2(-o.0, -o.1));
+    let m = quad
+        * Mat3::scale(vec2(1.0 / (w * b.scale), 1.0 / (h * b.scale)))
+        * Mat3::translate(vec2(-o.0, -o.1));
     let mut out = Image::new(b.img.width, b.img.height);
     effectcraft_raster::composite_warp(&mut out, &b.img, &m, &Default::default());
     b.img = out;
@@ -366,7 +454,12 @@ pub fn specs() -> Vec<EffectSpec> {
             "Twirl",
             vec![
                 p("angle", "Angle", num(0.0), ParamUi::Angle),
-                p("radius", "Twirl Radius", num(30.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "radius",
+                    "Twirl Radius",
+                    num(30.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
                 p("center", "Twirl Center", pt(0.5, 0.5), ParamUi::Point),
             ],
             twirl,
@@ -374,19 +467,52 @@ pub fn specs() -> Vec<EffectSpec> {
         spec(
             "ec.distort.spherize",
             "Spherize",
-            vec![p("radius", "Radius", num(0.0), slider(0.0, 2500.0, 0.0, 2500.0, 1)), p("center", "Center of Sphere", pt(0.5, 0.5), ParamUi::Point)],
+            vec![
+                p(
+                    "radius",
+                    "Radius",
+                    num(0.0),
+                    slider(0.0, 2500.0, 0.0, 2500.0, 1),
+                ),
+                p("center", "Center of Sphere", pt(0.5, 0.5), ParamUi::Point),
+            ],
             spherize,
         ),
         spec(
             "ec.distort.bulge",
             "Bulge",
             vec![
-                p("hradius", "Horizontal Radius", num(50.0), slider(0.0, 4000.0, 0.0, 1000.0, 1)),
-                p("vradius", "Vertical Radius", num(50.0), slider(0.0, 4000.0, 0.0, 1000.0, 1)),
+                p(
+                    "hradius",
+                    "Horizontal Radius",
+                    num(50.0),
+                    slider(0.0, 4000.0, 0.0, 1000.0, 1),
+                ),
+                p(
+                    "vradius",
+                    "Vertical Radius",
+                    num(50.0),
+                    slider(0.0, 4000.0, 0.0, 1000.0, 1),
+                ),
                 p("center", "Bulge Center", pt(0.5, 0.5), ParamUi::Point),
-                p("height", "Bulge Height", num(1.0), slider(-4.0, 4.0, -4.0, 4.0, 2)),
-                p("taperRadius", "Taper Radius", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("pinAllEdges", "Pin All Edges", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "height",
+                    "Bulge Height",
+                    num(1.0),
+                    slider(-4.0, 4.0, -4.0, 4.0, 2),
+                ),
+                p(
+                    "taperRadius",
+                    "Taper Radius",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "pinAllEdges",
+                    "Pin All Edges",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             bulge,
         ),
@@ -395,10 +521,25 @@ pub fn specs() -> Vec<EffectSpec> {
             "Wave Warp",
             vec![
                 p("waveType", "Wave Type", Value::Enum(0), popup(&WAVE_TYPES)),
-                p("height", "Wave Height", num(10.0), slider(-1000.0, 1000.0, -100.0, 100.0, 0)),
-                p("width", "Wave Width", num(40.0), slider(1.0, 10000.0, 1.0, 500.0, 0)),
+                p(
+                    "height",
+                    "Wave Height",
+                    num(10.0),
+                    slider(-1000.0, 1000.0, -100.0, 100.0, 0),
+                ),
+                p(
+                    "width",
+                    "Wave Width",
+                    num(40.0),
+                    slider(1.0, 10000.0, 1.0, 500.0, 0),
+                ),
                 p("direction", "Direction", num(90.0), ParamUi::Angle),
-                p("speed", "Wave Speed", num(1.0), slider(-100.0, 100.0, -5.0, 5.0, 1)),
+                p(
+                    "speed",
+                    "Wave Speed",
+                    num(1.0),
+                    slider(-100.0, 100.0, -5.0, 5.0, 1),
+                ),
                 p("pinning", "Pinning", Value::Enum(0), popup(&WAVE_PINNING)),
                 p("phase", "Phase", num(0.0), ParamUi::Angle),
             ],
@@ -408,12 +549,37 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.ripple",
             "Ripple",
             vec![
-                p("radius", "Radius", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "radius",
+                    "Radius",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
                 p("center", "Center of Ripple", pt(0.5, 0.5), ParamUi::Point),
-                p("conversion", "Type of Conversion", Value::Enum(0), popup(&["Asymmetric", "Symmetric"])),
-                p("speed", "Wave Speed", num(1.0), slider(-15.0, 15.0, -5.0, 5.0, 1)),
-                p("waveWidth", "Wave Width", num(20.0), slider(1.0, 1000.0, 1.0, 100.0, 1)),
-                p("waveHeight", "Wave Height", num(10.0), slider(0.0, 400.0, 0.0, 100.0, 1)),
+                p(
+                    "conversion",
+                    "Type of Conversion",
+                    Value::Enum(0),
+                    popup(&["Asymmetric", "Symmetric"]),
+                ),
+                p(
+                    "speed",
+                    "Wave Speed",
+                    num(1.0),
+                    slider(-15.0, 15.0, -5.0, 5.0, 1),
+                ),
+                p(
+                    "waveWidth",
+                    "Wave Width",
+                    num(20.0),
+                    slider(1.0, 1000.0, 1.0, 100.0, 1),
+                ),
+                p(
+                    "waveHeight",
+                    "Wave Height",
+                    num(10.0),
+                    slider(0.0, 400.0, 0.0, 100.0, 1),
+                ),
                 p("phase", "Ripple Phase", num(0.0), ParamUi::Angle),
             ],
             ripple,
@@ -421,21 +587,42 @@ pub fn specs() -> Vec<EffectSpec> {
         spec(
             "ec.distort.mirror",
             "Mirror",
-            vec![p("center", "Reflection Center", pt(0.5, 0.5), ParamUi::Point), p("angle", "Reflection Angle", num(0.0), ParamUi::Angle)],
+            vec![
+                p("center", "Reflection Center", pt(0.5, 0.5), ParamUi::Point),
+                p("angle", "Reflection Angle", num(0.0), ParamUi::Angle),
+            ],
             mirror,
         ),
         spec(
             "ec.distort.offset",
             "Offset",
-            vec![p("shift", "Shift Center To", pt(0.5, 0.5), ParamUi::Point), p("blend", "Blend With Original", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1))],
+            vec![
+                p("shift", "Shift Center To", pt(0.5, 0.5), ParamUi::Point),
+                p(
+                    "blend",
+                    "Blend With Original",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+            ],
             offset,
         ),
         spec(
             "ec.distort.polar",
             "Polar Coordinates",
             vec![
-                p("interpolation", "Interpolation", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("conversion", "Type of Conversion", Value::Enum(0), popup(&["Rect to Polar", "Polar to Rect"])),
+                p(
+                    "interpolation",
+                    "Interpolation",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "conversion",
+                    "Type of Conversion",
+                    Value::Enum(0),
+                    popup(&["Rect to Polar", "Polar to Rect"]),
+                ),
             ],
             polar,
         ),
@@ -445,16 +632,56 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("anchor", "Anchor Point", pt(0.5, 0.5), ParamUi::Point),
                 p("position", "Position", pt(0.5, 0.5), ParamUi::Point),
-                p("uniform", "Uniform Scale", Value::Bool(true), ParamUi::Checkbox),
-                p("scaleHeight", "Scale Height", num(100.0), slider(-10000.0, 10000.0, 0.0, 600.0, 1)),
-                p("scaleWidth", "Scale Width", num(100.0), slider(-10000.0, 10000.0, 0.0, 600.0, 1)),
-                p("skew", "Skew", num(0.0), slider(-70.0, 70.0, -70.0, 70.0, 1)),
+                p(
+                    "uniform",
+                    "Uniform Scale",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "scaleHeight",
+                    "Scale Height",
+                    num(100.0),
+                    slider(-10000.0, 10000.0, 0.0, 600.0, 1),
+                ),
+                p(
+                    "scaleWidth",
+                    "Scale Width",
+                    num(100.0),
+                    slider(-10000.0, 10000.0, 0.0, 600.0, 1),
+                ),
+                p(
+                    "skew",
+                    "Skew",
+                    num(0.0),
+                    slider(-70.0, 70.0, -70.0, 70.0, 1),
+                ),
                 p("skewAxis", "Skew Axis", num(0.0), ParamUi::Angle),
                 p("rotation", "Rotation", num(0.0), ParamUi::Angle),
-                p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("useCompositionShutterAngle", "Use Composition's Shutter Angle", Value::Bool(true), ParamUi::Checkbox),
-                p("shutterAngle", "Shutter Angle", num(0.0), slider(0.0, 720.0, 0.0, 360.0, 1)),
-                p("sampling", "Sampling", Value::Enum(0), popup(&["Bilinear", "Bicubic"])),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "useCompositionShutterAngle",
+                    "Use Composition's Shutter Angle",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "shutterAngle",
+                    "Shutter Angle",
+                    num(0.0),
+                    slider(0.0, 720.0, 0.0, 360.0, 1),
+                ),
+                p(
+                    "sampling",
+                    "Sampling",
+                    Value::Enum(0),
+                    popup(&["Bilinear", "Bicubic"]),
+                ),
             ],
             transform,
         ),
@@ -478,20 +705,48 @@ mod tests {
     use crate::Params;
 
     fn img(w: u32, h: u32) -> Image {
-        crate::util::gen_image(w, h, |x, y| [x as f32 / w as f32, y as f32 / h as f32, ((x * 7 + y * 3) % 11) as f32 / 11.0, 1.0])
+        crate::util::gen_image(w, h, |x, y| {
+            [
+                x as f32 / w as f32,
+                y as f32 / h as f32,
+                ((x * 7 + y * 3) % 11) as f32 / 11.0,
+                1.0,
+            ]
+        })
     }
 
     /// Run with Point defaults scaled to the layer (like `instantiate`).
     fn run(id: &str, set: &[(&str, Value)], im: Image) -> Buf {
         let s = crate::find(id).unwrap();
         let ls = [im.width as f64, im.height as f64];
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), crate::default_value(p, ls))).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), crate::default_value(p, ls)))
+                .collect(),
+        };
         for (k, v) in set {
             assert!(params.values.contains_key(*k), "{id}: unknown param {k}");
             params.values.insert(k.to_string(), v.clone());
         }
-        let ctx = EffectCtx { params: &params, time: 0.0, layer_size: ls, seed: 3, adjustment: false, env: Default::default() };
-        crate::apply(s, &ctx, Buf { img: im, offset: [0.0, 0.0], scale: 1.0 })
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: ls,
+            seed: 3,
+            adjustment: false,
+            env: Default::default(),
+        };
+        crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img: im,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
     }
 
     fn differs(a: Px4, b: Px4) -> bool {
@@ -504,7 +759,11 @@ mod tests {
         // 60×20 layer, radius 50 → 30 px: a pixel 20 px right of the centre is twirled (the old
         // smaller-dimension rule gave 5 px), corners (> 30 px away) are not.
         let im = img(60, 20);
-        let o = run("ec.distort.twirl", &[("angle", num(90.0)), ("radius", num(50.0))], im.clone());
+        let o = run(
+            "ec.distort.twirl",
+            &[("angle", num(90.0)), ("radius", num(50.0))],
+            im.clone(),
+        );
         assert!(differs(o.img.get(50, 10), im.get(50, 10)));
         assert_eq!(o.img.get(0, 0), im.get(0, 0));
     }
@@ -512,12 +771,22 @@ mod tests {
     #[test]
     fn ripple_radius_reaches_the_edge_at_100_and_conversion_matters() {
         let im = img(40, 40);
-        let base = [("radius", num(100.0)), ("waveHeight", num(4.0)), ("waveWidth", num(7.0))];
+        let base = [
+            ("radius", num(100.0)),
+            ("waveHeight", num(4.0)),
+            ("waveWidth", num(7.0)),
+        ];
         let asym = run("ec.distort.ripple", &base, im.clone());
         let mut sym_set = base.to_vec();
         sym_set.push(("conversion", Value::Enum(1)));
         let sym = run("ec.distort.ripple", &sym_set, im.clone());
-        assert!(asym.img.data.iter().zip(&sym.img.data).any(|(a, b)| differs(*a, *b)));
+        assert!(
+            asym.img
+                .data
+                .iter()
+                .zip(&sym.img.data)
+                .any(|(a, b)| differs(*a, *b))
+        );
         // Corners lie beyond radius 100 % (half the layer) and stay put.
         assert_eq!(asym.img.get(0, 0), im.get(0, 0));
     }
@@ -525,7 +794,11 @@ mod tests {
     #[test]
     fn bulge_taper_and_pin_all_edges() {
         let im = img(40, 40);
-        let big = [("hradius", num(40.0)), ("vradius", num(40.0)), ("height", num(2.0))];
+        let big = [
+            ("hradius", num(40.0)),
+            ("vradius", num(40.0)),
+            ("height", num(2.0)),
+        ];
         let free = run("ec.distort.bulge", &big, im.clone());
         let mut pinned_set = big.to_vec();
         pinned_set.push(("pinAllEdges", Value::Bool(true)));
@@ -544,28 +817,63 @@ mod tests {
         for k in 0..WAVE_TYPES.len() as u32 {
             for i in 0..200 {
                 let v = wave_shape(k, i as f64 * 0.137 - 5.0, 9);
-                assert!((-1.0001..=1.0001).contains(&v), "{} {v}", WAVE_TYPES[k as usize]);
+                assert!(
+                    (-1.0001..=1.0001).contains(&v),
+                    "{} {v}",
+                    WAVE_TYPES[k as usize]
+                );
             }
         }
         let im = img(40, 30);
         // Direction 0° → horizontal displacement; Left Edge pinning keeps the left column.
-        let set = [("direction", num(0.0)), ("height", num(5.0)), ("pinning", Value::Enum(3))];
+        let set = [
+            ("direction", num(0.0)),
+            ("height", num(5.0)),
+            ("pinning", Value::Enum(3)),
+        ];
         let o = run("ec.distort.wavewarp", &set, im.clone());
         let pad = ((o.img.width - im.width) / 2) as i64;
         for y in 0..30 {
             let (a, b) = (o.img.get(pad, y + pad), im.get(0, y));
-            assert!((0..4).all(|i| (a[i] - b[i]).abs() < 0.01), "row {y}: {a:?} vs {b:?}");
+            assert!(
+                (0..4).all(|i| (a[i] - b[i]).abs() < 0.01),
+                "row {y}: {a:?} vs {b:?}"
+            );
         }
-        let free = run("ec.distort.wavewarp", &[("direction", num(0.0)), ("height", num(5.0))], im);
-        assert!(free.img.data.iter().zip(&o.img.data).any(|(a, b)| differs(*a, *b)));
+        let free = run(
+            "ec.distort.wavewarp",
+            &[("direction", num(0.0)), ("height", num(5.0))],
+            im,
+        );
+        assert!(
+            free.img
+                .data
+                .iter()
+                .zip(&o.img.data)
+                .any(|(a, b)| differs(*a, *b))
+        );
     }
 
     #[test]
     fn transform_sampling_bicubic_differs_from_bilinear() {
         let im = img(32, 32);
-        let a = run("ec.distort.transform", &[("rotation", num(17.0))], im.clone());
-        let b = run("ec.distort.transform", &[("rotation", num(17.0)), ("sampling", Value::Enum(1))], im);
-        assert!(a.img.data.iter().zip(&b.img.data).any(|(p, q)| differs(*p, *q)));
+        let a = run(
+            "ec.distort.transform",
+            &[("rotation", num(17.0))],
+            im.clone(),
+        );
+        let b = run(
+            "ec.distort.transform",
+            &[("rotation", num(17.0)), ("sampling", Value::Enum(1))],
+            im,
+        );
+        assert!(
+            a.img
+                .data
+                .iter()
+                .zip(&b.img.data)
+                .any(|(p, q)| differs(*p, *q))
+        );
     }
 
     #[test]
@@ -581,8 +889,15 @@ mod tests {
             }
             fn params_at(&self, t: f64) -> Option<Params> {
                 let s = crate::find("ec.distort.transform").unwrap();
-                let mut p = Params { values: s.params.iter().map(|p| (p.id.to_string(), crate::default_value(p, [40.0, 20.0]))).collect() };
-                p.values.insert("position".into(), Value::Vec2([20.0 + 200.0 * t, 10.0]));
+                let mut p = Params {
+                    values: s
+                        .params
+                        .iter()
+                        .map(|p| (p.id.to_string(), crate::default_value(p, [40.0, 20.0])))
+                        .collect(),
+                };
+                p.values
+                    .insert("position".into(), Value::Vec2([20.0 + 200.0 * t, 10.0]));
                 Some(p)
             }
         }
@@ -593,7 +908,12 @@ mod tests {
             }
         }
         let render = |vals: &[(&str, Value)], shutter: Option<(f64, f64, u32)>| {
-            let env = crate::EffectEnv { host: Some(&Moving), frame_rate: 10.0, shutter, ..Default::default() };
+            let env = crate::EffectEnv {
+                host: Some(&Moving),
+                frame_rate: 10.0,
+                shutter,
+                ..Default::default()
+            };
             crate::run_fx("ec.distort.transform", vals, sq.clone(), 0.0, env).img
         };
         let partial = |i: &Image| i.data.iter().filter(|p| p[3] > 0.02 && p[3] < 0.98).count();
@@ -603,8 +923,21 @@ mod tests {
         let comp = render(&[], Some((180.0, -90.0, 16)));
         assert!(partial(&comp) > 50, "{}", partial(&comp));
         // Own Shutter Angle.
-        let own = render(&[("useCompositionShutterAngle", Value::Bool(false)), ("shutterAngle", num(360.0))], None);
+        let own = render(
+            &[
+                ("useCompositionShutterAngle", Value::Bool(false)),
+                ("shutterAngle", num(360.0)),
+            ],
+            None,
+        );
         assert!(partial(&own) > partial(&comp));
-        assert_eq!(partial(&render(&[("useCompositionShutterAngle", Value::Bool(false))], None)), 0, "0 deg: sharp");
+        assert_eq!(
+            partial(&render(
+                &[("useCompositionShutterAngle", Value::Bool(false))],
+                None
+            )),
+            0,
+            "0 deg: sharp"
+        );
     }
 }

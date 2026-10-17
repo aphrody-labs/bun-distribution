@@ -20,7 +20,11 @@ fn a_fresh_session_resolves_pdf_fonts_to_installed_families() {
     // which family that is depends on the machine's fonts, so the first of them to do is checked.
     let candidates: Vec<&String> = installed
         .iter()
-        .filter(|f| !bundled.contains(f) && f.contains(' ') && f.chars().all(|c| c.is_ascii_alphanumeric() || c == ' '))
+        .filter(|f| {
+            !bundled.contains(f)
+                && f.contains(' ')
+                && f.chars().all(|c| c.is_ascii_alphanumeric() || c == ' ')
+        })
         .take(200)
         .collect();
     if candidates.is_empty() {
@@ -28,9 +32,16 @@ fn a_fresh_session_resolves_pdf_fonts_to_installed_families() {
         return;
     }
     let import = |family: &str| {
-        let resources = format!("/Font << /F1 << /Type /Font /Subtype /TrueType /BaseFont /{} >> >>", family.replace(' ', ""));
-        let page = PdfPage { resources, ..PdfPage::new(100.0, 100.0, "BT /F1 12 Tf 10 30 Td (Hi) Tj ET") };
-        let r = import_with_report(&pdf_with(&[page], &[], None), &ImportOptions::default()).unwrap();
+        let resources = format!(
+            "/Font << /F1 << /Type /Font /Subtype /TrueType /BaseFont /{} >> >>",
+            family.replace(' ', "")
+        );
+        let page = PdfPage {
+            resources,
+            ..PdfPage::new(100.0, 100.0, "BT /F1 12 Tf 10 30 Td (Hi) Tj ET")
+        };
+        let r =
+            import_with_report(&pdf_with(&[page], &[], None), &ImportOptions::default()).unwrap();
         let mut families = vec![];
         r.document.walk(|n| {
             if let NodeKind::Text(t) = &n.kind {
@@ -43,7 +54,11 @@ fn a_fresh_session_resolves_pdf_fonts_to_installed_families() {
         let (families, warnings) = import(family);
         (!families.is_empty()).then_some((family, families, warnings))
     });
-    let (family, families, warnings) = found.expect("one of the installed families stays live text");
+    let (family, families, warnings) =
+        found.expect("one of the installed families stays live text");
     assert_eq!(families, std::slice::from_ref(*family));
-    assert!(!warnings.iter().any(|w| w.contains(family.as_str())), "{warnings:?}");
+    assert!(
+        !warnings.iter().any(|w| w.contains(family.as_str())),
+        "{warnings:?}"
+    );
 }

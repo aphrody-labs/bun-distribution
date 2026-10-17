@@ -9,8 +9,16 @@ fn doc_with_text(text: &str) -> (Document, NodeId) {
     let mut d = Document::new(500.0, 500.0);
     let l = d.layers[0].id;
     let id = d.alloc_id();
-    let t = TextObject::point(Point::new(100.0, 100.0), text, CharStyle { size: 20.0, ..Default::default() });
-    d.insert(Some(l), 0, Node::new(id, NodeKind::Text(Box::new(t)))).unwrap();
+    let t = TextObject::point(
+        Point::new(100.0, 100.0),
+        text,
+        CharStyle {
+            size: 20.0,
+            ..Default::default()
+        },
+    );
+    d.insert(Some(l), 0, Node::new(id, NodeKind::Text(Box::new(t))))
+        .unwrap();
     (d, id)
 }
 
@@ -26,8 +34,20 @@ fn key(tool: &mut TypeTool, d: &Document, k: ToolKey, mods: Mods) -> Vec<Action>
     tool.key(&cx(d, &sel, &p), k, mods)
 }
 
-const SHIFT: Mods = Mods { shift: true, alt: false, cmd: false, ctrl: false, space: false };
-const CMD: Mods = Mods { shift: false, alt: false, cmd: true, ctrl: false, space: false };
+const SHIFT: Mods = Mods {
+    shift: true,
+    alt: false,
+    cmd: false,
+    ctrl: false,
+    space: false,
+};
+const CMD: Mods = Mods {
+    shift: false,
+    alt: false,
+    cmd: true,
+    ctrl: false,
+    space: false,
+};
 
 /// Apply the tool's previews like the engine would (on top of the session snapshot).
 fn apply(d: &mut Document, snapshot: &Document, acts: &[Action]) {
@@ -38,7 +58,12 @@ fn apply(d: &mut Document, snapshot: &Document, acts: &[Action]) {
             let id = NodeId(p["id"].as_u64().unwrap());
             let runs: Vec<TextRun> = serde_json::from_value(p["runs"].clone()).unwrap();
             if let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) {
-                edit::replace_range_styled(&mut t.runs, p["start"].as_u64().unwrap() as usize, p["end"].as_u64().unwrap() as usize, &runs);
+                edit::replace_range_styled(
+                    &mut t.runs,
+                    p["start"].as_u64().unwrap() as usize,
+                    p["end"].as_u64().unwrap() as usize,
+                    &runs,
+                );
             }
         }
     }
@@ -56,13 +81,23 @@ fn typing_is_one_coalesced_preview() {
     apply(&mut d, &snap, &a1);
     let a2 = tool.text_input(&cx(&d, &sel, &p), "orld");
     apply(&mut d, &snap, &a2);
-    let NodeKind::Text(t) = &d.node(id).unwrap().kind else { panic!() };
+    let NodeKind::Text(t) = &d.node(id).unwrap().kind else {
+        panic!()
+    };
     assert_eq!(t.plain_text(), "Hello world");
-    assert!(!a2.iter().any(|a| matches!(a, Action::Begin(_))), "same session");
-    let Action::Preview(cmd, params) = a2.last().unwrap() else { panic!("{a2:?}") };
+    assert!(
+        !a2.iter().any(|a| matches!(a, Action::Begin(_))),
+        "same session"
+    );
+    let Action::Preview(cmd, params) = a2.last().unwrap() else {
+        panic!("{a2:?}")
+    };
     assert_eq!(cmd, "text.editRange");
     assert_eq!(params["id"], json!(id.0));
-    assert_eq!((params["start"].as_u64(), params["end"].as_u64()), (Some(5), Some(5)));
+    assert_eq!(
+        (params["start"].as_u64(), params["end"].as_u64()),
+        (Some(5), Some(5))
+    );
     let runs: Vec<TextRun> = serde_json::from_value(params["runs"].clone()).unwrap();
     assert_eq!(runs[0].text, " world");
     assert_eq!(tool.caret, 11);
@@ -84,8 +119,13 @@ fn shift_arrows_select_and_typing_replaces() {
     assert_eq!(tool.sel(), (6, 11));
     let (sel, p) = (Selection::default(), paint());
     let acts = tool.text_input(&cx(&d, &sel, &p), "there");
-    let Action::Preview(_, params) = acts.last().unwrap() else { panic!() };
-    assert_eq!((params["start"].as_u64(), params["end"].as_u64()), (Some(6), Some(11)));
+    let Action::Preview(_, params) = acts.last().unwrap() else {
+        panic!()
+    };
+    assert_eq!(
+        (params["start"].as_u64(), params["end"].as_u64()),
+        (Some(6), Some(11))
+    );
     assert_eq!(tool.caret, 11);
     assert_eq!(tool.sel(), (11, 11));
 }
@@ -129,9 +169,22 @@ fn backspace_deletes_selection_or_word() {
     let (d, _, mut tool) = editing("Hello big world");
     tool.caret = 9;
     tool.anchor = 9;
-    let acts = key(&mut tool, &d, ToolKey::Backspace, Mods { alt: true, ..Default::default() });
-    let Action::Preview(_, params) = acts.last().unwrap() else { panic!() };
-    assert_eq!((params["start"].as_u64(), params["end"].as_u64()), (Some(6), Some(9)));
+    let acts = key(
+        &mut tool,
+        &d,
+        ToolKey::Backspace,
+        Mods {
+            alt: true,
+            ..Default::default()
+        },
+    );
+    let Action::Preview(_, params) = acts.last().unwrap() else {
+        panic!()
+    };
+    assert_eq!(
+        (params["start"].as_u64(), params["end"].as_u64()),
+        (Some(6), Some(9))
+    );
     assert_eq!(tool.caret, 6);
 }
 
@@ -144,7 +197,13 @@ fn double_and_triple_click_select_word_and_paragraph() {
     let (top, bot) = vectorcraft_text::caret_position(&lay, 7);
     let at = t.xf * top.midpoint(bot);
     let c = cx(&d, &sel, &p);
-    for k in [PointerKind::Down, PointerKind::Up, PointerKind::Down, PointerKind::Up, PointerKind::DoubleClick] {
+    for k in [
+        PointerKind::Down,
+        PointerKind::Up,
+        PointerKind::Down,
+        PointerKind::Up,
+        PointerKind::DoubleClick,
+    ] {
         tool.pointer(&c, &PointerEvent::new(k, at.x, at.y));
     }
     assert_eq!(tool.sel(), (6, 10), "word");
@@ -173,7 +232,10 @@ fn drag_selects_and_overlay_highlights() {
     let o = tool.overlays(&c);
     assert!(o.iter().any(|o| matches!(o, Overlay::Highlight { .. })));
     let opts = tool.options();
-    assert_eq!((opts["start"].as_u64(), opts["end"].as_u64()), (Some(7), Some(9)));
+    assert_eq!(
+        (opts["start"].as_u64(), opts["end"].as_u64()),
+        (Some(7), Some(9))
+    );
 }
 
 #[test]
@@ -211,10 +273,19 @@ fn select_all_and_styled_paste() {
     let c = cx(&d, &sel, &p);
     tool.key(&c, ToolKey::Right, SHIFT);
     assert_eq!(tool.sel(), (0, 3));
-    let big = TextRun { text: "XY".into(), style: CharStyle { size: 40.0, ..Default::default() }, inline: None };
+    let big = TextRun {
+        text: "XY".into(),
+        style: CharStyle {
+            size: 40.0,
+            ..Default::default()
+        },
+        inline: None,
+    };
     tool.set_option("copy", &serde_json::to_value(vec![big.clone()]).unwrap());
     let acts = tool.text_input(&c, "XY");
-    let Action::Preview(_, params) = acts.last().unwrap() else { panic!() };
+    let Action::Preview(_, params) = acts.last().unwrap() else {
+        panic!()
+    };
     let runs: Vec<TextRun> = serde_json::from_value(params["runs"].clone()).unwrap();
     assert_eq!(runs, vec![big]);
 }
@@ -278,9 +349,17 @@ fn marked_text_is_underlined_with_the_converting_clause_thick() {
     tool.anchor = 3;
     let acts = tool.ime_preedit(&cx(&d, &sel, &p), "雅楽演奏", Some(2..4));
     apply(&mut d, &snap, &acts);
-    let NodeKind::Text(t) = &d.node(id).unwrap().kind else { panic!() };
+    let NodeKind::Text(t) = &d.node(id).unwrap().kind else {
+        panic!()
+    };
     assert_eq!(t.plain_text(), "曲雅楽演奏");
-    assert_eq!(tool.preedit, Some(Preedit { range: 3..15, active: Some(6..12) }));
+    assert_eq!(
+        tool.preedit,
+        Some(Preedit {
+            range: 3..15,
+            active: Some(6..12)
+        })
+    );
     let widths: Vec<f32> = tool
         .overlays(&cx(&d, &sel, &p))
         .iter()
@@ -289,7 +368,11 @@ fn marked_text_is_underlined_with_the_converting_clause_thick() {
             _ => None,
         })
         .collect();
-    assert_eq!(widths, vec![1.0, 2.5], "a thin underline, then the thick one under 演奏");
+    assert_eq!(
+        widths,
+        vec![1.0, 2.5],
+        "a thin underline, then the thick one under 演奏"
+    );
     // The candidate window follows the converting clause.
     let (top, _) = tool.ime_caret(&cx(&d, &sel, &p)).unwrap();
     let lay = vectorcraft_text::layout(FontDb::global(), t);
@@ -299,7 +382,9 @@ fn marked_text_is_underlined_with_the_converting_clause_thick() {
     assert!(key(&mut tool, &d, ToolKey::Backspace, Mods::default()).is_empty());
     let acts = tool.text_input(&cx(&d, &sel, &p), "雅楽演奏会");
     apply(&mut d, &snap, &acts);
-    let NodeKind::Text(t) = &d.node(id).unwrap().kind else { panic!() };
+    let NodeKind::Text(t) = &d.node(id).unwrap().kind else {
+        panic!()
+    };
     assert_eq!(t.plain_text(), "曲雅楽演奏会");
     assert!(!tool.composing());
 }
@@ -314,9 +399,16 @@ fn arrows_follow_the_columns_of_vertical_type() {
     tool.start_editing(id, 0);
     let s = "§".len();
     key(&mut tool, &d, ToolKey::Down, Mods::default());
-    assert_eq!(tool.caret, s, "↓ goes down the column to the next character");
+    assert_eq!(
+        tool.caret, s,
+        "↓ goes down the column to the next character"
+    );
     key(&mut tool, &d, ToolKey::Left, Mods::default());
-    assert_eq!(tool.caret, "§§§\n§".len(), "← goes on to the next column, keeping the place in it");
+    assert_eq!(
+        tool.caret,
+        "§§§\n§".len(),
+        "← goes on to the next column, keeping the place in it"
+    );
     key(&mut tool, &d, ToolKey::Right, Mods::default());
     assert_eq!(tool.caret, s, "→ comes back");
     key(&mut tool, &d, ToolKey::Up, Mods::default());
@@ -332,10 +424,15 @@ fn hebrew_typing_and_visual_arrows_keep_logical_text() {
     apply(&mut d, &snap, &actions);
     assert_eq!(tool.caret, "שלום".len());
     key(&mut tool, &d, ToolKey::Right, Mods::default());
-    assert_eq!(tool.caret, 6, "Right moves toward the logical start in Hebrew");
+    assert_eq!(
+        tool.caret, 6,
+        "Right moves toward the logical start in Hebrew"
+    );
     key(&mut tool, &d, ToolKey::Left, Mods::default());
     assert_eq!(tool.caret, 8);
-    let NodeKind::Text(t) = &d.node(id).unwrap().kind else { panic!() };
+    let NodeKind::Text(t) = &d.node(id).unwrap().kind else {
+        panic!()
+    };
     assert_eq!(t.plain_text(), "שלום");
 }
 
@@ -364,10 +461,21 @@ fn new_type_snaps_to_smart_guides() {
 fn layout_cache_follows_fonts_added_later() {
     // The web build adds fonts after startup: a caret layout cached before one arrived is stale.
     let (d, id, tool) = editing("abc");
-    let NodeKind::Text(t) = &d.node(id).unwrap().kind else { panic!("not text") };
+    let NodeKind::Text(t) = &d.node(id).unwrap().kind else {
+        panic!("not text")
+    };
     let before = tool.layout(t);
-    assert!(Arc::ptr_eq(&before, &tool.layout(t)), "cached while the fonts don't change");
+    assert!(
+        Arc::ptr_eq(&before, &tool.layout(t)),
+        "cached while the fonts don't change"
+    );
     let font = vectorcraft_text::test_fonts::variable_font().unwrap();
-    assert!(FontDb::global().add_font(font) > 0, "the test font is new to this process");
-    assert!(!Arc::ptr_eq(&before, &tool.layout(t)), "a font added after the layout must refresh it");
+    assert!(
+        FontDb::global().add_font(font) > 0,
+        "the test font is new to this process"
+    );
+    assert!(
+        !Arc::ptr_eq(&before, &tool.layout(t)),
+        "a font added after the layout must refresh it"
+    );
 }

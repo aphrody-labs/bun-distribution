@@ -129,11 +129,19 @@ impl Reader<'_> {
     }
     fn u16(&self, o: usize) -> Option<u16> {
         let s: [u8; 2] = self.b.get(o..o.checked_add(2)?)?.try_into().ok()?;
-        Some(if self.big { u16::from_be_bytes(s) } else { u16::from_le_bytes(s) })
+        Some(if self.big {
+            u16::from_be_bytes(s)
+        } else {
+            u16::from_le_bytes(s)
+        })
     }
     fn u32(&self, o: usize) -> Option<u32> {
         let s: [u8; 4] = self.b.get(o..o.checked_add(4)?)?.try_into().ok()?;
-        Some(if self.big { u32::from_be_bytes(s) } else { u32::from_le_bytes(s) })
+        Some(if self.big {
+            u32::from_be_bytes(s)
+        } else {
+            u32::from_le_bytes(s)
+        })
     }
 }
 
@@ -160,19 +168,32 @@ fn truncated(path: &str, kind: Kind) -> MediaError {
 }
 
 fn parse(path: &str, bytes: &[u8]) -> Result<Option<Header>> {
-    let Some((kind, big_endian)) = sniff(bytes) else { return Ok(None) };
-    let r = Reader { b: bytes, big: big_endian };
+    let Some((kind, big_endian)) = sniff(bytes) else {
+        return Ok(None);
+    };
+    let r = Reader {
+        b: bytes,
+        big: big_endian,
+    };
     let h = match kind {
         Kind::Dpx => parse_dpx(path, &r)?,
         Kind::Cineon => parse_cineon(path, &r)?,
     };
     let pixels = u64::from(h.width) * u64::from(h.height);
     if h.width == 0 || h.height == 0 || pixels > MAX_PIXELS {
-        return Err(MediaError::Decode(format!("{path}: image size {} × {} out of range", h.width, h.height)));
+        return Err(MediaError::Decode(format!(
+            "{path}: image size {} × {} out of range",
+            h.width, h.height
+        )));
     }
-    let need = h.offset.saturating_add(h.stride.saturating_mul(u64::from(h.height)));
+    let need = h
+        .offset
+        .saturating_add(h.stride.saturating_mul(u64::from(h.height)));
     if (bytes.len() as u64) < need {
-        return Err(MediaError::Decode(format!("{path}: truncated image data ({} of {need} bytes)", bytes.len())));
+        return Err(MediaError::Decode(format!(
+            "{path}: truncated image data ({} of {need} bytes)",
+            bytes.len()
+        )));
     }
     Ok(Some(h))
 }
@@ -197,7 +218,10 @@ fn parse_dpx(path: &str, r: &Reader) -> Result<Header> {
         return Err(unsupported(path, "DPX file without an image element"));
     }
     if sign == 1 {
-        return Err(unsupported(path, "DPX with signed samples is not supported"));
+        return Err(unsupported(
+            path,
+            "DPX with signed samples is not supported",
+        ));
     }
     if encoding == 1 {
         return Err(unsupported(path, "run-length encoded DPX is not supported"));
@@ -207,8 +231,20 @@ fn parse_dpx(path: &str, r: &Reader) -> Result<Header> {
         50 => Layout::Rgb,
         51 => Layout::Rgba,
         52 => Layout::Abgr,
-        100..=103 => return Err(unsupported(path, "DPX with Y'CbCr samples is not supported")),
-        d => return Err(unsupported(path, format!("DPX image element descriptor {d} is not supported (luma, RGB, RGBA and ABGR are)"))),
+        100..=103 => {
+            return Err(unsupported(
+                path,
+                "DPX with Y'CbCr samples is not supported",
+            ));
+        }
+        d => {
+            return Err(unsupported(
+                path,
+                format!(
+                    "DPX image element descriptor {d} is not supported (luma, RGB, RGBA and ABGR are)"
+                ),
+            ));
+        }
     };
     let packing = match (bits, packing) {
         (8, _) => Packing::Bytes8,
@@ -217,18 +253,41 @@ fn parse_dpx(path: &str, r: &Reader) -> Result<Header> {
         (10, 2) => Packing::Filled10B,
         (12, 1) => Packing::Filled12A,
         (12, 2) => Packing::Filled12B,
-        (10 | 12, _) => return Err(unsupported(path, format!("DPX with packed {bits}-bit samples (packing {packing}) is not supported"))),
-        (b, _) => return Err(unsupported(path, format!("DPX with {b}-bit samples is not supported (8, 10, 12 and 16 are)"))),
+        (10 | 12, _) => {
+            return Err(unsupported(
+                path,
+                format!("DPX with packed {bits}-bit samples (packing {packing}) is not supported"),
+            ));
+        }
+        (b, _) => {
+            return Err(unsupported(
+                path,
+                format!("DPX with {b}-bit samples is not supported (8, 10, 12 and 16 are)"),
+            ));
+        }
     };
     let (flip_x, flip_y) = match orientation {
         0 | u16::MAX => (false, false),
         1 => (true, false),
         2 => (false, true),
         3 => (true, true),
-        o => return Err(unsupported(path, format!("DPX orientation {o} (transposed image) is not supported"))),
+        o => {
+            return Err(unsupported(
+                path,
+                format!("DPX orientation {o} (transposed image) is not supported"),
+            ));
+        }
     };
-    let offset = if data_offset == 0 || data_offset == UNDEFINED32 { image_offset } else { data_offset };
-    let eol = if eol_padding == UNDEFINED32 { 0 } else { eol_padding };
+    let offset = if data_offset == 0 || data_offset == UNDEFINED32 {
+        image_offset
+    } else {
+        data_offset
+    };
+    let eol = if eol_padding == UNDEFINED32 {
+        0
+    } else {
+        eol_padding
+    };
     let samples = u64::from(width) * layout.components() as u64;
     // Pixel aspect ratio (orientation header), when stated.
     let pixel_aspect = match (r.u32(1628), r.u32(1632)) {
@@ -278,36 +337,72 @@ fn parse_cineon(path: &str, r: &Reader) -> Result<Header> {
     let layout = match channels {
         1 => Layout::Luma,
         3 => Layout::Rgb,
-        c => return Err(unsupported(path, format!("Cineon with {c} channels is not supported (1 and 3 are)"))),
+        c => {
+            return Err(unsupported(
+                path,
+                format!("Cineon with {c} channels is not supported (1 and 3 are)"),
+            ));
+        }
     };
     for c in 1..usize::from(channels) {
         let base = 196 + 28 * c;
-        if r.u8(base + 2) != Some(bits) || r.u32(base + 4) != Some(width) || r.u32(base + 8) != Some(height) {
-            return Err(unsupported(path, "Cineon channels of different sizes or depths are not supported"));
+        if r.u8(base + 2) != Some(bits)
+            || r.u32(base + 4) != Some(width)
+            || r.u32(base + 8) != Some(height)
+        {
+            return Err(unsupported(
+                path,
+                "Cineon channels of different sizes or depths are not supported",
+            ));
         }
     }
     if interleave != 0 {
-        return Err(unsupported(path, "Cineon with line or channel interleave is not supported"));
+        return Err(unsupported(
+            path,
+            "Cineon with line or channel interleave is not supported",
+        ));
     }
     if signed == 1 {
-        return Err(unsupported(path, "Cineon with signed samples is not supported"));
+        return Err(unsupported(
+            path,
+            "Cineon with signed samples is not supported",
+        ));
     }
     let packing = match (bits, packing) {
         (8, _) => Packing::Bytes8,
         (16, _) => Packing::Words16,
         (10, 5) => Packing::Filled10A,
         (10, 6) => Packing::Filled10B,
-        (10, p) => return Err(unsupported(path, format!("Cineon with 10-bit packing {p} is not supported (32-bit words are)"))),
-        (b, _) => return Err(unsupported(path, format!("Cineon with {b}-bit samples is not supported (8, 10 and 16 are)"))),
+        (10, p) => {
+            return Err(unsupported(
+                path,
+                format!("Cineon with 10-bit packing {p} is not supported (32-bit words are)"),
+            ));
+        }
+        (b, _) => {
+            return Err(unsupported(
+                path,
+                format!("Cineon with {b}-bit samples is not supported (8, 10 and 16 are)"),
+            ));
+        }
     };
     let (flip_x, flip_y) = match orientation {
         0 | u8::MAX => (false, false),
         1 => (false, true),
         2 => (true, false),
         3 => (true, true),
-        o => return Err(unsupported(path, format!("Cineon orientation {o} (transposed image) is not supported"))),
+        o => {
+            return Err(unsupported(
+                path,
+                format!("Cineon orientation {o} (transposed image) is not supported"),
+            ));
+        }
     };
-    let eol = if eol_padding == UNDEFINED32 { 0 } else { eol_padding };
+    let eol = if eol_padding == UNDEFINED32 {
+        0
+    } else {
+        eol_padding
+    };
     let samples = u64::from(width) * layout.components() as u64;
     Ok(Header {
         kind: Kind::Cineon,
@@ -327,10 +422,17 @@ fn parse_cineon(path: &str, r: &Reader) -> Result<Header> {
 
 /// Footage for a DPX or Cineon file (`None` for other formats).
 pub(crate) fn probe(path: &str, bytes: &[u8]) -> Result<Option<Footage>> {
-    let Some(h) = parse(path, bytes)? else { return Ok(None) };
+    let Some(h) = parse(path, bytes)? else {
+        return Ok(None);
+    };
     let alpha = matches!(h.layout, Layout::Rgba | Layout::Abgr);
-    let mut f = crate::probe::still_footage(path, h.width, h.height, image::ImageFormat::Png, alpha);
-    f.alpha = if alpha { AlphaMode::Straight } else { AlphaMode::Ignore };
+    let mut f =
+        crate::probe::still_footage(path, h.width, h.height, image::ImageFormat::Png, alpha);
+    f.alpha = if alpha {
+        AlphaMode::Straight
+    } else {
+        AlphaMode::Ignore
+    };
     f.pixel_aspect = h.pixel_aspect;
     let name = if h.kind == Kind::Dpx { "DPX" } else { "Cineon" };
     f.codec = format!("{name} {}-bit {}", h.packing.bits(), h.layout.name());
@@ -342,36 +444,51 @@ pub(crate) fn probe(path: &str, bytes: &[u8]) -> Result<Option<Footage>> {
 
 /// The picture of a DPX or Cineon file as 16-bit samples (`None` for other formats).
 pub(crate) fn decode(path: &str, bytes: &[u8]) -> Result<Option<image::DynamicImage>> {
-    let Some(h) = parse(path, bytes)? else { return Ok(None) };
+    let Some(h) = parse(path, bytes)? else {
+        return Ok(None);
+    };
     let (w, ht) = (h.width as usize, h.height as usize);
     // Output components: luma, RGB or RGBA (ABGR reordered).
     let nc = h.layout.components();
     let row_len = w * nc;
     let mut out = vec![0u16; row_len * ht];
     let max = h.packing.max();
-    out.par_chunks_mut(row_len).enumerate().for_each(|(y, row)| {
-        let sy = if h.flip_y { ht - 1 - y } else { y };
-        let start = h.offset.saturating_add(h.stride.saturating_mul(sy as u64));
-        let line = usize::try_from(start).ok().and_then(|s| bytes.get(s..)).unwrap_or(&[]);
-        for x in 0..w {
-            let sx = if h.flip_x { w - 1 - x } else { x };
-            for c in 0..nc {
-                // ABGR stores alpha first and colour reversed.
-                let sc = if h.layout == Layout::Abgr { 3 - c } else { c };
-                let v = sample(line, h.packing, h.big_endian, sx * nc + sc);
-                if let Some(o) = row.get_mut(x * nc + c) {
-                    *o = ((u64::from(v.min(max)) * 0xffff + u64::from(max) / 2) / u64::from(max)) as u16;
+    out.par_chunks_mut(row_len)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let sy = if h.flip_y { ht - 1 - y } else { y };
+            let start = h.offset.saturating_add(h.stride.saturating_mul(sy as u64));
+            let line = usize::try_from(start)
+                .ok()
+                .and_then(|s| bytes.get(s..))
+                .unwrap_or(&[]);
+            for x in 0..w {
+                let sx = if h.flip_x { w - 1 - x } else { x };
+                for c in 0..nc {
+                    // ABGR stores alpha first and colour reversed.
+                    let sc = if h.layout == Layout::Abgr { 3 - c } else { c };
+                    let v = sample(line, h.packing, h.big_endian, sx * nc + sc);
+                    if let Some(o) = row.get_mut(x * nc + c) {
+                        *o = ((u64::from(v.min(max)) * 0xffff + u64::from(max) / 2)
+                            / u64::from(max)) as u16;
+                    }
                 }
             }
-        }
-    });
+        });
     let (w32, h32) = (h.width, h.height);
     let img = match h.layout {
-        Layout::Luma => image::ImageBuffer::from_raw(w32, h32, out).map(image::DynamicImage::ImageLuma16),
-        Layout::Rgb => image::ImageBuffer::from_raw(w32, h32, out).map(image::DynamicImage::ImageRgb16),
-        Layout::Rgba | Layout::Abgr => image::ImageBuffer::from_raw(w32, h32, out).map(image::DynamicImage::ImageRgba16),
+        Layout::Luma => {
+            image::ImageBuffer::from_raw(w32, h32, out).map(image::DynamicImage::ImageLuma16)
+        }
+        Layout::Rgb => {
+            image::ImageBuffer::from_raw(w32, h32, out).map(image::DynamicImage::ImageRgb16)
+        }
+        Layout::Rgba | Layout::Abgr => {
+            image::ImageBuffer::from_raw(w32, h32, out).map(image::DynamicImage::ImageRgba16)
+        }
     };
-    img.map(Some).ok_or_else(|| MediaError::Decode(format!("{path}: image buffer size mismatch")))
+    img.map(Some)
+        .ok_or_else(|| MediaError::Decode(format!("{path}: image buffer size mismatch")))
 }
 
 /// Sample `i` of a line (0 past its end; the header check makes that unreachable for valid
@@ -380,7 +497,11 @@ pub(crate) fn decode(path: &str, bytes: &[u8]) -> Result<Option<image::DynamicIm
 fn sample(line: &[u8], packing: Packing, big: bool, i: usize) -> u32 {
     let word16 = |o: usize| -> u32 {
         match line.get(o..o + 2) {
-            Some(&[a, b]) => u32::from(if big { u16::from_be_bytes([a, b]) } else { u16::from_le_bytes([a, b]) }),
+            Some(&[a, b]) => u32::from(if big {
+                u16::from_be_bytes([a, b])
+            } else {
+                u16::from_le_bytes([a, b])
+            }),
             _ => 0,
         }
     };
@@ -411,7 +532,14 @@ mod tests {
     use super::*;
 
     /// A minimal big-endian DPX header for `w` × `h` with descriptor, bits and packing.
-    fn dpx_header(w: u32, h: u32, descriptor: u8, bits: u8, packing: u16, orientation: u16) -> Vec<u8> {
+    fn dpx_header(
+        w: u32,
+        h: u32,
+        descriptor: u8,
+        bits: u8,
+        packing: u16,
+        orientation: u16,
+    ) -> Vec<u8> {
         let mut b = vec![0u8; 2048];
         b[..4].copy_from_slice(b"SDPX");
         b[4..8].copy_from_slice(&2048u32.to_be_bytes());
@@ -433,7 +561,10 @@ mod tests {
         for px in [(1023u32, 512u32, 0u32), (0, 1, 1023)] {
             a.extend_from_slice(&((px.0 << 22) | (px.1 << 12) | (px.2 << 2)).to_be_bytes());
         }
-        let img = decode("a.dpx", &a).expect("decode").expect("dpx").to_rgb16();
+        let img = decode("a.dpx", &a)
+            .expect("decode")
+            .expect("dpx")
+            .to_rgb16();
         assert_eq!(img.get_pixel(0, 0).0, [65535, 32800, 0]);
         assert_eq!(img.get_pixel(1, 0).0, [0, 64, 65535]);
         let f = probe("a.dpx", &a).expect("probe").expect("dpx");
@@ -441,13 +572,22 @@ mod tests {
         // method B: pad bits high
         let mut b = dpx_header(1, 1, 50, 10, 2, 1);
         b.extend_from_slice(&((1023u32 << 20) | (512 << 10)).to_be_bytes());
-        let img = decode("b.dpx", &b).expect("decode").expect("dpx").to_rgb16();
+        let img = decode("b.dpx", &b)
+            .expect("decode")
+            .expect("dpx")
+            .to_rgb16();
         assert_eq!(img.get_pixel(0, 0).0, [65535, 32800, 0]);
         // orientation 2: bottom-to-top lines
         let mut c = dpx_header(1, 2, 6, 8, 0, 2);
         c.extend_from_slice(&[10, 0, 0, 0, 200, 0, 0, 0]);
-        let img = decode("c.dpx", &c).expect("decode").expect("dpx").to_luma16();
-        assert_eq!((img.get_pixel(0, 0).0[0], img.get_pixel(0, 1).0[0]), (200 * 257, 10 * 257));
+        let img = decode("c.dpx", &c)
+            .expect("decode")
+            .expect("dpx")
+            .to_luma16();
+        assert_eq!(
+            (img.get_pixel(0, 0).0[0], img.get_pixel(0, 1).0[0]),
+            (200 * 257, 10 * 257)
+        );
     }
 
     #[test]
@@ -463,9 +603,14 @@ mod tests {
             assert!(decode("t.dpx", good.get(..n).expect("cut")).is_err(), "{n}");
         }
         // huge, zero, unsupported
-        for (w, h, d, bits, p, o) in
-            [(u32::MAX, u32::MAX, 50, 10, 1, 0), (0, 4, 50, 10, 1, 0), (4, 4, 102, 10, 1, 0), (4, 4, 50, 10, 0, 0), (4, 4, 50, 32, 0, 0), (4, 4, 50, 10, 1, 5)]
-        {
+        for (w, h, d, bits, p, o) in [
+            (u32::MAX, u32::MAX, 50, 10, 1, 0),
+            (0, 4, 50, 10, 1, 0),
+            (4, 4, 102, 10, 1, 0),
+            (4, 4, 50, 10, 0, 0),
+            (4, 4, 50, 32, 0, 0),
+            (4, 4, 50, 10, 1, 5),
+        ] {
             let mut b = dpx_header(w, h, d, bits, p, o);
             b.extend(std::iter::repeat_n(0, 64));
             assert!(probe("h.dpx", &b).is_err() && decode("h.dpx", &b).is_err());
@@ -473,7 +618,10 @@ mod tests {
         // run-length encoding and offsets past the end are refused
         let mut rle = good.clone();
         rle[806..808].copy_from_slice(&1u16.to_be_bytes());
-        assert!(matches!(probe("r.dpx", &rle), Err(MediaError::Unsupported(_))));
+        assert!(matches!(
+            probe("r.dpx", &rle),
+            Err(MediaError::Unsupported(_))
+        ));
         let mut far = good.clone();
         far[808..812].copy_from_slice(&u32::MAX.wrapping_sub(1).to_be_bytes());
         assert!(probe("f.dpx", &far).is_err());

@@ -318,11 +318,7 @@ pub fn ray_aabb_intersection_3d(
     let tmin = tmin.max_element().max(0.0);
     let tmax = tmax.min_element();
 
-    if tmin <= tmax {
-        Some(tmin)
-    } else {
-        None
-    }
+    if tmin <= tmax { Some(tmin) } else { None }
 }
 
 #[cfg(test)]

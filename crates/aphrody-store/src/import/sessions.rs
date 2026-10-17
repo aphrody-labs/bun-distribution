@@ -26,7 +26,9 @@ struct Found {
 }
 
 fn collect(dir: &Path, root: &Path, agent: Option<&str>, out: &mut Vec<Found>) -> Result<()> {
-    let Ok(entries) = std::fs::read_dir(dir) else { return Ok(()) };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Ok(());
+    };
     let mut entries: Vec<_> = entries.flatten().collect();
     entries.sort_by_key(std::fs::DirEntry::file_name);
     for entry in entries {
@@ -42,7 +44,11 @@ fn collect(dir: &Path, root: &Path, agent: Option<&str>, out: &mut Vec<Found>) -
             collect(&path, root, next.as_deref().or(agent), out)?;
         } else if name.ends_with(".jsonl") {
             let stem = name.trim_end_matches(".jsonl").to_owned();
-            let rel = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+            let rel = path
+                .strip_prefix(root)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .replace('\\', "/");
             let mtime_ms = meta
                 .modified()
                 .ok()
@@ -85,7 +91,9 @@ pub fn plan_sessions(db: &HomeDb, sessions_dir: &Path) -> Result<ImportReport> {
     let mut found = Vec::new();
     collect(sessions_dir, sessions_dir, None, &mut found)?;
     report.add("files_found", found.len() as u64);
-    let mut stored = db.conn.prepare("SELECT source_bytes FROM sessions WHERE agent = ?1 AND id = ?2")?;
+    let mut stored = db
+        .conn
+        .prepare("SELECT source_bytes FROM sessions WHERE agent = ?1 AND id = ?2")?;
     for file in &found {
         let existing: Option<Option<i64>> = stored
             .query_row(params![file.agent, file.id], |r| r.get(0))
@@ -145,7 +153,14 @@ pub fn import_sessions(
                 i64::try_from(file.bytes).unwrap_or(i64::MAX),
                 i64::try_from(lines).unwrap_or(i64::MAX)
             ])?;
-            report.add(if changed == 1 { "indexed_or_updated" } else { "unchanged" }, 1);
+            report.add(
+                if changed == 1 {
+                    "indexed_or_updated"
+                } else {
+                    "unchanged"
+                },
+                1,
+            );
             report.add(&format!("agent:{}", file.agent), 1);
         }
     }
@@ -165,24 +180,40 @@ mod tests {
         let root = dir.path();
         std::fs::create_dir_all(root.join("codex")).unwrap();
         std::fs::create_dir_all(root.join("2026/09")).unwrap();
-        std::fs::write(root.join("codex/abc.jsonl"), "{\"secret\":1}\n{\"secret\":2}\n").unwrap();
+        std::fs::write(
+            root.join("codex/abc.jsonl"),
+            "{\"secret\":1}\n{\"secret\":2}\n",
+        )
+        .unwrap();
         std::fs::write(root.join("2026/09/n1.jsonl"), "{}\n").unwrap();
         std::fs::write(root.join("note.txt"), "ignored").unwrap();
         let mut db = HomeDb::open_in_memory().unwrap();
 
         let dry = import_sessions(&mut db, root, Some("dbfr"), false).unwrap();
         assert_eq!(dry.counts["files_found"], 2);
-        assert_eq!(db.conn().query_row::<i64, _, _>("SELECT count(*) FROM sessions", [], |r| r.get(0)).unwrap(), 0);
+        assert_eq!(
+            db.conn()
+                .query_row::<i64, _, _>("SELECT count(*) FROM sessions", [], |r| r.get(0))
+                .unwrap(),
+            0
+        );
 
         let applied = import_sessions(&mut db, root, Some("dbfr"), true).unwrap();
         assert_eq!(applied.counts["agent:codex"], 1);
         assert_eq!(applied.counts["agent:aphrody"], 1);
         let (records, domain): (i64, String) = db
             .conn()
-            .query_row("SELECT records, domain FROM sessions WHERE agent = 'codex'", [], |r| Ok((r.get(0)?, r.get(1)?)))
+            .query_row(
+                "SELECT records, domain FROM sessions WHERE agent = 'codex'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
             .unwrap();
         assert_eq!((records, domain.as_str()), (2, "dbfr"));
-        let messages: i64 = db.conn().query_row("SELECT count(*) FROM messages", [], |r| r.get(0)).unwrap();
+        let messages: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM messages", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(messages, 0);
         let again = import_sessions(&mut db, root, Some("dbfr"), true).unwrap();
         assert_eq!(again.counts["unchanged"], 2);

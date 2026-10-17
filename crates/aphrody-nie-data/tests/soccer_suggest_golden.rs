@@ -48,8 +48,14 @@ fn comptes_et_valeurs_byte_exact() {
 fn dispatch_typed() {
     use aphrody_nie_data::typed::{decode_by_key, family_key};
     let Some(root) = load() else { return };
-    assert_eq!(family_key("soccer_suggest_config_0.01.92.cfg.bin"), "soccer_suggest_config");
+    assert_eq!(
+        family_key("soccer_suggest_config_0.01.92.cfg.bin"),
+        "soccer_suggest_config"
+    );
     let (label, json) = decode_by_key("soccer_suggest_config", &root).expect("câblé");
     assert_eq!(label, "soccer_suggest");
-    assert_eq!(json["pass_extension_data"].as_array().map(Vec::len), Some(132));
+    assert_eq!(
+        json["pass_extension_data"].as_array().map(Vec::len),
+        Some(132)
+    );
 }

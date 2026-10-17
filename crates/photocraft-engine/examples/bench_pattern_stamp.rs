@@ -14,7 +14,10 @@ use serde_json::json;
 
 fn main() {
     let mut s = Session::new();
-    if let Err(e) = s.execute("file.new", json!({"width": 6016, "height": 4000, "depth": 8, "mode": "rgb"})) {
+    if let Err(e) = s.execute(
+        "file.new",
+        json!({"width": 6016, "height": 4000, "depth": 8, "mode": "rgb"}),
+    ) {
         eprintln!("file.new: {e}");
         std::process::exit(1);
     }
@@ -47,7 +50,9 @@ fn main() {
     match s.execute("paint.patternStamp", impressionist) {
         Ok(_) => {
             let ms = t.elapsed().as_secs_f64() * 1000.0;
-            println!("patternStamp impressionist hardness 100 size 200, 5800 px stroke: {ms:.1} ms");
+            println!(
+                "patternStamp impressionist hardness 100 size 200, 5800 px stroke: {ms:.1} ms"
+            );
         }
         Err(e) => {
             eprintln!("paint.patternStamp impressionist: {e}");

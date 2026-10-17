@@ -139,32 +139,73 @@ impl PluginManifest {
     pub fn validate(&self) -> Result<(), String> {
         const MAX_PARAMS: usize = 256;
         if self.api != PLUGIN_API_VERSION {
-            return Err(format!("plug-in `{}` targets plug-in API {} but this build implements API {PLUGIN_API_VERSION}", self.id, self.api));
+            return Err(format!(
+                "plug-in `{}` targets plug-in API {} but this build implements API {PLUGIN_API_VERSION}",
+                self.id, self.api
+            ));
         }
-        let ok_id = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
+        let ok_id = |s: &str| {
+            !s.is_empty()
+                && s.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+        };
         if !ok_id(&self.id) || self.id.starts_with("ec.") {
-            return Err(format!("bad plug-in id `{}` (reverse-domain, letters, digits, `.`, `_`, `-`; `ec.` is reserved)", self.id));
+            return Err(format!(
+                "bad plug-in id `{}` (reverse-domain, letters, digits, `.`, `_`, `-`; `ec.` is reserved)",
+                self.id
+            ));
         }
         if self.name.trim().is_empty() || self.category.trim().is_empty() {
             return Err(format!("plug-in `{}` needs a name and a category", self.id));
         }
         if self.params.len() > MAX_PARAMS {
-            return Err(format!("plug-in `{}` has {} parameters (at most {MAX_PARAMS})", self.id, self.params.len()));
+            return Err(format!(
+                "plug-in `{}` has {} parameters (at most {MAX_PARAMS})",
+                self.id,
+                self.params.len()
+            ));
         }
         let mut seen = std::collections::HashSet::new();
         for p in &self.params {
-            if p.id.is_empty() || !p.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') || !seen.insert(p.id.as_str()) {
-                return Err(format!("plug-in `{}`: bad or duplicate parameter id `{}`", self.id, p.id));
+            if p.id.is_empty()
+                || !p.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+                || !seen.insert(p.id.as_str())
+            {
+                return Err(format!(
+                    "plug-in `{}`: bad or duplicate parameter id `{}`",
+                    self.id, p.id
+                ));
             }
             if let PluginParamKind::Popup { options, default } = &p.kind
                 && (options.is_empty() || *default as usize >= options.len())
             {
-                return Err(format!("plug-in `{}`: popup `{}` needs options and a default index in range", self.id, p.id));
+                return Err(format!(
+                    "plug-in `{}`: popup `{}` needs options and a default index in range",
+                    self.id, p.id
+                ));
             }
-            if let PluginParamKind::Slider { default, min, max, slider_min, slider_max, .. } = &p.kind {
+            if let PluginParamKind::Slider {
+                default,
+                min,
+                max,
+                slider_min,
+                slider_max,
+                ..
+            } = &p.kind
+            {
                 let (lo, hi) = (slider_min.unwrap_or(*min), slider_max.unwrap_or(*max));
-                if [*default, *min, *max, lo, hi].iter().any(|v| !v.is_finite()) || min > max || lo > hi || default < min || default > max {
-                    return Err(format!("plug-in `{}`: slider `{}` needs min ≤ default ≤ max (and sliderMin ≤ sliderMax)", self.id, p.id));
+                if [*default, *min, *max, lo, hi]
+                    .iter()
+                    .any(|v| !v.is_finite())
+                    || min > max
+                    || lo > hi
+                    || default < min
+                    || default > max
+                {
+                    return Err(format!(
+                        "plug-in `{}`: slider `{}` needs min ≤ default ≤ max (and sliderMin ≤ sliderMax)",
+                        self.id, p.id
+                    ));
                 }
             }
         }
@@ -207,7 +248,9 @@ impl PluginParams<'_> {
     }
     /// Slider / angle / popup index / checkbox (0 or 1).
     pub fn f(&self, id: &str) -> f64 {
-        self.slot(id).and_then(|s| s.first().copied()).unwrap_or(0.0)
+        self.slot(id)
+            .and_then(|s| s.first().copied())
+            .unwrap_or(0.0)
     }
     pub fn b(&self, id: &str) -> bool {
         self.f(id) != 0.0
@@ -217,7 +260,9 @@ impl PluginParams<'_> {
         self.slot(id).map(|s| [s[0], s[1]]).unwrap_or([0.0; 2])
     }
     pub fn color(&self, id: &str) -> [f64; 4] {
-        self.slot(id).map(|s| [s[0], s[1], s[2], s[3]]).unwrap_or([1.0; 4])
+        self.slot(id)
+            .map(|s| [s[0], s[1], s[2], s[3]])
+            .unwrap_or([1.0; 4])
     }
 }
 
@@ -226,14 +271,20 @@ pub trait EffectPlugin: Send + Sync {
     fn manifest(&self) -> &PluginManifest;
     /// Process `frame` in place. `time` is layer time in seconds. An error leaves the frame as
     /// it was (the error is logged once).
-    fn render(&self, frame: &mut PluginFrame, params: &PluginParams, time: f64) -> Result<(), String>;
+    fn render(
+        &self,
+        frame: &mut PluginFrame,
+        params: &PluginParams,
+        time: f64,
+    ) -> Result<(), String>;
     /// Where the plug-in came from (a file path, `built-in`…), for listings.
     fn source(&self) -> String {
         "built-in".into()
     }
 }
 
-static SLOTS: [OnceLock<Arc<dyn EffectPlugin>>; MAX_PLUGINS] = [const { OnceLock::new() }; MAX_PLUGINS];
+static SLOTS: [OnceLock<Arc<dyn EffectPlugin>>; MAX_PLUGINS] =
+    [const { OnceLock::new() }; MAX_PLUGINS];
 
 /// Registered plug-in effects, in registration order.
 fn plugin_specs() -> &'static RwLock<Vec<&'static EffectSpec>> {
@@ -248,7 +299,11 @@ pub fn plugins() -> Vec<&'static EffectSpec> {
 
 /// The plug-in behind a registered effect id.
 pub fn plugin(id: &str) -> Option<Arc<dyn EffectPlugin>> {
-    SLOTS.iter().filter_map(|s| s.get()).find(|p| p.manifest().id == id).cloned()
+    SLOTS
+        .iter()
+        .filter_map(|s| s.get())
+        .find(|p| p.manifest().id == id)
+        .cloned()
 }
 
 fn leak(s: &str) -> &'static str {
@@ -257,17 +312,40 @@ fn leak(s: &str) -> &'static str {
 
 fn param_spec(p: &PluginParam) -> ParamSpec {
     let (default, ui) = match &p.kind {
-        PluginParamKind::Slider { default, min, max, slider_min, slider_max, decimals } => (
+        PluginParamKind::Slider {
+            default,
+            min,
+            max,
+            slider_min,
+            slider_max,
+            decimals,
+        } => (
             Value::Scalar(*default),
-            ParamUi::Slider { min: *min, max: *max, slider_min: slider_min.unwrap_or(*min), slider_max: slider_max.unwrap_or(*max), decimals: *decimals },
+            ParamUi::Slider {
+                min: *min,
+                max: *max,
+                slider_min: slider_min.unwrap_or(*min),
+                slider_max: slider_max.unwrap_or(*max),
+                decimals: *decimals,
+            },
         ),
         PluginParamKind::Angle { default } => (Value::Scalar(*default), ParamUi::Angle),
         PluginParamKind::Checkbox { default } => (Value::Bool(*default), ParamUi::Checkbox),
-        PluginParamKind::Popup { options, default } => (Value::Enum(*default), ParamUi::Popup { options: options.clone() }),
+        PluginParamKind::Popup { options, default } => (
+            Value::Enum(*default),
+            ParamUi::Popup {
+                options: options.clone(),
+            },
+        ),
         PluginParamKind::Point { default } => (Value::Vec2(*default), ParamUi::Point),
         PluginParamKind::Color { default } => (Value::Color(*default), ParamUi::Color),
     };
-    ParamSpec { id: leak(&p.id), name: leak(&p.name), default, ui }
+    ParamSpec {
+        id: leak(&p.id),
+        name: leak(&p.name),
+        default,
+        ui,
+    }
 }
 
 /// Register a plug-in effect: it appears in Effects & Presets under its category and is
@@ -276,12 +354,22 @@ fn param_spec(p: &PluginParam) -> ParamSpec {
 pub fn register_plugin(plugin: Arc<dyn EffectPlugin>) -> Result<&'static EffectSpec, String> {
     let m = plugin.manifest().clone();
     m.validate()?;
-    let mut specs = plugin_specs().write().map_err(|_| "plug-in registry poisoned".to_string())?;
+    let mut specs = plugin_specs()
+        .write()
+        .map_err(|_| "plug-in registry poisoned".to_string())?;
     if crate::registry().iter().any(|s| s.id == m.id) || specs.iter().any(|s| s.id == m.id) {
-        return Err(format!("an effect with id `{}` is already registered", m.id));
+        return Err(format!(
+            "an effect with id `{}` is already registered",
+            m.id
+        ));
     }
-    let slot = SLOTS.iter().position(|s| s.get().is_none()).ok_or_else(|| format!("too many plug-ins (at most {MAX_PLUGINS})"))?;
-    SLOTS[slot].set(plugin).map_err(|_| "plug-in slot taken".to_string())?;
+    let slot = SLOTS
+        .iter()
+        .position(|s| s.get().is_none())
+        .ok_or_else(|| format!("too many plug-ins (at most {MAX_PLUGINS})"))?;
+    SLOTS[slot]
+        .set(plugin)
+        .map_err(|_| "plug-in slot taken".to_string())?;
     let spec: &'static EffectSpec = Box::leak(Box::new(EffectSpec {
         id: leak(&m.id),
         name: leak(&m.name),
@@ -324,7 +412,13 @@ pub fn flatten(m: &PluginManifest, ctx: &EffectCtx, buf: &Buf) -> Vec<f64> {
                 let c = v.map(Value::as_color).unwrap_or([1.0; 4]);
                 out.extend(c.iter().map(|x| *x as f64));
             }
-            PluginParamKind::Checkbox { .. } => out.push(if v.map(Value::as_bool).unwrap_or(false) { 1.0 } else { 0.0 }),
+            PluginParamKind::Checkbox { .. } => {
+                out.push(if v.map(Value::as_bool).unwrap_or(false) {
+                    1.0
+                } else {
+                    0.0
+                })
+            }
             PluginParamKind::Popup { .. } => out.push(v.map(Value::as_enum).unwrap_or(0) as f64),
             _ => out.push(v.map(Value::as_f64).unwrap_or(0.0)),
         }
@@ -333,13 +427,23 @@ pub fn flatten(m: &PluginManifest, ctx: &EffectCtx, buf: &Buf) -> Vec<f64> {
 }
 
 fn run_slot(slot: usize, ctx: &EffectCtx, mut buf: Buf) -> Buf {
-    let Some(plugin) = SLOTS[slot].get() else { return buf };
+    let Some(plugin) = SLOTS[slot].get() else {
+        return buf;
+    };
     let m = plugin.manifest();
     let flat = flatten(m, ctx, &buf);
-    let params = PluginParams { manifest: m, flat: &flat };
+    let params = PluginParams {
+        manifest: m,
+        flat: &flat,
+    };
     let (width, height) = (buf.img.width, buf.img.height);
     let before = buf.img.data.clone();
-    let mut frame = PluginFrame { width, height, pixels: &mut buf.img.data, scale: buf.scale };
+    let mut frame = PluginFrame {
+        width,
+        height,
+        pixels: &mut buf.img.data,
+        scale: buf.scale,
+    };
     if let Err(e) = plugin.render(&mut frame, &params, ctx.time) {
         log::warn!("plug-in `{}`: {e}", m.id);
         buf.img.data = before;

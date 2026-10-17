@@ -59,7 +59,10 @@ impl OllamaName {
     /// [`ModelError::BadRef`] for an empty name, an empty segment, or a
     /// segment that could escape the store (`..`, separators, NUL).
     pub fn parse(input: &str) -> Result<Self> {
-        let bad = |reason| ModelError::BadRef { input: input.to_owned(), reason };
+        let bad = |reason| ModelError::BadRef {
+            input: input.to_owned(),
+            reason,
+        };
         let (path, tag) = match input.rsplit_once(':') {
             // A ':' before the last '/' is a host port, not a tag separator.
             Some((path, tag)) if !tag.contains('/') => (path, tag),
@@ -89,9 +92,14 @@ impl OllamaName {
     }
 
     fn manifest_rel(&self) -> PathBuf {
-        [self.host.as_str(), self.namespace.as_str(), self.model.as_str(), self.tag.as_str()]
-            .iter()
-            .collect()
+        [
+            self.host.as_str(),
+            self.namespace.as_str(),
+            self.model.as_str(),
+            self.tag.as_str(),
+        ]
+        .iter()
+        .collect()
     }
 }
 
@@ -169,12 +177,16 @@ impl OllamaStore {
                     "{}/{}/{}:{}",
                     name.host, name.namespace, name.model, name.tag
                 )));
-            },
+            }
             Err(source) => return Err(ModelError::Io { path, source }),
         };
         let manifest: Manifest = serde_json::from_slice(&bytes)
             .map_err(|source| ModelError::Registry { path, source })?;
-        Ok(OllamaModel { name, layers: manifest.layers, root: self.root.clone() })
+        Ok(OllamaModel {
+            name,
+            layers: manifest.layers,
+            root: self.root.clone(),
+        })
     }
 
     /// Names of every installed manifest, as `host/namespace/model:tag`.
@@ -191,8 +203,10 @@ impl OllamaStore {
         // host / namespace / model / tag: exactly four levels.
         let mut stack = vec![(base.clone(), 0_usize)];
         while let Some((dir, depth)) = stack.pop() {
-            let entries = std::fs::read_dir(&dir)
-                .map_err(|source| ModelError::Io { path: dir.clone(), source })?;
+            let entries = std::fs::read_dir(&dir).map_err(|source| ModelError::Io {
+                path: dir.clone(),
+                source,
+            })?;
             for entry in entries.flatten() {
                 let path = entry.path();
                 if depth < 3 && path.is_dir() {
@@ -222,13 +236,18 @@ impl OllamaModel {
     /// First layer of `media_type`, with its blob path.
     #[must_use]
     pub fn layer(&self, media_type: &str) -> Option<(&OllamaLayer, PathBuf)> {
-        self.layers.iter().find(|l| l.media_type == media_type).map(|l| (l, self.blob(l)))
+        self.layers
+            .iter()
+            .find(|l| l.media_type == media_type)
+            .map(|l| (l, self.blob(l)))
     }
 
     /// Path to the GGUF weights blob, when present on disk.
     #[must_use]
     pub fn gguf_path(&self) -> Option<PathBuf> {
-        self.layer(MEDIA_TYPE_MODEL).map(|(_, p)| p).filter(|p| p.is_file())
+        self.layer(MEDIA_TYPE_MODEL)
+            .map(|(_, p)| p)
+            .filter(|p| p.is_file())
     }
 
     /// UTF-8 text of a text layer (template, system, params).
@@ -237,8 +256,12 @@ impl OllamaModel {
     ///
     /// [`ModelError::Io`] when the blob cannot be read.
     pub fn read_text(&self, media_type: &str) -> Result<Option<String>> {
-        let Some((_, path)) = self.layer(media_type) else { return Ok(None) };
-        std::fs::read_to_string(&path).map(Some).map_err(|source| ModelError::Io { path, source })
+        let Some((_, path)) = self.layer(media_type) else {
+            return Ok(None);
+        };
+        std::fs::read_to_string(&path)
+            .map(Some)
+            .map_err(|source| ModelError::Io { path, source })
     }
 }
 
@@ -250,7 +273,12 @@ mod tests {
     fn name_defaults() {
         let n = OllamaName::parse("gpt-oss:20b").unwrap();
         assert_eq!(
-            (n.host.as_str(), n.namespace.as_str(), n.model.as_str(), n.tag.as_str()),
+            (
+                n.host.as_str(),
+                n.namespace.as_str(),
+                n.model.as_str(),
+                n.tag.as_str()
+            ),
             ("registry.ollama.ai", "library", "gpt-oss", "20b")
         );
         assert_eq!(OllamaName::parse("llama3").unwrap().tag, "latest");
@@ -278,8 +306,17 @@ mod tests {
         .unwrap();
         let store = OllamaStore::at(dir.path());
         let model = store.resolve("tiny").unwrap();
-        assert_eq!(model.gguf_path().unwrap(), dir.path().join("blobs/sha256-abc"));
-        assert_eq!(store.list().unwrap(), ["registry.ollama.ai/library/tiny:latest"]);
-        assert!(matches!(store.resolve("absent"), Err(ModelError::NotInstalled(_))));
+        assert_eq!(
+            model.gguf_path().unwrap(),
+            dir.path().join("blobs/sha256-abc")
+        );
+        assert_eq!(
+            store.list().unwrap(),
+            ["registry.ollama.ai/library/tiny:latest"]
+        );
+        assert!(matches!(
+            store.resolve("absent"),
+            Err(ModelError::NotInstalled(_))
+        ));
     }
 }

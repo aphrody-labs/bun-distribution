@@ -29,7 +29,14 @@
 //! Off macOS (and on `wasm32`) the crate compiles to stubs: scans are empty and nothing can be
 //! created.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(target_os = "macos")]
 #[allow(unsafe_code)]
@@ -65,7 +72,11 @@ pub fn is_supported_type(ty: u32) -> bool {
 /// followed by 8 upper-case hex digits.
 pub fn fourcc_string(code: u32) -> String {
     let b = code.to_be_bytes();
-    if b.iter().all(|c| (0x20..=0x7e).contains(c)) { b.iter().map(|&c| char::from(c)).collect() } else { format!("#{code:08X}") }
+    if b.iter().all(|c| (0x20..=0x7e).contains(c)) {
+        b.iter().map(|&c| char::from(c)).collect()
+    } else {
+        format!("#{code:08X}")
+    }
 }
 
 /// Parses one four-char code written by [`fourcc_string`].
@@ -99,7 +110,12 @@ fn parse_field(s: &str) -> Option<(u32, &str)> {
 
 /// The SoundCraft id of a component: `au:<type>:<subtype>:<manufacturer>`.
 pub fn format_id(ty: u32, subtype: u32, manufacturer: u32) -> String {
-    format!("{ID_PREFIX}{}:{}:{}", fourcc_string(ty), fourcc_string(subtype), fourcc_string(manufacturer))
+    format!(
+        "{ID_PREFIX}{}:{}:{}",
+        fourcc_string(ty),
+        fourcc_string(subtype),
+        fourcc_string(manufacturer)
+    )
 }
 
 /// The `(type, subtype, manufacturer)` codes of an `au:…` id (`None` for other ids or a
@@ -119,7 +135,9 @@ pub fn category_for(ty: u32, subtype: u32, name: &str) -> Category {
     }
     let by_sub = match &subtype.to_be_bytes() {
         b"dely" | b"sdly" | b"mdly" => Some(Category::Delay),
-        b"lpas" | b"hpas" | b"bpas" | b"hshf" | b"lshf" | b"pmeq" | b"nbeq" | b"geq " => Some(Category::Eq),
+        b"lpas" | b"hpas" | b"bpas" | b"hshf" | b"lshf" | b"pmeq" | b"nbeq" | b"geq " => {
+            Some(Category::Eq)
+        }
         b"dcmp" | b"mcmp" | b"lmtr" | b"xpnd" | b"ngte" => Some(Category::Dynamics),
         b"rvb2" | b"mrev" => Some(Category::Reverb),
         b"dist" => Some(Category::Harmonic),
@@ -139,7 +157,9 @@ pub fn category_for(ty: u32, subtype: u32, name: &str) -> Category {
         Category::Eq
     } else if has(&["compress", "limit", "gate", "expand", "dynamic", "de-ess"]) {
         Category::Dynamics
-    } else if has(&["chorus", "flang", "phase", "tremolo", "vibrato", "rotary", "ring mod"]) {
+    } else if has(&[
+        "chorus", "flang", "phase", "tremolo", "vibrato", "rotary", "ring mod",
+    ]) {
         Category::Modulation
     } else if has(&["distort", "satur", "overdrive", "fuzz", "bitcrush"]) {
         Category::Harmonic
@@ -282,17 +302,31 @@ mod tests {
         assert_eq!(parse_fourcc("abcde"), None);
         assert_eq!(parse_fourcc("ab\u{e9}"), None);
         assert_eq!(parse_fourcc(""), None);
-        for code in [0u32, 0x7f7f_7f7f, 0x2020_2020, u32::MAX, u32::from_be_bytes(*b"a:b:")] {
+        for code in [
+            0u32,
+            0x7f7f_7f7f,
+            0x2020_2020,
+            u32::MAX,
+            u32::from_be_bytes(*b"a:b:"),
+        ] {
             assert_eq!(parse_fourcc(&fourcc_string(code)), Some(code), "{code:08X}");
         }
     }
 
     #[test]
     fn ids_parse_and_format() {
-        let dly = (TYPE_EFFECT, u32::from_be_bytes(*b"dely"), u32::from_be_bytes(*b"appl"));
+        let dly = (
+            TYPE_EFFECT,
+            u32::from_be_bytes(*b"dely"),
+            u32::from_be_bytes(*b"appl"),
+        );
         assert_eq!(format_id(dly.0, dly.1, dly.2), "au:aufx:dely:appl");
         assert_eq!(parse_id("au:aufx:dely:appl"), Some(dly));
-        let dls = (TYPE_INSTRUMENT, u32::from_be_bytes(*b"dls "), u32::from_be_bytes(*b"appl"));
+        let dls = (
+            TYPE_INSTRUMENT,
+            u32::from_be_bytes(*b"dls "),
+            u32::from_be_bytes(*b"appl"),
+        );
         assert_eq!(parse_id("au:aumu:dls :appl"), Some(dls));
         // Colons inside a code are fine: fields have fixed widths.
         let odd = (TYPE_MUSIC_EFFECT, u32::from_be_bytes(*b"a:b:"), 0x0000_00FF);
@@ -322,17 +356,28 @@ mod tests {
 
     #[test]
     fn categories_and_names() {
-        let c = |ty: &[u8; 4], sub: &[u8; 4], name: &str| category_for(u32::from_be_bytes(*ty), u32::from_be_bytes(*sub), name);
+        let c = |ty: &[u8; 4], sub: &[u8; 4], name: &str| {
+            category_for(u32::from_be_bytes(*ty), u32::from_be_bytes(*sub), name)
+        };
         assert_eq!(c(b"aumu", b"dls ", "DLSMusicDevice"), Category::Instrument);
         assert_eq!(c(b"aufx", b"dely", "AUDelay"), Category::Delay);
         assert_eq!(c(b"aufx", b"lpas", "AULowpass"), Category::Eq);
-        assert_eq!(c(b"aufx", b"dcmp", "AUDynamicsProcessor"), Category::Dynamics);
+        assert_eq!(
+            c(b"aufx", b"dcmp", "AUDynamicsProcessor"),
+            Category::Dynamics
+        );
         assert_eq!(c(b"aufx", b"mrev", "AUMatrixReverb"), Category::Reverb);
         assert_eq!(c(b"aufx", b"xxxx", "Big Plate Verb"), Category::Reverb);
         assert_eq!(c(b"aufx", b"xxxx", "Tape Echo"), Category::Delay);
         assert_eq!(c(b"aufx", b"xxxx", "Thing"), Category::Other);
-        assert_eq!(split_component_name("Apple: AUDelay"), ("Apple".into(), "AUDelay".into()));
-        assert_eq!(split_component_name("NoVendor"), (String::new(), "NoVendor".into()));
+        assert_eq!(
+            split_component_name("Apple: AUDelay"),
+            ("Apple".into(), "AUDelay".into())
+        );
+        assert_eq!(
+            split_component_name("NoVendor"),
+            (String::new(), "NoVendor".into())
+        );
         assert_eq!(split_component_name("Odd:"), (String::new(), "Odd:".into()));
     }
 

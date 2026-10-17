@@ -1,7 +1,14 @@
 //! The GridCraft document model: workbooks, sheets, a copy-on-write cell store, interned
 //! styles, defined names, tables, conditional formats, validation, comments, charts and print
 //! settings. Pure data; calculation lives in `gridcraft-calc`.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod b64;
@@ -19,11 +26,14 @@ pub use cell::{Cell, CellPicture, Formula};
 pub use features::*;
 pub use password::PasswordHash;
 pub use preserved::{Preserved, PreservedPart, PreservedRel, PreservedSheet, PreservedXml};
-pub use sheet::{DEFAULT_COL_WIDTH, DEFAULT_ROW_HEIGHT, LineIndex, Sheet, SheetViewMode, Visibility, points_to_chars};
+pub use sheet::{
+    DEFAULT_COL_WIDTH, DEFAULT_ROW_HEIGHT, LineIndex, Sheet, SheetViewMode, Visibility,
+    points_to_chars,
+};
 pub use store::CellStore;
 pub use style::{
-    Alignment, BorderLine, BorderStyle, Borders, Color, Fill, Font, HAlign, NumFmt, PatternType, Style, StyleId, StyleTable, Theme, Underline,
-    VAlign, VertAlign,
+    Alignment, BorderLine, BorderStyle, Borders, Color, Fill, Font, HAlign, NumFmt, PatternType,
+    Style, StyleId, StyleTable, Theme, Underline, VAlign, VertAlign,
 };
 pub use workbook::{CalcMode, CalcSettings, DefinedName, DocProps, Workbook};
 

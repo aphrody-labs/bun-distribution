@@ -25,14 +25,22 @@ impl V3 {
         Self(self.0 - b.0, self.1 - b.1, self.2 - b.2)
     }
     fn cross(self, b: Self) -> Self {
-        Self(self.1 * b.2 - self.2 * b.1, self.2 * b.0 - self.0 * b.2, self.0 * b.1 - self.1 * b.0)
+        Self(
+            self.1 * b.2 - self.2 * b.1,
+            self.2 * b.0 - self.0 * b.2,
+            self.0 * b.1 - self.1 * b.0,
+        )
     }
     fn dot(self, b: Self) -> f64 {
         self.0 * b.0 + self.1 * b.1 + self.2 * b.2
     }
     fn unit(self) -> Self {
         let l = self.dot(self).sqrt();
-        if l < 1e-12 { Self::default() } else { Self(self.0 / l, self.1 / l, self.2 / l) }
+        if l < 1e-12 {
+            Self::default()
+        } else {
+            Self(self.0 / l, self.1 / l, self.2 / l)
+        }
     }
 }
 
@@ -85,7 +93,11 @@ impl Default for Revolve {
 }
 
 fn finite(v: f64, fallback: f64, min: f64, max: f64) -> f64 {
-    if v.is_finite() { v.clamp(min, max) } else { fallback }
+    if v.is_finite() {
+        v.clamp(min, max)
+    } else {
+        fallback
+    }
 }
 
 impl Revolve {
@@ -94,11 +106,24 @@ impl Revolve {
     /// Each pair has a cross product pointing along that parameter's rotation axis.
     pub fn rotation_planes(self) -> [[[f64; 3]; 2]; 3] {
         let o = self.sanitized();
-        let x_frame = Self { rotation_x: 0.0, ..o };
-        let y_frame = Self { rotation_x: 0.0, rotation_y: 0.0, ..o };
+        let x_frame = Self {
+            rotation_x: 0.0,
+            ..o
+        };
+        let y_frame = Self {
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            ..o
+        };
         [
-            [x_frame.rotate(V3(0.0, 1.0, 0.0)), x_frame.rotate(V3(0.0, 0.0, 1.0))],
-            [y_frame.rotate(V3(1.0, 0.0, 0.0)), y_frame.rotate(V3(0.0, 0.0, -1.0))],
+            [
+                x_frame.rotate(V3(0.0, 1.0, 0.0)),
+                x_frame.rotate(V3(0.0, 0.0, 1.0)),
+            ],
+            [
+                y_frame.rotate(V3(1.0, 0.0, 0.0)),
+                y_frame.rotate(V3(0.0, 0.0, -1.0)),
+            ],
             [V3(1.0, 0.0, 0.0), V3(0.0, 1.0, 0.0)],
         ]
         .map(|plane| plane.map(|v| [v.0, v.1, v.2]))
@@ -107,7 +132,14 @@ impl Revolve {
     /// The fixed centre of view rotation, in document coordinates.
     pub fn rotation_origin(self, bounds: Rect) -> Point {
         let o = self.sanitized();
-        Point::new(if o.edge == Edge::Left { bounds.x0 - o.offset } else { bounds.x1 + o.offset }, bounds.center().y)
+        Point::new(
+            if o.edge == Edge::Left {
+                bounds.x0 - o.offset
+            } else {
+                bounds.x1 + o.offset
+            },
+            bounds.center().y,
+        )
     }
 
     /// Rotated unit axes for a view-orientation guide (screen Y points down).
@@ -150,18 +182,31 @@ impl Revolve {
         let o = self.sanitized();
         let (se, ce) = o.light_elevation.to_radians().sin_cos();
         let (sa, ca) = o.light_azimuth.to_radians().sin_cos();
-        [[[0.0, -se, 0.0], [0.0, 0.0, ce], [ce, 0.0, 0.0]], [[0.0, 0.0, 0.0], [sa, 0.0, ca], [0.0, -1.0, 0.0]]]
+        [
+            [[0.0, -se, 0.0], [0.0, 0.0, ce], [ce, 0.0, 0.0]],
+            [[0.0, 0.0, 0.0], [sa, 0.0, ca], [0.0, -1.0, 0.0]],
+        ]
     }
 
     /// Move a light on its current hemisphere, preserving the azimuth at the poles.
     /// A light behind the object stays behind when its projected handle is dragged.
     pub fn light_at_on_side(self, point: Point) -> [f64; 2] {
         let o = self.sanitized();
-        let point = Point::new(finite(point.x, 0.0, -1e8, 1e8), finite(point.y, 0.0, -1e8, 1e8));
+        let point = Point::new(
+            finite(point.x, 0.0, -1e8, 1e8),
+            finite(point.y, 0.0, -1e8, 1e8),
+        );
         let length = point.x.hypot(point.y).max(1.0);
         let (x, y) = (point.x / length, point.y / length);
-        let z = (1.0 - x * x - y * y).max(0.0).sqrt().copysign(o.light_direction()[2]);
-        let azimuth = if x.hypot(z) < 1e-9 { o.light_azimuth } else { x.atan2(z).to_degrees() };
+        let z = (1.0 - x * x - y * y)
+            .max(0.0)
+            .sqrt()
+            .copysign(o.light_direction()[2]);
+        let azimuth = if x.hypot(z) < 1e-9 {
+            o.light_azimuth
+        } else {
+            x.atan2(z).to_degrees()
+        };
         [azimuth, (-y).clamp(-1.0, 1.0).asin().to_degrees()]
     }
 
@@ -170,7 +215,10 @@ impl Revolve {
         let length = point.x.hypot(point.y).max(1.0);
         let (x, y) = (point.x / length, point.y / length);
         let z = (1.0 - x * x - y * y).max(0.0).sqrt();
-        [x.atan2(z).to_degrees(), (-y).clamp(-1.0, 1.0).asin().to_degrees()]
+        [
+            x.atan2(z).to_degrees(),
+            (-y).clamp(-1.0, 1.0).asin().to_degrees(),
+        ]
     }
 
     fn sanitized(self) -> Self {
@@ -225,7 +273,10 @@ impl Face {
 /// Invalid or excessively complex inputs return an error, never a partial surface.
 pub fn revolve(path: &PathData, bounds: Rect, options: Revolve) -> Result<Vec<Face>, String> {
     let o = options.sanitized();
-    if ![bounds.x0, bounds.y0, bounds.x1, bounds.y1].iter().all(|v| v.is_finite() && v.abs() <= 1e8) {
+    if ![bounds.x0, bounds.y0, bounds.x1, bounds.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= 1e8)
+    {
         return Err("Revolve requires finite profile coordinates within 100 million points".into());
     }
     let axis = match o.edge {
@@ -250,7 +301,11 @@ pub fn revolve(path: &PathData, bounds: Rect, options: Revolve) -> Result<Vec<Fa
                 return Err("Revolve profile is too complex".into());
             }
         }
-        let segments = if sp.closed { sp.anchors.len() } else { sp.anchors.len().saturating_sub(1) };
+        let segments = if sp.closed {
+            sp.anchors.len()
+        } else {
+            sp.anchors.len().saturating_sub(1)
+        };
         // Bound work before sampling any data. Curves get sixteen samples, straight edges one.
         if segments > MAX_PROFILE_POINTS {
             return Err("Revolve profile is too complex".into());
@@ -268,7 +323,10 @@ pub fn revolve(path: &PathData, bounds: Rect, options: Revolve) -> Result<Vec<Fa
         }
         for pair in profile.windows(2) {
             let [a, b] = pair else { continue };
-            if ![a.x, a.y, b.x, b.y].iter().all(|v| v.is_finite() && v.abs() <= 1e8) {
+            if ![a.x, a.y, b.x, b.y]
+                .iter()
+                .all(|v| v.is_finite() && v.abs() <= 1e8)
+            {
                 return Err("Revolve profile contains invalid coordinates".into());
             }
             for j in 0..steps {
@@ -276,11 +334,22 @@ pub fn revolve(path: &PathData, bounds: Rect, options: Revolve) -> Result<Vec<Fa
                     let (s, c) = (sweep * step as f64 / steps as f64).sin_cos();
                     o.rotate(V3((p.x - axis) * c, p.y - center_y, (p.x - axis) * s))
                 };
-                let vertices = [vertex(*a, j), vertex(*b, j), vertex(*b, j + 1), vertex(*a, j + 1)];
+                let vertices = [
+                    vertex(*a, j),
+                    vertex(*b, j),
+                    vertex(*b, j + 1),
+                    vertex(*a, j + 1),
+                ];
                 // The diagonal gives a nonzero normal even when one profile endpoint is on-axis.
-                let mut normal = vertices[1].sub(vertices[0]).cross(vertices[2].sub(vertices[0])).unit();
+                let mut normal = vertices[1]
+                    .sub(vertices[0])
+                    .cross(vertices[2].sub(vertices[0]))
+                    .unit();
                 if normal.dot(normal) < 0.5 {
-                    normal = vertices[2].sub(vertices[0]).cross(vertices[3].sub(vertices[0])).unit();
+                    normal = vertices[2]
+                        .sub(vertices[0])
+                        .cross(vertices[3].sub(vertices[0]))
+                        .unit();
                 }
                 if normal.dot(normal) < 0.5 {
                     continue;
@@ -289,7 +358,11 @@ pub fn revolve(path: &PathData, bounds: Rect, options: Revolve) -> Result<Vec<Fa
                 if normal.2 < 0.0 {
                     normal = V3(-normal.0, -normal.1, -normal.2);
                 }
-                let brightness = if o.shade { (o.ambient + o.light_intensity * normal.dot(light).max(0.0)).clamp(0.0, 1.0) } else { 1.0 };
+                let brightness = if o.shade {
+                    (o.ambient + o.light_intensity * normal.dot(light).max(0.0)).clamp(0.0, 1.0)
+                } else {
+                    1.0
+                };
                 let points: Vec<_> = vertices
                     .iter()
                     .map(|v| {
@@ -309,9 +382,16 @@ pub fn revolve(path: &PathData, bounds: Rect, options: Revolve) -> Result<Vec<Fa
                 if area.abs() < 1e-10 {
                     continue;
                 }
-                faces.push(Face { points, depth: vertices.iter().map(|v| v.2).sum::<f64>() / 4.0, brightness });
+                faces.push(Face {
+                    points,
+                    depth: vertices.iter().map(|v| v.2).sum::<f64>() / 4.0,
+                    brightness,
+                });
                 if faces.len() > MAX_FACES {
-                    return Err("Revolve surface is too complex; reduce Segments or simplify the profile".into());
+                    return Err(
+                        "Revolve surface is too complex; reduce Segments or simplify the profile"
+                            .into(),
+                    );
                 }
             }
         }
@@ -327,21 +407,38 @@ mod tests {
     fn light_orbits_and_handle_projection_match_the_shading_direction_on_both_sides() {
         for azimuth in [-170.0f64, -45.0, 0.0, 83.0, 167.0] {
             for elevation in [-85.0f64, -30.0, 0.0, 45.0, 90.0] {
-                let o = Revolve { light_azimuth: azimuth, light_elevation: elevation, ..Default::default() };
+                let o = Revolve {
+                    light_azimuth: azimuth,
+                    light_elevation: elevation,
+                    ..Default::default()
+                };
                 let direction = o.light_direction();
-                for ([center, u, v], angle) in o.light_orbits().into_iter().zip([azimuth, elevation]) {
+                for ([center, u, v], angle) in
+                    o.light_orbits().into_iter().zip([azimuth, elevation])
+                {
                     let (s, c) = angle.to_radians().sin_cos();
                     for i in 0..3 {
                         assert!((center[i] + u[i] * c + v[i] * s - direction[i]).abs() < 1e-12);
                     }
                 }
                 let [a, e] = o.light_at_on_side(Point::new(direction[0], direction[1]));
-                assert!((a - azimuth).abs() < 1e-9 && (e - elevation).abs() < 1e-9, "{azimuth}, {elevation} -> {a}, {e}");
+                assert!(
+                    (a - azimuth).abs() < 1e-9 && (e - elevation).abs() < 1e-9,
+                    "{azimuth}, {elevation} -> {a}, {e}"
+                );
             }
         }
-        let o = Revolve { light_azimuth: 135.0, ..Default::default() };
+        let o = Revolve {
+            light_azimuth: 135.0,
+            ..Default::default()
+        };
         let [azimuth, elevation] = o.light_at_on_side(Point::new(0.3, -0.4));
-        let [x, y, z] = Revolve { light_azimuth: azimuth, light_elevation: elevation, ..o }.light_direction();
+        let [x, y, z] = Revolve {
+            light_azimuth: azimuth,
+            light_elevation: elevation,
+            ..o
+        }
+        .light_direction();
         assert!((x - 0.3).abs() < 1e-12 && (y + 0.4).abs() < 1e-12 && z < 0.0);
         let [a, e] = o.light_at_on_side(Point::new(f64::NAN, f64::INFINITY));
         assert!(a.is_finite() && e.is_finite());
@@ -349,7 +446,12 @@ mod tests {
 
     #[test]
     fn ring_axes_match_euler_parameter_rotation_and_origin_stays_fixed() {
-        let o = Revolve { rotation_x: 27.0, rotation_y: -39.0, rotation_z: 53.0, ..Default::default() };
+        let o = Revolve {
+            rotation_x: 27.0,
+            rotation_y: -39.0,
+            rotation_z: 53.0,
+            ..Default::default()
+        };
         let seed = V3(0.3, -0.5, 0.7);
         let before = o.rotate(seed);
         let planes = o.rotation_planes();
@@ -365,19 +467,52 @@ mod tests {
             let actual = changed.rotate(seed).sub(before);
             let expected = normal.cross(before);
             let step = 0.0001f64.to_radians();
-            for (a, b) in [(actual.0 / step, expected.0), (actual.1 / step, expected.1), (actual.2 / step, expected.2)] {
+            for (a, b) in [
+                (actual.0 / step, expected.0),
+                (actual.1 / step, expected.1),
+                (actual.2 / step, expected.2),
+            ] {
                 assert!((a - b).abs() < 1e-5);
             }
         }
-        assert_eq!(Revolve { edge: Edge::Right, offset: 12.0, ..o }.rotation_origin(Rect::new(20.0, 30.0, 80.0, 100.0)), Point::new(92.0, 65.0));
+        assert_eq!(
+            Revolve {
+                edge: Edge::Right,
+                offset: 12.0,
+                ..o
+            }
+            .rotation_origin(Rect::new(20.0, 30.0, 80.0, 100.0)),
+            Point::new(92.0, 65.0)
+        );
     }
     #[test]
     fn guides_match_projection_and_dragged_light_matches_shading_direction() {
-        let o = Revolve { rotation_x: 0.0, rotation_y: 0.0, rotation_z: 0.0, offset: 10.0, ..Default::default() };
-        assert_eq!(o.view_axes(), [Point::new(1.0, 0.0), Point::new(0.0, 1.0), Point::new(0.0, 0.0)]);
-        assert_eq!(o.projected_axis(Rect::new(20.0, 30.0, 80.0, 100.0)), [Point::new(10.0, 30.0), Point::new(10.0, 100.0)]);
+        let o = Revolve {
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            offset: 10.0,
+            ..Default::default()
+        };
+        assert_eq!(
+            o.view_axes(),
+            [
+                Point::new(1.0, 0.0),
+                Point::new(0.0, 1.0),
+                Point::new(0.0, 0.0)
+            ]
+        );
+        assert_eq!(
+            o.projected_axis(Rect::new(20.0, 30.0, 80.0, 100.0)),
+            [Point::new(10.0, 30.0), Point::new(10.0, 100.0)]
+        );
         let [azimuth, elevation] = Revolve::light_at(Point::new(0.3, -0.4));
-        let [x, y, z] = Revolve { light_azimuth: azimuth, light_elevation: elevation, ..o }.light_direction();
+        let [x, y, z] = Revolve {
+            light_azimuth: azimuth,
+            light_elevation: elevation,
+            ..o
+        }
+        .light_direction();
         assert!((x - 0.3).abs() < 1e-9 && (y + 0.4).abs() < 1e-9 && z > 0.0);
         let [azimuth, elevation] = Revolve::light_at(Point::new(2.0, -2.0));
         assert!(azimuth.is_finite() && elevation.is_finite() && elevation.abs() <= 90.0);
@@ -386,37 +521,87 @@ mod tests {
         let mut bp = BezPath::new();
         bp.move_to((40.0, 10.0));
         bp.line_to((40.0, 90.0));
-        (PathData::from_bezpath(&bp), Rect::new(0.0, 10.0, 40.0, 90.0))
+        (
+            PathData::from_bezpath(&bp),
+            Rect::new(0.0, 10.0, 40.0, 90.0),
+        )
     }
     #[test]
     fn cylinder_has_expected_silhouette_depth_order_and_shading() {
         let (p, b) = cylinder();
-        let faces = revolve(&p, b, Revolve { rotation_x: 0.0, rotation_y: 0.0, ..Default::default() }).unwrap();
+        let faces = revolve(
+            &p,
+            b,
+            Revolve {
+                rotation_x: 0.0,
+                rotation_y: 0.0,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         let points: Vec<_> = faces.iter().flat_map(|f| &f.points).collect();
         assert!((points.iter().map(|p| p.x).fold(f64::INFINITY, f64::min) + 40.0).abs() < 1e-6);
         assert!((points.iter().map(|p| p.x).fold(f64::NEG_INFINITY, f64::max) - 40.0).abs() < 1e-6);
         assert!(faces.windows(2).all(|w| w[0].depth <= w[1].depth));
-        assert!(faces.iter().any(|f| f.brightness > 0.8) && faces.iter().any(|f| f.brightness < 0.4));
+        assert!(
+            faces.iter().any(|f| f.brightness > 0.8) && faces.iter().any(|f| f.brightness < 0.4)
+        );
     }
     #[test]
     fn edge_offset_sweep_and_rotation_change_the_surface() {
         let (p, b) = cylinder();
         let base = revolve(&p, b, Revolve::default()).unwrap();
         for o in [
-            Revolve { edge: Edge::Right, offset: 20.0, ..Default::default() },
-            Revolve { angle: 120.0, ..Default::default() },
-            Revolve { rotation_z: 60.0, perspective: 0.8, ..Default::default() },
+            Revolve {
+                edge: Edge::Right,
+                offset: 20.0,
+                ..Default::default()
+            },
+            Revolve {
+                angle: 120.0,
+                ..Default::default()
+            },
+            Revolve {
+                rotation_z: 60.0,
+                perspective: 0.8,
+                ..Default::default()
+            },
         ] {
             assert_ne!(base, revolve(&p, b, o).unwrap());
         }
-        assert!(revolve(&p, b, Revolve { angle: 0.0, ..Default::default() }).unwrap().is_empty());
+        assert!(
+            revolve(
+                &p,
+                b,
+                Revolve {
+                    angle: 0.0,
+                    ..Default::default()
+                }
+            )
+            .unwrap()
+            .is_empty()
+        );
     }
     #[test]
     fn malformed_and_degenerate_inputs_are_bounded() {
         let (p, b) = cylinder();
-        let f = revolve(&p, b, Revolve { segments: usize::MAX, angle: f64::NAN, offset: f64::INFINITY, ..Default::default() }).unwrap();
+        let f = revolve(
+            &p,
+            b,
+            Revolve {
+                segments: usize::MAX,
+                angle: f64::NAN,
+                offset: f64::INFINITY,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert!(f.len() <= 128);
         assert!(revolve(&p, Rect::new(f64::NAN, 0.0, 1.0, 1.0), Revolve::default()).is_err());
-        assert!(revolve(&PathData::default(), b, Revolve::default()).unwrap().is_empty());
+        assert!(
+            revolve(&PathData::default(), b, Revolve::default())
+                .unwrap()
+                .is_empty()
+        );
     }
 }

@@ -32,7 +32,12 @@ impl BotConfig {
         let public_key = env::var("DISCORD_PUBLIC_KEY").ok();
         let guild_id = env::var("DISCORD_GUILD_ID").ok();
 
-        Ok(Self { token: token.trim().to_string(), client_id, public_key, guild_id })
+        Ok(Self {
+            token: token.trim().to_string(),
+            client_id,
+            public_key,
+            guild_id,
+        })
     }
 
     /// Loads BotConfig from a specific file path (e.g. `/etc/aphrody-discord.env` or `.env`).
@@ -56,13 +61,18 @@ impl BotConfig {
                     "DISCORD_CLIENT_ID" => client_id = Some(val),
                     "DISCORD_PUBLIC_KEY" => public_key = Some(val),
                     "DISCORD_GUILD_ID" => guild_id = Some(val),
-                    _ => {},
+                    _ => {}
                 }
             }
         }
 
         let token = token.context("Missing bot token in file")?;
-        Ok(Self { token, client_id, public_key, guild_id })
+        Ok(Self {
+            token,
+            client_id,
+            public_key,
+            guild_id,
+        })
     }
 }
 
@@ -122,7 +132,9 @@ impl AphrodyDiscordBot {
         filename: &str,
         bytes: &[u8],
     ) -> Result<DiscordMessage> {
-        self.client.send_file(channel_id, content, filename, bytes).await
+        self.client
+            .send_file(channel_id, content, filename, bytes)
+            .await
     }
 
     /// Answers a question using Aphrody AI formatting and posts it to a channel.
@@ -194,12 +206,12 @@ impl AphrodyDiscordBot {
                             interaction.application_id
                         );
                         Ok(InteractionResponse::message(msg))
-                    },
+                    }
                     other => Ok(InteractionResponse::ephemeral(format!(
                         "Command `/{other}` acknowledged by Aphrody."
                     ))),
                 }
-            },
+            }
             _ => Ok(InteractionResponse::pong()),
         }
     }

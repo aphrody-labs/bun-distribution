@@ -32,11 +32,17 @@ fn load_json(path: &str) -> serde_json::Value {
 }
 
 fn skill_text_path(racine: &std::path::Path, lang: &str) -> String {
-    format!("{}/common/text/{lang}/skill_text.cfg.bin.json", racine.display())
+    format!(
+        "{}/common/text/{lang}/skill_text.cfg.bin.json",
+        racine.display()
+    )
 }
 
 fn team_passive_text_path(racine: &std::path::Path, lang: &str) -> String {
-    format!("{}/common/text/{lang}/soccer_team_passive_text.cfg.bin.json", racine.display())
+    format!(
+        "{}/common/text/{lang}/soccer_team_passive_text.cfg.bin.json",
+        racine.display()
+    )
 }
 
 // ============================================================================
@@ -62,7 +68,11 @@ fn passive_skill_config_charge() {
 
     // Comparer avec inagle : 128 effectIds uniques, 1716 instances
     // Gain = 1716 instances avec stringId + params par rareté (vs 128 dédoublonnées dans inagle)
-    assert!(passives.len() >= 1700, "attendu ≥1700 instances, obtenu {}", passives.len());
+    assert!(
+        passives.len() >= 1700,
+        "attendu ≥1700 instances, obtenu {}",
+        passives.len()
+    );
 
     // Compter les effectIds uniques (= familles de passifs)
     let unique_effects: std::collections::HashSet<u32> =
@@ -75,14 +85,19 @@ fn passive_skill_config_charge() {
     );
 
     // Vérifier le golden ps10001 (première instance de la famille Shot AT même élément)
-    let ps10001 =
-        passives.iter().find(|p| p.string_id == "ps10001").expect("ps10001 doit être présent");
+    let ps10001 = passives
+        .iter()
+        .find(|p| p.string_id == "ps10001")
+        .expect("ps10001 doit être présent");
     assert_eq!(ps10001.passive_id.to_hex(), "0x3A2BCAF4");
     assert_eq!(ps10001.effect_id.to_hex(), "0x41DF1FED");
     assert_eq!(ps10001.rarity, 6);
     assert_eq!(ps10001.element, 0);
     // ps10001 = première instance → params = [0.5]
-    assert!(!ps10001.effect_params.is_empty(), "ps10001 doit avoir des params d'effet");
+    assert!(
+        !ps10001.effect_params.is_empty(),
+        "ps10001 doit avoir des params d'effet"
+    );
     assert!(
         (ps10001.effect_params[0] - 0.5).abs() < 1e-6,
         "ps10001 param[0] attendu 0.5, obtenu {}",
@@ -110,9 +125,16 @@ fn passive_skill_config_charge() {
         assert!(variant.is_some(), "{suffix} doit être présent");
         let v = variant.unwrap();
         // Tous partagent le même effectId (même famille)
-        assert_eq!(v.effect_id.to_hex(), "0x41DF1FED", "{suffix} effectId incorrect");
+        assert_eq!(
+            v.effect_id.to_hex(),
+            "0x41DF1FED",
+            "{suffix} effectId incorrect"
+        );
         // Les params doivent être différents entre les raretés
-        assert!(!v.effect_params.is_empty(), "{suffix} doit avoir des params");
+        assert!(
+            !v.effect_params.is_empty(),
+            "{suffix} doit avoir des params"
+        );
     }
 
     // Vérifier la présence de passives multi-paramètres (élément != 0)
@@ -121,9 +143,15 @@ fn passive_skill_config_charge() {
     eprintln!("Passives par élément (non-neutre): {elemental}");
 
     // Vérifier les string_ids de style 'mps' (passifs manager/multi)
-    let mps_count = passives.iter().filter(|p| p.string_id.starts_with("mps")).count();
+    let mps_count = passives
+        .iter()
+        .filter(|p| p.string_id.starts_with("mps"))
+        .count();
     eprintln!("Passives mps*: {mps_count}");
-    let ss_count = passives.iter().filter(|p| p.string_id.starts_with("ss_")).count();
+    let ss_count = passives
+        .iter()
+        .filter(|p| p.string_id.starts_with("ss_"))
+        .count();
     eprintln!("Passives ss_*: {ss_count}");
 
     eprintln!(
@@ -154,9 +182,18 @@ fn passive_skill_textes_resolus_echantillon() {
     let passives = parse_player_passives(&root, &text_fr, &text_en, &text_ja);
 
     // Compter les passives avec texte résolu (vs ceux sans texte)
-    let with_fr = passives.iter().filter(|p| p.text_resolved.fr.is_some()).count();
-    let with_en = passives.iter().filter(|p| p.text_resolved.en.is_some()).count();
-    let with_ja = passives.iter().filter(|p| p.text_resolved.ja.is_some()).count();
+    let with_fr = passives
+        .iter()
+        .filter(|p| p.text_resolved.fr.is_some())
+        .count();
+    let with_en = passives
+        .iter()
+        .filter(|p| p.text_resolved.en.is_some())
+        .count();
+    let with_ja = passives
+        .iter()
+        .filter(|p| p.text_resolved.ja.is_some())
+        .count();
     let total = passives.len();
 
     eprintln!(
@@ -166,13 +203,20 @@ fn passive_skill_textes_resolus_echantillon() {
 
     // Inagle a 120/128 avec texte non-vide. On doit au moins égaler.
     // Les passives sans texte sont les ss_ps* (variants spéciaux sans NOUN_INFO)
-    assert!(with_fr > 0, "Aucun passif n'a de texte FR résolu — problème de parsing");
+    assert!(
+        with_fr > 0,
+        "Aucun passif n'a de texte FR résolu — problème de parsing"
+    );
 
     // Vérifier que les textes résolus ne contiennent PLUS les placeholders
     let unresolved_cpassive = passives
         .iter()
         .filter(|p| {
-            p.text_resolved.fr.as_deref().map(|t| t.contains("[CPASSIVE01]")).unwrap_or(false)
+            p.text_resolved
+                .fr
+                .as_deref()
+                .map(|t| t.contains("[CPASSIVE01]"))
+                .unwrap_or(false)
         })
         .count();
     assert_eq!(
@@ -182,9 +226,18 @@ fn passive_skill_textes_resolus_echantillon() {
 
     let unresolved_value = passives
         .iter()
-        .filter(|p| p.text_resolved.fr.as_deref().map(|t| t.contains("<VALUE>")).unwrap_or(false))
+        .filter(|p| {
+            p.text_resolved
+                .fr
+                .as_deref()
+                .map(|t| t.contains("<VALUE>"))
+                .unwrap_or(false)
+        })
         .count();
-    assert_eq!(unresolved_value, 0, "{unresolved_value} passives encore avec <VALUE> non résolu");
+    assert_eq!(
+        unresolved_value, 0,
+        "{unresolved_value} passives encore avec <VALUE> non résolu"
+    );
 }
 
 #[test]
@@ -214,8 +267,14 @@ fn passive_vs_inagle_gain() {
 
     // Compter les champs supplémentaires qu'inagle ne fournit pas
     let has_string_id = passives.iter().filter(|p| !p.string_id.is_empty()).count();
-    let has_buff_icon = passives.iter().filter(|p| p.buff_icon_type.is_some()).count();
-    let has_params = passives.iter().filter(|p| !p.effect_params.is_empty()).count();
+    let has_buff_icon = passives
+        .iter()
+        .filter(|p| p.buff_icon_type.is_some())
+        .count();
+    let has_params = passives
+        .iter()
+        .filter(|p| !p.effect_params.is_empty())
+        .count();
 
     eprintln!(
         "GAIN: total={total} (vs inagle {inagle_count})\n\
@@ -225,7 +284,10 @@ fn passive_vs_inagle_gain() {
     );
 
     // Tous doivent avoir un string_id non vide (champ absent d'inagle)
-    assert_eq!(has_string_id, total, "Certains passives n'ont pas de string_id");
+    assert_eq!(
+        has_string_id, total,
+        "Certains passives n'ont pas de string_id"
+    );
 }
 
 // ============================================================================
@@ -250,7 +312,12 @@ fn team_passives_golden() {
     let team = parse_team_passives(&cfg, &text_ja);
 
     // 21 entrées vérifiées par inspection du cfg
-    assert_eq!(team.len(), 21, "attendu 21 team passives, obtenu {}", team.len());
+    assert_eq!(
+        team.len(),
+        21,
+        "attendu 21 team passives, obtenu {}",
+        team.len()
+    );
 
     // Golden: premier passif = "キャプテンのブロック" (Captain's Block)
     let first = &team[0];
@@ -278,7 +345,11 @@ fn team_passives_golden() {
     // Vérifier les plages de valeurs (0-20%)
     for tp in &team {
         assert!(tp.effect_value_min >= 0, "effectValueMin négatif");
-        assert!(tp.effect_value_max <= 20, "effectValueMax > 20: {}", tp.effect_value_max);
+        assert!(
+            tp.effect_value_max <= 20,
+            "effectValueMax > 20: {}",
+            tp.effect_value_max
+        );
     }
 
     // Textes disponibles pour tous (JA uniquement — non localisé dans le jeu)
@@ -343,7 +414,10 @@ fn cross_check_vs_inagle_passives() {
         passives.iter().map(|p| p.effect_id.get()).collect();
 
     // 128 effectIds uniques dans inagle_passives (vérifié par COUNT DISTINCT)
-    eprintln!("EffectIds uniques: {} (inagle_passives = 128 attendu)", unique_effects.len());
+    eprintln!(
+        "EffectIds uniques: {} (inagle_passives = 128 attendu)",
+        unique_effects.len()
+    );
     // On accepte ±5 pour tolérer les différences de version
     assert!(
         unique_effects.len() >= 123 && unique_effects.len() <= 140,
@@ -386,8 +460,16 @@ fn resolve_texts_echantillon_game() {
             0.5_f64,
             "+0.50",
         ),
-        ("For players of the same element,\\nShot AT [CPASSIVE01]+<VALUE>%[C]", 1.0_f64, "+1"),
-        ("[同属性/どうぞくせい]のシュートＡＴ[CPASSIVE01]＋<VALUE>％[C]", 1.5_f64, "1.50"),
+        (
+            "For players of the same element,\\nShot AT [CPASSIVE01]+<VALUE>%[C]",
+            1.0_f64,
+            "+1",
+        ),
+        (
+            "[同属性/どうぞくせい]のシュートＡＴ[CPASSIVE01]＋<VALUE>％[C]",
+            1.5_f64,
+            "1.50",
+        ),
     ];
 
     for (template, value, expected) in &cases {

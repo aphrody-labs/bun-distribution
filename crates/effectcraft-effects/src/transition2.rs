@@ -15,8 +15,21 @@ use rayon::prelude::*;
 use crate::util::{Plane, fit_layer, gauss_plane, layer_or_self, lerp4, smoothstep, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Transition", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Transition",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn pct() -> ParamUi {
@@ -33,10 +46,19 @@ fn completion(ctx: &EffectCtx) -> f32 {
 
 /// The layer in layer parameter `id` fitted to `b`, if one is chosen.
 fn reveal(ctx: &EffectCtx, b: &Buf, id: &str) -> Option<Image> {
-    ctx.layer_param(id, true).map(|o| fit_layer(ctx, b, &o, false))
+    ctx.layer_param(id, true)
+        .map(|o| fit_layer(ctx, b, &o, false))
 }
 
-const GRAD_PROPS: [&str; 7] = ["Red", "Green", "Blue", "Alpha", "Luminance", "Lightness", "Saturation"];
+const GRAD_PROPS: [&str; 7] = [
+    "Red",
+    "Green",
+    "Blue",
+    "Alpha",
+    "Luminance",
+    "Lightness",
+    "Saturation",
+];
 
 fn prop_plane(img: &Image, prop: u32) -> Plane {
     Plane::from_image(img, |p| {
@@ -65,7 +87,10 @@ fn wipe_t(g: f32, c: f32, w: f32) -> f32 {
 #[inline]
 fn grad(pl: &Plane, x: usize, y: usize) -> (f32, f32) {
     let (xi, yi) = (x as i64, y as i64);
-    ((pl.get_clamped(xi + 1, yi) - pl.get_clamped(xi - 1, yi)) * 0.5, (pl.get_clamped(xi, yi + 1) - pl.get_clamped(xi, yi - 1)) * 0.5)
+    (
+        (pl.get_clamped(xi + 1, yi) - pl.get_clamped(xi - 1, yi)) * 0.5,
+        (pl.get_clamped(xi, yi + 1) - pl.get_clamped(xi, yi - 1)) * 0.5,
+    )
 }
 
 // ------------------------------------------------------------------ CC Glass Wipe
@@ -92,8 +117,15 @@ fn glass_wipe(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let band = 4.0 * t * (1.0 - t);
             let (gx, gy) = grad(&g, x, y);
             let (fx, fy) = (x as f64 + 0.5, y as f64 + 0.5);
-            let (ox, oy) = ((gx * disp * band) as f64 * 10.0, (gy * disp * band) as f64 * 10.0);
-            let a = if band > 1e-4 { src.sample_bilinear(fx + ox, fy + oy) } else { src.data[y * src.width as usize + x] };
+            let (ox, oy) = (
+                (gx * disp * band) as f64 * 10.0,
+                (gy * disp * band) as f64 * 10.0,
+            );
+            let a = if band > 1e-4 {
+                src.sample_bilinear(fx + ox, fy + oy)
+            } else {
+                src.data[y * src.width as usize + x]
+            };
             let r = match &rev {
                 Some(r) if band > 1e-4 => r.sample_bilinear(fx - ox, fy - oy),
                 Some(r) => r.data[y * r.width as usize + x],
@@ -125,10 +157,14 @@ fn image_wipe(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if ctx.params.b("autoSoftness") {
         w = w.max(0.02);
     }
-    b.img.data.par_iter_mut().zip(g.data.par_iter()).for_each(|(px, &gv)| {
-        let k = 1.0 - wipe_t(gv, c, w);
-        *px = px.map(|v| v * k);
-    });
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(g.data.par_iter())
+        .for_each(|(px, &gv)| {
+            let k = 1.0 - wipe_t(gv, c, w);
+            *px = px.map(|v| v * k);
+        });
     b
 }
 
@@ -148,7 +184,10 @@ fn jaws(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let shape = ctx.params.e("shape");
     // Far enough at completion 1 that both halves (teeth included) have left the buffer.
     let (bw, bh) = (b.img.width as f64, b.img.height as f64);
-    let vmax = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)].iter().map(|&(x, y)| (-(x - cx) * sn + (y - cy) * cs).abs()).fold(0.0, f64::max);
+    let vmax = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)]
+        .iter()
+        .map(|&(x, y)| (-(x - cx) * sn + (y - cy) * cs).abs())
+        .fold(0.0, f64::max);
     let d = c * (vmax + 2.0 * amp + 2.0);
     // Tooth profile in [-amp, amp] along the cut.
     let profile = move |u: f64| -> f64 {
@@ -305,12 +344,15 @@ fn warpomatic(ctx: &EffectCtx, mut b: Buf) -> Buf {
         2 => {
             // Local differences: gradient magnitude.
             let mut o = Plane::new(m.w, m.h);
-            o.data.par_chunks_mut(m.w.max(1)).enumerate().for_each(|(y, row)| {
-                for (x, v) in row.iter_mut().enumerate() {
-                    let (gx, gy) = grad(&m, x, y);
-                    *v = ((gx * gx + gy * gy).sqrt() * 8.0).min(1.0);
-                }
-            });
+            o.data
+                .par_chunks_mut(m.w.max(1))
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for (x, v) in row.iter_mut().enumerate() {
+                        let (gx, gy) = grad(&m, x, y);
+                        *v = ((gx * gx + gy * gy).sqrt() * 8.0).min(1.0);
+                    }
+                });
             o
         }
         _ => m,
@@ -332,7 +374,11 @@ fn warpomatic(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 2 => (-iy, ix),
                 _ => (ix, iy),
             };
-            let out = if q < 1.0 { src.sample_bilinear(fx + ox, fy + oy) } else { [0.0; 4] };
+            let out = if q < 1.0 {
+                src.sample_bilinear(fx + ox, fy + oy)
+            } else {
+                [0.0; 4]
+            };
             let inc = match &rev {
                 Some(r) if q > 0.0 => r.sample_bilinear(fx + ix, fy + iy),
                 _ => [0.0; 4],
@@ -353,10 +399,25 @@ pub fn specs() -> Vec<EffectSpec> {
             "CC Glass Wipe",
             vec![
                 done(),
-                p("layerToReveal", "Layer to Reveal", Value::Layer(None), ParamUi::Layer),
-                p("gradientLayer", "Gradient Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "layerToReveal",
+                    "Layer to Reveal",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
+                p(
+                    "gradientLayer",
+                    "Gradient Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 p("softness", "Softness", num(10.0), pct()),
-                p("displacementAmount", "Displacement Amount", num(10.0), slider(-100.0, 100.0, -100.0, 100.0, 1)),
+                p(
+                    "displacementAmount",
+                    "Displacement Amount",
+                    num(10.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 1),
+                ),
             ],
             glass_wipe,
         ),
@@ -366,11 +427,21 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 done(),
                 p("borderSoftness", "Border Softness", num(0.0), pct()),
-                p("autoSoftness", "Auto Softness", Value::Bool(true), ParamUi::Checkbox),
+                p(
+                    "autoSoftness",
+                    "Auto Softness",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
                 p("layer", "Layer", Value::Layer(None), ParamUi::Layer),
                 p("property", "Property", Value::Enum(4), popup(&GRAD_PROPS)),
                 p("blur", "Blur", num(0.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-                p("inverseGradient", "Inverse Gradient", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "inverseGradient",
+                    "Inverse Gradient",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             image_wipe,
         ),
@@ -382,8 +453,18 @@ pub fn specs() -> Vec<EffectSpec> {
                 p("center", "Center", pt(0.5, 0.5), ParamUi::Point),
                 p("direction", "Direction", num(0.0), ParamUi::Angle),
                 p("height", "Height", num(50.0), pct()),
-                p("width", "Width", num(50.0), slider(1.0, 1000.0, 1.0, 200.0, 1)),
-                p("shape", "Shape", Value::Enum(0), popup(&["Spikes", "RoboJaw", "Block", "Waves"])),
+                p(
+                    "width",
+                    "Width",
+                    num(50.0),
+                    slider(1.0, 1000.0, 1.0, 200.0, 1),
+                ),
+                p(
+                    "shape",
+                    "Shape",
+                    Value::Enum(0),
+                    popup(&["Spikes", "RoboJaw", "Block", "Waves"]),
+                ),
             ],
             jaws,
         ),
@@ -393,9 +474,24 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 done(),
                 p("direction", "Direction", num(0.0), ParamUi::Angle),
-                p("thickness", "Thickness", num(20.0), slider(1.0, 500.0, 1.0, 100.0, 1)),
-                p("slant", "Slant", num(20.0), slider(-500.0, 500.0, -100.0, 100.0, 1)),
-                p("flipDirection", "Flip Direction", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "thickness",
+                    "Thickness",
+                    num(20.0),
+                    slider(1.0, 500.0, 1.0, 100.0, 1),
+                ),
+                p(
+                    "slant",
+                    "Slant",
+                    num(20.0),
+                    slider(-500.0, 500.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "flipDirection",
+                    "Flip Direction",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             line_sweep,
         ),
@@ -416,12 +512,42 @@ pub fn specs() -> Vec<EffectSpec> {
             "CC WarpoMatic",
             vec![
                 done(),
-                p("layerToReveal", "Layer to Reveal", Value::Layer(None), ParamUi::Layer),
-                p("reactorLayer", "Reactor Layer", Value::Layer(None), ParamUi::Layer),
-                p("reactor", "Reactor", Value::Enum(0), popup(&["Brightness", "Contrast Differences", "Local Differences"])),
-                p("smoothness", "Smoothness", num(10.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-                p("warpAmount", "Warp Amount", num(50.0), slider(-1000.0, 1000.0, -200.0, 200.0, 1)),
-                p("warpDirection", "Warp Direction", Value::Enum(0), popup(&["Joint", "Opposing", "Twisting"])),
+                p(
+                    "layerToReveal",
+                    "Layer to Reveal",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
+                p(
+                    "reactorLayer",
+                    "Reactor Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
+                p(
+                    "reactor",
+                    "Reactor",
+                    Value::Enum(0),
+                    popup(&["Brightness", "Contrast Differences", "Local Differences"]),
+                ),
+                p(
+                    "smoothness",
+                    "Smoothness",
+                    num(10.0),
+                    slider(0.0, 200.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "warpAmount",
+                    "Warp Amount",
+                    num(50.0),
+                    slider(-1000.0, 1000.0, -200.0, 200.0, 1),
+                ),
+                p(
+                    "warpDirection",
+                    "Warp Direction",
+                    Value::Enum(0),
+                    popup(&["Joint", "Opposing", "Twisting"]),
+                ),
                 p("blendSpan", "Blend Span", num(10.0), pct()),
             ],
             warpomatic,
@@ -511,23 +637,46 @@ mod tests {
         let img = ramp(40, 32);
         let o = run(
             "ec.transition.cctwister",
-            &[("completion", num(100.0)), ("shading", Value::Bool(false)), ("axis", num(0.0)), ("center", pt(20.0, 16.0))],
+            &[
+                ("completion", num(100.0)),
+                ("shading", Value::Bool(false)),
+                ("axis", num(0.0)),
+                ("center", pt(20.0, 16.0)),
+            ],
             img.clone(),
         );
         // Axis horizontal through the centre: the back is the source flipped vertically.
         for (x, y) in [(5usize, 4usize), (30, 20), (12, 27)] {
             let got = o.img.data[y * 40 + x];
             let want = img.data[(31 - y) * 40 + x];
-            assert!((got[1] - want[1]).abs() < 1e-3 && (got[0] - want[0]).abs() < 1e-3, "{x},{y} {got:?} {want:?}");
+            assert!(
+                (got[1] - want[1]).abs() < 1e-3 && (got[0] - want[0]).abs() < 1e-3,
+                "{x},{y} {got:?} {want:?}"
+            );
         }
     }
 
     #[test]
     fn line_sweep_flip_reverses_stagger() {
         let img = ramp(40, 32);
-        let a = run("ec.transition.cclinesweep", &[("completion", num(40.0))], img.clone());
-        let b = run("ec.transition.cclinesweep", &[("completion", num(40.0)), ("flipDirection", Value::Bool(true))], img.clone());
-        let cleared = |o: &Buf, y: usize| (0..40).filter(|&x| o.img.data[y * 40 + x][3] < 0.01).count();
+        let a = run(
+            "ec.transition.cclinesweep",
+            &[("completion", num(40.0))],
+            img.clone(),
+        );
+        let b = run(
+            "ec.transition.cclinesweep",
+            &[
+                ("completion", num(40.0)),
+                ("flipDirection", Value::Bool(true)),
+            ],
+            img.clone(),
+        );
+        let cleared = |o: &Buf, y: usize| {
+            (0..40)
+                .filter(|&x| o.img.data[y * 40 + x][3] < 0.01)
+                .count()
+        };
         // Unflipped: lower stripes trail; flipped: upper stripes trail.
         assert!(cleared(&a, 2) > cleared(&a, 30));
         assert!(cleared(&b, 2) < cleared(&b, 30));
@@ -536,7 +685,11 @@ mod tests {
     #[test]
     fn image_wipe_follows_gradient() {
         let img = ramp(40, 32);
-        let o = run("ec.transition.ccimagewipe", &[("completion", num(50.0)), ("property", Value::Enum(0))], img.clone());
+        let o = run(
+            "ec.transition.ccimagewipe",
+            &[("completion", num(50.0)), ("property", Value::Enum(0))],
+            img.clone(),
+        );
         // Red ramps left→right: dark (left) side goes first.
         assert!(o.img.data[16 * 40 + 2][3] < 0.01);
         assert!(o.img.data[16 * 40 + 37][3] > 0.99);

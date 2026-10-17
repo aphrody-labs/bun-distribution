@@ -13,7 +13,12 @@ use crate::effects::{GBuf, gaussian_blur};
 pub(crate) const KERNELS: &[&str] = &["flt_rays", "flt_burst", "flt_sweep", "flt_wipe"];
 
 /// Effect ids implemented here.
-pub(crate) const IDS: &[&str] = &["ec.generate.cclightrays", "ec.generate.cclightburst", "ec.generate.cclightsweep", "ec.transition.cclightwipe"];
+pub(crate) const IDS: &[&str] = &[
+    "ec.generate.cclightrays",
+    "ec.generate.cclightburst",
+    "ec.generate.cclightsweep",
+    "ec.transition.cclightwipe",
+];
 
 /// Run effect `id` (one of [`IDS`]); `None` = this parameter combination runs on the CPU.
 pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
@@ -48,7 +53,12 @@ fn light_rays(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let rad = (pr.f("radius") * b.scale).max(0.5);
     let ws = (pr.f("warpSoftness") / 50.0).max(0.0);
     let mut p = Params::default();
-    p.u[0] = [(pr.e("shape") == 1) as u32, pr.b("colorFromSource") as u32, pr.e("transferMode"), 0];
+    p.u[0] = [
+        (pr.e("shape") == 1) as u32,
+        pr.b("colorFromSource") as u32,
+        pr.e("transferMode"),
+        0,
+    ];
     p.f[0] = [c.0 as f32, c.1 as f32, k as f32, gain];
     p.f[1] = [rad as f32, (rad * (1.0 + ws)) as f32 + 1e-3, 0.0, 0.0];
     p.f[2] = rgb(pr.color("color"));
@@ -82,11 +92,20 @@ fn light_sweep(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     // The alpha plane (x), softened by util::gauss_plane (edges repeated) when thick enough.
     let alpha = e.scratch(b.img.width, b.img.height);
     e.pixels("fxe_alpha", &Params::default(), &b.img, None, &alpha, None);
-    let soft = if edge_t > 0.05 { gaussian_blur(e, &alpha, edge_t * 0.5, edge_t * 0.5, true) } else { alpha };
+    let soft = if edge_t > 0.05 {
+        gaussian_blur(e, &alpha, edge_t * 0.5, edge_t * 0.5, true)
+    } else {
+        alpha
+    };
     let mut p = Params::default();
     p.u[0] = [pr.e("shape"), pr.e("lightReceptionMode"), 0, 0];
     p.f[0] = [c.0 as f32, c.1 as f32, dir.cos() as f32, dir.sin() as f32];
-    p.f[1] = [half as f32, (pr.f("sweepIntensity") / 100.0) as f32, (pr.f("edgeIntensity") / 100.0) as f32, 0.0];
+    p.f[1] = [
+        half as f32,
+        (pr.f("sweepIntensity") / 100.0) as f32,
+        (pr.f("edgeIntensity") / 100.0) as f32,
+        0.0,
+    ];
     p.f[2] = rgb(pr.color("lightColor"));
     run(e, "flt_sweep", &p, b, Some(&soft))
 }
@@ -113,14 +132,26 @@ fn light_wipe(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     };
     // transition::max_corner_dist.
     let (w, h) = (b.img.width as f64, b.img.height as f64);
-    let maxd = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().map(|(x, y)| metric(x - c.0, y - c.1)).fold(1e-6, f64::max);
-    let edge = if reverse { (1.0 - done) * maxd } else { done * maxd };
+    let maxd = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]
+        .iter()
+        .map(|(x, y)| metric(x - c.0, y - c.1))
+        .fold(1e-6, f64::max);
+    let edge = if reverse {
+        (1.0 - done) * maxd
+    } else {
+        done * maxd
+    };
     let band = (maxd * 0.06).max(2.0);
     let ramp = (done * 20.0).min(1.0) as f32 * ((1.0 - done) * 20.0).min(1.0) as f32;
     let mut p = Params::default();
     p.u[0] = [shape, pr.b("colorFromSource") as u32, reverse as u32, 0];
     p.f[0] = [c.0 as f32, c.1 as f32, s as f32, co as f32];
-    p.f[1] = [edge as f32, band as f32, pr.f("intensity") as f32 / 100.0 * ramp, 0.0];
+    p.f[1] = [
+        edge as f32,
+        band as f32,
+        pr.f("intensity") as f32 / 100.0 * ramp,
+        0.0,
+    ];
     p.f[2] = rgb(pr.color("color"));
     run(e, "flt_wipe", &p, b, None)
 }

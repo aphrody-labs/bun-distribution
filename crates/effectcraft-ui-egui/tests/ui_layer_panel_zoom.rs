@@ -12,23 +12,51 @@ use serde_json::json;
 
 fn app() -> EffectcraftApp {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "View", "width": 640, "height": 360, "duration": 4})).unwrap();
-    s.execute("layer.newSolid", json!({"name": "Box", "color": "#e04020", "width": 80, "height": 80})).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "View", "width": 640, "height": 360, "duration": 4}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.newSolid",
+        json!({"name": "Box", "color": "#e04020", "width": 80, "height": 80}),
+    )
+    .unwrap();
     EffectcraftApp::new(s)
 }
 
 fn box_id(h: &Harness<'_, EffectcraftApp>) -> u64 {
-    h.state().session.active_comp().unwrap().layers.iter().find(|l| l.name == "Box").unwrap().id.0
+    h.state()
+        .session
+        .active_comp()
+        .unwrap()
+        .layers
+        .iter()
+        .find(|l| l.name == "Box")
+        .unwrap()
+        .id
+        .0
 }
 
 /// The harness with Box open in the Layer panel (focused).
 fn harness() -> Harness<'static, EffectcraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_eframe(|_| app());
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_eframe(|_| app());
     h.run_steps(3);
     let id = box_id(&h);
-    h.state_mut().session.execute("layer.select", json!({"layers": [id]})).unwrap();
+    h.state_mut()
+        .session
+        .execute("layer.select", json!({"layers": [id]}))
+        .unwrap();
     let ctx = h.ctx.clone();
-    effectcraft_ui_egui::menus::invoke(h.state_mut(), &ctx, "layer.openLayer", json!({"layer": id})).unwrap();
+    effectcraft_ui_egui::menus::invoke(
+        h.state_mut(),
+        &ctx,
+        "layer.openLayer",
+        json!({"layer": id}),
+    )
+    .unwrap();
     h.run_steps(3);
     assert_eq!(h.state().ui.focused, PanelKind::Layer);
     h
@@ -40,7 +68,12 @@ fn rect(h: &Harness<'_, EffectcraftApp>, id: &str) -> Rect {
 }
 
 fn press(h: &mut Harness<'_, EffectcraftApp>, p: Pos2, button: egui::PointerButton, pressed: bool) {
-    h.input_mut().events.push(Event::PointerButton { pos: p, button, pressed, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button,
+        pressed,
+        modifiers: Default::default(),
+    });
 }
 
 fn click(h: &mut Harness<'_, EffectcraftApp>, p: Pos2) {
@@ -52,12 +85,19 @@ fn click(h: &mut Harness<'_, EffectcraftApp>, p: Pos2) {
     h.run_steps(2);
 }
 
-fn drag_with(h: &mut Harness<'_, EffectcraftApp>, button: egui::PointerButton, from: Pos2, to: Pos2) {
+fn drag_with(
+    h: &mut Harness<'_, EffectcraftApp>,
+    button: egui::PointerButton,
+    from: Pos2,
+    to: Pos2,
+) {
     h.input_mut().events.push(Event::PointerMoved(from));
     press(h, from, button, true);
     h.step();
     for i in 1..=8 {
-        h.input_mut().events.push(Event::PointerMoved(from + (to - from) * (i as f32 / 8.0)));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(from + (to - from) * (i as f32 / 8.0)));
         h.step();
     }
     press(h, to, button, false);
@@ -78,14 +118,28 @@ fn shown(h: &Harness<'_, EffectcraftApp>) -> f32 {
 #[test]
 fn zoom_commands_act_on_the_focused_layer_panel() {
     let mut h = harness();
-    assert!(h.state().auto.find("layerPanel.magnification").is_some(), "the Layer panel has a magnification menu");
+    assert!(
+        h.state().auto.find("layerPanel.magnification").is_some(),
+        "the Layer panel has a magnification menu"
+    );
     let fit = shown(&h);
     let comp_zoom = h.state().ui.viewer.zoom;
     command(&mut h, "view.zoomOut");
-    let z = h.state().ui.layer_zoom.expect("Zoom Out sets the Layer panel's magnification");
+    let z = h
+        .state()
+        .ui
+        .layer_zoom
+        .expect("Zoom Out sets the Layer panel's magnification");
     assert!(z < fit, "{z} < {fit}");
-    assert!((shown(&h) - z).abs() < 0.01, "the canvas is drawn at the new magnification");
-    assert_eq!(h.state().ui.viewer.zoom, comp_zoom, "the Composition viewer keeps its magnification");
+    assert!(
+        (shown(&h) - z).abs() < 0.01,
+        "the canvas is drawn at the new magnification"
+    );
+    assert_eq!(
+        h.state().ui.viewer.zoom,
+        comp_zoom,
+        "the Composition viewer keeps its magnification"
+    );
     command(&mut h, "view.zoomIn");
     assert!(h.state().ui.layer_zoom.unwrap() > z);
     command(&mut h, "view.fit");
@@ -114,26 +168,55 @@ fn wheel_zooms_around_the_pointer_and_hand_tool_pans() {
     });
     h.run_steps(20);
     let after = rect(&h, "layerPanel.canvas");
-    assert!(after.width() > canvas.width(), "the wheel zooms in: {} → {}", canvas.width(), after.width());
+    assert!(
+        after.width() > canvas.width(),
+        "the wheel zooms in: {} → {}",
+        canvas.width(),
+        after.width()
+    );
     let still = after.min + after.size() * 0.25;
-    assert!(still.distance(at) < 2.0, "the point under the pointer stays put: {at:?} vs {still:?}");
+    assert!(
+        still.distance(at) < 2.0,
+        "the point under the pointer stays put: {at:?} vs {still:?}"
+    );
     // Hand tool drag pans; no paint or Roto stroke is made.
     h.state_mut().ui.tool = Tool::Hand;
     h.run_steps(2);
     let before = rect(&h, "layerPanel.canvas").min;
     let c = rect(&h, "layerPanel.area").center();
-    drag_with(&mut h, egui::PointerButton::Primary, c, c + vec2(60.0, 30.0));
+    drag_with(
+        &mut h,
+        egui::PointerButton::Primary,
+        c,
+        c + vec2(60.0, 30.0),
+    );
     let moved = rect(&h, "layerPanel.canvas").min - before;
-    assert!((moved.x - 60.0).abs() < 1.0 && (moved.y - 30.0).abs() < 1.0, "{moved:?}");
+    assert!(
+        (moved.x - 60.0).abs() < 1.0 && (moved.y - 30.0).abs() < 1.0,
+        "{moved:?}"
+    );
     // Middle-drag pans with a Roto Brush tool, painting nothing.
     h.state_mut().ui.tool = Tool::RotoBrush;
     h.run_steps(2);
     let before = rect(&h, "layerPanel.canvas").min;
     drag_with(&mut h, egui::PointerButton::Middle, c, c - vec2(40.0, 20.0));
     let moved = rect(&h, "layerPanel.canvas").min - before;
-    assert!((moved.x + 40.0).abs() < 1.0 && (moved.y + 20.0).abs() < 1.0, "{moved:?}");
-    let layer = h.state().session.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(box_id(&h))).unwrap().clone();
-    assert!(layer.effects().is_none_or(|fx| fx.groups().count() == 0), "panning adds no Roto Brush effect");
+    assert!(
+        (moved.x + 40.0).abs() < 1.0 && (moved.y + 20.0).abs() < 1.0,
+        "{moved:?}"
+    );
+    let layer = h
+        .state()
+        .session
+        .active_comp()
+        .unwrap()
+        .layer(effectcraft_engine::project::LayerId(box_id(&h)))
+        .unwrap()
+        .clone();
+    assert!(
+        layer.effects().is_none_or(|fx| fx.groups().count() == 0),
+        "panning adds no Roto Brush effect"
+    );
 }
 
 #[test]
@@ -144,9 +227,17 @@ fn zoom_tool_click_zooms_in_the_layer_panel() {
     h.run_steps(2);
     let c = rect(&h, "layerPanel.canvas").center();
     click(&mut h, c);
-    let z = h.state().ui.layer_zoom.expect("the Zoom tool sets the Layer panel's magnification");
+    let z = h
+        .state()
+        .ui
+        .layer_zoom
+        .expect("the Zoom tool sets the Layer panel's magnification");
     assert!((z - fit * 2.0).abs() < 0.01, "{fit} → {z}");
-    assert_eq!(h.state().ui.viewer.zoom, None, "the Composition viewer keeps Fit");
+    assert_eq!(
+        h.state().ui.viewer.zoom,
+        None,
+        "the Composition viewer keeps Fit"
+    );
 }
 
 #[test]
@@ -159,7 +250,11 @@ fn roto_brush_in_the_composition_panel_says_where_it_works() {
     let comp = rect(&h, "viewer.comp");
     let c = comp.center();
     click(&mut h, c);
-    assert!(h.state().ui.status.contains("Layer panel"), "a hint, not silence: {:?}", h.state().ui.status);
+    assert!(
+        h.state().ui.status.contains("Layer panel"),
+        "a hint, not silence: {:?}",
+        h.state().ui.status
+    );
     // Double-clicking the layer opens it in the Layer panel.
     h.run_steps(30);
     h.input_mut().events.push(Event::PointerMoved(c));

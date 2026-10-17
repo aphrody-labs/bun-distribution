@@ -15,18 +15,34 @@ use crate::{Result, Session, spec};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        spec!("fill.move", "Move fill", "{ids?, from, to} (indices in the fill list, bottom first)", true, |s, p| {
-            move_item(s, p, "fill.move", BoundList::Fills)
-        }),
-        spec!("stroke.move", "Move stroke", "{ids?, from, to} (indices in the stroke list, bottom first)", true, |s, p| {
-            move_item(s, p, "stroke.move", BoundList::Strokes)
-        }),
-        spec!("effect.move", "Move effect", "{ids?, from, to} (indices in the effect list, bottom first)", true, |s, p| {
-            move_item(s, p, "effect.move", BoundList::Effects)
-        }),
-        spec!("grid.move", "Move layout grid", "{ids?, from, to} (indices in the layout grid list, bottom first)", true, |s, p| {
-            move_item(s, p, "grid.move", BoundList::Grids)
-        }),
+        spec!(
+            "fill.move",
+            "Move fill",
+            "{ids?, from, to} (indices in the fill list, bottom first)",
+            true,
+            |s, p| { move_item(s, p, "fill.move", BoundList::Fills) }
+        ),
+        spec!(
+            "stroke.move",
+            "Move stroke",
+            "{ids?, from, to} (indices in the stroke list, bottom first)",
+            true,
+            |s, p| { move_item(s, p, "stroke.move", BoundList::Strokes) }
+        ),
+        spec!(
+            "effect.move",
+            "Move effect",
+            "{ids?, from, to} (indices in the effect list, bottom first)",
+            true,
+            |s, p| { move_item(s, p, "effect.move", BoundList::Effects) }
+        ),
+        spec!(
+            "grid.move",
+            "Move layout grid",
+            "{ids?, from, to} (indices in the layout grid list, bottom first)",
+            true,
+            |s, p| { move_item(s, p, "grid.move", BoundList::Grids) }
+        ),
     ]
 }
 
@@ -84,7 +100,14 @@ pub fn list_binding(key: &str) -> Option<(BoundList, usize, &str)> {
         _ => {}
     }
     let (prefix, rest) = key.split_once('/')?;
-    let list = [BoundList::Fills, BoundList::Strokes, BoundList::Effects, BoundList::Grids].into_iter().find(|l| l.prefix() == prefix)?;
+    let list = [
+        BoundList::Fills,
+        BoundList::Strokes,
+        BoundList::Effects,
+        BoundList::Grids,
+    ]
+    .into_iter()
+    .find(|l| l.prefix() == prefix)?;
     let (i, field) = rest.split_once('/')?;
     // Plain digits only (no sign, no "+1").
     if i.is_empty() || !i.bytes().all(|b| b.is_ascii_digit()) || field.is_empty() {
@@ -96,8 +119,15 @@ pub fn list_binding(key: &str) -> Option<(BoundList, usize, &str)> {
 /// The binding key on paint `index`'s colour that `n` uses, if any (`fill` for the first fill's,
 /// or `fills/<index>/color`).
 pub fn paint_binding_key(n: &Node, fills: bool, index: usize) -> Option<&str> {
-    let list = if fills { BoundList::Fills } else { BoundList::Strokes };
-    n.bound.keys().map(String::as_str).find(|k| list_binding(k) == Some((list, index, "color")))
+    let list = if fills {
+        BoundList::Fills
+    } else {
+        BoundList::Strokes
+    };
+    n.bound
+        .keys()
+        .map(String::as_str)
+        .find(|k| list_binding(k) == Some((list, index, "color")))
 }
 
 /// The gradient stop a paint field names (`stops/<j>/color` → j).
@@ -112,15 +142,35 @@ pub fn stop_binding(field: &str) -> Option<usize> {
 /// Keep the gradient stop bindings of paint `index` of `n`'s fills (or strokes) on their stops after
 /// the paint changed from `old`: one stop removed shifts the later ones down (the removed one's
 /// binding goes); a paint that is no longer a gradient drops them. Other edits keep stop indices.
-pub(crate) fn remap_stop_bindings(n: &mut Node, fills: bool, index: usize, old: &figcraft_color::Paint) {
+pub(crate) fn remap_stop_bindings(
+    n: &mut Node,
+    fills: bool,
+    index: usize,
+    old: &figcraft_color::Paint,
+) {
     use figcraft_color::PaintKind;
-    let list = if fills { BoundList::Fills } else { BoundList::Strokes };
-    let new = if fills { n.fills.get(index) } else { n.strokes.get(index) };
+    let list = if fills {
+        BoundList::Fills
+    } else {
+        BoundList::Strokes
+    };
+    let new = if fills {
+        n.fills.get(index)
+    } else {
+        n.strokes.get(index)
+    };
     // Some(k): stop k was removed; None: the paint has no stops any more.
     let removed = match (&old.kind, new.map(|p| &p.kind)) {
-        (PaintKind::Gradient(a), Some(PaintKind::Gradient(b))) if a.stops.len() == b.stops.len() + 1 => {
+        (PaintKind::Gradient(a), Some(PaintKind::Gradient(b)))
+            if a.stops.len() == b.stops.len() + 1 =>
+        {
             // The first stop that differs is the removed one when the rest moved down unchanged.
-            let k = a.stops.iter().zip(&b.stops).position(|(x, y)| x != y).unwrap_or(b.stops.len());
+            let k = a
+                .stops
+                .iter()
+                .zip(&b.stops)
+                .position(|(x, y)| x != y)
+                .unwrap_or(b.stops.len());
             if a.stops.get(k + 1..) != b.stops.get(k..) {
                 return;
             }
@@ -137,7 +187,10 @@ pub(crate) fn remap_stop_bindings(n: &mut Node, fills: bool, index: usize, old: 
             let j = stop_binding(field)?;
             match removed.and_then(|k| removed_index(j, k)) {
                 Some(to) if to == j => None,
-                to => Some((key.clone(), to.map(|to| l.key(i, &format!("stops/{to}/color"))))),
+                to => Some((
+                    key.clone(),
+                    to.map(|to| l.key(i, &format!("stops/{to}/color"))),
+                )),
             }
         })
         .collect();
@@ -173,7 +226,11 @@ pub fn removed_index(k: usize, removed: usize) -> Option<usize> {
 /// Keep `n`'s bindings on `list`'s items with their items when the list changes: `map` gives an
 /// item's new index, or None when it was removed (its bindings go with it). Bindings whose item
 /// keeps its place keep their key.
-pub(crate) fn remap_list_bindings(n: &mut Node, list: BoundList, map: impl Fn(usize) -> Option<usize>) {
+pub(crate) fn remap_list_bindings(
+    n: &mut Node,
+    list: BoundList,
+    map: impl Fn(usize) -> Option<usize>,
+) {
     let moved: Vec<(String, Option<String>)> = n
         .bound
         .keys()
@@ -258,7 +315,9 @@ pub(crate) fn remove_item(n: &mut Node, list: BoundList, index: usize) -> bool {
 
 /// Set `field` (`size|count|gutter|offset`) of layout grid `i` to a bound number.
 pub(crate) fn set_grid_field(grids: &mut [LayoutGrid], i: usize, field: &str, x: f64) {
-    let Some(g) = grids.get_mut(i).filter(|_| x.is_finite()) else { return };
+    let Some(g) = grids.get_mut(i).filter(|_| x.is_finite()) else {
+        return;
+    };
     match field {
         "size" => g.size = x.max(0.0),
         "count" => g.count = x.round().clamp(1.0, 1000.0) as u32,
@@ -271,7 +330,9 @@ pub(crate) fn set_grid_field(grids: &mut [LayoutGrid], i: usize, field: &str, x:
 /// Write bound numbers into a node's layout grids (`layoutGrids/<i>/<size|count|gutter|offset>`;
 /// only what changed, so unchanged layers stay shared).
 pub(crate) fn apply_grid_bindings(doc: &mut Document, id: NodeId, sets: &[(usize, String, f64)]) {
-    let Some(mut grids) = doc.node(id).map(|n| n.grids.clone()) else { return };
+    let Some(mut grids) = doc.node(id).map(|n| n.grids.clone()) else {
+        return;
+    };
     for (i, field, x) in sets {
         set_grid_field(&mut grids, *i, field, *x);
     }

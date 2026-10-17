@@ -69,7 +69,11 @@ pub(crate) fn aux_scene(w: u32, h: u32, scale: f64) -> AuxChannels {
             let bg = u > 0.8 && v < 0.25;
             let obj = ((x as f64 / scale) as u32 / 11 + (y as f64 / scale) as u32 / 9 * 3) % 5;
             let vals = [
-                if bg { BACKGROUND_DEPTH } else { 50.0 + 900.0 * u + 300.0 * (v * 7.0).sin() },
+                if bg {
+                    BACKGROUND_DEPTH
+                } else {
+                    50.0 + 900.0 * u + 300.0 * (v * 7.0).sin()
+                },
                 if bg { 0.0 } else { obj as f32 + 1.0 },
                 ((obj * 7) % 3) as f32,
                 0.5 + 0.5 * (u * 9.0).sin(),
@@ -95,7 +99,14 @@ pub(crate) fn aux_scene(w: u32, h: u32, scale: f64) -> AuxChannels {
         }
     }
     a.channels = ch;
-    a.manifests = vec![("CryptoObject".into(), NAMES.iter().zip(&hashes).map(|(n, h)| (n.to_string(), *h)).collect())];
+    a.manifests = vec![(
+        "CryptoObject".into(),
+        NAMES
+            .iter()
+            .zip(&hashes)
+            .map(|(n, h)| (n.to_string(), *h))
+            .collect(),
+    )];
     a
 }
 
@@ -105,8 +116,18 @@ pub(crate) fn direct(id: &str, vals: &[(&str, Value)], allow: f64) {
     let Some(g) = gpu() else { return };
     let spec = effectcraft_effects::find(id).unwrap();
     let size = [70.0, 44.0];
-    let mut params =
-        effectcraft_effects::Params { values: spec.params.iter().map(|ps| (ps.id.to_string(), effectcraft_effects::default_value(ps, size))).collect() };
+    let mut params = effectcraft_effects::Params {
+        values: spec
+            .params
+            .iter()
+            .map(|ps| {
+                (
+                    ps.id.to_string(),
+                    effectcraft_effects::default_value(ps, size),
+                )
+            })
+            .collect(),
+    };
     for (k, v) in vals {
         params.values.insert(k.to_string(), v.clone());
     }
@@ -119,7 +140,11 @@ pub(crate) fn direct(id: &str, vals: &[(&str, Value)], allow: f64) {
                 // A padded buffer: transparent margins.
                 for (i, px) in img.data.iter_mut().enumerate() {
                     let (x, y) = (i as u32 % img.width, i as u32 / img.width);
-                    if x < offset[0] as u32 || y < offset[1] as u32 || x >= w + offset[0] as u32 || y >= h + offset[1] as u32 {
+                    if x < offset[0] as u32
+                        || y < offset[1] as u32
+                        || x >= w + offset[0] as u32
+                        || y >= h + offset[1] as u32
+                    {
                         *px = [0.0; 4];
                     }
                 }
@@ -131,12 +156,24 @@ pub(crate) fn direct(id: &str, vals: &[(&str, Value)], allow: f64) {
                 layer_size: size,
                 seed: 11,
                 adjustment: false,
-                env: EffectEnv { host: Some(&host), ..Default::default() },
+                env: EffectEnv {
+                    host: Some(&host),
+                    ..Default::default()
+                },
             };
             let cpu = (spec.render)(&ctx(), buf.clone());
-            let out =
-                effectcraft_render::Accelerator::effects(g, &[effectcraft_render::FxStep { spec, ctx: ctx() }], &buf, None).expect("the GPU runs the effect");
-            assert_eq!((out.offset, out.scale), (cpu.offset, cpu.scale), "{id}: geometry");
+            let out = effectcraft_render::Accelerator::effects(
+                g,
+                &[effectcraft_render::FxStep { spec, ctx: ctx() }],
+                &buf,
+                None,
+            )
+            .expect("the GPU runs the effect");
+            assert_eq!(
+                (out.offset, out.scale),
+                (cpu.offset, cpu.scale),
+                "{id}: geometry"
+            );
             let d = diff(&cpu.img, &out.img, 1e-3);
             assert!(
                 d.over as f64 <= allow * d.total as f64,
@@ -164,10 +201,27 @@ impl FootageSource for AuxSource {
 
 fn compare(s: &Scene, o: RenderOpts) -> Option<crate::tests::Diff> {
     let g = gpu()?;
-    let cpu = Renderer::new(&s.p, &AuxSource, RenderOpts { backend: Backend::Cpu, ..o }).comp_frame_cpu(s.cid, Tick::ZERO);
-    let mut r = Renderer::new(&s.p, &AuxSource, RenderOpts { backend: Backend::Gpu, ..o });
+    let cpu = Renderer::new(
+        &s.p,
+        &AuxSource,
+        RenderOpts {
+            backend: Backend::Cpu,
+            ..o
+        },
+    )
+    .comp_frame_cpu(s.cid, Tick::ZERO);
+    let mut r = Renderer::new(
+        &s.p,
+        &AuxSource,
+        RenderOpts {
+            backend: Backend::Gpu,
+            ..o
+        },
+    );
     r.accel = Some(g);
-    let img = g.render(&r, s.cid, Tick::ZERO).expect("the GPU renders the frame");
+    let img = g
+        .render(&r, s.cid, Tick::ZERO)
+        .expect("the GPU renders the frame");
     let mut d = diff(&cpu, &img, tolerance(s.p.settings.bit_depth));
     d.quantized = s.p.settings.bit_depth != BitDepth::Bpc32;
     Some(d)
@@ -195,8 +249,22 @@ fn composited(id: &str, vals: &[(&str, Value)], allow: f64) {
         s.effect(&mut l, id, &vals);
         set(&mut l, "transform/rotation", Value::Scalar(8.0));
         s.push(l);
-        check(&format!("{id} {vals:?} {depth:?}"), compare(&s, opts()), allow);
-        check(&format!("{id} {vals:?} {depth:?} half"), compare(&s, RenderOpts { scale: 0.5, ..opts() }), allow);
+        check(
+            &format!("{id} {vals:?} {depth:?}"),
+            compare(&s, opts()),
+            allow,
+        );
+        check(
+            &format!("{id} {vals:?} {depth:?} half"),
+            compare(
+                &s,
+                RenderOpts {
+                    scale: 0.5,
+                    ..opts()
+                },
+            ),
+            allow,
+        );
     }
 }
 
@@ -210,54 +278,186 @@ fn on() -> Value {
 
 #[test]
 fn channel_extract() {
-    case("ec.3d.channelextract", &[("blackPoint", n(0.0)), ("whitePoint", n(1200.0))]);
-    case("ec.3d.channelextract", &[("whitePoint", n(400.0)), ("clampOutput", Value::Bool(false)), ("invertDepthMap", on())]);
-    case("ec.3d.channelextract", &[("blackPoint", n(900.0)), ("whitePoint", n(100.0))]);
-    case("ec.3d.channelextract", &[("channel", e(1)), ("whitePoint", n(5.0))]);
-    case("ec.3d.channelextract", &[("channel", e(2)), ("whitePoint", n(1.0))]);
-    case("ec.3d.channelextract", &[("channel", e(3)), ("whitePoint", n(1.0))]);
-    case("ec.3d.channelextract", &[("channel", e(4)), ("whitePoint", n(1.0)), ("antialias", on())]);
-    case("ec.3d.channelextract", &[("channel", e(5)), ("whitePoint", n(1.0))]);
+    case(
+        "ec.3d.channelextract",
+        &[("blackPoint", n(0.0)), ("whitePoint", n(1200.0))],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[
+            ("whitePoint", n(400.0)),
+            ("clampOutput", Value::Bool(false)),
+            ("invertDepthMap", on()),
+        ],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[("blackPoint", n(900.0)), ("whitePoint", n(100.0))],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[("channel", e(1)), ("whitePoint", n(5.0))],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[("channel", e(2)), ("whitePoint", n(1.0))],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[("channel", e(3)), ("whitePoint", n(1.0))],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[
+            ("channel", e(4)),
+            ("whitePoint", n(1.0)),
+            ("antialias", on()),
+        ],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[("channel", e(5)), ("whitePoint", n(1.0))],
+    );
     case("ec.3d.channelextract", &[("channel", e(6))]);
-    case("ec.3d.channelextract", &[("channel", e(7)), ("whitePoint", n(2.0))]);
-    case("ec.3d.channelextract", &[("blackPoint", n(0.0)), ("whitePoint", n(1000.0)), ("antialias", on())]);
+    case(
+        "ec.3d.channelextract",
+        &[("channel", e(7)), ("whitePoint", n(2.0))],
+    );
+    case(
+        "ec.3d.channelextract",
+        &[
+            ("blackPoint", n(0.0)),
+            ("whitePoint", n(1000.0)),
+            ("antialias", on()),
+        ],
+    );
 }
 
 #[test]
 fn depth_matte_fog_and_dof() {
     case("ec.3d.depthmatte", &[("depth", n(500.0))]);
-    case("ec.3d.depthmatte", &[("depth", n(400.0)), ("feather", n(300.0)), ("invert", on())]);
+    case(
+        "ec.3d.depthmatte",
+        &[("depth", n(400.0)), ("feather", n(300.0)), ("invert", on())],
+    );
     case("ec.3d.fog3d", &[]);
-    case("ec.3d.fog3d", &[("fogColor", c(0.3, 0.5, 0.9)), ("fogStartDepth", n(200.0)), ("fogEndDepth", n(900.0)), ("scatteringDensity", n(10.0))]);
-    case("ec.3d.fog3d", &[("foggyBackground", Value::Bool(false)), ("fogOpacity", n(70.0))]);
-    composited("ec.3d.fog3d", &[("gradientLayer", Value::Layer(Some(0))), ("layerContribution", n(60.0))], 0.0);
-    case("ec.3d.depthoffield", &[("focalPlane", n(400.0)), ("maximumRadius", n(8.0))]);
-    case("ec.3d.depthoffield", &[("focalPlane", n(200.0)), ("maximumRadius", n(5.0)), ("focalPlaneThickness", n(150.0)), ("focalBias", n(80.0))]);
+    case(
+        "ec.3d.fog3d",
+        &[
+            ("fogColor", c(0.3, 0.5, 0.9)),
+            ("fogStartDepth", n(200.0)),
+            ("fogEndDepth", n(900.0)),
+            ("scatteringDensity", n(10.0)),
+        ],
+    );
+    case(
+        "ec.3d.fog3d",
+        &[
+            ("foggyBackground", Value::Bool(false)),
+            ("fogOpacity", n(70.0)),
+        ],
+    );
+    composited(
+        "ec.3d.fog3d",
+        &[
+            ("gradientLayer", Value::Layer(Some(0))),
+            ("layerContribution", n(60.0)),
+        ],
+        0.0,
+    );
+    case(
+        "ec.3d.depthoffield",
+        &[("focalPlane", n(400.0)), ("maximumRadius", n(8.0))],
+    );
+    case(
+        "ec.3d.depthoffield",
+        &[
+            ("focalPlane", n(200.0)),
+            ("maximumRadius", n(5.0)),
+            ("focalPlaneThickness", n(150.0)),
+            ("focalBias", n(80.0)),
+        ],
+    );
 }
 
 #[test]
 fn ids_and_cryptomatte() {
     case("ec.3d.idmatte", &[("idSelection", n(2.0))]);
-    case("ec.3d.idmatte", &[("idSelection", n(3.0)), ("feather", n(3.0)), ("useCoverage", on()), ("invert", on())]);
-    case("ec.3d.idmatte", &[("auxChannel", e(1)), ("idSelection", n(1.0))]);
+    case(
+        "ec.3d.idmatte",
+        &[
+            ("idSelection", n(3.0)),
+            ("feather", n(3.0)),
+            ("useCoverage", on()),
+            ("invert", on()),
+        ],
+    );
+    case(
+        "ec.3d.idmatte",
+        &[("auxChannel", e(1)), ("idSelection", n(1.0))],
+    );
     case("ec.3d.identifier", &[]);
     case("ec.3d.identifier", &[("id", n(2.0))]);
     case("ec.3d.identifier", &[("display", e(1)), ("id", n(4.0))]);
     case("ec.3d.identifier", &[("display", e(2)), ("id", n(1.0))]);
-    case("ec.3d.identifier", &[("display", e(3)), ("channelType", e(1))]);
-    case("ec.3d.cryptomatte", &[("selection", Value::Str("beta, delta".into()))]);
-    case("ec.3d.cryptomatte", &[("selection", Value::Str("*a".into())), ("display", e(0))]);
-    case("ec.3d.cryptomatte", &[("selection", Value::Str("gamma".into())), ("display", e(1))]);
-    case("ec.3d.cryptomatte", &[("selection", Value::Str("alpha".into())), ("matteOnly", on())]);
+    case(
+        "ec.3d.identifier",
+        &[("display", e(3)), ("channelType", e(1))],
+    );
+    case(
+        "ec.3d.cryptomatte",
+        &[("selection", Value::Str("beta, delta".into()))],
+    );
+    case(
+        "ec.3d.cryptomatte",
+        &[("selection", Value::Str("*a".into())), ("display", e(0))],
+    );
+    case(
+        "ec.3d.cryptomatte",
+        &[("selection", Value::Str("gamma".into())), ("display", e(1))],
+    );
+    case(
+        "ec.3d.cryptomatte",
+        &[
+            ("selection", Value::Str("alpha".into())),
+            ("matteOnly", on()),
+        ],
+    );
 }
 
 #[test]
 fn extractor() {
-    case("ec.3d.extractor", &[("red", Value::Str("Z".into())), ("green", Value::Str("UV.U".into())), ("whitePoint", n(1000.0))]);
     case(
         "ec.3d.extractor",
-        &[("red", Value::Str("G".into())), ("blue", Value::Str("Coverage".into())), ("alpha", Value::Str("UV.V".into())), ("unMult", on())],
+        &[
+            ("red", Value::Str("Z".into())),
+            ("green", Value::Str("UV.U".into())),
+            ("whitePoint", n(1000.0)),
+        ],
     );
-    case("ec.3d.extractor", &[("red", Value::Str("A".into())), ("blackPoint", n(0.2)), ("whitePoint", n(0.8)), ("clip", on())]);
-    case("ec.3d.extractor", &[("green", Value::Str("".into())), ("alpha", Value::Str("nothing".into()))]);
+    case(
+        "ec.3d.extractor",
+        &[
+            ("red", Value::Str("G".into())),
+            ("blue", Value::Str("Coverage".into())),
+            ("alpha", Value::Str("UV.V".into())),
+            ("unMult", on()),
+        ],
+    );
+    case(
+        "ec.3d.extractor",
+        &[
+            ("red", Value::Str("A".into())),
+            ("blackPoint", n(0.2)),
+            ("whitePoint", n(0.8)),
+            ("clip", on()),
+        ],
+    );
+    case(
+        "ec.3d.extractor",
+        &[
+            ("green", Value::Str("".into())),
+            ("alpha", Value::Str("nothing".into())),
+        ],
+    );
 }

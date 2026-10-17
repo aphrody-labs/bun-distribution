@@ -9,8 +9,9 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 /// Native locale tags established by the existing companion resolver and RE evidence.
-pub const LOCALE_TAGS: [&str; 10] =
-    ["de", "en", "es", "fr", "it", "pt", "ja", "ko", "zh_hans", "zh_hant"];
+pub const LOCALE_TAGS: [&str; 10] = [
+    "de", "en", "es", "fr", "it", "pt", "ja", "ko", "zh_hans", "zh_hant",
+];
 
 /// A resource category inferred solely from its VFS path and extension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -57,7 +58,10 @@ pub struct LocaleAssetReport {
 
 fn kind_for(path: &str, locale: &str) -> LocalizedAssetKind {
     if path.starts_with("data/common/text/")
-        && path.split('/').nth(3).is_some_and(|segment| segment == locale)
+        && path
+            .split('/')
+            .nth(3)
+            .is_some_and(|segment| segment == locale)
     {
         return LocalizedAssetKind::Text;
     }
@@ -126,7 +130,9 @@ where
         }
     }
 
-    LocaleAssetReport { locales: reports.into_values().collect() }
+    LocaleAssetReport {
+        locales: reports.into_values().collect(),
+    }
 }
 
 #[cfg(test)]

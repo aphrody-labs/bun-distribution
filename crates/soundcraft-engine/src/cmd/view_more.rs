@@ -40,7 +40,12 @@ pub const EDIT_VIEWS: [&str; 14] = [
 ];
 
 const WAVEFORM_STYLE: &[&str] = &["waveform.peak", "waveform.power"];
-const CLIP_TIME: &[&str] = &["view.clip.time.current", "view.clip.time.original", "view.clip.time.user", "view.clip.time.none"];
+const CLIP_TIME: &[&str] = &[
+    "view.clip.time.current",
+    "view.clip.time.original",
+    "view.clip.time.user",
+    "view.clip.time.none",
+];
 const SENDS: [&str; 10] = [
     "expanded_send.a",
     "expanded_send.b",
@@ -77,19 +82,84 @@ const MARKER_RULERS: [&str; 5] = ["markers", "markers2", "markers3", "markers4",
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         // Edit Window Views.
-        flag!("view.edit_comments", "Comments", ["View", "Edit Window Views"], "edit_view.comments"),
-        flag!("view.edit_mic_preamps", "Mic Preamps", ["View", "Edit Window Views"], "edit_view.mic_preamps"),
-        flag!("view.edit_instruments", "Instruments", ["View", "Edit Window Views"], "edit_view.instruments"),
-        flag!("view.edit_inserts_ae", "Inserts A-E", ["View", "Edit Window Views"], "edit_view.inserts_ae"),
-        flag!("view.edit_inserts_fj", "Inserts F-J", ["View", "Edit Window Views"], "edit_view.inserts_fj"),
-        flag!("view.edit_sends_ae", "Sends A-E", ["View", "Edit Window Views"], "edit_view.sends_ae"),
-        flag!("view.edit_sends_fj", "Sends F-J", ["View", "Edit Window Views"], "edit_view.sends_fj"),
-        flag!("view.edit_io", "I/O", ["View", "Edit Window Views"], "edit_view.io"),
-        flag!("view.edit_object", "Object", ["View", "Edit Window Views"], "edit_view.object"),
-        flag!("view.edit_realtime_properties", "Real-Time Properties", ["View", "Edit Window Views"], "edit_view.realtime_properties"),
-        flag!("view.edit_track_color", "Track Color", ["View", "Edit Window Views"], "edit_view.track_color"),
-        flag!("view.edit_marker_controls", "Marker Controls", ["View", "Edit Window Views"], "edit_view.marker_controls"),
-        flag!("view.edit_pinned_tracks", "Pinned Tracks", ["View", "Edit Window Views"], "edit_view.pinned_tracks"),
+        flag!(
+            "view.edit_comments",
+            "Comments",
+            ["View", "Edit Window Views"],
+            "edit_view.comments"
+        ),
+        flag!(
+            "view.edit_mic_preamps",
+            "Mic Preamps",
+            ["View", "Edit Window Views"],
+            "edit_view.mic_preamps"
+        ),
+        flag!(
+            "view.edit_instruments",
+            "Instruments",
+            ["View", "Edit Window Views"],
+            "edit_view.instruments"
+        ),
+        flag!(
+            "view.edit_inserts_ae",
+            "Inserts A-E",
+            ["View", "Edit Window Views"],
+            "edit_view.inserts_ae"
+        ),
+        flag!(
+            "view.edit_inserts_fj",
+            "Inserts F-J",
+            ["View", "Edit Window Views"],
+            "edit_view.inserts_fj"
+        ),
+        flag!(
+            "view.edit_sends_ae",
+            "Sends A-E",
+            ["View", "Edit Window Views"],
+            "edit_view.sends_ae"
+        ),
+        flag!(
+            "view.edit_sends_fj",
+            "Sends F-J",
+            ["View", "Edit Window Views"],
+            "edit_view.sends_fj"
+        ),
+        flag!(
+            "view.edit_io",
+            "I/O",
+            ["View", "Edit Window Views"],
+            "edit_view.io"
+        ),
+        flag!(
+            "view.edit_object",
+            "Object",
+            ["View", "Edit Window Views"],
+            "edit_view.object"
+        ),
+        flag!(
+            "view.edit_realtime_properties",
+            "Real-Time Properties",
+            ["View", "Edit Window Views"],
+            "edit_view.realtime_properties"
+        ),
+        flag!(
+            "view.edit_track_color",
+            "Track Color",
+            ["View", "Edit Window Views"],
+            "edit_view.track_color"
+        ),
+        flag!(
+            "view.edit_marker_controls",
+            "Marker Controls",
+            ["View", "Edit Window Views"],
+            "edit_view.marker_controls"
+        ),
+        flag!(
+            "view.edit_pinned_tracks",
+            "Pinned Tracks",
+            ["View", "Edit Window Views"],
+            "edit_view.pinned_tracks"
+        ),
         cmd!(noundo "view.edit_all", "All", ["View", "Edit Window Views"], None, "{} — shows every Edit window column", always, |e, _| Ok(set_flags(e, &EDIT_VIEWS, true))),
         cmd!(noundo "view.edit_minimal", "Minimal", ["View", "Edit Window Views"], None, "{} — hides every optional Edit window column", always, |e, _| Ok(set_flags(e, &EDIT_VIEWS, false))),
         // Rulers.
@@ -118,16 +188,56 @@ pub fn specs() -> Vec<CommandSpec> {
             sort_rulers(&mut s.edit.rulers);
             Ok(json!({"rulers": s.edit.rulers}))
         }),
-        flag!("view.ruler_tempo_editor", "Tempo Editor", ["View", "Rulers", "Tempo"], "view.ruler.tempo_editor"),
-        flag!("view.ruler_key_staff", "Key Signature Staff", ["View", "Rulers", "Key Signature"], "view.ruler.key_staff"),
+        flag!(
+            "view.ruler_tempo_editor",
+            "Tempo Editor",
+            ["View", "Rulers", "Tempo"],
+            "view.ruler.tempo_editor"
+        ),
+        flag!(
+            "view.ruler_key_staff",
+            "Key Signature Staff",
+            ["View", "Rulers", "Key Signature"],
+            "view.ruler.key_staff"
+        ),
         // Marker displays.
-        flag!("view.marker_track_lane", "Track Lane", ["View", "Marker Displays"], "view.marker.track_lane"),
-        flag!("view.marker_ruler_lines", "Ruler Lines", ["View", "Marker Displays"], "view.marker.ruler_lines"),
-        flag!("view.marker_folder_lines", "Folder Lines", ["View", "Marker Displays"], "view.marker.folder_lines"),
-        flag!("view.marker_ruler_lane_color", "Ruler Lane Color", ["View", "Marker Displays"], "view.marker.ruler_lane_color"),
-        flag!("view.marker_track_lane_color", "Track Lane Color", ["View", "Marker Displays"], "view.marker.track_lane_color"),
+        flag!(
+            "view.marker_track_lane",
+            "Track Lane",
+            ["View", "Marker Displays"],
+            "view.marker.track_lane"
+        ),
+        flag!(
+            "view.marker_ruler_lines",
+            "Ruler Lines",
+            ["View", "Marker Displays"],
+            "view.marker.ruler_lines"
+        ),
+        flag!(
+            "view.marker_folder_lines",
+            "Folder Lines",
+            ["View", "Marker Displays"],
+            "view.marker.folder_lines"
+        ),
+        flag!(
+            "view.marker_ruler_lane_color",
+            "Ruler Lane Color",
+            ["View", "Marker Displays"],
+            "view.marker.ruler_lane_color"
+        ),
+        flag!(
+            "view.marker_track_lane_color",
+            "Track Lane Color",
+            ["View", "Marker Displays"],
+            "view.marker.track_lane_color"
+        ),
         // Other displays.
-        flag!("view.midi_input_display", "MIDI Input Display", ["View", "Other Displays"], "view.midi_input_display"),
+        flag!(
+            "view.midi_input_display",
+            "MIDI Input Display",
+            ["View", "Other Displays"],
+            "view.midi_input_display"
+        ),
         flag!(
             "view.midi_editor_clip_effects",
             "Clip Effects",
@@ -135,58 +245,284 @@ pub fn specs() -> Vec<CommandSpec> {
             "view.lower_dock.midi_editor.clip_effects"
         ),
         // Clip display.
-        flag!("view.clip_sync_point", "Sync Point", ["View", "Clip"], "view.clip.sync_point"),
-        flag!("view.clip_processing_state", "Processing State", ["View", "Clip"], "view.clip.processing_state"),
+        flag!(
+            "view.clip_sync_point",
+            "Sync Point",
+            ["View", "Clip"],
+            "view.clip.sync_point"
+        ),
+        flag!(
+            "view.clip_processing_state",
+            "Processing State",
+            ["View", "Clip"],
+            "view.clip.processing_state"
+        ),
         flag!("view.clip_name", "Name", ["View", "Clip"], "view.clip.name"),
-        flag!("view.clip_channel_name", "Channel Name", ["View", "Clip"], "view.clip.channel_name"),
-        flag!("view.clip_scene_take", "Scene And Take", ["View", "Clip"], "view.clip.scene_take"),
-        flag!("view.clip_rating", "Rating", ["View", "Clip"], "view.clip.rating"),
-        flag!("view.clip_overlap_shadows", "Overlap Shadows", ["View", "Clip"], "view.clip.overlap_shadows"),
-        flag!("view.clip_transparency", "Transparency", ["View", "Clip"], "view.clip.transparency"),
-        flag!("view.clip_overwrite_indicator", "Overwrite Indicator", ["View", "Clip"], "view.clip.overwrite_indicator"),
-        flag!("view.clip_copy_move_indicators", "Copy/Move Indicators", ["View", "Clip"], "view.clip.copy_move_indicators"),
-        flag!("view.clip_gain_line", "Clip Gain Line", ["View", "Clip"], "view.clip.gain_line"),
-        flag!("view.clip_gain_info", "Clip Gain Info", ["View", "Clip"], "view.clip.gain_info"),
-        flag!("view.clip_effects_status", "Clip Effects Status", ["View", "Clip"], "view.clip.effects_status"),
-        flag!("view.clip_ara_note_overlay", "ARA Note Overlay", ["View", "Clip"], "view.clip.ara_note_overlay"),
-        radio!("view.clip_time_current", "Current Time", ["View", "Clip"], "view.clip.time.current", CLIP_TIME),
-        radio!("view.clip_time_original", "Original Time Stamp", ["View", "Clip"], "view.clip.time.original", CLIP_TIME),
-        radio!("view.clip_time_user", "User Time Stamp", ["View", "Clip"], "view.clip.time.user", CLIP_TIME),
-        radio!("view.clip_time_none", "No Time", ["View", "Clip"], "view.clip.time.none", CLIP_TIME),
-        flag!("view.clip_all_channels", "Display on All Channels", ["View", "Clip"], "view.clip.all_channels"),
+        flag!(
+            "view.clip_channel_name",
+            "Channel Name",
+            ["View", "Clip"],
+            "view.clip.channel_name"
+        ),
+        flag!(
+            "view.clip_scene_take",
+            "Scene And Take",
+            ["View", "Clip"],
+            "view.clip.scene_take"
+        ),
+        flag!(
+            "view.clip_rating",
+            "Rating",
+            ["View", "Clip"],
+            "view.clip.rating"
+        ),
+        flag!(
+            "view.clip_overlap_shadows",
+            "Overlap Shadows",
+            ["View", "Clip"],
+            "view.clip.overlap_shadows"
+        ),
+        flag!(
+            "view.clip_transparency",
+            "Transparency",
+            ["View", "Clip"],
+            "view.clip.transparency"
+        ),
+        flag!(
+            "view.clip_overwrite_indicator",
+            "Overwrite Indicator",
+            ["View", "Clip"],
+            "view.clip.overwrite_indicator"
+        ),
+        flag!(
+            "view.clip_copy_move_indicators",
+            "Copy/Move Indicators",
+            ["View", "Clip"],
+            "view.clip.copy_move_indicators"
+        ),
+        flag!(
+            "view.clip_gain_line",
+            "Clip Gain Line",
+            ["View", "Clip"],
+            "view.clip.gain_line"
+        ),
+        flag!(
+            "view.clip_gain_info",
+            "Clip Gain Info",
+            ["View", "Clip"],
+            "view.clip.gain_info"
+        ),
+        flag!(
+            "view.clip_effects_status",
+            "Clip Effects Status",
+            ["View", "Clip"],
+            "view.clip.effects_status"
+        ),
+        flag!(
+            "view.clip_ara_note_overlay",
+            "ARA Note Overlay",
+            ["View", "Clip"],
+            "view.clip.ara_note_overlay"
+        ),
+        radio!(
+            "view.clip_time_current",
+            "Current Time",
+            ["View", "Clip"],
+            "view.clip.time.current",
+            CLIP_TIME
+        ),
+        radio!(
+            "view.clip_time_original",
+            "Original Time Stamp",
+            ["View", "Clip"],
+            "view.clip.time.original",
+            CLIP_TIME
+        ),
+        radio!(
+            "view.clip_time_user",
+            "User Time Stamp",
+            ["View", "Clip"],
+            "view.clip.time.user",
+            CLIP_TIME
+        ),
+        radio!(
+            "view.clip_time_none",
+            "No Time",
+            ["View", "Clip"],
+            "view.clip.time.none",
+            CLIP_TIME
+        ),
+        flag!(
+            "view.clip_all_channels",
+            "Display on All Channels",
+            ["View", "Clip"],
+            "view.clip.all_channels"
+        ),
         // Waveforms.
-        radio!("view.waveform_peak", "Peak", ["View", "Waveforms"], "waveform.peak", WAVEFORM_STYLE),
-        radio!("view.waveform_power", "Power", ["View", "Waveforms"], "waveform.power", WAVEFORM_STYLE),
-        flag!("view.waveform_rectified", "Rectified", ["View", "Waveforms"], "waveform.rectified"),
-        flag!("view.waveform_outlines", "Outlines", ["View", "Waveforms"], "waveform.outlines"),
-        flag!("view.waveform_overlapped_crossfades", "Overlapped Crossfades", ["View", "Waveforms"], "waveform.overlapped_crossfades"),
+        radio!(
+            "view.waveform_peak",
+            "Peak",
+            ["View", "Waveforms"],
+            "waveform.peak",
+            WAVEFORM_STYLE
+        ),
+        radio!(
+            "view.waveform_power",
+            "Power",
+            ["View", "Waveforms"],
+            "waveform.power",
+            WAVEFORM_STYLE
+        ),
+        flag!(
+            "view.waveform_rectified",
+            "Rectified",
+            ["View", "Waveforms"],
+            "waveform.rectified"
+        ),
+        flag!(
+            "view.waveform_outlines",
+            "Outlines",
+            ["View", "Waveforms"],
+            "waveform.outlines"
+        ),
+        flag!(
+            "view.waveform_overlapped_crossfades",
+            "Overlapped Crossfades",
+            ["View", "Waveforms"],
+            "waveform.overlapped_crossfades"
+        ),
         // Automation playlists.
-        flag!("view.automation_trim_playlist", "Trim Playlist", ["View", "Automation"], "view.automation.trim_playlist"),
-        flag!("view.automation_composite_playlist", "Composite Playlist", ["View", "Automation"], "view.automation.composite_playlist"),
+        flag!(
+            "view.automation_trim_playlist",
+            "Trim Playlist",
+            ["View", "Automation"],
+            "view.automation.trim_playlist"
+        ),
+        flag!(
+            "view.automation_composite_playlist",
+            "Composite Playlist",
+            ["View", "Automation"],
+            "view.automation.composite_playlist"
+        ),
         // Expanded sends.
         cmd!(noundo "view.expanded_sends_all", "All", ["View", "Expanded Sends"], None, "{} — expands every send in the sends view", always, |e, _| Ok(set_flags(e, &SENDS, true))),
         cmd!(noundo "view.expanded_sends_none", "None", ["View", "Expanded Sends"], None, "{}", always, |e, _| Ok(set_flags(e, &SENDS, false))),
-        flag!("view.expanded_send_a", "Send A", ["View", "Expanded Sends"], "expanded_send.a"),
-        flag!("view.expanded_send_b", "Send B", ["View", "Expanded Sends"], "expanded_send.b"),
-        flag!("view.expanded_send_c", "Send C", ["View", "Expanded Sends"], "expanded_send.c"),
-        flag!("view.expanded_send_d", "Send D", ["View", "Expanded Sends"], "expanded_send.d"),
-        flag!("view.expanded_send_e", "Send E", ["View", "Expanded Sends"], "expanded_send.e"),
-        flag!("view.expanded_send_f", "Send F", ["View", "Expanded Sends"], "expanded_send.f"),
-        flag!("view.expanded_send_g", "Send G", ["View", "Expanded Sends"], "expanded_send.g"),
-        flag!("view.expanded_send_h", "Send H", ["View", "Expanded Sends"], "expanded_send.h"),
-        flag!("view.expanded_send_i", "Send I", ["View", "Expanded Sends"], "expanded_send.i"),
-        flag!("view.expanded_send_j", "Send J", ["View", "Expanded Sends"], "expanded_send.j"),
+        flag!(
+            "view.expanded_send_a",
+            "Send A",
+            ["View", "Expanded Sends"],
+            "expanded_send.a"
+        ),
+        flag!(
+            "view.expanded_send_b",
+            "Send B",
+            ["View", "Expanded Sends"],
+            "expanded_send.b"
+        ),
+        flag!(
+            "view.expanded_send_c",
+            "Send C",
+            ["View", "Expanded Sends"],
+            "expanded_send.c"
+        ),
+        flag!(
+            "view.expanded_send_d",
+            "Send D",
+            ["View", "Expanded Sends"],
+            "expanded_send.d"
+        ),
+        flag!(
+            "view.expanded_send_e",
+            "Send E",
+            ["View", "Expanded Sends"],
+            "expanded_send.e"
+        ),
+        flag!(
+            "view.expanded_send_f",
+            "Send F",
+            ["View", "Expanded Sends"],
+            "expanded_send.f"
+        ),
+        flag!(
+            "view.expanded_send_g",
+            "Send G",
+            ["View", "Expanded Sends"],
+            "expanded_send.g"
+        ),
+        flag!(
+            "view.expanded_send_h",
+            "Send H",
+            ["View", "Expanded Sends"],
+            "expanded_send.h"
+        ),
+        flag!(
+            "view.expanded_send_i",
+            "Send I",
+            ["View", "Expanded Sends"],
+            "expanded_send.i"
+        ),
+        flag!(
+            "view.expanded_send_j",
+            "Send J",
+            ["View", "Expanded Sends"],
+            "expanded_send.j"
+        ),
         // Misc.
-        flag!("view.track_number", "Track Number", ["View"], "edit_view.track_number"),
-        flag!("view.track_transcription_lane", "Track Transcription Lane", ["View"], "view.track_transcription_lane"),
-        flag!("view.dropped_video_frame_indicator", "Dropped Video Frame Indicator", ["View"], "view.dropped_video_frame_indicator"),
+        flag!(
+            "view.track_number",
+            "Track Number",
+            ["View"],
+            "edit_view.track_number"
+        ),
+        flag!(
+            "view.track_transcription_lane",
+            "Track Transcription Lane",
+            ["View"],
+            "view.track_transcription_lane"
+        ),
+        flag!(
+            "view.dropped_video_frame_indicator",
+            "Dropped Video Frame Indicator",
+            ["View"],
+            "view.dropped_video_frame_indicator"
+        ),
         // Transport window views.
-        flag!("view.transport_counters", "Counters", ["View", "Transport"], "view.transport.counters"),
-        flag!("view.transport_midi_controls", "MIDI Controls", ["View", "Transport"], "view.transport.midi_controls"),
-        flag!("view.transport_synchronization", "Synchronization", ["View", "Transport"], "view.transport.synchronization"),
-        flag!("view.transport_ableton_link", "Ableton Link", ["View", "Transport"], "view.transport.ableton_link"),
-        flag!("view.transport_output_meters", "Output Meters", ["View", "Transport"], "view.transport.output_meters"),
-        flag!("view.transport_expanded", "Expanded", ["View", "Transport"], "view.transport.expanded"),
+        flag!(
+            "view.transport_counters",
+            "Counters",
+            ["View", "Transport"],
+            "view.transport.counters"
+        ),
+        flag!(
+            "view.transport_midi_controls",
+            "MIDI Controls",
+            ["View", "Transport"],
+            "view.transport.midi_controls"
+        ),
+        flag!(
+            "view.transport_synchronization",
+            "Synchronization",
+            ["View", "Transport"],
+            "view.transport.synchronization"
+        ),
+        flag!(
+            "view.transport_ableton_link",
+            "Ableton Link",
+            ["View", "Transport"],
+            "view.transport.ableton_link"
+        ),
+        flag!(
+            "view.transport_output_meters",
+            "Output Meters",
+            ["View", "Transport"],
+            "view.transport.output_meters"
+        ),
+        flag!(
+            "view.transport_expanded",
+            "Expanded",
+            ["View", "Transport"],
+            "view.transport.expanded"
+        ),
         cmd!(query "view.flags", "View Flags", [], None, "{prefix?} — lists the view/option flags that are on", always, |e, p| {
             let pre = str_param(p, "prefix").unwrap_or("");
             let f: Vec<&String> = e.session().edit.flags.iter().filter(|f| f.starts_with(pre)).collect();
@@ -228,7 +564,8 @@ mod tests {
         assert!(e.session().edit.flag("view.clip.rating"));
         e.execute("view.clip_rating", &json!({})).unwrap();
         assert!(!e.session().edit.flag("view.clip.rating"));
-        e.execute("view.edit_inserts_ae", &json!({"value": true})).unwrap();
+        e.execute("view.edit_inserts_ae", &json!({"value": true}))
+            .unwrap();
         let text = e.session().to_json().unwrap();
         let back = soundcraft_model::Session::from_json(&text).unwrap();
         assert!(back.edit.flag("edit_view.inserts_ae"));
@@ -267,10 +604,17 @@ mod tests {
         e.execute("view.ruler_markers3", &json!({})).unwrap();
         assert!(e.session().edit.rulers.iter().any(|r| r == "markers3"));
         e.execute("view.ruler_all_markers", &json!({})).unwrap();
-        assert!(MARKER_RULERS.iter().all(|m| e.session().edit.rulers.iter().any(|r| r == m)));
+        assert!(
+            MARKER_RULERS
+                .iter()
+                .all(|m| e.session().edit.rulers.iter().any(|r| r == m))
+        );
         e.execute("view.ruler_all", &json!({})).unwrap();
         assert_eq!(e.session().edit.rulers.len(), RULERS.len());
         e.execute("view.ruler_minimal", &json!({})).unwrap();
-        assert_eq!(e.session().edit.rulers, vec!["min_secs".to_string(), "markers".to_string()]);
+        assert_eq!(
+            e.session().edit.rulers,
+            vec!["min_secs".to_string(), "markers".to_string()]
+        );
     }
 }

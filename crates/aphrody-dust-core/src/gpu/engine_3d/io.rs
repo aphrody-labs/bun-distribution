@@ -40,30 +40,30 @@ impl Engine3d {
 
             0x620..=0x62F => {
                 (self.pos_test_result[addr as usize >> 2 & 3] >> ((addr & 3) << 3)) as u8
-            },
+            }
 
             0x630..=0x635 => {
                 (self.vec_test_result[addr as usize >> 1 & 3] >> ((addr & 1) << 3)) as u8
-            },
+            }
 
             0x640..=0x67F => {
                 if self.clip_mtx_needs_recalculation {
                     self.update_clip_mtx();
                 }
                 (self.cur_clip_mtx.get(addr as usize >> 2 & 0xF) >> ((addr & 3) << 3)) as u8
-            },
+            }
 
             0x680..=0x68B => {
                 (self.cur_pos_vec_mtxs[1].get(addr as usize >> 2 & 0xF) >> ((addr & 3) << 3)) as u8
-            },
+            }
             0x68C..=0x697 => {
                 (self.cur_pos_vec_mtxs[1].get(1 + (addr as usize >> 2 & 0xF)) >> ((addr & 3) << 3))
                     as u8
-            },
+            }
             0x698..=0x6A3 => {
                 (self.cur_pos_vec_mtxs[1].get(2 + (addr as usize >> 2 & 0xF)) >> ((addr & 3) << 3))
                     as u8
-            },
+            }
 
             _ => {
                 #[cfg(feature = "log")]
@@ -71,7 +71,7 @@ impl Engine3d {
                     slog::warn!(self.logger, "Unknown read8 @ {:#06X}", addr);
                 }
                 0
-            },
+            }
         }
     }
 
@@ -89,7 +89,7 @@ impl Engine3d {
 
             0x620..=0x62E => {
                 (self.pos_test_result[addr as usize >> 2 & 3] >> ((addr & 2) << 3)) as u16
-            },
+            }
 
             0x630..=0x634 => self.vec_test_result[addr as usize >> 1 & 3],
 
@@ -98,19 +98,19 @@ impl Engine3d {
                     self.update_clip_mtx();
                 }
                 (self.cur_clip_mtx.get(addr as usize >> 2 & 0xF) >> ((addr & 2) << 3)) as u16
-            },
+            }
 
             0x680..=0x68A => {
                 (self.cur_pos_vec_mtxs[1].get(addr as usize >> 2 & 0xF) >> ((addr & 2) << 3)) as u16
-            },
+            }
             0x68C..=0x696 => {
                 (self.cur_pos_vec_mtxs[1].get(1 + (addr as usize >> 2 & 0xF)) >> ((addr & 2) << 3))
                     as u16
-            },
+            }
             0x698..=0x6A2 => {
                 (self.cur_pos_vec_mtxs[1].get(2 + (addr as usize >> 2 & 0xF)) >> ((addr & 2) << 3))
                     as u16
-            },
+            }
 
             _ => {
                 #[cfg(feature = "log")]
@@ -118,7 +118,7 @@ impl Engine3d {
                     slog::warn!(self.logger, "Unknown read16 @ {:#06X}", addr);
                 }
                 0
-            },
+            }
         }
     }
 
@@ -142,7 +142,7 @@ impl Engine3d {
                     self.update_clip_mtx();
                 }
                 self.cur_clip_mtx.get(addr as usize >> 2 & 0xF) as u32
-            },
+            }
 
             0x680..=0x688 => self.cur_pos_vec_mtxs[1].get(addr as usize >> 2 & 0xF) as u32,
             0x68C..=0x694 => self.cur_pos_vec_mtxs[1].get(1 + (addr as usize >> 2 & 0xF)) as u32,
@@ -154,7 +154,7 @@ impl Engine3d {
                     slog::warn!(self.logger, "Unknown read32 @ {:#06X}", addr);
                 }
                 0
-            },
+            }
         }
     }
 
@@ -171,102 +171,102 @@ impl Engine3d {
                         set_rgb5_high(*color, value)
                     };
                 }
-            },
+            }
 
             0x340 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.alpha_test_ref = value & 0x1F;
                 }
-            },
+            }
 
             0x350 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_color =
                         set_rgb5_low(emu.gpu.engine_3d.rendering_state.clear_color, value);
                 }
-            },
+            }
             0x351 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_color =
                         set_rgb5_high(emu.gpu.engine_3d.rendering_state.clear_color, value);
                 }
-            },
+            }
             0x352 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_color[3] = value & 0x1F;
                 }
-            },
+            }
             0x353 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_poly_id = value & 0x3F;
                 }
-            },
+            }
 
             0x354 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_depth =
                         (emu.gpu.engine_3d.rendering_state.clear_depth & 0x7F00) | value as u16;
                 }
-            },
+            }
             0x355 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_depth =
                         (emu.gpu.engine_3d.rendering_state.clear_depth & 0x00FF)
                             | (value as u16 & 0x7F) << 8;
                 }
-            },
+            }
 
             0x356 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_image_offset[0] = value;
                 }
-            },
+            }
             0x357 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_image_offset[1] = value;
                 }
-            },
+            }
 
             0x358 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_color =
                         set_rgb5_low(emu.gpu.engine_3d.rendering_state.fog_color, value);
                 }
-            },
+            }
             0x359 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_color =
                         set_rgb5_high(emu.gpu.engine_3d.rendering_state.fog_color, value);
                 }
-            },
+            }
             0x35A => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_color[3] = value & 0x1F;
                 }
-            },
-            0x35B => {},
+            }
+            0x35B => {}
 
             0x35C => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_offset =
                         (emu.gpu.engine_3d.rendering_state.fog_offset & 0x7F00) | value as u16;
                 }
-            },
+            }
             0x35D => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_offset =
                         (emu.gpu.engine_3d.rendering_state.fog_offset & 0x00FF)
                             | (value as u16 & 0x7F) << 8;
                 }
-            },
-            0x35E | 0x35F => {},
+            }
+            0x35E | 0x35F => {}
 
             0x360..=0x37F => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_densities[addr as usize & 0x1F] =
                         fog_density(value);
                 }
-            },
+            }
 
             0x380..=0x3BF => {
                 if emu.gpu.engine_3d.rendering_enabled {
@@ -278,7 +278,7 @@ impl Engine3d {
                         set_rgb5_high(*color, value)
                     };
                 }
-            },
+            }
 
             0x601 => {
                 if emu.gpu.engine_3d.gx_enabled {
@@ -289,7 +289,7 @@ impl Engine3d {
                         &mut emu.arm9,
                     );
                 }
-            },
+            }
             0x603 => {
                 if emu.gpu.engine_3d.gx_enabled {
                     emu.gpu.engine_3d.write_gx_status(
@@ -299,8 +299,8 @@ impl Engine3d {
                         &mut emu.arm9,
                     );
                 }
-            },
-            0x600 | 0x602 => {},
+            }
+            0x600 | 0x602 => {}
 
             _ =>
             {
@@ -313,7 +313,7 @@ impl Engine3d {
                         value
                     );
                 }
-            },
+            }
         }
     }
 
@@ -329,13 +329,13 @@ impl Engine3d {
                     emu.gpu.engine_3d.rendering_state.edge_colors[(addr >> 1) as usize & 7] =
                         decode_rgb5(value, 0x1F);
                 }
-            },
+            }
 
             0x340 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.alpha_test_ref = value as u8 & 0x1F;
                 }
-            },
+            }
 
             0x350 => {
                 if emu.gpu.engine_3d.rendering_enabled {
@@ -343,45 +343,45 @@ impl Engine3d {
                         decode_rgb5(value, emu.gpu.engine_3d.rendering_state.clear_color[3]);
                     emu.gpu.engine_3d.rendering_state.rear_plane_fog_enabled = value & 1 << 15 != 0;
                 }
-            },
+            }
             0x352 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_color[3] = value as u8 & 0x1F;
                     emu.gpu.engine_3d.rendering_state.clear_poly_id = (value >> 8) as u8 & 0x3F;
                 }
-            },
+            }
 
             0x354 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_depth = value & 0x7FFF;
                 }
-            },
+            }
 
             0x356 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.clear_image_offset =
                         [value as u8, (value >> 8) as u8];
                 }
-            },
+            }
 
             0x358 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_color =
                         decode_rgb5(value, emu.gpu.engine_3d.rendering_state.fog_color[3]);
                 }
-            },
+            }
             0x35A => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_color[3] = value as u8 & 0x1F;
                 }
-            },
+            }
 
             0x35C => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_offset = value & 0x7FFF;
                 }
-            },
-            0x35E => {},
+            }
+            0x35E => {}
 
             0x360..=0x37E => {
                 if emu.gpu.engine_3d.rendering_enabled {
@@ -392,14 +392,14 @@ impl Engine3d {
                         value >>= 8;
                     }
                 }
-            },
+            }
 
             0x380..=0x3BE => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.toon_colors[(addr >> 1) as usize & 0x1F] =
                         decode_rgb5(value, 0x1F);
                 }
-            },
+            }
 
             0x600 => {
                 if emu.gpu.engine_3d.gx_enabled {
@@ -408,16 +408,15 @@ impl Engine3d {
                         &mut emu.arm9,
                     );
                 }
-            },
-            0x602
-                if emu.gpu.engine_3d.gx_enabled => {
-                    emu.gpu.engine_3d.write_gx_status(
-                        GxStatus(
-                            (emu.gpu.engine_3d.gx_status().0 & 0x0000_7FFF) | (value as u32) << 16,
-                        ),
-                        &mut emu.arm9,
-                    );
-                },
+            }
+            0x602 if emu.gpu.engine_3d.gx_enabled => {
+                emu.gpu.engine_3d.write_gx_status(
+                    GxStatus(
+                        (emu.gpu.engine_3d.gx_status().0 & 0x0000_7FFF) | (value as u32) << 16,
+                    ),
+                    &mut emu.arm9,
+                );
+            }
 
             _ =>
             {
@@ -430,7 +429,7 @@ impl Engine3d {
                         value
                     );
                 }
-            },
+            }
         }
     }
 
@@ -449,13 +448,13 @@ impl Engine3d {
                     emu.gpu.engine_3d.rendering_state.edge_colors[i | 1] =
                         decode_rgb5((value >> 16) as u16, 0x1F);
                 }
-            },
+            }
 
             0x340 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.alpha_test_ref = value as u8 & 0x1F;
                 }
-            },
+            }
 
             0x350 => {
                 if emu.gpu.engine_3d.rendering_enabled {
@@ -464,7 +463,7 @@ impl Engine3d {
                     emu.gpu.engine_3d.rendering_state.rear_plane_fog_enabled = value & 1 << 15 != 0;
                     emu.gpu.engine_3d.rendering_state.clear_poly_id = (value >> 24) as u8 & 0x3F;
                 }
-            },
+            }
 
             0x354 => {
                 if emu.gpu.engine_3d.rendering_enabled {
@@ -472,20 +471,20 @@ impl Engine3d {
                     emu.gpu.engine_3d.rendering_state.clear_image_offset =
                         [(value >> 16) as u8, (value >> 24) as u8];
                 }
-            },
+            }
 
             0x358 => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_color =
                         decode_rgb5(value as u16, (value >> 16) as u8 & 0x1F);
                 }
-            },
+            }
 
             0x35C => {
                 if emu.gpu.engine_3d.rendering_enabled {
                     emu.gpu.engine_3d.rendering_state.fog_offset = value as u16 & 0x7FFF;
                 }
-            },
+            }
 
             0x360..=0x37C => {
                 if emu.gpu.engine_3d.rendering_enabled {
@@ -496,7 +495,7 @@ impl Engine3d {
                         value >>= 8;
                     }
                 }
-            },
+            }
 
             0x380..=0x3BC => {
                 if emu.gpu.engine_3d.rendering_enabled {
@@ -506,24 +505,25 @@ impl Engine3d {
                     emu.gpu.engine_3d.rendering_state.toon_colors[i | 1] =
                         decode_rgb5((value >> 16) as u16, 0x1F);
                 }
-            },
+            }
 
             0x400..=0x43C => {
                 if emu.gpu.engine_3d.gx_enabled {
                     Self::write_packed_command(emu, value);
                 }
-            },
+            }
 
             0x440..=0x5FC => {
                 if emu.gpu.engine_3d.gx_enabled {
                     Self::write_unpacked_command(emu, (addr >> 2) as u8, value);
                 }
-            },
+            }
 
-            0x600
-                if emu.gpu.engine_3d.gx_enabled => {
-                    emu.gpu.engine_3d.write_gx_status(GxStatus(value), &mut emu.arm9);
-                },
+            0x600 if emu.gpu.engine_3d.gx_enabled => {
+                emu.gpu
+                    .engine_3d
+                    .write_gx_status(GxStatus(value), &mut emu.arm9);
+            }
 
             _ =>
             {
@@ -536,7 +536,7 @@ impl Engine3d {
                         value
                     );
                 }
-            },
+            }
         }
     }
 }

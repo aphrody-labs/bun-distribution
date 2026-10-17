@@ -29,7 +29,10 @@ static RERANKER: OnceLock<Reranker> = OnceLock::new();
 static INIT_LOCK: Mutex<()> = Mutex::new(());
 
 fn env_or(name: &str, default: &str) -> String {
-    std::env::var(name).ok().filter(|v| !v.trim().is_empty()).unwrap_or_else(|| default.to_string())
+    std::env::var(name)
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| default.to_string())
 }
 
 fn env_options() -> EmbedOptions {

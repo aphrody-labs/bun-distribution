@@ -26,7 +26,8 @@ impl MeterEvent {
         (TICKS_PER_QUARTER * 4 / d).max(1)
     }
     pub fn ticks_per_bar(&self) -> i64 {
-        self.ticks_per_beat().saturating_mul(i64::from(self.numerator.max(1)))
+        self.ticks_per_beat()
+            .saturating_mul(i64::from(self.numerator.max(1)))
     }
 }
 
@@ -47,12 +48,26 @@ pub struct TempoMap {
 
 impl Default for TempoMap {
     fn default() -> Self {
-        TempoMap { tempos: vec![TempoEvent { tick: 0, bpm: 120.0 }], meters: vec![MeterEvent { tick: 0, numerator: 4, denominator: 4 }] }
+        TempoMap {
+            tempos: vec![TempoEvent {
+                tick: 0,
+                bpm: 120.0,
+            }],
+            meters: vec![MeterEvent {
+                tick: 0,
+                numerator: 4,
+                denominator: 4,
+            }],
+        }
     }
 }
 
 fn valid_bpm(bpm: f64) -> Result<f64, TimeError> {
-    if bpm.is_finite() && (5.0..=1000.0).contains(&bpm) { Ok(bpm) } else { Err(TimeError::Tempo(bpm)) }
+    if bpm.is_finite() && (5.0..=1000.0).contains(&bpm) {
+        Ok(bpm)
+    } else {
+        Err(TimeError::Tempo(bpm))
+    }
 }
 
 impl TempoMap {
@@ -96,12 +111,25 @@ impl TempoMap {
     }
 
     /// Insert or replace the meter at `tick` (snapped to the bar line at or before it).
-    pub fn set_meter(&mut self, tick: i64, numerator: u32, denominator: u32) -> Result<(), TimeError> {
+    pub fn set_meter(
+        &mut self,
+        tick: i64,
+        numerator: u32,
+        denominator: u32,
+    ) -> Result<(), TimeError> {
         if !(1..=64).contains(&numerator) || ![1, 2, 4, 8, 16, 32, 64].contains(&denominator) {
             return Err(TimeError::Meter(numerator, denominator));
         }
-        let tick = if tick <= 0 { 0 } else { self.bar_start_tick(self.bar_beat_at_tick(tick).bar) };
-        let ev = MeterEvent { tick, numerator, denominator };
+        let tick = if tick <= 0 {
+            0
+        } else {
+            self.bar_start_tick(self.bar_beat_at_tick(tick).bar)
+        };
+        let ev = MeterEvent {
+            tick,
+            numerator,
+            denominator,
+        };
         match self.meters.binary_search_by(|e| e.tick.cmp(&tick)) {
             Ok(i) => {
                 if let Some(e) = self.meters.get_mut(i) {
@@ -137,7 +165,11 @@ impl TempoMap {
 
     /// Meter in effect at `tick`.
     pub fn meter_at_tick(&self, tick: i64) -> MeterEvent {
-        let mut m = self.meters.first().copied().unwrap_or(MeterEvent { tick: 0, numerator: 4, denominator: 4 });
+        let mut m = self.meters.first().copied().unwrap_or(MeterEvent {
+            tick: 0,
+            numerator: 4,
+            denominator: 4,
+        });
         for e in &self.meters {
             if e.tick <= tick {
                 m = *e;
@@ -226,7 +258,11 @@ impl TempoMap {
             let bar_tick = -bars_back * tpb;
             let within = tick - bar_tick;
             let beat_t = first.ticks_per_beat();
-            return BarBeat { bar: 1 - bars_back, beat: within / beat_t + 1, tick: within % beat_t };
+            return BarBeat {
+                bar: 1 - bars_back,
+                beat: within / beat_t + 1,
+                tick: within % beat_t,
+            };
         }
         let mut bar = 1i64;
         let mut seg_tick = 0i64;
@@ -243,16 +279,26 @@ impl TempoMap {
             let bars = rel / tpb;
             let within = rel % tpb;
             let beat_t = m.ticks_per_beat();
-            return BarBeat { bar: bar + bars, beat: within / beat_t + 1, tick: within % beat_t };
+            return BarBeat {
+                bar: bar + bars,
+                beat: within / beat_t + 1,
+                tick: within % beat_t,
+            };
         }
-        BarBeat { bar, beat: 1, tick: 0 }
+        BarBeat {
+            bar,
+            beat: 1,
+            tick: 0,
+        }
     }
 
     /// Bar|beat|tick → tick.
     pub fn tick_at_bar_beat(&self, bb: BarBeat) -> i64 {
         let start = self.bar_start_tick(bb.bar);
         let m = self.meter_at_tick(start);
-        start.saturating_add((bb.beat - 1).max(0).saturating_mul(m.ticks_per_beat())).saturating_add(bb.tick)
+        start
+            .saturating_add((bb.beat - 1).max(0).saturating_mul(m.ticks_per_beat()))
+            .saturating_add(bb.tick)
     }
 
     pub fn bar_beat_at(&self, s: Samples, sr: SampleRate) -> BarBeat {
@@ -283,9 +329,33 @@ mod tests {
         let m = TempoMap::default();
         let sr = SampleRate::HZ_48000;
         // One bar of 4/4 at 120 bpm = 2 seconds.
-        assert_eq!(m.samples_at_bar_beat(BarBeat { bar: 2, beat: 1, tick: 0 }, sr), 96_000);
-        assert_eq!(m.bar_beat_at(96_000, sr), BarBeat { bar: 2, beat: 1, tick: 0 });
-        assert_eq!(m.bar_beat_at(24_000, sr), BarBeat { bar: 1, beat: 2, tick: 0 });
+        assert_eq!(
+            m.samples_at_bar_beat(
+                BarBeat {
+                    bar: 2,
+                    beat: 1,
+                    tick: 0
+                },
+                sr
+            ),
+            96_000
+        );
+        assert_eq!(
+            m.bar_beat_at(96_000, sr),
+            BarBeat {
+                bar: 2,
+                beat: 1,
+                tick: 0
+            }
+        );
+        assert_eq!(
+            m.bar_beat_at(24_000, sr),
+            BarBeat {
+                bar: 1,
+                beat: 2,
+                tick: 0
+            }
+        );
     }
 
     #[test]
@@ -294,8 +364,14 @@ mod tests {
         let sr = SampleRate::HZ_48000;
         m.set_tempo(TICKS_PER_QUARTER * 4, 60.0).unwrap();
         // Bar 1 at 120 = 96000 samples; bar 2 at 60 = 192000 samples.
-        assert_eq!(m.tick_to_samples(TICKS_PER_QUARTER * 8, sr), 96_000 + 192_000);
-        assert_eq!(m.samples_to_ticks(96_000 + 192_000, sr), TICKS_PER_QUARTER * 8);
+        assert_eq!(
+            m.tick_to_samples(TICKS_PER_QUARTER * 8, sr),
+            96_000 + 192_000
+        );
+        assert_eq!(
+            m.samples_to_ticks(96_000 + 192_000, sr),
+            TICKS_PER_QUARTER * 8
+        );
     }
 
     #[test]
@@ -303,18 +379,50 @@ mod tests {
         let mut m = TempoMap::default();
         // 2 bars of 4/4 then 3/4.
         m.set_meter(TICKS_PER_QUARTER * 8, 3, 4).unwrap();
-        assert_eq!(m.bar_beat_at_tick(TICKS_PER_QUARTER * 8), BarBeat { bar: 3, beat: 1, tick: 0 });
-        assert_eq!(m.bar_beat_at_tick(TICKS_PER_QUARTER * 11), BarBeat { bar: 4, beat: 1, tick: 0 });
+        assert_eq!(
+            m.bar_beat_at_tick(TICKS_PER_QUARTER * 8),
+            BarBeat {
+                bar: 3,
+                beat: 1,
+                tick: 0
+            }
+        );
+        assert_eq!(
+            m.bar_beat_at_tick(TICKS_PER_QUARTER * 11),
+            BarBeat {
+                bar: 4,
+                beat: 1,
+                tick: 0
+            }
+        );
         assert_eq!(m.bar_start_tick(4), TICKS_PER_QUARTER * 11);
-        let bb = BarBeat { bar: 4, beat: 2, tick: 10 };
+        let bb = BarBeat {
+            bar: 4,
+            beat: 2,
+            tick: 10,
+        };
         assert_eq!(m.bar_beat_at_tick(m.tick_at_bar_beat(bb)), bb);
     }
 
     #[test]
     fn eighth_note_meters() {
         let m = TempoMap::new(120.0, 6, 8).unwrap();
-        assert_eq!(m.bar_beat_at_tick(TICKS_PER_QUARTER * 3), BarBeat { bar: 2, beat: 1, tick: 0 });
-        assert_eq!(m.bar_beat_at_tick(TICKS_PER_QUARTER / 2), BarBeat { bar: 1, beat: 2, tick: 0 });
+        assert_eq!(
+            m.bar_beat_at_tick(TICKS_PER_QUARTER * 3),
+            BarBeat {
+                bar: 2,
+                beat: 1,
+                tick: 0
+            }
+        );
+        assert_eq!(
+            m.bar_beat_at_tick(TICKS_PER_QUARTER / 2),
+            BarBeat {
+                bar: 1,
+                beat: 2,
+                tick: 0
+            }
+        );
     }
 
     #[test]
@@ -330,7 +438,21 @@ mod tests {
     #[test]
     fn negative_positions() {
         let m = TempoMap::default();
-        assert_eq!(m.bar_beat_at_tick(-TICKS_PER_QUARTER * 4), BarBeat { bar: 0, beat: 1, tick: 0 });
-        assert_eq!(m.bar_beat_at_tick(-TICKS_PER_QUARTER), BarBeat { bar: 0, beat: 4, tick: 0 });
+        assert_eq!(
+            m.bar_beat_at_tick(-TICKS_PER_QUARTER * 4),
+            BarBeat {
+                bar: 0,
+                beat: 1,
+                tick: 0
+            }
+        );
+        assert_eq!(
+            m.bar_beat_at_tick(-TICKS_PER_QUARTER),
+            BarBeat {
+                bar: 0,
+                beat: 4,
+                tick: 0
+            }
+        );
     }
 }

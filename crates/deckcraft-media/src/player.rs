@@ -85,7 +85,10 @@ impl Voice {
         }
     }
     fn pcm(&self) -> Option<&Arc<Pcm>> {
-        self.audio.as_ref().and_then(|s| s.get()).and_then(|r| r.as_ref().ok())
+        self.audio
+            .as_ref()
+            .and_then(|s| s.get())
+            .and_then(|r| r.as_ref().ok())
     }
     fn loading(&self) -> bool {
         self.audio.as_ref().is_some_and(|s| s.get().is_none())
@@ -198,7 +201,14 @@ pub struct Player {
 impl Player {
     /// A player over `out` (`None`: silent, clocked by [`Player::tick`]).
     pub fn new(out: Option<Box<dyn AudioOut>>) -> Player {
-        Player { out, streaming: false, mixer: Arc::new(Mutex::new(Mixer::default())), last_tick: None, idle_since: None, cache: HashMap::new() }
+        Player {
+            out,
+            streaming: false,
+            mixer: Arc::new(Mutex::new(Mixer::default())),
+            last_tick: None,
+            idle_since: None,
+            cache: HashMap::new(),
+        }
     }
 
     pub fn has_output(&self) -> bool {
@@ -214,7 +224,12 @@ impl Player {
     fn slot(&mut self, media_key: u64, bytes: &Bytes) -> Slot {
         if self.cache.len() > 16 {
             // Forget audio no voice uses.
-            let used: Vec<u64> = self.cache.iter().filter(|(_, s)| Arc::strong_count(s) > 1).map(|(k, _)| *k).collect();
+            let used: Vec<u64> = self
+                .cache
+                .iter()
+                .filter(|(_, s)| Arc::strong_count(s) > 1)
+                .map(|(k, _)| *k)
+                .collect();
             self.cache.retain(|k, _| used.contains(k));
         }
         self.cache
@@ -223,10 +238,18 @@ impl Player {
                 let slot: Slot = Arc::new(OnceLock::new());
                 let (s, b) = (slot.clone(), bytes.clone());
                 let job = move || {
-                    let _ = s.set(crate::audio::decode(&b).map(Arc::new).map_err(|e| e.to_string()));
+                    let _ = s.set(
+                        crate::audio::decode(&b)
+                            .map(Arc::new)
+                            .map_err(|e| e.to_string()),
+                    );
                 };
                 if crate::THREADS {
-                    if std::thread::Builder::new().name("deckcraft-audio-decode".into()).spawn(job).is_err() {
+                    if std::thread::Builder::new()
+                        .name("deckcraft-audio-decode".into())
+                        .spawn(job)
+                        .is_err()
+                    {
                         let _ = slot.set(Err("couldn't start the decoder".into()));
                     }
                 } else {
@@ -239,7 +262,14 @@ impl Player {
 
     /// Play voice `key` (a shape) from `from` seconds (default: the trimmed start). Resumes a
     /// paused voice when `from` is `None`.
-    pub fn play(&mut self, key: u64, media_key: u64, bytes: &Bytes, spec: VoiceSpec, from: Option<f64>) {
+    pub fn play(
+        &mut self,
+        key: u64,
+        media_key: u64,
+        bytes: &Bytes,
+        spec: VoiceSpec,
+        from: Option<f64>,
+    ) {
         let audio = spec.audio.then(|| self.slot(media_key, bytes));
         self.with(|m| {
             if let Some(v) = m.voices.iter_mut().find(|v| v.key == key) {
@@ -255,7 +285,13 @@ impl Player {
                 v.state = PlayState::Playing;
             } else {
                 let t = from.unwrap_or(spec.clip.range(spec.duration).0);
-                m.voices.push(Voice { key, audio, spec, t, state: PlayState::Playing });
+                m.voices.push(Voice {
+                    key,
+                    audio,
+                    spec,
+                    t,
+                    state: PlayState::Playing,
+                });
             }
         });
         self.ensure_stream();
@@ -267,13 +303,15 @@ impl Player {
         }
         let Some(out) = self.out.as_mut() else { return };
         let m = self.mixer.clone();
-        let fill = Box::new(move |buf: &mut [f32], channels: usize, rate: u32| match m.lock() {
-            Ok(mut g) => {
-                let frames = buf.len() / channels.max(1);
-                g.mix(Some(buf), frames, channels, rate)
-            }
-            Err(_) => buf.fill(0.0),
-        });
+        let fill = Box::new(
+            move |buf: &mut [f32], channels: usize, rate: u32| match m.lock() {
+                Ok(mut g) => {
+                    let frames = buf.len() / channels.max(1);
+                    g.mix(Some(buf), frames, channels, rate)
+                }
+                Err(_) => buf.fill(0.0),
+            },
+        );
         match out.start(fill) {
             Ok(()) => self.streaming = true,
             Err(e) => {
@@ -285,7 +323,11 @@ impl Player {
 
     pub fn pause(&mut self, key: u64) {
         self.with(|m| {
-            if let Some(v) = m.voices.iter_mut().find(|v| v.key == key && v.state == PlayState::Playing) {
+            if let Some(v) = m
+                .voices
+                .iter_mut()
+                .find(|v| v.key == key && v.state == PlayState::Playing)
+            {
                 v.state = PlayState::Paused;
             }
         });
@@ -316,10 +358,18 @@ impl Player {
     pub fn status(&self, key: u64) -> Option<VoiceStatus> {
         self.with(|m| {
             m.voices.iter().find(|v| v.key == key).map(|v| VoiceStatus {
-                state: if v.state == PlayState::Playing && v.loading() { PlayState::Loading } else { v.state },
+                state: if v.state == PlayState::Playing && v.loading() {
+                    PlayState::Loading
+                } else {
+                    v.state
+                },
                 position: v.t,
                 duration: v.duration(),
-                error: v.audio.as_ref().and_then(|s| s.get()).and_then(|r| r.as_ref().err().cloned()),
+                error: v
+                    .audio
+                    .as_ref()
+                    .and_then(|s| s.get())
+                    .and_then(|r| r.as_ref().err().cloned()),
             })
         })
     }
@@ -336,7 +386,10 @@ impl Player {
     /// Call every frame with the host's clock (seconds): runs the voices' clocks when there is no
     /// audio device, and releases the device after a few idle seconds.
     pub fn tick(&mut self, now: f64) {
-        let dt = self.last_tick.map(|l| (now - l).clamp(0.0, 0.25)).unwrap_or(0.0);
+        let dt = self
+            .last_tick
+            .map(|l| (now - l).clamp(0.0, 0.25))
+            .unwrap_or(0.0);
         self.last_tick = Some(now);
         if !self.streaming && dt > 0.0 {
             let frames = (dt * DEFAULT_RATE as f64).round() as usize;
@@ -357,7 +410,12 @@ impl Player {
 
     /// Block until voice `key`'s audio has decoded (tests, offline rendering).
     pub fn wait_loaded(&self, key: u64, timeout: std::time::Duration) -> bool {
-        let slot = self.with(|m| m.voices.iter().find(|v| v.key == key).and_then(|v| v.audio.clone()));
+        let slot = self.with(|m| {
+            m.voices
+                .iter()
+                .find(|v| v.key == key)
+                .and_then(|v| v.audio.clone())
+        });
         let Some(slot) = slot else { return true };
         let t0 = web_now();
         while slot.get().is_none() {
@@ -381,7 +439,9 @@ fn web_now() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         static T0: OnceLock<std::time::Instant> = OnceLock::new();
-        T0.get_or_init(std::time::Instant::now).elapsed().as_secs_f64()
+        T0.get_or_init(std::time::Instant::now)
+            .elapsed()
+            .as_secs_f64()
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -402,7 +462,12 @@ mod tests {
     use super::*;
 
     fn spec(duration: f64, looping: bool) -> VoiceSpec {
-        VoiceSpec { clip: ClipParams::default(), looping, duration, audio: false }
+        VoiceSpec {
+            clip: ClipParams::default(),
+            looping,
+            duration,
+            audio: false,
+        }
     }
 
     #[test]
@@ -452,15 +517,28 @@ mod tests {
 
     #[test]
     fn mixer_applies_volume_fade_and_channel_mapping() {
-        let pcm = Arc::new(Pcm { rate: 10, channels: 1, samples: vec![1.0; 10] });
+        let pcm = Arc::new(Pcm {
+            rate: 10,
+            channels: 1,
+            samples: vec![1.0; 10],
+        });
         let slot: Slot = Arc::new(OnceLock::new());
         let _ = slot.set(Ok(pcm));
-        let clip = ClipParams { fade_in: 0.5, volume: 0.5, ..Default::default() };
+        let clip = ClipParams {
+            fade_in: 0.5,
+            volume: 0.5,
+            ..Default::default()
+        };
         let mut m = Mixer {
             voices: vec![Voice {
                 key: 1,
                 audio: Some(slot),
-                spec: VoiceSpec { clip, looping: false, duration: 1.0, audio: true },
+                spec: VoiceSpec {
+                    clip,
+                    looping: false,
+                    duration: 1.0,
+                    audio: true,
+                },
                 t: 0.0,
                 state: PlayState::Playing,
             }],
@@ -469,7 +547,10 @@ mod tests {
         m.mix(Some(&mut buf), 12, 2, 10);
         // Frame 0: fade starts at 0; frame 3: 0.3/0.5 × 0.5 = 0.3; both channels carry the mono source.
         assert_eq!(buf[0], 0.0);
-        assert!((buf[6] - 0.3).abs() < 1e-5 && (buf[7] - 0.3).abs() < 1e-5, "{buf:?}");
+        assert!(
+            (buf[6] - 0.3).abs() < 1e-5 && (buf[7] - 0.3).abs() < 1e-5,
+            "{buf:?}"
+        );
         assert!((buf[16] - 0.5).abs() < 1e-5);
         // Past the end: silence, and the voice has ended.
         assert_eq!(buf[22], 0.0);
@@ -480,7 +561,10 @@ mod tests {
     fn device_clock_drives_position() {
         struct Fake(Arc<Mutex<Option<Box<dyn FnMut(&mut [f32], usize, u32) + Send>>>>);
         impl AudioOut for Fake {
-            fn start(&mut self, fill: Box<dyn FnMut(&mut [f32], usize, u32) + Send>) -> Result<(), String> {
+            fn start(
+                &mut self,
+                fill: Box<dyn FnMut(&mut [f32], usize, u32) + Send>,
+            ) -> Result<(), String> {
                 *self.0.lock().map_err(|e| e.to_string())? = Some(fill);
                 Ok(())
             }

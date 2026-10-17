@@ -36,12 +36,18 @@ struct Etat {
     delai: f64,
 }
 
-static ETAT: Mutex<Etat> = Mutex::new(Etat { tampon: Vec::new(), piste: 0, delai: -1.0 });
+static ETAT: Mutex<Etat> = Mutex::new(Etat {
+    tampon: Vec::new(),
+    piste: 0,
+    delai: -1.0,
+});
 
 /// Tampon d'échange de `n` octets, à remplir avant [`pet_resolve`].
 #[unsafe(no_mangle)]
 pub extern "C" fn pet_buffer(n: usize) -> *mut u8 {
-    let mut e = ETAT.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut e = ETAT
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     e.tampon.resize(n.max(64), 0);
     e.tampon.as_mut_ptr()
 }
@@ -49,8 +55,15 @@ pub extern "C" fn pet_buffer(n: usize) -> *mut u8 {
 /// Résout la piste nommée par les `n` premiers octets du tampon après `ecoule_ms`.
 #[unsafe(no_mangle)]
 pub extern "C" fn pet_resolve(n: usize, ecoule_ms: f64) -> i32 {
-    let mut e = ETAT.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    let nom = e.tampon.get(..n).and_then(|o| std::str::from_utf8(o).ok()).unwrap_or("").to_string();
+    let mut e = ETAT
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let nom = e
+        .tampon
+        .get(..n)
+        .and_then(|o| std::str::from_utf8(o).ok())
+        .unwrap_or("")
+        .to_string();
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
@@ -77,11 +90,15 @@ pub extern "C" fn pet_resolve(n: usize, ecoule_ms: f64) -> i32 {
 /// Longueur du nom de piste écrit par le dernier [`pet_resolve`].
 #[unsafe(no_mangle)]
 pub extern "C" fn pet_track_len() -> usize {
-    ETAT.lock().unwrap_or_else(std::sync::PoisonError::into_inner).piste
+    ETAT.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .piste
 }
 
 /// Délai du dernier [`pet_resolve`], ou -1.
 #[unsafe(no_mangle)]
 pub extern "C" fn pet_delay() -> f64 {
-    ETAT.lock().unwrap_or_else(std::sync::PoisonError::into_inner).delai
+    ETAT.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .delai
 }

@@ -18,23 +18,71 @@ pub const MAX_ELEMENTS: usize = 8_000_000;
 
 /// Known namespaces and the canonical prefix we use for them (read and write).
 pub const NAMESPACES: &[(&str, &str)] = &[
-    ("w", "http://schemas.openxmlformats.org/wordprocessingml/2006/main"),
-    ("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships"),
-    ("wp", "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"),
+    (
+        "w",
+        "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+    ),
+    (
+        "r",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+    ),
+    (
+        "wp",
+        "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+    ),
     ("a", "http://schemas.openxmlformats.org/drawingml/2006/main"),
-    ("c", "http://schemas.openxmlformats.org/drawingml/2006/chart"),
-    ("pic", "http://schemas.openxmlformats.org/drawingml/2006/picture"),
-    ("mc", "http://schemas.openxmlformats.org/markup-compatibility/2006"),
-    ("w14", "http://schemas.microsoft.com/office/word/2010/wordml"),
-    ("wpi", "http://schemas.microsoft.com/office/word/2010/wordprocessingInk"),
-    ("w15", "http://schemas.microsoft.com/office/word/2012/wordml"),
-    ("wp14", "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing"),
-    ("wps", "http://schemas.microsoft.com/office/word/2010/wordprocessingShape"),
-    ("wpg", "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup"),
-    ("wpc", "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"),
-    ("dgm", "http://schemas.openxmlformats.org/drawingml/2006/diagram"),
-    ("dsp", "http://schemas.microsoft.com/office/drawing/2008/diagram"),
-    ("m", "http://schemas.openxmlformats.org/officeDocument/2006/math"),
+    (
+        "c",
+        "http://schemas.openxmlformats.org/drawingml/2006/chart",
+    ),
+    (
+        "pic",
+        "http://schemas.openxmlformats.org/drawingml/2006/picture",
+    ),
+    (
+        "mc",
+        "http://schemas.openxmlformats.org/markup-compatibility/2006",
+    ),
+    (
+        "w14",
+        "http://schemas.microsoft.com/office/word/2010/wordml",
+    ),
+    (
+        "wpi",
+        "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
+    ),
+    (
+        "w15",
+        "http://schemas.microsoft.com/office/word/2012/wordml",
+    ),
+    (
+        "wp14",
+        "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+    ),
+    (
+        "wps",
+        "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+    ),
+    (
+        "wpg",
+        "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
+    ),
+    (
+        "wpc",
+        "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+    ),
+    (
+        "dgm",
+        "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+    ),
+    (
+        "dsp",
+        "http://schemas.microsoft.com/office/drawing/2008/diagram",
+    ),
+    (
+        "m",
+        "http://schemas.openxmlformats.org/officeDocument/2006/math",
+    ),
     ("v", "urn:schemas-microsoft-com:vml"),
     ("o", "urn:schemas-microsoft-com:office:office"),
     ("w10", "urn:schemas-microsoft-com:office:word"),
@@ -47,24 +95,51 @@ pub const DECORATIVE_NS: &str = "http://schemas.microsoft.com/office/drawing/201
 
 /// Namespaces that only appear in non-body parts.
 const OTHER_NAMESPACES: &[(&str, &str)] = &[
-    ("b", "http://schemas.openxmlformats.org/officeDocument/2006/bibliography"),
-    ("rel", "http://schemas.openxmlformats.org/package/2006/relationships"),
-    ("ct", "http://schemas.openxmlformats.org/package/2006/content-types"),
-    ("cp", "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"),
+    (
+        "b",
+        "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
+    ),
+    (
+        "rel",
+        "http://schemas.openxmlformats.org/package/2006/relationships",
+    ),
+    (
+        "ct",
+        "http://schemas.openxmlformats.org/package/2006/content-types",
+    ),
+    (
+        "cp",
+        "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+    ),
     ("dc", "http://purl.org/dc/elements/1.1/"),
     ("dcterms", "http://purl.org/dc/terms/"),
     ("xsi", "http://www.w3.org/2001/XMLSchema-instance"),
     ("xml", "http://www.w3.org/XML/1998/namespace"),
-    ("ep", "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"),
-    ("op", "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"),
-    ("vt", "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"),
+    (
+        "ep",
+        "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties",
+    ),
+    (
+        "op",
+        "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
+    ),
+    (
+        "vt",
+        "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+    ),
 ];
 
 /// ISO/IEC 29500 Strict namespaces map onto the transitional prefixes.
 const STRICT: &[(&str, &str)] = &[
     ("w", "http://purl.oclc.org/ooxml/wordprocessingml/main"),
-    ("r", "http://purl.oclc.org/ooxml/officeDocument/relationships"),
-    ("wp", "http://purl.oclc.org/ooxml/drawingml/wordprocessingDrawing"),
+    (
+        "r",
+        "http://purl.oclc.org/ooxml/officeDocument/relationships",
+    ),
+    (
+        "wp",
+        "http://purl.oclc.org/ooxml/drawingml/wordprocessingDrawing",
+    ),
     ("a", "http://purl.oclc.org/ooxml/drawingml/main"),
     ("pic", "http://purl.oclc.org/ooxml/drawingml/picture"),
     ("m", "http://purl.oclc.org/ooxml/officeDocument/math"),
@@ -123,7 +198,11 @@ impl El {
         }
         let local = name.rsplit(':').next().unwrap_or(name);
         if local != name {
-            return self.attrs.iter().find(|(k, _)| k == local).map(|(_, v)| v.as_str());
+            return self
+                .attrs
+                .iter()
+                .find(|(k, _)| k == local)
+                .map(|(_, v)| v.as_str());
         }
         None
     }
@@ -241,8 +320,18 @@ pub(crate) fn utf16_to_utf8(bytes: &[u8]) -> Option<String> {
         Some([0xFE, 0xFF]) => (bytes.get(2..)?, false),
         _ => return None,
     };
-    let units = rest.as_chunks::<2>().0.iter().map(|c| if le { u16::from_le_bytes(*c) } else { u16::from_be_bytes(*c) });
-    Some(char::decode_utf16(units).map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER)).collect())
+    let units = rest.as_chunks::<2>().0.iter().map(|c| {
+        if le {
+            u16::from_le_bytes(*c)
+        } else {
+            u16::from_be_bytes(*c)
+        }
+    });
+    Some(
+        char::decode_utf16(units)
+            .map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER))
+            .collect(),
+    )
 }
 
 /// Parse XML bytes into the root element.
@@ -273,7 +362,9 @@ pub fn parse_ns(bytes: &[u8], extra: &[(&'static str, &str)]) -> Result<El, Docx
     let mut buf = Vec::new();
     loop {
         buf.clear();
-        let (res, ev) = r.read_resolved_event_into(&mut buf).map_err(|e| DocxError::Xml(e.to_string()))?;
+        let (res, ev) = r
+            .read_resolved_event_into(&mut buf)
+            .map_err(|e| DocxError::Xml(e.to_string()))?;
         let el_prefix = match &res {
             ResolveResult::Bound(ns) => Some(prefix_for(ns.as_ref(), extra)),
             _ => None,
@@ -289,7 +380,11 @@ pub fn parse_ns(bytes: &[u8], extra: &[(&'static str, &str)]) -> Result<El, Docx
                     Some(p) => format!("{p}:{local}"),
                     None => local,
                 };
-                let mut el = El { name, attrs: Vec::new(), kids: Vec::new() };
+                let mut el = El {
+                    name,
+                    attrs: Vec::new(),
+                    kids: Vec::new(),
+                };
                 for a in e.attributes().with_checks(false) {
                     let Ok(a) = a else { continue };
                     let key = a.key;
@@ -300,7 +395,9 @@ pub fn parse_ns(bytes: &[u8], extra: &[(&'static str, &str)]) -> Result<El, Docx
                     let (ares, alocal) = r.resolver_mut().resolve_attribute(key);
                     let alocal = String::from_utf8_lossy(alocal.as_ref()).into_owned();
                     let aname = match ares {
-                        ResolveResult::Bound(ns) => format!("{}:{alocal}", prefix_for(ns.as_ref(), extra)),
+                        ResolveResult::Bound(ns) => {
+                            format!("{}:{alocal}", prefix_for(ns.as_ref(), extra))
+                        }
                         _ => alocal,
                     };
                     let val = match a.normalized_value(XmlVersion::Explicit1_0) {
@@ -311,14 +408,20 @@ pub fn parse_ns(bytes: &[u8], extra: &[(&'static str, &str)]) -> Result<El, Docx
                     // the namespace scope still exists; declarations are omitted from this tree.
                     let val = if el.name == "mc:Choice" && aname == "Requires" {
                         let requirements: Vec<_> = val.split_whitespace().take(65).collect();
-                        if requirements.len() > 64 || requirements.iter().any(|prefix| prefix.len() > 128) {
+                        if requirements.len() > 64
+                            || requirements.iter().any(|prefix| prefix.len() > 128)
+                        {
                             "?".to_string()
                         } else {
                             requirements
                                 .into_iter()
                                 .map(|prefix| {
                                     let qualified = format!("{prefix}:requirement");
-                                    match r.resolver_mut().resolve_attribute(QName(qualified.as_bytes())).0 {
+                                    match r
+                                        .resolver_mut()
+                                        .resolve_attribute(QName(qualified.as_bytes()))
+                                        .0
+                                    {
                                         ResolveResult::Bound(ns) => requirement_prefix(ns.as_ref()),
                                         _ => "?",
                                     }
@@ -438,7 +541,9 @@ pub struct W {
 
 impl W {
     pub fn new() -> W {
-        W { s: String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n") }
+        W {
+            s: String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"),
+        }
     }
     fn attrs(&mut self, attrs: &[(&str, &str)]) {
         for (k, v) in attrs {
@@ -489,7 +594,10 @@ impl W {
 
 /// `xmlns:` declarations for the body-part namespaces, plus `mc:Ignorable`.
 pub fn body_ns() -> Vec<(String, String)> {
-    let mut v: Vec<(String, String)> = NAMESPACES.iter().map(|(p, u)| (format!("xmlns:{p}"), (*u).to_string())).collect();
+    let mut v: Vec<(String, String)> = NAMESPACES
+        .iter()
+        .map(|(p, u)| (format!("xmlns:{p}"), (*u).to_string()))
+        .collect();
     v.push(("mc:Ignorable".into(), "w14 w15 wp14".into()));
     v
 }
@@ -502,18 +610,35 @@ mod tests {
     fn utf16_parts_parse_and_odd_ones_never_panic() {
         let src = r#"<?xml version="1.0" encoding="UTF-16"?><r:Relationships xmlns:r="urn:x"><r:Relationship Id="rId1" Target="café😀.xml"/></r:Relationships>"#;
         for le in [true, false] {
-            let mut b = if le { vec![0xFF, 0xFE] } else { vec![0xFE, 0xFF] };
-            b.extend(src.encode_utf16().flat_map(|u| if le { u.to_le_bytes() } else { u.to_be_bytes() }));
+            let mut b = if le {
+                vec![0xFF, 0xFE]
+            } else {
+                vec![0xFE, 0xFF]
+            };
+            b.extend(
+                src.encode_utf16()
+                    .flat_map(|u| if le { u.to_le_bytes() } else { u.to_be_bytes() }),
+            );
             let root = parse(&b).unwrap();
-            assert_eq!(root.els().next().and_then(|e| e.attr("Target")), Some("café😀.xml"), "le {le}");
+            assert_eq!(
+                root.els().next().and_then(|e| e.attr("Target")),
+                Some("café😀.xml"),
+                "le {le}"
+            );
         }
         // Odd length, unpaired surrogates, a bare BOM: an error or a tree, never a panic.
-        for b in
-            [&[0xFF, 0xFE][..], &[0xFE, 0xFF, 0x00], &[0xFF, 0xFE, b'<', 0, 0x00, 0xD8, b'a', 0, b'/', 0, b'>', 0], &[0xFF, 0xFE, 0x00, 0xDC, 0x00]]
-        {
+        for b in [
+            &[0xFF, 0xFE][..],
+            &[0xFE, 0xFF, 0x00],
+            &[0xFF, 0xFE, b'<', 0, 0x00, 0xD8, b'a', 0, b'/', 0, b'>', 0],
+            &[0xFF, 0xFE, 0x00, 0xDC, 0x00],
+        ] {
             let _ = parse(b);
         }
-        assert_eq!(utf16_to_utf8(&[0xFF, 0xFE, b'a', 0, 0x00, 0xD8, b'b']).as_deref(), Some("a\u{FFFD}"));
+        assert_eq!(
+            utf16_to_utf8(&[0xFF, 0xFE, b'a', 0, 0x00, 0xD8, b'b']).as_deref(),
+            Some("a\u{FFFD}")
+        );
         assert_eq!(utf16_to_utf8(b"<a/>"), None);
     }
 
@@ -534,7 +659,10 @@ mod tests {
     fn choice_requirements_resolve_namespace_aliases_and_rebindings() {
         let x = br#"<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:pen="http://schemas.microsoft.com/office/word/2010/wordprocessingInk"><mc:Choice Requires="pen"/><mc:Choice xmlns:pen="urn:future" Requires="pen"/><mc:Choice Requires="undeclared"/></mc:AlternateContent>"#;
         let e = parse(x).unwrap();
-        let values: Vec<_> = e.children("mc:Choice").map(|c| c.attr("Requires")).collect();
+        let values: Vec<_> = e
+            .children("mc:Choice")
+            .map(|c| c.attr("Requires"))
+            .collect();
         assert_eq!(values, [Some("wpi"), Some("?"), Some("?")]);
     }
 

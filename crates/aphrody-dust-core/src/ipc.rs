@@ -94,10 +94,14 @@ impl Ipc {
         let prev_value = self.fifo_control_7;
         if value.clear_send_fifo() {
             self.send_fifo_7.clear();
-            self.fifo_control_7 =
-                self.fifo_control_7.with_send_fifo_empty(true).with_send_fifo_full(false);
-            self.fifo_control_9 =
-                self.fifo_control_9.with_recv_fifo_empty(true).with_recv_fifo_full(false);
+            self.fifo_control_7 = self
+                .fifo_control_7
+                .with_send_fifo_empty(true)
+                .with_send_fifo_full(false);
+            self.fifo_control_9 = self
+                .fifo_control_9
+                .with_recv_fifo_empty(true)
+                .with_recv_fifo_full(false);
             self.last_word_received_from_arm7 = 0;
         }
         self.fifo_control_7.0 =
@@ -146,7 +150,9 @@ impl Ipc {
 
     #[inline]
     pub fn peek_7(&self) -> u32 {
-        self.send_fifo_9.peek().unwrap_or(self.last_word_received_from_arm9)
+        self.send_fifo_9
+            .peek()
+            .unwrap_or(self.last_word_received_from_arm9)
     }
 
     pub fn recv_7(&mut self, arm9_irqs: &mut arm9::Irqs) -> u32 {
@@ -172,7 +178,9 @@ impl Ipc {
                 self.last_word_received_from_arm9
             }
         } else {
-            self.send_fifo_9.peek().unwrap_or(self.last_word_received_from_arm9)
+            self.send_fifo_9
+                .peek()
+                .unwrap_or(self.last_word_received_from_arm9)
         }
     }
 
@@ -189,10 +197,14 @@ impl Ipc {
     ) {
         if value.clear_send_fifo() {
             self.send_fifo_9.clear();
-            self.fifo_control_9 =
-                self.fifo_control_9.with_send_fifo_empty(true).with_send_fifo_full(false);
-            self.fifo_control_7 =
-                self.fifo_control_7.with_recv_fifo_empty(true).with_recv_fifo_full(false);
+            self.fifo_control_9 = self
+                .fifo_control_9
+                .with_send_fifo_empty(true)
+                .with_send_fifo_full(false);
+            self.fifo_control_7 = self
+                .fifo_control_7
+                .with_recv_fifo_empty(true)
+                .with_recv_fifo_full(false);
             self.last_word_received_from_arm9 = 0;
         }
         let prev_value = self.fifo_control_9;
@@ -242,7 +254,9 @@ impl Ipc {
 
     #[inline]
     pub fn peek_9(&self) -> u32 {
-        self.send_fifo_7.peek().unwrap_or(self.last_word_received_from_arm7)
+        self.send_fifo_7
+            .peek()
+            .unwrap_or(self.last_word_received_from_arm7)
     }
 
     pub fn recv_9(&mut self, arm7_irqs: &mut arm7::Irqs) -> u32 {
@@ -268,7 +282,9 @@ impl Ipc {
                 self.last_word_received_from_arm7
             }
         } else {
-            self.send_fifo_7.peek().unwrap_or(self.last_word_received_from_arm7)
+            self.send_fifo_7
+                .peek()
+                .unwrap_or(self.last_word_received_from_arm7)
         }
     }
 }

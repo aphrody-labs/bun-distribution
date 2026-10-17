@@ -83,8 +83,16 @@ impl Spacing {
         }
         let natural = g.adv / self.glyph_desired.max(0.01);
         (
-            [0.0, g.space * (self.letter_max - self.letter_desired).max(0.0), natural * (self.glyph_max - self.glyph_desired).max(0.0)],
-            [0.0, g.space * (self.letter_desired - self.letter_min).max(0.0), natural * (self.glyph_desired - self.glyph_min).max(0.0)],
+            [
+                0.0,
+                g.space * (self.letter_max - self.letter_desired).max(0.0),
+                natural * (self.glyph_max - self.glyph_desired).max(0.0),
+            ],
+            [
+                0.0,
+                g.space * (self.letter_desired - self.letter_min).max(0.0),
+                natural * (self.glyph_desired - self.glyph_min).max(0.0),
+            ],
         )
     }
     /// Word-space stretch and shrink of space glyph `g` (only U+0020 is elastic).
@@ -92,7 +100,10 @@ impl Spacing {
         if g.ch != ' ' && !(g.ch == '\u{3000}' && g.ideographic_space_elastic) {
             return (0.0, 0.0);
         }
-        (g.space * (self.word_max - self.word_desired).max(0.0), g.space * (self.word_desired - self.word_min).max(0.0))
+        (
+            g.space * (self.word_max - self.word_desired).max(0.0),
+            g.space * (self.word_desired - self.word_min).max(0.0),
+        )
     }
 }
 
@@ -120,7 +131,11 @@ pub fn tiered_ratio(d: f64, y: [f64; 3], z: [f64; 3]) -> (f64, bool) {
     }
     if rem > 1e-6 {
         // Beyond every maximum: word spaces grow without bound (an H&J violation).
-        let unit = if cap[0] > EPS { cap[0] } else { cap.iter().sum::<f64>() };
+        let unit = if cap[0] > EPS {
+            cap[0]
+        } else {
+            cap.iter().sum::<f64>()
+        };
         r = if unit > EPS { r + rem / unit } else { INF };
     }
     (r, true)
@@ -156,7 +171,18 @@ const NONE: usize = usize::MAX;
 
 impl Item {
     fn boxed(w: f64, st: [f64; 3], sh: [f64; 3]) -> Item {
-        Item { kind: Kind::Box, w, st, sh, p: 0.0, flagged: false, auto: false, hang: 0.0, zone_from: NONE, emergency: false }
+        Item {
+            kind: Kind::Box,
+            w,
+            st,
+            sh,
+            p: 0.0,
+            flagged: false,
+            auto: false,
+            hang: 0.0,
+            zone_from: NONE,
+            emergency: false,
+        }
     }
     fn glue(w: f64, st: f64, sh: f64) -> Item {
         Item {
@@ -173,7 +199,18 @@ impl Item {
         }
     }
     fn penalty(w: f64, p: f64, flagged: bool) -> Item {
-        Item { kind: Kind::Penalty, w, st: [0.0; 3], sh: [0.0; 3], p, flagged, auto: false, hang: 0.0, zone_from: NONE, emergency: false }
+        Item {
+            kind: Kind::Penalty,
+            w,
+            st: [0.0; 3],
+            sh: [0.0; 3],
+            p,
+            flagged,
+            auto: false,
+            hang: 0.0,
+            zone_from: NONE,
+            emergency: false,
+        }
     }
 }
 
@@ -212,7 +249,10 @@ fn korean_letter(g: &Glyph) -> bool {
     let c = g.ch as u32;
     let hangul = matches!(c, 0x1100..=0x11FF | 0x3130..=0x318F | 0xA960..=0xA97F | 0xAC00..=0xD7FF);
     let han = matches!(c, 0x3400..=0x4DBF | 0x4E00..=0x9FFF | 0xF900..=0xFAFF | 0x20000..=0x3FFFF);
-    hangul || (han && g.lang.is_some_and(|t| designcraft_doc::language_subtag(t) == "ko"))
+    hangul
+        || (han
+            && g.lang
+                .is_some_and(|t| designcraft_doc::language_subtag(t) == "ko"))
 }
 
 /// Is the place between glyphs `a` and `b` one where CJK text may break (next to an ideograph, kana
@@ -238,7 +278,9 @@ pub fn hang(c: char) -> (f64, f64) {
     match c {
         '.' | ',' => (0.0, 1.0),
         '-' | '\u{2010}' | '\u{2011}' | '\u{AD}' => (0.75, 0.75),
-        '\'' | '"' | '‘' | '’' | '“' | '”' | '‚' | '„' | '‹' | '›' | '«' | '»' => (1.0, 1.0),
+        '\'' | '"' | '‘' | '’' | '“' | '”' | '‚' | '„' | '‹' | '›' | '«' | '»' => {
+            (1.0, 1.0)
+        }
         '\u{2013}' | '\u{2014}' => (0.5, 0.5),
         ':' | ';' => (0.0, 0.5),
         '!' | '?' => (0.0, 0.2),
@@ -297,14 +339,23 @@ fn push_inword(it: &mut Vec<Item>, ig: &mut Vec<usize>, p: Item, g: usize, sp: &
 
 /// Build Knuth items. `item_glyph[k]` = glyph index of item k (penalties: the glyph *before* which the break happens).
 /// `emergency_after[i]` allows an emergency break after glyph `i` (see [`overlong_words`]).
-fn items(glyphs: &[Glyph], hyph_after: &[bool], emergency_after: &[bool], sp: &Spacing) -> (Vec<Item>, Vec<usize>) {
+fn items(
+    glyphs: &[Glyph],
+    hyph_after: &[bool],
+    emergency_after: &[bool],
+    sp: &Spacing,
+) -> (Vec<Item>, Vec<usize>) {
     let mut it: Vec<Item> = Vec::with_capacity(glyphs.len() * 2 + 2);
     let mut ig = Vec::with_capacity(glyphs.len() * 2 + 2);
     let n = glyphs.len();
     let mut hy_cache = Vec::new();
     let mut last_space = NONE;
     for (i, g) in glyphs.iter().enumerate() {
-        let prev_hang = if i > 0 { right_hang(&glyphs[i - 1], sp) } else { 0.0 };
+        let prev_hang = if i > 0 {
+            right_hang(&glyphs[i - 1], sp)
+        } else {
+            0.0
+        };
         if is_forced(g.ch) {
             it.push(Item::glue(0.0, INF, 0.0));
             ig.push(i);
@@ -339,7 +390,11 @@ fn items(glyphs: &[Glyph], hyph_after: &[bool], emergency_after: &[bool], sp: &S
             continue;
         }
         if g.ch == SOFT_HYPHEN {
-            let hw = glyphs[..i].iter().rev().find(|g| g.ch != SOFT_HYPHEN).map_or(g.size * 0.33, |p| hyphen_width(p, &mut hy_cache));
+            let hw = glyphs[..i]
+                .iter()
+                .rev()
+                .find(|g| g.ch != SOFT_HYPHEN)
+                .map_or(g.size * 0.33, |p| hyphen_width(p, &mut hy_cache));
             let mut p = Item::penalty(hw, sp.hyphen_penalty, true);
             p.auto = true;
             p.zone_from = last_space;
@@ -362,7 +417,10 @@ fn items(glyphs: &[Glyph], hyph_after: &[bool], emergency_after: &[bool], sp: &S
                 let mut p = Item::penalty(0.0, 50.0, true);
                 p.hang = right_hang(g, sp);
                 push_inword(&mut it, &mut ig, p, i + 1, sp);
-            } else if matches!(g.ch, '\u{2013}' | '\u{2014}' | '/') || g.break_after.unwrap_or_else(|| cjk_break(g, &glyphs[i + 1], sp)) {
+            } else if matches!(g.ch, '\u{2013}' | '\u{2014}' | '/')
+                || g.break_after
+                    .unwrap_or_else(|| cjk_break(g, &glyphs[i + 1], sp))
+            {
                 let mut p = Item::penalty(0.0, 0.0, false);
                 p.hang = right_hang(g, sp);
                 push_inword(&mut it, &mut ig, p, i + 1, sp);
@@ -386,7 +444,11 @@ fn items(glyphs: &[Glyph], hyph_after: &[bool], emergency_after: &[bool], sp: &S
     it.push(Item::glue(0.0, INF, 0.0));
     ig.push(n);
     let mut p = Item::penalty(0.0, -INF, false);
-    p.hang = if n > 0 { right_hang(&glyphs[n - 1], sp) } else { 0.0 };
+    p.hang = if n > 0 {
+        right_hang(&glyphs[n - 1], sp)
+    } else {
+        0.0
+    };
     it.push(p);
     ig.push(n);
     (it, ig)
@@ -407,17 +469,39 @@ struct Node {
 }
 
 /// Knuth–Plass total-fit line breaking. `width(line)` gives each line's measure.
-pub fn knuth_plass(glyphs: &[Glyph], hyph_after: &[bool], sp: &Spacing, width: &dyn Fn(usize) -> f64) -> Vec<Break> {
+pub fn knuth_plass(
+    glyphs: &[Glyph],
+    hyph_after: &[bool],
+    sp: &Spacing,
+    width: &dyn Fn(usize) -> f64,
+) -> Vec<Break> {
     if glyphs.is_empty() {
-        return vec![Break { start: 0, end: 0, next: 0, hyphen: false, forced: true }];
+        return vec![Break {
+            start: 0,
+            end: 0,
+            next: 0,
+            hyphen: false,
+            forced: true,
+        }];
     }
     let (mut items, mut ig) = items(glyphs, hyph_after, &[], sp);
-    let narrowest = (0..=glyphs.len().min(64)).map(width).fold(f64::INFINITY, f64::min).max(1.0);
+    let narrowest = (0..=glyphs.len().min(64))
+        .map(width)
+        .fold(f64::INFINITY, f64::min)
+        .max(1.0);
     if let Some(emergency_after) = overlong_words(&items, &ig, glyphs, narrowest) {
         (items, ig) = self::items(glyphs, hyph_after, &emergency_after, sp);
     }
     for tolerance in [2.5, 12.0, f64::INFINITY] {
-        if let Some(b) = kp_pass(&items, &ig, glyphs, sp, width, tolerance, tolerance.is_infinite()) {
+        if let Some(b) = kp_pass(
+            &items,
+            &ig,
+            glyphs,
+            sp,
+            width,
+            tolerance,
+            tolerance.is_infinite(),
+        ) {
             return b;
         }
     }
@@ -428,7 +512,12 @@ pub fn knuth_plass(glyphs: &[Glyph], hyph_after: &[bool], sp: &Spacing, width: &
 /// word fits. A word is a run of boxes between two break opportunities (so a word with hyphenation
 /// points only gets emergency breaks where a part between them is still too wide), measured at
 /// its narrowest (fully shrunk) width. Emergency breaks respect no-break text and kinsoku.
-fn overlong_words(items: &[Item], ig: &[usize], glyphs: &[Glyph], measure: f64) -> Option<Vec<bool>> {
+fn overlong_words(
+    items: &[Item],
+    ig: &[usize],
+    glyphs: &[Glyph],
+    measure: f64,
+) -> Option<Vec<bool>> {
     let mut out: Option<Vec<bool>> = None;
     let mut seg: Option<(usize, usize)> = None;
     let mut w = 0.0;
@@ -446,7 +535,9 @@ fn overlong_words(items: &[Item], ig: &[usize], glyphs: &[Glyph], measure: f64) 
                 {
                     let marks = out.get_or_insert_with(|| vec![false; glyphs.len()]);
                     for i in a..b {
-                        let (Some(g), Some(next)) = (glyphs.get(i), glyphs.get(i + 1)) else { continue };
+                        let (Some(g), Some(next)) = (glyphs.get(i), glyphs.get(i + 1)) else {
+                            continue;
+                        };
                         let ok = !g.no_break
                             && g.break_after != Some(false)
                             && next.ch != SOFT_HYPHEN
@@ -493,11 +584,28 @@ fn kp_pass(
             sz[i + 1][t] = sz[i][t] + z[t];
         }
     }
-    let first_hang = items.iter().find(|i| i.kind == Kind::Box).map_or(0.0, |b| b.hang);
-    let mut arena: Vec<Node> =
-        vec![Node { pos: 0, line: 0, fitness: 1, tw: first_hang, ty: [0.0; 3], tz: [0.0; 3], demerits: 0.0, prev: None, hyphens: 0, flagged: false }];
+    let first_hang = items
+        .iter()
+        .find(|i| i.kind == Kind::Box)
+        .map_or(0.0, |b| b.hang);
+    let mut arena: Vec<Node> = vec![Node {
+        pos: 0,
+        line: 0,
+        fitness: 1,
+        tw: first_hang,
+        ty: [0.0; 3],
+        tz: [0.0; 3],
+        demerits: 0.0,
+        prev: None,
+        hyphens: 0,
+        flagged: false,
+    }];
     let limit = sp.hyphen_limit as usize;
-    let states = if limit == 0 { 2 } else { (limit + 1).min(MAX_HYPHEN_STATES) };
+    let states = if limit == 0 {
+        2
+    } else {
+        (limit + 1).min(MAX_HYPHEN_STATES)
+    };
     let mut active: Vec<usize> = vec![0];
     let mut best: Vec<Option<(f64, usize)>> = vec![None; 4 * states];
     let mut keep = Vec::new();
@@ -549,7 +657,12 @@ fn kp_pass(
                 }
                 // Hyphenation zone (unjustified): break before the word instead when that leaves
                 // less than the zone at the line end.
-                if it.auto && !sp.justify && sp.hyph_zone > 0.0 && it.zone_from != NONE && it.zone_from > n.pos {
+                if it.auto
+                    && !sp.justify
+                    && sp.hyph_zone > 0.0
+                    && it.zone_from != NONE
+                    && it.zone_from > n.pos
+                {
                     let before = sw[it.zone_from] - n.tw - items[it.zone_from].hang;
                     if target - before < sp.hyph_zone {
                         continue;
@@ -580,7 +693,11 @@ fn kp_pass(
             if (fit as i32 - n.fitness as i32).abs() > 1 {
                 d += 3000.0;
             }
-            let hs = if flagged { (n.hyphens as usize + 1).min(states - 1) } else { 0 };
+            let hs = if flagged {
+                (n.hyphens as usize + 1).min(states - 1)
+            } else {
+                0
+            };
             let total = n.demerits + d;
             let slot = &mut best[fit * states + hs];
             if slot.is_none_or(|(bd, _)| total < bd) {
@@ -625,7 +742,11 @@ fn kp_pass(
             i += 1;
         }
         // Knuth's pruning: a class is only worth a node if it is within the fitness demerit of the best.
-        let min_d = best.iter().flatten().map(|x| x.0).fold(f64::INFINITY, f64::min);
+        let min_d = best
+            .iter()
+            .flatten()
+            .map(|x| x.0)
+            .fold(f64::INFINITY, f64::min);
         for (k, c) in best.iter().enumerate() {
             if let Some((d, a)) = *c
                 && d <= min_d + 3000.0
@@ -648,7 +769,11 @@ fn kp_pass(
         }
     }
     // The final forced break: best node at position m-1.
-    let end = active.iter().copied().filter(|&a| arena[a].pos == m - 1).min_by(|&a, &b| arena[a].demerits.total_cmp(&arena[b].demerits))?;
+    let end = active
+        .iter()
+        .copied()
+        .filter(|&a| arena[a].pos == m - 1)
+        .min_by(|&a, &b| arena[a].demerits.total_cmp(&arena[b].demerits))?;
     let mut chain = Vec::new();
     let mut cur = Some(end);
     while let Some(c) = cur {
@@ -661,7 +786,12 @@ fn kp_pass(
     Some(breaks_from_positions(items, ig, glyphs, &chain))
 }
 
-fn breaks_from_positions(items: &[Item], ig: &[usize], glyphs: &[Glyph], chain: &[usize]) -> Vec<Break> {
+fn breaks_from_positions(
+    items: &[Item],
+    ig: &[usize],
+    glyphs: &[Glyph],
+    chain: &[usize],
+) -> Vec<Break> {
     let n = glyphs.len();
     let mut out = Vec::with_capacity(chain.len());
     let mut start = 0;
@@ -672,7 +802,12 @@ fn breaks_from_positions(items: &[Item], ig: &[usize], glyphs: &[Glyph], chain: 
                 let e = ig[b].min(n);
                 // A flagged penalty with width = an inserted hyphen (not an explicit '-').
                 let explicit = e > 0 && matches!(glyphs[e - 1].ch, '-' | '\u{2010}');
-                (e, it.flagged && it.w > 0.0 && !explicit || (it.flagged && e > 0 && glyphs[e - 1].ch == SOFT_HYPHEN), it.p <= -INF)
+                (
+                    e,
+                    it.flagged && it.w > 0.0 && !explicit
+                        || (it.flagged && e > 0 && glyphs[e - 1].ch == SOFT_HYPHEN),
+                    it.p <= -INF,
+                )
             }
             Kind::Glue | Kind::Box => (ig[b], false, false),
         };
@@ -686,15 +821,29 @@ fn breaks_from_positions(items: &[Item], ig: &[usize], glyphs: &[Glyph], chain: 
             next += 1;
         }
         let forced_glyph = end > 0 && end <= n && is_forced(glyphs[end - 1].ch);
-        out.push(Break { start, end: vis_end, next, hyphen, forced: forced || forced_glyph });
+        out.push(Break {
+            start,
+            end: vis_end,
+            next,
+            hyphen,
+            forced: forced || forced_glyph,
+        });
         start = next;
     }
     if out.is_empty() {
-        out.push(Break { start: 0, end: n, next: n, hyphen: false, forced: true });
+        out.push(Break {
+            start: 0,
+            end: n,
+            next: n,
+            hyphen: false,
+            forced: true,
+        });
     }
     // Lines produced past the paragraph end are dropped, except the empty line after a trailing
     // forced line break (a trailing column, frame or page break ends the paragraph).
-    let trailing_forced = glyphs.last().is_some_and(|g| g.ch == designcraft_doc::story::FORCED_LINE_BREAK);
+    let trailing_forced = glyphs
+        .last()
+        .is_some_and(|g| g.ch == designcraft_doc::story::FORCED_LINE_BREAK);
     out.retain(|b| b.start < n || (b.start == n && trailing_forced));
     out
 }
@@ -725,12 +874,22 @@ pub fn greedy(
     let mut hyphens = 0u32;
     let mut hy_cache = Vec::new();
     if n == 0 {
-        return vec![Break { start: 0, end: 0, next: 0, hyphen: false, forced: true }];
+        return vec![Break {
+            start: 0,
+            end: 0,
+            next: 0,
+            hyphen: false,
+            forced: true,
+        }];
     }
     let may_hyphenate = |hyphens: u32| sp.hyphen_limit == 0 || hyphens < sp.hyphen_limit;
     while start < n {
         let w = width(line).max(1.0);
-        let mut x = if sp.optical { -hang_left(&glyphs[start]) } else { 0.0 };
+        let mut x = if sp.optical {
+            -hang_left(&glyphs[start])
+        } else {
+            0.0
+        };
         let mut shrink = 0.0;
         let mut last_ok: Option<(usize, bool)> = None; // (break position = end glyph, hyphen)
         let mut last_space: Option<(usize, f64)> = None; // (break position, line width there)
@@ -756,12 +915,19 @@ pub fn greedy(
             let adv = if g.ch == '\t' { tab(line, x, i) } else { g.adv };
             if x + adv - hang_r > w + shrink + FIT_EPS
                 && i > start
-                && (last_ok.is_some() || glyphs.get(i - 1).is_none_or(|p| p.break_after != Some(false) && !p.no_break))
+                && (last_ok.is_some()
+                    || glyphs
+                        .get(i - 1)
+                        .is_none_or(|p| p.break_after != Some(false) && !p.no_break))
             {
                 // Overflow: break at the last opportunity, else before this glyph.
                 brk = Some(match last_ok {
                     // Hyphenation zone: break before the word if that leaves little space.
-                    Some((_, true)) if !sp.justify && sp.hyph_zone > 0.0 && last_space.is_some_and(|(_, xs)| w - xs < sp.hyph_zone) => {
+                    Some((_, true))
+                        if !sp.justify
+                            && sp.hyph_zone > 0.0
+                            && last_space.is_some_and(|(_, xs)| w - xs < sp.hyph_zone) =>
+                    {
                         (last_space.map_or(i, |s| s.0), false, false)
                     }
                     Some((p, h)) => (p, h, false),
@@ -773,13 +939,16 @@ pub fn greedy(
             if sp.justify {
                 shrink += sp.box_elastic(g).1.iter().sum::<f64>();
             }
-            if i + 1 < n && !glyphs[i + 1].is_space() && !g.no_break && g.break_after != Some(false) {
+            if i + 1 < n && !glyphs[i + 1].is_space() && !g.no_break && g.break_after != Some(false)
+            {
                 if matches!(g.ch, '-' | '\u{2010}' | '\u{2013}' | '\u{2014}' | '/')
-                    || g.break_after.unwrap_or_else(|| cjk_break(g, &glyphs[i + 1], sp))
+                    || g.break_after
+                        .unwrap_or_else(|| cjk_break(g, &glyphs[i + 1], sp))
                 {
                     last_ok = Some((i + 1, false));
                 } else if hyph_after[i] && may_hyphenate(hyphens) {
-                    let hy = hyphen_width(g, &mut hy_cache) * if sp.optical { 1.0 - hang('-').1 } else { 1.0 };
+                    let hy = hyphen_width(g, &mut hy_cache)
+                        * if sp.optical { 1.0 - hang('-').1 } else { 1.0 };
                     if x + hy <= w + shrink + FIT_EPS {
                         last_ok = Some((i + 1, true));
                     }
@@ -798,7 +967,13 @@ pub fn greedy(
             next += 1;
         }
         let next = next.max(start + 1).min(n.max(start + 1));
-        out.push(Break { start, end: vis_end, next: next.min(n), hyphen, forced: forced || end == n });
+        out.push(Break {
+            start,
+            end: vis_end,
+            next: next.min(n),
+            hyphen,
+            forced: forced || end == n,
+        });
         if next >= n {
             break;
         }
@@ -810,20 +985,38 @@ pub fn greedy(
     if let Some(last) = glyphs.last()
         && last.ch == designcraft_doc::story::FORCED_LINE_BREAK
     {
-        out.push(Break { start: n, end: n, next: n, hyphen: false, forced: true });
+        out.push(Break {
+            start: n,
+            end: n,
+            next: n,
+            hyphen: false,
+            forced: true,
+        });
     }
     out
 }
 
 /// Natural width of a broken line (with its inserted hyphen).
 pub fn line_width(glyphs: &[Glyph], b: &Break) -> f64 {
-    let w: f64 = glyphs[b.start..b.end.max(b.start)].iter().map(|g| g.adv).sum();
-    w + if b.hyphen && b.end > 0 { glyphs[b.end - 1].size * 0.33 } else { 0.0 }
+    let w: f64 = glyphs[b.start..b.end.max(b.start)]
+        .iter()
+        .map(|g| g.adv)
+        .sum();
+    w + if b.hyphen && b.end > 0 {
+        glyphs[b.end - 1].size * 0.33
+    } else {
+        0.0
+    }
 }
 
 /// Balance Ragged Lines: keep the composer's line count but make the lines as even as possible,
 /// by composing against the narrowest measure that still yields that many lines.
-pub fn balanced(glyphs: &[Glyph], hyph_after: &[bool], sp: &Spacing, width: &dyn Fn(usize) -> f64) -> Vec<Break> {
+pub fn balanced(
+    glyphs: &[Glyph],
+    hyph_after: &[bool],
+    sp: &Spacing,
+    width: &dyn Fn(usize) -> f64,
+) -> Vec<Break> {
     let base = knuth_plass(glyphs, hyph_after, sp, width);
     let n = base.len();
     if n < 2 || glyphs.len() > 3000 || base[..n - 1].iter().any(|b| b.forced) {
@@ -832,7 +1025,12 @@ pub fn balanced(glyphs: &[Glyph], hyph_after: &[bool], sp: &Spacing, width: &dyn
     let ok = |f: f64| -> Option<Vec<Break>> {
         let w = |j: usize| width(j) * f;
         let br = knuth_plass(glyphs, hyph_after, sp, &w);
-        (br.len() == n && br.iter().enumerate().all(|(j, b)| line_width(glyphs, b) <= w(j) + 0.01)).then_some(br)
+        (br.len() == n
+            && br
+                .iter()
+                .enumerate()
+                .all(|(j, b)| line_width(glyphs, b) <= w(j) + 0.01))
+        .then_some(br)
     };
     let (mut lo, mut hi) = (0.3, 1.0);
     let mut best = base;

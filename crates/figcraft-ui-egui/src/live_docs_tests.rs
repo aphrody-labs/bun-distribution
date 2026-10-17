@@ -6,7 +6,9 @@
 use std::sync::{Arc, Mutex};
 
 use figcraft_engine::figcraft_collab::message::ClientMsg;
-use figcraft_engine::live::{Access, Event as LiveEvent, HostOptions, LiveLink, Peer, Presence, Role, SessionInfo};
+use figcraft_engine::live::{
+    Access, Event as LiveEvent, HostOptions, LiveLink, Peer, Presence, Role, SessionInfo,
+};
 use serde_json::{Value, json};
 
 use crate::live_tests::{Harness, has_text, text_center};
@@ -70,7 +72,11 @@ fn run(h: &mut Harness, cmd: &str, params: Value) {
 }
 
 fn hana() -> Peer {
-    Peer { client_id: 2, name: "Hana".into(), color: "#9747FF".into() }
+    Peer {
+        client_id: 2,
+        name: "Hana".into(),
+        color: "#9747FF".into(),
+    }
 }
 
 #[test]
@@ -82,45 +88,107 @@ fn the_share_popover_is_the_session_of_the_tab_in_front() {
     let shapes = h.frames(2);
     assert!(has_text(&shapes, "Share this file"));
     let shapes = start_sharing(&mut h, &shapes);
-    for t in ["Sharing on your network · nobody else here yet", "Invite link", "Stop sharing"] {
+    for t in [
+        "Sharing on your network · nobody else here yet",
+        "Invite link",
+        "Stop sharing",
+    ] {
         assert!(has_text(&shapes, t), "hosting shows {t:?}");
     }
-    queue.lock().unwrap().push((1, LiveEvent::PeerJoined(hana())));
+    queue
+        .lock()
+        .unwrap()
+        .push((1, LiveEvent::PeerJoined(hana())));
     h.frames(2);
     assert_eq!(
-        (&live(&h)["status"], &live(&h)["session"], &live(&h)["peers"], &live(&h)["sessions"]),
+        (
+            &live(&h)["status"],
+            &live(&h)["session"],
+            &live(&h)["peers"],
+            &live(&h)["sessions"]
+        ),
         (&json!("live"), &json!(1), &json!(1), &json!(1))
     );
     // A new file: its tab isn't in that session and offers to start one.
     run(&mut h, "file.new", json!({}));
     let l = live(&h);
     assert_eq!(
-        (&l["status"], &l["session"], &l["role"], &l["peers"], &l["sessions"]),
-        (&json!("off"), &Value::Null, &Value::Null, &json!(0), &json!(1))
+        (
+            &l["status"],
+            &l["session"],
+            &l["role"],
+            &l["peers"],
+            &l["sessions"]
+        ),
+        (
+            &json!("off"),
+            &Value::Null,
+            &Value::Null,
+            &json!(0),
+            &json!(1)
+        )
     );
     let shapes = h.frames(1);
-    for t in ["Share this file", "Start sharing", "Join with a code", "Advanced"] {
+    for t in [
+        "Share this file",
+        "Start sharing",
+        "Join with a code",
+        "Advanced",
+    ] {
         assert!(has_text(&shapes, t), "the new file's popover shows {t:?}");
     }
-    for t in ["Invite link", "Stop sharing", "Sharing on your network · 1 person joined", "Hana"] {
-        assert!(!has_text(&shapes, t), "nothing of the other file's session: {t:?}");
+    for t in [
+        "Invite link",
+        "Stop sharing",
+        "Sharing on your network · 1 person joined",
+        "Hana",
+    ] {
+        assert!(
+            !has_text(&shapes, t),
+            "nothing of the other file's session: {t:?}"
+        );
     }
     // Start one here too: both run, each tab shows its own.
     let shapes = start_sharing(&mut h, &shapes);
-    assert!(has_text(&shapes, "Sharing on your network · nobody else here yet") && has_text(&shapes, "Stop sharing"));
-    assert_eq!((&live(&h)["session"], &live(&h)["peers"], &live(&h)["sessions"]), (&json!(2), &json!(0), &json!(2)));
-    assert_eq!(h.app.session.live().info.as_ref().unwrap().address, "127.0.0.1:47901");
+    assert!(
+        has_text(&shapes, "Sharing on your network · nobody else here yet")
+            && has_text(&shapes, "Stop sharing")
+    );
+    assert_eq!(
+        (
+            &live(&h)["session"],
+            &live(&h)["peers"],
+            &live(&h)["sessions"]
+        ),
+        (&json!(2), &json!(0), &json!(2))
+    );
+    assert_eq!(
+        h.app.session.live().info.as_ref().unwrap().address,
+        "127.0.0.1:47901"
+    );
     run(&mut h, "doc.switch", json!({"index": 0}));
-    assert_eq!((&live(&h)["session"], &live(&h)["peers"]), (&json!(1), &json!(1)));
-    assert_eq!(h.app.session.live().info.as_ref().unwrap().address, "127.0.0.1:47900");
+    assert_eq!(
+        (&live(&h)["session"], &live(&h)["peers"]),
+        (&json!(1), &json!(1))
+    );
+    assert_eq!(
+        h.app.session.live().info.as_ref().unwrap().address,
+        "127.0.0.1:47900"
+    );
     // Stopping the first leaves the second running.
     let shapes = h.frames(1);
     h.click(text_center(&shapes, "Stop sharing"));
     let shapes = h.frames(2);
     assert!(has_text(&shapes, "Start sharing"));
-    assert_eq!((&live(&h)["status"], &live(&h)["sessions"]), (&json!("off"), &json!(1)));
+    assert_eq!(
+        (&live(&h)["status"], &live(&h)["sessions"]),
+        (&json!("off"), &json!(1))
+    );
     run(&mut h, "doc.switch", json!({"index": 1}));
-    assert_eq!((&live(&h)["status"], &live(&h)["session"]), (&json!("live"), &json!(2)));
+    assert_eq!(
+        (&live(&h)["status"], &live(&h)["session"]),
+        (&json!("live"), &json!(2))
+    );
 }
 
 #[test]
@@ -128,8 +196,14 @@ fn a_session_behind_draws_nothing_and_asks_for_no_frames() {
     let (mut h, queue) = harness();
     run(&mut h, "collab.host", json!({}));
     let page = h.page();
-    let cursor = |x: f64, y: f64| Presence { cursor: Some((page, x, y)), ..Presence::default() };
-    queue.lock().unwrap().extend([(1, LiveEvent::PeerJoined(hana())), (1, LiveEvent::Presence(2, cursor(40.0, 40.0)))]);
+    let cursor = |x: f64, y: f64| Presence {
+        cursor: Some((page, x, y)),
+        ..Presence::default()
+    };
+    queue.lock().unwrap().extend([
+        (1, LiveEvent::PeerJoined(hana())),
+        (1, LiveEvent::Presence(2, cursor(40.0, 40.0))),
+    ]);
     let shapes = h.frames(3);
     assert!(has_text(&shapes, "Hana"), "their name tag by their cursor");
     assert_eq!(live(&h)["cursorsShown"], json!([2]));
@@ -142,17 +216,33 @@ fn a_session_behind_draws_nothing_and_asks_for_no_frames() {
     let shapes = h.frames(2);
     assert!(!has_text(&shapes, "Hana"));
     let l = live(&h);
-    assert_eq!((&l["cursorsShown"], &l["chatBox"], &l["status"]), (&json!([]), &Value::Null, &json!("off")));
-    assert!(h.goes_quiet(), "a session behind doesn't keep the window drawing");
+    assert_eq!(
+        (&l["cursorsShown"], &l["chatBox"], &l["status"]),
+        (&json!([]), &Value::Null, &json!("off"))
+    );
+    assert!(
+        h.goes_quiet(),
+        "a session behind doesn't keep the window drawing"
+    );
     // What happens there arrives all the same, without showing here.
-    queue.lock().unwrap().push((1, LiveEvent::Presence(2, cursor(90.0, 10.0))));
+    queue
+        .lock()
+        .unwrap()
+        .push((1, LiveEvent::Presence(2, cursor(90.0, 10.0))));
     let shapes = h.frames(2);
     assert!(!has_text(&shapes, "Hana"));
     let first = h.app.session.docs[0].uid;
-    assert_eq!(h.app.session.live_of(first).presence[&2].cursor, Some((page, 90.0, 10.0)));
+    assert_eq!(
+        h.app.session.live_of(first).presence[&2].cursor,
+        Some((page, 90.0, 10.0))
+    );
     assert!(h.goes_quiet());
     // Back on its tab the cursor is where it was last reported.
     run(&mut h, "doc.switch", json!({"index": 0}));
     assert_eq!(crate::live::shown_at(&h.app), vec![(2, (90.0, 10.0))]);
-    assert_eq!(live(&h)["chatBox"], Value::Null, "the chat box closed with the switch");
+    assert_eq!(
+        live(&h)["chatBox"],
+        Value::Null,
+        "the chat box closed with the switch"
+    );
 }

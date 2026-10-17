@@ -14,13 +14,26 @@ struct Request {
 
 impl Request {
     fn capture(app: &LightcraftApp, id: PhotoId) -> Result<Self, String> {
-        let photo = app.session.catalog.photo(id).filter(|p| !p.deleted).ok_or("the requested photo is no longer available")?;
-        Ok(Self { library: app.session.library_generation(), photo: id, source: photo.source.clone() })
+        let photo = app
+            .session
+            .catalog
+            .photo(id)
+            .filter(|p| !p.deleted)
+            .ok_or("the requested photo is no longer available")?;
+        Ok(Self {
+            library: app.session.library_generation(),
+            photo: id,
+            source: photo.source.clone(),
+        })
     }
 
     fn valid(&self, app: &LightcraftApp) -> bool {
         self.library == app.session.library_generation()
-            && app.session.catalog.photo(self.photo).is_some_and(|p| !p.deleted && p.source == self.source)
+            && app
+                .session
+                .catalog
+                .photo(self.photo)
+                .is_some_and(|p| !p.deleted && p.source == self.source)
     }
 }
 
@@ -31,10 +44,17 @@ pub(crate) struct Pending {
 }
 
 pub(crate) fn denoise_requested(app: &LightcraftApp, id: PhotoId) -> bool {
-    app.model_setup.denoise.as_ref().is_some_and(|r| r.photo == id && r.valid(app))
+    app.model_setup
+        .denoise
+        .as_ref()
+        .is_some_and(|r| r.photo == id && r.valid(app))
 }
 
-pub(crate) fn intercept(app: &mut LightcraftApp, command: &str, params: &Value) -> Option<Result<Value, String>> {
+pub(crate) fn intercept(
+    app: &mut LightcraftApp,
+    command: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     if matches!(command, "app.openLibrary" | "file.restoreLibrary") {
         app.model_setup = Pending::default();
         return None;
@@ -63,7 +83,10 @@ pub(crate) fn intercept(app: &mut LightcraftApp, command: &str, params: &Value) 
             None => return Some(Err("select a raw photo".into())),
         },
     };
-    let enabled = app.session.develop_of(id).is_some_and(|d| d.enhance.denoise_enabled());
+    let enabled = app
+        .session
+        .develop_of(id)
+        .is_some_and(|d| d.enhance.denoise_enabled());
     let on = match params.get("enabled") {
         Some(v) => match v.as_bool() {
             Some(on) => on,
@@ -73,29 +96,51 @@ pub(crate) fn intercept(app: &mut LightcraftApp, command: &str, params: &Value) 
     };
     if !on {
         app.model_setup.denoise = None;
-        return Some(app.session.execute("denoise.toggle", &json!({"id": id.0, "enabled": false})).map_err(|e| e.to_string()));
+        return Some(
+            app.session
+                .execute("denoise.toggle", &json!({"id": id.0, "enabled": false}))
+                .map_err(|e| e.to_string()),
+        );
     }
     let _ = app.session.execute("denoise.status", &json!({"id": id.0}));
     if !matches!(app.session.denoise_photo_state(id), PhotoState::NoModel) {
         return None;
     }
-    if app.session.execute("denoise.models.list", &json!({})).ok().is_none_or(|v| v["dir"].is_null()) {
+    if app
+        .session
+        .execute("denoise.models.list", &json!({}))
+        .ok()
+        .is_none_or(|v| v["dir"].is_null())
+    {
         return None;
     }
     Some(Request::capture(app, id).map(|request| {
         app.model_setup.denoise = Some(request);
         app.model_setup.next_check = 0.0;
-        app.ui.dialog = Some(Dialog::Settings { tab: "denoise".into() });
+        app.ui.dialog = Some(Dialog::Settings {
+            tab: "denoise".into(),
+        });
         app.ui.status = tr("Install a denoise model to enable AI Denoise on this photo").into();
         json!({"setupRequired": true, "photo": id.0})
     }))
 }
 
 pub(crate) fn notice(app: &mut LightcraftApp, ui: &mut egui::Ui, kind: &str) {
-    if kind != "denoise" || !app.model_setup.denoise.as_ref().is_some_and(|r| r.valid(app)) {
+    if kind != "denoise"
+        || !app
+            .model_setup
+            .denoise
+            .as_ref()
+            .is_some_and(|r| r.valid(app))
+    {
         return;
     }
-    ui.add(egui::Label::new(tr("After installation, AI Denoise will turn on for the requesting photo.")).wrap());
+    ui.add(
+        egui::Label::new(tr(
+            "After installation, AI Denoise will turn on for the requesting photo.",
+        ))
+        .wrap(),
+    );
     let r = ui.small_button(tr("Cancel pending action"));
     crate::widgets::register(ui.ctx(), "modelSetup:cancel:denoise", r.rect);
     if r.clicked() {
@@ -107,15 +152,27 @@ pub(crate) fn notice(app: &mut LightcraftApp, ui: &mut egui::Ui, kind: &str) {
 /// The model setup was dismissed with nothing on the way: neither Settings nor a model's terms
 /// are showing, no model download or installation is running, and the photo still has no model.
 fn abandoned(app: &mut LightcraftApp) -> bool {
-    if matches!(app.ui.dialog, Some(Dialog::Settings { .. } | Dialog::DenoiseModel { .. })) {
+    if matches!(
+        app.ui.dialog,
+        Some(Dialog::Settings { .. } | Dialog::DenoiseModel { .. })
+    ) {
         return false;
     }
-    let Some(photo) = app.model_setup.denoise.as_ref().map(|r| r.photo) else { return false };
+    let Some(photo) = app.model_setup.denoise.as_ref().map(|r| r.photo) else {
+        return false;
+    };
     if !matches!(app.session.denoise_photo_state(photo), PhotoState::NoModel) {
         return false;
     }
-    let Ok(v) = app.session.execute("denoise.models.downloads", &json!({})) else { return false };
-    !v["downloads"].as_array().into_iter().flatten().any(|d| matches!(d["state"].as_str(), Some("running" | "done" | "installing" | "installed")))
+    let Ok(v) = app.session.execute("denoise.models.downloads", &json!({})) else {
+        return false;
+    };
+    !v["downloads"].as_array().into_iter().flatten().any(|d| {
+        matches!(
+            d["state"].as_str(),
+            Some("running" | "done" | "installing" | "installed")
+        )
+    })
 }
 
 pub(crate) fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
@@ -137,17 +194,26 @@ pub(crate) fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
         return;
     }
     app.model_setup.next_check = now + 0.25;
-    let Some(request) = app.model_setup.denoise.take() else { return };
+    let Some(request) = app.model_setup.denoise.take() else {
+        return;
+    };
     if !request.valid(app) {
-        app.ui.status = tr("Pending photo action cancelled because its library or photo changed").into();
+        app.ui.status =
+            tr("Pending photo action cancelled because its library or photo changed").into();
         return;
     }
-    if matches!(app.session.denoise_photo_state(request.photo), PhotoState::NoModel | PhotoState::NotApplicable) {
+    if matches!(
+        app.session.denoise_photo_state(request.photo),
+        PhotoState::NoModel | PhotoState::NotApplicable
+    ) {
         app.model_setup.denoise = Some(request);
         ctx.request_repaint_after(std::time::Duration::from_millis(250));
         return;
     }
-    match app.run("denoise.toggle", json!({"id": request.photo.0, "enabled": true})) {
+    match app.run(
+        "denoise.toggle",
+        json!({"id": request.photo.0, "enabled": true}),
+    ) {
         Ok(_) => app.ui.status = tr("AI Denoise is enabled on the requesting photo").into(),
         Err(error) => app.ui.status = error,
     }

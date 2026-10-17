@@ -75,7 +75,14 @@ pub fn begin(app: &mut PhotocraftApp) -> Result<(), String> {
     let original = preset(app).ok_or("no preset symmetry")?;
     let document = app.session.active_index().ok_or("no document")?;
     let source = app.session.active().ok_or("no document")?.doc.clone();
-    app.ui.symmetry_transform = Some(Transform { original, preview: original, document, source, tool: app.ui.tool, gesture: None });
+    app.ui.symmetry_transform = Some(Transform {
+        original,
+        preview: original,
+        document,
+        source,
+        tool: app.ui.tool,
+        gesture: None,
+    });
     Ok(())
 }
 pub fn commit(app: &mut PhotocraftApp) {
@@ -88,7 +95,10 @@ fn valid(app: &PhotocraftApp, t: &Transform) -> bool {
         && app.ui.tool == t.tool
         && can_transform(app)
         && preset(app) == Some(t.original)
-        && app.session.active().is_some_and(|s| Arc::ptr_eq(&s.doc, &t.source))
+        && app
+            .session
+            .active()
+            .is_some_and(|s| Arc::ptr_eq(&s.doc, &t.source))
 }
 pub fn track(app: &mut PhotocraftApp, ctx: &egui::Context) {
     let Some(t) = &app.ui.symmetry_transform else {
@@ -113,7 +123,9 @@ pub fn track(app: &mut PhotocraftApp, ctx: &egui::Context) {
 fn mode_button(ui: &mut egui::Ui, mode: SymmetryMode, checked: bool) -> egui::Response {
     let icon = ui.id().with((mode.id(), "icon"));
     let name = label(mode);
-    let b = egui::Button::new((Atom::custom(icon, vec2(16.0, 16.0)), name, Atom::grow())).selected(checked).atom_ui(ui);
+    let b = egui::Button::new((Atom::custom(icon, vec2(16.0, 16.0)), name, Atom::grow()))
+        .selected(checked)
+        .atom_ui(ui);
     let tint = Tokens::get(ui.ctx()).icon;
     if let Some(r) = b.rect(icon) {
         let glyph = match mode {
@@ -124,12 +136,21 @@ fn mode_button(ui: &mut egui::Ui, mode: SymmetryMode, checked: bool) -> egui::Re
         };
         icons::paint(ui, r, glyph, 14.0, tint);
     }
-    b.response.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, ui.is_enabled(), checked, name));
+    b.response.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, ui.is_enabled(), checked, name)
+    });
     b.response
 }
 pub fn menu(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let current = app.session.active().and_then(|s| s.symmetry.clone());
-    let resp = icons::button_with_icon_size(ui, "painting-symmetry", 24.0, 14.0, current.is_some(), tl!("Set painting symmetry options"));
+    let resp = icons::button_with_icon_size(
+        ui,
+        "painting-symmetry",
+        24.0,
+        14.0,
+        current.is_some(),
+        tl!("Set painting symmetry options"),
+    );
     let resp = crate::brush_picker::named(resp, "Set painting symmetry options");
     egui::Popup::menu(&resp).show(|ui| {
         ui.set_min_width(220.0);
@@ -147,8 +168,17 @@ pub fn menu(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
             }
             ui.separator();
             for mode in SymmetryMode::ALL {
-                let checked = current.as_ref().and_then(PaintingSymmetry::preset).is_some_and(|p| p.mode == mode);
-                if ui.add_enabled_ui(crate::menus::is_enabled(app, "paint.setSymmetry"), |ui| mode_button(ui, mode, checked)).inner.clicked() {
+                let checked = current
+                    .as_ref()
+                    .and_then(PaintingSymmetry::preset)
+                    .is_some_and(|p| p.mode == mode);
+                if ui
+                    .add_enabled_ui(crate::menus::is_enabled(app, "paint.setSymmetry"), |ui| {
+                        mode_button(ui, mode, checked)
+                    })
+                    .inner
+                    .clicked()
+                {
                     run = Some(("paint.setSymmetry", json!({"mode":mode.id()})));
                     ui.close();
                 }
@@ -165,16 +195,31 @@ pub fn menu(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
                         PathRow::Work => ("work".into(), tl!("Work Path").into()),
                         PathRow::Layer => ("layer".into(), row.name),
                     };
-                    let checked = current.as_ref().and_then(PaintingSymmetry::path_source) == Some(name.as_str());
-                    if ui.add_enabled(crate::menus::is_enabled(app, "paint.symmetryFromPath"), egui::Button::selectable(checked, text)).clicked() {
+                    let checked = current.as_ref().and_then(PaintingSymmetry::path_source)
+                        == Some(name.as_str());
+                    if ui
+                        .add_enabled(
+                            crate::menus::is_enabled(app, "paint.symmetryFromPath"),
+                            egui::Button::selectable(checked, text),
+                        )
+                        .clicked()
+                    {
                         run = Some(("paint.symmetryFromPath", json!({"name":name})));
                         ui.close();
                     }
                 }
             }
             ui.separator();
-            if ui.add_enabled(can_transform(app), egui::Button::new(tl!("Transform Symmetry"))).clicked() {
-                if let Err(e) = crate::menus::invoke(app, ui.ctx(), "ui.symmetryTransform", json!({})) {
+            if ui
+                .add_enabled(
+                    can_transform(app),
+                    egui::Button::new(tl!("Transform Symmetry")),
+                )
+                .clicked()
+            {
+                if let Err(e) =
+                    crate::menus::invoke(app, ui.ctx(), "ui.symmetryTransform", json!({}))
+                {
                     app.ui.status = e;
                 }
                 ui.close();
@@ -193,7 +238,12 @@ fn rotation_handle(p: PresetSymmetry, size: [f64; 2]) -> [f64; 2] {
 }
 /// True throughout transform editing, including clicks outside a handle: never paint by accident.
 pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) -> bool {
-    if app.ui.symmetry_transform.as_ref().is_some_and(|t| !valid(app, t)) {
+    if app
+        .ui
+        .symmetry_transform
+        .as_ref()
+        .is_some_and(|t| !valid(app, t))
+    {
         app.ui.symmetry_transform = None;
     }
     if app.ui.symmetry_transform.is_none() {
@@ -202,7 +252,11 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
     let Some(xf) = ViewXform::active(app) else {
         return true;
     };
-    let size = app.session.active().map(|s| [f64::from(s.doc.size.width), f64::from(s.doc.size.height)]).unwrap_or([1.0, 1.0]);
+    let size = app
+        .session
+        .active()
+        .map(|s| [f64::from(s.doc.size.width), f64::from(s.doc.size.height)])
+        .unwrap_or([1.0, 1.0]);
     let Some(t) = &mut app.ui.symmetry_transform else {
         return false;
     };
@@ -212,18 +266,29 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
         ToolEvent::Down { x, y, .. } => {
             let p = [x, y];
             t.gesture = if distance(p, t.preview.center) <= tol {
-                Some(Gesture::Move { start: p, center: t.preview.center })
+                Some(Gesture::Move {
+                    start: p,
+                    center: t.preview.center,
+                })
             } else if distance(p, rotation_handle(t.preview, size)) <= tol {
-                Some(Gesture::Rotate { angle: (y - t.preview.center[1]).atan2(x - t.preview.center[0]), rotation: t.preview.rotation })
+                Some(Gesture::Rotate {
+                    angle: (y - t.preview.center[1]).atan2(x - t.preview.center[0]),
+                    rotation: t.preview.rotation,
+                })
             } else {
                 None
             };
         }
         ToolEvent::Move { x, y, .. } => {
             let (center, rotation) = match t.gesture {
-                Some(Gesture::Move { start, center }) => ([center[0] + x - start[0], center[1] + y - start[1]], t.preview.rotation),
+                Some(Gesture::Move { start, center }) => (
+                    [center[0] + x - start[0], center[1] + y - start[1]],
+                    t.preview.rotation,
+                ),
                 Some(Gesture::Rotate { angle, rotation }) => {
-                    let mut r = rotation + ((y - t.preview.center[1]).atan2(x - t.preview.center[0]) - angle).to_degrees();
+                    let mut r = rotation
+                        + ((y - t.preview.center[1]).atan2(x - t.preview.center[0]) - angle)
+                            .to_degrees();
                     if mods.shift {
                         r = (r / 15.0).round() * 15.0;
                     }
@@ -240,13 +305,19 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
     true
 }
 pub fn draw(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform) {
-    if !matches!(app.ui.tool, Tool::Brush | Tool::Pencil | Tool::Eraser) && app.ui.symmetry_transform.is_none() {
+    if !matches!(app.ui.tool, Tool::Brush | Tool::Pencil | Tool::Eraser)
+        && app.ui.symmetry_transform.is_none()
+    {
         return;
     }
     let Some(st) = app.session.active() else {
         return;
     };
-    let edit = app.ui.symmetry_transform.as_ref().filter(|t| app.session.active_index() == Some(t.document));
+    let edit = app
+        .ui
+        .symmetry_transform
+        .as_ref()
+        .filter(|t| app.session.active_index() == Some(t.document));
     let preview = edit.map(|t| t.preview).or_else(|| preset(app));
     let Some(p) = preview else {
         return;

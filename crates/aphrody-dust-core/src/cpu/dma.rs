@@ -168,6 +168,10 @@ impl<T: Copy, BU> Controller<T, BU> {
     #[inline]
     pub(crate) fn switch_to_max_priority_running_channel(&mut self) {
         let trailing_zeros = self.running_channels.trailing_zeros() as u8;
-        self.cur_channel = if trailing_zeros < 4 { Some(Index::new(trailing_zeros)) } else { None };
+        self.cur_channel = if trailing_zeros < 4 {
+            Some(Index::new(trailing_zeros))
+        } else {
+            None
+        };
     }
 }

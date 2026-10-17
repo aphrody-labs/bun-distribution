@@ -39,7 +39,9 @@ impl ser::Error for Problem {
 /// `Ok(())` when every float in `value`'s serialized form is finite; otherwise the path of the
 /// first one that is not.
 pub fn check<T: Serialize + ?Sized>(value: &T) -> Result<(), Problem> {
-    value.serialize(Check { path: String::new() })
+    value.serialize(Check {
+        path: String::new(),
+    })
 }
 
 struct Check {
@@ -48,10 +50,18 @@ struct Check {
 
 impl Check {
     fn at(&self, seg: fmt::Arguments<'_>) -> Check {
-        Check { path: format!("{}{}", self.path, seg) }
+        Check {
+            path: format!("{}{}", self.path, seg),
+        }
     }
     fn float(self, finite: bool) -> Result<(), Problem> {
-        if finite { Ok(()) } else { Err(Problem::NonFinite { path: self.path.trim_start_matches('.').to_owned() }) }
+        if finite {
+            Ok(())
+        } else {
+            Err(Problem::NonFinite {
+                path: self.path.trim_start_matches('.').to_owned(),
+            })
+        }
     }
 }
 
@@ -134,29 +144,64 @@ impl ser::Serializer for Check {
     fn serialize_newtype_struct<T: Serialize + ?Sized>(self, _: &'static str, v: &T) -> R {
         v.serialize(self)
     }
-    fn serialize_newtype_variant<T: Serialize + ?Sized>(self, _: &'static str, _: u32, variant: &'static str, v: &T) -> R {
+    fn serialize_newtype_variant<T: Serialize + ?Sized>(
+        self,
+        _: &'static str,
+        _: u32,
+        variant: &'static str,
+        v: &T,
+    ) -> R {
         v.serialize(self.at(format_args!(".{variant}")))
     }
     fn serialize_seq(self, _: Option<usize>) -> Result<Seq, Problem> {
-        Ok(Seq { path: self.path, i: 0 })
+        Ok(Seq {
+            path: self.path,
+            i: 0,
+        })
     }
     fn serialize_tuple(self, _: usize) -> Result<Seq, Problem> {
-        Ok(Seq { path: self.path, i: 0 })
+        Ok(Seq {
+            path: self.path,
+            i: 0,
+        })
     }
     fn serialize_tuple_struct(self, _: &'static str, _: usize) -> Result<Seq, Problem> {
-        Ok(Seq { path: self.path, i: 0 })
+        Ok(Seq {
+            path: self.path,
+            i: 0,
+        })
     }
-    fn serialize_tuple_variant(self, _: &'static str, _: u32, variant: &'static str, _: usize) -> Result<Seq, Problem> {
-        Ok(Seq { path: format!("{}.{variant}", self.path), i: 0 })
+    fn serialize_tuple_variant(
+        self,
+        _: &'static str,
+        _: u32,
+        variant: &'static str,
+        _: usize,
+    ) -> Result<Seq, Problem> {
+        Ok(Seq {
+            path: format!("{}.{variant}", self.path),
+            i: 0,
+        })
     }
     fn serialize_map(self, _: Option<usize>) -> Result<Map, Problem> {
-        Ok(Map { path: self.path, key: String::new() })
+        Ok(Map {
+            path: self.path,
+            key: String::new(),
+        })
     }
     fn serialize_struct(self, _: &'static str, _: usize) -> Result<Struct, Problem> {
         Ok(Struct { path: self.path })
     }
-    fn serialize_struct_variant(self, _: &'static str, _: u32, variant: &'static str, _: usize) -> Result<Struct, Problem> {
-        Ok(Struct { path: format!("{}.{variant}", self.path) })
+    fn serialize_struct_variant(
+        self,
+        _: &'static str,
+        _: u32,
+        variant: &'static str,
+        _: usize,
+    ) -> Result<Struct, Problem> {
+        Ok(Struct {
+            path: format!("{}.{variant}", self.path),
+        })
     }
 }
 
@@ -167,7 +212,9 @@ struct Seq {
 
 impl Seq {
     fn next<T: Serialize + ?Sized>(&mut self, v: &T) -> R {
-        let c = Check { path: format!("{}[{}]", self.path, self.i) };
+        let c = Check {
+            path: format!("{}[{}]", self.path, self.i),
+        };
         self.i += 1;
         v.serialize(c)
     }
@@ -227,12 +274,17 @@ impl ser::SerializeMap for Map {
     type Error = Problem;
     fn serialize_key<T: Serialize + ?Sized>(&mut self, key: &T) -> R {
         // Keys are checked like any value; their text (when they have one) names the entry.
-        key.serialize(Check { path: format!("{}.<key>", self.path) })?;
-        self.key = serde_json::to_string(key).map_or_else(|_| "?".to_owned(), |k| k.trim_matches('"').to_owned());
+        key.serialize(Check {
+            path: format!("{}.<key>", self.path),
+        })?;
+        self.key = serde_json::to_string(key)
+            .map_or_else(|_| "?".to_owned(), |k| k.trim_matches('"').to_owned());
         Ok(())
     }
     fn serialize_value<T: Serialize + ?Sized>(&mut self, v: &T) -> R {
-        v.serialize(Check { path: format!("{}.{}", self.path, self.key) })
+        v.serialize(Check {
+            path: format!("{}.{}", self.path, self.key),
+        })
     }
     fn end(self) -> R {
         Ok(())
@@ -245,7 +297,9 @@ struct Struct {
 
 impl Struct {
     fn field<T: Serialize + ?Sized>(&mut self, key: &'static str, v: &T) -> R {
-        v.serialize(Check { path: format!("{}.{key}", self.path) })
+        v.serialize(Check {
+            path: format!("{}.{key}", self.path),
+        })
     }
 }
 
@@ -297,8 +351,14 @@ mod tests {
     fn outer() -> Outer {
         Outer {
             dpi: 72.0,
-            inner: Some(Inner { gamma: 1.0, offsets: vec![0.0, 1.5] }),
-            layers: vec![Content::Levels(0.0, 1.0), Content::Exposure { exposure: 0.5 }],
+            inner: Some(Inner {
+                gamma: 1.0,
+                offsets: vec![0.0, 1.5],
+            }),
+            layers: vec![
+                Content::Levels(0.0, 1.0),
+                Content::Exposure { exposure: 0.5 },
+            ],
             named: [("blur".to_owned(), 2.0)].into_iter().collect(),
         }
     }
@@ -322,7 +382,9 @@ mod tests {
         }
         assert_eq!(path(&o), "inner.offsets[1]");
         let mut o = outer();
-        o.layers[1] = Content::Exposure { exposure: f32::NEG_INFINITY };
+        o.layers[1] = Content::Exposure {
+            exposure: f32::NEG_INFINITY,
+        };
         assert_eq!(path(&o), "layers[1].Exposure.exposure");
         let mut o = outer();
         o.layers[0] = Content::Levels(0.0, f64::NAN);

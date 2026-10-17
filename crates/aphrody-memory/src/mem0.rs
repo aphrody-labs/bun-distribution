@@ -120,8 +120,11 @@ impl GetResponse {
     fn into_record(self) -> MemoryRecord {
         // Mem0 stores the memory text in `memory`. Created-at is provider-side
         // ISO 8601; we parse to epoch ms when possible, falling back to now.
-        let created_at_unix_ms =
-            self.created_at.as_deref().and_then(parse_iso_to_unix_ms).unwrap_or_else(now_unix_ms);
+        let created_at_unix_ms = self
+            .created_at
+            .as_deref()
+            .and_then(parse_iso_to_unix_ms)
+            .unwrap_or_else(now_unix_ms);
         MemoryRecord {
             id: self.id,
             agent_id: self.user_id.unwrap_or_default(),
@@ -174,7 +177,10 @@ impl MemoryProvider for Mem0Provider {
         let tag_refs: Vec<&str> = rec.tags.iter().map(String::as_str).collect();
         let body = AddBody {
             user_id: &rec.agent_id,
-            messages: vec![Mem0Message { role: "user", content: &rec.content }],
+            messages: vec![Mem0Message {
+                role: "user",
+                content: &rec.content,
+            }],
             categories: tag_refs,
         };
         let resp = self

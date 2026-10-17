@@ -34,7 +34,11 @@ fn noun(name: &str, hash: i64, strings: &[&str]) -> Value {
 #[test]
 fn primary_name_and_alts() {
     // Première chaîne non vide → name ; suivantes → alt_names ; nettoyage appliqué.
-    let n = noun("NOUN_INFO_0", 0x1, &["<COL:F00>Mark<CLO>", "Marco", "マーク"]);
+    let n = noun(
+        "NOUN_INFO_0",
+        0x1,
+        &["<COL:F00>Mark<CLO>", "Marco", "マーク"],
+    );
     let p = parse_noun_node(&Node::new(&n)).expect("valide");
     assert_eq!(p.hash_id, HashId(0x1));
     assert_eq!(p.name, "Mark"); // balise retirée

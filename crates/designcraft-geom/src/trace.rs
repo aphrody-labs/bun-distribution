@@ -9,7 +9,13 @@ use crate::Point;
 /// `tol` pixels; outlines enclosing less than `min_area` pixels are dropped. Holes come out
 /// with the opposite winding.
 pub fn trace(mask: &[bool], w: usize, h: usize, tol: f64, min_area: f64) -> Vec<Vec<Point>> {
-    let inside = |x: isize, y: isize| x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && mask[y as usize * w + x as usize];
+    let inside = |x: isize, y: isize| {
+        x >= 0
+            && y >= 0
+            && (x as usize) < w
+            && (y as usize) < h
+            && mask[y as usize * w + x as usize]
+    };
     // Pixel-border edges with the inside on the right (clockwise, y down).
     let mut next: HashMap<(isize, isize), Vec<(isize, isize)>> = HashMap::new();
     let mut add = |a: (isize, isize), b: (isize, isize)| next.entry(a).or_default().push(b);
@@ -46,7 +52,10 @@ pub fn trace(mask: &[bool], w: usize, h: usize, tol: f64, min_area: f64) -> Vec<
                     None => break,
                 }
             }
-            let pts: Vec<Point> = ring.into_iter().map(|(x, y)| Point::new(x as f64, y as f64)).collect();
+            let pts: Vec<Point> = ring
+                .into_iter()
+                .map(|(x, y)| Point::new(x as f64, y as f64))
+                .collect();
             if area(&pts).abs() >= min_area {
                 out.push(simplify_closed(&pts, tol));
             }
@@ -57,7 +66,10 @@ pub fn trace(mask: &[bool], w: usize, h: usize, tol: f64, min_area: f64) -> Vec<
 
 fn area(p: &[Point]) -> f64 {
     let n = p.len();
-    (0..n).map(|i| p[i].x * p[(i + 1) % n].y - p[(i + 1) % n].x * p[i].y).sum::<f64>() / 2.0
+    (0..n)
+        .map(|i| p[i].x * p[(i + 1) % n].y - p[(i + 1) % n].x * p[i].y)
+        .sum::<f64>()
+        / 2.0
 }
 
 /// Ramer–Douglas–Peucker on a closed ring (split at its two farthest-apart points).
@@ -65,7 +77,9 @@ fn simplify_closed(p: &[Point], tol: f64) -> Vec<Point> {
     if p.len() < 4 {
         return p.to_vec();
     }
-    let far = (1..p.len()).max_by(|a, b| (p[*a] - p[0]).hypot().total_cmp(&(p[*b] - p[0]).hypot())).unwrap_or(p.len() / 2);
+    let far = (1..p.len())
+        .max_by(|a, b| (p[*a] - p[0]).hypot().total_cmp(&(p[*b] - p[0]).hypot()))
+        .unwrap_or(p.len() / 2);
     let mut a = rdp(&p[..=far], tol);
     let mut back: Vec<Point> = p[far..].to_vec();
     back.push(p[0]);
@@ -85,7 +99,11 @@ fn rdp(p: &[Point], tol: f64) -> Vec<Point> {
     let len = d.hypot();
     let (mut best, mut idx) = (0.0, 0);
     for (i, q) in p.iter().enumerate().take(p.len() - 1).skip(1) {
-        let dist = if len < 1e-12 { (*q - a).hypot() } else { ((*q - a).cross(d) / len).abs() };
+        let dist = if len < 1e-12 {
+            (*q - a).hypot()
+        } else {
+            ((*q - a).cross(d) / len).abs()
+        };
         if dist > best {
             (best, idx) = (dist, i);
         }
@@ -116,7 +134,10 @@ mod tests {
         let rings = trace(&mask, w, h, 0.75, 4.0);
         assert_eq!(rings.len(), 2, "outer edge and hole");
         let areas: Vec<f64> = rings.iter().map(|r| area(r)).collect();
-        assert!(areas.iter().any(|a| *a > 600.0) && areas.iter().any(|a| *a < -80.0), "{areas:?}");
+        assert!(
+            areas.iter().any(|a| *a > 600.0) && areas.iter().any(|a| *a < -80.0),
+            "{areas:?}"
+        );
         assert!(rings.iter().all(|r| r.len() < 60), "simplified");
         assert!(trace(&[false; 16], 4, 4, 1.0, 1.0).is_empty());
     }

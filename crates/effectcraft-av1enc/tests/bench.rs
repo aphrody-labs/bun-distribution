@@ -11,11 +11,21 @@ use effectcraft_av1enc::{Encoder, EncoderConfig, RateControl};
 
 /// Raw 8-bit 4:2:0 frames of an ffmpeg lavfi source, or None without ffmpeg.
 fn lavfi(src: &str, w: usize, h: usize, frames: usize) -> Option<Vec<Pic>> {
-    let out = std::env::temp_dir().join(format!("effectcraft-av1enc-bench-{}-{src}-{w}x{h}.yuv", std::process::id()));
+    let out = std::env::temp_dir().join(format!(
+        "effectcraft-av1enc-bench-{}-{src}-{w}x{h}.yuv",
+        std::process::id()
+    ));
     let st = Command::new("ffmpeg")
         .args(["-v", "error", "-y", "-f", "lavfi", "-i"])
         .arg(format!("{src}=size={w}x{h}:rate=30"))
-        .args(["-frames:v", &frames.to_string(), "-pix_fmt", "yuv420p", "-f", "rawvideo"])
+        .args([
+            "-frames:v",
+            &frames.to_string(),
+            "-pix_fmt",
+            "yuv420p",
+            "-f",
+            "rawvideo",
+        ])
         .arg(&out)
         .status()
         .ok()?;
@@ -32,7 +42,10 @@ fn lavfi(src: &str, w: usize, h: usize, frames: usize) -> Option<Vec<Pic>> {
                 w,
                 h,
                 y: f[..w * h].iter().map(|&b| b as u16).collect(),
-                u: f[w * h..w * h + cw * ch].iter().map(|&b| b as u16).collect(),
+                u: f[w * h..w * h + cw * ch]
+                    .iter()
+                    .map(|&b| b as u16)
+                    .collect(),
                 v: f[w * h + cw * ch..].iter().map(|&b| b as u16).collect(),
             })
             .collect(),
@@ -71,7 +84,11 @@ fn run(name: &str, pics: &[Pic], rate: RateControl, keyint: u32) {
         bytes as f64 * 8.0 * 30.0 / n / 1000.0,
         psnr_sum / n,
         t_key / n_key,
-        if n > n_key { t_inter / (n - n_key) } else { 0.0 },
+        if n > n_key {
+            t_inter / (n - n_key)
+        } else {
+            0.0
+        },
         &sizes[..sizes.len().min(6)]
     );
 }

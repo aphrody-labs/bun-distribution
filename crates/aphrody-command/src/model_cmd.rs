@@ -54,7 +54,10 @@ impl OutputOpts {
         if let Some(raw) = &self.format {
             return Format::from_str_opt(raw).ok_or_else(|| {
                 let valid: Vec<&str> = Format::all().iter().map(|f| f.as_str()).collect();
-                miette::miette!("unknown format `{raw}` (expected one of: {})", valid.join(", "))
+                miette::miette!(
+                    "unknown format `{raw}` (expected one of: {})",
+                    valid.join(", ")
+                )
             });
         }
         if self.json {
@@ -81,7 +84,7 @@ impl OutputOpts {
             None => {
                 println!("{}", body.trim_end());
                 Ok(())
-            },
+            }
         }
     }
 
@@ -280,17 +283,22 @@ pub(crate) async fn run(action: ModelAction) -> miette::Result<()> {
         ModelAction::Accel { output } => accel_report(&output),
         ModelAction::Catalog { task, output } => catalog(task.as_deref(), &output),
         ModelAction::Ps { output } => ps(&output),
-        ModelAction::Recommend { task, prefer, pull: do_pull, output } => {
-            recommend(&task, &prefer, do_pull, &output).await
-        },
+        ModelAction::Recommend {
+            task,
+            prefer,
+            pull: do_pull,
+            output,
+        } => recommend(&task, &prefer, do_pull, &output).await,
         other => {
             // Everything else needs the store open.
             let store = ModelStore::open().map_err(|e| miette::miette!("open model store: {e}"))?;
             match other {
                 ModelAction::List { task, output } => list(&store, task.as_deref(), &output),
-                ModelAction::Pull { spec, force, output } => {
-                    pull(&store, &spec, force, &output).await
-                },
+                ModelAction::Pull {
+                    spec,
+                    force,
+                    output,
+                } => pull(&store, &spec, force, &output).await,
                 ModelAction::Info { spec, output } => info(&store, &spec, &output),
                 ModelAction::Verify { spec, output } => verify(&store, &spec, &output),
                 ModelAction::Rm { spec, output } => remove(&store, &spec, &output),
@@ -305,7 +313,7 @@ pub(crate) async fn run(action: ModelAction) -> miette::Result<()> {
                 | ModelAction::Catalog { .. }
                 | ModelAction::Recommend { .. } => unreachable!(),
             }
-        },
+        }
     }
 }
 
@@ -319,8 +327,9 @@ pub(crate) async fn run(action: ModelAction) -> miette::Result<()> {
 /// as a single reference. Used by the read-only subcommands, which act on all
 /// of an entry's files (a Florence-2 install is four graphs plus sidecars).
 fn resolve_refs(spec: &str) -> miette::Result<Vec<ModelRef>> {
-    let resolved =
-        Catalog::builtin().resolve(spec).map_err(|e| miette::miette!("resolve `{spec}`: {e}"))?;
+    let resolved = Catalog::builtin()
+        .resolve(spec)
+        .map_err(|e| miette::miette!("resolve `{spec}`: {e}"))?;
     Ok(resolved.artifacts().into_iter().map(|(r, _)| r).collect())
 }
 
@@ -328,7 +337,10 @@ fn resolve_refs(spec: &str) -> miette::Result<Vec<ModelRef>> {
 fn parse_task(raw: &str) -> miette::Result<ModelTask> {
     ModelTask::from_str_opt(raw).ok_or_else(|| {
         let valid: Vec<&str> = ModelTask::all().iter().map(|t| t.as_str()).collect();
-        miette::miette!("unknown task `{raw}` (expected one of: {})", valid.join(", "))
+        miette::miette!(
+            "unknown task `{raw}` (expected one of: {})",
+            valid.join(", ")
+        )
     })
 }
 
@@ -354,10 +366,13 @@ fn parse_budget(raw: &str) -> miette::Result<u64> {
     if trimmed.is_empty() {
         return Err(miette::miette!("empty size budget"));
     }
-    let split = trimmed.find(|c: char| !c.is_ascii_digit() && c != '.').unwrap_or(trimmed.len());
+    let split = trimmed
+        .find(|c: char| !c.is_ascii_digit() && c != '.')
+        .unwrap_or(trimmed.len());
     let (number, suffix) = trimmed.split_at(split);
-    let value: f64 =
-        number.parse().map_err(|_| miette::miette!("`{raw}` does not start with a number"))?;
+    let value: f64 = number
+        .parse()
+        .map_err(|_| miette::miette!("`{raw}` does not start with a number"))?;
 
     let multiplier: u64 = match suffix.trim().to_ascii_lowercase().as_str() {
         "" | "b" => 1,
@@ -373,7 +388,7 @@ fn parse_budget(raw: &str) -> miette::Result<u64> {
             return Err(miette::miette!(
                 "unknown size suffix `{other}` (use B, KiB, MiB, GiB, TiB, KB, MB, GB, TB)"
             ));
-        },
+        }
     };
 
     // f64 has 53 bits of mantissa: exact for every byte count below 8 PiB.
@@ -390,21 +405,33 @@ fn parse_budget(raw: &str) -> miette::Result<u64> {
 
 fn list(store: &ModelStore, task: Option<&str>, output: &OutputOpts) -> miette::Result<()> {
     let task = task.map(parse_task).transpose()?;
-    let mut installed = store.list().map_err(|e| miette::miette!("read model registry: {e}"))?;
+    let mut installed = store
+        .list()
+        .map_err(|e| miette::miette!("read model registry: {e}"))?;
 
     if let Some(task) = task {
         // Task lives on the catalog entry, not the artefact, so filtering
         // means mapping each entry's recorded catalog id back to the catalog.
-        let ids: Vec<&str> =
-            Catalog::builtin().by_task(task).into_iter().map(|e| e.id.as_str()).collect();
+        let ids: Vec<&str> = Catalog::builtin()
+            .by_task(task)
+            .into_iter()
+            .map(|e| e.id.as_str())
+            .collect();
         installed.retain(|m| m.catalog_id.as_deref().is_some_and(|id| ids.contains(&id)));
     }
 
     let total: u64 = installed.iter().map(|m| m.bytes).sum();
 
-    let mut report = Report::new("Installed models", &["SIZE", "FORMAT", "CATALOG", "REFERENCE"])
-        .with_summary(format!("Store root: {}", store.root().display()))
-        .with_footer(format!("{} model(s), {} on disk", installed.len(), human_bytes(total)));
+    let mut report = Report::new(
+        "Installed models",
+        &["SIZE", "FORMAT", "CATALOG", "REFERENCE"],
+    )
+    .with_summary(format!("Store root: {}", store.root().display()))
+    .with_footer(format!(
+        "{} model(s), {} on disk",
+        installed.len(),
+        human_bytes(total)
+    ));
     for model in &installed {
         report.push(vec![
             human_bytes(model.bytes),
@@ -467,7 +494,9 @@ fn catalog(task: Option<&str>, output: &OutputOpts) -> miette::Result<()> {
             entry.task.to_string(),
             entry.backend.to_string(),
             entry.speed.to_string(),
-            entry.total_bytes().map_or_else(|| "?".to_owned(), human_bytes),
+            entry
+                .total_bytes()
+                .map_or_else(|| "?".to_owned(), human_bytes),
             license_cell(&entry.license),
             entry.title.clone(),
         ]);
@@ -485,12 +514,20 @@ fn accel_report(output: &OutputOpts) -> miette::Result<()> {
         .with_footer("`aphrody model recommend --task ocr` ranks the catalog against this profile");
     report.push(vec![
         "accelerators".into(),
-        profile.accelerators.iter().map(|a| a.as_str()).collect::<Vec<_>>().join(", "),
+        profile
+            .accelerators
+            .iter()
+            .map(|a| a.as_str())
+            .collect::<Vec<_>>()
+            .join(", "),
     ]);
     report.push(vec!["cpu threads".into(), profile.cpu_threads.to_string()]);
     report.push(vec![
         "cuda toolkit".into(),
-        profile.cuda_toolkit.clone().unwrap_or_else(|| "not found".to_owned()),
+        profile
+            .cuda_toolkit
+            .clone()
+            .unwrap_or_else(|| "not found".to_owned()),
     ]);
     for (index, gpu) in profile.gpus.iter().enumerate() {
         report.push(vec![format!("gpu {index}"), gpu.name.clone()]);
@@ -528,7 +565,9 @@ async fn recommend(
     let ranked = aphrody_models::rank_for(Catalog::builtin(), task, &profile, prefer);
 
     if ranked.is_empty() {
-        return Err(miette::miette!("no catalogued model for task `{task}` fits this machine"));
+        return Err(miette::miette!(
+            "no catalogued model for task `{task}` fits this machine"
+        ));
     }
 
     let mut report = Report::new(
@@ -536,13 +575,18 @@ async fn recommend(
         &["RANK", "ID", "RUNS ON", "DOWNLOAD", "WHY"],
     )
     .with_summary(hardware_line(&profile))
-    .with_footer(format!("Top pick: {} — `aphrody model pull {}`", ranked[0].id, ranked[0].id));
+    .with_footer(format!(
+        "Top pick: {} — `aphrody model pull {}`",
+        ranked[0].id, ranked[0].id
+    ));
     for (index, recommendation) in ranked.iter().enumerate() {
         report.push(vec![
             (index + 1).to_string(),
             recommendation.id.clone(),
             recommendation.accelerator.to_string(),
-            recommendation.download_bytes.map_or_else(|| "?".to_owned(), human_bytes),
+            recommendation
+                .download_bytes
+                .map_or_else(|| "?".to_owned(), human_bytes),
             recommendation.rationale.clone(),
         ]);
     }
@@ -572,7 +616,10 @@ fn hardware_line(profile: &HardwareProfile) -> String {
             human_bytes(gpu.vram_bytes),
             gpu.compute_capability,
             profile.cpu_threads,
-            profile.cuda_toolkit.as_deref().unwrap_or("toolkit not found")
+            profile
+                .cuda_toolkit
+                .as_deref()
+                .unwrap_or("toolkit not found")
         ),
         None => format!("No GPU detected; {} CPU threads", profile.cpu_threads),
     }
@@ -620,8 +667,11 @@ async fn pull(
                     human_bytes(total)
                 ),
                 None => {
-                    eprint!("\r  {role:<18}      {}   ", human_bytes(progress.downloaded));
-                },
+                    eprint!(
+                        "\r  {role:<18}      {}   ",
+                        human_bytes(progress.downloaded)
+                    );
+                }
             }
         }
     };
@@ -638,17 +688,23 @@ async fn pull(
         eprintln!();
     }
 
-    let transferred: u64 =
-        outcomes.iter().filter(|o| o.transferred()).map(|o| o.model().bytes).sum();
+    let transferred: u64 = outcomes
+        .iter()
+        .filter(|o| o.transferred())
+        .map(|o| o.model().bytes)
+        .sum();
     let total: u64 = outcomes.iter().map(|o| o.model().bytes).sum();
 
-    let mut report = Report::new(format!("Pulled {spec}"), &["OUTCOME", "SIZE", "FORMAT", "PATH"])
-        .with_footer(format!(
-            "{} artefact(s), {} on disk, {} transferred",
-            outcomes.len(),
-            human_bytes(total),
-            human_bytes(transferred)
-        ));
+    let mut report = Report::new(
+        format!("Pulled {spec}"),
+        &["OUTCOME", "SIZE", "FORMAT", "PATH"],
+    )
+    .with_footer(format!(
+        "{} artefact(s), {} on disk, {} transferred",
+        outcomes.len(),
+        human_bytes(total),
+        human_bytes(transferred)
+    ));
     for outcome in &outcomes {
         let model = outcome.model();
         report.push(vec![
@@ -692,8 +748,9 @@ fn info(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result<(
     let refs = resolve_refs(spec)?;
     let mut found = Vec::new();
     for reference in &refs {
-        let entry =
-            store.get(reference).map_err(|e| miette::miette!("read model registry: {e}"))?;
+        let entry = store
+            .get(reference)
+            .map_err(|e| miette::miette!("read model registry: {e}"))?;
         found.push((reference.clone(), entry));
     }
 
@@ -706,7 +763,10 @@ fn info(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result<(
         format!("Model info: {spec}"),
         &["REFERENCE", "STATE", "SIZE", "FORMAT", "HEADER"],
     )
-    .with_footer(format!("{installed} of {} artefact(s) installed", found.len()));
+    .with_footer(format!(
+        "{installed} of {} artefact(s) installed",
+        found.len()
+    ));
     if let Some(lic) = &license {
         report = report.with_summary(match &lic.note {
             Some(note) => format!(
@@ -749,7 +809,7 @@ fn info(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result<(
                     model.format.as_str().to_owned(),
                     header,
                 ]);
-            },
+            }
         }
     }
 
@@ -784,8 +844,9 @@ fn verify(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result
     let refs = resolve_refs(spec)?;
     let mut reports = Vec::new();
     for reference in &refs {
-        let report =
-            store.verify(reference).map_err(|e| miette::miette!("verify `{reference}`: {e}"))?;
+        let report = store
+            .verify(reference)
+            .map_err(|e| miette::miette!("verify `{reference}`: {e}"))?;
         reports.push(report);
     }
     let intact = reports.iter().all(aphrody_models::VerifyReport::is_intact);
@@ -798,7 +859,11 @@ fn verify(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result
         });
     for entry in &reports {
         report.push(vec![
-            if entry.is_intact() { "ok".into() } else { "CORRUPT".to_owned() },
+            if entry.is_intact() {
+                "ok".into()
+            } else {
+                "CORRUPT".to_owned()
+            },
             entry.reference.clone(),
             entry.actual_sha256.clone(),
         ]);
@@ -824,11 +889,16 @@ fn verify(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result
 fn ps(output: &OutputOpts) -> miette::Result<()> {
     use aphrody_llama_server::{Role, discover_running};
 
-    let running: Vec<_> =
-        [Role::Chat, Role::Embed, Role::Rerank].into_iter().filter_map(discover_running).collect();
+    let running: Vec<_> = [Role::Chat, Role::Embed, Role::Rerank]
+        .into_iter()
+        .filter_map(discover_running)
+        .collect();
 
-    let mut report = Report::new("Running models", &["ROLE", "ALIAS", "PORT", "READY", "MODEL"])
-        .with_footer(format!("{} instance(s)", running.len()));
+    let mut report = Report::new(
+        "Running models",
+        &["ROLE", "ALIAS", "PORT", "READY", "MODEL"],
+    )
+    .with_footer(format!("{} instance(s)", running.len()));
     for state in &running {
         report.push(vec![
             state.role.as_str().to_owned(),
@@ -857,8 +927,9 @@ fn remove(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result
     let refs = resolve_refs(spec)?;
     let mut removed = Vec::new();
     for reference in &refs {
-        let entry =
-            store.remove(reference).map_err(|e| miette::miette!("remove `{reference}`: {e}"))?;
+        let entry = store
+            .remove(reference)
+            .map_err(|e| miette::miette!("remove `{reference}`: {e}"))?;
         removed.push(entry);
     }
     let reclaimed: u64 = removed.iter().map(|m| m.bytes).sum();
@@ -879,8 +950,9 @@ fn remove(store: &ModelStore, spec: &str, output: &OutputOpts) -> miette::Result
 
 fn gc(store: &ModelStore, budget: &str, output: &OutputOpts) -> miette::Result<()> {
     let budget_bytes = parse_budget(budget)?;
-    let gc_report =
-        store.gc(budget_bytes).map_err(|e| miette::miette!("garbage-collect store: {e}"))?;
+    let gc_report = store
+        .gc(budget_bytes)
+        .map_err(|e| miette::miette!("garbage-collect store: {e}"))?;
 
     let mut report = Report::new("Garbage collection", &["ACTION", "TARGET"]).with_footer(format!(
         "reclaimed {}, {} remaining (budget {})",
@@ -901,7 +973,9 @@ fn gc(store: &ModelStore, budget: &str, output: &OutputOpts) -> miette::Result<(
 }
 
 fn doctor(store: &ModelStore, output: &OutputOpts) -> miette::Result<()> {
-    let drift = store.reconcile().map_err(|e| miette::miette!("reconcile model store: {e}"))?;
+    let drift = store
+        .reconcile()
+        .map_err(|e| miette::miette!("reconcile model store: {e}"))?;
     let clean = drift.is_clean();
     let guidance = doctor_guidance(&drift);
 
@@ -921,7 +995,11 @@ fn doctor(store: &ModelStore, output: &OutputOpts) -> miette::Result<()> {
     let json = serde_json::json!({ "root": store.root(), "clean": clean, "report": drift });
     output.emit_report(&report, &json)?;
 
-    if clean { Ok(()) } else { Err(miette::miette!("model store has drifted; {guidance}")) }
+    if clean {
+        Ok(())
+    } else {
+        Err(miette::miette!("model store has drifted; {guidance}"))
+    }
 }
 
 fn doctor_guidance(drift: &ReconcileReport) -> String {
@@ -946,8 +1024,9 @@ fn doctor_guidance(drift: &ReconcileReport) -> String {
 }
 
 fn adopt(store: &ModelStore, path: &Path, output: &OutputOpts) -> miette::Result<()> {
-    let entry =
-        store.adopt_local(path).map_err(|e| miette::miette!("adopt `{}`: {e}", path.display()))?;
+    let entry = store
+        .adopt_local(path)
+        .map_err(|e| miette::miette!("adopt `{}`: {e}", path.display()))?;
 
     let mut report = Report::new("Adopted artefact", &["FIELD", "VALUE"])
         .with_footer("the file stays where it is; `aphrody model rm` only un-tracks it");
@@ -975,7 +1054,7 @@ fn path(store: &ModelStore, spec: Option<&str>) -> miette::Result<()> {
             for reference in resolve_refs(spec)? {
                 println!("{}", store.path_for(&reference).display());
             }
-        },
+        }
     }
     Ok(())
 }
@@ -985,7 +1064,11 @@ mod tests {
     use super::*;
 
     fn opts(format: Option<&str>, json: bool, out: Option<&str>) -> OutputOpts {
-        OutputOpts { format: format.map(ToOwned::to_owned), json, out: out.map(PathBuf::from) }
+        OutputOpts {
+            format: format.map(ToOwned::to_owned),
+            json,
+            out: out.map(PathBuf::from),
+        }
     }
 
     #[test]
@@ -1017,7 +1100,10 @@ mod tests {
     #[test]
     fn task_parsing_lists_the_valid_names_on_failure() {
         assert_eq!(parse_task("ocr").unwrap(), ModelTask::Ocr);
-        assert_eq!(parse_task("speech-to-text").unwrap(), ModelTask::SpeechToText);
+        assert_eq!(
+            parse_task("speech-to-text").unwrap(),
+            ModelTask::SpeechToText
+        );
         let err = parse_task("transcribe").unwrap_err().to_string();
         assert!(err.contains("visual-transcription"), "{err}");
     }
@@ -1049,20 +1135,41 @@ mod tests {
     fn format_precedence_is_flag_then_json_then_extension_then_text() {
         assert_eq!(opts(None, false, None).format().unwrap(), Format::Text);
         assert_eq!(opts(None, true, None).format().unwrap(), Format::Json);
-        assert_eq!(opts(Some("md"), false, None).format().unwrap(), Format::Markdown);
-        assert_eq!(opts(None, false, Some("out.html")).format().unwrap(), Format::Html);
-        assert_eq!(opts(None, false, Some("out.csv")).format().unwrap(), Format::Csv);
+        assert_eq!(
+            opts(Some("md"), false, None).format().unwrap(),
+            Format::Markdown
+        );
+        assert_eq!(
+            opts(None, false, Some("out.html")).format().unwrap(),
+            Format::Html
+        );
+        assert_eq!(
+            opts(None, false, Some("out.csv")).format().unwrap(),
+            Format::Csv
+        );
         // An explicit flag beats both the shorthand and the extension.
-        assert_eq!(opts(Some("html"), true, Some("out.md")).format().unwrap(), Format::Html);
+        assert_eq!(
+            opts(Some("html"), true, Some("out.md")).format().unwrap(),
+            Format::Html
+        );
         // `--json` beats an extension.
-        assert_eq!(opts(None, true, Some("out.md")).format().unwrap(), Format::Json);
+        assert_eq!(
+            opts(None, true, Some("out.md")).format().unwrap(),
+            Format::Json
+        );
         // An unknown extension falls back to text rather than failing.
-        assert_eq!(opts(None, false, Some("out.dat")).format().unwrap(), Format::Text);
+        assert_eq!(
+            opts(None, false, Some("out.dat")).format().unwrap(),
+            Format::Text
+        );
     }
 
     #[test]
     fn an_unknown_format_names_the_valid_ones() {
-        let err = opts(Some("pdf"), false, None).format().unwrap_err().to_string();
+        let err = opts(Some("pdf"), false, None)
+            .format()
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("markdown"), "{err}");
         assert!(err.contains("html"), "{err}");
         assert!(err.contains("csv"), "{err}");
@@ -1101,7 +1208,9 @@ mod tests {
         let target = dir.path().join("report.json");
         let report = Report::new("t", &["A"]);
         let value = serde_json::json!({ "count": 2 });
-        opts(None, true, Some(&target.to_string_lossy())).emit_report(&report, &value).unwrap();
+        opts(None, true, Some(&target.to_string_lossy()))
+            .emit_report(&report, &value)
+            .unwrap();
 
         let written = std::fs::read_to_string(&target).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&written).unwrap();
@@ -1127,7 +1236,10 @@ mod tests {
     fn outcome_labels_are_stable_machine_words() {
         // The JSON surface promises these three exact strings.
         for label in ["already-present", "downloaded", "adopted"] {
-            assert!(label.chars().all(|c| c.is_ascii_lowercase() || c == '-'), "{label}");
+            assert!(
+                label.chars().all(|c| c.is_ascii_lowercase() || c == '-'),
+                "{label}"
+            );
         }
     }
 }

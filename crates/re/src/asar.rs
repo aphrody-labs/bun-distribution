@@ -157,45 +157,58 @@ fn parse_envelope(bytes: &[u8]) -> Result<Envelope<'_>, AsarError> {
     // The inner pickle holds the u32 `json_len` field (4 bytes) followed by
     // the JSON bytes and 4-byte alignment padding, so it must be at least
     // `4 + json_len` long.
-    let min_inner =
-        4usize.checked_add(json_len).ok_or(AsarError::Envelope("json length overflow"))?;
+    let min_inner = 4usize
+        .checked_add(json_len)
+        .ok_or(AsarError::Envelope("json length overflow"))?;
     if string_field_size < min_inner {
-        return Err(AsarError::Envelope("header pickle smaller than declared JSON length"));
+        return Err(AsarError::Envelope(
+            "header pickle smaller than declared JSON length",
+        ));
     }
     // outer payload = 4 (the u32 holding the inner-pickle size) + inner pickle.
     let expected_payload = 4usize
         .checked_add(string_field_size)
         .ok_or(AsarError::Envelope("payload size overflow"))?;
     if payload_size != expected_payload {
-        return Err(AsarError::Envelope("payload size does not match header pickle size"));
+        return Err(AsarError::Envelope(
+            "payload size does not match header pickle size",
+        ));
     }
 
     // JSON starts at byte 16 (after the four leading u32 fields), runs
     // json_len bytes.
     let json_start = 16usize;
-    let json_end = json_start.checked_add(json_len).ok_or(AsarError::Truncated("header json"))?;
-    let header_json = bytes.get(json_start..json_end).ok_or(AsarError::Truncated("header json"))?;
+    let json_end = json_start
+        .checked_add(json_len)
+        .ok_or(AsarError::Truncated("header json"))?;
+    let header_json = bytes
+        .get(json_start..json_end)
+        .ok_or(AsarError::Truncated("header json"))?;
 
     // Data begins after the two outer u32 fields ([0], [4]) and the entire
     // outer payload.
-    let data_start =
-        8usize.checked_add(payload_size).ok_or(AsarError::Envelope("data start overflow"))?;
+    let data_start = 8usize
+        .checked_add(payload_size)
+        .ok_or(AsarError::Envelope("data start overflow"))?;
     if data_start > bytes.len() {
         return Err(AsarError::Truncated("data section start past end"));
     }
 
-    Ok(Envelope { header_json, data_start })
+    Ok(Envelope {
+        header_json,
+        data_start,
+    })
 }
 
 /// Parse a node's numeric `size`/`offset`, accepting string or integer JSON.
 fn parse_u64_field(node: &serde_json::Map<String, Value>, key: &str) -> Result<u64, AsarError> {
     match node.get(key) {
-        Some(Value::String(s)) => {
-            s.parse::<u64>().map_err(|e| AsarError::Tree(format!("`{key}` not a u64 string: {e}")))
-        },
-        Some(Value::Number(n)) => {
-            n.as_u64().ok_or_else(|| AsarError::Tree(format!("`{key}` not a u64 number")))
-        },
+        Some(Value::String(s)) => s
+            .parse::<u64>()
+            .map_err(|e| AsarError::Tree(format!("`{key}` not a u64 string: {e}"))),
+        Some(Value::Number(n)) => n
+            .as_u64()
+            .ok_or_else(|| AsarError::Tree(format!("`{key}` not a u64 number"))),
         Some(_) => Err(AsarError::Tree(format!("`{key}` has wrong JSON type"))),
         None => Err(AsarError::Tree(format!("missing `{key}`"))),
     }
@@ -228,7 +241,11 @@ fn walk(
             .as_object()
             .ok_or_else(|| AsarError::Tree(format!("entry `{name}` is not an object")))?;
 
-        let full_path = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+        let full_path = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}/{name}")
+        };
 
         if child.contains_key("files") {
             // Directory: emit the dir entry, then recurse.
@@ -249,7 +266,9 @@ fn walk(
             } else if unpacked {
                 0
             } else {
-                return Err(AsarError::Tree(format!("file `{full_path}` missing `size`")));
+                return Err(AsarError::Tree(format!(
+                    "file `{full_path}` missing `size`"
+                )));
             };
             let offset = if unpacked {
                 // Unpacked files have no in-archive offset.
@@ -257,7 +276,13 @@ fn walk(
             } else {
                 parse_u64_field(child, "offset")?
             };
-            out.push(AsarEntry { path: full_path, size, offset, is_dir: false, unpacked });
+            out.push(AsarEntry {
+                path: full_path,
+                size,
+                offset,
+                is_dir: false,
+                unpacked,
+            });
         }
     }
     Ok(())
@@ -331,12 +356,18 @@ fn collect_winclean_files(
         let child = child
             .as_object()
             .ok_or_else(|| AsarError::Tree(format!("entry `{name}` is not an object")))?;
-        let full_path = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+        let full_path = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}/{name}")
+        };
         if child.contains_key("files") {
             collect_winclean_files(child, &full_path, base_offset, out)?;
             continue;
         }
-        let Some(size) = child.get("size") else { continue };
+        let Some(size) = child.get("size") else {
+            continue;
+        };
         let size = size.as_u64().ok_or_else(|| {
             AsarError::Tree(format!("`size` for `{full_path}` is not an integer"))
         })?;
@@ -349,7 +380,10 @@ fn collect_winclean_files(
                 .ok_or_else(|| AsarError::Tree(format!("invalid offset for `{full_path}`")))?,
             _ => 0,
         };
-        let is_executable = child.get("executable").and_then(Value::as_bool).unwrap_or(false);
+        let is_executable = child
+            .get("executable")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         out.push(WinCleanAsarFile {
             relative_path: full_path,
             offset: base_offset.saturating_add(relative_offset),
@@ -445,7 +479,9 @@ pub fn read_file(bytes: &[u8], path: &str) -> Result<Vec<u8>, AsarError> {
         .checked_add(size)
         .ok_or_else(|| AsarError::DataOutOfBounds(format!("{path}: end overflow")))?;
 
-    let data = bytes.get(start..end).ok_or_else(|| AsarError::DataOutOfBounds(path.to_owned()))?;
+    let data = bytes
+        .get(start..end)
+        .ok_or_else(|| AsarError::DataOutOfBounds(path.to_owned()))?;
     Ok(data.to_vec())
 }
 
@@ -578,7 +614,10 @@ mod tests {
     #[test]
     fn empty_input_is_truncated_not_panic() {
         assert!(matches!(list(b"").unwrap_err(), AsarError::Truncated(_)));
-        assert!(matches!(list(b"\x04\x00").unwrap_err(), AsarError::Truncated(_)));
+        assert!(matches!(
+            list(b"\x04\x00").unwrap_err(),
+            AsarError::Truncated(_)
+        ));
     }
 
     #[test]

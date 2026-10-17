@@ -45,7 +45,7 @@ pub fn inspect_bytes(bytes: &[u8]) -> Result<DetectionSummary> {
             let decompressed = crilayla::decompress(bytes)
                 .map_err(|error| anyhow::anyhow!("CRILAYLA: {error}"))?;
             serde_json::json!({ "decompressedBytes": decompressed.len() })
-        },
+        }
         FileFormat::Utf => {
             let table = cpk::parse_utf(bytes).map_err(|error| anyhow::anyhow!("@UTF: {error}"))?;
             serde_json::json!({
@@ -53,7 +53,7 @@ pub fn inspect_bytes(bytes: &[u8]) -> Result<DetectionSummary> {
                 "columnCount": table.column_count(),
                 "rowCount": table.row_count(),
             })
-        },
+        }
         FileFormat::Cpk => {
             let header = cpk::parse_cpk(bytes).map_err(|error| anyhow::anyhow!("CPK: {error}"))?;
             serde_json::json!({
@@ -61,7 +61,7 @@ pub fn inspect_bytes(bytes: &[u8]) -> Result<DetectionSummary> {
                 "columnCount": header.utf.column_count(),
                 "rowCount": header.utf.row_count(),
             })
-        },
+        }
         FileFormat::CfgBin => {
             let rdbn =
                 cfgbin::parse(bytes).map_err(|error| anyhow::anyhow!("RDBN/cfg.bin: {error}"))?;
@@ -71,10 +71,14 @@ pub fn inspect_bytes(bytes: &[u8]) -> Result<DetectionSummary> {
                 "fieldCount": rdbn.fields.len(),
                 "rootCount": rdbn.roots.len(),
             })
-        },
+        }
         _ => serde_json::json!({}),
     };
-    Ok(DetectionSummary { byte_length: bytes.len(), format: format.name().to_owned(), detail })
+    Ok(DetectionSummary {
+        byte_length: bytes.len(),
+        format: format.name().to_owned(),
+        detail,
+    })
 }
 
 /// JSON adapter for the browser and other non-CLI bindings.

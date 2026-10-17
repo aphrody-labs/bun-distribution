@@ -101,7 +101,7 @@ impl SdkError {
         match self {
             SdkError::OAuthServer { status: 400, body } => {
                 body.contains("FAILED_PRECONDITION") || body.contains("location is not supported")
-            },
+            }
             _ => false,
         }
     }

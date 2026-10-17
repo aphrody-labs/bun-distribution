@@ -44,7 +44,10 @@ impl Default for PollConfig {
     fn default() -> Self {
         // Firefly image jobs typically finish in a few seconds; poll once a
         // second for up to ~2 minutes.
-        Self { interval: Duration::from_secs(1), max_polls: 120 }
+        Self {
+            interval: Duration::from_secs(1),
+            max_polls: 120,
+        }
     }
 }
 
@@ -82,15 +85,24 @@ impl FireflyImage {
     pub async fn save_to_dir(&self, dir: &Path, prefix: &str) -> Result<PathBuf> {
         tokio::fs::create_dir_all(dir)
             .await
-            .map_err(|source| FireflyError::Io { path: dir.to_path_buf(), source })?;
+            .map_err(|source| FireflyError::Io {
+                path: dir.to_path_buf(),
+                source,
+            })?;
         let path = dir.join(format!("{prefix}_{}.{}", self.index, self.extension()));
         let tmp = path.with_extension(format!("{}.tmp", self.extension()));
         tokio::fs::write(&tmp, &self.bytes)
             .await
-            .map_err(|source| FireflyError::Io { path: tmp.clone(), source })?;
+            .map_err(|source| FireflyError::Io {
+                path: tmp.clone(),
+                source,
+            })?;
         tokio::fs::rename(&tmp, &path)
             .await
-            .map_err(|source| FireflyError::Io { path: path.clone(), source })?;
+            .map_err(|source| FireflyError::Io {
+                path: path.clone(),
+                source,
+            })?;
         tracing::debug!(path = %path.display(), bytes = self.bytes.len(), "saved Firefly output");
         Ok(path)
     }
@@ -117,7 +129,11 @@ impl FireflyClient {
         let http = reqwest::Client::builder()
             .user_agent(concat!("aphrody-firefly/", env!("CARGO_PKG_VERSION")))
             .build()?;
-        Ok(Self { http, tokens: TokenCache::new(creds), poll: PollConfig::default() })
+        Ok(Self {
+            http,
+            tokens: TokenCache::new(creds),
+            poll: PollConfig::default(),
+        })
     }
 
     /// Build a client from `FIREFLY_CLIENT_ID` / `FIREFLY_CLIENT_SECRET`.
@@ -243,8 +259,10 @@ impl FireflyClient {
                 body: auth::truncate(&body, 512),
             });
         }
-        serde_json::from_str(&body)
-            .map_err(|source| FireflyError::Decode { endpoint: endpoint.to_string(), source })
+        serde_json::from_str(&body).map_err(|source| FireflyError::Decode {
+            endpoint: endpoint.to_string(),
+            source,
+        })
     }
 
     /// Poll a job's status URL until it reaches a terminal state.
@@ -260,8 +278,10 @@ impl FireflyClient {
                 });
             }
             if envelope.status.is_terminal() {
-                let detail =
-                    envelope.error.map(|e| auth::truncate(&e.to_string(), 512)).unwrap_or_default();
+                let detail = envelope
+                    .error
+                    .map(|e| auth::truncate(&e.to_string(), 512))
+                    .unwrap_or_default();
                 return Err(FireflyError::JobFailed {
                     job_id: submission.job_id.clone(),
                     status: format!("{:?}", envelope.status).to_lowercase(),
@@ -298,8 +318,10 @@ impl FireflyClient {
                 body: auth::truncate(&body, 512),
             });
         }
-        serde_json::from_str(&body)
-            .map_err(|source| FireflyError::Decode { endpoint: status_url.to_string(), source })
+        serde_json::from_str(&body).map_err(|source| FireflyError::Decode {
+            endpoint: status_url.to_string(),
+            source,
+        })
     }
 
     /// Download every output URL in `result` concurrently.
@@ -323,7 +345,12 @@ impl FireflyClient {
                     .unwrap_or("image/jpeg")
                     .to_string();
                 let bytes = resp.bytes().await?.to_vec();
-                Ok::<FireflyImage, FireflyError>(FireflyImage { bytes, content_type, seed, index })
+                Ok::<FireflyImage, FireflyError>(FireflyImage {
+                    bytes,
+                    content_type,
+                    seed,
+                    index,
+                })
             });
         }
 
@@ -339,7 +366,7 @@ impl FireflyClient {
                         status: "panicked".to_string(),
                         detail: join_err.to_string(),
                     });
-                },
+                }
             }
         }
         images.sort_by_key(|img| img.index);

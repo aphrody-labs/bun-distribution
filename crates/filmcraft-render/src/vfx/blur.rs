@@ -63,21 +63,32 @@ pub fn bokeh(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let inv = 1.0 / taps.len() as f32;
     let src = work.clone();
     let w = work.w;
-    work.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let mut acc = [0f32; 4];
-            for &(dx, dy) in &taps {
-                let p = src.sample_bilinear_clamped(x as f32 + 0.5 + dx, y as f32 + 0.5 + dy);
+    work.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let mut acc = [0f32; 4];
+                for &(dx, dy) in &taps {
+                    let p = src.sample_bilinear_clamped(x as f32 + 0.5 + dx, y as f32 + 0.5 + dy);
+                    for k in 0..4 {
+                        acc[k] += p[k];
+                    }
+                }
                 for k in 0..4 {
-                    acc[k] += p[k];
+                    row[x * 4 + k] = acc[k] * inv;
                 }
             }
-            for k in 0..4 {
-                row[x * 4 + k] = acc[k] * inv;
-            }
-        }
-    });
-    *img = if down > 1.0 { work.transformed(fw, fh, &Affine::scale(fw as f64 / work.w as f64, fh as f64 / work.h as f64)) } else { work };
+        });
+    *img = if down > 1.0 {
+        work.transformed(
+            fw,
+            fh,
+            &Affine::scale(fw as f64 / work.w as f64, fh as f64 / work.h as f64),
+        )
+    } else {
+        work
+    };
 }
 
 /// Blur one channel of an image (0..3) with a Gaussian.
@@ -85,9 +96,22 @@ fn blur_channel(img: &mut Image, ch: usize, sx: f32, sy: f32, repeat: bool) {
     if sx <= 0.3 && sy <= 0.3 {
         return;
     }
-    let mut plane = Image { w: img.w, h: img.h, px: img.px.as_chunks::<4>().0.iter().flat_map(|p| [p[ch], 0.0, 0.0, 0.0]).collect() };
+    let mut plane = Image {
+        w: img.w,
+        h: img.h,
+        px: img
+            .px
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|p| [p[ch], 0.0, 0.0, 0.0])
+            .collect(),
+    };
     gaussian(&mut plane, sx, sy, repeat);
-    img.px.par_chunks_mut(4).zip(plane.px.par_chunks(4)).for_each(|(p, q)| p[ch] = q[0]);
+    img.px
+        .par_chunks_mut(4)
+        .zip(plane.px.par_chunks(4))
+        .for_each(|(p, q)| p[ch] = q[0]);
 }
 
 /// Channel Blur: independent Gaussian blur per R, G, B and alpha.
@@ -96,7 +120,13 @@ pub fn channel_blur(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let repeat = bv(e, "repeat_edge");
     for (ch, id) in ["red", "green", "blue", "alpha"].iter().enumerate() {
         let s = fv(e, id, cx) * cx.px_scale * 0.5;
-        blur_channel(img, ch, if dims == 2 { 0.0 } else { s }, if dims == 1 { 0.0 } else { s }, repeat);
+        blur_channel(
+            img,
+            ch,
+            if dims == 2 { 0.0 } else { s },
+            if dims == 1 { 0.0 } else { s },
+            repeat,
+        );
     }
 }
 
@@ -117,18 +147,23 @@ fn variable_blur(img: &mut Image, max_sigma: f32, amount: impl Fn(usize, usize) 
         })
         .collect();
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let a = amount(x, y).clamp(0.0, 1.0);
-            let i = levels.partition_point(|&l| l <= a).clamp(1, levels.len() - 1);
-            let (l0, l1) = (levels[i - 1], levels[i]);
-            let t = ((a - l0) / (l1 - l0)).clamp(0.0, 1.0);
-            let (p0, p1) = (stack[i - 1].get(x, y), stack[i].get(x, y));
-            for k in 0..4 {
-                row[x * 4 + k] = p0[k] + (p1[k] - p0[k]) * t;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let a = amount(x, y).clamp(0.0, 1.0);
+                let i = levels
+                    .partition_point(|&l| l <= a)
+                    .clamp(1, levels.len() - 1);
+                let (l0, l1) = (levels[i - 1], levels[i]);
+                let t = ((a - l0) / (l1 - l0)).clamp(0.0, 1.0);
+                let (p0, p1) = (stack[i - 1].get(x, y), stack[i].get(x, y));
+                for k in 0..4 {
+                    row[x * 4 + k] = p0[k] + (p1[k] - p0[k]) * t;
+                }
             }
-        }
-    });
+        });
 }
 
 /// Compound Blur: blur amount per pixel from a blur layer's luminance (another track, or this
@@ -137,7 +172,12 @@ pub fn compound(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let max = fv(e, "max", cx) * cx.px_scale * 0.5;
     let invert = bv(e, "invert");
     let layer = chv(e, "layer") as usize;
-    let track = if layer > 0 { cx.env.and_then(|env| env.track(layer - 1).map(|t| (t, env.layer_to_output()))) } else { None };
+    let track = if layer > 0 {
+        cx.env
+            .and_then(|env| env.track(layer - 1).map(|t| (t, env.layer_to_output())))
+    } else {
+        None
+    };
     let stretch = bv(e, "stretch");
     let own = img.clone();
     let (iw, ih) = (img.w as f64, img.h as f64);
@@ -147,7 +187,10 @@ pub fn compound(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 let p = if stretch {
                     m.apply(Vec2::new(x as f64 + 0.5, y as f64 + 0.5))
                 } else {
-                    Vec2::new((x as f64 + 0.5) / iw * t.w as f64, (y as f64 + 0.5) / ih * t.h as f64)
+                    Vec2::new(
+                        (x as f64 + 0.5) / iw * t.w as f64,
+                        (y as f64 + 0.5) / ih * t.h as f64,
+                    )
                 };
                 let s = t.sample_bilinear_clamped(p.x as f32, p.y as f32);
                 filmcraft_color::linear_to_srgb(luma([s[0], s[1], s[2]]).clamp(0.0, 1.0))
@@ -172,19 +215,26 @@ pub fn focus(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let show = bv(e, "show");
     let dist = |x: usize, y: usize| -> f32 {
         let (dx, dy) = (x as f64 + 0.5 - c.x, y as f64 + 0.5 - c.y);
-        let d = if linear { (-dx * s + dy * co).abs() } else { dx.hypot(dy) };
+        let d = if linear {
+            (-dx * s + dy * co).abs()
+        } else {
+            dx.hypot(dy)
+        };
         (((d - size) / feather).clamp(0.0, 1.0)) as f32
     };
     variable_blur(img, amount, dist);
     if show {
         let w = img.w;
-        img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-            for x in 0..w {
-                let k = (1.0 - dist(x, y)) * 0.35;
-                let p = &mut row[x * 4..x * 4 + 4];
-                over(p, [k, 0.0, 0.0, k]);
-            }
-        });
+        img.px
+            .par_chunks_mut(w * 4)
+            .enumerate()
+            .for_each(|(y, row)| {
+                for x in 0..w {
+                    let k = (1.0 - dist(x, y)) * 0.35;
+                    let p = &mut row[x * 4..x * 4 + 4];
+                    over(p, [k, 0.0, 0.0, k]);
+                }
+            });
     }
 }
 

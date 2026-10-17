@@ -30,7 +30,8 @@ fn gpu_export_frame_renderer_factory() -> Option<Box<dyn filmcraft_export::Frame
             self.0.render(project, seq, t, opts, sources)
         }
     }
-    filmcraft_gpu::ExportRenderer::new().map(|r| Box::new(R(r)) as Box<dyn filmcraft_export::FrameRenderer>)
+    filmcraft_gpu::ExportRenderer::new()
+        .map(|r| Box::new(R(r)) as Box<dyn filmcraft_export::FrameRenderer>)
 }
 
 fn median(v: &[f64]) -> f64 {
@@ -88,7 +89,9 @@ pub fn decode(o: &Opts) -> Vec<Value> {
             frames = n;
             let (t0, c0) = (Instant::now(), cpu_now());
             for f in 0..n {
-                if let Err(e) = src.video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(f))) {
+                if let Err(e) =
+                    src.video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(f)))
+                {
                     eprintln!("decode {name} frame {f}: {e}");
                     break;
                 }
@@ -130,16 +133,28 @@ pub fn decode(o: &Opts) -> Vec<Value> {
 /// seek (cold GOP cache). CPU time and samples decoded do not depend on load; wall time does.
 pub fn seek(o: &Opts) -> Vec<Value> {
     let seeks = if o.quick { 4 } else { 12 };
-    let modes: [(&str, Option<Tick>); 3] = [("full", None), ("keep 2 s", Some(Tick::from_seconds_f64(2.0))), ("late", Some(Tick::ZERO))];
+    let modes: [(&str, Option<Tick>); 3] = [
+        ("full", None),
+        ("keep 2 s", Some(Tick::from_seconds_f64(2.0))),
+        ("late", Some(Tick::ZERO)),
+    ];
     let mut rows = Vec::new();
-    for name in ["a1080.mp4", "a2160.mp4", "hevc2160.mp4"].into_iter().filter(|n| o.wants(n)) {
+    for name in ["a1080.mp4", "a2160.mp4", "hevc2160.mp4"]
+        .into_iter()
+        .filter(|n| o.wants(n))
+    {
         let Some(path) = fixture(name) else {
             eprintln!("seek {name}: skipped (fixture unavailable)");
             continue;
         };
         let bytes: Arc<[u8]> = std::fs::read(&path).expect("read fixture").into();
         let mut rng = 0x2545_f491_4f6c_dd1du64;
-        let (mut wall, mut cpu, mut dec, mut skip) = ([vec![], vec![], vec![]], [vec![], vec![], vec![]], [0u64; 3], [0u64; 3]);
+        let (mut wall, mut cpu, mut dec, mut skip) = (
+            [vec![], vec![], vec![]],
+            [vec![], vec![], vec![]],
+            [0u64; 3],
+            [0u64; 3],
+        );
         for _ in 0..seeks {
             rng ^= rng << 13;
             rng ^= rng >> 7;
@@ -150,7 +165,10 @@ pub fn seek(o: &Opts) -> Vec<Value> {
                 let n = rate.frame_at(src.info().duration).max(1);
                 let t = rate.tick_of((rng % n as u64) as i64);
                 let (g0, t0, c0) = (filmcraft_codecs::gop_stats(), Instant::now(), cpu_now());
-                filmcraft_media::cancel::with_catch_up(*margin, || src.video_frame(filmcraft_media::FrameRequest::full(t))).expect("frame");
+                filmcraft_media::cancel::with_catch_up(*margin, || {
+                    src.video_frame(filmcraft_media::FrameRequest::full(t))
+                })
+                .expect("frame");
                 wall[m].push(ms(t0.elapsed()));
                 cpu[m].push(ms(cpu_now() - c0));
                 let g = filmcraft_codecs::gop_stats() - g0;
@@ -164,7 +182,11 @@ pub fn seek(o: &Opts) -> Vec<Value> {
                 "p50_ms": pct(&wall[m], 0.5), "p95_ms": pct(&wall[m], 0.95), "cpu_ms_mean": cpu[m].iter().sum::<f64>() / seeks as f64,
                 "decoded_per_seek": dec[m] as f64 / seeks as f64, "skipped_per_seek": skip[m] as f64 / seeks as f64, "load": load_avg(),
             });
-            eprintln!("seek {name} {mode}: p50 {:.0} ms, CPU {:.0} ms", pct(&wall[m], 0.5), cpu[m].iter().sum::<f64>() / seeks as f64);
+            eprintln!(
+                "seek {name} {mode}: p50 {:.0} ms, CPU {:.0} ms",
+                pct(&wall[m], 0.5),
+                cpu[m].iter().sum::<f64>() / seeks as f64
+            );
             rows.push(row);
         }
     }
@@ -174,9 +196,19 @@ pub fn seek(o: &Opts) -> Vec<Value> {
 // ------------------------------------------------------------------------------------ playback
 
 fn new_bench(s: &Session, seconds: f64) -> Bench {
-    let server = FrameServer::new(s.media.clone(), s.services.clone(), s.previews.clone(), FrameServer::default_workers());
+    let server = FrameServer::new(
+        s.media.clone(),
+        s.services.clone(),
+        s.previews.clone(),
+        FrameServer::default_workers(),
+    );
     server.set_profiling(true);
-    Bench { server, refresh_hz: 60.0, seconds, draft: false }
+    Bench {
+        server,
+        refresh_hz: 60.0,
+        seconds,
+        draft: false,
+    }
 }
 
 /// Program-monitor playback through the real scheduler (see `playback.rs`), frames shown vs
@@ -205,20 +237,38 @@ pub fn playback(o: &Opts) -> Vec<Value> {
         ("av1-2160", "half draft", 0.5, true),
     ];
     let mut rows = Vec::new();
-    for &(scenario, res, scale, draft) in cases.iter().filter(|c| o.wants(&format!("{} {}", c.0, c.1))) {
+    for &(scenario, res, scale, draft) in cases
+        .iter()
+        .filter(|c| o.wants(&format!("{} {}", c.0, c.1)))
+    {
         let Some((s, seq)) = playback::scenario_session(scenario) else {
             eprintln!("playback {scenario}: skipped (fixtures unavailable)");
             continue;
         };
-        let fps = s.project.sequence(seq).map(|q| q.settings.frame_rate.as_f64()).unwrap_or(24.0);
+        let fps = s
+            .project
+            .sequence(seq)
+            .map(|q| q.settings.frame_rate.as_f64())
+            .unwrap_or(24.0);
         for rep in 0..o.repeat {
             // A fresh frame server per run: caches start cold, as after opening a project.
             let mut bench = new_bench(&s, seconds);
             bench.draft = draft;
             let mut display = Display::new(o.gpu);
-            let path = if display.gpu_available() { "gpu" } else { "cpu" };
+            let path = if display.gpu_available() {
+                "gpu"
+            } else {
+                "cpu"
+            };
             let hw0 = filmcraft_codecs::hw::hw_stats();
-            let r = bench.play(&s, seq, &mut display, scale, Tick::ZERO, &format!("{scenario} {res} #{}", rep + 1));
+            let r = bench.play(
+                &s,
+                seq,
+                &mut display,
+                scale,
+                Tick::ZERO,
+                &format!("{scenario} {res} #{}", rep + 1),
+            );
             let mut v = playback::to_json(&r, scenario, res, path);
             let frames = (r.shown + r.dropped).max(1) as f64;
             v["drop_pct"] = json!(100.0 * r.dropped as f64 / frames);
@@ -234,7 +284,10 @@ pub fn playback(o: &Opts) -> Vec<Value> {
             v["hw_fallbacks"] = json!(hw.fallbacks - hw0.fallbacks);
             v["load"] = json!(r.load);
             v["cores_needed"] = json!(r.process_cpu / frames * fps / 1000.0);
-            eprintln!("playback {scenario} {res}: {}/{} shown/dropped (load {})", r.shown, r.dropped, r.load);
+            eprintln!(
+                "playback {scenario} {res}: {}/{} shown/dropped (load {})",
+                r.shown, r.dropped, r.load
+            );
             rows.push(v);
         }
     }
@@ -248,7 +301,10 @@ pub fn playback(o: &Opts) -> Vec<Value> {
 pub fn scrub(o: &Opts) -> Vec<Value> {
     let (seeks, drags) = if o.quick { (8, 3) } else { (24, 8) };
     let mut rows = Vec::new();
-    for scenario in ["h264-1080", "h264-2160", "hevc-2160"].into_iter().filter(|s| o.wants(s)) {
+    for scenario in ["h264-1080", "h264-2160", "hevc-2160"]
+        .into_iter()
+        .filter(|s| o.wants(s))
+    {
         let Some((s, seq)) = playback::scenario_session(scenario) else {
             eprintln!("scrub {scenario}: skipped (fixtures unavailable)");
             continue;
@@ -256,7 +312,16 @@ pub fn scrub(o: &Opts) -> Vec<Value> {
         for _ in 0..o.repeat {
             let bench = new_bench(&s, 0.0);
             let mut display = Display::new(o.gpu);
-            let r = bench.scrub(&s, seq, &mut display, 1.0, seeks, drags, 24, Duration::from_secs(8));
+            let r = bench.scrub(
+                &s,
+                seq,
+                &mut display,
+                1.0,
+                seeks,
+                drags,
+                24,
+                Duration::from_secs(8),
+            );
             let positions = (seeks + drags) as f64;
             let row = json!({
                 "scenario": scenario,
@@ -266,7 +331,12 @@ pub fn scrub(o: &Opts) -> Vec<Value> {
                 "timeouts": r.timeouts, "gop_seeks": r.gop.seeks, "decoded": r.gop.decoded, "skipped": r.gop.skipped,
                 "decoded_per_seek": r.gop.decoded as f64 / positions, "process_cpu_ms": r.process_cpu_ms, "load": r.load,
             });
-            eprintln!("scrub {scenario}: seek p50 {:.0} ms p95 {:.0} ms (load {})", pct(&r.seek_ms, 0.5), pct(&r.seek_ms, 0.95), r.load);
+            eprintln!(
+                "scrub {scenario}: seek p50 {:.0} ms p95 {:.0} ms (load {})",
+                pct(&r.seek_ms, 0.5),
+                pct(&r.seek_ms, 0.95),
+                r.load
+            );
             rows.push(row);
         }
     }
@@ -288,18 +358,34 @@ pub fn big_sequence(s: &mut Session, item: ItemId, name: &str, seed: u64) -> (It
         rng
     };
     s.edit("bench sequence", |p: &mut Project, st| {
-        let settings = SequenceSettings { width: 1920, height: 1080, frame_rate: rate, ..SequenceSettings::default() };
+        let settings = SequenceSettings {
+            width: 1920,
+            height: 1080,
+            frame_rate: rate,
+            ..SequenceSettings::default()
+        };
         let seq = p.new_sequence(name, settings, 12, 8, None);
         let mut clips = 0;
         for t in 0..20 {
-            let kind = if t < 12 { TrackKind::Video } else { TrackKind::Audio };
+            let kind = if t < 12 {
+                TrackKind::Video
+            } else {
+                TrackKind::Audio
+            };
             let mut at = (next() % 24) as i64;
             let mut items = Vec::new();
             for _ in 0..50 {
                 let len = 24 + (next() % 48) as i64;
                 let src_in = (next() % (src_frames - len) as u64) as i64;
-                let mut it =
-                    p.make_track_item(item, kind, rate.tick_of(at), TimeRange::new(rate.tick_of(src_in), rate.tick_of(len)), rate).expect("track item");
+                let mut it = p
+                    .make_track_item(
+                        item,
+                        kind,
+                        rate.tick_of(at),
+                        TimeRange::new(rate.tick_of(src_in), rate.tick_of(len)),
+                        rate,
+                    )
+                    .expect("track item");
                 // "auto" (NaN) Motion points resolve against the frame, as the edit commands do
                 for e in &mut it.effects {
                     filmcraft_project::resolve_auto_points(e, (1920, 1080), (640, 360));
@@ -369,7 +455,9 @@ pub fn timeline(o: &Opts) -> Vec<Value> {
         let (_, clips) = big_sequence(&mut s, item, "Timeline 1000", 7);
         let (tx, rx) = std::sync::mpsc::channel();
         let app = filmcraft_ui_egui::FilmcraftApp::new(s).with_control(rx);
-        let mut b = egui_kittest::Harness::builder().with_size(egui::vec2(1920.0, 1080.0)).with_max_steps(100_000);
+        let mut b = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1920.0, 1080.0))
+            .with_max_steps(100_000);
         if gpu {
             b = b.wgpu();
         }
@@ -378,10 +466,17 @@ pub fn timeline(o: &Opts) -> Vec<Value> {
         for _ in 0..8 {
             ui.frame();
         }
-        ui.call("ui.set", json!({"timeline": {"videoTrackHeight": 34, "audioTrackHeight": 30}}));
-        for (view, setup) in
-            [("fit: all 1000 clips", json!({"timeline": {"fit": true}})), ("zoomed, scrolling", json!({"timeline": {"pps": 120.0, "scroll": 0.0}}))]
-        {
+        ui.call(
+            "ui.set",
+            json!({"timeline": {"videoTrackHeight": 34, "audioTrackHeight": 30}}),
+        );
+        for (view, setup) in [
+            ("fit: all 1000 clips", json!({"timeline": {"fit": true}})),
+            (
+                "zoomed, scrolling",
+                json!({"timeline": {"pps": 120.0, "scroll": 0.0}}),
+            ),
+        ] {
             ui.call("ui.set", setup);
             // settle the zoom animation, let thumbnails and waveforms arrive
             let t_settle = Instant::now();
@@ -389,7 +484,8 @@ pub fn timeline(o: &Opts) -> Vec<Value> {
                 ui.frame();
                 std::thread::sleep(Duration::from_millis(5));
             }
-            let (mut upd, mut tess, mut rend, mut total) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+            let (mut upd, mut tess, mut rend, mut total) =
+                (Vec::new(), Vec::new(), Vec::new(), Vec::new());
             let mut vertices = 0usize;
             let mut shapes = 0usize;
             let scrolling = view.starts_with("zoomed");
@@ -408,7 +504,10 @@ pub fn timeline(o: &Opts) -> Vec<Value> {
                 let out = ui.harness.output();
                 shapes = out.shapes.len();
                 let t1 = Instant::now();
-                let prims = ui.harness.ctx.tessellate(out.shapes.clone(), out.pixels_per_point);
+                let prims = ui
+                    .harness
+                    .ctx
+                    .tessellate(out.shapes.clone(), out.pixels_per_point);
                 let te = ms(t1.elapsed());
                 vertices = prims
                     .iter()
@@ -431,7 +530,11 @@ pub fn timeline(o: &Opts) -> Vec<Value> {
                     rend.push(r);
                 }
             }
-            eprintln!("timeline {view}: update p50 {:.2} ms, p95 {:.2} ms", pct(&upd, 0.5), pct(&upd, 0.95));
+            eprintln!(
+                "timeline {view}: update p50 {:.2} ms, p95 {:.2} ms",
+                pct(&upd, 0.5),
+                pct(&upd, 0.95)
+            );
             rows.push(json!({
                 "view": view, "clips": clips, "frames": frames, "gpu": gpu,
                 "update_p50_ms": pct(&upd, 0.5), "update_p95_ms": pct(&upd, 0.95),
@@ -461,10 +564,19 @@ pub fn export(o: &Opts) -> Vec<Value> {
     // so `--only h264` runs the plain scene and `--only h264_fx` only the layered one.
     let scenes = [
         ("h264", "h264", "H.264 + AAC (MP4)", "mp4", false),
-        ("h264_fx", "h264", "H.264 + AAC, 3 layers + effects", "mp4", true),
+        (
+            "h264_fx",
+            "h264",
+            "H.264 + AAC, 3 layers + effects",
+            "mp4",
+            true,
+        ),
         ("prores", "prores", "ProRes 422 (MOV)", "mov", false),
     ];
-    for (id, format, label, ext, fx) in scenes.into_iter().filter(|f| o.only.as_deref().is_none_or(|x| x == f.0)) {
+    for (id, format, label, ext, fx) in scenes
+        .into_iter()
+        .filter(|f| o.only.as_deref().is_none_or(|x| x == f.0))
+    {
         let mut runs = Vec::new();
         let mut cpu = Vec::new();
         let mut bytes = 0u64;
@@ -480,23 +592,50 @@ pub fn export(o: &Opts) -> Vec<Value> {
             let a = playback::import(&mut s, &path);
             let seq = if fx {
                 // PiP layers: (scale %, position, rotation, opacity %); effects per layer, GPU-capable only
-                let layers = [(a, 100.0, None, 0.0, 100.0), (a, 50.0, Some((480.0, -270.0)), 0.0, 100.0), (a, 33.0, Some((-560.0, 300.0)), 0.0, 70.0)];
-                let per_layer: [&[&str]; 3] = [&["proc_amp", "gaussian_blur", "vignette"], &["brightness_contrast"], &["sharpen"]];
+                let layers = [
+                    (a, 100.0, None, 0.0, 100.0),
+                    (a, 50.0, Some((480.0, -270.0)), 0.0, 100.0),
+                    (a, 33.0, Some((-560.0, 300.0)), 0.0, 70.0),
+                ];
+                let per_layer: [&[&str]; 3] = [
+                    &["proc_amp", "gaussian_blur", "vignette"],
+                    &["brightness_contrast"],
+                    &["sharpen"],
+                ];
                 playback::build_sequence_fx(&mut s, 1920, 1080, &layers, &per_layer, secs)
             } else {
-                playback::build_sequence(&mut s, 1920, 1080, &[(a, 100.0, None, 0.0, 100.0)], &[], secs)
+                playback::build_sequence(
+                    &mut s,
+                    1920,
+                    1080,
+                    &[(a, 100.0, None, 0.0, 100.0)],
+                    &[],
+                    secs,
+                )
             };
             // build_sequence adds video only: add the clip's audio on A1 for the AAC encode
             s.edit("audio", |p, _| {
                 let rate = FrameRate::FPS_23_976;
                 let it = p
-                    .make_track_item(a, TrackKind::Audio, Tick::ZERO, TimeRange::new(Tick::ZERO, rate.snap(Tick::from_seconds_f64(secs))), rate)
+                    .make_track_item(
+                        a,
+                        TrackKind::Audio,
+                        Tick::ZERO,
+                        TimeRange::new(Tick::ZERO, rate.snap(Tick::from_seconds_f64(secs))),
+                        rate,
+                    )
                     .expect("audio item");
-                p.sequence_mut(seq).expect("seq").audio_tracks[0].items.push(it);
+                p.sequence_mut(seq).expect("seq").audio_tracks[0]
+                    .items
+                    .push(it);
                 Ok(())
             })
             .expect("audio");
-            frames = s.project.sequence(seq).map(|q| q.settings.frame_rate.frame_at(q.duration())).unwrap_or(0);
+            frames = s
+                .project
+                .sequence(seq)
+                .map(|q| q.settings.frame_rate.frame_at(q.duration()))
+                .unwrap_or(0);
             let out = dir.join(format!("out.{ext}"));
             filmcraft_export::reset_export_lock_wait();
             filmcraft_gpu::export_renderer::timing::reset();
@@ -509,7 +648,11 @@ pub fn export(o: &Opts) -> Vec<Value> {
                 eprintln!("export {format}: {e}");
                 break;
             }
-            if let Some(e) = s.jobs.last().and_then(|j| j.progress.error.lock().ok().and_then(|g| g.clone())) {
+            if let Some(e) = s
+                .jobs
+                .last()
+                .and_then(|j| j.progress.error.lock().ok().and_then(|g| g.clone()))
+            {
                 eprintln!("export {format}: {e}");
                 break;
             }
@@ -574,17 +717,26 @@ pub fn project(o: &Opts) -> Vec<Value> {
     let (mut save, mut open) = (Vec::new(), Vec::new());
     for _ in 0..n {
         let t0 = Instant::now();
-        s.execute("file.saveAs", json!({"path": file.to_string_lossy()})).expect("save");
+        s.execute("file.saveAs", json!({"path": file.to_string_lossy()}))
+            .expect("save");
         save.push(ms(t0.elapsed()));
         let mut s2 = Session::default();
         let t1 = Instant::now();
-        s2.execute("file.open", json!({"path": file.to_string_lossy()})).expect("open");
+        s2.execute("file.open", json!({"path": file.to_string_lossy()}))
+            .expect("open");
         open.push(ms(t1.elapsed()));
         assert_eq!(s2.project.items.len(), s.project.items.len());
     }
     let mbytes = std::fs::metadata(&file).map(|m| m.len()).unwrap_or(0) as f64 / 1e6;
     let _ = std::fs::remove_dir_all(&dir);
-    eprintln!("project: save {:.0} ms, open {:.0} ms ({clips} clips, {mbytes:.1} MB)", median(&save), median(&open));
+    eprintln!(
+        "project: save {:.0} ms, open {:.0} ms ({clips} clips, {mbytes:.1} MB)",
+        median(&save),
+        median(&open)
+    );
     let row = |what: &str, v: &[f64]| json!({"what": what, "clips": clips, "mbytes": mbytes, "p50_ms": median(v), "min_ms": v.iter().cloned().fold(f64::MAX, f64::min), "runs_ms": v, "load": load_avg()});
-    vec![row("save (file.saveAs)", &save), row("open (file.open)", &open)]
+    vec![
+        row("save (file.saveAs)", &save),
+        row("open (file.open)", &open),
+    ]
 }

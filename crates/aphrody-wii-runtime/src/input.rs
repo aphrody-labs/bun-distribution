@@ -53,7 +53,10 @@ pub fn aim_to_ir(aim_x: f32, aim_y: f32) -> (u16, u16) {
 
 impl HostInput {
     pub fn gc_connected() -> Self {
-        Self::Gc(pad::PadStatus { connected: true, ..pad::PadStatus::default() })
+        Self::Gc(pad::PadStatus {
+            connected: true,
+            ..pad::PadStatus::default()
+        })
     }
 
     pub fn wii_neutral() -> Self {

@@ -28,7 +28,16 @@ const OFF: u8 = u8::MAX;
 static QUEUE: Mutex<Vec<Value>> = Mutex::new(Vec::new());
 
 /// RFC 5424 severities, from the least to the most severe, as the spec orders them.
-const LEVELS: [&str; 8] = ["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"];
+const LEVELS: [&str; 8] = [
+    "debug",
+    "info",
+    "notice",
+    "warning",
+    "error",
+    "critical",
+    "alert",
+    "emergency",
+];
 
 /// The severity a `logging/setLevel` level names, and the `log` level it filters at. `None` for
 /// anything the spec doesn't name.
@@ -71,7 +80,9 @@ pub fn set_level(level: Option<&str>) -> Result<(), UnknownLevel> {
         clear();
         return Ok(());
     };
-    let Some((index, parsed)) = parse(name) else { return Err(UnknownLevel) };
+    let Some((index, parsed)) = parse(name) else {
+        return Err(UnknownLevel);
+    };
     LEVEL.store(index, Ordering::Relaxed);
     log::set_max_level(parsed.to_level_filter());
     // Records already queued at the old level are dropped rather than leaked at the new one.
@@ -173,8 +184,16 @@ mod tests {
         install();
         assert_eq!(set_level(Some("warning")), Ok(()));
         assert_eq!(level(), Some("warning"));
-        assert_eq!(set_level(Some("nope")), Err(UnknownLevel), "an unknown level changes nothing");
-        assert_eq!(level(), Some("warning"), "the old level survives a bad request");
+        assert_eq!(
+            set_level(Some("nope")),
+            Err(UnknownLevel),
+            "an unknown level changes nothing"
+        );
+        assert_eq!(
+            level(),
+            Some("warning"),
+            "the old level survives a bad request"
+        );
         assert_eq!(set_level(Some("emergency")), Ok(()));
         assert_eq!(level(), Some("emergency"));
         assert_eq!(set_level(None), Ok(()));
@@ -206,9 +225,18 @@ mod tests {
         log::warn!("hello {name}", name = "world");
         // Another test thread may log while logging is on, so look for ours rather than counting.
         let got = drain();
-        let ours = got.iter().find(|m| m["data"] == "hello world").unwrap_or_else(|| panic!("not in {got:?}"));
+        let ours = got
+            .iter()
+            .find(|m| m["data"] == "hello world")
+            .unwrap_or_else(|| panic!("not in {got:?}"));
         assert_eq!(ours["level"], "warning");
-        assert!(ours["logger"].as_str().unwrap_or_default().starts_with("vectorcraft_mcp"), "{ours}");
+        assert!(
+            ours["logger"]
+                .as_str()
+                .unwrap_or_default()
+                .starts_with("vectorcraft_mcp"),
+            "{ours}"
+        );
 
         // Below the requested level stays out.
         set_level(Some("error")).ok();

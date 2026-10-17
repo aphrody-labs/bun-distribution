@@ -88,13 +88,17 @@ fn mv(s: &mut Session, v: &Value, f: fn(&mut Session, &Pos) -> Pos) -> CmdResult
 
 /// Does the caret's paragraph read right to left?
 fn rtl_para(s: &Session) -> bool {
-    s.doc.para_at(&s.sel.focus).is_some_and(|p| s.doc.styles.resolve_para(&p.props).bidi)
+    s.doc
+        .para_at(&s.sel.focus)
+        .is_some_and(|p| s.doc.styles.resolve_para(&p.props).bidi)
 }
 
 /// Is the caret's paragraph bidirectional (right to left, or with right-to-left text)? Arrow keys
 /// move visually there.
 fn bidi_para(s: &Session) -> bool {
-    s.doc.para_at(&s.sel.focus).is_some_and(|p| wordcraft_doc::bidi::has_rtl(&p.text) || s.doc.styles.resolve_para(&p.props).bidi)
+    s.doc.para_at(&s.sel.focus).is_some_and(|p| {
+        wordcraft_doc::bidi::has_rtl(&p.text) || s.doc.styles.resolve_para(&p.props).bidi
+    })
 }
 
 /// Left/Right: with a selection and no Shift, collapse to its edge.
@@ -123,8 +127,16 @@ fn visual_lr(s: &mut Session, v: &Value, is_left: bool) -> CmdResult {
     let l = s.layout();
     let to = match l.visual_step(&from, is_left, s.page_hint) {
         Some(wordcraft_layout::VisualStep::Moved(p)) => p,
-        Some(wordcraft_layout::VisualStep::Edge { start, stop, last_line, rtl }) => {
-            let at = |off| Pos { off, ..from.clone() };
+        Some(wordcraft_layout::VisualStep::Edge {
+            start,
+            stop,
+            last_line,
+            rtl,
+        }) => {
+            let at = |off| Pos {
+                off,
+                ..from.clone()
+            };
             if is_left != rtl {
                 match s.doc.para_at(&from) {
                     Some(para) if start > 0 => at(para.prev_boundary(start)),
@@ -148,12 +160,19 @@ fn left(s: &mut Session, p: &Pos) -> Pos {
     if let Some(para) = s.doc.para_at(p)
         && p.off > 0
     {
-        return Pos { off: para.prev_boundary(p.off), ..p.clone() };
+        return Pos {
+            off: para.prev_boundary(p.off),
+            ..p.clone()
+        };
     }
     match s.doc.prev_para(p.story, &p.path) {
         Some(q) => {
             let off = s.doc.para(p.story, &q).map(|x| x.len()).unwrap_or(0);
-            Pos { story: p.story, path: q, off }
+            Pos {
+                story: p.story,
+                path: q,
+                off,
+            }
         }
         None => p.clone(),
     }
@@ -163,41 +182,65 @@ fn right(s: &mut Session, p: &Pos) -> Pos {
     if let Some(para) = s.doc.para_at(p)
         && p.off < para.len()
     {
-        return Pos { off: para.next_boundary(p.off), ..p.clone() };
+        return Pos {
+            off: para.next_boundary(p.off),
+            ..p.clone()
+        };
     }
     match s.doc.next_para(p.story, &p.path) {
-        Some(q) => Pos { story: p.story, path: q, off: 0 },
+        Some(q) => Pos {
+            story: p.story,
+            path: q,
+            off: 0,
+        },
         None => p.clone(),
     }
 }
 
 fn word_left(s: &mut Session, p: &Pos) -> Pos {
     match s.doc.para_at(p) {
-        Some(para) if p.off > 0 => Pos { off: para.word_start(p.off), ..p.clone() },
+        Some(para) if p.off > 0 => Pos {
+            off: para.word_start(p.off),
+            ..p.clone()
+        },
         _ => left(s, p),
     }
 }
 
 fn word_right(s: &mut Session, p: &Pos) -> Pos {
     match s.doc.para_at(p) {
-        Some(para) if p.off < para.len() => Pos { off: para.word_end(p.off), ..p.clone() },
+        Some(para) if p.off < para.len() => Pos {
+            off: para.word_end(p.off),
+            ..p.clone()
+        },
         _ => right(s, p),
     }
 }
 
 fn para_up(s: &mut Session, p: &Pos) -> Pos {
     if p.off > 0 {
-        return Pos { off: 0, ..p.clone() };
+        return Pos {
+            off: 0,
+            ..p.clone()
+        };
     }
     match s.doc.prev_para(p.story, &p.path) {
-        Some(q) => Pos { story: p.story, path: q, off: 0 },
+        Some(q) => Pos {
+            story: p.story,
+            path: q,
+            off: 0,
+        },
         None => p.clone(),
     }
 }
 
 fn para_down(s: &mut Session, p: &Pos) -> Pos {
     match s.doc.next_para(p.story, &p.path) {
-        Some(q) => Pos { story: p.story, path: q, off: 0 },
+        Some(q) => Pos {
+            story: p.story,
+            path: q,
+            off: 0,
+        },
         None => {
             let off = s.doc.para_at(p).map(|x| x.len()).unwrap_or(0);
             Pos { off, ..p.clone() }
@@ -216,7 +259,11 @@ fn vert(s: &mut Session, v: &Value, dir: i32) -> CmdResult {
         }
         None => {
             // Top/bottom of the story: go to its start/end.
-            if dir < 0 { s.doc.start_of(from.story) } else { s.doc.end_of(from.story) }
+            if dir < 0 {
+                s.doc.start_of(from.story)
+            } else {
+                s.doc.end_of(from.story)
+            }
         }
     };
     if let Some(c) = l.caret_on(&to, s.page_hint) {
@@ -251,8 +298,14 @@ fn page(s: &mut Session, v: &Value, dir: i32) -> CmdResult {
     let ext = extend(v);
     let l = s.layout();
     let from = s.sel.focus.clone();
-    let Some(c) = l.caret_on(&from, s.page_hint) else { return sel_result(s) };
-    let np = if dir < 0 { c.page.saturating_sub(1) } else { (c.page + 1).min(l.pages.len().saturating_sub(1)) };
+    let Some(c) = l.caret_on(&from, s.page_hint) else {
+        return sel_result(s);
+    };
+    let np = if dir < 0 {
+        c.page.saturating_sub(1)
+    } else {
+        (c.page + 1).min(l.pages.len().saturating_sub(1))
+    };
     let to = l.hit(np, c.x, c.top + 1.0, from.story).unwrap_or(from);
     s.page_hint = np;
     apply(s, to, ext);
@@ -263,11 +316,13 @@ fn set(s: &mut Session, v: &Value) -> CmdResult {
     let ext = extend(v);
     let to = if let Some(pv) = v.get("pos") {
         parse_pos(pv).ok_or_else(|| CmdError::Params("bad `pos`".into()))?
-    } else if let (Some(pg), Some(x), Some(y)) = (p::u64(v, "page"), p::f32(v, "x"), p::f32(v, "y")) {
+    } else if let (Some(pg), Some(x), Some(y)) = (p::u64(v, "page"), p::f32(v, "x"), p::f32(v, "y"))
+    {
         let story = super::story_param(s, v);
         let l = s.layout();
         s.page_hint = pg as usize;
-        l.hit(pg as usize, x, y, story).ok_or_else(|| CmdError::Params("no text on that page".into()))?
+        l.hit(pg as usize, x, y, story)
+            .ok_or_else(|| CmdError::Params("no text on that page".into()))?
     } else {
         return Err(CmdError::Params("`pos` or `page`/`x`/`y` required".into()));
     };
@@ -279,14 +334,26 @@ fn set(s: &mut Session, v: &Value) -> CmdResult {
 
 fn select_all(s: &mut Session, _: &Value) -> CmdResult {
     let st = s.sel.focus.story;
-    s.sel = Selection { anchor: s.doc.start_of(st), focus: s.doc.end_of(st) };
+    s.sel = Selection {
+        anchor: s.doc.start_of(st),
+        focus: s.doc.end_of(st),
+    };
     sel_result(s)
 }
 
 fn select_range(s: &mut Session, v: &Value) -> CmdResult {
-    let a = v.get("anchor").and_then(parse_pos).ok_or_else(|| CmdError::Params("bad `anchor`".into()))?;
-    let b = v.get("focus").and_then(parse_pos).ok_or_else(|| CmdError::Params("bad `focus`".into()))?;
-    s.sel = Selection { anchor: s.doc.clamp(&a), focus: s.doc.clamp(&b) };
+    let a = v
+        .get("anchor")
+        .and_then(parse_pos)
+        .ok_or_else(|| CmdError::Params("bad `anchor`".into()))?;
+    let b = v
+        .get("focus")
+        .and_then(parse_pos)
+        .ok_or_else(|| CmdError::Params("bad `focus`".into()))?;
+    s.sel = Selection {
+        anchor: s.doc.clamp(&a),
+        focus: s.doc.clamp(&b),
+    };
     sel_result(s)
 }
 
@@ -319,16 +386,33 @@ impl Unit {
 /// includes its mark (it ends at the start of the next paragraph in the same container, when
 /// there is one), and so does its last line.
 pub fn unit_range(s: &mut Session, at: &Pos, unit: Unit) -> (Pos, Pos) {
-    let Some(p) = s.doc.para_at(at) else { return (at.clone(), at.clone()) };
+    let Some(p) = s.doc.para_at(at) else {
+        return (at.clone(), at.clone());
+    };
     let len = p.len();
     let mark_end = |s: &Session| match s.doc.next_para(at.story, &at.path) {
-        Some(q) if q.parent() == at.path.parent() => Pos { story: at.story, path: q, off: 0 },
-        _ => Pos { off: len, ..at.clone() },
+        Some(q) if q.parent() == at.path.parent() => Pos {
+            story: at.story,
+            path: q,
+            off: 0,
+        },
+        _ => Pos {
+            off: len,
+            ..at.clone()
+        },
     };
     let (a, b) = match unit {
         Unit::Word => p.word_at(at.off),
         Unit::Sentence => p.sentence_at(at.off),
-        Unit::Paragraph => return (Pos { off: 0, ..at.clone() }, mark_end(s)),
+        Unit::Paragraph => {
+            return (
+                Pos {
+                    off: 0,
+                    ..at.clone()
+                },
+                mark_end(s),
+            );
+        }
         Unit::Document => return (s.doc.start_of(at.story), s.doc.end_of(at.story)),
         Unit::Line => {
             let hint = s.page_hint;
@@ -339,14 +423,26 @@ pub fn unit_range(s: &mut Session, at: &Pos, unit: Unit) -> (Pos, Pos) {
             };
         }
     };
-    (Pos { off: a, ..at.clone() }, Pos { off: b, ..at.clone() })
+    (
+        Pos {
+            off: a,
+            ..at.clone()
+        },
+        Pos {
+            off: b,
+            ..at.clone()
+        },
+    )
 }
 
 fn select_unit(s: &mut Session, unit: Unit) -> CmdResult {
     let f = s.sel.focus.clone();
     if s.doc.para_at(&f).is_some() {
         let (a, b) = unit_range(s, &f, unit);
-        s.sel = Selection { anchor: a, focus: b };
+        s.sel = Selection {
+            anchor: a,
+            focus: b,
+        };
     }
     sel_result(s)
 }
@@ -377,23 +473,44 @@ fn select_line(s: &mut Session, v: &Value) -> CmdResult {
 /// the one under `pos`. Dragging forward anchors at the unit's start; dragging back before it
 /// anchors at its end, as in Word.
 fn drag_unit(s: &mut Session, v: &Value) -> CmdResult {
-    let unit = p::str(v, "unit")
-        .and_then(Unit::parse)
-        .ok_or_else(|| CmdError::Params("`unit` must be word, sentence, line, paragraph or document".into()))?;
-    let get = |k: &str| v.get(k).and_then(parse_pos).ok_or_else(|| CmdError::Params(format!("bad `{k}`")));
-    let (at, start, end) = (s.doc.clamp(&get("pos")?), s.doc.clamp(&get("start")?), s.doc.clamp(&get("end")?));
-    let (start, end) = if start <= end { (start, end) } else { (end, start) };
+    let unit = p::str(v, "unit").and_then(Unit::parse).ok_or_else(|| {
+        CmdError::Params("`unit` must be word, sentence, line, paragraph or document".into())
+    })?;
+    let get = |k: &str| {
+        v.get(k)
+            .and_then(parse_pos)
+            .ok_or_else(|| CmdError::Params(format!("bad `{k}`")))
+    };
+    let (at, start, end) = (
+        s.doc.clamp(&get("pos")?),
+        s.doc.clamp(&get("start")?),
+        s.doc.clamp(&get("end")?),
+    );
+    let (start, end) = if start <= end {
+        (start, end)
+    } else {
+        (end, start)
+    };
     // Only within one story (the pointer over another story keeps the selection).
     if at.story != start.story || end.story != start.story {
         return sel_result(s);
     }
     let (us, ue) = unit_range(s, &at, unit);
     s.sel = if unit == Unit::Document {
-        Selection { anchor: us, focus: ue }
+        Selection {
+            anchor: us,
+            focus: ue,
+        }
     } else if at >= start {
-        Selection { focus: ue.max(end.clone()), anchor: start }
+        Selection {
+            focus: ue.max(end.clone()),
+            anchor: start,
+        }
     } else {
-        Selection { focus: us.min(start), anchor: end }
+        Selection {
+            focus: us.min(start),
+            anchor: end,
+        }
     };
     s.goal_x = None;
     s.pending = None;
@@ -410,12 +527,24 @@ fn select_text(s: &mut Session, v: &Value) -> CmdResult {
     let mut count = 0;
     let story = super::story_param(s, v);
     for path in s.doc.para_paths(story) {
-        let Some(p) = s.doc.para(story, &path) else { continue };
+        let Some(p) = s.doc.para(story, &path) else {
+            continue;
+        };
         for (i, _) in p.text.match_indices(needle) {
             count += 1;
             if count == n {
-                s.sel =
-                    Selection { anchor: Pos { story, path: path.clone(), off: i }, focus: Pos { story, path: path.clone(), off: i + needle.len() } };
+                s.sel = Selection {
+                    anchor: Pos {
+                        story,
+                        path: path.clone(),
+                        off: i,
+                    },
+                    focus: Pos {
+                        story,
+                        path: path.clone(),
+                        off: i + needle.len(),
+                    },
+                };
                 return sel_result(s);
             }
         }

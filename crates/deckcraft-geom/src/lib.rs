@@ -3,7 +3,14 @@
 //! The document model keeps positions in points (1/72 inch) as `f64`. Office Open XML stores EMU
 //! (English Metric Units, 12 700 per point); [`emu_to_pt`] and [`pt_to_emu`] convert losslessly for
 //! integer EMU values, so files round-trip exactly.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod morph;
@@ -92,7 +99,11 @@ impl Unit {
 }
 
 fn split_number(t: &str) -> Option<(f64, &str)> {
-    let end = t.char_indices().find(|(_, c)| !(c.is_ascii_digit() || *c == '.' || *c == '-' || *c == '+')).map(|(i, _)| i).unwrap_or(t.len());
+    let end = t
+        .char_indices()
+        .find(|(_, c)| !(c.is_ascii_digit() || *c == '.' || *c == '-' || *c == '+'))
+        .map(|(i, _)| i)
+        .unwrap_or(t.len());
     let n: f64 = t.get(..end)?.parse().ok()?;
     Some((n, t.get(end..).unwrap_or("")))
 }
@@ -120,7 +131,13 @@ fn is_zero(v: &f64) -> bool {
 
 impl Xfrm {
     pub fn new(x: f64, y: f64, w: f64, h: f64) -> Self {
-        Xfrm { x, y, w, h, ..Default::default() }
+        Xfrm {
+            x,
+            y,
+            w,
+            h,
+            ..Default::default()
+        }
     }
     pub fn rect(&self) -> Rect {
         Rect::new(self.x, self.y, self.x + self.w, self.y + self.h)
@@ -141,14 +158,22 @@ impl Xfrm {
     /// Axis-aligned bounds of the rotated box in parent space.
     pub fn bounds(&self) -> Rect {
         let a = self.affine();
-        let pts = [Point::new(0.0, 0.0), Point::new(self.w, 0.0), Point::new(self.w, self.h), Point::new(0.0, self.h)].map(|p| a * p);
+        let pts = [
+            Point::new(0.0, 0.0),
+            Point::new(self.w, 0.0),
+            Point::new(self.w, self.h),
+            Point::new(0.0, self.h),
+        ]
+        .map(|p| a * p);
         let mut r = Rect::from_points(pts[0], pts[1]);
         r = r.union_pt(pts[2]).union_pt(pts[3]);
         r
     }
     /// True when no dimension is NaN/inf.
     pub fn is_finite(&self) -> bool {
-        [self.x, self.y, self.w, self.h, self.rot].iter().all(|v| v.is_finite())
+        [self.x, self.y, self.w, self.h, self.rot]
+            .iter()
+            .all(|v| v.is_finite())
     }
     /// Rotation normalised to 0..360.
     pub fn rot_norm(&self) -> f64 {
@@ -159,8 +184,16 @@ impl Xfrm {
 
 /// Maps a group's child coordinate space (`ch_off`, `ch_ext`) onto the group's own box.
 pub fn group_child_affine(group: &Xfrm, ch: Rect) -> Affine {
-    let sx = if ch.width().abs() > 1e-9 { group.w / ch.width() } else { 1.0 };
-    let sy = if ch.height().abs() > 1e-9 { group.h / ch.height() } else { 1.0 };
+    let sx = if ch.width().abs() > 1e-9 {
+        group.w / ch.width()
+    } else {
+        1.0
+    };
+    let sy = if ch.height().abs() > 1e-9 {
+        group.h / ch.height()
+    } else {
+        1.0
+    };
     group.affine() * Affine::scale_non_uniform(sx, sy) * Affine::translate(-ch.origin().to_vec2())
 }
 
@@ -209,7 +242,11 @@ pub fn near_path(path: &BezPath, p: Point, tol: f64) -> bool {
 
 /// Snap `v` to the nearest multiple of `step` (step <= 0 returns `v`).
 pub fn snap(v: f64, step: f64) -> f64 {
-    if step > 0.0 && step.is_finite() { (v / step).round() * step } else { v }
+    if step > 0.0 && step.is_finite() {
+        (v / step).round() * step
+    } else {
+        v
+    }
 }
 
 /// Flatten a path to move/line/close elements (tolerance 0.2).
@@ -223,7 +260,17 @@ mod tests {
 
     #[test]
     fn emu_roundtrip_is_exact() {
-        for emu in [0i64, 1, 12_699, 12_700, 914_400, 12_192_000, 6_858_000, -5, 123_456_789] {
+        for emu in [
+            0i64,
+            1,
+            12_699,
+            12_700,
+            914_400,
+            12_192_000,
+            6_858_000,
+            -5,
+            123_456_789,
+        ] {
             assert_eq!(pt_to_emu(emu_to_pt(emu)), emu);
         }
         assert_eq!(pt_to_emu(f64::NAN), 0);
@@ -243,7 +290,14 @@ mod tests {
 
     #[test]
     fn xfrm_affine_rotation_about_center() {
-        let x = Xfrm { x: 10.0, y: 20.0, w: 100.0, h: 50.0, rot: 90.0, ..Default::default() };
+        let x = Xfrm {
+            x: 10.0,
+            y: 20.0,
+            w: 100.0,
+            h: 50.0,
+            rot: 90.0,
+            ..Default::default()
+        };
         let c = x.affine() * Point::new(50.0, 25.0);
         assert!((c.x - 60.0).abs() < 1e-9 && (c.y - 45.0).abs() < 1e-9);
         let b = x.bounds();
@@ -252,7 +306,14 @@ mod tests {
 
     #[test]
     fn flips_mirror_local_space() {
-        let x = Xfrm { x: 0.0, y: 0.0, w: 100.0, h: 50.0, flip_h: true, ..Default::default() };
+        let x = Xfrm {
+            x: 0.0,
+            y: 0.0,
+            w: 100.0,
+            h: 50.0,
+            flip_h: true,
+            ..Default::default()
+        };
         let p = x.affine() * Point::new(0.0, 0.0);
         assert!((p.x - 100.0).abs() < 1e-9 && p.y.abs() < 1e-9);
     }
@@ -267,7 +328,23 @@ mod tests {
 
     #[test]
     fn segment_distance() {
-        assert!((dist_to_segment(Point::new(5.0, 5.0), Point::new(0.0, 0.0), Point::new(10.0, 0.0)) - 5.0).abs() < 1e-9);
-        assert!((dist_to_segment(Point::new(0.0, 3.0), Point::new(0.0, 0.0), Point::new(0.0, 0.0)) - 3.0).abs() < 1e-9);
+        assert!(
+            (dist_to_segment(
+                Point::new(5.0, 5.0),
+                Point::new(0.0, 0.0),
+                Point::new(10.0, 0.0)
+            ) - 5.0)
+                .abs()
+                < 1e-9
+        );
+        assert!(
+            (dist_to_segment(
+                Point::new(0.0, 3.0),
+                Point::new(0.0, 0.0),
+                Point::new(0.0, 0.0)
+            ) - 3.0)
+                .abs()
+                < 1e-9
+        );
     }
 }

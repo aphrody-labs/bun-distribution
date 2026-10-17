@@ -39,7 +39,7 @@ impl Extract {
         match rom.save(&self.path, key.as_ref()) {
             Err(RomSaveError::BlowfishKeyNeeded) => {
                 bail!("The ROM is encrypted, please provide ARM7 BIOS");
-            },
+            }
             result => Ok(result?),
         }
     }

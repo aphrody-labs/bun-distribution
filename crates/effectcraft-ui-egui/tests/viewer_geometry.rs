@@ -17,15 +17,23 @@ fn harness(width: f32, kind: ThemeKind) -> Harness<'static, EffectcraftApp> {
 
 fn harness_at_scale(width: f32, kind: ThemeKind, scale: f32) -> Harness<'static, EffectcraftApp> {
     let mut session = Session::default();
-    session.execute("comp.new", json!({"name":"Geometry validation", "width":640, "height":360, "duration":4})).unwrap();
-    let mut h = Harness::builder().with_size(vec2(width, 360.0)).with_pixels_per_point(scale).build_ui_state(
-        |ui, app: &mut EffectcraftApp| {
-            app.auto.begin_frame();
-            *app.frames.last_ms.lock().unwrap() = 0.0;
-            viewer::show(app, ui, ui.max_rect());
-        },
-        EffectcraftApp::new(session),
-    );
+    session
+        .execute(
+            "comp.new",
+            json!({"name":"Geometry validation", "width":640, "height":360, "duration":4}),
+        )
+        .unwrap();
+    let mut h = Harness::builder()
+        .with_size(vec2(width, 360.0))
+        .with_pixels_per_point(scale)
+        .build_ui_state(
+            |ui, app: &mut EffectcraftApp| {
+                app.auto.begin_frame();
+                *app.frames.last_ms.lock().unwrap() = 0.0;
+                viewer::show(app, ui, ui.max_rect());
+            },
+            EffectcraftApp::new(session),
+        );
     let ctx = h.ctx.clone();
     h.state_mut().set_theme(&ctx, kind);
     theme::install(&ctx, &h.state().tokens, "en");
@@ -34,20 +42,33 @@ fn harness_at_scale(width: f32, kind: ThemeKind, scale: f32) -> Harness<'static,
     while h.state().frames.urgent_pending() && std::time::Instant::now() < deadline {
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
-    assert!(!h.state().frames.urgent_pending(), "synthetic viewer frame must finish rendering");
+    assert!(
+        !h.state().frames.urgent_pending(),
+        "synthetic viewer frame must finish rendering"
+    );
     h.run_steps(3);
     h
 }
 
 fn rect(h: &Harness<'_, EffectcraftApp>, id: &str) -> Rect {
-    let e = h.state().auto.elements.iter().find(|e| e.id == id).unwrap_or_else(|| panic!("missing {id}"));
+    let e = h
+        .state()
+        .auto
+        .elements
+        .iter()
+        .find(|e| e.id == id)
+        .unwrap_or_else(|| panic!("missing {id}"));
     Rect::from_min_size(pos2(e.rect[0], e.rect[1]), vec2(e.rect[2], e.rect[3]))
 }
 
 fn luminance(color: Color32) -> f32 {
     let linear = |v: u8| {
         let v = f32::from(v) / 255.0;
-        if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+        if v <= 0.04045 {
+            v / 12.92
+        } else {
+            ((v + 0.055) / 1.055).powf(2.4)
+        }
     };
     0.2126 * linear(color.r()) + 0.7152 * linear(color.g()) + 0.0722 * linear(color.b())
 }
@@ -73,17 +94,27 @@ fn active_breadcrumb_text_contrasts_with_its_actual_painted_background() {
                 .iter()
                 .rev()
                 .find_map(|s| match &s.shape {
-                    Shape::Rect(r) if r.rect.height() == 18.0 && r.rect.contains(text.visual_bounding_rect().center()) => Some(r.fill),
+                    Shape::Rect(r)
+                        if r.rect.height() == 18.0
+                            && r.rect.contains(text.visual_bounding_rect().center()) =>
+                    {
+                        Some(r.fill)
+                    }
                     _ => None,
                 })
                 .unwrap();
             let color = text.override_text_color.unwrap_or(text.fallback_color);
             let foreground = luminance(color);
             let background = luminance(fill);
-            let contrast = (foreground.max(background) + 0.05) / (foreground.min(background) + 0.05);
-            eprintln!("viewer breadcrumb: {kind:?} {scale}x, text {color:?}, background {fill:?}, contrast {contrast:.2}");
+            let contrast =
+                (foreground.max(background) + 0.05) / (foreground.min(background) + 0.05);
+            eprintln!(
+                "viewer breadcrumb: {kind:?} {scale}x, text {color:?}, background {fill:?}, contrast {contrast:.2}"
+            );
             if contrast < 4.5 {
-                failures.push(format!("{kind:?} {scale}x: actual breadcrumb contrast is {contrast:.2}"));
+                failures.push(format!(
+                    "{kind:?} {scale}x: actual breadcrumb contrast is {contrast:.2}"
+                ));
             }
         }
     }
@@ -95,50 +126,106 @@ fn compact_control_row_scrolls_and_preserves_interactions() {
     let mut h = harness(300.0, ThemeKind::Light);
     assert!(rect(&h, "viewer.timecode").right() > 300.0);
     h.event(Event::PointerMoved(pos2(150.0, 345.0)));
-    h.event(Event::MouseWheel { unit: egui::MouseWheelUnit::Point, delta: vec2(-1500.0, 0.0), modifiers: Default::default(), phase: egui::TouchPhase::Move });
+    h.event(Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Point,
+        delta: vec2(-1500.0, 0.0),
+        modifiers: Default::default(),
+        phase: egui::TouchPhase::Move,
+    });
     h.run_steps(30);
     let timecode = rect(&h, "viewer.timecode");
     let row = rect(&h, "viewer.controls");
-    assert!(timecode.left() >= row.left() && timecode.right() <= row.right(), "last viewer control must scroll into view: {timecode:?}");
+    assert!(
+        timecode.left() >= row.left() && timecode.right() <= row.right(),
+        "last viewer control must scroll into view: {timecode:?}"
+    );
     let exposure = rect(&h, "viewer.resetExposure");
     assert!(exposure.left() >= row.left() && exposure.right() <= row.right());
-    h.state_mut().session.execute("view.exposure", json!({"stops":2.0})).unwrap();
+    h.state_mut()
+        .session
+        .execute("view.exposure", json!({"stops":2.0}))
+        .unwrap();
     h.run_steps(2);
     let point = rect(&h, "viewer.resetExposure").center();
     h.event(Event::PointerMoved(point));
     for pressed in [true, false] {
-        h.event(Event::PointerButton { pos: point, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() });
+        h.event(Event::PointerButton {
+            pos: point,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        });
         h.step();
     }
     h.run_steps(3);
-    assert_eq!(h.state().session.state.viewer.exposure, 0.0, "a scrolled control must still run its original command");
+    assert_eq!(
+        h.state().session.state.viewer.exposure,
+        0.0,
+        "a scrolled control must still run its original command"
+    );
 
     let exposure = rect(&h, "viewer.exposure").center();
     h.event(Event::PointerMoved(exposure));
-    h.event(Event::PointerButton { pos: exposure, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.event(Event::PointerButton {
+        pos: exposure,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
     for x in [10.0, 20.0, 30.0] {
         h.event(Event::PointerMoved(exposure + vec2(x, 0.0)));
         h.step();
     }
-    h.event(Event::PointerButton { pos: exposure + vec2(30.0, 0.0), button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.event(Event::PointerButton {
+        pos: exposure + vec2(30.0, 0.0),
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(3);
-    assert!(h.state().session.state.viewer.exposure > 0.0, "the scrolled exposure control must retain dragging");
+    assert!(
+        h.state().session.state.viewer.exposure > 0.0,
+        "the scrolled exposure control must retain dragging"
+    );
 
     click_control(&mut h, "viewer.snapshot");
-    assert!(h.state().session.snapshot.is_some(), "the scrolled snapshot button must capture");
+    assert!(
+        h.state().session.snapshot.is_some(),
+        "the scrolled snapshot button must capture"
+    );
     let snapshot = rect(&h, "viewer.showSnapshot").center();
     h.event(Event::PointerMoved(snapshot));
-    h.event(Event::PointerButton { pos: snapshot, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.event(Event::PointerButton {
+        pos: snapshot,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.run_steps(3);
-    assert!(h.state().session.state.viewer.show_snapshot, "the scrolled snapshot control must retain holding");
-    h.event(Event::PointerButton { pos: snapshot, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    assert!(
+        h.state().session.state.viewer.show_snapshot,
+        "the scrolled snapshot control must retain holding"
+    );
+    h.event(Event::PointerButton {
+        pos: snapshot,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(3);
-    assert!(!h.state().session.state.viewer.show_snapshot, "releasing the snapshot control must return to the current frame");
+    assert!(
+        !h.state().session.state.viewer.show_snapshot,
+        "releasing the snapshot control must return to the current frame"
+    );
 
     click_control(&mut h, "viewer.fastPreviews");
     click_control(&mut h, "viewer.fastPreviewsItem.1");
-    assert_eq!(h.state().session.state.viewer.fast_previews.id(), "adaptive", "a scrolled dropdown must retain its menu command");
+    assert_eq!(
+        h.state().session.state.viewer.fast_previews.id(),
+        "adaptive",
+        "a scrolled dropdown must retain its menu command"
+    );
 }
 
 fn click_control(h: &mut Harness<'_, EffectcraftApp>, id: &str) {
@@ -146,12 +233,20 @@ fn click_control(h: &mut Harness<'_, EffectcraftApp>, id: &str) {
     let point = control.center();
     let row = rect(h, "viewer.controls");
     if !id.contains("Item.") {
-        assert!(control.left() >= row.left() && control.right() <= row.right(), "{id} must be fully visible before clicking");
+        assert!(
+            control.left() >= row.left() && control.right() <= row.right(),
+            "{id} must be fully visible before clicking"
+        );
     }
     h.event(Event::PointerMoved(point));
     h.step();
     for pressed in [true, false] {
-        h.event(Event::PointerButton { pos: point, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() });
+        h.event(Event::PointerButton {
+            pos: point,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        });
         h.step();
     }
     h.run_steps(3);
@@ -168,13 +263,24 @@ fn tab_traversal_reveals_the_last_control() {
             break;
         }
     }
-    assert_eq!(h.ctx.memory(|memory| memory.focused()), Some(last), "Tab must reach the actual timecode control");
+    assert_eq!(
+        h.ctx.memory(|memory| memory.focused()),
+        Some(last),
+        "Tab must reach the actual timecode control"
+    );
     h.run_steps(12);
     let response = h.ctx.read_response(last).unwrap();
     let row = rect(&h, "viewer.controls");
-    assert!(response.rect.left() >= row.left() && response.rect.right() <= row.right(), "focused control must be visible: {:?}", response.rect);
     assert!(
-        h.output().shapes.iter().any(|shape| matches!(&shape.shape, Shape::Rect(rect)
+        response.rect.left() >= row.left() && response.rect.right() <= row.right(),
+        "focused control must be visible: {:?}",
+        response.rect
+    );
+    assert!(
+        h.output()
+            .shapes
+            .iter()
+            .any(|shape| matches!(&shape.shape, Shape::Rect(rect)
         if rect.rect == response.rect.shrink(1.0) && rect.stroke.color == h.state().tokens.focus)),
         "focused control must have a visible outline"
     );
@@ -188,16 +294,30 @@ fn compact_scrollbar_thumb_is_distinct_and_tracks_the_scrolled_position() {
             let (initial_track, initial_thumb) = painted_scrollbar(&h, kind, scale, "initial");
             scroll_controls_to_end(&mut h);
             let (scrolled_track, scrolled_thumb) = painted_scrollbar(&h, kind, scale, "scrolled");
-            assert_eq!(initial_track, scrolled_track, "scrolling must keep the track fixed");
-            assert!(scrolled_thumb.left() > initial_thumb.left() + 1.0, "the painted thumb must move with horizontal scrolling");
+            assert_eq!(
+                initial_track, scrolled_track,
+                "scrolling must keep the track fixed"
+            );
+            assert!(
+                scrolled_thumb.left() > initial_thumb.left() + 1.0,
+                "the painted thumb must move with horizontal scrolling"
+            );
         }
     }
 }
 
-fn painted_scrollbar(h: &Harness<'_, EffectcraftApp>, kind: ThemeKind, scale: f32, state: &str) -> (Rect, Rect) {
+fn painted_scrollbar(
+    h: &Harness<'_, EffectcraftApp>,
+    kind: ThemeKind,
+    scale: f32,
+    state: &str,
+) -> (Rect, Rect) {
     let scrollbar = h.get_by_role(egui::accesskit::Role::ScrollBar).rect();
     let row = rect(h, "viewer.controls");
-    assert!(row.contains_rect(scrollbar), "scrollbar {scrollbar:?} must stay inside {row:?}");
+    assert!(
+        row.contains_rect(scrollbar),
+        "scrollbar {scrollbar:?} must stay inside {row:?}"
+    );
     let mut painted: Vec<_> = h
         .output()
         .shapes
@@ -216,9 +336,16 @@ fn painted_scrollbar(h: &Harness<'_, EffectcraftApp>, kind: ThemeKind, scale: f3
         })
         .collect();
     painted.sort_by(|a, b| a.rect.width().total_cmp(&b.rect.width()));
-    assert_eq!(painted.len(), 2, "the track and thumb must each be painted without clipping");
+    assert_eq!(
+        painted.len(),
+        2,
+        "the track and thumb must each be painted without clipping"
+    );
     let (thumb, track) = (painted[0], painted[1]);
-    assert!(thumb.rect.width() < track.rect.width() - 1.0 && track.rect.contains_rect(thumb.rect), "the overflow thumb must be narrower than its track");
+    assert!(
+        thumb.rect.width() < track.rect.width() - 1.0 && track.rect.contains_rect(thumb.rect),
+        "the overflow thumb must be narrower than its track"
+    );
     let foreground = luminance(thumb.fill);
     let background = luminance(track.fill);
     let contrast = (foreground.max(background) + 0.05) / (foreground.min(background) + 0.05);
@@ -226,13 +353,21 @@ fn painted_scrollbar(h: &Harness<'_, EffectcraftApp>, kind: ThemeKind, scale: f3
         "viewer scrollbar: {kind:?} {scale}x {state}, thumb {:?} {:?}, track {:?} {:?}, contrast {contrast:.2}",
         thumb.rect, thumb.fill, track.rect, track.fill
     );
-    assert!(contrast >= 3.0, "{kind:?} {scale}x {state}: actual thumb/track contrast {contrast:.2} is too low");
+    assert!(
+        contrast >= 3.0,
+        "{kind:?} {scale}x {state}: actual thumb/track contrast {contrast:.2} is too low"
+    );
     (track.rect, thumb.rect)
 }
 
 fn scroll_controls_to_end(h: &mut Harness<'_, EffectcraftApp>) {
     h.event(Event::PointerMoved(pos2(150.0, 345.0)));
-    h.event(Event::MouseWheel { unit: egui::MouseWheelUnit::Point, delta: vec2(-1500.0, 0.0), modifiers: Default::default(), phase: egui::TouchPhase::Move });
+    h.event(Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Point,
+        delta: vec2(-1500.0, 0.0),
+        modifiers: Default::default(),
+        phase: egui::TouchPhase::Move,
+    });
     h.run_steps(30);
     h.event(Event::PointerMoved(pos2(150.0, 180.0)));
     h.run_steps(3);
@@ -240,16 +375,28 @@ fn scroll_controls_to_end(h: &mut Harness<'_, EffectcraftApp>) {
 
 #[test]
 fn viewer_theme_and_width_visual_matrix() {
-    let Ok(directory) = std::env::var("CRAFT_UI_VISUAL_DIR") else { return };
+    let Ok(directory) = std::env::var("CRAFT_UI_VISUAL_DIR") else {
+        return;
+    };
     std::fs::create_dir_all(&directory).unwrap();
     for kind in [ThemeKind::Dark, ThemeKind::Darker, ThemeKind::Light] {
         for width in [900.0, 300.0] {
             for scale in [1.0, 2.0] {
                 let mut h = harness_at_scale(width, kind, scale);
-                save_stable_snapshot(&mut h, &format!("{directory}/effect-viewer-{kind:?}-{width}-{scale}x.png"), width);
+                save_stable_snapshot(
+                    &mut h,
+                    &format!("{directory}/effect-viewer-{kind:?}-{width}-{scale}x.png"),
+                    width,
+                );
                 if width == 300.0 {
                     scroll_controls_to_end(&mut h);
-                    save_stable_snapshot(&mut h, &format!("{directory}/effect-viewer-{kind:?}-{width}-{scale}x-scrolled.png"), width);
+                    save_stable_snapshot(
+                        &mut h,
+                        &format!(
+                            "{directory}/effect-viewer-{kind:?}-{width}-{scale}x-scrolled.png"
+                        ),
+                        width,
+                    );
                 }
             }
         }
@@ -261,17 +408,26 @@ fn save_stable_snapshot(h: &mut Harness<'_, EffectcraftApp>, path: &str, width: 
     image.save(path).unwrap();
     h.run_steps(3);
     let repeated = h.render().unwrap();
-    assert!(image == repeated, "settled synthetic viewer pixels must repeat exactly: {path}");
+    assert!(
+        image == repeated,
+        "settled synthetic viewer pixels must repeat exactly: {path}"
+    );
     if width == 900.0 {
         let times: Vec<_> = h
             .output()
             .shapes
             .iter()
             .filter_map(|shape| match &shape.shape {
-                Shape::Text(text) if text.galley.text().ends_with(" ms") => Some(text.galley.text()),
+                Shape::Text(text) if text.galley.text().ends_with(" ms") => {
+                    Some(text.galley.text())
+                }
                 _ => None,
             })
             .collect();
-        assert_eq!(times, ["0 ms"], "cached rendering must preserve the deterministic timing input");
+        assert_eq!(
+            times,
+            ["0 ms"],
+            "cached rendering must preserve the deterministic timing input"
+        );
     }
 }

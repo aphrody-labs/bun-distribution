@@ -21,11 +21,41 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             update
         ),
-        spec!("variable.duplicate", "Duplicate variable", "{variable} → {id}", true, duplicate),
-        spec!("variable.renameMode", "Rename mode", "{collection, mode, name}", true, rename_mode),
-        spec!("variable.removeMode", "Delete mode", "{collection, mode} (a collection keeps at least one mode)", true, remove_mode),
-        spec!("variable.moveMode", "Move mode", "{collection, mode, to (index; 0 = the default mode, layers on Auto follow it)}", true, move_mode),
-        spec!("variable.renameCollection", "Rename collection", "{collection, name}", true, rename_collection),
+        spec!(
+            "variable.duplicate",
+            "Duplicate variable",
+            "{variable} → {id}",
+            true,
+            duplicate
+        ),
+        spec!(
+            "variable.renameMode",
+            "Rename mode",
+            "{collection, mode, name}",
+            true,
+            rename_mode
+        ),
+        spec!(
+            "variable.removeMode",
+            "Delete mode",
+            "{collection, mode} (a collection keeps at least one mode)",
+            true,
+            remove_mode
+        ),
+        spec!(
+            "variable.moveMode",
+            "Move mode",
+            "{collection, mode, to (index; 0 = the default mode, layers on Auto follow it)}",
+            true,
+            move_mode
+        ),
+        spec!(
+            "variable.renameCollection",
+            "Rename collection",
+            "{collection, name}",
+            true,
+            rename_collection
+        ),
         spec!(
             "variable.deleteCollection",
             "Delete collection",
@@ -46,14 +76,23 @@ pub fn specs() -> Vec<CommandSpec> {
 /// The first of `base`, `base 2`, `base 3`… that no collection is named.
 pub(crate) fn free_collection_name(doc: &Document, base: &str) -> String {
     (1..1000)
-        .map(|k| if k == 1 { base.to_string() } else { format!("{base} {k}") })
+        .map(|k| {
+            if k == 1 {
+                base.to_string()
+            } else {
+                format!("{base} {k}")
+            }
+        })
         .find(|n| !doc.variables.collections.iter().any(|c| c.name == *n))
         .unwrap_or_else(|| base.to_string())
 }
 
 /// The error for editing what an extended collection inherits.
 fn inherited(cmd: &str, what: &str) -> crate::EngineError {
-    bad(cmd, format!("{what} comes from the collection it extends (edit it there)"))
+    bad(
+        cmd,
+        format!("{what} comes from the collection it extends (edit it there)"),
+    )
 }
 
 /// Refuse mode edits of extended collections (they have the modes of the collection they extend).
@@ -66,7 +105,11 @@ pub(crate) fn check_modes_editable(doc: &Document, cmd: &str, collection: &str) 
 
 /// A variable name with each `/`-separated group part trimmed; None when nothing is left.
 pub(crate) fn clean_name(name: &str) -> Option<String> {
-    let parts: Vec<&str> = name.split('/').map(str::trim).filter(|s| !s.is_empty()).collect();
+    let parts: Vec<&str> = name
+        .split('/')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .collect();
     let out = parts.join("/");
     (!out.is_empty()).then(|| out.chars().take(500).collect())
 }
@@ -75,13 +118,27 @@ fn update(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.update";
     let v = req_string(cmd, p, "variable")?;
     let doc = s.doc_mut()?;
-    let var = doc.variables.get(&v).cloned().ok_or_else(|| bad(cmd, "no such variable"))?;
+    let var = doc
+        .variables
+        .get(&v)
+        .cloned()
+        .ok_or_else(|| bad(cmd, "no such variable"))?;
     let name = match string(p, "name") {
-        Some(_) if var.extends.is_some() => return Err(inherited(cmd, "an inherited variable's name")),
+        Some(_) if var.extends.is_some() => {
+            return Err(inherited(cmd, "an inherited variable's name"));
+        }
         Some(n) => {
             let n = clean_name(&n).ok_or_else(|| bad(cmd, "name can't be empty"))?;
-            if doc.variables.variables.iter().any(|x| x.id != var.id && x.collection == var.collection && x.name == n) {
-                return Err(bad(cmd, format!("a variable named `{n}` already exists in this collection")));
+            if doc
+                .variables
+                .variables
+                .iter()
+                .any(|x| x.id != var.id && x.collection == var.collection && x.name == n)
+            {
+                return Err(bad(
+                    cmd,
+                    format!("a variable named `{n}` already exists in this collection"),
+                ));
             }
             Some(n)
         }
@@ -95,7 +152,10 @@ fn update(s: &mut Session, p: &Value) -> Result<Value> {
             for x in a {
                 let id = x.as_str().ok_or_else(|| bad(cmd, "scopes: [scope ids]"))?;
                 if !scope_known(var.kind, id) {
-                    return Err(bad(cmd, format!("`{id}` isn't a scope for {} variables", var.kind.id())));
+                    return Err(bad(
+                        cmd,
+                        format!("`{id}` isn't a scope for {} variables", var.kind.id()),
+                    ));
                 }
                 ids.push(id);
             }
@@ -110,7 +170,10 @@ fn update(s: &mut Session, p: &Value) -> Result<Value> {
         Some(Value::Object(m)) => {
             for (k, x) in m {
                 if !CODE_PLATFORMS.contains(&k.as_str()) {
-                    return Err(bad(cmd, format!("codeSyntax: `{k}` isn't a platform (WEB, iOS, ANDROID)")));
+                    return Err(bad(
+                        cmd,
+                        format!("codeSyntax: `{k}` isn't a platform (WEB, iOS, ANDROID)"),
+                    ));
                 }
                 match x {
                     Value::String(n) if !n.trim().is_empty() => {
@@ -125,7 +188,12 @@ fn update(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Some(_) => return Err(bad(cmd, "codeSyntax: {WEB?, iOS?, ANDROID?}")),
     }
-    let slot = doc.variables.variables.iter_mut().find(|x| x.id == var.id).ok_or_else(|| bad(cmd, "no such variable"))?;
+    let slot = doc
+        .variables
+        .variables
+        .iter_mut()
+        .find(|x| x.id == var.id)
+        .ok_or_else(|| bad(cmd, "no such variable"))?;
     slot.code_syntax = code;
     if let Some(n) = name {
         slot.name = n;
@@ -146,11 +214,32 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.duplicate";
     let v = req_string(cmd, p, "variable")?;
     let doc = s.doc_mut()?;
-    let pos = doc.variables.variables.iter().position(|x| x.id == v || x.name == v).ok_or_else(|| bad(cmd, "no such variable"))?;
-    let mut copy = doc.variables.variables.get(pos).cloned().ok_or_else(|| bad(cmd, "no such variable"))?;
-    let taken = |n: &str| doc.variables.variables.iter().any(|x| x.collection == copy.collection && x.name == n);
+    let pos = doc
+        .variables
+        .variables
+        .iter()
+        .position(|x| x.id == v || x.name == v)
+        .ok_or_else(|| bad(cmd, "no such variable"))?;
+    let mut copy = doc
+        .variables
+        .variables
+        .get(pos)
+        .cloned()
+        .ok_or_else(|| bad(cmd, "no such variable"))?;
+    let taken = |n: &str| {
+        doc.variables
+            .variables
+            .iter()
+            .any(|x| x.collection == copy.collection && x.name == n)
+    };
     let name = (1..1000)
-        .map(|k| if k == 1 { format!("{} copy", copy.name) } else { format!("{} copy {k}", copy.name) })
+        .map(|k| {
+            if k == 1 {
+                format!("{} copy", copy.name)
+            } else {
+                format!("{} copy {k}", copy.name)
+            }
+        })
         .find(|n| !taken(n))
         .ok_or_else(|| bad(cmd, "too many copies"))?;
     copy.id = doc.new_variable_id();
@@ -165,7 +254,11 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The index of collection `c` (id or name).
 fn collection_index(doc: &Document, cmd: &str, c: &str) -> Result<usize> {
-    doc.variables.collections.iter().position(|x| x.id == c || x.name == c).ok_or_else(|| bad(cmd, "no such collection"))
+    doc.variables
+        .collections
+        .iter()
+        .position(|x| x.id == c || x.name == c)
+        .ok_or_else(|| bad(cmd, "no such collection"))
 }
 
 /// Collection `c`'s index and the id of its mode `m` (id or name).
@@ -179,19 +272,32 @@ fn mode_of(doc: &Document, cmd: &str, p: &Value) -> Result<(usize, ModeId)> {
         .and_then(|c| c.modes.iter().find(|x| x.id == m || x.name == m))
         .map(|x| x.id.clone())
         .ok_or_else(|| bad(cmd, "no such mode"))?;
-    check_modes_editable(doc, cmd, doc.variables.collections.get(ci).map_or("", |c| &c.id))?;
+    check_modes_editable(
+        doc,
+        cmd,
+        doc.variables.collections.get(ci).map_or("", |c| &c.id),
+    )?;
     Ok((ci, mode))
 }
 
 fn rename_mode(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.renameMode";
-    let name = req_string(cmd, p, "name")?.trim().chars().take(200).collect::<String>();
+    let name = req_string(cmd, p, "name")?
+        .trim()
+        .chars()
+        .take(200)
+        .collect::<String>();
     if name.is_empty() {
         return Err(bad(cmd, "name can't be empty"));
     }
     let doc = s.doc_mut()?;
     let (ci, mode) = mode_of(doc, cmd, p)?;
-    if let Some(m) = doc.variables.collections.get_mut(ci).and_then(|c| c.modes.iter_mut().find(|x| x.id == mode)) {
+    if let Some(m) = doc
+        .variables
+        .collections
+        .get_mut(ci)
+        .and_then(|c| c.modes.iter_mut().find(|x| x.id == mode))
+    {
         m.name = name;
     }
     ok()
@@ -201,17 +307,30 @@ fn remove_mode(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.removeMode";
     let doc = s.doc_mut()?;
     let (ci, mode) = mode_of(doc, cmd, p)?;
-    let coll = doc.variables.collections.get_mut(ci).ok_or_else(|| bad(cmd, "no such collection"))?;
+    let coll = doc
+        .variables
+        .collections
+        .get_mut(ci)
+        .ok_or_else(|| bad(cmd, "no such collection"))?;
     if coll.modes.len() < 2 {
         return Err(bad(cmd, "a collection keeps at least one mode"));
     }
     coll.modes.retain(|m| m.id != mode);
     let cid = coll.id.clone();
-    for v in doc.variables.variables.iter_mut().filter(|v| v.collection == cid) {
+    for v in doc
+        .variables
+        .variables
+        .iter_mut()
+        .filter(|v| v.collection == cid)
+    {
         v.values.remove(&mode);
     }
     // Layers set to the deleted mode go back to the default.
-    let users: Vec<NodeId> = doc.nodes().filter(|n| n.var_modes.get(&cid) == Some(&mode)).map(|n| n.id).collect();
+    let users: Vec<NodeId> = doc
+        .nodes()
+        .filter(|n| n.var_modes.get(&cid) == Some(&mode))
+        .map(|n| n.id)
+        .collect();
     for id in users {
         doc.get_mut(id)?.var_modes.remove(&cid);
     }
@@ -220,11 +339,21 @@ fn remove_mode(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn move_mode(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.moveMode";
-    let to = num(p, "to").filter(|x| x.is_finite()).ok_or_else(|| bad(cmd, "`to` must be a number"))?;
+    let to = num(p, "to")
+        .filter(|x| x.is_finite())
+        .ok_or_else(|| bad(cmd, "`to` must be a number"))?;
     let doc = s.doc_mut()?;
     let (ci, mode) = mode_of(doc, cmd, p)?;
-    let coll = doc.variables.collections.get_mut(ci).ok_or_else(|| bad(cmd, "no such collection"))?;
-    let from = coll.modes.iter().position(|m| m.id == mode).ok_or_else(|| bad(cmd, "no such mode"))?;
+    let coll = doc
+        .variables
+        .collections
+        .get_mut(ci)
+        .ok_or_else(|| bad(cmd, "no such collection"))?;
+    let from = coll
+        .modes
+        .iter()
+        .position(|m| m.id == mode)
+        .ok_or_else(|| bad(cmd, "no such mode"))?;
     let m = coll.modes.remove(from);
     let at = (to.max(0.0) as usize).min(coll.modes.len());
     coll.modes.insert(at, m);
@@ -233,14 +362,27 @@ fn move_mode(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn rename_collection(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.renameCollection";
-    let name = req_string(cmd, p, "name")?.trim().chars().take(200).collect::<String>();
+    let name = req_string(cmd, p, "name")?
+        .trim()
+        .chars()
+        .take(200)
+        .collect::<String>();
     if name.is_empty() {
         return Err(bad(cmd, "name can't be empty"));
     }
     let doc = s.doc_mut()?;
     let ci = collection_index(doc, cmd, &req_string(cmd, p, "collection")?)?;
-    if doc.variables.collections.iter().enumerate().any(|(i, c)| i != ci && c.name == name) {
-        return Err(bad(cmd, format!("a collection named `{name}` already exists")));
+    if doc
+        .variables
+        .collections
+        .iter()
+        .enumerate()
+        .any(|(i, c)| i != ci && c.name == name)
+    {
+        return Err(bad(
+            cmd,
+            format!("a collection named `{name}` already exists"),
+        ));
     }
     if let Some(c) = doc.variables.collections.get_mut(ci) {
         c.name = name;
@@ -252,12 +394,27 @@ fn delete_collection(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.deleteCollection";
     let doc = s.doc_mut()?;
     let ci = collection_index(doc, cmd, &req_string(cmd, p, "collection")?)?;
-    let cid = doc.variables.collections.get(ci).map(|c| c.id.clone()).ok_or_else(|| bad(cmd, "no such collection"))?;
-    let gone: BTreeSet<VariableId> = doc.variables.variables.iter().filter(|v| v.collection == cid).map(|v| v.id.clone()).collect();
+    let cid = doc
+        .variables
+        .collections
+        .get(ci)
+        .map(|c| c.id.clone())
+        .ok_or_else(|| bad(cmd, "no such collection"))?;
+    let gone: BTreeSet<VariableId> = doc
+        .variables
+        .variables
+        .iter()
+        .filter(|v| v.collection == cid)
+        .map(|v| v.id.clone())
+        .collect();
     forget_variables(doc, &gone)?;
     doc.variables.collections.retain(|c| c.id != cid);
     // Layers no longer follow the deleted modes either.
-    let users: Vec<NodeId> = doc.nodes().filter(|n| n.var_modes.contains_key(&cid)).map(|n| n.id).collect();
+    let users: Vec<NodeId> = doc
+        .nodes()
+        .filter(|n| n.var_modes.contains_key(&cid))
+        .map(|n| n.id)
+        .collect();
     for id in users {
         doc.get_mut(id)?.var_modes.remove(&cid);
     }
@@ -272,8 +429,12 @@ pub(crate) fn forget_variables(doc: &mut Document, gone: &BTreeSet<VariableId>) 
     let mut detached: Vec<(VariableId, ModeId, VariableValue)> = Vec::new();
     for v in vars.variables.iter().filter(|v| !gone.contains(&v.id)) {
         for (m, val) in &v.values {
-            let VariableValue::Alias(a) = val else { continue };
-            let Some(t) = vars.get(a).filter(|t| gone.contains(&t.id)) else { continue };
+            let VariableValue::Alias(a) = val else {
+                continue;
+            };
+            let Some(t) = vars.get(a).filter(|t| gone.contains(&t.id)) else {
+                continue;
+            };
             let modes = std::collections::BTreeMap::from([(t.collection.clone(), m.clone())]);
             if let Some(r) = vars.resolve(&t.id, &modes) {
                 detached.push((v.id.clone(), m.clone(), r));
@@ -286,7 +447,11 @@ pub(crate) fn forget_variables(doc: &mut Document, gone: &BTreeSet<VariableId>) 
         }
     }
     doc.variables.variables.retain(|v| !gone.contains(&v.id));
-    let users: Vec<NodeId> = doc.nodes().filter(|n| n.bound.values().any(|v| gone.contains(v))).map(|n| n.id).collect();
+    let users: Vec<NodeId> = doc
+        .nodes()
+        .filter(|n| n.bound.values().any(|v| gone.contains(v)))
+        .map(|n| n.id)
+        .collect();
     for id in users {
         doc.get_mut(id)?.bound.retain(|_, v| !gone.contains(v));
     }
@@ -297,13 +462,34 @@ fn reset_override(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.resetOverride";
     let v = req_string(cmd, p, "variable")?;
     let doc = s.doc_mut()?;
-    let var = doc.variables.get(&v).cloned().ok_or_else(|| bad(cmd, "no such variable"))?;
-    let parent = var.extends.as_deref().and_then(|x| doc.variables.get(x)).cloned();
-    let parent = parent.ok_or_else(|| bad(cmd, "only variables an extended collection inherits have overrides"))?;
+    let var = doc
+        .variables
+        .get(&v)
+        .cloned()
+        .ok_or_else(|| bad(cmd, "no such variable"))?;
+    let parent = var
+        .extends
+        .as_deref()
+        .and_then(|x| doc.variables.get(x))
+        .cloned();
+    let parent = parent.ok_or_else(|| {
+        bad(
+            cmd,
+            "only variables an extended collection inherits have overrides",
+        )
+    })?;
     let modes: Vec<ModeId> = match string(p, "mode") {
         Some(m) => {
-            let coll = doc.variables.collection(&var.collection).ok_or_else(|| bad(cmd, "variable has no collection"))?;
-            vec![coll.find_mode(&m).ok_or_else(|| bad(cmd, "no such mode"))?.id.clone()]
+            let coll = doc
+                .variables
+                .collection(&var.collection)
+                .ok_or_else(|| bad(cmd, "variable has no collection"))?;
+            vec![
+                coll.find_mode(&m)
+                    .ok_or_else(|| bad(cmd, "no such mode"))?
+                    .id
+                    .clone(),
+            ]
         }
         None => var.overrides.iter().cloned().collect(),
     };
@@ -328,7 +514,18 @@ pub fn sync_extensions(doc: &mut Document) {
         .variables
         .collections
         .iter()
-        .filter_map(|c| Some((c.id.clone(), c.extends.as_ref().map(|p| doc.variables.collections.iter().find(|x| x.id == *p).cloned())?)))
+        .filter_map(|c| {
+            Some((
+                c.id.clone(),
+                c.extends.as_ref().map(|p| {
+                    doc.variables
+                        .collections
+                        .iter()
+                        .find(|x| x.id == *p)
+                        .cloned()
+                })?,
+            ))
+        })
         .collect();
     for (cid, parent) in exts {
         let vars = &mut doc.variables.variables;
@@ -346,10 +543,18 @@ pub fn sync_extensions(doc: &mut Document) {
             }
             continue;
         };
-        let parents: Vec<Variable> = vars.iter().filter(|v| v.collection == parent.id).cloned().collect();
+        let parents: Vec<Variable> = vars
+            .iter()
+            .filter(|v| v.collection == parent.id)
+            .cloned()
+            .collect();
         let modes: Vec<ModeId> = parent.modes.iter().map(|m| m.id.clone()).collect();
         for v in vars.iter_mut().filter(|v| v.collection == cid) {
-            match v.extends.as_ref().map(|e| parents.iter().find(|p| p.id == *e)) {
+            match v
+                .extends
+                .as_ref()
+                .map(|e| parents.iter().find(|p| p.id == *e))
+            {
                 Some(Some(p)) => {
                     if v.kind != p.kind {
                         v.kind = p.kind;
@@ -358,8 +563,19 @@ pub fn sync_extensions(doc: &mut Document) {
                     v.name.clone_from(&p.name);
                     v.overrides.retain(|m| modes.contains(m));
                     let own = std::mem::take(&mut v.values);
-                    v.values =
-                        p.values.iter().map(|(m, x)| (m.clone(), own.get(m).filter(|_| v.overrides.contains(m)).unwrap_or(x).clone())).collect();
+                    v.values = p
+                        .values
+                        .iter()
+                        .map(|(m, x)| {
+                            (
+                                m.clone(),
+                                own.get(m)
+                                    .filter(|_| v.overrides.contains(m))
+                                    .unwrap_or(x)
+                                    .clone(),
+                            )
+                        })
+                        .collect();
                 }
                 Some(None) => {
                     v.extends = None;
@@ -370,7 +586,11 @@ pub fn sync_extensions(doc: &mut Document) {
             // Its own variables (and orphans) keep a value in every mode: new modes start with the
             // default mode's.
             if v.extends.is_none() {
-                let first = modes.iter().find_map(|m| v.values.get(m)).or_else(|| v.values.values().next()).cloned();
+                let first = modes
+                    .iter()
+                    .find_map(|m| v.values.get(m))
+                    .or_else(|| v.values.values().next())
+                    .cloned();
                 v.values.retain(|m, _| modes.contains(m));
                 if let Some(f) = first {
                     for m in &modes {
@@ -379,8 +599,14 @@ pub fn sync_extensions(doc: &mut Document) {
                 }
             }
         }
-        let missing: Vec<Variable> =
-            parents.into_iter().filter(|p| !vars.iter().any(|v| v.collection == cid && v.extends.as_ref() == Some(&p.id))).collect();
+        let missing: Vec<Variable> = parents
+            .into_iter()
+            .filter(|p| {
+                !vars
+                    .iter()
+                    .any(|v| v.collection == cid && v.extends.as_ref() == Some(&p.id))
+            })
+            .collect();
         if let Some(c) = doc.variables.collections.iter_mut().find(|c| c.id == cid)
             && c.modes != parent.modes
         {
@@ -389,17 +615,33 @@ pub fn sync_extensions(doc: &mut Document) {
         for p in missing {
             let id = doc.new_variable_id();
             let extends = Some(p.id.clone());
-            doc.variables.variables.push(Variable { id, collection: cid.clone(), extends, hidden_from_publishing: false, ..p });
+            doc.variables.variables.push(Variable {
+                id,
+                collection: cid.clone(),
+                extends,
+                hidden_from_publishing: false,
+                ..p
+            });
         }
     }
 }
 
 /// Check that `var` may alias `target` (id or name): it exists, has the same type and doesn't
 /// lead back to `var`. Returns the target's id.
-pub fn alias_target(vars: &Variables, var: &Variable, target: &str) -> std::result::Result<VariableId, String> {
-    let t = vars.get(target).ok_or_else(|| format!("no variable `{target}` to alias"))?;
+pub fn alias_target(
+    vars: &Variables,
+    var: &Variable,
+    target: &str,
+) -> std::result::Result<VariableId, String> {
+    let t = vars
+        .get(target)
+        .ok_or_else(|| format!("no variable `{target}` to alias"))?;
     if t.kind != var.kind {
-        return Err(format!("can't alias a {} variable to a {} one", var.kind.id(), t.kind.id()));
+        return Err(format!(
+            "can't alias a {} variable to a {} one",
+            var.kind.id(),
+            t.kind.id()
+        ));
     }
     let mut stack = vec![t.id.clone()];
     let mut seen = BTreeSet::new();
@@ -410,7 +652,12 @@ pub fn alias_target(vars: &Variables, var: &Variable, target: &str) -> std::resu
         if !seen.insert(cur.clone()) || seen.len() > 10_000 {
             continue;
         }
-        for v in vars.get(&cur).map(|x| x.values.values()).into_iter().flatten() {
+        for v in vars
+            .get(&cur)
+            .map(|x| x.values.values())
+            .into_iter()
+            .flatten()
+        {
             if let VariableValue::Alias(a) = v
                 && let Some(next) = vars.get(a)
             {
@@ -425,11 +672,15 @@ pub fn alias_target(vars: &Variables, var: &Variable, target: &str) -> std::resu
 pub fn field_scope(doc: &Document, node: NodeId, field: &str) -> Option<&'static str> {
     Some(match field {
         "width" | "height" | "minWidth" | "maxWidth" | "minHeight" | "maxHeight" => "WIDTH_HEIGHT",
-        "gap" | "columnGap" | "rowGap" | "crossGap" | "padding" | "paddingHorizontal" | "paddingVertical" | "paddingTop" | "paddingRight"
-        | "paddingBottom" | "paddingLeft" => "GAP",
-        "cornerRadius" | "topLeftRadius" | "topRightRadius" | "bottomRightRadius" | "bottomLeftRadius" => "CORNER_RADIUS",
+        "gap" | "columnGap" | "rowGap" | "crossGap" | "padding" | "paddingHorizontal"
+        | "paddingVertical" | "paddingTop" | "paddingRight" | "paddingBottom" | "paddingLeft" => {
+            "GAP"
+        }
+        "cornerRadius" | "topLeftRadius" | "topRightRadius" | "bottomRightRadius"
+        | "bottomLeftRadius" => "CORNER_RADIUS",
         "opacity" => "OPACITY",
-        "strokeWeight" | "strokeTopWeight" | "strokeRightWeight" | "strokeBottomWeight" | "strokeLeftWeight" => "STROKE_FLOAT",
+        "strokeWeight" | "strokeTopWeight" | "strokeRightWeight" | "strokeBottomWeight"
+        | "strokeLeftWeight" => "STROKE_FLOAT",
         "fontSize" => "FONT_SIZE",
         "fontWeight" => "FONT_WEIGHT",
         "paragraphSpacing" => "PARAGRAPH_SPACING",
@@ -461,6 +712,11 @@ pub fn field_takes(doc: &Document, node: NodeId, field: &str, kind: VariableType
     match (field, field_scope(doc, node, field)) {
         ("visible", _) => kind == VariableType::Boolean,
         (_, Some(scope)) => scope_known(kind, scope),
-        (f, None) => !matches!(super::lists::list_binding(f), Some((BoundList::Grids, _, _))) || kind == VariableType::Number,
+        (f, None) => {
+            !matches!(
+                super::lists::list_binding(f),
+                Some((BoundList::Grids, _, _))
+            ) || kind == VariableType::Number
+        }
     }
 }

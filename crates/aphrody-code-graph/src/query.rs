@@ -74,8 +74,18 @@ impl std::fmt::Display for Explanation {
         writeln!(f, "  Degree:    {}", self.degree)?;
         writeln!(f, "\nConnections ({}):", self.connections.len())?;
         for c in &self.connections {
-            let arrow = if c.direction == Direction::Incoming { "<--" } else { "-->" };
-            write!(f, "  {arrow} {} [{}] [{}]", c.other, c.relation, c.confidence.as_str())?;
+            let arrow = if c.direction == Direction::Incoming {
+                "<--"
+            } else {
+                "-->"
+            };
+            write!(
+                f,
+                "  {arrow} {} [{}] [{}]",
+                c.other,
+                c.relation,
+                c.confidence.as_str()
+            )?;
             if let Some(at) = &c.at {
                 write!(f, " {at}")?;
             }
@@ -123,7 +133,12 @@ pub struct QueryOptions {
 
 impl Default for QueryOptions {
     fn default() -> Self {
-        Self { depth: 2, budget_tokens: 2000, starts: 4, relations: Vec::new() }
+        Self {
+            depth: 2,
+            budget_tokens: 2000,
+            starts: 4,
+            relations: Vec::new(),
+        }
     }
 }
 
@@ -182,7 +197,7 @@ impl Graph {
         let (file, symbol) = match text.rsplit_once("::") {
             Some((file, symbol)) if file.contains('.') || file.contains('/') => {
                 (Some(file.replace('\\', "/")), symbol)
-            },
+            }
             _ => (None, text),
         };
         let in_file = |i: usize| {
@@ -243,18 +258,27 @@ impl Graph {
         if found.is_empty() {
             return by_id.ok_or_else(|| GraphError::NoMatch(text.to_owned()));
         }
-        let symbol = text.rsplit_once("::").map_or(text, |(_, s)| s).to_lowercase();
+        let symbol = text
+            .rsplit_once("::")
+            .map_or(text, |(_, s)| s)
+            .to_lowercase();
         let exact: Vec<usize> = found
             .iter()
             .copied()
             .filter(|&i| bare_label(&self.nodes[i].norm_label) == bare_label(&symbol))
             .collect();
         let tier = if exact.is_empty() { found } else { exact };
-        let sourced: Vec<usize> =
-            tier.iter().copied().filter(|&i| self.nodes[i].file.is_some()).collect();
+        let sourced: Vec<usize> = tier
+            .iter()
+            .copied()
+            .filter(|&i| self.nodes[i].file.is_some())
+            .collect();
         let tier = if sourced.is_empty() { tier } else { sourced };
-        let literal: Vec<usize> =
-            tier.iter().copied().filter(|&i| self.nodes[i].norm_label == symbol).collect();
+        let literal: Vec<usize> = tier
+            .iter()
+            .copied()
+            .filter(|&i| self.nodes[i].norm_label == symbol)
+            .collect();
         let tier = if literal.is_empty() { tier } else { literal };
         if let [only] = tier.as_slice() {
             return Ok(*only);
@@ -269,10 +293,19 @@ impl Graph {
                     (Some(f), None) => f.clone(),
                     _ => "(no source)".to_owned(),
                 };
-                format!("{} - {at} [id {}] ({} edges)", n.label, n.id, self.degree(i))
+                format!(
+                    "{} - {at} [id {}] ({} edges)",
+                    n.label,
+                    n.id,
+                    self.degree(i)
+                )
             })
             .collect();
-        Err(GraphError::Ambiguous { text: text.to_owned(), total: tier.len(), candidates })
+        Err(GraphError::Ambiguous {
+            text: text.to_owned(),
+            total: tier.len(),
+            candidates,
+        })
     }
 
     /// Describe the best node matching `text` and its connections.
@@ -348,7 +381,10 @@ impl Graph {
         let b = self.resolve(to)?;
         let keep = |e: usize| {
             options.relations.is_empty()
-                || options.relations.iter().any(|r| *r == self.edges[e].relation)
+                || options
+                    .relations
+                    .iter()
+                    .any(|r| *r == self.edges[e].relation)
         };
         let mut prev: Vec<Option<(usize, usize, bool)>> = vec![None; self.nodes.len()];
         let mut seen = vec![false; self.nodes.len()];
@@ -358,7 +394,11 @@ impl Graph {
             if u == b {
                 break;
             }
-            let backwards: &[usize] = if options.directed { &[] } else { self.in_edges(u) };
+            let backwards: &[usize] = if options.directed {
+                &[]
+            } else {
+                self.in_edges(u)
+            };
             for (&e, forward) in self
                 .out_edges(u)
                 .iter()
@@ -416,7 +456,11 @@ impl Graph {
                 .then_with(|| self.degree(b.0).cmp(&self.degree(a.0)))
                 .then_with(|| self.nodes[a.0].id.cmp(&self.nodes[b.0].id))
         });
-        let starts: Vec<usize> = scored.iter().take(options.starts).map(|(i, _)| *i).collect();
+        let starts: Vec<usize> = scored
+            .iter()
+            .take(options.starts)
+            .map(|(i, _)| *i)
+            .collect();
         let allowed = |relation: &str| {
             options.relations.is_empty() || options.relations.iter().any(|r| r == relation)
         };
@@ -498,7 +542,13 @@ impl Graph {
                 }
             }
         }
-        QueryResult { starts, truncated: order.len() - kept.len(), nodes: kept, edges, text }
+        QueryResult {
+            starts,
+            truncated: order.len() - kept.len(),
+            nodes: kept,
+            edges,
+            text,
+        }
     }
 }
 
@@ -538,20 +588,46 @@ mod tests {
         assert!(path[0].via.is_none());
         assert_eq!(path[1].via.map(|v| v.1), Some(false)); // d <- c is traversed against the edge
         assert!(g.shortest_path("Lonely", "RagStore").unwrap().is_none());
-        assert_eq!(g.shortest_path("RagStore", "RagStore").unwrap().unwrap().len(), 1);
+        assert_eq!(
+            g.shortest_path("RagStore", "RagStore")
+                .unwrap()
+                .unwrap()
+                .len(),
+            1
+        );
     }
 
     #[test]
     fn a_directed_path_follows_edges_forwards_only_and_filters_relations() {
         let g = sample();
-        let directed = PathOptions { directed: true, relations: Vec::new() };
-        assert!(g.shortest_path_with("Connection", "RagStore", &directed).unwrap().is_none());
-        let path = g.shortest_path_with("RagStore", "Connection", &directed).unwrap().unwrap();
+        let directed = PathOptions {
+            directed: true,
+            relations: Vec::new(),
+        };
+        assert!(
+            g.shortest_path_with("Connection", "RagStore", &directed)
+                .unwrap()
+                .is_none()
+        );
+        let path = g
+            .shortest_path_with("RagStore", "Connection", &directed)
+            .unwrap()
+            .unwrap();
         assert!(path.iter().skip(1).all(|h| h.via.is_some_and(|v| v.1)));
-        let calls_only = PathOptions { directed: true, relations: vec!["calls".into()] };
-        assert!(g.shortest_path_with("RagStore", "Connection", &calls_only).unwrap().is_none());
+        let calls_only = PathOptions {
+            directed: true,
+            relations: vec!["calls".into()],
+        };
+        assert!(
+            g.shortest_path_with("RagStore", "Connection", &calls_only)
+                .unwrap()
+                .is_none()
+        );
         assert_eq!(
-            g.shortest_path_with(".open()", "Connection", &calls_only).unwrap().unwrap().len(),
+            g.shortest_path_with(".open()", "Connection", &calls_only)
+                .unwrap()
+                .unwrap()
+                .len(),
             3
         );
     }
@@ -565,13 +641,18 @@ mod tests {
         ];
         let g = Graph::from_parts(nodes, Vec::new());
         match g.explain("join") {
-            Err(GraphError::Ambiguous { candidates, total, .. }) => {
-                assert_eq!(total, 2, "the stub is not a candidate when sourced nodes exist");
+            Err(GraphError::Ambiguous {
+                candidates, total, ..
+            }) => {
+                assert_eq!(
+                    total, 2,
+                    "the stub is not a candidate when sourced nodes exist"
+                );
                 assert!(
                     candidates[0].contains("src/a.ts") && candidates[0].contains("[id a_join]"),
                     "{candidates:?}"
                 );
-            },
+            }
             other => panic!("{other:?}"),
         }
         assert_eq!(g.explain("src/b.ts::join").unwrap().id, "b_join");
@@ -597,16 +678,35 @@ mod tests {
         assert_eq!(r.starts, vec![2]);
         assert!(r.nodes.len() >= 3);
         assert!(r.text.contains("NODE .upsert_doc()"));
-        assert!(r.text.contains("EDGE .open() --calls [INFERRED]--> .upsert_doc()"));
-        let tight =
-            g.query("upsert_doc", &QueryOptions { budget_tokens: 5, ..QueryOptions::default() });
+        assert!(
+            r.text
+                .contains("EDGE .open() --calls [INFERRED]--> .upsert_doc()")
+        );
+        let tight = g.query(
+            "upsert_doc",
+            &QueryOptions {
+                budget_tokens: 5,
+                ..QueryOptions::default()
+            },
+        );
         assert_eq!(tight.nodes.len(), 1);
         assert!(tight.truncated > 0);
         let only_contains = g.query(
             "upsert_doc",
-            &QueryOptions { relations: vec!["contains".into()], ..QueryOptions::default() },
+            &QueryOptions {
+                relations: vec!["contains".into()],
+                ..QueryOptions::default()
+            },
         );
-        assert!(only_contains.edges.iter().all(|&e| g.edges[e].relation == "contains"));
-        assert_eq!(g.query("the and", &QueryOptions::default()), QueryResult::default());
+        assert!(
+            only_contains
+                .edges
+                .iter()
+                .all(|&e| g.edges[e].relation == "contains")
+        );
+        assert_eq!(
+            g.query("the and", &QueryOptions::default()),
+            QueryResult::default()
+        );
     }
 }

@@ -178,7 +178,12 @@ fn chat_message_to_openai_messages(message: &ChatMessage) -> Vec<Value> {
                     Part::Image(image) => images.push(image),
                     // A tool result filed under a user message (Gemini-style
                     // history) still has to reach the wire as a `tool` message.
-                    Part::FunctionResponse { id, name, response, images } => {
+                    Part::FunctionResponse {
+                        id,
+                        name,
+                        response,
+                        images,
+                    } => {
                         tool_messages.push(tool_message(
                             id,
                             name,
@@ -186,8 +191,8 @@ fn chat_message_to_openai_messages(message: &ChatMessage) -> Vec<Value> {
                             images,
                             &mut tool_images,
                         ));
-                    },
-                    Part::FunctionCall { .. } | Part::Reasoning { .. } => {},
+                    }
+                    Part::FunctionCall { .. } | Part::Reasoning { .. } => {}
                 }
             }
 
@@ -197,7 +202,7 @@ fn chat_message_to_openai_messages(message: &ChatMessage) -> Vec<Value> {
                 result.push(json!({ "role": "user", "content": user_content(&texts, &images) }));
             }
             result
-        },
+        }
         Role::Model => {
             let mut text_parts = Vec::new();
             let mut tool_calls = Vec::new();
@@ -214,10 +219,10 @@ fn chat_message_to_openai_messages(message: &ChatMessage) -> Vec<Value> {
                                 "arguments": args.to_string(),
                             }
                         }));
-                    },
+                    }
                     // Reasoning is never replayed on this wire: servers that
                     // emit `reasoning_content` reject it on input.
-                    Part::Reasoning { .. } | Part::Image(_) | Part::FunctionResponse { .. } => {},
+                    Part::Reasoning { .. } | Part::Image(_) | Part::FunctionResponse { .. } => {}
                 }
             }
 
@@ -234,18 +239,24 @@ fn chat_message_to_openai_messages(message: &ChatMessage) -> Vec<Value> {
                 msg.insert("tool_calls".to_string(), Value::Array(tool_calls));
             }
             vec![Value::Object(msg)]
-        },
+        }
         Role::Tool => {
             let mut result = Vec::new();
             let mut tool_images = Vec::new();
             for part in &message.parts {
-                if let Part::FunctionResponse { id, name, response, images } = part {
+                if let Part::FunctionResponse {
+                    id,
+                    name,
+                    response,
+                    images,
+                } = part
+                {
                     result.push(tool_message(id, name, response, images, &mut tool_images));
                 }
             }
             result.extend(tool_images_message(&tool_images));
             result
-        },
+        }
     }
 }
 
@@ -330,8 +341,14 @@ impl ChatCompletionsStreamParser {
                 .and_then(Value::as_str)
                 .or_else(|| value.get("message").and_then(Value::as_str))
                 .unwrap_or("OpenAI Chat Completions error");
-            let status = error.get("code").and_then(Value::as_u64).map_or(502, |c| c as u16);
-            return Err(ModelError::Api { status, message: message.to_string() });
+            let status = error
+                .get("code")
+                .and_then(Value::as_u64)
+                .map_or(502, |c| c as u16);
+            return Err(ModelError::Api {
+                status,
+                message: message.to_string(),
+            });
         }
 
         let mut events = Vec::new();
@@ -363,7 +380,10 @@ impl ChatCompletionsStreamParser {
             self.completed_usage = Some(usage);
         }
 
-        let choice = value.get("choices").and_then(Value::as_array).and_then(|c| c.first());
+        let choice = value
+            .get("choices")
+            .and_then(Value::as_array)
+            .and_then(|c| c.first());
 
         if let Some(choice) = choice {
             let delta = choice.get("delta").or_else(|| choice.get("message"));
@@ -380,8 +400,10 @@ impl ChatCompletionsStreamParser {
                 }
 
                 // 2. Visible text content with <think> tag support
-                let content =
-                    delta.get("content").and_then(Value::as_str).filter(|s| !s.is_empty());
+                let content = delta
+                    .get("content")
+                    .and_then(Value::as_str)
+                    .filter(|s| !s.is_empty());
                 if let Some(c) = content {
                     events.extend(process_text_chunk(
                         c,
@@ -424,7 +446,10 @@ impl ChatCompletionsStreamParser {
             .map(|i| i as usize)
             .unwrap_or(self.pending_tool_calls.len());
 
-        let entry = if let Some(pos) = self.pending_tool_calls.iter().position(|p| p.index == index)
+        let entry = if let Some(pos) = self
+            .pending_tool_calls
+            .iter()
+            .position(|p| p.index == index)
         {
             &mut self.pending_tool_calls[pos]
         } else {
@@ -444,14 +469,19 @@ impl ChatCompletionsStreamParser {
         {
             entry.id = id.to_string();
         }
-        if let Some(name) =
-            tc.pointer("/function/name").or_else(|| tc.get("name")).and_then(Value::as_str)
+        if let Some(name) = tc
+            .pointer("/function/name")
+            .or_else(|| tc.get("name"))
+            .and_then(Value::as_str)
             && !name.is_empty()
         {
             entry.name.push_str(name);
         }
         let mut fragment = String::new();
-        if let Some(args) = tc.pointer("/function/arguments").or_else(|| tc.get("arguments")) {
+        if let Some(args) = tc
+            .pointer("/function/arguments")
+            .or_else(|| tc.get("arguments"))
+        {
             match args {
                 Value::String(s) => fragment.push_str(s),
                 other => fragment.push_str(&other.to_string()),
@@ -464,8 +494,10 @@ impl ChatCompletionsStreamParser {
             .len()
             .saturating_add(entry.name.len())
             .saturating_add(entry.arguments_buf.len());
-        self.pending_tool_bytes =
-            self.pending_tool_bytes.saturating_sub(old_bytes).saturating_add(new_bytes);
+        self.pending_tool_bytes = self
+            .pending_tool_bytes
+            .saturating_sub(old_bytes)
+            .saturating_add(new_bytes);
 
         Some(ModelStreamEvent::ToolCallDelta {
             id: (!entry.id.is_empty()).then(|| entry.id.clone()),
@@ -480,17 +512,29 @@ impl ChatCompletionsStreamParser {
         self.pending_tool_bytes = 0;
         let mut events = Vec::with_capacity(pending.len());
         for call in pending {
-            let name = if call.name.is_empty() { "unnamed_tool".to_string() } else { call.name };
+            let name = if call.name.is_empty() {
+                "unnamed_tool".to_string()
+            } else {
+                call.name
+            };
             // Some local servers omit the call id; mint a unique one so two
             // calls to the same tool never share an id.
-            let id = if call.id.is_empty() { crate::generate_call_id(&name) } else { call.id };
+            let id = if call.id.is_empty() {
+                crate::generate_call_id(&name)
+            } else {
+                call.id
+            };
             let arguments = if call.arguments_buf.trim().is_empty() {
                 Value::Null
             } else {
                 serde_json::from_str(&call.arguments_buf)
                     .unwrap_or(Value::String(call.arguments_buf))
             };
-            events.push(ModelStreamEvent::ToolCall { id, name, arguments });
+            events.push(ModelStreamEvent::ToolCall {
+                id,
+                name,
+                arguments,
+            });
         }
         events
     }
@@ -546,7 +590,9 @@ impl LocalChatCompletionsClient {
     pub fn new(base_url: impl Into<String>, model: impl Into<String>) -> Self {
         let root = base_url.into();
         let runtime = ProviderRuntime::keyless(format!("{}/v1", root.trim_end_matches('/')));
-        Self { inner: OpenAiCompatClient::from_provider(runtime, OpenAiWire::Chat, model) }
+        Self {
+            inner: OpenAiCompatClient::from_provider(runtime, OpenAiWire::Chat, model),
+        }
     }
 }
 
@@ -627,12 +673,13 @@ where
                                 items.push(Err(error));
                                 stream = None;
                                 break;
-                            },
+                            }
                         }
                     }
                     if stream.is_some() && buffer.len() > MAX_CHAT_SSE_FRAME_BYTES {
-                        items
-                            .push(Err(ModelError::Stream("OpenAI SSE frame exceeds 8 MiB".into())));
+                        items.push(Err(ModelError::Stream(
+                            "OpenAI SSE frame exceeds 8 MiB".into(),
+                        )));
                         stream = None;
                     }
                     if !items.is_empty() {
@@ -649,7 +696,7 @@ where
                                 Ok(text) => {
                                     buffer.push_str(text);
                                     utf8_tail.clear();
-                                },
+                                }
                                 Err(error) if error.error_len().is_none() => {
                                     // HTTP chunk boundaries may bisect a codepoint.
                                     let valid = error.valid_up_to();
@@ -658,7 +705,7 @@ where
                                             .expect("validated UTF-8 prefix"),
                                     );
                                     utf8_tail.drain(..valid);
-                                },
+                                }
                                 Err(error) => {
                                     let error =
                                         ModelError::Stream(format!("invalid utf-8: {error}"));
@@ -666,15 +713,15 @@ where
                                         futures::stream::iter(vec![Err(error)]),
                                         (None, buffer, utf8_tail, parser),
                                     ));
-                                },
+                                }
                             }
-                        },
+                        }
                         Some(Err(error)) => {
                             return Some((
                                 futures::stream::iter(vec![Err(error)]),
                                 (None, buffer, utf8_tail, parser),
                             ));
-                        },
+                        }
                         None => {
                             let items = if !utf8_tail.is_empty() {
                                 vec![Err(ModelError::Stream(
@@ -695,7 +742,7 @@ where
                                 futures::stream::iter(items),
                                 (None, String::new(), Vec::new(), parser),
                             ));
-                        },
+                        }
                     }
                 }
             },
@@ -714,7 +761,10 @@ mod tests {
         let turn = ChatTurn {
             system: Some("You are an expert system.".to_string()),
             messages: vec![
-                ChatMessage { role: Role::User, parts: vec![Part::Text("Hello".to_string())] },
+                ChatMessage {
+                    role: Role::User,
+                    parts: vec![Part::Text("Hello".to_string())],
+                },
                 ChatMessage {
                     role: Role::Model,
                     parts: vec![
@@ -878,8 +928,14 @@ mod tests {
         assert_eq!(messages[0]["role"], "tool");
         assert_eq!(messages[0]["tool_call_id"], "call_1");
         assert_eq!(messages[1]["role"], "user");
-        assert_eq!(messages[1]["content"][0]["text"], "Image output of tool call(s): computer");
-        assert_eq!(messages[1]["content"][1]["image_url"]["url"], "data:image/png;base64,BBBB");
+        assert_eq!(
+            messages[1]["content"][0]["text"],
+            "Image output of tool call(s): computer"
+        );
+        assert_eq!(
+            messages[1]["content"][1]["image_url"]["url"],
+            "data:image/png;base64,BBBB"
+        );
     }
 
     #[test]
@@ -906,7 +962,10 @@ mod tests {
         assert_eq!(req["max_tokens"], 512);
         assert_eq!(req["stop"], json!(["</s>"]));
         assert_eq!(req["response_format"]["type"], "json_schema");
-        assert_eq!(req["response_format"]["json_schema"]["schema"], json!({ "type": "object" }));
+        assert_eq!(
+            req["response_format"]["json_schema"]["schema"],
+            json!({ "type": "object" })
+        );
         assert_eq!(req["cache_prompt"], true);
         // `extra` is merged last.
         assert_eq!(req["temperature"], json!(0.9));
@@ -941,7 +1000,10 @@ mod tests {
     fn parse_text_delta_event() {
         let data = r#"{"choices":[{"delta":{"content":"Hello world!"}}]}"#;
         let events = parse_chat_completions_event(data).unwrap();
-        assert_eq!(events, vec![ModelStreamEvent::TextDelta("Hello world!".to_string())]);
+        assert_eq!(
+            events,
+            vec![ModelStreamEvent::TextDelta("Hello world!".to_string())]
+        );
     }
 
     #[test]
@@ -950,7 +1012,9 @@ mod tests {
         let events = parse_chat_completions_event(data).unwrap();
         assert_eq!(
             events,
-            vec![ModelStreamEvent::ReasoningDelta("Thinking carefully...".to_string())]
+            vec![ModelStreamEvent::ReasoningDelta(
+                "Thinking carefully...".to_string()
+            )]
         );
     }
 
@@ -1023,11 +1087,15 @@ mod tests {
             }
         );
         match &events[1] {
-            ModelStreamEvent::ToolCall { id, name, arguments } => {
+            ModelStreamEvent::ToolCall {
+                id,
+                name,
+                arguments,
+            } => {
                 assert_eq!(id, "call_abc123");
                 assert_eq!(name, "read_file");
                 assert_eq!(*arguments, json!({ "path": "src/lib.rs" }));
-            },
+            }
             other => panic!("expected ToolCall, got {other:?}"),
         }
     }
@@ -1067,14 +1135,20 @@ mod tests {
         );
 
         // Chunk 3: finish_reason tool_calls
-        let e3 = parser.feed_event(r#"{"choices":[{"finish_reason":"tool_calls"}]}"#).unwrap();
+        let e3 = parser
+            .feed_event(r#"{"choices":[{"finish_reason":"tool_calls"}]}"#)
+            .unwrap();
         assert_eq!(e3.len(), 1);
         match &e3[0] {
-            ModelStreamEvent::ToolCall { id, name, arguments } => {
+            ModelStreamEvent::ToolCall {
+                id,
+                name,
+                arguments,
+            } => {
                 assert_eq!(id, "call_1");
                 assert_eq!(name, "calc");
                 assert_eq!(*arguments, json!({ "a": 1 }));
-            },
+            }
             other => panic!("expected ToolCall, got {other:?}"),
         }
 
@@ -1117,7 +1191,7 @@ mod tests {
             ModelError::Api { status, message } => {
                 assert_eq!(status, 400);
                 assert_eq!(message, "Context length exceeded");
-            },
+            }
             other => panic!("expected Api error, got {other:?}"),
         }
     }
@@ -1152,7 +1226,13 @@ mod tests {
         .await
         .expect("DONE must end without EOF");
         assert_eq!(events.len(), 2);
-        assert!(matches!(&events[1], Ok(ModelStreamEvent::Completed { finish_reason: None, .. })));
+        assert!(matches!(
+            &events[1],
+            Ok(ModelStreamEvent::Completed {
+                finish_reason: None,
+                ..
+            })
+        ));
     }
 
     #[tokio::test]
@@ -1181,11 +1261,14 @@ mod tests {
             ))],
             vec![Ok(bytes::Bytes::from_static(b"data: {oops}\n\n"))],
         ] {
-            let events: Vec<_> =
-                chat_completions_sse_stream(futures::stream::iter(bytes)).collect().await;
+            let events: Vec<_> = chat_completions_sse_stream(futures::stream::iter(bytes))
+                .collect()
+                .await;
             assert!(events.last().expect("error").is_err(), "{events:?}");
             assert!(
-                !events.iter().any(|e| matches!(e, Ok(ModelStreamEvent::Completed { .. }))),
+                !events
+                    .iter()
+                    .any(|e| matches!(e, Ok(ModelStreamEvent::Completed { .. }))),
                 "{events:?}"
             );
         }
@@ -1220,9 +1303,15 @@ mod tests {
         });
         let stream = chat_completions_sse_stream(bytes);
         futures::pin_mut!(stream);
-        assert!(matches!(stream.next().await, Some(Ok(ModelStreamEvent::Created))));
+        assert!(matches!(
+            stream.next().await,
+            Some(Ok(ModelStreamEvent::Created))
+        ));
         assert_eq!(polls.load(Ordering::SeqCst), 0);
-        assert!(matches!(stream.next().await, Some(Ok(ModelStreamEvent::TextDelta(_)))));
+        assert!(matches!(
+            stream.next().await,
+            Some(Ok(ModelStreamEvent::TextDelta(_)))
+        ));
         assert_eq!(polls.load(Ordering::SeqCst), 1);
 
         let oversized = bytes::Bytes::from(vec![b'x'; MAX_CHAT_SSE_FRAME_BYTES + 1]);
@@ -1264,8 +1353,13 @@ mod tests {
             assert_eq!(reason, "reason", "split {split}");
         }
         let mut parser = ChatCompletionsStreamParser::new();
-        parser.feed_event(r#"{"choices":[{"delta":{"content":"literal <th"}}]}"#).expect("frame");
-        assert_eq!(parser.feed_done(), vec![ModelStreamEvent::TextDelta("<th".into())]);
+        parser
+            .feed_event(r#"{"choices":[{"delta":{"content":"literal <th"}}]}"#)
+            .expect("frame");
+        assert_eq!(
+            parser.feed_done(),
+            vec![ModelStreamEvent::TextDelta("<th".into())]
+        );
     }
 
     #[tokio::test]
@@ -1302,7 +1396,9 @@ mod tests {
             matches!(events.last(),Some(Err(ModelError::Stream(message))) if message.contains("pending tool calls exceed"))
         );
         assert!(
-            !events.iter().any(|event| matches!(event, Ok(ModelStreamEvent::Completed { .. })))
+            !events
+                .iter()
+                .any(|event| matches!(event, Ok(ModelStreamEvent::Completed { .. })))
         );
         assert_eq!(
             parse_chat_completions_event(r#"{"choices":[{"delta":{"content":"literal <th"}}]}"#)

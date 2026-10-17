@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_geom::{Affine, PathData, Point, Rect, Vec2};
 
-use crate::appearance::{Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeLayer};
+use crate::appearance::{
+    Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeLayer,
+};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Justify {
@@ -93,12 +95,20 @@ pub struct CharStyle {
     pub small_caps: Option<f64>,
     /// Character Alignment (Character panel menu): where characters smaller than the largest on
     /// their line line up with it.
-    #[serde(default, rename = "charAlign", skip_serializing_if = "crate::skip::is_default")]
+    #[serde(
+        default,
+        rename = "charAlign",
+        skip_serializing_if = "crate::skip::is_default"
+    )]
     pub char_align: CharAlign,
     /// Proportional Metrics (Character panel menu, East Asian options): full-width glyphs take the
     /// font's own proportional widths, OpenType `palt` (#966); in vertical type upright glyphs take
     /// its proportional heights, `vpal`.
-    #[serde(default, rename = "proportionalMetrics", skip_serializing_if = "crate::skip::is_default")]
+    #[serde(
+        default,
+        rename = "proportionalMetrics",
+        skip_serializing_if = "crate::skip::is_default"
+    )]
     pub proportional_metrics: bool,
     /// Digits (Character panel menu, Middle Eastern options): the numeral system the digits of
     /// these characters are drawn in, whatever digits were typed.
@@ -169,7 +179,10 @@ pub struct ScriptMetrics {
 }
 
 impl ScriptMetrics {
-    pub const DEFAULT: Self = Self { size: 58.3, position: 33.3 };
+    pub const DEFAULT: Self = Self {
+        size: 58.3,
+        position: 33.3,
+    };
 }
 
 impl Default for ScriptMetrics {
@@ -290,12 +303,18 @@ impl CharStyle {
     }
     /// The character fill as a fill layer, overprinting as the characters do.
     fn fill_layer(&self) -> FillLayer {
-        FillLayer { overprint: self.overprint_fill, ..FillLayer::new(self.fill.clone()) }
+        FillLayer {
+            overprint: self.overprint_fill,
+            ..FillLayer::new(self.fill.clone())
+        }
     }
     /// The characters' paint as an object appearance (their outlines'): the fill, plus the
     /// stroke when it draws one, overprinting as the characters do.
     pub fn appearance(&self) -> Appearance {
-        let mut a = Appearance { items: vec![AppearanceItem::Fill(self.fill_layer())], ..Default::default() };
+        let mut a = Appearance {
+            items: vec![AppearanceItem::Fill(self.fill_layer())],
+            ..Default::default()
+        };
         if self.has_stroke() {
             a.items.push(AppearanceItem::Stroke(self.stroke_layer()));
         }
@@ -304,7 +323,13 @@ impl CharStyle {
     /// The characters' paint as the basic fill and stroke rows (the stroke row even when it has
     /// no paint): the appearance the Eyedropper and graphic styles take from type.
     pub fn basic_appearance(&self) -> Appearance {
-        Appearance { items: vec![AppearanceItem::Fill(self.fill_layer()), AppearanceItem::Stroke(self.stroke_layer())], ..Default::default() }
+        Appearance {
+            items: vec![
+                AppearanceItem::Fill(self.fill_layer()),
+                AppearanceItem::Stroke(self.stroke_layer()),
+            ],
+            ..Default::default()
+        }
     }
 }
 
@@ -487,7 +512,11 @@ impl From<ParaStyle> for ParaStyleFile {
 
 impl From<ParaStyleFile> for ParaStyle {
     fn from(f: ParaStyleFile) -> Self {
-        let justify = if f.justify_auto { Justify::Auto } else { f.justify };
+        let justify = if f.justify_auto {
+            Justify::Auto
+        } else {
+            f.justify
+        };
         let ParaStyleFile {
             left_indent,
             right_indent,
@@ -630,7 +659,12 @@ pub enum VerticalAlign {
 }
 
 impl VerticalAlign {
-    pub const ALL: [VerticalAlign; 4] = [VerticalAlign::Top, VerticalAlign::Center, VerticalAlign::Bottom, VerticalAlign::Justify];
+    pub const ALL: [VerticalAlign; 4] = [
+        VerticalAlign::Top,
+        VerticalAlign::Center,
+        VerticalAlign::Bottom,
+        VerticalAlign::Justify,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             VerticalAlign::Top => "top",
@@ -653,7 +687,10 @@ pub struct TextWrap {
 
 impl Default for TextWrap {
     fn default() -> Self {
-        Self { offset: 6.0, invert: false }
+        Self {
+            offset: 6.0,
+            invert: false,
+        }
     }
 }
 
@@ -684,7 +721,13 @@ pub enum PathEffect {
 }
 
 impl PathEffect {
-    pub const ALL: [PathEffect; 5] = [PathEffect::Rainbow, PathEffect::Skew, PathEffect::Ribbon3d, PathEffect::StairStep, PathEffect::Gravity];
+    pub const ALL: [PathEffect; 5] = [
+        PathEffect::Rainbow,
+        PathEffect::Skew,
+        PathEffect::Ribbon3d,
+        PathEffect::StairStep,
+        PathEffect::Gravity,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             PathEffect::Rainbow => "rainbow",
@@ -696,7 +739,9 @@ impl PathEffect {
     }
     pub fn parse(s: &str) -> Option<Self> {
         let k = s.to_ascii_lowercase().replace([' ', '-', '_'], "");
-        Self::ALL.into_iter().find(|e| e.id().to_ascii_lowercase() == k || (k == "ribbon3d" && *e == PathEffect::Ribbon3d))
+        Self::ALL.into_iter().find(|e| {
+            e.id().to_ascii_lowercase() == k || (k == "ribbon3d" && *e == PathEffect::Ribbon3d)
+        })
     }
 }
 
@@ -716,7 +761,12 @@ pub enum PathAlign {
 }
 
 impl PathAlign {
-    pub const ALL: [PathAlign; 4] = [PathAlign::Ascender, PathAlign::Descender, PathAlign::Center, PathAlign::Baseline];
+    pub const ALL: [PathAlign; 4] = [
+        PathAlign::Ascender,
+        PathAlign::Descender,
+        PathAlign::Center,
+        PathAlign::Baseline,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             PathAlign::Ascender => "ascender",
@@ -726,7 +776,9 @@ impl PathAlign {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|a| a.id().eq_ignore_ascii_case(s.trim()))
+        Self::ALL
+            .into_iter()
+            .find(|a| a.id().eq_ignore_ascii_case(s.trim()))
     }
 }
 
@@ -803,18 +855,26 @@ impl AreaFit {
     /// The fit an id names (case, spaces, dashes and underscores ignored), with `min_percent`
     /// for Shrink Text (clamped to 10..100; a non-finite value gives the default).
     pub fn parse(id: &str, min_percent: Option<f64>) -> Option<Self> {
-        match id.to_ascii_lowercase().replace([' ', '-', '_'], "").as_str() {
+        match id
+            .to_ascii_lowercase()
+            .replace([' ', '-', '_'], "")
+            .as_str()
+        {
             "none" | "off" => Some(AreaFit::None),
             "autoheight" | "autosize" => Some(AreaFit::AutoHeight),
-            "shrinktext" | "shrinktexttofit" | "shrink" => {
-                Some(AreaFit::ShrinkText { min_percent: Self::clamp_percent(min_percent.unwrap_or(Self::DEFAULT_MIN_PERCENT)) })
-            }
+            "shrinktext" | "shrinktexttofit" | "shrink" => Some(AreaFit::ShrinkText {
+                min_percent: Self::clamp_percent(min_percent.unwrap_or(Self::DEFAULT_MIN_PERCENT)),
+            }),
             _ => None,
         }
     }
     /// A Shrink Text minimum percentage within 10..100 (the default when not finite).
     pub fn clamp_percent(p: f64) -> f64 {
-        if p.is_finite() { p.clamp(Self::MIN_PERCENT, 100.0) } else { Self::DEFAULT_MIN_PERCENT }
+        if p.is_finite() {
+            p.clamp(Self::MIN_PERCENT, 100.0)
+        } else {
+            Self::DEFAULT_MIN_PERCENT
+        }
     }
     /// Shrink Text's minimum scale factor (0.1..1), if this is Shrink Text.
     pub fn min_scale(self) -> Option<f64> {
@@ -849,11 +909,19 @@ pub struct TextRun {
 impl TextRun {
     /// A plain text run.
     pub fn new(text: impl Into<String>, style: CharStyle) -> Self {
-        Self { text: text.into(), style, inline: None }
+        Self {
+            text: text.into(),
+            style,
+            inline: None,
+        }
     }
     /// An inline graphic run showing `art`.
     pub fn inline(art: InlineArt, style: CharStyle) -> Self {
-        Self { text: INLINE_CHAR.to_string(), style, inline: Some(art) }
+        Self {
+            text: INLINE_CHAR.to_string(),
+            style,
+            inline: Some(art),
+        }
     }
 }
 
@@ -893,15 +961,28 @@ fn one() -> f64 {
 
 impl InlineArt {
     pub fn new(symbol: impl Into<String>) -> Self {
-        Self { symbol: symbol.into(), scale: 1.0, baseline_shift: 0.0, bounds: None }
+        Self {
+            symbol: symbol.into(),
+            scale: 1.0,
+            baseline_shift: 0.0,
+            bounds: None,
+        }
     }
     /// `scale`, made finite and positive (untrusted input).
     pub fn safe_scale(&self) -> f64 {
-        if self.scale.is_finite() && self.scale > 0.0 { self.scale.min(INLINE_MAX_SCALE) } else { 1.0 }
+        if self.scale.is_finite() && self.scale > 0.0 {
+            self.scale.min(INLINE_MAX_SCALE)
+        } else {
+            1.0
+        }
     }
     /// `baseline_shift`, made finite (untrusted input).
     pub fn safe_shift(&self) -> f64 {
-        if self.baseline_shift.is_finite() { self.baseline_shift.clamp(-1e5, 1e5) } else { 0.0 }
+        if self.baseline_shift.is_finite() {
+            self.baseline_shift.clamp(-1e5, 1e5)
+        } else {
+            0.0
+        }
     }
 }
 
@@ -928,7 +1009,9 @@ impl TextKind {
     /// Round a closed path the end may be past 1 (the span runs on past the path's start), a full
     /// turn without an end or with the end at the start. None for other type.
     pub fn path_span(&self) -> Option<(f64, f64)> {
-        let TextKind::OnPath { path, start, end } = self else { return None };
+        let TextKind::OnPath { path, start, end } = self else {
+            return None;
+        };
         let s = fraction(*start);
         Some(if path.is_closed() {
             let run = end.map_or(0.0, |e| (fraction(e) - s).rem_euclid(1.0));
@@ -941,7 +1024,11 @@ impl TextKind {
 
 /// `x` as a fraction of a path's length (0..1; 0 when not finite).
 fn fraction(x: f64) -> f64 {
-    if x.is_finite() { x.clamp(0.0, 1.0) } else { 0.0 }
+    if x.is_finite() {
+        x.clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
 }
 
 /// `path` run the other way, each point as far from its new start as it was from its old end
@@ -980,15 +1067,27 @@ pub struct TextObject {
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     pub area: AreaOptions,
     /// Type on a Path effect (type on a path only).
-    #[serde(default, rename = "pathEffect", skip_serializing_if = "crate::skip::is_default")]
+    #[serde(
+        default,
+        rename = "pathEffect",
+        skip_serializing_if = "crate::skip::is_default"
+    )]
     pub path_effect: PathEffect,
     /// Type on a Path Options › Align to Path (type on a path only).
-    #[serde(default, rename = "pathAlign", skip_serializing_if = "crate::skip::is_default")]
+    #[serde(
+        default,
+        rename = "pathAlign",
+        skip_serializing_if = "crate::skip::is_default"
+    )]
     pub path_align: PathAlign,
     /// Type on a Path Options › Spacing in points (type on a path only): glyphs are spaced as if
     /// set this far above the path, which closes them up round the outside of a curve and opens
     /// them up round the inside.
-    #[serde(default, rename = "pathSpacing", skip_serializing_if = "crate::skip::is_default")]
+    #[serde(
+        default,
+        rename = "pathSpacing",
+        skip_serializing_if = "crate::skip::is_default"
+    )]
     pub path_spacing: f64,
     /// Wrap objects above this area type, resolved by the engine after each edit (text space).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1022,12 +1121,21 @@ impl TextObject {
         let (sx, sy) = (a.hypot(b), c.hypot(d));
         let determinant = (a / sx) * (d / sy) - (b / sx) * (c / sy);
         let horizontal = sx / sy;
-        if !sy.is_finite() || sy <= 0.0 || !horizontal.is_finite() || horizontal <= 0.0 || !determinant.is_finite() || determinant.abs() <= 1e-12 {
+        if !sy.is_finite()
+            || sy <= 0.0
+            || !horizontal.is_finite()
+            || horizontal <= 0.0
+            || !determinant.is_finite()
+            || determinant.abs() <= 1e-12
+        {
             return None;
         }
         // Avoid a pure rotation turning otherwise identical fields into mixed values.
         let unit = |v: f64| if (v - 1.0).abs() <= 1e-12 { 1.0 } else { v };
-        Some(TextStyleScale { points: unit(sy), horizontal: unit(horizontal) })
+        Some(TextStyleScale {
+            points: unit(sy),
+            horizontal: unit(horizontal),
+        })
     }
 
     /// Character attributes as presented by controls (stored runs stay local for layout
@@ -1039,7 +1147,15 @@ impl TextObject {
         style.leading = style.leading.map(|v| v * scale.points);
         style.baseline_shift *= scale.points;
         style.h_scale *= scale.horizontal;
-        if ![style.size, style.leading.unwrap_or(0.0), style.baseline_shift, style.h_scale].iter().all(|v| v.is_finite()) {
+        if ![
+            style.size,
+            style.leading.unwrap_or(0.0),
+            style.baseline_shift,
+            style.h_scale,
+        ]
+        .iter()
+        .all(|v| v.is_finite())
+        {
             return None;
         }
         Some(style)
@@ -1067,15 +1183,24 @@ impl TextObject {
     }
     /// Number of paragraphs (`\n`-separated; empty text has one).
     pub fn paragraph_count(&self) -> usize {
-        1 + self.runs.iter().map(|r| r.text.bytes().filter(|&b| b == b'\n').count()).sum::<usize>()
+        1 + self
+            .runs
+            .iter()
+            .map(|r| r.text.bytes().filter(|&b| b == b'\n').count())
+            .sum::<usize>()
     }
     /// Attributes of paragraph `i` (the last paragraph's past the end).
     pub fn para_at(&self, i: usize) -> &ParaStyle {
-        self.paras.get(i).or(self.paras.last()).unwrap_or(&self.para)
+        self.paras
+            .get(i)
+            .or(self.paras.last())
+            .unwrap_or(&self.para)
     }
     /// Every paragraph's attributes, one per paragraph.
     pub fn paragraph_styles(&self) -> Vec<ParaStyle> {
-        (0..self.paragraph_count()).map(|i| self.para_at(i).clone()).collect()
+        (0..self.paragraph_count())
+            .map(|i| self.para_at(i).clone())
+            .collect()
     }
     /// Set every paragraph's attributes from `styles` (one per paragraph; a short list repeats its
     /// last entry, a long one is cut).
@@ -1111,12 +1236,23 @@ impl TextObject {
     /// touches its paragraph).
     pub fn paragraphs_in(&self, start: usize, end: usize) -> std::ops::Range<usize> {
         let text = self.plain_text();
-        let (a, b) = (start.min(end).min(text.len()), start.max(end).min(text.len()));
-        let index = |byte: usize| text.as_bytes().get(..byte).map_or(0, |s| s.iter().filter(|&&c| c == b'\n').count());
+        let (a, b) = (
+            start.min(end).min(text.len()),
+            start.max(end).min(text.len()),
+        );
+        let index = |byte: usize| {
+            text.as_bytes()
+                .get(..byte)
+                .map_or(0, |s| s.iter().filter(|&&c| c == b'\n').count())
+        };
         index(a)..index(b) + 1
     }
     /// Apply `f` to the attributes of paragraphs `range` (indices; None = every paragraph).
-    pub fn edit_paras(&mut self, range: Option<std::ops::Range<usize>>, mut f: impl FnMut(&mut ParaStyle)) {
+    pub fn edit_paras(
+        &mut self,
+        range: Option<std::ops::Range<usize>>,
+        mut f: impl FnMut(&mut ParaStyle),
+    ) {
         match range {
             None => {
                 f(&mut self.para);
@@ -1152,7 +1288,9 @@ impl TextObject {
         }
         let r = self.paragraphs_in(start, end);
         let v = self.paragraph_styles();
-        let Some(keep) = v.get(r.start).cloned() else { return };
+        let Some(keep) = v.get(r.start).cloned() else {
+            return;
+        };
         let added = insert.bytes().filter(|&b| b == b'\n').count();
         let mut out: Vec<ParaStyle> = v.iter().take(r.start + 1).cloned().collect();
         out.extend(std::iter::repeat_n(keep, added));
@@ -1163,7 +1301,10 @@ impl TextObject {
         }
     }
     pub fn first_style(&self) -> CharStyle {
-        self.runs.first().map(|r| r.style.clone()).unwrap_or_default()
+        self.runs
+            .first()
+            .map(|r| r.style.clone())
+            .unwrap_or_default()
     }
     /// Approximate bounds when no layout cache is available (0.55 em average advance).
     pub fn estimate_bounds(&self) -> Rect {
@@ -1172,13 +1313,22 @@ impl TextObject {
         let lines: Vec<&str> = text.split('\n').collect();
         let w = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0) as f64 * st.size * 0.55;
         let lead = st.effective_leading();
-        Rect::new(0.0, -st.size * 0.8, w.max(1.0), -st.size * 0.8 + lead * lines.len().max(1) as f64)
+        Rect::new(
+            0.0,
+            -st.size * 0.8,
+            w.max(1.0),
+            -st.size * 0.8 + lead * lines.len().max(1) as f64,
+        )
     }
     pub fn bounds(&self) -> Option<Rect> {
         match &self.kind {
             TextKind::Area { frame } => frame.bounds().map(|b| self.xf.transform_rect_bbox(b)),
             TextKind::OnPath { path, .. } => path.bounds().map(|b| self.xf.transform_rect_bbox(b)),
-            TextKind::Point => Some(self.xf.transform_rect_bbox(self.cached_bounds.unwrap_or_else(|| self.estimate_bounds()))),
+            TextKind::Point => {
+                Some(self.xf.transform_rect_bbox(
+                    self.cached_bounds.unwrap_or_else(|| self.estimate_bounds()),
+                ))
+            }
         }
     }
     pub fn transform(&mut self, a: Affine) {
@@ -1195,8 +1345,12 @@ impl TextObject {
     /// centre bracket dragged across the path): the path runs the other way and the brackets swap
     /// ends, so the type keeps its stretch of the path. False, changing nothing, for other type.
     pub fn flip_on_path(&mut self) -> bool {
-        let Some((s, e)) = self.kind.path_span() else { return false };
-        let TextKind::OnPath { path, start, end } = &mut self.kind else { return false };
+        let Some((s, e)) = self.kind.path_span() else {
+            return false;
+        };
+        let TextKind::OnPath { path, start, end } = &mut self.kind else {
+            return false;
+        };
         reverse_from_end(path);
         if path.is_closed() {
             *start = (1.0 - e).rem_euclid(1.0);
@@ -1231,7 +1385,12 @@ impl TextObject {
         self.reshape_area(|frame, to_text| {
             // A distance: only the linear part of the document → text map applies.
             let local = to_text * d.to_point() - to_text * Point::ZERO;
-            refs.iter().all(|&(si, ai)| frame.anchor_mut(si, ai).map(|a| a.translate(local)).is_some())
+            refs.iter().all(|&(si, ai)| {
+                frame
+                    .anchor_mut(si, ai)
+                    .map(|a| a.translate(local))
+                    .is_some()
+            })
         })
     }
     /// Edit a copy of the area frame with `f` (given the document → text space map) and keep it
@@ -1242,9 +1401,15 @@ impl TextObject {
             return false;
         }
         let to_text = self.xf.inverse();
-        let TextKind::Area { frame } = &mut self.kind else { return false };
+        let TextKind::Area { frame } = &mut self.kind else {
+            return false;
+        };
         let mut next = frame.clone();
-        if !f(&mut next, to_text) || !next.anchors().all(|(_, _, a)| a.p.is_finite() && a.h_in.is_finite() && a.h_out.is_finite()) {
+        if !f(&mut next, to_text)
+            || !next
+                .anchors()
+                .all(|(_, _, a)| a.p.is_finite() && a.h_in.is_finite() && a.h_out.is_finite())
+        {
             return false;
         }
         *frame = next;
@@ -1268,10 +1433,15 @@ impl TextObject {
     /// The baselines in text space (the layout cache): for point type with none cached, the first
     /// one across [`Self::local_bounds`] (down the first column's centre line for vertical type).
     pub fn baselines(&self) -> impl Iterator<Item = (Point, Point)> + '_ {
-        let first = (self.cached_baselines.is_empty() && matches!(self.kind, TextKind::Point)).then(|| {
-            let b = self.local_bounds();
-            if self.vertical { (Point::new(0.0, b.y0), Point::new(0.0, b.y1)) } else { (Point::new(b.x0, 0.0), Point::new(b.x1, 0.0)) }
-        });
+        let first = (self.cached_baselines.is_empty() && matches!(self.kind, TextKind::Point))
+            .then(|| {
+                let b = self.local_bounds();
+                if self.vertical {
+                    (Point::new(0.0, b.y0), Point::new(0.0, b.y1))
+                } else {
+                    (Point::new(b.x0, 0.0), Point::new(b.x1, 0.0))
+                }
+            });
         self.cached_baselines.iter().copied().chain(first)
     }
 }
@@ -1295,25 +1465,42 @@ mod tests {
         assert_eq!(map(Digits::Hindi, "a-Z ३ ٪ ۔"), "a-Z ३ ٪ ۔");
         let st = CharStyle::default();
         assert!(serde_json::to_value(&st).unwrap().get("digits").is_none());
-        let farsi = CharStyle { digits: Digits::Farsi, ..CharStyle::default() };
+        let farsi = CharStyle {
+            digits: Digits::Farsi,
+            ..CharStyle::default()
+        };
         assert_eq!(serde_json::to_value(&farsi).unwrap()["digits"], "farsi");
         // Styles written before the attribute existed (no `digits` key) read as Default.
         let old = serde_json::to_value(&st).unwrap();
-        assert_eq!(serde_json::from_value::<CharStyle>(old).unwrap().digits, Digits::Default);
-        assert_eq!(serde_json::from_value::<CharStyle>(serde_json::to_value(&farsi).unwrap()).unwrap(), farsi);
+        assert_eq!(
+            serde_json::from_value::<CharStyle>(old).unwrap().digits,
+            Digits::Default
+        );
+        assert_eq!(
+            serde_json::from_value::<CharStyle>(serde_json::to_value(&farsi).unwrap()).unwrap(),
+            farsi
+        );
     }
 
     #[test]
     fn character_controls_reject_collapsed_and_nonfinite_transforms() {
         let mut t = TextObject::point(Point::ZERO, "Text", CharStyle::default());
-        for matrix in [[0.0; 6], [1.0, 1.0, 2.0, 2.0, 0.0, 0.0], [f64::INFINITY, 0.0, 0.0, 1.0, 0.0, 0.0], [1.0, 0.0, 0.0, 1.0, f64::NAN, 0.0]] {
+        for matrix in [
+            [0.0; 6],
+            [1.0, 1.0, 2.0, 2.0, 0.0, 0.0],
+            [f64::INFINITY, 0.0, 0.0, 1.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0, 1.0, f64::NAN, 0.0],
+        ] {
             t.xf = Affine::new(matrix);
             assert!(t.effective_char_style(&t.first_style()).is_none());
         }
         t.xf = Affine::rotate(0.83);
         assert_eq!(t.effective_char_style(&t.first_style()).unwrap().size, 12.0);
         t.xf = Affine::scale(1e308);
-        assert!(t.effective_char_style(&t.first_style()).is_none(), "overflowing point size");
+        assert!(
+            t.effective_char_style(&t.first_style()).is_none(),
+            "overflowing point size"
+        );
     }
 
     #[test]
@@ -1326,24 +1513,44 @@ mod tests {
     }
 
     fn justified(j: Justify) -> ParaStyle {
-        ParaStyle { justify: j, ..ParaStyle::default() }
+        ParaStyle {
+            justify: j,
+            ..ParaStyle::default()
+        }
     }
 
     #[test]
     fn paragraph_styles_split_merge_and_normalize() {
         let mut t = TextObject::point(Point::ZERO, "one\ntwo\nthree", CharStyle::default());
-        assert_eq!((t.paragraph_count(), t.paras.len()), (3, 0), "one style for all: nothing stored");
+        assert_eq!(
+            (t.paragraph_count(), t.paras.len()),
+            (3, 0),
+            "one style for all: nothing stored"
+        );
         assert_eq!(t.paragraphs_in(0, 0), 0..1);
         assert_eq!(t.paragraphs_in(4, 4), 1..2);
         assert_eq!(t.paragraphs_in(2, 9), 0..3);
         assert_eq!(t.paragraphs_in(99, 99), 2..3, "clamped to the text");
         t.edit_paras(Some(1..2), |p| p.justify = Justify::Center);
-        let js = |t: &TextObject| t.paragraph_styles().iter().map(|p| p.justify).collect::<Vec<_>>();
+        let js = |t: &TextObject| {
+            t.paragraph_styles()
+                .iter()
+                .map(|p| p.justify)
+                .collect::<Vec<_>>()
+        };
         assert_eq!(js(&t), [Justify::Left, Justify::Center, Justify::Left]);
         // Return inside "two": the new paragraph continues its style.
         t.splice_paras(5, 5, "\n");
         t.runs[0].text.insert(5, '\n');
-        assert_eq!(js(&t), [Justify::Left, Justify::Center, Justify::Center, Justify::Left]);
+        assert_eq!(
+            js(&t),
+            [
+                Justify::Left,
+                Justify::Center,
+                Justify::Center,
+                Justify::Left
+            ]
+        );
         // Deleting the break between "one" and "t": the first paragraph's style wins.
         t.splice_paras(3, 4, "");
         t.runs[0].text.remove(3);
@@ -1352,7 +1559,10 @@ mod tests {
         // An edit that skips the splice is repaired by normalizing (the last style continues).
         t.runs[0].text.push_str("\nfour");
         t.normalize_paras();
-        assert_eq!(js(&t), [Justify::Left, Justify::Center, Justify::Left, Justify::Left]);
+        assert_eq!(
+            js(&t),
+            [Justify::Left, Justify::Center, Justify::Left, Justify::Left]
+        );
         // `para` is paragraph 0's; all alike collapses to `para` alone.
         t.edit_paras(Some(0..1), |p| p.justify = Justify::Right);
         assert_eq!(t.para.justify, Justify::Right);
@@ -1360,7 +1570,15 @@ mod tests {
         assert!(t.paras.is_empty() && t.para.justify == Justify::Right);
         // A short list repeats its last entry, a long one is cut.
         t.set_paragraph_styles(vec![justified(Justify::Left), justified(Justify::Center)]);
-        assert_eq!(js(&t), [Justify::Left, Justify::Center, Justify::Center, Justify::Center]);
+        assert_eq!(
+            js(&t),
+            [
+                Justify::Left,
+                Justify::Center,
+                Justify::Center,
+                Justify::Center
+            ]
+        );
         t.set_paragraph_styles(vec![justified(Justify::Center); 9]);
         assert!(t.paras.is_empty() && t.para.justify == Justify::Center);
         // Old documents (no `paras`) load; new ones keep paragraph 0 in `para`.
@@ -1378,7 +1596,9 @@ mod tests {
     /// 120 × 40 area type at (40, 40), its text drawn at twice its size.
     fn area_type() -> TextObject {
         let mut t = TextObject::point(Point::ZERO, "Some text", CharStyle::default());
-        t.kind = TextKind::Area { frame: vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 60.0, 20.0)) };
+        t.kind = TextKind::Area {
+            frame: vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 60.0, 20.0)),
+        };
         t.xf = Affine::translate((40.0, 40.0)) * Affine::scale(2.0);
         t
     }
@@ -1389,10 +1609,19 @@ mod tests {
         assert_eq!(t.bounds(), Some(Rect::new(40.0, 40.0, 160.0, 80.0)));
         // Bottom-right handle to (200, 140), about the top-left corner.
         let o = Affine::translate((40.0, 40.0));
-        assert!(t.transform_area(o * Affine::scale_non_uniform(160.0 / 120.0, 100.0 / 40.0) * o.inverse()));
-        assert_eq!(t.xf, Affine::translate((40.0, 40.0)) * Affine::scale(2.0), "the type keeps its size");
+        assert!(t.transform_area(
+            o * Affine::scale_non_uniform(160.0 / 120.0, 100.0 / 40.0) * o.inverse()
+        ));
+        assert_eq!(
+            t.xf,
+            Affine::translate((40.0, 40.0)) * Affine::scale(2.0),
+            "the type keeps its size"
+        );
         let b = t.bounds().unwrap();
-        assert!((b.x1 - 200.0).abs() < 1e-9 && (b.y1 - 140.0).abs() < 1e-9 && b.x0 == 40.0, "{b:?}");
+        assert!(
+            (b.x1 - 200.0).abs() < 1e-9 && (b.y1 - 140.0).abs() < 1e-9 && b.x0 == 40.0,
+            "{b:?}"
+        );
         assert_eq!(t.area_frame().unwrap().bounds(), Some(b));
         // Point type has no area; a degenerate transform or a non-finite frame changes nothing.
         let mut p = TextObject::point(Point::ZERO, "x", CharStyle::default());
@@ -1410,9 +1639,15 @@ mod tests {
         let mut t = area_type();
         // The bottom-right corner (anchor 2) 20 pt right: 10 pt in text space at 2×.
         assert!(t.move_area_anchors(&[(0, 2)], Vec2::new(20.0, 0.0)));
-        let TextKind::Area { frame } = &t.kind else { panic!() };
+        let TextKind::Area { frame } = &t.kind else {
+            panic!()
+        };
         assert_eq!(frame.subpaths[0].anchors[2].p, Point::new(70.0, 20.0));
-        assert_eq!(frame.subpaths[0].anchors[1].p, Point::new(60.0, 0.0), "the others stay");
+        assert_eq!(
+            frame.subpaths[0].anchors[1].p,
+            Point::new(60.0, 0.0),
+            "the others stay"
+        );
         // A missing anchor changes nothing.
         let before = t.clone();
         assert!(!t.move_area_anchors(&[(0, 1), (0, 9)], Vec2::new(5.0, 5.0)));
@@ -1442,22 +1677,36 @@ mod tests {
         struct OldText {
             para: OldPara,
         }
-        for (direction, physical) in
-            [(Some(ParaDirection::RightToLeft), OldJustify::Right), (Some(ParaDirection::LeftToRight), OldJustify::Left), (None, OldJustify::Left)]
-        {
+        for (direction, physical) in [
+            (Some(ParaDirection::RightToLeft), OldJustify::Right),
+            (Some(ParaDirection::LeftToRight), OldJustify::Left),
+            (None, OldJustify::Left),
+        ] {
             let mut t = TextObject::point(Point::ZERO, "שלום", CharStyle::default());
-            t.para = ParaStyle { justify: Justify::Auto, direction, ..Default::default() };
+            t.para = ParaStyle {
+                justify: Justify::Auto,
+                direction,
+                ..Default::default()
+            };
             let json = serde_json::to_string(&t).unwrap();
             let old: OldText = serde_json::from_str(&json).unwrap();
             assert_eq!(old.para.justify, physical, "{json}");
             assert_eq!(serde_json::from_str::<TextObject>(&json).unwrap(), t);
         }
         // Other alignments save as before, without the flag.
-        let p = ParaStyle { justify: Justify::Right, ..Default::default() };
+        let p = ParaStyle {
+            justify: Justify::Right,
+            ..Default::default()
+        };
         let json = serde_json::to_string(&p).unwrap();
         assert!(!json.contains("justify_auto"), "{json}");
         assert_eq!(serde_json::from_str::<ParaStyle>(&json).unwrap(), p);
         // Files from before the flag keep their alignment.
-        assert_eq!(serde_json::from_str::<ParaStyle>(r#"{"justify":"Center"}"#).unwrap().justify, Justify::Center);
+        assert_eq!(
+            serde_json::from_str::<ParaStyle>(r#"{"justify":"Center"}"#)
+                .unwrap()
+                .justify,
+            Justify::Center
+        );
     }
 }

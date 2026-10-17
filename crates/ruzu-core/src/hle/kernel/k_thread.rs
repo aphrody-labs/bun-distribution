@@ -2269,21 +2269,23 @@ impl KThread {
         self.suspend_request_flags = 0;
         self.parent = owner.map(Arc::downgrade);
         self.scheduler = owner.and_then(|process| process.lock().unwrap().scheduler.clone());
-        self.global_scheduler_context = owner.and_then(|process| {
-            process
-                .lock()
-                .unwrap()
-                .global_scheduler_context
-                .as_ref()
-                .map(Arc::downgrade)
-        }).or_else(|| {
-            // A host dummy does not need a process or a per-core scheduler,
-            // but its WAITING/RUNNABLE transitions still belong to the kernel's
-            // global scheduler (upstream KThread always has KernelCore access).
-            super::kernel::get_kernel_ref()
-                .and_then(|kernel| kernel.global_scheduler_context())
-                .map(Arc::downgrade)
-        });
+        self.global_scheduler_context = owner
+            .and_then(|process| {
+                process
+                    .lock()
+                    .unwrap()
+                    .global_scheduler_context
+                    .as_ref()
+                    .map(Arc::downgrade)
+            })
+            .or_else(|| {
+                // A host dummy does not need a process or a per-core scheduler,
+                // but its WAITING/RUNNABLE transitions still belong to the kernel's
+                // global scheduler (upstream KThread always has KernelCore access).
+                super::kernel::get_kernel_ref()
+                    .and_then(|kernel| kernel.global_scheduler_context())
+                    .map(Arc::downgrade)
+            });
         // Upstream obtains the scheduler lock directly from KernelCore. A
         // parentless host identity can be created inside a scheduler callback
         // which already holds the GSC mutex; do not reacquire it here.
@@ -3279,7 +3281,11 @@ impl KThread {
     /// Mirrors upstream `KThread::NotifyAvailable`. Delegates to the thread's
     /// wait_queue `NotifyAvailable` under scheduler lock. Only touches `self`
     /// and its `sync_wait_context` — never the process.
-    pub fn notify_available(&mut self, signaled_object: *const SynchronizationObjectState, result: u32) -> bool {
+    pub fn notify_available(
+        &mut self,
+        signaled_object: *const SynchronizationObjectState,
+        result: u32,
+    ) -> bool {
         let _scheduler_lock = self.lock_scheduler();
         let Some(wait_queue) = self.wait_queue.clone() else {
             return false;

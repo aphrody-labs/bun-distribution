@@ -4,7 +4,14 @@
 //! Shaping here is style-agnostic: [`shape`] turns a string in one face into glyph ids, clusters
 //! and advances in font units. `designcraft-compose` applies sizes, tracking, scaling and
 //! justification on top.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod fontdb;
@@ -15,8 +22,9 @@ pub mod testing;
 mod vertical;
 
 pub use fontdb::{
-    DOCUMENT_FONTS_FOLDER, DocumentFonts, FALLBACK_FAMILY, FaceRef, FontDb, FontFace, FontSource, MAX_DOCUMENT_FONT_BYTES, MAX_DOCUMENT_FONT_FILES,
-    MAX_DOCUMENT_FONTS_TOTAL, ScopedFonts, base_style, bundled, system_font_dirs,
+    DOCUMENT_FONTS_FOLDER, DocumentFonts, FALLBACK_FAMILY, FaceRef, FontDb, FontFace, FontSource,
+    MAX_DOCUMENT_FONT_BYTES, MAX_DOCUMENT_FONT_FILES, MAX_DOCUMENT_FONTS_TOTAL, ScopedFonts,
+    base_style, bundled, system_font_dirs,
 };
 pub use group::{FamilyInfo, FontGroup, sort_for_menu};
 pub use harfrust::Feature;
@@ -92,7 +100,11 @@ pub fn feature(tag: &str) -> Option<Feature> {
     if b.len() != 4 {
         return None;
     }
-    Some(Feature::new(Tag::new(&[b[0], b[1], b[2], b[3]]), on as u32, ..))
+    Some(Feature::new(
+        Tag::new(&[b[0], b[1], b[2], b[3]]),
+        on as u32,
+        ..,
+    ))
 }
 
 /// A strong right-to-left character (Hebrew, Arabic, …)?
@@ -106,8 +118,11 @@ fn direction_runs(text: &str) -> Vec<(std::ops::Range<usize>, bool, unicode_scri
     use unicode_script::{Script, UnicodeScript};
     let info = unicode_bidi::BidiInfo::new(text, None);
     let mut runs = Vec::new();
-    let mut script =
-        text.chars().map(|c| c.script()).find(|s| !matches!(s, Script::Common | Script::Inherited | Script::Unknown)).unwrap_or(Script::Common);
+    let mut script = text
+        .chars()
+        .map(|c| c.script())
+        .find(|s| !matches!(s, Script::Common | Script::Inherited | Script::Unknown))
+        .unwrap_or(Script::Common);
     let mut start = 0;
     let mut rtl = info.levels.first().is_some_and(|l| l.is_rtl());
     for (i, c) in text.char_indices() {
@@ -143,7 +158,12 @@ pub struct ShapeContext<'a> {
 /// Caps) while keeping clusters pointing into the original string. Glyphs come in logical
 /// order: right-to-left runs are shaped right to left, then their clusters put back in text
 /// order (each cluster's glyphs keep the shaper's order); line layout reorders them visually.
-pub fn shape(face: &FontFace, text: &str, features: &[Feature], map: impl Fn(char) -> char) -> Vec<ShapedGlyph> {
+pub fn shape(
+    face: &FontFace,
+    text: &str,
+    features: &[Feature],
+    map: impl Fn(char) -> char,
+) -> Vec<ShapedGlyph> {
     shape_with_context(face, text, features, map, ShapeContext::default())
 }
 
@@ -158,8 +178,16 @@ pub fn shape_with_context(
     let mut out = Vec::with_capacity(text.len());
     for (r, rtl, script) in direction_runs(text) {
         let local = ShapeContext {
-            before: if r.start == 0 { context.before } else { &text[..r.start] },
-            after: if r.end == text.len() { context.after } else { &text[r.end..] },
+            before: if r.start == 0 {
+                context.before
+            } else {
+                &text[..r.start]
+            },
+            after: if r.end == text.len() {
+                context.after
+            } else {
+                &text[r.end..]
+            },
             language: context.language,
         };
         let mut g = shape_dir(face, &text[r.clone()], features, &map, rtl, script, local);
@@ -194,7 +222,11 @@ fn shape_dir(
 ) -> Vec<ShapedGlyph> {
     let mut out = Vec::with_capacity(text.len());
     let shaped = face.hb().map(|hb| {
-        let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
+        let shaper = face
+            .shaper
+            .shaper(&hb)
+            .instance(face.instance.as_ref())
+            .build();
         let mut buf = UnicodeBuffer::new();
         for (i, c) in text.char_indices() {
             buf.add(map(c), i as u32);
@@ -209,7 +241,11 @@ fn shape_dir(
         }
         buf.set_flags(harfrust::BufferFlags::PRODUCE_SAFE_TO_INSERT_TATWEEL);
         buf.guess_segment_properties();
-        buf.set_direction(if rtl { Direction::RightToLeft } else { Direction::LeftToRight });
+        buf.set_direction(if rtl {
+            Direction::RightToLeft
+        } else {
+            Direction::LeftToRight
+        });
         let gb = shaper.shape(buf, ShapeOptions::new().features(features));
         for (info, pos) in gb.glyph_infos().iter().zip(gb.glyph_positions()) {
             out.push(ShapedGlyph {
@@ -251,12 +287,25 @@ fn shape_dir(
 /// [`shape_with_context`]): the shaper applies `vert` (vertical forms), and `vkrn` and `vpal` when
 /// `features` turn them on. Advances and origins are the face's vertical metrics
 /// ([`FontFace::v_advance`], [`FontFace::v_origin`]).
-pub fn shape_vertical(face: &FontFace, text: &str, features: &[Feature], map: impl Fn(char) -> char, context: ShapeContext<'_>) -> Vec<ShapedGlyph> {
-    let mut funcs = vertical::VerticalFuncs { face, metrics: vertical::VMetrics::new(face) };
+pub fn shape_vertical(
+    face: &FontFace,
+    text: &str,
+    features: &[Feature],
+    map: impl Fn(char) -> char,
+    context: ShapeContext<'_>,
+) -> Vec<ShapedGlyph> {
+    let mut funcs = vertical::VerticalFuncs {
+        face,
+        metrics: vertical::VMetrics::new(face),
+    };
     let mut out = Vec::with_capacity(text.len());
     let mut origins = Vec::with_capacity(text.len());
     let shaped = face.hb().map(|hb| {
-        let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
+        let shaper = face
+            .shaper
+            .shaper(&hb)
+            .instance(face.instance.as_ref())
+            .build();
         let mut buf = UnicodeBuffer::new();
         for (i, c) in text.char_indices() {
             buf.add(map(c), i as u32);
@@ -268,7 +317,12 @@ pub fn shape_vertical(face: &FontFace, text: &str, features: &[Feature], map: im
         }
         buf.guess_segment_properties();
         buf.set_direction(Direction::TopToBottom);
-        let gb = shaper.shape(buf, ShapeOptions::new().features(features).font_funcs(Some(&mut funcs)));
+        let gb = shaper.shape(
+            buf,
+            ShapeOptions::new()
+                .features(features)
+                .font_funcs(Some(&mut funcs)),
+        );
         for (info, pos) in gb.glyph_infos().iter().zip(gb.glyph_positions()) {
             out.push(ShapedGlyph {
                 gid: info.glyph_id,
@@ -313,7 +367,11 @@ pub fn shape_vertical(face: &FontFace, text: &str, features: &[Feature], map: im
 
 /// Glyph id of the first of `chars` the face has (0 = .notdef).
 pub fn first_glyph(face: &FontFace, chars: &[char]) -> u32 {
-    chars.iter().map(|c| face.glyph_for(*c)).find(|g| *g != 0).unwrap_or(0)
+    chars
+        .iter()
+        .map(|c| face.glyph_for(*c))
+        .find(|g| *g != 0)
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -354,7 +412,10 @@ mod tests {
         let face = FontDb::global().face(DEFAULT_FAMILY, "Regular");
         let g = shape(&face, "Hello", &[], |c| c);
         assert_eq!(g.len(), 5);
-        assert_eq!(g.iter().map(|g| g.cluster).collect::<Vec<_>>(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(
+            g.iter().map(|g| g.cluster).collect::<Vec<_>>(),
+            vec![0, 1, 2, 3, 4]
+        );
         assert!(g.iter().all(|g| g.x_advance > 0 && g.gid != 0));
     }
 
@@ -371,7 +432,19 @@ mod tests {
     fn language_picks_localized_forms() {
         // Source Serif 4's `locl` has a Turkish `i`.
         let face = FontDb::global().face(DEFAULT_FAMILY, "Regular");
-        let gid = |language| shape_with_context(&face, "i", &[], |c| c, ShapeContext { language, ..Default::default() })[0].gid;
+        let gid = |language| {
+            shape_with_context(
+                &face,
+                "i",
+                &[],
+                |c| c,
+                ShapeContext {
+                    language,
+                    ..Default::default()
+                },
+            )[0]
+            .gid
+        };
         assert_eq!(gid(None), face.glyph_for('i'));
         assert_eq!(gid(Some("en-US")), face.glyph_for('i'));
         assert_ne!(gid(Some("tr")), face.glyph_for('i'));
@@ -389,26 +462,41 @@ mod tests {
     #[test]
     fn variable_font_named_instances_are_styles() {
         // Uses a variable system font when one is installed (macOS ships several).
-        let Some(data) =
-            ["/System/Library/Fonts/Supplemental/Skia.ttf", "/System/Library/Fonts/NewYork.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
-                .iter()
-                .find_map(|p| std::fs::read(p).ok())
-        else {
+        let Some(data) = [
+            "/System/Library/Fonts/Supplemental/Skia.ttf",
+            "/System/Library/Fonts/NewYork.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        ]
+        .iter()
+        .find_map(|p| std::fs::read(p).ok()) else {
             return;
         };
         let db = FontDb::global();
         db.add_font(data.clone());
         let Some(fam) = skrifa::FontRef::new(&data).ok().and_then(|f| {
-            (f.named_instances().len() > 1)
-                .then(|| f.localized_strings(skrifa::string::StringId::FAMILY_NAME).english_or_first().map(|s| s.to_string()))?
+            (f.named_instances().len() > 1).then(|| {
+                f.localized_strings(skrifa::string::StringId::FAMILY_NAME)
+                    .english_or_first()
+                    .map(|s| s.to_string())
+            })?
         }) else {
             return;
         };
         let styles = db.styles(&fam);
         assert!(styles.len() > 1, "{styles:?}");
-        let faces: Vec<_> = styles.iter().map(|s| db.face(&fam, s)).filter(|f| f.is_variable()).collect();
-        let light = faces.iter().min_by(|a, b| a.weight.total_cmp(&b.weight)).unwrap();
-        let heavy = faces.iter().max_by(|a, b| a.weight.total_cmp(&b.weight)).unwrap();
+        let faces: Vec<_> = styles
+            .iter()
+            .map(|s| db.face(&fam, s))
+            .filter(|f| f.is_variable())
+            .collect();
+        let light = faces
+            .iter()
+            .min_by(|a, b| a.weight.total_cmp(&b.weight))
+            .unwrap();
+        let heavy = faces
+            .iter()
+            .max_by(|a, b| a.weight.total_cmp(&b.weight))
+            .unwrap();
         assert!(heavy.weight > light.weight, "{light:?} {heavy:?}");
         let ink = |f: &FontFace| {
             let g = shape(f, "H", &[], |c| c);
@@ -421,10 +509,18 @@ mod tests {
         let wght = axes.iter().find(|a| a.0 == "wght").expect("a weight axis");
         let mid = (wght.2 + wght.4) / 2.0;
         let custom = db.face(&fam, &format!("{} {{wght:{mid}}}", light.style));
-        assert!(custom.is_variable() && custom.coords.iter().any(|(t, v)| t == b"wght" && *v == mid));
-        assert!(!db.styles(&fam).iter().any(|s| s.contains('{')), "instances aren't listed");
+        assert!(
+            custom.is_variable() && custom.coords.iter().any(|(t, v)| t == b"wght" && *v == mid)
+        );
+        assert!(
+            !db.styles(&fam).iter().any(|s| s.contains('{')),
+            "instances aren't listed"
+        );
         let static_face = db.face(DEFAULT_FAMILY, "Regular {wght:700}");
-        assert_eq!(static_face.style, "Regular", "static fonts ignore axis settings");
+        assert_eq!(
+            static_face.style, "Regular",
+            "static fonts ignore axis settings"
+        );
     }
 
     #[test]
@@ -432,8 +528,14 @@ mod tests {
         let db = FontDb::with_font_dirs(Vec::new());
         db.set_system_fallback(false);
         db.add_font(testing::font_with("DC Test Suffix (OTF)", &['a']).unwrap());
-        assert_eq!(db.face("DC Test Suffix (OTF)", "Regular").family, "DC Test Suffix (OTF)");
-        assert_eq!(db.face(&format!("{DEFAULT_FAMILY} (TT)"), "Regular").family, DEFAULT_FAMILY);
+        assert_eq!(
+            db.face("DC Test Suffix (OTF)", "Regular").family,
+            "DC Test Suffix (OTF)"
+        );
+        assert_eq!(
+            db.face(&format!("{DEFAULT_FAMILY} (TT)"), "Regular").family,
+            DEFAULT_FAMILY
+        );
         assert!(db.has_family(&format!("{DEFAULT_FAMILY} (T1)")));
         assert!(!db.has_family(&format!("{DEFAULT_FAMILY} (Bold)")));
         assert!(!db.has_family("DC Test Suffix"));
@@ -457,11 +559,23 @@ mod tests {
         let font = testing::font_with("DC Test Empty Notdef", &['a']).unwrap();
         db.add_font(testing::with_empty_notdef(font).unwrap());
         let face = db.face("DC Test Empty Notdef", "Regular");
-        assert!(face.skrifa().unwrap().outline_glyphs().get(skrifa::GlyphId::NOTDEF).is_some_and(|g| {
-            let mut pen = kurbo::BezPath::new();
-            let _ = g.draw(skrifa::outline::DrawSettings::unhinted(skrifa::instance::Size::unscaled(), face.location()), &mut BezPen(&mut pen));
-            pen.elements().is_empty()
-        }));
+        assert!(
+            face.skrifa()
+                .unwrap()
+                .outline_glyphs()
+                .get(skrifa::GlyphId::NOTDEF)
+                .is_some_and(|g| {
+                    let mut pen = kurbo::BezPath::new();
+                    let _ = g.draw(
+                        skrifa::outline::DrawSettings::unhinted(
+                            skrifa::instance::Size::unscaled(),
+                            face.location(),
+                        ),
+                        &mut BezPen(&mut pen),
+                    );
+                    pen.elements().is_empty()
+                })
+        );
         // The box spans the glyph's advance, above the baseline (outlines are y-down).
         let b = kurbo::Shape::bounding_box(&*db.outline(&face, 0));
         assert!(b.width() > 0.0 && b.width() <= face.advance(0), "{b:?}");
@@ -483,10 +597,15 @@ mod tests {
             self.0.line_to((x as f64, y as f64));
         }
         fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) {
-            self.0.quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
+            self.0
+                .quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
         }
         fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
-            self.0.curve_to((cx0 as f64, cy0 as f64), (cx1 as f64, cy1 as f64), (x as f64, y as f64));
+            self.0.curve_to(
+                (cx0 as f64, cy0 as f64),
+                (cx1 as f64, cy1 as f64),
+                (x as f64, y as f64),
+            );
         }
         fn close(&mut self) {
             self.0.close_path();
@@ -501,7 +620,10 @@ mod tests {
         }
         let fonts = japanese_document_fonts();
         assert!(!fonts.is_empty(), "craft-fonts has Japanese fonts");
-        assert!(fonts[0].family.contains("Mincho"), "documents fall back to a Mincho first");
+        assert!(
+            fonts[0].family.contains("Mincho"),
+            "documents fall back to a Mincho first"
+        );
         assert_eq!(japanese_ui_fonts(false)[0].family, "BIZ UDPGothic");
         assert_eq!(japanese_ui_fonts(true)[0].style, "Bold");
         let db = FontDb::with_font_dirs(Vec::new());
@@ -510,14 +632,31 @@ mod tests {
             // Inspect the embedded face directly so this cannot pass through an OS fallback.
             let font = skrifa::FontRef::new(cf.bytes).unwrap();
             for ch in "日本語縦書き横書きルビ、。「」".chars() {
-                assert_ne!(font.charmap().map(ch).unwrap_or_default(), skrifa::GlyphId::NOTDEF, "{} lacks {ch}", cf.family);
+                assert_ne!(
+                    font.charmap().map(ch).unwrap_or_default(),
+                    skrifa::GlyphId::NOTDEF,
+                    "{} lacks {ch}",
+                    cf.family
+                );
             }
             let face = db.face(cf.family, cf.style);
             assert_eq!(face.family, cf.family);
             let horizontal = shape(&face, "「」、。", &[], |c| c);
-            let vertical = shape(&face, "「」、。", &[feature("vert").unwrap(), feature("vrt2").unwrap()], |c| c);
+            let vertical = shape(
+                &face,
+                "「」、。",
+                &[feature("vert").unwrap(), feature("vrt2").unwrap()],
+                |c| c,
+            );
             assert_eq!(horizontal.len(), vertical.len());
-            assert!(horizontal.iter().zip(&vertical).any(|(h, v)| h.gid != v.gid), "{} has vertical forms", cf.family);
+            assert!(
+                horizontal
+                    .iter()
+                    .zip(&vertical)
+                    .any(|(h, v)| h.gid != v.gid),
+                "{} has vertical forms",
+                cf.family
+            );
         }
         // Japanese in a Latin face falls back to a craft-fonts Mincho, without system fonts, in
         // Japanese text (the Japanese chain) and without a language (the first loaded face).
@@ -539,7 +678,10 @@ mod tests {
             assert!(japanese_fonts().next().is_none() && japanese_document_fonts().is_empty());
             let latin = db.face(DEFAULT_FAMILY, "Regular");
             for language in [Some("ja"), None] {
-                assert!(db.fallback_for('語', latin.id(), language).is_none(), "no bundled Japanese font: {language:?}");
+                assert!(
+                    db.fallback_for('語', latin.id(), language).is_none(),
+                    "no bundled Japanese font: {language:?}"
+                );
             }
         }
     }

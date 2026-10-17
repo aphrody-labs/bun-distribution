@@ -3,11 +3,11 @@ use bevy_ecs::{
     query::{QueryItem, With},
     system::lifetimeless::Read,
 };
-use bevy_math::{ops::abs, Vec2};
+use bevy_math::{Vec2, ops::abs};
 use bevy_reflect::Reflect;
 use bevy_render::{
-    extract_component::ExtractComponent, render_resource::ShaderType,
-    sync_component::SyncComponent, RenderApp,
+    RenderApp, extract_component::ExtractComponent, render_resource::ShaderType,
+    sync_component::SyncComponent,
 };
 
 /// Simulates the warping of the image caused by real-world camera lenses.

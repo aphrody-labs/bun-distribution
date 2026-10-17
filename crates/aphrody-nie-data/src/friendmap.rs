@@ -55,7 +55,10 @@ impl FriendMapLineInfo {
     /// (`lineElemAry = 0x00000000`) sont conservées car elles sont sémantiquement valides.
     #[must_use]
     pub fn from_value(v: &Value) -> Option<Self> {
-        Some(Self { line_no: field_i64(v, "lineNo")?, line_elem_ary: field_hash(v, "lineElemAry") })
+        Some(Self {
+            line_no: field_i64(v, "lineNo")?,
+            line_elem_ary: field_hash(v, "lineElemAry"),
+        })
     }
 }
 
@@ -100,8 +103,14 @@ impl FriendMapBaseInfo {
             friend_map_id,
             start_y: field_i64(v, "startY").unwrap_or(0),
             start_x: field_i64(v, "startX").unwrap_or(0),
-            line_offset: li.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            line_count: li.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            line_offset: li
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            line_count: li
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
         })
     }
 }

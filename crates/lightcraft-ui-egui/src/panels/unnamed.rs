@@ -36,7 +36,12 @@ pub struct Unnamed {
 }
 
 fn rect_of(v: &Value) -> Option<lightcraft_geom::Rect> {
-    Some(lightcraft_geom::Rect { x0: v["x0"].as_f64()?, y0: v["y0"].as_f64()?, x1: v["x1"].as_f64()?, y1: v["y1"].as_f64()? })
+    Some(lightcraft_geom::Rect {
+        x0: v["x0"].as_f64()?,
+        y0: v["y0"].as_f64()?,
+        x1: v["x1"].as_f64()?,
+        y1: v["y1"].as_f64()?,
+    })
 }
 
 fn face_of(v: &Value) -> Option<UnnamedFace> {
@@ -51,8 +56,13 @@ fn face_of(v: &Value) -> Option<UnnamedFace> {
 /// The engine's answer as a list (anything that does not make sense is left out).
 pub fn parse(v: &Value) -> Unnamed {
     Unnamed {
-        total: v["total"].as_u64().map_or(0, |n| usize::try_from(n).unwrap_or(0)),
-        faces: v["faces"].as_array().map(|a| a.iter().filter_map(face_of).collect()).unwrap_or_default(),
+        total: v["total"]
+            .as_u64()
+            .map_or(0, |n| usize::try_from(n).unwrap_or(0)),
+        faces: v["faces"]
+            .as_array()
+            .map(|a| a.iter().filter_map(face_of).collect())
+            .unwrap_or_default(),
         ordered: v["ordered"] == true,
         ready: v["ready"] == true,
     }
@@ -68,10 +78,14 @@ pub fn faces(app: &mut LightcraftApp, now: f64) -> Arc<Unnamed> {
     {
         return list.clone();
     }
-    let v = app.session.execute("faces.unnamed", &json!({})).unwrap_or(Value::Null);
+    let v = app
+        .session
+        .execute("faces.unnamed", &json!({}))
+        .unwrap_or(Value::Null);
     let list = Arc::new(parse(&v));
     // what was selected and has since been named (or removed) is no longer selected
-    let present: std::collections::HashSet<(u64, usize)> = list.faces.iter().map(|f| (f.photo, f.index)).collect();
+    let present: std::collections::HashSet<(u64, usize)> =
+        list.faces.iter().map(|f| (f.photo, f.index)).collect();
     app.ui.unnamed_selected.retain(|k| present.contains(k));
     app.caches.unnamed = Some((rev, indexed, now, list.clone()));
     list
@@ -100,7 +114,10 @@ fn click(app: &mut LightcraftApp, list: &Unnamed, i: usize, shift: bool) {
 
 /// Name `faces` (photo, region) `name`, as one undo step.
 fn name(app: &mut LightcraftApp, faces: &[(u64, usize)], name: &str) {
-    let list: Vec<Value> = faces.iter().map(|(photo, index)| json!({"photo": photo, "index": index})).collect();
+    let list: Vec<Value> = faces
+        .iter()
+        .map(|(photo, index)| json!({"photo": photo, "index": index}))
+        .collect();
     let _ = app.run("faces.nameFaces", json!({"faces": list, "name": name}));
 }
 
@@ -120,9 +137,15 @@ pub fn naming_bar(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let suggested: Option<String> = {
         let list = app.caches.unnamed.as_ref().map(|c| c.3.clone());
         list.and_then(|l| {
-            let names: std::collections::BTreeSet<Option<&str>> =
-                l.faces.iter().filter(|f| app.ui.unnamed_selected.contains(&(f.photo, f.index))).map(|f| f.suggestion.as_deref()).collect();
-            (names.len() == 1).then(|| names.into_iter().next().flatten().map(str::to_string)).flatten()
+            let names: std::collections::BTreeSet<Option<&str>> = l
+                .faces
+                .iter()
+                .filter(|f| app.ui.unnamed_selected.contains(&(f.photo, f.index)))
+                .map(|f| f.suggestion.as_deref())
+                .collect();
+            (names.len() == 1)
+                .then(|| names.into_iter().next().flatten().map(str::to_string))
+                .flatten()
         })
     };
     let mut submit: Option<String> = None;
@@ -130,19 +153,38 @@ pub fn naming_bar(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.add_space(super::people::PAD - 4.0);
         let n = selected.len();
-        ui.label(RichText::new(if n == 1 { "1 face selected".to_string() } else { format!("{n} faces selected") }).color(t.text));
+        ui.label(
+            RichText::new(if n == 1 {
+                "1 face selected".to_string()
+            } else {
+                format!("{n} faces selected")
+            })
+            .color(t.text),
+        );
         let hint = suggested.clone().unwrap_or_else(|| "Name…".to_string());
-        let field = crate::text_field::TextField::singleline("field:unnamedName", &mut app.ui.unnamed_name).hint(hint).width(240.0).show(ui);
+        let field =
+            crate::text_field::TextField::singleline("field:unnamedName", &mut app.ui.unnamed_name)
+                .hint(hint)
+                .width(240.0)
+                .show(ui);
         let edit = &field.response;
         if std::mem::take(&mut app.ui.unnamed_focus) {
             edit.request_focus();
         }
         let typed = app.ui.unnamed_name.trim().to_string();
-        let chosen = if typed.is_empty() { suggested.clone().unwrap_or_default() } else { typed.clone() };
+        let chosen = if typed.is_empty() {
+            suggested.clone().unwrap_or_default()
+        } else {
+            typed.clone()
+        };
         if field.ending == Some(crate::text_field::Ending::Return) && !chosen.is_empty() {
             submit = Some(chosen.clone());
         }
-        let label = if n == 1 { "Name face".to_string() } else { format!("Name {n} faces") };
+        let label = if n == 1 {
+            "Name face".to_string()
+        } else {
+            format!("Name {n} faces")
+        };
         let b = ui.add_enabled(!chosen.is_empty(), egui::Button::new(label));
         register(ui.ctx(), "unnamed:name", b.rect);
         if b.clicked() {
@@ -156,12 +198,19 @@ pub fn naming_bar(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let typed = app.ui.unnamed_name.trim().to_lowercase();
     if !typed.is_empty() {
         let people = app.caches.person_names(&app.session.catalog);
-        let matching: Vec<&String> = people.iter().filter(|p| p.to_lowercase().starts_with(&typed) && p.to_lowercase() != typed).take(6).collect();
+        let matching: Vec<&String> = people
+            .iter()
+            .filter(|p| p.to_lowercase().starts_with(&typed) && p.to_lowercase() != typed)
+            .take(6)
+            .collect();
         if !matching.is_empty() {
             ui.horizontal(|ui| {
                 ui.add_space(super::people::PAD - 4.0);
                 for p in matching {
-                    let b = ui.add(egui::Button::new(RichText::new(p.as_str()).color(t.text_label)).frame(false));
+                    let b = ui.add(
+                        egui::Button::new(RichText::new(p.as_str()).color(t.text_label))
+                            .frame(false),
+                    );
                     register(ui.ctx(), format!("unnamed:pick:{p}"), b.rect);
                     if b.clicked() {
                         submit = Some(p.clone());
@@ -183,16 +232,41 @@ pub fn naming_bar(app: &mut LightcraftApp, ui: &mut egui::Ui) {
 }
 
 /// The heading of the section, at `at`, and what it says about where the faces come from.
-pub fn section_header(app: &mut LightcraftApp, ui: &mut egui::Ui, list: &Unnamed, at: egui::Pos2, right: f32) {
+pub fn section_header(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    list: &Unnamed,
+    at: egui::Pos2,
+    right: f32,
+) {
     let t = Tokens::get(ui.ctx());
-    let count = if list.total > list.faces.len() { format!("{} of {}", list.faces.len(), list.total) } else { list.total.to_string() };
+    let count = if list.total > list.faces.len() {
+        format!("{} of {}", list.faces.len(), list.total)
+    } else {
+        list.total.to_string()
+    };
     let p = ui.painter();
-    p.text(at, Align2::LEFT_CENTER, "Unnamed faces", t.semibold(15.0), t.text);
-    p.text(pos2(right, at.y), Align2::RIGHT_CENTER, count, t.font(13.0), t.text_dim);
+    p.text(
+        at,
+        Align2::LEFT_CENTER,
+        "Unnamed faces",
+        t.semibold(15.0),
+        t.text,
+    );
+    p.text(
+        pos2(right, at.y),
+        Align2::RIGHT_CENTER,
+        count,
+        t.font(13.0),
+        t.text_dim,
+    );
     let sub = if !list.ready && list.faces.is_empty() {
         "Turn on face recognition in Settings to find the faces in your photos.".to_string()
     } else if list.faces.is_empty() && app.caches.faces_pending > 0 {
-        format!("Looking through your photos… {} left", app.caches.faces_pending)
+        format!(
+            "Looking through your photos… {} left",
+            app.caches.faces_pending
+        )
     } else if list.faces.is_empty() {
         "No unnamed faces. Faces found in your photos appear here until you name them.".to_string()
     } else if list.ordered {
@@ -200,7 +274,13 @@ pub fn section_header(app: &mut LightcraftApp, ui: &mut egui::Ui, list: &Unnamed
     } else {
         "Click faces to select them, Shift-click for a range, then type a name.".to_string()
     };
-    p.text(pos2(at.x, at.y + 24.0), Align2::LEFT_CENTER, sub, t.font(12.0), t.text_dim);
+    p.text(
+        pos2(at.x, at.y + 24.0),
+        Align2::LEFT_CENTER,
+        sub,
+        t.font(12.0),
+        t.text_dim,
+    );
     if !list.ready && list.faces.is_empty() {
         let r = Rect::from_min_size(pos2(at.x, at.y + 38.0), vec2(120.0, 22.0));
         let b = ui.put(r, egui::Button::new("Open Settings"));
@@ -211,12 +291,17 @@ pub fn section_header(app: &mut LightcraftApp, ui: &mut egui::Ui, list: &Unnamed
     } else if !list.faces.is_empty() {
         let r = Rect::from_min_size(pos2(right - 130.0, at.y + 12.0), vec2(130.0, 22.0));
         let all = app.ui.unnamed_selected.len() == list.faces.len();
-        let b = ui.put(r, egui::Button::new(if all { "Select none" } else { "Select all" }));
+        let b = ui.put(
+            r,
+            egui::Button::new(if all { "Select none" } else { "Select all" }),
+        );
         register(ui.ctx(), "unnamed:selectAll", b.rect);
         if b.clicked() {
             app.ui.unnamed_selected.clear();
             if !all {
-                app.ui.unnamed_selected.extend(list.faces.iter().map(|f| (f.photo, f.index)));
+                app.ui
+                    .unnamed_selected
+                    .extend(list.faces.iter().map(|f| (f.photo, f.index)));
                 app.ui.unnamed_focus = true;
             }
         }
@@ -224,44 +309,93 @@ pub fn section_header(app: &mut LightcraftApp, ui: &mut egui::Ui, list: &Unnamed
 }
 
 /// One face tile, number `i` of `list`.
-pub fn tile(app: &mut LightcraftApp, ui: &mut egui::Ui, list: &Unnamed, i: usize, r: Rect, f: &UnnamedFace, ppp: f32) {
+pub fn tile(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    list: &Unnamed,
+    i: usize,
+    r: Rect,
+    f: &UnnamedFace,
+    ppp: f32,
+) {
     let t = Tokens::get(ui.ctx());
     let key = (f.photo, f.index);
     let selected = app.ui.unnamed_selected.contains(&key);
-    let resp = ui.interact(r, egui::Id::new(("unnamed-face", f.photo, f.index)), Sense::click());
+    let resp = ui.interact(
+        r,
+        egui::Id::new(("unnamed-face", f.photo, f.index)),
+        Sense::click(),
+    );
     register(ui.ctx(), format!("unnamed-face:{}:{}", f.photo, f.index), r);
     // a suggested name along the bottom: a click accepts it for this face (added after the tile, so it wins there)
     let strip = Rect::from_min_max(pos2(r.left(), r.bottom() - 20.0), r.right_bottom());
-    let accept = f.suggestion.as_ref().map(|_| ui.interact(strip, egui::Id::new(("unnamed-accept", f.photo, f.index)), Sense::click()));
+    let accept = f.suggestion.as_ref().map(|_| {
+        ui.interact(
+            strip,
+            egui::Id::new(("unnamed-accept", f.photo, f.index)),
+            Sense::click(),
+        )
+    });
     if let Some(a) = &accept {
-        register(ui.ctx(), format!("unnamed-accept:{}:{}", f.photo, f.index), a.rect);
+        register(
+            ui.ctx(),
+            format!("unnamed-accept:{}:{}", f.photo, f.index),
+            a.rect,
+        );
     }
     let hovered = resp.hovered() || accept.as_ref().is_some_and(|a| a.hovered());
     let p = ui.painter();
     p.rect_filled(r, 3.0, t.canvas);
-    if let Some(job) = app.session.face_job(lightcraft_catalog::PhotoId(f.photo), f.view, (r.width() * ppp).ceil() as usize)
-        && let Some(tex) = app.renderer.variant(job)
+    if let Some(job) = app.session.face_job(
+        lightcraft_catalog::PhotoId(f.photo),
+        f.view,
+        (r.width() * ppp).ceil() as usize,
+    ) && let Some(tex) = app.renderer.variant(job)
     {
-        p.image(tex.tex.id(), r, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        p.image(
+            tex.tex.id(),
+            r,
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
     }
     if selected {
         p.rect_filled(r, 3.0, Color32::from_rgba_unmultiplied(70, 130, 255, 55));
-        p.rect_stroke(r, 3.0, Stroke::new(2.0, Color32::from_rgb(110, 160, 255)), StrokeKind::Inside);
+        p.rect_stroke(
+            r,
+            3.0,
+            Stroke::new(2.0, Color32::from_rgb(110, 160, 255)),
+            StrokeKind::Inside,
+        );
         // a check at the top left
         let c = pos2(r.left() + 13.0, r.top() + 13.0);
         p.circle_filled(c, 9.0, Color32::from_rgb(70, 130, 255));
-        p.line_segment([pos2(c.x - 4.0, c.y), pos2(c.x - 1.0, c.y + 3.5)], Stroke::new(1.8, Color32::WHITE));
-        p.line_segment([pos2(c.x - 1.0, c.y + 3.5), pos2(c.x + 4.5, c.y - 3.5)], Stroke::new(1.8, Color32::WHITE));
+        p.line_segment(
+            [pos2(c.x - 4.0, c.y), pos2(c.x - 1.0, c.y + 3.5)],
+            Stroke::new(1.8, Color32::WHITE),
+        );
+        p.line_segment(
+            [pos2(c.x - 1.0, c.y + 3.5), pos2(c.x + 4.5, c.y - 3.5)],
+            Stroke::new(1.8, Color32::WHITE),
+        );
     } else if hovered {
         p.rect_stroke(r, 3.0, Stroke::new(1.0, Color32::WHITE), StrokeKind::Inside);
     }
     if let Some(name) = &f.suggestion {
         p.rect_filled(strip, 0.0, Color32::from_black_alpha(165));
         let label = super::people::fit(p, name, t.font(11.5), r.width() - 18.0);
-        p.text(pos2(r.left() + 5.0, strip.center().y), Align2::LEFT_CENTER, format!("{label}?"), t.font(11.5), Color32::from_gray(225));
+        p.text(
+            pos2(r.left() + 5.0, strip.center().y),
+            Align2::LEFT_CENTER,
+            format!("{label}?"),
+            t.font(11.5),
+            Color32::from_gray(225),
+        );
     }
     if let (Some(a), Some(who)) = (&accept, &f.suggestion)
-        && a.clone().on_hover_text(format!("Name this face {who}")).clicked()
+        && a.clone()
+            .on_hover_text(format!("Name this face {who}"))
+            .clicked()
     {
         name(app, &[key], who);
         return;
@@ -288,10 +422,20 @@ mod tests {
             ],
         });
         let list = parse(&v);
-        assert_eq!((list.total, list.ordered, list.ready, list.faces.len()), (9, true, true, 2));
+        assert_eq!(
+            (list.total, list.ordered, list.ready, list.faces.len()),
+            (9, true, true, 2)
+        );
         assert_eq!(list.faces[0].suggestion.as_deref(), Some("Jane Doe"));
-        assert_eq!(list.faces[0].view.x0, 0.12, "the view box is used when there is one");
-        assert_eq!((list.faces[1].view.x0, list.faces[1].suggestion.clone()), (0.1, None), "else the face's own box");
+        assert_eq!(
+            list.faces[0].view.x0, 0.12,
+            "the view box is used when there is one"
+        );
+        assert_eq!(
+            (list.faces[1].view.x0, list.faces[1].suggestion.clone()),
+            (0.1, None),
+            "else the face's own box"
+        );
         for bad in [Value::Null, json!([]), json!({"faces": 5, "total": -1})] {
             assert_eq!(parse(&bad), Unnamed::default(), "{bad}");
         }

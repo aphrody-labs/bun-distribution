@@ -12,11 +12,18 @@ use crate::theme::{Tokens, regular, semibold};
 pub fn show(app: &mut WordApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     // SmartArt Design › Text Pane, while a SmartArt graphic WordCraft can edit is selected.
-    if app.session.view.smart_art_pane && wordcraft_engine::cmd::smart_art::selected_smart_art(&app.session).is_some() {
+    if app.session.view.smart_art_pane
+        && wordcraft_engine::cmd::smart_art::selected_smart_art(&app.session).is_some()
+    {
         egui::Panel::left("smart_art_pane")
             .default_size(250.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| {
                 if header(ui, "Text Pane") {
                     let _ = app.run("smartArt.textPane", json!({"value": false}));
@@ -29,49 +36,84 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
         egui::Panel::left("nav_pane")
             .default_size(260.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| nav(app, ui));
     }
     if app.session.view.clipboard_pane {
         egui::Panel::left("clipboard_pane")
             .default_size(250.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| clipboard(app, ui));
     }
     if app.session.view.styles_pane {
         egui::Panel::right("styles_pane")
             .default_size(250.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| styles(app, ui));
     }
     if app.session.view.style_inspector {
         egui::Panel::right("style_inspector")
             .default_size(240.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| inspector(app, ui));
     }
     if app.session.view.accessibility_pane {
         egui::Panel::right("accessibility_pane")
             .default_size(280.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| crate::a11y_pane::accessibility(app, ui));
     }
     if app.session.view.alt_text_pane {
         egui::Panel::right("alt_text_pane")
             .default_size(260.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| crate::a11y_pane::alt_text(app, ui));
     }
     if app.restrict.open {
         egui::Panel::right("restrict_pane")
             .default_size(270.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| {
                 if header(ui, "Restrict Editing") {
                     app.restrict.open = false;
@@ -84,7 +126,12 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
         egui::Panel::right("comments_pane")
             .default_size(290.0)
             .resizable(true)
-            .frame(egui::Frame::NONE.fill(t.panel).inner_margin(10).stroke(Stroke::new(1.0, t.border)))
+            .frame(
+                egui::Frame::NONE
+                    .fill(t.panel)
+                    .inner_margin(10)
+                    .stroke(Stroke::new(1.0, t.border)),
+            )
             .show(ui, |ui| comments(app, ui));
     }
 }
@@ -113,16 +160,24 @@ fn nav(app: &mut WordApp, ui: &mut Ui) {
     let mut q = ui.data(|d| d.get_temp::<String>(qid)).unwrap_or_default();
     // Ctrl+F with text selected searches for it, as Word does (a selection within one line).
     let focus = std::mem::take(&mut app.nav_search_focus);
-    let picked = focus.then(|| app.session.selected_text()).filter(|t| !t.is_empty() && !t.contains(['\n', '\r']) && t.chars().count() <= 255);
+    let picked = focus
+        .then(|| app.session.selected_text())
+        .filter(|t| !t.is_empty() && !t.contains(['\n', '\r']) && t.chars().count() <= 255);
     if let Some(t) = &picked {
         q = t.clone();
     }
-    let mut out = egui::TextEdit::singleline(&mut q).hint_text(tl!("Search document")).desired_width(f32::INFINITY).show(ui);
+    let mut out = egui::TextEdit::singleline(&mut q)
+        .hint_text(tl!("Search document"))
+        .desired_width(f32::INFINITY)
+        .show(ui);
     let r = out.response.clone();
     if focus {
         // Focused with its text selected, so typing replaces it.
         r.request_focus();
-        let all = egui::text::CCursorRange::two(egui::text::CCursor::new(0), egui::text::CCursor::new(q.chars().count()));
+        let all = egui::text::CCursorRange::two(
+            egui::text::CCursor::new(0),
+            egui::text::CCursor::new(q.chars().count()),
+        );
         out.state.cursor.set_char_range(Some(all));
         out.state.store(ui.ctx(), r.id);
     }
@@ -136,7 +191,11 @@ fn nav(app: &mut WordApp, ui: &mut Ui) {
     }
     ui.add_space(4.0);
     ui.horizontal(|ui| {
-        for (k, l) in [("headings", "Headings"), ("pages", "Pages"), ("results", "Results")] {
+        for (k, l) in [
+            ("headings", "Headings"),
+            ("pages", "Pages"),
+            ("results", "Results"),
+        ] {
             if ui.selectable_label(app.ui.nav_tab == k, tl!(l)).clicked() {
                 app.ui.nav_tab = k.into();
             }
@@ -219,7 +278,15 @@ fn nav_heading(ui: &mut Ui, level: u8, text: &str, selected: bool) -> egui::Resp
         ui.add_space(level as f32 * 14.0);
         ui.add_sized(
             vec2(ui.available_width(), ui.spacing().interact_size.y),
-            egui::Button::selectable(selected, egui::RichText::new(text).font(if level == 0 { semibold(12.5) } else { regular(12.5) })).truncate(),
+            egui::Button::selectable(
+                selected,
+                egui::RichText::new(text).font(if level == 0 {
+                    semibold(12.5)
+                } else {
+                    regular(12.5)
+                }),
+            )
+            .truncate(),
         )
         .on_hover_text(text)
     })
@@ -232,40 +299,75 @@ fn clipboard(app: &mut WordApp, ui: &mut Ui) {
         let _ = app.run("edit.clipboardPane", json!({"value": false}));
         return;
     }
-    let items: Vec<String> = app.session.clip_history.items().iter().map(|i| i.preview()).collect();
+    let items: Vec<String> = app
+        .session
+        .clip_history
+        .items()
+        .iter()
+        .map(|i| i.preview())
+        .collect();
     ui.horizontal(|ui| {
-        if ui.add_enabled(!items.is_empty(), egui::Button::new(tl!("Paste All"))).clicked() {
+        if ui
+            .add_enabled(!items.is_empty(), egui::Button::new(tl!("Paste All")))
+            .clicked()
+        {
             let _ = app.run("edit.pasteAllClipboard", json!({}));
             app.canvas.want_focus = true;
         }
-        if ui.add_enabled(!items.is_empty(), egui::Button::new(tl!("Clear All"))).clicked() {
+        if ui
+            .add_enabled(!items.is_empty(), egui::Button::new(tl!("Clear All")))
+            .clicked()
+        {
             let _ = app.run("edit.clearClipboard", json!({}));
         }
     });
     ui.add_space(4.0);
-    let hint = if items.is_empty() { "Nothing collected yet. Items you copy or cut appear here." } else { "Click an item to paste it." };
+    let hint = if items.is_empty() {
+        "Nothing collected yet. Items you copy or cut appear here."
+    } else {
+        "Click an item to paste it."
+    };
     ui.label(egui::RichText::new(tl!(hint)).small().weak());
     ui.separator();
     let t = Tokens::get(ui.ctx());
     egui::ScrollArea::vertical().show(ui, |ui| {
         for (i, preview) in items.iter().enumerate() {
-            egui::Frame::NONE.fill(t.input).stroke(Stroke::new(1.0, t.border)).corner_radius(6).inner_margin(8).show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                let text = if preview.is_empty() { tl!("(picture or object)").to_string() } else { preview.clone() };
-                let mut job =
-                    egui::text::LayoutJob::single_section(text, egui::TextFormat { font_id: regular(12.5), color: t.text, ..Default::default() });
-                job.wrap.max_width = ui.available_width();
-                job.wrap.max_rows = 3;
-                if ui.add(egui::Button::new(job).frame(false)).on_hover_text(tl!("Paste")).clicked() {
-                    let _ = app.run("edit.pasteClipboardItem", json!({"index": i}));
-                    app.canvas.want_focus = true;
-                }
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                    if ui.small_button(tl!("Delete")).clicked() {
-                        let _ = app.run("edit.deleteClipboardItem", json!({"index": i}));
+            egui::Frame::NONE
+                .fill(t.input)
+                .stroke(Stroke::new(1.0, t.border))
+                .corner_radius(6)
+                .inner_margin(8)
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    let text = if preview.is_empty() {
+                        tl!("(picture or object)").to_string()
+                    } else {
+                        preview.clone()
+                    };
+                    let mut job = egui::text::LayoutJob::single_section(
+                        text,
+                        egui::TextFormat {
+                            font_id: regular(12.5),
+                            color: t.text,
+                            ..Default::default()
+                        },
+                    );
+                    job.wrap.max_width = ui.available_width();
+                    job.wrap.max_rows = 3;
+                    if ui
+                        .add(egui::Button::new(job).frame(false))
+                        .on_hover_text(tl!("Paste"))
+                        .clicked()
+                    {
+                        let _ = app.run("edit.pasteClipboardItem", json!({"index": i}));
+                        app.canvas.want_focus = true;
                     }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                        if ui.small_button(tl!("Delete")).clicked() {
+                            let _ = app.run("edit.deleteClipboardItem", json!({"index": i}));
+                        }
+                    });
                 });
-            });
             ui.add_space(6.0);
         }
     });
@@ -276,16 +378,34 @@ fn styles(app: &mut WordApp, ui: &mut Ui) {
         let _ = app.run("view.stylesPane", json!({"value": false}));
         return;
     }
-    let st = app.session.run("format.state", &json!({})).unwrap_or_default();
-    let cur = st.get("style").and_then(Value::as_str).unwrap_or("Normal").to_string();
+    let st = app
+        .session
+        .run("format.state", &json!({}))
+        .unwrap_or_default();
+    let cur = st
+        .get("style")
+        .and_then(Value::as_str)
+        .unwrap_or("Normal")
+        .to_string();
     let current_name = app
         .session
         .doc
         .styles
         .get(&cur)
         .map(crate::i18n::style_name)
-        .unwrap_or_else(|| st.get("styleName").and_then(Value::as_str).unwrap_or("").to_string());
-    ui.label(egui::RichText::new(crate::i18n::fmt(tl!("Current style: {style}"), &[("style", &current_name)])).small());
+        .unwrap_or_else(|| {
+            st.get("styleName")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string()
+        });
+    ui.label(
+        egui::RichText::new(crate::i18n::fmt(
+            tl!("Current style: {style}"),
+            &[("style", &current_name)],
+        ))
+        .small(),
+    );
     ui.horizontal(|ui| {
         if ui.button(tl!("New Style…")).clicked() {
             app.dialog = crate::dialogs::Dialog::open("newStyle", app);
@@ -300,7 +420,10 @@ fn styles(app: &mut WordApp, ui: &mut Ui) {
     if ui.button(tl!("Manage Styles…")).clicked() {
         let _ = app.run("styles.manage", json!({}));
     }
-    if ui.selectable_label(app.session.view.style_inspector, tl!("Style Inspector")).clicked() {
+    if ui
+        .selectable_label(app.session.view.style_inspector, tl!("Style Inspector"))
+        .clicked()
+    {
         let _ = app.run("styles.inspector", json!({}));
     }
     ui.separator();
@@ -311,7 +434,13 @@ fn styles(app: &mut WordApp, ui: &mut Ui) {
         .styles
         .iter()
         .filter(|s| !s.hidden && s.kind != wordcraft_doc::StyleKind::Table)
-        .map(|s| (s.id.clone(), crate::i18n::style_name(s), s.kind == wordcraft_doc::StyleKind::Character))
+        .map(|s| {
+            (
+                s.id.clone(),
+                crate::i18n::style_name(s),
+                s.kind == wordcraft_doc::StyleKind::Character,
+            )
+        })
         .collect();
     list.sort_by_key(|s| s.1.to_lowercase());
     egui::ScrollArea::vertical().show(ui, |ui| {
@@ -349,58 +478,92 @@ fn comments(app: &mut WordApp, ui: &mut Ui) {
         let _ = app.run("view.commentsPane", json!({"value": false}));
         return;
     }
-    if crate::widgets::icon_text_button(ui, "newComment", tl!("New Comment"), regular(12.5)).clicked() {
+    if crate::widgets::icon_text_button(ui, "newComment", tl!("New Comment"), regular(12.5))
+        .clicked()
+    {
         let _ = app.run("review.newComment", json!({"text": ""}));
     }
     ui.separator();
-    let list = app.session.run("review.comments", &json!({})).unwrap_or_default();
+    let list = app
+        .session
+        .run("review.comments", &json!({}))
+        .unwrap_or_default();
     let t = Tokens::get(ui.ctx());
     egui::ScrollArea::vertical().show(ui, |ui| {
         for c in list.as_array().cloned().unwrap_or_default() {
             let id = c.get("id").and_then(Value::as_u64).unwrap_or(0);
             let reply = c.get("parent").is_some_and(|p| !p.is_null());
-            egui::Frame::NONE.fill(t.input).stroke(Stroke::new(1.0, t.border)).corner_radius(6).inner_margin(8).show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                if reply {
-                    ui.add_space(0.0);
-                }
-                ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new(c.get("author").and_then(Value::as_str).unwrap_or("")).font(semibold(12.0)));
-                    ui.label(egui::RichText::new(comment_stamp(c.get("date").and_then(Value::as_str).unwrap_or(""))).small().weak());
-                    if c.get("resolved").and_then(Value::as_bool).unwrap_or(false) {
-                        ui.label(egui::RichText::new(tl!("Resolved")).small().color(t.green));
+            egui::Frame::NONE
+                .fill(t.input)
+                .stroke(Stroke::new(1.0, t.border))
+                .corner_radius(6)
+                .inner_margin(8)
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    if reply {
+                        ui.add_space(0.0);
+                    }
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            egui::RichText::new(
+                                c.get("author").and_then(Value::as_str).unwrap_or(""),
+                            )
+                            .font(semibold(12.0)),
+                        );
+                        ui.label(
+                            egui::RichText::new(comment_stamp(
+                                c.get("date").and_then(Value::as_str).unwrap_or(""),
+                            ))
+                            .small()
+                            .weak(),
+                        );
+                        if c.get("resolved").and_then(Value::as_bool).unwrap_or(false) {
+                            ui.label(egui::RichText::new(tl!("Resolved")).small().color(t.green));
+                        }
+                    });
+                    // Editable comment text (one undo step per edit, like the balloons).
+                    comment_editor(app, ui, id as u32, None, false);
+                    let open_key = egui::Id::new(("comment_reply_open", id));
+                    let mut replying = ui.data(|d| d.get_temp::<bool>(open_key)).unwrap_or(false);
+                    ui.horizontal(|ui| {
+                        if ui.small_button(tl!("Go to")).clicked()
+                            && let Some(a) = c.get("anchor").filter(|a| !a.is_null())
+                        {
+                            let _ = app.run("caret.set", json!({"pos": a}));
+                        }
+                        if ui.small_button(tl!("Reply")).clicked() {
+                            replying = true;
+                            ui.data_mut(|d| d.insert_temp(open_key, true));
+                            ui.data_mut(|d| {
+                                d.insert_temp(egui::Id::new(("comment_reply_focus", id)), true)
+                            });
+                        }
+                        let resolved = c.get("resolved").and_then(Value::as_bool).unwrap_or(false);
+                        if ui
+                            .small_button(if resolved {
+                                tl!("Reopen")
+                            } else {
+                                tl!("Resolve")
+                            })
+                            .clicked()
+                        {
+                            let _ = app.run("review.resolveComment", json!({"id": id}));
+                        }
+                        if ui.small_button(tl!("Delete")).clicked() {
+                            let _ = app.run("review.deleteComment", json!({"id": id}));
+                        }
+                    });
+                    if replying {
+                        let focus = ui
+                            .data_mut(|d| {
+                                d.remove_temp::<bool>(egui::Id::new(("comment_reply_focus", id)))
+                            })
+                            .unwrap_or(false);
+                        if reply_editor(app, ui, id as u32, None, focus) {
+                            ui.data_mut(|d| d.remove::<bool>(open_key));
+                        }
                     }
                 });
-                // Editable comment text (one undo step per edit, like the balloons).
-                comment_editor(app, ui, id as u32, None, false);
-                let open_key = egui::Id::new(("comment_reply_open", id));
-                let mut replying = ui.data(|d| d.get_temp::<bool>(open_key)).unwrap_or(false);
-                ui.horizontal(|ui| {
-                    if ui.small_button(tl!("Go to")).clicked()
-                        && let Some(a) = c.get("anchor").filter(|a| !a.is_null())
-                    {
-                        let _ = app.run("caret.set", json!({"pos": a}));
-                    }
-                    if ui.small_button(tl!("Reply")).clicked() {
-                        replying = true;
-                        ui.data_mut(|d| d.insert_temp(open_key, true));
-                        ui.data_mut(|d| d.insert_temp(egui::Id::new(("comment_reply_focus", id)), true));
-                    }
-                    let resolved = c.get("resolved").and_then(Value::as_bool).unwrap_or(false);
-                    if ui.small_button(if resolved { tl!("Reopen") } else { tl!("Resolve") }).clicked() {
-                        let _ = app.run("review.resolveComment", json!({"id": id}));
-                    }
-                    if ui.small_button(tl!("Delete")).clicked() {
-                        let _ = app.run("review.deleteComment", json!({"id": id}));
-                    }
-                });
-                if replying {
-                    let focus = ui.data_mut(|d| d.remove_temp::<bool>(egui::Id::new(("comment_reply_focus", id)))).unwrap_or(false);
-                    if reply_editor(app, ui, id as u32, None, focus) {
-                        ui.data_mut(|d| d.remove::<bool>(open_key));
-                    }
-                }
-            });
             ui.add_space(6.0);
         }
     });
@@ -417,11 +580,24 @@ fn reply_key(id: u32) -> egui::Id {
 /// A comment's text, editable in place (the Comments pane and the balloons). Typing stays in a
 /// draft until the field loses focus; then [`commit_comment`] writes it back with one
 /// `review.editComment`, so each editing session is one undo step.
-pub(crate) fn comment_editor(app: &mut WordApp, ui: &mut Ui, id: u32, font: Option<egui::FontId>, focus: bool) {
-    let Some(part) = app.session.doc.comments.get(&id).map(|c| c.part) else { return };
+pub(crate) fn comment_editor(
+    app: &mut WordApp,
+    ui: &mut Ui,
+    id: u32,
+    font: Option<egui::FontId>,
+    focus: bool,
+) {
+    let Some(part) = app.session.doc.comments.get(&id).map(|c| c.part) else {
+        return;
+    };
     let key = edit_key(id);
-    let mut text = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_else(|| app.session.doc.plain_text(StoryRef::Part(part)));
-    let mut edit = egui::TextEdit::multiline(&mut text).desired_rows(1).desired_width(f32::INFINITY).hint_text(tl!("Add a comment"));
+    let mut text = ui
+        .data(|d| d.get_temp::<String>(key))
+        .unwrap_or_else(|| app.session.doc.plain_text(StoryRef::Part(part)));
+    let mut edit = egui::TextEdit::multiline(&mut text)
+        .desired_rows(1)
+        .desired_width(f32::INFINITY)
+        .hint_text(tl!("Add a comment"));
     if let Some(f) = font {
         edit = edit.font(f);
     }
@@ -439,8 +615,12 @@ pub(crate) fn comment_editor(app: &mut WordApp, ui: &mut Ui, id: u32, font: Opti
 
 /// Write a comment's draft text back, when it has one that differs from the comment.
 pub(crate) fn commit_comment(app: &mut WordApp, ctx: &egui::Context, id: u32) {
-    let Some(text) = ctx.data_mut(|d| d.remove_temp::<String>(edit_key(id))) else { return };
-    let Some(part) = app.session.doc.comments.get(&id).map(|c| c.part) else { return };
+    let Some(text) = ctx.data_mut(|d| d.remove_temp::<String>(edit_key(id))) else {
+        return;
+    };
+    let Some(part) = app.session.doc.comments.get(&id).map(|c| c.part) else {
+        return;
+    };
     if text != app.session.doc.plain_text(StoryRef::Part(part)) {
         let _ = app.run("review.editComment", json!({"id": id, "text": text}));
     }
@@ -456,10 +636,19 @@ fn thread_root(app: &WordApp, id: u32) -> u32 {
 
 /// A field for replying to a comment. When it loses focus a non-empty reply is posted with
 /// `review.reply`; returns true when the field is done (posted or left empty).
-pub(crate) fn reply_editor(app: &mut WordApp, ui: &mut Ui, id: u32, font: Option<egui::FontId>, focus: bool) -> bool {
+pub(crate) fn reply_editor(
+    app: &mut WordApp,
+    ui: &mut Ui,
+    id: u32,
+    font: Option<egui::FontId>,
+    focus: bool,
+) -> bool {
     let key = reply_key(id);
     let mut text = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_default();
-    let mut edit = egui::TextEdit::multiline(&mut text).desired_rows(1).desired_width(f32::INFINITY).hint_text(tl!("Write a reply"));
+    let mut edit = egui::TextEdit::multiline(&mut text)
+        .desired_rows(1)
+        .desired_width(f32::INFINITY)
+        .hint_text(tl!("Write a reply"));
     if let Some(f) = font {
         edit = edit.font(f);
     }
@@ -479,7 +668,9 @@ pub(crate) fn reply_editor(app: &mut WordApp, ui: &mut Ui, id: u32, font: Option
 
 /// Post a pending reply draft to comment `id` (nothing when there is none or it is blank).
 pub(crate) fn commit_reply(app: &mut WordApp, ctx: &egui::Context, id: u32) {
-    let Some(text) = ctx.data_mut(|d| d.remove_temp::<String>(reply_key(id))) else { return };
+    let Some(text) = ctx.data_mut(|d| d.remove_temp::<String>(reply_key(id))) else {
+        return;
+    };
     if !text.trim().is_empty() {
         let root = thread_root(app, id);
         let _ = app.run("review.reply", json!({"id": root, "text": text.trim_end()}));
@@ -504,7 +695,10 @@ fn inspector(app: &mut WordApp, ui: &mut Ui) {
     let cstyle = chr["styleName"].as_str().map(str::to_string);
     // Built-in style names show in the interface language; the document keeps the English ones.
     let shown = |id: &Value, name: &str| {
-        id.as_str().and_then(|id| app.session.doc.styles.get(id)).map(crate::i18n::style_name).unwrap_or_else(|| name.to_string())
+        id.as_str()
+            .and_then(|id| app.session.doc.styles.get(id))
+            .map(crate::i18n::style_name)
+            .unwrap_or_else(|| name.to_string())
     };
     let pstyle_shown = shown(&para["style"], &pstyle);
     let cstyle_shown = cstyle.as_deref().map(|n| shown(&chr["style"], n));
@@ -513,11 +707,31 @@ fn inspector(app: &mut WordApp, ui: &mut Ui) {
     let mut clear: Option<&str> = None;
     egui::ScrollArea::vertical().show(ui, |ui| {
         section(ui, &t, "Paragraph", |ui| {
-            if level_row(ui, &t, "Style", &pstyle_shown, false, "Reset to Normal", pstyle == "Normal" && para["style"] == "Normal") {
+            if level_row(
+                ui,
+                &t,
+                "Style",
+                &pstyle_shown,
+                false,
+                "Reset to Normal",
+                pstyle == "Normal" && para["style"] == "Normal",
+            ) {
                 clear = Some("paragraphStyle");
             }
-            let (txt, empty) = if pdirect.is_empty() { (none.clone(), true) } else { (pdirect.join(", "), false) };
-            if level_row(ui, &t, "Direct formatting", &txt, empty, "Clear Paragraph Formatting", empty) {
+            let (txt, empty) = if pdirect.is_empty() {
+                (none.clone(), true)
+            } else {
+                (pdirect.join(", "), false)
+            };
+            if level_row(
+                ui,
+                &t,
+                "Direct formatting",
+                &txt,
+                empty,
+                "Clear Paragraph Formatting",
+                empty,
+            ) {
                 clear = Some("paragraphFormatting");
             }
         });
@@ -530,14 +744,30 @@ fn inspector(app: &mut WordApp, ui: &mut Ui) {
             if level_row(ui, &t, "Style", &txt, empty, "Clear Character Style", empty) {
                 clear = Some("characterStyle");
             }
-            let (txt, empty) = if cdirect.is_empty() { (none.clone(), true) } else { (cdirect.join(", "), false) };
-            if level_row(ui, &t, "Direct formatting", &txt, empty, "Clear Character Formatting", empty) {
+            let (txt, empty) = if cdirect.is_empty() {
+                (none.clone(), true)
+            } else {
+                (cdirect.join(", "), false)
+            };
+            if level_row(
+                ui,
+                &t,
+                "Direct formatting",
+                &txt,
+                empty,
+                "Clear Character Formatting",
+                empty,
+            ) {
                 clear = Some("characterFormatting");
             }
         });
         ui.add_space(10.0);
         ui.horizontal(|ui| {
-            if ui.button(tl!("Clear All")).on_hover_text(tl!("Clear All Formatting")).clicked() {
+            if ui
+                .button(tl!("Clear All"))
+                .on_hover_text(tl!("Clear All Formatting"))
+                .clicked()
+            {
                 let _ = app.run("format.clear", json!({}));
                 app.canvas.want_focus = true;
             }
@@ -554,24 +784,47 @@ fn inspector(app: &mut WordApp, ui: &mut Ui) {
 
 /// A titled, bordered group in the inspector.
 fn section(ui: &mut Ui, t: &Tokens, title: &str, body: impl FnOnce(&mut Ui)) {
-    ui.label(egui::RichText::new(tl!(title)).font(semibold(12.5)).color(t.text));
+    ui.label(
+        egui::RichText::new(tl!(title))
+            .font(semibold(12.5))
+            .color(t.text),
+    );
     ui.add_space(2.0);
-    egui::Frame::NONE.fill(t.input).stroke(Stroke::new(1.0, t.border)).corner_radius(4).inner_margin(8).show(ui, |ui| {
-        ui.set_width(ui.available_width());
-        body(ui);
-    });
+    egui::Frame::NONE
+        .fill(t.input)
+        .stroke(Stroke::new(1.0, t.border))
+        .corner_radius(4)
+        .inner_margin(8)
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            body(ui);
+        });
 }
 
 /// One level: a caption, its value, and a clear button (disabled when there's nothing to clear).
 /// Returns true when the button was clicked.
-fn level_row(ui: &mut Ui, t: &Tokens, caption: &str, value: &str, dim: bool, tip: &str, disabled: bool) -> bool {
-    ui.label(egui::RichText::new(tl!(caption)).font(regular(11.0)).color(t.text_dim));
+fn level_row(
+    ui: &mut Ui,
+    t: &Tokens,
+    caption: &str,
+    value: &str,
+    dim: bool,
+    tip: &str,
+    disabled: bool,
+) -> bool {
+    ui.label(
+        egui::RichText::new(tl!(caption))
+            .font(regular(11.0))
+            .color(t.text_dim),
+    );
     let mut clicked = false;
     ui.horizontal(|ui| {
         let w = (ui.available_width() - 26.0).max(40.0);
         ui.allocate_ui(vec2(w, 18.0), |ui| {
             ui.set_width(w);
-            let text = egui::RichText::new(value).font(regular(12.5)).color(if dim { t.text_disabled } else { t.text });
+            let text = egui::RichText::new(value)
+                .font(regular(12.5))
+                .color(if dim { t.text_disabled } else { t.text });
             ui.add(egui::Label::new(text).wrap());
         });
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
@@ -598,12 +851,22 @@ fn level_row(ui: &mut Ui, t: &Tokens, caption: &str, value: &str, dim: bool, tip
 
 /// Readable descriptions of the inspector's `direct` entries (`[{"prop", "value"}]`).
 fn direct_list(v: &Value) -> Vec<String> {
-    v.as_array().map(|a| a.iter().take(64).map(|d| describe(d["prop"].as_str().unwrap_or(""), &d["value"])).collect()).unwrap_or_default()
+    v.as_array()
+        .map(|a| {
+            a.iter()
+                .take(64)
+                .map(|d| describe(d["prop"].as_str().unwrap_or(""), &d["value"]))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Each `{"prop", "value"}` of a list (the Style Inspector's, or a formatting change's) as text.
 pub(crate) fn describe_props(list: &[Value]) -> Vec<String> {
-    list.iter().take(64).map(|d| describe(d["prop"].as_str().unwrap_or(""), &d["value"])).collect()
+    list.iter()
+        .take(64)
+        .map(|d| describe(d["prop"].as_str().unwrap_or(""), &d["value"]))
+        .collect()
 }
 
 /// "Bold", "Not Italic", "Font: Arial", "Size: 14 pt"…
@@ -671,7 +934,9 @@ fn describe(prop: &str, v: &Value) -> String {
             l @ 0..=8 => crate::i18n::fmt(tl!("Level {n}"), &[("n", &(l + 1).to_string())]),
             _ => tl!("Body Text").to_string(),
         },
-        ("dropCap", Value::Number(n)) => crate::i18n::fmt(tl!("{n} lines"), &[("n", &n.to_string())]),
+        ("dropCap", Value::Number(n)) => {
+            crate::i18n::fmt(tl!("{n} lines"), &[("n", &n.to_string())])
+        }
         (_, Value::Number(n)) => pt(n.as_f64().unwrap_or(0.0)),
         ("align", Value::String(s)) => tl!(match s.as_str() {
             "center" => "Centered",
@@ -706,7 +971,10 @@ fn trim_num(x: f64) -> String {
 
 /// `2026-10-12T04:44:00Z` → `2026-10-12 04:44` (date and time, no seconds) for comment cards.
 fn comment_stamp(iso: &str) -> String {
-    iso.chars().take(16).map(|c| if c == 'T' { ' ' } else { c }).collect()
+    iso.chars()
+        .take(16)
+        .map(|c| if c == 'T' { ' ' } else { c })
+        .collect()
 }
 
 /// `dotDash` → `Dot dash` (enum values from the document model).
@@ -743,28 +1011,50 @@ mod navigation_tests {
 
     #[test]
     fn long_headings_truncate_without_stretching_navigation() {
-        let text = "An extremely long heading with words that must stay inside the navigation pane ".repeat(20);
+        let text =
+            "An extremely long heading with words that must stay inside the navigation pane "
+                .repeat(20);
         for (width, level) in [(260.0, 0), (180.0, 5)] {
             let ctx = egui::Context::default();
             crate::theme::install_fonts(&ctx);
             let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(900.0, 600.0));
             let mut panel_rect = egui::Rect::NOTHING;
             let mut heading_rect = egui::Rect::NOTHING;
-            let output = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), ..Default::default() }, |ui| {
-                let result = egui::Panel::left("navigation_test")
-                    .default_size(width)
-                    .resizable(true)
-                    .show(ui, |ui| egui::ScrollArea::vertical().show(ui, |ui| nav_heading(ui, level, &text, true)).inner);
-                panel_rect = result.response.rect;
-                heading_rect = result.inner.rect;
-            });
+            let output = ctx.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(screen),
+                    ..Default::default()
+                },
+                |ui| {
+                    let result = egui::Panel::left("navigation_test")
+                        .default_size(width)
+                        .resizable(true)
+                        .show(ui, |ui| {
+                            egui::ScrollArea::vertical()
+                                .show(ui, |ui| nav_heading(ui, level, &text, true))
+                                .inner
+                        });
+                    panel_rect = result.response.rect;
+                    heading_rect = result.inner.rect;
+                },
+            );
 
-            assert!(panel_rect.width() < width + 20.0, "long heading expanded the {width}px pane to {panel_rect:?}");
-            assert!(heading_rect.max.x <= panel_rect.max.x, "heading escaped pane: {heading_rect:?} / {panel_rect:?}");
+            assert!(
+                panel_rect.width() < width + 20.0,
+                "long heading expanded the {width}px pane to {panel_rect:?}"
+            );
+            assert!(
+                heading_rect.max.x <= panel_rect.max.x,
+                "heading escaped pane: {heading_rect:?} / {panel_rect:?}"
+            );
             assert!(
                 output.shapes.iter().any(|s| match &s.shape {
                     egui::Shape::Text(t) => {
-                        t.galley.elided && t.galley.rows.last().is_some_and(|r| r.row.glyphs.last().is_some_and(|g| g.chr == '…'))
+                        t.galley.elided
+                            && t.galley
+                                .rows
+                                .last()
+                                .is_some_and(|r| r.row.glyphs.last().is_some_and(|g| g.chr == '…'))
                     }
                     _ => false,
                 }),

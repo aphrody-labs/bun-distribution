@@ -67,7 +67,10 @@ impl SecuritySettings {
 
     /// Some permission is withheld (only a permissions password applies them).
     pub fn restricts(&self) -> bool {
-        self.printing != Printing::High || self.changes != Changes::Any || !self.copy || !self.screen_reader
+        self.printing != Printing::High
+            || self.changes != Changes::Any
+            || !self.copy
+            || !self.screen_reader
     }
 
     /// The encryption dictionary's `P` entry: the permission bits (1-based bit numbers of the PDF
@@ -114,7 +117,9 @@ impl SecuritySettings {
             )));
         }
         if self.open_password == self.permissions_password {
-            return Err(PdfError::BadSetting("the open and permissions passwords must differ".into()));
+            return Err(PdfError::BadSetting(
+                "the open and permissions passwords must differ".into(),
+            ));
         }
         for pw in [&self.open_password, &self.permissions_password] {
             if revision(c) < 6 {
@@ -125,7 +130,9 @@ impl SecuritySettings {
                     )));
                 }
             } else if pw.len() > MAX_PASSWORD {
-                return Err(PdfError::BadSetting(format!("passwords can have up to {MAX_PASSWORD} bytes")));
+                return Err(PdfError::BadSetting(format!(
+                    "passwords can have up to {MAX_PASSWORD} bytes"
+                )));
             }
         }
         Ok(())
@@ -135,7 +142,9 @@ impl SecuritySettings {
 impl PdfSettings {
     /// The algorithm the file is encrypted with; `None` without a password.
     pub fn encryption(&self) -> Option<Encryption> {
-        self.security.protected().then(|| Encryption::for_compatibility(self.compatibility))
+        self.security
+            .protected()
+            .then(|| Encryption::for_compatibility(self.compatibility))
     }
 }
 
@@ -144,7 +153,10 @@ pub(crate) fn warnings(set: &PdfSettings) -> Vec<String> {
     let s = &set.security;
     let mut out = vec![];
     if s.protected() && s.plaintext_metadata && revision(set.compatibility) <= 3 {
-        out.push(format!("{} encryption covers the metadata too: plaintext metadata needs PDF 1.5 or later", set.compatibility.label()));
+        out.push(format!(
+            "{} encryption covers the metadata too: plaintext metadata needs PDF 1.5 or later",
+            set.compatibility.label()
+        ));
     }
     out
 }
@@ -153,8 +165,8 @@ pub(crate) fn warnings(set: &PdfSettings) -> Vec<String> {
 
 /// Padding of passwords (revisions 2–4).
 const PAD: [u8; 32] = [
-    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08, 0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-    0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
+    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
 ];
 
 fn md5(parts: &[&[u8]]) -> [u8; 16] {
@@ -210,8 +222,12 @@ impl Aes {
     fn new(key: &[u8]) -> Result<Self, PdfError> {
         let bad = |_| PdfError::Write("bad AES key".into());
         match key.len() {
-            16 => aes::Aes128::new_from_slice(key).map(|c| Self::A128(Box::new(c))).map_err(bad),
-            _ => aes::Aes256::new_from_slice(key).map(|c| Self::A256(Box::new(c))).map_err(bad),
+            16 => aes::Aes128::new_from_slice(key)
+                .map(|c| Self::A128(Box::new(c)))
+                .map_err(bad),
+            _ => aes::Aes256::new_from_slice(key)
+                .map(|c| Self::A256(Box::new(c)))
+                .map_err(bad),
         }
     }
 
@@ -238,7 +254,10 @@ impl Aes {
         }
         if pad {
             let n = (16 - rest.len()) as u8;
-            put(std::array::from_fn(|i| rest.get(i).copied().unwrap_or(n)), &mut out);
+            put(
+                std::array::from_fn(|i| rest.get(i).copied().unwrap_or(n)),
+                &mut out,
+            );
         }
         out
     }
@@ -252,7 +271,12 @@ fn first<const N: usize>(b: &[u8]) -> [u8; N] {
 /// The revision 6 password hash of `password` with `salt` (and the 48-byte U entry when hashing
 /// the owner password).
 fn hash6(password: &[u8], salt: &[u8], udata: &[u8]) -> Result<[u8; 32], PdfError> {
-    let mut k: Vec<u8> = Sha256::new().chain_update(password).chain_update(salt).chain_update(udata).finalize().to_vec();
+    let mut k: Vec<u8> = Sha256::new()
+        .chain_update(password)
+        .chain_update(salt)
+        .chain_update(udata)
+        .finalize()
+        .to_vec();
     let mut round = 0u32;
     loop {
         let mut k1 = Vec::with_capacity(64 * (password.len() + k.len() + udata.len()));
@@ -291,19 +315,30 @@ impl Entropy {
         for i in 0u8..4 {
             h.update(state.hash_one(i).to_le_bytes());
         }
-        h.update(vectorcraft_doc::metadata::now_unix().unwrap_or_default().to_le_bytes());
+        h.update(
+            vectorcraft_doc::metadata::now_unix()
+                .unwrap_or_default()
+                .to_le_bytes(),
+        );
         for m in material {
             h.update((m.len() as u64).to_le_bytes());
             h.update(m);
         }
-        Self { seed: h.finalize().into(), counter: 0 }
+        Self {
+            seed: h.finalize().into(),
+            counter: 0,
+        }
     }
 
     fn bytes<const N: usize>(&mut self) -> [u8; N] {
         let mut out = [0u8; N];
         for chunk in out.chunks_mut(32) {
             self.counter += 1;
-            let block: [u8; 32] = Sha256::new().chain_update(self.seed).chain_update(self.counter.to_le_bytes()).finalize().into();
+            let block: [u8; 32] = Sha256::new()
+                .chain_update(self.seed)
+                .chain_update(self.counter.to_le_bytes())
+                .finalize()
+                .into();
             chunk.copy_from_slice(&block[..chunk.len()]);
         }
         out
@@ -332,15 +367,28 @@ struct Handler {
 
 impl Handler {
     /// The handler for `sec` at version `c`, for a file whose first ID is `id`.
-    fn new(sec: &SecuritySettings, c: Compatibility, id: &[u8], rng: &mut Entropy) -> Result<Self, PdfError> {
+    fn new(
+        sec: &SecuritySettings,
+        c: Compatibility,
+        id: &[u8],
+        rng: &mut Entropy,
+    ) -> Result<Self, PdfError> {
         let r = revision(c);
         let cipher = Encryption::for_compatibility(c);
         let user = sec.open_password.as_bytes();
         // Without a permissions password the open password grants every permission anyway.
-        let owner = if sec.permissions_password.is_empty() { user } else { sec.permissions_password.as_bytes() };
+        let owner = if sec.permissions_password.is_empty() {
+            user
+        } else {
+            sec.permissions_password.as_bytes()
+        };
         let p = sec.permission_bits();
         let encrypt_metadata = r <= 3 || !sec.plaintext_metadata;
-        let meta = if encrypt_metadata { "" } else { "/EncryptMetadata false" };
+        let meta = if encrypt_metadata {
+            ""
+        } else {
+            "/EncryptMetadata false"
+        };
         if r == 6 {
             let key: [u8; 32] = rng.bytes();
             let (uv, uk): ([u8; 8], [u8; 8]) = (rng.bytes(), rng.bytes());
@@ -363,7 +411,12 @@ impl Handler {
                 hex(&ue),
                 hex(&perms)
             );
-            return Ok(Self { key: key.to_vec(), cipher, encrypt_metadata, dict });
+            return Ok(Self {
+                key: key.to_vec(),
+                cipher,
+                encrypt_metadata,
+                dict,
+            });
         }
         // O (algorithm 3), the file key (algorithm 2) and U (algorithms 4 and 5): a 5-byte key and
         // single RC4 passes for revision 2, a 16-byte key for revisions 3 and 4.
@@ -390,10 +443,22 @@ impl Handler {
             u
         };
         let dict = match r {
-            2 => format!("<</Filter/Standard/V 1/R 2/Length 40/P {p}/O{}/U{}>>", hex(&o), hex(&u)),
-            3 => format!("<</Filter/Standard/V 2/R 3/Length 128/P {p}/O{}/U{}>>", hex(&o), hex(&u)),
+            2 => format!(
+                "<</Filter/Standard/V 1/R 2/Length 40/P {p}/O{}/U{}>>",
+                hex(&o),
+                hex(&u)
+            ),
+            3 => format!(
+                "<</Filter/Standard/V 2/R 3/Length 128/P {p}/O{}/U{}>>",
+                hex(&o),
+                hex(&u)
+            ),
             _ => {
-                let cfm = if cipher == Encryption::Aes128 { "AESV2" } else { "V2" };
+                let cfm = if cipher == Encryption::Aes128 {
+                    "AESV2"
+                } else {
+                    "V2"
+                };
                 format!(
                     "<</Filter/Standard/V 4/R 4/Length 128/CF<</StdCF<</AuthEvent/DocOpen/CFM/{cfm}/Length 16>>>>/StmF/StdCF/StrF/StdCF/P {p}/O{}/U{}{meta}>>",
                     hex(&o),
@@ -401,15 +466,35 @@ impl Handler {
                 )
             }
         };
-        Ok(Self { key, cipher, encrypt_metadata, dict })
+        Ok(Self {
+            key,
+            cipher,
+            encrypt_metadata,
+            dict,
+        })
     }
 
     /// `data` of object `num generation` encrypted.
-    fn encrypt(&self, num: u32, generation: u16, data: &[u8], rng: &mut Entropy) -> Result<Vec<u8>, PdfError> {
+    fn encrypt(
+        &self,
+        num: u32,
+        generation: u16,
+        data: &[u8],
+        rng: &mut Entropy,
+    ) -> Result<Vec<u8>, PdfError> {
         // The object's key: the file key's length plus 5 bytes, at most 16 (algorithm 1).
         let object_key = || {
-            let salt: &[u8] = if self.cipher == Encryption::Aes128 { b"sAlT" } else { &[] };
-            let h = md5(&[&self.key, &num.to_le_bytes()[..3], &generation.to_le_bytes(), salt]);
+            let salt: &[u8] = if self.cipher == Encryption::Aes128 {
+                b"sAlT"
+            } else {
+                &[]
+            };
+            let h = md5(&[
+                &self.key,
+                &num.to_le_bytes()[..3],
+                &generation.to_le_bytes(),
+                salt,
+            ]);
             h.get(..(self.key.len() + 5).min(16)).unwrap_or(&h).to_vec()
         };
         let aes = |key: &[u8], rng: &mut Entropy| -> Result<Vec<u8>, PdfError> {
@@ -718,7 +803,11 @@ impl<'a> Lexer<'a> {
                     match look.next()? {
                         (Tok::DictClose, _, end) => {
                             *self = look;
-                            return Some(Obj::Dict { entries, start, end });
+                            return Some(Obj::Dict {
+                                entries,
+                                start,
+                                end,
+                            });
                         }
                         (Tok::Name(k), ..) => {
                             *self = look;
@@ -746,7 +835,10 @@ impl<'a> Lexer<'a> {
                     let mut look = self.clone();
                     match (look.next(), look.next()) {
                         (Some((Tok::Word(g), ..)), Some((Tok::Word(b"R"), ..))) => {
-                            match (u32::try_from(value), int(g).and_then(|g| u16::try_from(g).ok())) {
+                            match (
+                                u32::try_from(value),
+                                int(g).and_then(|g| u16::try_from(g).ok()),
+                            ) {
                                 (Ok(n), Some(g)) => {
                                     *self = look;
                                     Obj::Ref(n, g)
@@ -765,7 +857,9 @@ impl<'a> Lexer<'a> {
 
     /// The header `num generation obj` of an indirect object.
     pub(crate) fn header(&mut self) -> Option<(u32, u16)> {
-        let (Some((Tok::Word(n), ..)), Some((Tok::Word(g), ..)), Some((Tok::Word(b"obj"), ..))) = (self.next(), self.next(), self.next()) else {
+        let (Some((Tok::Word(n), ..)), Some((Tok::Word(g), ..)), Some((Tok::Word(b"obj"), ..))) =
+            (self.next(), self.next(), self.next())
+        else {
             return None;
         };
         Some((u32::try_from(int(n)?).ok()?, u16::try_from(int(g)?).ok()?))
@@ -802,15 +896,23 @@ fn xref_table(pdf: &[u8], xref: usize) -> Result<(Vec<Entry>, Obj<'_>), PdfError
             break;
         }
         let (first, count) = (word(lx.next()), word(lx.next()));
-        let (Some(first), Some(count)) = (first, count) else { return Err(failed("bad cross-reference table")) };
+        let (Some(first), Some(count)) = (first, count) else {
+            return Err(failed("bad cross-reference table"));
+        };
         for i in 0..count {
             let (off, generation, kind) = (word(lx.next()), word(lx.next()), lx.next());
-            let (Some(off), Some(generation), Some((Tok::Word(kind), ..))) = (off, generation, kind) else {
+            let (Some(off), Some(generation), Some((Tok::Word(kind), ..))) =
+                (off, generation, kind)
+            else {
                 return Err(failed("bad cross-reference entry"));
             };
             if kind == b"n" {
                 let num = u32::try_from(first + i).map_err(|_| failed("bad object number"))?;
-                entries.push((num, u16::try_from(generation).unwrap_or(0), usize::try_from(off).map_err(|_| failed("bad offset"))?));
+                entries.push((
+                    num,
+                    u16::try_from(generation).unwrap_or(0),
+                    usize::try_from(off).map_err(|_| failed("bad offset"))?,
+                ));
             }
         }
     }
@@ -820,15 +922,28 @@ fn xref_table(pdf: &[u8], xref: usize) -> Result<(Vec<Entry>, Obj<'_>), PdfError
 
 /// The edits encrypting the object at `off` (its strings and stream data); `catalog`: add the
 /// 256-bit AES extension to it.
-fn object_edits(pdf: &[u8], off: usize, h: &Handler, catalog: bool, rng: &mut Entropy, edits: &mut Vec<Edit>) -> Result<(), PdfError> {
+fn object_edits(
+    pdf: &[u8],
+    off: usize,
+    h: &Handler,
+    catalog: bool,
+    rng: &mut Entropy,
+    edits: &mut Vec<Edit>,
+) -> Result<(), PdfError> {
     let mut lx = Lexer::at(pdf, off);
-    let (num, generation) = lx.header().ok_or_else(|| failed("an object's header is missing"))?;
+    let (num, generation) = lx
+        .header()
+        .ok_or_else(|| failed("an object's header is missing"))?;
     let obj = lx.object(0).ok_or_else(|| failed("unreadable object"))?;
     let mut strings = vec![];
     obj.strings(&mut strings);
     for s in strings {
         if let Obj::Str { bytes, start, end } = s {
-            edits.push((*start, *end, hex(&h.encrypt(num, generation, bytes, rng)?).into_bytes()));
+            edits.push((
+                *start,
+                *end,
+                hex(&h.encrypt(num, generation, bytes, rng)?).into_bytes(),
+            ));
         }
     }
     if let (true, Obj::Dict { start, .. }) = (catalog, &obj)
@@ -836,15 +951,23 @@ fn object_edits(pdf: &[u8], off: usize, h: &Handler, catalog: bool, rng: &mut En
     {
         edits.push((start + 2, start + 2, AES256_EXTENSION.to_vec()));
     }
-    let Some(((len_start, len_end), (data, data_end))) = stream_spans(pdf, &mut lx, &obj).map_err(failed)? else { return Ok(()) };
+    let Some(((len_start, len_end), (data, data_end))) =
+        stream_spans(pdf, &mut lx, &obj).map_err(failed)?
+    else {
+        return Ok(());
+    };
     let ty = obj.name(b"Type");
     if matches!(ty, Some(b"XRef" | b"ObjStm")) {
-        return Err(failed("cross-reference and object streams aren't supported"));
+        return Err(failed(
+            "cross-reference and object streams aren't supported",
+        ));
     }
     if ty == Some(&b"Metadata"[..]) && !h.encrypt_metadata {
         return Ok(());
     }
-    let bytes = pdf.get(data..data_end).ok_or_else(|| failed("a stream runs past the end"))?;
+    let bytes = pdf
+        .get(data..data_end)
+        .ok_or_else(|| failed("a stream runs past the end"))?;
     let enc = h.encrypt(num, generation, bytes, rng)?;
     edits.push((len_start, len_end, enc.len().to_string().into_bytes()));
     edits.push((data, data_end, enc));
@@ -856,9 +979,17 @@ pub(crate) type StreamSpans = ((usize, usize), (usize, usize));
 
 /// Where the object whose dictionary `dict` the lexer `lx` has just read keeps its stream data:
 /// its [`StreamSpans`]; `None` when it isn't a stream.
-pub(crate) fn stream_spans(pdf: &[u8], lx: &mut Lexer<'_>, dict: &Obj<'_>) -> Result<Option<StreamSpans>, &'static str> {
-    let Some((Tok::Word(b"stream"), _, keyword_end)) = lx.next() else { return Ok(None) };
-    let Some(Obj::Int { value, start, end }) = dict.get(b"Length") else { return Err("a stream's length isn't a number") };
+pub(crate) fn stream_spans(
+    pdf: &[u8],
+    lx: &mut Lexer<'_>,
+    dict: &Obj<'_>,
+) -> Result<Option<StreamSpans>, &'static str> {
+    let Some((Tok::Word(b"stream"), _, keyword_end)) = lx.next() else {
+        return Ok(None);
+    };
+    let Some(Obj::Int { value, start, end }) = dict.get(b"Length") else {
+        return Err("a stream's length isn't a number");
+    };
     // The data starts after the end of line that follows `stream`.
     let mut data = keyword_end;
     if pdf.get(data) == Some(&b'\r') {
@@ -867,11 +998,17 @@ pub(crate) fn stream_spans(pdf: &[u8], lx: &mut Lexer<'_>, dict: &Obj<'_>) -> Re
     if pdf.get(data) == Some(&b'\n') {
         data += 1;
     }
-    let data_end = usize::try_from(*value).ok().and_then(|n| data.checked_add(n)).ok_or("bad stream length")?;
+    let data_end = usize::try_from(*value)
+        .ok()
+        .and_then(|n| data.checked_add(n))
+        .ok_or("bad stream length")?;
     if data_end > pdf.len() {
         return Err("a stream runs past the end");
     }
-    if !matches!(Lexer::at(pdf, data_end).next(), Some((Tok::Word(b"endstream"), ..))) {
+    if !matches!(
+        Lexer::at(pdf, data_end).next(),
+        Some((Tok::Word(b"endstream"), ..))
+    ) {
         return Err("a stream's length is wrong");
     }
     Ok(Some(((*start, *end), (data, data_end))))
@@ -899,26 +1036,48 @@ pub(crate) fn protect(pdf: Vec<u8>, set: &PdfSettings) -> Result<Vec<u8>, PdfErr
 
 /// [`protect`], keeping what encrypted the file (`None` when it isn't encrypted). The objects keep
 /// their order and numbers; the encryption dictionary comes after them, numbered last.
-pub(crate) fn protect_keeping(pdf: Vec<u8>, set: &PdfSettings) -> Result<(Vec<u8>, Option<Cipher>), PdfError> {
+pub(crate) fn protect_keeping(
+    pdf: Vec<u8>,
+    set: &PdfSettings,
+) -> Result<(Vec<u8>, Option<Cipher>), PdfError> {
     let sec = &set.security;
     if !sec.protected() {
         return Ok((pdf, None));
     }
     let xref = xref_offset(&pdf).ok_or_else(|| failed("no cross-reference table"))?;
     let (mut objects, trailer) = xref_table(&pdf, xref)?;
-    let Obj::Dict { start: t_start, end: t_end, .. } = &trailer else { return Err(failed("bad trailer")) };
+    let Obj::Dict {
+        start: t_start,
+        end: t_end,
+        ..
+    } = &trailer
+    else {
+        return Err(failed("bad trailer"));
+    };
     if trailer.get(b"Prev").is_some() || trailer.get(b"Encrypt").is_some() {
         return Err(failed("the file was updated or encrypted already"));
     }
-    let Some(Obj::Int { value: size, start: size_start, end: size_end }) = trailer.get(b"Size") else {
+    let Some(Obj::Int {
+        value: size,
+        start: size_start,
+        end: size_end,
+    }) = trailer.get(b"Size")
+    else {
         return Err(failed("the trailer has no size"));
     };
-    let size = u32::try_from(*size).ok().filter(|s| *s as usize <= 2 * objects.len() + 16).ok_or_else(|| failed("bad trailer size"))?;
+    let size = u32::try_from(*size)
+        .ok()
+        .filter(|s| *s as usize <= 2 * objects.len() + 16)
+        .ok_or_else(|| failed("bad trailer size"))?;
     let root = match trailer.get(b"Root") {
         Some(Obj::Ref(n, _)) => Some(*n),
         _ => None,
     };
-    let mut rng = Entropy::new(&[sec.open_password.as_bytes(), sec.permissions_password.as_bytes(), &pdf]);
+    let mut rng = Entropy::new(&[
+        sec.open_password.as_bytes(),
+        sec.permissions_password.as_bytes(),
+        &pdf,
+    ]);
     let (id, new_id) = match trailer.first_string(b"ID") {
         Some(id) => (id.to_vec(), None),
         None => {
@@ -932,7 +1091,14 @@ pub(crate) fn protect_keeping(pdf: Vec<u8>, set: &PdfSettings) -> Result<(Vec<u8
     objects.sort_by_key(|o| o.2);
     let mut edits = vec![];
     for (num, _, off) in &objects {
-        object_edits(&pdf, *off, &h, extension && root == Some(*num), &mut rng, &mut edits)?;
+        object_edits(
+            &pdf,
+            *off,
+            &h,
+            extension && root == Some(*num),
+            &mut rng,
+            &mut edits,
+        )?;
     }
     edits.sort_by_key(|e| (e.0, e.1));
 
@@ -942,17 +1108,26 @@ pub(crate) fn protect_keeping(pdf: Vec<u8>, set: &PdfSettings) -> Result<(Vec<u8
     let (mut at, mut pending) = (0, edits.iter().peekable());
     let mut copy_to = |to: usize, out: &mut Vec<u8>, at: &mut usize| -> Result<(), PdfError> {
         while let Some((s, e, new)) = pending.next_if(|e| e.0 < to) {
-            out.extend_from_slice(pdf.get(*at..*s).ok_or_else(|| failed("overlapping edits"))?);
+            out.extend_from_slice(
+                pdf.get(*at..*s)
+                    .ok_or_else(|| failed("overlapping edits"))?,
+            );
             out.extend_from_slice(new);
             *at = *e;
         }
-        out.extend_from_slice(pdf.get(*at..to).ok_or_else(|| failed("overlapping edits"))?);
+        out.extend_from_slice(
+            pdf.get(*at..to)
+                .ok_or_else(|| failed("overlapping edits"))?,
+        );
         *at = to;
         Ok(())
     };
     for (num, generation, off) in &objects {
         copy_to(*off, &mut out, &mut at)?;
-        let slot = offsets.get_mut(*num as usize).filter(|_| *num < size).ok_or_else(|| failed("bad object number"))?;
+        let slot = offsets
+            .get_mut(*num as usize)
+            .filter(|_| *num < size)
+            .ok_or_else(|| failed("bad object number"))?;
         *slot = Some((out.len(), *generation));
     }
     copy_to(xref, &mut out, &mut at)?;
@@ -972,10 +1147,19 @@ pub(crate) fn protect_keeping(pdf: Vec<u8>, set: &PdfSettings) -> Result<(Vec<u8
         out.extend_from_slice(entry.as_bytes());
     }
     out.extend_from_slice(b"trailer\n");
-    let dict_body = t_end.checked_sub(2).filter(|b| *b >= *size_end).ok_or_else(|| failed("bad trailer"))?;
-    out.extend_from_slice(pdf.get(*t_start..*size_start).ok_or_else(|| failed("bad trailer"))?);
+    let dict_body = t_end
+        .checked_sub(2)
+        .filter(|b| *b >= *size_end)
+        .ok_or_else(|| failed("bad trailer"))?;
+    out.extend_from_slice(
+        pdf.get(*t_start..*size_start)
+            .ok_or_else(|| failed("bad trailer"))?,
+    );
     out.extend_from_slice((size + 1).to_string().as_bytes());
-    out.extend_from_slice(pdf.get(*size_end..dict_body).ok_or_else(|| failed("bad trailer"))?);
+    out.extend_from_slice(
+        pdf.get(*size_end..dict_body)
+            .ok_or_else(|| failed("bad trailer"))?,
+    );
     if let Some(id) = new_id {
         out.extend_from_slice(format!("/ID[{}{}]", hex(&id), hex(&id)).as_bytes());
     }
@@ -1032,8 +1216,16 @@ pub(crate) fn user_password(pdf: &[u8], owner: &str) -> Option<String> {
         d @ Obj::Dict { .. } => d,
         _ => return None,
     };
-    let r = u8::try_from(enc.int(b"R")?).ok().filter(|r| (2..=4).contains(r))?;
-    let n = if r == 2 { 5 } else { usize::try_from(enc.int(b"Length").unwrap_or(40) / 8).ok()?.clamp(5, 16) };
+    let r = u8::try_from(enc.int(b"R")?)
+        .ok()
+        .filter(|r| (2..=4).contains(r))?;
+    let n = if r == 2 {
+        5
+    } else {
+        usize::try_from(enc.int(b"Length").unwrap_or(40) / 8)
+            .ok()?
+            .clamp(5, 16)
+    };
     let key = owner_key(owner.as_bytes(), r, n);
     let mut user = enc.string(b"O")?.get(..32)?.to_vec();
     if r == 2 {

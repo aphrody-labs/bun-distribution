@@ -83,7 +83,13 @@ fn lines_rect(mut pts: Vec<[f64; 2]>) -> Option<[f64; 4]> {
         [(a, b), (b, c), (c, d), (d, a)]
             .iter()
             .enumerate()
-            .all(|(i, (p, q))| if (i % 2 == 0) == first_horizontal { same(p[1], q[1]) } else { same(p[0], q[0]) })
+            .all(|(i, (p, q))| {
+                if (i % 2 == 0) == first_horizontal {
+                    same(p[1], q[1])
+                } else {
+                    same(p[0], q[0])
+                }
+            })
     };
     if !(fits(true) || fits(false)) {
         return None;
@@ -100,7 +106,11 @@ fn lines_rect(mut pts: Vec<[f64; 2]>) -> Option<[f64; 4]> {
 
 impl Default for Gs {
     fn default() -> Self {
-        Gs { ctm: Matrix::IDENTITY, fill: [0.0, 0.0, 0.0], alpha: 1.0 }
+        Gs {
+            ctm: Matrix::IDENTITY,
+            fill: [0.0, 0.0, 0.0],
+            alpha: 1.0,
+        }
     }
 }
 
@@ -180,8 +190,17 @@ impl<'a> Walker<'a> {
                         && [c, m, y, k].iter().all(|v| v.is_finite())
                     {
                         // Naive CMYK -> RGB; good enough to tell black from white.
-                        let (c, m, y, k) = (c.clamp(0.0, 1.0), m.clamp(0.0, 1.0), y.clamp(0.0, 1.0), k.clamp(0.0, 1.0));
-                        gs.fill = [(1.0 - c) * (1.0 - k), (1.0 - m) * (1.0 - k), (1.0 - y) * (1.0 - k)];
+                        let (c, m, y, k) = (
+                            c.clamp(0.0, 1.0),
+                            m.clamp(0.0, 1.0),
+                            y.clamp(0.0, 1.0),
+                            k.clamp(0.0, 1.0),
+                        );
+                        gs.fill = [
+                            (1.0 - c) * (1.0 - k),
+                            (1.0 - m) * (1.0 - k),
+                            (1.0 - y) * (1.0 - k),
+                        ];
                     }
                 }
                 b"gs" => {
@@ -192,7 +211,12 @@ impl<'a> Walker<'a> {
                 b"re" => {
                     let rect = op.nums::<4>().and_then(|[x, y, w, h]| {
                         if [x, y, w, h].iter().all(|v| v.is_finite()) && w != 0.0 && h != 0.0 {
-                            let r = gs.ctm.bbox([x.min(x + w), y.min(y + h), x.max(x + w), y.max(y + h)]);
+                            let r = gs.ctm.bbox([
+                                x.min(x + w),
+                                y.min(y + h),
+                                x.max(x + w),
+                                y.max(y + h),
+                            ]);
                             (r[2] > r[0] && r[3] > r[1]).then_some(r)
                         } else {
                             None
@@ -226,7 +250,11 @@ impl<'a> Walker<'a> {
                     if let Some(r) = std::mem::replace(&mut path, Path::Empty).rect()
                         && gs.alpha >= 1.0
                     {
-                        self.out.push(FilledRect { rect: r, rgb: gs.fill, pos });
+                        self.out.push(FilledRect {
+                            rect: r,
+                            rgb: gs.fill,
+                            pos,
+                        });
                     }
                 }
                 b"S" | b"s" | b"n" => path = Path::Empty,
@@ -249,11 +277,26 @@ impl<'a> Walker<'a> {
     /// Follow a form XObject read-only, composing its matrix onto the current CTM. State
     /// changes inside never leak out; every rectangle found is stamped with the `Do`
     /// position `pos`.
-    fn walk_xobject(&mut self, name: &[u8], gs: &Gs, resources: &Dict, depth: usize, pos: (usize, usize)) -> Result<(), AuditError> {
-        let xobjects = resources.get(b"XObject").map(|o| self.doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default();
-        let Some(entry) = xobjects.get(name) else { return Ok(()) };
+    fn walk_xobject(
+        &mut self,
+        name: &[u8],
+        gs: &Gs,
+        resources: &Dict,
+        depth: usize,
+        pos: (usize, usize),
+    ) -> Result<(), AuditError> {
+        let xobjects = resources
+            .get(b"XObject")
+            .map(|o| self.doc.resolve(o))
+            .and_then(|o| o.as_dict().cloned())
+            .unwrap_or_default();
+        let Some(entry) = xobjects.get(name) else {
+            return Ok(());
+        };
         let resolved = self.doc.resolve(entry);
-        let Object::Stream(stream) = &*resolved else { return Ok(()) };
+        let Object::Stream(stream) = &*resolved else {
+            return Ok(());
+        };
         let dict = &stream.dict;
         if dict.name(b"Subtype") != Some(b"Form") {
             return Ok(());
@@ -263,11 +306,19 @@ impl<'a> Walker<'a> {
             .map(|o| self.doc.resolve(o))
             .and_then(|o| o.as_array().map(|a| a.to_vec()))
             .and_then(|a| {
-                let v: Vec<f64> = a.iter().filter_map(|o| self.doc.resolve(o).as_f64()).collect();
-                (v.len() == 6 && v.iter().all(|x| x.is_finite())).then(|| Matrix([v[0], v[1], v[2], v[3], v[4], v[5]]))
+                let v: Vec<f64> = a
+                    .iter()
+                    .filter_map(|o| self.doc.resolve(o).as_f64())
+                    .collect();
+                (v.len() == 6 && v.iter().all(|x| x.is_finite()))
+                    .then(|| Matrix([v[0], v[1], v[2], v[3], v[4], v[5]]))
             })
             .unwrap_or(Matrix::IDENTITY);
-        let sub_resources = dict.get(b"Resources").map(|o| self.doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default();
+        let sub_resources = dict
+            .get(b"Resources")
+            .map(|o| self.doc.resolve(o))
+            .and_then(|o| o.as_dict().cloned())
+            .unwrap_or_default();
         // A form stream that cannot be decoded fails the audit: it might hide a cover.
         let data = stream.decoded_strict()?;
         let ops = parse(&data).ops;
@@ -275,7 +326,14 @@ impl<'a> Walker<'a> {
         let mut sub_gs = gs.clone();
         sub_gs.ctm = matrix.then(&gs.ctm);
         let mut sub_stack = Vec::new();
-        self.walk_ops(&ops, &mut sub_gs, &mut sub_stack, &sub_resources, depth + 1, Some(pos))
+        self.walk_ops(
+            &ops,
+            &mut sub_gs,
+            &mut sub_stack,
+            &sub_resources,
+            depth + 1,
+            Some(pos),
+        )
     }
 }
 
@@ -294,8 +352,15 @@ fn ext_alpha(doc: &Document, resources: &Dict, name: &[u8]) -> f64 {
         .and_then(|o| o.as_dict().cloned())
         .and_then(|d| d.get(name).map(|o| doc.resolve(o)))
         .and_then(|o| o.as_dict().cloned())
-        .and_then(|d| d.get(b"ca").map(|o| doc.resolve(o)).and_then(|o| o.as_f64()));
-    alpha.filter(|a| a.is_finite()).map(|a| a.clamp(0.0, 1.0)).unwrap_or(1.0)
+        .and_then(|d| {
+            d.get(b"ca")
+                .map(|o| doc.resolve(o))
+                .and_then(|o| o.as_f64())
+        });
+    alpha
+        .filter(|a| a.is_finite())
+        .map(|a| a.clamp(0.0, 1.0))
+        .unwrap_or(1.0)
 }
 
 /// Every opaque filled rectangle drawn by a page's content (and its form XObjects), with paint
@@ -303,7 +368,11 @@ fn ext_alpha(doc: &Document, resources: &Dict, name: &[u8]) -> f64 {
 /// state set in an earlier stream is still in force in the later ones. Any content stream that
 /// cannot be decoded is an audit failure, never an empty result.
 pub fn filled_rects(doc: &Document, page: &Dict) -> Result<Vec<FilledRect>, AuditError> {
-    let resources = page.get(b"Resources").map(|o| doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default();
+    let resources = page
+        .get(b"Resources")
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_dict().cloned())
+        .unwrap_or_default();
     let contents: Vec<Object> = match page.get(b"Contents") {
         None => Vec::new(),
         Some(c) => match &*doc.resolve(c) {
@@ -319,7 +388,12 @@ pub fn filled_rects(doc: &Document, page: &Dict) -> Result<Vec<FilledRect>, Audi
     }
     let pieces = Pieces::join(&streams);
     let parsed = pieces.parse();
-    let mut w = Walker { doc, pieces: &pieces, out: Vec::new(), ops_seen: 0 };
+    let mut w = Walker {
+        doc,
+        pieces: &pieces,
+        out: Vec::new(),
+        ops_seen: 0,
+    };
     let mut gs = Gs::default();
     let mut stack = Vec::new();
     w.walk_ops(&parsed.ops, &mut gs, &mut stack, &resources, 0, None)?;

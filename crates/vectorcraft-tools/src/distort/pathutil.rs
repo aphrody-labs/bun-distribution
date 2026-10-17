@@ -7,7 +7,9 @@ const ACC: f64 = 1e-4;
 
 /// Arc length of each segment.
 pub fn seg_lengths(sp: &SubPath) -> Vec<f64> {
-    (0..sp.segment_count()).map(|i| sp.segment(i).arclen(ACC)).collect()
+    (0..sp.segment_count())
+        .map(|i| sp.segment(i).arclen(ACC))
+        .collect()
 }
 
 /// Fraction of the subpath's length at segment `seg`, parameter `t`.
@@ -18,7 +20,13 @@ pub fn fraction_at(sp: &SubPath, seg: usize, t: f64) -> f64 {
         return 0.0;
     }
     let before: f64 = l[..seg.min(l.len())].iter().sum();
-    let part = if seg < l.len() { sp.segment(seg).subsegment(0.0..t.clamp(0.0, 1.0)).arclen(ACC) } else { 0.0 };
+    let part = if seg < l.len() {
+        sp.segment(seg)
+            .subsegment(0.0..t.clamp(0.0, 1.0))
+            .arclen(ACC)
+    } else {
+        0.0
+    };
     ((before + part) / total).clamp(0.0, 1.0)
 }
 
@@ -33,7 +41,11 @@ pub fn eval_fraction(sp: &SubPath, f: f64) -> Option<(Point, Vec2)> {
     for (i, len) in l.iter().enumerate() {
         if target <= *len || i == l.len() - 1 {
             let c = sp.segment(i);
-            let t = if *len > 1e-12 { c.inv_arclen(target.min(*len), ACC) } else { 0.0 };
+            let t = if *len > 1e-12 {
+                c.inv_arclen(target.min(*len), ACC)
+            } else {
+                0.0
+            };
             return Some((c.eval(t), tangent(&c, t)));
         }
         target -= len;
@@ -51,7 +63,11 @@ pub fn tangent(c: &vectorcraft_geom::CubicBez, t: f64) -> Vec2 {
         if d2.hypot() > 1e-12 { d2 } else { c.p3 - c.p0 }
     };
     let h = d.hypot();
-    if h > 1e-12 { d / h } else { Vec2::new(1.0, 0.0) }
+    if h > 1e-12 {
+        d / h
+    } else {
+        Vec2::new(1.0, 0.0)
+    }
 }
 
 /// The left normal of a tangent in y-down document space (left of the direction of travel).
@@ -63,7 +79,13 @@ pub fn left_normal(t: Vec2) -> Vec2 {
 pub fn nearest_fraction(path: &PathData, p: Point) -> Option<(usize, f64, Point, Vec2, f64)> {
     let (si, seg, t, q, d) = path.nearest(p)?;
     let sp = &path.subpaths[si];
-    Some((si, fraction_at(sp, seg, t), q, tangent(&sp.segment(seg), t), d))
+    Some((
+        si,
+        fraction_at(sp, seg, t),
+        q,
+        tangent(&sp.segment(seg), t),
+        d,
+    ))
 }
 
 #[cfg(test)]
@@ -72,7 +94,14 @@ mod tests {
 
     #[test]
     fn fractions_round_trip_on_a_polyline() {
-        let sp = SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0), Point::new(100.0, 100.0)], false);
+        let sp = SubPath::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(100.0, 0.0),
+                Point::new(100.0, 100.0),
+            ],
+            false,
+        );
         assert!((fraction_at(&sp, 0, 0.5) - 0.25).abs() < 1e-6);
         assert!((fraction_at(&sp, 1, 0.5) - 0.75).abs() < 1e-6);
         let (p, t) = eval_fraction(&sp, 0.75).unwrap();

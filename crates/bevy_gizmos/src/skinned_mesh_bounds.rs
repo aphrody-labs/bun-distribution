@@ -13,17 +13,16 @@ use bevy_ecs::{
 };
 use bevy_math::Affine3A;
 use bevy_mesh::{
-    mark_3d_meshes_as_changed_if_their_assets_changed,
+    Mesh, Mesh3d, mark_3d_meshes_as_changed_if_their_assets_changed,
     skinning::{SkinnedMesh, SkinnedMeshInverseBindposes},
-    Mesh, Mesh3d,
 };
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
-use bevy_transform::{components::GlobalTransform, TransformSystems};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
+use bevy_transform::{TransformSystems, components::GlobalTransform};
 
 use crate::{
+    AppGizmoBuilder,
     config::{GizmoConfigGroup, GizmoConfigStore},
     gizmos::Gizmos,
-    AppGizmoBuilder,
 };
 
 /// A [`Plugin`] that provides visualization of entities with [`DynamicSkinnedMeshBounds`].

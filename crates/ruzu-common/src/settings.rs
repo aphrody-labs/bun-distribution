@@ -564,7 +564,14 @@ impl Values {
             ),
             Category::Miscellaneous => visit!(log_filter, log_flush_line, censor_username),
             Category::WebService => {
-                visit!(enable_telemetry, web_api_url, yuzu_username, yuzu_token, eden_username, eden_token,)
+                visit!(
+                    enable_telemetry,
+                    web_api_url,
+                    yuzu_username,
+                    yuzu_token,
+                    eden_username,
+                    eden_token,
+                )
             }
             Category::System => visit!(
                 cpu_clock,
@@ -1214,11 +1221,7 @@ impl Default for Values {
             async_presentation: SwitchableSetting::new(false, "async_presentation", RendererHacks),
             fix_bloom_effects: SwitchableSetting::new(false, "fix_bloom_effects", RendererHacks),
             emulate_bgr565: SwitchableSetting::new(false, "emulate_bgr565", RendererHacks),
-            rescale_hack: SwitchableSetting::new(
-                false,
-                "rescale_hack",
-                RendererHacks,
-            ),
+            rescale_hack: SwitchableSetting::new(false, "rescale_hack", RendererHacks),
             use_asynchronous_shaders: SwitchableSetting::new(
                 false,
                 "use_asynchronous_shaders",
@@ -1282,8 +1285,12 @@ impl Default for Values {
             ),
             enable_renderdoc_hotkey: Setting::new(false, "renderdoc_hotkey", RendererDebug),
             disable_buffer_reorder: SwitchableSetting::with_options(
-                false, "disable_buffer_reorder", RendererDebug,
-                Specialization::DEFAULT, true, true,
+                false,
+                "disable_buffer_reorder",
+                RendererDebug,
+                Specialization::DEFAULT,
+                true,
+                true,
             ),
 
             // System
@@ -1567,7 +1574,14 @@ impl Default for Values {
 
             // Miscellaneous
             log_filter: Setting::new("*:Info".to_string(), "log_filter", Miscellaneous),
-            log_flush_line: Setting::with_options(false, "flush_line", Miscellaneous, Specialization::DEFAULT, true, true),
+            log_flush_line: Setting::with_options(
+                false,
+                "flush_line",
+                Miscellaneous,
+                Specialization::DEFAULT,
+                true,
+                true,
+            ),
             censor_username: Setting::new(true, "censor_username", Miscellaneous),
             use_dev_keys: Setting::new(false, "use_dev_keys", Debugging),
 
@@ -1639,7 +1653,6 @@ pub fn is_gpu_fence_behavior_accurate(values: &Values) -> bool {
     *values.gpu_fence_behavior.get_value() == GpuFenceBehavior::Accurate
 }
 
-
 /// Upstream `Settings::IsOpenGL()`.
 pub fn is_opengl() -> bool {
     matches!(
@@ -1651,8 +1664,7 @@ pub fn is_opengl() -> bool {
 /// Eden selects debug optimizations through CpuAccuracy::Debugging. Preserve
 /// the older Ruzu checkbox/config key as an explicit compatibility alias.
 pub fn is_cpu_debug_enabled(values: &Values) -> bool {
-    *values.cpu_accuracy.get_value() == CpuAccuracy::Debugging
-        || *values.cpu_debug_mode.get_value()
+    *values.cpu_accuracy.get_value() == CpuAccuracy::Debugging || *values.cpu_debug_mode.get_value()
 }
 
 /// Returns true if fastmem is effectively enabled.
@@ -2029,8 +2041,13 @@ mod tests {
 
     #[test]
     fn configured_time_zone_names_follow_upstream_table() {
-        for (zone, name) in [(TimeZone::Default, "GMT"), (TimeZone::Cet, "CET"),
-            (TimeZone::Japan, "Japan"), (TimeZone::Utc, "UTC"), (TimeZone::Zulu, "Zulu")] {
+        for (zone, name) in [
+            (TimeZone::Default, "GMT"),
+            (TimeZone::Cet, "CET"),
+            (TimeZone::Japan, "Japan"),
+            (TimeZone::Utc, "UTC"),
+            (TimeZone::Zulu, "Zulu"),
+        ] {
             assert_eq!(get_time_zone_string(zone), name);
         }
         assert!(!get_time_zone_string(TimeZone::Auto).is_empty());
@@ -2042,16 +2059,40 @@ mod tests {
         // Linkage::by_category using that instance's category. The Rust visitor
         // must preserve this invariant without storing self-referential pointers.
         let categories = [
-            Category::Android, Category::Audio, Category::Core, Category::Cpu,
-            Category::CpuDebug, Category::CpuUnsafe, Category::Overlay,
-            Category::Renderer, Category::RendererAdvanced, Category::RendererHacks,
-            Category::RendererExtensions, Category::RendererDebug, Category::System,
-            Category::SystemAudio, Category::DataStorage, Category::Debugging,
-            Category::DebuggingGraphics, Category::GpuDriver, Category::Miscellaneous,
-            Category::Network, Category::WebService, Category::AddOns, Category::Controls,
-            Category::Ui, Category::UiAudio, Category::UiGeneral, Category::UiLayout,
-            Category::UiGameList, Category::Screenshots, Category::Shortcuts,
-            Category::Multiplayer, Category::Services, Category::Paths, Category::Linux,
+            Category::Android,
+            Category::Audio,
+            Category::Core,
+            Category::Cpu,
+            Category::CpuDebug,
+            Category::CpuUnsafe,
+            Category::Overlay,
+            Category::Renderer,
+            Category::RendererAdvanced,
+            Category::RendererHacks,
+            Category::RendererExtensions,
+            Category::RendererDebug,
+            Category::System,
+            Category::SystemAudio,
+            Category::DataStorage,
+            Category::Debugging,
+            Category::DebuggingGraphics,
+            Category::GpuDriver,
+            Category::Miscellaneous,
+            Category::Network,
+            Category::WebService,
+            Category::AddOns,
+            Category::Controls,
+            Category::Ui,
+            Category::UiAudio,
+            Category::UiGeneral,
+            Category::UiLayout,
+            Category::UiGameList,
+            Category::Screenshots,
+            Category::Shortcuts,
+            Category::Multiplayer,
+            Category::Services,
+            Category::Paths,
+            Category::Linux,
             Category::LibraryApplet,
         ];
         assert_eq!(categories.len(), Category::MaxEnum as usize);
@@ -2061,8 +2102,11 @@ mod tests {
             assert_eq!(category as usize, index);
             values.for_each_setting_in_category_mut(category, |setting| {
                 assert_eq!(setting.category(), category, "{}", setting.label());
-                assert!(labels.insert(setting.label().to_owned()),
-                    "duplicate registration: {}", setting.label());
+                assert!(
+                    labels.insert(setting.label().to_owned()),
+                    "duplicate registration: {}",
+                    setting.label()
+                );
             });
         }
         // Inventory of the Setting/SwitchableSetting fields in Values; plain
@@ -2290,7 +2334,10 @@ mod tests {
             values.astc_recompression.setting.runtime_modifiable,
             values.renderer_force_max_clock.setting.runtime_modifiable,
             values.use_disk_shader_cache.setting.runtime_modifiable,
-            values.use_vulkan_driver_pipeline_cache.setting.runtime_modifiable,
+            values
+                .use_vulkan_driver_pipeline_cache
+                .setting
+                .runtime_modifiable,
             values.enable_compute_pipelines.setting.runtime_modifiable,
             values.use_video_framerate.setting.runtime_modifiable,
             values.use_reactive_flushing.setting.runtime_modifiable,
@@ -2303,7 +2350,12 @@ mod tests {
     #[test]
     fn renderer_extras_runtime_metadata_matches_upstream() {
         let values = Values::default();
-        assert!(values.skip_cpu_inner_invalidation.setting.runtime_modifiable);
+        assert!(
+            values
+                .skip_cpu_inner_invalidation
+                .setting
+                .runtime_modifiable
+        );
         for runtime_modifiable in [
             values.async_presentation.setting.runtime_modifiable,
             values.fix_bloom_effects.setting.runtime_modifiable,
@@ -2320,7 +2372,10 @@ mod tests {
         ] {
             assert!(!runtime_modifiable);
         }
-        assert_eq!(values.sample_shading.setting.specialization, Specialization::SCALAR);
+        assert_eq!(
+            values.sample_shading.setting.specialization,
+            Specialization::SCALAR
+        );
     }
 
     #[test]
@@ -2442,8 +2497,19 @@ mod tests {
         values.for_each_setting_in_category_mut(Category::Controls, |setting| {
             labels.push(setting.label().to_string());
         });
-        for label in ["pause_tas_on_load", "tas_enable", "tas_loop", "tas_show_recording_dialog"] {
-            assert_eq!(labels.iter().filter(|entry| entry.as_str() == label).count(), 1);
+        for label in [
+            "pause_tas_on_load",
+            "tas_enable",
+            "tas_loop",
+            "tas_show_recording_dialog",
+        ] {
+            assert_eq!(
+                labels
+                    .iter()
+                    .filter(|entry| entry.as_str() == label)
+                    .count(),
+                1
+            );
         }
     }
 
@@ -2453,23 +2519,47 @@ mod tests {
         let mut actual = Vec::new();
         values.for_each_setting_in_category_mut(Category::Controls, |setting| {
             actual.push(setting.label().to_owned());
-            assert_eq!(setting.save(), match setting.label() {
-                "mouse_panning" => false,
-                "disable_wgi_xinput" | "enable_raw_input" => cfg!(target_os = "windows"),
-                _ => true,
-            });
+            assert_eq!(
+                setting.save(),
+                match setting.label() {
+                    "mouse_panning" => false,
+                    "disable_wgi_xinput" | "enable_raw_input" => cfg!(target_os = "windows"),
+                    _ => true,
+                }
+            );
         });
         let mut expected = [
-            "disable_wgi_xinput", "enable_raw_input", "controller_navigation",
-            "enable_joycon_driver", "enable_procon_driver", "vibration_enabled",
-            "enable_accurate_vibrations", "motion_enabled", "udp_input_servers",
-            "enable_udp_controller", "pause_tas_on_load", "tas_enable", "tas_loop",
-            "tas_show_recording_dialog", "mouse_panning", "mouse_panning_sensitivity",
-            "mouse_enabled", "mouse_panning_x_sensitivity", "mouse_panning_y_sensitivity",
-            "mouse_panning_deadzone_counterweight", "mouse_panning_decay_strength",
-            "mouse_panning_min_decay", "emulate_analog_keyboard", "keyboard_enabled",
-            "debug_pad_enabled", "touch_device", "touch_from_button_map",
-            "enable_ring_controller", "enable_ir_sensor", "ir_sensor_device", "random_amiibo_id",
+            "disable_wgi_xinput",
+            "enable_raw_input",
+            "controller_navigation",
+            "enable_joycon_driver",
+            "enable_procon_driver",
+            "vibration_enabled",
+            "enable_accurate_vibrations",
+            "motion_enabled",
+            "udp_input_servers",
+            "enable_udp_controller",
+            "pause_tas_on_load",
+            "tas_enable",
+            "tas_loop",
+            "tas_show_recording_dialog",
+            "mouse_panning",
+            "mouse_panning_sensitivity",
+            "mouse_enabled",
+            "mouse_panning_x_sensitivity",
+            "mouse_panning_y_sensitivity",
+            "mouse_panning_deadzone_counterweight",
+            "mouse_panning_decay_strength",
+            "mouse_panning_min_decay",
+            "emulate_analog_keyboard",
+            "keyboard_enabled",
+            "debug_pad_enabled",
+            "touch_device",
+            "touch_from_button_map",
+            "enable_ring_controller",
+            "enable_ir_sensor",
+            "ir_sensor_device",
+            "random_amiibo_id",
         ];
         actual.sort();
         expected.sort();
@@ -2480,7 +2570,13 @@ mod tests {
     fn rtc_offset_preserves_signed_64_bit_values() {
         use crate::settings_setting::BasicSetting;
         let mut values = Values::default();
-        for offset in [i64::MIN, -4_000_000_000, 4_000_000_000, (1i64 << 53) + 1, i64::MAX] {
+        for offset in [
+            i64::MIN,
+            -4_000_000_000,
+            4_000_000_000,
+            (1i64 << 53) + 1,
+            i64::MAX,
+        ] {
             values.custom_rtc_offset.set_value(offset);
             assert_eq!(*values.custom_rtc_offset.get_value(), offset);
             let serialized = values.custom_rtc_offset.to_string_repr();

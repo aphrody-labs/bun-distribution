@@ -241,7 +241,10 @@ pub const ELEMENTS_MATCHER: [(&str, &str); 18] = [
 ];
 
 fn resoudre<'a>(table: &[(&str, &'a str)], cle: &'a str) -> &'a str {
-    table.iter().find(|(k, _)| *k == cle).map_or(cle, |(_, v)| *v)
+    table
+        .iter()
+        .find(|(k, _)| *k == cle)
+        .map_or(cle, |(_, v)| *v)
 }
 
 /// Normalise un poste vers sa forme anglaise canonique (`matcher.ts:104`).
@@ -385,7 +388,9 @@ pub fn correlation_spearman(a: &[f64], b: &[f64]) -> f64 {
         let mut ordre: Vec<usize> = (0..n).collect();
         // Tri STABLE croissant, comme `Array.prototype.sort` en JS moderne.
         ordre.sort_by(|&x, &y| {
-            valeurs[x].partial_cmp(&valeurs[y]).unwrap_or(std::cmp::Ordering::Equal)
+            valeurs[x]
+                .partial_cmp(&valeurs[y])
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
 
         let mut r = vec![0.0f64; n];
@@ -606,8 +611,10 @@ pub fn rank_candidates_bounded(
         .iter()
         .filter_map(|candidate| {
             let score = matching_score(zukan, candidate);
-            (score >= SCORE_MINIMAL)
-                .then(|| RankedMatch { candidate_id: candidate.id.clone(), score })
+            (score >= SCORE_MINIMAL).then(|| RankedMatch {
+                candidate_id: candidate.id.clone(),
+                score,
+            })
         })
         .collect();
     ranked.sort_by_key(|candidate| std::cmp::Reverse(candidate.score));
@@ -649,15 +656,21 @@ pub fn apparier_groupes_strict(
     groupe_db: &[LigneInagle],
     assignes: &mut HashMap<String, String>,
 ) {
-    let db_libres: Vec<&LigneInagle> =
-        groupe_db.iter().filter(|c| !assignes.contains_key(&c.id)).collect();
+    let db_libres: Vec<&LigneInagle> = groupe_db
+        .iter()
+        .filter(|c| !assignes.contains_key(&c.id))
+        .collect();
     if db_libres.is_empty() {
         return;
     }
 
     let disponibles: Vec<&EntreeZukan> = groupe_zukan
         .iter()
-        .filter(|z| z.zukan_hash.as_ref().is_some_and(|h| !ctx.hashes_utilises.contains(h)))
+        .filter(|z| {
+            z.zukan_hash
+                .as_ref()
+                .is_some_and(|h| !ctx.hashes_utilises.contains(h))
+        })
         .collect();
 
     let mut paires: Vec<(&LigneInagle, &EntreeZukan, i32)> = Vec::new();
@@ -700,7 +713,11 @@ pub fn assigner_meilleur(
     }
     let mut classes: Vec<(&EntreeZukan, i32)> = candidats
         .iter()
-        .filter(|z| z.zukan_hash.as_ref().is_some_and(|h| !ctx.hashes_utilises.contains(h)))
+        .filter(|z| {
+            z.zukan_hash
+                .as_ref()
+                .is_some_and(|h| !ctx.hashes_utilises.contains(h))
+        })
         .map(|z| (z, score_appariement(z, c)))
         .filter(|(_, s)| *s >= score_min)
         .collect();
@@ -856,8 +873,11 @@ pub fn evaluer_ligne(
     db: &LigneInagle,
     zukan_par_hash: &HashMap<String, Vec<EntreeZukan>>,
 ) -> Option<AnomalieAudit> {
-    let entrees =
-        db.zukan_hash.as_ref().filter(|h| !h.is_empty()).and_then(|h| zukan_par_hash.get(h));
+    let entrees = db
+        .zukan_hash
+        .as_ref()
+        .filter(|h| !h.is_empty())
+        .and_then(|h| zukan_par_hash.get(h));
 
     let Some(z) = entrees.and_then(|v| v.first()) else {
         return Some(AnomalieAudit {
@@ -871,7 +891,13 @@ pub fn evaluer_ligne(
 
     let db_nom_en = db.name_en.to_lowercase().trim().to_string();
     let nom_zukan = z.nom.to_lowercase().trim().to_string();
-    let db_nom_fr = db.name_fr.as_deref().unwrap_or_default().to_lowercase().trim().to_string();
+    let db_nom_fr = db
+        .name_fr
+        .as_deref()
+        .unwrap_or_default()
+        .to_lowercase()
+        .trim()
+        .to_string();
     let premier = |s: &str| s.split_whitespace().next().unwrap_or_default().to_string();
     let zukan_premier = premier(&nom_zukan);
     let db_premier = premier(&db_nom_en);
@@ -879,7 +905,12 @@ pub fn evaluer_ligne(
 
     let est_miximax = db_nom_en.contains('×') || db_nom_en.contains('+');
     let db_nom_base = est_miximax.then(|| {
-        let avant = db_nom_en.split(['×', '+']).next().unwrap_or_default().trim().to_string();
+        let avant = db_nom_en
+            .split(['×', '+'])
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         premier(&avant)
     });
 
@@ -891,14 +922,18 @@ pub fn evaluer_ligne(
         || nom_zukan.contains(&db_premier)
         || db_nom_en.contains(&zukan_premier);
 
-    let poste_diverge =
-        match (audit_norm_pos(z.position.as_deref()), audit_norm_pos(Some(db.position.as_str()))) {
-            (Some(a), Some(b)) => a != b,
-            _ => false,
-        };
+    let poste_diverge = match (
+        audit_norm_pos(z.position.as_deref()),
+        audit_norm_pos(Some(db.position.as_str())),
+    ) {
+        (Some(a), Some(b)) => a != b,
+        _ => false,
+    };
     let element_diverge = !est_miximax
-        && match (audit_norm_elem(z.element.as_deref()), audit_norm_elem(Some(db.element.as_str())))
-        {
+        && match (
+            audit_norm_elem(z.element.as_deref()),
+            audit_norm_elem(Some(db.element.as_str())),
+        ) {
             (Some(a), Some(b)) => a != b,
             _ => false,
         };
@@ -1138,13 +1173,22 @@ mod tests {
         assert_eq!(audit_norm_pos(Some("Defenseur")).as_deref(), Some("DF"));
         assert_eq!(norm_pos(Some("Defenseur")).as_deref(), Some("Defenseur"));
         // 2. `Entraîneur` : connu du matcher seul.
-        assert_eq!(audit_norm_pos(Some("Entraîneur")).as_deref(), Some("Entraîneur"));
+        assert_eq!(
+            audit_norm_pos(Some("Entraîneur")).as_deref(),
+            Some("Entraîneur")
+        );
         // 3. Japonais et `Aucun` : matcher seul.
         assert_eq!(audit_norm_elem(Some("火")).as_deref(), Some("火"));
         assert_eq!(audit_norm_elem(Some("Aucun")).as_deref(), Some("Aucun"));
         // 4. `Orion` : le matcher le traduit, l'audit non.
-        assert_eq!(zukan_jeu_vers_serie(Some("Inazuma Eleven Orion")).as_deref(), Some("Orion"));
-        assert_eq!(audit_zukan_jeu_vers_serie(Some("Inazuma Eleven Orion")), None);
+        assert_eq!(
+            zukan_jeu_vers_serie(Some("Inazuma Eleven Orion")).as_deref(),
+            Some("Orion")
+        );
+        assert_eq!(
+            audit_zukan_jeu_vers_serie(Some("Inazuma Eleven Orion")),
+            None
+        );
     }
 
     #[test]
@@ -1161,7 +1205,10 @@ mod tests {
             zukan_jeu_vers_serie(Some("Inazuma Eleven GO: Shine")).as_deref(),
             Some("Inazuma Eleven GO")
         );
-        assert_eq!(zukan_jeu_vers_serie(Some("Inazuma Eleven")).as_deref(), Some("Inazuma Eleven"));
+        assert_eq!(
+            zukan_jeu_vers_serie(Some("Inazuma Eleven")).as_deref(),
+            Some("Inazuma Eleven")
+        );
         assert_eq!(zukan_jeu_vers_serie(Some("Autre chose")), None);
     }
 
@@ -1434,7 +1481,9 @@ mod tests {
         let a = evaluer_ligne(&db, &index).expect("corrélation -1 attendue");
         assert_eq!(a.correlation_stats, Some(-1.0));
         assert!(
-            a.raisons.iter().any(|r| r == "STATS: correlation=-1.00 (very low)"),
+            a.raisons
+                .iter()
+                .any(|r| r == "STATS: correlation=-1.00 (very low)"),
             "{:?}",
             a.raisons
         );
@@ -1523,9 +1572,18 @@ mod tests {
         assert_eq!(
             ranked,
             vec![
-                RankedMatch { candidate_id: "best".to_string(), score: 70 },
-                RankedMatch { candidate_id: "first".to_string(), score: 40 },
-                RankedMatch { candidate_id: "second".to_string(), score: 40 },
+                RankedMatch {
+                    candidate_id: "best".to_string(),
+                    score: 70
+                },
+                RankedMatch {
+                    candidate_id: "first".to_string(),
+                    score: 40
+                },
+                RankedMatch {
+                    candidate_id: "second".to_string(),
+                    score: 40
+                },
             ]
         );
     }

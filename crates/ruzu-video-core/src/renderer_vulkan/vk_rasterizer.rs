@@ -68,7 +68,11 @@ struct VertexInputDescriptions {
 }
 
 impl VertexInputDescriptions {
-    unsafe fn set(&self, extension: &ash::ext::vertex_input_dynamic_state::DeviceFn, cmdbuf: vk::CommandBuffer) {
+    unsafe fn set(
+        &self,
+        extension: &ash::ext::vertex_input_dynamic_state::DeviceFn,
+        cmdbuf: vk::CommandBuffer,
+    ) {
         (extension.cmd_set_vertex_input_ext)(
             cmdbuf,
             self.bindings.len() as u32,
@@ -4138,7 +4142,10 @@ fn create_host_buffer(
 fn clear_rescaling(is_rescaling: bool) -> (u32, u32) {
     if is_rescaling {
         let values = common::settings::values();
-        (values.resolution_info.up_scale, values.resolution_info.down_shift)
+        (
+            values.resolution_info.up_scale,
+            values.resolution_info.down_shift,
+        )
     } else {
         (1, 0)
     }
@@ -4154,7 +4161,10 @@ mod tests {
     fn clear_rescaling_releases_settings_before_viewport_work() {
         let expected = {
             let values = common::settings::values();
-            (values.resolution_info.up_scale, values.resolution_info.down_shift)
+            (
+                values.resolution_info.up_scale,
+                values.resolution_info.down_shift,
+            )
         };
         let scale = clear_rescaling(true);
         assert_eq!(scale, expected);
@@ -4451,14 +4461,8 @@ mod tests {
         let mut bindings = VertexInputBindings::new();
         let mut attributes = VertexInputAttributes::new();
         for index in 0..32 {
-            bindings.push(
-                vk::VertexInputBindingDescription2EXT::default()
-                    .binding(index),
-            );
-            attributes.push(
-                vk::VertexInputAttributeDescription2EXT::default()
-                    .location(index),
-            );
+            bindings.push(vk::VertexInputBindingDescription2EXT::default().binding(index));
+            attributes.push(vk::VertexInputAttributeDescription2EXT::default().location(index));
         }
         assert!(!bindings.spilled());
         assert!(!attributes.spilled());

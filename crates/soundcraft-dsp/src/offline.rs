@@ -17,7 +17,9 @@ use crate::{Plugin, db_to_gain, gain_to_db};
 pub const MAX_OFFLINE_SAMPLES: usize = 1 << 28;
 
 /// Fade curves. [`FadeShape::gain`] is the fade-in curve; a fade-out uses `gain(1 - t)`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum FadeShape {
     Linear,
     /// Constant power (sin/cos), for crossfades between uncorrelated material.
@@ -32,7 +34,13 @@ pub enum FadeShape {
 }
 
 impl FadeShape {
-    pub const ALL: [FadeShape; 5] = [FadeShape::Linear, FadeShape::EqualPower, FadeShape::SCurve, FadeShape::Exponential, FadeShape::Logarithmic];
+    pub const ALL: [FadeShape; 5] = [
+        FadeShape::Linear,
+        FadeShape::EqualPower,
+        FadeShape::SCurve,
+        FadeShape::Exponential,
+        FadeShape::Logarithmic,
+    ];
 
     /// Fade-in gain at position `t` in 0..1 (0 → silent, 1 → unity). NaN is treated as 0.
     pub fn gain(self, t: f32) -> f32 {
@@ -53,13 +61,20 @@ fn max_len(ch: &[Vec<f32>]) -> usize {
 }
 
 fn peak(ch: &[Vec<f32>]) -> f32 {
-    ch.iter().flatten().filter(|v| v.is_finite()).fold(0.0f32, |m, v| m.max(v.abs()))
+    ch.iter()
+        .flatten()
+        .filter(|v| v.is_finite())
+        .fold(0.0f32, |m, v| m.max(v.abs()))
 }
 
 /// Peak-normalizes to `target_db` dBFS, either all channels together or each on its own.
 /// Silent channels are left alone.
 pub fn normalize(ch: &mut [Vec<f32>], target_db: f32, per_channel: bool) {
-    let target = db_to_gain(if target_db.is_nan() { 0.0 } else { target_db.clamp(-144.0, 24.0) });
+    let target = db_to_gain(if target_db.is_nan() {
+        0.0
+    } else {
+        target_db.clamp(-144.0, 24.0)
+    });
     if per_channel {
         for c in ch.iter_mut() {
             let p = peak(std::slice::from_ref(c));
@@ -99,7 +114,12 @@ pub fn remove_dc(ch: &mut [Vec<f32>]) {
         if c.is_empty() {
             continue;
         }
-        let mean = c.iter().filter(|v| v.is_finite()).map(|&v| f64::from(v)).sum::<f64>() / c.len() as f64;
+        let mean = c
+            .iter()
+            .filter(|v| v.is_finite())
+            .map(|&v| f64::from(v))
+            .sum::<f64>()
+            / c.len() as f64;
         let m = mean as f32;
         c.iter_mut().for_each(|s| *s -= m);
     }
@@ -161,7 +181,11 @@ impl SincTable {
                     return 0.0;
                 }
                 let arg = PI * cutoff * t;
-                let sinc = if arg.abs() < 1e-12 { 1.0 } else { arg.sin() / arg };
+                let sinc = if arg.abs() < 1e-12 {
+                    1.0
+                } else {
+                    arg.sin() / arg
+                };
                 let w = bessel_i0(beta * (1.0 - x * x).max(0.0).sqrt()) / i0b;
                 (cutoff * sinc * w) as f32
             })
@@ -212,7 +236,9 @@ fn resample_ratio(ch: &[Vec<f32>], ratio: f64, out_len: usize) -> Vec<Vec<f32>> 
     // Anti-alias below the lower of the two Nyquists, with a little transition room.
     let cutoff = if ratio < 1.0 { ratio * 0.94 } else { 0.97 };
     let table = SincTable::new(cutoff);
-    ch.iter().map(|c| resample_channel(c, ratio, out_len, &table)).collect()
+    ch.iter()
+        .map(|c| resample_channel(c, ratio, out_len, &table))
+        .collect()
 }
 
 /// High-quality windowed-sinc sample-rate conversion from `from` Hz to `to` Hz.
@@ -224,7 +250,10 @@ pub fn resample(ch: &[Vec<f32>], from: u32, to: u32) -> Vec<Vec<f32>> {
     ch.iter()
         .map(|c| {
             let out_len = ((c.len() as f64 * ratio).round() as usize).min(MAX_OFFLINE_SAMPLES);
-            resample_ratio(std::slice::from_ref(c), ratio, out_len).into_iter().next().unwrap_or_default()
+            resample_ratio(std::slice::from_ref(c), ratio, out_len)
+                .into_iter()
+                .next()
+                .unwrap_or_default()
         })
         .collect()
 }
@@ -237,22 +266,50 @@ pub fn resample(ch: &[Vec<f32>], from: u32, to: u32) -> Vec<Vec<f32>> {
 /// segment choices so the stereo image stays coherent.
 pub fn time_stretch(ch: &[Vec<f32>], ratio: f64, sample_rate: f32) -> Vec<Vec<f32>> {
     let len = max_len(ch);
-    let ratio = if ratio.is_finite() { ratio.clamp(0.1, 10.0) } else { 1.0 };
+    let ratio = if ratio.is_finite() {
+        ratio.clamp(0.1, 10.0)
+    } else {
+        1.0
+    };
     let out_len = ((len as f64 * ratio).round() as usize).min(MAX_OFFLINE_SAMPLES);
     if len == 0 || ch.is_empty() {
         return ch.iter().map(|_| vec![0.0; out_len]).collect();
     }
     if (ratio - 1.0).abs() < 1e-9 {
-        return ch.iter().map(|c| c.iter().copied().chain(std::iter::repeat(0.0)).take(out_len).collect()).collect();
+        return ch
+            .iter()
+            .map(|c| {
+                c.iter()
+                    .copied()
+                    .chain(std::iter::repeat(0.0))
+                    .take(out_len)
+                    .collect()
+            })
+            .collect();
     }
     let sr = f64::from(sane_sr(sample_rate));
     let frame = (((sr * 0.04) as usize) & !1).clamp(64, 8192);
     let hop = frame / 2;
     let tol = ((sr * 0.010) as usize).clamp(8, 2048) as i64;
-    let window: Vec<f32> = (0..frame).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / frame as f64).cos()) as f32).collect();
+    let window: Vec<f32> = (0..frame)
+        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / frame as f64).cos()) as f32)
+        .collect();
     let nch = ch.len() as f32;
-    let guide: Vec<f32> = (0..len).map(|i| ch.iter().map(|c| c.get(i).copied().unwrap_or(0.0)).sum::<f32>() / nch).collect();
-    let g = |i: i64| -> f32 { if i < 0 { 0.0 } else { guide.get(i as usize).copied().unwrap_or(0.0) } };
+    let guide: Vec<f32> = (0..len)
+        .map(|i| {
+            ch.iter()
+                .map(|c| c.get(i).copied().unwrap_or(0.0))
+                .sum::<f32>()
+                / nch
+        })
+        .collect();
+    let g = |i: i64| -> f32 {
+        if i < 0 {
+            0.0
+        } else {
+            guide.get(i as usize).copied().unwrap_or(0.0)
+        }
+    };
 
     let buf_len = out_len + frame;
     let mut out: Vec<Vec<f32>> = ch.iter().map(|_| vec![0.0; buf_len]).collect();
@@ -336,7 +393,11 @@ pub fn time_stretch(ch: &[Vec<f32>], ratio: f64, sample_rate: f32) -> Vec<Vec<f3
 /// Length-preserving pitch shift by `semitones` (clamped to ±48): WSOLA stretch followed by
 /// windowed-sinc resampling back to the original length.
 pub fn pitch_shift(ch: &[Vec<f32>], semitones: f32, sample_rate: f32) -> Vec<Vec<f32>> {
-    let st = if semitones.is_finite() { semitones.clamp(-48.0, 48.0) } else { 0.0 };
+    let st = if semitones.is_finite() {
+        semitones.clamp(-48.0, 48.0)
+    } else {
+        0.0
+    };
     if st.abs() < 1e-4 {
         return ch.to_vec();
     }
@@ -360,12 +421,27 @@ pub fn pitch_shift(ch: &[Vec<f32>], semitones: f32, sample_rate: f32) -> Vec<Vec
 
 /// Generates a test signal. Periodic waveforms peak at `level_db`; noise is scaled so its peak
 /// stays at or below `level_db`.
-pub fn signal_generator(kind: Waveform, freq: f32, level_db: f32, sample_rate: f32, frames: usize, channels: usize) -> Vec<Vec<f32>> {
+pub fn signal_generator(
+    kind: Waveform,
+    freq: f32,
+    level_db: f32,
+    sample_rate: f32,
+    frames: usize,
+    channels: usize,
+) -> Vec<Vec<f32>> {
     let sr = sane_sr(sample_rate);
     let frames = frames.min(MAX_OFFLINE_SAMPLES);
     let channels = channels.min(crate::util::MAX_CHANNELS);
-    let f = if freq.is_finite() { freq.clamp(0.0, sr * 0.49) } else { 1000.0 };
-    let g = db_to_gain(if level_db.is_nan() { -20.0 } else { level_db.min(0.0) });
+    let f = if freq.is_finite() {
+        freq.clamp(0.0, sr * 0.49)
+    } else {
+        1000.0
+    };
+    let g = db_to_gain(if level_db.is_nan() {
+        -20.0
+    } else {
+        level_db.min(0.0)
+    });
     let mut osc = Osc::new(0x1234_5678);
     let mono: Vec<f32> = (0..frames).map(|_| osc.next(kind, f / sr) * g).collect();
     (0..channels).map(|_| mono.clone()).collect()
@@ -376,17 +452,30 @@ pub fn signal_generator(kind: Waveform, freq: f32, level_db: f32, sample_rate: f
 pub fn detect_transients(ch: &[Vec<f32>], sample_rate: f32, sensitivity: f32) -> Vec<usize> {
     let len = max_len(ch);
     let sr = sane_sr(sample_rate);
-    let sens = if sensitivity.is_finite() { sensitivity.clamp(0.0, 1.0) } else { 0.5 };
+    let sens = if sensitivity.is_finite() {
+        sensitivity.clamp(0.0, 1.0)
+    } else {
+        0.5
+    };
     let n = ((sr * 0.023) as usize).clamp(64, 8192).next_power_of_two();
     let hop = n / 4;
     if len < n || ch.is_empty() {
         return Vec::new();
     }
     let nch = ch.len() as f32;
-    let mono: Vec<f32> = (0..len).map(|i| ch.iter().map(|c| c.get(i).copied().filter(|v| v.is_finite()).unwrap_or(0.0)).sum::<f32>() / nch).collect();
+    let mono: Vec<f32> = (0..len)
+        .map(|i| {
+            ch.iter()
+                .map(|c| c.get(i).copied().filter(|v| v.is_finite()).unwrap_or(0.0))
+                .sum::<f32>()
+                / nch
+        })
+        .collect();
     let mut planner = FftPlanner::<f32>::new();
     let fft = planner.plan_fft_forward(n);
-    let window: Vec<f32> = (0..n).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32).collect();
+    let window: Vec<f32> = (0..n)
+        .map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()) as f32)
+        .collect();
     let frames = (len - n) / hop + 1;
     let mut prev = vec![0.0f32; n / 2 + 1];
     let mut buf = vec![Complex::new(0.0f32, 0.0); n];
@@ -394,7 +483,10 @@ pub fn detect_transients(ch: &[Vec<f32>], sample_rate: f32, sensitivity: f32) ->
     for m in 0..frames {
         let start = m * hop;
         for (i, b) in buf.iter_mut().enumerate() {
-            *b = Complex::new(mono.get(start + i).copied().unwrap_or(0.0) * window.get(i).copied().unwrap_or(0.0), 0.0);
+            *b = Complex::new(
+                mono.get(start + i).copied().unwrap_or(0.0) * window.get(i).copied().unwrap_or(0.0),
+                0.0,
+            );
         }
         fft.process(&mut buf);
         let mut f = 0.0;
@@ -419,16 +511,26 @@ pub fn detect_transients(ch: &[Vec<f32>], sample_rate: f32, sensitivity: f32) ->
         let cur = flux.get(m).copied().unwrap_or(0.0);
         let lo = m.saturating_sub(w);
         let hi = (m + w + 1).min(flux.len());
-        let local = flux.get(lo..hi).map(|s| s.iter().sum::<f32>() / s.len().max(1) as f32).unwrap_or(0.0);
+        let local = flux
+            .get(lo..hi)
+            .map(|s| s.iter().sum::<f32>() / s.len().max(1) as f32)
+            .unwrap_or(0.0);
         let prev_v = flux.get(m - 1).copied().unwrap_or(0.0);
         let next_v = flux.get(m + 1).copied().unwrap_or(0.0);
-        if cur > local * mult + delta && cur >= prev_v && cur > next_v && last.is_none_or(|l| m - l >= min_gap) {
+        if cur > local * mult + delta
+            && cur >= prev_v
+            && cur > next_v
+            && last.is_none_or(|l| m - l >= min_gap)
+        {
             last = Some(m);
             // Refine: first sample in the analysis frame reaching a quarter of the frame's peak.
             let start = m * hop;
             let seg = mono.get(start..(start + n).min(len)).unwrap_or(&[]);
             let pk = seg.iter().fold(0.0f32, |a, v| a.max(v.abs()));
-            let off = seg.iter().position(|v| v.abs() >= 0.25 * pk).unwrap_or(n / 2);
+            let off = seg
+                .iter()
+                .position(|v| v.abs() >= 0.25 * pk)
+                .unwrap_or(n / 2);
             let pos = start + off;
             if out.last().is_none_or(|&p: &usize| pos > p) {
                 out.push(pos);
@@ -442,14 +544,26 @@ pub fn detect_transients(ch: &[Vec<f32>], sample_rate: f32, sensitivity: f32) ->
 /// exceeds `threshold_db`. Silent gaps shorter than `min_len` samples do not split a region.
 /// Each region is padded by `pad_before`/`pad_after` (clamped to the buffer) and overlapping
 /// regions are merged.
-pub fn non_silent_ranges(ch: &[Vec<f32>], threshold_db: f32, min_len: usize, pad_before: usize, pad_after: usize) -> Vec<(usize, usize)> {
+pub fn non_silent_ranges(
+    ch: &[Vec<f32>],
+    threshold_db: f32,
+    min_len: usize,
+    pad_before: usize,
+    pad_after: usize,
+) -> Vec<(usize, usize)> {
     let len = max_len(ch);
-    let thr = db_to_gain(if threshold_db.is_nan() { -48.0 } else { threshold_db });
+    let thr = db_to_gain(if threshold_db.is_nan() {
+        -48.0
+    } else {
+        threshold_db
+    });
     let mut raw: Vec<(usize, usize)> = Vec::new();
     let mut start: Option<usize> = None;
     let mut last_loud = 0usize;
     for i in 0..len {
-        let loud = ch.iter().any(|c| c.get(i).is_some_and(|v| v.is_finite() && v.abs() > thr));
+        let loud = ch
+            .iter()
+            .any(|c| c.get(i).is_some_and(|v| v.is_finite() && v.abs() > thr));
         if !loud {
             continue;
         }
@@ -492,14 +606,30 @@ pub fn apply_plugin(ch: &mut [Vec<f32>], plugin: &mut dyn Plugin, sample_rate: f
 }
 
 /// Like [`apply_plugin`] but returns new buffers extended by the plugin's tail (capped at 60 s).
-pub fn apply_plugin_with_tail(ch: &[Vec<f32>], plugin: &mut dyn Plugin, sample_rate: f32) -> Vec<Vec<f32>> {
+pub fn apply_plugin_with_tail(
+    ch: &[Vec<f32>],
+    plugin: &mut dyn Plugin,
+    sample_rate: f32,
+) -> Vec<Vec<f32>> {
     let len = max_len(ch);
     plugin.prepare(sane_sr(sample_rate), 1024, ch.len());
-    let tail = plugin.tail_samples().min((sane_sr(sample_rate) * 60.0) as usize);
-    render(ch, plugin, sample_rate, (len + tail).min(MAX_OFFLINE_SAMPLES))
+    let tail = plugin
+        .tail_samples()
+        .min((sane_sr(sample_rate) * 60.0) as usize);
+    render(
+        ch,
+        plugin,
+        sample_rate,
+        (len + tail).min(MAX_OFFLINE_SAMPLES),
+    )
 }
 
-fn render(ch: &[Vec<f32>], plugin: &mut dyn Plugin, sample_rate: f32, out_len: usize) -> Vec<Vec<f32>> {
+fn render(
+    ch: &[Vec<f32>],
+    plugin: &mut dyn Plugin,
+    sample_rate: f32,
+    out_len: usize,
+) -> Vec<Vec<f32>> {
     const BLOCK: usize = 1024;
     let sr = sane_sr(sample_rate);
     let channels = ch.len();
@@ -514,7 +644,11 @@ fn render(ch: &[Vec<f32>], plugin: &mut dyn Plugin, sample_rate: f32, out_len: u
         let n = BLOCK.min(total - done);
         for (s, c) in scratch.iter_mut().zip(ch) {
             for (i, v) in s.iter_mut().enumerate() {
-                *v = if i < n { c.get(done + i).copied().unwrap_or(0.0) } else { 0.0 };
+                *v = if i < n {
+                    c.get(done + i).copied().unwrap_or(0.0)
+                } else {
+                    0.0
+                };
             }
         }
         plugin.process(&mut scratch, n);

@@ -4,7 +4,11 @@
 //! argile pour les primitives sans texture. Headless, déterministe. Le portage GPU/wgpu est le pas
 //! suivant ; ici on rend les **vrais maillages + atlas CPK**.
 
-#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 
 use crate::glb::{Model, Texture};
 use crate::vecmath::{V3, cross, dot, normv, sub};
@@ -22,8 +26,15 @@ pub fn bounds(model: &Model) -> (V3, f32) {
             }
         }
     }
-    let c = [(lo[0] + hi[0]) * 0.5, (lo[1] + hi[1]) * 0.5, (lo[2] + hi[2]) * 0.5];
-    let r = (0..3).map(|k| (hi[k] - lo[k]) * 0.5).fold(0.0_f32, f32::max).max(1e-3);
+    let c = [
+        (lo[0] + hi[0]) * 0.5,
+        (lo[1] + hi[1]) * 0.5,
+        (lo[2] + hi[2]) * 0.5,
+    ];
+    let r = (0..3)
+        .map(|k| (hi[k] - lo[k]) * 0.5)
+        .fold(0.0_f32, f32::max)
+        .max(1e-3);
     (c, r)
 }
 
@@ -62,7 +73,12 @@ pub const TILT: f32 = 0.20;
 #[must_use]
 pub fn couleur_fond(y: u32, h: u32) -> [u8; 4] {
     let t = y as f32 / h as f32;
-    [(24.0 + 26.0 * t) as u8, (28.0 + 30.0 * t) as u8, (40.0 + 34.0 * t) as u8, 255]
+    [
+        (24.0 + 26.0 * t) as u8,
+        (28.0 + 30.0 * t) as u8,
+        (40.0 + 34.0 * t) as u8,
+        255,
+    ]
 }
 
 /// Rend `model` vu sous l'angle `angle` (radians) en RGBA8 `w`×`h`.
@@ -104,7 +120,11 @@ pub fn render(model: &Model, angle: f32, w: u32, h: u32) -> Vec<u8> {
     for y in 0..h {
         let bg = couleur_fond(y, h);
         let row_start = (y as usize) * (w as usize) * 4;
-        for pixel in px[row_start..row_start + (w as usize) * 4].as_chunks_mut::<4>().0.iter_mut() {
+        for pixel in px[row_start..row_start + (w as usize) * 4]
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
+        {
             pixel.copy_from_slice(&bg);
         }
     }
@@ -112,7 +132,11 @@ pub fn render(model: &Model, angle: f32, w: u32, h: u32) -> Vec<u8> {
 
     // Projette un sommet (centré/normalisé/orienté) → (sx_px, sy_px, depth) ou None si derrière.
     let project = |v: V3| -> Option<(f32, f32, f32)> {
-        let n = [(v[0] - center[0]) * inv, (v[1] - center[1]) * inv, (v[2] - center[2]) * inv];
+        let n = [
+            (v[0] - center[0]) * inv,
+            (v[1] - center[1]) * inv,
+            (v[2] - center[2]) * inv,
+        ];
         let r = orient(n, cy, sy, cx, sx);
         let depth = cam_d - r[2]; // >0 = devant la caméra
         if depth <= 0.05 {
@@ -145,12 +169,21 @@ pub fn render(model: &Model, angle: f32, w: u32, h: u32) -> Vec<u8> {
                 continue;
             }
             // Normale de face (espace monde centré/orienté) pour Lambert.
-            let na =
-                [(wa[0] - center[0]) * inv, (wa[1] - center[1]) * inv, (wa[2] - center[2]) * inv];
-            let nb =
-                [(wb[0] - center[0]) * inv, (wb[1] - center[1]) * inv, (wb[2] - center[2]) * inv];
-            let nc =
-                [(wc[0] - center[0]) * inv, (wc[1] - center[1]) * inv, (wc[2] - center[2]) * inv];
+            let na = [
+                (wa[0] - center[0]) * inv,
+                (wa[1] - center[1]) * inv,
+                (wa[2] - center[2]) * inv,
+            ];
+            let nb = [
+                (wb[0] - center[0]) * inv,
+                (wb[1] - center[1]) * inv,
+                (wb[2] - center[2]) * inv,
+            ];
+            let nc = [
+                (wc[0] - center[0]) * inv,
+                (wc[1] - center[1]) * inv,
+                (wc[2] - center[2]) * inv,
+            ];
             let fn_ = normv(cross(
                 sub(orient(nb, cy, sy, cx, sx), orient(na, cy, sy, cx, sx)),
                 sub(orient(nc, cy, sy, cx, sx), orient(na, cy, sy, cx, sx)),
@@ -176,7 +209,11 @@ pub fn render(model: &Model, angle: f32, w: u32, h: u32) -> Vec<u8> {
 
 /// Vue empruntée d'une [`Texture`] pour le rastériseur partagé `aphrody-softraster`.
 fn view(t: &Texture) -> aphrody_softraster::TextureView<'_> {
-    aphrody_softraster::TextureView { width: t.width, height: t.height, rgba: &t.rgba }
+    aphrody_softraster::TextureView {
+        width: t.width,
+        height: t.height,
+        rgba: &t.rgba,
+    }
 }
 
 /// Échantillonnage nearest d'une texture en UV [0,1] (CLAMP_TO_EDGE) → RGBA.
@@ -232,7 +269,9 @@ mod tests {
         let tex = Texture {
             width: 2,
             height: 2,
-            rgba: vec![255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255],
+            rgba: vec![
+                255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
+            ],
         };
         let model = Model {
             primitives: vec![Primitive {
@@ -280,9 +319,16 @@ mod tests {
         let buf = render(&tri_model(), 0.0, w, h);
         assert_eq!(buf.len(), (w * h * 4) as usize);
         // Au moins quelques pixels de mesh (argile ~100-200) au-dessus du fond sombre (<60).
-        let lit =
-            buf.as_chunks::<4>().0.iter().filter(|p| p[0] > 80 && p[1] > 80 && p[2] > 80).count();
-        assert!(lit > 50, "le triangle doit produire des pixels de mesh ({lit})");
+        let lit = buf
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|p| p[0] > 80 && p[1] > 80 && p[2] > 80)
+            .count();
+        assert!(
+            lit > 50,
+            "le triangle doit produire des pixels de mesh ({lit})"
+        );
     }
 
     #[test]
@@ -291,8 +337,9 @@ mod tests {
         let front = render(&model, 0.0, 64, 64);
         model.primitives[0].indices.reverse();
         let back = render(&model, 0.0, 64, 64);
-        let background: Vec<u8> =
-            (0..64).flat_map(|y| (0..64).flat_map(move |_| couleur_fond(y, 64))).collect();
+        let background: Vec<u8> = (0..64)
+            .flat_map(|y| (0..64).flat_map(move |_| couleur_fond(y, 64)))
+            .collect();
         assert_ne!(front, background, "face CCW tournée vers +Z visible");
         assert_eq!(back, background, "face arrière éliminée");
     }

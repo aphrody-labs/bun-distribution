@@ -50,9 +50,12 @@ fn rdbn_to_iecode(data: &[u8]) -> Option<Value> {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
     let path = vfs
         .iter()
         .map(|(p, _)| p.to_string())
@@ -69,7 +72,11 @@ fn main() {
 
     let parsed = aphrody_nie_data::chara_details::parse_chara_details(&root);
     eprintln!("[module] parse_chara_details = {} entrées", parsed.len());
-    assert_eq!(parsed.len(), 550, "550 lignes m_charaDetailsList (probe live)");
+    assert_eq!(
+        parsed.len(),
+        550,
+        "550 lignes m_charaDetailsList (probe live)"
+    );
 
     for d in parsed.iter().take(3) {
         eprintln!(

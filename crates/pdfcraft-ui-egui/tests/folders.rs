@@ -22,7 +22,8 @@ struct TempFolder(PathBuf);
 
 impl TempFolder {
     fn new(name: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-pinned-{name}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcraft-pinned-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Self(dir)
@@ -49,21 +50,27 @@ impl Drop for TempFolder {
 }
 
 fn harness(setup: impl FnOnce(&mut PdfCraftApp) + 'static) -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 1400.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        // List folders on the frame that asks, not on a worker thread.
-        app.run_inline = true;
-        setup(&mut app);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 1400.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            // List folders on the frame that asks, not on a worker thread.
+            app.run_inline = true;
+            setup(&mut app);
+            app
+        });
     // Fonts install on frame 1 and apply on frame 2.
     h.run_steps(4);
     h
 }
 
 fn listed(h: &Harness<'static, PdfCraftApp>, folder: &str) -> Vec<String> {
-    h.state().pinned.listing(folder).map(|l| l.files.iter().map(|f| f.name.clone()).collect()).unwrap_or_default()
+    h.state()
+        .pinned
+        .listing(folder)
+        .map(|l| l.files.iter().map(|f| f.name.clone()).collect())
+        .unwrap_or_default()
 }
 
 #[test]
@@ -81,7 +88,11 @@ fn a_pinned_folder_lists_its_newest_pdfs_on_home() {
     assert!(h.state_mut().execute("file.pin_folder"));
     h.run_steps(4);
     assert_eq!(h.state().pinned.folders, std::slice::from_ref(&folder));
-    assert_eq!(listed(&h, &folder), ["newer.PDF", "older.pdf"], "newest first; no text files, hidden files or folders");
+    assert_eq!(
+        listed(&h, &folder),
+        ["newer.PDF", "older.pdf"],
+        "newest first; no text files, hidden files or folders"
+    );
     assert_eq!(h.state().pinned.listing(&folder).map(|l| l.total), Some(2));
     h.get_by_label("newer.PDF");
     h.get_by_label("older.pdf");
@@ -102,7 +113,10 @@ fn clicking_a_pinned_pdf_opens_it_and_adds_it_to_recent() {
     h.run_steps(3);
     let app = h.state();
     assert_eq!(app.views.len(), 1, "the PDF opens in a tab");
-    assert_eq!(app.recent.first().map(|r| r.path.clone()), Some(path.to_string_lossy().into_owned()));
+    assert_eq!(
+        app.recent.first().map(|r| r.path.clone()),
+        Some(path.to_string_lossy().into_owned())
+    );
 }
 
 #[test]
@@ -152,7 +166,10 @@ fn pinned_folders_survive_a_restart() {
     b.restore(&a.persist());
     assert_eq!(b.pinned.folders, [folder]);
     b.restore("{\"pinned_folders\": [5, \"relative/path\"]}");
-    assert!(b.pinned.folders.is_empty(), "only absolute folder paths are restored");
+    assert!(
+        b.pinned.folders.is_empty(),
+        "only absolute folder paths are restored"
+    );
     b.restore("{not json");
     assert!(b.pinned.folders.is_empty());
 }
@@ -182,7 +199,11 @@ fn an_unavailable_folder_says_so_and_stays_pinned() {
 fn show_more_reveals_the_older_pdfs() {
     let dir = TempFolder::new("more");
     for i in 0..SHOWN + 2 {
-        dir.file(&format!("scan{i:02}.pdf"), FIXTURE, Duration::from_secs(60 * (i as u64 + 1)));
+        dir.file(
+            &format!("scan{i:02}.pdf"),
+            FIXTURE,
+            Duration::from_secs(60 * (i as u64 + 1)),
+        );
     }
     let folder = dir.path();
     let mut h = harness(move |app| {
@@ -190,7 +211,10 @@ fn show_more_reveals_the_older_pdfs() {
     });
     h.run_steps(2);
     h.get_by_label("scan00.pdf");
-    assert!(h.query_by_label("scan09.pdf").is_none(), "only the newest {SHOWN} show at first");
+    assert!(
+        h.query_by_label("scan09.pdf").is_none(),
+        "only the newest {SHOWN} show at first"
+    );
     h.get_by_label("Show 2 more").click();
     h.run_steps(2);
     h.get_by_label("scan09.pdf");
@@ -213,28 +237,57 @@ fn a_long_pdf_name_is_cut_before_its_date_and_size() {
         .shapes
         .iter()
         .filter_map(|c| match &c.shape {
-            egui::Shape::Text(t) => Some((t.galley.text().to_owned(), t.galley.elided, t.visual_bounding_rect())),
+            egui::Shape::Text(t) => Some((
+                t.galley.text().to_owned(),
+                t.galley.elided,
+                t.visual_bounding_rect(),
+            )),
             _ => None,
         })
         .collect();
-    let (_, cut, rect) = text.iter().find(|(s, ..)| *s == name).expect("the PDF is listed");
-    let detail = text.iter().find(|(s, _, r)| s.contains('·') && r.y_range().contains(rect.center().y)).expect("its row shows the date and size").2;
+    let (_, cut, rect) = text
+        .iter()
+        .find(|(s, ..)| *s == name)
+        .expect("the PDF is listed");
+    let detail = text
+        .iter()
+        .find(|(s, _, r)| s.contains('·') && r.y_range().contains(rect.center().y))
+        .expect("its row shows the date and size")
+        .2;
     assert!(*cut, "the name is cut short");
-    assert!(rect.right() < detail.left(), "the name ends before the date and size");
+    assert!(
+        rect.right() < detail.left(),
+        "the name ends before the date and size"
+    );
 }
 
 #[test]
 fn pinning_is_limited_and_never_duplicates() {
     let mut app = PdfCraftApp::new();
     app.set_option("language", "en").unwrap();
-    assert!(!app.pin_folder("relative/scans"), "a relative path is refused");
+    assert!(
+        !app.pin_folder("relative/scans"),
+        "a relative path is refused"
+    );
     let root = if cfg!(windows) { "C:\\" } else { "/" };
-    let folders: Vec<String> = (0..MAX_PINNED).map(|i| Path::new(root).join(format!("pinned-{i}")).to_string_lossy().into_owned()).collect();
+    let folders: Vec<String> = (0..MAX_PINNED)
+        .map(|i| {
+            Path::new(root)
+                .join(format!("pinned-{i}"))
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect();
     for f in &folders {
         assert!(app.pin_folder(f));
     }
     assert!(app.pin_folder(&folders[0]), "pinning again is fine");
     assert_eq!(app.pinned.folders.len(), MAX_PINNED, "and adds nothing");
     assert!(!app.pin_folder(&Path::new(root).join("one-too-many").to_string_lossy()));
-    assert!(app.toast.as_ref().is_some_and(|(m, _)| m.contains("Unpin one first")), "the user is told");
+    assert!(
+        app.toast
+            .as_ref()
+            .is_some_and(|(m, _)| m.contains("Unpin one first")),
+        "the user is told"
+    );
 }

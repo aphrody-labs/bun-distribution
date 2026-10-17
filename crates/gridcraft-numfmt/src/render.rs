@@ -50,7 +50,9 @@ pub(crate) fn render_general(sec: &Section, v: f64, width: usize) -> Out {
     let mut out = Out::default();
     for t in &sec.toks {
         match t {
-            Tok::General => out.push(&format_general_fit(v, width).unwrap_or_else(|| "#".repeat(width.clamp(1, 11)))),
+            Tok::General => out.push(
+                &format_general_fit(v, width).unwrap_or_else(|| "#".repeat(width.clamp(1, 11))),
+            ),
             Tok::Fill(c) => out.fill(*c),
             other => out.push(&other.literal_text()),
         }
@@ -63,7 +65,19 @@ pub(crate) fn render_date(sec: &Section, v: f64, sys: DateSystem) -> Option<Out>
     if !v.is_finite() || !(0.0..max_serial(sys) as f64 + 1.0).contains(&v) {
         return None;
     }
-    let sub_digits = sec.toks.iter().filter_map(|t| if let Tok::Date(DatePart::SubSec(n)) = t { Some(*n) } else { None }).max().unwrap_or(0).min(3);
+    let sub_digits = sec
+        .toks
+        .iter()
+        .filter_map(|t| {
+            if let Tok::Date(DatePart::SubSec(n)) = t {
+                Some(*n)
+            } else {
+                None
+            }
+        })
+        .max()
+        .unwrap_or(0)
+        .min(3);
     let unit: i64 = 10i64.pow(3 - sub_digits as u32);
     let mut day = v.floor() as i64;
     let mut ms = (((v - v.floor()) * 86_400_000.0) / unit as f64).round() as i64 * unit;
@@ -72,15 +86,34 @@ pub(crate) fn render_date(sec: &Section, v: f64, sys: DateSystem) -> Option<Out>
         day += 1;
     }
     let total_ms = day.saturating_mul(86_400_000).saturating_add(ms);
-    let needs_date = sec.toks.iter().any(|t| matches!(t, Tok::Date(d) if d.is_calendar()));
-    let dt = if needs_date { datetime_from_serial(sys, day as f64)? } else { datetime_from_serial(sys, 0.0).unwrap_or_default() };
-    let ampm = sec.toks.iter().any(|t| matches!(t, Tok::Date(DatePart::AmPm | DatePart::AP(..))));
+    let needs_date = sec
+        .toks
+        .iter()
+        .any(|t| matches!(t, Tok::Date(d) if d.is_calendar()));
+    let dt = if needs_date {
+        datetime_from_serial(sys, day as f64)?
+    } else {
+        datetime_from_serial(sys, 0.0).unwrap_or_default()
+    };
+    let ampm = sec
+        .toks
+        .iter()
+        .any(|t| matches!(t, Tok::Date(DatePart::AmPm | DatePart::AP(..))));
     let hour = ms / 3_600_000;
     let minute = (ms / 60_000) % 60;
     let second = (ms / 1000) % 60;
     let milli = ms % 1000;
-    let pad = |n: i64, w: u8| if w >= 2 { format!("{:0w$}", n, w = w.min(20) as usize) } else { n.to_string() };
-    let month_name = MONTHS.get((dt.month as usize).wrapping_sub(1)).copied().unwrap_or("");
+    let pad = |n: i64, w: u8| {
+        if w >= 2 {
+            format!("{:0w$}", n, w = w.min(20) as usize)
+        } else {
+            n.to_string()
+        }
+    };
+    let month_name = MONTHS
+        .get((dt.month as usize).wrapping_sub(1))
+        .copied()
+        .unwrap_or("");
     let day_name = WEEKDAYS.get(dt.weekday as usize).copied().unwrap_or("");
     let mut out = Out::default();
     for t in &sec.toks {
@@ -142,7 +175,14 @@ pub(crate) fn render_date(sec: &Section, v: f64, sys: DateSystem) -> Option<Out>
 /// Assigns integer digits right-to-left to the placeholders at `idxs`; the leftmost placeholder
 /// takes all remaining digits. `force_zero` shows `0` in the units placeholder when there are no
 /// digits. A blank `?` pads with a space, and so does the thousands separator it would carry.
-fn fill_int(toks: &[Tok], idxs: &[usize], digits: &str, thousands: bool, force_zero: bool, pieces: &mut [String]) {
+fn fill_int(
+    toks: &[Tok],
+    idxs: &[usize],
+    digits: &str,
+    thousands: bool,
+    force_zero: bool,
+    pieces: &mut [String],
+) {
     let ds: Vec<char> = digits.chars().collect();
     let mut rem = ds.len();
     let mut pos = 0usize;
@@ -227,7 +267,9 @@ fn fill_frac(toks: &[Tok], idxs: &[usize], frac: &str, pieces: &mut [String]) {
 }
 
 fn digit_indices(toks: &[Tok], range: std::ops::Range<usize>) -> Vec<usize> {
-    range.filter(|&i| matches!(toks.get(i), Some(Tok::Digit(_)))).collect()
+    range
+        .filter(|&i| matches!(toks.get(i), Some(Tok::Digit(_))))
+        .collect()
 }
 
 /// Renders a non-negative number through a number section.
@@ -370,11 +412,15 @@ fn approximate(x: f64, max_den: u64) -> (u64, u64) {
             break;
         }
         let a = a_f as u64;
-        let Some(q2) = a.checked_mul(q1).and_then(|v| v.checked_add(q0)) else { break };
+        let Some(q2) = a.checked_mul(q1).and_then(|v| v.checked_add(q0)) else {
+            break;
+        };
         if q2 > max_den {
             break;
         }
-        let Some(p2) = a.checked_mul(p1).and_then(|v| v.checked_add(p0)) else { break };
+        let Some(p2) = a.checked_mul(p1).and_then(|v| v.checked_add(p0)) else {
+            break;
+        };
         (p0, q0, p1, q1) = (p1, q1, p2, q2);
         let frac = r - a_f;
         if frac < 1e-12 {
@@ -387,9 +433,16 @@ fn approximate(x: f64, max_den: u64) -> (u64, u64) {
     }
     // Semiconvergent bound.
     let k = (max_den - q0) / q1;
-    let (pb, qb) = (p0.saturating_add(k.saturating_mul(p1)), q0.saturating_add(k.saturating_mul(q1)));
+    let (pb, qb) = (
+        p0.saturating_add(k.saturating_mul(p1)),
+        q0.saturating_add(k.saturating_mul(q1)),
+    );
     let err_a = (p1 as f64 / q1 as f64 - x).abs();
-    let err_b = if qb > 0 { (pb as f64 / qb as f64 - x).abs() } else { f64::INFINITY };
+    let err_b = if qb > 0 {
+        (pb as f64 / qb as f64 - x).abs()
+    } else {
+        f64::INFINITY
+    };
     if err_b < err_a { (pb, qb) } else { (p1, q1) }
 }
 
@@ -404,10 +457,20 @@ fn shown_width(t: &Tok) -> usize {
 
 /// Replaces the literals in `range` with spaces (`spaces`) or nothing; placeholders and the bar
 /// in it get the same treatment through `pieces`.
-fn blank_range(toks: &[Tok], range: std::ops::Range<usize>, spaces: bool, pieces: &mut [String], lits: &mut [Option<String>]) {
+fn blank_range(
+    toks: &[Tok],
+    range: std::ops::Range<usize>,
+    spaces: bool,
+    pieces: &mut [String],
+    lits: &mut [Option<String>],
+) {
     for i in range {
         let Some(t) = toks.get(i) else { break };
-        let s = if spaces { " ".repeat(shown_width(t)) } else { String::new() };
+        let s = if spaces {
+            " ".repeat(shown_width(t))
+        } else {
+            String::new()
+        };
         match t {
             Tok::Lit(_) => {
                 if let Some(l) = lits.get_mut(i) {
@@ -435,8 +498,12 @@ fn blank_range(toks: &[Tok], range: std::ops::Range<usize>, spaces: bool, pieces
 fn render_fraction(sec: &Section, x: f64, pieces: &mut [String], lits: &mut [Option<String>]) {
     let toks = &sec.toks;
     let is_digit = |i: usize| matches!(toks.get(i), Some(Tok::Digit(_)));
-    let Some(slash) = toks.iter().position(|t| matches!(t, Tok::Slash)) else { return };
-    let Some(num_last) = (0..slash).rev().find(|&i| is_digit(i)) else { return };
+    let Some(slash) = toks.iter().position(|t| matches!(t, Tok::Slash)) else {
+        return;
+    };
+    let Some(num_last) = (0..slash).rev().find(|&i| is_digit(i)) else {
+        return;
+    };
     let mut num_start = num_last;
     while num_start > 0 && is_digit(num_start - 1) {
         num_start -= 1;
@@ -445,7 +512,10 @@ fn render_fraction(sec: &Section, x: f64, pieces: &mut [String], lits: &mut [Opt
     let num_idx = digit_indices(toks, num_start..num_last + 1);
     let sep_start = whole_idx.last().map_or(num_start, |&w| w + 1);
     let (fixed_den, den_start): (Option<u64>, usize) = match toks.get(slash + 1) {
-        Some(Tok::FixedDenom(s)) => (Some(s.parse::<u64>().unwrap_or(u64::MAX).clamp(1, 1_000_000_000)), slash + 1),
+        Some(Tok::FixedDenom(s)) => (
+            Some(s.parse::<u64>().unwrap_or(u64::MAX).clamp(1, 1_000_000_000)),
+            slash + 1,
+        ),
         _ => {
             let mut i = slash + 1;
             while matches!(toks.get(i), Some(Tok::Lit(_))) {
@@ -465,7 +535,11 @@ fn render_fraction(sec: &Section, x: f64, pieces: &mut [String], lits: &mut [Opt
     let den_idx = digit_indices(toks, den_start..den_end);
     let has_q = |idx: &[usize]| idx.iter().any(|&i| toks.get(i) == Some(&Tok::Digit('?')));
     let has_whole = !whole_idx.is_empty();
-    let (mut whole, f) = if has_whole { (x.floor(), x - x.floor()) } else { (0.0, x) };
+    let (mut whole, f) = if has_whole {
+        (x.floor(), x - x.floor())
+    } else {
+        (0.0, x)
+    };
     let (mut num, den) = match fixed_den {
         Some(d) => ((f * d as f64).round() as u64, d),
         None => {
@@ -477,8 +551,14 @@ fn render_fraction(sec: &Section, x: f64, pieces: &mut [String], lits: &mut [Opt
         whole += (num / den) as f64;
         num %= den;
     }
-    let whole_s = if whole >= 1.0 { fixed(whole, 0).0 } else { String::new() };
-    let num_zero_ph = num_idx.iter().any(|&i| toks.get(i) == Some(&Tok::Digit('0')));
+    let whole_s = if whole >= 1.0 {
+        fixed(whole, 0).0
+    } else {
+        String::new()
+    };
+    let num_zero_ph = num_idx
+        .iter()
+        .any(|&i| toks.get(i) == Some(&Tok::Digit('0')));
     if has_whole && num == 0 && !num_zero_ph {
         fill_int(toks, &whole_idx, &whole_s, sec.thousands, true, pieces);
         let spaces = has_q(&whole_idx) || has_q(&num_idx) || has_q(&den_idx);
@@ -487,10 +567,16 @@ fn render_fraction(sec: &Section, x: f64, pieces: &mut [String], lits: &mut [Opt
     }
     if has_whole {
         // A zero value shows `0` in a `?` or `0` units place, nothing in a `#` one.
-        let units_hash = whole_idx.last().is_some_and(|&i| toks.get(i) == Some(&Tok::Digit('#')));
+        let units_hash = whole_idx
+            .last()
+            .is_some_and(|&i| toks.get(i) == Some(&Tok::Digit('#')));
         let force = whole_s.is_empty() && num == 0 && !units_hash;
         fill_int(toks, &whole_idx, &whole_s, sec.thousands, force, pieces);
-        let whole_shown = whole_idx.iter().any(|&i| pieces.get(i).is_some_and(|p| p.chars().any(|c| c.is_ascii_digit())));
+        let whole_shown = whole_idx.iter().any(|&i| {
+            pieces
+                .get(i)
+                .is_some_and(|p| p.chars().any(|c| c.is_ascii_digit()))
+        });
         if !whole_shown {
             let spaces = has_q(&whole_idx) || has_q(&num_idx);
             blank_range(toks, sep_start..num_start, spaces, pieces, lits);
@@ -508,7 +594,10 @@ fn render_fraction(sec: &Section, x: f64, pieces: &mut [String], lits: &mut [Opt
     } else {
         // Denominator digits are zero padded to the `0` placeholders, then left aligned; `?`
         // pads with spaces after them.
-        let zeros = den_idx.iter().filter(|&&i| toks.get(i) == Some(&Tok::Digit('0'))).count();
+        let zeros = den_idx
+            .iter()
+            .filter(|&&i| toks.get(i) == Some(&Tok::Digit('0')))
+            .count();
         // No `{:0>zeros$}`: a format width above u16::MAX panics.
         let mut padded = "0".repeat(zeros.saturating_sub(den_s.chars().count()));
         padded.push_str(&den_s);
@@ -516,7 +605,9 @@ fn render_fraction(sec: &Section, x: f64, pieces: &mut [String], lits: &mut [Opt
         let count = den_idx.len();
         for (k, &ti) in den_idx.iter().enumerate() {
             let s = if k + 1 == count {
-                dc.get(k..).map(|r| r.iter().collect::<String>()).unwrap_or_default()
+                dc.get(k..)
+                    .map(|r| r.iter().collect::<String>())
+                    .unwrap_or_default()
             } else {
                 dc.get(k).map(|c| c.to_string()).unwrap_or_default()
             };

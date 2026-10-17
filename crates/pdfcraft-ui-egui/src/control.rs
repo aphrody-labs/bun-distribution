@@ -59,7 +59,10 @@ fn now_secs() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         static START: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
-        START.get_or_init(std::time::Instant::now).elapsed().as_secs_f64()
+        START
+            .get_or_init(std::time::Instant::now)
+            .elapsed()
+            .as_secs_f64()
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -91,7 +94,11 @@ impl ControlClient {
     /// Queue a request; the reply arrives on the returned receiver once the app has handled it.
     pub fn send(&self, method: &str, params: Value) -> Receiver<Reply> {
         let (reply, rx) = channel();
-        let req = ControlRequest { method: method.into(), params, reply };
+        let req = ControlRequest {
+            method: method.into(),
+            params,
+            reply,
+        };
         if let Err(e) = self.tx.send(req) {
             let _ = e.0.reply.send(Err("the app has closed".into()));
         }
@@ -123,7 +130,9 @@ impl egui::Plugin for ControlPlugin {
     }
 
     fn input_hook(&mut self, ctx: &egui::Context, input: &mut egui::RawInput) {
-        let Ok(mut s) = self.shared.lock() else { return };
+        let Ok(mut s) = self.shared.lock() else {
+            return;
+        };
         if let Some(batch) = s.inject.pop_front() {
             input.events.extend(batch);
         }
@@ -133,9 +142,13 @@ impl egui::Plugin for ControlPlugin {
     }
 
     fn output_hook(&mut self, _ctx: &egui::Context, output: &mut egui::FullOutput) {
-        let Ok(mut s) = self.shared.lock() else { return };
+        let Ok(mut s) = self.shared.lock() else {
+            return;
+        };
         s.passes += 1;
-        let Some(update) = &output.platform_output.accesskit_update else { return };
+        let Some(update) = &output.platform_output.accesskit_update else {
+            return;
+        };
         s.nodes = update.nodes.iter().cloned().collect();
         s.root = update.tree.as_ref().map(|t| t.root);
         s.focus = Some(update.focus);
@@ -171,10 +184,23 @@ pub struct Control {
 /// Install the control channel on `ctx`: returns the app half and a client.
 pub fn attach(ctx: &egui::Context) -> (Control, ControlClient) {
     let shared = Arc::new(Mutex::new(Shared::default()));
-    ctx.add_plugin(ControlPlugin { shared: shared.clone() });
+    ctx.add_plugin(ControlPlugin {
+        shared: shared.clone(),
+    });
     ctx.enable_accesskit();
     let (tx, rx) = channel();
-    (Control { rx, shared, pending: Vec::new(), next_tag: 1 }, ControlClient { tx, ctx: ctx.clone() })
+    (
+        Control {
+            rx,
+            shared,
+            pending: Vec::new(),
+            next_tag: 1,
+        },
+        ControlClient {
+            tx,
+            ctx: ctx.clone(),
+        },
+    )
 }
 
 /// What a request needs from the app (implemented by `PdfCraftApp`).
@@ -199,13 +225,25 @@ impl Control {
                 }
                 Handled::AfterFrames(frames, value) => {
                     let until_pass = self.passes() + u64::from(frames);
-                    self.pending.push(Pending::Frames { until_pass, since: now_secs(), reply: req.reply, value });
+                    self.pending.push(Pending::Frames {
+                        until_pass,
+                        since: now_secs(),
+                        reply: req.reply,
+                        value,
+                    });
                 }
                 Handled::Screenshot(region) => {
                     let tag = self.next_tag;
                     self.next_tag += 1;
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(tag)));
-                    self.pending.push(Pending::Screenshot { tag, region, reply: req.reply, since: now_secs() });
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                        tag,
+                    )));
+                    self.pending.push(Pending::Screenshot {
+                        tag,
+                        region,
+                        reply: req.reply,
+                        since: now_secs(),
+                    });
                 }
             }
         }
@@ -220,9 +258,13 @@ impl Control {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).map(|tag| (*tag, image.clone()))
-                    }
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => user_data
+                        .data
+                        .as_ref()
+                        .and_then(|d| d.downcast_ref::<u64>())
+                        .map(|tag| (*tag, image.clone())),
                     _ => None,
                 })
                 .collect()
@@ -233,7 +275,12 @@ impl Control {
         let mut keep = Vec::new();
         for p in self.pending.drain(..) {
             match p {
-                Pending::Frames { until_pass, reply, value, .. } if passes >= until_pass => {
+                Pending::Frames {
+                    until_pass,
+                    reply,
+                    value,
+                    ..
+                } if passes >= until_pass => {
                     let _ = reply.send(Ok(value));
                 }
                 Pending::Frames { since, reply, .. } if now - since > NOT_DRAWN_TIMEOUT => {
@@ -244,7 +291,12 @@ impl Control {
                     let _ = reply.send(Err(not_drawn("handling the input")));
                 }
                 p @ Pending::Frames { .. } => keep.push(p),
-                Pending::Screenshot { tag, region, reply, since } => match shots.iter().find(|(t, _)| *t == tag) {
+                Pending::Screenshot {
+                    tag,
+                    region,
+                    reply,
+                    since,
+                } => match shots.iter().find(|(t, _)| *t == tag) {
                     Some((_, image)) => {
                         let _ = reply.send(screenshot_png(image, region, ppp));
                     }
@@ -253,7 +305,12 @@ impl Control {
                     None if now - since > NOT_DRAWN_TIMEOUT => {
                         let _ = reply.send(Err(not_drawn("the screenshot")));
                     }
-                    None => keep.push(Pending::Screenshot { tag, region, reply, since }),
+                    None => keep.push(Pending::Screenshot {
+                        tag,
+                        region,
+                        reply,
+                        since,
+                    }),
                 },
             }
         }
@@ -273,8 +330,18 @@ impl Control {
         n + 1
     }
 
-    fn handle(&mut self, ctx: &egui::Context, host: &mut impl Host, method: &str, p: &Value) -> Handled {
-        let str_param = |k: &str| p.get(k).and_then(Value::as_str).ok_or_else(|| format!("{method}: missing string parameter {k}"));
+    fn handle(
+        &mut self,
+        ctx: &egui::Context,
+        host: &mut impl Host,
+        method: &str,
+        p: &Value,
+    ) -> Handled {
+        let str_param = |k: &str| {
+            p.get(k)
+                .and_then(Value::as_str)
+                .ok_or_else(|| format!("{method}: missing string parameter {k}"))
+        };
         let r: Result<Handled, String> = (|| match method {
             "ui.state" => {
                 let mut state = host.state();
@@ -283,8 +350,12 @@ impl Control {
                 Ok(Handled::Now(Ok(state)))
             }
             "ui.commands" => Ok(Handled::Now(Ok(host.commands()))),
-            "ui.dock" | "ui.dock.reset" => Ok(Handled::Now(host.dock(method == "ui.dock.reset", p))),
-            "ui.command" if str_param("id")? == "ui.dock" => Ok(Handled::Now(host.dock(false, p.get("params").unwrap_or(p)))),
+            "ui.dock" | "ui.dock.reset" => {
+                Ok(Handled::Now(host.dock(method == "ui.dock.reset", p)))
+            }
+            "ui.command" if str_param("id")? == "ui.dock" => {
+                Ok(Handled::Now(host.dock(false, p.get("params").unwrap_or(p))))
+            }
             "ui.command" => Ok(Handled::Now(host.command(str_param("id")?))),
             "ui.set" => {
                 let value = match p.get("value") {
@@ -305,7 +376,9 @@ impl Control {
                         .and_then(Value::as_f64)
                         .filter(|n| n.is_finite() && (320.0..=8192.0).contains(n))
                         .map(|n| n as f32)
-                        .ok_or_else(|| format!("ui.resize: {key} must be between 320 and 8192 logical points"))
+                        .ok_or_else(|| {
+                            format!("ui.resize: {key} must be between 320 and 8192 logical points")
+                        })
                 };
                 let size = egui::vec2(dimension("width")?, dimension("height")?);
                 if cfg!(target_arch = "wasm32") {
@@ -313,7 +386,10 @@ impl Control {
                 }
                 ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(size));
                 ctx.request_repaint();
-                Ok(Handled::AfterFrames(2, json!({ "requested": [size.x, size.y] })))
+                Ok(Handled::AfterFrames(
+                    2,
+                    json!({ "requested": [size.x, size.y] }),
+                ))
             }
             "ui.quit" => {
                 only_params(p, method, &[])?;
@@ -321,7 +397,9 @@ impl Control {
                     return Err("ui.quit needs a native window".into());
                 }
                 let quitting = host.quit(ctx);
-                Ok(Handled::Now(Ok(json!({ "quitting": quitting, "needs_confirmation": !quitting }))))
+                Ok(Handled::Now(Ok(
+                    json!({ "quitting": quitting, "needs_confirmation": !quitting }),
+                )))
             }
             "ui.drag" => self.drag(p),
             "ui.move" => {
@@ -330,22 +408,39 @@ impl Control {
                         .and_then(Value::as_f64)
                         .map(|n| n as f32)
                         .filter(|n| n.is_finite())
-                        .ok_or_else(|| format!("ui.move: {key} must be a finite coordinate in points"))
+                        .ok_or_else(|| {
+                            format!("ui.move: {key} must be a finite coordinate in points")
+                        })
                 };
                 let pos = egui::pos2(point("x")?, point("y")?);
-                Ok(Handled::AfterFrames(self.inject(vec![vec![egui::Event::PointerMoved(pos)]]), json!({ "moved": [pos.x, pos.y] })))
+                Ok(Handled::AfterFrames(
+                    self.inject(vec![vec![egui::Event::PointerMoved(pos)]]),
+                    json!({ "moved": [pos.x, pos.y] }),
+                ))
             }
             "ui.type" => {
                 let text = str_param("text")?.to_string();
-                Ok(Handled::AfterFrames(self.inject(vec![vec![egui::Event::Text(text)]]), json!({ "typed": true })))
+                Ok(Handled::AfterFrames(
+                    self.inject(vec![vec![egui::Event::Text(text)]]),
+                    json!({ "typed": true }),
+                ))
             }
             "ui.key" => {
                 let name = str_param("key")?;
                 let key = egui::Key::from_name(name)
                     .ok_or_else(|| format!("ui.key: unknown key {name:?} (egui key names: A, Enter, Escape, ArrowDown, F5, …)"))?;
                 let modifiers = modifiers(p.get("modifiers"))?;
-                let ev = |pressed| egui::Event::Key { key, physical_key: None, pressed, repeat: false, modifiers };
-                Ok(Handled::AfterFrames(self.inject(vec![vec![ev(true)], vec![ev(false)]]), json!({ "key": name })))
+                let ev = |pressed| egui::Event::Key {
+                    key,
+                    physical_key: None,
+                    pressed,
+                    repeat: false,
+                    modifiers,
+                };
+                Ok(Handled::AfterFrames(
+                    self.inject(vec![vec![ev(true)], vec![ev(false)]]),
+                    json!({ "key": name }),
+                ))
             }
             "ui.screenshot" => {
                 let region = match p.get("region") {
@@ -363,24 +458,37 @@ impl Control {
     }
 
     fn inspect(&self, p: &Value) -> Value {
-        let query = p.get("query").and_then(Value::as_str).map(str::to_lowercase);
+        let query = p
+            .get("query")
+            .and_then(Value::as_str)
+            .map(str::to_lowercase);
         let role = p.get("role").and_then(Value::as_str).map(str::to_lowercase);
         let focused = p.get("focused").and_then(Value::as_bool);
         let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(500) as usize;
-        let Ok(s) = self.shared.lock() else { return json!({ "widgets": [] }) };
+        let Ok(s) = self.shared.lock() else {
+            return json!({ "widgets": [] });
+        };
         let mut out = Vec::new();
         let mut total = 0usize;
         let mut stack: Vec<(NodeId, usize)> = s.root.map(|r| vec![(r, 0)]).unwrap_or_default();
         while let Some((id, depth)) = stack.pop() {
-            let Some(node) = s.nodes.get(&id) else { continue };
+            let Some(node) = s.nodes.get(&id) else {
+                continue;
+            };
             for c in node.children().iter().rev() {
                 stack.push((*c, depth + 1));
             }
             let w = widget(id, node, depth, s.focus == Some(id));
-            let text =
-                format!("{} {} {}", w["label"].as_str().unwrap_or(""), w["value"].as_str().unwrap_or(""), w["description"].as_str().unwrap_or(""))
-                    .to_lowercase();
-            let role_ok = role.as_ref().is_none_or(|r| w["role"].as_str().is_some_and(|x| x.to_lowercase() == *r));
+            let text = format!(
+                "{} {} {}",
+                w["label"].as_str().unwrap_or(""),
+                w["value"].as_str().unwrap_or(""),
+                w["description"].as_str().unwrap_or("")
+            )
+            .to_lowercase();
+            let role_ok = role
+                .as_ref()
+                .is_none_or(|r| w["role"].as_str().is_some_and(|x| x.to_lowercase() == *r));
             let query_ok = query.as_ref().is_none_or(|q| text.contains(q.as_str()));
             let focus_ok = focused.is_none_or(|want| (s.focus == Some(id)) == want);
             if role_ok && query_ok && focus_ok && id != s.root.unwrap_or(id) {
@@ -396,10 +504,17 @@ impl Control {
     /// Press at `from`, move to `to` in `steps` frames, release (drawing, selecting text, moving).
     fn drag(&mut self, p: &Value) -> Result<Handled, String> {
         let point = |k: &str| -> Result<egui::Pos2, String> {
-            match p.get(k).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_f64).collect::<Vec<_>>()).as_deref() {
+            match p
+                .get(k)
+                .and_then(Value::as_array)
+                .map(|a| a.iter().filter_map(Value::as_f64).collect::<Vec<_>>())
+                .as_deref()
+            {
                 Some([x, y]) => Some(egui::pos2(*x as f32, *y as f32))
                     .filter(|pos| pos.is_finite())
-                    .ok_or_else(|| format!("ui.drag: {k} must be [x, y], finite coordinates in points")),
+                    .ok_or_else(|| {
+                        format!("ui.drag: {k} must be [x, y], finite coordinates in points")
+                    }),
                 _ => Err(format!("ui.drag: {k} must be [x, y] in points")),
             }
         };
@@ -407,38 +522,74 @@ impl Control {
         if !(to - from).is_finite() {
             return Err("ui.drag: from and to must be a finite distance apart, in points".into());
         }
-        let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(8).clamp(1, 200) as usize;
+        let steps = p
+            .get("steps")
+            .and_then(Value::as_u64)
+            .unwrap_or(8)
+            .clamp(1, 200) as usize;
         let modifiers = modifiers(p.get("modifiers"))?;
         let which = pointer_button(p, "ui.drag")?;
-        let button = |pos, pressed| egui::Event::PointerButton { pos, button: which, pressed, modifiers };
-        let mut frames = vec![vec![egui::Event::PointerMoved(from)], vec![button(from, true)]];
+        let button = |pos, pressed| egui::Event::PointerButton {
+            pos,
+            button: which,
+            pressed,
+            modifiers,
+        };
+        let mut frames = vec![
+            vec![egui::Event::PointerMoved(from)],
+            vec![button(from, true)],
+        ];
         for k in 1..=steps {
-            frames.push(vec![egui::Event::PointerMoved(from + (to - from) * (k as f32 / steps as f32))]);
+            frames.push(vec![egui::Event::PointerMoved(
+                from + (to - from) * (k as f32 / steps as f32),
+            )]);
         }
         frames.push(vec![button(to, false)]);
         let n = self.inject(frames);
-        Ok(Handled::AfterFrames(n, json!({ "dragged": [[from.x, from.y], [to.x, to.y]] })))
+        Ok(Handled::AfterFrames(
+            n,
+            json!({ "dragged": [[from.x, from.y], [to.x, to.y]] }),
+        ))
     }
 
     fn click(&mut self, p: &Value) -> Result<Handled, String> {
-        if let (Some(x), Some(y)) = (p.get("x").and_then(Value::as_f64), p.get("y").and_then(Value::as_f64)) {
+        if let (Some(x), Some(y)) = (
+            p.get("x").and_then(Value::as_f64),
+            p.get("y").and_then(Value::as_f64),
+        ) {
             let point = |key: &str, n: f64| {
-                Some(n as f32).filter(|n| n.is_finite()).ok_or_else(|| format!("ui.click: {key} must be a finite coordinate in points"))
+                Some(n as f32)
+                    .filter(|n| n.is_finite())
+                    .ok_or_else(|| format!("ui.click: {key} must be a finite coordinate in points"))
             };
             let pos = egui::pos2(point("x", x)?, point("y", y)?);
             let which = pointer_button(p, "ui.click")?;
-            let button = |pressed| egui::Event::PointerButton { pos, button: which, pressed, modifiers: egui::Modifiers::NONE };
-            let frames = self.inject(vec![vec![egui::Event::PointerMoved(pos)], vec![button(true)], vec![button(false)]]);
+            let button = |pressed| egui::Event::PointerButton {
+                pos,
+                button: which,
+                pressed,
+                modifiers: egui::Modifiers::NONE,
+            };
+            let frames = self.inject(vec![
+                vec![egui::Event::PointerMoved(pos)],
+                vec![button(true)],
+                vec![button(false)],
+            ]);
             return Ok(Handled::AfterFrames(frames, json!({ "clicked": [x, y] })));
         }
         let s = self.shared.lock().map_err(|_| "control state poisoned")?;
         let id = match (p.get("id"), p.get("label").and_then(Value::as_str)) {
             (Some(id), _) => {
-                let id: u64 =
-                    id.as_u64().or_else(|| id.as_str().and_then(|s| s.parse().ok())).ok_or("ui.click: id must be a widget id from ui.inspect")?;
+                let id: u64 = id
+                    .as_u64()
+                    .or_else(|| id.as_str().and_then(|s| s.parse().ok()))
+                    .ok_or("ui.click: id must be a widget id from ui.inspect")?;
                 let id = NodeId(id);
                 if !s.nodes.contains_key(&id) {
-                    return Err(format!("ui.click: no widget with id {} on screen (run ui.inspect again)", id.0));
+                    return Err(format!(
+                        "ui.click: no widget with id {} on screen (run ui.inspect again)",
+                        id.0
+                    ));
                 }
                 id
             }
@@ -447,58 +598,114 @@ impl Control {
                 let matches: Vec<NodeId> = s
                     .nodes
                     .iter()
-                    .filter(|(_, n)| n.supports_action(Action::Click) && !n.is_disabled() && n.label().is_some_and(|l| l.to_lowercase() == want))
+                    .filter(|(_, n)| {
+                        n.supports_action(Action::Click)
+                            && !n.is_disabled()
+                            && n.label().is_some_and(|l| l.to_lowercase() == want)
+                    })
                     .map(|(id, _)| *id)
                     .collect();
                 match matches.as_slice() {
                     [one] => *one,
-                    [] => return Err(format!("ui.click: no enabled clickable widget labelled {label:?} (try ui.inspect with query)")),
-                    many => return Err(format!("ui.click: {} widgets are labelled {label:?}; click one by id", many.len())),
+                    [] => {
+                        return Err(format!(
+                            "ui.click: no enabled clickable widget labelled {label:?} (try ui.inspect with query)"
+                        ));
+                    }
+                    many => {
+                        return Err(format!(
+                            "ui.click: {} widgets are labelled {label:?}; click one by id",
+                            many.len()
+                        ));
+                    }
                 }
             }
             (None, None) => return Err("ui.click: pass id, label, or x and y".into()),
         };
         let node = &s.nodes[&id];
         if node.is_disabled() {
-            return Err(format!("ui.click: widget {} ({}) is disabled", id.0, node.label().unwrap_or("unlabelled")));
+            return Err(format!(
+                "ui.click: widget {} ({}) is disabled",
+                id.0,
+                node.label().unwrap_or("unlabelled")
+            ));
         }
         let label = node.label().map(str::to_owned);
-        let action = accesskit::ActionRequest { action: Action::Click, target_tree: accesskit::TreeId::ROOT, target_node: id, data: None };
+        let action = accesskit::ActionRequest {
+            action: Action::Click,
+            target_tree: accesskit::TreeId::ROOT,
+            target_node: id,
+            data: None,
+        };
         drop(s);
         let frames = self.inject(vec![vec![egui::Event::AccessKitActionRequest(action)]]);
-        Ok(Handled::AfterFrames(frames, json!({ "clicked": id.0.to_string(), "label": label })))
+        Ok(Handled::AfterFrames(
+            frames,
+            json!({ "clicked": id.0.to_string(), "label": label }),
+        ))
     }
 
     fn focus(&mut self, p: &Value) -> Result<Handled, String> {
         only_params(p, "ui.focus", &["id", "label"])?;
         let s = self.shared.lock().map_err(|_| "control state poisoned")?;
         let id = match (p.get("id"), p.get("label")) {
-            (Some(id), None) => {
-                NodeId(id.as_u64().or_else(|| id.as_str().and_then(|s| s.parse().ok())).ok_or("ui.focus: id must be a widget id from ui.inspect")?)
-            }
+            (Some(id), None) => NodeId(
+                id.as_u64()
+                    .or_else(|| id.as_str().and_then(|s| s.parse().ok()))
+                    .ok_or("ui.focus: id must be a widget id from ui.inspect")?,
+            ),
             (None, Some(Value::String(label))) => {
                 let matches: Vec<NodeId> = s
                     .nodes
                     .iter()
-                    .filter(|(_, n)| n.supports_action(Action::Focus) && !n.is_disabled() && n.label().is_some_and(|l| l.eq_ignore_ascii_case(label)))
+                    .filter(|(_, n)| {
+                        n.supports_action(Action::Focus)
+                            && !n.is_disabled()
+                            && n.label().is_some_and(|l| l.eq_ignore_ascii_case(label))
+                    })
                     .map(|(id, _)| *id)
                     .collect();
                 match matches.as_slice() {
                     [one] => *one,
-                    [] => return Err(format!("ui.focus: no enabled focusable widget labelled {label:?}")),
-                    many => return Err(format!("ui.focus: {} widgets are labelled {label:?}; use a widget id", many.len())),
+                    [] => {
+                        return Err(format!(
+                            "ui.focus: no enabled focusable widget labelled {label:?}"
+                        ));
+                    }
+                    many => {
+                        return Err(format!(
+                            "ui.focus: {} widgets are labelled {label:?}; use a widget id",
+                            many.len()
+                        ));
+                    }
                 }
             }
             _ => return Err("ui.focus: pass exactly one widget id or label".into()),
         };
-        let node = s.nodes.get(&id).ok_or_else(|| format!("ui.focus: no widget with id {} on screen (run ui.inspect again)", id.0))?;
+        let node = s.nodes.get(&id).ok_or_else(|| {
+            format!(
+                "ui.focus: no widget with id {} on screen (run ui.inspect again)",
+                id.0
+            )
+        })?;
         if node.is_disabled() || !node.supports_action(Action::Focus) {
-            return Err(format!("ui.focus: widget {} is disabled or not focusable", id.0));
+            return Err(format!(
+                "ui.focus: widget {} is disabled or not focusable",
+                id.0
+            ));
         }
-        let action = accesskit::ActionRequest { action: Action::Focus, target_tree: accesskit::TreeId::ROOT, target_node: id, data: None };
+        let action = accesskit::ActionRequest {
+            action: Action::Focus,
+            target_tree: accesskit::TreeId::ROOT,
+            target_node: id,
+            data: None,
+        };
         drop(s);
         let frames = self.inject(vec![vec![egui::Event::AccessKitActionRequest(action)]]);
-        Ok(Handled::AfterFrames(frames, json!({ "focus_requested": id.0.to_string() })))
+        Ok(Handled::AfterFrames(
+            frames,
+            json!({ "focus_requested": id.0.to_string() }),
+        ))
     }
 }
 
@@ -553,7 +760,9 @@ fn only_params(p: &Value, method: &str, allowed: &[&str]) -> Result<(), String> 
     if p.is_null() && allowed.is_empty() {
         return Ok(());
     }
-    let object = p.as_object().ok_or_else(|| format!("{method}: params must be an object"))?;
+    let object = p
+        .as_object()
+        .ok_or_else(|| format!("{method}: params must be an object"))?;
     if let Some(key) = object.keys().find(|key| !allowed.contains(&key.as_str())) {
         return Err(format!("{method}: unknown parameter {key:?}"));
     }
@@ -565,7 +774,9 @@ fn pointer_button(p: &Value, method: &str) -> Result<egui::PointerButton, String
         "primary" | "left" => Ok(egui::PointerButton::Primary),
         "secondary" | "right" => Ok(egui::PointerButton::Secondary),
         "middle" => Ok(egui::PointerButton::Middle),
-        other => Err(format!("{method}: unknown button {other:?} (primary, secondary, middle)")),
+        other => Err(format!(
+            "{method}: unknown button {other:?} (primary, secondary, middle)"
+        )),
     }
 }
 
@@ -578,7 +789,11 @@ fn modifiers(v: Option<&Value>) -> Result<egui::Modifiers, String> {
             "alt" | "option" => m.alt = true,
             "ctrl" | "control" => m.ctrl = true,
             "mac_cmd" => m.mac_cmd = true,
-            other => return Err(format!("ui.key: unknown modifier {other:?} (command, shift, alt, ctrl)")),
+            other => {
+                return Err(format!(
+                    "ui.key: unknown modifier {other:?} (command, shift, alt, ctrl)"
+                ));
+            }
         }
     }
     // "command" is ⌘ on macOS and Ctrl elsewhere, as egui expects.
@@ -593,9 +808,20 @@ fn modifiers(v: Option<&Value>) -> Result<egui::Modifiers, String> {
 }
 
 fn rect_param(v: &Value) -> Result<egui::Rect, String> {
-    let a: Vec<f32> = v.as_array().map(|a| a.iter().filter_map(Value::as_f64).map(|f| f as f32).collect()).unwrap_or_default();
+    let a: Vec<f32> = v
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_f64)
+                .map(|f| f as f32)
+                .collect()
+        })
+        .unwrap_or_default();
     match a.as_slice() {
-        [x0, y0, x1, y1] if x1 > x0 && y1 > y0 => Ok(egui::Rect::from_min_max(egui::pos2(*x0, *y0), egui::pos2(*x1, *y1))),
+        [x0, y0, x1, y1] if x1 > x0 && y1 > y0 => Ok(egui::Rect::from_min_max(
+            egui::pos2(*x0, *y0),
+            egui::pos2(*x1, *y1),
+        )),
         _ => Err("region must be [x0, y0, x1, y1] in points".into()),
     }
 }
@@ -606,7 +832,12 @@ fn screenshot_png(image: &egui::ColorImage, region: Option<egui::Rect>, ppp: f32
     let (x0, y0, x1, y1) = match region {
         Some(r) => {
             let px = |v: f32, max: usize| ((v * ppp).round().max(0.0) as usize).min(max);
-            (px(r.min.x, w), px(r.min.y, h), px(r.max.x, w), px(r.max.y, h))
+            (
+                px(r.min.x, w),
+                px(r.min.y, h),
+                px(r.max.x, w),
+                px(r.max.y, h),
+            )
         }
         None => (0, 0, w, h),
     };
@@ -628,7 +859,9 @@ fn screenshot_png(image: &egui::ColorImage, region: Option<egui::Rect>, ppp: f32
     writer.write_image_data(&rgba).map_err(|e| e.to_string())?;
     writer.finish().map_err(|e| e.to_string())?;
     use base64::Engine as _;
-    Ok(json!({ "png_base64": base64::engine::general_purpose::STANDARD.encode(out), "width": cw, "height": ch, "pixels_per_point": ppp }))
+    Ok(
+        json!({ "png_base64": base64::engine::general_purpose::STANDARD.encode(out), "width": cw, "height": ch, "pixels_per_point": ppp }),
+    )
 }
 
 impl Host for crate::PdfCraftApp {
@@ -731,7 +964,8 @@ impl Host for crate::PdfCraftApp {
     }
 
     fn command(&mut self, id: &str) -> Reply {
-        let spec = pdfcraft_engine::commands::command(id).ok_or_else(|| format!("unknown command {id:?} (see ui.commands)"))?;
+        let spec = pdfcraft_engine::commands::command(id)
+            .ok_or_else(|| format!("unknown command {id:?} (see ui.commands)"))?;
         if !self.command_enabled(spec) {
             return Err(format!("{id} is disabled right now"));
         }
@@ -749,7 +983,8 @@ impl Host for crate::PdfCraftApp {
     }
 
     fn set(&mut self, key: &str, value: &str) -> Reply {
-        self.set_option(key, value).map(|()| json!({ "set": key, "value": value }))
+        self.set_option(key, value)
+            .map(|()| json!({ "set": key, "value": value }))
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -758,10 +993,18 @@ impl Host for crate::PdfCraftApp {
         self.open_path(path);
         if self.views.len() > before || self.password_prompt.is_some() {
             Ok(json!({ "opened": path, "password_prompt": self.password_prompt.is_some() }))
-        } else if self.pending_opens.iter().any(|pending| pending.path.as_deref() == Some(path)) {
+        } else if self
+            .pending_opens
+            .iter()
+            .any(|pending| pending.path.as_deref() == Some(path))
+        {
             Ok(json!({ "accepted": path, "pending": true }))
         } else {
-            Err(self.toast.as_ref().map(|t| t.0.clone()).unwrap_or_else(|| format!("couldn't open {path}")))
+            Err(self
+                .toast
+                .as_ref()
+                .map(|t| t.0.clone())
+                .unwrap_or_else(|| format!("couldn't open {path}")))
         }
     }
 
@@ -876,7 +1119,11 @@ enum LineRead {
 
 /// Read one `\n`-terminated line of at most `max` bytes into `buf`.
 #[cfg(not(target_arch = "wasm32"))]
-fn read_line_limited(reader: &mut impl std::io::BufRead, buf: &mut Vec<u8>, max: usize) -> std::io::Result<LineRead> {
+fn read_line_limited(
+    reader: &mut impl std::io::BufRead,
+    buf: &mut Vec<u8>,
+    max: usize,
+) -> std::io::Result<LineRead> {
     use std::io::{BufRead, Read};
     buf.clear();
     // `take` bounds what is buffered for one line: never more than `max` + 1 bytes.
@@ -892,7 +1139,11 @@ fn read_line_limited(reader: &mut impl std::io::BufRead, buf: &mut Vec<u8>, max:
         return Ok(LineRead::Line);
     }
     // No newline: either the limit was passed, or this is a last line before end of stream.
-    Ok(if buf.len() > max { LineRead::TooLong } else { LineRead::Line })
+    Ok(if buf.len() > max {
+        LineRead::TooLong
+    } else {
+        LineRead::Line
+    })
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -902,7 +1153,11 @@ fn rpc_error(id: Value, code: i64, message: &str) -> Value {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn constant_time_eq(a: &str, b: &str) -> bool {
-    a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
+    a.len() == b.len()
+        && a.bytes()
+            .zip(b.bytes())
+            .fold(0u8, |acc, (x, y)| acc | (x ^ y))
+            == 0
 }
 
 /// 128 random bits from the OS, hex-encoded.
@@ -924,7 +1179,8 @@ mod transport_tests {
         let (_control, client) = super::attach(&egui::Context::default());
         let ep = super::serve(client).unwrap();
         let s = std::net::TcpStream::connect(("127.0.0.1", ep.port)).unwrap();
-        s.set_read_timeout(Some(std::time::Duration::from_secs(5))).unwrap();
+        s.set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
         writeln!(s.try_clone().unwrap(), "not json").unwrap();
         let mut r = BufReader::new(s);
         let mut first = String::new();
@@ -935,7 +1191,10 @@ mod transport_tests {
         let mut next = String::new();
         let closed = match r.read_line(&mut next) {
             Ok(n) => n == 0,
-            Err(e) => matches!(e.kind(), ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted),
+            Err(e) => matches!(
+                e.kind(),
+                ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted
+            ),
         };
         assert!(closed, "the connection stayed open: {next:?}");
     }
@@ -946,17 +1205,40 @@ mod transport_tests {
         use super::{LineRead, read_line_limited};
         let mut buf = Vec::new();
         let mut input: &[u8] = b"aaaaaaaaaa\nbb\r\ncc";
-        assert_eq!(read_line_limited(&mut input, &mut buf, 10).unwrap(), LineRead::Line);
-        assert_eq!(buf, b"aaaaaaaaaa", "a line exactly at the limit is accepted");
-        assert_eq!(read_line_limited(&mut input, &mut buf, 10).unwrap(), LineRead::Line);
+        assert_eq!(
+            read_line_limited(&mut input, &mut buf, 10).unwrap(),
+            LineRead::Line
+        );
+        assert_eq!(
+            buf, b"aaaaaaaaaa",
+            "a line exactly at the limit is accepted"
+        );
+        assert_eq!(
+            read_line_limited(&mut input, &mut buf, 10).unwrap(),
+            LineRead::Line
+        );
         assert_eq!(buf, b"bb", "CRLF is stripped");
-        assert_eq!(read_line_limited(&mut input, &mut buf, 10).unwrap(), LineRead::Line);
+        assert_eq!(
+            read_line_limited(&mut input, &mut buf, 10).unwrap(),
+            LineRead::Line
+        );
         assert_eq!(buf, b"cc", "a last line without a newline is still read");
-        assert_eq!(read_line_limited(&mut input, &mut buf, 10).unwrap(), LineRead::End, "then end of stream");
+        assert_eq!(
+            read_line_limited(&mut input, &mut buf, 10).unwrap(),
+            LineRead::End,
+            "then end of stream"
+        );
         let long = [b'x'; 100];
         let mut input: &[u8] = &long;
-        assert_eq!(read_line_limited(&mut input, &mut buf, 10).unwrap(), LineRead::TooLong);
-        assert_eq!(input.len(), 100 - 11, "at most limit + 1 bytes are read; the rest is left");
+        assert_eq!(
+            read_line_limited(&mut input, &mut buf, 10).unwrap(),
+            LineRead::TooLong
+        );
+        assert_eq!(
+            input.len(),
+            100 - 11,
+            "at most limit + 1 bytes are read; the rest is left"
+        );
     }
 
     /// Before authenticating, a line longer than [`super::MAX_AUTH_LINE`] is refused as soon as
@@ -968,10 +1250,14 @@ mod transport_tests {
         let (_control, client) = super::attach(&egui::Context::default());
         let ep = super::serve(client).unwrap();
         let s = std::net::TcpStream::connect(("127.0.0.1", ep.port)).unwrap();
-        s.set_read_timeout(Some(std::time::Duration::from_secs(5))).unwrap();
+        s.set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
         // Exactly one byte over the limit, without a newline: the server reads it all, so the
         // close below is a clean end of stream.
-        s.try_clone().unwrap().write_all(&vec![b'x'; super::MAX_AUTH_LINE + 1]).unwrap();
+        s.try_clone()
+            .unwrap()
+            .write_all(&vec![b'x'; super::MAX_AUTH_LINE + 1])
+            .unwrap();
         let mut r = BufReader::new(s);
         let mut first = String::new();
         r.read_line(&mut first).unwrap();
@@ -980,7 +1266,10 @@ mod transport_tests {
         let mut next = String::new();
         let closed = match r.read_line(&mut next) {
             Ok(n) => n == 0,
-            Err(e) => matches!(e.kind(), ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted),
+            Err(e) => matches!(
+                e.kind(),
+                ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted
+            ),
         };
         assert!(closed, "the connection stayed open: {next:?}");
     }
@@ -994,7 +1283,8 @@ mod transport_tests {
         let (_control, client) = super::attach(&egui::Context::default());
         let ep = super::serve(client).unwrap();
         let s = std::net::TcpStream::connect(("127.0.0.1", ep.port)).unwrap();
-        s.set_read_timeout(Some(std::time::Duration::from_secs(5))).unwrap();
+        s.set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
         let mut w = s.try_clone().unwrap();
         let mut r = BufReader::new(s);
         let reply = |r: &mut BufReader<std::net::TcpStream>| {
@@ -1006,8 +1296,16 @@ mod transport_tests {
         writeln!(w, "{auth}").unwrap();
         assert_eq!(reply(&mut r)["result"]["ok"], true);
         writeln!(w, "{}", "x".repeat(4 * super::MAX_AUTH_LINE)).unwrap();
-        assert_eq!(reply(&mut r)["error"]["code"], -32700, "a long line after auth is parsed, not refused");
+        assert_eq!(
+            reply(&mut r)["error"]["code"],
+            -32700,
+            "a long line after auth is parsed, not refused"
+        );
         writeln!(w, "y").unwrap();
-        assert_eq!(reply(&mut r)["error"]["code"], -32700, "and the connection is still open");
+        assert_eq!(
+            reply(&mut r)["error"]["code"],
+            -32700,
+            "and the connection is still open"
+        );
     }
 }

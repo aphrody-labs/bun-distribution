@@ -43,9 +43,12 @@ pub fn select_depot_ids(
         language: language.to_owned(),
     };
     if !explicit_depots.is_empty() {
-        let limits =
-            PlanningLimits { max_depots: explicit_depots.len(), ..PlanningLimits::default() };
-        return crate::depot::planning::select_depot_ids(&[], &selection, limits).unwrap_or_default();
+        let limits = PlanningLimits {
+            max_depots: explicit_depots.len(),
+            ..PlanningLimits::default()
+        };
+        return crate::depot::planning::select_depot_ids(&[], &selection, limits)
+            .unwrap_or_default();
     }
 
     let KvValue::Children(ref map) = depots.value else {
@@ -54,10 +57,15 @@ pub fn select_depot_ids(
     let records: Vec<DepotRecord> = map
         .iter()
         .filter_map(|(key, depot)| {
-            key.parse::<u32>().ok().map(|id| depot_record_from_kv(id, depot))
+            key.parse::<u32>()
+                .ok()
+                .map(|id| depot_record_from_kv(id, depot))
         })
         .collect();
-    let limits = PlanningLimits { max_depots: records.len(), ..PlanningLimits::default() };
+    let limits = PlanningLimits {
+        max_depots: records.len(),
+        ..PlanningLimits::default()
+    };
     crate::depot::planning::select_depot_ids(&records, &selection, limits).unwrap_or_default()
 }
 
@@ -110,9 +118,15 @@ fn depot_record_from_kv(depot_id: u32, depot: &KeyValue) -> DepotRecord {
                 .collect()
         })
         .unwrap_or_default();
-    let architecture = config.and_then(|value| kv_string(value, "osarch")).map(str::to_owned);
-    let language = config.and_then(|value| kv_string(value, "language")).map(str::to_owned);
-    let low_violence = config.and_then(|value| value.get("lowviolence")).is_some_and(kv_as_bool);
+    let architecture = config
+        .and_then(|value| kv_string(value, "osarch"))
+        .map(str::to_owned);
+    let language = config
+        .and_then(|value| kv_string(value, "language"))
+        .map(str::to_owned);
+    let low_violence = config
+        .and_then(|value| value.get("lowviolence"))
+        .is_some_and(kv_as_bool);
     let manifests = depot
         .get("manifests")
         .and_then(|value| match &value.value {
@@ -219,17 +233,26 @@ mod kv_builder {
         for (k, v) in pairs {
             map.insert(k.to_string(), v);
         }
-        KeyValue { key: key.to_string(), value: KvValue::Children(map) }
+        KeyValue {
+            key: key.to_string(),
+            value: KvValue::Children(map),
+        }
     }
 
     /// Crée un nœud KV feuille String.
     pub fn str_val(key: &str, val: &str) -> KeyValue {
-        KeyValue { key: key.to_string(), value: KvValue::String(val.to_string()) }
+        KeyValue {
+            key: key.to_string(),
+            value: KvValue::String(val.to_string()),
+        }
     }
 
     /// Crée un nœud KV feuille Int32.
     pub fn int_val(key: &str, val: i32) -> KeyValue {
-        KeyValue { key: key.to_string(), value: KvValue::Int32(val) }
+        KeyValue {
+            key: key.to_string(),
+            value: KvValue::Int32(val),
+        }
     }
 }
 
@@ -282,8 +305,14 @@ mod tests {
     #[test]
     fn explicit_depots_returned_deduped() {
         let depots = children("depots", vec![]);
-        let result =
-            select_depot_ids(&depots, &[10, 20, 10, 30], false, "windows", None, "english");
+        let result = select_depot_ids(
+            &depots,
+            &[10, 20, 10, 30],
+            false,
+            "windows",
+            None,
+            "english",
+        );
         assert_eq!(result, vec![10, 20, 30]);
     }
 
@@ -399,7 +428,10 @@ mod tests {
     #[test]
     fn proxied_from_app_returns_target() {
         // Pas de "manifests", mais "depotfromapp" présent.
-        let depot = children("42", vec![("depotfromapp", str_val("depotfromapp", "9999"))]);
+        let depot = children(
+            "42",
+            vec![("depotfromapp", str_val("depotfromapp", "9999"))],
+        );
         assert_eq!(proxied_from_app(&depot), 9999);
     }
 
@@ -410,7 +442,10 @@ mod tests {
         let manifests = children("manifests", vec![("public", branch)]);
         let depot = children(
             "42",
-            vec![("manifests", manifests), ("depotfromapp", str_val("depotfromapp", "9999"))],
+            vec![
+                ("manifests", manifests),
+                ("depotfromapp", str_val("depotfromapp", "9999")),
+            ],
         );
         // Manifests présents → pas un proxy
         assert_eq!(proxied_from_app(&depot), 0);

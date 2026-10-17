@@ -21,22 +21,42 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
     let mut dec = image_webp::WebPDecoder::new(Cursor::new(bytes)).map_err(err)?;
     dec.set_memory_limit(limits.alloc_usize());
     let (w, h) = dec.dimensions();
-    let layout = if dec.has_alpha() { ChannelLayout::Rgba } else { ChannelLayout::Rgb };
+    let layout = if dec.has_alpha() {
+        ChannelLayout::Rgba
+    } else {
+        ChannelLayout::Rgb
+    };
     limits.check(w, h, layout, SampleType::U8)?;
     // VP8L back-references and VP8 skipped macroblocks compress flat areas extremely well, so the
     // ratio is generous; it still stops a header-only file from asking for a gigabyte.
-    Limits::check_plausible(u64::from(w) * u64::from(h) * layout.channels() as u64, bytes.len(), 1 << 16)?;
-    let size = dec.output_buffer_size().ok_or_else(|| err("image too large"))?;
+    Limits::check_plausible(
+        u64::from(w) * u64::from(h) * layout.channels() as u64,
+        bytes.len(),
+        1 << 16,
+    )?;
+    let size = dec
+        .output_buffer_size()
+        .ok_or_else(|| err("image too large"))?;
     let mut buf = alloc_zeroed::<u8>(size)?;
     dec.read_image(&mut buf).map_err(err)?;
     let icc = dec.icc_profile().ok().flatten();
     let exif = dec.exif_metadata().ok().flatten();
-    let xmp = dec.xmp_metadata().ok().flatten().and_then(|b| String::from_utf8(b).ok());
+    let xmp = dec
+        .xmp_metadata()
+        .ok()
+        .flatten()
+        .and_then(|b| String::from_utf8(b).ok());
     let mut img = Image::from_u8(w, h, layout, buf)?;
     img.icc = icc;
-    img.meta = Metadata { exif, xmp, ..Default::default() };
+    img.meta = Metadata {
+        exif,
+        xmp,
+        ..Default::default()
+    };
     if dec.is_animated() && dec.num_frames() > 1 {
-        img.warnings.push(DecodeWarning::MoreFrames { total: Some(dec.num_frames()) });
+        img.warnings.push(DecodeWarning::MoreFrames {
+            total: Some(dec.num_frames()),
+        });
     }
     Ok(img)
 }
@@ -66,10 +86,15 @@ pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Ve
             enc.set_exif_metadata(crate::resolution::export_exif(exif, img.meta.dpi).into_owned());
         }
         if let Some(xmp) = &img.meta.xmp {
-            enc.set_xmp_metadata(crate::resolution::export_xmp(xmp, img.meta.dpi).as_bytes().to_vec());
+            enc.set_xmp_metadata(
+                crate::resolution::export_xmp(xmp, img.meta.dpi)
+                    .as_bytes()
+                    .to_vec(),
+            );
         }
     }
-    enc.encode(img.data(), img.width(), img.height(), ct).map_err(|e| CodecError::encode(F, e))?;
+    enc.encode(img.data(), img.width(), img.height(), ct)
+        .map_err(|e| CodecError::encode(F, e))?;
     Ok(out)
 }
 
@@ -79,25 +104,71 @@ fn encode_lossy(img: &Image, opts: &EncodeOptions) -> Result<Vec<u8>, CodecError
     use super::vp8;
     let (w, h) = img.dimensions();
     if w > vp8::MAX_DIMENSION || h > vp8::MAX_DIMENSION {
-        return Err(CodecError::encode(F, format!("lossy WebP holds at most {} pixels per side", vp8::MAX_DIMENSION)));
+        return Err(CodecError::encode(
+            F,
+            format!(
+                "lossy WebP holds at most {} pixels per side",
+                vp8::MAX_DIMENSION
+            ),
+        ));
     }
     // The VP8 path takes 8-bit RGB(A); gray becomes RGB with flat chroma.
     let has_alpha = img.layout().has_alpha();
-    let target = if has_alpha { ChannelLayout::Rgba } else { ChannelLayout::Rgb };
+    let target = if has_alpha {
+        ChannelLayout::Rgba
+    } else {
+        ChannelLayout::Rgb
+    };
     let rgb = img.converted(target, SampleType::U8);
     let stride = target.channels();
     let yuv = vp8::Yuv::from_rgb(rgb.data(), w, h, stride);
-    let frame = vp8::encode_frame(&yuv, vp8::Params { quality: opts.webp_quality.min(100) }).map_err(|e| CodecError::encode(F, e))?;
+    let frame = vp8::encode_frame(
+        &yuv,
+        vp8::Params {
+            quality: opts.webp_quality.min(100),
+        },
+    )
+    .map_err(|e| CodecError::encode(F, e))?;
     let alpha: Option<Vec<u8>> = if has_alpha {
         let a: Vec<u8> = rgb.data().iter().skip(3).step_by(4).copied().collect();
-        if a.iter().all(|&v| v == 255) { None } else { Some(a) }
+        if a.iter().all(|&v| v == 255) {
+            None
+        } else {
+            Some(a)
+        }
     } else {
         None
     };
-    let icc = if opts.embed_icc { img.icc.as_deref() } else { None };
-    let exif = if opts.embed_metadata { img.meta.exif.as_deref().map(|e| crate::resolution::export_exif(e, img.meta.dpi)) } else { None };
-    let xmp = if opts.embed_metadata { img.meta.xmp.as_deref().map(|x| crate::resolution::export_xmp(x, img.meta.dpi)) } else { None };
-    Ok(riff(w, h, &frame, alpha.as_deref(), icc, exif.as_deref(), xmp.as_deref().map(str::as_bytes)))
+    let icc = if opts.embed_icc {
+        img.icc.as_deref()
+    } else {
+        None
+    };
+    let exif = if opts.embed_metadata {
+        img.meta
+            .exif
+            .as_deref()
+            .map(|e| crate::resolution::export_exif(e, img.meta.dpi))
+    } else {
+        None
+    };
+    let xmp = if opts.embed_metadata {
+        img.meta
+            .xmp
+            .as_deref()
+            .map(|x| crate::resolution::export_xmp(x, img.meta.dpi))
+    } else {
+        None
+    };
+    Ok(riff(
+        w,
+        h,
+        &frame,
+        alpha.as_deref(),
+        icc,
+        exif.as_deref(),
+        xmp.as_deref().map(str::as_bytes),
+    ))
 }
 
 /// A RIFF chunk: FourCC, little-endian size, payload, padded to an even length.
@@ -112,7 +183,15 @@ fn chunk(out: &mut Vec<u8>, fourcc: &[u8; 4], payload: &[u8]) {
 
 /// The WebP container around a VP8 frame: the simple form when there is nothing else, else the
 /// extended form (`VP8X`) with the alpha plane and the metadata chunks in the specified order.
-fn riff(w: u32, h: u32, frame: &[u8], alpha: Option<&[u8]>, icc: Option<&[u8]>, exif: Option<&[u8]>, xmp: Option<&[u8]>) -> Vec<u8> {
+fn riff(
+    w: u32,
+    h: u32,
+    frame: &[u8],
+    alpha: Option<&[u8]>,
+    icc: Option<&[u8]>,
+    exif: Option<&[u8]>,
+    xmp: Option<&[u8]>,
+) -> Vec<u8> {
     let mut body = b"WEBP".to_vec();
     let extended = alpha.is_some() || icc.is_some() || exif.is_some() || xmp.is_some();
     if extended {

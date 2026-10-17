@@ -38,7 +38,10 @@ fn main() -> anyhow::Result<()> {
         );
     }
     // create_new prevents accidental writes through an existing file or symlink.
-    let file = std::fs::OpenOptions::new().write(true).create_new(true).open(candidate)?;
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(candidate)?;
     drop(file);
     let source = args
         .get(5)
@@ -55,7 +58,10 @@ fn main() -> anyhow::Result<()> {
         &mut connection,
         io::stdin().lock(),
         &documents,
-        &Provenance { source: args[1].clone(), sha256: args[2].clone() },
+        &Provenance {
+            source: args[1].clone(),
+            sha256: args[2].clone(),
+        },
     )?;
     if let Some(source) = &source {
         let tables = cross::verify_mirror_preserved(source, &connection)?;

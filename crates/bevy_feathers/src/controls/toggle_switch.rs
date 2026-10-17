@@ -13,10 +13,10 @@ use bevy_ecs::{
     world::Mut,
 };
 use bevy_input_focus::tab_navigation::TabIndex;
-use bevy_picking::{cursor::EntityCursor, hover::Hovered, PickingSystems};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_picking::{PickingSystems, cursor::EntityCursor, hover::Hovered};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_scene::prelude::*;
-use bevy_ui::{percent, px, Checked, InteractionDisabled, Node, PositionType, Pressed, UiSystems};
+use bevy_ui::{Checked, InteractionDisabled, Node, PositionType, Pressed, UiSystems, percent, px};
 use bevy_ui_widgets::{ActivateOnPress, Checkbox};
 
 use crate::{

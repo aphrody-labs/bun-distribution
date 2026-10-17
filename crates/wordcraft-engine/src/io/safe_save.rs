@@ -26,7 +26,11 @@ pub(super) fn write(path: &Path, bytes: &[u8]) -> io::Result<()> {
     })
 }
 
-fn replace_with(path: &Path, private: bool, prepare: impl FnOnce(&mut File) -> io::Result<()>) -> io::Result<()> {
+fn replace_with(
+    path: &Path,
+    private: bool,
+    prepare: impl FnOnce(&mut File) -> io::Result<()>,
+) -> io::Result<()> {
     let mut temp = Temporary::create(path, private)?;
     prepare(temp.file()?)?;
     temp.commit(path)
@@ -44,12 +48,16 @@ impl Temporary {
     fn create(destination: &Path, private: bool) -> io::Result<Self> {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         if destination.file_name().is_none() {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "save destination needs a file name"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "save destination needs a file name",
+            ));
         }
         // A short name also works beside a destination already at the filename-length limit.
         for _ in 0..128 {
             let id = NEXT.fetch_add(1, Ordering::Relaxed);
-            let path = destination.with_file_name(format!(".wordcraft-save-{}-{id}.tmp", std::process::id()));
+            let path = destination
+                .with_file_name(format!(".wordcraft-save-{}-{id}.tmp", std::process::id()));
             let mut options = OpenOptions::new();
             options.write(true).create_new(true);
             #[cfg(unix)]
@@ -60,16 +68,27 @@ impl Temporary {
             #[cfg(not(unix))]
             let _ = private;
             match options.open(&path) {
-                Ok(file) => return Ok(Self { path, file: Some(file), committed: false }),
+                Ok(file) => {
+                    return Ok(Self {
+                        path,
+                        file: Some(file),
+                        committed: false,
+                    });
+                }
                 Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
                 Err(e) => return Err(e),
             }
         }
-        Err(io::Error::new(io::ErrorKind::AlreadyExists, "could not create a save temporary file"))
+        Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "could not create a save temporary file",
+        ))
     }
 
     fn file(&mut self) -> io::Result<&mut File> {
-        self.file.as_mut().ok_or_else(|| io::Error::other("save temporary file is closed"))
+        self.file
+            .as_mut()
+            .ok_or_else(|| io::Error::other("save temporary file is closed"))
     }
 
     fn commit(mut self, destination: &Path) -> io::Result<()> {
@@ -100,8 +119,11 @@ mod tests {
     impl Scratch {
         fn new() -> Self {
             static NEXT: AtomicU64 = AtomicU64::new(0);
-            let path =
-                std::env::temp_dir().join(format!("wordcraft-save-owner-test-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+            let path = std::env::temp_dir().join(format!(
+                "wordcraft-save-owner-test-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
             fs::create_dir(&path).unwrap();
             Self(path)
         }
@@ -122,7 +144,11 @@ mod tests {
             let path = d.target();
             fs::write(&path, b"Original bytes.").unwrap();
             let err = replace_with(&path, true, |file| {
-                file.write_all(if partial { b"Partial" } else { b"Complete replacement bytes." })?;
+                file.write_all(if partial {
+                    b"Partial"
+                } else {
+                    b"Complete replacement bytes."
+                })?;
                 Err(io::Error::other("injected preparation failure"))
             })
             .unwrap_err();
@@ -140,8 +166,16 @@ mod tests {
         let mut first = Temporary::create(&path, true).unwrap();
         let mut second = Temporary::create(&path, true).unwrap();
         assert_ne!(first.path, second.path);
-        first.file().unwrap().write_all(b"First complete save.").unwrap();
-        second.file().unwrap().write_all(b"Second complete save.").unwrap();
+        first
+            .file()
+            .unwrap()
+            .write_all(b"First complete save.")
+            .unwrap();
+        second
+            .file()
+            .unwrap()
+            .write_all(b"Second complete save.")
+            .unwrap();
         first.file().unwrap().sync_all().unwrap();
         second.file().unwrap().sync_all().unwrap();
         assert_eq!(fs::read(&path).unwrap(), b"Original bytes.");
@@ -158,7 +192,10 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
         let d = Scratch::new();
         let temp = Temporary::create(&d.target(), true).unwrap();
-        assert_eq!(fs::metadata(&temp.path).unwrap().permissions().mode() & 0o777, 0o600);
+        assert_eq!(
+            fs::metadata(&temp.path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
     }
 
     /// A new document gets the default mode, as `fs::write` would give it — not 0600; a replaced
@@ -173,10 +210,16 @@ mod tests {
         let default_mode = fs::metadata(&reference).unwrap().permissions().mode() & 0o777;
         let path = d.target();
         write(&path, b"New document.").unwrap();
-        assert_eq!(fs::metadata(&path).unwrap().permissions().mode() & 0o777, default_mode);
+        assert_eq!(
+            fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            default_mode
+        );
         fs::set_permissions(&path, fs::Permissions::from_mode(0o640)).unwrap();
         write(&path, b"Saved again.").unwrap();
-        assert_eq!(fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o640);
+        assert_eq!(
+            fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o640
+        );
         assert_eq!(fs::read(&path).unwrap(), b"Saved again.");
     }
 }

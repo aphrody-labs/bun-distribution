@@ -14,16 +14,23 @@ use crate::{ClapError, scan};
 use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
 use clap_sys::events::{
-    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_MIDI, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON, CLAP_EVENT_PARAM_VALUE, clap_event_header, clap_event_midi,
-    clap_event_note, clap_event_param_value, clap_input_events, clap_output_events,
+    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_MIDI, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON,
+    CLAP_EVENT_PARAM_VALUE, clap_event_header, clap_event_midi, clap_event_note,
+    clap_event_param_value, clap_input_events, clap_output_events,
 };
-use clap_sys::ext::audio_ports::{CLAP_AUDIO_PORT_IS_MAIN, CLAP_EXT_AUDIO_PORTS, clap_audio_port_info, clap_plugin_audio_ports};
+use clap_sys::ext::audio_ports::{
+    CLAP_AUDIO_PORT_IS_MAIN, CLAP_EXT_AUDIO_PORTS, clap_audio_port_info, clap_plugin_audio_ports,
+};
 use clap_sys::ext::gui::{CLAP_EXT_GUI, clap_host_gui, clap_plugin_gui};
 use clap_sys::ext::latency::{CLAP_EXT_LATENCY, clap_host_latency, clap_plugin_latency};
-use clap_sys::ext::log::{CLAP_EXT_LOG, CLAP_LOG_ERROR, CLAP_LOG_FATAL, CLAP_LOG_WARNING, clap_host_log, clap_log_severity};
+use clap_sys::ext::log::{
+    CLAP_EXT_LOG, CLAP_LOG_ERROR, CLAP_LOG_FATAL, CLAP_LOG_WARNING, clap_host_log,
+    clap_log_severity,
+};
 use clap_sys::ext::note_ports::{CLAP_EXT_NOTE_PORTS, clap_note_port_info, clap_plugin_note_ports};
 use clap_sys::ext::params::{
-    CLAP_EXT_PARAMS, clap_host_params, clap_param_clear_flags, clap_param_info, clap_param_rescan_flags, clap_plugin_params,
+    CLAP_EXT_PARAMS, clap_host_params, clap_param_clear_flags, clap_param_info,
+    clap_param_rescan_flags, clap_plugin_params,
 };
 use clap_sys::ext::state::{CLAP_EXT_STATE, clap_host_state, clap_plugin_state};
 use clap_sys::factory::plugin_factory::{CLAP_PLUGIN_FACTORY_ID, clap_plugin_factory};
@@ -73,7 +80,11 @@ unsafe fn read_cstr(p: *const c_char) -> Option<String> {
 /// Reads a fixed-size `char[N]` name buffer, stopping at the first NUL or the end of the array.
 /// `c_char` is `i8` on x86 and `u8` on ARM/RISC-V Linux; the byte reinterpretation is the same for both.
 fn read_name(buf: &[c_char]) -> String {
-    let bytes: Vec<u8> = buf.iter().take_while(|c| **c != 0).map(|c| u8::from_ne_bytes(c.to_ne_bytes())).collect();
+    let bytes: Vec<u8> = buf
+        .iter()
+        .take_while(|c| **c != 0)
+        .map(|c| u8::from_ne_bytes(c.to_ne_bytes()))
+        .collect();
     String::from_utf8_lossy(&bytes).into_owned()
 }
 
@@ -130,27 +141,35 @@ impl Bundle {
         let lib = unsafe { libloading::Library::new(&exe) }.map_err(|e| err(e.to_string()))?;
         // SAFETY: `clap_entry` is the CLAP-mandated exported data symbol of type
         // `const clap_plugin_entry`; the symbol's address is therefore a `*const clap_plugin_entry`.
-        let entry: *const clap_plugin_entry = match unsafe { lib.get::<*const clap_plugin_entry>(b"clap_entry\0") } {
-            Ok(sym) => *sym,
-            Err(e) => return Err(err(format!("not a CLAP plugin: {e}"))),
-        };
+        let entry: *const clap_plugin_entry =
+            match unsafe { lib.get::<*const clap_plugin_entry>(b"clap_entry\0") } {
+                Ok(sym) => *sym,
+                Err(e) => return Err(err(format!("not a CLAP plugin: {e}"))),
+            };
         if entry.is_null() {
             return Err(err("null clap_entry".into()));
         }
         // SAFETY: non-null pointer to the entry struct inside the library, which `lib` keeps mapped.
         let e = unsafe { *entry };
         if !clap_version_is_compatible(e.clap_version) {
-            return Err(err(format!("unsupported CLAP version {}.{}", e.clap_version.major, e.clap_version.minor)));
+            return Err(err(format!(
+                "unsupported CLAP version {}.{}",
+                e.clap_version.major, e.clap_version.minor
+            )));
         }
-        let (Some(init), Some(get_factory)) = (e.init, e.get_factory) else { return Err(err("incomplete clap_entry".into())) };
-        let cpath = CString::new(path.to_string_lossy().into_owned()).map_err(|_| err("path contains NUL".into()))?;
+        let (Some(init), Some(get_factory)) = (e.init, e.get_factory) else {
+            return Err(err("incomplete clap_entry".into()));
+        };
+        let cpath = CString::new(path.to_string_lossy().into_owned())
+            .map_err(|_| err("path contains NUL".into()))?;
         // SAFETY: `init` comes from a valid entry; the path is a valid NUL-terminated string that
         // outlives the call.
         if !unsafe { init(cpath.as_ptr()) } {
             return Err(err("clap_entry.init failed".into()));
         }
         // SAFETY: the entry is initialised; the id is a static NUL-terminated string.
-        let factory = unsafe { get_factory(CLAP_PLUGIN_FACTORY_ID.as_ptr()) } as *const clap_plugin_factory;
+        let factory =
+            unsafe { get_factory(CLAP_PLUGIN_FACTORY_ID.as_ptr()) } as *const clap_plugin_factory;
         if factory.is_null() {
             if let Some(deinit) = e.deinit {
                 // SAFETY: balanced with the successful `init` above.
@@ -158,7 +177,11 @@ impl Bundle {
             }
             return Err(err("no plugin factory".into()));
         }
-        Ok(Bundle { entry, factory, _lib: lib })
+        Ok(Bundle {
+            entry,
+            factory,
+            _lib: lib,
+        })
     }
 
     fn factory(&self) -> clap_plugin_factory {
@@ -169,7 +192,9 @@ impl Bundle {
     /// The plugins this binary provides.
     pub fn descriptors(&self) -> Vec<RawDescriptor> {
         let f = self.factory();
-        let (Some(count), Some(get)) = (f.get_plugin_count, f.get_plugin_descriptor) else { return Vec::new() };
+        let (Some(count), Some(get)) = (f.get_plugin_count, f.get_plugin_descriptor) else {
+            return Vec::new();
+        };
         // SAFETY: vtable call with the factory pointer it belongs to.
         let n = unsafe { count(self.factory) }.min(MAX_PLUGINS_PER_FACTORY);
         let mut out = Vec::new();
@@ -182,7 +207,9 @@ impl Bundle {
             // SAFETY: non-null descriptor owned by the plugin library, valid while it is loaded.
             let d = unsafe { *d };
             // SAFETY: descriptor string fields are null or NUL-terminated (CLAP contract).
-            let Some(id) = (unsafe { read_cstr(d.id) }).filter(|s| !s.is_empty()) else { continue };
+            let Some(id) = (unsafe { read_cstr(d.id) }).filter(|s| !s.is_empty()) else {
+                continue;
+            };
             // SAFETY: as above.
             let name = unsafe { read_cstr(d.name) }.unwrap_or_else(|| id.clone());
             let mut features = Vec::new();
@@ -218,7 +245,10 @@ impl Bundle {
     /// Creates and initialises one plugin instance.
     pub fn instantiate(self: &Arc<Self>, plugin_id: &str) -> Result<Instance, ClapError> {
         let err = |m: &str| ClapError::Instantiate(plugin_id.to_string(), m.to_string());
-        let create = self.factory().create_plugin.ok_or_else(|| err("factory cannot create plugins"))?;
+        let create = self
+            .factory()
+            .create_plugin
+            .ok_or_else(|| err("factory cannot create plugins"))?;
         let cid = CString::new(plugin_id).map_err(|_| err("id contains NUL"))?;
         let state = Arc::new(HostState::default());
         let host = Box::new(clap_host {
@@ -275,7 +305,13 @@ impl Bundle {
         inst.state_ext = inst.extension::<clap_plugin_state>(CLAP_EXT_STATE);
         let gui = inst.extension::<clap_plugin_gui>(CLAP_EXT_GUI);
         inst.gui = Arc::new(GuiLink {
-            inner: Mutex::new(GuiInner { plugin, gui, alive: !gui.is_null(), created: false, visible: false }),
+            inner: Mutex::new(GuiInner {
+                plugin,
+                gui,
+                alive: !gui.is_null(),
+                created: false,
+                visible: false,
+            }),
             host: Arc::clone(&inst.state),
         });
         Ok(inst)
@@ -366,7 +402,11 @@ unsafe extern "C" fn host_request_callback(host: *const clap_host) {
     }
 }
 
-unsafe extern "C" fn host_log(_host: *const clap_host, severity: clap_log_severity, msg: *const c_char) {
+unsafe extern "C" fn host_log(
+    _host: *const clap_host,
+    severity: clap_log_severity,
+    msg: *const c_char,
+) {
     // SAFETY: CLAP passes a NUL-terminated message (or null, handled).
     let m = unsafe { read_cstr(msg) }.unwrap_or_default();
     match severity {
@@ -383,7 +423,12 @@ unsafe extern "C" fn host_params_rescan(host: *const clap_host, _flags: clap_par
     }
 }
 
-unsafe extern "C" fn host_params_clear(_host: *const clap_host, _id: clap_id, _flags: clap_param_clear_flags) {}
+unsafe extern "C" fn host_params_clear(
+    _host: *const clap_host,
+    _id: clap_id,
+    _flags: clap_param_clear_flags,
+) {
+}
 
 unsafe extern "C" fn host_params_request_flush(host: *const clap_host) {
     // SAFETY: the plugin passes back the host pointer we gave it.
@@ -408,7 +453,11 @@ unsafe extern "C" fn host_state_mark_dirty(host: *const clap_host) {
 
 unsafe extern "C" fn host_gui_resize_hints_changed(_host: *const clap_host) {}
 
-unsafe extern "C" fn host_gui_request_resize(_host: *const clap_host, _width: u32, _height: u32) -> bool {
+unsafe extern "C" fn host_gui_request_resize(
+    _host: *const clap_host,
+    _width: u32,
+    _height: u32,
+) -> bool {
     // Floating windows belong to the plugin, which resizes them itself.
     true
 }
@@ -445,7 +494,9 @@ unsafe extern "C" fn host_gui_closed(host: *const clap_host, was_destroyed: bool
     }
 }
 
-static HOST_STATE: clap_host_state = clap_host_state { mark_dirty: Some(host_state_mark_dirty) };
+static HOST_STATE: clap_host_state = clap_host_state {
+    mark_dirty: Some(host_state_mark_dirty),
+};
 static HOST_GUI: clap_host_gui = clap_host_gui {
     resize_hints_changed: Some(host_gui_resize_hints_changed),
     request_resize: Some(host_gui_request_resize),
@@ -453,12 +504,22 @@ static HOST_GUI: clap_host_gui = clap_host_gui {
     request_hide: Some(host_gui_request_hide),
     closed: Some(host_gui_closed),
 };
-static HOST_LOG: clap_host_log = clap_host_log { log: Some(host_log) };
-static HOST_PARAMS: clap_host_params =
-    clap_host_params { rescan: Some(host_params_rescan), clear: Some(host_params_clear), request_flush: Some(host_params_request_flush) };
-static HOST_LATENCY: clap_host_latency = clap_host_latency { changed: Some(host_latency_changed) };
+static HOST_LOG: clap_host_log = clap_host_log {
+    log: Some(host_log),
+};
+static HOST_PARAMS: clap_host_params = clap_host_params {
+    rescan: Some(host_params_rescan),
+    clear: Some(host_params_clear),
+    request_flush: Some(host_params_request_flush),
+};
+static HOST_LATENCY: clap_host_latency = clap_host_latency {
+    changed: Some(host_latency_changed),
+};
 
-unsafe extern "C" fn host_get_extension(_host: *const clap_host, id: *const c_char) -> *const c_void {
+unsafe extern "C" fn host_get_extension(
+    _host: *const clap_host,
+    id: *const c_char,
+) -> *const c_void {
     if id.is_null() {
         return std::ptr::null();
     }
@@ -509,12 +570,18 @@ pub(crate) enum Event {
 impl Event {
     pub fn time(&self) -> u32 {
         match *self {
-            Event::Param { time, .. } | Event::NoteOn { time, .. } | Event::NoteOff { time, .. } | Event::Midi { time, .. } => time,
+            Event::Param { time, .. }
+            | Event::NoteOn { time, .. }
+            | Event::NoteOff { time, .. }
+            | Event::Midi { time, .. } => time,
         }
     }
     pub fn set_time(&mut self, t: u32) {
         match self {
-            Event::Param { time, .. } | Event::NoteOn { time, .. } | Event::NoteOff { time, .. } | Event::Midi { time, .. } => *time = t,
+            Event::Param { time, .. }
+            | Event::NoteOn { time, .. }
+            | Event::NoteOff { time, .. }
+            | Event::Midi { time, .. } => *time = t,
         }
     }
 }
@@ -547,7 +614,11 @@ impl RawEvent {
         };
         match *e {
             Event::Param { time, id, value } => RawEvent::Param(clap_event_param_value {
-                header: header(size_of::<clap_event_param_value>(), CLAP_EVENT_PARAM_VALUE, time),
+                header: header(
+                    size_of::<clap_event_param_value>(),
+                    CLAP_EVENT_PARAM_VALUE,
+                    time,
+                ),
                 param_id: id,
                 cookie: std::ptr::null_mut(),
                 note_id: -1,
@@ -556,7 +627,11 @@ impl RawEvent {
                 key: -1,
                 value,
             }),
-            Event::NoteOn { time, key, velocity } => RawEvent::Note(clap_event_note {
+            Event::NoteOn {
+                time,
+                key,
+                velocity,
+            } => RawEvent::Note(clap_event_note {
                 header: header(size_of::<clap_event_note>(), CLAP_EVENT_NOTE_ON, time),
                 note_id: -1,
                 port_index: 0,
@@ -572,9 +647,11 @@ impl RawEvent {
                 key: i16::from(key),
                 velocity: 0.0,
             }),
-            Event::Midi { time, data } => {
-                RawEvent::Midi(clap_event_midi { header: header(size_of::<clap_event_midi>(), CLAP_EVENT_MIDI, time), port_index: 0, data })
-            }
+            Event::Midi { time, data } => RawEvent::Midi(clap_event_midi {
+                header: header(size_of::<clap_event_midi>(), CLAP_EVENT_MIDI, time),
+                port_index: 0,
+                data,
+            }),
         }
     }
 }
@@ -588,16 +665,23 @@ unsafe extern "C" fn in_events_size(list: *const clap_input_events) -> u32 {
     v.map_or(0, |v| u32::try_from(v.len()).unwrap_or(u32::MAX))
 }
 
-unsafe extern "C" fn in_events_get(list: *const clap_input_events, index: u32) -> *const clap_event_header {
+unsafe extern "C" fn in_events_get(
+    list: *const clap_input_events,
+    index: u32,
+) -> *const clap_event_header {
     if list.is_null() {
         return std::ptr::null();
     }
     // SAFETY: as in `in_events_size`; the Vec is not mutated while the plugin processes.
     let v = unsafe { ((*list).ctx as *const Vec<RawEvent>).as_ref() };
-    v.and_then(|v| v.get(index as usize)).map_or(std::ptr::null(), RawEvent::header)
+    v.and_then(|v| v.get(index as usize))
+        .map_or(std::ptr::null(), RawEvent::header)
 }
 
-unsafe extern "C" fn out_events_try_push(list: *const clap_output_events, event: *const clap_event_header) -> bool {
+unsafe extern "C" fn out_events_try_push(
+    list: *const clap_output_events,
+    event: *const clap_event_header,
+) -> bool {
     // Plugin → host events are accepted. Parameter values (typically edits in the plugin's GUI)
     // are kept, while there is room, so the UI can write them into the session; the rest is
     // ignored.
@@ -606,7 +690,10 @@ unsafe extern "C" fn out_events_try_push(list: *const clap_output_events, event:
     }
     // SAFETY: CLAP passes a valid event header for the duration of the call.
     let h = unsafe { &*event };
-    if h.space_id != CLAP_CORE_EVENT_SPACE_ID || h.type_ != CLAP_EVENT_PARAM_VALUE || (h.size as usize) < size_of::<clap_event_param_value>() {
+    if h.space_id != CLAP_CORE_EVENT_SPACE_ID
+        || h.type_ != CLAP_EVENT_PARAM_VALUE
+        || (h.size as usize) < size_of::<clap_event_param_value>()
+    {
         return true;
     }
     // SAFETY: the header says this is a complete `clap_event_param_value` (type and size checked).
@@ -630,12 +717,18 @@ struct ReadCursor<'a> {
     pos: usize,
 }
 
-unsafe extern "C" fn istream_read(stream: *const clap_istream, buffer: *mut c_void, size: u64) -> i64 {
+unsafe extern "C" fn istream_read(
+    stream: *const clap_istream,
+    buffer: *mut c_void,
+    size: u64,
+) -> i64 {
     if stream.is_null() || buffer.is_null() {
         return -1;
     }
     // SAFETY: `ctx` is the `ReadCursor` on `load_state`'s stack frame, alive during the call.
-    let Some(c) = (unsafe { ((*stream).ctx as *mut ReadCursor<'_>).as_mut() }) else { return -1 };
+    let Some(c) = (unsafe { ((*stream).ctx as *mut ReadCursor<'_>).as_mut() }) else {
+        return -1;
+    };
     let rest = c.data.get(c.pos..).unwrap_or(&[]);
     let n = rest.len().min(usize::try_from(size).unwrap_or(usize::MAX));
     if let Some(src) = rest.get(..n) {
@@ -647,13 +740,21 @@ unsafe extern "C" fn istream_read(stream: *const clap_istream, buffer: *mut c_vo
     i64::try_from(n).unwrap_or(-1)
 }
 
-unsafe extern "C" fn ostream_write(stream: *const clap_ostream, buffer: *const c_void, size: u64) -> i64 {
+unsafe extern "C" fn ostream_write(
+    stream: *const clap_ostream,
+    buffer: *const c_void,
+    size: u64,
+) -> i64 {
     if stream.is_null() || buffer.is_null() {
         return -1;
     }
     // SAFETY: `ctx` is the output Vec on `save_state`'s stack frame, alive during the call.
-    let Some(v) = (unsafe { ((*stream).ctx as *mut Vec<u8>).as_mut() }) else { return -1 };
-    let Ok(n) = usize::try_from(size) else { return -1 };
+    let Some(v) = (unsafe { ((*stream).ctx as *mut Vec<u8>).as_mut() }) else {
+        return -1;
+    };
+    let Ok(n) = usize::try_from(size) else {
+        return -1;
+    };
     if v.len().saturating_add(n) > MAX_STATE_BYTES {
         return -1;
     }
@@ -715,7 +816,13 @@ pub(crate) struct GuiLink {
 impl Default for GuiLink {
     fn default() -> Self {
         GuiLink {
-            inner: Mutex::new(GuiInner { plugin: std::ptr::null(), gui: std::ptr::null(), alive: false, created: false, visible: false }),
+            inner: Mutex::new(GuiInner {
+                plugin: std::ptr::null(),
+                gui: std::ptr::null(),
+                alive: false,
+                created: false,
+                visible: false,
+            }),
             host: Arc::new(HostState::default()),
         }
     }
@@ -740,7 +847,9 @@ impl GuiLink {
 
     fn vt(g: &GuiInner) -> Option<clap_plugin_gui> {
         // SAFETY: `gui` is null or the plugin's static extension vtable, valid while `alive`.
-        (g.alive).then(|| unsafe { g.gui.as_ref() }.copied()).flatten()
+        (g.alive)
+            .then(|| unsafe { g.gui.as_ref() }.copied())
+            .flatten()
     }
 
     /// Opens (creates and shows) the plugin's floating editor window.
@@ -758,8 +867,11 @@ impl GuiLink {
             g.visible = true;
             return Ok(());
         }
-        let api = window_api().ok_or_else(|| "plugin editors are not supported on this platform".to_string())?;
-        let (Some(supported), Some(create)) = (vt.is_api_supported, vt.create) else { return Err("incomplete clap.gui extension".into()) };
+        let api = window_api()
+            .ok_or_else(|| "plugin editors are not supported on this platform".to_string())?;
+        let (Some(supported), Some(create)) = (vt.is_api_supported, vt.create) else {
+            return Err("incomplete clap.gui extension".into());
+        };
         // SAFETY: live plugin; `api` is a static NUL-terminated string; main thread.
         if !unsafe { supported(g.plugin, api.as_ptr(), true) } {
             return Err("this plugin offers only an embedded editor; SoundCraft hosts floating CLAP editors".into());
@@ -857,7 +969,11 @@ impl GuiLink {
             }
         }
         drop(g);
-        let mut e = self.host.edits.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut e = self
+            .host
+            .edits
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         let out = e.clone();
         e.clear();
         out
@@ -870,7 +986,9 @@ impl GuiLink {
             if on_main_thread() {
                 GuiLink::destroy(&mut g);
             } else {
-                log::warn!("clap: editor still open while its plugin is destroyed off the main thread");
+                log::warn!(
+                    "clap: editor still open while its plugin is destroyed off the main thread"
+                );
                 g.created = false;
             }
         }
@@ -896,14 +1014,35 @@ unsafe impl Send for PortBuffers {}
 impl PortBuffers {
     /// One buffer set per port, `channels[p]` channels each (capped), `frames` long.
     pub fn new(channels: &[u32], frames: usize) -> PortBuffers {
-        let data: Vec<Vec<Vec<f32>>> =
-            channels.iter().take(MAX_PORTS as usize).map(|&c| (0..c.min(MAX_PORT_CHANNELS)).map(|_| vec![0.0; frames]).collect()).collect();
-        let ptrs = data.iter().map(|p| vec![std::ptr::null_mut(); p.len()]).collect();
+        let data: Vec<Vec<Vec<f32>>> = channels
+            .iter()
+            .take(MAX_PORTS as usize)
+            .map(|&c| {
+                (0..c.min(MAX_PORT_CHANNELS))
+                    .map(|_| vec![0.0; frames])
+                    .collect()
+            })
+            .collect();
+        let ptrs = data
+            .iter()
+            .map(|p| vec![std::ptr::null_mut(); p.len()])
+            .collect();
         let bufs = data
             .iter()
-            .map(|_| clap_audio_buffer { data32: std::ptr::null_mut(), data64: std::ptr::null_mut(), channel_count: 0, latency: 0, constant_mask: 0 })
+            .map(|_| clap_audio_buffer {
+                data32: std::ptr::null_mut(),
+                data64: std::ptr::null_mut(),
+                channel_count: 0,
+                latency: 0,
+                constant_mask: 0,
+            })
             .collect();
-        PortBuffers { data, ptrs, bufs, frames }
+        PortBuffers {
+            data,
+            ptrs,
+            bufs,
+            frames,
+        }
     }
 
     pub fn channels(&self, port: usize) -> usize {
@@ -911,16 +1050,27 @@ impl PortBuffers {
     }
 
     pub fn channel(&self, port: usize, ch: usize) -> Option<&[f32]> {
-        self.data.get(port).and_then(|p| p.get(ch)).map(Vec::as_slice)
+        self.data
+            .get(port)
+            .and_then(|p| p.get(ch))
+            .map(Vec::as_slice)
     }
 
     pub fn channel_mut(&mut self, port: usize, ch: usize) -> Option<&mut [f32]> {
-        self.data.get_mut(port).and_then(|p| p.get_mut(ch)).map(Vec::as_mut_slice)
+        self.data
+            .get_mut(port)
+            .and_then(|p| p.get_mut(ch))
+            .map(Vec::as_mut_slice)
     }
 
     /// Points the CLAP tables at the current data (no allocation).
     fn refresh(&mut self) {
-        for ((d, p), b) in self.data.iter_mut().zip(self.ptrs.iter_mut()).zip(self.bufs.iter_mut()) {
+        for ((d, p), b) in self
+            .data
+            .iter_mut()
+            .zip(self.ptrs.iter_mut())
+            .zip(self.bufs.iter_mut())
+        {
             for (dc, pc) in d.iter_mut().zip(p.iter_mut()) {
                 *pc = dc.as_mut_ptr();
             }
@@ -1017,7 +1167,10 @@ impl Instance {
         // SAFETY: the extension pointer, when non-null, points to a static vtable in the plugin.
         let save = unsafe { self.state_ext.as_ref() }?.save?;
         let mut out: Vec<u8> = Vec::new();
-        let stream = clap_ostream { ctx: (&mut out as *mut Vec<u8>).cast::<c_void>(), write: Some(ostream_write) };
+        let stream = clap_ostream {
+            ctx: (&mut out as *mut Vec<u8>).cast::<c_void>(),
+            write: Some(ostream_write),
+        };
         // SAFETY: valid instance; the stream and its context live on this frame for the call.
         unsafe { save(self.plugin, &stream) }.then_some(out)
     }
@@ -1025,9 +1178,14 @@ impl Instance {
     /// `clap_plugin_state.load` from memory. `false` without the extension or when refused.
     pub fn load_state(&self, data: &[u8]) -> bool {
         // SAFETY: see `save_state`.
-        let Some(load) = (unsafe { self.state_ext.as_ref() }).and_then(|s| s.load) else { return false };
+        let Some(load) = (unsafe { self.state_ext.as_ref() }).and_then(|s| s.load) else {
+            return false;
+        };
         let mut cursor = ReadCursor { data, pos: 0 };
-        let stream = clap_istream { ctx: (&mut cursor as *mut ReadCursor<'_>).cast::<c_void>(), read: Some(istream_read) };
+        let stream = clap_istream {
+            ctx: (&mut cursor as *mut ReadCursor<'_>).cast::<c_void>(),
+            read: Some(istream_read),
+        };
         // SAFETY: valid instance; the stream and its cursor live on this frame for the call.
         unsafe { load(self.plugin, &stream) }
     }
@@ -1044,8 +1202,12 @@ impl Instance {
 
     pub fn params(&self) -> Vec<RawParam> {
         // SAFETY: the extension pointer, when non-null, points to a static vtable in the plugin.
-        let Some(p) = (unsafe { self.params.as_ref() }) else { return Vec::new() };
-        let (Some(count), Some(get_info)) = (p.count, p.get_info) else { return Vec::new() };
+        let Some(p) = (unsafe { self.params.as_ref() }) else {
+            return Vec::new();
+        };
+        let (Some(count), Some(get_info)) = (p.count, p.get_info) else {
+            return Vec::new();
+        };
         // SAFETY: vtable call with the instance it belongs to.
         let n = unsafe { count(self.plugin) }.min(MAX_PARAMS);
         let mut out = Vec::new();
@@ -1061,8 +1223,20 @@ impl Instance {
             if !(min.is_finite() && max.is_finite()) || max < min {
                 continue;
             }
-            let default = if info.default_value.is_finite() { info.default_value.clamp(min, max) } else { min };
-            out.push(RawParam { id: info.id, name: read_name(&info.name), module: read_name(&info.module), flags: info.flags, min, max, default });
+            let default = if info.default_value.is_finite() {
+                info.default_value.clamp(min, max)
+            } else {
+                min
+            };
+            out.push(RawParam {
+                id: info.id,
+                name: read_name(&info.name),
+                module: read_name(&info.module),
+                flags: info.flags,
+                min,
+                max,
+                default,
+            });
         }
         out
     }
@@ -1088,8 +1262,12 @@ impl Instance {
 
     pub fn audio_ports(&self, is_input: bool) -> Vec<PortInfo> {
         // SAFETY: see `params`.
-        let Some(p) = (unsafe { self.ports.as_ref() }) else { return Vec::new() };
-        let (Some(count), Some(get)) = (p.count, p.get) else { return Vec::new() };
+        let Some(p) = (unsafe { self.ports.as_ref() }) else {
+            return Vec::new();
+        };
+        let (Some(count), Some(get)) = (p.count, p.get) else {
+            return Vec::new();
+        };
         // SAFETY: vtable call with its instance.
         let n = unsafe { count(self.plugin, is_input) }.min(MAX_PORTS);
         let mut out = Vec::new();
@@ -1098,10 +1276,16 @@ impl Instance {
             let mut info: clap_audio_port_info = unsafe { std::mem::zeroed() };
             // SAFETY: index below the count; `info` is writable.
             if unsafe { get(self.plugin, i, is_input, &mut info) } {
-                out.push(PortInfo { channels: info.channel_count.min(MAX_PORT_CHANNELS), main: info.flags & CLAP_AUDIO_PORT_IS_MAIN != 0 });
+                out.push(PortInfo {
+                    channels: info.channel_count.min(MAX_PORT_CHANNELS),
+                    main: info.flags & CLAP_AUDIO_PORT_IS_MAIN != 0,
+                });
             } else {
                 // Keep port indices aligned: an unreadable port still needs a (silent) buffer slot.
-                out.push(PortInfo { channels: 0, main: false });
+                out.push(PortInfo {
+                    channels: 0,
+                    main: false,
+                });
             }
         }
         out
@@ -1118,7 +1302,10 @@ impl Instance {
         // SAFETY: plain data; all-zero is valid.
         let mut info: clap_note_port_info = unsafe { std::mem::zeroed() };
         // SAFETY: index 0 is below the non-zero count; `info` is writable.
-        unsafe { get(self.plugin, 0, true, &mut info) }.then_some(NotePort { supported: info.supported_dialects, preferred: info.preferred_dialect })
+        unsafe { get(self.plugin, 0, true, &mut info) }.then_some(NotePort {
+            supported: info.supported_dialects,
+            preferred: info.preferred_dialect,
+        })
     }
 
     pub fn latency(&self) -> u32 {
@@ -1134,9 +1321,17 @@ impl Instance {
         self.active
     }
 
-    pub fn activate(&mut self, sample_rate: f64, min_frames: u32, max_frames: u32) -> Result<(), ClapError> {
+    pub fn activate(
+        &mut self,
+        sample_rate: f64,
+        min_frames: u32,
+        max_frames: u32,
+    ) -> Result<(), ClapError> {
         self.deactivate();
-        let f = self.vt().activate.ok_or_else(|| ClapError::Process("plugin has no activate".into()))?;
+        let f = self
+            .vt()
+            .activate
+            .ok_or_else(|| ClapError::Process("plugin has no activate".into()))?;
         // SAFETY: valid, inactive instance; arguments are sane (checked by the caller).
         if !unsafe { f(self.plugin, sample_rate, min_frames, max_frames) } {
             return Err(ClapError::Process("activate failed".into()));
@@ -1190,8 +1385,14 @@ impl Instance {
         if !self.active {
             return Err(ClapError::Process("not active".into()));
         }
-        if frames == 0 || frames > self.max_frames || frames > inputs.frames || frames > outputs.frames {
-            return Err(ClapError::Process("block larger than the activated size".into()));
+        if frames == 0
+            || frames > self.max_frames
+            || frames > inputs.frames
+            || frames > outputs.frames
+        {
+            return Err(ClapError::Process(
+                "block larger than the activated size".into(),
+            ));
         }
         if !self.processing {
             let ok = match self.vt().start_processing {
@@ -1204,7 +1405,10 @@ impl Instance {
             }
             self.processing = true;
         }
-        let process = self.vt().process.ok_or_else(|| ClapError::Process("plugin has no process".into()))?;
+        let process = self
+            .vt()
+            .process
+            .ok_or_else(|| ClapError::Process("plugin has no process".into()))?;
         self.raw.clear();
         for e in events.iter().take(self.raw.capacity()) {
             self.raw.push(RawEvent::from_event(e, offset));
@@ -1212,13 +1416,17 @@ impl Instance {
         inputs.refresh();
         outputs.refresh();
         let in_events = clap_input_events {
-            ctx: (&self.raw as *const Vec<RawEvent>).cast_mut().cast::<c_void>(),
+            ctx: (&self.raw as *const Vec<RawEvent>)
+                .cast_mut()
+                .cast::<c_void>(),
             size: Some(in_events_size),
             get: Some(in_events_get),
         };
         self.out_params.clear();
-        let out_events =
-            clap_output_events { ctx: (&mut self.out_params as *mut Vec<(u32, f64)>).cast::<c_void>(), try_push: Some(out_events_try_push) };
+        let out_events = clap_output_events {
+            ctx: (&mut self.out_params as *mut Vec<(u32, f64)>).cast::<c_void>(),
+            try_push: Some(out_events_try_push),
+        };
         let p = clap_process {
             steady_time,
             frames_count: u32::try_from(frames).unwrap_or(0),
@@ -1246,7 +1454,13 @@ impl Instance {
             }
         }
         self.out_params.clear();
-        if status == CLAP_PROCESS_ERROR { Err(ClapError::Process("plugin reported a processing error".into())) } else { Ok(status) }
+        if status == CLAP_PROCESS_ERROR {
+            Err(ClapError::Process(
+                "plugin reported a processing error".into(),
+            ))
+        } else {
+            Ok(status)
+        }
     }
 }
 

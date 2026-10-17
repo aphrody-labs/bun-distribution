@@ -28,7 +28,12 @@ fn echo_cmd(text: &str) -> CommandBuilder {
 fn spawn_echo_reads_output() {
     let pty_system = native_pty_system();
     let pair = pty_system
-        .openpty(PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })
+        .openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
         .expect("openpty");
 
     let cmd = echo_cmd("hi");
@@ -56,9 +61,14 @@ fn spawn_echo_reads_output() {
 
     drop(pair.master);
 
-    let output = rx.recv_timeout(std::time::Duration::from_secs(5)).expect("read thread timed out");
+    let output = rx
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .expect("read thread timed out");
     let text = String::from_utf8_lossy(&output);
-    assert!(text.contains("hi"), "expected 'hi' in pty output; got: {text:?}");
+    assert!(
+        text.contains("hi"),
+        "expected 'hi' in pty output; got: {text:?}"
+    );
 }
 
 /// Test 2: Resize a pty pair and verify the new dimensions are reflected.
@@ -66,12 +76,22 @@ fn spawn_echo_reads_output() {
 fn resize_round_trip() {
     let pty_system = native_pty_system();
     let pair = pty_system
-        .openpty(PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })
+        .openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
         .expect("openpty");
 
     // Resize to a different size.
     pair.master
-        .resize(PtySize { rows: 40, cols: 132, pixel_width: 0, pixel_height: 0 })
+        .resize(PtySize {
+            rows: 40,
+            cols: 132,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
         .expect("resize");
 
     // The slave is still open; the pair is valid after resize.
@@ -90,7 +110,12 @@ fn resize_round_trip() {
 fn master_writer_propagates_bytes_to_slave() {
     let pty_system = native_pty_system();
     let pair = pty_system
-        .openpty(PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })
+        .openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
         .expect("openpty");
 
     // Spawn a shell that reads stdin and echoes it back.
@@ -142,7 +167,12 @@ fn master_writer_propagates_bytes_to_slave() {
     let _ = child.wait();
     drop(pair.master);
 
-    let output = rx.recv_timeout(std::time::Duration::from_secs(5)).expect("read thread timed out");
+    let output = rx
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .expect("read thread timed out");
     let text = String::from_utf8_lossy(&output);
-    assert!(text.contains("hello-pty"), "expected 'hello-pty' in pty output; got: {text:?}");
+    assert!(
+        text.contains("hello-pty"),
+        "expected 'hello-pty' in pty output; got: {text:?}"
+    );
 }

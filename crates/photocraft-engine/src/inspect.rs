@@ -91,7 +91,13 @@ fn layer_sel(l: &Layer, selected: &[photocraft_doc::LayerId]) -> Value {
     });
     match &l.content {
         LayerContent::Group(g) => {
-            v["children"] = Value::Array(g.children.iter().rev().map(|c| layer_sel(c, selected)).collect());
+            v["children"] = Value::Array(
+                g.children
+                    .iter()
+                    .rev()
+                    .map(|c| layer_sel(c, selected))
+                    .collect(),
+            );
             v["expanded"] = json!(g.expanded);
             if let Some(a) = &g.artboard {
                 v["artboard"] = json!({"rect": [a.rect.x0, a.rect.y0, a.rect.width(), a.rect.height()], "background": a.background.name(), "preset": a.preset});
@@ -112,7 +118,9 @@ fn layer_sel(l: &Layer, selected: &[photocraft_doc::LayerId]) -> Value {
             // `linked` to the `Idnt` uuid of its file, which its duplicates share; New Smart Object
             // via Copy embeds its own copy of the file instead.
             v["smartSource"] = match &sm.source {
-                SmartSource::Embedded { file_name, .. } => json!({"kind": "embedded", "fileName": file_name}),
+                SmartSource::Embedded { file_name, .. } => {
+                    json!({"kind": "embedded", "fileName": file_name})
+                }
                 SmartSource::Linked { path } => json!({"kind": "linked", "path": path}),
             };
         }
@@ -123,7 +131,11 @@ fn layer_sel(l: &Layer, selected: &[photocraft_doc::LayerId]) -> Value {
     }
     // Advanced Blending › Channels (only when some channel is left out).
     if l.excluded_channels != 0 {
-        v["channels"] = json!((0..4).map(|i| l.excluded_channels & (1 << i) == 0).collect::<Vec<_>>());
+        v["channels"] = json!(
+            (0..4)
+                .map(|i| l.excluded_channels & (1 << i) == 0)
+                .collect::<Vec<_>>()
+        );
     }
     // Blending Options › Advanced Blending switches (only when one differs from Photoshop's default).
     if !l.advanced.is_default() {
@@ -167,20 +179,34 @@ mod tests {
 
     #[test]
     fn document_inspect_reports_raster_and_vector_masks_when_nested() {
-        let cases = [(false, None), (true, None), (false, Some(true)), (false, Some(false)), (true, Some(true))];
+        let cases = [
+            (false, None),
+            (true, None),
+            (false, Some(true)),
+            (false, Some(false)),
+            (true, Some(true)),
+        ];
         let mut session = Session::new();
-        session.execute("file.new", json!({"width": 1, "height": 1})).unwrap();
+        session
+            .execute("file.new", json!({"width": 1, "height": 1}))
+            .unwrap();
         let layers = cases
             .iter()
             .map(|&(raster, enabled)| {
                 let mut layer = Layer::raster("Mask case", PixelFormat::RGBA8);
                 layer.mask = raster.then(LayerMask::reveal_all);
-                layer.vector_mask = enabled.map(|enabled| VectorMask { enabled, ..VectorMask::new(Path::default()) });
+                layer.vector_mask = enabled.map(|enabled| VectorMask {
+                    enabled,
+                    ..VectorMask::new(Path::default())
+                });
                 layer
             })
             .collect::<Vec<_>>();
         let mut group = Layer::group("Inner", layers.clone());
-        group.vector_mask = Some(VectorMask { enabled: false, ..VectorMask::new(Path::default()) });
+        group.vector_mask = Some(VectorMask {
+            enabled: false,
+            ..VectorMask::new(Path::default())
+        });
         let mut roots = layers;
         roots.push(Layer::group("Outer", vec![group]));
         session
@@ -201,7 +227,10 @@ mod tests {
         assert_eq!(inner.get("hasMask"), Some(&json!(false)));
         assert_eq!(inner.get("hasVectorMask"), Some(&json!(true)));
         assert_eq!(inner.get("vectorMaskEnabled"), Some(&json!(false)));
-        for nodes in [&roots[1..], inner["children"].as_array().unwrap().as_slice()] {
+        for nodes in [
+            &roots[1..],
+            inner["children"].as_array().unwrap().as_slice(),
+        ] {
             assert_eq!(nodes.len(), cases.len());
             for (node, &(raster, enabled)) in nodes.iter().zip(cases.iter().rev()) {
                 assert_eq!(node.get("hasMask"), Some(&json!(raster)));

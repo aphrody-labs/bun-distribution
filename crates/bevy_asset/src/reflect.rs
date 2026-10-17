@@ -1,14 +1,14 @@
 use alloc::{borrow::Cow, boxed::Box, format};
 use core::any::{Any, TypeId};
-use serde::{de::Error as _, ser::Error as _, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de::Error as _, ser::Error as _};
 use thiserror::Error;
 use tracing::warn;
 use uuid::Uuid;
 
-use bevy_ecs::world::{unsafe_world_cell::UnsafeWorldCell, World};
+use bevy_ecs::world::{World, unsafe_world_cell::UnsafeWorldCell};
 use bevy_reflect::{
-    serde::{ReflectDeserializerProcessor, ReflectSerializerProcessor},
     CreateTypeData, FromReflect, PartialReflect, Reflect, TypeRegistry,
+    serde::{ReflectDeserializerProcessor, ReflectSerializerProcessor},
 };
 
 use crate::{
@@ -311,7 +311,9 @@ impl ReflectSerializerProcessor for HandleSerializeProcessor {
         };
 
         #[derive(Error, Debug)]
-        #[error("Attempted to serialize an ephemeral asset handle {0:?} while `EphemeralHandleBehavior::Error` is set")]
+        #[error(
+            "Attempted to serialize an ephemeral asset handle {0:?} while `EphemeralHandleBehavior::Error` is set"
+        )]
         struct SerializingEphemeralHandleError(UntypedHandle);
 
         fn handle_reference_from_handle(
@@ -324,10 +326,12 @@ impl ReflectSerializerProcessor for HandleSerializeProcessor {
                         match ephemeral_handle_behavior {
                             EphemeralHandleBehavior::Silent => {}
                             EphemeralHandleBehavior::Warn => {
-                                warn!("Serializing ephemeral handle {handle:?}. Ephemeral handles cannot be deserialized. Replacing with Handle::default");
+                                warn!(
+                                    "Serializing ephemeral handle {handle:?}. Ephemeral handles cannot be deserialized. Replacing with Handle::default"
+                                );
                             }
                             EphemeralHandleBehavior::Error => {
-                                return Err(SerializingEphemeralHandleError(handle.clone()))
+                                return Err(SerializingEphemeralHandleError(handle.clone()));
                             }
                         }
                         HandleReference::Uuid(AssetId::<()>::DEFAULT_UUID)
@@ -400,7 +404,7 @@ pub trait LoadFromPath {
     ///
     /// See [`LoadBuilder::load_erased`](crate::LoadBuilder::load_erased) for more.
     fn load_from_path_erased(&mut self, type_id: TypeId, path: AssetPath<'static>)
-        -> UntypedHandle;
+    -> UntypedHandle;
 }
 
 impl LoadFromPath for LoadContext<'_> {
@@ -521,15 +525,15 @@ mod tests {
     use uuid::Uuid;
 
     use crate::{
-        tests::{create_app, run_app_until, CoolText, CoolTextLoader, CoolTextRon, SubText},
         Asset, AssetApp, AssetServer, Assets, DirectAssetAccessExt, EphemeralHandleBehavior,
         Handle, HandleDeserializeProcessor, HandleSerializeProcessor, LoadedUntypedAsset,
         ReflectAsset, UntypedHandle,
+        tests::{CoolText, CoolTextLoader, CoolTextRon, SubText, create_app, run_app_until},
     };
     use bevy_ecs::reflect::AppTypeRegistry;
     use bevy_reflect::{
-        serde::{TypedReflectDeserializer, TypedReflectSerializer},
         FromReflect, Reflect, TypePath,
+        serde::{TypedReflectDeserializer, TypedReflectSerializer},
     };
 
     #[derive(Asset, Reflect)]

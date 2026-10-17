@@ -47,7 +47,9 @@ impl CRand {
         let mut i = 1;
         while i < N {
             let prev = mt[i - 1];
-            mt[i] = INIT_MULT.wrapping_mul(prev ^ (prev >> 30)).wrapping_add(i as u32);
+            mt[i] = INIT_MULT
+                .wrapping_mul(prev ^ (prev >> 30))
+                .wrapping_add(i as u32);
             i += 1;
         }
         // `index == N` force une torsion au premier tirage.
@@ -214,7 +216,10 @@ mod tests {
         }
         // ±2 % autour de 50 % — large mais détecte tout biais structurel.
         let ratio = f64::from(zeros) / f64::from(N_SAMPLES);
-        assert!((0.48..0.52).contains(&ratio), "ratio de 0 = {ratio:.4} hors [0.48,0.52]");
+        assert!(
+            (0.48..0.52).contains(&ratio),
+            "ratio de 0 = {ratio:.4} hors [0.48,0.52]"
+        );
     }
 
     #[test]

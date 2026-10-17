@@ -47,13 +47,23 @@ pub const TABLE: &[(&str, Class)] = &[
 
 /// Explicit orderings *within* a layer (earlier may be used by later). Each chain is separate:
 /// `calc` and `xlsx` both build on `model` but not on each other.
-pub const INTRA_LAYER_ORDER: &[&[&str]] = &[&["core", "numfmt"], &["formula", "functions"], &["model", "calc"], &["model", "xlsx"]];
+pub const INTRA_LAYER_ORDER: &[&[&str]] = &[
+    &["core", "numfmt"],
+    &["formula", "functions"],
+    &["model", "calc"],
+    &["model", "xlsx"],
+];
 
 fn intra_layer_allowed(from: &str, to: &str) -> bool {
     let (from, to) = (short_name(from), short_name(to));
-    INTRA_LAYER_ORDER.iter().any(|chain| match (chain.iter().position(|n| *n == from), chain.iter().position(|n| *n == to)) {
-        (Some(f), Some(t)) => t < f,
-        _ => false,
+    INTRA_LAYER_ORDER.iter().any(|chain| {
+        match (
+            chain.iter().position(|n| *n == from),
+            chain.iter().position(|n| *n == to),
+        ) {
+            (Some(f), Some(t)) => t < f,
+            _ => false,
+        }
     })
 }
 
@@ -107,26 +117,59 @@ pub struct Crate {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Violation {
-    Unregistered { krate: String },
-    Upward { krate: String, dep: String, from: u8, to: u8, kind: DepKind },
-    FormatDep { krate: String, dep: String },
-    UiBelowL6 { krate: String, dep: String, layer: u8 },
+    Unregistered {
+        krate: String,
+    },
+    Upward {
+        krate: String,
+        dep: String,
+        from: u8,
+        to: u8,
+        kind: DepKind,
+    },
+    FormatDep {
+        krate: String,
+        dep: String,
+    },
+    UiBelowL6 {
+        krate: String,
+        dep: String,
+        layer: u8,
+    },
 }
 
 impl std::fmt::Display for Violation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Violation::Unregistered { krate } => {
-                write!(f, "{krate}: unknown workspace crate; register it in xtask/src/layers.rs TABLE (see plan/architecture.md §3)")
+                write!(
+                    f,
+                    "{krate}: unknown workspace crate; register it in xtask/src/layers.rs TABLE (see plan/architecture.md §3)"
+                )
             }
-            Violation::Upward { krate, dep, from, to, kind } => {
-                write!(f, "{krate} (L{from}) -> {dep} (L{to}) [{kind:?}]: may only depend on strictly lower layers")
+            Violation::Upward {
+                krate,
+                dep,
+                from,
+                to,
+                kind,
+            } => {
+                write!(
+                    f,
+                    "{krate} (L{from}) -> {dep} (L{to}) [{kind:?}]: may only depend on strictly lower layers"
+                )
             }
             Violation::FormatDep { krate, dep } => {
-                write!(f, "{krate}: format crates may only depend on core/formula/model, not {dep}")
+                write!(
+                    f,
+                    "{krate}: format crates may only depend on core/formula/model, not {dep}"
+                )
             }
             Violation::UiBelowL6 { krate, dep, layer } => {
-                write!(f, "{krate} (L{layer}) depends on UI crate `{dep}`; UI toolkits are only allowed in L6+")
+                write!(
+                    f,
+                    "{krate} (L{layer}) depends on UI crate `{dep}`; UI toolkits are only allowed in L6+"
+                )
             }
         }
     }
@@ -137,14 +180,19 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
     let mut out = Vec::new();
     for c in crates {
         let Some(class) = classify(&c.name) else {
-            out.push(Violation::Unregistered { krate: c.name.clone() });
+            out.push(Violation::Unregistered {
+                krate: c.name.clone(),
+            });
             continue;
         };
         // Tooling and the L7 apps sit on top of everything.
         let Some(layer) = class.layer().filter(|l| *l < 7) else {
             continue;
         };
-        let format_allowed = FORMAT_ALLOWED.iter().find(|(n, _)| *n == short_name(&c.name)).map(|(_, a)| *a);
+        let format_allowed = FORMAT_ALLOWED
+            .iter()
+            .find(|(n, _)| *n == short_name(&c.name))
+            .map(|(_, a)| *a);
         for d in &c.deps {
             // Self dev-dependencies (e.g. to enable features in tests) are fine.
             if d.name == c.name {
@@ -155,10 +203,15 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
                     && d.kind != DepKind::Dev
                     && !allowed.contains(&short_name(&d.name))
                 {
-                    out.push(Violation::FormatDep { krate: c.name.clone(), dep: d.name.clone() });
+                    out.push(Violation::FormatDep {
+                        krate: c.name.clone(),
+                        dep: d.name.clone(),
+                    });
                 }
                 // Unregistered deps are reported on their own entry.
-                let Some(dc) = classify(&d.name) else { continue };
+                let Some(dc) = classify(&d.name) else {
+                    continue;
+                };
                 let to = dc.layer().unwrap_or(u8::MAX);
                 if to >= layer && !(to == layer && intra_layer_allowed(&c.name, &d.name)) {
                     out.push(Violation::Upward {
@@ -170,7 +223,11 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
                     });
                 }
             } else if layer < UI_MIN_LAYER && is_ui_crate(&d.name) {
-                out.push(Violation::UiBelowL6 { krate: c.name.clone(), dep: d.name.clone(), layer });
+                out.push(Violation::UiBelowL6 {
+                    krate: c.name.clone(),
+                    dep: d.name.clone(),
+                    layer,
+                });
             }
         }
     }
@@ -181,7 +238,9 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
 
 /// Build the model from `cargo metadata --format-version 1 --no-deps`.
 pub fn from_metadata(meta: &Value) -> Result<Vec<Crate>, String> {
-    let pkgs = meta["packages"].as_array().ok_or("metadata: no packages array")?;
+    let pkgs = meta["packages"]
+        .as_array()
+        .ok_or("metadata: no packages array")?;
     let members: Vec<&str> = pkgs.iter().filter_map(|p| p["name"].as_str()).collect();
     let mut out = Vec::new();
     for p in pkgs {
@@ -195,7 +254,11 @@ pub fn from_metadata(meta: &Value) -> Result<Vec<Crate>, String> {
                 _ => DepKind::Normal,
             };
             let workspace = members.contains(&dname.as_str()) || d["path"].is_string();
-            deps.push(Dep { name: dname, kind, workspace });
+            deps.push(Dep {
+                name: dname,
+                kind,
+                workspace,
+            });
         }
         out.push(Crate { name, deps });
     }
@@ -217,7 +280,17 @@ mod tests {
     use super::*;
 
     fn c(name: &str, deps: &[(&str, DepKind, bool)]) -> Crate {
-        Crate { name: name.into(), deps: deps.iter().map(|(n, k, w)| Dep { name: (*n).into(), kind: *k, workspace: *w }).collect() }
+        Crate {
+            name: name.into(),
+            deps: deps
+                .iter()
+                .map(|(n, k, w)| Dep {
+                    name: (*n).into(),
+                    kind: *k,
+                    workspace: *w,
+                })
+                .collect(),
+        }
     }
     use DepKind::*;
 
@@ -227,28 +300,75 @@ mod tests {
             c("gridcraft-core", &[("serde", Normal, false)]),
             c("gridcraft-numfmt", &[("gridcraft-core", Normal, true)]),
             c("gridcraft-formula", &[("gridcraft-core", Normal, true)]),
-            c("gridcraft-functions", &[("gridcraft-core", Normal, true), ("gridcraft-formula", Normal, true)]),
+            c(
+                "gridcraft-functions",
+                &[
+                    ("gridcraft-core", Normal, true),
+                    ("gridcraft-formula", Normal, true),
+                ],
+            ),
             c("gridcraft-model", &[("gridcraft-formula", Normal, true)]),
-            c("gridcraft-calc", &[("gridcraft-model", Normal, true), ("gridcraft-functions", Normal, true), ("gridcraft-numfmt", Normal, true)]),
-            c("gridcraft-xlsx", &[("gridcraft-core", Normal, true), ("gridcraft-formula", Normal, true), ("gridcraft-model", Normal, true)]),
+            c(
+                "gridcraft-calc",
+                &[
+                    ("gridcraft-model", Normal, true),
+                    ("gridcraft-functions", Normal, true),
+                    ("gridcraft-numfmt", Normal, true),
+                ],
+            ),
+            c(
+                "gridcraft-xlsx",
+                &[
+                    ("gridcraft-core", Normal, true),
+                    ("gridcraft-formula", Normal, true),
+                    ("gridcraft-model", Normal, true),
+                ],
+            ),
             c("gridcraft-chart", &[("gridcraft-model", Normal, true)]),
-            c("gridcraft-engine", &[("gridcraft-calc", Normal, true), ("gridcraft-xlsx", Normal, true), ("gridcraft-chart", Normal, true)]),
-            c("gridcraft-ui-egui", &[("gridcraft-engine", Normal, true), ("egui", Normal, false), ("wgpu", Normal, false)]),
-            c("gridcraft-cli", &[("gridcraft-ui-egui", Normal, true), ("gridcraft-mcp", Normal, true)]),
+            c(
+                "gridcraft-engine",
+                &[
+                    ("gridcraft-calc", Normal, true),
+                    ("gridcraft-xlsx", Normal, true),
+                    ("gridcraft-chart", Normal, true),
+                ],
+            ),
+            c(
+                "gridcraft-ui-egui",
+                &[
+                    ("gridcraft-engine", Normal, true),
+                    ("egui", Normal, false),
+                    ("wgpu", Normal, false),
+                ],
+            ),
+            c(
+                "gridcraft-cli",
+                &[
+                    ("gridcraft-ui-egui", Normal, true),
+                    ("gridcraft-mcp", Normal, true),
+                ],
+            ),
         ];
         assert!(check(&g).is_empty(), "{:?}", check(&g));
     }
 
     #[test]
     fn upward_dependency_flagged() {
-        let v = check(&[c("gridcraft-formula", &[("gridcraft-engine", Normal, true)])]);
+        let v = check(&[c(
+            "gridcraft-formula",
+            &[("gridcraft-engine", Normal, true)],
+        )]);
         assert!(matches!(v[..], [Violation::Upward { from: 1, to: 5, .. }]));
     }
 
     #[test]
     fn sideways_dependency_flagged() {
         let v = check(&[c("gridcraft-xlsx", &[("gridcraft-calc", Normal, true)])]);
-        assert!(v.iter().any(|x| matches!(x, Violation::Upward { from: 2, to: 2, .. })), "{v:?}");
+        assert!(
+            v.iter()
+                .any(|x| matches!(x, Violation::Upward { from: 2, to: 2, .. })),
+            "{v:?}"
+        );
         let v = check(&[c("gridcraft-ui-egui", &[("gridcraft-mcp", Normal, true)])]);
         assert!(matches!(v[..], [Violation::Upward { from: 6, to: 6, .. }]));
     }
@@ -266,7 +386,10 @@ mod tests {
     #[test]
     fn format_crate_limited_to_core_formula_model() {
         let v = check(&[c("gridcraft-xlsx", &[("gridcraft-numfmt", Normal, true)])]);
-        assert!(matches!(&v[..], [Violation::FormatDep { dep, .. }] if dep == "gridcraft-numfmt"), "{v:?}");
+        assert!(
+            matches!(&v[..], [Violation::FormatDep { dep, .. }] if dep == "gridcraft-numfmt"),
+            "{v:?}"
+        );
         // Dev-dependencies (round-trip tests through the calculator, say) are allowed if lower.
         assert!(check(&[c("gridcraft-xlsx", &[("gridcraft-numfmt", Dev, true)])]).is_empty());
     }
@@ -284,9 +407,21 @@ mod tests {
 
     #[test]
     fn ui_crates_below_l6_flagged() {
-        for dep in ["egui", "eframe", "winit", "egui_kittest", "egui_extras", "rfd", "wgpu", "wgpu-core"] {
+        for dep in [
+            "egui",
+            "eframe",
+            "winit",
+            "egui_kittest",
+            "egui_extras",
+            "rfd",
+            "wgpu",
+            "wgpu-core",
+        ] {
             let v = check(&[c("gridcraft-engine", &[(dep, Normal, false)])]);
-            assert!(matches!(v[..], [Violation::UiBelowL6 { layer: 5, .. }]), "{dep}");
+            assert!(
+                matches!(v[..], [Violation::UiBelowL6 { layer: 5, .. }]),
+                "{dep}"
+            );
         }
         assert!(check(&[c("gridcraft-engine", &[("serde", Normal, false)])]).is_empty());
         assert!(check(&[c("gridcraft-mcp", &[("winit", Normal, false)])]).is_empty());
@@ -295,14 +430,22 @@ mod tests {
     #[test]
     fn unregistered_crate_is_error() {
         let v = check(&[c("gridcraft-mystery", &[])]);
-        assert!(matches!(&v[..], [Violation::Unregistered { krate }] if krate == "gridcraft-mystery"));
+        assert!(
+            matches!(&v[..], [Violation::Unregistered { krate }] if krate == "gridcraft-mystery")
+        );
         assert!(v[0].to_string().contains("register"));
     }
 
     #[test]
     fn apps_and_xtask_exempt() {
         for app in ["gridcraft", "gridcraft-cli", "gridcraft-web", "xtask"] {
-            assert!(check(&[c(app, &[("egui", Normal, false), ("gridcraft-ui-egui", Normal, true)])]).is_empty());
+            assert!(
+                check(&[c(
+                    app,
+                    &[("egui", Normal, false), ("gridcraft-ui-egui", Normal, true)]
+                )])
+                .is_empty()
+            );
         }
     }
 

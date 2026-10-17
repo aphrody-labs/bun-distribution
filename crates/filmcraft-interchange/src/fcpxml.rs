@@ -19,15 +19,17 @@ use std::collections::HashMap;
 use filmcraft_geom::Vec2;
 use filmcraft_media::MediaKind;
 use filmcraft_project::{
-    BinId, ItemId, ItemKind, Keyframe, Label, Marker, MarkerId, MarkerKind, Param, ParamValue, Project, Sequence, TrackItem, TrackKind, Transition,
-    TransitionAlign, TransitionId, effect::find_effect_by_name,
+    BinId, ItemId, ItemKind, Keyframe, Label, Marker, MarkerId, MarkerKind, Param, ParamValue,
+    Project, Sequence, TrackItem, TrackKind, Transition, TransitionAlign, TransitionId,
+    effect::find_effect_by_name,
 };
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, Tick};
 use roxmltree::Node;
 
 use crate::common::{
-    Builder, MediaSpec, base_item, db_to_gain, empty_sequence, file_name, gain_to_db, generator_of, item_media, item_path, kind_from_ext, param,
-    param_modified, path_to_file_url, resolve_path, scaled, set_param, settings_for, standard_effects, transition_effect, transition_name,
+    Builder, MediaSpec, base_item, db_to_gain, empty_sequence, file_name, gain_to_db, generator_of,
+    item_media, item_path, kind_from_ext, param, param_modified, path_to_file_url, resolve_path,
+    scaled, set_param, settings_for, standard_effects, transition_effect, transition_name,
 };
 use crate::xml::{child, children, elements, num};
 use crate::{Error, ExportOptions, Format, ImportOptions, Imported, Report, Result};
@@ -85,7 +87,11 @@ pub(crate) fn fmt_time(t: Tick, rate: FrameRate) -> String {
     }
     let g = gcd(t.0 as i128, TICKS_PER_SECOND as i128);
     let (a, b) = (t.0 as i128 / g, TICKS_PER_SECOND as i128 / g);
-    if b == 1 { format!("{a}s") } else { format!("{a}/{b}s") }
+    if b == 1 {
+        format!("{a}s")
+    } else {
+        format!("{a}/{b}s")
+    }
 }
 
 fn attr_time(n: Node, name: &str) -> Option<Tick> {
@@ -100,7 +106,11 @@ fn rate_from_frame_duration(s: &str) -> Option<FrameRate> {
 }
 
 fn audio_rate_str(sr: u32) -> String {
-    if sr.is_multiple_of(1000) { format!("{}k", sr / 1000) } else { format!("{}k", sr as f64 / 1000.0) }
+    if sr.is_multiple_of(1000) {
+        format!("{}k", sr / 1000)
+    } else {
+        format!("{}k", sr as f64 / 1000.0)
+    }
 }
 
 fn parse_audio_rate(s: &str) -> Option<u32> {
@@ -148,12 +158,21 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
         return Err(Error::parse(Format::Fcpxml, "root element is not <fcpxml>"));
     }
     if let Some(v) = root.attribute("version") {
-        let minor = v.split('.').nth(1).and_then(|m| m.parse::<u32>().ok()).unwrap_or(0);
+        let minor = v
+            .split('.')
+            .nth(1)
+            .and_then(|m| m.parse::<u32>().ok())
+            .unwrap_or(0);
         if !v.starts_with("1.") || minor > 11 {
-            report.info(format!("FCPXML version {v} is newer than 1.11; unknown elements were ignored"));
+            report.info(format!(
+                "FCPXML version {v} is newer than 1.11; unknown elements were ignored"
+            ));
         }
     }
-    let lib_name = child(root, "library").and_then(|l| child(l, "event")).and_then(|e| e.attribute("name")).unwrap_or("Imported FCPXML");
+    let lib_name = child(root, "library")
+        .and_then(|l| child(l, "event"))
+        .and_then(|e| e.attribute("name"))
+        .unwrap_or("Imported FCPXML");
     let mut imp = Imp {
         b: Builder::new(lib_name),
         opts,
@@ -167,12 +186,23 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
     };
     if let Some(res) = child(root, "resources") {
         for r in elements(res) {
-            let Some(id) = r.attribute("id") else { continue };
+            let Some(id) = r.attribute("id") else {
+                continue;
+            };
             match r.tag_name().name() {
                 "format" => {
-                    let rate = r.attribute("frameDuration").and_then(rate_from_frame_duration).unwrap_or_default();
-                    let w = r.attribute("width").and_then(|v| v.parse().ok()).unwrap_or(1920);
-                    let h = r.attribute("height").and_then(|v| v.parse().ok()).unwrap_or(1080);
+                    let rate = r
+                        .attribute("frameDuration")
+                        .and_then(rate_from_frame_duration)
+                        .unwrap_or_default();
+                    let w = r
+                        .attribute("width")
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(1920);
+                    let h = r
+                        .attribute("height")
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(1080);
                     imp.formats.insert(id.into(), (rate, w, h));
                 }
                 "asset" => {
@@ -182,7 +212,8 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
                     imp.media_nodes.insert(id.into(), r);
                 }
                 "effect" => {
-                    imp.effects.insert(id.into(), r.attribute("name").unwrap_or("").to_string());
+                    imp.effects
+                        .insert(id.into(), r.attribute("name").unwrap_or("").to_string());
                 }
                 _ => {}
             }
@@ -226,7 +257,8 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
 }
 
 fn flag(n: Node, name: &str) -> Option<bool> {
-    n.attribute(name).map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+    n.attribute(name)
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
 }
 
 impl<'a, 'i> Imp<'a, 'i, '_> {
@@ -236,8 +268,13 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         }
         let n = *self.asset_nodes.get(id)?;
         let name = n.attribute("name").unwrap_or("Asset").to_string();
-        let src = child(n, "media-rep").and_then(|m| m.attribute("src")).or_else(|| n.attribute("src"));
-        let fmt = n.attribute("format").and_then(|f| self.formats.get(f)).copied();
+        let src = child(n, "media-rep")
+            .and_then(|m| m.attribute("src"))
+            .or_else(|| n.attribute("src"));
+        let fmt = n
+            .attribute("format")
+            .and_then(|f| self.formats.get(f))
+            .copied();
         let mut has_video = flag(n, "hasVideo").unwrap_or(false);
         let has_audio = flag(n, "hasAudio").unwrap_or(false);
         if !has_video && !has_audio {
@@ -249,7 +286,14 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
             duration: attr_time(n, "duration"),
             video: has_video.then(|| fmt.map(|(r, w, h)| (w, h, r)).unwrap_or((1920, 1080, rate))),
             audio: has_audio.then(|| {
-                (n.attribute("audioRate").and_then(parse_audio_rate).unwrap_or(48_000), n.attribute("audioChannels").and_then(|c| c.parse().ok()).unwrap_or(2))
+                (
+                    n.attribute("audioRate")
+                        .and_then(parse_audio_rate)
+                        .unwrap_or(48_000),
+                    n.attribute("audioChannels")
+                        .and_then(|c| c.parse().ok())
+                        .unwrap_or(2),
+                )
             }),
             start_tc: (start != Tick::ZERO).then(|| rate.frame_at(start)),
             kind: None,
@@ -257,19 +301,28 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let item = match src {
             Some(url) => {
                 let p = resolve_path(url, self.opts.base_dir.as_deref());
-                self.b.file_media(&format!("file:{p}"), &name, &p, &spec, bin)
+                self.b
+                    .file_media(&format!("file:{p}"), &name, &p, &spec, bin)
             }
             None => {
-                self.report.warn(format!("asset \"{name}\" has no media; imported offline"));
+                self.report
+                    .warn(format!("asset \"{name}\" has no media; imported offline"));
                 let p = resolve_path(&name, self.opts.base_dir.as_deref());
-                let it = self.b.file_media(&format!("asset:{id}"), &name, &p, &spec, bin);
+                let it = self
+                    .b
+                    .file_media(&format!("asset:{id}"), &name, &p, &spec, bin);
                 if let Some(m) = self.b.p.item_mut(it).and_then(|i| i.as_media_mut()) {
                     m.offline = true;
                 }
                 it
             }
         };
-        let a = Asset { item, start, has_video, has_audio };
+        let a = Asset {
+            item,
+            start,
+            has_video,
+            has_audio,
+        };
         self.assets.insert(id.into(), a.clone());
         Some(a)
     }
@@ -289,7 +342,11 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
     }
 
     fn sequence(&mut self, s: Node<'a, 'i>, name: &str, bin: Option<BinId>) -> ItemId {
-        let (rate, w, h) = s.attribute("format").and_then(|f| self.formats.get(f)).copied().unwrap_or((FrameRate::default(), 1920, 1080));
+        let (rate, w, h) = s
+            .attribute("format")
+            .and_then(|f| self.formats.get(f))
+            .copied()
+            .unwrap_or((FrameRate::default(), 1920, 1080));
         let df = s.attribute("tcFormat") == Some("DF");
         let mut settings = settings_for(rate, w, h, df);
         if let Some(sr) = s.attribute("audioRate").and_then(parse_audio_rate) {
@@ -299,7 +356,10 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let mut seq = empty_sequence(settings);
         let tc_start = attr_time(s, "tcStart").unwrap_or(Tick::ZERO);
         seq.start_timecode = rate.frame_at(tc_start);
-        let ctx = Ctx { seq_rate: rate, frame: (w, h) };
+        let ctx = Ctx {
+            seq_rate: rate,
+            frame: (w, h),
+        };
         self.b.ensure_tracks(&mut seq, TrackKind::Video, 1);
         self.b.ensure_tracks(&mut seq, TrackKind::Audio, 1);
         if let Some(spine) = child(s, "spine") {
@@ -313,7 +373,15 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
 
     /// Lay out a storyline. `origin` maps the storyline's offsets to timeline time
     /// (`timeline = origin + offset`). `lane` is the storyline's lane (0 = primary).
-    fn storyline(&mut self, seq: &mut Sequence, ctx: &Ctx, spine: Node<'a, 'i>, origin: Tick, lane: i32, primary: bool) {
+    fn storyline(
+        &mut self,
+        seq: &mut Sequence,
+        ctx: &Ctx,
+        spine: Node<'a, 'i>,
+        origin: Tick,
+        lane: i32,
+        primary: bool,
+    ) {
         // (timeline start, timeline end, video clip on this storyline's track)
         let mut laid: Vec<(Tick, Tick, Option<filmcraft_project::ClipId>)> = Vec::new();
         let mut transitions: Vec<(usize, Node)> = Vec::new();
@@ -331,7 +399,8 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let vidx = if lane >= 0 { lane as usize } else { usize::MAX };
         for (pos, el) in transitions {
             if vidx == usize::MAX {
-                self.report.warn("transitions on audio storylines are not supported");
+                self.report
+                    .warn("transitions on audio storylines are not supported");
                 continue;
             }
             let start = origin + attr_time(el, "offset").unwrap_or(Tick::ZERO);
@@ -340,7 +409,11 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                 continue;
             }
             let name = child(el, "filter-video")
-                .and_then(|f| f.attribute("ref").and_then(|r| self.effects.get(r).cloned()).or_else(|| f.attribute("name").map(str::to_string)))
+                .and_then(|f| {
+                    f.attribute("ref")
+                        .and_then(|r| self.effects.get(r).cloned())
+                        .or_else(|| f.attribute("name").map(str::to_string))
+                })
                 .filter(|n| !n.is_empty())
                 .or_else(|| el.attribute("name").map(str::to_string))
                 .unwrap_or_else(|| "Cross Dissolve".into());
@@ -363,15 +436,36 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
             let id = TransitionId(self.b.alloc());
             // The clips may have been moved to another track by placement; find the track holding them.
             let clip = from.or(to).map(|c| c.0);
-            if let Some(t) = seq.video_tracks.iter_mut().find(|t| clip.is_some_and(|c| t.item(c).is_some())) {
-                t.transitions.push(Transition { id, effect, start, duration: dur, from: from.map(|f| f.0), to: to.map(|t| t.0), align, reverse: false });
+            if let Some(t) = seq
+                .video_tracks
+                .iter_mut()
+                .find(|t| clip.is_some_and(|c| t.item(c).is_some()))
+            {
+                t.transitions.push(Transition {
+                    id,
+                    effect,
+                    start,
+                    duration: dur,
+                    from: from.map(|f| f.0),
+                    to: to.map(|t| t.0),
+                    align,
+                    reverse: false,
+                });
                 t.sort();
             }
         }
     }
 
     /// Lay out one storyline element at timeline time `t0`. Returns (timeline end, video clip).
-    fn element(&mut self, seq: &mut Sequence, ctx: &Ctx, el: Node<'a, 'i>, t0: Tick, lane: i32, primary: bool) -> (Tick, Option<filmcraft_project::ClipId>) {
+    fn element(
+        &mut self,
+        seq: &mut Sequence,
+        ctx: &Ctx,
+        el: Node<'a, 'i>,
+        t0: Tick,
+        lane: i32,
+        primary: bool,
+    ) -> (Tick, Option<filmcraft_project::ClipId>) {
         let tag = el.tag_name().name();
         let dur = attr_time(el, "duration").unwrap_or(Tick::ZERO);
         let local_start = attr_time(el, "start").unwrap_or(Tick::ZERO);
@@ -380,27 +474,51 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let name = el.attribute("name").unwrap_or("Clip").to_string();
         // Media and source in.
         let media: Option<(ItemId, Tick, bool, bool)> = match tag {
-            "asset-clip" => el.attribute("ref").and_then(|r| self.asset(r, None)).map(|a| (a.item, a.start, a.has_video, a.has_audio)),
+            "asset-clip" => el
+                .attribute("ref")
+                .and_then(|r| self.asset(r, None))
+                .map(|a| (a.item, a.start, a.has_video, a.has_audio)),
             "clip" => {
                 // A clip wraps video/audio/asset-clip children that reference the asset.
-                let inner = elements(el).find(|c| matches!(c.tag_name().name(), "video" | "audio" | "asset-clip") && c.attribute("ref").is_some());
+                let inner = elements(el).find(|c| {
+                    matches!(c.tag_name().name(), "video" | "audio" | "asset-clip")
+                        && c.attribute("ref").is_some()
+                });
                 inner.and_then(|c| {
                     let a = self.asset(c.attribute("ref").unwrap_or(""), None)?;
                     // inner local time = inner.start + (t - inner.offset)
-                    let shift = attr_time(c, "start").unwrap_or(Tick::ZERO) - attr_time(c, "offset").unwrap_or(Tick::ZERO);
+                    let shift = attr_time(c, "start").unwrap_or(Tick::ZERO)
+                        - attr_time(c, "offset").unwrap_or(Tick::ZERO);
                     let v = a.has_video && c.tag_name().name() != "audio";
-                    let au = a.has_audio && (c.tag_name().name() != "video" || elements(el).any(|x| x.has_tag_name("audio")));
+                    let au = a.has_audio
+                        && (c.tag_name().name() != "video"
+                            || elements(el).any(|x| x.has_tag_name("audio")));
                     Some((a.item, a.start - shift, v, au))
                 })
             }
             "ref-clip" => el.attribute("ref").and_then(|r| {
                 let item = self.media(r)?;
-                let tc = self.b.p.sequence(item).map(|s| s.settings.frame_rate.tick_of(s.start_timecode)).unwrap_or(Tick::ZERO);
-                Some((item, tc, true, self.b.p.sequence(item).is_some_and(|s| s.audio_tracks.iter().any(|t| !t.items.is_empty()))))
+                let tc = self
+                    .b
+                    .p
+                    .sequence(item)
+                    .map(|s| s.settings.frame_rate.tick_of(s.start_timecode))
+                    .unwrap_or(Tick::ZERO);
+                Some((
+                    item,
+                    tc,
+                    true,
+                    self.b
+                        .p
+                        .sequence(item)
+                        .is_some_and(|s| s.audio_tracks.iter().any(|t| !t.items.is_empty())),
+                ))
             }),
             "gap" => None,
             "title" | "video" | "audio" | "sync-clip" | "mc-clip" | "live-drawing" => {
-                self.report.warn(format!("FCPXML <{tag}> elements are not supported and were skipped"));
+                self.report.warn(format!(
+                    "FCPXML <{tag}> elements are not supported and were skipped"
+                ));
                 None
             }
             _ => None,
@@ -413,12 +531,18 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
             let src_enable = el.attribute("srcEnable").unwrap_or("all");
             let want_v = has_v && src_enable != "audio" && lane >= 0;
             let want_a = has_a && src_enable != "video";
-            let link = if want_v && want_a { Some(self.b.link_id()) } else { None };
+            let link = if want_v && want_a {
+                Some(self.b.link_id())
+            } else {
+                None
+            };
             for (kind, want) in [(TrackKind::Video, want_v), (TrackKind::Audio, want_a)] {
                 if !want {
                     continue;
                 }
-                let mut ti = self.b.clip(item, kind, &name, t0, dur, src_in.max(Tick::ZERO));
+                let mut ti = self
+                    .b
+                    .clip(item, kind, &name, t0, dur, src_in.max(Tick::ZERO));
                 ti.speed = speed;
                 ti.reverse = reverse;
                 if hold {
@@ -454,18 +578,26 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         if primary {
             // Markers on primary storyline elements are timeline markers.
             for m in self.markers(el, local_start, Tick::ZERO, 1.0, ctx.seq_rate) {
-                seq.markers.push(Marker { start: t0 + m.start, ..m });
+                seq.markers.push(Marker {
+                    start: t0 + m.start,
+                    ..m
+                });
             }
         }
         // Connected clips and secondary storylines.
         for c in elements(el) {
-            let Some(l) = c.attribute("lane").and_then(|l| l.parse::<i32>().ok()) else { continue };
+            let Some(l) = c.attribute("lane").and_then(|l| l.parse::<i32>().ok()) else {
+                continue;
+            };
             let off = attr_time(c, "offset").unwrap_or(Tick::ZERO);
             let ct0 = t0 + (off - local_start);
             let clane = if lane > 0 && l > 0 { lane + l } else { l };
             if c.has_tag_name("spine") {
                 // Secondary storyline: children offsets are in the storyline's local time.
-                let first = elements(c).filter(|x| !x.has_tag_name("transition")).find_map(|x| attr_time(x, "offset")).unwrap_or(Tick::ZERO);
+                let first = elements(c)
+                    .filter(|x| !x.has_tag_name("transition"))
+                    .find_map(|x| attr_time(x, "offset"))
+                    .unwrap_or(Tick::ZERO);
                 self.storyline(seq, ctx, c, ct0 - first, clane, false);
             } else {
                 self.element(seq, ctx, c, ct0, clane, false);
@@ -475,13 +607,25 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         (t0 + dur, vclip)
     }
 
-    fn markers(&mut self, el: Node, local_start: Tick, src_in: Tick, speed: f64, rate: FrameRate) -> Vec<Marker> {
+    fn markers(
+        &mut self,
+        el: Node,
+        local_start: Tick,
+        src_in: Tick,
+        speed: f64,
+        rate: FrameRate,
+    ) -> Vec<Marker> {
         let mut out = Vec::new();
         // FCPXML has no zero-duration marker: a point is written as one frame at the sequence rate.
         let frame = rate.frame_duration();
-        for m in elements(el).filter(|m| matches!(m.tag_name().name(), "marker" | "chapter-marker")) {
+        for m in elements(el).filter(|m| matches!(m.tag_name().name(), "marker" | "chapter-marker"))
+        {
             let rel = attr_time(m, "start").unwrap_or(Tick::ZERO) - local_start;
-            let start = if src_in == Tick::ZERO && speed == 1.0 { rel } else { src_in + scaled(rel, speed) };
+            let start = if src_in == Tick::ZERO && speed == 1.0 {
+                rel
+            } else {
+                src_in + scaled(rel, speed)
+            };
             let d = attr_time(m, "duration").unwrap_or(Tick::ZERO);
             out.push(Marker {
                 id: MarkerId(self.b.alloc()),
@@ -489,15 +633,32 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                 duration: if d <= frame { Tick::ZERO } else { d },
                 name: m.attribute("value").unwrap_or("").to_string(),
                 comment: m.attribute("note").unwrap_or("").to_string(),
-                kind: if m.has_tag_name("chapter-marker") { MarkerKind::Chapter } else { MarkerKind::Comment },
-                color: if m.has_tag_name("chapter-marker") { Label::Mango } else { Label::Blue },
+                kind: if m.has_tag_name("chapter-marker") {
+                    MarkerKind::Chapter
+                } else {
+                    MarkerKind::Comment
+                },
+                color: if m.has_tag_name("chapter-marker") {
+                    Label::Mango
+                } else {
+                    Label::Blue
+                },
             });
         }
         out
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn adjustments(&mut self, ti: &mut TrackItem, el: Node, local_start: Tick, src_in: Tick, speed: f64, ctx: &Ctx, kind: TrackKind) {
+    fn adjustments(
+        &mut self,
+        ti: &mut TrackItem,
+        el: Node,
+        local_start: Tick,
+        src_in: Tick,
+        speed: f64,
+        ctx: &Ctx,
+        kind: TrackKind,
+    ) {
         // keyframe time (element-local) -> media time
         let kt = |t: Tick| src_in + scaled(t - local_start, speed);
         let (fw, fh) = (ctx.frame.0 as f64, ctx.frame.1 as f64);
@@ -510,7 +671,10 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                         Vec2::new(fw / 2.0 + x * fh / 100.0, fh / 2.0 - y * fh / 100.0)
                     };
                     if let Some(p) = self.kparam(a, "position", &kt, |v| ParamValue::Vec2(to_px(v)))
-                        && (p.is_animated() || p.value.as_vec2().is_some_and(|v| (v.x - fw / 2.0).abs() > 1e-9 || (v.y - fh / 2.0).abs() > 1e-9))
+                        && (p.is_animated()
+                            || p.value.as_vec2().is_some_and(|v| {
+                                (v.x - fw / 2.0).abs() > 1e-9 || (v.y - fh / 2.0).abs() > 1e-9
+                            }))
                     {
                         set_param(ti, "motion", "position", p);
                     }
@@ -523,45 +687,71 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                         set_param(ti, "motion", "scale", p);
                     }
                     if nonuniform {
-                        self.report.warn("non-uniform scale was imported as uniform scale");
+                        self.report
+                            .warn("non-uniform scale was imported as uniform scale");
                     }
-                    if let Some(p) = self.kparam(a, "rotation", &kt, |v| ParamValue::Float(-v.trim().parse::<f64>().unwrap_or(0.0))) {
+                    if let Some(p) = self.kparam(a, "rotation", &kt, |v| {
+                        ParamValue::Float(-v.trim().parse::<f64>().unwrap_or(0.0))
+                    }) {
                         set_param(ti, "motion", "rotation", p);
                     }
                     if let Some(p) = self.kparam(a, "anchor", &kt, |v| ParamValue::Vec2(to_px(v)))
-                        && p.value.as_vec2().is_some_and(|v| (v.x - fw / 2.0).abs() > 1e-9 || (v.y - fh / 2.0).abs() > 1e-9)
+                        && p.value.as_vec2().is_some_and(|v| {
+                            (v.x - fw / 2.0).abs() > 1e-9 || (v.y - fh / 2.0).abs() > 1e-9
+                        })
                     {
                         set_param(ti, "motion", "anchor", p);
                     }
                 }
                 ("adjust-blend", TrackKind::Video) => {
-                    if let Some(p) = self.kparam(a, "amount", &kt, |v| ParamValue::Float(v.trim().parse::<f64>().unwrap_or(1.0) * 100.0)) {
+                    if let Some(p) = self.kparam(a, "amount", &kt, |v| {
+                        ParamValue::Float(v.trim().parse::<f64>().unwrap_or(1.0) * 100.0)
+                    }) {
                         set_param(ti, "opacity", "opacity", p);
                     }
                 }
                 ("adjust-volume", TrackKind::Audio) => {
-                    if let Some(p) = self.kparam(a, "amount", &kt, |v| ParamValue::Float(parse_db(v))) {
+                    if let Some(p) =
+                        self.kparam(a, "amount", &kt, |v| ParamValue::Float(parse_db(v)))
+                    {
                         set_param(ti, "volume", "level", p);
                     }
                 }
                 ("filter-video", TrackKind::Video) | ("filter-audio", TrackKind::Audio) => {
-                    let name =
-                        a.attribute("ref").and_then(|r| self.effects.get(r).cloned()).or_else(|| a.attribute("name").map(str::to_string)).unwrap_or_default();
+                    let name = a
+                        .attribute("ref")
+                        .and_then(|r| self.effects.get(r).cloned())
+                        .or_else(|| a.attribute("name").map(str::to_string))
+                        .unwrap_or_default();
                     match find_effect_by_name(&name).filter(|d| !d.intrinsic) {
                         Some(d) => {
                             let mut inst = d.instance();
                             inst.enabled = flag(a, "enabled").unwrap_or(true);
                             for p in children(a, "param") {
-                                let (Some(k), Some(v)) = (p.attribute("key").or(p.attribute("name")), p.attribute("value")) else { continue };
-                                if let (Some(pd), Ok(f)) = (d.params.iter().find(|x| x.id == k || x.label.eq_ignore_ascii_case(k)), v.parse::<f64>())
-                                    && matches!(pd.default, ParamValue::Float(_))
+                                let (Some(k), Some(v)) = (
+                                    p.attribute("key").or(p.attribute("name")),
+                                    p.attribute("value"),
+                                ) else {
+                                    continue;
+                                };
+                                if let (Some(pd), Ok(f)) = (
+                                    d.params
+                                        .iter()
+                                        .find(|x| x.id == k || x.label.eq_ignore_ascii_case(k)),
+                                    v.parse::<f64>(),
+                                ) && matches!(pd.default, ParamValue::Float(_))
                                 {
-                                    inst.params.insert(pd.id.to_string(), Param::new(ParamValue::Float(f)));
+                                    inst.params.insert(
+                                        pd.id.to_string(),
+                                        Param::new(ParamValue::Float(f)),
+                                    );
                                 }
                             }
                             ti.effects.push(inst);
                         }
-                        None => self.report.warn(format!("effect \"{name}\" is not supported and was skipped")),
+                        None => self.report.warn(format!(
+                            "effect \"{name}\" is not supported and was skipped"
+                        )),
                     }
                 }
                 _ => {}
@@ -570,13 +760,21 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
     }
 
     /// A parameter from an adjustment attribute plus optional `<param name><keyframeAnimation>`.
-    fn kparam(&mut self, a: Node, name: &str, kt: &dyn Fn(Tick) -> Tick, mut map: impl FnMut(&str) -> ParamValue) -> Option<Param> {
+    fn kparam(
+        &mut self,
+        a: Node,
+        name: &str,
+        kt: &dyn Fn(Tick) -> Tick,
+        mut map: impl FnMut(&str) -> ParamValue,
+    ) -> Option<Param> {
         let attr = a.attribute(name);
         let pnode = children(a, "param").find(|p| p.attribute("name") == Some(name));
         let mut p = Param::new(map(attr.or(pnode.and_then(|p| p.attribute("value")))?));
         if let Some(anim) = pnode.and_then(|p| child(p, "keyframeAnimation")) {
             for k in children(anim, "keyframe") {
-                let (Some(t), Some(v)) = (attr_time(k, "time"), k.attribute("value")) else { continue };
+                let (Some(t), Some(v)) = (attr_time(k, "time"), k.attribute("value")) else {
+                    continue;
+                };
                 let mut kf = Keyframe::new(kt(t), map(v));
                 if k.attribute("interp") == Some("hold") {
                     kf.interp = filmcraft_project::Interpolation::Hold;
@@ -600,16 +798,28 @@ fn pair(v: &str) -> (f64, f64) {
 
 fn parse_db(v: &str) -> f64 {
     let s = v.trim();
-    let s = s.strip_suffix("dB").or_else(|| s.strip_suffix("db")).unwrap_or(s);
+    let s = s
+        .strip_suffix("dB")
+        .or_else(|| s.strip_suffix("db"))
+        .unwrap_or(s);
     s.trim().parse().unwrap_or(0.0)
 }
 
 /// (speed, reverse, freeze, source time at the element's local start) from a `timeMap`.
 fn time_map(el: Node, local_start: Tick) -> (f64, bool, bool, Tick) {
-    let Some(tm) = child(el, "timeMap") else { return (1.0, false, false, local_start) };
-    let pts: Vec<(Tick, Tick)> = children(tm, "timept").filter_map(|p| Some((attr_time(p, "time")?, attr_time(p, "value")?))).collect();
+    let Some(tm) = child(el, "timeMap") else {
+        return (1.0, false, false, local_start);
+    };
+    let pts: Vec<(Tick, Tick)> = children(tm, "timept")
+        .filter_map(|p| Some((attr_time(p, "time")?, attr_time(p, "value")?)))
+        .collect();
     if pts.len() < 2 {
-        return (1.0, false, false, pts.first().map(|p| p.1).unwrap_or(local_start));
+        return (
+            1.0,
+            false,
+            false,
+            pts.first().map(|p| p.1).unwrap_or(local_start),
+        );
     }
     let (t0, v0) = pts[0];
     let (t1, v1) = pts[pts.len() - 1];
@@ -651,7 +861,12 @@ struct Exp<'a, 'r> {
     building: Vec<ItemId>,
 }
 
-pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: &mut Report) -> Result<String> {
+pub(crate) fn export(
+    p: &Project,
+    seq_id: ItemId,
+    opts: &ExportOptions,
+    report: &mut Report,
+) -> Result<String> {
     let seq = p.sequence(seq_id).ok_or(Error::NoSequence(seq_id))?;
     let mut x = Exp {
         p,
@@ -664,17 +879,32 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
         res_out: Vec::new(),
         building: Vec::new(),
     };
-    let fmt = x.format(seq.settings.frame_rate, seq.settings.width, seq.settings.height);
-    let name = opts.name.clone().unwrap_or_else(|| p.item(seq_id).map(|i| i.name.clone()).unwrap_or_default());
+    let fmt = x.format(
+        seq.settings.frame_rate,
+        seq.settings.width,
+        seq.settings.height,
+    );
+    let name = opts
+        .name
+        .clone()
+        .unwrap_or_else(|| p.item(seq_id).map(|i| i.name.clone()).unwrap_or_default());
     let body = x.sequence_xml(seq_id, &fmt, 4);
-    let mut out =
-        format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE fcpxml>\n<fcpxml version=\"{}\">\n  <resources>\n", opts.fcpxml_version.as_str());
+    let mut out = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE fcpxml>\n<fcpxml version=\"{}\">\n  <resources>\n",
+        opts.fcpxml_version.as_str()
+    );
     for r in &x.res_out {
         out.push_str(r);
     }
     out.push_str("  </resources>\n");
-    out.push_str(&format!("  <library>\n    <event name=\"{}\">\n", crate::xml::escape(&p.name)));
-    out.push_str(&format!("      <project name=\"{}\">\n", crate::xml::escape(&name)));
+    out.push_str(&format!(
+        "  <library>\n    <event name=\"{}\">\n",
+        crate::xml::escape(&p.name)
+    ));
+    out.push_str(&format!(
+        "      <project name=\"{}\">\n",
+        crate::xml::escape(&name)
+    ));
     out.push_str(&body);
     out.push_str("      </project>\n    </event>\n  </library>\n</fcpxml>\n");
     Ok(out)
@@ -699,7 +929,11 @@ impl Exp<'_, '_> {
     }
 
     fn format(&mut self, rate: FrameRate, w: u32, h: u32) -> String {
-        if let Some(f) = self.formats.iter().find(|f| f.1 == rate && f.2 == w && f.3 == h) {
+        if let Some(f) = self
+            .formats
+            .iter()
+            .find(|f| f.1 == rate && f.2 == w && f.3 == h)
+        {
             return f.0.clone();
         }
         let id = self.rid();
@@ -721,11 +955,25 @@ impl Exp<'_, '_> {
             self.report.warn("clip without media skipped");
             return String::new();
         };
-        let name = self.p.item(item).map(|i| i.name.clone()).unwrap_or_default();
-        let fmt = m.info.video.as_ref().map(|v| self.format(m.interpret.frame_rate.unwrap_or(v.frame_rate), v.width, v.height));
+        let name = self
+            .p
+            .item(item)
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
+        let fmt = m.info.video.as_ref().map(|v| {
+            self.format(
+                m.interpret.frame_rate.unwrap_or(v.frame_rate),
+                v.width,
+                v.height,
+            )
+        });
         let id = self.rid();
         let mrate = m.info.video.as_ref().map(|v| v.frame_rate).unwrap_or(rate);
-        let start = m.info.start_timecode.map(|f| mrate.tick_of(f)).unwrap_or(Tick::ZERO);
+        let start = m
+            .info
+            .start_timecode
+            .map(|f| mrate.tick_of(f))
+            .unwrap_or(Tick::ZERO);
         let mut a = format!(
             "    <asset id=\"{id}\" name=\"{}\" start=\"{}\" duration=\"{}\" hasVideo=\"{}\" hasAudio=\"{}\"",
             crate::xml::escape(&name),
@@ -738,11 +986,21 @@ impl Exp<'_, '_> {
             a.push_str(&format!(" format=\"{f}\""));
         }
         if let Some(au) = m.info.audio() {
-            a.push_str(&format!(" audioSources=\"1\" audioChannels=\"{}\" audioRate=\"{}\"", au.channels, au.sample_rate));
+            a.push_str(&format!(
+                " audioSources=\"1\" audioChannels=\"{}\" audioRate=\"{}\"",
+                au.channels, au.sample_rate
+            ));
         }
         let path = item_path(self.p, item).unwrap_or("");
-        let src = if crate::common::is_absolute(path) { path_to_file_url(path, false) } else { path.to_string() };
-        a.push_str(&format!(">\n      <media-rep kind=\"original-media\" src=\"{}\"/>\n    </asset>\n", crate::xml::escape(&src)));
+        let src = if crate::common::is_absolute(path) {
+            path_to_file_url(path, false)
+        } else {
+            path.to_string()
+        };
+        a.push_str(&format!(
+            ">\n      <media-rep kind=\"original-media\" src=\"{}\"/>\n    </asset>\n",
+            crate::xml::escape(&src)
+        ));
         self.res_out.push(a);
         self.assets.insert(item, Res { id: id.clone() });
         let _ = file_name;
@@ -763,8 +1021,15 @@ impl Exp<'_, '_> {
         self.building.push(item);
         let body = self.sequence_xml(item, &fmt, 3);
         self.building.pop();
-        let name = self.p.item(item).map(|i| i.name.clone()).unwrap_or_default();
-        self.res_out.push(format!("    <media id=\"{id}\" name=\"{}\">\n{body}    </media>\n", crate::xml::escape(&name)));
+        let name = self
+            .p
+            .item(item)
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
+        self.res_out.push(format!(
+            "    <media id=\"{id}\" name=\"{}\">\n{body}    </media>\n",
+            crate::xml::escape(&name)
+        ));
         id
     }
 
@@ -773,13 +1038,20 @@ impl Exp<'_, '_> {
             return r.id.clone();
         }
         let id = self.rid();
-        self.res_out.push(format!("    <effect id=\"{id}\" name=\"{}\" uid=\"filmcraft.{}\"/>\n", crate::xml::escape(name), crate::xml::escape(id_hint)));
-        self.effects.insert(name.to_string(), Res { id: id.clone() });
+        self.res_out.push(format!(
+            "    <effect id=\"{id}\" name=\"{}\" uid=\"filmcraft.{}\"/>\n",
+            crate::xml::escape(name),
+            crate::xml::escape(id_hint)
+        ));
+        self.effects
+            .insert(name.to_string(), Res { id: id.clone() });
         id
     }
 
     fn sequence_xml(&mut self, seq_id: ItemId, fmt: &str, indent: usize) -> String {
-        let Some(seq) = self.p.sequence(seq_id) else { return String::new() };
+        let Some(seq) = self.p.sequence(seq_id) else {
+            return String::new();
+        };
         let rate = seq.settings.frame_rate;
         let df = seq.settings.drop_frame && rate.supports_drop_frame();
         let tc0 = rate.tick_of(seq.start_timecode);
@@ -792,9 +1064,12 @@ impl Exp<'_, '_> {
             audio_rate_str(seq.settings.sample_rate)
         );
         // Which audio items merge into video clips (same index track, linked, identical timing).
-        let mut merged: HashMap<filmcraft_project::ClipId, filmcraft_project::ClipId> = HashMap::new();
+        let mut merged: HashMap<filmcraft_project::ClipId, filmcraft_project::ClipId> =
+            HashMap::new();
         for (vi, vt) in seq.video_tracks.iter().enumerate() {
-            let Some(at) = seq.audio_tracks.get(vi) else { continue };
+            let Some(at) = seq.audio_tracks.get(vi) else {
+                continue;
+            };
             for v in &vt.items {
                 if let Some(a) = at.items.iter().find(|a| {
                     a.link.is_some()
@@ -844,16 +1119,27 @@ impl Exp<'_, '_> {
                 for tr in v1.transitions.iter().filter(|tr| tr.to == Some(it.id)) {
                     trans_after.push((els.len(), self.transition_xml(tr, tc0, rate)));
                 }
-                let audio = merged.get(&it.id).and_then(|a| seq.audio_tracks[0].item(*a));
+                let audio = merged
+                    .get(&it.id)
+                    .and_then(|a| seq.audio_tracks[0].item(*a));
                 let el = self.clip_el(it, audio, TrackKind::Video, tc0 + it.start, None, seq, true);
                 els.push(el);
-                for tr in v1.transitions.iter().filter(|tr| tr.from == Some(it.id) && tr.to.is_none()) {
+                for tr in v1
+                    .transitions
+                    .iter()
+                    .filter(|tr| tr.from == Some(it.id) && tr.to.is_none())
+                {
                     trans_after.push((els.len(), self.transition_xml(tr, tc0, rate)));
                 }
                 t = it.end();
             }
         }
-        let last_start = seq.all_tracks().skip(1).flat_map(|tr| tr.items.iter().map(|i| i.start)).chain(seq.markers.iter().map(|m| m.start)).max();
+        let last_start = seq
+            .all_tracks()
+            .skip(1)
+            .flat_map(|tr| tr.items.iter().map(|i| i.start))
+            .chain(seq.markers.iter().map(|m| m.start))
+            .max();
         if let Some(ls) = last_start
             && ls >= t
         {
@@ -861,23 +1147,39 @@ impl Exp<'_, '_> {
             push_gap(&mut els, t, end);
         }
         // Connected clips.
-        for (kind, tracks) in [(TrackKind::Video, &seq.video_tracks), (TrackKind::Audio, &seq.audio_tracks)] {
+        for (kind, tracks) in [
+            (TrackKind::Video, &seq.video_tracks),
+            (TrackKind::Audio, &seq.audio_tracks),
+        ] {
             for (ti, track) in tracks.iter().enumerate() {
                 if kind == TrackKind::Video && ti == 0 {
                     continue;
                 }
-                let lane = if kind == TrackKind::Video { ti as i32 } else { -(ti as i32 + 1) };
+                let lane = if kind == TrackKind::Video {
+                    ti as i32
+                } else {
+                    -(ti as i32 + 1)
+                };
                 for it in &track.items {
                     if merged_audio.contains(&it.id) {
                         continue;
                     }
-                    let Some(pi) = els.iter().position(|e| e.start <= it.start && it.start < e.end) else {
-                        self.report.warn("a connected clip could not be attached and was dropped");
+                    let Some(pi) = els
+                        .iter()
+                        .position(|e| e.start <= it.start && it.start < e.end)
+                    else {
+                        self.report
+                            .warn("a connected clip could not be attached and was dropped");
                         continue;
                     };
                     let local = els[pi].local + (it.start - els[pi].start);
-                    let audio =
-                        if kind == TrackKind::Video { merged.get(&it.id).and_then(|a| seq.audio_tracks.get(ti).and_then(|t| t.item(*a))) } else { None };
+                    let audio = if kind == TrackKind::Video {
+                        merged
+                            .get(&it.id)
+                            .and_then(|a| seq.audio_tracks.get(ti).and_then(|t| t.item(*a)))
+                    } else {
+                        None
+                    };
                     let el = self.clip_el(it, audio, kind, local, Some(lane), seq, false);
                     let s = self.render_el(&el, 0);
                     els[pi].children.push(s);
@@ -886,13 +1188,18 @@ impl Exp<'_, '_> {
         }
         // Sequence markers on the covering primary element.
         for m in &seq.markers {
-            match els.iter().position(|e| e.start <= m.start && m.start < e.end) {
+            match els
+                .iter()
+                .position(|e| e.start <= m.start && m.start < e.end)
+            {
                 Some(pi) => {
                     let local = els[pi].local + (m.start - els[pi].start);
                     let s = marker_xml(m, local, rate);
                     els[pi].children.push(s);
                 }
-                None => self.report.warn("a sequence marker past the end of the timeline was dropped"),
+                None => self
+                    .report
+                    .warn("a sequence marker past the end of the timeline was dropped"),
             }
         }
         let inner = format!("{pad}    ");
@@ -940,15 +1247,30 @@ impl Exp<'_, '_> {
 
     /// A clip element at `offset` (in its parent's local time).
     #[allow(clippy::too_many_arguments)]
-    fn clip_el(&mut self, it: &TrackItem, audio: Option<&TrackItem>, kind: TrackKind, offset: Tick, lane: Option<i32>, seq: &Sequence, primary: bool) -> El {
+    fn clip_el(
+        &mut self,
+        it: &TrackItem,
+        audio: Option<&TrackItem>,
+        kind: TrackKind,
+        offset: Tick,
+        lane: Option<i32>,
+        seq: &Sequence,
+        primary: bool,
+    ) -> El {
         let rate = seq.settings.frame_rate;
         let base = base_item(self.p, it.item);
-        let is_seq = matches!(self.p.item(base).map(|i| &i.kind), Some(ItemKind::Sequence(_)));
+        let is_seq = matches!(
+            self.p.item(base).map(|i| &i.kind),
+            Some(ItemKind::Sequence(_))
+        );
         let generator = generator_of(self.p, base).cloned();
         let lane_attr = lane.map(|l| format!(" lane=\"{l}\"")).unwrap_or_default();
         let name = crate::xml::escape(&it.name);
         if let Some(g) = generator {
-            self.report.warn(format!("generator \"{}\" is not supported in FCPXML; written as a gap", g.label()));
+            self.report.warn(format!(
+                "generator \"{}\" is not supported in FCPXML; written as a gap",
+                g.label()
+            ));
             return El {
                 start: it.start,
                 end: it.end(),
@@ -971,7 +1293,11 @@ impl Exp<'_, '_> {
             } else {
                 self.media(base)
             };
-            let origin = self.p.sequence(base).map(|s| s.settings.frame_rate.tick_of(s.start_timecode)).unwrap_or(Tick::ZERO);
+            let origin = self
+                .p
+                .sequence(base)
+                .map(|s| s.settings.frame_rate.tick_of(s.start_timecode))
+                .unwrap_or(Tick::ZERO);
             ("ref-clip", r, origin)
         } else {
             let r = match crate::common::uncarried_clip(self.p, it, rate) {
@@ -982,13 +1308,19 @@ impl Exp<'_, '_> {
                 None => self.asset(base, rate),
             };
             let m = item_media(self.p, base);
-            let mrate = m.and_then(|m| m.info.video.as_ref().map(|v| v.frame_rate)).unwrap_or(rate);
-            let st = m.and_then(|m| m.info.start_timecode).map(|f| mrate.tick_of(f)).unwrap_or(Tick::ZERO);
+            let mrate = m
+                .and_then(|m| m.info.video.as_ref().map(|v| v.frame_rate))
+                .unwrap_or(rate);
+            let st = m
+                .and_then(|m| m.info.start_timecode)
+                .map(|f| mrate.tick_of(f))
+                .unwrap_or(Tick::ZERO);
             ("asset-clip", r, st)
         };
         let retimed = it.speed != 1.0 || it.reverse || it.frame_hold.is_some();
         let local = origin + it.source_in;
-        let has_audio = item_media(self.p, base).is_some_and(|m| m.info.has_audio()) || (is_seq && audio.is_some());
+        let has_audio = item_media(self.p, base).is_some_and(|m| m.info.has_audio())
+            || (is_seq && audio.is_some());
         let has_video = item_media(self.p, base).is_none_or(|m| m.info.video.is_some());
         let src_enable = match (kind, audio.is_some()) {
             (TrackKind::Video, true) => "",
@@ -1017,7 +1349,11 @@ impl Exp<'_, '_> {
         }
         // keyframe media time -> element local time
         let to_local = |t: Tick| -> Tick {
-            if it.speed == 0.0 || it.frame_hold.is_some() { local } else { local + Tick(((t - it.source_in).0 as f64 / it.speed).round() as i64) }
+            if it.speed == 0.0 || it.frame_hold.is_some() {
+                local
+            } else {
+                local + Tick(((t - it.source_in).0 as f64 / it.speed).round() as i64)
+            }
         };
         if kind == TrackKind::Video {
             self.transform(it, seq, &to_local, &mut children);
@@ -1035,30 +1371,51 @@ impl Exp<'_, '_> {
                     "0dB",
                 ));
             }
-            if param_modified(a, "panner", "balance") || param_modified(a, "channel_volume", "left") || param_modified(a, "channel_volume", "right") {
-                self.report.warn("pan and channel volume are not exported to FCPXML");
+            if param_modified(a, "panner", "balance")
+                || param_modified(a, "channel_volume", "left")
+                || param_modified(a, "channel_volume", "right")
+            {
+                self.report
+                    .warn("pan and channel volume are not exported to FCPXML");
             }
         }
         for e in standard_effects(it) {
             let n = e.def().map(|d| d.name).unwrap_or(&e.effect).to_string();
             let r = self.effect(&n, &e.effect);
-            let tag = if kind == TrackKind::Video { "filter-video" } else { "filter-audio" };
+            let tag = if kind == TrackKind::Video {
+                "filter-video"
+            } else {
+                "filter-audio"
+            };
             let mut s = format!("<{tag} ref=\"{r}\" name=\"{}\"", crate::xml::escape(&n));
             if !e.enabled {
                 s.push_str(" enabled=\"0\"");
             }
-            let floats: Vec<_> =
-                e.params.iter().filter_map(|(k, p)| p.value.as_f64().filter(|_| matches!(p.value, ParamValue::Float(_))).map(|v| (k, v))).collect();
+            let floats: Vec<_> = e
+                .params
+                .iter()
+                .filter_map(|(k, p)| {
+                    p.value
+                        .as_f64()
+                        .filter(|_| matches!(p.value, ParamValue::Float(_)))
+                        .map(|v| (k, v))
+                })
+                .collect();
             if floats.is_empty() {
                 s.push_str("/>");
             } else {
                 s.push_str(">\n");
                 for (k, v) in floats {
-                    s.push_str(&format!("  <param name=\"{k}\" key=\"{k}\" value=\"{}\"/>\n", num(v)));
+                    s.push_str(&format!(
+                        "  <param name=\"{k}\" key=\"{k}\" value=\"{}\"/>\n",
+                        num(v)
+                    ));
                 }
                 s.push_str(&format!("</{tag}>"));
             }
-            self.report.info(format!("effect \"{n}\" written as an FCPXML filter reference (FilmCraft-specific)"));
+            self.report.info(format!(
+                "effect \"{n}\" written as an FCPXML filter reference (FilmCraft-specific)"
+            ));
             children.push(s);
         }
         if !primary || kind == TrackKind::Audio {
@@ -1086,32 +1443,60 @@ impl Exp<'_, '_> {
         }
     }
 
-    fn transform(&mut self, it: &TrackItem, seq: &Sequence, to_local: &dyn Fn(Tick) -> Tick, out: &mut Vec<String>) {
+    fn transform(
+        &mut self,
+        it: &TrackItem,
+        seq: &Sequence,
+        to_local: &dyn Fn(Tick) -> Tick,
+        out: &mut Vec<String>,
+    ) {
         let rate = seq.settings.frame_rate;
         let (fw, fh) = (seq.settings.width as f64, seq.settings.height as f64);
         let pos = |v: &ParamValue| {
             let p = v.as_vec2().unwrap_or(Vec2::new(f64::NAN, f64::NAN));
-            let x = if p.x.is_nan() { 0.0 } else { (p.x - fw / 2.0) / fh * 100.0 };
-            let y = if p.y.is_nan() { 0.0 } else { -(p.y - fh / 2.0) / fh * 100.0 };
+            let x = if p.x.is_nan() {
+                0.0
+            } else {
+                (p.x - fw / 2.0) / fh * 100.0
+            };
+            let y = if p.y.is_nan() {
+                0.0
+            } else {
+                -(p.y - fh / 2.0) / fh * 100.0
+            };
             format!("{} {}", num(x), num(y))
         };
-        let changed = ["position", "scale", "rotation", "anchor"].iter().any(|p| param_modified(it, "motion", p));
+        let changed = ["position", "scale", "rotation", "anchor"]
+            .iter()
+            .any(|p| param_modified(it, "motion", p));
         if changed {
-            if param_modified(it, "motion", "scale_width") || param(it, "motion", "uniform_scale").and_then(|p| p.value.as_bool()) == Some(false) {
-                self.report.warn("non-uniform scale is not exported to FCPXML");
+            if param_modified(it, "motion", "scale_width")
+                || param(it, "motion", "uniform_scale").and_then(|p| p.value.as_bool())
+                    == Some(false)
+            {
+                self.report
+                    .warn("non-uniform scale is not exported to FCPXML");
             }
             let mut attrs = Vec::new();
             let mut params = Vec::new();
             for (id, attr, f) in [
-                ("position", "position", &pos as &dyn Fn(&ParamValue) -> String),
+                (
+                    "position",
+                    "position",
+                    &pos as &dyn Fn(&ParamValue) -> String,
+                ),
                 ("scale", "scale", &|v: &ParamValue| {
                     let s = v.as_f64().unwrap_or(100.0) / 100.0;
                     format!("{} {}", num(s), num(s))
                 }),
-                ("rotation", "rotation", &|v: &ParamValue| num(-v.as_f64().unwrap_or(0.0))),
+                ("rotation", "rotation", &|v: &ParamValue| {
+                    num(-v.as_f64().unwrap_or(0.0))
+                }),
                 ("anchor", "anchor", &pos),
             ] {
-                let Some(p) = param(it, "motion", id) else { continue };
+                let Some(p) = param(it, "motion", id) else {
+                    continue;
+                };
                 if !param_modified(it, "motion", id) {
                     continue;
                 }
@@ -1119,8 +1504,16 @@ impl Exp<'_, '_> {
                 if p.is_animated() {
                     let mut s = format!("  <param name=\"{attr}\">\n    <keyframeAnimation>\n");
                     for k in &p.keyframes {
-                        let interp = if k.interp == filmcraft_project::Interpolation::Hold { " interp=\"hold\"" } else { "" };
-                        s.push_str(&format!("      <keyframe time=\"{}\" value=\"{}\"{interp}/>\n", fmt_time(to_local(k.time), rate), f(&k.value)));
+                        let interp = if k.interp == filmcraft_project::Interpolation::Hold {
+                            " interp=\"hold\""
+                        } else {
+                            ""
+                        };
+                        s.push_str(&format!(
+                            "      <keyframe time=\"{}\" value=\"{}\"{interp}/>\n",
+                            fmt_time(to_local(k.time), rate),
+                            f(&k.value)
+                        ));
                     }
                     s.push_str("    </keyframeAnimation>\n  </param>");
                     params.push(s);
@@ -1129,9 +1522,20 @@ impl Exp<'_, '_> {
             out.push(wrap("adjust-transform", &attrs.concat(), &params));
         }
         if param_modified(it, "opacity", "opacity") {
-            out.push(kparam_xml("adjust-blend", "amount", param(it, "opacity", "opacity"), rate, to_local, |v| num(v.as_f64().unwrap_or(100.0) / 100.0), "1"));
+            out.push(kparam_xml(
+                "adjust-blend",
+                "amount",
+                param(it, "opacity", "opacity"),
+                rate,
+                to_local,
+                |v| num(v.as_f64().unwrap_or(100.0) / 100.0),
+                "1",
+            ));
         }
-        if param(it, "opacity", "blend").and_then(|p| p.value.as_f64()).is_some_and(|b| b != 0.0) {
+        if param(it, "opacity", "blend")
+            .and_then(|p| p.value.as_f64())
+            .is_some_and(|b| b != 0.0)
+        {
             self.report.warn("blend modes are not exported to FCPXML");
         }
         let _ = (db_to_gain(0.0), gain_to_db(1.0));
@@ -1139,7 +1543,11 @@ impl Exp<'_, '_> {
 }
 
 fn wrap(tag: &str, attrs: &str, params: &[String]) -> String {
-    if params.is_empty() { format!("<{tag}{attrs}/>") } else { format!("<{tag}{attrs}>\n{}\n</{tag}>", params.join("\n")) }
+    if params.is_empty() {
+        format!("<{tag}{attrs}/>")
+    } else {
+        format!("<{tag}{attrs}>\n{}\n</{tag}>", params.join("\n"))
+    }
 }
 
 fn kparam_xml(
@@ -1151,14 +1559,24 @@ fn kparam_xml(
     f: impl Fn(&ParamValue) -> String,
     default: &str,
 ) -> String {
-    let Some(p) = p else { return format!("<{tag} {name}=\"{default}\"/>") };
+    let Some(p) = p else {
+        return format!("<{tag} {name}=\"{default}\"/>");
+    };
     let attrs = format!(" {name}=\"{}\"", f(&p.value));
     let mut params = Vec::new();
     if p.is_animated() {
         let mut s = format!("  <param name=\"{name}\">\n    <keyframeAnimation>\n");
         for k in &p.keyframes {
-            let interp = if k.interp == filmcraft_project::Interpolation::Hold { " interp=\"hold\"" } else { "" };
-            s.push_str(&format!("      <keyframe time=\"{}\" value=\"{}\"{interp}/>\n", fmt_time(to_local(k.time), rate), f(&k.value)));
+            let interp = if k.interp == filmcraft_project::Interpolation::Hold {
+                " interp=\"hold\""
+            } else {
+                ""
+            };
+            s.push_str(&format!(
+                "      <keyframe time=\"{}\" value=\"{}\"{interp}/>\n",
+                fmt_time(to_local(k.time), rate),
+                f(&k.value)
+            ));
         }
         s.push_str("    </keyframeAnimation>\n  </param>");
         params.push(s);
@@ -1167,10 +1585,27 @@ fn kparam_xml(
 }
 
 fn marker_xml(m: &Marker, local: Tick, rate: FrameRate) -> String {
-    let tag = if m.kind == MarkerKind::Chapter { "chapter-marker" } else { "marker" };
-    let dur = if m.duration > Tick::ZERO { m.duration } else { rate.frame_duration() };
-    let note = if m.comment.is_empty() { String::new() } else { format!(" note=\"{}\"", crate::xml::escape(&m.comment)) };
-    format!("<{tag} start=\"{}\" duration=\"{}\" value=\"{}\"{note}/>", fmt_time(local, rate), fmt_time(dur, rate), crate::xml::escape(&m.name))
+    let tag = if m.kind == MarkerKind::Chapter {
+        "chapter-marker"
+    } else {
+        "marker"
+    };
+    let dur = if m.duration > Tick::ZERO {
+        m.duration
+    } else {
+        rate.frame_duration()
+    };
+    let note = if m.comment.is_empty() {
+        String::new()
+    } else {
+        format!(" note=\"{}\"", crate::xml::escape(&m.comment))
+    };
+    format!(
+        "<{tag} start=\"{}\" duration=\"{}\" value=\"{}\"{note}/>",
+        fmt_time(local, rate),
+        fmt_time(dur, rate),
+        crate::xml::escape(&m.name)
+    )
 }
 
 #[cfg(test)]
@@ -1185,7 +1620,10 @@ mod tests {
         assert_eq!(parse_time("0s"), Some(Tick::ZERO));
         assert_eq!(fmt_time(r.tick_of(1), r), "1001/24000s");
         assert_eq!(fmt_time(r.tick_of(24000), r), "1001s");
-        assert_eq!(fmt_time(FrameRate::FPS_25.tick_of(50), FrameRate::FPS_25), "2s");
+        assert_eq!(
+            fmt_time(FrameRate::FPS_25.tick_of(50), FrameRate::FPS_25),
+            "2s"
+        );
         for rate in FrameRate::COMMON {
             for f in [0, 1, 7, 1799, 1800, 86_313, 1_000_003] {
                 let t = rate.tick_of(f);
@@ -1194,7 +1632,13 @@ mod tests {
         }
         let odd = Tick(12_345);
         assert_eq!(parse_time(&fmt_time(odd, r)), Some(odd));
-        assert_eq!(rate_from_frame_duration("1001/30000s"), Some(FrameRate::FPS_29_97));
-        assert_eq!(rate_from_frame_duration("100/2500s"), Some(FrameRate::FPS_25));
+        assert_eq!(
+            rate_from_frame_duration("1001/30000s"),
+            Some(FrameRate::FPS_29_97)
+        );
+        assert_eq!(
+            rate_from_frame_duration("100/2500s"),
+            Some(FrameRate::FPS_25)
+        );
     }
 }

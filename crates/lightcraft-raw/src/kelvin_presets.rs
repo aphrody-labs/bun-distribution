@@ -38,15 +38,28 @@ const MAX_TINT: f64 = 150.0;
 /// Models whose white balance is edited in Kelvin through their presets, checked to carry them (on 80–150 own
 /// photos each, or the public corpus samples for the ILCE-3500 and ILCE-7S): the Exif model as Sony writes it. A
 /// camera with measured matrices (`crate::spectral`) is read through those instead.
-const MODELS: &[&str] = &["DSC-RX10", "ILCA-77M2", "ILCA-99M2", "ILCE-3500", "ILCE-7S", "SLT-A33"];
+const MODELS: &[&str] = &[
+    "DSC-RX10",
+    "ILCA-77M2",
+    "ILCA-99M2",
+    "ILCE-3500",
+    "ILCE-7S",
+    "SLT-A33",
+];
 
 /// Whether a raw of this Exif make and model is edited in Kelvin through its presets (when it has no colour
 /// matrices of its own or measured: see [`crate::spectral::find`], which comes first).
 pub fn covers(make: Option<&str>, model: &str) -> bool {
     let model = model.trim();
-    let model = model.strip_prefix("SONY ").or_else(|| model.strip_prefix("Sony ")).unwrap_or(model);
-    make.is_none_or(|m| m.split_whitespace().next().is_some_and(|b| b.eq_ignore_ascii_case("SONY")))
-        && MODELS.iter().any(|m| m.eq_ignore_ascii_case(model))
+    let model = model
+        .strip_prefix("SONY ")
+        .or_else(|| model.strip_prefix("Sony "))
+        .unwrap_or(model);
+    make.is_none_or(|m| {
+        m.split_whitespace()
+            .next()
+            .is_some_and(|b| b.eq_ignore_ascii_case("SONY"))
+    }) && MODELS.iter().any(|m| m.eq_ignore_ascii_case(model))
 }
 
 /// [`covers`] for make and model joined by a space, as the catalog keeps them (`"SONY ILCA-99M2"`).
@@ -68,7 +81,10 @@ fn usable(m: [f32; 3]) -> bool {
 }
 
 fn log_point(m: [f32; 3]) -> [f64; 2] {
-    [(m[0] as f64 / m[1] as f64).ln(), (m[2] as f64 / m[1] as f64).ln()]
+    [
+        (m[0] as f64 / m[1] as f64).ln(),
+        (m[2] as f64 / m[1] as f64).ln(),
+    ]
 }
 
 fn locus_uv(t: f64) -> (f64, f64) {
@@ -79,12 +95,16 @@ impl KelvinPresets {
     /// `points` as (Kelvin, multipliers), ascending in Kelvin; `None` unless they make a curve: positive
     /// multipliers, red rising and blue falling from one preset to the next.
     pub fn new(points: [(f32, [f32; 3]); 5]) -> Option<KelvinPresets> {
-        let ok = points.iter().all(|(k, m)| *k > 0.0 && k.is_finite() && usable(*m))
+        let ok = points
+            .iter()
+            .all(|(k, m)| *k > 0.0 && k.is_finite() && usable(*m))
             && points.windows(2).all(|w| {
                 let (a, b) = (log_point(w[0].1), log_point(w[1].1));
                 w[0].0 < w[1].0 && b[0] > a[0] && b[1] < a[1]
             });
-        ok.then(|| KelvinPresets { points: points.map(|(k, m)| (k, [m[0] / m[1], 1.0, m[2] / m[1]])) })
+        ok.then(|| KelvinPresets {
+            points: points.map(|(k, m)| (k, [m[0] / m[1], 1.0, m[2] / m[1]])),
+        })
     }
 
     /// Temperature (K) and tint of the white these multipliers balance (see the module docs); `None` for unusable
@@ -103,7 +123,11 @@ impl KelvinPresets {
             let len = d[0].hypot(d[1]);
             let t = [d[0] / len, d[1] / len];
             // the normal towards higher red and blue: a green white
-            let n = if t[0] - t[1] < 0.0 { [t[1], -t[0]] } else { [-t[1], t[0]] };
+            let n = if t[0] - t[1] < 0.0 {
+                [t[1], -t[0]]
+            } else {
+                [-t[1], t[0]]
+            };
             let r = [q[0] - p0[0], q[1] - p0[1]];
             let along = (r[0] * t[0] + r[1] * t[1]) / len;
             let off = r[0] * n[0] + r[1] * n[1];
@@ -160,10 +184,16 @@ mod tests {
         let p = a99m2();
         for (k, m) in p.points {
             let (t, tint) = p.temp_tint(m).unwrap();
-            assert!((t - k as f64).abs() < 0.5 && tint.abs() < 1e-6, "{k}: {t} {tint}");
+            assert!(
+                (t - k as f64).abs() < 0.5 && tint.abs() < 1e-6,
+                "{k}: {t} {tint}"
+            );
             // the scale of the multipliers doesn't matter, only their ratios to green
             let (t2, tint2) = p.temp_tint(m.map(|v| v * 2.3)).unwrap();
-            assert!((t2 - t).abs() < 1e-3 && (tint2 - tint).abs() < 1e-4, "{t2} {tint2}");
+            assert!(
+                (t2 - t).abs() < 1e-3 && (tint2 - tint).abs() < 1e-4,
+                "{t2} {tint2}"
+            );
         }
     }
 
@@ -172,12 +202,18 @@ mod tests {
         let p = a99m2();
         let mid = |a: [f32; 3], b: [f32; 3]| [(a[0] * b[0]).sqrt(), 1.0, (a[2] * b[2]).sqrt()];
         let (t, tint) = p.temp_tint(mid(p.points[2].1, p.points[3].1)).unwrap();
-        assert!((4500.0..6000.0).contains(&t) && tint.abs() < 1.0, "{t} {tint}");
+        assert!(
+            (4500.0..6000.0).contains(&t) && tint.abs() < 1.0,
+            "{t} {tint}"
+        );
         // beyond the ends: extended, then held to the slider's range
         let (hot, _) = p.temp_tint([3.5, 1.0, 1.15]).unwrap();
         let (cold, _) = p.temp_tint([1.15, 1.0, 4.0]).unwrap();
         let (coldest, _) = p.temp_tint([0.3, 1.0, 20.0]).unwrap();
-        assert!((8500.0..MAX_K).contains(&hot) && (MIN_K..2500.0).contains(&cold) && coldest == MIN_K, "{hot} {cold} {coldest}");
+        assert!(
+            (8500.0..MAX_K).contains(&hot) && (MIN_K..2500.0).contains(&cold) && coldest == MIN_K,
+            "{hot} {cold} {coldest}"
+        );
     }
 
     #[test]
@@ -209,19 +245,42 @@ mod tests {
         let mut pts = p.points;
         pts[0].1[0] = 0.0;
         assert_eq!(KelvinPresets::new(pts), None);
-        assert_eq!(as_shot_white(&ColorData::default(), Some([2.0, 1.0, 1.5])), None);
-        let with = ColorData { kelvin_presets: Some(p), ..Default::default() };
+        assert_eq!(
+            as_shot_white(&ColorData::default(), Some([2.0, 1.0, 1.5])),
+            None
+        );
+        let with = ColorData {
+            kelvin_presets: Some(p),
+            ..Default::default()
+        };
         assert!(as_shot_white(&with, Some([2.0, 1.0, 1.5])).is_some());
     }
 
     #[test]
     fn covered_models() {
-        for c in ["SONY ILCA-99M2", "SONY DSC-RX10", "SONY ILCA-77M2", "SONY SLT-A33", "ILCA-99M2", "Sony ilca-99m2"] {
+        for c in [
+            "SONY ILCA-99M2",
+            "SONY DSC-RX10",
+            "SONY ILCA-77M2",
+            "SONY SLT-A33",
+            "ILCA-99M2",
+            "Sony ilca-99m2",
+        ] {
             assert!(covers_camera(c), "{c}");
         }
-        for c in ["SONY ILCE-7M3", "SONY DSC-RX10M4", "Canon SLT-A33", "", "SONY"] {
+        for c in [
+            "SONY ILCE-7M3",
+            "SONY DSC-RX10M4",
+            "Canon SLT-A33",
+            "",
+            "SONY",
+        ] {
             assert!(!covers_camera(c), "{c}");
         }
-        assert!(covers(Some("SONY"), "ILCA-99M2") && covers(None, "ILCA-99M2") && !covers(Some("NIKON CORPORATION"), "ILCA-99M2"));
+        assert!(
+            covers(Some("SONY"), "ILCA-99M2")
+                && covers(None, "ILCA-99M2")
+                && !covers(Some("NIKON CORPORATION"), "ILCA-99M2")
+        );
     }
 }

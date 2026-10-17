@@ -158,7 +158,7 @@ mod tests {
     };
     use core::any::TypeId;
 
-    use crate::{convert::ReflectConvert, type_registry::GetTypeRegistration, TypeRegistry};
+    use crate::{TypeRegistry, convert::ReflectConvert, type_registry::GetTypeRegistration};
 
     /// Tests that `i32` can be converted to `String` if the appropriate
     /// conversion is registered.

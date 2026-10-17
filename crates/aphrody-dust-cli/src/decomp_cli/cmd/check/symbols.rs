@@ -56,7 +56,10 @@ impl CheckSymbols {
         let delinks_map = DelinksMap::from_config(
             &config,
             config_path,
-            DelinksMapOptions { migrate_sections: false, generate_gap_files: false },
+            DelinksMapOptions {
+                migrate_sections: false,
+                generate_gap_files: false,
+            },
         )?;
         if self.module_filter.has(ModuleKind::Arm9)
             && let Some(target_symbols) = symbol_maps.get(ModuleKind::Arm9)
@@ -120,8 +123,9 @@ impl CheckSymbols {
                 // Label symbols are not imported by SymbolMapsExt::from_object
                 continue;
             }
-            if let Some((_, section)) =
-                delinks.sections.get_by_contained_address(target_symbol.addr)
+            if let Some((_, section)) = delinks
+                .sections
+                .get_by_contained_address(target_symbol.addr)
                 && section.name() == ".exceptix"
             {
                 // Exception table index symbols are stripped by the EXCEPTION command in the LCF

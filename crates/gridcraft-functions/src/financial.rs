@@ -6,7 +6,10 @@
 use gridcraft_core::date::{datetime_from_serial, days_in_month, serial_from_ymd};
 use gridcraft_core::{CellError, DateSystem, Value};
 
-use crate::util::{R, S, array_numbers, as_array, flatten, has, num, num_val, numbers, opt_bool, opt_num, round_half_away, text, to_sig_digits};
+use crate::util::{
+    R, S, array_numbers, as_array, flatten, has, num, num_val, numbers, opt_bool, opt_num,
+    round_half_away, text, to_sig_digits,
+};
 use crate::{Arg, Ctx, FnSpec, VAR};
 
 // ---------------------------------------------------------------------------------------------
@@ -38,7 +41,11 @@ fn pv_calc(rate: f64, nper: f64, pmt: f64, fv: f64, typ: f64) -> f64 {
 }
 
 fn type_arg(args: &[Arg], i: usize) -> R<f64> {
-    Ok(if opt_num(args, i, 0.0)? != 0.0 { 1.0 } else { 0.0 })
+    Ok(if opt_num(args, i, 0.0)? != 0.0 {
+        1.0
+    } else {
+        0.0
+    })
 }
 
 fn pmt(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
@@ -52,12 +59,24 @@ fn pmt(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 
 fn fv(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let (rate, nper, pmt) = (num(a, 0)?, num(a, 1)?, num(a, 2)?);
-    num_val(fv_calc(rate, nper, pmt, opt_num(a, 3, 0.0)?, type_arg(a, 4)?))
+    num_val(fv_calc(
+        rate,
+        nper,
+        pmt,
+        opt_num(a, 3, 0.0)?,
+        type_arg(a, 4)?,
+    ))
 }
 
 fn pv(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let (rate, nper, pmt) = (num(a, 0)?, num(a, 1)?, num(a, 2)?);
-    num_val(pv_calc(rate, nper, pmt, opt_num(a, 3, 0.0)?, type_arg(a, 4)?))
+    num_val(pv_calc(
+        rate,
+        nper,
+        pmt,
+        opt_num(a, 3, 0.0)?,
+        type_arg(a, 4)?,
+    ))
 }
 
 fn nper(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
@@ -113,7 +132,14 @@ fn cumulative(a: &[Arg], principal: bool) -> R<Value> {
     let (rate, np, pv) = (num(a, 0)?, num(a, 1)?, num(a, 2)?);
     let (start, end, typ) = (num(a, 3)?.trunc(), num(a, 4)?.trunc(), num(a, 5)?);
     let np_i = np.trunc();
-    if rate <= 0.0 || np_i <= 0.0 || pv <= 0.0 || start < 1.0 || end < start || end > np_i || (typ != 0.0 && typ != 1.0) {
+    if rate <= 0.0
+        || np_i <= 0.0
+        || pv <= 0.0
+        || start < 1.0
+        || end < start
+        || end > np_i
+        || (typ != 0.0 && typ != 1.0)
+    {
         return Err(CellError::Num);
     }
     if end - start > 1e7 || np_i > 1e15 {
@@ -179,7 +205,11 @@ fn solve_rate(f: impl Fn(f64) -> f64, guess: f64) -> R<f64> {
         }
     }
     // Scan for a sign change and bisect.
-    let grid: Vec<f64> = [-0.999_999, -0.99, -0.9, -0.5, -0.2, 0.0, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 100.0, 1000.0].to_vec();
+    let grid: Vec<f64> = [
+        -0.999_999, -0.99, -0.9, -0.5, -0.2, 0.0, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 100.0,
+        1000.0,
+    ]
+    .to_vec();
     for w in grid.windows(2) {
         let (mut lo, mut hi) = match w {
             [a, b] => (*a, *b),
@@ -267,7 +297,10 @@ fn dated_flows(values: &Value, dates: &Value) -> R<(Vec<f64>, Vec<f64>)> {
 
 fn xnpv_calc(rate: f64, v: &[f64], d: &[f64]) -> f64 {
     let d0 = d.first().copied().unwrap_or(0.0);
-    v.iter().zip(d).map(|(x, t)| x / (1.0 + rate).powf((t - d0) / 365.0)).sum()
+    v.iter()
+        .zip(d)
+        .map(|(x, t)| x / (1.0 + rate).powf((t - d0) / 365.0))
+        .sum()
 }
 
 fn xnpv(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
@@ -275,12 +308,18 @@ fn xnpv(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     if rate <= -1.0 {
         return Err(CellError::Num);
     }
-    let (v, d) = dated_flows(&a.get(1).ok_or(CellError::Value)?.value, &a.get(2).ok_or(CellError::Value)?.value)?;
+    let (v, d) = dated_flows(
+        &a.get(1).ok_or(CellError::Value)?.value,
+        &a.get(2).ok_or(CellError::Value)?.value,
+    )?;
     num_val(xnpv_calc(rate, &v, &d))
 }
 
 fn xirr(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    let (v, d) = dated_flows(&a.first().ok_or(CellError::Value)?.value, &a.get(1).ok_or(CellError::Value)?.value)?;
+    let (v, d) = dated_flows(
+        &a.first().ok_or(CellError::Value)?.value,
+        &a.get(1).ok_or(CellError::Value)?.value,
+    )?;
     let guess = opt_num(a, 2, 0.1)?;
     if !v.iter().any(|x| *x > 0.0) || !v.iter().any(|x| *x < 0.0) {
         return Err(CellError::Num);
@@ -430,10 +469,15 @@ fn syd(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 fn db(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let (cost, salvage, life, period) = (num(a, 0)?, num(a, 1)?, num(a, 2)?, num(a, 3)?.trunc());
     let month = opt_num(a, 4, 12.0)?.trunc();
-    if cost < 0.0 || salvage < 0.0 || life <= 0.0 || period <= 0.0 || !(1.0..=12.0).contains(&month) {
+    if cost < 0.0 || salvage < 0.0 || life <= 0.0 || period <= 0.0 || !(1.0..=12.0).contains(&month)
+    {
         return Err(CellError::Num);
     }
-    let max_period = if month == 12.0 { life.trunc() } else { life.trunc() + 1.0 };
+    let max_period = if month == 12.0 {
+        life.trunc()
+    } else {
+        life.trunc() + 1.0
+    };
     if period > max_period.max(1.0) || period > 1e7 {
         return Err(CellError::Num);
     }
@@ -461,7 +505,8 @@ fn db(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 fn ddb(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let (cost, salvage, life, period) = (num(a, 0)?, num(a, 1)?, num(a, 2)?, num(a, 3)?);
     let factor = opt_num(a, 4, 2.0)?;
-    if cost < 0.0 || salvage < 0.0 || life <= 0.0 || period <= 0.0 || factor <= 0.0 || period > life {
+    if cost < 0.0 || salvage < 0.0 || life <= 0.0 || period <= 0.0 || factor <= 0.0 || period > life
+    {
         return Err(CellError::Num);
     }
     let mut rate = factor / life;
@@ -473,12 +518,23 @@ fn ddb(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         old = cost * (1.0 - rate).powf(period - 1.0);
     }
     let new = cost * (1.0 - rate).powf(period);
-    let dep = if new < salvage { old - salvage } else { old - new };
+    let dep = if new < salvage {
+        old - salvage
+    } else {
+        old - new
+    };
     num_val(dep.max(0.0))
 }
 
 /// Per-period declining-balance depreciation with optional switch to straight line.
-fn vdb_schedule(cost: f64, salvage: f64, life: f64, factor: f64, no_switch: bool, periods: usize) -> Vec<f64> {
+fn vdb_schedule(
+    cost: f64,
+    salvage: f64,
+    life: f64,
+    factor: f64,
+    no_switch: bool,
+    periods: usize,
+) -> Vec<f64> {
     let mut out = Vec::with_capacity(periods);
     let mut book = cost;
     let mut sl: Option<f64> = None;
@@ -488,7 +544,11 @@ fn vdb_schedule(cost: f64, salvage: f64, life: f64, factor: f64, no_switch: bool
         } else {
             let ddb = (book * factor / life).min((book - salvage).max(0.0));
             let remaining = life - i as f64;
-            let slv = if remaining > 0.0 { (book - salvage) / remaining.max(1.0) } else { 0.0 };
+            let slv = if remaining > 0.0 {
+                (book - salvage) / remaining.max(1.0)
+            } else {
+                0.0
+            };
             if !no_switch && slv > ddb {
                 sl = Some(slv);
                 slv.min((book - salvage).max(0.0))
@@ -503,10 +563,18 @@ fn vdb_schedule(cost: f64, salvage: f64, life: f64, factor: f64, no_switch: bool
 }
 
 fn vdb(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    let (cost, salvage, life, start, end) = (num(a, 0)?, num(a, 1)?, num(a, 2)?, num(a, 3)?, num(a, 4)?);
+    let (cost, salvage, life, start, end) =
+        (num(a, 0)?, num(a, 1)?, num(a, 2)?, num(a, 3)?, num(a, 4)?);
     let factor = opt_num(a, 5, 2.0)?;
     let no_switch = opt_bool(a, 6, false)?;
-    if cost < 0.0 || salvage < 0.0 || life <= 0.0 || start < 0.0 || end < start || end > life || factor <= 0.0 {
+    if cost < 0.0
+        || salvage < 0.0
+        || life <= 0.0
+        || start < 0.0
+        || end < start
+        || end > life
+        || factor <= 0.0
+    {
         return Err(CellError::Num);
     }
     let periods = end.ceil();
@@ -527,7 +595,13 @@ fn amorlinc(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
     let (cost, purchased, first, salvage) = (num(a, 0)?, date(a, 1)?, date(a, 2)?, num(a, 3)?);
     let (period, rate, basis) = (num(a, 4)?.trunc(), num(a, 5)?, basis_arg(a, 6)?);
     let _ = c;
-    if cost < 0.0 || salvage < 0.0 || salvage > cost || period < 0.0 || rate <= 0.0 || first < purchased {
+    if cost < 0.0
+        || salvage < 0.0
+        || salvage > cost
+        || period < 0.0
+        || rate <= 0.0
+        || first < purchased
+    {
         return Err(CellError::Num);
     }
     let full = cost * rate;
@@ -544,7 +618,14 @@ fn amordegrc(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
     let (cost, purchased, first, salvage) = (num(a, 0)?, date(a, 1)?, date(a, 2)?, num(a, 3)?);
     let (period, rate, basis) = (num(a, 4)?.trunc(), num(a, 5)?, basis_arg(a, 6)?);
     let _ = c;
-    if cost < 0.0 || salvage < 0.0 || salvage > cost || period < 0.0 || rate <= 0.0 || first < purchased || period > 1e6 {
+    if cost < 0.0
+        || salvage < 0.0
+        || salvage > cost
+        || period < 0.0
+        || rate <= 0.0
+        || first < purchased
+        || period > 1e6
+    {
         return Err(CellError::Num);
     }
     let life = 1.0 / rate;
@@ -572,7 +653,11 @@ fn amordegrc(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
         if rest < 0.0 {
             // The two final periods split what remains; afterwards nothing is left.
             let left = period - n;
-            return num_val(if left <= 1.0 { (book * 0.5).round() } else { 0.0 });
+            return num_val(if left <= 1.0 {
+                (book * 0.5).round()
+            } else {
+                0.0
+            });
         }
         book -= dep;
         n += 1.0;
@@ -741,7 +826,11 @@ fn coupons(settle: f64, mat: f64, freq: f64) -> R<Coupon> {
             return Err(CellError::Num);
         }
     }
-    Ok(Coupon { pcd: shift_months(anchor, -k * step, eom)?, ncd: shift_months(anchor, -(k - 1) * step, eom)?, num: k as f64 })
+    Ok(Coupon {
+        pcd: shift_months(anchor, -k * step, eom)?,
+        ncd: shift_months(anchor, -(k - 1) * step, eom)?,
+        num: k as f64,
+    })
 }
 
 fn coup_days(c: &Coupon, freq: f64, basis: u32) -> f64 {
@@ -834,7 +923,11 @@ fn accrint(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         }
         Ok(j)
     };
-    let start = if calc_method || settle <= first { issue } else { cd(index_of(settle)?)? };
+    let start = if calc_method || settle <= first {
+        issue
+    } else {
+        cd(index_of(settle)?)?
+    };
     let mut j = index_of(start)?;
     let mut sum = 0.0;
     let mut guard = 0;
@@ -874,7 +967,13 @@ fn accrintm(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 
 /// settlement, maturity, value, value, [basis] for discount securities.
 fn disc_args(a: &[Arg]) -> R<(f64, f64, f64, f64, u32)> {
-    let (s, m, x, y, b) = (date(a, 0)?, date(a, 1)?, num(a, 2)?, num(a, 3)?, basis_arg(a, 4)?);
+    let (s, m, x, y, b) = (
+        date(a, 0)?,
+        date(a, 1)?,
+        num(a, 2)?,
+        num(a, 3)?,
+        basis_arg(a, 4)?,
+    );
     if s >= m || x <= 0.0 || y <= 0.0 {
         return Err(CellError::Num);
     }
@@ -961,7 +1060,14 @@ fn tbilleq(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 
 /// settlement, maturity, issue, rate, value, [basis].
 fn mat_terms(a: &[Arg]) -> R<(f64, f64, f64, f64, f64)> {
-    let (s, m, issue, rate, x, b) = (date(a, 0)?, date(a, 1)?, date(a, 2)?, num(a, 3)?, num(a, 4)?, basis_arg(a, 5)?);
+    let (s, m, issue, rate, x, b) = (
+        date(a, 0)?,
+        date(a, 1)?,
+        date(a, 2)?,
+        num(a, 3)?,
+        num(a, 4)?,
+        basis_arg(a, 5)?,
+    );
     if s >= m || issue >= s || rate < 0.0 || x < 0.0 {
         return Err(CellError::Num);
     }
@@ -1001,7 +1107,13 @@ fn bond(settle: f64, mat: f64, freq: f64, basis: u32) -> R<Bond> {
     if e <= 0.0 {
         return Err(CellError::Num);
     }
-    Ok(Bond { n: c.num, e, a, dsc, freq })
+    Ok(Bond {
+        n: c.num,
+        e,
+        a,
+        dsc,
+        freq,
+    })
 }
 
 fn bond_price(b: &Bond, rate: f64, yld: f64, red: f64) -> f64 {
@@ -1123,7 +1235,11 @@ fn normal_length(start: f64, end: f64, freq: f64, basis: u32) -> f64 {
 
 /// Days of `[from, to]` under a basis, or 0 when the span is empty.
 fn span(from: f64, to: f64, basis: u32) -> R<f64> {
-    if to > from { day_count(from, to, basis) } else { Ok(0.0) }
+    if to > from {
+        day_count(from, to, basis)
+    } else {
+        Ok(0.0)
+    }
 }
 
 /// The odd-first-period terms that ODDFPRICE and ODDFYIELD share.
@@ -1176,7 +1292,14 @@ fn odd_first(settle: f64, mat: f64, issue: f64, first: f64, freq: f64, basis: u3
     }
     let nq = nq.ok_or(CellError::Num)?;
     let n = coupons(first, mat, freq)?.num;
-    Ok(OddFirst { n, nq, frac, dc, acc, freq })
+    Ok(OddFirst {
+        n,
+        nq,
+        frac,
+        dc,
+        acc,
+        freq,
+    })
 }
 
 fn odd_first_price(t: &OddFirst, rate: f64, yld: f64, red: f64) -> f64 {
@@ -1332,7 +1455,11 @@ const EURO_RATES: &[(&str, f64, i32)] = &[
 fn euro_currency(a: &[Arg], i: usize) -> R<(&'static str, f64, i32)> {
     let code = text(a, i)?;
     let code = code.trim();
-    EURO_RATES.iter().copied().find(|(c, _, _)| c.eq_ignore_ascii_case(code)).ok_or(CellError::Value)
+    EURO_RATES
+        .iter()
+        .copied()
+        .find(|(c, _, _)| c.eq_ignore_ascii_case(code))
+        .ok_or(CellError::Value)
 }
 
 /// EUROCONVERT(number, source, target, [full_precision], [triangulation_precision]).
@@ -1361,7 +1488,11 @@ fn euroconvert(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         euros = to_sig_digits(euros, t);
     }
     let out = euros * tgt_rate;
-    num_val(if full { out } else { round_half_away(out, tgt_prec) })
+    num_val(if full {
+        out
+    } else {
+        round_half_away(out, tgt_prec)
+    })
 }
 
 pub(crate) fn specs() -> Vec<FnSpec> {
@@ -1376,11 +1507,56 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Periodic payment for a loan or annuity with constant payments and rate.",
             pmt
         ),
-        f!("IPMT", 4, 6, Financial, S, "IPMT(rate, per, nper, pv, [fv], [type])", "Interest part of a given period's payment.", ipmt),
-        f!("PPMT", 4, 6, Financial, S, "PPMT(rate, per, nper, pv, [fv], [type])", "Principal part of a given period's payment.", ppmt),
-        f!("PV", 3, 5, Financial, S, "PV(rate, nper, pmt, [fv], [type])", "Present value of a series of equal future payments.", pv),
-        f!("FV", 3, 5, Financial, S, "FV(rate, nper, pmt, [pv], [type])", "Future value of an investment with constant payments and rate.", fv),
-        f!("NPER", 3, 5, Financial, S, "NPER(rate, pmt, pv, [fv], [type])", "Number of periods needed to pay off or accumulate an amount.", nper),
+        f!(
+            "IPMT",
+            4,
+            6,
+            Financial,
+            S,
+            "IPMT(rate, per, nper, pv, [fv], [type])",
+            "Interest part of a given period's payment.",
+            ipmt
+        ),
+        f!(
+            "PPMT",
+            4,
+            6,
+            Financial,
+            S,
+            "PPMT(rate, per, nper, pv, [fv], [type])",
+            "Principal part of a given period's payment.",
+            ppmt
+        ),
+        f!(
+            "PV",
+            3,
+            5,
+            Financial,
+            S,
+            "PV(rate, nper, pmt, [fv], [type])",
+            "Present value of a series of equal future payments.",
+            pv
+        ),
+        f!(
+            "FV",
+            3,
+            5,
+            Financial,
+            S,
+            "FV(rate, nper, pmt, [pv], [type])",
+            "Future value of an investment with constant payments and rate.",
+            fv
+        ),
+        f!(
+            "NPER",
+            3,
+            5,
+            Financial,
+            S,
+            "NPER(rate, pmt, pv, [fv], [type])",
+            "Number of periods needed to pay off or accumulate an amount.",
+            nper
+        ),
         f!(
             "RATE",
             3,
@@ -1421,8 +1597,26 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Net present value of periodic cash flows at a discount rate.",
             npv
         ),
-        f!("XNPV", 3, 3, Financial, &[true, false, false], "XNPV(rate, values, dates)", "Net present value of cash flows on specific dates.", xnpv),
-        f!("IRR", 1, 2, Financial, &[false, true], "IRR(values, [guess])", "Internal rate of return of periodic cash flows.", irr),
+        f!(
+            "XNPV",
+            3,
+            3,
+            Financial,
+            &[true, false, false],
+            "XNPV(rate, values, dates)",
+            "Net present value of cash flows on specific dates.",
+            xnpv
+        ),
+        f!(
+            "IRR",
+            1,
+            2,
+            Financial,
+            &[false, true],
+            "IRR(values, [guess])",
+            "Internal rate of return of periodic cash flows.",
+            irr
+        ),
         f!(
             "XIRR",
             2,
@@ -1453,7 +1647,16 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Future value of a principal after a series of compound rates.",
             fvschedule
         ),
-        f!("EFFECT", 2, 2, Financial, S, "EFFECT(nominal_rate, npery)", "Effective annual rate from a nominal rate and compounding periods.", effect),
+        f!(
+            "EFFECT",
+            2,
+            2,
+            Financial,
+            S,
+            "EFFECT(nominal_rate, npery)",
+            "Effective annual rate from a nominal rate and compounding periods.",
+            effect
+        ),
         f!(
             "NOMINAL",
             2,
@@ -1464,9 +1667,36 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Nominal annual rate from an effective rate and compounding periods.",
             nominal
         ),
-        f!("ISPMT", 4, 4, Financial, S, "ISPMT(rate, per, nper, pv)", "Interest paid in a period of a loan with even principal payments.", ispmt),
-        f!("PDURATION", 3, 3, Financial, S, "PDURATION(rate, pv, fv)", "Periods needed for an investment to grow to a target value.", pduration),
-        f!("RRI", 3, 3, Financial, S, "RRI(nper, pv, fv)", "Equivalent interest rate for the growth of an investment.", rri),
+        f!(
+            "ISPMT",
+            4,
+            4,
+            Financial,
+            S,
+            "ISPMT(rate, per, nper, pv)",
+            "Interest paid in a period of a loan with even principal payments.",
+            ispmt
+        ),
+        f!(
+            "PDURATION",
+            3,
+            3,
+            Financial,
+            S,
+            "PDURATION(rate, pv, fv)",
+            "Periods needed for an investment to grow to a target value.",
+            pduration
+        ),
+        f!(
+            "RRI",
+            3,
+            3,
+            Financial,
+            S,
+            "RRI(nper, pv, fv)",
+            "Equivalent interest rate for the growth of an investment.",
+            rri
+        ),
         f!(
             "DOLLARDE",
             2,
@@ -1477,10 +1707,46 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Converts a fractional price notation to a decimal number.",
             dollarde
         ),
-        f!("DOLLARFR", 2, 2, Financial, S, "DOLLARFR(decimal_dollar, fraction)", "Converts a decimal price to fractional notation.", dollarfr),
-        f!("SLN", 3, 3, Financial, S, "SLN(cost, salvage, life)", "Straight-line depreciation for one period.", sln),
-        f!("SYD", 4, 4, Financial, S, "SYD(cost, salvage, life, per)", "Sum-of-years'-digits depreciation for a period.", syd),
-        f!("DB", 4, 5, Financial, S, "DB(cost, salvage, life, period, [month])", "Fixed-declining-balance depreciation for a period.", db),
+        f!(
+            "DOLLARFR",
+            2,
+            2,
+            Financial,
+            S,
+            "DOLLARFR(decimal_dollar, fraction)",
+            "Converts a decimal price to fractional notation.",
+            dollarfr
+        ),
+        f!(
+            "SLN",
+            3,
+            3,
+            Financial,
+            S,
+            "SLN(cost, salvage, life)",
+            "Straight-line depreciation for one period.",
+            sln
+        ),
+        f!(
+            "SYD",
+            4,
+            4,
+            Financial,
+            S,
+            "SYD(cost, salvage, life, per)",
+            "Sum-of-years'-digits depreciation for a period.",
+            syd
+        ),
+        f!(
+            "DB",
+            4,
+            5,
+            Financial,
+            S,
+            "DB(cost, salvage, life, period, [month])",
+            "Fixed-declining-balance depreciation for a period.",
+            db
+        ),
         f!(
             "DDB",
             4,
@@ -1571,7 +1837,16 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Days from settlement to the next coupon date.",
             coupdaysnc
         ),
-        f!("COUPNCD", 3, 4, Financial, S, "COUPNCD(settlement, maturity, frequency, [basis])", "Next coupon date after settlement.", coupncd),
+        f!(
+            "COUPNCD",
+            3,
+            4,
+            Financial,
+            S,
+            "COUPNCD(settlement, maturity, frequency, [basis])",
+            "Next coupon date after settlement.",
+            coupncd
+        ),
         f!(
             "COUPPCD",
             3,
@@ -1592,7 +1867,16 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Number of coupons payable between settlement and maturity.",
             coupnum
         ),
-        f!("DISC", 4, 5, Financial, S, "DISC(settlement, maturity, pr, redemption, [basis])", "Discount rate of a security.", disc),
+        f!(
+            "DISC",
+            4,
+            5,
+            Financial,
+            S,
+            "DISC(settlement, maturity, pr, redemption, [basis])",
+            "Discount rate of a security.",
+            disc
+        ),
         f!(
             "PRICEDISC",
             4,
@@ -1643,8 +1927,26 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Price per 100 face value of a Treasury bill.",
             tbillprice
         ),
-        f!("TBILLYIELD", 3, 3, Financial, S, "TBILLYIELD(settlement, maturity, pr)", "Yield of a Treasury bill.", tbillyield),
-        f!("TBILLEQ", 3, 3, Financial, S, "TBILLEQ(settlement, maturity, discount)", "Bond-equivalent yield of a Treasury bill.", tbilleq),
+        f!(
+            "TBILLYIELD",
+            3,
+            3,
+            Financial,
+            S,
+            "TBILLYIELD(settlement, maturity, pr)",
+            "Yield of a Treasury bill.",
+            tbillyield
+        ),
+        f!(
+            "TBILLEQ",
+            3,
+            3,
+            Financial,
+            S,
+            "TBILLEQ(settlement, maturity, discount)",
+            "Bond-equivalent yield of a Treasury bill.",
+            tbilleq
+        ),
         f!(
             "PRICEMAT",
             5,
@@ -1770,61 +2072,277 @@ mod tests {
 
     #[test]
     fn tvm() {
-        close_tol(ev("PMT", vec![n(0.08 / 12.0), n(10.0), n(10000.0)]), -1037.032089, 1e-9);
-        close_tol(ev("PMT", vec![n(0.06 / 12.0), n(216.0), n(0.0), n(50000.0)]), -129.0811609, 1e-9);
+        close_tol(
+            ev("PMT", vec![n(0.08 / 12.0), n(10.0), n(10000.0)]),
+            -1037.032089,
+            1e-9,
+        );
+        close_tol(
+            ev("PMT", vec![n(0.06 / 12.0), n(216.0), n(0.0), n(50000.0)]),
+            -129.0811609,
+            1e-9,
+        );
         close(ev("PMT", vec![n(0.0), n(10.0), n(1000.0)]), -100.0);
         is_err(ev("PMT", vec![n(0.1), n(0.0), n(1000.0)]), CellError::Num);
-        close_tol(ev("FV", vec![n(0.06 / 12.0), n(10.0), n(-200.0), n(-500.0), n(1.0)]), 2581.403374, 1e-9);
-        close_tol(ev("FV", vec![n(0.01), n(12.0), n(-1000.0)]), 12682.50301, 1e-9);
+        close_tol(
+            ev(
+                "FV",
+                vec![n(0.06 / 12.0), n(10.0), n(-200.0), n(-500.0), n(1.0)],
+            ),
+            2581.403374,
+            1e-9,
+        );
+        close_tol(
+            ev("FV", vec![n(0.01), n(12.0), n(-1000.0)]),
+            12682.50301,
+            1e-9,
+        );
         close(ev("FV", vec![n(0.0), n(10.0), n(-100.0)]), 1000.0);
-        close_tol(ev("PV", vec![n(0.08 / 12.0), n(240.0), n(500.0)]), -59777.14585, 1e-9);
-        close_tol(ev("NPER", vec![n(0.01), n(-100.0), n(-1000.0), n(10000.0), n(1.0)]), 59.6738657, 1e-8);
-        close_tol(ev("NPER", vec![n(0.01), n(-100.0), n(-1000.0), n(10000.0)]), 60.0821229, 1e-8);
-        close_tol(ev("NPER", vec![n(0.01), n(-100.0), n(-1000.0)]), -9.57859404, 1e-8);
-        close_tol(ev("IPMT", vec![n(0.1 / 12.0), n(1.0), n(36.0), n(8000.0)]), -66.66666667, 1e-9);
-        close_tol(ev("IPMT", vec![n(0.1), n(3.0), n(3.0), n(8000.0)]), -292.4471299, 1e-9);
-        is_err(ev("IPMT", vec![n(0.1), n(4.0), n(3.0), n(8000.0)]), CellError::Num);
-        close_tol(ev("PPMT", vec![n(0.1 / 12.0), n(1.0), n(24.0), n(2000.0)]), -75.62318601, 1e-9);
-        close_tol(ev("PPMT", vec![n(0.08), n(10.0), n(10.0), n(200000.0)]), -27598.05346, 1e-9);
-        close_tol(ev("RATE", vec![n(48.0), n(-200.0), n(8000.0)]), 0.0077014725, 1e-7);
-        close_tol(ev("CUMIPMT", vec![n(0.09 / 12.0), n(360.0), n(125000.0), n(13.0), n(24.0), n(0.0)]), -11135.23213, 1e-9);
-        close_tol(ev("CUMIPMT", vec![n(0.09 / 12.0), n(360.0), n(125000.0), n(1.0), n(1.0), n(0.0)]), -937.5, 1e-9);
-        close_tol(ev("CUMPRINC", vec![n(0.09 / 12.0), n(360.0), n(125000.0), n(13.0), n(24.0), n(0.0)]), -934.1071234, 1e-9);
-        close_tol(ev("CUMPRINC", vec![n(0.09 / 12.0), n(360.0), n(125000.0), n(1.0), n(1.0), n(0.0)]), -68.27827118, 1e-9);
-        is_err(ev("CUMIPMT", vec![n(0.0), n(360.0), n(125000.0), n(1.0), n(1.0), n(0.0)]), CellError::Num);
-        is_err(ev("CUMIPMT", vec![n(0.01), n(360.0), n(125000.0), n(1.0), n(1.0), n(2.0)]), CellError::Num);
+        close_tol(
+            ev("PV", vec![n(0.08 / 12.0), n(240.0), n(500.0)]),
+            -59777.14585,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "NPER",
+                vec![n(0.01), n(-100.0), n(-1000.0), n(10000.0), n(1.0)],
+            ),
+            59.6738657,
+            1e-8,
+        );
+        close_tol(
+            ev("NPER", vec![n(0.01), n(-100.0), n(-1000.0), n(10000.0)]),
+            60.0821229,
+            1e-8,
+        );
+        close_tol(
+            ev("NPER", vec![n(0.01), n(-100.0), n(-1000.0)]),
+            -9.57859404,
+            1e-8,
+        );
+        close_tol(
+            ev("IPMT", vec![n(0.1 / 12.0), n(1.0), n(36.0), n(8000.0)]),
+            -66.66666667,
+            1e-9,
+        );
+        close_tol(
+            ev("IPMT", vec![n(0.1), n(3.0), n(3.0), n(8000.0)]),
+            -292.4471299,
+            1e-9,
+        );
+        is_err(
+            ev("IPMT", vec![n(0.1), n(4.0), n(3.0), n(8000.0)]),
+            CellError::Num,
+        );
+        close_tol(
+            ev("PPMT", vec![n(0.1 / 12.0), n(1.0), n(24.0), n(2000.0)]),
+            -75.62318601,
+            1e-9,
+        );
+        close_tol(
+            ev("PPMT", vec![n(0.08), n(10.0), n(10.0), n(200000.0)]),
+            -27598.05346,
+            1e-9,
+        );
+        close_tol(
+            ev("RATE", vec![n(48.0), n(-200.0), n(8000.0)]),
+            0.0077014725,
+            1e-7,
+        );
+        close_tol(
+            ev(
+                "CUMIPMT",
+                vec![
+                    n(0.09 / 12.0),
+                    n(360.0),
+                    n(125000.0),
+                    n(13.0),
+                    n(24.0),
+                    n(0.0),
+                ],
+            ),
+            -11135.23213,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "CUMIPMT",
+                vec![
+                    n(0.09 / 12.0),
+                    n(360.0),
+                    n(125000.0),
+                    n(1.0),
+                    n(1.0),
+                    n(0.0),
+                ],
+            ),
+            -937.5,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "CUMPRINC",
+                vec![
+                    n(0.09 / 12.0),
+                    n(360.0),
+                    n(125000.0),
+                    n(13.0),
+                    n(24.0),
+                    n(0.0),
+                ],
+            ),
+            -934.1071234,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "CUMPRINC",
+                vec![
+                    n(0.09 / 12.0),
+                    n(360.0),
+                    n(125000.0),
+                    n(1.0),
+                    n(1.0),
+                    n(0.0),
+                ],
+            ),
+            -68.27827118,
+            1e-9,
+        );
+        is_err(
+            ev(
+                "CUMIPMT",
+                vec![n(0.0), n(360.0), n(125000.0), n(1.0), n(1.0), n(0.0)],
+            ),
+            CellError::Num,
+        );
+        is_err(
+            ev(
+                "CUMIPMT",
+                vec![n(0.01), n(360.0), n(125000.0), n(1.0), n(1.0), n(2.0)],
+            ),
+            CellError::Num,
+        );
     }
 
     #[test]
     fn cash_flows() {
-        close_tol(ev("NPV", vec![n(0.1), n(-10000.0), n(3000.0), n(4200.0), n(6800.0)]), 1188.443412, 1e-9);
-        close_tol(ev("NPV", vec![n(0.08), rf(col(&[8000.0, 9200.0, 10000.0, 12000.0, 14500.0]))]), 41922.06155, 1e-9);
+        close_tol(
+            ev(
+                "NPV",
+                vec![n(0.1), n(-10000.0), n(3000.0), n(4200.0), n(6800.0)],
+            ),
+            1188.443412,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "NPV",
+                vec![
+                    n(0.08),
+                    rf(col(&[8000.0, 9200.0, 10000.0, 12000.0, 14500.0])),
+                ],
+            ),
+            41922.06155,
+            1e-9,
+        );
         is_err(ev("NPV", vec![n(-1.0), n(1.0)]), CellError::Div0);
         let flows = col(&[-70000.0, 12000.0, 15000.0, 18000.0, 21000.0]);
         close_tol(ev("IRR", vec![rf(flows)]), -0.021244848, 1e-7);
-        close_tol(ev("IRR", vec![rf(col(&[-70000.0, 12000.0, 15000.0, 18000.0, 21000.0, 26000.0]))]), 0.086630948, 1e-7);
-        close_tol(ev("IRR", vec![rf(col(&[-70000.0, 12000.0, 15000.0])), n(-0.1)]), -0.44350694, 1e-7);
+        close_tol(
+            ev(
+                "IRR",
+                vec![rf(col(&[
+                    -70000.0, 12000.0, 15000.0, 18000.0, 21000.0, 26000.0,
+                ]))],
+            ),
+            0.086630948,
+            1e-7,
+        );
+        close_tol(
+            ev("IRR", vec![rf(col(&[-70000.0, 12000.0, 15000.0])), n(-0.1)]),
+            -0.44350694,
+            1e-7,
+        );
         is_err(ev("IRR", vec![rf(col(&[1.0, 2.0]))]), CellError::Num);
         let vals = col(&[-10000.0, 2750.0, 4250.0, 3250.0, 2750.0]);
         let dates = col(&[39448.0, 39508.0, 39751.0, 39859.0, 39904.0]);
-        close_tol(ev("XNPV", vec![n(0.09), rf(vals.clone()), rf(dates.clone())]), 2086.647602, 1e-9);
-        close_tol(ev("XIRR", vec![rf(vals.clone()), rf(dates)]), 0.373362535, 1e-7);
-        is_err(ev("XNPV", vec![n(0.09), rf(vals), rf(col(&[1.0, 2.0]))]), CellError::Num);
+        close_tol(
+            ev("XNPV", vec![n(0.09), rf(vals.clone()), rf(dates.clone())]),
+            2086.647602,
+            1e-9,
+        );
+        close_tol(
+            ev("XIRR", vec![rf(vals.clone()), rf(dates)]),
+            0.373362535,
+            1e-7,
+        );
+        is_err(
+            ev("XNPV", vec![n(0.09), rf(vals), rf(col(&[1.0, 2.0]))]),
+            CellError::Num,
+        );
         let m = col(&[-120000.0, 39000.0, 30000.0, 21000.0, 37000.0, 46000.0]);
         close_tol(ev("MIRR", vec![rf(m), n(0.1), n(0.12)]), 0.1260943, 1e-6);
-        close_tol(ev("MIRR", vec![rf(col(&[-120000.0, 39000.0, 30000.0, 21000.0])), n(0.1), n(0.12)]), -0.048044655, 1e-7);
-        is_err(ev("MIRR", vec![rf(col(&[1.0, 2.0])), n(0.1), n(0.1)]), CellError::Div0);
+        close_tol(
+            ev(
+                "MIRR",
+                vec![
+                    rf(col(&[-120000.0, 39000.0, 30000.0, 21000.0])),
+                    n(0.1),
+                    n(0.12),
+                ],
+            ),
+            -0.048044655,
+            1e-7,
+        );
+        is_err(
+            ev("MIRR", vec![rf(col(&[1.0, 2.0])), n(0.1), n(0.1)]),
+            CellError::Div0,
+        );
         // Excel 365 gives -1 when every flow is negative: the positive flows are worth nothing.
-        close_tol(ev("MIRR", vec![rf(col(&[-10000.0, -3400.0, -6500.0, -1000.0])), n(0.07), n(0.01)]), -1.0, 1e-12);
-        close(ev("FVSCHEDULE", vec![n(1.0), av(row(&[0.09, 0.11, 0.1]))]), 1.33089);
+        close_tol(
+            ev(
+                "MIRR",
+                vec![
+                    rf(col(&[-10000.0, -3400.0, -6500.0, -1000.0])),
+                    n(0.07),
+                    n(0.01),
+                ],
+            ),
+            -1.0,
+            1e-12,
+        );
+        close(
+            ev("FVSCHEDULE", vec![n(1.0), av(row(&[0.09, 0.11, 0.1]))]),
+            1.33089,
+        );
         close(ev("EFFECT", vec![n(0.0525), n(4.0)]), 0.0535426673707584);
         is_err(ev("EFFECT", vec![n(-0.1), n(4.0)]), CellError::Num);
         close_tol(ev("NOMINAL", vec![n(0.053543), n(4.0)]), 0.052500319, 1e-8);
-        close_tol(ev("ISPMT", vec![n(0.1 / 12.0), n(0.0), n(36.0), n(8000000.0)]), -66666.66667, 1e-9);
-        is_err(ev("ISPMT", vec![n(0.1), n(1.0), n(0.0), n(1.0)]), CellError::Div0);
-        close_tol(ev("PDURATION", vec![n(0.025), n(2000.0), n(2200.0)]), 3.859866163, 1e-9);
-        is_err(ev("PDURATION", vec![n(0.0), n(2000.0), n(2200.0)]), CellError::Num);
-        close_tol(ev("RRI", vec![n(96.0), n(10000.0), n(11000.0)]), 0.0009933, 1e-4);
+        close_tol(
+            ev("ISPMT", vec![n(0.1 / 12.0), n(0.0), n(36.0), n(8000000.0)]),
+            -66666.66667,
+            1e-9,
+        );
+        is_err(
+            ev("ISPMT", vec![n(0.1), n(1.0), n(0.0), n(1.0)]),
+            CellError::Div0,
+        );
+        close_tol(
+            ev("PDURATION", vec![n(0.025), n(2000.0), n(2200.0)]),
+            3.859866163,
+            1e-9,
+        );
+        is_err(
+            ev("PDURATION", vec![n(0.0), n(2000.0), n(2200.0)]),
+            CellError::Num,
+        );
+        close_tol(
+            ev("RRI", vec![n(96.0), n(10000.0), n(11000.0)]),
+            0.0009933,
+            1e-4,
+        );
         close(ev("DOLLARDE", vec![n(1.02), n(16.0)]), 1.125);
         close(ev("DOLLARDE", vec![n(1.1), n(32.0)]), 1.3125);
         close(ev("DOLLARFR", vec![n(1.125), n(16.0)]), 1.02);
@@ -1836,32 +2354,126 @@ mod tests {
     #[test]
     fn depreciation() {
         close(ev("SLN", vec![n(30000.0), n(7500.0), n(10.0)]), 2250.0);
-        is_err(ev("SLN", vec![n(30000.0), n(7500.0), n(0.0)]), CellError::Div0);
-        close_tol(ev("SYD", vec![n(30000.0), n(7500.0), n(10.0), n(1.0)]), 4090.909091, 1e-9);
-        close_tol(ev("SYD", vec![n(30000.0), n(7500.0), n(10.0), n(10.0)]), 409.0909091, 1e-9);
+        is_err(
+            ev("SLN", vec![n(30000.0), n(7500.0), n(0.0)]),
+            CellError::Div0,
+        );
+        close_tol(
+            ev("SYD", vec![n(30000.0), n(7500.0), n(10.0), n(1.0)]),
+            4090.909091,
+            1e-9,
+        );
+        close_tol(
+            ev("SYD", vec![n(30000.0), n(7500.0), n(10.0), n(10.0)]),
+            409.0909091,
+            1e-9,
+        );
         let dbv = |p: f64| ev("DB", vec![n(1000000.0), n(100000.0), n(6.0), n(p), n(7.0)]);
         close_tol(dbv(1.0), 186083.3333, 1e-9);
         close_tol(dbv(2.0), 259639.4167, 1e-9);
         close_tol(dbv(3.0), 176814.4428, 1e-9);
         close_tol(dbv(7.0), 15845.09847, 1e-9);
         is_err(dbv(8.0), CellError::Num);
-        close_tol(ev("DDB", vec![n(2400.0), n(300.0), n(3650.0), n(1.0)]), 1.315068493, 1e-8);
-        close(ev("DDB", vec![n(2400.0), n(300.0), n(120.0), n(1.0), n(2.0)]), 40.0);
-        close(ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(1.0), n(2.0)]), 480.0);
-        close_tol(ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(2.0), n(1.5)]), 306.0, 1e-12);
-        close_tol(ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(10.0)]), 22.1225472, 1e-8);
-        is_err(ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(11.0)]), CellError::Num);
-        close_tol(ev("VDB", vec![n(2400.0), n(300.0), n(3650.0), n(0.0), n(1.0)]), 1.315068493, 1e-8);
-        close(ev("VDB", vec![n(2400.0), n(300.0), n(120.0), n(0.0), n(1.0)]), 40.0);
-        close(ev("VDB", vec![n(2400.0), n(300.0), n(10.0), n(0.0), n(1.0)]), 480.0);
-        close_tol(ev("VDB", vec![n(2400.0), n(300.0), n(120.0), n(6.0), n(18.0)]), 396.3060533, 1e-8);
-        close_tol(ev("VDB", vec![n(2400.0), n(300.0), n(120.0), n(6.0), n(18.0), n(1.5)]), 311.8089367, 1e-8);
-        close(ev("VDB", vec![n(2400.0), n(300.0), n(10.0), n(0.0), n(0.875), n(1.5)]), 315.0);
+        close_tol(
+            ev("DDB", vec![n(2400.0), n(300.0), n(3650.0), n(1.0)]),
+            1.315068493,
+            1e-8,
+        );
+        close(
+            ev("DDB", vec![n(2400.0), n(300.0), n(120.0), n(1.0), n(2.0)]),
+            40.0,
+        );
+        close(
+            ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(1.0), n(2.0)]),
+            480.0,
+        );
+        close_tol(
+            ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(2.0), n(1.5)]),
+            306.0,
+            1e-12,
+        );
+        close_tol(
+            ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(10.0)]),
+            22.1225472,
+            1e-8,
+        );
+        is_err(
+            ev("DDB", vec![n(2400.0), n(300.0), n(10.0), n(11.0)]),
+            CellError::Num,
+        );
+        close_tol(
+            ev("VDB", vec![n(2400.0), n(300.0), n(3650.0), n(0.0), n(1.0)]),
+            1.315068493,
+            1e-8,
+        );
+        close(
+            ev("VDB", vec![n(2400.0), n(300.0), n(120.0), n(0.0), n(1.0)]),
+            40.0,
+        );
+        close(
+            ev("VDB", vec![n(2400.0), n(300.0), n(10.0), n(0.0), n(1.0)]),
+            480.0,
+        );
+        close_tol(
+            ev("VDB", vec![n(2400.0), n(300.0), n(120.0), n(6.0), n(18.0)]),
+            396.3060533,
+            1e-8,
+        );
+        close_tol(
+            ev(
+                "VDB",
+                vec![n(2400.0), n(300.0), n(120.0), n(6.0), n(18.0), n(1.5)],
+            ),
+            311.8089367,
+            1e-8,
+        );
+        close(
+            ev(
+                "VDB",
+                vec![n(2400.0), n(300.0), n(10.0), n(0.0), n(0.875), n(1.5)],
+            ),
+            315.0,
+        );
         // Over the whole life the total depreciation is cost - salvage.
-        close(ev("VDB", vec![n(2400.0), n(300.0), n(10.0), n(0.0), n(10.0)]), 2100.0);
-        is_err(ev("VDB", vec![n(2400.0), n(300.0), n(10.0), n(5.0), n(4.0)]), CellError::Num);
-        close_tol(ev("AMORLINC", vec![n(2400.0), d(2008, 8, 19), d(2008, 12, 31), n(300.0), n(1.0), n(0.15), n(1.0)]), 360.0, 1e-9);
-        close(ev("AMORDEGRC", vec![n(2400.0), d(2008, 8, 19), d(2008, 12, 31), n(300.0), n(1.0), n(0.15), n(1.0)]), 776.0);
+        close(
+            ev("VDB", vec![n(2400.0), n(300.0), n(10.0), n(0.0), n(10.0)]),
+            2100.0,
+        );
+        is_err(
+            ev("VDB", vec![n(2400.0), n(300.0), n(10.0), n(5.0), n(4.0)]),
+            CellError::Num,
+        );
+        close_tol(
+            ev(
+                "AMORLINC",
+                vec![
+                    n(2400.0),
+                    d(2008, 8, 19),
+                    d(2008, 12, 31),
+                    n(300.0),
+                    n(1.0),
+                    n(0.15),
+                    n(1.0),
+                ],
+            ),
+            360.0,
+            1e-9,
+        );
+        close(
+            ev(
+                "AMORDEGRC",
+                vec![
+                    n(2400.0),
+                    d(2008, 8, 19),
+                    d(2008, 12, 31),
+                    n(300.0),
+                    n(1.0),
+                    n(0.15),
+                    n(1.0),
+                ],
+            ),
+            776.0,
+        );
     }
 
     #[test]
@@ -1873,47 +2485,315 @@ mod tests {
         close(args("COUPNCD"), 40678.0);
         close(args("COUPPCD"), 40497.0);
         close(args("COUPNUM"), 2.0);
-        close(ev("COUPDAYS", vec![d(2011, 1, 25), d(2011, 11, 15), n(2.0), n(0.0)]), 180.0);
-        close(ev("COUPDAYS", vec![d(2011, 1, 25), d(2011, 11, 15), n(4.0), n(3.0)]), 91.25);
-        close(ev("COUPNUM", vec![d(2007, 1, 25), d(2008, 11, 15), n(2.0), n(1.0)]), 4.0);
-        is_err(ev("COUPNUM", vec![d(2012, 1, 25), d(2011, 11, 15), n(2.0)]), CellError::Num);
-        is_err(ev("COUPNUM", vec![d(2011, 1, 25), d(2011, 11, 15), n(3.0)]), CellError::Num);
-        is_err(ev("COUPNUM", vec![d(2011, 1, 25), d(2011, 11, 15), n(2.0), n(5.0)]), CellError::Num);
+        close(
+            ev(
+                "COUPDAYS",
+                vec![d(2011, 1, 25), d(2011, 11, 15), n(2.0), n(0.0)],
+            ),
+            180.0,
+        );
+        close(
+            ev(
+                "COUPDAYS",
+                vec![d(2011, 1, 25), d(2011, 11, 15), n(4.0), n(3.0)],
+            ),
+            91.25,
+        );
+        close(
+            ev(
+                "COUPNUM",
+                vec![d(2007, 1, 25), d(2008, 11, 15), n(2.0), n(1.0)],
+            ),
+            4.0,
+        );
+        is_err(
+            ev("COUPNUM", vec![d(2012, 1, 25), d(2011, 11, 15), n(2.0)]),
+            CellError::Num,
+        );
+        is_err(
+            ev("COUPNUM", vec![d(2011, 1, 25), d(2011, 11, 15), n(3.0)]),
+            CellError::Num,
+        );
+        is_err(
+            ev(
+                "COUPNUM",
+                vec![d(2011, 1, 25), d(2011, 11, 15), n(2.0), n(5.0)],
+            ),
+            CellError::Num,
+        );
         // End-of-month maturity keeps month-end coupon dates.
-        close(ev("COUPPCD", vec![d(2011, 3, 15), d(2011, 11, 30), n(2.0)]), serial_from_ymd(DateSystem::D1900, 2010, 11, 30).unwrap());
-        close(ev("COUPNCD", vec![d(2011, 3, 15), d(2011, 11, 30), n(2.0)]), serial_from_ymd(DateSystem::D1900, 2011, 5, 31).unwrap());
+        close(
+            ev("COUPPCD", vec![d(2011, 3, 15), d(2011, 11, 30), n(2.0)]),
+            serial_from_ymd(DateSystem::D1900, 2010, 11, 30).unwrap(),
+        );
+        close(
+            ev("COUPNCD", vec![d(2011, 3, 15), d(2011, 11, 30), n(2.0)]),
+            serial_from_ymd(DateSystem::D1900, 2011, 5, 31).unwrap(),
+        );
     }
 
     #[test]
     fn securities() {
-        close_tol(ev("DISC", vec![d(2007, 1, 25), d(2007, 6, 15), n(97.975), n(100.0), n(1.0)]), 0.052420213, 1e-8);
-        close_tol(ev("PRICEDISC", vec![d(2008, 2, 16), d(2008, 3, 1), n(0.0525), n(100.0), n(2.0)]), 99.79583333, 1e-9);
-        close_tol(ev("YIELDDISC", vec![d(2008, 2, 16), d(2008, 3, 1), n(99.795), n(100.0), n(2.0)]), 0.052823, 1e-5);
-        close_tol(ev("INTRATE", vec![d(2008, 2, 15), d(2008, 5, 15), n(1000000.0), n(1014420.0), n(2.0)]), 0.05768, 1e-9);
-        close_tol(ev("RECEIVED", vec![d(2008, 2, 15), d(2008, 5, 15), n(1000000.0), n(0.0575), n(2.0)]), 1014584.654, 1e-9);
-        is_err(ev("DISC", vec![d(2008, 2, 15), d(2008, 1, 15), n(97.0), n(100.0)]), CellError::Num);
-        close_tol(ev("TBILLPRICE", vec![d(2008, 3, 31), d(2008, 6, 1), n(0.09)]), 98.45, 1e-12);
-        close_tol(ev("TBILLYIELD", vec![d(2008, 3, 31), d(2008, 6, 1), n(98.45)]), 0.091417, 1e-6);
-        close_tol(ev("TBILLEQ", vec![d(2008, 3, 31), d(2008, 6, 1), n(0.0914)]), 0.094151, 1e-6);
-        is_err(ev("TBILLPRICE", vec![d(2008, 3, 31), d(2009, 6, 1), n(0.09)]), CellError::Num);
-        close_tol(ev("ACCRINTM", vec![d(2008, 4, 1), d(2008, 6, 15), n(0.1), n(1000.0), n(3.0)]), 20.54794521, 1e-9);
-        is_err(ev("ACCRINTM", vec![d(2008, 6, 15), d(2008, 4, 1), n(0.1)]), CellError::Num);
-        close_tol(ev("ACCRINT", vec![d(2008, 3, 1), d(2008, 8, 31), d(2008, 5, 1), n(0.1), n(1000.0), n(2.0), n(0.0)]), 16.66666667, 1e-9);
-        close_tol(ev("ACCRINT", vec![d(2008, 3, 5), d(2008, 8, 31), d(2008, 5, 1), n(0.1), n(1000.0), n(2.0), n(0.0), b(false)]), 15.55555556, 1e-9);
-        close_tol(ev("PRICEMAT", vec![d(2008, 2, 15), d(2008, 4, 13), d(2007, 11, 11), n(0.061), n(0.061), n(0.0)]), 99.98449888, 1e-9);
-        close_tol(ev("YIELDMAT", vec![d(2008, 3, 15), d(2008, 11, 3), d(2007, 11, 8), n(0.0625), n(100.0123), n(0.0)]), 0.060954, 1e-6);
-        close_tol(ev("PRICE", vec![d(2008, 2, 15), d(2017, 11, 15), n(0.0575), n(0.065), n(100.0), n(2.0), n(0.0)]), 94.63436, 1e-7);
-        close_tol(ev("YIELD", vec![d(2008, 2, 15), d(2016, 11, 15), n(0.0575), n(95.04287), n(100.0), n(2.0), n(0.0)]), 0.065, 1e-6);
-        is_err(ev("PRICE", vec![d(2008, 2, 15), d(2017, 11, 15), n(-0.01), n(0.065), n(100.0), n(2.0)]), CellError::Num);
-        close_tol(ev("DURATION", vec![d(2018, 7, 1), d(2048, 1, 1), n(0.08), n(0.09), n(2.0), n(1.0)]), 10.9191453, 1e-8);
-        close_tol(ev("MDURATION", vec![d(2008, 1, 1), d(2016, 1, 1), n(0.08), n(0.09), n(2.0), n(1.0)]), 5.73567, 1e-6);
+        close_tol(
+            ev(
+                "DISC",
+                vec![d(2007, 1, 25), d(2007, 6, 15), n(97.975), n(100.0), n(1.0)],
+            ),
+            0.052420213,
+            1e-8,
+        );
+        close_tol(
+            ev(
+                "PRICEDISC",
+                vec![d(2008, 2, 16), d(2008, 3, 1), n(0.0525), n(100.0), n(2.0)],
+            ),
+            99.79583333,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "YIELDDISC",
+                vec![d(2008, 2, 16), d(2008, 3, 1), n(99.795), n(100.0), n(2.0)],
+            ),
+            0.052823,
+            1e-5,
+        );
+        close_tol(
+            ev(
+                "INTRATE",
+                vec![
+                    d(2008, 2, 15),
+                    d(2008, 5, 15),
+                    n(1000000.0),
+                    n(1014420.0),
+                    n(2.0),
+                ],
+            ),
+            0.05768,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "RECEIVED",
+                vec![
+                    d(2008, 2, 15),
+                    d(2008, 5, 15),
+                    n(1000000.0),
+                    n(0.0575),
+                    n(2.0),
+                ],
+            ),
+            1014584.654,
+            1e-9,
+        );
+        is_err(
+            ev(
+                "DISC",
+                vec![d(2008, 2, 15), d(2008, 1, 15), n(97.0), n(100.0)],
+            ),
+            CellError::Num,
+        );
+        close_tol(
+            ev("TBILLPRICE", vec![d(2008, 3, 31), d(2008, 6, 1), n(0.09)]),
+            98.45,
+            1e-12,
+        );
+        close_tol(
+            ev("TBILLYIELD", vec![d(2008, 3, 31), d(2008, 6, 1), n(98.45)]),
+            0.091417,
+            1e-6,
+        );
+        close_tol(
+            ev("TBILLEQ", vec![d(2008, 3, 31), d(2008, 6, 1), n(0.0914)]),
+            0.094151,
+            1e-6,
+        );
+        is_err(
+            ev("TBILLPRICE", vec![d(2008, 3, 31), d(2009, 6, 1), n(0.09)]),
+            CellError::Num,
+        );
+        close_tol(
+            ev(
+                "ACCRINTM",
+                vec![d(2008, 4, 1), d(2008, 6, 15), n(0.1), n(1000.0), n(3.0)],
+            ),
+            20.54794521,
+            1e-9,
+        );
+        is_err(
+            ev("ACCRINTM", vec![d(2008, 6, 15), d(2008, 4, 1), n(0.1)]),
+            CellError::Num,
+        );
+        close_tol(
+            ev(
+                "ACCRINT",
+                vec![
+                    d(2008, 3, 1),
+                    d(2008, 8, 31),
+                    d(2008, 5, 1),
+                    n(0.1),
+                    n(1000.0),
+                    n(2.0),
+                    n(0.0),
+                ],
+            ),
+            16.66666667,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "ACCRINT",
+                vec![
+                    d(2008, 3, 5),
+                    d(2008, 8, 31),
+                    d(2008, 5, 1),
+                    n(0.1),
+                    n(1000.0),
+                    n(2.0),
+                    n(0.0),
+                    b(false),
+                ],
+            ),
+            15.55555556,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "PRICEMAT",
+                vec![
+                    d(2008, 2, 15),
+                    d(2008, 4, 13),
+                    d(2007, 11, 11),
+                    n(0.061),
+                    n(0.061),
+                    n(0.0),
+                ],
+            ),
+            99.98449888,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "YIELDMAT",
+                vec![
+                    d(2008, 3, 15),
+                    d(2008, 11, 3),
+                    d(2007, 11, 8),
+                    n(0.0625),
+                    n(100.0123),
+                    n(0.0),
+                ],
+            ),
+            0.060954,
+            1e-6,
+        );
+        close_tol(
+            ev(
+                "PRICE",
+                vec![
+                    d(2008, 2, 15),
+                    d(2017, 11, 15),
+                    n(0.0575),
+                    n(0.065),
+                    n(100.0),
+                    n(2.0),
+                    n(0.0),
+                ],
+            ),
+            94.63436,
+            1e-7,
+        );
+        close_tol(
+            ev(
+                "YIELD",
+                vec![
+                    d(2008, 2, 15),
+                    d(2016, 11, 15),
+                    n(0.0575),
+                    n(95.04287),
+                    n(100.0),
+                    n(2.0),
+                    n(0.0),
+                ],
+            ),
+            0.065,
+            1e-6,
+        );
+        is_err(
+            ev(
+                "PRICE",
+                vec![
+                    d(2008, 2, 15),
+                    d(2017, 11, 15),
+                    n(-0.01),
+                    n(0.065),
+                    n(100.0),
+                    n(2.0),
+                ],
+            ),
+            CellError::Num,
+        );
+        close_tol(
+            ev(
+                "DURATION",
+                vec![
+                    d(2018, 7, 1),
+                    d(2048, 1, 1),
+                    n(0.08),
+                    n(0.09),
+                    n(2.0),
+                    n(1.0),
+                ],
+            ),
+            10.9191453,
+            1e-8,
+        );
+        close_tol(
+            ev(
+                "MDURATION",
+                vec![
+                    d(2008, 1, 1),
+                    d(2016, 1, 1),
+                    n(0.08),
+                    n(0.09),
+                    n(2.0),
+                    n(1.0),
+                ],
+            ),
+            5.73567,
+            1e-6,
+        );
         // A one-coupon bond uses the closed form for yield; PRICE and YIELD invert each other.
-        let p = ev("PRICE", vec![d(2008, 2, 15), d(2008, 6, 15), n(0.05), n(0.04), n(100.0), n(2.0)]);
+        let p = ev(
+            "PRICE",
+            vec![
+                d(2008, 2, 15),
+                d(2008, 6, 15),
+                n(0.05),
+                n(0.04),
+                n(100.0),
+                n(2.0),
+            ],
+        );
         let pv = match p {
             Value::Number(x) => x,
             _ => panic!(),
         };
-        close_tol(ev("YIELD", vec![d(2008, 2, 15), d(2008, 6, 15), n(0.05), n(pv), n(100.0), n(2.0)]), 0.04, 1e-9);
+        close_tol(
+            ev(
+                "YIELD",
+                vec![
+                    d(2008, 2, 15),
+                    d(2008, 6, 15),
+                    n(0.05),
+                    n(pv),
+                    n(100.0),
+                    n(2.0),
+                ],
+            ),
+            0.04,
+            1e-9,
+        );
     }
 
     fn number(v: Value) -> f64 {
@@ -1927,40 +2807,158 @@ mod tests {
     fn odd_periods() {
         // The worked examples on Microsoft's function pages (results as printed there).
         let first = |x: f64, rest: &[f64]| {
-            let mut a = vec![d(2008, 11, 11), d(2021, 3, 1), d(2008, 10, 15), d(2009, 3, 1), n(x)];
+            let mut a = vec![
+                d(2008, 11, 11),
+                d(2021, 3, 1),
+                d(2008, 10, 15),
+                d(2009, 3, 1),
+                n(x),
+            ];
             a.extend(rest.iter().map(|v| n(*v)));
             a
         };
-        close_tol(ev("ODDFPRICE", first(0.0785, &[0.0625, 100.0, 2.0, 1.0])), 113.60, 0.005 / 113.6);
-        close_tol(ev("ODDFYIELD", first(0.0575, &[84.50, 100.0, 2.0, 0.0])), 0.0772, 0.00005);
-        let lp = vec![d(2008, 2, 7), d(2008, 6, 15), d(2007, 10, 15), n(0.0375), n(0.0405), n(100.0), n(2.0), n(0.0)];
+        close_tol(
+            ev("ODDFPRICE", first(0.0785, &[0.0625, 100.0, 2.0, 1.0])),
+            113.60,
+            0.005 / 113.6,
+        );
+        close_tol(
+            ev("ODDFYIELD", first(0.0575, &[84.50, 100.0, 2.0, 0.0])),
+            0.0772,
+            0.00005,
+        );
+        let lp = vec![
+            d(2008, 2, 7),
+            d(2008, 6, 15),
+            d(2007, 10, 15),
+            n(0.0375),
+            n(0.0405),
+            n(100.0),
+            n(2.0),
+            n(0.0),
+        ];
         close_tol(ev("ODDLPRICE", lp), 99.88, 0.005 / 99.88);
-        let ly = vec![d(2008, 4, 20), d(2008, 6, 15), d(2007, 12, 24), n(0.0375), n(99.875), n(100.0), n(2.0), n(0.0)];
+        let ly = vec![
+            d(2008, 4, 20),
+            d(2008, 6, 15),
+            d(2007, 12, 24),
+            n(0.0375),
+            n(99.875),
+            n(100.0),
+            n(2.0),
+            n(0.0),
+        ];
         close_tol(ev("ODDLYIELD", ly), 0.04519, 0.000005);
 
         // Yield → price → yield, for a short and a long odd first period and a long odd last period.
-        for (issue, basis) in [(d(2008, 10, 15), 0.0), (d(2007, 1, 20), 1.0), (d(2008, 1, 31), 3.0)] {
-            let args = |x: f64| vec![d(2008, 11, 11), d(2021, 3, 1), issue.clone(), d(2009, 3, 1), n(0.06), n(x), n(100.0), n(2.0), n(basis)];
+        for (issue, basis) in [
+            (d(2008, 10, 15), 0.0),
+            (d(2007, 1, 20), 1.0),
+            (d(2008, 1, 31), 3.0),
+        ] {
+            let args = |x: f64| {
+                vec![
+                    d(2008, 11, 11),
+                    d(2021, 3, 1),
+                    issue.clone(),
+                    d(2009, 3, 1),
+                    n(0.06),
+                    n(x),
+                    n(100.0),
+                    n(2.0),
+                    n(basis),
+                ]
+            };
             let p = number(ev("ODDFPRICE", args(0.05)));
             close_tol(ev("ODDFYIELD", args(p)), 0.05, 1e-9);
         }
-        let last = |x: f64| vec![d(2009, 2, 1), d(2009, 12, 15), d(2008, 3, 15), n(0.04), n(x), n(100.0), n(4.0), n(1.0)];
+        let last = |x: f64| {
+            vec![
+                d(2009, 2, 1),
+                d(2009, 12, 15),
+                d(2008, 3, 15),
+                n(0.04),
+                n(x),
+                n(100.0),
+                n(4.0),
+                n(1.0),
+            ]
+        };
         let p = number(ev("ODDLPRICE", last(0.07)));
         close_tol(ev("ODDLYIELD", last(p)), 0.07, 1e-9);
 
         // Argument checks: frequency, basis, date order, negative yield, non-positive price.
-        is_err(ev("ODDFPRICE", first(0.0785, &[0.0625, 100.0, 3.0, 1.0])), CellError::Num);
-        is_err(ev("ODDFPRICE", first(0.0785, &[0.0625, 100.0, 2.0, 5.0])), CellError::Num);
-        is_err(ev("ODDFPRICE", first(0.0785, &[-0.01, 100.0, 2.0, 1.0])), CellError::Num);
-        is_err(ev("ODDFYIELD", first(0.0575, &[0.0, 100.0, 2.0, 0.0])), CellError::Num);
         is_err(
-            ev("ODDFPRICE", vec![d(2009, 4, 1), d(2021, 3, 1), d(2008, 10, 15), d(2009, 3, 1), n(0.07), n(0.06), n(100.0), n(2.0)]),
+            ev("ODDFPRICE", first(0.0785, &[0.0625, 100.0, 3.0, 1.0])),
             CellError::Num,
         );
-        is_err(ev("ODDLPRICE", vec![d(2007, 10, 1), d(2008, 6, 15), d(2007, 10, 15), n(0.0375), n(0.0405), n(100.0), n(2.0)]), CellError::Num);
-        is_err(ev("ODDLYIELD", vec![d(2008, 4, 20), d(2008, 6, 15), d(2007, 12, 24), n(0.0375), n(-1.0), n(100.0), n(2.0)]), CellError::Num);
         is_err(
-            ev("ODDFPRICE", first(0.0785, &[0.0625, 100.0, 2.0, 1.0]).into_iter().take(4).chain([t("x"), n(0.06), n(100.0), n(2.0)]).collect()),
+            ev("ODDFPRICE", first(0.0785, &[0.0625, 100.0, 2.0, 5.0])),
+            CellError::Num,
+        );
+        is_err(
+            ev("ODDFPRICE", first(0.0785, &[-0.01, 100.0, 2.0, 1.0])),
+            CellError::Num,
+        );
+        is_err(
+            ev("ODDFYIELD", first(0.0575, &[0.0, 100.0, 2.0, 0.0])),
+            CellError::Num,
+        );
+        is_err(
+            ev(
+                "ODDFPRICE",
+                vec![
+                    d(2009, 4, 1),
+                    d(2021, 3, 1),
+                    d(2008, 10, 15),
+                    d(2009, 3, 1),
+                    n(0.07),
+                    n(0.06),
+                    n(100.0),
+                    n(2.0),
+                ],
+            ),
+            CellError::Num,
+        );
+        is_err(
+            ev(
+                "ODDLPRICE",
+                vec![
+                    d(2007, 10, 1),
+                    d(2008, 6, 15),
+                    d(2007, 10, 15),
+                    n(0.0375),
+                    n(0.0405),
+                    n(100.0),
+                    n(2.0),
+                ],
+            ),
+            CellError::Num,
+        );
+        is_err(
+            ev(
+                "ODDLYIELD",
+                vec![
+                    d(2008, 4, 20),
+                    d(2008, 6, 15),
+                    d(2007, 12, 24),
+                    n(0.0375),
+                    n(-1.0),
+                    n(100.0),
+                    n(2.0),
+                ],
+            ),
+            CellError::Num,
+        );
+        is_err(
+            ev(
+                "ODDFPRICE",
+                first(0.0785, &[0.0625, 100.0, 2.0, 1.0])
+                    .into_iter()
+                    .take(4)
+                    .chain([t("x"), n(0.06), n(100.0), n(2.0)])
+                    .collect(),
+            ),
             CellError::Value,
         );
     }
@@ -1969,22 +2967,72 @@ mod tests {
     fn odd_periods_survive_hostile_input() {
         // Quarterly quasi-periods across the whole date range, huge rates and yields: a value or
         // an error, never a panic or a hang.
-        let wide = |x: f64, y: f64| vec![n(2_957_000.0), n(2_958_465.0), n(400.0), n(2_957_900.0), n(x), n(y), n(1e300), n(4.0), n(1.0)];
+        let wide = |x: f64, y: f64| {
+            vec![
+                n(2_957_000.0),
+                n(2_958_465.0),
+                n(400.0),
+                n(2_957_900.0),
+                n(x),
+                n(y),
+                n(1e300),
+                n(4.0),
+                n(1.0),
+            ]
+        };
         for (x, y) in [(0.05, 0.05), (1e300, 1e300), (0.0, 1e-300)] {
             let _ = ev("ODDFPRICE", wide(x, y));
             let _ = ev("ODDFYIELD", wide(x, y));
         }
         // The long walk itself works: settled early in an odd first period of ~32,000 quarters,
         // a small yield round-trips.
-        let long = |y: f64| vec![n(500.0), n(2_958_465.0), n(400.0), n(2_957_900.0), n(0.05), n(y), n(100.0), n(4.0), n(1.0)];
+        let long = |y: f64| {
+            vec![
+                n(500.0),
+                n(2_958_465.0),
+                n(400.0),
+                n(2_957_900.0),
+                n(0.05),
+                n(y),
+                n(100.0),
+                n(4.0),
+                n(1.0),
+            ]
+        };
         let p = number(ev("ODDFPRICE", long(0.0001)));
         close_tol(ev("ODDFYIELD", long(p)), 0.0001, 1e-9);
-        let last = |x: f64, y: f64| vec![n(2_958_000.0), n(2_958_465.0), n(400.0), n(x), n(y), n(1e300), n(4.0), n(1.0)];
+        let last = |x: f64, y: f64| {
+            vec![
+                n(2_958_000.0),
+                n(2_958_465.0),
+                n(400.0),
+                n(x),
+                n(y),
+                n(1e300),
+                n(4.0),
+                n(1.0),
+            ]
+        };
         for (x, y) in [(0.05, 0.05), (1e300, 1e300), (0.0, f64::MAX)] {
             let _ = ev("ODDLPRICE", last(x, y));
             let _ = ev("ODDLYIELD", last(x, y));
         }
-        is_err(ev("ODDFPRICE", vec![n(-5.0), n(1e20), n(0.0), n(1e10), n(0.05), n(0.05), n(100.0), n(2.0)]), CellError::Num);
+        is_err(
+            ev(
+                "ODDFPRICE",
+                vec![
+                    n(-5.0),
+                    n(1e20),
+                    n(0.0),
+                    n(1e10),
+                    n(0.05),
+                    n(0.05),
+                    n(100.0),
+                    n(2.0),
+                ],
+            ),
+            CellError::Num,
+        );
     }
 
     #[test]
@@ -2006,10 +3054,16 @@ mod tests {
         close(ec(1.23456, "DEM", "DEM", vec![]), 1.23456);
         // Unknown codes and a triangulation precision below 3 are #VALUE!.
         is_err(ec(1.0, "USD", "EUR", vec![]), CellError::Value);
-        is_err(ec(1.0, "FRF", "DEM", vec![b(true), n(2.0)]), CellError::Value);
+        is_err(
+            ec(1.0, "FRF", "DEM", vec![b(true), n(2.0)]),
+            CellError::Value,
+        );
         // Hostile magnitudes give a number or #NUM!, never a panic.
         is_err(ec(f64::MAX, "EUR", "ITL", vec![]), CellError::Num);
-        close(ec(1.0, "FRF", "DEM", vec![b(true), n(1e300)]), 1.95583 / 6.55957);
+        close(
+            ec(1.0, "FRF", "DEM", vec![b(true), n(1e300)]),
+            1.95583 / 6.55957,
+        );
     }
 
     #[test]
@@ -2017,6 +3071,9 @@ mod tests {
         let v = ev("SLN", vec![av(row(&[100.0, 200.0])), n(0.0), n(10.0)]);
         assert_eq!(rows_of(&v), vec![vec![nv(10.0), nv(20.0)]]);
         is_err(ev("PMT", vec![t("abc"), n(1.0), n(1.0)]), CellError::Value);
-        is_err(ev("PMT", vec![e(CellError::NA), n(1.0), n(1.0)]), CellError::NA);
+        is_err(
+            ev("PMT", vec![e(CellError::NA), n(1.0), n(1.0)]),
+            CellError::NA,
+        );
     }
 }

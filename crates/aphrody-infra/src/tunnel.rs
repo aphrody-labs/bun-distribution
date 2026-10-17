@@ -89,7 +89,10 @@ pub enum WgCommand {
         public_key: String,
     },
     /// Converge the peers of a live interface on a configuration (`wg syncconf`).
-    Syncconf { name: Option<String>, config: String },
+    Syncconf {
+        name: Option<String>,
+        config: String,
+    },
     /// Print the `wg setconf` subset of a configuration (`wg-quick strip`).
     Strip { config: PathBuf },
     /// WireGuardNT driver library (Windows).
@@ -106,8 +109,20 @@ fn inventory(root: &Path) -> Result<Inventory> {
 /// Interface name of this OS: `windowsTunnelName` on Windows, `interface` elsewhere.
 pub(crate) fn default_name(root: &Path) -> String {
     inventory(root)
-        .map(|i| if cfg!(windows) { i.windows_tunnel_name } else { i.interface })
-        .unwrap_or_else(|_| if cfg!(windows) { "aphrody".into() } else { "wg1".into() })
+        .map(|i| {
+            if cfg!(windows) {
+                i.windows_tunnel_name
+            } else {
+                i.interface
+            }
+        })
+        .unwrap_or_else(|_| {
+            if cfg!(windows) {
+                "aphrody".into()
+            } else {
+                "wg1".into()
+            }
+        })
 }
 
 /// Protected key store of this host.
@@ -120,7 +135,10 @@ fn key_path(name: &str) -> PathBuf {
 }
 
 fn read_key(path: &Path) -> Result<Key> {
-    fs_read(path)?.trim().parse().map_err(|e| anyhow!("{}: {e}", path.display()))
+    fs_read(path)?
+        .trim()
+        .parse()
+        .map_err(|e| anyhow!("{}: {e}", path.display()))
 }
 
 fn fs_read(path: &Path) -> Result<String> {
@@ -162,7 +180,11 @@ fn load_config(root: &Path, target: &str, name: &str, key_file: Option<&Path>) -
 }
 
 fn backend(userspace: bool) -> Backend {
-    if userspace { Backend::Userspace } else { Backend::native() }
+    if userspace {
+        Backend::Userspace
+    } else {
+        Backend::native()
+    }
 }
 
 fn status_json(t: &Tunnel) -> Result<Value> {
@@ -176,7 +198,7 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
             let k = Key::generate_private().map_err(wg_err)?;
             println!("{k}");
             return Ok(json!({ "generated": "private" }));
-        },
+        }
         WgCommand::Pubkey { key } => {
             let raw = match key {
                 Some(k) => k.clone(),
@@ -184,16 +206,16 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                     let mut s = String::new();
                     std::io::stdin().read_to_string(&mut s)?;
                     s
-                },
+                }
             };
             let k: Key = raw.trim().parse().map_err(wg_err)?;
             println!("{}", k.public());
             return Ok(json!({ "public": k.public().to_base64() }));
-        },
+        }
         WgCommand::Genpsk => {
             println!("{}", Key::generate_preshared().map_err(wg_err)?);
             return Ok(json!({ "generated": "preshared" }));
-        },
+        }
         WgCommand::Keygen { name, force } => {
             let name = name.clone().unwrap_or_else(|| default_name(root));
             let path = key_path(&name);
@@ -205,27 +227,40 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                 write_secret(&path, &format!("{k}\n"))?;
                 json!({ "name": name, "keyFile": path, "publicKey": k.public().to_base64(), "created": true })
             }
-        },
+        }
         WgCommand::Plan => inventory(root)?.plan(),
-        WgCommand::Render { member, private_key_file, out } => {
+        WgCommand::Render {
+            member,
+            private_key_file,
+            out,
+        } => {
             let key = private_key_file.as_deref().map(read_key).transpose()?;
             let cfg = inventory(root)?.render(member, key).map_err(wg_err)?;
             match out {
                 Some(p) => {
                     write_secret(p, &cfg.render())?;
                     json!({ "member": member, "written": p })
-                },
+                }
                 None => {
                     print!("{}", cfg.render());
                     return Ok(json!({ "member": member }));
-                },
+                }
             }
-        },
+        }
         WgCommand::Strip { config } => {
-            print!("{}", Config::parse(&fs_read(config)?).map_err(wg_err)?.strip());
+            print!(
+                "{}",
+                Config::parse(&fs_read(config)?).map_err(wg_err)?.strip()
+            );
             return Ok(json!({ "stripped": config }));
-        },
-        WgCommand::Up { target, name, private_key_file, userspace, detach } => {
+        }
+        WgCommand::Up {
+            target,
+            name,
+            private_key_file,
+            userspace,
+            detach,
+        } => {
             let name = name.clone().unwrap_or_else(|| default_name(root));
             let backend = backend(*userspace);
             if *detach && !backend.persistent() {
@@ -249,7 +284,7 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                 println!("tunnel {name} arrêté");
                 json!({ "name": name, "up": false, "status": st })
             }
-        },
+        }
         WgCommand::Down { name } => {
             let name = name.clone().unwrap_or_else(|| default_name(root));
             let recorded = state::recorded(&name);
@@ -261,7 +296,7 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                     .map_err(wg_err)?;
                 json!({ "name": name, "down": true })
             }
-        },
+        }
         WgCommand::Show { name } => {
             let name = name.clone().unwrap_or_else(|| default_name(root));
             let st = status_json(&Tunnel::open(&name, Backend::native()).map_err(wg_err)?)?;
@@ -270,7 +305,7 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                 return Ok(st);
             }
             st
-        },
+        }
         WgCommand::SetPeer {
             name,
             public_key,
@@ -298,7 +333,7 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                 .and_then(|t| t.patch_peer(&patch))
                 .map_err(wg_err)?;
             json!({ "name": name, "peer": public_key, "configured": true })
-        },
+        }
         WgCommand::RemovePeer { name, public_key } => {
             let name = name.clone().unwrap_or_else(|| default_name(root));
             let k: Key = public_key.parse().map_err(wg_err)?;
@@ -306,7 +341,7 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                 .and_then(|t| t.remove_peer(&k))
                 .map_err(wg_err)?;
             json!({ "name": name, "peer": public_key, "removed": true })
-        },
+        }
         WgCommand::Syncconf { name, config } => {
             let name = name.clone().unwrap_or_else(|| default_name(root));
             let cfg = load_config(root, config, &name, None)?;
@@ -314,7 +349,7 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                 .and_then(|t| t.sync(&cfg))
                 .map_err(wg_err)?;
             json!({ "name": name, "sync": report })
-        },
+        }
         WgCommand::Driver { action } => match action {
             DriverAction::Status => serde_json::to_value(driver::status())?,
             DriverAction::Install => {
@@ -323,9 +358,11 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
                         "WireGuardNT est propre à Windows (Linux: module noyau, macOS/BSD: --userspace)"
                     );
                 }
-                let path = tokio::task::spawn_blocking(driver::install).await?.map_err(wg_err)?;
+                let path = tokio::task::spawn_blocking(driver::install)
+                    .await?
+                    .map_err(wg_err)?;
                 json!({ "installed": path, "version": driver::NT_VERSION, "sha256": driver::NT_SHA256 })
-            },
+            }
         },
     };
     println!("{}", serde_json::to_string_pretty(&out)?);
@@ -343,7 +380,10 @@ fn detach_up(
     let exe = std::env::current_exe()?;
     let mut args: Vec<String> = Vec::new();
     // The multi-call `aphrody` binary dispatches `infra`; `aphrody-infra` takes the subcommand.
-    if exe.file_stem().is_some_and(|s| s.eq_ignore_ascii_case("aphrody")) {
+    if exe
+        .file_stem()
+        .is_some_and(|s| s.eq_ignore_ascii_case("aphrody"))
+    {
         args.push("infra".into());
     }
     args.extend([
@@ -364,7 +404,10 @@ fn detach_up(
     std::fs::create_dir_all(driver::state_dir())?;
     let file = std::fs::File::create(&log)?;
     let mut cmd = std::process::Command::new(exe).detached();
-    cmd.args(&args).stdin(std::process::Stdio::null()).stdout(file.try_clone()?).stderr(file);
+    cmd.args(&args)
+        .stdin(std::process::Stdio::null())
+        .stdout(file.try_clone()?)
+        .stderr(file);
     #[cfg(windows)]
     disinherit_std_handles();
     let child = cmd.spawn()?;
@@ -407,8 +450,12 @@ fn print_status(st: &Value) {
         if let Some(e) = p["endpoint"].as_str() {
             println!("  endpoint: {e}");
         }
-        let ips: Vec<&str> =
-            p["allowed_ips"].as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+        let ips: Vec<&str> = p["allowed_ips"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect();
         println!("  allowed ips: {}", ips.join(", "));
         if let Some(h) = p["latest_handshake"].as_u64() {
             let now = std::time::SystemTime::now()
@@ -416,7 +463,10 @@ fn print_status(st: &Value) {
                 .map_or(0, |d| d.as_secs());
             println!("  latest handshake: {}s ago", now.saturating_sub(h));
         }
-        println!("  transfer: {} B received, {} B sent", p["rx_bytes"], p["tx_bytes"]);
+        println!(
+            "  transfer: {} B received, {} B sent",
+            p["rx_bytes"], p["tx_bytes"]
+        );
         if let Some(k) = p["persistent_keepalive"].as_u64() {
             println!("  persistent keepalive: every {k}s");
         }
@@ -451,8 +501,13 @@ mod tests {
             args.extend_from_slice(extra);
             WgArgs::try_parse_from(args).unwrap().command
         };
-        let WgCommand::SetPeer { allowed_ips, endpoint, keepalive, preshared_key_file, .. } =
-            parse(&["--keepalive", "25"])
+        let WgCommand::SetPeer {
+            allowed_ips,
+            endpoint,
+            keepalive,
+            preshared_key_file,
+            ..
+        } = parse(&["--keepalive", "25"])
         else {
             panic!("set-peer expected");
         };
@@ -465,9 +520,15 @@ mod tests {
         else {
             panic!("set-peer expected");
         };
-        assert_eq!(allowed_ips.unwrap(), ["10.200.77.10/32", "2001:db8::10/128"]);
-        let WgCommand::SetPeer { allowed_ips, keepalive, .. } =
-            parse(&["--allowed-ips", "--keepalive", "0"])
+        assert_eq!(
+            allowed_ips.unwrap(),
+            ["10.200.77.10/32", "2001:db8::10/128"]
+        );
+        let WgCommand::SetPeer {
+            allowed_ips,
+            keepalive,
+            ..
+        } = parse(&["--allowed-ips", "--keepalive", "0"])
         else {
             panic!("set-peer expected");
         };

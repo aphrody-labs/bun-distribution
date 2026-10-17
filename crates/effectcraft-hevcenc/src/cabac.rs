@@ -19,7 +19,11 @@ pub fn init_contexts(slice_qp: i32, init_type: usize) -> Contexts {
         let m = slope * 5 - 45;
         let n = (offset << 3) - 16;
         let pre = (((m * qp) >> 4) + n).clamp(1, 126);
-        *c = if pre <= 63 { ((63 - pre) << 1) as u8 } else { (((pre - 64) << 1) | 1) as u8 };
+        *c = if pre <= 63 {
+            ((63 - pre) << 1) as u8
+        } else {
+            (((pre - 64) << 1) | 1) as u8
+        };
     }
     ctx
 }
@@ -51,7 +55,14 @@ impl CabacEncoder {
     /// Start encoding slice data into `w` (which must be byte aligned).
     pub fn new(w: BitWriter, ctx: Contexts) -> Self {
         debug_assert!(w.is_aligned());
-        CabacEncoder { ctx, low: 0, range: 510, outstanding: 0, first: true, w }
+        CabacEncoder {
+            ctx,
+            low: 0,
+            range: 510,
+            outstanding: 0,
+            first: true,
+            w,
+        }
     }
 
     #[inline]
@@ -172,7 +183,11 @@ pub struct Estimator {
 
 impl Estimator {
     pub fn new(ctx: Contexts) -> Self {
-        Estimator { ctx, bits: 0, table: cost_table() }
+        Estimator {
+            ctx,
+            bits: 0,
+            table: cost_table(),
+        }
     }
 }
 

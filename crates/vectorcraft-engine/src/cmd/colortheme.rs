@@ -65,7 +65,11 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn has_themes(s: &Session) -> std::result::Result<(), String> {
-    if s.prefs.color_themes.is_empty() { Err("no saved themes".into()) } else { Ok(()) }
+    if s.prefs.color_themes.is_empty() {
+        Err("no saved themes".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// A theme as the commands list it.
@@ -87,27 +91,49 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 
 /// The index of the saved theme called `name`.
 fn find(s: &Session, name: &str, cmd: &str) -> Result<usize> {
-    s.prefs.color_themes.iter().position(|t| t.name == name).ok_or_else(|| bad(cmd, format!("no saved theme called {name} (see colorTheme.list)")))
+    s.prefs
+        .color_themes
+        .iter()
+        .position(|t| t.name == name)
+        .ok_or_else(|| {
+            bad(
+                cmd,
+                format!("no saved theme called {name} (see colorTheme.list)"),
+            )
+        })
 }
 
 /// The first free "Theme N".
 fn next_name(s: &Session) -> String {
-    (1..).map(|n| format!("Theme {n}")).find(|n| !s.prefs.color_themes.iter().any(|t| t.name.eq_ignore_ascii_case(n))).unwrap_or_default()
+    (1..)
+        .map(|n| format!("Theme {n}"))
+        .find(|n| {
+            !s.prefs
+                .color_themes
+                .iter()
+                .any(|t| t.name.eq_ignore_ascii_case(n))
+        })
+        .unwrap_or_default()
 }
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "colorTheme.save";
     let rule = match str_param(p, "rule") {
-        Some(r) => Some(Harmony::parse(r).ok_or_else(|| bad(C, format!("unknown rule `{r}` (see color.harmony)")))?),
+        Some(r) => Some(
+            Harmony::parse(r)
+                .ok_or_else(|| bad(C, format!("unknown rule `{r}` (see color.harmony)")))?,
+        ),
         None => None,
     };
     let colors: Vec<Color> = match (p.get("colors"), p.get("color")) {
-        (Some(Value::Array(cs)), _) => {
-            cs.iter().map(|c| color_value(c).ok_or_else(|| bad(C, format!("invalid colour {c}")))).collect::<Result<_>>()?
-        }
+        (Some(Value::Array(cs)), _) => cs
+            .iter()
+            .map(|c| color_value(c).ok_or_else(|| bad(C, format!("invalid colour {c}"))))
+            .collect::<Result<_>>()?,
         (None, Some(c)) => {
             let base = color_value(c).ok_or_else(|| bad(C, "invalid `color`"))?;
-            rule.ok_or_else(|| bad(C, "`color` needs a `rule` to make the theme from"))?.theme(base)
+            rule.ok_or_else(|| bad(C, "`color` needs a `rule` to make the theme from"))?
+                .theme(base)
         }
         _ => return Err(bad(C, "give `colors`, or `color` and `rule`")),
     };
@@ -120,10 +146,22 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
         Some(n) => n.to_string(),
         None => replace.map_or_else(|| next_name(s), |i| s.prefs.color_themes[i].name.clone()),
     };
-    if s.prefs.color_themes.iter().enumerate().any(|(i, t)| Some(i) != replace && t.name.eq_ignore_ascii_case(&name)) {
-        return Err(bad(C, format!("a theme is already called {name} (replace: \"{name}\" overwrites it)")));
+    if s.prefs
+        .color_themes
+        .iter()
+        .enumerate()
+        .any(|(i, t)| Some(i) != replace && t.name.eq_ignore_ascii_case(&name))
+    {
+        return Err(bad(
+            C,
+            format!("a theme is already called {name} (replace: \"{name}\" overwrites it)"),
+        ));
     }
-    let theme = ColorTheme { name: name.clone(), colors, rule: rule.map(Harmony::id) };
+    let theme = ColorTheme {
+        name: name.clone(),
+        colors,
+        rule: rule.map(Harmony::id),
+    };
     match replace {
         Some(i) => s.prefs.color_themes[i] = theme,
         None => s.prefs.color_themes.push(theme),
@@ -142,7 +180,8 @@ fn add_to_swatches(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "colorTheme.addToSwatches";
     let name = str_param(p, "name").ok_or_else(|| bad(C, "missing `name`"))?;
     let t = &s.prefs.color_themes[find(s, name, C)?];
-    let params = json!({ "name": t.name, "colors": t.colors.iter().map(color_json).collect::<Vec<_>>() });
+    let params =
+        json!({ "name": t.name, "colors": t.colors.iter().map(color_json).collect::<Vec<_>>() });
     let r = s.execute("swatch.newGroup", &params)?;
     Ok(json!({ "name": r["name"], "swatches": r["swatches"] }))
 }

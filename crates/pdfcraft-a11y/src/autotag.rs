@@ -40,21 +40,37 @@ struct Plan {
 }
 
 fn unsupported(page: usize, reason: impl Into<String>) -> AutoTagError {
-    AutoTagError::Unsupported { page: page + 1, reason: reason.into() }
+    AutoTagError::Unsupported {
+        page: page + 1,
+        reason: reason.into(),
+    }
 }
 
-fn content_bytes(doc: &Document, page: &pdfcraft_model::Page, index: usize) -> Result<Vec<u8>, AutoTagError> {
-    let Some(contents) = page.dict.get(b"Contents") else { return Ok(Vec::new()) };
+fn content_bytes(
+    doc: &Document,
+    page: &pdfcraft_model::Page,
+    index: usize,
+) -> Result<Vec<u8>, AutoTagError> {
+    let Some(contents) = page.dict.get(b"Contents") else {
+        return Ok(Vec::new());
+    };
     let resolved = doc.resolve(contents);
     let pieces: Vec<Object> = match &*resolved {
         Object::Array(items) => items.clone(),
         Object::Stream(_) => vec![contents.clone()],
-        _ => return Err(unsupported(index, "contents are not a stream or array of streams")),
+        _ => {
+            return Err(unsupported(
+                index,
+                "contents are not a stream or array of streams",
+            ));
+        }
     };
     let mut all = Vec::new();
     for item in pieces {
         let value = doc.resolve(&item);
-        let Object::Stream(stream) = &*value else { return Err(unsupported(index, "contents include a non-stream object")) };
+        let Object::Stream(stream) = &*value else {
+            return Err(unsupported(index, "contents include a non-stream object"));
+        };
         let remaining = MAX_PAGE_BYTES.saturating_sub(all.len().saturating_add(1));
         if remaining == 0 {
             return Err(unsupported(index, "decoded content exceeds 16 MiB"));
@@ -66,8 +82,9 @@ fn content_bytes(doc: &Document, page: &pdfcraft_model::Page, index: usize) -> R
             }
             stream.raw.to_vec()
         } else {
-            pdfcraft_filters::decode(&chain, &stream.raw, remaining)
-                .map_err(|e| unsupported(index, format!("content cannot be decoded strictly: {e}")))?
+            pdfcraft_filters::decode(&chain, &stream.raw, remaining).map_err(|e| {
+                unsupported(index, format!("content cannot be decoded strictly: {e}"))
+            })?
         };
         all.extend_from_slice(&decoded);
         all.push(b'\n');
@@ -140,7 +157,10 @@ fn plan(doc: &Document) -> Result<Vec<Plan>, AutoTagError> {
         return Err(AutoTagError::AlreadyTagged);
     }
     if catalog.contains(b"AcroForm") {
-        return Err(unsupported(0, "form fields need their own tags; this text-only action cannot tag them"));
+        return Err(unsupported(
+            0,
+            "form fields need their own tags; this text-only action cannot tag them",
+        ));
     }
     let pages = pdfcraft_model::pages(doc);
     if pages.len() > MAX_PAGES {
@@ -150,18 +170,31 @@ fn plan(doc: &Document) -> Result<Vec<Plan>, AutoTagError> {
     let mut total = 0usize;
     for (index, page) in pages.iter().enumerate() {
         if page.dict.contains(b"StructParents") {
-            return Err(unsupported(index, "page already has a structure parent key"));
+            return Err(unsupported(
+                index,
+                "page already has a structure parent key",
+            ));
         }
-        if page.dict.get(b"Annots").is_some_and(|a| match &*doc.resolve(a) {
-            Object::Array(items) => !items.is_empty(),
-            _ => true,
-        }) {
-            return Err(unsupported(index, "annotations need separate structure tags"));
+        if page
+            .dict
+            .get(b"Annots")
+            .is_some_and(|a| match &*doc.resolve(a) {
+                Object::Array(items) => !items.is_empty(),
+                _ => true,
+            })
+        {
+            return Err(unsupported(
+                index,
+                "annotations need separate structure tags",
+            ));
         }
         let bytes = content_bytes(doc, page, index)?;
         let parsed = parse(&bytes);
         if parsed.skipped > 0 || parsed.ops.len() > MAX_OPERATORS {
-            return Err(unsupported(index, "content has malformed or too many operators"));
+            return Err(unsupported(
+                index,
+                "content has malformed or too many operators",
+            ));
         }
         let mut start = None;
         let mut has_text = false;
@@ -173,7 +206,9 @@ fn plan(doc: &Document) -> Result<Vec<Plan>, AutoTagError> {
                     has_text = false;
                 }
                 b"ET" => {
-                    let Some(first) = start.take() else { return Err(unsupported(index, "unmatched ET operator")) };
+                    let Some(first) = start.take() else {
+                        return Err(unsupported(index, "unmatched ET operator"));
+                    };
                     if has_text {
                         spans.push((first, at));
                         if spans.len() > MAX_TEXT_OBJECTS {
@@ -184,14 +219,26 @@ fn plan(doc: &Document) -> Result<Vec<Plan>, AutoTagError> {
                 b"Tj" | b"TJ" | b"'" | b"\"" if start.is_some() => has_text = true,
                 name if start.is_some() && harmless_inside(name) => {}
                 name if start.is_none() && harmless_outside(name) => {}
-                _ => return Err(unsupported(index, format!("unsupported or painted operator {}", String::from_utf8_lossy(&op.op)))),
+                _ => {
+                    return Err(unsupported(
+                        index,
+                        format!(
+                            "unsupported or painted operator {}",
+                            String::from_utf8_lossy(&op.op)
+                        ),
+                    ));
+                }
             }
         }
         if start.is_some() {
             return Err(unsupported(index, "unterminated BT text object"));
         }
         total = total.saturating_add(spans.len());
-        out.push(Plan { page: page.obj, ops: parsed.ops, spans });
+        out.push(Plan {
+            page: page.obj,
+            ops: parsed.ops,
+            spans,
+        });
     }
     if total == 0 {
         return Err(AutoTagError::NoText);
@@ -226,7 +273,10 @@ pub fn autotag_text(doc: &mut Document) -> Result<AutoTagResult, AutoTagError> {
             element.set(b"S".to_vec(), Object::name("P"));
             element.set(b"P".to_vec(), Object::Ref(document));
             element.set(b"Pg".to_vec(), Object::Ref(page.page));
-            element.set(b"K".to_vec(), Object::Int(i64::try_from(mcid).map_err(|_| AutoTagError::TooManyPages)?));
+            element.set(
+                b"K".to_vec(),
+                Object::Int(i64::try_from(mcid).map_err(|_| AutoTagError::TooManyPages)?),
+            );
             let reference = next.add(element);
             parents.push(Object::Ref(reference));
             children.push(Object::Ref(reference));
@@ -234,12 +284,22 @@ pub fn autotag_text(doc: &mut Document) -> Result<AutoTagResult, AutoTagError> {
             ends.insert(*last);
             paragraphs = paragraphs.saturating_add(1);
         }
-        let mut marked = Vec::with_capacity(page.ops.len().saturating_add(page.spans.len().saturating_mul(2)));
+        let mut marked = Vec::with_capacity(
+            page.ops
+                .len()
+                .saturating_add(page.spans.len().saturating_mul(2)),
+        );
         for (at, op) in page.ops.into_iter().enumerate() {
             if let Some(mcid) = starts.get(&at) {
                 let mut properties = Dict::new();
-                properties.set(b"MCID".to_vec(), Object::Int(i64::try_from(*mcid).map_err(|_| AutoTagError::TooManyPages)?));
-                marked.push(Op::new("BDC", vec![Object::name("P"), Object::Dict(properties)]));
+                properties.set(
+                    b"MCID".to_vec(),
+                    Object::Int(i64::try_from(*mcid).map_err(|_| AutoTagError::TooManyPages)?),
+                );
+                marked.push(Op::new(
+                    "BDC",
+                    vec![Object::name("P"), Object::Dict(properties)],
+                ));
             }
             marked.push(op);
             if ends.contains(&at) {
@@ -268,9 +328,17 @@ pub fn autotag_text(doc: &mut Document) -> Result<AutoTagResult, AutoTagError> {
     structure.set(b"Type".to_vec(), Object::name("StructTreeRoot"));
     structure.set(b"K".to_vec(), Object::Ref(document));
     structure.set(b"ParentTree".to_vec(), Object::Ref(parent_tree));
-    structure.set(b"ParentTreeNextKey".to_vec(), Object::Int(i64::try_from(tagged_pages).map_err(|_| AutoTagError::TooManyPages)?));
+    structure.set(
+        b"ParentTreeNextKey".to_vec(),
+        Object::Int(i64::try_from(tagged_pages).map_err(|_| AutoTagError::TooManyPages)?),
+    );
     next.set(root, structure);
-    let mark_info = next.get(catalog).as_dict().and_then(|d| d.get(b"MarkInfo")).map(|m| next.resolve(m)).and_then(|m| m.as_dict().cloned());
+    let mark_info = next
+        .get(catalog)
+        .as_dict()
+        .and_then(|d| d.get(b"MarkInfo"))
+        .map(|m| next.resolve(m))
+        .and_then(|m| m.as_dict().cloned());
     let mut mark_info = mark_info.unwrap_or_default();
     mark_info.set(b"Marked".to_vec(), Object::Bool(true));
     next.update_dict(catalog, |d| {
@@ -278,5 +346,8 @@ pub fn autotag_text(doc: &mut Document) -> Result<AutoTagResult, AutoTagError> {
         d.set(b"MarkInfo".to_vec(), Object::Dict(mark_info));
     })?;
     *doc = next;
-    Ok(AutoTagResult { pages: tagged_pages, paragraphs })
+    Ok(AutoTagResult {
+        pages: tagged_pages,
+        paragraphs,
+    })
 }

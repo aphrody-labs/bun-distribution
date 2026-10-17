@@ -30,7 +30,11 @@ pub struct Detail {
 impl Detail {
     /// Borne un nombre d'éléments par [`Self::limit`].
     fn take(self, total: usize) -> usize {
-        if self.limit == 0 { total } else { total.min(self.limit) }
+        if self.limit == 0 {
+            total
+        } else {
+            total.min(self.limit)
+        }
     }
 }
 
@@ -138,7 +142,11 @@ fn report(
                 "function={path} name={} kind={} params={} lines={}-{}",
                 if f.name.is_empty() { "-" } else { &f.name },
                 f.kind.label(),
-                if f.params.is_empty() { "-".to_string() } else { f.params.join(",") },
+                if f.params.is_empty() {
+                    "-".to_string()
+                } else {
+                    f.params.join(",")
+                },
                 f.start_line,
                 f.end_line,
             );
@@ -159,7 +167,11 @@ fn report(
     }
 
     if detail.crc32 {
-        for s in a.crc32_strings.iter().take(detail.take(a.crc32_strings.len())) {
+        for s in a
+            .crc32_strings
+            .iter()
+            .take(detail.take(a.crc32_strings.len()))
+        {
             // Le moteur adresse ces noms par leur hash : sans lui, la chaîne ne se
             // raccorde à rien dans les données binaires.
             println!(
@@ -176,13 +188,25 @@ mod tests {
 
     #[test]
     fn la_limite_zero_ne_borne_rien() {
-        let d = Detail { functions: false, calls: false, strings: false, crc32: false, limit: 0 };
+        let d = Detail {
+            functions: false,
+            calls: false,
+            strings: false,
+            crc32: false,
+            limit: 0,
+        };
         assert_eq!(d.take(5000), 5000);
     }
 
     #[test]
     fn la_limite_borne_le_detail() {
-        let d = Detail { functions: true, calls: false, strings: false, crc32: false, limit: 3 };
+        let d = Detail {
+            functions: true,
+            calls: false,
+            strings: false,
+            crc32: false,
+            limit: 3,
+        };
         assert_eq!(d.take(100), 3);
         // Une rubrique plus courte que la limite n'est pas allongée.
         assert_eq!(d.take(2), 2);
@@ -192,7 +216,13 @@ mod tests {
     fn un_repertoire_sans_lua_est_une_erreur() {
         let dir = std::env::temp_dir().join("nie-lua-vide");
         let _ = std::fs::create_dir_all(&dir);
-        let d = Detail { functions: false, calls: false, strings: false, crc32: false, limit: 1 };
+        let d = Detail {
+            functions: false,
+            calls: false,
+            strings: false,
+            crc32: false,
+            limit: 1,
+        };
         assert!(run(&dir, d).is_err());
     }
 }

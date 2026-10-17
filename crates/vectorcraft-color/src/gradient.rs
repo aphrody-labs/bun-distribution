@@ -20,7 +20,13 @@ pub enum GradientKind {
 impl GradientKind {
     /// Parse a kind name (`linear`, `radial`, `freeform`; any case).
     pub fn parse(s: &str) -> Option<Self> {
-        [GradientKind::Linear, GradientKind::Radial, GradientKind::Freeform].into_iter().find(|k| k.label().eq_ignore_ascii_case(s))
+        [
+            GradientKind::Linear,
+            GradientKind::Radial,
+            GradientKind::Freeform,
+        ]
+        .into_iter()
+        .find(|k| k.label().eq_ignore_ascii_case(s))
     }
     pub fn label(self) -> &'static str {
         match self {
@@ -45,14 +51,24 @@ pub struct GradientStop {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub swatch: Option<String>,
     /// Tint of the linked swatch (0..1; 1 without a link), as on a solid paint.
-    #[serde(default = "crate::full_tint", skip_serializing_if = "crate::is_full_tint")]
+    #[serde(
+        default = "crate::full_tint",
+        skip_serializing_if = "crate::is_full_tint"
+    )]
     pub tint: f32,
 }
 
 impl GradientStop {
     /// An opaque, unlinked stop of `color` at `offset` with a centred midpoint.
     pub fn new(offset: f32, color: Color) -> Self {
-        Self { offset, color, opacity: 1.0, midpoint: 0.5, swatch: None, tint: 1.0 }
+        Self {
+            offset,
+            color,
+            opacity: 1.0,
+            midpoint: 0.5,
+            swatch: None,
+            tint: 1.0,
+        }
     }
     /// Give the stop `color`, linked to `link` (a global swatch and tint) or unlinked.
     pub fn set_color(&mut self, color: Color, link: Option<(String, f32)>) {
@@ -80,7 +96,13 @@ pub struct Gradient {
 impl Default for Gradient {
     /// Illustrator's default "White, Black" gradient.
     fn default() -> Self {
-        Self { kind: GradientKind::Linear, stops: vec![GradientStop::new(0.0, Color::WHITE), GradientStop::new(1.0, Color::BLACK)] }
+        Self {
+            kind: GradientKind::Linear,
+            stops: vec![
+                GradientStop::new(0.0, Color::WHITE),
+                GradientStop::new(1.0, Color::BLACK),
+            ],
+        }
     }
 }
 
@@ -106,8 +128,15 @@ impl Gradient {
                 let u = (t - a.offset) / span;
                 // Map through the midpoint: u=mid → 0.5.
                 let m = a.midpoint.clamp(0.01, 0.99);
-                let v = if u < m { 0.5 * u / m } else { 0.5 + 0.5 * (u - m) / (1.0 - m) };
-                return (mix(&a.color, &b.color, v), a.opacity + (b.opacity - a.opacity) * v);
+                let v = if u < m {
+                    0.5 * u / m
+                } else {
+                    0.5 + 0.5 * (u - m) / (1.0 - m)
+                };
+                return (
+                    mix(&a.color, &b.color, v),
+                    a.opacity + (b.opacity - a.opacity) * v,
+                );
             }
         }
         match stops.last() {
@@ -123,11 +152,15 @@ impl Gradient {
     /// on the gradient's own stops).
     pub fn expanded(&self) -> impl Iterator<Item = (f32, Color, f32, Option<f32>)> + '_ {
         self.stops.iter().enumerate().flat_map(move |(i, s)| {
-            let mid = self.stops.get(i + 1).filter(|_| (s.midpoint - 0.5).abs() > 1e-3).map(|n| {
-                let t = s.offset + (n.offset - s.offset) * s.midpoint;
-                let (c, o) = self.sample(t);
-                (t, c, o, Some(s.midpoint))
-            });
+            let mid = self
+                .stops
+                .get(i + 1)
+                .filter(|_| (s.midpoint - 0.5).abs() > 1e-3)
+                .map(|n| {
+                    let t = s.offset + (n.offset - s.offset) * s.midpoint;
+                    let (c, o) = self.sample(t);
+                    (t, c, o, Some(s.midpoint))
+                });
             std::iter::once((s.offset, s.color, s.opacity, None)).chain(mid)
         })
     }
@@ -159,7 +192,10 @@ impl Gradient {
         }
         let stop = |offset: f32, t: f32| {
             let (color, opacity) = self.sample(t);
-            GradientStop { opacity, ..GradientStop::new(offset, color) }
+            GradientStop {
+                opacity,
+                ..GradientStop::new(offset, color)
+            }
         };
         let d = to - from;
         let mut stops = vec![stop(0.0, from)];
@@ -168,11 +204,17 @@ impl Gradient {
                 self.expanded_stops()
                     .into_iter()
                     .filter(|(t, ..)| *t > from && *t < to)
-                    .map(|(t, color, opacity)| GradientStop { opacity, ..GradientStop::new((t - from) / d, color) }),
+                    .map(|(t, color, opacity)| GradientStop {
+                        opacity,
+                        ..GradientStop::new((t - from) / d, color)
+                    }),
             );
         }
         stops.push(stop(1.0, to));
-        Gradient { kind: GradientKind::Linear, stops }
+        Gradient {
+            kind: GradientKind::Linear,
+            stops,
+        }
     }
 }
 
@@ -183,7 +225,10 @@ pub const MIN_STOPS: usize = 2;
 
 /// Put `s` among `stops` (sorted by offset, after stops at the same offset). Returns its index.
 fn place_stop(stops: &mut Vec<GradientStop>, s: GradientStop) -> usize {
-    let i = stops.iter().position(|o| o.offset > s.offset).unwrap_or(stops.len());
+    let i = stops
+        .iter()
+        .position(|o| o.offset > s.offset)
+        .unwrap_or(stops.len());
     stops.insert(i, s);
     i
 }
@@ -194,7 +239,13 @@ pub fn insert_stop(g: &Gradient, offset: f32) -> (Vec<GradientStop>, usize) {
     let offset = offset.clamp(0.0, 1.0);
     let (color, opacity) = g.sample(offset);
     let mut stops = g.stops.clone();
-    let i = place_stop(&mut stops, GradientStop { opacity, ..GradientStop::new(offset, color) });
+    let i = place_stop(
+        &mut stops,
+        GradientStop {
+            opacity,
+            ..GradientStop::new(offset, color)
+        },
+    );
     (stops, i)
 }
 
@@ -223,8 +274,16 @@ pub fn move_stop(stops: &[GradientStop], i: usize, offset: f32) -> (Vec<Gradient
 /// Add a copy of stop `i` at `offset` (Alt-drag). Returns the stops and the copy's index.
 pub fn duplicate_stop(stops: &[GradientStop], i: usize, offset: f32) -> (Vec<GradientStop>, usize) {
     let mut v = stops.to_vec();
-    let Some(s) = v.get(i).cloned() else { return (v, i) };
-    let ni = place_stop(&mut v, GradientStop { offset: offset.clamp(0.0, 1.0), ..s });
+    let Some(s) = v.get(i).cloned() else {
+        return (v, i);
+    };
+    let ni = place_stop(
+        &mut v,
+        GradientStop {
+            offset: offset.clamp(0.0, 1.0),
+            ..s
+        },
+    );
     (v, ni)
 }
 
@@ -294,11 +353,21 @@ impl GradientGeom {
         let a = angle_deg.to_radians();
         let d = Vec2::new(a.cos(), -a.sin());
         match kind {
-            GradientKind::Radial => Self { start: c, end: c + d * (b.width().max(b.height()) / 2.0), aspect: 1.0, focal: None },
+            GradientKind::Radial => Self {
+                start: c,
+                end: c + d * (b.width().max(b.height()) / 2.0),
+                aspect: 1.0,
+                focal: None,
+            },
             _ => {
                 // Project the box corners onto the direction to cover the whole box.
                 let half = (b.width() * d.x.abs() + b.height() * d.y.abs()) / 2.0;
-                Self { start: c - d * half, end: c + d * half, aspect: 1.0, focal: None }
+                Self {
+                    start: c - d * half,
+                    end: c + d * half,
+                    aspect: 1.0,
+                    focal: None,
+                }
             }
         }
     }
@@ -326,7 +395,11 @@ impl GradientGeom {
             let far = a * self.end;
             let nrm = perp(lin(perp(u)));
             self.start = start;
-            self.end = if nrm.hypot2() > 1e-18 { start + nrm * ((far - start).dot(nrm) / nrm.hypot2()) } else { far };
+            self.end = if nrm.hypot2() > 1e-18 {
+                start + nrm * ((far - start).dot(nrm) / nrm.hypot2())
+            } else {
+                far
+            };
             return;
         }
         let (lu, lw) = (lin(u), lin(perp(u) * self.aspect));
@@ -344,7 +417,11 @@ impl GradientGeom {
             let th = 0.5 * (2.0 * r).atan2(p - q);
             let e1 = Vec2::new(th.cos(), th.sin());
             let e2 = perp(e1);
-            if e1.dot(lu).abs() >= e2.dot(lu).abs() { (e1, s1, s2) } else { (e2, s2, s1) }
+            if e1.dot(lu).abs() >= e2.dot(lu).abs() {
+                (e1, s1, s2)
+            } else {
+                (e2, s2, s1)
+            }
         };
         let axis = if axis.dot(lu) < 0.0 { -axis } else { axis };
         self.start = start;
@@ -373,9 +450,13 @@ impl GradientGeom {
         if kind != GradientKind::Radial {
             return (p - self.start).dot(u) / u.hypot2();
         }
-        let Some(to_unit) = self.unit_frame().map(|m| m.inverse()) else { return 0.0 };
+        let Some(to_unit) = self.unit_frame().map(|m| m.inverse()) else {
+            return 0.0;
+        };
         let q = (to_unit * p).to_vec2();
-        let Some(f) = self.focal.map(|f| (to_unit * f).to_vec2()) else { return q.hypot() };
+        let Some(f) = self.focal.map(|f| (to_unit * f).to_vec2()) else {
+            return q.hypot();
+        };
         // The level t through q: |q - f(1 - t)| = t, the root at t >= 0 (|f| < 1).
         let d = q - f;
         let a = f.hypot2() - 1.0;
@@ -390,7 +471,16 @@ impl GradientGeom {
     /// `aspect` × the radius across the vector. None when the ellipse is flat (no inverse).
     pub fn unit_frame(&self) -> Option<Affine> {
         let u = self.end - self.start;
-        (u.hypot2() * self.aspect.abs() > 1e-18).then(|| Affine::new([u.x, u.y, -u.y * self.aspect, u.x * self.aspect, self.start.x, self.start.y]))
+        (u.hypot2() * self.aspect.abs() > 1e-18).then(|| {
+            Affine::new([
+                u.x,
+                u.y,
+                -u.y * self.aspect,
+                u.x * self.aspect,
+                self.start.x,
+                self.start.y,
+            ])
+        })
     }
 
     /// The map that squashes a radial gradient's circle (centre `start`, radius the vector's
@@ -417,14 +507,23 @@ impl GradientGeom {
             let m = self.unit_frame()?;
             let q = (m.inverse() * f).to_vec2();
             let r = q.hypot();
-            (r > 1e-6).then(|| if r > FOCAL_MAX { m * (q * (FOCAL_MAX / r)).to_point() } else { f })
+            (r > 1e-6).then(|| {
+                if r > FOCAL_MAX {
+                    m * (q * (FOCAL_MAX / r)).to_point()
+                } else {
+                    f
+                }
+            })
         });
     }
 
     /// After a change of the vector or aspect from `before`, put the focal point back where it
     /// was relative to the extent ellipse.
     pub fn keep_focal_from(&mut self, before: &GradientGeom) {
-        let rel = before.focal.zip(before.unit_frame()).map(|(f, m)| m.inverse() * f);
+        let rel = before
+            .focal
+            .zip(before.unit_frame())
+            .map(|(f, m)| m.inverse() * f);
         self.focal = None;
         if let (Some(q), Some(m)) = (rel, self.unit_frame()) {
             self.set_focal(Some(m * q));
@@ -443,9 +542,16 @@ impl GradientGeom {
 /// `from` has no extent on, its offset from the centre).
 fn rebase_point(p: Point, from: Rect, to: Rect) -> Point {
     let axis = |v: f64, a0: f64, a1: f64, b0: f64, b1: f64| {
-        if (a1 - a0).abs() > 1e-12 { b0 + (v - a0) / (a1 - a0) * (b1 - b0) } else { v - (a0 + a1) / 2.0 + (b0 + b1) / 2.0 }
+        if (a1 - a0).abs() > 1e-12 {
+            b0 + (v - a0) / (a1 - a0) * (b1 - b0)
+        } else {
+            v - (a0 + a1) / 2.0 + (b0 + b1) / 2.0
+        }
     };
-    Point::new(axis(p.x, from.x0, from.x1, to.x0, to.x1), axis(p.y, from.y0, from.y1, to.y0, to.y1))
+    Point::new(
+        axis(p.x, from.x0, from.x1, to.x0, to.x1),
+        axis(p.y, from.y0, from.y1, to.y0, to.y1),
+    )
 }
 
 /// A gradient applied to a fill or stroke.
@@ -468,7 +574,13 @@ pub struct GradientPaint {
 
 impl GradientPaint {
     pub fn new(gradient: Gradient) -> Self {
-        Self { gradient, geom: None, angle: 0.0, swatch: None, freeform: None }
+        Self {
+            gradient,
+            geom: None,
+            angle: 0.0,
+            swatch: None,
+            freeform: None,
+        }
     }
     /// The freeform gradient drawn on box `bounds`: its own points, else the automatic ones
     /// (fitted to the box: [`Freeform::auto`] without a shape to keep them inside).
@@ -489,8 +601,14 @@ impl GradientPaint {
     /// shape (the Draw mode stays).
     pub fn seed_freeform(&mut self, bounds: Rect, inside: &dyn Fn(Point) -> bool) {
         if self.gradient.kind == GradientKind::Freeform && !self.has_freeform_points() {
-            let mode = self.freeform.as_ref().map_or_else(Default::default, |f| f.mode);
-            self.set_freeform(Freeform { mode, ..Freeform::auto(bounds, &self.gradient, inside) });
+            let mode = self
+                .freeform
+                .as_ref()
+                .map_or_else(Default::default, |f| f.mode);
+            self.set_freeform(Freeform {
+                mode,
+                ..Freeform::auto(bounds, &self.gradient, inside)
+            });
         }
     }
     /// Set the freeform points, with the stops following their colours (what swatch chips,
@@ -500,12 +618,14 @@ impl GradientPaint {
         self.freeform = Some(f);
     }
     pub fn resolve(&self, bounds: Rect) -> GradientGeom {
-        self.geom.unwrap_or_else(|| GradientGeom::fit(self.gradient.kind, bounds, self.angle))
+        self.geom
+            .unwrap_or_else(|| GradientGeom::fit(self.gradient.kind, bounds, self.angle))
     }
     /// Is the gradient placed in its paint's space (its vector, and a freeform gradient's points),
     /// rather than fitted to the object's box on each render?
     pub fn is_placed(&self) -> bool {
-        self.geom.is_some() && (self.gradient.kind != GradientKind::Freeform || self.has_freeform_points())
+        self.geom.is_some()
+            && (self.gradient.kind != GradientKind::Freeform || self.has_freeform_points())
     }
     /// Fix an unplaced gradient (geom None) to its fit on `bounds`, so it can follow transforms
     /// that refitting wouldn't reproduce (rotation, shear, non-uniform scale, warps).
@@ -581,24 +701,52 @@ mod tests {
     /// the other way round.
     #[test]
     fn reverse_mirrors_midpoints() {
-        let stop = |offset, hex, midpoint| GradientStop { midpoint, ..GradientStop::new(offset, Color::from_hex(hex).unwrap()) };
-        let two = Gradient { kind: GradientKind::Linear, stops: vec![stop(0.0, "#ff0000", 0.2), stop(1.0, "#0000ff", 0.5)] };
-        let three =
-            Gradient { kind: GradientKind::Linear, stops: vec![stop(0.0, "#ff0000", 0.2), stop(0.3, "#00ff00", 0.8), stop(1.0, "#0000ff", 0.5)] };
+        let stop = |offset, hex, midpoint| GradientStop {
+            midpoint,
+            ..GradientStop::new(offset, Color::from_hex(hex).unwrap())
+        };
+        let two = Gradient {
+            kind: GradientKind::Linear,
+            stops: vec![stop(0.0, "#ff0000", 0.2), stop(1.0, "#0000ff", 0.5)],
+        };
+        let three = Gradient {
+            kind: GradientKind::Linear,
+            stops: vec![
+                stop(0.0, "#ff0000", 0.2),
+                stop(0.3, "#00ff00", 0.8),
+                stop(1.0, "#0000ff", 0.5),
+            ],
+        };
         for g in [two, three] {
             let mut r = g.clone();
             r.reverse();
             let mids: Vec<f32> = r.stops.iter().map(|s| s.midpoint).collect();
-            let want: Vec<f32> = g.stops.iter().rev().skip(1).map(|s| 1.0 - s.midpoint).chain([0.5]).collect();
-            assert!(mids.iter().zip(&want).all(|(a, b)| (a - b).abs() < 1e-6), "{mids:?} {want:?}");
+            let want: Vec<f32> = g
+                .stops
+                .iter()
+                .rev()
+                .skip(1)
+                .map(|s| 1.0 - s.midpoint)
+                .chain([0.5])
+                .collect();
+            assert!(
+                mids.iter().zip(&want).all(|(a, b)| (a - b).abs() < 1e-6),
+                "{mids:?} {want:?}"
+            );
             for i in 0..=20 {
                 let t = i as f32 / 20.0;
                 let ((a, ao), (b, bo)) = (g.sample(t), r.sample(1.0 - t));
-                let same = a.to_rgba8(1.0).iter().zip(b.to_rgba8(1.0)).all(|(x, y)| x.abs_diff(y) <= 1);
+                let same = a
+                    .to_rgba8(1.0)
+                    .iter()
+                    .zip(b.to_rgba8(1.0))
+                    .all(|(x, y)| x.abs_diff(y) <= 1);
                 assert!(same && (ao - bo).abs() < 1e-6, "t {t}: {a:?} vs {b:?}");
             }
             r.reverse();
-            let back = r.stops.iter().zip(&g.stops).all(|(a, b)| (a.offset - b.offset).abs() < 1e-6 && (a.midpoint - b.midpoint).abs() < 1e-6);
+            let back = r.stops.iter().zip(&g.stops).all(|(a, b)| {
+                (a.offset - b.offset).abs() < 1e-6 && (a.midpoint - b.midpoint).abs() < 1e-6
+            });
             assert!(back, "reversed twice, it is as it was: {:?}", r.stops);
         }
     }
@@ -608,14 +756,25 @@ mod tests {
     }
 
     fn linear(start: (f64, f64), end: (f64, f64)) -> GradientGeom {
-        GradientGeom { start: start.into(), end: end.into(), aspect: 1.0, focal: None }
+        GradientGeom {
+            start: start.into(),
+            end: end.into(),
+            aspect: 1.0,
+            focal: None,
+        }
     }
 
     #[test]
     fn rotate_90_gives_vertical_vector() {
         let mut g = linear((0.0, 0.0), (100.0, 0.0));
-        g.transform(Affine::rotate(std::f64::consts::FRAC_PI_2), GradientKind::Linear);
-        assert!(close(g.start, Point::ZERO) && close(g.end, Point::new(0.0, 100.0)), "{g:?}");
+        g.transform(
+            Affine::rotate(std::f64::consts::FRAC_PI_2),
+            GradientKind::Linear,
+        );
+        assert!(
+            close(g.start, Point::ZERO) && close(g.end, Point::new(0.0, 100.0)),
+            "{g:?}"
+        );
         assert!((g.angle_deg() + 90.0).abs() < 1e-9);
     }
 
@@ -623,31 +782,62 @@ mod tests {
     fn reflect_swaps_start_and_end() {
         let mut g = linear((0.0, 25.0), (100.0, 25.0));
         // Reflect across the vertical axis through x = 50.
-        let flip = Affine::translate((50.0, 0.0)) * Affine::scale_non_uniform(-1.0, 1.0) * Affine::translate((-50.0, 0.0));
+        let flip = Affine::translate((50.0, 0.0))
+            * Affine::scale_non_uniform(-1.0, 1.0)
+            * Affine::translate((-50.0, 0.0));
         g.transform(flip, GradientKind::Linear);
-        assert!(close(g.start, Point::new(100.0, 25.0)) && close(g.end, Point::new(0.0, 25.0)), "{g:?}");
+        assert!(
+            close(g.start, Point::new(100.0, 25.0)) && close(g.end, Point::new(0.0, 25.0)),
+            "{g:?}"
+        );
     }
 
     #[test]
     fn non_uniform_scale_turns_a_circle_into_an_ellipse() {
-        let mut g = GradientGeom { start: Point::new(10.0, 10.0), end: Point::new(20.0, 10.0), aspect: 1.0, focal: None };
+        let mut g = GradientGeom {
+            start: Point::new(10.0, 10.0),
+            end: Point::new(20.0, 10.0),
+            aspect: 1.0,
+            focal: None,
+        };
         g.transform(Affine::scale_non_uniform(2.0, 1.0), GradientKind::Radial);
-        assert!(close(g.start, Point::new(20.0, 10.0)) && close(g.end, Point::new(40.0, 10.0)), "{g:?}");
+        assert!(
+            close(g.start, Point::new(20.0, 10.0)) && close(g.end, Point::new(40.0, 10.0)),
+            "{g:?}"
+        );
         assert!((g.aspect - 0.5).abs() < 1e-9);
         // A vertical vector keeps its axis: the ellipse is twice as wide as the vector is long.
-        let mut v = GradientGeom { start: Point::ZERO, end: Point::new(0.0, -10.0), aspect: 1.0, focal: None };
+        let mut v = GradientGeom {
+            start: Point::ZERO,
+            end: Point::new(0.0, -10.0),
+            aspect: 1.0,
+            focal: None,
+        };
         v.transform(Affine::scale_non_uniform(2.0, 1.0), GradientKind::Radial);
-        assert!(close(v.end, Point::new(0.0, -10.0)) && (v.aspect - 2.0).abs() < 1e-9, "{v:?}");
+        assert!(
+            close(v.end, Point::new(0.0, -10.0)) && (v.aspect - 2.0).abs() < 1e-9,
+            "{v:?}"
+        );
     }
 
     #[test]
     fn samples_follow_shear_and_rotation() {
         let shear = Affine::new([1.0, 0.3, 0.7, 1.2, 15.0, -4.0]) * Affine::rotate(0.4);
         for kind in [GradientKind::Linear, GradientKind::Radial] {
-            let g = GradientGeom { start: Point::new(30.0, 40.0), end: Point::new(80.0, 55.0), aspect: 0.6, focal: None };
+            let g = GradientGeom {
+                start: Point::new(30.0, 40.0),
+                end: Point::new(80.0, 55.0),
+                aspect: 0.6,
+                focal: None,
+            };
             let mut m = g;
             m.transform(shear, kind);
-            for p in [Point::new(30.0, 40.0), Point::new(55.0, 70.0), Point::new(90.0, 10.0), Point::new(-20.0, 48.0)] {
+            for p in [
+                Point::new(30.0, 40.0),
+                Point::new(55.0, 70.0),
+                Point::new(90.0, 10.0),
+                Point::new(-20.0, 48.0),
+            ] {
                 let (a, b) = (g.param_at(kind, p), m.param_at(kind, shear * p));
                 assert!((a - b).abs() < 1e-9, "{kind:?} at {p:?}: {a} vs {b}");
             }
@@ -658,8 +848,16 @@ mod tests {
     fn radial_fit_uses_the_angle_and_param_honours_aspect() {
         let b = Rect::new(0.0, 0.0, 100.0, 60.0);
         let g = GradientGeom::fit(GradientKind::Radial, b, 90.0);
-        assert!(close(g.start, Point::new(50.0, 30.0)) && close(g.end, Point::new(50.0, -20.0)), "end above the centre: {g:?}");
-        let e = GradientGeom { start: Point::ZERO, end: Point::new(10.0, 0.0), aspect: 0.5, focal: None };
+        assert!(
+            close(g.start, Point::new(50.0, 30.0)) && close(g.end, Point::new(50.0, -20.0)),
+            "end above the centre: {g:?}"
+        );
+        let e = GradientGeom {
+            start: Point::ZERO,
+            end: Point::new(10.0, 0.0),
+            aspect: 0.5,
+            focal: None,
+        };
         assert!((e.param_at(GradientKind::Radial, Point::new(0.0, 5.0)) - 1.0).abs() < 1e-12);
         assert!((e.param_at(GradientKind::Radial, Point::new(5.0, 0.0)) - 0.5).abs() < 1e-12);
         assert!((e.param_at(GradientKind::Linear, Point::new(5.0, 7.0)) - 0.5).abs() < 1e-12);
@@ -667,7 +865,8 @@ mod tests {
 
     fn g3() -> Gradient {
         let mut g = Gradient::default();
-        g.stops.insert(1, GradientStop::new(0.5, Color::rgb(1.0, 0.0, 0.0)));
+        g.stops
+            .insert(1, GradientStop::new(0.5, Color::rgb(1.0, 0.0, 0.0)));
         g
     }
 
@@ -702,14 +901,20 @@ mod tests {
         assert!(v.windows(2).all(|w| w[0].offset <= w[1].offset));
         let (v, i) = move_stop(&g.stops, 1, -3.0);
         // Clamped to 0 and placed after the existing stop at 0.
-        assert_eq!((i, v[i].offset, v[i].color.to_hex()), (1, 0.0, "#ff0000".to_string()));
+        assert_eq!(
+            (i, v[i].offset, v[i].color.to_hex()),
+            (1, 0.0, "#ff0000".to_string())
+        );
     }
 
     #[test]
     fn duplicate_copies_the_stop_to_a_new_offset() {
         let g = g3();
         let (v, i) = duplicate_stop(&g.stops, 1, 0.9);
-        assert_eq!((v.len(), i, v[i].offset, v[i].color.to_hex()), (4, 2, 0.9, "#ff0000".to_string()));
+        assert_eq!(
+            (v.len(), i, v[i].offset, v[i].color.to_hex()),
+            (4, 2, 0.9, "#ff0000".to_string())
+        );
         assert_eq!(v[1], g.stops[1], "the original stays");
         assert_eq!(duplicate_stop(&g.stops, 7, 0.5).0, g.stops);
     }
@@ -719,8 +924,14 @@ mod tests {
         let mut g = g3();
         g.stops[0].opacity = 0.25;
         let v = swap_stop_colors(&g.stops, 0, 1);
-        assert_eq!((v[0].color.to_hex(), v[1].color.to_hex()), ("#ff0000".to_string(), "#ffffff".to_string()));
-        assert_eq!((v[0].offset, v[0].opacity, v[1].offset, v[1].opacity), (0.0, 0.25, 0.5, 1.0));
+        assert_eq!(
+            (v[0].color.to_hex(), v[1].color.to_hex()),
+            ("#ff0000".to_string(), "#ffffff".to_string())
+        );
+        assert_eq!(
+            (v[0].offset, v[0].opacity, v[1].offset, v[1].opacity),
+            (0.0, 0.25, 0.5, 1.0)
+        );
         assert_eq!(swap_stop_colors(&g.stops, 0, 9), g.stops);
     }
 
@@ -738,13 +949,37 @@ mod tests {
 
     #[test]
     fn rebase_keeps_relative_positions() {
-        let mut g = GradientGeom { start: Point::new(110.0, 150.0), end: Point::new(190.0, 120.0), aspect: 0.5, focal: None };
-        g.rebase(Rect::new(100.0, 100.0, 200.0, 200.0), Rect::new(500.0, 0.0, 700.0, 50.0));
-        assert!(close(g.start, Point::new(520.0, 25.0)) && close(g.end, Point::new(680.0, 10.0)) && g.aspect == 0.5, "{g:?}");
+        let mut g = GradientGeom {
+            start: Point::new(110.0, 150.0),
+            end: Point::new(190.0, 120.0),
+            aspect: 0.5,
+            focal: None,
+        };
+        g.rebase(
+            Rect::new(100.0, 100.0, 200.0, 200.0),
+            Rect::new(500.0, 0.0, 700.0, 50.0),
+        );
+        assert!(
+            close(g.start, Point::new(520.0, 25.0))
+                && close(g.end, Point::new(680.0, 10.0))
+                && g.aspect == 0.5,
+            "{g:?}"
+        );
         // A box without height (a horizontal line) keeps the offset from its centre line.
-        let mut h = GradientGeom { start: Point::new(0.0, 12.0), end: Point::new(10.0, 10.0), aspect: 1.0, focal: None };
-        h.rebase(Rect::new(0.0, 10.0, 10.0, 10.0), Rect::new(0.0, 0.0, 20.0, 40.0));
-        assert!(close(h.start, Point::new(0.0, 22.0)) && close(h.end, Point::new(20.0, 20.0)), "{h:?}");
+        let mut h = GradientGeom {
+            start: Point::new(0.0, 12.0),
+            end: Point::new(10.0, 10.0),
+            aspect: 1.0,
+            focal: None,
+        };
+        h.rebase(
+            Rect::new(0.0, 10.0, 10.0, 10.0),
+            Rect::new(0.0, 0.0, 20.0, 40.0),
+        );
+        assert!(
+            close(h.start, Point::new(0.0, 22.0)) && close(h.end, Point::new(20.0, 20.0)),
+            "{h:?}"
+        );
         // Unplaced paints have nothing to move.
         let mut p = GradientPaint::new(Gradient::default());
         p.rebase(Rect::new(0.0, 0.0, 1.0, 1.0), Rect::new(5.0, 5.0, 9.0, 9.0));
@@ -757,14 +992,25 @@ mod tests {
         p.angle = 90.0;
         let b = Rect::new(0.0, 0.0, 100.0, 50.0);
         p.pin(b);
-        assert_eq!(p.geom, Some(GradientGeom::fit(GradientKind::Linear, b, 90.0)));
+        assert_eq!(
+            p.geom,
+            Some(GradientGeom::fit(GradientKind::Linear, b, 90.0))
+        );
         p.pin(Rect::new(0.0, 0.0, 1.0, 1.0));
-        assert_eq!(p.geom, Some(GradientGeom::fit(GradientKind::Linear, b, 90.0)));
+        assert_eq!(
+            p.geom,
+            Some(GradientGeom::fit(GradientKind::Linear, b, 90.0))
+        );
     }
 
     /// A 100 pt circle at (200, 200) with its focal point 40 pt left of the centre.
     fn off_centre() -> GradientGeom {
-        let mut g = GradientGeom { start: Point::new(200.0, 200.0), end: Point::new(300.0, 200.0), aspect: 1.0, focal: None };
+        let mut g = GradientGeom {
+            start: Point::new(200.0, 200.0),
+            end: Point::new(300.0, 200.0),
+            aspect: 1.0,
+            focal: None,
+        };
         g.set_focal(Some(Point::new(160.0, 200.0)));
         g
     }
@@ -776,7 +1022,8 @@ mod tests {
         assert!(s.contains("\"focal\""), "{s}");
         assert_eq!(serde_json::from_str::<GradientGeom>(&s).unwrap(), g);
         // Placements saved before focal points existed load centred, and centred ones write none.
-        let old: GradientGeom = serde_json::from_str(r#"{"start":{"x":0.0,"y":0.0},"end":{"x":1.0,"y":0.0}}"#).unwrap();
+        let old: GradientGeom =
+            serde_json::from_str(r#"{"start":{"x":0.0,"y":0.0},"end":{"x":1.0,"y":0.0}}"#).unwrap();
         assert_eq!((old.focal, old.aspect), (None, 1.0));
         assert!(!serde_json::to_string(&old).unwrap().contains("focal"));
     }
@@ -784,15 +1031,24 @@ mod tests {
     #[test]
     fn focal_follows_transforms_and_rebases() {
         let mut g = off_centre();
-        let a = Affine::translate((10.0, -5.0)) * Affine::rotate(0.7) * Affine::scale_non_uniform(2.0, 0.5);
+        let a = Affine::translate((10.0, -5.0))
+            * Affine::rotate(0.7)
+            * Affine::scale_non_uniform(2.0, 0.5);
         let f = a * g.focal.unwrap();
         g.transform(a, GradientKind::Radial);
         assert!(close(g.focal.unwrap(), f), "{g:?}");
         // Still at the same parameter: the first stop.
         assert!(g.param_at(GradientKind::Radial, f).abs() < 1e-9);
         let mut h = off_centre();
-        h.rebase(Rect::new(100.0, 100.0, 300.0, 300.0), Rect::new(0.0, 0.0, 100.0, 100.0));
-        assert!(close(h.focal.unwrap(), Point::new(30.0, 50.0)) && close(h.start, Point::new(50.0, 50.0)), "{h:?}");
+        h.rebase(
+            Rect::new(100.0, 100.0, 300.0, 300.0),
+            Rect::new(0.0, 0.0, 100.0, 100.0),
+        );
+        assert!(
+            close(h.focal.unwrap(), Point::new(30.0, 50.0))
+                && close(h.start, Point::new(50.0, 50.0)),
+            "{h:?}"
+        );
     }
 
     #[test]
@@ -803,25 +1059,47 @@ mod tests {
         // The extent circle is the last stop all round.
         for a in [0.0f64, 1.0, 2.5, 4.0] {
             let p = Point::new(200.0 + 100.0 * a.cos(), 200.0 + 100.0 * a.sin());
-            assert!((g.param_at(GradientKind::Radial, p) - 1.0).abs() < 1e-9, "{a}");
+            assert!(
+                (g.param_at(GradientKind::Radial, p) - 1.0).abs() < 1e-9,
+                "{a}"
+            );
         }
         // The centre lies on the level-2/7 circle: centred 2/7 of the way back to the focal point
         // (0.4 of the radius off), with a radius of 2/7.
-        assert!((t(200.0, 200.0) - 2.0 / 7.0).abs() < 1e-9, "{}", t(200.0, 200.0));
-        assert!(t(180.0, 200.0) < t(220.0, 200.0), "nearer the focal side is earlier");
-        assert_eq!(GradientGeom { focal: None, ..g }.param_at(GradientKind::Radial, Point::new(250.0, 200.0)), 0.5);
+        assert!(
+            (t(200.0, 200.0) - 2.0 / 7.0).abs() < 1e-9,
+            "{}",
+            t(200.0, 200.0)
+        );
+        assert!(
+            t(180.0, 200.0) < t(220.0, 200.0),
+            "nearer the focal side is earlier"
+        );
+        assert_eq!(
+            GradientGeom { focal: None, ..g }
+                .param_at(GradientKind::Radial, Point::new(250.0, 200.0)),
+            0.5
+        );
     }
 
     #[test]
     fn focal_is_kept_inside_the_ellipse_and_follows_its_reshaping() {
         let mut g = off_centre();
         g.set_focal(Some(Point::new(500.0, 200.0)));
-        assert!(close(g.focal.unwrap(), Point::new(299.0, 200.0)), "pulled inside: {g:?}");
+        assert!(
+            close(g.focal.unwrap(), Point::new(299.0, 200.0)),
+            "pulled inside: {g:?}"
+        );
         g.set_focal(Some(Point::new(200.0, 200.0)));
         assert_eq!(g.focal, None, "on the centre: centred");
         // A new vector and aspect keep it in its place in the ellipse.
         let before = off_centre();
-        let mut h = GradientGeom { start: Point::new(0.0, 0.0), end: Point::new(0.0, 50.0), aspect: 0.5, focal: None };
+        let mut h = GradientGeom {
+            start: Point::new(0.0, 0.0),
+            end: Point::new(0.0, 50.0),
+            aspect: 0.5,
+            focal: None,
+        };
         h.keep_focal_from(&before);
         assert!(close(h.focal.unwrap(), Point::new(0.0, -20.0)), "{h:?}");
     }

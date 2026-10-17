@@ -25,8 +25,9 @@ pub struct MotionClips {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn clips(vfs: &Vfs, path: &str) -> Result<MotionClips, String> {
-    let (dir_prefix, base) =
-        path.rsplit_once('/').map_or(("", path), |(dir, base)| (&path[..dir.len() + 1], base));
+    let (dir_prefix, base) = path
+        .rsplit_once('/')
+        .map_or(("", path), |(dir, base)| (&path[..dir.len() + 1], base));
     let stem = base.rsplit_once('.').map_or(base, |(stem, _)| stem);
 
     let archives: Vec<String> = if base.to_ascii_lowercase().ends_with(".g4pk") {
@@ -43,7 +44,9 @@ pub fn clips(vfs: &Vfs, path: &str) -> Result<MotionClips, String> {
                 };
                 let stem_lower = stem.to_ascii_lowercase();
                 name == stem_lower
-                    || name.strip_prefix(&stem_lower).is_some_and(|s| s.starts_with('_'))
+                    || name
+                        .strip_prefix(&stem_lower)
+                        .is_some_and(|s| s.starts_with('_'))
             })
             .map(|(p, _)| p.to_string())
             .collect();
@@ -55,7 +58,9 @@ pub fn clips(vfs: &Vfs, path: &str) -> Result<MotionClips, String> {
         return Ok(MotionClips {
             archives,
             clips: Vec::new(),
-            notice: Some(format!("No native motion archive for {stem} in {dir_prefix}")),
+            notice: Some(format!(
+                "No native motion archive for {stem} in {dir_prefix}"
+            )),
         });
     }
 
@@ -69,7 +74,9 @@ pub fn clips(vfs: &Vfs, path: &str) -> Result<MotionClips, String> {
         let size = vfs.find(archive).map(|entry| u64::from(entry.file_size));
         let Some(size) = size.filter(|size| *size <= remaining_bytes && *size <= 32 * 1024 * 1024)
         else {
-            skipped.push(format!("{archive} (missing or exceeds inspection byte budget)"));
+            skipped.push(format!(
+                "{archive} (missing or exceeds inspection byte budget)"
+            ));
             continue;
         };
         remaining_bytes -= size;
@@ -78,7 +85,7 @@ pub fn clips(vfs: &Vfs, path: &str) -> Result<MotionClips, String> {
             Err(_) => {
                 skipped.push(format!("{archive} (resource read failed)"));
                 continue;
-            },
+            }
         };
         if data.len() as u64 > size {
             skipped.push(format!("{archive} (resource exceeds indexed size)"));
@@ -89,13 +96,19 @@ pub fn clips(vfs: &Vfs, path: &str) -> Result<MotionClips, String> {
             Err(_) => {
                 skipped.push(format!("{archive} (invalid G4PK)"));
                 continue;
-            },
+            }
         };
         let mut found_motion = false;
-        for file in pk.files.iter().filter(|f| f.name.to_ascii_lowercase().ends_with(".g4mt")) {
+        for file in pk
+            .files
+            .iter()
+            .filter(|f| f.name.to_ascii_lowercase().ends_with(".g4mt"))
+        {
             found_motion = true;
-            let Some(bytes) =
-                file.offset.checked_add(file.size).and_then(|end| data.get(file.offset..end))
+            let Some(bytes) = file
+                .offset
+                .checked_add(file.size)
+                .and_then(|end| data.get(file.offset..end))
             else {
                 skipped.push(format!("{archive}/{} (entry outside archive)", file.name));
                 continue;
@@ -135,7 +148,15 @@ pub fn clips(vfs: &Vfs, path: &str) -> Result<MotionClips, String> {
     } else if clips.is_empty() {
         Some(format!("No readable clip: {}", skipped.join(" ; ")))
     } else {
-        Some(format!("{} archive(s) skipped: {}", skipped.len(), skipped.join(" ; ")))
+        Some(format!(
+            "{} archive(s) skipped: {}",
+            skipped.len(),
+            skipped.join(" ; ")
+        ))
     };
-    Ok(MotionClips { archives, clips, notice })
+    Ok(MotionClips {
+        archives,
+        clips,
+        notice,
+    })
 }

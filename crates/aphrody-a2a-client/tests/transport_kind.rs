@@ -61,8 +61,10 @@ fn wasi_resolves_to_unsupported() {
 fn browser_jsonrpc_transport_compiles() {
     use aphrody_a2a_client::jsonrpc::JsonRpcTransport;
     let client = reqwest::Client::new();
-    let _transport: Box<dyn Transport> =
-        Box::new(JsonRpcTransport::new(client, "https://example.invalid/jsonrpc".to_string()));
+    let _transport: Box<dyn Transport> = Box::new(JsonRpcTransport::new(
+        client,
+        "https://example.invalid/jsonrpc".to_string(),
+    ));
 }
 
 #[cfg(all(not(target_family = "wasm"), feature = "rustls-tls"))]
@@ -76,8 +78,10 @@ fn jsonrpc_transport_advertises_protocol_name() {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     let client = reqwest::Client::new();
-    let transport: Box<dyn Transport> =
-        Box::new(JsonRpcTransport::new(client, "http://127.0.0.1:0/jsonrpc".to_string()));
+    let transport: Box<dyn Transport> = Box::new(JsonRpcTransport::new(
+        client,
+        "http://127.0.0.1:0/jsonrpc".to_string(),
+    ));
     assert_eq!(transport.protocol_name(), "jsonrpc");
 }
 

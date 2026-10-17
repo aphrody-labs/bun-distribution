@@ -8,8 +8,14 @@ use rusqlite::{Connection, types::Value as SqlValue, types::ValueRef};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-const MENU_CATEGORIES: &[&str] =
-    &["gallery_img2", "ev_pic", "stadium", "vsroute_map", "hlp", "telop_waza"];
+const MENU_CATEGORIES: &[&str] = &[
+    "gallery_img2",
+    "ev_pic",
+    "stadium",
+    "vsroute_map",
+    "hlp",
+    "telop_waza",
+];
 const SELECTION_CATEGORIES: &[&str] = &["story", "chronicle", "special", "kizuna", "other"];
 const IMAGE_ROOT: &str = "https://cdn.rosegriffon.fr/dx11/menu/220_img";
 
@@ -55,15 +61,25 @@ fn title(stem: &str) -> String {
     let mut result = String::new();
     for ch in clean.trim().chars() {
         let word = ch.is_ascii_alphanumeric();
-        result.push(if word && !previous_word { ch.to_ascii_uppercase() } else { ch });
+        result.push(if word && !previous_word {
+            ch.to_ascii_uppercase()
+        } else {
+            ch
+        });
         previous_word = word;
     }
-    if result.is_empty() { stem.to_owned() } else { result }
+    if result.is_empty() {
+        stem.to_owned()
+    } else {
+        result
+    }
 }
 
 fn category(stem: &str) -> &str {
     let parsed = stem.strip_prefix("img_").unwrap_or_default();
-    let end = parsed.find(|ch: char| !ch.is_ascii_lowercase()).unwrap_or(parsed.len());
+    let end = parsed
+        .find(|ch: char| !ch.is_ascii_lowercase())
+        .unwrap_or(parsed.len());
     let parsed = &parsed[..end];
     if SELECTION_CATEGORIES.contains(&parsed) || MENU_CATEGORIES.contains(&parsed) {
         parsed
@@ -79,23 +95,29 @@ fn scalar(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<Value> {
         ValueRef::Real(value) => json!(value),
         ValueRef::Text(value) => {
             let text = String::from_utf8_lossy(value);
-            if matches!(text.as_ref(), "\\N" | "\\\\N") { Value::Null } else { json!(text) }
-        },
+            if matches!(text.as_ref(), "\\N" | "\\\\N") {
+                Value::Null
+            } else {
+                json!(text)
+            }
+        }
         ValueRef::Blob(_) => {
             return Err(rusqlite::Error::InvalidColumnType(
                 index,
                 "gallery value".into(),
                 rusqlite::types::Type::Blob,
             ));
-        },
+        }
     })
 }
 
 fn selection(connection: &Connection, input: &GalleryRequest) -> anyhow::Result<(Vec<Value>, u64)> {
     let mut filter = vec!["1".to_owned()];
     let mut values = Vec::<SqlValue>::new();
-    if let Some(category) =
-        input.category.as_deref().filter(|category| SELECTION_CATEGORIES.contains(category))
+    if let Some(category) = input
+        .category
+        .as_deref()
+        .filter(|category| SELECTION_CATEGORIES.contains(category))
     {
         filter.push("img_path LIKE ?".into());
         values.push(format!("img_{category}_%").into());
@@ -128,8 +150,10 @@ fn selection(connection: &Connection, input: &GalleryRequest) -> anyhow::Result<
                 object.insert("imgPath".into(), json!(path));
                 object.insert("category".into(), json!(category(path)));
                 object.insert("title".into(), json!(title(path)));
-                object
-                    .insert("needTokenNum".into(), if token.is_null() { json!(0) } else { token });
+                object.insert(
+                    "needTokenNum".into(),
+                    if token.is_null() { json!(0) } else { token },
+                );
                 object.insert("flgNo".into(), if flag.is_null() { json!(0) } else { flag });
                 Ok(result)
             })?
@@ -221,7 +245,10 @@ mod tests {
         let connection = Connection::open_in_memory().unwrap();
         let menu = list(
             &connection,
-            &GalleryRequest { category: Some("menu".into()), ..Default::default() },
+            &GalleryRequest {
+                category: Some("menu".into()),
+                ..Default::default()
+            },
         )
         .unwrap();
         assert_eq!(menu["total"], 0);
@@ -233,8 +260,14 @@ mod tests {
         let connection = Connection::open_in_memory().unwrap();
         connection.execute_batch("CREATE TABLE inagle_gallery(id TEXT,img_path TEXT,need_token_num TEXT,flg_no TEXT);
             INSERT INTO inagle_gallery VALUES ('two','img_story_two','2','2'),('ten','img_story_ten','10','10'),('null','img_other_null',NULL,NULL);").unwrap();
-        let page =
-            list(&connection, &GalleryRequest { limit: Some(1), ..Default::default() }).unwrap();
+        let page = list(
+            &connection,
+            &GalleryRequest {
+                limit: Some(1),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(page["total"], 3);
         assert_eq!(page["data"][0]["id"], "ten");
         assert_eq!(page["data"][0]["needTokenNum"], "10");
@@ -287,7 +320,10 @@ mod tests {
         assert_eq!(menu["data"].as_array().unwrap().len(), 300);
         let images = list(
             &connection,
-            &GalleryRequest { category: Some("gallery_img2".into()), ..Default::default() },
+            &GalleryRequest {
+                category: Some("gallery_img2".into()),
+                ..Default::default()
+            },
         )
         .unwrap();
         assert_eq!(images["total"], 363);
@@ -315,8 +351,11 @@ mod tests {
             Connection::open_with_flags(mirror, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
                 .unwrap();
         for (index, case) in cases.iter().enumerate() {
-            let actual =
-                list(&connection, &serde_json::from_value(case["input"].clone()).unwrap()).unwrap();
+            let actual = list(
+                &connection,
+                &serde_json::from_value(case["input"].clone()).unwrap(),
+            )
+            .unwrap();
             assert!(
                 actual == case["expected"],
                 "historical gallery JSON differs at fixture {index}"
@@ -331,6 +370,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(editorial.total, 3939);
-        assert_eq!(editorial.categories.iter().map(|category| category.count).sum::<u64>(), 3939);
+        assert_eq!(
+            editorial
+                .categories
+                .iter()
+                .map(|category| category.count)
+                .sum::<u64>(),
+            3939
+        );
     }
 }

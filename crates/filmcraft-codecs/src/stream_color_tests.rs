@@ -8,7 +8,10 @@ use std::sync::Arc;
 
 use filmcraft_bitstream::{BitWriter, escape_rbsp};
 use filmcraft_color::{ColorInfo, ColorSpace, Matrix, Primaries, Range, Transfer};
-use filmcraft_isobmff::{Av1Config, AvcConfig, Brand, CodecConfig, HevcConfig, HevcNalArray, Mp4Writer, SampleEntry, TrackConfig, WriteSample, WriterOptions};
+use filmcraft_isobmff::{
+    Av1Config, AvcConfig, Brand, CodecConfig, HevcConfig, HevcNalArray, Mp4Writer, SampleEntry,
+    TrackConfig, WriteSample, WriterOptions,
+};
 use filmcraft_matroska::{MkvWriter, MuxOptions, TrackKind, TrackSpec};
 use filmcraft_media::MediaSource;
 
@@ -22,9 +25,18 @@ struct Signal {
     full_range: bool,
 }
 
-const PQ_2020: Signal = Signal { codes: Some((9, 16, 9)), full_range: false };
-const SMPTE_170M: Signal = Signal { codes: Some((6, 6, 6)), full_range: false };
-const FULL_ONLY: Signal = Signal { codes: None, full_range: true };
+const PQ_2020: Signal = Signal {
+    codes: Some((9, 16, 9)),
+    full_range: false,
+};
+const SMPTE_170M: Signal = Signal {
+    codes: Some((6, 6, 6)),
+    full_range: false,
+};
+const FULL_ONLY: Signal = Signal {
+    codes: None,
+    full_range: true,
+};
 
 fn signal(w: &mut BitWriter, s: Signal) {
     w.write_bit(true); // video_signal_type_present_flag
@@ -135,7 +147,12 @@ fn hevc_sps(width: u32, height: u32, vui: Option<Signal>) -> Vec<u8> {
 
 /// An AV1 sequence header OBU (AV1 bitstream spec §5.5; reduced still-picture header, profile 0,
 /// 10-bit 4:2:0) of `width`×`height` with `color_config` signalling `codes` and `full_range`.
-fn av1_sequence_header(width: u32, height: u32, codes: Option<(u8, u8, u8)>, full_range: bool) -> Vec<u8> {
+fn av1_sequence_header(
+    width: u32,
+    height: u32,
+    codes: Option<(u8, u8, u8)>,
+    full_range: bool,
+) -> Vec<u8> {
     let mut w = BitWriter::new();
     w.write_bits(0, 3); // seq_profile
     w.write_bit(true); // still_picture
@@ -162,13 +179,20 @@ fn av1_sequence_header(width: u32, height: u32, codes: Option<(u8, u8, u8)>, ful
     w.rbsp_trailing();
     let payload = w.finish();
     // OBU header: type 1 (OBU_SEQUENCE_HEADER), obu_has_size_field; one-byte leb128 size
-    let mut obu = vec![(1 << 3) | 2, u8::try_from(payload.len()).expect("short payload")];
+    let mut obu = vec![
+        (1 << 3) | 2,
+        u8::try_from(payload.len()).expect("short payload"),
+    ];
     obu.extend(payload);
     obu
 }
 
 fn avc(sps: Vec<u8>) -> CodecConfig {
-    CodecConfig::Avc(AvcConfig::new(vec![sps], vec![vec![0x68, 0xCE, 0x38, 0x80]], 4))
+    CodecConfig::Avc(AvcConfig::new(
+        vec![sps],
+        vec![vec![0x68, 0xCE, 0x38, 0x80]],
+        4,
+    ))
 }
 
 fn hevc(sps: Vec<u8>) -> CodecConfig {
@@ -178,17 +202,32 @@ fn hevc(sps: Vec<u8>) -> CodecConfig {
         bit_depth_luma: 10,
         bit_depth_chroma: 10,
         length_size: 4,
-        arrays: vec![HevcNalArray { completeness: true, nal_type: 33, nalus: vec![sps] }],
+        arrays: vec![HevcNalArray {
+            completeness: true,
+            nal_type: 33,
+            nalus: vec![sps],
+        }],
         ..Default::default()
     })
 }
 
 fn av1(obus: Vec<u8>) -> CodecConfig {
-    CodecConfig::Av1(Av1Config { high_bitdepth: true, chroma_subsampling_x: true, chroma_subsampling_y: true, config_obus: obus, ..Default::default() })
+    CodecConfig::Av1(Av1Config {
+        high_bitdepth: true,
+        chroma_subsampling_x: true,
+        chroma_subsampling_y: true,
+        config_obus: obus,
+        ..Default::default()
+    })
 }
 
 /// A one-sample MP4 with `codec` (the sample is never decoded) and, when given, a `colr` box.
-fn mp4(codec: CodecConfig, w: u16, h: u16, colr: Option<filmcraft_isobmff::ColorInfo>) -> Arc<[u8]> {
+fn mp4(
+    codec: CodecConfig,
+    w: u16,
+    h: u16,
+    colr: Option<filmcraft_isobmff::ColorInfo>,
+) -> Arc<[u8]> {
     let mut entry = match codec {
         CodecConfig::Avc(c) => SampleEntry::avc(c, w, h),
         CodecConfig::Hevc(c) => SampleEntry::hevc(c, w, h),
@@ -197,13 +236,28 @@ fn mp4(codec: CodecConfig, w: u16, h: u16, colr: Option<filmcraft_isobmff::Color
     if let Some(v) = entry.video.as_mut() {
         v.color = colr;
     }
-    let mut mux = Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mp4)).expect("writer");
+    let mut mux =
+        Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mp4)).expect("writer");
     let t = mux.add_track(TrackConfig::new(entry, 30)).expect("track");
-    mux.write_sample(t, WriteSample { data: &[0, 0, 0, 1, 0x65], duration: 1, composition_offset: 0, is_sync: true }).expect("sample");
+    mux.write_sample(
+        t,
+        WriteSample {
+            data: &[0, 0, 0, 1, 0x65],
+            duration: 1,
+            composition_offset: 0,
+            is_sync: true,
+        },
+    )
+    .expect("sample");
     mux.finish().expect("finish").into_inner().into()
 }
 
-fn mp4_color(codec: CodecConfig, w: u16, h: u16, colr: Option<filmcraft_isobmff::ColorInfo>) -> ColorInfo {
+fn mp4_color(
+    codec: CodecConfig,
+    w: u16,
+    h: u16,
+    colr: Option<filmcraft_isobmff::ColorInfo>,
+) -> ColorInfo {
     let src = crate::Mp4Source::open("clip.mp4", mp4(codec, w, h, colr)).expect("open");
     src.info().video.as_ref().expect("video").color
 }
@@ -211,7 +265,15 @@ fn mp4_color(codec: CodecConfig, w: u16, h: u16, colr: Option<filmcraft_isobmff:
 #[test]
 fn hevc_pq_without_colr_is_rec2100_pq() {
     let c = mp4_color(hevc(hevc_sps(1920, 1080, Some(PQ_2020))), 1920, 1080, None);
-    assert_eq!(c, ColorInfo { matrix: Matrix::Bt2020Ncl, transfer: Transfer::Pq, primaries: Primaries::Bt2020, range: Range::Limited });
+    assert_eq!(
+        c,
+        ColorInfo {
+            matrix: Matrix::Bt2020Ncl,
+            transfer: Transfer::Pq,
+            primaries: Primaries::Bt2020,
+            range: Range::Limited
+        }
+    );
     assert_eq!(ColorSpace::from_info(&c), ColorSpace::Rec2100Pq);
     assert!(ColorSpace::from_info(&c).is_hdr());
 }
@@ -220,27 +282,62 @@ fn hevc_pq_without_colr_is_rec2100_pq() {
 fn full_range_h264_without_colr_is_full_range() {
     // video_full_range_flag with no colour description: full range, the rest by size
     let c = mp4_color(avc(h264_sps(80, 45, Some(FULL_ONLY))), 1280, 720, None);
-    assert_eq!(c, ColorInfo { range: Range::Full, ..ColorInfo::REC709 });
+    assert_eq!(
+        c,
+        ColorInfo {
+            range: Range::Full,
+            ..ColorInfo::REC709
+        }
+    );
 }
 
 #[test]
 fn bt601_sd_h264_without_colr_has_bt601_primaries() {
     let c = mp4_color(avc(h264_sps(45, 30, Some(SMPTE_170M))), 720, 480, None);
-    assert_eq!(c, ColorInfo { matrix: Matrix::Bt601, transfer: Transfer::Bt709, primaries: Primaries::Bt601_525, range: Range::Limited });
+    assert_eq!(
+        c,
+        ColorInfo {
+            matrix: Matrix::Bt601,
+            transfer: Transfer::Bt709,
+            primaries: Primaries::Bt601_525,
+            range: Range::Limited
+        }
+    );
     // PAL (BT.470 BG primaries, BT.601 matrix)
-    let pal = Signal { codes: Some((5, 6, 5)), full_range: false };
+    let pal = Signal {
+        codes: Some((5, 6, 5)),
+        full_range: false,
+    };
     let c = mp4_color(avc(h264_sps(45, 36, Some(pal))), 720, 576, None);
-    assert_eq!((c.primaries, c.matrix), (Primaries::Bt601_625, Matrix::Bt601));
+    assert_eq!(
+        (c.primaries, c.matrix),
+        (Primaries::Bt601_625, Matrix::Bt601)
+    );
 }
 
 #[test]
 fn unspecified_or_missing_vui_keeps_the_size_defaults() {
-    let unspecified = Signal { codes: Some((2, 2, 2)), full_range: false };
+    let unspecified = Signal {
+        codes: Some((2, 2, 2)),
+        full_range: false,
+    };
     for vui in [None, Some(unspecified)] {
-        assert_eq!(mp4_color(avc(h264_sps(80, 45, vui)), 1280, 720, None), ColorInfo::REC709);
-        assert_eq!(mp4_color(hevc(hevc_sps(1920, 1080, vui)), 1920, 1080, None), ColorInfo::REC709);
+        assert_eq!(
+            mp4_color(avc(h264_sps(80, 45, vui)), 1280, 720, None),
+            ColorInfo::REC709
+        );
+        assert_eq!(
+            mp4_color(hevc(hevc_sps(1920, 1080, vui)), 1920, 1080, None),
+            ColorInfo::REC709
+        );
         // SD: the BT.601 matrix, as before
-        assert_eq!(mp4_color(avc(h264_sps(45, 30, vui)), 720, 480, None), ColorInfo { matrix: Matrix::Bt601, ..ColorInfo::REC709 });
+        assert_eq!(
+            mp4_color(avc(h264_sps(45, 30, vui)), 720, 480, None),
+            ColorInfo {
+                matrix: Matrix::Bt601,
+                ..ColorInfo::REC709
+            }
+        );
     }
 }
 
@@ -249,61 +346,168 @@ fn colr_wins_over_the_bitstream() {
     use filmcraft_isobmff::ColorInfo::{Nclc, Nclx};
     let sps = || hevc(hevc_sps(1920, 1080, Some(PQ_2020)));
     // a BT.709 nclx box beats a PQ VUI, and is what the decoder's frames are tagged with
-    let colr = Nclx { primaries: 1, transfer: 1, matrix: 1, full_range: false };
-    assert_eq!(mp4_color(sps(), 1920, 1080, Some(colr.clone())), ColorInfo::REC709);
+    let colr = Nclx {
+        primaries: 1,
+        transfer: 1,
+        matrix: 1,
+        full_range: false,
+    };
+    assert_eq!(
+        mp4_color(sps(), 1920, 1080, Some(colr.clone())),
+        ColorInfo::REC709
+    );
     // HLG in colr, PQ in the VUI: HLG
-    let hlg = Nclx { primaries: 9, transfer: 18, matrix: 9, full_range: false };
-    assert_eq!(mp4_color(sps(), 1920, 1080, Some(hlg)).transfer, Transfer::Hlg);
+    let hlg = Nclx {
+        primaries: 9,
+        transfer: 18,
+        matrix: 9,
+        full_range: false,
+    };
+    assert_eq!(
+        mp4_color(sps(), 1920, 1080, Some(hlg)).transfer,
+        Transfer::Hlg
+    );
     // limited range in colr beats a full-range VUI
-    assert_eq!(mp4_color(avc(h264_sps(80, 45, Some(FULL_ONLY))), 1280, 720, Some(colr)).range, Range::Limited);
+    assert_eq!(
+        mp4_color(
+            avc(h264_sps(80, 45, Some(FULL_ONLY))),
+            1280,
+            720,
+            Some(colr)
+        )
+        .range,
+        Range::Limited
+    );
     // what colr leaves unspecified comes from the VUI
-    let partial = Nclx { primaries: 2, transfer: 16, matrix: 2, full_range: false };
-    assert_eq!(mp4_color(sps(), 1920, 1080, Some(partial)), mp4_color(sps(), 1920, 1080, None));
+    let partial = Nclx {
+        primaries: 2,
+        transfer: 16,
+        matrix: 2,
+        full_range: false,
+    };
+    assert_eq!(
+        mp4_color(sps(), 1920, 1080, Some(partial)),
+        mp4_color(sps(), 1920, 1080, None)
+    );
     // QuickTime nclc has no range flag: the VUI's range stands
-    let nclc = Nclc { primaries: 1, transfer: 1, matrix: 1 };
-    assert_eq!(mp4_color(avc(h264_sps(80, 45, Some(FULL_ONLY))), 1280, 720, Some(nclc)).range, Range::Full);
+    let nclc = Nclc {
+        primaries: 1,
+        transfer: 1,
+        matrix: 1,
+    };
+    assert_eq!(
+        mp4_color(
+            avc(h264_sps(80, 45, Some(FULL_ONLY))),
+            1280,
+            720,
+            Some(nclc)
+        )
+        .range,
+        Range::Full
+    );
     // an ICC profile has no code points: the bitstream decides
-    let icc = filmcraft_isobmff::ColorInfo::Icc { kind: filmcraft_isobmff::FourCc(*b"prof"), profile: vec![0; 8] };
-    assert_eq!(mp4_color(sps(), 1920, 1080, Some(icc)).transfer, Transfer::Pq);
+    let icc = filmcraft_isobmff::ColorInfo::Icc {
+        kind: filmcraft_isobmff::FourCc(*b"prof"),
+        profile: vec![0; 8],
+    };
+    assert_eq!(
+        mp4_color(sps(), 1920, 1080, Some(icc)).transfer,
+        Transfer::Pq
+    );
 }
 
 #[test]
 fn av1_sequence_header_colour() {
     let obu = av1_sequence_header(1920, 1080, Some((9, 16, 9)), false);
-    assert_eq!(from_codec_config(&av1(obu.clone())), Some(ColorCodes { primaries: 9, transfer: 16, matrix: 9, full_range: Some(false) }));
+    assert_eq!(
+        from_codec_config(&av1(obu.clone())),
+        Some(ColorCodes {
+            primaries: 9,
+            transfer: 16,
+            matrix: 9,
+            full_range: Some(false)
+        })
+    );
     let c = mp4_color(av1(obu), 1920, 1080, None);
     assert_eq!(ColorSpace::from_info(&c), ColorSpace::Rec2100Pq);
     // no colour description: unspecified code points, the range flag still counts
     let obu = av1_sequence_header(640, 360, None, true);
-    assert_eq!(from_codec_config(&av1(obu)), Some(ColorCodes { primaries: 2, transfer: 2, matrix: 2, full_range: Some(true) }));
+    assert_eq!(
+        from_codec_config(&av1(obu)),
+        Some(ColorCodes {
+            primaries: 2,
+            transfer: 2,
+            matrix: 2,
+            full_range: Some(true)
+        })
+    );
 }
 
 #[test]
 fn matroska_without_colour_uses_the_bitstream() {
-    let CodecConfig::Hevc(hvcc) = hevc(hevc_sps(1920, 1080, Some(PQ_2020))) else { panic!("an hvcC") };
+    let CodecConfig::Hevc(hvcc) = hevc(hevc_sps(1920, 1080, Some(PQ_2020))) else {
+        panic!("an hvcC")
+    };
     let mut spec = TrackSpec::new(TrackKind::Video, "V_MPEGH/ISO/HEVC");
     spec.codec_private = hvcc.to_bytes();
     spec.video_size = Some((1920, 1080));
     spec.default_duration_ns = Some(33_333_333);
-    let mut w = MkvWriter::new(Cursor::new(Vec::new()), vec![spec], MuxOptions::default()).expect("writer");
-    w.write_frame(0, 0, true, &[0, 0, 0, 1, 0x26], None).expect("frame");
+    let mut w =
+        MkvWriter::new(Cursor::new(Vec::new()), vec![spec], MuxOptions::default()).expect("writer");
+    w.write_frame(0, 0, true, &[0, 0, 0, 1, 0x26], None)
+        .expect("frame");
     let b: Arc<[u8]> = w.finish().expect("finish").into_inner().into();
     let src = crate::MkvSource::open("clip.mkv", b).expect("open");
     let c = src.info().video.as_ref().expect("video").color;
     assert_eq!(ColorSpace::from_info(&c), ColorSpace::Rec2100Pq);
-    assert_eq!((c.primaries, c.matrix), (Primaries::Bt2020, Matrix::Bt2020Ncl));
+    assert_eq!(
+        (c.primaries, c.matrix),
+        (Primaries::Bt2020, Matrix::Bt2020Ncl)
+    );
 }
 
 #[test]
 fn resolve_takes_each_field_from_the_first_source_that_knows_it() {
-    let colr = ColorCodes { primaries: 1, transfer: 2, matrix: 0, full_range: None };
-    let vui = ColorCodes { primaries: 9, transfer: 18, matrix: 9, full_range: Some(true) };
+    let colr = ColorCodes {
+        primaries: 1,
+        transfer: 2,
+        matrix: 0,
+        full_range: None,
+    };
+    let vui = ColorCodes {
+        primaries: 9,
+        transfer: 18,
+        matrix: 9,
+        full_range: Some(true),
+    };
     // matrix 0 (identity) is not one we know: the VUI's BT.2020 is used
     let c = resolve(1920, 1080, &[colr, vui]);
-    assert_eq!(c, ColorInfo { matrix: Matrix::Bt2020Ncl, transfer: Transfer::Hlg, primaries: Primaries::Bt709, range: Range::Full });
-    assert_eq!(resolve(720, 480, &[]), ColorInfo { matrix: Matrix::Bt601, ..ColorInfo::REC709 });
+    assert_eq!(
+        c,
+        ColorInfo {
+            matrix: Matrix::Bt2020Ncl,
+            transfer: Transfer::Hlg,
+            primaries: Primaries::Bt709,
+            range: Range::Full
+        }
+    );
+    assert_eq!(
+        resolve(720, 480, &[]),
+        ColorInfo {
+            matrix: Matrix::Bt601,
+            ..ColorInfo::REC709
+        }
+    );
     // code points that don't fit a byte are unspecified, not truncated (0x109 is not 9)
-    assert_eq!(ColorCodes::from_wide(0x109, 0x110, 0x109, None), ColorCodes { primaries: 2, transfer: 2, matrix: 2, full_range: None });
+    assert_eq!(
+        ColorCodes::from_wide(0x109, 0x110, 0x109, None),
+        ColorCodes {
+            primaries: 2,
+            transfer: 2,
+            matrix: 2,
+            full_range: None
+        }
+    );
 }
 
 /// Every truncation and many bit flips of each configuration: never a panic, and the result is
@@ -313,7 +517,10 @@ fn hostile_parameter_sets_never_panic() {
     let configs: Vec<(Vec<u8>, fn(Vec<u8>) -> CodecConfig)> = vec![
         (h264_sps(45, 30, Some(SMPTE_170M)), avc),
         (hevc_sps(1920, 1080, Some(PQ_2020)), hevc),
-        (av1_sequence_header(1920, 1080, Some((9, 16, 9)), false), av1),
+        (
+            av1_sequence_header(1920, 1080, Some((9, 16, 9)), false),
+            av1,
+        ),
     ];
     for (good, make) in configs {
         assert!(from_codec_config(&make(good.clone())).is_some());
@@ -331,10 +538,25 @@ fn hostile_parameter_sets_never_panic() {
         }
     }
     // configurations with no parameter sets at all
-    assert_eq!(from_codec_config(&CodecConfig::Avc(AvcConfig::default())), None);
-    assert_eq!(from_codec_config(&CodecConfig::Hevc(HevcConfig::default())), None);
-    assert_eq!(from_codec_config(&CodecConfig::Av1(Av1Config::default())), None);
+    assert_eq!(
+        from_codec_config(&CodecConfig::Avc(AvcConfig::default())),
+        None
+    );
+    assert_eq!(
+        from_codec_config(&CodecConfig::Hevc(HevcConfig::default())),
+        None
+    );
+    assert_eq!(
+        from_codec_config(&CodecConfig::Av1(Av1Config::default())),
+        None
+    );
     // a garbage SPS imports with the size defaults
-    assert_eq!(mp4_color(avc(vec![0x67, 0xff, 0xff]), 1280, 720, None), ColorInfo::REC709);
-    assert_eq!(mp4_color(hevc(vec![33 << 1, 1, 0xff]), 1920, 1080, None), ColorInfo::REC709);
+    assert_eq!(
+        mp4_color(avc(vec![0x67, 0xff, 0xff]), 1280, 720, None),
+        ColorInfo::REC709
+    );
+    assert_eq!(
+        mp4_color(hevc(vec![33 << 1, 1, 0xff]), 1920, 1080, None),
+        ColorInfo::REC709
+    );
 }

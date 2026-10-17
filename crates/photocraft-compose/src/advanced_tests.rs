@@ -22,22 +22,35 @@ fn close(a: [f32; 4], b: [f32; 4]) -> bool {
 #[track_caller]
 fn check(d: &Document, x: i32, y: i32, want: [f32; 4], what: &str) {
     let got = render(d, Rect::from_xywh(x, y, 1, 1)).px[0];
-    assert!(close(got, want), "{what} ({:?}) at ({x},{y}): got {got:?}, want {want:?}", d.depth);
+    assert!(
+        close(got, want),
+        "{what} ({:?}) at ({x},{y}): got {got:?}, want {want:?}",
+        d.depth
+    );
     // Tiled and whole-canvas renders agree (knockout targets are per tile).
     let tiled = render_tiled(d, d.bounds(), 3);
     let whole = render(d, d.bounds());
-    assert!(tiled.px.iter().zip(&whole.px).all(|(a, b)| close(*a, *b)), "{what}: tiles differ from the whole render");
+    assert!(
+        tiled.px.iter().zip(&whole.px).all(|(a, b)| close(*a, *b)),
+        "{what}: tiles differ from the whole render"
+    );
 }
 
 /// A 12×8 document at `depth` with a white Background (or none).
 fn doc(depth: SampleType, background: bool) -> Document {
     let size = Size::new(12, 8);
-    if background { Document::with_background("t", size, ColorMode::Rgb, depth, Color::WHITE) } else { Document::new("t", size, ColorMode::Rgb, depth) }
+    if background {
+        Document::with_background("t", size, ColorMode::Rgb, depth, Color::WHITE)
+    } else {
+        Document::new("t", size, ColorMode::Rgb, depth)
+    }
 }
 
 fn solid(d: &Document, name: &str, r: Rect, c: [f32; 4]) -> Layer {
     let mut l = Layer::raster(name, d.pixel_format());
-    l.surface_mut().unwrap().fill_rect(r, &photocraft_raster::from_rgba(&d.pixel_format(), c));
+    l.surface_mut()
+        .unwrap()
+        .fill_rect(r, &photocraft_raster::from_rgba(&d.pixel_format(), c));
     l
 }
 
@@ -153,7 +166,13 @@ fn knockout_on_a_group_uses_its_composite_shape_and_fill() {
         g.advanced.knockout = Knockout::Deep;
         d.layers.push(green);
         d.layers.push(g);
-        check(&d, 2, 2, [0.5, 0.5, 1.0, 1.0], "blue at 50 % over the Background");
+        check(
+            &d,
+            2,
+            2,
+            [0.5, 0.5, 1.0, 1.0],
+            "blue at 50 % over the Background",
+        );
         check(&d, 9, 2, GREEN, "outside the group's pixels");
     }
 }
@@ -166,9 +185,19 @@ fn knockout_follows_masks_and_transparency_shapes() {
         d.layers.push(green);
         let mut k = knocker(&d, Knockout::Deep);
         // A mask hiding x >= 3: only x < 3 knocks out.
-        let mut m = photocraft_raster::Surface::new(PixelFormat::new(ColorMode::Grayscale, depth, false));
-        m.fill_rect(Rect::new(0, 0, 3, 8), &photocraft_raster::from_rgba(&m.format(), [1.0; 4]));
-        k.mask = Some(LayerMask { surface: m, enabled: true, linked: true, density: 1.0, feather: 0.0 });
+        let mut m =
+            photocraft_raster::Surface::new(PixelFormat::new(ColorMode::Grayscale, depth, false));
+        m.fill_rect(
+            Rect::new(0, 0, 3, 8),
+            &photocraft_raster::from_rgba(&m.format(), [1.0; 4]),
+        );
+        k.mask = Some(LayerMask {
+            surface: m,
+            enabled: true,
+            linked: true,
+            density: 1.0,
+            feather: 0.0,
+        });
         d.layers.push(k);
         check(&d, 1, 2, WHITE, "inside the mask");
         check(&d, 4, 2, GREEN, "masked out");
@@ -191,7 +220,13 @@ fn clipped_layer_shallow_knockout_stops_at_the_base() {
         d.layers.push(base);
         d.layers.push(mid);
         d.layers.push(k);
-        check(&d, 2, 2, RED, "the base shows through the clipped layer above it");
+        check(
+            &d,
+            2,
+            2,
+            RED,
+            "the base shows through the clipped layer above it",
+        );
         check(&d, 9, 2, GREEN, "outside");
         d.layers[3].advanced.knockout = Knockout::Deep;
         check(&d, 2, 2, RED, "clipped deep stops at the base too");
@@ -225,7 +260,10 @@ fn blend_clipped_layers_individually() {
 }
 
 fn overlay(c: [f32; 3]) -> Effect {
-    Effect::ColorOverlay { common: FxCommon::new(BlendMode::Normal, 1.0), color: Color::rgb(c[0], c[1], c[2]) }
+    Effect::ColorOverlay {
+        common: FxCommon::new(BlendMode::Normal, 1.0),
+        color: Color::rgb(c[0], c[1], c[2]),
+    }
 }
 
 #[test]
@@ -255,14 +293,30 @@ fn interior_effects_blend_over_the_layer_mode_unless_grouped() {
     let lift = 1.0 - 2.0 * (1.0 - grey);
     for depth in DEPTHS {
         let mut d = doc(depth, false);
-        d.layers.push(solid(&d, "grey", full(&d), [grey, grey, grey, 1.0]));
+        d.layers
+            .push(solid(&d, "grey", full(&d), [grey, grey, grey, 1.0]));
         let mut l = solid(&d, "black", full(&d), [0.0, 0.0, 0.0, 1.0]);
         l.blend = BlendMode::Color;
-        l.effects.items = vec![Effect::ColorOverlay { common: FxCommon::new(BlendMode::Overlay, 1.0), color: Color::rgb(1.0, 0.0, 0.0) }];
+        l.effects.items = vec![Effect::ColorOverlay {
+            common: FxCommon::new(BlendMode::Overlay, 1.0),
+            color: Color::rgb(1.0, 0.0, 0.0),
+        }];
         d.layers.push(l);
-        check(&d, 2, 2, [1.0, lift, lift, 1.0], "default: overlay over the Color blend");
+        check(
+            &d,
+            2,
+            2,
+            [1.0, lift, lift, 1.0],
+            "default: overlay over the Color blend",
+        );
         d.layers[1].advanced.blend_interior = true;
-        check(&d, 2, 2, [grey, grey, grey, 1.0], "as group: overlay inside the Color blend");
+        check(
+            &d,
+            2,
+            2,
+            [grey, grey, grey, 1.0],
+            "as group: overlay inside the Color blend",
+        );
     }
 }
 
@@ -305,13 +359,28 @@ fn outside_stroke() -> Effect {
 fn shapeless_stroke_tile_skips_match_full_region_across_blending_settings() {
     use photocraft_doc::BlendRange;
 
-    let modes = [BlendMode::Normal, BlendMode::Multiply, BlendMode::Screen, BlendMode::Difference];
+    let modes = [
+        BlendMode::Normal,
+        BlendMode::Multiply,
+        BlendMode::Screen,
+        BlendMode::Difference,
+    ];
     for depth in DEPTHS {
-        for position in [StrokePosition::Outside, StrokePosition::Inside, StrokePosition::Center] {
+        for position in [
+            StrokePosition::Outside,
+            StrokePosition::Inside,
+            StrokePosition::Center,
+        ] {
             for blend in modes {
                 for fill in [0.0, 0.5, 1.0] {
                     for blend_if in [false, true] {
-                        let mut d = Document::with_background("t", Size::new(80, 768), ColorMode::Rgb, depth, Color::WHITE);
+                        let mut d = Document::with_background(
+                            "t",
+                            Size::new(80, 768),
+                            ColorMode::Rgb,
+                            depth,
+                            Color::WHITE,
+                        );
                         let mut l = solid(&d, "stroke", Rect::new(28, 318, 52, 342), BLUE);
                         l.effects.items = vec![Effect::Stroke(StrokeFx {
                             common: FxCommon::new(BlendMode::Normal, 1.0),
@@ -323,14 +392,26 @@ fn shapeless_stroke_tile_skips_match_full_region_across_blending_settings() {
                         l.fill_opacity = fill;
                         l.advanced.transparency_shapes = false;
                         if blend_if {
-                            l.blend_if.set(0, [BlendRange::FULL, BlendRange { black: [128, 128], white: [255, 255] }]);
+                            l.blend_if.set(
+                                0,
+                                [
+                                    BlendRange::FULL,
+                                    BlendRange {
+                                        black: [128, 128],
+                                        white: [255, 255],
+                                    },
+                                ],
+                            );
                         }
                         d.layers.push(l);
 
                         let rect = Rect::new(0, 0, 80, 768);
                         let whole = render_tiled(&d, rect, 1024);
                         let tiled = render_tiled(&d, rect, 64);
-                        assert_eq!(whole.px, tiled.px, "{depth:?}, {position:?}, {blend:?}, fill={fill}, blend_if={blend_if}");
+                        assert_eq!(
+                            whole.px, tiled.px,
+                            "{depth:?}, {position:?}, {blend:?}, fill={fill}, blend_if={blend_if}"
+                        );
 
                         let mut bands = Vec::new();
                         render_bands(&d, rect, 256, |band| -> Result<(), ()> {
@@ -342,7 +423,10 @@ fn shapeless_stroke_tile_skips_match_full_region_across_blending_settings() {
                         for band in bands {
                             band_pixels.extend(band.px);
                         }
-                        assert_eq!(whole.px, band_pixels, "banded: {depth:?}, {position:?}, {blend:?}, fill={fill}, blend_if={blend_if}");
+                        assert_eq!(
+                            whole.px, band_pixels,
+                            "banded: {depth:?}, {position:?}, {blend:?}, fill={fill}, blend_if={blend_if}"
+                        );
                     }
                 }
             }
@@ -361,23 +445,52 @@ fn shapeless_stroke_skip_rejects_advanced_blending_and_masks() {
     assert!(shapeless_stroke_bounds(&l).is_some());
 
     l.advanced.knockout = Knockout::Deep;
-    assert!(shapeless_stroke_bounds(&l).is_none(), "knockout changes the backdrop outside the content");
+    assert!(
+        shapeless_stroke_bounds(&l).is_none(),
+        "knockout changes the backdrop outside the content"
+    );
     l.advanced.knockout = Knockout::None;
 
     l.advanced.blend_interior = true;
-    assert!(shapeless_stroke_bounds(&l).is_none(), "Blend Interior effects remain on the uncropped path");
+    assert!(
+        shapeless_stroke_bounds(&l).is_none(),
+        "Blend Interior effects remain on the uncropped path"
+    );
     l.advanced.blend_interior = false;
 
-    l.blend_if.set(0, [BlendRange::FULL, BlendRange { black: [128, 128], white: [255, 255] }]);
-    assert!(shapeless_stroke_bounds(&l).is_none(), "Blend If remains on the uncropped path");
+    l.blend_if.set(
+        0,
+        [
+            BlendRange::FULL,
+            BlendRange {
+                black: [128, 128],
+                white: [255, 255],
+            },
+        ],
+    );
+    assert!(
+        shapeless_stroke_bounds(&l).is_none(),
+        "Blend If remains on the uncropped path"
+    );
     l.blend_if = Default::default();
 
     l.mask = Some(LayerMask::hide_all());
-    assert!(shapeless_stroke_bounds(&l).is_none(), "enabled masks remain on the uncropped path");
+    assert!(
+        shapeless_stroke_bounds(&l).is_none(),
+        "enabled masks remain on the uncropped path"
+    );
     l.mask = None;
 
-    l.vector_mask = Some(VectorMask::new(Path::new(vec![Subpath::polygon(&[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)])])));
-    assert!(shapeless_stroke_bounds(&l).is_none(), "enabled vector masks remain on the uncropped path");
+    l.vector_mask = Some(VectorMask::new(Path::new(vec![Subpath::polygon(&[
+        (0.0, 0.0),
+        (10.0, 0.0),
+        (10.0, 10.0),
+        (0.0, 10.0),
+    ])])));
+    assert!(
+        shapeless_stroke_bounds(&l).is_none(),
+        "enabled vector masks remain on the uncropped path"
+    );
 }
 
 #[test]
@@ -387,9 +500,19 @@ fn layer_mask_hides_effects() {
         let mut l = solid(&d, "l", full(&d), BLUE);
         l.effects.items = vec![inside_stroke()];
         // The mask shows x < 8.
-        let mut m = photocraft_raster::Surface::new(PixelFormat::new(ColorMode::Grayscale, depth, false));
-        m.fill_rect(Rect::new(0, 0, 8, 8), &photocraft_raster::from_rgba(&m.format(), [1.0; 4]));
-        l.mask = Some(LayerMask { surface: m, enabled: true, linked: true, density: 1.0, feather: 0.0 });
+        let mut m =
+            photocraft_raster::Surface::new(PixelFormat::new(ColorMode::Grayscale, depth, false));
+        m.fill_rect(
+            Rect::new(0, 0, 8, 8),
+            &photocraft_raster::from_rgba(&m.format(), [1.0; 4]),
+        );
+        l.mask = Some(LayerMask {
+            surface: m,
+            enabled: true,
+            linked: true,
+            density: 1.0,
+            feather: 0.0,
+        });
         d.layers.push(l);
         // Default: the stroke follows the masked shape, so it runs along the mask's edge.
         check(&d, 7, 4, RED, "stroke along the mask edge");
@@ -416,7 +539,12 @@ fn vector_mask_hides_effects() {
         let mut d = doc(depth, true);
         let mut l = solid(&d, "l", full(&d), BLUE);
         l.effects.items = vec![inside_stroke()];
-        let path = Path::new(vec![Subpath::polygon(&[(-4.0, -4.0), (8.0, -4.0), (8.0, 12.0), (-4.0, 12.0)])]);
+        let path = Path::new(vec![Subpath::polygon(&[
+            (-4.0, -4.0),
+            (8.0, -4.0),
+            (8.0, 12.0),
+            (-4.0, 12.0),
+        ])]);
         l.vector_mask = Some(VectorMask::new(path));
         d.layers.push(l);
         check(&d, 7, 4, RED, "stroke along the vector mask");
@@ -437,7 +565,12 @@ fn vector_mask_cache_does_not_mix_up_layers() {
             let mut l = solid(&d, name, full(&d), color);
             l.effects.items = vec![inside_stroke()];
             l.advanced.vector_mask_hides_effects = true;
-            let path = Path::new(vec![Subpath::polygon(&[(x0, -4.0), (x1, -4.0), (x1, 12.0), (x0, 12.0)])]);
+            let path = Path::new(vec![Subpath::polygon(&[
+                (x0, -4.0),
+                (x1, -4.0),
+                (x1, 12.0),
+                (x0, 12.0),
+            ])]);
             l.vector_mask = Some(VectorMask::new(path));
             d.layers.push(l);
         }

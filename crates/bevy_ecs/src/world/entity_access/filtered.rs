@@ -4,7 +4,7 @@ use crate::{
     component::{Component, ComponentId, Mutable},
     entity::{ContainsEntity, Entity, EntityEquivalent, EntityLocation},
     query::Access,
-    world::{unsafe_world_cell::UnsafeEntityCell, EntityMut, EntityRef, Mut, Ref},
+    world::{EntityMut, EntityRef, Mut, Ref, unsafe_world_cell::UnsafeEntityCell},
 };
 
 use bevy_ptr::Ptr;

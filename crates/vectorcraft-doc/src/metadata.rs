@@ -16,7 +16,11 @@ pub enum CopyrightStatus {
 }
 
 impl CopyrightStatus {
-    pub const ALL: [CopyrightStatus; 3] = [CopyrightStatus::Unknown, CopyrightStatus::Copyrighted, CopyrightStatus::PublicDomain];
+    pub const ALL: [CopyrightStatus; 3] = [
+        CopyrightStatus::Unknown,
+        CopyrightStatus::Copyrighted,
+        CopyrightStatus::PublicDomain,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             CopyrightStatus::Unknown => "unknown",
@@ -32,7 +36,9 @@ impl CopyrightStatus {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|c| c.id().eq_ignore_ascii_case(s) || c.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|c| c.id().eq_ignore_ascii_case(s) || c.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -64,7 +70,10 @@ pub struct DocMetadata {
 impl DocMetadata {
     /// The PNG text entries (registered keywords where one fits) for a document titled `title`:
     /// only the non-empty ones.
-    pub fn png_text<'a>(&'a self, title: &'a str) -> Vec<(&'static str, std::borrow::Cow<'a, str>)> {
+    pub fn png_text<'a>(
+        &'a self,
+        title: &'a str,
+    ) -> Vec<(&'static str, std::borrow::Cow<'a, str>)> {
         let mut out: Vec<(&'static str, std::borrow::Cow<'a, str>)> = vec![];
         let mut push = |k: &'static str, v: std::borrow::Cow<'a, str>| {
             if !v.trim().is_empty() {
@@ -77,7 +86,10 @@ impl DocMetadata {
         push("Keywords", self.keywords.join(", ").into());
         push("Copyright", self.copyright_notice.as_str().into());
         push("Copyright URL", self.copyright_url.as_str().into());
-        push("Creation Time", self.created.map(iso8601).unwrap_or_default().into());
+        push(
+            "Creation Time",
+            self.created.map(iso8601).unwrap_or_default().into(),
+        );
         out
     }
 }
@@ -86,7 +98,10 @@ impl DocMetadata {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn now_unix() -> Option<i64> {
     use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now().duration_since(UNIX_EPOCH).ok().and_then(|d| i64::try_from(d.as_secs()).ok())
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
+        .and_then(|d| i64::try_from(d.as_secs()).ok())
 }
 #[cfg(target_arch = "wasm32")]
 pub fn now_unix() -> Option<i64> {
@@ -109,7 +124,14 @@ pub fn civil(t: i64) -> [i64; 6] {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
-    [year.clamp(0, 9999), month, day, secs / 3600, secs / 60 % 60, secs % 60]
+    [
+        year.clamp(0, 9999),
+        month,
+        day,
+        secs / 3600,
+        secs / 60 % 60,
+        secs % 60,
+    ]
 }
 
 /// Unix seconds → `2026-10-05T14:03:00Z`.
@@ -128,15 +150,30 @@ mod tests {
         assert_eq!(iso8601(1_791_208_980), "2026-10-05T14:03:00Z");
         assert_eq!(civil(i64::MIN)[0], 0);
         assert_eq!(civil(i64::MAX)[0], 9999);
-        assert_eq!(CopyrightStatus::parse("Public Domain"), Some(CopyrightStatus::PublicDomain));
-        assert_eq!(CopyrightStatus::parse("publicdomain"), Some(CopyrightStatus::PublicDomain));
+        assert_eq!(
+            CopyrightStatus::parse("Public Domain"),
+            Some(CopyrightStatus::PublicDomain)
+        );
+        assert_eq!(
+            CopyrightStatus::parse("publicdomain"),
+            Some(CopyrightStatus::PublicDomain)
+        );
         assert_eq!(CopyrightStatus::parse("maybe"), None);
     }
 
     #[test]
     fn png_text_skips_empty_entries() {
-        let m = DocMetadata { author: "Ada".into(), keywords: vec!["a".into(), "b".into()], created: Some(0), ..Default::default() };
-        let t: Vec<(&str, String)> = m.png_text("Poster").into_iter().map(|(k, v)| (k, v.into_owned())).collect();
+        let m = DocMetadata {
+            author: "Ada".into(),
+            keywords: vec!["a".into(), "b".into()],
+            created: Some(0),
+            ..Default::default()
+        };
+        let t: Vec<(&str, String)> = m
+            .png_text("Poster")
+            .into_iter()
+            .map(|(k, v)| (k, v.into_owned()))
+            .collect();
         assert_eq!(
             t,
             [

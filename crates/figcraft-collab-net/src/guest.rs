@@ -26,7 +26,9 @@ use tungstenite::{Bytes, Message};
 use crate::inbox::Inbox;
 use crate::invite::{Endpoint, Invite};
 pub use crate::join::GuestConfig;
-use crate::join::{Next, Outcome, Resuming, Seen, Taken, after, closed, hello, resolved, take, unresolved};
+use crate::join::{
+    Next, Outcome, Resuming, Seen, Taken, after, closed, hello, resolved, take, unresolved,
+};
 use crate::manage;
 use crate::net::{Duplex, NetLimits, config, open, shutdown};
 use crate::throttle::{PRESENCE_INTERVAL, Throttle, earliest};
@@ -65,25 +67,38 @@ impl Guest {
     pub fn start(mut cfg: GuestConfig, inbox: Inbox) -> io::Result<Guest> {
         let (tx, rx) = channel();
         let me = tx.clone();
-        let thread = std::thread::Builder::new().name("live-guest".into()).spawn(move || {
-            // A join code: the server says which file it opens, then the join goes on as with a link.
-            if let Some(code) = cfg.code.clone() {
-                inbox.push(Event::Status(Status::Connecting));
-                let asked =
-                    manage::resolve(&cfg.invite.server, &code, &cfg.limits, cfg.connect_timeout).map_err(|e| match e.strip_prefix(manage::REFUSED) {
+        let thread = std::thread::Builder::new()
+            .name("live-guest".into())
+            .spawn(move || {
+                // A join code: the server says which file it opens, then the join goes on as with a link.
+                if let Some(code) = cfg.code.clone() {
+                    inbox.push(Event::Status(Status::Connecting));
+                    let asked = manage::resolve(
+                        &cfg.invite.server,
+                        &code,
+                        &cfg.limits,
+                        cfg.connect_timeout,
+                    )
+                    .map_err(|e| match e.strip_prefix(manage::REFUSED) {
                         Some(why) => Outcome::Refused(why.to_string()),
                         None => Outcome::Retry(e),
                     });
-                if let Err(o) = asked.and_then(|(file, token)| resolved(&mut cfg, file, token)) {
-                    if let Next::Stop(Some(e)) = after(unresolved(&cfg, o), &cfg, false, &mut 0, &inbox) {
-                        inbox.push(e);
+                    if let Err(o) = asked.and_then(|(file, token)| resolved(&mut cfg, file, token))
+                    {
+                        if let Next::Stop(Some(e)) =
+                            after(unresolved(&cfg, o), &cfg, false, &mut 0, &inbox)
+                        {
+                            inbox.push(e);
+                        }
+                        return;
                     }
-                    return;
                 }
-            }
-            supervise(&cfg, &inbox, &rx, &me);
-        })?;
-        Ok(Guest { cmd: tx, thread: Some(thread) })
+                supervise(&cfg, &inbox, &rx, &me);
+            })?;
+        Ok(Guest {
+            cmd: tx,
+            thread: Some(thread),
+        })
     }
 
     /// Upload `job.doc` to the server as a new file, then join it with its edit link (returns at
@@ -92,43 +107,63 @@ impl Guest {
     pub fn publish(job: Publish, cfg: GuestConfig, inbox: Inbox) -> io::Result<Guest> {
         let (tx, rx) = channel();
         let me = tx.clone();
-        let thread = std::thread::Builder::new().name("live-publish".into()).spawn(move || {
-            inbox.push(Event::Status(Status::Connecting));
-            let (cfg, published, hosting) = match upload(&job, cfg) {
-                Ok(done) => done,
-                Err(e) => return inbox.push(Event::Status(Status::Failed { reason: format!("Couldn't publish to the server: {e}") })),
-            };
-            // Before anyone hears the file is there, so what others join with shows with it. The
-            // file's first links stay its owner's (this app joins with one): others get their own,
-            // which stopping takes away again.
-            let shared = job.share.then(|| {
-                let owner = published.owner.as_deref().unwrap_or_default();
-                let made = manage::share(&job.server, job.key.as_deref(), &published.file, owner, &[], true, &cfg.limits, cfg.connect_timeout);
-                made.and_then(|s| s.ok_or_else(|| "the server didn't make the links".to_string()))
-            });
-            if let Some(h) = hosting {
-                inbox.push(Event::Hosting(h));
-            }
-            inbox.push(Event::Published(published));
-            if let Some(shared) = shared {
-                inbox.push(Event::Shared(shared));
-            }
-            // Left while uploading: the file stays on the server, nobody joins it. Anything else
-            // that came meanwhile (presence) waits for the session.
-            let mut waiting = Vec::new();
-            loop {
-                match rx.try_recv() {
-                    Ok(Cmd::Leave) | Err(TryRecvError::Disconnected) => return,
-                    Ok(c) => waiting.push(c),
-                    Err(TryRecvError::Empty) => break,
+        let thread = std::thread::Builder::new()
+            .name("live-publish".into())
+            .spawn(move || {
+                inbox.push(Event::Status(Status::Connecting));
+                let (cfg, published, hosting) = match upload(&job, cfg) {
+                    Ok(done) => done,
+                    Err(e) => {
+                        return inbox.push(Event::Status(Status::Failed {
+                            reason: format!("Couldn't publish to the server: {e}"),
+                        }));
+                    }
+                };
+                // Before anyone hears the file is there, so what others join with shows with it. The
+                // file's first links stay its owner's (this app joins with one): others get their own,
+                // which stopping takes away again.
+                let shared = job.share.then(|| {
+                    let owner = published.owner.as_deref().unwrap_or_default();
+                    let made = manage::share(
+                        &job.server,
+                        job.key.as_deref(),
+                        &published.file,
+                        owner,
+                        &[],
+                        true,
+                        &cfg.limits,
+                        cfg.connect_timeout,
+                    );
+                    made.and_then(|s| {
+                        s.ok_or_else(|| "the server didn't make the links".to_string())
+                    })
+                });
+                if let Some(h) = hosting {
+                    inbox.push(Event::Hosting(h));
                 }
-            }
-            for c in waiting {
-                let _ = me.send(c);
-            }
-            supervise(&cfg, &inbox, &rx, &me);
-        })?;
-        Ok(Guest { cmd: tx, thread: Some(thread) })
+                inbox.push(Event::Published(published));
+                if let Some(shared) = shared {
+                    inbox.push(Event::Shared(shared));
+                }
+                // Left while uploading: the file stays on the server, nobody joins it. Anything else
+                // that came meanwhile (presence) waits for the session.
+                let mut waiting = Vec::new();
+                loop {
+                    match rx.try_recv() {
+                        Ok(Cmd::Leave) | Err(TryRecvError::Disconnected) => return,
+                        Ok(c) => waiting.push(c),
+                        Err(TryRecvError::Empty) => break,
+                    }
+                }
+                for c in waiting {
+                    let _ = me.send(c);
+                }
+                supervise(&cfg, &inbox, &rx, &me);
+            })?;
+        Ok(Guest {
+            cmd: tx,
+            thread: Some(thread),
+        })
     }
 
     /// Your latest presence.
@@ -182,10 +217,18 @@ pub(crate) fn upload_file(
     limits: &NetLimits,
     timeout: Duration,
 ) -> Result<(Invite, Published, Option<HostInfo>), String> {
-    let snapshot = Replica::new(doc.clone()).snapshot().map_err(|e| e.to_string())?;
-    let publish = vec![Admin::Publish { name: name.to_string(), snapshot }];
+    let snapshot = Replica::new(doc.clone())
+        .snapshot()
+        .map_err(|e| e.to_string())?;
+    let publish = vec![Admin::Publish {
+        name: name.to_string(),
+        snapshot,
+    }];
     let (replies, hosting) = match key {
-        Some(key) => (manage::request(server, key, publish, limits, timeout)?, None),
+        Some(key) => (
+            manage::request(server, key, publish, limits, timeout)?,
+            None,
+        ),
         None => {
             let (info, replies) = manage::hosting(server, "", "", publish, limits, timeout)?;
             (replies, Some(info))
@@ -193,31 +236,78 @@ pub(crate) fn upload_file(
     };
     let (file, edit, view, owner, expires) = match replies.into_iter().next() {
         Some(AdminReply::Published { file, edit, view }) => (file, edit, view, None, None),
-        Some(AdminReply::Hosted { file, edit, view, owner, expires }) => (file, edit, view, Some(owner), expires),
+        Some(AdminReply::Hosted {
+            file,
+            edit,
+            view,
+            owner,
+            expires,
+        }) => (file, edit, view, Some(owner), expires),
         Some(AdminReply::Failed { reason }) => return Err(reason),
         _ => return Err("the server didn't say where the file is".into()),
     };
-    let link = |token: String| Invite { server: server.clone(), file: file.id.clone(), token };
+    let link = |token: String| Invite {
+        server: server.clone(),
+        file: file.id.clone(),
+        token,
+    };
     let (edit, view) = (link(edit.token), link(view.token));
-    let published =
-        Published { server: server.display(), file: file.id.clone(), name: file.name, edit: edit.link(), view: view.link(), owner, expires };
+    let published = Published {
+        server: server.display(),
+        file: file.id.clone(),
+        name: file.name,
+        edit: edit.link(),
+        view: view.link(),
+        owner,
+        expires,
+    };
     Ok((edit, published, hosting))
 }
 
 /// Upload the document; the join settings for the new file, its links and the server's hosting.
-fn upload(job: &Publish, mut cfg: GuestConfig) -> Result<(GuestConfig, Published, Option<HostInfo>), String> {
-    let (edit, published, hosting) = upload_file(&job.server, job.key.as_deref(), &job.name, &job.doc, &cfg.limits, cfg.connect_timeout)?;
+fn upload(
+    job: &Publish,
+    mut cfg: GuestConfig,
+) -> Result<(GuestConfig, Published, Option<HostInfo>), String> {
+    let (edit, published, hosting) = upload_file(
+        &job.server,
+        job.key.as_deref(),
+        &job.name,
+        &job.doc,
+        &cfg.limits,
+        cfg.connect_timeout,
+    )?;
     cfg.invite = edit;
     Ok((cfg, published, hosting))
 }
 
 fn connect(cfg: &GuestConfig) -> Result<Conn, String> {
     let (rd, wr, sock) = open(&cfg.invite.server, cfg.connect_timeout, &cfg.limits)?;
-    let (reader, _) = tungstenite::client::client_with_config(cfg.invite.endpoint(), rd, Some(config(cfg.limits.max_server_message)))
-        .map_err(|e| format!("{} doesn't answer as a FigCraft session: {e}", cfg.invite.server.display()))?;
-    let writer = WebSocket::from_raw_socket(wr, WsRole::Client, Some(config(cfg.limits.max_client_message)));
-    reader.get_ref().set_read_timeout(Some(cfg.limits.idle_timeout)).map_err(|e| e.to_string())?;
-    Ok(Conn { reader, writer, sock })
+    let (reader, _) = tungstenite::client::client_with_config(
+        cfg.invite.endpoint(),
+        rd,
+        Some(config(cfg.limits.max_server_message)),
+    )
+    .map_err(|e| {
+        format!(
+            "{} doesn't answer as a FigCraft session: {e}",
+            cfg.invite.server.display()
+        )
+    })?;
+    let writer = WebSocket::from_raw_socket(
+        wr,
+        WsRole::Client,
+        Some(config(cfg.limits.max_client_message)),
+    );
+    reader
+        .get_ref()
+        .set_read_timeout(Some(cfg.limits.idle_timeout))
+        .map_err(|e| e.to_string())?;
+    Ok(Conn {
+        reader,
+        writer,
+        sock,
+    })
 }
 
 fn supervise(cfg: &GuestConfig, inbox: &Inbox, rx: &Receiver<Cmd>, me: &Sender<Cmd>) {
@@ -230,7 +320,18 @@ fn supervise(cfg: &GuestConfig, inbox: &Inbox, rx: &Receiver<Cmd>, me: &Sender<C
     loop {
         epoch += 1;
         let outcome = match connect(cfg) {
-            Ok(c) => session(c, cfg, inbox, rx, me, epoch, &resume, &mut pending, &mut was_live, &mut attempt),
+            Ok(c) => session(
+                c,
+                cfg,
+                inbox,
+                rx,
+                me,
+                epoch,
+                &resume,
+                &mut pending,
+                &mut was_live,
+                &mut attempt,
+            ),
             Err(e) => Outcome::Retry(e),
         };
         match after(outcome, cfg, was_live, &mut attempt, inbox) {
@@ -269,10 +370,23 @@ fn session(
     was_live: &mut bool,
     attempt: &mut u32,
 ) -> Outcome {
-    let Conn { reader, mut writer, sock } = c;
+    let Conn {
+        reader,
+        mut writer,
+        sock,
+    } = c;
     let reader = {
-        let ctx = ReaderCtx { inbox: inbox.clone(), tx: me.clone(), epoch, cfg: cfg.clone(), resume: resume.clone() };
-        match std::thread::Builder::new().name("live-guest-read".into()).spawn(move || read_loop(reader, &ctx)) {
+        let ctx = ReaderCtx {
+            inbox: inbox.clone(),
+            tx: me.clone(),
+            epoch,
+            cfg: cfg.clone(),
+            resume: resume.clone(),
+        };
+        match std::thread::Builder::new()
+            .name("live-guest-read".into())
+            .spawn(move || read_loop(reader, &ctx))
+        {
             Ok(t) => t,
             Err(e) => {
                 shutdown(&sock);
@@ -301,25 +415,35 @@ fn session(
                     welcomed = true;
                     *was_live = true;
                     *attempt = 0;
-                    out = pending.take().and_then(|p| throttle.offer(p, Instant::now()));
+                    out = pending
+                        .take()
+                        .and_then(|p| throttle.offer(p, Instant::now()));
                 }
                 Ok(Cmd::Lost(e, o)) if e == epoch => break o,
                 Ok(Cmd::Leave) | Err(RecvTimeoutError::Disconnected) => {
-                    let _ = writer.close(Some(CloseFrame { code: CloseCode::Normal, reason: "".into() }));
+                    let _ = writer.close(Some(CloseFrame {
+                        code: CloseCode::Normal,
+                        reason: "".into(),
+                    }));
                     break Outcome::Left;
                 }
                 // From an earlier connection.
                 Ok(Cmd::Welcomed(_) | Cmd::Lost(..)) => {}
                 Err(RecvTimeoutError::Timeout) => {}
             }
-            if !now_send.iter().all(|m| send(&mut writer, m, &mut last_sent)) {
+            if !now_send
+                .iter()
+                .all(|m| send(&mut writer, m, &mut last_sent))
+            {
                 break Outcome::Retry("the connection dropped".into());
             }
             let now = Instant::now();
             let out = out.or_else(|| throttle.take_due(now));
             let ok = match out {
                 Some(p) => send(&mut writer, &ClientMsg::Presence(p), &mut last_sent),
-                None if now >= last_sent + cfg.limits.keepalive => send(&mut writer, &ClientMsg::Ping, &mut last_sent),
+                None if now >= last_sent + cfg.limits.keepalive => {
+                    send(&mut writer, &ClientMsg::Ping, &mut last_sent)
+                }
                 None => true,
             };
             if !ok {
@@ -352,22 +476,32 @@ fn read_loop(mut ws: WebSocket<Duplex>, ctx: &ReaderCtx) {
     let mut seen = Seen::default();
     let outcome = loop {
         match ws.read() {
-            Ok(Message::Binary(b)) => match message::decode::<ServerMsg>(&b, ctx.cfg.limits.max_server_message) {
-                Ok(m) => {
-                    let welcomed = || {
-                        let _ = ctx.tx.send(Cmd::Welcomed(ctx.epoch));
-                    };
-                    match take(m, &ctx.cfg, &ctx.inbox, &mut seen, &ctx.resume, &welcomed) {
-                        Taken::Continue | Taken::Welcomed => {}
-                        Taken::End(o) => break o,
+            Ok(Message::Binary(b)) => {
+                match message::decode::<ServerMsg>(&b, ctx.cfg.limits.max_server_message) {
+                    Ok(m) => {
+                        let welcomed = || {
+                            let _ = ctx.tx.send(Cmd::Welcomed(ctx.epoch));
+                        };
+                        match take(m, &ctx.cfg, &ctx.inbox, &mut seen, &ctx.resume, &welcomed) {
+                            Taken::Continue | Taken::Welcomed => {}
+                            Taken::End(o) => break o,
+                        }
+                    }
+                    Err(e) => {
+                        break Outcome::Refused(format!(
+                            "the host sent a message this version can't read ({e})"
+                        ));
                     }
                 }
-                Err(e) => break Outcome::Refused(format!("the host sent a message this version can't read ({e})")),
-            },
-            Ok(Message::Close(f)) => break f.map_or_else(|| closed(0, ""), |f| closed(f.code.into(), &f.reason)),
+            }
+            Ok(Message::Close(f)) => {
+                break f.map_or_else(|| closed(0, ""), |f| closed(f.code.into(), &f.reason));
+            }
             Ok(Message::Text(_)) => break Outcome::Refused("the host sent a text message".into()),
             Ok(_) => {}
-            Err(tungstenite::Error::Capacity(_)) => break Outcome::Refused("the host sent a message over the size limit".into()),
+            Err(tungstenite::Error::Capacity(_)) => {
+                break Outcome::Refused("the host sent a message over the size limit".into());
+            }
             Err(e) => break Outcome::Retry(e.to_string()),
         }
     };

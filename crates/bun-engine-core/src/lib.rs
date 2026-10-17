@@ -21,11 +21,11 @@ pub mod machine;
 pub mod recomp;
 #[cfg(feature = "runtime")]
 pub mod runtime;
-#[cfg(all(feature = "web", target_arch = "wasm32"))]
-pub mod web;
-#[cfg(feature = "stream")]
-pub mod stream;
 #[cfg(feature = "steam")]
 pub mod steam;
+#[cfg(feature = "stream")]
+pub mod stream;
+#[cfg(all(feature = "web", target_arch = "wasm32"))]
+pub mod web;
 #[cfg(feature = "runtime")]
 pub mod window;

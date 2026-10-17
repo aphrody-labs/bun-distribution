@@ -76,7 +76,11 @@ pub enum ModuleError {
     #[snafu(transparent)]
     FunctionAnalysis { source: FunctionAnalysisError },
     #[snafu(display("function {name} could not be analyzed: {parse_result:x?}:\n{backtrace}"))]
-    FunctionAnalysisFailed { name: String, parse_result: ParseFunctionError, backtrace: Backtrace },
+    FunctionAnalysisFailed {
+        name: String,
+        parse_result: ParseFunctionError,
+        backtrace: Backtrace,
+    },
     #[snafu(transparent)]
     Section { source: SectionError },
     #[snafu(transparent)]
@@ -115,7 +119,11 @@ pub enum ModuleError {
     #[snafu(display(
         "The DS Protect relocation from {from:#010x} points to {to:#010x} which is outside of this module's address space:\n{backtrace}"
     ))]
-    InvalidDsProtReloc { from: u32, to: u32, backtrace: Backtrace },
+    InvalidDsProtReloc {
+        from: u32,
+        to: u32,
+        backtrace: Backtrace,
+    },
 }
 
 pub const ENTRY_FN_SYMBOL_NAME: &str = "Entry";
@@ -142,10 +150,21 @@ pub struct ModuleOptions<'a> {
 
 impl Module {
     pub fn new(symbol_map: &mut SymbolMap, options: ModuleOptions) -> Result<Module, ModuleError> {
-        let ModuleOptions { kind, name, relocations, mut sections, code, signed } = options;
+        let ModuleOptions {
+            kind,
+            name,
+            relocations,
+            mut sections,
+            code,
+            signed,
+        } = options;
 
-        let base_address = sections.base_address().ok_or_else(|| NoSectionsSnafu.build())?;
-        let end_address = sections.end_address().ok_or_else(|| NoSectionsSnafu.build())?;
+        let base_address = sections
+            .base_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
+        let end_address = sections
+            .end_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
         let bss_size = sections.bss_size();
         Self::import_functions(symbol_map, &mut sections, base_address, end_address, code)?;
 
@@ -155,7 +174,11 @@ impl Module {
                 format!("data_ov{id:03}_"),
                 format!("__sinit_ov{id:03}_"),
             ),
-            _ => ("func_".to_string(), "data_".to_string(), "__sinit_".to_string()),
+            _ => (
+                "func_".to_string(),
+                "data_".to_string(),
+                "__sinit_".to_string(),
+            ),
         };
 
         Ok(Self {
@@ -184,8 +207,12 @@ impl Module {
         mut sections: Sections,
         code: &[u8],
     ) -> Result<Module, ModuleError> {
-        let base_address = sections.base_address().ok_or_else(|| NoSectionsSnafu.build())?;
-        let end_address = sections.end_address().ok_or_else(|| NoSectionsSnafu.build())?;
+        let base_address = sections
+            .base_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
+        let end_address = sections
+            .end_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
         let bss_size = sections.bss_size();
         Self::import_functions(symbol_map, &mut sections, base_address, end_address, code)?;
         Ok(Self {
@@ -259,7 +286,10 @@ impl Module {
             Some(BTreeMap::from([
                 // Empty .ctor sections won't be detected by relocation analysis, so instead
                 // override any pointer to .ctor to a link-time constant relocation
-                (ctor_range.start, RelocationKind::LinkTimeConst(LinkTimeConst::Arm9CtorStart)),
+                (
+                    ctor_range.start,
+                    RelocationKind::LinkTimeConst(LinkTimeConst::Arm9CtorStart),
+                ),
             ])),
         )?;
         module.find_data_from_sections(symbol_map, options)?;
@@ -283,8 +313,12 @@ impl Module {
     ) -> Result<Self, ModuleError> {
         let OverlayModuleOptions { id, code, signed } = options;
 
-        let base_address = sections.base_address().ok_or_else(|| NoSectionsSnafu.build())?;
-        let end_address = sections.end_address().ok_or_else(|| NoSectionsSnafu.build())?;
+        let base_address = sections
+            .base_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
+        let end_address = sections
+            .end_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
         let bss_size = sections.bss_size();
         Self::import_functions(symbol_map, &mut sections, base_address, end_address, code)?;
         Ok(Self {
@@ -338,7 +372,10 @@ impl Module {
         log::debug!("Analyzing overlay {}", overlay.id());
         module.find_sections_overlay(
             symbol_map,
-            CtorRange { start: overlay.ctor_start(), end: overlay.ctor_end() },
+            CtorRange {
+                start: overlay.ctor_start(),
+                end: overlay.ctor_end(),
+            },
             dsprot_result.as_ref(),
         )?;
         find_function_labels(&module, symbol_map, options)?;
@@ -363,8 +400,12 @@ impl Module {
         kind: AutoloadKind,
         code: &[u8],
     ) -> Result<Self, ModuleError> {
-        let base_address = sections.base_address().ok_or_else(|| NoSectionsSnafu.build())?;
-        let end_address = sections.end_address().ok_or_else(|| NoSectionsSnafu.build())?;
+        let base_address = sections
+            .base_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
+        let end_address = sections
+            .end_address()
+            .ok_or_else(|| NoSectionsSnafu.build())?;
         let bss_size = sections.bss_size();
         Self::import_functions(symbol_map, &mut sections, base_address, end_address, code)?;
         Ok(Self {
@@ -490,16 +531,21 @@ impl Module {
                 existing_functions: None,
                 dsprot_encrypted_ranges: &[],
                 check_defs_uses: false,
-                parse_options: ParseFunctionOptions { thumb: sym_function.mode.into_thumb() },
+                parse_options: ParseFunctionOptions {
+                    thumb: sym_function.mode.into_thumb(),
+                },
             });
             let function = match parse_result {
                 Ok(function) => function,
                 Err(FunctionAnalysisError::IntoFunction {
                     source: IntoFunctionError::ParseFunction { source },
                 }) => {
-                    return FunctionAnalysisFailedSnafu { name: symbol.name, parse_result: source }
-                        .fail();
-                },
+                    return FunctionAnalysisFailedSnafu {
+                        name: symbol.name,
+                        parse_result: source,
+                    }
+                    .fail();
+                }
                 Err(e) => return Err(e.into()),
             };
             function.add_local_symbols_to_map(symbol_map)?;
@@ -529,7 +575,12 @@ impl Module {
         } else {
             let start = functions.first_key_value().unwrap().1.start_address();
             // Align by 4 in case of Thumb function ending on a 2-byte boundary
-            let end = functions.last_key_value().unwrap().1.end_address().next_multiple_of(4);
+            let end = functions
+                .last_key_value()
+                .unwrap()
+                .1
+                .end_address()
+                .next_multiple_of(4);
             log::debug!(
                 "Found {} functions in {}: {:#x} to {:#x}",
                 functions.len(),
@@ -537,7 +588,11 @@ impl Module {
                 start,
                 end
             );
-            Ok(Some(FoundFunctions { functions, start, end }))
+            Ok(Some(FoundFunctions {
+                functions,
+                start,
+                end,
+            }))
         }
     }
 
@@ -596,7 +651,11 @@ impl Module {
             ));
         }
 
-        if init_functions.0.is_empty() { Ok(None) } else { Ok(Some(init_functions)) }
+        if init_functions.0.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(init_functions))
+        }
     }
 
     /// Adds the .init section to this module. Returns the start and end address of the .init section.
@@ -616,7 +675,11 @@ impl Module {
 
         let functions_min = *init_functions.0.first().unwrap();
         let functions_max = *init_functions.0.last().unwrap();
-        let FoundFunctions { functions: init_functions, start: init_start, end: init_end } = self
+        let FoundFunctions {
+            functions: init_functions,
+            start: init_start,
+            end: init_end,
+        } = self
             .find_functions(
                 symbol_map,
                 &FunctionSearchOptions {
@@ -661,7 +724,11 @@ impl Module {
 
     /// Adds the .text section to this module.
     fn add_text_section(&mut self, functions_result: FoundFunctions) -> Result<(), ModuleError> {
-        let FoundFunctions { functions, start, end } = functions_result;
+        let FoundFunctions {
+            functions,
+            start,
+            end,
+        } = functions_result;
 
         if start < end {
             self.sections.add(Section::new(SectionOptions {
@@ -738,7 +805,8 @@ impl Module {
                     && address < end_address.unwrap_or(self.end_address())
                     && functions
                         .range(..=address)
-                        .next_back().is_none_or(|(_, function)| address >= function.end_address())
+                        .next_back()
+                        .is_none_or(|(_, function)| address >= function.end_address())
             })
             .collect()
     }
@@ -797,12 +865,15 @@ impl Module {
         ctor: CtorRange,
         dsprot_result: Option<&DsProtDecryptResult>,
     ) -> Result<(), ModuleError> {
-        let overriden_function_sizes =
-            &dsprot_result.map(create_overriden_function_sizes).unwrap_or_default();
-        let dsprot_encrypted_functions =
-            &dsprot_result.map(create_dsprot_encryptions).unwrap_or_default();
-        let dsprot_encrypted_ranges =
-            dsprot_result.map(|r| r.encrypted_ranges.as_slice()).unwrap_or(&[]);
+        let overriden_function_sizes = &dsprot_result
+            .map(create_overriden_function_sizes)
+            .unwrap_or_default();
+        let dsprot_encrypted_functions = &dsprot_result
+            .map(create_dsprot_encryptions)
+            .unwrap_or_default();
+        let dsprot_encrypted_ranges = dsprot_result
+            .map(|r| r.encrypted_ranges.as_slice())
+            .unwrap_or(&[]);
 
         let rodata_end = if let Some(init_functions) = self.add_ctor_section(&ctor, symbol_map)? {
             if let Some((init_start, _)) = self.add_init_section(
@@ -877,12 +948,15 @@ impl Module {
         main_func: &MainFunction,
         dsprot_result: Option<&DsProtDecryptResult>,
     ) -> Result<(), ModuleError> {
-        let overriden_function_sizes =
-            &dsprot_result.map(create_overriden_function_sizes).unwrap_or_default();
-        let dsprot_encrypted_functions =
-            &dsprot_result.map(create_dsprot_encryptions).unwrap_or_default();
-        let dsprot_encrypted_ranges =
-            dsprot_result.map(|r| r.encrypted_ranges.as_slice()).unwrap_or(&[]);
+        let overriden_function_sizes = &dsprot_result
+            .map(create_overriden_function_sizes)
+            .unwrap_or_default();
+        let dsprot_encrypted_functions = &dsprot_result
+            .map(create_dsprot_encryptions)
+            .unwrap_or_default();
+        let dsprot_encrypted_ranges = dsprot_result
+            .map(|r| r.encrypted_ranges.as_slice())
+            .unwrap_or(&[]);
 
         // .ctor and .init
         let (read_only_end, rodata_start) =
@@ -945,14 +1019,20 @@ impl Module {
                     parse_result: source,
                 }
                 .fail();
-            },
+            }
             Err(e) => return Err(e.into()),
         };
         symbol_map.add_function(&autoload_function);
-        functions.insert(autoload_function.first_instruction_address(), autoload_function);
+        functions.insert(
+            autoload_function.first_instruction_address(),
+            autoload_function,
+        );
 
         // Entry functions
-        let FoundFunctions { functions: entry_functions, .. } = self
+        let FoundFunctions {
+            functions: entry_functions,
+            ..
+        } = self
             .find_functions(
                 symbol_map,
                 &FunctionSearchOptions {
@@ -1006,7 +1086,11 @@ impl Module {
                 dsprot_encrypted_ranges,
             },
         )?;
-        let FoundFunctions { functions: text_functions, end: mut text_end, .. } = functions_result;
+        let FoundFunctions {
+            functions: text_functions,
+            end: mut text_end,
+            ..
+        } = functions_result;
 
         let text_start = self.base_address;
         functions.extend(text_functions);
@@ -1038,7 +1122,11 @@ impl Module {
             functions.insert(exception_data.find_exception_table_fn_addr, function);
         }
 
-        self.add_text_section(FoundFunctions { functions, start: text_start, end: text_end })?;
+        self.add_text_section(FoundFunctions {
+            functions,
+            start: text_start,
+            end: text_end,
+        })?;
 
         // Add .exception and .exceptix sections if they exist
         let text_exceptix_end = if let Some(exception_data) = exception_data {
@@ -1350,7 +1438,7 @@ impl Module {
                         },
                         options,
                     )?;
-                },
+                }
                 SectionKind::Code => {
                     // Look for data in gaps between functions
                     let mut symbols = symbol_map
@@ -1364,8 +1452,9 @@ impl Module {
                             continue;
                         }
 
-                        let next_address =
-                            symbols.peek().map_or(section.end_address(), |(_, s)| s.addr);
+                        let next_address = symbols
+                            .peek()
+                            .map_or(section.end_address(), |(_, s)| s.addr);
                         let end_address = symbol.addr + symbol.size(next_address);
                         if end_address < next_address {
                             gaps.push(end_address..next_address);
@@ -1393,8 +1482,8 @@ impl Module {
                             )?;
                         }
                     }
-                },
-                SectionKind::Bss => {},
+                }
+                SectionKind::Bss => {}
             }
         }
         Ok(())
@@ -1441,8 +1530,10 @@ impl Module {
             );
 
             // Add relocation and destination symbol
-            let (_, section) =
-                self.sections.get_by_contained_address(relocation.to_address).ok_or_else(|| {
+            let (_, section) = self
+                .sections
+                .get_by_contained_address(relocation.to_address)
+                .ok_or_else(|| {
                     InvalidDsProtRelocSnafu {
                         from: relocation.from_address,
                         to: relocation.to_address,
@@ -1451,17 +1542,17 @@ impl Module {
                 })?;
             let symbol_name = format!("{}{:08x}", self.default_data_prefix, relocation.to_address);
             match section.kind() {
-                SectionKind::Code => {},
+                SectionKind::Code => {}
                 SectionKind::Data | SectionKind::Rodata => {
                     symbol_map.add_data(Some(symbol_name), relocation.to_address, SymData::Any)?;
-                },
+                }
                 SectionKind::Bss => {
                     symbol_map.add_bss(
                         Some(symbol_name),
                         relocation.to_address,
                         SymBss { size: None },
                     )?;
-                },
+                }
             }
             let reloc = self.relocations.add(Relocation::new(RelocationOptions {
                 from: relocation.from_address,
@@ -1507,7 +1598,9 @@ impl Module {
     }
 
     pub fn get_function(&self, addr: u32) -> Option<&Function> {
-        self.sections.get_by_contained_address(addr).and_then(|(_, s)| s.functions().get(&addr))
+        self.sections
+            .get_by_contained_address(addr)
+            .and_then(|(_, s)| s.functions().get(&addr))
     }
 
     pub fn bss_size(&self) -> u32 {
@@ -1593,7 +1686,11 @@ fn create_overriden_function_sizes(dsprot_result: &DsProtDecryptResult) -> BTree
 fn create_dsprot_encryptions(
     dsprot_result: &DsProtDecryptResult,
 ) -> BTreeMap<u32, dsprot::EncryptionType> {
-    dsprot_result.functions.iter().map(|f| (f.address, f.encryption)).collect()
+    dsprot_result
+        .functions
+        .iter()
+        .map(|f| (f.address, f.encryption))
+        .collect()
 }
 
 struct AddInitSectionOptions<'a> {

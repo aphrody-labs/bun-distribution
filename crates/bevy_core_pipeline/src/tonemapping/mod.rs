@@ -1,6 +1,6 @@
 use bevy_app::prelude::*;
 use bevy_asset::{
-    embedded_asset, load_embedded_asset, AssetServer, Assets, Handle, RenderAssetUsages,
+    AssetServer, Assets, Handle, RenderAssetUsages, embedded_asset, load_embedded_asset,
 };
 use bevy_camera::Camera;
 use bevy_ecs::prelude::*;
@@ -9,6 +9,7 @@ use bevy_image::{CompressedImageFormats, Image, ImageSampler, ImageType};
 use bevy_log::error;
 use bevy_log::warn;
 use bevy_render::{
+    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     extract_component::ExtractComponentPlugin,
     extract_resource::{ExtractResource, ExtractResourcePlugin},
     render_asset::RenderAssets,
@@ -19,9 +20,8 @@ use bevy_render::{
     renderer::RenderDevice,
     texture::{FallbackImage, GpuImage},
     view::{ColorGrading, ExtractedView, ViewTarget, ViewUniform},
-    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
-use bevy_shader::{load_shader_library, Shader, ShaderDefVal};
+use bevy_shader::{Shader, ShaderDefVal, load_shader_library};
 use bitflags::bitflags;
 
 mod node;

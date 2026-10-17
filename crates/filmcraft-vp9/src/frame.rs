@@ -12,7 +12,10 @@ pub struct Mv {
 impl Mv {
     pub const ZERO: Mv = Mv { row: 0, col: 0 };
     pub fn new(row: i32, col: i32) -> Mv {
-        Mv { row: row as i16, col: col as i16 }
+        Mv {
+            row: row as i16,
+            col: col as i16,
+        }
     }
 }
 
@@ -125,7 +128,13 @@ impl Frame {
 
     /// A band buffer for this frame's geometry (recycled memory, contents unspecified).
     pub fn new_band(&self) -> Band {
-        Band { planes: std::array::from_fn(|p| self.pools.bands.take_any((self.band_h[p] + BAND_PAD) * self.strides[p], 0)) }
+        Band {
+            planes: std::array::from_fn(|p| {
+                self.pools
+                    .bands
+                    .take_any((self.band_h[p] + BAND_PAD) * self.strides[p], 0)
+            }),
+        }
     }
 
     /// Publish band `r` (ignored if already published).
@@ -155,7 +164,9 @@ impl Frame {
         #[cfg(not(feature = "threads"))]
         {
             // Bands are decoded in order before use; an unpublished one reads as empty.
-            static EMPTY: Band = Band { planes: [Vec::new(), Vec::new(), Vec::new()] };
+            static EMPTY: Band = Band {
+                planes: [Vec::new(), Vec::new(), Vec::new()],
+            };
             self.bands[r].get().unwrap_or(&EMPTY)
         }
     }
@@ -178,7 +189,10 @@ impl Frame {
         if (y1 - 1) / bh != r {
             return None;
         }
-        Some((&self.band(r).planes[p], (y0 % bh + BAND_PAD) * self.strides[p]))
+        Some((
+            &self.band(r).planes[p],
+            (y0 % bh + BAND_PAD) * self.strides[p],
+        ))
     }
 
     /// A complete frame from full planes (tests).
@@ -192,7 +206,8 @@ impl Frame {
                 for k in 0..bh {
                     let y = r * bh + k;
                     if let Some(src) = planes[p].get(y * s..y * s + s) {
-                        b.planes[p][(k + BAND_PAD) * s..(k + BAND_PAD + 1) * s].copy_from_slice(src);
+                        b.planes[p][(k + BAND_PAD) * s..(k + BAND_PAD + 1) * s]
+                            .copy_from_slice(src);
                     }
                 }
             }
@@ -204,7 +219,11 @@ impl Frame {
 
 impl Drop for Frame {
     fn drop(&mut self) {
-        for b in std::mem::take(&mut self.bands).into_vec().into_iter().filter_map(|b| b.into_inner()) {
+        for b in std::mem::take(&mut self.bands)
+            .into_vec()
+            .into_iter()
+            .filter_map(|b| b.into_inner())
+        {
             for p in b.planes {
                 self.pools.bands.put(p);
             }
@@ -213,14 +232,23 @@ impl Drop for Frame {
 }
 
 /// Geometry of the frame planes: allocation sizes for (MiCols, MiRows) rounded to superblocks.
-pub fn plane_geometry(width: u32, height: u32, ss_x: bool, ss_y: bool) -> [(usize, usize, usize, usize); 3] {
+pub fn plane_geometry(
+    width: u32,
+    height: u32,
+    ss_x: bool,
+    ss_y: bool,
+) -> [(usize, usize, usize, usize); 3] {
     let sb_cols = (width as usize).div_ceil(64);
     let sb_rows = (height as usize).div_ceil(64);
     let (aw, ah) = (sb_cols * 64, sb_rows * 64);
     let (sx, sy) = (ss_x as usize, ss_y as usize);
     let cw = (width as usize + sx) >> sx;
     let ch = (height as usize + sy) >> sy;
-    [(aw, ah, width as usize, height as usize), (aw >> sx, ah >> sy, cw, ch), (aw >> sx, ah >> sy, cw, ch)]
+    [
+        (aw, ah, width as usize, height as usize),
+        (aw >> sx, ah >> sy, cw, ch),
+        (aw >> sx, ah >> sy, cw, ch),
+    ]
 }
 
 /// Recycled buffers (strip / frame planes, mode info), so that steady-state decoding does not
@@ -239,7 +267,10 @@ impl<T> Default for Pool<T> {
 impl<T> Pool<T> {
     /// A pool keeping at most `max` buffers.
     pub fn with_max(max: usize) -> Self {
-        Pool { bufs: Default::default(), max }
+        Pool {
+            bufs: Default::default(),
+            max,
+        }
     }
 }
 
@@ -248,8 +279,13 @@ impl<T: Clone> Pool<T> {
     /// `fill` only initialises fresh memory).
     pub fn take_any(&self, len: usize, fill: T) -> Vec<T> {
         let found = {
-            let mut b = self.bufs.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            b.iter().position(|v| v.len() >= len).map(|i| b.swap_remove(i))
+            let mut b = self
+                .bufs
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            b.iter()
+                .position(|v| v.len() >= len)
+                .map(|i| b.swap_remove(i))
         };
         match found {
             Some(mut v) => {
@@ -263,8 +299,13 @@ impl<T: Clone> Pool<T> {
     /// A buffer of `len` copies of `fill` (recycled memory when available).
     pub fn take(&self, len: usize, fill: T) -> Vec<T> {
         let found = {
-            let mut b = self.bufs.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            b.iter().position(|v| v.capacity() >= len).map(|i| b.swap_remove(i))
+            let mut b = self
+                .bufs
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            b.iter()
+                .position(|v| v.capacity() >= len)
+                .map(|i| b.swap_remove(i))
         };
         match found {
             Some(mut v) => {
@@ -280,7 +321,10 @@ impl<T: Clone> Pool<T> {
         if v.capacity() == 0 {
             return;
         }
-        let mut b = self.bufs.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut b = self
+            .bufs
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if b.len() < self.max {
             b.push(v);
         }
@@ -297,6 +341,10 @@ pub struct Pools {
 
 impl Default for Pools {
     fn default() -> Self {
-        Pools { samples: Pool::default(), bands: Pool::with_max(1024), mi: Pool::default() }
+        Pools {
+            samples: Pool::default(),
+            bands: Pool::with_max(1024),
+            mi: Pool::default(),
+        }
     }
 }

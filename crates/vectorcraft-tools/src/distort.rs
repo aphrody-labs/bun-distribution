@@ -33,7 +33,9 @@ pub use width::{WidthTool, stroke_owner};
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
     Some(match id {
         "width" => Box::new(WidthTool::default()),
-        "warp" | "twirl" | "pucker" | "bloat" | "scallop" | "crystallize" | "wrinkle" => Box::new(LiquifyTool::new(id)),
+        "warp" | "twirl" | "pucker" | "bloat" | "scallop" | "crystallize" | "wrinkle" => {
+            Box::new(LiquifyTool::new(id))
+        }
         "puppetWarp" => Box::new(PuppetWarpTool::default()),
         "perspectiveGrid" => Box::new(PerspectiveGridTool::default()),
         "perspectiveSelection" => Box::new(PerspectiveSelectionTool::default()),
@@ -110,7 +112,10 @@ pub fn collect_points(n: &Node, out: &mut Vec<Point>) {
                 }
             }
         }
-        NodeKind::Layer { .. } | NodeKind::Group { .. } | NodeKind::Compound { .. } | NodeKind::Blend { .. } => {}
+        NodeKind::Layer { .. }
+        | NodeKind::Group { .. }
+        | NodeKind::Compound { .. }
+        | NodeKind::Blend { .. } => {}
         _ => {
             if let Some(b) = c.geometric_bounds() {
                 out.extend([Point::new(b.x0, b.y0), Point::new(b.x1, b.y1)]);
@@ -124,13 +129,30 @@ pub(crate) const BLUE: [u8; 3] = [0x4a, 0x7c, 0xff];
 
 /// A small diamond polygon at `p` (half-diagonal `r`).
 pub(crate) fn diamond(p: Point, r: f64) -> vectorcraft_geom::BezPath {
-    crate::xform::polygon(&[Point::new(p.x, p.y - r), Point::new(p.x + r, p.y), Point::new(p.x, p.y + r), Point::new(p.x - r, p.y)], true)
+    crate::xform::polygon(
+        &[
+            Point::new(p.x, p.y - r),
+            Point::new(p.x + r, p.y),
+            Point::new(p.x, p.y + r),
+            Point::new(p.x - r, p.y),
+        ],
+        true,
+    )
 }
 
 /// A circle / ellipse outline for brush feedback.
-pub(crate) fn ellipse_path(c: Point, rx: f64, ry: f64, angle_deg: f64) -> vectorcraft_geom::BezPath {
+pub(crate) fn ellipse_path(
+    c: Point,
+    rx: f64,
+    ry: f64,
+    angle_deg: f64,
+) -> vectorcraft_geom::BezPath {
     use vectorcraft_geom::Shape;
-    let e = vectorcraft_geom::kurbo::Ellipse::new(c, (rx.max(0.01), ry.max(0.01)), angle_deg.to_radians());
+    let e = vectorcraft_geom::kurbo::Ellipse::new(
+        c,
+        (rx.max(0.01), ry.max(0.01)),
+        angle_deg.to_radians(),
+    );
     e.to_path(0.05)
 }
 
@@ -163,7 +185,11 @@ mod tests {
 
     #[test]
     fn warp_node_maps_all_points_and_drops_live_shape() {
-        let mut n = Node::path(vectorcraft_doc::NodeId(1), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art());
+        let mut n = Node::path(
+            vectorcraft_doc::NodeId(1),
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            Appearance::default_art(),
+        );
         warp_node_with(&mut n, &|p| Point::new(p.x * 2.0, p.y + 1.0));
         let b = n.geometric_bounds().unwrap();
         assert_eq!((b.x0, b.y0, b.x1, b.y1), (0.0, 1.0, 20.0, 11.0));
@@ -176,12 +202,21 @@ mod tests {
     #[test]
     fn warp_pins_and_maps_gradients_once() {
         let grad = Paint::Gradient(Box::new(GradientPaint::new(Gradient::default())));
-        let mut n =
-            Node::path(vectorcraft_doc::NodeId(1), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::basic(grad, Paint::None, 0.0));
+        let mut n = Node::path(
+            vectorcraft_doc::NodeId(1),
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            Appearance::basic(grad, Paint::None, 0.0),
+        );
         warp_node_with(&mut n, &|p| Point::new(p.x * 2.0, p.y + 1.0));
-        let Paint::Gradient(g) = n.appearance.fill_paint() else { panic!() };
+        let Paint::Gradient(g) = n.appearance.fill_paint() else {
+            panic!()
+        };
         let geom = g.geom.expect("pinned before the warp");
-        assert!(geom.start.distance(Point::new(0.0, 6.0)) < 1e-9 && geom.end.distance(Point::new(20.0, 6.0)) < 1e-9, "{geom:?}");
+        assert!(
+            geom.start.distance(Point::new(0.0, 6.0)) < 1e-9
+                && geom.end.distance(Point::new(20.0, 6.0)) < 1e-9,
+            "{geom:?}"
+        );
     }
 
     #[test]

@@ -35,16 +35,19 @@ pub enum ModelChoice {
 impl std::fmt::Debug for ModelChoice {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LocalResponses(client) => {
-                f.debug_tuple("LocalResponses").field(&client.model_id().to_string()).finish()
-            },
-            Self::LocalChat(client) => {
-                f.debug_tuple("LocalChat").field(&client.model_id().to_string()).finish()
-            },
+            Self::LocalResponses(client) => f
+                .debug_tuple("LocalResponses")
+                .field(&client.model_id().to_string())
+                .finish(),
+            Self::LocalChat(client) => f
+                .debug_tuple("LocalChat")
+                .field(&client.model_id().to_string())
+                .finish(),
             Self::Stub(_) => f.write_str("Stub"),
-            Self::Dyn(client) => {
-                f.debug_tuple("Dyn").field(&client.model_id().to_string()).finish()
-            },
+            Self::Dyn(client) => f
+                .debug_tuple("Dyn")
+                .field(&client.model_id().to_string())
+                .finish(),
         }
     }
 }
@@ -113,7 +116,9 @@ impl ScriptedTurn {
     /// A turn that emits a single block of visible text.
     #[must_use]
     pub fn text(text: impl Into<String>) -> Self {
-        Self { events: vec![ModelStreamEvent::TextDelta(text.into())] }
+        Self {
+            events: vec![ModelStreamEvent::TextDelta(text.into())],
+        }
     }
 
     /// A turn that requests a single tool call.
@@ -172,7 +177,10 @@ impl StubModelClient {
     /// Build a stub for `model` that replays `turns` in order.
     #[must_use]
     pub fn new(model: impl Into<String>, turns: Vec<ScriptedTurn>) -> Self {
-        Self { model: model.into(), turns: Mutex::new(turns.into_iter().collect()) }
+        Self {
+            model: model.into(),
+            turns: Mutex::new(turns.into_iter().collect()),
+        }
     }
 
     /// Number of scripted turns not yet consumed.
@@ -183,7 +191,12 @@ impl StubModelClient {
 
     /// Pop the next scripted turn, or an empty one once the script is spent.
     fn next_turn(&self) -> ScriptedTurn {
-        self.turns.lock().map(|mut q| q.pop_front()).ok().flatten().unwrap_or_default()
+        self.turns
+            .lock()
+            .map(|mut q| q.pop_front())
+            .ok()
+            .flatten()
+            .unwrap_or_default()
     }
 }
 

@@ -130,7 +130,10 @@ fn launch_skill(args: &[OsString]) -> Result<()> {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let script = manifest.join("dust-cli");
     if !script.is_file() {
-        bail!("could not find the canonical Dust Python client at {}", script.display());
+        bail!(
+            "could not find the canonical Dust Python client at {}",
+            script.display()
+        );
     }
     let python = std::env::var_os("PYTHON").unwrap_or_else(|| OsString::from("python3"));
     let status = ProcessCommand::new(python)
@@ -146,11 +149,22 @@ fn launch_skill(args: &[OsString]) -> Result<()> {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let level = if cli.debug { LevelFilter::Debug } else { LevelFilter::Info };
-    let style = if cli.force_color { WriteStyle::Always } else { WriteStyle::Auto };
+    let level = if cli.debug {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
+    };
+    let style = if cli.force_color {
+        WriteStyle::Always
+    } else {
+        WriteStyle::Auto
+    };
     let mut logger = env_logger::builder();
     logger.filter_level(level).write_style(style);
-    if let Command::Decomp { command: DecompCommand::Diff(diff) } = &cli.command {
+    if let Command::Decomp {
+        command: DecompCommand::Diff(diff),
+    } = &cli.command
+    {
         diff.configure_logger(&mut logger)?;
     }
     logger.init();

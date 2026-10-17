@@ -131,7 +131,11 @@ fn hash_or_none(value: i32) -> Option<String> {
 ///
 /// Source : `getElement` (mapper-aura.ts L320-329) — `val >= 0 && val <= 4`.
 fn element_from_var8(v8: i32) -> Element {
-    if (0..=4).contains(&v8) { Element::from_code(v8) } else { Element::Neant }
+    if (0..=4).contains(&v8) {
+        Element::from_code(v8)
+    } else {
+        Element::Neant
+    }
 }
 
 /// Classe le sous-type depuis le préfixe d'`assetCode` (priorité 1, fiable).
@@ -183,7 +187,11 @@ pub struct ConfigVar {
 impl ConfigVar {
     /// Lit la variable comme entier signé (parité `Number.parseInt`).
     fn as_int(&self) -> Option<i32> {
-        if self.ty == "Int" { self.value.parse::<i32>().ok() } else { None }
+        if self.ty == "Int" {
+            self.value.parse::<i32>().ok()
+        } else {
+            None
+        }
     }
 }
 
@@ -279,7 +287,10 @@ mod loader {
     pub fn load_aura_fixture_vars() -> Vec<ConfigVar> {
         let raw: RawFixture =
             serde_json::from_str(AURA_JSON).expect("aura_fixture.json embarqué valide");
-        raw.vars.into_iter().map(|(ty, value)| ConfigVar { ty, value }).collect()
+        raw.vars
+            .into_iter()
+            .map(|(ty, value)| ConfigVar { ty, value })
+            .collect()
     }
 }
 
@@ -307,13 +318,22 @@ mod tests {
         // wks sans « totem »/« soul » → Keshin (parité TS).
         assert_eq!(classify_sub_type("wks00020", None), AuraSubType::Keshin);
         // wks avec « totem » dans le nom → Soul.
-        assert_eq!(classify_sub_type("wks00240", Some("Totem de Arthur")), AuraSubType::Soul);
+        assert_eq!(
+            classify_sub_type("wks00240", Some("Totem de Arthur")),
+            AuraSubType::Soul
+        );
     }
 
     #[test]
     fn classify_other_prefixes() {
-        assert_eq!(classify_sub_type("awakening_01", None), AuraSubType::Awakening);
-        assert_eq!(classify_sub_type("mode_change_x", None), AuraSubType::ModeChange);
+        assert_eq!(
+            classify_sub_type("awakening_01", None),
+            AuraSubType::Awakening
+        );
+        assert_eq!(
+            classify_sub_type("mode_change_x", None),
+            AuraSubType::ModeChange
+        );
         assert_eq!(classify_sub_type("wmm00210_h2", None), AuraSubType::Miximax);
         assert_eq!(classify_sub_type("wko00100", None), AuraSubType::Keshin);
         assert_eq!(classify_sub_type("unknown99", None), AuraSubType::Aura);
@@ -356,7 +376,9 @@ mod golden_tests {
         let aura = AuraCmd::parse(&vars, None).expect("aura parsée");
         let skills = load_skill_fixture();
 
-        let hissatsu = aura.resolve_hissatsu(&skills).expect("hissatsu résoluble depuis skillId1");
+        let hissatsu = aura
+            .resolve_hissatsu(&skills)
+            .expect("hissatsu résoluble depuis skillId1");
         assert_eq!(hissatsu.skill_id, "0x0F8C620D");
         assert_eq!(hissatsu.skill_id_str, "whs01780");
         assert_eq!(hissatsu.category, Category::Tir);

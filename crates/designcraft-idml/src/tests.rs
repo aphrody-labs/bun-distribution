@@ -27,7 +27,8 @@ fn zip_files(files: &[(&str, &str)]) -> Vec<u8> {
 fn zip_files_plain() -> Vec<u8> {
     use zip::write::SimpleFileOptions;
     let mut w = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    w.start_file("document.json", SimpleFileOptions::default()).unwrap();
+    w.start_file("document.json", SimpleFileOptions::default())
+        .unwrap();
     w.write_all(b"{}").unwrap();
     w.finish().unwrap().into_inner()
 }
@@ -223,7 +224,10 @@ fn odd_page_break_ends_its_paragraph_and_keeps_its_parity() {
     assert_eq!(story.paras.len(), 2);
     assert_eq!(story.paras[0].style, "Text/Body");
     assert_eq!(story.paras[1].style, st::BASIC_PARAGRAPH);
-    assert_eq!(story.paras[1].para.align, Some(designcraft_doc::Align::Center));
+    assert_eq!(
+        story.paras[1].para.align,
+        Some(designcraft_doc::Align::Center)
+    );
     // Export writes the break as the paragraph's one `Br`; importing that gives the same story.
     let back = import_idml(&export_idml(&d)).unwrap();
     let again = back.stories.values().next().unwrap();
@@ -238,7 +242,14 @@ fn odd_page_break_ends_its_paragraph_and_keeps_its_parity() {
     d.sections[0].start_number = Some(4);
     let cs = designcraft_compose::compose_story(&d, sid, &Default::default());
     assert_eq!(cs.overset_at, None);
-    assert_eq!(cs.frames[1].lines.iter().map(|l| l.para).collect::<Vec<_>>(), vec![1]);
+    assert_eq!(
+        cs.frames[1]
+            .lines
+            .iter()
+            .map(|l| l.para)
+            .collect::<Vec<_>>(),
+        vec![1]
+    );
 }
 
 #[test]
@@ -246,7 +257,10 @@ fn imports_hand_written_fixture() {
     let d = import_idml_with(&fixture(), &|_| None).unwrap();
     assert_eq!(d.title, "Fixture");
     assert!(d.settings.facing_pages);
-    assert_eq!((d.settings.page_width, d.settings.page_height), (500.0, 700.0));
+    assert_eq!(
+        (d.settings.page_width, d.settings.page_height),
+        (500.0, 700.0)
+    );
     assert_eq!(d.settings.bleed[0], 9.0);
     assert_eq!(d.page_count(), 2);
     let sp = &d.spreads[0];
@@ -255,7 +269,10 @@ fn imports_hand_written_fixture() {
     assert_eq!(sp.pages[1].x, 500.0);
     assert_eq!(sp.pages[0].margins.inside, 20.0);
     assert_eq!(sp.pages[0].columns.count, 3);
-    assert_eq!(sp.pages[1].columns.count, 2, "falls back to the default margin preference");
+    assert_eq!(
+        sp.pages[1].columns.count, 2,
+        "falls back to the default margin preference"
+    );
     assert_eq!(sp.pages[0].parent, Some(d.parents[0].id));
     let info = d.parents[0].parent.as_ref().unwrap();
     assert_eq!((info.prefix.as_str(), info.name.as_str()), ("A", "Parent"));
@@ -266,9 +283,19 @@ fn imports_hand_written_fixture() {
     assert_eq!(d.layers[0].name, "Art");
     assert_eq!(d.layers[0].color, [255, 0, 0]);
     // Swatches.
-    assert!(matches!(d.swatch("Brand").unwrap().value, SwatchValue::Color { color_type: designcraft_color::ColorType::Spot, .. }));
-    assert!(matches!(&d.swatch("Brand 50%").unwrap().value, SwatchValue::Tint { base, tint } if base == "Brand" && *tint == 0.5));
-    let SwatchValue::Gradient { gradient } = &d.swatch("Fade").unwrap().value else { panic!("gradient") };
+    assert!(matches!(
+        d.swatch("Brand").unwrap().value,
+        SwatchValue::Color {
+            color_type: designcraft_color::ColorType::Spot,
+            ..
+        }
+    ));
+    assert!(
+        matches!(&d.swatch("Brand 50%").unwrap().value, SwatchValue::Tint { base, tint } if base == "Brand" && *tint == 0.5)
+    );
+    let SwatchValue::Gradient { gradient } = &d.swatch("Fade").unwrap().value else {
+        panic!("gradient")
+    };
     assert_eq!(gradient.kind, designcraft_color::GradientKind::Radial);
     assert_eq!(gradient.stops[1].color, Color::cmyk(0.1, 0.2, 0.3, 0.4));
     assert!((gradient.stops[0].midpoint - 0.3).abs() < 1e-6);
@@ -280,17 +307,42 @@ fn imports_hand_written_fixture() {
     let body = d.styles.para("Text/Body").expect("grouped style");
     assert_eq!(body.based_on.as_deref(), Some(st::BASIC_PARAGRAPH));
     assert_eq!(body.chars.size, Some(10.0));
-    assert_eq!(body.chars.leading, Some(designcraft_doc::Leading::Points(13.0)));
+    assert_eq!(
+        body.chars.leading,
+        Some(designcraft_doc::Leading::Points(13.0))
+    );
     assert_eq!(body.para.align, Some(designcraft_doc::Align::LeftJustified));
-    assert_eq!(d.styles.char_style("Strong").unwrap().chars.font_style.as_deref(), Some("Bold"));
+    assert_eq!(
+        d.styles
+            .char_style("Strong")
+            .unwrap()
+            .chars
+            .font_style
+            .as_deref(),
+        Some("Bold")
+    );
     // Frames, threads, text.
     let story = d.stories.values().next().unwrap();
-    assert_eq!(story.text, format!("Hello & bold\nPage {}\tend{}\nafter", st::PAGE_NUMBER, st::FRAME_BREAK));
+    assert_eq!(
+        story.text,
+        format!(
+            "Hello & bold\nPage {}\tend{}\nafter",
+            st::PAGE_NUMBER,
+            st::FRAME_BREAK
+        )
+    );
     assert_eq!(story.paras.len(), 3);
     assert_eq!(story.paras[0].style, "Text/Body");
     assert_eq!(story.paras[1].style, st::BASIC_PARAGRAPH);
-    assert_eq!(story.paras[1].para.align, Some(designcraft_doc::Align::Center));
-    let bold = story.runs().find(|(r, _)| story.text[r.clone()].starts_with("bold")).unwrap().1;
+    assert_eq!(
+        story.paras[1].para.align,
+        Some(designcraft_doc::Align::Center)
+    );
+    let bold = story
+        .runs()
+        .find(|(r, _)| story.text[r.clone()].starts_with("bold"))
+        .unwrap()
+        .1;
     assert_eq!(bold.style, "Strong");
     assert_eq!(bold.over.size, Some(14.0));
     assert_eq!(story.frames.len(), 2);
@@ -298,14 +350,23 @@ fn imports_hand_written_fixture() {
     assert_eq!(f1.bounds(), Rect::new(50.0, 50.0, 350.0, 250.0));
     assert_eq!(f1.fill.swatch, "Brand 50%");
     let o = &f1.text_frame().unwrap().options;
-    assert_eq!((o.columns, o.gutter, o.inset), (2, 8.0, [1.0, 2.0, 3.0, 4.0]));
-    assert_eq!(d.item(story.frames[1]).unwrap().bounds(), Rect::new(550.0, 50.0, 650.0, 150.0));
+    assert_eq!(
+        (o.columns, o.gutter, o.inset),
+        (2, 8.0, [1.0, 2.0, 3.0, 4.0])
+    );
+    assert_eq!(
+        d.item(story.frames[1]).unwrap().bounds(),
+        Rect::new(550.0, 50.0, 650.0, 150.0)
+    );
     // Group child keeps its own transform relative to the group.
     let g = sp.items.iter().find(|i| i.shape == Shape::Group).unwrap();
     assert_eq!(g.bounds(), Rect::new(510.0, 370.0, 560.0, 420.0));
     let oval = &g.children()[0];
     assert_eq!(oval.fill.swatch, "Fade");
-    assert_eq!((oval.stroke.swatch.as_str(), oval.stroke.weight), ("Brand", 2.0));
+    assert_eq!(
+        (oval.stroke.swatch.as_str(), oval.stroke.weight),
+        ("Brand", 2.0)
+    );
     // Linked image with a missing file: link recorded, no data; stroke from the object style.
     let img = sp.items.iter().find(|i| i.graphic().is_some()).unwrap();
     assert_eq!(img.stroke.swatch, "[Black]");
@@ -338,7 +399,11 @@ fn inset_fixture(preference: &str, object_styles: &str) -> Document {
           </Spread>
         </idPkg:Spread>"#
     );
-    import_idml(&zip_files(&[("designmap.xml", &designmap), ("Spreads/Spread_s.xml", &spread)])).unwrap()
+    import_idml(&zip_files(&[
+        ("designmap.xml", &designmap),
+        ("Spreads/Spread_s.xml", &spread),
+    ]))
+    .unwrap()
 }
 
 fn frame_inset(d: &Document) -> [f64; 4] {
@@ -346,22 +411,39 @@ fn frame_inset(d: &Document) -> [f64; 4] {
 }
 
 fn inset_list(values: &[&str]) -> String {
-    let items = values.iter().map(|v| format!(r#"<ListItem type="unit">{v}</ListItem>"#)).collect::<String>();
+    let items = values
+        .iter()
+        .map(|v| format!(r#"<ListItem type="unit">{v}</ListItem>"#))
+        .collect::<String>();
     format!(r#"<Properties><InsetSpacing type="list">{items}</InsetSpacing></Properties>"#)
 }
 
 #[test]
 fn imports_scalar_inset_properties_like_lists_and_attributes() {
-    let scalar =
-        inset_fixture(r#"<TextFramePreference><Properties><InsetSpacing type="unit"> 9 </InsetSpacing></Properties></TextFramePreference>"#, "");
-    let list = inset_fixture(&format!("<TextFramePreference>{}</TextFramePreference>", inset_list(&["9"; 4])), "");
+    let scalar = inset_fixture(
+        r#"<TextFramePreference><Properties><InsetSpacing type="unit"> 9 </InsetSpacing></Properties></TextFramePreference>"#,
+        "",
+    );
+    let list = inset_fixture(
+        &format!(
+            "<TextFramePreference>{}</TextFramePreference>",
+            inset_list(&["9"; 4])
+        ),
+        "",
+    );
     let attribute = inset_fixture(r#"<TextFramePreference InsetSpacing="9"/>"#, "");
-    let untyped = inset_fixture(r#"<TextFramePreference><Properties><InsetSpacing>9</InsetSpacing></Properties></TextFramePreference>"#, "");
+    let untyped = inset_fixture(
+        r#"<TextFramePreference><Properties><InsetSpacing>9</InsetSpacing></Properties></TextFramePreference>"#,
+        "",
+    );
     assert_eq!(frame_inset(&scalar), [9.0; 4]);
     assert_eq!(frame_inset(&scalar), frame_inset(&list));
     assert_eq!(frame_inset(&scalar), frame_inset(&attribute));
     assert_eq!(frame_inset(&scalar), frame_inset(&untyped));
-    assert_eq!(scalar.spreads[0].items[0].text_area(), Rect::new(9.0, 9.0, 91.0, 91.0));
+    assert_eq!(
+        scalar.spreads[0].items[0].text_area(),
+        Rect::new(9.0, 9.0, 91.0, 91.0)
+    );
     let round_trip = import_idml(&export_idml(&scalar)).unwrap();
     assert_eq!(frame_inset(&round_trip), [9.0; 4]);
 }
@@ -369,12 +451,22 @@ fn imports_scalar_inset_properties_like_lists_and_attributes() {
 #[test]
 fn inset_property_keeps_precedence_over_attribute() {
     for (property, expected) in [
-        (r#"<Properties><InsetSpacing type="unit">9</InsetSpacing></Properties>"#.to_string(), [9.0; 4]),
+        (
+            r#"<Properties><InsetSpacing type="unit">9</InsetSpacing></Properties>"#.to_string(),
+            [9.0; 4],
+        ),
         (inset_list(&["1", "2", "3", "4"]), [1.0, 2.0, 3.0, 4.0]),
         (inset_list(&["1", "2", "3"]), [0.0; 4]),
-        (r#"<Properties><InsetSpacing type="unit">invalid</InsetSpacing></Properties>"#.to_string(), [0.0; 4]),
+        (
+            r#"<Properties><InsetSpacing type="unit">invalid</InsetSpacing></Properties>"#
+                .to_string(),
+            [0.0; 4],
+        ),
     ] {
-        let d = inset_fixture(&format!(r#"<TextFramePreference InsetSpacing="42">{property}</TextFramePreference>"#), "");
+        let d = inset_fixture(
+            &format!(r#"<TextFramePreference InsetSpacing="42">{property}</TextFramePreference>"#),
+            "",
+        );
         assert_eq!(frame_inset(&d), expected, "{property}");
     }
 }
@@ -392,14 +484,33 @@ fn inset_spacing_rejects_malformed_and_nonfinite_values() {
         preferences.push(format!(r#"<TextFramePreference InsetSpacing="{value}"/>"#));
         preferences
             .push(format!(r#"<TextFramePreference><Properties><InsetSpacing type="unit">{value}</InsetSpacing></Properties></TextFramePreference>"#));
-        preferences.push(format!("<TextFramePreference>{}</TextFramePreference>", inset_list(&["1", value, "3", "4"])));
+        preferences.push(format!(
+            "<TextFramePreference>{}</TextFramePreference>",
+            inset_list(&["1", value, "3", "4"])
+        ));
     }
-    for values in [&[][..], &["9"][..], &["1", "2", "3"][..], &["1", "2", "3", "4", "5"][..], &["1", "bad", "2", "3", "4"][..]] {
-        preferences.push(format!("<TextFramePreference>{}</TextFramePreference>", inset_list(values)));
+    for values in [
+        &[][..],
+        &["9"][..],
+        &["1", "2", "3"][..],
+        &["1", "2", "3", "4", "5"][..],
+        &["1", "bad", "2", "3", "4"][..],
+    ] {
+        preferences.push(format!(
+            "<TextFramePreference>{}</TextFramePreference>",
+            inset_list(values)
+        ));
     }
-    preferences.push(format!("<TextFramePreference>{}</TextFramePreference>", inset_list(&["1", "<Other>2</Other>", "3", "4"])));
+    preferences.push(format!(
+        "<TextFramePreference>{}</TextFramePreference>",
+        inset_list(&["1", "<Other>2</Other>", "3", "4"])
+    ));
     for preference in preferences {
-        assert_eq!(frame_inset(&inset_fixture(&preference, "")), [0.0; 4], "{preference}");
+        assert_eq!(
+            frame_inset(&inset_fixture(&preference, "")),
+            [0.0; 4],
+            "{preference}"
+        );
     }
 }
 
@@ -409,14 +520,33 @@ fn inset_spacing_preserves_finite_signed_values_and_edge_order() {
         let expected = [value.trim().parse::<f64>().unwrap(); 4];
         for preference in [
             format!(r#"<TextFramePreference InsetSpacing="{value}"/>"#),
-            format!(r#"<TextFramePreference><Properties><InsetSpacing type="unit">{value}</InsetSpacing></Properties></TextFramePreference>"#),
-            format!("<TextFramePreference>{}</TextFramePreference>", inset_list(&[value; 4])),
+            format!(
+                r#"<TextFramePreference><Properties><InsetSpacing type="unit">{value}</InsetSpacing></Properties></TextFramePreference>"#
+            ),
+            format!(
+                "<TextFramePreference>{}</TextFramePreference>",
+                inset_list(&[value; 4])
+            ),
         ] {
-            assert_eq!(frame_inset(&inset_fixture(&preference, "")), expected, "{preference}");
+            assert_eq!(
+                frame_inset(&inset_fixture(&preference, "")),
+                expected,
+                "{preference}"
+            );
         }
     }
-    let d = inset_fixture(&format!("<TextFramePreference>{}</TextFramePreference>", inset_list(&["1", "-2", "3.5", "4"])), "");
-    assert_eq!(frame_inset(&d), [1.0, -2.0, 3.5, 4.0], "top, left, bottom, right");
+    let d = inset_fixture(
+        &format!(
+            "<TextFramePreference>{}</TextFramePreference>",
+            inset_list(&["1", "-2", "3.5", "4"])
+        ),
+        "",
+    );
+    assert_eq!(
+        frame_inset(&d),
+        [1.0, -2.0, 3.5, 4.0],
+        "top, left, bottom, right"
+    );
 }
 
 #[test]
@@ -425,7 +555,18 @@ fn imports_scalar_insets_in_object_style_without_replacing_frame_override() {
       <TextFramePreference><Properties><InsetSpacing type="unit">9</InsetSpacing></Properties></TextFramePreference>
     </ObjectStyle>"#;
     let d = inset_fixture(r#"<TextFramePreference InsetSpacing="3"/>"#, styles);
-    assert_eq!(d.styles.object.iter().find(|s| s.name == "Padded").unwrap().text_frame.as_ref().unwrap().inset, [9.0; 4]);
+    assert_eq!(
+        d.styles
+            .object
+            .iter()
+            .find(|s| s.name == "Padded")
+            .unwrap()
+            .text_frame
+            .as_ref()
+            .unwrap()
+            .inset,
+        [9.0; 4]
+    );
     assert_eq!(frame_inset(&d), [3.0; 4]);
 }
 
@@ -462,10 +603,21 @@ fn designmap_parts_match_leniently_and_missing_ones_are_reported() {
         ("Spreads/Spread_u2.xml", &one_frame_spread("u2")),
     ]);
     let r = import_idml_report(&zip, &|_| None).unwrap();
-    assert_eq!(r.document.spreads.len(), 2, "both lenient spellings resolve");
-    assert!(r.document.spreads.iter().all(|sp| sp.items.len() == 1), "the spreads keep their frames");
+    assert_eq!(
+        r.document.spreads.len(),
+        2,
+        "both lenient spellings resolve"
+    );
+    assert!(
+        r.document.spreads.iter().all(|sp| sp.items.len() == 1),
+        "the spreads keep their frames"
+    );
     assert_eq!(r.warnings.len(), 1, "{:?}", r.warnings);
-    assert!(r.warnings[0].contains("Spreads/Spread_gone.xml"), "{:?}", r.warnings);
+    assert!(
+        r.warnings[0].contains("Spreads/Spread_gone.xml"),
+        "{:?}",
+        r.warnings
+    );
 
     // With every spread part missing the import fails, and the error names the part.
     let only_missing = r#"<Document xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" Self="d">
@@ -491,26 +643,60 @@ fn rejects_non_idml() {
 }
 
 fn small_doc() -> Document {
-    let mut d = Document::new(&NewDocument { pages: 3, ..Default::default() });
-    d.swatches.push(Swatch::color("Brand", Color::rgb(1.0, 0.0, 0.0)));
+    let mut d = Document::new(&NewDocument {
+        pages: 3,
+        ..Default::default()
+    });
+    d.swatches
+        .push(Swatch::color("Brand", Color::rgb(1.0, 0.0, 0.0)));
     d.swatches.push(Swatch {
         name: "Brand 30".into(),
-        value: SwatchValue::Tint { base: "Brand".into(), tint: 0.3 },
+        value: SwatchValue::Tint {
+            base: "Brand".into(),
+            tint: 0.3,
+        },
         locked: false,
         named: true,
         hidden: false,
     });
     let lid = d.default_layer();
-    let (f1, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(40.0, 40.0, 300.0, 200.0), lid, "One\ttwo\nThree", ParaFormat::default()).unwrap();
-    let (f2, _) = d.add_text_frame(SpreadRef::Doc(1), Rect::new(700.0, 40.0, 900.0, 200.0), lid, "", ParaFormat::default()).unwrap();
+    let (f1, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(40.0, 40.0, 300.0, 200.0),
+            lid,
+            "One\ttwo\nThree",
+            ParaFormat::default(),
+        )
+        .unwrap();
+    let (f2, _) = d
+        .add_text_frame(
+            SpreadRef::Doc(1),
+            Rect::new(700.0, 40.0, 900.0, 200.0),
+            lid,
+            "",
+            ParaFormat::default(),
+        )
+        .unwrap();
     d.thread(f1, f2).unwrap();
     if let Some(s) = d.story_mut(sid) {
-        s.format_chars(0..3, |f| f.over = CharAttrs { size: Some(20.0), fill: Some("Brand".into()), ..Default::default() });
+        s.format_chars(0..3, |f| {
+            f.over = CharAttrs {
+                size: Some(20.0),
+                fill: Some("Brand".into()),
+                ..Default::default()
+            }
+        });
         let end = s.len();
         s.insert(end, &format!(" {}\n", st::COLUMN_BREAK));
     }
     let id = designcraft_doc::ItemId(d.alloc());
-    let mut it = designcraft_doc::Item::new(id, lid, Shape::Oval, shapes::ellipse(Rect::new(650.0, 300.0, 750.0, 380.0)));
+    let mut it = designcraft_doc::Item::new(
+        id,
+        lid,
+        Shape::Oval,
+        shapes::ellipse(Rect::new(650.0, 300.0, 750.0, 380.0)),
+    );
     it.fill = Fill::swatch("Brand 30");
     it.xf = designcraft_geom::Affine::rotate_about(0.3, designcraft_geom::Point::new(700.0, 340.0));
     it.opacity = 0.5;
@@ -537,7 +723,10 @@ fn round_trips_small_document() {
         assert_eq!(a.items.len(), b.items.len());
         for (ia, ib) in a.items.iter().zip(&b.items) {
             let (ra, rb) = (ia.bounds(), ib.bounds());
-            assert!((ra.x0 - rb.x0).abs() < 0.01 && (ra.y1 - rb.y1).abs() < 0.01, "{ra:?} vs {rb:?}");
+            assert!(
+                (ra.x0 - rb.x0).abs() < 0.01 && (ra.y1 - rb.y1).abs() < 0.01,
+                "{ra:?} vs {rb:?}"
+            );
         }
     }
     let sa: Vec<&str> = d.stories.values().map(|s| s.text.as_str()).collect();
@@ -546,8 +735,15 @@ fn round_trips_small_document() {
     let s = back.stories.values().next().unwrap();
     assert_eq!(s.frames.len(), 2);
     assert_eq!(s.runs().next().unwrap().1.over.size, Some(20.0));
-    assert_eq!(s.runs().next().unwrap().1.over.fill.as_deref(), Some("Brand"));
-    let oval = back.spreads[1].items.iter().find(|i| i.shape == Shape::Oval).unwrap();
+    assert_eq!(
+        s.runs().next().unwrap().1.over.fill.as_deref(),
+        Some("Brand")
+    );
+    let oval = back.spreads[1]
+        .items
+        .iter()
+        .find(|i| i.shape == Shape::Oval)
+        .unwrap();
     assert_eq!(oval.fill.swatch, "Brand 30");
     assert!((oval.opacity - 0.5).abs() < 1e-6);
     assert!(back.swatch("Brand 30").is_some());
@@ -565,9 +761,18 @@ fn uri_and_base64_helpers() {
 #[test]
 fn round_trips_tables() {
     let mut d = Document::new(&NewDocument::default());
-    d.swatches.push(Swatch::color("Brand", Color::rgb(1.0, 0.0, 0.0)));
+    d.swatches
+        .push(Swatch::color("Brand", Color::rgb(1.0, 0.0, 0.0)));
     let lid = d.default_layer();
-    let (_, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(40.0, 40.0, 400.0, 400.0), lid, "Intro\nOutro", ParaFormat::default()).unwrap();
+    let (_, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(40.0, 40.0, 400.0, 400.0),
+            lid,
+            "Intro\nOutro",
+            ParaFormat::default(),
+        )
+        .unwrap();
     let mut t = designcraft_doc::Table::new(d.alloc(), 3, 3, 1, 0, 300.0);
     t.cell_mut(0, 0).unwrap().text.insert(0, "Head");
     t.cell_mut(0, 0).unwrap().fill = "Brand".into();
@@ -576,8 +781,14 @@ fn round_trips_tables() {
     t.rows[2].mode = designcraft_doc::RowHeightMode::Exactly;
     t.rows[2].height = 30.0;
     t.columns[0].width = 50.0;
-    t.merge(designcraft_doc::CellRange::new(2, 1, 3, 2)).unwrap();
-    t.options.alt_rows = Some(designcraft_doc::AltFills { first: 1, first_color: "Brand".into(), first_tint: 0.2, ..Default::default() });
+    t.merge(designcraft_doc::CellRange::new(2, 1, 3, 2))
+        .unwrap();
+    t.options.alt_rows = Some(designcraft_doc::AltFills {
+        first: 1,
+        first_color: "Brand".into(),
+        first_tint: 0.2,
+        ..Default::default()
+    });
     d.story_mut(sid).unwrap().insert_table(5, t.clone());
     d.check().unwrap();
     let back = import_idml(&export_idml(&d)).unwrap();
@@ -589,12 +800,24 @@ fn round_trips_tables() {
     assert_eq!(bt.cell(0, 0).unwrap().text.text, "Head");
     assert_eq!(bt.cell(0, 0).unwrap().fill, "Brand");
     assert_eq!(bt.cell(1, 2).unwrap().text.text, "Body\nTwo");
-    assert_eq!(bt.cell(2, 1).unwrap().vj, designcraft_doc::VerticalJustification::Center);
-    assert_eq!((bt.cell(2, 1).unwrap().row_span, bt.cell(2, 1).unwrap().col_span), (2, 2));
+    assert_eq!(
+        bt.cell(2, 1).unwrap().vj,
+        designcraft_doc::VerticalJustification::Center
+    );
+    assert_eq!(
+        (
+            bt.cell(2, 1).unwrap().row_span,
+            bt.cell(2, 1).unwrap().col_span
+        ),
+        (2, 2)
+    );
     assert_eq!(bt.rows[2].mode, designcraft_doc::RowHeightMode::Exactly);
     assert!((bt.rows[2].height - 30.0).abs() < 1e-6);
     assert!((bt.columns[0].width - 50.0).abs() < 1e-6);
-    assert_eq!(bt.options.alt_rows.as_ref().map(|a| a.first_color.as_str()), Some("Brand"));
+    assert_eq!(
+        bt.options.alt_rows.as_ref().map(|a| a.first_color.as_str()),
+        Some("Brand")
+    );
 }
 
 #[test]
@@ -615,7 +838,12 @@ fn imports_and_round_trips_explicit_cell_border_overrides() {
 </Table></CharacterStyleRange></ParagraphStyleRange></Story></idPkg:Story>"#;
     let d = import_idml(&fixture_with_story(story)).unwrap();
     d.check().unwrap();
-    let table = d.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let table = d
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     let cell = table.cell(0, 0).unwrap();
     assert_eq!(cell.border_overrides, [true, true, false, false]);
     assert!(!cell.strokes[0].is_visible(), "explicit None is retained");
@@ -625,8 +853,16 @@ fn imports_and_round_trips_explicit_cell_border_overrides() {
     assert_eq!(table.cell(0, 1).unwrap().border_overrides, [false; 4]);
 
     let back = import_idml(&export_idml(&d)).unwrap();
-    let roundtrip = back.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
-    assert_eq!(roundtrip.cell(0, 0).unwrap().border_overrides, cell.border_overrides);
+    let roundtrip = back
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
+    assert_eq!(
+        roundtrip.cell(0, 0).unwrap().border_overrides,
+        cell.border_overrides
+    );
     assert_eq!(roundtrip.cell(0, 0).unwrap().strokes, cell.strokes);
     assert_eq!(roundtrip.cell(0, 1).unwrap().border_overrides, [false; 4]);
 }
@@ -635,7 +871,15 @@ fn imports_and_round_trips_explicit_cell_border_overrides() {
 fn round_trips_footnotes_and_options() {
     let mut d = Document::new(&NewDocument::default());
     let lid = d.default_layer();
-    let (_, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(40.0, 40.0, 400.0, 400.0), lid, "Body text here.", ParaFormat::default()).unwrap();
+    let (_, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(40.0, 40.0, 400.0, 400.0),
+            lid,
+            "Body text here.",
+            ParaFormat::default(),
+        )
+        .unwrap();
     {
         let s = d.story_mut(sid).unwrap();
         s.insert_note(4, "First note.", ParaFormat::default());
@@ -674,8 +918,18 @@ fn imports_indesign_style_footnote() {
 </ParagraphStyleRange></Story></idPkg:Story>"#;
     let d = import_idml(&fixture_with_story(story)).unwrap();
     d.check().unwrap();
-    let s = d.stories.values().find(|s| !s.notes.is_empty()).expect("story with a footnote");
-    assert_eq!(s.text, format!("Body text with a{} note here.", designcraft_doc::FOOTNOTE_REF));
+    let s = d
+        .stories
+        .values()
+        .find(|s| !s.notes.is_empty())
+        .expect("story with a footnote");
+    assert_eq!(
+        s.text,
+        format!(
+            "Body text with a{} note here.",
+            designcraft_doc::FOOTNOTE_REF
+        )
+    );
     assert_eq!(s.notes[0].text.text, "A source note.");
     // One run: the reference takes its position from the options, not an override.
     assert_eq!(s.chars.len(), 1);
@@ -685,11 +939,24 @@ fn imports_indesign_style_footnote() {
 fn round_trips_cross_references() {
     let mut d = Document::new(&NewDocument::default());
     let lid = d.default_layer();
-    let (_, sid) =
-        d.add_text_frame(SpreadRef::Doc(0), Rect::new(40.0, 40.0, 400.0, 400.0), lid, "Results: found\nSee .", ParaFormat::default()).unwrap();
+    let (_, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(40.0, 40.0, 400.0, 400.0),
+            lid,
+            "Results: found\nSee .",
+            ParaFormat::default(),
+        )
+        .unwrap();
     let target = d.paragraph_anchor(sid, 0).unwrap();
     let at = d.story(sid).unwrap().text.find(" .").unwrap() + 1;
-    d.story_mut(sid).unwrap().insert_xref(at, designcraft_doc::CrossRef { target, format: "Paragraph Text".into() });
+    d.story_mut(sid).unwrap().insert_xref(
+        at,
+        designcraft_doc::CrossRef {
+            target,
+            format: "Paragraph Text".into(),
+        },
+    );
     d.xref_formats.push(designcraft_doc::XrefFormat {
         name: "Mine".into(),
         definition: "(<partialPara delim=\":\" includeDelim=\"true\" />, p. <pageNum />)".into(),
@@ -701,7 +968,9 @@ fn round_trips_cross_references() {
     assert_eq!(s.text, d.story(sid).unwrap().text);
     assert_eq!(s.xrefs.len(), 1);
     assert_eq!(s.xrefs[0].format, "Paragraph Text");
-    let (tsid, tpos) = back.find_anchor(s.xrefs[0].target).expect("target resolves");
+    let (tsid, tpos) = back
+        .find_anchor(s.xrefs[0].target)
+        .expect("target resolves");
     assert_eq!((tsid, tpos), (s.id, 0));
     let mine = back.xref_format("Mine").unwrap();
     assert_eq!(mine.definition, d.xref_format("Mine").unwrap().definition);
@@ -714,35 +983,74 @@ fn round_trips_index_references() {
     let mut d = Document::new(&NewDocument::default());
     let lid = d.default_layer();
     let (_, sid) = d
-        .add_text_frame(SpreadRef::Doc(0), Rect::new(40.0, 40.0, 400.0, 400.0), lid, "Kerning adjusts pairs.\nMore.", ParaFormat::default())
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(40.0, 40.0, 400.0, 400.0),
+            lid,
+            "Kerning adjusts pairs.\nMore.",
+            ParaFormat::default(),
+        )
         .unwrap();
     {
         let s = d.story_mut(sid).unwrap();
         s.insert_index_ref(
             0,
-            designcraft_doc::IndexRef { topics: vec!["Type".into(), "Kerning".into()], sort: vec![], range: IndexRange::CurrentPage },
+            designcraft_doc::IndexRef {
+                topics: vec!["Type".into(), "Kerning".into()],
+                sort: vec![],
+                range: IndexRange::CurrentPage,
+            },
         );
-        s.insert_index_ref(5, designcraft_doc::IndexRef { topics: vec!["Pairs".into()], sort: vec![], range: IndexRange::NextParagraphs(2) });
-        s.insert_index_ref(9, designcraft_doc::IndexRef { topics: vec!["Spacing".into()], sort: vec![], range: IndexRange::See("Type".into()) });
+        s.insert_index_ref(
+            5,
+            designcraft_doc::IndexRef {
+                topics: vec!["Pairs".into()],
+                sort: vec![],
+                range: IndexRange::NextParagraphs(2),
+            },
+        );
+        s.insert_index_ref(
+            9,
+            designcraft_doc::IndexRef {
+                topics: vec!["Spacing".into()],
+                sort: vec![],
+                range: IndexRange::See("Type".into()),
+            },
+        );
     }
     d.check().unwrap();
     let back = import_idml(&export_idml(&d)).unwrap();
     back.check().unwrap();
     let s = back.stories.values().next().unwrap();
-    let mut got: Vec<(Vec<String>, IndexRange)> = s.index_refs.iter().map(|r| (r.topics.clone(), r.range.clone())).collect();
+    let mut got: Vec<(Vec<String>, IndexRange)> = s
+        .index_refs
+        .iter()
+        .map(|r| (r.topics.clone(), r.range.clone()))
+        .collect();
     got.sort_by(|a, b| a.0.cmp(&b.0));
     assert_eq!(
         got,
         [
             (vec!["Pairs".to_string()], IndexRange::NextParagraphs(2)),
             (vec!["Spacing".to_string()], IndexRange::See("Type".into())),
-            (vec!["Type".to_string(), "Kerning".to_string()], IndexRange::CurrentPage),
+            (
+                vec!["Type".to_string(), "Kerning".to_string()],
+                IndexRange::CurrentPage
+            ),
         ]
     );
     // The text survives; page references keep their places (See references, which InDesign keeps
     // on topics rather than in text, come back at the story start).
-    assert_eq!(s.text.replace(designcraft_doc::INDEX_MARK, ""), "Kerning adjusts pairs.\nMore.");
-    assert!(s.text.starts_with(&format!("{0}{0}Ke{0}rning", designcraft_doc::INDEX_MARK)), "{:?}", s.text);
+    assert_eq!(
+        s.text.replace(designcraft_doc::INDEX_MARK, ""),
+        "Kerning adjusts pairs.\nMore."
+    );
+    assert!(
+        s.text
+            .starts_with(&format!("{0}{0}Ke{0}rning", designcraft_doc::INDEX_MARK)),
+        "{:?}",
+        s.text
+    );
 }
 
 #[test]
@@ -750,44 +1058,97 @@ fn round_trips_anchored_objects() {
     use designcraft_doc::{AnchorPosition, AnchoredObject, anchored::AnchorAlign};
     let mut d = Document::new(&NewDocument::default());
     let lid = d.default_layer();
-    let (_, sid) =
-        d.add_text_frame(SpreadRef::Doc(0), Rect::new(40.0, 40.0, 400.0, 400.0), lid, "Inline here.\nAbove.", ParaFormat::default()).unwrap();
-    let mut a =
-        designcraft_doc::Item::new(designcraft_doc::ItemId(d.alloc()), lid, Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 20.0, 16.0)));
+    let (_, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(40.0, 40.0, 400.0, 400.0),
+            lid,
+            "Inline here.\nAbove.",
+            ParaFormat::default(),
+        )
+        .unwrap();
+    let mut a = designcraft_doc::Item::new(
+        designcraft_doc::ItemId(d.alloc()),
+        lid,
+        Shape::Rectangle,
+        shapes::rectangle(Rect::new(0.0, 0.0, 20.0, 16.0)),
+    );
     a.fill = Fill::swatch(designcraft_color::swatch::BLACK);
-    let b = designcraft_doc::Item::new(designcraft_doc::ItemId(d.alloc()), lid, Shape::Oval, shapes::ellipse(Rect::new(0.0, 0.0, 60.0, 30.0)));
+    let b = designcraft_doc::Item::new(
+        designcraft_doc::ItemId(d.alloc()),
+        lid,
+        Shape::Oval,
+        shapes::ellipse(Rect::new(0.0, 0.0, 60.0, 30.0)),
+    );
     {
         let s = d.story_mut(sid).unwrap();
-        s.insert_object(7, AnchoredObject::new(a, AnchorPosition::Inline { y_offset: 2.0 }));
+        s.insert_object(
+            7,
+            AnchoredObject::new(a, AnchorPosition::Inline { y_offset: 2.0 }),
+        );
         let at = s.text.find("Above").unwrap();
-        s.insert_object(at, AnchoredObject::new(b, AnchorPosition::AboveLine { align: AnchorAlign::Center, space_before: 3.0, space_after: 4.0 }));
+        s.insert_object(
+            at,
+            AnchoredObject::new(
+                b,
+                AnchorPosition::AboveLine {
+                    align: AnchorAlign::Center,
+                    space_before: 3.0,
+                    space_after: 4.0,
+                },
+            ),
+        );
     }
     d.check().unwrap();
     let back = import_idml(&export_idml(&d)).unwrap();
     back.check().unwrap();
-    let s = back.stories.values().find(|s| !s.objects.is_empty()).unwrap();
+    let s = back
+        .stories
+        .values()
+        .find(|s| !s.objects.is_empty())
+        .unwrap();
     assert_eq!(s.text, d.story(sid).unwrap().text);
     assert_eq!(s.objects.len(), 2);
     let (w, h) = s.objects[0].size();
     assert!((w - 20.0).abs() < 1e-6 && (h - 16.0).abs() < 1e-6);
-    assert_eq!(s.objects[0].position, AnchorPosition::Inline { y_offset: 2.0 });
-    assert_eq!(s.objects[0].item.fill.swatch, designcraft_color::swatch::BLACK);
+    assert_eq!(
+        s.objects[0].position,
+        AnchorPosition::Inline { y_offset: 2.0 }
+    );
+    assert_eq!(
+        s.objects[0].item.fill.swatch,
+        designcraft_color::swatch::BLACK
+    );
     assert_eq!(s.objects[1].item.shape, Shape::Oval);
-    assert_eq!(s.objects[1].position, AnchorPosition::AboveLine { align: AnchorAlign::Center, space_before: 3.0, space_after: 4.0 });
+    assert_eq!(
+        s.objects[1].position,
+        AnchorPosition::AboveLine {
+            align: AnchorAlign::Center,
+            space_before: 3.0,
+            space_after: 4.0
+        }
+    );
 }
 
 #[test]
 fn round_trips_frames_with_pasted_in_items() {
     let mut d = Document::new(&NewDocument::default());
     let lid = d.default_layer();
-    let inner = designcraft_doc::Item::new(designcraft_doc::ItemId(d.alloc()), lid, Shape::Oval, shapes::ellipse(Rect::new(0.0, 0.0, 300.0, 300.0)));
+    let inner = designcraft_doc::Item::new(
+        designcraft_doc::ItemId(d.alloc()),
+        lid,
+        Shape::Oval,
+        shapes::ellipse(Rect::new(0.0, 0.0, 300.0, 300.0)),
+    );
     let mut frame = designcraft_doc::Item::new(
         designcraft_doc::ItemId(d.alloc()),
         lid,
         Shape::Rectangle,
         shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)),
     );
-    frame.content = designcraft_doc::Content::Group { items: vec![std::sync::Arc::new(inner)] };
+    frame.content = designcraft_doc::Content::Group {
+        items: vec![std::sync::Arc::new(inner)],
+    };
     d.insert_item(SpreadRef::Doc(0), frame, None).unwrap();
     let back = import_idml(&export_idml(&d)).unwrap();
     let f = &back.spreads[0].items[0];
@@ -795,25 +1156,63 @@ fn round_trips_frames_with_pasted_in_items() {
     assert!(f.has_nested_items(), "{:?}", f.content);
     assert_eq!(f.children()[0].shape, Shape::Oval);
     let b = f.bounds();
-    assert!((b.x0 - 100.0).abs() < 0.01 && (b.x1 - 200.0).abs() < 0.01, "{b:?}");
+    assert!(
+        (b.x0 - 100.0).abs() < 0.01 && (b.x1 - 200.0).abs() < 0.01,
+        "{b:?}"
+    );
 }
 
 #[test]
 fn vertical_story_orientation_round_trips() {
     let mut d = Document::new(&NewDocument::default());
     let lid = d.default_layer();
-    let (a, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(72.0, 72.0, 200.0, 400.0), lid, "縦書き", ParaFormat::default()).unwrap();
-    let (b, _) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(300.0, 72.0, 428.0, 400.0), lid, "", ParaFormat::default()).unwrap();
+    let (a, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(72.0, 72.0, 200.0, 400.0),
+            lid,
+            "縦書き",
+            ParaFormat::default(),
+        )
+        .unwrap();
+    let (b, _) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(300.0, 72.0, 428.0, 400.0),
+            lid,
+            "",
+            ParaFormat::default(),
+        )
+        .unwrap();
     d.thread(a, b).unwrap();
-    d.add_text_frame(SpreadRef::Doc(0), Rect::new(450.0, 72.0, 550.0, 400.0), lid, "横", ParaFormat::default()).unwrap();
+    d.add_text_frame(
+        SpreadRef::Doc(0),
+        Rect::new(450.0, 72.0, 550.0, 400.0),
+        lid,
+        "横",
+        ParaFormat::default(),
+    )
+    .unwrap();
     d.story_mut(sid).unwrap().vertical = true;
     // Orientation and column direction are separate settings of the story.
     d.story_mut(sid).unwrap().direction = designcraft_doc::TextDirection::RightToLeft;
     let back = import_idml(&export_idml(&d)).unwrap();
     use designcraft_doc::TextDirection::{LeftToRight, RightToLeft};
-    let directions: Vec<_> = back.stories.values().map(|s| (s.frames.len(), s.vertical, s.direction)).collect();
-    assert!(directions.contains(&(2, true, RightToLeft)) && directions.contains(&(1, false, LeftToRight)), "{directions:?}");
-    let frames: Vec<bool> = back.spreads[0].items.iter().map(|i| back.frame_vertical(i)).collect();
+    let directions: Vec<_> = back
+        .stories
+        .values()
+        .map(|s| (s.frames.len(), s.vertical, s.direction))
+        .collect();
+    assert!(
+        directions.contains(&(2, true, RightToLeft))
+            && directions.contains(&(1, false, LeftToRight)),
+        "{directions:?}"
+    );
+    let frames: Vec<bool> = back.spreads[0]
+        .items
+        .iter()
+        .map(|i| back.frame_vertical(i))
+        .collect();
     assert_eq!(frames, [true, true, false]);
 }
 
@@ -824,18 +1223,29 @@ fn cjk_character_attributes_import_from_independent_xml_and_round_trip() {
         <CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]" LeadingAki="0.25" TrailingAki="-1" Tsume="20" Jidori="4" LeadingModel="LeadingModelCenter" CharacterAlignment="AlignEmCenter" KentenKind="KentenWhiteCircle"><Content>甲乙</Content></CharacterStyleRange>
       </ParagraphStyleRange></Story></idPkg:Story>"#;
     let doc = import_idml(&fixture_with_story(story)).unwrap();
-    let st = doc.stories.values().find(|s| s.text.contains("甲乙")).unwrap();
+    let st = doc
+        .stories
+        .values()
+        .find(|s| s.text.contains("甲乙"))
+        .unwrap();
     let a = &st.runs().next().unwrap().1.over;
     assert_eq!(a.leading_aki, Some(Some(0.25)));
     assert_eq!(a.trailing_aki, Some(None));
     assert_eq!(a.jidori, Some(4));
     assert_eq!(a.tsume, Some(0.2));
     assert_eq!(a.kenten_character.as_deref(), Some("○"));
-    assert_eq!(a.leading_model, Some(designcraft_doc::cjk::LeadingModel::Center));
+    assert_eq!(
+        a.leading_model,
+        Some(designcraft_doc::cjk::LeadingModel::Center)
+    );
     assert_eq!(st.paras[0].para.bunri_kinshi, Some(true));
     assert_eq!(st.paras[0].para.rensuuji, Some(false));
     let back = import_idml(&export_idml(&doc)).unwrap();
-    let st2 = back.stories.values().find(|s| s.text.contains("甲乙")).unwrap();
+    let st2 = back
+        .stories
+        .values()
+        .find(|s| s.text.contains("甲乙"))
+        .unwrap();
     let b = &st2.runs().next().unwrap().1.over;
     assert_eq!(a.leading_aki, b.leading_aki);
     assert_eq!(a.trailing_aki, b.trailing_aki);
@@ -850,17 +1260,33 @@ fn warichu_imports_from_idml_and_round_trips() {
         <CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]" Warichu="true" WarichuLines="3" WarichuSize="40" WarichuLineSpacing="1" WarichuAlignment="Left" WarichuCharsBeforeBreak="2" WarichuCharsAfterBreak="2"><Content>注釈</Content></CharacterStyleRange>
       </ParagraphStyleRange></Story></idPkg:Story>"#;
     let doc = import_idml(&fixture_with_story(story)).unwrap();
-    let st = doc.stories.values().find(|s| s.text.contains("注釈")).unwrap();
+    let st = doc
+        .stories
+        .values()
+        .find(|s| s.text.contains("注釈"))
+        .unwrap();
     let a = &st.runs().next().unwrap().1.over;
     assert_eq!(a.warichu, Some(true));
     assert_eq!(a.warichu_lines, Some(3));
     assert_eq!(a.warichu_size, Some(40.0));
     assert_eq!(a.warichu_line_spacing, Some(1.0));
-    assert_eq!(a.warichu_alignment, Some(designcraft_doc::cjk::WarichuAlignment::Left));
+    assert_eq!(
+        a.warichu_alignment,
+        Some(designcraft_doc::cjk::WarichuAlignment::Left)
+    );
     assert_eq!(a.warichu_chars_before_break, Some(2));
     assert_eq!(a.warichu_chars_after_break, Some(2));
     let back = import_idml(&export_idml(&doc)).unwrap();
-    let b = &back.stories.values().find(|s| s.text.contains("注釈")).unwrap().runs().next().unwrap().1.over;
+    let b = &back
+        .stories
+        .values()
+        .find(|s| s.text.contains("注釈"))
+        .unwrap()
+        .runs()
+        .next()
+        .unwrap()
+        .1
+        .over;
     assert_eq!(a.warichu, b.warichu);
     assert_eq!(a.warichu_lines, b.warichu_lines);
     assert_eq!(a.warichu_size, b.warichu_size);
@@ -872,9 +1298,18 @@ fn warichu_imports_from_idml_and_round_trips() {
 #[test]
 fn automatic_kerning_does_not_import_inactive_numeric_values() {
     for (attributes, expected) in [
-        (r#"KerningMethod="$ID/Optical" KerningValue="1e+11""#, Some(designcraft_doc::Kerning::Optical)),
-        (r#"KerningMethod="$ID/Metrics" KerningValue="0""#, Some(designcraft_doc::Kerning::Metrics)),
-        (r#"KerningValue="-40""#, Some(designcraft_doc::Kerning::Manual(-40.0))),
+        (
+            r#"KerningMethod="$ID/Optical" KerningValue="1e+11""#,
+            Some(designcraft_doc::Kerning::Optical),
+        ),
+        (
+            r#"KerningMethod="$ID/Metrics" KerningValue="0""#,
+            Some(designcraft_doc::Kerning::Metrics),
+        ),
+        (
+            r#"KerningValue="-40""#,
+            Some(designcraft_doc::Kerning::Manual(-40.0)),
+        ),
         (r#"KerningValue="1e+11""#, None),
     ] {
         let story = format!(
@@ -884,8 +1319,16 @@ fn automatic_kerning_does_not_import_inactive_numeric_values() {
         </ParagraphStyleRange></Story></idPkg:Story>"#
         );
         let d = import_idml(&fixture_with_story(&story)).unwrap();
-        let s = d.stories.values().find(|s| s.text.contains("甲乙")).unwrap();
-        assert_eq!(s.runs().next().unwrap().1.over.kerning, expected, "{attributes}");
+        let s = d
+            .stories
+            .values()
+            .find(|s| s.text.contains("甲乙"))
+            .unwrap();
+        assert_eq!(
+            s.runs().next().unwrap().1.over.kerning,
+            expected,
+            "{attributes}"
+        );
     }
 }
 
@@ -896,7 +1339,10 @@ fn cjk_composite_fonts_and_custom_kinsoku_are_document_resources() {
       <CompositeFont Self="CompositeFont/Mixed" Name="Mixed"><CompositeFontEntry Self="cf1" Name="Base" FontStyle="Regular"><Properties><AppliedFont type="string">Source Serif 4</AppliedFont></Properties></CompositeFontEntry>
       <CompositeFontEntry Self="cf2" Name="Digits" CustomCharacters="0123456789" FontStyle="Regular" RelativeSize="80" BaselineShift="10"><Properties><AppliedFont type="string">Source Sans 3</AppliedFont></Properties></CompositeFontEntry></CompositeFont>
     </Document>"#);
-    let story = STORY.replace("<ParagraphStyleRange ", "<ParagraphStyleRange KinsokuSet=\"KinsokuTable/Test\" ");
+    let story = STORY.replace(
+        "<ParagraphStyleRange ",
+        "<ParagraphStyleRange KinsokuSet=\"KinsokuTable/Test\" ",
+    );
     let bytes = zip_files(&[
         ("designmap.xml", &map),
         ("Resources/Graphic.xml", GRAPHIC),
@@ -913,9 +1359,13 @@ fn cjk_composite_fonts_and_custom_kinsoku_are_document_resources() {
     assert_eq!(f.entry('1').unwrap().relative_size, 0.8);
     let back = import_idml(&export_idml(&d)).unwrap();
     assert_eq!(back.styles.composite_fonts, d.styles.composite_fonts);
-    assert!(
-        back.stories.values().flat_map(|s| &s.paras).any(|p| p.para.kinsoku.as_ref().and_then(Option::as_ref).is_some_and(|k| k.no_start == "乙"))
-    );
+    assert!(back.stories.values().flat_map(|s| &s.paras).any(|p| {
+        p.para
+            .kinsoku
+            .as_ref()
+            .and_then(Option::as_ref)
+            .is_some_and(|k| k.no_start == "乙")
+    }));
 }
 
 #[test]
@@ -940,7 +1390,12 @@ fn cjk_unsupported_mojikumi_is_preserved_instead_of_silently_dropped() {
     assert!(t.overrides[0].does_not_float);
     let back = import_idml(&export_idml(&d)).unwrap();
     assert_eq!(back.styles.mojikumi_tables, d.styles.mojikumi_tables);
-    assert!(back.stories.values().flat_map(|s| &s.paras).any(|p| p.para.mojikumi.as_deref() == Some("MojikumiTable/Spacing")));
+    assert!(
+        back.stories
+            .values()
+            .flat_map(|s| &s.paras)
+            .any(|p| p.para.mojikumi.as_deref() == Some("MojikumiTable/Spacing"))
+    );
 }
 
 #[test]
@@ -952,15 +1407,25 @@ fn arabic_controls_import_independent_xml_and_round_trip() {
     let d = import_idml(&fixture_with_story(story)).unwrap();
     let st = d.stories.values().find(|s| s.text.contains('ب')).unwrap();
     assert_eq!(st.paras[0].para.kashidas, Some(false));
-    assert_eq!(st.paras[0].para.arabic_justification.as_deref(), Some("NaskhJustification"));
+    assert_eq!(
+        st.paras[0].para.arabic_justification.as_deref(),
+        Some("NaskhJustification")
+    );
     let a = &st.runs().next().unwrap().1.over;
-    assert_eq!(a.character_direction, Some(designcraft_doc::arabic::CharacterDirection::LeftToRight));
+    assert_eq!(
+        a.character_direction,
+        Some(designcraft_doc::arabic::CharacterDirection::LeftToRight)
+    );
     assert_eq!(a.allow_kashidas, Some(false));
     assert_eq!(a.diacritic_x_offset, Some(150.0));
     assert_eq!(a.diacritic_y_offset, Some(-100.0));
     assert_eq!(a.digits, Some(designcraft_doc::Digits::Farsi));
     let back = import_idml(&export_idml(&d)).unwrap();
-    let b = back.stories.values().find(|s| s.text.contains('ب')).unwrap();
+    let b = back
+        .stories
+        .values()
+        .find(|s| s.text.contains('ب'))
+        .unwrap();
     let attrs = &b.runs().next().unwrap().1.over;
     assert_eq!(attrs.character_direction, a.character_direction);
     assert_eq!(attrs.diacritic_x_offset, a.diacritic_x_offset);
@@ -973,16 +1438,31 @@ fn arabic_controls_import_independent_xml_and_round_trip() {
 #[test]
 fn arabic_story_and_table_directions_survive_idml_export() {
     let mut d = Document::new(&NewDocument::default());
-    let (_, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(0.0, 0.0, 300.0, 300.0), d.default_layer(), "", ParaFormat::default()).unwrap();
+    let (_, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(0.0, 0.0, 300.0, 300.0),
+            d.default_layer(),
+            "",
+            ParaFormat::default(),
+        )
+        .unwrap();
     let st = d.story_mut(sid).unwrap();
     st.direction = designcraft_doc::TextDirection::RightToLeft;
     let mut t = designcraft_doc::Table::new(42, 1, 2, 0, 0, 200.0);
     t.options.direction = designcraft_doc::TextDirection::RightToLeft;
     st.insert_table(0, t);
     let back = import_idml(&export_idml(&d)).unwrap();
-    let st = back.stories.values().find(|st| !st.tables.is_empty()).unwrap();
+    let st = back
+        .stories
+        .values()
+        .find(|st| !st.tables.is_empty())
+        .unwrap();
     assert_eq!(st.direction, designcraft_doc::TextDirection::RightToLeft);
-    assert_eq!(st.tables.values().next().unwrap().options.direction, designcraft_doc::TextDirection::RightToLeft);
+    assert_eq!(
+        st.tables.values().next().unwrap().options.direction,
+        designcraft_doc::TextDirection::RightToLeft
+    );
 }
 /// Fully synthetic style-only table, including sparse based-on attributes and local overrides.
 const CASCADE_STYLES: &str = r#"<idPkg:Styles xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging">
@@ -1051,18 +1531,33 @@ fn fixture_with_table_styles(styles: &str, story: &str) -> Vec<u8> {
 fn table_style_cascade_preserves_sparse_edges_and_local_overrides() {
     let d = import_idml(&fixture_with_table_styles(CASCADE_STYLES, CASCADE_STORY)).unwrap();
     d.check().unwrap();
-    let table = d.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let table = d
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     assert_eq!((table.nrows(), table.ncols()), (2, 3));
     assert_eq!(table.style, "Table");
     assert_eq!(table.options.space_before, 19.0);
-    assert_eq!(std::array::from_fn::<_, 4, _>(|i| table.options.border_for(i).weight), [7.0, 8.0, 9.0, 10.0]);
+    assert_eq!(
+        std::array::from_fn::<_, 4, _>(|i| table.options.border_for(i).weight),
+        [7.0, 8.0, 9.0, 10.0]
+    );
     assert_eq!(table.options.border_for(3).color, "Brand");
     let fills = table.options.alt_rows.as_ref().unwrap();
     assert_eq!((fills.first, fills.next, fills.first_tint), (1, 1, 0.2));
     assert_eq!(fills.first_color, "Brand");
     let header = table.cell(0, 0).unwrap();
-    assert_eq!(header.fill, designcraft_color::swatch::PAPER, "header takes precedence over left region");
-    assert!(header.style.is_empty(), "a table region does not become AppliedCellStyle");
+    assert_eq!(
+        header.fill,
+        designcraft_color::swatch::PAPER,
+        "header takes precedence over left region"
+    );
+    assert!(
+        header.style.is_empty(),
+        "a table region does not become AppliedCellStyle"
+    );
     assert_eq!(header.insets, [2.0, 3.0, 4.0, 5.0]);
     assert_eq!(header.vj, designcraft_doc::VerticalJustification::Center);
     assert_eq!(header.text.paras[0].style, "CellParagraph");
@@ -1077,7 +1572,10 @@ fn table_style_cascade_preserves_sparse_edges_and_local_overrides() {
     assert_eq!(explicit.fill, "Brand");
     assert_eq!(explicit.fill_tint, 0.75);
     assert_eq!(explicit.insets, [0.0, 3.0, 4.0, 5.0]);
-    assert_eq!(explicit.strokes[0].weight, 2.0, "color-only override inherits weight");
+    assert_eq!(
+        explicit.strokes[0].weight, 2.0,
+        "color-only override inherits weight"
+    );
     assert_eq!(explicit.strokes[0].color, designcraft_color::swatch::NONE);
     assert_eq!(explicit.strokes[3].weight, 5.0);
     assert_eq!(explicit.strokes[3].tint, 0.3);
@@ -1089,14 +1587,26 @@ fn table_style_cascade_preserves_sparse_edges_and_local_overrides() {
     assert_eq!(local.strokes[0].weight, 0.0);
     assert_eq!(local.strokes[3].color, designcraft_color::swatch::NONE);
     assert_eq!(local.stroke_priorities, [0, 0, 0, 7]);
-    assert_eq!(local.text.paras[0].style, st::BASIC_PARAGRAPH, "explicit paragraph style wins");
-    assert_eq!(table.cell(1, 0).unwrap().fill, designcraft_color::swatch::BLACK);
+    assert_eq!(
+        local.text.paras[0].style,
+        st::BASIC_PARAGRAPH,
+        "explicit paragraph style wins"
+    );
+    assert_eq!(
+        table.cell(1, 0).unwrap().fill,
+        designcraft_color::swatch::BLACK
+    );
     assert_eq!(table.cell(1, 0).unwrap().strokes[1].weight, 0.0);
     assert_eq!(table.cell(1, 1).unwrap().fill_tint, 0.5);
     assert_eq!(table.cell(1, 2).unwrap().fill, "Brand");
 
     let back = import_idml(&export_idml(&d)).unwrap();
-    let roundtrip = back.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let roundtrip = back
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     for (before, after) in table.cells.iter().zip(&roundtrip.cells) {
         assert_eq!(after.strokes, before.strokes);
         assert_eq!(after.border_overrides, before.border_overrides);
@@ -1108,10 +1618,30 @@ fn table_style_cascade_preserves_sparse_edges_and_local_overrides() {
     for i in 0..4 {
         assert_eq!(roundtrip.options.border_for(i), table.options.border_for(i));
     }
-    let style = back.styles.cell.iter().find(|s| s.name == "Explicit").unwrap();
-    assert_eq!(style.strokes[0].weight, None, "style export keeps absence distinct from zero");
-    assert_eq!(style.strokes[0].color.as_deref(), Some(designcraft_color::swatch::NONE));
-    assert_eq!(back.styles.table.iter().find(|s| s.name == "Table").unwrap().based_on.as_deref(), Some("BaseTable"));
+    let style = back
+        .styles
+        .cell
+        .iter()
+        .find(|s| s.name == "Explicit")
+        .unwrap();
+    assert_eq!(
+        style.strokes[0].weight, None,
+        "style export keeps absence distinct from zero"
+    );
+    assert_eq!(
+        style.strokes[0].color.as_deref(),
+        Some(designcraft_color::swatch::NONE)
+    );
+    assert_eq!(
+        back.styles
+            .table
+            .iter()
+            .find(|s| s.name == "Table")
+            .unwrap()
+            .based_on
+            .as_deref(),
+        Some("BaseTable")
+    );
 }
 
 #[test]
@@ -1120,9 +1650,17 @@ fn table_style_same_as_body_flags_and_editable_basic_table_are_inherited() {
         "Name=\"Table\" SpaceBefore",
         "Name=\"Table\" HeaderRegionSameAsBodyRegion=\"true\" LeftColumnRegionSameAsBodyRegion=\"true\" SpaceBefore",
     );
-    let story = CASCADE_STORY.replace("AppliedTableStyle=\"ts-child\"", "AppliedTableStyle=\"TableStyle/$ID/[Basic Table]\"");
+    let story = CASCADE_STORY.replace(
+        "AppliedTableStyle=\"ts-child\"",
+        "AppliedTableStyle=\"TableStyle/$ID/[Basic Table]\"",
+    );
     let d = import_idml(&fixture_with_table_styles(&styles, &story)).unwrap();
-    let table = d.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let table = d
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     assert!(table.style.is_empty());
     assert_eq!(table.options.space_after, 17.0);
     assert_eq!(table.cell(0, 0).unwrap().fill, "Brand");
@@ -1143,7 +1681,12 @@ fn table_style_cycles_and_missing_bases_terminate_without_losing_nearest_values(
 <TableStyle Self="TableStyle/B" Name="B" SpaceAfter="20"><Properties><BasedOn type="object">ts-child</BasedOn></Properties></TableStyle>
 </RootTableStyleGroup></idPkg:Styles>"#;
     let d = import_idml(&fixture_with_table_styles(styles, CASCADE_STORY)).unwrap();
-    let table = d.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let table = d
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     assert_eq!(table.options.space_after, 20.0);
     assert_eq!(table.cell(1, 1).unwrap().strokes[0].weight, 0.0);
     assert_eq!(table.cell(1, 1).unwrap().strokes[0].color, "Brand");
@@ -1157,10 +1700,18 @@ fn table_local_alternating_fill_off_survives_named_style_roundtrip() {
         "Name=\"Table\" SpaceBefore",
         "Name=\"Table\" StartColumnFillCount=\"1\" EndColumnFillCount=\"1\" StartColumnFillColor=\"Color/Brand\" SpaceBefore",
     );
-    let story = CASCADE_STORY.replace("HeaderRowCount=\"1\"", "HeaderRowCount=\"1\" StartRowFillCount=\"0\" StartColumnFillCount=\"0\"");
+    let story = CASCADE_STORY.replace(
+        "HeaderRowCount=\"1\"",
+        "HeaderRowCount=\"1\" StartRowFillCount=\"0\" StartColumnFillCount=\"0\"",
+    );
     let document = import_idml(&fixture_with_table_styles(&styles, &story)).unwrap();
     for document in [&document, &import_idml(&export_idml(&document)).unwrap()] {
-        let table = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+        let table = document
+            .stories
+            .values()
+            .flat_map(|s| s.tables.values())
+            .next()
+            .unwrap();
         assert!(table.options.alt_rows.is_none());
         assert!(table.options.alt_cols.is_none());
     }
@@ -1168,10 +1719,17 @@ fn table_local_alternating_fill_off_survives_named_style_roundtrip() {
 
 #[test]
 fn table_local_fill_counts_enable_inherited_disabled_pattern_colors() {
-    let story =
-        CASCADE_STORY.replace("AppliedTableStyle=\"ts-child\"", "AppliedTableStyle=\"ts-base\" StartRowFillCount=\"1\" EndRowFillCount=\"1\"");
+    let story = CASCADE_STORY.replace(
+        "AppliedTableStyle=\"ts-child\"",
+        "AppliedTableStyle=\"ts-base\" StartRowFillCount=\"1\" EndRowFillCount=\"1\"",
+    );
     let document = import_idml(&fixture_with_table_styles(CASCADE_STYLES, &story)).unwrap();
-    let table = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let table = document
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     let fills = table.options.alt_rows.as_ref().unwrap();
     assert_eq!((fills.first, fills.next), (1, 1));
     assert_eq!(fills.first_color, "Brand");
@@ -1181,13 +1739,27 @@ fn table_local_fill_counts_enable_inherited_disabled_pattern_colors() {
 #[test]
 fn table_absent_and_explicit_default_edges_remain_distinct_on_idml_roundtrip() {
     let story = CASCADE_STORY
-        .replace("AppliedTableStyle=\"ts-child\"", "AppliedTableStyle=\"Missing\"")
-        .replace("Name=\"1:1\"", "Name=\"1:1\" TopEdgeStrokeWeight=\"1\" TopEdgeStrokePriority=\"0\"");
+        .replace(
+            "AppliedTableStyle=\"ts-child\"",
+            "AppliedTableStyle=\"Missing\"",
+        )
+        .replace(
+            "Name=\"1:1\"",
+            "Name=\"1:1\" TopEdgeStrokeWeight=\"1\" TopEdgeStrokePriority=\"0\"",
+        );
     let document = import_idml(&fixture_with_table_styles(STYLES, &story)).unwrap();
     for document in [&document, &import_idml(&export_idml(&document)).unwrap()] {
-        let table = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+        let table = document
+            .stories
+            .values()
+            .flat_map(|s| s.tables.values())
+            .next()
+            .unwrap();
         assert_eq!(table.cell(1, 0).unwrap().stroke_defined, [false; 4]);
-        assert_eq!(table.cell(1, 1).unwrap().stroke_defined, [true, false, false, false]);
+        assert_eq!(
+            table.cell(1, 1).unwrap().stroke_defined,
+            [true, false, false, false]
+        );
         assert_eq!(table.cell(1, 1).unwrap().border_overrides, [false; 4]);
         assert_eq!(table.cell(1, 1).unwrap().stroke_priorities, [0; 4]);
     }
@@ -1195,34 +1767,71 @@ fn table_absent_and_explicit_default_edges_remain_distinct_on_idml_roundtrip() {
 
 #[test]
 fn multiline_table_and_cell_style_bases_resolve() {
-    let styles = CASCADE_STYLES.replace(">cs-base</BasedOn>", ">\n  cs-base \n</BasedOn>").replace(">ts-base</BasedOn>", ">\n ts-base \n</BasedOn>");
+    let styles = CASCADE_STYLES
+        .replace(">cs-base</BasedOn>", ">\n  cs-base \n</BasedOn>")
+        .replace(">ts-base</BasedOn>", ">\n ts-base \n</BasedOn>");
     let document = import_idml(&fixture_with_table_styles(&styles, CASCADE_STORY)).unwrap();
-    let table = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let table = document
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     assert_eq!(table.cell(1, 1).unwrap().strokes[0].weight, 2.0);
     assert_eq!(table.options.border_for(0).weight, 7.0);
 }
 
 #[test]
 fn legacy_native_documents_export_both_builtin_table_styles_when_missing() {
-    let story = CASCADE_STORY.replace("AppliedTableStyle=\"ts-child\"", "AppliedTableStyle=\"TableStyle/$ID/[Basic Table]\"");
+    let story = CASCADE_STORY.replace(
+        "AppliedTableStyle=\"ts-child\"",
+        "AppliedTableStyle=\"TableStyle/$ID/[Basic Table]\"",
+    );
     let mut document = import_idml(&fixture_with_story(&story)).unwrap();
     document.styles_mut().table.clear();
     let bytes = export_idml(&document);
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(&bytes)).unwrap();
     let mut styles = String::new();
-    std::io::Read::read_to_string(&mut zip.by_name("Resources/Styles.xml").unwrap(), &mut styles).unwrap();
-    assert_eq!(styles.matches("Self=\"TableStyle/$ID/[Basic Table]\"").count(), 1);
-    assert_eq!(styles.matches("Self=\"TableStyle/$ID/[No table style]\"").count(), 1);
+    std::io::Read::read_to_string(
+        &mut zip.by_name("Resources/Styles.xml").unwrap(),
+        &mut styles,
+    )
+    .unwrap();
+    assert_eq!(
+        styles
+            .matches("Self=\"TableStyle/$ID/[Basic Table]\"")
+            .count(),
+        1
+    );
+    assert_eq!(
+        styles
+            .matches("Self=\"TableStyle/$ID/[No table style]\"")
+            .count(),
+        1
+    );
     let back = import_idml(&bytes).unwrap();
-    assert!(back.styles.table.iter().any(|s| s.name == designcraft_doc::BASIC_TABLE));
+    assert!(
+        back.styles
+            .table
+            .iter()
+            .any(|s| s.name == designcraft_doc::BASIC_TABLE)
+    );
 }
 
 #[test]
 fn hostile_table_spans_are_clamped_before_arithmetic() {
-    let story = CASCADE_STORY.replace("Name=\"1:1\"", "Name=\"1:1\" RowSpan=\"inf\" ColumnSpan=\"inf\"");
+    let story = CASCADE_STORY.replace(
+        "Name=\"1:1\"",
+        "Name=\"1:1\" RowSpan=\"inf\" ColumnSpan=\"inf\"",
+    );
     let document = import_idml(&fixture_with_table_styles(CASCADE_STYLES, &story)).unwrap();
     document.check().unwrap();
-    let table = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let table = document
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     assert_eq!(table.cell(1, 1).unwrap().row_span, 1);
     assert_eq!(table.cell(1, 1).unwrap().col_span, 2);
 }
@@ -1235,8 +1844,16 @@ fn signed_idml_edge_priorities_roundtrip_without_clamping() {
     );
     let document = import_idml(&fixture_with_table_styles(CASCADE_STYLES, &story)).unwrap();
     for document in [&document, &import_idml(&export_idml(&document)).unwrap()] {
-        let table = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
-        assert_eq!(table.cell(1, 1).unwrap().stroke_priorities, [-5, i32::MIN, 0, i32::MAX]);
+        let table = document
+            .stories
+            .values()
+            .flat_map(|s| s.tables.values())
+            .next()
+            .unwrap();
+        assert_eq!(
+            table.cell(1, 1).unwrap().stroke_priorities,
+            [-5, i32::MIN, 0, i32::MAX]
+        );
     }
 }
 
@@ -1246,25 +1863,53 @@ fn alternating_table_strokes_inherit_and_roundtrip_without_flattening_cell_edges
         "Name=\"BaseTable\"",
         "Name=\"BaseTable\" StartRowStrokeCount=\"1\" EndRowStrokeCount=\"1\" StartRowStrokeWeight=\"0\" EndRowStrokeWeight=\"0\" StartRowStrokeColor=\"Color/Paper\" EndRowStrokeColor=\"Color/Brand\" StartColumnStrokeCount=\"2\" EndColumnStrokeCount=\"1\" StartColumnStrokeWeight=\"1\" EndColumnStrokeWeight=\"2\" EndColumnLineStyle=\"StrokeStyle/$ID/Dotted\" SkipFirstAlternatingStrokeColumns=\"1\"",
     ).replace("Name=\"Table\"", "Name=\"Table\" StartRowStrokeTint=\"25\"");
-    let story = CASCADE_STORY.replace("HeaderRowCount=\"1\"", "HeaderRowCount=\"1\" EndRowStrokeColor=\"Swatch/None\"");
+    let story = CASCADE_STORY.replace(
+        "HeaderRowCount=\"1\"",
+        "HeaderRowCount=\"1\" EndRowStrokeColor=\"Swatch/None\"",
+    );
     let document = import_idml(&fixture_with_table_styles(&styles, &story)).unwrap();
-    let before = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let before = document
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     let row = before.options.row_strokes.as_ref().unwrap();
     assert_eq!((row.first, row.next), (1, 1));
     assert_eq!(row.first_stroke.tint, 0.25);
     assert_eq!(row.first_stroke.color, designcraft_color::swatch::PAPER);
     assert_eq!(row.next_stroke.color, designcraft_color::swatch::NONE);
-    assert!(!row.uniform_stroke().unwrap().is_visible(), "zero patterns are uniform even when their colors differ");
+    assert!(
+        !row.uniform_stroke().unwrap().is_visible(),
+        "zero patterns are uniform even when their colors differ"
+    );
     let column = before.options.column_strokes.as_ref().unwrap();
     assert_eq!((column.first, column.next, column.skip_first), (2, 1, 1));
     assert_eq!(column.next_stroke.kind, designcraft_doc::StrokeType::Dotted);
-    assert!(column.uniform_stroke().is_none(), "nonuniform/skipped patterns are preserved without guessing their phase");
-    assert_eq!(before.cell(0, 0).unwrap().strokes[2].weight, 6.0, "cell styles remain higher-precedence edges");
+    assert!(
+        column.uniform_stroke().is_none(),
+        "nonuniform/skipped patterns are preserved without guessing their phase"
+    );
+    assert_eq!(
+        before.cell(0, 0).unwrap().strokes[2].weight,
+        6.0,
+        "cell styles remain higher-precedence edges"
+    );
     let back = import_idml(&export_idml(&document)).unwrap();
-    let after = back.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+    let after = back
+        .stories
+        .values()
+        .flat_map(|s| s.tables.values())
+        .next()
+        .unwrap();
     assert_eq!(after.options.row_strokes, before.options.row_strokes);
     assert_eq!(after.options.column_strokes, before.options.column_strokes);
-    let style = back.styles.table.iter().find(|s| s.name == "Table").unwrap();
+    let style = back
+        .styles
+        .table
+        .iter()
+        .find(|s| s.name == "Table")
+        .unwrap();
     assert_eq!(style.row_strokes.first_stroke.weight, None);
     assert_eq!(style.row_strokes.first_stroke.tint, Some(0.25));
 }
@@ -1281,10 +1926,18 @@ fn alternating_table_strokes_local_off_overrides_named_style_on_roundtrip() {
     );
     let document = import_idml(&fixture_with_table_styles(&styles, &story)).unwrap();
     for document in [&document, &import_idml(&export_idml(&document)).unwrap()] {
-        let table = document.stories.values().flat_map(|s| s.tables.values()).next().unwrap();
+        let table = document
+            .stories
+            .values()
+            .flat_map(|s| s.tables.values())
+            .next()
+            .unwrap();
         let row = table.options.row_strokes.as_ref().unwrap();
         let column = table.options.column_strokes.as_ref().unwrap();
-        assert_eq!((row.first, row.next, column.first, column.next), (0, 0, 0, 0));
+        assert_eq!(
+            (row.first, row.next, column.first, column.next),
+            (0, 0, 0, 0)
+        );
         assert!(row.uniform_stroke().is_none());
         assert!(column.uniform_stroke().is_none());
         assert_eq!(row.first_stroke.weight, 4.0);
@@ -1297,22 +1950,52 @@ fn alternating_table_strokes_local_off_overrides_named_style_on_roundtrip() {
 #[test]
 fn complete_uniform_native_style_fields_keep_legacy_identity_on_idml_roundtrip() {
     let mut document = import_idml(&fixture()).unwrap();
-    let stroke = designcraft_doc::CellStroke { weight: 3.0, tint: 0.5, ..Default::default() };
+    let stroke = designcraft_doc::CellStroke {
+        weight: 3.0,
+        tint: 0.5,
+        ..Default::default()
+    };
     document.styles_mut().cell.push(designcraft_doc::CellStyle {
         name: "Uniform".into(),
         insets: Some([5.0; 4]),
         stroke: Some(stroke.clone()),
         ..Default::default()
     });
-    document.styles_mut().table.push(designcraft_doc::TableStyle { name: "Uniform".into(), border: Some(stroke.clone()), ..Default::default() });
+    document
+        .styles_mut()
+        .table
+        .push(designcraft_doc::TableStyle {
+            name: "Uniform".into(),
+            border: Some(stroke.clone()),
+            ..Default::default()
+        });
     let back = import_idml(&export_idml(&document)).unwrap();
-    let cell = back.styles.cell.iter().find(|s| s.name == "Uniform").unwrap();
+    let cell = back
+        .styles
+        .cell
+        .iter()
+        .find(|s| s.name == "Uniform")
+        .unwrap();
     assert_eq!(cell.insets, Some([5.0; 4]));
     assert_eq!(cell.stroke.as_ref(), Some(&stroke));
-    assert!(cell.strokes.iter().all(designcraft_doc::CellStrokeAttrs::is_empty));
-    let table = back.styles.table.iter().find(|s| s.name == "Uniform").unwrap();
+    assert!(
+        cell.strokes
+            .iter()
+            .all(designcraft_doc::CellStrokeAttrs::is_empty)
+    );
+    let table = back
+        .styles
+        .table
+        .iter()
+        .find(|s| s.name == "Uniform")
+        .unwrap();
     assert_eq!(table.border.as_ref(), Some(&stroke));
-    assert!(table.borders.iter().all(designcraft_doc::CellStrokeAttrs::is_empty));
+    assert!(
+        table
+            .borders
+            .iter()
+            .all(designcraft_doc::CellStrokeAttrs::is_empty)
+    );
 }
 
 #[test]
@@ -1323,18 +2006,45 @@ fn imports_column_rules_from_frames_and_object_styles() {
     let styles = format!(
         r#"<ObjectStyle Self="ObjectStyle/Padded" Name="Padded" EnableTextFrameGeneralOptions="true"><TextFramePreference TextColumnCount="2" {rule}/></ObjectStyle>"#
     );
-    let d = inset_fixture(&format!(r#"<TextFramePreference TextColumnCount="3" {rule}/>"#), &styles);
-    let style = d.styles.object.iter().find(|s| s.name == "Padded").unwrap().text_frame.clone().unwrap();
-    for o in [d.spreads[0].items[0].text_frame().unwrap().options.clone(), style] {
+    let d = inset_fixture(
+        &format!(r#"<TextFramePreference TextColumnCount="3" {rule}/>"#),
+        &styles,
+    );
+    let style = d
+        .styles
+        .object
+        .iter()
+        .find(|s| s.name == "Padded")
+        .unwrap()
+        .text_frame
+        .clone()
+        .unwrap();
+    for o in [
+        d.spreads[0].items[0].text_frame().unwrap().options.clone(),
+        style,
+    ] {
         assert!(o.column_rule, "{o:?}");
         assert_eq!(o.column_rule_weight, 2.5);
         assert_eq!(o.column_rule_color, designcraft_color::swatch::BLACK);
         assert!((o.column_rule_tint - 0.4).abs() < 1e-6);
-        assert_eq!((o.column_rule_offset, o.column_rule_top_inset, o.column_rule_bottom_inset), (-3.0, 6.0, 9.0));
+        assert_eq!(
+            (
+                o.column_rule_offset,
+                o.column_rule_top_inset,
+                o.column_rule_bottom_inset
+            ),
+            (-3.0, 6.0, 9.0)
+        );
     }
     // Absent attributes: no rule, InDesign's defaults.
     let d = inset_fixture(r#"<TextFramePreference TextColumnCount="3"/>"#, "");
-    assert_eq!(d.spreads[0].items[0].text_frame().unwrap().options, designcraft_doc::TextFrameOptions { columns: 3, ..Default::default() });
+    assert_eq!(
+        d.spreads[0].items[0].text_frame().unwrap().options,
+        designcraft_doc::TextFrameOptions {
+            columns: 3,
+            ..Default::default()
+        }
+    );
 }
 
 #[test]
@@ -1353,12 +2063,24 @@ fn column_rules_round_trip() {
     let want = o.clone();
     let bytes = export_idml(&d);
     let back = import_idml(&bytes).unwrap();
-    let got = back.spreads[0].items.iter().find_map(|i| i.text_frame().filter(|t| t.options.column_rule)).unwrap().options.clone();
+    let got = back.spreads[0]
+        .items
+        .iter()
+        .find_map(|i| i.text_frame().filter(|t| t.options.column_rule))
+        .unwrap()
+        .options
+        .clone();
     assert_eq!(got, want);
     // Frames without a rule stay without one.
     let plain = export_idml(&small_doc());
     let back = import_idml(&plain).unwrap();
-    assert!(back.spreads.iter().flat_map(|s| &s.items).filter_map(|i| i.text_frame()).all(|t| !t.options.column_rule));
+    assert!(
+        back.spreads
+            .iter()
+            .flat_map(|s| &s.items)
+            .filter_map(|i| i.text_frame())
+            .all(|t| !t.options.column_rule)
+    );
 }
 
 /// InDesign's designmap lists layers back to front; `Document::layers[0]` is the front layer.
@@ -1380,16 +2102,26 @@ fn layers_import_and_export_in_stacking_order() {
         </Rectangle>
       </Spread>
     </idPkg:Spread>"#;
-    let d = import_idml(&zip_files(&[("designmap.xml", designmap), ("Spreads/Spread_s.xml", spread)])).unwrap();
+    let d = import_idml(&zip_files(&[
+        ("designmap.xml", designmap),
+        ("Spreads/Spread_s.xml", spread),
+    ]))
+    .unwrap();
     let names = |d: &Document| d.layers.iter().map(|l| l.name.clone()).collect::<Vec<_>>();
     assert_eq!(names(&d), ["Content", "Background"]);
-    assert_eq!(d.spreads[0].items[0].layer, d.layers[1].id, "the rectangle stays on Background");
+    assert_eq!(
+        d.spreads[0].items[0].layer, d.layers[1].id,
+        "the rectangle stays on Background"
+    );
 
     let bytes = export_idml(&d);
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes.as_slice())).unwrap();
     let mut map = String::new();
     std::io::Read::read_to_string(&mut zip.by_name("designmap.xml").unwrap(), &mut map).unwrap();
-    let (bg, content) = (map.find(r#"Name="Background""#).unwrap(), map.find(r#"Name="Content""#).unwrap());
+    let (bg, content) = (
+        map.find(r#"Name="Background""#).unwrap(),
+        map.find(r#"Name="Content""#).unwrap(),
+    );
     assert!(bg < content, "designmap lists the back layer first");
     let back = import_idml(&bytes).unwrap();
     assert_eq!(names(&back), ["Content", "Background"]);
@@ -1404,13 +2136,32 @@ fn split_columns_import_and_round_trip() {
         <CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"><Content>Split list</Content></CharacterStyleRange>
       </ParagraphStyleRange></Story></idPkg:Story>"#;
     let doc = import_idml(&fixture_with_story(story)).unwrap();
-    let para = |d: &Document| d.stories.values().find(|s| s.text.contains("Split list")).unwrap().paras[0].para.clone();
+    let para = |d: &Document| {
+        d.stories
+            .values()
+            .find(|s| s.text.contains("Split list"))
+            .unwrap()
+            .paras[0]
+            .para
+            .clone()
+    };
     let a = para(&doc);
     assert_eq!(a.span_columns, Some(designcraft_doc::SpanColumns::Split(3)));
     assert_eq!(a.split_inside_gutter, Some(27.0));
     assert_eq!(a.split_outside_gutter, Some(4.5));
     let b = para(&import_idml(&export_idml(&doc)).unwrap());
-    assert_eq!((b.span_columns, b.split_inside_gutter, b.split_outside_gutter), (a.span_columns, a.split_inside_gutter, a.split_outside_gutter));
+    assert_eq!(
+        (
+            b.span_columns,
+            b.split_inside_gutter,
+            b.split_outside_gutter
+        ),
+        (
+            a.span_columns,
+            a.split_inside_gutter,
+            a.split_outside_gutter
+        )
+    );
 }
 
 #[test]
@@ -1442,7 +2193,10 @@ fn list_numbering_format_expression_and_bullet_import_and_round_trip() {
     ]);
     let check = |d: &Document| {
         let (head, _) = d.styles.resolve_para_style("Text/Head");
-        assert_eq!(head.number_style, designcraft_doc::NumberStyle::UpperLetters);
+        assert_eq!(
+            head.number_style,
+            designcraft_doc::NumberStyle::UpperLetters
+        );
         assert_eq!(head.number_label(2), "B.\t");
         let (table, _) = d.styles.resolve_para_style("Text/Table");
         assert_eq!(table.number_label(7), "Tabel 007\t");
@@ -1463,19 +2217,42 @@ fn type_on_a_path_keeps_its_start_and_end_brackets() {
         let mut d = Document::new(&NewDocument::default());
         let lid = d.default_layer();
         let id = designcraft_doc::ItemId(d.alloc());
-        let line = PathData::single(SubPath::new(vec![Anchor::corner(Point::new(100.0, 300.0)), Anchor::corner(Point::new(500.0, 300.0))], false));
+        let line = PathData::single(SubPath::new(
+            vec![
+                Anchor::corner(Point::new(100.0, 300.0)),
+                Anchor::corner(Point::new(500.0, 300.0)),
+            ],
+            false,
+        ));
         let mut it = designcraft_doc::Item::new(id, lid, Shape::GraphicLine, line);
         let sid = designcraft_doc::StoryId(d.alloc());
-        let mut tf = designcraft_doc::TextFrame { story: sid, options: Default::default() };
-        tf.options.path = Some(designcraft_doc::PathType { start: 30.0, end, ..Default::default() });
+        let mut tf = designcraft_doc::TextFrame {
+            story: sid,
+            options: Default::default(),
+        };
+        tf.options.path = Some(designcraft_doc::PathType {
+            start: 30.0,
+            end,
+            ..Default::default()
+        });
         it.content = designcraft_doc::Content::Text(tf);
         let mut story = designcraft_doc::Story::with_text(sid, "Along", Default::default());
         story.frames = vec![id];
         d.stories.insert(sid, std::sync::Arc::new(story));
         d.insert_item(SpreadRef::Doc(0), it, None).unwrap();
         let back = import_idml(&export_idml(&d)).unwrap();
-        let pt = back.spreads[0].items[0].text_frame().unwrap().options.path.clone().unwrap();
+        let pt = back.spreads[0].items[0]
+            .text_frame()
+            .unwrap()
+            .options
+            .path
+            .clone()
+            .unwrap();
         assert!((pt.start - 30.0).abs() < 1e-6, "{pt:?}");
-        assert_eq!(pt.end.map(|e| e.round()), end, "an end bracket at the path's end is no end bracket");
+        assert_eq!(
+            pt.end.map(|e| e.round()),
+            end,
+            "an end bracket at the path's end is no end bracket"
+        );
     }
 }

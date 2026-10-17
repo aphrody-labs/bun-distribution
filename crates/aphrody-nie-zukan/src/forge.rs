@@ -76,16 +76,18 @@ pub fn encode_q(json: &str) -> Result<String> {
 /// Accepte la forme URL-encodée ou déjà décodée.
 pub fn decode_q(q: &str) -> Result<String> {
     // D'abord percent-decoder
-    let decoded_url =
-        percent_encoding::percent_decode_str(q).decode_utf8().context("percent-decode UTF-8")?;
+    let decoded_url = percent_encoding::percent_decode_str(q)
+        .decode_utf8()
+        .context("percent-decode UTF-8")?;
     // Padding base64url : longueur doit être multiple de 4
     let padded = match decoded_url.len() % 4 {
         2 => format!("{decoded_url}=="),
         3 => format!("{decoded_url}="),
         _ => decoded_url.into_owned(),
     };
-    let inverted =
-        URL_SAFE_NO_PAD.decode(padded.trim_end_matches('=')).context("base64url decode")?;
+    let inverted = URL_SAFE_NO_PAD
+        .decode(padded.trim_end_matches('='))
+        .context("base64url decode")?;
     let original: Vec<u8> = inverted.iter().map(|&b| !b).collect();
     let json = String::from_utf8(original).context("UTF-8 decode")?;
     Ok(json)
@@ -180,7 +182,13 @@ mod tests {
 
     #[test]
     fn roundtrip_various_ids() {
-        let ids = ["c01000010", "c01000020", "c01000100", "c02024750", "c05020110"];
+        let ids = [
+            "c01000010",
+            "c01000020",
+            "c01000100",
+            "c02024750",
+            "c05020110",
+        ];
         for id in ids {
             let json = format!(r#"{{"character_id":["{id}"]}}"#);
             let q = encode_q(&json).unwrap();

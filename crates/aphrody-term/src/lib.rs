@@ -20,7 +20,7 @@ pub use cell::{CellFlags, PackedCell};
 pub use computer_use::{ComputerAction, ComputerUseController, SemanticBlock};
 pub use grid::{CursorShape, CursorState, DirtyTracker, TerminalGrid};
 pub use parser::VtParser;
-pub use pty::{FairMutex, PtyController, MAX_LOCKED_READ_BYTES};
+pub use pty::{FairMutex, MAX_LOCKED_READ_BYTES, PtyController};
 pub use render::{BgQuad, FrameBatcher, GlyphQuad};
 
 use std::sync::Arc;

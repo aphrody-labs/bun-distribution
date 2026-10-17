@@ -195,7 +195,9 @@ impl RealSkillConfig {
     #[must_use]
     pub fn courses_for(&self, skill: &RealSkillInfo) -> &[RealSkillShootCourse] {
         let start = skill.course_start().min(self.courses.len());
-        let end = start.saturating_add(skill.course_count()).min(self.courses.len());
+        let end = start
+            .saturating_add(skill.course_count())
+            .min(self.courses.len());
         &self.courses[start..end]
     }
 }
@@ -209,7 +211,12 @@ impl RealSkillConfig {
 #[must_use]
 pub fn parse_real_skill_config(root: &Value) -> RealSkillConfig {
     let courses = list_values(root, "m_RealSkillShootCourseInfoList")
-        .map(|values| values.iter().map(RealSkillShootCourse::from_value).collect())
+        .map(|values| {
+            values
+                .iter()
+                .map(RealSkillShootCourse::from_value)
+                .collect()
+        })
         .unwrap_or_default();
     let skills = list_values(root, "m_RealSkillInfoList")
         .map(|values| values.iter().map(RealSkillInfo::from_value).collect())

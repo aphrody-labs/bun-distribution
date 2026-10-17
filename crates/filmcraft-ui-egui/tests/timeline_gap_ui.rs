@@ -22,9 +22,19 @@ impl Driver {
     fn two_clips() -> (Self, ClipId, ClipId) {
         let mut s = Session::default();
         s.execute("file.openDemoProject", json!({})).unwrap();
-        s.execute("file.newSequence", json!({"name": "Gaps", "video": 1, "audio": 1})).unwrap();
+        s.execute(
+            "file.newSequence",
+            json!({"name": "Gaps", "video": 1, "audio": 1}),
+        )
+        .unwrap();
         let rate = s.sequence_rate();
-        let item = s.project.items.values().find(|i| i.has_video() && i.has_audio() && i.as_media().is_some()).map(|i| i.id).unwrap();
+        let item = s
+            .project
+            .items
+            .values()
+            .find(|i| i.has_video() && i.has_audio() && i.as_media().is_some())
+            .map(|i| i.id)
+            .unwrap();
         for f in [0, 96] {
             s.execute("timeline.place", json!({"item": item.0, "frame": f, "sourceIn": rate.tick_of(48).0, "duration": rate.tick_of(48).0})).unwrap();
         }
@@ -33,7 +43,9 @@ impl Driver {
         let (a, b) = (v1.items[0].id, v1.items[1].id);
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(s).with_control(rx);
-        let mut builder = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut builder = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if std::env::var_os("FILMCRAFT_UI_SHOTS").is_some() {
             builder = builder.wgpu();
         }
@@ -44,10 +56,16 @@ impl Driver {
     }
 
     fn shot(&mut self, name: &str) {
-        let Some(dir) = std::env::var_os("FILMCRAFT_UI_SHOTS").map(std::path::PathBuf::from) else { return };
+        let Some(dir) = std::env::var_os("FILMCRAFT_UI_SHOTS").map(std::path::PathBuf::from) else {
+            return;
+        };
         self.frames(3);
         std::fs::create_dir_all(&dir).unwrap();
-        self.harness.render().unwrap().save(dir.join(format!("{name}.png"))).unwrap();
+        self.harness
+            .render()
+            .unwrap()
+            .save(dir.join(format!("{name}.png")))
+            .unwrap();
     }
 
     fn frames(&mut self, n: usize) {
@@ -77,31 +95,67 @@ impl Driver {
     fn rect(&mut self, id: &str) -> Option<[f64; 4]> {
         self.frames(2);
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        let e = v.as_array().unwrap().iter().find(|e| e["id"] == json!(id))?.clone();
-        let r: Vec<f64> = e["rect"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap()).collect();
+        let e = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == json!(id))?
+            .clone();
+        let r: Vec<f64> = e["rect"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_f64().unwrap())
+            .collect();
         Some([r[0], r[1], r[2], r[3]])
     }
 
     /// Click (`button`: "left" or "right") in the middle of the empty time between `a` and `b`.
     fn click_between(&mut self, a: ClipId, b: ClipId, button: &str) {
-        let ra = self.rect(&format!("timeline.clip.{}", a.0)).expect("the first clip is shown");
-        let rb = self.rect(&format!("timeline.clip.{}", b.0)).expect("the second clip is shown");
+        let ra = self
+            .rect(&format!("timeline.clip.{}", a.0))
+            .expect("the first clip is shown");
+        let rb = self
+            .rect(&format!("timeline.clip.{}", b.0))
+            .expect("the second clip is shown");
         let (gap_l, gap_r) = (ra[0] + ra[2], rb[0]);
-        assert!(gap_r - gap_l > 10.0, "the gap is wide enough to click: {ra:?} {rb:?}");
-        self.ok("ui.click", json!({"x": (gap_l + gap_r) / 2.0, "y": ra[1] + ra[3] / 2.0, "button": button}));
+        assert!(
+            gap_r - gap_l > 10.0,
+            "the gap is wide enough to click: {ra:?} {rb:?}"
+        );
+        self.ok(
+            "ui.click",
+            json!({"x": (gap_l + gap_r) / 2.0, "y": ra[1] + ra[3] / 2.0, "button": button}),
+        );
         self.frames(3);
     }
 
     fn start(&mut self, c: ClipId) -> i64 {
-        self.harness.state_mut().session.active_sequence().unwrap().find_item(c).map(|(_, i)| i.start.0).unwrap()
+        self.harness
+            .state_mut()
+            .session
+            .active_sequence()
+            .unwrap()
+            .find_item(c)
+            .map(|(_, i)| i.start.0)
+            .unwrap()
     }
 
     fn frame(&mut self, n: i64) -> i64 {
-        self.harness.state_mut().session.sequence_rate().tick_of(n).0
+        self.harness
+            .state_mut()
+            .session
+            .sequence_rate()
+            .tick_of(n)
+            .0
     }
 
     fn gap(&mut self) -> Value {
-        self.ok("engine.execute", json!({"command": "sequence.inspect", "params": {}}))["gapSelection"].clone()
+        self.ok(
+            "engine.execute",
+            json!({"command": "sequence.inspect", "params": {}}),
+        )["gapSelection"]
+            .clone()
     }
 }
 
@@ -111,14 +165,21 @@ fn clicking_a_gap_selects_it_and_delete_closes_it() {
     let (f48, f96) = (d.frame(48), d.frame(96));
     d.click_between(a, b, "left");
     let g = d.gap();
-    assert_eq!((g["start"].as_i64(), g["end"].as_i64()), (Some(f48), Some(f96)), "the gap is selected: {g}");
+    assert_eq!(
+        (g["start"].as_i64(), g["end"].as_i64()),
+        (Some(f48), Some(f96)),
+        "the gap is selected: {g}"
+    );
     assert!(d.rect("timeline.gap").is_some(), "and drawn");
     d.ok("ui.key", json!({"key": "Delete"}));
     d.frames(3);
     assert_eq!(d.start(b), f48, "Delete closes the gap");
     assert_eq!(d.start(a), 0, "the clip before stays");
     assert_eq!(d.gap(), Value::Null);
-    assert!(d.rect("timeline.gap").is_none(), "nothing is drawn any more");
+    assert!(
+        d.rect("timeline.gap").is_none(),
+        "nothing is drawn any more"
+    );
 }
 
 #[test]
@@ -137,9 +198,18 @@ fn right_clicking_a_gap_offers_ripple_delete() {
     let f48 = d.frame(48);
     d.click_between(a, b, "right");
     assert!(d.gap().is_object(), "right-clicking selects the gap");
-    assert!(d.rect("timeline.gapMenu.edit.rippleDelete").is_some(), "its menu offers Ripple Delete");
-    assert!(d.rect("timeline.clipMenu.edit.cut").is_none(), "not the clip menu");
-    d.ok("ui.click", json!({"id": "timeline.gapMenu.edit.rippleDelete"}));
+    assert!(
+        d.rect("timeline.gapMenu.edit.rippleDelete").is_some(),
+        "its menu offers Ripple Delete"
+    );
+    assert!(
+        d.rect("timeline.clipMenu.edit.cut").is_none(),
+        "not the clip menu"
+    );
+    d.ok(
+        "ui.click",
+        json!({"id": "timeline.gapMenu.edit.rippleDelete"}),
+    );
     d.frames(3);
     assert_eq!(d.start(b), f48, "Ripple Delete closes the gap");
 }
@@ -155,26 +225,45 @@ fn clicking_a_clip_or_after_the_last_clip_drops_the_gap() {
     d.click_between(a, b, "left");
     // empty time after the last clip is not a gap
     let rb = d.rect(&format!("timeline.clip.{}", b.0)).unwrap();
-    d.ok("ui.click", json!({"x": rb[0] + rb[2] + 30.0, "y": rb[1] + rb[3] / 2.0}));
+    d.ok(
+        "ui.click",
+        json!({"x": rb[0] + rb[2] + 30.0, "y": rb[1] + rb[3] / 2.0}),
+    );
     d.frames(3);
     assert_eq!(d.gap(), Value::Null);
     d.ok("ui.key", json!({"key": "Delete"}));
     d.frames(3);
-    assert_eq!(d.start(b), f96, "Delete with nothing selected moves nothing");
+    assert_eq!(
+        d.start(b),
+        f96,
+        "Delete with nothing selected moves nothing"
+    );
 }
 
 /// A cut's edit point menu, right-clicked before, does not stand in for the gap's menu.
 #[test]
 fn the_gap_menu_follows_an_edit_point_menu() {
     let (mut d, a, b) = Driver::two_clips();
-    d.ok("ui.click", json!({"id": format!("timeline.clip.{}", b.0), "fx": 0.0, "button": "right"}));
+    d.ok(
+        "ui.click",
+        json!({"id": format!("timeline.clip.{}", b.0), "fx": 0.0, "button": "right"}),
+    );
     d.frames(3);
-    assert!(d.rect("timeline.editPointMenu.rippleIn").is_some(), "the edge's edit point menu");
+    assert!(
+        d.rect("timeline.editPointMenu.rippleIn").is_some(),
+        "the edge's edit point menu"
+    );
     d.ok("ui.key", json!({"key": "Escape"}));
     d.frames(3);
     d.click_between(a, b, "right");
-    assert!(d.rect("timeline.gapMenu.edit.rippleDelete").is_some(), "the gap's menu");
-    assert!(d.rect("timeline.editPointMenu.rippleIn").is_none(), "not the edit point menu");
+    assert!(
+        d.rect("timeline.gapMenu.edit.rippleDelete").is_some(),
+        "the gap's menu"
+    );
+    assert!(
+        d.rect("timeline.editPointMenu.rippleIn").is_none(),
+        "not the edit point menu"
+    );
 }
 
 #[test]
@@ -187,19 +276,39 @@ fn close_gap_can_be_found_assigned_and_run_from_the_shortcut_editor() {
     d.ok("ui.type", json!({"text":"Close Gap"}));
     d.frames(2);
     assert_eq!(d.harness.state().shortcut_editor.search, "Close Gap");
-    assert!(d.rect("shortcuts.row.sequence.closeGap").is_some(), "Close Gap must be searchable and assignable");
+    assert!(
+        d.rect("shortcuts.row.sequence.closeGap").is_some(),
+        "Close Gap must be searchable and assignable"
+    );
     d.shot("close-gap-shortcut-found");
     d.ok("ui.click", json!({"id":"shortcuts.cell.sequence.closeGap"}));
     d.frames(3);
     d.shot("close-gap-shortcut-recording");
-    assert_eq!(d.harness.state().shortcut_editor.recording, Some(("sequence.closeGap".into(), false)), "{:?}", d.harness.state().shortcut_editor);
+    assert_eq!(
+        d.harness.state().shortcut_editor.recording,
+        Some(("sequence.closeGap".into(), false)),
+        "{:?}",
+        d.harness.state().shortcut_editor
+    );
     d.ok("ui.key", json!({"key":"Alt+Shift+F8"}));
     d.frames(3);
-    assert_eq!(d.harness.state().session.shortcuts.primary("sequence.closeGap").as_deref(), Some("Alt+Shift+F8"));
+    assert_eq!(
+        d.harness
+            .state()
+            .session
+            .shortcuts
+            .primary("sequence.closeGap")
+            .as_deref(),
+        Some("Alt+Shift+F8")
+    );
     d.shot("close-gap-shortcut-assigned");
     d.ok("ui.click", json!({"id":"shortcuts.ok"}));
     d.click_between(a, b, "left");
-    assert_eq!(serde_json::to_value(&d.harness.state().session.project).unwrap(), before, "shortcut editing and gap selection do not edit the project");
+    assert_eq!(
+        serde_json::to_value(&d.harness.state().session.project).unwrap(),
+        before,
+        "shortcut editing and gap selection do not edit the project"
+    );
     let undo = d.harness.state().session.history.undo.len();
     d.ok("ui.key", json!({"key":"Alt+Shift+F8"}));
     d.frames(3);
@@ -209,5 +318,8 @@ fn close_gap_can_be_found_assigned_and_run_from_the_shortcut_editor() {
     assert_eq!(d.harness.state().session.history.undo.len(), undo + 1);
     d.shot("close-gap-shortcut-result");
     d.ok("engine.execute", json!({"command":"edit.undo","params":{}}));
-    assert_eq!(serde_json::to_value(&d.harness.state().session.project).unwrap(), before);
+    assert_eq!(
+        serde_json::to_value(&d.harness.state().session.project).unwrap(),
+        before
+    );
 }

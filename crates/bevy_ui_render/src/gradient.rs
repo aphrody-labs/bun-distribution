@@ -16,18 +16,18 @@ use bevy_ecs::{
         *,
     },
 };
-use bevy_math::{
-    ops::{cos, sin},
-    FloatOrd, Rect, Vec2,
-};
 use bevy_math::{Affine2, Vec2Swizzles};
+use bevy_math::{
+    FloatOrd, Rect, Vec2,
+    ops::{cos, sin},
+};
 use bevy_mesh::VertexBufferLayout;
 use bevy_render::{
+    Extract, ExtractSchedule, Render, RenderSystems,
     render_phase::*,
     render_resource::{binding_types::uniform_buffer, *},
     renderer::{RenderDevice, RenderQueue},
     view::*,
-    Extract, ExtractSchedule, Render, RenderSystems,
 };
 use bevy_render::{GpuResourceAppExt, RenderStartup};
 use bevy_shader::Shader;

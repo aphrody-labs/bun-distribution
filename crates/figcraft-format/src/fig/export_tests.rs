@@ -5,9 +5,14 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use figcraft_doc::color::{BlendMode, Color, ColorStop, Gradient, GradientKind, ImageScaleMode, Paint, PaintKind};
+use figcraft_doc::color::{
+    BlendMode, Color, ColorStop, Gradient, GradientKind, ImageScaleMode, Paint, PaintKind,
+};
 use figcraft_doc::geom::{Affine, Point};
-use figcraft_doc::proto::{Action, Direction, Easing, Flow, Interaction, KeyMods, Overflow, OverlayPosition, ScrollPosition, Transition, Trigger};
+use figcraft_doc::proto::{
+    Action, Direction, Easing, Flow, Interaction, KeyMods, Overflow, OverlayPosition,
+    ScrollPosition, Transition, Trigger,
+};
 use figcraft_doc::*;
 use serde_json::Value;
 
@@ -22,7 +27,10 @@ mod assets;
 struct Lcg(u64);
 impl Lcg {
     fn next(&mut self) -> u64 {
-        self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.0 = self
+            .0
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.0 >> 33
     }
     fn below(&mut self, n: u64) -> u64 {
@@ -42,39 +50,85 @@ impl Lcg {
 }
 
 fn rgb(r: &mut Lcg) -> Color {
-    Color::new(r.below(9) as f32 / 8.0, r.below(9) as f32 / 8.0, r.below(9) as f32 / 8.0, 1.0)
+    Color::new(
+        r.below(9) as f32 / 8.0,
+        r.below(9) as f32 / 8.0,
+        r.below(9) as f32 / 8.0,
+        1.0,
+    )
 }
 
-const BLENDS: [BlendMode; 4] = [BlendMode::Normal, BlendMode::Multiply, BlendMode::Screen, BlendMode::Overlay];
+const BLENDS: [BlendMode; 4] = [
+    BlendMode::Normal,
+    BlendMode::Multiply,
+    BlendMode::Screen,
+    BlendMode::Overlay,
+];
 
 fn paint(r: &mut Lcg, image: &str) -> Paint {
     let kind = match r.below(4) {
         0 | 1 => PaintKind::Solid { color: rgb(r) },
         2 => {
-            let kind = r.pick(&[GradientKind::Linear, GradientKind::Radial, GradientKind::Angular, GradientKind::Diamond]);
+            let kind = r.pick(&[
+                GradientKind::Linear,
+                GradientKind::Radial,
+                GradientKind::Angular,
+                GradientKind::Diamond,
+            ]);
             let mut g = Gradient::default_for(kind, rgb(r));
             g.from = (r.f(0.0, 1.0), r.f(0.0, 1.0));
             g.to = (g.from.0 + r.f(0.25, 1.0), g.from.1 - r.f(0.0, 0.5));
             // Across the main axis (handles on one line can't be written).
             let k = r.pick(&[0.5, 1.0]);
-            g.width = (g.from.0 - (g.to.1 - g.from.1) * k, g.from.1 + (g.to.0 - g.from.0) * k);
-            g.stops = vec![ColorStop { position: 0.0, color: rgb(r) }, ColorStop { position: 0.5, color: rgb(r).with_alpha(0.5) }];
+            g.width = (
+                g.from.0 - (g.to.1 - g.from.1) * k,
+                g.from.1 + (g.to.0 - g.from.0) * k,
+            );
+            g.stops = vec![
+                ColorStop {
+                    position: 0.0,
+                    color: rgb(r),
+                },
+                ColorStop {
+                    position: 0.5,
+                    color: rgb(r).with_alpha(0.5),
+                },
+            ];
             PaintKind::Gradient(g)
         }
         _ => {
-            let mut p =
-                Paint::image(image.to_string(), r.pick(&[ImageScaleMode::Fill, ImageScaleMode::Fit, ImageScaleMode::Tile, ImageScaleMode::Crop]));
+            let mut p = Paint::image(
+                image.to_string(),
+                r.pick(&[
+                    ImageScaleMode::Fill,
+                    ImageScaleMode::Fit,
+                    ImageScaleMode::Tile,
+                    ImageScaleMode::Crop,
+                ]),
+            );
             if let PaintKind::Image(img) = &mut p.kind {
                 img.rotation = r.below(4) as i32;
                 img.scale = r.f(0.5, 2.0);
                 if img.scale_mode == ImageScaleMode::Crop {
-                    img.crop = Some([r.f(0.5, 1.0), 0.0, 0.0, r.f(0.5, 1.0), r.f(0.0, 0.25), r.f(0.0, 0.25)]);
+                    img.crop = Some([
+                        r.f(0.5, 1.0),
+                        0.0,
+                        0.0,
+                        r.f(0.5, 1.0),
+                        r.f(0.0, 0.25),
+                        r.f(0.0, 0.25),
+                    ]);
                 }
             }
             p.kind
         }
     };
-    Paint { kind, opacity: r.pick(&[1.0, 0.5, 0.25]), visible: r.chance(85), blend: r.pick(&BLENDS) }
+    Paint {
+        kind,
+        opacity: r.pick(&[1.0, 0.5, 0.25]),
+        visible: r.chance(85),
+        blend: r.pick(&BLENDS),
+    }
 }
 
 fn effect(r: &mut Lcg) -> Effect {
@@ -87,7 +141,10 @@ fn effect(r: &mut Lcg) -> Effect {
         show_behind: r.chance(30),
     };
     let blur = |r: &mut Lcg| {
-        let mut b = Blur { radius: r.f(1.0, 10.0), ..Blur::default() };
+        let mut b = Blur {
+            radius: r.f(1.0, 10.0),
+            ..Blur::default()
+        };
         if r.chance(40) {
             b.blur_type = BlurType::Progressive;
             b.start_radius = r.f(0.0, 2.0);
@@ -111,9 +168,17 @@ fn effect(r: &mut Lcg) -> Effect {
             opacity: 0.5,
             blend: BlendMode::Normal,
         }),
-        _ => EffectKind::Texture(Texture { size: r.f(1.0, 4.0), size_y: None, radius: r.f(0.0, 4.0), clip_to_shape: r.chance(50) }),
+        _ => EffectKind::Texture(Texture {
+            size: r.f(1.0, 4.0),
+            size_y: None,
+            radius: r.f(0.0, 4.0),
+            clip_to_shape: r.chance(50),
+        }),
     };
-    Effect { kind, visible: r.chance(90) }
+    Effect {
+        kind,
+        visible: r.chance(90),
+    }
 }
 
 /// Random looks: paints, strokes, effects, opacity, blend, corners, constraints, a rotation.
@@ -121,7 +186,11 @@ fn style(r: &mut Lcg, n: &mut Node, image: &str) {
     n.fills = (0..r.below(3)).map(|_| paint(r, image)).collect();
     n.strokes = (0..r.below(2)).map(|_| Paint::solid(rgb(r))).collect();
     n.stroke.weight = r.f(0.0, 4.0);
-    n.stroke.align = r.pick(&[StrokeAlign::Inside, StrokeAlign::Center, StrokeAlign::Outside]);
+    n.stroke.align = r.pick(&[
+        StrokeAlign::Inside,
+        StrokeAlign::Center,
+        StrokeAlign::Outside,
+    ]);
     n.stroke.join = r.pick(&[StrokeJoin::Miter, StrokeJoin::Bevel, StrokeJoin::Round]);
     let cap = r.pick(&[StrokeCap::None, StrokeCap::Round, StrokeCap::Square]);
     (n.stroke.cap_start, n.stroke.cap_end) = (cap, cap);
@@ -140,20 +209,40 @@ fn style(r: &mut Lcg, n: &mut Node, image: &str) {
         n.blend = r.pick(&BLENDS);
     }
     if n.kind.has_corner_radius() {
-        n.corners.radii = if n.kind.has_independent_corners() && r.chance(40) { [1.0, 2.0, 3.0, 4.0] } else { [r.f(0.0, 8.0); 4] };
+        n.corners.radii = if n.kind.has_independent_corners() && r.chance(40) {
+            [1.0, 2.0, 3.0, 4.0]
+        } else {
+            [r.f(0.0, 8.0); 4]
+        };
         n.corners.smoothing = r.pick(&[0.0, 0.6]);
     }
     n.constraints = Constraints {
-        horizontal: r.pick(&[HConstraint::Left, HConstraint::Right, HConstraint::LeftRight, HConstraint::Center, HConstraint::Scale]),
-        vertical: r.pick(&[VConstraint::Top, VConstraint::Bottom, VConstraint::TopBottom, VConstraint::Center, VConstraint::Scale]),
+        horizontal: r.pick(&[
+            HConstraint::Left,
+            HConstraint::Right,
+            HConstraint::LeftRight,
+            HConstraint::Center,
+            HConstraint::Scale,
+        ]),
+        vertical: r.pick(&[
+            VConstraint::Top,
+            VConstraint::Bottom,
+            VConstraint::TopBottom,
+            VConstraint::Center,
+            VConstraint::Scale,
+        ]),
     };
     if r.chance(30) {
         let a = r.f(-1.5, 1.5);
         n.transform *= Affine::rotate(a);
     }
     if r.chance(15) {
-        n.exports =
-            vec![ExportSetting { size: ExportSize::Scale { value: 2.0 }, suffix: "@2x".into(), format: ExportFormat::Png, ..Default::default() }];
+        n.exports = vec![ExportSetting {
+            size: ExportSize::Scale { value: 2.0 },
+            suffix: "@2x".into(),
+            format: ExportFormat::Png,
+            ..Default::default()
+        }];
     }
 }
 
@@ -163,27 +252,58 @@ fn text_data(r: &mut Lcg) -> TextData {
     let mut td = TextData::new(chars);
     td.style.font_size = r.f(8.0, 32.0);
     td.style.font_style = r.pick(&["Regular", "Bold"]).into();
-    td.style.letter_spacing = r.pick(&[LetterSpacing::Percent(0.0), LetterSpacing::Percent(5.0), LetterSpacing::Pixels(1.5)]);
-    td.style.line_height = r.pick(&[LineHeight::Auto, LineHeight::Pixels(20.0), LineHeight::Percent(150.0), LineHeight::Percent(100.0)]);
+    td.style.letter_spacing = r.pick(&[
+        LetterSpacing::Percent(0.0),
+        LetterSpacing::Percent(5.0),
+        LetterSpacing::Pixels(1.5),
+    ]);
+    td.style.line_height = r.pick(&[
+        LineHeight::Auto,
+        LineHeight::Pixels(20.0),
+        LineHeight::Percent(150.0),
+        LineHeight::Percent(100.0),
+    ]);
     td.style.case = r.pick(&[TextCase::Original, TextCase::Upper, TextCase::Title]);
-    td.style.decoration = r.pick(&[TextDecoration::None, TextDecoration::Underline, TextDecoration::Strikethrough]);
+    td.style.decoration = r.pick(&[
+        TextDecoration::None,
+        TextDecoration::Underline,
+        TextDecoration::Strikethrough,
+    ]);
     if r.chance(15) {
         td.style.link = Some("https://example.com/a".into());
     }
     if r.chance(15) {
         td.style.fills = Some(vec![Paint::solid(rgb(r))]);
     }
-    td.auto_resize = r.pick(&[TextAutoResize::WidthAndHeight, TextAutoResize::Height, TextAutoResize::None, TextAutoResize::Truncate]);
+    td.auto_resize = r.pick(&[
+        TextAutoResize::WidthAndHeight,
+        TextAutoResize::Height,
+        TextAutoResize::None,
+        TextAutoResize::Truncate,
+    ]);
     if td.auto_resize == TextAutoResize::Truncate {
         td.max_lines = 2;
     }
-    td.align_h = r.pick(&[TextAlignH::Left, TextAlignH::Center, TextAlignH::Right, TextAlignH::Justified]);
+    td.align_h = r.pick(&[
+        TextAlignH::Left,
+        TextAlignH::Center,
+        TextAlignH::Right,
+        TextAlignH::Justified,
+    ]);
     td.align_v = r.pick(&[TextAlignV::Top, TextAlignV::Middle, TextAlignV::Bottom]);
     td.paragraph_spacing = r.f(0.0, 8.0);
     let n = td.char_count();
     for _ in 0..r.below(3) {
-        let (a, b) = (r.below(n as u64 + 1) as usize, r.below(n as u64 + 1) as usize);
-        let (size, bold, fill, ls) = (r.f(8.0, 40.0), r.chance(50), r.chance(30).then(|| vec![Paint::solid(rgb(r))]), r.f(0.0, 10.0));
+        let (a, b) = (
+            r.below(n as u64 + 1) as usize,
+            r.below(n as u64 + 1) as usize,
+        );
+        let (size, bold, fill, ls) = (
+            r.f(8.0, 40.0),
+            r.chance(50),
+            r.chance(30).then(|| vec![Paint::solid(rgb(r))]),
+            r.f(0.0, 10.0),
+        );
         td.restyle(a.min(b), a.max(b), |s| {
             s.font_size = size;
             if bold {
@@ -204,7 +324,9 @@ fn text_data(r: &mut Lcg) -> TextData {
 }
 
 fn network(r: &mut Lcg, w: f64, h: f64) -> VectorNetwork {
-    let pts: Vec<Point> = (0..3 + r.below(4)).map(|_| Point::new(r.f(0.0, w), r.f(0.0, h))).collect();
+    let pts: Vec<Point> = (0..3 + r.below(4))
+        .map(|_| Point::new(r.f(0.0, w), r.f(0.0, h)))
+        .collect();
     let mut net = VectorNetwork::from_points(&pts, r.chance(60));
     if let Some(s) = net.segments.first_mut() {
         s.ta = (r.f(0.0, 8.0), 0.0);
@@ -212,7 +334,12 @@ fn network(r: &mut Lcg, w: f64, h: f64) -> VectorNetwork {
     }
     if let Some(v) = net.vertices.get_mut(1) {
         v.radius = r.pick(&[0.0, 2.0]);
-        v.mirror = r.pick(&[None, Some(HandleMirroring::Angle), Some(HandleMirroring::AngleAndLength), Some(HandleMirroring::None)]);
+        v.mirror = r.pick(&[
+            None,
+            Some(HandleMirroring::Angle),
+            Some(HandleMirroring::AngleAndLength),
+            Some(HandleMirroring::None),
+        ]);
     }
     if let Some(reg) = net.regions.first_mut() {
         reg.winding = r.pick(&[WindingRule::NonZero, WindingRule::EvenOdd]);
@@ -231,7 +358,12 @@ struct Gen {
 
 impl Gen {
     fn node(&mut self, parent: NodeId, kind: NodeKind, name: &str) -> NodeId {
-        let (x, y, w, h) = (self.r.f(-50.0, 400.0), self.r.f(-50.0, 400.0), self.r.f(1.0, 200.0), self.r.f(1.0, 120.0));
+        let (x, y, w, h) = (
+            self.r.f(-50.0, 400.0),
+            self.r.f(-50.0, 400.0),
+            self.r.f(1.0, 200.0),
+            self.r.f(1.0, 120.0),
+        );
         let id = self.doc.create(parent, kind, name, x, y, w, h).unwrap();
         let image = self.image.clone();
         let n = self.doc.node_mut(id).unwrap();
@@ -244,20 +376,38 @@ impl Gen {
     fn layer(&mut self, parent: NodeId, depth: usize) -> NodeId {
         let parent_layout = self.doc.node(parent).and_then(|p| p.layout.clone());
         let on_page = self.doc.node(parent).is_some_and(Node::is_page);
-        let kind = if depth >= 3 { 3 + self.r.below(8) } else { self.r.below(12) };
+        let kind = if depth >= 3 {
+            3 + self.r.below(8)
+        } else {
+            self.r.below(12)
+        };
         let id = match kind {
             0 => {
                 let id = self.node(parent, NodeKind::Frame, "Frame");
                 if self.r.chance(60) {
-                    let mode = self.r.pick(&[LayoutMode::Horizontal, LayoutMode::Vertical, LayoutMode::Grid]);
+                    let mode = self.r.pick(&[
+                        LayoutMode::Horizontal,
+                        LayoutMode::Vertical,
+                        LayoutMode::Grid,
+                    ]);
                     let l = AutoLayout {
                         mode,
                         wrap: mode != LayoutMode::Grid && self.r.chance(30),
                         gap: self.r.f(0.0, 16.0),
                         cross_gap: self.r.f(0.0, 8.0),
                         padding: [1.0, 2.0, self.r.f(0.0, 8.0), 4.0],
-                        main_align: self.r.pick(&[MainAlign::Min, MainAlign::Center, MainAlign::Max, MainAlign::SpaceBetween]),
-                        cross_align: self.r.pick(&[CrossAlign::Min, CrossAlign::Center, CrossAlign::Max, CrossAlign::Baseline]),
+                        main_align: self.r.pick(&[
+                            MainAlign::Min,
+                            MainAlign::Center,
+                            MainAlign::Max,
+                            MainAlign::SpaceBetween,
+                        ]),
+                        cross_align: self.r.pick(&[
+                            CrossAlign::Min,
+                            CrossAlign::Center,
+                            CrossAlign::Max,
+                            CrossAlign::Baseline,
+                        ]),
                         grid_columns: 1 + self.r.below(3) as u32,
                         grid_rows: 1 + self.r.below(3) as u32,
                         strokes_included: self.r.chance(30),
@@ -276,7 +426,8 @@ impl Gen {
                     }
                 }
                 if self.r.chance(20) {
-                    self.doc.node_mut(id).unwrap().grids = vec![LayoutGrid::columns(), LayoutGrid::rows()];
+                    self.doc.node_mut(id).unwrap().grids =
+                        vec![LayoutGrid::columns(), LayoutGrid::rows()];
                 }
                 if self.r.chance(15) {
                     let n = self.doc.node_mut(id).unwrap();
@@ -294,7 +445,14 @@ impl Gen {
                 let kind = if kind == 1 {
                     NodeKind::Group
                 } else {
-                    NodeKind::BooleanOp { op: self.r.pick(&[BoolOp::Union, BoolOp::Subtract, BoolOp::Intersect, BoolOp::Exclude]) }
+                    NodeKind::BooleanOp {
+                        op: self.r.pick(&[
+                            BoolOp::Union,
+                            BoolOp::Subtract,
+                            BoolOp::Intersect,
+                            BoolOp::Exclude,
+                        ]),
+                    }
                 };
                 let id = self.node(parent, kind, "Group");
                 // Groups paint nothing of their own.
@@ -303,7 +461,11 @@ impl Gen {
                     let leaf = if self.r.chance(50) {
                         NodeKind::Rectangle
                     } else {
-                        NodeKind::Ellipse { start: 0.0, sweep: std::f64::consts::TAU, inner: 0.0 }
+                        NodeKind::Ellipse {
+                            start: 0.0,
+                            sweep: std::f64::consts::TAU,
+                            inner: 0.0,
+                        }
                     };
                     self.node(id, leaf, "Operand");
                 }
@@ -312,8 +474,20 @@ impl Gen {
             }
             3 => self.node(parent, NodeKind::Rectangle, "Rect"),
             4 => {
-                let (start, sweep, inner) = if self.r.chance(50) { (0.0, std::f64::consts::TAU, 0.0) } else { (0.5, 3.0, 0.25) };
-                self.node(parent, NodeKind::Ellipse { start, sweep, inner }, "Ellipse")
+                let (start, sweep, inner) = if self.r.chance(50) {
+                    (0.0, std::f64::consts::TAU, 0.0)
+                } else {
+                    (0.5, 3.0, 0.25)
+                };
+                self.node(
+                    parent,
+                    NodeKind::Ellipse {
+                        start,
+                        sweep,
+                        inner,
+                    },
+                    "Ellipse",
+                )
             }
             5 => {
                 let count = 3 + self.r.below(6) as u32;
@@ -329,12 +503,19 @@ impl Gen {
                 id
             }
             8 => {
-                let id = self.node(parent, NodeKind::Vector { network: VectorNetwork::default() }, "Vector");
+                let id = self.node(
+                    parent,
+                    NodeKind::Vector {
+                        network: VectorNetwork::default(),
+                    },
+                    "Vector",
+                );
                 let n = self.doc.node_mut(id).unwrap();
                 let net = network(&mut self.r, n.width, n.height);
                 n.kind = NodeKind::Vector { network: net };
                 if self.r.chance(40) {
-                    (n.stroke.cap_start, n.stroke.cap_end) = (StrokeCap::None, StrokeCap::LineArrow);
+                    (n.stroke.cap_start, n.stroke.cap_end) =
+                        (StrokeCap::None, StrokeCap::LineArrow);
                 }
                 id
             }
@@ -355,9 +536,19 @@ impl Gen {
             _ => self.node(parent, NodeKind::Slice, "Slice"),
         };
         if let Some(pl) = parent_layout {
-            let fill_ok = !matches!(self.doc.node(id).map(|n| &n.kind), Some(NodeKind::Group | NodeKind::BooleanOp { .. }));
-            let (fh, fv, abs) = (self.r.chance(30) && fill_ok, self.r.chance(30) && fill_ok, self.r.chance(10));
-            let (col, row) = (self.r.below(u64::from(pl.grid_columns)) as u32, self.r.below(u64::from(pl.grid_rows)) as u32);
+            let fill_ok = !matches!(
+                self.doc.node(id).map(|n| &n.kind),
+                Some(NodeKind::Group | NodeKind::BooleanOp { .. })
+            );
+            let (fh, fv, abs) = (
+                self.r.chance(30) && fill_ok,
+                self.r.chance(30) && fill_ok,
+                self.r.chance(10),
+            );
+            let (col, row) = (
+                self.r.below(u64::from(pl.grid_columns)) as u32,
+                self.r.below(u64::from(pl.grid_rows)) as u32,
+            );
             let min = self.r.chance(20).then_some(10.0);
             let n = self.doc.node_mut(id).unwrap();
             if fh {
@@ -395,7 +586,16 @@ impl Gen {
         let m = self.doc.node(main).unwrap().clone();
         let id = self.doc.alloc_id();
         let mut n = m.clone();
-        (n.id, n.kind, n.name, n.parent, n.source) = (id, NodeKind::Instance { component: main, props }, "Instance".into(), None, None);
+        (n.id, n.kind, n.name, n.parent, n.source) = (
+            id,
+            NodeKind::Instance {
+                component: main,
+                props,
+            },
+            "Instance".into(),
+            None,
+            None,
+        );
         n.children.clear();
         n.transform = Affine::translate((self.r.f(0.0, 400.0), self.r.f(400.0, 600.0)));
         self.doc.insert(n, parent, None).unwrap();
@@ -408,22 +608,41 @@ impl Gen {
     /// A component with a boolean and a text property, a component set, and instances of both
     /// (with property values and overrides), and one nested two levels deep.
     fn components(&mut self, page: NodeId) {
-        let comp = self.node(page, NodeKind::Component { description: "A button".into(), props: BTreeMap::new() }, "Button");
+        let comp = self.node(
+            page,
+            NodeKind::Component {
+                description: "A button".into(),
+                props: BTreeMap::new(),
+            },
+            "Button",
+        );
         let icon = self.node(comp, NodeKind::Rectangle, "Icon");
         let label = self.node(comp, NodeKind::Text(TextData::new("Label")), "Label");
         {
             let n = self.doc.node_mut(comp).unwrap();
             if let NodeKind::Component { props, .. } = &mut n.kind {
                 props.insert("Show".into(), PropDef::Boolean { default: true });
-                props.insert("Label".into(), PropDef::Text { default: "Label".into() });
+                props.insert(
+                    "Label".into(),
+                    PropDef::Text {
+                        default: "Label".into(),
+                    },
+                );
             }
         }
         let fx = effect(&mut self.r);
         let n = self.doc.node_mut(icon).unwrap();
         n.prop_refs.insert("visible".into(), "Show".into());
         n.effects = vec![fx];
-        self.doc.node_mut(label).unwrap().prop_refs.insert("characters".into(), "Label".into());
-        let props = BTreeMap::from([("Show".to_string(), Value::Bool(false)), ("Label".to_string(), Value::String("Hi".into()))]);
+        self.doc
+            .node_mut(label)
+            .unwrap()
+            .prop_refs
+            .insert("characters".into(), "Label".into());
+        let props = BTreeMap::from([
+            ("Show".to_string(), Value::Bool(false)),
+            ("Label".to_string(), Value::String("Hi".into())),
+        ]);
         let inst = self.instance(comp, page, props);
         // Apply the property values and a fill override, as the engine would.
         let kids = self.doc.node(inst).unwrap().children.clone();
@@ -441,30 +660,74 @@ impl Gen {
                     n.visible = false;
                     n.fills = vec![fill];
                     n.effects.clear();
-                    n.overrides.extend(["visible".to_string(), "fills".to_string(), "effects".to_string()]);
+                    n.overrides.extend([
+                        "visible".to_string(),
+                        "fills".to_string(),
+                        "effects".to_string(),
+                    ]);
                 }
             }
         }
         // A card holding an instance of the button, and an instance of the card overriding a layer of
         // the nested button.
-        let card = self.node(page, NodeKind::Component { description: String::new(), props: BTreeMap::new() }, "Card");
+        let card = self.node(
+            page,
+            NodeKind::Component {
+                description: String::new(),
+                props: BTreeMap::new(),
+            },
+            "Card",
+        );
         // A grid whose second cell holds the nested button.
-        self.doc.node_mut(card).unwrap().layout = Some(AutoLayout { mode: LayoutMode::Grid, grid_columns: 2, grid_rows: 1, ..AutoLayout::default() });
+        self.doc.node_mut(card).unwrap().layout = Some(AutoLayout {
+            mode: LayoutMode::Grid,
+            grid_columns: 2,
+            grid_rows: 1,
+            ..AutoLayout::default()
+        });
         let nested = self.instance(comp, card, BTreeMap::new());
         self.doc.node_mut(nested).unwrap().child_layout.grid_column = Some(1);
         let outer = self.instance(card, page, BTreeMap::new());
-        let deep = self.doc.node(outer).unwrap().children.first().and_then(|c| self.doc.node(*c)).and_then(|c| c.children.first().copied());
+        let deep = self
+            .doc
+            .node(outer)
+            .unwrap()
+            .children
+            .first()
+            .and_then(|c| self.doc.node(*c))
+            .and_then(|c| c.children.first().copied());
         if let Some(d) = deep {
             let n = self.doc.node_mut(d).unwrap();
             n.opacity = 0.25;
             n.overrides.insert("opacity".into());
         }
         // A component set with two variants and an instance of the second.
-        let set = self.node(page, NodeKind::ComponentSet { description: "States".into() }, "Toggle");
+        let set = self.node(
+            page,
+            NodeKind::ComponentSet {
+                description: "States".into(),
+            },
+            "Toggle",
+        );
         let mut variants = Vec::new();
         for name in ["State=Off", "State=On"] {
-            let v = self.node(set, NodeKind::Component { description: String::new(), props: BTreeMap::new() }, name);
-            self.node(v, NodeKind::Ellipse { start: 0.0, sweep: std::f64::consts::TAU, inner: 0.0 }, "Knob");
+            let v = self.node(
+                set,
+                NodeKind::Component {
+                    description: String::new(),
+                    props: BTreeMap::new(),
+                },
+                name,
+            );
+            self.node(
+                v,
+                NodeKind::Ellipse {
+                    start: 0.0,
+                    sweep: std::f64::consts::TAU,
+                    inner: 0.0,
+                },
+                "Knob",
+            );
             variants.push(v);
         }
         if let Some(on) = variants.last() {
@@ -481,33 +744,59 @@ impl Gen {
         let layers = self.layers.clone();
         for id in layers {
             // Not on component layers: their instances, made already, would miss them.
-            let in_component = self
-                .doc
-                .ancestors(id)
-                .iter()
-                .chain([&id])
-                .any(|a| matches!(self.doc.node(*a).map(|n| &n.kind), Some(NodeKind::Component { .. } | NodeKind::ComponentSet { .. })));
-            if !self.r.chance(25) || in_component || self.doc.node(id).is_some_and(|n| n.source.is_some()) {
+            let in_component = self.doc.ancestors(id).iter().chain([&id]).any(|a| {
+                matches!(
+                    self.doc.node(*a).map(|n| &n.kind),
+                    Some(NodeKind::Component { .. } | NodeKind::ComponentSet { .. })
+                )
+            });
+            if !self.r.chance(25)
+                || in_component
+                || self.doc.node(id).is_some_and(|n| n.source.is_some())
+            {
                 continue;
             }
             let dest = self.r.pick(&self.frames);
             let trigger = match self.r.below(6) {
                 0 => Trigger::OnClick,
                 1 => Trigger::OnHover,
-                2 => Trigger::AfterDelay { ms: 10 * self.r.below(300) as u32 },
-                3 => Trigger::KeyPress { key: KeyMods { shift: true, ..KeyMods::default() }.combo("K") },
-                4 => Trigger::KeyPress { key: "Gamepad A".into() },
-                _ => [Trigger::MouseEnter, Trigger::MouseLeave, Trigger::MouseDown, Trigger::MouseUp, Trigger::OnPress, Trigger::OnDrag]
-                    [self.r.below(6) as usize]
+                2 => Trigger::AfterDelay {
+                    ms: 10 * self.r.below(300) as u32,
+                },
+                3 => Trigger::KeyPress {
+                    key: KeyMods {
+                        shift: true,
+                        ..KeyMods::default()
+                    }
+                    .combo("K"),
+                },
+                4 => Trigger::KeyPress {
+                    key: "Gamepad A".into(),
+                },
+                _ => [
+                    Trigger::MouseEnter,
+                    Trigger::MouseLeave,
+                    Trigger::MouseDown,
+                    Trigger::MouseUp,
+                    Trigger::OnPress,
+                    Trigger::OnDrag,
+                ][self.r.below(6) as usize]
                     .clone(),
             };
             let action = match self.r.below(8) {
-                0 | 1 => Action::Navigate { dest, preserve_scroll: self.r.chance(50) },
+                0 | 1 => Action::Navigate {
+                    dest,
+                    preserve_scroll: self.r.chance(50),
+                },
                 2 => Action::OpenOverlay {
                     dest,
                     // One setting per overlay (its frame carries it).
-                    position: [OverlayPosition::Center, OverlayPosition::TopLeft, OverlayPosition::BottomRight, OverlayPosition::Manual]
-                        [(dest.0 % 4) as usize],
+                    position: [
+                        OverlayPosition::Center,
+                        OverlayPosition::TopLeft,
+                        OverlayPosition::BottomRight,
+                        OverlayPosition::Manual,
+                    ][(dest.0 % 4) as usize],
                     close_on_outside: true,
                     background: Some(Color::new(0.0, 0.0, 0.0, 0.5)),
                     offset: None,
@@ -516,9 +805,16 @@ impl Gen {
                 4 => Action::ChangeTo { dest },
                 5 => Action::Back,
                 6 => Action::CloseOverlay,
-                _ => Action::OpenUrl { url: "https://example.com".into() },
+                _ => Action::OpenUrl {
+                    url: "https://example.com".into(),
+                },
             };
-            let d = self.r.pick(&[Direction::Left, Direction::Right, Direction::Top, Direction::Bottom]);
+            let d = self.r.pick(&[
+                Direction::Left,
+                Direction::Right,
+                Direction::Top,
+                Direction::Bottom,
+            ]);
             let transition = self.r.pick(&[
                 Transition::Instant,
                 Transition::Dissolve,
@@ -538,10 +834,21 @@ impl Gen {
                 Easing::EaseOutBack,
                 Easing::EaseInOutBack,
                 Easing::Gentle,
-                Easing::CustomBezier { x1: 0.25, y1: 0.125, x2: 0.5, y2: 1.0 },
+                Easing::CustomBezier {
+                    x1: 0.25,
+                    y1: 0.125,
+                    x2: 0.5,
+                    y2: 1.0,
+                },
             ]);
-            let it =
-                Interaction { trigger, actions: vec![action], transition, duration_ms: 10 * (1 + self.r.below(100) as u32), easing, delay_ms: 0 };
+            let it = Interaction {
+                trigger,
+                actions: vec![action],
+                transition,
+                duration_ms: 10 * (1 + self.r.below(100) as u32),
+                easing,
+                delay_ms: 0,
+            };
             let fixed = self.r.chance(20);
             let n = self.doc.node_mut(id).unwrap();
             n.interactions.push(it);
@@ -557,14 +864,21 @@ impl Gen {
 fn generate(seed: u64) -> Document {
     let mut doc = Document::new(format!("Generated {seed}"));
     let (image, _, _) = crate::add_image(&mut doc, super::tests::png()).unwrap();
-    let mut g = Gen { r: Lcg(seed.wrapping_mul(0x9E37_79B9).wrapping_add(17)), doc, image, frames: Vec::new(), layers: Vec::new() };
+    let mut g = Gen {
+        r: Lcg(seed.wrapping_mul(0x9E37_79B9).wrapping_add(17)),
+        doc,
+        image,
+        frames: Vec::new(),
+        layers: Vec::new(),
+    };
     let mut pages = vec![g.doc.first_page().unwrap()];
     if g.r.chance(40) {
         pages.push(g.doc.add_page("Second"));
     }
     for (i, page) in pages.iter().enumerate() {
         let bg = rgb(&mut g.r);
-        if let Some(NodeKind::Page { background, .. }) = g.doc.node_mut(*page).map(|n| &mut n.kind) {
+        if let Some(NodeKind::Page { background, .. }) = g.doc.node_mut(*page).map(|n| &mut n.kind)
+        {
             *background = bg;
         }
         for _ in 0..1 + g.r.below(5) {
@@ -573,9 +887,22 @@ fn generate(seed: u64) -> Document {
         if i == 0 {
             g.components(*page);
         }
-        let start = g.doc.node(*page).unwrap().children.iter().copied().find(|c| g.frames.contains(c));
-        if let (Some(start), Some(NodeKind::Page { flows, .. })) = (start, g.doc.node_mut(*page).map(|n| &mut n.kind)) {
-            flows.push(Flow { name: "Main flow".into(), start, description: String::new() });
+        let start = g
+            .doc
+            .node(*page)
+            .unwrap()
+            .children
+            .iter()
+            .copied()
+            .find(|c| g.frames.contains(c));
+        if let (Some(start), Some(NodeKind::Page { flows, .. })) =
+            (start, g.doc.node_mut(*page).map(|n| &mut n.kind))
+        {
+            flows.push(Flow {
+                name: "Main flow".into(),
+                start,
+                description: String::new(),
+            });
         }
     }
     g.interactions();
@@ -610,16 +937,26 @@ fn normalize(n: &mut Node, ix: &dyn Fn(NodeId) -> NodeId) {
     fold(&mut n.strokes);
     for e in &mut n.effects {
         match &mut e.kind {
-            EffectKind::DropShadow(s) | EffectKind::InnerShadow(s) if s.blend == BlendMode::PassThrough => s.blend = BlendMode::Normal,
+            EffectKind::DropShadow(s) | EffectKind::InnerShadow(s)
+                if s.blend == BlendMode::PassThrough =>
+            {
+                s.blend = BlendMode::Normal
+            }
             // A grain as tall as it is wide has no height of its own.
-            EffectKind::Noise(Noise { size, size_y, .. }) | EffectKind::Texture(Texture { size, size_y, .. }) if *size_y == Some(*size) => {
+            EffectKind::Noise(Noise { size, size_y, .. })
+            | EffectKind::Texture(Texture { size, size_y, .. })
+                if *size_y == Some(*size) =>
+            {
                 *size_y = None
             }
             _ => {}
         }
     }
     if let Some(l) = &mut n.layout {
-        if matches!(l.main_align, MainAlign::SpaceAround | MainAlign::SpaceEvenly) {
+        if matches!(
+            l.main_align,
+            MainAlign::SpaceAround | MainAlign::SpaceEvenly
+        ) {
             l.main_align = MainAlign::SpaceBetween;
         }
         // Track counts only matter (and are only written) for grids.
@@ -669,7 +1006,11 @@ fn normalize(n: &mut Node, ix: &dyn Fn(NodeId) -> NodeId) {
             }
             let px = |s: &mut TextStyle| {
                 if let LetterSpacing::Percent(p) = s.letter_spacing {
-                    s.letter_spacing = if p == 0.0 { LetterSpacing::default() } else { LetterSpacing::Pixels(p / 100.0 * s.font_size) };
+                    s.letter_spacing = if p == 0.0 {
+                        LetterSpacing::default()
+                    } else {
+                        LetterSpacing::Pixels(p / 100.0 * s.font_size)
+                    };
                 }
                 s.style_id = None;
                 if let Some(f) = &mut s.fills {
@@ -680,7 +1021,12 @@ fn normalize(n: &mut Node, ix: &dyn Fn(NodeId) -> NodeId) {
             for r in &mut td.runs {
                 px(&mut r.style);
             }
-            td.paragraphs = (0..td.paragraph_count()).map(|p| ParaList { list: td.para_list(p).list, indent: 0 }).collect();
+            td.paragraphs = (0..td.paragraph_count())
+                .map(|p| ParaList {
+                    list: td.para_list(p).list,
+                    indent: 0,
+                })
+                .collect();
             td.list = ListStyle::None;
         }
         NodeKind::Vector { network } => {
@@ -716,7 +1062,11 @@ fn normalize(n: &mut Node, ix: &dyn Fn(NodeId) -> NodeId) {
         let animated = it.actions.iter().any(|a| {
             matches!(
                 a,
-                Action::Navigate { .. } | Action::OpenOverlay { .. } | Action::SwapOverlay { .. } | Action::ChangeTo { .. } | Action::ScrollTo { .. }
+                Action::Navigate { .. }
+                    | Action::OpenOverlay { .. }
+                    | Action::SwapOverlay { .. }
+                    | Action::ChangeTo { .. }
+                    | Action::ScrollTo { .. }
             )
         });
         if !animated || it.transition == Transition::Instant {
@@ -750,18 +1100,28 @@ fn close(a: &Value, b: &Value, path: &str) -> Result<(), String> {
     match (a, b) {
         (Value::Number(x), Value::Number(y)) => {
             let (x, y) = (x.as_f64().unwrap(), y.as_f64().unwrap());
-            if (x - y).abs() <= 2e-3 * x.abs().max(y.abs()).max(1.0) { Ok(()) } else { Err(format!("{path}: {x} vs {y}")) }
+            if (x - y).abs() <= 2e-3 * x.abs().max(y.abs()).max(1.0) {
+                Ok(())
+            } else {
+                Err(format!("{path}: {x} vs {y}"))
+            }
         }
         (Value::Object(x), Value::Object(y)) => {
             for k in x.keys().chain(y.keys()).collect::<BTreeSet<_>>() {
                 let null = Value::Null;
-                close(x.get(k).unwrap_or(&null), y.get(k).unwrap_or(&null), &format!("{path}.{k}"))?;
+                close(
+                    x.get(k).unwrap_or(&null),
+                    y.get(k).unwrap_or(&null),
+                    &format!("{path}.{k}"),
+                )?;
             }
             Ok(())
         }
-        (Value::Array(x), Value::Array(y)) if x.len() == y.len() => {
-            x.iter().zip(y).enumerate().try_for_each(|(i, (p, q))| close(p, q, &format!("{path}[{i}]")))
-        }
+        (Value::Array(x), Value::Array(y)) if x.len() == y.len() => x
+            .iter()
+            .zip(y)
+            .enumerate()
+            .try_for_each(|(i, (p, q))| close(p, q, &format!("{path}[{i}]"))),
         _ if a == b => Ok(()),
         _ => Err(format!("{path}: {a} vs {b}")),
     }
@@ -769,7 +1129,11 @@ fn close(a: &Value, b: &Value, path: &str) -> Result<(), String> {
 
 fn assert_same(a: &Document, b: &Document, what: &str) {
     let (x, y) = (canon(a), canon(b));
-    let names = |c: &[Value]| c.iter().map(|v| v["name"].as_str().unwrap_or("").to_string()).collect::<Vec<_>>();
+    let names = |c: &[Value]| {
+        c.iter()
+            .map(|v| v["name"].as_str().unwrap_or("").to_string())
+            .collect::<Vec<_>>()
+    };
     assert_eq!(names(&x), names(&y), "{what}: layer trees differ");
     for (p, q) in x.iter().zip(&y) {
         if let Err(e) = close(p, q, p["name"].as_str().unwrap_or("?")) {
@@ -800,13 +1164,27 @@ fn round_trip_keeps_the_details() {
     let (back, warnings) = round_trip(&doc, "seed 3");
     assert!(warnings.is_empty(), "{warnings:?}");
     assert_eq!(back.name, doc.name);
-    assert_eq!(back.images.len(), doc.images.len(), "the image comes back with its bytes");
+    assert_eq!(
+        back.images.len(),
+        doc.images.len(),
+        "the image comes back with its bytes"
+    );
     let inst =
         back.nodes().find(|n| n.name == "Instance" && matches!(&n.kind, NodeKind::Instance { props, .. } if props.contains_key("Label"))).unwrap();
-    let NodeKind::Instance { component, props } = &inst.kind else { panic!() };
-    assert_eq!(back.node(*component).map(|c| c.name.as_str()), Some("Button"));
+    let NodeKind::Instance { component, props } = &inst.kind else {
+        panic!()
+    };
+    assert_eq!(
+        back.node(*component).map(|c| c.name.as_str()),
+        Some("Button")
+    );
     assert_eq!(props.get("Label"), Some(&Value::String("Hi".into())));
-    let label = inst.children.iter().filter_map(|c| back.node(*c)).find_map(|c| c.kind.text()).unwrap();
+    let label = inst
+        .children
+        .iter()
+        .filter_map(|c| back.node(*c))
+        .find_map(|c| c.kind.text())
+        .unwrap();
     assert_eq!(label.characters, "Hi");
 }
 
@@ -817,8 +1195,16 @@ fn written_files_decode_and_list_parents_first() {
         let (bytes, _) = export(&doc, Some(&super::tests::png())).unwrap();
         let archive = Archive::open(&bytes).unwrap();
         let (schema, message) = decode_canvas(&archive.canvas).unwrap();
-        let msg = schema.decode_message(schema.find("Message").unwrap(), &message).unwrap();
-        let guid = |v: &Kv| format!("{}:{}", v.get("sessionID").unwrap().f64().unwrap(), v.get("localID").unwrap().f64().unwrap());
+        let msg = schema
+            .decode_message(schema.find("Message").unwrap(), &message)
+            .unwrap();
+        let guid = |v: &Kv| {
+            format!(
+                "{}:{}",
+                v.get("sessionID").unwrap().f64().unwrap(),
+                v.get("localID").unwrap().f64().unwrap()
+            )
+        };
         let blobs = msg.get("blobs").unwrap().list().len();
         let mut seen = BTreeSet::new();
         let changes = msg.get("nodeChanges").unwrap().list();
@@ -828,22 +1214,45 @@ fn written_files_decode_and_list_parents_first() {
                 assert!(nc.get("parentIndex").is_none());
             } else {
                 let parent = guid(nc.get("parentIndex").unwrap().get("guid").unwrap());
-                assert!(seen.contains(&parent), "seed {seed}: {id} is listed before its parent {parent}");
+                assert!(
+                    seen.contains(&parent),
+                    "seed {seed}: {id} is listed before its parent {parent}"
+                );
             }
             assert!(seen.insert(id), "seed {seed}: GUIDs are unique");
             for p in nc.get("fillGeometry").map(Kv::list).unwrap_or_default() {
                 assert!((p.get("commandsBlob").unwrap().f64().unwrap() as usize) < blobs);
             }
             for p in nc.get("fillPaints").map(Kv::list).unwrap_or_default() {
-                if let Some(h) = p.get("image").and_then(|i| i.get("hash")).and_then(Kv::bytes) {
+                if let Some(h) = p
+                    .get("image")
+                    .and_then(|i| i.get("hash"))
+                    .and_then(Kv::bytes)
+                {
                     let hex: String = h.iter().map(|b| format!("{b:02x}")).collect();
-                    assert!(archive.image(&hex).is_some(), "seed {seed}: image {hex} is in the file");
+                    assert!(
+                        archive.image(&hex).is_some(),
+                        "seed {seed}: image {hex} is in the file"
+                    );
                 }
             }
         }
         // Every layer once, except instance layers (their main says them).
-        let inside = |id: NodeId| doc.ancestors(id).iter().any(|a| matches!(doc.node(*a).map(|n| &n.kind), Some(NodeKind::Instance { .. })));
-        let expected = doc.pages.iter().flat_map(|p| doc.subtree(*p)).filter(|id| !inside(*id)).count() + 1;
+        let inside = |id: NodeId| {
+            doc.ancestors(id).iter().any(|a| {
+                matches!(
+                    doc.node(*a).map(|n| &n.kind),
+                    Some(NodeKind::Instance { .. })
+                )
+            })
+        };
+        let expected = doc
+            .pages
+            .iter()
+            .flat_map(|p| doc.subtree(*p))
+            .filter(|id| !inside(*id))
+            .count()
+            + 1;
         assert_eq!(changes.len(), expected, "seed {seed}");
         let mut z = zip::ZipArchive::new(std::io::Cursor::new(&bytes[..])).unwrap();
         assert!(crate::read_member(&mut z, "thumbnail.png", 1 << 20).is_ok());
@@ -858,8 +1267,14 @@ fn the_written_schema_parses_and_round_trips() {
     for (a, b) in schema.defs.iter().zip(&back.defs) {
         assert_eq!(a.name, b.name);
         assert_eq!(
-            a.fields.iter().map(|f| (&f.name, f.ty, f.array, f.value)).collect::<Vec<_>>(),
-            b.fields.iter().map(|f| (&f.name, f.ty, f.array, f.value)).collect::<Vec<_>>()
+            a.fields
+                .iter()
+                .map(|f| (&f.name, f.ty, f.array, f.value))
+                .collect::<Vec<_>>(),
+            b.fields
+                .iter()
+                .map(|f| (&f.name, f.ty, f.array, f.value))
+                .collect::<Vec<_>>()
         );
     }
     assert!(Schema::parse("message M nope x").is_err());
@@ -874,7 +1289,11 @@ fn random_value<'s>(s: &'s Schema, ty: Type, r: &mut Lcg, depth: usize) -> Kv<'s
         Type::Int => Kv::Int(r.next() as i32 as i64),
         Type::Uint => Kv::Uint(u64::from(r.next() as u32)),
         Type::Float => Kv::Float(r.pick(&[0.0, 1.5, -2.25, 1e-3, 3.0e7, -1e20])),
-        Type::Str => Kv::Str((0..r.below(6)).map(|_| r.pick(&['a', 'é', '😀', ' '])).collect()),
+        Type::Str => Kv::Str(
+            (0..r.below(6))
+                .map(|_| r.pick(&['a', 'é', '😀', ' ']))
+                .collect(),
+        ),
         Type::Int64 => Kv::Int(r.next() as i64 - (1 << 30)),
         Type::Uint64 => Kv::Uint(r.next()),
         Type::Def(i) => random_def(s, i, r, depth + 1),
@@ -895,8 +1314,17 @@ fn random_def<'s>(s: &'s Schema, i: usize, r: &mut Lcg, depth: usize) -> Kv<'s> 
         Kv::Array((0..n).map(|_| random_value(s, ty, r, depth)).collect())
     };
     match d.kind {
-        Kind::Enum => Kv::Enum(d.fields[r.below(d.fields.len() as u64) as usize].name.as_str()),
-        Kind::Struct => Kv::Object(d.fields.iter().map(|f| (f.name.as_str(), field(f, r))).collect()),
+        Kind::Enum => Kv::Enum(
+            d.fields[r.below(d.fields.len() as u64) as usize]
+                .name
+                .as_str(),
+        ),
+        Kind::Struct => Kv::Object(
+            d.fields
+                .iter()
+                .map(|f| (f.name.as_str(), field(f, r)))
+                .collect(),
+        ),
         Kind::Message => {
             let mut out = Vec::new();
             if depth <= 4 {
@@ -929,9 +1357,14 @@ fn encoder_output_always_decodes_to_the_same_values() {
 
 #[test]
 fn the_encoder_refuses_what_the_schema_cant_hold() {
-    let schema = Schema::parse("struct V float x, float y\nmessage M V v, uint n, string s, bool b").unwrap();
+    let schema =
+        Schema::parse("struct V float x, float y\nmessage M V v, uint n, string s, bool b")
+            .unwrap();
     let bad = [
-        Kv::Object(vec![("v", Kv::Object(vec![("x", Kv::Float(f32::NAN)), ("y", Kv::Float(0.0))]))]),
+        Kv::Object(vec![(
+            "v",
+            Kv::Object(vec![("x", Kv::Float(f32::NAN)), ("y", Kv::Float(0.0))]),
+        )]),
         Kv::Object(vec![("v", Kv::Object(vec![("x", Kv::Float(1.0))]))]),
         Kv::Object(vec![("n", Kv::Int(-1))]),
         Kv::Object(vec![("n", Kv::Uint(1 << 40))]),
@@ -944,7 +1377,9 @@ fn the_encoder_refuses_what_the_schema_cant_hold() {
     }
     // NULs inside strings are dropped rather than ending them early.
     let ok = Kv::Object(vec![("s", Kv::Str("a\0b".into())), ("b", Kv::Bool(true))]);
-    let back = schema.decode_message(1, &encode::message(&schema, 1, &ok).unwrap()).unwrap();
+    let back = schema
+        .decode_message(1, &encode::message(&schema, 1, &ok).unwrap())
+        .unwrap();
     assert_eq!(back.get("s"), Some(&Kv::Str("ab".into())));
     assert_eq!(back.get("b"), Some(&Kv::Bool(true)));
 }
@@ -981,8 +1416,13 @@ fn junk_documents_never_panic() {
                 l.gap = f64::NAN;
             }
             n.interactions.push(Interaction {
-                trigger: Trigger::KeyPress { key: "Hyper+\u{0}".into() },
-                actions: vec![Action::Navigate { dest: NodeId(u64::MAX), preserve_scroll: false }],
+                trigger: Trigger::KeyPress {
+                    key: "Hyper+\u{0}".into(),
+                },
+                actions: vec![Action::Navigate {
+                    dest: NodeId(u64::MAX),
+                    preserve_scroll: false,
+                }],
                 transition: Transition::Instant,
                 duration_ms: u32::MAX,
                 easing: Easing::default(),
@@ -997,7 +1437,11 @@ fn junk_documents_never_panic() {
                 }
                 NodeKind::Text(td) => {
                     td.characters.push_str("\0\u{FFFF}");
-                    td.runs.push(StyleRun { start: 5, end: 1, style: TextStyle::default() });
+                    td.runs.push(StyleRun {
+                        start: 5,
+                        end: 1,
+                        style: TextStyle::default(),
+                    });
                 }
                 NodeKind::Instance { component, props } => {
                     *component = NodeId(u64::MAX - 1);
@@ -1019,7 +1463,12 @@ fn junk_documents_never_panic() {
 fn link(doc: &mut Document) {
     fn zip(doc: &mut Document, mine: NodeId, theirs: NodeId) {
         let pairs: Vec<(NodeId, NodeId)> = match (doc.node(mine), doc.node(theirs)) {
-            (Some(m), Some(t)) => m.children.iter().copied().zip(t.children.iter().copied()).collect(),
+            (Some(m), Some(t)) => m
+                .children
+                .iter()
+                .copied()
+                .zip(t.children.iter().copied())
+                .collect(),
             _ => return,
         };
         for (m, t) in pairs {
@@ -1061,6 +1510,10 @@ fn local_samples_round_trip() {
                 }
             }
         }
-        assert_same(&a, &b, &format!("{} (export warnings: {warnings:?})", p.display()));
+        assert_same(
+            &a,
+            &b,
+            &format!("{} (export warnings: {warnings:?})", p.display()),
+        );
     }
 }

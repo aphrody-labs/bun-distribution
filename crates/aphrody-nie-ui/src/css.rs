@@ -36,7 +36,9 @@ pub fn root_block() -> String {
             s.push('\n');
         }
         write_header(&mut s, title, *dashes);
-        let end = SECTIONS.get(i + 1).map_or(GAME_COLORS.len(), |(next, _, _)| *next);
+        let end = SECTIONS
+            .get(i + 1)
+            .map_or(GAME_COLORS.len(), |(next, _, _)| *next);
         for token in &GAME_COLORS[*start..end] {
             s.push_str(&token.css_line());
             s.push('\n');
@@ -45,7 +47,11 @@ pub fn root_block() -> String {
 
     // Géométrie (3 jetons bruts).
     s.push('\n');
-    write_header(&mut s, "Geometrie : les tuiles du menu sont BISEAUTEES, pas rectangulaires", 16);
+    write_header(
+        &mut s,
+        "Geometrie : les tuiles du menu sont BISEAUTEES, pas rectangulaires",
+        16,
+    );
     for t in &RAW_TOKENS[0..3] {
         s.push_str(&t.css_line());
         s.push('\n');
@@ -157,7 +163,9 @@ pub fn screens_block() -> String {
             s.push('\n');
         }
         let _ = writeln!(s, "\t/* --- {title} --- */");
-        let end = SCREEN_SECTIONS.get(i + 1).map_or(SCREEN_COLORS.len(), |(next, _)| *next);
+        let end = SCREEN_SECTIONS
+            .get(i + 1)
+            .map_or(SCREEN_COLORS.len(), |(next, _)| *next);
         for c in &SCREEN_COLORS[*start..end] {
             s.push_str(&c.css_line());
             s.push('\n');
@@ -192,11 +200,17 @@ mod tests {
     #[test]
     fn screens_block_porte_les_47_couleurs_le_skew_et_les_classes_du_contrat() {
         let css = screens_block();
-        let screen_props = css.lines().filter(|l| l.trim_start().starts_with("--screen-")).count();
+        let screen_props = css
+            .lines()
+            .filter(|l| l.trim_start().starts_with("--screen-"))
+            .count();
         // 47 couleurs + 5 longueurs. Les deux dernières sont la cellule verrouillée de la
         // galerie et le cyan de sélection, mesurés sur `trophy_gallery.png` et confirmés sur
         // `bank_character_detail.png`.
-        assert_eq!(screen_props, 52, "le compte de propriétés --screen-* a changé");
+        assert_eq!(
+            screen_props, 52,
+            "le compte de propriétés --screen-* a changé"
+        );
         assert!(css.contains("\t--game-skew: -10deg;"));
         for classe in [
             ".game-header-bar",
@@ -327,7 +341,10 @@ mod tests {
         assert!(bloc.starts_with(":root {\n"));
         assert!(bloc.ends_with("}\n"));
         // 29 couleurs + 17 jetons non colorés = 46 déclarations, comme le fichier livré.
-        let proprietes = bloc.lines().filter(|l| l.trim_start().starts_with("--")).count();
+        let proprietes = bloc
+            .lines()
+            .filter(|l| l.trim_start().starts_with("--"))
+            .count();
         assert_eq!(proprietes, 46, "le compte de propriétés a changé");
     }
 
@@ -348,7 +365,10 @@ mod tests {
             return;
         };
         let Some(bloc_livre) = extract_root_block(&livre) else {
-            panic!("« {} » ne contient pas de bloc :root reconnaissable", chemin.display());
+            panic!(
+                "« {} » ne contient pas de bloc :root reconnaissable",
+                chemin.display()
+            );
         };
         let genere = root_block();
         if bloc_livre != genere {

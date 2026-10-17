@@ -32,10 +32,22 @@ pub(crate) struct Tool {
 
 pub(crate) const TOOLS: &[Tool] = &[
     // Infrastructure and OS.
-    tool("infra", &["aphrody-infra"], Target::Entry(aphrody_infra::cli_main)),
+    tool(
+        "infra",
+        &["aphrody-infra"],
+        Target::Entry(aphrody_infra::cli_main),
+    ),
     tool("ovh", &["aphrody-ovh"], Target::Entry(ovh)),
-    tool("yolo", &["aphrody-yolo"], Target::Entry(aphrody_yolo::cli_main)),
-    tool("kernel", &["aphrody-kernel"], Target::Entry(aphrody_kernel::cli_main)),
+    tool(
+        "yolo",
+        &["aphrody-yolo"],
+        Target::Entry(aphrody_yolo::cli_main),
+    ),
+    tool(
+        "kernel",
+        &["aphrody-kernel"],
+        Target::Entry(aphrody_kernel::cli_main),
+    ),
     tool(
         "host-service",
         &["aphrody-host-service"],
@@ -43,31 +55,83 @@ pub(crate) const TOOLS: &[Tool] = &[
     ),
     tool("ssh", &["aphrody-ssh"], Target::Command("ssh")),
     tool("wsl", &["aphrody-wsl"], Target::Entry(crate::wsl::cli_main)),
-    tool("backend", &["aphrody-backend"], Target::Entry(aphrody_backend::cli_main)),
+    tool(
+        "backend",
+        &["aphrody-backend"],
+        Target::Entry(aphrody_backend::cli_main),
+    ),
     // MCP and Web.
-    tool("mcp-server", &["aphrody-mcp"], Target::Entry(aphrody_mcp::cli_main)),
-    tool("web-engine", &["aphrody-web"], Target::Entry(aphrody_web_engine::cli_main)),
-    tool("web-worker", &["aphrody-web-worker"], Target::Entry(aphrody_web_engine::worker_main)),
+    tool(
+        "mcp-server",
+        &["aphrody-mcp"],
+        Target::Entry(aphrody_mcp::cli_main),
+    ),
+    tool(
+        "web-engine",
+        &["aphrody-web"],
+        Target::Entry(aphrody_web_engine::cli_main),
+    ),
+    tool(
+        "web-worker",
+        &["aphrody-web-worker"],
+        Target::Entry(aphrody_web_engine::worker_main),
+    ),
     tool("x", &["x-cli"], Target::Entry(aphrody_x::cli_main)),
     // AI and Google.
     tool("google", &["aphrody-google"], Target::Command("google")),
-    tool("embed", &["aphrody-embed"], Target::Entry(aphrody_embed::cli_main)),
+    tool(
+        "embed",
+        &["aphrody-embed"],
+        Target::Entry(aphrody_embed::cli_main),
+    ),
     tool("n2b", &["n2b"], Target::Command("n2b")),
     // Tauri tooling (vendored crates; their standalone binaries are not built).
-    tool("rag-eval", &["aphrody-rag-eval"], Target::Entry(aphrody_rag_eval::cli_main)),
+    tool(
+        "rag-eval",
+        &["aphrody-rag-eval"],
+        Target::Entry(aphrody_rag_eval::cli_main),
+    ),
     // The agent home: one database, one pipeline, one retrieval (docs/plans/agent-home-pipeline).
-    tool("home", &["aphrody-home"], Target::Entry(aphrody_rag::home_cli::cli_main)),
-    tool("graph", &["aphrody-graph"], Target::Entry(aphrody_code_graph::cli::cli_main)),
+    tool(
+        "home",
+        &["aphrody-home"],
+        Target::Entry(aphrody_rag::home_cli::cli_main),
+    ),
+    tool(
+        "graph",
+        &["aphrody-graph"],
+        Target::Entry(aphrody_code_graph::cli::cli_main),
+    ),
     tool("tauri", &["cargo-tauri"], Target::Entry(tauri)),
-    tool("create-tauri-app", &["cargo-create-tauri-app"], Target::Entry(create_tauri_app)),
+    tool(
+        "create-tauri-app",
+        &["cargo-create-tauri-app"],
+        Target::Entry(create_tauri_app),
+    ),
     // UI and build tooling.
     tool("identity", &[], Target::Entry(identity)),
-    tool("m3-reproduce", &["aphrody-m3-reproduce"], Target::Entry(aphrody_m3_reproduce::cli_main)),
-    tool("canvas", &["aphrody-canvas"], Target::Entry(aphrody_render::cli_main)),
-    tool("bindgen", &["aphrody-bindgen"], Target::Entry(aphrody_bindgen::cli_main)),
+    tool(
+        "m3-reproduce",
+        &["aphrody-m3-reproduce"],
+        Target::Entry(aphrody_m3_reproduce::cli_main),
+    ),
+    tool(
+        "canvas",
+        &["aphrody-canvas"],
+        Target::Entry(aphrody_render::cli_main),
+    ),
+    tool(
+        "bindgen",
+        &["aphrody-bindgen"],
+        Target::Entry(aphrody_bindgen::cli_main),
+    ),
     // Codex OSS and App-Server Protocol v2.
     tool("codex", &["aphrody-codex"], Target::Command("codex")),
-    tool("app-server", &["aphrody-app-server"], Target::Entry(app_server)),
+    tool(
+        "app-server",
+        &["aphrody-app-server"],
+        Target::Entry(app_server),
+    ),
     // Former `yolo workflow`: the aphrody-infra pipeline stages.
     tool("workflow", &[], Target::Entry(workflow)),
     // Commands owned by Bun packages of the checkout (former yolo Bun CLI), see bun_bridge.
@@ -108,7 +172,11 @@ const fn bun(name: &'static str) -> Tool {
 }
 
 const fn tool(name: &'static str, aliases: &'static [&'static str], target: Target) -> Tool {
-    Tool { name, aliases, target }
+    Tool {
+        name,
+        aliases,
+        target,
+    }
 }
 
 /// Listed under `aphrody --help`; a unit test keeps it in step with [`TOOLS`].
@@ -155,7 +223,7 @@ fn compat_route(argv: &[OsString]) -> Option<Resolved> {
     match (word(1), word(2)) {
         (Some("google"), Some("drive" | "fonts")) => {
             Some(Resolved::Entry(bun_bridge::google, argv[1..].to_vec()))
-        },
+        }
         (Some("mcp"), None) => Some(Resolved::Entry(mcp_server, vec![OsString::from("mcp")])),
         _ => None,
     }
@@ -218,7 +286,7 @@ fn identity(args: Vec<OsString>) -> i32 {
         _ => {
             eprintln!("aphrody identity: unknown tool {}", tool.to_string_lossy());
             return 2;
-        },
+        }
     };
     let mut argv = vec![tool];
     argv.extend(rest);
@@ -227,8 +295,11 @@ fn identity(args: Vec<OsString>) -> i32 {
 
 /// `aphrody app-server …`: local app-server daemon.
 fn app_server(args: Vec<OsString>) -> i32 {
-    let mut argv =
-        vec![OsString::from("aphrody"), OsString::from("codex"), OsString::from("app-server")];
+    let mut argv = vec![
+        OsString::from("aphrody"),
+        OsString::from("codex"),
+        OsString::from("app-server"),
+    ];
     argv.extend(args.into_iter().skip(1));
     crate::run_from_args(argv)
 }
@@ -273,7 +344,7 @@ pub(crate) fn resolve(mut argv: Vec<OsString>) -> Resolved {
                 let mut rewritten = vec![OsString::from("aphrody"), OsString::from(command)];
                 rewritten.extend(argv.into_iter().skip(1));
                 Resolved::Clap(rewritten)
-            },
+            }
         };
     }
     let subcommand = argv.get(1).and_then(|arg| arg.to_str());
@@ -336,7 +407,10 @@ mod tests {
     #[test]
     fn invocation_name_rewrites_to_command() {
         let argv = args(&["/home/u/.local/bin/aphrody-ssh", "status", "--json"]);
-        assert_eq!(clap_args(resolve(argv)), ["aphrody", "ssh", "status", "--json"]);
+        assert_eq!(
+            clap_args(resolve(argv)),
+            ["aphrody", "ssh", "status", "--json"]
+        );
     }
 
     #[test]
@@ -360,7 +434,10 @@ mod tests {
     #[test]
     fn install_path_links_every_compatibility_name() {
         let names: Vec<_> = aliases().collect();
-        assert!(names.contains(&"n2b"), "`aphrody self install-path` must link n2b");
+        assert!(
+            names.contains(&"n2b"),
+            "`aphrody self install-path` must link n2b"
+        );
     }
 
     #[test]
@@ -406,7 +483,10 @@ mod tests {
 
     #[test]
     fn bare_mcp_is_the_server_and_mcp_subcommands_stay_clap() {
-        assert!(matches!(resolve(args(&["aphrody", "mcp"])), Resolved::Entry(..)));
+        assert!(matches!(
+            resolve(args(&["aphrody", "mcp"])),
+            Resolved::Entry(..)
+        ));
         assert_eq!(
             clap_args(resolve(args(&["aphrody", "mcp", "list"]))),
             ["aphrody", "mcp", "list"]

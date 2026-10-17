@@ -17,7 +17,14 @@
 //! inside it becomes [`Error::Malformed`].
 
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod orient;
 /// Lossless synthetic HEIF files for tests, here and in the crates above (feature `testdata`).
@@ -60,7 +67,10 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options { max_pixels: 1 << 28, apply_transforms: true }
+        Options {
+            max_pixels: 1 << 28,
+            apply_transforms: true,
+        }
     }
 }
 
@@ -122,14 +132,19 @@ const SEQUENCE: &str = "this file holds an image sequence; only HEIF still image
 
 /// heic-rs 0.1.1 reconstructs 4:2:0 and monochrome pictures exactly but fails on the 4:2:2 and
 /// 4:4:4 ones some cameras write (Canon and Sony "HIF"); those failures are reported as this.
-const CHROMA_422_444: &str = "4:2:2 and 4:4:4 HEIF images (as some Canon and Sony cameras write) can't be decoded yet";
+const CHROMA_422_444: &str =
+    "4:2:2 and 4:4:4 HEIF images (as some Canon and Sony cameras write) can't be decoded yet";
 
 pub(crate) fn err(e: heic_rs::Error) -> Error {
     match e {
         heic_rs::Error::Unsupported(what) => Error::Unsupported(what),
         // The primary item is neither an HEVC picture nor a grid of them.
-        heic_rs::Error::MissingBox("hvcC") => Error::Unsupported("the image is an overlay, an identity derivation or not HEVC-coded"),
-        heic_rs::Error::PixelLimit { .. } | heic_rs::Error::BoxTooLarge { .. } => Error::Limit(e.to_string()),
+        heic_rs::Error::MissingBox("hvcC") => {
+            Error::Unsupported("the image is an overlay, an identity derivation or not HEVC-coded")
+        }
+        heic_rs::Error::PixelLimit { .. } | heic_rs::Error::BoxTooLarge { .. } => {
+            Error::Limit(e.to_string())
+        }
         e => Error::Malformed(e.to_string()),
     }
 }
@@ -138,7 +153,11 @@ pub(crate) fn err(e: heic_rs::Error) -> Error {
 /// out-of-range slices in heic-rs 0.1.1 on malformed files: in its box parser (`boxes.rs:130`)
 /// and during reconstruction (`hevc/decode/recon.rs:70`).
 fn guarded<T>(f: impl FnOnce() -> Result<T, Error>) -> Result<T, Error> {
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).unwrap_or_else(|_| Err(Error::Malformed("the HEIF decoder failed on this file".into())))
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).unwrap_or_else(|_| {
+        Err(Error::Malformed(
+            "the HEIF decoder failed on this file".into(),
+        ))
+    })
 }
 
 /// Reads the container's declared size, depth and alpha without decoding pixels, so callers can
@@ -183,14 +202,25 @@ pub fn decode(bytes: &[u8], options: &Options) -> Result<Decoded, Error> {
 /// `min_edge`, if any (iPhones store one of about 320 × 240). Transforms are applied as for the
 /// primary image; the metadata (and, when the thumbnail has no profile of its own, the ICC
 /// profile) are the primary image's.
-pub fn decode_thumbnail(bytes: &[u8], min_edge: u32, options: &Options) -> Result<Option<Decoded>, Error> {
+pub fn decode_thumbnail(
+    bytes: &[u8],
+    min_edge: u32,
+    options: &Options,
+) -> Result<Option<Decoded>, Error> {
     guarded(|| {
         let ctx = Context::open(bytes).map_err(err)?;
         let primary = ctx.meta.primary;
         let mut best: Option<(u32, u32)> = None;
-        for r in ctx.meta.refs.iter().filter(|r| r.kind == heic_rs::meta::iref::RefKind::Thmb && r.to.contains(&primary)) {
+        for r in ctx
+            .meta
+            .refs
+            .iter()
+            .filter(|r| r.kind == heic_rs::meta::iref::RefKind::Thmb && r.to.contains(&primary))
+        {
             let Ok(p) = ctx.props(r.from) else { continue };
-            let Ok((w, h)) = ctx.coded_size(r.from, &p) else { continue };
+            let Ok((w, h)) = ctx.coded_size(r.from, &p) else {
+                continue;
+            };
             let edge = w.max(h);
             if edge >= min_edge && best.is_none_or(|(_, e)| edge < e) {
                 best = Some((r.from, edge));
@@ -230,7 +260,12 @@ fn decode_unguarded(bytes: &[u8], options: &Options) -> Result<Decoded, Error> {
 
 /// Decodes one image item (a coded picture or a grid of them) to RGB(A), alpha included when
 /// `with_alpha` and the item has an alpha auxiliary image.
-fn decode_item(ctx: &Context<'_>, id: u32, options: &Options, with_alpha: bool) -> Result<Decoded, Error> {
+fn decode_item(
+    ctx: &Context<'_>,
+    id: u32,
+    options: &Options,
+    with_alpha: bool,
+) -> Result<Decoded, Error> {
     let p = ctx.props(id).map_err(err)?;
     let limit = options.max_pixels;
     // The declared sizes are refused before anything is decoded or allocated.
@@ -242,10 +277,21 @@ fn decode_item(ctx: &Context<'_>, id: u32, options: &Options, with_alpha: bool) 
     let coded = Coded::decode(ctx, id, &p, limit)?;
     let planes = coded.planes()?;
     let colour = colour(&p, &coded.first_props);
-    let signal = ycc::Signal { matrix: colour.matrix, full_range: colour.full_range };
-    let alpha_id = if with_alpha { ctx.alpha_item(id).map_err(err)? } else { None };
+    let signal = ycc::Signal {
+        matrix: colour.matrix,
+        full_range: colour.full_range,
+    };
+    let alpha_id = if with_alpha {
+        ctx.alpha_item(id).map_err(err)?
+    } else {
+        None
+    };
     let (w, h) = planes.size();
-    let mode = if options.apply_transforms && orient::odd_crop(w, h, &p.transforms)? { ycc::Upsampling::Bilinear } else { ycc::Upsampling::Nearest };
+    let mode = if options.apply_transforms && orient::odd_crop(w, h, &p.transforms)? {
+        ycc::Upsampling::Bilinear
+    } else {
+        ycc::Upsampling::Nearest
+    };
     let mut data = ycc::to_rgb16(&planes, signal, alpha_id.is_some(), mode)
         .ok_or_else(|| Error::Malformed("the decoded pictures don't cover the image".into()))?;
     if let Some(aux) = alpha_id {
@@ -253,13 +299,21 @@ fn decode_item(ctx: &Context<'_>, id: u32, options: &Options, with_alpha: bool) 
         let alpha = Coded::decode(ctx, aux, &ap, limit)?;
         let alpha_planes = alpha.planes()?;
         if alpha_planes.size() != (w, h) {
-            return Err(Error::Unsupported("an alpha image of a different size than the picture"));
+            return Err(Error::Unsupported(
+                "an alpha image of a different size than the picture",
+            ));
         }
-        ycc::put_alpha(&alpha_planes, &mut data).ok_or_else(|| Error::Malformed("the alpha image is incomplete".into()))?;
+        ycc::put_alpha(&alpha_planes, &mut data)
+            .ok_or_else(|| Error::Malformed("the alpha image is incomplete".into()))?;
     }
     let bit_depth = planes.bit_depth();
     let has_alpha = alpha_id.is_some();
-    let mut img = orient::Pixels { width: w, height: h, ch: if has_alpha { 4 } else { 3 }, data };
+    let mut img = orient::Pixels {
+        width: w,
+        height: h,
+        ch: if has_alpha { 4 } else { 3 },
+        data,
+    };
     if options.apply_transforms {
         img = orient::apply(img, &p.transforms)?;
     }
@@ -289,17 +343,32 @@ struct Coded<'a> {
 }
 
 impl<'a> Coded<'a> {
-    fn decode(ctx: &Context<'a>, id: u32, p: &ItemProps<'a>, limit: u64) -> Result<Coded<'a>, Error> {
+    fn decode(
+        ctx: &Context<'a>,
+        id: u32,
+        p: &ItemProps<'a>,
+        limit: u64,
+    ) -> Result<Coded<'a>, Error> {
         let (grid, ids) = match ctx.grid(id).map_err(err)? {
             Some((g, tiles)) => (Some(g), tiles),
             None => (None, vec![id]),
         };
-        let first = *ids.first().ok_or_else(|| Error::Malformed("grid lists no tiles".into()))?;
-        let first_props = if first == id { p.clone() } else { ctx.props(first).map_err(err)? };
+        let first = *ids
+            .first()
+            .ok_or_else(|| Error::Malformed("grid lists no tiles".into()))?;
+        let first_props = if first == id {
+            p.clone()
+        } else {
+            ctx.props(first).map_err(err)?
+        };
         let chroma_format = first_props.hvcc.as_ref().map_or(1, |c| c.chroma_format);
         let decode_one = |t: &u32| -> Result<Frame, Error> {
             let tp = ctx.props(*t).map_err(err)?;
-            let hvcc = tp.hvcc.as_ref().ok_or(heic_rs::Error::MissingBox("hvcC")).map_err(err)?;
+            let hvcc = tp
+                .hvcc
+                .as_ref()
+                .ok_or(heic_rs::Error::MissingBox("hvcC"))
+                .map_err(err)?;
             let data = ctx.item_data(*t).map_err(err)?;
             let nals = hvcc.split_nals(&data).map_err(err)?;
             let params = hvcc.parameter_sets();
@@ -322,14 +391,24 @@ impl<'a> Coded<'a> {
             Error::Malformed(_) if chroma_format >= 2 => Error::Unsupported(CHROMA_422_444),
             e => e,
         })?;
-        Ok(Coded { frames, grid, first_props, chroma_format })
+        Ok(Coded {
+            frames,
+            grid,
+            first_props,
+            chroma_format,
+        })
     }
 
     fn planes(&self) -> Result<ycc::Planes<'_>, Error> {
         match (&self.grid, self.frames.as_slice()) {
-            (Some(g), tiles) => heic_rs::grid::Mosaic::new(g, tiles).map(ycc::Planes::Grid).map_err(err),
+            (Some(g), tiles) => heic_rs::grid::Mosaic::new(g, tiles)
+                .map(ycc::Planes::Grid)
+                .map_err(err),
             (None, [frame]) => Ok(ycc::Planes::Picture(frame)),
-            (None, _) => Err(Error::Malformed(format!("expected one coded picture (chroma format {})", self.chroma_format))),
+            (None, _) => Err(Error::Malformed(format!(
+                "expected one coded picture (chroma format {})",
+                self.chroma_format
+            ))),
         }
     }
 }
@@ -338,10 +417,24 @@ impl<'a> Coded<'a> {
 /// first tile), else the VUI of its (first) coded picture, else the H.265 defaults.
 fn colour(p: &ItemProps<'_>, coded: &ItemProps<'_>) -> Colour {
     if let Some(n) = p.nclx.or(coded.nclx) {
-        return Colour { primaries: n.primaries, transfer: n.transfer, matrix: n.matrix_code, full_range: n.range == Range::Full };
+        return Colour {
+            primaries: n.primaries,
+            transfer: n.transfer,
+            matrix: n.matrix_code,
+            full_range: n.range == Range::Full,
+        };
     }
-    let s = coded.hvcc.as_ref().and_then(|c| vui::signal(&c.parameter_sets())).unwrap_or_default();
-    Colour { primaries: s.primaries.into(), transfer: s.transfer.into(), matrix: s.matrix.into(), full_range: s.full_range }
+    let s = coded
+        .hvcc
+        .as_ref()
+        .and_then(|c| vui::signal(&c.parameter_sets()))
+        .unwrap_or_default();
+    Colour {
+        primaries: s.primaries.into(),
+        transfer: s.transfer.into(),
+        matrix: s.matrix.into(),
+        full_range: s.full_range,
+    }
 }
 
 /// The primary image's EXIF (TIFF structure) and XMP packet. Metadata is a courtesy: a broken
@@ -349,10 +442,13 @@ fn colour(p: &ItemProps<'_>, coded: &ItemProps<'_>) -> Colour {
 fn metadata(ctx: &Context<'_>) -> (Option<Vec<u8>>, Option<String>) {
     let id = ctx.meta.primary;
     let exif = ctx.exif(id).ok().flatten().map(<[u8]>::to_vec);
-    let xmp = ctx.xmp_item(id).and_then(|x| ctx.item_data(x).ok()).and_then(|d| match d {
-        Cow::Borrowed(b) => String::from_utf8(b.to_vec()).ok(),
-        Cow::Owned(b) => String::from_utf8(b).ok(),
-    });
+    let xmp = ctx
+        .xmp_item(id)
+        .and_then(|x| ctx.item_data(x).ok())
+        .and_then(|d| match d {
+            Cow::Borrowed(b) => String::from_utf8(b.to_vec()).ok(),
+            Cow::Owned(b) => String::from_utf8(b).ok(),
+        });
     (exif, xmp.map(|x| x.trim_end_matches('\0').to_string()))
 }
 
@@ -366,16 +462,23 @@ mod tests {
     /// Found by PhotoCraft's `decode_heif` fuzz target: a malformed box makes heic-rs 0.1.1 slice
     /// out of range (`boxes.rs:130`). It must be an error, not a crash.
     const HEIC_RS_BOX_PANIC: [u8; 72] = [
-        0x00, 0x00, 0x00, 0x24, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63, 0x00, 0x00, 0x00, 0x00, 0x6d, 0x69, 0x66, 0x31, 0x4d, 0x69, 0x50,
-        0x72, 0x6d, 0x69, 0x61, 0x66, 0x4d, 0x69, 0x48, 0x42, 0x72, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6d, 0x65, 0x74, 0x61, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x75, 0x75, 0x69, 0x64, 0x00, 0x00, 0x00, 0x00, 0x03, 0x08, 0x08, 0x08, 0x00, 0x03, 0x01, 0x03, 0x70,
-        0x00, 0xa8, 0x00,
+        0x00, 0x00, 0x00, 0x24, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63, 0x00, 0x00, 0x00,
+        0x00, 0x6d, 0x69, 0x66, 0x31, 0x4d, 0x69, 0x50, 0x72, 0x6d, 0x69, 0x61, 0x66, 0x4d, 0x69,
+        0x48, 0x42, 0x72, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6d, 0x65, 0x74, 0x61, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x75, 0x75, 0x69, 0x64, 0x00, 0x00, 0x00, 0x00,
+        0x03, 0x08, 0x08, 0x08, 0x00, 0x03, 0x01, 0x03, 0x70, 0x00, 0xa8, 0x00,
     ];
 
     #[test]
     fn a_heic_rs_panic_is_a_malformed_error() {
         for apply_transforms in [true, false] {
-            let r = decode(&HEIC_RS_BOX_PANIC, &Options { apply_transforms, ..Default::default() });
+            let r = decode(
+                &HEIC_RS_BOX_PANIC,
+                &Options {
+                    apply_transforms,
+                    ..Default::default()
+                },
+            );
             assert!(matches!(r, Err(Error::Malformed(_))), "{r:?}");
         }
     }
@@ -384,8 +487,14 @@ mod tests {
     fn image_sequence_is_unsupported_with_a_clear_message() {
         // An ftyp and nothing else: a HEIF image sequence would have a moov here instead of a meta.
         let bytes = b"\0\0\0\x18ftypmsf1\0\0\0\0msf1hevc";
-        for r in [probe(bytes).map(|_| ()), decode(bytes, &Options::default()).map(|_| ())] {
-            assert!(matches!(&r, Err(Error::Unsupported(m)) if m.contains("sequence")), "{r:?}");
+        for r in [
+            probe(bytes).map(|_| ()),
+            decode(bytes, &Options::default()).map(|_| ()),
+        ] {
+            assert!(
+                matches!(&r, Err(Error::Unsupported(m)) if m.contains("sequence")),
+                "{r:?}"
+            );
         }
     }
 
@@ -402,6 +511,10 @@ mod tests {
     fn errors_display_their_kind() {
         assert!(Error::Unsupported("x").to_string().contains("unsupported"));
         assert!(Error::Limit("x".into()).to_string().contains("limit"));
-        assert!(Error::Malformed("x".into()).to_string().contains("malformed"));
+        assert!(
+            Error::Malformed("x".into())
+                .to_string()
+                .contains("malformed")
+        );
     }
 }

@@ -183,9 +183,14 @@ fn parse_envelope(raw: RawEnvelope) -> StreamEvent {
                 .unwrap_or("")
                 .to_owned();
             StreamEvent::Text(text)
-        },
+        }
         "tool_call" | "function_call" => {
-            let name = raw.rest.get("name").and_then(|v| v.as_str()).unwrap_or("").to_owned();
+            let name = raw
+                .rest
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_owned();
             let arguments = raw
                 .rest
                 .get("arguments")
@@ -198,12 +203,20 @@ fn parse_envelope(raw: RawEnvelope) -> StreamEvent {
                 .or_else(|| raw.rest.get("call_id"))
                 .and_then(|v| v.as_str())
                 .map(str::to_owned);
-            StreamEvent::ToolCall { name, arguments, call_id }
-        },
+            StreamEvent::ToolCall {
+                name,
+                arguments,
+                call_id,
+            }
+        }
         "done" | "finish" | "end" => {
-            let model = raw.rest.get("model").and_then(|v| v.as_str()).map(str::to_owned);
+            let model = raw
+                .rest
+                .get("model")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned);
             StreamEvent::Done { model }
-        },
+        }
         "error" => {
             let message = raw
                 .rest
@@ -212,9 +225,13 @@ fn parse_envelope(raw: RawEnvelope) -> StreamEvent {
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown error")
                 .to_owned();
-            let code = raw.rest.get("code").and_then(|v| v.as_i64()).map(|c| c as i32);
+            let code = raw
+                .rest
+                .get("code")
+                .and_then(|v| v.as_i64())
+                .map(|c| c as i32);
             StreamEvent::Error { message, code }
-        },
+        }
         "result" if raw.rest.get("status").and_then(|v| v.as_str()) == Some("error") => {
             let message = raw
                 .rest
@@ -223,8 +240,11 @@ fn parse_envelope(raw: RawEnvelope) -> StreamEvent {
                 .and_then(|v| v.as_str())
                 .unwrap_or("API result error")
                 .to_owned();
-            StreamEvent::Error { message, code: None }
-        },
+            StreamEvent::Error {
+                message,
+                code: None,
+            }
+        }
         _ => {
             // Reconstruct the original value so callers can inspect it.
             let mut obj = match raw.rest {
@@ -234,11 +254,11 @@ fn parse_envelope(raw: RawEnvelope) -> StreamEvent {
                     let mut m = serde_json::Map::new();
                     m.insert("_rest".to_owned(), other);
                     m
-                },
+                }
             };
             obj.insert("type".to_owned(), serde_json::Value::String(raw.kind));
             StreamEvent::Unknown(serde_json::Value::Object(obj))
-        },
+        }
     }
 }
 
@@ -303,9 +323,12 @@ impl GeminiRuntime {
 
         match result {
             Err(e) => {
-                let event = StreamEvent::Error { message: e.to_string(), code: None };
+                let event = StreamEvent::Error {
+                    message: e.to_string(),
+                    code: None,
+                };
                 stream::once(async move { event }).boxed()
-            },
+            }
             Ok(child_stream) => child_stream,
         }
     }
@@ -317,8 +340,11 @@ impl GeminiRuntime {
         prompt: &'a str,
         opts: &'a TurnOptions,
     ) -> Result<BoxStream<'a, StreamEvent>, RuntimeError> {
-        let mut args: Vec<String> =
-            vec!["--output-format".into(), "stream-json".into(), "--yolo".into()];
+        let mut args: Vec<String> = vec![
+            "--output-format".into(),
+            "stream-json".into(),
+            "--yolo".into(),
+        ];
 
         // Append --model only when a non-default model is requested.
         if let Some(ref model) = opts.model
@@ -407,7 +433,7 @@ where
                             },
                         };
                         return Some((event, (lines, child, stderr_task, false)));
-                    },
+                    }
                     Ok(None) => {
                         let mut process = child.take()?;
                         let status = process.wait().await;
@@ -420,10 +446,13 @@ where
                             Err(error) => format!("Gemini CLI wait failed: {error}"),
                         };
                         return Some((
-                            StreamEvent::Error { message, code: None },
+                            StreamEvent::Error {
+                                message,
+                                code: None,
+                            },
                             (lines, child, stderr_task, true),
                         ));
-                    },
+                    }
                     Err(error) => {
                         // Dropping `child` kills a process that can no longer be read.
                         return Some((
@@ -433,7 +462,7 @@ where
                             },
                             (lines, None, None, true),
                         ));
-                    },
+                    }
                 }
             }
         },
@@ -470,7 +499,12 @@ pub fn resolve_bin() -> Result<PathBuf, RuntimeError> {
     let executable = std::env::current_exe().ok();
     let cwd = std::env::current_dir().ok();
     let path = std::env::var_os("PATH");
-    resolve_bin_in(explicit.as_deref(), executable.as_deref(), cwd.as_deref(), path.as_deref())
+    resolve_bin_in(
+        explicit.as_deref(),
+        executable.as_deref(),
+        cwd.as_deref(),
+        path.as_deref(),
+    )
 }
 
 fn resolve_bin_in(
@@ -522,7 +556,11 @@ fn resolve_bin_in(
     }
 
     // Step 4 : PATH lookup.
-    Ok(which::which_in("gemini", path, cwd.unwrap_or(std::path::Path::new(".")))?)
+    Ok(which::which_in(
+        "gemini",
+        path,
+        cwd.unwrap_or(std::path::Path::new(".")),
+    )?)
 }
 
 /// Locate the `gemini` binary via [`resolve_bin`] and query its version.
@@ -539,7 +577,8 @@ fn resolve_bin_in(
 pub async fn detect() -> Result<GeminiRuntime, RuntimeError> {
     let bin = resolve_bin()?;
 
-    let output = Command::new(&bin).no_window()
+    let output = Command::new(&bin)
+        .no_window()
         .arg("--version")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -577,8 +616,9 @@ mod tests {
     #[tokio::test]
     async fn stream_skips_blank_lines_without_fabricating_unknown_events() {
         let input = b"\n  \n{\"type\":\"content\",\"content\":\"ready\"}\n\n";
-        let events: Vec<_> =
-            stream_turn_output(BufReader::new(&input[..]).lines(), None, None).collect().await;
+        let events: Vec<_> = stream_turn_output(BufReader::new(&input[..]).lines(), None, None)
+            .collect()
+            .await;
         assert_eq!(events.len(), 1);
         assert!(matches!(&events[0], StreamEvent::Text(text) if text == "ready"));
     }
@@ -604,11 +644,15 @@ mod tests {
             ]);
             command
         };
-        command.stdout(Stdio::piped()).stderr(Stdio::null()).kill_on_drop(true);
+        command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .kill_on_drop(true);
         let mut child = command.spawn().expect("spawn delayed child");
         let stdout = child.stdout.take().expect("child stdout");
-        let events: Vec<_> =
-            stream_turn_output(BufReader::new(stdout).lines(), Some(child), None).collect().await;
+        let events: Vec<_> = stream_turn_output(BufReader::new(stdout).lines(), Some(child), None)
+            .collect()
+            .await;
         assert_eq!(events.len(), 1, "{events:?}");
         assert!(matches!(&events[0], StreamEvent::Text(text) if text == "alive"));
     }
@@ -631,7 +675,10 @@ mod tests {
             command.args(["-c", "printf 'fixture-sensitive-output' >&2; exit 7"]);
             command
         };
-        command.stdout(Stdio::piped()).stderr(Stdio::piped()).kill_on_drop(true);
+        command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .kill_on_drop(true);
         let mut child = command.spawn().expect("spawn failing child");
         let stdout = child.stdout.take().expect("child stdout");
         let stderr = child.stderr.take().expect("child stderr");
@@ -639,12 +686,17 @@ mod tests {
             let mut stderr = stderr;
             let _ = tokio::io::copy(&mut stderr, &mut tokio::io::sink()).await;
         });
-        let events: Vec<_> =
-            stream_turn_output(BufReader::new(stdout).lines(), Some(child), Some(stderr_task))
-                .collect()
-                .await;
+        let events: Vec<_> = stream_turn_output(
+            BufReader::new(stdout).lines(),
+            Some(child),
+            Some(stderr_task),
+        )
+        .collect()
+        .await;
         assert_eq!(events.len(), 1, "{events:?}");
-        let StreamEvent::Error { message, .. } = &events[0] else { panic!("expected error") };
+        let StreamEvent::Error { message, .. } = &events[0] else {
+            panic!("expected error")
+        };
         assert!(message.contains('7'), "{message}");
         assert!(!message.contains("fixture-sensitive-output"));
     }
@@ -680,11 +732,15 @@ mod tests {
             r#"{"type":"tool_call","name":"read_file","arguments":{"path":"/tmp/x"},"id":"tc-1"}"#,
         );
         match event {
-            StreamEvent::ToolCall { name, arguments, call_id } => {
+            StreamEvent::ToolCall {
+                name,
+                arguments,
+                call_id,
+            } => {
                 assert_eq!(name, "read_file");
                 assert_eq!(arguments["path"], "/tmp/x");
                 assert_eq!(call_id.as_deref(), Some("tc-1"));
-            },
+            }
             other => panic!("expected ToolCall, got {other:?}"),
         }
     }
@@ -695,7 +751,7 @@ mod tests {
         match event {
             StreamEvent::Done { model } => {
                 assert_eq!(model.as_deref(), Some("gemini-2.5-pro"));
-            },
+            }
             other => panic!("expected Done, got {other:?}"),
         }
     }
@@ -716,7 +772,7 @@ mod tests {
             StreamEvent::Error { message, code } => {
                 assert_eq!(message, "quota exceeded");
                 assert_eq!(code, Some(429));
-            },
+            }
             other => panic!("expected Error, got {other:?}"),
         }
     }
@@ -728,7 +784,7 @@ mod tests {
             StreamEvent::Unknown(v) => {
                 assert_eq!(v["type"], "future_type");
                 assert_eq!(v["payload"], 42);
-            },
+            }
             other => panic!("expected Unknown, got {other:?}"),
         }
     }
@@ -754,7 +810,7 @@ mod tests {
     fn absent_binary_returns_not_found_without_mutating_process_state() {
         let tmp = tempfile::tempdir().expect("create temp dir");
         match resolve_bin_in(None, None, Some(tmp.path()), Some(tmp.path().as_os_str())) {
-            Err(RuntimeError::NotFound(_)) => {}, // expected
+            Err(RuntimeError::NotFound(_)) => {} // expected
             other => panic!("expected NotFound for an absent binary, got {other:?}"),
         }
     }

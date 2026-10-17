@@ -111,9 +111,13 @@ pub(crate) fn print_document_html(sheets: &[(f64, f64)], urls: &[String]) -> Str
     for (&size, url) in sheets.iter().zip(urls) {
         let src = attr(url);
         if same_size(size, paper) {
-            html_sheets.push_str(&format!("<div><img alt=\"\" style=\"width:{pw};height:{ph}\" src=\"{src}\"></div>"));
+            html_sheets.push_str(&format!(
+                "<div><img alt=\"\" style=\"width:{pw};height:{ph}\" src=\"{src}\"></div>"
+            ));
         } else if same_size((size.1, size.0), paper) {
-            html_sheets.push_str(&format!("<div class=\"turned\"><img alt=\"\" src=\"{src}\"></div>"));
+            html_sheets.push_str(&format!(
+                "<div class=\"turned\"><img alt=\"\" src=\"{src}\"></div>"
+            ));
         } else {
             let k = match others.iter().position(|o| same_size(*o, size)) {
                 Some(k) => k,
@@ -128,7 +132,9 @@ pub(crate) fn print_document_html(sheets: &[(f64, f64)], urls: &[String]) -> Str
             html_sheets.push_str(&format!("<div class=\"s{k}\"><img alt=\"\" style=\"width:{w};height:{h}\" src=\"{src}\"></div>"));
         }
     }
-    format!("<!doctype html><html><head><meta charset=\"utf-8\"><title>PdfCraft</title><style>{css}</style></head><body>{html_sheets}</body></html>")
+    format!(
+        "<!doctype html><html><head><meta charset=\"utf-8\"><title>PdfCraft</title><style>{css}</style></head><body>{html_sheets}</body></html>"
+    )
 }
 
 /// A browser print being prepared: the print-ready PDF's sheets drawn one [`WebPrintJob::step`]
@@ -157,7 +163,16 @@ impl WebPrintJob {
             pages: sheets.len(),
             sizes: sheets.iter().map(|&(w, h)| (w as f32, h as f32)).collect(),
         };
-        Ok(Self { exporter: Exporter::from_source(source), pdf, name, sheets, dpi, urls: Vec::new(), bytes: 0, max_bytes: MAX_JOB_BYTES })
+        Ok(Self {
+            exporter: Exporter::from_source(source),
+            pdf,
+            name,
+            sheets,
+            dpi,
+            urls: Vec::new(),
+            bytes: 0,
+            max_bytes: MAX_JOB_BYTES,
+        })
     }
 
     pub fn total(&self) -> usize {
@@ -173,9 +188,14 @@ impl WebPrintJob {
     }
 
     /// Draw the next sheet and give its PNG to `sink`. Errors end the job.
-    pub fn step(&mut self, sink: &mut dyn FnMut(Vec<u8>) -> Result<String, String>) -> Result<(), String> {
+    pub fn step(
+        &mut self,
+        sink: &mut dyn FnMut(Vec<u8>) -> Result<String, String>,
+    ) -> Result<(), String> {
         let i = self.urls.len();
-        let Some(&dpi) = self.dpi.get(i) else { return Ok(()) };
+        let Some(&dpi) = self.dpi.get(i) else {
+            return Ok(());
+        };
         let png = self.exporter.png(i, dpi)?;
         self.bytes = self.bytes.saturating_add(png.len() as u64);
         if self.bytes > self.max_bytes {
@@ -239,7 +259,9 @@ pub(crate) fn blob_url(png: Vec<u8>) -> Result<String, String> {
     drop(png);
     let opts = web_sys::BlobPropertyBag::new();
     opts.set_type("image/png");
-    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&js_sys::Array::of1(&array), &opts).map_err(err)?;
+    let blob =
+        web_sys::Blob::new_with_u8_array_sequence_and_options(&js_sys::Array::of1(&array), &opts)
+            .map_err(err)?;
     web_sys::Url::create_object_url_with_blob(&blob).map_err(err)
 }
 
@@ -272,9 +294,15 @@ pub(crate) fn print_in_iframe(
     use wasm_bindgen::JsCast;
     let err = js_error;
     clear_last_frame();
-    let document = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
+    let document = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
     let body = document.body().ok_or("no document body")?;
-    let frame: web_sys::HtmlIFrameElement = document.create_element("iframe").map_err(err)?.dyn_into().map_err(|_| "not an iframe")?;
+    let frame: web_sys::HtmlIFrameElement = document
+        .create_element("iframe")
+        .map_err(err)?
+        .dyn_into()
+        .map_err(|_| "not an iframe")?;
     // Not `display: none` or hidden: some browsers print nothing from a frame that isn't laid out.
     frame.set_attribute("style", "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none").map_err(err)?;
     frame.set_attribute("aria-hidden", "true").map_err(err)?;
@@ -291,29 +319,45 @@ pub(crate) fn print_in_iframe(
                         ctx.request_repaint();
                     }
                 };
-                let (Some(window), Some(doc)) = (frame.content_window(), frame.content_document()) else {
+                let (Some(window), Some(doc)) = (frame.content_window(), frame.content_document())
+                else {
                     report("the print page didn't load".into());
                     return;
                 };
                 let images = doc.images();
                 for i in 0..images.length() {
-                    let Some(img) = images.item(i).and_then(|e| e.dyn_into::<web_sys::HtmlImageElement>().ok()) else { continue };
+                    let Some(img) = images
+                        .item(i)
+                        .and_then(|e| e.dyn_into::<web_sys::HtmlImageElement>().ok())
+                    else {
+                        continue;
+                    };
                     if let Err(e) = wasm_bindgen_futures::JsFuture::from(img.decode()).await {
-                        report(format!("sheet {} couldn't be prepared for printing: {}", i + 1, err(e)));
+                        report(format!(
+                            "sheet {} couldn't be prepared for printing: {}",
+                            i + 1,
+                            err(e)
+                        ));
                         return;
                     }
                 }
                 // Clean up when the dialog closes; browsers that don't say so are cleaned up by
                 // the next print.
                 let after = wasm_bindgen::closure::Closure::once_into_js(clear_last_frame);
-                let _ = window.add_event_listener_with_callback("afterprint", after.unchecked_ref());
+                let _ =
+                    window.add_event_listener_with_callback("afterprint", after.unchecked_ref());
                 if let Err(e) = window.print() {
-                    report(format!("the browser wouldn't open its print dialog: {}", err(e)));
+                    report(format!(
+                        "the browser wouldn't open its print dialog: {}",
+                        err(e)
+                    ));
                 }
             });
         })
     };
-    frame.add_event_listener_with_callback("load", on_load.unchecked_ref()).map_err(err)?;
+    frame
+        .add_event_listener_with_callback("load", on_load.unchecked_ref())
+        .map_err(err)?;
     frame.set_srcdoc(html);
     body.append_child(&frame).map_err(err)?;
     LAST_FRAME.with(|f| *f.borrow_mut() = Some((frame, urls)));
@@ -333,7 +377,10 @@ mod tests {
         assert_eq!(plan_dpi(&vec![LETTER; 101]).unwrap()[0], 200.0);
         assert_eq!(plan_dpi(&vec![LETTER; 300]).unwrap()[0], 200.0);
         assert_eq!(plan_dpi(&vec![LETTER; 301]).unwrap()[0], 150.0);
-        assert_eq!(plan_dpi(&vec![LETTER; MAX_SHEETS]).unwrap().len(), MAX_SHEETS);
+        assert_eq!(
+            plan_dpi(&vec![LETTER; MAX_SHEETS]).unwrap().len(),
+            MAX_SHEETS
+        );
         let e = plan_dpi(&vec![LETTER; MAX_SHEETS + 1]).unwrap_err();
         assert!(e.contains("save the print-ready PDF"), "{e}");
         assert!(plan_dpi(&[]).is_err());
@@ -348,7 +395,12 @@ mod tests {
         assert!(pixels <= MAX_SHEET_PIXELS * 1.0001, "{pixels}");
         // A huge sheet still gets a usable floor rather than nothing.
         assert_eq!(plan_dpi(&[(14_400.0, 14_400.0)]).unwrap()[0], MIN_DPI);
-        for bad in [(f64::NAN, 792.0), (612.0, f64::INFINITY), (0.0, 792.0), (-612.0, 792.0)] {
+        for bad in [
+            (f64::NAN, 792.0),
+            (612.0, f64::INFINITY),
+            (0.0, 792.0),
+            (-612.0, 792.0),
+        ] {
             assert!(plan_dpi(&[LETTER, bad]).unwrap_err().contains("sheet 2"));
         }
     }
@@ -357,16 +409,27 @@ mod tests {
     fn the_print_page_turns_sideways_sheets_names_other_sizes_and_ends_without_a_blank_page() {
         const A4: (f64, f64) = (595.28, 841.89);
         let sheets = [LETTER, (792.0, 612.0), A4, (612.2, 791.8), A4];
-        let urls: Vec<String> = (0..5).map(|i| format!("blob:https://example.test/{i}")).collect();
+        let urls: Vec<String> = (0..5)
+            .map(|i| format!("blob:https://example.test/{i}"))
+            .collect();
         let html = print_document_html(&sheets, &urls);
         // The paper is the first sheet's.
         assert!(html.contains("@page{size:612pt 792pt;margin:0}"), "{html}");
         assert_eq!(html.matches("<div").count(), 5);
         // Letter landscape is turned onto Letter portrait, not given a page of its own.
-        assert!(html.contains("<div class=\"turned\"><img alt=\"\" src=\"blob:https://example.test/1\"></div>"), "{html}");
+        assert!(
+            html.contains(
+                "<div class=\"turned\"><img alt=\"\" src=\"blob:https://example.test/1\"></div>"
+            ),
+            "{html}"
+        );
         assert!(html.contains(".turned img{width:792pt;height:612pt;transform-origin:0 0;transform:translate(0,792pt) rotate(-90deg)}"), "{html}");
         // A4 gets one named page, shared by both A4 sheets; a size within half a point is the paper.
-        assert_eq!(html.matches("@page s0{size:595.28pt 841.89pt;margin:0}").count(), 1);
+        assert_eq!(
+            html.matches("@page s0{size:595.28pt 841.89pt;margin:0}")
+                .count(),
+            1
+        );
         assert!(!html.contains("@page s1"), "{html}");
         assert_eq!(html.matches("<div class=\"s0\">").count(), 2);
         assert!(html.contains("<div><img alt=\"\" style=\"width:612pt;height:792pt\" src=\"blob:https://example.test/3\"></div>"));
@@ -381,20 +444,31 @@ mod tests {
         let mut offsets = Vec::new();
         let n = sizes.len();
         let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 3 + i)).collect();
-        let mut objects = vec!["<< /Type /Catalog /Pages 2 0 R >>".to_string(), format!("<< /Type /Pages /Kids [{}] /Count {n} >>", kids.join(" "))];
+        let mut objects = vec![
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            format!("<< /Type /Pages /Kids [{}] /Count {n} >>", kids.join(" ")),
+        ];
         for (w, h) in sizes {
-            objects.push(format!("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {w} {h}] >>"));
+            objects.push(format!(
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {w} {h}] >>"
+            ));
         }
         for (i, o) in objects.iter().enumerate() {
             offsets.push(out.len());
             out.push_str(&format!("{} 0 obj\n{o}\nendobj\n", i + 1));
         }
         let xref = out.len();
-        out.push_str(&format!("xref\n0 {}\n0000000000 65535 f \n", objects.len() + 1));
+        out.push_str(&format!(
+            "xref\n0 {}\n0000000000 65535 f \n",
+            objects.len() + 1
+        ));
         for o in offsets {
             out.push_str(&format!("{o:010} 00000 n \n"));
         }
-        out.push_str(&format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objects.len() + 1));
+        out.push_str(&format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objects.len() + 1
+        ));
         out.into_bytes()
     }
 
@@ -408,7 +482,8 @@ mod tests {
     #[test]
     fn a_job_draws_every_sheet_at_its_planned_resolution_then_builds_the_page() {
         let sheets = vec![LETTER, (792.0, 612.0), (297.64, 420.94)];
-        let mut job = WebPrintJob::new(blank_pdf(&sheets), sheets.clone(), "doc.pdf".into()).unwrap();
+        let mut job =
+            WebPrintJob::new(blank_pdf(&sheets), sheets.clone(), "doc.pdf".into()).unwrap();
         assert_eq!((job.done(), job.total(), job.finished()), (0, 3, false));
         let mut pngs = Vec::new();
         while !job.finished() {
@@ -420,9 +495,16 @@ mod tests {
         }
         assert_eq!(pngs.len(), 3);
         assert_eq!(png_size(&pngs[0]), (2550, 3300), "Letter at 300 dpi");
-        assert_eq!(png_size(&pngs[1]), (3300, 2550), "landscape Letter at 300 dpi");
+        assert_eq!(
+            png_size(&pngs[1]),
+            (3300, 2550),
+            "landscape Letter at 300 dpi"
+        );
         let (w, h) = png_size(&pngs[2]);
-        assert!((w as i64 - 1240).abs() <= 1 && (h as i64 - 1754).abs() <= 1, "A6 at 300 dpi: {w}×{h}");
+        assert!(
+            (w as i64 - 1240).abs() <= 1 && (h as i64 - 1754).abs() <= 1,
+            "A6 at 300 dpi: {w}×{h}"
+        );
         // A finished job does nothing more.
         job.step(&mut |_| panic!("no sheet left")).unwrap();
         let html = job.html();
@@ -433,21 +515,32 @@ mod tests {
 
     #[test]
     fn a_sink_error_or_a_page_that_isnt_there_stops_the_job() {
-        let mut job = WebPrintJob::new(blank_pdf(&[LETTER]), vec![LETTER], "doc.pdf".into()).unwrap();
-        assert_eq!(job.step(&mut |_| Err("out of memory".into())).unwrap_err(), "out of memory");
+        let mut job =
+            WebPrintJob::new(blank_pdf(&[LETTER]), vec![LETTER], "doc.pdf".into()).unwrap();
+        assert_eq!(
+            job.step(&mut |_| Err("out of memory".into())).unwrap_err(),
+            "out of memory"
+        );
         assert_eq!(job.done(), 0);
         // The layout promised two sheets but the PDF has one: an error, not a panic.
-        let mut short = WebPrintJob::new(blank_pdf(&[LETTER]), vec![LETTER, LETTER], "doc.pdf".into()).unwrap();
+        let mut short =
+            WebPrintJob::new(blank_pdf(&[LETTER]), vec![LETTER, LETTER], "doc.pdf".into()).unwrap();
         short.step(&mut |_| Ok("blob:1".into())).unwrap();
         assert!(short.step(&mut |_| Ok("blob:2".into())).is_err());
         // A job whose pictures outgrow the byte cap stops instead of filling the tab's memory.
-        let mut big = WebPrintJob::new(blank_pdf(&[LETTER, LETTER]), vec![LETTER, LETTER], "doc.pdf".into()).unwrap();
+        let mut big = WebPrintJob::new(
+            blank_pdf(&[LETTER, LETTER]),
+            vec![LETTER, LETTER],
+            "doc.pdf".into(),
+        )
+        .unwrap();
         big.max_bytes = 1;
         let e = big.step(&mut |_| Ok("blob:1".into())).unwrap_err();
         assert!(e.contains("save the print-ready PDF"), "{e}");
         assert_eq!(big.done(), 0);
         // Garbage bytes fail at the first sheet.
-        let mut garbage = WebPrintJob::new(b"not a pdf".to_vec(), vec![LETTER], "x.pdf".into()).unwrap();
+        let mut garbage =
+            WebPrintJob::new(b"not a pdf".to_vec(), vec![LETTER], "x.pdf".into()).unwrap();
         assert!(garbage.step(&mut |_| Ok("blob:1".into())).is_err());
     }
 }

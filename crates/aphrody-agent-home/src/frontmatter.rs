@@ -136,7 +136,11 @@ fn quote_scalar(value: &str) -> String {
     if !needs {
         return value.to_string();
     }
-    if value.contains('"') { format!("'{value}'") } else { format!("\"{value}\"") }
+    if value.contains('"') {
+        format!("'{value}'")
+    } else {
+        format!("\"{value}\"")
+    }
 }
 
 /// Set (`Some`) or remove (`None`) top-level scalar keys in the frontmatter of
@@ -149,8 +153,9 @@ fn quote_scalar(value: &str) -> String {
 #[must_use]
 pub fn upsert_scalars(content: &str, pairs: &[(&str, Option<&str>)]) -> String {
     let (fm, body) = split(content);
-    let mut lines: Vec<String> =
-        fm.map(|f| f.lines().map(str::to_string).collect()).unwrap_or_default();
+    let mut lines: Vec<String> = fm
+        .map(|f| f.lines().map(str::to_string).collect())
+        .unwrap_or_default();
     for (key, value) in pairs {
         let top_level_key = |line: &str| {
             !line.starts_with([' ', '\t'])
@@ -202,12 +207,21 @@ mod tests {
         let src = "---\n# keep me\nname: Sam\ntags:\n  - a\n  - b\nlang: fr\n---\n\nBody.\n";
         let out = upsert_scalars(
             src,
-            &[("name", Some("Alex")), ("tags", None), ("avatar", Some("img/a.png"))],
+            &[
+                ("name", Some("Alex")),
+                ("tags", None),
+                ("avatar", Some("img/a.png")),
+            ],
         );
-        assert_eq!(out, "---\n# keep me\nname: Alex\nlang: fr\navatar: img/a.png\n---\n\nBody.\n");
+        assert_eq!(
+            out,
+            "---\n# keep me\nname: Alex\nlang: fr\navatar: img/a.png\n---\n\nBody.\n"
+        );
         let pairs = parse(split(&out).0.unwrap());
         assert!(
-            pairs.iter().any(|(k, v)| k == "avatar" && *v == FmValue::Scalar("img/a.png".into()))
+            pairs
+                .iter()
+                .any(|(k, v)| k == "avatar" && *v == FmValue::Scalar("img/a.png".into()))
         );
     }
 
@@ -260,8 +274,14 @@ mod tests {
     fn parse_handles_scalar_block_and_inline() {
         let pairs = parse("a: 1\nb:\n  - x\n  - y\nc: [m, n]\n");
         assert_eq!(pairs[0], ("a".into(), FmValue::Scalar("1".into())));
-        assert_eq!(pairs[1], ("b".into(), FmValue::List(vec!["x".into(), "y".into()])));
-        assert_eq!(pairs[2], ("c".into(), FmValue::List(vec!["m".into(), "n".into()])));
+        assert_eq!(
+            pairs[1],
+            ("b".into(), FmValue::List(vec!["x".into(), "y".into()]))
+        );
+        assert_eq!(
+            pairs[2],
+            ("c".into(), FmValue::List(vec!["m".into(), "n".into()]))
+        );
     }
 
     #[test]

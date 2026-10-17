@@ -37,7 +37,11 @@ pub async fn share_files(paths: Vec<String>) -> Result<(), String> {
         let joined = paths.join("\0");
         // SAFETY: the Swift bridge copies the string before returning.
         let shared = unsafe { crate::macos::share_items(&joined.as_str().into()) };
-        if shared { Ok(()) } else { Err("Failed to show share sheet".to_string()) }
+        if shared {
+            Ok(())
+        } else {
+            Err("Failed to show share sheet".to_string())
+        }
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -70,22 +74,37 @@ pub async fn get_sidecar_path(
 
 #[cfg(target_os = "macos")]
 fn reveal_path(path: &Path) -> std::io::Result<()> {
-    std::process::Command::new("open").no_window().arg("-R").arg(path).spawn()?.wait().map(drop)
+    std::process::Command::new("open")
+        .no_window()
+        .arg("-R")
+        .arg(path)
+        .spawn()?
+        .wait()
+        .map(drop)
 }
 
 #[cfg(windows)]
 fn reveal_path(path: &Path) -> std::io::Result<()> {
     // explorer.exe exits with 1 even when it succeeds: only a spawn failure is an error.
-    std::process::Command::new("explorer").no_window().arg("/select,").arg(path).spawn()?.wait().map(drop)
+    std::process::Command::new("explorer")
+        .no_window()
+        .arg("/select,")
+        .arg(path)
+        .spawn()?
+        .wait()
+        .map(drop)
 }
 
 #[cfg(target_os = "linux")]
 fn reveal_path(path: &Path) -> std::io::Result<()> {
     // No portable "select" verb on Linux desktops: open the containing folder.
     match path.parent() {
-        Some(parent) => {
-            std::process::Command::new("xdg-open").no_window().arg(parent).spawn()?.wait().map(drop)
-        },
+        Some(parent) => std::process::Command::new("xdg-open")
+            .no_window()
+            .arg(parent)
+            .spawn()?
+            .wait()
+            .map(drop),
         None => Ok(()),
     }
 }

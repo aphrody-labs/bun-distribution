@@ -51,7 +51,11 @@ impl InferenceBackend {
     pub fn select(requested: Option<&str>, compiled: bool) -> Result<Self, BackendError> {
         let requested = requested.map(str::trim).filter(|value| !value.is_empty());
         match requested.map(str::to_ascii_lowercase).as_deref() {
-            None | Some("auto") => Ok(if compiled { Self::InProcess } else { Self::Spawn }),
+            None | Some("auto") => Ok(if compiled {
+                Self::InProcess
+            } else {
+                Self::Spawn
+            }),
             Some("spawn") => Ok(Self::Spawn),
             Some("in-process" | "in_process" | "inprocess") => {
                 if compiled {
@@ -59,7 +63,7 @@ impl InferenceBackend {
                 } else {
                     Err(BackendError::NotCompiled)
                 }
-            },
+            }
             Some(other) => Err(BackendError::Unknown(other.to_owned())),
         }
     }
@@ -80,10 +84,22 @@ mod tests {
 
     #[test]
     fn auto_follows_the_build() {
-        assert_eq!(InferenceBackend::select(None, true), Ok(InferenceBackend::InProcess));
-        assert_eq!(InferenceBackend::select(Some("auto"), true), Ok(InferenceBackend::InProcess));
-        assert_eq!(InferenceBackend::select(None, false), Ok(InferenceBackend::Spawn));
-        assert_eq!(InferenceBackend::select(Some("  "), false), Ok(InferenceBackend::Spawn));
+        assert_eq!(
+            InferenceBackend::select(None, true),
+            Ok(InferenceBackend::InProcess)
+        );
+        assert_eq!(
+            InferenceBackend::select(Some("auto"), true),
+            Ok(InferenceBackend::InProcess)
+        );
+        assert_eq!(
+            InferenceBackend::select(None, false),
+            Ok(InferenceBackend::Spawn)
+        );
+        assert_eq!(
+            InferenceBackend::select(Some("  "), false),
+            Ok(InferenceBackend::Spawn)
+        );
     }
 
     #[test]

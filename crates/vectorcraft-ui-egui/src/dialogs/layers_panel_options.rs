@@ -15,15 +15,27 @@ use crate::{VectorcraftApp, widgets};
 /// The dialog kind of the Layers Panel Options.
 pub const KIND: &str = "layersPanelOptions";
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Layers Panel Options").into(), body, confirm, min_width: 300.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Layers Panel Options").into(),
+    body,
+    confirm,
+    min_width: 300.0,
+    ..DialogSpec::FORM
+};
 
-const SIZES: [(&str, &str, f32); 3] = [("small", "Small", ROW_SMALL), ("medium", "Medium", ROW_MEDIUM), ("large", "Large", ROW_LARGE)];
+const SIZES: [(&str, &str, f32); 3] = [
+    ("small", "Small", ROW_SMALL),
+    ("medium", "Medium", ROW_MEDIUM),
+    ("large", "Large", ROW_LARGE),
+];
 
 /// `ui.layersPanelOptions`: open the dialog on the panel's options.
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     let o = &app.ui.layers_panel;
-    let size = SIZES.iter().find(|s| (s.2 - o.row()).abs() < 0.01).map_or("other", |s| s.0);
+    let size = SIZES
+        .iter()
+        .find(|s| (s.2 - o.row()).abs() < 0.01)
+        .map_or("other", |s| s.0);
     let fields = json!({
         "layersOnly": o.layers_only, "rowSize": size, "otherSize": o.row(),
         "thumbLayers": o.thumb_layers, "thumbGroups": o.thumb_groups, "thumbObjects": o.thumb_objects,
@@ -49,11 +61,19 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             let labels: Vec<&str> = SIZES.iter().map(|s| s.1).chain(["Other"]).collect();
             let shown = SIZES.iter().find(|s| s.0 == cur).map_or("Other", |s| s.1);
             if let Some(i) = widgets::dropdown(ui, "layers-row-size", shown, &labels, 110.0) {
-                d.fields.insert("rowSize".into(), json!(SIZES.get(i).map_or("other", |s| s.0)));
+                d.fields.insert(
+                    "rowSize".into(),
+                    json!(SIZES.get(i).map_or("other", |s| s.0)),
+                );
             }
             let v = d.f64("otherSize", f64::from(ROW_MEDIUM));
             let other = d.str("rowSize") == "other";
-            if let Some(v) = ui.add_enabled_ui(other, |ui| widgets::range_field(ui, "otherSize", v, 12.0..=100.0, " pt", 0, 60.0)).inner {
+            if let Some(v) = ui
+                .add_enabled_ui(other, |ui| {
+                    widgets::range_field(ui, "otherSize", v, 12.0..=100.0, " pt", 0, 60.0)
+                })
+                .inner
+            {
                 d.fields.insert("otherSize".into(), json!(v));
             }
         });
@@ -70,10 +90,17 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 /// The options the fields describe.
 pub(crate) fn options(d: &Dialog) -> PanelOptions {
     let size = d.str("rowSize");
-    let row_size = SIZES.iter().find(|s| s.0 == size).map_or_else(|| (d.f64("otherSize", f64::from(ROW_MEDIUM)) as f32).clamp(12.0, 100.0), |s| s.2);
+    let row_size = SIZES.iter().find(|s| s.0 == size).map_or_else(
+        || (d.f64("otherSize", f64::from(ROW_MEDIUM)) as f32).clamp(12.0, 100.0),
+        |s| s.2,
+    );
     PanelOptions {
         layers_only: d.bool("layersOnly"),
-        row_size: if row_size.is_finite() { row_size } else { ROW_MEDIUM },
+        row_size: if row_size.is_finite() {
+            row_size
+        } else {
+            ROW_MEDIUM
+        },
         thumb_layers: d.bool("thumbLayers"),
         thumb_groups: d.bool("thumbGroups"),
         thumb_objects: d.bool("thumbObjects"),
@@ -94,12 +121,16 @@ mod tests {
     #[test]
     fn panel_options_round_trip_and_apply() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
+        app.session
+            .execute("file.new", &json!({"width": 100, "height": 100}))
+            .unwrap();
         app.run("ui.layersPanelOptions", json!({})).unwrap();
         assert_eq!(app.ui.dialog.as_ref().unwrap().str("rowSize"), "medium");
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        let mut out = ctx.run_ui(Default::default(), |ui| super::super::show(&mut app, ui.ctx()));
+        let mut out = ctx.run_ui(Default::default(), |ui| {
+            super::super::show(&mut app, ui.ctx())
+        });
         out.textures_delta.clear();
         let d = app.ui.dialog.as_mut().unwrap();
         d.fields.insert("layersOnly".into(), json!(true));
@@ -111,7 +142,12 @@ mod tests {
         assert!(o.layers_only && !o.thumb_objects && o.thumb_layers);
         assert_eq!(o.row(), 100.0, "kept to 100 pt");
         app.run("ui.layersPanelOptions", json!({})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("rowSize".into(), json!("large"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("rowSize".into(), json!("large"));
         super::super::confirm(&mut app).unwrap();
         assert_eq!(app.ui.layers_panel.row(), ROW_LARGE);
     }

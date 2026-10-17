@@ -50,7 +50,7 @@ pub fn probe_tcp(address: &str, timeout: Duration) -> ProbeResult {
                 duration_ms: start.elapsed().as_millis() as u64,
                 error: Some("aucune adresse résolue".to_string()),
             };
-        },
+        }
         Err(e) => {
             return ProbeResult {
                 url: address.to_string(),
@@ -59,7 +59,7 @@ pub fn probe_tcp(address: &str, timeout: Duration) -> ProbeResult {
                 duration_ms: start.elapsed().as_millis() as u64,
                 error: Some(e.to_string()),
             };
-        },
+        }
     };
 
     match TcpStream::connect_timeout(&socket_addr, timeout) {
@@ -108,9 +108,13 @@ pub fn probe_url(url: &str, timeout: Duration) -> ProbeResult {
                 ok,
                 status,
                 duration_ms,
-                error: if ok { None } else { Some(format!("HTTP code {}", status)) },
+                error: if ok {
+                    None
+                } else {
+                    Some(format!("HTTP code {}", status))
+                },
             }
-        },
+        }
         Err(e) => ProbeResult {
             url: url.to_string(),
             ok: false,
@@ -125,7 +129,9 @@ pub fn probe_url(url: &str, timeout: Duration) -> ProbeResult {
 pub fn probe_remote(target: &str, url: &str, timeout_secs: u32) -> Result<ProbeResult> {
     if target.is_empty()
         || target.starts_with('-')
-        || !target.bytes().all(|ch| ch.is_ascii_alphanumeric() || b"._-@:".contains(&ch))
+        || !target
+            .bytes()
+            .all(|ch| ch.is_ascii_alphanumeric() || b"._-@:".contains(&ch))
     {
         bail!("invalid SSH target");
     }
@@ -223,7 +229,11 @@ mod tests {
         let target_open = format!("tcp://127.0.0.1:{port}");
 
         let res_open = probe_tcp(&target_open, Duration::from_millis(2000));
-        assert!(res_open.ok, "le port ouvert doit être probe avec succès: {:?}", res_open.error);
+        assert!(
+            res_open.ok,
+            "le port ouvert doit être probe avec succès: {:?}",
+            res_open.error
+        );
         assert_eq!(res_open.status, 200);
 
         drop(listener);

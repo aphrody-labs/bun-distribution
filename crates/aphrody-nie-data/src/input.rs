@@ -361,7 +361,11 @@ where
 pub fn parse_adaptive_trigger_def(root: &Value) -> AdaptiveTriggerDef {
     AdaptiveTriggerDef {
         mode_items: extract_list(root, "m_ModeItemList", ModeItem::from_value),
-        triggers: extract_list(root, "m_InfoAdaptiveTriggerDataList", AdaptiveTrigger::from_value),
+        triggers: extract_list(
+            root,
+            "m_InfoAdaptiveTriggerDataList",
+            AdaptiveTrigger::from_value,
+        ),
     }
 }
 
@@ -370,12 +374,18 @@ pub fn parse_adaptive_trigger_def(root: &Value) -> AdaptiveTriggerDef {
 pub fn parse_haptic_feedback_def(root: &Value) -> HapticFeedbackDef {
     HapticFeedbackDef {
         mode_items: extract_list(root, "m_ModeItemList", ModeItem::from_value),
-        feedbacks: extract_list(root, "m_InfoHapticFeedbackDataList", HapticFeedback::from_value),
+        feedbacks: extract_list(
+            root,
+            "m_InfoHapticFeedbackDataList",
+            HapticFeedback::from_value,
+        ),
     }
 }
 
 /// Parse un `vibration_def_*.cfg.bin.json` complet (1 liste).
 #[must_use]
 pub fn parse_vibration_def(root: &Value) -> VibrationDef {
-    VibrationDef { vibrations: extract_list(root, "m_vibrationDefList", Vibration::from_value) }
+    VibrationDef {
+        vibrations: extract_list(root, "m_vibrationDefList", Vibration::from_value),
+    }
 }

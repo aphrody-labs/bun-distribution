@@ -243,11 +243,19 @@ fn ror_imm_s_nonzero(regs: &mut Regs, value: u32, shift: u8) -> u32 {
 }
 
 pub fn ror_imm_s_no_rrx(regs: &mut Regs, value: u32, shift: u8) -> u32 {
-    if shift == 0 { value } else { ror_imm_s_nonzero(regs, value, shift) }
+    if shift == 0 {
+        value
+    } else {
+        ror_imm_s_nonzero(regs, value, shift)
+    }
 }
 
 pub fn ror_imm_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {
-    if shift == 0 { rrx_s(regs, value) } else { ror_imm_s_nonzero(regs, value, shift) }
+    if shift == 0 {
+        rrx_s(regs, value)
+    } else {
+        ror_imm_s_nonzero(regs, value, shift)
+    }
 }
 
 pub fn ror_reg_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {

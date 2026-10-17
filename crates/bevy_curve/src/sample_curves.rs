@@ -10,7 +10,7 @@ use core::any::type_name;
 use core::fmt::{self, Debug};
 
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{utility::GenericTypePathCell, Reflect, TypePath};
+use bevy_reflect::{Reflect, TypePath, utility::GenericTypePathCell};
 
 #[cfg(feature = "bevy_reflect")]
 mod paths {

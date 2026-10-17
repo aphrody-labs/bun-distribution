@@ -28,20 +28,20 @@ fn get_output_color(mode: u8, texture_mapping_enabled: bool) -> &'static str {
             0 => {
                 "output.color = ((t_color * 63.0 + 1.0) * (v_color * 63.0 + 1.0) - 1.0) * (1.0 / \
                  4095.0);"
-            },
+            }
             1 => {
                 "output.color = vec4<f32>((t_color * t_color.a + v_color * (1.0 - t_color.a)).rgb, \
                  v_color.a);"
-            },
+            }
             2 => {
                 "output.color = ((t_color * 63.0 + 1.0) * (toon_color * 63.0 + 1.0) - 1.0) * (1.0 \
                  / 4095.0);"
-            },
+            }
             _ => {
                 "let blended_color = ((t_color * 63.0 + 1.0) * vec4<f32>(vec3<f32>(v_color.r * \
                  63.0 + 1.0), 64.0) - 1.0) * (1.0 / 4095.0);
                 output.color = min(blended_color + vec4<f32>(toon_color.rgb, 0.0), vec4<f32>(1.0));"
-            },
+            }
         }
     } else {
         match mode {

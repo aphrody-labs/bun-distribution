@@ -5,7 +5,9 @@
 
 use egui::{Color32, RichText, Sense, Stroke, pos2, vec2};
 use photocraft_engine::BrushSettings;
-use photocraft_engine::paint::{self, BrushPreset, Control, Dynamic, MAX_BRUSH_SIZE, MaskMode, Pattern, PatternStyle, TipShape};
+use photocraft_engine::paint::{
+    self, BrushPreset, Control, Dynamic, MAX_BRUSH_SIZE, MaskMode, Pattern, PatternStyle, TipShape,
+};
 
 use crate::brush_preview;
 use crate::theme::{self, Tokens};
@@ -35,8 +37,12 @@ pub const MASK_MODES: [(MaskMode, &str); 10] = [
     (MaskMode::Height, "Height"),
 ];
 
-const PATTERNS: [(PatternStyle, &str); 4] =
-    [(PatternStyle::Paper, "Paper"), (PatternStyle::Canvas, "Canvas"), (PatternStyle::Noise, "Noise"), (PatternStyle::Dots, "Dots")];
+const PATTERNS: [(PatternStyle, &str); 4] = [
+    (PatternStyle::Paper, "Paper"),
+    (PatternStyle::Canvas, "Canvas"),
+    (PatternStyle::Noise, "Noise"),
+    (PatternStyle::Dots, "Dots"),
+];
 
 /// Percent slider over a 0..`max` fraction.
 fn pct(ui: &mut egui::Ui, label: &str, v: &mut f32, max: f32) -> bool {
@@ -46,14 +52,21 @@ fn pct(ui: &mut egui::Ui, label: &str, v: &mut f32, max: f32) -> bool {
 /// Percent slider over a `min..max` fraction.
 fn signed_pct(ui: &mut egui::Ui, label: &str, v: &mut f32, min: f32, max: f32) -> bool {
     let mut p = (*v * 100.0).round();
-    let changed = widgets::slider_row(ui, label, &mut p, min * 100.0..=max * 100.0, "%", None).changed();
+    let changed =
+        widgets::slider_row(ui, label, &mut p, min * 100.0..=max * 100.0, "%", None).changed();
     if changed {
         *v = (p.round() / 100.0).clamp(min, max);
     }
     changed
 }
 
-fn num(ui: &mut egui::Ui, label: &str, v: &mut f32, range: std::ops::RangeInclusive<f32>, suffix: &str) -> bool {
+fn num(
+    ui: &mut egui::Ui,
+    label: &str,
+    v: &mut f32,
+    range: std::ops::RangeInclusive<f32>,
+    suffix: &str,
+) -> bool {
     let mut x = *v;
     let changed = widgets::slider_row(ui, label, &mut x, range.clone(), suffix, None).changed();
     if changed {
@@ -72,11 +85,18 @@ fn dim(ui: &mut egui::Ui, s: &str) {
 fn control_row(ui: &mut egui::Ui, id: &str, d: &mut Dynamic, angle: bool) {
     ui.horizontal(|ui| {
         dim(ui, tl!("Control:"));
-        let n = if angle || matches!(d.control, Control::InitialDirection | Control::Direction) { 8 } else { 6 };
+        let n = if angle || matches!(d.control, Control::InitialDirection | Control::Direction) {
+            8
+        } else {
+            6
+        };
         widgets::dropdown(ui, id, &mut d.control, &CONTROLS[..n], 130.0);
         if d.control == Control::Fade {
             let mut steps = d.fade_steps as f32;
-            if widgets::value_field(ui, &mut steps, 1.0..=9999.0, "", 56.0).on_hover_text(tl!("Fade steps")).changed() {
+            if widgets::value_field(ui, &mut steps, 1.0..=9999.0, "", 56.0)
+                .on_hover_text(tl!("Fade steps"))
+                .changed()
+            {
                 d.fade_steps = steps.round().clamp(1.0, 9999.0) as u32;
             }
         }
@@ -85,7 +105,15 @@ fn control_row(ui: &mut egui::Ui, id: &str, d: &mut Dynamic, angle: bool) {
 }
 
 /// A jitter slider, its Control row and (optionally) the Minimum slider: one Photoshop block.
-fn dynamic(ui: &mut egui::Ui, id: &str, label: &str, d: &mut Dynamic, max: f32, minimum: Option<&str>, angle: bool) {
+fn dynamic(
+    ui: &mut egui::Ui,
+    id: &str,
+    label: &str,
+    d: &mut Dynamic,
+    max: f32,
+    minimum: Option<&str>,
+    angle: bool,
+) {
     pct(ui, label, &mut d.jitter, max);
     control_row(ui, id, d, angle);
     if let Some(m) = minimum {
@@ -96,7 +124,9 @@ fn dynamic(ui: &mut egui::Ui, id: &str, label: &str, d: &mut Dynamic, max: f32, 
 
 /// Minimum belongs to the control. Off disables editing without discarding its saved value.
 fn minimum_row(ui: &mut egui::Ui, label: &str, d: &mut Dynamic) {
-    ui.add_enabled_ui(d.control != Control::Off, |ui| pct(ui, label, &mut d.minimum, 1.0));
+    ui.add_enabled_ui(d.control != Control::Off, |ui| {
+        pct(ui, label, &mut d.minimum, 1.0)
+    });
 }
 
 /// Size: a value field over a logarithmic slider (small sizes get most of the travel).
@@ -111,7 +141,8 @@ fn size_row(ui: &mut egui::Ui, label: &str, size: &mut f32, max: f32, restore: O
                 *size = s.round().clamp(1.0, max);
             }
             if let Some(orig) = restore
-                && crate::icons::button(ui, "undo-2", 22.0, false, tl!("Restore original size")).clicked()
+                && crate::icons::button(ui, "undo-2", 22.0, false, tl!("Restore original size"))
+                    .clicked()
             {
                 *size = orig.clamp(1.0, max);
             }
@@ -144,14 +175,23 @@ pub fn roundness_handles(angle: f32, roundness: f32) -> [egui::Vec2; 2] {
 
 /// What a press at `rel` (relative to the centre) grabs: a roundness handle within 7 px, else the angle.
 pub fn ellipse_grab(rel: egui::Vec2, angle: f32, roundness: f32) -> EllipseGrab {
-    if roundness_handles(angle, roundness).iter().any(|h| (*h - rel).length() <= 7.0) { EllipseGrab::Roundness } else { EllipseGrab::Angle }
+    if roundness_handles(angle, roundness)
+        .iter()
+        .any(|h| (*h - rel).length() <= 7.0)
+    {
+        EllipseGrab::Roundness
+    } else {
+        EllipseGrab::Angle
+    }
 }
 
 /// The new (angle, roundness) for a drag to `rel`: the angle points at the pointer (degrees,
 /// counter-clockwise, -180..180); the roundness is the pointer's distance along the minor axis.
 pub fn ellipse_drag(grab: EllipseGrab, rel: egui::Vec2, angle: f32, roundness: f32) -> (f32, f32) {
     match grab {
-        EllipseGrab::Angle if rel.length() > 1.0 => ((-rel.y).atan2(rel.x).to_degrees().round(), roundness),
+        EllipseGrab::Angle if rel.length() > 1.0 => {
+            ((-rel.y).atan2(rel.x).to_degrees().round(), roundness)
+        }
         EllipseGrab::Angle => (angle, roundness),
         EllipseGrab::Roundness => {
             let (s, c) = angle.to_radians().sin_cos();
@@ -194,8 +234,14 @@ fn ellipse_widget(ui: &mut egui::Ui, angle: &mut f32, roundness: &mut f32) -> bo
     let p = ui.painter();
     p.circle_filled(c, 40.0, t.field);
     p.circle_stroke(c, 40.0, Stroke::new(1.0, t.field_border));
-    p.line_segment([c - vec2(40.0, 0.0), c + vec2(40.0, 0.0)], Stroke::new(1.0, t.separator));
-    p.line_segment([c - vec2(0.0, 40.0), c + vec2(0.0, 40.0)], Stroke::new(1.0, t.separator));
+    p.line_segment(
+        [c - vec2(40.0, 0.0), c + vec2(40.0, 0.0)],
+        Stroke::new(1.0, t.separator),
+    );
+    p.line_segment(
+        [c - vec2(0.0, 40.0), c + vec2(0.0, 40.0)],
+        Stroke::new(1.0, t.separator),
+    );
     let (s, co) = angle.to_radians().sin_cos();
     let major = vec2(co, -s);
     let minor = vec2(-s, -co);
@@ -206,17 +252,27 @@ fn ellipse_widget(ui: &mut egui::Ui, angle: &mut f32, roundness: &mut f32) -> bo
             c + major * a.cos() * ELLIPSE_R + minor * a.sin() * ELLIPSE_R * rr
         })
         .collect();
-    p.add(egui::Shape::convex_polygon(pts, t.text.gamma_multiply(0.18), Stroke::new(1.5, t.text)));
+    p.add(egui::Shape::convex_polygon(
+        pts,
+        t.text.gamma_multiply(0.18),
+        Stroke::new(1.5, t.text),
+    ));
     // Arrow along the major axis.
     let tip = c + major * (ELLIPSE_R + 5.0);
     p.line_segment([c, tip], Stroke::new(1.5, t.accent));
     let back = tip - major * 7.0;
-    p.add(egui::Shape::convex_polygon(vec![tip, back + minor * 4.0, back - minor * 4.0], t.accent, Stroke::NONE));
+    p.add(egui::Shape::convex_polygon(
+        vec![tip, back + minor * 4.0, back - minor * 4.0],
+        t.accent,
+        Stroke::NONE,
+    ));
     for h in roundness_handles(*angle, *roundness) {
         p.circle_filled(c + h, 4.0, Color32::WHITE);
         p.circle_stroke(c + h, 4.0, Stroke::new(1.0, t.accent));
     }
-    let _ = resp.on_hover_text(tl!("Drag the arrow to set the angle, the dots to set the roundness"));
+    let _ = resp.on_hover_text(tl!(
+        "Drag the arrow to set the angle, the dots to set the roundness"
+    ));
     changed
 }
 
@@ -233,42 +289,75 @@ pub fn thumb_scale(size: f32) -> f32 {
 
 /// Photoshop's scrolling grid of preset tips with their sizes; `highlight` is the selected
 /// preset (by identity: look-alike duplicates must stay distinct). Returns the clicked index.
-fn tip_grid(ui: &mut egui::Ui, id: &str, presets: &[BrushPreset], highlight: Option<usize>) -> Option<usize> {
+fn tip_grid(
+    ui: &mut egui::Ui,
+    id: &str,
+    presets: &[BrushPreset],
+    highlight: Option<usize>,
+) -> Option<usize> {
     let t = Tokens::get(ui.ctx());
     let mut clicked = None;
-    let frame = egui::Frame::NONE.fill(t.field).stroke(Stroke::new(1.0, t.field_border)).corner_radius(t.radius_sm as u8).inner_margin(egui::Margin::same(3));
+    let frame = egui::Frame::NONE
+        .fill(t.field)
+        .stroke(Stroke::new(1.0, t.field_border))
+        .corner_radius(t.radius_sm as u8)
+        .inner_margin(egui::Margin::same(3));
     frame.show(ui, |ui| {
-        egui::ScrollArea::vertical().id_salt(id).max_height(104.0).auto_shrink([false, true]).show(ui, |ui| {
-            ui.horizontal_wrapped(|ui| {
-                ui.spacing_mut().item_spacing = vec2(2.0, 2.0);
-                for (i, p) in presets.iter().enumerate() {
-                    let (cell, resp) = ui.allocate_exact_size(vec2(44.0, 50.0), Sense::click());
-                    if !ui.is_rect_visible(cell) {
-                        continue;
+        egui::ScrollArea::vertical()
+            .id_salt(id)
+            .max_height(104.0)
+            .auto_shrink([false, true])
+            .show(ui, |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    ui.spacing_mut().item_spacing = vec2(2.0, 2.0);
+                    for (i, p) in presets.iter().enumerate() {
+                        let (cell, resp) = ui.allocate_exact_size(vec2(44.0, 50.0), Sense::click());
+                        if !ui.is_rect_visible(cell) {
+                            continue;
+                        }
+                        if highlight == Some(i) {
+                            ui.painter().rect_filled(cell, 3.0, t.accent_soft);
+                            ui.painter().rect_stroke(
+                                cell,
+                                3.0,
+                                Stroke::new(1.0, t.accent),
+                                egui::StrokeKind::Inside,
+                            );
+                        } else if resp.hovered() {
+                            ui.painter().rect_filled(cell, 3.0, t.hover);
+                        }
+                        let (tip, size, hard, angle, round, _) = preset_tip(p);
+                        let tex = brush_preview::tip_texture(
+                            ui.ctx(),
+                            &format!("{id}:{}", p.name),
+                            tip,
+                            (hard, angle, round),
+                            34,
+                            t.text,
+                        );
+                        let ir = egui::Rect::from_center_size(
+                            pos2(cell.center().x, cell.top() + 20.0),
+                            vec2(34.0, 34.0) * thumb_scale(size),
+                        );
+                        ui.painter().image(
+                            tex.id(),
+                            ir,
+                            egui::Rect::from_min_max(egui::Pos2::ZERO, pos2(1.0, 1.0)),
+                            Color32::WHITE,
+                        );
+                        ui.painter().text(
+                            pos2(cell.center().x, cell.bottom() - 6.0),
+                            egui::Align2::CENTER_CENTER,
+                            format!("{}", size.round() as i64),
+                            egui::FontId::proportional(9.5),
+                            t.text_dim,
+                        );
+                        if resp.on_hover_text(&p.name).clicked() {
+                            clicked = Some(i);
+                        }
                     }
-                    if highlight == Some(i) {
-                        ui.painter().rect_filled(cell, 3.0, t.accent_soft);
-                        ui.painter().rect_stroke(cell, 3.0, Stroke::new(1.0, t.accent), egui::StrokeKind::Inside);
-                    } else if resp.hovered() {
-                        ui.painter().rect_filled(cell, 3.0, t.hover);
-                    }
-                    let (tip, size, hard, angle, round, _) = preset_tip(p);
-                    let tex = brush_preview::tip_texture(ui.ctx(), &format!("{id}:{}", p.name), tip, (hard, angle, round), 34, t.text);
-                    let ir = egui::Rect::from_center_size(pos2(cell.center().x, cell.top() + 20.0), vec2(34.0, 34.0) * thumb_scale(size));
-                    ui.painter().image(tex.id(), ir, egui::Rect::from_min_max(egui::Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
-                    ui.painter().text(
-                        pos2(cell.center().x, cell.bottom() - 6.0),
-                        egui::Align2::CENTER_CENTER,
-                        format!("{}", size.round() as i64),
-                        egui::FontId::proportional(9.5),
-                        t.text_dim,
-                    );
-                    if resp.on_hover_text(&p.name).clicked() {
-                        clicked = Some(i);
-                    }
-                }
+                });
             });
-        });
     });
     ui.add_space(6.0);
     clicked
@@ -279,9 +368,16 @@ fn tip_grid(ui: &mut egui::Ui, id: &str, presets: &[BrushPreset], highlight: Opt
 /// is returned so the caller can mark it current with `brush.presets.setCurrent` (by identity:
 /// look-alike duplicates stay distinct; the engine can't infer it from the brush). The tip fields
 /// are also copied into the working brush so this frame's controls start from them.
-fn tip_shape(ui: &mut egui::Ui, b: &mut BrushSettings, presets: &[BrushPreset], current: Option<&str>) -> Option<String> {
-    let highlight = current.and_then(|n| presets.iter().position(|p| p.name.eq_ignore_ascii_case(n)));
-    if let Some(p) = tip_grid(ui, "brush-tip-grid", presets, highlight).and_then(|i| presets.get(i)) {
+fn tip_shape(
+    ui: &mut egui::Ui,
+    b: &mut BrushSettings,
+    presets: &[BrushPreset],
+    current: Option<&str>,
+) -> Option<String> {
+    let highlight =
+        current.and_then(|n| presets.iter().position(|p| p.name.eq_ignore_ascii_case(n)));
+    if let Some(p) = tip_grid(ui, "brush-tip-grid", presets, highlight).and_then(|i| presets.get(i))
+    {
         let (pt, ps, ph, pa, pr, psp) = preset_tip(p);
         b.tip = pt.clone();
         b.size = ps;
@@ -305,7 +401,11 @@ fn tip_shape(ui: &mut egui::Ui, b: &mut BrushSettings, presets: &[BrushPreset], 
         ui.vertical(|ui| {
             ui.add_space(10.0);
             ui.horizontal(|ui| {
-                ui.allocate_ui_with_layout(vec2(72.0, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| dim(ui, tl!("Angle:")));
+                ui.allocate_ui_with_layout(
+                    vec2(72.0, 24.0),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| dim(ui, tl!("Angle:")),
+                );
                 let mut a = b.angle;
                 if widgets::value_field(ui, &mut a, -180.0..=180.0, "°", 70.0).changed() {
                     b.angle = a.round().clamp(-180.0, 180.0);
@@ -313,7 +413,11 @@ fn tip_shape(ui: &mut egui::Ui, b: &mut BrushSettings, presets: &[BrushPreset], 
             });
             ui.add_space(6.0);
             ui.horizontal(|ui| {
-                ui.allocate_ui_with_layout(vec2(72.0, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| dim(ui, tl!("Roundness:")));
+                ui.allocate_ui_with_layout(
+                    vec2(72.0, 24.0),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| dim(ui, tl!("Roundness:")),
+                );
                 let mut r = (b.roundness * 100.0).round();
                 if widgets::value_field(ui, &mut r, 1.0..=100.0, "%", 70.0).changed() {
                     b.roundness = (r.round() / 100.0).clamp(0.01, 1.0);
@@ -326,10 +430,13 @@ fn tip_shape(ui: &mut egui::Ui, b: &mut BrushSettings, presets: &[BrushPreset], 
         pct(ui, tl!("Hardness"), &mut b.hardness, 1.0);
     });
     // Unchecked, the pointer's speed sets the spacing (Photoshop).
-    widgets::checkbox(ui, &mut b.spacing_enabled, tl!("Spacing")).on_hover_text(tl!("Off: the speed of the pointer sets the spacing"));
+    widgets::checkbox(ui, &mut b.spacing_enabled, tl!("Spacing"))
+        .on_hover_text(tl!("Off: the speed of the pointer sets the spacing"));
     ui.add_space(2.0);
     let on = b.spacing_enabled;
-    ui.add_enabled_ui(on, |ui| signed_pct(ui, tl!("Spacing"), &mut b.spacing, 0.01, 10.0));
+    ui.add_enabled_ui(on, |ui| {
+        signed_pct(ui, tl!("Spacing"), &mut b.spacing, 0.01, 10.0)
+    });
     None
 }
 
@@ -340,17 +447,36 @@ fn shape_dynamics(ui: &mut egui::Ui, b: &mut BrushSettings) {
     minimum_row(ui, tl!("Minimum Diameter"), &mut sd.size);
     // Tilt Scale applies with the size control on Pen Tilt (greyed out otherwise, like Photoshop).
     let tilt = sd.size.control == Control::PenTilt;
-    ui.add_enabled_ui(tilt, |ui| pct(ui, tl!("Tilt Scale"), &mut sd.tilt_scale, 2.0));
+    ui.add_enabled_ui(tilt, |ui| {
+        pct(ui, tl!("Tilt Scale"), &mut sd.tilt_scale, 2.0)
+    });
     ui.add_space(6.0);
-    dynamic(ui, "brush-angle-ctl", tl!("Angle Jitter"), &mut sd.angle, 1.0, None, true);
-    dynamic(ui, "brush-round-ctl", tl!("Roundness Jitter"), &mut sd.roundness, 1.0, Some(tl!("Minimum Roundness")), false);
+    dynamic(
+        ui,
+        "brush-angle-ctl",
+        tl!("Angle Jitter"),
+        &mut sd.angle,
+        1.0,
+        None,
+        true,
+    );
+    dynamic(
+        ui,
+        "brush-round-ctl",
+        tl!("Roundness Jitter"),
+        &mut sd.roundness,
+        1.0,
+        Some(tl!("Minimum Roundness")),
+        false,
+    );
     ui.horizontal(|ui| {
         widgets::checkbox(ui, &mut sd.flip_x_jitter, tl!("Flip X Jitter"));
         ui.add_space(8.0);
         widgets::checkbox(ui, &mut sd.flip_y_jitter, tl!("Flip Y Jitter"));
     });
     ui.add_space(2.0);
-    widgets::checkbox(ui, &mut sd.brush_projection, tl!("Brush Projection")).on_hover_text(tl!("Apply the pen's tilt and rotation to the tip shape"));
+    widgets::checkbox(ui, &mut sd.brush_projection, tl!("Brush Projection"))
+        .on_hover_text(tl!("Apply the pen's tilt and rotation to the tip shape"));
 }
 
 fn scattering(ui: &mut egui::Ui, b: &mut BrushSettings) {
@@ -364,7 +490,15 @@ fn scattering(ui: &mut egui::Ui, b: &mut BrushSettings) {
     if num(ui, tl!("Count"), &mut c, 1.0..=16.0, "") {
         sc.count = c as u32;
     }
-    dynamic(ui, "brush-count-ctl", tl!("Count Jitter"), &mut sc.count_jitter, 1.0, None, false);
+    dynamic(
+        ui,
+        "brush-count-ctl",
+        tl!("Count Jitter"),
+        &mut sc.count_jitter,
+        1.0,
+        None,
+        false,
+    );
 }
 
 /// The pattern swatch: the (adjusted) texture as the stroke sees it.
@@ -380,7 +514,16 @@ fn pattern_swatch(ui: &mut egui::Ui, tx: &paint::Texture) {
                 Pattern::Procedural { style, size, seed } => (*style as u32, *size, *seed, 0),
                 // A bitmap tile (a stored one's preview until it is loaded, #1843).
                 p => p.bitmap().map_or((0, 0, 0, 0), |g| {
-                    (g.width, g.height, g.data.len() as u32, g.data.iter().step_by((g.data.len() / 512).max(1)).map(|v| *v as u32).sum::<u32>())
+                    (
+                        g.width,
+                        g.height,
+                        g.data.len() as u32,
+                        g.data
+                            .iter()
+                            .step_by((g.data.len() / 512).max(1))
+                            .map(|v| *v as u32)
+                            .sum::<u32>(),
+                    )
                 }),
             },
             tx.invert,
@@ -394,10 +537,20 @@ fn pattern_swatch(ui: &mut egui::Ui, tx: &paint::Texture) {
     let tex = brush_preview::with_cache(ui.ctx(), |c| {
         c.get("texture-swatch", sig, || {
             let img = match &tx.pattern {
-                Pattern::Procedural { style, size, seed } => paint::procedural::pattern(*style, (*size).clamp(4, 1024), *seed),
+                Pattern::Procedural { style, size, seed } => {
+                    paint::procedural::pattern(*style, (*size).clamp(4, 1024), *seed)
+                }
                 p => match p.bitmap() {
-                    Some(g) if g.is_valid() => paint::tile::PatternImage { width: g.width as usize, height: g.height as usize, data: g.to_f32() },
-                    _ => paint::tile::PatternImage { width: 1, height: 1, data: vec![0.5] },
+                    Some(g) if g.is_valid() => paint::tile::PatternImage {
+                        width: g.width as usize,
+                        height: g.height as usize,
+                        data: g.to_f32(),
+                    },
+                    _ => paint::tile::PatternImage {
+                        width: 1,
+                        height: 1,
+                        data: vec![0.5],
+                    },
                 },
             };
             let px: Vec<u8> = (0..n * n)
@@ -408,11 +561,22 @@ fn pattern_swatch(ui: &mut egui::Ui, tx: &paint::Texture) {
                 })
                 .collect();
             let img = egui::ColorImage::from_rgba_unmultiplied([n as usize, n as usize], &px);
-            ui.ctx().load_texture("texture-swatch", img, egui::TextureOptions::LINEAR)
+            ui.ctx()
+                .load_texture("texture-swatch", img, egui::TextureOptions::LINEAR)
         })
     });
-    ui.painter().image(tex.id(), rect, egui::Rect::from_min_max(egui::Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
-    ui.painter().rect_stroke(rect, 0.0, Stroke::new(1.0, t.field_border), egui::StrokeKind::Inside);
+    ui.painter().image(
+        tex.id(),
+        rect,
+        egui::Rect::from_min_max(egui::Pos2::ZERO, pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
+    ui.painter().rect_stroke(
+        rect,
+        0.0,
+        Stroke::new(1.0, t.field_border),
+        egui::StrokeKind::Inside,
+    );
 }
 
 fn texture(ui: &mut egui::Ui, b: &mut BrushSettings) {
@@ -425,7 +589,8 @@ fn texture(ui: &mut egui::Ui, b: &mut BrushSettings) {
                 Pattern::Procedural { style, .. } => Some(*style),
                 Pattern::Tile(_) | Pattern::Stored(_) => None,
             };
-            let mut opts: Vec<(Option<PatternStyle>, &str)> = PATTERNS.iter().map(|(s, l)| (Some(*s), *l)).collect();
+            let mut opts: Vec<(Option<PatternStyle>, &str)> =
+                PATTERNS.iter().map(|(s, l)| (Some(*s), *l)).collect();
             if style.is_none() {
                 opts.push((None, tl!("Custom")));
             }
@@ -436,7 +601,11 @@ fn texture(ui: &mut egui::Ui, b: &mut BrushSettings) {
                     Pattern::Procedural { size, .. } => *size,
                     Pattern::Tile(_) | Pattern::Stored(_) => 128,
                 };
-                tx.pattern = Pattern::Procedural { style: s, size, seed: 1 };
+                tx.pattern = Pattern::Procedural {
+                    style: s,
+                    size,
+                    seed: 1,
+                };
             }
             ui.add_space(4.0);
             widgets::checkbox(ui, &mut tx.invert, tl!("Invert"));
@@ -455,7 +624,12 @@ fn texture(ui: &mut egui::Ui, b: &mut BrushSettings) {
         tx.brightness = br / 150.0;
     }
     // Photoshop's -50..100 contrast onto the model's -1..1.
-    let mut ct = if tx.contrast < 0.0 { tx.contrast * 50.0 } else { tx.contrast * 100.0 }.round();
+    let mut ct = if tx.contrast < 0.0 {
+        tx.contrast * 50.0
+    } else {
+        tx.contrast * 100.0
+    }
+    .round();
     if num(ui, tl!("Contrast"), &mut ct, -50.0..=100.0, "") {
         tx.contrast = if ct < 0.0 { ct / 50.0 } else { ct / 100.0 };
     }
@@ -511,9 +685,26 @@ fn color_dynamics(ui: &mut egui::Ui, b: &mut BrushSettings) {
     let c = &mut b.color_dynamics;
     widgets::checkbox(ui, &mut c.per_tip, tl!("Apply Per Tip"));
     ui.add_space(6.0);
-    dynamic(ui, "brush-fgbg-ctl", tl!("Foreground/Background Jitter"), &mut c.fg_bg, 1.0, None, false);
+    dynamic(
+        ui,
+        "brush-fgbg-ctl",
+        tl!("Foreground/Background Jitter"),
+        &mut c.fg_bg,
+        1.0,
+        None,
+        false,
+    );
     let mut h = (c.hue_jitter * 100.0).round();
-    if widgets::slider_row(ui, tl!("Hue Jitter"), &mut h, 0.0..=100.0, "%", Some(&widgets::hue_stops())).changed() {
+    if widgets::slider_row(
+        ui,
+        tl!("Hue Jitter"),
+        &mut h,
+        0.0..=100.0,
+        "%",
+        Some(&widgets::hue_stops()),
+    )
+    .changed()
+    {
         c.hue_jitter = (h.round() / 100.0).clamp(0.0, 1.0);
     }
     pct(ui, tl!("Saturation Jitter"), &mut c.saturation_jitter, 1.0);
@@ -523,10 +714,42 @@ fn color_dynamics(ui: &mut egui::Ui, b: &mut BrushSettings) {
 
 fn transfer(ui: &mut egui::Ui, b: &mut BrushSettings) {
     let tr = &mut b.transfer;
-    dynamic(ui, "brush-opacity-ctl", tl!("Opacity Jitter"), &mut tr.opacity, 1.0, Some(tl!("Minimum")), false);
-    dynamic(ui, "brush-flow-ctl", tl!("Flow Jitter"), &mut tr.flow, 1.0, Some(tl!("Minimum")), false);
-    dynamic(ui, "brush-wet-ctl", tl!("Wetness Jitter"), &mut tr.wetness, 1.0, Some(tl!("Minimum")), false);
-    dynamic(ui, "brush-mix-ctl", tl!("Mix Jitter"), &mut tr.mix, 1.0, Some(tl!("Minimum")), false);
+    dynamic(
+        ui,
+        "brush-opacity-ctl",
+        tl!("Opacity Jitter"),
+        &mut tr.opacity,
+        1.0,
+        Some(tl!("Minimum")),
+        false,
+    );
+    dynamic(
+        ui,
+        "brush-flow-ctl",
+        tl!("Flow Jitter"),
+        &mut tr.flow,
+        1.0,
+        Some(tl!("Minimum")),
+        false,
+    );
+    dynamic(
+        ui,
+        "brush-wet-ctl",
+        tl!("Wetness Jitter"),
+        &mut tr.wetness,
+        1.0,
+        Some(tl!("Minimum")),
+        false,
+    );
+    dynamic(
+        ui,
+        "brush-mix-ctl",
+        tl!("Mix Jitter"),
+        &mut tr.mix,
+        1.0,
+        Some(tl!("Minimum")),
+        false,
+    );
 }
 
 /// The Mixer Brush options the brush carries (Photoshop shows them in the Mixer Brush's options
@@ -536,7 +759,11 @@ fn mixer_options(ui: &mut egui::Ui, b: &mut BrushSettings) {
     ui.add_space(4.0);
     widgets::hairline(ui);
     ui.add_space(4.0);
-    ui.label(RichText::new(tl!("Mixer Brush")).font(theme::semibold(11.5)).color(t.text_dim));
+    ui.label(
+        RichText::new(tl!("Mixer Brush"))
+            .font(theme::semibold(11.5))
+            .color(t.text_dim),
+    );
     ui.add_space(2.0);
     let m = &mut b.mixer;
     pct(ui, tl!("Wet"), &mut m.wet, 1.0);
@@ -579,10 +806,20 @@ fn smoothing(ui: &mut egui::Ui, b: &mut BrushSettings) {
 /// Controls for section `i` (see [`crate::brush_panel::SECTIONS`]). `presets` feed the tip grids.
 /// Returns the name of a preset whose tip was picked in the Brush Tip Shape grid, for
 /// `brush.presets.setCurrent`.
-pub fn section_body(ui: &mut egui::Ui, b: &mut BrushSettings, i: usize, presets: &[BrushPreset], current: Option<&str>) -> Option<String> {
+pub fn section_body(
+    ui: &mut egui::Ui,
+    b: &mut BrushSettings,
+    i: usize,
+    presets: &[BrushPreset],
+    current: Option<&str>,
+) -> Option<String> {
     let t = Tokens::get(ui.ctx());
     let note = |ui: &mut egui::Ui, s: &str| {
-        ui.label(RichText::new(s).color(t.text_faint).font(theme::medium(11.5)));
+        ui.label(
+            RichText::new(s)
+                .color(t.text_faint)
+                .font(theme::medium(11.5)),
+        );
     };
     if i == 0 {
         return tip_shape(ui, b, presets, current);
@@ -598,15 +835,27 @@ pub fn section_body(ui: &mut egui::Ui, b: &mut BrushSettings, i: usize, presets:
             mixer_options(ui, b);
         }
         7 => pose(ui, b),
-        8 => note(ui, "Adds extra randomness to the soft edges of the brush tip. No options: turn it on in the list."),
-        9 => note(ui, "Builds up paint along the edges of the stroke for a watercolour look. No options: turn it on in the list."),
+        8 => note(
+            ui,
+            "Adds extra randomness to the soft edges of the brush tip. No options: turn it on in the list.",
+        ),
+        9 => note(
+            ui,
+            "Builds up paint along the edges of the stroke for a watercolour look. No options: turn it on in the list.",
+        ),
         10 => {
-            note(ui, tl!("Airbrush: keeps depositing paint while the pointer rests."));
+            note(
+                ui,
+                tl!("Airbrush: keeps depositing paint while the pointer rests."),
+            );
             ui.add_space(6.0);
             num(ui, tl!("Rate"), &mut b.build_up_rate, 1.0..=200.0, "/s");
         }
         11 => smoothing(ui, b),
-        _ => note(ui, "Keeps the current pattern and scale when you switch to another textured brush preset."),
+        _ => note(
+            ui,
+            "Keeps the current pattern and scale when you switch to another textured brush preset.",
+        ),
     }
     None
 }
@@ -633,17 +882,19 @@ mod tests {
 
     fn section_harness(section: usize, b: BrushSettings) -> Harness<'static, BrushSettings> {
         let mut ready = false;
-        let mut h = Harness::builder().with_size(vec2(340.0, 1100.0)).build_ui_state(
-            move |ui, b: &mut BrushSettings| {
-                if !ready {
-                    crate::PhotocraftApp::setup_context(ui.ctx(), theme::ThemeKind::ProMedium);
-                    ready = true;
-                    return;
-                }
-                section_body(ui, b, section, &[], None);
-            },
-            b,
-        );
+        let mut h = Harness::builder()
+            .with_size(vec2(340.0, 1100.0))
+            .build_ui_state(
+                move |ui, b: &mut BrushSettings| {
+                    if !ready {
+                        crate::PhotocraftApp::setup_context(ui.ctx(), theme::ThemeKind::ProMedium);
+                        ready = true;
+                        return;
+                    }
+                    section_body(ui, b, section, &[], None);
+                },
+                b,
+            );
         h.run_steps(3);
         h
     }
@@ -670,11 +921,22 @@ mod tests {
                 set_controls(h.state_mut(), control);
                 h.run_steps(2);
                 for value in &values {
-                    let field = h.query_all_by_role(Role::SpinButton).find(|n| n.accesskit_node().numeric_value() == Some(*value)).expect("minimum input");
-                    assert_eq!(field.accesskit_node().is_disabled(), control == Control::Off, "section {section}, minimum {value}, {control:?}");
+                    let field = h
+                        .query_all_by_role(Role::SpinButton)
+                        .find(|n| n.accesskit_node().numeric_value() == Some(*value))
+                        .expect("minimum input");
+                    assert_eq!(
+                        field.accesskit_node().is_disabled(),
+                        control == Control::Off,
+                        "section {section}, minimum {value}, {control:?}"
+                    );
                 }
                 assert!(
-                    h.query_all_by_role(Role::SpinButton).any(|n| n.accesskit_node().numeric_value() == Some(0.0) && !n.accesskit_node().is_disabled()),
+                    h.query_all_by_role(Role::SpinButton).any(|n| n
+                        .accesskit_node()
+                        .numeric_value()
+                        == Some(0.0)
+                        && !n.accesskit_node().is_disabled()),
                     "jitter stays editable"
                 );
             }
@@ -686,8 +948,15 @@ mod tests {
             }
             h.run_steps(2);
             for (index, value) in values.iter().enumerate() {
-                let field = h.query_all_by_role(Role::SpinButton).find(|n| n.accesskit_node().numeric_value() == Some(*value)).unwrap();
-                assert_eq!(field.accesskit_node().is_disabled(), index == 0, "each minimum follows its own control");
+                let field = h
+                    .query_all_by_role(Role::SpinButton)
+                    .find(|n| n.accesskit_node().numeric_value() == Some(*value))
+                    .unwrap();
+                assert_eq!(
+                    field.accesskit_node().is_disabled(),
+                    index == 0,
+                    "each minimum follows its own control"
+                );
             }
         }
     }
@@ -695,11 +964,21 @@ mod tests {
     fn drag(h: &mut Harness<'static, BrushSettings>, from: egui::Pos2, to: egui::Pos2) {
         h.event(egui::Event::PointerMoved(from));
         h.run_steps(1);
-        h.event(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: egui::Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: from,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: egui::Modifiers::NONE,
+        });
         h.run_steps(1);
         h.event(egui::Event::PointerMoved(to));
         h.run_steps(1);
-        h.event(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: egui::Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: to,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: egui::Modifiers::NONE,
+        });
         h.run_steps(2);
     }
 
@@ -707,7 +986,10 @@ mod tests {
     fn disabled_minimum_ignores_input_and_keeps_its_value_for_reactivation() {
         let mut h = section_harness(1, minimum_brush());
         let before = h.state().clone();
-        let field = h.query_all_by_role(Role::SpinButton).find(|n| n.accesskit_node().numeric_value() == Some(20.0)).unwrap();
+        let field = h
+            .query_all_by_role(Role::SpinButton)
+            .find(|n| n.accesskit_node().numeric_value() == Some(20.0))
+            .unwrap();
         let center = field.rect().center();
         field.click();
         h.key_press(egui::Key::ArrowUp);
@@ -718,42 +1000,82 @@ mod tests {
         drag(&mut h, track, track);
         let label = h.get_by_label("Minimum Diameter").rect().center();
         drag(&mut h, label, label + vec2(60.0, 0.0));
-        assert_eq!(h.state(), &before, "disabled interactions never rewrite brush settings");
+        assert_eq!(
+            h.state(),
+            &before,
+            "disabled interactions never rewrite brush settings"
+        );
 
         h.state_mut().shape_dynamics.size.control = Control::PenPressure;
         h.run_steps(2);
-        let field = h.query_all_by_role(Role::SpinButton).find(|n| n.accesskit_node().numeric_value() == Some(20.0)).unwrap();
+        let field = h
+            .query_all_by_role(Role::SpinButton)
+            .find(|n| n.accesskit_node().numeric_value() == Some(20.0))
+            .unwrap();
         assert!(!field.accesskit_node().is_disabled());
         field.click();
         h.key_press(egui::Key::ArrowUp);
         h.run_steps(2);
-        assert_eq!(h.state().shape_dynamics.size.minimum, 0.21, "active minimum is editable");
+        assert_eq!(
+            h.state().shape_dynamics.size.minimum,
+            0.21,
+            "active minimum is editable"
+        );
         drag(&mut h, track, track);
         let minimum = h.state().shape_dynamics.size.minimum;
-        assert!(minimum > 0.8, "the active slider accepts the same pointer position: {minimum}");
+        assert!(
+            minimum > 0.8,
+            "the active slider accepts the same pointer position: {minimum}"
+        );
         h.state_mut().shape_dynamics.size.control = Control::Off;
         h.run_steps(2);
-        assert_eq!(h.state().shape_dynamics.size.minimum, minimum, "Off keeps the saved minimum");
+        assert_eq!(
+            h.state().shape_dynamics.size.minimum,
+            minimum,
+            "Off keeps the saved minimum"
+        );
     }
 
     #[test]
     fn ellipse_widget_drags_angle_and_roundness() {
         // Pointing straight up is 90° (counter-clockwise from +x; screen y is down).
-        assert_eq!(ellipse_drag(EllipseGrab::Angle, vec2(0.0, -20.0), 0.0, 1.0), (90.0, 1.0));
-        assert_eq!(ellipse_drag(EllipseGrab::Angle, vec2(-20.0, 0.0), 0.0, 1.0).0.abs(), 180.0);
+        assert_eq!(
+            ellipse_drag(EllipseGrab::Angle, vec2(0.0, -20.0), 0.0, 1.0),
+            (90.0, 1.0)
+        );
+        assert_eq!(
+            ellipse_drag(EllipseGrab::Angle, vec2(-20.0, 0.0), 0.0, 1.0)
+                .0
+                .abs(),
+            180.0
+        );
         // The centre itself doesn't change the angle.
-        assert_eq!(ellipse_drag(EllipseGrab::Angle, vec2(0.2, 0.1), 30.0, 0.5), (30.0, 0.5));
+        assert_eq!(
+            ellipse_drag(EllipseGrab::Angle, vec2(0.2, 0.1), 30.0, 0.5),
+            (30.0, 0.5)
+        );
         // At angle 0 the minor axis is vertical: half the radius up is 50 % roundness.
-        let (_, r) = ellipse_drag(EllipseGrab::Roundness, vec2(0.0, -ELLIPSE_R / 2.0), 0.0, 1.0);
+        let (_, r) = ellipse_drag(
+            EllipseGrab::Roundness,
+            vec2(0.0, -ELLIPSE_R / 2.0),
+            0.0,
+            1.0,
+        );
         assert!((r - 0.5).abs() < 1e-4);
         // Handles sit on the minor axis and are what a press there grabs.
         let [h, _] = roundness_handles(0.0, 0.5);
         assert!((h - vec2(0.0, -ELLIPSE_R / 2.0)).length() < 1e-4);
         assert_eq!(ellipse_grab(h, 0.0, 0.5), EllipseGrab::Roundness);
-        assert_eq!(ellipse_grab(vec2(ELLIPSE_R, 0.0), 0.0, 0.5), EllipseGrab::Angle);
+        assert_eq!(
+            ellipse_grab(vec2(ELLIPSE_R, 0.0), 0.0, 0.5),
+            EllipseGrab::Angle
+        );
         // Rotated 90°: the minor axis is horizontal.
         let [h, _] = roundness_handles(90.0, 1.0);
-        assert!((h.x.abs() - ELLIPSE_R).abs() < 1e-3 && h.y.abs() < 1e-3, "{h:?}");
+        assert!(
+            (h.x.abs() - ELLIPSE_R).abs() < 1e-3 && h.y.abs() < 1e-3,
+            "{h:?}"
+        );
         let (_, r) = ellipse_drag(EllipseGrab::Roundness, vec2(500.0, 0.0), 90.0, 0.2);
         assert_eq!(r, 1.0);
     }

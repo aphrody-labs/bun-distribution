@@ -64,7 +64,7 @@ fn main() {
             Err(e) => {
                 println!("{path} : illisible ({e})");
                 continue;
-            },
+            }
         };
         match cfgbin_parse(&brut) {
             Err(e) => println!("{path} : parse impossible ({e:?})"),
@@ -80,13 +80,16 @@ fn main() {
                     if re == brut { "FIDÈLE" } else { "INFIDÈLE" }
                 );
                 if re != brut {
-                    println!("  premier écart à l'offset {0} (0x{0:X})", premier_ecart(&brut, &re));
+                    println!(
+                        "  premier écart à l'offset {0} (0x{0:X})",
+                        premier_ecart(&brut, &re)
+                    );
                 }
                 if let Some(o) = &out_path {
                     std::fs::write(o, &re).expect("écriture du réencodé");
                     println!("  réencodé écrit dans {o}");
                 }
-            },
+            }
         }
     }
 }
@@ -130,7 +133,10 @@ impl Compte {
 
 /// Premier offset où les deux tampons diffèrent, `min(len)` si l'un est un préfixe de l'autre.
 fn premier_ecart(a: &[u8], b: &[u8]) -> usize {
-    a.iter().zip(b).position(|(x, y)| x != y).unwrap_or(a.len().min(b.len()))
+    a.iter()
+        .zip(b)
+        .position(|(x, y)| x != y)
+        .unwrap_or(a.len().min(b.len()))
 }
 
 /// Réencode par la voie qui convient au conteneur, puis compare aux octets d'origine.
@@ -157,9 +163,14 @@ fn juger(octets: &[u8]) -> Verdict {
     let offset = premier_ecart(octets, &reencode);
     let delta = reencode.len() as isize - octets.len() as isize;
     if delta == 0 {
-        Verdict::MemeTailleContenuDifferent { premier_offset: offset }
+        Verdict::MemeTailleContenuDifferent {
+            premier_offset: offset,
+        }
     } else {
-        Verdict::TailleDifferente { delta, premier_offset: offset }
+        Verdict::TailleDifferente {
+            delta,
+            premier_offset: offset,
+        }
     }
 }
 
@@ -171,19 +182,27 @@ fn famille(chemin: &str) -> String {
         }
         return "gamedata".to_string();
     }
-    chemin.rsplit_once('/').map_or_else(|| "?".to_string(), |(d, _)| d.to_string())
+    chemin
+        .rsplit_once('/')
+        .map_or_else(|| "?".to_string(), |(d, _)| d.to_string())
 }
 
 /// Retient le plus petit fichier divergent — le moins cher à ouvrir dans un éditeur hexa.
 fn noter_divergent(compte: &mut Compte, chemin: &str, taille: usize, delta: isize, offset: usize) {
-    if compte.plus_petit_divergent.as_ref().is_none_or(|(_, t, _, _)| taille < *t) {
+    if compte
+        .plus_petit_divergent
+        .as_ref()
+        .is_none_or(|(_, t, _, _)| taille < *t)
+    {
         compte.plus_petit_divergent = Some((chemin.to_string(), taille, delta, offset));
     }
 }
 
 /// Balaie les `.cfg.bin` du VFS et ventile le verdict par famille.
 fn corpus(motif: Option<&str>) {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let data_dir = Path::new(&dir).join("data");
 
     let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
@@ -223,12 +242,15 @@ fn corpus(motif: Option<&str>) {
                 Verdict::MemeTailleContenuDifferent { premier_offset } => {
                     compte.meme_taille += 1;
                     noter_divergent(compte, chemin, octets.len(), 0, premier_offset);
-                },
-                Verdict::TailleDifferente { delta, premier_offset } => {
+                }
+                Verdict::TailleDifferente {
+                    delta,
+                    premier_offset,
+                } => {
                     compte.taille_differente += 1;
                     compte.delta_total += delta;
                     noter_divergent(compte, chemin, octets.len(), delta, premier_offset);
-                },
+                }
                 Verdict::EchecEncodage => compte.echec_encodage += 1,
                 Verdict::EchecDecodage => compte.echec_decodage += 1,
             }
@@ -253,7 +275,11 @@ fn corpus(motif: Option<&str>) {
     }
 
     let total = global.total();
-    let part = if total == 0 { 0.0 } else { global.identique as f64 * 100.0 / total as f64 };
+    let part = if total == 0 {
+        0.0
+    } else {
+        global.identique as f64 * 100.0 / total as f64
+    };
     println!(
         "\nTOTAL {total} — octet-identiques {} ({part:.3} %), même taille mais différents {}, \
          taille différente {}, encodage refusé {}, décodage refusé {}",
@@ -268,7 +294,11 @@ fn corpus(motif: Option<&str>) {
             "Écart de taille cumulé : {:+} octet(s) sur {} fichier(s) — {}",
             global.delta_total,
             global.taille_differente,
-            if global.delta_total < 0 { "le réencodage ROGNE" } else { "le réencodage GONFLE" }
+            if global.delta_total < 0 {
+                "le réencodage ROGNE"
+            } else {
+                "le réencodage GONFLE"
+            }
         );
     }
     if let Some((chemin, taille, delta, offset)) = &global.plus_petit_divergent {

@@ -204,8 +204,11 @@ fn item_node(idx: usize, item_id: i64) -> Value {
 
 /// Construit un bloc shop nie : `SHOP_INFO_x` suivi de son frère `SHOP_INFO_ITEM_LIST_BEG_x`.
 fn shop_block(shop_idx: usize, shop_id: i64, name_hash: i64, items: &[i64]) -> Vec<Value> {
-    let item_children: Vec<Value> =
-        items.iter().enumerate().map(|(i, v)| item_node(i, *v)).collect();
+    let item_children: Vec<Value> = items
+        .iter()
+        .enumerate()
+        .map(|(i, v)| item_node(i, *v))
+        .collect();
     vec![
         json!({
             "name": format!("SHOP_INFO_{shop_idx}"),
@@ -276,13 +279,21 @@ fn shop2_dedup_set_87_items() {
 
     // 88 noeuds item mais 87 uniques : -1937608713 apparaît deux fois (sémantique Set).
     assert_eq!(SHOP2_ITEMS.len(), 88);
-    assert_eq!(s.item_count(), 87, "doublon -1937608713 fusionné comme un Set JS");
+    assert_eq!(
+        s.item_count(),
+        87,
+        "doublon -1937608713 fusionné comme un Set JS"
+    );
     assert!(s.has_item(HashId::from_signed(-1937608713)));
     // Le premier item reste en tête, le dernier en queue (ordre conservé).
     assert_eq!(s.items[0], HashId::from_signed(-412001153));
     assert_eq!(*s.items.last().unwrap(), HashId::from_signed(750866647));
     // -1937608713 n'apparaît qu'une seule fois.
-    let occurrences = s.items.iter().filter(|&&h| h == HashId::from_signed(-1937608713)).count();
+    let occurrences = s
+        .items
+        .iter()
+        .filter(|&&h| h == HashId::from_signed(-1937608713))
+        .count();
     assert_eq!(occurrences, 1);
 }
 

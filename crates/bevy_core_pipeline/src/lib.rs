@@ -36,8 +36,8 @@ use crate::{
     upscaling::UpscalingPlugin,
 };
 use bevy_app::{App, Plugin};
-use bevy_render::renderer::{RenderGraph, RenderGraphSystems};
 use bevy_render::RenderApp;
+use bevy_render::renderer::{RenderGraph, RenderGraphSystems};
 use bevy_shader::load_shader_library;
 use oit::OrderIndependentTransparencyPlugin;
 

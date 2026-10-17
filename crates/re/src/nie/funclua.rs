@@ -94,7 +94,10 @@ pub fn ingest_funclua(db: &mut Db, bin: i64, exe_path: &std::path::Path) -> Resu
     let mut pairs: Vec<(u32, u64)> = Vec::new();
 
     for name in [".rdata", ".data"] {
-        let Some(sec) = pe.sections.iter().find(|s| s.name().is_ok_and(|n| n.starts_with(name)))
+        let Some(sec) = pe
+            .sections
+            .iter()
+            .find(|s| s.name().is_ok_and(|n| n.starts_with(name)))
         else {
             continue;
         };
@@ -143,7 +146,9 @@ pub fn ingest_funclua(db: &mut Db, bin: i64, exe_path: &std::path::Path) -> Resu
     stats.handlers = handlers.len();
 
     let known: HashSet<u64> = {
-        let mut q = db.conn().prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
+        let mut q = db
+            .conn()
+            .prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
         q.query_map([bin], |r| r.get::<_, i64>(0).map(|v| v as u64))?
             .collect::<std::result::Result<_, _>>()?
     };
@@ -232,7 +237,10 @@ mod tests {
     #[test]
     fn une_entree_bien_formee_est_acceptee() {
         let raw = entry(0x1400_1000, 0x214D_A123, 0);
-        assert_eq!(entry_ok(&raw, 0, 0x1400_0000, 0x1500_0000), Some((0x1400_1000, 0x214D_A123)));
+        assert_eq!(
+            entry_ok(&raw, 0, 0x1400_0000, 0x1500_0000),
+            Some((0x1400_1000, 0x214D_A123))
+        );
     }
 
     #[test]
@@ -266,9 +274,15 @@ mod tests {
     /// sans cet ordre, le nom changerait d'une exécution à l'autre.
     #[test]
     fn le_nom_d_un_handler_partage_est_stable() {
-        let mut pairs = [(0x00FF_0000u32, 0x1400_1000u64), (0x0000_00FFu32, 0x1400_1000u64)];
+        let mut pairs = [
+            (0x00FF_0000u32, 0x1400_1000u64),
+            (0x0000_00FFu32, 0x1400_1000u64),
+        ];
         pairs.sort_unstable();
         assert_eq!(pairs[0].0, 0x0000_00FF);
-        assert_eq!(format!("funcLuaCmd_{:08x}", pairs[0].0), "funcLuaCmd_000000ff");
+        assert_eq!(
+            format!("funcLuaCmd_{:08x}", pairs[0].0),
+            "funcLuaCmd_000000ff"
+        );
     }
 }

@@ -89,8 +89,8 @@ pub mod prelude {
         relationship::RelationshipTarget,
         resource::Resource,
         schedule::{
-            common_conditions::*, ApplyDeferred, IntoScheduleConfigs, IntoSystemSet, Schedule,
-            Schedules, SystemCondition, SystemSet,
+            ApplyDeferred, IntoScheduleConfigs, IntoSystemSet, Schedule, Schedules,
+            SystemCondition, SystemSet, common_conditions::*,
         },
         spawn::{Spawn, SpawnIter, SpawnRelated, SpawnWith, WithOneRelated, WithRelated},
         system::{
@@ -99,7 +99,7 @@ pub mod prelude {
             Res, ResMut, Single, System, SystemIn, SystemInput, SystemParamBuilder,
             SystemParamFunction,
         },
-        template::{template, FromTemplate, Template},
+        template::{FromTemplate, Template, template},
         world::{EntityMut, EntityRef, EntityWorldMut, FromWorld, World},
     };
 
@@ -165,7 +165,7 @@ mod tests {
         prelude::Or,
         query::{Added, Changed, FilteredAccess, QueryFilter, With, Without},
         resource::Resource,
-        world::{error::EntityDespawnError, EntityMut, EntityRef, Mut, World},
+        world::{EntityMut, EntityRef, Mut, World, error::EntityDespawnError},
     };
     use alloc::{string::String, sync::Arc, vec, vec::Vec};
     use bevy_platform::collections::HashSet;
@@ -954,15 +954,19 @@ mod tests {
             1
         );
         assert!(world.query::<&A>().get(&world, a).is_ok());
-        assert!(world
-            .query_filtered::<(), Added<A>>()
-            .get(&world, a)
-            .is_ok());
+        assert!(
+            world
+                .query_filtered::<(), Added<A>>()
+                .get(&world, a)
+                .is_ok()
+        );
         assert!(world.query::<&A>().get(&world, a).is_ok());
-        assert!(world
-            .query_filtered::<(), Added<A>>()
-            .get(&world, a)
-            .is_ok());
+        assert!(
+            world
+                .query_filtered::<(), Added<A>>()
+                .get(&world, a)
+                .is_ok()
+        );
 
         world.clear_trackers();
 
@@ -977,15 +981,19 @@ mod tests {
             0
         );
         assert!(world.query::<&A>().get(&world, a).is_ok());
-        assert!(world
-            .query_filtered::<(), Added<A>>()
-            .get(&world, a)
-            .is_err());
+        assert!(
+            world
+                .query_filtered::<(), Added<A>>()
+                .get(&world, a)
+                .is_err()
+        );
         assert!(world.query::<&A>().get(&world, a).is_ok());
-        assert!(world
-            .query_filtered::<(), Added<A>>()
-            .get(&world, a)
-            .is_err());
+        assert!(
+            world
+                .query_filtered::<(), Added<A>>()
+                .get(&world, a)
+                .is_err()
+        );
     }
 
     #[test]
@@ -1158,7 +1166,11 @@ mod tests {
         // ensure changing an entity's archetypes also moves its changed state
         world.entity_mut(e1).insert(C);
 
-        assert_eq!(get_filtered::<Changed<SparseStored>>(&mut world), [e3, e1].into_iter().collect::<EntityHashSet>(), "changed entities list should not change (although the order will due to archetype moves)");
+        assert_eq!(
+            get_filtered::<Changed<SparseStored>>(&mut world),
+            [e3, e1].into_iter().collect::<EntityHashSet>(),
+            "changed entities list should not change (although the order will due to archetype moves)"
+        );
 
         // spawning a new SparseStored entity should not change existing changed state
         world.entity_mut(e1).insert(SparseStored(0));
@@ -1801,7 +1813,11 @@ mod tests {
 
         assert_eq!(
             component_values,
-            [(Some(&A(0)), &B(1), &C), (Some(&A(0)), &B(2), &C), (None, &B(3), &C)],
+            [
+                (Some(&A(0)), &B(1), &C),
+                (Some(&A(0)), &B(2), &C),
+                (None, &B(3), &C)
+            ],
             "all entities should have had their B component replaced, received C component, and had their A component (or lack thereof) unchanged"
         );
     }

@@ -1,5 +1,5 @@
 //! Provides a way to automatically set the mouse cursor based on hovered entity.
-use crate::{hover::HoverMap, pointer::PointerId, PickingSystems};
+use crate::{PickingSystems, hover::HoverMap, pointer::PointerId};
 use bevy_app::{App, Plugin, PreUpdate};
 use bevy_derive::Deref;
 use bevy_ecs::{
@@ -13,7 +13,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res},
     template::FromTemplate,
 };
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 #[cfg(feature = "custom_cursor")]
 use bevy_window::CustomCursor;
 use bevy_window::{CursorIcon, SystemCursorIcon, Window};

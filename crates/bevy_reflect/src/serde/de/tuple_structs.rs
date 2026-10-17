@@ -1,12 +1,12 @@
 use crate::{
-    serde::{de::tuple_utils::visit_tuple, SerializationData},
-    tuple_struct::{DynamicTupleStruct, TupleStructInfo},
     TypeRegistration, TypeRegistry,
+    serde::{SerializationData, de::tuple_utils::visit_tuple},
+    tuple_struct::{DynamicTupleStruct, TupleStructInfo},
 };
 use core::{fmt, fmt::Formatter};
 use serde::de::{DeserializeSeed, SeqAccess, Visitor};
 
-use super::{registration_utils::try_get_registration, TypedReflectDeserializer};
+use super::{TypedReflectDeserializer, registration_utils::try_get_registration};
 
 use super::ReflectDeserializerProcessor;
 

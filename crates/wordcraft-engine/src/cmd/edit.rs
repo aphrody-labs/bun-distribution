@@ -10,13 +10,16 @@ use crate::{CmdError, CmdResult, CommandSpec, Selection, Session, p};
 /// Undo several steps at once: the Undo button's list (#701). `count` is validated here and
 /// clamped to the undo depth, so hostile numbers never reach the stack.
 fn undo_to(s: &mut Session, v: &Value) -> CmdResult {
-    let n = p::u64(v, "count").ok_or_else(|| CmdError::Params("`count` (whole number, 1 or more) is required".into()))?;
+    let n = p::u64(v, "count")
+        .ok_or_else(|| CmdError::Params("`count` (whole number, 1 or more) is required".into()))?;
     if n == 0 {
         return Err(CmdError::Params("`count` must be 1 or more".into()));
     }
     let n = usize::try_from(n).unwrap_or(usize::MAX).min(s.undo_depth());
     if s.step_lifts_protection(false) {
-        return Err(CmdError::Disabled("edit.undoTo: use Stop Protection to lift the document's protection".into()));
+        return Err(CmdError::Disabled(
+            "edit.undoTo: use Stop Protection to lift the document's protection".into(),
+        ));
     }
     let undone = s.undo_steps(n);
     let mut r = sel_result(s)?;
@@ -28,7 +31,11 @@ fn undo_to(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn has_sel(s: &Session) -> Option<&'static str> {
-    if s.sel.is_collapsed() { Some("nothing is selected") } else { None }
+    if s.sel.is_collapsed() {
+        Some("nothing is selected")
+    } else {
+        None
+    }
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -213,7 +220,10 @@ pub struct ClipItem {
 impl ClipItem {
     /// One line of the item's text for a list: whitespace runs become one space, objects drop out.
     pub fn preview(&self) -> String {
-        let words = self.text.split(|c: char| c.is_whitespace() || c == wordcraft_doc::para::OBJ).filter(|w| !w.is_empty());
+        let words = self
+            .text
+            .split(|c: char| c.is_whitespace() || c == wordcraft_doc::para::OBJ)
+            .filter(|w| !w.is_empty());
         let mut out = String::new();
         let mut n = 0;
         for w in words {
@@ -254,18 +264,39 @@ impl ClipHistory {
 
     fn push(&mut self, f: &Fragment, text: &str) {
         // Text plus per-paragraph overhead; pictures are references into the document.
-        let paras = text.matches('\n').count().saturating_add(f.blocks.len()).saturating_add(f.parts.len()).saturating_add(1);
-        let bytes = text.len().saturating_mul(2).saturating_add(paras.saturating_mul(256));
+        let paras = text
+            .matches('\n')
+            .count()
+            .saturating_add(f.blocks.len())
+            .saturating_add(f.parts.len())
+            .saturating_add(1);
+        let bytes = text
+            .len()
+            .saturating_mul(2)
+            .saturating_add(paras.saturating_mul(256));
         if bytes > CLIP_ITEM_BYTES || f.blocks.is_empty() {
             return;
         }
         // Copying the same thing again doesn't add a second item.
-        if self.items.first().is_some_and(|i| i.text == text && i.fragment == *f) {
+        if self
+            .items
+            .first()
+            .is_some_and(|i| i.text == text && i.fragment == *f)
+        {
             return;
         }
-        self.items.insert(0, ClipItem { fragment: f.clone(), text: text.to_string(), bytes });
+        self.items.insert(
+            0,
+            ClipItem {
+                fragment: f.clone(),
+                text: text.to_string(),
+                bytes,
+            },
+        );
         self.items.truncate(CLIP_MAX_ITEMS);
-        while self.items.len() > 1 && self.items.iter().map(|i| i.bytes).sum::<usize>() > CLIP_TOTAL_BYTES {
+        while self.items.len() > 1
+            && self.items.iter().map(|i| i.bytes).sum::<usize>() > CLIP_TOTAL_BYTES
+        {
             self.items.pop();
         }
     }
@@ -290,15 +321,25 @@ impl ClipHistory {
 }
 
 fn has_clips(s: &Session) -> Option<&'static str> {
-    if s.clip_history.is_empty() { Some("the Clipboard pane is empty") } else { None }
+    if s.clip_history.is_empty() {
+        Some("the Clipboard pane is empty")
+    } else {
+        None
+    }
 }
 
 fn clip_index(s: &Session, v: &Value) -> Result<usize, CmdError> {
-    let i = p::u64(v, "index").ok_or_else(|| CmdError::Params("`index` (number, 0 = newest) is required".into()))?;
+    let i = p::u64(v, "index")
+        .ok_or_else(|| CmdError::Params("`index` (number, 0 = newest) is required".into()))?;
     usize::try_from(i)
         .ok()
         .filter(|i| *i < s.clip_history.len())
-        .ok_or_else(|| CmdError::Params(format!("no clipboard item {i} (there are {})", s.clip_history.len())))
+        .ok_or_else(|| {
+            CmdError::Params(format!(
+                "no clipboard item {i} (there are {})",
+                s.clip_history.len()
+            ))
+        })
 }
 
 /// Paste a collected item through the normal paste path. The clipboard itself stays as it was.
@@ -311,13 +352,24 @@ fn paste_clip(s: &mut Session, f: Fragment) -> CmdResult {
 
 fn paste_clip_item(s: &mut Session, v: &Value) -> CmdResult {
     let i = clip_index(s, v)?;
-    let f = s.clip_history.items.get(i).map(|x| x.fragment.clone()).ok_or_else(|| CmdError::Params("no such clipboard item".into()))?;
+    let f = s
+        .clip_history
+        .items
+        .get(i)
+        .map(|x| x.fragment.clone())
+        .ok_or_else(|| CmdError::Params("no such clipboard item".into()))?;
     paste_clip(s, f)
 }
 
 /// Every collected item, in the order they were copied (one undo step).
 fn paste_all_clips(s: &mut Session, _: &Value) -> CmdResult {
-    let all: Vec<Fragment> = s.clip_history.items.iter().rev().map(|x| x.fragment.clone()).collect();
+    let all: Vec<Fragment> = s
+        .clip_history
+        .items
+        .iter()
+        .rev()
+        .map(|x| x.fragment.clone())
+        .collect();
     let mut r = sel_result(s)?;
     for f in all {
         r = paste_clip(s, f)?;
@@ -328,7 +380,11 @@ fn paste_all_clips(s: &mut Session, _: &Value) -> CmdResult {
 fn paste_text(s: &mut Session, v: &Value) -> CmdResult {
     let text = match p::str(v, "text") {
         Some(t) => t.to_string(),
-        None => s.clipboard.as_ref().map(Fragment::plain_text).unwrap_or_default(),
+        None => s
+            .clipboard
+            .as_ref()
+            .map(Fragment::plain_text)
+            .unwrap_or_default(),
     };
     if text.is_empty() {
         return Err(CmdError::Failed("the clipboard is empty".into()));
@@ -360,7 +416,10 @@ struct Seg {
 /// boundaries and anchors see the neighbouring live text, not the deleted text.
 /// Otherwise Replace would find its own deleted text again.
 pub(crate) fn search(s: &Session, story: StoryRef) -> Result<Vec<(Pos, Pos)>, CmdError> {
-    Ok(search_full(s, story, false)?.into_iter().map(|f| (f.a, f.b)).collect())
+    Ok(search_full(s, story, false)?
+        .into_iter()
+        .map(|f| (f.a, f.b))
+        .collect())
 }
 
 fn find_opts(f: &crate::session::FindState) -> find_pattern::Opts {
@@ -380,7 +439,11 @@ fn find_opts(f: &crate::session::FindState) -> find_pattern::Opts {
 /// [`search`], with the Replace with text of each match when `with_rep` (special codes, `^&`,
 /// wildcard groups). A pattern that can match a paragraph mark (`^p`) reads runs of sibling
 /// paragraphs as one text with a mark between them; otherwise each paragraph is read alone.
-pub(crate) fn search_full(s: &Session, story: StoryRef, with_rep: bool) -> Result<Vec<Found>, CmdError> {
+pub(crate) fn search_full(
+    s: &Session,
+    story: StoryRef,
+    with_rep: bool,
+) -> Result<Vec<Found>, CmdError> {
     use regex_automata::{Input, meta, util::syntax};
     let f = &s.find;
     if f.query.is_empty() {
@@ -398,8 +461,12 @@ pub(crate) fn search_full(s: &Session, story: StoryRef, with_rep: bool) -> Resul
     // Paragraphs read as one text: consecutive siblings when the pattern spans paragraphs.
     let mut chunks: Vec<std::ops::Range<usize>> = Vec::new();
     for i in 0..paths.len() {
-        let joins =
-            c.spans_paras && i > 0 && paths.get(i - 1).zip(paths.get(i)).is_some_and(|(x, y)| x.parent() == y.parent() && x.last() + 1 == y.last());
+        let joins = c.spans_paras
+            && i > 0
+            && paths
+                .get(i - 1)
+                .zip(paths.get(i))
+                .is_some_and(|(x, y)| x.parent() == y.parent() && x.last() + 1 == y.last());
         match chunks.last_mut() {
             Some(r) if joins => r.end = i + 1,
             _ => chunks.push(i..i + 1),
@@ -420,7 +487,9 @@ pub(crate) fn search_full(s: &Session, story: StoryRef, with_rep: bool) -> Resul
             };
             let mut expect = 0;
             for (r, ch) in p.run_ranges() {
-                let Some(t) = p.text.get(r.clone()).filter(|_| ch.del.is_none()) else { continue };
+                let Some(t) = p.text.get(r.clone()).filter(|_| ch.del.is_none()) else {
+                    continue;
+                };
                 if t.is_empty() {
                     continue;
                 }
@@ -428,8 +497,16 @@ pub(crate) fn search_full(s: &Session, story: StoryRef, with_rep: bool) -> Resul
                     cuts.push(hay.len());
                 }
                 match segs.last_mut() {
-                    Some(sg) if !sg.mark && sg.para == i && sg.raw + sg.len == r.start => sg.len += t.len(),
-                    _ => segs.push(Seg { hay: hay.len(), para: i, raw: r.start, len: t.len(), mark: false }),
+                    Some(sg) if !sg.mark && sg.para == i && sg.raw + sg.len == r.start => {
+                        sg.len += t.len()
+                    }
+                    _ => segs.push(Seg {
+                        hay: hay.len(),
+                        para: i,
+                        raw: r.start,
+                        len: t.len(),
+                        mark: false,
+                    }),
                 }
                 hay.push_str(t);
                 expect = r.end;
@@ -438,21 +515,45 @@ pub(crate) fn search_full(s: &Session, story: StoryRef, with_rep: bool) -> Resul
                 if expect != p.text.len() {
                     cuts.push(hay.len());
                 }
-                segs.push(Seg { hay: hay.len(), para: i, raw: p.text.len(), len: 1, mark: true });
-                hay.push(if p.section.is_some() { find_pattern::SECT_MARK } else { find_pattern::PARA_MARK });
+                segs.push(Seg {
+                    hay: hay.len(),
+                    para: i,
+                    raw: p.text.len(),
+                    len: 1,
+                    mark: true,
+                });
+                hay.push(if p.section.is_some() {
+                    find_pattern::SECT_MARK
+                } else {
+                    find_pattern::PARA_MARK
+                });
             }
         }
         let pos_of = |x: usize, end: bool| -> Option<Pos> {
-            let k = segs.partition_point(|sg| if end { sg.hay + sg.len < x } else { sg.hay + sg.len <= x });
+            let k = segs.partition_point(|sg| {
+                if end {
+                    sg.hay + sg.len < x
+                } else {
+                    sg.hay + sg.len <= x
+                }
+            });
             let sg = segs.get(k)?;
             if (end && sg.hay >= x) || (!end && sg.hay > x) {
                 return None;
             }
             if sg.mark && x > sg.hay {
                 let path = paths.get(sg.para)?;
-                return Some(Pos { story, path: path.with_last(path.last() + 1), off: 0 });
+                return Some(Pos {
+                    story,
+                    path: path.with_last(path.last() + 1),
+                    off: 0,
+                });
             }
-            Some(Pos { story, path: paths.get(sg.para)?.clone(), off: sg.raw + (x - sg.hay) })
+            Some(Pos {
+                story,
+                path: paths.get(sg.para)?.clone(),
+                off: sg.raw + (x - sg.hay),
+            })
         };
         cuts.push(hay.len());
         let mut from = 0;
@@ -467,7 +568,9 @@ pub(crate) fn search_full(s: &Session, story: StoryRef, with_rep: bool) -> Resul
                 let Some(m) = caps.get_match() else { break };
                 // Step past an empty match so the search moves on.
                 let next = if m.is_empty() {
-                    hay.get(m.end()..).and_then(|t| t.chars().next()).map_or(m.end() + 1, |c| m.end() + c.len_utf8())
+                    hay.get(m.end()..)
+                        .and_then(|t| t.chars().next())
+                        .map_or(m.end() + 1, |c| m.end() + c.len_utf8())
                 } else {
                     m.end()
                 };
@@ -478,10 +581,21 @@ pub(crate) fn search_full(s: &Session, story: StoryRef, with_rep: bool) -> Resul
                 if m.is_empty() {
                     continue;
                 }
-                let (Some(a), Some(b)) = (pos_of(m.start(), false), pos_of(m.end(), true)) else { continue };
+                let (Some(a), Some(b)) = (pos_of(m.start(), false), pos_of(m.end(), true)) else {
+                    continue;
+                };
                 let rep = pieces.as_ref().map(|pc| {
-                    let group = |n: usize| caps.get_group(n).and_then(|g| hay.get(g.range())).map(str::to_string);
-                    find_pattern::expand(pc, hay.get(m.range()).unwrap_or(""), &group, &s.clipboard_text)
+                    let group = |n: usize| {
+                        caps.get_group(n)
+                            .and_then(|g| hay.get(g.range()))
+                            .map(str::to_string)
+                    };
+                    find_pattern::expand(
+                        pc,
+                        hay.get(m.range()).unwrap_or(""),
+                        &group,
+                        &s.clipboard_text,
+                    )
                 });
                 out.push(Found { a, b, rep });
                 if out.len() >= 100_000 {
@@ -544,10 +658,18 @@ fn find(s: &mut Session, v: &Value) -> CmdResult {
     s.find.results = search(s, story)?;
     // Select the first match after the caret.
     let caret = s.sel.focus.clone();
-    let idx = s.find.results.iter().position(|(a, _)| *a >= caret).unwrap_or(0);
+    let idx = s
+        .find
+        .results
+        .iter()
+        .position(|(a, _)| *a >= caret)
+        .unwrap_or(0);
     s.find.current = idx;
     if let Some((a, b)) = s.find.results.get(idx).cloned() {
-        s.sel = Selection { anchor: a, focus: b };
+        s.sel = Selection {
+            anchor: a,
+            focus: b,
+        };
     }
     Ok(json!({
         "count": s.find.results.len(),
@@ -566,9 +688,16 @@ fn advanced_find(s: &mut Session, v: &Value) -> CmdResult {
         "main" => None,
         "selection" if !s.sel.is_collapsed() => Some(s.sel.ordered()),
         "selection" => return Err(CmdError::Params("`in: selection` needs a selection".into())),
-        other => return Err(CmdError::Params(format!("`in` is main or selection, not `{other}`"))),
+        other => {
+            return Err(CmdError::Params(format!(
+                "`in` is main or selection, not `{other}`"
+            )));
+        }
     };
-    let story = within.as_ref().map(|(a, _)| a.story).unwrap_or(StoryRef::Body);
+    let story = within
+        .as_ref()
+        .map(|(a, _)| a.story)
+        .unwrap_or(StoryRef::Body);
     let mut found = search(s, story)?;
     if let Some((a, b)) = &within {
         found.retain(|(x, y)| x >= a && y <= b);
@@ -578,7 +707,11 @@ fn advanced_find(s: &mut Session, v: &Value) -> CmdResult {
         s.find.highlights = None;
     }
     let n = found.len();
-    let matches: Vec<Value> = found.iter().take(200).map(|(a, b)| json!({"start": pos_json(a), "end": pos_json(b)})).collect();
+    let matches: Vec<Value> = found
+        .iter()
+        .take(200)
+        .map(|(a, b)| json!({"start": pos_json(a), "end": pos_json(b)}))
+        .collect();
     s.find.current = 0;
     s.find.results = found;
     Ok(json!({"count": n, "matches": matches, "highlight": s.find.highlight}))
@@ -591,15 +724,30 @@ fn step(s: &mut Session, dir: i64) -> CmdResult {
     if n == 0 {
         return Err(CmdError::Failed("no matches".into()));
     }
-    let caret = if dir > 0 { s.sel.ordered().1 } else { s.sel.ordered().0 };
-    let idx = if dir > 0 {
-        s.find.results.iter().position(|(a, _)| *a >= caret).unwrap_or(0)
+    let caret = if dir > 0 {
+        s.sel.ordered().1
     } else {
-        s.find.results.iter().rposition(|(_, b)| *b <= caret).unwrap_or(n - 1)
+        s.sel.ordered().0
+    };
+    let idx = if dir > 0 {
+        s.find
+            .results
+            .iter()
+            .position(|(a, _)| *a >= caret)
+            .unwrap_or(0)
+    } else {
+        s.find
+            .results
+            .iter()
+            .rposition(|(_, b)| *b <= caret)
+            .unwrap_or(n - 1)
     };
     s.find.current = idx;
     if let Some((a, b)) = s.find.results.get(idx).cloned() {
-        s.sel = Selection { anchor: a, focus: b };
+        s.sel = Selection {
+            anchor: a,
+            focus: b,
+        };
     }
     Ok(json!({"index": idx, "count": n}))
 }
@@ -628,11 +776,18 @@ fn replace_all(s: &mut Session, v: &Value) -> CmdResult {
         let with = rep.unwrap_or_default();
         if s.doc.settings.track_changes {
             // Same path as a single replace, so the change is a reviewable revision.
-            s.sel = Selection { anchor: a, focus: b };
+            s.sel = Selection {
+                anchor: a,
+                focus: b,
+            };
             super::paste_text(s, &with)?;
             continue;
         }
-        let props = s.doc.para_at(&a).map(|p| p.props_of_char(a.off).clone()).unwrap_or_default();
+        let props = s
+            .doc
+            .para_at(&a)
+            .map(|p| p.props_of_char(a.off).clone())
+            .unwrap_or_default();
         let mut at = s.doc.delete_range(&a, &b)?;
         for (k, part) in with.split(['\r', '\u{2029}']).enumerate() {
             if k > 0 {
@@ -651,7 +806,10 @@ fn goto(s: &mut Session, v: &Value) -> CmdResult {
     // Relative pages, Go To's "+2" / "-1": from the page the caret is on.
     let by = v.get("pageBy").and_then(Value::as_i64);
     let rel = by.map(|by| {
-        let here = s.layout().caret_on(&s.sel.focus, s.page_hint).map_or(0, |c| c.page) as i64;
+        let here = s
+            .layout()
+            .caret_on(&s.sel.focus, s.page_hint)
+            .map_or(0, |c| c.page) as i64;
         (here + 1).saturating_add(by).max(1) as u64
     });
     if let Some(pg) = rel.or_else(|| p::u64(v, "page")) {
@@ -659,9 +817,17 @@ fn goto(s: &mut Session, v: &Value) -> CmdResult {
         let idx = (pg.max(1) as usize - 1).min(l.pages.len().saturating_sub(1));
         let target = l.pages.get(idx).and_then(|page| {
             page.items.iter().find_map(|it| match it {
-                wordcraft_layout::Placed::Lines { story, path, para, l0, .. } if *story == StoryRef::Body => {
-                    para.lines.get(*l0).map(|ln| Pos { story: *story, path: path.clone(), off: ln.start })
-                }
+                wordcraft_layout::Placed::Lines {
+                    story,
+                    path,
+                    para,
+                    l0,
+                    ..
+                } if *story == StoryRef::Body => para.lines.get(*l0).map(|ln| Pos {
+                    story: *story,
+                    path: path.clone(),
+                    off: ln.start,
+                }),
                 _ => None,
             })
         });
@@ -673,14 +839,23 @@ fn goto(s: &mut Session, v: &Value) -> CmdResult {
         return sel_result(s);
     }
     if let Some(name) = p::str(v, "bookmark") {
-        let bm = s.doc.bookmarks().into_iter().find(|(n, _)| n == name).ok_or_else(|| CmdError::Failed(format!("no bookmark `{name}`")))?;
+        let bm = s
+            .doc
+            .bookmarks()
+            .into_iter()
+            .find(|(n, _)| n == name)
+            .ok_or_else(|| CmdError::Failed(format!("no bookmark `{name}`")))?;
         s.sel = Selection::caret(bm.1);
         return sel_result(s);
     }
     if let Some(n) = p::u64(v, "paragraph") {
         let paths = s.doc.para_paths(StoryRef::Body);
         if let Some(path) = paths.get((n.max(1) - 1) as usize) {
-            s.sel = Selection::caret(Pos { story: StoryRef::Body, path: path.clone(), off: 0 });
+            s.sel = Selection::caret(Pos {
+                story: StoryRef::Body,
+                path: path.clone(),
+                off: 0,
+            });
         }
         return sel_result(s);
     }
@@ -690,8 +865,16 @@ fn goto(s: &mut Session, v: &Value) -> CmdResult {
 
 fn painter_pick(s: &mut Session) {
     let f = s.sel.ordered().0;
-    let chr = s.doc.para_at(&f).map(|p| p.props_of_char(f.off).clone()).unwrap_or_default();
-    let para = s.doc.para_at(&f).map(|p| p.props.clone()).unwrap_or_default();
+    let chr = s
+        .doc
+        .para_at(&f)
+        .map(|p| p.props_of_char(f.off).clone())
+        .unwrap_or_default();
+    let para = s
+        .doc
+        .para_at(&f)
+        .map(|p| p.props.clone())
+        .unwrap_or_default();
     s.painter = Some((chr, para, false));
 }
 
@@ -709,14 +892,26 @@ fn painter(s: &mut Session, v: &Value) -> CmdResult {
 
 /// Apply the format painter's formatting to the selection.
 fn paste_format(s: &mut Session, _: &Value) -> CmdResult {
-    let Some((chr, para, sticky)) = s.painter.clone() else { return Err(CmdError::Failed("no formatting copied".into())) };
+    let Some((chr, para, sticky)) = s.painter.clone() else {
+        return Err(CmdError::Failed("no formatting copied".into()));
+    };
     let (a, b) = s.sel.ordered();
     if a == b {
         // No selection: apply paragraph formatting (and word formatting like Word).
         let f = s.sel.focus.clone();
         if let Some(pp) = s.doc.para_at(&f) {
             let (x, y) = pp.word_at(f.off);
-            s.doc.format_range(&Pos { off: x, ..f.clone() }, &Pos { off: y, ..f.clone() }, &|c| *c = chr.cleared().overlaid(&chr))?;
+            s.doc.format_range(
+                &Pos {
+                    off: x,
+                    ..f.clone()
+                },
+                &Pos {
+                    off: y,
+                    ..f.clone()
+                },
+                &|c| *c = chr.cleared().overlaid(&chr),
+            )?;
         }
         s.doc.format_paragraphs(&a, &b, &|p| *p = para.clone())?;
     } else {

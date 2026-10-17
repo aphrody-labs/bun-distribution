@@ -49,7 +49,9 @@ impl WebOsFs {
     /// Throws on a truncated, corrupt or oversized image.
     #[wasm_bindgen(constructor)]
     pub fn new(image: &[u8]) -> Result<WebOsFs, String> {
-        Ok(Self { fs: SharedOpfsVfs::from_image(image).map_err(err)? })
+        Ok(Self {
+            fs: SharedOpfsVfs::from_image(image).map_err(err)?,
+        })
     }
 
     /// `[{"name","kind":"file"|"dir","size"}]` sorted by name.
@@ -216,7 +218,10 @@ pub(crate) fn apply_patch_json(
     cwd: &[u8],
 ) -> Result<String, String> {
     let args = parse_patch(patch).map_err(|e| e.to_string())?;
-    let adapter = PatchFs { fs: RefCell::new(fs.clone()), cwd };
+    let adapter = PatchFs {
+        fs: RefCell::new(fs.clone()),
+        cwd,
+    };
     let summary = apply_patch(&args, &adapter).map_err(|e| e.to_string())?;
     let names = |v: &[PathBuf]| -> Vec<String> {
         v.iter().map(|p| p.to_string_lossy().into_owned()).collect()
@@ -330,7 +335,11 @@ fn to_io(e: VfsError) -> io::Error {
 
 impl PatchFileSystem for PatchFs<'_> {
     fn read(&self, path: &Path) -> io::Result<String> {
-        let bytes = self.fs.borrow_mut().read(&self.resolve(path)?).map_err(to_io)?;
+        let bytes = self
+            .fs
+            .borrow_mut()
+            .read(&self.resolve(path)?)
+            .map_err(to_io)?;
         String::from_utf8(bytes).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     }
 
@@ -341,11 +350,15 @@ impl PatchFileSystem for PatchFs<'_> {
     }
 
     fn remove(&self, path: &Path) -> io::Result<()> {
-        self.fs.borrow_mut().remove(&self.resolve(path)?).map_err(to_io)
+        self.fs
+            .borrow_mut()
+            .remove(&self.resolve(path)?)
+            .map_err(to_io)
     }
 
     fn exists(&self, path: &Path) -> bool {
-        self.resolve(path).is_ok_and(|p| self.fs.borrow_mut().exists(&p))
+        self.resolve(path)
+            .is_ok_and(|p| self.fs.borrow_mut().exists(&p))
     }
 }
 
@@ -381,8 +394,13 @@ mod tests {
     #[test]
     fn strings_finds_text() {
         let mut fs = WebOsFs::new(&[]).expect("empty image");
-        fs.write("/bin/blob", b"\0\0\0hello-world\0\x01").expect("write");
-        assert!(fs.strings("/bin/blob", 4, 10).expect("strings").contains("hello-world"));
+        fs.write("/bin/blob", b"\0\0\0hello-world\0\x01")
+            .expect("write");
+        assert!(
+            fs.strings("/bin/blob", 4, 10)
+                .expect("strings")
+                .contains("hello-world")
+        );
     }
 }
 
@@ -395,7 +413,10 @@ mod shell_tests {
         let mut fs = WebOsFs::new(&[]).expect("empty image");
         let mut shell = fs.shell(80, 24).expect("shell");
         let _ = shell.input(b"echo from-shell > made.txt\r");
-        assert_eq!(fs.read("/home/user/made.txt").expect("read"), b"from-shell\n");
+        assert_eq!(
+            fs.read("/home/user/made.txt").expect("read"),
+            b"from-shell\n"
+        );
         let reply = fs.rpc(
             r#"{"Query":{"method":"query:files.directory_listing","library_id":null,"payload":{"path":{"Physical":{"device_slug":"webos","path":"/home/user"}},"sort_by":"name","limit":null,"include_hidden":null,"folders_first":null}}}"#,
             "2026-10-10T00:00:00Z",
@@ -413,7 +434,8 @@ mod command_tests {
     #[test]
     fn terminal_reaches_triage_search_and_patch() {
         let mut fs = WebOsFs::new(&[]).expect("empty image");
-        fs.write("/home/user/notes.md", b"# Notes\n\nthe walrus sings\n").expect("write");
+        fs.write("/home/user/notes.md", b"# Notes\n\nthe walrus sings\n")
+            .expect("write");
         let mut shell = fs.shell(100, 40).expect("shell");
         let out = String::from_utf8(shell.input(b"search walrus\r")).expect("utf8");
         assert!(out.contains("/home/user/notes.md:"), "{out}");
@@ -428,7 +450,11 @@ mod command_tests {
     #[test]
     fn terminal_and_module_detect_languages() {
         let mut fs = WebOsFs::new(&[]).expect("empty image");
-        fs.write("/home/user/fr.txt", "bonjour et merci pour le café\n".as_bytes()).expect("write");
+        fs.write(
+            "/home/user/fr.txt",
+            "bonjour et merci pour le café\n".as_bytes(),
+        )
+        .expect("write");
         let mut shell = fs.shell(100, 40).expect("shell");
         let out = String::from_utf8(shell.input(b"detect-lang fr.txt\r")).expect("utf8");
         assert!(out.contains(r#""language":"fr""#), "{out}");

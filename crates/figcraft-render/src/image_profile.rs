@@ -8,7 +8,10 @@ use std::io::Cursor;
 
 use figcraft_color::ColorProfile;
 use image::{DynamicImage, ImageDecoder, ImageFormat, RgbaImage};
-use moxcms::{Chromaticity, ColorPrimaries, DataColorSpace, Layout, ParsingOptions, ProfileText, ToneReprCurve, TransformOptions, XyY};
+use moxcms::{
+    Chromaticity, ColorPrimaries, DataColorSpace, Layout, ParsingOptions, ProfileText,
+    ToneReprCurve, TransformOptions, XyY,
+};
 
 /// The most bytes an embedded profile may have; bigger ones are ignored.
 pub const MAX_ICC_BYTES: usize = 4 << 20;
@@ -27,7 +30,10 @@ pub struct Source {
 
 impl Source {
     fn srgb() -> Source {
-        Source { name: Some("sRGB".into()), profile: None }
+        Source {
+            name: Some("sRGB".into()),
+            profile: None,
+        }
     }
 
     /// The colour space of encoded image `bytes` (reads the headers only).
@@ -45,7 +51,10 @@ impl Source {
     /// read them if such files turn up.
     pub(crate) fn read(bytes: &[u8], dec: &mut impl ImageDecoder) -> Source {
         let format = image::guess_format(bytes).ok();
-        if !matches!(format, Some(ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::WebP | ImageFormat::Tiff)) {
+        if !matches!(
+            format,
+            Some(ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::WebP | ImageFormat::Tiff)
+        ) {
             return Source::default();
         }
         match dec.icc_profile() {
@@ -62,9 +71,21 @@ impl Source {
         if grey && img.color().has_color() {
             return None;
         }
-        let (layout, pixels) = if grey { (Layout::GrayAlpha, img.to_luma_alpha8().into_raw()) } else { (Layout::Rgba, img.to_rgba8().into_raw()) };
+        let (layout, pixels) = if grey {
+            (Layout::GrayAlpha, img.to_luma_alpha8().into_raw())
+        } else {
+            (Layout::Rgba, img.to_rgba8().into_raw())
+        };
         let mut out = RgbaImage::new(img.width(), img.height());
-        src.create_transform_8bit(layout, &working(target), Layout::Rgba, TransformOptions::default()).ok()?.transform(&pixels, &mut out).ok()?;
+        src.create_transform_8bit(
+            layout,
+            &working(target),
+            Layout::Rgba,
+            TransformOptions::default(),
+        )
+        .ok()?
+        .transform(&pixels, &mut out)
+        .ok()?;
         Some(out)
     }
 }
@@ -82,7 +103,10 @@ fn from_icc(icc: &[u8]) -> Source {
     if icc.len() > MAX_ICC_BYTES {
         return Source::default();
     }
-    let options = ParsingOptions { max_profile_size: MAX_ICC_BYTES + 1, ..Default::default() };
+    let options = ParsingOptions {
+        max_profile_size: MAX_ICC_BYTES + 1,
+        ..Default::default()
+    };
     match moxcms::ColorProfile::new_from_slice_with_options(icc, options) {
         Ok(p) => managed(name(&p), p),
         Err(_) => Source::default(),
@@ -97,23 +121,52 @@ fn managed(name: String, p: moxcms::ColorProfile) -> Source {
         DataColorSpace::Gray => Layout::GrayAlpha,
         _ => return Source::default(),
     };
-    let finite = p.rgb_to_xyz_matrix().v.iter().flatten().all(|v| v.is_finite());
-    if !finite || p.create_transform_8bit(layout, &working(ColorProfile::Srgb), Layout::Rgba, TransformOptions::default()).is_err() {
+    let finite = p
+        .rgb_to_xyz_matrix()
+        .v
+        .iter()
+        .flatten()
+        .all(|v| v.is_finite());
+    if !finite
+        || p.create_transform_8bit(
+            layout,
+            &working(ColorProfile::Srgb),
+            Layout::Rgba,
+            TransformOptions::default(),
+        )
+        .is_err()
+    {
         return Source::default();
     }
-    Source { name: Some(name), profile: Some(p) }
+    Source {
+        name: Some(name),
+        profile: Some(p),
+    }
 }
 
 /// A profile's description, cleaned up for display.
 fn name(p: &moxcms::ColorProfile) -> String {
     let text = match &p.description {
         Some(ProfileText::PlainString(s)) => s.as_str(),
-        Some(ProfileText::Localizable(l)) => l.iter().find(|s| s.language == "en").or(l.first()).map_or("", |s| s.value.as_str()),
-        Some(ProfileText::Description(d)) if d.ascii_string.trim_matches(char::from(0)).is_empty() => d.unicode_string.as_str(),
+        Some(ProfileText::Localizable(l)) => l
+            .iter()
+            .find(|s| s.language == "en")
+            .or(l.first())
+            .map_or("", |s| s.value.as_str()),
+        Some(ProfileText::Description(d))
+            if d.ascii_string.trim_matches(char::from(0)).is_empty() =>
+        {
+            d.unicode_string.as_str()
+        }
         Some(ProfileText::Description(d)) => d.ascii_string.as_str(),
         None => "",
     };
-    text.chars().filter(|c| !c.is_control()).take(MAX_NAME_CHARS).collect::<String>().trim().to_string()
+    text.chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_NAME_CHARS)
+        .collect::<String>()
+        .trim()
+        .to_string()
 }
 
 /// sRGB's white point and primaries (CIE 1931 xy), as a PNG `cHRM` chunk lists them.
@@ -121,27 +174,46 @@ const SRGB_CHRM: [(f32, f32); 4] = [(0.3127, 0.3290), (0.64, 0.33), (0.30, 0.60)
 
 /// A PNG's `sRGB` chunk, or its `gAMA` chunk with `cHRM` primaries (sRGB's when missing or invalid).
 fn png_chunks(bytes: &[u8]) -> Source {
-    let Ok(reader) = png::Decoder::new(Cursor::new(bytes)).read_info() else { return Source::default() };
+    let Ok(reader) = png::Decoder::new(Cursor::new(bytes)).read_info() else {
+        return Source::default();
+    };
     let info = reader.info();
     if info.srgb.is_some() {
         return Source::srgb();
     }
-    let Some(gamma) = info.gama_chunk.map(|g| g.into_value()).filter(|g| g.is_finite() && (0.1..=10.0).contains(g)) else {
+    let Some(gamma) = info
+        .gama_chunk
+        .map(|g| g.into_value())
+        .filter(|g| g.is_finite() && (0.1..=10.0).contains(g))
+    else {
         return Source::default();
     };
-    let xy = |(x, y): (png::ScaledFloat, png::ScaledFloat)| Chromaticity::new(x.into_value(), y.into_value());
+    let xy = |(x, y): (png::ScaledFloat, png::ScaledFloat)| {
+        Chromaticity::new(x.into_value(), y.into_value())
+    };
     let chrm = info
         .chrm_chunk
         .map(|c| [xy(c.white), xy(c.red), xy(c.green), xy(c.blue)])
-        .filter(|cs| cs.iter().all(|c| c.x.is_finite() && c.y.is_finite() && c.x >= 0.0 && c.y > 0.001 && c.x + c.y <= 1.0));
-    let near = |cs: &[Chromaticity; 4]| cs.iter().zip(SRGB_CHRM).all(|(c, (x, y))| (c.x - x).abs() < 0.01 && (c.y - y).abs() < 0.01);
+        .filter(|cs| {
+            cs.iter().all(|c| {
+                c.x.is_finite() && c.y.is_finite() && c.x >= 0.0 && c.y > 0.001 && c.x + c.y <= 1.0
+            })
+        });
+    let near = |cs: &[Chromaticity; 4]| {
+        cs.iter()
+            .zip(SRGB_CHRM)
+            .all(|(c, (x, y))| (c.x - x).abs() < 0.01 && (c.y - y).abs() < 0.01)
+    };
     // gAMA 1/2.2 is what PNG writers put next to (or instead of) an `sRGB` chunk: it means sRGB.
     if chrm.as_ref().is_none_or(near) && (gamma * 2.2 - 1.0).abs() < 0.01 {
         return Source::srgb();
     }
     let mut p = moxcms::ColorProfile::new_srgb();
     if let Some([w, red, green, blue]) = chrm {
-        p.update_rgb_colorimetry(XyY::new(f64::from(w.x), f64::from(w.y), 1.0), ColorPrimaries { red, green, blue });
+        p.update_rgb_colorimetry(
+            XyY::new(f64::from(w.x), f64::from(w.y), 1.0),
+            ColorPrimaries { red, green, blue },
+        );
     }
     // Without this moxcms may take the sRGB curve that sRGB's CICP code points name.
     p.cicp = None;

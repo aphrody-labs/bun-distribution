@@ -33,7 +33,12 @@ fn package_aphrody_v2_est_charge_et_reconstruit_pixel_exact() {
         "1a458332b408f168cfedf43bffe1c79418168d86a534663e96a8fdcfb28f6067"
     );
 
-    for (degrees, label) in [(0.0, "up"), (90.0, "right"), (180.0, "down"), (270.0, "left")] {
+    for (degrees, label) in [
+        (0.0, "up"),
+        (90.0, "right"),
+        (180.0, "down"),
+        (270.0, "left"),
+    ] {
         let frame = pet.direction(degrees).expect("direction cardinale");
         assert_eq!(frame.direction.as_deref(), Some(label));
     }
@@ -54,6 +59,9 @@ fn package_aphrody_v2_est_charge_et_reconstruit_pixel_exact() {
             }
         }
     }
-    assert_eq!(rebuilt, pet.rgba, "les 74 cellules reconstruisent l'atlas RGBA");
+    assert_eq!(
+        rebuilt, pet.rgba,
+        "les 74 cellules reconstruisent l'atlas RGBA"
+    );
     assert_eq!(sha256_hex(&rebuilt), pet.manifest.atlas.rgba_sha256);
 }

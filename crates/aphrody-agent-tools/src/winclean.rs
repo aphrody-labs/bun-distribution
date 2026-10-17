@@ -215,9 +215,15 @@ impl ToolExecutor for WincleanGatewayTool {
     }
 
     async fn handle(&self, arguments: Value) -> Result<ToolOutput, ToolError> {
-        let tool = arguments.get("tool").and_then(Value::as_str).filter(|t| !t.is_empty());
+        let tool = arguments
+            .get("tool")
+            .and_then(Value::as_str)
+            .filter(|t| !t.is_empty());
         let Some(tool) = tool else {
-            let filter = arguments.get("filter").and_then(Value::as_str).unwrap_or_default();
+            let filter = arguments
+                .get("filter")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             return Ok(ToolOutput::ok(render_catalog(filter)));
         };
         if !aphrody_winclean::TOOL_NAMES.contains(&tool) {
@@ -236,7 +242,9 @@ impl ToolExecutor for WincleanGatewayTool {
         arguments
             .get("tool")
             .and_then(Value::as_str)
-            .map_or(ToolSafety::Safe, |t| classify(t, aphrody_guard::guardrails_enabled()))
+            .map_or(ToolSafety::Safe, |t| {
+                classify(t, aphrody_guard::guardrails_enabled())
+            })
     }
 }
 
@@ -251,8 +259,11 @@ pub fn winclean_tools() -> Vec<Arc<dyn ToolExecutor>> {
 /// tools, and the rest of the catalog deferred.
 #[must_use]
 pub fn winclean_gaming_tools() -> Vec<Arc<dyn ToolExecutor>> {
-    let direct: Vec<&str> =
-        WINCLEAN_DIRECT_TOOLS.iter().chain(WINCLEAN_GAMING_TOOLS).copied().collect();
+    let direct: Vec<&str> = WINCLEAN_DIRECT_TOOLS
+        .iter()
+        .chain(WINCLEAN_GAMING_TOOLS)
+        .copied()
+        .collect();
     profile_tools(&direct)
 }
 
@@ -276,14 +287,23 @@ fn render_catalog(filter: &str) -> String {
     }
     let mut out = String::new();
     for info in catalog.iter().filter(|t| t.name.contains(filter)) {
-        let summary =
-            info.description.as_deref().unwrap_or_default().split(". ").next().unwrap_or_default();
+        let summary = info
+            .description
+            .as_deref()
+            .unwrap_or_default()
+            .split(". ")
+            .next()
+            .unwrap_or_default();
         out.push_str(&info.name);
         out.push_str(" — ");
         out.push_str(summary);
         out.push('\n');
     }
-    if out.is_empty() { format!("winclean: no tool matches `{filter}`") } else { out }
+    if out.is_empty() {
+        format!("winclean: no tool matches `{filter}`")
+    } else {
+        out
+    }
 }
 
 async fn invoke(tool: &str, arguments: Value) -> Result<ToolOutput, ToolError> {
@@ -294,13 +314,20 @@ async fn invoke(tool: &str, arguments: Value) -> Result<ToolOutput, ToolError> {
                 "{tool}: aphrody-winclean backend unavailable ({error}); \
                  update ../aphrody-os and rebuild aphrody"
             )));
-        },
+        }
     };
-    let args = if arguments.is_null() { Value::Object(Default::default()) } else { arguments };
-    let result = wc.call_async(tool, &args).await.map_err(|error| ToolError::Execution {
-        tool: tool.to_owned(),
-        message: error.to_string(),
-    })?;
+    let args = if arguments.is_null() {
+        Value::Object(Default::default())
+    } else {
+        arguments
+    };
+    let result = wc
+        .call_async(tool, &args)
+        .await
+        .map_err(|error| ToolError::Execution {
+            tool: tool.to_owned(),
+            message: error.to_string(),
+        })?;
     Ok(render_result(tool, &result))
 }
 
@@ -336,8 +363,12 @@ fn render_result(tool: &str, result: &ToolResult) -> ToolOutput {
                 path.display()
             ),
             Err(error) => {
-                format!("\n[{} {} bytes not saved: {error}]", image.mime_type, image.bytes.len())
-            },
+                format!(
+                    "\n[{} {} bytes not saved: {error}]",
+                    image.mime_type,
+                    image.bytes.len()
+                )
+            }
         });
     }
     if text.len() > MAX_OUTPUT_BYTES {
@@ -348,7 +379,11 @@ fn render_result(tool: &str, result: &ToolResult) -> ToolOutput {
         text.truncate(cut);
         text.push_str("\n[output truncated]");
     }
-    let output = if result.is_error { ToolOutput::error(text) } else { ToolOutput::ok(text) };
+    let output = if result.is_error {
+        ToolOutput::error(text)
+    } else {
+        ToolOutput::ok(text)
+    };
     output.with_images(inline)
 }
 
@@ -364,7 +399,9 @@ mod tests {
         let encoded = base64::engine::general_purpose::STANDARD.encode(png);
         let result = ToolResult {
             content: vec![
-                aphrody_winclean::Content::Text { text: "captured".to_owned() },
+                aphrody_winclean::Content::Text {
+                    text: "captured".to_owned(),
+                },
                 aphrody_winclean::Content::Image {
                     data: encoded.clone(),
                     mime_type: "image/png".to_owned(),
@@ -377,7 +414,11 @@ mod tests {
         let output = render_result("computer_capture_screen", &result);
         assert!(!output.is_error);
         assert_eq!(output.images, vec![ToolImage::new("image/png", encoded)]);
-        assert!(output.content.starts_with("captured\n[image/png 12 bytes saved to "));
+        assert!(
+            output
+                .content
+                .starts_with("captured\n[image/png 12 bytes saved to ")
+        );
     }
 
     #[test]
@@ -407,10 +448,16 @@ mod tests {
             .collect();
         assert_eq!(direct.len(), WINCLEAN_DIRECT_TOOLS.len() + 1);
         for name in WINCLEAN_DIRECT_TOOLS {
-            assert!(aphrody_winclean::TOOL_NAMES.contains(name), "unknown direct tool {name}");
+            assert!(
+                aphrody_winclean::TOOL_NAMES.contains(name),
+                "unknown direct tool {name}"
+            );
         }
         for name in MUTATING_TOOLS {
-            assert!(aphrody_winclean::TOOL_NAMES.contains(name), "unknown mutating tool {name}");
+            assert!(
+                aphrody_winclean::TOOL_NAMES.contains(name),
+                "unknown mutating tool {name}"
+            );
         }
     }
 
@@ -421,10 +468,18 @@ mod tests {
             assert_eq!(schema["type"], "object", "{}", tool.definition().name);
         }
         let click = WincleanTool::new(
-            aphrody_winclean::catalog().iter().find(|t| t.name == "computer_click").unwrap(),
+            aphrody_winclean::catalog()
+                .iter()
+                .find(|t| t.name == "computer_click")
+                .unwrap(),
             ToolExposure::Direct,
         );
-        let required = click.definition().input_schema.required.clone().unwrap_or_default();
+        let required = click
+            .definition()
+            .input_schema
+            .required
+            .clone()
+            .unwrap_or_default();
         assert!(required.contains(&"x".to_owned()));
     }
 
@@ -438,12 +493,20 @@ mod tests {
     #[tokio::test]
     async fn gateway_lists_and_describes() {
         let gateway = WincleanGatewayTool::new();
-        let list = gateway.handle(serde_json::json!({ "filter": "computer_" })).await.unwrap();
+        let list = gateway
+            .handle(serde_json::json!({ "filter": "computer_" }))
+            .await
+            .unwrap();
         assert!(list.content.contains("computer_observe"));
-        let exact =
-            gateway.handle(serde_json::json!({ "filter": "computer_click" })).await.unwrap();
+        let exact = gateway
+            .handle(serde_json::json!({ "filter": "computer_click" }))
+            .await
+            .unwrap();
         assert!(exact.content.contains("inputSchema"));
-        let unknown = gateway.handle(serde_json::json!({ "tool": "nope" })).await.unwrap();
+        let unknown = gateway
+            .handle(serde_json::json!({ "tool": "nope" }))
+            .await
+            .unwrap();
         assert!(unknown.is_error);
     }
 

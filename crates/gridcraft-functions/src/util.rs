@@ -24,7 +24,9 @@ pub(crate) const A: &[bool] = &[false];
 pub(crate) fn finish(r: R<Value>) -> Value {
     match r {
         Ok(Value::Number(n)) => Value::number(n),
-        Ok(Value::Text(t)) if t.len() > MAX_TEXT && t.chars().count() > MAX_TEXT => Value::Error(CellError::Value),
+        Ok(Value::Text(t)) if t.len() > MAX_TEXT && t.chars().count() > MAX_TEXT => {
+            Value::Error(CellError::Value)
+        }
         Ok(v) => v,
         Err(e) => Value::Error(e),
     }
@@ -32,7 +34,11 @@ pub(crate) fn finish(r: R<Value>) -> Value {
 
 /// A finite number or `#NUM!`.
 pub(crate) fn num_val(n: f64) -> R<Value> {
-    if n.is_finite() { Ok(Value::Number(if n == 0.0 { 0.0 } else { n })) } else { Err(CellError::Num) }
+    if n.is_finite() {
+        Ok(Value::Number(if n == 0.0 { 0.0 } else { n }))
+    } else {
+        Err(CellError::Num)
+    }
 }
 
 pub(crate) fn text_val(s: impl Into<Arc<str>>) -> R<Value> {
@@ -119,12 +125,20 @@ pub(crate) fn array_val(rows: usize, cols: usize, data: Vec<Value>) -> R<Value> 
     if rows.checked_mul(cols).is_none_or(|n| n > MAX_CELLS) {
         return Err(CellError::Num);
     }
-    Array::new(rows, cols, data).map(Value::from).ok_or(CellError::Calc)
+    Array::new(rows, cols, data)
+        .map(Value::from)
+        .ok_or(CellError::Calc)
 }
 
 /// Checks that a requested result size is acceptable.
 pub(crate) fn check_size(rows: f64, cols: f64) -> R<(usize, usize)> {
-    if rows.is_nan() || cols.is_nan() || rows < 1.0 || cols < 1.0 || !rows.is_finite() || !cols.is_finite() {
+    if rows.is_nan()
+        || cols.is_nan()
+        || rows < 1.0
+        || cols < 1.0
+        || !rows.is_finite()
+        || !cols.is_finite()
+    {
         return Err(CellError::Value);
     }
     let (r, c) = (rows as usize, cols as usize);
@@ -229,9 +243,15 @@ pub(crate) fn round_half_away(x: f64, digits: i32) -> f64 {
     }
     let digits = digits.clamp(-400, 400) as i64;
     let s = format!("{:.14e}", x.abs());
-    let Some((mant, exp)) = s.split_once('e') else { return x };
+    let Some((mant, exp)) = s.split_once('e') else {
+        return x;
+    };
     let Ok(e) = exp.parse::<i64>() else { return x };
-    let mut d: Vec<u8> = mant.bytes().filter(u8::is_ascii_digit).map(|b| b - b'0').collect();
+    let mut d: Vec<u8> = mant
+        .bytes()
+        .filter(u8::is_ascii_digit)
+        .map(|b| b - b'0')
+        .collect();
     // value = 0.d1d2…d15 × 10^(e+1); keep the first `keep` digits.
     let keep = e + 1 + digits;
     if keep >= d.len() as i64 {
@@ -296,7 +316,10 @@ pub(crate) mod testutil {
     }
     impl Default for TestCtx {
         fn default() -> Self {
-            TestCtx { state: 0x2545_F491_4F6C_DD1D, sys: DateSystem::D1900 }
+            TestCtx {
+                state: 0x2545_F491_4F6C_DD1D,
+                sys: DateSystem::D1900,
+            }
         }
     }
     impl Ctx for TestCtx {
@@ -401,7 +424,13 @@ pub(crate) mod testutil {
     #[track_caller]
     pub fn rows_of(v: &Value) -> Vec<Vec<Value>> {
         match v {
-            Value::Array(a) => (0..a.rows).map(|r| (0..a.cols).map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty)).collect()).collect(),
+            Value::Array(a) => (0..a.rows)
+                .map(|r| {
+                    (0..a.cols)
+                        .map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty))
+                        .collect()
+                })
+                .collect(),
             other => vec![vec![other.clone()]],
         }
     }
@@ -424,10 +453,28 @@ mod tests {
 
     #[test]
     fn aggregate_numbers() {
-        let arr = Value::from(Array::new(1, 4, vec![Value::Number(1.0), Value::from("2"), Value::Bool(true), Value::Empty]).unwrap());
+        let arr = Value::from(
+            Array::new(
+                1,
+                4,
+                vec![
+                    Value::Number(1.0),
+                    Value::from("2"),
+                    Value::Bool(true),
+                    Value::Empty,
+                ],
+            )
+            .unwrap(),
+        );
         assert_eq!(numbers(&[Arg::reference(arr.clone())]).unwrap(), vec![1.0]);
-        assert_eq!(numbers_a(&[Arg::reference(arr)]).unwrap(), vec![1.0, 0.0, 1.0]);
-        assert_eq!(numbers(&[Arg::val("3"), Arg::val(true)]).unwrap(), vec![3.0, 1.0]);
+        assert_eq!(
+            numbers_a(&[Arg::reference(arr)]).unwrap(),
+            vec![1.0, 0.0, 1.0]
+        );
+        assert_eq!(
+            numbers(&[Arg::val("3"), Arg::val(true)]).unwrap(),
+            vec![3.0, 1.0]
+        );
         assert_eq!(numbers(&[Arg::val("x")]), Err(CellError::Value));
         assert_eq!(numbers(&[Arg::reference("x")]).unwrap(), Vec::<f64>::new());
     }

@@ -23,7 +23,12 @@ fn area(s: &mut Session, x: f64, y: f64, w: f64, h: f64, extra: Value) -> Vec<No
         p.extend(e.clone());
     }
     let out = ex(s, "select.area", p);
-    let listed: Vec<NodeId> = out["selection"].as_array().unwrap().iter().filter_map(id_of).collect();
+    let listed: Vec<NodeId> = out["selection"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(id_of)
+        .collect();
     assert_eq!(listed, s.selection(), "the result lists the new selection");
     sorted(listed)
 }
@@ -36,26 +41,54 @@ fn sorted(mut v: Vec<NodeId>) -> Vec<NodeId> {
 #[test]
 fn a_box_selects_like_a_marquee() {
     let mut s = Session::new();
-    let frame = id_of(&ex(&mut s, "frame.create", json!({"x": 300, "y": 0, "width": 200, "height": 200}))["id"]).unwrap();
+    let frame = id_of(
+        &ex(
+            &mut s,
+            "frame.create",
+            json!({"x": 300, "y": 0, "width": 200, "height": 200}),
+        )["id"],
+    )
+    .unwrap();
     let inner = rect(&mut s, 20.0, 20.0, Some(frame));
     let a = rect(&mut s, 0.0, 0.0, None);
     let b = rect(&mut s, 100.0, 0.0, None);
     // Top-level layers it touches; a frame only touched from outside isn't selected.
-    assert_eq!(area(&mut s, -10.0, -10.0, 340.0, 40.0, json!({})), sorted(vec![a, b]));
+    assert_eq!(
+        area(&mut s, -10.0, -10.0, 340.0, 40.0, json!({})),
+        sorted(vec![a, b])
+    );
     // A negative size draws the box the other way.
-    assert_eq!(area(&mut s, 130.0, 30.0, -140.0, -40.0, json!({})), sorted(vec![a, b]));
+    assert_eq!(
+        area(&mut s, 130.0, 30.0, -140.0, -40.0, json!({})),
+        sorted(vec![a, b])
+    );
     // Covering the frame selects it.
-    assert_eq!(area(&mut s, 290.0, -10.0, 220.0, 220.0, json!({})), vec![frame]);
+    assert_eq!(
+        area(&mut s, 290.0, -10.0, 220.0, 220.0, json!({})),
+        vec![frame]
+    );
     // Starting inside the frame selects its children.
     assert_eq!(area(&mut s, 305.0, 5.0, 60.0, 60.0, json!({})), vec![inner]);
     // Deep: nested layers too.
-    assert_eq!(area(&mut s, -10.0, -10.0, 340.0, 40.0, json!({"deep": true})), sorted(vec![a, b, inner]));
+    assert_eq!(
+        area(&mut s, -10.0, -10.0, 340.0, 40.0, json!({"deep": true})),
+        sorted(vec![a, b, inner])
+    );
     // Add toggles: what was selected and is covered again comes out.
     ex(&mut s, "select.set", json!({"ids": [a]}));
-    assert_eq!(area(&mut s, 90.0, -10.0, 40.0, 40.0, json!({"add": true})), sorted(vec![a, b]));
-    assert_eq!(area(&mut s, -10.0, -10.0, 40.0, 40.0, json!({"add": true})), vec![b]);
+    assert_eq!(
+        area(&mut s, 90.0, -10.0, 40.0, 40.0, json!({"add": true})),
+        sorted(vec![a, b])
+    );
+    assert_eq!(
+        area(&mut s, -10.0, -10.0, 40.0, 40.0, json!({"add": true})),
+        vec![b]
+    );
     // An empty spot clears the selection (without add).
-    assert_eq!(area(&mut s, 1000.0, 1000.0, 10.0, 10.0, json!({})), Vec::<NodeId>::new());
+    assert_eq!(
+        area(&mut s, 1000.0, 1000.0, 10.0, 10.0, json!({})),
+        Vec::<NodeId>::new()
+    );
 }
 
 #[test]

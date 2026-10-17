@@ -3,7 +3,14 @@
 //! The UI is thin: every action goes through [`SlideApp::run`], which handles UI commands
 //! (views, panes, zoom) here and sends everything else to the engine. The ribbon, menus,
 //! shortcuts, the command palette and the control channel all share that entry point.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod backstage;
@@ -140,24 +147,49 @@ pub const UI_COMMANDS: &[(&str, &str, Option<&str>, &str)] = &[
     ("view.reading", "Reading View", None, "{}"),
     ("view.notes", "Notes", None, "{on?: bool}"),
     ("view.ruler", "Ruler", None, "{on?: bool}"),
-    ("view.gridlines", "Gridlines", Some("Shift+F9"), "{on?: bool}"),
+    (
+        "view.gridlines",
+        "Gridlines",
+        Some("Shift+F9"),
+        "{on?: bool}",
+    ),
     ("view.guides", "Guides", Some("Alt+F9"), "{on?: bool}"),
     ("view.zoomIn", "Zoom In", Some("Cmd+="), "{}"),
     ("view.zoomOut", "Zoom Out", Some("Cmd+-"), "{}"),
     ("view.zoom", "Zoom…", None, "{percent}"),
     ("view.fit", "Fit to Window", None, "{}"),
-    ("view.pane", "Task Pane", None, "{pane: format|animation|selection|comments|designer|background|null}"),
+    (
+        "view.pane",
+        "Task Pane",
+        None,
+        "{pane: format|animation|selection|comments|designer|background|null}",
+    ),
     ("view.tab", "Ribbon Tab", None, "{tab}"),
-    ("view.collapseRibbon", "Collapse the Ribbon", Some("Cmd+F1"), "{}"),
+    (
+        "view.collapseRibbon",
+        "Collapse the Ribbon",
+        Some("Cmd+F1"),
+        "{}",
+    ),
     ("view.dark", "Dark Mode", None, "{on?: bool}"),
     ("view.grayscale", "Grayscale", None, "{on?: bool}"),
     ("show.start", "Slide Show", Some("F5"), "{from?: index}"),
     ("show.presenter", "Presenter View", None, "{on?: bool}"),
     ("show.end", "End Show", None, "{}"),
     ("app.home", "Home", None, "{on?}"),
-    ("app.backstage", "File", Some("Alt+F"), "{page?: home|new|open|info|saveAs|print|export|account, on?: bool}"),
+    (
+        "app.backstage",
+        "File",
+        Some("Alt+F"),
+        "{page?: home|new|open|info|saveAs|print|export|account, on?: bool}",
+    ),
     ("app.closePresentation", "Close", Some("Cmd+W"), "{}"),
-    ("app.print", "Print", Some("Cmd+P"), "{layout?, perPage?, slides?, includeHidden?, frame?}"),
+    (
+        "app.print",
+        "Print",
+        Some("Cmd+P"),
+        "{layout?, perPage?, slides?, includeHidden?, frame?}",
+    ),
     ("app.about", "About DeckCraft", None, "{}"),
     ("app.palette", "Command Palette", Some("Cmd+Shift+P"), "{}"),
     ("app.preferences", "Preferences…", Some("Cmd+,"), "{}"),
@@ -244,7 +276,11 @@ impl SlideApp {
             status: None,
             toast: None,
             fonts_noted: Default::default(),
-            perf: Perf { frame_ms: 0.0, render_ms: 0.0, fps: 0.0 },
+            perf: Perf {
+                frame_ms: 0.0,
+                render_ms: 0.0,
+                fps: 0.0,
+            },
             synthetic: vec![],
             canvas_rect: None,
             canvas_scale: 1.0,
@@ -347,7 +383,11 @@ impl SlideApp {
 
     /// The file name a save or export suggests: the presentation's title with `ext`.
     fn suggested_name(&self, ext: &str) -> String {
-        let name = self.session.active().map(|d| d.title()).unwrap_or_else(|| "Presentation".into());
+        let name = self
+            .session
+            .active()
+            .map(|d| d.title())
+            .unwrap_or_else(|| "Presentation".into());
         format!("{name}.{ext}")
     }
 
@@ -356,7 +396,9 @@ impl SlideApp {
     /// on the web. `extra` adds `file.export` params (the PDF's layout, slides…). The
     /// presentation keeps its own file. Returns whether a file was written or handed over.
     pub fn export_as(&mut self, fmt: &str, extra: Value) -> bool {
-        let Some(slide) = self.session.active().map(|d| d.selection.slide) else { return false };
+        let Some(slide) = self.session.active().map(|d| d.selection.slide) else {
+            return false;
+        };
         let (ext, format, all) = match fmt {
             "pdf" => ("pdf", "pdf", false),
             "png" => ("png", "png", false),
@@ -372,7 +414,9 @@ impl SlideApp {
         };
         let suggested = self.suggested_name(ext);
         if let Some(pick) = self.services.pick_save.as_mut() {
-            let Some(path) = pick(&suggested) else { return false };
+            let Some(path) = pick(&suggested) else {
+                return false;
+            };
             let mut params = json!({"path": path, "format": format, "all": all});
             if let (Some(o), Some(x)) = (params.as_object_mut(), extra.as_object()) {
                 o.extend(x.clone());
@@ -385,11 +429,24 @@ impl SlideApp {
                 Err(_) => false,
             };
         }
-        let Some(doc) = self.session.active().map(|d| d.doc.clone()) else { return false };
+        let Some(doc) = self.session.active().map(|d| d.doc.clone()) else {
+            return false;
+        };
         let bytes = match format {
             "png" | "jpeg" => {
-                let img = deckcraft_render::render_slide(&doc, slide, &deckcraft_render::RenderOpts { scale: 2.0, ..Default::default() });
-                Ok(if format == "png" { img.to_png() } else { img.to_jpeg(92) })
+                let img = deckcraft_render::render_slide(
+                    &doc,
+                    slide,
+                    &deckcraft_render::RenderOpts {
+                        scale: 2.0,
+                        ..Default::default()
+                    },
+                );
+                Ok(if format == "png" {
+                    img.to_png()
+                } else {
+                    img.to_jpeg(92)
+                })
             }
             "pdf" => deckcraft_engine::cmd::file::pdf_bytes(&doc, &extra),
             other => deckcraft_engine::cmd::file::save_bytes(&doc, other),
@@ -410,7 +467,9 @@ impl SlideApp {
                 false
             }
             (Ok(_), None) => {
-                self.set_status("Saving a copy needs a file picker, which this window doesn't have.");
+                self.set_status(
+                    "Saving a copy needs a file picker, which this window doesn't have.",
+                );
                 false
             }
         }
@@ -420,22 +479,43 @@ impl SlideApp {
     /// layout, slides and options) is written to the temporary folder and opened in the system's
     /// PDF viewer, which has the printers; on the web it downloads.
     pub fn print_pdf(&mut self, params: Value) -> bool {
-        let Some((title, doc)) = self.session.active().map(|d| (d.title(), d.doc.clone())) else { return false };
-        let mut params = if params.is_object() { params } else { json!({}) };
+        let Some((title, doc)) = self.session.active().map(|d| (d.title(), d.doc.clone())) else {
+            return false;
+        };
+        let mut params = if params.is_object() {
+            params
+        } else {
+            json!({})
+        };
         if self.services.pick_save.is_none() {
             // Web: the browser hands the PDF to the user.
             let bytes = deckcraft_engine::cmd::file::pdf_bytes(&doc, &params);
             return self.download(&format!("{title}.pdf"), bytes);
         }
-        let safe: String = title.chars().map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' { c } else { '_' }).collect();
-        let path = std::env::temp_dir().join(format!("{safe} (print).pdf")).to_string_lossy().to_string();
+        let safe: String = title
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || c == ' ' || c == '-' {
+                    c
+                } else {
+                    '_'
+                }
+            })
+            .collect();
+        let path = std::env::temp_dir()
+            .join(format!("{safe} (print).pdf"))
+            .to_string_lossy()
+            .to_string();
         if let Some(o) = params.as_object_mut() {
             o.insert("path".into(), json!(path));
             o.insert("format".into(), json!("pdf"));
         }
         match self.run("file.export", params) {
             Ok(_) => {
-                self.open_url(&format!("file:///{}", path.replace('\\', "/").trim_start_matches('/')));
+                self.open_url(&format!(
+                    "file:///{}",
+                    path.replace('\\', "/").trim_start_matches('/')
+                ));
                 self.set_status("Opened the presentation as a PDF to print");
                 true
             }
@@ -453,48 +533,85 @@ impl SlideApp {
             "view.outline" => self.ui.view = ViewMode::Outline,
             "view.sorter" => self.ui.view = ViewMode::Sorter,
             "view.notesPage" => self.ui.view = ViewMode::NotesPage,
-            "view.reading" => self.start_show(self.session.active().map(|d| d.selection.slide).unwrap_or(0), true),
+            "view.reading" => self.start_show(
+                self.session
+                    .active()
+                    .map(|d| d.selection.slide)
+                    .unwrap_or(0),
+                true,
+            ),
             "view.notes" => self.ui.notes = self.flag(p, self.ui.notes),
             "view.ruler" => self.ui.ruler = self.flag(p, self.ui.ruler),
             "view.gridlines" => self.ui.gridlines = self.flag(p, self.ui.gridlines),
             "view.guides" => self.ui.guides = self.flag(p, self.ui.guides),
             "view.zoomIn" | "view.zoomOut" => {
                 let cur = self.ui.zoom.unwrap_or(self.canvas_scale);
-                let steps = [0.1, 0.25, 0.33, 0.5, 0.66, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0];
+                let steps = [
+                    0.1, 0.25, 0.33, 0.5, 0.66, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0,
+                ];
                 let next = if id == "view.zoomIn" {
-                    steps.iter().copied().find(|s| *s > cur + 0.01).unwrap_or(4.0)
+                    steps
+                        .iter()
+                        .copied()
+                        .find(|s| *s > cur + 0.01)
+                        .unwrap_or(4.0)
                 } else {
-                    steps.iter().rev().copied().find(|s| *s < cur - 0.01).unwrap_or(0.1)
+                    steps
+                        .iter()
+                        .rev()
+                        .copied()
+                        .find(|s| *s < cur - 0.01)
+                        .unwrap_or(0.1)
                 };
                 self.ui.zoom = Some(next);
             }
             "view.zoom" => {
-                let pct = p.get("percent").and_then(Value::as_f64).ok_or("missing `percent`")?;
+                let pct = p
+                    .get("percent")
+                    .and_then(Value::as_f64)
+                    .ok_or("missing `percent`")?;
                 self.ui.zoom = Some((pct as f32 / 100.0).clamp(0.1, 4.0));
             }
             "view.fit" => self.ui.zoom = None,
             "view.pane" => {
                 let pane = p.get("pane").and_then(Value::as_str).map(String::from);
-                self.ui.pane =
-                    if pane.is_some() && pane == self.ui.pane && p.get("toggle").and_then(Value::as_bool).unwrap_or(false) { None } else { pane };
+                self.ui.pane = if pane.is_some()
+                    && pane == self.ui.pane
+                    && p.get("toggle").and_then(Value::as_bool).unwrap_or(false)
+                {
+                    None
+                } else {
+                    pane
+                };
                 if let Some(tab) = p.get("tab").and_then(Value::as_str) {
                     self.ui.format_tab = tab.to_string();
                 }
             }
             "view.tab" => {
-                let tab = p.get("tab").and_then(Value::as_str).ok_or("missing `tab`")?;
+                let tab = p
+                    .get("tab")
+                    .and_then(Value::as_str)
+                    .ok_or("missing `tab`")?;
                 self.ui.tab = tab.to_string();
                 self.ui.ribbon_collapsed = false;
             }
             "view.collapseRibbon" => self.ui.ribbon_collapsed = !self.ui.ribbon_collapsed,
             "view.dark" => {
                 let on = self.flag(p, self.ui.brightness == theme::Brightness::Dark);
-                self.ui.brightness = if on { theme::Brightness::Dark } else { theme::Brightness::Light };
+                self.ui.brightness = if on {
+                    theme::Brightness::Dark
+                } else {
+                    theme::Brightness::Light
+                };
                 self.restyle = true;
             }
             "view.grayscale" => self.ui.grayscale = self.flag(p, self.ui.grayscale),
             "show.start" => {
-                let from = p.get("from").and_then(Value::as_u64).map(|v| v as usize).unwrap_or(0);
+                let from = p
+                    .get("from")
+                    .and_then(Value::as_u64)
+                    .map(|v| v as usize)
+                    .unwrap_or(0);
                 self.start_show(from, false);
             }
             "show.presenter" => self.ui.presenter_view = self.flag(p, self.ui.presenter_view),
@@ -516,11 +633,15 @@ impl SlideApp {
                     return Ok(json!({"page": self.backstage.as_ref().map(|b| b.page.id())}));
                 }
                 let page = match p.get("page").and_then(Value::as_str) {
-                    Some(id) => backstage::Page::parse(id).ok_or_else(|| format!("unknown File page `{id}`"))?,
+                    Some(id) => backstage::Page::parse(id)
+                        .ok_or_else(|| format!("unknown File page `{id}`"))?,
                     None => backstage::Page::Home,
                 };
                 if page.needs_doc() && self.session.active().is_none() {
-                    return Err(format!("File › {} needs an open presentation", page.label()));
+                    return Err(format!(
+                        "File › {} needs an open presentation",
+                        page.label()
+                    ));
                 }
                 self.open_backstage(page);
                 return Ok(json!({"page": page.id()}));
@@ -547,7 +668,9 @@ impl SlideApp {
             }
             "app.links" => {
                 use deckcraft_engine::links::*;
-                return Ok(json!({"discord": DISCORD, "website": WEBSITE, "apps": APPS, "appPage": APP_PAGE, "github": GITHUB}));
+                return Ok(
+                    json!({"discord": DISCORD, "website": WEBSITE, "apps": APPS, "appPage": APP_PAGE, "github": GITHUB}),
+                );
             }
             _ => return Err(format!("unknown UI command `{id}`")),
         }
@@ -557,7 +680,12 @@ impl SlideApp {
     pub fn start_show(&mut self, from: usize, reading: bool) {
         self.media.stop_owned(media::Owner::Editor);
         if let Some(d) = self.session.active() {
-            self.show = Some(show::Show::new(&d.doc, from, reading, self.ui.presenter_view && !reading));
+            self.show = Some(show::Show::new(
+                &d.doc,
+                from,
+                reading,
+                self.ui.presenter_view && !reading,
+            ));
         }
     }
 
@@ -572,7 +700,9 @@ impl SlideApp {
     }
 
     pub fn open_path(&mut self, path: &str) -> Result<(), String> {
-        self.session.execute("file.open", &json!({"path": path})).map_err(|e| e.to_string())?;
+        self.session
+            .execute("file.open", &json!({"path": path}))
+            .map_err(|e| e.to_string())?;
         self.ui.recent.retain(|p| p != path);
         self.ui.recent.insert(0, path.to_string());
         self.ui.recent.truncate(12);
@@ -585,7 +715,10 @@ impl SlideApp {
             if let Some(path) = pick(purpose) {
                 let r = match self.services.read.as_ref().map(|r| r(&path)) {
                     Some(Ok(bytes)) => {
-                        let name = std::path::Path::new(&path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                        let name = std::path::Path::new(&path)
+                            .file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_default();
                         self.session.execute(cmd, &json!({"name": name, "data": deckcraft_engine::cmd::base64_encode(&bytes)}))
                     }
                     _ => self.session.execute(cmd, &json!({"path": path})),
@@ -600,8 +733,16 @@ impl SlideApp {
     }
 
     pub fn save_as_dialog(&mut self, format: &str) {
-        let name = self.session.active().map(|d| d.title()).unwrap_or_else(|| "Presentation".into());
-        let ext = if format == "pptx" { "pptx" } else { "deckcraft" };
+        let name = self
+            .session
+            .active()
+            .map(|d| d.title())
+            .unwrap_or_else(|| "Presentation".into());
+        let ext = if format == "pptx" {
+            "pptx"
+        } else {
+            "deckcraft"
+        };
         let suggested = format!("{name}.{ext}");
         if let Some(pick) = self.services.pick_save.as_mut() {
             if let Some(path) = pick(&suggested) {
@@ -627,11 +768,23 @@ impl SlideApp {
     /// Save every presentation with unsaved changes (asking for a location where needed).
     /// Returns false if one wasn't saved (cancelled or failed).
     pub fn save_all(&mut self) -> bool {
-        let dirty: Vec<usize> = self.session.documents().iter().enumerate().filter(|(_, d)| d.is_dirty()).map(|(i, _)| i).collect();
+        let dirty: Vec<usize> = self
+            .session
+            .documents()
+            .iter()
+            .enumerate()
+            .filter(|(_, d)| d.is_dirty())
+            .map(|(i, _)| i)
+            .collect();
         for i in dirty {
             self.session.set_active(i);
             self.save();
-            if self.session.documents().get(i).is_some_and(|d| d.is_dirty()) {
+            if self
+                .session
+                .documents()
+                .get(i)
+                .is_some_and(|d| d.is_dirty())
+            {
                 return false;
             }
         }
@@ -667,7 +820,11 @@ impl SlideApp {
                     }
                 }
                 UiRequest::Media { action, shape, ms } => {
-                    let owner = if self.show.is_some() { media::Owner::Show } else { media::Owner::Editor };
+                    let owner = if self.show.is_some() {
+                        media::Owner::Show
+                    } else {
+                        media::Owner::Editor
+                    };
                     if let Some(doc) = self.session.active().map(|d| d.doc.clone()) {
                         self.media.request(&doc, &action, shape, ms, owner);
                     }
@@ -677,8 +834,13 @@ impl SlideApp {
     }
 
     fn drain_inbox(&mut self) {
-        let Some(inbox) = self.services.inbox.clone() else { return };
-        let files: Vec<(String, Vec<u8>)> = inbox.lock().map(|mut v| std::mem::take(&mut *v)).unwrap_or_default();
+        let Some(inbox) = self.services.inbox.clone() else {
+            return;
+        };
+        let files: Vec<(String, Vec<u8>)> = inbox
+            .lock()
+            .map(|mut v| std::mem::take(&mut *v))
+            .unwrap_or_default();
         for (name, bytes) in files {
             self.open_or_insert_bytes(&name, &bytes);
         }
@@ -708,7 +870,11 @@ impl SlideApp {
             self.set_status(format!("{name}: DeckCraft can't open this kind of file"));
             return;
         };
-        let p = if cmd == "slide.fromOutline" { json!({"text": String::from_utf8_lossy(bytes)}) } else { json!({"name": name, "data": data}) };
+        let p = if cmd == "slide.fromOutline" {
+            json!({"text": String::from_utf8_lossy(bytes)})
+        } else {
+            json!({"name": name, "data": data})
+        };
         if self.session.active().is_none() && cmd != "file.openBytes" {
             let _ = self.session.execute("file.new", &json!({}));
         }
@@ -753,7 +919,10 @@ impl SlideApp {
         self.collect_screenshots(ctx);
         self.issue_screenshots(ctx);
         // Closing the window with unsaved changes asks first.
-        if ctx.input(|i| i.viewport().close_requested()) && !self.quit_confirmed && self.session.documents().iter().any(|d| d.is_dirty()) {
+        if ctx.input(|i| i.viewport().close_requested())
+            && !self.quit_confirmed
+            && self.session.documents().iter().any(|d| d.is_dirty())
+        {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.show = None;
             if self.dialog.as_ref().is_none_or(|d| d.id != "quit") {
@@ -761,7 +930,9 @@ impl SlideApp {
             }
         }
         // AutoRecover: unsaved presentations are written to the recovery folder periodically.
-        if self.session.recovery_dir.is_some() && now - self.last_recovery > (self.session.prefs.recovery_minutes * 60.0).max(10.0) {
+        if self.session.recovery_dir.is_some()
+            && now - self.last_recovery > (self.session.prefs.recovery_minutes * 60.0).max(10.0)
+        {
             self.last_recovery = now;
             if self.session.documents().iter().any(|d| d.is_dirty())
                 && let Err(e) = self.session.execute("file.recovery.save", &json!({}))
@@ -773,7 +944,11 @@ impl SlideApp {
         // delivers them through `Services::inbox`.
         #[cfg(not(target_arch = "wasm32"))]
         for f in ctx.input(|i| i.raw.dropped_files.clone()) {
-            let name = f.path().file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "dropped file".into());
+            let name = f
+                .path()
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "dropped file".into());
             match f.bytes() {
                 Ok(bytes) => self.open_or_insert_bytes(&name, &bytes),
                 Err(e) => self.set_status(e),
@@ -789,7 +964,9 @@ impl SlideApp {
                 .iter()
                 .filter_map(|e| match e {
                     egui::Event::Text(t) | egui::Event::Paste(t) => Some(t.as_str()),
-                    egui::Event::Ime(egui::ImeEvent::Preedit { text, .. } | egui::ImeEvent::Commit(text)) => Some(text.as_str()),
+                    egui::Event::Ime(
+                        egui::ImeEvent::Preedit { text, .. } | egui::ImeEvent::Commit(text),
+                    ) => Some(text.as_str()),
                     _ => None,
                 })
                 .collect()
@@ -811,9 +988,12 @@ impl SlideApp {
     /// replaced on each update; the commit replaces it as one undo step.
     fn ime_event(&mut self, e: &egui::ImeEvent) {
         let r = match e {
-            egui::ImeEvent::Preedit { text, active_range_chars } => {
-                self.session.compose_text(text, active_range_chars.as_ref().map(|r| (r.start, r.end)))
-            }
+            egui::ImeEvent::Preedit {
+                text,
+                active_range_chars,
+            } => self
+                .session
+                .compose_text(text, active_range_chars.as_ref().map(|r| (r.start, r.end))),
             egui::ImeEvent::Commit(text) => self.session.commit_text(text),
             #[allow(deprecated)]
             egui::ImeEvent::Disabled => {
@@ -834,9 +1014,15 @@ impl SlideApp {
         }
         let n = match self.synthetic.first() {
             Some(egui::Event::PointerMoved(_) | egui::Event::PointerButton { .. }) => 1,
-            _ => self.synthetic.iter().position(|e| matches!(e, egui::Event::Key { pressed: false, .. })).map_or(self.synthetic.len(), |i| i + 1),
+            _ => self
+                .synthetic
+                .iter()
+                .position(|e| matches!(e, egui::Event::Key { pressed: false, .. }))
+                .map_or(self.synthetic.len(), |i| i + 1),
         };
-        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) = self.synthetic.first() {
+        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) =
+            self.synthetic.first()
+        {
             raw.events.push(egui::Event::PointerMoved(*p));
         }
         let n = n.min(self.synthetic.len());
@@ -845,7 +1031,10 @@ impl SlideApp {
 
     /// Keyboard and clipboard for the slide (when no text field has focus).
     fn keyboard(&mut self, ctx: &egui::Context) {
-        if ctx.memory(|m| m.focused().is_some()) || self.dialog.as_ref().is_some_and(|d| d.modal()) || self.palette.is_some() {
+        if ctx.memory(|m| m.focused().is_some())
+            || self.dialog.as_ref().is_some_and(|d| d.modal())
+            || self.palette.is_some()
+        {
             return;
         }
         let events = ctx.input(|i| i.events.clone());
@@ -854,9 +1043,22 @@ impl SlideApp {
             // shortcuts (New, Open, Command Palette…); typing, pasting or deleting would edit the
             // hidden presentation.
             for e in events {
-                if let egui::Event::Key { key, pressed: true, modifiers, .. } = e {
-                    let mods = Mods { shift: modifiers.shift, alt: modifiers.alt, cmd: modifiers.command || modifiers.ctrl };
-                    if backstage::key(self, key, mods) || !(mods.cmd || mods.alt) || menus::ui_shortcut(self, key, mods) {
+                if let egui::Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } = e
+                {
+                    let mods = Mods {
+                        shift: modifiers.shift,
+                        alt: modifiers.alt,
+                        cmd: modifiers.command || modifiers.ctrl,
+                    };
+                    if backstage::key(self, key, mods)
+                        || !(mods.cmd || mods.alt)
+                        || menus::ui_shortcut(self, key, mods)
+                    {
                         continue;
                     }
                     // Engine shortcuts that don't touch the hidden slide (Ctrl+N).
@@ -874,8 +1076,9 @@ impl SlideApp {
         for e in events {
             match e {
                 egui::Event::Text(t) => {
-                    if self.session.active().is_some_and(|d| d.selection.text.is_some() || d.selection.shapes.len() == 1)
-                        && let Err(e) = self.session.type_text(&t)
+                    if self.session.active().is_some_and(|d| {
+                        d.selection.text.is_some() || d.selection.shapes.len() == 1
+                    }) && let Err(e) = self.session.type_text(&t)
                     {
                         self.set_status(e.to_string());
                     }
@@ -897,7 +1100,11 @@ impl SlideApp {
                 }
                 egui::Event::Paste(text) => {
                     // An image on the clipboard (screenshots, copied pictures) becomes a picture.
-                    let img = if text.is_empty() { self.services.clipboard_image.as_mut().and_then(|f| f()) } else { None };
+                    let img = if text.is_empty() {
+                        self.services.clipboard_image.as_mut().and_then(|f| f())
+                    } else {
+                        None
+                    };
                     let r = match img {
                         Some(png) => self
                             .session
@@ -908,9 +1115,19 @@ impl SlideApp {
                         self.set_status(e.to_string());
                     }
                 }
-                egui::Event::Key { key, pressed: true, modifiers, .. } => {
-                    let mods = Mods { shift: modifiers.shift, alt: modifiers.alt, cmd: modifiers.command || modifiers.ctrl };
-                    if !self.session.tool.drawing_freeform() && menus::ui_shortcut(self, key, mods) {
+                egui::Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } => {
+                    let mods = Mods {
+                        shift: modifiers.shift,
+                        alt: modifiers.alt,
+                        cmd: modifiers.command || modifiers.ctrl,
+                    };
+                    if !self.session.tool.drawing_freeform() && menus::ui_shortcut(self, key, mods)
+                    {
                         continue;
                     }
                     let name = key_name(key);
@@ -948,36 +1165,40 @@ impl SlideApp {
             ribbon::show(self, ui);
             status::status_bar(self, ui);
         }
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.chrome)).show(ui, |ui| {
-            if self.backstage.is_some() {
-                // File tab: the Backstage view replaces everything below the title bar.
-                backstage::show(self, ui);
-                return;
-            }
-            if self.session.active().is_none() {
-                return;
-            }
-            match self.ui.view {
-                ViewMode::Sorter => sorter::show(self, ui),
-                ViewMode::NotesPage => sorter::notes_page(self, ui),
-                ViewMode::Outline | ViewMode::Normal | ViewMode::Reading => {
-                    if self.ui.pane.is_some() {
-                        panes::show(self, ui);
-                    }
-                    if self.ui.view == ViewMode::Outline {
-                        sorter::outline_pane(self, ui);
-                    } else {
-                        thumbs::show(self, ui);
-                    }
-                    egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.canvas)).show(ui, |ui| {
-                        if self.ui.notes {
-                            status::notes_pane(self, ui);
-                        }
-                        canvas::show(self, ui);
-                    });
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(t.chrome))
+            .show(ui, |ui| {
+                if self.backstage.is_some() {
+                    // File tab: the Backstage view replaces everything below the title bar.
+                    backstage::show(self, ui);
+                    return;
                 }
-            }
-        });
+                if self.session.active().is_none() {
+                    return;
+                }
+                match self.ui.view {
+                    ViewMode::Sorter => sorter::show(self, ui),
+                    ViewMode::NotesPage => sorter::notes_page(self, ui),
+                    ViewMode::Outline | ViewMode::Normal | ViewMode::Reading => {
+                        if self.ui.pane.is_some() {
+                            panes::show(self, ui);
+                        }
+                        if self.ui.view == ViewMode::Outline {
+                            sorter::outline_pane(self, ui);
+                        } else {
+                            thumbs::show(self, ui);
+                        }
+                        egui::CentralPanel::default()
+                            .frame(egui::Frame::NONE.fill(t.canvas))
+                            .show(ui, |ui| {
+                                if self.ui.notes {
+                                    status::notes_pane(self, ui);
+                                }
+                                canvas::show(self, ui);
+                            });
+                    }
+                }
+            });
         toast::note_missing_fonts(self);
         toast::show(self, &ctx);
         dialogs::show(self, &ctx);
@@ -998,13 +1219,23 @@ impl SlideApp {
         if self.show.is_none()
             && let Some(d) = self.session.active()
         {
-            let here: Vec<deckcraft_model::ShapeId> = if d.selection.target == deckcraft_engine::Target::Slides {
-                media::slide_media(&d.doc, d.selection.slide).into_iter().map(|m| m.0).collect()
-            } else {
-                vec![]
-            };
-            let gone: Vec<_> =
-                self.media.ids().into_iter().filter(|id| !here.contains(id) && self.media.owner(*id) == Some(media::Owner::Editor)).collect();
+            let here: Vec<deckcraft_model::ShapeId> =
+                if d.selection.target == deckcraft_engine::Target::Slides {
+                    media::slide_media(&d.doc, d.selection.slide)
+                        .into_iter()
+                        .map(|m| m.0)
+                        .collect()
+                } else {
+                    vec![]
+                };
+            let gone: Vec<_> = self
+                .media
+                .ids()
+                .into_iter()
+                .filter(|id| {
+                    !here.contains(id) && self.media.owner(*id) == Some(media::Owner::Editor)
+                })
+                .collect();
             for id in gone {
                 self.media.stop(id);
             }
@@ -1017,7 +1248,9 @@ impl SlideApp {
     }
 
     fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            return;
+        };
         while let Ok(req) = rx.try_recv() {
             let reply = req.reply.clone();
             match control::handle(self, ctx, &req) {
@@ -1028,7 +1261,8 @@ impl SlideApp {
                     self.shot_token += 1;
                     let token = self.shot_token;
                     self.queued_shots.push((token, now_ms() + 120.0, 0));
-                    self.pending_shots.push((token, path, reply, now_ms() + 8000.0));
+                    self.pending_shots
+                        .push((token, path, reply, now_ms() + 8000.0));
                 }
             }
         }
@@ -1040,7 +1274,9 @@ impl SlideApp {
         self.queued_shots.retain_mut(|(token, at, frames)| {
             *frames += 1;
             if now >= *at && *frames >= 3 {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(*token)));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                    *token,
+                )));
                 false
             } else {
                 true
@@ -1060,8 +1296,14 @@ impl SlideApp {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        let token = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
                         Some((token, image.clone()))
                     }
                     _ => None,
@@ -1114,7 +1356,10 @@ pub fn now_ms() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs_f64() * 1000.0).unwrap_or(0.0)
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs_f64() * 1000.0)
+            .unwrap_or(0.0)
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -1139,7 +1384,16 @@ mod tests {
     fn title_text(app: &SlideApp) -> String {
         let d = app.session.active().unwrap();
         let sh = &d.doc.slides[0].shapes[0];
-        sh.text.as_ref().map(|t| t.paragraphs.iter().map(|p| p.text()).collect::<Vec<_>>().join("\n")).unwrap_or_default()
+        sh.text
+            .as_ref()
+            .map(|t| {
+                t.paragraphs
+                    .iter()
+                    .map(|p| p.text())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            })
+            .unwrap_or_default()
     }
 
     #[test]
@@ -1150,21 +1404,44 @@ mod tests {
         let mut body = deckcraft_model::text::TextBody::from_text("Hello");
         body.paragraphs[0].runs[0].props.font = Some("Qqq Nonexistent Sans".into());
         slide.shapes[0].text = Some(body);
-        let data = deckcraft_engine::cmd::base64_encode(&deckcraft_engine::cmd::file::save_bytes(&p, "pptx").unwrap());
-        let mut harness = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-            |ui, app: &mut SlideApp| {
-                app.logic(ui.ctx());
-                app.ui(ui);
-            },
-            SlideApp::new(Session::with_new(), Services::default()),
+        let data = deckcraft_engine::cmd::base64_encode(
+            &deckcraft_engine::cmd::file::save_bytes(&p, "pptx").unwrap(),
         );
+        let mut harness = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1200.0, 800.0))
+            .build_ui_state(
+                |ui, app: &mut SlideApp| {
+                    app.logic(ui.ctx());
+                    app.ui(ui);
+                },
+                SlideApp::new(Session::with_new(), Services::default()),
+            );
         harness.run_steps(2);
-        assert!(harness.state().toast.is_none(), "a new presentation has nothing to say");
-        harness.state_mut().session.execute("file.openBytes", &json!({"name": "a.pptx", "data": data})).unwrap();
+        assert!(
+            harness.state().toast.is_none(),
+            "a new presentation has nothing to say"
+        );
+        harness
+            .state_mut()
+            .session
+            .execute("file.openBytes", &json!({"name": "a.pptx", "data": data}))
+            .unwrap();
         harness.run_steps(2);
-        let text = harness.state().toast.as_ref().map(|t| t.text.clone()).unwrap_or_default();
-        assert!(text.starts_with("Qqq Nonexistent Sans isn't installed"), "{text}");
-        assert!(harness.query_by_label_contains("Qqq Nonexistent Sans isn't installed").is_some());
+        let text = harness
+            .state()
+            .toast
+            .as_ref()
+            .map(|t| t.text.clone())
+            .unwrap_or_default();
+        assert!(
+            text.starts_with("Qqq Nonexistent Sans isn't installed"),
+            "{text}"
+        );
+        assert!(
+            harness
+                .query_by_label_contains("Qqq Nonexistent Sans isn't installed")
+                .is_some()
+        );
         // Closed, it stays closed for that document.
         harness.get_by_label("Close").click();
         harness.run_steps(2);
@@ -1176,22 +1453,34 @@ mod tests {
     /// #17: Home created a new blank presentation instead of going to the start screen.
     #[test]
     fn home_shows_the_start_screen_over_the_open_presentation() {
-        let mut harness = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-            |ui, app: &mut SlideApp| {
-                app.logic(ui.ctx());
-                app.ui(ui);
-            },
-            SlideApp::new(Session::with_new(), Services::default()),
-        );
+        let mut harness = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1200.0, 800.0))
+            .build_ui_state(
+                |ui, app: &mut SlideApp| {
+                    app.logic(ui.ctx());
+                    app.ui(ui);
+                },
+                SlideApp::new(Session::with_new(), Services::default()),
+            );
         // The app keeps requesting repaints, so step frames instead of run().
         harness.run_steps(2);
-        let title = harness.state().session.active().unwrap().doc.slides[0].shapes[0].id.0;
-        harness.state_mut().session.execute("text.edit", &json!({"id": title})).unwrap();
+        let title = harness.state().session.active().unwrap().doc.slides[0].shapes[0]
+            .id
+            .0;
+        harness
+            .state_mut()
+            .session
+            .execute("text.edit", &json!({"id": title}))
+            .unwrap();
 
         harness.state_mut().run("app.home", json!({})).unwrap();
         harness.run_steps(2);
         assert!(harness.state().backstage_open());
-        assert_eq!(harness.state().session.documents().len(), 1, "Home doesn't create a presentation");
+        assert_eq!(
+            harness.state().session.documents().len(),
+            1,
+            "Home doesn't create a presentation"
+        );
 
         // Typing on the start screen doesn't reach the presentation behind it; Escape goes back.
         harness.event(egui::Event::Text("a".into()));
@@ -1209,10 +1498,16 @@ mod tests {
         assert!(harness.state().backstage_open());
         harness.state_mut().run("app.home", json!({})).unwrap();
         assert!(!harness.state().backstage_open());
-        harness.state_mut().run("app.home", json!({"on": true})).unwrap();
+        harness
+            .state_mut()
+            .run("app.home", json!({"on": true}))
+            .unwrap();
         harness.state_mut().run("file.new", json!({})).unwrap();
         harness.run_steps(2);
-        assert!(!harness.state().backstage_open(), "a new presentation leaves Home");
+        assert!(
+            !harness.state().backstage_open(),
+            "a new presentation leaves Home"
+        );
         assert_eq!(harness.state().session.documents().len(), 2);
     }
 
@@ -1224,20 +1519,37 @@ mod tests {
         let mut session = Session::with_new();
         session.mac_keys = false;
         session.prefs.autocorrect = false;
-        let mut harness = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-            |ui, app: &mut SlideApp| {
-                app.logic(ui.ctx());
-                app.ui(ui);
-            },
-            SlideApp::new(session, Services::default()),
-        );
+        let mut harness = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1200.0, 800.0))
+            .build_ui_state(
+                |ui, app: &mut SlideApp| {
+                    app.logic(ui.ctx());
+                    app.ui(ui);
+                },
+                SlideApp::new(session, Services::default()),
+            );
         harness.run_steps(2);
-        let title = harness.state().session.active().unwrap().doc.slides[0].shapes[0].id.0;
-        harness.state_mut().session.execute("text.edit", &json!({"id": title})).unwrap();
+        let title = harness.state().session.active().unwrap().doc.slides[0].shapes[0]
+            .id
+            .0;
+        harness
+            .state_mut()
+            .session
+            .execute("text.edit", &json!({"id": title}))
+            .unwrap();
         harness.event(egui::Event::Text("Hello, world.  Foo bar".into()));
         harness.run_steps(1);
         assert_eq!(title_text(harness.state()), "Hello, world.  Foo bar");
-        let caret = |h: &egui_kittest::Harness<'_, SlideApp>| h.state().session.active().unwrap().selection.text.clone().unwrap();
+        let caret = |h: &egui_kittest::Harness<'_, SlideApp>| {
+            h.state()
+                .session
+                .active()
+                .unwrap()
+                .selection
+                .text
+                .clone()
+                .unwrap()
+        };
         let ctrl = Modifiers::COMMAND;
         let ctrl_shift = Modifiers::COMMAND | Modifiers::SHIFT;
 
@@ -1288,7 +1600,13 @@ mod tests {
         assert_eq!((t.anchor, t.caret), ((1, 0), (0, 0)));
 
         // Ctrl+Shift+> (egui reports the Period key) grows the selected text's font.
-        let size = |h: &mut egui_kittest::Harness<'_, SlideApp>| h.state_mut().session.execute("format.state", &json!({})).unwrap()["size"].as_f64();
+        let size = |h: &mut egui_kittest::Harness<'_, SlideApp>| {
+            h.state_mut()
+                .session
+                .execute("format.state", &json!({}))
+                .unwrap()["size"]
+                .as_f64()
+        };
         let before = size(&mut harness);
         harness.key_press_modifiers(ctrl_shift, Key::Period);
         harness.run_steps(1);
@@ -1296,23 +1614,31 @@ mod tests {
         assert!(after > before.unwrap_or(0.0), "{before:?} → {after}");
         harness.key_press_modifiers(ctrl, Key::OpenBracket);
         harness.run_steps(1);
-        assert!(size(&mut harness).unwrap_or(f64::MAX) < after, "Ctrl+[ shrinks");
+        assert!(
+            size(&mut harness).unwrap_or(f64::MAX) < after,
+            "Ctrl+[ shrinks"
+        );
     }
 
     #[test]
     fn home_needs_an_open_presentation() {
         let mut app = SlideApp::new(Session::new(), Services::default());
         app.run("app.home", json!({})).unwrap();
-        assert!(!app.backstage_open(), "with nothing open the start screen shows anyway");
+        assert!(
+            !app.backstage_open(),
+            "with nothing open the start screen shows anyway"
+        );
     }
     fn canvas_harness() -> egui_kittest::Harness<'static, SlideApp> {
-        let mut harness = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-            |ui, app: &mut SlideApp| {
-                app.logic(ui.ctx());
-                app.ui(ui);
-            },
-            SlideApp::new(Session::with_new(), Services::default()),
-        );
+        let mut harness = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1200.0, 800.0))
+            .build_ui_state(
+                |ui, app: &mut SlideApp| {
+                    app.logic(ui.ctx());
+                    app.ui(ui);
+                },
+                SlideApp::new(Session::with_new(), Services::default()),
+            );
         harness.run_steps(2);
         let app = harness.state_mut();
         // Zoomed out, the canvas shows plenty of pasteboard around the slide.
@@ -1323,12 +1649,22 @@ mod tests {
     }
 
     fn selected(app: &SlideApp) -> Vec<u64> {
-        app.session.active().unwrap().selection.shapes.iter().map(|i| i.0 as u64).collect()
+        app.session
+            .active()
+            .unwrap()
+            .selection
+            .shapes
+            .iter()
+            .map(|i| i.0 as u64)
+            .collect()
     }
 
     fn shape_x(app: &SlideApp, id: u64) -> f64 {
         let st = app.session.active().unwrap();
-        st.shape(deckcraft_model::ShapeId(id as u32)).and_then(|s| s.xfrm).unwrap().x
+        st.shape(deckcraft_model::ShapeId(id as u32))
+            .and_then(|s| s.xfrm)
+            .unwrap()
+            .x
     }
 
     /// #270: PowerPoint's Normal view draws objects off the slide on the area around it, where
@@ -1336,18 +1672,38 @@ mod tests {
     #[test]
     fn off_slide_objects_show_on_the_pasteboard_and_can_be_selected_and_moved() {
         let mut harness = canvas_harness();
-        let off =
-            harness.state_mut().session.execute("shape.insert", &json!({"preset": "rect", "rect": [1000.0, 100.0, 120.0, 80.0]})).unwrap()["id"]
-                .as_u64()
-                .unwrap();
-        harness.state_mut().session.execute("edit.select", &json!({"ids": []})).unwrap();
+        let off = harness
+            .state_mut()
+            .session
+            .execute(
+                "shape.insert",
+                &json!({"preset": "rect", "rect": [1000.0, 100.0, 120.0, 80.0]}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        harness
+            .state_mut()
+            .session
+            .execute("edit.select", &json!({"ids": []}))
+            .unwrap();
         harness.run_steps(3);
 
         let app = harness.state();
-        let (slide, region, k) = (app.slide_rect.unwrap(), app.canvas_region.unwrap(), app.canvas_scale);
+        let (slide, region, k) = (
+            app.slide_rect.unwrap(),
+            app.canvas_region.unwrap(),
+            app.canvas_scale,
+        );
         // The texture reaches past the slide's right edge to the shape's, and no further left/up.
-        assert!(region.max.x >= slide.min.x + 1120.0 * k - 1.0, "{region:?} {slide:?}");
-        assert!((region.min.x - slide.min.x).abs() < 1.0 && (region.min.y - slide.min.y).abs() < 1.0, "{region:?} {slide:?}");
+        assert!(
+            region.max.x >= slide.min.x + 1120.0 * k - 1.0,
+            "{region:?} {slide:?}"
+        );
+        assert!(
+            (region.min.x - slide.min.x).abs() < 1.0 && (region.min.y - slide.min.y).abs() < 1.0,
+            "{region:?} {slide:?}"
+        );
         let centre = slide.min + egui::vec2(1060.0 * k, 140.0 * k);
         assert!(app.canvas_rect.unwrap().contains(centre));
 
@@ -1357,9 +1713,15 @@ mod tests {
             let shape = px(centre);
             let board = px(slide.min + egui::vec2(1060.0 * k, 400.0 * k));
             let doc = &harness.state().session.active().unwrap().doc;
-            let accent = doc.masters[0].theme.colors.get(deckcraft_color::SchemeSlot::Accent1);
+            let accent = doc.masters[0]
+                .theme
+                .colors
+                .get(deckcraft_color::SchemeSlot::Accent1);
             let close = |a: u8, b: u8| (a as i32 - b as i32).abs() <= 4;
-            assert!(close(shape[0], accent.r) && close(shape[1], accent.g) && close(shape[2], accent.b), "{shape:?} vs {accent:?}");
+            assert!(
+                close(shape[0], accent.r) && close(shape[1], accent.g) && close(shape[2], accent.b),
+                "{shape:?} vs {accent:?}"
+            );
             assert_ne!(shape, board);
         }
 
@@ -1387,8 +1749,14 @@ mod tests {
         let x = shape_x(harness.state(), off);
         assert!((x - (1000.0 + 40.0 / k as f64)).abs() < 1.5, "{x}");
         // The pasteboard followed it.
-        let (slide, region) = (harness.state().slide_rect.unwrap(), harness.state().canvas_region.unwrap());
-        assert!(region.max.x >= slide.min.x + (x as f32 + 120.0) * k - 1.0, "{region:?}");
+        let (slide, region) = (
+            harness.state().slide_rect.unwrap(),
+            harness.state().canvas_region.unwrap(),
+        );
+        assert!(
+            region.max.x >= slide.min.x + (x as f32 + 120.0) * k - 1.0,
+            "{region:?}"
+        );
 
         // Idle frames don't render the canvas again.
         let n = harness.state().textures.canvas_renders;
@@ -1403,9 +1771,16 @@ mod tests {
         harness.run_steps(3);
         let app = harness.state();
         let (slide, region) = (app.slide_rect.unwrap(), app.canvas_region.unwrap());
-        assert!((region.min - slide.min).length() < 0.5 && (region.max - slide.max).length() < 1.0, "{region:?} {slide:?}");
+        assert!(
+            (region.min - slide.min).length() < 0.5 && (region.max - slide.max).length() < 1.0,
+            "{region:?} {slide:?}"
+        );
         let n = app.textures.canvas_renders;
         harness.run_steps(3);
-        assert_eq!(harness.state().textures.canvas_renders, n, "an unchanged slide isn't rendered again");
+        assert_eq!(
+            harness.state().textures.canvas_renders,
+            n,
+            "an unchanged slide isn't rendered again"
+        );
     }
 }

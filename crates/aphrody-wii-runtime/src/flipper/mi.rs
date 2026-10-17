@@ -13,7 +13,9 @@ impl Default for MemoryInterface {
 
 impl MemoryInterface {
     pub fn new() -> Self {
-        Self { interrupt_mask: regs::MiInterruptMask::from_raw(0) }
+        Self {
+            interrupt_mask: regs::MiInterruptMask::from_raw(0),
+        }
     }
 }
 

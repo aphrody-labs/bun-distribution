@@ -43,8 +43,14 @@ mod tests {
         e.execute("track.new", &json!({})).unwrap();
         let t = e.session().tracks[0].id.0;
         let id = "vst3:00000000000000000000000000000000";
-        assert!(e.execute("mix.insert", &json!({"track": t, "plugin": id})).is_err());
-        assert!(e.execute("mix.insert", &json!({"track": t, "plugin": "vst3:not-hex"})).is_err());
+        assert!(
+            e.execute("mix.insert", &json!({"track": t, "plugin": id}))
+                .is_err()
+        );
+        assert!(
+            e.execute("mix.insert", &json!({"track": t, "plugin": "vst3:not-hex"}))
+                .is_err()
+        );
         assert!(crate::cmd::clap::plugin_info(id).is_none());
     }
 }

@@ -30,9 +30,9 @@ pub mod prelude {
     pub use crate::text2d::{Text2d, Text2dReader, Text2dWriter};
     #[doc(hidden)]
     pub use crate::{
+        SpriteScalingMode,
         sprite::{Sprite, SpriteImageMode},
         texture_slice::{BorderRect, SliceScaleMode, TextureSlicer},
-        SpriteScalingMode,
     };
 }
 
@@ -43,7 +43,7 @@ use bevy_camera::{
     visibility::VisibilitySystems,
 };
 use bevy_math::Vec2;
-use bevy_mesh::{mark_2d_meshes_as_changed_if_their_assets_changed, Mesh, Mesh2d};
+use bevy_mesh::{Mesh, Mesh2d, mark_2d_meshes_as_changed_if_their_assets_changed};
 #[cfg(feature = "bevy_text")]
 use bevy_text::detect_text_needs_rerender;
 #[cfg(feature = "bevy_picking")]
@@ -228,21 +228,23 @@ mod test {
         let entity = app.world_mut().spawn(Sprite::from_image(image_handle)).id();
 
         // Verify that the entity does not have an AABB
-        assert!(!app
-            .world()
-            .get_entity(entity)
-            .expect("Could not find entity")
-            .contains::<Aabb>());
+        assert!(
+            !app.world()
+                .get_entity(entity)
+                .expect("Could not find entity")
+                .contains::<Aabb>()
+        );
 
         // Run system
         app.update();
 
         // Verify the AABB exists
-        assert!(app
-            .world()
-            .get_entity(entity)
-            .expect("Could not find entity")
-            .contains::<Aabb>());
+        assert!(
+            app.world()
+                .get_entity(entity)
+                .expect("Could not find entity")
+                .contains::<Aabb>()
+        );
     }
 
     #[test]

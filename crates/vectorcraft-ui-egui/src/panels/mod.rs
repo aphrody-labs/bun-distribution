@@ -92,8 +92,20 @@ pub(crate) fn corner_radius_row(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node,
 }
 
 /// [`corner_radius_row`]'s field, `width` wide.
-pub(crate) fn corner_radius_field(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, id: impl std::hash::Hash + std::fmt::Debug, width: f32) {
-    if let Some(r) = crate::widgets::num_field(ui, id, corner_radius(app, n), app.session.general_unit(), width) {
+pub(crate) fn corner_radius_field(
+    app: &mut VectorcraftApp,
+    ui: &mut Ui,
+    n: &Node,
+    id: impl std::hash::Hash + std::fmt::Debug,
+    width: f32,
+) {
+    if let Some(r) = crate::widgets::num_field(
+        ui,
+        id,
+        corner_radius(app, n),
+        app.session.general_unit(),
+        width,
+    ) {
         app.run("object.setLiveShape", json!({"radius": r})).ok();
     }
 }
@@ -143,7 +155,10 @@ pub fn show_icon_panel(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) {
         asset_export::ID => asset_export::show(app, ui),
         css_properties::ID => css_properties::show(app, ui),
         _ => {
-            dim_label(ui, tl!("This panel is on the roadmap (see the parity plan)."));
+            dim_label(
+                ui,
+                tl!("This panel is on the roadmap (see the parity plan)."),
+            );
         }
     }
 }
@@ -199,8 +214,19 @@ pub fn panel_menu_items(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) -> bool
 pub fn panel_menu(app: &mut VectorcraftApp, ui: &mut Ui, id: &str, rect: Rect) {
     let t = Tokens::get(ui.ctx());
     let resp = ui.interact(rect, ui.id().with(("panel-menu", id)), Sense::click());
-    icons::paint(ui, "menu", rect.shrink(1.0), if resp.hovered() { t.text_strong } else { t.text_dim });
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!("Panel menu")));
+    icons::paint(
+        ui,
+        "menu",
+        rect.shrink(1.0),
+        if resp.hovered() {
+            t.text_strong
+        } else {
+            t.text_dim
+        },
+    );
+    resp.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!("Panel menu"))
+    });
     let resp = resp.on_hover_text(tl!("Panel menu"));
     egui::Popup::menu(&resp).show(|ui| {
         crate::widgets::menu_scroll(ui, |ui| {
@@ -231,7 +257,11 @@ pub fn libraries(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// The paint command of the active proxy (Fill or Stroke), or of the inactive one.
 pub(crate) fn proxy_cmd(app: &VectorcraftApp, inactive: bool) -> &'static str {
-    if app.session.fill_active != inactive { "paint.setFill" } else { "paint.setStroke" }
+    if app.session.fill_active != inactive {
+        "paint.setFill"
+    } else {
+        "paint.setStroke"
+    }
 }
 
 /// The first selected node, borrowed (for per-frame reads that need no copy of it).
@@ -263,7 +293,9 @@ pub(crate) fn current_paints(app: &VectorcraftApp) -> (Paint, Paint) {
 /// Whether the selected objects' fills and strokes differ (the proxies show "?"), cached per
 /// document revision and Appearance panel item.
 pub(crate) fn mixed_paints(app: &VectorcraftApp, ctx: &egui::Context) -> (bool, bool) {
-    let Some(st) = app.session.active() else { return (false, false) };
+    let Some(st) = app.session.active() else {
+        return (false, false);
+    };
     let key = (st.uid, st.revision, app.session.appearance_item());
     match pstate::<Option<((u64, u64, Option<usize>), (bool, bool))>>(ctx, "proxy-mixed") {
         Some((k, mixed)) if k == key => mixed,
@@ -288,7 +320,13 @@ pub(crate) fn current_stroke(app: &VectorcraftApp) -> Option<StrokeLayer> {
 /// ([`vectorcraft_engine::DocState::stroke_mixed`]), cached per document revision. While the Type
 /// tool edits text, the selected characters' stroke shows as it is.
 pub(crate) fn stroke_mixed(app: &VectorcraftApp, ctx: &egui::Context) -> StrokeMixed {
-    let Some(st) = app.session.active().filter(|_| character::text_editing(app).is_none()) else { return StrokeMixed::default() };
+    let Some(st) = app
+        .session
+        .active()
+        .filter(|_| character::text_editing(app).is_none())
+    else {
+        return StrokeMixed::default();
+    };
     let key = (st.uid, st.revision);
     match pstate::<Option<((u64, u64), StrokeMixed)>>(ctx, "stroke-mixed") {
         Some((k, mixed)) if k == key => mixed,
@@ -304,10 +342,16 @@ pub(crate) fn stroke_mixed(app: &VectorcraftApp, ctx: &egui::Context) -> StrokeM
 /// panel's active item's, else the first selected object's.
 pub(crate) fn current_transparency(app: &VectorcraftApp) -> Option<(f32, BlendMode)> {
     let n = first_node(app)?;
-    Some(match app.session.appearance_item().and_then(|i| n.appearance.items.get(i)) {
-        Some(it) => (it.opacity(), it.blend()),
-        None => (n.opacity, n.blend),
-    })
+    Some(
+        match app
+            .session
+            .appearance_item()
+            .and_then(|i| n.appearance.items.get(i))
+        {
+            Some(it) => (it.opacity(), it.blend()),
+            None => (n.opacity, n.blend),
+        },
+    )
 }
 
 /// Is the active proxy "?" (the selected objects' paints differ)?
@@ -345,10 +389,20 @@ pub(crate) fn proxy(app: &mut VectorcraftApp, ui: &mut Ui, size: f32) {
 /// `chevron` after it): the proxy's paint, "?" when the selected objects' paints differ. A click
 /// brings that proxy forward and opens a popover with the Swatches panel; Shift-click (or the
 /// popover's toggle) shows the Color panel's mixer instead.
-pub(crate) fn paint_chip(app: &mut VectorcraftApp, ui: &mut Ui, stroke: bool, size: f32, chevron: bool) {
+pub(crate) fn paint_chip(
+    app: &mut VectorcraftApp,
+    ui: &mut Ui,
+    stroke: bool,
+    size: f32,
+    chevron: bool,
+) {
     let (fill, stroke_paint) = current_paints(app);
     let mixed = mixed_paints(app, ui.ctx());
-    let (paint, mixed) = if stroke { (stroke_paint, mixed.1) } else { (fill, mixed.0) };
+    let (paint, mixed) = if stroke {
+        (stroke_paint, mixed.1)
+    } else {
+        (fill, mixed.0)
+    };
     let resp = crate::widgets::chip_button(ui, size, chevron, |ui, chip| {
         crate::widgets::proxy_chip(ui, chip, &paint, mixed, stroke.then_some(size * 0.25));
     });
@@ -358,7 +412,8 @@ pub(crate) fn paint_chip(app: &mut VectorcraftApp, ui: &mut Ui, stroke: bool, si
         "Fill: click for swatches, Shift-click for the color mixer"
     });
     if resp.clicked() {
-        app.run("paint.toggleActive", json!({ "fill": !stroke })).ok();
+        app.run("paint.toggleActive", json!({ "fill": !stroke }))
+            .ok();
         set_pstate(ui.ctx(), MIXER, ui.input(|i| i.modifiers.shift));
     }
     // A popover that keeps its own open state: the Swatches body opens menus of its own (Swatch
@@ -376,7 +431,10 @@ fn paint_popover(app: &mut VectorcraftApp, ui: &mut Ui) {
     ui.set_width(POPOVER_WIDTH);
     let mixer: bool = pstate(ui.ctx(), MIXER);
     ui.horizontal(|ui| {
-        for (icon, tip, m) in [("swatch-book", "Swatches", false), ("palette", "Color Mixer (Shift-click the chip)", true)] {
+        for (icon, tip, m) in [
+            ("swatch-book", "Swatches", false),
+            ("palette", "Color Mixer (Shift-click the chip)", true),
+        ] {
             if crate::widgets::icon_button(ui, icon, tip, mixer == m, 22.0).clicked() {
                 set_pstate(ui.ctx(), MIXER, m);
             }
@@ -392,7 +450,13 @@ fn paint_popover(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// Run `cmd` live: while dragging, preview on top of an interaction snapshot; on release, commit
 /// it as one undo step. Falls back to a plain run when no document is open.
-pub(crate) fn live_run(app: &mut VectorcraftApp, label: &str, cmd: &str, params: Value, phase: Live) {
+pub(crate) fn live_run(
+    app: &mut VectorcraftApp,
+    label: &str,
+    cmd: &str,
+    params: Value,
+    phase: Live,
+) {
     match phase {
         Live::Idle => {}
         Live::Dragging | Live::Released => {
@@ -412,8 +476,12 @@ pub(crate) fn live_run(app: &mut VectorcraftApp, label: &str, cmd: &str, params:
 }
 
 /// Per-panel UI state kept in egui memory (not document state).
-pub(crate) fn pstate<T: Clone + Default + Send + Sync + 'static>(ctx: &egui::Context, key: &str) -> T {
-    ctx.data(|d| d.get_temp::<T>(egui::Id::new(("panel-state", key)))).unwrap_or_default()
+pub(crate) fn pstate<T: Clone + Default + Send + Sync + 'static>(
+    ctx: &egui::Context,
+    key: &str,
+) -> T {
+    ctx.data(|d| d.get_temp::<T>(egui::Id::new(("panel-state", key))))
+        .unwrap_or_default()
 }
 pub(crate) fn set_pstate<T: Clone + Send + Sync + 'static>(ctx: &egui::Context, key: &str, v: T) {
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(("panel-state", key)), v));
@@ -430,7 +498,12 @@ pub(crate) fn recent_colors_row(app: &VectorcraftApp, ui: &mut Ui) -> Option<Col
     let t = Tokens::get(ui.ctx());
     crate::widgets::subheader(ui, tl!("Recent Colors"));
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 22.0), Sense::hover());
-    ui.painter().rect_stroke(r, 0.0, egui::Stroke::new(1.0, t.input_border), egui::StrokeKind::Inside);
+    ui.painter().rect_stroke(
+        r,
+        0.0,
+        egui::Stroke::new(1.0, t.input_border),
+        egui::StrokeKind::Inside,
+    );
     let mut chosen = None;
     for (i, c) in app.session.recent_colors.iter().enumerate() {
         let cell = Rect::from_min_size(r.min + vec2(3.0 + i as f32 * 19.0, 3.0), vec2(16.0, 16.0));
@@ -454,8 +527,14 @@ pub(crate) use vectorcraft_tools::params::color_json;
 pub(crate) fn paint_params(p: &Paint) -> Value {
     match p {
         Paint::None => json!({"none": true}),
-        Paint::Solid { swatch: Some(n), tint, .. } if *tint < 1.0 => json!({"swatch": n, "tint": tint * 100.0}),
-        Paint::Solid { swatch: Some(n), .. } => json!({"swatch": n}),
+        Paint::Solid {
+            swatch: Some(n),
+            tint,
+            ..
+        } if *tint < 1.0 => json!({"swatch": n, "tint": tint * 100.0}),
+        Paint::Solid {
+            swatch: Some(n), ..
+        } => json!({"swatch": n}),
         Paint::Solid { color, .. } => json!({"color": color_json(color)}),
         Paint::Gradient(g) => json!({"gradient": vectorcraft_tools::params::gradient_params(g)}),
         Paint::Pattern { pattern, .. } => json!({"pattern": pattern}),
@@ -490,14 +569,27 @@ mod tests {
         assert_eq!(paint_params(&Paint::None), json!({"none": true}));
         let p = paint_params(&Paint::solid(Color::cmyk(0.1, 0.2, 0.3, 0.4)));
         assert!((p["color"]["k"].as_f64().unwrap() - 0.4).abs() < 1e-6);
-        let g = Paint::Gradient(Box::new(vectorcraft_color::GradientPaint::new(Default::default())));
+        let g = Paint::Gradient(Box::new(vectorcraft_color::GradientPaint::new(
+            Default::default(),
+        )));
         let p = paint_params(&g);
         assert_eq!(p["gradient"]["kind"], "linear");
         assert_eq!(p["gradient"]["stops"].as_array().unwrap().len(), 2);
-        assert_eq!(paint_params(&vectorcraft_doc::pattern::pattern_paint("Dots")), json!({"pattern": "Dots"}));
+        assert_eq!(
+            paint_params(&vectorcraft_doc::pattern::pattern_paint("Dots")),
+            json!({"pattern": "Dots"})
+        );
         assert_eq!(p["gradient"]["stops"][0]["midpoint"], json!(0.5));
-        let tint = Paint::Solid { color: Color::gray(0.5), swatch: Some("Ink".into()), tint: 0.5 };
-        assert_eq!(paint_params(&tint), json!({"swatch": "Ink", "tint": 50.0}), "a tint keeps its percentage");
+        let tint = Paint::Solid {
+            color: Color::gray(0.5),
+            swatch: Some("Ink".into()),
+            tint: 0.5,
+        };
+        assert_eq!(
+            paint_params(&tint),
+            json!({"swatch": "Ink", "tint": 50.0}),
+            "a tint keeps its percentage"
+        );
     }
 }
 #[cfg(test)]

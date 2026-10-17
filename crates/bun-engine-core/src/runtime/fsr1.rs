@@ -13,8 +13,14 @@ const SHADER: &str = include_str!("fsr1.wgsl");
 /// (`ExpressionAlreadyInScope`), so each variant is its own module.
 fn variant(device: &wgpu::Device, rgb_source: bool, srgb_target: bool) -> wgpu::ShaderModule {
     let source = SHADER
-        .replace("override RGB_SOURCE: bool = false;", &format!("const RGB_SOURCE: bool = {rgb_source};"))
-        .replace("override SRGB_TARGET: bool = false;", &format!("const SRGB_TARGET: bool = {srgb_target};"));
+        .replace(
+            "override RGB_SOURCE: bool = false;",
+            &format!("const RGB_SOURCE: bool = {rgb_source};"),
+        )
+        .replace(
+            "override SRGB_TARGET: bool = false;",
+            &format!("const SRGB_TARGET: bool = {srgb_target};"),
+        );
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("fsr1"),
         source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -81,7 +87,11 @@ fn texture_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
 
 impl Fsr1 {
     /// Pipelines for `target_format` (sRGB targets get linear output) and a `hud_size` overlay.
-    pub fn new(device: &wgpu::Device, target_format: wgpu::TextureFormat, hud_size: (u32, u32)) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        target_format: wgpu::TextureFormat,
+        hud_size: (u32, u32),
+    ) -> Self {
         let srgb = target_format.is_srgb();
         let (nv12_module, rgb_module) = (variant(device, false, srgb), variant(device, true, srgb));
         let params_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -123,7 +133,10 @@ impl Fsr1 {
         let params_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("fsr params"),
             layout: &params_layout,
-            entries: &[wgpu::BindGroupEntry { binding: 0, resource: params.as_entire_binding() }],
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params.as_entire_binding(),
+            }],
         });
         let pipeline = |label: &str,
                         entry: &str,
@@ -149,7 +162,11 @@ impl Fsr1 {
                     module,
                     entry_point: Some(entry),
                     compilation_options: Default::default(),
-                    targets: &[Some(wgpu::ColorTargetState { format, blend, write_mask: wgpu::ColorWrites::ALL })],
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
                 }),
                 primitive: wgpu::PrimitiveState::default(),
                 depth_stencil: None,
@@ -159,8 +176,22 @@ impl Fsr1 {
             })
         };
         let easu_groups = [Some(&params_layout), Some(&planes_layout)];
-        let easu_nv12 = pipeline("fsr easu nv12", "easu", &easu_groups, UPSCALED_FORMAT, None, &nv12_module);
-        let easu_rgb = pipeline("fsr easu rgb", "easu", &easu_groups, UPSCALED_FORMAT, None, &rgb_module);
+        let easu_nv12 = pipeline(
+            "fsr easu nv12",
+            "easu",
+            &easu_groups,
+            UPSCALED_FORMAT,
+            None,
+            &nv12_module,
+        );
+        let easu_rgb = pipeline(
+            "fsr easu rgb",
+            "easu",
+            &easu_groups,
+            UPSCALED_FORMAT,
+            None,
+            &rgb_module,
+        );
         let rcas = pipeline(
             "fsr rcas",
             "rcas",
@@ -184,21 +215,27 @@ impl Fsr1 {
             ..Default::default()
         });
         let hud_texture = device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("fsr hud"),
-                size: wgpu::Extent3d { width: hud_size.0.max(1), height: hud_size.1.max(1), depth_or_array_layers: 1 },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8Unorm,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
+            label: Some("fsr hud"),
+            size: wgpu::Extent3d {
+                width: hud_size.0.max(1),
+                height: hud_size.1.max(1),
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
         });
         let hud_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("fsr hud"),
             layout: &single_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::TextureView(&hud_texture.create_view(&Default::default())),
+                resource: wgpu::BindingResource::TextureView(
+                    &hud_texture.create_view(&Default::default()),
+                ),
             }],
         });
         Self {
@@ -226,14 +263,28 @@ impl Fsr1 {
     }
 
     /// Source bind group of NV12 luma (R8) and chroma (RG8) views.
-    pub fn planes_group(&self, device: &wgpu::Device, luma: &wgpu::TextureView, chroma: &wgpu::TextureView) -> wgpu::BindGroup {
+    pub fn planes_group(
+        &self,
+        device: &wgpu::Device,
+        luma: &wgpu::TextureView,
+        chroma: &wgpu::TextureView,
+    ) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("fsr nv12 planes"),
             layout: &self.planes_layout,
             entries: &[
-                wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(luma) },
-                wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(chroma) },
-                wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&self.sampler) },
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(luma),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(chroma),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
             ],
         })
     }
@@ -258,7 +309,11 @@ impl Fsr1 {
                 bytes_per_row: Some(self.hud_size.0 * 4),
                 rows_per_image: Some(self.hud_size.1),
             },
-            wgpu::Extent3d { width: self.hud_size.0, height: self.hud_size.1, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width: self.hud_size.0,
+                height: self.hud_size.1,
+                depth_or_array_layers: 1,
+            },
         );
     }
 
@@ -294,12 +349,17 @@ impl Fsr1 {
             if self.upscaled.as_ref().is_none_or(|u| u.size != out) {
                 let texture = device.create_texture(&wgpu::TextureDescriptor {
                     label: Some("fsr easu output"),
-                    size: wgpu::Extent3d { width: out.0, height: out.1, depth_or_array_layers: 1 },
+                    size: wgpu::Extent3d {
+                        width: out.0,
+                        height: out.1,
+                        depth_or_array_layers: 1,
+                    },
                     mip_level_count: 1,
                     sample_count: 1,
                     dimension: wgpu::TextureDimension::D2,
                     format: UPSCALED_FORMAT,
-                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING
+                        | wgpu::TextureUsages::RENDER_ATTACHMENT,
                     view_formats: &[],
                 });
                 let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -307,10 +367,16 @@ impl Fsr1 {
                     layout: &self.single_layout,
                     entries: &[wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&texture.create_view(&Default::default())),
+                        resource: wgpu::BindingResource::TextureView(
+                            &texture.create_view(&Default::default()),
+                        ),
                     }],
                 });
-                self.upscaled = Some(Upscaled { texture, group, size: out });
+                self.upscaled = Some(Upscaled {
+                    texture,
+                    group,
+                    size: out,
+                });
             }
             let upscaled = self.upscaled.as_ref().unwrap();
             let view = upscaled.texture.create_view(&Default::default());
@@ -320,7 +386,10 @@ impl Fsr1 {
                     view: &view,
                     depth_slice: None,
                     resolve_target: None,
-                    ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color::BLACK), store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
                 })],
                 depth_stencil_attachment: None,
                 timestamp_writes: None,
@@ -343,7 +412,10 @@ impl Fsr1 {
                 view: target,
                 depth_slice: None,
                 resolve_target: None,
-                ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color::BLACK), store: wgpu::StoreOp::Store },
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
             })],
             depth_stencil_attachment: None,
             timestamp_writes: None,
@@ -351,7 +423,14 @@ impl Fsr1 {
             multiview_mask: None,
         });
         if let (Some((x, y, w, h)), Some(upscaled)) = (viewport, self.upscaled.as_ref()) {
-            pass.set_viewport(x, y, w.min(target_size.0 as f32 - x), h.min(target_size.1 as f32 - y), 0.0, 1.0);
+            pass.set_viewport(
+                x,
+                y,
+                w.min(target_size.0 as f32 - x),
+                h.min(target_size.1 as f32 - y),
+                0.0,
+                1.0,
+            );
             pass.set_pipeline(&self.rcas);
             pass.set_bind_group(0, &self.params_group, &[]);
             pass.set_bind_group(2, &upscaled.group, &[]);
@@ -359,8 +438,12 @@ impl Fsr1 {
         }
         if show_hud {
             // Only the HUD rectangle is rasterized.
-            let w = (self.hud_size.0 as f32).min(target_size.0 as f32 - 8.0).max(1.0);
-            let h = (self.hud_size.1 as f32).min(target_size.1 as f32 - 8.0).max(1.0);
+            let w = (self.hud_size.0 as f32)
+                .min(target_size.0 as f32 - 8.0)
+                .max(1.0);
+            let h = (self.hud_size.1 as f32)
+                .min(target_size.1 as f32 - 8.0)
+                .max(1.0);
             pass.set_viewport(8.0, 8.0, w, h, 0.0, 1.0);
             pass.set_pipeline(&self.hud);
             pass.set_bind_group(0, &self.params_group, &[]);
@@ -388,7 +471,9 @@ mod plugin {
             Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
             camera::ExtractedCamera,
             render_asset::RenderAssets,
-            render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages, TextureViewId},
+            render_resource::{
+                Extent3d, TextureDimension, TextureFormat, TextureUsages, TextureViewId,
+            },
             renderer::{RenderContext, RenderDevice, RenderQueue, ViewQuery},
             texture::GpuImage,
             view::ViewTarget,
@@ -412,14 +497,19 @@ mod plugin {
         /// `Assets<Image>` and show in an `ImageNode` or a sprite.
         pub fn target_image(width: u32, height: u32) -> Image {
             let mut image = Image::new_fill(
-                Extent3d { width: width.max(1), height: height.max(1), depth_or_array_layers: 1 },
+                Extent3d {
+                    width: width.max(1),
+                    height: height.max(1),
+                    depth_or_array_layers: 1,
+                },
                 TextureDimension::D2,
                 &[0, 0, 0, 255],
                 TextureFormat::Rgba8UnormSrgb,
                 RenderAssetUsages::RENDER_WORLD,
             );
-            image.texture_descriptor.usage =
-                TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
+            image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+                | TextureUsages::COPY_DST
+                | TextureUsages::RENDER_ATTACHMENT;
             image
         }
     }
@@ -434,8 +524,18 @@ mod plugin {
 
     impl State {
         /// The FSR core for `format` and the source bind group of `image`.
-        fn prepare(&mut self, device: &wgpu::Device, format: wgpu::TextureFormat, image: &GpuImage, sharpness: f32) -> (&mut Fsr1, &wgpu::BindGroup) {
-            if self.fsr.as_ref().is_none_or(|f| f.target_format() != format) {
+        fn prepare(
+            &mut self,
+            device: &wgpu::Device,
+            format: wgpu::TextureFormat,
+            image: &GpuImage,
+            sharpness: f32,
+        ) -> (&mut Fsr1, &wgpu::BindGroup) {
+            if self
+                .fsr
+                .as_ref()
+                .is_none_or(|f| f.target_format() != format)
+            {
                 self.fsr = Some(Fsr1::new(device, format, (1, 1)));
                 self.group = None;
             }
@@ -451,11 +551,16 @@ mod plugin {
 
     impl Plugin for Fsr1Plugin {
         fn build(&self, app: &mut App) {
-            let Some(render_app) = app.get_sub_app_mut(RenderApp) else { return };
+            let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
+                return;
+            };
             render_app
                 .init_resource::<State>()
                 .add_systems(ExtractSchedule, extract)
-                .add_systems(Render, fsr1_to_image.in_set(RenderSystems::PrepareBindGroups))
+                .add_systems(
+                    Render,
+                    fsr1_to_image.in_set(RenderSystems::PrepareBindGroups),
+                )
                 .add_systems(Core2d, fsr1_post_process.after(upscaling));
         }
     }
@@ -468,7 +573,10 @@ mod plugin {
     }
 
     fn size_of(image: &GpuImage) -> (u32, u32) {
-        (image.texture_descriptor.size.width, image.texture_descriptor.size.height)
+        (
+            image.texture_descriptor.size.width,
+            image.texture_descriptor.size.height,
+        )
     }
 
     /// Render-to-image mode: one EASU + RCAS pass into the target, submitted before the frame's
@@ -481,13 +589,27 @@ mod plugin {
         mut state: ResMut<State>,
     ) {
         let Some(upscale) = upscale else { return };
-        let Some(target) = upscale.target.as_ref().and_then(|t| images.get(t)) else { return };
-        let Some(source) = images.get(&upscale.image) else { return };
+        let Some(target) = upscale.target.as_ref().and_then(|t| images.get(t)) else {
+            return;
+        };
+        let Some(source) = images.get(&upscale.image) else {
+            return;
+        };
         let device = device.wgpu_device();
         let format = target.texture_descriptor.format;
         let (fsr, group) = state.prepare(device, format, source, upscale.sharpness_stops);
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("fsr1 to image") });
-        fsr.encode(device, &queue, &mut encoder, Some((Fsr1Source::Rgb(group), size_of(source))), &target.texture_view, size_of(target), false);
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("fsr1 to image"),
+        });
+        fsr.encode(
+            device,
+            &queue,
+            &mut encoder,
+            Some((Fsr1Source::Rgb(group), size_of(source))),
+            &target.texture_view,
+            size_of(target),
+            false,
+        );
         queue.submit([encoder.finish()]);
     }
 
@@ -500,11 +622,20 @@ mod plugin {
         mut state: ResMut<State>,
         mut ctx: RenderContext,
     ) {
-        let Some(upscale) = upscale.filter(|u| u.target.is_none()) else { return };
-        let Some(source) = images.get(&upscale.image) else { return };
+        let Some(upscale) = upscale.filter(|u| u.target.is_none()) else {
+            return;
+        };
+        let Some(source) = images.get(&upscale.image) else {
+            return;
+        };
         let (target, camera) = view.into_inner();
-        let Some(target_size) = camera.physical_target_size else { return };
-        let (Some(out), Some(format)) = (target.out_texture(), target.out_texture_view_format()) else { return };
+        let Some(target_size) = camera.physical_target_size else {
+            return;
+        };
+        let (Some(out), Some(format)) = (target.out_texture(), target.out_texture_view_format())
+        else {
+            return;
+        };
         let device = device.wgpu_device();
         let (fsr, group) = state.prepare(device, format, source, upscale.sharpness_stops);
         fsr.encode(

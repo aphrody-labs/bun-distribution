@@ -31,7 +31,9 @@ pub(crate) async fn send_request(
     accept: &str,
 ) -> Result<reqwest::Response, ModelError> {
     send_with_retry(runtime, &|| {
-        let mut request = http.request(method.clone(), url).header(reqwest::header::ACCEPT, accept);
+        let mut request = http
+            .request(method.clone(), url)
+            .header(reqwest::header::ACCEPT, accept);
         if let Some(token) = &runtime.bearer_token {
             request = request.bearer_auth(token);
         }
@@ -88,8 +90,8 @@ pub(crate) fn error_message(body: &str) -> String {
             {
                 return message.clone();
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
     match map.get("detail") {
         Some(Value::String(detail)) if !detail.is_empty() => detail.clone(),
@@ -100,8 +102,9 @@ pub(crate) fn error_message(body: &str) -> String {
 /// Replace a raw error body in [`ModelError::Api`] by its extracted message.
 pub(crate) fn refine_api_error(error: ModelError) -> ModelError {
     match error {
-        ModelError::Api { status, message } => {
-            ModelError::Api { status, message: error_message(&message) }
+        ModelError::Api { status, message } => ModelError::Api {
+            status,
+            message: error_message(&message),
         },
         other => other,
     }
@@ -127,7 +130,10 @@ pub(crate) fn server_root(base_url: &str) -> String {
 
 /// A copy of `runtime` whose `base_url` is the server root.
 pub(crate) fn rooted(runtime: &ProviderRuntime) -> ProviderRuntime {
-    ProviderRuntime { base_url: server_root(&runtime.base_url), ..runtime.clone() }
+    ProviderRuntime {
+        base_url: server_root(&runtime.base_url),
+        ..runtime.clone()
+    }
 }
 
 #[cfg(test)]
@@ -138,18 +144,39 @@ mod tests {
 
     #[test]
     fn server_root_strips_only_a_trailing_api_segment() {
-        assert_eq!(server_root("http://localhost:11434/v1"), "http://localhost:11434");
-        assert_eq!(server_root("http://localhost:11434/v1/"), "http://localhost:11434");
-        assert_eq!(server_root("http://localhost:11434"), "http://localhost:11434");
-        assert_eq!(server_root("http://localhost:11434/api"), "http://localhost:11434");
-        assert_eq!(server_root("https://gw.example/ollama/v1"), "https://gw.example/ollama");
+        assert_eq!(
+            server_root("http://localhost:11434/v1"),
+            "http://localhost:11434"
+        );
+        assert_eq!(
+            server_root("http://localhost:11434/v1/"),
+            "http://localhost:11434"
+        );
+        assert_eq!(
+            server_root("http://localhost:11434"),
+            "http://localhost:11434"
+        );
+        assert_eq!(
+            server_root("http://localhost:11434/api"),
+            "http://localhost:11434"
+        );
+        assert_eq!(
+            server_root("https://gw.example/ollama/v1"),
+            "https://gw.example/ollama"
+        );
         // A path that merely contains the segment is left alone.
-        assert_eq!(server_root("https://host/v1/models-proxy"), "https://host/v1/models-proxy");
+        assert_eq!(
+            server_root("https://host/v1/models-proxy"),
+            "https://host/v1/models-proxy"
+        );
     }
 
     #[test]
     fn error_messages_are_extracted_from_every_server_shape() {
-        assert_eq!(error_message(r#"{"error":"model 'x' not found"}"#), "model 'x' not found");
+        assert_eq!(
+            error_message(r#"{"error":"model 'x' not found"}"#),
+            "model 'x' not found"
+        );
         assert_eq!(
             error_message(
                 r#"{"error":{"message":"bad request","type":"BadRequestError","code":400}}"#
@@ -158,7 +185,10 @@ mod tests {
         );
         assert_eq!(error_message(r#"{"detail":"not allowed"}"#), "not allowed");
         assert_eq!(error_message("  plain text body \n"), "plain text body");
-        assert_eq!(error_message(r#"{"unexpected":true}"#), r#"{"unexpected":true}"#);
+        assert_eq!(
+            error_message(r#"{"unexpected":true}"#),
+            r#"{"unexpected":true}"#
+        );
     }
 
     #[test]

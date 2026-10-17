@@ -35,7 +35,11 @@ pub enum BatchKind {
 pub enum Notice {
     /// The server refused one of this client's batches: what it changed is rolled back and it
     /// leaves the undo history.
-    Rejected { batch_id: u64, kind: BatchKind, reason: String },
+    Rejected {
+        batch_id: u64,
+        kind: BatchKind,
+        reason: String,
+    },
     /// The session restarted while this client was away: its unconfirmed batches are gone.
     Lost { batches: usize },
 }
@@ -44,11 +48,22 @@ impl Notice {
     /// The text to show.
     pub fn message(&self) -> String {
         match self {
-            Notice::Rejected { kind: BatchKind::Undo, reason, .. } => format!("Couldn't undo: {reason}"),
-            Notice::Rejected { kind: BatchKind::Redo, reason, .. } => format!("Couldn't redo: {reason}"),
+            Notice::Rejected {
+                kind: BatchKind::Undo,
+                reason,
+                ..
+            } => format!("Couldn't undo: {reason}"),
+            Notice::Rejected {
+                kind: BatchKind::Redo,
+                reason,
+                ..
+            } => format!("Couldn't redo: {reason}"),
             Notice::Rejected { reason, .. } => format!("Your change couldn't be applied: {reason}"),
             Notice::Lost { batches } => {
-                format!("The live session restarted: {batches} unsent change{} couldn't be kept", if *batches == 1 { "" } else { "s" })
+                format!(
+                    "The live session restarted: {batches} unsent change{} couldn't be kept",
+                    if *batches == 1 { "" } else { "s" }
+                )
             }
         }
     }
@@ -88,7 +103,12 @@ pub(crate) struct Step {
 
 /// What `changes` (a batch that turned `pre` into `post`) wrote, oriented `[pre, post]`; with
 /// `same`, also the targets it wrote that kept their value.
-fn capture(pre: &Replica, post: &Replica, changes: &[Change], same: bool) -> Result<(Writes, Nodes), Error> {
+fn capture(
+    pre: &Replica,
+    post: &Replica,
+    changes: &[Change],
+    same: bool,
+) -> Result<(Writes, Nodes), Error> {
     let (a, b) = (pre.document(), post.document());
     let mut writes = Writes::new();
     let mut nodes = Nodes::new();
@@ -129,7 +149,14 @@ fn capture(pre: &Replica, post: &Replica, changes: &[Change], same: bool) -> Res
 
 impl Step {
     /// The step for batch `batch` that turned `pre` into `post` with `changes`.
-    pub fn new(id: u64, label: &str, batch: u64, pre: &Replica, post: &Replica, changes: &[Change]) -> Result<Step, Error> {
+    pub fn new(
+        id: u64,
+        label: &str,
+        batch: u64,
+        pre: &Replica,
+        post: &Replica,
+        changes: &[Change],
+    ) -> Result<Step, Error> {
         let (writes, nodes) = capture(pre, post, changes, false)?;
         Ok(Step {
             id,
@@ -151,9 +178,19 @@ impl Step {
     /// `post`. The edit's nodes become those it now creates and deletes (a layer someone put
     /// inside a layer it deletes comes back with an undo); an undo or redo only updates the nodes
     /// of the step (what it takes with it beyond them was someone else's).
-    pub fn refresh(&mut self, pre: &Replica, post: &Replica, changes: &[Change], kind: BatchKind) -> Result<(), Error> {
+    pub fn refresh(
+        &mut self,
+        pre: &Replica,
+        post: &Replica,
+        changes: &[Change],
+        kind: BatchKind,
+    ) -> Result<(), Error> {
         let (writes, nodes) = capture(pre, post, changes, true)?;
-        let (p, q) = if kind == BatchKind::Undo { (FWD, BACK) } else { (BACK, FWD) };
+        let (p, q) = if kind == BatchKind::Undo {
+            (FWD, BACK)
+        } else {
+            (BACK, FWD)
+        };
         for (t, [x, y]) in writes {
             if !self.taken.contains(&t)
                 && let Some(s) = self.writes.get_mut(&t)
@@ -184,7 +221,10 @@ impl Step {
     /// batches are ordered before it.
     pub fn send(&mut self, changes: &[Change]) {
         self.confirmed = false;
-        self.in_flight = Some((changes.iter().filter_map(Target::of).collect(), Touches::default()));
+        self.in_flight = Some((
+            changes.iter().filter_map(Target::of).collect(),
+            Touches::default(),
+        ));
     }
 
     /// The server confirmed the step's batch of `kind`.
@@ -257,12 +297,17 @@ impl Step {
         let back: BTreeMap<NodeId, &Change> = self
             .nodes
             .iter()
-            .filter(|(id, s)| s[other].is_none() && !self.taken_nodes.contains(*id) && !doc.contains(**id))
+            .filter(|(id, s)| {
+                s[other].is_none() && !self.taken_nodes.contains(*id) && !doc.contains(**id)
+            })
             .filter_map(|(id, s)| s[side].as_ref().map(|c| (*id, c)))
             .collect();
         let depth = |mut id: NodeId| {
             let mut d = 0usize;
-            while let Some(Change::Create { parent: Some(p), .. }) = back.get(&id).copied() {
+            while let Some(Change::Create {
+                parent: Some(p), ..
+            }) = back.get(&id).copied()
+            {
                 d += 1;
                 id = *p;
                 if d > back.len() {
@@ -271,7 +316,10 @@ impl Step {
             }
             d
         };
-        let mut todo: Vec<(usize, Change)> = back.iter().map(|(id, c)| (depth(*id), (*c).clone())).collect();
+        let mut todo: Vec<(usize, Change)> = back
+            .iter()
+            .map(|(id, c)| (depth(*id), (*c).clone()))
+            .collect();
         todo.sort_by_key(|(d, _)| *d);
         let mut todo: Vec<Change> = todo.into_iter().map(|(_, c)| c).collect();
         for (t, v) in &self.writes {
@@ -294,12 +342,20 @@ impl Step {
         let gone: BTreeSet<NodeId> = self
             .nodes
             .iter()
-            .filter(|(id, s)| s[side].is_none() && s[other].is_some() && !self.taken_nodes.contains(*id))
+            .filter(|(id, s)| {
+                s[side].is_none() && s[other].is_some() && !self.taken_nodes.contains(*id)
+            })
             .map(|(id, _)| *id)
             .collect();
         let wdoc = work.document();
-        let mut stack: Vec<NodeId> =
-            gone.iter().copied().filter(|id| wdoc.node(*id).is_some_and(|n| n.parent.is_none_or(|p| !gone.contains(&p)))).collect();
+        let mut stack: Vec<NodeId> = gone
+            .iter()
+            .copied()
+            .filter(|id| {
+                wdoc.node(*id)
+                    .is_some_and(|n| n.parent.is_none_or(|p| !gone.contains(&p)))
+            })
+            .collect();
         let mut deletes = Vec::new();
         while let Some(id) = stack.pop() {
             if wdoc.subtree(id).iter().all(|d| gone.contains(d)) {
@@ -417,7 +473,9 @@ impl Touches {
                         None => false,
                     }
             }
-            Target::Entry(e) => self.entries.contains(e) || e.list().is_some_and(|l| self.whole.contains(&l)),
+            Target::Entry(e) => {
+                self.entries.contains(e) || e.list().is_some_and(|l| self.whole.contains(&l))
+            }
         }
     }
 

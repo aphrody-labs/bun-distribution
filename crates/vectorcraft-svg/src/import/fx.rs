@@ -26,7 +26,12 @@ pub(super) fn blends(xml: &roxmltree::Document) -> HashMap<String, String> {
     }
     xml.descendants()
         .filter(|n| n.tag_name().name() == "filter")
-        .filter_map(|n| Some((n.attribute("id")?.to_string(), n.attribute(BLEND)?.to_string())))
+        .filter_map(|n| {
+            Some((
+                n.attribute("id")?.to_string(),
+                n.attribute(BLEND)?.to_string(),
+            ))
+        })
         .collect()
 }
 
@@ -86,18 +91,44 @@ impl V {
             V::Graphic => V::Blurred(sd),
             V::Blurred(a) => V::Blurred(add(a)),
             V::Alpha(s) => V::Alpha(Shape { sd: add(s.sd), ..s }),
-            V::Paint { shape, color, opacity, clipped: false } => {
-                V::Paint { shape: Shape { sd: add(shape.sd), ..shape }, color, opacity, clipped: false }
-            }
+            V::Paint {
+                shape,
+                color,
+                opacity,
+                clipped: false,
+            } => V::Paint {
+                shape: Shape {
+                    sd: add(shape.sd),
+                    ..shape
+                },
+                color,
+                opacity,
+                clipped: false,
+            },
             _ => return None,
         })
     }
 
     fn offset(self, dx: f64, dy: f64) -> Option<V> {
-        let moved = |s: Shape| Shape { dx: s.dx + dx, dy: s.dy + dy, moved: true, ..s };
+        let moved = |s: Shape| Shape {
+            dx: s.dx + dx,
+            dy: s.dy + dy,
+            moved: true,
+            ..s
+        };
         Some(match self {
             V::Alpha(s) => V::Alpha(moved(s)),
-            V::Paint { shape, color, opacity, clipped: false } => V::Paint { shape: moved(shape), color, opacity, clipped: false },
+            V::Paint {
+                shape,
+                color,
+                opacity,
+                clipped: false,
+            } => V::Paint {
+                shape: moved(shape),
+                color,
+                opacity,
+                clipped: false,
+            },
             v @ (V::Graphic | V::Blurred(_)) if dx == 0.0 && dy == 0.0 => v,
             _ => return None,
         })
@@ -111,8 +142,26 @@ impl V {
             m => m,
         };
         Some(match (self, mask) {
-            (V::Flood(color, opacity), V::Alpha(shape)) => V::Paint { shape, color, opacity, clipped: false },
-            (V::Paint { shape, color, opacity, .. }, V::Alpha(s)) if s.plain() => V::Paint { shape, color, opacity, clipped: true },
+            (V::Flood(color, opacity), V::Alpha(shape)) => V::Paint {
+                shape,
+                color,
+                opacity,
+                clipped: false,
+            },
+            (
+                V::Paint {
+                    shape,
+                    color,
+                    opacity,
+                    ..
+                },
+                V::Alpha(s),
+            ) if s.plain() => V::Paint {
+                shape,
+                color,
+                opacity,
+                clipped: true,
+            },
             (V::Graphic, V::Alpha(s)) if !s.moved && !s.inverted => V::Feathered(s.sd),
             (f @ V::Feathered(_), V::Alpha(s)) if s.plain() => f,
             _ => return None,
@@ -124,14 +173,24 @@ impl V {
     fn color_matrix(self, m: &[f32]) -> Option<V> {
         let shape = match self {
             V::Alpha(s) => s,
-            V::Blurred(sd) => Shape { sd, ..Shape::default() },
+            V::Blurred(sd) => Shape {
+                sd,
+                ..Shape::default()
+            },
             _ => return None,
         };
         let row = |r: usize| m.get(r * 5..r * 5 + 5);
-        let (Some(r), Some(g), Some(b), Some(a)) = (row(0), row(1), row(2), row(3)) else { return None };
-        let colour_only = [r, g, b].iter().all(|row| row.iter().take(4).all(|v| *v == 0.0));
+        let (Some(r), Some(g), Some(b), Some(a)) = (row(0), row(1), row(2), row(3)) else {
+            return None;
+        };
+        let colour_only = [r, g, b]
+            .iter()
+            .all(|row| row.iter().take(4).all(|v| *v == 0.0));
         let alpha_only = a.iter().take(3).all(|v| *v == 0.0) && a.get(4) == Some(&0.0);
-        let (Some(cr), Some(cg), Some(cb), Some(k)) = (r.get(4), g.get(4), b.get(4), a.get(3)) else { return None };
+        let (Some(cr), Some(cg), Some(cb), Some(k)) = (r.get(4), g.get(4), b.get(4), a.get(3))
+        else {
+            return None;
+        };
         (colour_only && alpha_only).then(|| V::Paint {
             shape,
             color: Color::rgb(cr.clamp(0.0, 1.0), cg.clamp(0.0, 1.0), cb.clamp(0.0, 1.0)),
@@ -163,38 +222,70 @@ fn eval(f: &Filter) -> Option<V> {
             }
         };
         let v = match p.kind() {
-            Kind::GaussianBlur(b) => input(b.input())?.blur(sd(b.std_dev_x().get(), b.std_dev_y().get()))?,
+            Kind::GaussianBlur(b) => {
+                input(b.input())?.blur(sd(b.std_dev_x().get(), b.std_dev_y().get()))?
+            }
             Kind::Offset(o) => input(o.input())?.offset(o.dx() as f64, o.dy() as f64)?,
             Kind::Flood(fl) => V::Flood(color(fl.color()), fl.opacity().get()),
             Kind::Composite(c) => {
                 let (a, b) = (input(c.input1())?, input(c.input2())?);
                 match c.operator() {
                     CompositeOperator::In => a.inside(b)?,
-                    CompositeOperator::Over => V::Stack(b.layers().into_iter().chain(a.layers()).collect()),
+                    CompositeOperator::Over => {
+                        V::Stack(b.layers().into_iter().chain(a.layers()).collect())
+                    }
                     _ => return None,
                 }
             }
-            Kind::Merge(m) => V::Stack(m.inputs().iter().map(input).collect::<Option<Vec<_>>>()?.into_iter().flat_map(V::layers).collect()),
+            Kind::Merge(m) => V::Stack(
+                m.inputs()
+                    .iter()
+                    .map(input)
+                    .collect::<Option<Vec<_>>>()?
+                    .into_iter()
+                    .flat_map(V::layers)
+                    .collect(),
+            ),
             Kind::ColorMatrix(c) => match c.kind() {
                 ColorMatrixKind::Matrix(m) => input(c.input())?.color_matrix(m)?,
                 _ => return None,
             },
             Kind::ComponentTransfer(c) => {
-                let identity = [c.func_r(), c.func_g(), c.func_b()].iter().all(|f| matches!(f, TransferFunction::Identity));
+                let identity = [c.func_r(), c.func_g(), c.func_b()]
+                    .iter()
+                    .all(|f| matches!(f, TransferFunction::Identity));
                 let invert = match c.func_a() {
                     TransferFunction::Table(t) => t.as_slice() == [1.0, 0.0],
-                    TransferFunction::Linear { slope, intercept } => *slope == -1.0 && *intercept == 1.0,
+                    TransferFunction::Linear { slope, intercept } => {
+                        *slope == -1.0 && *intercept == 1.0
+                    }
                     _ => false,
                 };
                 match input(c.input())? {
-                    V::Alpha(s) if identity && invert && s.sd == 0.0 => V::Alpha(Shape { inverted: !s.inverted, ..s }),
+                    V::Alpha(s) if identity && invert && s.sd == 0.0 => V::Alpha(Shape {
+                        inverted: !s.inverted,
+                        ..s
+                    }),
                     _ => return None,
                 }
             }
             Kind::DropShadow(d) if matches!(input(d.input())?, V::Graphic) => {
-                let shape =
-                    Shape { sd: sd(d.std_dev_x().get(), d.std_dev_y().get()), dx: d.dx() as f64, dy: d.dy() as f64, moved: true, inverted: false };
-                V::Stack(vec![V::Paint { shape, color: color(d.color()), opacity: d.opacity().get(), clipped: false }, V::Graphic])
+                let shape = Shape {
+                    sd: sd(d.std_dev_x().get(), d.std_dev_y().get()),
+                    dx: d.dx() as f64,
+                    dy: d.dy() as f64,
+                    moved: true,
+                    inverted: false,
+                };
+                V::Stack(vec![
+                    V::Paint {
+                        shape,
+                        color: color(d.color()),
+                        opacity: d.opacity().get(),
+                        clipped: false,
+                    },
+                    V::Graphic,
+                ])
             }
             _ => return None,
         };
@@ -207,7 +298,11 @@ fn eval(f: &Filter) -> Option<V> {
 /// The live effects `filters` (in the order they apply) stand for, in user space mapped to the
 /// document by `ts`; `blends`: the modes our export recorded ([`blends`]). `None` when one of
 /// them isn't an effect the canvas draws.
-pub(super) fn effects(filters: &[Arc<Filter>], ts: Affine, blends: &HashMap<String, String>) -> Option<Vec<Effect>> {
+pub(super) fn effects(
+    filters: &[Arc<Filter>],
+    ts: Affine,
+    blends: &HashMap<String, String>,
+) -> Option<Vec<Effect>> {
     let k = ts.determinant().abs().sqrt();
     let [a, b, c, d, _, _] = ts.as_coeffs();
     let along = |dx: f64, dy: f64| Vec2::new(a * dx + c * dy, b * dx + d * dy);
@@ -222,26 +317,52 @@ pub(super) fn effects(filters: &[Arc<Filter>], ts: Affine, blends: &HashMap<Stri
             V::Blurred(sd) => ("blur.gaussian", json!({ "radius": blur(sd) })),
             V::Feathered(sd) => ("stylize.feather", json!({ "radius": blur(sd) })),
             V::Stack(layers) => match layers.as_slice() {
-                [V::Paint { shape, color, opacity, clipped: false }, V::Graphic] if !shape.inverted => {
+                [
+                    V::Paint {
+                        shape,
+                        color,
+                        opacity,
+                        clipped: false,
+                    },
+                    V::Graphic,
+                ] if !shape.inverted => {
                     let (color, opacity) = paint(*color, *opacity);
                     if shape.moved {
                         let v = along(shape.dx, shape.dy);
                         let p = json!({ "x": num(v.x), "y": num(v.y), "blur": blur(shape.sd), "color": color, "opacity": opacity, "mode": mode });
                         ("stylize.dropShadow", p)
                     } else {
-                        ("stylize.outerGlow", json!({ "blur": blur(shape.sd), "color": color, "opacity": opacity, "mode": mode }))
+                        (
+                            "stylize.outerGlow",
+                            json!({ "blur": blur(shape.sd), "color": color, "opacity": opacity, "mode": mode }),
+                        )
                     }
                 }
-                [V::Graphic, V::Paint { shape, color, opacity, clipped: true }] if !shape.moved => {
+                [
+                    V::Graphic,
+                    V::Paint {
+                        shape,
+                        color,
+                        opacity,
+                        clipped: true,
+                    },
+                ] if !shape.moved => {
                     let (color, opacity) = paint(*color, *opacity);
                     let source = if shape.inverted { "edge" } else { "center" };
-                    ("stylize.innerGlow", json!({ "blur": blur(shape.sd), "color": color, "opacity": opacity, "mode": mode, "source": source }))
+                    (
+                        "stylize.innerGlow",
+                        json!({ "blur": blur(shape.sd), "color": color, "opacity": opacity, "mode": mode, "source": source }),
+                    )
                 }
                 _ => return None,
             },
             _ => return None,
         };
-        out.push(Effect { id: id.into(), params, visible: true });
+        out.push(Effect {
+            id: id.into(),
+            params,
+            visible: true,
+        });
     }
     Some(out)
 }

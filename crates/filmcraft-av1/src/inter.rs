@@ -33,7 +33,11 @@ fn resolve_divisor(d: i64) -> (i32, i64) {
     let a = d.unsigned_abs();
     let n = 63 - a.leading_zeros() as i32;
     let e = a as i64 - (1i64 << n);
-    let f = if n > DIV_LUT_BITS as i32 { round2_signed64(e, (n - DIV_LUT_BITS as i32) as u32) } else { e << (DIV_LUT_BITS as i32 - n) };
+    let f = if n > DIV_LUT_BITS as i32 {
+        round2_signed64(e, (n - DIV_LUT_BITS as i32) as u32)
+    } else {
+        e << (DIV_LUT_BITS as i32 - n)
+    };
     let shift = n + DIV_LUT_PREC_BITS as i32;
     let factor = DIV_LUT[f as usize] as i64;
     (shift, if d < 0 { -factor } else { factor })
@@ -46,13 +50,17 @@ pub(crate) fn setup_shear(p: &[i32; 6]) -> (bool, i32, i32, i32, i32) {
     let beta0 = (p[3] as i64).clamp(-32768, 32767);
     let (div_shift, div_factor) = resolve_divisor(p[2] as i64);
     let v = (p[4] as i64) << WARPEDMODEL_PREC_BITS;
-    let gamma0 = round2_signed_wide(v as i128 * div_factor as i128, div_shift as u32).clamp(-32768, 32767);
+    let gamma0 =
+        round2_signed_wide(v as i128 * div_factor as i128, div_shift as u32).clamp(-32768, 32767);
     let w = p[3] as i64 * p[4] as i64;
-    let delta0 = (p[5] as i64 - round2_signed_wide(w as i128 * div_factor as i128, div_shift as u32) - prec).clamp(-32768, 32767);
+    let delta0 =
+        (p[5] as i64 - round2_signed_wide(w as i128 * div_factor as i128, div_shift as u32) - prec)
+            .clamp(-32768, 32767);
     let rb = WARP_PARAM_REDUCE_BITS as u32;
     let red = |x: i64| (round2_signed64(x, rb) << rb) as i32;
     let (alpha, beta, gamma, delta) = (red(alpha0), red(beta0), red(gamma0), red(delta0));
-    let valid = !(4 * alpha.abs() + 7 * beta.abs() >= (1 << WARPEDMODEL_PREC_BITS) || 4 * gamma.abs() + 4 * delta.abs() >= (1 << WARPEDMODEL_PREC_BITS));
+    let valid = !(4 * alpha.abs() + 7 * beta.abs() >= (1 << WARPEDMODEL_PREC_BITS)
+        || 4 * gamma.abs() + 4 * delta.abs() >= (1 << WARPEDMODEL_PREC_BITS));
     (valid, alpha, beta, gamma, delta)
 }
 
@@ -60,7 +68,11 @@ fn round2_signed_wide(x: i128, n: u32) -> i64 {
     if n == 0 {
         return x as i64;
     }
-    (if x >= 0 { (x + (1 << (n - 1))) >> n } else { -((-x + (1 << (n - 1))) >> n) }) as i64
+    (if x >= 0 {
+        (x + (1 << (n - 1))) >> n
+    } else {
+        -((-x + (1 << (n - 1))) >> n)
+    }) as i64
 }
 
 /// WedgeMasks[ bsize ][ flipSign ][ wedge ] (7.11.3.11), stored as w*h bytes each.
@@ -73,9 +85,11 @@ fn wedge_masks() -> &'static Vec<Vec<[Vec<u8>; 2]>> {
             let mut shift = (n / 4) as i32;
             let mut i = 0;
             while i < n {
-                master[WEDGE_OBLIQUE63][i][j] = WEDGE_MASTER_OBLIQUE_EVEN[(j as i32 - shift).clamp(0, n as i32 - 1) as usize];
+                master[WEDGE_OBLIQUE63][i][j] =
+                    WEDGE_MASTER_OBLIQUE_EVEN[(j as i32 - shift).clamp(0, n as i32 - 1) as usize];
                 shift -= 1;
-                master[WEDGE_OBLIQUE63][i + 1][j] = WEDGE_MASTER_OBLIQUE_ODD[(j as i32 - shift).clamp(0, n as i32 - 1) as usize];
+                master[WEDGE_OBLIQUE63][i + 1][j] =
+                    WEDGE_MASTER_OBLIQUE_ODD[(j as i32 - shift).clamp(0, n as i32 - 1) as usize];
                 master[WEDGE_VERTICAL][i][j] = WEDGE_MASTER_VERTICAL[j];
                 master[WEDGE_VERTICAL][i + 1][j] = WEDGE_MASTER_VERTICAL[j];
                 i += 2;
@@ -140,9 +154,16 @@ fn wedge_masks() -> &'static Vec<Vec<[Vec<u8>; 2]>> {
 impl TileDecoder<'_, '_> {
     /// Reference plane and its (lastX, lastY) for refIdx (-1: the current frame for intra BC).
     fn ref_plane_dims(&self, ref_idx: i32, plane: usize) -> (i32, i32) {
-        let (sx, sy) = if plane > 0 { (self.fs.ssx as i32, self.fs.ssy as i32) } else { (0, 0) };
+        let (sx, sy) = if plane > 0 {
+            (self.fs.ssx as i32, self.fs.ssy as i32)
+        } else {
+            (0, 0)
+        };
         let (uw, fh) = if ref_idx < 0 {
-            ((self.fs.fh.mi_cols * 4) as i32, (self.fs.fh.mi_rows * 4) as i32)
+            (
+                (self.fs.fh.mi_cols * 4) as i32,
+                (self.fs.fh.mi_rows * 4) as i32,
+            )
         } else {
             let ri = &self.fs.ref_info[ref_idx as usize];
             (ri.upscaled_width as i32, ri.frame_height as i32)
@@ -151,7 +172,14 @@ impl TileDecoder<'_, '_> {
     }
 
     /// Motion vector scaling process (7.11.3.3): (startX, startY, stepX, stepY).
-    fn mv_scaling(&self, plane: usize, ref_idx: i32, x: i32, y: i32, mv: [i32; 2]) -> (i32, i32, i32, i32) {
+    fn mv_scaling(
+        &self,
+        plane: usize,
+        ref_idx: i32,
+        x: i32,
+        y: i32,
+        mv: [i32; 2],
+    ) -> (i32, i32, i32, i32) {
         let fh = &self.fs.fh;
         let (ref_uw, ref_h) = if ref_idx < 0 {
             (fh.upscaled_width as i64, fh.frame_height as i64)
@@ -164,7 +192,11 @@ impl TileDecoder<'_, '_> {
         let rs = REF_SCALE_SHIFT as i64;
         let x_scale = ((ref_uw << rs) + fw / 2) / fw;
         let y_scale = ((ref_h << rs) + fhh / 2) / fhh;
-        let (sx, sy) = if plane > 0 { (self.fs.ssx as i32, self.fs.ssy as i32) } else { (0, 0) };
+        let (sx, sy) = if plane > 0 {
+            (self.fs.ssx as i32, self.fs.ssy as i32)
+        } else {
+            (0, 0)
+        };
         let half = 1i64 << (SUBPEL_BITS - 1);
         let orig_x = ((x as i64) << SUBPEL_BITS) + ((2 * mv[1]) >> sx) as i64 + half;
         let orig_y = ((y as i64) << SUBPEL_BITS) + ((2 * mv[0]) >> sy) as i64 + half;
@@ -181,7 +213,11 @@ impl TileDecoder<'_, '_> {
 
     fn ref_plane(&self, ref_idx: i32, plane: usize) -> &Plane {
         // A missing reference (rejected earlier for valid streams) predicts from the current frame.
-        match usize::try_from(ref_idx).ok().and_then(|i| self.fs.refs.get(i)).and_then(|r| r.as_ref()) {
+        match usize::try_from(ref_idx)
+            .ok()
+            .and_then(|i| self.fs.refs.get(i))
+            .and_then(|r| r.as_ref())
+        {
             Some(r) => &r.buf.planes[plane],
             None => &self.t.cur.planes[plane],
         }
@@ -241,7 +277,9 @@ impl TileDecoder<'_, '_> {
             );
             return;
         }
-        let inter_h = ((((h as i32 - 1) * y_step + (1 << SCALE_SUBPEL_BITS) - 1) >> SCALE_SUBPEL_BITS) + 8) as usize;
+        let inter_h = ((((h as i32 - 1) * y_step + (1 << SCALE_SUBPEL_BITS) - 1)
+            >> SCALE_SUBPEL_BITS)
+            + 8) as usize;
         for r in 0..inter_h {
             let ry = ((y >> 10) + r as i32 - 3).clamp(0, last_y) as usize;
             let row = refp.row(ry);
@@ -288,11 +326,17 @@ impl TileDecoder<'_, '_> {
     ) {
         let refp = self.ref_plane(ref_idx, plane);
         let (last_x, last_y) = self.ref_plane_dims(ref_idx, plane);
-        let (sx, sy) = if plane > 0 { (self.fs.ssx as i32, self.fs.ssy as i32) } else { (0, 0) };
+        let (sx, sy) = if plane > 0 {
+            (self.fs.ssx as i32, self.fs.ssy as i32)
+        } else {
+            (0, 0)
+        };
         let src_x = (x + j8 as i32 * 8 + 4) << sx;
         let src_y = (y + i8 as i32 * 8 + 4) << sy;
-        let dst_x = params[2] as i64 * src_x as i64 + params[3] as i64 * src_y as i64 + params[0] as i64;
-        let dst_y = params[4] as i64 * src_x as i64 + params[5] as i64 * src_y as i64 + params[1] as i64;
+        let dst_x =
+            params[2] as i64 * src_x as i64 + params[3] as i64 * src_y as i64 + params[0] as i64;
+        let dst_y =
+            params[4] as i64 * src_x as i64 + params[5] as i64 * src_y as i64 + params[1] as i64;
         let (_, alpha, beta, gamma, delta) = setup_shear(params);
         let x4 = dst_x >> sx;
         let y4 = dst_y >> sy;
@@ -305,10 +349,12 @@ impl TileDecoder<'_, '_> {
             let row = refp.row((iy4 + i1).clamp(0, last_y) as usize);
             for i2 in -4..4i32 {
                 let sxv = sx4 + alpha * i2 + beta * i1;
-                let offs = (round2(sxv, WARPEDDIFF_PREC_BITS as u32) + WARPEDPIXEL_PREC_SHIFTS as i32) as usize;
+                let offs = (round2(sxv, WARPEDDIFF_PREC_BITS as u32)
+                    + WARPEDPIXEL_PREC_SHIFTS as i32) as usize;
                 let mut s = 0i32;
                 for i3 in 0..8i32 {
-                    s += WARPED_FILTERS[offs][i3 as usize] as i32 * row[(ix4 + i2 - 3 + i3).clamp(0, last_x) as usize] as i32;
+                    s += WARPED_FILTERS[offs][i3 as usize] as i32
+                        * row[(ix4 + i2 - 3 + i3).clamp(0, last_x) as usize] as i32;
                 }
                 inter[(i1 + 7) as usize][(i2 + 4) as usize] = round2(s, rnd.0);
             }
@@ -318,12 +364,15 @@ impl TileDecoder<'_, '_> {
         for i1 in -4..lim_i {
             for i2 in -4..lim_j {
                 let syv = sy4 + gamma * i2 + delta * i1;
-                let offs = (round2(syv, WARPEDDIFF_PREC_BITS as u32) + WARPEDPIXEL_PREC_SHIFTS as i32) as usize;
+                let offs = (round2(syv, WARPEDDIFF_PREC_BITS as u32)
+                    + WARPEDPIXEL_PREC_SHIFTS as i32) as usize;
                 let mut s = 0i32;
                 for i3 in 0..8 {
-                    s += WARPED_FILTERS[offs][i3] as i32 * inter[(i1 + i3 as i32 + 4) as usize][(i2 + 4) as usize];
+                    s += WARPED_FILTERS[offs][i3] as i32
+                        * inter[(i1 + i3 as i32 + 4) as usize][(i2 + 4) as usize];
                 }
-                pred[(i8 * 8 + (i1 + 4) as usize) * PRED_STRIDE + j8 * 8 + (i2 + 4) as usize] = round2(s, rnd.1);
+                pred[(i8 * 8 + (i1 + 4) as usize) * PRED_STRIDE + j8 * 8 + (i2 + 4) as usize] =
+                    round2(s, rnd.1);
             }
         }
     }
@@ -369,8 +418,14 @@ impl TileDecoder<'_, '_> {
         }
         let prec = 1i64 << WARPEDMODEL_PREC_BITS;
         let cl = WARPEDMODEL_NONDIAGAFFINE_CLAMP as i64;
-        let nondiag = |v: i64| round2_signed_wide(v as i128 * div_factor as i128, div_shift as u32).clamp(-cl + 1, cl - 1);
-        let diag = |v: i64| round2_signed_wide(v as i128 * div_factor as i128, div_shift as u32).clamp(prec - cl + 1, prec + cl - 1);
+        let nondiag = |v: i64| {
+            round2_signed_wide(v as i128 * div_factor as i128, div_shift as u32)
+                .clamp(-cl + 1, cl - 1)
+        };
+        let diag = |v: i64| {
+            round2_signed_wide(v as i128 * div_factor as i128, div_shift as u32)
+                .clamp(prec - cl + 1, prec + cl - 1)
+        };
         let mut p = [0i64; 6];
         p[2] = diag(a[1][1] * bx[0] - a[0][1] * bx[1]);
         p[3] = nondiag(-a[0][1] * bx[0] + a[0][0] * bx[1]);
@@ -390,7 +445,16 @@ impl TileDecoder<'_, '_> {
 
     /// Inter prediction process (7.11.3.1) for a w x h region of `plane` at (x, y).
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn predict_inter(&mut self, plane: usize, x: usize, y: usize, w: usize, h: usize, cand_row: usize, cand_col: usize) {
+    pub(crate) fn predict_inter(
+        &mut self,
+        plane: usize,
+        x: usize,
+        y: usize,
+        w: usize,
+        h: usize,
+        cand_row: usize,
+        cand_col: usize,
+    ) {
         let bd = self.fs.bit_depth;
         let mi_i = self.t.mi.idx(cand_row, cand_col);
         let cand_refs = self.t.mi.ref_frame[mi_i];
@@ -405,15 +469,24 @@ impl TileDecoder<'_, '_> {
                 self.b.local_valid = setup_shear(&p).0;
             }
         }
-        let mut preds = [std::mem::take(&mut self.pred_buf[0]), std::mem::take(&mut self.pred_buf[1])];
+        let mut preds = [
+            std::mem::take(&mut self.pred_buf[0]),
+            std::mem::take(&mut self.pred_buf[1]),
+        ];
         let mut tmp = std::mem::take(&mut self.mc_tmp);
         let fh = &self.fs.fh;
         for ref_list in 0..1 + is_compound as usize {
             let ref_frame = cand_refs[ref_list];
             let ym = self.b.y_mode;
-            let global = (ym == GLOBALMV || ym == GLOBAL_GLOBALMV) && ref_frame > INTRA_FRAME as i8 && fh.gm_type[ref_frame as usize] as usize > TRANSLATION;
+            let global = (ym == GLOBALMV || ym == GLOBAL_GLOBALMV)
+                && ref_frame > INTRA_FRAME as i8
+                && fh.gm_type[ref_frame as usize] as usize > TRANSLATION;
             let global_valid = global && setup_shear(&fh.gm_params[ref_frame as usize]).0;
-            let ref_idx: i32 = if self.b.use_intrabc { -1 } else { fh.ref_frame_idx[ref_frame as usize - LAST_FRAME] as i32 };
+            let ref_idx: i32 = if self.b.use_intrabc {
+                -1
+            } else {
+                fh.ref_frame_idx[ref_frame as usize - LAST_FRAME] as i32
+            };
             let use_warp = if w < 8 || h < 8 || fh.force_integer_mv {
                 0
             } else if self.b.motion_mode as usize == LOCALWARP && self.b.local_valid {
@@ -425,15 +498,44 @@ impl TileDecoder<'_, '_> {
             };
             let mv = [cand_mvs[ref_list].row as i32, cand_mvs[ref_list].col as i32];
             if use_warp != 0 {
-                let params = if use_warp == 1 { self.b.local_warp_params } else { fh.gm_params[ref_frame as usize] };
+                let params = if use_warp == 1 {
+                    self.b.local_warp_params
+                } else {
+                    fh.gm_params[ref_frame as usize]
+                };
                 for i8 in 0..=((h - 1) >> 3) {
                     for j8 in 0..=((w - 1) >> 3) {
-                        self.block_warp(&params, plane, ref_idx, x as i32, y as i32, i8, j8, w, h, rnd, &mut preds[ref_list]);
+                        self.block_warp(
+                            &params,
+                            plane,
+                            ref_idx,
+                            x as i32,
+                            y as i32,
+                            i8,
+                            j8,
+                            w,
+                            h,
+                            rnd,
+                            &mut preds[ref_list],
+                        );
                     }
                 }
             } else {
                 let (sx, sy, stx, sty) = self.mv_scaling(plane, ref_idx, x as i32, y as i32, mv);
-                self.block_inter_prediction(plane, ref_idx, sx, sy, stx, sty, w, h, filters, rnd, &mut preds[ref_list], &mut tmp);
+                self.block_inter_prediction(
+                    plane,
+                    ref_idx,
+                    sx,
+                    sy,
+                    stx,
+                    sty,
+                    w,
+                    h,
+                    filters,
+                    rnd,
+                    &mut preds[ref_list],
+                    &mut tmp,
+                );
             }
         }
         let ct = self.b.compound_type;
@@ -471,7 +573,11 @@ impl TileDecoder<'_, '_> {
                 }
             }
         }
-        let (fwd, bck) = if ct == COMPOUND_DISTANCE { self.distance_weights(cand_refs) } else { (0, 0) };
+        let (fwd, bck) = if ct == COMPOUND_DISTANCE {
+            self.distance_weights(cand_refs)
+        } else {
+            (0, 0)
+        };
         let max = (1i32 << bd) - 1;
         let is_inter_intra = self.b.is_inter && self.b.ref_frame[1] == INTRA_FRAME as i8;
         if !is_compound && !is_inter_intra {
@@ -497,7 +603,8 @@ impl TileDecoder<'_, '_> {
                 let row = &mut pl.row_from_mut(y + i, x)[..w];
                 for j in 0..w {
                     let k = i * PRED_STRIDE + j;
-                    row[j] = round2(fwd * preds[0][k] + bck * preds[1][k], 4 + rnd.2).clamp(0, max) as u16;
+                    row[j] = round2(fwd * preds[0][k] + bck * preds[1][k], 4 + rnd.2).clamp(0, max)
+                        as u16;
                 }
             }
         } else {
@@ -522,8 +629,22 @@ impl TileDecoder<'_, '_> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn mask_blend(&mut self, preds: &[Vec<i32>; 2], plane: usize, dx: usize, dy: usize, w: usize, h: usize, post: u32, max: i32) {
-        let (sx, sy) = if plane > 0 { (self.fs.ssx, self.fs.ssy) } else { (0, 0) };
+    fn mask_blend(
+        &mut self,
+        preds: &[Vec<i32>; 2],
+        plane: usize,
+        dx: usize,
+        dy: usize,
+        w: usize,
+        h: usize,
+        post: u32,
+        max: i32,
+    ) {
+        let (sx, sy) = if plane > 0 {
+            (self.fs.ssx, self.fs.ssy)
+        } else {
+            (0, 0)
+        };
         let interintra = self.b.interintra;
         let wedge_ii = self.b.wedge_interintra;
         for yy in 0..h {
@@ -534,7 +655,13 @@ impl TileDecoder<'_, '_> {
                 } else if sx == 1 && sy == 0 {
                     round2(mk(yy, 2 * xx) + mk(yy, 2 * xx + 1), 1)
                 } else {
-                    round2(mk(2 * yy, 2 * xx) + mk(2 * yy, 2 * xx + 1) + mk(2 * yy + 1, 2 * xx) + mk(2 * yy + 1, 2 * xx + 1), 2)
+                    round2(
+                        mk(2 * yy, 2 * xx)
+                            + mk(2 * yy, 2 * xx + 1)
+                            + mk(2 * yy + 1, 2 * xx)
+                            + mk(2 * yy + 1, 2 * xx + 1),
+                        2,
+                    )
                 };
                 let k = yy * PRED_STRIDE + xx;
                 let pl = &mut self.t.cur.planes[plane];
@@ -543,7 +670,8 @@ impl TileDecoder<'_, '_> {
                     let p1 = pl.at(dx + xx, dy + yy) as i32;
                     pl.set(dx + xx, dy + yy, round2(m * p1 + (64 - m) * p0, 6) as u16);
                 } else {
-                    let v = round2(m * preds[0][k] + (64 - m) * preds[1][k], 6 + post).clamp(0, max);
+                    let v =
+                        round2(m * preds[0][k] + (64 - m) * preds[1][k], 6 + post).clamp(0, max);
                     pl.set(dx + xx, dy + yy, v as u16);
                 }
             }
@@ -555,13 +683,18 @@ impl TileDecoder<'_, '_> {
         let mut dist = [0i32; 2];
         for (rl, d) in dist.iter_mut().enumerate() {
             let h = fh.order_hints[refs[rl] as usize];
-            *d = crate::header::relative_dist(&self.fs.seq, h, fh.order_hint).abs().clamp(0, MAX_FRAME_DISTANCE as i32);
+            *d = crate::header::relative_dist(&self.fs.seq, h, fh.order_hint)
+                .abs()
+                .clamp(0, MAX_FRAME_DISTANCE as i32);
         }
         let d0 = dist[1];
         let d1 = dist[0];
         let order = (d0 <= d1) as usize;
         if d0 == 0 || d1 == 0 {
-            return (QUANT_DIST_LOOKUP[3][order] as i32, QUANT_DIST_LOOKUP[3][1 - order] as i32);
+            return (
+                QUANT_DIST_LOOKUP[3][order] as i32,
+                QUANT_DIST_LOOKUP[3][1 - order] as i32,
+            );
         }
         let mut i = 0;
         while i < 3 {
@@ -576,12 +709,19 @@ impl TileDecoder<'_, '_> {
             }
             i += 1;
         }
-        (QUANT_DIST_LOOKUP[i][order] as i32, QUANT_DIST_LOOKUP[i][1 - order] as i32)
+        (
+            QUANT_DIST_LOOKUP[i][order] as i32,
+            QUANT_DIST_LOOKUP[i][1 - order] as i32,
+        )
     }
 
     /// Overlapped motion compensation (7.11.3.9).
     fn overlapped_motion_compensation(&mut self, plane: usize, w: usize, h: usize) {
-        let (sx, sy) = if plane > 0 { (self.fs.ssx, self.fs.ssy) } else { (0, 0) };
+        let (sx, sy) = if plane > 0 {
+            (self.fs.ssx, self.fs.ssy)
+        } else {
+            (0, 0)
+        };
         let (mi_rows, mi_cols) = (self.fs.fh.mi_rows as usize, self.fs.fh.mi_cols as usize);
         let bd = self.fs.bit_depth;
         let max = (1i32 << bd) - 1;
@@ -644,13 +784,16 @@ impl TileDecoder<'_, '_> {
             let ci = self.t.mi.idx(cr, cc);
             let m = self.t.mi.mv[ci][0];
             let mv = [m.row as i32, m.col as i32];
-            let ref_idx = self.fs.fh.ref_frame_idx[self.t.mi.ref_frame[ci][0] as usize - LAST_FRAME] as i32;
+            let ref_idx =
+                self.fs.fh.ref_frame_idx[self.t.mi.ref_frame[ci][0] as usize - LAST_FRAME] as i32;
             let px = (x4 * 4) >> sx;
             let py = (y4 * 4) >> sy;
             let (stx, sty, sxs, sys) = self.mv_scaling(plane, ref_idx, px as i32, py as i32, mv);
             let filters = self.t.mi.interp_filter[ci];
             let rnd = rounding(false, bd);
-            self.block_inter_prediction(plane, ref_idx, stx, sty, sxs, sys, pw, ph, filters, rnd, &mut obmc, &mut tmp);
+            self.block_inter_prediction(
+                plane, ref_idx, stx, sty, sxs, sys, pw, ph, filters, rnd, &mut obmc, &mut tmp,
+            );
             let mask = get_mask(if pass == 0 { ph } else { pw });
             let pl = &mut self.t.cur.planes[plane];
             for i in 0..ph {

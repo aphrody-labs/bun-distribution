@@ -38,8 +38,12 @@ struct Extractor<'a> {
 }
 
 fn require_specifier<'b>(init: Option<&'b Expression<'_>>) -> Option<&'b str> {
-    let Some(Expression::CallExpression(call)) = init else { return None };
-    let Expression::Identifier(callee) = &call.callee else { return None };
+    let Some(Expression::CallExpression(call)) = init else {
+        return None;
+    };
+    let Expression::Identifier(callee) = &call.callee else {
+        return None;
+    };
     if callee.name.as_str() != "require" {
         return None;
     }
@@ -128,7 +132,9 @@ impl Extractor<'_> {
     }
 
     fn push_call(&mut self, name: &str, method: bool, module: Option<String>, offset: u32) {
-        let Some(from) = self.owners.last().cloned() else { return };
+        let Some(from) = self.owners.last().cloned() else {
+            return;
+        };
         let loc = format!("L{}", self.line(offset));
         self.out.calls.push(RawCall {
             from,
@@ -151,10 +157,12 @@ impl<'a> Visit<'a> for Extractor<'a> {
                 BindingPattern::BindingIdentifier(identifier) => {
                     self.imported
                         .insert(identifier.name.to_string(), (specifier.clone(), "*".into()));
-                },
+                }
                 BindingPattern::ObjectPattern(pattern) => {
                     for property in &pattern.properties {
-                        let PropertyKey::StaticIdentifier(key) = &property.key else { continue };
+                        let PropertyKey::StaticIdentifier(key) = &property.key else {
+                            continue;
+                        };
                         let local = match &property.value {
                             BindingPattern::BindingIdentifier(id) => id.name.to_string(),
                             BindingPattern::AssignmentPattern(p) => match &p.left {
@@ -164,10 +172,11 @@ impl<'a> Visit<'a> for Extractor<'a> {
                             _ => continue,
                         };
                         names.push(key.name.to_string());
-                        self.imported.insert(local, (specifier.clone(), key.name.to_string()));
+                        self.imported
+                            .insert(local, (specifier.clone(), key.name.to_string()));
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
             self.record_import(&specifier, names, declaration.span.start);
             walk::walk_variable_declarator(self, declaration);
@@ -261,13 +270,13 @@ impl<'a> Visit<'a> for Extractor<'a> {
                             imported
                         };
                         self.push_call(&target, false, Some(module), call.span.start);
-                    },
+                    }
                     None if callee != "require" => {
                         self.push_call(callee, false, None, call.span.start)
-                    },
-                    None => {},
+                    }
+                    None => {}
                 }
-            },
+            }
             Expression::StaticMemberExpression(member) => match &member.object {
                 // `ns.fn()` on a namespace import or a `require()` binding.
                 Expression::Identifier(object) => {
@@ -282,13 +291,13 @@ impl<'a> Visit<'a> for Extractor<'a> {
                             call.span.start,
                         );
                     }
-                },
+                }
                 Expression::ThisExpression(_) => {
                     self.push_call(member.property.name.as_str(), true, None, call.span.start);
-                },
-                _ => {},
+                }
+                _ => {}
             },
-            _ => {},
+            _ => {}
         }
         walk::walk_call_expression(self, call);
     }
@@ -309,10 +318,10 @@ impl<'a> Visit<'a> for Extractor<'a> {
                     ),
                     ImportDeclarationSpecifier::ImportDefaultSpecifier(s) => {
                         ("default".to_owned(), s.local.name.to_string())
-                    },
+                    }
                     ImportDeclarationSpecifier::ImportNamespaceSpecifier(s) => {
                         ("*".to_owned(), s.local.name.to_string())
-                    },
+                    }
                 };
                 if imported != "*" {
                     names.push(if imported == "default" {
@@ -321,7 +330,8 @@ impl<'a> Visit<'a> for Extractor<'a> {
                         imported.clone()
                     });
                 }
-                self.imported.insert(local, (specifier_text.clone(), imported));
+                self.imported
+                    .insert(local, (specifier_text.clone(), imported));
             }
         }
         self.record_import(&specifier_text, names, import.span.start);
@@ -335,11 +345,17 @@ impl<'a> Visit<'a> for Extractor<'a> {
 }
 
 fn parse_source_types(rel_path: &str) -> Vec<SourceType> {
-    let Ok(base) = SourceType::from_path(rel_path) else { return Vec::new() };
+    let Ok(base) = SourceType::from_path(rel_path) else {
+        return Vec::new();
+    };
     // Plain `.js` routinely holds JSX (React sources, fixtures); try JSX first, then strict JS,
     // then TSX for Flow-annotated sources (Oxc has no Flow parser; most annotations are valid TS).
     if base.is_javascript() {
-        let mut types = if base.is_jsx() { vec![base] } else { vec![base.with_jsx(true), base] };
+        let mut types = if base.is_jsx() {
+            vec![base]
+        } else {
+            vec![base.with_jsx(true), base]
+        };
         types.push(base.with_typescript(true).with_jsx(true));
         types
     } else {
@@ -367,7 +383,11 @@ pub fn extract(rel_path: &str, source: &[u8]) -> FileExtract {
         let attempt = Parser::new(&allocator, source, source_type).parse();
         if attempt.fatal_error {
             if first_error.is_none() {
-                first_error = attempt.diagnostics.errors().next().map(|e| e.message.to_string());
+                first_error = attempt
+                    .diagnostics
+                    .errors()
+                    .next()
+                    .map(|e| e.message.to_string());
             }
             continue;
         }
@@ -416,16 +436,31 @@ mod tests {
         let source = b"import { helper } from './helper';\nexport function run() { helper(); }\n";
         let file = extract("src/main.ts", source);
         assert!(file.error.is_none());
-        assert!(file.nodes.iter().any(|node| node.label == "main.ts" && node.id == "src_main_ts"));
-        assert!(file.nodes.iter().any(|node| node.label == "run()" && node.id == "src_main_run"));
+        assert!(
+            file.nodes
+                .iter()
+                .any(|node| node.label == "main.ts" && node.id == "src_main_ts")
+        );
+        assert!(
+            file.nodes
+                .iter()
+                .any(|node| node.label == "run()" && node.id == "src_main_run")
+        );
         assert_eq!(file.imports.len(), 1);
         assert_eq!(
-            (file.imports[0].specifier.as_str(), file.imports[0].names.as_slice()),
+            (
+                file.imports[0].specifier.as_str(),
+                file.imports[0].names.as_slice()
+            ),
             ("./helper", &["helper".to_owned()][..])
         );
         let call = &file.calls[0];
         assert_eq!(
-            (call.from.as_str(), call.name.as_str(), call.module.as_deref()),
+            (
+                call.from.as_str(),
+                call.name.as_str(),
+                call.module.as_deref()
+            ),
             ("src_main_run", "helper", Some("./helper"))
         );
     }
@@ -434,19 +469,27 @@ mod tests {
     fn require_bindings_and_namespace_members_keep_their_module() {
         let source = b"const { validate: check } = require(\"internal/validators\");\nconst fs = require('node:fs');\nfunction f() { check(); fs.readFileSync(); }\n";
         let file = extract("src/js/node/x.ts", source);
-        let calls: Vec<(&str, Option<&str>)> =
-            file.calls.iter().map(|c| (c.name.as_str(), c.module.as_deref())).collect();
+        let calls: Vec<(&str, Option<&str>)> = file
+            .calls
+            .iter()
+            .map(|c| (c.name.as_str(), c.module.as_deref()))
+            .collect();
         assert_eq!(
             calls,
-            [("validate", Some("internal/validators")), ("readFileSync", Some("node:fs"))]
+            [
+                ("validate", Some("internal/validators")),
+                ("readFileSync", Some("node:fs"))
+            ]
         );
         assert_eq!(file.imports.len(), 2);
     }
 
     #[test]
     fn plain_js_with_jsx_parses() {
-        let file =
-            extract("fixtures/a.js", b"function Component({x}) { return <div>{x}</div>; }\n");
+        let file = extract(
+            "fixtures/a.js",
+            b"function Component({x}) { return <div>{x}</div>; }\n",
+        );
         assert!(file.error.is_none(), "{:?}", file.error);
         assert!(file.nodes.iter().any(|n| n.label == "Component()"));
         let flow = extract(
@@ -459,7 +502,9 @@ mod tests {
 
     #[test]
     fn recognizes_js_and_ts_variants_but_not_unrelated_files() {
-        for path in ["a.js", "a.jsx", "a.mjs", "a.cjs", "a.ts", "a.tsx", "a.mts", "a.cts"] {
+        for path in [
+            "a.js", "a.jsx", "a.mjs", "a.cjs", "a.ts", "a.tsx", "a.mts", "a.cts",
+        ] {
             assert_eq!(
                 super::super::Language::of_path(path),
                 Some(super::super::Language::TypeScript)
@@ -472,7 +517,11 @@ mod tests {
     fn extracts_classes_methods_interfaces_and_type_aliases() {
         let source = b"class Box { scale(value: number) { return value * 2; } }\ninterface Shape { area(): number }\ntype Id = string;\n";
         let file = extract("models.ts", source);
-        assert!(file.nodes.iter().any(|node| node.label == "Box" && node.class == NodeClass::Type));
+        assert!(
+            file.nodes
+                .iter()
+                .any(|node| node.label == "Box" && node.class == NodeClass::Type)
+        );
         assert!(
             file.nodes
                 .iter()
@@ -480,9 +529,15 @@ mod tests {
         );
         assert!(file.edges.iter().any(|edge| edge.relation == "method"));
         assert!(
-            file.nodes.iter().any(|node| node.label == "Shape" && node.class == NodeClass::Type)
+            file.nodes
+                .iter()
+                .any(|node| node.label == "Shape" && node.class == NodeClass::Type)
         );
-        assert!(file.nodes.iter().any(|node| node.label == "Id" && node.class == NodeClass::Type));
+        assert!(
+            file.nodes
+                .iter()
+                .any(|node| node.label == "Id" && node.class == NodeClass::Type)
+        );
     }
 
     #[test]

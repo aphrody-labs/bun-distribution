@@ -18,7 +18,12 @@ fn box2i(w: [i32; 4]) -> Vec<u8> {
 
 /// The test-side preprocessing for RLE / ZIP: interleave even and odd bytes, then byte deltas.
 fn predict(raw: &[u8]) -> Vec<u8> {
-    let mut t: Vec<u8> = raw.iter().step_by(2).chain(raw.iter().skip(1).step_by(2)).copied().collect();
+    let mut t: Vec<u8> = raw
+        .iter()
+        .step_by(2)
+        .chain(raw.iter().skip(1).step_by(2))
+        .copied()
+        .collect();
     for i in (1..t.len()).rev() {
         t[i] = t[i].wrapping_sub(t[i - 1]).wrapping_add(128);
     }
@@ -45,7 +50,10 @@ fn pxr24(raw: &[u8], chans: &[Chan], width: usize, lines: usize) -> Vec<u8> {
                 let d = v.wrapping_sub(prev);
                 prev = v;
                 let n = if *t == 2 { 3 } else { size };
-                planes[0..n].iter_mut().enumerate().for_each(|(k, p)| p.push((d >> (8 * (n - 1 - k))) as u8));
+                planes[0..n]
+                    .iter_mut()
+                    .enumerate()
+                    .for_each(|(k, p)| p.push((d >> (8 * (n - 1 - k))) as u8));
             }
             at += width * size;
             out.extend(planes.concat());
@@ -66,7 +74,10 @@ fn rle(t: &[u8]) -> Vec<u8> {
             i += run;
         } else {
             let mut j = i;
-            while j < t.len() && j - i < 127 && !(j + 2 < t.len() && t[j] == t[j + 1] && t[j] == t[j + 2]) {
+            while j < t.len()
+                && j - i < 127
+                && !(j + 2 < t.len() && t[j] == t[j + 1] && t[j] == t[j + 2])
+            {
                 j += 1;
             }
             let j = j.max(i + 1);
@@ -114,7 +125,13 @@ fn f16(v: f32) -> u16 {
 
 /// An EXR file: `chans` (alphabetical, as EXR stores them), data window `data`, display window
 /// `display`, compression `comp`; `value(channel index, x, y)` gives each sample.
-fn exr_file(chans: &[Chan], data: [i32; 4], display: [i32; 4], comp: u8, value: impl Fn(usize, i32, i32) -> f32) -> Vec<u8> {
+fn exr_file(
+    chans: &[Chan],
+    data: [i32; 4],
+    display: [i32; 4],
+    comp: u8,
+    value: impl Fn(usize, i32, i32) -> f32,
+) -> Vec<u8> {
     let mut f = MAGIC.to_vec();
     f.extend_from_slice(&2u32.to_le_bytes());
     let mut cl = Vec::new();
@@ -201,7 +218,13 @@ fn half_floats() {
 #[test]
 fn rgba_half_every_compression() {
     let (w, h) = (7, 21); // two ZIP chunks, the second partial
-    let want = exr_file(RGBA_HALF, [0, 0, w - 1, h - 1], [0, 0, w - 1, h - 1], 0, pattern);
+    let want = exr_file(
+        RGBA_HALF,
+        [0, 0, w - 1, h - 1],
+        [0, 0, w - 1, h - 1],
+        0,
+        pattern,
+    );
     let base = decode("a.exr", &want).unwrap();
     assert_eq!((base.frame.width, base.frame.height), (7, 21));
     assert!(base.has_alpha);
@@ -210,9 +233,23 @@ fn rgba_half_every_compression() {
     let px = floats(&base);
     // pixel (3, 2): R G B A
     let p = &px[(2 * 7 + 3) * 4..][..4];
-    assert_eq!(p, &[pattern(3, 3, 2), pattern(2, 3, 2), pattern(1, 3, 2), pattern(0, 3, 2)]);
+    assert_eq!(
+        p,
+        &[
+            pattern(3, 3, 2),
+            pattern(2, 3, 2),
+            pattern(1, 3, 2),
+            pattern(0, 3, 2)
+        ]
+    );
     for comp in [1, 2, 3, 5] {
-        let f = exr_file(RGBA_HALF, [0, 0, w - 1, h - 1], [0, 0, w - 1, h - 1], comp, pattern);
+        let f = exr_file(
+            RGBA_HALF,
+            [0, 0, w - 1, h - 1],
+            [0, 0, w - 1, h - 1],
+            comp,
+            pattern,
+        );
         assert_ne!(f, want, "compression {comp} packs differently");
         let d = decode("a.exr", &f).unwrap_or_else(|e| panic!("compression {comp}: {e}"));
         assert_eq!(floats(&d), px, "compression {comp}");
@@ -234,11 +271,28 @@ fn pxr24_keeps_half_and_uint_exactly_and_floats_to_24_bits() {
     assert_eq!((d.frame.width, d.frame.height), (40, 35));
     assert_eq!(d.pixel_format, "RGB 32-bit float");
     let px = floats(&d);
-    for (x, y) in [(0, 0), (1, 0), (39, 0), (0, 16), (7, 17), (39, 34), (13, 33)] {
+    for (x, y) in [
+        (0, 0),
+        (1, 0),
+        (39, 0),
+        (0, 16),
+        (7, 17),
+        (39, 34),
+        (13, 33),
+    ] {
         let p = &px[(y * 40 + x) * 4..][..4];
         let (x, y) = (x as i32, y as i32);
         let cut = |v: f32| f32::from_bits(v.to_bits() & 0xFFFF_FF00);
-        assert_eq!(p, &[cut(value(2, x, y)), half(f16(value(1, x, y))), cut(value(0, x, y)), 1.0], "pixel ({x}, {y})");
+        assert_eq!(
+            p,
+            &[
+                cut(value(2, x, y)),
+                half(f16(value(1, x, y))),
+                cut(value(0, x, y)),
+                1.0
+            ],
+            "pixel ({x}, {y})"
+        );
     }
 }
 
@@ -258,7 +312,9 @@ fn damaged_pxr24_is_an_error() {
 
 #[test]
 fn luminance_only_is_grey_and_opaque() {
-    let f = exr_file(&[("Y", 2)], [0, 0, 3, 1], [0, 0, 3, 1], 2, |_, x, y| x as f32 * 0.25 + y as f32 * 4.0);
+    let f = exr_file(&[("Y", 2)], [0, 0, 3, 1], [0, 0, 3, 1], 2, |_, x, y| {
+        x as f32 * 0.25 + y as f32 * 4.0
+    });
     let d = decode("y.exr", &f).unwrap();
     assert!(!d.has_alpha);
     assert_eq!(d.pixel_format, "Y 32-bit float");
@@ -269,7 +325,9 @@ fn luminance_only_is_grey_and_opaque() {
 fn rgb_without_alpha_and_extra_channels() {
     // an unknown channel ("Z", uint) is skipped; missing alpha is opaque
     let chans: &[Chan] = &[("B", 1), ("G", 1), ("R", 1), ("Z", 0)];
-    let f = exr_file(chans, [0, 0, 1, 0], [0, 0, 1, 0], 1, |c, x, _| [0.25, 0.5, 2.0, 7.0][c] + x as f32);
+    let f = exr_file(chans, [0, 0, 1, 0], [0, 0, 1, 0], 1, |c, x, _| {
+        [0.25, 0.5, 2.0, 7.0][c] + x as f32
+    });
     let d = decode("rgb.exr", &f).unwrap();
     assert!(!d.has_alpha);
     assert_eq!(d.pixel_format, "RGB 16-bit float");
@@ -279,14 +337,24 @@ fn rgb_without_alpha_and_extra_channels() {
 #[test]
 fn data_window_is_placed_in_the_display_window() {
     // data window 2×1 at (1, 1) of a 4×3 display window starting at (-1, -1)... and one column outside
-    let f = exr_file(&[("B", 2), ("G", 2), ("R", 2)], [2, 0, 3, 0], [-1, -1, 2, 1], 0, |_, x, _| x as f32);
+    let f = exr_file(
+        &[("B", 2), ("G", 2), ("R", 2)],
+        [2, 0, 3, 0],
+        [-1, -1, 2, 1],
+        0,
+        |_, x, _| x as f32,
+    );
     let d = decode("dw.exr", &f).unwrap();
     assert_eq!((d.frame.width, d.frame.height), (4, 3));
     assert!(d.has_alpha, "uncovered pixels are transparent");
     let px = floats(&d);
     // display (x, y) = data (x - 1, y - 1): data x 2 lands at display column 3; data x 3 is outside
     for (i, p) in px.as_chunks::<4>().0.iter().enumerate() {
-        let want: &[f32] = if i == 4 + 3 { &[2.0, 2.0, 2.0, 1.0] } else { &[0.0; 4] };
+        let want: &[f32] = if i == 4 + 3 {
+            &[2.0, 2.0, 2.0, 1.0]
+        } else {
+            &[0.0; 4]
+        };
         assert_eq!(&p[..], want, "pixel {i}");
     }
 }
@@ -298,9 +366,14 @@ fn still_source_reports_exr() {
     let s = crate::open_bytes("shot.0001.exr", f.into(), &[]).unwrap();
     let v = s.info().video.clone().unwrap();
     assert_eq!(s.info().kind, MediaKind::Still);
-    assert_eq!((v.width, v.height, v.codec.as_str(), v.has_alpha), (4, 4, "EXR", true));
+    assert_eq!(
+        (v.width, v.height, v.codec.as_str(), v.has_alpha),
+        (4, 4, "EXR", true)
+    );
     assert_eq!(v.pixel_format, "RGBA 16-bit float");
-    let fr = s.video_frame(crate::FrameRequest::full(filmcraft_time::Tick(0))).unwrap();
+    let fr = s
+        .video_frame(crate::FrameRequest::full(filmcraft_time::Tick(0)))
+        .unwrap();
     assert!(matches!(fr.data, filmcraft_frame::PixelData::RgbaF32(_)));
 }
 
@@ -309,23 +382,43 @@ fn unsupported_files_say_why() {
     let f = exr_file(RGBA_HALF, [0, 0, 1, 1], [0, 0, 1, 1], 0, pattern);
     let mut tiled = f.clone();
     tiled[5] |= 0x02;
-    assert!(matches!(decode("t.exr", &tiled), Err(MediaError::Unsupported(m)) if m.contains("tiled")));
+    assert!(
+        matches!(decode("t.exr", &tiled), Err(MediaError::Unsupported(m)) if m.contains("tiled"))
+    );
     let piz = exr_file(RGBA_HALF, [0, 0, 1, 1], [0, 0, 1, 1], 4, pattern);
     assert!(matches!(decode("p.exr", &piz), Err(MediaError::Unsupported(m)) if m.contains("PIZ")));
     let b44 = exr_file(RGBA_HALF, [0, 0, 1, 1], [0, 0, 1, 1], 6, pattern);
     assert!(matches!(decode("b.exr", &b44), Err(MediaError::Unsupported(m)) if m.contains("B44")));
     let dwab = exr_file(RGBA_HALF, [0, 0, 1, 1], [0, 0, 1, 1], 9, pattern);
-    assert!(matches!(decode("d.exr", &dwab), Err(MediaError::Unsupported(m)) if m.contains("DWAB")));
-    let ry = exr_file(&[("BY", 1), ("RY", 1), ("Y", 1)], [0, 0, 1, 1], [0, 0, 1, 1], 0, pattern);
-    assert!(matches!(decode("c.exr", &ry), Err(MediaError::Unsupported(_))));
+    assert!(
+        matches!(decode("d.exr", &dwab), Err(MediaError::Unsupported(m)) if m.contains("DWAB"))
+    );
+    let ry = exr_file(
+        &[("BY", 1), ("RY", 1), ("Y", 1)],
+        [0, 0, 1, 1],
+        [0, 0, 1, 1],
+        0,
+        pattern,
+    );
+    assert!(matches!(
+        decode("c.exr", &ry),
+        Err(MediaError::Unsupported(_))
+    ));
     let depth = exr_file(&[("Z", 2)], [0, 0, 1, 1], [0, 0, 1, 1], 0, pattern);
-    assert!(matches!(decode("z.exr", &depth), Err(MediaError::Unsupported(m)) if m.contains("no R, G, B or Y")));
+    assert!(
+        matches!(decode("z.exr", &depth), Err(MediaError::Unsupported(m)) if m.contains("no R, G, B or Y"))
+    );
 }
 
 #[test]
 fn hostile_files_are_errors_not_panics() {
     // windows too large to allocate, or inverted
-    for data in [[0, 0, i32::MAX, i32::MAX], [i32::MIN, 0, i32::MAX, 0], [5, 5, 0, 0], [0, 0, 1 << 14, 1 << 14]] {
+    for data in [
+        [0, 0, i32::MAX, i32::MAX],
+        [i32::MIN, 0, i32::MAX, 0],
+        [5, 5, 0, 0],
+        [0, 0, 1 << 14, 1 << 14],
+    ] {
         let f = exr_file(&[("R", 1)], [0, 0, 0, 0], [0, 0, 0, 0], 0, pattern);
         // patch the data window in the header
         let at = f.windows(10).position(|w| w == b"dataWindow").unwrap() + 10 + 1 + 6 + 4;
@@ -337,7 +430,10 @@ fn hostile_files_are_errors_not_panics() {
     for comp in [0, 1, 2, 3] {
         let f = exr_file(RGBA_HALF, [0, 0, 5, 17], [0, 0, 5, 17], comp, pattern);
         for n in 0..f.len() {
-            assert!(decode("h.exr", &f[..n]).is_err(), "compression {comp}, {n} bytes");
+            assert!(
+                decode("h.exr", &f[..n]).is_err(),
+                "compression {comp}, {n} bytes"
+            );
         }
         for n in 0..f.len() {
             for x in [0x01, 0x80, 0xFF] {

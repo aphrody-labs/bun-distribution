@@ -115,9 +115,9 @@ pub unsafe extern "C" fn aphrody_rag_call_json(
 ) -> i64 {
     catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: pointer contract documented above.
-        let (Some(op), Some(input)) =
-            (unsafe { borrow_str(op, op_len) }, unsafe { borrow_str(input, input_len) })
-        else {
+        let (Some(op), Some(input)) = (unsafe { borrow_str(op, op_len) }, unsafe {
+            borrow_str(input, input_len)
+        }) else {
             return i64::from(RAG_INVALID);
         };
         let doc = match aphrody_rag_core::api::call_json(op, input) {
@@ -254,7 +254,10 @@ mod tests {
         assert_eq!(small, vec![0u8; 4]);
         let mut again = vec![0u8; usize::try_from(need).unwrap()];
         // SAFETY: valid buffer.
-        assert_eq!(unsafe { aphrody_rag_take(again.as_mut_ptr(), again.len()) }, need);
+        assert_eq!(
+            unsafe { aphrody_rag_take(again.as_mut_ptr(), again.len()) },
+            need
+        );
         assert_eq!(&again[..], &buf[..again.len()]);
     }
 
@@ -262,7 +265,10 @@ mod tests {
     fn errors_are_documents_or_codes() {
         let (n, buf) = json("nope", "{}", 256);
         let text = std::str::from_utf8(&buf[..usize::try_from(n).unwrap()]).unwrap();
-        assert!(text.starts_with("{\"error\":\"unknown json operation"), "{text}");
+        assert!(
+            text.starts_with("{\"error\":\"unknown json operation"),
+            "{text}"
+        );
         // SAFETY: a null pointer with a non-zero length is the invalid case under test.
         assert_eq!(
             unsafe {
@@ -307,8 +313,14 @@ mod tests {
 
     #[test]
     fn vec_roundtrip_and_manifest() {
-        let a: Vec<u8> = [1.0_f32, 2.0].iter().flat_map(|v| v.to_le_bytes()).collect();
-        let b: Vec<u8> = [3.0_f32, 4.0].iter().flat_map(|v| v.to_le_bytes()).collect();
+        let a: Vec<u8> = [1.0_f32, 2.0]
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        let b: Vec<u8> = [3.0_f32, 4.0]
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
         let op = b"dot_f32";
         let mut out = [0u8; 4];
         // SAFETY: valid pointers.
@@ -333,7 +345,9 @@ mod tests {
         let len = unsafe { aphrody_rag_manifest(m.as_mut_ptr(), m.len()) };
         assert!(len > 0);
         assert!(
-            std::str::from_utf8(&m[..usize::try_from(len).unwrap()]).unwrap().contains("\"abi\":1")
+            std::str::from_utf8(&m[..usize::try_from(len).unwrap()])
+                .unwrap()
+                .contains("\"abi\":1")
         );
         assert_eq!(aphrody_rag_abi_version(), RAG_FFI_ABI_VERSION);
     }

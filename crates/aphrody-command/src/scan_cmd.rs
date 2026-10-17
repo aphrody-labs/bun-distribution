@@ -67,8 +67,11 @@ impl TerminalCommand for TreeCommand {
                 let entry = entry.into_diagnostic()?;
                 let p = entry.path();
                 if p.is_dir() {
-                    let name =
-                        p.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
+                    let name = p
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or_default()
+                        .to_string();
                     tasks.push((group.clone(), p, name));
                 }
             }
@@ -142,7 +145,12 @@ impl TerminalCommand for TreeCommand {
         }
         println!();
         println!("=== TOP 20 DIRECTORIES BY SIZE ===");
-        for v in report["directories"].as_array().unwrap_or(&vec![]).iter().take(20) {
+        for v in report["directories"]
+            .as_array()
+            .unwrap_or(&vec![])
+            .iter()
+            .take(20)
+        {
             println!(
                 "  {:<10} {:<40} {:>10} files  {:>10.2} MB",
                 v["group"].as_str().unwrap_or(""),
@@ -163,7 +171,11 @@ fn scan_dir(group: &str, path: &Path, name: &str, top_n: usize) -> Value {
     let mut files: u64 = 0;
     let mut ext_count: HashMap<String, u64> = HashMap::new();
 
-    for entry in WalkDir::new(path).follow_links(false).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(path)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if !entry.file_type().is_file() {
             continue;
         }
@@ -182,8 +194,11 @@ fn scan_dir(group: &str, path: &Path, name: &str, top_n: usize) -> Value {
 
     let mut sorted: Vec<(String, u64)> = ext_count.into_iter().collect();
     sorted.sort_by_key(|(_, c)| std::cmp::Reverse(*c));
-    let top_exts: Vec<Value> =
-        sorted.into_iter().take(top_n).map(|(e, c)| json!({"ext": e, "count": c})).collect();
+    let top_exts: Vec<Value> = sorted
+        .into_iter()
+        .take(top_n)
+        .map(|(e, c)| json!({"ext": e, "count": c}))
+        .collect();
 
     json!({
         "group": group,
@@ -276,7 +291,10 @@ impl TerminalCommand for ManifestsCommand {
             }) {
                 continue;
             }
-            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default();
             if MANIFEST_NAMES.iter().any(|m| m.eq_ignore_ascii_case(name))
                 || name.starts_with("tsconfig.") && name.ends_with(".json")
             {
@@ -287,23 +305,33 @@ impl TerminalCommand for ManifestsCommand {
         let candidates = candidates.into_inner().unwrap();
         eprintln!("  found: {} manifests", candidates.len());
 
-        let manifests: Vec<Value> =
-            candidates.par_iter().filter_map(|p| parse_manifest(&root, p)).collect();
+        let manifests: Vec<Value> = candidates
+            .par_iter()
+            .filter_map(|p| parse_manifest(&root, p))
+            .collect();
 
         let elapsed = started.elapsed();
 
         // Counts by filename.
         let mut counts: HashMap<String, u64> = HashMap::new();
         for m in &manifests {
-            *counts.entry(m["fileName"].as_str().unwrap_or("").to_string()).or_insert(0) += 1;
+            *counts
+                .entry(m["fileName"].as_str().unwrap_or("").to_string())
+                .or_insert(0) += 1;
         }
-        let mut by_type: Vec<Value> =
-            counts.into_iter().map(|(k, v)| json!({"pattern": k, "count": v})).collect();
+        let mut by_type: Vec<Value> = counts
+            .into_iter()
+            .map(|(k, v)| json!({"pattern": k, "count": v}))
+            .collect();
         by_type.sort_by_key(|v| std::cmp::Reverse(v["count"].as_u64().unwrap_or(0)));
 
         let mut sorted_manifests = manifests.clone();
-        sorted_manifests
-            .sort_by(|a, b| a["path"].as_str().unwrap_or("").cmp(b["path"].as_str().unwrap_or("")));
+        sorted_manifests.sort_by(|a, b| {
+            a["path"]
+                .as_str()
+                .unwrap_or("")
+                .cmp(b["path"].as_str().unwrap_or(""))
+        });
 
         let report = json!({
             "generatedAt": chrono_iso8601_now(),
@@ -334,7 +362,11 @@ impl TerminalCommand for ManifestsCommand {
         println!("=== WORKSPACE ROOTS ===");
         for m in report["manifests"].as_array().unwrap_or(&vec![]) {
             if let Some(members) = m["meta"]["workspaceMembers"].as_u64() {
-                println!("  {:<60} members={}", m["path"].as_str().unwrap_or(""), members);
+                println!(
+                    "  {:<60} members={}",
+                    m["path"].as_str().unwrap_or(""),
+                    members
+                );
             }
         }
 
@@ -348,7 +380,11 @@ impl TerminalCommand for ManifestsCommand {
 fn parse_manifest(root: &Path, path: &Path) -> Option<Value> {
     let text = std::fs::read_to_string(path).ok()?;
     let file_name = path.file_name()?.to_str()?.to_string();
-    let rel_path = path.strip_prefix(root).unwrap_or(path).display().to_string();
+    let rel_path = path
+        .strip_prefix(root)
+        .unwrap_or(path)
+        .display()
+        .to_string();
     let size_kb = (text.len() as f64 / 1024.0 * 100.0).round() / 100.0;
 
     let mut meta = serde_json::Map::new();
@@ -370,7 +406,11 @@ fn parse_manifest(root: &Path, path: &Path) -> Option<Value> {
                     meta.insert("devDependencyCount".into(), json!(d.len()));
                 }
                 if let Some(ws) = obj.get("workspaces") {
-                    let n = if let Some(arr) = ws.as_array() { arr.len() } else { 1 };
+                    let n = if let Some(arr) = ws.as_array() {
+                        arr.len()
+                    } else {
+                        1
+                    };
                     meta.insert("workspaceMembers".into(), json!(n));
                 }
                 if let Some(s) = obj.get("scripts").and_then(|v| v.as_object()) {
@@ -379,11 +419,14 @@ fn parse_manifest(root: &Path, path: &Path) -> Option<Value> {
                 if let Some(p) = obj.get("pipeline").and_then(|v| v.as_object()) {
                     meta.insert("pipelineTasks".into(), json!(p.len()));
                 }
-            },
+            }
             Err(e) => {
                 let msg = e.to_string();
-                meta.insert("parseError".into(), json!(msg.chars().take(120).collect::<String>()));
-            },
+                meta.insert(
+                    "parseError".into(),
+                    json!(msg.chars().take(120).collect::<String>()),
+                );
+            }
         }
     } else if file_name.ends_with(".toml") {
         meta.insert("type".into(), json!("toml"));
@@ -469,7 +512,9 @@ fn count_section_entries(text: &str, section: &str) -> usize {
         if let Some(eq_idx) = trimmed.find('=') {
             let key = trimmed[..eq_idx].trim();
             if !key.is_empty()
-                && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+                && key
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
             {
                 count += 1;
             }
@@ -540,7 +585,7 @@ fn strip_jsonc_comments(input: &str) -> String {
                         }
                     }
                     continue;
-                },
+                }
                 Some('*') => {
                     chars.next();
                     while let Some(c2) = chars.next() {
@@ -550,8 +595,8 @@ fn strip_jsonc_comments(input: &str) -> String {
                         }
                     }
                     continue;
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         out.push(c);
@@ -565,7 +610,9 @@ fn resolve_root(explicit: Option<PathBuf>) -> miette::Result<PathBuf> {
     if let Some(p) = explicit {
         return Ok(p);
     }
-    std::env::current_dir().into_diagnostic().wrap_err("failed to read current working directory")
+    std::env::current_dir()
+        .into_diagnostic()
+        .wrap_err("failed to read current working directory")
 }
 
 /// Where [`write_report`] sent the report.
@@ -580,7 +627,9 @@ enum Report {
 }
 
 fn write_report(output: Option<&Path>, report: &Value) -> miette::Result<Report> {
-    let Some(path) = output else { return Ok(Report::Summary) };
+    let Some(path) = output else {
+        return Ok(Report::Summary);
+    };
     let json = serde_json::to_string_pretty(report)
         .into_diagnostic()
         .wrap_err("failed to serialise report")?;
@@ -588,9 +637,11 @@ fn write_report(output: Option<&Path>, report: &Value) -> miette::Result<Report>
         use std::io::Write as _;
         match writeln!(std::io::stdout().lock(), "{json}") {
             Err(error) if error.kind() != std::io::ErrorKind::BrokenPipe => {
-                return Err(error).into_diagnostic().wrap_err("failed to write the report");
-            },
-            _ => {},
+                return Err(error)
+                    .into_diagnostic()
+                    .wrap_err("failed to write the report");
+            }
+            _ => {}
         }
         return Ok(Report::Stdout);
     }
@@ -613,8 +664,12 @@ fn print_written(path: Option<&Path>) {
     match path {
         Some(path) => {
             let size = std::fs::metadata(path).map_or(0, |meta| meta.len());
-            println!("report written to {} ({:.1} KB)", path.display(), size as f64 / 1024.0);
-        },
+            println!(
+                "report written to {} ({:.1} KB)",
+                path.display(),
+                size as f64 / 1024.0
+            );
+        }
         None => println!("no JSON report written; pass -o <file> (or -o - for stdout)"),
     }
 }
@@ -623,7 +678,10 @@ fn print_written(path: Option<&Path>) {
 /// seconds and formats them as UTC; sufficient for report metadata.
 fn chrono_iso8601_now() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
     // Conservative: emit Unix epoch seconds as `@<secs>` plus an RFC3339 UTC
     // expansion. We compute UTC manually (no leap-second precision) to avoid
     // adding a dep for one timestamp.

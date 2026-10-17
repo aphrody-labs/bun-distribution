@@ -129,7 +129,10 @@ impl CoffObject {
             if raw[..4] == [0, 0, 0, 0] {
                 let off = u32::from_le_bytes([raw[4], raw[5], raw[6], raw[7]]) as usize;
                 let at = strtab_off + off;
-                let end = bytes[at..].iter().position(|&c| c == 0).map_or(bytes.len(), |p| at + p);
+                let end = bytes[at..]
+                    .iter()
+                    .position(|&c| c == 0)
+                    .map_or(bytes.len(), |p| at + p);
                 String::from_utf8_lossy(&bytes[at..end]).into_owned()
             } else {
                 let end = raw.iter().position(|&c| c == 0).unwrap_or(8);
@@ -154,8 +157,10 @@ impl CoffObject {
                 // Nom long : `/<offset décimal>` dans la table de chaînes.
                 if let Ok(off) = rest.trim().parse::<usize>() {
                     let at = strtab_off + off;
-                    let end =
-                        bytes[at..].iter().position(|&c| c == 0).map_or(bytes.len(), |p| at + p);
+                    let end = bytes[at..]
+                        .iter()
+                        .position(|&c| c == 0)
+                        .map_or(bytes.len(), |p| at + p);
                     name = String::from_utf8_lossy(&bytes[at..end]).into_owned();
                 }
             }
@@ -190,7 +195,12 @@ impl CoffObject {
 
         Ok(Self {
             bytes,
-            header: CoffFileHeader { machine, n_sections, ptr_symbol_table, n_symbols },
+            header: CoffFileHeader {
+                machine,
+                n_sections,
+                ptr_symbol_table,
+                n_symbols,
+            },
             sections,
             symbols,
         })
@@ -285,7 +295,12 @@ impl CoffObject {
             if off + w <= start || off >= end {
                 continue;
             }
-            for m in mask.iter_mut().take(end - start).skip(off.saturating_sub(start)).take(w) {
+            for m in mask
+                .iter_mut()
+                .take(end - start)
+                .skip(off.saturating_sub(start))
+                .take(w)
+            {
                 *m = true;
             }
         }
@@ -362,7 +377,10 @@ mod tests {
         assert_eq!(o.symbols.len(), 1);
         let c = o.symbol_code("essai").expect("symbole");
         assert_eq!(c.bytes, vec![0x48, 0x89, 0xE8, 0xE8, 0, 0, 0, 0]);
-        assert_eq!(c.reloc_mask, vec![false, false, false, false, true, true, true, true]);
+        assert_eq!(
+            c.reloc_mask,
+            vec![false, false, false, false, true, true, true, true]
+        );
         assert_eq!(c.comparable_len(), 4);
         assert_eq!(o.defined_functions().len(), 1);
     }

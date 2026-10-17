@@ -8,7 +8,11 @@
 /// Add odd parity to a 7-bit value.
 pub fn with_parity(b: u8) -> u8 {
     let b = b & 0x7f;
-    if b.count_ones().is_multiple_of(2) { b | 0x80 } else { b }
+    if b.count_ones().is_multiple_of(2) {
+        b | 0x80
+    } else {
+        b
+    }
 }
 
 /// Basic character set (0x20–0x7F). Differs from ASCII in ten positions.
@@ -30,18 +34,20 @@ pub fn basic_char(b: u8) -> Option<char> {
 }
 
 /// Special characters: control pair `0x11, 0x30 + i`.
-pub const SPECIAL: [char; 16] = ['®', '°', '½', '¿', '™', '¢', '£', '♪', 'à', '\u{a0}', 'è', 'â', 'ê', 'î', 'ô', 'û'];
+pub const SPECIAL: [char; 16] = [
+    '®', '°', '½', '¿', '™', '¢', '£', '♪', 'à', '\u{a0}', 'è', 'â', 'ê', 'î', 'ô', 'û',
+];
 
 /// Extended Spanish/French/miscellaneous: control pair `0x12, 0x20 + i`.
 pub const EXT_12: [char; 32] = [
-    'Á', 'É', 'Ó', 'Ú', 'Ü', 'ü', '‘', '¡', '*', '\'', '—', '©', '℠', '•', '“', '”', 'À', 'Â', 'Ç', 'È', 'Ê', 'Ë', 'ë', 'Î', 'Ï', 'ï', 'Ô', 'Ù', 'ù', 'Û', '«',
-    '»',
+    'Á', 'É', 'Ó', 'Ú', 'Ü', 'ü', '‘', '¡', '*', '\'', '—', '©', '℠', '•', '“', '”', 'À', 'Â', 'Ç',
+    'È', 'Ê', 'Ë', 'ë', 'Î', 'Ï', 'ï', 'Ô', 'Ù', 'ù', 'Û', '«', '»',
 ];
 
 /// Extended Portuguese/German/Danish: control pair `0x13, 0x20 + i`.
 pub const EXT_13: [char; 32] = [
-    'Ã', 'ã', 'Í', 'Ì', 'ì', 'Ò', 'ò', 'Õ', 'õ', '{', '}', '\\', '^', '_', '|', '~', 'Ä', 'ä', 'Ö', 'ö', 'ß', '¥', '¤', '¦', 'Å', 'å', 'Ø', 'ø', '┌', '┐', '└',
-    '┘',
+    'Ã', 'ã', 'Í', 'Ì', 'ì', 'Ò', 'ò', 'Õ', 'õ', '{', '}', '\\', '^', '_', '|', '~', 'Ä', 'ä', 'Ö',
+    'ö', 'ß', '¥', '¤', '¦', 'Å', 'å', 'Ø', 'ø', '┌', '┐', '└', '┘',
 ];
 
 /// How a character is transmitted.
@@ -51,7 +57,11 @@ pub enum Encoded {
     Basic(u8),
     /// A two-byte special/extended code (channel 1 first byte, second byte). Extended characters
     /// replace the preceding character, so a basic `fallback` is sent first for older decoders.
-    Pair { b1: u8, b2: u8, fallback: Option<u8> },
+    Pair {
+        b1: u8,
+        b2: u8,
+        fallback: Option<u8>,
+    },
 }
 
 fn basic_byte(c: char) -> Option<u8> {
@@ -70,7 +80,11 @@ pub fn encode_char(c: char) -> Option<Encoded> {
         return Some(Encoded::Basic(b));
     }
     if let Some(i) = SPECIAL.iter().position(|&s| s == c) {
-        return Some(Encoded::Pair { b1: 0x11, b2: 0x30 + i as u8, fallback: None });
+        return Some(Encoded::Pair {
+            b1: 0x11,
+            b2: 0x30 + i as u8,
+            fallback: None,
+        });
     }
     let fallback = |c: char| -> u8 {
         let f = match c {
@@ -96,10 +110,18 @@ pub fn encode_char(c: char) -> Option<Encoded> {
         basic_byte(f).unwrap_or(0x2d)
     };
     if let Some(i) = EXT_12.iter().position(|&s| s == c) {
-        return Some(Encoded::Pair { b1: 0x12, b2: 0x20 + i as u8, fallback: Some(fallback(c)) });
+        return Some(Encoded::Pair {
+            b1: 0x12,
+            b2: 0x20 + i as u8,
+            fallback: Some(fallback(c)),
+        });
     }
     if let Some(i) = EXT_13.iter().position(|&s| s == c) {
-        return Some(Encoded::Pair { b1: 0x13, b2: 0x20 + i as u8, fallback: Some(fallback(c)) });
+        return Some(Encoded::Pair {
+            b1: 0x13,
+            b2: 0x20 + i as u8,
+            fallback: Some(fallback(c)),
+        });
     }
     None
 }
@@ -150,7 +172,11 @@ pub fn decode_pac(b1: u8, b2: u8) -> Option<(usize, usize)> {
         _ => return None,
     };
     let a = b2 & 0x1f;
-    let indent = if a & 0x10 != 0 { ((a & 0x0e) >> 1) as usize * 4 } else { 0 };
+    let indent = if a & 0x10 != 0 {
+        ((a & 0x0e) >> 1) as usize * 4
+    } else {
+        0
+    };
     Some((row, indent))
 }
 
@@ -173,7 +199,11 @@ pub fn encode_pac(row: usize, indent: usize) -> (u8, u8) {
         14 => (0x14, false),
         _ => (0x14, true),
     };
-    let attr = if indent >= 4 { 0x10 | (((indent / 4).min(7) as u8) << 1) } else { 0 };
+    let attr = if indent >= 4 {
+        0x10 | (((indent / 4).min(7) as u8) << 1)
+    } else {
+        0
+    };
     (b1, (if hi { 0x60 } else { 0x40 }) | attr)
 }
 
@@ -198,7 +228,11 @@ mod tests {
         for row in 1..=15 {
             for indent in (0..32).step_by(4) {
                 let (b1, b2) = encode_pac(row, indent);
-                assert_eq!(decode_pac(b1, b2), Some((row, indent)), "row {row} indent {indent}");
+                assert_eq!(
+                    decode_pac(b1, b2),
+                    Some((row, indent)),
+                    "row {row} indent {indent}"
+                );
             }
         }
     }
@@ -207,9 +241,30 @@ mod tests {
     fn chars() {
         assert_eq!(encode_char('A'), Some(Encoded::Basic(0x41)));
         assert_eq!(encode_char('é'), Some(Encoded::Basic(0x5c)));
-        assert_eq!(encode_char('♪'), Some(Encoded::Pair { b1: 0x11, b2: 0x37, fallback: None }));
-        assert!(matches!(encode_char('{'), Some(Encoded::Pair { b1: 0x13, b2: 0x29, .. })));
-        assert!(matches!(encode_char('*'), Some(Encoded::Pair { b1: 0x12, b2: 0x28, .. })));
+        assert_eq!(
+            encode_char('♪'),
+            Some(Encoded::Pair {
+                b1: 0x11,
+                b2: 0x37,
+                fallback: None
+            })
+        );
+        assert!(matches!(
+            encode_char('{'),
+            Some(Encoded::Pair {
+                b1: 0x13,
+                b2: 0x29,
+                ..
+            })
+        ));
+        assert!(matches!(
+            encode_char('*'),
+            Some(Encoded::Pair {
+                b1: 0x12,
+                b2: 0x28,
+                ..
+            })
+        ));
         assert_eq!(encode_char('漢'), None);
     }
 }

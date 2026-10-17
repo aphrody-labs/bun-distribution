@@ -18,10 +18,15 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -56,7 +61,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn click(&mut self, id: &str) {
@@ -66,7 +74,11 @@ impl Driver {
 
     fn ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
 
     fn settings(&mut self) -> Value {
@@ -77,16 +89,29 @@ impl Driver {
 #[test]
 fn a_failed_take_can_be_discarded_from_the_settings_dialog() {
     let mut d = Driver::demo();
-    d.exec("audio.voiceover.start", json!({"track":"A1","time":0,"preroll":0}));
-    let blocker = std::env::temp_dir().join(format!("filmcraft-voiceover-ui-blocker-{}", std::process::id()));
+    d.exec(
+        "audio.voiceover.start",
+        json!({"track":"A1","time":0,"preroll":0}),
+    );
+    let blocker = std::env::temp_dir().join(format!(
+        "filmcraft-voiceover-ui-blocker-{}",
+        std::process::id()
+    ));
     std::fs::write(&blocker, b"not a directory").unwrap();
-    let failure = d.call("engine.execute", json!({"command":"audio.voiceover.stop","params":{"seconds":1,"dir":blocker}}));
+    let failure = d.call(
+        "engine.execute",
+        json!({"command":"audio.voiceover.stop","params":{"seconds":1,"dir":blocker}}),
+    );
     assert_eq!(failure["ok"], false);
     assert!(d.harness.state().session.voiceover.recording());
     d.ok("ui.menu.invoke", json!({"id":"voiceover.settingsDialog"}));
     d.frames(4); // Allow the newly anchored window to settle before using its button rectangle.
     d.click("voiceover.discard");
-    assert!(!d.harness.state().session.voiceover.recording(), "{}", d.harness.state().ui.status);
+    assert!(
+        !d.harness.state().session.voiceover.recording(),
+        "{}",
+        d.harness.state().ui.status
+    );
     d.exec("file.newProject", json!({}));
     std::fs::remove_file(blocker).unwrap();
 }
@@ -94,9 +119,15 @@ fn a_failed_take_can_be_discarded_from_the_settings_dialog() {
 #[test]
 fn settings_dialog_from_the_track_header_persists_on_ok() {
     let mut d = Driver::demo();
-    assert!(d.ids("timeline.track.A1.voiceover").contains(&"timeline.track.A1.voiceover".to_string()));
+    assert!(
+        d.ids("timeline.track.A1.voiceover")
+            .contains(&"timeline.track.A1.voiceover".to_string())
+    );
     // right-click the microphone: the context menu has the settings entry
-    d.ok("ui.click", json!({"id": "timeline.track.A1.voiceover", "button": "right"}));
+    d.ok(
+        "ui.click",
+        json!({"id": "timeline.track.A1.voiceover", "button": "right"}),
+    );
     d.frames(2);
     d.click("timeline.track.A1.voiceover.settings");
     let ids = d.ids("voiceover.");
@@ -139,7 +170,10 @@ fn microphone_button_records_onto_its_track() {
     let mut d = Driver::demo();
     let dir = std::env::temp_dir().join(format!("filmcraft-vo-ui-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    d.exec("file.projectSettings.scratchDisks", json!({"captured": dir.to_string_lossy()}));
+    d.exec(
+        "file.projectSettings.scratchDisks",
+        json!({"captured": dir.to_string_lossy()}),
+    );
     d.exec("audio.voiceover.settings", json!({"prerollSeconds": 0.5}));
     let (n, label) = (2usize, "A2".to_string());
     d.exec("playhead.set", json!({"seconds": 2.0}));
@@ -147,31 +181,55 @@ fn microphone_button_records_onto_its_track() {
     let st = d.settings();
     let rec = d.exec("audio.voiceover.settings", json!({}))["recording"].clone();
     assert!(rec.is_object(), "recording started: {st} {rec}");
-    let (start, capture) = (rec["recordStart"].as_i64().unwrap(), rec["captureStart"].as_i64().unwrap());
+    let (start, capture) = (
+        rec["recordStart"].as_i64().unwrap(),
+        rec["captureStart"].as_i64().unwrap(),
+    );
     // half a second of pre-roll; playback starts on the frame at or before the capture start (the
     // playhead snaps to frames) and the capture restarts there when the audio clock starts
     let frame = 10_594_584_000; // 1/23.976 s
-    assert!((127_008_000_000..=127_008_000_000 + frame).contains(&(start - capture)), "{}", start - capture);
-    assert_eq!(d.ok("ui.inspect", json!({}))["playback"]["playing"], json!(true));
+    assert!(
+        (127_008_000_000..=127_008_000_000 + frame).contains(&(start - capture)),
+        "{}",
+        start - capture
+    );
+    assert_eq!(
+        d.ok("ui.inspect", json!({}))["playback"]["playing"],
+        json!(true)
+    );
     // playing: the countdown / recording overlay is up
     assert!(!d.ids("voiceover.countdown.overlay").is_empty());
     // stop at 3 s (headless frames don't advance the playback clock; the engine command takes the
     // time) and look at the result on the record track
-    let v = d.exec("audio.voiceover.stop", json!({"time": start + 254_016_000_000}));
+    let v = d.exec(
+        "audio.voiceover.stop",
+        json!({"time": start + 254_016_000_000}),
+    );
     assert_eq!(v["placed"], true);
     assert_eq!(v["track"], label.as_str());
     assert_eq!(v["samples"], 48_000);
     d.ok("ui.playback", json!({"action": "stop"}));
     let q = d.exec("sequence.inspect", json!({}));
-    let clips = q["audio"][n - 1]["items"].as_array().cloned().unwrap_or_default();
-    assert!(clips.iter().any(|c| c["start"] == json!(start) && c["duration"] == json!(254_016_000_000i64) && c["clip"] == v["clip"]), "{q}");
+    let clips = q["audio"][n - 1]["items"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    assert!(
+        clips.iter().any(|c| c["start"] == json!(start)
+            && c["duration"] == json!(254_016_000_000i64)
+            && c["clip"] == v["clip"]),
+        "{q}"
+    );
     assert!(d.exec("audio.voiceover.settings", json!({}))["recording"].is_null());
     // clicking the microphone while recording stops the take (and playback)
     d.click(&format!("timeline.track.{label}.voiceover"));
     assert!(d.exec("audio.voiceover.settings", json!({}))["recording"].is_object());
     d.click(&format!("timeline.track.{label}.voiceover"));
     assert!(d.exec("audio.voiceover.settings", json!({}))["recording"].is_null());
-    assert_eq!(d.ok("ui.inspect", json!({}))["playback"]["playing"], json!(false));
+    assert_eq!(
+        d.ok("ui.inspect", json!({}))["playback"]["playing"],
+        json!(false)
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -180,9 +238,17 @@ fn recording_past_the_end_of_the_timeline_starts_there_not_at_the_beginning() {
     let mut d = Driver::demo();
     let dir = std::env::temp_dir().join(format!("filmcraft-vo-ui-end-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    d.exec("file.projectSettings.scratchDisks", json!({"captured": dir.to_string_lossy()}));
+    d.exec(
+        "file.projectSettings.scratchDisks",
+        json!({"captured": dir.to_string_lossy()}),
+    );
     d.exec("audio.voiceover.settings", json!({"prerollSeconds": 0.5}));
-    d.harness.state_mut().session.prefs.timeline.return_to_beginning = true;
+    d.harness
+        .state_mut()
+        .session
+        .prefs
+        .timeline
+        .return_to_beginning = true;
     // far beyond the last clip: empty timeline
     d.exec("playhead.set", json!({"seconds": 10_000.0}));
     d.click("timeline.track.A2.voiceover");
@@ -191,7 +257,10 @@ fn recording_past_the_end_of_the_timeline_starts_there_not_at_the_beginning() {
     let ps = d.ok("ui.inspect", json!({}));
     assert_eq!(ps["playback"]["playing"], json!(true));
     let playhead = ps["playhead"].as_i64().unwrap();
-    assert!(playhead > 9_000 * 254_016_000_000i64, "playhead jumped back to {playhead}");
+    assert!(
+        playhead > 9_000 * 254_016_000_000i64,
+        "playhead jumped back to {playhead}"
+    );
     d.click("timeline.track.A2.voiceover");
     let _ = std::fs::remove_dir_all(&dir);
 }

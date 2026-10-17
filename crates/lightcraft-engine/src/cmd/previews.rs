@@ -48,21 +48,34 @@ impl PreviewBuild {
     }
 
     pub fn error(&self) -> Option<String> {
-        self.error.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+        self.error
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 }
 
 /// The jobs that build `id`'s previews: the largest grid thumbnail and the view render at `edge`
 /// (`None` = 1:1, the photo's full size), the larger first.
-pub(crate) fn jobs_for(s: &mut Session, id: lightcraft_catalog::PhotoId, edge: Option<usize>) -> Vec<RenderJob> {
-    let Some(p) = s.catalog.photo(id) else { return Vec::new() };
+pub(crate) fn jobs_for(
+    s: &mut Session,
+    id: lightcraft_catalog::PhotoId,
+    edge: Option<usize>,
+) -> Vec<RenderJob> {
+    let Some(p) = s.catalog.photo(id) else {
+        return Vec::new();
+    };
     let full = p.width.max(p.height) as usize;
     let e = edge.unwrap_or(full).min(full.max(1)).max(1);
     let thumb = THUMB_SIZES[THUMB_SIZES.len() - 1];
     let (view, grid) = (s.loupe_job(id, e, e, true), s.thumb_job(id, thumb));
     // the larger render goes first: the one after it renders from the source it loaded (see
     // `run_photo`), which must not be smaller than what it needs
-    if e >= thumb { view.into_iter().chain(grid).collect() } else { grid.into_iter().chain(view).collect() }
+    if e >= thumb {
+        view.into_iter().chain(grid).collect()
+    } else {
+        grid.into_iter().chain(view).collect()
+    }
 }
 
 /// The build's row in the activity stack (`what` as in [`PreviewBuild::what`]).
@@ -72,7 +85,9 @@ fn task_for(s: &Session, state: &PreviewBuild) -> TaskGuard {
         "smart previews" => ("smartPreviews", "Building smart previews"),
         _ => ("smartPreviews", "Discarding smart previews"),
     };
-    let task = s.activity.start(kind, label, Cancel::Flag(state.cancel.clone()));
+    let task = s
+        .activity
+        .start(kind, label, Cancel::Flag(state.cancel.clone()));
     task.progress(0, state.total as u64);
     task
 }
@@ -113,9 +128,13 @@ fn run_all(jobs: Vec<Vec<RenderJob>>, state: &PreviewBuild, task: &TaskGuard, la
             if state.cancel.load(Ordering::Relaxed) {
                 break;
             }
-            let next = queue.lock().unwrap_or_else(std::sync::PoisonError::into_inner).next();
+            let next = queue
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .next();
             let Some(photo_jobs) = next else { break };
-            let ok = crate::guard::catch("building previews", || run_photo(photo_jobs)).unwrap_or(false);
+            let ok =
+                crate::guard::catch("building previews", || run_photo(photo_jobs)).unwrap_or(false);
             if !ok {
                 state.failed.fetch_add(1, Ordering::Relaxed);
             }
@@ -127,7 +146,11 @@ fn run_all(jobs: Vec<Vec<RenderJob>>, state: &PreviewBuild, task: &TaskGuard, la
     std::thread::scope(|sc| {
         for k in 1..lanes.max(1) {
             // a lane that can't start leaves its photos to the others (and to this thread)
-            if std::thread::Builder::new().name(format!("previews-{k}")).spawn_scoped(sc, work).is_err() {
+            if std::thread::Builder::new()
+                .name(format!("previews-{k}"))
+                .spawn_scoped(sc, work)
+                .is_err()
+            {
                 break;
             }
         }
@@ -144,21 +167,40 @@ fn run_all(jobs: Vec<Vec<RenderJob>>, state: &PreviewBuild, task: &TaskGuard, la
 fn build(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "library.buildPreviews";
     let edge = match str_param(p, "size").unwrap_or("standard") {
-        "standard" => Some(p.get("edge").and_then(Value::as_u64).map_or(STANDARD_EDGE, |e| e.clamp(256, 8192) as usize)),
+        "standard" => Some(
+            p.get("edge")
+                .and_then(Value::as_u64)
+                .map_or(STANDARD_EDGE, |e| e.clamp(256, 8192) as usize),
+        ),
         "full" | "1:1" => None,
         other => return Err(bad(C, format!("unknown size `{other}` (standard|full)"))),
     };
-    if s.preview_build.as_ref().is_some_and(|b| !b.finished.load(Ordering::Relaxed)) {
+    if s.preview_build
+        .as_ref()
+        .is_some_and(|b| !b.finished.load(Ordering::Relaxed))
+    {
         return Err(bad(C, "a preview build is already running"));
     }
     // explicit ids, else the selection, else everything in view
-    let ids = if p.get("ids").is_some() || p.get("id").is_some() || !s.selection.ids.is_empty() { s.targets(p) } else { s.visible_cloned() };
-    let jobs: Vec<Vec<RenderJob>> = ids.iter().map(|id| jobs_for(s, *id, edge)).filter(|j| !j.is_empty()).collect();
-    let state = Arc::new(PreviewBuild { total: jobs.len(), ..Default::default() });
+    let ids = if p.get("ids").is_some() || p.get("id").is_some() || !s.selection.ids.is_empty() {
+        s.targets(p)
+    } else {
+        s.visible_cloned()
+    };
+    let jobs: Vec<Vec<RenderJob>> = ids
+        .iter()
+        .map(|id| jobs_for(s, *id, edge))
+        .filter(|j| !j.is_empty())
+        .collect();
+    let state = Arc::new(PreviewBuild {
+        total: jobs.len(),
+        ..Default::default()
+    });
     s.preview_build = Some(state.clone());
     let task = task_for(s, &state);
     let lanes = lanes(jobs.len(), edge.is_none());
-    let wait = p.get("wait").and_then(Value::as_bool).unwrap_or(false) || cfg!(target_arch = "wasm32");
+    let wait =
+        p.get("wait").and_then(Value::as_bool).unwrap_or(false) || cfg!(target_arch = "wasm32");
     if wait {
         run_all(jobs, &state, &task, lanes);
         return Ok(state.json());
@@ -180,7 +222,12 @@ fn build(s: &mut Session, p: &Value) -> Result<Value> {
 /// `camera_preview::file_local_look`, [`lightcraft_catalog::Photo::fitted_look`]: only those
 /// proxies go stale when the fit changes).
 #[cfg(not(target_arch = "wasm32"))]
-type SmartJob = (lightcraft_catalog::PhotoId, std::path::PathBuf, Option<crate::media::SourceRef>, bool);
+type SmartJob = (
+    lightcraft_catalog::PhotoId,
+    std::path::PathBuf,
+    Option<crate::media::SourceRef>,
+    bool,
+);
 
 /// Held while one proxy is checked and (re)written, so Build Smart Previews and the opening look
 /// refresh ([`refresh_stale_smart_previews`]), on their own threads, never write the same file at once.
@@ -212,7 +259,19 @@ struct SmartCounts {
 fn original_only(source: crate::media::SourceRef) -> Option<crate::media::SourceRef> {
     use crate::media::SourceRef;
     match source {
-        SourceRef::File { path, max_edge, loader, denoise, .. } => Some(SourceRef::File { path, max_edge, loader, fallback: None, denoise }),
+        SourceRef::File {
+            path,
+            max_edge,
+            loader,
+            denoise,
+            ..
+        } => Some(SourceRef::File {
+            path,
+            max_edge,
+            loader,
+            fallback: None,
+            denoise,
+        }),
         SourceRef::Loaded(d) if d.info.is_some() => Some(SourceRef::Loaded(d)),
         _ => None,
     }
@@ -242,7 +301,9 @@ fn smart_run(
         if state.is_some_and(|(st, _)| st.cancel.load(Ordering::Relaxed)) {
             break;
         }
-        let _one = SMART_WRITE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _one = SMART_WRITE
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         // Read either the new shard or a pre-upgrade flat file, without making new work
         // depend on having the original online.
         let path = crate::smart::existing_file_path(dir, path);
@@ -261,21 +322,34 @@ fn smart_run(
             } else {
                 // a stale proxy is rebuilt from the original only: never from itself (the file
                 // fallback or a source decoded from a proxy would stamp the old look as current)
-                let source = if stale { source.and_then(original_only) } else { source };
+                let source = if stale {
+                    source.and_then(original_only)
+                } else {
+                    source
+                };
                 // atomic: a failed write leaves no partial proxy that would pass for a built one;
                 // and synced (issue #134): built so the photo can be edited while its original
                 // is offline, when it is the only copy — the sync is small next to the decode
                 let r = source
                     .ok_or_else(|| "nothing to build from".to_string())
                     .and_then(|s| s.load_source())
-                    .and_then(|src| crate::smart::encode(&src.image, src.info_or(Default::default()).camera_tone.as_ref()))
+                    .and_then(|src| {
+                        crate::smart::encode(
+                            &src.image,
+                            src.info_or(Default::default()).camera_tone.as_ref(),
+                        )
+                    })
                     .and_then(|b| {
-                        let parent = path.parent().ok_or_else(|| format!("{}: no parent folder", path.display()))?;
+                        let parent = path
+                            .parent()
+                            .ok_or_else(|| format!("{}: no parent folder", path.display()))?;
                         // Only create the leaf shard: do not recreate a missing external drive.
                         if !parent.is_dir() {
-                            std::fs::create_dir(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+                            std::fs::create_dir(parent)
+                                .map_err(|e| format!("{}: {e}", parent.display()))?;
                         }
-                        lightcraft_catalog::safe_file::write_atomic(&path, &b).map_err(|e| format!("{}: {e}", path.display()))
+                        lightcraft_catalog::safe_file::write_atomic(&path, &b)
+                            .map_err(|e| format!("{}: {e}", path.display()))
                     });
                 match r {
                     Ok(()) => {
@@ -318,27 +392,53 @@ fn smart_run(
 #[cfg(not(target_arch = "wasm32"))]
 fn smart(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "library.smartPreviews";
-    let dir = s.media.smart_dir.clone().ok_or_else(|| bad(C, "smart previews need a library on disk"))?;
+    let dir = s
+        .media
+        .smart_dir
+        .clone()
+        .ok_or_else(|| bad(C, "smart previews need a library on disk"))?;
     let discard = p.get("discard").and_then(Value::as_bool).unwrap_or(false);
-    let background = p.get("background").and_then(Value::as_bool).unwrap_or(false);
-    if background && s.preview_build.as_ref().is_some_and(|b| !b.finished.load(Ordering::Relaxed)) {
+    let background = p
+        .get("background")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if background
+        && s.preview_build
+            .as_ref()
+            .is_some_and(|b| !b.finished.load(Ordering::Relaxed))
+    {
         return Err(bad(C, "a preview build is already running"));
     }
-    let ids = if p.get("ids").is_some() || !s.selection.ids.is_empty() { s.targets(p) } else { s.visible_cloned() };
+    let ids = if p.get("ids").is_some() || !s.selection.ids.is_empty() {
+        s.targets(p)
+    } else {
+        s.visible_cloned()
+    };
     let mut jobs: Vec<SmartJob> = Vec::new();
     for id in ids {
-        let Some(ph) = s.catalog.photo(id).cloned() else { continue };
+        let Some(ph) = s.catalog.photo(id).cloned() else {
+            continue;
+        };
         if !matches!(ph.source, lightcraft_catalog::Source::File { .. }) {
             continue;
         }
         let path = crate::smart::sharded_file_path(&dir, &ph);
-        let source = (!discard).then(|| s.media.source_ref(&ph, crate::media::SourceLevel::Preview));
+        let source =
+            (!discard).then(|| s.media.source_ref(&ph, crate::media::SourceLevel::Preview));
         jobs.push((id, path, source, ph.fitted_look()));
     }
     let custom = s.smart_previews_dir.is_some();
     if background {
-        let what = if discard { "discarding smart previews" } else { "smart previews" };
-        let state = Arc::new(PreviewBuild { total: jobs.len(), what, ..Default::default() });
+        let what = if discard {
+            "discarding smart previews"
+        } else {
+            "smart previews"
+        };
+        let state = Arc::new(PreviewBuild {
+            total: jobs.len(),
+            what,
+            ..Default::default()
+        });
         s.preview_build = Some(state.clone());
         let task = task_for(s, &state);
         let st = state.clone();
@@ -347,7 +447,9 @@ fn smart(s: &mut Session, p: &Value) -> Result<Value> {
             .spawn(move || {
                 if let Err(e) = smart_run(&dir, custom, discard, jobs, Some((&st, &task))) {
                     log::warn!("{C}: {e}");
-                    *st.error.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(e);
+                    *st.error
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(e);
                 }
                 st.finished.store(true, Ordering::Relaxed);
             })
@@ -375,9 +477,22 @@ pub(crate) fn refresh_stale_smart_previews(s: &mut Session) -> Option<std::threa
         return None;
     }
     let max_edge = crate::media::SourceLevel::Preview.max_edge();
-    let photos: Vec<_> = s.catalog.photos().filter(|p| matches!(p.source, lightcraft_catalog::Source::File { .. }) && p.fitted_look()).collect();
-    let jobs: Vec<SmartJob> =
-        photos.iter().map(|p| (p.id, crate::smart::sharded_file_path(&dir, p), Some(s.media.origin_ref(&p.source, max_edge)), true)).collect();
+    let photos: Vec<_> = s
+        .catalog
+        .photos()
+        .filter(|p| matches!(p.source, lightcraft_catalog::Source::File { .. }) && p.fitted_look())
+        .collect();
+    let jobs: Vec<SmartJob> = photos
+        .iter()
+        .map(|p| {
+            (
+                p.id,
+                crate::smart::sharded_file_path(&dir, p),
+                Some(s.media.origin_ref(&p.source, max_edge)),
+                true,
+            )
+        })
+        .collect();
     std::thread::Builder::new()
         .name("lc-smart-look".into())
         .spawn(move || refresh_stale(&dir, jobs))
@@ -390,13 +505,24 @@ pub(crate) fn refresh_stale_smart_previews(s: &mut Session) -> Option<std::threa
 fn refresh_stale(dir: &std::path::Path, jobs: Vec<SmartJob>) {
     let stale: Vec<SmartJob> = jobs
         .into_iter()
-        .map(|(id, path, source, look)| (id, crate::smart::existing_file_path(dir, path), source, look))
+        .map(|(id, path, source, look)| {
+            (
+                id,
+                crate::smart::existing_file_path(dir, path),
+                source,
+                look,
+            )
+        })
         .filter(|(_, path, _, _)| crate::smart::is_stale(path))
         .collect();
     if !stale.is_empty() {
         // `custom`: the folder is there already, and must not be recreated if it went away since
         match smart_run(dir, true, false, stale, None) {
-            Ok(n) => log::info!("smart previews: {} refreshed to the current camera look, {} kept (original offline)", n.refreshed, n.stale_kept),
+            Ok(n) => log::info!(
+                "smart previews: {} refreshed to the current camera look, {} kept (original offline)",
+                n.refreshed,
+                n.stale_kept
+            ),
             Err(e) => {
                 // not marked: the next opening tries again
                 log::warn!("smart previews: look refresh: {e}");
@@ -414,7 +540,11 @@ fn refresh_stale(dir: &std::path::Path, jobs: Vec<SmartJob>) {
 #[cfg(not(target_arch = "wasm32"))]
 fn location_json(s: &Session) -> Value {
     let dir = s.media.smart_dir.clone();
-    let default = s.library.as_ref().filter(|l| l.on_disk).map(|l| crate::smart::dir(&l.dir));
+    let default = s
+        .library
+        .as_ref()
+        .filter(|l| l.on_disk)
+        .map(|l| crate::smart::dir(&l.dir));
     let (count, bytes) = dir.as_deref().map_or((0, 0), crate::smart::stats);
     json!({
         "path": dir.as_ref().map(|d| d.to_string_lossy()),
@@ -430,13 +560,22 @@ fn location_json(s: &Session) -> Value {
 #[cfg(not(target_arch = "wasm32"))]
 fn smart_location(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "library.smartPreviewsLocation";
-    let current = s.media.smart_dir.clone().ok_or_else(|| bad(C, "smart previews need a library on disk"))?;
+    let current = s
+        .media
+        .smart_dir
+        .clone()
+        .ok_or_else(|| bad(C, "smart previews need a library on disk"))?;
     let reset = p.get("reset").and_then(Value::as_bool).unwrap_or(false);
     let chosen = str_param(p, "path").filter(|x| !x.trim().is_empty());
     if !reset && chosen.is_none() {
         return Ok(location_json(s));
     }
-    let lib_dir = s.library.as_ref().filter(|l| l.on_disk).map(|l| l.dir.clone()).ok_or_else(|| bad(C, "smart previews need a library on disk"))?;
+    let lib_dir = s
+        .library
+        .as_ref()
+        .filter(|l| l.on_disk)
+        .map(|l| l.dir.clone())
+        .ok_or_else(|| bad(C, "smart previews need a library on disk"))?;
     let default = crate::smart::dir(&lib_dir);
     let (new_dir, custom) = match chosen {
         Some(x) if !reset => {
@@ -455,12 +594,21 @@ fn smart_location(s: &mut Session, p: &Value) -> Result<Value> {
     crate::smart::check_writable(&new_dir).map_err(|e| bad(C, e))?;
     let (held, _) = crate::smart::stats(&current);
     let existing = match str_param(p, "existing") {
-        Some(x) => Some(crate::smart::Existing::parse(x).ok_or_else(|| bad(C, "existing must be move, leave or discard"))?),
+        Some(x) => Some(
+            crate::smart::Existing::parse(x)
+                .ok_or_else(|| bad(C, "existing must be move, leave or discard"))?,
+        ),
         None if held == 0 => Some(crate::smart::Existing::Leave),
         None => None,
     };
     let Some(existing) = existing else {
-        return Err(bad(C, format!("{held} smart preview(s) are in {}: pass existing = move, leave or discard", current.display())));
+        return Err(bad(
+            C,
+            format!(
+                "{held} smart preview(s) are in {}: pass existing = move, leave or discard",
+                current.display()
+            ),
+        ));
     };
     let (moved, failed) = crate::smart::migrate(&current, &new_dir, existing);
     s.smart_previews_dir = custom;
@@ -522,12 +670,20 @@ pub fn specs() -> Vec<CommandSpec> {
         cmd!(query "library.previewProgress", "Preview Build Progress", [], None, "{} → {total, done, failed, repaired, running, cancelled, what, error} | null", always, |s, _| {
             Ok(s.preview_build.as_ref().map_or(Value::Null, |b| b.json()))
         }),
-        cmd!("library.cancelPreviews", "Cancel Preview Build", [], None, "{}", always, |s, _| {
-            if let Some(b) = &s.preview_build {
-                b.cancel.store(true, Ordering::Relaxed);
+        cmd!(
+            "library.cancelPreviews",
+            "Cancel Preview Build",
+            [],
+            None,
+            "{}",
+            always,
+            |s, _| {
+                if let Some(b) = &s.preview_build {
+                    b.cancel.store(true, Ordering::Relaxed);
+                }
+                Ok(s.preview_build.as_ref().map_or(Value::Null, |b| b.json()))
             }
-            Ok(s.preview_build.as_ref().map_or(Value::Null, |b| b.json()))
-        }),
+        ),
     ]
 }
 
@@ -548,8 +704,17 @@ mod tests {
         let mut jobs = jobs_for(&mut s, id, Some(512));
         assert_eq!(jobs.len(), 2, "view and thumbnail");
         assert!(jobs[0].view_cache.is_some(), "the view renders first");
-        jobs[1].source = SourceRef::File { path: "/nonexistent/photo.arw".into(), max_edge: 512, loader: None, fallback: None, denoise: None };
-        assert!(run_photo(jobs), "the thumbnail rendered from the view's decoded source");
+        jobs[1].source = SourceRef::File {
+            path: "/nonexistent/photo.arw".into(),
+            max_edge: 512,
+            loader: None,
+            fallback: None,
+            denoise: None,
+        };
+        assert!(
+            run_photo(jobs),
+            "the thumbnail rendered from the view's decoded source"
+        );
     }
 
     // Given many photos, a standard preview build renders them side by side and counts every one
@@ -558,7 +723,12 @@ mod tests {
         let mut s = Session::with_demo();
         let ids: Vec<u64> = s.catalog.photos().map(|p| p.id.0).collect();
         assert!(ids.len() > 4);
-        let r = s.execute("library.buildPreviews", &json!({"size": "standard", "edge": 512, "ids": ids, "wait": true})).unwrap();
+        let r = s
+            .execute(
+                "library.buildPreviews",
+                &json!({"size": "standard", "edge": 512, "ids": ids, "wait": true}),
+            )
+            .unwrap();
         assert_eq!(r["done"], json!(ids.len()), "{r}");
         assert_eq!(r["total"], json!(ids.len()));
         assert_eq!(r["failed"], json!(0));

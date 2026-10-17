@@ -44,10 +44,15 @@ impl PrefixPattern {
             return Err(Error::EmptyPattern);
         };
 
-        let rest: Vec<PatternToken> =
-            rest_tokens.iter().map(|t| PatternToken::Single(t.clone())).collect();
+        let rest: Vec<PatternToken> = rest_tokens
+            .iter()
+            .map(|t| PatternToken::Single(t.clone()))
+            .collect();
 
-        Ok(Self { first: first.clone(), rest })
+        Ok(Self {
+            first: first.clone(),
+            rest,
+        })
     }
 
     /// Tests if `cmd` matches this prefix pattern.
@@ -168,7 +173,11 @@ mod tests {
         ];
         assert_eq!(
             pattern.matches_prefix(&cmd1),
-            Some(vec!["git".to_string(), "reset".to_string(), "--hard".to_string()])
+            Some(vec![
+                "git".to_string(),
+                "reset".to_string(),
+                "--hard".to_string()
+            ])
         );
 
         let cmd2 = vec!["git".to_string(), "reset".to_string(), "--soft".to_string()];
@@ -182,20 +191,37 @@ mod tests {
     fn test_pattern_token_alts() {
         let pattern = PrefixPattern {
             first: "git".to_string(),
-            rest: vec![PatternToken::Alts(vec!["checkout".to_string(), "switch".to_string()])],
+            rest: vec![PatternToken::Alts(vec![
+                "checkout".to_string(),
+                "switch".to_string(),
+            ])],
         };
 
-        assert!(pattern.matches_prefix(&["git".to_string(), "checkout".to_string()]).is_some());
-        assert!(pattern.matches_prefix(&["git".to_string(), "switch".to_string()]).is_some());
-        assert!(pattern.matches_prefix(&["git".to_string(), "status".to_string()]).is_none());
+        assert!(
+            pattern
+                .matches_prefix(&["git".to_string(), "checkout".to_string()])
+                .is_some()
+        );
+        assert!(
+            pattern
+                .matches_prefix(&["git".to_string(), "switch".to_string()])
+                .is_some()
+        );
+        assert!(
+            pattern
+                .matches_prefix(&["git".to_string(), "status".to_string()])
+                .is_none()
+        );
     }
 
     #[test]
     fn test_rule_example_validation() {
         let pattern = PrefixPattern::from_tokens(&["ls".to_string()]).unwrap();
         let mut rule = PrefixRule::new(pattern, Decision::Allow, None);
-        rule.match_examples.push(vec!["ls".to_string(), "-la".to_string()]);
-        rule.not_match_examples.push(vec!["cat".to_string(), "file".to_string()]);
+        rule.match_examples
+            .push(vec!["ls".to_string(), "-la".to_string()]);
+        rule.not_match_examples
+            .push(vec!["cat".to_string(), "file".to_string()]);
 
         assert!(rule.validate_examples().is_ok());
 

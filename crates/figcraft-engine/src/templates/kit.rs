@@ -33,7 +33,10 @@ pub(super) struct Kit {
 
 impl Kit {
     pub fn new(name: &str) -> Self {
-        Self { s: Session::with_document(Document::new(name)), styles: BTreeMap::new() }
+        Self {
+            s: Session::with_document(Document::new(name)),
+            styles: BTreeMap::new(),
+        }
     }
 
     /// The document, with every page on `background` and the first page shown.
@@ -41,7 +44,9 @@ impl Kit {
         let ds = self.s.docs.pop().ok_or(EngineError::NoDocument)?;
         let mut doc = Arc::try_unwrap(ds.doc).unwrap_or_else(|d| (*d).clone());
         for page in doc.pages.clone() {
-            if let Some(NodeKind::Page { background: b, .. }) = doc.node_mut(page).map(|n| &mut n.kind) {
+            if let Some(NodeKind::Page { background: b, .. }) =
+                doc.node_mut(page).map(|n| &mut n.kind)
+            {
                 *b = background;
             }
         }
@@ -58,7 +63,9 @@ impl Kit {
     /// The id a command answered with.
     fn made(&mut self, cmd: &str, params: Value) -> Result<NodeId> {
         let v = self.run(cmd, params)?;
-        v.get("id").and_then(crate::params::id_of).ok_or_else(|| EngineError::Other(format!("`{cmd}` made no layer")))
+        v.get("id")
+            .and_then(crate::params::id_of)
+            .ok_or_else(|| EngineError::Other(format!("`{cmd}` made no layer")))
     }
 
     /// The page being built on.
@@ -84,7 +91,9 @@ impl Kit {
     /// `props` with style names in `fill`, `stroke` and `textStyle` turned into links to those
     /// styles (anything else, like "#RRGGBB", stays a plain value).
     fn resolved(&self, props: Value) -> Value {
-        let Value::Object(map) = props else { return props };
+        let Value::Object(map) = props else {
+            return props;
+        };
         let mut out = Map::new();
         for (k, v) in map {
             let style = v.as_str().and_then(|name| self.styles.get(name));
@@ -104,25 +113,64 @@ impl Kit {
     }
 
     /// A layer of `kind` (frame, component, rectangle, ellipse…) at `[x, y, width, height]`.
-    pub fn node(&mut self, kind: &str, parent: NodeId, name: &str, [x, y, w, h]: [f64; 4], props: Value) -> Result<NodeId> {
-        self.create(kind, parent, json!({"name": name, "x": x, "y": y, "width": w, "height": h}), props)
+    pub fn node(
+        &mut self,
+        kind: &str,
+        parent: NodeId,
+        name: &str,
+        [x, y, w, h]: [f64; 4],
+        props: Value,
+    ) -> Result<NodeId> {
+        self.create(
+            kind,
+            parent,
+            json!({"name": name, "x": x, "y": y, "width": w, "height": h}),
+            props,
+        )
     }
 
-    pub fn frame(&mut self, parent: NodeId, name: &str, at: [f64; 4], props: Value) -> Result<NodeId> {
+    pub fn frame(
+        &mut self,
+        parent: NodeId,
+        name: &str,
+        at: [f64; 4],
+        props: Value,
+    ) -> Result<NodeId> {
         self.node("frame", parent, name, at, props)
     }
 
-    pub fn rect(&mut self, parent: NodeId, name: &str, at: [f64; 4], props: Value) -> Result<NodeId> {
+    pub fn rect(
+        &mut self,
+        parent: NodeId,
+        name: &str,
+        at: [f64; 4],
+        props: Value,
+    ) -> Result<NodeId> {
         self.node("rectangle", parent, name, at, props)
     }
 
-    pub fn ellipse(&mut self, parent: NodeId, name: &str, at: [f64; 4], props: Value) -> Result<NodeId> {
+    pub fn ellipse(
+        &mut self,
+        parent: NodeId,
+        name: &str,
+        at: [f64; 4],
+        props: Value,
+    ) -> Result<NodeId> {
         self.node("ellipse", parent, name, at, props)
     }
 
     /// An auto layout frame of `kind` (frame or component) that hugs its content, without a fill,
     /// unless `props` say otherwise.
-    pub fn stack_of(&mut self, kind: &str, parent: NodeId, name: &str, dir: &str, gap: f64, pad: Value, props: Value) -> Result<NodeId> {
+    pub fn stack_of(
+        &mut self,
+        kind: &str,
+        parent: NodeId,
+        name: &str,
+        dir: &str,
+        gap: f64,
+        pad: Value,
+        props: Value,
+    ) -> Result<NodeId> {
         let mut base = json!({"clip": false, "layout": dir, "gap": gap, "padding": pad, "sizingH": "hug", "sizingV": "hug"});
         if props.get("fill").is_none() && props.get("fills").is_none() {
             base = merged(base, json!({"fills": []}));
@@ -130,52 +178,136 @@ impl Kit {
         self.create(kind, parent, json!({"name": name}), merged(base, props))
     }
 
-    pub fn stack(&mut self, parent: NodeId, name: &str, dir: &str, gap: f64, pad: Value, props: Value) -> Result<NodeId> {
+    pub fn stack(
+        &mut self,
+        parent: NodeId,
+        name: &str,
+        dir: &str,
+        gap: f64,
+        pad: Value,
+        props: Value,
+    ) -> Result<NodeId> {
         self.stack_of("frame", parent, name, dir, gap, pad, props)
     }
 
     /// One line of text in text style `style`, coloured `color` (a paint style's name or a colour).
-    pub fn text(&mut self, parent: NodeId, chars: &str, style: &str, color: &str) -> Result<NodeId> {
+    pub fn text(
+        &mut self,
+        parent: NodeId,
+        chars: &str,
+        style: &str,
+        color: &str,
+    ) -> Result<NodeId> {
         self.text_with(parent, chars, style, color, json!({}))
     }
 
-    pub fn text_with(&mut self, parent: NodeId, chars: &str, style: &str, color: &str, props: Value) -> Result<NodeId> {
-        self.create("text", parent, json!({"text": chars}), merged(json!({"textStyle": style, "fill": color}), props))
+    pub fn text_with(
+        &mut self,
+        parent: NodeId,
+        chars: &str,
+        style: &str,
+        color: &str,
+        props: Value,
+    ) -> Result<NodeId> {
+        self.create(
+            "text",
+            parent,
+            json!({"text": chars}),
+            merged(json!({"textStyle": style, "fill": color}), props),
+        )
     }
 
     /// Text set by hand rather than in a text style: `size` px in font style `weight`.
-    pub fn sized_text(&mut self, parent: NodeId, chars: &str, [size, line]: [f64; 2], weight: &str, color: &str, props: Value) -> Result<NodeId> {
-        let base = json!({"fontSize": size, "fontStyle": weight, "lineHeight": line, "fill": color});
+    pub fn sized_text(
+        &mut self,
+        parent: NodeId,
+        chars: &str,
+        [size, line]: [f64; 2],
+        weight: &str,
+        color: &str,
+        props: Value,
+    ) -> Result<NodeId> {
+        let base =
+            json!({"fontSize": size, "fontStyle": weight, "lineHeight": line, "fill": color});
         self.create("text", parent, json!({"text": chars}), merged(base, props))
     }
 
     /// Text that fills its auto layout parent's width and wraps.
-    pub fn para(&mut self, parent: NodeId, chars: &str, style: &str, color: &str) -> Result<NodeId> {
-        self.text_with(parent, chars, style, color, json!({"sizingH": "fill", "textAutoResize": "height"}))
+    pub fn para(
+        &mut self,
+        parent: NodeId,
+        chars: &str,
+        style: &str,
+        color: &str,
+    ) -> Result<NodeId> {
+        self.text_with(
+            parent,
+            chars,
+            style,
+            color,
+            json!({"sizingH": "fill", "textAutoResize": "height"}),
+        )
     }
 
     /// A stroked outline from SVG path data, where the path puts it in `parent`.
-    pub fn line(&mut self, parent: NodeId, name: &str, path: &str, color: &str, weight: f64) -> Result<NodeId> {
+    pub fn line(
+        &mut self,
+        parent: NodeId,
+        name: &str,
+        path: &str,
+        color: &str,
+        weight: f64,
+    ) -> Result<NodeId> {
         let props = json!({"fills": [], "stroke": color, "strokeWeight": weight, "strokeCap": "round", "strokeJoin": "round"});
         self.create("vector", parent, json!({"name": name, "path": path}), props)
     }
 
     /// A filled shape from SVG path data.
-    pub fn shape(&mut self, parent: NodeId, name: &str, path: &str, props: Value) -> Result<NodeId> {
+    pub fn shape(
+        &mut self,
+        parent: NodeId,
+        name: &str,
+        path: &str,
+        props: Value,
+    ) -> Result<NodeId> {
         self.create("vector", parent, json!({"name": name, "path": path}), props)
     }
 
     /// An icon: a square frame of `size` holding `glyph` stroked in `color`.
-    pub fn icon(&mut self, parent: NodeId, glyph: &Glyph, size: f64, color: &str) -> Result<NodeId> {
-        self.icon_of("frame", parent, glyph, [0.0, 0.0], size, color).map(|(frame, _)| frame)
+    pub fn icon(
+        &mut self,
+        parent: NodeId,
+        glyph: &Glyph,
+        size: f64,
+        color: &str,
+    ) -> Result<NodeId> {
+        self.icon_of("frame", parent, glyph, [0.0, 0.0], size, color)
+            .map(|(frame, _)| frame)
     }
 
     /// [`Kit::icon`] as a frame or component at a place of its own: the icon and its outline.
-    pub fn icon_of(&mut self, kind: &str, parent: NodeId, glyph: &Glyph, [x, y]: [f64; 2], size: f64, color: &str) -> Result<(NodeId, NodeId)> {
-        let frame = self.node(kind, parent, glyph.name, [x, y, ICON, ICON], json!({"fills": [], "clip": false}))?;
+    pub fn icon_of(
+        &mut self,
+        kind: &str,
+        parent: NodeId,
+        glyph: &Glyph,
+        [x, y]: [f64; 2],
+        size: f64,
+        color: &str,
+    ) -> Result<(NodeId, NodeId)> {
+        let frame = self.node(
+            kind,
+            parent,
+            glyph.name,
+            [x, y, ICON, ICON],
+            json!({"fills": [], "clip": false}),
+        )?;
         let stroke = self.line(frame, "Glyph", glyph.path, color, 2.0)?;
         // The glyph follows the frame's size (and an instance's); its stroke keeps its weight.
-        self.set(stroke, json!({"constraints": {"horizontal": "scale", "vertical": "scale"}}))?;
+        self.set(
+            stroke,
+            json!({"constraints": {"horizontal": "scale", "vertical": "scale"}}),
+        )?;
         if size != ICON {
             self.set(frame, json!({"width": size, "height": size}))?;
         }
@@ -184,13 +316,17 @@ impl Kit {
 
     pub fn set(&mut self, id: NodeId, props: Value) -> Result<()> {
         let props = self.resolved(props);
-        self.run("node.set", json!({"ids": [id.0], "props": props})).map(drop)
+        self.run("node.set", json!({"ids": [id.0], "props": props}))
+            .map(drop)
     }
 
     /// Paint styles: (name, colour).
     pub fn colors(&mut self, list: &[(&str, &str)]) -> Result<()> {
         for (name, hex) in list {
-            let v = self.run("style.create", json!({"type": "paint", "name": name, "value": [hex]}))?;
+            let v = self.run(
+                "style.create",
+                json!({"type": "paint", "name": name, "value": [hex]}),
+            )?;
             self.keep_style(name, &v);
         }
         Ok(())
@@ -200,7 +336,10 @@ impl Kit {
     pub fn type_styles(&mut self, list: &[(&str, f64, &str, f64)]) -> Result<()> {
         for (name, size, weight, line) in list {
             let value = json!({"fontSize": size, "fontStyle": weight, "lineHeight": line});
-            let v = self.run("style.create", json!({"type": "text", "name": name, "value": value}))?;
+            let v = self.run(
+                "style.create",
+                json!({"type": "text", "name": name, "value": value}),
+            )?;
             self.keep_style(name, &v);
         }
         Ok(())
@@ -213,11 +352,23 @@ impl Kit {
     }
 
     /// A variable collection with `modes`, and its variables: (name, type, one value per mode).
-    pub fn variables(&mut self, collection: &str, modes: &[&str], vars: Vec<(&str, &str, Vec<Value>)>) -> Result<()> {
-        self.run("variable.createCollection", json!({"name": collection, "modes": modes}))?;
+    pub fn variables(
+        &mut self,
+        collection: &str,
+        modes: &[&str],
+        vars: Vec<(&str, &str, Vec<Value>)>,
+    ) -> Result<()> {
+        self.run(
+            "variable.createCollection",
+            json!({"name": collection, "modes": modes}),
+        )?;
         for (name, kind, values) in vars {
-            let values: Map<String, Value> = modes.iter().map(|m| m.to_string()).zip(values).collect();
-            self.run("variable.create", json!({"collection": collection, "name": name, "type": kind, "values": values}))?;
+            let values: Map<String, Value> =
+                modes.iter().map(|m| m.to_string()).zip(values).collect();
+            self.run(
+                "variable.create",
+                json!({"collection": collection, "name": name, "type": kind, "values": values}),
+            )?;
         }
         Ok(())
     }
@@ -225,40 +376,71 @@ impl Kit {
     /// Bind fields of layer `id` to variables: (field, variable name). Gives the layer back.
     pub fn bound(&mut self, id: NodeId, binds: &[(&str, &str)]) -> Result<NodeId> {
         for (field, variable) in binds {
-            self.run("variable.bind", json!({"ids": [id.0], "field": field, "variable": variable}))?;
+            self.run(
+                "variable.bind",
+                json!({"ids": [id.0], "field": field, "variable": variable}),
+            )?;
         }
         Ok(id)
     }
 
     /// Show `frame` in `mode` of variable collection `collection`.
     pub fn mode(&mut self, frame: NodeId, collection: &str, mode: &str) -> Result<()> {
-        self.run("variable.setMode", json!({"ids": [frame.0], "collection": collection, "mode": mode})).map(drop)
+        self.run(
+            "variable.setMode",
+            json!({"ids": [frame.0], "collection": collection, "mode": mode}),
+        )
+        .map(drop)
     }
 
     /// Combine components (named "Property=Value, …") into a component set called `name`.
     pub fn variants(&mut self, name: &str, ids: &[NodeId], props: Value) -> Result<NodeId> {
-        let set = self.made("component.combineVariants", json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>()}))?;
+        let set = self.made(
+            "component.combineVariants",
+            json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>()}),
+        )?;
         self.set(set, merged(json!({"name": name}), props))?;
         Ok(set)
     }
 
     /// A text property of `component` (or of a set) shown by `layers` (one per variant).
-    pub fn text_prop(&mut self, component: NodeId, name: &str, default: &str, layers: &[NodeId]) -> Result<()> {
+    pub fn text_prop(
+        &mut self,
+        component: NodeId,
+        name: &str,
+        default: &str,
+        layers: &[NodeId],
+    ) -> Result<()> {
         for (i, layer) in layers.iter().enumerate() {
             if i == 0 {
                 self.run("component.addProperty", json!({"id": component.0, "name": name, "type": "text", "default": default, "layer": layer.0}))?;
             } else {
-                self.run("component.bindProperty", json!({"layer": layer.0, "property": name, "field": "characters"}))?;
+                self.run(
+                    "component.bindProperty",
+                    json!({"layer": layer.0, "property": name, "field": "characters"}),
+                )?;
             }
         }
         Ok(())
     }
 
     /// An instance of `component` in `parent` with component `properties` and layer `props`.
-    pub fn instance(&mut self, component: NodeId, parent: NodeId, properties: Value, props: Value) -> Result<NodeId> {
-        let id = self.made("instance.create", json!({"component": component.0, "parent": parent.0, "x": 0, "y": 0}))?;
+    pub fn instance(
+        &mut self,
+        component: NodeId,
+        parent: NodeId,
+        properties: Value,
+        props: Value,
+    ) -> Result<NodeId> {
+        let id = self.made(
+            "instance.create",
+            json!({"component": component.0, "parent": parent.0, "x": 0, "y": 0}),
+        )?;
         if properties.as_object().is_some_and(|o| !o.is_empty()) {
-            self.run("instance.setProperties", json!({"ids": [id.0], "properties": properties}))?;
+            self.run(
+                "instance.setProperties",
+                json!({"ids": [id.0], "properties": properties}),
+            )?;
         }
         if props.as_object().is_some_and(|o| !o.is_empty()) {
             self.set(id, props)?;
@@ -274,7 +456,8 @@ impl Kit {
 
     /// The prototype starts at frame `start`.
     pub fn flow(&mut self, start: NodeId, name: &str) -> Result<()> {
-        self.run("proto.flow.add", json!({"start": start.0, "name": name})).map(drop)
+        self.run("proto.flow.add", json!({"start": start.0, "name": name}))
+            .map(drop)
     }
 }
 
@@ -343,28 +526,71 @@ impl Kit {
 
     /// A picture drawn from shapes (a sun over two ridges at dawn), `w` × `h`; `props` then size
     /// or round it, and the shapes follow.
-    pub fn scene(&mut self, parent: NodeId, name: &str, [w, h]: [f64; 2], props: Value) -> Result<NodeId> {
-        let frame = self.frame(parent, name, [0.0, 0.0, w, h], json!({"fills": gradient("#BFE3D6", "#F8ECD4"), "clip": true}))?;
+    pub fn scene(
+        &mut self,
+        parent: NodeId,
+        name: &str,
+        [w, h]: [f64; 2],
+        props: Value,
+    ) -> Result<NodeId> {
+        let frame = self.frame(
+            parent,
+            name,
+            [0.0, 0.0, w, h],
+            json!({"fills": gradient("#BFE3D6", "#F8ECD4"), "clip": true}),
+        )?;
         let follow = json!({"horizontal": "scale", "vertical": "scale"});
         let sun = w.min(h) * 0.22;
-        self.ellipse(frame, "Sun", [w * 0.68, h * 0.14, sun, sun], json!({"fill": ACCENT, "constraints": follow}))?;
+        self.ellipse(
+            frame,
+            "Sun",
+            [w * 0.68, h * 0.14, sun, sun],
+            json!({"fill": ACCENT, "constraints": follow}),
+        )?;
         let ridge = |ys: [f64; 6]| {
             let [a, b, c, d, e, f] = ys.map(|y| y * h);
-            format!("M0 {a} L{} {b} L{} {c} L{} {d} L{} {e} L{w} {f} V{h} H0 Z", w * 0.2, w * 0.38, w * 0.58, w * 0.8)
+            format!(
+                "M0 {a} L{} {b} L{} {c} L{} {d} L{} {e} L{w} {f} V{h} H0 Z",
+                w * 0.2,
+                w * 0.38,
+                w * 0.58,
+                w * 0.8
+            )
         };
-        for (name, color, ys) in
-            [("Far ridge", "#6FB09B", [0.62, 0.40, 0.56, 0.32, 0.58, 0.46]), ("Near ridge", PRIMARY, [0.84, 0.64, 0.78, 0.58, 0.82, 0.70])]
-        {
-            self.shape(frame, name, &ridge(ys), json!({"fill": color, "constraints": follow}))?;
+        for (name, color, ys) in [
+            ("Far ridge", "#6FB09B", [0.62, 0.40, 0.56, 0.32, 0.58, 0.46]),
+            ("Near ridge", PRIMARY, [0.84, 0.64, 0.78, 0.58, 0.82, 0.70]),
+        ] {
+            self.shape(
+                frame,
+                name,
+                &ridge(ys),
+                json!({"fill": color, "constraints": follow}),
+            )?;
         }
         self.set(frame, props)?;
         Ok(frame)
     }
 
     /// A pill or tile holding one line of text: (text style, text colour) on `fill`.
-    pub fn chip(&mut self, parent: NodeId, label: &str, [style, color]: [&str; 2], fill: &str, pad: [f64; 2], radius: f64) -> Result<NodeId> {
+    pub fn chip(
+        &mut self,
+        parent: NodeId,
+        label: &str,
+        [style, color]: [&str; 2],
+        fill: &str,
+        pad: [f64; 2],
+        radius: f64,
+    ) -> Result<NodeId> {
         let props = json!({"fill": fill, "cornerRadius": radius, "mainAlign": "center", "crossAlign": "center"});
-        let chip = self.stack(parent, label, H, 8.0, json!([pad[0], pad[1], pad[0], pad[1]]), props)?;
+        let chip = self.stack(
+            parent,
+            label,
+            H,
+            8.0,
+            json!([pad[0], pad[1], pad[0], pad[1]]),
+            props,
+        )?;
         self.text(chip, label, style, color)?;
         Ok(chip)
     }
@@ -379,8 +605,19 @@ impl Kit {
     /// A bar chart in `card`: a plot drawn `w` × `h` with a baseline and one bar per (name, share of
     /// the height), the tallest in the accent colour, and the names under it in `label_style`. The
     /// shapes follow the plot, which fills the room `card` has.
-    pub fn bar_chart(&mut self, card: NodeId, [w, h]: [f64; 2], bars: &[(&str, f64)], label_style: &str) -> Result<()> {
-        let plot = self.frame(card, "Plot", [0.0, 0.0, w, h], json!({"fills": [], "clip": false}))?;
+    pub fn bar_chart(
+        &mut self,
+        card: NodeId,
+        [w, h]: [f64; 2],
+        bars: &[(&str, f64)],
+        label_style: &str,
+    ) -> Result<()> {
+        let plot = self.frame(
+            card,
+            "Plot",
+            [0.0, 0.0, w, h],
+            json!({"fills": [], "clip": false}),
+        )?;
         let follow = json!({"horizontal": "scale", "vertical": "scale"});
         let slot = w / bars.len().max(1) as f64;
         let top = bars.iter().map(|(_, share)| *share).fold(0.0, f64::max);
@@ -397,14 +634,33 @@ impl Kit {
         // Each name sits under its bar: the row's cells are as wide as the bars' slots.
         let axis = self.stack(card, "Axis", H, 0.0, json!(0), json!({"sizingH": "fill"}))?;
         for (name, _) in bars {
-            self.text_with(axis, name, label_style, MUTED, json!({"sizingH": "fill", "textAlign": "center"}))?;
+            self.text_with(
+                axis,
+                name,
+                label_style,
+                MUTED,
+                json!({"sizingH": "fill", "textAlign": "center"}),
+            )?;
         }
         Ok(())
     }
 
     /// A tile with a figure and what it counts.
-    pub fn stat(&mut self, parent: NodeId, value: &str, label: &str, value_style: &str) -> Result<NodeId> {
-        let tile = self.stack(parent, label, V, 2.0, json!(16), json!({"fill": CARD, "cornerRadius": 16, "sizingH": "fill"}))?;
+    pub fn stat(
+        &mut self,
+        parent: NodeId,
+        value: &str,
+        label: &str,
+        value_style: &str,
+    ) -> Result<NodeId> {
+        let tile = self.stack(
+            parent,
+            label,
+            V,
+            2.0,
+            json!(16),
+            json!({"fill": CARD, "cornerRadius": 16, "sizingH": "fill"}),
+        )?;
         self.text(tile, value, value_style, INK)?;
         self.text(tile, label, "Body/S", MUTED)?;
         Ok(tile)

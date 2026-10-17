@@ -46,7 +46,11 @@ fn yuv(r: f32, g: f32, b: f32) -> (u8, u8, u8) {
     let y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     let cb = (b - y) / 1.8556;
     let cr = (r - y) / 1.5748;
-    ((16.0 + 219.0 * y).round() as u8, (128.0 + 224.0 * cb).round() as u8, (128.0 + 224.0 * cr).round() as u8)
+    (
+        (16.0 + 219.0 * y).round() as u8,
+        (128.0 + 224.0 * cb).round() as u8,
+        (128.0 + 224.0 * cr).round() as u8,
+    )
 }
 
 /// Moving SMPTE-like bars, a gradient, a 1-pixel checker band, a moving box and a frame counter.
@@ -84,7 +88,13 @@ impl Pattern {
                 bars_uv[x + 1] = v;
             }
         }
-        Self { width: w, height: h, bars_y, bars_uv, frame: vec![0u8; w * h * 3 / 2] }
+        Self {
+            width: w,
+            height: h,
+            bars_y,
+            bars_uv,
+            frame: vec![0u8; w * h * 3 / 2],
+        }
     }
 
     fn rect(&mut self, x0: usize, y0: usize, w: usize, h: usize, (y, u, v): (u8, u8, u8)) {
@@ -184,7 +194,14 @@ pub struct Config {
 }
 
 /// Run the synthetic host until `stop`; packets go to `dest`.
-pub fn run(config: Config, dest: SocketAddr, clock: Arc<Clock>, force_idr: Arc<AtomicBool>, stop: Arc<AtomicBool>, sent: Arc<AtomicU64>) -> Result<(), String> {
+pub fn run(
+    config: Config,
+    dest: SocketAddr,
+    clock: Arc<Clock>,
+    force_idr: Arc<AtomicBool>,
+    stop: Arc<AtomicBool>,
+    sent: Arc<AtomicU64>,
+) -> Result<(), String> {
     let mut encoder = Encoder::new(config.width, config.height, config.fps, config.bitrate_kbps)?;
     let mut packetizer = Packetizer::new(None);
     let mut pattern = Pattern::new(config.width, config.height);
@@ -192,7 +209,8 @@ pub fn run(config: Config, dest: SocketAddr, clock: Arc<Clock>, force_idr: Arc<A
     let period = Duration::from_secs_f64(1.0 / f64::from(config.fps));
     let mut next = Instant::now();
     let mut rng = 0x9E37_79B9_7F4A_7C15u64;
-    let threshold = (f64::from(config.loss_percent.clamp(0.0, 100.0)) / 100.0 * u64::MAX as f64) as u64;
+    let threshold =
+        (f64::from(config.loss_percent.clamp(0.0, 100.0)) / 100.0 * u64::MAX as f64) as u64;
     let mut n: u64 = 0;
     while !stop.load(Ordering::Relaxed) {
         let now = Instant::now();
@@ -202,15 +220,28 @@ pub fn run(config: Config, dest: SocketAddr, clock: Arc<Clock>, force_idr: Arc<A
         next += period;
         let captured = Instant::now();
         let index = n as u32;
-        clock.capture[index as usize % SLOTS].store(captured.duration_since(clock.epoch).as_nanos() as u64, Ordering::Release);
+        clock.capture[index as usize % SLOTS].store(
+            captured.duration_since(clock.epoch).as_nanos() as u64,
+            Ordering::Release,
+        );
         let nv12 = pattern.render(n);
         let idr = n == 0 || force_idr.swap(false, Ordering::AcqRel);
         let units = encoder.encode(nv12, idr)?;
-        clock.encode[index as usize % SLOTS].store(captured.elapsed().as_nanos() as u64, Ordering::Release);
+        clock.encode[index as usize % SLOTS]
+            .store(captured.elapsed().as_nanos() as u64, Ordering::Release);
         let rtp = (n * 90_000 / u64::from(config.fps)) as u32;
         for (au, key) in units {
             let latency = (captured.elapsed().as_secs_f64() * 10_000.0) as u16;
-            for shard in packetizer.packetize(&au, key, config.packet_size, 2, config.fec_percent, index, rtp, latency) {
+            for shard in packetizer.packetize(
+                &au,
+                key,
+                config.packet_size,
+                2,
+                config.fec_percent,
+                index,
+                rtp,
+                latency,
+            ) {
                 rng ^= rng << 13;
                 rng ^= rng >> 7;
                 rng ^= rng << 17;

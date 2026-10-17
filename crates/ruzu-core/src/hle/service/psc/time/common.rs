@@ -174,7 +174,8 @@ impl OperationEvent {
     /// Corresponds to `OperationEvent::OperationEvent(Core::System&)` in upstream.
     pub fn new() -> Self {
         let id = NEXT_OPERATION_EVENT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let mut ctx = crate::hle::service::kernel_helpers::ServiceContext::new("Time:OperationEvent".into());
+        let mut ctx =
+            crate::hle::service::kernel_helpers::ServiceContext::new("Time:OperationEvent".into());
         let event = ctx.create_event("Time:OperationEvent:Event".into());
         Self {
             id,
@@ -196,7 +197,9 @@ impl OperationEvent {
     }
 
     pub fn get_event(&self) -> std::sync::Arc<crate::hle::service::os::event::Event> {
-        self.ctx.get_event(self.event).expect("operation event must exist")
+        self.ctx
+            .get_event(self.event)
+            .expect("operation event must exist")
     }
 }
 
@@ -236,9 +239,8 @@ mod tests {
             padding: 0,
         };
         // All eight bytes are explicit initialized fields now.
-        let bytes = unsafe {
-            std::slice::from_raw_parts(&calendar as *const CalendarTime as *const u8, 8)
-        };
+        let bytes =
+            unsafe { std::slice::from_raw_parts(&calendar as *const CalendarTime as *const u8, 8) };
         let year = 2024_i16.to_ne_bytes();
         assert_eq!(bytes, &[year[0], year[1], 2, 29, 12, 34, 56, 0]);
     }

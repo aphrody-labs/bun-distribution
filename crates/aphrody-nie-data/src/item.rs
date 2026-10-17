@@ -161,7 +161,10 @@ impl ItemInfo {
 
         // Stats : seulement pour les catégories équipement, et si var6 existe.
         let stats = if category.has_equipment_stats() && n > 6 {
-            Some(ItemStats { stat1: node.int(5), stat2: node.int(6) })
+            Some(ItemStats {
+                stat1: node.int(5),
+                stat2: node.int(6),
+            })
         } else {
             None
         };

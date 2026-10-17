@@ -8,7 +8,17 @@
 //! The project is an `Arc<Project>` edited copy-on-write; undo keeps whole-project snapshots (cheap
 //! thanks to structural sharing of untouched items).
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod aaf_omf;
 pub mod autosave;
@@ -74,7 +84,11 @@ pub use media_pool::MediaPool;
 /// The OS temp folder; `/tmp` on wasm32, where `std::env::temp_dir()` panics ("no filesystem on
 /// this platform"). Use this instead of `std::env::temp_dir()` in any code the web build runs.
 pub fn temp_dir() -> std::path::PathBuf {
-    if cfg!(target_arch = "wasm32") { std::path::PathBuf::from("/tmp") } else { std::env::temp_dir() }
+    if cfg!(target_arch = "wasm32") {
+        std::path::PathBuf::from("/tmp")
+    } else {
+        std::env::temp_dir()
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -136,7 +150,17 @@ pub trait Services: Send + Sync {
     /// Entries of a directory with their kind, size and date (the Media Browser). The default
     /// derives them from [`Services::list_dir`] (every name a file).
     fn list_entries(&self, dir: &str) -> Option<std::io::Result<Vec<media_browser::DirEntry>>> {
-        self.list_dir(dir).map(|r| r.map(|names| names.into_iter().map(|name| media_browser::DirEntry { name, ..Default::default() }).collect()))
+        self.list_dir(dir).map(|r| {
+            r.map(|names| {
+                names
+                    .into_iter()
+                    .map(|name| media_browser::DirEntry {
+                        name,
+                        ..Default::default()
+                    })
+                    .collect()
+            })
+        })
     }
     /// Drives and network locations (Media Browser ▸ Local Drives / Network).
     fn volumes(&self) -> Vec<media_browser::Volume> {
@@ -160,11 +184,22 @@ impl Services for FsServices {
     }
     fn file_size(&self, path: &str) -> std::io::Result<u64> {
         let m = std::fs::metadata(path)?;
-        if m.is_file() { Ok(m.len()) } else { Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("{path} is not a file"))) }
+        if m.is_file() {
+            Ok(m.len())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{path} is not a file"),
+            ))
+        }
     }
     fn list_dir(&self, dir: &str) -> Option<std::io::Result<Vec<String>>> {
         let dir = if dir.is_empty() { "." } else { dir };
-        Some(std::fs::read_dir(dir).map(|rd| rd.flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect()))
+        Some(std::fs::read_dir(dir).map(|rd| {
+            rd.flatten()
+                .map(|e| e.file_name().to_string_lossy().to_string())
+                .collect()
+        }))
     }
     fn file_loader(&self) -> Option<filmcraft_media::sequence::FrameLoader> {
         Some(std::sync::Arc::new(|p: &str| std::fs::read(p)))
@@ -172,7 +207,10 @@ impl Services for FsServices {
     /// Media are read in place from the open file: a clip costs its index, not its size.
     #[cfg(any(unix, windows))]
     fn reader(&self, path: &str) -> Option<std::io::Result<filmcraft_media::SharedReader>> {
-        Some(filmcraft_media::reader::FileReader::open(std::path::Path::new(path)).map(|r| std::sync::Arc::new(r) as filmcraft_media::SharedReader))
+        Some(
+            filmcraft_media::reader::FileReader::open(std::path::Path::new(path))
+                .map(|r| std::sync::Arc::new(r) as filmcraft_media::SharedReader),
+        )
     }
     fn list_entries(&self, dir: &str) -> Option<std::io::Result<Vec<media_browser::DirEntry>>> {
         Some(media_browser::std_list_entries(dir))
@@ -246,15 +284,32 @@ pub struct EffectSel {
 
 impl EffectSel {
     /// The selection of `effects[index]` of `clip`.
-    pub fn of(clip: ClipId, effects: &[filmcraft_project::EffectInstance], index: usize) -> Option<Self> {
+    pub fn of(
+        clip: ClipId,
+        effects: &[filmcraft_project::EffectInstance],
+        index: usize,
+    ) -> Option<Self> {
         let id = &effects.get(index)?.effect;
-        let instance = effects.iter().take(index).filter(|e| &e.effect == id).count();
-        Some(Self { clip, effect: id.clone(), instance })
+        let instance = effects
+            .iter()
+            .take(index)
+            .filter(|e| &e.effect == id)
+            .count();
+        Some(Self {
+            clip,
+            effect: id.clone(),
+            instance,
+        })
     }
 
     /// Where the selected effect is in the clip's `effects`.
     pub fn index(&self, effects: &[filmcraft_project::EffectInstance]) -> Option<usize> {
-        effects.iter().enumerate().filter(|(_, e)| e.effect == self.effect).nth(self.instance).map(|(i, _)| i)
+        effects
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| e.effect == self.effect)
+            .nth(self.instance)
+            .map(|(i, _)| i)
     }
 }
 
@@ -392,7 +447,8 @@ pub struct Session {
     pub jobs: Vec<Job>,
     /// Export job → the offline items it drew the slate for, filled when the export finishes
     /// (#1054; `offlineMedia` in `file.exportMedia` and queue results).
-    pub export_offline: std::collections::HashMap<u64, Arc<std::sync::Mutex<Vec<media_pool::OfflineMedia>>>>,
+    pub export_offline:
+        std::collections::HashMap<u64, Arc<std::sync::Mutex<Vec<media_pool::OfflineMedia>>>>,
     /// User preferences (`prefs.*` commands) and where they persist (None = not persisted).
     pub prefs: autosave::Preferences,
     pub prefs_path: Option<std::path::PathBuf>,
@@ -455,7 +511,8 @@ pub struct SteppedJob {
     pub exporter: filmcraft_export::Exporter,
     pub provider: media_pool::PoolProvider,
     pub progress: Arc<filmcraft_export::Progress>,
-    pub result: Arc<std::sync::Mutex<Option<std::result::Result<filmcraft_export::Report, String>>>>,
+    pub result:
+        Arc<std::sync::Mutex<Option<std::result::Result<filmcraft_export::Report, String>>>>,
 }
 
 /// A background job with shared progress.
@@ -464,13 +521,18 @@ pub struct Job {
     pub id: u64,
     pub label: String,
     pub progress: Arc<filmcraft_export::Progress>,
-    pub result: Arc<std::sync::Mutex<Option<std::result::Result<filmcraft_export::Report, String>>>>,
+    pub result:
+        Arc<std::sync::Mutex<Option<std::result::Result<filmcraft_export::Report, String>>>>,
 }
 
 impl Job {
     pub fn to_json(&self) -> Value {
         use std::sync::atomic::Ordering;
-        let res = self.result.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let res = self
+            .result
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         serde_json::json!({
             "id": self.id,
             "label": self.label,
@@ -496,7 +558,10 @@ impl Session {
     pub fn new(services: Arc<dyn Services>) -> Self {
         Self {
             project: Arc::new(Project::new("Untitled")),
-            history: History { limit: 200, ..Default::default() },
+            history: History {
+                limit: 200,
+                ..Default::default()
+            },
             revision: 1,
             saved_revision: 1,
             path: None,
@@ -558,7 +623,9 @@ impl Session {
                 Err(e) => {
                     let e = e.to_string();
                     *j.progress.error.lock().unwrap_or_else(|x| x.into_inner()) = Some(e.clone());
-                    j.progress.finished.store(true, std::sync::atomic::Ordering::Relaxed);
+                    j.progress
+                        .finished
+                        .store(true, std::sync::atomic::Ordering::Relaxed);
                     *j.result.lock().unwrap_or_else(|x| x.into_inner()) = Some(Err(e));
                     self.stepped.remove(0);
                 }
@@ -583,7 +650,10 @@ impl Session {
         self.export_presets.set_dir(&cfg.data_dir);
         self.prefs_path = Some(prefs_path);
         self.apply_media_cache();
-        self.persistence = Some(autosave::Persistence::start(&cfg, self.prefs.auto_save.clone())?);
+        self.persistence = Some(autosave::Persistence::start(
+            &cfg,
+            self.prefs.auto_save.clone(),
+        )?);
         self.sync_persistence();
         Ok(())
     }
@@ -598,15 +668,24 @@ impl Session {
     }
 
     pub fn recovery_candidates(&self) -> &[autosave::RecoveryCandidate] {
-        self.persistence.as_ref().map(|p| p.candidates.as_slice()).unwrap_or(&[])
+        self.persistence
+            .as_ref()
+            .map(|p| p.candidates.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Tell the worker about the current project state if it changed (cheap: an `Arc` clone and a
     /// channel send; serialization happens on the worker). Called after every command.
     pub fn sync_persistence(&mut self) {
         let dirty = self.is_dirty();
-        let Some(p) = self.persistence.as_mut() else { return };
-        let cur = autosave::Sent { revision: self.revision, saved_revision: self.saved_revision, path: self.path.clone() };
+        let Some(p) = self.persistence.as_mut() else {
+            return;
+        };
+        let cur = autosave::Sent {
+            revision: self.revision,
+            saved_revision: self.saved_revision,
+            path: self.path.clone(),
+        };
         if p.last_sent.as_ref() == Some(&cur) {
             return;
         }
@@ -626,17 +705,24 @@ impl Session {
         scene_detect::poll(self);
         export_tools::pump_queue(self, false);
         panels::log_jobs(self);
-        let Some(p) = self.persistence.as_mut() else { return };
+        let Some(p) = self.persistence.as_mut() else {
+            return;
+        };
         for ev in p.drain_events() {
             match ev {
                 autosave::WorkerEvent::SavedProject { path, revision }
-                    if self.path.as_deref() == Some(path.as_str()) && revision > self.saved_revision && revision <= self.revision =>
+                    if self.path.as_deref() == Some(path.as_str())
+                        && revision > self.saved_revision
+                        && revision <= self.revision =>
                 {
                     self.saved_revision = revision;
                 }
                 autosave::WorkerEvent::Error(m) => {
                     self.log.push(panels::Level::Error, "autosave", m.clone());
-                    self.events.push(Event::Toast { message: m, error: true });
+                    self.events.push(Event::Toast {
+                        message: m,
+                        error: true,
+                    });
                 }
                 _ => {}
             }
@@ -670,7 +756,9 @@ impl Session {
         if let Some(p) = &self.path
             && !cfg!(target_arch = "wasm32")
         {
-            self.previews.move_to(project_tools::previews_dir(self).unwrap_or_else(|| previews::dir_for_project(p)));
+            self.previews.move_to(
+                project_tools::previews_dir(self).unwrap_or_else(|| previews::dir_for_project(p)),
+            );
         }
     }
 
@@ -705,14 +793,23 @@ impl Session {
         // Last-resort guard: a panic in a command (a bug that escaped the never-crash rules)
         // becomes an error for the caller (UI, CLI, control channel, MCP) instead of taking the
         // session and its unsaved project down. The panic hook has logged where it happened.
-        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, &params)))
-            .unwrap_or_else(|_| Err(EngineError::Other(format!("internal error in `{id}` (see the crash log); the command did not complete"))));
+        let r =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, &params)))
+                .unwrap_or_else(|_| {
+                    Err(EngineError::Other(format!(
+                        "internal error in `{id}` (see the crash log); the command did not complete"
+                    )))
+                });
         self.exec_depth -= 1;
         if self.exec_depth == 0 {
             source_monitor::track_history(self);
         }
         // source graphics: an edited instance updates the shared layers and the other instances
-        if r.is_ok() && spec.journal && id.starts_with("graphics.") && !self.project.source_graphics.is_empty() {
+        if r.is_ok()
+            && spec.journal
+            && id.starts_with("graphics.")
+            && !self.project.source_graphics.is_empty()
+        {
             graphic_templates::sync_source_graphics(self);
         }
         if self.exec_depth == 0
@@ -735,7 +832,13 @@ impl Session {
     /// Another command arrives while trim-mode playback runs: a dynamic trim is committed first
     /// (so e.g. Undo undoes it as one step); loop playback stops unless it is a trim command.
     fn settle_trim_playback(&mut self, id: &str) {
-        const LIVE: [&str; 5] = ["trim.shuttle", "trim.tick", "trim.shuttleStop", "trim.cancelDynamic", "trim.playAround"];
+        const LIVE: [&str; 5] = [
+            "trim.shuttle",
+            "trim.tick",
+            "trim.shuttleStop",
+            "trim.cancelDynamic",
+            "trim.playAround",
+        ];
         if LIVE.contains(&id) {
             return;
         }
@@ -753,7 +856,11 @@ impl Session {
     /// items), is asked the same question about those targets instead: the check runs again with
     /// them standing in for the selection, so every other condition (an open sequence, a filled
     /// clipboard, the kind of item…) still applies. The selections are put back before returning.
-    fn enabled_for(&mut self, spec: &CommandSpec, params: &Value) -> std::result::Result<(), String> {
+    fn enabled_for(
+        &mut self,
+        spec: &CommandSpec,
+        params: &Value,
+    ) -> std::result::Result<(), String> {
         let by_selection = (spec.enabled)(self);
         if by_selection.is_ok() {
             return by_selection;
@@ -762,7 +869,11 @@ impl Session {
         let items = commands::named_items(self, spec, params);
         // clips were named but none is one of the active sequence: say which and why, rather
         // than "no clips selected" to a caller that did not mean the selection (#591)
-        let missing = if clips.is_none() { commands::named_clips_missing(self, spec, params) } else { None };
+        let missing = if clips.is_none() {
+            commands::named_clips_missing(self, spec, params)
+        } else {
+            None
+        };
         if clips.is_none() && items.is_none() {
             return by_selection.map_err(|why| missing.unwrap_or(why));
         }
@@ -785,10 +896,28 @@ impl Session {
     pub fn project_view(&self) -> filmcraft_project::ProjectView {
         let is_seq = |id: &ItemId| self.project.sequence(*id).is_some();
         filmcraft_project::ProjectView {
-            open_sequences: self.state.open_sequences.iter().copied().filter(is_seq).collect(),
+            open_sequences: self
+                .state
+                .open_sequences
+                .iter()
+                .copied()
+                .filter(is_seq)
+                .collect(),
             active_sequence: self.state.active_sequence.filter(is_seq),
-            sequences: self.state.timeline_views.iter().filter(|(id, _)| is_seq(id)).map(|(id, v)| (*id, *v)).collect(),
-            playheads: self.state.playheads.iter().filter(|(id, _)| is_seq(id)).map(|(id, t)| (*id, *t)).collect(),
+            sequences: self
+                .state
+                .timeline_views
+                .iter()
+                .filter(|(id, _)| is_seq(id))
+                .map(|(id, v)| (*id, *v))
+                .collect(),
+            playheads: self
+                .state
+                .playheads
+                .iter()
+                .filter(|(id, _)| is_seq(id))
+                .map(|(id, t)| (*id, *t))
+                .collect(),
         }
     }
 
@@ -805,15 +934,24 @@ impl Session {
             }
         }
         if !open.is_empty() {
-            self.state.active_sequence = view.active_sequence.filter(|id| open.contains(id)).or(open.first().copied());
+            self.state.active_sequence = view
+                .active_sequence
+                .filter(|id| open.contains(id))
+                .or(open.first().copied());
             self.state.open_sequences = open;
         }
-        self.state.timeline_views =
-            view.sequences.into_iter().filter(|(id, _)| self.project.sequence(*id).is_some()).filter_map(|(id, v)| Some((id, v.checked()?))).collect();
+        self.state.timeline_views = view
+            .sequences
+            .into_iter()
+            .filter(|(id, _)| self.project.sequence(*id).is_some())
+            .filter_map(|(id, v)| Some((id, v.checked()?)))
+            .collect();
         for (id, t) in view.playheads {
             if let Some(seq) = self.project.sequence(id) {
                 let t = t.clamp(Tick::ZERO, filmcraft_project::ProjectView::MAX_PLAYHEAD);
-                self.state.playheads.insert(id, seq.settings.frame_rate.snap(t));
+                self.state
+                    .playheads
+                    .insert(id, seq.settings.frame_rate.snap(t));
             }
         }
     }
@@ -825,14 +963,20 @@ impl Session {
         match edited.nest_cycle() {
             Some(id) if self.project.nest_cycle().is_none() => {
                 let name = edited.item(id).map(|i| i.name.as_str()).unwrap_or_default();
-                Err(EngineError::Other(format!("a sequence cannot be nested inside itself (\u{201c}{name}\u{201d})")))
+                Err(EngineError::Other(format!(
+                    "a sequence cannot be nested inside itself (\u{201c}{name}\u{201d})"
+                )))
             }
             _ => Ok(()),
         }
     }
 
     /// Apply an undoable project edit. The closure gets a mutable copy; on error nothing changes.
-    pub fn edit<R>(&mut self, label: &str, f: impl FnOnce(&mut Project, &mut EditorState) -> Result<R>) -> Result<R> {
+    pub fn edit<R>(
+        &mut self,
+        label: &str,
+        f: impl FnOnce(&mut Project, &mut EditorState) -> Result<R>,
+    ) -> Result<R> {
         let mut p = (*self.project).clone();
         let mut st = self.state.clone();
         let r = f(&mut p, &mut st)?;
@@ -852,8 +996,14 @@ impl Session {
 
     /// Like [`Session::edit`], but consecutive calls with the same `key` (and no other edit in
     /// between) share one undo step: dragging a control is one undoable change.
-    pub fn edit_merged<R>(&mut self, label: &str, key: &str, f: impl FnOnce(&mut Project, &mut EditorState) -> Result<R>) -> Result<R> {
-        let merge = self.history.merge_key.as_deref() == Some(key) && self.history.undo.last().is_some_and(|u| u.0 == label);
+    pub fn edit_merged<R>(
+        &mut self,
+        label: &str,
+        key: &str,
+        f: impl FnOnce(&mut Project, &mut EditorState) -> Result<R>,
+    ) -> Result<R> {
+        let merge = self.history.merge_key.as_deref() == Some(key)
+            && self.history.undo.last().is_some_and(|u| u.0 == label);
         if !merge {
             let r = self.edit(label, f)?;
             self.history.merge_key = Some(key.to_string());
@@ -872,9 +1022,18 @@ impl Session {
 
     /// Run several undoable edits as one undo step labelled `label`. If `f` fails, every edit it made
     /// is rolled back and the history is as before.
-    pub fn edit_group<R>(&mut self, label: &str, f: impl FnOnce(&mut Session) -> Result<R>) -> Result<R> {
-        let (project, state, undo, redo, limit) =
-            (self.project.clone(), self.state.clone(), self.history.undo.len(), self.history.redo.clone(), self.history.limit);
+    pub fn edit_group<R>(
+        &mut self,
+        label: &str,
+        f: impl FnOnce(&mut Session) -> Result<R>,
+    ) -> Result<R> {
+        let (project, state, undo, redo, limit) = (
+            self.project.clone(),
+            self.state.clone(),
+            self.history.undo.len(),
+            self.history.redo.clone(),
+            self.history.limit,
+        );
         // keep every step the group makes, however many, so the first one can be found afterwards
         self.history.limit = usize::MAX;
         // a panic inside the group must not leave the history unlimited: restore, then let it go on
@@ -921,14 +1080,20 @@ impl Session {
     /// Nothing happens when `mark` has left the history. Returns how many steps were taken back.
     pub fn revert_to(&mut self, mark: UndoMark) -> usize {
         if let UndoMark(Some(p)) = mark
-            && !self.history.undo.iter().any(|u| Arc::as_ptr(&u.1) as usize == p)
+            && !self
+                .history
+                .undo
+                .iter()
+                .any(|u| Arc::as_ptr(&u.1) as usize == p)
         {
             return 0;
         }
         let mut earliest = None;
         let mut n = 0;
         while self.undo_mark() != mark {
-            let Some((_, prev)) = self.history.undo.pop() else { break };
+            let Some((_, prev)) = self.history.undo.pop() else {
+                break;
+            };
             earliest = Some(prev);
             n += 1;
         }
@@ -942,7 +1107,11 @@ impl Session {
     }
 
     /// Edit the active sequence with the edit-algebra context.
-    pub fn edit_sequence<R>(&mut self, label: &str, f: impl FnOnce(&mut Sequence, &mut EditCtx, &mut EditorState) -> Result<R>) -> Result<R> {
+    pub fn edit_sequence<R>(
+        &mut self,
+        label: &str,
+        f: impl FnOnce(&mut Sequence, &mut EditCtx, &mut EditorState) -> Result<R>,
+    ) -> Result<R> {
         self.edit_sequence_as(label, None, f)
     }
 
@@ -959,13 +1128,22 @@ impl Session {
         let body = move |p: &mut Project, st: &mut EditorState| {
             let project_snapshot = std::sync::Arc::new(p.clone());
             let snap = project_snapshot.clone();
-            let durations = move |id: ItemId| -> Option<Tick> { media_duration(&project_snapshot, &media, id) };
+            let durations =
+                move |id: ItemId| -> Option<Tick> { media_duration(&project_snapshot, &media, id) };
             let starts = move |id: ItemId| media_start(&snap, id);
-            let min = p.sequence(seq_id).map(|s| s.settings.frame_rate.frame_duration()).unwrap_or(Tick(1));
+            let min = p
+                .sequence(seq_id)
+                .map(|s| s.settings.frame_rate.frame_duration())
+                .unwrap_or(Tick(1));
             let mut next = p.next_id;
             let r = {
                 let seq = p.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
-                let mut ctx = EditCtx { next_id: &mut next, media_duration: &durations, media_start: &starts, min_duration: min };
+                let mut ctx = EditCtx {
+                    next_id: &mut next,
+                    media_duration: &durations,
+                    media_start: &starts,
+                    min_duration: min,
+                };
                 f(seq, &mut ctx, st)?
             };
             p.next_id = next;
@@ -1004,14 +1182,21 @@ impl Session {
     pub fn fix_state(&mut self) {
         let p = self.project.clone();
         if let Some(m) = self.state.selected_mask {
-            let ok =
-                self.active_sequence().and_then(|q| q.find_item(m.clip)).and_then(|(_, it)| it.effects.get(m.effect)).is_some_and(|e| m.mask < e.masks.len());
+            let ok = self
+                .active_sequence()
+                .and_then(|q| q.find_item(m.clip))
+                .and_then(|(_, it)| it.effects.get(m.effect))
+                .is_some_and(|e| m.mask < e.masks.len());
             if !ok {
                 self.state.selected_mask = None;
             }
         }
         if let Some(e) = &self.state.selected_effect
-            && self.active_sequence().and_then(|q| q.find_item(e.clip)).and_then(|(_, it)| e.index(&it.effects)).is_none()
+            && self
+                .active_sequence()
+                .and_then(|q| q.find_item(e.clip))
+                .and_then(|(_, it)| e.index(&it.effects))
+                .is_none()
         {
             self.state.selected_effect = None;
         }
@@ -1020,8 +1205,12 @@ impl Session {
         {
             self.state.active_sequence = p.sequences().next().map(|i| i.id);
         }
-        self.state.open_sequences.retain(|s| p.sequence(*s).is_some());
-        self.state.timeline_views.retain(|s, _| p.sequence(*s).is_some());
+        self.state
+            .open_sequences
+            .retain(|s| p.sequence(*s).is_some());
+        self.state
+            .timeline_views
+            .retain(|s, _| p.sequence(*s).is_some());
         if let Some(s) = self.state.source_item
             && p.item(s).is_none()
         {
@@ -1030,12 +1219,16 @@ impl Session {
         source_monitor::track_history(self);
         if let Some(seq) = self.state.active_sequence.and_then(|s| p.sequence(s)) {
             self.state.selection.retain(|c| seq.find_item(*c).is_some());
-            self.state.caption_selection.retain(|c| seq.find_caption(*c).is_some());
+            self.state
+                .caption_selection
+                .retain(|c| seq.find_caption(*c).is_some());
         } else {
             self.state.selection.clear();
             self.state.caption_selection.clear();
         }
-        self.state.project_selection.retain(|i| p.item(*i).is_some());
+        self.state
+            .project_selection
+            .retain(|i| p.item(*i).is_some());
         self.drop_stale_gap();
     }
 
@@ -1043,7 +1236,10 @@ impl Session {
     /// into it or next to it, its track went, another sequence became the active one).
     fn drop_stale_gap(&mut self) {
         if let Some(g) = self.state.gap_selection
-            && !self.active_sequence().and_then(|q| q.track(g.track)).is_some_and(|tr| filmcraft_edit::through::track_gaps(tr).contains(&g.range))
+            && !self
+                .active_sequence()
+                .and_then(|q| q.track(g.track))
+                .is_some_and(|tr| filmcraft_edit::through::track_gaps(tr).contains(&g.range))
         {
             self.state.gap_selection = None;
         }
@@ -1051,20 +1247,28 @@ impl Session {
 
     fn bump(&mut self) {
         self.revision += 1;
-        self.events.push(Event::ProjectChanged { revision: self.revision });
+        self.events.push(Event::ProjectChanged {
+            revision: self.revision,
+        });
     }
 
     pub fn toast(&mut self, msg: impl Into<String>) {
         let message = msg.into();
         self.log.push(panels::Level::Info, "app", message.clone());
-        self.events.push(Event::Toast { message, error: false });
+        self.events.push(Event::Toast {
+            message,
+            error: false,
+        });
     }
 
     /// An error message for the user (a toast, and an Events panel entry from `source`).
     pub fn error_toast(&mut self, source: &str, msg: impl Into<String>) {
         let message = msg.into();
         self.log.push(panels::Level::Error, source, message.clone());
-        self.events.push(Event::Toast { message, error: true });
+        self.events.push(Event::Toast {
+            message,
+            error: true,
+        });
     }
 
     pub fn drain_events(&mut self) -> Vec<Event> {
@@ -1074,16 +1278,24 @@ impl Session {
     // ---- accessors ----
 
     pub fn active_sequence(&self) -> Option<&Sequence> {
-        self.state.active_sequence.and_then(|s| self.project.sequence(s))
+        self.state
+            .active_sequence
+            .and_then(|s| self.project.sequence(s))
     }
 
     pub fn playhead(&self) -> Tick {
-        self.state.active_sequence.and_then(|s| self.state.playheads.get(&s).copied()).unwrap_or_default()
+        self.state
+            .active_sequence
+            .and_then(|s| self.state.playheads.get(&s).copied())
+            .unwrap_or_default()
     }
 
     pub fn set_playhead(&mut self, t: Tick) {
         if let Some(s) = self.state.active_sequence {
-            let rate = self.active_sequence().map(|s| s.settings.frame_rate).unwrap_or_default();
+            let rate = self
+                .active_sequence()
+                .map(|s| s.settings.frame_rate)
+                .unwrap_or_default();
             self.state.playheads.insert(s, rate.snap(t.max(Tick::ZERO)));
             if self.state.selection_follows_playhead {
                 sequence_tools::select_under_playhead(self);
@@ -1092,18 +1304,24 @@ impl Session {
     }
 
     pub fn sequence_rate(&self) -> FrameRate {
-        self.active_sequence().map(|s| s.settings.frame_rate).unwrap_or_default()
+        self.active_sequence()
+            .map(|s| s.settings.frame_rate)
+            .unwrap_or_default()
     }
 
     pub fn targeting(&self) -> Targeting {
-        let Some(sid) = self.state.active_sequence else { return Targeting::default() };
+        let Some(sid) = self.state.active_sequence else {
+            return Targeting::default();
+        };
         if let Some(t) = self.state.targeting.get(&sid) {
             return t.clone();
         }
         // Default: V1/A1 patched and all tracks targeted.
         let seq = self.active_sequence();
         Targeting {
-            targeted: seq.map(|s| s.all_tracks().map(|t| t.id).collect()).unwrap_or_default(),
+            targeted: seq
+                .map(|s| s.all_tracks().map(|t| t.id).collect())
+                .unwrap_or_default(),
             video_dest: seq.and_then(|s| s.video_tracks.first().map(|t| t.id)),
             audio_dest: seq.and_then(|s| s.audio_tracks.first().map(|t| t.id)),
         }
@@ -1118,9 +1336,21 @@ impl Session {
     /// for scopes and analysis).
     pub fn render_program_working(&self, scale: f32) -> Option<filmcraft_render::Image> {
         let seq = self.renderable_sequence(scale).ok()?;
-        let provider = self.media.provider(self.project.clone(), self.services.clone());
-        let opts = filmcraft_render::RenderOptions { scale, working_output: true, ..Default::default() };
-        Some(filmcraft_render::render_sequence(&self.project, seq, self.playhead(), opts, &provider))
+        let provider = self
+            .media
+            .provider(self.project.clone(), self.services.clone());
+        let opts = filmcraft_render::RenderOptions {
+            scale,
+            working_output: true,
+            ..Default::default()
+        };
+        Some(filmcraft_render::render_sequence(
+            &self.project,
+            seq,
+            self.playhead(),
+            opts,
+            &provider,
+        ))
     }
 
     /// Render the active sequence at the playhead (CPU reference path).
@@ -1137,22 +1367,50 @@ impl Session {
 
     /// [`Session::render_program_at`], with the reason when nothing can be rendered.
     pub fn try_render_program_at(&self, scale: f32, t: Tick) -> Result<filmcraft_render::Image> {
-        self.render_program_with(scale, t, &self.media.provider(self.project.clone(), self.services.clone()))
+        self.render_program_with(
+            scale,
+            t,
+            &self
+                .media
+                .provider(self.project.clone(), self.services.clone()),
+        )
     }
 
     /// [`Session::try_render_program_at`], also naming the offline items the frame drew the slate
     /// for (#1054).
-    pub fn try_render_program_with_offline_at(&self, scale: f32, t: Tick) -> Result<(filmcraft_render::Image, Vec<media_pool::OfflineMedia>)> {
-        let provider = self.media.provider(self.project.clone(), self.services.clone()).recording();
+    pub fn try_render_program_with_offline_at(
+        &self,
+        scale: f32,
+        t: Tick,
+    ) -> Result<(filmcraft_render::Image, Vec<media_pool::OfflineMedia>)> {
+        let provider = self
+            .media
+            .provider(self.project.clone(), self.services.clone())
+            .recording();
         let img = self.render_program_with(scale, t, &provider)?;
         Ok((img, provider.offline_used()))
     }
 
-    fn render_program_with(&self, scale: f32, t: Tick, provider: &dyn filmcraft_render::SourceProvider) -> Result<filmcraft_render::Image> {
+    fn render_program_with(
+        &self,
+        scale: f32,
+        t: Tick,
+        provider: &dyn filmcraft_render::SourceProvider,
+    ) -> Result<filmcraft_render::Image> {
         let seq = self.renderable_sequence(scale)?;
         let t = self.sequence_rate().snap(t.max(Tick::ZERO));
-        let opts = filmcraft_render::RenderOptions { scale, captions: true, ..Default::default() };
-        Ok(filmcraft_render::render_sequence(&self.project, seq, t, opts, provider))
+        let opts = filmcraft_render::RenderOptions {
+            scale,
+            captions: true,
+            ..Default::default()
+        };
+        Ok(filmcraft_render::render_sequence(
+            &self.project,
+            seq,
+            t,
+            opts,
+            provider,
+        ))
     }
 
     /// The active sequence, if a frame of it at `scale` is within the image size limits.
@@ -1160,12 +1418,19 @@ impl Session {
         let id = self.state.active_sequence.ok_or(EngineError::NoSequence)?;
         let seq = self.project.sequence(id).ok_or(EngineError::NoSequence)?;
         if !scale.is_finite() || scale <= 0.0 {
-            return Err(EngineError::Other(format!("render scale {scale} must be finite and positive")));
+            return Err(EngineError::Other(format!(
+                "render scale {scale} must be finite and positive"
+            )));
         }
         let (w, h) = filmcraft_render::output_size(seq, scale);
         let size = u32::try_from(w).ok().zip(u32::try_from(h).ok());
-        let Some((w, h)) = size else { return Err(EngineError::Other("the requested render frame exceeds the image size limits".into())) };
-        filmcraft_project::validate_frame_size(w, h).map_err(|e| EngineError::Other(format!("cannot render a {w}x{h} frame: {e}")))?;
+        let Some((w, h)) = size else {
+            return Err(EngineError::Other(
+                "the requested render frame exceeds the image size limits".into(),
+            ));
+        };
+        filmcraft_project::validate_frame_size(w, h)
+            .map_err(|e| EngineError::Other(format!("cannot render a {w}x{h} frame: {e}")))?;
         Ok(id)
     }
 }
@@ -1174,7 +1439,11 @@ impl Session {
 /// In point, everything else at 0.
 pub fn media_start(p: &Project, id: ItemId) -> Tick {
     match p.item(id).map(|i| &i.kind) {
-        Some(filmcraft_project::ItemKind::Subclip { range, restrict_trims: true, .. }) => range.start,
+        Some(filmcraft_project::ItemKind::Subclip {
+            range,
+            restrict_trims: true,
+            ..
+        }) => range.start,
         _ => Tick::ZERO,
     }
 }
@@ -1193,12 +1462,17 @@ pub fn media_duration(p: &Project, _pool: &MediaPool, id: ItemId) -> Option<Tick
             },
             filmcraft_project::ItemKind::Sequence(s) => Some(s.duration()),
             // a subclip that restricts trims ends at its Out point; otherwise its parent's media is the limit
-            filmcraft_project::ItemKind::Subclip { range, restrict_trims: true, .. } => Some(range.end()),
+            filmcraft_project::ItemKind::Subclip {
+                range,
+                restrict_trims: true,
+                ..
+            } => Some(range.end()),
             filmcraft_project::ItemKind::Subclip { parent, .. } => {
                 id = *parent;
                 continue;
             }
-            filmcraft_project::ItemKind::AdjustmentLayer { .. } | filmcraft_project::ItemKind::Graphic { .. } => None,
+            filmcraft_project::ItemKind::AdjustmentLayer { .. }
+            | filmcraft_project::ItemKind::Graphic { .. } => None,
         };
     }
     None

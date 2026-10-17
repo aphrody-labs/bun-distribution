@@ -27,16 +27,63 @@ pub fn specs() -> Vec<CommandSpec> {
         .key("Alt+F9")
         .params(r#"{"value"?: bool}"#)
         .pure(),
-        CommandSpec::new("fields.toggleCode", "Toggle Field Codes", "Insert › Text › Quick Parts", toggle_code).key("Shift+F9"),
-        CommandSpec::new("fields.setCode", "Edit Field Code", "Insert › Text › Quick Parts", set_code).params(r#"{"code": string}"#),
-        CommandSpec::new("fields.unlink", "Unlink Fields", "Insert › Text › Quick Parts", unlink).key("Mod+Shift+F9"),
-        CommandSpec::new("fields.lock", "Lock Fields", "Insert › Text › Quick Parts", |s, _| set_locked(s, true)).key("Mod+F11"),
-        CommandSpec::new("fields.unlock", "Unlock Fields", "Insert › Text › Quick Parts", |s, _| set_locked(s, false)).key("Mod+Shift+F11"),
-        CommandSpec::new("fields.next", "Next Field", "Insert › Text › Quick Parts", |s, _| go(s, true)).key("F11").pure(),
-        CommandSpec::new("fields.previous", "Previous Field", "Insert › Text › Quick Parts", |s, _| go(s, false)).key("Shift+F11").pure(),
-        CommandSpec::new("fields.selected", "Selected Fields", "Insert › Text › Quick Parts", |s, _| {
-            Ok(Value::Array(selected(s).iter().map(|f| f.json()).collect()))
-        })
+        CommandSpec::new(
+            "fields.toggleCode",
+            "Toggle Field Codes",
+            "Insert › Text › Quick Parts",
+            toggle_code,
+        )
+        .key("Shift+F9"),
+        CommandSpec::new(
+            "fields.setCode",
+            "Edit Field Code",
+            "Insert › Text › Quick Parts",
+            set_code,
+        )
+        .params(r#"{"code": string}"#),
+        CommandSpec::new(
+            "fields.unlink",
+            "Unlink Fields",
+            "Insert › Text › Quick Parts",
+            unlink,
+        )
+        .key("Mod+Shift+F9"),
+        CommandSpec::new(
+            "fields.lock",
+            "Lock Fields",
+            "Insert › Text › Quick Parts",
+            |s, _| set_locked(s, true),
+        )
+        .key("Mod+F11"),
+        CommandSpec::new(
+            "fields.unlock",
+            "Unlock Fields",
+            "Insert › Text › Quick Parts",
+            |s, _| set_locked(s, false),
+        )
+        .key("Mod+Shift+F11"),
+        CommandSpec::new(
+            "fields.next",
+            "Next Field",
+            "Insert › Text › Quick Parts",
+            |s, _| go(s, true),
+        )
+        .key("F11")
+        .pure(),
+        CommandSpec::new(
+            "fields.previous",
+            "Previous Field",
+            "Insert › Text › Quick Parts",
+            |s, _| go(s, false),
+        )
+        .key("Shift+F11")
+        .pure(),
+        CommandSpec::new(
+            "fields.selected",
+            "Selected Fields",
+            "Insert › Text › Quick Parts",
+            |s, _| Ok(Value::Array(selected(s).iter().map(|f| f.json()).collect())),
+        )
         .pure(),
     ]
 }
@@ -70,15 +117,35 @@ impl FieldAt {
 pub fn story_fields(s: &Session, story: StoryRef) -> Vec<FieldAt> {
     let mut out = Vec::new();
     for path in s.doc.para_paths(story) {
-        let Some(para) = s.doc.para(story, &path) else { continue };
+        let Some(para) = s.doc.para(story, &path) else {
+            continue;
+        };
         for off in para.object_offsets() {
-            if let Some(InlineObject::Field { instr, locked, code, .. }) = para.object_at(off) {
-                out.push(FieldAt { at: Pos::new(story, path.clone(), off), end: None, instr: instr.clone(), locked: *locked, code: *code });
+            if let Some(InlineObject::Field {
+                instr,
+                locked,
+                code,
+                ..
+            }) = para.object_at(off)
+            {
+                out.push(FieldAt {
+                    at: Pos::new(story, path.clone(), off),
+                    end: None,
+                    instr: instr.clone(),
+                    locked: *locked,
+                    code: *code,
+                });
             }
         }
     }
     for r in s.doc.field_ranges(story) {
-        out.push(FieldAt { at: r.start, end: Some(r.end), instr: r.instr, locked: r.locked, code: false });
+        out.push(FieldAt {
+            at: r.start,
+            end: Some(r.end),
+            instr: r.instr,
+            locked: r.locked,
+            code: false,
+        });
     }
     out.sort_by(|a, b| a.at.cmp(&b.at));
     out
@@ -91,18 +158,29 @@ pub fn selected(s: &Session) -> Vec<FieldAt> {
     let (a, b) = s.sel.ordered();
     let all = story_fields(s, a.story);
     if a != b {
-        let inside: Vec<FieldAt> = all.iter().filter(|f| f.at >= a && f.at < b).cloned().collect();
+        let inside: Vec<FieldAt> = all
+            .iter()
+            .filter(|f| f.at >= a && f.at < b)
+            .cloned()
+            .collect();
         if !inside.is_empty() {
             return inside;
         }
     }
     let width = OBJ.len_utf8();
-    let simple = |off: usize| all.iter().find(|f| f.end.is_none() && f.at.path == a.path && f.at.off == off).cloned();
+    let simple = |off: usize| {
+        all.iter()
+            .find(|f| f.end.is_none() && f.at.path == a.path && f.at.off == off)
+            .cloned()
+    };
     if let Some(f) = simple(a.off).or_else(|| a.off.checked_sub(width).and_then(simple)) {
         return vec![f];
     }
     // The innermost range field around the caret: the last-starting one that contains it.
-    all.into_iter().rfind(|f| f.end.as_ref().is_some_and(|e| f.at < a && a <= *e)).into_iter().collect()
+    all.into_iter()
+        .rfind(|f| f.end.as_ref().is_some_and(|e| f.at < a && a <= *e))
+        .into_iter()
+        .collect()
 }
 
 fn none_selected() -> CmdError {
@@ -110,7 +188,11 @@ fn none_selected() -> CmdError {
 }
 
 /// Change the object a field's position names (the simple field or the range field's start).
-fn with_field(s: &mut Session, at: &Pos, f: impl FnOnce(&mut InlineObject)) -> Result<(), CmdError> {
+fn with_field(
+    s: &mut Session,
+    at: &Pos,
+    f: impl FnOnce(&mut InlineObject),
+) -> Result<(), CmdError> {
     let para = s.doc.para_mut(at.story, &at.path)?;
     if let Some(o) = para.object_at_mut(at.off) {
         f(o);
@@ -121,7 +203,10 @@ fn with_field(s: &mut Session, at: &Pos, f: impl FnOnce(&mut InlineObject)) -> R
 
 /// Shift+F9: the selected simple fields switch between showing their code and their result.
 fn toggle_code(s: &mut Session, _: &Value) -> CmdResult {
-    let fields: Vec<FieldAt> = selected(s).into_iter().filter(|f| f.end.is_none()).collect();
+    let fields: Vec<FieldAt> = selected(s)
+        .into_iter()
+        .filter(|f| f.end.is_none())
+        .collect();
     if fields.is_empty() {
         return Err(none_selected());
     }
@@ -154,9 +239,13 @@ fn set_code(s: &mut Session, v: &Value) -> CmdResult {
     if code.is_empty() || code.len() > MAX_CODE || code.contains(OBJ) {
         return Err(CmdError::Params("bad field code".into()));
     }
-    let Some(f) = selected(s).into_iter().next() else { return Err(none_selected()) };
+    let Some(f) = selected(s).into_iter().next() else {
+        return Err(none_selected());
+    };
     with_field(s, &f.at, |o| match o {
-        InlineObject::Field { instr, .. } | InlineObject::FieldStart { instr, .. } => *instr = code.clone(),
+        InlineObject::Field { instr, .. } | InlineObject::FieldStart { instr, .. } => {
+            *instr = code.clone()
+        }
         _ => {}
     })?;
     super::references::update_fields(s)?;
@@ -172,7 +261,9 @@ fn set_locked(s: &mut Session, value: bool) -> CmdResult {
     }
     for f in &fields {
         with_field(s, &f.at, |o| match o {
-            InlineObject::Field { locked, .. } | InlineObject::FieldStart { locked, .. } => *locked = value,
+            InlineObject::Field { locked, .. } | InlineObject::FieldStart { locked, .. } => {
+                *locked = value
+            }
             _ => {}
         })?;
     }
@@ -181,7 +272,12 @@ fn set_locked(s: &mut Session, value: bool) -> CmdResult {
 
 /// The text a simple field shows now (page numbers from the current layout).
 fn shown_text(s: &mut Session, f: &FieldAt) -> String {
-    let Some(InlineObject::Field { instr, result, .. }) = s.doc.para_at(&f.at).and_then(|p| p.object_at(f.at.off)).cloned() else {
+    let Some(InlineObject::Field { instr, result, .. }) = s
+        .doc
+        .para_at(&f.at)
+        .and_then(|p| p.object_at(f.at.off))
+        .cloned()
+    else {
         return String::new();
     };
     let l = s.layout();
@@ -193,7 +289,13 @@ fn shown_text(s: &mut Session, f: &FieldAt) -> String {
         section: 1,
         title: s.doc.core.title.as_str().into(),
         author: s.doc.core.creator.as_str().into(),
-        filename: s.path.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().to_string()).unwrap_or_default().into(),
+        filename: s
+            .path
+            .as_ref()
+            .and_then(|p| p.file_name())
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default()
+            .into(),
         ..Default::default()
     };
     wordcraft_layout::fields::field_text(&instr, &result, &ctx).0
@@ -206,7 +308,16 @@ fn unlink(s: &mut Session, _: &Value) -> CmdResult {
     if fields.is_empty() {
         return Err(none_selected());
     }
-    let texts: Vec<String> = fields.iter().map(|f| if f.end.is_none() { shown_text(s, f) } else { String::new() }).collect();
+    let texts: Vec<String> = fields
+        .iter()
+        .map(|f| {
+            if f.end.is_none() {
+                shown_text(s, f)
+            } else {
+                String::new()
+            }
+        })
+        .collect();
     // Markers to remove and text to put in their place, last first so earlier positions hold.
     let mut edits: Vec<(Pos, String)> = Vec::new();
     for (f, t) in fields.iter().zip(texts) {
@@ -236,18 +347,35 @@ fn go(s: &mut Session, forward: bool) -> CmdResult {
     let (a, _) = s.sel.ordered();
     let all = story_fields(s, a.story);
     let target = if forward {
-        let after = |f: &&FieldAt| if s.sel.is_collapsed() { f.at >= a } else { f.at > a };
+        let after = |f: &&FieldAt| {
+            if s.sel.is_collapsed() {
+                f.at >= a
+            } else {
+                f.at > a
+            }
+        };
         all.iter().find(after).or(all.first())
     } else {
         all.iter().rev().find(|f| f.at < a).or(all.last())
     };
-    let Some(f) = target else { return Err(CmdError::Failed("the document has no fields".into())) };
+    let Some(f) = target else {
+        return Err(CmdError::Failed("the document has no fields".into()));
+    };
     let width = OBJ.len_utf8();
     let end = match &f.end {
-        Some(e) => Pos { off: e.off + width, ..e.clone() },
-        None => Pos { off: f.at.off + width, ..f.at.clone() },
+        Some(e) => Pos {
+            off: e.off + width,
+            ..e.clone()
+        },
+        None => Pos {
+            off: f.at.off + width,
+            ..f.at.clone()
+        },
     };
-    s.sel = Selection { anchor: f.at.clone(), focus: end };
+    s.sel = Selection {
+        anchor: f.at.clone(),
+        focus: end,
+    };
     sel_result(s)
 }
 
@@ -261,9 +389,11 @@ mod tests {
     fn session_with_fields() -> Session {
         let mut s = Session::new(wordcraft_doc::Document::new());
         s.run("text.insert", &json!({"text": "Made by "})).unwrap();
-        s.run("insert.field", &json!({"instr": "AUTHOR", "result": "Old"})).unwrap();
+        s.run("insert.field", &json!({"instr": "AUTHOR", "result": "Old"}))
+            .unwrap();
         s.run("text.insert", &json!({"text": " on "})).unwrap();
-        s.run("insert.field", &json!({"instr": "TITLE", "result": "T"})).unwrap();
+        s.run("insert.field", &json!({"instr": "TITLE", "result": "T"}))
+            .unwrap();
         s.doc.core.creator = "Ada".into();
         s
     }
@@ -294,19 +424,32 @@ mod tests {
         assert!(!page_text(&mut s).contains("{ AUTHOR }"));
         s.run("view.fieldCodes", &json!({})).unwrap();
         let shown = page_text(&mut s);
-        assert!(shown.contains("{ AUTHOR }") && shown.contains("{ TITLE }"), "{shown}");
+        assert!(
+            shown.contains("{ AUTHOR }") && shown.contains("{ TITLE }"),
+            "{shown}"
+        );
         s.run("view.fieldCodes", &json!({"value": false})).unwrap();
         // Shift+F9 on the selected (first) field only.
         s.run("fields.toggleCode", &json!({})).unwrap();
         let shown = page_text(&mut s);
-        assert!(shown.contains("{ AUTHOR }") && !shown.contains("{ TITLE }"), "{shown}");
+        assert!(
+            shown.contains("{ AUTHOR }") && !shown.contains("{ TITLE }"),
+            "{shown}"
+        );
         // F9 updates and shows the result again.
         s.run("references.updateFields", &json!({})).unwrap();
         let shown = page_text(&mut s);
-        assert!(!shown.contains("{ AUTHOR }") && shown.contains("Ada"), "{shown}");
+        assert!(
+            !shown.contains("{ AUTHOR }") && shown.contains("Ada"),
+            "{shown}"
+        );
         // The toggle is undoable and never saved to files.
         s.run("fields.toggleCode", &json!({})).unwrap();
-        assert!(serde_json::to_string(&s.doc).unwrap().contains("\"code\":true"));
+        assert!(
+            serde_json::to_string(&s.doc)
+                .unwrap()
+                .contains("\"code\":true")
+        );
         assert!(s.undo());
         assert!(!page_text(&mut s).contains("{ AUTHOR }"));
     }
@@ -318,35 +461,65 @@ mod tests {
         let mut s = session_with_fields();
         s.run("caret.docStart", &json!({})).unwrap();
         s.run("fields.next", &json!({})).unwrap();
-        assert_eq!(s.run("fields.selected", &json!({})).unwrap()[0]["instr"], "AUTHOR");
+        assert_eq!(
+            s.run("fields.selected", &json!({})).unwrap()[0]["instr"],
+            "AUTHOR"
+        );
         s.run("fields.next", &json!({})).unwrap();
-        assert_eq!(s.run("fields.selected", &json!({})).unwrap()[0]["instr"], "TITLE");
+        assert_eq!(
+            s.run("fields.selected", &json!({})).unwrap()[0]["instr"],
+            "TITLE"
+        );
         s.run("fields.next", &json!({})).unwrap();
-        assert_eq!(s.run("fields.selected", &json!({})).unwrap()[0]["instr"], "AUTHOR", "wraps around");
+        assert_eq!(
+            s.run("fields.selected", &json!({})).unwrap()[0]["instr"],
+            "AUTHOR",
+            "wraps around"
+        );
         s.run("fields.previous", &json!({})).unwrap();
-        assert_eq!(s.run("fields.selected", &json!({})).unwrap()[0]["instr"], "TITLE");
+        assert_eq!(
+            s.run("fields.selected", &json!({})).unwrap()[0]["instr"],
+            "TITLE"
+        );
         s.run("fields.previous", &json!({})).unwrap();
 
         // Edit the code: the result follows.
         s.doc.core.title = "Report".into();
         s.run("fields.setCode", &json!({"code": "TITLE"})).unwrap();
-        let objs = |s: &Session| s.doc.body.first().and_then(|b| b.as_para()).map(|p| p.objects.clone()).unwrap_or_default();
-        assert!(matches!(objs(&s).first(), Some(InlineObject::Field { instr, result, .. }) if instr == "TITLE" && result == "Report"));
+        let objs = |s: &Session| {
+            s.doc
+                .body
+                .first()
+                .and_then(|b| b.as_para())
+                .map(|p| p.objects.clone())
+                .unwrap_or_default()
+        };
+        assert!(
+            matches!(objs(&s).first(), Some(InlineObject::Field { instr, result, .. }) if instr == "TITLE" && result == "Report")
+        );
         assert!(s.run("fields.setCode", &json!({"code": ""})).is_err());
 
         // A locked field keeps its result.
         s.run("fields.lock", &json!({})).unwrap();
         s.doc.core.title = "Changed".into();
         s.run("references.updateFields", &json!({})).unwrap();
-        assert!(matches!(objs(&s).first(), Some(InlineObject::Field { result, locked: true, .. }) if result == "Report"));
+        assert!(
+            matches!(objs(&s).first(), Some(InlineObject::Field { result, locked: true, .. }) if result == "Report")
+        );
         s.run("fields.unlock", &json!({})).unwrap();
         s.run("references.updateFields", &json!({})).unwrap();
-        assert!(matches!(objs(&s).first(), Some(InlineObject::Field { result, locked: false, .. }) if result == "Changed"));
+        assert!(
+            matches!(objs(&s).first(), Some(InlineObject::Field { result, locked: false, .. }) if result == "Changed")
+        );
 
         // Unlink: the field becomes its text; Undo brings it back.
         s.run("fields.unlink", &json!({})).unwrap();
         assert_eq!(objs(&s).len(), 1);
-        assert!(s.doc.plain_text(wordcraft_doc::StoryRef::Body).starts_with("Made by Changed on "));
+        assert!(
+            s.doc
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .starts_with("Made by Changed on ")
+        );
         assert!(s.undo());
         assert_eq!(objs(&s).len(), 2);
         // Nothing selected: an error, not a no-op undo step.

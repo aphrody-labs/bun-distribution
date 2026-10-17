@@ -11,12 +11,18 @@ use pdfcraft_ui_egui::{PdfCraftApp, RecoveryStore};
 fn fixture(n: usize) -> Vec<u8> {
     let mut objs: Vec<String> = vec!["<< /Type /Catalog /Pages 2 0 R >>".into()];
     let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 4 + 2 * i)).collect();
-    objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>", kids.join(" ")));
+    objs.push(format!(
+        "<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>",
+        kids.join(" ")
+    ));
     objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into());
     for i in 0..n {
         objs.push(format!("<< /Type /Page /Parent 2 0 R /Contents {} 0 R /Resources << /Font << /F1 3 0 R >> >> >>", 5 + 2 * i));
         let body = format!("BT /F1 24 Tf 20 150 Td (Confidential {}) Tj ET", i + 1);
-        objs.push(format!("<< /Length {} >>\nstream\n{body}\nendstream", body.len()));
+        objs.push(format!(
+            "<< /Length {} >>\nstream\n{body}\nendstream",
+            body.len()
+        ));
     }
     let mut out = b"%PDF-1.7\n".to_vec();
     let mut offsets = Vec::new();
@@ -29,7 +35,13 @@ fn fixture(n: usize) -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -50,10 +62,13 @@ fn crashed_session(s: &RecoveryStore, bytes: Vec<u8>, password: Option<&str>, pa
     app.enable_recovery(s.clone());
     match password {
         Some(pw) => {
-            app.open_bytes("work.pdf", path.map(str::to_string), bytes).unwrap();
+            app.open_bytes("work.pdf", path.map(str::to_string), bytes)
+                .unwrap();
             app.submit_password(Some(pw.to_string()));
         }
-        None => app.open_bytes("work.pdf", path.map(str::to_string), bytes).unwrap(),
+        None => app
+            .open_bytes("work.pdf", path.map(str::to_string), bytes)
+            .unwrap(),
     }
     assert!(app.apply_edit(Edit::DeletePages { pages: vec![0] }));
     app.autosave_now();
@@ -61,12 +76,14 @@ fn crashed_session(s: &RecoveryStore, bytes: Vec<u8>, password: Option<&str>, pa
 }
 
 fn harness(s: RecoveryStore) -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.enable_recovery(s);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.enable_recovery(s);
+            app
+        });
     h.run_steps(4);
     h
 }
@@ -85,9 +102,17 @@ fn a_crashed_session_is_offered_and_recovered_unsaved() {
     assert_eq!(app.views.len(), 1);
     let doc = app.session.get(app.views[0].id).unwrap();
     assert!(doc.dirty, "recovered changes are unsaved");
-    assert_eq!(doc.path.as_deref(), Some("/docs/work.pdf"), "Save goes back to the original file");
+    assert_eq!(
+        doc.path.as_deref(),
+        Some("/docs/work.pdf"),
+        "Save goes back to the original file"
+    );
     assert_eq!(doc.info.pages.len(), 2, "the edit survived the crash");
-    assert_eq!(s.list().len(), 1, "the entry stays until the document is saved or closed");
+    assert_eq!(
+        s.list().len(),
+        1,
+        "the entry stays until the document is saved or closed"
+    );
 }
 
 #[test]
@@ -110,15 +135,24 @@ fn saving_or_closing_clears_the_entry_and_nothing_is_written_for_clean_documents
     app.open_bytes("a.pdf", None, fixture(2)).unwrap();
     app.autosave_now();
     assert_eq!(files_in(&s), 0, "no changes, no autosave");
-    app.apply_edit(Edit::RotatePages { pages: vec![0], degrees: 90 });
+    app.apply_edit(Edit::RotatePages {
+        pages: vec![0],
+        degrees: 90,
+    });
     app.autosave_now();
     assert_eq!(s.list().len(), 1);
-    let out = std::env::temp_dir().join(format!("pdfcraft-recovery-saved-{}.pdf", std::process::id()));
+    let out = std::env::temp_dir().join(format!(
+        "pdfcraft-recovery-saved-{}.pdf",
+        std::process::id()
+    ));
     app.save_override = Some(out.to_string_lossy().into_owned());
     assert!(app.save_active(pdfcraft_ui_egui::SaveTarget::InPlace));
     assert_eq!(files_in(&s), 0, "saved: nothing to recover");
     // Edit again, autosave, then close and discard.
-    app.apply_edit(Edit::RotatePages { pages: vec![0], degrees: 90 });
+    app.apply_edit(Edit::RotatePages {
+        pages: vec![0],
+        degrees: 90,
+    });
     app.autosave_now();
     assert_eq!(s.list().len(), 1);
     app.close_tab(0);
@@ -129,18 +163,23 @@ fn saving_or_closing_clears_the_entry_and_nothing_is_written_for_clean_documents
 #[test]
 fn quitting_cleanly_leaves_nothing_behind() {
     let s = store("quit");
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe({
-        let s = s.clone();
-        move |_cc| {
-            let mut app = PdfCraftApp::new();
-            app.set_option("language", "en").unwrap();
-            app.enable_recovery(s);
-            app.open_bytes("q.pdf", None, fixture(2)).unwrap();
-            app
-        }
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_eframe({
+            let s = s.clone();
+            move |_cc| {
+                let mut app = PdfCraftApp::new();
+                app.set_option("language", "en").unwrap();
+                app.enable_recovery(s);
+                app.open_bytes("q.pdf", None, fixture(2)).unwrap();
+                app
+            }
+        });
     h.run_steps(3);
-    h.state_mut().apply_edit(Edit::RotatePages { pages: vec![0], degrees: 90 });
+    h.state_mut().apply_edit(Edit::RotatePages {
+        pages: vec![0],
+        degrees: 90,
+    });
     h.state_mut().autosave_now();
     assert_eq!(s.list().len(), 1);
     // Quit → "Don't save" → the app closes and the autosave is removed.
@@ -176,7 +215,10 @@ fn encrypted_documents_are_autosaved_encrypted_and_recovered_with_the_password()
     let meta = s.list().remove(0);
     assert!(meta.encrypted);
     let saved = s.read(&meta.key).unwrap();
-    assert!(!String::from_utf8_lossy(&saved).contains("Confidential"), "no plaintext on disk");
+    assert!(
+        !String::from_utf8_lossy(&saved).contains("Confidential"),
+        "no plaintext on disk"
+    );
     let mut h = harness(s.clone());
     h.get_by_label_contains("password-protected");
     h.get_by_label("Recover").click();
@@ -201,25 +243,42 @@ fn encrypted_documents_are_autosaved_encrypted_and_recovered_with_the_password()
 #[test]
 fn a_cancelled_recovery_password_does_not_attach_to_the_next_unlocked_document() {
     let s = store("cancelled");
-    crashed_session(&s, encrypted(fixture(2), "pw-a"), Some("pw-a"), Some("/docs/A.pdf"));
+    crashed_session(
+        &s,
+        encrypted(fixture(2), "pw-a"),
+        Some("pw-a"),
+        Some("/docs/A.pdf"),
+    );
     assert_eq!(s.list().len(), 1);
     let mut h = harness(s.clone());
     h.get_by_label("Recover").click();
     h.run_steps(3);
-    assert!(h.state().password_prompt.is_some(), "the snapshot asks for its password");
+    assert!(
+        h.state().password_prompt.is_some(),
+        "the snapshot asks for its password"
+    );
     h.get_by_label("Cancel").click();
     h.run_steps(3);
     assert!(h.state().password_prompt.is_none());
     assert!(h.state().views.is_empty());
 
     let app = h.state_mut();
-    app.open_bytes("B.pdf", Some("/docs/B.pdf".into()), encrypted(fixture(1), "pw-b")).unwrap();
+    app.open_bytes(
+        "B.pdf",
+        Some("/docs/B.pdf".into()),
+        encrypted(fixture(1), "pw-b"),
+    )
+    .unwrap();
     app.submit_password(Some("pw-b".into()));
     h.run_steps(3);
     let app = h.state();
     assert_eq!(app.views.len(), 1);
     let b = app.session.get(app.views[0].id).unwrap();
-    assert_eq!(b.path.as_deref(), Some("/docs/B.pdf"), "B keeps its own path");
+    assert_eq!(
+        b.path.as_deref(),
+        Some("/docs/B.pdf"),
+        "B keeps its own path"
+    );
     assert!(!b.dirty, "B is clean: it is not the recovered document");
     assert_eq!(s.list().len(), 1, "A's snapshot is still in the store");
     assert_eq!(app.recoverable.len(), 1, "and on offer again");
@@ -244,11 +303,19 @@ fn incomplete_entries_are_preserved_until_explicitly_discarded() {
         assert_eq!(entries[0].key, "orphan");
         assert_eq!(entries[0].path, None);
         assert_eq!(s.read("orphan").unwrap(), bytes);
-        assert_eq!(files_in(&s), 2, "listing must not remove any recovery files");
+        assert_eq!(
+            files_in(&s),
+            2,
+            "listing must not remove any recovery files"
+        );
     }
     s.clear();
     assert!(!s.dir().join("orphan.pdf").exists());
-    assert_eq!(files_in(&s), 0, "metadata without a snapshot holds no work and is cleared too");
+    assert_eq!(
+        files_in(&s),
+        0,
+        "metadata without a snapshot holds no work and is cleared too"
+    );
 }
 
 #[test]
@@ -267,10 +334,17 @@ fn a_failed_metadata_write_keeps_the_completed_snapshot_recoverable() {
     assert!(s.write(&meta, &bytes).is_err());
     assert_eq!(s.read("snapshot").unwrap(), bytes);
     let entries = s.list();
-    assert_eq!(s.read("snapshot").unwrap(), bytes, "a failed sidecar write must not lose the PDF");
+    assert_eq!(
+        s.read("snapshot").unwrap(),
+        bytes,
+        "a failed sidecar write must not lose the PDF"
+    );
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].key, "snapshot");
-    assert_eq!(entries[0].path, None, "an unknown original path must require Save As");
+    assert_eq!(
+        entries[0].path, None,
+        "an unknown original path must require Save As"
+    );
 }
 
 #[test]
@@ -297,20 +371,34 @@ fn missing_corrupt_or_mismatched_metadata_recovers_the_snapshot_without_an_origi
         let doc = app.session.get(app.views[0].id).unwrap();
         assert!(doc.dirty);
         assert_eq!(doc.path, None);
-        assert_eq!(doc.info.pages.len(), 2, "the edit survived missing metadata: {case}");
+        assert_eq!(
+            doc.info.pages.len(),
+            2,
+            "the edit survived missing metadata: {case}"
+        );
         let recovered = s.list();
         assert_eq!(recovered.len(), 1);
         assert_eq!(s.read(&recovered[0].key).unwrap(), saved);
         // The damaged sidecar was replaced with metadata for the recovered snapshot.
-        let sidecar: pdfcraft_ui_egui::RecoveryMeta = serde_json::from_slice(&std::fs::read(&sidecar).unwrap()).unwrap();
-        assert_eq!((sidecar.key.as_str(), sidecar.path.as_deref()), (recovered[0].key.as_str(), None), "{case}");
+        let sidecar: pdfcraft_ui_egui::RecoveryMeta =
+            serde_json::from_slice(&std::fs::read(&sidecar).unwrap()).unwrap();
+        assert_eq!(
+            (sidecar.key.as_str(), sidecar.path.as_deref()),
+            (recovered[0].key.as_str(), None),
+            "{case}"
+        );
     }
 }
 
 #[test]
 fn an_encrypted_snapshot_without_metadata_still_requires_its_password() {
     let s = store("encrypted-orphan");
-    crashed_session(&s, encrypted(fixture(2), "pw"), Some("pw"), Some("original.pdf"));
+    crashed_session(
+        &s,
+        encrypted(fixture(2), "pw"),
+        Some("pw"),
+        Some("original.pdf"),
+    );
     let meta = s.list().remove(0);
     let saved = s.read(&meta.key).unwrap();
     std::fs::remove_file(s.dir().join(format!("{}.json", meta.key))).unwrap();
@@ -330,10 +418,18 @@ fn an_encrypted_snapshot_without_metadata_still_requires_its_password() {
     assert!(doc.dirty);
     assert_eq!(doc.path, None);
     assert_eq!(doc.info.pages.len(), 1);
-    assert_eq!(s.read(&meta.key).unwrap(), saved, "recovery must not rewrite encrypted bytes");
+    assert_eq!(
+        s.read(&meta.key).unwrap(),
+        saved,
+        "recovery must not rewrite encrypted bytes"
+    );
     let sidecar: pdfcraft_ui_egui::RecoveryMeta =
-        serde_json::from_slice(&std::fs::read(s.dir().join(format!("{}.json", meta.key))).unwrap()).unwrap();
-    assert!(sidecar.encrypted, "the replacement metadata records that the snapshot is encrypted");
+        serde_json::from_slice(&std::fs::read(s.dir().join(format!("{}.json", meta.key))).unwrap())
+            .unwrap();
+    assert!(
+        sidecar.encrypted,
+        "the replacement metadata records that the snapshot is encrypted"
+    );
 }
 
 /// Through the control channel, the reply to a click comes after the click's effects: state read
@@ -342,15 +438,18 @@ fn an_encrypted_snapshot_without_metadata_still_requires_its_password() {
 fn control_click_effects_are_visible_when_the_reply_arrives() {
     let s = store("control");
     crashed_session(&s, fixture(2), None, None);
-    let slot: std::sync::Arc<std::sync::Mutex<Option<pdfcraft_ui_egui::control::ControlClient>>> = Default::default();
+    let slot: std::sync::Arc<std::sync::Mutex<Option<pdfcraft_ui_egui::control::ControlClient>>> =
+        Default::default();
     let (slot2, s2) = (slot.clone(), s.clone());
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(move |cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        *slot2.lock().unwrap() = Some(app.attach_control(&cc.egui_ctx));
-        app.enable_recovery(s2);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_eframe(move |cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            *slot2.lock().unwrap() = Some(app.attach_control(&cc.egui_ctx));
+            app.enable_recovery(s2);
+            app
+        });
     h.run_steps(4);
     let c = slot.lock().unwrap().take().unwrap();
     let call = |h: &mut Harness<'static, PdfCraftApp>, m: &str, p: serde_json::Value| {
@@ -363,8 +462,22 @@ fn control_click_effects_are_visible_when_the_reply_arrives() {
         }
         panic!("no reply to {m}");
     };
-    assert_eq!(call(&mut h, "ui.state", serde_json::json!({}))["dialog"], "Recovery");
-    call(&mut h, "ui.click", serde_json::json!({ "label": "Discard" }));
-    assert_eq!(files_in(&s), 0, "discarded by the time the click is answered");
-    assert_eq!(call(&mut h, "ui.state", serde_json::json!({}))["dialog"], serde_json::Value::Null);
+    assert_eq!(
+        call(&mut h, "ui.state", serde_json::json!({}))["dialog"],
+        "Recovery"
+    );
+    call(
+        &mut h,
+        "ui.click",
+        serde_json::json!({ "label": "Discard" }),
+    );
+    assert_eq!(
+        files_in(&s),
+        0,
+        "discarded by the time the click is answered"
+    );
+    assert_eq!(
+        call(&mut h, "ui.state", serde_json::json!({}))["dialog"],
+        serde_json::Value::Null
+    );
 }

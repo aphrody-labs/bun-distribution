@@ -45,7 +45,11 @@ pub fn parse(s: &str) -> Option<(Modifiers, Key)> {
 fn mods_match(want: Modifiers, got: Modifiers, mac: bool) -> bool {
     // Off macOS egui reports Ctrl as both `ctrl` and `command`: Ctrl is the shortcut's Cmd, and a shortcut's
     // Ctrl (the Mac Control key) has no key of its own there, so Ctrl+X is Cut, not Cmd+Ctrl+X.
-    let ctrl = if mac { want.ctrl == got.ctrl } else { !want.ctrl };
+    let ctrl = if mac {
+        want.ctrl == got.ctrl
+    } else {
+        !want.ctrl
+    };
     want.command == got.command && want.shift == got.shift && want.alt == got.alt && ctrl
 }
 
@@ -64,7 +68,13 @@ pub fn handle(app: &mut SoundApp, ctx: &egui::Context) {
         i.events
             .iter()
             .filter_map(|e| match e {
-                egui::Event::Key { key, pressed: true, repeat: false, modifiers, .. } => Some((*key, *modifiers)),
+                egui::Event::Key {
+                    key,
+                    pressed: true,
+                    repeat: false,
+                    modifiers,
+                    ..
+                } => Some((*key, *modifiers)),
                 _ => None,
             })
             .collect()
@@ -80,9 +90,10 @@ pub fn handle(app: &mut SoundApp, ctx: &egui::Context) {
                 continue;
             }
             let _ = app.run(id, json!({}));
-        } else if let Some(c) =
-            crate::menus::UI_COMMANDS.iter().find(|c| c.3.and_then(parse).is_some_and(|(m, k)| k == key && mods_match(m, mods, mac)))
-        {
+        } else if let Some(c) = crate::menus::UI_COMMANDS.iter().find(|c| {
+            c.3.and_then(parse)
+                .is_some_and(|(m, k)| k == key && mods_match(m, mods, mac))
+        }) {
             let _ = app.run(c.0, json!({}));
         }
     }
@@ -91,7 +102,11 @@ pub fn handle(app: &mut SoundApp, ctx: &egui::Context) {
 fn command_for(key: Key, mods: Modifiers, mac: bool) -> Option<&'static str> {
     soundcraft_engine::command_specs()
         .iter()
-        .find(|c| c.shortcut.and_then(parse).is_some_and(|(m, k)| k == key && mods_match(m, mods, mac)))
+        .find(|c| {
+            c.shortcut
+                .and_then(parse)
+                .is_some_and(|(m, k)| k == key && mods_match(m, mods, mac))
+        })
         .map(|c| c.id)
 }
 
@@ -100,7 +115,11 @@ fn fixed(app: &mut SoundApp, key: Key, m: Modifiers, mac: bool) -> bool {
     let plain = !m.command && !m.alt && !m.ctrl && !m.shift;
     match key {
         Key::Space if !m.command && !m.alt => {
-            let id = if m.shift { "transport.half_speed" } else { "transport.toggle" };
+            let id = if m.shift {
+                "transport.half_speed"
+            } else {
+                "transport.toggle"
+            };
             let _ = app.run(id, json!({}));
             true
         }
@@ -157,7 +176,10 @@ fn fixed(app: &mut SoundApp, key: Key, m: Modifiers, mac: bool) -> bool {
                 && let Some(t) = s.edit.selected_tracks.first().copied()
             {
                 let r = soundcraft_time::Range::new(at + 1, s.content_end());
-                if let Some(n) = soundcraft_engine::io::transients_in(s, t, r, 0.5).into_iter().find(|x| *x > at + 64) {
+                if let Some(n) = soundcraft_engine::io::transients_in(s, t, r, 0.5)
+                    .into_iter()
+                    .find(|x| *x > at + 64)
+                {
                     let _ = app.run("transport.locate", json!({"at": n}));
                     return true;
                 }
@@ -169,28 +191,50 @@ fn fixed(app: &mut SoundApp, key: Key, m: Modifiers, mac: bool) -> bool {
                 .flat_map(|t| t.clips().iter().flat_map(|c| [c.start, c.end()]))
                 .collect();
             edges.sort_unstable();
-            let next = if back { edges.iter().rev().find(|e| **e < at).copied() } else { edges.iter().find(|e| **e > at).copied() };
+            let next = if back {
+                edges.iter().rev().find(|e| **e < at).copied()
+            } else {
+                edges.iter().find(|e| **e > at).copied()
+            };
             if let Some(n) = next {
                 let _ = app.run("transport.locate", json!({"at": n}));
             }
             true
         }
         Key::ArrowUp | Key::ArrowDown if m.ctrl && !m.shift => {
-            let id = if key == Key::ArrowUp { "edit.extend_selection_up" } else { "edit.extend_selection_down" };
+            let id = if key == Key::ArrowUp {
+                "edit.extend_selection_up"
+            } else {
+                "edit.extend_selection_down"
+            };
             let _ = app.run(id, json!({}));
             true
         }
         // Ctrl+Shift+Up/Down nudge clip gain off macOS too (the registry's Ctrl is the Mac Control key).
         Key::ArrowUp | Key::ArrowDown if !mac && m.ctrl && m.shift && !m.alt => {
-            let id = if key == Key::ArrowUp { "clip.gain_nudge_up" } else { "clip.gain_nudge_down" };
+            let id = if key == Key::ArrowUp {
+                "clip.gain_nudge_up"
+            } else {
+                "clip.gain_nudge_down"
+            };
             let _ = app.run(id, json!({}));
             true
         }
         // Commands Keyboard Focus: single-key editing (Edit window only).
-        k if plain && app.ui.window == MainWindow::Edit && app.engine.session().edit.keyboard_focus == "commands" && commands_focus(app, k) => true,
+        k if plain
+            && app.ui.window == MainWindow::Edit
+            && app.engine.session().edit.keyboard_focus == "commands"
+            && commands_focus(app, k) =>
+        {
+            true
+        }
         Key::R | Key::T if plain => {
             // Zoom out / in on the timeline (Commands Focus style).
-            let id = if key == Key::T { "view.zoom_in" } else { "view.zoom_out" };
+            let id = if key == Key::T {
+                "view.zoom_in"
+            } else {
+                "view.zoom_out"
+            };
             let _ = app.run(id, json!({}));
             true
         }
@@ -232,13 +276,25 @@ fn commands_focus(app: &mut SoundApp, key: Key) -> bool {
 /// Move the edit selection to the track above/below (P / ;).
 fn move_selection_track(app: &mut SoundApp, dir: i64) {
     let s = app.engine.session();
-    let visible: Vec<u64> = s.tracks.iter().filter(|t| !t.hidden).map(|t| t.id.0).collect();
-    let Some(cur) = s.edit.selected_tracks.first().map(|t| t.0) else { return };
-    let Some(i) = visible.iter().position(|t| *t == cur) else { return };
+    let visible: Vec<u64> = s
+        .tracks
+        .iter()
+        .filter(|t| !t.hidden)
+        .map(|t| t.id.0)
+        .collect();
+    let Some(cur) = s.edit.selected_tracks.first().map(|t| t.0) else {
+        return;
+    };
+    let Some(i) = visible.iter().position(|t| *t == cur) else {
+        return;
+    };
     let j = (i as i64 + dir).clamp(0, visible.len() as i64 - 1) as usize;
     if let Some(t) = visible.get(j) {
         let sel = s.edit.selection;
-        let _ = app.run("edit.select", json!({"tracks": [t], "start": sel.start, "end": sel.end, "exact": true}));
+        let _ = app.run(
+            "edit.select",
+            json!({"tracks": [t], "start": sel.start, "end": sel.end, "exact": true}),
+        );
     }
 }
 
@@ -246,10 +302,18 @@ fn move_selection_track(app: &mut SoundApp, dir: i64) {
 fn tab_clip(app: &mut SoundApp, back: bool) {
     let s = app.engine.session();
     let at = s.edit.selection.start;
-    let mut edges: Vec<i64> =
-        s.tracks.iter().filter(|t| s.edit.selected_tracks.contains(&t.id)).flat_map(|t| t.clips().iter().flat_map(|c| [c.start, c.end()])).collect();
+    let mut edges: Vec<i64> = s
+        .tracks
+        .iter()
+        .filter(|t| s.edit.selected_tracks.contains(&t.id))
+        .flat_map(|t| t.clips().iter().flat_map(|c| [c.start, c.end()]))
+        .collect();
     edges.sort_unstable();
-    let next = if back { edges.iter().rev().find(|e| **e < at).copied() } else { edges.iter().find(|e| **e > at).copied() };
+    let next = if back {
+        edges.iter().rev().find(|e| **e < at).copied()
+    } else {
+        edges.iter().find(|e| **e > at).copied()
+    };
     if let Some(n) = next {
         let _ = app.run("transport.locate", json!({"at": n}));
     }
@@ -264,7 +328,10 @@ pub fn shortcut_label(s: &str, mac: bool) -> String {
     if s.split('+').any(|p| p == "Ctrl") {
         return String::new();
     }
-    s.split('+').map(|p| if p == "Cmd" { "Ctrl" } else { p }).collect::<Vec<_>>().join("+")
+    s.split('+')
+        .map(|p| if p == "Cmd" { "Ctrl" } else { p })
+        .collect::<Vec<_>>()
+        .join("+")
 }
 
 #[cfg(test)]
@@ -296,9 +363,17 @@ mod tests {
     use egui::{Key, Modifiers};
 
     /// Ctrl held on Windows or Linux, as egui reports it.
-    const PC_CTRL: Modifiers = Modifiers { ctrl: true, command: true, ..Modifiers::NONE };
+    const PC_CTRL: Modifiers = Modifiers {
+        ctrl: true,
+        command: true,
+        ..Modifiers::NONE
+    };
     /// Cmd held on macOS.
-    const MAC_CMD: Modifiers = Modifiers { mac_cmd: true, command: true, ..Modifiers::NONE };
+    const MAC_CMD: Modifiers = Modifiers {
+        mac_cmd: true,
+        command: true,
+        ..Modifiers::NONE
+    };
 
     fn want(s: &str) -> Modifiers {
         parse(s).map(|(m, _)| m).unwrap()
@@ -307,7 +382,14 @@ mod tests {
     #[test]
     fn ctrl_is_cmd_off_macos() {
         assert!(mods_match(want("Cmd+S"), PC_CTRL, false));
-        assert!(mods_match(want("Cmd+Shift+N"), Modifiers { shift: true, ..PC_CTRL }, false));
+        assert!(mods_match(
+            want("Cmd+Shift+N"),
+            Modifiers {
+                shift: true,
+                ..PC_CTRL
+            },
+            false
+        ));
         assert!(mods_match(want("Cmd+X"), PC_CTRL, false));
         assert!(!mods_match(want("Cmd+Ctrl+X"), PC_CTRL, false));
         assert!(!mods_match(want("Cmd+S"), Modifiers::NONE, false));
@@ -318,16 +400,59 @@ mod tests {
     fn cmd_and_ctrl_stay_apart_on_macos() {
         assert!(mods_match(want("Cmd+S"), MAC_CMD, true));
         assert!(!mods_match(want("Cmd+S"), Modifiers::CTRL, true));
-        assert!(mods_match(want("Cmd+Ctrl+X"), Modifiers { ctrl: true, ..MAC_CMD }, true));
-        assert!(!mods_match(want("Cmd+X"), Modifiers { ctrl: true, ..MAC_CMD }, true), "Cmd+Ctrl+X is not Cut");
+        assert!(mods_match(
+            want("Cmd+Ctrl+X"),
+            Modifiers {
+                ctrl: true,
+                ..MAC_CMD
+            },
+            true
+        ));
+        assert!(
+            !mods_match(
+                want("Cmd+X"),
+                Modifiers {
+                    ctrl: true,
+                    ..MAC_CMD
+                },
+                true
+            ),
+            "Cmd+Ctrl+X is not Cut"
+        );
         assert!(!search_chord(MAC_CMD, true));
-        assert!(search_chord(Modifiers { ctrl: true, ..MAC_CMD }, true));
+        assert!(search_chord(
+            Modifiers {
+                ctrl: true,
+                ..MAC_CMD
+            },
+            true
+        ));
     }
 
     #[test]
     fn shift_cmd_k_prompts_for_a_folder_to_export_clips() {
-        assert_eq!(command_for(Key::K, Modifiers { shift: true, ..MAC_CMD }, true), Some("file.export_clips"));
-        assert_eq!(command_for(Key::K, Modifiers { shift: true, ..PC_CTRL }, false), Some("file.export_clips"));
+        assert_eq!(
+            command_for(
+                Key::K,
+                Modifiers {
+                    shift: true,
+                    ..MAC_CMD
+                },
+                true
+            ),
+            Some("file.export_clips")
+        );
+        assert_eq!(
+            command_for(
+                Key::K,
+                Modifiers {
+                    shift: true,
+                    ..PC_CTRL
+                },
+                false
+            ),
+            Some("file.export_clips")
+        );
         assert!(crate::dialogs::takes_path("file.export_clips"));
     }
 }

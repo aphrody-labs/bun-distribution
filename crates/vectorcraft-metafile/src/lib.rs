@@ -77,7 +77,10 @@ pub struct Output {
 /// images before (the engine does); the ones left are reported and left out.
 pub fn export(doc: &Document, region: Rect, kind: Kind) -> Result<Output, String> {
     let r = region.abs();
-    if ![r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite()) || r.width() <= 0.0 || r.height() <= 0.0 {
+    if ![r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite())
+        || r.width() <= 0.0
+        || r.height() <= 0.0
+    {
         return Err("the export region is empty".into());
     }
     let baked = vectorcraft_effects::bake_document(doc);

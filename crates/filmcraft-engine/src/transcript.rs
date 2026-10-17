@@ -25,8 +25,25 @@ use crate::{EngineError, Result, Session};
 type Run = fn(&mut Session, &Value) -> Result<Value>;
 type Enabled = fn(&Session) -> std::result::Result<(), String>;
 
-fn spec(id: &'static str, label: &'static str, menu: &'static [&'static str], params: &'static str, enabled: Enabled, run: Run, journal: bool) -> CommandSpec {
-    CommandSpec { id, label, menu, shortcut: None, params, enabled, run, journal }
+fn spec(
+    id: &'static str,
+    label: &'static str,
+    menu: &'static [&'static str],
+    params: &'static str,
+    enabled: Enabled,
+    run: Run,
+    journal: bool,
+) -> CommandSpec {
+    CommandSpec {
+        id,
+        label,
+        menu,
+        shortcut: None,
+        params,
+        enabled,
+        run,
+        journal,
+    }
 }
 
 /// Where downloaded speech models live (`<data dir>/models`).
@@ -49,21 +66,32 @@ pub fn sequence_words(s: &Session) -> Vec<SeqWord> {
 
 fn has_transcript(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
-    if sequence_words(s).is_empty() { Err("the sequence has no transcript (Transcribe first)".into()) } else { Ok(()) }
+    if sequence_words(s).is_empty() {
+        Err("the sequence has no transcript (Transcribe first)".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_transcripts(s: &Session) -> std::result::Result<(), String> {
-    if s.project.transcripts.is_empty() { Err("there are no transcripts".into()) } else { Ok(()) }
+    if s.project.transcripts.is_empty() {
+        Err("there are no transcripts".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// Why speech-to-text can't run in this build (no installed transcriber, built without `whisper`).
-pub(crate) const NO_SPEECH: &str =
-    "speech-to-text is not available in this build (built without the `whisper` feature); import a transcript with transcript.set instead";
+pub(crate) const NO_SPEECH: &str = "speech-to-text is not available in this build (built without the `whisper` feature); import a transcript with transcript.set instead";
 
 /// `transcript.generate` can run: a host installed a transcriber or the build has speech-to-text
 /// (#97: it reported enabled and then always failed).
 pub(crate) fn can_transcribe(s: &Session) -> std::result::Result<(), String> {
-    if s.transcriber.is_some() || speech_available() { Ok(()) } else { Err(NO_SPEECH.into()) }
+    if s.transcriber.is_some() || speech_available() {
+        Ok(())
+    } else {
+        Err(NO_SPEECH.into())
+    }
 }
 
 /// `transcript.downloadModel` can run: built with `speech-download` (#98).
@@ -81,20 +109,30 @@ fn media_item(s: &Session, item: ItemId) -> Option<ItemId> {
 }
 
 fn ids_p(p: &Value, k: &str) -> Option<Vec<ItemId>> {
-    p.get(k).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(ItemId).collect())
+    p.get(k)
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).map(ItemId).collect())
 }
 
 /// Items to transcribe: `items` / `item`, else the Project panel selection, else the media of the
 /// active sequence's enabled audio clips. Subclips resolve to their media; duplicates are removed.
 fn targets(s: &Session, p: &Value) -> Vec<ItemId> {
-    let mut raw = ids_p(p, "items").or_else(|| u64_p(p, "item").map(|i| vec![ItemId(i)])).unwrap_or_default();
+    let mut raw = ids_p(p, "items")
+        .or_else(|| u64_p(p, "item").map(|i| vec![ItemId(i)]))
+        .unwrap_or_default();
     if raw.is_empty() {
         raw = s.state.project_selection.clone();
     }
     if raw.is_empty()
         && let Some(q) = s.active_sequence()
     {
-        raw = q.audio_tracks.iter().flat_map(|t| t.items.iter()).filter(|it| it.enabled).map(|it| it.item).collect();
+        raw = q
+            .audio_tracks
+            .iter()
+            .flat_map(|t| t.items.iter())
+            .filter(|it| it.enabled)
+            .map(|it| it.item)
+            .collect();
     }
     let mut out = Vec::new();
     for i in raw {
@@ -140,26 +178,38 @@ fn transcriber(s: &Session, p: &Value) -> Result<Arc<dyn Transcriber>> {
     if !filmcraft_speech::available() {
         return Err(EngineError::Other(NO_SPEECH.into()));
     }
-    let dir = models_dir().ok_or_else(|| EngineError::Other("no data directory for speech models".into()))?;
+    let dir = models_dir()
+        .ok_or_else(|| EngineError::Other("no data directory for speech models".into()))?;
     filmcraft_speech::load(&dir, model).map_err(speech_err)
 }
 
 fn generate(s: &mut Session, p: &Value) -> Result<Value> {
     let items = targets(s, p);
     if items.is_empty() {
-        return Err(bad("transcript.generate", "nothing to transcribe (pass `items`, select clips, or open a sequence with audio)"));
+        return Err(bad(
+            "transcript.generate",
+            "nothing to transcribe (pass `items`, select clips, or open a sequence with audio)",
+        ));
     }
     let t = transcriber(s, p)?;
     // Settings ▸ Media Analysis & Transcription: language (or auto-detect) and speaker labelling
     let ma = &s.prefs.media_analysis;
-    let default_language = if ma.language_auto_detect { None } else { Some(ma.default_language.clone()) };
+    let default_language = if ma.language_auto_detect {
+        None
+    } else {
+        Some(ma.default_language.clone())
+    };
     let opts = Options {
         language: match str_p(p, "language") {
-            Some(l) => Some(l).filter(|l| !l.is_empty() && *l != "auto").map(str::to_string),
+            Some(l) => Some(l)
+                .filter(|l| !l.is_empty() && *l != "auto")
+                .map(str::to_string),
             None => default_language,
         },
         diarize: bool_p(p, "diarize").unwrap_or(ma.speaker_labeling != "off"),
-        max_speakers: u64_p(p, "maxSpeakers").map(|n| n.clamp(1, 32) as usize).unwrap_or(Options::default().max_speakers),
+        max_speakers: u64_p(p, "maxSpeakers")
+            .map(|n| n.clamp(1, 32) as usize)
+            .unwrap_or(Options::default().max_speakers),
     };
     let mut done: Vec<(ItemId, Transcript)> = Vec::new();
     let mut skipped = Vec::new();
@@ -168,12 +218,16 @@ fn generate(s: &mut Session, p: &Value) -> Result<Value> {
             skipped.push(item.0);
             continue;
         };
-        let mut tr = t.transcribe(&audio, &opts, &mut |_, _| true).map_err(speech_err)?;
+        let mut tr = t
+            .transcribe(&audio, &opts, &mut |_, _| true)
+            .map_err(speech_err)?;
         tr.normalize();
         done.push((item, tr));
     }
     if done.is_empty() {
-        return Err(EngineError::Other("none of the clips has audio to transcribe".into()));
+        return Err(EngineError::Other(
+            "none of the clips has audio to transcribe".into(),
+        ));
     }
     let report: Vec<Value> = done
         .iter()
@@ -189,10 +243,16 @@ fn generate(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set(s: &mut Session, p: &Value) -> Result<Value> {
-    let item = u64_p(p, "item").map(ItemId).ok_or_else(|| bad("transcript.set", "`item` is required"))?;
+    let item = u64_p(p, "item")
+        .map(ItemId)
+        .ok_or_else(|| bad("transcript.set", "`item` is required"))?;
     let item = media_item(s, item).ok_or_else(|| bad("transcript.set", "no such media item"))?;
-    let v = p.get("transcript").cloned().ok_or_else(|| bad("transcript.set", "`transcript` is required"))?;
-    let mut t: Transcript = serde_json::from_value(v).map_err(|e| bad("transcript.set", e.to_string()))?;
+    let v = p
+        .get("transcript")
+        .cloned()
+        .ok_or_else(|| bad("transcript.set", "`transcript` is required"))?;
+    let mut t: Transcript =
+        serde_json::from_value(v).map_err(|e| bad("transcript.set", e.to_string()))?;
     if t.source.is_empty() {
         t.source = "imported".into();
     }
@@ -207,11 +267,15 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn delete(s: &mut Session, p: &Value) -> Result<Value> {
-    let items: Vec<ItemId> = match ids_p(p, "items").or_else(|| u64_p(p, "item").map(|i| vec![ItemId(i)])) {
-        Some(v) => v.into_iter().filter_map(|i| media_item(s, i)).collect(),
-        None => s.project.transcripts.keys().copied().collect(),
-    };
-    let n = items.iter().filter(|i| s.project.transcripts.contains_key(i)).count();
+    let items: Vec<ItemId> =
+        match ids_p(p, "items").or_else(|| u64_p(p, "item").map(|i| vec![ItemId(i)])) {
+            Some(v) => v.into_iter().filter_map(|i| media_item(s, i)).collect(),
+            None => s.project.transcripts.keys().copied().collect(),
+        };
+    let n = items
+        .iter()
+        .filter(|i| s.project.transcripts.contains_key(i))
+        .count();
     if n == 0 {
         return Err(EngineError::Other("no transcript to delete".into()));
     }
@@ -272,9 +336,18 @@ fn search(s: &mut Session, p: &Value) -> Result<Value> {
 /// Timeline range of the words `from..=to` (frame-snapped outward).
 fn range_p(s: &Session, p: &Value, cmd: &str) -> Result<TimeRange> {
     let words = sequence_words(s);
-    let from = u64_p(p, "from").ok_or_else(|| bad(cmd, "`from` (word index) is required"))? as usize;
+    let from =
+        u64_p(p, "from").ok_or_else(|| bad(cmd, "`from` (word index) is required"))? as usize;
     let to = u64_p(p, "to").map(|n| n as usize).unwrap_or(from);
-    tx::word_range(&words, from, to, s.sequence_rate()).ok_or_else(|| bad(cmd, format!("word index out of range (the transcript has {} words)", words.len())))
+    tx::word_range(&words, from, to, s.sequence_rate()).ok_or_else(|| {
+        bad(
+            cmd,
+            format!(
+                "word index out of range (the transcript has {} words)",
+                words.len()
+            ),
+        )
+    })
 }
 
 fn range_json(r: TimeRange) -> Value {
@@ -294,34 +367,53 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn extract_or_lift(s: &mut Session, p: &Value, extract: bool) -> Result<Value> {
-    let cmd = if extract { "transcript.extract" } else { "transcript.lift" };
+    let cmd = if extract {
+        "transcript.extract"
+    } else {
+        "transcript.lift"
+    };
     let r = range_p(s, p, cmd)?;
     let tg = s.targeting().targeted;
-    s.edit_sequence(if extract { "Extract Text" } else { "Lift Text" }, |q, ctx, _| {
-        if extract {
-            edit::extract(q, &tg, r, ctx);
-        } else {
-            edit::lift(q, &tg, r, ctx);
-        }
-        q.mark_in = None;
-        q.mark_out = None;
-        Ok(())
-    })?;
+    s.edit_sequence(
+        if extract { "Extract Text" } else { "Lift Text" },
+        |q, ctx, _| {
+            if extract {
+                edit::extract(q, &tg, r, ctx);
+            } else {
+                edit::lift(q, &tg, r, ctx);
+            }
+            q.mark_in = None;
+            q.mark_out = None;
+            Ok(())
+        },
+    )?;
     s.set_playhead(r.start);
     Ok(range_json(r))
 }
 
 fn rename_speaker(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_p(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad("transcript.renameSpeaker", "`name` is required"))?.to_string();
+    let name = str_p(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad("transcript.renameSpeaker", "`name` is required"))?
+        .to_string();
     let item = u64_p(p, "item").map(ItemId).and_then(|i| media_item(s, i));
     // `speaker`: the current name (every transcript), or an index (needs `item`)
     let (old_name, index) = match p.get("speaker") {
         Some(Value::String(n)) => (Some(n.clone()), None),
         Some(v) if v.is_u64() => (None, v.as_u64().map(|n| n as usize)),
-        _ => return Err(bad("transcript.renameSpeaker", "`speaker` (name, or index with `item`) is required")),
+        _ => {
+            return Err(bad(
+                "transcript.renameSpeaker",
+                "`speaker` (name, or index with `item`) is required",
+            ));
+        }
     };
     if index.is_some() && item.is_none() {
-        return Err(bad("transcript.renameSpeaker", "a speaker index needs `item`"));
+        return Err(bad(
+            "transcript.renameSpeaker",
+            "a speaker index needs `item`",
+        ));
     }
     let mut n = 0;
     let mut next = s.project.transcripts.clone();
@@ -352,7 +444,9 @@ fn remove_ranges(s: &mut Session, label: &str, ranges: Vec<TimeRange>) -> Result
     if n == 0 {
         return Ok(json!({"removed": 0, "ticks": 0}));
     }
-    let total = s.edit_sequence(label, |q, ctx, _| Ok(tx::ripple_delete_ranges(q, ranges, ctx)))?;
+    let total = s.edit_sequence(label, |q, ctx, _| {
+        Ok(tx::ripple_delete_ranges(q, ranges, ctx))
+    })?;
     Ok(json!({"removed": n, "ticks": total.0, "seconds": total.0 as f64 / TICKS_PER_SECOND as f64}))
 }
 
@@ -367,7 +461,11 @@ fn remove_pauses(s: &mut Session, p: &Value) -> Result<Value> {
 fn remove_fillers(s: &mut Session, p: &Value) -> Result<Value> {
     let words = sequence_words(s);
     let fillers: Vec<String> = match p.get("fillers").and_then(Value::as_array) {
-        Some(a) => a.iter().filter_map(Value::as_str).map(str::to_string).collect(),
+        Some(a) => a
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect(),
         None => tx::DEFAULT_FILLERS.iter().map(|f| f.to_string()).collect(),
     };
     let hits = tx::find_fillers(&words, &fillers);
@@ -379,15 +477,26 @@ fn create_captions(s: &mut Session, p: &Value) -> Result<Value> {
     let words = sequence_words(s);
     let d = CaptionRules::default();
     let rules = CaptionRules {
-        max_chars: u64_p(p, "maxChars").map(|n| n as usize).unwrap_or(d.max_chars),
+        max_chars: u64_p(p, "maxChars")
+            .map(|n| n as usize)
+            .unwrap_or(d.max_chars),
         lines: u64_p(p, "lines").map(|n| n as usize).unwrap_or(d.lines),
-        min_duration: f64_p(p, "minSeconds").map(Tick::from_seconds_f64).unwrap_or(d.min_duration),
-        max_duration: f64_p(p, "maxSeconds").map(Tick::from_seconds_f64).unwrap_or(d.max_duration),
-        gap_frames: p.get("gapFrames").and_then(Value::as_i64).unwrap_or(d.gap_frames),
+        min_duration: f64_p(p, "minSeconds")
+            .map(Tick::from_seconds_f64)
+            .unwrap_or(d.min_duration),
+        max_duration: f64_p(p, "maxSeconds")
+            .map(Tick::from_seconds_f64)
+            .unwrap_or(d.max_duration),
+        gap_frames: p
+            .get("gapFrames")
+            .and_then(Value::as_i64)
+            .unwrap_or(d.gap_frames),
         break_pause: d.break_pause,
     };
     let blocks = tx::caption_blocks(&words, &rules, s.sequence_rate());
-    let format = str_p(p, "format").and_then(CaptionFormat::from_name).unwrap_or_default();
+    let format = str_p(p, "format")
+        .and_then(CaptionFormat::from_name)
+        .unwrap_or_default();
     let name = str_p(p, "name").unwrap_or("Transcript").to_string();
     let n = blocks.len();
     let tid = s.edit_sequence("Create Captions", |q, ctx, st| {
@@ -419,12 +528,16 @@ fn models(_: &mut Session, _: &Value) -> Result<Value> {
 /// the size, source and licence (`transcript.models`) and ask before running this.
 fn download_model(_: &mut Session, p: &Value) -> Result<Value> {
     let id = str_p(p, "model").unwrap_or(filmcraft_speech::models::DEFAULT_MODEL);
-    let m = filmcraft_speech::models::find(id).ok_or_else(|| speech_err(SpeechError::UnknownModel(id.into())))?;
-    let dir = models_dir().ok_or_else(|| EngineError::Other("no data directory for speech models".into()))?;
+    let m = filmcraft_speech::models::find(id)
+        .ok_or_else(|| speech_err(SpeechError::UnknownModel(id.into())))?;
+    let dir = models_dir()
+        .ok_or_else(|| EngineError::Other("no data directory for speech models".into()))?;
     #[cfg(feature = "speech-download")]
     {
         filmcraft_speech::models::download(&dir, m, &mut |_, _, _| true).map_err(speech_err)?;
-        Ok(json!({"model": m.id, "dir": filmcraft_speech::models::model_dir(&dir, m).to_string_lossy()}))
+        Ok(
+            json!({"model": m.id, "dir": filmcraft_speech::models::model_dir(&dir, m).to_string_lossy()}),
+        )
     }
     #[cfg(not(feature = "speech-download"))]
     {
@@ -453,14 +566,78 @@ pub fn commands() -> Vec<CommandSpec> {
             set,
             true,
         ),
-        spec("transcript.delete", "Delete Transcript", &["Sequence", "Transcript"], r#"{"items":[id]?}"#, has_transcripts, delete, true),
-        spec("transcript.inspect", "Inspect Transcript", &[], r#"{"paragraphGapSeconds":f?}"#, always, inspect, false),
-        spec("transcript.search", "Search Transcript", &[], r#"{"query":str}"#, always, search, false),
-        spec("transcript.models", "List Speech Models", &[], "{}", always, models, false),
-        spec("transcript.downloadModel", "Download Speech Model", &[], r#"{"model":"whisper-base"?}"#, can_download, download_model, true),
-        spec("transcript.select", "Mark Selected Text", &[], r#"{"from":word,"to":word?}"#, has_transcript, select, true),
-        spec("transcript.extract", "Extract Selected Text", &[], r#"{"from":word,"to":word?}"#, has_transcript, |s, p| extract_or_lift(s, p, true), true),
-        spec("transcript.lift", "Lift Selected Text", &[], r#"{"from":word,"to":word?}"#, has_transcript, |s, p| extract_or_lift(s, p, false), true),
+        spec(
+            "transcript.delete",
+            "Delete Transcript",
+            &["Sequence", "Transcript"],
+            r#"{"items":[id]?}"#,
+            has_transcripts,
+            delete,
+            true,
+        ),
+        spec(
+            "transcript.inspect",
+            "Inspect Transcript",
+            &[],
+            r#"{"paragraphGapSeconds":f?}"#,
+            always,
+            inspect,
+            false,
+        ),
+        spec(
+            "transcript.search",
+            "Search Transcript",
+            &[],
+            r#"{"query":str}"#,
+            always,
+            search,
+            false,
+        ),
+        spec(
+            "transcript.models",
+            "List Speech Models",
+            &[],
+            "{}",
+            always,
+            models,
+            false,
+        ),
+        spec(
+            "transcript.downloadModel",
+            "Download Speech Model",
+            &[],
+            r#"{"model":"whisper-base"?}"#,
+            can_download,
+            download_model,
+            true,
+        ),
+        spec(
+            "transcript.select",
+            "Mark Selected Text",
+            &[],
+            r#"{"from":word,"to":word?}"#,
+            has_transcript,
+            select,
+            true,
+        ),
+        spec(
+            "transcript.extract",
+            "Extract Selected Text",
+            &[],
+            r#"{"from":word,"to":word?}"#,
+            has_transcript,
+            |s, p| extract_or_lift(s, p, true),
+            true,
+        ),
+        spec(
+            "transcript.lift",
+            "Lift Selected Text",
+            &[],
+            r#"{"from":word,"to":word?}"#,
+            has_transcript,
+            |s, p| extract_or_lift(s, p, false),
+            true,
+        ),
         spec(
             "transcript.renameSpeaker",
             "Rename Speaker…",
@@ -479,7 +656,15 @@ pub fn commands() -> Vec<CommandSpec> {
             remove_pauses,
             true,
         ),
-        spec("transcript.removeFillers", "Remove Filler Words", &["Sequence", "Transcript"], r#"{"fillers":[str]?}"#, has_transcript, remove_fillers, true),
+        spec(
+            "transcript.removeFillers",
+            "Remove Filler Words",
+            &["Sequence", "Transcript"],
+            r#"{"fillers":[str]?}"#,
+            has_transcript,
+            remove_fillers,
+            true,
+        ),
         spec(
             "transcript.createCaptions",
             "Create Captions from Transcript…",

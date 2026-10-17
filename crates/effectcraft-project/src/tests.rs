@@ -6,15 +6,37 @@ use crate::{Comp, ItemKind, LayerSource, MaskMode, Project, Solid};
 
 fn project_with_layer() -> (Project, crate::ItemId) {
     let mut p = Project::default();
-    let comp = Comp::new(1920, 1080, FrameRate::FPS_29_97, Tick::from_seconds_f64(10.0));
-    let cid = p.add_item("Main", effectcraft_color::Label::Sandstone, None, ItemKind::Comp(comp.clone().into()));
+    let comp = Comp::new(
+        1920,
+        1080,
+        FrameRate::FPS_29_97,
+        Tick::from_seconds_f64(10.0),
+    );
+    let cid = p.add_item(
+        "Main",
+        effectcraft_color::Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.clone().into()),
+    );
     let sid = p.add_item(
         "Red Solid",
         effectcraft_color::Label::Red,
         None,
-        ItemKind::Solid(Solid { color: [1.0, 0.0, 0.0], width: 1920, height: 1080, pixel_aspect: 1.0 }),
+        ItemKind::Solid(Solid {
+            color: [1.0, 0.0, 0.0],
+            width: 1920,
+            height: 1080,
+            pixel_aspect: 1.0,
+        }),
     );
-    let layer = build::layer(&mut p, &comp, "Red Solid 1", LayerSource::Solid { item: sid }, (1920, 1080), None);
+    let layer = build::layer(
+        &mut p,
+        &comp,
+        "Red Solid 1",
+        LayerSource::Solid { item: sid },
+        (1920, 1080),
+        None,
+    );
     p.comp_mut(cid).unwrap().layers.push(layer);
     (p, cid)
 }
@@ -23,8 +45,14 @@ fn project_with_layer() -> (Project, crate::ItemId) {
 fn paths_resolve() {
     let (p, cid) = project_with_layer();
     let l = &p.comp(cid).unwrap().layers[0];
-    assert_eq!(l.props.prop("transform/position").unwrap().value, Value::Vec3([960.0, 540.0, 0.0]));
-    assert_eq!(l.props.prop("Transform/Opacity").unwrap().value, Value::Scalar(100.0));
+    assert_eq!(
+        l.props.prop("transform/position").unwrap().value,
+        Value::Vec3([960.0, 540.0, 0.0])
+    );
+    assert_eq!(
+        l.props.prop("Transform/Opacity").unwrap().value,
+        Value::Scalar(100.0)
+    );
     assert_eq!(l.props.prop("transform/#7").unwrap().match_id, "rotation");
     let uid = l.props.prop("transform/scale").unwrap().uid;
     let path = l.props.path_of(uid).unwrap();
@@ -36,8 +64,20 @@ fn paths_resolve() {
 fn masks_and_occurrence_paths() {
     let (mut p, cid) = project_with_layer();
     let mut next = p.next_id;
-    let m1 = build::mask(&mut Ids(&mut next), "Mask 1", ShapePath::rect([0.0, 0.0], 10.0, 10.0), MaskMode::Add, [255, 0, 0]);
-    let m2 = build::mask(&mut Ids(&mut next), "Mask 2", ShapePath::ellipse([0.0, 0.0], 10.0, 10.0), MaskMode::Subtract, [0, 255, 0]);
+    let m1 = build::mask(
+        &mut Ids(&mut next),
+        "Mask 1",
+        ShapePath::rect([0.0, 0.0], 10.0, 10.0),
+        MaskMode::Add,
+        [255, 0, 0],
+    );
+    let m2 = build::mask(
+        &mut Ids(&mut next),
+        "Mask 2",
+        ShapePath::ellipse([0.0, 0.0], 10.0, 10.0),
+        MaskMode::Subtract,
+        [0, 255, 0],
+    );
     p.next_id = next;
     let l = &mut p.comp_mut(cid).unwrap().layers[0];
     let masks = l.props.sub_mut("masks").unwrap();
@@ -57,7 +97,10 @@ fn animate_and_roundtrip_json() {
         op.set_animated(true, Tick::ZERO);
         op.set_value_at(Tick::from_seconds_f64(1.0), Value::Scalar(0.0));
         assert_eq!(op.keys.len(), 2);
-        assert_eq!(op.value_at(Tick::from_seconds_f64(0.5)), Value::Scalar(50.0));
+        assert_eq!(
+            op.value_at(Tick::from_seconds_f64(0.5)),
+            Value::Scalar(50.0)
+        );
     }
     let json = p.to_json();
     let q = Project::from_json(&json).unwrap();
@@ -76,7 +119,14 @@ fn comp_resolution_is_saved_and_old_projects_load_with_auto() {
     assert_eq!(q.comp(cid).unwrap().resolution, Resolution::Custom(5));
     p.comp_mut(cid).unwrap().resolution = Resolution::Half;
     let text = p.to_file_json().unwrap();
-    assert_eq!(Project::from_json(&text).unwrap().comp(cid).unwrap().resolution, Resolution::Half);
+    assert_eq!(
+        Project::from_json(&text)
+            .unwrap()
+            .comp(cid)
+            .unwrap()
+            .resolution,
+        Resolution::Half
+    );
     // A project saved before comps had a resolution opens with Auto.
     fn strip(v: &mut serde_json::Value) {
         match v {
@@ -90,11 +140,21 @@ fn comp_resolution_is_saved_and_old_projects_load_with_auto() {
     }
     let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
     strip(&mut old);
-    assert_eq!(Project::from_json(&old.to_string()).unwrap().comp(cid).unwrap().resolution, Resolution::Auto);
+    assert_eq!(
+        Project::from_json(&old.to_string())
+            .unwrap()
+            .comp(cid)
+            .unwrap()
+            .resolution,
+        Resolution::Auto
+    );
     // It's not part of the comp's pixels.
     let (a, b) = (p.comp(cid).unwrap(), q.comp(cid).unwrap());
     assert!(a != b && a.same_pixels(b));
-    assert_eq!(format!("{:?}", a.pixel_form()), format!("{:?}", b.pixel_form()));
+    assert_eq!(
+        format!("{:?}", a.pixel_form()),
+        format!("{:?}", b.pixel_form())
+    );
 }
 
 #[test]
@@ -129,7 +189,16 @@ fn camera_and_light_layers_build() {
     let cam = build::layer(&mut p, &comp, "Camera 1", LayerSource::Camera, (0, 0), None);
     assert!(cam.props.prop("cameraOptions/zoom").is_some());
     assert!(cam.props.prop("transform/poi").is_some());
-    let light = build::layer(&mut p, &comp, "Light 1", LayerSource::Light { kind: crate::LightKind::Spot }, (0, 0), None);
+    let light = build::layer(
+        &mut p,
+        &comp,
+        "Light 1",
+        LayerSource::Light {
+            kind: crate::LightKind::Spot,
+        },
+        (0, 0),
+        None,
+    );
     assert!(light.props.prop("lightOptions/coneAngle").is_some());
 }
 
@@ -159,26 +228,61 @@ fn project_files_name_their_version_and_always_read_back() {
     let (mut p, cid) = project_with_layer();
     let text = p.to_file_json().unwrap();
     assert_eq!(crate::saved_by(&text).as_deref(), Some(crate::APP_VERSION));
-    assert!(text.trim_start().starts_with("{\n  \"savedBy\""), "the version comes first");
+    assert!(
+        text.trim_start().starts_with("{\n  \"savedBy\""),
+        "the version comes first"
+    );
     assert_eq!(Project::from_json(&text).unwrap(), p);
-    assert_eq!(crate::saved_by(&p.to_json()), None, "plain JSON (worker hand-offs) has none");
+    assert_eq!(
+        crate::saved_by(&p.to_json()),
+        None,
+        "plain JSON (worker hand-offs) has none"
+    );
     // JSON can't hold NaN: saving refuses instead of writing a file that can't be opened.
-    p.comp_mut(cid).unwrap().layers[0].props.prop_mut("transform/opacity").unwrap().value = Value::Scalar(f64::NAN);
+    p.comp_mut(cid).unwrap().layers[0]
+        .props
+        .prop_mut("transform/opacity")
+        .unwrap()
+        .value = Value::Scalar(f64::NAN);
     let e = p.to_file_json().unwrap_err().to_string();
     assert!(e.contains("can't be saved"), "{e}");
-    assert!(crate::is_newer_version("0.2.0", "0.1.9") && crate::is_newer_version("1.0.0-rc.1", "0.9.9"));
-    assert!(!crate::is_newer_version("0.1.1", "0.1.1") && !crate::is_newer_version("0.1.0", "0.1.1"));
+    assert!(
+        crate::is_newer_version("0.2.0", "0.1.9") && crate::is_newer_version("1.0.0-rc.1", "0.9.9")
+    );
+    assert!(
+        !crate::is_newer_version("0.1.1", "0.1.1") && !crate::is_newer_version("0.1.0", "0.1.1")
+    );
 }
 
 #[test]
 fn project_files_remember_the_open_comps() {
     let (p, cid) = project_with_layer();
-    let view = crate::SavedView { active_comp: Some(cid), open_comps: vec![cid] };
+    let view = crate::SavedView {
+        active_comp: Some(cid),
+        open_comps: vec![cid],
+    };
     let text = p.to_file_json_with_view(&view).unwrap();
     assert_eq!(crate::saved_view(&text), view);
-    assert_eq!(Project::from_json(&text).unwrap(), p, "the view is not part of the project");
+    assert_eq!(
+        Project::from_json(&text).unwrap(),
+        p,
+        "the view is not part of the project"
+    );
     // Files from before #748 have no view; a garbled one is ignored, not an error.
-    assert_eq!(crate::saved_view(&p.to_file_json().unwrap()), crate::SavedView::default());
-    let odd = text.replacen(&format!("\"activeComp\": {}", cid.0), "\"activeComp\": \"Main\"", 1);
-    assert_eq!(crate::saved_view(&odd), crate::SavedView { active_comp: None, open_comps: vec![cid] });
+    assert_eq!(
+        crate::saved_view(&p.to_file_json().unwrap()),
+        crate::SavedView::default()
+    );
+    let odd = text.replacen(
+        &format!("\"activeComp\": {}", cid.0),
+        "\"activeComp\": \"Main\"",
+        1,
+    );
+    assert_eq!(
+        crate::saved_view(&odd),
+        crate::SavedView {
+            active_comp: None,
+            open_comps: vec![cid]
+        }
+    );
 }

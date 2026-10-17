@@ -6,7 +6,14 @@
 //! adapter are replaced by `model` and the DisplayList design in M1–M2. The public API is what the engine and UI rely on, so
 //! the swap stays internal to this crate.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod inspect;
 mod pixels;
@@ -16,13 +23,15 @@ mod structure;
 pub mod text;
 
 pub use inspect::{
-    Annotation, Attachment, AttachmentSource, DestView, DocInfo, Field, FieldKind, FontInfo, Layer, LayerOp, Link, LinkTarget, OutlineItem, PageInfo,
-    RemoteDestination, Xfa, attachment_data, check_pages, inspect, pretty_date,
+    Annotation, Attachment, AttachmentSource, DestView, DocInfo, Field, FieldKind, FontInfo, Layer,
+    LayerOp, Link, LinkTarget, OutlineItem, PageInfo, RemoteDestination, Xfa, attachment_data,
+    check_pages, inspect, pretty_date,
 };
 pub use pixels::Pixels;
 pub use raster::{
-    MAX_PIXELS, MAX_SIDE, PRINT_TAG, PageRenderer, RenderConfig, RenderPool, RenderRequest, RenderStats, RenderWarning, RenderedPage, RequestKind,
-    Retiring, Tile, device_pixels, effective_scale,
+    MAX_PIXELS, MAX_SIDE, PRINT_TAG, PageRenderer, RenderConfig, RenderPool, RenderRequest,
+    RenderStats, RenderWarning, RenderedPage, RequestKind, Retiring, Tile, device_pixels,
+    effective_scale,
 };
 pub use reading::{ReadingColors, ReadingParams};
 pub use text::{PageText, TextGlyph};

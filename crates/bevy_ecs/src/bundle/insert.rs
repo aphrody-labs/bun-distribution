@@ -4,20 +4,20 @@ use core::ptr::NonNull;
 
 use crate::{
     archetype::{
-        Archetype, ArchetypeAfterBundleInsert, ArchetypeCreated, ArchetypeId, Archetypes,
-        ComponentStatus, ARCHETYPE_CREATED,
+        ARCHETYPE_CREATED, Archetype, ArchetypeAfterBundleInsert, ArchetypeCreated, ArchetypeId,
+        Archetypes, ComponentStatus,
     },
     bundle::{ArchetypeMoveType, Bundle, BundleId, BundleInfo, DynamicBundle, InsertMode},
     change_detection::{MaybeLocation, Tick},
     component::{Components, StorageType},
     entity::{Entities, Entity, EntityLocation},
     event::{EntityComponentsTrigger, GlobalTrigger},
-    lifecycle::{AddEvent, DiscardEvent, InsertEvent, ADD, DISCARD, INSERT},
+    lifecycle::{ADD, AddEvent, DISCARD, DiscardEvent, INSERT, InsertEvent},
     observer::Observers,
     query::DebugCheckedUnwrap as _,
     relationship::RelationshipHookMode,
     storage::{SparseSets, Storages, Table},
-    world::{unsafe_world_cell::UnsafeWorldCell, World},
+    world::{World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 // SAFETY: We have exclusive world access so our pointers can't be invalidated externally

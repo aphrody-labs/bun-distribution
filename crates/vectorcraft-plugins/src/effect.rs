@@ -72,7 +72,12 @@ static ERRORS: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
 
 /// The last error of live-effect plug-in `id` (cleared when it next succeeds).
 pub fn last_error(id: &str) -> Option<String> {
-    ERRORS.lock().unwrap_or_else(|e| e.into_inner()).as_ref()?.get(id).cloned()
+    ERRORS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()?
+        .get(id)
+        .cloned()
 }
 
 fn note(id: &str, r: &Result<PathData>) {
@@ -87,7 +92,13 @@ fn note(id: &str, r: &Result<PathData>) {
 /// Runs live-effect plug-in `id` on `path` (whose reference box is `bounds`): the new geometry,
 /// or `None` when the plug-in isn't installed, isn't an effect, or fails (the caller then keeps
 /// the geometry).
-pub fn apply(id: &str, params: &Value, path: &PathData, bounds: Rect, rule: FillRule) -> Option<PathData> {
+pub fn apply(
+    id: &str,
+    params: &Value,
+    path: &PathData,
+    bounds: Rect,
+    rule: FillRule,
+) -> Option<PathData> {
     let plugin = registry::get(id).filter(|p| p.manifest().kind == Kind::Effect)?;
     let resolved = Value::Object(plugin.manifest().resolve_params(params).ok()?);
     let key = Key {
@@ -98,7 +109,11 @@ pub fn apply(id: &str, params: &Value, path: &PathData, bounds: Rect, rule: Fill
         path: path.clone(),
     };
     let h = key.hash64();
-    if let Some((k, out)) = CACHE.lock().unwrap_or_else(|e| e.into_inner()).as_ref().and_then(|c| c.get(&h))
+    if let Some((k, out)) = CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .and_then(|c| c.get(&h))
         && *k == key
     {
         return out.clone();
@@ -115,7 +130,13 @@ pub fn apply(id: &str, params: &Value, path: &PathData, bounds: Rect, rule: Fill
     out
 }
 
-fn run(plugin: &crate::Plugin, mut params: Value, path: &PathData, bounds: Rect, rule: FillRule) -> Result<PathData> {
+fn run(
+    plugin: &crate::Plugin,
+    mut params: Value,
+    path: &PathData,
+    bounds: Rect,
+    rule: FillRule,
+) -> Result<PathData> {
     let b = json!([bounds.x0, bounds.y0, bounds.x1, bounds.y1]);
     params["_context"] = json!({"mode": "effect", "bounds": b});
     let rule = match rule {
@@ -124,7 +145,14 @@ fn run(plugin: &crate::Plugin, mut params: Value, path: &PathData, bounds: Rect,
     };
     let input = json!({"objects": [{"type": "path", "path": path, "fillRule": rule, "bounds": b}]});
     let (input, params) = (serde_json::to_vec(&input), serde_json::to_vec(&params));
-    let (Ok(input), Ok(params)) = (input, params) else { return Err(Error::Params("can't encode the input".into())) };
-    let limits = Limits { wall_time_ms: WALL_TIME_MS, ..plugin.limits().clone() };
-    Ok(output_geometry(decode(&plugin.run_limited(&input, &params, &limits)?)?))
+    let (Ok(input), Ok(params)) = (input, params) else {
+        return Err(Error::Params("can't encode the input".into()));
+    };
+    let limits = Limits {
+        wall_time_ms: WALL_TIME_MS,
+        ..plugin.limits().clone()
+    };
+    Ok(output_geometry(decode(
+        &plugin.run_limited(&input, &params, &limits)?,
+    )?))
 }

@@ -19,7 +19,11 @@ impl WavAudioSink {
             "Configured audio WAV dump"
         );
 
-        Self { path, pending_rate: emulated_rate, writer: None }
+        Self {
+            path,
+            pending_rate: emulated_rate,
+            writer: None,
+        }
     }
 
     fn ensure_open(&mut self) -> &mut hound::WavWriter<BufWriter<File>> {

@@ -63,18 +63,38 @@ fn capture<B: Backend + ?Sized>(b: &mut B, mut params: Value) -> Result<Vec<u8>,
 pub fn page_children<B: Backend + ?Sized>(b: &mut B) -> Result<Vec<u64>, String> {
     let doc = b.call("document.inspect", json!({"depth": 1}))?;
     let current = doc.get("currentPage").cloned().unwrap_or(Value::Null);
-    let pages = doc.get("pages").and_then(Value::as_array).cloned().unwrap_or_default();
-    let page = pages.iter().find(|p| p.get("id") == Some(&current)).or_else(|| pages.first());
+    let pages = doc
+        .get("pages")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let page = pages
+        .iter()
+        .find(|p| p.get("id") == Some(&current))
+        .or_else(|| pages.first());
     Ok(page
         .and_then(|p| p.get("children"))
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(|c| c.get("id").and_then(Value::as_u64)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|c| c.get("id").and_then(Value::as_u64))
+                .collect()
+        })
         .unwrap_or_default())
 }
 
 fn temp_png(what: &str) -> String {
-    let n = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-    std::env::temp_dir().join(format!("figcraft-mcp-{what}-{}-{n}.png", std::process::id())).to_string_lossy().into_owned()
+    let n = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    std::env::temp_dir()
+        .join(format!(
+            "figcraft-mcp-{what}-{}-{n}.png",
+            std::process::id()
+        ))
+        .to_string_lossy()
+        .into_owned()
 }
 
 fn read_and_remove(path: &str) -> Result<Vec<u8>, String> {
@@ -85,9 +105,14 @@ fn read_and_remove(path: &str) -> Result<Vec<u8>, String> {
 
 /// Decode a `data` field (base64, optionally a data: URL) from an export result.
 pub fn decode_data(v: &Value) -> Result<Vec<u8>, String> {
-    let d = v.get("data").and_then(Value::as_str).ok_or("the export returned no data")?;
+    let d = v
+        .get("data")
+        .and_then(Value::as_str)
+        .ok_or("the export returned no data")?;
     let d = d.split_once(',').map(|(_, b)| b).unwrap_or(d);
-    base64::engine::general_purpose::STANDARD.decode(d.trim()).map_err(|e| format!("bad base64 from the app: {e}"))
+    base64::engine::general_purpose::STANDARD
+        .decode(d.trim())
+        .map_err(|e| format!("bad base64 from the app: {e}"))
 }
 
 /// A running FigCraft app, reached through its loopback control port (`figcraft --control PORT`).
@@ -100,7 +125,11 @@ pub struct Attached {
 impl Attached {
     /// Connect to `addr` (e.g. `127.0.0.1:7979`), failing fast when nothing is listening.
     pub fn connect(addr: &str) -> std::io::Result<Self> {
-        let mut r = Self { addr: addr.to_string(), conn: None, next_id: 1 };
+        let mut r = Self {
+            addr: addr.to_string(),
+            conn: None,
+            next_id: 1,
+        };
         r.reconnect()?;
         Ok(r)
     }
@@ -116,7 +145,10 @@ impl Attached {
 
     fn reconnect(&mut self) -> std::io::Result<()> {
         self.conn = None;
-        let mut last = std::io::Error::new(std::io::ErrorKind::NotFound, format!("cannot resolve {}", self.addr));
+        let mut last = std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("cannot resolve {}", self.addr),
+        );
         for sa in self.addr.to_socket_addrs()? {
             match TcpStream::connect_timeout(&sa, Duration::from_millis(800)) {
                 Ok(s) => {
@@ -138,14 +170,20 @@ impl Attached {
             self.reconnect()?;
         }
         let Some((reader, writer)) = self.conn.as_mut() else {
-            return Err(std::io::Error::new(std::io::ErrorKind::NotConnected, "not connected to the app"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "not connected to the app",
+            ));
         };
         writer.write_all(line.as_bytes())?;
         writer.write_all(b"\n")?;
         writer.flush()?;
         let mut reply = String::new();
         if reader.read_line(&mut reply)? == 0 {
-            return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "control channel closed"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "control channel closed",
+            ));
         }
         Ok(reply)
     }
@@ -167,11 +205,16 @@ impl Backend for Attached {
                 })?
             }
         };
-        let v: Value = serde_json::from_str(reply.trim()).map_err(|e| format!("bad reply from the app: {e}"))?;
+        let v: Value = serde_json::from_str(reply.trim())
+            .map_err(|e| format!("bad reply from the app: {e}"))?;
         if v.get("ok").and_then(Value::as_bool) == Some(true) {
             Ok(v.get("result").cloned().unwrap_or(Value::Null))
         } else {
-            Err(v.get("error").and_then(Value::as_str).unwrap_or("unknown error").to_string())
+            Err(v
+                .get("error")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown error")
+                .to_string())
         }
     }
 

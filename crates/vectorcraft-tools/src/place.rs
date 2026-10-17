@@ -57,7 +57,9 @@ impl PlaceTool {
         }
         if self.entries.is_empty() {
             self.current = 0;
-            return vec![Action::SwitchTool(self.prev.clone().unwrap_or_else(|| "selection".into()))];
+            return vec![Action::SwitchTool(
+                self.prev.clone().unwrap_or_else(|| "selection".into()),
+            )];
         }
         self.current %= self.entries.len();
         vec![]
@@ -66,7 +68,11 @@ impl PlaceTool {
     fn cycle(&mut self, forward: bool) {
         let n = self.entries.len();
         if n > 0 {
-            self.current = if forward { (self.current + 1) % n } else { (self.current + n - 1) % n };
+            self.current = if forward {
+                (self.current + 1) % n
+            } else {
+                (self.current + n - 1) % n
+            };
         }
     }
 }
@@ -89,8 +95,12 @@ impl Tool for PlaceTool {
                 }
             }
             PointerKind::Up => {
-                let Some((a, _)) = self.drag.take() else { return vec![] };
-                let (Some(r), Some(e)) = (self.target(a, ev.pos, cx.tol(3.0)), self.entry()) else { return vec![] };
+                let Some((a, _)) = self.drag.take() else {
+                    return vec![];
+                };
+                let (Some(r), Some(e)) = (self.target(a, ev.pos, cx.tol(3.0)), self.entry()) else {
+                    return vec![];
+                };
                 let mut p = e.params.clone();
                 p["rect"] = json!([r.x0, r.y0, r.width(), r.height()]);
                 let mut acts = vec![Action::Exec("file.place".into(), p)];
@@ -119,12 +129,21 @@ impl Tool for PlaceTool {
     }
 
     fn claims_key(&self, _cx: &ToolContext, key: ToolKey) -> bool {
-        !self.entries.is_empty() && matches!(key, ToolKey::Escape | ToolKey::Left | ToolKey::Right | ToolKey::Up | ToolKey::Down)
+        !self.entries.is_empty()
+            && matches!(
+                key,
+                ToolKey::Escape | ToolKey::Left | ToolKey::Right | ToolKey::Up | ToolKey::Down
+            )
     }
 
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
-        let Some((a, b)) = self.drag else { return vec![] };
-        self.target(a, b, cx.tol(3.0)).map(Overlay::Marquee).into_iter().collect()
+        let Some((a, b)) = self.drag else {
+            return vec![];
+        };
+        self.target(a, b, cx.tol(3.0))
+            .map(Overlay::Marquee)
+            .into_iter()
+            .collect()
     }
 
     fn cursor(&self, _cx: &ToolContext, _p: Point, _mods: Mods) -> Cursor {
@@ -170,7 +189,11 @@ impl Tool for PlaceTool {
                 }
             }
             "current" => {
-                if let Some(i) = value.as_u64().map(|i| i as usize).filter(|i| *i < self.entries.len()) {
+                if let Some(i) = value
+                    .as_u64()
+                    .map(|i| i as usize)
+                    .filter(|i| *i < self.entries.len())
+                {
                     self.current = i;
                 }
             }
@@ -211,19 +234,37 @@ mod tests {
         let mut t = loaded(3);
         t.pointer(&c, &ev(PointerKind::Down, 10.0, 10.0));
         let acts = t.pointer(&c, &ev(PointerKind::Up, 11.0, 10.0));
-        assert_eq!(acts, vec![Action::Exec("file.place".into(), json!({"path": "f0.png", "rect": [10.0, 10.0, 40.0, 20.0]}))]);
+        assert_eq!(
+            acts,
+            vec![Action::Exec(
+                "file.place".into(),
+                json!({"path": "f0.png", "rect": [10.0, 10.0, 40.0, 20.0]})
+            )]
+        );
         // A drag up and to the left grows the box from the press point, aspect kept.
         t.pointer(&c, &ev(PointerKind::Down, 100.0, 100.0));
         t.pointer(&c, &ev(PointerKind::Drag, 20.0, 90.0));
-        assert_eq!(t.overlays(&c), vec![Overlay::Marquee(Rect::new(20.0, 60.0, 100.0, 100.0))]);
+        assert_eq!(
+            t.overlays(&c),
+            vec![Overlay::Marquee(Rect::new(20.0, 60.0, 100.0, 100.0))]
+        );
         let acts = t.pointer(&c, &ev(PointerKind::Up, 20.0, 90.0));
-        assert_eq!(acts[0], Action::Exec("file.place".into(), json!({"path": "f1.png", "rect": [20.0, 60.0, 80.0, 40.0]})));
+        assert_eq!(
+            acts[0],
+            Action::Exec(
+                "file.place".into(),
+                json!({"path": "f1.png", "rect": [20.0, 60.0, 80.0, 40.0]})
+            )
+        );
         assert_eq!(t.options()["count"], 1);
         // Placing the last file returns to the previous tool.
         t.pointer(&c, &ev(PointerKind::Down, 0.0, 0.0));
         let acts = t.pointer(&c, &ev(PointerKind::Up, 0.0, 0.0));
         assert_eq!(acts.last(), Some(&Action::SwitchTool("pen".into())));
-        assert!(!t.claims_key(&c, ToolKey::Escape), "an empty cursor takes no keys");
+        assert!(
+            !t.claims_key(&c, ToolKey::Escape),
+            "an empty cursor takes no keys"
+        );
     }
 
     #[test]
@@ -240,6 +281,9 @@ mod tests {
         assert!(t.key(&c, ToolKey::Escape, Mods::default()).is_empty());
         assert_eq!(t.options()["names"], json!(["f1.png", "f2.png"]));
         t.key(&c, ToolKey::Escape, Mods::default());
-        assert_eq!(t.key(&c, ToolKey::Escape, Mods::default()), vec![Action::SwitchTool("pen".into())]);
+        assert_eq!(
+            t.key(&c, ToolKey::Escape, Mods::default()),
+            vec![Action::SwitchTool("pen".into())]
+        );
     }
 }

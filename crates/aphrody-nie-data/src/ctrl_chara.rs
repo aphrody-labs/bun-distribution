@@ -77,5 +77,7 @@ pub fn parse_all_ctrl_chara(root: &Value) -> Vec<CtrlCharaData> {
 /// (port de `isControllable`).
 #[must_use]
 pub fn is_controllable(characters: &[CtrlCharaData], chara_param_id: HashId) -> bool {
-    characters.iter().any(|c| c.chara_param_id == chara_param_id)
+    characters
+        .iter()
+        .any(|c| c.chara_param_id == chara_param_id)
 }

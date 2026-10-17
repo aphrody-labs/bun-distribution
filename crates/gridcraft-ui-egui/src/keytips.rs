@@ -40,7 +40,11 @@ impl KeyTips {
     }
 
     fn toggle(&mut self) {
-        self.prefix = if self.prefix.is_some() { None } else { Some(String::new()) };
+        self.prefix = if self.prefix.is_some() {
+            None
+        } else {
+            Some(String::new())
+        };
         self.alt_armed = false;
     }
 
@@ -58,7 +62,10 @@ impl KeyTips {
         for (index, event) in events.iter().enumerate() {
             let mut handled = false;
             match event {
-                Event::PointerButton { pressed: true, .. } | Event::MouseWheel { .. } | Event::WindowFocused(false) | Event::Ime(_) => self.clear(),
+                Event::PointerButton { pressed: true, .. }
+                | Event::MouseWheel { .. }
+                | Event::WindowFocused(false)
+                | Event::Ime(_) => self.clear(),
                 Event::Copy | Event::Cut | Event::Paste(_) => self.clear(),
                 Event::ModifiersChanged(m) => {
                     if command_modifier(*m) || (mac && m.alt) {
@@ -67,7 +74,13 @@ impl KeyTips {
                         self.alt_armed = false;
                     }
                 }
-                Event::Key { key: Key::AltLeft, pressed, repeat, modifiers, .. } if !mac && !command_modifier(*modifiers) && !modifiers.shift => {
+                Event::Key {
+                    key: Key::AltLeft,
+                    pressed,
+                    repeat,
+                    modifiers,
+                    ..
+                } if !mac && !command_modifier(*modifiers) && !modifiers.shift => {
                     if *pressed {
                         if !repeat {
                             self.alt_armed = true;
@@ -78,11 +91,25 @@ impl KeyTips {
                         handled = true;
                     }
                 }
-                Event::Key { key, pressed, repeat, modifiers, .. } => {
+                Event::Key {
+                    key,
+                    pressed,
+                    repeat,
+                    modifiers,
+                    ..
+                } => {
                     self.alt_armed = false;
                     if command_modifier(*modifiers)
                         || modifiers.alt
-                        || matches!(key, Key::AltLeft | Key::AltRight | Key::ControlLeft | Key::ControlRight | Key::SuperLeft | Key::SuperRight)
+                        || matches!(
+                            key,
+                            Key::AltLeft
+                                | Key::AltRight
+                                | Key::ControlLeft
+                                | Key::ControlRight
+                                | Key::SuperLeft
+                                | Key::SuperRight
+                        )
                     {
                         self.clear();
                     } else if !pressed {
@@ -93,7 +120,9 @@ impl KeyTips {
                     } else if *key == Key::F10 && modifiers.is_none() {
                         self.toggle();
                         handled = true;
-                    } else if self.prefix.is_some() && !matches!(key, Key::ShiftLeft | Key::ShiftRight) {
+                    } else if self.prefix.is_some()
+                        && !matches!(key, Key::ShiftLeft | Key::ShiftRight)
+                    {
                         handled = true;
                         if *key == Key::Escape {
                             // Escape pops one level; at a single-letter level it
@@ -106,7 +135,11 @@ impl KeyTips {
                                 }
                             }
                         } else if key.name().len() == 1 {
-                            let next = format!("{}{key_name}", self.prefix.as_deref().unwrap_or_default(), key_name = key.name());
+                            let next = format!(
+                                "{}{key_name}",
+                                self.prefix.as_deref().unwrap_or_default(),
+                                key_name = key.name()
+                            );
                             match keytip_table::lookup(&next) {
                                 Some(keytip_table::Entry::Tab(tab)) => {
                                     // A tab with deeper sequences stays as an active level
@@ -116,7 +149,9 @@ impl KeyTips {
                                     actions.push(Action::Tab(tab));
                                 }
                                 Some(keytip_table::Entry::Continue) => self.prefix = Some(next),
-                                Some(keytip_table::Entry::Finish(action)) => self.finish(action, &mut actions),
+                                Some(keytip_table::Entry::Finish(action)) => {
+                                    self.finish(action, &mut actions)
+                                }
                                 // No complete sequence, but deeper ones start here: wait for
                                 // more input (Excel's two-letter units like Draw's "JI").
                                 None if keytip_table::has_deeper(&next) => self.prefix = Some(next),
@@ -133,7 +168,8 @@ impl KeyTips {
                 Event::Text(_) => {
                     self.alt_armed = false;
                     // Paired text is decided with its key, which may occur later on web.
-                    handled = self.prefix.is_some() && !pairs.iter().any(|(_, text)| *text == index);
+                    handled =
+                        self.prefix.is_some() && !pairs.iter().any(|(_, text)| *text == index);
                 }
                 _ => {}
             }
@@ -145,7 +181,11 @@ impl KeyTips {
             }
         }
         ctx.input_mut(|i| {
-            i.events = events.into_iter().enumerate().filter_map(|(index, event)| (!consumed.contains(&index)).then_some(event)).collect()
+            i.events = events
+                .into_iter()
+                .enumerate()
+                .filter_map(|(index, event)| (!consumed.contains(&index)).then_some(event))
+                .collect()
         });
         actions
     }
@@ -165,10 +205,24 @@ fn text_pairs(events: &[Event]) -> Vec<(usize, usize)> {
     let mut pairs = Vec::new();
     for (text_index, event) in events.iter().enumerate() {
         let Event::Text(_) = event else { continue };
-        let before = events.iter().enumerate().take(text_index).rev().find(|(_, e)| !matches!(e, Event::ModifiersChanged(_)));
-        let after = events.iter().enumerate().skip(text_index + 1).find(|(_, e)| !matches!(e, Event::ModifiersChanged(_)));
+        let before = events
+            .iter()
+            .enumerate()
+            .take(text_index)
+            .rev()
+            .find(|(_, e)| !matches!(e, Event::ModifiersChanged(_)));
+        let after = events
+            .iter()
+            .enumerate()
+            .skip(text_index + 1)
+            .find(|(_, e)| !matches!(e, Event::ModifiersChanged(_)));
         for (key_index, event) in before.into_iter().chain(after) {
-            if let Event::Key { key, pressed: true, modifiers, .. } = event
+            if let Event::Key {
+                key,
+                pressed: true,
+                modifiers,
+                ..
+            } = event
                 && (key.name().len() == 1 || modifiers.alt || command_modifier(*modifiers))
                 && !pairs.iter().any(|(paired, _)| *paired == key_index)
             {
@@ -185,26 +239,46 @@ mod tests {
     use super::*;
 
     fn key(key: Key, pressed: bool, modifiers: Modifiers) -> Event {
-        Event::Key { key, physical_key: None, pressed, repeat: false, modifiers }
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        }
     }
 
     #[test]
     fn active_mode_preserves_modified_text_before_key() {
         for (os, letter, text, modifiers) in [
-            (OperatingSystem::Windows, Key::E, "€", Modifiers::CTRL | Modifiers::ALT),
+            (
+                OperatingSystem::Windows,
+                Key::E,
+                "€",
+                Modifiers::CTRL | Modifiers::ALT,
+            ),
             (OperatingSystem::Nix, Key::E, "€", Modifiers::ALT),
             (OperatingSystem::Mac, Key::O, "œ", Modifiers::ALT),
             (OperatingSystem::Mac, Key::C, "c", Modifiers::COMMAND),
         ] {
             let ctx = Context::default();
             ctx.set_os(os);
-            let mut tips = KeyTips { prefix: Some("H".into()), ..Default::default() };
+            let mut tips = KeyTips {
+                prefix: Some("H".into()),
+                ..Default::default()
+            };
             let events = vec![Event::Text(text.into()), key(letter, true, modifiers)];
             let mut remaining = Vec::new();
-            let mut output = ctx.run_ui(egui::RawInput { events: events.clone(), ..Default::default() }, |ui| {
-                assert!(tips.process(ui.ctx(), true).is_empty());
-                remaining = ui.input(|i| i.events.clone());
-            });
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    events: events.clone(),
+                    ..Default::default()
+                },
+                |ui| {
+                    assert!(tips.process(ui.ctx(), true).is_empty());
+                    remaining = ui.input(|i| i.events.clone());
+                },
+            );
             output.textures_delta.clear();
             assert_eq!(tips.prefix(), None);
             assert_eq!(remaining, events);
@@ -216,11 +290,20 @@ mod tests {
         let ctx = Context::default();
         ctx.set_os(OperatingSystem::Windows);
         let mut tips = KeyTips::default();
-        let events =
-            vec![key(Key::AltLeft, true, Modifiers::ALT), key(Key::ShiftLeft, true, Modifiers::NONE), key(Key::AltLeft, false, Modifiers::NONE)];
-        let mut output = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| {
-            assert!(tips.process(ui.ctx(), true).is_empty());
-        });
+        let events = vec![
+            key(Key::AltLeft, true, Modifiers::ALT),
+            key(Key::ShiftLeft, true, Modifiers::NONE),
+            key(Key::AltLeft, false, Modifiers::NONE),
+        ];
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                events,
+                ..Default::default()
+            },
+            |ui| {
+                assert!(tips.process(ui.ctx(), true).is_empty());
+            },
+        );
         output.textures_delta.clear();
         assert_eq!(tips.prefix(), None);
     }

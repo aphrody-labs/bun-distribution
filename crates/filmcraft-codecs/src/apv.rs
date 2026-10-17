@@ -8,7 +8,9 @@ use std::sync::Arc;
 
 use filmcraft_color::{ColorInfo, Matrix, Range, Transfer};
 use filmcraft_frame::{AudioBuffer, VideoFrame};
-use filmcraft_media::{FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, SharedSource, VideoStreamInfo};
+use filmcraft_media::{
+    FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, SharedSource, VideoStreamInfo,
+};
 use filmcraft_time::{FrameRate, Tick};
 
 use crate::CodecError;
@@ -18,7 +20,10 @@ use crate::video::{ApvDecoder, VideoDecoder, primaries_from_code};
 /// Sniff a raw APV bitstream: either a `raw_bitstream_access_unit()` (`[au_size: u32]['aPv1']`) or
 /// an unprefixed `access_unit()` starting with `'aPv1'`.
 pub fn sniff(head: &[u8]) -> bool {
-    (head.len() >= 8 && &head[4..8] == b"aPv1" && u32::from_be_bytes([head[0], head[1], head[2], head[3]]) >= 8) || head.starts_with(b"aPv1")
+    (head.len() >= 8
+        && &head[4..8] == b"aPv1"
+        && u32::from_be_bytes([head[0], head[1], head[2], head[3]]) >= 8)
+        || head.starts_with(b"aPv1")
 }
 
 pub struct ApvSource {
@@ -70,9 +75,13 @@ impl ApvSource {
         let Some(&(off0, sz0)) = samples.first() else {
             return Err(CodecError::Container("APV: no valid access units".into()));
         };
-        let first = filmcraft_media::reader::read_range(&*reader, off0, sz0 as usize).map_err(|e| CodecError::Container(e.to_string()))?;
+        let first = filmcraft_media::reader::read_range(&*reader, off0, sz0 as usize)
+            .map_err(|e| CodecError::Container(e.to_string()))?;
         let fh = filmcraft_apv::probe(&first).map_err(|e| CodecError::Decode(e.to_string()))?;
-        let mut color = ColorInfo { matrix: filmcraft_frame::default_matrix(fh.width, fh.height), ..ColorInfo::REC709 };
+        let mut color = ColorInfo {
+            matrix: filmcraft_frame::default_matrix(fh.width, fh.height),
+            ..ColorInfo::REC709
+        };
         let mut explicit_color = None;
         if fh.color_description_present {
             if let Some(m) = Matrix::from_code(fh.color.matrix) {
@@ -119,7 +128,13 @@ impl ApvSource {
             start_timecode: None,
             file_size: Some(len),
         };
-        Ok(Self { info, bytes: crate::Src(reader), samples, rate, video: GopCache::new(explicit_color) })
+        Ok(Self {
+            info,
+            bytes: crate::Src(reader),
+            samples,
+            rate,
+            video: GopCache::new(explicit_color),
+        })
     }
 }
 
@@ -139,8 +154,14 @@ impl VideoSamples for ApvVideo<'_> {
         (!self.0.samples.is_empty()).then(|| t.clamp(0, self.0.samples.len() as i64 - 1) as usize)
     }
     fn read(&self, i: usize) -> crate::Result<Vec<u8>> {
-        let (off, sz) = self.0.samples.get(i).copied().ok_or_else(|| CodecError::Container("sample index out of range".into()))?;
-        filmcraft_media::reader::read_range(&*self.0.bytes.0, off, sz as usize).map_err(|e| CodecError::Container(e.to_string()))
+        let (off, sz) = self
+            .0
+            .samples
+            .get(i)
+            .copied()
+            .ok_or_else(|| CodecError::Container("sample index out of range".into()))?;
+        filmcraft_media::reader::read_range(&*self.0.bytes.0, off, sz as usize)
+            .map_err(|e| CodecError::Container(e.to_string()))
     }
     fn make_decoder(&self) -> crate::Result<Box<dyn VideoDecoder>> {
         Ok(Box::new(ApvDecoder))
@@ -157,7 +178,12 @@ impl MediaSource for ApvSource {
         Ok(self.video.frame(&ApvVideo(self), frame_idx)?)
     }
 
-    fn audio(&self, _start: i64, _frames: usize, _sample_rate: u32) -> Result<AudioBuffer, MediaError> {
+    fn audio(
+        &self,
+        _start: i64,
+        _frames: usize,
+        _sample_rate: u32,
+    ) -> Result<AudioBuffer, MediaError> {
         Err(MediaError::NoStream("audio"))
     }
 }
@@ -166,12 +192,24 @@ pub fn opener(name: &str, bytes: Arc<[u8]>) -> Option<Result<SharedSource, Media
     if !sniff(&bytes) {
         return None;
     }
-    Some(ApvSource::open(name, bytes).map(|s| Arc::new(s) as SharedSource).map_err(Into::into))
+    Some(
+        ApvSource::open(name, bytes)
+            .map(|s| Arc::new(s) as SharedSource)
+            .map_err(Into::into),
+    )
 }
 
-pub fn reader_opener(name: &str, head: &[u8], reader: &filmcraft_media::SharedReader) -> Option<Result<SharedSource, MediaError>> {
+pub fn reader_opener(
+    name: &str,
+    head: &[u8],
+    reader: &filmcraft_media::SharedReader,
+) -> Option<Result<SharedSource, MediaError>> {
     if !sniff(head) {
         return None;
     }
-    Some(ApvSource::open_reader(name, reader.clone()).map(|s| Arc::new(s) as SharedSource).map_err(Into::into))
+    Some(
+        ApvSource::open_reader(name, reader.clone())
+            .map(|s| Arc::new(s) as SharedSource)
+            .map_err(Into::into),
+    )
 }

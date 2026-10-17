@@ -3271,7 +3271,10 @@ mod tests {
     fn registered_device_commands_return_a_64_bit_empty_count() {
         let settings = Arc::new(HidFirmwareSettings::new());
         let hid = Arc::new(parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new()));
-        let manager = Arc::new(parking_lot::Mutex::new(ResourceManager::new(settings.clone(), hid)));
+        let manager = Arc::new(parking_lot::Mutex::new(ResourceManager::new(
+            settings.clone(),
+            hid,
+        )));
         let service = IHidSystemServer::new(manager, settings);
         for command in [548, 551] {
             let mut ctx = HLERequestContext::new();
@@ -3280,7 +3283,10 @@ mod tests {
             assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());
             assert_eq!(&ctx.cmd_buf[8..10], &[0, 0]);
         }
-        assert_eq!(service.handlers[&551].name, "GetRegisteredDevicesForControllerSupport");
+        assert_eq!(
+            service.handlers[&551].name,
+            "GetRegisteredDevicesForControllerSupport"
+        );
     }
 
     #[test]
@@ -3291,17 +3297,25 @@ mod tests {
         use crate::hle::service::hle_ipc::KAutoObjectRef;
         let settings = Arc::new(HidFirmwareSettings::new());
         let hid = Arc::new(parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new()));
-        let manager = Arc::new(parking_lot::Mutex::new(ResourceManager::new(settings.clone(), hid)));
+        let manager = Arc::new(parking_lot::Mutex::new(ResourceManager::new(
+            settings.clone(),
+            hid,
+        )));
         let service = IHidSystemServer::new(manager, settings);
         let process = Arc::new(ProcessLock::from_value(KProcess::new()));
         let readable = Arc::new(std::sync::Mutex::new(KReadableEvent::new()));
         readable.lock().unwrap().initialize(1, 2);
-        service.joy_detach_event.attach_kernel_event(readable.clone(), process.clone());
+        service
+            .joy_detach_event
+            .attach_kernel_event(readable.clone(), process.clone());
         let thread = Arc::new(KThreadLock::new(KThread::new()));
         thread.lock().unwrap().parent = Some(Arc::downgrade(&process));
         let mut ctx = HLERequestContext::new_with_thread(thread, 0);
         service.handlers[&751].handler_callback.unwrap()(&service, &mut ctx);
-        assert!(matches!(ctx.outgoing_copy_objects.as_slice(), [KAutoObjectRef::ObjectId(2)]));
+        assert!(matches!(
+            ctx.outgoing_copy_objects.as_slice(),
+            [KAutoObjectRef::ObjectId(2)]
+        ));
         assert!(!readable.lock().unwrap().is_signaled());
     }
 

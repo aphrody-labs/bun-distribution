@@ -44,7 +44,11 @@ fn attached_backend_forwards_everything() {
     let backend = Attached::port(port).unwrap();
     assert!(backend.describe().contains(&port.to_string()));
     let mut s = Server::new(Box::new(backend));
-    let r = call(&mut s, "create_node", json!({"type": "frame", "width": 64, "height": 32, "props": {"fill": "#FF0000"}}));
+    let r = call(
+        &mut s,
+        "create_node",
+        json!({"type": "frame", "width": 64, "height": 32, "props": {"fill": "#FF0000"}}),
+    );
     assert_eq!(r["isError"], false, "{r}");
     let created: Value = serde_json::from_str(r["content"][0]["text"].as_str().unwrap()).unwrap();
     let id = created["id"].clone();
@@ -60,13 +64,22 @@ fn attached_backend_forwards_everything() {
     assert_eq!(e["content"][0]["mimeType"], "image/png");
     assert!(call(&mut s, "key", json!({"key": "Delete"}))["isError"] == false);
     let doc = call(&mut s, "inspect_document", json!({}));
-    assert!(!doc["content"][0]["text"].as_str().unwrap().contains("\"Frame"));
+    assert!(
+        !doc["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("\"Frame")
+    );
     let err = call(&mut s, "run_command", json!({"command": "nope"}));
     assert_eq!(err["isError"], true);
 }
 
 #[test]
 fn attached_to_nothing_fails_cleanly() {
-    let port = TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port();
+    let port = TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
     assert!(Attached::port(port).is_err());
 }

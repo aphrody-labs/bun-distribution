@@ -2764,7 +2764,8 @@ impl KPageTableBase {
         let Some(impl_pt) = self.m_impl.as_ref() else {
             return Err(svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value());
         };
-        let Some((first_entry, mut traversal_context)) = self.begin_traversal(impl_pt, address as u64)
+        let Some((first_entry, mut traversal_context)) =
+            self.begin_traversal(impl_pt, address as u64)
         else {
             return Err(svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value());
         };
@@ -5008,7 +5009,8 @@ impl KPageTableBase {
         let Some(impl_pt) = self.m_impl.as_ref() else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((first_entry, mut traversal_context)) = self.begin_traversal(impl_pt, src_addr as u64)
+        let Some((first_entry, mut traversal_context)) =
+            self.begin_traversal(impl_pt, src_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
@@ -5127,7 +5129,8 @@ impl KPageTableBase {
         let Some(impl_pt) = self.m_impl.as_ref() else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((first_entry, mut traversal_context)) = self.begin_traversal(impl_pt, dst_addr as u64)
+        let Some((first_entry, mut traversal_context)) =
+            self.begin_traversal(impl_pt, dst_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
@@ -5261,7 +5264,8 @@ impl KPageTableBase {
         let Some(impl_pt) = self.m_impl.as_ref() else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((first_entry, mut traversal_context)) = self.begin_traversal(impl_pt, src_addr as u64)
+        let Some((first_entry, mut traversal_context)) =
+            self.begin_traversal(impl_pt, src_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
@@ -5379,7 +5383,8 @@ impl KPageTableBase {
         let Some(memory) = self.m_memory.as_ref() else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((first_entry, mut traversal_context)) = self.begin_traversal(impl_pt, src_addr as u64)
+        let Some((first_entry, mut traversal_context)) =
+            self.begin_traversal(impl_pt, src_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
@@ -5471,7 +5476,8 @@ impl KPageTableBase {
         let Some(impl_pt) = self.m_impl.as_ref() else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((first_entry, mut traversal_context)) = self.begin_traversal(impl_pt, dst_addr as u64)
+        let Some((first_entry, mut traversal_context)) =
+            self.begin_traversal(impl_pt, dst_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
@@ -5590,7 +5596,8 @@ impl KPageTableBase {
         let Some(impl_pt) = self.m_impl.as_ref() else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((first_entry, mut traversal_context)) = self.begin_traversal(impl_pt, dst_addr as u64)
+        let Some((first_entry, mut traversal_context)) =
+            self.begin_traversal(impl_pt, dst_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
@@ -5784,11 +5791,13 @@ impl KPageTableBase {
         let Some(dst_impl) = dst_table.m_impl.as_ref() else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((mut src_entry, mut src_context)) = self.begin_traversal(src_impl, src_addr as u64)
+        let Some((mut src_entry, mut src_context)) =
+            self.begin_traversal(src_impl, src_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
-        let Some((mut dst_entry, mut dst_context)) = self.begin_traversal(dst_impl, dst_addr as u64)
+        let Some((mut dst_entry, mut dst_context)) =
+            self.begin_traversal(dst_impl, dst_addr as u64)
         else {
             return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
         };
@@ -5822,7 +5831,8 @@ impl KPageTableBase {
 
             if offset + cur_copy_size != size {
                 if cur_src_addr + cur_min_size as u64 == cur_src_block_addr + cur_src_size as u64 {
-                    let Some(next_entry) = self.continue_traversal(src_impl, &mut src_context) else {
+                    let Some(next_entry) = self.continue_traversal(src_impl, &mut src_context)
+                    else {
                         return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
                     };
                     updated_src = cur_src_addr + cur_min_size as u64 != next_entry.phys_addr;
@@ -5832,7 +5842,8 @@ impl KPageTableBase {
                 if cur_dst_addr + cur_min_size as u64
                     == dst_entry.phys_addr + dst_entry.block_size as u64
                 {
-                    let Some(next_entry) = self.continue_traversal(dst_impl, &mut dst_context) else {
+                    let Some(next_entry) = self.continue_traversal(dst_impl, &mut dst_context)
+                    else {
                         return svc_results::RESULT_INVALID_CURRENT_MEMORY.get_inner_value();
                     };
                     updated_dst = cur_dst_addr + cur_min_size as u64 != next_entry.phys_addr;
@@ -6544,7 +6555,8 @@ impl KPageTableBase {
             let mut next_src_addr = mapping_src_start + PAGE_SIZE;
 
             while next_src_addr < mapping_src_end {
-                let Some(next_entry) = self.continue_traversal(src_impl, &mut traversal_context) else {
+                let Some(next_entry) = self.continue_traversal(src_impl, &mut traversal_context)
+                else {
                     rollback_ipc_server_mapping(
                         self,
                         Some(updater.page_list()),

@@ -31,19 +31,31 @@ impl Default for Headless {
 /// Commands the desktop app adds on top of the engine; the headless backend implements them too so
 /// `run_command` behaves the same in both modes.
 const HOST_COMMANDS: &[(&str, &str, &str)] = &[
-    ("file.open", "Open…", "{path} open any readable file (see document.formats) as a new document; templates open untitled"),
+    (
+        "file.open",
+        "Open…",
+        "{path} open any readable file (see document.formats) as a new document; templates open untitled",
+    ),
     (
         "file.save",
         "Save",
         "{…as document.save} = document.save {path?, format?, options?, svg?: {…SVG options}}: .vectorcraft, .ai (a PDF that reopens editable), .pdf, .svg or .svgz (default: the document's own path and format)",
     ),
-    ("file.export", "Export…", "{…as document.export} = document.export {path?, format?, artboard?, range?, scale?, …} (no path → dataBase64)"),
+    (
+        "file.export",
+        "Export…",
+        "{…as document.export} = document.export {path?, format?, artboard?, range?, scale?, …} (no path → dataBase64)",
+    ),
     (
         "file.exportForScreens",
         "Export for Screens…",
         "{folder?, zip?, artboards? | range? | fullDocument? | assets?, includeBleed?, subfolders?, preset?, formats?, settings?, prefix?} = document.exportForScreens (no folder → the files, or one zip, as dataBase64)",
     ),
-    ("tool.select", "Select Tool", "{tool} e.g. selection, directSelection, pen, rectangle, ellipse, polygon, star, lineSegment"),
+    (
+        "tool.select",
+        "Select Tool",
+        "{tool} e.g. selection, directSelection, pen, rectangle, ellipse, polygon, star, lineSegment",
+    ),
     (
         "tool.setOption",
         "Tool Option",
@@ -87,7 +99,9 @@ fn tool_key(name: &str) -> Option<ToolKey> {
 /// Does a shortcut like `Cmd+Shift+]` match `key` + `mods`?
 fn shortcut_matches(shortcut: &str, key: &str, mods: Mods) -> bool {
     let parts: Vec<&str> = shortcut.split('+').collect();
-    let Some((k, ms)) = parts.split_last() else { return false };
+    let Some((k, ms)) = parts.split_last() else {
+        return false;
+    };
     let has = |m: &str| ms.iter().any(|x| x.eq_ignore_ascii_case(m));
     k.eq_ignore_ascii_case(key)
         && has("cmd") == mods.cmd
@@ -99,7 +113,12 @@ fn shortcut_matches(shortcut: &str, key: &str, mods: Mods) -> bool {
 impl Headless {
     /// A session with no document (the first `file.new` / `app.open` creates one).
     pub fn new() -> Self {
-        Self { session: Session::new(), renderer: Renderer::new(), view: ViewInfo::default(), roots: None }
+        Self {
+            session: Session::new(),
+            renderer: Renderer::new(),
+            view: ViewInfo::default(),
+            roots: None,
+        }
     }
 
     /// Confine the files every method reads and writes to `roots` ([`file_access`]).
@@ -135,7 +154,10 @@ impl Headless {
             "file.open" => self.open(params),
             "file.save" => self.save(params),
             "file.export" => self.export(params),
-            "file.exportForScreens" => self.session.execute("document.exportForScreens", params).map_err(|e| e.to_string()),
+            "file.exportForScreens" => self
+                .session
+                .execute("document.exportForScreens", params)
+                .map_err(|e| e.to_string()),
             "tool.select" => self.select_tool(params),
             "tool.setOption" => self.session.set_tool_option_cmd(params),
             _ => self.session.execute(id, params).map_err(|e| e.to_string()),
@@ -143,7 +165,12 @@ impl Headless {
     }
 
     fn commands(&self) -> Value {
-        let mut v: Vec<Value> = self.session.commands().into_iter().map(|c| serde_json::to_value(c).unwrap_or_default()).collect();
+        let mut v: Vec<Value> = self
+            .session
+            .commands()
+            .into_iter()
+            .map(|c| serde_json::to_value(c).unwrap_or_default())
+            .collect();
         for (id, label, params) in HOST_COMMANDS {
             v.push(json!({"id": id, "label": label, "menu": [], "shortcut": null, "params": params, "enabled": true, "host": true}));
         }
@@ -155,15 +182,23 @@ impl Headless {
         if vectorcraft_tools::tool_info(t).is_none() {
             return Err(format!("unknown tool `{t}` (see ui.tool.list)"));
         }
-        self.session.select_tool(t, self.view).map_err(|e| e.to_string())?;
+        self.session
+            .select_tool(t, self.view)
+            .map_err(|e| e.to_string())?;
         Ok(json!({"tool": self.session.tool_id()}))
     }
 
-    fn apply_ui_requests(&mut self, reqs: Vec<UiRequest>, out: &mut Vec<Value>) -> Result<(), String> {
+    fn apply_ui_requests(
+        &mut self,
+        reqs: Vec<UiRequest>,
+        out: &mut Vec<Value>,
+    ) -> Result<(), String> {
         for r in reqs {
             match r {
                 UiRequest::SwitchTool(t) => {
-                    self.session.select_tool(&t, self.view).map_err(|e| e.to_string())?;
+                    self.session
+                        .select_tool(&t, self.view)
+                        .map_err(|e| e.to_string())?;
                 }
                 UiRequest::Dialog(k, p) => out.push(json!({"dialog": k, "params": p})),
                 UiRequest::Status(msg) => out.push(json!({"status": msg})),
@@ -173,37 +208,84 @@ impl Headless {
     }
 
     fn pointer(&mut self, p: &Value) -> Result<Value, String> {
-        let events = p.get("events").and_then(Value::as_array).ok_or("missing `events`")?;
-        let base: Mods = p.get("mods").and_then(|m| serde_json::from_value(m.clone()).ok()).unwrap_or_default();
+        let events = p
+            .get("events")
+            .and_then(Value::as_array)
+            .ok_or("missing `events`")?;
+        let base: Mods = p
+            .get("mods")
+            .and_then(|m| serde_json::from_value(m.clone()).ok())
+            .unwrap_or_default();
         self.ensure_document();
         let mut requests = vec![];
         for e in events {
             let kind = s(e, "kind").unwrap_or("");
-            let kind = pointer_kind(kind).ok_or_else(|| format!("unknown pointer kind `{kind}` (down|drag|up|move|doubleclick)"))?;
+            let kind = pointer_kind(kind).ok_or_else(|| {
+                format!("unknown pointer kind `{kind}` (down|drag|up|move|doubleclick)")
+            })?;
             if s(e, "space") == Some("screen") {
-                return Err("screen-space pointer events need the desktop app; use document coordinates".into());
+                return Err(
+                    "screen-space pointer events need the desktop app; use document coordinates"
+                        .into(),
+                );
             }
-            let x = e.get("x").and_then(Value::as_f64).ok_or("pointer event needs numeric `x`")?;
-            let y = e.get("y").and_then(Value::as_f64).ok_or("pointer event needs numeric `y`")?;
-            let mods = e.get("mods").and_then(|m| serde_json::from_value(m.clone()).ok()).unwrap_or(base);
-            let ev = PointerEvent { kind, pos: Point::new(x, y), mods, pressure: PointerEvent::json_pressure(e) };
-            let reqs = self.session.pointer(&ev, self.view).map_err(|e| e.to_string())?;
+            let x = e
+                .get("x")
+                .and_then(Value::as_f64)
+                .ok_or("pointer event needs numeric `x`")?;
+            let y = e
+                .get("y")
+                .and_then(Value::as_f64)
+                .ok_or("pointer event needs numeric `y`")?;
+            let mods = e
+                .get("mods")
+                .and_then(|m| serde_json::from_value(m.clone()).ok())
+                .unwrap_or(base);
+            let ev = PointerEvent {
+                kind,
+                pos: Point::new(x, y),
+                mods,
+                pressure: PointerEvent::json_pressure(e),
+            };
+            let reqs = self
+                .session
+                .pointer(&ev, self.view)
+                .map_err(|e| e.to_string())?;
             self.apply_ui_requests(reqs, &mut requests)?;
             let hold = PointerEvent::json_hold(e);
             if hold > 0.0 {
-                let reqs = self.session.tool_tick(hold, self.view).map_err(|e| e.to_string())?;
+                let reqs = self
+                    .session
+                    .tool_tick(hold, self.view)
+                    .map_err(|e| e.to_string())?;
                 self.apply_ui_requests(reqs, &mut requests)?;
             }
         }
-        let sel = self.session.active().map(|d| d.selection.objects.iter().map(|i| i.0).collect::<Vec<_>>()).unwrap_or_default();
-        let key = self.session.active().and_then(|d| d.selection.key).map(|k| k.0);
-        Ok(json!({"selection": sel, "key": key, "tool": self.session.tool_id(), "requests": requests}))
+        let sel = self
+            .session
+            .active()
+            .map(|d| d.selection.objects.iter().map(|i| i.0).collect::<Vec<_>>())
+            .unwrap_or_default();
+        let key = self
+            .session
+            .active()
+            .and_then(|d| d.selection.key)
+            .map(|k| k.0);
+        Ok(
+            json!({"selection": sel, "key": key, "tool": self.session.tool_id(), "requests": requests}),
+        )
     }
 
     fn key(&mut self, p: &Value) -> Result<Value, String> {
         let key = s(p, "key").ok_or("missing `key`")?;
         let b = |n: &str| p.get(n).and_then(Value::as_bool).unwrap_or(false);
-        let mods = Mods { shift: b("shift"), alt: b("alt"), cmd: b("cmd"), ctrl: b("ctrl"), ..Mods::default() };
+        let mods = Mods {
+            shift: b("shift"),
+            alt: b("alt"),
+            cmd: b("cmd"),
+            ctrl: b("ctrl"),
+            ..Mods::default()
+        };
         let tk = tool_key(key);
         // A busy tool (pen path in progress, shape being dragged) gets its keys first, as do keys
         // the tool claims (the Gradient tool's selected stop takes Delete and the arrows).
@@ -211,26 +293,47 @@ impl Headless {
             && (self.session.tool_busy() || self.session.tool_claims_key(k, self.view))
         {
             let mut out = vec![];
-            let reqs = self.session.tool_key(k, mods, self.view).map_err(|e| e.to_string())?;
+            let reqs = self
+                .session
+                .tool_key(k, mods, self.view)
+                .map_err(|e| e.to_string())?;
             self.apply_ui_requests(reqs, &mut out)?;
             return Ok(json!({"handledBy": "tool", "requests": out}));
         }
-        if let Some(c) = vectorcraft_engine::command_specs().iter().find(|c| c.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods))) {
+        if let Some(c) = vectorcraft_engine::command_specs()
+            .iter()
+            .find(|c| c.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods)))
+        {
             let r = self.exec(c.id, &json!({}))?;
             return Ok(json!({"handledBy": "command", "command": c.id, "result": r}));
         }
-        if let Some(t) = TOOL_GROUPS.iter().flat_map(|g| g.iter()).find(|t| t.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods))) {
-            self.session.select_tool(t.id, self.view).map_err(|e| e.to_string())?;
+        if let Some(t) = TOOL_GROUPS
+            .iter()
+            .flat_map(|g| g.iter())
+            .find(|t| t.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods)))
+        {
+            self.session
+                .select_tool(t.id, self.view)
+                .map_err(|e| e.to_string())?;
             return Ok(json!({"handledBy": "tool.select", "tool": t.id}));
         }
         // Backspace clears the selection as Delete does (as in the desktop app).
-        if tk == Some(ToolKey::Backspace) && mods == Mods::default() && self.session.active().is_some_and(|d| !d.selection.is_empty()) {
+        if tk == Some(ToolKey::Backspace)
+            && mods == Mods::default()
+            && self
+                .session
+                .active()
+                .is_some_and(|d| !d.selection.is_empty())
+        {
             let r = self.exec("edit.clear", &json!({}))?;
             return Ok(json!({"handledBy": "command", "command": "edit.clear", "result": r}));
         }
         if let Some(k) = tk {
             let mut out = vec![];
-            let reqs = self.session.tool_key(k, mods, self.view).map_err(|e| e.to_string())?;
+            let reqs = self
+                .session
+                .tool_key(k, mods, self.view)
+                .map_err(|e| e.to_string())?;
             self.apply_ui_requests(reqs, &mut out)?;
             return Ok(json!({"handledBy": "tool", "requests": out}));
         }
@@ -241,8 +344,16 @@ impl Headless {
         let st = self.session.active().ok_or("no document")?;
         let doc = st.doc.clone();
         let idx = p.get("artboard").and_then(Value::as_u64).unwrap_or(0) as usize;
-        let r = doc.artboards.get(idx).map(|a| a.rect).ok_or("no such artboard")?;
-        let scale = p.get("scale").and_then(Value::as_f64).unwrap_or(1.0).clamp(0.01, 16.0);
+        let r = doc
+            .artboards
+            .get(idx)
+            .map(|a| a.rect)
+            .ok_or("no such artboard")?;
+        let scale = p
+            .get("scale")
+            .and_then(Value::as_f64)
+            .unwrap_or(1.0)
+            .clamp(0.01, 16.0);
         vectorcraft_render::raster_size(r, scale)?;
         let img = self.renderer.render_region(&doc, r, scale, true);
         let png = img.to_png()?;
@@ -250,7 +361,8 @@ impl Headless {
         match s(p, "path") {
             Some(path) => {
                 file_access::check_write(path)?;
-                vectorcraft_format::write_atomic(std::path::Path::new(path), &png).map_err(|e| format!("write {path}: {e}"))?;
+                vectorcraft_format::write_atomic(std::path::Path::new(path), &png)
+                    .map_err(|e| format!("write {path}: {e}"))?;
                 out["path"] = json!(path);
                 // `data: true` asks for the image as well as the file.
                 if p.get("data").and_then(Value::as_bool) == Some(true) {
@@ -265,7 +377,9 @@ impl Headless {
     /// `app.open {path}`: any readable file as a new active document (`document.open`).
     pub fn open(&mut self, p: &Value) -> Result<Value, String> {
         let path = s(p, "path").ok_or("missing `path`")?;
-        self.session.execute("document.open", &json!({"path": path})).map_err(|e| e.to_string())
+        self.session
+            .execute("document.open", &json!({"path": path}))
+            .map_err(|e| e.to_string())
     }
 
     /// `app.save {path?, format?, options?}`: `document.save` (by default the document's own path and
@@ -275,12 +389,16 @@ impl Headless {
         if s(p, "path").is_none() && st.path.is_none() {
             return Err("missing `path` (document was never saved)".into());
         }
-        self.session.execute("document.save", p).map_err(|e| e.to_string())
+        self.session
+            .execute("document.save", p)
+            .map_err(|e| e.to_string())
     }
 
     /// `app.export {path?, format?, …}`: `document.export` (format defaults to the path's extension).
     pub fn export(&mut self, p: &Value) -> Result<Value, String> {
-        self.session.execute("document.export", p).map_err(|e| e.to_string())
+        self.session
+            .execute("document.export", p)
+            .map_err(|e| e.to_string())
     }
 }
 
@@ -304,7 +422,10 @@ impl Headless {
     fn answer(&mut self, method: &str, p: &Value) -> Result<Value, String> {
         match method {
             "engine.execute" | "ui.menu.invoke" | "command" => {
-                let id = s(p, "command").or(s(p, "id")).ok_or("missing `command`")?.to_string();
+                let id = s(p, "command")
+                    .or(s(p, "id"))
+                    .ok_or("missing `command`")?
+                    .to_string();
                 let params = match p.get("params") {
                     None | Some(Value::Null) => json!({}),
                     Some(v) => v.clone(),
@@ -324,9 +445,9 @@ impl Headless {
             "app.save" => self.save(p),
             "app.export" => self.export(p),
             "app.quit" => Ok(Value::Null),
-            m if m.starts_with("ui.") => {
-                Err(format!("`{m}` needs the desktop app (start `vectorcraft --control 7979` and use `vectorcraft-cli mcp --connect`)"))
-            }
+            m if m.starts_with("ui.") => Err(format!(
+                "`{m}` needs the desktop app (start `vectorcraft --control 7979` and use `vectorcraft-cli mcp --connect`)"
+            )),
             other => Err(format!("unknown method `{other}`")),
         }
     }

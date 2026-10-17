@@ -169,7 +169,9 @@ pub trait Relationship: Component + Sized {
         if !Self::ALLOW_SELF_REFERENTIAL && target_entity == entity {
             warn!(
                 "{}The {}({target_entity:?}) relationship on entity {entity:?} points to itself. The invalid {} relationship has been removed.\nIf this is intended behavior self-referential relations can be enabled with the allow_self_referential attribute: #[relationship(allow_self_referential)]",
-                caller.map(|location|format!("{location}: ")).unwrap_or_default(),
+                caller
+                    .map(|location| format!("{location}: "))
+                    .unwrap_or_default(),
                 DebugName::type_name::<Self>(),
                 DebugName::type_name::<Self>()
             );
@@ -206,7 +208,9 @@ pub trait Relationship: Component + Sized {
         } else {
             warn!(
                 "{}The {}({target_entity:?}) relationship on entity {entity:?} relates to an entity that does not exist. The invalid {} relationship has been removed.",
-                caller.map(|location|format!("{location}: ")).unwrap_or_default(),
+                caller
+                    .map(|location| format!("{location}: "))
+                    .unwrap_or_default(),
                 DebugName::type_name::<Self>(),
                 DebugName::type_name::<Self>()
             );
@@ -1035,13 +1039,17 @@ mod tests {
             .collect::<Vec<_>>();
 
         for &child in &children {
-            assert!(world
-                .get::<ChildOf>(child)
-                .is_some_and(|child_of| child_of.parent() == parent));
+            assert!(
+                world
+                    .get::<ChildOf>(child)
+                    .is_some_and(|child_of| child_of.parent() == parent)
+            );
         }
-        assert!(world
-            .get::<Children>(parent)
-            .is_some_and(|children| children.len() == 10));
+        assert!(
+            world
+                .get::<Children>(parent)
+                .is_some_and(|children| children.len() == 10)
+        );
     }
 
     #[test]

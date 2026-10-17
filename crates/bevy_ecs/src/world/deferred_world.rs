@@ -8,7 +8,7 @@ use crate::{
     component::{ComponentId, Mutable},
     entity::Entity,
     event::{EntityComponentsTrigger, Event, EventKey, Trigger},
-    lifecycle::{DiscardEvent, HookContext, InsertEvent, DISCARD, INSERT},
+    lifecycle::{DISCARD, DiscardEvent, HookContext, INSERT, InsertEvent},
     message::{Message, MessageId, Messages, WriteBatchIds},
     observer::TriggerContext,
     prelude::{Component, QueryState},
@@ -16,10 +16,10 @@ use crate::{
     relationship::RelationshipHookMode,
     resource::Resource,
     system::{Commands, Query},
-    world::{error::EntityMutableFetchError, EntityFetcher, WorldEntityFetch},
+    world::{EntityFetcher, WorldEntityFetch, error::EntityMutableFetchError},
 };
 
-use super::{unsafe_world_cell::UnsafeWorldCell, Mut, World};
+use super::{Mut, World, unsafe_world_cell::UnsafeWorldCell};
 
 /// A [`World`] reference that disallows structural ECS changes.
 /// This includes initializing resources, registering components or spawning entities.

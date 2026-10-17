@@ -12,7 +12,14 @@
 //! The crate knows nothing about the COS object model. Callers pass in the values of the
 //! `/Encrypt` dictionary and the first element of the trailer `/ID`.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod aes_cbc;
 mod rc4;
@@ -35,8 +42,8 @@ pub enum CryptError {
 
 /// 32-byte padding string used by revisions 2–4 (§7.6.4.3.2, step a).
 pub const PADDING: [u8; 32] = [
-    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08, 0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-    0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
+    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
 ];
 
 /// How a crypt filter encrypts (`/CFM`).
@@ -145,7 +152,10 @@ impl SecurityHandler {
     /// tries the empty password, which opens documents that only have an owner password.
     pub fn open(dict: EncryptDict, id0: &[u8], password: Option<&str>) -> Result<Self, CryptError> {
         if !dict.filter.is_empty() && dict.filter != b"Standard" {
-            return Err(CryptError::Unsupported(format!("/Filter /{}", String::from_utf8_lossy(&dict.filter))));
+            return Err(CryptError::Unsupported(format!(
+                "/Filter /{}",
+                String::from_utf8_lossy(&dict.filter)
+            )));
         }
         let pw = password.unwrap_or("");
         let mut recovered_user = None;
@@ -177,7 +187,12 @@ impl SecurityHandler {
             }
             r => return Err(CryptError::Unsupported(format!("revision {r}"))),
         };
-        Ok(Self { dict, key, auth, recovered_user })
+        Ok(Self {
+            dict,
+            key,
+            auth,
+            recovered_user,
+        })
     }
 
     /// Upgrade to owner access with the owner (permissions) password, as when a restricted
@@ -204,7 +219,10 @@ impl SecurityHandler {
     }
 
     pub fn permissions(&self) -> Permissions {
-        Permissions { bits: self.dict.p, owner: self.auth == Auth::Owner }
+        Permissions {
+            bits: self.dict.p,
+            owner: self.auth == Auth::Owner,
+        }
     }
 
     pub fn dict(&self) -> &EncryptDict {
@@ -225,7 +243,12 @@ impl SecurityHandler {
         if name == b"Identity" || name.is_empty() {
             return Method::Identity;
         }
-        self.dict.crypt_filters.iter().find(|(n, _)| n == name).map(|(_, m)| *m).unwrap_or(Method::Identity)
+        self.dict
+            .crypt_filters
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, m)| *m)
+            .unwrap_or(Method::Identity)
     }
 
     /// The method for strings or a kind of stream.
@@ -237,7 +260,11 @@ impl SecurityHandler {
             None => self.method_named(&self.dict.str_f),
             Some(StreamKind::Normal) => self.method_named(&self.dict.stm_f),
             Some(StreamKind::EmbeddedFile) => {
-                let eff = if self.dict.ef_f.is_empty() { &self.dict.stm_f } else { &self.dict.ef_f };
+                let eff = if self.dict.ef_f.is_empty() {
+                    &self.dict.stm_f
+                } else {
+                    &self.dict.ef_f
+                };
                 self.method_named(eff)
             }
             Some(StreamKind::Named(n)) => self.method_named(n),
@@ -260,7 +287,14 @@ impl SecurityHandler {
         digest[..(self.key.len() + 5).min(16)].to_vec()
     }
 
-    fn apply(&self, method: Method, num: u32, generation: u16, data: &[u8], encrypt: bool) -> Vec<u8> {
+    fn apply(
+        &self,
+        method: Method,
+        num: u32,
+        generation: u16,
+        data: &[u8],
+        encrypt: bool,
+    ) -> Vec<u8> {
         match method {
             Method::Identity => data.to_vec(),
             Method::Rc4 => rc4(&self.object_key(method, num, generation), data),
@@ -300,11 +334,23 @@ impl SecurityHandler {
         self.apply(self.method(None), num, generation, data, true)
     }
 
-    pub fn decrypt_stream(&self, num: u32, generation: u16, data: &[u8], kind: StreamKind) -> Vec<u8> {
+    pub fn decrypt_stream(
+        &self,
+        num: u32,
+        generation: u16,
+        data: &[u8],
+        kind: StreamKind,
+    ) -> Vec<u8> {
         self.apply(self.method(Some(kind)), num, generation, data, false)
     }
 
-    pub fn encrypt_stream(&self, num: u32, generation: u16, data: &[u8], kind: StreamKind) -> Vec<u8> {
+    pub fn encrypt_stream(
+        &self,
+        num: u32,
+        generation: u16,
+        data: &[u8],
+        kind: StreamKind,
+    ) -> Vec<u8> {
         self.apply(self.method(Some(kind)), num, generation, data, true)
     }
 
@@ -321,8 +367,8 @@ impl SecurityHandler {
 /// with it, because R2–R4 passwords need it too and cos depends on this crate.
 const PDFDOC_LOW: [char; 8] = ['˘', 'ˇ', 'ˆ', '˙', '˝', '˛', '˚', '˜'];
 const PDFDOC_HIGH: [char; 33] = [
-    '•', '†', '‡', '…', '—', '–', 'ƒ', '⁄', '‹', '›', '−', '‰', '„', '“', '”', '‘', '’', '‚', '™', 'ﬁ', 'ﬂ', 'Ł', 'Œ', 'Š', 'Ÿ', 'Ž', 'ı', 'ł', 'œ',
-    'š', 'ž', '\u{FFFD}', '€',
+    '•', '†', '‡', '…', '—', '–', 'ƒ', '⁄', '‹', '›', '−', '‰', '„', '“', '”', '‘', '’', '‚', '™',
+    'ﬁ', 'ﬂ', 'Ł', 'Œ', 'Š', 'Ÿ', 'Ž', 'ı', 'ł', 'œ', 'š', 'ž', '\u{FFFD}', '€',
 ];
 
 /// PDFDocEncoding → Unicode.
@@ -336,11 +382,19 @@ pub fn pdfdoc_char(c: u8) -> char {
 
 /// Unicode → PDFDocEncoding, `None` for a character it lacks (ğ, ş, İ, Cyrillic, CJK, …).
 pub fn pdfdoc_byte(c: char) -> Option<u8> {
-    let at = |table: &[char], base: u8| table.iter().position(|&t| t == c && t != '\u{FFFD}').and_then(|i| u8::try_from(i).ok()).map(|i| base + i);
-    at(&PDFDOC_LOW, 0x18).or_else(|| at(&PDFDOC_HIGH, 0x80)).or_else(|| match u32::from(c) {
-        0x18..=0x1F | 0x80..=0xA0 => None,
-        n => u8::try_from(n).ok(),
-    })
+    let at = |table: &[char], base: u8| {
+        table
+            .iter()
+            .position(|&t| t == c && t != '\u{FFFD}')
+            .and_then(|i| u8::try_from(i).ok())
+            .map(|i| base + i)
+    };
+    at(&PDFDOC_LOW, 0x18)
+        .or_else(|| at(&PDFDOC_HIGH, 0x80))
+        .or_else(|| match u32::from(c) {
+            0x18..=0x1F | 0x80..=0xA0 => None,
+            n => u8::try_from(n).ok(),
+        })
 }
 
 /// Revisions 2–4: the password in PDFDocEncoding (§7.6.4.3.2, Algorithm 2), at most 32 bytes.
@@ -362,7 +416,9 @@ fn legacy_candidates(pw: &str) -> Vec<Vec<u8>> {
 
 /// Revisions 5–6: SASLprep (RFC 4013), UTF-8, at most 127 bytes.
 fn sasl_password(pw: &str) -> Vec<u8> {
-    let prepped = stringprep::saslprep(pw).map(|c| c.into_owned()).unwrap_or_else(|_| pw.to_string());
+    let prepped = stringprep::saslprep(pw)
+        .map(|c| c.into_owned())
+        .unwrap_or_else(|_| pw.to_string());
     let mut bytes = prepped.into_bytes();
     bytes.truncate(127);
     bytes
@@ -377,7 +433,11 @@ fn pad(pw: &[u8]) -> [u8; 32] {
 }
 
 fn key_len(d: &EncryptDict) -> usize {
-    if d.r == 2 { 5 } else { (d.length_bits.clamp(40, 128) / 8) as usize }
+    if d.r == 2 {
+        5
+    } else {
+        (d.length_bits.clamp(40, 128) / 8) as usize
+    }
 }
 
 // ── Revisions 2–4 ──────────────────────────────────────────────────────────────────────────────
@@ -432,7 +492,16 @@ fn user_key_r4(d: &EncryptDict, id0: &[u8], pw: &[u8]) -> Option<Vec<u8>> {
         let n = if d.r == 2 { 32 } else { 16 };
         (d.u.len() >= n && u[..n] == d.u[..n]).then_some(key)
     };
-    check(d).or_else(|| (d.r >= 4 && !d.encrypt_metadata).then(|| check(&EncryptDict { encrypt_metadata: true, ..d.clone() })).flatten())
+    check(d).or_else(|| {
+        (d.r >= 4 && !d.encrypt_metadata)
+            .then(|| {
+                check(&EncryptDict {
+                    encrypt_metadata: true,
+                    ..d.clone()
+                })
+            })
+            .flatten()
+    })
 }
 
 /// The RC4 key derived from an owner password (Algorithm 3, steps a–d).
@@ -463,7 +532,9 @@ fn owner_key_r4(d: &EncryptDict, id0: &[u8], pw: &[u8]) -> Option<(Vec<u8>, Vec<
     }
     let key = user_key_r4(d, id0, &user)?;
     // The recovered value is the padded password: strip the padding suffix.
-    let len = (0..=32).find(|&i| user.len() >= 32 && user[i..32] == PADDING[..32 - i]).unwrap_or(user.len().min(32));
+    let len = (0..=32)
+        .find(|&i| user.len() >= 32 && user[i..32] == PADDING[..32 - i])
+        .unwrap_or(user.len().min(32));
     Some((key, user[..len].to_vec()))
 }
 
@@ -490,8 +561,12 @@ fn hash_r6(r: i64, pw: &[u8], salt: &[u8], udata: &[u8]) -> Vec<u8> {
             k1.extend_from_slice(udata);
         }
         // `k` is always a SHA-2 digest (32, 48 or 64 bytes): key = its first 16 bytes, IV = the next 16.
-        let Some((key, rest)) = k.split_first_chunk::<16>() else { break };
-        let Some(iv) = rest.first_chunk::<16>() else { break };
+        let Some((key, rest)) = k.split_first_chunk::<16>() else {
+            break;
+        };
+        let Some(iv) = rest.first_chunk::<16>() else {
+            break;
+        };
         let e = aes_cbc_encrypt(key, iv, &k1, false);
         let m = e.iter().take(16).map(|b| u32::from(*b)).sum::<u32>() % 3;
         k = match m {
@@ -511,9 +586,15 @@ fn hash_r6(r: i64, pw: &[u8], salt: &[u8], udata: &[u8]) -> Vec<u8> {
 /// Algorithm 2.A: authenticate as owner (`owner = true`) or user; returns the file key.
 fn key_r6(d: &EncryptDict, pw: &[u8], owner: bool) -> Result<Option<Vec<u8>>, CryptError> {
     if d.u.len() < 48 || d.o.len() < 48 {
-        return Err(CryptError::Malformed("/O and /U must be 48 bytes for R5/R6".into()));
+        return Err(CryptError::Malformed(
+            "/O and /U must be 48 bytes for R5/R6".into(),
+        ));
     }
-    let (hashed, encrypted, udata) = if owner { (&d.o[..48], &d.oe, &d.u[..48]) } else { (&d.u[..48], &d.ue, &[][..]) };
+    let (hashed, encrypted, udata) = if owner {
+        (&d.o[..48], &d.oe, &d.u[..48])
+    } else {
+        (&d.u[..48], &d.ue, &[][..])
+    };
     if hash_r6(d.r, pw, &hashed[32..40], udata) != hashed[..32] {
         return Ok(None);
     }
@@ -598,7 +679,12 @@ fn expand(seed: &[u8; 32], label: &[u8], n: usize) -> Vec<u8> {
 pub fn create(params: &NewEncryption, id0: &[u8]) -> Result<SecurityHandler, CryptError> {
     // Bits 7–8 and 13–32 must be 1; bits 1–2 must be 0 (§7.6.4.2).
     let p = (params.permissions | !0xFFF | 0xC0) & !0x3;
-    let mut d = EncryptDict { filter: b"Standard".to_vec(), p, encrypt_metadata: params.encrypt_metadata, ..Default::default() };
+    let mut d = EncryptDict {
+        filter: b"Standard".to_vec(),
+        p,
+        encrypt_metadata: params.encrypt_metadata,
+        ..Default::default()
+    };
     let user = prepared_password(params.algorithm, params.user_password);
     let owner = prepared_password(params.algorithm, params.owner_password);
     match params.algorithm {
@@ -615,7 +701,11 @@ pub fn create(params: &NewEncryption, id0: &[u8]) -> Result<SecurityHandler, Cry
             } else {
                 d.encrypt_metadata = true; // V < 4 always encrypts metadata
             }
-            let owner = if params.owner_password.is_empty() { user.clone() } else { owner };
+            let owner = if params.owner_password.is_empty() {
+                user.clone()
+            } else {
+                owner
+            };
             // Algorithm 3: /O
             let rk = owner_rc4_key(&d, &owner);
             let mut o = rc4(&rk, &pad(&user));
@@ -628,7 +718,12 @@ pub fn create(params: &NewEncryption, id0: &[u8]) -> Result<SecurityHandler, Cry
             d.o = o;
             let key = file_key_r4(&d, id0, &user);
             d.u = u_value_r4(&d, id0, &key);
-            Ok(SecurityHandler { dict: d, key, auth: Auth::Owner, recovered_user: Some(user) })
+            Ok(SecurityHandler {
+                dict: d,
+                key,
+                auth: Auth::Owner,
+                recovered_user: Some(user),
+            })
         }
         Algorithm::Aes256 => {
             (d.v, d.r, d.length_bits) = (5, 6, 256);
@@ -657,7 +752,12 @@ pub fn create(params: &NewEncryption, id0: &[u8]) -> Result<SecurityHandler, Cry
             perms[9..12].copy_from_slice(b"adb");
             perms[12..16].copy_from_slice(&expand(&params.seed, b"perms", 4));
             d.perms = aes_cbc_encrypt(&key, &[0; 16], &perms, false);
-            Ok(SecurityHandler { dict: d, key, auth: Auth::Owner, recovered_user: None })
+            Ok(SecurityHandler {
+                dict: d,
+                key,
+                auth: Auth::Owner,
+                recovered_user: None,
+            })
         }
     }
 }

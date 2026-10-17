@@ -88,7 +88,9 @@ impl From<aphrody_mcp_client::McpTool> for McpTool {
 
 /// Copy a `HashMap` environment or header set into the canonical client's ordered map.
 fn ordered(map: &HashMap<String, String>) -> BTreeMap<String, String> {
-    map.iter().map(|(key, value)| (key.clone(), value.clone())).collect()
+    map.iter()
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -109,7 +111,10 @@ pub struct McpClient {
 
 impl McpClient {
     fn wrap(inner: aphrody_mcp_client::McpClient) -> Self {
-        Self { inner, rpc_timeout: DEFAULT_RPC_TIMEOUT }
+        Self {
+            inner,
+            rpc_timeout: DEFAULT_RPC_TIMEOUT,
+        }
     }
 
     /// Apply this client's timeout to every phase of the canonical client.
@@ -247,7 +252,9 @@ mod tests {
         let server = std::thread::spawn(move || {
             for _ in 0..3 {
                 let (stream, _) = listener.accept().expect("accept MCP request");
-                stream.set_read_timeout(Some(Duration::from_secs(5))).expect("read timeout");
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(5)))
+                    .expect("read timeout");
                 let mut reader = std::io::BufReader::new(stream);
                 let mut line = String::new();
                 reader.read_line(&mut line).expect("request line");
@@ -284,7 +291,11 @@ mod tests {
                     "tools/list" => serde_json::json!({"jsonrpc":"2.0","id":request["id"],"result":{"tools":[]}}).to_string(),
                     method => panic!("unexpected method: {method}"),
                 };
-                let status = if response.is_empty() { "202 Accepted" } else { "200 OK" };
+                let status = if response.is_empty() {
+                    "202 Accepted"
+                } else {
+                    "200 OK"
+                };
                 write!(
                     reader.get_mut(),
                     "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: \
@@ -295,7 +306,10 @@ mod tests {
             }
         });
         let headers = HashMap::from([
-            ("Authorization".to_owned(), "Bearer fixture-secret".to_owned()),
+            (
+                "Authorization".to_owned(),
+                "Bearer fixture-secret".to_owned(),
+            ),
             ("X-Project".to_owned(), "fixture-workspace".to_owned()),
         ]);
         let mut client = McpClient::from_http_headers(format!("http://{address}/mcp"), &headers)

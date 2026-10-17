@@ -5,16 +5,37 @@ use egui_kittest::{Harness, kittest::Queryable};
 use std::sync::Arc;
 
 fn app(depth: u32) -> PhotocraftApp {
-    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-    app.run("prefs.set", json!({"path":"interface.language","value":"en"})).unwrap();
-    app.run("file.new", json!({"width":32,"height":24,"depth":depth,"background":"#406080"})).unwrap();
+    let mut app = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
+    );
+    app.run(
+        "prefs.set",
+        json!({"path":"interface.language","value":"en"}),
+    )
+    .unwrap();
+    app.run(
+        "file.new",
+        json!({"width":32,"height":24,"depth":depth,"background":"#406080"}),
+    )
+    .unwrap();
     app
 }
 fn fields(app: &PhotocraftApp, id: u64) -> Map<String, Value> {
-    app.ui.dialogs.iter().find(|d| d.id == id).unwrap().fields.clone()
+    app.ui
+        .dialogs
+        .iter()
+        .find(|d| d.id == id)
+        .unwrap()
+        .fields
+        .clone()
 }
 fn set_color(app: &mut PhotocraftApp, id: u64, color: &str) {
-    app.ui.dialog_mut(id).unwrap().fields.insert("color".into(), json!(color));
+    app.ui
+        .dialog_mut(id)
+        .unwrap()
+        .fields
+        .insert("color".into(), json!(color));
 }
 fn selected(app: &PhotocraftApp, parent: u64) -> String {
     fields(app, parent)["selected"].as_str().unwrap().into()
@@ -36,10 +57,16 @@ fn every_exposed_color_field_uses_the_shared_picker_and_only_updates_its_target(
             let history = app.session.active().unwrap().history.past_len();
             let picker = open(&mut app, parent, &effect, field).unwrap();
             assert!(color_picker_ui::owns(&fields(&app, picker)));
-            assert_eq!(fields(&app, picker)["__label"], "Color Picker (Layer Style Color)");
+            assert_eq!(
+                fields(&app, picker)["__label"],
+                "Color Picker (Layer Style Color)"
+            );
             set_color(&mut app, picker, "#23a567");
             let shown = preview_fields(&app, parent, &original);
-            assert_eq!(super::super::entry(&shown, &effect).unwrap()["params"][field], "#23a567");
+            assert_eq!(
+                super::super::entry(&shown, &effect).unwrap()["params"][field],
+                "#23a567"
+            );
             assert_eq!(fields(&app, parent), original);
             dialogs::confirm(&mut app, picker).unwrap();
             let mut expected = original;
@@ -62,7 +89,12 @@ fn preview_cancel_ok_parent_cancel_and_apply_are_transactional_at_every_depth() 
         layer_style::add_instance(&mut app.ui.dialog_mut(parent).unwrap().fields, "stroke");
         let original = fields(&app, parent);
         let st = app.session.active().unwrap();
-        let (doc, history, revision, dirty) = (st.doc.clone(), st.history.past_len(), st.revision, st.is_dirty());
+        let (doc, history, revision, dirty) = (
+            st.doc.clone(),
+            st.history.past_len(),
+            st.revision,
+            st.is_dirty(),
+        );
         let picker = open(&mut app, parent, &effect, "color").unwrap();
         set_color(&mut app, picker, "#00ff00");
         let (shown, key) = canvas::display_doc(&mut app, 0);
@@ -71,9 +103,15 @@ fn preview_cancel_ok_parent_cancel_and_apply_are_transactional_at_every_depth() 
         assert_eq!(key, again.1);
         assert!(Arc::ptr_eq(&shown, &again.0), "unchanged preview is cached");
         let pixel = photocraft_compose::flatten(&shown).get(3, 3);
-        assert!(pixel[1] > pixel[0] && pixel[1] > pixel[2], "live preview is green at {depth} bits");
+        assert!(
+            pixel[1] > pixel[0] && pixel[1] > pixel[2],
+            "live preview is green at {depth} bits"
+        );
         let st = app.session.active().unwrap();
-        assert_eq!((st.history.past_len(), st.revision, st.is_dirty()), (history, revision, dirty));
+        assert_eq!(
+            (st.history.past_len(), st.revision, st.is_dirty()),
+            (history, revision, dirty)
+        );
         assert!(Arc::ptr_eq(&st.doc, &doc));
         dialogs::cancel(&mut app, picker).unwrap();
         assert_eq!(fields(&app, parent), original);
@@ -94,17 +132,45 @@ fn preview_cancel_ok_parent_cancel_and_apply_are_transactional_at_every_depth() 
         let pixel = photocraft_compose::flatten(&applied).get(3, 3);
         assert!(pixel[1] > pixel[0]);
         app.run("edit.undo", json!({})).unwrap();
-        assert_eq!(app.session.active().unwrap().doc.layer(doc.layers[0].id).unwrap().effects.items.len(), 0);
+        assert_eq!(
+            app.session
+                .active()
+                .unwrap()
+                .doc
+                .layer(doc.layers[0].id)
+                .unwrap()
+                .effects
+                .items
+                .len(),
+            0
+        );
         app.run("edit.redo", json!({})).unwrap();
-        assert_eq!(app.session.active().unwrap().doc.layer(doc.layers[0].id).unwrap().effects, applied.layer(doc.layers[0].id).unwrap().effects);
+        assert_eq!(
+            app.session
+                .active()
+                .unwrap()
+                .doc
+                .layer(doc.layers[0].id)
+                .unwrap()
+                .effects,
+            applied.layer(doc.layers[0].id).unwrap().effects
+        );
     }
 }
 
 #[test]
 fn unchanged_ok_preserves_missing_parameters_and_imported_effect_snapshot() {
     let mut app = app(8);
-    app.run("layer.layerStyle.stroke", json!({"size":7,"color":"#123456","add":true})).unwrap();
-    app.run("layer.layerStyle.stroke", json!({"size":9,"color":"#abcdef","add":true})).unwrap();
+    app.run(
+        "layer.layerStyle.stroke",
+        json!({"size":7,"color":"#123456","add":true}),
+    )
+    .unwrap();
+    app.run(
+        "layer.layerStyle.stroke",
+        json!({"size":9,"color":"#abcdef","add":true}),
+    )
+    .unwrap();
     let parent = layer_style::open(&mut app, Some("stroke")).unwrap();
     let original = fields(&app, parent);
     for effect in ["fx1", "fx2"] {
@@ -116,12 +182,28 @@ fn unchanged_ok_preserves_missing_parameters_and_imported_effect_snapshot() {
     set_color(&mut app, picker, "#223344");
     dialogs::confirm(&mut app, picker).unwrap();
     let current = fields(&app, parent);
-    assert_eq!(super::super::entry(&current, "fx1"), super::super::entry(&original, "fx1"));
-    assert_eq!(super::super::entry(&current, "fx2").unwrap()["fx"], super::super::entry(&original, "fx2").unwrap()["fx"]);
+    assert_eq!(
+        super::super::entry(&current, "fx1"),
+        super::super::entry(&original, "fx1")
+    );
+    assert_eq!(
+        super::super::entry(&current, "fx2").unwrap()["fx"],
+        super::super::entry(&original, "fx2").unwrap()["fx"]
+    );
     dialogs::cancel(&mut app, parent).unwrap();
     let parent = layer_style::open(&mut app, Some("gradientOverlay")).unwrap();
     let effect = selected(&app, parent);
-    app.ui.dialog_mut(parent).unwrap().fields.get_mut("effects").unwrap().as_array_mut().unwrap()[0]["params"].as_object_mut().unwrap().remove("from");
+    app.ui
+        .dialog_mut(parent)
+        .unwrap()
+        .fields
+        .get_mut("effects")
+        .unwrap()
+        .as_array_mut()
+        .unwrap()[0]["params"]
+        .as_object_mut()
+        .unwrap()
+        .remove("from");
     let original = fields(&app, parent);
     let picker = open(&mut app, parent, &effect, "from").unwrap();
     dialogs::confirm(&mut app, picker).unwrap();
@@ -130,7 +212,17 @@ fn unchanged_ok_preserves_missing_parameters_and_imported_effect_snapshot() {
 
 #[test]
 fn stale_targets_and_invalid_colors_never_apply_or_leave_preview() {
-    for change in ["document", "parent", "effect", "kind", "color", "source", "malformed", "layer", "replaced"] {
+    for change in [
+        "document",
+        "parent",
+        "effect",
+        "kind",
+        "color",
+        "source",
+        "malformed",
+        "layer",
+        "replaced",
+    ] {
         let mut app = app(8);
         let parent = layer_style::open(&mut app, Some("colorOverlay")).unwrap();
         let effect = selected(&app, parent);
@@ -144,31 +236,51 @@ fn stale_targets_and_invalid_colors_never_apply_or_leave_preview() {
                 app.ui.close_dialog(parent);
             }
             "effect" => {
-                app.ui.dialog_mut(parent).unwrap().fields.insert("effects".into(), json!([]));
+                app.ui
+                    .dialog_mut(parent)
+                    .unwrap()
+                    .fields
+                    .insert("effects".into(), json!([]));
             }
             "kind" => {
                 app.ui.dialog_mut(parent).unwrap().fields["effects"][0]["kind"] = json!("stroke");
             }
             "color" => {
-                set_param(&mut app.ui.dialog_mut(parent).unwrap().fields, &effect, "color", json!("#ff00ff"));
+                set_param(
+                    &mut app.ui.dialog_mut(parent).unwrap().fields,
+                    &effect,
+                    "color",
+                    json!("#ff00ff"),
+                );
             }
             "replaced" => {
-                app.ui.dialog_mut(parent).unwrap().fields["effects"][0] =
-                    json!({"id":effect,"kind":"colorOverlay","on":true,"params":{"color":"#ff0000","opacity":12}});
+                app.ui.dialog_mut(parent).unwrap().fields["effects"][0] = json!({"id":effect,"kind":"colorOverlay","on":true,"params":{"color":"#ff0000","opacity":12}});
             }
             "source" => {
-                app.ui.dialog_mut(parent).unwrap().fields["effects"][0]["fx"] = json!({"replacement":true});
+                app.ui.dialog_mut(parent).unwrap().fields["effects"][0]["fx"] =
+                    json!({"replacement":true});
             }
             "malformed" => {
-                app.ui.dialog_mut(picker).unwrap().fields.insert(TARGET.into(), json!(null));
+                app.ui
+                    .dialog_mut(picker)
+                    .unwrap()
+                    .fields
+                    .insert(TARGET.into(), json!(null));
             }
             _ => {
-                app.ui.dialog_mut(parent).unwrap().fields.insert("layer".into(), json!(999999));
+                app.ui
+                    .dialog_mut(parent)
+                    .unwrap()
+                    .fields
+                    .insert("layer".into(), json!(999999));
             }
         }
         let current_parent = app.ui.dialogs.iter().find(|d| d.id == parent).cloned();
         assert!(dialogs::confirm(&mut app, picker).is_err(), "{change}");
-        assert_eq!(app.ui.dialogs.iter().find(|d| d.id == parent).cloned(), current_parent);
+        assert_eq!(
+            app.ui.dialogs.iter().find(|d| d.id == parent).cloned(),
+            current_parent
+        );
     }
     let mut app = app(8);
     let parent = layer_style::open(&mut app, Some("colorOverlay")).unwrap();
@@ -188,7 +300,11 @@ fn stale_targets_and_invalid_colors_never_apply_or_leave_preview() {
 fn preview_off_and_parent_confirmation_and_cancellation_keep_their_contract() {
     let mut app = app(8);
     let parent = layer_style::open(&mut app, Some("colorOverlay")).unwrap();
-    app.ui.dialog_mut(parent).unwrap().fields.insert("preview".into(), json!(false));
+    app.ui
+        .dialog_mut(parent)
+        .unwrap()
+        .fields
+        .insert("preview".into(), json!(false));
     let effect = selected(&app, parent);
     let original = fields(&app, parent);
     let doc = app.session.active().unwrap().doc.clone();
@@ -205,14 +321,19 @@ fn preview_off_and_parent_confirmation_and_cancellation_keep_their_contract() {
 fn harness() -> Harness<'static, PhotocraftApp> {
     let mut app = app(8);
     layer_style::open(&mut app, Some("colorOverlay")).unwrap();
-    let mut h = Harness::builder().with_size(vec2(1500.0, 1000.0)).build_ui_state(
-        |ui, app| {
-            if ui.ctx().fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                dialogs::show(app, ui.ctx());
-            }
-        },
-        app,
-    );
+    let mut h = Harness::builder()
+        .with_size(vec2(1500.0, 1000.0))
+        .build_ui_state(
+            |ui, app| {
+                if ui.ctx().fonts(|f| {
+                    f.families()
+                        .contains(&egui::FontFamily::Name("medium".into()))
+                }) {
+                    dialogs::show(app, ui.ctx());
+                }
+            },
+            app,
+        );
     PhotocraftApp::setup_context(&h.ctx, ThemeKind::ProMedium);
     h.run_steps(4);
     h
@@ -236,7 +357,10 @@ fn real_swatch_click_opens_shared_dialog_and_enter_escape_only_affect_the_child(
         if action == Key::Escape {
             assert_eq!(fields(h.state(), parent), before);
         } else {
-            assert_eq!(super::super::entry(&fields(h.state(), parent), "fx1").unwrap()["params"]["color"], "#00ff00");
+            assert_eq!(
+                super::super::entry(&fields(h.state(), parent), "fx1").unwrap()["params"]["color"],
+                "#00ff00"
+            );
         }
     }
 }

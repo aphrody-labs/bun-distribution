@@ -177,7 +177,11 @@ pub enum DevStatus {
 }
 
 impl DevStatus {
-    pub const ALL: [DevStatus; 3] = [DevStatus::None, DevStatus::ReadyForDev, DevStatus::Completed];
+    pub const ALL: [DevStatus; 3] = [
+        DevStatus::None,
+        DevStatus::ReadyForDev,
+        DevStatus::Completed,
+    ];
     pub fn is_none(&self) -> bool {
         *self == DevStatus::None
     }
@@ -260,7 +264,11 @@ impl AnnotationCategory {
     ];
 
     pub fn new(id: &str, name: &str, color: Color) -> Self {
-        Self { id: id.to_string(), name: name.to_string(), color }
+        Self {
+            id: id.to_string(),
+            name: name.to_string(),
+            color,
+        }
     }
 
     /// The categories a file starts with.
@@ -329,7 +337,13 @@ impl NodeKind {
 
     /// Frame-like nodes: can have auto layout, clip content, layout grids, and act as artboards.
     pub fn is_frame_like(&self) -> bool {
-        matches!(self, NodeKind::Frame | NodeKind::Component { .. } | NodeKind::ComponentSet { .. } | NodeKind::Instance { .. })
+        matches!(
+            self,
+            NodeKind::Frame
+                | NodeKind::Component { .. }
+                | NodeKind::ComponentSet { .. }
+                | NodeKind::Instance { .. }
+        )
     }
 
     /// Nodes that may contain children.
@@ -383,7 +397,11 @@ impl NodeKind {
 
     /// Kinds with a radius per corner (the others round every corner alike).
     pub fn has_independent_corners(&self) -> bool {
-        self.has_corner_radius() && !matches!(self, NodeKind::Polygon { .. } | NodeKind::Star { .. } | NodeKind::Vector { .. })
+        self.has_corner_radius()
+            && !matches!(
+                self,
+                NodeKind::Polygon { .. } | NodeKind::Star { .. } | NodeKind::Vector { .. }
+            )
     }
 
     pub fn text(&self) -> Option<&TextData> {
@@ -555,11 +573,21 @@ fn is_identity(v: &Affine) -> bool {
 
 impl Node {
     /// A node with Figma's defaults for its kind.
-    pub fn new(id: NodeId, kind: NodeKind, name: impl Into<String>, width: f64, height: f64) -> Self {
+    pub fn new(
+        id: NodeId,
+        kind: NodeKind,
+        name: impl Into<String>,
+        width: f64,
+        height: f64,
+    ) -> Self {
         let fills = match &kind {
             NodeKind::Frame | NodeKind::Component { .. } => vec![Paint::solid(Color::WHITE)],
             NodeKind::Section { .. } => vec![Paint::solid(Color::WHITE)],
-            NodeKind::Rectangle | NodeKind::Ellipse { .. } | NodeKind::Polygon { .. } | NodeKind::Star { .. } | NodeKind::Vector { .. } => {
+            NodeKind::Rectangle
+            | NodeKind::Ellipse { .. }
+            | NodeKind::Polygon { .. }
+            | NodeKind::Star { .. }
+            | NodeKind::Vector { .. } => {
                 vec![Paint::solid(Color::DEFAULT_SHAPE)]
             }
             NodeKind::Text(_) => vec![Paint::solid(Color::BLACK)],
@@ -567,18 +595,39 @@ impl Node {
         };
         let strokes = match &kind {
             NodeKind::Line => vec![Paint::solid(Color::BLACK)],
-            NodeKind::ComponentSet { .. } => vec![Paint::solid(Color::from_rgb8_const(0x97, 0x47, 0xFF))],
+            NodeKind::ComponentSet { .. } => {
+                vec![Paint::solid(Color::from_rgb8_const(0x97, 0x47, 0xFF))]
+            }
             _ => vec![],
         };
         let stroke = match &kind {
-            NodeKind::Line | NodeKind::Vector { .. } => StrokeProps { align: StrokeAlign::Center, ..Default::default() },
-            NodeKind::ComponentSet { .. } => StrokeProps { dashes: vec![10.0, 5.0], ..Default::default() },
+            NodeKind::Line | NodeKind::Vector { .. } => StrokeProps {
+                align: StrokeAlign::Center,
+                ..Default::default()
+            },
+            NodeKind::ComponentSet { .. } => StrokeProps {
+                dashes: vec![10.0, 5.0],
+                ..Default::default()
+            },
             _ => StrokeProps::default(),
         };
-        let blend = if kind.is_container() { BlendMode::PassThrough } else { BlendMode::Normal };
-        let clip = matches!(kind, NodeKind::Frame | NodeKind::Component { .. } | NodeKind::ComponentSet { .. } | NodeKind::Instance { .. });
+        let blend = if kind.is_container() {
+            BlendMode::PassThrough
+        } else {
+            BlendMode::Normal
+        };
+        let clip = matches!(
+            kind,
+            NodeKind::Frame
+                | NodeKind::Component { .. }
+                | NodeKind::ComponentSet { .. }
+                | NodeKind::Instance { .. }
+        );
         let corners = match &kind {
-            NodeKind::ComponentSet { .. } => Corners { radii: [5.0; 4], smoothing: 0.0 },
+            NodeKind::ComponentSet { .. } => Corners {
+                radii: [5.0; 4],
+                smoothing: 0.0,
+            },
             _ => Corners::default(),
         };
         Self {
@@ -634,7 +683,15 @@ impl Node {
     /// A new section with the look sections are created with (white, a light grey border, slightly
     /// rounded, contents unclipped).
     pub fn new_section(id: NodeId, name: impl Into<String>, width: f64, height: f64) -> Self {
-        let mut n = Self::new(id, NodeKind::Section { contents_hidden: false }, name, width, height);
+        let mut n = Self::new(
+            id,
+            NodeKind::Section {
+                contents_hidden: false,
+            },
+            name,
+            width,
+            height,
+        );
         n.strokes = vec![Paint::solid(Color::from_rgb8_const(0xE6, 0xE6, 0xE6))];
         n.corners.radii = [2.0; 4];
         n.clip = false;
@@ -656,7 +713,12 @@ impl Node {
     /// A section whose contents are hidden: only its name and outline show; its children are
     /// skipped when rendering and hit testing.
     pub fn hides_contents(&self) -> bool {
-        matches!(self.kind, NodeKind::Section { contents_hidden: true })
+        matches!(
+            self.kind,
+            NodeKind::Section {
+                contents_hidden: true
+            }
+        )
     }
 
     /// Whether `self` and `other` differ only in handoff status and whether a section's contents
@@ -704,7 +766,10 @@ impl Node {
     /// Whether this group or frame blends its children among themselves before the result meets
     /// what is behind it: set to Normal rather than pass-through (with children to blend).
     pub fn isolates_children(&self) -> bool {
-        self.blend == BlendMode::Normal && self.kind.is_container() && !matches!(self.kind, NodeKind::BooleanOp { .. }) && !self.children.is_empty()
+        self.blend == BlendMode::Normal
+            && self.kind.is_container()
+            && !matches!(self.kind, NodeKind::BooleanOp { .. })
+            && !self.children.is_empty()
     }
 
     /// Whether painted strokes are present.
@@ -722,7 +787,10 @@ impl Node {
     /// grown by its strokes and glyphs, then by its effects (see [`Node::grow_by_effects`]).
     pub fn own_paint_bounds(&self, world: Affine) -> figcraft_geom::Rect {
         let o = self.outline_reach();
-        self.grow_by_effects(figcraft_geom::transform_rect_bbox(world, self.local_rect().inflate(o, o)))
+        self.grow_by_effects(figcraft_geom::transform_rect_bbox(
+            world,
+            self.local_rect().inflate(o, o),
+        ))
     }
 
     /// Page-space area `b` grown by what this node's visible effects paint around it: blurs all
@@ -730,41 +798,78 @@ impl Node {
     /// shadow falling down adds room below and none above.
     pub fn grow_by_effects(&self, b: figcraft_geom::Rect) -> figcraft_geom::Rect {
         let miter = self.spread_miter_reach();
-        self.effects.iter().filter(|e| e.visible).fold(b, |r, e| match &e.kind {
-            EffectKind::DropShadow(s) => {
-                let g = s.radius.abs() * 1.5 + s.spread.max(0.0) + miter;
-                let (dx, dy) = s.offset;
-                if g.is_finite() && dx.is_finite() && dy.is_finite() { r.union(b.inflate(g, g) + figcraft_geom::kurbo::Vec2::new(dx, dy)) } else { r }
-            }
-            _ => {
-                let g = e.reach();
-                if g.is_finite() && g > 0.0 { r.union(b.inflate(g, g)) } else { r }
-            }
-        })
+        self.effects
+            .iter()
+            .filter(|e| e.visible)
+            .fold(b, |r, e| match &e.kind {
+                EffectKind::DropShadow(s) => {
+                    let g = s.radius.abs() * 1.5 + s.spread.max(0.0) + miter;
+                    let (dx, dy) = s.offset;
+                    if g.is_finite() && dx.is_finite() && dy.is_finite() {
+                        r.union(b.inflate(g, g) + figcraft_geom::kurbo::Vec2::new(dx, dy))
+                    } else {
+                        r
+                    }
+                }
+                _ => {
+                    let g = e.reach();
+                    if g.is_finite() && g > 0.0 {
+                        r.union(b.inflate(g, g))
+                    } else {
+                        r
+                    }
+                }
+            })
     }
 
     /// How far (local units) strokes and glyphs reach outside the box.
     fn outline_reach(&self) -> f64 {
         let stroke = if self.has_visible_stroke() {
-            let w = self.stroke.sides.map(|s| s.iter().copied().fold(0.0, f64::max)).unwrap_or_else(|| self.stroke.max_weight());
+            let w = self
+                .stroke
+                .sides
+                .map(|s| s.iter().copied().fold(0.0, f64::max))
+                .unwrap_or_else(|| self.stroke.max_weight());
             let base = match self.stroke.align {
                 StrokeAlign::Inside => 0.0,
                 StrokeAlign::Center => w / 2.0,
                 StrokeAlign::Outside => w,
             };
             // Arrowheads are sized by the weight, whatever a width profile does.
-            let point_arrows =
-                matches!(&self.kind, NodeKind::Vector { network } if network.vertices.iter().any(|v| v.cap.is_some_and(StrokeCap::is_arrow)));
-            let caps =
-                if self.stroke.cap_start.is_arrow() || self.stroke.cap_end.is_arrow() || point_arrows { w.max(self.stroke.weight) * 3.0 } else { w };
+            let point_arrows = matches!(&self.kind, NodeKind::Vector { network } if network.vertices.iter().any(|v| v.cap.is_some_and(StrokeCap::is_arrow)));
+            let caps = if self.stroke.cap_start.is_arrow()
+                || self.stroke.cap_end.is_arrow()
+                || point_arrows
+            {
+                w.max(self.stroke.weight) * 3.0
+            } else {
+                w
+            };
             // Right-angled or smooth outlines (boxes, ellipses) end their mitres on the grown box.
-            let boxy = matches!(self.kind, NodeKind::Rectangle | NodeKind::Ellipse { .. } | NodeKind::Section { .. }) || self.kind.is_frame_like();
-            let miter = if boxy { 1.0 } else { self.stroke.miter_limit.clamp(1.0, 4.0) };
-            base.max(if matches!(self.kind, NodeKind::Line | NodeKind::Vector { .. }) { caps } else { 0.0 }) * miter
+            let boxy = matches!(
+                self.kind,
+                NodeKind::Rectangle | NodeKind::Ellipse { .. } | NodeKind::Section { .. }
+            ) || self.kind.is_frame_like();
+            let miter = if boxy {
+                1.0
+            } else {
+                self.stroke.miter_limit.clamp(1.0, 4.0)
+            };
+            base.max(
+                if matches!(self.kind, NodeKind::Line | NodeKind::Vector { .. }) {
+                    caps
+                } else {
+                    0.0
+                },
+            ) * miter
         } else {
             0.0
         };
-        let glyphs = if let NodeKind::Text(t) = &self.kind { t.path_reach() + t.trim_reach() } else { 0.0 };
+        let glyphs = if let NodeKind::Text(t) = &self.kind {
+            t.path_reach() + t.trim_reach()
+        } else {
+            0.0
+        };
         stroke + glyphs
     }
 
@@ -772,14 +877,20 @@ impl Node {
     /// spread moves the edges out in parallel and they meet in a mitre (see
     /// [`SPREAD_MITER_LIMIT`]). Rectangles, frames and ellipses grow by exactly the spread.
     fn spread_miter_reach(&self) -> f64 {
-        if matches!(self.kind, NodeKind::Rectangle | NodeKind::Ellipse { .. } | NodeKind::Section { .. }) || self.kind.is_frame_like() {
+        if matches!(
+            self.kind,
+            NodeKind::Rectangle | NodeKind::Ellipse { .. } | NodeKind::Section { .. }
+        ) || self.kind.is_frame_like()
+        {
             return 0.0;
         }
         self.effects
             .iter()
             .filter(|e| e.visible)
             .filter_map(|e| match &e.kind {
-                EffectKind::DropShadow(s) if s.spread.is_finite() => Some(s.spread.max(0.0) * (SPREAD_MITER_LIMIT - 1.0)),
+                EffectKind::DropShadow(s) if s.spread.is_finite() => {
+                    Some(s.spread.max(0.0) * (SPREAD_MITER_LIMIT - 1.0))
+                }
                 _ => None,
             })
             .fold(0.0, f64::max)

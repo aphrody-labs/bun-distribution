@@ -20,17 +20,26 @@ pub struct ToolResult {
 
 impl ToolResult {
     pub fn text(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: false }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: false,
+        }
     }
     pub fn json(v: &Value) -> Self {
         Self::text(serde_json::to_string_pretty(v).unwrap_or_default())
     }
     pub fn error(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: true }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: true,
+        }
     }
     pub fn image(png_base64: String, info: &Value) -> Self {
         Self {
-            content: vec![json!({"type": "image", "data": png_base64, "mimeType": "image/png"}), json!({"type": "text", "text": info.to_string()})],
+            content: vec![
+                json!({"type": "image", "data": png_base64, "mimeType": "image/png"}),
+                json!({"type": "text", "text": info.to_string()}),
+            ],
             is_error: false,
         }
     }
@@ -58,14 +67,20 @@ pub fn tool_definitions() -> Value {
             "list_commands",
             "List commands",
             "Every WordCraft command: id, label, ribbon location, shortcut and params. Filter with `query`.",
-            obj(json!({"query": s("Case-insensitive filter on id/label/location")}), &[]),
+            obj(
+                json!({"query": s("Case-insensitive filter on id/label/location")}),
+                &[]
+            ),
             true
         ),
         tool(
             "execute",
             "Run a command",
             "Run one command by id with params, e.g. {command:\"format.bold\"} or {command:\"insert.table\", params:{rows:3, cols:4}}.",
-            obj(json!({"command": s("Command id"), "params": {"type": "object", "description": "Command parameters"}}), &["command"]),
+            obj(
+                json!({"command": s("Command id"), "params": {"type": "object", "description": "Command parameters"}}),
+                &["command"]
+            ),
             false
         ),
         tool(
@@ -82,7 +97,10 @@ pub fn tool_definitions() -> Value {
             "new_document",
             "New document",
             "Start a document: blank, sample, letter, resume or report.",
-            obj(json!({"template": s("blank|sample|letter|resume|report")}), &[]),
+            obj(
+                json!({"template": s("blank|sample|letter|resume|report")}),
+                &[]
+            ),
             false
         ),
         tool(
@@ -103,17 +121,29 @@ pub fn tool_definitions() -> Value {
             "type_text",
             "Type text",
             "Type at the caret (replacing the selection). Use \\n... for line breaks inside text; use execute text.newParagraph for new paragraphs, or `paragraphs: true` to split lines into paragraphs.",
-            obj(json!({"text": s("Text"), "paragraphs": {"type": "boolean"}}), &["text"]),
+            obj(
+                json!({"text": s("Text"), "paragraphs": {"type": "boolean"}}),
+                &["text"]
+            ),
             false
         ),
         tool(
             "select_text",
             "Select text",
             "Select the n-th occurrence of some text.",
-            obj(json!({"text": s("Text to find"), "occurrence": n("1-based")}), &["text"]),
+            obj(
+                json!({"text": s("Text to find"), "occurrence": n("1-based")}),
+                &["text"]
+            ),
             false
         ),
-        tool("get_text", "Document text", "Plain text of the document body.", obj(json!({}), &[]), true),
+        tool(
+            "get_text",
+            "Document text",
+            "Plain text of the document body.",
+            obj(json!({}), &[]),
+            true
+        ),
         tool(
             "inspect_document",
             "Inspect document",
@@ -125,23 +155,44 @@ pub fn tool_definitions() -> Value {
             "render_page",
             "Render page",
             "Render a page to PNG to look at the result.",
-            obj(json!({"page": n("1-based page"), "scale": n("Pixels per point (default 1)")}), &[]),
+            obj(
+                json!({"page": n("1-based page"), "scale": n("Pixels per point (default 1)")}),
+                &[]
+            ),
             true
         ),
-        tool("parity", "Feature parity", "WordCraft's command coverage of the word-processor feature catalog.", obj(json!({}), &[]), true),
-        tool("screenshot", "Screenshot app", "Screenshot of the whole WordCraft window (desktop app only).", obj(json!({}), &[]), true),
+        tool(
+            "parity",
+            "Feature parity",
+            "WordCraft's command coverage of the word-processor feature catalog.",
+            obj(json!({}), &[]),
+            true
+        ),
+        tool(
+            "screenshot",
+            "Screenshot app",
+            "Screenshot of the whole WordCraft window (desktop app only).",
+            obj(json!({}), &[]),
+            true
+        ),
         tool(
             "click",
             "Click",
             "Click at window coordinates (desktop app only).",
-            obj(json!({"x": n("x"), "y": n("y"), "count": n("1-3 clicks"), "shift": {"type": "boolean"}, "cmd": {"type": "boolean"}}), &["x", "y"]),
+            obj(
+                json!({"x": n("x"), "y": n("y"), "count": n("1-3 clicks"), "shift": {"type": "boolean"}, "cmd": {"type": "boolean"}}),
+                &["x", "y"]
+            ),
             false
         ),
         tool(
             "key",
             "Press key",
             "Press a key with modifiers (desktop app only), e.g. {key:\"B\", cmd:true}.",
-            obj(json!({"key": s("Key name"), "shift": {"type": "boolean"}, "alt": {"type": "boolean"}, "cmd": {"type": "boolean"}}), &["key"]),
+            obj(
+                json!({"key": s("Key name"), "shift": {"type": "boolean"}, "alt": {"type": "boolean"}, "cmd": {"type": "boolean"}}),
+                &["key"]
+            ),
             false
         ),
         tool(
@@ -176,9 +227,11 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
                         .into_iter()
                         .filter(|c| {
                             q.is_empty()
-                                || ["id", "label", "location"]
-                                    .iter()
-                                    .any(|k| c.get(*k).and_then(Value::as_str).is_some_and(|x| x.to_lowercase().contains(&q)))
+                                || ["id", "label", "location"].iter().any(|k| {
+                                    c.get(*k)
+                                        .and_then(Value::as_str)
+                                        .is_some_and(|x| x.to_lowercase().contains(&q))
+                                })
                         })
                         .collect();
                     ToolResult::json(&Value::Array(f))
@@ -194,7 +247,12 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
         "batch" => {
             let keep = a.get("keepGoing").and_then(Value::as_bool).unwrap_or(false);
             let mut out = Vec::new();
-            for c in a.get("commands").and_then(Value::as_array).cloned().unwrap_or_default() {
+            for c in a
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+            {
                 let id = c.get("command").and_then(Value::as_str).unwrap_or("");
                 let r = exec(b, id, c.get("params").cloned().unwrap_or(json!({})));
                 let failed = r.is_err();
@@ -203,16 +261,32 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
                     Err(e) => json!({"command": id, "ok": false, "error": e}),
                 });
                 if failed && !keep {
-                    return ToolResult { content: vec![json!({"type": "text", "text": Value::Array(out).to_string()})], is_error: true };
+                    return ToolResult {
+                        content: vec![
+                            json!({"type": "text", "text": Value::Array(out).to_string()}),
+                        ],
+                        is_error: true,
+                    };
                 }
             }
             ToolResult::json(&Value::Array(out))
         }
-        "new_document" => wrap(exec(b, "file.new", json!({"template": st("template").unwrap_or("blank")}))),
-        "open_document" => wrap(exec(b, "file.open", json!({"path": st("path").unwrap_or("")}))),
+        "new_document" => wrap(exec(
+            b,
+            "file.new",
+            json!({"template": st("template").unwrap_or("blank")}),
+        )),
+        "open_document" => wrap(exec(
+            b,
+            "file.open",
+            json!({"path": st("path").unwrap_or("")}),
+        )),
         "save_document" => {
             let p = st("path");
-            let ext = p.and_then(|x| x.rsplit('.').next()).unwrap_or("").to_ascii_lowercase();
+            let ext = p
+                .and_then(|x| x.rsplit('.').next())
+                .unwrap_or("")
+                .to_ascii_lowercase();
             if ext == "png" {
                 wrap(exec(b, "file.exportPng", json!({"path": p})))
             } else {
@@ -228,7 +302,10 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
         }
         "type_text" => {
             let t = st("text").unwrap_or("");
-            if a.get("paragraphs").and_then(Value::as_bool).unwrap_or(false) {
+            if a.get("paragraphs")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+            {
                 let mut last = Ok(Value::Null);
                 for (i, line) in t.split('\n').enumerate() {
                     if i > 0 {
@@ -246,9 +323,11 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
                 wrap(exec(b, "text.insert", json!({"text": t, "raw": true})))
             }
         }
-        "select_text" => {
-            wrap(exec(b, "select.text", json!({"text": st("text").unwrap_or(""), "occurrence": a.get("occurrence").cloned().unwrap_or(json!(1))})))
-        }
+        "select_text" => wrap(exec(
+            b,
+            "select.text",
+            json!({"text": st("text").unwrap_or(""), "occurrence": a.get("occurrence").cloned().unwrap_or(json!(1))}),
+        )),
         "get_text" => wrap(exec(b, "document.text", json!({}))),
         "inspect_document" => wrap(b.call("document.inspect", json!({}))),
         "parity" => wrap(b.call("ui.parity", json!({}))),
@@ -257,7 +336,10 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
         "render_page" => {
             let params = json!({"page": a.get("page").cloned().unwrap_or(json!(1)), "scale": a.get("scale").cloned().unwrap_or(json!(1.0))});
             match b.call("ui.render", params) {
-                Ok(v) => png_result(&v, &json!({"width": v["width"], "height": v["height"], "pages": v["pages"]})),
+                Ok(v) => png_result(
+                    &v,
+                    &json!({"width": v["width"], "height": v["height"], "pages": v["pages"]}),
+                ),
                 Err(e) => ToolResult::error(e),
             }
         }

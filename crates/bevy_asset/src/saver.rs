@@ -5,16 +5,16 @@
 //! [`AssetWriter`]: crate::io::AssetWriter
 
 use crate::{
+    Asset, AssetContainer, AssetId, AssetLoader, AssetPath, AssetServer, ErasedLoadedAsset, Handle,
+    LabeledAsset, UntypedAssetId, UntypedHandle,
     io::{AssetWriterError, MissingAssetSourceError, MissingAssetWriterError, Writer},
     meta::{AssetAction, AssetMeta, AssetMetaDyn, Settings},
     transformer::TransformedAsset,
-    Asset, AssetContainer, AssetId, AssetLoader, AssetPath, AssetServer, ErasedLoadedAsset, Handle,
-    LabeledAsset, UntypedAssetId, UntypedHandle,
 };
 use alloc::{boxed::Box, string::ToString, sync::Arc, vec::Vec};
 use atomicow::CowArc;
 use bevy_ecs::error::BevyError;
-use bevy_platform::collections::{hash_map::Entry, HashMap};
+use bevy_platform::collections::{HashMap, hash_map::Entry};
 use bevy_reflect::TypePath;
 use bevy_tasks::{BoxedFuture, ConditionalSendFuture};
 use core::{any::TypeId, borrow::Borrow, ops::Deref};
@@ -584,9 +584,9 @@ pub(crate) mod tests {
     use ron::ser::PrettyConfig;
 
     use crate::{
-        saver::{save_using_saver, AssetSaver, SavedAsset, SavedAssetBuilder},
-        tests::{create_app, run_app_until, CoolText, CoolTextLoader, CoolTextRon, SubText},
         AssetApp, AssetPath, AssetServer, Assets,
+        saver::{AssetSaver, SavedAsset, SavedAssetBuilder, save_using_saver},
+        tests::{CoolText, CoolTextLoader, CoolTextRon, SubText, create_app, run_app_until},
     };
 
     fn new_subtext(text: &str) -> SubText {

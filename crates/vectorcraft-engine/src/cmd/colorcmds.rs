@@ -195,20 +195,43 @@ pub(crate) struct Recolor<'a> {
 
 impl<'a> Recolor<'a> {
     pub(crate) fn new(scope: Scope, f: &'a dyn Fn(Color) -> Color) -> Self {
-        Self { f, links: None, scope, images: HashMap::new(), patterns: HashMap::new(), new_images: vec![], new_patterns: vec![], changed: 0 }
+        Self {
+            f,
+            links: None,
+            scope,
+            images: HashMap::new(),
+            patterns: HashMap::new(),
+            new_images: vec![],
+            new_patterns: vec![],
+            changed: 0,
+        }
     }
 
     /// A pass that maps only solid colours and gradient stops, with their swatch link and tint
     /// (`links`); meshes and images keep their colours.
     pub(crate) fn links(scope: Scope, links: &'a LinkMap<'a>) -> Self {
-        Self { links: Some(links), ..Self::new(Scope { images: false, ..scope }, &same) }
+        Self {
+            links: Some(links),
+            ..Self::new(
+                Scope {
+                    images: false,
+                    ..scope
+                },
+                &same,
+            )
+        }
     }
 
     /// Recolour the objects `ids` and everything inside them (each once), add the new images and
     /// pattern swatches, and return the number of paints, meshes and images changed.
     pub(crate) fn run(mut self, d: &mut Document, ids: &[NodeId]) -> usize {
         let targets: HashSet<NodeId> = ids.iter().copied().collect();
-        let layers: Vec<(usize, Node)> = d.layers.iter().enumerate().filter_map(|(i, l)| Some((i, self.find(d, l, &targets)?))).collect();
+        let layers: Vec<(usize, Node)> = d
+            .layers
+            .iter()
+            .enumerate()
+            .filter_map(|(i, l)| Some((i, self.find(d, l, &targets)?)))
+            .collect();
         for (i, l) in layers {
             d.layers[i] = Arc::new(l);
         }
@@ -238,9 +261,22 @@ impl<'a> Recolor<'a> {
 
     /// `n` recoloured (through the shared colour visitor), or `None` when nothing changed.
     fn subtree(&mut self, d: &Document, n: &Node) -> Option<Node> {
-        let Scope { fill, stroke, images, .. } = self.scope;
+        let Scope {
+            fill,
+            stroke,
+            images,
+            ..
+        } = self.scope;
         let mut m = n.clone();
-        let changed = recolor_node(&mut m, Reach { fill, stroke, images }, &mut Visit { pass: self, d });
+        let changed = recolor_node(
+            &mut m,
+            Reach {
+                fill,
+                stroke,
+                images,
+            },
+            &mut Visit { pass: self, d },
+        );
         self.changed += changed;
         (changed > 0).then_some(m)
     }
@@ -248,7 +284,9 @@ impl<'a> Recolor<'a> {
     /// Recolour one paint: true when it changed.
     fn paint(&mut self, d: &Document, p: &mut Paint) -> bool {
         match p {
-            Paint::Pattern { pattern, .. } if self.scope.patterns => self.pattern(d, pattern).map(|new| *pattern = new).is_some(),
+            Paint::Pattern { pattern, .. } if self.scope.patterns => {
+                self.pattern(d, pattern).map(|new| *pattern = new).is_some()
+            }
             _ => match self.links {
                 Some(f) => map_links(p, f),
                 None => map_paint(p, self.f),
@@ -285,7 +323,11 @@ impl<'a> Recolor<'a> {
         let mut def = d.pattern(name)?.clone();
         // The whole tile is recoloured, whichever of the object's paints uses the pattern.
         let (scope, before) = (self.scope, self.changed);
-        self.scope = Scope { fill: true, stroke: true, ..scope };
+        self.scope = Scope {
+            fill: true,
+            stroke: true,
+            ..scope
+        };
         for n in &mut def.art {
             if let Some(new) = self.subtree(d, n) {
                 *n = Arc::new(new);
@@ -296,7 +338,11 @@ impl<'a> Recolor<'a> {
         if !changed {
             return None;
         }
-        def.name = unique_name(name, |n| d.swatch_name_taken(n) || d.pattern(n).is_some() || self.new_patterns.iter().any(|p| p.name == n));
+        def.name = unique_name(name, |n| {
+            d.swatch_name_taken(n)
+                || d.pattern(n).is_some()
+                || self.new_patterns.iter().any(|p| p.name == n)
+        });
         let new = def.name.clone();
         self.new_patterns.push(def);
         self.patterns.insert(name.to_string(), Some(new.clone()));
@@ -322,7 +368,12 @@ impl ColorVisitor for Visit<'_, '_> {
     }
 }
 
-pub(crate) fn recolor(s: &mut Session, p: &Value, label: &str, f: &dyn Fn(Color) -> Color) -> Result<Value> {
+pub(crate) fn recolor(
+    s: &mut Session,
+    p: &Value,
+    label: &str,
+    f: &dyn Fn(Color) -> Color,
+) -> Result<Value> {
     run_pass(s, p, label, Recolor::new(Scope::of(p), f))
 }
 
@@ -356,7 +407,12 @@ fn adjust_balance(s: &mut Session, p: &Value) -> Result<Value> {
         None if given(&["gray"]) => "gray".into(),
         None if given(&["r", "g", "b"]) => "rgb".into(),
         None if given(&["tint"]) => "global".into(),
-        None => return Err(bad(C, "give a mode or r/g/b, c/m/y/k, gray or tint adjustments")),
+        None => {
+            return Err(bad(
+                C,
+                "give a mode or r/g/b, c/m/y/k, gray or tint adjustments",
+            ));
+        }
     };
     let g = |k: &str| (f64_or(p, k, 0.0).clamp(-100.0, 100.0) / 100.0) as f32;
     let cl = |v: f32| v.clamp(0.0, 1.0);
@@ -382,10 +438,15 @@ fn adjust_balance(s: &mut Session, p: &Value) -> Result<Value> {
         "global" => {
             // Each linked colour moves to the shifted tint of its global swatch's current colour.
             let d = &s.doc()?.doc;
-            let bases: HashMap<String, Color> = d.swatches_iter().filter_map(|w| Some((w.name.clone(), d.global_color(&w.name)?))).collect();
+            let bases: HashMap<String, Color> = d
+                .swatches_iter()
+                .filter_map(|w| Some((w.name.clone(), d.global_color(&w.name)?)))
+                .collect();
             let dt = g("tint");
             let shift = move |c: &mut Color, link: &mut Option<String>, tint: &mut f32| {
-                let Some(base) = link.as_ref().and_then(|l| bases.get(l)) else { return false };
+                let Some(base) = link.as_ref().and_then(|l| bases.get(l)) else {
+                    return false;
+                };
                 let t = cl(*tint + dt);
                 if t == *tint {
                     return false;
@@ -395,7 +456,12 @@ fn adjust_balance(s: &mut Session, p: &Value) -> Result<Value> {
             };
             return run_pass(s, p, "Adjust Colors", Recolor::links(Scope::of(p), &shift));
         }
-        other => return Err(bad(C, format!("unknown mode `{other}` (rgb|cmyk|gray|global)"))),
+        other => {
+            return Err(bad(
+                C,
+                format!("unknown mode `{other}` (rgb|cmyk|gray|global)"),
+            ));
+        }
     };
     let convert = bool_or(p, "convert", false);
     recolor(s, p, "Adjust Colors", &move |c| {
@@ -441,7 +507,11 @@ fn fill_color(n: &Node) -> Option<Color> {
         NodeKind::Text(t) => t.first_style().fill.color(),
         NodeKind::Mesh(m) => {
             let k = m.points.len() as f32;
-            let sum = m.points.iter().map(|p| p.color.to_rgb()).reduce(|a, c| [a[0] + c[0], a[1] + c[1], a[2] + c[2]])?;
+            let sum = m
+                .points
+                .iter()
+                .map(|p| p.color.to_rgb())
+                .reduce(|a, c| [a[0] + c[0], a[1] + c[1], a[2] + c[2]])?;
             Some(Color::rgb(sum[0] / k, sum[1] / k, sum[2] / k))
         }
         _ => n.appearance.fill_paint().color(),
@@ -453,9 +523,16 @@ fn blend(s: &mut Session, order: BlendOrder) -> Result<Value> {
     let d = &s.doc()?.doc;
     let mut ids = filled_leaves(d, &roots);
     if ids.len() < 3 {
-        return Err(EngineError::Other("Blend colors: select at least three objects with filled colours".into()));
+        return Err(EngineError::Other(
+            "Blend colors: select at least three objects with filled colours".into(),
+        ));
     }
-    let center = |id: &NodeId| d.node(*id).and_then(|n| n.geometric_bounds()).map(|b| b.center()).unwrap_or_default();
+    let center = |id: &NodeId| {
+        d.node(*id)
+            .and_then(|n| n.geometric_bounds())
+            .map(|b| b.center())
+            .unwrap_or_default()
+    };
     match order {
         BlendOrder::Stack => {
             // Front to back: frontmost first.
@@ -464,28 +541,53 @@ fn blend(s: &mut Session, order: BlendOrder) -> Result<Value> {
         BlendOrder::Horizontal => ids.sort_by(|a, b| center(a).x.total_cmp(&center(b).x)),
         BlendOrder::Vertical => ids.sort_by(|a, b| center(a).y.total_cmp(&center(b).y)),
     }
-    let first = ids.first().and_then(|id| d.node(*id)).and_then(fill_color).unwrap_or_default();
-    let last = ids.last().and_then(|id| d.node(*id)).and_then(fill_color).unwrap_or_default();
+    let first = ids
+        .first()
+        .and_then(|id| d.node(*id))
+        .and_then(fill_color)
+        .unwrap_or_default();
+    let last = ids
+        .last()
+        .and_then(|id| d.node(*id))
+        .and_then(fill_color)
+        .unwrap_or_default();
     // Ends in one model blend in it; mixed ones give colours in the document's model.
-    let model = if first.model() == last.model() { first.model() } else { d.color_mode.model() };
+    let model = if first.model() == last.model() {
+        first.model()
+    } else {
+        d.color_mode.model()
+    };
     let n = ids.len();
     let label = match order {
         BlendOrder::Stack => "Blend Front to Back",
         BlendOrder::Horizontal => "Blend Horizontally",
         BlendOrder::Vertical => "Blend Vertically",
     };
-    let fills = Scope { fill: true, stroke: false, images: false, patterns: false };
+    let fills = Scope {
+        fill: true,
+        stroke: false,
+        images: false,
+        patterns: false,
+    };
     let changed = s.edit(label, |d, _| {
         let mut changed = 0;
         for (i, id) in ids.iter().enumerate().take(n - 1).skip(1) {
             let c = lerp_color(&first, &last, i as f32 / (n - 1) as f32).in_model(model);
             // A mesh moves its average to the blended colour and keeps its shading.
-            let f: Box<dyn Fn(Color) -> Color> = match d.node(*id).map(|n| (&n.kind, fill_color(n))) {
+            let f: Box<dyn Fn(Color) -> Color> = match d.node(*id).map(|n| (&n.kind, fill_color(n)))
+            {
                 Some((NodeKind::Mesh(_), Some(mean))) => {
                     let ([cr, cg, cb], [mr, mg, mb]) = (c.to_rgb(), mean.to_rgb());
                     Box::new(move |p| {
                         let [r, g, b] = p.to_rgb();
-                        keep_model(p, Color::rgb((r + cr - mr).clamp(0.0, 1.0), (g + cg - mg).clamp(0.0, 1.0), (b + cb - mb).clamp(0.0, 1.0)))
+                        keep_model(
+                            p,
+                            Color::rgb(
+                                (r + cr - mr).clamp(0.0, 1.0),
+                                (g + cg - mg).clamp(0.0, 1.0),
+                                (b + cb - mb).clamp(0.0, 1.0),
+                            ),
+                        )
                     })
                 }
                 _ => Box::new(move |_| c),
@@ -499,7 +601,10 @@ fn blend(s: &mut Session, order: BlendOrder) -> Result<Value> {
 
 fn harmony(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "color.harmony";
-    let base = p.get("color").and_then(color_value).ok_or_else(|| bad(C, "missing or invalid `color`"))?;
+    let base = p
+        .get("color")
+        .and_then(color_value)
+        .ok_or_else(|| bad(C, "missing or invalid `color`"))?;
     let rule = str_param(p, "rule").ok_or_else(|| bad(C, "missing `rule`"))?;
     let rule = Harmony::parse(rule).ok_or_else(|| {
         let ids: Vec<String> = Harmony::ALL.iter().map(|h| h.id()).collect();
@@ -510,7 +615,12 @@ fn harmony(s: &mut Session, p: &Value) -> Result<Value> {
         opts.steps = n.min(u32::MAX as u64) as u32;
     }
     if let Some(v) = str_param(p, "variation") {
-        opts.variation = Variation::parse(v).ok_or_else(|| bad(C, format!("unknown variation `{v}` (tintsShades|warmCool|vividMuted)")))?;
+        opts.variation = Variation::parse(v).ok_or_else(|| {
+            bad(
+                C,
+                format!("unknown variation `{v}` (tintsShades|warmCool|vividMuted)"),
+            )
+        })?;
     }
     if let Some(a) = p.get("amount").and_then(Value::as_f64) {
         opts.amount = a as f32;
@@ -520,5 +630,7 @@ fn harmony(s: &mut Session, p: &Value) -> Result<Value> {
         g = g.limited(&palette);
     }
     let hex = |cs: &[Color]| cs.iter().map(Color::to_hex).collect::<Vec<_>>();
-    Ok(json!({ "rule": rule.id(), "colors": hex(&g.colors), "grid": g.grid.iter().map(|r| hex(r)).collect::<Vec<_>>() }))
+    Ok(
+        json!({ "rule": rule.id(), "colors": hex(&g.colors), "grid": g.grid.iter().map(|r| hex(r)).collect::<Vec<_>>() }),
+    )
 }

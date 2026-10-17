@@ -41,7 +41,10 @@ pub const ALLOWED_LICENCES: &[&str] = &[
 /// (AGENTS.md §1.2).
 pub const BRAND_LICENCE: &str = "LicenseRef-Storyteller-Trademark";
 
-pub const ADOBE_DATA_ALLOWED: &[(&str, &str)] = &[("hayro-cmap", "assets/cmaps.brotli"), ("hayro-interpret", "src/font/generated/metrics.rs")];
+pub const ADOBE_DATA_ALLOWED: &[(&str, &str)] = &[
+    ("hayro-cmap", "assets/cmaps.brotli"),
+    ("hayro-interpret", "src/font/generated/metrics.rs"),
+];
 
 /// First-party files on that same closed list: generated tables of Adobe-authored non-visual
 /// technical data we hold ourselves rather than through a dependency. Each still needs an
@@ -51,8 +54,10 @@ pub const ADOBE_DATA_FILES: &[&str] = &["crates/fonts/src/std14.rs"];
 
 /// File extensions that count as assets wherever they appear in the repository.
 const ASSET_EXTENSIONS: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "svg", "ico", "icns", "webp", "bmp", "tif", "tiff", "avif", "heic", "ttf", "otf", "ttc", "woff", "woff2", "pfb",
-    "pfa", "afm", "icc", "icm", "pdf", "eps", "ps", "ai", "psd", "mp3", "wav", "ogg", "flac", "mp4", "mov", "webm", "cur", "ani", "brotli", "tsv",
+    "png", "jpg", "jpeg", "gif", "svg", "ico", "icns", "webp", "bmp", "tif", "tiff", "avif",
+    "heic", "ttf", "otf", "ttc", "woff", "woff2", "pfb", "pfa", "afm", "icc", "icm", "pdf", "eps",
+    "ps", "ai", "psd", "mp3", "wav", "ogg", "flac", "mp4", "mov", "webm", "cur", "ani", "brotli",
+    "tsv",
 ];
 
 #[derive(Deserialize, Default)]
@@ -137,20 +142,26 @@ pub struct Fetched {
 }
 
 pub fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("xtask lives in the workspace").to_path_buf()
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("xtask lives in the workspace")
+        .to_path_buf()
 }
 
 pub fn load(root: &Path) -> Result<Manifest> {
     let path = root.join("ATTRIBUTION.toml");
-    let text = std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let text =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
     toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))
 }
 
 pub fn sha256_hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes).iter().fold(String::with_capacity(64), |mut s, b| {
-        let _ = write!(s, "{b:02x}");
-        s
-    })
+    Sha256::digest(bytes)
+        .iter()
+        .fold(String::with_capacity(64), |mut s, b| {
+            let _ = write!(s, "{b:02x}");
+            s
+        })
 }
 
 /// `cargo xtask assets [--write]`.
@@ -162,10 +173,17 @@ pub fn run(args: &[String]) -> Result<()> {
         std::fs::write(root.join("ATTRIBUTION.md"), &markdown)?;
         println!("assets: wrote ATTRIBUTION.md");
     }
-    let mut problems = check(&root, &manifest, &repo_files(&root)?, &cargo_lock_versions(&root)?);
+    let mut problems = check(
+        &root,
+        &manifest,
+        &repo_files(&root)?,
+        &cargo_lock_versions(&root)?,
+    );
     match std::fs::read_to_string(root.join("ATTRIBUTION.md")) {
         Ok(existing) if existing == markdown => {}
-        _ => problems.push("ATTRIBUTION.md is out of date: run `cargo xtask assets --write`".into()),
+        _ => {
+            problems.push("ATTRIBUTION.md is out of date: run `cargo xtask assets --write`".into())
+        }
     }
     if problems.is_empty() {
         println!(
@@ -179,21 +197,35 @@ pub fn run(args: &[String]) -> Result<()> {
         for p in &problems {
             eprintln!("  ✗ {p}");
         }
-        bail!("{} asset policy violation(s); see AGENTS.md §1", problems.len())
+        bail!(
+            "{} asset policy violation(s); see AGENTS.md §1",
+            problems.len()
+        )
     }
 }
 
 /// Files in the working tree that git tracks or would track (respects .gitignore).
 fn repo_files(root: &Path) -> Result<Vec<String>> {
     let out = Command::new("git")
-        .args(["ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+        .args([
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ])
         .current_dir(root)
         .output()
         .context("running git ls-files")?;
     if !out.status.success() {
         bail!("git ls-files failed");
     }
-    Ok(out.stdout.split(|b| *b == 0).filter(|s| !s.is_empty()).map(|s| String::from_utf8_lossy(s).into_owned()).collect())
+    Ok(out
+        .stdout
+        .split(|b| *b == 0)
+        .filter(|s| !s.is_empty())
+        .map(|s| String::from_utf8_lossy(s).into_owned())
+        .collect())
 }
 
 fn cargo_lock_versions(root: &Path) -> Result<BTreeSet<(String, String)>> {
@@ -211,12 +243,16 @@ fn cargo_lock_versions(root: &Path) -> Result<BTreeSet<(String, String)>> {
 }
 
 pub fn is_asset_path(path: &str) -> bool {
-    Path::new(path).extension().and_then(|e| e.to_str()).is_some_and(|e| ASSET_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
+    Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| ASSET_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
 }
 
 /// Every licence id in an SPDX expression (`MIT OR Apache-2.0`, `MIT AND Bitstream-Vera`).
 fn licence_ids(expr: &str) -> impl Iterator<Item = &str> {
-    expr.split(|c: char| c.is_whitespace() || c == '(' || c == ')').filter(|t| !t.is_empty() && *t != "OR" && *t != "AND" && *t != "WITH")
+    expr.split(|c: char| c.is_whitespace() || c == '(' || c == ')')
+        .filter(|t| !t.is_empty() && *t != "OR" && *t != "AND" && *t != "WITH")
 }
 
 fn mentions_adobe(s: &str) -> bool {
@@ -224,16 +260,28 @@ fn mentions_adobe(s: &str) -> bool {
 }
 
 /// All policy checks that don't depend on the filesystem layout beyond `root` (unit-testable).
-pub fn check(root: &Path, m: &Manifest, repo_files: &[String], lock: &BTreeSet<(String, String)>) -> Vec<String> {
+pub fn check(
+    root: &Path,
+    m: &Manifest,
+    repo_files: &[String],
+    lock: &BTreeSet<(String, String)>,
+) -> Vec<String> {
     let mut problems = Vec::new();
     let mut seen = BTreeSet::new();
     // Kinds that may never come from Adobe (AGENTS.md §1.1): visual design, and UI translations
     // (which must be clean-room, never taken from a product's string tables).
-    let visual = |kind: &str| matches!(kind, "icon" | "image" | "font" | "logo" | "cursor" | "video" | "translation");
+    let visual = |kind: &str| {
+        matches!(
+            kind,
+            "icon" | "image" | "font" | "logo" | "cursor" | "video" | "translation"
+        )
+    };
     let licence_ok = |what: &str, licence: &str, problems: &mut Vec<String>| {
         for id in licence_ids(licence) {
             if !ALLOWED_LICENCES.contains(&id) {
-                problems.push(format!("{what}: licence `{id}` is not on the allowlist (AGENTS.md §1.2)"));
+                problems.push(format!(
+                    "{what}: licence `{id}` is not on the allowlist (AGENTS.md §1.2)"
+                ));
             }
         }
     };
@@ -241,18 +289,30 @@ pub fn check(root: &Path, m: &Manifest, repo_files: &[String], lock: &BTreeSet<(
         if !seen.insert(a.path.clone()) {
             problems.push(format!("{}: listed twice", a.path));
         }
-        let brand = a.licence == BRAND_LICENCE && a.kind == "logo" && a.path.starts_with("docs/brand/");
+        let brand =
+            a.licence == BRAND_LICENCE && a.kind == "logo" && a.path.starts_with("docs/brand/");
         if !brand {
             licence_ok(&a.path, &a.licence, &mut problems);
         }
         if !root.join(&a.licence_file).is_file() {
-            problems.push(format!("{}: licence file {} is missing", a.path, a.licence_file));
+            problems.push(format!(
+                "{}: licence file {} is missing",
+                a.path, a.licence_file
+            ));
         }
-        if visual(&a.kind) && (mentions_adobe(&a.author) || mentions_adobe(&a.source) || mentions_adobe(&a.title)) {
-            problems.push(format!("{}: {} from Adobe is forbidden (AGENTS.md §1.1)", a.path, a.kind));
+        if visual(&a.kind)
+            && (mentions_adobe(&a.author) || mentions_adobe(&a.source) || mentions_adobe(&a.title))
+        {
+            problems.push(format!(
+                "{}: {} from Adobe is forbidden (AGENTS.md §1.1)",
+                a.path, a.kind
+            ));
         }
         if a.adobe_data && !(ADOBE_DATA_FILES.contains(&a.path.as_str()) && a.kind == "data") {
-            problems.push(format!("{}: adobe_data is only allowed for the closed list in AGENTS.md §1.1", a.path));
+            problems.push(format!(
+                "{}: adobe_data is only allowed for the closed list in AGENTS.md §1.1",
+                a.path
+            ));
         }
         match std::fs::read(root.join(&a.path)) {
             Ok(bytes) if sha256_hex(&bytes) == a.sha256 => {}
@@ -272,12 +332,18 @@ pub fn check(root: &Path, m: &Manifest, repo_files: &[String], lock: &BTreeSet<(
             problems.push(format!("{what}: crate version not in Cargo.lock (dependency changed: re-audit its bundled assets)"));
         }
         if visual(&b.kind) && (mentions_adobe(&b.author) || mentions_adobe(&b.source)) {
-            problems.push(format!("{what}: {} from Adobe is forbidden (AGENTS.md §1.1)", b.kind));
+            problems.push(format!(
+                "{what}: {} from Adobe is forbidden (AGENTS.md §1.1)",
+                b.kind
+            ));
         }
         let adobe = mentions_adobe(&b.author);
-        let approved = ADOBE_DATA_ALLOWED.contains(&(b.krate.as_str(), b.path.as_str())) && b.kind == "data";
+        let approved =
+            ADOBE_DATA_ALLOWED.contains(&(b.krate.as_str(), b.path.as_str())) && b.kind == "data";
         if (adobe || b.adobe_data) && !(approved && b.adobe_data) {
-            problems.push(format!("{what}: Adobe-authored material outside the closed list in AGENTS.md §1.1"));
+            problems.push(format!(
+                "{what}: Adobe-authored material outside the closed list in AGENTS.md §1.1"
+            ));
         }
         if b.sha256.len() != 64 {
             problems.push(format!("{what}: sha256 must be 64 hex digits"));
@@ -285,11 +351,19 @@ pub fn check(root: &Path, m: &Manifest, repo_files: &[String], lock: &BTreeSet<(
     }
     for f in &m.fetched {
         licence_ok(&f.file, &f.licence, &mut problems);
-        if visual(&f.kind) && (mentions_adobe(&f.author) || mentions_adobe(&f.source) || mentions_adobe(&f.title)) {
-            problems.push(format!("{}: {} from Adobe is forbidden (AGENTS.md §1.1)", f.file, f.kind));
+        if visual(&f.kind)
+            && (mentions_adobe(&f.author) || mentions_adobe(&f.source) || mentions_adobe(&f.title))
+        {
+            problems.push(format!(
+                "{}: {} from Adobe is forbidden (AGENTS.md §1.1)",
+                f.file, f.kind
+            ));
         }
         if f.sha256.len() != 64 || f.licence_sha256.len() != 64 {
-            problems.push(format!("{}: sha256 and licence_sha256 must be 64 hex digits", f.file));
+            problems.push(format!(
+                "{}: sha256 and licence_sha256 must be 64 hex digits",
+                f.file
+            ));
         }
         if !f.url.starts_with("https://") || !f.licence_url.starts_with("https://") {
             problems.push(format!("{}: URLs must be https", f.file));
@@ -297,8 +371,13 @@ pub fn check(root: &Path, m: &Manifest, repo_files: &[String], lock: &BTreeSet<(
     }
     for b in &m.build_input {
         licence_ok(&b.name, &b.licence, &mut problems);
-        if visual(&b.kind) && (mentions_adobe(&b.author) || mentions_adobe(&b.source) || mentions_adobe(&b.title)) {
-            problems.push(format!("{}: {} from Adobe is forbidden (AGENTS.md §1.1)", b.name, b.kind));
+        if visual(&b.kind)
+            && (mentions_adobe(&b.author) || mentions_adobe(&b.source) || mentions_adobe(&b.title))
+        {
+            problems.push(format!(
+                "{}: {} from Adobe is forbidden (AGENTS.md §1.1)",
+                b.name, b.kind
+            ));
         }
         if !b.source.starts_with("https://") || !b.attribution.starts_with("https://") {
             problems.push(format!("{}: URLs must be https", b.name));
@@ -328,7 +407,12 @@ fn fetch_verified(url: &str, path: &Path, sha256: &str) -> Result<()> {
     }
     println!("assets: fetching {url}");
     let tmp = path.with_extension("part");
-    let status = Command::new("curl").args(["-sSfL", "--retry", "3", "-o"]).arg(&tmp).arg(url).status().context("running curl")?;
+    let status = Command::new("curl")
+        .args(["-sSfL", "--retry", "3", "-o"])
+        .arg(&tmp)
+        .arg(url)
+        .status()
+        .context("running curl")?;
     if !status.success() {
         bail!("download failed: {url}");
     }
@@ -347,7 +431,10 @@ fn fetch_verified(url: &str, path: &Path, sha256: &str) -> Result<()> {
 pub fn models(args: &[String]) -> Result<()> {
     let root = root();
     let m = load(&root)?;
-    let dir = args.first().map(PathBuf::from).unwrap_or_else(|| root.join("assets/models"));
+    let dir = args
+        .first()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("assets/models"));
     for p in fetch_all(&m, &dir, "model")? {
         println!("models: {}", p.display());
     }
@@ -357,7 +444,8 @@ pub fn models(args: &[String]) -> Result<()> {
 
 /// The credits shipped beside the models (their licences require attribution).
 fn models_attribution(m: &Manifest) -> String {
-    let mut s = String::from("PdfCraft's text recognition (Scan & OCR) uses these models, unmodified.\n");
+    let mut s =
+        String::from("PdfCraft's text recognition (Scan & OCR) uses these models, unmodified.\n");
     for f in m.fetched.iter().filter(|f| f.kind == "model") {
         let _ = write!(
             s,
@@ -384,14 +472,27 @@ pub fn render_markdown(m: &Manifest) -> String {
         m.asset.len()
     ));
     for a in &m.asset {
-        let _ = writeln!(s, "| `{}` | {} | {} | {} | {} | {} |", a.path, esc(&a.title), esc(&a.author), a.licence, esc(&a.source), esc(&a.usage));
+        let _ = writeln!(
+            s,
+            "| `{}` | {} | {} | {} | {} | {} |",
+            a.path,
+            esc(&a.title),
+            esc(&a.author),
+            a.licence,
+            esc(&a.source),
+            esc(&a.usage)
+        );
     }
     s.push_str(&format!(
         "\n## Compiled in through dependencies ({})\n\n| Crate | File | Title | Author | Licence | Source | Used for |\n|---|---|---|---|---|---|---|\n",
         m.bundled.len()
     ));
     for b in &m.bundled {
-        let note = if b.adobe_data { " (non-visual data, AGENTS.md §1.1)" } else { "" };
+        let note = if b.adobe_data {
+            " (non-visual data, AGENTS.md §1.1)"
+        } else {
+            ""
+        };
         let _ = writeln!(
             s,
             "| `{}` {} | `{}` | {}{} | {} | {} | {} | {} |",
@@ -411,7 +512,16 @@ pub fn render_markdown(m: &Manifest) -> String {
         m.fetched.len()
     ));
     for f in &m.fetched {
-        let _ = writeln!(s, "| `{}` | {} | {} | {} | {} | {} |", f.file, esc(&f.title), esc(&f.author), f.licence, esc(&f.source), esc(&f.usage));
+        let _ = writeln!(
+            s,
+            "| `{}` | {} | {} | {} | {} | {} |",
+            f.file,
+            esc(&f.title),
+            esc(&f.author),
+            f.licence,
+            esc(&f.source),
+            esc(&f.usage)
+        );
     }
     s.push_str(&format!(
         "\n## Optional build inputs ({})\n\nNot in this repository and never downloaded by it: compiled in only when the build sets the option (official releases do). Each input attributes its own files.\n\n| Input | Option | Title | Author | Licence | Source | Attribution | Used for |\n|---|---|---|---|---|---|---|---|\n",
@@ -446,7 +556,11 @@ mod tests {
         let models: Vec<_> = m.fetched.iter().filter(|f| f.kind == "model").collect();
         assert!(!models.is_empty());
         for f in models {
-            assert!(text.contains(&f.file) && text.contains(&f.author) && text.contains(&f.licence), "{}", f.file);
+            assert!(
+                text.contains(&f.file) && text.contains(&f.author) && text.contains(&f.licence),
+                "{}",
+                f.file
+            );
         }
     }
 
@@ -494,59 +608,136 @@ mod tests {
             kind: "font".into(),
             usage: "u".into(),
         };
-        let check_one = |b: BuildInput| check(&root(), &Manifest { build_input: vec![b], ..Default::default() }, &[], &lock(&[]));
+        let check_one = |b: BuildInput| {
+            check(
+                &root(),
+                &Manifest {
+                    build_input: vec![b],
+                    ..Default::default()
+                },
+                &[],
+                &lock(&[]),
+            )
+        };
         assert!(check_one(input("OFL-1.1", "https://example.org/ATTRIBUTION.md")).is_empty());
-        assert_eq!(check_one(input("LicenseRef-Proprietary", "https://example.org/A.md")).len(), 1);
+        assert_eq!(
+            check_one(input("LicenseRef-Proprietary", "https://example.org/A.md")).len(),
+            1
+        );
         assert_eq!(check_one(input("OFL-1.1", "ATTRIBUTION.md")).len(), 1);
     }
 
     fn lock(entries: &[(&str, &str)]) -> BTreeSet<(String, String)> {
-        entries.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect()
+        entries
+            .iter()
+            .map(|(a, b)| (a.to_string(), b.to_string()))
+            .collect()
     }
 
     #[test]
     fn the_real_manifest_passes() {
         let root = root();
         let m = load(&root).unwrap();
-        let problems = check(&root, &m, &repo_files(&root).unwrap(), &cargo_lock_versions(&root).unwrap());
+        let problems = check(
+            &root,
+            &m,
+            &repo_files(&root).unwrap(),
+            &cargo_lock_versions(&root).unwrap(),
+        );
         assert!(problems.is_empty(), "{problems:#?}");
     }
 
     #[test]
     fn unlisted_asset_is_rejected() {
-        let p = check(&root(), &Manifest::default(), &["assets/icons/x.svg".into()], &lock(&[]));
-        assert!(p.iter().any(|p| p.contains("no ATTRIBUTION.toml entry")), "{p:?}");
+        let p = check(
+            &root(),
+            &Manifest::default(),
+            &["assets/icons/x.svg".into()],
+            &lock(&[]),
+        );
+        assert!(
+            p.iter().any(|p| p.contains("no ATTRIBUTION.toml entry")),
+            "{p:?}"
+        );
     }
 
     #[test]
     fn translation_catalogs_require_attribution() {
         assert!(is_asset_path("crates/ui-egui/src/i18n/ja.tsv"));
-        let p = check(&root(), &Manifest::default(), &["crates/ui-egui/src/i18n/ja.tsv".into()], &lock(&[]));
-        assert!(p.iter().any(|p| p.contains("no ATTRIBUTION.toml entry")), "{p:?}");
-        let m = Manifest { asset: vec![asset("crates/ui-egui/src/i18n/ja.tsv", "Adobe", "translation", "MIT")], ..Default::default() };
-        assert!(check(&root(), &m, &[], &lock(&[])).iter().any(|p| p.contains("from Adobe is forbidden")));
+        let p = check(
+            &root(),
+            &Manifest::default(),
+            &["crates/ui-egui/src/i18n/ja.tsv".into()],
+            &lock(&[]),
+        );
+        assert!(
+            p.iter().any(|p| p.contains("no ATTRIBUTION.toml entry")),
+            "{p:?}"
+        );
+        let m = Manifest {
+            asset: vec![asset(
+                "crates/ui-egui/src/i18n/ja.tsv",
+                "Adobe",
+                "translation",
+                "MIT",
+            )],
+            ..Default::default()
+        };
+        assert!(
+            check(&root(), &m, &[], &lock(&[]))
+                .iter()
+                .any(|p| p.contains("from Adobe is forbidden"))
+        );
     }
 
     #[test]
     fn adobe_icons_are_rejected() {
-        let m = Manifest { asset: vec![asset("assets/icons/x.svg", "Adobe Inc.", "icon", "MIT")], ..Default::default() };
+        let m = Manifest {
+            asset: vec![asset("assets/icons/x.svg", "Adobe Inc.", "icon", "MIT")],
+            ..Default::default()
+        };
         let p = check(&root(), &m, &[], &lock(&[]));
-        assert!(p.iter().any(|p| p.contains("from Adobe is forbidden")), "{p:?}");
+        assert!(
+            p.iter().any(|p| p.contains("from Adobe is forbidden")),
+            "{p:?}"
+        );
     }
 
     #[test]
     fn disallowed_licences_are_rejected() {
-        let m = Manifest { asset: vec![asset("assets/icons/x.svg", "Someone", "icon", "LicenseRef-Proprietary OR MIT")], ..Default::default() };
+        let m = Manifest {
+            asset: vec![asset(
+                "assets/icons/x.svg",
+                "Someone",
+                "icon",
+                "LicenseRef-Proprietary OR MIT",
+            )],
+            ..Default::default()
+        };
         let p = check(&root(), &m, &[], &lock(&[]));
-        assert!(p.iter().any(|p| p.contains("not on the allowlist")), "{p:?}");
+        assert!(
+            p.iter().any(|p| p.contains("not on the allowlist")),
+            "{p:?}"
+        );
     }
 
     #[test]
     fn changed_file_fails_hash_check() {
         let mut a = asset("assets/icons/x.svg", "Lucide", "icon", "ISC");
         a.sha256 = "0".repeat(64);
-        let p = check(&root(), &Manifest { asset: vec![a], ..Default::default() }, &[], &lock(&[]));
-        assert!(p.iter().any(|p| p.contains("SHA-256 does not match")), "{p:?}");
+        let p = check(
+            &root(),
+            &Manifest {
+                asset: vec![a],
+                ..Default::default()
+            },
+            &[],
+            &lock(&[]),
+        );
+        assert!(
+            p.iter().any(|p| p.contains("SHA-256 does not match")),
+            "{p:?}"
+        );
     }
 
     #[test]
@@ -559,53 +750,121 @@ mod tests {
         ] {
             let mut a = asset(path, "Storyteller", kind, BRAND_LICENCE);
             a.licence_file = "docs/brand/LICENSE-brand.txt".into();
-            let m = Manifest { asset: vec![a], ..Default::default() };
+            let m = Manifest {
+                asset: vec![a],
+                ..Default::default()
+            };
             let p = check(&root, &m, &[], &BTreeSet::new());
-            assert_eq!(p.iter().all(|p| !p.contains("allowlist")), pass, "{path} {kind}: {p:?}");
+            assert_eq!(
+                p.iter().all(|p| !p.contains("allowlist")),
+                pass,
+                "{path} {kind}: {p:?}"
+            );
         }
     }
 
     #[test]
     fn adobe_data_only_on_the_closed_list() {
         let l = lock(&[("hayro-cmap", "1.0.0"), ("other", "1.0.0")]);
-        let ok = Manifest { bundled: vec![bundled("hayro-cmap", "assets/cmaps.brotli", "Adobe", "data", true)], ..Default::default() };
+        let ok = Manifest {
+            bundled: vec![bundled(
+                "hayro-cmap",
+                "assets/cmaps.brotli",
+                "Adobe",
+                "data",
+                true,
+            )],
+            ..Default::default()
+        };
         assert!(check(&root(), &ok, &[], &l).is_empty());
-        let sneaky = Manifest { bundled: vec![bundled("other", "fonts/Myriad.otf", "Adobe", "data", true)], ..Default::default() };
-        assert!(check(&root(), &sneaky, &[], &l).iter().any(|p| p.contains("closed list")));
-        let font = Manifest { bundled: vec![bundled("hayro-cmap", "assets/cmaps.brotli", "Adobe", "font", true)], ..Default::default() };
-        assert!(check(&root(), &font, &[], &l).iter().any(|p| p.contains("forbidden")));
+        let sneaky = Manifest {
+            bundled: vec![bundled("other", "fonts/Myriad.otf", "Adobe", "data", true)],
+            ..Default::default()
+        };
+        assert!(
+            check(&root(), &sneaky, &[], &l)
+                .iter()
+                .any(|p| p.contains("closed list"))
+        );
+        let font = Manifest {
+            bundled: vec![bundled(
+                "hayro-cmap",
+                "assets/cmaps.brotli",
+                "Adobe",
+                "font",
+                true,
+            )],
+            ..Default::default()
+        };
+        assert!(
+            check(&root(), &font, &[], &l)
+                .iter()
+                .any(|p| p.contains("forbidden"))
+        );
     }
 
     #[test]
     fn first_party_adobe_data_only_on_the_closed_list() {
         let l = lock(&[]);
         // The generated standard-14 table is on the list, as `kind = "data"`.
-        let mut ok = asset("crates/fonts/src/std14.rs", "Adobe (Core14 AFM metrics); tables by the PdfCraft contributors", "data", "MIT");
+        let mut ok = asset(
+            "crates/fonts/src/std14.rs",
+            "Adobe (Core14 AFM metrics); tables by the PdfCraft contributors",
+            "data",
+            "MIT",
+        );
         ok.adobe_data = true;
-        let m = Manifest { asset: vec![ok], ..Default::default() };
-        assert!(check(&root(), &m, &[], &l).is_empty(), "{:?}", check(&root(), &m, &[], &l));
+        let m = Manifest {
+            asset: vec![ok],
+            ..Default::default()
+        };
+        assert!(
+            check(&root(), &m, &[], &l).is_empty(),
+            "{:?}",
+            check(&root(), &m, &[], &l)
+        );
 
         // Any other first-party file claiming it is refused.
         let mut sneaky = asset("Cargo.toml", "Adobe", "data", "MIT");
         sneaky.adobe_data = true;
-        let m = Manifest { asset: vec![sneaky], ..Default::default() };
-        assert!(check(&root(), &m, &[], &l).iter().any(|p| p.contains("closed list")));
+        let m = Manifest {
+            asset: vec![sneaky],
+            ..Default::default()
+        };
+        assert!(
+            check(&root(), &m, &[], &l)
+                .iter()
+                .any(|p| p.contains("closed list"))
+        );
 
         // Even on the list, it may only be data — never a typeface.
         let mut wrong_kind = asset("crates/fonts/src/std14.rs", "Adobe", "font", "MIT");
         wrong_kind.adobe_data = true;
-        let m = Manifest { asset: vec![wrong_kind], ..Default::default() };
+        let m = Manifest {
+            asset: vec![wrong_kind],
+            ..Default::default()
+        };
         assert!(!check(&root(), &m, &[], &l).is_empty());
     }
 
     #[test]
     fn dependency_upgrade_forces_reaudit() {
-        let m = Manifest { bundled: vec![bundled("other", "a.ttf", "Someone", "font", false)], ..Default::default() };
-        assert!(check(&root(), &m, &[], &lock(&[("other", "2.0.0")])).iter().any(|p| p.contains("not in Cargo.lock")));
+        let m = Manifest {
+            bundled: vec![bundled("other", "a.ttf", "Someone", "font", false)],
+            ..Default::default()
+        };
+        assert!(
+            check(&root(), &m, &[], &lock(&[("other", "2.0.0")]))
+                .iter()
+                .any(|p| p.contains("not in Cargo.lock"))
+        );
     }
 
     #[test]
     fn spdx_expressions_split() {
-        assert_eq!(licence_ids("(MIT OR Apache-2.0) AND OFL-1.1").collect::<Vec<_>>(), ["MIT", "Apache-2.0", "OFL-1.1"]);
+        assert_eq!(
+            licence_ids("(MIT OR Apache-2.0) AND OFL-1.1").collect::<Vec<_>>(),
+            ["MIT", "Apache-2.0", "OFL-1.1"]
+        );
     }
 }

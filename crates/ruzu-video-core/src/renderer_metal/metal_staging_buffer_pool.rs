@@ -148,7 +148,12 @@ impl MetalStagingBufferPool {
     /// Upload, download, then device-local cached capacity. The stream buffer
     /// is excluded; querying uses an already observed tick and never waits.
     pub(super) fn cache_memory_usage(&self, known_tick: u64) -> [StagingCacheMemoryUsage; 3] {
-        [&self.upload_cache, &self.download_cache, &self.device_local_cache].map(|cache| {
+        [
+            &self.upload_cache,
+            &self.download_cache,
+            &self.device_local_cache,
+        ]
+        .map(|cache| {
             let mut usage = StagingCacheMemoryUsage::default();
             for entry in cache.iter().flat_map(|level| &level.entries) {
                 let bytes = entry.buffer.length();
@@ -511,7 +516,9 @@ mod tests {
         assert_eq!(first.size, 17);
         assert!(Arc::ptr_eq(&first.buffer, pool.stream_buf()));
         assert!(Arc::ptr_eq(&second.buffer, pool.stream_buf()));
-        let dedicated = pool.request_upload_buffer(&mut scheduler, 17, true).unwrap();
+        let dedicated = pool
+            .request_upload_buffer(&mut scheduler, 17, true)
+            .unwrap();
         assert!(!Arc::ptr_eq(&dedicated.buffer, pool.stream_buf()));
     }
 
@@ -520,22 +527,45 @@ mod tests {
         let device = MetalDevice::new().unwrap();
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
-        let _stream = pool.request_upload_buffer(&mut scheduler, 32, false).unwrap();
-        let mut deferred = pool.request_upload_buffer(&mut scheduler, 32, true).unwrap();
-        let _download = pool.request_download_buffer(&mut scheduler, 64, false).unwrap();
-        let _local = pool.request(&mut scheduler, 128, StagingBufferUsage::DeviceLocal, false).unwrap();
+        let _stream = pool
+            .request_upload_buffer(&mut scheduler, 32, false)
+            .unwrap();
+        let mut deferred = pool
+            .request_upload_buffer(&mut scheduler, 32, true)
+            .unwrap();
+        let _download = pool
+            .request_download_buffer(&mut scheduler, 64, false)
+            .unwrap();
+        let _local = pool
+            .request(&mut scheduler, 128, StagingBufferUsage::DeviceLocal, false)
+            .unwrap();
         let usage = pool.cache_memory_usage(0);
-        assert_eq!(usage, [
-            StagingCacheMemoryUsage { total_bytes: 32, deferred_bytes: 32, reusable_bytes: 0 },
-            StagingCacheMemoryUsage { total_bytes: 64, ..Default::default() },
-            StagingCacheMemoryUsage { total_bytes: 128, ..Default::default() },
-        ]);
+        assert_eq!(
+            usage,
+            [
+                StagingCacheMemoryUsage {
+                    total_bytes: 32,
+                    deferred_bytes: 32,
+                    reusable_bytes: 0
+                },
+                StagingCacheMemoryUsage {
+                    total_bytes: 64,
+                    ..Default::default()
+                },
+                StagingCacheMemoryUsage {
+                    total_bytes: 128,
+                    ..Default::default()
+                },
+            ]
+        );
         assert_eq!(scheduler.current_tick(), 1);
         assert_eq!(scheduler.completed_tick(), 0);
         pool.free_deferred(&scheduler, &mut deferred).unwrap();
         let usage = pool.cache_memory_usage(1);
-        assert_eq!(usage.map(|u| (u.total_bytes, u.reusable_bytes, u.deferred_bytes)),
-            [(32, 32, 0), (64, 64, 0), (128, 128, 0)]);
+        assert_eq!(
+            usage.map(|u| (u.total_bytes, u.reusable_bytes, u.deferred_bytes)),
+            [(32, 32, 0), (64, 64, 0), (128, 128, 0)]
+        );
         // The snapshot must not poll, submit or advance the scheduler itself.
         assert_eq!(scheduler.completed_tick(), 0);
     }
@@ -575,14 +605,20 @@ mod tests {
         let device = MetalDevice::new().unwrap();
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
-        let mut first = pool.request_upload_buffer(&mut scheduler, 16, false).unwrap();
+        let mut first = pool
+            .request_upload_buffer(&mut scheduler, 16, false)
+            .unwrap();
         first.mapped_span_mut().fill(0x35);
         let output = MetalBuffer::new(&device, 16).unwrap();
-        first.buffer.encode_upload_copy(&mut scheduler, &output, first.offset, 0, 16).unwrap();
+        first
+            .buffer
+            .encode_upload_copy(&mut scheduler, &output, first.offset, 0, 16)
+            .unwrap();
         pool.stream_iterator = MAX_STREAM_BUFFER_SIZE - MAX_ALIGNMENT;
         pool.stream_free_iterator = pool.stream_iterator;
-        let mut wrapped = pool.request_upload_buffer_with_binding_span(
-            &mut scheduler, 16, MAX_ALIGNMENT * 2).unwrap();
+        let mut wrapped = pool
+            .request_upload_buffer_with_binding_span(&mut scheduler, 16, MAX_ALIGNMENT * 2)
+            .unwrap();
         assert!(!Arc::ptr_eq(&wrapped.buffer, pool.stream_buf()));
         wrapped.mapped_span_mut().fill(0x91);
         assert_eq!(first.mapped_span(), &[0x35; 16]);
@@ -590,7 +626,9 @@ mod tests {
         let mut actual = [0; 16];
         output.read(0, &mut actual).unwrap();
         assert_eq!(actual, [0x35; 16]);
-        let reused = pool.request_upload_buffer(&mut scheduler, 16, false).unwrap();
+        let reused = pool
+            .request_upload_buffer(&mut scheduler, 16, false)
+            .unwrap();
         assert!(Arc::ptr_eq(&reused.buffer, pool.stream_buf()));
     }
 

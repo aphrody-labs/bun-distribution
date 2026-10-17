@@ -50,7 +50,11 @@ const MAX_TILES: usize = 16;
 
 /// Parse the tile table at the start of the strip (file structure, *Container*): `u32` count, `u32` 0, then
 /// 24-byte entries `u64` offset (relative to the strip), `u32` x, y, width, height, all little-endian.
-pub(crate) fn parse_tile_table(strip: &[u8], width: usize, height: usize) -> Result<Vec<TileEntry>> {
+pub(crate) fn parse_tile_table(
+    strip: &[u8],
+    width: usize,
+    height: usize,
+) -> Result<Vec<TileEntry>> {
     let count = u32_le(strip, 0).ok_or_else(|| corrupt("truncated tile table"))?;
     if count == 0 || count > MAX_TILES {
         return Err(unsupported("tile count outside 1..=16"));
@@ -59,29 +63,62 @@ pub(crate) fn parse_tile_table(strip: &[u8], width: usize, height: usize) -> Res
     let mut area = 0usize;
     for i in 0..count {
         let at = 8 + 24 * i;
-        let e = strip.get(at..at + 24).ok_or_else(|| corrupt("truncated tile table"))?;
-        let offset = e.get(..8).and_then(|b| <[u8; 8]>::try_from(b).ok()).map(u64::from_le_bytes).and_then(|o| usize::try_from(o).ok());
-        let offset = offset.filter(|&o| o < strip.len()).ok_or_else(|| corrupt("tile offset outside the strip"))?;
+        let e = strip
+            .get(at..at + 24)
+            .ok_or_else(|| corrupt("truncated tile table"))?;
+        let offset = e
+            .get(..8)
+            .and_then(|b| <[u8; 8]>::try_from(b).ok())
+            .map(u64::from_le_bytes)
+            .and_then(|o| usize::try_from(o).ok());
+        let offset = offset
+            .filter(|&o| o < strip.len())
+            .ok_or_else(|| corrupt("tile offset outside the strip"))?;
         if tiles.last().is_some_and(|p| offset <= p.offset) {
             return Err(corrupt("tile offsets do not increase"));
         }
         let (x, y, w, h) = (u32_le(e, 8), u32_le(e, 12), u32_le(e, 16), u32_le(e, 20));
-        let (Some(x), Some(y), Some(w), Some(h)) = (x, y, w, h) else { return Err(corrupt("truncated tile table")) };
+        let (Some(x), Some(y), Some(w), Some(h)) = (x, y, w, h) else {
+            return Err(corrupt("truncated tile table"));
+        };
         // Even geometry; the level-3 band width w / 16 must be whole (w/2 a multiple of 8).
-        if w == 0 || h == 0 || x % 2 != 0 || y % 2 != 0 || w % 2 != 0 || h % 2 != 0 || (w / 2) % 8 != 0 {
+        if w == 0
+            || h == 0
+            || x % 2 != 0
+            || y % 2 != 0
+            || w % 2 != 0
+            || h % 2 != 0
+            || (w / 2) % 8 != 0
+        {
             return Err(unsupported("tile geometry"));
         }
-        let fits = x.checked_add(w).is_some_and(|r| r <= width) && y.checked_add(h).is_some_and(|b| b <= height);
+        let fits = x.checked_add(w).is_some_and(|r| r <= width)
+            && y.checked_add(h).is_some_and(|b| b <= height);
         if !fits {
             return Err(corrupt("tile outside the image"));
         }
-        let a = w.checked_mul(h).filter(|&a| a <= crate::MAX_SAMPLES).ok_or(RawError::Limit("ARW6 tile too large"))?;
-        area = area.checked_add(a).ok_or(RawError::Limit("ARW6 tiles too large"))?;
-        tiles.push(TileEntry { offset, x, y, width: w, height: h });
+        let a = w
+            .checked_mul(h)
+            .filter(|&a| a <= crate::MAX_SAMPLES)
+            .ok_or(RawError::Limit("ARW6 tile too large"))?;
+        area = area
+            .checked_add(a)
+            .ok_or(RawError::Limit("ARW6 tiles too large"))?;
+        tiles.push(TileEntry {
+            offset,
+            x,
+            y,
+            width: w,
+            height: h,
+        });
     }
     for (i, a) in tiles.iter().enumerate() {
         for b in tiles.iter().skip(i + 1) {
-            if a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height {
+            if a.x < b.x + b.width
+                && b.x < a.x + a.width
+                && a.y < b.y + b.height
+                && b.y < a.y + a.height
+            {
                 return Err(corrupt("tiles overlap"));
             }
         }
@@ -138,33 +175,64 @@ const GROUP_STREAMS: [usize; 5] = [3, 3, 3, 3, 1];
 /// Parse word 0 (RDD 34 `Picture_info`; every real file has HS = tile width, VS = tile height / 2, BBD 16, NC 3, NW 3,
 /// NP 1000000000b), the group size words 3..=7 and each stream's header word (*Container*, Phase 0).
 pub(crate) fn parse_tile_header(tile: &[u8], tw: usize, th: usize) -> Result<TileHeader> {
-    let w0 = tile.get(..16).ok_or_else(|| corrupt("tile shorter than its picture header"))?;
+    let w0 = tile
+        .get(..16)
+        .ok_or_else(|| corrupt("tile shorter than its picture header"))?;
     let f = |pos, n| field(w0, pos, n).map(|v| v as usize);
-    let (hs, vs, bbd, nc, nw, np) = (f(64, 16), f(80, 16), f(102, 6), f(112, 3), f(115, 3), f(118, 10));
-    let (Some(hs), Some(vs), Some(bbd), Some(nc), Some(nw), Some(np)) = (hs, vs, bbd, nc, nw, np) else {
+    let (hs, vs, bbd, nc, nw, np) = (
+        f(64, 16),
+        f(80, 16),
+        f(102, 6),
+        f(112, 3),
+        f(115, 3),
+        f(118, 10),
+    );
+    let (Some(hs), Some(vs), Some(bbd), Some(nc), Some(nw), Some(np)) = (hs, vs, bbd, nc, nw, np)
+    else {
         return Err(corrupt("picture header"));
     };
     if hs != tw || vs * 2 != th || bbd != 16 || nc != 3 || nw != 3 || np != 0b10_0000_0000 {
-        return Err(unsupported(&format!("picture header variant (HS {hs}, VS {vs}, BBD {bbd}, NC {nc}, NW {nw}, NP {np:#b})")));
+        return Err(unsupported(&format!(
+            "picture header variant (HS {hs}, VS {vs}, BBD {bbd}, NC {nc}, NW {nw}, NP {np:#b})"
+        )));
     }
     let mut streams = Vec::with_capacity(13);
     let mut word = 8usize;
     for (group, &n) in GROUP_STREAMS.iter().enumerate() {
-        let table = tile.get((3 + group) * 16..(4 + group) * 16).ok_or_else(|| corrupt("truncated group table"))?;
+        let table = tile
+            .get((3 + group) * 16..(4 + group) * 16)
+            .ok_or_else(|| corrupt("truncated group table"))?;
         if usize::from(table.first().copied().unwrap_or(0)) != n {
             return Err(unsupported("group stream count"));
         }
         for comp in 0..n {
             let size_words = u24_be(table, 1 + 3 * comp).ok_or_else(|| corrupt("group table"))?;
-            let end = word.checked_add(size_words).filter(|e| e.checked_mul(16).is_some_and(|b| b <= tile.len()));
+            let end = word
+                .checked_add(size_words)
+                .filter(|e| e.checked_mul(16).is_some_and(|b| b <= tile.len()));
             let end = end.ok_or_else(|| corrupt("stream outside the tile"))?;
-            let hdr = tile.get(word * 16..word * 16 + 16).ok_or_else(|| corrupt("stream outside the tile"))?;
-            let (index_words, data_words) =
-                (u16_be(hdr, 0).ok_or_else(|| corrupt("stream header"))?, u24_be(hdr, 2).ok_or_else(|| corrupt("stream header"))?);
-            if index_words.checked_add(data_words).and_then(|s| s.checked_add(1)).is_none_or(|s| s > size_words) {
+            let hdr = tile
+                .get(word * 16..word * 16 + 16)
+                .ok_or_else(|| corrupt("stream outside the tile"))?;
+            let (index_words, data_words) = (
+                u16_be(hdr, 0).ok_or_else(|| corrupt("stream header"))?,
+                u24_be(hdr, 2).ok_or_else(|| corrupt("stream header"))?,
+            );
+            if index_words
+                .checked_add(data_words)
+                .and_then(|s| s.checked_add(1))
+                .is_none_or(|s| s > size_words)
+            {
                 return Err(corrupt("stream header sizes exceed the stream"));
             }
-            streams.push(StreamRef { group: group as u8, comp: comp as u8, word, size_words, index_words, data_words });
+            streams.push(StreamRef {
+                group: group as u8,
+                comp: comp as u8,
+                word,
+                size_words,
+                index_words,
+                data_words,
+            });
             word = end;
         }
     }
@@ -181,7 +249,9 @@ pub(crate) struct Half {
 }
 
 fn nibbles(b: &[u8], from: usize, n: usize) -> Option<u32> {
-    (from..from + n).try_fold(0u32, |a, i| Some((a << 4) | u32::from((*b.get(i / 2)? >> (4 * (1 - i % 2))) & 15)))
+    (from..from + n).try_fold(0u32, |a, i| {
+        Some((a << 4) | u32::from((*b.get(i / 2)? >> (4 * (1 - i % 2))) & 15))
+    })
 }
 
 /// The `2 * ntu` halves of a stream. Index entry per TU (file structure): `A:16 X B:16 X` with A / B the byte
@@ -190,28 +260,62 @@ fn nibbles(b: &[u8], from: usize, n: usize) -> Option<u32> {
 pub(crate) fn stream_halves(tile: &[u8], s: &StreamRef, ntu: usize) -> Result<Vec<Half>> {
     let nx = if s.group == 0 || s.group == 4 { 1 } else { 3 };
     let esz = 4 + nx; // bytes: (16 + 4nx + 16 + 4nx) / 8
-    let idx_start = s.word.checked_add(1).and_then(|w| w.checked_mul(16)).ok_or_else(|| corrupt("stream position"))?;
-    let idx_len = s.index_words.checked_mul(16).ok_or_else(|| corrupt("stream position"))?;
+    let idx_start = s
+        .word
+        .checked_add(1)
+        .and_then(|w| w.checked_mul(16))
+        .ok_or_else(|| corrupt("stream position"))?;
+    let idx_len = s
+        .index_words
+        .checked_mul(16)
+        .ok_or_else(|| corrupt("stream position"))?;
     if ntu.checked_mul(esz).is_none_or(|n| n > idx_len) {
         return Err(corrupt("index table too small for the tile's TUs"));
     }
-    let data_start = idx_start.checked_add(idx_len).ok_or_else(|| corrupt("stream position"))?;
-    let index = tile.get(idx_start..data_start).ok_or_else(|| corrupt("index table outside the tile"))?;
-    let data_end = s.data_words.checked_mul(16).and_then(|d| d.checked_add(data_start)).ok_or_else(|| corrupt("stream position"))?;
+    let data_start = idx_start
+        .checked_add(idx_len)
+        .ok_or_else(|| corrupt("stream position"))?;
+    let index = tile
+        .get(idx_start..data_start)
+        .ok_or_else(|| corrupt("index table outside the tile"))?;
+    let data_end = s
+        .data_words
+        .checked_mul(16)
+        .and_then(|d| d.checked_add(data_start))
+        .ok_or_else(|| corrupt("stream position"))?;
     if data_end > tile.len() {
         return Err(corrupt("stream data outside the tile"));
     }
     let mut halves = Vec::with_capacity(2 * ntu);
     let mut pos = data_start;
     for k in 0..ntu {
-        let e = index.get(k * esz..(k + 1) * esz).ok_or_else(|| corrupt("index table"))?;
+        let e = index
+            .get(k * esz..(k + 1) * esz)
+            .ok_or_else(|| corrupt("index table"))?;
         let bad = || corrupt("index entry");
-        let (a, x1) = (nibbles(e, 0, 4).ok_or_else(bad)? as usize, nibbles(e, 4, nx).ok_or_else(bad)?);
-        let (b, x2) = (nibbles(e, 4 + nx, 4).ok_or_else(bad)? as usize, nibbles(e, 8 + nx, nx).ok_or_else(bad)?);
+        let (a, x1) = (
+            nibbles(e, 0, 4).ok_or_else(bad)? as usize,
+            nibbles(e, 4, nx).ok_or_else(bad)?,
+        );
+        let (b, x2) = (
+            nibbles(e, 4 + nx, 4).ok_or_else(bad)? as usize,
+            nibbles(e, 8 + nx, nx).ok_or_else(bad)?,
+        );
         for (len, x) in [(a, x1), (b, x2)] {
-            let end = pos.checked_add(len).filter(|&e| e <= data_end).ok_or_else(|| corrupt("half outside its stream's data"))?;
-            let qi = if nx == 1 { [x; 3] } else { [(x >> 8) & 15, (x >> 4) & 15, x & 15] };
-            halves.push(Half { start: pos, len, qi });
+            let end = pos
+                .checked_add(len)
+                .filter(|&e| e <= data_end)
+                .ok_or_else(|| corrupt("half outside its stream's data"))?;
+            let qi = if nx == 1 {
+                [x; 3]
+            } else {
+                [(x >> 8) & 15, (x >> 4) & 15, x & 15]
+            };
+            halves.push(Half {
+                start: pos,
+                len,
+                qi,
+            });
             pos = end;
         }
     }
@@ -223,7 +327,10 @@ pub(crate) fn stream_halves(tile: &[u8], s: &StreamRef, ntu: usize) -> Result<Ve
 /// Halves of `vs` plane rows are anchored to the sensor: half `n` covers plane rows `8n - 6 + s .. 8n + 1 + s`, so
 /// `ceil((vs - 2 - s) / 8) + 1` halves are needed, two per TU (*Container*).
 pub(crate) fn tu_count(vs: usize, s: u8) -> usize {
-    let halves = vs.saturating_sub(2usize.saturating_add(usize::from(s))).div_ceil(8).saturating_add(1);
+    let halves = vs
+        .saturating_sub(2usize.saturating_add(usize::from(s)))
+        .div_ceil(8)
+        .saturating_add(1);
     halves.div_ceil(2)
 }
 
@@ -248,10 +355,24 @@ pub(crate) fn half_rows(n: usize, s: u8, rows: usize) -> Range<usize> {
 /// (index table at word `g4.word + 1`, entry 0's `A` = big-endian u16; its bytes start after the index table).
 /// Residual lines are decoded while at least 8 bits remain and fewer than 8 lines were read (*Frame geometry*).
 pub(crate) fn first_half_shift(tile: &[u8], g4: &StreamRef, width2: usize) -> Result<u8> {
-    let idx = g4.word.checked_add(1).and_then(|w| w.checked_mul(16)).ok_or_else(|| corrupt("stream position"))?;
-    let data = g4.index_words.checked_mul(16).and_then(|l| l.checked_add(idx)).ok_or_else(|| corrupt("stream position"))?;
+    let idx = g4
+        .word
+        .checked_add(1)
+        .and_then(|w| w.checked_mul(16))
+        .ok_or_else(|| corrupt("stream position"))?;
+    let data = g4
+        .index_words
+        .checked_mul(16)
+        .and_then(|l| l.checked_add(idx))
+        .ok_or_else(|| corrupt("stream position"))?;
     let a = u16_be(tile, idx).ok_or_else(|| corrupt("index table outside the tile"))?;
-    let bytes = tile.get(data..data.checked_add(a).ok_or_else(|| corrupt("stream position"))?).ok_or_else(|| corrupt("half outside the tile"))?;
+    let bytes = tile
+        .get(
+            data..data
+                .checked_add(a)
+                .ok_or_else(|| corrupt("stream position"))?,
+        )
+        .ok_or_else(|| corrupt("half outside the tile"))?;
     let total = bytes.len() * 8;
     let mut bits = Bits::new(bytes);
     let mut lines = 0usize;
@@ -298,7 +419,15 @@ fn half_layout(n: usize, s: u8, vs: usize, ph: [u8; 3]) -> HalfRows {
     let (l1, h1) = split(&rows, ph[0]);
     let (l2, h2) = split(&l1, ph[1]);
     let (l3, h3) = split(&l2, ph[2]);
-    HalfRows { t, l1, h1, l2, h2, l3, h3 }
+    HalfRows {
+        t,
+        l1,
+        h1,
+        l2,
+        h2,
+        l3,
+        h3,
+    }
 }
 
 /// Lines a half holds in group `g`: g0 LL3 rows; g1 HL3 + LH3 + HH3; g2 HL2 + LH2 + HH2; g3 HL1 + LH1 + HH1; g4 residual.
@@ -326,15 +455,26 @@ fn line_width(g: u8, w2: usize) -> usize {
 type HalfLines = (Half, Vec<Vec<i32>>);
 
 /// Index the stream's halves and VLD-decode exactly the lines each holds; a line running past its half is `Corrupt`.
-fn decode_stream(tile: &[u8], st: &StreamRef, ntu: usize, w2: usize, layouts: &[HalfRows]) -> Result<Vec<HalfLines>> {
+fn decode_stream(
+    tile: &[u8],
+    st: &StreamRef,
+    ntu: usize,
+    w2: usize,
+    layouts: &[HalfRows],
+) -> Result<Vec<HalfLines>> {
     let halves = stream_halves(tile, st, ntu)?;
     let width = line_width(st.group, w2);
     halves
         .into_iter()
         .zip(layouts)
         .map(|(half, rows)| {
-            let end = half.start.checked_add(half.len).ok_or_else(|| corrupt("half position"))?;
-            let bytes = tile.get(half.start..end).ok_or_else(|| corrupt("half outside the tile"))?;
+            let end = half
+                .start
+                .checked_add(half.len)
+                .ok_or_else(|| corrupt("half position"))?;
+            let bytes = tile
+                .get(half.start..end)
+                .ok_or_else(|| corrupt("half outside the tile"))?;
             let total = bytes.len() * 8;
             let mut bits = Bits::new(bytes);
             let mut lines = Vec::with_capacity(line_count(st.group, rows));
@@ -357,8 +497,13 @@ fn decode_stream(tile: &[u8], st: &StreamRef, ntu: usize, w2: usize, layouts: &[
 
 /// Dequantise `line` into band row `row`.
 fn put(plane: &mut Plane, row: usize, line: &[i32], mut f: impl FnMut(i32) -> i32) -> Result<()> {
-    let start = row.checked_mul(plane.width).ok_or_else(|| corrupt("band row"))?;
-    let dst = plane.data.get_mut(start..start.saturating_add(plane.width)).ok_or_else(|| corrupt("band row outside its band"))?;
+    let start = row
+        .checked_mul(plane.width)
+        .ok_or_else(|| corrupt("band row"))?;
+    let dst = plane
+        .data
+        .get_mut(start..start.saturating_add(plane.width))
+        .ok_or_else(|| corrupt("band row outside its band"))?;
     for (d, &v) in dst.iter_mut().zip(line) {
         *d = f(v);
     }
@@ -370,14 +515,27 @@ fn fill(set: [(&mut Plane, &[usize], u32); 3], lines: &[Vec<i32>]) -> Result<()>
     let mut it = lines.iter();
     for (plane, rows, qi) in set {
         for &r in rows {
-            put(plane, r, it.next().ok_or_else(|| corrupt("half holds fewer lines than rows"))?, |q| dequant(q, qi))?;
+            put(
+                plane,
+                r,
+                it.next()
+                    .ok_or_else(|| corrupt("half holds fewer lines than rows"))?,
+                |q| dequant(q, qi),
+            )?;
         }
     }
     Ok(())
 }
 
 /// One colour component: its ten bands from streams g0..g3 (component `c`), then the 3-level inverse.
-fn component(c: usize, streams: &[Vec<HalfLines>], layouts: &[HalfRows], vs: usize, w2: usize, ph: [u8; 3]) -> Result<Plane> {
+fn component(
+    c: usize,
+    streams: &[Vec<HalfLines>],
+    layouts: &[HalfRows],
+    vs: usize,
+    w2: usize,
+    ph: [u8; 3],
+) -> Result<Plane> {
     let (n1l, n1h) = band_rows(vs, ph[0]);
     let (n2l, n2h) = band_rows(n1l, ph[1]);
     let (n3l, n3h) = band_rows(n2l, ph[2]);
@@ -395,7 +553,12 @@ fn component(c: usize, streams: &[Vec<HalfLines>], layouts: &[HalfRows], vs: usi
         lh1: z(w1, n1h),
         hh1: z(w1, n1h),
     };
-    let grp = |g: usize, n: usize| streams.get(3 * g + c).and_then(|s| s.get(n)).ok_or_else(|| corrupt("missing half"));
+    let grp = |g: usize, n: usize| {
+        streams
+            .get(3 * g + c)
+            .and_then(|s| s.get(n))
+            .ok_or_else(|| corrupt("missing half"))
+    };
     for (n, r) in layouts.iter().enumerate() {
         let (h0, l0) = grp(0, n)?;
         // LL3: the nibble must be 0 (Phase 0: never seen otherwise); lines are DPCM from 2048 for the green mean (c = 0) and
@@ -411,11 +574,32 @@ fn component(c: usize, streams: &[Vec<HalfLines>], layouts: &[HalfRows], vs: usi
             })?;
         }
         let (h1, l1) = grp(1, n)?;
-        fill([(&mut b.hl3, &r.l3, h1.qi[0]), (&mut b.lh3, &r.h3, h1.qi[1]), (&mut b.hh3, &r.h3, h1.qi[2])], l1)?;
+        fill(
+            [
+                (&mut b.hl3, &r.l3, h1.qi[0]),
+                (&mut b.lh3, &r.h3, h1.qi[1]),
+                (&mut b.hh3, &r.h3, h1.qi[2]),
+            ],
+            l1,
+        )?;
         let (h2, l2) = grp(2, n)?;
-        fill([(&mut b.hl2, &r.l2, h2.qi[0]), (&mut b.lh2, &r.h2, h2.qi[1]), (&mut b.hh2, &r.h2, h2.qi[2])], l2)?;
+        fill(
+            [
+                (&mut b.hl2, &r.l2, h2.qi[0]),
+                (&mut b.lh2, &r.h2, h2.qi[1]),
+                (&mut b.hh2, &r.h2, h2.qi[2]),
+            ],
+            l2,
+        )?;
         let (h3, l3) = grp(3, n)?;
-        fill([(&mut b.hl1, &r.l1, h3.qi[0]), (&mut b.lh1, &r.h1, h3.qi[1]), (&mut b.hh1, &r.h1, h3.qi[2])], l3)?;
+        fill(
+            [
+                (&mut b.hl1, &r.l1, h3.qi[0]),
+                (&mut b.lh1, &r.h1, h3.qi[1]),
+                (&mut b.hh1, &r.h1, h3.qi[2]),
+            ],
+            l3,
+        )?;
     }
     reconstruct3(&b, ph)
 }
@@ -433,26 +617,49 @@ pub(crate) struct TilePlanes {
 pub(crate) fn decode_tile_planes(tile: &[u8], tw: usize, th: usize) -> Result<TilePlanes> {
     let h = parse_tile_header(tile, tw, th)?;
     let (w2, vs) = (tw / 2, h.vs);
-    if vs == 0 || !tw.is_multiple_of(2) || !w2.is_multiple_of(8) || w2.checked_mul(vs).is_none_or(|a| a > crate::MAX_SAMPLES) {
+    if vs == 0
+        || !tw.is_multiple_of(2)
+        || !w2.is_multiple_of(8)
+        || w2.checked_mul(vs).is_none_or(|a| a > crate::MAX_SAMPLES)
+    {
         return Err(unsupported("tile geometry"));
     }
-    let g4 = h.streams.get(12).ok_or_else(|| corrupt("missing residual stream"))?;
+    let g4 = h
+        .streams
+        .get(12)
+        .ok_or_else(|| corrupt("missing residual stream"))?;
     let s = first_half_shift(tile, g4, w2)?;
     let (ntu, ph) = (tu_count(vs, s), phases(s));
     let layouts: Vec<HalfRows> = (0..2 * ntu).map(|n| half_layout(n, s, vs, ph)).collect();
-    let streams =
-        h.streams.par_iter().map(|st| decode_stream(tile, st, ntu, w2, &layouts)).collect::<Vec<_>>().into_iter().collect::<Result<Vec<_>>>()?;
-    let comps =
-        (0..3).into_par_iter().map(|c| component(c, &streams, &layouts, vs, w2, ph)).collect::<Vec<_>>().into_iter().collect::<Result<Vec<_>>>()?;
+    let streams = h
+        .streams
+        .par_iter()
+        .map(|st| decode_stream(tile, st, ntu, w2, &layouts))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect::<Result<Vec<_>>>()?;
+    let comps = (0..3)
+        .into_par_iter()
+        .map(|c| component(c, &streams, &layouts, vs, w2, ph))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect::<Result<Vec<_>>>()?;
     // Residual: g4's lines are the half's plane rows, dequantised with the half's nibble.
     let mut res = Plane::zeros(w2, vs);
-    for ((half, lines), r) in streams.get(12).ok_or_else(|| corrupt("missing residual stream"))?.iter().zip(&layouts) {
+    for ((half, lines), r) in streams
+        .get(12)
+        .ok_or_else(|| corrupt("missing residual stream"))?
+        .iter()
+        .zip(&layouts)
+    {
         for (row, line) in r.t.clone().zip(lines) {
             put(&mut res, row, line, |q| dequant(q, half.qi[0]))?;
         }
     }
     let mut it = comps.into_iter();
-    let (Some(m), Some(c1), Some(c2)) = (it.next(), it.next(), it.next()) else { return Err(corrupt("missing component")) };
+    let (Some(m), Some(c1), Some(c2)) = (it.next(), it.next(), it.next()) else {
+        return Err(corrupt("missing component"));
+    };
     Ok(TilePlanes { m, c1, c2, res })
 }
 
@@ -463,12 +670,18 @@ pub(crate) fn decode_tile_planes(tile: &[u8], tw: usize, th: usize) -> Result<Ti
 pub(crate) fn colour(p: &TilePlanes) -> Result<Vec<u16>> {
     let (w2, h2) = (p.m.width, p.m.height);
     let len = w2.checked_mul(h2).ok_or_else(|| corrupt("tile size"))?;
-    if [&p.c1, &p.c2, &p.res].iter().any(|q| q.width != w2 || q.height != h2 || q.data.len() != len) || p.m.data.len() != len {
+    if [&p.c1, &p.c2, &p.res]
+        .iter()
+        .any(|q| q.width != w2 || q.height != h2 || q.data.len() != len)
+        || p.m.data.len() != len
+    {
         return Err(corrupt("plane size mismatch"));
     }
     let mw = w2.checked_mul(2).ok_or_else(|| corrupt("tile size"))?;
     let total = len.checked_mul(4).ok_or_else(|| corrupt("tile size"))?;
-    let at = |q: &Plane, j: usize, x: usize| -> i64 { q.data.get(j * w2 + x).copied().unwrap_or(0) as i64 };
+    let at = |q: &Plane, j: usize, x: usize| -> i64 {
+        q.data.get(j * w2 + x).copied().unwrap_or(0) as i64
+    };
     let mut g1 = vec![0i64; len];
     for j in 0..h2 {
         let jp = j.saturating_sub(1);
@@ -508,14 +721,23 @@ pub(crate) fn decode_tile(tile: &[u8], tw: usize, th: usize) -> Result<Vec<u16>>
 
 /// Decode a whole ARW6 strip: [`Mode::Header`](crate::Mode) validates the tile table, tile headers and stream
 /// tables and returns no samples; `Full` decodes the tiles in parallel into a `width x height` mosaic.
-pub(crate) fn decode(strip: &[u8], width: usize, height: usize, mode: crate::Mode) -> Result<Vec<u16>> {
+pub(crate) fn decode(
+    strip: &[u8],
+    width: usize,
+    height: usize,
+    mode: crate::Mode,
+) -> Result<Vec<u16>> {
     let tiles = parse_tile_table(strip, width, height)?;
-    let bytes = |i: usize| tile_bytes(strip, &tiles, i).ok_or_else(|| corrupt("tile outside strip"));
+    let bytes =
+        |i: usize| tile_bytes(strip, &tiles, i).ok_or_else(|| corrupt("tile outside strip"));
     if mode == crate::Mode::Header {
         for (i, t) in tiles.iter().enumerate() {
             let tile = bytes(i)?;
             let h = parse_tile_header(tile, t.width, t.height)?;
-            let g4 = h.streams.get(12).ok_or_else(|| corrupt("missing residual stream"))?;
+            let g4 = h
+                .streams
+                .get(12)
+                .ok_or_else(|| corrupt("missing residual stream"))?;
             let s = first_half_shift(tile, g4, t.width / 2)?;
             let ntu = tu_count(h.vs, s);
             for st in &h.streams {
@@ -524,13 +746,28 @@ pub(crate) fn decode(strip: &[u8], width: usize, height: usize, mode: crate::Mod
         }
         return Ok(Vec::new());
     }
-    let decoded: Vec<Result<Vec<u16>>> = tiles.par_iter().enumerate().map(|(i, t)| decode_tile(bytes(i)?, t.width, t.height)).collect();
-    let mut out = vec![0u16; width.checked_mul(height).ok_or_else(|| corrupt("image size"))?];
+    let decoded: Vec<Result<Vec<u16>>> = tiles
+        .par_iter()
+        .enumerate()
+        .map(|(i, t)| decode_tile(bytes(i)?, t.width, t.height))
+        .collect();
+    let mut out = vec![
+        0u16;
+        width
+            .checked_mul(height)
+            .ok_or_else(|| corrupt("image size"))?
+    ];
     for (t, d) in tiles.iter().zip(decoded) {
         let d = d?;
         for (r, row) in d.chunks_exact(t.width.max(1)).enumerate() {
-            let start = (t.y + r).checked_mul(width).and_then(|a| a.checked_add(t.x)).ok_or_else(|| corrupt("tile placement"))?;
-            let dst = start.checked_add(row.len()).and_then(|end| out.get_mut(start..end)).ok_or_else(|| corrupt("tile outside image"))?;
+            let start = (t.y + r)
+                .checked_mul(width)
+                .and_then(|a| a.checked_add(t.x))
+                .ok_or_else(|| corrupt("tile placement"))?;
+            let dst = start
+                .checked_add(row.len())
+                .and_then(|end| out.get_mut(start..end))
+                .ok_or_else(|| corrupt("tile outside image"))?;
             dst.copy_from_slice(row);
         }
     }
@@ -554,7 +791,11 @@ mod tests {
             x ^= x << 17;
             (x % (2 * span as u64 + 1)) as i32 - span
         };
-        let mut mk = |centre: i32, span: i32| Plane { width: w2, height: h2, data: (0..w2 * h2).map(|_| centre + next(span)).collect() };
+        let mut mk = |centre: i32, span: i32| Plane {
+            width: w2,
+            height: h2,
+            data: (0..w2 * h2).map(|_| centre + next(span)).collect(),
+        };
         (mk(2048, 200), mk(0, 60), mk(0, 60), mk(0, 24))
     }
 
@@ -564,14 +805,25 @@ mod tests {
 
     fn seeded_tile(w: usize, h: usize, s: u8, qi: Qis, seed: u64) -> (Vec<u8>, TileSpec) {
         let (m, c1, c2, res) = planes(w / 2, h / 2, seed);
-        let t = TileSpec { s, qi, m, c1, c2, res };
+        let t = TileSpec {
+            s,
+            qi,
+            m,
+            c1,
+            c2,
+            res,
+        };
         (encode_tile(&t), t)
     }
 
     /// The raw strip bytes of the compression-32766 IFD, as `arw.rs` locates them.
     fn strip_of(file: &[u8]) -> &[u8] {
         let tiff = Tiff::parse(file).unwrap();
-        let raw = tiff.all_ifds().into_iter().find(|i| i.u16(t::COMPRESSION) == Some(32766)).unwrap();
+        let raw = tiff
+            .all_ifds()
+            .into_iter()
+            .find(|i| i.u16(t::COMPRESSION) == Some(32766))
+            .unwrap();
         let info = raw.image().unwrap();
         let chunks = info.chunks(file.len() as u64);
         chunk_bytes(file, &chunks[0]).unwrap()
@@ -584,7 +836,10 @@ mod tests {
         let strip = strip_of(&file);
         let t = parse_tile_table(strip, 64, 48).unwrap();
         assert_eq!(t.len(), 1);
-        assert_eq!((t[0].x, t[0].y, t[0].width, t[0].height, t[0].offset), (0, 0, 64, 48, 512));
+        assert_eq!(
+            (t[0].x, t[0].y, t[0].width, t[0].height, t[0].offset),
+            (0, 0, 64, 48, 512)
+        );
     }
 
     #[test]
@@ -601,7 +856,11 @@ mod tests {
         odd[20..24].copy_from_slice(&63u32.to_le_bytes()); // the first tile's y: odd, and no longer covering
         assert!(parse_tile_table(&odd, 64, 48).is_err());
         assert!(parse_tile_table(&strip, 64, 64).is_err()); // does not cover the image
-        let two = arw6_file(&[(0, 0, 64, 48, tile.clone()), (0, 0, 64, 48, tile.clone())], 128, 48);
+        let two = arw6_file(
+            &[(0, 0, 64, 48, tile.clone()), (0, 0, 64, 48, tile.clone())],
+            128,
+            48,
+        );
         assert!(parse_tile_table(strip_of(&two), 128, 48).is_err()); // overlapping
         assert!(parse_tile_table(&strip[..7], 64, 48).is_err()); // truncated table
     }
@@ -614,8 +873,25 @@ mod tests {
         let ntu = tu_count(24, 3);
         assert_eq!(ntu, 2);
         assert_eq!(
-            h.streams.iter().map(|s| (s.group, s.comp)).collect::<Vec<_>>(),
-            [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (4, 0)]
+            h.streams
+                .iter()
+                .map(|s| (s.group, s.comp))
+                .collect::<Vec<_>>(),
+            [
+                (0, 0),
+                (0, 1),
+                (0, 2),
+                (1, 0),
+                (1, 1),
+                (1, 2),
+                (2, 0),
+                (2, 1),
+                (2, 2),
+                (3, 0),
+                (3, 1),
+                (3, 2),
+                (4, 0)
+            ]
         );
         let g3 = stream_halves(&tile, &h.streams[9], ntu).unwrap();
         assert_eq!(g3.len(), 4);
@@ -625,7 +901,10 @@ mod tests {
         assert!(g4[3].start + g4[3].len <= tile.len());
         let mut bad = tile.clone();
         bad[13] = 0xff; // corrupts word 0's BBD bits: any picture-header deviation is Unsupported
-        assert!(matches!(parse_tile_header(&bad, 64, 48), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            parse_tile_header(&bad, 64, 48),
+            Err(RawError::Unsupported(_))
+        ));
         assert!(parse_tile_header(&tile, 64, 50).is_err()); // VS != th / 2
     }
 
@@ -646,7 +925,12 @@ mod tests {
         seventeen[0] = 17;
         assert!(parse_tile_table(&seventeen, 1088, 48).is_err());
 
-        let two = strip_of(&arw6_file(&[(0, 0, 64, 48, tile.clone()), (64, 0, 64, 48, tile.clone())], 128, 48)).to_vec();
+        let two = strip_of(&arw6_file(
+            &[(0, 0, 64, 48, tile.clone()), (64, 0, 64, 48, tile.clone())],
+            128,
+            48,
+        ))
+        .to_vec();
         assert_eq!(parse_tile_table(&two, 128, 48).unwrap().len(), 2);
         let mut swapped = two.clone();
         let (a, b) = (two[8..16].to_vec(), two[32..40].to_vec());
@@ -664,19 +948,32 @@ mod tests {
         let mut huge = one.clone();
         put32(&mut huge, 24, 1 << 20);
         put32(&mut huge, 28, 1 << 20);
-        assert!(matches!(parse_tile_table(&huge, 1 << 20, 1 << 20), Err(RawError::Limit(_))));
+        assert!(matches!(
+            parse_tile_table(&huge, 1 << 20, 1 << 20),
+            Err(RawError::Limit(_))
+        ));
     }
 
     #[test]
     fn tile_bytes_span_to_the_next_offset() {
         let (tile, _) = one_tile(64, 48, 0, Qis::ZERO);
-        let file = arw6_file(&[(0, 0, 64, 48, tile.clone()), (64, 0, 64, 48, tile.clone())], 128, 48);
+        let file = arw6_file(
+            &[(0, 0, 64, 48, tile.clone()), (64, 0, 64, 48, tile.clone())],
+            128,
+            48,
+        );
         let strip = strip_of(&file);
         let tiles = parse_tile_table(strip, 128, 48).unwrap();
-        let (t0, t1) = (tile_bytes(strip, &tiles, 0).unwrap(), tile_bytes(strip, &tiles, 1).unwrap());
+        let (t0, t1) = (
+            tile_bytes(strip, &tiles, 0).unwrap(),
+            tile_bytes(strip, &tiles, 1).unwrap(),
+        );
         assert_eq!(t0.len(), tiles[1].offset - tiles[0].offset);
         assert_eq!(t0, &tile[..]);
-        assert_eq!(t1.as_ptr() as usize + t1.len(), strip.as_ptr() as usize + strip.len());
+        assert_eq!(
+            t1.as_ptr() as usize + t1.len(),
+            strip.as_ptr() as usize + strip.len()
+        );
         assert!(tile_bytes(strip, &tiles, 2).is_none());
     }
 
@@ -699,7 +996,10 @@ mod tests {
         let idx_start = (s.word + 1) * 16;
         bad_half[idx_start..idx_start + 2].copy_from_slice(&[0xff, 0xff]); // A past the data area
         assert!(stream_halves(&bad_half, s, tu_count(24, 0)).is_err());
-        let outside = StreamRef { index_words: 0xffff, ..s.clone() };
+        let outside = StreamRef {
+            index_words: 0xffff,
+            ..s.clone()
+        };
         assert!(stream_halves(&tile, &outside, tu_count(24, 0)).is_err());
     }
 
@@ -718,9 +1018,18 @@ mod tests {
             for (n, half) in g4.iter().enumerate() {
                 let bytes = &tile[half.start..half.start + half.len];
                 let mut bits = Bits::new(bytes);
-                for r in (8 * n as i32 - 6 + s as i32..8 * n as i32 + 2 + s as i32).filter(|&r| (0..24).contains(&r)) {
-                    let line = crate::llvc::vld_decode_line(&mut bits, bytes.len() * 8, 32).unwrap();
-                    let want: Vec<i32> = spec.res.row(r as usize).unwrap().iter().map(|&v| quantize(v, 2)).collect();
+                for r in (8 * n as i32 - 6 + s as i32..8 * n as i32 + 2 + s as i32)
+                    .filter(|&r| (0..24).contains(&r))
+                {
+                    let line =
+                        crate::llvc::vld_decode_line(&mut bits, bytes.len() * 8, 32).unwrap();
+                    let want: Vec<i32> = spec
+                        .res
+                        .row(r as usize)
+                        .unwrap()
+                        .iter()
+                        .map(|&v| quantize(v, 2))
+                        .collect();
                     assert_eq!(line, want, "s {s} half {n} row {r}");
                 }
             }
@@ -736,7 +1045,10 @@ mod tests {
         vld_encode_line(&vals, 100, &mut w);
         let bytes = w.finish();
         let mut b = Bits::new(&bytes);
-        assert_eq!(crate::llvc::vld_decode_line(&mut b, bytes.len() * 8, 100).unwrap(), vals);
+        assert_eq!(
+            crate::llvc::vld_decode_line(&mut b, bytes.len() * 8, 100).unwrap(),
+            vals
+        );
     }
 
     #[test]
@@ -753,12 +1065,29 @@ mod tests {
 
     #[test]
     fn tu_count_covers_every_row() {
-        assert_eq!((tu_count(1668, 0), tu_count(2186, 3), tu_count(24, 3), tu_count(48, 0)), (105, 137, 2, 4));
+        assert_eq!(
+            (
+                tu_count(1668, 0),
+                tu_count(2186, 3),
+                tu_count(24, 3),
+                tu_count(48, 0)
+            ),
+            (105, 137, 2, 4)
+        );
         for s in 0u8..=5 {
             for vs in 1usize..200 {
                 let last = half_rows(2 * tu_count(vs, s) - 1, s, vs);
-                assert!(last.end == vs || (2 * tu_count(vs, s) - 1) * 8 + usize::from(s) + 2 >= vs, "s {s} vs {vs}");
-                assert_eq!((0..2 * tu_count(vs, s)).map(|n| half_rows(n, s, vs).len()).sum::<usize>(), vs, "s {s} vs {vs}");
+                assert!(
+                    last.end == vs || (2 * tu_count(vs, s) - 1) * 8 + usize::from(s) + 2 >= vs,
+                    "s {s} vs {vs}"
+                );
+                assert_eq!(
+                    (0..2 * tu_count(vs, s))
+                        .map(|n| half_rows(n, s, vs).len())
+                        .sum::<usize>(),
+                    vs,
+                    "s {s} vs {vs}"
+                );
             }
         }
     }
@@ -777,7 +1106,8 @@ mod tests {
         for s in 0u8..=5 {
             for (w, h) in [(64usize, 48usize), (80, 96), (64, 36)] {
                 let (tile, spec) = one_tile(w, h, s, Qis::ZERO); // QI 0: lossless, planes must come back exactly
-                let p = decode_tile_planes(&tile, w, h).unwrap_or_else(|e| panic!("s={s} {w}x{h}: {e}"));
+                let p = decode_tile_planes(&tile, w, h)
+                    .unwrap_or_else(|e| panic!("s={s} {w}x{h}: {e}"));
                 assert_eq!(p.m, spec.m, "s={s} {w}x{h} m");
                 assert_eq!(p.c1, spec.c1);
                 assert_eq!(p.c2, spec.c2);
@@ -806,7 +1136,10 @@ mod tests {
         let w = h.streams[9].word * 16 + 16; // first index entry of g3 c0: shrink A by 1 byte
         let a = u16::from_be_bytes([tile[w], tile[w + 1]]) - 1;
         tile[w..w + 2].copy_from_slice(&a.to_be_bytes());
-        assert!(matches!(decode_tile_planes(&tile, 64, 48), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            decode_tile_planes(&tile, 64, 48),
+            Err(RawError::Corrupt(_))
+        ));
     }
 
     proptest::proptest! {
@@ -821,7 +1154,11 @@ mod tests {
     }
 
     fn plane(w: usize, v: &[i32]) -> Plane {
-        Plane { width: w, height: v.len() / w, data: v.to_vec() }
+        Plane {
+            width: w,
+            height: v.len() / w,
+            data: v.to_vec(),
+        }
     }
 
     fn example() -> TilePlanes {
@@ -838,15 +1175,35 @@ mod tests {
         let out = colour(&example()).unwrap(); // 6 wide x 4 rows, curve units
         let code = |r: usize, c: usize| out[r * 6 + c] as i32;
         assert_eq!(
-            [code(0, 1), code(0, 3), code(0, 5), code(2, 1), code(2, 3), code(2, 5)],
+            [
+                code(0, 1),
+                code(0, 3),
+                code(0, 5),
+                code(2, 1),
+                code(2, 3),
+                code(2, 5)
+            ],
             [2049, 2053, 2059, 2050, 2050, 2071].map(|c| curve(c) as i32)
         ); // G1
         assert_eq!(
-            [code(1, 0), code(1, 2), code(1, 4), code(3, 0), code(3, 2), code(3, 4)],
+            [
+                code(1, 0),
+                code(1, 2),
+                code(1, 4),
+                code(3, 0),
+                code(3, 2),
+                code(3, 4)
+            ],
             [2053, 2042, 2060, 2050, 2052, 2054].map(|c| curve(c) as i32)
         ); // G2
-        assert_eq!([code(0, 0), code(0, 2), code(0, 4)], [2071, 2027, 2059].map(|c| curve(c) as i32)); // R
-        assert_eq!([code(1, 1), code(1, 3), code(1, 5)], [2041, 2061, 2061].map(|c| curve(c) as i32)); // B
+        assert_eq!(
+            [code(0, 0), code(0, 2), code(0, 4)],
+            [2071, 2027, 2059].map(|c| curve(c) as i32)
+        ); // R
+        assert_eq!(
+            [code(1, 1), code(1, 3), code(1, 5)],
+            [2041, 2061, 2061].map(|c| curve(c) as i32)
+        ); // B
     }
 
     #[test]
@@ -883,8 +1240,15 @@ mod tests {
         let (tile, _) = one_tile(64, 48, 3, Qis::REAL);
         let file = arw6_file(&[(0, 0, 64, 48, tile)], 64, 48);
         let strip = strip_of(&file);
-        assert!(decode(strip, 64, 48, crate::Mode::Header).unwrap().is_empty());
-        assert_eq!(decode(strip, 64, 48, crate::Mode::Full).unwrap().len(), 64 * 48);
+        assert!(
+            decode(strip, 64, 48, crate::Mode::Header)
+                .unwrap()
+                .is_empty()
+        );
+        assert_eq!(
+            decode(strip, 64, 48, crate::Mode::Full).unwrap().len(),
+            64 * 48
+        );
         for n in 0..strip.len() {
             let _ = decode(&strip[..n], 64, 48, crate::Mode::Full);
             let _ = decode(&strip[..n], 64, 48, crate::Mode::Header);
@@ -897,21 +1261,38 @@ mod tests {
         let h = parse_tile_header(&tile, 64, 48).unwrap();
         let st = &h.streams[9]; // g3 c0
         let start = (st.word + 1 + st.index_words) * 16;
-        for (i, b) in tile[start..start + st.data_words * 16].iter_mut().enumerate() {
+        for (i, b) in tile[start..start + st.data_words * 16]
+            .iter_mut()
+            .enumerate()
+        {
             *b = (i as u8).wrapping_mul(97) ^ 0xa5;
         }
         let strip = strip_of(&arw6_file(&[(0, 0, 64, 48, tile)], 64, 48)).to_vec();
         assert!(decode(&strip, 64, 48, crate::Mode::Header).is_ok());
-        assert!(matches!(decode(&strip, 64, 48, crate::Mode::Full), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            decode(&strip, 64, 48, crate::Mode::Full),
+            Err(RawError::Corrupt(_))
+        ));
     }
 
     #[test]
     fn chroma_planes_are_base_free() {
         let (w2, h2) = (32, 24);
-        let flat = |v: i32| Plane { width: w2, height: h2, data: vec![v; w2 * h2] };
+        let flat = |v: i32| Plane {
+            width: w2,
+            height: h2,
+            data: vec![v; w2 * h2],
+        };
         let (m, _, _, res) = planes(w2, h2, 7);
         for (c1, c2) in [(0, 0), (5, -3)] {
-            let t = TileSpec { s: 0, qi: Qis::ZERO, m: m.clone(), c1: flat(c1), c2: flat(c2), res: res.clone() };
+            let t = TileSpec {
+                s: 0,
+                qi: Qis::ZERO,
+                m: m.clone(),
+                c1: flat(c1),
+                c2: flat(c2),
+                res: res.clone(),
+            };
             let tile = encode_tile(&t);
             let p = decode_tile_planes(&tile, 64, 48).unwrap();
             assert!(p.c1.data.iter().all(|&v| v == c1) && p.c2.data.iter().all(|&v| v == c2));
@@ -941,15 +1322,28 @@ mod tests {
     fn twelve_bit_mode_is_unsupported() {
         let (tile, _) = one_tile(64, 48, 0, Qis::ZERO);
         let file = arw6_file_bits(&[(0, 0, 64, 48, tile)], 64, 48, 12);
-        assert!(matches!(crate::decode(&file), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            crate::decode(&file),
+            Err(RawError::Unsupported(_))
+        ));
     }
 
     #[test]
     fn shift_out_of_range_is_unsupported() {
         let (w2, h2) = (32, 24);
         let (m, c1, c2, res) = planes(w2, h2, 7);
-        let tile = encode_tile(&TileSpec { s: 6, qi: Qis::ZERO, m, c1, c2, res });
-        assert!(matches!(decode_tile_planes(&tile, 64, 48), Err(RawError::Unsupported(_))));
+        let tile = encode_tile(&TileSpec {
+            s: 6,
+            qi: Qis::ZERO,
+            m,
+            c1,
+            c2,
+            res,
+        });
+        assert!(matches!(
+            decode_tile_planes(&tile, 64, 48),
+            Err(RawError::Unsupported(_))
+        ));
     }
 
     #[test]
@@ -963,7 +1357,10 @@ mod tests {
         tile[at + 1] = 1;
         let strip = strip_of(&arw6_file(&[(0, 0, 64, 48, tile)], 64, 48)).to_vec();
         assert!(decode(&strip, 64, 48, crate::Mode::Header).is_ok());
-        assert!(matches!(decode(&strip, 64, 48, crate::Mode::Full), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            decode(&strip, 64, 48, crate::Mode::Full),
+            Err(RawError::Corrupt(_))
+        ));
     }
 
     #[test]
@@ -981,12 +1378,21 @@ mod tests {
         assert_eq!((img.width, img.height, img.bits), (128, 96, 16));
         assert_eq!(img.black.values, vec![1024.0; 4]);
         assert_eq!(img.white, vec![30720.0]);
-        assert_eq!(img.cfa.as_ref().map(|c| c.pattern.clone()), Some(vec![0, 1, 1, 2]));
-        let crate::RawData::U16(d) = img.data else { panic!() };
+        assert_eq!(
+            img.cfa.as_ref().map(|c| c.pattern.clone()),
+            Some(vec![0, 1, 1, 2])
+        );
+        let crate::RawData::U16(d) = img.data else {
+            panic!()
+        };
         for (x, y, w, h, bytes) in &tiles {
             let want = decode_tile(bytes, *w, *h).unwrap();
             for r in 0..*h {
-                assert_eq!(&d[(y + r) * 128 + x..(y + r) * 128 + x + w], &want[r * w..(r + 1) * w], "tile at ({x},{y}) row {r}");
+                assert_eq!(
+                    &d[(y + r) * 128 + x..(y + r) * 128 + x + w],
+                    &want[r * w..(r + 1) * w],
+                    "tile at ({x},{y}) row {r}"
+                );
             }
         }
         assert_eq!(crate::probe_info(&file).unwrap().width, 128); // header mode: tile tables and headers only

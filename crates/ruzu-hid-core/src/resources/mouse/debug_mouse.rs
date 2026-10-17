@@ -105,7 +105,9 @@ mod tests {
         assert_eq!((enabled.delta_x, enabled.delta_y), (320, 360));
         assert_eq!((enabled.delta_wheel_x, enabled.delta_wheel_y), (4, -2));
         assert_eq!(enabled.button.raw, 3);
-        common::settings::values_mut().mouse_enabled.set_value(false);
+        common::settings::values_mut()
+            .mouse_enabled
+            .set_value(false);
         wheel = AnalogStickState { x: 9, y: -7 };
         device.on_update(&mut memory, &buttons, &position, &wheel);
         let disabled = memory.mouse_lifo.read_current_entry().state;

@@ -1,14 +1,14 @@
-use bevy_asset::{io::Writer, saver::SavedAsset, AssetPath, AsyncWriteExt};
+use bevy_asset::{AssetPath, AsyncWriteExt, io::Writer, saver::SavedAsset};
 use ctt::{
-    convert, ColorSpace, Container, ConvertSettings, Image as CttImage, MipmapFilter,
-    PipelineOutput, Quality, Surface, TextureKind,
+    ColorSpace, Container, ConvertSettings, Image as CttImage, MipmapFilter, PipelineOutput,
+    Quality, Surface, TextureKind, convert,
 };
 
 use super::{
+    CompressedImageSaverError, CompressedImageSaverSettings,
     ctt_helpers::{
         bevy_to_ctt_alpha_mode, choose_ctt_compressed_format, wgpu_to_ctt_texture_format,
     },
-    CompressedImageSaverError, CompressedImageSaverSettings,
 };
 use crate::{Image, ImageFormat, ImageFormatSetting, ImageLoaderSettings};
 

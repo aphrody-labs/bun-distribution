@@ -3,7 +3,7 @@ use bevy_camera::Camera;
 use bevy_ecs::prelude::*;
 use bevy_math::{Quat, StableInterpolate, Vec3};
 use bevy_time::Time;
-use bevy_transform::{components::Transform, TransformSystems};
+use bevy_transform::{TransformSystems, components::Transform};
 
 /// Plugin to move the camera smoothly according to the current time
 pub struct EasyCameraMovementPlugin {

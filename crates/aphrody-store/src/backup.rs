@@ -56,7 +56,11 @@ pub fn sha256_file(path: &Path) -> Result<String> {
         }
         hasher.update(&buffer[..read]);
     }
-    Ok(hasher.finalize().iter().map(|b| format!("{b:02x}")).collect())
+    Ok(hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect())
 }
 
 /// Verify a backup: its SHA-256 equals `expected_sha256`, it opens read-only and passes
@@ -68,11 +72,18 @@ pub fn sha256_file(path: &Path) -> Result<String> {
 pub fn verify_backup(path: &Path, expected_sha256: &str) -> Result<()> {
     let actual = sha256_file(path)?;
     if actual != expected_sha256 {
-        return Err(StoreError::ChecksumMismatch { expected: expected_sha256.to_owned(), actual });
+        return Err(StoreError::ChecksumMismatch {
+            expected: expected_sha256.to_owned(),
+            actual,
+        });
     }
     let conn = sqlite::open(path, OpenPolicy::read_only())?;
     let result: String = conn.query_row("PRAGMA integrity_check", [], |row| row.get(0))?;
-    if result == "ok" { Ok(()) } else { Err(StoreError::Integrity(result)) }
+    if result == "ok" {
+        Ok(())
+    } else {
+        Err(StoreError::Integrity(result))
+    }
 }
 
 /// Result of verifying every backup recorded in the ledger.
@@ -95,8 +106,11 @@ impl HomeDb {
     ///
     /// SQLite failures (a bad backup is reported in the result, not as an error).
     pub fn verify_ledger(&self) -> Result<LedgerCheck> {
-        let mut statement = self.conn.prepare("SELECT path, sha256 FROM backups ORDER BY id")?;
-        let rows = statement.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+        let mut statement = self
+            .conn
+            .prepare("SELECT path, sha256 FROM backups ORDER BY id")?;
+        let rows =
+            statement.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
         let mut check = LedgerCheck::default();
         for row in rows {
             let (path, sha) = row?;
@@ -127,7 +141,13 @@ impl HomeDb {
         let created_at_ms = now_ms();
         let safe: String = label
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '-'
+                }
+            })
             .collect();
         let name = format!(
             "aphrody-{safe}-{}-{:03}.sqlite",
@@ -137,15 +157,14 @@ impl HomeDb {
         let path = dir.join(&name);
         sqlite::vacuum_into(&self.conn, &path)?;
 
-        let sha256 = match sha256_file(&path)
-            .and_then(|sha| verify_backup(&path, &sha).map(|()| sha))
-        {
-            Ok(sha) => sha,
-            Err(error) => {
-                let _ = std::fs::remove_file(&path);
-                return Err(error);
-            },
-        };
+        let sha256 =
+            match sha256_file(&path).and_then(|sha| verify_backup(&path, &sha).map(|()| sha)) {
+                Ok(sha) => sha,
+                Err(error) => {
+                    let _ = std::fs::remove_file(&path);
+                    return Err(error);
+                }
+            };
         let bytes = std::fs::metadata(&path)?.len();
         let sidecar = dir.join(format!("{name}.sha256"));
         OpenOptions::new()
@@ -167,7 +186,13 @@ impl HomeDb {
                 created_at_ms
             ],
         )?;
-        Ok(BackupReport { path, sha256, bytes, schema_version, created_at_ms })
+        Ok(BackupReport {
+            path,
+            sha256,
+            bytes,
+            schema_version,
+            created_at_ms,
+        })
     }
 }
 
@@ -205,12 +230,17 @@ mod tests {
         verify_backup(&report.path, &report.sha256).unwrap();
         let sidecar = std::fs::read_to_string(format!("{}.sha256", report.path.display())).unwrap();
         assert!(sidecar.starts_with(&report.sha256));
-        let recorded: i64 =
-            db.conn().query_row("SELECT count(*) FROM backups", [], |r| r.get(0)).unwrap();
+        let recorded: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM backups", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(recorded, 1);
         // The copy holds the data and the live database is untouched.
         let copy = HomeDb::open_read_only(&report.path).unwrap();
-        let files: i64 = copy.conn().query_row("SELECT count(*) FROM files", [], |r| r.get(0)).unwrap();
+        let files: i64 = copy
+            .conn()
+            .query_row("SELECT count(*) FROM files", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(files, 1);
         db.integrity_check().unwrap();
     }

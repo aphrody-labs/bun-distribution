@@ -47,7 +47,11 @@ fn parse_base(s: &str, radix: u32) -> R<i64> {
         _ => 40,
     };
     // A full 10-digit number with the top bit set is negative.
-    if s.len() == 10 && v >= 1i64 << (bits - 1) { Ok(v - (1i64 << bits)) } else { Ok(v) }
+    if s.len() == 10 && v >= 1i64 << (bits - 1) {
+        Ok(v - (1i64 << bits))
+    } else {
+        Ok(v)
+    }
 }
 
 /// Writes `v` in `radix`, using 10-digit two's complement for negatives and padding to `places`.
@@ -90,14 +94,22 @@ fn to_radix(mut v: i64, radix: u32) -> String {
     let mut out = Vec::new();
     while v > 0 {
         let d = (v % radix as i64) as u32;
-        out.push(char::from_digit(d, radix).unwrap_or('0').to_ascii_uppercase());
+        out.push(
+            char::from_digit(d, radix)
+                .unwrap_or('0')
+                .to_ascii_uppercase(),
+        );
         v /= radix as i64;
     }
     out.iter().rev().collect()
 }
 
 fn places_arg(a: &[Arg]) -> R<Option<f64>> {
-    if has(a, 1) { Ok(Some(num(a, 1)?)) } else { Ok(None) }
+    if has(a, 1) {
+        Ok(Some(num(a, 1)?))
+    } else {
+        Ok(None)
+    }
 }
 
 fn convert_base(a: &[Arg], from: u32, to: u32) -> R<Value> {
@@ -163,13 +175,19 @@ fn bit_operand(a: &[Arg], i: usize) -> R<u64> {
 }
 
 fn bitand(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    Ok(Value::Number((bit_operand(a, 0)? & bit_operand(a, 1)?) as f64))
+    Ok(Value::Number(
+        (bit_operand(a, 0)? & bit_operand(a, 1)?) as f64,
+    ))
 }
 fn bitor(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    Ok(Value::Number((bit_operand(a, 0)? | bit_operand(a, 1)?) as f64))
+    Ok(Value::Number(
+        (bit_operand(a, 0)? | bit_operand(a, 1)?) as f64,
+    ))
 }
 fn bitxor(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    Ok(Value::Number((bit_operand(a, 0)? ^ bit_operand(a, 1)?) as f64))
+    Ok(Value::Number(
+        (bit_operand(a, 0)? ^ bit_operand(a, 1)?) as f64,
+    ))
 }
 
 fn shift(a: &[Arg], left: bool) -> R<Value> {
@@ -233,7 +251,12 @@ struct Unit {
 }
 
 const fn u(names: &'static [&'static str], dim: Dim, factor: f64, pre: Pre) -> Unit {
-    Unit { names, dim, factor, pre }
+    Unit {
+        names,
+        dim,
+        factor,
+        pre,
+    }
 }
 
 const IN: f64 = 0.0254;
@@ -255,10 +278,20 @@ const UNITS: &[Unit] = &[
     u(&["ozm"], Dim::Mass, 28.349_523_125, Pre::No),
     u(&["grain"], Dim::Mass, 0.064_798_91, Pre::No),
     u(&["cwt", "shweight"], Dim::Mass, 45_359.237, Pre::No),
-    u(&["uk_cwt", "lcwt", "hweight"], Dim::Mass, 50_802.345_44, Pre::No),
+    u(
+        &["uk_cwt", "lcwt", "hweight"],
+        Dim::Mass,
+        50_802.345_44,
+        Pre::No,
+    ),
     u(&["stone"], Dim::Mass, 6_350.293_18, Pre::No),
     u(&["ton"], Dim::Mass, 907_184.74, Pre::No),
-    u(&["uk_ton", "LTON", "brton"], Dim::Mass, 1_016_046.908_8, Pre::No),
+    u(
+        &["uk_ton", "LTON", "brton"],
+        Dim::Mass,
+        1_016_046.908_8,
+        Pre::No,
+    ),
     // Length (metre)
     u(&["m"], Dim::Length, 1.0, Pre::Si(1)),
     u(&["mi"], Dim::Length, MI, Pre::No),
@@ -269,7 +302,12 @@ const UNITS: &[Unit] = &[
     u(&["ang"], Dim::Length, 1e-10, Pre::Si(1)),
     u(&["ell"], Dim::Length, 1.143, Pre::No),
     u(&["ly"], Dim::Length, LY, Pre::Si(1)),
-    u(&["parsec", "pc"], Dim::Length, 30_856_775_814_913_673.0, Pre::Si(1)),
+    u(
+        &["parsec", "pc"],
+        Dim::Length,
+        30_856_775_814_913_673.0,
+        Pre::Si(1),
+    ),
     u(&["Picapt", "Pica"], Dim::Length, PICA_PT, Pre::No),
     u(&["pica"], Dim::Length, PICA, Pre::No),
     u(&["survey_mi"], Dim::Length, 1_609.347_218_694_437, Pre::No),
@@ -334,7 +372,12 @@ const UNITS: &[Unit] = &[
     u(&["in3"], Dim::Volume, IN * IN * IN, Pre::No),
     u(&["ang3"], Dim::Volume, 1e-30, Pre::Si(3)),
     u(&["ly3"], Dim::Volume, LY * LY * LY, Pre::No),
-    u(&["Picapt3", "Pica3"], Dim::Volume, PICA_PT * PICA_PT * PICA_PT, Pre::No),
+    u(
+        &["Picapt3", "Pica3"],
+        Dim::Volume,
+        PICA_PT * PICA_PT * PICA_PT,
+        Pre::No,
+    ),
     u(&["barrel"], Dim::Volume, 0.158_987_294_928, Pre::No),
     u(&["bushel"], Dim::Volume, 0.035_239_070_166_88, Pre::No),
     u(&["MTON"], Dim::Volume, 1.132_673_863_68, Pre::No),
@@ -522,14 +565,20 @@ impl Cx {
         Cx::new(self.re - o.re, self.im - o.im)
     }
     fn mul(self, o: Cx) -> Cx {
-        Cx::new(self.re * o.re - self.im * o.im, self.re * o.im + self.im * o.re)
+        Cx::new(
+            self.re * o.re - self.im * o.im,
+            self.re * o.im + self.im * o.re,
+        )
     }
     fn div(self, o: Cx) -> R<Cx> {
         let d = o.re * o.re + o.im * o.im;
         if d == 0.0 {
             return Err(CellError::Num);
         }
-        Ok(Cx::new((self.re * o.re + self.im * o.im) / d, (self.im * o.re - self.re * o.im) / d))
+        Ok(Cx::new(
+            (self.re * o.re + self.im * o.im) / d,
+            (self.im * o.re - self.re * o.im) / d,
+        ))
     }
     fn abs(self) -> f64 {
         self.re.hypot(self.im)
@@ -548,20 +597,36 @@ impl Cx {
         Ok(Cx::new(self.abs().ln(), self.arg()))
     }
     fn sin(self) -> Cx {
-        Cx::new(self.re.sin() * self.im.cosh(), self.re.cos() * self.im.sinh())
+        Cx::new(
+            self.re.sin() * self.im.cosh(),
+            self.re.cos() * self.im.sinh(),
+        )
     }
     fn cos(self) -> Cx {
-        Cx::new(self.re.cos() * self.im.cosh(), -self.re.sin() * self.im.sinh())
+        Cx::new(
+            self.re.cos() * self.im.cosh(),
+            -self.re.sin() * self.im.sinh(),
+        )
     }
     fn sinh(self) -> Cx {
-        Cx::new(self.re.sinh() * self.im.cos(), self.re.cosh() * self.im.sin())
+        Cx::new(
+            self.re.sinh() * self.im.cos(),
+            self.re.cosh() * self.im.sin(),
+        )
     }
     fn cosh(self) -> Cx {
-        Cx::new(self.re.cosh() * self.im.cos(), self.re.sinh() * self.im.sin())
+        Cx::new(
+            self.re.cosh() * self.im.cos(),
+            self.re.sinh() * self.im.sin(),
+        )
     }
     fn powf(self, n: f64) -> R<Cx> {
         if self.re == 0.0 && self.im == 0.0 {
-            return if n > 0.0 { Ok(Cx::new(0.0, 0.0)) } else { Err(CellError::Num) };
+            return if n > 0.0 {
+                Ok(Cx::new(0.0, 0.0))
+            } else {
+                Err(CellError::Num)
+            };
         }
         let r = self.abs().powf(n);
         let t = self.arg() * n;
@@ -576,7 +641,9 @@ fn parse_real(s: &str) -> Option<f64> {
     if s.is_empty() || s.contains(char::is_whitespace) {
         return None;
     }
-    let ok = s.chars().all(|c| c.is_ascii_digit() || matches!(c, '.' | 'e' | 'E' | '+' | '-'));
+    let ok = s
+        .chars()
+        .all(|c| c.is_ascii_digit() || matches!(c, '.' | 'e' | 'E' | '+' | '-'));
     if !ok {
         return None;
     }
@@ -593,7 +660,9 @@ fn parse_complex(s: &str) -> R<(Cx, Option<char>)> {
         _ => None,
     };
     let Some(sfx) = suffix else {
-        return parse_real(s).map(|r| (Cx::new(r, 0.0), None)).ok_or(CellError::Num);
+        return parse_real(s)
+            .map(|r| (Cx::new(r, 0.0), None))
+            .ok_or(CellError::Num);
     };
     let body = &s[..s.len() - 1];
     // Split at the last sign that is not at the start and not part of an exponent.
@@ -611,7 +680,11 @@ fn parse_complex(s: &str) -> R<(Cx, Option<char>)> {
         Some(i) => (&body[..i], &body[i..]),
         None => ("", body),
     };
-    let re = if re_s.is_empty() { 0.0 } else { parse_real(re_s).ok_or(CellError::Num)? };
+    let re = if re_s.is_empty() {
+        0.0
+    } else {
+        parse_real(re_s).ok_or(CellError::Num)?
+    };
     let im = match im_s {
         "" | "+" => 1.0,
         "-" => -1.0,
@@ -708,8 +781,14 @@ macro_rules! im1 {
 im1!(imconjugate, |z: Cx| Ok(Cx::new(z.re, -z.im)));
 im1!(imexp, |z: Cx| Ok(z.exp()));
 im1!(imln, |z: Cx| z.ln());
-im1!(imlog10, |z: Cx| z.ln().map(|l| Cx::new(l.re / std::f64::consts::LN_10, l.im / std::f64::consts::LN_10)));
-im1!(imlog2, |z: Cx| z.ln().map(|l| Cx::new(l.re / std::f64::consts::LN_2, l.im / std::f64::consts::LN_2)));
+im1!(imlog10, |z: Cx| z.ln().map(|l| Cx::new(
+    l.re / std::f64::consts::LN_10,
+    l.im / std::f64::consts::LN_10
+)));
+im1!(imlog2, |z: Cx| z.ln().map(|l| Cx::new(
+    l.re / std::f64::consts::LN_2,
+    l.im / std::f64::consts::LN_2
+)));
 im1!(imsqrt, |z: Cx| z.powf(0.5));
 im1!(imsin, |z: Cx| Ok(z.sin()));
 im1!(imcos, |z: Cx| Ok(z.cos()));
@@ -732,7 +811,13 @@ fn imaginary(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     im_real_fn(a, |z| Ok(z.im))
 }
 fn imargument(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    im_real_fn(a, |z| if z.re == 0.0 && z.im == 0.0 { Err(CellError::Div0) } else { Ok(z.arg()) })
+    im_real_fn(a, |z| {
+        if z.re == 0.0 && z.im == 0.0 {
+            Err(CellError::Div0)
+        } else {
+            Ok(z.arg())
+        }
+    })
 }
 
 fn im_binary(a: &[Arg], f: fn(Cx, Cx) -> R<Cx>) -> R<Value> {
@@ -796,7 +881,11 @@ const MAX_BESSEL_POINTS: f64 = 4_000_000.0;
 fn bessel_j(n: u32, x: f64) -> Option<f64> {
     let pts = (2.0 * (x.abs() + n as f64) + 64.0).ceil();
     if pts > MAX_BESSEL_POINTS {
-        return if x.abs() > 1e6 { hankel(n, x.abs()).map(|(j, _)| if x < 0.0 && n % 2 == 1 { -j } else { j }) } else { None };
+        return if x.abs() > 1e6 {
+            hankel(n, x.abs()).map(|(j, _)| if x < 0.0 && n % 2 == 1 { -j } else { j })
+        } else {
+            None
+        };
     }
     let m = pts as usize;
     let h = 2.0 * PI / m as f64;
@@ -838,7 +927,11 @@ fn hankel(n: u32, x: f64) -> Option<(f64, f64)> {
     let f = (2.0 / (PI * x)).sqrt();
     let j = f * (p * chi.cos() - q * chi.sin());
     let y = f * (p * chi.sin() + q * chi.cos());
-    if j.is_finite() && y.is_finite() { Some((j, y)) } else { None }
+    if j.is_finite() && y.is_finite() {
+        Some((j, y))
+    } else {
+        None
+    }
 }
 
 const EULER: f64 = std::f64::consts::EULER_GAMMA;
@@ -866,7 +959,8 @@ fn bessel_j_all(x: f64) -> Vec<f64> {
             *v = prev;
         }
     }
-    let norm: f64 = j.first().copied().unwrap_or(0.0) + 2.0 * j.iter().skip(2).step_by(2).sum::<f64>();
+    let norm: f64 =
+        j.first().copied().unwrap_or(0.0) + 2.0 * j.iter().skip(2).step_by(2).sum::<f64>();
     if norm != 0.0 {
         for v in j.iter_mut() {
             *v /= norm;
@@ -898,7 +992,11 @@ fn bessel_y01(x: f64) -> Option<(f64, f64)> {
     }
     let y0 = (2.0 / PI) * l * jj(0) - (4.0 / PI) * s0;
     let y1 = -(2.0 / PI) * (jj(0) / x - l * jj(1)) + (2.0 / PI) * s1;
-    if y0.is_finite() && y1.is_finite() { Some((y0, y1)) } else { None }
+    if y0.is_finite() && y1.is_finite() {
+        Some((y0, y1))
+    } else {
+        None
+    }
 }
 
 fn bessel_y(n: u32, x: f64) -> Option<f64> {
@@ -1028,21 +1126,156 @@ fn besselk(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 
 pub(crate) fn specs() -> Vec<FnSpec> {
     vec![
-        f!("BIN2DEC", 1, 1, Engineering, S, "BIN2DEC(number)", "Converts a binary number to decimal.", bin2dec),
-        f!("BIN2HEX", 1, 2, Engineering, S, "BIN2HEX(number, [places])", "Converts a binary number to hexadecimal.", bin2hex),
-        f!("BIN2OCT", 1, 2, Engineering, S, "BIN2OCT(number, [places])", "Converts a binary number to octal.", bin2oct),
-        f!("DEC2BIN", 1, 2, Engineering, S, "DEC2BIN(number, [places])", "Converts a decimal number to binary.", dec2bin),
-        f!("DEC2HEX", 1, 2, Engineering, S, "DEC2HEX(number, [places])", "Converts a decimal number to hexadecimal.", dec2hex),
-        f!("DEC2OCT", 1, 2, Engineering, S, "DEC2OCT(number, [places])", "Converts a decimal number to octal.", dec2oct),
-        f!("HEX2BIN", 1, 2, Engineering, S, "HEX2BIN(number, [places])", "Converts a hexadecimal number to binary.", hex2bin),
-        f!("HEX2DEC", 1, 1, Engineering, S, "HEX2DEC(number)", "Converts a hexadecimal number to decimal.", hex2dec),
-        f!("HEX2OCT", 1, 2, Engineering, S, "HEX2OCT(number, [places])", "Converts a hexadecimal number to octal.", hex2oct),
-        f!("OCT2BIN", 1, 2, Engineering, S, "OCT2BIN(number, [places])", "Converts an octal number to binary.", oct2bin),
-        f!("OCT2DEC", 1, 1, Engineering, S, "OCT2DEC(number)", "Converts an octal number to decimal.", oct2dec),
-        f!("OCT2HEX", 1, 2, Engineering, S, "OCT2HEX(number, [places])", "Converts an octal number to hexadecimal.", oct2hex),
-        f!("BITAND", 2, 2, Engineering, S, "BITAND(number1, number2)", "Bitwise AND of two non-negative integers.", bitand),
-        f!("BITOR", 2, 2, Engineering, S, "BITOR(number1, number2)", "Bitwise OR of two non-negative integers.", bitor),
-        f!("BITXOR", 2, 2, Engineering, S, "BITXOR(number1, number2)", "Bitwise exclusive OR of two non-negative integers.", bitxor),
+        f!(
+            "BIN2DEC",
+            1,
+            1,
+            Engineering,
+            S,
+            "BIN2DEC(number)",
+            "Converts a binary number to decimal.",
+            bin2dec
+        ),
+        f!(
+            "BIN2HEX",
+            1,
+            2,
+            Engineering,
+            S,
+            "BIN2HEX(number, [places])",
+            "Converts a binary number to hexadecimal.",
+            bin2hex
+        ),
+        f!(
+            "BIN2OCT",
+            1,
+            2,
+            Engineering,
+            S,
+            "BIN2OCT(number, [places])",
+            "Converts a binary number to octal.",
+            bin2oct
+        ),
+        f!(
+            "DEC2BIN",
+            1,
+            2,
+            Engineering,
+            S,
+            "DEC2BIN(number, [places])",
+            "Converts a decimal number to binary.",
+            dec2bin
+        ),
+        f!(
+            "DEC2HEX",
+            1,
+            2,
+            Engineering,
+            S,
+            "DEC2HEX(number, [places])",
+            "Converts a decimal number to hexadecimal.",
+            dec2hex
+        ),
+        f!(
+            "DEC2OCT",
+            1,
+            2,
+            Engineering,
+            S,
+            "DEC2OCT(number, [places])",
+            "Converts a decimal number to octal.",
+            dec2oct
+        ),
+        f!(
+            "HEX2BIN",
+            1,
+            2,
+            Engineering,
+            S,
+            "HEX2BIN(number, [places])",
+            "Converts a hexadecimal number to binary.",
+            hex2bin
+        ),
+        f!(
+            "HEX2DEC",
+            1,
+            1,
+            Engineering,
+            S,
+            "HEX2DEC(number)",
+            "Converts a hexadecimal number to decimal.",
+            hex2dec
+        ),
+        f!(
+            "HEX2OCT",
+            1,
+            2,
+            Engineering,
+            S,
+            "HEX2OCT(number, [places])",
+            "Converts a hexadecimal number to octal.",
+            hex2oct
+        ),
+        f!(
+            "OCT2BIN",
+            1,
+            2,
+            Engineering,
+            S,
+            "OCT2BIN(number, [places])",
+            "Converts an octal number to binary.",
+            oct2bin
+        ),
+        f!(
+            "OCT2DEC",
+            1,
+            1,
+            Engineering,
+            S,
+            "OCT2DEC(number)",
+            "Converts an octal number to decimal.",
+            oct2dec
+        ),
+        f!(
+            "OCT2HEX",
+            1,
+            2,
+            Engineering,
+            S,
+            "OCT2HEX(number, [places])",
+            "Converts an octal number to hexadecimal.",
+            oct2hex
+        ),
+        f!(
+            "BITAND",
+            2,
+            2,
+            Engineering,
+            S,
+            "BITAND(number1, number2)",
+            "Bitwise AND of two non-negative integers.",
+            bitand
+        ),
+        f!(
+            "BITOR",
+            2,
+            2,
+            Engineering,
+            S,
+            "BITOR(number1, number2)",
+            "Bitwise OR of two non-negative integers.",
+            bitor
+        ),
+        f!(
+            "BITXOR",
+            2,
+            2,
+            Engineering,
+            S,
+            "BITXOR(number1, number2)",
+            "Bitwise exclusive OR of two non-negative integers.",
+            bitxor
+        ),
         f!(
             "BITLSHIFT",
             2,
@@ -1063,9 +1296,36 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Shifts the bits of a number right (left for negative shifts).",
             bitrshift
         ),
-        f!("CONVERT", 3, 3, Engineering, S, "CONVERT(number, from_unit, to_unit)", "Converts a measurement from one unit to another.", convert),
-        f!("DELTA", 1, 2, Engineering, S, "DELTA(number1, [number2])", "Returns 1 when two numbers are equal, otherwise 0.", delta),
-        f!("GESTEP", 1, 2, Engineering, S, "GESTEP(number, [step])", "Returns 1 when a number is at least the step, otherwise 0.", gestep),
+        f!(
+            "CONVERT",
+            3,
+            3,
+            Engineering,
+            S,
+            "CONVERT(number, from_unit, to_unit)",
+            "Converts a measurement from one unit to another.",
+            convert
+        ),
+        f!(
+            "DELTA",
+            1,
+            2,
+            Engineering,
+            S,
+            "DELTA(number1, [number2])",
+            "Returns 1 when two numbers are equal, otherwise 0.",
+            delta
+        ),
+        f!(
+            "GESTEP",
+            1,
+            2,
+            Engineering,
+            S,
+            "GESTEP(number, [step])",
+            "Returns 1 when a number is at least the step, otherwise 0.",
+            gestep
+        ),
         f!(
             "ERF",
             1,
@@ -1076,9 +1336,36 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Error function integrated from 0 to a limit, or between two limits.",
             erf_fn
         ),
-        f!("ERF.PRECISE", 1, 1, Engineering, S, "ERF.PRECISE(x)", "Error function integrated from 0 to x.", erf_precise),
-        f!("ERFC", 1, 1, Engineering, S, "ERFC(x)", "Complementary error function, 1 - ERF(x).", erfc_fn),
-        f!("ERFC.PRECISE", 1, 1, Engineering, S, "ERFC.PRECISE(x)", "Complementary error function, 1 - ERF(x).", erfc_fn),
+        f!(
+            "ERF.PRECISE",
+            1,
+            1,
+            Engineering,
+            S,
+            "ERF.PRECISE(x)",
+            "Error function integrated from 0 to x.",
+            erf_precise
+        ),
+        f!(
+            "ERFC",
+            1,
+            1,
+            Engineering,
+            S,
+            "ERFC(x)",
+            "Complementary error function, 1 - ERF(x).",
+            erfc_fn
+        ),
+        f!(
+            "ERFC.PRECISE",
+            1,
+            1,
+            Engineering,
+            S,
+            "ERFC.PRECISE(x)",
+            "Complementary error function, 1 - ERF(x).",
+            erfc_fn
+        ),
         f!(
             "COMPLEX",
             2,
@@ -1089,35 +1376,296 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Builds a complex number as text from real and imaginary parts.",
             complex
         ),
-        f!("IMABS", 1, 1, Engineering, S, "IMABS(inumber)", "Absolute value (modulus) of a complex number.", imabs),
-        f!("IMAGINARY", 1, 1, Engineering, S, "IMAGINARY(inumber)", "Imaginary coefficient of a complex number.", imaginary),
-        f!("IMREAL", 1, 1, Engineering, S, "IMREAL(inumber)", "Real coefficient of a complex number.", imreal),
-        f!("IMARGUMENT", 1, 1, Engineering, S, "IMARGUMENT(inumber)", "Angle of a complex number in radians.", imargument),
-        f!("IMCONJUGATE", 1, 1, Engineering, S, "IMCONJUGATE(inumber)", "Complex conjugate of a complex number.", imconjugate),
-        f!("IMCOS", 1, 1, Engineering, S, "IMCOS(inumber)", "Cosine of a complex number.", imcos),
-        f!("IMCOSH", 1, 1, Engineering, S, "IMCOSH(inumber)", "Hyperbolic cosine of a complex number.", imcosh),
-        f!("IMCOT", 1, 1, Engineering, S, "IMCOT(inumber)", "Cotangent of a complex number.", imcot),
-        f!("IMCSC", 1, 1, Engineering, S, "IMCSC(inumber)", "Cosecant of a complex number.", imcsc),
-        f!("IMCSCH", 1, 1, Engineering, S, "IMCSCH(inumber)", "Hyperbolic cosecant of a complex number.", imcsch),
-        f!("IMDIV", 2, 2, Engineering, S, "IMDIV(inumber1, inumber2)", "Quotient of two complex numbers.", imdiv),
-        f!("IMEXP", 1, 1, Engineering, S, "IMEXP(inumber)", "Exponential of a complex number.", imexp),
-        f!("IMLN", 1, 1, Engineering, S, "IMLN(inumber)", "Natural logarithm of a complex number.", imln),
-        f!("IMLOG10", 1, 1, Engineering, S, "IMLOG10(inumber)", "Base-10 logarithm of a complex number.", imlog10),
-        f!("IMLOG2", 1, 1, Engineering, S, "IMLOG2(inumber)", "Base-2 logarithm of a complex number.", imlog2),
-        f!("IMPOWER", 2, 2, Engineering, S, "IMPOWER(inumber, number)", "Raises a complex number to a power.", impower),
-        f!("IMPRODUCT", 1, VAR, Engineering, A, "IMPRODUCT(inumber1, [inumber2], ...)", "Product of complex numbers.", improduct),
-        f!("IMSEC", 1, 1, Engineering, S, "IMSEC(inumber)", "Secant of a complex number.", imsec),
-        f!("IMSECH", 1, 1, Engineering, S, "IMSECH(inumber)", "Hyperbolic secant of a complex number.", imsech),
-        f!("IMSIN", 1, 1, Engineering, S, "IMSIN(inumber)", "Sine of a complex number.", imsin),
-        f!("IMSINH", 1, 1, Engineering, S, "IMSINH(inumber)", "Hyperbolic sine of a complex number.", imsinh),
-        f!("IMSQRT", 1, 1, Engineering, S, "IMSQRT(inumber)", "Square root of a complex number.", imsqrt),
-        f!("IMSUB", 2, 2, Engineering, S, "IMSUB(inumber1, inumber2)", "Difference of two complex numbers.", imsub),
-        f!("IMSUM", 1, VAR, Engineering, A, "IMSUM(inumber1, [inumber2], ...)", "Sum of complex numbers.", imsum),
-        f!("IMTAN", 1, 1, Engineering, S, "IMTAN(inumber)", "Tangent of a complex number.", imtan),
-        f!("BESSELJ", 2, 2, Engineering, S, "BESSELJ(x, n)", "Bessel function of the first kind, J_n(x).", besselj),
-        f!("BESSELY", 2, 2, Engineering, S, "BESSELY(x, n)", "Bessel function of the second kind, Y_n(x).", bessely),
-        f!("BESSELI", 2, 2, Engineering, S, "BESSELI(x, n)", "Modified Bessel function of the first kind, I_n(x).", besseli),
-        f!("BESSELK", 2, 2, Engineering, S, "BESSELK(x, n)", "Modified Bessel function of the second kind, K_n(x).", besselk),
+        f!(
+            "IMABS",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMABS(inumber)",
+            "Absolute value (modulus) of a complex number.",
+            imabs
+        ),
+        f!(
+            "IMAGINARY",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMAGINARY(inumber)",
+            "Imaginary coefficient of a complex number.",
+            imaginary
+        ),
+        f!(
+            "IMREAL",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMREAL(inumber)",
+            "Real coefficient of a complex number.",
+            imreal
+        ),
+        f!(
+            "IMARGUMENT",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMARGUMENT(inumber)",
+            "Angle of a complex number in radians.",
+            imargument
+        ),
+        f!(
+            "IMCONJUGATE",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMCONJUGATE(inumber)",
+            "Complex conjugate of a complex number.",
+            imconjugate
+        ),
+        f!(
+            "IMCOS",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMCOS(inumber)",
+            "Cosine of a complex number.",
+            imcos
+        ),
+        f!(
+            "IMCOSH",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMCOSH(inumber)",
+            "Hyperbolic cosine of a complex number.",
+            imcosh
+        ),
+        f!(
+            "IMCOT",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMCOT(inumber)",
+            "Cotangent of a complex number.",
+            imcot
+        ),
+        f!(
+            "IMCSC",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMCSC(inumber)",
+            "Cosecant of a complex number.",
+            imcsc
+        ),
+        f!(
+            "IMCSCH",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMCSCH(inumber)",
+            "Hyperbolic cosecant of a complex number.",
+            imcsch
+        ),
+        f!(
+            "IMDIV",
+            2,
+            2,
+            Engineering,
+            S,
+            "IMDIV(inumber1, inumber2)",
+            "Quotient of two complex numbers.",
+            imdiv
+        ),
+        f!(
+            "IMEXP",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMEXP(inumber)",
+            "Exponential of a complex number.",
+            imexp
+        ),
+        f!(
+            "IMLN",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMLN(inumber)",
+            "Natural logarithm of a complex number.",
+            imln
+        ),
+        f!(
+            "IMLOG10",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMLOG10(inumber)",
+            "Base-10 logarithm of a complex number.",
+            imlog10
+        ),
+        f!(
+            "IMLOG2",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMLOG2(inumber)",
+            "Base-2 logarithm of a complex number.",
+            imlog2
+        ),
+        f!(
+            "IMPOWER",
+            2,
+            2,
+            Engineering,
+            S,
+            "IMPOWER(inumber, number)",
+            "Raises a complex number to a power.",
+            impower
+        ),
+        f!(
+            "IMPRODUCT",
+            1,
+            VAR,
+            Engineering,
+            A,
+            "IMPRODUCT(inumber1, [inumber2], ...)",
+            "Product of complex numbers.",
+            improduct
+        ),
+        f!(
+            "IMSEC",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMSEC(inumber)",
+            "Secant of a complex number.",
+            imsec
+        ),
+        f!(
+            "IMSECH",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMSECH(inumber)",
+            "Hyperbolic secant of a complex number.",
+            imsech
+        ),
+        f!(
+            "IMSIN",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMSIN(inumber)",
+            "Sine of a complex number.",
+            imsin
+        ),
+        f!(
+            "IMSINH",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMSINH(inumber)",
+            "Hyperbolic sine of a complex number.",
+            imsinh
+        ),
+        f!(
+            "IMSQRT",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMSQRT(inumber)",
+            "Square root of a complex number.",
+            imsqrt
+        ),
+        f!(
+            "IMSUB",
+            2,
+            2,
+            Engineering,
+            S,
+            "IMSUB(inumber1, inumber2)",
+            "Difference of two complex numbers.",
+            imsub
+        ),
+        f!(
+            "IMSUM",
+            1,
+            VAR,
+            Engineering,
+            A,
+            "IMSUM(inumber1, [inumber2], ...)",
+            "Sum of complex numbers.",
+            imsum
+        ),
+        f!(
+            "IMTAN",
+            1,
+            1,
+            Engineering,
+            S,
+            "IMTAN(inumber)",
+            "Tangent of a complex number.",
+            imtan
+        ),
+        f!(
+            "BESSELJ",
+            2,
+            2,
+            Engineering,
+            S,
+            "BESSELJ(x, n)",
+            "Bessel function of the first kind, J_n(x).",
+            besselj
+        ),
+        f!(
+            "BESSELY",
+            2,
+            2,
+            Engineering,
+            S,
+            "BESSELY(x, n)",
+            "Bessel function of the second kind, Y_n(x).",
+            bessely
+        ),
+        f!(
+            "BESSELI",
+            2,
+            2,
+            Engineering,
+            S,
+            "BESSELI(x, n)",
+            "Modified Bessel function of the first kind, I_n(x).",
+            besseli
+        ),
+        f!(
+            "BESSELK",
+            2,
+            2,
+            Engineering,
+            S,
+            "BESSELK(x, n)",
+            "Modified Bessel function of the second kind, K_n(x).",
+            besselk
+        ),
     ]
 }
 
@@ -1130,11 +1678,21 @@ mod tests {
 
     #[track_caller]
     fn cx(v: Value, re: f64, im: f64) {
-        let Value::Text(s) = &v else { panic!("expected complex text, got {v:?}") };
+        let Value::Text(s) = &v else {
+            panic!("expected complex text, got {v:?}")
+        };
         let (z, _) = parse_complex(s).unwrap();
         let tol = 1e-12;
-        assert!((z.re - re).abs() <= tol * re.abs().max(1.0), "{s}: re {} vs {re}", z.re);
-        assert!((z.im - im).abs() <= tol * im.abs().max(1.0), "{s}: im {} vs {im}", z.im);
+        assert!(
+            (z.re - re).abs() <= tol * re.abs().max(1.0),
+            "{s}: re {} vs {re}",
+            z.re
+        );
+        assert!(
+            (z.im - im).abs() <= tol * im.abs().max(1.0),
+            "{s}: im {} vs {im}",
+            z.im
+        );
     }
 
     #[test]
@@ -1191,7 +1749,10 @@ mod tests {
         is_err(ev("BITAND", vec![n(-1.0), n(5.0)]), CellError::Num);
         is_err(ev("BITAND", vec![n(1.5), n(5.0)]), CellError::Num);
         is_err(ev("BITLSHIFT", vec![n(1.0), n(54.0)]), CellError::Num);
-        is_err(ev("BITLSHIFT", vec![n(2f64.powi(47)), n(1.0)]), CellError::Num);
+        is_err(
+            ev("BITLSHIFT", vec![n(2f64.powi(47)), n(1.0)]),
+            CellError::Num,
+        );
     }
 
     #[test]
@@ -1205,8 +1766,14 @@ mod tests {
         close(ev("CONVERT", vec![n(1.0), t("gal"), t("l")]), 3.785411784);
         close(ev("CONVERT", vec![n(1.0), t("byte"), t("bit")]), 8.0);
         close(ev("CONVERT", vec![n(1.0), t("kibyte"), t("byte")]), 1024.0);
-        close(ev("CONVERT", vec![n(100.0), t("km/h"), t("m/s")]), 100.0 / 3.6);
-        close(ev("CONVERT", vec![n(1.0), t("m2"), t("ft2")]), 10.763910416709722);
+        close(
+            ev("CONVERT", vec![n(100.0), t("km/h"), t("m/s")]),
+            100.0 / 3.6,
+        );
+        close(
+            ev("CONVERT", vec![n(1.0), t("m2"), t("ft2")]),
+            10.763910416709722,
+        );
         close(ev("CONVERT", vec![n(1.0), t("km2"), t("m2")]), 1e6);
         close(ev("CONVERT", vec![n(1.0), t("hr"), t("mn")]), 60.0);
         close(ev("CONVERT", vec![n(1.0), t("atm"), t("Pa")]), 101325.0);
@@ -1215,10 +1782,16 @@ mod tests {
         close(ev("CONVERT", vec![n(1.0), t("mm"), t("m")]), 0.001);
         close(ev("CONVERT", vec![n(6.0), t("ft"), t("yd")]), 2.0);
         close(ev("CONVERT", vec![n(1.0), t("cup"), t("tsp")]), 48.0);
-        is_err(ev("CONVERT", vec![n(2.5), t("ft"), t("sec")]), CellError::NA);
+        is_err(
+            ev("CONVERT", vec![n(2.5), t("ft"), t("sec")]),
+            CellError::NA,
+        );
         is_err(ev("CONVERT", vec![n(1.0), t("xyz"), t("m")]), CellError::NA);
         is_err(ev("CONVERT", vec![n(1.0), t("kft"), t("m")]), CellError::NA);
-        is_err(ev("CONVERT", vec![n(1.0), t("LBM"), t("kg")]), CellError::NA);
+        is_err(
+            ev("CONVERT", vec![n(1.0), t("LBM"), t("kg")]),
+            CellError::NA,
+        );
     }
 
     #[test]
@@ -1230,10 +1803,22 @@ mod tests {
         close(ev("GESTEP", vec![n(-4.0)]), 0.0);
         close_tol(ev("ERF", vec![n(0.745)]), 0.707_928_920, 1e-9);
         close_tol(ev("ERF", vec![n(1.0)]), 0.842_700_792_949_715, 1e-12);
-        close_tol(ev("ERF", vec![n(0.0), n(1.5)]), 0.966_105_146_475_311, 1e-12);
-        close_tol(ev("ERF.PRECISE", vec![n(1.0)]), 0.842_700_792_949_715, 1e-12);
+        close_tol(
+            ev("ERF", vec![n(0.0), n(1.5)]),
+            0.966_105_146_475_311,
+            1e-12,
+        );
+        close_tol(
+            ev("ERF.PRECISE", vec![n(1.0)]),
+            0.842_700_792_949_715,
+            1e-12,
+        );
         close_tol(ev("ERFC", vec![n(1.0)]), 0.157_299_207_050_285, 1e-12);
-        close_tol(ev("ERFC.PRECISE", vec![n(-1.0)]), 1.842_700_792_949_715, 1e-12);
+        close_tol(
+            ev("ERFC.PRECISE", vec![n(-1.0)]),
+            1.842_700_792_949_715,
+            1e-12,
+        );
     }
 
     #[test]
@@ -1245,7 +1830,10 @@ mod tests {
         is_text(ev("COMPLEX", vec![n(1.5), n(-2.0)]), "1.5-2i");
         is_text(ev("COMPLEX", vec![n(3.0), n(0.0)]), "3");
         is_text(ev("COMPLEX", vec![n(0.0), n(0.0)]), "0");
-        is_err(ev("COMPLEX", vec![n(1.0), n(1.0), t("k")]), CellError::Value);
+        is_err(
+            ev("COMPLEX", vec![n(1.0), n(1.0), t("k")]),
+            CellError::Value,
+        );
         close(ev("IMABS", vec![t("5+12i")]), 13.0);
         close(ev("IMREAL", vec![t("6-9i")]), 6.0);
         close(ev("IMAGINARY", vec![t("3+4i")]), 4.0);
@@ -1260,35 +1848,105 @@ mod tests {
         is_text(ev("IMPRODUCT", vec![t("3+4i"), t("5-3i")]), "27+11i");
         is_text(ev("IMPRODUCT", vec![t("1+2i"), n(30.0)]), "30+60i");
         is_text(ev("IMSUM", vec![t("3+4i"), t("5-3i")]), "8+i");
-        is_text(ev("IMSUM", vec![rf(arr(vec![vec![tv("1+i"), Value::Empty, tv("2")]]))]), "3+i");
+        is_text(
+            ev(
+                "IMSUM",
+                vec![rf(arr(vec![vec![tv("1+i"), Value::Empty, tv("2")]]))],
+            ),
+            "3+i",
+        );
         is_text(ev("IMSUB", vec![t("13+4i"), t("5+3i")]), "8+i");
         is_err(ev("IMSUM", vec![t("1+i"), t("1+j")]), CellError::Value);
         is_err(ev("IMABS", vec![t("abc")]), CellError::Num);
         is_err(ev("IMABS", vec![b(true)]), CellError::Value);
-        cx(ev("IMEXP", vec![t("1+i")]), 1.468_693_939_915_885_2, 2.287_355_287_178_842);
-        cx(ev("IMLN", vec![t("3+4i")]), 1.609_437_912_434_100_3, 0.927_295_218_001_612_2);
-        cx(ev("IMLOG10", vec![t("3+4i")]), 0.698_970_004_336_018_8, 0.402_719_196_273_373_2);
-        cx(ev("IMLOG2", vec![t("3+4i")]), 2.321_928_094_887_362, 1.337_804_212_450_976_8);
-        cx(ev("IMSQRT", vec![t("1+i")]), 1.098_684_113_467_809_9, 0.455_089_860_562_227_3);
+        cx(
+            ev("IMEXP", vec![t("1+i")]),
+            1.468_693_939_915_885_2,
+            2.287_355_287_178_842,
+        );
+        cx(
+            ev("IMLN", vec![t("3+4i")]),
+            1.609_437_912_434_100_3,
+            0.927_295_218_001_612_2,
+        );
+        cx(
+            ev("IMLOG10", vec![t("3+4i")]),
+            0.698_970_004_336_018_8,
+            0.402_719_196_273_373_2,
+        );
+        cx(
+            ev("IMLOG2", vec![t("3+4i")]),
+            2.321_928_094_887_362,
+            1.337_804_212_450_976_8,
+        );
+        cx(
+            ev("IMSQRT", vec![t("1+i")]),
+            1.098_684_113_467_809_9,
+            0.455_089_860_562_227_3,
+        );
         cx(ev("IMSQRT", vec![t("-4")]), 0.0, 2.0);
         is_text(ev("IMPOWER", vec![t("2+3i"), n(3.0)]), "-46+9i");
-        cx(ev("IMPOWER", vec![t("2+3i"), n(0.5)]), 1.674_149_228_035_540_2, 0.895_977_476_129_838);
-        cx(ev("IMSIN", vec![t("3+4i")]), 3.853_738_037_919_377, -27.016_813_258_003_93);
-        cx(ev("IMCOS", vec![t("1+i")]), 0.833_730_025_131_149, -0.988_897_705_762_865);
-        cx(ev("IMSINH", vec![t("4+3i")]), -27.016_813_258_003_93, 3.853_738_037_919_377);
-        cx(ev("IMCOSH", vec![t("4+3i")]), -27.034_945_603_074_224, 3.851_153_334_811_777);
-        cx(ev("IMTAN", vec![t("4+3i")]), 0.004_908_258_067_496_06, 1.000_709_536_067_233);
-        cx(ev("IMCOT", vec![t("4+3i")]), 0.004_901_182_394_304_4, -0.999_266_927_805_902);
-        cx(ev("IMSEC", vec![t("4+3i")]), -0.065_294_027_857_947_1, -0.075_224_960_302_773_2);
-        cx(ev("IMCSC", vec![t("4+3i")]), -0.075_489_832_915_863_7, 0.064_877_471_370_635_5);
+        cx(
+            ev("IMPOWER", vec![t("2+3i"), n(0.5)]),
+            1.674_149_228_035_540_2,
+            0.895_977_476_129_838,
+        );
+        cx(
+            ev("IMSIN", vec![t("3+4i")]),
+            3.853_738_037_919_377,
+            -27.016_813_258_003_93,
+        );
+        cx(
+            ev("IMCOS", vec![t("1+i")]),
+            0.833_730_025_131_149,
+            -0.988_897_705_762_865,
+        );
+        cx(
+            ev("IMSINH", vec![t("4+3i")]),
+            -27.016_813_258_003_93,
+            3.853_738_037_919_377,
+        );
+        cx(
+            ev("IMCOSH", vec![t("4+3i")]),
+            -27.034_945_603_074_224,
+            3.851_153_334_811_777,
+        );
+        cx(
+            ev("IMTAN", vec![t("4+3i")]),
+            0.004_908_258_067_496_06,
+            1.000_709_536_067_233,
+        );
+        cx(
+            ev("IMCOT", vec![t("4+3i")]),
+            0.004_901_182_394_304_4,
+            -0.999_266_927_805_902,
+        );
+        cx(
+            ev("IMSEC", vec![t("4+3i")]),
+            -0.065_294_027_857_947_1,
+            -0.075_224_960_302_773_2,
+        );
+        cx(
+            ev("IMCSC", vec![t("4+3i")]),
+            -0.075_489_832_915_863_7,
+            0.064_877_471_370_635_5,
+        );
         is_text(ev("IMSECH", vec![t("0")]), "1");
         is_err(ev("IMCSCH", vec![t("0")]), CellError::Num);
         // sech z · cosh z = 1
-        let Value::Text(c) = ev("IMCOSH", vec![t("4+3i")]) else { panic!() };
-        let Value::Text(sc) = ev("IMSECH", vec![t("4+3i")]) else { panic!() };
+        let Value::Text(c) = ev("IMCOSH", vec![t("4+3i")]) else {
+            panic!()
+        };
+        let Value::Text(sc) = ev("IMSECH", vec![t("4+3i")]) else {
+            panic!()
+        };
         cx(ev("IMPRODUCT", vec![t(&c), t(&sc)]), 1.0, 0.0);
-        let Value::Text(sh) = ev("IMSINH", vec![t("4+3i")]) else { panic!() };
-        let Value::Text(csh) = ev("IMCSCH", vec![t("4+3i")]) else { panic!() };
+        let Value::Text(sh) = ev("IMSINH", vec![t("4+3i")]) else {
+            panic!()
+        };
+        let Value::Text(csh) = ev("IMCSCH", vec![t("4+3i")]) else {
+            panic!()
+        };
         cx(ev("IMPRODUCT", vec![t(&sh), t(&csh)]), 1.0, 0.0);
         cx(ev("IMSUM", vec![t("1.5e1+2E-1j")]), 15.0, 0.2);
     }
@@ -1299,15 +1957,51 @@ mod tests {
         close_tol(ev("BESSELY", vec![n(2.5), n(1.0)]), 0.145_918_138, 1e-6);
         close_tol(ev("BESSELI", vec![n(1.5), n(1.0)]), 0.981_666_428, 1e-6);
         close_tol(ev("BESSELK", vec![n(1.5), n(1.0)]), 0.277_387_804, 1e-6);
-        close_tol(ev("BESSELJ", vec![n(1.0), n(0.0)]), 0.765_197_686_557_966_6, 1e-12);
-        close_tol(ev("BESSELJ", vec![n(1.0), n(1.0)]), 0.440_050_585_744_933_5, 1e-12);
-        close_tol(ev("BESSELJ", vec![n(-1.0), n(1.0)]), -0.440_050_585_744_933_5, 1e-12);
-        close_tol(ev("BESSELY", vec![n(1.0), n(0.0)]), 0.088_256_964_215_676_96, 1e-11);
-        close_tol(ev("BESSELY", vec![n(1.0), n(1.0)]), -0.781_212_821_300_288_7, 1e-11);
-        close_tol(ev("BESSELI", vec![n(1.0), n(0.0)]), 1.266_065_877_752_008_4, 1e-12);
-        close_tol(ev("BESSELI", vec![n(1.0), n(1.0)]), 0.565_159_103_992_485_1, 1e-12);
-        close_tol(ev("BESSELK", vec![n(1.0), n(0.0)]), 0.421_024_438_240_708_3, 1e-11);
-        close_tol(ev("BESSELK", vec![n(1.0), n(1.0)]), 0.601_907_230_197_234_6, 1e-11);
+        close_tol(
+            ev("BESSELJ", vec![n(1.0), n(0.0)]),
+            0.765_197_686_557_966_6,
+            1e-12,
+        );
+        close_tol(
+            ev("BESSELJ", vec![n(1.0), n(1.0)]),
+            0.440_050_585_744_933_5,
+            1e-12,
+        );
+        close_tol(
+            ev("BESSELJ", vec![n(-1.0), n(1.0)]),
+            -0.440_050_585_744_933_5,
+            1e-12,
+        );
+        close_tol(
+            ev("BESSELY", vec![n(1.0), n(0.0)]),
+            0.088_256_964_215_676_96,
+            1e-11,
+        );
+        close_tol(
+            ev("BESSELY", vec![n(1.0), n(1.0)]),
+            -0.781_212_821_300_288_7,
+            1e-11,
+        );
+        close_tol(
+            ev("BESSELI", vec![n(1.0), n(0.0)]),
+            1.266_065_877_752_008_4,
+            1e-12,
+        );
+        close_tol(
+            ev("BESSELI", vec![n(1.0), n(1.0)]),
+            0.565_159_103_992_485_1,
+            1e-12,
+        );
+        close_tol(
+            ev("BESSELK", vec![n(1.0), n(0.0)]),
+            0.421_024_438_240_708_3,
+            1e-11,
+        );
+        close_tol(
+            ev("BESSELK", vec![n(1.0), n(1.0)]),
+            0.601_907_230_197_234_6,
+            1e-11,
+        );
         is_err(ev("BESSELJ", vec![n(1.0), n(-1.0)]), CellError::Num);
         is_err(ev("BESSELY", vec![n(0.0), n(1.0)]), CellError::Num);
         is_err(ev("BESSELK", vec![n(-1.0), n(1.0)]), CellError::Num);
@@ -1332,10 +2026,19 @@ mod tests {
             };
             let w = j1 * y0 - j0 * y1;
             let expect = 2.0 / (std::f64::consts::PI * x);
-            assert!((w - expect).abs() < 1e-9 * expect.max(1.0), "x={x}: {w} vs {expect}");
+            assert!(
+                (w - expect).abs() < 1e-9 * expect.max(1.0),
+                "x={x}: {w} vs {expect}"
+            );
         }
         // Large orders and arguments stay finite.
-        assert!(matches!(ev("BESSELJ", vec![n(50.0), n(3.0)]), Value::Number(_)));
-        assert!(matches!(ev("BESSELK", vec![n(30.0), n(5.0)]), Value::Number(_)));
+        assert!(matches!(
+            ev("BESSELJ", vec![n(50.0), n(3.0)]),
+            Value::Number(_)
+        ));
+        assert!(matches!(
+            ev("BESSELK", vec![n(30.0), n(5.0)]),
+            Value::Number(_)
+        ));
     }
 }

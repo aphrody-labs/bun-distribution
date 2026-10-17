@@ -27,8 +27,15 @@ impl FootageSource for Stub {
 }
 
 fn harness(broken: bool) -> (Harness<'static, EffectcraftApp>, ItemId) {
-    let mut s = Session { footage: Arc::new(Stub(broken)), ..Default::default() };
-    s.execute("comp.new", json!({"name": "Main", "width": 320, "height": 180, "duration": 4})).unwrap();
+    let mut s = Session {
+        footage: Arc::new(Stub(broken)),
+        ..Default::default()
+    };
+    s.execute(
+        "comp.new",
+        json!({"name": "Main", "width": 320, "height": 180, "duration": 4}),
+    )
+    .unwrap();
     let footage = Footage {
         kind: FootageKind::Video,
         path: "clip.mp4".into(),
@@ -38,10 +45,17 @@ fn harness(broken: bool) -> (Harness<'static, EffectcraftApp>, ItemId) {
         duration: Tick::from_seconds_f64(2.0),
         ..Default::default()
     };
-    let clip = std::sync::Arc::make_mut(&mut s.project).add_item("Clip", Default::default(), None, ItemKind::Footage(footage));
+    let clip = std::sync::Arc::make_mut(&mut s.project).add_item(
+        "Clip",
+        Default::default(),
+        None,
+        ItemKind::Footage(footage),
+    );
     s.execute("layer.addItem", json!({"item": clip.0})).unwrap();
     s.execute("project.select", json!({"items": []})).unwrap();
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_eframe(|_| EffectcraftApp::new(s));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(4);
     (h, clip)
 }
@@ -49,15 +63,32 @@ fn harness(broken: bool) -> (Harness<'static, EffectcraftApp>, ItemId) {
 #[test]
 fn undecodable_footage_is_marked_in_the_project_panel_and_the_viewer() {
     let (h, clip) = harness(true);
-    let marker = h.state().auto.find(&format!("project.item.{}.problem", clip.0)).expect("a warning on the footage item").clone();
+    let marker = h
+        .state()
+        .auto
+        .find(&format!("project.item.{}.problem", clip.0))
+        .expect("a warning on the footage item")
+        .clone();
     assert!(marker.label.contains("4:2:2"), "{marker:?}");
-    let notice = h.state().auto.query("viewer.footageProblem.").first().copied().expect("a notice in the viewer").clone();
+    let notice = h
+        .state()
+        .auto
+        .query("viewer.footageProblem.")
+        .first()
+        .copied()
+        .expect("a notice in the viewer")
+        .clone();
     assert!(notice.label.contains(WHY), "{notice:?}");
 }
 
 #[test]
 fn readable_footage_has_no_notice() {
     let (h, clip) = harness(false);
-    assert!(h.state().auto.find(&format!("project.item.{}.problem", clip.0)).is_none());
+    assert!(
+        h.state()
+            .auto
+            .find(&format!("project.item.{}.problem", clip.0))
+            .is_none()
+    );
     assert!(h.state().auto.query("viewer.footageProblem.").is_empty());
 }

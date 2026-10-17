@@ -10,11 +10,17 @@ use designcraft_doc::{Document, ParaFormat, SpreadRef};
 use designcraft_geom::{Affine, Rect, Vec2};
 use designcraft_render::{Placed, RenderOptions, Renderer};
 
-const WORDS: &[&str] = &["grid", "margin", "column", "rhythm", "baseline", "reader", "story", "frame", "quiet", "layout", "type", "texture"];
+const WORDS: &[&str] = &[
+    "grid", "margin", "column", "rhythm", "baseline", "reader", "story", "frame", "quiet",
+    "layout", "type", "texture",
+];
 
 /// `pages` pages, each with 6 frames of one threaded story.
 fn text_doc(pages: usize) -> Document {
-    let mut d = Document::new(&NewDocument { pages, ..Default::default() });
+    let mut d = Document::new(&NewDocument {
+        pages,
+        ..Default::default()
+    });
     let lid = d.default_layer();
     let mut text = String::new();
     for i in 0..pages * 3000 {
@@ -27,9 +33,16 @@ fn text_doc(pages: usize) -> Document {
         let x0 = d.spreads[si].pages[pi].x;
         for k in 0..6 {
             let (c, r) = ((k % 2) as f64, (k / 2) as f64);
-            let rect = Rect::new(x0 + 36.0 + c * 280.0, 36.0 + r * 240.0, x0 + 296.0 + c * 280.0, 266.0 + r * 240.0);
+            let rect = Rect::new(
+                x0 + 36.0 + c * 280.0,
+                36.0 + r * 240.0,
+                x0 + 296.0 + c * 280.0,
+                266.0 + r * 240.0,
+            );
             let t = if prev.is_none() { text.as_str() } else { "" };
-            let (id, _) = d.add_text_frame(SpreadRef::Doc(si), rect, lid, t, ParaFormat::default()).unwrap();
+            let (id, _) = d
+                .add_text_frame(SpreadRef::Doc(si), rect, lid, t, ParaFormat::default())
+                .unwrap();
             if let Some(p) = prev {
                 d.thread(p, id).unwrap();
             }
@@ -44,7 +57,10 @@ fn placed(d: &Document) -> Vec<Placed> {
     (0..d.spreads.len())
         .map(|i| {
             let b = d.spreads[i].bounds();
-            let p = Placed { spread: SpreadRef::Doc(i), xf: Affine::translate(Vec2::new(-b.x0, y)) };
+            let p = Placed {
+                spread: SpreadRef::Doc(i),
+                xf: Affine::translate(Vec2::new(-b.x0, y)),
+            };
             y += b.height() + 36.0;
             p
         })
@@ -64,7 +80,11 @@ fn glyph_paths_are_cached_and_offscreen_text_is_skipped() {
     let a = r.render(&d, &cache, &all, 800, 600, view, &opts);
     let drawn = r.stats.glyphs;
     assert!(drawn > 100, "glyphs drawn: {drawn}");
-    assert!(r.cached_frames() <= 4, "only visible frames get glyph paths: {}", r.cached_frames());
+    assert!(
+        r.cached_frames() <= 4,
+        "only visible frames get glyph paths: {}",
+        r.cached_frames()
+    );
     // Same pixels from the cache.
     let b = r.render(&d, &cache, &all, 800, 600, view, &opts);
     assert!(a.pixels == b.pixels);
@@ -87,12 +107,18 @@ fn greeked_text_builds_no_glyph_paths() {
     let cache = Cache::new();
     let mut r = Renderer::new();
     r.threads = 0;
-    let opts = RenderOptions { greek_below_px: 6.0, ..Default::default() };
+    let opts = RenderOptions {
+        greek_below_px: 6.0,
+        ..Default::default()
+    };
     let img = r.render(&d, &cache, &placed(&d), 400, 300, Affine::scale(0.3), &opts);
     assert_eq!(r.stats.glyphs, 0);
     assert_eq!(r.cached_frames(), 0);
     // The grey bars are drawn.
-    let grey = (0..img.width).flat_map(|x| (0..img.height).map(move |y| (x, y))).filter(|&(x, y)| img.pixel(x, y)[0] < 240).count();
+    let grey = (0..img.width)
+        .flat_map(|x| (0..img.height).map(move |y| (x, y)))
+        .filter(|&(x, y)| img.pixel(x, y)[0] < 240)
+        .count();
     assert!(grey > 200, "{grey}");
 }
 
@@ -105,7 +131,10 @@ fn render_text_heavy_spread_at_100_percent_within_budget() {
     let mut r = Renderer::new();
     // 100% on a HiDPI 2880×1800 canvas = 2 px/pt, centred on the second spread.
     let view = Affine::scale(2.0) * Affine::translate((0.0, -828.0));
-    let opts = RenderOptions { greek_below_px: 6.0, ..Default::default() };
+    let opts = RenderOptions {
+        greek_below_px: 6.0,
+        ..Default::default()
+    };
     r.render(&d, &cache, &all, 2880, 1800, view, &opts);
     let mut v: Vec<f64> = (0..9)
         .map(|_| {
@@ -116,7 +145,10 @@ fn render_text_heavy_spread_at_100_percent_within_budget() {
         .collect();
     v.sort_by(f64::total_cmp);
     let median = v[v.len() / 2];
-    eprintln!("render text-heavy spread at 100%, 2880×1800: {median:.2} ms (glyphs {})", r.stats.glyphs);
+    eprintln!(
+        "render text-heavy spread at 100%, 2880×1800: {median:.2} ms (glyphs {})",
+        r.stats.glyphs
+    );
     // plan/architecture.md §9: < 16 ms.
     assert!(median < 16.0, "{median:.2} ms");
 }

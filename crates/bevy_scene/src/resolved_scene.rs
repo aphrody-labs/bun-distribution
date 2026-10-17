@@ -604,7 +604,9 @@ pub enum CachedSceneError {
         path: Option<AssetPath<'static>>,
     },
     /// Caused when attempting to include a cached scene when a [`ResolvedScene`] already has [`Template`]s or related scenes.
-    #[error("Attempted to include cached scene (id {id:?}, path: {path:?}), but the resolved scene already has templates. For correctness, the cached scene should always be included first.")]
+    #[error(
+        "Attempted to include cached scene (id {id:?}, path: {path:?}), but the resolved scene already has templates. For correctness, the cached scene should always be included first."
+    )]
     LateCached {
         /// The asset id of the cached scene that was included late.
         id: UntypedAssetId,
@@ -644,9 +646,7 @@ pub enum ApplySceneError {
         id: AssetId<ScenePatch>,
     },
     /// Caused when a related [`ResolvedScene`] fails to apply.
-    #[error(
-        "Failed to apply the related {relationship_type_name} Scene at index {index}: {error}"
-    )]
+    #[error("Failed to apply the related {relationship_type_name} Scene at index {index}: {error}")]
     RelatedSceneError {
         /// The type name of the relationship.
         relationship_type_name: &'static str,

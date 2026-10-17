@@ -108,7 +108,10 @@ impl Rapport {
     /// Nombre de règles en échec (erreur, ou aucune occurrence trouvée).
     #[must_use]
     pub fn echecs(&self) -> usize {
-        self.resultats.iter().filter(|r| r.erreur.is_some() || r.trouvees == 0).count()
+        self.resultats
+            .iter()
+            .filter(|r| r.erreur.is_some() || r.trouvees == 0)
+            .count()
     }
 }
 
@@ -123,7 +126,10 @@ fn nombre(s: &str) -> Option<u32> {
 
 /// Parse une suite d'octets hexadécimaux (`9d aa ac d5`, `9daaacd5`, `9d-aa-ac-d5`).
 fn octets(s: &str) -> Result<Vec<u8>, String> {
-    let hex: String = s.chars().filter(|c| !c.is_whitespace() && *c != '-').collect();
+    let hex: String = s
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '-')
+        .collect();
     if hex.is_empty() || !hex.len().is_multiple_of(2) {
         return Err(format!("suite hex vide ou de longueur impaire : {s:?}"));
     }
@@ -176,11 +182,16 @@ pub fn parser(texte: &str) -> Result<Recette, String> {
                     })?;
                     // L'offset peut être négatif (le voisin de gauche fait aussi une signature).
                     let off_t = off_s.trim().trim_start_matches('+');
-                    let (negatif, chiffres) =
-                        off_t.strip_prefix('-').map_or((false, off_t), |reste| (true, reste));
+                    let (negatif, chiffres) = off_t
+                        .strip_prefix('-')
+                        .map_or((false, off_t), |reste| (true, reste));
                     let brut = nombre(chiffres)
                         .ok_or_else(|| format!("ligne {}: offset de garde illisible", n + 1))?;
-                    let off = if negatif { -i64::from(brut) } else { i64::from(brut) };
+                    let off = if negatif {
+                        -i64::from(brut)
+                    } else {
+                        i64::from(brut)
+                    };
                     let val = nombre(val_s)
                         .ok_or_else(|| format!("ligne {}: valeur de garde illisible", n + 1))?;
                     garde = Some((off, val));
@@ -191,15 +202,23 @@ pub fn parser(texte: &str) -> Result<Recette, String> {
                     .ok_or_else(|| format!("ligne {}: valeur source illisible", n + 1))?;
                 let vers = nombre(vers_s)
                     .ok_or_else(|| format!("ligne {}: valeur cible illisible", n + 1))?;
-                r.regles.push(Regle::RemplacerU32 { de, vers, max, garde });
-            },
+                r.regles.push(Regle::RemplacerU32 {
+                    de,
+                    vers,
+                    max,
+                    garde,
+                });
+            }
             "at" => {
                 let (adresse, val) = reste.split_once('=').ok_or_else(|| {
                     format!("ligne {}: attendu « at <adresse> = <octets> »", n + 1)
                 })?;
                 let o = octets(val).map_err(|e| format!("ligne {}: {e}", n + 1))?;
-                r.regles.push(Regle::Ecrire { adresse: adresse.trim().to_owned(), octets: o });
-            },
+                r.regles.push(Regle::Ecrire {
+                    adresse: adresse.trim().to_owned(),
+                    octets: o,
+                });
+            }
             autre => return Err(format!("ligne {}: directive inconnue « {autre} »", n + 1)),
         }
     }
@@ -232,7 +251,11 @@ fn resoudre(adresse: &str, pid: i32) -> Result<u64, String> {
 fn ecrire_et_verifier(pid: i32, addr: u64, octets: &[u8]) -> Result<(), String> {
     write_exact(pid, addr, octets).map_err(|e| e.to_string())?;
     let relu = read_exact(pid, addr, octets.len()).map_err(|e| e.to_string())?;
-    if relu == octets { Ok(()) } else { Err(format!("relecture divergente à 0x{addr:x}")) }
+    if relu == octets {
+        Ok(())
+    } else {
+        Err(format!("relecture divergente à 0x{addr:x}"))
+    }
 }
 
 /// Applique une recette au process `pid`.
@@ -256,7 +279,12 @@ pub fn appliquer(pid: i32, module: &str, recette: &Recette, a_blanc: bool) -> Ra
             erreur: None,
         };
         match regle {
-            Regle::RemplacerU32 { de, vers, max, garde } => {
+            Regle::RemplacerU32 {
+                de,
+                vers,
+                max,
+                garde,
+            } => {
                 let motif = de.to_le_bytes();
                 let remplacement = vers.to_le_bytes();
                 let plafond = max.unwrap_or(usize::MAX);
@@ -306,7 +334,7 @@ pub fn appliquer(pid: i32, module: &str, recette: &Recette, a_blanc: bool) -> Ra
                 if res.trouvees == 0 {
                     res.erreur = Some(format!("aucune occurrence de 0x{de:08X}"));
                 }
-            },
+            }
             Regle::Ecrire { adresse, octets } => match resoudre(adresse, pid) {
                 Ok(addr) => {
                     res.trouvees = 1;
@@ -317,14 +345,17 @@ pub fn appliquer(pid: i32, module: &str, recette: &Recette, a_blanc: bool) -> Ra
                             Err(e) => res.erreur = Some(e),
                         }
                     }
-                },
+                }
                 Err(e) => res.erreur = Some(e),
             },
         }
         resultats.push(res);
     }
 
-    Rapport { nom: recette.nom.clone(), resultats }
+    Rapport {
+        nom: recette.nom.clone(),
+        resultats,
+    }
 }
 
 #[cfg(test)]
@@ -341,12 +372,28 @@ mod tests {
         assert_eq!(r.regles.len(), 3);
         assert_eq!(
             r.regles[0],
-            Regle::RemplacerU32 { de: 0x1122_3344, vers: 0x5566_7788, max: None, garde: None }
+            Regle::RemplacerU32 {
+                de: 0x1122_3344,
+                vers: 0x5566_7788,
+                max: None,
+                garde: None
+            }
         );
-        assert_eq!(r.regles[1], Regle::RemplacerU32 { de: 1, vers: 2, max: Some(3), garde: None });
+        assert_eq!(
+            r.regles[1],
+            Regle::RemplacerU32 {
+                de: 1,
+                vers: 2,
+                max: Some(3),
+                garde: None
+            }
+        );
         assert_eq!(
             r.regles[2],
-            Regle::Ecrire { adresse: "nie.exe+0x10".into(), octets: vec![0xDE, 0xAD, 0xBE, 0xEF] }
+            Regle::Ecrire {
+                adresse: "nie.exe+0x10".into(),
+                octets: vec![0xDE, 0xAD, 0xBE, 0xEF]
+            }
         );
     }
 
@@ -382,14 +429,24 @@ mod tests {
             nom: "t".into(),
             resultats: vec![
                 ResultatRegle {
-                    regle: Regle::RemplacerU32 { de: 1, vers: 2, max: None, garde: None },
+                    regle: Regle::RemplacerU32 {
+                        de: 1,
+                        vers: 2,
+                        max: None,
+                        garde: None,
+                    },
                     trouvees: 3,
                     ecrites: 3,
                     adresses: vec![],
                     erreur: None,
                 },
                 ResultatRegle {
-                    regle: Regle::RemplacerU32 { de: 9, vers: 8, max: None, garde: None },
+                    regle: Regle::RemplacerU32 {
+                        de: 9,
+                        vers: 8,
+                        max: None,
+                        garde: None,
+                    },
                     trouvees: 0,
                     ecrites: 0,
                     adresses: vec![],

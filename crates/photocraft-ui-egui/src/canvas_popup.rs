@@ -11,7 +11,10 @@ pub(crate) fn outside_pressed(ctx: &Context, menu: Id, rect: Rect) -> bool {
     // A quick tap's opening press can fall outside the menu after physical-pixel rounding.
     // Use the frame, rather than the pass, so a layout retry cannot dismiss it either.
     let opened = ctx.data(|d| d.get_temp::<u64>(menu.with("opening-frame")));
-    opened != Some(ctx.cumulative_frame_nr()) && ctx.input(|i| i.pointer.any_pressed() && i.pointer.interact_pos().is_some_and(|p| !rect.contains(p)))
+    opened != Some(ctx.cumulative_frame_nr())
+        && ctx.input(|i| {
+            i.pointer.any_pressed() && i.pointer.interact_pos().is_some_and(|p| !rect.contains(p))
+        })
 }
 
 #[cfg(test)]
@@ -23,8 +26,18 @@ mod tests {
         RawInput {
             events: vec![
                 Event::PointerMoved(pos2(5.75, 5.75)),
-                Event::PointerButton { pos: pos2(5.75, 5.75), button: PointerButton::Secondary, pressed: true, modifiers: Modifiers::NONE },
-                Event::PointerButton { pos: pos2(5.75, 5.75), button: PointerButton::Secondary, pressed: false, modifiers: Modifiers::NONE },
+                Event::PointerButton {
+                    pos: pos2(5.75, 5.75),
+                    button: PointerButton::Secondary,
+                    pressed: true,
+                    modifiers: Modifiers::NONE,
+                },
+                Event::PointerButton {
+                    pos: pos2(5.75, 5.75),
+                    button: PointerButton::Secondary,
+                    pressed: false,
+                    modifiers: Modifiers::NONE,
+                },
             ],
             ..Default::default()
         }
@@ -50,16 +63,29 @@ mod tests {
                     // assertion tests the frame guard, rather than the absence of input.
                     ctx.input_mut(|i| i.pointer = opening_pointer.clone().unwrap());
                 }
-                let outside_input = ctx.input(|i| i.pointer.any_pressed() && i.pointer.interact_pos().is_some_and(|p| !rect.contains(p)));
+                let outside_input = ctx.input(|i| {
+                    i.pointer.any_pressed()
+                        && i.pointer.interact_pos().is_some_and(|p| !rect.contains(p))
+                });
                 decisions.push((outside_input, outside_pressed(ctx, id, rect)));
                 passes += 1;
             })
             .drop_without_applying_deltas();
             assert_eq!(passes, 2);
-            assert_eq!(decisions, [(true, false), (true, false)], "both passes must protect an outside opening press");
+            assert_eq!(
+                decisions,
+                [(true, false), (true, false)],
+                "both passes must protect an outside opening press"
+            );
             let mut later_outside = false;
-            ctx.run_ui(outside_press(), |ui| later_outside = outside_pressed(ui.ctx(), id, rect)).drop_without_applying_deltas();
-            assert!(later_outside, "a later frame's outside press still dismisses the menu");
+            ctx.run_ui(outside_press(), |ui| {
+                later_outside = outside_pressed(ui.ctx(), id, rect)
+            })
+            .drop_without_applying_deltas();
+            assert!(
+                later_outside,
+                "a later frame's outside press still dismisses the menu"
+            );
         }
     }
 
@@ -69,7 +95,8 @@ mod tests {
         let first = Id::new("first");
         let second = Id::new("second");
         let rect = Rect::from_min_size(pos2(6.0, 6.0), vec2(100.0, 100.0));
-        ctx.run_ui(RawInput::default(), |ui| mark_open(ui.ctx(), first)).drop_without_applying_deltas();
+        ctx.run_ui(RawInput::default(), |ui| mark_open(ui.ctx(), first))
+            .drop_without_applying_deltas();
         ctx.run_ui(outside_press(), |ui| {
             let ctx = ui.ctx();
             mark_open(ctx, second);

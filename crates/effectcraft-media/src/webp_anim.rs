@@ -48,15 +48,34 @@ fn header(bytes: &[u8]) -> Option<Header> {
     if !is_webp(bytes) {
         return None;
     }
-    let riff = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes)?;
-    let end = usize::try_from(riff).ok()?.saturating_add(8).min(bytes.len());
+    let riff = bytes
+        .get(4..8)
+        .and_then(|b| b.try_into().ok())
+        .map(u32::from_le_bytes)?;
+    let end = usize::try_from(riff)
+        .ok()?
+        .saturating_add(8)
+        .min(bytes.len());
     let (mut at, mut canvas, mut delays) = (12usize, None, Vec::new());
     while delays.len() < MAX_FRAMES {
-        let Some(head) = bytes.get(at..at.saturating_add(8)).filter(|_| at.saturating_add(8) <= end) else { break };
-        let size = head.get(4..8).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes)?;
+        let Some(head) = bytes
+            .get(at..at.saturating_add(8))
+            .filter(|_| at.saturating_add(8) <= end)
+        else {
+            break;
+        };
+        let size = head
+            .get(4..8)
+            .and_then(|b| b.try_into().ok())
+            .map(u32::from_le_bytes)?;
         let size = usize::try_from(size).ok()?;
         let body_end = at.saturating_add(8).saturating_add(size);
-        let Some(body) = bytes.get(at.saturating_add(8)..body_end).filter(|_| body_end <= end) else { break };
+        let Some(body) = bytes
+            .get(at.saturating_add(8)..body_end)
+            .filter(|_| body_end <= end)
+        else {
+            break;
+        };
         match head.get(0..4) {
             Some(b"VP8X") => {
                 let flags = *body.first()?;
@@ -74,7 +93,12 @@ fn header(bytes: &[u8]) -> Option<Header> {
         at = body_end.saturating_add(size & 1);
     }
     let (width, height, alpha) = canvas?;
-    Some(Header { width, height, alpha, delays })
+    Some(Header {
+        width,
+        height,
+        alpha,
+        delays,
+    })
 }
 
 /// The delay of a frame in milliseconds. Browsers show delays of 10 ms or less (that encoders
@@ -99,28 +123,50 @@ fn timing(delays: &[u32]) -> Timing {
         total = total.saturating_add(i64::from(d));
     }
     let n = i64::try_from(delays.len()).unwrap_or(i64::MAX);
-    let (min, max) = (delays.iter().copied().min().unwrap_or(0), delays.iter().copied().max().unwrap_or(0));
+    let (min, max) = (
+        delays.iter().copied().min().unwrap_or(0),
+        delays.iter().copied().max().unwrap_or(0),
+    );
     // Frame times of a standard rate rounded to milliseconds: that rate if every frame starts (and
     // the last one ends) within a millisecond of it.
-    let fps = if total > 0 { n.saturating_mul(1000).saturating_add(total / 2) / total } else { 0 };
+    let fps = if total > 0 {
+        n.saturating_mul(1000).saturating_add(total / 2) / total
+    } else {
+        0
+    };
     if max == min.saturating_add(1) && fps > 0 {
-        for rate in [FrameRate::new(fps, 1), FrameRate::new(fps.saturating_mul(1000), 1001)] {
+        for rate in [
+            FrameRate::new(fps, 1),
+            FrameRate::new(fps.saturating_mul(1000), 1001),
+        ] {
             // |start_ms - k * 1000 * den / num| <= 1, in integers.
             let (num, den) = (i128::from(rate.num), i128::from(rate.den));
-            let fits = starts_ms.iter().copied().chain([total]).enumerate().all(|(k, ms)| {
-                let k = i128::try_from(k).unwrap_or(i128::MAX);
-                (i128::from(ms) * num - k * 1000 * den).abs() <= num
-            });
+            let fits = starts_ms
+                .iter()
+                .copied()
+                .chain([total])
+                .enumerate()
+                .all(|(k, ms)| {
+                    let k = i128::try_from(k).unwrap_or(i128::MAX);
+                    (i128::from(ms) * num - k * 1000 * den).abs() <= num
+                });
             if fits {
                 let starts = (0..n).map(|k| rate.tick_of(k)).collect();
-                return Timing { rate, starts, duration: rate.tick_of(n) };
+                return Timing {
+                    rate,
+                    starts,
+                    duration: rate.tick_of(n),
+                };
             }
         }
     }
     let step = delays.iter().fold(0, |g, &d| gcd(g, d)).max(1);
     Timing {
         rate: FrameRate::new(1000, i64::from(step)),
-        starts: starts_ms.iter().map(|&ms| Tick::from_units(ms, 1000)).collect(),
+        starts: starts_ms
+            .iter()
+            .map(|&ms| Tick::from_units(ms, 1000))
+            .collect(),
         duration: Tick::from_units(total, 1000),
     }
 }
@@ -142,7 +188,11 @@ pub(crate) fn probe(path: &str, bytes: &[u8]) -> Option<Footage> {
         duration: t.duration,
         has_video: true,
         has_audio: false,
-        alpha: if h.alpha { AlphaMode::Straight } else { AlphaMode::Ignore },
+        alpha: if h.alpha {
+            AlphaMode::Straight
+        } else {
+            AlphaMode::Ignore
+        },
         codec: CODEC.to_string(),
         ..Default::default()
     })
@@ -152,11 +202,18 @@ pub(crate) fn probe(path: &str, bytes: &[u8]) -> Option<Footage> {
 /// the frames before it; an animation too large to hold in memory is refused before decoding.
 pub(crate) fn load(bytes: &[u8]) -> Result<Anim> {
     let h = header(bytes).ok_or_else(|| MediaError::Decode("WebP: not an animated WebP".into()))?;
-    let frame_bytes = usize::try_from(u64::from(h.width) * u64::from(h.height) * 4).unwrap_or(usize::MAX);
+    let frame_bytes =
+        usize::try_from(u64::from(h.width) * u64::from(h.height) * 4).unwrap_or(usize::MAX);
     if frame_bytes.saturating_mul(h.delays.len()) > MAX_BYTES {
-        return Err(MediaError::Unsupported(format!("animated WebP of {} frames of {}×{} is too large to hold in memory", h.delays.len(), h.width, h.height)));
+        return Err(MediaError::Unsupported(format!(
+            "animated WebP of {} frames of {}×{} is too large to hold in memory",
+            h.delays.len(),
+            h.width,
+            h.height
+        )));
     }
-    let dec = WebPDecoder::new(Cursor::new(bytes)).map_err(|e| MediaError::Decode(format!("WebP: {e}")))?;
+    let dec = WebPDecoder::new(Cursor::new(bytes))
+        .map_err(|e| MediaError::Decode(format!("WebP: {e}")))?;
     let (mut frames, mut delays, mut size) = (Vec::new(), Vec::new(), 0usize);
     for frame in dec.into_frames() {
         let frame = match frame {
@@ -172,7 +229,9 @@ pub(crate) fn load(bytes: &[u8]) -> Result<Anim> {
         let buf = frame.into_buffer();
         size = size.saturating_add(buf.as_raw().len());
         if size > MAX_BYTES {
-            return Err(MediaError::Unsupported("animated WebP is too large to hold in memory".into()));
+            return Err(MediaError::Unsupported(
+                "animated WebP is too large to hold in memory".into(),
+            ));
         }
         frames.push(DynamicImage::ImageRgba8(buf));
     }
@@ -208,7 +267,9 @@ mod tests {
     fn vp8l(w: u32, h: u32, rgba: [u8; 4]) -> Vec<u8> {
         let mut still = Vec::new();
         let px = rgba.repeat((w * h) as usize);
-        WebPEncoder::new_lossless(&mut still).write_image(&px, w, h, ExtendedColorType::Rgba8).unwrap();
+        WebPEncoder::new_lossless(&mut still)
+            .write_image(&px, w, h, ExtendedColorType::Rgba8)
+            .unwrap();
         let at = still.windows(4).position(|c| c == b"VP8L").unwrap();
         still[at..].to_vec()
     }
@@ -239,7 +300,9 @@ mod tests {
     const BLUE: [u8; 4] = [0, 0, 255, 128];
 
     fn pixel_at(pool: &MediaPool, f: &Footage, seconds: f64) -> [f32; 4] {
-        pool.frame_at(f, Tick::from_seconds_f64(seconds)).unwrap().data[0]
+        pool.frame_at(f, Tick::from_seconds_f64(seconds))
+            .unwrap()
+            .data[0]
     }
 
     #[test]
@@ -271,7 +334,9 @@ mod tests {
     #[test]
     fn delays_rounded_to_milliseconds_read_as_the_standard_rate() {
         // 24 frames a second rounded to whole milliseconds, as ffmpeg writes them.
-        let delays: Vec<u32> = (0..24).map(|k| (((k + 1) * 1000 + 12) / 24 - (k * 1000 + 12) / 24) as u32).collect();
+        let delays: Vec<u32> = (0..24)
+            .map(|k| (((k + 1) * 1000 + 12) / 24 - (k * 1000 + 12) / 24) as u32)
+            .collect();
         assert!(delays.iter().all(|&d| d == 41 || d == 42));
         let t = timing(&delays);
         assert_eq!(t.rate, FrameRate::new(24, 1));
@@ -279,7 +344,9 @@ mod tests {
         assert_eq!(t.starts[5], FrameRate::new(24, 1).tick_of(5));
         // 29.97: 33 and 34 ms over a long run.
         let ntsc = FrameRate::new(30_000, 1001);
-        let delays: Vec<u32> = (0..300).map(|k| (((k + 1) * 1_001_000 / 30_000) - (k * 1_001_000 / 30_000)) as u32).collect();
+        let delays: Vec<u32> = (0..300)
+            .map(|k| (((k + 1) * 1_001_000 / 30_000) - (k * 1_001_000 / 30_000)) as u32)
+            .collect();
         assert_eq!(timing(&delays).rate, ntsc);
         // Uneven timing is kept exactly.
         assert_eq!(timing(&[40, 80, 40]).rate, FrameRate::new(25, 1));
@@ -291,7 +358,9 @@ mod tests {
     #[test]
     fn a_still_webp_stays_a_still() {
         let mut still = Vec::new();
-        WebPEncoder::new_lossless(&mut still).write_image(&RED.repeat(4), 2, 2, ExtendedColorType::Rgba8).unwrap();
+        WebPEncoder::new_lossless(&mut still)
+            .write_image(&RED.repeat(4), 2, 2, ExtendedColorType::Rgba8)
+            .unwrap();
         let f = probe_bytes("s.webp", still.into()).unwrap();
         assert_eq!(f.kind, FootageKind::Still);
         // So does an animation of one frame.

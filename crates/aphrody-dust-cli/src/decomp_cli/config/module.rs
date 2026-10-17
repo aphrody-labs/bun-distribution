@@ -20,13 +20,13 @@ impl ModuleKindExt for ModuleKind {
                     anyhow!("Invalid overlay ID in linked object section name '{section_name}'")
                 })?;
                 Ok(Some(ModuleKind::Overlay(id)))
-            },
+            }
             name if name.starts_with("AUTOLOAD_") => {
                 let index = name[9..].parse::<u32>().map_err(|_| {
                     anyhow!("Invalid autoload index in linked object section name '{section_name}'")
                 })?;
                 Ok(Some(ModuleKind::Autoload(AutoloadKind::Unknown(index))))
-            },
+            }
             _ => Ok(None),
         }
     }

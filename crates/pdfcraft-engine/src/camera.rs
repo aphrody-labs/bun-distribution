@@ -34,7 +34,8 @@ pub fn warp(rgba: &[u8], width: u32, height: u32, quad: [Point; 4]) -> Result<Wa
     if w == 0 || h == 0 || w.checked_mul(h).and_then(|n| n.checked_mul(4)) != Some(rgba.len()) {
         return Err("the page could not be read as a picture".into());
     }
-    let [tl, tr, br, bl] = order_quad(quad).ok_or("the four corners must enclose an area (a convex quadrilateral)")?;
+    let [tl, tr, br, bl] =
+        order_quad(quad).ok_or("the four corners must enclose an area (a convex quadrilateral)")?;
     let dist = |a: Point, b: Point| (a[0] - b[0]).hypot(a[1] - b[1]);
     let mut ow = dist(tl, tr).max(dist(bl, br));
     let mut oh = dist(tl, bl).max(dist(tr, br));
@@ -46,8 +47,14 @@ pub fn warp(rgba: &[u8], width: u32, height: u32, quad: [Point; 4]) -> Result<Wa
     }
     // Both are at least 1 and their product is at most MAX_PIXELS, so the casts are exact.
     let (ow, oh) = (ow as u32, oh as u32);
-    let rect = [[0.0, 0.0], [ow as f64, 0.0], [ow as f64, oh as f64], [0.0, oh as f64]];
-    let to_src = Homography::from_points(rect, [tl, tr, br, bl]).ok_or("the four corners must not be in a line")?;
+    let rect = [
+        [0.0, 0.0],
+        [ow as f64, 0.0],
+        [ow as f64, oh as f64],
+        [0.0, oh as f64],
+    ];
+    let to_src = Homography::from_points(rect, [tl, tr, br, bl])
+        .ok_or("the four corners must not be in a line")?;
 
     let px = |x: usize, y: usize| -> [f64; 4] {
         let i = (y * w + x) * 4;
@@ -84,7 +91,11 @@ pub fn warp(rgba: &[u8], width: u32, height: u32, quad: [Point; 4]) -> Result<Wa
             }
         }
     }
-    Ok(Warped { width: ow, height: oh, rgb })
+    Ok(Warped {
+        width: ow,
+        height: oh,
+        rgb,
+    })
 }
 
 /// The long side, in pixels, a page is rendered at to look for the document's edges.
@@ -98,8 +109,16 @@ impl Session {
         let doc = self.get(id)?;
         let info = doc.info.pages.get(page)?;
         let scale = (DETECT_SIDE / info.width.max(info.height).max(1.0)).clamp(0.05, MAX_SCALE);
-        let config = RenderConfig { password: doc.password.as_deref().map(Arc::from), ..Default::default() };
-        let shot = pdfcraft_render::PageRenderer::new(doc.bytes.clone(), config).render(RenderRequest { page, scale, ..Default::default() });
+        let config = RenderConfig {
+            password: doc.password.as_deref().map(Arc::from),
+            ..Default::default()
+        };
+        let shot =
+            pdfcraft_render::PageRenderer::new(doc.bytes.clone(), config).render(RenderRequest {
+                page,
+                scale,
+                ..Default::default()
+            });
         if shot.error.is_some() {
             return None;
         }
@@ -114,7 +133,12 @@ impl Session {
     /// Enhance ▸ Camera image: replace page `page` (0-based) of document `id` with the part of it
     /// inside `corners` (PDF user space, any order), straightened to a rectangle. The page is
     /// read at its picture's own resolution (at most 600 dpi) and keeps that physical size.
-    pub fn enhance_camera_page(&mut self, id: DocId, page: usize, corners: [Point; 4]) -> Result<(), EditError> {
+    pub fn enhance_camera_page(
+        &mut self,
+        id: DocId,
+        page: usize,
+        corners: [Point; 4],
+    ) -> Result<(), EditError> {
         self.enhance_camera_page_at(id, page, corners, crate::camera_clean::Look::Original, 0)
     }
 
@@ -133,7 +157,9 @@ impl Session {
         if let Some(why) = &doc.read_only_reason {
             return Err(EditError::ReadOnly(why.clone()));
         }
-        let info = doc.info.pages.get(page).ok_or_else(|| EditError::Invalid(format!("there is no page {}", page.saturating_add(1))))?;
+        let info = doc.info.pages.get(page).ok_or_else(|| {
+            EditError::Invalid(format!("there is no page {}", page.saturating_add(1)))
+        })?;
         let native = doc
             .page_images(page)
             .iter()
@@ -147,13 +173,27 @@ impl Session {
             .reduce(f32::max);
         let area = (info.width.max(1.0) as f64) * (info.height.max(1.0) as f64);
         let cap = (MAX_PIXELS / area).sqrt() as f32;
-        let scale = native.unwrap_or(DEFAULT_SCALE).clamp(1.0, MAX_SCALE).min(cap).max(0.01);
+        let scale = native
+            .unwrap_or(DEFAULT_SCALE)
+            .clamp(1.0, MAX_SCALE)
+            .min(cap)
+            .max(0.01);
 
-        let config = RenderConfig { password: doc.password.as_deref().map(Arc::from), ..Default::default() };
+        let config = RenderConfig {
+            password: doc.password.as_deref().map(Arc::from),
+            ..Default::default()
+        };
         let mut r = pdfcraft_render::PageRenderer::new(doc.bytes.clone(), config);
-        let shot = r.render(RenderRequest { page, scale, ..Default::default() });
+        let shot = r.render(RenderRequest {
+            page,
+            scale,
+            ..Default::default()
+        });
         if let Some(e) = shot.error {
-            return Err(EditError::Invalid(format!("page {} could not be rendered: {e}", page + 1)));
+            return Err(EditError::Invalid(format!(
+                "page {} could not be rendered: {e}",
+                page + 1
+            )));
         }
         let k = shot.width as f64 / (info.width as f64).max(1e-3);
         let quad = corners.map(|[x, y]| {
@@ -162,7 +202,9 @@ impl Session {
         });
         let out = warp(&shot.rgba, shot.width, shot.height, quad).map_err(EditError::Invalid)?;
         let pixels = crate::camera_clean::apply(&out.rgb, out.width, out.height, look, level)
-            .ok_or_else(|| EditError::Invalid("the straightened page could not be cleaned up".into()))?;
+            .ok_or_else(|| {
+                EditError::Invalid("the straightened page could not be cleaned up".into())
+            })?;
         // Black and white is lossless (PNG): JPEG would smear grey around every letter.
         let mut encoded = Vec::new();
         let (name, written) = match &pixels {
@@ -176,16 +218,20 @@ impl Session {
                     image::ExtendedColorType::Rgb8,
                 ),
             ),
-            crate::camera_clean::Pixels::Grey(grey) if look == crate::camera_clean::Look::BlackWhite => (
-                "camera.png",
-                image::ImageEncoder::write_image(
-                    image::codecs::png::PngEncoder::new(&mut encoded),
-                    grey,
-                    out.width,
-                    out.height,
-                    image::ExtendedColorType::L8,
-                ),
-            ),
+            crate::camera_clean::Pixels::Grey(grey)
+                if look == crate::camera_clean::Look::BlackWhite =>
+            {
+                (
+                    "camera.png",
+                    image::ImageEncoder::write_image(
+                        image::codecs::png::PngEncoder::new(&mut encoded),
+                        grey,
+                        out.width,
+                        out.height,
+                        image::ExtendedColorType::L8,
+                    ),
+                )
+            }
             crate::camera_clean::Pixels::Grey(grey) => (
                 "camera.jpg",
                 image::ImageEncoder::write_image(
@@ -197,12 +243,28 @@ impl Session {
                 ),
             ),
         };
-        written.map_err(|e| EditError::Invalid(format!("the straightened page could not be encoded: {e}")))?;
+        written.map_err(|e| {
+            EditError::Invalid(format!("the straightened page could not be encoded: {e}"))
+        })?;
         // One device pixel per `k` points keeps the page's physical size.
         let dpi = (k * 72.0).clamp(1.0, 1200.0);
-        let bytes = self.create_from_images_with_resolution(&[(name.into(), encoded)], ImageResolution::Dpi(dpi))?;
-        let replace = Edit::ReplacePages { pages: vec![page], name: "camera.pdf".into(), bytes, src_pages: vec![0] };
-        self.apply(id, Edit::Batch { label: "Enhance camera image".into(), edits: vec![replace] })
+        let bytes = self.create_from_images_with_resolution(
+            &[(name.into(), encoded)],
+            ImageResolution::Dpi(dpi),
+        )?;
+        let replace = Edit::ReplacePages {
+            pages: vec![page],
+            name: "camera.pdf".into(),
+            bytes,
+            src_pages: vec![0],
+        };
+        self.apply(
+            id,
+            Edit::Batch {
+                label: "Enhance camera image".into(),
+                edits: vec![replace],
+            },
+        )
     }
 }
 
@@ -232,7 +294,13 @@ mod tests {
                 (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) >= 0.0
             })
         };
-        let src = raster(200, 180, |x, y| if inside(x as f64 + 0.5, y as f64 + 0.5) { [20, 20, 20] } else { [255, 255, 255] });
+        let src = raster(200, 180, |x, y| {
+            if inside(x as f64 + 0.5, y as f64 + 0.5) {
+                [20, 20, 20]
+            } else {
+                [255, 255, 255]
+            }
+        });
         let out = warp(&src, 200, 180, quad).unwrap();
         // The longer of each pair of opposite sides: 170 × 140.
         assert_eq!((out.width, out.height), (170, 140));
@@ -268,9 +336,20 @@ mod tests {
         let src = raster(10, 10, |_, _| [0, 0, 0]);
         let line = [[0.0, 0.0], [5.0, 5.0], [10.0, 10.0], [2.0, 2.0]];
         assert!(warp(&src, 10, 10, line).is_err());
-        assert!(warp(&src, 10, 10, [[f64::NAN, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]).is_err());
+        assert!(
+            warp(
+                &src,
+                10,
+                10,
+                [[f64::NAN, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
+            )
+            .is_err()
+        );
         let ok = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]];
-        assert!(warp(&src, 11, 10, ok).is_err(), "size doesn't match the buffer");
+        assert!(
+            warp(&src, 11, 10, ok).is_err(),
+            "size doesn't match the buffer"
+        );
         assert!(warp(&[], 0, 0, ok).is_err());
         // Corners far outside the raster: a capped, white picture, not a huge allocation.
         let far = [[-1e9, -1e9], [1e9, -1e9], [1e9, 1e9], [-1e9, 1e9]];

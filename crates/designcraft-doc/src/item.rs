@@ -33,10 +33,19 @@ impl Default for Fill {
 
 impl Fill {
     pub fn none() -> Self {
-        Fill { swatch: designcraft_color::swatch::NONE.into(), tint: 1.0, gradient_angle: None, gradient_vector: None, overprint: false }
+        Fill {
+            swatch: designcraft_color::swatch::NONE.into(),
+            tint: 1.0,
+            gradient_angle: None,
+            gradient_vector: None,
+            overprint: false,
+        }
     }
     pub fn swatch(name: &str) -> Self {
-        Fill { swatch: name.into(), ..Fill::none() }
+        Fill {
+            swatch: name.into(),
+            ..Fill::none()
+        }
     }
     pub fn is_none(&self) -> bool {
         self.swatch == designcraft_color::swatch::NONE
@@ -133,7 +142,12 @@ impl StrokeType {
 
     /// The filled area for types drawn as fills (stripes, wavy, hash); `None` for solid, dashed
     /// and dotted strokes (and unresolved named styles).
-    pub fn outline(&self, bp: &designcraft_geom::BezPath, weight: f64, tol: f64) -> Option<designcraft_geom::BezPath> {
+    pub fn outline(
+        &self,
+        bp: &designcraft_geom::BezPath,
+        weight: f64,
+        tol: f64,
+    ) -> Option<designcraft_geom::BezPath> {
         use designcraft_geom::stroke_style as ss;
         match self {
             StrokeType::Wavy => Some(ss::wavy(bp, weight, tol)),
@@ -251,11 +265,18 @@ impl Default for Stroke {
 impl Stroke {
     /// How far the painted stroke can reach beyond the path (arrowheads reach further).
     pub fn extent(&self) -> f64 {
-        if self.start == Arrowhead::None && self.end == Arrowhead::None { self.weight } else { self.weight.max(0.5) * 5.5 }
+        if self.start == Arrowhead::None && self.end == Arrowhead::None {
+            self.weight
+        } else {
+            self.weight.max(0.5) * 5.5
+        }
     }
 
     pub fn none() -> Self {
-        Stroke { swatch: designcraft_color::swatch::NONE.into(), ..Stroke::default() }
+        Stroke {
+            swatch: designcraft_color::swatch::NONE.into(),
+            ..Stroke::default()
+        }
     }
     pub fn is_none(&self) -> bool {
         self.swatch == designcraft_color::swatch::NONE || self.weight <= 0.0
@@ -555,13 +576,23 @@ pub struct MediaOptions {
 impl Item {
     /// The graphic to draw for this frame: a media frame with a poster draws the poster
     /// stretched over the media rectangle.
-    pub fn drawn_graphic(&self, assets: &std::collections::BTreeMap<AssetId, Arc<crate::Asset>>) -> Option<Graphic> {
-        let Content::Graphic(g) = &self.content else { return None };
+    pub fn drawn_graphic(
+        &self,
+        assets: &std::collections::BTreeMap<AssetId, Arc<crate::Asset>>,
+    ) -> Option<Graphic> {
+        let Content::Graphic(g) = &self.content else {
+            return None;
+        };
         if let Some(poster) = self.media.as_ref().and_then(|m| m.poster)
             && let Some((pw, ph)) = assets.get(&poster).and_then(|a| a.pixels)
         {
             let (pw, ph) = (pw.max(1) as f64, ph.max(1) as f64);
-            return Some(Graphic { asset: poster, size: (pw, ph), xf: g.xf * Affine::scale_non_uniform(g.size.0 / pw, g.size.1 / ph), ..g.clone() });
+            return Some(Graphic {
+                asset: poster,
+                size: (pw, ph),
+                xf: g.xf * Affine::scale_non_uniform(g.size.0 / pw, g.size.1 / ph),
+                ..g.clone()
+            });
         }
         Some(g.clone())
     }
@@ -630,8 +661,16 @@ impl Graphic {
         if area.width() <= 0.0 || area.height() <= 0.0 {
             return None;
         }
-        let (fx, fy) = ([0.0, 0.5, 1.0][(self.fit_align % 3) as usize], [0.0, 0.5, 1.0][(self.fit_align / 3).min(2) as usize]);
-        let place = |w: f64, h: f64| (area.x0 + (area.width() - w) * fx, area.y0 + (area.height() - h) * fy);
+        let (fx, fy) = (
+            [0.0, 0.5, 1.0][(self.fit_align % 3) as usize],
+            [0.0, 0.5, 1.0][(self.fit_align / 3).min(2) as usize],
+        );
+        let place = |w: f64, h: f64| {
+            (
+                area.x0 + (area.width() - w) * fx,
+                area.y0 + (area.height() - h) * fy,
+            )
+        };
         Some(match mode {
             Fitting::None => return None,
             Fitting::FillProportionally | Fitting::FitProportionally => {
@@ -642,7 +681,10 @@ impl Graphic {
                 };
                 Affine::translate(place(nw * k, nh * k)) * Affine::scale(k)
             }
-            Fitting::FitContentToFrame => Affine::translate((area.x0, area.y0)) * Affine::scale_non_uniform(area.width() / nw, area.height() / nh),
+            Fitting::FitContentToFrame => {
+                Affine::translate((area.x0, area.y0))
+                    * Affine::scale_non_uniform(area.width() / nw, area.height() / nh)
+            }
             Fitting::CenterContent => {
                 let cur = self.xf.transform_rect_bbox(Rect::new(0.0, 0.0, nw, nh));
                 let (x, y) = place(cur.width(), cur.height());
@@ -761,7 +803,13 @@ pub struct OuterGlow {
 
 impl Default for OuterGlow {
     fn default() -> Self {
-        OuterGlow { on: false, color: designcraft_color::swatch::BLACK.into(), opacity: 0.75, size: 7.0, spread: 0.0 }
+        OuterGlow {
+            on: false,
+            color: designcraft_color::swatch::BLACK.into(),
+            opacity: 0.75,
+            size: 7.0,
+            spread: 0.0,
+        }
     }
 }
 
@@ -818,7 +866,14 @@ pub struct InnerGlow {
 
 impl Default for InnerGlow {
     fn default() -> Self {
-        InnerGlow { on: false, color: designcraft_color::swatch::PAPER.into(), opacity: 0.75, size: 7.0, choke: 0.0, center: false }
+        InnerGlow {
+            on: false,
+            color: designcraft_color::swatch::PAPER.into(),
+            opacity: 0.75,
+            size: 7.0,
+            choke: 0.0,
+            center: false,
+        }
     }
 }
 
@@ -870,7 +925,15 @@ pub struct Satin {
 
 impl Default for Satin {
     fn default() -> Self {
-        Satin { on: false, color: designcraft_color::swatch::BLACK.into(), opacity: 0.5, angle: 120.0, distance: 7.0, size: 7.0, invert: false }
+        Satin {
+            on: false,
+            color: designcraft_color::swatch::BLACK.into(),
+            opacity: 0.5,
+            angle: 120.0,
+            distance: 7.0,
+            size: 7.0,
+            invert: false,
+        }
     }
 }
 
@@ -892,13 +955,23 @@ pub struct GradientFeather {
 
 impl Default for GradientFeather {
     fn default() -> Self {
-        GradientFeather { on: false, radial: false, angle: 0.0, start: 1.0, end: 0.0, vector: None }
+        GradientFeather {
+            on: false,
+            radial: false,
+            angle: 0.0,
+            start: 1.0,
+            end: 0.0,
+            vector: None,
+        }
     }
 }
 
 impl GradientFeather {
     /// The gradient's two points in item space for an object with inner bounds `b`.
-    pub fn points(&self, b: designcraft_geom::Rect) -> (designcraft_geom::Point, designcraft_geom::Point) {
+    pub fn points(
+        &self,
+        b: designcraft_geom::Rect,
+    ) -> (designcraft_geom::Point, designcraft_geom::Point) {
         use designcraft_geom::{Point, Vec2};
         if let Some([x0, y0, x1, y1]) = self.vector {
             return (Point::new(x0, y0), Point::new(x1, y1));
@@ -1090,7 +1163,11 @@ impl Item {
     /// The children that show: all of them, or just the active state of a multi-state object.
     pub fn shown_children(&self) -> impl Iterator<Item = &Arc<Item>> {
         let only = (!self.states.is_empty()).then_some(self.active_state);
-        self.children().iter().enumerate().filter(move |(i, _)| only.is_none_or(|a| a == *i)).map(|(_, c)| c)
+        self.children()
+            .iter()
+            .enumerate()
+            .filter(move |(i, _)| only.is_none_or(|a| a == *i))
+            .map(|(_, c)| c)
     }
 
     pub fn children_mut(&mut self) -> Option<&mut Vec<Arc<Item>>> {
@@ -1123,7 +1200,8 @@ impl Item {
 
     /// A frame with items pasted into it (Edit › Paste Into): drawn clipped to its path.
     pub fn has_nested_items(&self) -> bool {
-        self.shape != Shape::Group && matches!(&self.content, Content::Group { items } if !items.is_empty())
+        self.shape != Shape::Group
+            && matches!(&self.content, Content::Group { items } if !items.is_empty())
     }
 
     pub fn bounds(&self) -> Rect {
@@ -1137,7 +1215,10 @@ impl Item {
             }
             return r.unwrap_or(Rect::ZERO);
         }
-        self.path.transformed(self.xf).bounds().unwrap_or(Rect::ZERO)
+        self.path
+            .transformed(self.xf)
+            .bounds()
+            .unwrap_or(Rect::ZERO)
     }
 
     /// Visible bounds including stroke weight (approximate for inside/outside alignment).
@@ -1152,15 +1233,27 @@ impl Item {
             StrokeAlign::Outside => self.stroke.weight,
         };
         // Arrowheads on open paths.
-        let w = if self.path.is_closed() { w } else { w.max(self.stroke.extent() - self.stroke.weight) };
+        let w = if self.path.is_closed() {
+            w
+        } else {
+            w.max(self.stroke.extent() - self.stroke.weight)
+        };
         b.inflate(w, w)
     }
 
     /// The frame's text area (inner space) after inset.
     pub fn text_area(&self) -> Rect {
         let r = self.inner_bounds();
-        let inset = self.text_frame().map(|t| t.options.inset).unwrap_or([0.0; 4]);
-        Rect::new(r.x0 + inset[1], r.y0 + inset[0], (r.x1 - inset[3]).max(r.x0 + inset[1]), (r.y1 - inset[2]).max(r.y0 + inset[0]))
+        let inset = self
+            .text_frame()
+            .map(|t| t.options.inset)
+            .unwrap_or([0.0; 4]);
+        Rect::new(
+            r.x0 + inset[1],
+            r.y0 + inset[0],
+            (r.x1 - inset[3]).max(r.x0 + inset[1]),
+            (r.y1 - inset[2]).max(r.y0 + inset[0]),
+        )
     }
 
     /// Spread-space centre.
@@ -1198,21 +1291,47 @@ mod tests {
 
     #[test]
     fn bounds_and_text_area() {
-        let mut it = Item::new(ItemId(1), LayerId(1), Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)));
+        let mut it = Item::new(
+            ItemId(1),
+            LayerId(1),
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)),
+        );
         it.xf = Affine::translate((10.0, 20.0));
         assert_eq!(it.bounds(), Rect::new(10.0, 20.0, 110.0, 70.0));
-        it.content = Content::Text(TextFrame { story: StoryId(2), options: TextFrameOptions { inset: [5.0, 6.0, 7.0, 8.0], ..Default::default() } });
+        it.content = Content::Text(TextFrame {
+            story: StoryId(2),
+            options: TextFrameOptions {
+                inset: [5.0, 6.0, 7.0, 8.0],
+                ..Default::default()
+            },
+        });
         assert_eq!(it.text_area(), Rect::new(6.0, 5.0, 92.0, 43.0));
-        it.stroke = Stroke { weight: 4.0, ..Stroke::default() };
+        it.stroke = Stroke {
+            weight: 4.0,
+            ..Stroke::default()
+        };
         assert_eq!(it.visible_bounds(), Rect::new(8.0, 18.0, 112.0, 72.0));
     }
 
     #[test]
     fn group_bounds_union_children() {
-        let a = Item::new(ItemId(1), LayerId(1), Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)));
-        let b = Item::new(ItemId(2), LayerId(1), Shape::Rectangle, shapes::rectangle(Rect::new(20.0, 20.0, 30.0, 40.0)));
+        let a = Item::new(
+            ItemId(1),
+            LayerId(1),
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+        );
+        let b = Item::new(
+            ItemId(2),
+            LayerId(1),
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(20.0, 20.0, 30.0, 40.0)),
+        );
         let mut g = Item::new(ItemId(3), LayerId(1), Shape::Group, PathData::default());
-        g.content = Content::Group { items: vec![Arc::new(a), Arc::new(b)] };
+        g.content = Content::Group {
+            items: vec![Arc::new(a), Arc::new(b)],
+        };
         assert_eq!(g.bounds(), Rect::new(0.0, 0.0, 30.0, 40.0));
         let mut n = 0;
         g.walk(&mut |_| n += 1);
@@ -1221,9 +1340,17 @@ mod tests {
 
     #[test]
     fn serde_roundtrip() {
-        let mut it = Item::new(ItemId(1), LayerId(1), Shape::Oval, shapes::ellipse(Rect::new(0.0, 0.0, 10.0, 10.0)));
+        let mut it = Item::new(
+            ItemId(1),
+            LayerId(1),
+            Shape::Oval,
+            shapes::ellipse(Rect::new(0.0, 0.0, 10.0, 10.0)),
+        );
         it.fill = Fill::swatch("[Black]");
-        it.content = Content::Text(TextFrame { story: StoryId(9), options: TextFrameOptions::default() });
+        it.content = Content::Text(TextFrame {
+            story: StoryId(9),
+            options: TextFrameOptions::default(),
+        });
         let s = serde_json::to_string(&it).unwrap();
         let back: Item = serde_json::from_str(&s).unwrap();
         assert_eq!(it, back);

@@ -101,13 +101,16 @@ pub(crate) async fn run(action: WincleanAction) -> miette::Result<()> {
             let map = aphrody_winclean::browser::discover(binary, user_data).into_diagnostic()?;
             println!("{}", serde_json::to_string_pretty(&map).into_diagnostic()?);
             Ok(())
-        },
+        }
         WincleanAction::BrowserSetup { binary, user_data } => {
             let map = aphrody_winclean::browser::discover(binary, user_data).into_diagnostic()?;
             let result = aphrody_winclean::browser::setup(&map).into_diagnostic()?;
-            println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&result).into_diagnostic()?
+            );
             Ok(())
-        },
+        }
         WincleanAction::Doctor { json } => doctor(json),
         WincleanAction::Tools { filter, live, json } => tools(filter.as_deref(), live, json),
         WincleanAction::Schema { tool } => {
@@ -115,10 +118,19 @@ pub(crate) async fn run(action: WincleanAction) -> miette::Result<()> {
                 .iter()
                 .find(|t| t.name == tool)
                 .ok_or_else(|| miette!("unknown winclean tool `{tool}`"))?;
-            println!("{}", serde_json::to_string_pretty(&info.input_schema).into_diagnostic()?);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&info.input_schema).into_diagnostic()?
+            );
             Ok(())
-        },
-        WincleanAction::Call { tool, args, kv, json, images } => {
+        }
+        WincleanAction::Call {
+            tool,
+            args,
+            kv,
+            json,
+            images,
+        } => {
             let mut arguments = build_arguments(args.as_deref(), &kv)?;
             if let Some(info) = aphrody_winclean::catalog().iter().find(|t| t.name == tool) {
                 coerce_to_schema(&mut arguments, &info.input_schema, &kv);
@@ -132,7 +144,10 @@ pub(crate) async fn run(action: WincleanAction) -> miette::Result<()> {
                 )
                 .await
                 .into_diagnostic()?;
-                client.initialize("aphrody-winclean-cli").await.into_diagnostic()?;
+                client
+                    .initialize("aphrody-winclean-cli")
+                    .await
+                    .into_diagnostic()?;
                 let result = client
                     .request(
                         "tools/call",
@@ -143,31 +158,51 @@ pub(crate) async fn run(action: WincleanAction) -> miette::Result<()> {
                     .into_diagnostic()?;
                 serde_json::from_value::<ToolResult>(result).into_diagnostic()?
             } else {
-                load()?.call_async(&tool, &arguments).await.into_diagnostic()?
+                load()?
+                    .call_async(&tool, &arguments)
+                    .await
+                    .into_diagnostic()?
             };
             if json {
-                println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&result).into_diagnostic()?
+                );
             } else {
                 print_result(&tool, &result, images.as_deref().unwrap_or(Path::new(".")))?;
             }
-            if result.is_error { Err(miette!("{tool} reported an error")) } else { Ok(()) }
-        },
-        WincleanAction::Observe { hwnd, max_elements, out } => {
+            if result.is_error {
+                Err(miette!("{tool} reported an error"))
+            } else {
+                Ok(())
+            }
+        }
+        WincleanAction::Observe {
+            hwnd,
+            max_elements,
+            out,
+        } => {
             let args = aphrody_winclean::ComputerObserveArgs::new()
                 .window_handle(hwnd)
                 .max_elements(max_elements);
-            let result = load()?.computer_observe_async(&args).await.into_diagnostic()?;
+            let result = load()?
+                .computer_observe_async(&args)
+                .await
+                .into_diagnostic()?;
             save_first_image(&result, &out)?;
             println!("{}", result.text());
             Ok(())
-        },
+        }
         WincleanAction::Screenshot { out } => {
             let args = aphrody_winclean::ComputerCaptureScreenArgs::default();
-            let result = load()?.computer_capture_screen_async(&args).await.into_diagnostic()?;
+            let result = load()?
+                .computer_capture_screen_async(&args)
+                .await
+                .into_diagnostic()?;
             save_first_image(&result, &out)?;
             println!("{}", result.text());
             Ok(())
-        },
+        }
     }
 }
 
@@ -198,7 +233,7 @@ fn doctor(json: bool) -> miette::Result<()> {
                     .map(|n| format!("-{n}")),
             );
             (Some(true), wc.version().ok(), Some(live.len()), drift, None)
-        },
+        }
         Err(error) => (Some(false), None, None, Vec::new(), Some(error)),
     };
 
@@ -212,13 +247,19 @@ fn doctor(json: bool) -> miette::Result<()> {
             "drift": drift,
             "error": error,
         });
-        println!("{}", serde_json::to_string_pretty(&report).into_diagnostic()?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&report).into_diagnostic()?
+        );
     } else {
         println!("runtime    : aphrody-os");
         match (loaded, &error) {
             (Some(true), _) => {
-                println!("loaded     : yes (ABI {})", version.as_deref().unwrap_or("?"))
-            },
+                println!(
+                    "loaded     : yes (ABI {})",
+                    version.as_deref().unwrap_or("?")
+                )
+            }
             (Some(false), Some(error)) => println!("loaded     : no — {error}"),
             _ => println!("loaded     : no"),
         }
@@ -229,7 +270,10 @@ fn doctor(json: bool) -> miette::Result<()> {
         if drift.is_empty() {
             println!("drift      : none");
         } else {
-            println!("drift      : {} (update ../aphrody-os and rebuild aphrody)", drift.join(" "));
+            println!(
+                "drift      : {} (update ../aphrody-os and rebuild aphrody)",
+                drift.join(" ")
+            );
         }
     }
     if error.is_some() || !drift.is_empty() {
@@ -244,10 +288,15 @@ fn tools(filter: Option<&str>, live: bool, json: bool) -> miette::Result<()> {
     } else {
         aphrody_winclean::catalog().to_vec()
     };
-    let selected: Vec<_> =
-        catalog.into_iter().filter(|t| filter.is_none_or(|f| t.name.contains(f))).collect();
+    let selected: Vec<_> = catalog
+        .into_iter()
+        .filter(|t| filter.is_none_or(|f| t.name.contains(f)))
+        .collect();
     if json {
-        println!("{}", serde_json::to_string_pretty(&selected).into_diagnostic()?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&selected).into_diagnostic()?
+        );
         return Ok(());
     }
     for info in &selected {
@@ -268,8 +317,9 @@ fn build_arguments(json: Option<&str>, kv: &[String]) -> miette::Result<Value> {
         None => Map::new(),
     };
     for pair in kv {
-        let (key, value) =
-            pair.split_once('=').ok_or_else(|| miette!("--arg expects KEY=VALUE, got `{pair}`"))?;
+        let (key, value) = pair
+            .split_once('=')
+            .ok_or_else(|| miette!("--arg expects KEY=VALUE, got `{pair}`"))?;
         let value = serde_json::from_str::<Value>(value)
             .unwrap_or_else(|_| Value::String(value.to_owned()));
         map.insert(key.to_owned(), value);
@@ -303,7 +353,9 @@ fn coerce_to_schema(arguments: &mut Value, schema: &Value, kv: &[String]) {
         return;
     };
     for pair in kv {
-        let Some((key, raw)) = pair.split_once('=') else { continue };
+        let Some((key, raw)) = pair.split_once('=') else {
+            continue;
+        };
         let wants_string = props.get(key).is_some_and(|p| p["type"] == "string");
         if wants_string && !map.get(key).is_some_and(Value::is_string) {
             map.insert(key.to_owned(), Value::String(raw.to_owned()));
@@ -321,7 +373,12 @@ fn print_result(tool: &str, result: &ToolResult, image_dir: &Path) -> miette::Re
         let path = image_dir.join(format!("{tool}-{index}.{ext}"));
         std::fs::create_dir_all(image_dir).into_diagnostic()?;
         std::fs::write(&path, &image.bytes).into_diagnostic()?;
-        eprintln!("{} ({} bytes) -> {}", image.mime_type, image.bytes.len(), path.display());
+        eprintln!(
+            "{} ({} bytes) -> {}",
+            image.mime_type,
+            image.bytes.len(),
+            path.display()
+        );
     }
     Ok(())
 }
@@ -330,7 +387,11 @@ fn save_first_image(result: &ToolResult, out: &Path) -> miette::Result<()> {
     if result.is_error {
         return Err(miette!("{}", result.text()));
     }
-    let image = result.images().into_iter().next().ok_or_else(|| miette!("no image returned"))?;
+    let image = result
+        .images()
+        .into_iter()
+        .next()
+        .ok_or_else(|| miette!("no image returned"))?;
     if let Some(parent) = out.parent().filter(|p| !p.as_os_str().is_empty()) {
         std::fs::create_dir_all(parent).into_diagnostic()?;
     }
@@ -347,7 +408,11 @@ mod tests {
     fn arguments_merge_json_and_pairs() {
         let args = build_arguments(
             Some(r#"{"windowHandle":0}"#),
-            &["x=120".into(), "button=left".into(), "activate=false".into()],
+            &[
+                "x=120".into(),
+                "button=left".into(),
+                "activate=false".into(),
+            ],
         )
         .unwrap();
         assert_eq!(
@@ -367,7 +432,11 @@ mod tests {
         let object = result(serde_json::json!({
             "content": [], "structuredContent": {"BuildNumber": "28000"}, "isError": false
         }));
-        assert!(render_result(&object).unwrap().contains("\"BuildNumber\": \"28000\""));
+        assert!(
+            render_result(&object)
+                .unwrap()
+                .contains("\"BuildNumber\": \"28000\"")
+        );
         let plain = result(serde_json::json!({
             "content": [], "structuredContent": "Set registry value", "isError": false
         }));
@@ -386,7 +455,10 @@ mod tests {
 
     #[test]
     fn empty_result_renders_nothing() {
-        assert_eq!(render_result(&result(serde_json::json!({"content": []}))).unwrap(), "");
+        assert_eq!(
+            render_result(&result(serde_json::json!({"content": []}))).unwrap(),
+            ""
+        );
     }
 
     #[test]
@@ -400,8 +472,10 @@ mod tests {
 
     #[test]
     fn registry_value_schema_is_string_typed_in_the_catalog() {
-        let info =
-            aphrody_winclean::catalog().iter().find(|t| t.name == "set_registry_value").unwrap();
+        let info = aphrody_winclean::catalog()
+            .iter()
+            .find(|t| t.name == "set_registry_value")
+            .unwrap();
         let kv = vec!["value=2".to_owned()];
         let mut args = build_arguments(None, &kv).unwrap();
         coerce_to_schema(&mut args, &info.input_schema, &kv);

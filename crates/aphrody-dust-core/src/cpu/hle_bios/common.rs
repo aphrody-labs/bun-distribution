@@ -48,9 +48,15 @@ pub fn crc16(init: u32, len: u32, r3: u32, mut f: impl FnMut() -> u16) -> (u32, 
 }
 
 pub fn is_debugger<E: Engine, const ADDR: usize>(emu: &Emu<E>) -> (u32, u32, u32) {
-    emu.main_mem()
-        .write_le::<u16>(ADDR & emu.main_mem_mask().get() as usize, emu.is_debugger() as u16);
-    (emu.is_debugger() as u32, (emu.is_debugger() as u32) << 2, 0x027F_FFE0)
+    emu.main_mem().write_le::<u16>(
+        ADDR & emu.main_mem_mask().get() as usize,
+        emu.is_debugger() as u16,
+    );
+    (
+        emu.is_debugger() as u32,
+        (emu.is_debugger() as u32) << 2,
+        0x027F_FFE0,
+    )
 }
 
 /// LZ77 (LZSS) decompression, `LZ77UnCompReadNormalWrite8bit`: `src` holds the header word
@@ -61,7 +67,12 @@ pub fn lz77_uncomp(
     mut read_8: impl FnMut(u32) -> u8,
     mut write_8: impl FnMut(u32, u8),
 ) {
-    let header = u32::from_le_bytes([read_8(src), read_8(src + 1), read_8(src + 2), read_8(src + 3)]);
+    let header = u32::from_le_bytes([
+        read_8(src),
+        read_8(src + 1),
+        read_8(src + 2),
+        read_8(src + 3),
+    ]);
     let (mut src, mut remaining, mut out) = (src.wrapping_add(4), (header >> 8) as usize, dst);
     while remaining > 0 {
         let flags = read_8(src);
@@ -98,7 +109,12 @@ pub fn rl_uncomp(
     mut read_8: impl FnMut(u32) -> u8,
     mut write_8: impl FnMut(u32, u8),
 ) {
-    let header = u32::from_le_bytes([read_8(src), read_8(src + 1), read_8(src + 2), read_8(src + 3)]);
+    let header = u32::from_le_bytes([
+        read_8(src),
+        read_8(src + 1),
+        read_8(src + 2),
+        read_8(src + 3),
+    ]);
     let (mut src, mut remaining, mut out) = (src.wrapping_add(4), (header >> 8) as usize, dst);
     while remaining > 0 {
         let flag = read_8(src);
@@ -130,7 +146,12 @@ pub fn diff_8_unfilter(
     mut read_8: impl FnMut(u32) -> u8,
     mut write_8: impl FnMut(u32, u8),
 ) {
-    let header = u32::from_le_bytes([read_8(src), read_8(src + 1), read_8(src + 2), read_8(src + 3)]);
+    let header = u32::from_le_bytes([
+        read_8(src),
+        read_8(src + 1),
+        read_8(src + 2),
+        read_8(src + 3),
+    ]);
     let mut value = 0_u8;
     for i in 0..(header >> 8) {
         value = value.wrapping_add(read_8(src.wrapping_add(4 + i)));

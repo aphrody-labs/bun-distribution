@@ -43,7 +43,9 @@ impl<'de, T: HexTrait> Visitor<'de> for HexVisitor<T> {
         let v = v.strip_prefix("0x").unwrap_or(v);
         match T::from_str_radix(v, 16) {
             Ok(value) => Ok(Hex(value)),
-            Err(_) => Err(serde::de::Error::custom(format!("invalid hex integer format '{v}'"))),
+            Err(_) => Err(serde::de::Error::custom(format!(
+                "invalid hex integer format '{v}'"
+            ))),
         }
     }
 }
@@ -99,17 +101,17 @@ impl<'de, T: IHexTrait> Visitor<'de> for IHexVisitor<T> {
             let v = v.strip_prefix("0x").unwrap_or(v);
             match T::from_str_radix(v, 16) {
                 Ok(value) => Ok(IHex(-value)),
-                Err(_) => {
-                    Err(serde::de::Error::custom(format!("invalid hex integer format '{v}'")))
-                },
+                Err(_) => Err(serde::de::Error::custom(format!(
+                    "invalid hex integer format '{v}'"
+                ))),
             }
         } else {
             let v = v.strip_prefix("0x").unwrap_or(v);
             match T::from_str_radix(v, 16) {
                 Ok(value) => Ok(IHex(value)),
-                Err(_) => {
-                    Err(serde::de::Error::custom(format!("invalid hex integer format '{v}'")))
-                },
+                Err(_) => Err(serde::de::Error::custom(format!(
+                    "invalid hex integer format '{v}'"
+                ))),
             }
         }
     }

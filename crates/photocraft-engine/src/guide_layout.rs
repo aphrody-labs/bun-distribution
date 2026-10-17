@@ -11,20 +11,28 @@ const MAX_COUNT: u64 = 1000;
 const MAX_EDGES: u64 = 16_000;
 
 fn bad(message: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: COMMAND.into(), msg: message.into() }
+    EngineError::BadParams {
+        cmd: COMMAND.into(),
+        msg: message.into(),
+    }
 }
 
 fn number(p: &Value, key: &str, default: f64) -> Result<f64> {
     match p.get(key) {
         None | Some(Value::Null) => Ok(default),
-        Some(v) => v.as_f64().filter(|n| n.is_finite() && *n >= 0.0).ok_or_else(|| bad(format!("{key} must be a finite non-negative number"))),
+        Some(v) => v
+            .as_f64()
+            .filter(|n| n.is_finite() && *n >= 0.0)
+            .ok_or_else(|| bad(format!("{key} must be a finite non-negative number"))),
     }
 }
 
 fn count(p: &Value, key: &str) -> Result<u64> {
     let n = match p.get(key) {
         None => 0,
-        Some(v) => v.as_u64().ok_or_else(|| bad(format!("{key} must be a whole number")))?,
+        Some(v) => v
+            .as_u64()
+            .ok_or_else(|| bad(format!("{key} must be a whole number")))?,
     };
     // Each column/row costs a loop iteration plus a duplicate scan, so an
     // absurd count from the caller would block the app for minutes (#704).
@@ -39,16 +47,28 @@ fn count(p: &Value, key: &str) -> Result<u64> {
 fn flag(p: &Value, key: &str) -> Result<bool> {
     match p.get(key) {
         None => Ok(false),
-        Some(v) => v.as_bool().ok_or_else(|| bad(format!("{key} must be a boolean"))),
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad(format!("{key} must be a boolean"))),
     }
 }
 
 /// Document coordinates of every selected artboard, including boards containing selected layers.
 pub fn selected_artboards(s: &Session) -> Vec<Rect> {
-    let Some(st) = s.active() else { return Vec::new() };
+    let Some(st) = s.active() else {
+        return Vec::new();
+    };
     let selected = st.selected_layers();
-    let ids: std::collections::HashSet<_> = selected.iter().filter_map(|id| st.doc.artboard_of(*id)).collect();
-    st.doc.artboards().into_iter().filter(|(id, _, _)| ids.contains(id)).map(|(_, _, board)| board.rect).collect()
+    let ids: std::collections::HashSet<_> = selected
+        .iter()
+        .filter_map(|id| st.doc.artboard_of(*id))
+        .collect();
+    st.doc
+        .artboards()
+        .into_iter()
+        .filter(|(id, _, _)| ids.contains(id))
+        .map(|(_, _, board)| board.rect)
+        .collect()
 }
 
 fn targets(s: &Session, p: &Value) -> Result<Vec<Rect>> {
@@ -61,7 +81,11 @@ fn targets(s: &Session, p: &Value) -> Result<Vec<Rect>> {
         "document" => Ok(vec![st.doc.bounds()]),
         "selectedArtboards" => {
             let boards = selected_artboards(s);
-            if boards.is_empty() { Err(bad("select an artboard or a layer inside one")) } else { Ok(boards) }
+            if boards.is_empty() {
+                Err(bad("select an artboard or a layer inside one"))
+            } else {
+                Ok(boards)
+            }
         }
         _ => Err(bad("target must be document or selectedArtboards")),
     }
@@ -79,18 +103,36 @@ fn push_unique(out: &mut Vec<f64>, value: f64) -> Result<()> {
 
 /// Guide positions for `count` columns (or rows) across `[start, end]`, Photoshop-style: both
 /// edges of every column; a fixed `width` packs columns from `start` (or centres them).
-fn axis(start: f64, end: f64, count: u64, fixed: f64, gap: f64, center: bool, out: &mut Vec<f64>) -> Result<()> {
+fn axis(
+    start: f64,
+    end: f64,
+    count: u64,
+    fixed: f64,
+    gap: f64,
+    center: bool,
+    out: &mut Vec<f64>,
+) -> Result<()> {
     if count == 0 {
         return Ok(());
     }
     let available = end - start;
     let n = count as f64;
-    let width = if fixed > 0.0 { fixed } else { (available - (n - 1.0) * gap) / n };
+    let width = if fixed > 0.0 {
+        fixed
+    } else {
+        (available - (n - 1.0) * gap) / n
+    };
     let total = n * width + (n - 1.0) * gap;
     if width <= 0.0 || !total.is_finite() || total > available + 0.001 {
-        return Err(bad("count, size and gutter must fit inside the target margins"));
+        return Err(bad(
+            "count, size and gutter must fit inside the target margins",
+        ));
     }
-    let origin = if center && fixed > 0.0 { start + (available - total) / 2.0 } else { start };
+    let origin = if center && fixed > 0.0 {
+        start + (available - total) / 2.0
+    } else {
+        start
+    };
     for i in 0..count {
         let a = origin + i as f64 * (width + gap);
         push_unique(out, a)?;
@@ -123,7 +165,10 @@ pub fn calculate(s: &Session, p: &Value) -> Result<Layout> {
             }
             let mut m = [0.0; 4];
             for (out, value) in m.iter_mut().zip(a) {
-                *out = value.as_f64().filter(|v| v.is_finite() && *v >= 0.0).ok_or_else(|| bad("margins must be finite non-negative numbers"))?;
+                *out = value
+                    .as_f64()
+                    .filter(|v| v.is_finite() && *v >= 0.0)
+                    .ok_or_else(|| bad("margins must be finite non-negative numbers"))?;
             }
             m
         }
@@ -132,12 +177,23 @@ pub fn calculate(s: &Session, p: &Value) -> Result<Layout> {
     let [top, left, bottom, right] = margins;
     let bounds = targets(s, p)?;
     // Bound the aggregate work as well as each count, including multi-artboard requests.
-    if (cols + rows + 4).saturating_mul(2).saturating_mul(bounds.len() as u64) > MAX_EDGES {
-        return Err(bad("the selected targets would create too many guide lines"));
+    if (cols + rows + 4)
+        .saturating_mul(2)
+        .saturating_mul(bounds.len() as u64)
+        > MAX_EDGES
+    {
+        return Err(bad(
+            "the selected targets would create too many guide lines",
+        ));
     }
     let mut added = Guides::default();
     for rect in &bounds {
-        let (x0, y0, x1, y1) = (f64::from(rect.x0) + left, f64::from(rect.y0) + top, f64::from(rect.x1) - right, f64::from(rect.y1) - bottom);
+        let (x0, y0, x1, y1) = (
+            f64::from(rect.x0) + left,
+            f64::from(rect.y0) + top,
+            f64::from(rect.x1) - right,
+            f64::from(rect.y1) - bottom,
+        );
         if x0 >= x1 || y0 >= y1 {
             return Err(bad("margins must leave space inside the target"));
         }
@@ -157,8 +213,16 @@ pub fn calculate(s: &Session, p: &Value) -> Result<Layout> {
     if clear {
         if p.get("target").and_then(Value::as_str) == Some("selectedArtboards") {
             // Guides are stored as document-wide axes, matching Clear Selected Artboard Guides.
-            guides.vertical.retain(|v| !bounds.iter().any(|r| *v >= f64::from(r.x0) && *v <= f64::from(r.x1)));
-            guides.horizontal.retain(|v| !bounds.iter().any(|r| *v >= f64::from(r.y0) && *v <= f64::from(r.y1)));
+            guides.vertical.retain(|v| {
+                !bounds
+                    .iter()
+                    .any(|r| *v >= f64::from(r.x0) && *v <= f64::from(r.x1))
+            });
+            guides.horizontal.retain(|v| {
+                !bounds
+                    .iter()
+                    .any(|r| *v >= f64::from(r.y0) && *v <= f64::from(r.y1))
+            });
         } else {
             guides = Guides::default();
         }

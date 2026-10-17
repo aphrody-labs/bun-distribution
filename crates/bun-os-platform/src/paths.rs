@@ -25,7 +25,12 @@ impl Paths {
                 [std::env::current_exe().ok(), std::env::current_dir().ok()]
                     .into_iter()
                     .flatten()
-                    .find_map(|start| start.ancestors().find(|d| is_repo(d)).map(Path::to_path_buf))
+                    .find_map(|start| {
+                        start
+                            .ancestors()
+                            .find(|d| is_repo(d))
+                            .map(Path::to_path_buf)
+                    })
             })
             .unwrap_or_else(|| PathBuf::from("."));
         let usr = std::env::var_os("BUN_OS_USR")
@@ -63,17 +68,28 @@ impl Paths {
     /// `pluginDigest` in packages/bun-os-platform/src/plugins). Signed-only plugins are reached
     /// through the sidecar.
     pub fn plugin_dirs(&self) -> Vec<PathBuf> {
-        let lock: serde_json::Value = std::fs::read_to_string(self.usr.join("etc").join("bun-os").join("plugins.lock.json"))
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_default();
+        let lock: serde_json::Value = std::fs::read_to_string(
+            self.usr
+                .join("etc")
+                .join("bun-os")
+                .join("plugins.lock.json"),
+        )
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
         let mut out = Vec::new();
         for (root, builtin) in [
             (self.package.join("plugins"), true),
             (self.usr.join("lib").join("bun-os").join("plugins"), false),
         ] {
-            let Ok(entries) = std::fs::read_dir(&root) else { continue };
-            let mut dirs: Vec<PathBuf> = entries.flatten().map(|e| e.path()).filter(|p| p.join("plugin.json").is_file()).collect();
+            let Ok(entries) = std::fs::read_dir(&root) else {
+                continue;
+            };
+            let mut dirs: Vec<PathBuf> = entries
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.join("plugin.json").is_file())
+                .collect();
             dirs.sort();
             for dir in dirs {
                 let trusted = builtin || {
@@ -81,8 +97,12 @@ impl Paths {
                         .ok()
                         .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
                         .and_then(|m| m.get("name").and_then(|n| n.as_str()).map(str::to_string));
-                    name.and_then(|n| lock["plugins"][n.as_str()]["sha256"].as_str().map(str::to_string))
-                        .is_some_and(|pinned| pinned == plugin_digest(&dir))
+                    name.and_then(|n| {
+                        lock["plugins"][n.as_str()]["sha256"]
+                            .as_str()
+                            .map(str::to_string)
+                    })
+                    .is_some_and(|pinned| pinned == plugin_digest(&dir))
                 };
                 if trusted {
                     out.push(dir);
@@ -102,8 +122,13 @@ impl Paths {
 pub fn plugin_digest(dir: &Path) -> String {
     use sha2::{Digest, Sha256};
     fn walk(root: &Path, dir: &Path, hash: &mut Sha256) {
-        let Ok(entries) = std::fs::read_dir(dir) else { return };
-        let mut names: Vec<String> = entries.flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect();
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        let mut names: Vec<String> = entries
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
         names.sort();
         for name in names {
             if name == "node_modules" || name == "plugin.sig" {
@@ -113,7 +138,11 @@ pub fn plugin_digest(dir: &Path) -> String {
             if path.is_dir() {
                 walk(root, &path, hash);
             } else if let Ok(bytes) = std::fs::read(&path) {
-                let rel = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+                let rel = path
+                    .strip_prefix(root)
+                    .unwrap_or(&path)
+                    .to_string_lossy()
+                    .replace('\\', "/");
                 hash.update(rel.as_bytes());
                 hash.update([0u8]);
                 hash.update(&bytes);

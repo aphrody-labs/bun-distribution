@@ -204,7 +204,11 @@ impl PeImage {
         }
         let dos_stub = bytes
             .get(..pe_offset)
-            .ok_or(PeError::Truncated { at: 0, need: pe_offset, len: bytes.len() })?
+            .ok_or(PeError::Truncated {
+                at: 0,
+                need: pe_offset,
+                len: bytes.len(),
+            })?
             .to_vec();
 
         let c = pe_offset + 4;
@@ -227,8 +231,10 @@ impl PeImage {
         let mut directories = Vec::with_capacity(n_rva_and_sizes as usize);
         for i in 0..n_rva_and_sizes as usize {
             let at = o + 112 + i * 8;
-            directories
-                .push(DataDirectory { rva: rd_u32(&bytes, at)?, size: rd_u32(&bytes, at + 4)? });
+            directories.push(DataDirectory {
+                rva: rd_u32(&bytes, at)?,
+                size: rd_u32(&bytes, at + 4)?,
+            });
         }
         let dirs_end = 112 + n_rva_and_sizes as usize * 8;
         let tail = if (coff.size_optional as usize) > dirs_end {
@@ -282,11 +288,13 @@ impl PeImage {
         let mut sections = Vec::with_capacity(coff.n_sections as usize);
         for i in 0..coff.n_sections as usize {
             let at = sec_off + i * SECTION_HEADER_SIZE;
-            let raw = bytes.get(at..at + SECTION_HEADER_SIZE).ok_or(PeError::Truncated {
-                at,
-                need: SECTION_HEADER_SIZE,
-                len: bytes.len(),
-            })?;
+            let raw = bytes
+                .get(at..at + SECTION_HEADER_SIZE)
+                .ok_or(PeError::Truncated {
+                    at,
+                    need: SECTION_HEADER_SIZE,
+                    len: bytes.len(),
+                })?;
             let mut name = [0u8; 8];
             name.copy_from_slice(&raw[..8]);
             sections.push(SectionHeader {
@@ -314,7 +322,15 @@ impl PeImage {
             })?
             .to_vec();
 
-        Ok(Self { bytes, dos_stub, pe_offset, coff, opt, sections, header_padding })
+        Ok(Self {
+            bytes,
+            dos_stub,
+            pe_offset,
+            coff,
+            opt,
+            sections,
+            header_padding,
+        })
     }
 
     /// Fin (exclusive) de la région d'en-tête dans le fichier.
@@ -505,7 +521,10 @@ mod tests {
     fn refuse_les_signatures_invalides() {
         let mut raw = synth();
         raw[0] = 0;
-        assert!(matches!(PeImage::parse(raw).unwrap_err(), PeError::NoDosMagic(_)));
+        assert!(matches!(
+            PeImage::parse(raw).unwrap_err(),
+            PeError::NoDosMagic(_)
+        ));
     }
 }
 
@@ -566,7 +585,12 @@ pub mod tables {
             return None;
         }
         let tail = sec.ptr_raw as usize + out.len();
-        if img.bytes.get(tail..sec.ptr_raw as usize + raw)?.iter().any(|b| *b != 0) {
+        if img
+            .bytes
+            .get(tail..sec.ptr_raw as usize + raw)?
+            .iter()
+            .any(|b| *b != 0)
+        {
             return None;
         }
         out.resize(raw, 0);

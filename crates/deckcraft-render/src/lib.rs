@@ -4,7 +4,14 @@
 //! [`render_slide`] draws the background, the master and layout graphics, then the slide's shapes
 //! (fills with theme shading, gradients, pictures, outlines with dashes and arrowheads, shadows,
 //! glow and soft edges, text, tables, charts, groups), optionally with per-shape animation state.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod chart;
@@ -76,7 +83,9 @@ impl Image {
     pub fn to_png(&self) -> Vec<u8> {
         let mut px = self.to_straight();
         px.resize(self.width as usize * self.height as usize * 4, 0);
-        let Some(img) = image::RgbaImage::from_raw(self.width, self.height, px) else { return Vec::new() };
+        let Some(img) = image::RgbaImage::from_raw(self.width, self.height, px) else {
+            return Vec::new();
+        };
         let mut buf = Vec::new();
         if let Err(e) = img.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png) {
             log::error!("PNG encode: {e}");
@@ -86,10 +95,18 @@ impl Image {
     }
     pub fn to_jpeg(&self, quality: u8) -> Vec<u8> {
         let straight = self.to_straight();
-        let rgb: Vec<u8> = straight.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect();
-        let Some(img) = image::RgbImage::from_raw(self.width, self.height, rgb) else { return Vec::new() };
+        let rgb: Vec<u8> = straight
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect();
+        let Some(img) = image::RgbImage::from_raw(self.width, self.height, rgb) else {
+            return Vec::new();
+        };
         let mut buf = Vec::new();
-        let enc = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, quality.clamp(1, 100));
+        let enc =
+            image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, quality.clamp(1, 100));
         if let Err(e) = img.write_with_encoder(enc) {
             log::error!("JPEG encode: {e}");
             return Vec::new();
@@ -101,7 +118,12 @@ impl Image {
         let i = (y as usize * self.width as usize + x as usize) * 4;
         let p = self.pixels.get(i..i + 4).unwrap_or(&[0, 0, 0, 0]);
         let a = p.get(3).copied().unwrap_or(0) as u32;
-        let un = |c: u8| (c as u32 * 255 + a / 2).checked_div(a).map(|v| v.min(255) as u8).unwrap_or(0);
+        let un = |c: u8| {
+            (c as u32 * 255 + a / 2)
+                .checked_div(a)
+                .map(|v| v.min(255) as u8)
+                .unwrap_or(0)
+        };
         [un(p[0]), un(p[1]), un(p[2]), a as u8]
     }
 }
@@ -125,7 +147,16 @@ pub struct ShapeState {
 
 impl Default for ShapeState {
     fn default() -> Self {
-        ShapeState { visible: true, opacity: 1.0, offset: Vec2::ZERO, scale: (1.0, 1.0), rotate: 0.0, clip: None, tint: None, paras: vec![] }
+        ShapeState {
+            visible: true,
+            opacity: 1.0,
+            offset: Vec2::ZERO,
+            scale: (1.0, 1.0),
+            rotate: 0.0,
+            clip: None,
+            tint: None,
+            paras: vec![],
+        }
     }
 }
 
@@ -140,7 +171,11 @@ pub struct ParaState {
 
 impl Default for ParaState {
     fn default() -> Self {
-        ParaState { visible: true, opacity: 1.0, offset: Vec2::ZERO }
+        ParaState {
+            visible: true,
+            opacity: 1.0,
+            offset: Vec2::ZERO,
+        }
     }
 }
 
@@ -203,7 +238,12 @@ struct SlideFields {
 
 impl SlideFields {
     fn new(num: u32, footer: String, opts: &RenderOpts) -> Self {
-        SlideFields { num, date: opts.date_text.clone(), footer, now: opts.now.or_else(DateTime::now_local) }
+        SlideFields {
+            num,
+            date: opts.date_text.clone(),
+            footer,
+            now: opts.now.or_else(DateTime::now_local),
+        }
     }
 }
 
@@ -219,7 +259,10 @@ impl Fields for SlideFields {
         if datetime::is_date_field(kind) {
             // An automatic date: today's, in the format of its type. (A fixed date is plain text
             // in the slide's placeholder, not a field.)
-            return self.date.clone().or_else(|| datetime::field_text(kind, lang, self.now?));
+            return self
+                .date
+                .clone()
+                .or_else(|| datetime::field_text(kind, lang, self.now?));
         }
         if kind == "footer" {
             return Some(self.footer.clone());
@@ -245,7 +288,13 @@ pub struct Renderer {
 
 impl Default for Renderer {
     fn default() -> Self {
-        Renderer { resources: Resources::new(), paths: Vec::new(), bg: None, drawn: None, view: Affine::IDENTITY }
+        Renderer {
+            resources: Resources::new(),
+            paths: Vec::new(),
+            bg: None,
+            drawn: None,
+            view: Affine::IDENTITY,
+        }
     }
 }
 
@@ -255,7 +304,9 @@ thread_local! {
 
 /// Does anything on this slide (or its layout/master graphics) use blur-based effects?
 pub fn needs_filters(pres: &Presentation, slide: &Slide) -> bool {
-    let Some(rctx) = Ctx::for_slide(pres, slide) else { return false };
+    let Some(rctx) = Ctx::for_slide(pres, slide) else {
+        return false;
+    };
     let mut any = false;
     let mut check = |shapes: &[Shape]| {
         deckcraft_model::walk(shapes, &mut |s, _| {
@@ -280,10 +331,15 @@ pub fn needs_filters(pres: &Presentation, slide: &Slide) -> bool {
 /// text styles it inherits)? Such text is blurred, which needs filters.
 fn text_has_effects(rctx: &Ctx, s: &Shape) -> bool {
     use deckcraft_model::text::{ListStyle, RunProps};
-    let fx = |r: &RunProps| r.shadow.as_ref().is_some_and(|s| !s.inner) || r.glow.as_ref().is_some_and(|g| g.radius > 0.0);
+    let fx = |r: &RunProps| {
+        r.shadow.as_ref().is_some_and(|s| !s.inner)
+            || r.glow.as_ref().is_some_and(|g| g.radius > 0.0)
+    };
     let styled = |l: &ListStyle| l.levels.iter().flatten().any(|lv| fx(&lv.run));
     let Some(t) = &s.text else { return false };
-    t.paragraphs.iter().any(|p| p.runs.iter().any(|r| fx(&r.props)) || fx(&p.end_props))
+    t.paragraphs
+        .iter()
+        .any(|p| p.runs.iter().any(|r| fx(&r.props)) || fx(&p.end_props))
         || styled(&t.list_style)
         || styled(&rctx.master.title_style)
         || styled(&rctx.master.body_style)
@@ -301,7 +357,9 @@ pub fn render_slide(pres: &Presentation, index: usize, opts: &RenderOpts) -> Ima
 /// included). The editor grows its pasteboard to it ([`pasteboard_region`]).
 pub fn render_slide_drawn(pres: &Presentation, index: usize, opts: &RenderOpts) -> (Image, Rect) {
     let page = Rect::new(0.0, 0.0, pres.slide_size.width, pres.slide_size.height);
-    let Some(slide) = pres.slides.get(index) else { return (Image::default(), page) };
+    let Some(slide) = pres.slides.get(index) else {
+        return (Image::default(), page);
+    };
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         RENDERER.with(|r| {
             let mut r = r.borrow_mut();
@@ -312,10 +370,18 @@ pub fn render_slide_drawn(pres: &Presentation, index: usize, opts: &RenderOpts) 
     })) {
         Ok((img, drawn)) => {
             let k = opts.scale;
-            let to_slide =
-                |d: Rect| Rect::new((d.x0 - opts.offset.0) / k, (d.y0 - opts.offset.1) / k, (d.x1 - opts.offset.0) / k, (d.y1 - opts.offset.1) / k);
+            let to_slide = |d: Rect| {
+                Rect::new(
+                    (d.x0 - opts.offset.0) / k,
+                    (d.y0 - opts.offset.1) / k,
+                    (d.x1 - opts.offset.0) / k,
+                    (d.y1 - opts.offset.1) / k,
+                )
+            };
             let extent = match drawn {
-                Some(d) if k.is_finite() && k > 0.0 && to_slide(d).is_finite() => page.union(to_slide(d)),
+                Some(d) if k.is_finite() && k > 0.0 && to_slide(d).is_finite() => {
+                    page.union(to_slide(d))
+                }
                 _ => page,
             };
             (img, extent)
@@ -324,7 +390,14 @@ pub fn render_slide_drawn(pres: &Presentation, index: usize, opts: &RenderOpts) 
             log::error!("rendering slide {index} panicked; showing a blank slide");
             RENDERER.with(|r| *r.borrow_mut() = Renderer::default());
             let (w, h) = output_size(pres, opts);
-            (Image { width: w as u32, height: h as u32, pixels: vec![255; w as usize * h as usize * 4] }, page)
+            (
+                Image {
+                    width: w as u32,
+                    height: h as u32,
+                    pixels: vec![255; w as usize * h as usize * 4],
+                },
+                page,
+            )
         }
     }
 }
@@ -346,13 +419,20 @@ pub fn render_blend(
     paths: &[PathMorph],
     opts: &RenderOpts,
 ) -> Image {
-    let (Some(a), Some(b)) = (pres.slides.get(old), pres.slides.get(new)) else { return Image::default() };
+    let (Some(a), Some(b)) = (pres.slides.get(old), pres.slides.get(new)) else {
+        return Image::default();
+    };
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        RENDERER.with(|r| r.borrow_mut().blend(pres, (a, old), (b, new), mix, shapes, text, paths, opts))
+        RENDERER.with(|r| {
+            r.borrow_mut()
+                .blend(pres, (a, old), (b, new), mix, shapes, text, paths, opts)
+        })
     })) {
         Ok(img) => img,
         Err(_) => {
-            log::error!("rendering a frame between slides {old} and {new} panicked; showing the new slide");
+            log::error!(
+                "rendering a frame between slides {old} and {new} panicked; showing the new slide"
+            );
             RENDERER.with(|r| *r.borrow_mut() = Renderer::default());
             render_slide(pres, new, opts)
         }
@@ -360,8 +440,15 @@ pub fn render_blend(
 }
 
 /// Render a layout (Slide Master view thumbnail and canvas).
-pub fn render_layout(pres: &Presentation, master: usize, layout: Option<usize>, opts: &RenderOpts) -> Image {
-    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| RENDERER.with(|r| r.borrow_mut().layout(pres, master, layout, opts)))) {
+pub fn render_layout(
+    pres: &Presentation,
+    master: usize,
+    layout: Option<usize>,
+    opts: &RenderOpts,
+) -> Image {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        RENDERER.with(|r| r.borrow_mut().layout(pres, master, layout, opts))
+    })) {
         Ok(img) => img,
         Err(_) => {
             log::error!("rendering a layout panicked; showing a blank image");
@@ -372,14 +459,17 @@ pub fn render_layout(pres: &Presentation, master: usize, layout: Option<usize>, 
 }
 
 fn output_size(pres: &Presentation, opts: &RenderOpts) -> (u16, u16) {
-    let (w, h) = opts
-        .size
-        .unwrap_or(((pres.slide_size.width * opts.scale).round().max(1.0) as u32, (pres.slide_size.height * opts.scale).round().max(1.0) as u32));
+    let (w, h) = opts.size.unwrap_or((
+        (pres.slide_size.width * opts.scale).round().max(1.0) as u32,
+        (pres.slide_size.height * opts.scale).round().max(1.0) as u32,
+    ));
     (w.clamp(1, MAX_SIDE) as u16, h.clamp(1, MAX_SIDE) as u16)
 }
 
 pub(crate) fn color(c: Rgba, alpha: f64) -> peniko::Color {
-    let a = (c.a as f64 * alpha.clamp(0.0, 1.0)).round().clamp(0.0, 255.0) as u8;
+    let a = (c.a as f64 * alpha.clamp(0.0, 1.0))
+        .round()
+        .clamp(0.0, 255.0) as u8;
     peniko::Color::from_rgba8(c.r, c.g, c.b, a)
 }
 
@@ -396,21 +486,36 @@ fn shade(c: Rgba, m: FillMode) -> Rgba {
 /// Geometry of a shape at its size.
 pub fn shape_geometry(shape: &Shape, w: f64, h: f64) -> Geometry {
     match &shape.geom {
-        Geom::Preset { name, adj } => preset::build(name, w, h, adj).or_else(|| preset::build("rect", w, h, &[])).unwrap_or(Geometry {
-            paths: vec![],
-            text_rect: Rect::new(0.0, 0.0, w, h),
-            handles: vec![],
-            sites: vec![],
-        }),
+        Geom::Preset { name, adj } => preset::build(name, w, h, adj)
+            .or_else(|| preset::build("rect", w, h, &[]))
+            .unwrap_or(Geometry {
+                paths: vec![],
+                text_rect: Rect::new(0.0, 0.0, w, h),
+                handles: vec![],
+                sites: vec![],
+            }),
         Geom::Custom { paths } => {
             let mut out = vec![];
             for p in paths {
-                let (pw, ph) = (if p.w > 0.0 { p.w } else { w.max(1e-9) }, if p.h > 0.0 { p.h } else { h.max(1e-9) });
+                let (pw, ph) = (
+                    if p.w > 0.0 { p.w } else { w.max(1e-9) },
+                    if p.h > 0.0 { p.h } else { h.max(1e-9) },
+                );
                 let mut bp = parse_path(&p.d);
                 bp.apply_affine(Affine::scale_non_uniform(w / pw, h / ph));
-                out.push(SubPath { path: bp, fill: p.fill, stroke: p.stroke, even_odd: false });
+                out.push(SubPath {
+                    path: bp,
+                    fill: p.fill,
+                    stroke: p.stroke,
+                    even_odd: false,
+                });
             }
-            Geometry { paths: out, text_rect: Rect::new(0.0, 0.0, w, h), handles: vec![], sites: vec![] }
+            Geometry {
+                paths: out,
+                text_rect: Rect::new(0.0, 0.0, w, h),
+                handles: vec![],
+                sites: vec![],
+            }
         }
     }
 }
@@ -418,9 +523,16 @@ pub fn shape_geometry(shape: &Shape, w: f64, h: f64) -> Geometry {
 /// Parse our custom path syntax (`M x y L x y C … Q … Z`).
 pub fn parse_path(d: &str) -> BezPath {
     let mut bp = BezPath::new();
-    let toks: Vec<&str> = d.split(|c: char| c.is_whitespace() || c == ',').filter(|t| !t.is_empty()).collect();
+    let toks: Vec<&str> = d
+        .split(|c: char| c.is_whitespace() || c == ',')
+        .filter(|t| !t.is_empty())
+        .collect();
     let mut i = 0;
-    let num = |i: usize| toks.get(i).and_then(|t| t.parse::<f64>().ok()).filter(|v| v.is_finite());
+    let num = |i: usize| {
+        toks.get(i)
+            .and_then(|t| t.parse::<f64>().ok())
+            .filter(|v| v.is_finite())
+    };
     let mut started = false;
     while i < toks.len() {
         let t = toks.get(i).copied().unwrap_or("");
@@ -444,16 +556,22 @@ pub fn parse_path(d: &str) -> BezPath {
                 i += 3;
             }
             "C" => {
-                if let (Some(a), Some(b), Some(c), Some(d2), Some(e), Some(f)) =
-                    (num(i + 1), num(i + 2), num(i + 3), num(i + 4), num(i + 5), num(i + 6))
-                    && started
+                if let (Some(a), Some(b), Some(c), Some(d2), Some(e), Some(f)) = (
+                    num(i + 1),
+                    num(i + 2),
+                    num(i + 3),
+                    num(i + 4),
+                    num(i + 5),
+                    num(i + 6),
+                ) && started
                 {
                     bp.curve_to((a, b), (c, d2), (e, f));
                 }
                 i += 7;
             }
             "Q" => {
-                if let (Some(a), Some(b), Some(c), Some(d2)) = (num(i + 1), num(i + 2), num(i + 3), num(i + 4))
+                if let (Some(a), Some(b), Some(c), Some(d2)) =
+                    (num(i + 1), num(i + 2), num(i + 3), num(i + 4))
                     && started
                 {
                     bp.quad_to((a, b), (c, d2));
@@ -474,12 +592,23 @@ pub fn parse_path(d: &str) -> BezPath {
 
 /// The rectangle a picture's image occupies given its crop (fractions; negative = padding).
 pub fn crop_dest(bounds: Rect, crop: [f64; 4]) -> Rect {
-    let [l, t, r, b] = crop.map(|v| if v.is_finite() { v.clamp(-10.0, 0.99) } else { 0.0 });
+    let [l, t, r, b] = crop.map(|v| {
+        if v.is_finite() {
+            v.clamp(-10.0, 0.99)
+        } else {
+            0.0
+        }
+    });
     let vis_w = (1.0 - l - r).max(1e-6);
     let vis_h = (1.0 - t - b).max(1e-6);
     let fw = bounds.width() / vis_w;
     let fh = bounds.height() / vis_h;
-    Rect::new(bounds.x0 - l * fw, bounds.y0 - t * fh, bounds.x0 - l * fw + fw, bounds.y0 - t * fh + fh)
+    Rect::new(
+        bounds.x0 - l * fw,
+        bounds.y0 - t * fh,
+        bounds.x0 - l * fw + fw,
+        bounds.y0 - t * fh + fh,
+    )
 }
 
 struct Frame<'a> {
@@ -489,12 +618,23 @@ struct Frame<'a> {
 }
 
 impl Renderer {
-    fn canvas(pres: &Presentation, opts: &RenderOpts, filters: bool) -> (RenderContext, u16, u16, Affine) {
+    fn canvas(
+        pres: &Presentation,
+        opts: &RenderOpts,
+        filters: bool,
+    ) -> (RenderContext, u16, u16, Affine) {
         let (w, h) = output_size(pres, opts);
         let mut ctx = RenderContext::new_with(
             w,
             h,
-            vello_cpu::RenderSettings { num_threads: if cfg!(target_arch = "wasm32") || filters { 0 } else { opts.threads }, ..Default::default() },
+            vello_cpu::RenderSettings {
+                num_threads: if cfg!(target_arch = "wasm32") || filters {
+                    0
+                } else {
+                    opts.threads
+                },
+                ..Default::default()
+            },
         );
         if let Some(c) = opts.clear {
             ctx.set_paint(color(c, 1.0));
@@ -513,11 +653,22 @@ impl Renderer {
     }
 
     fn fields(pres: &Presentation, index: usize, opts: &RenderOpts) -> SlideFields {
-        SlideFields::new(pres.slide_number(index), pres.header_footer.footer_text.clone(), opts)
+        SlideFields::new(
+            pres.slide_number(index),
+            pres.header_footer.footer_text.clone(),
+            opts,
+        )
     }
 
     /// Background plus the master and layout graphics the slide shows.
-    fn backdrop(&mut self, ctx: &mut RenderContext, f: &Frame, rctx: &Ctx, slide: &Slide, view: Affine) {
+    fn backdrop(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        rctx: &Ctx,
+        slide: &Slide,
+        view: Affine,
+    ) {
         self.background(ctx, f, rctx, Some(slide), view);
         let (show_layout, show_master) = resolve::show_master_shapes(slide, rctx.layout);
         if show_master {
@@ -538,9 +689,19 @@ impl Renderer {
         }
     }
 
-    fn slide(&mut self, pres: &Presentation, slide: &Slide, index: usize, opts: &RenderOpts) -> Image {
+    fn slide(
+        &mut self,
+        pres: &Presentation,
+        slide: &Slide,
+        index: usize,
+        opts: &RenderOpts,
+    ) -> Image {
         let (mut ctx, w, h, view) = Self::canvas(pres, opts, needs_filters(pres, slide));
-        let f = Frame { pres, opts, fields: Self::fields(pres, index, opts) };
+        let f = Frame {
+            pres,
+            opts,
+            fields: Self::fields(pres, index, opts),
+        };
         if let Some(rctx) = Ctx::for_slide(pres, slide) {
             self.backdrop(&mut ctx, &f, &rctx, slide, view);
             for s in &slide.shapes {
@@ -562,17 +723,40 @@ impl Renderer {
         paths: &[PathMorph],
         opts: &RenderOpts,
     ) -> Image {
-        let mix = if mix.is_finite() { mix.clamp(0.0, 1.0) } else { 1.0 };
-        let (mut ctx, w, h, view) = Self::canvas(pres, opts, needs_filters(pres, old.0) || needs_filters(pres, new.0));
-        let (Some(co), Some(cn)) = (Ctx::for_slide(pres, old.0), Ctx::for_slide(pres, new.0)) else { return self.finish(ctx, w, h) };
+        let mix = if mix.is_finite() {
+            mix.clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
+        let (mut ctx, w, h, view) = Self::canvas(
+            pres,
+            opts,
+            needs_filters(pres, old.0) || needs_filters(pres, new.0),
+        );
+        let (Some(co), Some(cn)) = (Ctx::for_slide(pres, old.0), Ctx::for_slide(pres, new.0))
+        else {
+            return self.finish(ctx, w, h);
+        };
         // Backdrop graphics never take shape states: their ids may clash with the frame's shapes.
-        let bopts = RenderOpts { state: None, date_text: opts.date_text.clone(), ..*opts };
+        let bopts = RenderOpts {
+            state: None,
+            date_text: opts.date_text.clone(),
+            ..*opts
+        };
         if mix < 1.0 {
-            let f = Frame { pres, opts: &bopts, fields: Self::fields(pres, old.1, opts) };
+            let f = Frame {
+                pres,
+                opts: &bopts,
+                fields: Self::fields(pres, old.1, opts),
+            };
             self.backdrop(&mut ctx, &f, &co, old.0, view);
         }
         if mix > 0.0 {
-            let f = Frame { pres, opts: &bopts, fields: Self::fields(pres, new.1, opts) };
+            let f = Frame {
+                pres,
+                opts: &bopts,
+                fields: Self::fields(pres, new.1, opts),
+            };
             let layered = mix < 1.0;
             if layered {
                 ctx.push_layer(None, None, Some(mix as f32), None, None);
@@ -582,8 +766,16 @@ impl Renderer {
                 ctx.pop_layer();
             }
         }
-        let fo = Frame { pres, opts, fields: Self::fields(pres, old.1, opts) };
-        let fnew = Frame { pres, opts, fields: Self::fields(pres, new.1, opts) };
+        let fo = Frame {
+            pres,
+            opts,
+            fields: Self::fields(pres, old.1, opts),
+        };
+        let fnew = Frame {
+            pres,
+            opts,
+            fields: Self::fields(pres, new.1, opts),
+        };
         let mut drawn: Vec<ShapeId> = Vec::new();
         // Set only now: the backdrop's ids may clash with the frame's.
         self.paths = paths.to_vec();
@@ -593,7 +785,17 @@ impl Renderer {
                 self.shape(&mut ctx, f, c, s, view, 0);
                 continue;
             };
-            self.shape(&mut ctx, f, c, &Shape { text: None, ..s.clone() }, view, 0);
+            self.shape(
+                &mut ctx,
+                f,
+                c,
+                &Shape {
+                    text: None,
+                    ..s.clone()
+                },
+                view,
+                0,
+            );
             drawn.push(s.id);
             if !(drawn.contains(&tm.old) && drawn.contains(&tm.new)) {
                 continue;
@@ -601,18 +803,42 @@ impl Renderer {
             let find = |id: ShapeId| shapes.iter().map(|(s, _)| s).find(|s| s.id == id);
             if let (Some(a), Some(b)) = (find(tm.old), find(tm.new)) {
                 let now = b.xfrm.unwrap_or_else(|| resolve::xfrm(&cn, b));
-                morph_text::draw(&mut ctx, (&co, a, &fo.fields), (&cn, b, &fnew.fields), tm, now, view);
+                morph_text::draw(
+                    &mut ctx,
+                    (&co, a, &fo.fields),
+                    (&cn, b, &fnew.fields),
+                    tm,
+                    now,
+                    view,
+                );
             }
         }
         self.paths.clear();
         self.finish(ctx, w, h)
     }
 
-    fn layout(&mut self, pres: &Presentation, mi: usize, li: Option<usize>, opts: &RenderOpts) -> Image {
+    fn layout(
+        &mut self,
+        pres: &Presentation,
+        mi: usize,
+        li: Option<usize>,
+        opts: &RenderOpts,
+    ) -> Image {
         let (w, h) = output_size(pres, opts);
-        let mut ctx = RenderContext::new_with(w, h, vello_cpu::RenderSettings { num_threads: 0, ..Default::default() });
+        let mut ctx = RenderContext::new_with(
+            w,
+            h,
+            vello_cpu::RenderSettings {
+                num_threads: 0,
+                ..Default::default()
+            },
+        );
         let view = Affine::translate((opts.offset.0, opts.offset.1)) * Affine::scale(opts.scale);
-        let f = Frame { pres, opts, fields: SlideFields::new(1, String::new(), opts) };
+        let f = Frame {
+            pres,
+            opts,
+            fields: SlideFields::new(1, String::new(), opts),
+        };
         if let Some(m) = pres.masters.get(mi) {
             match li.and_then(|i| m.layouts.get(i)) {
                 Some(l) => {
@@ -646,10 +872,21 @@ impl Renderer {
         if let Some(pm) = vello_cpu::PixmapMut::new(w, h, &mut pixels) {
             ctx.render(pm, &mut self.resources);
         }
-        Image { width: w as u32, height: h as u32, pixels }
+        Image {
+            width: w as u32,
+            height: h as u32,
+            pixels,
+        }
     }
 
-    fn background(&mut self, ctx: &mut RenderContext, f: &Frame, rctx: &Ctx, slide: Option<&Slide>, view: Affine) {
+    fn background(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        rctx: &Ctx,
+        slide: Option<&Slide>,
+        view: Affine,
+    ) {
         let (fill, ph) = resolve::background(rctx, slide);
         let r = Rect::new(0.0, 0.0, f.pres.slide_size.width, f.pres.slide_size.height);
         ctx.set_transform(view);
@@ -658,11 +895,30 @@ impl Renderer {
         // slide, or a see-through colour, leaves white around and under it.
         ctx.set_paint(color(Rgba::WHITE, 1.0));
         ctx.fill_path(&path);
-        paint::fill_path(ctx, rctx, &fill, ph, &path, r, view, FillMode::Norm, 1.0, f.pres);
+        paint::fill_path(
+            ctx,
+            rctx,
+            &fill,
+            ph,
+            &path,
+            r,
+            view,
+            FillMode::Norm,
+            1.0,
+            f.pres,
+        );
         self.bg = Some((fill, ph, view));
     }
 
-    fn shape(&mut self, ctx: &mut RenderContext, f: &Frame, rctx: &Ctx, s: &Shape, parent: Affine, depth: usize) {
+    fn shape(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        rctx: &Ctx,
+        s: &Shape,
+        parent: Affine,
+        depth: usize,
+    ) {
         if depth == 0 {
             let outer = std::mem::replace(&mut self.view, parent);
             self.shape_at(ctx, f, rctx, s, parent, depth);
@@ -678,7 +934,11 @@ impl Renderer {
     /// never the line width; outside a group, `m` itself and no change to the outline.
     fn line_space(&self, m: Affine, depth: usize) -> (Affine, Affine) {
         let view = self.view;
-        if depth > 0 && view.determinant().abs() > 1e-12 && view.is_finite() { (view, view.inverse() * m) } else { (m, Affine::IDENTITY) }
+        if depth > 0 && view.determinant().abs() > 1e-12 && view.is_finite() {
+            (view, view.inverse() * m)
+        } else {
+            (m, Affine::IDENTITY)
+        }
     }
 
     /// The size and transform a shape's text is set in: inside a group whose child coordinates
@@ -689,7 +949,8 @@ impl Renderer {
         let c = rel.as_coeffs();
         let (sx, sy) = (c[0].hypot(c[1]), c[2].hypot(c[3]));
         let ok = |k: f64| k.is_finite() && k > 1e-9;
-        if depth == 0 || !ok(sx) || !ok(sy) || ((sx - 1.0).abs() < 1e-9 && (sy - 1.0).abs() < 1e-9) {
+        if depth == 0 || !ok(sx) || !ok(sy) || ((sx - 1.0).abs() < 1e-9 && (sy - 1.0).abs() < 1e-9)
+        {
             return (w, h, m);
         }
         let (tw, th) = (w * sx, h * sy);
@@ -699,7 +960,15 @@ impl Renderer {
         (tw, th, m * Affine::scale_non_uniform(1.0 / sx, 1.0 / sy))
     }
 
-    fn shape_at(&mut self, ctx: &mut RenderContext, f: &Frame, rctx: &Ctx, s: &Shape, parent: Affine, depth: usize) {
+    fn shape_at(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        rctx: &Ctx,
+        s: &Shape,
+        parent: Affine,
+        depth: usize,
+    ) {
         if depth > 32 || (s.hidden && !f.opts.show_hidden) || f.opts.skip.contains(&s.id) {
             return;
         }
@@ -724,8 +993,16 @@ impl Renderer {
         let layered = st.opacity < 0.999 || st.clip.is_some();
         if layered {
             ctx.set_transform(m);
-            let clip = st.clip.map(|[l, t, r, b]| Rect::new(l * x.w, t * x.h, r * x.w, b * x.h).to_path(0.1));
-            ctx.push_layer(clip.as_ref(), None, Some(st.opacity.clamp(0.0, 1.0) as f32), None, None);
+            let clip = st
+                .clip
+                .map(|[l, t, r, b]| Rect::new(l * x.w, t * x.h, r * x.w, b * x.h).to_path(0.1));
+            ctx.push_layer(
+                clip.as_ref(),
+                None,
+                Some(st.opacity.clamp(0.0, 1.0) as f32),
+                None,
+                None,
+            );
         }
         match &s.kind {
             ShapeKind::Group { children, child } => {
@@ -738,7 +1015,12 @@ impl Renderer {
             ShapeKind::Table(t) => {
                 // Rows grow with their text: what the cells cover, borders included.
                 let cells = table::draw(ctx, f.pres, rctx, t, m, x.w, x.h, &f.fields);
-                self.track(m, cells.unwrap_or(Rect::new(0.0, 0.0, x.w, x.h)).inflate(2.0, 2.0));
+                self.track(
+                    m,
+                    cells
+                        .unwrap_or(Rect::new(0.0, 0.0, x.w, x.h))
+                        .inflate(2.0, 2.0),
+                );
             }
             ShapeKind::Chart(c) => {
                 self.track(m, Rect::new(0.0, 0.0, x.w, x.h));
@@ -746,7 +1028,11 @@ impl Renderer {
             }
             ShapeKind::Ink { strokes } => {
                 for sk in strokes {
-                    let w = if sk.width.is_finite() { sk.width.abs() } else { 0.0 };
+                    let w = if sk.width.is_finite() {
+                        sk.width.abs()
+                    } else {
+                        0.0
+                    };
                     for (px, py, _) in &sk.points {
                         self.track(parent, Rect::new(*px, *py, *px, *py).inflate(w, w));
                     }
@@ -762,7 +1048,11 @@ impl Renderer {
                     bp.apply_affine(rel);
                     ctx.set_transform(base);
                     ctx.set_paint(color(sk.color, if sk.highlighter { 0.4 } else { 1.0 }));
-                    ctx.set_stroke(kurbo::Stroke::new(sk.width.max(0.1)).with_caps(kurbo::Cap::Round).with_join(kurbo::Join::Round));
+                    ctx.set_stroke(
+                        kurbo::Stroke::new(sk.width.max(0.1))
+                            .with_caps(kurbo::Cap::Round)
+                            .with_join(kurbo::Join::Round),
+                    );
                     ctx.stroke_path(&bp);
                 }
             }
@@ -790,7 +1080,15 @@ impl Renderer {
             Some(pm) => morph_path::geometry(pm, s, w, h),
             None => (shape_geometry(s, w, h), Vec::new()),
         };
-        let fade = |i: usize| fades.get(i).copied().unwrap_or(deckcraft_geom::morph::Fade { fill: 1.0, stroke: 1.0 });
+        let fade = |i: usize| {
+            fades
+                .get(i)
+                .copied()
+                .unwrap_or(deckcraft_geom::morph::Fade {
+                    fill: 1.0,
+                    stroke: 1.0,
+                })
+        };
         let (fill, fill_ph) = resolve::fill(rctx, s);
         let (line, line_ph) = resolve::line(rctx, s);
         let (effects, fx_ph) = resolve::effects(rctx, s);
@@ -799,18 +1097,30 @@ impl Renderer {
         let is_pic = matches!(s.kind, ShapeKind::Picture { .. });
         let outline = geo.outline();
         // Placeholders in the editor: dashed outline and prompt, nothing else when empty.
-        let empty_ph = s.ph.is_some() && s.text.as_ref().is_none_or(TextBody::is_empty) && !is_pic && !matches!(s.kind, ShapeKind::Media(_));
-        let fill = if let Some(t) = st.tint { Some(Fill::solid(deckcraft_model::ColorRef::rgb(t))) } else { fill };
+        let empty_ph = s.ph.is_some()
+            && s.text.as_ref().is_none_or(TextBody::is_empty)
+            && !is_pic
+            && !matches!(s.kind, ShapeKind::Media(_));
+        let fill = if let Some(t) = st.tint {
+            Some(Fill::solid(deckcraft_model::ColorRef::rgb(t)))
+        } else {
+            fill
+        };
         // Effects below the shape.
         if let Some(e) = &effects {
             // A picture (or picture fill) casts its shadow from its pixels, not its frame.
             let content = match (&s.kind, &fill) {
-                (ShapeKind::Picture { fill: pf }, _) | (_, Some(Fill::Picture(pf))) => Some(paint::resolved(rctx, pf, None).into_owned()),
+                (ShapeKind::Picture { fill: pf }, _) | (_, Some(Fill::Picture(pf))) => {
+                    Some(paint::resolved(rctx, pf, None).into_owned())
+                }
                 _ => None,
             };
             self.effects_below(ctx, rctx, e, fx_ph, &geo, &fill, content.as_ref(), m, w, h);
         }
-        let soft = effects.as_ref().and_then(|e| e.soft_edge).filter(|r| *r > 0.0);
+        let soft = effects
+            .as_ref()
+            .and_then(|e| e.soft_edge)
+            .filter(|r| *r > 0.0);
         if let Some(r) = soft {
             ctx.set_transform(Affine::IDENTITY);
             ctx.push_layer(None, None, None, None, None);
@@ -828,16 +1138,25 @@ impl Renderer {
             }
             // An object DeckCraft doesn't model (an embedded OLE object, an unknown graphic): its
             // preview picture, stretched over the frame, as PowerPoint draws it.
-            ShapeKind::Opaque { preview: Some(media), .. } => {
+            ShapeKind::Opaque {
+                preview: Some(media),
+                ..
+            } => {
                 ctx.set_transform(m);
-                let pf = deckcraft_model::style::PictureFill { media: *media, ..Default::default() };
+                let pf = deckcraft_model::style::PictureFill {
+                    media: *media,
+                    ..Default::default()
+                };
                 paint::picture(ctx, f.pres, &pf, Rect::new(0.0, 0.0, w, h), m, None);
             }
             ShapeKind::Media(mc) => {
                 ctx.set_transform(m);
                 let bounds = Rect::new(0.0, 0.0, w, h);
                 if let Some(p) = mc.poster {
-                    let pf = deckcraft_model::style::PictureFill { media: p, ..Default::default() };
+                    let pf = deckcraft_model::style::PictureFill {
+                        media: p,
+                        ..Default::default()
+                    };
                     paint::picture(ctx, f.pres, &pf, bounds, m, None);
                 } else if mc.video {
                     ctx.set_paint(peniko::Color::from_rgba8(20, 20, 24, 255));
@@ -856,16 +1175,47 @@ impl Renderer {
                             continue;
                         }
                         ctx.set_transform(m);
-                        ctx.set_fill_rule(if sp.even_odd { peniko::Fill::EvenOdd } else { peniko::Fill::NonZero });
+                        ctx.set_fill_rule(if sp.even_odd {
+                            peniko::Fill::EvenOdd
+                        } else {
+                            peniko::Fill::NonZero
+                        });
                         match (fl, &self.bg) {
                             // `useBgFill`: the slide's background, laid out on the slide (not the
                             // shape), shows through the shape.
                             (Fill::Background, Some((bg, ph, view))) => {
-                                let slide = Rect::new(0.0, 0.0, f.pres.slide_size.width, f.pres.slide_size.height);
+                                let slide = Rect::new(
+                                    0.0,
+                                    0.0,
+                                    f.pres.slide_size.width,
+                                    f.pres.slide_size.height,
+                                );
                                 let path = (view.inverse() * m) * sp.path.clone();
-                                paint::fill_path(ctx, rctx, bg, *ph, &path, slide, *view, sp.fill, fade(i).fill, f.pres);
+                                paint::fill_path(
+                                    ctx,
+                                    rctx,
+                                    bg,
+                                    *ph,
+                                    &path,
+                                    slide,
+                                    *view,
+                                    sp.fill,
+                                    fade(i).fill,
+                                    f.pres,
+                                );
                             }
-                            _ => paint::fill_path(ctx, rctx, fl, fill_ph, &sp.path, Rect::new(0.0, 0.0, w, h), m, sp.fill, fade(i).fill, f.pres),
+                            _ => paint::fill_path(
+                                ctx,
+                                rctx,
+                                fl,
+                                fill_ph,
+                                &sp.path,
+                                Rect::new(0.0, 0.0, w, h),
+                                m,
+                                sp.fill,
+                                fade(i).fill,
+                                f.pres,
+                            ),
                         }
                         ctx.set_fill_rule(peniko::Fill::NonZero);
                     }
@@ -884,10 +1234,32 @@ impl Renderer {
                 "lighten" => peniko::Mix::Lighten,
                 _ => peniko::Mix::Normal,
             };
-            for (i, sp) in geo.paths.iter().enumerate().filter(|(i, sp)| sp.fill != FillMode::None && fade(*i).fill > 0.0) {
+            for (i, sp) in geo
+                .paths
+                .iter()
+                .enumerate()
+                .filter(|(i, sp)| sp.fill != FillMode::None && fade(*i).fill > 0.0)
+            {
                 ctx.set_transform(m);
-                ctx.push_layer(Some(&sp.path), Some(peniko::BlendMode::new(mix, peniko::Compose::SrcOver)), None, None, None);
-                paint::fill_path(ctx, rctx, &ov.fill, fx_ph, &sp.path, Rect::new(0.0, 0.0, w, h), m, FillMode::Norm, fade(i).fill, f.pres);
+                ctx.push_layer(
+                    Some(&sp.path),
+                    Some(peniko::BlendMode::new(mix, peniko::Compose::SrcOver)),
+                    None,
+                    None,
+                    None,
+                );
+                paint::fill_path(
+                    ctx,
+                    rctx,
+                    &ov.fill,
+                    fx_ph,
+                    &sp.path,
+                    Rect::new(0.0, 0.0, w, h),
+                    m,
+                    FillMode::Norm,
+                    fade(i).fill,
+                    f.pres,
+                );
                 ctx.pop_layer();
             }
         }
@@ -895,7 +1267,12 @@ impl Renderer {
         if line.fill.as_ref().is_some_and(|f| !f.is_none()) {
             let lw = line.width.unwrap_or(0.75).max(0.0);
             let (base, rel) = self.line_space(m, depth);
-            for (i, sp) in geo.paths.iter().enumerate().filter(|(i, p)| p.stroke && fade(*i).stroke > 0.0) {
+            for (i, sp) in geo
+                .paths
+                .iter()
+                .enumerate()
+                .filter(|(i, p)| p.stroke && fade(*i).stroke > 0.0)
+            {
                 let path = if rel == Affine::IDENTITY {
                     std::borrow::Cow::Borrowed(&sp.path)
                 } else {
@@ -916,14 +1293,20 @@ impl Renderer {
             ctx.set_transform(m);
             ctx.push_layer(
                 None,
-                Some(peniko::BlendMode::new(peniko::Mix::Normal, peniko::Compose::DestIn)),
+                Some(peniko::BlendMode::new(
+                    peniko::Mix::Normal,
+                    peniko::Compose::DestIn,
+                )),
                 None,
                 None,
                 Some(blur(r / 3.0 * scale_of(m))),
             );
             ctx.set_paint(peniko::Color::from_rgba8(0, 0, 0, 255));
             ctx.fill_path(&outline);
-            ctx.push_blend_layer(peniko::BlendMode::new(peniko::Mix::Normal, peniko::Compose::DestOut));
+            ctx.push_blend_layer(peniko::BlendMode::new(
+                peniko::Mix::Normal,
+                peniko::Compose::DestOut,
+            ));
             ctx.set_stroke(kurbo::Stroke::new(r * 1.7).with_join(kurbo::Join::Round));
             ctx.stroke_path(&outline);
             ctx.pop_layer();
@@ -941,9 +1324,17 @@ impl Renderer {
             // As PowerPoint draws it (measured on its export): the shadow falls inside along the
             // edges it points to (45 degrees: the bottom and right), blurred by a third of the
             // blur radius.
-            ctx.push_layer(None, None, None, None, Some(blur(sh.blur / 3.0 * scale_of(m))));
+            ctx.push_layer(
+                None,
+                None,
+                None,
+                None,
+                Some(blur(sh.blur / 3.0 * scale_of(m))),
+            );
             ctx.set_paint(color(c, 1.0));
-            let mut ring = Rect::new(0.0, 0.0, w, h).inflate(w.max(h), w.max(h)).to_path(0.1);
+            let mut ring = Rect::new(0.0, 0.0, w, h)
+                .inflate(w.max(h), w.max(h))
+                .to_path(0.1);
             let mut hole = outline.clone();
             hole.apply_affine(Affine::translate(-d));
             ring.extend(hole.iter());
@@ -970,7 +1361,17 @@ impl Renderer {
             };
             let tr = geo.text_rect;
             if !body.is_empty() {
-                let l = deckcraft_text::layout(rctx, s, body, &Opts { rect: tr, fields: &f.fields, prompt_color: None, no_shrink: false });
+                let l = deckcraft_text::layout(
+                    rctx,
+                    s,
+                    body,
+                    &Opts {
+                        rect: tr,
+                        fields: &f.fields,
+                        prompt_color: None,
+                        no_shrink: false,
+                    },
+                );
                 let tm = text_transform(m, tr, l.rotation);
                 for b in l.lines.iter().filter_map(line_bounds) {
                     // Glyphs reach a little past their carets and line box (italics, swashes).
@@ -997,8 +1398,21 @@ impl Renderer {
             ctx.set_paint(peniko::Color::from_rgba8(0xA6, 0xA6, 0xA6, 255));
             ctx.set_stroke(kurbo::Stroke::new(px).with_dashes(0.0, [3.0 * px, 2.0 * px]));
             ctx.stroke_path(&Rect::new(0.0, 0.0, w, h).to_path(0.1));
-            if matches!(s.ph_type(), Some(PhType::Picture | PhType::Chart | PhType::Table | PhType::Media | PhType::Diagram)) {
-                paint::placeholder_icon(ctx, s.ph_type().unwrap_or(PhType::Picture), Rect::new(0.0, 0.0, w, h));
+            if matches!(
+                s.ph_type(),
+                Some(
+                    PhType::Picture
+                        | PhType::Chart
+                        | PhType::Table
+                        | PhType::Media
+                        | PhType::Diagram
+                )
+            ) {
+                paint::placeholder_icon(
+                    ctx,
+                    s.ph_type().unwrap_or(PhType::Picture),
+                    Rect::new(0.0, 0.0, w, h),
+                );
             }
         }
     }
@@ -1023,7 +1437,11 @@ impl Renderer {
                     p.extend(sp.path.iter());
                 }
             }
-            if p.elements().is_empty() { geo.outline() } else { p }
+            if p.elements().is_empty() {
+                geo.outline()
+            } else {
+                p
+            }
         };
         let k = scale_of(m);
         if let Some(sh) = &e.outer_shadow {
@@ -1031,13 +1449,30 @@ impl Renderer {
             let d = Vec2::new(sh.dir.to_radians().cos(), sh.dir.to_radians().sin()) * sh.dist;
             let c0 = Point::new(w / 2.0, h / 2.0);
             let local = Affine::translate(c0.to_vec2())
-                * Affine::new([sh.sx, sh.ky.to_radians().tan(), sh.kx.to_radians().tan(), sh.sy, 0.0, 0.0])
+                * Affine::new([
+                    sh.sx,
+                    sh.ky.to_radians().tan(),
+                    sh.kx.to_radians().tan(),
+                    sh.sy,
+                    0.0,
+                    0.0,
+                ])
                 * Affine::translate(-c0.to_vec2());
             // Shadow offset is in slide space (doesn't rotate with the shape unless asked).
-            let sm = if sh.rotate_with_shape { m * Affine::translate(d) * local } else { pre_translate(m, d * k) * local };
+            let sm = if sh.rotate_with_shape {
+                m * Affine::translate(d) * local
+            } else {
+                pre_translate(m, d * k) * local
+            };
             ctx.set_transform(Affine::IDENTITY);
             // Blurred by a third of the blur radius, as PowerPoint's export shows.
-            ctx.push_layer(None, None, Some((c.a as f32) / 255.0), None, Some(blur(sh.blur / 3.0 * k)));
+            ctx.push_layer(
+                None,
+                None,
+                Some((c.a as f32) / 255.0),
+                None,
+                Some(blur(sh.blur / 3.0 * k)),
+            );
             ctx.set_transform(sm);
             match content {
                 // As PowerPoint draws it: the shadow is the picture's own coverage (a logo on a
@@ -1046,7 +1481,16 @@ impl Renderer {
                 Some(pf) => {
                     ctx.push_clip_layer(&silhouette);
                     paint::picture(ctx, rctx.pres, pf, Rect::new(0.0, 0.0, w, h), sm, None);
-                    ctx.push_layer(None, Some(peniko::BlendMode::new(peniko::Mix::Normal, peniko::Compose::SrcIn)), None, None, None);
+                    ctx.push_layer(
+                        None,
+                        Some(peniko::BlendMode::new(
+                            peniko::Mix::Normal,
+                            peniko::Compose::SrcIn,
+                        )),
+                        None,
+                        None,
+                        None,
+                    );
                     ctx.set_paint(color(c.with_alpha(255), 1.0));
                     ctx.fill_rect(&Rect::new(0.0, 0.0, w, h).inflate(1.0, 1.0));
                     ctx.pop_layer();
@@ -1064,27 +1508,72 @@ impl Renderer {
             ctx.set_transform(Affine::IDENTITY);
             // Measured on PowerPoint's export: a glow of radius r is half strength about half of r
             // out from the outline and gone by r.
-            ctx.push_layer(None, None, Some((c.a as f32) / 255.0), None, Some(blur(g.radius * 0.17 * k)));
+            ctx.push_layer(
+                None,
+                None,
+                Some((c.a as f32) / 255.0),
+                None,
+                Some(blur(g.radius * 0.17 * k)),
+            );
             ctx.set_transform(m);
             ctx.set_paint(color(c.with_alpha(255), 1.0));
-            ctx.set_stroke(kurbo::Stroke::new(g.radius.max(0.0) * 0.95).with_join(kurbo::Join::Round));
+            ctx.set_stroke(
+                kurbo::Stroke::new(g.radius.max(0.0) * 0.95).with_join(kurbo::Join::Round),
+            );
             ctx.stroke_path(&silhouette);
             ctx.fill_path(&silhouette);
             ctx.pop_layer();
         }
         if let Some(rf) = &e.reflection {
             // Mirror below the shape, fading out.
-            let mm = m * Affine::translate((0.0, 2.0 * h + rf.dist)) * Affine::scale_non_uniform(1.0, -1.0);
+            let mm = m
+                * Affine::translate((0.0, 2.0 * h + rf.dist))
+                * Affine::scale_non_uniform(1.0, -1.0);
             ctx.set_transform(Affine::IDENTITY);
-            ctx.push_layer(None, None, Some(rf.start_alpha.clamp(0.0, 1.0) as f32 * 0.6), None, Some(blur(rf.blur * 0.5 * k)));
+            ctx.push_layer(
+                None,
+                None,
+                Some(rf.start_alpha.clamp(0.0, 1.0) as f32 * 0.6),
+                None,
+                Some(blur(rf.blur * 0.5 * k)),
+            );
             ctx.set_transform(mm);
             if let Some(fl) = fill {
-                paint::fill_path(ctx, rctx, fl, ph, &silhouette, Rect::new(0.0, 0.0, w, h), mm, FillMode::Norm, 1.0, rctx.pres);
+                paint::fill_path(
+                    ctx,
+                    rctx,
+                    fl,
+                    ph,
+                    &silhouette,
+                    Rect::new(0.0, 0.0, w, h),
+                    mm,
+                    FillMode::Norm,
+                    1.0,
+                    rctx.pres,
+                );
             }
             // Fade mask.
-            ctx.push_layer(None, Some(peniko::BlendMode::new(peniko::Mix::Normal, peniko::Compose::DestIn)), None, None, None);
-            let grad = peniko::Gradient::new_linear(Point::new(0.0, h), Point::new(0.0, h * (1.0 - rf.end_pos.clamp(0.01, 1.0))))
-                .with_stops([(0.0, peniko::Color::from_rgba8(0, 0, 0, 255)), (1.0, peniko::Color::from_rgba8(0, 0, 0, 0))].as_slice());
+            ctx.push_layer(
+                None,
+                Some(peniko::BlendMode::new(
+                    peniko::Mix::Normal,
+                    peniko::Compose::DestIn,
+                )),
+                None,
+                None,
+                None,
+            );
+            let grad = peniko::Gradient::new_linear(
+                Point::new(0.0, h),
+                Point::new(0.0, h * (1.0 - rf.end_pos.clamp(0.01, 1.0))),
+            )
+            .with_stops(
+                [
+                    (0.0, peniko::Color::from_rgba8(0, 0, 0, 255)),
+                    (1.0, peniko::Color::from_rgba8(0, 0, 0, 0)),
+                ]
+                .as_slice(),
+            );
             ctx.set_paint(grad);
             ctx.fill_rect(&Rect::new(0.0, 0.0, w, h).inflate(4.0, 4.0));
             ctx.pop_layer();
@@ -1102,10 +1591,22 @@ pub(crate) fn scale_of(m: Affine) -> f64 {
 }
 
 fn blur(sigma: f64) -> Filter {
-    Filter::from_primitive(FilterPrimitive::GaussianBlur { std_deviation: sigma.clamp(0.0, 500.0) as f32, edge_mode: EdgeMode::None })
+    Filter::from_primitive(FilterPrimitive::GaussianBlur {
+        std_deviation: sigma.clamp(0.0, 500.0) as f32,
+        edge_mode: EdgeMode::None,
+    })
 }
 
-fn stroke(ctx: &mut RenderContext, rctx: &Ctx, line: &Line, ph: Option<Rgba>, path: &BezPath, m: Affine, lw: f64, alpha: f64) {
+fn stroke(
+    ctx: &mut RenderContext,
+    rctx: &Ctx,
+    line: &Line,
+    ph: Option<Rgba>,
+    path: &BezPath,
+    m: Affine,
+    lw: f64,
+    alpha: f64,
+) {
     use deckcraft_model::style::{LineCap, LineJoin};
     let cap = match line.cap.unwrap_or_default() {
         LineCap::Flat => kurbo::Cap::Butt,
@@ -1119,7 +1620,9 @@ fn stroke(ctx: &mut RenderContext, rctx: &Ctx, line: &Line, ph: Option<Rgba>, pa
     };
     // Hairlines stay visible at any zoom.
     let min_w = 0.5 / scale_of(m).max(1e-6);
-    let mut sk = kurbo::Stroke::new(lw.max(min_w)).with_caps(cap).with_join(join);
+    let mut sk = kurbo::Stroke::new(lw.max(min_w))
+        .with_caps(cap)
+        .with_join(join);
     if let Some(d) = &line.dash {
         let pat: Vec<f64> = d.pattern().iter().map(|v| v * lw.max(0.75)).collect();
         if !pat.is_empty() && pat.iter().all(|v| *v > 0.0) {
@@ -1132,7 +1635,11 @@ fn stroke(ctx: &mut RenderContext, rctx: &Ctx, line: &Line, ph: Option<Rgba>, pa
             ctx.set_paint(color(rctx.color(c, ph), alpha));
         }
         Some(Fill::Gradient(g)) => {
-            let c = g.stops.first().map(|s| rctx.color(&s.color, ph)).unwrap_or(Rgba::BLACK);
+            let c = g
+                .stops
+                .first()
+                .map(|s| rctx.color(&s.color, ph))
+                .unwrap_or(Rgba::BLACK);
             ctx.set_paint(color(c, alpha));
         }
         _ => ctx.set_paint(color(Rgba::BLACK, alpha)),
@@ -1176,16 +1683,40 @@ fn end_points(path: &BezPath) -> Option<((Point, Point), (Point, Point))> {
         return None;
     }
     let first = *pts.first()?;
-    let second = pts.iter().skip(1).find(|p| (**p - first).hypot() > 1e-6).copied().unwrap_or(*pts.get(1)?);
+    let second = pts
+        .iter()
+        .skip(1)
+        .find(|p| (**p - first).hypot() > 1e-6)
+        .copied()
+        .unwrap_or(*pts.get(1)?);
     let last = *pts.last()?;
-    let prev = pts.iter().rev().skip(1).find(|p| (**p - last).hypot() > 1e-6).copied().unwrap_or(*pts.get(pts.len() - 2)?);
+    let prev = pts
+        .iter()
+        .rev()
+        .skip(1)
+        .find(|p| (**p - last).hypot() > 1e-6)
+        .copied()
+        .unwrap_or(*pts.get(pts.len() - 2)?);
     Some(((first, second), (last, prev)))
 }
 
 #[allow(clippy::too_many_arguments)]
-fn arrowheads(ctx: &mut RenderContext, rctx: &Ctx, line: &Line, ph: Option<Rgba>, geo: &Geometry, rel: Affine, m: Affine, lw: f64) {
-    let Some(sp) = geo.paths.iter().find(|p| p.stroke) else { return };
-    let Some(((a, a2), (b, b2))) = end_points(&sp.path) else { return };
+fn arrowheads(
+    ctx: &mut RenderContext,
+    rctx: &Ctx,
+    line: &Line,
+    ph: Option<Rgba>,
+    geo: &Geometry,
+    rel: Affine,
+    m: Affine,
+    lw: f64,
+) {
+    let Some(sp) = geo.paths.iter().find(|p| p.stroke) else {
+        return;
+    };
+    let Some(((a, a2), (b, b2))) = end_points(&sp.path) else {
+        return;
+    };
     // The outline's ends in the space the arrowheads are sized and drawn in.
     let (a, a2, b, b2) = (rel * a, rel * a2, rel * b, rel * b2);
     let col = match &line.fill {
@@ -1258,7 +1789,13 @@ fn arrowheads(ctx: &mut RenderContext, rctx: &Ctx, line: &Line, ph: Option<Rgba>
 fn prompt_body(rctx: &Ctx, s: &Shape, kind: PhType) -> TextBody {
     // Layout/master prompt text when the layout supplies a custom one.
     let (lp, _) = resolve::parents(rctx, s);
-    let custom = lp.and_then(|l| l.ph.as_ref().filter(|p| p.has_custom_prompt).and(l.text.as_ref())).filter(|t| !t.is_empty());
+    let custom = lp
+        .and_then(|l| {
+            l.ph.as_ref()
+                .filter(|p| p.has_custom_prompt)
+                .and(l.text.as_ref())
+        })
+        .filter(|t| !t.is_empty());
     if let Some(t) = custom {
         return t.clone();
     }
@@ -1270,7 +1807,15 @@ fn prompt_body(rctx: &Ctx, s: &Shape, kind: PhType) -> TextBody {
         return TextBody::default();
     }
     let mut t = TextBody::from_text(txt);
-    if matches!(kind, PhType::Picture | PhType::Chart | PhType::Table | PhType::Media | PhType::Diagram | PhType::ClipArt) {
+    if matches!(
+        kind,
+        PhType::Picture
+            | PhType::Chart
+            | PhType::Table
+            | PhType::Media
+            | PhType::Diagram
+            | PhType::ClipArt
+    ) {
         t.body.anchor = Some(deckcraft_model::text::Anchor::Bottom);
         if let Some(p) = t.paragraphs.first_mut() {
             p.props.align = Some(deckcraft_model::text::Align::Center);
@@ -1306,8 +1851,27 @@ fn glyph(face: &deckcraft_fonts::FontFace, gid: u32) -> Arc<BezPath> {
 }
 
 /// Draw a text body into shape space `m` within the text rect.
-pub fn draw_text(ctx: &mut RenderContext, rctx: &Ctx, s: &Shape, body: &TextBody, tr: Rect, m: Affine, fields: &dyn Fields, prompt: Option<Rgba>) {
-    let l = deckcraft_text::layout(rctx, s, body, &Opts { rect: tr, fields, prompt_color: prompt, no_shrink: false });
+pub fn draw_text(
+    ctx: &mut RenderContext,
+    rctx: &Ctx,
+    s: &Shape,
+    body: &TextBody,
+    tr: Rect,
+    m: Affine,
+    fields: &dyn Fields,
+    prompt: Option<Rgba>,
+) {
+    let l = deckcraft_text::layout(
+        rctx,
+        s,
+        body,
+        &Opts {
+            rect: tr,
+            fields,
+            prompt_color: prompt,
+            no_shrink: false,
+        },
+    );
     draw_layout(ctx, &l, tr, m);
 }
 
@@ -1325,7 +1889,10 @@ pub fn text_transform(m: Affine, tr: Rect, rotation: f64) -> Affine {
         t = t * Affine::translate(c) * Affine::scale_non_uniform(-1.0, 1.0) * Affine::translate(-c);
     }
     if rotation != 0.0 && rotation.is_finite() && c.is_finite() {
-        t = t * Affine::translate(c) * Affine::rotate(rotation.to_radians()) * Affine::translate(-c);
+        t = t
+            * Affine::translate(c)
+            * Affine::rotate(rotation.to_radians())
+            * Affine::translate(-c);
     }
     t
 }
@@ -1343,8 +1910,20 @@ pub fn draw_layout(ctx: &mut RenderContext, l: &deckcraft_text::TextLayout, tr: 
 }
 
 /// Draw a laid-out text block with per-paragraph animation states.
-pub fn draw_layout_with(ctx: &mut RenderContext, l: &deckcraft_text::TextLayout, tr: Rect, m: Affine, paras: &[(usize, ParaState)]) {
-    let para = |i: usize| paras.iter().find(|(p, _)| *p == i).map(|(_, s)| *s).unwrap_or_default();
+pub fn draw_layout_with(
+    ctx: &mut RenderContext,
+    l: &deckcraft_text::TextLayout,
+    tr: Rect,
+    m: Affine,
+    paras: &[(usize, ParaState)],
+) {
+    let para = |i: usize| {
+        paras
+            .iter()
+            .find(|(p, _)| *p == i)
+            .map(|(_, s)| *s)
+            .unwrap_or_default()
+    };
     let m = text_transform(m, tr, l.rotation);
     let deco = |ctx: &mut RenderContext, d: &deckcraft_text::Deco| {
         let ps = para(d.para);
@@ -1387,12 +1966,25 @@ pub fn draw_layout_with(ctx: &mut RenderContext, l: &deckcraft_text::TextLayout,
             };
             let li = line_at(l, run.para, *y);
             if !grads.iter().any(|(i, _)| *i == li) {
-                let scheme = deckcraft_color::ColorScheme { name: String::new(), colors: [Rgba::BLACK; 12] };
-                let stops = g.stops.iter().map(|s| (s.pos, s.color.resolve(&scheme, None))).collect();
+                let scheme = deckcraft_color::ColorScheme {
+                    name: String::new(),
+                    colors: [Rgba::BLACK; 12],
+                };
+                let stops = g
+                    .stops
+                    .iter()
+                    .map(|s| (s.pos, s.color.resolve(&scheme, None)))
+                    .collect();
                 let bounds = l.lines.get(li).and_then(line_bounds).unwrap_or(tr);
-                grads.push((li, paint::gradient(&g.shape, stops, bounds, run.alpha * ps.opacity)));
+                grads.push((
+                    li,
+                    paint::gradient(&g.shape, stops, bounds, run.alpha * ps.opacity),
+                ));
             }
-            let fill = grads.iter().find(|(i, _)| *i == li).map(|(_, g)| (g, Affine::translate((-*x, -*y))));
+            let fill = grads
+                .iter()
+                .find(|(i, _)| *i == li)
+                .map(|(_, g)| (g, Affine::translate((-*x, -*y))));
             draw_glyph_with(ctx, run, *gid, at, ps.opacity, fill);
         }
     }
@@ -1407,14 +1999,23 @@ fn line_at(l: &deckcraft_text::TextLayout, para: usize, y: f64) -> usize {
         .iter()
         .enumerate()
         .filter(|(_, li)| li.para == para)
-        .min_by(|a, b| (a.1.baseline - y).abs().total_cmp(&(b.1.baseline - y).abs()))
+        .min_by(|a, b| {
+            (a.1.baseline - y)
+                .abs()
+                .total_cmp(&(b.1.baseline - y).abs())
+        })
         .map(|(i, _)| i)
         .unwrap_or(0)
 }
 
 /// The box a line's text covers: its top and bottom, its first and last caret.
 fn line_bounds(li: &deckcraft_text::LineInfo) -> Option<Rect> {
-    let (x0, x1) = li.caret_x.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), x| (a.min(*x), b.max(*x)));
+    let (x0, x1) = li
+        .caret_x
+        .iter()
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), x| {
+            (a.min(*x), b.max(*x))
+        });
     let r = Rect::new(x0, li.top, x1, li.bottom);
     (r.is_finite() && r.width() > 0.0 && r.height() > 0.0).then_some(r)
 }
@@ -1426,13 +2027,25 @@ enum TextEffect {
 }
 
 /// Draw `run`'s shadow or glow (if it has one) under its glyphs, placed by `m`.
-fn text_effect(ctx: &mut RenderContext, run: &deckcraft_text::GlyphRun, which: TextEffect, m: Affine, opacity: f64) {
+fn text_effect(
+    ctx: &mut RenderContext,
+    run: &deckcraft_text::GlyphRun,
+    which: TextEffect,
+    m: Affine,
+    opacity: f64,
+) {
     let Some(fx) = run.effects else { return };
     let k = run.size / run.face.upem.max(1.0);
-    let skew = if run.fake_italic { Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0]) } else { Affine::IDENTITY };
+    let skew = if run.fake_italic {
+        Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0])
+    } else {
+        Affine::IDENTITY
+    };
     let px = scale_of(m);
     let (c, sigma, offset, grow) = match (which, fx.shadow, fx.glow) {
-        (TextEffect::Shadow, Some(s), _) => (s.color, s.blur * 0.5 * px, Vec2::new(s.dx, s.dy), 0.0),
+        (TextEffect::Shadow, Some(s), _) => {
+            (s.color, s.blur * 0.5 * px, Vec2::new(s.dx, s.dy), 0.0)
+        }
         // Measured on PowerPoint's export: a text glow of radius r is solid to about a third of r
         // past the glyph's edge and fades out by about two thirds of r.
         (TextEffect::Glow, _, Some((gc, r))) => (gc, r * 0.15 * px, Vec2::ZERO, r * 0.68),
@@ -1451,7 +2064,8 @@ fn text_effect(ctx: &mut RenderContext, run: &deckcraft_text::GlyphRun, which: T
             continue;
         }
         // The offset is in slide space: a shadow falls the same way whatever the text's rotation.
-        let at = pre_translate(m * Affine::translate((*x, *y)), offset * px) * skew * Affine::scale(k);
+        let at =
+            pre_translate(m * Affine::translate((*x, *y)), offset * px) * skew * Affine::scale(k);
         ctx.set_transform(at);
         ctx.fill_path(&path);
         if grow > 0.0 {
@@ -1463,7 +2077,13 @@ fn text_effect(ctx: &mut RenderContext, run: &deckcraft_text::GlyphRun, which: T
 }
 
 /// Draw glyph `gid` of `run` with its origin (on the baseline) mapped by `at`, faded by `opacity`.
-pub(crate) fn draw_glyph(ctx: &mut RenderContext, run: &deckcraft_text::GlyphRun, gid: u32, at: Affine, opacity: f64) {
+pub(crate) fn draw_glyph(
+    ctx: &mut RenderContext,
+    run: &deckcraft_text::GlyphRun,
+    gid: u32,
+    at: Affine,
+    opacity: f64,
+) {
     draw_glyph_with(ctx, run, gid, at, opacity, None);
 }
 
@@ -1484,14 +2104,22 @@ fn draw_glyph_with(
     let k = run.size / run.face.upem.max(1.0);
     // Colour glyphs (emoji) paint their own colours; an outline (text outline effect) still
     // strokes the plain glyph below.
-    if alpha > 0.0 && run.outline.is_none() && run.face.is_color() && colr::paint(ctx, &run.face, gid, at, k, run.color, alpha) {
+    if alpha > 0.0
+        && run.outline.is_none()
+        && run.face.is_color()
+        && colr::paint(ctx, &run.face, gid, at, k, run.color, alpha)
+    {
         return;
     }
     let path = glyph(&run.face, gid);
     if path.elements().is_empty() {
         return;
     }
-    let skew = if run.fake_italic { Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0]) } else { Affine::IDENTITY };
+    let skew = if run.fake_italic {
+        Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0])
+    } else {
+        Affine::IDENTITY
+    };
     ctx.set_transform(at * skew * Affine::scale(k));
     if let Some((g, to_text)) = fill
         && alpha > 0.0
@@ -1523,9 +2151,23 @@ pub fn render_shape(pres: &Presentation, slide: &Slide, id: ShapeId, scale: f64)
     let b = x.bounds().inflate(8.0, 8.0);
     let w = (b.width() * scale).ceil().clamp(1.0, MAX_SIDE as f64) as u16;
     let h = (b.height() * scale).ceil().clamp(1.0, MAX_SIDE as f64) as u16;
-    let mut ctx = RenderContext::new_with(w, h, vello_cpu::RenderSettings { num_threads: 0, ..Default::default() });
-    let opts = RenderOpts { scale, ..Default::default() };
-    let f = Frame { pres, opts: &opts, fields: SlideFields::new(1, String::new(), &opts) };
+    let mut ctx = RenderContext::new_with(
+        w,
+        h,
+        vello_cpu::RenderSettings {
+            num_threads: 0,
+            ..Default::default()
+        },
+    );
+    let opts = RenderOpts {
+        scale,
+        ..Default::default()
+    };
+    let f = Frame {
+        pres,
+        opts: &opts,
+        fields: SlideFields::new(1, String::new(), &opts),
+    };
     let view = Affine::scale(scale) * Affine::translate(-b.origin().to_vec2());
     RENDERER.with(|r| {
         let mut r = r.borrow_mut();
@@ -1549,13 +2191,29 @@ mod mt_tests {
         let mut sh = deckcraft_model::Shape {
             id: ShapeId(900),
             xfrm: Some(deckcraft_geom::Xfrm::new(10.0, 10.0, 100.0, 100.0)),
-            style: Some(deckcraft_model::ShapeStyle::accent(deckcraft_color::SchemeSlot::Accent1)),
+            style: Some(deckcraft_model::ShapeStyle::accent(
+                deckcraft_color::SchemeSlot::Accent1,
+            )),
             ..Default::default()
         };
-        sh.effects = Some(deckcraft_model::Effects { soft_edge: Some(5.0), ..Default::default() });
+        sh.effects = Some(deckcraft_model::Effects {
+            soft_edge: Some(5.0),
+            ..Default::default()
+        });
         sl.shapes.push(sh);
         assert!(needs_filters(&s, &s.slides[0]));
-        let img = RENDERER.with(|r| r.borrow_mut().slide(&s, &s.slides[0], 0, &RenderOpts { scale: 0.5, threads: 4, ..Default::default() }));
+        let img = RENDERER.with(|r| {
+            r.borrow_mut().slide(
+                &s,
+                &s.slides[0],
+                0,
+                &RenderOpts {
+                    scale: 0.5,
+                    threads: 4,
+                    ..Default::default()
+                },
+            )
+        });
         assert_eq!(img.width, 480);
         // The shape itself is drawn (not a blank fallback).
         assert_ne!(img.pixel(30, 30), [255, 255, 255, 255]);

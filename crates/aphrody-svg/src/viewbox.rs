@@ -25,7 +25,12 @@ impl ViewBox {
     #[must_use]
     pub fn parse(value: &str) -> Option<Self> {
         let vb: svgtypes::ViewBox = value.parse().ok()?;
-        (vb.w > 0.0 && vb.h > 0.0).then_some(Self { x: vb.x, y: vb.y, width: vb.w, height: vb.h })
+        (vb.w > 0.0 && vb.h > 0.0).then_some(Self {
+            x: vb.x,
+            y: vb.y,
+            width: vb.w,
+            height: vb.h,
+        })
     }
 
     /// `min-x min-y width height`, numbers trimmed to `precision` decimals.
@@ -110,7 +115,10 @@ pub enum Sizing {
     /// Remove `width`/`height` so the SVG scales to its container.
     Responsive,
     /// Set `width`/`height` in px (a missing side follows the `viewBox` ratio).
-    Fixed { width: Option<f64>, height: Option<f64> },
+    Fixed {
+        width: Option<f64>,
+        height: Option<f64>,
+    },
 }
 
 struct Normalizer {
@@ -174,20 +182,43 @@ pub fn normalize(svg: &str, sizing: Sizing) -> Result<String> {
                 (Some(w), Some(h)) => (w, h),
                 _ => return Err(Error::NoSize),
             };
-            ViewBox { x: 0.0, y: 0.0, width: w, height: h }
-        },
+            ViewBox {
+                x: 0.0,
+                y: 0.0,
+                width: w,
+                height: h,
+            }
+        }
     };
     let ratio = view_box.width / view_box.height;
     let (width, height) = match sizing {
-        Sizing::Fixed { width: Some(w), height: Some(h) } => (Some(w), Some(h)),
-        Sizing::Fixed { width: Some(w), height: None } => (Some(w), Some(w / ratio)),
-        Sizing::Fixed { width: None, height: Some(h) } => (Some(h * ratio), Some(h)),
-        Sizing::Fixed { width: None, height: None } => {
-            (Some(view_box.width), Some(view_box.height))
-        },
+        Sizing::Fixed {
+            width: Some(w),
+            height: Some(h),
+        } => (Some(w), Some(h)),
+        Sizing::Fixed {
+            width: Some(w),
+            height: None,
+        } => (Some(w), Some(w / ratio)),
+        Sizing::Fixed {
+            width: None,
+            height: Some(h),
+        } => (Some(h * ratio), Some(h)),
+        Sizing::Fixed {
+            width: None,
+            height: None,
+        } => (Some(view_box.width), Some(view_box.height)),
         _ => (None, None),
     };
-    Ok(xml::write_document(&doc, &Normalizer { view_box, width, height, sizing }))
+    Ok(xml::write_document(
+        &doc,
+        &Normalizer {
+            view_box,
+            width,
+            height,
+            sizing,
+        },
+    ))
 }
 
 #[cfg(test)]
@@ -214,7 +245,10 @@ mod tests {
             Sizing::Fixed { width: Some(48.0), height: None },
         )
         .expect("ok");
-        assert!(out.contains(r#"viewBox="0 -960 960 960" width="48" height="48""#), "{out}");
+        assert!(
+            out.contains(r#"viewBox="0 -960 960 960" width="48" height="48""#),
+            "{out}"
+        );
     }
 
     #[test]
@@ -225,7 +259,10 @@ mod tests {
         .expect("ok");
         assert_eq!(g.size(), Some((50.0, 25.0)));
         assert!(matches!(
-            normalize(r#"<svg xmlns="http://www.w3.org/2000/svg" width="50%"/>"#, Sizing::Keep),
+            normalize(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="50%"/>"#,
+                Sizing::Keep
+            ),
             Err(Error::NoSize)
         ));
     }

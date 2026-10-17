@@ -11,17 +11,28 @@ type Harness = egui_kittest::Harness<'static, SheetApp>;
 fn harness() -> Harness {
     let mut session = Session::new();
     session.new_workbook();
-    session.execute("range.setValues", json!({"range": "A1", "values": [["first", 2], [3, "fourth"]]})).unwrap();
-    session.execute("view.rightToLeft", json!({"on": true})).unwrap();
-    session.execute("selection.set", json!({"cell": "B2"})).unwrap();
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            let ctx = ui.ctx().clone();
-            app.logic(&ctx);
-            app.ui(ui);
-        },
-        SheetApp::new(session, Default::default()),
-    );
+    session
+        .execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [["first", 2], [3, "fourth"]]}),
+        )
+        .unwrap();
+    session
+        .execute("view.rightToLeft", json!({"on": true}))
+        .unwrap();
+    session
+        .execute("selection.set", json!({"cell": "B2"}))
+        .unwrap();
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            SheetApp::new(session, Default::default()),
+        );
     h.run_steps(4);
     h
 }
@@ -36,7 +47,9 @@ fn geo(h: &Harness) -> Geo {
 fn point(h: &Harness, a1: &str) -> Pos2 {
     let app = h.state();
     let sheet = app.session.active().unwrap().wb.active().unwrap();
-    geo(h).screen_cell_rect(sheet, CellRef::parse(a1).unwrap()).center()
+    geo(h)
+        .screen_cell_rect(sheet, CellRef::parse(a1).unwrap())
+        .center()
 }
 
 fn frame(h: &mut Harness, event: Event) {
@@ -45,7 +58,12 @@ fn frame(h: &mut Harness, event: Event) {
 }
 
 fn button(pos: Pos2, pressed: bool) -> Event {
-    Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE }
+    Event::PointerButton {
+        pos,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    }
 }
 
 fn current(h: &Harness) -> RangeRef {
@@ -82,9 +100,15 @@ fn left_and_right_arrows_follow_the_screen() {
     let mut h = harness();
     h.key_press(Key::ArrowLeft);
     h.run_steps(1);
-    assert_eq!(h.state().session.active().unwrap().selection.active, CellRef::parse("C2").unwrap());
+    assert_eq!(
+        h.state().session.active().unwrap().selection.active,
+        CellRef::parse("C2").unwrap()
+    );
     h.key_press(Key::ArrowRight);
     h.key_press(Key::ArrowRight);
     h.run_steps(1);
-    assert_eq!(h.state().session.active().unwrap().selection.active, CellRef::parse("A2").unwrap());
+    assert_eq!(
+        h.state().session.active().unwrap().selection.active,
+        CellRef::parse("A2").unwrap()
+    );
 }

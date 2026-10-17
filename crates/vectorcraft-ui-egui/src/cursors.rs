@@ -45,7 +45,18 @@ fn line(p: &mut Ink, a: Pos2, b: Pos2) {
 
 fn arrow_points(o: Pos2) -> Vec<Pos2> {
     // Classic pointer, tip at o.
-    [(0.0, 0.0), (0.0, 15.0), (3.8, 11.4), (6.4, 17.0), (8.6, 16.0), (6.1, 10.6), (11.0, 10.6)].iter().map(|(x, y)| o + vec2(*x, *y)).collect()
+    [
+        (0.0, 0.0),
+        (0.0, 15.0),
+        (3.8, 11.4),
+        (6.4, 17.0),
+        (8.6, 16.0),
+        (6.1, 10.6),
+        (11.0, 10.6),
+    ]
+    .iter()
+    .map(|(x, y)| o + vec2(*x, *y))
+    .collect()
 }
 
 fn arrow(p: &mut Ink, o: Pos2, hollow: bool) {
@@ -53,15 +64,26 @@ fn arrow(p: &mut Ink, o: Pos2, hollow: bool) {
     // The arrow is concave: draw as a filled mesh of two convex parts, then outline.
     p.add(Shape::closed_line(pts.clone(), Stroke::new(3.0, HALO)));
     let fill = if hollow { HALO } else { INK };
-    p.add(Shape::convex_polygon(vec![pts[0], pts[1], pts[2], pts[5], pts[6]], fill, Stroke::NONE));
-    p.add(Shape::convex_polygon(vec![pts[2], pts[3], pts[4], pts[5]], fill, Stroke::NONE));
+    p.add(Shape::convex_polygon(
+        vec![pts[0], pts[1], pts[2], pts[5], pts[6]],
+        fill,
+        Stroke::NONE,
+    ));
+    p.add(Shape::convex_polygon(
+        vec![pts[2], pts[3], pts[4], pts[5]],
+        fill,
+        Stroke::NONE,
+    ));
     p.add(Shape::closed_line(pts, Stroke::new(1.0, INK)));
 }
 
 fn crosshair(p: &mut Ink, o: Pos2) {
-    for (a, b) in
-        [(vec2(-9.0, 0.0), vec2(-2.0, 0.0)), (vec2(2.0, 0.0), vec2(9.0, 0.0)), (vec2(0.0, -9.0), vec2(0.0, -2.0)), (vec2(0.0, 2.0), vec2(0.0, 9.0))]
-    {
+    for (a, b) in [
+        (vec2(-9.0, 0.0), vec2(-2.0, 0.0)),
+        (vec2(2.0, 0.0), vec2(9.0, 0.0)),
+        (vec2(0.0, -9.0), vec2(0.0, -2.0)),
+        (vec2(0.0, 2.0), vec2(0.0, 9.0)),
+    ] {
         line(p, o + a, o + b);
     }
 }
@@ -69,8 +91,19 @@ fn crosshair(p: &mut Ink, o: Pos2) {
 /// A pipette pointing down-left: the sampling tip is the hotspot, with the tube and bulb above
 /// right. Drawn here so bitmap and painted cursors share the same original glyph (#1269).
 fn eyedropper(p: &mut Ink, o: Pos2) {
-    let tube = [(0.0, 0.0), (1.0, -5.0), (14.0, -18.0), (18.0, -14.0), (5.0, -1.0)];
-    poly(p, tube.iter().map(|(x, y)| o + vec2(*x, *y)).collect(), HALO, INK);
+    let tube = [
+        (0.0, 0.0),
+        (1.0, -5.0),
+        (14.0, -18.0),
+        (18.0, -14.0),
+        (5.0, -1.0),
+    ];
+    poly(
+        p,
+        tube.iter().map(|(x, y)| o + vec2(*x, *y)).collect(),
+        HALO,
+        INK,
+    );
     let bulb = o + vec2(20.0, -20.0);
     p.circle_filled(bulb, 6.5, HALO);
     p.circle_filled(bulb, 5.0, INK);
@@ -79,7 +112,13 @@ fn eyedropper(p: &mut Ink, o: Pos2) {
 
 fn pen(p: &mut Ink, o: Pos2, badge: &str) {
     // Nib pointing to the top-left hotspot.
-    let pts = vec![o, o + vec2(4.0, 12.0), o + vec2(8.0, 16.0), o + vec2(16.0, 8.0), o + vec2(12.0, 4.0)];
+    let pts = vec![
+        o,
+        o + vec2(4.0, 12.0),
+        o + vec2(8.0, 16.0),
+        o + vec2(16.0, 8.0),
+        o + vec2(12.0, 4.0),
+    ];
     poly(p, pts, INK, INK);
     p.circle_filled(o + vec2(6.0, 6.0), 1.4, HALO);
     line(p, o + vec2(10.0, 14.0), o + vec2(14.0, 18.0));
@@ -98,7 +137,8 @@ fn pen(p: &mut Ink, o: Pos2, badge: &str) {
         // Join: a segment running into a square end point.
         "j" => {
             line(p, b + vec2(0.0, 6.0), b + vec2(3.5, 2.5));
-            let sq = [(3.0, -1.0), (7.0, -1.0), (7.0, 3.0), (3.0, 3.0)].map(|(x, y)| b + vec2(x, y));
+            let sq =
+                [(3.0, -1.0), (7.0, -1.0), (7.0, 3.0), (3.0, 3.0)].map(|(x, y)| b + vec2(x, y));
             poly(p, sq.to_vec(), INK, INK);
         }
         "^" => {
@@ -133,7 +173,9 @@ fn rotate(p: &mut Ink, o: Pos2, octant: u8) {
     let (s, c) = (f32::from(octant % 8) * std::f32::consts::FRAC_PI_4).sin_cos();
     let turn = |v: Vec2| vec2(v.x * c - v.y * s, v.x * s + v.y * c);
     let at = |a: f32| o + turn(vec2(a.cos() * R, -a.sin() * R));
-    let pts: Vec<Pos2> = (0..=12).map(|i| at(a0 + (a1 - a0) * i as f32 / 12.0)).collect();
+    let pts: Vec<Pos2> = (0..=12)
+        .map(|i| at(a0 + (a1 - a0) * i as f32 / 12.0))
+        .collect();
     p.add(Shape::line(pts.clone(), Stroke::new(3.2, HALO)));
     p.add(Shape::line(pts, Stroke::new(1.3, INK)));
     // Each head points away from the arc, along its tangent there.
@@ -195,7 +237,12 @@ fn stop_badge(p: &mut Ink, o: Pos2, add: bool) {
 
 /// A slice badge: a small rectangle cut by a line, at `b` (its top left).
 fn slice_badge(p: &mut Ink, b: Pos2) {
-    let pts = vec![b, b + vec2(8.0, 0.0), b + vec2(8.0, 6.0), b + vec2(0.0, 6.0)];
+    let pts = vec![
+        b,
+        b + vec2(8.0, 0.0),
+        b + vec2(8.0, 6.0),
+        b + vec2(0.0, 6.0),
+    ];
     poly(p, pts, HALO, INK);
     line(p, b + vec2(4.0, 0.0), b + vec2(4.0, 6.0));
 }
@@ -204,7 +251,17 @@ fn slice_badge(p: &mut Ink, b: Pos2) {
 fn slice(p: &mut Ink, o: Pos2) {
     crosshair(p, o);
     let b = o + vec2(7.0, 7.0);
-    poly(p, vec![b, b + vec2(9.0, 4.0), b + vec2(10.0, 7.0), b + vec2(3.0, 6.0)], HALO, INK);
+    poly(
+        p,
+        vec![
+            b,
+            b + vec2(9.0, 4.0),
+            b + vec2(10.0, 7.0),
+            b + vec2(3.0, 6.0),
+        ],
+        HALO,
+        INK,
+    );
     line(p, b + vec2(8.0, 6.0), b + vec2(12.0, 12.0));
 }
 
@@ -253,8 +310,22 @@ fn blend(p: &mut Ink, o: Pos2, badge: Cursor) {
         p.circle_filled(b + vec2(3.5, 3.5), 1.4, INK);
         return;
     }
-    let fill = if badge == Cursor::BlendObject { INK } else { HALO };
-    poly(p, vec![b, b + vec2(7.0, 0.0), b + vec2(7.0, 7.0), b + vec2(0.0, 7.0)], fill, INK);
+    let fill = if badge == Cursor::BlendObject {
+        INK
+    } else {
+        HALO
+    };
+    poly(
+        p,
+        vec![
+            b,
+            b + vec2(7.0, 0.0),
+            b + vec2(7.0, 7.0),
+            b + vec2(0.0, 7.0),
+        ],
+        fill,
+        INK,
+    );
 }
 
 /// The Shape Builder: a crosshair with a plus badge below right of the hotspot (merge mode), or a
@@ -275,7 +346,12 @@ fn shape_builder(p: &mut Ink, o: Pos2, erase: bool) {
 fn hand(p: &mut Ink, o: Pos2, closed: bool) {
     // Thumb out to the left, four fingers up from the palm (open) or folded over it (closed),
     // then the palm, a rounded block below the hotspot, over their bases.
-    let mut parts = vec![vec![o + vec2(-7.0, 0.0), o + vec2(-13.0, -4.0), o + vec2(-14.0, -1.0), o + vec2(-9.0, 5.0)]];
+    let mut parts = vec![vec![
+        o + vec2(-7.0, 0.0),
+        o + vec2(-13.0, -4.0),
+        o + vec2(-14.0, -1.0),
+        o + vec2(-9.0, 5.0),
+    ]];
     for (i, x) in [-5.5f32, -1.75, 2.0, 5.75].into_iter().enumerate() {
         let top = if closed {
             -5.0
@@ -284,9 +360,21 @@ fn hand(p: &mut Ink, o: Pos2, closed: bool) {
         } else {
             -14.0
         };
-        parts.push(vec![o + vec2(x - 1.5, 0.0), o + vec2(x - 1.5, top), o + vec2(x + 1.5, top), o + vec2(x + 1.5, 0.0)]);
+        parts.push(vec![
+            o + vec2(x - 1.5, 0.0),
+            o + vec2(x - 1.5, top),
+            o + vec2(x + 1.5, top),
+            o + vec2(x + 1.5, 0.0),
+        ]);
     }
-    parts.push(vec![o + vec2(-7.0, -2.0), o + vec2(7.25, -2.0), o + vec2(8.0, 6.0), o + vec2(4.0, 11.0), o + vec2(-5.0, 11.0), o + vec2(-9.0, 5.0)]);
+    parts.push(vec![
+        o + vec2(-7.0, -2.0),
+        o + vec2(7.25, -2.0),
+        o + vec2(8.0, 6.0),
+        o + vec2(4.0, 11.0),
+        o + vec2(-5.0, 11.0),
+        o + vec2(-9.0, 5.0),
+    ]);
     // Every halo first, so no part's halo covers another's outline.
     for part in &parts {
         p.add(Shape::closed_line(part.clone(), Stroke::new(3.0, HALO)));
@@ -436,7 +524,11 @@ fn rasterize(c: Cursor, ppp: f32) -> Option<CustomCursorImage> {
     let mut px = vec![[0.0; 4]; w * h];
     let corner = |v: &Vertex| (v.pos.to_vec2() * ppp - min, v.color);
     for &[i, j, k] in mesh.indices.as_chunks::<3>().0 {
-        if let (Some(a), Some(b), Some(c)) = (mesh.vertices.get(i as usize), mesh.vertices.get(j as usize), mesh.vertices.get(k as usize)) {
+        if let (Some(a), Some(b), Some(c)) = (
+            mesh.vertices.get(i as usize),
+            mesh.vertices.get(j as usize),
+            mesh.vertices.get(k as usize),
+        ) {
             fill_triangle(&mut px, w, [corner(a), corner(b), corner(c)]);
         }
     }
@@ -447,7 +539,11 @@ fn rasterize(c: Cursor, ppp: f32) -> Option<CustomCursorImage> {
             [r * k, g * k, b * k, a].map(|x| (x * 255.0).round().clamp(0.0, 255.0) as u8)
         })
         .collect();
-    Some(CustomCursorImage { rgba: rgba.into(), size: [w as u16, h as u16], hotspot: [-min.x as u16, -min.y as u16] })
+    Some(CustomCursorImage {
+        rgba: rgba.into(),
+        size: [w as u16, h as u16],
+        hotspot: [-min.x as u16, -min.y as u16],
+    })
 }
 
 /// Blend triangle `t` (pixel positions and premultiplied colours, interpolated across it) over `px`
@@ -472,11 +568,14 @@ fn fill_triangle(px: &mut [[f32; 4]], w: usize, t: [(Vec2, Color32); 3]) {
     for y in lo.y.floor() as usize..hi.y.ceil() as usize {
         for x in lo.x.floor() as usize..hi.x.ceil() as usize {
             let p = vec2(x as f32 + 0.5, y as f32 + 0.5);
-            let weights = [(b.0, c.0), (c.0, a.0), (a.0, b.0)].map(|(u, v)| (edge(u, v, p), owns(u, v)));
+            let weights =
+                [(b.0, c.0), (c.0, a.0), (a.0, b.0)].map(|(u, v)| (edge(u, v, p), owns(u, v)));
             if !weights.iter().all(|&(e, own)| e > 0.0 || (e == 0.0 && own)) {
                 continue;
             }
-            let Some(dst) = px.get_mut(y * w + x) else { continue };
+            let Some(dst) = px.get_mut(y * w + x) else {
+                continue;
+            };
             let [wa, wb, wc] = weights.map(|(e, _)| e / area);
             let src: [f32; 4] = std::array::from_fn(|i| {
                 let channel = |col: Color32| f32::from(col.to_array()[i]);
@@ -543,7 +642,12 @@ mod tests {
     /// The straight RGBA of pixel (x, y).
     fn pixel(img: &CustomCursorImage, x: usize, y: usize) -> [u8; 4] {
         let i = (y * img.size[0] as usize + x) * 4;
-        [img.rgba[i], img.rgba[i + 1], img.rgba[i + 2], img.rgba[i + 3]]
+        [
+            img.rgba[i],
+            img.rgba[i + 1],
+            img.rgba[i + 2],
+            img.rgba[i + 3],
+        ]
     }
 
     #[test]
@@ -553,21 +657,42 @@ mod tests {
                 let img = rasterize(c, ppp).unwrap_or_else(|| panic!("{c:?} at {ppp}"));
                 let [w, h] = img.size.map(usize::from);
                 assert_eq!(img.rgba.len(), w * h * 4, "{c:?}");
-                assert!(img.hotspot[0] < img.size[0] && img.hotspot[1] < img.size[1], "{c:?} at {ppp}: {img:?}");
-                assert!(w as f32 <= 50.0 * ppp && h as f32 <= 50.0 * ppp, "{c:?} at {ppp}: {img:?}");
-                assert!(img.rgba.as_chunks::<4>().0.iter().any(|p| p[3] == 255), "{c:?}: nothing opaque");
+                assert!(
+                    img.hotspot[0] < img.size[0] && img.hotspot[1] < img.size[1],
+                    "{c:?} at {ppp}: {img:?}"
+                );
+                assert!(
+                    w as f32 <= 50.0 * ppp && h as f32 <= 50.0 * ppp,
+                    "{c:?} at {ppp}: {img:?}"
+                );
+                assert!(
+                    img.rgba.as_chunks::<4>().0.iter().any(|p| p[3] == 255),
+                    "{c:?}: nothing opaque"
+                );
             }
             // #1269: the normal Eyedropper is a pipette, with its tip at the hotspot; only
             // Use Precise Cursors turns it into a crosshair.
             let dropper = rasterize(Cursor::Eyedropper, ppp).unwrap();
             let precise = rasterize(Cursor::Eyedropper.precise(), ppp).unwrap();
-            assert_ne!(dropper, precise, "Eyedropper must be distinguishable from its precise cursor at {ppp}");
+            assert_ne!(
+                dropper, precise,
+                "Eyedropper must be distinguishable from its precise cursor at {ppp}"
+            );
             let [hx, hy] = dropper.hotspot.map(usize::from);
             let halo = (3.0 * ppp).ceil(); // The bitmap bounds round out to whole physical pixels.
-            assert!(hx as f32 <= halo && f32::from(dropper.size[1]) - hy as f32 <= halo, "the tip is at the lower-left: {dropper:?}");
-            assert!(pixel(&dropper, hx, hy)[3] > 0, "the tip covers the hotspot at {ppp}");
+            assert!(
+                hx as f32 <= halo && f32::from(dropper.size[1]) - hy as f32 <= halo,
+                "the tip is at the lower-left: {dropper:?}"
+            );
+            assert!(
+                pixel(&dropper, hx, hy)[3] > 0,
+                "the tip covers the hotspot at {ppp}"
+            );
         }
-        assert!(rasterize(Cursor::NotAllowed, 1.0).is_none(), "the busy states stay system cursors");
+        assert!(
+            rasterize(Cursor::NotAllowed, 1.0).is_none(),
+            "the busy states stay system cursors"
+        );
         for ppp in [0.0, -1.0, f32::NAN, f32::INFINITY, 1e9] {
             assert!(rasterize(Cursor::Arrow, ppp).is_none(), "{ppp}");
         }
@@ -580,19 +705,41 @@ mod tests {
         // The tip covers the hotspot's pixel; the body is solid black, the outline's halo white.
         assert!(pixel(&img, hx, hy)[3] > 0, "{:?}", pixel(&img, hx, hy));
         let body = pixel(&img, hx + 2, hy + 8);
-        assert!(body[3] == 255 && body[..3].iter().all(|&c| c < 40), "{body:?}");
-        assert!(img.rgba.as_chunks::<4>().0.iter().any(|p| p[3] == 255 && p[..3].iter().all(|&c| c > 215)), "no white halo");
+        assert!(
+            body[3] == 255 && body[..3].iter().all(|&c| c < 40),
+            "{body:?}"
+        );
+        assert!(
+            img.rgba
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .any(|p| p[3] == 255 && p[..3].iter().all(|&c| c > 215)),
+            "no white halo"
+        );
         // Nothing left of or above the tip but the halo.
-        assert!((0..img.size[1] as usize).all(|y| pixel(&img, 0, y)[..3].iter().all(|&c| c > 100) || pixel(&img, 0, y)[3] < 128));
+        assert!(
+            (0..img.size[1] as usize)
+                .all(|y| pixel(&img, 0, y)[..3].iter().all(|&c| c > 100)
+                    || pixel(&img, 0, y)[3] < 128)
+        );
         // At twice the pixels per point, twice the pixels.
         let big = rasterize(Cursor::Arrow, 2.0).unwrap();
         for i in 0..2 {
             let ratio = f32::from(big.size[i]) / f32::from(img.size[i]);
-            assert!((1.8..=2.2).contains(&ratio), "{:?} vs {:?}", big.size, img.size);
+            assert!(
+                (1.8..=2.2).contains(&ratio),
+                "{:?} vs {:?}",
+                big.size,
+                img.size
+            );
         }
         let [bx, by] = big.hotspot.map(usize::from);
         let body = pixel(&big, bx + 4, by + 16);
-        assert!(body[3] == 255 && body[..3].iter().all(|&c| c < 40), "{body:?}");
+        assert!(
+            body[3] == 255 && body[..3].iter().all(|&c| c < 40),
+            "{body:?}"
+        );
     }
 
     #[test]
@@ -601,16 +748,28 @@ mod tests {
         let a = images.get(Cursor::Pen, 1.5).unwrap();
         let b = images.get(Cursor::Pen, 1.5).unwrap();
         assert!(Arc::ptr_eq(&a.rgba, &b.rgba));
-        assert!(!Arc::ptr_eq(&a.rgba, &images.get(Cursor::Pen, 2.0).unwrap().rgba));
+        assert!(!Arc::ptr_eq(
+            &a.rgba,
+            &images.get(Cursor::Pen, 2.0).unwrap().rgba
+        ));
         assert!(images.get(Cursor::NotAllowed, 1.5).is_none());
         assert!(images.get(Cursor::Arrow, f32::NAN).is_none());
         assert_eq!(images.0.len(), 2);
     }
 
     /// One headless 800×600 frame of the whole window, a tenth of a second after the last.
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) -> egui::FullOutput {
+    fn frame(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        events: Vec<egui::Event>,
+    ) -> egui::FullOutput {
         let time = Some(ctx.input(|i| i.time) + 0.1);
-        let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))), time, events, ..Default::default() };
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))),
+            time,
+            events,
+            ..Default::default()
+        };
         let mut out = ctx.run_ui(raw, |ui| {
             app.logic(ui.ctx());
             app.ui(ui);
@@ -622,7 +781,8 @@ mod tests {
     #[test]
     fn the_canvas_hands_the_tool_cursor_to_the_os_and_idles_while_the_pointer_rests() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
         let ctx = egui::Context::default();
         for _ in 0..3 {
             frame(&mut app, &ctx, vec![]);
@@ -631,7 +791,11 @@ mod tests {
         let over = canvas.center();
         let out = frame(&mut app, &ctx, vec![egui::Event::PointerMoved(over)]);
         if OS_CURSORS {
-            let img = out.platform_output.cursor_image.as_ref().expect("the Selection tool's arrow as an OS cursor");
+            let img = out
+                .platform_output
+                .cursor_image
+                .as_ref()
+                .expect("the Selection tool's arrow as an OS cursor");
             assert_eq!(img, &app.canvas.cursors.get(Cursor::Arrow, 1.0).unwrap());
             // Where the OS can't show the bitmap, its system cursor.
             assert_eq!(out.platform_output.cursor_icon, egui::CursorIcon::Default);
@@ -640,18 +804,40 @@ mod tests {
         }
         // The same bitmap while the pointer moves (the OS keeps its cursor), and an idle window
         // once it rests: no frame is asked for.
-        let next = frame(&mut app, &ctx, vec![egui::Event::PointerMoved(over + vec2(5.0, 3.0))]);
+        let next = frame(
+            &mut app,
+            &ctx,
+            vec![egui::Event::PointerMoved(over + vec2(5.0, 3.0))],
+        );
         if OS_CURSORS {
-            assert!(Arc::ptr_eq(&next.platform_output.cursor_image.unwrap().rgba, &out.platform_output.cursor_image.unwrap().rgba));
+            assert!(Arc::ptr_eq(
+                &next.platform_output.cursor_image.unwrap().rgba,
+                &out.platform_output.cursor_image.unwrap().rgba
+            ));
         }
         let mut idle = frame(&mut app, &ctx, vec![]);
         for _ in 0..3 {
             idle = frame(&mut app, &ctx, vec![]);
         }
-        let delay = idle.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.repaint_delay).unwrap();
-        assert!(delay > std::time::Duration::from_millis(100), "{delay:?} {:?}", ctx.repaint_causes());
+        let delay = idle
+            .viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .map(|v| v.repaint_delay)
+            .unwrap();
+        assert!(
+            delay > std::time::Duration::from_millis(100),
+            "{delay:?} {:?}",
+            ctx.repaint_causes()
+        );
         // Off the canvas, the panels' cursors.
-        let off = frame(&mut app, &ctx, vec![egui::Event::PointerMoved(Pos2::new(canvas.left() - 20.0, canvas.center().y))]);
+        let off = frame(
+            &mut app,
+            &ctx,
+            vec![egui::Event::PointerMoved(Pos2::new(
+                canvas.left() - 20.0,
+                canvas.center().y,
+            ))],
+        );
         assert!(off.platform_output.cursor_image.is_none());
     }
 
@@ -660,20 +846,41 @@ mod tests {
     #[test]
     fn tool_cursors_scale_with_the_ui_only_when_asked() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        app.run("prefs.set", json!({"key": "uiScaling", "value": 2.0})).unwrap();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
+        app.run("prefs.set", json!({"key": "uiScaling", "value": 2.0}))
+            .unwrap();
         let ctx = egui::Context::default();
         for _ in 0..3 {
             frame(&mut app, &ctx, vec![]);
         }
         assert_eq!(ctx.zoom_factor(), 2.0);
         let over = app.canvas_rect.unwrap().center();
-        let shown =
-            |app: &mut VectorcraftApp, d: f32| frame(app, &ctx, vec![egui::Event::PointerMoved(over + vec2(d, 0.0))]).platform_output.cursor_image;
+        let shown = |app: &mut VectorcraftApp, d: f32| {
+            frame(
+                app,
+                &ctx,
+                vec![egui::Event::PointerMoved(over + vec2(d, 0.0))],
+            )
+            .platform_output
+            .cursor_image
+        };
         if OS_CURSORS {
-            assert_eq!(shown(&mut app, 0.0).unwrap(), app.canvas.cursors.get(Cursor::Arrow, 1.0).unwrap(), "off: its own size");
-            app.run("prefs.set", json!({"key": "scaleCursorWithUi", "value": true})).unwrap();
-            assert_eq!(shown(&mut app, 4.0).unwrap(), app.canvas.cursors.get(Cursor::Arrow, 2.0).unwrap(), "on: twice as big");
+            assert_eq!(
+                shown(&mut app, 0.0).unwrap(),
+                app.canvas.cursors.get(Cursor::Arrow, 1.0).unwrap(),
+                "off: its own size"
+            );
+            app.run(
+                "prefs.set",
+                json!({"key": "scaleCursorWithUi", "value": true}),
+            )
+            .unwrap();
+            assert_eq!(
+                shown(&mut app, 4.0).unwrap(),
+                app.canvas.cursors.get(Cursor::Arrow, 2.0).unwrap(),
+                "on: twice as big"
+            );
         }
         // Painted into the window (macOS, the web), the glyph is drawn at the scale asked for, its
         // hotspot where the pointer is.
@@ -681,15 +888,28 @@ mod tests {
             let ctx = egui::Context::default();
             let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
                 let layer = egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("probe"));
-                assert!(paint(&ui.ctx().layer_painter(layer), Cursor::Arrow, pos2(100.0, 100.0), scale));
+                assert!(paint(
+                    &ui.ctx().layer_painter(layer),
+                    Cursor::Arrow,
+                    pos2(100.0, 100.0),
+                    scale
+                ));
             });
             out.textures_delta.clear();
             out.textures_delta.clear();
-            out.shapes.iter().fold(egui::Rect::NOTHING, |r, c| r.union(c.shape.visual_bounding_rect()))
+            out.shapes.iter().fold(egui::Rect::NOTHING, |r, c| {
+                r.union(c.shape.visual_bounding_rect())
+            })
         };
         let (full, half) = (painted(1.0), painted(0.5));
-        assert!((half.height() * 2.0 - full.height()).abs() < 1.5 && full.height() > 15.0, "{full:?} {half:?}");
-        assert!(full.contains(pos2(100.0, 100.0)) && half.contains(pos2(100.0, 100.0)), "{full:?} {half:?}");
+        assert!(
+            (half.height() * 2.0 - full.height()).abs() < 1.5 && full.height() > 15.0,
+            "{full:?} {half:?}"
+        );
+        assert!(
+            full.contains(pos2(100.0, 100.0)) && half.contains(pos2(100.0, 100.0)),
+            "{full:?} {half:?}"
+        );
     }
 
     #[test]

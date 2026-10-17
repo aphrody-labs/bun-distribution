@@ -29,7 +29,8 @@ fn bitexact_log2tan(isin: i32, icos: i32) -> i32 {
     let ls = ilog(isin as u32);
     let icos = icos << (15 - lc);
     let isin = isin << (15 - ls);
-    (ls - lc) * (1 << 11) + frac_mul16(isin, frac_mul16(isin, -2597) + 7932) - frac_mul16(icos, frac_mul16(icos, -2597) + 7932)
+    (ls - lc) * (1 << 11) + frac_mul16(isin, frac_mul16(isin, -2597) + 7932)
+        - frac_mul16(icos, frac_mul16(icos, -2597) + 7932)
 }
 
 fn compute_qn(n: i32, b: i32, offset: i32, pulse_cap: i32, stereo: bool) -> i32 {
@@ -201,7 +202,13 @@ pub struct BandEnc<'m, 'e> {
 impl BandEnc<'_, '_> {
     /// `compute_theta` for a mono split (single block): measures the energy split between the
     /// two halves and codes the quantised angle with the triangular pdf.
-    fn compute_theta_split(&mut self, xa: &[f32], xb: &[f32], b: &mut i32, lm: i32) -> (i32, i32, i32) {
+    fn compute_theta_split(
+        &mut self,
+        xa: &[f32],
+        xb: &[f32],
+        b: &mut i32,
+        lm: i32,
+    ) -> (i32, i32, i32) {
         let n = xa.len() as i32;
         let i = self.i;
         let pulse_cap = self.m.log_n[i] + lm * (1 << BITRES);
@@ -217,7 +224,11 @@ impl BandEnc<'_, '_> {
             let q = qn as u32;
             let half = q >> 1;
             let ft = (half + 1) * (half + 1);
-            let (fl, fs) = if it <= half { (it * (it + 1) >> 1, it + 1) } else { (ft - ((q + 1 - it) * (q + 2 - it) >> 1), q + 1 - it) };
+            let (fl, fs) = if it <= half {
+                (it * (it + 1) >> 1, it + 1)
+            } else {
+                (ft - ((q + 1 - it) * (q + 2 - it) >> 1), q + 1 - it)
+            };
             self.enc.encode(fl, fl + fs, ft);
             itheta = ((it * 16384) / q) as i32;
         }
@@ -315,8 +326,20 @@ pub fn quant_all_bands(
     coded_bands: usize,
 ) {
     let mm = 1usize << lm;
-    debug_assert!(c == 1 || dual_stereo || intensity <= start, "stereo frames are coded as dual stereo");
-    let mut ctx = BandEnc { m, enc, i: 0, spread, remaining_bits: 0, pvq_v: Vec::new(), iy: Vec::new(), tmp: Vec::new() };
+    debug_assert!(
+        c == 1 || dual_stereo || intensity <= start,
+        "stereo frames are coded as dual stereo"
+    );
+    let mut ctx = BandEnc {
+        m,
+        enc,
+        i: 0,
+        spread,
+        remaining_bits: 0,
+        pvq_v: Vec::new(),
+        iy: Vec::new(),
+        tmp: Vec::new(),
+    };
     for i in start..end {
         ctx.i = i;
         let xo = mm * EBANDS[i] as usize;
@@ -400,7 +423,9 @@ mod tests {
     fn spreading_inverse_is_exact() {
         for &len in &[8usize, 16, 24, 48, 96, 176] {
             for k in [1usize, 2, 3, 5] {
-                let orig: Vec<f32> = (0..len).map(|i| ((i * 31 % 17) as f32 - 8.0) / 8.0).collect();
+                let orig: Vec<f32> = (0..len)
+                    .map(|i| ((i * 31 % 17) as f32 - 8.0) / 8.0)
+                    .collect();
                 let mut x = orig.clone();
                 exp_rotation_inv(&mut x, len, k, SPREAD_NORMAL);
                 exp_rotation(&mut x, len, k, SPREAD_NORMAL);
@@ -419,11 +444,17 @@ mod tests {
         for nn in 1..=n {
             v[nn * w] = 1;
             for kk in 1..=k {
-                v[nn * w + kk] = v[(nn - 1) * w + kk].saturating_add(v[nn * w + kk - 1]).saturating_add(v[(nn - 1) * w + kk - 1]);
+                v[nn * w + kk] = v[(nn - 1) * w + kk]
+                    .saturating_add(v[nn * w + kk - 1])
+                    .saturating_add(v[(nn - 1) * w + kk - 1]);
             }
         }
         let total = v[n * w + k];
-        let mut i = if total >= 2 { dec.uint(total as u32) as u64 } else { 0 };
+        let mut i = if total >= 2 {
+            dec.uint(total as u32) as u64
+        } else {
+            0
+        };
         let mut y = vec![0i32; n];
         let mut kk = k;
         for j in 0..n {
@@ -486,7 +517,10 @@ mod tests {
         let mut y = vec![0i32; 32];
         for k in [1usize, 4, 16, 64] {
             pvq_search(&x, k, &mut y);
-            assert_eq!(y.iter().map(|v| v.unsigned_abs() as usize).sum::<usize>(), k);
+            assert_eq!(
+                y.iter().map(|v| v.unsigned_abs() as usize).sum::<usize>(),
+                k
+            );
             let xy: f32 = x.iter().zip(&y).map(|(a, &b)| a * b as f32).sum();
             let yy: f32 = y.iter().map(|&b| (b * b) as f32).sum();
             let xx: f32 = x.iter().map(|a| a * a).sum();

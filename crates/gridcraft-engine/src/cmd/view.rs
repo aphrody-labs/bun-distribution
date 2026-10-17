@@ -17,25 +17,118 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             freeze_panes
         ),
-        cmd!("view.freezeTopRow", "Freeze Top Row", ["View", "Window", "Freeze Panes"], None, "{}", has_doc, |s, _| set_freeze(s, Some((1, 0)))),
-        cmd!("view.freezeFirstColumn", "Freeze First Column", ["View", "Window", "Freeze Panes"], None, "{}", has_doc, |s, _| set_freeze(
-            s,
-            Some((0, 1))
-        )),
-        cmd!("view.unfreezePanes", "Unfreeze Panes", ["View", "Window", "Freeze Panes"], None, "{}", has_doc, |s, _| set_freeze(s, None)),
-        cmd!("view.gridlines", "Gridlines", ["View", "Show"], None, "{on?}", has_doc, |s, p| sheet_flag(s, p, "gridlines")),
-        cmd!("view.headings", "Headings", ["View", "Show"], None, "{on?}", has_doc, |s, p| sheet_flag(s, p, "headings")),
-        cmd!("view.showZeros", "Show Zeros", [], None, "{on?}", has_doc, |s, p| sheet_flag(s, p, "zeros")),
-        cmd!("view.rightToLeft", "Sheet Right-to-Left", ["Page Layout", "Sheet Options"], None, "{on?}", has_doc, |s, p| sheet_flag(s, p, "rtl")),
-        cmd!("view.zoom", "Zoom", ["View", "Zoom"], None, "{percent: 10..400}", has_doc, zoom),
-        cmd!("view.zoom100", "100%", ["View", "Zoom"], None, "{}", has_doc, |s, _| zoom(s, &json!({"percent": 100}))),
+        cmd!(
+            "view.freezeTopRow",
+            "Freeze Top Row",
+            ["View", "Window", "Freeze Panes"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| set_freeze(s, Some((1, 0)))
+        ),
+        cmd!(
+            "view.freezeFirstColumn",
+            "Freeze First Column",
+            ["View", "Window", "Freeze Panes"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| set_freeze(s, Some((0, 1)))
+        ),
+        cmd!(
+            "view.unfreezePanes",
+            "Unfreeze Panes",
+            ["View", "Window", "Freeze Panes"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| set_freeze(s, None)
+        ),
+        cmd!(
+            "view.gridlines",
+            "Gridlines",
+            ["View", "Show"],
+            None,
+            "{on?}",
+            has_doc,
+            |s, p| sheet_flag(s, p, "gridlines")
+        ),
+        cmd!(
+            "view.headings",
+            "Headings",
+            ["View", "Show"],
+            None,
+            "{on?}",
+            has_doc,
+            |s, p| sheet_flag(s, p, "headings")
+        ),
+        cmd!(
+            "view.showZeros",
+            "Show Zeros",
+            [],
+            None,
+            "{on?}",
+            has_doc,
+            |s, p| sheet_flag(s, p, "zeros")
+        ),
+        cmd!(
+            "view.rightToLeft",
+            "Sheet Right-to-Left",
+            ["Page Layout", "Sheet Options"],
+            None,
+            "{on?}",
+            has_doc,
+            |s, p| sheet_flag(s, p, "rtl")
+        ),
+        cmd!(
+            "view.zoom",
+            "Zoom",
+            ["View", "Zoom"],
+            None,
+            "{percent: 10..400}",
+            has_doc,
+            zoom
+        ),
+        cmd!(
+            "view.zoom100",
+            "100%",
+            ["View", "Zoom"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| zoom(s, &json!({"percent": 100}))
+        ),
         cmd!(query "view.formulaBar", "Formula Bar", ["View", "Show"], None, "{on?: bool}", always, |s, p| {
             s.prefs.formula_bar = bool_param(p, "on").unwrap_or(!s.prefs.formula_bar);
             Ok(json!({"on": s.prefs.formula_bar}))
         }),
-        cmd!("view.zoomToSelection", "Zoom to Selection", ["View", "Zoom"], None, "{viewWidth?, viewHeight?}", has_doc, zoom_selection),
-        cmd!("pageLayout.orientation", "Orientation", ["Page Layout", "Page Setup"], None, "{orientation: portrait|landscape}", has_doc, orientation),
-        cmd!("pageLayout.size", "Size", ["Page Layout", "Page Setup"], None, "{paper: Letter|Legal|A4|A3|A5|Tabloid|Executive}", has_doc, paper),
+        cmd!(
+            "view.zoomToSelection",
+            "Zoom to Selection",
+            ["View", "Zoom"],
+            None,
+            "{viewWidth?, viewHeight?}",
+            has_doc,
+            zoom_selection
+        ),
+        cmd!(
+            "pageLayout.orientation",
+            "Orientation",
+            ["Page Layout", "Page Setup"],
+            None,
+            "{orientation: portrait|landscape}",
+            has_doc,
+            orientation
+        ),
+        cmd!(
+            "pageLayout.size",
+            "Size",
+            ["Page Layout", "Page Setup"],
+            None,
+            "{paper: Letter|Legal|A4|A3|A5|Tabloid|Executive}",
+            has_doc,
+            paper
+        ),
         cmd!(
             "pageLayout.margins",
             "Margins",
@@ -72,16 +165,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             scale_fit
         ),
-        cmd!("pageLayout.printGridlines", "Print Gridlines", ["Page Layout", "Sheet Options"], None, "{on?}", has_doc, |s, p| sheet_flag(
-            s,
-            p,
-            "printGridlines"
-        )),
-        cmd!("pageLayout.printHeadings", "Print Headings", ["Page Layout", "Sheet Options"], None, "{on?}", has_doc, |s, p| sheet_flag(
-            s,
-            p,
-            "printHeadings"
-        )),
+        cmd!(
+            "pageLayout.printGridlines",
+            "Print Gridlines",
+            ["Page Layout", "Sheet Options"],
+            None,
+            "{on?}",
+            has_doc,
+            |s, p| sheet_flag(s, p, "printGridlines")
+        ),
+        cmd!(
+            "pageLayout.printHeadings",
+            "Print Headings",
+            ["Page Layout", "Sheet Options"],
+            None,
+            "{on?}",
+            has_doc,
+            |s, p| sheet_flag(s, p, "printHeadings")
+        ),
         cmd!(
             "pageLayout.breaks",
             "Breaks",
@@ -124,7 +225,14 @@ fn freeze_panes(s: &mut Session, p: &Json) -> Result<Json> {
     let cols = at.col.saturating_sub(top.col);
     let _ = (rows, cols);
     let (rows, cols) = (at.row, at.col);
-    set_freeze(s, if rows == 0 && cols == 0 { None } else { Some((rows, cols)) })
+    set_freeze(
+        s,
+        if rows == 0 && cols == 0 {
+            None
+        } else {
+            Some((rows, cols))
+        },
+    )
 }
 
 fn set_freeze(s: &mut Session, f: Option<(u32, u32)>) -> Result<Json> {
@@ -153,7 +261,9 @@ fn sheet_flag(s: &mut Session, p: &Json, which: &str) -> Result<Json> {
 }
 
 fn zoom(s: &mut Session, p: &Json) -> Result<Json> {
-    let z = f64_param(p, "percent").ok_or_else(|| bad("view.zoom", "missing `percent`"))?.clamp(10.0, 400.0) as u16;
+    let z = f64_param(p, "percent")
+        .ok_or_else(|| bad("view.zoom", "missing `percent`"))?
+        .clamp(10.0, 400.0) as u16;
     let d = s.doc_mut()?;
     let dirty = d.is_dirty();
     let wb = std::sync::Arc::make_mut(&mut d.wb);
@@ -180,7 +290,11 @@ fn zoom_selection(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn orientation(s: &mut Session, p: &Json) -> Result<Json> {
-    let o = if str_param(p, "orientation") == Some("landscape") { Orientation::Landscape } else { Orientation::Portrait };
+    let o = if str_param(p, "orientation") == Some("landscape") {
+        Orientation::Landscape
+    } else {
+        Orientation::Portrait
+    };
     edit(s, |cx| {
         let si = cx.sheet_index();
         cx.sheet_mut(si)?.print.orientation = o;
@@ -210,7 +324,10 @@ fn margins(s: &mut Session, p: &Json) -> Result<Json> {
         if let Some(pr) = preset {
             *m = pr;
         }
-        for (i, k) in ["left", "right", "top", "bottom", "header", "footer"].iter().enumerate() {
+        for (i, k) in ["left", "right", "top", "bottom", "header", "footer"]
+            .iter()
+            .enumerate()
+        {
             if let Some(v) = f64_param(p, k)
                 && let Some(slot) = m.get_mut(i)
             {
@@ -232,8 +349,12 @@ fn print_area(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn print_titles(s: &mut Session, p: &Json) -> Result<Json> {
-    let rows = str_param(p, "rows").and_then(RangeRef::parse).map(|r| (r.start.row, r.end.row));
-    let cols = str_param(p, "cols").and_then(RangeRef::parse).map(|r| (r.start.col, r.end.col));
+    let rows = str_param(p, "rows")
+        .and_then(RangeRef::parse)
+        .map(|r| (r.start.row, r.end.row));
+    let cols = str_param(p, "cols")
+        .and_then(RangeRef::parse)
+        .map(|r| (r.start.col, r.end.col));
     edit(s, |cx| {
         let si = cx.sheet_index();
         let pr = &mut cx.sheet_mut(si)?.print;
@@ -252,7 +373,10 @@ fn scale_fit(s: &mut Session, p: &Json) -> Result<Json> {
             pr.fit_to = None;
         }
         if p.get("width").is_some() || p.get("height").is_some() {
-            pr.fit_to = Some((u32_param(p, "width").unwrap_or(0).min(32767) as u16, u32_param(p, "height").unwrap_or(0).min(32767) as u16));
+            pr.fit_to = Some((
+                u32_param(p, "width").unwrap_or(0).min(32767) as u16,
+                u32_param(p, "height").unwrap_or(0).min(32767) as u16,
+            ));
         }
         Ok(Json::Null)
     })
@@ -300,19 +424,39 @@ fn header_footer(s: &mut Session, p: &Json) -> Result<Json> {
             let footer = match part.unwrap_or("header") {
                 "header" => false,
                 "footer" => true,
-                other => return Err(bad(CMD, format!("`part` must be header or footer, not `{other}`"))),
+                other => {
+                    return Err(bad(
+                        CMD,
+                        format!("`part` must be header or footer, not `{other}`"),
+                    ));
+                }
             };
             let idx = match sec.unwrap_or("center") {
                 "left" => 0usize,
                 "center" | "centre" => 1,
                 "right" => 2,
-                other => return Err(bad(CMD, format!("`section` must be left, center or right, not `{other}`"))),
+                other => {
+                    return Err(bad(
+                        CMD,
+                        format!("`section` must be left, center or right, not `{other}`"),
+                    ));
+                }
             };
             let page = match str_param(p, "page") {
                 None => gridcraft_model::HfPage::Odd,
-                Some(id) => gridcraft_model::HfPage::parse(id).ok_or_else(|| bad(CMD, format!("`page` must be odd, even or first, not `{id}`")))?,
+                Some(id) => gridcraft_model::HfPage::parse(id).ok_or_else(|| {
+                    bad(
+                        CMD,
+                        format!("`page` must be odd, even or first, not `{id}`"),
+                    )
+                })?,
             };
-            Some((page, footer, idx, super::print::fields_to_codes(str_param(p, "text").unwrap_or(""))))
+            Some((
+                page,
+                footer,
+                idx,
+                super::print::fields_to_codes(str_param(p, "text").unwrap_or("")),
+            ))
         }
     };
     edit(s, |cx| {
@@ -363,13 +507,55 @@ fn header_footer(s: &mut Session, p: &Json) -> Result<Json> {
 /// GridCraft's own theme set (original palettes).
 pub fn themes() -> Vec<(&'static str, [u32; 12])> {
     vec![
-        ("Craft", [0xFFFFFF, 0x000000, 0xE8E8E8, 0x0E2841, 0x156082, 0xE97132, 0x196B24, 0x0F9ED5, 0xA02B93, 0x4EA72E, 0x467886, 0x96607D]),
-        ("Slate", [0xFFFFFF, 0x1F2328, 0xEEF1F4, 0x3B4652, 0x4F6D8A, 0x8AA1B8, 0xC27C4C, 0x6F9A72, 0x9D6C9B, 0xD3B25A, 0x2F6FB0, 0x7A5C8F]),
-        ("Meadow", [0xFFFFFF, 0x16241A, 0xEEF4EA, 0x2E4A33, 0x4D8B3F, 0x9BC53D, 0xE4B33A, 0x2E8C83, 0xC4643C, 0x7B6A9E, 0x2B7A57, 0x6E7F3A]),
-        ("Ember", [0xFFFFFF, 0x2A1A14, 0xF6EEE8, 0x5A2E1E, 0xD9532B, 0xF2994A, 0xF2C94C, 0x8C3B2E, 0x4A6FA5, 0x6F8F4E, 0xB5472A, 0x8C6A5A]),
-        ("Ocean", [0xFFFFFF, 0x0B1E2D, 0xE8F1F7, 0x123A5A, 0x1F78B4, 0x33A6CC, 0x52C7B8, 0x3B5BA5, 0xF2A65A, 0x8E6CB8, 0x1A6FA8, 0x6A7FB0]),
-        ("Orchid", [0xFFFFFF, 0x24152B, 0xF3EDF6, 0x4B2C5E, 0x8E44AD, 0xC56CF0, 0xF78FB3, 0x3DC1D3, 0xF5CD79, 0x63CDDA, 0x7E3FA0, 0xB066B0]),
-        ("Graphite", [0xFFFFFF, 0x111111, 0xEDEDED, 0x333333, 0x595959, 0x7F7F7F, 0xA5A5A5, 0x3C78D8, 0xCC4125, 0x6AA84F, 0x3C78D8, 0x8E7CC3]),
+        (
+            "Craft",
+            [
+                0xFFFFFF, 0x000000, 0xE8E8E8, 0x0E2841, 0x156082, 0xE97132, 0x196B24, 0x0F9ED5,
+                0xA02B93, 0x4EA72E, 0x467886, 0x96607D,
+            ],
+        ),
+        (
+            "Slate",
+            [
+                0xFFFFFF, 0x1F2328, 0xEEF1F4, 0x3B4652, 0x4F6D8A, 0x8AA1B8, 0xC27C4C, 0x6F9A72,
+                0x9D6C9B, 0xD3B25A, 0x2F6FB0, 0x7A5C8F,
+            ],
+        ),
+        (
+            "Meadow",
+            [
+                0xFFFFFF, 0x16241A, 0xEEF4EA, 0x2E4A33, 0x4D8B3F, 0x9BC53D, 0xE4B33A, 0x2E8C83,
+                0xC4643C, 0x7B6A9E, 0x2B7A57, 0x6E7F3A,
+            ],
+        ),
+        (
+            "Ember",
+            [
+                0xFFFFFF, 0x2A1A14, 0xF6EEE8, 0x5A2E1E, 0xD9532B, 0xF2994A, 0xF2C94C, 0x8C3B2E,
+                0x4A6FA5, 0x6F8F4E, 0xB5472A, 0x8C6A5A,
+            ],
+        ),
+        (
+            "Ocean",
+            [
+                0xFFFFFF, 0x0B1E2D, 0xE8F1F7, 0x123A5A, 0x1F78B4, 0x33A6CC, 0x52C7B8, 0x3B5BA5,
+                0xF2A65A, 0x8E6CB8, 0x1A6FA8, 0x6A7FB0,
+            ],
+        ),
+        (
+            "Orchid",
+            [
+                0xFFFFFF, 0x24152B, 0xF3EDF6, 0x4B2C5E, 0x8E44AD, 0xC56CF0, 0xF78FB3, 0x3DC1D3,
+                0xF5CD79, 0x63CDDA, 0x7E3FA0, 0xB066B0,
+            ],
+        ),
+        (
+            "Graphite",
+            [
+                0xFFFFFF, 0x111111, 0xEDEDED, 0x333333, 0x595959, 0x7F7F7F, 0xA5A5A5, 0x3C78D8,
+                0xCC4125, 0x6AA84F, 0x3C78D8, 0x8E7CC3,
+            ],
+        ),
     ]
 }
 
@@ -379,10 +565,21 @@ fn theme(s: &mut Session, p: &Json) -> Result<Json> {
         .get("colors")
         .and_then(Json::as_array)
         .and_then(|a| {
-            let v: Vec<u32> = a.iter().filter_map(|c| c.as_str().and_then(|h| u32::from_str_radix(h.trim_start_matches('#'), 16).ok())).collect();
+            let v: Vec<u32> = a
+                .iter()
+                .filter_map(|c| {
+                    c.as_str()
+                        .and_then(|h| u32::from_str_radix(h.trim_start_matches('#'), 16).ok())
+                })
+                .collect();
             <[u32; 12]>::try_from(v).ok()
         })
-        .or_else(|| themes().into_iter().find(|(n, _)| n.eq_ignore_ascii_case(&name)).map(|(_, c)| c))
+        .or_else(|| {
+            themes()
+                .into_iter()
+                .find(|(n, _)| n.eq_ignore_ascii_case(&name))
+                .map(|(_, c)| c)
+        })
         .ok_or_else(|| bad("pageLayout.theme", format!("unknown theme `{name}`")))?;
     let major = str_param(p, "majorFont").map(str::to_string);
     let minor = str_param(p, "minorFont").map(str::to_string);
@@ -419,8 +616,14 @@ mod tests {
     fn formula_bar_toggles_without_a_workbook_and_defaults_to_shown() {
         let mut s = Session::new();
         assert!(s.prefs.formula_bar);
-        assert_eq!(s.execute("view.formulaBar", json!({})).unwrap()["on"], false);
-        assert_eq!(s.execute("view.formulaBar", json!({"on": true})).unwrap()["on"], true);
+        assert_eq!(
+            s.execute("view.formulaBar", json!({})).unwrap()["on"],
+            false
+        );
+        assert_eq!(
+            s.execute("view.formulaBar", json!({"on": true})).unwrap()["on"],
+            true
+        );
         // A prefs.json saved before the option existed keeps the formula bar shown.
         let old: crate::Prefs = serde_json::from_str(r#"{"userName": "Ann"}"#).unwrap();
         assert!(old.formula_bar);

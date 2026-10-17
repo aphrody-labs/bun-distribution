@@ -4,13 +4,13 @@
 //! Provides process discovery, memory map inspection (`/proc/[pid]/maps`),
 //! arbitrary virtual memory reading (`/proc/[pid]/mem`), and AOB pattern scanning.
 
+use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
-use serde::{Deserialize, Serialize};
 
-use crate::game::error::{ReError, Result};
 use super::aob::AobPattern;
+use crate::game::error::{ReError, Result};
 
 /// A mapped virtual memory region of a target process.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -101,11 +101,9 @@ impl WineProcessMemory {
     /// Attaches to a process PID and parses its virtual memory mapping.
     pub fn attach(pid: u32, process_name: &str) -> Result<Self> {
         let maps_path = format!("/proc/{pid}/maps");
-        let content = fs::read_to_string(&maps_path).map_err(|e| {
-            ReError::ParseError {
-                context: "process_attach",
-                details: format!("Failed to read {maps_path}: {e}"),
-            }
+        let content = fs::read_to_string(&maps_path).map_err(|e| ReError::ParseError {
+            context: "process_attach",
+            details: format!("Failed to read {maps_path}: {e}"),
         })?;
 
         let mut regions = Vec::new();
@@ -114,7 +112,10 @@ impl WineProcessMemory {
         for line in content.lines() {
             if let Some(region) = parse_maps_line(line) {
                 if base_address == 0
-                    && region.pathname.to_lowercase().contains(&process_name.to_lowercase())
+                    && region
+                        .pathname
+                        .to_lowercase()
+                        .contains(&process_name.to_lowercase())
                     && region.is_executable
                 {
                     base_address = region.start;
@@ -144,16 +145,18 @@ impl WineProcessMemory {
             details: format!("Cannot open {mem_path}: {e}"),
         })?;
 
-        file.seek(SeekFrom::Start(address)).map_err(|e| ReError::ParseError {
-            context: "seek_memory",
-            details: format!("Cannot seek to 0x{address:x}: {e}"),
-        })?;
+        file.seek(SeekFrom::Start(address))
+            .map_err(|e| ReError::ParseError {
+                context: "seek_memory",
+                details: format!("Cannot seek to 0x{address:x}: {e}"),
+            })?;
 
         let mut buffer = vec![0u8; len];
-        file.read_exact(&mut buffer).map_err(|e| ReError::ParseError {
-            context: "read_exact_memory",
-            details: format!("Cannot read {len} bytes at 0x{address:x}: {e}"),
-        })?;
+        file.read_exact(&mut buffer)
+            .map_err(|e| ReError::ParseError {
+                context: "read_exact_memory",
+                details: format!("Cannot read {len} bytes at 0x{address:x}: {e}"),
+            })?;
 
         Ok(buffer)
     }

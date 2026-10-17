@@ -29,15 +29,22 @@ fn dir() -> std::path::PathBuf {
 }
 
 fn harness(dir: std::path::PathBuf) -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("contract.pdf", None, FIXTURE.to_vec()).expect("opens");
-        app.set_option("left", "closed").unwrap();
-        app.export_dir_override = Some(dir.to_string_lossy().into_owned());
-        app.save_override = Some(dir.join("contract_signed.pdf").to_string_lossy().into_owned());
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("contract.pdf", None, FIXTURE.to_vec())
+                .expect("opens");
+            app.set_option("left", "closed").unwrap();
+            app.export_dir_override = Some(dir.to_string_lossy().into_owned());
+            app.save_override = Some(
+                dir.join("contract_signed.pdf")
+                    .to_string_lossy()
+                    .into_owned(),
+            );
+            app
+        });
     h.run_steps(6);
     h
 }
@@ -65,12 +72,32 @@ fn one_click_trust_stores_the_displayed_signer_not_the_embedded_root() {
     // is a different certificate from the displayed signer.
     let (signer, root) = {
         let s = h.state();
-        let sig = s.session.get(s.views[0].id).unwrap().signatures.iter().find(|x| x.signed).cloned().expect("a signed field");
-        assert_eq!(sig.status, SignatureStatus::Unknown, "untrusted before the click");
-        assert_eq!(sig.chain.len(), 2, "the CMS embeds the signer and its root: {:?}", sig.chain.len());
+        let sig = s
+            .session
+            .get(s.views[0].id)
+            .unwrap()
+            .signatures
+            .iter()
+            .find(|x| x.signed)
+            .cloned()
+            .expect("a signed field");
+        assert_eq!(
+            sig.status,
+            SignatureStatus::Unknown,
+            "untrusted before the click"
+        );
+        assert_eq!(
+            sig.chain.len(),
+            2,
+            "the CMS embeds the signer and its root: {:?}",
+            sig.chain.len()
+        );
         let signer = sig.certificate.clone().expect("a signer certificate");
         let root = sig.chain.last().cloned().expect("a chain top");
-        assert_ne!(signer.raw, root.raw, "the embedded chain top must differ from the signer for this test to be meaningful");
+        assert_ne!(
+            signer.raw, root.raw,
+            "the embedded chain top must differ from the signer for this test to be meaningful"
+        );
         (signer, root)
     };
 
@@ -82,6 +109,12 @@ fn one_click_trust_stores_the_displayed_signer_not_the_embedded_root() {
 
     // The trust store holds exactly the displayed signer, never the document-supplied root.
     let trusted = h.state().session.trusted_certificates().to_vec();
-    assert!(trusted.iter().any(|c| c.raw == signer.raw), "the displayed signer should be trusted");
-    assert!(!trusted.iter().any(|c| c.raw == root.raw), "the embedded root must not be trusted by the one-click action");
+    assert!(
+        trusted.iter().any(|c| c.raw == signer.raw),
+        "the displayed signer should be trusted"
+    );
+    assert!(
+        !trusted.iter().any(|c| c.raw == root.raw),
+        "the embedded root must not be trusted by the one-click action"
+    );
 }

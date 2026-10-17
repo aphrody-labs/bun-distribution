@@ -175,7 +175,11 @@ fn parse_shop_node(node: Node<'_>) -> Option<ShopInfo> {
     if name_var.ty != "Int" {
         return None;
     }
-    Some(ShopInfo { shop_id: shop_var.as_hash(), name_hash: name_var.as_hash(), items: Vec::new() })
+    Some(ShopInfo {
+        shop_id: shop_var.as_hash(),
+        name_hash: name_var.as_hash(),
+        items: Vec::new(),
+    })
 }
 
 /// Ajoute les items d'un conteneur `SHOP_INFO_ITEM_LIST_BEG_x` à `items` (dédup, ordre).
@@ -187,7 +191,7 @@ fn collect_items_from_list(list_node: Node<'_>, items: &mut Vec<HashId>) {
         // itemId à l'index 2, uniquement si présent et de type Int (comme inagle).
         match item.var(2) {
             Some(v) if v.ty == "Int" => push_unique(items, v.as_hash()),
-            _ => {},
+            _ => {}
         }
     }
 }
@@ -236,8 +240,11 @@ mod tests {
     fn shop2_dedup_set_comme_inagle() {
         // Sous-ensemble réel : SHOP_INFO_2 avec le doublon consécutif (-1937608713 x2).
         let items_raw: &[i64] = &[1385048577, -1937608713, -1937608713, 825536693];
-        let item_children: Vec<Value> =
-            items_raw.iter().enumerate().map(|(i, v)| item_node(i, *v)).collect();
+        let item_children: Vec<Value> = items_raw
+            .iter()
+            .enumerate()
+            .map(|(i, v)| item_node(i, *v))
+            .collect();
         let root = json!({
             "entries": [{
                 "name": "SHOP_INFO_LIST_BEG_0",
@@ -298,7 +305,10 @@ mod tests {
         assert_eq!(shops.len(), 1);
         assert_eq!(shops[0].shop_id, HashId(0x6124_5112));
         assert_eq!(shops[0].name_hash, HashId(0x3505_C205));
-        assert_eq!(shops[0].items, vec![HashId(0x6D5D_11A0), HashId(0x5B79_031E)]);
+        assert_eq!(
+            shops[0].items,
+            vec![HashId(0x6D5D_11A0), HashId(0x5B79_031E)]
+        );
     }
 
     /// Un shop dont `var[1]` manque est ignoré (comme inagle qui renvoie `null`).

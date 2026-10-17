@@ -147,7 +147,11 @@ fn keyboard_rows() -> Vec<Vec<(&'static str, &'static str, f32)>> {
     for d in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] {
         r.push((d, d, 1.0));
     }
-    r.extend([("-", "-", 1.0), ("=", "=", 1.0), ("Delete", "Backspace", 1.6)]);
+    r.extend([
+        ("-", "-", 1.0),
+        ("=", "=", 1.0),
+        ("Delete", "Backspace", 1.6),
+    ]);
     rows.push(r);
     let mut r: Vec<(&str, &str, f32)> = vec![("Tab", "Tab", 1.5)];
     for c in ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"] {
@@ -165,11 +169,28 @@ fn keyboard_rows() -> Vec<Vec<(&'static str, &'static str, f32)>> {
     for c in ["Z", "X", "C", "V", "B", "N", "M"] {
         r.push((c, c, 1.0));
     }
-    r.extend([(",", ",", 1.0), (".", ".", 1.0), ("/", "/", 1.0), ("Shift", "#shift", 2.3)]);
+    r.extend([
+        (",", ",", 1.0),
+        (".", ".", 1.0),
+        ("/", "/", 1.0),
+        ("Shift", "#shift", 2.3),
+    ]);
     rows.push(r);
-    let (cmd, alt) = if cfg!(target_os = "macos") { ("⌘ Cmd", "⌥ Opt") } else { ("Ctrl", "Alt") };
+    let (cmd, alt) = if cfg!(target_os = "macos") {
+        ("⌘ Cmd", "⌥ Opt")
+    } else {
+        ("Ctrl", "Alt")
+    };
     rows.push(vec![
-        ("Ctrl", if cfg!(target_os = "macos") { "#ctrl" } else { "#cmd" }, 1.4),
+        (
+            "Ctrl",
+            if cfg!(target_os = "macos") {
+                "#ctrl"
+            } else {
+                "#cmd"
+            },
+            1.4,
+        ),
         (alt, "#alt", 1.4),
         (cmd, "#cmd", 1.6),
         ("Space", "Space", 6.0),
@@ -200,12 +221,20 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
     if st.recording {
         let got = ctx.input(|i| {
             i.events.iter().find_map(|e| match e {
-                egui::Event::Key { key, pressed: true, modifiers, .. } => Some((*key, *modifiers)),
+                egui::Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } => Some((*key, *modifiers)),
                 _ => None,
             })
         });
         // The shortcut field must not also type the key it just recorded (Alt+R came out as `rAlt+R`).
-        ctx.input_mut(|i| i.events.retain(|e| !matches!(e, egui::Event::Text(_) | egui::Event::Key { .. })));
+        ctx.input_mut(|i| {
+            i.events
+                .retain(|e| !matches!(e, egui::Event::Text(_) | egui::Event::Key { .. }))
+        });
         if let Some((k, m)) = got {
             st.recording = false;
             if k != egui::Key::Escape
@@ -217,8 +246,17 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
     }
     // Modifiers: toggles, or the ones held on the keyboard.
     let held = ctx.input(|i| i.modifiers);
-    let held = [held.ctrl && cfg!(target_os = "macos"), held.command, held.alt, held.shift];
-    let mods = if held.iter().any(|m| *m) && !st.recording { held } else { st.mods };
+    let held = [
+        held.ctrl && cfg!(target_os = "macos"),
+        held.command,
+        held.alt,
+        held.shift,
+    ];
+    let mods = if held.iter().any(|m| *m) && !st.recording {
+        held
+    } else {
+        st.mods
+    };
 
     let table = app.session.shortcuts().clone();
     let presets = app.session.keymaps.names();
@@ -241,25 +279,39 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
         // ---- preset bar
         ui.horizontal(|ui| {
             ui.label(tr("Preset:"));
-            let r = egui::ComboBox::from_id_salt("sc-preset").selected_text(&active).width(220.0).show_ui(ui, |ui| {
-                for n in &presets {
-                    if ui.selectable_label(*n == active, n).clicked() {
-                        run.push(("shortcuts.preset".into(), json!({"op": "select", "name": n})));
+            let r = egui::ComboBox::from_id_salt("sc-preset")
+                .selected_text(&active)
+                .width(220.0)
+                .show_ui(ui, |ui| {
+                    for n in &presets {
+                        if ui.selectable_label(*n == active, n).clicked() {
+                            run.push((
+                                "shortcuts.preset".into(),
+                                json!({"op": "select", "name": n}),
+                            ));
+                        }
                     }
-                }
-            });
+                });
             app.auto.add("shortcuts.preset", r.response.rect, "Preset");
             let custom = active != DEFAULT_PRESET;
             let b = ui.button(tr("Duplicate"));
             app.auto.add("shortcuts.duplicate", b.rect, "Duplicate");
             if b.clicked() {
-                run.push(("shortcuts.preset".into(), json!({"op": "duplicate", "from": active, "name": format!("{active} copy")})));
+                run.push((
+                    "shortcuts.preset".into(),
+                    json!({"op": "duplicate", "from": active, "name": format!("{active} copy")}),
+                ));
             }
             if let Some(name) = &mut st.rename {
                 let r = ui.add(egui::TextEdit::singleline(name).desired_width(140.0));
                 app.auto.add("shortcuts.renameField", r.rect, "New name");
-                if ui.button(tr("Rename")).clicked() || (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
-                    run.push(("shortcuts.preset".into(), json!({"op": "rename", "name": active, "newName": name})));
+                if ui.button(tr("Rename")).clicked()
+                    || (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)))
+                {
+                    run.push((
+                        "shortcuts.preset".into(),
+                        json!({"op": "rename", "name": active, "newName": name}),
+                    ));
                     st.rename = None;
                 }
             } else {
@@ -272,34 +324,57 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
             let b = ui.add_enabled(custom, egui::Button::new(tr("Delete")));
             app.auto.add("shortcuts.delete", b.rect, "Delete");
             if b.clicked() {
-                run.push(("shortcuts.preset".into(), json!({"op": "delete", "name": active})));
+                run.push((
+                    "shortcuts.preset".into(),
+                    json!({"op": "delete", "name": active}),
+                ));
             }
             let b = ui.add_enabled(custom, egui::Button::new(tr("Reset Preset")));
-            app.auto.add("shortcuts.resetPreset", b.rect, "Reset Preset");
+            app.auto
+                .add("shortcuts.resetPreset", b.rect, "Reset Preset");
             if b.clicked() {
                 run.push(("shortcuts.reset".into(), json!({})));
             }
             let b = ui.button(tr("Import..."));
             app.auto.add("shortcuts.import", b.rect, "Import");
             if b.clicked()
-                && let Some(p) = app.hooks.pick_files.as_ref().and_then(|f| f(&["json"]).into_iter().next())
+                && let Some(p) = app
+                    .hooks
+                    .pick_files
+                    .as_ref()
+                    .and_then(|f| f(&["json"]).into_iter().next())
             {
                 run.push(("shortcuts.import".into(), json!({"path": p})));
             }
             let b = ui.button(tr("Export..."));
             app.auto.add("shortcuts.export", b.rect, "Export");
             if b.clicked()
-                && let Some(p) = app.hooks.pick_save_file.as_ref().and_then(|f| f(&format!("{active}.json"), "json"))
+                && let Some(p) = app
+                    .hooks
+                    .pick_save_file
+                    .as_ref()
+                    .and_then(|f| f(&format!("{active}.json"), "json"))
             {
-                run.push(("shortcuts.export".into(), json!({"preset": active, "path": p})));
+                run.push((
+                    "shortcuts.export".into(),
+                    json!({"preset": active, "path": p}),
+                ));
             }
         });
         ui.add_space(6.0);
         // ---- modifiers + legend
         ui.horizontal(|ui| {
             ui.label(tr("Modifiers:"));
-            let names = if cfg!(target_os = "macos") { ["⌃ Ctrl", "⌘ Cmd", "⌥ Opt", "⇧ Shift"] } else { ["", "Ctrl", "Alt", "Shift"] };
-            for (i, (n, id)) in names.iter().zip(["ctrl", "cmd", "alt", "shift"]).enumerate() {
+            let names = if cfg!(target_os = "macos") {
+                ["⌃ Ctrl", "⌘ Cmd", "⌥ Opt", "⇧ Shift"]
+            } else {
+                ["", "Ctrl", "Alt", "Shift"]
+            };
+            for (i, (n, id)) in names
+                .iter()
+                .zip(["ctrl", "cmd", "alt", "shift"])
+                .enumerate()
+            {
                 if n.is_empty() {
                     continue;
                 }
@@ -310,7 +385,10 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
                 }
             }
             ui.add_space(20.0);
-            for (c, l) in [(APP_COLOR, "Application-wide"), (PANEL_COLOR, "Panel-specific")] {
+            for (c, l) in [
+                (APP_COLOR, "Application-wide"),
+                (PANEL_COLOR, "Panel-specific"),
+            ] {
                 let (r, _) = ui.allocate_exact_size(vec2(14.0, 14.0), Sense::hover());
                 ui.painter().rect_filled(r, 2.0, c);
                 ui.label(RichText::new(l).color(t.text_dim));
@@ -320,62 +398,90 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
         // ---- keyboard
         let unit = 40.0;
         let gap = 3.0;
-        let (area, _) = ui.allocate_exact_size(vec2(ui.available_width(), unit * 6.0 + gap * 6.0 + 4.0), Sense::hover());
+        let (area, _) = ui.allocate_exact_size(
+            vec2(ui.available_width(), unit * 6.0 + gap * 6.0 + 4.0),
+            Sense::hover(),
+        );
         let p = ui.painter_at(area);
-        let draw_key = |app: &mut EffectcraftApp, r: Rect, label: &str, name: &str, st: &mut EditorState| {
-            let mod_idx = match name {
-                "#ctrl" => Some(0),
-                "#cmd" => Some(1),
-                "#alt" => Some(2),
-                "#shift" => Some(3),
-                _ => None,
-            };
-            let (a, pn) = keymap.get(name).copied().unwrap_or((false, false));
-            let fill = match mod_idx {
-                Some(i) if mods[i] => t.accent,
-                _ => t.field_bg,
-            };
-            p.rect_filled(r, 4.0, fill);
-            if a && pn {
-                let half = Rect::from_min_max(r.min, pos2(r.center().x, r.max.y));
-                p.rect_filled(half, 4.0, APP_COLOR);
-                p.rect_filled(Rect::from_min_max(pos2(r.center().x, r.min.y), r.max), 4.0, PANEL_COLOR);
-            } else if a {
-                p.rect_filled(r, 4.0, APP_COLOR);
-            } else if pn {
-                p.rect_filled(r, 4.0, PANEL_COLOR);
-            }
-            let sel = st.key.as_deref() == Some(name) && !name.is_empty();
-            p.rect_stroke(r, 4.0, Stroke::new(if sel { 2.0 } else { 1.0 }, if sel { Color32::WHITE } else { t.field_border }), StrokeKind::Inside);
-            p.text(
-                r.left_top() + vec2(5.0, 4.0),
-                Align2::LEFT_TOP,
-                label,
-                Tokens::ui(11.0),
-                if a || pn || mod_idx.is_some_and(|i| mods[i]) { Color32::WHITE } else { t.text },
-            );
-            if name.is_empty() {
-                return;
-            }
-            let id = format!("shortcuts.key.{}", name.trim_start_matches('#'));
-            app.auto.add(&id, r, label);
-            let resp = ui.interact(r, egui::Id::new(("sc-key", name, r.min.x as i32)), Sense::click());
-            if resp.clicked() {
-                if let Some(i) = mod_idx {
-                    st.mods[i] = !st.mods[i];
-                } else {
-                    st.key = Some(name.to_string());
-                    st.pending = format!("{}{}", mods_text(mods), name);
+        let draw_key =
+            |app: &mut EffectcraftApp, r: Rect, label: &str, name: &str, st: &mut EditorState| {
+                let mod_idx = match name {
+                    "#ctrl" => Some(0),
+                    "#cmd" => Some(1),
+                    "#alt" => Some(2),
+                    "#shift" => Some(3),
+                    _ => None,
+                };
+                let (a, pn) = keymap.get(name).copied().unwrap_or((false, false));
+                let fill = match mod_idx {
+                    Some(i) if mods[i] => t.accent,
+                    _ => t.field_bg,
+                };
+                p.rect_filled(r, 4.0, fill);
+                if a && pn {
+                    let half = Rect::from_min_max(r.min, pos2(r.center().x, r.max.y));
+                    p.rect_filled(half, 4.0, APP_COLOR);
+                    p.rect_filled(
+                        Rect::from_min_max(pos2(r.center().x, r.min.y), r.max),
+                        4.0,
+                        PANEL_COLOR,
+                    );
+                } else if a {
+                    p.rect_filled(r, 4.0, APP_COLOR);
+                } else if pn {
+                    p.rect_filled(r, 4.0, PANEL_COLOR);
                 }
-            }
-            if !name.starts_with('#') {
-                let who: Vec<String> =
-                    table.bindings().into_iter().filter(|(sc, _)| split(sc) == (mods, name.to_string())).map(|(_, b)| b.label.clone()).collect();
-                if !who.is_empty() {
-                    resp.on_hover_text(who.join("\n"));
+                let sel = st.key.as_deref() == Some(name) && !name.is_empty();
+                p.rect_stroke(
+                    r,
+                    4.0,
+                    Stroke::new(
+                        if sel { 2.0 } else { 1.0 },
+                        if sel { Color32::WHITE } else { t.field_border },
+                    ),
+                    StrokeKind::Inside,
+                );
+                p.text(
+                    r.left_top() + vec2(5.0, 4.0),
+                    Align2::LEFT_TOP,
+                    label,
+                    Tokens::ui(11.0),
+                    if a || pn || mod_idx.is_some_and(|i| mods[i]) {
+                        Color32::WHITE
+                    } else {
+                        t.text
+                    },
+                );
+                if name.is_empty() {
+                    return;
                 }
-            }
-        };
+                let id = format!("shortcuts.key.{}", name.trim_start_matches('#'));
+                app.auto.add(&id, r, label);
+                let resp = ui.interact(
+                    r,
+                    egui::Id::new(("sc-key", name, r.min.x as i32)),
+                    Sense::click(),
+                );
+                if resp.clicked() {
+                    if let Some(i) = mod_idx {
+                        st.mods[i] = !st.mods[i];
+                    } else {
+                        st.key = Some(name.to_string());
+                        st.pending = format!("{}{}", mods_text(mods), name);
+                    }
+                }
+                if !name.starts_with('#') {
+                    let who: Vec<String> = table
+                        .bindings()
+                        .into_iter()
+                        .filter(|(sc, _)| split(sc) == (mods, name.to_string()))
+                        .map(|(_, b)| b.label.clone())
+                        .collect();
+                    if !who.is_empty() {
+                        resp.on_hover_text(who.join("\n"));
+                    }
+                }
+            };
         let mut y = area.min.y + 2.0;
         for row in keyboard_rows() {
             let mut x = area.min.x + 2.0;
@@ -390,36 +496,84 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
         }
         let side_x = area.min.x + unit * 16.0;
         for (label, name, c, r) in SIDE_KEYS {
-            let rect = Rect::from_min_size(pos2(side_x + c * unit, area.min.y + 2.0 + r * (unit + gap)), vec2(unit - gap, unit - gap));
+            let rect = Rect::from_min_size(
+                pos2(side_x + c * unit, area.min.y + 2.0 + r * (unit + gap)),
+                vec2(unit - gap, unit - gap),
+            );
             draw_key(app, rect, label, name, &mut st);
         }
         // Key details: everything bound to the selected key.
         let info_x = side_x + unit * 3.5;
-        let info = Rect::from_min_max(pos2(info_x, area.min.y + 2.0), pos2(area.max.x - 2.0, area.max.y - 2.0));
+        let info = Rect::from_min_max(
+            pos2(info_x, area.min.y + 2.0),
+            pos2(area.max.x - 2.0, area.max.y - 2.0),
+        );
         p.rect_filled(info, 4.0, t.row);
         let p = ui.painter_at(info.shrink(2.0));
         if let Some(k) = &st.key {
-            p.text(info.left_top() + vec2(8.0, 6.0), Align2::LEFT_TOP, tr_args("Key: {}", &[&k]), Tokens::semibold(12.0), t.tab_text_active);
+            p.text(
+                info.left_top() + vec2(8.0, 6.0),
+                Align2::LEFT_TOP,
+                tr_args("Key: {}", &[&k]),
+                Tokens::semibold(12.0),
+                t.tab_text_active,
+            );
             let mut yy = info.min.y + 26.0;
-            let mut list: Vec<(String, String, String)> =
-                table.bindings().into_iter().filter(|(sc, _)| split(sc).1 == *k).map(|(sc, b)| (sc.to_string(), b.label.clone(), b.scope.clone())).collect();
+            let mut list: Vec<(String, String, String)> = table
+                .bindings()
+                .into_iter()
+                .filter(|(sc, _)| split(sc).1 == *k)
+                .map(|(sc, b)| (sc.to_string(), b.label.clone(), b.scope.clone()))
+                .collect();
             list.sort();
             if list.is_empty() {
-                p.text(pos2(info.min.x + 8.0, yy), Align2::LEFT_TOP, tr("Not assigned"), Tokens::ui(11.5), t.text_dim);
+                p.text(
+                    pos2(info.min.x + 8.0, yy),
+                    Align2::LEFT_TOP,
+                    tr("Not assigned"),
+                    Tokens::ui(11.5),
+                    t.text_dim,
+                );
             }
             for (sc, label, scope) in list.into_iter().take(9) {
-                let col = if scope == APP_SCOPE { APP_COLOR } else { PANEL_COLOR };
-                p.text(pos2(info.min.x + 8.0, yy), Align2::LEFT_TOP, crate::menus::shortcut_text(&sc), Tokens::ui(11.5), col);
-                p.text(pos2(info.min.x + 78.0, yy), Align2::LEFT_TOP, label, Tokens::ui(11.5), t.text);
+                let col = if scope == APP_SCOPE {
+                    APP_COLOR
+                } else {
+                    PANEL_COLOR
+                };
+                p.text(
+                    pos2(info.min.x + 8.0, yy),
+                    Align2::LEFT_TOP,
+                    crate::menus::shortcut_text(&sc),
+                    Tokens::ui(11.5),
+                    col,
+                );
+                p.text(
+                    pos2(info.min.x + 78.0, yy),
+                    Align2::LEFT_TOP,
+                    label,
+                    Tokens::ui(11.5),
+                    t.text,
+                );
                 yy += 17.0;
             }
         } else {
-            p.text(info.left_top() + vec2(8.0, 6.0), Align2::LEFT_TOP, tr("Click a key to see its commands."), Tokens::ui(11.5), t.text_dim);
+            p.text(
+                info.left_top() + vec2(8.0, 6.0),
+                Align2::LEFT_TOP,
+                tr("Click a key to see its commands."),
+                Tokens::ui(11.5),
+                t.text_dim,
+            );
         }
         ui.add_space(4.0);
         // ---- search + command list + editor
         ui.horizontal(|ui| {
-            let r = ui.add(egui::TextEdit::singleline(&mut st.query).hint_text(tr("Search commands or shortcuts")).desired_width(360.0));
+            let r = ui.add(
+                egui::TextEdit::singleline(&mut st.query)
+                    .hint_text(tr("Search commands or shortcuts"))
+                    .desired_width(360.0),
+            );
             crate::widgets::focus_on_open(ui.ctx(), &r, &st.query);
             app.auto.add("shortcuts.search", r.rect, "Search");
         });
@@ -432,8 +586,13 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
                 if q.is_empty() {
                     return true;
                 }
-                let keys = table.keys.get(&b.key).map(|k| k.join(" ")).unwrap_or_default();
-                let hay = format!("{} {} {} {}", b.label, b.command, b.path.join(" "), keys).to_lowercase();
+                let keys = table
+                    .keys
+                    .get(&b.key)
+                    .map(|k| k.join(" "))
+                    .unwrap_or_default();
+                let hay = format!("{} {} {} {}", b.label, b.command, b.path.join(" "), keys)
+                    .to_lowercase();
                 q.split_whitespace().all(|w| hay.contains(w))
             })
             .collect();
@@ -554,7 +713,10 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
         });
         ui.add_space(6.0);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let r = ui.add(egui::Button::new(RichText::new(tr("   OK   ")).color(Color32::WHITE)).fill(t.accent));
+            let r = ui.add(
+                egui::Button::new(RichText::new(tr("   OK   ")).color(Color32::WHITE))
+                    .fill(t.accent),
+            );
             app.auto.add("shortcuts.close", r.rect, "OK");
             close |= r.clicked();
         });
@@ -577,7 +739,10 @@ mod tests {
     #[test]
     fn combo_text_round_trips_through_the_parser() {
         let cases = [
-            (egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::K),
+            (
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+                egui::Key::K,
+            ),
             (egui::Modifiers::ALT, egui::Key::OpenBracket),
             (egui::Modifiers::NONE, egui::Key::F9),
         ];
@@ -585,21 +750,41 @@ mod tests {
             let txt = combo_text(m, k).unwrap();
             let (pm, pk) = crate::menus::parse_shortcut(&txt).unwrap();
             assert_eq!(pk, k, "{txt}");
-            assert_eq!((pm.command, pm.alt, pm.shift), (m.command, m.alt, m.shift), "{txt}");
+            assert_eq!(
+                (pm.command, pm.alt, pm.shift),
+                (m.command, m.alt, m.shift),
+                "{txt}"
+            );
         }
-        assert_eq!(split("Cmd+Shift+K"), ([false, true, false, true], "K".into()));
+        assert_eq!(
+            split("Cmd+Shift+K"),
+            ([false, true, false, true], "K".into())
+        );
         assert_eq!(split("Cmd++"), ([false, true, false, false], "+".into()));
         // The plus key, with and without modifiers, parses back (typed by hand or recorded).
         for txt in ["+", "Cmd++", "Alt++"] {
-            assert_eq!(crate::menus::parse_shortcut(txt).map(|(_, k)| k), Some(egui::Key::Plus), "{txt}");
+            assert_eq!(
+                crate::menus::parse_shortcut(txt).map(|(_, k)| k),
+                Some(egui::Key::Plus),
+                "{txt}"
+            );
         }
-        assert_eq!(crate::menus::parse_shortcut("Alt+R").map(|(m, k)| (m.alt, k)), Some((true, egui::Key::R)));
+        assert_eq!(
+            crate::menus::parse_shortcut("Alt+R").map(|(m, k)| (m.alt, k)),
+            Some((true, egui::Key::R))
+        );
         assert_eq!(split("F9"), ([false; 4], "F9".into()));
     }
 
     fn frame(app: &mut EffectcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) {
         app.auto.begin_frame();
-        let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| crate::panels::dialogs::show(app, ui.ctx()));
+        let mut out = ctx.run_ui(
+            egui::RawInput {
+                events,
+                ..Default::default()
+            },
+            |ui| crate::panels::dialogs::show(app, ui.ctx()),
+        );
         out.textures_delta.clear();
     }
 
@@ -609,19 +794,43 @@ mod tests {
         let ctx = egui::Context::default();
         crate::theme::install(&ctx, &app.tokens, crate::i18n::language(&app));
         open(&mut app);
-        app.dialog_state.shortcuts.selected = app.session.shortcuts().bindables.first().map(|b| b.key.clone());
+        app.dialog_state.shortcuts.selected = app
+            .session
+            .shortcuts()
+            .bindables
+            .first()
+            .map(|b| b.key.clone());
         for _ in 0..3 {
             frame(&mut app, &ctx, vec![]);
         }
-        let [x, y, w, h] = app.auto.find("shortcuts.record").expect("shortcut field").rect;
+        let [x, y, w, h] = app
+            .auto
+            .find("shortcuts.record")
+            .expect("shortcut field")
+            .rect;
         let at = pos2(x + w / 2.0, y + h / 2.0);
-        let click = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
-        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at), click(true)]);
+        let click = |pressed| egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        frame(
+            &mut app,
+            &ctx,
+            vec![egui::Event::PointerMoved(at), click(true)],
+        );
         frame(&mut app, &ctx, vec![click(false)]);
         frame(&mut app, &ctx, vec![]);
         assert!(app.dialog_state.shortcuts.recording);
         // Alt+R arrives as the key and as the typed text `r`.
-        let key = egui::Event::Key { key: egui::Key::R, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::ALT };
+        let key = egui::Event::Key {
+            key: egui::Key::R,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::ALT,
+        };
         frame(&mut app, &ctx, vec![key, egui::Event::Text("r".into())]);
         frame(&mut app, &ctx, vec![]);
         assert_eq!(app.dialog_state.shortcuts.pending, "Alt+R");

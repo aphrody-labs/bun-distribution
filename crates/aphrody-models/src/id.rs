@@ -56,7 +56,10 @@ impl ModelRef {
     pub fn parse(input: &str) -> Result<Self> {
         let raw = input.trim();
         if raw.is_empty() {
-            return Err(ModelError::BadRef { input: input.to_owned(), reason: "empty reference" });
+            return Err(ModelError::BadRef {
+                input: input.to_owned(),
+                reason: "empty reference",
+            });
         }
 
         if let Some(rest) = raw.strip_prefix("hf:") {
@@ -134,7 +137,12 @@ impl ModelRef {
             });
         }
 
-        Ok(Self::Hf { owner: owner.to_owned(), repo: repo.to_owned(), file, revision })
+        Ok(Self::Hf {
+            owner: owner.to_owned(),
+            repo: repo.to_owned(),
+            file,
+            revision,
+        })
     }
 
     /// The resolvable download URL for this reference, when one exists.
@@ -143,7 +151,12 @@ impl ModelRef {
     #[must_use]
     pub fn download_url(&self) -> Option<String> {
         match self {
-            Self::Hf { owner, repo, file, revision } => Some(format!(
+            Self::Hf {
+                owner,
+                repo,
+                file,
+                revision,
+            } => Some(format!(
                 "https://huggingface.co/{owner}/{repo}/resolve/{revision}/{file}?download=true"
             )),
             Self::Url(u) => Some(u.clone()),
@@ -160,7 +173,12 @@ impl ModelRef {
     #[must_use]
     pub fn relative_path(&self) -> Option<PathBuf> {
         match self {
-            Self::Hf { owner, repo, file, revision } => {
+            Self::Hf {
+                owner,
+                repo,
+                file,
+                revision,
+            } => {
                 let mut p = PathBuf::from("hf");
                 p.push(sanitize(owner));
                 p.push(sanitize(repo));
@@ -169,14 +187,14 @@ impl ModelRef {
                     p.push(sanitize(seg));
                 }
                 Some(p)
-            },
+            }
             Self::Url(u) => {
                 let digest = crate::digest::sha256_hex(u.as_bytes());
                 let mut p = PathBuf::from("url");
                 p.push(&digest[..16]);
                 p.push(sanitize(&self.basename()));
                 Some(p)
-            },
+            }
             Self::Local(_) => None,
         }
     }
@@ -193,9 +211,10 @@ impl ModelRef {
                 .filter(|s| !s.is_empty())
                 .unwrap_or("artifact.bin")
                 .to_owned(),
-            Self::Local(p) => p
-                .file_name()
-                .map_or_else(|| p.display().to_string(), |n| n.to_string_lossy().into_owned()),
+            Self::Local(p) => p.file_name().map_or_else(
+                || p.display().to_string(),
+                |n| n.to_string_lossy().into_owned(),
+            ),
         }
     }
 }
@@ -203,13 +222,18 @@ impl ModelRef {
 impl fmt::Display for ModelRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Hf { owner, repo, file, revision } => {
+            Self::Hf {
+                owner,
+                repo,
+                file,
+                revision,
+            } => {
                 write!(f, "hf:{owner}/{repo}/{file}")?;
                 if revision != DEFAULT_REVISION {
                     write!(f, "@{revision}")?;
                 }
                 Ok(())
-            },
+            }
             Self::Url(u) => write!(f, "{u}"),
             Self::Local(p) => write!(f, "file:{}", p.display()),
         }
@@ -244,7 +268,13 @@ impl<'de> serde::Deserialize<'de> for ModelRef {
 fn sanitize(component: &str) -> String {
     let mut out: String = component
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-') { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-') {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     // A component of nothing but dots would still resolve to `.` / `..`.
     if out.is_empty() || out.chars().all(|c| c == '.') {
@@ -275,10 +305,15 @@ mod tests {
     #[test]
     fn parses_pinned_revision() {
         let r = ModelRef::parse("ggerganov/whisper.cpp/ggml-base.en.bin@v1.5.4").unwrap();
-        let ModelRef::Hf { revision, file, .. } = &r else { panic!("expected hf") };
+        let ModelRef::Hf { revision, file, .. } = &r else {
+            panic!("expected hf")
+        };
         assert_eq!(revision, "v1.5.4");
         assert_eq!(file, "ggml-base.en.bin");
-        assert_eq!(r.to_string(), "hf:ggerganov/whisper.cpp/ggml-base.en.bin@v1.5.4");
+        assert_eq!(
+            r.to_string(),
+            "hf:ggerganov/whisper.cpp/ggml-base.en.bin@v1.5.4"
+        );
     }
 
     #[test]
@@ -338,7 +373,9 @@ mod tests {
     #[test]
     fn slash_bearing_suffix_is_not_a_revision() {
         let r = ModelRef::parse("hf:a/b/c.onnx@refs/pr/1").unwrap();
-        let ModelRef::Hf { revision, .. } = &r else { panic!() };
+        let ModelRef::Hf { revision, .. } = &r else {
+            panic!()
+        };
         assert_eq!(revision, "main");
     }
 

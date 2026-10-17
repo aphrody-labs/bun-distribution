@@ -44,7 +44,8 @@ impl Dash {
     /// pattern with a negative or non-finite value, or whose values are all zero, is invalid and the
     /// stroke is drawn solid.
     pub fn is_dashed(&self) -> bool {
-        self.pattern.iter().all(|v| v.is_finite() && *v >= 0.0) && self.pattern.iter().any(|v| *v > 0.0)
+        self.pattern.iter().all(|v| v.is_finite() && *v >= 0.0)
+            && self.pattern.iter().any(|v| *v > 0.0)
     }
     /// Scale the dash and gap lengths and the offset by `s`.
     pub fn scale(&mut self, s: f64) {
@@ -238,35 +239,78 @@ impl WidthProfile {
         for w in p.windows(2) {
             if t <= w[1].0 {
                 let u = (t - w[0].0) / (w[1].0 - w[0].0).max(1e-9);
-                return (w[0].1 + (w[1].1 - w[0].1) * u, w[0].2 + (w[1].2 - w[0].2) * u);
+                return (
+                    w[0].1 + (w[1].1 - w[0].1) * u,
+                    w[0].2 + (w[1].2 - w[0].2) * u,
+                );
             }
         }
         p.last().map_or((1.0, 1.0), |l| (l.1, l.2))
     }
     /// The built-in profiles, in menu order. "uniform" is the plain stroke (no profile).
     pub const PRESETS: [ProfilePreset; 7] = [
-        ProfilePreset { id: "uniform", label: "Uniform", points: &[(0.0, 1.0, 1.0), (1.0, 1.0, 1.0)] },
-        ProfilePreset { id: "lens", label: "Lens", points: &[(0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)] },
-        ProfilePreset { id: "taperStart", label: "Taper Start", points: &[(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)] },
-        ProfilePreset { id: "taperEnd", label: "Taper End", points: &[(0.0, 1.0, 1.0), (1.0, 0.0, 0.0)] },
+        ProfilePreset {
+            id: "uniform",
+            label: "Uniform",
+            points: &[(0.0, 1.0, 1.0), (1.0, 1.0, 1.0)],
+        },
+        ProfilePreset {
+            id: "lens",
+            label: "Lens",
+            points: &[(0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)],
+        },
+        ProfilePreset {
+            id: "taperStart",
+            label: "Taper Start",
+            points: &[(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)],
+        },
+        ProfilePreset {
+            id: "taperEnd",
+            label: "Taper End",
+            points: &[(0.0, 1.0, 1.0), (1.0, 0.0, 0.0)],
+        },
         // Full width at both ends, pinched to a quarter in the middle.
-        ProfilePreset { id: "pinch", label: "Pinch", points: &[(0.0, 1.0, 1.0), (0.5, 0.25, 0.25), (1.0, 1.0, 1.0)] },
+        ProfilePreset {
+            id: "pinch",
+            label: "Pinch",
+            points: &[(0.0, 1.0, 1.0), (0.5, 0.25, 0.25), (1.0, 1.0, 1.0)],
+        },
         // A round head a fifth of the way along, then a long taper to the end.
-        ProfilePreset { id: "teardrop", label: "Teardrop", points: &[(0.0, 0.0, 0.0), (0.2, 1.0, 1.0), (1.0, 0.0, 0.0)] },
+        ProfilePreset {
+            id: "teardrop",
+            label: "Teardrop",
+            points: &[(0.0, 0.0, 0.0), (0.2, 1.0, 1.0), (1.0, 0.0, 0.0)],
+        },
         // Two swells between narrow necks.
-        ProfilePreset { id: "wave", label: "Wave", points: &[(0.0, 0.3, 0.3), (0.25, 1.0, 1.0), (0.5, 0.3, 0.3), (0.75, 1.0, 1.0), (1.0, 0.3, 0.3)] },
+        ProfilePreset {
+            id: "wave",
+            label: "Wave",
+            points: &[
+                (0.0, 0.3, 0.3),
+                (0.25, 1.0, 1.0),
+                (0.5, 0.3, 0.3),
+                (0.75, 1.0, 1.0),
+                (1.0, 0.3, 0.3),
+            ],
+        },
     ];
     /// The built-in profile with this id.
     pub fn preset(id: &str) -> Option<Self> {
-        Self::PRESETS.iter().find(|p| p.id == id).map(|p| Self { points: p.points.to_vec() })
+        Self::PRESETS.iter().find(|p| p.id == id).map(|p| Self {
+            points: p.points.to_vec(),
+        })
     }
     /// The id of the built-in profile these points match, if any.
     pub fn preset_id(&self) -> Option<&'static str> {
-        Self::PRESETS.iter().find(|p| p.points == self.points.as_slice()).map(|p| p.id)
+        Self::PRESETS
+            .iter()
+            .find(|p| p.points == self.points.as_slice())
+            .map(|p| p.id)
     }
     /// The id of a stroke's profile: "uniform" without one, "custom" when it matches no preset.
     pub fn id_of(p: Option<&Self>) -> &'static str {
-        p.map_or(Some("uniform"), Self::preset_id).unwrap_or("custom")
+        p.map_or(Some("uniform"), Self::preset_id)
+            .unwrap_or("custom")
     }
     /// The lens profile (thin ends, full width in the middle).
     pub fn lens() -> Self {
@@ -283,7 +327,11 @@ impl WidthProfile {
     pub fn around(&self, t: f64) -> ((f64, f64), (f64, f64)) {
         let p = &self.points;
         if let Some(i) = p.iter().position(|q| (q.0 - t).abs() <= 1e-7) {
-            let j = i + p[i..].iter().take_while(|q| (q.0 - p[i].0).abs() <= 1e-9).count() - 1;
+            let j = i + p[i..]
+                .iter()
+                .take_while(|q| (q.0 - p[i].0).abs() <= 1e-9)
+                .count()
+                - 1;
             if j > i {
                 return ((p[i].1, p[i].2), (p[j].1, p[j].2));
             }
@@ -313,26 +361,37 @@ impl PressureProfile {
     /// The pressure at `t` (0..1), linear between samples; [`Self::MID`] without any.
     pub fn at(&self, t: f64) -> f64 {
         let p = &self.points;
-        let (Some(first), Some(last)) = (p.first(), p.last()) else { return Self::MID };
+        let (Some(first), Some(last)) = (p.first(), p.last()) else {
+            return Self::MID;
+        };
         let v = if t <= first.0 {
             first.1
         } else {
             p.windows(2)
                 .find_map(|w| match w {
-                    [a, b] if t <= b.0 => Some(a.1 + (b.1 - a.1) * ((t - a.0) / (b.0 - a.0).max(1e-9)).clamp(0.0, 1.0)),
+                    [a, b] if t <= b.0 => Some(
+                        a.1 + (b.1 - a.1) * ((t - a.0) / (b.0 - a.0).max(1e-9)).clamp(0.0, 1.0),
+                    ),
                     _ => None,
                 })
                 .unwrap_or(last.1)
         };
-        if v.is_finite() { v.clamp(0.0, 1.0) } else { Self::MID }
+        if v.is_finite() {
+            v.clamp(0.0, 1.0)
+        } else {
+            Self::MID
+        }
     }
 
     /// A profile from (position, pressure) samples in order along the stroke: values are clamped
     /// into 0..1 (non-finite ones dropped), the curve is simplified to within 1 % and kept to
     /// [`Self::MAX_POINTS`]. `None` without a sample.
     pub fn from_samples(samples: impl IntoIterator<Item = (f64, f64)>) -> Option<Self> {
-        let pts: Vec<(f64, f64)> =
-            samples.into_iter().filter(|(t, p)| t.is_finite() && p.is_finite()).map(|(t, p)| (t.clamp(0.0, 1.0), p.clamp(0.0, 1.0))).collect();
+        let pts: Vec<(f64, f64)> = samples
+            .into_iter()
+            .filter(|(t, p)| t.is_finite() && p.is_finite())
+            .map(|(t, p)| (t.clamp(0.0, 1.0), p.clamp(0.0, 1.0)))
+            .collect();
         if pts.is_empty() {
             return None;
         }
@@ -345,14 +404,28 @@ impl PressureProfile {
             prev = p.0;
         }
         let keep = simplify_1d(&pts, Self::TOLERANCE);
-        let pts = thin(pts.iter().zip(keep).filter(|(_, k)| *k).map(|(p, _)| *p).collect(), Self::MAX_POINTS);
+        let pts = thin(
+            pts.iter()
+                .zip(keep)
+                .filter(|(_, k)| *k)
+                .map(|(p, _)| *p)
+                .collect(),
+            Self::MAX_POINTS,
+        );
         let round = |v: f64| (v * 1e4).round() / 1e4;
-        Some(Self { points: pts.into_iter().map(|(t, p)| (round(t), round(p))).collect() })
+        Some(Self {
+            points: pts.into_iter().map(|(t, p)| (round(t), round(p))).collect(),
+        })
     }
 
     /// The pressure of a path `old_len` long (`old`; None: drawn without pressure) continued at its
     /// end by a stroke `added_len` long (`added`). None when neither has pressure.
-    pub fn extended(old: Option<&Self>, old_len: f64, added: Option<&Self>, added_len: f64) -> Option<Self> {
+    pub fn extended(
+        old: Option<&Self>,
+        old_len: f64,
+        added: Option<&Self>,
+        added_len: f64,
+    ) -> Option<Self> {
         if old.is_none() && added.is_none() {
             return None;
         }
@@ -361,7 +434,9 @@ impl PressureProfile {
         if !total.is_finite() || total <= 1e-9 {
             return old.or(added).cloned();
         }
-        let flat = Self { points: vec![(0.0, Self::MID), (1.0, Self::MID)] };
+        let flat = Self {
+            points: vec![(0.0, Self::MID), (1.0, Self::MID)],
+        };
         let (old, added) = (old.unwrap_or(&flat), added.unwrap_or(&flat));
         let o = old_len / total;
         let old_pts = old.points.iter().map(|&(t, p)| (t * o, p));
@@ -370,12 +445,21 @@ impl PressureProfile {
 
     /// The pressure of the path reversed.
     pub fn reversed(&self) -> Self {
-        Self { points: self.points.iter().rev().map(|&(t, p)| (1.0 - t, p)).collect() }
+        Self {
+            points: self
+                .points
+                .iter()
+                .rev()
+                .map(|&(t, p)| (1.0 - t, p))
+                .collect(),
+        }
     }
 
     /// A light–heavy–light stroke, for previews of pressure-sensitive brushes.
     pub fn sample() -> Self {
-        Self { points: vec![(0.0, 0.0), (0.5, 1.0), (1.0, 0.0)] }
+        Self {
+            points: vec![(0.0, 0.0), (0.5, 1.0), (1.0, 0.0)],
+        }
     }
 }
 
@@ -385,14 +469,18 @@ fn thin(pts: Vec<(f64, f64)>, max: usize) -> Vec<(f64, f64)> {
     if n <= max || max < 2 {
         return pts;
     }
-    (0..max).filter_map(|i| pts.get(i * (n - 1) / (max - 1)).copied()).collect()
+    (0..max)
+        .filter_map(|i| pts.get(i * (n - 1) / (max - 1)).copied())
+        .collect()
 }
 
 /// Douglas–Peucker over a function sampled at `pts`: which samples to keep so the polyline through
 /// them stays within `tol` (vertically) of every sample. The ends are always kept.
 fn simplify_1d(pts: &[(f64, f64)], tol: f64) -> Vec<bool> {
     let mut keep = vec![false; pts.len()];
-    let Some(last) = pts.len().checked_sub(1) else { return keep };
+    let Some(last) = pts.len().checked_sub(1) else {
+        return keep;
+    };
     for i in [0, last] {
         if let Some(k) = keep.get_mut(i) {
             *k = true;
@@ -400,9 +488,19 @@ fn simplify_1d(pts: &[(f64, f64)], tol: f64) -> Vec<bool> {
     }
     let mut stack = vec![(0, last)];
     while let Some((i, j)) = stack.pop() {
-        let (Some(&a), Some(&b)) = (pts.get(i), pts.get(j)) else { continue };
-        let line = |t: f64| if b.0 - a.0 > 1e-12 { a.1 + (b.1 - a.1) * (t - a.0) / (b.0 - a.0) } else { (a.1 + b.1) / 2.0 };
-        let far = (i + 1..j).filter_map(|k| pts.get(k).map(|q| (k, (q.1 - line(q.0)).abs()))).max_by(|x, y| x.1.total_cmp(&y.1));
+        let (Some(&a), Some(&b)) = (pts.get(i), pts.get(j)) else {
+            continue;
+        };
+        let line = |t: f64| {
+            if b.0 - a.0 > 1e-12 {
+                a.1 + (b.1 - a.1) * (t - a.0) / (b.0 - a.0)
+            } else {
+                (a.1 + b.1) / 2.0
+            }
+        };
+        let far = (i + 1..j)
+            .filter_map(|k| pts.get(k).map(|q| (k, (q.1 - line(q.0)).abs())))
+            .max_by(|x, y| x.1.total_cmp(&y.1));
         if let Some((k, d)) = far
             && d > tol
         {
@@ -461,7 +559,14 @@ pub struct FillLayer {
 
 impl FillLayer {
     pub fn new(paint: Paint) -> Self {
-        Self { paint, opacity: 1.0, blend: BlendMode::Normal, visible: true, effects: vec![], overprint: false }
+        Self {
+            paint,
+            opacity: 1.0,
+            blend: BlendMode::Normal,
+            visible: true,
+            effects: vec![],
+            overprint: false,
+        }
     }
 }
 
@@ -530,7 +635,11 @@ pub enum StrokeGradientMode {
 }
 
 impl StrokeGradientMode {
-    pub const ALL: [StrokeGradientMode; 3] = [StrokeGradientMode::Within, StrokeGradientMode::Along, StrokeGradientMode::Across];
+    pub const ALL: [StrokeGradientMode; 3] = [
+        StrokeGradientMode::Within,
+        StrokeGradientMode::Along,
+        StrokeGradientMode::Across,
+    ];
     /// The name commands use (`within`, `along`, `across`).
     pub fn name(self) -> &'static str {
         match self {
@@ -541,7 +650,9 @@ impl StrokeGradientMode {
     }
     /// Parse a mode name (any case).
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|m| m.name().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.name().eq_ignore_ascii_case(s))
     }
 }
 
@@ -590,14 +701,24 @@ impl StrokeLayer {
     /// Weight of the start (`end == false`) or end arrowhead: stroke weight × its scale, at least
     /// a quarter point. A head of weight `hw` fits a box about `4·hw` long and wide.
     pub fn arrow_weight(&self, end: bool) -> f64 {
-        let pct = if end { self.arrow_scale.1 } else { self.arrow_scale.0 };
+        let pct = if end {
+            self.arrow_scale.1
+        } else {
+            self.arrow_scale.0
+        };
         (self.width * pct / 100.0).max(0.25)
     }
     /// How far the start (`end == false`) or end arrowhead can reach from its end point (0
     /// without one): the head's diagonal, or with [`ArrowAlign::Extend`] its length, plus the cap.
     pub fn head_reach(&self, end: bool) -> f64 {
-        let head = if end { self.end_arrow } else { self.start_arrow };
-        head.map_or(0.0, |_| HEAD_REACH * self.arrow_weight(end) + self.width / 2.0)
+        let head = if end {
+            self.end_arrow
+        } else {
+            self.start_arrow
+        };
+        head.map_or(0.0, |_| {
+            HEAD_REACH * self.arrow_weight(end) + self.width / 2.0
+        })
     }
     /// How far the arrowheads can reach from the path's end points (0 without heads).
     pub fn arrow_reach(&self) -> f64 {
@@ -605,7 +726,11 @@ impl StrokeLayer {
     }
     /// The widest the width profile makes the stroke, as a factor of its weight (1 without one).
     pub fn profile_max(&self) -> f64 {
-        self.profile.as_ref().and_then(|p| p.points.iter().map(|&(_, l, r)| l.max(r)).reduce(f64::max)).unwrap_or(1.0).max(0.0)
+        self.profile
+            .as_ref()
+            .and_then(|p| p.points.iter().map(|&(_, l, r)| l.max(r)).reduce(f64::max))
+            .unwrap_or(1.0)
+            .max(0.0)
     }
     /// The stroke's body across a path that is `closed` or open: how far it reaches from the path
     /// at full width (half the weight centred; the whole weight on one side when aligned inside or
@@ -629,8 +754,16 @@ impl StrokeLayer {
     /// limit, projecting caps' corners and the arrowheads ([`Appearance::outset`]).
     pub fn reach(&self) -> f64 {
         let side = self.side_reach(true).max(self.side_reach(false));
-        let miter = if self.join == LineJoin::Miter { self.miter_limit.max(1.0) } else { 1.0 };
-        let cap = if self.cap == LineCap::Square { std::f64::consts::SQRT_2 } else { 1.0 };
+        let miter = if self.join == LineJoin::Miter {
+            self.miter_limit.max(1.0)
+        } else {
+            1.0
+        };
+        let cap = if self.cap == LineCap::Square {
+            std::f64::consts::SQRT_2
+        } else {
+            1.0
+        };
         (side * miter.max(cap)).max(self.arrow_reach())
     }
     /// The box an unplaced gradient on this stroke fits to (see [`stroke_paint_bounds`]).
@@ -642,7 +775,8 @@ impl StrokeLayer {
     pub fn path_gradient(&self) -> Option<&vectorcraft_color::GradientPaint> {
         match &self.paint {
             Paint::Gradient(g)
-                if self.gradient_mode != StrokeGradientMode::Within && g.gradient.kind != vectorcraft_color::GradientKind::Freeform =>
+                if self.gradient_mode != StrokeGradientMode::Within
+                    && g.gradient.kind != vectorcraft_color::GradientKind::Freeform =>
             {
                 Some(g)
             }
@@ -653,7 +787,10 @@ impl StrokeLayer {
 
 /// The box an unplaced gradient on a stroke of `width` fits to: the geometric bounds grown by half
 /// the weight (object strokes and type strokes alike, on screen and in exports).
-pub fn stroke_paint_bounds(geometric: vectorcraft_geom::Rect, width: f64) -> vectorcraft_geom::Rect {
+pub fn stroke_paint_bounds(
+    geometric: vectorcraft_geom::Rect,
+    width: f64,
+) -> vectorcraft_geom::Rect {
     geometric.inflate(width / 2.0, width / 2.0)
 }
 
@@ -749,7 +886,13 @@ pub struct Appearance {
 impl Appearance {
     /// Illustrator's "basic appearance": one fill below one stroke.
     pub fn basic(fill: Paint, stroke: Paint, width: f64) -> Self {
-        Self { items: vec![AppearanceItem::Fill(FillLayer::new(fill)), AppearanceItem::Stroke(StrokeLayer::new(stroke, width))], ..Self::default() }
+        Self {
+            items: vec![
+                AppearanceItem::Fill(FillLayer::new(fill)),
+                AppearanceItem::Stroke(StrokeLayer::new(stroke, width)),
+            ],
+            ..Self::default()
+        }
     }
     /// White fill, 1 pt black stroke (the default for new art).
     pub fn default_art() -> Self {
@@ -757,17 +900,41 @@ impl Appearance {
     }
     /// The topmost fill (what the Fill proxy shows).
     pub fn fill(&self) -> Option<&FillLayer> {
-        self.items.iter().rev().find_map(|i| if let AppearanceItem::Fill(f) = i { Some(f) } else { None })
+        self.items.iter().rev().find_map(|i| {
+            if let AppearanceItem::Fill(f) = i {
+                Some(f)
+            } else {
+                None
+            }
+        })
     }
     pub fn fill_mut(&mut self) -> Option<&mut FillLayer> {
-        self.items.iter_mut().rev().find_map(|i| if let AppearanceItem::Fill(f) = i { Some(f) } else { None })
+        self.items.iter_mut().rev().find_map(|i| {
+            if let AppearanceItem::Fill(f) = i {
+                Some(f)
+            } else {
+                None
+            }
+        })
     }
     /// The topmost stroke (what the Stroke proxy shows).
     pub fn stroke(&self) -> Option<&StrokeLayer> {
-        self.items.iter().rev().find_map(|i| if let AppearanceItem::Stroke(s) = i { Some(s) } else { None })
+        self.items.iter().rev().find_map(|i| {
+            if let AppearanceItem::Stroke(s) = i {
+                Some(s)
+            } else {
+                None
+            }
+        })
     }
     pub fn stroke_mut(&mut self) -> Option<&mut StrokeLayer> {
-        self.items.iter_mut().rev().find_map(|i| if let AppearanceItem::Stroke(s) = i { Some(s) } else { None })
+        self.items.iter_mut().rev().find_map(|i| {
+            if let AppearanceItem::Stroke(s) = i {
+                Some(s)
+            } else {
+                None
+            }
+        })
     }
     /// This appearance for other art: the pen pressure its strokes were drawn with stays with them.
     pub fn without_pressure(mut self) -> Self {
@@ -782,7 +949,9 @@ impl Appearance {
         self.fill().map(|f| f.paint.clone()).unwrap_or(Paint::None)
     }
     pub fn stroke_paint(&self) -> Paint {
-        self.stroke().map(|s| s.paint.clone()).unwrap_or(Paint::None)
+        self.stroke()
+            .map(|s| s.paint.clone())
+            .unwrap_or(Paint::None)
     }
     /// Set the top fill's paint, creating a fill if there is none.
     pub fn set_fill(&mut self, p: Paint) {
@@ -795,11 +964,16 @@ impl Appearance {
     pub fn set_stroke(&mut self, p: Paint) {
         match self.stroke_mut() {
             Some(s) => s.paint = p,
-            None => self.items.push(AppearanceItem::Stroke(StrokeLayer::new(p, 1.0))),
+            None => self
+                .items
+                .push(AppearanceItem::Stroke(StrokeLayer::new(p, 1.0))),
         }
     }
     pub fn stroke_width(&self) -> f64 {
-        self.stroke().filter(|s| !s.paint.is_none()).map(|s| s.width).unwrap_or(0.0)
+        self.stroke()
+            .filter(|s| !s.paint.is_none())
+            .map(|s| s.width)
+            .unwrap_or(0.0)
     }
     /// Is this a basic appearance: at most one fill and one stroke, none hidden or with its own
     /// opacity, blend mode or effects, and no object effects?
@@ -809,7 +983,12 @@ impl Appearance {
             && self.contents_index.is_none()
             && count(true) <= 1
             && count(false) <= 1
-            && self.items.iter().all(|i| i.visible() && i.effects().is_empty() && i.opacity() == 1.0 && i.blend() == BlendMode::Normal)
+            && self.items.iter().all(|i| {
+                i.visible()
+                    && i.effects().is_empty()
+                    && i.opacity() == 1.0
+                    && i.blend() == BlendMode::Normal
+            })
     }
     /// Fill item `index`, or the topmost fill for `None`. `None` when that item is not a fill.
     pub fn fill_at(&self, index: Option<usize>) -> Option<&FillLayer> {
@@ -883,11 +1062,19 @@ impl Appearance {
     }
     /// The paint of fill (`fill`) or stroke item `index` (`None`: the topmost one).
     pub fn paint_at(&self, index: Option<usize>, fill: bool) -> Option<&Paint> {
-        if fill { self.fill_at(index).map(|f| &f.paint) } else { self.stroke_at(index).map(|s| &s.paint) }
+        if fill {
+            self.fill_at(index).map(|f| &f.paint)
+        } else {
+            self.stroke_at(index).map(|s| &s.paint)
+        }
     }
     /// [`Self::set_fill_at`] or [`Self::set_stroke_at`].
     pub fn set_paint_at(&mut self, index: Option<usize>, fill: bool, p: Paint) -> bool {
-        if fill { self.set_fill_at(index, p) } else { self.set_stroke_at(index, p) }
+        if fill {
+            self.set_fill_at(index, p)
+        } else {
+            self.set_stroke_at(index, p)
+        }
     }
     /// The effects of item `index`, or the object-level effects for `None`.
     pub fn effects_at(&self, index: Option<usize>) -> Option<&Vec<Effect>> {
@@ -912,7 +1099,9 @@ impl Appearance {
     /// Largest distance the painted area can extend beyond any geometry (see
     /// [`StrokeLayer::reach`]); paths measure their own with [`Self::stroked_bounds`].
     pub fn outset(&self) -> f64 {
-        self.painted_strokes().map(StrokeLayer::reach).fold(0.0, f64::max)
+        self.painted_strokes()
+            .map(StrokeLayer::reach)
+            .fold(0.0, f64::max)
     }
     /// Scale stroke weights, dash lengths and dash offsets (Scale Strokes & Effects).
     pub fn scale_strokes(&mut self, s: f64) {
@@ -928,7 +1117,10 @@ impl Appearance {
     /// Scale the distance parameters of every effect (the object's and each fill's and stroke's)
     /// by `s` with `scale` (the effects catalogue knows which parameters are distances).
     pub fn scale_effects(&mut self, s: f64, scale: fn(&mut Effect, f64)) {
-        let items = self.items.iter_mut().flat_map(|i| i.effects_mut().iter_mut());
+        let items = self
+            .items
+            .iter_mut()
+            .flat_map(|i| i.effects_mut().iter_mut());
         for e in self.effects.iter_mut().chain(items) {
             scale(e, s);
         }
@@ -936,16 +1128,28 @@ impl Appearance {
     /// Gradient paints of the fills and strokes.
     fn gradients_mut(&mut self) -> impl Iterator<Item = &mut vectorcraft_color::GradientPaint> {
         self.items.iter_mut().filter_map(|i| match i {
-            AppearanceItem::Fill(FillLayer { paint: Paint::Gradient(g), .. })
-            | AppearanceItem::Stroke(StrokeLayer { paint: Paint::Gradient(g), .. }) => Some(&mut **g),
+            AppearanceItem::Fill(FillLayer {
+                paint: Paint::Gradient(g),
+                ..
+            })
+            | AppearanceItem::Stroke(StrokeLayer {
+                paint: Paint::Gradient(g),
+                ..
+            }) => Some(&mut **g),
             _ => None,
         })
     }
     /// Gradient paints of the fills and strokes.
     pub(crate) fn gradients(&self) -> impl Iterator<Item = &vectorcraft_color::GradientPaint> {
         self.items.iter().filter_map(|i| match i {
-            AppearanceItem::Fill(FillLayer { paint: Paint::Gradient(g), .. })
-            | AppearanceItem::Stroke(StrokeLayer { paint: Paint::Gradient(g), .. }) => Some(&**g),
+            AppearanceItem::Fill(FillLayer {
+                paint: Paint::Gradient(g),
+                ..
+            })
+            | AppearanceItem::Stroke(StrokeLayer {
+                paint: Paint::Gradient(g),
+                ..
+            }) => Some(&**g),
             _ => None,
         })
     }
@@ -967,9 +1171,16 @@ impl Appearance {
             }
             if let (Some(fa), Some(fo)) = (&mut g.freeform, &o.freeform)
                 && fa.points.len() == fo.points.len()
-                && fa.points.iter().zip(&fo.points).all(|(p, q)| p.at.distance(q.at) <= 1e-6)
+                && fa
+                    .points
+                    .iter()
+                    .zip(&fo.points)
+                    .all(|(p, q)| p.at.distance(q.at) <= 1e-6)
             {
-                fa.points.iter_mut().zip(&fo.points).for_each(|(p, q)| p.at = q.at);
+                fa.points
+                    .iter_mut()
+                    .zip(&fo.points)
+                    .for_each(|(p, q)| p.at = q.at);
             }
         }
         a == *other
@@ -978,8 +1189,14 @@ impl Appearance {
     /// space; none: fitted to the bounds on each render)?
     fn has_gradient(&self, placed: bool) -> bool {
         self.items.iter().any(|i| match i {
-            AppearanceItem::Fill(FillLayer { paint: Paint::Gradient(g), .. })
-            | AppearanceItem::Stroke(StrokeLayer { paint: Paint::Gradient(g), .. }) => g.is_placed() == placed,
+            AppearanceItem::Fill(FillLayer {
+                paint: Paint::Gradient(g),
+                ..
+            })
+            | AppearanceItem::Stroke(StrokeLayer {
+                paint: Paint::Gradient(g),
+                ..
+            }) => g.is_placed() == placed,
             _ => false,
         })
     }
@@ -996,7 +1213,10 @@ impl Appearance {
     pub fn pin_gradients(&mut self, bounds: vectorcraft_geom::Rect) {
         for i in &mut self.items {
             match i {
-                AppearanceItem::Fill(FillLayer { paint: Paint::Gradient(g), .. }) => g.pin(bounds),
+                AppearanceItem::Fill(FillLayer {
+                    paint: Paint::Gradient(g),
+                    ..
+                }) => g.pin(bounds),
                 AppearanceItem::Stroke(s) => {
                     let b = s.paint_bounds(bounds);
                     if let Paint::Gradient(g) = &mut s.paint {
@@ -1013,7 +1233,10 @@ impl Appearance {
     pub fn rebase_gradients(&mut self, from: vectorcraft_geom::Rect, to: vectorcraft_geom::Rect) {
         for i in &mut self.items {
             match i {
-                AppearanceItem::Fill(FillLayer { paint: Paint::Gradient(g), .. }) => g.rebase(from, to),
+                AppearanceItem::Fill(FillLayer {
+                    paint: Paint::Gradient(g),
+                    ..
+                }) => g.rebase(from, to),
                 AppearanceItem::Stroke(s) => {
                     let (f, t) = (s.paint_bounds(from), s.paint_bounds(to));
                     if let Paint::Gradient(g) = &mut s.paint {
@@ -1034,13 +1257,22 @@ impl Appearance {
     /// geometric bounds are `bounds` with a warp, given its local affine approximation at a point
     /// (taken at the middle of each gradient's vector). Unplaced ones are fixed to their fit first;
     /// other gradients stay as they are.
-    pub fn warp_linear_gradients(&mut self, bounds: vectorcraft_geom::Rect, near: &dyn Fn(vectorcraft_geom::Point) -> vectorcraft_geom::Affine) {
+    pub fn warp_linear_gradients(
+        &mut self,
+        bounds: vectorcraft_geom::Rect,
+        near: &dyn Fn(vectorcraft_geom::Point) -> vectorcraft_geom::Affine,
+    ) {
         for i in &mut self.items {
             let (g, b) = match i {
-                AppearanceItem::Fill(FillLayer { paint: Paint::Gradient(g), .. }) => (g, bounds),
+                AppearanceItem::Fill(FillLayer {
+                    paint: Paint::Gradient(g),
+                    ..
+                }) => (g, bounds),
                 AppearanceItem::Stroke(s) => {
                     let b = s.paint_bounds(bounds);
-                    let Paint::Gradient(g) = &mut s.paint else { continue };
+                    let Paint::Gradient(g) = &mut s.paint else {
+                        continue;
+                    };
                     (g, b)
                 }
                 _ => continue,
@@ -1057,11 +1289,18 @@ impl Appearance {
     /// Map placed gradients through a warp, given its local affine approximation at a point (taken
     /// at each gradient's centre: the start of a radial, the middle of a linear vector). Freeform
     /// points each follow the warp at their own position.
-    pub fn warp_gradients(&mut self, near: &dyn Fn(vectorcraft_geom::Point) -> vectorcraft_geom::Affine) {
+    pub fn warp_gradients(
+        &mut self,
+        near: &dyn Fn(vectorcraft_geom::Point) -> vectorcraft_geom::Affine,
+    ) {
         for g in self.gradients_mut() {
             let freeform = g.freeform.take();
             if let Some(geom) = g.geom {
-                let c = if g.gradient.kind == vectorcraft_color::GradientKind::Radial { geom.start } else { geom.start.midpoint(geom.end) };
+                let c = if g.gradient.kind == vectorcraft_color::GradientKind::Radial {
+                    geom.start
+                } else {
+                    geom.start.midpoint(geom.end)
+                };
                 g.transform(near(c));
             }
             g.freeform = freeform.map(|mut f| {
@@ -1076,7 +1315,11 @@ impl Appearance {
     /// Is any fill, stroke or effect (the object's or an item's) hidden?
     pub fn has_hidden(&self) -> bool {
         let hidden = |fx: &[Effect]| fx.iter().any(|e| !e.visible);
-        hidden(&self.effects) || self.items.iter().any(|i| !i.visible() || hidden(i.effects()))
+        hidden(&self.effects)
+            || self
+                .items
+                .iter()
+                .any(|i| !i.visible() || hidden(i.effects()))
     }
 
     /// Make every hidden fill, stroke and effect visible (Show All Hidden Attributes). Returns
@@ -1143,7 +1386,11 @@ impl Appearance {
         let others_below = self.contents_at();
         let to = to.min(self.items.len());
         self.items.insert(to, it);
-        let now_below = if below { to <= others_below } else { to < others_below };
+        let now_below = if below {
+            to <= others_below
+        } else {
+            to < others_below
+        };
         self.set_contents_at(others_below + usize::from(now_below));
         Some(to)
     }
@@ -1158,10 +1405,18 @@ mod tests {
         let mut a = Appearance::default_art();
         assert!(!a.has_hidden() && !a.show_all());
         a.stroke_mut().unwrap().visible = false;
-        a.items[0].effects_mut().push(Effect { id: "distort.roughen".into(), params: serde_json::Value::Null, visible: false });
+        a.items[0].effects_mut().push(Effect {
+            id: "distort.roughen".into(),
+            params: serde_json::Value::Null,
+            visible: false,
+        });
         assert!(a.has_hidden());
         assert!(a.show_all());
-        assert!(!a.has_hidden() && a.items.iter().all(AppearanceItem::visible) && a.items[0].effects()[0].visible);
+        assert!(
+            !a.has_hidden()
+                && a.items.iter().all(AppearanceItem::visible)
+                && a.items[0].effects()[0].visible
+        );
     }
 
     #[test]
@@ -1178,43 +1433,75 @@ mod tests {
         use vectorcraft_geom::{Point, Rect};
         let placed = |x: f64| {
             let mut g = GradientPaint::new(Gradient::default());
-            g.geom = Some(GradientGeom { start: Point::new(x, 0.0), end: Point::new(x + 10.0, 0.0), aspect: 1.0, focal: None });
+            g.geom = Some(GradientGeom {
+                start: Point::new(x, 0.0),
+                end: Point::new(x + 10.0, 0.0),
+                aspect: 1.0,
+                focal: None,
+            });
             Paint::Gradient(Box::new(g))
         };
         let mut a = Appearance::basic(placed(0.0), placed(-5.0), 10.0);
-        a.rebase_gradients(Rect::new(0.0, 0.0, 100.0, 100.0), Rect::new(100.0, 0.0, 300.0, 100.0));
+        a.rebase_gradients(
+            Rect::new(0.0, 0.0, 100.0, 100.0),
+            Rect::new(100.0, 0.0, 300.0, 100.0),
+        );
         let start = |p: Paint| match p {
             Paint::Gradient(g) => g.geom.unwrap().start,
             _ => panic!("a gradient"),
         };
         // The fill's start stays on the left edge; the stroke's on its inflated box's (−5 → 95).
-        assert_eq!((start(a.fill_paint()), start(a.stroke_paint())), (Point::new(100.0, 0.0), Point::new(95.0, 0.0)));
+        assert_eq!(
+            (start(a.fill_paint()), start(a.stroke_paint())),
+            (Point::new(100.0, 0.0), Point::new(95.0, 0.0))
+        );
     }
 
     #[test]
     fn items_by_index() {
         let mut a = Appearance::default_art();
-        a.items.push(AppearanceItem::Fill(FillLayer::new(Paint::None)));
+        a.items
+            .push(AppearanceItem::Fill(FillLayer::new(Paint::None)));
         // [Fill white, Stroke black, Fill none]
         assert_eq!(a.fill_at(None).unwrap().paint, Paint::None);
-        assert_eq!(a.fill_at(Some(0)).unwrap().paint, Paint::solid(Color::WHITE));
-        assert!(a.fill_at(Some(1)).is_none() && a.stroke_at(Some(0)).is_none() && a.fill_at(Some(9)).is_none());
+        assert_eq!(
+            a.fill_at(Some(0)).unwrap().paint,
+            Paint::solid(Color::WHITE)
+        );
+        assert!(
+            a.fill_at(Some(1)).is_none()
+                && a.stroke_at(Some(0)).is_none()
+                && a.fill_at(Some(9)).is_none()
+        );
         assert_eq!(a.item_of_kind(Some(1), false), Some(1));
         assert_eq!(a.item_of_kind(Some(1), true), None);
         assert_eq!(a.fill_for(Some(1)).unwrap().paint, Paint::None);
         assert!(a.set_fill_at(Some(0), Paint::solid(Color::BLACK)));
         assert!(!a.set_stroke_at(Some(0), Paint::None));
-        assert_eq!(a.fill_at(Some(0)).unwrap().paint, Paint::solid(Color::BLACK));
-        a.effects_mut(Some(1)).unwrap().push(Effect { id: "distort.roughen".into(), params: serde_json::Value::Null, visible: true });
+        assert_eq!(
+            a.fill_at(Some(0)).unwrap().paint,
+            Paint::solid(Color::BLACK)
+        );
+        a.effects_mut(Some(1)).unwrap().push(Effect {
+            id: "distort.roughen".into(),
+            params: serde_json::Value::Null,
+            visible: true,
+        });
         assert_eq!(a.effects_at(Some(1)).unwrap().len(), 1);
         assert!(a.effects_at(None).unwrap().is_empty() && a.effects_mut(Some(3)).is_none());
-        assert_eq!((a.items[1].kind_name(), a.items[2].kind_name()), ("stroke", "fill"));
+        assert_eq!(
+            (a.items[1].kind_name(), a.items[2].kind_name()),
+            ("stroke", "fill")
+        );
     }
 
     #[test]
     fn basic_means_one_plain_fill_and_stroke() {
         let stroke = || AppearanceItem::Stroke(StrokeLayer::new(Paint::solid(Color::BLACK), 1.0));
-        let mut a = Appearance { items: vec![stroke(), stroke()], ..Appearance::default() };
+        let mut a = Appearance {
+            items: vec![stroke(), stroke()],
+            ..Appearance::default()
+        };
         assert!(!a.is_basic(), "two strokes");
         a.items.pop();
         assert!(a.is_basic() && Appearance::default().is_basic());
@@ -1225,10 +1512,15 @@ mod tests {
         c.fill_mut().unwrap().opacity = 0.5;
         assert!(!c.is_basic(), "fill opacity");
         let mut d = Appearance::default_art();
-        d.items.push(AppearanceItem::Fill(FillLayer::new(Paint::None)));
+        d.items
+            .push(AppearanceItem::Fill(FillLayer::new(Paint::None)));
         assert!(!d.is_basic(), "two fills");
         let mut e = Appearance::default_art();
-        e.effects.push(Effect { id: "distort.roughen".into(), params: serde_json::Value::Null, visible: true });
+        e.effects.push(Effect {
+            id: "distort.roughen".into(),
+            params: serde_json::Value::Null,
+            visible: true,
+        });
         assert!(!e.is_basic(), "an effect");
     }
 
@@ -1245,36 +1537,70 @@ mod tests {
     #[test]
     fn pressure_profile_samples_simplify_and_interpolate() {
         // A steady ramp keeps only its ends; a bump keeps its peak.
-        let ramp = PressureProfile::from_samples((0..=100).map(|i| (i as f64 / 100.0, i as f64 / 100.0))).unwrap();
+        let ramp =
+            PressureProfile::from_samples((0..=100).map(|i| (i as f64 / 100.0, i as f64 / 100.0)))
+                .unwrap();
         assert_eq!(ramp.points, vec![(0.0, 0.0), (1.0, 1.0)]);
         assert!((ramp.at(0.25) - 0.25).abs() < 1e-9);
-        let bump = PressureProfile::from_samples([(0.0, 0.2), (0.3, 0.2), (0.5, 0.9), (0.7, 0.2), (1.0, 0.2)]).unwrap();
-        assert!(bump.points.contains(&(0.5, 0.9)) && (bump.at(0.4) - 0.55).abs() < 1e-9, "{bump:?}");
+        let bump = PressureProfile::from_samples([
+            (0.0, 0.2),
+            (0.3, 0.2),
+            (0.5, 0.9),
+            (0.7, 0.2),
+            (1.0, 0.2),
+        ])
+        .unwrap();
+        assert!(
+            bump.points.contains(&(0.5, 0.9)) && (bump.at(0.4) - 0.55).abs() < 1e-9,
+            "{bump:?}"
+        );
         // Junk is clamped or dropped; positions never go back; nothing at all is no profile.
-        let junk = PressureProfile::from_samples([(f64::NAN, 0.5), (0.5, 7.0), (0.2, -1.0), (2.0, f64::INFINITY)]).unwrap();
+        let junk = PressureProfile::from_samples([
+            (f64::NAN, 0.5),
+            (0.5, 7.0),
+            (0.2, -1.0),
+            (2.0, f64::INFINITY),
+        ])
+        .unwrap();
         assert_eq!(junk.points, vec![(0.5, 1.0), (0.5, 0.0)]);
         assert!(PressureProfile::from_samples([(f64::NAN, 0.5)]).is_none());
         assert_eq!(PressureProfile::default().at(0.3), PressureProfile::MID);
         // A long noisy stroke stays bounded.
-        let noisy = PressureProfile::from_samples((0..1_000_000).map(|i| (i as f64 / 1e6, (i % 2) as f64))).unwrap();
+        let noisy =
+            PressureProfile::from_samples((0..1_000_000).map(|i| (i as f64 / 1e6, (i % 2) as f64)))
+                .unwrap();
         assert!(noisy.points.len() <= PressureProfile::MAX_POINTS);
         // Out-of-order points (a hand-edited file) still read within 0..1.
-        let odd = PressureProfile { points: vec![(1.0, 5.0), (0.0, -3.0)] };
+        let odd = PressureProfile {
+            points: vec![(1.0, 5.0), (0.0, -3.0)],
+        };
         assert!((0.0..=1.0).contains(&odd.at(0.5)));
     }
 
     #[test]
     fn pressure_profile_extends_and_reverses() {
-        let old = PressureProfile { points: vec![(0.0, 0.0), (1.0, 1.0)] };
-        let added = PressureProfile { points: vec![(0.0, 1.0), (1.0, 0.0)] };
+        let old = PressureProfile {
+            points: vec![(0.0, 0.0), (1.0, 1.0)],
+        };
+        let added = PressureProfile {
+            points: vec![(0.0, 1.0), (1.0, 0.0)],
+        };
         // A 30 pt path continued by 10 pt: its ramp fills the first three quarters.
         let joined = PressureProfile::extended(Some(&old), 30.0, Some(&added), 10.0).unwrap();
-        assert!((joined.at(0.75) - 1.0).abs() < 1e-9 && (joined.at(0.375) - 0.5).abs() < 1e-9 && joined.at(1.0) == 0.0, "{joined:?}");
+        assert!(
+            (joined.at(0.75) - 1.0).abs() < 1e-9
+                && (joined.at(0.375) - 0.5).abs() < 1e-9
+                && joined.at(1.0) == 0.0,
+            "{joined:?}"
+        );
         // A side without pressure is half way.
         let half = PressureProfile::extended(None, 10.0, Some(&added), 10.0).unwrap();
         assert_eq!(half.at(0.25), PressureProfile::MID);
         assert!(PressureProfile::extended(None, 10.0, None, 10.0).is_none());
-        assert_eq!(PressureProfile::extended(Some(&old), 0.0, None, f64::NAN), Some(old.clone()));
+        assert_eq!(
+            PressureProfile::extended(Some(&old), 0.0, None, f64::NAN),
+            Some(old.clone())
+        );
         assert_eq!(old.reversed().points, vec![(0.0, 1.0), (1.0, 0.0)]);
     }
 
@@ -1285,8 +1611,12 @@ mod tests {
         assert!(json.get("pressure").is_none());
         let st: StrokeLayer = serde_json::from_value(json).unwrap();
         assert_eq!(st.pressure, None);
-        let pressed = StrokeLayer { pressure: Some(PressureProfile::sample()), ..st };
-        let back: StrokeLayer = serde_json::from_value(serde_json::to_value(&pressed).unwrap()).unwrap();
+        let pressed = StrokeLayer {
+            pressure: Some(PressureProfile::sample()),
+            ..st
+        };
+        let back: StrokeLayer =
+            serde_json::from_value(serde_json::to_value(&pressed).unwrap()).unwrap();
         assert_eq!(back, pressed);
         let mut ap = Appearance::basic(Paint::None, Paint::None, 1.0);
         ap.stroke_mut().unwrap().pressure = Some(PressureProfile::sample());
@@ -1309,9 +1639,17 @@ mod tests {
             assert_eq!(WidthProfile::id_of(Some(&prof)), p.id);
         }
         assert_eq!(WidthProfile::id_of(None), "uniform");
-        assert_eq!(WidthProfile::id_of(Some(&WidthProfile { points: vec![(0.0, 0.3, 0.3)] })), "custom");
+        assert_eq!(
+            WidthProfile::id_of(Some(&WidthProfile {
+                points: vec![(0.0, 0.3, 0.3)]
+            })),
+            "custom"
+        );
         assert!(WidthProfile::preset("nope").is_none());
-        assert_eq!(WidthProfile::lens().points, vec![(0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)]);
+        assert_eq!(
+            WidthProfile::lens().points,
+            vec![(0.0, 0.0, 0.0), (0.5, 1.0, 1.0), (1.0, 0.0, 0.0)]
+        );
     }
 
     #[test]
@@ -1362,9 +1700,14 @@ mod tests {
         for name in SAVED {
             let a: Arrowhead = serde_json::from_value(serde_json::json!(name)).unwrap();
             assert_eq!(serde_json::to_value(a).unwrap(), name);
-            assert_eq!(Arrowhead::ALL.iter().filter(|x| **x == a).count(), 1, "{name} in the menu once");
+            assert_eq!(
+                Arrowhead::ALL.iter().filter(|x| **x == a).count(),
+                1,
+                "{name} in the menu once"
+            );
         }
-        let labels: std::collections::HashSet<&str> = Arrowhead::ALL.iter().map(|a| a.label()).collect();
+        let labels: std::collections::HashSet<&str> =
+            Arrowhead::ALL.iter().map(|a| a.label()).collect();
         assert_eq!(labels.len(), Arrowhead::ALL.len(), "labels are distinct");
     }
 
@@ -1374,7 +1717,8 @@ mod tests {
         assert_eq!(st.arrow_align, ArrowAlign::Extend);
         // The default is not written, so older readers see the same JSON as before.
         assert!(!serde_json::to_string(&st).unwrap().contains("arrow_align"));
-        let old: StrokeLayer = serde_json::from_str(r#"{"paint":{"type":"none"},"width":2.0}"#).unwrap();
+        let old: StrokeLayer =
+            serde_json::from_str(r#"{"paint":{"type":"none"},"width":2.0}"#).unwrap();
         assert_eq!(old.arrow_align, ArrowAlign::Extend);
         st.arrow_align = ArrowAlign::Tip;
         let back: StrokeLayer = serde_json::from_str(&serde_json::to_string(&st).unwrap()).unwrap();
@@ -1391,11 +1735,18 @@ mod tests {
         st.arrow_scale = (100.0, 200.0);
         assert_eq!(st.arrow_weight(false), 4.0);
         assert_eq!(st.arrow_weight(true), 8.0);
-        assert_eq!((st.head_reach(false), st.head_reach(true)), (0.0, HEAD_REACH * 8.0 + 2.0));
+        assert_eq!(
+            (st.head_reach(false), st.head_reach(true)),
+            (0.0, HEAD_REACH * 8.0 + 2.0)
+        );
         // A 32 pt head whose tip sits up to its length (plus the cap) past the end point.
         assert_eq!(a.outset(), HEAD_REACH * 8.0 + 2.0);
         a.stroke_mut().unwrap().width = 0.01;
-        assert_eq!(a.stroke().unwrap().arrow_weight(true), 0.25, "heads keep a minimum size");
+        assert_eq!(
+            a.stroke().unwrap().arrow_weight(true),
+            0.25,
+            "heads keep a minimum size"
+        );
     }
 
     #[test]
@@ -1408,7 +1759,13 @@ mod tests {
         // Open paths stroke inside-aligned strokes centred.
         a.stroke_mut().unwrap().align = StrokeAlign::Inside;
         assert_eq!(a.outset(), 5.0);
-        assert_eq!((a.stroke().unwrap().side_reach(true), a.stroke().unwrap().body(true)), (0.0, (10.0, Some(true))));
+        assert_eq!(
+            (
+                a.stroke().unwrap().side_reach(true),
+                a.stroke().unwrap().body(true)
+            ),
+            (0.0, (10.0, Some(true)))
+        );
     }
 
     #[test]
@@ -1419,10 +1776,15 @@ mod tests {
         let st = a.stroke_mut().unwrap();
         st.join = LineJoin::Bevel;
         st.cap = LineCap::Square;
-        assert!((a.outset() - std::f64::consts::SQRT_2).abs() < 1e-12, "a projecting cap's corner");
+        assert!(
+            (a.outset() - std::f64::consts::SQRT_2).abs() < 1e-12,
+            "a projecting cap's corner"
+        );
         let st = a.stroke_mut().unwrap();
         st.cap = LineCap::Round;
-        st.profile = Some(WidthProfile { points: vec![(0.0, 0.5, 2.5), (1.0, 1.0, 1.0)] });
+        st.profile = Some(WidthProfile {
+            points: vec![(0.0, 0.5, 2.5), (1.0, 1.0, 1.0)],
+        });
         assert_eq!(st.profile_max(), 2.5);
         assert_eq!(a.outset(), 2.5);
         a.stroke_mut().unwrap().paint = Paint::None;
@@ -1432,8 +1794,15 @@ mod tests {
     #[test]
     fn contents_slot_follows_item_edits_and_round_trips() {
         let fill = || AppearanceItem::Fill(FillLayer::new(Paint::None));
-        let mut a = Appearance { items: vec![fill(), fill(), fill()], ..Appearance::default() };
-        assert_eq!((a.contents_at(), a.split_contents().1.len()), (0, 3), "all items above by default");
+        let mut a = Appearance {
+            items: vec![fill(), fill(), fill()],
+            ..Appearance::default()
+        };
+        assert_eq!(
+            (a.contents_at(), a.split_contents().1.len()),
+            (0, 3),
+            "all items above by default"
+        );
         a.set_contents_at(1);
         assert!(!a.is_basic());
         // [0 | 1 2]: removing below shifts the slot, removing above doesn't.
@@ -1462,6 +1831,10 @@ mod tests {
         assert_eq!(serde_json::from_str::<Appearance>(&json).unwrap(), a);
         let old: Appearance = serde_json::from_str(r#"{"items":[]}"#).unwrap();
         assert_eq!(old.contents_index, None);
-        assert!(!serde_json::to_string(&Appearance::default_art()).unwrap().contains("contents_index"));
+        assert!(
+            !serde_json::to_string(&Appearance::default_art())
+                .unwrap()
+                .contains("contents_index")
+        );
     }
 }

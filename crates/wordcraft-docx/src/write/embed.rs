@@ -14,7 +14,8 @@ use wordcraft_doc::para::Float;
 
 use super::PartRels;
 use crate::package::{
-    CUSTOM_XML_ROOTS, EMBEDDED_PARTS, EmbeddedManifest, MAX_EMBEDDED_PARTS, MAX_EMBEDDED_RELS, VBA_PROJECT_PART, VBA_RELATED, rel_is, relative, rt,
+    CUSTOM_XML_ROOTS, EMBEDDED_PARTS, EmbeddedManifest, MAX_EMBEDDED_PARTS, MAX_EMBEDDED_RELS,
+    VBA_PROJECT_PART, VBA_RELATED, rel_is, relative, rt,
 };
 use crate::units::{MAX_LEN_PT, emu, int};
 use crate::xml::{self, El, MAX_DEPTH};
@@ -52,7 +53,11 @@ pub(crate) struct EmbedWriter<'d> {
 
 impl<'d> EmbedWriter<'d> {
     pub fn new(doc: &'d wordcraft_doc::Document) -> EmbedWriter<'d> {
-        let manifest = doc.passthrough.get(EMBEDDED_PARTS).map(|m| EmbeddedManifest::parse(m)).unwrap_or_default();
+        let manifest = doc
+            .passthrough
+            .get(EMBEDDED_PARTS)
+            .map(|m| EmbeddedManifest::parse(m))
+            .unwrap_or_default();
         let mut taken: HashSet<String> = [
             "word/document.xml",
             "word/styles.xml",
@@ -71,7 +76,10 @@ impl<'d> EmbedWriter<'d> {
         taken.insert(VBA_PROJECT_PART.to_ascii_lowercase());
         // The bibliography writer uses these names when sources are present (#532).
         if !doc.sources.is_empty() {
-            taken.extend(["customxml/item1.xml".into(), "customxml/itemprops1.xml".into()]);
+            taken.extend([
+                "customxml/item1.xml".into(),
+                "customxml/itemprops1.xml".into(),
+            ]);
         }
         // The macro project's parts keep their names (see `write_as`).
         if let Some(m) = doc.passthrough.get(VBA_RELATED) {
@@ -104,7 +112,8 @@ impl<'d> EmbedWriter<'d> {
     /// Reserve the names of the media files this writer writes.
     pub fn reserve_media<'a>(&mut self, files: impl Iterator<Item = &'a String>) {
         for f in files {
-            self.taken.insert(format!("word/media/{f}").to_ascii_lowercase());
+            self.taken
+                .insert(format!("word/media/{f}").to_ascii_lowercase());
         }
     }
 
@@ -113,14 +122,19 @@ impl<'d> EmbedWriter<'d> {
         lower.ends_with(".rels")
             || lower.starts_with("docprops/")
             || lower.starts_with("_rels/")
-            || ((lower.starts_with("word/header") || lower.starts_with("word/footer")) && lower.ends_with(".xml"))
+            || ((lower.starts_with("word/header") || lower.starts_with("word/footer"))
+                && lower.ends_with(".xml"))
     }
 
     /// A free part name for (a copy of) `orig`: `orig` itself if free, else `stem_N.ext`.
     fn alloc(&mut self, orig: &str) -> String {
         // Suffixes cannot escape reserved directories or a .rels extension. Such a kept
         // part needs a different base name, otherwise every candidate would be reserved.
-        let orig = if Self::reserved(&orig.to_ascii_lowercase()) { "word/embeddings/part.xml" } else { orig };
+        let orig = if Self::reserved(&orig.to_ascii_lowercase()) {
+            "word/embeddings/part.xml"
+        } else {
+            orig
+        };
         let lower = orig.to_ascii_lowercase();
         if !Self::reserved(&lower) && self.taken.insert(lower) {
             return orig.to_string();
@@ -179,12 +193,19 @@ impl<'d> EmbedWriter<'d> {
 
     /// Reattach implicit custom XML roots, sharing their kept parts across both owners.
     pub fn custom_xml_rels(&mut self, owner: &str, rels: &mut PartRels) {
-        let Some(roots) = self.passthrough.get(CUSTOM_XML_ROOTS).cloned() else { return };
+        let Some(roots) = self.passthrough.get(CUSTOM_XML_ROOTS).cloned() else {
+            return;
+        };
         let mut memo = std::mem::take(&mut self.first);
         let mut written = Vec::new();
-        for line in String::from_utf8_lossy(&roots).lines().take(MAX_EMBEDDED_RELS * 2) {
+        for line in String::from_utf8_lossy(&roots)
+            .lines()
+            .take(MAX_EMBEDDED_RELS * 2)
+        {
             let fields: Vec<&str> = line.split('\t').collect();
-            let [source, kind, target] = fields.as_slice() else { continue };
+            let [source, kind, target] = fields.as_slice() else {
+                continue;
+            };
             if *source != owner || !rel_is(kind, rt::CUSTOM_XML) {
                 continue;
             }
@@ -205,9 +226,16 @@ impl<'d> EmbedWriter<'d> {
             if !seen.insert(p) || seen.len() > MAX_EMBEDDED_PARTS {
                 continue;
             }
-            cost = cost.saturating_add(self.passthrough.get(p).map_or(0, |b| b.len() as u64)).saturating_add(PART_COST);
+            cost = cost
+                .saturating_add(self.passthrough.get(p).map_or(0, |b| b.len() as u64))
+                .saturating_add(PART_COST);
             if let Some(info) = self.manifest.parts.get(p) {
-                todo.extend(info.rels.iter().filter(|r| !r.external).map(|r| r.target.as_str()));
+                todo.extend(
+                    info.rels
+                        .iter()
+                        .filter(|r| !r.external)
+                        .map(|r| r.target.as_str()),
+                );
             }
         }
         cost
@@ -216,7 +244,12 @@ impl<'d> EmbedWriter<'d> {
     /// Write part `root` and the parts it reaches, naming them through `memo` (original → written
     /// name; parts already in it aren't written again). Returns `root`'s written name and adds
     /// the indices of the parts written to `written`.
-    fn copy_tree(&mut self, root: &str, memo: &mut HashMap<String, String>, written: &mut Vec<usize>) -> Option<String> {
+    fn copy_tree(
+        &mut self,
+        root: &str,
+        memo: &mut HashMap<String, String>,
+        written: &mut Vec<usize>,
+    ) -> Option<String> {
         if let Some(n) = memo.get(root) {
             return Some(n.clone());
         }
@@ -227,8 +260,15 @@ impl<'d> EmbedWriter<'d> {
         memo.insert(root.to_string(), name.clone());
         let mut todo = vec![root.to_string()];
         while let Some(orig) = todo.pop() {
-            let (Some(info), Some(bytes)) = (self.manifest.parts.get(&orig).cloned(), self.passthrough.get(&orig)) else { continue };
-            let Some(new) = memo.get(&orig).cloned() else { continue };
+            let (Some(info), Some(bytes)) = (
+                self.manifest.parts.get(&orig).cloned(),
+                self.passthrough.get(&orig),
+            ) else {
+                continue;
+            };
+            let Some(new) = memo.get(&orig).cloned() else {
+                continue;
+            };
             let mut rels = PartRels::default();
             for r in &info.rels {
                 if r.external {
@@ -248,7 +288,11 @@ impl<'d> EmbedWriter<'d> {
                 };
                 rels.add_with_id(&r.id, &r.kind, &relative(&new, &target), false);
             }
-            let ct = if info.content_type.is_empty() { "application/octet-stream".to_string() } else { info.content_type };
+            let ct = if info.content_type.is_empty() {
+                "application/octet-stream".to_string()
+            } else {
+                info.content_type
+            };
             written.push(self.parts.len());
             self.parts.push((new, bytes.to_vec(), ct, rels));
         }
@@ -261,13 +305,24 @@ impl super::Writer<'_> {
     /// story part's) and the parts it needs queued for writing. `resize`, for an OLE object, writes
     /// the object's current size and position into its own markup (a chart or diagram's frame is
     /// written by the caller). `None` when it can't be written back (its parts are gone).
-    pub(super) fn embedded_xml(&mut self, src: &Embedded, rels: &mut PartRels, resize: Option<(f32, f32, &Float, &str)>) -> Option<String> {
-        self.embedded_tree(src, rels, resize).map(|root| root.to_xml())
+    pub(super) fn embedded_xml(
+        &mut self,
+        src: &Embedded,
+        rels: &mut PartRels,
+        resize: Option<(f32, f32, &Float, &str)>,
+    ) -> Option<String> {
+        self.embedded_tree(src, rels, resize)
+            .map(|root| root.to_xml())
     }
 
     /// The same bounded preservation operation, retaining the parsed tree for a caller that
     /// must rebuild an ink AlternateContent drawing frame without reparsing unbound prefixes.
-    pub(super) fn embedded_tree(&mut self, src: &Embedded, rels: &mut PartRels, resize: Option<(f32, f32, &Float, &str)>) -> Option<El> {
+    pub(super) fn embedded_tree(
+        &mut self,
+        src: &Embedded,
+        rels: &mut PartRels,
+        resize: Option<(f32, f32, &Float, &str)>,
+    ) -> Option<El> {
         let Some(left) = self.embeds.markup_bytes.checked_sub(src.xml.len() as u64) else {
             log::warn!("docx: too much embedded-object markup; the rest is left out");
             return None;
@@ -277,27 +332,46 @@ impl super::Writer<'_> {
         let mut used = Vec::new();
         rel_attr_values(&root, &mut used, 0);
         // Every relationship the markup uses must be writable, or the object would be broken.
-        let writable = |id: &String| src.refs.iter().any(|r| r.id == *id && (r.external || self.embeds.available(&r.target)));
+        let writable = |id: &String| {
+            src.refs
+                .iter()
+                .any(|r| r.id == *id && (r.external || self.embeds.available(&r.target)))
+        };
         if !used.iter().all(writable) {
             log::warn!("docx: an embedded object's parts are missing; it is left out");
             return None;
         }
-        let roots: Vec<&str> = src.refs.iter().filter(|r| !r.external).map(|r| r.target.as_str()).collect();
+        let roots: Vec<&str> = src
+            .refs
+            .iter()
+            .filter(|r| !r.external)
+            .map(|r| r.target.as_str())
+            .collect();
         // Written before (a copy of this object): give this one its own parts while the budget lasts.
         let again = roots.iter().any(|r| self.embeds.first.contains_key(*r));
-        let cost = if again { self.embeds.tree_cost(&roots) } else { 0 };
+        let cost = if again {
+            self.embeds.tree_cost(&roots)
+        } else {
+            0
+        };
         let fresh = again && cost <= self.embeds.copy_bytes;
         if fresh {
             self.embeds.copy_bytes -= cost;
         }
-        let mut memo = if fresh { HashMap::new() } else { std::mem::take(&mut self.embeds.first) };
+        let mut memo = if fresh {
+            HashMap::new()
+        } else {
+            std::mem::take(&mut self.embeds.first)
+        };
         let mut written = Vec::new();
         let mut ids: HashMap<String, String> = HashMap::new();
         for r in &src.refs {
             let new_id = if r.external {
                 Some(rels.add(&r.kind, &r.target, true))
             } else {
-                self.embeds.copy_tree(&r.target, &mut memo, &mut written).map(|name| rels.add(&r.kind, &relative(STORY_PART, &name), false))
+                self.embeds
+                    .copy_tree(&r.target, &mut memo, &mut written)
+                    .map(|name| rels.add(&r.kind, &relative(STORY_PART, &name), false))
             };
             if let Some(id) = new_id {
                 ids.insert(r.id.clone(), id);
@@ -328,37 +402,93 @@ impl super::Writer<'_> {
     /// The `a:graphic` of a SmartArt graphic written from its model, laid out `w` × `h` points:
     /// new diagram parts (`word/diagrams/{data,layout,quickStyle,colors,drawing}N.xml`) related
     /// from the story part through `rels`.
-    pub(super) fn smart_art_graphic(&mut self, spec: &wordcraft_doc::smart_art::SmartArtSpec, w: f32, h: f32, rels: &mut PartRels) -> String {
+    pub(super) fn smart_art_graphic(
+        &mut self,
+        spec: &wordcraft_doc::smart_art::SmartArtSpec,
+        w: f32,
+        h: f32,
+        rels: &mut PartRels,
+    ) -> String {
         use crate::package::rt;
         use crate::smart_art as sa;
         let names = self.embeds.fresh_set(
-            &["word/diagrams/data", "word/diagrams/layout", "word/diagrams/quickStyle", "word/diagrams/colors", "word/diagrams/drawing"],
+            &[
+                "word/diagrams/data",
+                "word/diagrams/layout",
+                "word/diagrams/quickStyle",
+                "word/diagrams/colors",
+                "word/diagrams/drawing",
+            ],
             ".xml",
         );
-        let [data, layout, style, colors, drawing] = names.as_slice() else { return String::new() };
+        let [data, layout, style, colors, drawing] = names.as_slice() else {
+            return String::new();
+        };
         // The drawing first: the data part names it by the story part's relationship id.
         let drawing_id = rels.add(rt::DIAGRAM_DRAWING, &relative(STORY_PART, drawing), false);
         let parts = [
-            (data, sa::data_xml(spec, &drawing_id), sa::DATA_CT, rt::DIAGRAM_DATA),
-            (layout, sa::layout_xml(spec.layout), sa::LAYOUT_CT, rt::DIAGRAM_LAYOUT),
-            (style, sa::quick_style_xml(), sa::STYLE_CT, rt::DIAGRAM_QUICK_STYLE),
-            (colors, sa::colors_xml(spec.colors), sa::COLORS_CT, rt::DIAGRAM_COLORS),
-            (drawing, sa::drawing_xml(spec, w, h), sa::DRAWING_CT, rt::DIAGRAM_DRAWING),
+            (
+                data,
+                sa::data_xml(spec, &drawing_id),
+                sa::DATA_CT,
+                rt::DIAGRAM_DATA,
+            ),
+            (
+                layout,
+                sa::layout_xml(spec.layout),
+                sa::LAYOUT_CT,
+                rt::DIAGRAM_LAYOUT,
+            ),
+            (
+                style,
+                sa::quick_style_xml(),
+                sa::STYLE_CT,
+                rt::DIAGRAM_QUICK_STYLE,
+            ),
+            (
+                colors,
+                sa::colors_xml(spec.colors),
+                sa::COLORS_CT,
+                rt::DIAGRAM_COLORS,
+            ),
+            (
+                drawing,
+                sa::drawing_xml(spec, w, h),
+                sa::DRAWING_CT,
+                rt::DIAGRAM_DRAWING,
+            ),
         ];
         let mut ids = Vec::new();
         for (name, xml, ct, kind) in parts {
-            self.embeds.parts.push((name.clone(), xml.into_bytes(), ct.to_string(), PartRels::default()));
+            self.embeds.parts.push((
+                name.clone(),
+                xml.into_bytes(),
+                ct.to_string(),
+                PartRels::default(),
+            ));
             ids.push(rels.add(kind, &relative(STORY_PART, name), false));
         }
         let id = |i: usize| ids.get(i).cloned().unwrap_or_default();
         let mut x = xml::W::default();
-        x.open("a:graphic", &[("xmlns:a", "http://schemas.openxmlformats.org/drawingml/2006/main")]);
+        x.open(
+            "a:graphic",
+            &[(
+                "xmlns:a",
+                "http://schemas.openxmlformats.org/drawingml/2006/main",
+            )],
+        );
         x.open("a:graphicData", &[("uri", sa::DIAGRAM_URI)]);
         x.empty(
             "dgm:relIds",
             &[
-                ("xmlns:dgm", "http://schemas.openxmlformats.org/drawingml/2006/diagram"),
-                ("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships"),
+                (
+                    "xmlns:dgm",
+                    "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+                ),
+                (
+                    "xmlns:r",
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                ),
                 ("r:dm", &id(0)),
                 ("r:lo", &id(1)),
                 ("r:qs", &id(2)),
@@ -372,19 +502,44 @@ impl super::Writer<'_> {
 
     /// The `a:graphic` of a chart written from its model: a new chart part (`word/charts/chartN.xml`)
     /// related from the story part through `rels`.
-    pub(super) fn chart_graphic(&mut self, spec: &wordcraft_doc::chart::ChartSpec, rels: &mut PartRels) -> String {
+    pub(super) fn chart_graphic(
+        &mut self,
+        spec: &wordcraft_doc::chart::ChartSpec,
+        rels: &mut PartRels,
+    ) -> String {
         let name = self.embeds.fresh("word/charts/chart", ".xml");
         let bytes = crate::chart_spec::chart_xml(spec).into_bytes();
-        self.embeds.parts.push((name.clone(), bytes, crate::chart_spec::CHART_CT.to_string(), PartRels::default()));
-        let id = rels.add(crate::package::rt::CHART, &relative(STORY_PART, &name), false);
+        self.embeds.parts.push((
+            name.clone(),
+            bytes,
+            crate::chart_spec::CHART_CT.to_string(),
+            PartRels::default(),
+        ));
+        let id = rels.add(
+            crate::package::rt::CHART,
+            &relative(STORY_PART, &name),
+            false,
+        );
         let mut w = xml::W::default();
-        w.open("a:graphic", &[("xmlns:a", "http://schemas.openxmlformats.org/drawingml/2006/main")]);
+        w.open(
+            "a:graphic",
+            &[(
+                "xmlns:a",
+                "http://schemas.openxmlformats.org/drawingml/2006/main",
+            )],
+        );
         w.open("a:graphicData", &[("uri", crate::chart_spec::CHART_URI)]);
         w.empty(
             "c:chart",
             &[
-                ("xmlns:c", "http://schemas.openxmlformats.org/drawingml/2006/chart"),
-                ("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships"),
+                (
+                    "xmlns:c",
+                    "http://schemas.openxmlformats.org/drawingml/2006/chart",
+                ),
+                (
+                    "xmlns:r",
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                ),
                 ("r:id", &id),
             ],
         );
@@ -396,7 +551,15 @@ impl super::Writer<'_> {
     /// Write an OLE object's size (and position, when floating), rotation and flips into its VML
     /// shape and DrawingML picture, with the effect extent covering the rotated bounds as for
     /// other drawings, its alt text into both, and give its drawing a fresh `wp:docPr` id.
-    fn resize_object(&mut self, e: &mut El, w: f32, h: f32, float: &Float, alt: &str, depth: usize) {
+    fn resize_object(
+        &mut self,
+        e: &mut El,
+        w: f32,
+        h: f32,
+        float: &Float,
+        alt: &str,
+        depth: usize,
+    ) {
         if depth > MAX_DEPTH {
             return;
         }
@@ -409,9 +572,22 @@ impl super::Writer<'_> {
             }
             "wp:extent" => set_size_attrs(e, w, h),
             // A turned object needs an effect extent (filled in below) right after its extent.
-            "wp:inline" | "wp:anchor" if !e.els().any(|c| c.name == "wp:effectExtent") && float.spin().deg != 0.0 => {
-                if let Some(at) = e.kids.iter().position(|k| matches!(k, xml::Node::El(c) if c.name == "wp:extent")) {
-                    e.kids.insert(at + 1, xml::Node::El(El { name: "wp:effectExtent".to_string(), attrs: Vec::new(), kids: Vec::new() }));
+            "wp:inline" | "wp:anchor"
+                if !e.els().any(|c| c.name == "wp:effectExtent") && float.spin().deg != 0.0 =>
+            {
+                if let Some(at) = e
+                    .kids
+                    .iter()
+                    .position(|k| matches!(k, xml::Node::El(c) if c.name == "wp:extent"))
+                {
+                    e.kids.insert(
+                        at + 1,
+                        xml::Node::El(El {
+                            name: "wp:effectExtent".to_string(),
+                            attrs: Vec::new(),
+                            kids: Vec::new(),
+                        }),
+                    );
                 }
             }
             "wp:effectExtent" => {
@@ -419,14 +595,16 @@ impl super::Writer<'_> {
                 let (px, py) = float.spin_pad(w, h);
                 let [el, et, er, eb] = float.effect_extent();
                 let ext = [el + px, et + py, er + px, eb + py].map(emu);
-                e.attrs.retain(|(k, _)| !matches!(k.as_str(), "l" | "t" | "r" | "b"));
+                e.attrs
+                    .retain(|(k, _)| !matches!(k.as_str(), "l" | "t" | "r" | "b"));
                 for (k, v) in ["l", "t", "r", "b"].into_iter().zip(ext) {
                     e.attrs.push((k.to_string(), v));
                 }
             }
             // The picture's own frame (`pic:spPr`): its size and the object's rotation and flips.
             "a:xfrm" => {
-                e.attrs.retain(|(k, _)| !matches!(k.as_str(), "rot" | "flipH" | "flipV"));
+                e.attrs
+                    .retain(|(k, _)| !matches!(k.as_str(), "rot" | "flipH" | "flipV"));
                 for (k, v) in super::story::spin_attrs(float.spin()) {
                     e.attrs.push((k.to_string(), v));
                 }
@@ -457,16 +635,29 @@ impl super::Writer<'_> {
 
     /// Ink's own transform need not fill its outer drawing frame. Scale its original offsets
     /// and extents proportionally; an unrelated edit must not stretch the preserved strokes.
-    pub(super) fn ink_transform(e: &mut El, from: (f32, f32), to: (f32, f32), float: &Float, depth: usize) {
+    pub(super) fn ink_transform(
+        e: &mut El,
+        from: (f32, f32),
+        to: (f32, f32),
+        float: &Float,
+        depth: usize,
+    ) {
         if depth > MAX_DEPTH {
             return;
         }
         if e.name == "w14:xfrm" {
-            e.attrs.retain(|(k, _)| !matches!(k.as_str(), "rot" | "flipH" | "flipV"));
+            e.attrs
+                .retain(|(k, _)| !matches!(k.as_str(), "rot" | "flipH" | "flipV"));
             for (k, v) in super::story::spin_attrs(float.spin()) {
                 e.attrs.push((k.to_string(), v));
             }
-            let scale = |old: f32, new: f32| if old.is_finite() && old > 0.0 && new.is_finite() { (new.max(0.0) / old) as f64 } else { 1.0 };
+            let scale = |old: f32, new: f32| {
+                if old.is_finite() && old > 0.0 && new.is_finite() {
+                    (new.max(0.0) / old) as f64
+                } else {
+                    1.0
+                }
+            };
             let (sx, sy) = (scale(from.0, to.0), scale(from.1, to.1));
             let max = MAX_LEN_PT as f64 * 12_700.0;
             for c in e.kids.iter_mut().filter_map(|k| match k {
@@ -584,14 +775,21 @@ fn vml_style_with(style: &str, w: f32, h: f32, float: &Float) -> String {
     let absolute = style
         .split(';')
         .filter_map(|d| d.split_once(':'))
-        .any(|(k, v)| k.trim().eq_ignore_ascii_case("position") && v.trim().eq_ignore_ascii_case("absolute"));
+        .any(|(k, v)| {
+            k.trim().eq_ignore_ascii_case("position") && v.trim().eq_ignore_ascii_case("absolute")
+        });
     let mut out: Vec<String> = style
         .split(';')
         .filter(|d| {
-            let key = d.split_once(':').map_or("", |(k, _)| k).trim().to_ascii_lowercase();
+            let key = d
+                .split_once(':')
+                .map_or("", |(k, _)| k)
+                .trim()
+                .to_ascii_lowercase();
             !(d.trim().is_empty()
                 || matches!(key.as_str(), "width" | "height" | "rotation" | "flip")
-                || (absolute && matches!(key.as_str(), "left" | "top" | "margin-left" | "margin-top")))
+                || (absolute
+                    && matches!(key.as_str(), "left" | "top" | "margin-left" | "margin-top")))
         })
         .map(|d| d.trim().to_string())
         .collect();
@@ -606,7 +804,11 @@ fn vml_style_with(style: &str, w: f32, h: f32, float: &Float) -> String {
     if spin.deg != 0.0 {
         out.push(format!("rotation:{}", pt(spin.deg)));
     }
-    let flip: Vec<&str> = [(spin.flip_h, "x"), (spin.flip_v, "y")].into_iter().filter(|(on, _)| *on).map(|(_, f)| f).collect();
+    let flip: Vec<&str> = [(spin.flip_h, "x"), (spin.flip_v, "y")]
+        .into_iter()
+        .filter(|(on, _)| *on)
+        .map(|(_, f)| f)
+        .collect();
     if !flip.is_empty() {
         out.push(format!("flip:{}", flip.join(" ")));
     }
@@ -626,18 +828,46 @@ mod tests {
 
     #[test]
     fn data_part_drawing_ids_are_rewritten_once() {
-        let ids: HashMap<String, String> = [("rId9".to_string(), "rId2".to_string()), ("rId2".to_string(), "rId3".to_string())].into_iter().collect();
-        let out = patch_rel_ids(br#"<x relId="rId9"/><y relId="rId2"/><z relId="rId7"/><w relId="unterminated"#, &ids);
-        assert_eq!(String::from_utf8(out).unwrap(), r#"<x relId="rId2"/><y relId="rId3"/><z relId="rId7"/><w relId="unterminated"#);
+        let ids: HashMap<String, String> = [
+            ("rId9".to_string(), "rId2".to_string()),
+            ("rId2".to_string(), "rId3".to_string()),
+        ]
+        .into_iter()
+        .collect();
+        let out = patch_rel_ids(
+            br#"<x relId="rId9"/><y relId="rId2"/><z relId="rId7"/><w relId="unterminated"#,
+            &ids,
+        );
+        assert_eq!(
+            String::from_utf8(out).unwrap(),
+            r#"<x relId="rId2"/><y relId="rId3"/><z relId="rId7"/><w relId="unterminated"#
+        );
     }
 
     #[test]
     fn vml_style_takes_the_new_size_and_offset() {
-        let inline = vml_style_with("width:100pt;height:50pt;mso-wrap-style:square", 120.5, 60.0, &Float::default());
+        let inline = vml_style_with(
+            "width:100pt;height:50pt;mso-wrap-style:square",
+            120.5,
+            60.0,
+            &Float::default(),
+        );
         assert_eq!(inline, "mso-wrap-style:square;width:120.5pt;height:60pt");
-        let float = Float { x: 10.0, y: 20.25, ..Float::default() };
-        let abs = vml_style_with("position:absolute;left:5pt;margin-left:3pt;top:1pt;width:1pt;height:1pt", 2.0, 3.0, &float);
-        assert_eq!(abs, "position:absolute;margin-left:10pt;margin-top:20.25pt;width:2pt;height:3pt");
+        let float = Float {
+            x: 10.0,
+            y: 20.25,
+            ..Float::default()
+        };
+        let abs = vml_style_with(
+            "position:absolute;left:5pt;margin-left:3pt;top:1pt;width:1pt;height:1pt",
+            2.0,
+            3.0,
+            &float,
+        );
+        assert_eq!(
+            abs,
+            "position:absolute;margin-left:10pt;margin-top:20.25pt;width:2pt;height:3pt"
+        );
         assert_eq!(pt(f32::NAN), "0");
     }
 
@@ -645,9 +875,17 @@ mod tests {
     fn vml_style_takes_the_rotation_and_flips() {
         let mut float = Float::default();
         float.set_spin(wordcraft_geom::Spin::new(-30.5, true, true));
-        let s = vml_style_with("width:1pt;rotation:10;flip:x;height:1pt;z-index:3", 2.0, 3.0, &float);
+        let s = vml_style_with(
+            "width:1pt;rotation:10;flip:x;height:1pt;z-index:3",
+            2.0,
+            3.0,
+            &float,
+        );
         assert_eq!(s, "z-index:3;width:2pt;height:3pt;rotation:329.5;flip:x y");
         // Unturned: no rotation or flip left behind.
-        assert_eq!(vml_style_with("rotation:90;flip:y;width:1pt", 2.0, 3.0, &Float::default()), "width:2pt;height:3pt");
+        assert_eq!(
+            vml_style_with("rotation:90;flip:y;width:1pt", 2.0, 3.0, &Float::default()),
+            "width:2pt;height:3pt"
+        );
     }
 }

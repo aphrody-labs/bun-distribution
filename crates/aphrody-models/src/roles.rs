@@ -192,7 +192,10 @@ mod tests {
         assert_eq!(role.resolve_with(None, |_| None), role.default_model());
 
         // Only `configured`: it wins over the default.
-        assert_eq!(role.resolve_with(Some("custom-embed"), |_| None), "custom-embed");
+        assert_eq!(
+            role.resolve_with(Some("custom-embed"), |_| None),
+            "custom-embed"
+        );
 
         // Both set: the environment variable wins.
         assert_eq!(
@@ -203,7 +206,10 @@ mod tests {
         );
 
         // Blank values are treated as unset, not as an explicit empty model.
-        assert_eq!(role.resolve_with(Some("   "), |_| Some(String::new())), role.default_model());
+        assert_eq!(
+            role.resolve_with(Some("   "), |_| Some(String::new())),
+            role.default_model()
+        );
     }
 
     #[test]
@@ -211,6 +217,10 @@ mod tests {
         let mut seen: Vec<&'static str> = LocalRole::ALL.iter().map(|r| r.as_str()).collect();
         seen.sort_unstable();
         seen.dedup();
-        assert_eq!(seen.len(), LocalRole::ALL.len(), "ALL must list every role exactly once");
+        assert_eq!(
+            seen.len(),
+            LocalRole::ALL.len(),
+            "ALL must list every role exactly once"
+        );
     }
 }

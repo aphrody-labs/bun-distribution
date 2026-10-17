@@ -83,14 +83,21 @@ impl Chunker for RustChunker {
 }
 
 fn qualify(prefix: &[String], name: &str) -> String {
-    if prefix.is_empty() { name.to_string() } else { format!("{}::{name}", prefix.join("::")) }
+    if prefix.is_empty() {
+        name.to_string()
+    } else {
+        format!("{}::{name}", prefix.join("::"))
+    }
 }
 
 fn span_lines(spanned: &impl Spanned) -> (u32, u32) {
     let span = spanned.span();
     let start = span.start().line;
     let end = span.end().line;
-    (u32::try_from(start).unwrap_or(1).max(1), u32::try_from(end).unwrap_or(1).max(1))
+    (
+        u32::try_from(start).unwrap_or(1).max(1),
+        u32::try_from(end).unwrap_or(1).max(1),
+    )
 }
 
 fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<RawUnit>) {
@@ -121,7 +128,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                         end_line,
                     });
                 }
-            },
+            }
             syn::Item::Mod(item_mod) => {
                 if let Some((_, inner)) = &item_mod.content {
                     let name = item_mod.ident.to_string();
@@ -136,7 +143,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                         end_line,
                     });
                 }
-            },
+            }
             syn::Item::Fn(f) => {
                 let (start_line, end_line) = span_lines(f);
                 out.push(RawUnit {
@@ -144,7 +151,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             syn::Item::Struct(s) => {
                 let (start_line, end_line) = span_lines(s);
                 out.push(RawUnit {
@@ -152,7 +159,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             syn::Item::Enum(e) => {
                 let (start_line, end_line) = span_lines(e);
                 out.push(RawUnit {
@@ -160,7 +167,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             syn::Item::Trait(t) => {
                 let (start_line, end_line) = span_lines(t);
                 out.push(RawUnit {
@@ -168,7 +175,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             syn::Item::Union(u) => {
                 let (start_line, end_line) = span_lines(u);
                 out.push(RawUnit {
@@ -176,13 +183,19 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             syn::Item::Macro(m) => {
                 let (start_line, end_line) = span_lines(m);
-                let name =
-                    m.ident.as_ref().map_or_else(|| "macro_rules".to_string(), ToString::to_string);
-                out.push(RawUnit { symbol: Some(qualify(prefix, &name)), start_line, end_line });
-            },
+                let name = m
+                    .ident
+                    .as_ref()
+                    .map_or_else(|| "macro_rules".to_string(), ToString::to_string);
+                out.push(RawUnit {
+                    symbol: Some(qualify(prefix, &name)),
+                    start_line,
+                    end_line,
+                });
+            }
             syn::Item::Const(c) => {
                 let (start_line, end_line) = span_lines(c);
                 out.push(RawUnit {
@@ -190,7 +203,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             syn::Item::Static(s) => {
                 let (start_line, end_line) = span_lines(s);
                 out.push(RawUnit {
@@ -198,7 +211,7 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             syn::Item::Type(t) => {
                 let (start_line, end_line) = span_lines(t);
                 out.push(RawUnit {
@@ -206,11 +219,15 @@ fn collect_items(items: &[syn::Item], prefix: &mut Vec<String>, out: &mut Vec<Ra
                     start_line,
                     end_line,
                 });
-            },
+            }
             other => {
                 let (start_line, end_line) = span_lines(other);
-                out.push(RawUnit { symbol: None, start_line, end_line });
-            },
+                out.push(RawUnit {
+                    symbol: None,
+                    start_line,
+                    end_line,
+                });
+            }
         }
     }
 }

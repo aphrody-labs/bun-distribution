@@ -42,7 +42,10 @@ pub enum AutoFit {
     /// Do not autofit.
     None,
     /// Shrink text on overflow: font scale and line-spacing reduction (0–1).
-    Shrink { font_scale: f64, line_reduction: f64 },
+    Shrink {
+        font_scale: f64,
+        line_reduction: f64,
+    },
     /// Resize shape to fit text.
     Shape,
 }
@@ -415,10 +418,18 @@ fn is_text_kind(k: &RunKind) -> bool {
 
 impl Run {
     pub fn new(text: impl Into<String>) -> Self {
-        Run { text: text.into(), props: RunProps::default(), kind: RunKind::Text }
+        Run {
+            text: text.into(),
+            props: RunProps::default(),
+            kind: RunKind::Text,
+        }
     }
     pub fn with(text: impl Into<String>, props: RunProps) -> Self {
-        Run { text: text.into(), props, kind: RunKind::Text }
+        Run {
+            text: text.into(),
+            props,
+            kind: RunKind::Text,
+        }
     }
     /// The characters this run contributes to the paragraph (a break is one `\u{b}`).
     pub fn content(&self) -> &str {
@@ -451,7 +462,14 @@ fn is_default_para(p: &ParaProps) -> bool {
 
 impl Paragraph {
     pub fn new(text: &str) -> Self {
-        Paragraph { runs: if text.is_empty() { vec![] } else { vec![Run::new(text)] }, ..Default::default() }
+        Paragraph {
+            runs: if text.is_empty() {
+                vec![]
+            } else {
+                vec![Run::new(text)]
+            },
+            ..Default::default()
+        }
     }
     pub fn text(&self) -> String {
         self.runs.iter().map(|r| r.content()).collect()
@@ -527,11 +545,18 @@ pub struct TextBody {
 
 impl TextBody {
     pub fn from_text(text: &str) -> Self {
-        TextBody { paragraphs: text.split('\n').map(Paragraph::new).collect(), ..Default::default() }
+        TextBody {
+            paragraphs: text.split('\n').map(Paragraph::new).collect(),
+            ..Default::default()
+        }
     }
     /// Plain text with `\n` between paragraphs.
     pub fn text(&self) -> String {
-        self.paragraphs.iter().map(Paragraph::text).collect::<Vec<_>>().join("\n")
+        self.paragraphs
+            .iter()
+            .map(Paragraph::text)
+            .collect::<Vec<_>>()
+            .join("\n")
     }
     pub fn is_empty(&self) -> bool {
         self.paragraphs.iter().all(Paragraph::is_empty)

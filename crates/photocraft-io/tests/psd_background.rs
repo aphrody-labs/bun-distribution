@@ -10,7 +10,9 @@ fn file(name: &str, transparency_channel: bool) -> PsdFile {
     let mut f = testgen::layered(Version::Psd, ColorMode::Rgb, 8, Compression::Rle);
     let bottom = f.layers_mut().first_mut().unwrap();
     bottom.name = name.bytes().filter(u8::is_ascii).collect();
-    bottom.blocks.retain(|b| &b.key != b"luni" && &b.key != b"lspf");
+    bottom
+        .blocks
+        .retain(|b| &b.key != b"luni" && &b.key != b"lspf");
     bottom.blocks.push(TaggedBlock::unicode_name(name));
     bottom.flags.set_transparency_protected(true);
     if !transparency_channel {
@@ -23,7 +25,9 @@ fn file(name: &str, transparency_channel: bool) -> PsdFile {
 fn a_localized_background_is_the_background() {
     for name in ["Hintergrund", "背景", "Arrière-plan"] {
         let (d, _) = psd_to_document(&file(name, false));
-        let bg = d.background().unwrap_or_else(|| panic!("{name}: no Background"));
+        let bg = d
+            .background()
+            .unwrap_or_else(|| panic!("{name}: no Background"));
         assert_eq!(bg.name, name);
         assert!(bg.locks.transparency && bg.locks.position, "{name}");
         assert_eq!(bg.id, d.layers[0].id);

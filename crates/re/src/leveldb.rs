@@ -178,7 +178,7 @@ fn utf8_preview(bytes: &[u8], limit: usize) -> Option<String> {
             } else {
                 None
             }
-        },
+        }
     }
 }
 
@@ -216,8 +216,10 @@ mod tests {
                 ..Options::default()
             };
             let mut db = DB::open(&db_path, opt).expect("create db");
-            db.put(b"META:https://example.com", b"\x01\x00").expect("put 1");
-            db.put(b"_app.localhost\x00\x01key", b"hello world").expect("put 2");
+            db.put(b"META:https://example.com", b"\x01\x00")
+                .expect("put 1");
+            db.put(b"_app.localhost\x00\x01key", b"hello world")
+                .expect("put 2");
             db.flush().expect("flush");
         }
 
@@ -261,9 +263,15 @@ mod tests {
         }
 
         let entries = dump(&db_path).expect("dump");
-        let e = entries.iter().find(|e| e.key_utf8.as_deref() == Some("blob")).expect("found");
+        let e = entries
+            .iter()
+            .find(|e| e.key_utf8.as_deref() == Some("blob"))
+            .expect("found");
         assert_eq!(e.value_len, 4);
-        assert!(e.value_utf8.is_none(), "binary value must not decode to UTF-8");
+        assert!(
+            e.value_utf8.is_none(),
+            "binary value must not decode to UTF-8"
+        );
         // Round-trips through JSON without losing the hex key.
         let json = serde_json::to_value(e).expect("serialize");
         assert_eq!(json["key_hex"], hex::encode(b"blob"));
@@ -290,7 +298,10 @@ mod tests {
         }
 
         let entries = dump(&db_path).expect("dump");
-        let e = entries.iter().find(|e| e.key_utf8.as_deref() == Some("k")).expect("found");
+        let e = entries
+            .iter()
+            .find(|e| e.key_utf8.as_deref() == Some("k"))
+            .expect("found");
         assert_eq!(e.value_len, VALUE_PREVIEW_LIMIT * 2);
         assert_eq!(
             e.value_utf8.as_deref().map(str::len),

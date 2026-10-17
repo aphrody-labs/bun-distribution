@@ -14,7 +14,10 @@ use std::sync::Arc;
 
 use photocraft_cms::{Builtin, Intent, Profile, Transform};
 use photocraft_codecs::{self as codecs, ChannelLayout, Format, Image, SampleType};
-use photocraft_raw::{CameraLook, DevelopOptions, Limits, PreviewColorSpace, RawError, Reference, Sensor, WhiteBalance};
+use photocraft_raw::{
+    CameraLook, DevelopOptions, Limits, PreviewColorSpace, RawError, Reference, Sensor,
+    WhiteBalance,
+};
 pub use photocraft_raw::{Tone, retone};
 
 use crate::flat::image_to_document;
@@ -28,7 +31,12 @@ pub fn is_raw(bytes: &[u8]) -> bool {
 /// The decode limits shared with the flat codecs.
 fn limits() -> Limits {
     let l = codecs::Limits::default();
-    Limits { max_width: l.max_width, max_height: l.max_height, max_pixels: l.max_pixels, max_alloc: l.max_alloc }
+    Limits {
+        max_width: l.max_width,
+        max_height: l.max_height,
+        max_pixels: l.max_pixels,
+        max_alloc: l.max_alloc,
+    }
 }
 
 /// A raw file's embedded JPEG preview, turned upright. Its own EXIF orientation wins when it
@@ -36,9 +44,20 @@ fn limits() -> Limits {
 /// their previews are usually stored as the sensor reads out). Developed raws are oriented by
 /// `photocraft-raw` and carry no EXIF, so nothing is turned twice.
 fn upright_preview(raw: &[u8], jpeg: &[u8]) -> Result<Image, IoError> {
-    let img = codecs::decode_as_with(Format::Jpeg, jpeg, &codecs::DecodeOptions { keep_orientation: true, ..Default::default() })?;
+    let img = codecs::decode_as_with(
+        Format::Jpeg,
+        jpeg,
+        &codecs::DecodeOptions {
+            keep_orientation: true,
+            ..Default::default()
+        },
+    )?;
     let own = img.meta.exif.as_deref().map_or(1, codecs::exif_orientation);
-    let o = if own != 1 { own } else { photocraft_raw::orientation(raw).unwrap_or_else(|| codecs::exif_orientation(raw)) };
+    let o = if own != 1 {
+        own
+    } else {
+        photocraft_raw::orientation(raw).unwrap_or_else(|| codecs::exif_orientation(raw))
+    };
     Ok(img.oriented(o)?)
 }
 
@@ -72,14 +91,29 @@ pub struct RawTuning {
 /// RGB). The second value is `false` when the file has
 /// no as-shot white balance: Temperature / Tint were then not applied, and the caller keeps
 /// them as RGB adjustments.
-pub fn import_raw_tuned(name: &str, bytes: &[u8], tuning: &RawTuning) -> Result<(ImportResult, bool), IoError> {
-    let format = photocraft_raw::identify(bytes).map(|f| f.name()).unwrap_or("camera raw");
+pub fn import_raw_tuned(
+    name: &str,
+    bytes: &[u8],
+    tuning: &RawTuning,
+) -> Result<(ImportResult, bool), IoError> {
+    let format = photocraft_raw::identify(bytes)
+        .map(|f| f.name())
+        .unwrap_or("camera raw");
     let exposure = f64::from(tuning.exposure);
     if !exposure.is_finite() || !(-10.0..=10.0).contains(&exposure) {
-        return Err(IoError::Raw(RawError::Malformed(format!("exposure {} EV is out of range", tuning.exposure))));
+        return Err(IoError::Raw(RawError::Malformed(format!(
+            "exposure {} EV is out of range",
+            tuning.exposure
+        ))));
     }
     let sensor = photocraft_raw::decode(bytes, &limits()).map_err(IoError::Raw)?;
-    let slider = |v: f32| if v.is_finite() { v.clamp(-100.0, 100.0) } else { 0.0 };
+    let slider = |v: f32| {
+        if v.is_finite() {
+            v.clamp(-100.0, 100.0)
+        } else {
+            0.0
+        }
+    };
     let tone = photocraft_raw::Tone {
         shadows: slider(tuning.shadows),
         highlights: slider(tuning.highlights),
@@ -90,7 +124,13 @@ pub fn import_raw_tuned(name: &str, bytes: &[u8], tuning: &RawTuning) -> Result<
     // The colour rendering the default open used (a look fitted to the camera's JPEG for files
     // without colour calibration), so re-developing changes only what the sliders change.
     let camera_look = default_look(bytes, &sensor);
-    let mut opts = DevelopOptions { limits: limits(), exposure, tone, camera_look, ..Default::default() };
+    let mut opts = DevelopOptions {
+        limits: limits(),
+        exposure,
+        tone,
+        camera_look,
+        ..Default::default()
+    };
     let wb_applied = match sensor.camera_wb {
         Some(m) => {
             let g = wb_gains(tuning.temperature, tuning.tint);
@@ -101,16 +141,28 @@ pub fn import_raw_tuned(name: &str, bytes: &[u8], tuning: &RawTuning) -> Result<
     };
     let dev = photocraft_raw::develop_sensor(&sensor, &opts).map_err(IoError::Raw)?;
     let wb = if wb_applied {
-        format!("as-shot white balance, temperature {:+.0}, tint {:+.0}", tuning.temperature, tuning.tint)
+        format!(
+            "as-shot white balance, temperature {:+.0}, tint {:+.0}",
+            tuning.temperature, tuning.tint
+        )
     } else {
         "estimated white balance".into()
     };
-    let tone = [("shadows", tone.shadows), ("highlights", tone.highlights), ("clarity", tone.clarity), ("texture", tone.texture), ("dehaze", tone.dehaze)]
-        .iter()
-        .filter(|(_, v)| *v != 0.0)
-        .map(|(k, v)| format!(", {k} {v:+.0}"))
-        .collect::<String>();
-    let summary = format!("developed in Camera Raw (exposure {:+.2} EV{tone}, {wb})", tuning.exposure);
+    let tone = [
+        ("shadows", tone.shadows),
+        ("highlights", tone.highlights),
+        ("clarity", tone.clarity),
+        ("texture", tone.texture),
+        ("dehaze", tone.dehaze),
+    ]
+    .iter()
+    .filter(|(_, v)| *v != 0.0)
+    .map(|(k, v)| format!(", {k} {v:+.0}"))
+    .collect::<String>();
+    let summary = format!(
+        "developed in Camera Raw (exposure {:+.2} EV{tone}, {wb})",
+        tuning.exposure
+    );
     Ok((developed_document(name, format, dev, &summary)?, wb_applied))
 }
 
@@ -119,7 +171,9 @@ pub fn import_raw_tuned(name: &str, bytes: &[u8], tuning: &RawTuning) -> Result<
 /// this crate decodes). For previews of the open-time raw-stage sliders
 /// ([`photocraft_raw::retone`]), in linear-light knots.
 pub fn tone_curve(bytes: &[u8]) -> Vec<[f32; 2]> {
-    let Ok(sensor) = photocraft_raw::decode(bytes, &limits()) else { return Vec::new() };
+    let Ok(sensor) = photocraft_raw::decode(bytes, &limits()) else {
+        return Vec::new();
+    };
     match default_look(bytes, &sensor) {
         Some(look) => look.tone.as_ref().map(look_knots).unwrap_or_default(),
         None => sensor.tone_curve,
@@ -130,7 +184,10 @@ pub fn tone_curve(bytes: &[u8]) -> Vec<[f32; 2]> {
 /// log-linearly): sampled densely enough that the two agree within a fraction of a code value.
 fn look_knots(t: &photocraft_raw::ToneCurve) -> Vec<[f32; 2]> {
     const N: usize = 256;
-    (1..=N).map(|i| (i as f64 / N as f64).powi(2)).map(|x| [x as f32, t.eval(x) as f32]).collect()
+    (1..=N)
+        .map(|i| (i as f64 / N as f64).powi(2))
+        .map(|x| [x as f32, t.eval(x) as f32])
+        .collect()
 }
 
 /// The look a default open develops `bytes` with: fitted to the embedded JPEG when the file has
@@ -141,7 +198,15 @@ fn default_look(bytes: &[u8], sensor: &Sensor) -> Option<CameraLook> {
     if !sensor.color.calibrations.is_empty() || sensor.is_monochrome() {
         return None;
     }
-    fit_preview_look(bytes, sensor, &DevelopOptions { limits: limits(), ..Default::default() }).ok()
+    fit_preview_look(
+        bytes,
+        sensor,
+        &DevelopOptions {
+            limits: limits(),
+            ..Default::default()
+        },
+    )
+    .ok()
 }
 
 /// "Canon" + "Canon EOS 80D" and "NIKON CORPORATION" + "NIKON D3200" read as the model alone:
@@ -149,29 +214,55 @@ fn default_look(bytes: &[u8], sensor: &Sensor) -> Option<CameraLook> {
 fn camera_name(make: Option<&str>, model: Option<&str>) -> String {
     match (make, model) {
         (Some(make), Some(model))
-            if make.split_whitespace().next().is_some_and(|brand| model.to_ascii_lowercase().starts_with(&brand.to_ascii_lowercase())) =>
+            if make.split_whitespace().next().is_some_and(|brand| {
+                model
+                    .to_ascii_lowercase()
+                    .starts_with(&brand.to_ascii_lowercase())
+            }) =>
         {
             model.to_string()
         }
-        (make, model) => [make, model].into_iter().flatten().collect::<Vec<_>>().join(" "),
+        (make, model) => [make, model]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .join(" "),
     }
 }
 
 /// Camera Raw's white-balance gains for Temperature / Tint (−100…100), the same the Camera
 /// Raw filter applies ([`photocraft_algo::camera_raw::white_balance_gains`]).
 fn wb_gains(temperature: f32, tint: f32) -> [f64; 3] {
-    photocraft_algo::camera_raw::white_balance_gains(temperature.clamp(-100.0, 100.0), tint.clamp(-100.0, 100.0)).map(f64::from)
+    photocraft_algo::camera_raw::white_balance_gains(
+        temperature.clamp(-100.0, 100.0),
+        tint.clamp(-100.0, 100.0),
+    )
+    .map(f64::from)
 }
 
 /// A developed raw as a 16-bit ProPhoto document, with a note saying how it was developed.
-fn developed_document(name: &str, format: &str, dev: photocraft_raw::Developed, summary: &str) -> Result<ImportResult, IoError> {
+fn developed_document(
+    name: &str,
+    format: &str,
+    dev: photocraft_raw::Developed,
+    summary: &str,
+) -> Result<ImportResult, IoError> {
     let img = Image::from_u16(dev.width, dev.height, ChannelLayout::Rgb, &dev.rgb)?;
     let mut r = image_to_document(name, &img)?;
-    r.document.icc_profile = Some(Arc::new(photocraft_cms::Builtin::ProPhotoCompat.profile().to_bytes().to_vec()));
+    r.document.icc_profile = Some(Arc::new(
+        photocraft_cms::Builtin::ProPhotoCompat
+            .profile()
+            .to_bytes()
+            .to_vec(),
+    ));
     let camera = camera_name(dev.info.make.as_deref(), dev.info.model.as_deref());
     r.warnings.push(format!(
         "{format}{} {summary} into 16-bit {}",
-        if camera.is_empty() { String::new() } else { format!(" from {camera}") },
+        if camera.is_empty() {
+            String::new()
+        } else {
+            format!(" from {camera}")
+        },
         photocraft_raw::OUTPUT_SPACE
     ));
     r.warnings.extend(dev.warnings);
@@ -180,7 +271,14 @@ fn developed_document(name: &str, format: &str, dev: photocraft_raw::Developed, 
 
 /// Develops a raw file with the default settings.
 pub fn import_raw(name: &str, bytes: &[u8]) -> Result<ImportResult, IoError> {
-    import_raw_with(name, bytes, &DevelopOptions { limits: limits(), ..Default::default() })
+    import_raw_with(
+        name,
+        bytes,
+        &DevelopOptions {
+            limits: limits(),
+            ..Default::default()
+        },
+    )
 }
 
 /// Smallest preview long edge preferred for the colour fit (a smaller preview decodes faster;
@@ -190,10 +288,20 @@ const FIT_PREVIEW_EDGE: u32 = 2 * photocraft_raw::PROXY_EDGE as u32;
 /// The colour space of a raw's decoded preview when it is not sRGB: its own ICC profile, else the
 /// one the raw's EXIF states (a Sony body set to Adobe RGB writes no profile into the JPEG).
 /// `None` means sRGB.
-fn preview_profile(raw: &[u8], icc: Option<&[u8]>) -> Result<Option<Cow<'static, Profile>>, String> {
+fn preview_profile(
+    raw: &[u8],
+    icc: Option<&[u8]>,
+) -> Result<Option<Cow<'static, Profile>>, String> {
     let src = match icc {
-        Some(icc) => Cow::Owned(Profile::parse(icc).map_err(|e| format!("the preview's ICC profile does not parse: {e}"))?),
-        None if photocraft_raw::embedded_preview_color_space(raw) == Some(PreviewColorSpace::AdobeRgb) => Cow::Borrowed(Builtin::AdobeRgbCompat.profile()),
+        Some(icc) => Cow::Owned(
+            Profile::parse(icc)
+                .map_err(|e| format!("the preview's ICC profile does not parse: {e}"))?,
+        ),
+        None if photocraft_raw::embedded_preview_color_space(raw)
+            == Some(PreviewColorSpace::AdobeRgb) =>
+        {
+            Cow::Borrowed(Builtin::AdobeRgbCompat.profile())
+        }
         None => return Ok(None),
     };
     Ok((!src.same_colors(Builtin::Srgb.profile())).then_some(src))
@@ -204,7 +312,11 @@ fn preview_profile(raw: &[u8], icc: Option<&[u8]>) -> Result<Option<Cow<'static,
 /// `FIT_PREVIEW_EDGE` pixels long (else the largest), decodes it, turns it upright and
 /// converts it to sRGB when it is in another colour space ([`preview_profile`]). `Err` says
 /// why there is no fit.
-pub fn fit_preview_look(raw: &[u8], sensor: &Sensor, opts: &DevelopOptions) -> Result<CameraLook, String> {
+pub fn fit_preview_look(
+    raw: &[u8],
+    sensor: &Sensor,
+    opts: &DevelopOptions,
+) -> Result<CameraLook, String> {
     let previews = photocraft_raw::embedded_previews(raw);
     let long = |p: &photocraft_raw::Preview| p.width.max(p.height);
     let pick = previews
@@ -213,23 +325,42 @@ pub fn fit_preview_look(raw: &[u8], sensor: &Sensor, opts: &DevelopOptions) -> R
         .min_by_key(|p| long(p))
         .or_else(|| previews.iter().max_by_key(|p| long(p)))
         .ok_or("no embedded JPEG preview")?;
-    let img = upright_preview(raw, pick.jpeg).map_err(|e| format!("the embedded preview does not decode: {e}"))?;
+    let img = upright_preview(raw, pick.jpeg)
+        .map_err(|e| format!("the embedded preview does not decode: {e}"))?;
     if img.layout() != ChannelLayout::Rgb || img.sample_type() != SampleType::U8 {
         return Err("the embedded preview is not 8-bit RGB".into());
     }
     let (w, h) = img.dimensions();
     let mut rgb: Cow<[u8]> = Cow::Borrowed(img.data());
     if let Some(src) = preview_profile(raw, img.icc.as_deref())? {
-        let t = Transform::new(&src, Builtin::Srgb.profile(), Intent::RelativeColorimetric, false).map_err(|e| e.to_string())?;
+        let t = Transform::new(
+            &src,
+            Builtin::Srgb.profile(),
+            Intent::RelativeColorimetric,
+            false,
+        )
+        .map_err(|e| e.to_string())?;
         let mut out = vec![0u8; rgb.len()];
         t.convert_u8(&rgb, 3, &mut out, 3, false);
         rgb = Cow::Owned(out);
     }
-    photocraft_raw::fit_look(sensor, opts, &Reference { width: w, height: h, rgb: &rgb }).map_err(|e| e.to_string())
+    photocraft_raw::fit_look(
+        sensor,
+        opts,
+        &Reference {
+            width: w,
+            height: h,
+            rgb: &rgb,
+        },
+    )
+    .map_err(|e| e.to_string())
 }
 
 /// Decodes and develops; a file without colour calibration gets a look fitted to its preview.
-fn develop_fitted(bytes: &[u8], opts: &DevelopOptions) -> Result<photocraft_raw::Developed, RawError> {
+fn develop_fitted(
+    bytes: &[u8],
+    opts: &DevelopOptions,
+) -> Result<photocraft_raw::Developed, RawError> {
     let sensor = photocraft_raw::decode(bytes, &opts.limits)?;
     let mut opts = Cow::Borrowed(opts);
     if opts.camera_look.is_none()
@@ -248,11 +379,20 @@ pub const DEVELOPED_NOTE: &str = "developed with default settings";
 
 /// Develops a raw file with explicit settings. Without `opts.camera_look`, a file without
 /// colour calibration gets one fitted to its embedded JPEG when that clearly helps.
-pub fn import_raw_with(name: &str, bytes: &[u8], opts: &DevelopOptions) -> Result<ImportResult, IoError> {
-    let format = photocraft_raw::identify(bytes).map(|f| f.name()).unwrap_or("camera raw");
+pub fn import_raw_with(
+    name: &str,
+    bytes: &[u8],
+    opts: &DevelopOptions,
+) -> Result<ImportResult, IoError> {
+    let format = photocraft_raw::identify(bytes)
+        .map(|f| f.name())
+        .unwrap_or("camera raw");
     match develop_fitted(bytes, opts) {
         Ok(dev) => {
-            let summary = format!("{DEVELOPED_NOTE} ({} demosaic, as-shot white balance)", opts.demosaic.id());
+            let summary = format!(
+                "{DEVELOPED_NOTE} ({} demosaic, as-shot white balance)",
+                opts.demosaic.id()
+            );
             developed_document(name, format, dev, &summary)
         }
         Err(RawError::Unsupported(reason)) => match photocraft_raw::embedded_preview(bytes) {
@@ -280,11 +420,20 @@ mod tests {
 
     #[test]
     fn camera_names_drop_a_repeated_make() {
-        assert_eq!(camera_name(Some("Canon"), Some("Canon EOS 80D")), "Canon EOS 80D");
-        assert_eq!(camera_name(Some("NIKON CORPORATION"), Some("NIKON D3200")), "NIKON D3200");
+        assert_eq!(
+            camera_name(Some("Canon"), Some("Canon EOS 80D")),
+            "Canon EOS 80D"
+        );
+        assert_eq!(
+            camera_name(Some("NIKON CORPORATION"), Some("NIKON D3200")),
+            "NIKON D3200"
+        );
         assert_eq!(camera_name(Some("SONY"), Some("ILCE-7M3")), "SONY ILCE-7M3");
         assert_eq!(camera_name(None, Some("X")), "X");
-        assert_eq!(camera_name(Some("Panasonic"), Some("DC-G9")), "Panasonic DC-G9");
+        assert_eq!(
+            camera_name(Some("Panasonic"), Some("DC-G9")),
+            "Panasonic DC-G9"
+        );
     }
 
     /// A Sony body set to Adobe RGB says so only in the raw's EXIF (ColorSpace Uncalibrated, InteropIndex "R03"):
@@ -295,20 +444,43 @@ mod tests {
         let raw = |color_space: u16, index: &str| {
             let mut t = TiffBuilder::default();
             let interop = t.ifd(vec![(0x0001, Val::Ascii(index.into()))]);
-            let exif = t.ifd(vec![(0xA001, Val::Short(vec![color_space])), (0xA005, Val::Ifds(vec![interop]))]);
-            t.chain = vec![t.ifd(vec![(271, Val::Ascii("SONY".into())), (34665, Val::Ifds(vec![exif]))])];
+            let exif = t.ifd(vec![
+                (0xA001, Val::Short(vec![color_space])),
+                (0xA005, Val::Ifds(vec![interop])),
+            ]);
+            t.chain = vec![t.ifd(vec![
+                (271, Val::Ascii("SONY".into())),
+                (34665, Val::Ifds(vec![exif])),
+            ])];
             t.build()
         };
         let adobe = raw(0xFFFF, "R03");
         let srgb = raw(1, "R98");
-        assert!(preview_profile(&adobe, None).unwrap().unwrap().same_colors(Builtin::AdobeRgbCompat.profile()));
+        assert!(
+            preview_profile(&adobe, None)
+                .unwrap()
+                .unwrap()
+                .same_colors(Builtin::AdobeRgbCompat.profile())
+        );
         assert!(preview_profile(&srgb, None).unwrap().is_none());
-        assert!(preview_profile(b"not a raw", None).unwrap().is_none(), "unstated: sRGB");
+        assert!(
+            preview_profile(b"not a raw", None).unwrap().is_none(),
+            "unstated: sRGB"
+        );
         // the preview's own profile wins over the raw's EXIF
         let srgb_icc = Builtin::Srgb.profile().to_bytes().to_vec();
-        assert!(preview_profile(&adobe, Some(srgb_icc.as_slice())).unwrap().is_none());
+        assert!(
+            preview_profile(&adobe, Some(srgb_icc.as_slice()))
+                .unwrap()
+                .is_none()
+        );
         let p3_icc = Builtin::DisplayP3.profile().to_bytes().to_vec();
-        assert!(preview_profile(&srgb, Some(p3_icc.as_slice())).unwrap().unwrap().same_colors(Builtin::DisplayP3.profile()));
+        assert!(
+            preview_profile(&srgb, Some(p3_icc.as_slice()))
+                .unwrap()
+                .unwrap()
+                .same_colors(Builtin::DisplayP3.profile())
+        );
         assert!(preview_profile(&adobe, Some(b"not an ICC profile")).is_err());
     }
 }

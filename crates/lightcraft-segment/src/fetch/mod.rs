@@ -17,8 +17,18 @@ use std::path::Path;
 // TODO(maintainer): pin `vocab.json` and `merges.txt` (size + SHA-256) when the files are
 // uploaded to LightCraft's CDN.
 pub const SAM3_FILES: &[FileSpec] = &[
-    FileSpec { name: "vocab.json", size: None, sha256: None, max: 16 << 20 },
-    FileSpec { name: "merges.txt", size: None, sha256: None, max: 16 << 20 },
+    FileSpec {
+        name: "vocab.json",
+        size: None,
+        sha256: None,
+        max: 16 << 20,
+    },
+    FileSpec {
+        name: "merges.txt",
+        size: None,
+        sha256: None,
+        max: 16 << 20,
+    },
     FileSpec {
         name: crate::WEIGHTS_FILE,
         size: Some(SAM3_WEIGHTS_SIZE),
@@ -53,7 +63,10 @@ pub fn mirrors(env: Option<&str>, file: Option<&Path>) -> Vec<String> {
 
 /// Download settings for SAM 3: the defaults, plus [`TOKEN_ENV`] for a gated mirror.
 pub fn options() -> Options {
-    Options { token_env: Some(TOKEN_ENV), ..Options::default() }
+    Options {
+        token_env: Some(TOKEN_ENV),
+        ..Options::default()
+    }
 }
 
 /// Environment variable with a bearer token for the SAM 3 mirror's own host (a gated Hugging Face repository).
@@ -72,7 +85,10 @@ mod tests {
 
     #[test]
     fn sam3_mirrors_come_from_the_environment_the_file_and_the_defaults() {
-        let m = mirrors(Some("https://a.example/x/"), Some(Path::new("/nonexistent/mirrors.txt")));
+        let m = mirrors(
+            Some("https://a.example/x/"),
+            Some(Path::new("/nonexistent/mirrors.txt")),
+        );
         assert_eq!(m.len(), 1 + DEFAULT_MIRRORS.len());
         assert!(no_mirrors_message().contains(MIRRORS_ENV));
     }

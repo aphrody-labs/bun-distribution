@@ -68,8 +68,10 @@ impl Reranker {
             }))
             .map_err(|e| Error::Tokenizer(e.to_string()))?;
         tokenizer.with_padding(None);
-        let pair_specials =
-            tokenizer.get_post_processor().map(|p| p.added_tokens(true)).unwrap_or(0);
+        let pair_specials = tokenizer
+            .get_post_processor()
+            .map(|p| p.added_tokens(true))
+            .unwrap_or(0);
 
         let threads = resolve_threads(opts.threads);
         Ok(Self {
@@ -112,16 +114,21 @@ impl Reranker {
 
     /// `(index, score)` sorted by descending score.
     pub fn rank(&self, query: &str, passages: &[&str]) -> Result<Vec<(usize, f32)>> {
-        let mut ranked: Vec<(usize, f32)> =
-            self.score(query, passages)?.into_iter().enumerate().collect();
+        let mut ranked: Vec<(usize, f32)> = self
+            .score(query, passages)?
+            .into_iter()
+            .enumerate()
+            .collect();
         ranked.sort_by(|a, b| b.1.total_cmp(&a.1).then(a.0.cmp(&b.0)));
         Ok(ranked)
     }
 
     fn score_in_pool(&self, query: &str, passages: &[&str]) -> Result<Vec<f32>> {
         let query = self.fit_query(query.trim())?;
-        let inputs: Vec<EncodeInput<'_>> =
-            passages.iter().map(|p| EncodeInput::Dual(query.into(), p.trim().into())).collect();
+        let inputs: Vec<EncodeInput<'_>> = passages
+            .iter()
+            .map(|p| EncodeInput::Dual(query.into(), p.trim().into()))
+            .collect();
         let encodings: Vec<Encoding> = self
             .tokenizer
             .encode_batch_fast(inputs, true)
@@ -172,7 +179,7 @@ impl Reranker {
                 Ok(encoding) => {
                     let end = encoding.get_offsets()[limit - 1].1;
                     return Ok(text.get(..end).unwrap_or(text));
-                },
+                }
                 // Longer than the whole budget: the single-sequence encode itself refuses
                 // to truncate, so halve the text and retry.
                 Err(_) if text.len() > 1 => {
@@ -181,7 +188,7 @@ impl Reranker {
                         end -= 1;
                     }
                     text = &text[..end];
-                },
+                }
                 Err(e) => return Err(Error::Tokenizer(e.to_string())),
             }
         }

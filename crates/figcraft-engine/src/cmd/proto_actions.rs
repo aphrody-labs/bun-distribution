@@ -46,7 +46,13 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             remove
         ),
-        spec!("proto.action.move", "Reorder prototype action", "{id?, index, path, to (its new index in the same list)} → {path}", true, move_action),
+        spec!(
+            "proto.action.move",
+            "Reorder prototype action",
+            "{id?, index, path, to (its new index in the same list)} → {path}",
+            true,
+            move_action
+        ),
         spec!(
             "proto.conditional.addBlock",
             "Add else if / else",
@@ -84,12 +90,19 @@ fn evaluate(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = s.doc()?;
     let vars = &doc.variables;
     let e = match (string(p, "expression"), parse::<Expr>(cmd, p, "expr")?) {
-        (Some(text), _) => Expr::parse(&text, vars).map_err(|e| bad(cmd, format!("`{text}`: {e}")))?,
+        (Some(text), _) => {
+            Expr::parse(&text, vars).map_err(|e| bad(cmd, format!("`{text}`: {e}")))?
+        }
         (None, Some(mut e)) => {
             super::proto::canonical_expr(vars, &mut e, 0);
             e
         }
-        (None, None) => return Err(bad(cmd, "`expression` (text) or `expr` (expression JSON) required")),
+        (None, None) => {
+            return Err(bad(
+                cmd,
+                "`expression` (text) or `expr` (expression JSON) required",
+            ));
+        }
     };
     let kind = e.type_of(vars).map_err(|m| bad(cmd, m))?;
     let modes = match id(p, "id") {
@@ -97,7 +110,12 @@ fn evaluate(s: &mut Session, p: &Value) -> Result<Value> {
         Some(n) => return Err(bad(cmd, format!("no layer {n}"))),
         None => BTreeMap::new(),
     };
-    let v = e.eval(vars, &modes).ok_or_else(|| bad(cmd, "it gives no value here (a division by zero, or a number too large)"))?;
+    let v = e.eval(vars, &modes).ok_or_else(|| {
+        bad(
+            cmd,
+            "it gives no value here (a division by zero, or a number too large)",
+        )
+    })?;
     Ok(json!({"value": v, "type": kind, "text": e.display(vars)}))
 }
 
@@ -116,7 +134,10 @@ pub fn action_at<'a>(actions: &'a [Action], path: &[usize]) -> Option<&'a Action
 }
 
 /// The action list `path` points into and the index in it (which may be one past the end).
-fn list_mut<'a>(actions: &'a mut Vec<Action>, path: &[usize]) -> Option<(&'a mut Vec<Action>, usize)> {
+fn list_mut<'a>(
+    actions: &'a mut Vec<Action>,
+    path: &[usize],
+) -> Option<(&'a mut Vec<Action>, usize)> {
     let (last, rest) = path.split_last()?;
     let mut list = actions;
     for pair in rest.chunks(2) {
@@ -147,14 +168,24 @@ pub fn placeholder(kind: VariableType) -> VariableValue {
 /// What a condition or a set variable starts with for variable `v`: its value in the default
 /// modes (a [`placeholder`] when it has none of its type).
 pub fn start_value(vars: &Variables, v: &Variable) -> VariableValue {
-    default_value(vars, &v.id).filter(|x| x.type_of() == Some(v.kind)).unwrap_or_else(|| placeholder(v.kind))
+    default_value(vars, &v.id)
+        .filter(|x| x.type_of() == Some(v.kind))
+        .unwrap_or_else(|| placeholder(v.kind))
 }
 
 /// The condition a new if / else if starts with: the first boolean variable (else the first
 /// variable) equal to its value; `true` when there are no variables.
 pub fn default_condition(vars: &Variables) -> Expr {
-    match vars.variables.iter().find(|v| v.kind == VariableType::Boolean).or(vars.variables.first()) {
-        Some(v) => Expr::op(ExprOp::Equals, vec![Expr::var(v.id.clone()), Expr::Value(start_value(vars, v))]),
+    match vars
+        .variables
+        .iter()
+        .find(|v| v.kind == VariableType::Boolean)
+        .or(vars.variables.first())
+    {
+        Some(v) => Expr::op(
+            ExprOp::Equals,
+            vec![Expr::var(v.id.clone()), Expr::Value(start_value(vars, v))],
+        ),
         None => Expr::Value(VariableValue::Boolean(true)),
     }
 }
@@ -173,7 +204,9 @@ fn resolve_expressions(cmd: &str, vars: &Variables, v: &mut Value, depth: usize)
         return Err(bad(cmd, "actions are nested too deeply"));
     }
     match v {
-        Value::Array(a) => a.iter_mut().try_for_each(|x| resolve_expressions(cmd, vars, x, depth + 1)),
+        Value::Array(a) => a
+            .iter_mut()
+            .try_for_each(|x| resolve_expressions(cmd, vars, x, depth + 1)),
         Value::Object(o) => {
             if let Some(Value::String(text)) = o.get("expression") {
                 let e = Expr::parse(text, vars).map_err(|e| bad(cmd, format!("`{text}`: {e}")))?;
@@ -192,7 +225,8 @@ fn resolve_expressions(cmd: &str, vars: &Variables, v: &mut Value, depth: usize)
                 }
                 o.remove("expression");
             }
-            o.values_mut().try_for_each(|x| resolve_expressions(cmd, vars, x, depth + 1))
+            o.values_mut()
+                .try_for_each(|x| resolve_expressions(cmd, vars, x, depth + 1))
         }
         _ => Ok(()),
     }
@@ -208,7 +242,9 @@ fn check_action(cmd: &str, vars: &Variables, a: &Action) -> Result<()> {
     for x in walk(std::slice::from_ref(a)) {
         match x {
             Action::SetVariable { variable, expr, .. } => {
-                let v = vars.get(variable).ok_or_else(|| bad(cmd, format!("no variable `{variable}`")))?;
+                let v = vars
+                    .get(variable)
+                    .ok_or_else(|| bad(cmd, format!("no variable `{variable}`")))?;
                 if let Some(e) = expr {
                     e.check_value(vars, v.kind).map_err(|m| bad(cmd, m))?;
                 }
@@ -242,7 +278,9 @@ fn action_param(cmd: &str, s: &Session, p: &Value) -> Result<Action> {
 fn condition_param(cmd: &str, s: &Session, p: &Value) -> Result<Option<Expr>> {
     let vars = &s.doc()?.variables;
     let e = match (string(p, "expression"), parse::<Expr>(cmd, p, "condition")?) {
-        (Some(text), _) => Expr::parse(&text, vars).map_err(|e| bad(cmd, format!("`{text}`: {e}")))?,
+        (Some(text), _) => {
+            Expr::parse(&text, vars).map_err(|e| bad(cmd, format!("`{text}`: {e}")))?
+        }
         (None, Some(mut e)) => {
             super::proto::canonical_expr(vars, &mut e, 0);
             e
@@ -255,13 +293,24 @@ fn condition_param(cmd: &str, s: &Session, p: &Value) -> Result<Option<Expr>> {
 
 /// A `path` param: whole numbers, an odd count (it ends at an action), not deeper than actions nest.
 fn path_param(cmd: &str, p: &Value, key: &str) -> Result<Option<Vec<usize>>> {
-    let Some(v) = get(p, key) else { return Ok(None) };
-    let list = v.as_array().ok_or_else(|| bad(cmd, format!("`{key}` must be a list of indexes")))?;
+    let Some(v) = get(p, key) else {
+        return Ok(None);
+    };
+    let list = v
+        .as_array()
+        .ok_or_else(|| bad(cmd, format!("`{key}` must be a list of indexes")))?;
     if list.len() % 2 == 0 || list.len() > 2 * MAX_ACTION_DEPTH + 1 {
-        return Err(bad(cmd, format!("`{key}` must be [action] or [action, block, action, …]")));
+        return Err(bad(
+            cmd,
+            format!("`{key}` must be [action] or [action, block, action, …]"),
+        ));
     }
     list.iter()
-        .map(|x| f64_of(x).filter(|f| (0.0..1e6).contains(f) && f.fract() == 0.0).map(|f| f as usize))
+        .map(|x| {
+            f64_of(x)
+                .filter(|f| (0.0..1e6).contains(f) && f.fract() == 0.0)
+                .map(|f| f as usize)
+        })
         .collect::<Option<Vec<usize>>>()
         .map(Some)
         .ok_or_else(|| bad(cmd, format!("`{key}` holds whole numbers ≥ 0")))
@@ -273,14 +322,30 @@ fn req_path(cmd: &str, p: &Value) -> Result<Vec<usize>> {
 
 /// Apply `f` to the actions of interaction `index` of each target (all or nothing: an error rolls
 /// the command back). Returns `f`'s result for the last target.
-fn edit(cmd: &str, s: &mut Session, p: &Value, f: impl Fn(&mut Vec<Action>) -> Result<Value>) -> Result<Value> {
+fn edit(
+    cmd: &str,
+    s: &mut Session,
+    p: &Value,
+    f: impl Fn(&mut Vec<Action>) -> Result<Value>,
+) -> Result<Value> {
     let k = req_index(cmd, p, "index")?;
     let mut out = None;
     for i in req_targets(cmd, s, p)? {
-        let Some(mut actions) = s.doc()?.get(i)?.interactions.get(k).map(|it| it.actions.clone()) else { continue };
+        let Some(mut actions) = s
+            .doc()?
+            .get(i)?
+            .interactions
+            .get(k)
+            .map(|it| it.actions.clone())
+        else {
+            continue;
+        };
         let r = f(&mut actions)?;
         if actions.is_empty() {
-            return Err(bad(cmd, "an interaction needs an action: remove the interaction instead"));
+            return Err(bad(
+                cmd,
+                "an interaction needs an action: remove the interaction instead",
+            ));
         }
         if let Some(it) = s.doc_mut()?.get_mut(i)?.interactions.get_mut(k) {
             it.actions = actions;
@@ -291,7 +356,10 @@ fn edit(cmd: &str, s: &mut Session, p: &Value, f: impl Fn(&mut Vec<Action>) -> R
 }
 
 fn no_list(cmd: &str) -> crate::EngineError {
-    bad(cmd, "no action there: `path` must lead through conditional actions and their blocks")
+    bad(
+        cmd,
+        "no action there: `path` must lead through conditional actions and their blocks",
+    )
 }
 
 fn add(s: &mut Session, p: &Value) -> Result<Value> {
@@ -302,7 +370,10 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
         let path = path.clone().unwrap_or_else(|| vec![actions.len()]);
         let (list, at) = list_mut(actions, &path).ok_or_else(|| no_list(cmd))?;
         if at > list.len() {
-            return Err(bad(cmd, format!("index {at} is past the end ({} actions)", list.len())));
+            return Err(bad(
+                cmd,
+                format!("index {at} is past the end ({} actions)", list.len()),
+            ));
         }
         if list.len() >= MAX_ACTIONS {
             return Err(bad(cmd, format!("at most {MAX_ACTIONS} actions in a list")));
@@ -356,7 +427,11 @@ fn move_action(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// The blocks of the conditional action at `path`.
-fn blocks_mut<'a>(cmd: &str, actions: &'a mut Vec<Action>, path: &[usize]) -> Result<&'a mut Vec<ConditionalBlock>> {
+fn blocks_mut<'a>(
+    cmd: &str,
+    actions: &'a mut Vec<Action>,
+    path: &[usize],
+) -> Result<&'a mut Vec<ConditionalBlock>> {
     let (list, at) = list_mut(actions, path).ok_or_else(|| no_list(cmd))?;
     match list.get_mut(at) {
         Some(Action::Conditional { blocks }) => Ok(blocks),
@@ -393,8 +468,18 @@ fn add_block(s: &mut Session, p: &Value) -> Result<Value> {
         } else {
             blocks.len()
         };
-        let condition = if is_else { None } else { Some(cond.clone().unwrap_or_else(|| fallback.clone())) };
-        blocks.insert(at, ConditionalBlock { condition, actions: vec![] });
+        let condition = if is_else {
+            None
+        } else {
+            Some(cond.clone().unwrap_or_else(|| fallback.clone()))
+        };
+        blocks.insert(
+            at,
+            ConditionalBlock {
+                condition,
+                actions: vec![],
+            },
+        );
         Ok(json!({"block": at}))
     })
 }
@@ -403,10 +488,13 @@ fn set_condition(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "proto.conditional.setCondition";
     let path = req_path(cmd, p)?;
     let block = req_index(cmd, p, "block")?;
-    let cond = condition_param(cmd, s, p)?.ok_or_else(|| bad(cmd, "`expression` or `condition` required"))?;
+    let cond = condition_param(cmd, s, p)?
+        .ok_or_else(|| bad(cmd, "`expression` or `condition` required"))?;
     edit(cmd, s, p, |actions| {
         let blocks = blocks_mut(cmd, actions, &path)?;
-        let b = blocks.get_mut(block).ok_or_else(|| bad(cmd, format!("no block {block}")))?;
+        let b = blocks
+            .get_mut(block)
+            .ok_or_else(|| bad(cmd, format!("no block {block}")))?;
         b.condition = Some(cond.clone());
         Ok(json!({"ok": true}))
     })

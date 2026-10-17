@@ -64,7 +64,10 @@ pub struct FormatCaps {
 /// Formats that are enabled but intentionally not symmetric, with the reason.
 /// The test-suite asserts that every other enabled format is read+write.
 pub const ASYMMETRIC_EXCEPTIONS: &[(Format, &str)] = &[
-    (Format::Xpm, "XPM is a legacy Unix icon interchange format. Reading existing XPM icons is supported; writing modern image assets should use PNG instead."),
+    (
+        Format::Xpm,
+        "XPM is a legacy Unix icon interchange format. Reading existing XPM icons is supported; writing modern image assets should use PNG instead.",
+    ),
     (
         Format::Pcx,
         "PCX is supported for opening legacy paint and clipart assets. New files should use PNG; writing obsolete indexed and planar variants is intentionally not provided.",
@@ -229,30 +232,125 @@ pub fn caps(format: Format) -> FormatCaps {
         lossy: false,
     };
     match format {
-        Format::Png => {
-            FormatCaps { depths: &[S::U8, S::U16], layouts: RGB_GRAY, icc: true, exif: true, xmp: true, dpi: true, text: true, animation: true, ..base }
-        }
-        Format::Jpeg => FormatCaps { layouts: &[L::Gray, L::Rgb, L::Cmyk], alpha: false, icc: true, exif: true, xmp: true, dpi: true, lossy: true, ..base },
-        Format::Tiff => FormatCaps { depths: &[S::U8, S::U16, S::F32], layouts: ALL_LAYOUTS, icc: true, xmp: true, dpi: true, text: true, ..base },
-        Format::WebP => FormatCaps { icc: true, exif: true, xmp: true, animation: true, ..base },
-        Format::Gif => FormatCaps { layouts: &[L::Rgba], animation: true, lossy: true, ..base },
+        Format::Png => FormatCaps {
+            depths: &[S::U8, S::U16],
+            layouts: RGB_GRAY,
+            icc: true,
+            exif: true,
+            xmp: true,
+            dpi: true,
+            text: true,
+            animation: true,
+            ..base
+        },
+        Format::Jpeg => FormatCaps {
+            layouts: &[L::Gray, L::Rgb, L::Cmyk],
+            alpha: false,
+            icc: true,
+            exif: true,
+            xmp: true,
+            dpi: true,
+            lossy: true,
+            ..base
+        },
+        Format::Tiff => FormatCaps {
+            depths: &[S::U8, S::U16, S::F32],
+            layouts: ALL_LAYOUTS,
+            icc: true,
+            xmp: true,
+            dpi: true,
+            text: true,
+            ..base
+        },
+        Format::WebP => FormatCaps {
+            icc: true,
+            exif: true,
+            xmp: true,
+            animation: true,
+            ..base
+        },
+        Format::Gif => FormatCaps {
+            layouts: &[L::Rgba],
+            animation: true,
+            lossy: true,
+            ..base
+        },
         Format::Bmp => base,
-        Format::Tga => FormatCaps { layouts: RGB_GRAY, ..base },
-        Format::Ico => FormatCaps { layouts: &[L::Rgba], ..base },
-        Format::Pnm => FormatCaps { depths: &[S::U8, S::U16, S::F32], layouts: ALL_LAYOUTS, ..base },
-        Format::Pcx => FormatCaps { read: true, write: false, layouts: &[L::Rgb], alpha: false, ..base },
-        Format::Xpm => FormatCaps { read: true, write: false, layouts: &[L::Rgba], ..base },
-        Format::Dds => FormatCaps { read: true, write: false, layouts: RGB_GRAY, ..base },
+        Format::Tga => FormatCaps {
+            layouts: RGB_GRAY,
+            ..base
+        },
+        Format::Ico => FormatCaps {
+            layouts: &[L::Rgba],
+            ..base
+        },
+        Format::Pnm => FormatCaps {
+            depths: &[S::U8, S::U16, S::F32],
+            layouts: ALL_LAYOUTS,
+            ..base
+        },
+        Format::Pcx => FormatCaps {
+            read: true,
+            write: false,
+            layouts: &[L::Rgb],
+            alpha: false,
+            ..base
+        },
+        Format::Xpm => FormatCaps {
+            read: true,
+            write: false,
+            layouts: &[L::Rgba],
+            ..base
+        },
+        Format::Dds => FormatCaps {
+            read: true,
+            write: false,
+            layouts: RGB_GRAY,
+            ..base
+        },
         Format::Qoi => base,
-        Format::OpenExr => FormatCaps { depths: &[S::F16, S::F32], layouts: RGB_GRAY, ..base },
-        Format::Hdr => FormatCaps { depths: &[S::F32], layouts: &[L::Rgb], alpha: false, lossy: true, ..base },
-        Format::Avif => FormatCaps { read: false, write: cfg!(feature = "avif"), lossy: true, ..base },
-        Format::Heif => {
-            FormatCaps { read: cfg!(feature = "heif"), write: false, depths: &[S::U8, S::U16], icc: true, exif: true, xmp: true, lossy: true, ..base }
-        }
-        Format::Fits => FormatCaps { depths: &[S::U8, S::U16, S::F32], layouts: &[L::Gray, L::Rgb], alpha: false, text: true, ..base },
+        Format::OpenExr => FormatCaps {
+            depths: &[S::F16, S::F32],
+            layouts: RGB_GRAY,
+            ..base
+        },
+        Format::Hdr => FormatCaps {
+            depths: &[S::F32],
+            layouts: &[L::Rgb],
+            alpha: false,
+            lossy: true,
+            ..base
+        },
+        Format::Avif => FormatCaps {
+            read: false,
+            write: cfg!(feature = "avif"),
+            lossy: true,
+            ..base
+        },
+        Format::Heif => FormatCaps {
+            read: cfg!(feature = "heif"),
+            write: false,
+            depths: &[S::U8, S::U16],
+            icc: true,
+            exif: true,
+            xmp: true,
+            lossy: true,
+            ..base
+        },
+        Format::Fits => FormatCaps {
+            depths: &[S::U8, S::U16, S::F32],
+            layouts: &[L::Gray, L::Rgb],
+            alpha: false,
+            text: true,
+            ..base
+        },
         // `text`: the DPX header fields only (see `fidelity_warnings_with`).
-        Format::Dpx => FormatCaps { depths: &[S::U8, S::U16], layouts: &[L::Gray, L::Rgb, L::Rgba], text: true, ..base },
+        Format::Dpx => FormatCaps {
+            depths: &[S::U8, S::U16],
+            layouts: &[L::Gray, L::Rgb, L::Rgba],
+            text: true,
+            ..base
+        },
     }
 }
 
@@ -266,7 +364,11 @@ pub fn detect(bytes: &[u8]) -> Option<Format> {
     if b.starts_with(&[0xFF, 0xD8, 0xFF]) {
         return Some(Format::Jpeg);
     }
-    if b.starts_with(b"II*\0") || b.starts_with(b"MM\0*") || b.starts_with(b"II+\0") || b.starts_with(b"MM\0+") {
+    if b.starts_with(b"II*\0")
+        || b.starts_with(b"MM\0*")
+        || b.starts_with(b"II+\0")
+        || b.starts_with(b"MM\0+")
+    {
         return Some(Format::Tiff);
     }
     if b.len() >= 12 && &b[0..4] == b"RIFF" && &b[8..12] == b"WEBP" {
@@ -301,7 +403,11 @@ pub fn detect(bytes: &[u8]) -> Option<Format> {
     if b.len() >= 6 && b[0..4] == [0, 0, 1, 0] && (b[4] != 0 || b[5] != 0) {
         return Some(Format::Ico);
     }
-    if b.len() >= 3 && b[0] == b'P' && matches!(b[1], b'1'..=b'7' | b'F' | b'f') && b[2].is_ascii_whitespace() {
+    if b.len() >= 3
+        && b[0] == b'P'
+        && matches!(b[1], b'1'..=b'7' | b'F' | b'f')
+        && b[2].is_ascii_whitespace()
+    {
         return Some(Format::Pnm);
     }
     if b.starts_with(b"SDPX") || b.starts_with(b"XPDS") {
@@ -326,7 +432,13 @@ pub fn detect(bytes: &[u8]) -> Option<Format> {
 fn ftyp_brands(b: &[u8]) -> impl Iterator<Item = &[u8; 4]> {
     let size = u32::from_be_bytes([b[0], b[1], b[2], b[3]]) as usize;
     let end = size.clamp(12, b.len().min(64));
-    b[8..end].as_chunks::<4>().0.iter().enumerate().filter(|(i, _)| *i != 1).map(|(_, c)| c)
+    b[8..end]
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| *i != 1)
+        .map(|(_, c)| c)
 }
 
 fn is_avif_ftyp(b: &[u8]) -> bool {
@@ -337,7 +449,12 @@ fn is_avif_ftyp(b: &[u8]) -> bool {
 /// not AVIF (checked first). Sequence-only files (`hevc`, `msf1`) are recognised so that opening
 /// one says what is unsupported instead of "unrecognized format".
 fn is_heif_ftyp(b: &[u8]) -> bool {
-    ftyp_brands(b).any(|c| matches!(c, b"heic" | b"heix" | b"heim" | b"heis" | b"hevc" | b"hevx" | b"mif1" | b"msf1" | b"miaf"))
+    ftyp_brands(b).any(|c| {
+        matches!(
+            c,
+            b"heic" | b"heix" | b"heim" | b"heis" | b"hevc" | b"hevx" | b"mif1" | b"msf1" | b"miaf"
+        )
+    })
 }
 
 fn looks_like_tga(b: &[u8]) -> bool {
@@ -372,6 +489,12 @@ fn looks_like_tga(b: &[u8]) -> bool {
 /// Look up a format by file extension (case-insensitive, with or without a
 /// leading dot, or a full file name/path).
 pub fn from_extension(ext: &str) -> Option<Format> {
-    let ext = ext.rsplit(['.', '/', '\\']).next().unwrap_or(ext).to_ascii_lowercase();
-    Format::ALL.into_iter().find(|f| f.extensions().contains(&ext.as_str()))
+    let ext = ext
+        .rsplit(['.', '/', '\\'])
+        .next()
+        .unwrap_or(ext)
+        .to_ascii_lowercase();
+    Format::ALL
+        .into_iter()
+        .find(|f| f.extensions().contains(&ext.as_str()))
 }

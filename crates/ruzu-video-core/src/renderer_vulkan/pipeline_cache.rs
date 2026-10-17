@@ -820,11 +820,13 @@ pub(crate) fn translate_graphics_stages_from_environments_with_features(
     let capture_directory = pre_raster_capture_directory(key, has_geometry);
     if let Some(directory) = capture_directory {
         let path = directory.join(format!("{:016x}.bin", key.hash_value()));
-        let result = std::fs::create_dir_all(directory).and_then(|()| {
-            capture_geometry_environments(&path, key, &environments.span())
-        });
+        let result = std::fs::create_dir_all(directory)
+            .and_then(|()| capture_geometry_environments(&path, key, &environments.span()));
         match result {
-            Ok(true) => log::info!("Pre-raster pipeline environments captured: {}", path.display()),
+            Ok(true) => log::info!(
+                "Pre-raster pipeline environments captured: {}",
+                path.display()
+            ),
             Ok(false) => {}
             Err(error) => log::error!("Pre-raster environment capture failed: {error}"),
         }
@@ -970,7 +972,10 @@ pub(super) fn compile_graphics_stages_from_file_environments(
                 .iter()
                 .find(|env| env.shader_stage() == program.stage);
             let (code, start) = env.map_or((&[][..], 0), |env| {
-                (env.cached_instruction_slice(), env.cached_instruction_start())
+                (
+                    env.cached_instruction_slice(),
+                    env.cached_instruction_start(),
+                )
             });
             dump_geometry_pipeline_stage(directory, key, program, &runtime_info, code, start);
         }
@@ -1145,8 +1150,7 @@ impl GraphicsPipelineBuilder {
                 continue;
             };
             self.device_owner.get().save_shader(&compiled.spirv_words);
-            let create_info = vk::ShaderModuleCreateInfo::default()
-                .code(&compiled.spirv_words);
+            let create_info = vk::ShaderModuleCreateInfo::default().code(&compiled.spirv_words);
             modules[index] = match unsafe {
                 self.device_owner
                     .get()
@@ -1588,8 +1592,7 @@ where
     };
     vulkan_device.save_shader(&compiled.spirv_words);
     let device = vulkan_device.get_logical().clone();
-    let create_info = vk::ShaderModuleCreateInfo::default()
-        .code(&compiled.spirv_words);
+    let create_info = vk::ShaderModuleCreateInfo::default().code(&compiled.spirv_words);
     let spv_module = unsafe { device.create_shader_module(&create_info, None).ok()? };
     let should_log = is_active();
     let should_dump = *common::settings::values().gpu_log_shader_dumps.get_value();
@@ -1770,8 +1773,7 @@ impl PipelineCache {
         &self,
         initial_data: &[u8],
     ) -> Result<vk::PipelineCache, vk::Result> {
-        let cache_ci = vk::PipelineCacheCreateInfo::default()
-            .initial_data(initial_data);
+        let cache_ci = vk::PipelineCacheCreateInfo::default().initial_data(initial_data);
         unsafe { self.device.create_pipeline_cache(&cache_ci, None) }
     }
 
@@ -2207,7 +2209,10 @@ impl PipelineCache {
             RefCell::new(Vec::new());
         let load_graphics = |file: &mut std::fs::File, envs: Vec<FileEnvironment>| {
             let key = GraphicsPipelineKey::read_from_file(file)?;
-            if envs.iter().any(FileEnvironment::has_ambiguous_depth_stencil_formats) {
+            if envs
+                .iter()
+                .any(FileEnvironment::has_ambiguous_depth_stencil_formats)
+            {
                 skipped.set(skipped.get() + 1);
                 return Ok(());
             }
@@ -2513,23 +2518,35 @@ mod tests {
     fn inspect_cached_tessellation_with_native_host_profile() {
         use crate::renderer_metal::{
             metal_device::MetalDevice,
-            metal_pipeline_cache::{make_host_translate_info as native_host_info, make_shader_profile},
+            metal_pipeline_cache::{
+                make_host_translate_info as native_host_info, make_shader_profile,
+            },
             metal_shader::compile_msl_library,
         };
         use crate::shader_environment::GraphicsEnvironment;
         use std::io::Write;
         use std::os::unix::fs::DirBuilderExt;
 
-        let source = PathBuf::from(std::env::var_os("RUZU_REPLAY_VULKAN_CACHE")
-            .expect("set RUZU_REPLAY_VULKAN_CACHE to a Vulkan environment cache"));
-        let directory = PathBuf::from(std::env::var_os("RUZU_DUMP_TESSELLATION_PIPELINES")
-            .expect("set RUZU_DUMP_TESSELLATION_PIPELINES to a new output directory"));
-        std::fs::DirBuilder::new().mode(0o700).create(&directory).unwrap();
+        let source = PathBuf::from(
+            std::env::var_os("RUZU_REPLAY_VULKAN_CACHE")
+                .expect("set RUZU_REPLAY_VULKAN_CACHE to a Vulkan environment cache"),
+        );
+        let directory = PathBuf::from(
+            std::env::var_os("RUZU_DUMP_TESSELLATION_PIPELINES")
+                .expect("set RUZU_DUMP_TESSELLATION_PIPELINES to a new output directory"),
+        );
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&directory)
+            .unwrap();
         let copy = directory.join("input-snapshot.bin");
         // LoadPipelines may delete invalid files. Only expose this private copy,
         // and validate its survival before treating an empty result as evidence.
-        let mut snapshot = std::fs::OpenOptions::new().write(true).create_new(true)
-            .open(&copy).unwrap();
+        let mut snapshot = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&copy)
+            .unwrap();
         std::io::copy(&mut std::fs::File::open(source).unwrap(), &mut snapshot).unwrap();
         snapshot.flush().unwrap();
         drop(snapshot);
@@ -2537,7 +2554,9 @@ mod tests {
         let mut compute_count = 0usize;
         let mut entries = Vec::new();
         load_pipelines(
-            || false, &copy, CACHE_VERSION,
+            || false,
+            &copy,
+            CACHE_VERSION,
             Box::new(|file, _| {
                 ComputePipelineCacheKey::read_from_file(file)?;
                 compute_count += 1;
@@ -2552,8 +2571,14 @@ mod tests {
                 Ok(())
             }),
         );
-        assert!(copy.exists(), "cache snapshot rejected; counts are not valid");
-        assert!(graphics_count + compute_count != 0, "cache snapshot is empty");
+        assert!(
+            copy.exists(),
+            "cache snapshot rejected; counts are not valid"
+        );
+        assert!(
+            graphics_count + compute_count != 0,
+            "cache snapshot is empty"
+        );
         eprintln!("Environment inventory: graphics={graphics_count} compute={compute_count} tessellation={}", entries.len());
         let device = MetalDevice::new().unwrap();
         let host_info = native_host_info(device.profile());
@@ -2568,60 +2593,116 @@ mod tests {
             }
             let translated = catch_shader_exception(|| {
                 translate_graphics_stages_from_environments_with_features(
-                    &host_info, &key, &mut environments,
-                    RuntimeInfoDeviceFeatures { transform_feedback: true, molten_vk: true },
+                    &host_info,
+                    &key,
+                    &mut environments,
+                    RuntimeInfoDeviceFeatures {
+                        transform_feedback: true,
+                        molten_vk: true,
+                    },
                 )
-            }).expect("captured shader translation must succeed")
-                .expect("captured pipeline must have a vertex stage");
-            let stages: Vec<_> = translated.iter().flatten().map(|stage| stage.program.stage).collect();
-            eprintln!("Tessellation pipeline {:016x}: {stages:?}", key.hash_value());
+            })
+            .expect("captured shader translation must succeed")
+            .expect("captured pipeline must have a vertex stage");
+            let stages: Vec<_> = translated
+                .iter()
+                .flatten()
+                .map(|stage| stage.program.stage)
+                .collect();
+            eprintln!(
+                "Tessellation pipeline {:016x}: {stages:?}",
+                key.hash_value()
+            );
             if let Some(control) = &translated[1] {
+                use crate::renderer_metal::metal_tessellation_pipeline::MetalTessellationControlPipeline;
                 use shader_recompiler::backend::msl::{
                     emit_msl::emit_msl_tessellation_control_function,
                     emit_msl_tessellation::TessellationControlLayout, MslOptions,
                 };
-                use crate::renderer_metal::metal_tessellation_pipeline::MetalTessellationControlPipeline;
-                let artifact = emit_msl_tessellation_control_function(&control.program,
-                    &make_shader_profile(device.profile()), &control.runtime_info,
-                    &MslOptions::default(), &mut Bindings::default()).unwrap();
-                std::fs::write(directory.join(format!("{:016x}_control.metal", key.hash_value())),
-                    &artifact.source.source).unwrap();
-                let layout = TessellationControlLayout::new(&control.program, &control.runtime_info).unwrap();
+                let artifact = emit_msl_tessellation_control_function(
+                    &control.program,
+                    &make_shader_profile(device.profile()),
+                    &control.runtime_info,
+                    &MslOptions::default(),
+                    &mut Bindings::default(),
+                )
+                .unwrap();
+                std::fs::write(
+                    directory.join(format!("{:016x}_control.metal", key.hash_value())),
+                    &artifact.source.source,
+                )
+                .unwrap();
+                let layout =
+                    TessellationControlLayout::new(&control.program, &control.runtime_info)
+                        .unwrap();
                 MetalTessellationControlPipeline::new(&device, &artifact, &layout).unwrap();
-                eprintln!("Runtime native TCS compute pipeline compiled: {:016x}", key.hash_value());
+                eprintln!(
+                    "Runtime native TCS compute pipeline compiled: {:016x}",
+                    key.hash_value()
+                );
             }
             if let (Some(control), Some(evaluation)) = (&translated[1], &translated[2]) {
-                use shader_recompiler::backend::msl::{
-                    emit_msl::emit_msl_tessellation_evaluation_function,
-                    emit_msl_tessellation::TessellationControlLayout,
-                    MslOptions,
+                use crate::renderer_metal::{
+                    metal_pipeline_cache::MetalRenderPipelineKey,
+                    metal_tessellation_pipeline::MetalTessellationEvaluationPipeline,
                 };
-                use crate::renderer_metal::{metal_pipeline_cache::MetalRenderPipelineKey,
-                    metal_tessellation_pipeline::MetalTessellationEvaluationPipeline};
                 use objc2_foundation::NSString;
                 use objc2_metal::{MTLLibrary as _, MTLPixelFormat};
-                let layout = TessellationControlLayout::new(&control.program, &control.runtime_info).unwrap();
-                let artifact = emit_msl_tessellation_evaluation_function(&evaluation.program,
-                    &make_shader_profile(device.profile()), &evaluation.runtime_info,
-                    &MslOptions::default(), &mut Bindings::default()).unwrap();
-                std::fs::write(directory.join(format!("{:016x}_evaluation.metal", key.hash_value())),
-                    &artifact.source.source).unwrap();
+                use shader_recompiler::backend::msl::{
+                    emit_msl::emit_msl_tessellation_evaluation_function,
+                    emit_msl_tessellation::TessellationControlLayout, MslOptions,
+                };
+                let layout =
+                    TessellationControlLayout::new(&control.program, &control.runtime_info)
+                        .unwrap();
+                let artifact = emit_msl_tessellation_evaluation_function(
+                    &evaluation.program,
+                    &make_shader_profile(device.profile()),
+                    &evaluation.runtime_info,
+                    &MslOptions::default(),
+                    &mut Bindings::default(),
+                )
+                .unwrap();
+                std::fs::write(
+                    directory.join(format!("{:016x}_evaluation.metal", key.hash_value())),
+                    &artifact.source.source,
+                )
+                .unwrap();
                 // Diagnostic-only fragment: this verifies the real TES entry,
                 // not framebuffer formats or the complete captured guest pipeline.
                 let library = compile_msl_library(device.device(),
                     "#include <metal_stdlib>\nusing namespace metal;\nfragment float4 probe_fragment() { return float4(1.0f); }",
                     artifact.language_version).unwrap();
-                let fragment = library.newFunctionWithName(&NSString::from_str("probe_fragment")).unwrap();
+                let fragment = library
+                    .newFunctionWithName(&NSString::from_str("probe_fragment"))
+                    .unwrap();
                 let mut render_key = MetalRenderPipelineKey::new(0, 0);
                 render_key.color_attachments[0].format = MTLPixelFormat::RGBA8Unorm;
-                MetalTessellationEvaluationPipeline::new(&device, &render_key, &artifact,
-                    &layout, &evaluation.runtime_info, 64, Some(&fragment)).unwrap();
-                eprintln!("Native TES render pipeline compiled: {:016x}", key.hash_value());
+                MetalTessellationEvaluationPipeline::new(
+                    &device,
+                    &render_key,
+                    &artifact,
+                    &layout,
+                    &evaluation.runtime_info,
+                    64,
+                    Some(&fragment),
+                )
+                .unwrap();
+                eprintln!(
+                    "Native TES render pipeline compiled: {:016x}",
+                    key.hash_value()
+                );
             }
-            let mut cache = crate::renderer_metal::metal_pipeline_cache::MetalPipelineCache::new(device.clone());
-            cache.validate_captured_tessellation(&key, &mut environments)
+            let mut cache = crate::renderer_metal::metal_pipeline_cache::MetalPipelineCache::new(
+                device.clone(),
+            );
+            cache
+                .validate_captured_tessellation(&key, &mut environments)
                 .expect("complete captured native tessellation stage chain must compile");
-            eprintln!("Native captured VS/TCS/TES/FS pipeline and cache reuse verified: {:016x}", key.hash_value());
+            eprintln!(
+                "Native captured VS/TCS/TES/FS pipeline and cache reuse verified: {:016x}",
+                key.hash_value()
+            );
         }
     }
 
@@ -2852,14 +2933,19 @@ mod tests {
     #[test]
     fn invalid_predicate_boolean_op_is_a_caught_shader_error() {
         use shader_recompiler::frontend::translate::{common_funcs, TranslatorVisitor};
-        use shader_recompiler::ir::{basic_block::Block, program::Program, types::ShaderStage, value::Value};
+        use shader_recompiler::ir::{
+            basic_block::Block, program::Program, types::ShaderStage, value::Value,
+        };
 
         let result = catch_shader_exception(|| {
             let mut program = Program::new(ShaderStage::VertexB);
             program.blocks.push(Block::new());
             let mut visitor = TranslatorVisitor::new(&mut program, 0);
             common_funcs::predicate_combine(
-                &mut visitor, Value::ImmU1(true), Value::ImmU1(false), 3,
+                &mut visitor,
+                Value::ImmU1(true),
+                Value::ImmU1(false),
+                3,
             );
         });
         assert_eq!(result.unwrap_err(), "Invalid bop 3 is not implemented");
@@ -2913,7 +2999,9 @@ mod tests {
 
         let result = catch_shader_exception(|| {
             let mut program = Program::new(ShaderStage::Fragment);
-            program.blocks.push(shader_recompiler::ir::basic_block::Block::new());
+            program
+                .blocks
+                .push(shader_recompiler::ir::basic_block::Block::new());
             shader_recompiler::backend::emit_spirv(
                 &program,
                 &Default::default(),

@@ -35,7 +35,11 @@ pub fn specs() -> Vec<CommandSpec> {
             [],
             None,
             "{name} delete a saved New Document preset → {deleted}",
-            |s| if s.prefs.new_doc_presets.is_empty() { Err("no saved presets".into()) } else { Ok(()) },
+            |s| if s.prefs.new_doc_presets.is_empty() {
+                Err("no saved presets".into())
+            } else {
+                Ok(())
+            },
             delete
         ),
     ]
@@ -75,7 +79,9 @@ impl ArtboardLayout {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|l| l.id().eq_ignore_ascii_case(s) || l.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|l| l.id().eq_ignore_ascii_case(s) || l.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -99,7 +105,9 @@ impl PreviewMode {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|m| m.id().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.id().eq_ignore_ascii_case(s))
     }
 }
 
@@ -153,7 +161,11 @@ impl Default for DocSettings {
 /// Most artboards a new document can have (as the reference app).
 pub const MAX_ARTBOARDS: u32 = 1000;
 /// Raster effects resolutions New Document offers: (ppi, label).
-pub const RASTER_PPI: [(f64, &str); 3] = [(72.0, "Screen (72 ppi)"), (150.0, "Medium (150 ppi)"), (300.0, "High (300 ppi)")];
+pub const RASTER_PPI: [(f64, &str); 3] = [
+    (72.0, "Screen (72 ppi)"),
+    (150.0, "Medium (150 ppi)"),
+    (300.0, "High (300 ppi)"),
+];
 
 impl DocSettings {
     /// The columns a grid actually uses (0 or more than the artboards: one row).
@@ -169,13 +181,22 @@ impl DocSettings {
 
     /// "portrait" or "landscape" (a square is portrait).
     pub fn orientation(&self) -> &'static str {
-        if self.width > self.height { "landscape" } else { "portrait" }
+        if self.width > self.height {
+            "landscape"
+        } else {
+            "portrait"
+        }
     }
 
     /// The size as New Document shows it, e.g. "1920 × 1080 px".
     pub fn size_label(&self) -> String {
         let u = self.units;
-        format!("{} × {} {}", u.number(self.width), u.number(self.height), u.suffix())
+        format!(
+            "{} × {} {}",
+            u.number(self.width),
+            u.number(self.height),
+            u.suffix()
+        )
     }
 
     /// As `file.newPresets` lists it (and `file.new` takes it back).
@@ -208,8 +229,14 @@ impl DocSettings {
             match p.get(k) {
                 None | Some(Value::Null) => Ok(None),
                 Some(Value::Number(n)) => Ok(n.as_f64()),
-                Some(Value::String(s)) => units.parse(s).map(Some).ok_or_else(|| bad(cmd, format!("{k}: can't read `{s}` as a length"))),
-                Some(_) => Err(bad(cmd, format!("{k} must be a number (pt) or a length such as \"210 mm\""))),
+                Some(Value::String(s)) => units
+                    .parse(s)
+                    .map(Some)
+                    .ok_or_else(|| bad(cmd, format!("{k}: can't read `{s}` as a length"))),
+                Some(_) => Err(bad(
+                    cmd,
+                    format!("{k} must be a number (pt) or a length such as \"210 mm\""),
+                )),
             }
         };
         if let Some(w) = length("width", self.units)? {
@@ -218,17 +245,37 @@ impl DocSettings {
         if let Some(h) = length("height", self.units)? {
             self.height = h;
         }
-        if !(self.width > 0.0 && self.height > 0.0) || self.width > MAX_SIDE || self.height > MAX_SIDE {
-            return Err(bad(cmd, "width/height must be positive and within the canvas"));
+        if !(self.width > 0.0 && self.height > 0.0)
+            || self.width > MAX_SIDE
+            || self.height > MAX_SIDE
+        {
+            return Err(bad(
+                cmd,
+                "width/height must be positive and within the canvas",
+            ));
         }
         match p.get("orientation").and_then(Value::as_str) {
             None => {}
-            Some(o) if o.eq_ignore_ascii_case("portrait") => (self.width, self.height) = (self.width.min(self.height), self.width.max(self.height)),
-            Some(o) if o.eq_ignore_ascii_case("landscape") => (self.width, self.height) = (self.width.max(self.height), self.width.min(self.height)),
-            Some(o) => return Err(bad(cmd, format!("orientation must be portrait or landscape, not `{o}`"))),
+            Some(o) if o.eq_ignore_ascii_case("portrait") => {
+                (self.width, self.height) =
+                    (self.width.min(self.height), self.width.max(self.height))
+            }
+            Some(o) if o.eq_ignore_ascii_case("landscape") => {
+                (self.width, self.height) =
+                    (self.width.max(self.height), self.width.min(self.height))
+            }
+            Some(o) => {
+                return Err(bad(
+                    cmd,
+                    format!("orientation must be portrait or landscape, not `{o}`"),
+                ));
+            }
         }
         if let Some(n) = p.get("artboards").filter(|v| !v.is_null()) {
-            let n = n.as_f64().filter(|n| n.is_finite()).ok_or_else(|| bad(cmd, "artboards must be a number"))?;
+            let n = n
+                .as_f64()
+                .filter(|n| n.is_finite())
+                .ok_or_else(|| bad(cmd, "artboards must be a number"))?;
             self.artboards = n.round().clamp(1.0, MAX_ARTBOARDS as f64) as u32;
         }
         if let Some(l) = p.get("artboardLayout").filter(|v| !v.is_null()) {
@@ -244,36 +291,70 @@ impl DocSettings {
             self.color_mode = match m.to_ascii_lowercase().as_str() {
                 "rgb" | "rgb color" => ColorMode::Rgb,
                 "cmyk" | "cmyk color" => ColorMode::Cmyk,
-                _ => return Err(bad(cmd, format!("colorMode must be rgb or cmyk, not `{m}`"))),
+                _ => {
+                    return Err(bad(
+                        cmd,
+                        format!("colorMode must be rgb or cmyk, not `{m}`"),
+                    ));
+                }
             };
         }
         if let Some(v) = p.get("rasterEffectsPpi").filter(|v| !v.is_null()) {
             self.raster_effects_ppi = v
                 .as_f64()
                 .filter(|r| (1.0..=2400.0).contains(r))
-                .ok_or_else(|| bad(cmd, "rasterEffectsPpi must be 1–2400 (72 screen, 150 medium, 300 high)"))?;
+                .ok_or_else(|| {
+                    bad(
+                        cmd,
+                        "rasterEffectsPpi must be 1–2400 (72 screen, 150 medium, 300 high)",
+                    )
+                })?;
         }
         if let Some(m) = p.get("previewMode").filter(|v| !v.is_null()) {
-            self.preview_mode = m.as_str().and_then(PreviewMode::parse).ok_or_else(|| bad(cmd, "previewMode must be default, pixel or overprint"))?;
+            self.preview_mode = m
+                .as_str()
+                .and_then(PreviewMode::parse)
+                .ok_or_else(|| bad(cmd, "previewMode must be default, pixel or overprint"))?;
         }
         let extent = self.boards().iter().fold(Rect::ZERO, |a, r| a.union(*r));
-        if extent.width().max(extent.height()) + self.bleed.iter().fold(0.0f64, |a, b| a.max(*b)) * 2.0 > crate::MAX_COORD {
-            return Err(bad(cmd, "the artboards don't fit on the canvas: fewer artboards, less spacing or a smaller size"));
+        if extent.width().max(extent.height())
+            + self.bleed.iter().fold(0.0f64, |a, b| a.max(*b)) * 2.0
+            > crate::MAX_COORD
+        {
+            return Err(bad(
+                cmd,
+                "the artboards don't fit on the canvas: fewer artboards, less spacing or a smaller size",
+            ));
         }
         Ok(self)
     }
 
     /// `artboardLayout: {layout?, columns?, spacing?, rightToLeft?}` or just a layout id.
     fn layout_params(&mut self, l: &Value, cmd: &str) -> Result<()> {
-        let bad_layout = || bad(cmd, "artboardLayout.layout must be gridByRow, gridByColumn, row or column");
+        let bad_layout = || {
+            bad(
+                cmd,
+                "artboardLayout.layout must be gridByRow, gridByColumn, row or column",
+            )
+        };
         if let Some(id) = l.as_str() {
             self.layout = ArtboardLayout::parse(id).ok_or_else(bad_layout)?;
             return Ok(());
         }
-        let o = l.as_object().ok_or_else(|| bad(cmd, "artboardLayout must be {layout?, columns?, spacing?, rightToLeft?}"))?;
+        let o = l.as_object().ok_or_else(|| {
+            bad(
+                cmd,
+                "artboardLayout must be {layout?, columns?, spacing?, rightToLeft?}",
+            )
+        })?;
         for (k, v) in o {
             match k.as_str() {
-                "layout" => self.layout = v.as_str().and_then(ArtboardLayout::parse).ok_or_else(bad_layout)?,
+                "layout" => {
+                    self.layout = v
+                        .as_str()
+                        .and_then(ArtboardLayout::parse)
+                        .ok_or_else(bad_layout)?
+                }
                 "columns" => {
                     self.columns = v
                         .as_f64()
@@ -286,10 +367,26 @@ impl DocSettings {
                     self.spacing = v
                         .as_f64()
                         .filter(|s| (0.0..=MAX_SPACING).contains(s))
-                        .ok_or_else(|| bad(cmd, format!("artboardLayout.spacing must be 0–{MAX_SPACING} pt")))?
+                        .ok_or_else(|| {
+                            bad(
+                                cmd,
+                                format!("artboardLayout.spacing must be 0–{MAX_SPACING} pt"),
+                            )
+                        })?
                 }
-                "rightToLeft" => self.right_to_left = v.as_bool().ok_or_else(|| bad(cmd, "artboardLayout.rightToLeft must be true or false"))?,
-                _ => return Err(bad(cmd, format!("unknown artboardLayout key `{k}` (layout, columns, spacing, rightToLeft)"))),
+                "rightToLeft" => {
+                    self.right_to_left = v.as_bool().ok_or_else(|| {
+                        bad(cmd, "artboardLayout.rightToLeft must be true or false")
+                    })?
+                }
+                _ => {
+                    return Err(bad(
+                        cmd,
+                        format!(
+                            "unknown artboardLayout key `{k}` (layout, columns, spacing, rightToLeft)"
+                        ),
+                    ));
+                }
             }
         }
         Ok(())
@@ -300,10 +397,17 @@ impl DocSettings {
         let n = self.artboards.max(1) as usize;
         let sizes = vec![(self.width, self.height); n];
         let by_column = self.layout == ArtboardLayout::GridByColumn;
-        grid_origins(&sizes, Point::ZERO, self.grid_columns(), self.spacing, by_column, self.right_to_left)
-            .into_iter()
-            .map(|o| Rect::from_origin_size(o, (self.width, self.height)))
-            .collect()
+        grid_origins(
+            &sizes,
+            Point::ZERO,
+            self.grid_columns(),
+            self.spacing,
+            by_column,
+            self.right_to_left,
+        )
+        .into_iter()
+        .map(|o| Rect::from_origin_size(o, (self.width, self.height)))
+        .collect()
     }
 
     /// The new document (title and swatches set by `file.new`).
@@ -344,10 +448,24 @@ pub fn color_mode_id(m: ColorMode) -> &'static str {
 /// Top-left corners for artboards of `sizes` from `origin`: `columns` per row, `spacing` apart,
 /// each column as wide and each row as tall as its largest artboard; `by_column` fills columns
 /// top to bottom first, `rtl` puts the first column at the right.
-pub(crate) fn grid_origins(sizes: &[(f64, f64)], origin: Point, columns: usize, spacing: f64, by_column: bool, rtl: bool) -> Vec<Point> {
+pub(crate) fn grid_origins(
+    sizes: &[(f64, f64)],
+    origin: Point,
+    columns: usize,
+    spacing: f64,
+    by_column: bool,
+    rtl: bool,
+) -> Vec<Point> {
     let n = sizes.len().max(1);
     let cols = columns.clamp(1, n);
-    grid_origins_rc(sizes, origin, (n.div_ceil(cols), cols), spacing, by_column, rtl)
+    grid_origins_rc(
+        sizes,
+        origin,
+        (n.div_ceil(cols), cols),
+        spacing,
+        by_column,
+        rtl,
+    )
 }
 
 /// [`grid_origins`] on a grid of `rows` × `cols` cells (at least enough for every artboard when
@@ -363,7 +481,11 @@ pub(crate) fn grid_origins_rc(
     let (rows, cols) = (rows.max(1), cols.max(1));
     // Grid cell (row, column) of artboard i.
     let cell = |i: usize| {
-        let (r, c) = if by_column { (i % rows, i / rows) } else { (i / cols, i % cols) };
+        let (r, c) = if by_column {
+            (i % rows, i / rows)
+        } else {
+            (i / cols, i % cols)
+        };
         (r, if rtl { cols - 1 - c.min(cols - 1) } else { c })
     };
     let (mut col_w, mut row_h) = (vec![0.0f64; cols], vec![0.0f64; rows]);
@@ -385,7 +507,12 @@ pub(crate) fn grid_origins_rc(
 
 /// The built-in presets: (category, presets as (name, width, height, units)), with the category's
 /// colour mode and raster effects resolution. Sizes in `units` (converted to points on use).
-type Category = (&'static str, ColorMode, f64, &'static [(&'static str, f64, f64, Unit)]);
+type Category = (
+    &'static str,
+    ColorMode,
+    f64,
+    &'static [(&'static str, f64, f64, Unit)],
+);
 
 const PX: Unit = Unit::Pixels;
 const PT: Unit = Unit::Points;
@@ -500,7 +627,9 @@ pub const CATEGORIES: &[Category] = &[
 
 /// The category tabs in order: Recent, Saved, then the built-in categories.
 pub fn category_names() -> impl Iterator<Item = &'static str> {
-    ["Recent", "Saved"].into_iter().chain(CATEGORIES.iter().map(|c| c.0))
+    ["Recent", "Saved"]
+        .into_iter()
+        .chain(CATEGORIES.iter().map(|c| c.0))
 }
 
 /// The built-in presets of one category: screen sizes in pixels, the others in `general`
@@ -511,7 +640,11 @@ fn builtin(c: &Category, general: Unit) -> impl Iterator<Item = DocSettings> + '
         name: name.into(),
         width: units.to_pt(w),
         height: units.to_pt(h),
-        units: if units == Unit::Pixels { units } else { general },
+        units: if units == Unit::Pixels {
+            units
+        } else {
+            general
+        },
         color_mode,
         raster_effects_ppi: ppi,
         ..DocSettings::default()
@@ -526,7 +659,10 @@ pub fn category(s: &Session, name: &str) -> Option<Vec<DocSettings>> {
     if name.eq_ignore_ascii_case("Saved") {
         return Some(s.prefs.new_doc_presets.clone());
     }
-    CATEGORIES.iter().find(|c| c.0.eq_ignore_ascii_case(name)).map(|c| builtin(c, s.default_units()).collect())
+    CATEGORIES
+        .iter()
+        .find(|c| c.0.eq_ignore_ascii_case(name))
+        .map(|c| builtin(c, s.default_units()).collect())
 }
 
 /// A preset by name (any case): a saved one first, then the built-in ones.
@@ -537,13 +673,21 @@ pub fn find(s: &Session, name: &str) -> Option<DocSettings> {
         .iter()
         .find(|p| p.name.eq_ignore_ascii_case(name))
         .cloned()
-        .or_else(|| CATEGORIES.iter().flat_map(|c| builtin(c, s.default_units())).find(|p| p.name.eq_ignore_ascii_case(name)))
+        .or_else(|| {
+            CATEGORIES
+                .iter()
+                .flat_map(|c| builtin(c, s.default_units()))
+                .find(|p| p.name.eq_ignore_ascii_case(name))
+        })
 }
 
 impl Session {
     /// New Document's starting settings: Letter in Preferences ▸ Units ▸ General.
     fn default_settings(&self) -> DocSettings {
-        DocSettings { units: self.default_units(), ..DocSettings::default() }
+        DocSettings {
+            units: self.default_units(),
+            ..DocSettings::default()
+        }
     }
 }
 
@@ -554,7 +698,12 @@ const RECENT: usize = 12;
 pub(crate) fn file_new(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "file.new";
     let base = match str_param(p, "preset") {
-        Some(name) => find(s, name).ok_or_else(|| bad(C, format!("no preset called `{name}` (see file.newPresets)")))?,
+        Some(name) => find(s, name).ok_or_else(|| {
+            bad(
+                C,
+                format!("no preset called `{name}` (see file.newPresets)"),
+            )
+        })?,
         None => s.default_settings(),
     };
     // A preset keeps its name in Recent unless its size changed (turning it doesn't count).
@@ -566,7 +715,11 @@ pub(crate) fn file_new(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let mut d = settings.document();
     d.grid = s.prefs.grid();
-    d.title = match str_param(p, "name").or(str_param(p, "title")).map(str::trim).filter(|t| !t.is_empty()) {
+    d.title = match str_param(p, "name")
+        .or(str_param(p, "title"))
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+    {
         // New Document offers the next untitled name: taking it uses it up.
         Some(t) if t == s.peek_untitled() => s.next_untitled(),
         Some(t) => t.to_string(),
@@ -586,7 +739,9 @@ pub(crate) fn file_new(s: &mut Session, p: &Value) -> Result<Value> {
 /// Put `settings` first in Recent (one entry per size and units).
 fn remember(s: &mut Session, settings: &DocSettings) {
     let recent = &mut s.prefs.recent_new_docs;
-    recent.retain(|r| (r.width, r.height, r.units) != (settings.width, settings.height, settings.units));
+    recent.retain(|r| {
+        (r.width, r.height, r.units) != (settings.width, settings.height, settings.units)
+    });
     recent.insert(0, settings.clone());
     recent.truncate(RECENT);
 }
@@ -596,7 +751,15 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
         Some(c) => vec![
             category_names()
                 .find(|n| n.eq_ignore_ascii_case(c))
-                .ok_or_else(|| bad("file.newPresets", format!("unknown category `{c}` ({})", category_names().collect::<Vec<_>>().join(", "))))?,
+                .ok_or_else(|| {
+                    bad(
+                        "file.newPresets",
+                        format!(
+                            "unknown category `{c}` ({})",
+                            category_names().collect::<Vec<_>>().join(", ")
+                        ),
+                    )
+                })?,
         ],
         None => category_names().collect(),
     };
@@ -614,7 +777,12 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
         .filter(|n| !n.is_empty() && n.chars().count() <= 64)
         .ok_or_else(|| bad(C, "give the preset a name (1–64 characters)"))?;
     let base = match str_param(p, "preset") {
-        Some(from) => find(s, from).ok_or_else(|| bad(C, format!("no preset called `{from}` (see file.newPresets)")))?,
+        Some(from) => find(s, from).ok_or_else(|| {
+            bad(
+                C,
+                format!("no preset called `{from}` (see file.newPresets)"),
+            )
+        })?,
         None => s.default_settings(),
     };
     let mut preset = base.with_params(p, C)?;
@@ -631,6 +799,9 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "file.newPresets.delete";
     let name = str_param(p, "name").unwrap_or("").trim();
     let saved = &mut s.prefs.new_doc_presets;
-    let i = saved.iter().position(|q| q.name.eq_ignore_ascii_case(name)).ok_or_else(|| bad(C, format!("no saved preset called `{name}`")))?;
+    let i = saved
+        .iter()
+        .position(|q| q.name.eq_ignore_ascii_case(name))
+        .ok_or_else(|| bad(C, format!("no saved preset called `{name}`")))?;
     Ok(json!({ "deleted": saved.remove(i).name }))
 }

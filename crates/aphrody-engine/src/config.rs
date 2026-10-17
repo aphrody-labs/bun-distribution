@@ -67,7 +67,10 @@ impl EngineConfig {
     /// Build a config targeting `model` with engine defaults otherwise.
     #[must_use]
     pub fn new(model: impl Into<String>) -> Self {
-        Self { model: model.into(), ..Self::default() }
+        Self {
+            model: model.into(),
+            ..Self::default()
+        }
     }
 
     /// Set the system prompt (builder style).
@@ -108,7 +111,8 @@ impl EngineConfig {
     /// Run autonomously without an artificial per-turn iteration cap.
     #[must_use]
     pub fn with_yolo(self) -> Self {
-        self.with_autonomy(AutonomyMode::FullAuto).with_max_tool_iterations(0)
+        self.with_autonomy(AutonomyMode::FullAuto)
+            .with_max_tool_iterations(0)
     }
 
     /// Set the autonomy mode (builder style).

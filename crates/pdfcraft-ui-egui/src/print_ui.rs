@@ -4,7 +4,10 @@
 //! sheets. Printing sends the print-ready PDF to the system spooler; "Save as PDF" writes it.
 
 use egui::{Color32, Pos2, Rect, Stroke, pos2, vec2};
-use pdfcraft_engine::print::{self, Binding, BookletSubset, Content, Layout, Orientation, PAPERS, PageOrder, SizeMode, Subset, spool};
+use pdfcraft_engine::print::{
+    self, Binding, BookletSubset, Content, Layout, Orientation, PAPERS, PageOrder, SizeMode,
+    Subset, spool,
+};
 
 use crate::theme::{self, Tokens};
 use crate::{PdfCraftApp, widgets};
@@ -13,7 +16,10 @@ use crate::{PdfCraftApp, widgets};
 const PREVIEW_W: f32 = 320.0;
 const PREVIEW_H: f32 = 380.0;
 const PREVIEW_INSET: f32 = 12.0;
-pub(crate) const PREVIEW_BOX: (f32, f32) = (PREVIEW_W - 2.0 * PREVIEW_INSET, PREVIEW_H - 2.0 * PREVIEW_INSET);
+pub(crate) const PREVIEW_BOX: (f32, f32) = (
+    PREVIEW_W - 2.0 * PREVIEW_INSET,
+    PREVIEW_H - 2.0 * PREVIEW_INSET,
+);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Which {
@@ -125,7 +131,10 @@ impl Default for PrintDraft {
 impl PrintDraft {
     /// The engine settings for this draft (page count and labels from the document).
     pub fn settings(&self, count: usize, labels: &[String]) -> Result<print::Settings, String> {
-        if self.handling == Handling::Multiple && self.order == PageOrder::CutStack && self.duplex != spool::Duplex::Off {
+        if self.handling == Handling::Multiple
+            && self.order == PageOrder::CutStack
+            && self.duplex != spool::Duplex::Off
+        {
             return Err("Cut and stack needs Two-sided: Off. Print single-sided sheets.".into());
         }
         let range = match self.which {
@@ -135,9 +144,15 @@ impl PrintDraft {
         // Selected and Current are positions, not a typed range: a range would read numbers as
         // page labels first.
         let pages = match self.which {
-            Which::Selected => print::select_listed(count, &self.selected, self.subset, self.reverse),
-            Which::Current => print::select_listed(count, &[self.current_page], self.subset, self.reverse),
-            Which::All | Which::Range => print::select_pages(count, range.as_deref(), labels, self.subset, self.reverse),
+            Which::Selected => {
+                print::select_listed(count, &self.selected, self.subset, self.reverse)
+            }
+            Which::Current => {
+                print::select_listed(count, &[self.current_page], self.subset, self.reverse)
+            }
+            Which::All | Which::Range => {
+                print::select_pages(count, range.as_deref(), labels, self.subset, self.reverse)
+            }
         }
         // What the person got wrong about what to print is said in their language: the engine hands
         // the wording over whole and the page numbers apart from it.
@@ -148,15 +163,38 @@ impl PrintDraft {
                 m => m,
             }),
             Handling::Multiple => match Layout::multiple(self.per_sheet) {
-                Layout::Multiple { cols, rows, per_sheet, .. } => {
-                    Layout::Multiple { cols, rows, per_sheet, order: self.order, border: self.border, auto_rotate: self.auto_rotate }
-                }
+                Layout::Multiple {
+                    cols,
+                    rows,
+                    per_sheet,
+                    ..
+                } => Layout::Multiple {
+                    cols,
+                    rows,
+                    per_sheet,
+                    order: self.order,
+                    border: self.border,
+                    auto_rotate: self.auto_rotate,
+                },
                 other => other,
             },
-            Handling::Booklet => Layout::Booklet { subset: self.booklet_subset, binding: self.binding },
-            Handling::Poster => Layout::Poster { scale: self.poster_scale, overlap: self.overlap, cut_marks: self.cut_marks },
+            Handling::Booklet => Layout::Booklet {
+                subset: self.booklet_subset,
+                binding: self.binding,
+            },
+            Handling::Poster => Layout::Poster {
+                scale: self.poster_scale,
+                overlap: self.overlap,
+                cut_marks: self.cut_marks,
+            },
         };
-        Ok(print::Settings { pages, paper: PAPERS[self.paper.min(PAPERS.len() - 1)].1, orientation: self.orientation, layout, content: self.content })
+        Ok(print::Settings {
+            pages,
+            paper: PAPERS[self.paper.min(PAPERS.len() - 1)].1,
+            orientation: self.orientation,
+            layout,
+            content: self.content,
+        })
     }
 
     pub fn job(&self, title: &str) -> spool::Job {
@@ -170,7 +208,11 @@ impl PrintDraft {
             title: title.to_string(),
             // Only for the printer the options were read from.
             options: match (&self.printer, &self.driver_options) {
-                (Some(p), Some((read_for, _))) if p == read_for => self.driver_choices.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+                (Some(p), Some((read_for, _))) if p == read_for => self
+                    .driver_choices
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect(),
                 _ => Vec::new(),
             },
         }
@@ -212,7 +254,11 @@ pub(crate) struct PrintTasks {
 fn listed_printers() -> Vec<spool::Printer> {
     #[cfg(target_arch = "wasm32")]
     {
-        vec![spool::Printer { name: crate::web_print::BROWSER_PRINTER.to_string(), default: true, two_sided: None }]
+        vec![spool::Printer {
+            name: crate::web_print::BROWSER_PRINTER.to_string(),
+            default: true,
+            two_sided: None,
+        }]
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -222,17 +268,27 @@ fn listed_printers() -> Vec<spool::Printer> {
 
 /// A printer's name as the dialog shows it.
 fn printer_label(name: &str) -> String {
-    if name == crate::web_print::BROWSER_PRINTER { crate::web_print::browser_printer_label().to_string() } else { name.to_string() }
+    if name == crate::web_print::BROWSER_PRINTER {
+        crate::web_print::browser_printer_label().to_string()
+    } else {
+        name.to_string()
+    }
 }
 
 /// The printer the dialog preselects: the system default, else the first.
 fn default_printer(printers: &[spool::Printer]) -> Option<String> {
-    printers.iter().find(|p| p.default).or(printers.first()).map(|p| p.name.clone())
+    printers
+        .iter()
+        .find(|p| p.default)
+        .or(printers.first())
+        .map(|p| p.name.clone())
 }
 
 impl PdfCraftApp {
     pub fn open_print(&mut self) {
-        let Some((i, _)) = self.active_ids() else { return };
+        let Some((i, _)) = self.active_ids() else {
+            return;
+        };
         let (printers, printers_loading) = match self.printer_source.clone() {
             // The list from the last time the dialog opened, until the fresh one arrives.
             #[cfg(not(target_arch = "wasm32"))]
@@ -297,7 +353,9 @@ impl PdfCraftApp {
                     Ok(p) => Some(p),
                     Err(std::sync::mpsc::TryRecvError::Empty) => None,
                     // A source that died lists nothing new; the dialog keeps what it has.
-                    Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(self.print_draft.printers.clone()),
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                        Some(self.print_draft.printers.clone())
+                    }
                 };
                 if let Some(printers) = printers {
                     self.print_tasks.printers = None;
@@ -310,17 +368,22 @@ impl PdfCraftApp {
                 }
             }
             let mut finished = Vec::new();
-            self.print_tasks.jobs.retain(|(printer, rx)| match rx.try_recv() {
-                Ok(r) => {
-                    finished.push((printer.clone(), r));
-                    false
-                }
-                Err(std::sync::mpsc::TryRecvError::Empty) => true,
-                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                    finished.push((printer.clone(), Err("the print job stopped unexpectedly".into())));
-                    false
-                }
-            });
+            self.print_tasks
+                .jobs
+                .retain(|(printer, rx)| match rx.try_recv() {
+                    Ok(r) => {
+                        finished.push((printer.clone(), r));
+                        false
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Empty) => true,
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                        finished.push((
+                            printer.clone(),
+                            Err("the print job stopped unexpectedly".into()),
+                        ));
+                        false
+                    }
+                });
             for (printer, result) in finished {
                 self.report_print_job(&printer, result);
             }
@@ -329,8 +392,14 @@ impl PdfCraftApp {
 
     fn report_print_job(&mut self, printer: &str, result: Result<String, String>) {
         match result {
-            Ok(msg) if msg.is_empty() => self.notify(crate::i18n::fmt(tl!("Sent to {printer}"), &[("printer", printer)])),
-            Ok(msg) => self.notify(crate::i18n::fmt(tl!("Sent to {printer}: {msg}"), &[("printer", printer), ("msg", &msg)])),
+            Ok(msg) if msg.is_empty() => self.notify(crate::i18n::fmt(
+                tl!("Sent to {printer}"),
+                &[("printer", printer)],
+            )),
+            Ok(msg) => self.notify(crate::i18n::fmt(
+                tl!("Sent to {printer}: {msg}"),
+                &[("printer", printer), ("msg", &msg)],
+            )),
             Err(e) => self.notify_error(e),
         }
     }
@@ -343,8 +412,12 @@ impl PdfCraftApp {
         if !self.commit_form_typing() {
             return false;
         }
-        let Some((_, id)) = self.active_ids() else { return false };
-        let Some(doc) = self.session.get(id) else { return false };
+        let Some((_, id)) = self.active_ids() else {
+            return false;
+        };
+        let Some(doc) = self.session.get(id) else {
+            return false;
+        };
         let labels: Vec<String> = doc.info.pages.iter().map(|p| p.label.clone()).collect();
         let settings = match self.print_draft.settings(doc.info.pages.len(), &labels) {
             Ok(s) => s,
@@ -364,9 +437,16 @@ impl PdfCraftApp {
         match self.print_draft.printer.clone() {
             #[cfg(target_arch = "wasm32")]
             Some(printer) if printer == crate::web_print::BROWSER_PRINTER => {
-                let sizes: Vec<(f64, f64)> = doc.info.pages.iter().map(|p| (f64::from(p.width), f64::from(p.height))).collect();
+                let sizes: Vec<(f64, f64)> = doc
+                    .info
+                    .pages
+                    .iter()
+                    .map(|p| (f64::from(p.width), f64::from(p.height)))
+                    .collect();
                 match print::layout(&sizes, &settings) {
-                    Ok(sheets) => self.print_in_browser(name, bytes, sheets.iter().map(|s| s.size).collect()),
+                    Ok(sheets) => {
+                        self.print_in_browser(name, bytes, sheets.iter().map(|s| s.size).collect())
+                    }
                     Err(e) => {
                         self.notify_error(e);
                         false
@@ -391,7 +471,10 @@ impl PdfCraftApp {
                 ctx.request_repaint();
             }
         });
-        self.notify(crate::i18n::fmt(tl!("Sending to {printer}…"), &[("printer", &printer)]));
+        self.notify(crate::i18n::fmt(
+            tl!("Sending to {printer}…"),
+            &[("printer", &printer)],
+        ));
         self.print_tasks.jobs.push((printer, rx));
         true
     }
@@ -430,11 +513,18 @@ impl PdfCraftApp {
     /// Draw the next sheet of the browser print, and hand the finished page to the browser.
     #[cfg(target_arch = "wasm32")]
     fn poll_web_print(&mut self) {
-        let failed: Vec<String> = self.print_tasks.web_failed.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default();
+        let failed: Vec<String> = self
+            .print_tasks
+            .web_failed
+            .lock()
+            .map(|mut q| std::mem::take(&mut *q))
+            .unwrap_or_default();
         if let Some(e) = failed.into_iter().next() {
             self.web_print_failed(&e);
         }
-        let Some(job) = self.print_tasks.web_job.as_mut() else { return };
+        let Some(job) = self.print_tasks.web_job.as_mut() else {
+            return;
+        };
         if !job.finished() {
             if let Err(e) = job.step(&mut crate::web_print::blob_url) {
                 self.print_tasks.web_job = None;
@@ -442,17 +532,27 @@ impl PdfCraftApp {
                 return;
             }
             let (done, total) = (job.done().to_string(), job.total().to_string());
-            self.notify_fmt("Preparing sheet {done} of {total} for printing…", &[("done", &done), ("total", &total)]);
+            self.notify_fmt(
+                "Preparing sheet {done} of {total} for printing…",
+                &[("done", &done), ("total", &total)],
+            );
             if let Some(ctx) = &self.ctx {
                 ctx.request_repaint();
             }
             return;
         }
-        let Some(mut job) = self.print_tasks.web_job.take() else { return };
+        let Some(mut job) = self.print_tasks.web_job.take() else {
+            return;
+        };
         let html = job.html();
         let urls = job.take_urls();
         self.print_tasks.web_last = Some((job.name.clone(), job.pdf.clone()));
-        match crate::web_print::print_in_iframe(&html, urls, self.print_tasks.web_failed.clone(), self.ctx.clone()) {
+        match crate::web_print::print_in_iframe(
+            &html,
+            urls,
+            self.print_tasks.web_failed.clone(),
+            self.ctx.clone(),
+        ) {
             Ok(()) => self.notify_tr("Opening the browser's print dialog…"),
             Err(e) => self.web_print_failed(&e),
         }
@@ -469,7 +569,10 @@ impl PdfCraftApp {
         let stem = name.trim_end_matches(".pdf").trim_end_matches(".PDF");
         let file = format!("{stem} (print).pdf");
         match crate::editing::download(&file, &pdf) {
-            Ok(()) => self.notify_fmt("Couldn't print from the browser ({e}); downloaded {name} to print instead", &[("e", error), ("name", &file)]),
+            Ok(()) => self.notify_fmt(
+                "Couldn't print from the browser ({e}); downloaded {name} to print instead",
+                &[("e", error), ("name", &file)],
+            ),
             Err(_) => self.notify_error(error),
         }
     }
@@ -479,21 +582,30 @@ impl PdfCraftApp {
     /// is showing.
     #[cfg(not(target_arch = "wasm32"))]
     fn save_print_pdf(&mut self, name: &str, bytes: Vec<u8>) -> bool {
-        let write = move |app: &mut Self, path: std::path::PathBuf| match crate::editing::write_atomically(&path.to_string_lossy(), &bytes) {
-            Ok(()) => {
-                app.notify_fmt("Saved the print-ready PDF to {path}", &[("path", &path.display().to_string())]);
-                true
-            }
-            Err(e) => {
-                app.notify_fmt("Could not save: {e}", &[("e", &e.to_string())]);
-                false
-            }
-        };
+        let write =
+            move |app: &mut Self, path: std::path::PathBuf| match crate::editing::write_atomically(
+                &path.to_string_lossy(),
+                &bytes,
+            ) {
+                Ok(()) => {
+                    app.notify_fmt(
+                        "Saved the print-ready PDF to {path}",
+                        &[("path", &path.display().to_string())],
+                    );
+                    true
+                }
+                Err(e) => {
+                    app.notify_fmt("Could not save: {e}", &[("e", &e.to_string())]);
+                    false
+                }
+            };
         match self.save_override.clone() {
             Some(p) => write(self, p.into()),
             None => {
                 let stem = name.trim_end_matches(".pdf").trim_end_matches(".PDF");
-                let dialog = rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).set_file_name(format!("{stem} (print).pdf"));
+                let dialog = rfd::AsyncFileDialog::new()
+                    .add_filter("PDF", &["pdf"])
+                    .set_file_name(format!("{stem} (print).pdf"));
                 self.ask_one(crate::pickers::Ask::Save(dialog), None, move |app, path| {
                     write(app, path);
                 })
@@ -513,7 +625,10 @@ impl PdfCraftApp {
                 true
             }
             Err(e) => {
-                self.notify_fmt("Couldn't download {name}: {e}", &[("name", &file), ("e", &e)]);
+                self.notify_fmt(
+                    "Couldn't download {name}: {e}",
+                    &[("name", &file), ("e", &e)],
+                );
                 false
             }
         }
@@ -531,17 +646,35 @@ pub(crate) const PREVIEW_BYTES: f64 = 128.0 * 1024.0 * 1024.0;
 /// Pages on the current sheet and its neighbours, each with the device pixels per point that
 /// fill the preview pane (so the picture is not a stretched thumbnail), nearest sheet first and
 /// within [`PREVIEW_MAX_SIDE`] (and `max_side`, the GPU's texture limit) and [`PREVIEW_BYTES`].
-pub(crate) fn preview_rasters(d: &PrintDraft, sizes: &[(f64, f64)], labels: &[String], ppp: f32, max_side: f32) -> Vec<(usize, f32)> {
-    let Ok(settings) = d.settings(sizes.len(), labels) else { return Vec::new() };
-    let Ok(sheets) = print::layout(sizes, &settings) else { return Vec::new() };
+pub(crate) fn preview_rasters(
+    d: &PrintDraft,
+    sizes: &[(f64, f64)],
+    labels: &[String],
+    ppp: f32,
+    max_side: f32,
+) -> Vec<(usize, f32)> {
+    let Ok(settings) = d.settings(sizes.len(), labels) else {
+        return Vec::new();
+    };
+    let Ok(sheets) = print::layout(sizes, &settings) else {
+        return Vec::new();
+    };
     if sheets.is_empty() {
         return Vec::new();
     }
     let ppp = if ppp.is_finite() { ppp.max(1.0) } else { 1.0 };
-    let side = if max_side.is_finite() && max_side >= 1.0 { max_side.min(PREVIEW_MAX_SIDE) } else { PREVIEW_MAX_SIDE };
+    let side = if max_side.is_finite() && max_side >= 1.0 {
+        max_side.min(PREVIEW_MAX_SIDE)
+    } else {
+        PREVIEW_MAX_SIDE
+    };
     let i = d.sheet.min(sheets.len() - 1);
     // Nearest first: the sheet on screen, then the next one, then the previous one.
-    let order = [Some(i), i.checked_add(1).filter(|n| *n < sheets.len()), i.checked_sub(1)];
+    let order = [
+        Some(i),
+        i.checked_add(1).filter(|n| *n < sheets.len()),
+        i.checked_sub(1),
+    ];
     let mut out: Vec<(usize, f32, f64)> = Vec::new();
     let mut bytes = 0.0f64;
     for sheet in order.into_iter().flatten().filter_map(|s| sheets.get(s)) {
@@ -553,7 +686,9 @@ pub(crate) fn preview_rasters(d: &PrintDraft, sizes: &[(f64, f64)], labels: &[St
         for pl in &sheet.placed {
             let [a, b, _, _, _, _] = pl.matrix.0;
             let placed = (a.hypot(b) as f32) * k * ppp;
-            let Some(&(pw, ph)) = sizes.get(pl.page) else { continue };
+            let Some(&(pw, ph)) = sizes.get(pl.page) else {
+                continue;
+            };
             let long_pt = pw.max(ph) as f32;
             if !placed.is_finite() || placed < 0.05 || !long_pt.is_finite() || long_pt < 1.0 {
                 continue;
@@ -571,71 +706,127 @@ pub(crate) fn preview_rasters(d: &PrintDraft, sizes: &[(f64, f64)], labels: &[St
             }
         }
     }
-    out.into_iter().map(|(page, scale, _)| (page, scale)).collect()
+    out.into_iter()
+        .map(|(page, scale, _)| (page, scale))
+        .collect()
 }
 
 /// Properties… on CUPS: the driver's options for this print, grouped as the driver groups them.
 /// Only choices away from the printer's defaults are kept, and sent with the job.
 fn driver_options_panel(ui: &mut egui::Ui, d: &mut PrintDraft, t: &Tokens) {
-    let PrintDraft { driver_options: Some((_, options)), driver_choices: choices, show_driver_options: show, .. } = d else { return };
-    egui::Frame::new().fill(t.hover).corner_radius(egui::CornerRadius::same(6)).inner_margin(egui::Margin::same(10)).show(ui, |ui| {
-        ui.set_width(ui.available_width());
-        ui.horizontal(|ui| {
-            ui.label(egui::RichText::new(tl!("Printer properties")).font(theme::semibold(13.0)));
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button(tl!("Done")).clicked() {
-                    *show = false;
-                }
-                if ui.add_enabled(!choices.is_empty(), egui::Button::new(tl!("Reset to printer defaults"))).clicked() {
-                    choices.clear();
-                }
-            });
-        });
-        if options.is_empty() {
-            ui.label(egui::RichText::new(tl!("This printer offers no settings of its own.")).small().color(t.text_muted));
-            return;
-        }
-        egui::ScrollArea::vertical().id_salt("driver-options").max_height(240.0).show(ui, |ui| {
-            for (n, chunk) in options.chunk_by(|a, b| a.group == b.group).enumerate() {
-                let group = chunk.first().map_or("", |o| o.group.as_str());
-                if !group.is_empty() {
-                    ui.add_space(4.0);
-                    // Option and group names are the driver's own text.
-                    ui.label(egui::RichText::new(group).small().color(t.text_muted));
-                }
-                egui::Grid::new(("driver-group", n)).num_columns(2).spacing([10.0, 4.0]).show(ui, |ui| {
-                    for o in chunk {
-                        ui.label(&o.label);
-                        let current = choices.get(&o.key).cloned().unwrap_or_else(|| o.default.clone());
-                        let label_of = |c: &str| o.choices.iter().find(|(k, _)| k == c).map_or_else(|| c.to_string(), |(_, l)| l.clone());
-                        let mut pick = current.clone();
-                        egui::ComboBox::from_id_salt(("driver-option", &o.key)).selected_text(label_of(&current)).width(200.0).show_ui(ui, |ui| {
-                            for (k, l) in &o.choices {
-                                ui.selectable_value(&mut pick, k.clone(), l.as_str());
-                            }
-                        });
-                        if pick != current {
-                            if pick == o.default {
-                                choices.remove(&o.key);
-                            } else {
-                                choices.insert(o.key.clone(), pick);
-                            }
-                        }
-                        ui.end_row();
+    let PrintDraft {
+        driver_options: Some((_, options)),
+        driver_choices: choices,
+        show_driver_options: show,
+        ..
+    } = d
+    else {
+        return;
+    };
+    egui::Frame::new()
+        .fill(t.hover)
+        .corner_radius(egui::CornerRadius::same(6))
+        .inner_margin(egui::Margin::same(10))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(tl!("Printer properties")).font(theme::semibold(13.0)),
+                );
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button(tl!("Done")).clicked() {
+                        *show = false;
+                    }
+                    if ui
+                        .add_enabled(
+                            !choices.is_empty(),
+                            egui::Button::new(tl!("Reset to printer defaults")),
+                        )
+                        .clicked()
+                    {
+                        choices.clear();
                     }
                 });
+            });
+            if options.is_empty() {
+                ui.label(
+                    egui::RichText::new(tl!("This printer offers no settings of its own."))
+                        .small()
+                        .color(t.text_muted),
+                );
+                return;
             }
+            egui::ScrollArea::vertical()
+                .id_salt("driver-options")
+                .max_height(240.0)
+                .show(ui, |ui| {
+                    for (n, chunk) in options.chunk_by(|a, b| a.group == b.group).enumerate() {
+                        let group = chunk.first().map_or("", |o| o.group.as_str());
+                        if !group.is_empty() {
+                            ui.add_space(4.0);
+                            // Option and group names are the driver's own text.
+                            ui.label(egui::RichText::new(group).small().color(t.text_muted));
+                        }
+                        egui::Grid::new(("driver-group", n))
+                            .num_columns(2)
+                            .spacing([10.0, 4.0])
+                            .show(ui, |ui| {
+                                for o in chunk {
+                                    ui.label(&o.label);
+                                    let current = choices
+                                        .get(&o.key)
+                                        .cloned()
+                                        .unwrap_or_else(|| o.default.clone());
+                                    let label_of = |c: &str| {
+                                        o.choices
+                                            .iter()
+                                            .find(|(k, _)| k == c)
+                                            .map_or_else(|| c.to_string(), |(_, l)| l.clone())
+                                    };
+                                    let mut pick = current.clone();
+                                    egui::ComboBox::from_id_salt(("driver-option", &o.key))
+                                        .selected_text(label_of(&current))
+                                        .width(200.0)
+                                        .show_ui(ui, |ui| {
+                                            for (k, l) in &o.choices {
+                                                ui.selectable_value(
+                                                    &mut pick,
+                                                    k.clone(),
+                                                    l.as_str(),
+                                                );
+                                            }
+                                        });
+                                    if pick != current {
+                                        if pick == o.default {
+                                            choices.remove(&o.key);
+                                        } else {
+                                            choices.insert(o.key.clone(), pick);
+                                        }
+                                    }
+                                    ui.end_row();
+                                }
+                            });
+                    }
+                });
         });
-    });
 }
 
-fn combo<T: PartialEq + Copy>(ui: &mut egui::Ui, id: &str, value: &mut T, choices: &[(T, &str)], width: f32) {
+fn combo<T: PartialEq + Copy>(
+    ui: &mut egui::Ui,
+    id: &str,
+    value: &mut T,
+    choices: &[(T, &str)],
+    width: f32,
+) {
     let shown = choices.iter().find(|c| c.0 == *value).map_or("", |c| c.1);
-    egui::ComboBox::from_id_salt(id).selected_text(shown).width(width).show_ui(ui, |ui| {
-        for (v, label) in choices {
-            ui.selectable_value(value, *v, *label);
-        }
-    });
+    egui::ComboBox::from_id_salt(id)
+        .selected_text(shown)
+        .width(width)
+        .show_ui(ui, |ui| {
+            for (v, label) in choices {
+                ui.selectable_value(value, *v, *label);
+            }
+        });
 }
 
 /// Draw the dialog. `thumb` gives a page's thumbnail texture when there is one. Returns
@@ -652,7 +843,11 @@ pub(crate) fn body(
     ui.label(egui::RichText::new(tl!("Print")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
     let settings = d.settings(sizes.len(), labels);
-    let sheets = settings.as_ref().ok().and_then(|s| print::layout(sizes, s).ok()).unwrap_or_default();
+    let sheets = settings
+        .as_ref()
+        .ok()
+        .and_then(|s| print::layout(sizes, s).ok())
+        .unwrap_or_default();
     d.sheet = d.sheet.min(sheets.len().saturating_sub(1));
     ui.horizontal_top(|ui| {
         // Settings.
@@ -1013,8 +1208,18 @@ pub(crate) fn body(
     ui.add_space(12.0);
     let (mut go, mut cancel) = (false, false);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        let label = if d.printer.is_some() { "Print" } else { "Save as PDF" };
-        if ui.add_enabled_ui(settings.is_ok() && !sheets.is_empty(), |ui| widgets::pill_button(ui, label, true)).inner.clicked() {
+        let label = if d.printer.is_some() {
+            "Print"
+        } else {
+            "Save as PDF"
+        };
+        if ui
+            .add_enabled_ui(settings.is_ok() && !sheets.is_empty(), |ui| {
+                widgets::pill_button(ui, label, true)
+            })
+            .inner
+            .clicked()
+        {
             go = true;
         }
         if widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
@@ -1030,19 +1235,40 @@ mod tests {
 
     #[test]
     fn current_page_preview_uses_positions_and_selection_guards() {
-        for labels in [["i", "ii", "iii", "1", "2"], ["1", "1", "1", "1", "1"], ["1", "2", "3", "4", "5"]] {
+        for labels in [
+            ["i", "ii", "iii", "1", "2"],
+            ["1", "1", "1", "1", "1"],
+            ["1", "2", "3", "4", "5"],
+        ] {
             let labels: Vec<String> = labels.into_iter().map(str::to_owned).collect();
             for current_page in 0..5 {
-                let draft = PrintDraft { which: Which::Current, current_page, ..Default::default() };
+                let draft = PrintDraft {
+                    which: Which::Current,
+                    current_page,
+                    ..Default::default()
+                };
                 let rasters = preview_rasters(&draft, &[(200.0, 300.0); 5], &labels, 1.0, 8192.0);
-                assert_eq!(rasters.iter().map(|(page, _)| *page).collect::<Vec<_>>(), vec![current_page]);
+                assert_eq!(
+                    rasters.iter().map(|(page, _)| *page).collect::<Vec<_>>(),
+                    vec![current_page]
+                );
             }
         }
-        let labels: Vec<String> = ["i", "ii", "iii", "1", "2"].into_iter().map(str::to_owned).collect();
-        let mut draft = PrintDraft { which: Which::Selected, selected: vec![0, 3], ..Default::default() };
+        let labels: Vec<String> = ["i", "ii", "iii", "1", "2"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect();
+        let mut draft = PrintDraft {
+            which: Which::Selected,
+            selected: vec![0, 3],
+            ..Default::default()
+        };
         assert_eq!(draft.settings(5, &labels).unwrap().pages, vec![0, 3]);
         draft.which = Which::All;
-        assert_eq!(draft.settings(5, &labels).unwrap().pages, vec![0, 1, 2, 3, 4]);
+        assert_eq!(
+            draft.settings(5, &labels).unwrap().pages,
+            vec![0, 1, 2, 3, 4]
+        );
         draft.which = Which::Current;
         draft.reverse = true;
         draft.subset = Subset::Odd;
@@ -1058,11 +1284,17 @@ mod tests {
 
     #[test]
     fn composed_sheets_keep_exact_scaling_and_the_dialogs_duplex_choice() {
-        let draft = PrintDraft { duplex: spool::Duplex::LongEdge, ..PrintDraft::default() };
+        let draft = PrintDraft {
+            duplex: spool::Duplex::LongEdge,
+            ..PrintDraft::default()
+        };
         let job = draft.job("report.pdf");
         assert_eq!(job.scaling, spool::Scaling::Exact);
         assert_eq!(job.duplex, Some(spool::Duplex::LongEdge));
-        assert_eq!(PrintDraft::default().job("report.pdf").duplex, Some(spool::Duplex::Off));
+        assert_eq!(
+            PrintDraft::default().job("report.pdf").duplex,
+            Some(spool::Duplex::Off)
+        );
     }
 
     /// Issue #1308: Current page is the page on screen, even when a later page is labelled with
@@ -1071,23 +1303,43 @@ mod tests {
     fn current_page_is_the_viewed_page_not_a_label() {
         let labels: Vec<String> = ["i", "ii", "iii", "1", "2"].map(String::from).to_vec();
         for (current, want) in [(0, vec![0]), (1, vec![1]), (3, vec![3])] {
-            let d = PrintDraft { which: Which::Current, current_page: current, ..PrintDraft::default() };
-            assert_eq!(d.settings(5, &labels).map(|s| s.pages), Ok(want), "viewing page {}", current + 1);
+            let d = PrintDraft {
+                which: Which::Current,
+                current_page: current,
+                ..PrintDraft::default()
+            };
+            assert_eq!(
+                d.settings(5, &labels).map(|s| s.pages),
+                Ok(want),
+                "viewing page {}",
+                current + 1
+            );
         }
-        let typed = PrintDraft { which: Which::Range, range: "1".into(), ..PrintDraft::default() };
+        let typed = PrintDraft {
+            which: Which::Range,
+            range: "1".into(),
+            ..PrintDraft::default()
+        };
         assert_eq!(typed.settings(5, &labels).map(|s| s.pages), Ok(vec![3]));
     }
 
     #[test]
     fn print_preview_rasters_stay_within_the_texture_limit() {
         // Actual size on a 14,400 pt (200 in) page would ask for a raster far past any texture.
-        let d = PrintDraft { size: SizeMode::Actual, ..PrintDraft::default() };
+        let d = PrintDraft {
+            size: SizeMode::Actual,
+            ..PrintDraft::default()
+        };
         let sizes = vec![(14_400.0, 14_400.0); 2];
         let labels = vec!["1".into(), "2".into()];
         for max_side in [2048.0, 8192.0, 16384.0, f32::NAN, 0.0] {
             for (page, scale) in preview_rasters(&d, &sizes, &labels, 4.0, max_side) {
                 let long = 14_400.0 * scale;
-                let cap = if max_side.is_finite() && max_side >= 1.0 { max_side.min(PREVIEW_MAX_SIDE) } else { PREVIEW_MAX_SIDE };
+                let cap = if max_side.is_finite() && max_side >= 1.0 {
+                    max_side.min(PREVIEW_MAX_SIDE)
+                } else {
+                    PREVIEW_MAX_SIDE
+                };
                 assert!(long <= cap + 1.0, "page {page} at {max_side}: {long} px");
             }
         }
@@ -1097,13 +1349,26 @@ mod tests {
     fn print_preview_rasters_keep_the_current_sheet_within_the_byte_budget() {
         // Many large pages: the current sheet always gets its raster; neighbours only while the
         // budget lasts, and the total stays within it.
-        let d = PrintDraft { sheet: 5, ..PrintDraft::default() };
+        let d = PrintDraft {
+            sheet: 5,
+            ..PrintDraft::default()
+        };
         let sizes = vec![(2_000.0, 2_000.0); 12];
         let labels: Vec<String> = (1..=12).map(|n| n.to_string()).collect();
         let rasters = preview_rasters(&d, &sizes, &labels, 4.0, 16384.0);
-        assert_eq!(rasters.first().map(|r| r.0), Some(5), "the sheet on screen comes first: {rasters:?}");
-        let total: f64 = rasters.iter().map(|(_, s)| (2_000.0 * f64::from(*s)).ceil().powi(2) * 4.0).sum();
-        assert!(total <= PREVIEW_BYTES || rasters.len() == 1, "{total} bytes for {rasters:?}");
+        assert_eq!(
+            rasters.first().map(|r| r.0),
+            Some(5),
+            "the sheet on screen comes first: {rasters:?}"
+        );
+        let total: f64 = rasters
+            .iter()
+            .map(|(_, s)| (2_000.0 * f64::from(*s)).ceil().powi(2) * 4.0)
+            .sum();
+        assert!(
+            total <= PREVIEW_BYTES || rasters.len() == 1,
+            "{total} bytes for {rasters:?}"
+        );
     }
 
     #[test]
@@ -1112,10 +1377,20 @@ mod tests {
         let sizes = vec![(612.0, 792.0); 3];
         let labels = vec!["1".into(), "2".into(), "3".into()];
         let rasters = preview_rasters(&d, &sizes, &labels, 2.0, 8192.0);
-        let scale = rasters.iter().find(|(page, _)| *page == 0).map(|(_, s)| *s).unwrap();
+        let scale = rasters
+            .iter()
+            .find(|(page, _)| *page == 0)
+            .map(|(_, s)| *s)
+            .unwrap();
         // A 132 pt thumbnail at 2× is about 0.43 px/pt. The preview pane needs roughly twice that.
-        assert!(scale > 0.7, "letter page in the preview at 2 px/pt: {scale}");
-        assert!(rasters.iter().any(|(page, _)| *page == 1), "the next sheet is ready");
+        assert!(
+            scale > 0.7,
+            "letter page in the preview at 2 px/pt: {scale}"
+        );
+        assert!(
+            rasters.iter().any(|(page, _)| *page == 1),
+            "the next sheet is ready"
+        );
         let mut later = d.clone();
         later.sheet = 2;
         let rasters = preview_rasters(&later, &sizes, &labels, 2.0, 8192.0);

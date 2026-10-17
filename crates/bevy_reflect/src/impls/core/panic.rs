@@ -6,7 +6,7 @@ use crate::{
     reflect::ApplyError,
     type_path::DynamicTypePath,
     type_registry::{GetTypeRegistration, ReflectFromPtr, TypeRegistration},
-    utility::{reflect_hasher, NonGenericTypeInfoCell},
+    utility::{NonGenericTypeInfoCell, reflect_hasher},
 };
 use bevy_platform::prelude::*;
 use core::any::Any;

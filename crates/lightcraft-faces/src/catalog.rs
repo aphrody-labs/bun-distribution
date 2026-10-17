@@ -73,9 +73,23 @@ struct Raw {
 
 /// A file name for the download, from the address: letters, digits, `.`, `_`, `-`, ending in `.onnx`.
 fn file_name_of(url: &str) -> String {
-    let last = url.split(['?', '#']).next().unwrap_or("").rsplit('/').next().unwrap_or("");
-    let clean: String = last.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-')).take(80).collect();
-    if clean.ends_with(".onnx") && clean.len() > 5 && !clean.starts_with('.') { clean } else { "model.onnx".to_string() }
+    let last = url
+        .split(['?', '#'])
+        .next()
+        .unwrap_or("")
+        .rsplit('/')
+        .next()
+        .unwrap_or("");
+    let clean: String = last
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+        .take(80)
+        .collect();
+    if clean.ends_with(".onnx") && clean.len() > 5 && !clean.starts_with('.') {
+        clean
+    } else {
+        "model.onnx".to_string()
+    }
 }
 
 fn entry(v: &Value) -> Result<Entry, String> {
@@ -88,23 +102,38 @@ fn entry(v: &Value) -> Result<Entry, String> {
     if m.sha256.is_none() || m.size_bytes.is_none() {
         return Err("needs `sha256` and `sizeBytes`: a download is checked against them".into());
     }
-    if !(raw.url.len() <= 500 && raw.url.starts_with("https://") && !raw.url.chars().any(|c| c.is_control() || c.is_whitespace())) {
-        return Err("`url` must be an https:// address of at most 500 characters, without spaces".into());
+    if !(raw.url.len() <= 500
+        && raw.url.starts_with("https://")
+        && !raw.url.chars().any(|c| c.is_control() || c.is_whitespace()))
+    {
+        return Err(
+            "`url` must be an https:// address of at most 500 characters, without spaces".into(),
+        );
     }
     if known::all().iter().any(|k| k.id == m.id) {
         return Err("that id belongs to a model LightCraft already knows".into());
     }
-    if m.sha256.as_deref().is_some_and(|h| known::lookup(h).is_some()) {
+    if m.sha256
+        .as_deref()
+        .is_some_and(|h| known::lookup(h).is_some())
+    {
         return Err("LightCraft already knows a model with that file".into());
     }
-    Ok(Entry { file_name: file_name_of(&raw.url), url: raw.url, manifest: raw.manifest })
+    Ok(Entry {
+        file_name: file_name_of(&raw.url),
+        url: raw.url,
+        manifest: raw.manifest,
+    })
 }
 
 /// Read a catalog file's bytes: the usable entries, and why the others were left out.
 pub fn parse(bytes: &[u8]) -> Catalog {
     let mut out = Catalog::default();
     if bytes.len() > MAX_CATALOG_BYTES {
-        out.errors.push(format!("catalog.json is larger than {} KB: not read", MAX_CATALOG_BYTES / 1024));
+        out.errors.push(format!(
+            "catalog.json is larger than {} KB: not read",
+            MAX_CATALOG_BYTES / 1024
+        ));
         return out;
     }
     // Notepad and older PowerShell begin a UTF-8 file with a byte-order mark
@@ -112,26 +141,30 @@ pub fn parse(bytes: &[u8]) -> Catalog {
     let value: Value = match serde_json::from_slice(bytes) {
         Ok(v) => v,
         Err(e) => {
-            out.errors.push(format!("catalog.json is not valid JSON: {e}"));
+            out.errors
+                .push(format!("catalog.json is not valid JSON: {e}"));
             return out;
         }
     };
     let Some(models) = value.get("models").and_then(Value::as_array) else {
-        out.errors.push("catalog.json needs a \"models\" list".into());
+        out.errors
+            .push("catalog.json needs a \"models\" list".into());
         return out;
     };
     if models.len() > MAX_ENTRIES {
-        out.errors.push(format!("only the first {MAX_ENTRIES} models of the catalog are read"));
+        out.errors.push(format!(
+            "only the first {MAX_ENTRIES} models of the catalog are read"
+        ));
     }
     for (i, v) in models.iter().take(MAX_ENTRIES).enumerate() {
-        let label = v
-            .get("id")
-            .and_then(Value::as_str)
-            .map_or_else(|| format!("model {}", i + 1), |id| format!("`{}`", id.chars().take(40).collect::<String>()));
+        let label = v.get("id").and_then(Value::as_str).map_or_else(
+            || format!("model {}", i + 1),
+            |id| format!("`{}`", id.chars().take(40).collect::<String>()),
+        );
         match entry(v) {
-            Ok(e) if out.entries.iter().any(|x| x.manifest.id == e.manifest.id) => {
-                out.errors.push(format!("{label}: listed twice, the first is used"))
-            }
+            Ok(e) if out.entries.iter().any(|x| x.manifest.id == e.manifest.id) => out
+                .errors
+                .push(format!("{label}: listed twice, the first is used")),
             Ok(e) => out.entries.push(e),
             Err(why) => out.errors.push(format!("{label}: {why}")),
         }
@@ -163,16 +196,43 @@ mod tests {
         let c = cat(vec![good("my-model")]);
         assert_eq!(c.errors, Vec::<String>::new());
         let e = &c.entries[0];
-        assert_eq!((e.manifest.id.as_str(), e.file_name.as_str()), ("my-model", "recogniser-r50.onnx"), "the file name comes from the address");
-        assert_eq!(e.manifest.licence.commercial, crate::Commercial::No, "a non-commercial model is the user's to add");
+        assert_eq!(
+            (e.manifest.id.as_str(), e.file_name.as_str()),
+            ("my-model", "recogniser-r50.onnx"),
+            "the file name comes from the address"
+        );
+        assert_eq!(
+            e.manifest.licence.commercial,
+            crate::Commercial::No,
+            "a non-commercial model is the user's to add"
+        );
         let d = e.download().unwrap();
-        assert_eq!((d.size_bytes, d.sha256.len(), d.url.as_str()), (1234, 64, "https://example.org/w/recogniser-r50.onnx?download=1"));
-        assert_eq!(e.manifest.input, crate::InputSpec::default(), "the input defaults to the ArcFace convention");
-        assert_eq!(e.manifest.speed, Some(1.7), "the speed ratio is the user's to state");
+        assert_eq!(
+            (d.size_bytes, d.sha256.len(), d.url.as_str()),
+            (
+                1234,
+                64,
+                "https://example.org/w/recogniser-r50.onnx?download=1"
+            )
+        );
+        assert_eq!(
+            e.manifest.input,
+            crate::InputSpec::default(),
+            "the input defaults to the ArcFace convention"
+        );
+        assert_eq!(
+            e.manifest.speed,
+            Some(1.7),
+            "the speed ratio is the user's to state"
+        );
         let mut nonsense = good("nonsense-speed");
         nonsense["speed"] = json!(-3);
         let c = cat(vec![nonsense]);
-        assert!(c.entries.is_empty() && c.errors.iter().any(|e| e.contains("speed")), "{:?}", c.errors);
+        assert!(
+            c.entries.is_empty() && c.errors.iter().any(|e| e.contains("speed")),
+            "{:?}",
+            c.errors
+        );
     }
 
     #[test]
@@ -199,10 +259,32 @@ mod tests {
         let builtin = good("sface-2021dec");
         let mut known_file = good("known-file");
         known_file["sha256"] = json!(known::SFACE_SHA256);
-        let c = cat(vec![good("fine"), no_hash, http, spaces, detector, bad_id, builtin, known_file, good("fine"), json!(7), json!({"id": "x"})]);
-        assert_eq!(c.entries.iter().map(|e| e.manifest.id.as_str()).collect::<Vec<_>>(), ["fine"]);
+        let c = cat(vec![
+            good("fine"),
+            no_hash,
+            http,
+            spaces,
+            detector,
+            bad_id,
+            builtin,
+            known_file,
+            good("fine"),
+            json!(7),
+            json!({"id": "x"}),
+        ]);
+        assert_eq!(
+            c.entries
+                .iter()
+                .map(|e| e.manifest.id.as_str())
+                .collect::<Vec<_>>(),
+            ["fine"]
+        );
         assert_eq!(c.errors.len(), 10, "{:#?}", c.errors);
-        assert!(c.errors.iter().any(|e| e.contains("`no-hash`") && e.contains("sha256")));
+        assert!(
+            c.errors
+                .iter()
+                .any(|e| e.contains("`no-hash`") && e.contains("sha256"))
+        );
         assert!(c.errors.iter().any(|e| e.contains("https")));
         assert!(c.errors.iter().any(|e| e.contains("already knows")));
         assert!(c.errors.iter().any(|e| e.contains("listed twice")));
@@ -210,19 +292,42 @@ mod tests {
 
     #[test]
     fn a_hostile_or_broken_file_is_an_error_message_not_a_crash() {
-        for bytes in [&b""[..], b"not json", b"[]", b"{}", b"{\"models\": 5}", b"\xff\xfe\x00", &vec![b' '; MAX_CATALOG_BYTES + 1]] {
+        for bytes in [
+            &b""[..],
+            b"not json",
+            b"[]",
+            b"{}",
+            b"{\"models\": 5}",
+            b"\xff\xfe\x00",
+            &vec![b' '; MAX_CATALOG_BYTES + 1],
+        ] {
             let c = parse(bytes);
-            assert!(c.entries.is_empty() && !c.errors.is_empty(), "{:?}", String::from_utf8_lossy(&bytes[..bytes.len().min(20)]));
+            assert!(
+                c.entries.is_empty() && !c.errors.is_empty(),
+                "{:?}",
+                String::from_utf8_lossy(&bytes[..bytes.len().min(20)])
+            );
         }
         // more entries than allowed: the extra are ignored, with a note
-        let many: Vec<Value> = (0..MAX_ENTRIES + 20).map(|i| good(&format!("m{i}"))).collect();
+        let many: Vec<Value> = (0..MAX_ENTRIES + 20)
+            .map(|i| good(&format!("m{i}")))
+            .collect();
         let c = cat(many);
         assert_eq!(c.entries.len(), MAX_ENTRIES);
         assert!(c.errors.iter().any(|e| e.contains("first")));
         // file names from odd addresses are safe
-        for url in ["https://x.org/a/b/c.onnx", "https://x.org/", "https://x.org/..%2f..%2fevil.onnx", "https://x.org/q.bin", "https://x.org/.onnx"] {
+        for url in [
+            "https://x.org/a/b/c.onnx",
+            "https://x.org/",
+            "https://x.org/..%2f..%2fevil.onnx",
+            "https://x.org/q.bin",
+            "https://x.org/.onnx",
+        ] {
             let got = file_name_of(url);
-            assert!(!got.contains(['/', '\\']) && got.ends_with(".onnx") && !got.starts_with('.'), "{url} -> {got}");
+            assert!(
+                !got.contains(['/', '\\']) && got.ends_with(".onnx") && !got.starts_with('.'),
+                "{url} -> {got}"
+            );
         }
     }
 }

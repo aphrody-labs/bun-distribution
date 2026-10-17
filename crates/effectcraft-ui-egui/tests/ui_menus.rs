@@ -11,7 +11,9 @@ use serde_json::json;
 fn harness() -> Harness<'static, EffectcraftApp> {
     let mut s = Session::default();
     s.execute("file.openDemoProject", json!({})).unwrap();
-    let mut h = Harness::builder().with_size(vec2(1400.0, 900.0)).build_eframe(|_| EffectcraftApp::new(s));
+    let mut h = Harness::builder()
+        .with_size(vec2(1400.0, 900.0))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(3);
     h
 }
@@ -23,23 +25,49 @@ fn rect(h: &Harness<'_, EffectcraftApp>, id: &str) -> Rect {
 
 fn click_at(h: &mut Harness<'_, EffectcraftApp>, p: Pos2) {
     h.input_mut().events.push(Event::PointerMoved(p));
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(2);
 }
 
 /// Press and release `key` (one frame each), then let the UI settle.
 fn key(h: &mut Harness<'_, EffectcraftApp>, key: Key) {
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    });
     h.step();
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: false,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    });
     h.run_steps(3);
 }
 
 /// The label of the widget with keyboard focus (the highlighted menu entry).
 fn focused(h: &Harness<'_, EffectcraftApp>) -> String {
-    h.query_by(|n| n.is_focused()).and_then(|n| n.accesskit_node().label()).unwrap_or_default().trim().to_string()
+    h.query_by(|n| n.is_focused())
+        .and_then(|n| n.accesskit_node().label())
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 fn shown(h: &Harness<'_, EffectcraftApp>, label: &str) -> bool {
@@ -55,12 +83,18 @@ fn shortcuts_wait_while_a_menu_is_open() {
     click_at(&mut h, edit.center());
     assert!(shown(&h, "Keyboard Shortcuts"), "the Edit menu is open");
     key(&mut h, Key::Space);
-    assert!(!h.state().playback.playing, "Space didn't start the preview");
+    assert!(
+        !h.state().playback.playing,
+        "Space didn't start the preview"
+    );
     // With the menu closed, Space previews again.
     key(&mut h, Key::Escape);
     assert!(!shown(&h, "Keyboard Shortcuts"), "Escape closed the menu");
     key(&mut h, Key::Space);
-    assert!(h.state().playback.playing, "Space previews with the menus closed");
+    assert!(
+        h.state().playback.playing,
+        "Space previews with the menus closed"
+    );
 }
 
 /// Alt focuses the menu bar; Down opens the menu, Up / Down move the highlight, Right opens a
@@ -72,21 +106,44 @@ fn arrow_keys_drive_the_menu_bar() {
         return;
     }
     let mut h = harness();
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::ALT));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::ALT));
     h.step();
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::NONE));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::NONE));
     h.run_steps(2);
     assert_eq!(focused(&h), "File", "Alt focused the menu bar");
     key(&mut h, Key::ArrowDown);
     assert!(shown(&h, "Open Project"), "Down opened File");
-    assert!(focused(&h).starts_with("New"), "its first entry is highlighted: {:?}", focused(&h));
+    assert!(
+        focused(&h).starts_with("New"),
+        "its first entry is highlighted: {:?}",
+        focused(&h)
+    );
     key(&mut h, Key::ArrowRight);
-    assert!(focused(&h).contains("New Project"), "Right opened the New submenu: {:?}", focused(&h));
+    assert!(
+        focused(&h).contains("New Project"),
+        "Right opened the New submenu: {:?}",
+        focused(&h)
+    );
     key(&mut h, Key::ArrowDown);
-    assert!(focused(&h).contains("New Project from Template"), "Down moved down the submenu: {:?}", focused(&h));
+    assert!(
+        focused(&h).contains("New Project from Template"),
+        "Down moved down the submenu: {:?}",
+        focused(&h)
+    );
     key(&mut h, Key::ArrowLeft);
-    assert!(!shown(&h, "New Project from Template"), "Left closed the submenu");
-    assert!(focused(&h).starts_with("New"), "and went back to its entry: {:?}", focused(&h));
+    assert!(
+        !shown(&h, "New Project from Template"),
+        "Left closed the submenu"
+    );
+    assert!(
+        focused(&h).starts_with("New"),
+        "and went back to its entry: {:?}",
+        focused(&h)
+    );
     key(&mut h, Key::ArrowDown);
     assert!(focused(&h).contains("Open Project"), "{:?}", focused(&h));
     key(&mut h, Key::ArrowRight);
@@ -108,15 +165,35 @@ fn enter_chooses_the_highlighted_entry() {
     click_at(&mut h, edit.center());
     key(&mut h, Key::ArrowUp);
     if cfg!(target_os = "macos") {
-        assert!(focused(&h).starts_with("Keyboard Shortcuts"), "Up went to the last entry: {:?}", focused(&h));
+        assert!(
+            focused(&h).starts_with("Keyboard Shortcuts"),
+            "Up went to the last entry: {:?}",
+            focused(&h)
+        );
         key(&mut h, Key::Enter);
-        assert_eq!(h.state().dialog, Some(effectcraft_ui_egui::Dialog::Shortcuts), "Enter chose it");
+        assert_eq!(
+            h.state().dialog,
+            Some(effectcraft_ui_egui::Dialog::Shortcuts),
+            "Enter chose it"
+        );
     } else {
-        assert!(focused(&h).starts_with("Preferences"), "Up went to the last entry: {:?}", focused(&h));
+        assert!(
+            focused(&h).starts_with("Preferences"),
+            "Up went to the last entry: {:?}",
+            focused(&h)
+        );
         key(&mut h, Key::Enter);
-        assert!(focused(&h).starts_with("General"), "Enter opened the submenu: {:?}", focused(&h));
+        assert!(
+            focused(&h).starts_with("General"),
+            "Enter opened the submenu: {:?}",
+            focused(&h)
+        );
         key(&mut h, Key::Enter);
-        assert_eq!(h.state().dialog, Some(effectcraft_ui_egui::Dialog::Settings), "Enter chose General...");
+        assert_eq!(
+            h.state().dialog,
+            Some(effectcraft_ui_egui::Dialog::Settings),
+            "Enter chose General..."
+        );
     }
     assert!(!shown(&h, "Quick Apply"), "and closed the menu");
 }
@@ -139,7 +216,13 @@ fn relink_menu_uses_engine_availability_and_folder_picker_cancel_is_a_noop() {
         None
     }));
     let revision = app.session.revision;
-    let result = effectcraft_ui_egui::menus::invoke(&mut app, &egui::Context::default(), "file.relinkFootage", json!({})).unwrap();
+    let result = effectcraft_ui_egui::menus::invoke(
+        &mut app,
+        &egui::Context::default(),
+        "file.relinkFootage",
+        json!({}),
+    )
+    .unwrap();
     assert!(picked.get());
     assert!(result.is_null());
     assert_eq!(app.session.revision, revision);
@@ -162,9 +245,14 @@ fn relink_is_reachable_through_the_dependencies_menu() {
     let file = rect(&h, "menu.File");
     click_at(&mut h, file.center());
     let dependencies = h.query_by_label_contains("Dependencies").unwrap().rect();
-    h.input_mut().events.push(Event::PointerMoved(dependencies.center()));
+    h.input_mut()
+        .events
+        .push(Event::PointerMoved(dependencies.center()));
     h.run_steps(8);
-    let relink = h.query_by_label_contains("Relink Missing Footage").unwrap().rect();
+    let relink = h
+        .query_by_label_contains("Relink Missing Footage")
+        .unwrap()
+        .rect();
     if let Some(path) = std::env::var_os("EFFECTCRAFT_RELINK_MENU_SNAPSHOT") {
         h.render().unwrap().save(path).unwrap();
     }
@@ -183,25 +271,48 @@ fn relink_restores_decoded_pixels_and_invalidates_viewer_content() {
     std::fs::create_dir_all(dir.join("old")).unwrap();
     std::fs::create_dir_all(dir.join("new/deep")).unwrap();
     let old = dir.join("old/plate.png");
-    image::RgbaImage::from_pixel(32, 32, image::Rgba([230, 40, 80, 255])).save(&old).unwrap();
+    image::RgbaImage::from_pixel(32, 32, image::Rgba([230, 40, 80, 255]))
+        .save(&old)
+        .unwrap();
     let mut s = effectcraft_host::session();
-    let item = s.execute("file.import", json!({"paths": [old], "sequence": false})).unwrap()["items"][0].as_u64().unwrap();
-    s.execute("comp.new", json!({"name": "Relink", "width": 32, "height": 32, "duration": 1})).unwrap();
+    let item = s
+        .execute("file.import", json!({"paths": [old], "sequence": false}))
+        .unwrap()["items"][0]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Relink", "width": 32, "height": 32, "duration": 1}),
+    )
+    .unwrap();
     s.execute("layer.addItem", json!({"item": item})).unwrap();
     let cid = s.active_comp_id().unwrap();
     let expected = s.render(cid, Tick::ZERO, RenderOpts::default());
     let moved = dir.join("new/deep/plate.png");
     std::fs::rename(&old, &moved).unwrap();
     s.execute("footage.check", json!({"wait": true})).unwrap();
-    let ItemKind::Footage(f) = &s.project.item(ItemId(item)).unwrap().kind else { panic!("footage") };
+    let ItemKind::Footage(f) = &s.project.item(ItemId(item)).unwrap().kind else {
+        panic!("footage")
+    };
     assert!(f.missing);
     let missing_content = effectcraft_ui_egui::frames::comp_content(&s.project, cid);
     let missing = s.render(cid, Tick::ZERO, RenderOpts::default());
     assert_ne!(missing.data, expected.data);
-    let r = s.execute("file.relinkFootage", json!({"folder": dir.join("new"), "wait": true})).unwrap();
+    let r = s
+        .execute(
+            "file.relinkFootage",
+            json!({"folder": dir.join("new"), "wait": true}),
+        )
+        .unwrap();
     assert_eq!(r["relinked"], 1);
-    assert_ne!(effectcraft_ui_egui::frames::comp_content(&s.project, cid), missing_content);
-    assert_eq!(s.render(cid, Tick::ZERO, RenderOpts::default()).data, expected.data);
+    assert_ne!(
+        effectcraft_ui_egui::frames::comp_content(&s.project, cid),
+        missing_content
+    );
+    assert_eq!(
+        s.render(cid, Tick::ZERO, RenderOpts::default()).data,
+        expected.data
+    );
     std::fs::remove_dir_all(dir).unwrap();
 }
 
@@ -219,7 +330,13 @@ fn import_dialog_offers_mxf() {
         *seen.borrow_mut() = exts.iter().map(|e| e.to_string()).collect();
         Vec::new()
     }));
-    let result = effectcraft_ui_egui::menus::invoke(&mut app, &egui::Context::default(), "file.import", json!({})).unwrap();
+    let result = effectcraft_ui_egui::menus::invoke(
+        &mut app,
+        &egui::Context::default(),
+        "file.import",
+        json!({}),
+    )
+    .unwrap();
     assert!(result.is_null(), "cancelled: nothing imported");
     let offered = offered.borrow();
     assert!(offered.iter().any(|e| e == "mxf"), "offered {offered:?}");

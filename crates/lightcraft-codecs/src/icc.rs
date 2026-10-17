@@ -4,7 +4,8 @@
 use crate::space::{NamedSpace, Trc, rgb_to_xyz_d50};
 use lightcraft_color::{D50, Mat3, RgbSpace, bradford};
 use moxcms::{
-    ColorProfile, DataColorSpace, Layout, LocalizableString, Matrix3d, ProfileText, RenderingIntent, ToneReprCurve, TransformOptions, Xyzd,
+    ColorProfile, DataColorSpace, Layout, LocalizableString, Matrix3d, ProfileText,
+    RenderingIntent, ToneReprCurve, TransformOptions, Xyzd,
 };
 use serde::{Deserialize, Serialize};
 
@@ -40,7 +41,9 @@ pub struct IccInfo {
 
 /// Parse an ICC profile. Returns `None` for malformed or unsupported data (never panics).
 pub fn parse(bytes: &[u8]) -> Option<IccInfo> {
-    let p = std::panic::catch_unwind(|| ColorProfile::new_from_slice(bytes)).ok()?.ok()?;
+    let p = std::panic::catch_unwind(|| ColorProfile::new_from_slice(bytes))
+        .ok()?
+        .ok()?;
     Some(info_of(&p))
 }
 
@@ -53,28 +56,48 @@ fn info_of(p: &ColorProfile) -> IccInfo {
         _ => IccColorModel::Other,
     };
     let has_lut = p.lut_a_to_b_perceptual.is_some() || p.lut_a_to_b_colorimetric.is_some();
-    let kind = if model == IccColorModel::Rgb && p.is_matrix_shaper() && p.pcs == DataColorSpace::Xyz {
-        let c = [p.red_colorant, p.green_colorant, p.blue_colorant];
-        let to_xyz_d50 = Mat3([[c[0].x, c[1].x, c[2].x], [c[0].y, c[1].y, c[2].y], [c[0].z, c[1].z, c[2].z]]);
-        let trcs = [&p.red_trc, &p.green_trc, &p.blue_trc];
-        let trc = trcs.map(|t| t.as_ref().map(trc_from_icc).unwrap_or(Trc::Srgb));
-        if to_xyz_d50.determinant().abs() > 1e-6 && trc.iter().all(valid_trc) { IccKind::MatrixTrc { to_xyz_d50, trc } } else { IccKind::NeedsCms }
-    } else if model == IccColorModel::Gray && p.gray_trc.is_some() && !has_lut {
-        let trc = p.gray_trc.as_ref().map(trc_from_icc).unwrap_or(Trc::Srgb);
-        if valid_trc(&trc) { IccKind::Gray { trc } } else { IccKind::NeedsCms }
-    } else {
-        IccKind::NeedsCms
-    };
+    let kind =
+        if model == IccColorModel::Rgb && p.is_matrix_shaper() && p.pcs == DataColorSpace::Xyz {
+            let c = [p.red_colorant, p.green_colorant, p.blue_colorant];
+            let to_xyz_d50 = Mat3([
+                [c[0].x, c[1].x, c[2].x],
+                [c[0].y, c[1].y, c[2].y],
+                [c[0].z, c[1].z, c[2].z],
+            ]);
+            let trcs = [&p.red_trc, &p.green_trc, &p.blue_trc];
+            let trc = trcs.map(|t| t.as_ref().map(trc_from_icc).unwrap_or(Trc::Srgb));
+            if to_xyz_d50.determinant().abs() > 1e-6 && trc.iter().all(valid_trc) {
+                IccKind::MatrixTrc { to_xyz_d50, trc }
+            } else {
+                IccKind::NeedsCms
+            }
+        } else if model == IccColorModel::Gray && p.gray_trc.is_some() && !has_lut {
+            let trc = p.gray_trc.as_ref().map(trc_from_icc).unwrap_or(Trc::Srgb);
+            if valid_trc(&trc) {
+                IccKind::Gray { trc }
+            } else {
+                IccKind::NeedsCms
+            }
+        } else {
+            IccKind::NeedsCms
+        };
     let named = match &kind {
         IccKind::MatrixTrc { to_xyz_d50, .. } => NamedSpace::recognize(to_xyz_d50),
         _ => None,
     };
-    IccInfo { model, kind, named, description }
+    IccInfo {
+        model,
+        kind,
+        named,
+        description,
+    }
 }
 
 fn valid_trc(t: &Trc) -> bool {
     match t {
-        Trc::Parametric(p) => matches!(p.len(), 1 | 3 | 4 | 5 | 7) && p.iter().all(|v| v.is_finite()),
+        Trc::Parametric(p) => {
+            matches!(p.len(), 1 | 3 | 4 | 5 | 7) && p.iter().all(|v| v.is_finite())
+        }
         Trc::Gamma(g) => g.is_finite() && *g > 0.0,
         _ => true,
     }
@@ -108,16 +131,28 @@ fn trc_from_icc(t: &ToneReprCurve) -> Trc {
 fn trc_to_icc(t: &Trc) -> ToneReprCurve {
     match t {
         Trc::Linear => ToneReprCurve::Parametric(vec![1.0]),
-        Trc::Srgb => ToneReprCurve::Parametric(vec![2.4, 1.0 / 1.055, 0.055 / 1.055, 1.0 / 12.92, 0.04045]),
+        Trc::Srgb => {
+            ToneReprCurve::Parametric(vec![2.4, 1.0 / 1.055, 0.055 / 1.055, 1.0 / 12.92, 0.04045])
+        }
         Trc::Gamma(g) => ToneReprCurve::Parametric(vec![*g]),
-        Trc::Rec709 => ToneReprCurve::Parametric(vec![1.0 / 0.45, 1.0 / 1.099, 0.099 / 1.099, 1.0 / 4.5, 0.081]),
+        Trc::Rec709 => ToneReprCurve::Parametric(vec![
+            1.0 / 0.45,
+            1.0 / 1.099,
+            0.099 / 1.099,
+            1.0 / 4.5,
+            0.081,
+        ]),
         Trc::Parametric(p) => ToneReprCurve::Parametric(p.clone()),
         Trc::Table(v) => ToneReprCurve::Lut(v.clone()),
     }
 }
 
 fn xyzd(v: [f64; 3]) -> Xyzd {
-    Xyzd { x: v[0], y: v[1], z: v[2] }
+    Xyzd {
+        x: v[0],
+        y: v[1],
+        z: v[2],
+    }
 }
 
 /// ICC PCS illuminant (D50) as stored in profiles.
@@ -138,14 +173,24 @@ pub fn write_matrix_trc(space: &RgbSpace, trc: &Trc) -> Vec<u8> {
     p.blue_trc = Some(curve);
     p.white_point = xyzd(ICC_D50);
     p.media_white_point = Some(xyzd(ICC_D50));
-    p.chromatic_adaptation = Some(Matrix3d { v: bradford(space.white, D50).0 });
+    p.chromatic_adaptation = Some(Matrix3d {
+        v: bradford(space.white, D50).0,
+    });
     p.rendering_intent = RenderingIntent::Perceptual;
     let desc = match trc {
         t if t.is_linear() => format!("{} (linear)", space.name),
         _ => space.name.to_string(),
     };
-    p.description = Some(ProfileText::Localizable(vec![LocalizableString::new("en".into(), "US".into(), desc)]));
-    p.copyright = Some(ProfileText::Localizable(vec![LocalizableString::new("en".into(), "US".into(), "No copyright, use freely".into())]));
+    p.description = Some(ProfileText::Localizable(vec![LocalizableString::new(
+        "en".into(),
+        "US".into(),
+        desc,
+    )]));
+    p.copyright = Some(ProfileText::Localizable(vec![LocalizableString::new(
+        "en".into(),
+        "US".into(),
+        "No copyright, use freely".into(),
+    )]));
     align_tags(&fixed_date(p.encode().unwrap_or_default()))
 }
 
@@ -165,11 +210,18 @@ fn fixed_date(mut b: Vec<u8>) -> Vec<u8> {
 /// back, so a tag of odd length (e.g. a `mluc` description with an odd number of characters)
 /// misaligns every following tag — which some readers (macOS ImageIO for PNG `iCCP`) reject.
 fn align_tags(b: &[u8]) -> Vec<u8> {
-    let be = |i: usize| b.get(i..i + 4).map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]) as usize);
+    let be = |i: usize| {
+        b.get(i..i + 4)
+            .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]) as usize)
+    };
     let Some(n) = be(128) else { return b.to_vec() };
     let table_end = 132 + 12 * n;
-    let tags: Option<Vec<(usize, usize)>> = (0..n).map(|t| Some((be(132 + 12 * t + 4)?, be(132 + 12 * t + 8)?))).collect();
-    let Some(tags) = tags.filter(|t| table_end <= b.len() && t.iter().all(|&(o, l)| o >= table_end && o + l <= b.len())) else {
+    let tags: Option<Vec<(usize, usize)>> = (0..n)
+        .map(|t| Some((be(132 + 12 * t + 4)?, be(132 + 12 * t + 8)?)))
+        .collect();
+    let Some(tags) = tags.filter(|t| {
+        table_end <= b.len() && t.iter().all(|&(o, l)| o >= table_end && o + l <= b.len())
+    }) else {
         return b.to_vec();
     };
     let mut out = b[..table_end].to_vec();
@@ -217,7 +269,11 @@ pub(crate) fn linear_rec2020_profile() -> ColorProfile {
 
 /// Convert device samples (0..1, interleaved, `channels` = 1, 3 or 4 matching the profile's colour
 /// model) to linear Rec.2020 through a full CMS transform. `None` if the profile cannot be applied.
-pub(crate) fn cms_to_linear_rec2020(icc: &[u8], samples: &[f32], channels: usize) -> Option<Vec<[f32; 3]>> {
+pub(crate) fn cms_to_linear_rec2020(
+    icc: &[u8],
+    samples: &[f32],
+    channels: usize,
+) -> Option<Vec<[f32; 3]>> {
     let src = ColorProfile::new_from_slice(icc).ok()?;
     let layout = match (src.color_space, channels) {
         (DataColorSpace::Rgb, 3) => Layout::Rgb,
@@ -226,9 +282,14 @@ pub(crate) fn cms_to_linear_rec2020(icc: &[u8], samples: &[f32], channels: usize
         _ => return None,
     };
     let dst = linear_rec2020_profile();
-    let opts = TransformOptions { rendering_intent: RenderingIntent::RelativeColorimetric, ..TransformOptions::default() };
+    let opts = TransformOptions {
+        rendering_intent: RenderingIntent::RelativeColorimetric,
+        ..TransformOptions::default()
+    };
     let run = || -> Option<Vec<[f32; 3]>> {
-        let t = src.create_transform_f32(layout, &dst, Layout::Rgb, opts).ok()?;
+        let t = src
+            .create_transform_f32(layout, &dst, Layout::Rgb, opts)
+            .ok()?;
         let n = samples.len() / channels;
         let mut out = vec![0f32; n * 3];
         // Chunk to bound temporary memory and allow parallelism.
@@ -239,7 +300,9 @@ pub(crate) fn cms_to_linear_rec2020(icc: &[u8], samples: &[f32], channels: usize
         {
             use rayon::prelude::*;
             let pairs: Vec<_> = src_chunks.zip(dst_chunks).collect();
-            let ok = pairs.into_par_iter().all(|(s, d)| t.transform(s, d).is_ok());
+            let ok = pairs
+                .into_par_iter()
+                .all(|(s, d)| t.transform(s, d).is_ok());
             if !ok {
                 return None;
             }
@@ -248,7 +311,13 @@ pub(crate) fn cms_to_linear_rec2020(icc: &[u8], samples: &[f32], channels: usize
         for (s, d) in src_chunks.zip(dst_chunks) {
             t.transform(s, d).ok()?;
         }
-        Some(out.as_chunks::<3>().0.iter().map(|c| [c[0], c[1], c[2]]).collect())
+        Some(
+            out.as_chunks::<3>()
+                .0
+                .iter()
+                .map(|c| [c[0], c[1], c[2]])
+                .collect(),
+        )
     };
     std::panic::catch_unwind(run).ok().flatten()
 }
@@ -266,7 +335,9 @@ mod tests {
             let info = parse(&bytes).expect("parses");
             assert_eq!(info.named, Some(n), "{n:?}");
             match info.kind {
-                IccKind::MatrixTrc { trc, .. } => assert!(trc[0].approx_eq(&n.trc(), 2e-4), "{n:?} {:?}", trc[0]),
+                IccKind::MatrixTrc { trc, .. } => {
+                    assert!(trc[0].approx_eq(&n.trc(), 2e-4), "{n:?} {:?}", trc[0])
+                }
                 k => panic!("{k:?}"),
             }
         }
@@ -278,10 +349,15 @@ mod tests {
             for trc in [n.trc(), Trc::Linear] {
                 let b = write_matrix_trc(&n.rgb_space(), &trc);
                 assert_eq!(b.len() % 4, 0, "{n:?}");
-                assert_eq!(u32::from_be_bytes(b[0..4].try_into().unwrap()) as usize, b.len());
+                assert_eq!(
+                    u32::from_be_bytes(b[0..4].try_into().unwrap()) as usize,
+                    b.len()
+                );
                 let count = u32::from_be_bytes(b[128..132].try_into().unwrap()) as usize;
                 for t in 0..count {
-                    let off = u32::from_be_bytes(b[132 + 12 * t + 4..132 + 12 * t + 8].try_into().unwrap());
+                    let off = u32::from_be_bytes(
+                        b[132 + 12 * t + 4..132 + 12 * t + 8].try_into().unwrap(),
+                    );
                     assert_eq!(off % 4, 0, "{n:?} tag {t}");
                 }
                 assert!(parse(&b).is_some_and(|i| i.named == Some(n)), "{n:?}");
@@ -294,7 +370,9 @@ mod tests {
         let bytes = write_matrix_trc(&PROPHOTO, &Trc::Linear);
         let info = parse(&bytes).unwrap();
         assert_eq!(info.named, Some(NamedSpace::ProPhoto));
-        let IccKind::MatrixTrc { trc, .. } = info.kind else { panic!() };
+        let IccKind::MatrixTrc { trc, .. } = info.kind else {
+            panic!()
+        };
         assert!(trc[1].is_linear());
     }
 

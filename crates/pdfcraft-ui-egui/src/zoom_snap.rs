@@ -12,7 +12,13 @@ use crate::{PdfCraftApp, QuickTool};
 pub type Marquee = (usize, Rect, [f32; 4]);
 
 /// Drag a rectangle on page `page` (Marquee Zoom, Snapshot).
-pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, page: usize, view: &mut DocView) {
+pub(crate) fn page_input(
+    ui: &egui::Ui,
+    resp: &egui::Response,
+    xf: &PageXform,
+    page: usize,
+    view: &mut DocView,
+) {
     let pointer = ui.input(|i| i.pointer.hover_pos());
     let origin = ui.input(|i| i.pointer.press_origin());
     if pointer.is_some_and(|p| xf.rect.contains(p)) {
@@ -27,20 +33,39 @@ pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, p
         && p == page
         && let Some(end) = pointer
     {
-        let end = Pos2::new(end.x.clamp(xf.rect.left(), xf.rect.right()), end.y.clamp(xf.rect.top(), xf.rect.bottom()));
+        let end = Pos2::new(
+            end.x.clamp(xf.rect.left(), xf.rect.right()),
+            end.y.clamp(xf.rect.top(), xf.rect.bottom()),
+        );
         let r = Rect::from_two_pos(start, end);
-        ui.painter().rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, Color32::from_rgb(0x14, 0x73, 0xE6)), egui::StrokeKind::Middle);
+        ui.painter().rect_stroke(
+            r,
+            CornerRadius::ZERO,
+            Stroke::new(1.0, Color32::from_rgb(0x14, 0x73, 0xE6)),
+            egui::StrokeKind::Middle,
+        );
         if resp.drag_stopped() {
             view.marquee = None;
-            let (a, b) = (xf.screen_to_view(r.left_top()), xf.screen_to_view(r.right_bottom()));
-            view.marquee_done = Some((page, r, [a.0.min(b.0), a.1.min(b.1), a.0.max(b.0), a.1.max(b.1)]));
+            let (a, b) = (
+                xf.screen_to_view(r.left_top()),
+                xf.screen_to_view(r.right_bottom()),
+            );
+            view.marquee_done = Some((
+                page,
+                r,
+                [a.0.min(b.0), a.1.min(b.1), a.0.max(b.0), a.1.max(b.1)],
+            ));
         }
     }
     if resp.clicked()
         && let Some(p) = pointer.filter(|p| xf.rect.contains(*p))
     {
         let v = xf.screen_to_view(p);
-        view.marquee_done = Some((page, Rect::from_min_size(p, egui::Vec2::ZERO), [v.0, v.1, v.0, v.1]));
+        view.marquee_done = Some((
+            page,
+            Rect::from_min_size(p, egui::Vec2::ZERO),
+            [v.0, v.1, v.0, v.1],
+        ));
     }
 }
 
@@ -64,14 +89,22 @@ impl PdfCraftApp {
                     return;
                 }
                 // The tool outlives the tab it was chosen on.
-                if self.views.get(index).map(|v| v.id).is_some_and(|id| !self.may_copy(id)) {
+                if self
+                    .views
+                    .get(index)
+                    .map(|v| v.id)
+                    .is_some_and(|id| !self.may_copy(id))
+                {
                     return;
                 }
                 match self.snapshot(index, page, view_rect) {
-                    Ok((w, h)) => {
-                        self.notify_fmt("The selected area has been copied ({w} × {h} pixels)", &[("w", &w.to_string()), ("h", &h.to_string())])
+                    Ok((w, h)) => self.notify_fmt(
+                        "The selected area has been copied ({w} × {h} pixels)",
+                        &[("w", &w.to_string()), ("h", &h.to_string())],
+                    ),
+                    Err(e) => {
+                        self.notify_fmt("Couldn't take the snapshot: {e}", &[("e", &e.to_string())])
                     }
-                    Err(e) => self.notify_fmt("Couldn't take the snapshot: {e}", &[("e", &e.to_string())]),
                 }
             }
             _ => {}
@@ -85,12 +118,25 @@ impl PdfCraftApp {
         let view = &self.views[index];
         let page = view.current;
         let doc = self.session.get(view.id).ok_or("no document")?;
-        let config = RenderConfig { password: doc.password.as_deref().map(std::sync::Arc::from), ..RenderConfig::default() };
+        let config = RenderConfig {
+            password: doc.password.as_deref().map(std::sync::Arc::from),
+            ..RenderConfig::default()
+        };
         let mut r = pdfcraft_render::PageRenderer::new(doc.bytes.clone(), config);
         // About 800 px along the longer side is plenty to find the margins.
-        let size = doc.info.pages.get(page).map_or(792.0, |p| p.width.max(p.height));
-        let out =
-            r.render(RenderRequest { page, kind: RequestKind::Pixels, tile: None, scale: (800.0 / size).clamp(0.1, 4.0), tag: 0, preview: false });
+        let size = doc
+            .info
+            .pages
+            .get(page)
+            .map_or(792.0, |p| p.width.max(p.height));
+        let out = r.render(RenderRequest {
+            page,
+            kind: RequestKind::Pixels,
+            tile: None,
+            scale: (800.0 / size).clamp(0.1, 4.0),
+            tag: 0,
+            preview: false,
+        });
         if let Some(e) = out.error {
             return Err(e);
         }
@@ -106,7 +152,10 @@ impl PdfCraftApp {
                     _ => (u, v),
                 };
                 let (a, b) = (rotate(u0, v0), rotate(u1, v1));
-                if !view.fit_content(page, [a.0.min(b.0), a.1.min(b.1), a.0.max(b.0), a.1.max(b.1)]) {
+                if !view.fit_content(
+                    page,
+                    [a.0.min(b.0), a.1.min(b.1), a.0.max(b.0), a.1.max(b.1)],
+                ) {
                     view.fit = crate::canvas::Fit::Width;
                 }
             }
@@ -117,7 +166,12 @@ impl PdfCraftApp {
 
     /// Render `view_rect` (page view points) of `page` at the current zoom and copy it to the
     /// clipboard (and keep it in `last_snapshot`).
-    pub fn snapshot(&mut self, index: usize, page: usize, view_rect: [f32; 4]) -> Result<(u32, u32), String> {
+    pub fn snapshot(
+        &mut self,
+        index: usize,
+        page: usize,
+        view_rect: [f32; 4],
+    ) -> Result<(u32, u32), String> {
         let view = &self.views[index];
         let doc = self.session.get(view.id).ok_or("no document")?;
         let ppp = self.ctx.as_ref().map_or(2.0, |c| c.pixels_per_point());
@@ -131,17 +185,33 @@ impl PdfCraftApp {
         if (tile.w as u64) * (tile.h as u64) > 64_000_000 {
             return Err("the area is too large at this zoom".into());
         }
-        let config = RenderConfig { password: doc.password.as_deref().map(std::sync::Arc::from), ..RenderConfig::default() };
+        let config = RenderConfig {
+            password: doc.password.as_deref().map(std::sync::Arc::from),
+            ..RenderConfig::default()
+        };
         let mut r = pdfcraft_render::PageRenderer::new(doc.bytes.clone(), config);
-        let out = r.render(RenderRequest { page, kind: RequestKind::Pixels, tile: Some(tile), scale, tag: 0, preview: false });
+        let out = r.render(RenderRequest {
+            page,
+            kind: RequestKind::Pixels,
+            tile: Some(tile),
+            scale,
+            tag: 0,
+            preview: false,
+        });
         if let Some(e) = out.error {
             return Err(e);
         }
         let (w, h) = (out.width, out.height);
         #[cfg(not(target_arch = "wasm32"))]
         if self.system_clipboard {
-            let img = arboard::ImageData { width: w as usize, height: h as usize, bytes: std::borrow::Cow::Borrowed(&out.rgba) };
-            arboard::Clipboard::new().and_then(|mut c| c.set_image(img)).map_err(|e| e.to_string())?;
+            let img = arboard::ImageData {
+                width: w as usize,
+                height: h as usize,
+                bytes: std::borrow::Cow::Borrowed(&out.rgba),
+            };
+            arboard::Clipboard::new()
+                .and_then(|mut c| c.set_image(img))
+                .map_err(|e| e.to_string())?;
         }
         self.last_snapshot = Some((w, h, out.rgba));
         Ok((w, h))
@@ -165,7 +235,14 @@ pub(crate) fn ink_bounds(w: usize, h: usize, rgba: &[u8]) -> Option<[f32; 4]> {
             }
         }
     }
-    (x1 > x0 && y1 > y0).then(|| [x0 as f32 / w as f32, y0 as f32 / h as f32, x1 as f32 / w as f32, y1 as f32 / h as f32])
+    (x1 > x0 && y1 > y0).then(|| {
+        [
+            x0 as f32 / w as f32,
+            y0 as f32 / h as f32,
+            x1 as f32 / w as f32,
+            y1 as f32 / h as f32,
+        ]
+    })
 }
 
 #[cfg(test)]

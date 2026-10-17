@@ -23,7 +23,7 @@ fn image_test(side: u32) -> Vec<u8> {
                 (false, false) => {
                     let ramp = u8::try_from(x * 255 / side).unwrap_or(255);
                     [ramp, ramp, ramp, 255]
-                },
+                }
             };
             rgba.extend_from_slice(&pixel);
         }
@@ -50,7 +50,10 @@ fn le_bc7_pese_un_octet_par_pixel_la_ou_le_bgra8_en_pese_quatre() {
     // Deux textures de cette taille plus les en-têtes : l'ordre de grandeur du fichier mesuré.
     let deux_textures = 2 * pixels_bc7;
     assert_eq!(deux_textures, 131_072);
-    assert!(deux_textures < 131_648, "la référence mesurée laisse la place aux en-têtes");
+    assert!(
+        deux_textures < 131_648,
+        "la référence mesurée laisse la place aux en-têtes"
+    );
 }
 
 #[test]

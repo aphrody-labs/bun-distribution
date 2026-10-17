@@ -50,7 +50,19 @@ const AUTHOR: &str = "OpenAI";
 
 macro_rules! hf {
     ($repo:literal, $rev:literal, $name:literal, $sha:literal, $size:expr) => {
-        ModelFile { name: $name, url: concat!("https://huggingface.co/openai/", $repo, "/resolve/", $rev, "/", $name), sha256: $sha, size: $size }
+        ModelFile {
+            name: $name,
+            url: concat!(
+                "https://huggingface.co/openai/",
+                $repo,
+                "/resolve/",
+                $rev,
+                "/",
+                $name
+            ),
+            sha256: $sha,
+            size: $size,
+        }
     };
 }
 
@@ -198,13 +210,19 @@ pub fn model_dir(models_dir: &Path, m: &ModelInfo) -> PathBuf {
 /// All files present with their catalogue sizes (contents were verified when downloaded).
 pub fn installed(models_dir: &Path, m: &ModelInfo) -> bool {
     let d = model_dir(models_dir, m);
-    m.files.iter().all(|f| std::fs::metadata(d.join(f.name)).is_ok_and(|md| md.len() == f.size))
+    m.files
+        .iter()
+        .all(|f| std::fs::metadata(d.join(f.name)).is_ok_and(|md| md.len() == f.size))
 }
 
 /// Bytes still to download for `m` (files already present are skipped).
 pub fn missing_bytes(models_dir: &Path, m: &ModelInfo) -> u64 {
     let d = model_dir(models_dir, m);
-    m.files.iter().filter(|f| !std::fs::metadata(d.join(f.name)).is_ok_and(|md| md.len() == f.size)).map(|f| f.size).sum()
+    m.files
+        .iter()
+        .filter(|f| !std::fs::metadata(d.join(f.name)).is_ok_and(|md| md.len() == f.size))
+        .map(|f| f.size)
+        .sum()
 }
 
 /// The tokenizer shared by the multilingual models has one checksum.
@@ -221,7 +239,11 @@ pub type DownloadProgress<'a> = &'a mut dyn FnMut(u64, u64, &str) -> bool;
 /// and fails. Pure Rust TLS (rustls + RustCrypto) with the operating system's certificate
 /// verifier.
 #[cfg(feature = "download")]
-pub fn download(models_dir: &Path, m: &ModelInfo, progress: DownloadProgress) -> Result<(), crate::SpeechError> {
+pub fn download(
+    models_dir: &Path,
+    m: &ModelInfo,
+    progress: DownloadProgress,
+) -> Result<(), crate::SpeechError> {
     download_files(&model_dir(models_dir, m), m.files, progress)
 }
 
@@ -229,12 +251,20 @@ pub fn download(models_dir: &Path, m: &ModelInfo, progress: DownloadProgress) ->
 /// `files` go into `dir`, each verified against its SHA-256 and size before it is renamed into
 /// place.
 #[cfg(feature = "download")]
-pub fn download_files(dir: &Path, files: &[ModelFile], progress: DownloadProgress) -> Result<(), crate::SpeechError> {
+pub fn download_files(
+    dir: &Path,
+    files: &[ModelFile],
+    progress: DownloadProgress,
+) -> Result<(), crate::SpeechError> {
     use crate::SpeechError;
     use sha2::Digest;
     use std::io::{Read, Write};
     std::fs::create_dir_all(dir)?;
-    let total: u64 = files.iter().filter(|f| !std::fs::metadata(dir.join(f.name)).is_ok_and(|md| md.len() == f.size)).map(|f| f.size).sum();
+    let total: u64 = files
+        .iter()
+        .filter(|f| !std::fs::metadata(dir.join(f.name)).is_ok_and(|md| md.len() == f.size))
+        .map(|f| f.size)
+        .sum();
     let agent = agent();
     let mut done = 0u64;
     for f in files {
@@ -243,7 +273,10 @@ pub fn download_files(dir: &Path, files: &[ModelFile], progress: DownloadProgres
             continue;
         }
         let part = dir.join(format!("{}.part", f.name));
-        let resp = agent.get(f.url).call().map_err(|e| SpeechError::Download(format!("{}: {e}", f.url)))?;
+        let resp = agent
+            .get(f.url)
+            .call()
+            .map_err(|e| SpeechError::Download(format!("{}: {e}", f.url)))?;
         let mut body = resp.into_body();
         let mut reader = body.as_reader();
         let mut out = std::io::BufWriter::new(std::fs::File::create(&part)?);
@@ -251,7 +284,9 @@ pub fn download_files(dir: &Path, files: &[ModelFile], progress: DownloadProgres
         let mut buf = vec![0u8; 1 << 20];
         let mut got = 0u64;
         loop {
-            let n = reader.read(&mut buf).map_err(|e| SpeechError::Download(format!("{}: {e}", f.name)))?;
+            let n = reader
+                .read(&mut buf)
+                .map_err(|e| SpeechError::Download(format!("{}: {e}", f.name)))?;
             if n == 0 {
                 break;
             }
@@ -266,10 +301,17 @@ pub fn download_files(dir: &Path, files: &[ModelFile], progress: DownloadProgres
         }
         out.flush()?;
         drop(out);
-        let sha: String = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect();
+        let sha: String = hasher
+            .finalize()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
         if sha != f.sha256 || got != f.size {
             let _ = std::fs::remove_file(&part);
-            return Err(SpeechError::Download(format!("{}: checksum mismatch (got {sha}, {got} bytes; expected {}, {} bytes)", f.name, f.sha256, f.size)));
+            return Err(SpeechError::Download(format!(
+                "{}: checksum mismatch (got {sha}, {got} bytes; expected {}, {} bytes)",
+                f.name, f.sha256, f.size
+            )));
         }
         std::fs::rename(&part, &dest)?;
         done += f.size;
@@ -303,7 +345,11 @@ mod tests {
         for m in catalogue() {
             assert!(m.size() > 100_000_000, "{}", m.id);
             for f in m.files {
-                assert!(f.url.starts_with("https://huggingface.co/openai/whisper-"), "{}", f.url);
+                assert!(
+                    f.url.starts_with("https://huggingface.co/openai/whisper-"),
+                    "{}",
+                    f.url
+                );
                 assert!(f.url.contains("/resolve/") && f.url.ends_with(f.name));
                 assert_eq!(f.sha256.len(), 64);
                 assert!(f.sha256.bytes().all(|b| b.is_ascii_hexdigit()));
@@ -316,7 +362,8 @@ mod tests {
 
     #[test]
     fn installed_checks_sizes() {
-        let dir = std::env::temp_dir().join(format!("filmcraft-speech-models-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("filmcraft-speech-models-{}", std::process::id()));
         let m = find("whisper-tiny").unwrap();
         assert!(!installed(&dir, m));
         assert_eq!(missing_bytes(&dir, m), m.size());

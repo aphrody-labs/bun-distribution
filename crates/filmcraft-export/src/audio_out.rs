@@ -43,9 +43,19 @@ pub(crate) struct AudioOut {
 }
 
 impl AudioOut {
-    pub fn new(project: Arc<Project>, seq: ItemId, settings: &ExportSettings, range: TimeRange) -> Result<Self> {
+    pub fn new(
+        project: Arc<Project>,
+        seq: ItemId,
+        settings: &ExportSettings,
+        range: TimeRange,
+    ) -> Result<Self> {
         let q = project.sequence(seq).ok_or(ExportError::NoSequence)?;
-        let r = settings.resolve(q.settings.width, q.settings.height, q.settings.frame_rate, q.settings.sample_rate);
+        let r = settings.resolve(
+            q.settings.width,
+            q.settings.height,
+            q.settings.frame_rate,
+            q.settings.sample_rate,
+        );
         let mut seq = q.clone();
         seq.settings.sample_rate = r.sample_rate;
         let sr = r.sample_rate;
@@ -61,12 +71,29 @@ impl AudioOut {
             l
         });
         let latency = limiter.as_ref().map(|l| l.latency() as i64).unwrap_or(0);
-        Ok(AudioOut { project, seq, sr, channels: r.channels as usize, gain: 1.0, limiter, latency, next_in: start, out: start, end, loudness: None })
+        Ok(AudioOut {
+            project,
+            seq,
+            sr,
+            channels: r.channels as usize,
+            gain: 1.0,
+            limiter,
+            latency,
+            next_in: start,
+            out: start,
+            end,
+            loudness: None,
+        })
     }
 
     /// The loudness pass: measure the integrated loudness of the whole range and set the gain
     /// that brings it to the target. `cancel` is polled between chunks.
-    pub fn measure(&mut self, settings: &ExportSettings, sources: &dyn SourceProvider, cancel: &dyn Fn() -> bool) -> Result<()> {
+    pub fn measure(
+        &mut self,
+        settings: &ExportSettings,
+        sources: &dyn SourceProvider,
+        cancel: &dyn Fn() -> bool,
+    ) -> Result<()> {
         let ln = &settings.effects.loudness;
         if !ln.enabled {
             return Ok(());
@@ -96,7 +123,8 @@ impl AudioOut {
         if measured.is_finite() && ln.target_lufs.is_finite() {
             for _ in 0..4 {
                 self.rewind(start, trial_gain);
-                let mut limited = filmcraft_audio_dsp::LoudnessMeter::new(self.sr as f64, self.channels);
+                let mut limited =
+                    filmcraft_audio_dsp::LoudnessMeter::new(self.sr as f64, self.channels);
                 while self.out < self.end {
                     if cancel() {
                         self.rewind(start, best_gain);
@@ -119,7 +147,9 @@ impl AudioOut {
                 }
                 // Stop on convergence or a ceiling-limited plateau. An impossible target
                 // must not cause unbounded passes or ever bypass the limiter.
-                if error.abs() <= 0.1 || previous.is_some_and(|last: f64| (achieved - last).abs() < 0.02) {
+                if error.abs() <= 0.1
+                    || previous.is_some_and(|last: f64| (achieved - last).abs() < 0.02)
+                {
                     break;
                 }
                 previous = Some(achieved);
@@ -127,7 +157,10 @@ impl AudioOut {
             }
         }
         self.rewind(start, best_gain);
-        self.loudness = Some(LoudnessReport { measured_lufs: measured, gain_db: best_gain });
+        self.loudness = Some(LoudnessReport {
+            measured_lufs: measured,
+            gain_db: best_gain,
+        });
         Ok(())
     }
 
@@ -166,7 +199,17 @@ impl AudioOut {
         for c in st.iter_mut() {
             c.resize(n, 0.0);
         }
-        if self.channels == 1 { vec![st[0].iter().zip(&st[1]).map(|(l, r)| 0.5 * (l + r)).collect()] } else { st }
+        if self.channels == 1 {
+            vec![
+                st[0]
+                    .iter()
+                    .zip(&st[1])
+                    .map(|(l, r)| 0.5 * (l + r))
+                    .collect(),
+            ]
+        } else {
+            st
+        }
     }
 
     /// Output samples up to `until` (exclusive), planar; None when there is nothing new.
@@ -182,7 +225,8 @@ impl AudioOut {
         let drop = (self.latency - (self.next_in - self.out)).clamp(0, n_in as i64) as usize;
         self.next_in = want_in;
         if self.gain != 1.0 {
-            buf.iter_mut().for_each(|c| c.iter_mut().for_each(|s| *s *= self.gain));
+            buf.iter_mut()
+                .for_each(|c| c.iter_mut().for_each(|s| *s *= self.gain));
         }
         if let Some(l) = self.limiter.as_mut() {
             let mut refs: Vec<&mut [f32]> = buf.iter_mut().map(Vec::as_mut_slice).collect();
@@ -224,7 +268,10 @@ pub(crate) fn interleave(planar: &[Vec<f32>]) -> Vec<f32> {
 mod bounds_tests {
     #[test]
     fn ragged_audio_planes_keep_channel_positions_without_panicking() {
-        assert_eq!(super::interleave(&[vec![1.0, 2.0], vec![3.0]]), vec![1.0, 3.0, 2.0, 0.0]);
+        assert_eq!(
+            super::interleave(&[vec![1.0, 2.0], vec![3.0]]),
+            vec![1.0, 3.0, 2.0, 0.0]
+        );
         assert!(super::interleave(&[]).is_empty());
     }
 }

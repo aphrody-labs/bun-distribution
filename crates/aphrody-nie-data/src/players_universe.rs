@@ -45,8 +45,14 @@ use crate::hash::HashId;
 /// Lit un champ paire `[offset, count]` (`(0, 0)` si absent ou mal formé).
 fn pair(v: &Value, key: &str) -> (i64, i64) {
     let arr = v.get(key).and_then(Value::as_array);
-    let off = arr.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0);
-    let cnt = arr.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0);
+    let off = arr
+        .and_then(|a| a.first())
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
+    let cnt = arr
+        .and_then(|a| a.get(1))
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     (off, cnt)
 }
 
@@ -274,7 +280,9 @@ impl UniverseStarSignInfo {
     /// Parse une entrée.
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
-        Self { star_sign_id_crc: field_hash(v, "starSignIdCrc") }
+        Self {
+            star_sign_id_crc: field_hash(v, "starSignIdCrc"),
+        }
     }
 }
 
@@ -304,7 +312,11 @@ impl UniverseStarSignSetData {
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
         let (star_sign_offset, star_sign_count) = pair(v, "universeStarSignInfoList");
-        Self { universe_id_crc: field_hash(v, "universeIdCrc"), star_sign_offset, star_sign_count }
+        Self {
+            universe_id_crc: field_hash(v, "universeIdCrc"),
+            star_sign_offset,
+            star_sign_count,
+        }
     }
 }
 
@@ -495,7 +507,11 @@ impl StarSignCharaSetData {
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
         let (rate_offset, rate_count) = pair(v, "starSignRarityRateInfoList");
-        Self { star_sign_id_crc: field_hash(v, "starSignIdCrc"), rate_offset, rate_count }
+        Self {
+            star_sign_id_crc: field_hash(v, "starSignIdCrc"),
+            rate_offset,
+            rate_count,
+        }
     }
 }
 
@@ -545,13 +561,21 @@ impl PlayersUniverseConfig {
     /// Tranche des [`StarSignRarityRateInfo`] d'un signe (`starSignRarityRateInfoList`).
     #[must_use]
     pub fn rates_of(&self, set: &StarSignCharaSetData) -> &[StarSignRarityRateInfo] {
-        slice_of(&self.star_sign_rarity_rates, set.rate_offset, set.rate_count)
+        slice_of(
+            &self.star_sign_rarity_rates,
+            set.rate_offset,
+            set.rate_count,
+        )
     }
 
     /// Tranche des [`UniverseStarSignInfo`] d'un univers (`universeStarSignInfoList`).
     #[must_use]
     pub fn star_signs_of(&self, set: &UniverseStarSignSetData) -> &[UniverseStarSignInfo] {
-        slice_of(&self.universe_star_signs, set.star_sign_offset, set.star_sign_count)
+        slice_of(
+            &self.universe_star_signs,
+            set.star_sign_offset,
+            set.star_sign_count,
+        )
     }
 }
 
@@ -577,7 +601,11 @@ pub fn parse_players_universe_config(root: &Value) -> PlayersUniverseConfig {
             UniverseStarSignSetData::from_value,
         ),
         star_signs: map_list(root, "m_starSignInfoList", StarSignInfo::from_value),
-        star_sign_charas: map_list(root, "m_starSignCharaInfoList", StarSignCharaInfo::from_value),
+        star_sign_charas: map_list(
+            root,
+            "m_starSignCharaInfoList",
+            StarSignCharaInfo::from_value,
+        ),
         star_sign_rarity_rates: map_list(
             root,
             "m_starSignRarityRateInfoList",

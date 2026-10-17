@@ -4,7 +4,9 @@ use crate::{AutoParam, AutomationLane, ChannelFormat, Clip, ClipId, Mixer, Track
 use soundcraft_time::{Range, Samples};
 
 /// Track types (Track › New).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum TrackKind {
     #[default]
     Audio,
@@ -67,23 +69,37 @@ impl TrackKind {
     }
     pub fn from_id(s: &str) -> Option<TrackKind> {
         let s = s.to_ascii_lowercase();
-        TrackKind::ALL.into_iter().find(|k| k.id() == s || k.label().eq_ignore_ascii_case(&s))
+        TrackKind::ALL
+            .into_iter()
+            .find(|k| k.id() == s || k.label().eq_ignore_ascii_case(&s))
     }
     /// Track kinds that hold clips on a timeline.
     pub fn has_playlist(self) -> bool {
-        matches!(self, TrackKind::Audio | TrackKind::Midi | TrackKind::Instrument | TrackKind::Video)
+        matches!(
+            self,
+            TrackKind::Audio | TrackKind::Midi | TrackKind::Instrument | TrackKind::Video
+        )
     }
     pub fn is_midi(self) -> bool {
         matches!(self, TrackKind::Midi | TrackKind::Instrument)
     }
     /// Kinds that pass audio through the mixer.
     pub fn is_audio_path(self) -> bool {
-        matches!(self, TrackKind::Audio | TrackKind::Aux | TrackKind::Master | TrackKind::Instrument | TrackKind::Folder)
+        matches!(
+            self,
+            TrackKind::Audio
+                | TrackKind::Aux
+                | TrackKind::Master
+                | TrackKind::Instrument
+                | TrackKind::Folder
+        )
     }
 }
 
 /// Track heights (View › Track Height presets).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum TrackHeight {
     Micro,
     Mini,
@@ -131,7 +147,9 @@ impl TrackHeight {
         }
     }
     pub fn from_id(s: &str) -> Option<TrackHeight> {
-        TrackHeight::ALL.into_iter().find(|h| h.label().eq_ignore_ascii_case(s))
+        TrackHeight::ALL
+            .into_iter()
+            .find(|h| h.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -165,7 +183,10 @@ pub struct Playlist {
 
 impl Playlist {
     pub fn new(name: impl Into<String>) -> Self {
-        Playlist { name: name.into(), clips: Vec::new() }
+        Playlist {
+            name: name.into(),
+            clips: Vec::new(),
+        }
     }
     pub fn sort(&mut self) {
         self.clips.sort_by_key(|c| (c.start, c.id.0));
@@ -234,9 +255,19 @@ fn yes() -> bool {
 }
 
 impl Track {
-    pub fn new(id: TrackId, name: impl Into<String>, kind: TrackKind, format: ChannelFormat, color: [u8; 3]) -> Self {
+    pub fn new(
+        id: TrackId,
+        name: impl Into<String>,
+        kind: TrackKind,
+        format: ChannelFormat,
+        color: [u8; 3],
+    ) -> Self {
         let name = name.into();
-        let format = if kind.is_midi() && kind == TrackKind::Midi { ChannelFormat::Mono } else { format };
+        let format = if kind.is_midi() && kind == TrackKind::Midi {
+            ChannelFormat::Mono
+        } else {
+            format
+        };
         let view = if kind.is_midi() {
             "notes"
         } else if kind.has_playlist() {
@@ -313,18 +344,36 @@ mod tests {
 
     #[test]
     fn new_track_defaults() {
-        let t = Track::new(TrackId(1), "Gtr", TrackKind::Audio, ChannelFormat::Stereo, TRACK_COLORS[0]);
+        let t = Track::new(
+            TrackId(1),
+            "Gtr",
+            TrackKind::Audio,
+            ChannelFormat::Stereo,
+            TRACK_COLORS[0],
+        );
         assert_eq!(t.channels(), 2);
         assert_eq!(t.view, "waveform");
         assert_eq!(t.playlists.len(), 1);
-        let m = Track::new(TrackId(2), "Keys", TrackKind::Midi, ChannelFormat::Stereo, TRACK_COLORS[0]);
+        let m = Track::new(
+            TrackId(2),
+            "Keys",
+            TrackKind::Midi,
+            ChannelFormat::Stereo,
+            TRACK_COLORS[0],
+        );
         assert_eq!(m.format, ChannelFormat::Mono);
         assert_eq!(m.view, "notes");
     }
 
     #[test]
     fn lane_mut_creates_once() {
-        let mut t = Track::new(TrackId(1), "Gtr", TrackKind::Audio, ChannelFormat::Mono, TRACK_COLORS[0]);
+        let mut t = Track::new(
+            TrackId(1),
+            "Gtr",
+            TrackKind::Audio,
+            ChannelFormat::Mono,
+            TRACK_COLORS[0],
+        );
         t.lane_mut(&AutoParam::Volume).set_point(0, -3.0);
         t.lane_mut(&AutoParam::Volume).set_point(10, -6.0);
         assert_eq!(t.automation.len(), 1);

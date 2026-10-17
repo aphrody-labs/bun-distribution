@@ -66,13 +66,19 @@ fn diff_8_unfilter_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u32) {
 fn diff_16_unfilter<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm9.logger, "Unimplemented Diff8bitUnFilterWrite16bit SWI");
+    slog::error!(
+        _emu.arm9.logger,
+        "Unimplemented Diff8bitUnFilterWrite16bit SWI"
+    );
 }
 
 fn huff_uncomp_read_callback<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm9.logger, "Unimplemented HuffUnCompReadByCallback SWI");
+    slog::error!(
+        _emu.arm9.logger,
+        "Unimplemented HuffUnCompReadByCallback SWI"
+    );
 }
 
 fn lz77_uncomp_read_normal_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u32) {
@@ -88,7 +94,10 @@ fn lz77_uncomp_read_normal_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u
 fn lz77_uncomp_read_callback_write_16<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm9.logger, "Unimplemented LZ77UnCompReadByCallbackWrite16bit SWI");
+    slog::error!(
+        _emu.arm9.logger,
+        "Unimplemented LZ77UnCompReadByCallbackWrite16bit SWI"
+    );
 }
 
 fn rl_uncomp_read_normal_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u32) {
@@ -104,7 +113,10 @@ fn rl_uncomp_read_normal_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u32
 fn rl_uncomp_read_callback_write_16<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm9.logger, "Unimplemented RLUnCompReadByCallbackWrite16bit SWI");
+    slog::error!(
+        _emu.arm9.logger,
+        "Unimplemented RLUnCompReadByCallbackWrite16bit SWI"
+    );
 }
 
 fn cpu_set<E: Engine>(emu: &mut Emu<E>, r0_3: [u32; 4]) -> [u32; 2] {
@@ -189,14 +201,21 @@ fn intr_wait<E: Engine>(emu: &mut Emu<E>, discard_old: bool, mask: u32) {
 }
 
 fn process_intr_wait_irqs<E: Engine>(emu: &mut Emu<E>) -> bool {
-    let requested_mask_addr = emu.arm9.cp15.dtcm_control().base_addr().wrapping_add(0x3FF8);
+    let requested_mask_addr = emu
+        .arm9
+        .cp15
+        .dtcm_control()
+        .base_addr()
+        .wrapping_add(0x3FF8);
 
     let mut requested = bus::read_32::<CpuAccess, _, false>(emu, requested_mask_addr);
     let masked = requested & emu.arm9.hle_bios.intr_wait_mask;
     requested ^= masked;
     bus::write_32::<CpuAccess, _>(emu, requested_mask_addr, requested);
 
-    emu.arm9.irqs.write_master_enable(true, &mut emu.arm9.schedule);
+    emu.arm9
+        .irqs
+        .write_master_enable(true, &mut emu.arm9.schedule);
 
     emu.arm9.hle_bios.swi_r0_3[0] = 1;
 
@@ -234,7 +253,11 @@ pub struct State {
 
 impl State {
     pub fn new(enabled: bool) -> Self {
-        State { enabled, swi_r0_3: [0; 4], intr_wait_mask: 0 }
+        State {
+            enabled,
+            swi_r0_3: [0; 4],
+            intr_wait_mask: 0,
+        }
     }
 }
 
@@ -276,7 +299,12 @@ static SWI_NAMES: [&str; 0x20] = [
 
 pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
     #[cfg(feature = "log")]
-    slog::debug!(emu.arm9.logger, "SWI {:#04X} ({})", number, SWI_NAMES[number as usize]);
+    slog::debug!(
+        emu.arm9.logger,
+        "SWI {:#04X} ({})",
+        number,
+        SWI_NAMES[number as usize]
+    );
 
     match number {
         0x00 => soft_reset(emu),
@@ -286,17 +314,17 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
         0x04 => {
             intr_wait(emu, r0_3[0] != 0, r0_3[1]);
             return;
-        },
+        }
 
         0x05 => {
             intr_wait(emu, true, 1);
             return;
-        },
+        }
 
         0x06 => {
             halt(emu);
             r0_3[0] = 0;
-        },
+        }
 
         0x09 => (r0_3[0], r0_3[1], r0_3[3]) = common::div(r0_3[0], r0_3[1]),
 
@@ -314,7 +342,7 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
                 r0_3[1] = r0_3[1].wrapping_add(2);
                 half
             });
-        },
+        }
 
         0x0F => (r0_3[0], r0_3[1], r0_3[3]) = common::is_debugger::<_, 0x7F_FFF8>(emu),
 
@@ -336,18 +364,23 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
 
         0x1F => {
             bus::write_32::<CpuAccess, _>(emu, 0x0400_0300, r0_3[0]);
-        },
+        }
 
         _ => {
             unimplemented!("Invalid ARM9 SWI {:#X}", number);
-        },
+        }
     }
 
     E::Arm9Data::return_from_hle_swi(emu, r0_3);
 }
 
 pub fn handle_irq<E: Engine>(emu: &mut Emu<E>) -> u32 {
-    let dtcm_top = emu.arm9.cp15.dtcm_control().base_addr().wrapping_add(0x4000);
+    let dtcm_top = emu
+        .arm9
+        .cp15
+        .dtcm_control()
+        .base_addr()
+        .wrapping_add(0x4000);
     let handler_addr = bus::read_32::<CpuAccess, _, false>(emu, dtcm_top.wrapping_sub(4));
     E::Arm9Data::jump_and_link(emu, handler_addr, 0xFFFF_0204);
     dtcm_top

@@ -65,11 +65,11 @@ impl SerialInterface {
             0x04 => {
                 self.clear_rdst(ch);
                 self.channels[ch].in_hi
-            },
+            }
             0x08 => {
                 self.clear_rdst(ch);
                 self.channels[ch].in_lo
-            },
+            }
             _ => 0,
         }
     }
@@ -81,7 +81,7 @@ impl SerialInterface {
             0x00 => self.channels[ch].out = val,
             0x04 => self.channels[ch].in_hi = val,
             0x08 => self.channels[ch].in_lo = val,
-            _ => {},
+            _ => {}
         }
     }
 
@@ -103,7 +103,7 @@ impl SerialInterface {
             1 => self.status = self.status.with_rdst1(false),
             2 => self.status = self.status.with_rdst2(false),
             3 => self.status = self.status.with_rdst3(false),
-            _ => {},
+            _ => {}
         }
     }
 
@@ -114,7 +114,7 @@ impl SerialInterface {
             1 => self.status = self.status.with_rdst1(true),
             2 => self.status = self.status.with_rdst2(true),
             3 => self.status = self.status.with_rdst3(true),
-            _ => {},
+            _ => {}
         }
     }
 
@@ -156,7 +156,7 @@ impl SerialInterface {
                     self.io_buffer[0] = (GC_CONTROLLER_ID >> 24) as u8;
                     self.io_buffer[1] = (GC_CONTROLLER_ID >> 16) as u8;
                     self.io_buffer[2] = (GC_CONTROLLER_ID >> 8) as u8;
-                },
+                }
                 // Return current pad data (8 bytes).
                 0x40 => {
                     self.rumble_motor[channel] = self.io_buffer[2] & 0x03;
@@ -165,19 +165,19 @@ impl SerialInterface {
                     let lo = self.pad_state[channel].encode_lo();
                     self.io_buffer[0..4].copy_from_slice(&hi.to_be_bytes());
                     self.io_buffer[4..8].copy_from_slice(&lo.to_be_bytes());
-                },
+                }
                 // Return 10 byte origin data / recalibration payload.
                 0x41 | 0x42 => {
                     let origin = PadStatus::encode_origin();
                     self.io_buffer[0..10].copy_from_slice(&origin);
-                },
+                }
                 _ => {
                     tracing::warn!(
                         cmd = format!("{cmd:02X}"),
                         channel,
                         "unknown SI buffer command"
                     );
-                },
+                }
             }
             self.comcsr = self.comcsr.with_com_error(false);
         } else {
@@ -201,7 +201,7 @@ impl SerialInterface {
                     1 => self.status = self.status.with_norep1(true),
                     2 => self.status = self.status.with_norep2(true),
                     3 => self.status = self.status.with_norep3(true),
-                    _ => {},
+                    _ => {}
                 }
                 continue;
             }

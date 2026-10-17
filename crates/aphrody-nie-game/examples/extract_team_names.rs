@@ -112,9 +112,12 @@ fn load_t2b_prefix(vfs: &Vfs, prefix: &str, must: &str) -> serde_json::Value {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let teams = aphrody_nie_data::belong_team::parse_belong_team_config(&load_rdbn(
         &vfs,
@@ -128,11 +131,22 @@ fn main() {
     eprintln!("[team_text fr] entrées = {}", team_text.len());
 
     use aphrody_nie_data::belong_team::resolve_team_name;
-    let named = teams.iter().filter(|t| resolve_team_name(t, &team_text).is_some()).count();
+    let named = teams
+        .iter()
+        .filter(|t| resolve_team_name(t, &team_text).is_some())
+        .count();
     eprintln!("noms d'équipe résolus = {named}/{}", teams.len());
     assert!(named > 0, "au moins un nom d'équipe résolu");
-    for t in teams.iter().filter(|t| resolve_team_name(t, &team_text).is_some()).take(8) {
-        eprintln!("  team {} → {:?}", t.belong_team_id.to_hex(), resolve_team_name(t, &team_text));
+    for t in teams
+        .iter()
+        .filter(|t| resolve_team_name(t, &team_text).is_some())
+        .take(8)
+    {
+        eprintln!(
+            "  team {} → {:?}",
+            t.belong_team_id.to_hex(),
+            resolve_team_name(t, &team_text)
+        );
     }
 
     // Chaîne chara_base → belong_team : l'équipe d'Endou (c01000010, belong_team_id 0xF01BB293).

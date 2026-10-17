@@ -18,16 +18,16 @@ use bevy_ecs_macro_logic::{
     map_entities::map_entities,
 };
 use bevy_macro_utils::{
-    derive_label, ensure_no_collision,
+    BevyManifest, derive_label, ensure_no_collision,
     fq_std::{FQDefault, FQIterator, FQOption, FQResult},
-    get_struct_fields, pascal_to_snake_case, BevyManifest,
+    get_struct_fields, pascal_to_snake_case,
 };
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{
-    parse_macro_input, parse_quote, punctuated::Punctuated, token::Comma, ConstParam, Data,
-    DeriveInput, Fields, GenericParam, TypeParam,
+    ConstParam, Data, DeriveInput, Fields, GenericParam, TypeParam, parse_macro_input, parse_quote,
+    punctuated::Punctuated, token::Comma,
 };
 
 enum BundleFieldKind {

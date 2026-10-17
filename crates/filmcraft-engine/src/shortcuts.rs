@@ -175,7 +175,9 @@ impl Platform {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
 pub struct Mods {
     pub cmd: bool,
     pub ctrl: bool,
@@ -190,7 +192,12 @@ impl Mods {
     /// Canonical prefix, e.g. `Cmd+Alt+`.
     pub fn prefix(self) -> String {
         let mut s = String::new();
-        for (on, n) in [(self.cmd, "Cmd+"), (self.ctrl, "Ctrl+"), (self.alt, "Alt+"), (self.shift, "Shift+")] {
+        for (on, n) in [
+            (self.cmd, "Cmd+"),
+            (self.ctrl, "Ctrl+"),
+            (self.alt, "Alt+"),
+            (self.shift, "Shift+"),
+        ] {
             if on {
                 s.push_str(n);
             }
@@ -266,7 +273,11 @@ impl Chord {
         let text = text.replace("++", "+").trim_end_matches('+').to_string();
         let mut mods = Mods::default();
         let mut key = None;
-        let parts: Vec<&str> = text.split('+').map(str::trim).filter(|p| !p.is_empty()).collect();
+        let parts: Vec<&str> = text
+            .split('+')
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .collect();
         for (i, p) in parts.iter().enumerate() {
             let low = p.to_ascii_lowercase();
             let is_last = i + 1 == parts.len();
@@ -283,7 +294,9 @@ impl Chord {
                 }
                 "alt" | "opt" | "option" => mods.alt = true,
                 "shift" => mods.shift = true,
-                _ if is_last => key = Some(canon_key(p).ok_or_else(|| format!("unknown key `{p}`"))?),
+                _ if is_last => {
+                    key = Some(canon_key(p).ok_or_else(|| format!("unknown key `{p}`"))?)
+                }
                 _ => return Err(format!("unknown modifier `{p}`")),
             }
         }
@@ -310,7 +323,12 @@ impl Chord {
     pub fn display(&self, p: Platform) -> String {
         if p.is_mac() {
             let mut s = String::new();
-            for (on, g) in [(self.mods.ctrl, "⌃"), (self.mods.alt, "⌥"), (self.mods.shift, "⇧"), (self.mods.cmd, "⌘")] {
+            for (on, g) in [
+                (self.mods.ctrl, "⌃"),
+                (self.mods.alt, "⌥"),
+                (self.mods.shift, "⇧"),
+                (self.mods.cmd, "⌘"),
+            ] {
                 if on {
                     s.push_str(g);
                 }
@@ -334,7 +352,11 @@ impl Chord {
         } else {
             let e = self.effective(p);
             let mut s = String::new();
-            for (on, n) in [(e.mods.cmd, "Ctrl+"), (e.mods.alt, "Alt+"), (e.mods.shift, "Shift+")] {
+            for (on, n) in [
+                (e.mods.cmd, "Ctrl+"),
+                (e.mods.alt, "Alt+"),
+                (e.mods.shift, "Shift+"),
+            ] {
                 if on {
                     s.push_str(n);
                 }
@@ -371,17 +393,27 @@ fn drop_control_collisions(b: &mut Vec<Binding>, p: Platform) {
     if p.is_mac() {
         return;
     }
-    let primary: Vec<(String, Option<Chord>)> =
-        b.iter().filter(|x| x.chord().is_some_and(|c| !c.mods.ctrl)).map(|x| (x.context().to_string(), x.chord().map(|c| c.effective(p)))).collect();
+    let primary: Vec<(String, Option<Chord>)> = b
+        .iter()
+        .filter(|x| x.chord().is_some_and(|c| !c.mods.ctrl))
+        .map(|x| (x.context().to_string(), x.chord().map(|c| c.effective(p))))
+        .collect();
     b.retain(|x| {
         let Some(c) = x.chord() else { return true };
-        !(c.mods.ctrl && primary.iter().any(|(ctx, k)| ctx == x.context() && *k == Some(c.effective(p))))
+        !(c.mods.ctrl
+            && primary
+                .iter()
+                .any(|(ctx, k)| ctx == x.context() && *k == Some(c.effective(p))))
     });
 }
 
 impl Binding {
     fn new(command: &str, keys: &str, panel: Option<&str>) -> Self {
-        Binding { command: command.to_string(), keys: normalize(keys).unwrap_or_else(|_| keys.to_string()), panel: panel.map(str::to_string) }
+        Binding {
+            command: command.to_string(),
+            keys: normalize(keys).unwrap_or_else(|_| keys.to_string()),
+            panel: panel.map(str::to_string),
+        }
     }
     fn chord(&self) -> Option<Chord> {
         Chord::parse(&self.keys).ok()
@@ -410,7 +442,9 @@ impl CommandInfo {
             label: label.into(),
             category: category_of(id, menu),
             menu: menu.iter().map(|s| s.to_string()).collect(),
-            defaults: default.map(|k| vec![(k.to_string(), None)]).unwrap_or_default(),
+            defaults: default
+                .map(|k| vec![(k.to_string(), None)])
+                .unwrap_or_default(),
         }
     }
 }
@@ -429,20 +463,30 @@ fn category_of(id: &str, menu: &[&str]) -> String {
         "tts" => "Text to Speech".into(),
         _ => menu.first().map(|s| s.to_string()).unwrap_or_else(|| {
             let mut c = prefix.chars();
-            c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default()
+            c.next()
+                .map(|f| f.to_uppercase().collect::<String>() + c.as_str())
+                .unwrap_or_default()
         }),
     }
 }
 
 /// Engine commands worth binding: undoable actions that need no required parameters.
 fn bindable(c: &CommandSpec) -> bool {
-    if !c.journal || c.id.starts_with("shortcuts.") || c.id.starts_with("prefs.") || c.id == "trim.tick" {
+    if !c.journal
+        || c.id.starts_with("shortcuts.")
+        || c.id.starts_with("prefs.")
+        || c.id == "trim.tick"
+    {
         return false;
     }
     if c.shortcut.is_some() {
         return true;
     }
-    let body = c.params.trim().trim_start_matches('{').trim_end_matches('}');
+    let body = c
+        .params
+        .trim()
+        .trim_start_matches('{')
+        .trim_end_matches('}');
     if body.trim().is_empty() {
         return true;
     }
@@ -532,8 +576,11 @@ impl Shortcuts {
 
     /// Every bindable command (engine + frontend), in registry order.
     pub fn commands(&self) -> Vec<CommandInfo> {
-        let mut v: Vec<CommandInfo> =
-            crate::commands::command_specs().iter().filter(|c| bindable(c)).map(|c| CommandInfo::new(c.id, c.label, c.menu, c.shortcut)).collect();
+        let mut v: Vec<CommandInfo> = crate::commands::command_specs()
+            .iter()
+            .filter(|c| bindable(c))
+            .map(|c| CommandInfo::new(c.id, c.label, c.menu, c.shortcut))
+            .collect();
         for e in &self.external {
             if !v.iter().any(|c| c.id == e.id) {
                 v.push(e.clone());
@@ -572,7 +619,10 @@ impl Shortcuts {
                 out.push(Binding::new(&c.id, k, p.as_deref()));
             }
         }
-        for (c, k, p) in presets::FILMCRAFT_PANEL.iter().chain(presets::PREMIERE_PANEL) {
+        for (c, k, p) in presets::FILMCRAFT_PANEL
+            .iter()
+            .chain(presets::PREMIERE_PANEL)
+        {
             if self.known(c) {
                 out.push(Binding::new(c, k, panel_opt(p)));
             }
@@ -598,7 +648,9 @@ impl Shortcuts {
             }
             let b = Binding::new(c, k, panel_opt(p));
             let key = b.chord().map(|c| c.effective(platform));
-            let taken = base.iter().chain(added.iter()).any(|o| o.context() == b.context() && o.chord().map(|c| c.effective(platform)) == key);
+            let taken = base.iter().chain(added.iter()).any(|o| {
+                o.context() == b.context() && o.chord().map(|c| c.effective(platform)) == key
+            });
             if !taken {
                 added.push(b);
             }
@@ -630,7 +682,11 @@ impl Shortcuts {
     /// Apply a preset table: listed commands get exactly the listed keys, and a listed key is taken
     /// away from whatever else had it in that context.
     fn apply_table(&self, b: &mut Vec<Binding>, table: &[Entry]) {
-        let listed: Vec<&str> = table.iter().map(|e| e.0).filter(|c| self.known(c)).collect();
+        let listed: Vec<&str> = table
+            .iter()
+            .map(|e| e.0)
+            .filter(|c| self.known(c))
+            .collect();
         b.retain(|x| !listed.contains(&x.command.as_str()));
         for (c, k, p) in table {
             if !self.known(c) {
@@ -648,12 +704,21 @@ impl Shortcuts {
 
     /// Custom preset names (files in the presets directory).
     pub fn user_presets(&self) -> Vec<String> {
-        let Some(dir) = self.presets_dir() else { return Vec::new() };
-        let Ok(rd) = std::fs::read_dir(dir) else { return Vec::new() };
+        let Some(dir) = self.presets_dir() else {
+            return Vec::new();
+        };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return Vec::new();
+        };
         let mut v: Vec<String> = rd
             .flatten()
             .filter(|e| e.file_name() != ACTIVE_FILE)
-            .filter_map(|e| std::fs::read(e.path()).ok().and_then(|b| serde_json::from_slice::<PresetFile>(&b).ok()).map(|p| p.name))
+            .filter_map(|e| {
+                std::fs::read(e.path())
+                    .ok()
+                    .and_then(|b| serde_json::from_slice::<PresetFile>(&b).ok())
+                    .map(|p| p.name)
+            })
             .filter(|n| !BUILTIN_PRESETS.contains(&n.as_str()))
             .collect();
         v.sort();
@@ -662,15 +727,29 @@ impl Shortcuts {
     }
 
     fn preset_path(&self, name: &str) -> Option<PathBuf> {
-        let safe: String = name.chars().map(|c| if c.is_alphanumeric() || " -_().".contains(c) { c } else { '_' }).collect();
-        self.presets_dir().map(|d| d.join(format!("{}.json", safe.trim())))
+        let safe: String = name
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || " -_().".contains(c) {
+                    c
+                } else {
+                    '_'
+                }
+            })
+            .collect();
+        self.presets_dir()
+            .map(|d| d.join(format!("{}.json", safe.trim())))
     }
 
     /// Use the per-user data directory: loads the active set saved there (if any).
     pub fn set_dir(&mut self, data_dir: &Path) {
         self.dir = Some(data_dir.to_path_buf());
-        let Some(path) = self.presets_dir().map(|d| d.join(ACTIVE_FILE)) else { return };
-        let Ok(bytes) = std::fs::read(&path) else { return };
+        let Some(path) = self.presets_dir().map(|d| d.join(ACTIVE_FILE)) else {
+            return;
+        };
+        let Ok(bytes) = std::fs::read(&path) else {
+            return;
+        };
         match serde_json::from_slice::<PresetFile>(&bytes) {
             Ok(f) => {
                 self.preset = f.name.clone();
@@ -690,15 +769,27 @@ impl Shortcuts {
     }
 
     fn file(&self, name: &str, modified: bool) -> PresetFile {
-        PresetFile { format: FILE_FORMAT.into(), version: 1, name: name.into(), platform: None, modified, bindings: self.bindings.clone() }
+        PresetFile {
+            format: FILE_FORMAT.into(),
+            version: 1,
+            name: name.into(),
+            platform: None,
+            modified,
+            bindings: self.bindings.clone(),
+        }
     }
 
     fn persist(&self) {
-        let Some(dir) = self.presets_dir() else { return };
+        let Some(dir) = self.presets_dir() else {
+            return;
+        };
         let f = self.file(&self.preset, self.modified);
-        if let Err(e) = std::fs::create_dir_all(&dir)
-            .and_then(|_| filmcraft_format::atomic_write(&dir.join(ACTIVE_FILE), &serde_json::to_vec_pretty(&f).unwrap_or_default()))
-        {
+        if let Err(e) = std::fs::create_dir_all(&dir).and_then(|_| {
+            filmcraft_format::atomic_write(
+                &dir.join(ACTIVE_FILE),
+                &serde_json::to_vec_pretty(&f).unwrap_or_default(),
+            )
+        }) {
             log::warn!("saving keyboard shortcuts: {e}");
         }
     }
@@ -706,7 +797,11 @@ impl Shortcuts {
     // ---------------------------------------------------------------- editing
 
     fn snapshot(&self) -> Snapshot {
-        Snapshot { bindings: self.bindings.clone(), preset: self.preset.clone(), modified: self.modified }
+        Snapshot {
+            bindings: self.bindings.clone(),
+            preset: self.preset.clone(),
+            modified: self.modified,
+        }
     }
 
     fn restore(&mut self, s: Snapshot) {
@@ -728,24 +823,44 @@ impl Shortcuts {
     /// Assign `keys` to `command`. Unless `add`, the command's other shortcuts in that context are
     /// replaced. Unless `keep_conflicts`, the key is taken away from any other command bound to it
     /// in the same context (returned as `reassigned`).
-    pub fn set(&mut self, command: &str, keys: &str, panel: Option<&str>, add: bool, keep_conflicts: bool) -> std::result::Result<Vec<Binding>, String> {
+    pub fn set(
+        &mut self,
+        command: &str,
+        keys: &str,
+        panel: Option<&str>,
+        add: bool,
+        keep_conflicts: bool,
+    ) -> std::result::Result<Vec<Binding>, String> {
         if !self.known(command) {
             return Err(format!("unknown command `{command}`"));
         }
         let panel = check_panel(panel)?;
         let chord = Chord::parse(keys)?;
-        let nb = Binding { command: command.into(), keys: chord.canonical(), panel: panel.map(str::to_string) };
+        let nb = Binding {
+            command: command.into(),
+            keys: chord.canonical(),
+            panel: panel.map(str::to_string),
+        };
         let before = self.snapshot();
         if !add {
-            let copies = if nb.panel.is_none() { self.app_chords(command, None) } else { Vec::new() };
-            self.bindings.retain(|b| !(same_shortcut_command(&b.command, command) && (b.context() == nb.context() || is_copy(b, &copies))));
+            let copies = if nb.panel.is_none() {
+                self.app_chords(command, None)
+            } else {
+                Vec::new()
+            };
+            self.bindings.retain(|b| {
+                !(same_shortcut_command(&b.command, command)
+                    && (b.context() == nb.context() || is_copy(b, &copies)))
+            });
         }
         let mut reassigned = Vec::new();
         if !keep_conflicts {
             let p = Platform::current();
             let eff = chord.effective(p);
             self.bindings.retain(|b| {
-                let clash = b.command != command && b.context() == nb.context() && b.chord().is_some_and(|c| c.effective(p) == eff);
+                let clash = b.command != command
+                    && b.context() == nb.context()
+                    && b.chord().is_some_and(|c| c.effective(p) == eff);
                 if clash {
                     reassigned.push(b.clone());
                 }
@@ -761,7 +876,12 @@ impl Shortcuts {
     }
 
     /// Remove shortcuts of `command` (one key, or all; in one context, or all).
-    pub fn clear(&mut self, command: &str, keys: Option<&str>, panel: Option<&str>) -> std::result::Result<usize, String> {
+    pub fn clear(
+        &mut self,
+        command: &str,
+        keys: Option<&str>,
+        panel: Option<&str>,
+    ) -> std::result::Result<usize, String> {
         let chord = keys.map(Chord::parse).transpose()?;
         let panel = match panel {
             Some(p) => Some(check_panel(Some(p))?.map(str::to_string)),
@@ -770,7 +890,11 @@ impl Shortcuts {
         let before = self.snapshot();
         let n0 = self.bindings.len();
         let twins = shortcut_twins(command);
-        let copies = if panel == Some(None) { self.app_chords(command, chord.as_ref()) } else { Vec::new() };
+        let copies = if panel == Some(None) {
+            self.app_chords(command, chord.as_ref())
+        } else {
+            Vec::new()
+        };
         self.bindings.retain(|b| {
             let cmd = same_shortcut_command(&b.command, command);
             let key_ok = chord.as_ref().is_none_or(|c| b.chord().as_ref() == Some(c));
@@ -793,7 +917,9 @@ impl Shortcuts {
     }
 
     pub fn undo(&mut self) -> bool {
-        let Some(s) = self.undo.pop() else { return false };
+        let Some(s) = self.undo.pop() else {
+            return false;
+        };
         let cur = self.snapshot();
         self.redo.push(cur);
         self.restore(s);
@@ -803,7 +929,9 @@ impl Shortcuts {
     }
 
     pub fn redo(&mut self) -> bool {
-        let Some(s) = self.redo.pop() else { return false };
+        let Some(s) = self.redo.pop() else {
+            return false;
+        };
         let cur = self.snapshot();
         self.undo.push(cur);
         self.restore(s);
@@ -846,7 +974,9 @@ impl Shortcuts {
         let bindings = match self.builtin(name) {
             Some(b) => b,
             None => {
-                let path = self.preset_path(name).ok_or("no data directory for custom presets")?;
+                let path = self
+                    .preset_path(name)
+                    .ok_or("no data directory for custom presets")?;
                 let f = read_file(&path)?;
                 convert(f.bindings, f.platform)
             }
@@ -865,9 +995,13 @@ impl Shortcuts {
             return Err("a preset needs a name".into());
         }
         if BUILTIN_PRESETS.iter().any(|b| b.eq_ignore_ascii_case(name)) {
-            return Err(format!("`{name}` is a built-in preset; choose another name"));
+            return Err(format!(
+                "`{name}` is a built-in preset; choose another name"
+            ));
         }
-        let path = self.preset_path(name).ok_or("no data directory for custom presets")?;
+        let path = self
+            .preset_path(name)
+            .ok_or("no data directory for custom presets")?;
         write_file(&path, &self.file(name, false))?;
         let before = self.snapshot();
         self.preset = name.into();
@@ -880,7 +1014,9 @@ impl Shortcuts {
         if BUILTIN_PRESETS.contains(&name) {
             return Err("built-in presets cannot be deleted".into());
         }
-        let path = self.preset_path(name).ok_or("no data directory for custom presets")?;
+        let path = self
+            .preset_path(name)
+            .ok_or("no data directory for custom presets")?;
         std::fs::remove_file(&path).map_err(|e| format!("{}: {e}", path.display()))?;
         if self.preset == name {
             self.modified = true;
@@ -899,13 +1035,25 @@ impl Shortcuts {
     pub fn import(&mut self, path: &Path, activate: bool) -> std::result::Result<String, String> {
         let f = read_file(path)?;
         let name = if f.name.trim().is_empty() || BUILTIN_PRESETS.contains(&f.name.as_str()) {
-            path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "Imported".into())
+            path.file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "Imported".into())
         } else {
             f.name.clone()
         };
-        let bindings: Vec<Binding> = convert(f.bindings, f.platform).into_iter().filter(|b| self.known(&b.command)).collect();
+        let bindings: Vec<Binding> = convert(f.bindings, f.platform)
+            .into_iter()
+            .filter(|b| self.known(&b.command))
+            .collect();
         if let Some(p) = self.preset_path(&name) {
-            let file = PresetFile { format: FILE_FORMAT.into(), version: 1, name: name.clone(), platform: None, modified: false, bindings: bindings.clone() };
+            let file = PresetFile {
+                format: FILE_FORMAT.into(),
+                version: 1,
+                name: name.clone(),
+                platform: None,
+                modified: false,
+                bindings: bindings.clone(),
+            };
             write_file(&p, &file)?;
         }
         if activate {
@@ -931,12 +1079,18 @@ impl Shortcuts {
     // ---------------------------------------------------------------- queries
 
     pub fn for_command(&self, id: &str) -> Vec<&Binding> {
-        self.bindings.iter().filter(|b| same_shortcut_command(&b.command, id)).collect()
+        self.bindings
+            .iter()
+            .filter(|b| same_shortcut_command(&b.command, id))
+            .collect()
     }
 
     /// The shortcut menus show: the first application-wide one.
     pub fn primary(&self, id: &str) -> Option<String> {
-        self.bindings.iter().find(|b| same_shortcut_command(&b.command, id) && b.panel.is_none()).map(|b| b.keys.clone())
+        self.bindings
+            .iter()
+            .find(|b| same_shortcut_command(&b.command, id) && b.panel.is_none())
+            .map(|b| b.keys.clone())
     }
 
     /// The command a chord runs with `panel` focused (panel shortcuts first).
@@ -944,7 +1098,11 @@ impl Shortcuts {
         let eff = chord.effective(p);
         let m = |b: &&Binding| b.chord().is_some_and(|c| c.effective(p) == eff);
         if let Some(pn) = panel
-            && let Some(b) = self.bindings.iter().filter(|b| b.panel.as_deref() == Some(pn)).find(m)
+            && let Some(b) = self
+                .bindings
+                .iter()
+                .filter(|b| b.panel.as_deref() == Some(pn))
+                .find(m)
         {
             return Some(b);
         }
@@ -956,12 +1114,17 @@ impl Shortcuts {
         let mut map: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
         for b in &self.bindings {
             let Some(c) = b.chord() else { continue };
-            let e = map.entry((b.context().to_string(), c.effective(p).canonical())).or_default();
+            let e = map
+                .entry((b.context().to_string(), c.effective(p).canonical()))
+                .or_default();
             if !e.contains(&b.command) {
                 e.push(b.command.clone());
             }
         }
-        map.into_iter().filter(|(_, v)| v.len() > 1).map(|((ctx, k), v)| (ctx, k, v)).collect()
+        map.into_iter()
+            .filter(|(_, v)| v.len() > 1)
+            .map(|((ctx, k), v)| (ctx, k, v))
+            .collect()
     }
 
     /// Panel shortcuts that shadow an application shortcut while their panel has focus.
@@ -972,7 +1135,12 @@ impl Shortcuts {
             if let Some(a) = self.resolve(&c, None, p)
                 && a.command != b.command
             {
-                out.push((b.panel.clone().unwrap_or_default(), b.keys.clone(), b.command.clone(), a.command.clone()));
+                out.push((
+                    b.panel.clone().unwrap_or_default(),
+                    b.keys.clone(),
+                    b.command.clone(),
+                    a.command.clone(),
+                ));
             }
         }
         out
@@ -980,14 +1148,24 @@ impl Shortcuts {
 
     /// Bindings on one key (any modifiers): the shortcut editor's "Key:" list.
     pub fn for_key(&self, key: &str) -> Vec<&Binding> {
-        let Some(k) = canon_key(key) else { return Vec::new() };
-        let mut v: Vec<&Binding> = self.bindings.iter().filter(|b| b.chord().is_some_and(|c| c.key == k)).collect();
+        let Some(k) = canon_key(key) else {
+            return Vec::new();
+        };
+        let mut v: Vec<&Binding> = self
+            .bindings
+            .iter()
+            .filter(|b| b.chord().is_some_and(|c| c.key == k))
+            .collect();
         v.sort_by_key(|b| b.chord().map(|c| (c.mods.count(), c.mods)));
         v
     }
 
     /// Commands assigned with exactly `mods` held, per key: (application command, panel command).
-    pub fn keyboard(&self, mods: Mods, panel: Option<&str>) -> BTreeMap<&'static str, (Option<String>, Option<String>)> {
+    pub fn keyboard(
+        &self,
+        mods: Mods,
+        panel: Option<&str>,
+    ) -> BTreeMap<&'static str, (Option<String>, Option<String>)> {
         let mut m: BTreeMap<&'static str, (Option<String>, Option<String>)> = BTreeMap::new();
         for b in &self.bindings {
             let Some(c) = b.chord() else { continue };
@@ -1066,16 +1244,24 @@ fn convert(bindings: Vec<Binding>, platform: Option<Platform>) -> Vec<Binding> {
         .filter_map(|b| {
             let c = Chord::parse_for(&b.keys, p).ok()?;
             let panel = check_panel(b.panel.as_deref()).ok()?.map(str::to_string);
-            Some(Binding { command: b.command, keys: c.canonical(), panel })
+            Some(Binding {
+                command: b.command,
+                keys: c.canonical(),
+                panel,
+            })
         })
         .collect()
 }
 
 fn read_file(path: &Path) -> std::result::Result<PresetFile, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let f: PresetFile = serde_json::from_slice(&bytes).map_err(|e| format!("{}: {e}", path.display()))?;
+    let f: PresetFile =
+        serde_json::from_slice(&bytes).map_err(|e| format!("{}: {e}", path.display()))?;
     if f.format != FILE_FORMAT {
-        return Err(format!("{}: not a FilmCraft keyboard shortcuts file", path.display()));
+        return Err(format!(
+            "{}: not a FilmCraft keyboard shortcuts file",
+            path.display()
+        ));
     }
     Ok(f)
 }
@@ -1084,13 +1270,16 @@ fn write_file(path: &Path, f: &PresetFile) -> std::result::Result<(), String> {
     if let Some(d) = path.parent() {
         std::fs::create_dir_all(d).map_err(|e| format!("{}: {e}", d.display()))?;
     }
-    filmcraft_format::atomic_write(path, &serde_json::to_vec_pretty(f).unwrap_or_default()).map_err(|e| format!("{}: {e}", path.display()))
+    filmcraft_format::atomic_write(path, &serde_json::to_vec_pretty(f).unwrap_or_default())
+        .map_err(|e| format!("{}: {e}", path.display()))
 }
 
 // ------------------------------------------------------------------ commands
 
 fn platform_p(p: &Value) -> Platform {
-    str_p(p, "platform").and_then(Platform::from_name).unwrap_or_else(Platform::current)
+    str_p(p, "platform")
+        .and_then(Platform::from_name)
+        .unwrap_or_else(Platform::current)
 }
 
 fn err(cmd: &str) -> impl Fn(String) -> EngineError + '_ {
@@ -1133,88 +1322,238 @@ fn list(s: &Session, p: &Value) -> Value {
 pub fn commands() -> Vec<CommandSpec> {
     macro_rules! sc {
         ($id:literal, $label:literal, $params:literal, $journal:expr, $run:expr) => {
-            CommandSpec { id: $id, label: $label, menu: &[], shortcut: None, params: $params, enabled: always, run: $run, journal: $journal }
+            CommandSpec {
+                id: $id,
+                label: $label,
+                menu: &[],
+                shortcut: None,
+                params: $params,
+                enabled: always,
+                run: $run,
+                journal: $journal,
+            }
         };
     }
     vec![
-        sc!("shortcuts.list", "List Keyboard Shortcuts", r#"{"query":str?,"panel":str?,"assigned":bool?,"platform":"mac|windows|linux"?}"#, false, |s, p| Ok(
-            list(s, p)
-        )),
-        sc!("shortcuts.get", "Get Shortcuts of a Command", r#"{"command":id,"platform":str?}"#, false, |s, p| {
-            let id = str_p(p, "command").ok_or_else(|| bad("shortcuts.get", "need `command`"))?;
-            let c = s.shortcuts.command(id).ok_or_else(|| bad("shortcuts.get", format!("unknown command `{id}`")))?;
-            let plat = platform_p(p);
-            let bs: Vec<Value> = s.shortcuts.for_command(id).into_iter().map(|b| s.shortcuts.binding_json(b, plat)).collect();
-            Ok(json!({"id": c.id, "label": c.label, "category": c.category, "shortcuts": bs}))
-        }),
-        sc!("shortcuts.set", "Assign Shortcut", r#"{"command":id,"keys":"Cmd+Shift+K","panel":str?,"add":bool?,"keepConflicts":bool?}"#, true, |s, p| {
-            let id = str_p(p, "command").ok_or_else(|| bad("shortcuts.set", "need `command`"))?;
-            let keys = str_p(p, "keys").ok_or_else(|| bad("shortcuts.set", "need `keys`"))?;
-            let r = s
-                .shortcuts
-                .set(id, keys, str_p(p, "panel"), bool_p(p, "add").unwrap_or(false), bool_p(p, "keepConflicts").unwrap_or(false))
-                .map_err(err("shortcuts.set"))?;
-            let plat = Platform::current();
-            let conflicts: Vec<Value> = s.shortcuts.conflicts(plat).into_iter().map(|(c, k, v)| json!({"context": c, "keys": k, "commands": v})).collect();
-            Ok(json!({"keys": normalize(keys).unwrap_or_default(), "reassigned": r, "conflicts": conflicts}))
-        }),
-        sc!("shortcuts.clear", "Clear Shortcut", r#"{"command":id,"keys":str?,"panel":str?}"#, true, |s, p| {
-            let id = str_p(p, "command").ok_or_else(|| bad("shortcuts.clear", "need `command`"))?;
-            let n = s.shortcuts.clear(id, str_p(p, "keys"), str_p(p, "panel")).map_err(err("shortcuts.clear"))?;
-            Ok(json!({"removed": n}))
-        }),
-        sc!("shortcuts.undo", "Undo Shortcut Change", "{}", true, |s, _| Ok(json!({"undone": s.shortcuts.undo()}))),
-        sc!("shortcuts.redo", "Redo Shortcut Change", "{}", true, |s, _| Ok(json!({"redone": s.shortcuts.redo()}))),
-        sc!("shortcuts.conflicts", "Shortcut Conflicts", r#"{"platform":"mac|windows|linux"?}"#, false, |s, p| {
-            let plat = platform_p(p);
-            let c: Vec<Value> = s.shortcuts.conflicts(plat).into_iter().map(|(c, k, v)| json!({"context": c, "keys": k, "commands": v})).collect();
-            let o: Vec<Value> =
+        sc!(
+            "shortcuts.list",
+            "List Keyboard Shortcuts",
+            r#"{"query":str?,"panel":str?,"assigned":bool?,"platform":"mac|windows|linux"?}"#,
+            false,
+            |s, p| Ok(list(s, p))
+        ),
+        sc!(
+            "shortcuts.get",
+            "Get Shortcuts of a Command",
+            r#"{"command":id,"platform":str?}"#,
+            false,
+            |s, p| {
+                let id =
+                    str_p(p, "command").ok_or_else(|| bad("shortcuts.get", "need `command`"))?;
+                let c = s
+                    .shortcuts
+                    .command(id)
+                    .ok_or_else(|| bad("shortcuts.get", format!("unknown command `{id}`")))?;
+                let plat = platform_p(p);
+                let bs: Vec<Value> = s
+                    .shortcuts
+                    .for_command(id)
+                    .into_iter()
+                    .map(|b| s.shortcuts.binding_json(b, plat))
+                    .collect();
+                Ok(json!({"id": c.id, "label": c.label, "category": c.category, "shortcuts": bs}))
+            }
+        ),
+        sc!(
+            "shortcuts.set",
+            "Assign Shortcut",
+            r#"{"command":id,"keys":"Cmd+Shift+K","panel":str?,"add":bool?,"keepConflicts":bool?}"#,
+            true,
+            |s, p| {
+                let id =
+                    str_p(p, "command").ok_or_else(|| bad("shortcuts.set", "need `command`"))?;
+                let keys = str_p(p, "keys").ok_or_else(|| bad("shortcuts.set", "need `keys`"))?;
+                let r = s
+                    .shortcuts
+                    .set(
+                        id,
+                        keys,
+                        str_p(p, "panel"),
+                        bool_p(p, "add").unwrap_or(false),
+                        bool_p(p, "keepConflicts").unwrap_or(false),
+                    )
+                    .map_err(err("shortcuts.set"))?;
+                let plat = Platform::current();
+                let conflicts: Vec<Value> = s
+                    .shortcuts
+                    .conflicts(plat)
+                    .into_iter()
+                    .map(|(c, k, v)| json!({"context": c, "keys": k, "commands": v}))
+                    .collect();
+                Ok(
+                    json!({"keys": normalize(keys).unwrap_or_default(), "reassigned": r, "conflicts": conflicts}),
+                )
+            }
+        ),
+        sc!(
+            "shortcuts.clear",
+            "Clear Shortcut",
+            r#"{"command":id,"keys":str?,"panel":str?}"#,
+            true,
+            |s, p| {
+                let id =
+                    str_p(p, "command").ok_or_else(|| bad("shortcuts.clear", "need `command`"))?;
+                let n = s
+                    .shortcuts
+                    .clear(id, str_p(p, "keys"), str_p(p, "panel"))
+                    .map_err(err("shortcuts.clear"))?;
+                Ok(json!({"removed": n}))
+            }
+        ),
+        sc!(
+            "shortcuts.undo",
+            "Undo Shortcut Change",
+            "{}",
+            true,
+            |s, _| Ok(json!({"undone": s.shortcuts.undo()}))
+        ),
+        sc!(
+            "shortcuts.redo",
+            "Redo Shortcut Change",
+            "{}",
+            true,
+            |s, _| Ok(json!({"redone": s.shortcuts.redo()}))
+        ),
+        sc!(
+            "shortcuts.conflicts",
+            "Shortcut Conflicts",
+            r#"{"platform":"mac|windows|linux"?}"#,
+            false,
+            |s, p| {
+                let plat = platform_p(p);
+                let c: Vec<Value> = s
+                    .shortcuts
+                    .conflicts(plat)
+                    .into_iter()
+                    .map(|(c, k, v)| json!({"context": c, "keys": k, "commands": v}))
+                    .collect();
+                let o: Vec<Value> =
                 s.shortcuts.overrides(plat).into_iter().map(|(pn, k, cmd, app)| json!({"panel": pn, "keys": k, "command": cmd, "overrides": app})).collect();
-            Ok(json!({"conflicts": c, "panelOverrides": o}))
-        }),
-        sc!("shortcuts.forKey", "Shortcuts on a Key", r#"{"key":"K","platform":str?}"#, false, |s, p| {
-            let k = str_p(p, "key").ok_or_else(|| bad("shortcuts.forKey", "need `key`"))?;
-            let plat = platform_p(p);
-            Ok(json!(
+                Ok(json!({"conflicts": c, "panelOverrides": o}))
+            }
+        ),
+        sc!(
+            "shortcuts.forKey",
+            "Shortcuts on a Key",
+            r#"{"key":"K","platform":str?}"#,
+            false,
+            |s, p| {
+                let k = str_p(p, "key").ok_or_else(|| bad("shortcuts.forKey", "need `key`"))?;
+                let plat = platform_p(p);
+                Ok(json!(
                 s.shortcuts
                     .for_key(k)
                     .into_iter()
                     .map(|b| json!({"keys": b.keys, "display": b.chord().map(|c| c.display(plat)), "command": b.command, "panel": b.panel}))
                     .collect::<Vec<_>>()
             ))
-        }),
-        sc!("shortcuts.resolve", "Resolve Shortcut", r#"{"keys":str,"panel":str?,"platform":str?}"#, false, |s, p| {
-            let keys = str_p(p, "keys").ok_or_else(|| bad("shortcuts.resolve", "need `keys`"))?;
-            let c = Chord::parse(keys).map_err(err("shortcuts.resolve"))?;
-            let panel = check_panel(str_p(p, "panel")).map_err(err("shortcuts.resolve"))?;
-            Ok(s.shortcuts.resolve(&c, panel, platform_p(p)).map(|b| json!({"command": b.command, "panel": b.panel})).unwrap_or(Value::Null))
-        }),
-        sc!("shortcuts.presets", "Keyboard Shortcut Presets", "{}", false, |s, _| Ok(presets_json(s))),
-        sc!("shortcuts.loadPreset", "Load Shortcut Preset", r#"{"name":str}"#, true, |s, p| {
-            let n = str_p(p, "name").ok_or_else(|| bad("shortcuts.loadPreset", "need `name`"))?;
-            s.shortcuts.load_preset(n).map_err(err("shortcuts.loadPreset"))?;
-            Ok(presets_json(s))
-        }),
-        sc!("shortcuts.savePreset", "Save Shortcut Preset As", r#"{"name":str}"#, true, |s, p| {
-            let n = str_p(p, "name").ok_or_else(|| bad("shortcuts.savePreset", "need `name`"))?;
-            let path = s.shortcuts.save_preset(n).map_err(err("shortcuts.savePreset"))?;
-            Ok(json!({"path": path, "presets": presets_json(s)}))
-        }),
-        sc!("shortcuts.deletePreset", "Delete Shortcut Preset", r#"{"name":str}"#, true, |s, p| {
-            let n = str_p(p, "name").ok_or_else(|| bad("shortcuts.deletePreset", "need `name`"))?;
-            s.shortcuts.delete_preset(n).map_err(err("shortcuts.deletePreset"))?;
-            Ok(presets_json(s))
-        }),
-        sc!("shortcuts.export", "Export Keyboard Shortcuts", r#"{"path":str}"#, true, |s, p| {
-            let path = str_p(p, "path").ok_or_else(|| bad("shortcuts.export", "need `path`"))?;
-            s.shortcuts.export(Path::new(path)).map_err(err("shortcuts.export"))?;
-            Ok(json!({"path": path, "bindings": s.shortcuts.bindings.len()}))
-        }),
-        sc!("shortcuts.import", "Import Keyboard Shortcuts", r#"{"path":str,"activate":bool=true}"#, true, |s, p| {
-            let path = str_p(p, "path").ok_or_else(|| bad("shortcuts.import", "need `path`"))?;
-            let name = s.shortcuts.import(Path::new(path), bool_p(p, "activate").unwrap_or(true)).map_err(err("shortcuts.import"))?;
-            Ok(json!({"name": name, "presets": presets_json(s)}))
-        }),
+            }
+        ),
+        sc!(
+            "shortcuts.resolve",
+            "Resolve Shortcut",
+            r#"{"keys":str,"panel":str?,"platform":str?}"#,
+            false,
+            |s, p| {
+                let keys =
+                    str_p(p, "keys").ok_or_else(|| bad("shortcuts.resolve", "need `keys`"))?;
+                let c = Chord::parse(keys).map_err(err("shortcuts.resolve"))?;
+                let panel = check_panel(str_p(p, "panel")).map_err(err("shortcuts.resolve"))?;
+                Ok(s.shortcuts
+                    .resolve(&c, panel, platform_p(p))
+                    .map(|b| json!({"command": b.command, "panel": b.panel}))
+                    .unwrap_or(Value::Null))
+            }
+        ),
+        sc!(
+            "shortcuts.presets",
+            "Keyboard Shortcut Presets",
+            "{}",
+            false,
+            |s, _| Ok(presets_json(s))
+        ),
+        sc!(
+            "shortcuts.loadPreset",
+            "Load Shortcut Preset",
+            r#"{"name":str}"#,
+            true,
+            |s, p| {
+                let n =
+                    str_p(p, "name").ok_or_else(|| bad("shortcuts.loadPreset", "need `name`"))?;
+                s.shortcuts
+                    .load_preset(n)
+                    .map_err(err("shortcuts.loadPreset"))?;
+                Ok(presets_json(s))
+            }
+        ),
+        sc!(
+            "shortcuts.savePreset",
+            "Save Shortcut Preset As",
+            r#"{"name":str}"#,
+            true,
+            |s, p| {
+                let n =
+                    str_p(p, "name").ok_or_else(|| bad("shortcuts.savePreset", "need `name`"))?;
+                let path = s
+                    .shortcuts
+                    .save_preset(n)
+                    .map_err(err("shortcuts.savePreset"))?;
+                Ok(json!({"path": path, "presets": presets_json(s)}))
+            }
+        ),
+        sc!(
+            "shortcuts.deletePreset",
+            "Delete Shortcut Preset",
+            r#"{"name":str}"#,
+            true,
+            |s, p| {
+                let n =
+                    str_p(p, "name").ok_or_else(|| bad("shortcuts.deletePreset", "need `name`"))?;
+                s.shortcuts
+                    .delete_preset(n)
+                    .map_err(err("shortcuts.deletePreset"))?;
+                Ok(presets_json(s))
+            }
+        ),
+        sc!(
+            "shortcuts.export",
+            "Export Keyboard Shortcuts",
+            r#"{"path":str}"#,
+            true,
+            |s, p| {
+                let path =
+                    str_p(p, "path").ok_or_else(|| bad("shortcuts.export", "need `path`"))?;
+                s.shortcuts
+                    .export(Path::new(path))
+                    .map_err(err("shortcuts.export"))?;
+                Ok(json!({"path": path, "bindings": s.shortcuts.bindings.len()}))
+            }
+        ),
+        sc!(
+            "shortcuts.import",
+            "Import Keyboard Shortcuts",
+            r#"{"path":str,"activate":bool=true}"#,
+            true,
+            |s, p| {
+                let path =
+                    str_p(p, "path").ok_or_else(|| bad("shortcuts.import", "need `path`"))?;
+                let name = s
+                    .shortcuts
+                    .import(Path::new(path), bool_p(p, "activate").unwrap_or(true))
+                    .map_err(err("shortcuts.import"))?;
+                Ok(json!({"name": name, "presets": presets_json(s)}))
+            }
+        ),
         sc!("shortcuts.audit", "Shortcut Audit", "{}", false, |s, _| {
             let a = s.shortcuts.audit();
             Ok(json!({"count": a.len(), "assigned": a}))

@@ -16,15 +16,15 @@ use bevy_math::{Affine2, FloatOrd, Rect, Vec2};
 use bevy_mesh::VertexBufferLayout;
 use bevy_platform::collections::HashMap;
 use bevy_render::{
+    Extract, ExtractSchedule, Render, RenderSystems,
     render_asset::RenderAssets,
     render_phase::*,
     render_resource::{binding_types::uniform_buffer, *},
     renderer::{RenderDevice, RenderQueue},
     texture::GpuImage,
     view::*,
-    Extract, ExtractSchedule, Render, RenderSystems,
 };
-use bevy_render::{sync_world::MainEntity, GpuResourceAppExt, RenderStartup};
+use bevy_render::{GpuResourceAppExt, RenderStartup, sync_world::MainEntity};
 use bevy_shader::Shader;
 use bevy_sprite::{SliceScaleMode, SpriteImageMode, TextureSlicer};
 use bevy_sprite_render::SpriteAssetEvents;

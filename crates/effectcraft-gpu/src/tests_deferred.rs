@@ -23,7 +23,9 @@ pub(crate) fn deferred_gpu() -> Option<(&'static Gpu, std::sync::MutexGuard<'sta
     crate::tests::hold_gpu_lock();
     let g = G
         .get_or_init(|| {
-            let g = pollster::block_on(Gpu::request_deferred()).map_err(|e| eprintln!("deferred gpu tests skipped: {e}")).ok();
+            let g = pollster::block_on(Gpu::request_deferred())
+                .map_err(|e| eprintln!("deferred gpu tests skipped: {e}"))
+                .ok();
             if let Some(g) = &g {
                 eprintln!("deferred gpu tests: adapter {}", g.ctx.name);
             }
@@ -45,28 +47,58 @@ pub(crate) fn scene() -> Scene {
     s.effect(&mut bg, "ec.color.levels", &[("gamma", n(1.3))]);
     s.push(bg);
     let mut solid = s.solid([0.9, 0.4, 0.1], 30, 20);
-    s.effect(&mut solid, "ec.stylize.glow", &[("threshold", n(20.0)), ("radius", n(6.0))]);
+    s.effect(
+        &mut solid,
+        "ec.stylize.glow",
+        &[("threshold", n(20.0)), ("radius", n(6.0))],
+    );
     set(&mut solid, "transform/position", v3(30.0, 20.0));
     s.push(solid);
     // Precomp: a footage layer blurred inside; the precomp layer blurred again outside.
     let inner = Comp::new(60, 40, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-    let inner_id = s.p.add_item("Inner", effectcraft_color::Label::Blue, None, ItemKind::Comp(inner.clone().into()));
+    let inner_id = s.p.add_item(
+        "Inner",
+        effectcraft_color::Label::Blue,
+        None,
+        ItemKind::Comp(inner.clone().into()),
+    );
     {
-        let mut ins = Scene { p: std::mem::take(&mut s.p), cid: inner_id, comp: inner };
+        let mut ins = Scene {
+            p: std::mem::take(&mut s.p),
+            cid: inner_id,
+            comp: inner,
+        };
         let mut l = ins.footage(50, 30);
         ins.effect(&mut l, "ec.blur.fastbox", &[("radius", n(3.0))]);
         ins.push(l);
         s.p = ins.p;
     }
-    let mut pre = build::layer(&mut s.p, &s.comp, "Inner", LayerSource::Comp { item: inner_id }, (60, 40), None);
-    s.effect(&mut pre, "ec.blur.directional", &[("length", n(6.0)), ("direction", Value::Scalar(30.0))]);
+    let mut pre = build::layer(
+        &mut s.p,
+        &s.comp,
+        "Inner",
+        LayerSource::Comp { item: inner_id },
+        (60, 40),
+        None,
+    );
+    s.effect(
+        &mut pre,
+        "ec.blur.directional",
+        &[("length", n(6.0)), ("direction", Value::Scalar(30.0))],
+    );
     set(&mut pre, "transform/position", v3(60.0, 35.0));
     s.push(pre);
     s
 }
 
 /// Render in passes with deferred readbacks; returns the frame and the number of passes.
-pub(crate) fn render_passes(g: &Gpu, s: &Scene, opts: RenderOpts, cache: &LayerCache, t: Tick) -> (effectcraft_raster::Image, usize) {
+pub(crate) fn render_passes(
+    g: &Gpu,
+    s: &Scene,
+    opts: RenderOpts,
+    cache: &LayerCache,
+    t: Tick,
+) -> (effectcraft_raster::Image, usize) {
     cache.set_gate(g.miss_gate());
     let mut r = Renderer::new(&s.p, &Pattern, opts);
     r.accel = Some(g);
@@ -88,28 +120,78 @@ pub(crate) fn render_passes(g: &Gpu, s: &Scene, opts: RenderOpts, cache: &LayerC
 
 #[test]
 fn deferred_passes_match_the_cpu() {
-    let Some((g, _lock)) = deferred_gpu() else { return };
+    let Some((g, _lock)) = deferred_gpu() else {
+        return;
+    };
     assert!(g.context().can_readback() && !g.context().can_wait());
     let s = scene();
     let t = Tick::from_seconds_f64(0.5);
-    let cpu = Renderer::new(&s.p, &Pattern, RenderOpts { backend: Backend::Cpu, ..Default::default() }).comp_frame_cpu(s.cid, t);
+    let cpu = Renderer::new(
+        &s.p,
+        &Pattern,
+        RenderOpts {
+            backend: Backend::Cpu,
+            ..Default::default()
+        },
+    )
+    .comp_frame_cpu(s.cid, t);
     let tol = tolerance(BitDepth::Bpc32) * 2.0;
     // The whole frame on the GPU (GPU compositor + chains + the frame's readback).
     let cache = LayerCache::default();
-    let (img, passes) = render_passes(g, &s, RenderOpts { backend: Backend::Gpu, ..Default::default() }, &cache, t);
+    let (img, passes) = render_passes(
+        g,
+        &s,
+        RenderOpts {
+            backend: Backend::Gpu,
+            ..Default::default()
+        },
+        &cache,
+        t,
+    );
     let d = diff(&cpu, &img, tol);
     assert!(d.over == 0, "whole-frame GPU: {d:?}");
-    assert!(passes >= 3, "chains, the nested chain, then the frame readback: {passes} passes");
+    assert!(
+        passes >= 3,
+        "chains, the nested chain, then the frame readback: {passes} passes"
+    );
     // Again (a new frame: results are per frame; the layer cache holds the genuine buffers of
     // the cacheable layers): the same pixels.
-    let (img2, passes2) = render_passes(g, &s, RenderOpts { backend: Backend::Gpu, ..Default::default() }, &cache, t);
+    let (img2, passes2) = render_passes(
+        g,
+        &s,
+        RenderOpts {
+            backend: Backend::Gpu,
+            ..Default::default()
+        },
+        &cache,
+        t,
+    );
     assert_eq!(img2.data, img.data);
     assert!(passes2 <= passes, "{passes2} <= {passes}");
     // CPU compositing with GPU chains (a region of interest keeps the frame off the GPU
     // compositor): every placeholder is gone by the last pass.
     let roi = Some([0.0, 0.0, 97.0, 61.0]);
-    let cpu_roi = Renderer::new(&s.p, &Pattern, RenderOpts { backend: Backend::Cpu, roi, ..Default::default() }).comp_frame_cpu(s.cid, t);
-    let (img3, passes3) = render_passes(g, &s, RenderOpts { backend: Backend::Gpu, roi, ..Default::default() }, &LayerCache::default(), t);
+    let cpu_roi = Renderer::new(
+        &s.p,
+        &Pattern,
+        RenderOpts {
+            backend: Backend::Cpu,
+            roi,
+            ..Default::default()
+        },
+    )
+    .comp_frame_cpu(s.cid, t);
+    let (img3, passes3) = render_passes(
+        g,
+        &s,
+        RenderOpts {
+            backend: Backend::Gpu,
+            roi,
+            ..Default::default()
+        },
+        &LayerCache::default(),
+        t,
+    );
     let d = diff(&cpu_roi, &img3, tol);
     assert!(d.over == 0, "CPU composite, GPU chains: {d:?}");
     assert!(passes3 >= 2);
@@ -119,12 +201,22 @@ fn deferred_passes_match_the_cpu() {
 
 #[test]
 fn placeholders_never_reach_the_layer_cache() {
-    let Some((g, _lock)) = deferred_gpu() else { return };
+    let Some((g, _lock)) = deferred_gpu() else {
+        return;
+    };
     let s = scene();
     let t = Tick::from_seconds_f64(1.0);
     let cache = LayerCache::default();
     cache.set_gate(g.miss_gate());
-    let mut r = Renderer::new(&s.p, &Pattern, RenderOpts { backend: Backend::Gpu, roi: Some([0.0, 0.0, 97.0, 61.0]), ..Default::default() });
+    let mut r = Renderer::new(
+        &s.p,
+        &Pattern,
+        RenderOpts {
+            backend: Backend::Gpu,
+            roi: Some([0.0, 0.0, 97.0, 61.0]),
+            ..Default::default()
+        },
+    );
     r.accel = Some(g);
     r.cache = Some(&cache);
     g.frame_begin();
@@ -136,14 +228,44 @@ fn placeholders_never_reach_the_layer_cache() {
     let first_pass_entries = cache.stats().entries;
     g.wait();
     pollster::block_on(g.settled());
-    let (img, _) = render_passes(g, &s, RenderOpts { backend: Backend::Gpu, roi: Some([0.0, 0.0, 97.0, 61.0]), ..Default::default() }, &cache, t);
-    assert!(cache.stats().entries > first_pass_entries, "{first_pass_entries} → {:?}", cache.stats());
+    let (img, _) = render_passes(
+        g,
+        &s,
+        RenderOpts {
+            backend: Backend::Gpu,
+            roi: Some([0.0, 0.0, 97.0, 61.0]),
+            ..Default::default()
+        },
+        &cache,
+        t,
+    );
+    assert!(
+        cache.stats().entries > first_pass_entries,
+        "{first_pass_entries} → {:?}",
+        cache.stats()
+    );
     // A fresh CPU render through the same cache (served from it) agrees with the CPU.
-    let mut cr = Renderer::new(&s.p, &Pattern, RenderOpts { backend: Backend::Cpu, roi: Some([0.0, 0.0, 97.0, 61.0]), ..Default::default() });
+    let mut cr = Renderer::new(
+        &s.p,
+        &Pattern,
+        RenderOpts {
+            backend: Backend::Cpu,
+            roi: Some([0.0, 0.0, 97.0, 61.0]),
+            ..Default::default()
+        },
+    );
     cr.cache = Some(&cache);
     let cached = cr.comp_frame_cpu(s.cid, t);
-    let fresh =
-        Renderer::new(&s.p, &Pattern, RenderOpts { backend: Backend::Cpu, roi: Some([0.0, 0.0, 97.0, 61.0]), ..Default::default() }).comp_frame_cpu(s.cid, t);
+    let fresh = Renderer::new(
+        &s.p,
+        &Pattern,
+        RenderOpts {
+            backend: Backend::Cpu,
+            roi: Some([0.0, 0.0, 97.0, 61.0]),
+            ..Default::default()
+        },
+    )
+    .comp_frame_cpu(s.cid, t);
     let tol = tolerance(BitDepth::Bpc32) * 2.0;
     assert_eq!(diff(&fresh, &cached, tol).over, 0);
     assert_eq!(diff(&fresh, &img, tol).over, 0);

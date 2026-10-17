@@ -1,10 +1,10 @@
 use crate::{
+    AnimationEntityMut, AnimationEvaluationError,
     animatable::Animatable,
     animation_curves::{AnimationCurve, AnimationCurveEvaluator, EvaluatorId},
     graph::AnimationNodeIndex,
-    AnimationEntityMut, AnimationEvaluationError,
 };
-use bevy_curve::{iterable::IterableCurve, Interval};
+use bevy_curve::{Interval, iterable::IterableCurve};
 use bevy_mesh::morph::MorphWeights;
 use bevy_reflect::{FromReflect, Reflect, Reflectable};
 use core::{

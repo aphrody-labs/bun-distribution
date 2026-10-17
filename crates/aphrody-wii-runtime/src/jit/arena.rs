@@ -43,7 +43,9 @@ impl DenseArena {
             clean: 0,
         };
 
-        Ok(DenseArena { inner: Arc::new(Mutex::new(inner)) })
+        Ok(DenseArena {
+            inner: Arc::new(Mutex::new(inner)),
+        })
     }
 
     pub fn set_floor(&self) {
@@ -70,7 +72,10 @@ impl JITMemoryProvider for DenseArena {
         let start = (inner.offset + align - 1) & !(align - 1);
         let end = start + size;
         if end > inner.alloc.len() {
-            return Err(io::Error::new(io::ErrorKind::OutOfMemory, "JIT code arena exhausted"));
+            return Err(io::Error::new(
+                io::ErrorKind::OutOfMemory,
+                "JIT code arena exhausted",
+            ));
         }
 
         #[cfg(all(target_vendor = "apple", target_arch = "aarch64"))]

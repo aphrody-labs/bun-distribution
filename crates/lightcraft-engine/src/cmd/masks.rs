@@ -1,6 +1,8 @@
 //! Masking and Remove (spot) commands on the active photo.
 
-use lightcraft_develop::{BrushStroke, LocalAdjustments, Mask, MaskComponent, MaskOp, MaskShape, RedEye, Spot, SpotMode};
+use lightcraft_develop::{
+    BrushStroke, LocalAdjustments, Mask, MaskComponent, MaskOp, MaskShape, RedEye, Spot, SpotMode,
+};
 use lightcraft_geom::Point;
 use serde_json::{Value, json};
 
@@ -11,9 +13,10 @@ use crate::{Result, Session};
 fn shape_from(kind: &str, p: &Value, c: &str) -> Result<MaskShape> {
     Ok(match kind {
         "brush" => MaskShape::Brush { strokes: vec![] },
-        "linear" => {
-            MaskShape::Linear { start: point(p, "start").unwrap_or(Point::new(0.5, 0.25)), end: point(p, "end").unwrap_or(Point::new(0.5, 0.6)) }
-        }
+        "linear" => MaskShape::Linear {
+            start: point(p, "start").unwrap_or(Point::new(0.5, 0.25)),
+            end: point(p, "end").unwrap_or(Point::new(0.5, 0.6)),
+        },
         "radial" => MaskShape::Radial {
             center: point(p, "center").unwrap_or(Point::new(0.5, 0.5)),
             rx: f64_or(p, "rx", 0.22),
@@ -35,18 +38,42 @@ fn shape_from(kind: &str, p: &Value, c: &str) -> Result<MaskShape> {
             let samples: Vec<[f64; 3]> = p
                 .get("samples")
                 .and_then(Value::as_array)
-                .map(|a| a.iter().filter_map(|s| Some([s.get(0)?.as_f64()?, s.get(1)?.as_f64()?, s.get(2)?.as_f64()?])).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|s| {
+                            Some([
+                                s.get(0)?.as_f64()?,
+                                s.get(1)?.as_f64()?,
+                                s.get(2)?.as_f64()?,
+                            ])
+                        })
+                        .collect()
+                })
                 .unwrap_or_default();
-            MaskShape::ColorRange { samples, refine: f64_or(p, "refine", 50.0) }
+            MaskShape::ColorRange {
+                samples,
+                refine: f64_or(p, "refine", 50.0),
+            }
         }
-        "object" => MaskShape::Object { hint: points(p, "points"), exclude: points(p, "exclude"), seg: seg_param(p), detail: vec![], edge: 0.0 },
-        "prompt" => {
-            MaskShape::Prompt { text: str_param(p, "text").unwrap_or_default().trim().to_string(), seg: seg_param(p), detail: vec![], edge: 0.0 }
-        }
+        "object" => MaskShape::Object {
+            hint: points(p, "points"),
+            exclude: points(p, "exclude"),
+            seg: seg_param(p),
+            detail: vec![],
+            edge: 0.0,
+        },
+        "prompt" => MaskShape::Prompt {
+            text: str_param(p, "text").unwrap_or_default().trim().to_string(),
+            seg: seg_param(p),
+            detail: vec![],
+            edge: 0.0,
+        },
         other => {
             return Err(bad(
                 c,
-                format!("unknown mask kind `{other}` (brush|linear|radial|sky|subject|background|luminanceRange|colorRange|object|prompt)"),
+                format!(
+                    "unknown mask kind `{other}` (brush|linear|radial|sky|subject|background|luminanceRange|colorRange|object|prompt)"
+                ),
             ));
         }
     })
@@ -56,13 +83,18 @@ fn shape_from(kind: &str, p: &Value, c: &str) -> Result<MaskShape> {
 fn points(p: &Value, key: &str) -> Vec<Point> {
     p.get(key)
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(|q| Some(Point::new(q.get(0)?.as_f64()?, q.get(1)?.as_f64()?))).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|q| Some(Point::new(q.get(0)?.as_f64()?, q.get(1)?.as_f64()?)))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
 /// A segmentation passed in (`seg`: a stored or replayed AI mask; the model isn't needed).
 fn seg_param(p: &Value) -> Option<lightcraft_develop::SegMask> {
-    p.get("seg").and_then(|v| serde_json::from_value(v.clone()).ok())
+    p.get("seg")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
 }
 
 /// What a new AI shape still needs once it is added.
@@ -87,8 +119,13 @@ fn resolve_ai(s: &mut Session, shape: &mut MaskShape, c: &str) -> Result<Later> 
             s.segmenter.model_dir().map_err(ai_err)?;
             return Ok(Later::Clicks(std::mem::take(hint), std::mem::take(exclude)));
         }
-        MaskShape::Object { hint, exclude, seg, .. } if !hint.is_empty() => {
-            *seg = Some(s.segment_clicks(id, &clicks_of(hint, exclude)).map_err(ai_err)?);
+        MaskShape::Object {
+            hint, exclude, seg, ..
+        } if !hint.is_empty() => {
+            *seg = Some(
+                s.segment_clicks(id, &clicks_of(hint, exclude))
+                    .map_err(ai_err)?,
+            );
         }
         MaskShape::Object { .. } => {
             // the clicks come later: refuse an Object mask that could never be computed (no
@@ -107,7 +144,9 @@ fn resolve_ai(s: &mut Session, shape: &mut MaskShape, c: &str) -> Result<Later> 
         }
         MaskShape::Prompt { text, seg, .. } => {
             let found = s.segment_text(id, text).map_err(ai_err)?;
-            *seg = Some(found.ok_or_else(|| ai_err(format!("nothing matching “{text}” was found in this photo")))?);
+            *seg = Some(found.ok_or_else(|| {
+                ai_err(format!("nothing matching “{text}” was found in this photo"))
+            })?);
         }
         _ => {}
     }
@@ -115,10 +154,17 @@ fn resolve_ai(s: &mut Session, shape: &mut MaskShape, c: &str) -> Result<Later> 
 }
 
 /// Queue what a new AI component (component `comp` of mask `mask`) still needs.
-fn queue_later(s: &mut Session, later: Later, mask: u32, comp: usize, mut out: Value) -> Result<Value> {
+fn queue_later(
+    s: &mut Session,
+    later: Later,
+    mask: u32,
+    comp: usize,
+    mut out: Value,
+) -> Result<Value> {
     if let Later::Clicks(hint, exclude) = later {
         let id = s.active().ok_or_else(|| ai_err("no active photo"))?;
-        s.segment_clicks_later(id, mask, comp, hint, exclude).map_err(ai_err)?;
+        s.segment_clicks_later(id, mask, comp, hint, exclude)
+            .map_err(ai_err)?;
         out["pending"] = json!(true);
     }
     Ok(out)
@@ -130,10 +176,25 @@ fn ai_err(msg: impl Into<String>) -> crate::EngineError {
 }
 
 pub(crate) fn clicks_of(include: &[Point], exclude: &[Point]) -> Vec<Click> {
-    include.iter().map(|p| Click { at: *p, include: true }).chain(exclude.iter().map(|p| Click { at: *p, include: false })).collect()
+    include
+        .iter()
+        .map(|p| Click {
+            at: *p,
+            include: true,
+        })
+        .chain(exclude.iter().map(|p| Click {
+            at: *p,
+            include: false,
+        }))
+        .collect()
 }
 
-fn masks_edit(s: &mut Session, c: &str, label: &str, f: impl FnOnce(&mut Vec<Mask>, &mut Option<u32>) -> Result<()>) -> Result<Value> {
+fn masks_edit(
+    s: &mut Session,
+    c: &str,
+    label: &str,
+    f: impl FnOnce(&mut Vec<Mask>, &mut Option<u32>) -> Result<()>,
+) -> Result<Value> {
     let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
     let mut d = (*s.develop_of(id).unwrap_or_default()).clone();
     let mut active = s.active_mask;
@@ -144,11 +205,18 @@ fn masks_edit(s: &mut Session, c: &str, label: &str, f: impl FnOnce(&mut Vec<Mas
 }
 
 fn mask_id(p: &Value, active: Option<u32>, c: &str) -> Result<u32> {
-    p.get("id").and_then(Value::as_u64).map(|v| v as u32).or(active).ok_or_else(|| bad(c, "no mask selected (give `id`)"))
+    p.get("id")
+        .and_then(Value::as_u64)
+        .map(|v| v as u32)
+        .or(active)
+        .ok_or_else(|| bad(c, "no mask selected (give `id`)"))
 }
 
 fn find(masks: &mut [Mask], id: u32, c: &str) -> Result<usize> {
-    masks.iter().position(|m| m.id == id).ok_or_else(|| bad(c, format!("no mask {id}")))
+    masks
+        .iter()
+        .position(|m| m.id == id)
+        .ok_or_else(|| bad(c, format!("no mask {id}")))
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -166,16 +234,28 @@ pub fn specs() -> Vec<CommandSpec> {
                 let later = resolve_ai(s, &mut shape, "mask.add")?;
                 let name = str_param(p, "name").map(str::to_string);
                 if let Later::Text(text) = &later {
-                    let id = s.active().ok_or_else(|| bad("mask.add", "no active photo"))?;
-                    s.segment_text_later(id, None, "add", name, text).map_err(ai_err)?;
+                    let id = s
+                        .active()
+                        .ok_or_else(|| bad("mask.add", "no active photo"))?;
+                    s.segment_text_later(id, None, "add", name, text)
+                        .map_err(ai_err)?;
                     return Ok(json!({"pending": true}));
                 }
-                let next = s.active().and_then(|id| s.develop_of(id)).map(|d| d.next_mask_id()).unwrap_or(1);
+                let next = s
+                    .active()
+                    .and_then(|id| s.develop_of(id))
+                    .map(|d| d.next_mask_id())
+                    .unwrap_or(1);
                 let out = masks_edit(s, "mask.add", "Add Mask", |masks, active| {
                     masks.push(Mask {
                         id: next,
                         name: name.unwrap_or_else(|| format!("Mask {next}")),
-                        components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape }],
+                        components: vec![MaskComponent {
+                            name: None,
+                            op: MaskOp::Add,
+                            invert: false,
+                            shape,
+                        }],
                         ..Default::default()
                     });
                     *active = Some(next);
@@ -194,24 +274,36 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let kind = str_param(p, "kind").unwrap_or("brush").to_string();
                 let op: MaskOp =
-                    serde_json::from_value(p.get("op").cloned().unwrap_or(json!("add"))).map_err(|e| bad("mask.addComponent", e.to_string()))?;
+                    serde_json::from_value(p.get("op").cloned().unwrap_or(json!("add")))
+                        .map_err(|e| bad("mask.addComponent", e.to_string()))?;
                 let active = s.active_mask;
                 let mid = mask_id(p, active, "mask.addComponent")?;
-                let id = s.active().ok_or_else(|| bad("mask.addComponent", "no active photo"))?;
-                if !s.develop_of(id).is_some_and(|d| d.masks.iter().any(|m| m.id == mid)) {
+                let id = s
+                    .active()
+                    .ok_or_else(|| bad("mask.addComponent", "no active photo"))?;
+                if !s
+                    .develop_of(id)
+                    .is_some_and(|d| d.masks.iter().any(|m| m.id == mid))
+                {
                     return Err(bad("mask.addComponent", format!("no mask {mid}")));
                 }
                 let mut shape = shape_from(&kind, p, "mask.addComponent")?;
                 let later = resolve_ai(s, &mut shape, "mask.addComponent")?;
                 if let Later::Text(text) = &later {
                     let op = p.get("op").and_then(Value::as_str).unwrap_or("add");
-                    s.segment_text_later(id, Some(mid), op, None, text).map_err(ai_err)?;
+                    s.segment_text_later(id, Some(mid), op, None, text)
+                        .map_err(ai_err)?;
                     return Ok(json!({"pending": true}));
                 }
                 let mut comp = 0;
                 let out = masks_edit(s, "mask.addComponent", "Edit Mask", |masks, _| {
                     let i = find(masks, mid, "mask.addComponent")?;
-                    masks[i].components.push(MaskComponent { name: None, op, invert: bool_or(p, "invert", false), shape });
+                    masks[i].components.push(MaskComponent {
+                        name: None,
+                        op,
+                        invert: bool_or(p, "invert", false),
+                        shape,
+                    });
                     comp = masks[i].components.len() - 1;
                     Ok(())
                 })?;
@@ -243,20 +335,38 @@ pub fn specs() -> Vec<CommandSpec> {
                     erase: bool_or(p, "erase", false),
                     auto_mask: bool_or(p, "autoMask", false),
                 };
-                let next = s.active().and_then(|id| s.develop_of(id)).map(|d| d.next_mask_id()).unwrap_or(1);
-                let want = p.get("id").and_then(Value::as_u64).map(|v| v as u32).or(s.active_mask);
+                let next = s
+                    .active()
+                    .and_then(|id| s.develop_of(id))
+                    .map(|d| d.next_mask_id())
+                    .unwrap_or(1);
+                let want = p
+                    .get("id")
+                    .and_then(Value::as_u64)
+                    .map(|v| v as u32)
+                    .or(s.active_mask);
                 masks_edit(s, "mask.brushStroke", "Brush", |masks, active| {
                     let i = match want.and_then(|m| masks.iter().position(|x| x.id == m)) {
                         Some(i) => i,
                         None => {
-                            masks.push(Mask { id: next, name: format!("Mask {next}"), ..Default::default() });
+                            masks.push(Mask {
+                                id: next,
+                                name: format!("Mask {next}"),
+                                ..Default::default()
+                            });
                             *active = Some(next);
                             masks.len() - 1
                         }
                     };
                     let m = &mut masks[i];
-                    if let Some(MaskComponent { shape: MaskShape::Brush { strokes }, .. }) =
-                        m.components.iter_mut().rev().find(|c| matches!(c.shape, MaskShape::Brush { .. }))
+                    if let Some(MaskComponent {
+                        shape: MaskShape::Brush { strokes },
+                        ..
+                    }) = m
+                        .components
+                        .iter_mut()
+                        .rev()
+                        .find(|c| matches!(c.shape, MaskShape::Brush { .. }))
                     {
                         strokes.push(stroke);
                     } else {
@@ -264,25 +374,39 @@ pub fn specs() -> Vec<CommandSpec> {
                             name: None,
                             op: MaskOp::Add,
                             invert: false,
-                            shape: MaskShape::Brush { strokes: vec![stroke] },
+                            shape: MaskShape::Brush {
+                                strokes: vec![stroke],
+                            },
                         });
                     }
                     Ok(())
                 })
             }
         ),
-        cmd!("mask.update", "Update Mask Shape", [], None, "{id?, component?: index (0), shape: MaskShape JSON}", has_active, |s, p| {
-            let shape: MaskShape =
-                serde_json::from_value(p.get("shape").cloned().unwrap_or_default()).map_err(|e| bad("mask.update", e.to_string()))?;
-            let comp = p.get("component").and_then(Value::as_u64).unwrap_or(0) as usize;
-            let mid = mask_id(p, s.active_mask, "mask.update")?;
-            masks_edit(s, "mask.update", "Edit Mask", |masks, _| {
-                let i = find(masks, mid, "mask.update")?;
-                let c = masks[i].components.get_mut(comp).ok_or_else(|| bad("mask.update", "no such component"))?;
-                c.shape = shape;
-                Ok(())
-            })
-        }),
+        cmd!(
+            "mask.update",
+            "Update Mask Shape",
+            [],
+            None,
+            "{id?, component?: index (0), shape: MaskShape JSON}",
+            has_active,
+            |s, p| {
+                let shape: MaskShape =
+                    serde_json::from_value(p.get("shape").cloned().unwrap_or_default())
+                        .map_err(|e| bad("mask.update", e.to_string()))?;
+                let comp = p.get("component").and_then(Value::as_u64).unwrap_or(0) as usize;
+                let mid = mask_id(p, s.active_mask, "mask.update")?;
+                masks_edit(s, "mask.update", "Edit Mask", |masks, _| {
+                    let i = find(masks, mid, "mask.update")?;
+                    let c = masks[i]
+                        .components
+                        .get_mut(comp)
+                        .ok_or_else(|| bad("mask.update", "no such component"))?;
+                    c.shape = shape;
+                    Ok(())
+                })
+            }
+        ),
         cmd!(
             "mask.sampleColor",
             "Sample Mask Color",
@@ -295,21 +419,39 @@ pub fn specs() -> Vec<CommandSpec> {
                 let (x, y) = (super::f64_req(p, "x", c)?, super::f64_req(p, "y", c)?);
                 let add = p.get("add").and_then(Value::as_bool).unwrap_or(false);
                 let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
-                let src = s.source_now(id, crate::media::SourceLevel::Thumb).map_err(|e| bad(c, e))?;
+                let src = s
+                    .source_now(id, crate::media::SourceLevel::Thumb)
+                    .map_err(|e| bad(c, e))?;
                 let info = s.source_info(id);
                 let d = s.develop_of(id).unwrap_or_default();
                 let req = lightcraft_pipeline::RenderRequest::fit(384, 384);
-                let lab = lightcraft_pipeline::color_range_sample(&src, &info, &d, &req, lightcraft_geom::Point::new(x, y))
-                    .ok_or_else(|| bad(c, "the point is outside the photo"))?;
+                let lab = lightcraft_pipeline::color_range_sample(
+                    &src,
+                    &info,
+                    &d,
+                    &req,
+                    lightcraft_geom::Point::new(x, y),
+                )
+                .ok_or_else(|| bad(c, "the point is outside the photo"))?;
                 let mid = mask_id(p, s.active_mask, c)?;
-                let comp = p.get("component").and_then(Value::as_u64).map(|v| v as usize);
+                let comp = p
+                    .get("component")
+                    .and_then(Value::as_u64)
+                    .map(|v| v as usize);
                 let mut out = Vec::new();
                 masks_edit(s, c, "Color Range", |masks, _| {
                     let i = find(masks, mid, c)?;
                     let k = comp
-                        .or_else(|| masks[i].components.iter().position(|x| matches!(x.shape, MaskShape::ColorRange { .. })))
+                        .or_else(|| {
+                            masks[i]
+                                .components
+                                .iter()
+                                .position(|x| matches!(x.shape, MaskShape::ColorRange { .. }))
+                        })
                         .ok_or_else(|| bad(c, "the mask has no colour range"))?;
-                    let Some(MaskShape::ColorRange { samples, .. }) = masks[i].components.get_mut(k).map(|x| &mut x.shape) else {
+                    let Some(MaskShape::ColorRange { samples, .. }) =
+                        masks[i].components.get_mut(k).map(|x| &mut x.shape)
+                    else {
                         return Err(bad(c, "not a colour range component"));
                     };
                     if !add {
@@ -341,22 +483,38 @@ pub fn specs() -> Vec<CommandSpec> {
                 let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
                 let mid = mask_id(p, s.active_mask, c)?;
                 let d = s.develop_of(id).unwrap_or_default();
-                let m = d.masks.iter().find(|m| m.id == mid).ok_or_else(|| bad(c, format!("no mask {mid}")))?;
+                let m = d
+                    .masks
+                    .iter()
+                    .find(|m| m.id == mid)
+                    .ok_or_else(|| bad(c, format!("no mask {mid}")))?;
                 let k = m
                     .components
                     .iter()
                     .rposition(|x| matches!(x.shape, MaskShape::Object { .. }))
                     .ok_or_else(|| bad(c, "the mask has no Object selection (add one first)"))?;
-                let Some(MaskShape::Object { hint, exclude: ex, edge, .. }) = m.components.get(k).map(|x| &x.shape) else {
+                let Some(MaskShape::Object {
+                    hint,
+                    exclude: ex,
+                    edge,
+                    ..
+                }) = m.components.get(k).map(|x| &x.shape)
+                else {
                     return Err(bad(c, "not an Object component"));
                 };
                 let (mut hint, mut ex, edge) = (hint.clone(), ex.clone(), *edge);
                 // clicks still on their way to the model count too
-                if let Some(pending) = s.segmenter.pending_clicks().filter(|q| (q.photo, q.mask, q.comp) == (id, mid, k)) {
+                if let Some(pending) = s
+                    .segmenter
+                    .pending_clicks()
+                    .filter(|q| (q.photo, q.mask, q.comp) == (id, mid, k))
+                {
                     (hint, ex) = (pending.hint.clone(), pending.exclude.clone());
                 }
                 if hint.len() + ex.len() >= MAX_CLICKS {
-                    return Err(ai_err(format!("an Object selection takes at most {MAX_CLICKS} clicks; start a new one")));
+                    return Err(ai_err(format!(
+                        "an Object selection takes at most {MAX_CLICKS} clicks; start a new one"
+                    )));
                 }
                 if exclude {
                     ex.push(at)
@@ -365,15 +523,29 @@ pub fn specs() -> Vec<CommandSpec> {
                 }
                 if s.segmenter.background && !hint.is_empty() {
                     let out = json!({"include": hint.len(), "exclude": ex.len(), "pending": true});
-                    s.segment_clicks_later(id, mid, k, hint, ex).map_err(ai_err)?;
+                    s.segment_clicks_later(id, mid, k, hint, ex)
+                        .map_err(ai_err)?;
                     return Ok(out);
                 }
-                let seg = if hint.is_empty() { None } else { Some(s.segment_clicks(id, &clicks_of(&hint, &ex)).map_err(ai_err)?) };
+                let seg = if hint.is_empty() {
+                    None
+                } else {
+                    Some(
+                        s.segment_clicks(id, &clicks_of(&hint, &ex))
+                            .map_err(ai_err)?,
+                    )
+                };
                 let out = json!({"include": hint.len(), "exclude": ex.len()});
                 masks_edit(s, c, "Object Mask", |masks, _| {
                     let i = find(masks, mid, c)?;
                     if let Some(comp) = masks[i].components.get_mut(k) {
-                        comp.shape = MaskShape::Object { hint, exclude: ex, seg, detail: vec![], edge };
+                        comp.shape = MaskShape::Object {
+                            hint,
+                            exclude: ex,
+                            seg,
+                            detail: vec![],
+                            edge,
+                        };
                     }
                     Ok(())
                 })?;
@@ -392,13 +564,19 @@ pub fn specs() -> Vec<CommandSpec> {
                 let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
                 let mid = mask_id(p, s.active_mask, c)?;
                 let d = s.develop_of(id).unwrap_or_default();
-                let m = d.masks.iter().find(|m| m.id == mid).ok_or_else(|| bad(c, format!("no mask {mid}")))?;
+                let m = d
+                    .masks
+                    .iter()
+                    .find(|m| m.id == mid)
+                    .ok_or_else(|| bad(c, format!("no mask {mid}")))?;
                 let k = match p.get("component").and_then(Value::as_u64) {
                     Some(k) => k as usize,
                     None => m
                         .components
                         .iter()
-                        .rposition(|x| matches!(x.shape, MaskShape::Object { .. } | MaskShape::Prompt { .. }))
+                        .rposition(|x| {
+                            matches!(x.shape, MaskShape::Object { .. } | MaskShape::Prompt { .. })
+                        })
                         .ok_or_else(|| bad(c, "the mask has no Object or Describe selection"))?,
                 };
                 let started = s.segment_detail(id, mid, k).map_err(ai_err)?;
@@ -502,63 +680,117 @@ pub fn specs() -> Vec<CommandSpec> {
             "{id?, values: {exposure, contrast, highlights, shadows, whites, blacks, temp, tint, texture, clarity, dehaze, hue, saturation, sharpness, noise, moire, defringe, color_hue, color_sat, amount}}",
             has_active,
             |s, p| {
-                let vals = p.get("values").cloned().ok_or_else(|| bad("mask.adjust", "missing values"))?;
+                let vals = p
+                    .get("values")
+                    .cloned()
+                    .ok_or_else(|| bad("mask.adjust", "missing values"))?;
                 let mid = mask_id(p, s.active_mask, "mask.adjust")?;
                 masks_edit(s, "mask.adjust", "Mask Adjustment", |masks, _| {
                     let i = find(masks, mid, "mask.adjust")?;
                     let mut v = serde_json::to_value(masks[i].adjust).unwrap_or_default();
                     lightcraft_develop::presets::deep_merge(&mut v, &vals);
-                    let a: LocalAdjustments = serde_json::from_value(v).map_err(|e| bad("mask.adjust", e.to_string()))?;
+                    let a: LocalAdjustments =
+                        serde_json::from_value(v).map_err(|e| bad("mask.adjust", e.to_string()))?;
                     masks[i].adjust = clamp_local(a);
                     Ok(())
                 })
             }
         ),
-        cmd!("mask.select", "Select Mask", [], None, "{id|null}", has_active, |s, p| {
-            s.active_mask = p.get("id").and_then(Value::as_u64).map(|v| v as u32);
-            ok()
-        }),
-        cmd!("mask.delete", "Delete Mask", [], None, "{id?}", has_active, |s, p| {
-            let mid = mask_id(p, s.active_mask, "mask.delete")?;
-            masks_edit(s, "mask.delete", "Delete Mask", |masks, active| {
-                let i = find(masks, mid, "mask.delete")?;
-                masks.remove(i);
-                *active = masks.last().map(|m| m.id);
-                Ok(())
-            })
-        }),
-        cmd!("mask.deleteAll", "Delete All Masks", [], None, "{}", has_active, |s, _| {
-            masks_edit(s, "mask.deleteAll", "Delete All Masks", |masks, active| {
-                masks.clear();
-                *active = None;
-                Ok(())
-            })
-        }),
-        cmd!("mask.rename", "Rename Mask", [], None, "{id?, name}", has_active, |s, p| {
-            let name = str_param(p, "name").ok_or_else(|| bad("mask.rename", "missing name"))?.to_string();
-            let mid = mask_id(p, s.active_mask, "mask.rename")?;
-            masks_edit(s, "mask.rename", "Rename Mask", |masks, _| {
-                let i = find(masks, mid, "mask.rename")?;
-                masks[i].name = name;
-                Ok(())
-            })
-        }),
-        cmd!("mask.invert", "Invert Mask", [], None, "{id?}", has_active, |s, p| {
-            let mid = mask_id(p, s.active_mask, "mask.invert")?;
-            masks_edit(s, "mask.invert", "Invert Mask", |masks, _| {
-                let i = find(masks, mid, "mask.invert")?;
-                masks[i].invert = !masks[i].invert;
-                Ok(())
-            })
-        }),
-        cmd!("mask.visible", "Show/Hide Mask", [], None, "{id?, visible?: bool}", has_active, |s, p| {
-            let mid = mask_id(p, s.active_mask, "mask.visible")?;
-            masks_edit(s, "mask.visible", "Toggle Mask", |masks, _| {
-                let i = find(masks, mid, "mask.visible")?;
-                masks[i].visible = bool_or(p, "visible", !masks[i].visible);
-                Ok(())
-            })
-        }),
+        cmd!(
+            "mask.select",
+            "Select Mask",
+            [],
+            None,
+            "{id|null}",
+            has_active,
+            |s, p| {
+                s.active_mask = p.get("id").and_then(Value::as_u64).map(|v| v as u32);
+                ok()
+            }
+        ),
+        cmd!(
+            "mask.delete",
+            "Delete Mask",
+            [],
+            None,
+            "{id?}",
+            has_active,
+            |s, p| {
+                let mid = mask_id(p, s.active_mask, "mask.delete")?;
+                masks_edit(s, "mask.delete", "Delete Mask", |masks, active| {
+                    let i = find(masks, mid, "mask.delete")?;
+                    masks.remove(i);
+                    *active = masks.last().map(|m| m.id);
+                    Ok(())
+                })
+            }
+        ),
+        cmd!(
+            "mask.deleteAll",
+            "Delete All Masks",
+            [],
+            None,
+            "{}",
+            has_active,
+            |s, _| {
+                masks_edit(s, "mask.deleteAll", "Delete All Masks", |masks, active| {
+                    masks.clear();
+                    *active = None;
+                    Ok(())
+                })
+            }
+        ),
+        cmd!(
+            "mask.rename",
+            "Rename Mask",
+            [],
+            None,
+            "{id?, name}",
+            has_active,
+            |s, p| {
+                let name = str_param(p, "name")
+                    .ok_or_else(|| bad("mask.rename", "missing name"))?
+                    .to_string();
+                let mid = mask_id(p, s.active_mask, "mask.rename")?;
+                masks_edit(s, "mask.rename", "Rename Mask", |masks, _| {
+                    let i = find(masks, mid, "mask.rename")?;
+                    masks[i].name = name;
+                    Ok(())
+                })
+            }
+        ),
+        cmd!(
+            "mask.invert",
+            "Invert Mask",
+            [],
+            None,
+            "{id?}",
+            has_active,
+            |s, p| {
+                let mid = mask_id(p, s.active_mask, "mask.invert")?;
+                masks_edit(s, "mask.invert", "Invert Mask", |masks, _| {
+                    let i = find(masks, mid, "mask.invert")?;
+                    masks[i].invert = !masks[i].invert;
+                    Ok(())
+                })
+            }
+        ),
+        cmd!(
+            "mask.visible",
+            "Show/Hide Mask",
+            [],
+            None,
+            "{id?, visible?: bool}",
+            has_active,
+            |s, p| {
+                let mid = mask_id(p, s.active_mask, "mask.visible")?;
+                masks_edit(s, "mask.visible", "Toggle Mask", |masks, _| {
+                    let i = find(masks, mid, "mask.visible")?;
+                    masks[i].visible = bool_or(p, "visible", !masks[i].visible);
+                    Ok(())
+                })
+            }
+        ),
         cmd!(
             "mask.duplicate",
             "Duplicate Mask",
@@ -569,8 +801,16 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let mid = mask_id(p, s.active_mask, "mask.duplicate")?;
                 let invert = bool_or(p, "invert", false);
-                let next = s.active().and_then(|id| s.develop_of(id)).map(|d| d.next_mask_id()).unwrap_or(1);
-                let label = if invert { "Duplicate and Invert Mask" } else { "Duplicate Mask" };
+                let next = s
+                    .active()
+                    .and_then(|id| s.develop_of(id))
+                    .map(|d| d.next_mask_id())
+                    .unwrap_or(1);
+                let label = if invert {
+                    "Duplicate and Invert Mask"
+                } else {
+                    "Duplicate Mask"
+                };
                 masks_edit(s, "mask.duplicate", label, |masks, active| {
                     let i = find(masks, mid, "mask.duplicate")?;
                     let mut m = masks[i].clone();
@@ -595,10 +835,17 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let c = "mask.component";
                 let mid = mask_id(p, s.active_mask, c)?;
-                let k = p.get("component").and_then(Value::as_u64).ok_or_else(|| bad(c, "missing component"))? as usize;
-                let action = str_param(p, "action").ok_or_else(|| bad(c, "missing action"))?.to_string();
+                let k = p
+                    .get("component")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| bad(c, "missing component"))? as usize;
+                let action = str_param(p, "action")
+                    .ok_or_else(|| bad(c, "missing action"))?
+                    .to_string();
                 let op: Option<MaskOp> = match p.get("op") {
-                    Some(v) => Some(serde_json::from_value(v.clone()).map_err(|e| bad(c, e.to_string()))?),
+                    Some(v) => {
+                        Some(serde_json::from_value(v.clone()).map_err(|e| bad(c, e.to_string()))?)
+                    }
                     None => None,
                 };
                 let label = match action.as_str() {
@@ -607,15 +854,27 @@ pub fn specs() -> Vec<CommandSpec> {
                     "delete" => "Delete Component",
                     "rename" => "Rename Component",
                     "op" => "Change Component Mode",
-                    a => return Err(bad(c, format!("unknown action {a:?} (invert|duplicate|delete|rename|op)"))),
+                    a => {
+                        return Err(bad(
+                            c,
+                            format!("unknown action {a:?} (invert|duplicate|delete|rename|op)"),
+                        ));
+                    }
                 };
                 masks_edit(s, c, label, |masks, active| {
                     let i = find(masks, mid, c)?;
                     let comps = &mut masks[i].components;
-                    let comp = comps.get_mut(k).ok_or_else(|| bad(c, "no such component"))?;
+                    let comp = comps
+                        .get_mut(k)
+                        .ok_or_else(|| bad(c, "no such component"))?;
                     match action.as_str() {
                         "invert" => comp.invert = !comp.invert,
-                        "rename" => comp.name = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).map(str::to_string),
+                        "rename" => {
+                            comp.name = str_param(p, "name")
+                                .map(str::trim)
+                                .filter(|n| !n.is_empty())
+                                .map(str::to_string)
+                        }
                         "op" => comp.op = op.ok_or_else(|| bad(c, "missing op"))?,
                         "duplicate" => {
                             let copy = comp.clone();
@@ -633,26 +892,41 @@ pub fn specs() -> Vec<CommandSpec> {
                 })
             }
         ),
-        cmd!("mask.move", "Move Mask", [], None, "{id?, to?: index (0 = top), delta?: ±n} — reorder the masks list", has_active, |s, p| {
-            let mid = mask_id(p, s.active_mask, "mask.move")?;
-            let mut masks = s.active().and_then(|id| s.develop_of(id)).map(|d| d.masks.clone()).unwrap_or_default();
-            let i = find(&mut masks, mid, "mask.move")?;
-            let to = match (p.get("to").and_then(Value::as_i64), p.get("delta").and_then(Value::as_i64)) {
-                (Some(t), _) => t,
-                (None, Some(d)) => i as i64 + d,
-                (None, None) => return Err(bad("mask.move", "give `to` (index) or `delta`")),
+        cmd!(
+            "mask.move",
+            "Move Mask",
+            [],
+            None,
+            "{id?, to?: index (0 = top), delta?: ±n} — reorder the masks list",
+            has_active,
+            |s, p| {
+                let mid = mask_id(p, s.active_mask, "mask.move")?;
+                let mut masks = s
+                    .active()
+                    .and_then(|id| s.develop_of(id))
+                    .map(|d| d.masks.clone())
+                    .unwrap_or_default();
+                let i = find(&mut masks, mid, "mask.move")?;
+                let to = match (
+                    p.get("to").and_then(Value::as_i64),
+                    p.get("delta").and_then(Value::as_i64),
+                ) {
+                    (Some(t), _) => t,
+                    (None, Some(d)) => i as i64 + d,
+                    (None, None) => return Err(bad("mask.move", "give `to` (index) or `delta`")),
+                }
+                .clamp(0, masks.len() as i64 - 1) as usize;
+                if to == i {
+                    return Ok(json!({"activeMask": s.active_mask}));
+                }
+                masks_edit(s, "mask.move", "Reorder Masks", |masks, _| {
+                    let i = find(masks, mid, "mask.move")?;
+                    let m = masks.remove(i);
+                    masks.insert(to, m);
+                    Ok(())
+                })
             }
-            .clamp(0, masks.len() as i64 - 1) as usize;
-            if to == i {
-                return Ok(json!({"activeMask": s.active_mask}));
-            }
-            masks_edit(s, "mask.move", "Reorder Masks", |masks, _| {
-                let i = find(masks, mid, "mask.move")?;
-                let m = masks.remove(i);
-                masks.insert(to, m);
-                Ok(())
-            })
-        }),
+        ),
         // ---- Remove tool (spots)
         cmd!(
             "spot.findDust",
@@ -665,10 +939,16 @@ pub fn specs() -> Vec<CommandSpec> {
                 let c = "spot.findDust";
                 let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
                 // the uncropped photo, so positions are the spots' own coordinates
-                let job = s.render_job(id, 1600, 1600, false, false).ok_or_else(|| bad(c, "no photo"))?;
+                let job = s
+                    .render_job(id, 1600, 1600, false, false)
+                    .ok_or_else(|| bad(c, "no photo"))?;
                 let img = job.run().rendered.map_err(|e| bad(c, e))?.image;
-                let found = lightcraft_pipeline::dust::detect(&img, f64_or(p, "sensitivity", 50.0) as f32);
-                let out: Vec<Value> = found.iter().map(|d| json!({"x": d.x, "y": d.y, "size": d.radius})).collect();
+                let found =
+                    lightcraft_pipeline::dust::detect(&img, f64_or(p, "sensitivity", 50.0) as f32);
+                let out: Vec<Value> = found
+                    .iter()
+                    .map(|d| json!({"x": d.x, "y": d.y, "size": d.radius}))
+                    .collect();
                 if !p.get("add").and_then(Value::as_bool).unwrap_or(true) || found.is_empty() {
                     return Ok(json!({"spots": out, "added": 0}));
                 }
@@ -702,11 +982,23 @@ pub fn specs() -> Vec<CommandSpec> {
                 let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
                 let detector = super::face_detect::detector(s).map_err(|e| bad(c, e))?;
                 // the uncropped photo, so positions are the spots' own coordinates
-                let job = s.render_job(id, 1600, 1600, false, false).ok_or_else(|| bad(c, "no photo"))?;
+                let job = s
+                    .render_job(id, 1600, 1600, false, false)
+                    .ok_or_else(|| bad(c, "no photo"))?;
                 let img = job.run().rendered.map_err(|e| bad(c, e))?.image;
-                let rgb: Vec<u8> = img.data.iter().flat_map(|px| [px[0], px[1], px[2]]).collect();
-                let faces =
-                    detector.detect(&rgb, img.width, img.height, &lightcraft_faces::yunet::Options::default()).map_err(|e| bad(c, e.to_string()))?;
+                let rgb: Vec<u8> = img
+                    .data
+                    .iter()
+                    .flat_map(|px| [px[0], px[1], px[2]])
+                    .collect();
+                let faces = detector
+                    .detect(
+                        &rgb,
+                        img.width,
+                        img.height,
+                        &lightcraft_faces::yunet::Options::default(),
+                    )
+                    .map_err(|e| bad(c, e.to_string()))?;
                 let boxes: Vec<lightcraft_pipeline::blemish::FaceBox> = faces
                     .iter()
                     .map(|f| lightcraft_pipeline::blemish::FaceBox {
@@ -718,14 +1010,21 @@ pub fn specs() -> Vec<CommandSpec> {
                     })
                     .collect();
                 let max_per_face = (f64_or(p, "maxPerFace", 6.0) as usize).clamp(1, 20);
-                let mut found = lightcraft_pipeline::blemish::detect(&img, &boxes, f64_or(p, "sensitivity", 50.0) as f32);
+                let mut found = lightcraft_pipeline::blemish::detect(
+                    &img,
+                    &boxes,
+                    f64_or(p, "sensitivity", 50.0) as f32,
+                );
                 let mut per_face = std::collections::BTreeMap::new();
                 found.retain(|b| {
                     let n = per_face.entry(b.face).or_insert(0usize);
                     *n += 1;
                     *n <= max_per_face
                 });
-                let out: Vec<Value> = found.iter().map(|b| json!({"x": b.x, "y": b.y, "size": b.radius, "face": b.face})).collect();
+                let out: Vec<Value> = found
+                    .iter()
+                    .map(|b| json!({"x": b.x, "y": b.y, "size": b.radius, "face": b.face}))
+                    .collect();
                 if !p.get("add").and_then(Value::as_bool).unwrap_or(true) || found.is_empty() {
                     return Ok(json!({"faces": boxes.len(), "spots": out, "added": 0}));
                 }
@@ -756,11 +1055,18 @@ pub fn specs() -> Vec<CommandSpec> {
             has_active,
             |s, p| {
                 let mode: SpotMode =
-                    serde_json::from_value(p.get("mode").cloned().unwrap_or(json!("remove"))).map_err(|e| bad("spot.add", e.to_string()))?;
+                    serde_json::from_value(p.get("mode").cloned().unwrap_or(json!("remove")))
+                        .map_err(|e| bad("spot.add", e.to_string()))?;
                 let pts: Vec<Point> = p
                     .get("points")
                     .and_then(Value::as_array)
-                    .map(|a| a.iter().filter_map(|q| Some(Point::new(q.get(0)?.as_f64()?, q.get(1)?.as_f64()?))).collect())
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|q| {
+                                Some(Point::new(q.get(0)?.as_f64()?, q.get(1)?.as_f64()?))
+                            })
+                            .collect()
+                    })
                     .unwrap_or_default();
                 if pts.is_empty() {
                     return Err(bad("spot.add", "missing points"));
@@ -774,7 +1080,9 @@ pub fn specs() -> Vec<CommandSpec> {
                     opacity: f64_or(p, "opacity", d.opacity).clamp(0.0, 100.0),
                     source_offset: point(p, "source"),
                 };
-                let id = s.active().ok_or_else(|| bad("spot.add", "no active photo"))?;
+                let id = s
+                    .active()
+                    .ok_or_else(|| bad("spot.add", "no active photo"))?;
                 let mut dd = (*s.develop_of(id).unwrap_or_default()).clone();
                 if spot.source_offset.is_none() && spot.mode != SpotMode::Fill {
                     // resolve the automatic source now: it gets a pin and stays put at every size
@@ -787,15 +1095,23 @@ pub fn specs() -> Vec<CommandSpec> {
                 Ok(json!({"index": n - 1}))
             }
         ),
-        cmd!("spot.select", "Select Spot", [], None, "{index|null}", has_active, |s, p| {
-            let n = spots_len(s);
-            s.active_spot = match p.get("index").and_then(Value::as_u64) {
-                Some(i) if (i as usize) < n => Some(i as usize),
-                Some(_) => return Err(bad("spot.select", "no such spot")),
-                None => None,
-            };
-            Ok(json!({"activeSpot": s.active_spot}))
-        }),
+        cmd!(
+            "spot.select",
+            "Select Spot",
+            [],
+            None,
+            "{index|null}",
+            has_active,
+            |s, p| {
+                let n = spots_len(s);
+                s.active_spot = match p.get("index").and_then(Value::as_u64) {
+                    Some(i) if (i as usize) < n => Some(i as usize),
+                    Some(_) => return Err(bad("spot.select", "no such spot")),
+                    None => None,
+                };
+                Ok(json!({"activeSpot": s.active_spot}))
+            }
+        ),
         cmd!(
             "spot.update",
             "Edit Spot",
@@ -807,13 +1123,17 @@ pub fn specs() -> Vec<CommandSpec> {
                 let c = "spot.update";
                 let i = spot_index(s, p, c)?;
                 let mode: Option<SpotMode> = match p.get("mode") {
-                    Some(m) => Some(serde_json::from_value(m.clone()).map_err(|e| bad(c, e.to_string()))?),
+                    Some(m) => {
+                        Some(serde_json::from_value(m.clone()).map_err(|e| bad(c, e.to_string()))?)
+                    }
                     None => None,
                 };
                 spots_edit(s, c, "Edit Spot", |spots| {
                     let sp = &mut spots[i];
                     if let Some(d) = point(p, "move") {
-                        sp.points.iter_mut().for_each(|q| *q = Point::new(q.x + d.x, q.y + d.y));
+                        sp.points
+                            .iter_mut()
+                            .for_each(|q| *q = Point::new(q.x + d.x, q.y + d.y));
                         // the source moves along (its offset is relative to the target)
                     }
                     if let Some(o) = point(p, "source") {
@@ -853,7 +1173,8 @@ pub fn specs() -> Vec<CommandSpec> {
                 let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
                 let dd = (*s.develop_of(id).unwrap_or_default()).clone();
                 let spot = dd.spots[i].clone();
-                let next = pick_source(s, id, &dd, &spot, spot.source_offset).ok_or_else(|| bad(c, "no other source fits in the photo"))?;
+                let next = pick_source(s, id, &dd, &spot, spot.source_offset)
+                    .ok_or_else(|| bad(c, "no other source fits in the photo"))?;
                 spots_edit(s, c, "Refresh Source", |spots| {
                     spots[i].source_offset = Some(next);
                     Ok(())
@@ -861,20 +1182,28 @@ pub fn specs() -> Vec<CommandSpec> {
                 Ok(json!({"index": i, "source": [next.x, next.y]}))
             }
         ),
-        cmd!("spot.delete", "Delete Spot", [], None, "{index? (the selected spot)}", has_active, |s, p| {
-            let c = "spot.delete";
-            let i = spot_index(s, p, c)?;
-            spots_edit(s, c, "Delete Spot", |spots| {
-                spots.remove(i);
-                Ok(())
-            })?;
-            s.active_spot = match s.active_spot {
-                Some(a) if a == i => None,
-                Some(a) if a > i => Some(a - 1),
-                a => a,
-            };
-            ok()
-        }),
+        cmd!(
+            "spot.delete",
+            "Delete Spot",
+            [],
+            None,
+            "{index? (the selected spot)}",
+            has_active,
+            |s, p| {
+                let c = "spot.delete";
+                let i = spot_index(s, p, c)?;
+                spots_edit(s, c, "Delete Spot", |spots| {
+                    spots.remove(i);
+                    Ok(())
+                })?;
+                s.active_spot = match s.active_spot {
+                    Some(a) if a == i => None,
+                    Some(a) if a > i => Some(a - 1),
+                    a => a,
+                };
+                ok()
+            }
+        ),
         // ---- Red eye / pet eye
         cmd!(
             "redeye.add",
@@ -920,24 +1249,35 @@ pub fn specs() -> Vec<CommandSpec> {
                 if !eye.pet {
                     return Err(bad(c, "catchlights are for pet eyes"));
                 }
-                let off = point(p, "offset").or(eye.catchlight).unwrap_or(Point::new(-0.35, -0.35));
-                eye.catchlight = bool_or(p, "on", true).then(|| Point::new(off.x.clamp(-1.0, 1.0), off.y.clamp(-1.0, 1.0)));
+                let off = point(p, "offset")
+                    .or(eye.catchlight)
+                    .unwrap_or(Point::new(-0.35, -0.35));
+                eye.catchlight = bool_or(p, "on", true)
+                    .then(|| Point::new(off.x.clamp(-1.0, 1.0), off.y.clamp(-1.0, 1.0)));
                 s.set_develop(id, dd, "Catchlight")?;
                 ok()
             }
         ),
-        cmd!("redeye.delete", "Delete Red Eye Correction", [], None, "{index}", has_active, |s, p| {
-            let c = "redeye.delete";
-            let i = super::f64_req(p, "index", c)? as usize;
-            let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
-            let mut dd = (*s.develop_of(id).unwrap_or_default()).clone();
-            if i >= dd.red_eye.len() {
-                return Err(bad(c, "no such eye"));
+        cmd!(
+            "redeye.delete",
+            "Delete Red Eye Correction",
+            [],
+            None,
+            "{index}",
+            has_active,
+            |s, p| {
+                let c = "redeye.delete";
+                let i = super::f64_req(p, "index", c)? as usize;
+                let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
+                let mut dd = (*s.develop_of(id).unwrap_or_default()).clone();
+                if i >= dd.red_eye.len() {
+                    return Err(bad(c, "no such eye"));
+                }
+                dd.red_eye.remove(i);
+                s.set_develop(id, dd, "Delete Red Eye")?;
+                ok()
             }
-            dd.red_eye.remove(i);
-            s.set_develop(id, dd, "Delete Red Eye")?;
-            ok()
-        }),
+        ),
     ]
 }
 
@@ -945,19 +1285,32 @@ pub fn specs() -> Vec<CommandSpec> {
 pub const SPOT_SIZE: (f64, f64) = (0.001, 0.25);
 
 fn spots_len(s: &Session) -> usize {
-    s.active().and_then(|id| s.develop_of(id)).map(|d| d.spots.len()).unwrap_or(0)
+    s.active()
+        .and_then(|id| s.develop_of(id))
+        .map(|d| d.spots.len())
+        .unwrap_or(0)
 }
 
 /// `index` from the params, else the selected spot.
 fn spot_index(s: &Session, p: &Value, c: &str) -> Result<usize> {
-    let i = p.get("index").and_then(Value::as_u64).map(|v| v as usize).or(s.active_spot).ok_or_else(|| bad(c, "no spot selected (give `index`)"))?;
+    let i = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .map(|v| v as usize)
+        .or(s.active_spot)
+        .ok_or_else(|| bad(c, "no spot selected (give `index`)"))?;
     if i >= spots_len(s) {
         return Err(bad(c, "no such spot"));
     }
     Ok(i)
 }
 
-fn spots_edit(s: &mut Session, c: &str, label: &str, f: impl FnOnce(&mut Vec<Spot>) -> Result<()>) -> Result<()> {
+fn spots_edit(
+    s: &mut Session,
+    c: &str,
+    label: &str,
+    f: impl FnOnce(&mut Vec<Spot>) -> Result<()>,
+) -> Result<()> {
     let id = s.active().ok_or_else(|| bad(c, "no active photo"))?;
     let mut d = (*s.develop_of(id).unwrap_or_default()).clone();
     f(&mut d.spots)?;
@@ -965,7 +1318,13 @@ fn spots_edit(s: &mut Session, c: &str, label: &str, f: impl FnOnce(&mut Vec<Spo
 }
 
 /// An automatic source for `spot` on photo `id` (a small proxy of the photo, framed by `d`).
-fn pick_source(s: &mut Session, id: crate::PhotoId, d: &lightcraft_develop::DevelopSettings, spot: &Spot, avoid: Option<Point>) -> Option<Point> {
+fn pick_source(
+    s: &mut Session,
+    id: crate::PhotoId,
+    d: &lightcraft_develop::DevelopSettings,
+    spot: &Spot,
+    avoid: Option<Point>,
+) -> Option<Point> {
     let src = s.source_now(id, crate::media::SourceLevel::Thumb).ok()?;
     let info = s.source_info(id);
     lightcraft_pipeline::spots::pick_source(&src, &info, d, spot, avoid)

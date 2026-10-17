@@ -44,7 +44,9 @@ fn random_bytes_and_empty() {
     for len in [1usize, 10, 100, 1000, 10_000] {
         let v: Vec<u8> = (0..len)
             .map(|_| {
-                seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                seed = seed
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
                 (seed >> 33) as u8
             })
             .collect();
@@ -77,7 +79,11 @@ fn missing_parts_still_import() {
         if name == "ppt/presentation.xml" {
             assert!(r.is_err());
         } else if let Ok(p) = r {
-            assert!(p.validate().is_empty(), "dropping {name}: {:?}", p.validate());
+            assert!(
+                p.validate().is_empty(),
+                "dropping {name}: {:?}",
+                p.validate()
+            );
             // Whatever we read must export again.
             deckcraft_pptx::export(&p).expect("re-export");
         }
@@ -88,7 +94,13 @@ fn missing_parts_still_import() {
 fn bad_xml_in_each_part() {
     let es = entries(&valid());
     for i in 0..es.len() {
-        for bad in [&b"<p:sld><unclosed"[..], b"\xff\xfe\x00garbage", b"", b"<?xml version=\"1.0\"?>", b"<a:b c='1' c='2'/>"] {
+        for bad in [
+            &b"<p:sld><unclosed"[..],
+            b"\xff\xfe\x00garbage",
+            b"",
+            b"<?xml version=\"1.0\"?>",
+            b"<a:b c='1' c='2'/>",
+        ] {
             let mut v = es.clone();
             v[i].1 = bad.to_vec();
             if let Ok(p) = deckcraft_pptx::import(&rezip(&v)) {
@@ -152,7 +164,10 @@ fn deep_nesting_is_bounded() {
 fn relationship_cycles_and_bad_targets() {
     let es = entries(&valid());
     let mut v = es.clone();
-    if let Some(e) = v.iter_mut().find(|(n, _)| n == "ppt/slides/_rels/slide1.xml.rels") {
+    if let Some(e) = v
+        .iter_mut()
+        .find(|(n, _)| n == "ppt/slides/_rels/slide1.xml.rels")
+    {
         e.1 = br#"<Relationships xmlns="x"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../../../../../etc/passwd"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slide1.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="slide1.xml"/></Relationships>"#.to_vec();
     }
     let p = deckcraft_pptx::import(&rezip(&v)).expect("import");
@@ -222,7 +237,8 @@ fn zip_bomb_entry_is_capped() {
     let mut es = entries(&valid());
     es.push(("ppt/big.xml".into(), big));
     let mut z = zip::ZipWriter::new(Cursor::new(Vec::new()));
-    let o = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let o = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
     for (n, d) in &es {
         z.start_file(n.as_str(), o).expect("start");
         z.write_all(d).expect("write");
@@ -239,19 +255,34 @@ fn export_of_odd_models_is_valid() {
     use std::sync::Arc;
     // No masters, dangling layout, duplicate and zero shape ids, NaN geometry, control characters.
     let mut p = defaults::new_presentation(None);
-    let mut s = Slide { id: SlideId(9999), layout: LayoutId(12345), ..Default::default() };
+    let mut s = Slide {
+        id: SlideId(9999),
+        layout: LayoutId(12345),
+        ..Default::default()
+    };
     for id in [0, 1, 5, 5] {
         s.shapes.push(Shape {
             id: ShapeId(id),
             name: "bad\u{0}name\u{b}".into(),
-            xfrm: Some(deckcraft_geom::Xfrm::new(f64::NAN, f64::INFINITY, -5.0, 1e300)),
-            text: Some(deckcraft_model::TextBody::from_text("tab\tand\u{1}control\nnew line")),
+            xfrm: Some(deckcraft_geom::Xfrm::new(
+                f64::NAN,
+                f64::INFINITY,
+                -5.0,
+                1e300,
+            )),
+            text: Some(deckcraft_model::TextBody::from_text(
+                "tab\tand\u{1}control\nnew line",
+            )),
             ..Default::default()
         });
     }
     s.shapes.push(Shape {
         id: ShapeId(7),
-        kind: ShapeKind::Opaque { xml: "<not xml".into(), preview: None, label: "Thing".into() },
+        kind: ShapeKind::Opaque {
+            xml: "<not xml".into(),
+            preview: None,
+            label: "Thing".into(),
+        },
         ..Default::default()
     });
     p.slides.push(Arc::new(s));
@@ -261,6 +292,7 @@ fn export_of_odd_models_is_valid() {
     assert!(q.validate().is_empty(), "{:?}", q.validate());
     let mut empty = p.clone();
     empty.masters.clear();
-    let q = deckcraft_pptx::import(&deckcraft_pptx::export(&empty).expect("export")).expect("import");
+    let q =
+        deckcraft_pptx::import(&deckcraft_pptx::export(&empty).expect("export")).expect("import");
     assert!(!q.masters.is_empty());
 }

@@ -45,7 +45,9 @@ pub(crate) fn gcd(a: u32, b: u32) -> u32 {
 /// Describe an animated GIF as a movie. `None` for a GIF with fewer than two frames (a still) or
 /// one whose headers can't be read.
 pub(crate) fn probe(path: &str, bytes: &[u8]) -> Option<Footage> {
-    let mut dec = gif::DecodeOptions::new().read_info(Cursor::new(bytes)).ok()?;
+    let mut dec = gif::DecodeOptions::new()
+        .read_info(Cursor::new(bytes))
+        .ok()?;
     let (width, height) = (u32::from(dec.width()), u32::from(dec.height()));
     let mut delays: Vec<u32> = Vec::new();
     while delays.len() < MAX_FRAMES {
@@ -93,7 +95,8 @@ impl Anim {
         if crate::webp_anim::is_webp(bytes) {
             return crate::webp_anim::load(bytes);
         }
-        let dec = GifDecoder::new(Cursor::new(bytes)).map_err(|e| MediaError::Decode(format!("GIF: {e}")))?;
+        let dec = GifDecoder::new(Cursor::new(bytes))
+            .map_err(|e| MediaError::Decode(format!("GIF: {e}")))?;
         let (mut frames, mut starts) = (Vec::new(), Vec::new());
         let (mut at, mut size) = (0i64, 0usize);
         for frame in dec.into_frames() {
@@ -110,7 +113,9 @@ impl Anim {
             let buf = frame.into_buffer();
             size = size.saturating_add(buf.as_raw().len());
             if size > MAX_BYTES {
-                return Err(MediaError::Unsupported("GIF is too large to hold in memory".into()));
+                return Err(MediaError::Unsupported(
+                    "GIF is too large to hold in memory".into(),
+                ));
             }
             starts.push(Tick::from_units(at, 100));
             at = at.saturating_add(i64::from(cs));

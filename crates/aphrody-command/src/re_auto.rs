@@ -230,7 +230,10 @@ fn analyze_file(path: &Path, deep: bool, strings_limit: usize) -> Result<AutoRep
                 .funcs
                 .iter()
                 .take(50)
-                .map(|f| FuncSummary { name: f.name.clone(), addr: f.addr })
+                .map(|f| FuncSummary {
+                    name: f.name.clone(),
+                    addr: f.addr,
+                })
                 .collect();
             Some(GoSummary {
                 go_version: report.go_version,
@@ -241,7 +244,7 @@ fn analyze_file(path: &Path, deep: bool, strings_limit: usize) -> Result<AutoRep
                 packages: report.packages,
                 types_sample: report.types_sample,
             })
-        },
+        }
         None => None,
     };
 
@@ -249,7 +252,11 @@ fn analyze_file(path: &Path, deep: bool, strings_limit: usize) -> Result<AutoRep
     let disasm_entry = disasm_entrypoint(&triage, &data, &mut warnings);
 
     // --- Passe deep (Ghidra) ---
-    let deep_result = if deep { Some(run_ghidra(path, &mut warnings)) } else { None };
+    let deep_result = if deep {
+        Some(run_ghidra(path, &mut warnings))
+    } else {
+        None
+    };
 
     // --- Sections (résumé) ---
     let sections = triage
@@ -311,7 +318,7 @@ fn disasm_entrypoint(
                 "entrypoint VA {ep_va:#x} not mapped to a file offset — disasm skipped"
             ));
             return None;
-        },
+        }
     };
 
     let code_slice = match data.get(ep_offset..) {
@@ -319,16 +326,26 @@ fn disasm_entrypoint(
         _ => {
             warnings.push("entrypoint offset out of bounds".to_owned());
             return None;
-        },
+        }
     };
 
     let insns: Vec<DisasmInsn> = aphrody_re::disasm(code_slice, ep_va, AUTO_DISASM_LIMIT);
     if insns.is_empty() {
-        warnings.push(format!("disasm at entrypoint {ep_va:#x} yielded no valid instructions"));
+        warnings.push(format!(
+            "disasm at entrypoint {ep_va:#x} yielded no valid instructions"
+        ));
         return None;
     }
 
-    Some(insns.into_iter().map(|i| DisasmSummary { address: i.address, text: i.text }).collect())
+    Some(
+        insns
+            .into_iter()
+            .map(|i| DisasmSummary {
+                address: i.address,
+                text: i.text,
+            })
+            .collect(),
+    )
 }
 
 /// Résolution VA → offset fichier pour PE et ELF (best-effort).
@@ -411,7 +428,8 @@ fn run_ghidra(path: &Path, warnings: &mut Vec<String>) -> DeepSummary {
             .unwrap_or(0)
     ));
 
-    let status = std::process::Command::new(&headless_bin).no_window()
+    let status = std::process::Command::new(&headless_bin)
+        .no_window()
         .arg(&tmp_proj)
         .arg("aphrody_auto_re")
         .args(["-import", &path.to_string_lossy()])
@@ -429,10 +447,12 @@ fn run_ghidra(path: &Path, warnings: &mut Vec<String>) -> DeepSummary {
                 ghidra_available: true,
                 ghidra_unavailable_reason: None,
                 ghidra_output: json_out.or_else(|| {
-                    Some(serde_json::Value::String(stdout.chars().take(4096).collect()))
+                    Some(serde_json::Value::String(
+                        stdout.chars().take(4096).collect(),
+                    ))
                 }),
             }
-        },
+        }
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
             let reason = format!(
@@ -446,7 +466,7 @@ fn run_ghidra(path: &Path, warnings: &mut Vec<String>) -> DeepSummary {
                 ghidra_unavailable_reason: Some(reason),
                 ghidra_output: None,
             }
-        },
+        }
         Err(e) => {
             let reason = format!("failed to spawn analyzeHeadless: {e}");
             warnings.push(format!("ghidra spawn error: {reason}"));
@@ -455,7 +475,7 @@ fn run_ghidra(path: &Path, warnings: &mut Vec<String>) -> DeepSummary {
                 ghidra_unavailable_reason: Some(reason),
                 ghidra_output: None,
             }
-        },
+        }
     }
 }
 
@@ -528,7 +548,9 @@ fn resolve_redress_bin() -> Option<PathBuf> {
     let gopath_bins = std::env::var("GOPATH")
         .ok()
         .map(|g| {
-            g.split(if cfg!(windows) { ';' } else { ':' }).map(PathBuf::from).collect::<Vec<_>>()
+            g.split(if cfg!(windows) { ';' } else { ':' })
+                .map(PathBuf::from)
+                .collect::<Vec<_>>()
         })
         .unwrap_or_default();
     let home_go = std::env::var("HOME")
@@ -562,7 +584,12 @@ pub(crate) fn run_redress(path: &Path) -> RedressSummary {
 
     let target = path.to_string_lossy();
     let run = |sub: &str| -> Option<String> {
-        let out = std::process::Command::new(&bin).no_window().arg(sub).arg(target.as_ref()).output().ok()?;
+        let out = std::process::Command::new(&bin)
+            .no_window()
+            .arg(sub)
+            .arg(target.as_ref())
+            .output()
+            .ok()?;
         if out.status.success() {
             let s = String::from_utf8_lossy(&out.stdout).into_owned();
             (!s.trim().is_empty()).then_some(s)
@@ -615,10 +642,10 @@ fn run_auto_batch(dir: &Path, deep: bool, json_only: bool, limit: usize) -> Resu
             match analyze_file(&path, deep, limit) {
                 Ok(r) => {
                     results.lock().unwrap().push(r);
-                },
+                }
                 Err(e) => {
                     errors.lock().unwrap().push(e);
-                },
+                }
             }
         });
         handles.push(handle);
@@ -650,7 +677,9 @@ fn run_auto_batch(dir: &Path, deep: bool, json_only: bool, limit: usize) -> Resu
 /// Collecte récursivement les fichiers qui sont des exécutables PE ou ELF.
 fn collect_executables(dir: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
-    let Ok(walker) = walkdir_collect(dir) else { return out };
+    let Ok(walker) = walkdir_collect(dir) else {
+        return out;
+    };
     for entry in walker {
         if is_executable_by_magic(&entry) {
             out.push(entry);
@@ -669,7 +698,9 @@ fn walk_dir_recursive(dir: &Path, out: &mut Vec<PathBuf>, depth: usize, max_dept
     if depth > max_depth {
         return;
     }
-    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
@@ -682,7 +713,9 @@ fn walk_dir_recursive(dir: &Path, out: &mut Vec<PathBuf>, depth: usize, max_dept
 
 /// Détecte les exécutables par magic bytes (PE: `MZ`, ELF: `\x7FELF`).
 fn is_executable_by_magic(path: &Path) -> bool {
-    let Ok(mut f) = std::fs::File::open(path) else { return false };
+    let Ok(mut f) = std::fs::File::open(path) else {
+        return false;
+    };
     use std::io::Read;
     let mut magic = [0u8; 4];
     if f.read_exact(&mut magic).is_err() {
@@ -703,7 +736,10 @@ struct Semaphore {
 
 impl Semaphore {
     fn new(n: usize) -> Self {
-        Self { count: std::sync::Mutex::new(n), cond: std::sync::Condvar::new() }
+        Self {
+            count: std::sync::Mutex::new(n),
+            cond: std::sync::Condvar::new(),
+        }
     }
 
     fn acquire(&self) -> SemaphorePermit<'_> {

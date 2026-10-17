@@ -25,7 +25,9 @@ pub struct ReferenceCorpus {
 impl ReferenceCorpus {
     /// Resolve the selected checkout. Acquisition may complete after server startup.
     pub fn for_workspace(root: &Path) -> io::Result<Self> {
-        Ok(Self { workspace: root.canonicalize()? })
+        Ok(Self {
+            workspace: root.canonicalize()?,
+        })
     }
 
     /// Expose data only; no acquisition, host execution or raw upstream scripts.
@@ -54,7 +56,10 @@ impl ReferenceCorpus {
         if !root.starts_with(&self.workspace) {
             return Err(StatusCode::NOT_FOUND);
         }
-        let target = root.join(relative).canonicalize().map_err(|_| StatusCode::NOT_FOUND)?;
+        let target = root
+            .join(relative)
+            .canonicalize()
+            .map_err(|_| StatusCode::NOT_FOUND)?;
         if !target.starts_with(&root) {
             return Err(StatusCode::NOT_FOUND);
         }
@@ -92,7 +97,9 @@ async fn style_tokens(State(corpus): State<Arc<ReferenceCorpus>>) -> JsonRespons
 }
 
 async fn google_catalog(State(corpus): State<Arc<ReferenceCorpus>>) -> JsonResponse {
-    corpus.json("google-design/google-catalog.json").map(axum::Json)
+    corpus
+        .json("google-design/google-catalog.json")
+        .map(axum::Json)
 }
 
 fn entry<'a>(catalog: &'a Value, slug: &str) -> Option<&'a Value> {
@@ -101,7 +108,11 @@ fn entry<'a>(catalog: &'a Value, slug: &str) -> Option<&'a Value> {
             || entry
                 .get("slugs")
                 .and_then(Value::as_array)
-                .is_some_and(|slugs| slugs.iter().any(|candidate| candidate.as_str() == Some(slug)))
+                .is_some_and(|slugs| {
+                    slugs
+                        .iter()
+                        .any(|candidate| candidate.as_str() == Some(slug))
+                })
     })
 }
 
@@ -142,11 +153,15 @@ async fn google_document(
 async fn assets(State(corpus): State<Arc<ReferenceCorpus>>) -> JsonResponse {
     let material = corpus.json("material-3/assets.json")?;
     let google = corpus.json("google-design/manifest.json")?;
-    Ok(axum::Json(json!({"material":material,"googleDesign":google.get("files")})))
+    Ok(axum::Json(
+        json!({"material":material,"googleDesign":google.get("files")}),
+    ))
 }
 
 async fn specs(State(corpus): State<Arc<ReferenceCorpus>>) -> JsonResponse {
-    corpus.json("material-3/material-catalog.json").map(axum::Json)
+    corpus
+        .json("material-3/material-catalog.json")
+        .map(axum::Json)
 }
 
 fn valid_slug(slug: &str) -> bool {
@@ -185,7 +200,9 @@ async fn spec(
     if !relative.ends_with(".json") {
         return Err(StatusCode::NOT_FOUND);
     }
-    corpus.json(&format!("material-3/{relative}")).map(axum::Json)
+    corpus
+        .json(&format!("material-3/{relative}"))
+        .map(axum::Json)
 }
 
 #[cfg(test)]
@@ -197,15 +214,27 @@ mod tests {
     #[tokio::test]
     async fn missing_corpus_is_explicit_and_raw_scripts_are_not_routes() {
         let temporary = tempfile::tempdir().unwrap();
-        let app = ReferenceCorpus::for_workspace(temporary.path()).unwrap().router();
+        let app = ReferenceCorpus::for_workspace(temporary.path())
+            .unwrap()
+            .router();
         let result = app
             .clone()
-            .oneshot(Request::builder().uri("/api/design/tokens").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/design/tokens")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(result.status(), StatusCode::SERVICE_UNAVAILABLE);
         let result = app
-            .oneshot(Request::builder().uri("/var/mirrors/main.js").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/var/mirrors/main.js")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(result.status(), StatusCode::NOT_FOUND);
@@ -231,7 +260,9 @@ mod tests {
             corpus.join("material-3/material-catalog.json"),
             r#"{"entries":[{"slug":"styles/color","slugs":["styles/color","styles/color/overview"],"markdown_path":"documents/m3.material.io/styles/color/index.md"}]}"#,
         ).unwrap();
-        let app = ReferenceCorpus::for_workspace(temporary.path()).unwrap().router();
+        let app = ReferenceCorpus::for_workspace(temporary.path())
+            .unwrap()
+            .router();
         for uri in [
             "/api/design/tokens",
             "/api/design/docs/styles/color",

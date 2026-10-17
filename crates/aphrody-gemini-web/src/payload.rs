@@ -16,7 +16,7 @@
 //! The live web UI appends further sparse context slots (indices 3+); they are
 //! optional for a text-only send and omitted here.
 
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::{
     boq::parse_envelopes,
@@ -36,14 +36,24 @@ pub fn build_send_payload(
     attachments: Option<&[UploadedAttachment]>,
 ) -> Value {
     let image_list = if let Some(atts) = attachments {
-        let list: Vec<Value> =
-            atts.iter().map(|att| json!([[att.url.clone(), 1], att.name.clone()])).collect();
+        let list: Vec<Value> = atts
+            .iter()
+            .map(|att| json!([[att.url.clone(), 1], att.name.clone()]))
+            .collect();
         Value::Array(list)
     } else {
         Value::Null
     };
 
-    let message_content = json!([prompt, 0, Value::Null, image_list, Value::Null, Value::Null, 0]);
+    let message_content = json!([
+        prompt,
+        0,
+        Value::Null,
+        image_list,
+        Value::Null,
+        Value::Null,
+        0
+    ]);
     let language_tuple = json!([language]);
     let chat_metadata = json!([
         opt_str(meta.conversation_id.as_deref()),
@@ -75,18 +85,18 @@ fn collect_image_urls_into(v: &Value, out: &mut Vec<String>) {
                 && !out.iter().any(|u| u == s) =>
         {
             out.push(s.clone());
-        },
+        }
         Value::Array(a) => {
             for item in a {
                 collect_image_urls_into(item, out);
             }
-        },
+        }
         Value::Object(o) => {
             for item in o.values() {
                 collect_image_urls_into(item, out);
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -108,18 +118,18 @@ fn collect_video_urls_into(v: &Value, out: &mut Vec<String>) {
             if is_video && !out.iter().any(|u| u == s) {
                 out.push(s.clone());
             }
-        },
+        }
         Value::Array(a) => {
             for item in a {
                 collect_video_urls_into(item, out);
             }
-        },
+        }
         Value::Object(o) => {
             for item in o.values() {
                 collect_video_urls_into(item, out);
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -137,7 +147,9 @@ pub fn parse_stream_response(raw: &str) -> Result<ChatReply> {
     let mut best: Option<ChatReply> = None;
     for inner in parse_envelopes(raw) {
         if let Some(reply) = extract_reply(&inner) {
-            let better = best.as_ref().is_none_or(|b| reply.text.len() > b.text.len());
+            let better = best
+                .as_ref()
+                .is_none_or(|b| reply.text.len() > b.text.len());
             if better {
                 best = Some(reply);
             }
@@ -185,7 +197,11 @@ pub fn strip_restarted_drafts(text: &str) -> &str {
         if index <= start {
             continue;
         }
-        if text[..index].chars().next_back().is_some_and(char::is_alphanumeric) {
+        if text[..index]
+            .chars()
+            .next_back()
+            .is_some_and(char::is_alphanumeric)
+        {
             restart = Some(index);
         }
     }
@@ -226,9 +242,14 @@ fn extract_reply(inner: &Value) -> Option<ChatReply> {
         .to_string();
 
     let meta_arr = inner.get(1).and_then(Value::as_array);
-    let conversation_id =
-        meta_arr.and_then(|m| m.first()).and_then(Value::as_str).map(str::to_string);
-    let response_id = meta_arr.and_then(|m| m.get(1)).and_then(Value::as_str).map(str::to_string);
+    let conversation_id = meta_arr
+        .and_then(|m| m.first())
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let response_id = meta_arr
+        .and_then(|m| m.get(1))
+        .and_then(Value::as_str)
+        .map(str::to_string);
     let choice_id = first.get(0).and_then(Value::as_str).map(str::to_string);
 
     let web_image_urls = first
@@ -246,8 +267,11 @@ fn extract_reply(inner: &Value) -> Option<ChatReply> {
     // Generated images (Nano Banana / image model). The web app nests them under
     // candidate[12][7]; the exact leaf indices vary by build, so collect every
     // googleusercontent/lh3 URL found in that subtree.
-    let generated_image_urls =
-        first.get(12).and_then(|v| v.get(7)).map(collect_image_urls).unwrap_or_default();
+    let generated_image_urls = first
+        .get(12)
+        .and_then(|v| v.get(7))
+        .map(collect_image_urls)
+        .unwrap_or_default();
 
     // Generated videos (Veo). Scan the whole candidate subtree for video URLs —
     // the leaf path varies and videos may be delivered as a late streamed chunk.
@@ -255,7 +279,11 @@ fn extract_reply(inner: &Value) -> Option<ChatReply> {
 
     Some(ChatReply {
         text,
-        metadata: ConversationMetadata { conversation_id, response_id, choice_id },
+        metadata: ConversationMetadata {
+            conversation_id,
+            response_id,
+            choice_id,
+        },
         web_image_urls,
         generated_image_urls,
         generated_video_urls,
@@ -292,10 +320,18 @@ mod tests {
             url: "https://lh3.googleusercontent.com/chat/abc".to_string(),
             name: "test.png".to_string(),
         }];
-        let p = build_send_payload("describe", "en", &ConversationMetadata::default(), Some(&atts));
+        let p = build_send_payload(
+            "describe",
+            "en",
+            &ConversationMetadata::default(),
+            Some(&atts),
+        );
         assert_eq!(
             p[0][3],
-            json!([[["https://lh3.googleusercontent.com/chat/abc", 1], "test.png"]])
+            json!([[
+                ["https://lh3.googleusercontent.com/chat/abc", 1],
+                "test.png"
+            ]])
         );
     }
 
@@ -375,8 +411,14 @@ mod tests {
             inner.to_string(),
         );
         let reply = parse_stream_response(&raw).unwrap();
-        assert!(reply.generated_image_urls.iter().any(|u| u.contains("img1")));
-        assert!(reply.generated_video_urls.iter().any(|u| u.contains("clip.mp4")));
+        assert!(reply
+            .generated_image_urls
+            .iter()
+            .any(|u| u.contains("img1")));
+        assert!(reply
+            .generated_video_urls
+            .iter()
+            .any(|u| u.contains("clip.mp4")));
     }
 
     /// One `wrb.fr` chunk per snapshot, in the length-prefixed stream framing.
@@ -404,7 +446,10 @@ mod tests {
              s'agit d'une forme divine bien fascinante, cher ami.",
         ]);
         let reply = parse_stream_response(&raw).unwrap();
-        assert_eq!(reply.text, "Oh oh ! Il s'agit d'une forme divine bien fascinante, cher ami.");
+        assert_eq!(
+            reply.text,
+            "Oh oh ! Il s'agit d'une forme divine bien fascinante, cher ami."
+        );
     }
 
     #[test]
@@ -420,7 +465,10 @@ mod tests {
     #[test]
     fn keeps_only_the_last_of_several_restarts() {
         let text = "Hmpf... Le SupHmpf... Le Super Saiyan GHmpf... Le Super Saiyan God, minus.";
-        assert_eq!(strip_restarted_drafts(text), "Hmpf... Le Super Saiyan God, minus.");
+        assert_eq!(
+            strip_restarted_drafts(text),
+            "Hmpf... Le Super Saiyan God, minus."
+        );
     }
 
     #[test]
@@ -443,7 +491,10 @@ mod tests {
 
     #[test]
     fn strips_a_restart_after_leading_whitespace() {
-        assert_eq!(strip_restarted_drafts("  Oh oh ! VoOh oh ! Voilà."), "Oh oh ! Voilà.");
+        assert_eq!(
+            strip_restarted_drafts("  Oh oh ! VoOh oh ! Voilà."),
+            "Oh oh ! Voilà."
+        );
     }
 
     #[test]

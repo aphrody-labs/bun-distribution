@@ -23,12 +23,19 @@ pub struct ToolResult {
 
 impl ToolResult {
     pub fn text(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], ..Default::default() }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            ..Default::default()
+        }
     }
 
     /// A JSON result as pretty text plus `structuredContent` when it is an object.
     pub fn json(v: Value) -> Self {
-        let text = if v.is_null() { "ok".to_string() } else { serde_json::to_string_pretty(&v).unwrap_or_default() };
+        let text = if v.is_null() {
+            "ok".to_string()
+        } else {
+            serde_json::to_string_pretty(&v).unwrap_or_default()
+        };
         let mut r = Self::text(text);
         if v.is_object() {
             r.structured = Some(v);
@@ -37,7 +44,10 @@ impl ToolResult {
     }
 
     pub fn error(msg: impl Into<String>) -> Self {
-        Self { is_error: true, ..Self::text(msg) }
+        Self {
+            is_error: true,
+            ..Self::text(msg)
+        }
     }
 
     fn from(r: Result<Value, String>) -> Self {
@@ -57,7 +67,10 @@ impl ToolResult {
 
     /// The first image block's base64 data and mime type.
     pub fn image(&self) -> Option<(&str, &str)> {
-        self.content.iter().find(|c| c["type"] == "image").and_then(|c| Some((c["data"].as_str()?, c["mimeType"].as_str()?)))
+        self.content
+            .iter()
+            .find(|c| c["type"] == "image")
+            .and_then(|c| Some((c["data"].as_str()?, c["mimeType"].as_str()?)))
     }
 }
 
@@ -341,7 +354,9 @@ pub fn command_tool_name(id: &str) -> String {
 
 /// One tool per command reported by the backend's `engine.commands`.
 pub fn command_tools(backend: &mut dyn Backend) -> Vec<Value> {
-    let Ok(Value::Array(cmds)) = backend.call("engine.commands", json!({})) else { return Vec::new() };
+    let Ok(Value::Array(cmds)) = backend.call("engine.commands", json!({})) else {
+        return Vec::new();
+    };
     cmds.iter()
         .filter_map(|c| {
             let id = c["id"].as_str()?;
@@ -350,7 +365,10 @@ pub fn command_tools(backend: &mut dyn Backend) -> Vec<Value> {
             if let Some(p) = c["params"].as_str().filter(|p| !p.is_empty()) {
                 d.push_str(&format!(" Params: {p}."));
             }
-            if let Some(m) = c["menu"].as_array().filter(|m| m.iter().any(|x| x.as_str().is_some_and(|s| !s.is_empty()))) {
+            if let Some(m) = c["menu"]
+                .as_array()
+                .filter(|m| m.iter().any(|x| x.as_str().is_some_and(|s| !s.is_empty())))
+            {
                 let m: Vec<&str> = m.iter().filter_map(Value::as_str).collect();
                 d.push_str(&format!(" Menu: {}.", m.join(" › ")));
             }
@@ -405,7 +423,10 @@ pub(crate) fn check_args(name: &str, args: &Value) -> Result<(), String> {
     };
     if let Some(bad) = m.keys().find(|k| !props.contains_key(*k)) {
         let accepted: Vec<&str> = props.keys().map(String::as_str).collect();
-        return Err(format!("unknown argument \"{bad}\" for {name}; expected: {}", accepted.join(", ")));
+        return Err(format!(
+            "unknown argument \"{bad}\" for {name}; expected: {}",
+            accepted.join(", ")
+        ));
     }
     Ok(())
 }
@@ -425,7 +446,10 @@ pub fn tool_definitions(backend: &mut dyn Backend, with_commands: bool) -> Vec<V
 }
 
 fn exec(b: &mut dyn Backend, command: &str, params: Value) -> Result<Value, String> {
-    b.call("engine.execute", json!({"command": command, "params": params}))
+    b.call(
+        "engine.execute",
+        json!({"command": command, "params": params}),
+    )
 }
 
 /// Make `args.id` (if any) the active photo.
@@ -438,19 +462,37 @@ fn activate(b: &mut dyn Backend, args: &Value) -> Result<(), String> {
 
 fn temp_path(tag: &str) -> std::path::PathBuf {
     static N: AtomicU64 = AtomicU64::new(0);
-    std::env::temp_dir().join(format!("lightcraft-mcp-{}-{}-{tag}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)))
+    std::env::temp_dir().join(format!(
+        "lightcraft-mcp-{}-{}-{tag}.png",
+        std::process::id(),
+        N.fetch_add(1, Ordering::Relaxed)
+    ))
 }
 
 /// Read a PNG the backend wrote, optionally downscale / re-encode as JPEG, and wrap it as image
 /// content (+ a text block with the metadata).
-fn image_result(file: &std::path::Path, max: Option<u32>, format: &str, save_to: Option<&str>, meta: Value) -> ToolResult {
+fn image_result(
+    file: &std::path::Path,
+    max: Option<u32>,
+    format: &str,
+    save_to: Option<&str>,
+    meta: Value,
+) -> ToolResult {
     let bytes = match std::fs::read(file) {
         Ok(b) => b,
-        Err(e) => return ToolResult::error(format!("cannot read rendered image {}: {e}", file.display())),
+        Err(e) => {
+            return ToolResult::error(format!(
+                "cannot read rendered image {}: {e}",
+                file.display()
+            ));
+        }
     };
     let _ = std::fs::remove_file(file);
     let jpeg = matches!(format, "jpeg" | "jpg");
-    let (w, h) = (meta["width"].as_u64().unwrap_or(0) as u32, meta["height"].as_u64().unwrap_or(0) as u32);
+    let (w, h) = (
+        meta["width"].as_u64().unwrap_or(0) as u32,
+        meta["height"].as_u64().unwrap_or(0) as u32,
+    );
     let too_big = max.is_some_and(|m| w.max(h) > m);
     let (bytes, w, h) = if jpeg || too_big {
         let opts = match max {
@@ -484,7 +526,10 @@ fn image_result(file: &std::path::Path, max: Option<u32>, format: &str, save_to:
         o.remove("path");
     }
     ToolResult {
-        content: vec![json!({"type": "image", "data": base64_encode(&bytes), "mimeType": mime}), json!({"type": "text", "text": info.to_string()})],
+        content: vec![
+            json!({"type": "image", "data": base64_encode(&bytes), "mimeType": mime}),
+            json!({"type": "text", "text": info.to_string()}),
+        ],
         is_error: false,
         structured: None,
     }
@@ -502,15 +547,23 @@ fn render_photo(b: &mut dyn Backend, args: &Value) -> ToolResult {
     if let Err(e) = check_save_path(b, args) {
         return ToolResult::error(e);
     }
-    let size = args.get("size").and_then(Value::as_u64).unwrap_or(1024).clamp(16, 4096);
+    let size = args
+        .get("size")
+        .and_then(Value::as_u64)
+        .unwrap_or(1024)
+        .clamp(16, 4096);
     let id = match args.get("id").and_then(Value::as_u64) {
         Some(id) => Some(id),
         None => match exec(b, "library.state", json!({})) {
-            Ok(s) => s["selection"]["active"].as_u64().or(s["selection"]["ids"][0].as_u64()),
+            Ok(s) => s["selection"]["active"]
+                .as_u64()
+                .or(s["selection"]["ids"][0].as_u64()),
             Err(e) => return ToolResult::error(e),
         },
     };
-    let Some(id) = id else { return ToolResult::error("no active photo: import or select one, or pass `id`") };
+    let Some(id) = id else {
+        return ToolResult::error("no active photo: import or select one, or pass `id`");
+    };
     let file = temp_path("render");
     let path = file.to_string_lossy().to_string();
     let meta = match b.call("ui.render", json!({"id": id, "size": size, "path": path})) {
@@ -519,7 +572,13 @@ fn render_photo(b: &mut dyn Backend, args: &Value) -> ToolResult {
     };
     let mut meta = meta;
     meta["id"] = json!(id);
-    image_result(&file, None, args.get("format").and_then(Value::as_str).unwrap_or("png"), args.get("path").and_then(Value::as_str), meta)
+    image_result(
+        &file,
+        None,
+        args.get("format").and_then(Value::as_str).unwrap_or("png"),
+        args.get("path").and_then(Value::as_str),
+        meta,
+    )
 }
 
 fn screenshot(b: &mut dyn Backend, args: &Value) -> ToolResult {
@@ -531,7 +590,12 @@ fn screenshot(b: &mut dyn Backend, args: &Value) -> ToolResult {
     match b.call("ui.screenshot", json!({"path": path})) {
         Ok(meta) => image_result(
             &file,
-            Some(args.get("maxSize").and_then(Value::as_u64).unwrap_or(1600).clamp(64, 8192) as u32),
+            Some(
+                args.get("maxSize")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(1600)
+                    .clamp(64, 8192) as u32,
+            ),
             args.get("format").and_then(Value::as_str).unwrap_or("png"),
             args.get("path").and_then(Value::as_str),
             meta,
@@ -564,15 +628,26 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
     match name {
         "list_commands" | "command_list" => {
             let filter = s("filter").unwrap_or("").to_lowercase();
-            let enabled_only = args.get("enabled_only").and_then(Value::as_bool).unwrap_or(false);
+            let enabled_only = args
+                .get("enabled_only")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
             ToolResult::from(b.call("engine.commands", json!({})).map(|v| {
                 match v {
                     Value::Array(a) => Value::Array(
                         a.into_iter()
                             .filter(|c| {
                                 filter.is_empty()
-                                    || c["id"].as_str().unwrap_or("").to_lowercase().contains(&filter)
-                                    || c["label"].as_str().unwrap_or("").to_lowercase().contains(&filter)
+                                    || c["id"]
+                                        .as_str()
+                                        .unwrap_or("")
+                                        .to_lowercase()
+                                        .contains(&filter)
+                                    || c["label"]
+                                        .as_str()
+                                        .unwrap_or("")
+                                        .to_lowercase()
+                                        .contains(&filter)
                             })
                             .filter(|c| !enabled_only || c["enabled"].as_bool() != Some(false))
                             .collect(),
@@ -582,12 +657,24 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
             }))
         }
         "command_run" => match s("id") {
-            Some(c) => ToolResult::from(exec(b, c, args.get("params").cloned().filter(|p| !p.is_null()).unwrap_or(json!({})))),
+            Some(c) => ToolResult::from(exec(
+                b,
+                c,
+                args.get("params")
+                    .cloned()
+                    .filter(|p| !p.is_null())
+                    .unwrap_or(json!({})),
+            )),
             None => ToolResult::error("missing `id`"),
         },
         "command_batch" => {
-            let Some(steps) = args.get("steps").and_then(Value::as_array) else { return ToolResult::error("missing `steps`") };
-            let stop = args.get("stop_on_error").and_then(Value::as_bool).unwrap_or(true);
+            let Some(steps) = args.get("steps").and_then(Value::as_array) else {
+                return ToolResult::error("missing `steps`");
+            };
+            let stop = args
+                .get("stop_on_error")
+                .and_then(Value::as_bool)
+                .unwrap_or(true);
             let (mut completed, mut failed, mut results) = (0, 0, Vec::new());
             for st in steps {
                 let Some(id) = st["id"].as_str() else {
@@ -598,7 +685,14 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
                     }
                     continue;
                 };
-                match exec(b, id, st.get("params").cloned().filter(|p| !p.is_null()).unwrap_or(json!({}))) {
+                match exec(
+                    b,
+                    id,
+                    st.get("params")
+                        .cloned()
+                        .filter(|p| !p.is_null())
+                        .unwrap_or(json!({})),
+                ) {
                     Ok(r) => {
                         completed += 1;
                         results.push(json!({"ok": true, "result": r}));
@@ -613,7 +707,14 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
                 }
             }
             let r = json!({"completed": completed, "failed": failed, "results": results});
-            if failed > 0 { ToolResult { is_error: true, ..ToolResult::json(r) } } else { ToolResult::json(r) }
+            if failed > 0 {
+                ToolResult {
+                    is_error: true,
+                    ..ToolResult::json(r)
+                }
+            } else {
+                ToolResult::json(r)
+            }
         }
         "doc_inspect" => ToolResult::from(doc_inspect(b)),
         "render_preview" => {
@@ -624,12 +725,23 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
             render_photo(b, &a)
         }
         "run_command" => match s("command") {
-            Some(c) => ToolResult::from(exec(b, c, args.get("params").cloned().filter(|p| !p.is_null()).unwrap_or(json!({})))),
+            Some(c) => ToolResult::from(exec(
+                b,
+                c,
+                args.get("params")
+                    .cloned()
+                    .filter(|p| !p.is_null())
+                    .unwrap_or(json!({})),
+            )),
             None => ToolResult::error("missing `command`"),
         },
         "import" => {
             let paths: Vec<String> = match args.get("paths") {
-                Some(Value::Array(a)) => a.iter().filter_map(Value::as_str).map(str::to_string).collect(),
+                Some(Value::Array(a)) => a
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .collect(),
                 Some(Value::String(p)) => vec![p.clone()],
                 _ => return ToolResult::error("missing `paths`"),
             };
@@ -638,7 +750,14 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
                 return ToolResult::error(format!("no photos found in {paths:?}"));
             }
             let mut p = json!({"paths": files});
-            for k in ["album", "mode", "destination", "organize", "rename", "onDeleted"] {
+            for k in [
+                "album",
+                "mode",
+                "destination",
+                "organize",
+                "rename",
+                "onDeleted",
+            ] {
                 if let Some(v) = args.get(k).filter(|v| !v.is_null()) {
                     p[k] = v.clone();
                 }
@@ -650,7 +769,11 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
                 r
             }))
         }
-        "query_photos" => ToolResult::from(exec(b, "catalog.query", obj(args, &["filter", "sort", "offset", "limit"]))),
+        "query_photos" => ToolResult::from(exec(
+            b,
+            "catalog.query",
+            obj(args, &["filter", "sort", "offset", "limit"]),
+        )),
         "select_photos" => {
             let mut p = obj(args, &["ids", "active", "mode"]);
             if p.get("active").is_none()
@@ -665,8 +788,12 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
         "set_develop" => {
             let r = (|| {
                 activate(b, args)?;
-                let values = args.get("values").filter(|v| v.as_object().is_some_and(|o| !o.is_empty()));
-                let settings = args.get("settings").filter(|v| v.as_object().is_some_and(|o| !o.is_empty()));
+                let values = args
+                    .get("values")
+                    .filter(|v| v.as_object().is_some_and(|o| !o.is_empty()));
+                let settings = args
+                    .get("settings")
+                    .filter(|v| v.as_object().is_some_and(|o| !o.is_empty()));
                 if values.is_none() && settings.is_none() {
                     return Err("give `values` ({controlId: number}) and/or `settings` (partial develop JSON)".to_string());
                 }
@@ -702,7 +829,11 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
             }
             None => ToolResult::error("missing `preset`"),
         },
-        "crop" if args.get("rect").is_none() && args.get("angle").is_none() && args.get("reset").and_then(Value::as_bool) != Some(true) => {
+        "crop"
+            if args.get("rect").is_none()
+                && args.get("angle").is_none()
+                && args.get("reset").and_then(Value::as_bool) != Some(true) =>
+        {
             ToolResult::error("give `rect`, `angle` or `reset: true`")
         }
         "crop" => ToolResult::from(activate(b, args).and_then(|_| {
@@ -760,7 +891,9 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
         })),
         "screenshot" | "ui_screenshot" => screenshot(b, args),
         "inspect_ui" | "ui_inspect" => ToolResult::from(b.call("ui.inspect", json!({}))),
-        "set_ui" => ToolResult::from(b.call("ui.set", args.get("state").cloned().unwrap_or(json!({})))),
+        "set_ui" => {
+            ToolResult::from(b.call("ui.set", args.get("state").cloned().unwrap_or(json!({}))))
+        }
         "list_widgets" => ToolResult::from(b.call("ui.widgets", obj(args, &["filter"]))),
         "click" => {
             let mut p = obj(args, &["x", "y", "count", "button"]);
@@ -769,14 +902,20 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
                     p["id"] = json!(w);
                     ToolResult::from(b.call("ui.clickWidget", p))
                 }
-                None if args.get("x").is_some() && args.get("y").is_some() => ToolResult::from(b.call("ui.click", p)),
+                None if args.get("x").is_some() && args.get("y").is_some() => {
+                    ToolResult::from(b.call("ui.click", p))
+                }
                 None => ToolResult::error("give `widget` or `x` and `y`"),
             }
         }
-        "press_key" => ToolResult::from(b.call("ui.key", obj(args, &["key", "cmd", "shift", "alt", "ctrl"]))),
+        "press_key" => {
+            ToolResult::from(b.call("ui.key", obj(args, &["key", "cmd", "shift", "alt", "ctrl"])))
+        }
         "type_text" => ToolResult::from(b.call("ui.text", obj(args, &["text"]))),
         "clipboard" => ToolResult::from(b.call("ui.clipboard", obj(args, &["action", "text"]))),
-        "pointer_gesture" => ToolResult::from(b.call("ui.pointer", obj(args, &["events", "alt", "shift", "cmd"]))),
+        "pointer_gesture" => {
+            ToolResult::from(b.call("ui.pointer", obj(args, &["events", "alt", "shift", "cmd"])))
+        }
         other => ToolResult::error(format!("unknown tool `{other}` (see tools/list)")),
     }
 }

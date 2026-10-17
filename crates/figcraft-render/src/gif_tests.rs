@@ -20,15 +20,25 @@ fn gif(frames: &[([u8; 4], u32)], w: u32, h: u32) -> Vec<u8> {
     {
         let mut enc = GifEncoder::new(&mut out);
         enc.set_repeat(Repeat::Infinite).unwrap();
-        let frames =
-            frames.iter().map(|(c, ms)| Frame::from_parts(RgbaImage::from_pixel(w, h, image::Rgba(*c)), 0, 0, Delay::from_numer_denom_ms(*ms, 1)));
+        let frames = frames.iter().map(|(c, ms)| {
+            Frame::from_parts(
+                RgbaImage::from_pixel(w, h, image::Rgba(*c)),
+                0,
+                0,
+                Delay::from_numer_denom_ms(*ms, 1),
+            )
+        });
         enc.encode_frames(frames).unwrap();
     }
     out
 }
 
 fn data(bytes: Vec<u8>) -> ImageData {
-    ImageData { bytes: Arc::new(bytes), width: 4, height: 4 }
+    ImageData {
+        bytes: Arc::new(bytes),
+        width: 4,
+        height: 4,
+    }
 }
 
 #[test]
@@ -37,7 +47,13 @@ fn frames_keep_their_delays_and_loop() {
     let frames = images::decode_frames(&bytes).unwrap();
     let secs: Vec<f64> = frames.iter().map(|f| f.1).collect();
     assert_eq!(secs, vec![0.1, 0.2, 0.1], "a 0 ms delay plays as 100 ms");
-    let a = images::animation("gif-timing", Some(&data(bytes)), &ImageFilters::default(), ColorProfile::Srgb).unwrap();
+    let a = images::animation(
+        "gif-timing",
+        Some(&data(bytes)),
+        &ImageFilters::default(),
+        ColorProfile::Srgb,
+    )
+    .unwrap();
     assert_eq!(a.len(), 3);
     let at = |t: f64| {
         let (i, next) = a.at(t);
@@ -53,7 +69,10 @@ fn frames_keep_their_delays_and_loop() {
 #[test]
 fn stills_and_junk_never_animate() {
     let still = gif(&[(RED, 100)], 4, 4);
-    assert!(images::decode_frames(&still).is_none(), "one frame is a still");
+    assert!(
+        images::decode_frames(&still).is_none(),
+        "one frame is a still"
+    );
     let png = crate::encode_png(&tiny_skia::Pixmap::new(2, 2).unwrap()).unwrap();
     assert!(images::decode_frames(&png).is_none());
     let moving = gif(&[(RED, 100), (GREEN, 100)], 8, 8);
@@ -69,8 +88,13 @@ fn stills_and_junk_never_animate() {
 
 #[test]
 fn decoding_is_capped() {
-    let many: Vec<([u8; 4], u32)> = (0..MAX_FRAMES + 5).map(|i| (if i % 2 == 0 { RED } else { GREEN }, 100)).collect();
-    assert_eq!(images::decode_frames(&gif(&many, 1, 1)).unwrap().len(), MAX_FRAMES);
+    let many: Vec<([u8; 4], u32)> = (0..MAX_FRAMES + 5)
+        .map(|i| (if i % 2 == 0 { RED } else { GREEN }, 100))
+        .collect();
+    assert_eq!(
+        images::decode_frames(&gif(&many, 1, 1)).unwrap().len(),
+        MAX_FRAMES
+    );
     // A canvas so big that one frame is past the byte cap doesn't play (its first frame is still
     // the image, where the renderer can decode it).
     let mut huge = gif(&[(RED, 100), (GREEN, 100)], 1, 1);
@@ -82,7 +106,9 @@ fn decoding_is_capped() {
 fn the_first_frame_draws_unless_time_moves_on() {
     let mut d = Document::new("t");
     let page = d.add_page("Page 1");
-    let id = d.create(page, NodeKind::Rectangle, "GIF", 0.0, 0.0, 4.0, 4.0).unwrap();
+    let id = d
+        .create(page, NodeKind::Rectangle, "GIF", 0.0, 0.0, 4.0, 4.0)
+        .unwrap();
     let bytes = gif(&[(RED, 100), (GREEN, 100)], 4, 4);
     let hash = "gif-first-frame".to_string();
     d.images.insert(hash.clone(), data(bytes));
@@ -91,10 +117,23 @@ fn the_first_frame_draws_unless_time_moves_on() {
         let c = p.pixel(2, 2).unwrap();
         [c.red(), c.green(), c.blue()]
     };
-    assert_eq!(centre(crate::render_node(&d, id, 1.0).unwrap()), [255, 0, 0], "exports and the canvas: the first frame");
-    assert_eq!(centre(crate::render_node_at(&d, id, 1.0, 0.15).unwrap()), [0, 255, 0], "the presenter, 150 ms in");
+    assert_eq!(
+        centre(crate::render_node(&d, id, 1.0).unwrap()),
+        [255, 0, 0],
+        "exports and the canvas: the first frame"
+    );
+    assert_eq!(
+        centre(crate::render_node_at(&d, id, 1.0, 0.15).unwrap()),
+        [0, 255, 0],
+        "the presenter, 150 ms in"
+    );
     let (frame, next) = images::animation_clock(&d, page, 0.15).unwrap();
-    assert!(frame != images::animation_clock(&d, page, 0.05).unwrap().0 && (next - 0.05).abs() < 1e-9);
+    assert!(
+        frame != images::animation_clock(&d, page, 0.05).unwrap().0 && (next - 0.05).abs() < 1e-9
+    );
     d.get_mut(id).unwrap().visible = false;
-    assert!(images::animation_clock(&d, page, 0.15).is_none(), "hidden layers don't keep the presenter awake");
+    assert!(
+        images::animation_clock(&d, page, 0.15).is_none(),
+        "hidden layers don't keep the presenter awake"
+    );
 }

@@ -73,16 +73,27 @@ impl GrayPyramid {
             lv.push(d);
         }
         let grads = lv.par_iter().map(Plane::gradients).collect();
-        GrayPyramid { levels: lv, grads, factor, offset }
+        GrayPyramid {
+            levels: lv,
+            grads,
+            factor,
+            offset,
+        }
     }
 
     /// Layer pixels → level-0 plane coordinates.
     pub fn to_plane(&self, p: [f64; 2]) -> [f64; 2] {
-        [(p[0] + self.offset[0]) / self.factor, (p[1] + self.offset[1]) / self.factor]
+        [
+            (p[0] + self.offset[0]) / self.factor,
+            (p[1] + self.offset[1]) / self.factor,
+        ]
     }
     /// Level-0 plane coordinates → layer pixels.
     pub fn to_layer(&self, q: [f64; 2]) -> [f64; 2] {
-        [q[0] * self.factor - self.offset[0], q[1] * self.factor - self.offset[1]]
+        [
+            q[0] * self.factor - self.offset[0],
+            q[1] * self.factor - self.offset[1],
+        ]
     }
     pub fn width(&self) -> usize {
         self.levels.first().map(|p| p.w).unwrap_or(0)
@@ -108,7 +119,13 @@ pub struct CornerOpts {
 
 impl Default for CornerOpts {
     fn default() -> Self {
-        CornerOpts { max_features: 300, min_distance: 8.0, quality: 0.01, window: 2, border: 6 }
+        CornerOpts {
+            max_features: 300,
+            min_distance: 8.0,
+            quality: 0.01,
+            window: 2,
+            border: 6,
+        }
     }
 }
 
@@ -142,7 +159,10 @@ pub fn corner_scores(p: &Plane, gx: &Plane, gy: &Plane, r: usize) -> Vec<f32> {
         for (x, o) in row.iter_mut().enumerate() {
             let x0 = x.saturating_sub(r);
             let x1 = (x + r + 1).min(w);
-            let bs = |s: &[f64]| s[y1 * (w + 1) + x1] - s[y0 * (w + 1) + x1] - s[y1 * (w + 1) + x0] + s[y0 * (w + 1) + x0];
+            let bs = |s: &[f64]| {
+                s[y1 * (w + 1) + x1] - s[y0 * (w + 1) + x1] - s[y1 * (w + 1) + x0]
+                    + s[y0 * (w + 1) + x0]
+            };
             let (a, b, c) = (bs(&sxx), bs(&sxy), bs(&syy));
             let tr = 0.5 * (a + c);
             let d = (0.25 * (a - c) * (a - c) + b * b).sqrt();
@@ -154,8 +174,14 @@ pub fn corner_scores(p: &Plane, gx: &Plane, gy: &Plane, r: usize) -> Vec<f32> {
 
 /// Good features to track in `pyr` level 0, optionally restricted by `inside(plane point)`.
 /// Returns level-0 plane coordinates (pixel centres), strongest first.
-pub fn good_features(pyr: &GrayPyramid, opts: &CornerOpts, inside: Option<&(dyn Fn([f64; 2]) -> bool + Sync)>) -> Vec<[f64; 2]> {
-    let Some(p) = pyr.levels.first() else { return vec![] };
+pub fn good_features(
+    pyr: &GrayPyramid,
+    opts: &CornerOpts,
+    inside: Option<&(dyn Fn([f64; 2]) -> bool + Sync)>,
+) -> Vec<[f64; 2]> {
+    let Some(p) = pyr.levels.first() else {
+        return vec![];
+    };
     let (gx, gy) = &pyr.grads[0];
     let score = corner_scores(p, gx, gy, opts.window.max(1));
     let (w, h) = (p.w, p.h);
@@ -250,11 +276,23 @@ pub struct LkOpts {
 
 impl Default for LkOpts {
     fn default() -> Self {
-        LkOpts { radius: 5, iterations: 20, epsilon: 0.01, min_eigen: 1e-5, fb_max: 1.0 }
+        LkOpts {
+            radius: 5,
+            iterations: 20,
+            epsilon: 0.01,
+            min_eigen: 1e-5,
+            fb_max: 1.0,
+        }
     }
 }
 
-fn lk_point(a: &GrayPyramid, b: &GrayPyramid, p: [f64; 2], guess: [f64; 2], o: &LkOpts) -> Option<[f64; 2]> {
+fn lk_point(
+    a: &GrayPyramid,
+    b: &GrayPyramid,
+    p: [f64; 2],
+    guess: [f64; 2],
+    o: &LkOpts,
+) -> Option<[f64; 2]> {
     let top = a.levels.len().min(b.levels.len()).checked_sub(1)?;
     let r = o.radius;
     let n = ((2 * r + 1) * (2 * r + 1)) as f64;
@@ -302,7 +340,11 @@ fn lk_point(a: &GrayPyramid, b: &GrayPyramid, p: [f64; 2], guess: [f64; 2], o: &
             let mut k = 0;
             for dy in -r..=r {
                 for dx in -r..=r {
-                    ib.sample(c[0] + g[0] + v[0] + dx as f64, c[1] + g[1] + v[1] + dy as f64, &mut v1);
+                    ib.sample(
+                        c[0] + g[0] + v[0] + dx as f64,
+                        c[1] + g[1] + v[1] + dy as f64,
+                        &mut v1,
+                    );
                     let diff = (win[k] - v1[0]) as f64;
                     bx += diff * wgx[k] as f64;
                     by += diff * wgy[k] as f64;
@@ -337,7 +379,13 @@ fn lk_point(a: &GrayPyramid, b: &GrayPyramid, p: [f64; 2], guess: [f64; 2], o: &
 /// Track level-0 points from pyramid `a` to pyramid `b` (with optional per-point initial
 /// displacement guesses). `None` for lost points (untrackable window, left the frame, or failed
 /// the forward–backward check).
-pub fn track(a: &GrayPyramid, b: &GrayPyramid, pts: &[[f64; 2]], guesses: Option<&[[f64; 2]]>, o: &LkOpts) -> Vec<Option<[f64; 2]>> {
+pub fn track(
+    a: &GrayPyramid,
+    b: &GrayPyramid,
+    pts: &[[f64; 2]],
+    guesses: Option<&[[f64; 2]]>,
+    o: &LkOpts,
+) -> Vec<Option<[f64; 2]>> {
     pts.par_iter()
         .enumerate()
         .map(|(i, p)| {
@@ -383,7 +431,8 @@ mod tests {
             let b = h(i, j + 1) + (h(i + 1, j + 1) - h(i, j + 1)) * sx;
             a + (b - a) * sy
         }
-        (0.2 + 0.4 * noise(x + 1000.0, y + 1000.0, 9.0) + 0.3 * noise(x + 1000.0, y + 1000.0, 4.0)) as f32
+        (0.2 + 0.4 * noise(x + 1000.0, y + 1000.0, 9.0) + 0.3 * noise(x + 1000.0, y + 1000.0, 4.0))
+            as f32
     }
 
     fn img(dx: f64, dy: f64) -> Image {
@@ -401,21 +450,51 @@ mod tests {
     fn klt_recovers_a_shift() {
         let a = GrayPyramid::from_image(&img(0.0, 0.0), [0.0; 2], 1, 3);
         let b = GrayPyramid::from_image(&img(6.3, -4.2), [0.0; 2], 1, 3);
-        let pts = good_features(&a, &CornerOpts { max_features: 60, ..Default::default() }, None);
+        let pts = good_features(
+            &a,
+            &CornerOpts {
+                max_features: 60,
+                ..Default::default()
+            },
+            None,
+        );
         assert!(pts.len() >= 20, "{}", pts.len());
         let q = track(&a, &b, &pts, None, &LkOpts::default());
-        let good: Vec<_> = pts.iter().zip(&q).filter_map(|(p, q)| q.map(|q| [q[0] - p[0], q[1] - p[1]])).collect();
-        assert!(good.len() * 2 > pts.len(), "{} of {}", good.len(), pts.len());
-        let mut errs: Vec<f64> = good.iter().map(|d| ((d[0] - 6.3).powi(2) + (d[1] + 4.2).powi(2)).sqrt()).collect();
+        let good: Vec<_> = pts
+            .iter()
+            .zip(&q)
+            .filter_map(|(p, q)| q.map(|q| [q[0] - p[0], q[1] - p[1]]))
+            .collect();
+        assert!(
+            good.len() * 2 > pts.len(),
+            "{} of {}",
+            good.len(),
+            pts.len()
+        );
+        let mut errs: Vec<f64> = good
+            .iter()
+            .map(|d| ((d[0] - 6.3).powi(2) + (d[1] + 4.2).powi(2)).sqrt())
+            .collect();
         errs.sort_by(f64::total_cmp);
-        assert!(errs[errs.len() / 2] < 0.1, "median error {}", errs[errs.len() / 2]);
+        assert!(
+            errs[errs.len() / 2] < 0.1,
+            "median error {}",
+            errs[errs.len() / 2]
+        );
     }
 
     #[test]
     fn features_respect_the_region_and_spacing() {
         let a = GrayPyramid::from_image(&img(0.0, 0.0), [0.0; 2], 1, 2);
         let inside = |p: [f64; 2]| p[0] < 80.0;
-        let pts = good_features(&a, &CornerOpts { min_distance: 10.0, ..Default::default() }, Some(&inside));
+        let pts = good_features(
+            &a,
+            &CornerOpts {
+                min_distance: 10.0,
+                ..Default::default()
+            },
+            Some(&inside),
+        );
         assert!(!pts.is_empty());
         assert!(pts.iter().all(|p| p[0] < 80.0));
         for (i, p) in pts.iter().enumerate() {

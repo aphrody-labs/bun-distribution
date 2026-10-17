@@ -55,17 +55,30 @@ pub fn spawn<T: Send + 'static>(
     let repaint = app.tasks.repaint.clone();
     let job = move || {
         let t = work();
-        let _ = tx.send(Box::new(move |app: &mut LightcraftApp, ctx: &egui::Context| done(app, ctx, t)));
+        let _ = tx.send(Box::new(
+            move |app: &mut LightcraftApp, ctx: &egui::Context| done(app, ctx, t),
+        ));
         if let Some(c) = repaint {
             c.request_repaint();
         }
     };
     #[cfg(not(target_arch = "wasm32"))]
-    std::thread::Builder::new().name(format!("lc-task-{label}")).spawn(job).map_err(|e| format!("{label}: could not start: {e}"))?;
+    std::thread::Builder::new()
+        .name(format!("lc-task-{label}"))
+        .spawn(job)
+        .map_err(|e| format!("{label}: could not start: {e}"))?;
     #[cfg(target_arch = "wasm32")]
     job();
-    let guard = kind.map(|k| app.session.activity.start(k, label, lightcraft_engine::activity::Cancel::No));
-    app.tasks.running.push(Task { label: label.to_string(), rx, _guard: guard });
+    let guard = kind.map(|k| {
+        app.session
+            .activity
+            .start(k, label, lightcraft_engine::activity::Cancel::No)
+    });
+    app.tasks.running.push(Task {
+        label: label.to_string(),
+        rx,
+        _guard: guard,
+    });
     Ok(())
 }
 

@@ -42,7 +42,12 @@ pub struct SnapOptions {
 }
 impl Default for SnapOptions {
     fn default() -> Self {
-        Self { endpoints: true, midpoints: true, intersections: true, paths: true }
+        Self {
+            endpoints: true,
+            midpoints: true,
+            intersections: true,
+            paths: true,
+        }
     }
 }
 fn dot(a: Point, b: Point) -> f64 {
@@ -63,7 +68,11 @@ pub fn intersection(a: Point, b: Point, c: Point, d: Point) -> Option<Point> {
     }
     let t = cross(sub(c, a), s) / denominator;
     let u = cross(sub(c, a), r) / denominator;
-    if (0.0..=1.0).contains(&t) && (0.0..=1.0).contains(&u) { Some([a[0] + t * r[0], a[1] + t * r[1]]) } else { None }
+    if (0.0..=1.0).contains(&t) && (0.0..=1.0).contains(&u) {
+        Some([a[0] + t * r[0], a[1] + t * r[1]])
+    } else {
+        None
+    }
 }
 fn nearest(p: Point, a: Point, b: Point) -> Point {
     let v = sub(b, a);
@@ -76,7 +85,11 @@ fn nearest(p: Point, a: Point, b: Point) -> Point {
 }
 /// Save a subpath's implicit closing edge for fill operations. An unpainted or
 /// stroke-only open path must not gain that edge.
-fn remember_close(closures: &mut Vec<[Point; 2]>, current: Option<Point>, start: Option<Point>) -> bool {
+fn remember_close(
+    closures: &mut Vec<[Point; 2]>,
+    current: Option<Point>,
+    start: Option<Point>,
+) -> bool {
     if let (Some(a), Some(b)) = (current, start)
         && distance(a, b) > 1e-9
     {
@@ -91,19 +104,30 @@ fn remember_close(closures: &mut Vec<[Point; 2]>, current: Option<Point>, start:
 impl Geometry {
     /// Dense intersection searches are capped independently from path extraction.
     pub fn intersection_limited(&self, at: Point, tolerance: f64) -> bool {
-        self.segments.iter().filter(|[a, b]| distance(at, nearest(at, *a, *b)) <= tolerance).take(257).count() > 256
+        self.segments
+            .iter()
+            .filter(|[a, b]| distance(at, nearest(at, *a, *b)) <= tolerance)
+            .take(257)
+            .count()
+            > 256
     }
     pub fn snap(&self, at: Point, tolerance: f64, options: SnapOptions) -> Result<Option<Snap>> {
         check_points(&[at])?;
         if !tolerance.is_finite() || !(0.0..=10_000.0).contains(&tolerance) {
-            return Err(invalid("snap tolerance must be between 0 and 10000 user units"));
+            return Err(invalid(
+                "snap tolerance must be between 0 and 10000 user units",
+            ));
         }
         let mut best: Option<Snap> = None;
         let consider = |best: &mut Option<Snap>, p: Point, kind: SnapKind| {
             let distance = distance(at, p);
             // Discrete targets take precedence over projections at the same distance.
             if distance <= tolerance && best.is_none_or(|b| distance < b.distance - 1e-9) {
-                *best = Some(Snap { point: p, kind, distance });
+                *best = Some(Snap {
+                    point: p,
+                    kind,
+                    distance,
+                });
             }
         };
         if options.endpoints {
@@ -118,7 +142,12 @@ impl Geometry {
         }
         // Only segments in the pointer's neighbourhood participate in intersection tests.
         // Cap the local quadratic work even on a malicious densely overlapping drawing.
-        let local: Vec<_> = self.segments.iter().filter(|[a, b]| distance(at, nearest(at, *a, *b)) <= tolerance).take(256).collect();
+        let local: Vec<_> = self
+            .segments
+            .iter()
+            .filter(|[a, b]| distance(at, nearest(at, *a, *b)) <= tolerance)
+            .take(256)
+            .collect();
         if options.intersections {
             for (i, s) in local.iter().enumerate() {
                 for t in local.iter().skip(i + 1) {
@@ -186,8 +215,12 @@ impl Geometry {
 pub fn constrain(last: Point, point: Point) -> Point {
     let v = sub(point, last);
     let length = v[0].hypot(v[1]);
-    let angle = (v[1].atan2(v[0]) / std::f64::consts::FRAC_PI_4).round() * std::f64::consts::FRAC_PI_4;
-    [last[0] + length * angle.cos(), last[1] + length * angle.sin()]
+    let angle =
+        (v[1].atan2(v[0]) / std::f64::consts::FRAC_PI_4).round() * std::f64::consts::FRAC_PI_4;
+    [
+        last[0] + length * angle.cos(),
+        last[1] + length * angle.sin(),
+    ]
 }
 struct Walker<'a> {
     doc: &'a Document,
@@ -197,7 +230,13 @@ struct Walker<'a> {
     streams: usize,
 }
 impl Walker<'_> {
-    fn walk(&mut self, object: &Object, resources: &Dict, initial: Matrix, depth: usize) -> Result<()> {
+    fn walk(
+        &mut self,
+        object: &Object,
+        resources: &Dict,
+        initial: Matrix,
+        depth: usize,
+    ) -> Result<()> {
         if depth >= 32 || self.streams >= 4096 || self.geometry.truncated {
             self.geometry.truncated = true;
             return Ok(());
@@ -209,7 +248,9 @@ impl Walker<'_> {
             for part in arr {
                 let s = self.doc.resolve(part);
                 if let Object::Stream(s) = s.as_ref() {
-                    let remaining = MAX_BYTES.saturating_sub(self.bytes).saturating_sub(joined.len());
+                    let remaining = MAX_BYTES
+                        .saturating_sub(self.bytes)
+                        .saturating_sub(joined.len());
                     if remaining == 0 {
                         self.geometry.truncated = true;
                         break;
@@ -220,13 +261,17 @@ impl Walker<'_> {
                             joined.extend(data);
                             joined.push(b'\n');
                         }
-                        Err(_) => self.geometry.unreadable = self.geometry.unreadable.saturating_add(1),
+                        Err(_) => {
+                            self.geometry.unreadable = self.geometry.unreadable.saturating_add(1)
+                        }
                     }
                 }
             }
             return self.ops(&joined, resources, initial, depth);
         }
-        let Object::Stream(stream) = o.as_ref() else { return Ok(()) };
+        let Object::Stream(stream) = o.as_ref() else {
+            return Ok(());
+        };
         let remaining = MAX_BYTES.saturating_sub(self.bytes);
         if remaining == 0 {
             self.geometry.truncated = true;
@@ -254,7 +299,12 @@ impl Walker<'_> {
             [x, y]
         };
         for op in parse(data).ops {
-            if self.geometry.segments.len().saturating_add(path.segments.len()) >= MAX_SEGMENTS
+            if self
+                .geometry
+                .segments
+                .len()
+                .saturating_add(path.segments.len())
+                >= MAX_SEGMENTS
                 || self.geometry.targets().saturating_add(path.targets()) >= MAX_TARGETS
             {
                 self.geometry.truncated = true;
@@ -299,10 +349,17 @@ impl Walker<'_> {
                 "c" | "v" | "y" => {
                     if let Some(a) = current {
                         let curve = match String::from_utf8_lossy(&op.op).as_ref() {
-                            "c" => op
-                                .nums::<6>()
-                                .map(|[x1, y1, x2, y2, x3, y3]| [a, point(matrix, x1, y1), point(matrix, x2, y2), point(matrix, x3, y3)]),
-                            "v" => op.nums::<4>().map(|[x2, y2, x3, y3]| [a, a, point(matrix, x2, y2), point(matrix, x3, y3)]),
+                            "c" => op.nums::<6>().map(|[x1, y1, x2, y2, x3, y3]| {
+                                [
+                                    a,
+                                    point(matrix, x1, y1),
+                                    point(matrix, x2, y2),
+                                    point(matrix, x3, y3),
+                                ]
+                            }),
+                            "v" => op.nums::<4>().map(|[x2, y2, x3, y3]| {
+                                [a, a, point(matrix, x2, y2), point(matrix, x3, y3)]
+                            }),
                             _ => op.nums::<4>().map(|[x1, y1, x3, y3]| {
                                 let d = point(matrix, x3, y3);
                                 [a, point(matrix, x1, y1), d, d]
@@ -314,7 +371,13 @@ impl Walker<'_> {
                             let before = path.segments.len();
                             path.curve([a, b, c, d], 0);
                             if path.segments.len() > before {
-                                path.target([a, d], [(a[0] + 3.0 * b[0] + 3.0 * c[0] + d[0]) / 8.0, (a[1] + 3.0 * b[1] + 3.0 * c[1] + d[1]) / 8.0]);
+                                path.target(
+                                    [a, d],
+                                    [
+                                        (a[0] + 3.0 * b[0] + 3.0 * c[0] + d[0]) / 8.0,
+                                        (a[1] + 3.0 * b[1] + 3.0 * c[1] + d[1]) / 8.0,
+                                    ],
+                                );
                             }
                             current = Some(d);
                         }
@@ -353,8 +416,14 @@ impl Walker<'_> {
                         // Filling implicitly closes every open subpath, not just the last one.
                         // Stroke-only S leaves its open subpaths unchanged.
                         for [a, b] in closures.drain(..) {
-                            if self.geometry.segments.len().saturating_add(path.segments.len()) >= MAX_SEGMENTS
-                                || self.geometry.targets().saturating_add(path.targets()) >= MAX_TARGETS
+                            if self
+                                .geometry
+                                .segments
+                                .len()
+                                .saturating_add(path.segments.len())
+                                >= MAX_SEGMENTS
+                                || self.geometry.targets().saturating_add(path.targets())
+                                    >= MAX_TARGETS
                             {
                                 path.truncated = true;
                                 break;
@@ -384,7 +453,11 @@ impl Walker<'_> {
                 "Do" => {
                     if let Some(name) = op.name(0) {
                         let xobjects = resources.get(b"XObject").map(|o| self.doc.resolve(o));
-                        if let Some(o) = xobjects.as_ref().and_then(|o| o.as_dict()).and_then(|d| d.get(name)) {
+                        if let Some(o) = xobjects
+                            .as_ref()
+                            .and_then(|o| o.as_dict())
+                            .and_then(|d| d.get(name))
+                        {
                             let r = o.as_ref();
                             if r.is_some_and(|r| self.seen.contains(&r)) {
                                 continue;
@@ -397,11 +470,14 @@ impl Walker<'_> {
                                     .dict
                                     .get(b"Matrix")
                                     .map(|m| self.doc.resolve(m))
-                                    .and_then(|o| o.as_array().and_then(|a| Matrix::from_operands(a)))
+                                    .and_then(|o| {
+                                        o.as_array().and_then(|a| Matrix::from_operands(a))
+                                    })
                                     .unwrap_or_default()
                                     .then(&matrix);
                                 let own = s.dict.get(b"Resources").map(|o| self.doc.resolve(o));
-                                let res = own.as_ref().and_then(|o| o.as_dict()).unwrap_or(resources);
+                                let res =
+                                    own.as_ref().and_then(|o| o.as_dict()).unwrap_or(resources);
                                 if let Some(r) = r {
                                     self.seen.insert(r);
                                 }
@@ -423,8 +499,17 @@ pub fn geometry(doc: &Document, page_index: usize) -> Result<Geometry> {
     let p = crate::page(doc, page_index)?;
     let resources = p.dict.get(b"Resources").map(|o| doc.resolve(o));
     let empty = Dict::new();
-    let resources = resources.as_ref().and_then(|o| o.as_dict()).unwrap_or(&empty);
-    let mut walker = Walker { doc, geometry: Geometry::default(), seen: HashSet::new(), bytes: 0, streams: 0 };
+    let resources = resources
+        .as_ref()
+        .and_then(|o| o.as_dict())
+        .unwrap_or(&empty);
+    let mut walker = Walker {
+        doc,
+        geometry: Geometry::default(),
+        seen: HashSet::new(),
+        bytes: 0,
+        streams: 0,
+    };
     // Extraction is lenient: limits and unreadable streams are reported in the geometry.
     if let Some(contents) = p.dict.get(b"Contents") {
         walker.walk(contents, resources, Matrix::IDENTITY, 0)?;

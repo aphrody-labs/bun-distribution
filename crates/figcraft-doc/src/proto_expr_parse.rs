@@ -38,20 +38,36 @@ impl Expr {
     pub fn parse(text: &str, vars: &Variables) -> Parsed {
         let s: Vec<char> = text.chars().collect();
         if s.len() > MAX_EXPR_TEXT {
-            return Err(ExprError { message: format!("Keep expressions under {MAX_EXPR_TEXT} characters"), at: 0 });
+            return Err(ExprError {
+                message: format!("Keep expressions under {MAX_EXPR_TEXT} characters"),
+                at: 0,
+            });
         }
         // Longest names first, so "count total" wins over "count".
         let mut names: Vec<(Vec<char>, String)> = vars
             .variables
             .iter()
-            .flat_map(|v| [(v.name.chars().collect::<Vec<char>>(), v.id.clone()), (v.id.chars().collect(), v.id.clone())])
+            .flat_map(|v| {
+                [
+                    (v.name.chars().collect::<Vec<char>>(), v.id.clone()),
+                    (v.id.chars().collect(), v.id.clone()),
+                ]
+            })
             .filter(|(n, _)| !n.is_empty())
             .collect();
         names.sort_by_key(|(n, _)| std::cmp::Reverse(n.len()));
-        let mut p = Parser { s, i: 0, names, vars };
+        let mut p = Parser {
+            s,
+            i: 0,
+            names,
+            vars,
+        };
         p.ws();
         if p.peek(0).is_none() {
-            return Err(ExprError { message: "Type an expression".into(), at: 0 });
+            return Err(ExprError {
+                message: "Type an expression".into(),
+                at: 0,
+            });
         }
         let e = p.or(0)?;
         p.ws();
@@ -71,15 +87,28 @@ impl Expr {
     pub fn check_condition(&self, vars: &Variables) -> Result<(), String> {
         match self.type_of(vars)? {
             VariableType::Boolean => Ok(()),
-            t => Err(format!("A condition must be true or false, not {}", noun(t))),
+            t => Err(format!(
+                "A condition must be true or false, not {}",
+                noun(t)
+            )),
         }
     }
 
     /// A value for a variable of `kind` (text variables take numbers and booleans as text).
     pub fn check_value(&self, vars: &Variables, kind: VariableType) -> Result<(), String> {
         let t = self.type_of(vars)?;
-        let fits = t == kind || (kind == VariableType::String && matches!(t, VariableType::Number | VariableType::Boolean));
-        if fits { Ok(()) } else { Err(format!("This gives {}, but the variable holds {}", noun(t), noun(kind))) }
+        let fits = t == kind
+            || (kind == VariableType::String
+                && matches!(t, VariableType::Number | VariableType::Boolean));
+        if fits {
+            Ok(())
+        } else {
+            Err(format!(
+                "This gives {}, but the variable holds {}",
+                noun(t),
+                noun(kind)
+            ))
+        }
     }
 
     fn type_at(&self, vars: &Variables, depth: usize) -> Result<VariableType, String> {
@@ -88,20 +117,40 @@ impl Expr {
             return Err("The expression is nested too deeply".into());
         }
         let (op, args) = match self {
-            Expr::Value(VariableValue::Alias(id)) => return vars.get(id).map(|v| v.kind).ok_or_else(|| format!("No variable `{id}`")),
-            Expr::Value(VariableValue::Number(n)) if !n.is_finite() => return Err("Numbers must be finite".into()),
+            Expr::Value(VariableValue::Alias(id)) => {
+                return vars
+                    .get(id)
+                    .map(|v| v.kind)
+                    .ok_or_else(|| format!("No variable `{id}`"));
+            }
+            Expr::Value(VariableValue::Number(n)) if !n.is_finite() => {
+                return Err("Numbers must be finite".into());
+            }
             Expr::Value(v) => return v.type_of().ok_or_else(|| "Not a value".to_string()),
             Expr::Mode { collection } => {
-                return vars.collection(collection).map(|_| T::String).ok_or_else(|| format!("No variable collection `{collection}`"));
+                return vars
+                    .collection(collection)
+                    .map(|_| T::String)
+                    .ok_or_else(|| format!("No variable collection `{collection}`"));
             }
             Expr::InMode { variable, mode } => {
-                let v = vars.get(variable).ok_or_else(|| format!("No variable `{variable}`"))?;
-                let c = vars.collection(&v.collection).ok_or_else(|| format!("No variable collection `{}`", v.collection))?;
-                return c.find_mode(mode).map(|_| v.kind).ok_or_else(|| format!("{} has no mode `{mode}`", c.name));
+                let v = vars
+                    .get(variable)
+                    .ok_or_else(|| format!("No variable `{variable}`"))?;
+                let c = vars
+                    .collection(&v.collection)
+                    .ok_or_else(|| format!("No variable collection `{}`", v.collection))?;
+                return c
+                    .find_mode(mode)
+                    .map(|_| v.kind)
+                    .ok_or_else(|| format!("{} has no mode `{mode}`", c.name));
             }
             Expr::Op { op, args } => (*op, args),
         };
-        let ts = args.iter().map(|a| a.type_at(vars, depth + 1)).collect::<Result<Vec<T>, String>>()?;
+        let ts = args
+            .iter()
+            .map(|a| a.type_at(vars, depth + 1))
+            .collect::<Result<Vec<T>, String>>()?;
         let all = |k: T| !ts.is_empty() && ts.iter().all(|t| *t == k);
         let sym = op.symbol();
         match op {
@@ -125,13 +174,19 @@ impl Expr {
                 [] | [_] => Err(format!("`{sym}` compares two values")),
                 [first, rest @ ..] => match rest.iter().find(|t| *t != first) {
                     None => Ok(T::Boolean),
-                    Some(other) => Err(format!("Can't compare {} with {}", noun(*first), noun(*other))),
+                    Some(other) => Err(format!(
+                        "Can't compare {} with {}",
+                        noun(*first),
+                        noun(*other)
+                    )),
                 },
             },
-            ExprOp::Less | ExprOp::LessOrEqual | ExprOp::Greater | ExprOp::GreaterOrEqual => match ts.as_slice() {
-                [T::Number, T::Number] | [T::String, T::String] => Ok(T::Boolean),
-                _ => Err(format!("`{sym}` compares two numbers or two texts")),
-            },
+            ExprOp::Less | ExprOp::LessOrEqual | ExprOp::Greater | ExprOp::GreaterOrEqual => {
+                match ts.as_slice() {
+                    [T::Number, T::Number] | [T::String, T::String] => Ok(T::Boolean),
+                    _ => Err(format!("`{sym}` compares two numbers or two texts")),
+                }
+            }
             ExprOp::And | ExprOp::Or => {
                 if all(T::Boolean) {
                     Ok(T::Boolean)
@@ -186,33 +241,52 @@ impl Parser<'_> {
     }
 
     fn err(&self, message: impl Into<String>) -> ExprError {
-        ExprError { message: message.into(), at: self.i }
+        ExprError {
+            message: message.into(),
+            at: self.i,
+        }
     }
 
     fn deeper(&self, depth: usize) -> Result<usize, ExprError> {
         // Each pair of brackets goes through every precedence level (about eight calls).
-        if depth >= MAX_EXPR_DEPTH * 8 { Err(self.err("The expression is nested too deeply")) } else { Ok(depth + 1) }
+        if depth >= MAX_EXPR_DEPTH * 8 {
+            Err(self.err("The expression is nested too deeply"))
+        } else {
+            Ok(depth + 1)
+        }
     }
 
     /// `word` (any case) here and not running on into a longer word.
     fn at_keyword(&self, word: &str) -> bool {
         let n = word.chars().count();
-        word.chars().enumerate().all(|(k, c)| self.peek(k).is_some_and(|x| x.to_lowercase().eq(c.to_lowercase()))) && !self.peek(n).is_some_and(ident)
+        word.chars().enumerate().all(|(k, c)| {
+            self.peek(k)
+                .is_some_and(|x| x.to_lowercase().eq(c.to_lowercase()))
+        }) && !self.peek(n).is_some_and(ident)
     }
 
     /// The first character from `k` characters on that isn't whitespace.
     fn next_after(&self, k: usize) -> Option<char> {
-        self.s.iter().skip(self.i + k).copied().find(|c| !c.is_whitespace())
+        self.s
+            .iter()
+            .skip(self.i + k)
+            .copied()
+            .find(|c| !c.is_whitespace())
     }
 
     fn at_symbol(&self, sym: &str) -> bool {
-        sym.chars().enumerate().all(|(k, c)| self.peek(k) == Some(c))
+        sym.chars()
+            .enumerate()
+            .all(|(k, c)| self.peek(k) == Some(c))
     }
 
     /// Consume one of `words` (keywords) or `symbols`.
     fn eat_any(&mut self, words: &[&str], symbols: &[&str]) -> bool {
         self.ws();
-        let hit = words.iter().find(|w| self.at_keyword(w)).or_else(|| symbols.iter().find(|s| self.at_symbol(s)));
+        let hit = words
+            .iter()
+            .find(|w| self.at_keyword(w))
+            .or_else(|| symbols.iter().find(|s| self.at_symbol(s)));
         match hit {
             Some(h) => {
                 self.i += h.chars().count();
@@ -226,7 +300,10 @@ impl Parser<'_> {
     fn variable_here(&self) -> Option<(String, usize)> {
         self.names.iter().find_map(|(name, id)| {
             let n = name.len();
-            let same = name.iter().enumerate().all(|(k, c)| self.peek(k) == Some(*c));
+            let same = name
+                .iter()
+                .enumerate()
+                .all(|(k, c)| self.peek(k) == Some(*c));
             // "count" doesn't match the start of "counter".
             let runs_on = name.last().is_some_and(|c| ident(*c)) && self.peek(n).is_some_and(ident);
             (same && !runs_on).then(|| (id.clone(), n))
@@ -234,7 +311,14 @@ impl Parser<'_> {
     }
 
     /// A chain of one loose operator (`a or b or c` → one `or` of three).
-    fn chain(&mut self, depth: usize, op: ExprOp, words: &[&str], symbols: &[&str], next: fn(&mut Self, usize) -> Parsed) -> Parsed {
+    fn chain(
+        &mut self,
+        depth: usize,
+        op: ExprOp,
+        words: &[&str],
+        symbols: &[&str],
+        next: fn(&mut Self, usize) -> Parsed,
+    ) -> Parsed {
         let d = self.deeper(depth)?;
         let first = next(self, d)?;
         let mut args = vec![first];
@@ -285,18 +369,23 @@ impl Parser<'_> {
     fn compare(&mut self, depth: usize) -> Parsed {
         let d = self.deeper(depth)?;
         let left = self.sum(d)?;
-        let Some(op) = self.compare_op() else { return Ok(left) };
+        let Some(op) = self.compare_op() else {
+            return Ok(left);
+        };
         let mut args = vec![left, self.sum(d)?];
         loop {
             let at = self.i;
             match self.compare_op() {
                 None => break,
                 // `a == b == c`: all equal.
-                Some(o) if o == op && matches!(op, ExprOp::Equals | ExprOp::NotEqual) => args.push(self.sum(d)?),
+                Some(o) if o == op && matches!(op, ExprOp::Equals | ExprOp::NotEqual) => {
+                    args.push(self.sum(d)?)
+                }
                 Some(_) => {
                     self.i = at;
                     self.ws();
-                    return Err(self.err("Compare two values at a time: join comparisons with `and` or `or`"));
+                    return Err(self
+                        .err("Compare two values at a time: join comparisons with `and` or `or`"));
                 }
             }
         }
@@ -305,13 +394,20 @@ impl Parser<'_> {
 
     /// Left-to-right operators of one level: a run of the same one is one n-ary operation
     /// (`a - b - c`), a change of operator nests (`a + b - c` → `(a + b) - c`).
-    fn level(&mut self, depth: usize, ops: &[(char, ExprOp)], next: fn(&mut Self, usize) -> Parsed) -> Parsed {
+    fn level(
+        &mut self,
+        depth: usize,
+        ops: &[(char, ExprOp)],
+        next: fn(&mut Self, usize) -> Parsed,
+    ) -> Parsed {
         let d = self.deeper(depth)?;
         let mut cur = next(self, d)?;
         let mut cur_op: Option<ExprOp> = None;
         loop {
             self.ws();
-            let Some((_, op)) = ops.iter().find(|(c, _)| self.peek(0) == Some(*c)) else { break };
+            let Some((_, op)) = ops.iter().find(|(c, _)| self.peek(0) == Some(*c)) else {
+                break;
+            };
             self.i += 1;
             let rhs = next(self, d)?;
             match &mut cur {
@@ -326,11 +422,19 @@ impl Parser<'_> {
     }
 
     fn sum(&mut self, depth: usize) -> Parsed {
-        self.level(depth, &[('+', ExprOp::Add), ('-', ExprOp::Subtract)], Self::product)
+        self.level(
+            depth,
+            &[('+', ExprOp::Add), ('-', ExprOp::Subtract)],
+            Self::product,
+        )
     }
 
     fn product(&mut self, depth: usize) -> Parsed {
-        self.level(depth, &[('*', ExprOp::Multiply), ('/', ExprOp::Divide)], Self::unary)
+        self.level(
+            depth,
+            &[('*', ExprOp::Multiply), ('/', ExprOp::Divide)],
+            Self::unary,
+        )
     }
 
     fn unary(&mut self, depth: usize) -> Parsed {
@@ -342,7 +446,9 @@ impl Parser<'_> {
             // `-3` is a negative number; `-x` negates.
             if self.peek(0).is_some_and(|c| c.is_ascii_digit() || c == '.') {
                 return match self.number()? {
-                    Expr::Value(VariableValue::Number(n)) => Ok(Expr::Value(VariableValue::Number(-n))),
+                    Expr::Value(VariableValue::Number(n)) => {
+                        Ok(Expr::Value(VariableValue::Number(-n)))
+                    }
                     other => Ok(Expr::op(ExprOp::Negate, vec![other])),
                 };
             }
@@ -365,7 +471,9 @@ impl Parser<'_> {
         self.take(&mut text, |c| c.is_ascii_digit() || c == '.');
         // An exponent: 1e3, 2.5E-4.
         let exp_digit = |k: usize| self.peek(k).is_some_and(|c| c.is_ascii_digit());
-        if matches!(self.peek(0), Some('e' | 'E')) && (exp_digit(1) || (matches!(self.peek(1), Some('+' | '-')) && exp_digit(2))) {
+        if matches!(self.peek(0), Some('e' | 'E'))
+            && (exp_digit(1) || (matches!(self.peek(1), Some('+' | '-')) && exp_digit(2)))
+        {
             text.push('e');
             self.i += 1;
             if let Some(sign) = self.peek(0).filter(|c| *c == '+' || *c == '-') {
@@ -376,12 +484,16 @@ impl Parser<'_> {
         }
         match text.parse::<f64>() {
             Ok(n) if n.is_finite() => Ok(Expr::Value(VariableValue::Number(n))),
-            _ => Err(ExprError { message: format!("`{text}` isn't a number"), at: start }),
+            _ => Err(ExprError {
+                message: format!("`{text}` isn't a number"),
+                at: start,
+            }),
         }
     }
 
     fn string(&mut self, quote: char) -> Parsed {
-        self.text(quote).map(|t| Expr::Value(VariableValue::String(t)))
+        self.text(quote)
+            .map(|t| Expr::Value(VariableValue::String(t)))
     }
 
     /// The text of a literal in `quote`s starting here.
@@ -391,7 +503,12 @@ impl Parser<'_> {
         let mut out = String::new();
         loop {
             match self.peek(0) {
-                None => return Err(ExprError { message: format!("Close the text with {quote}"), at: start }),
+                None => {
+                    return Err(ExprError {
+                        message: format!("Close the text with {quote}"),
+                        at: start,
+                    });
+                }
                 Some(c) if c == quote => {
                     self.i += 1;
                     return Ok(out);
@@ -400,7 +517,12 @@ impl Parser<'_> {
                     match self.peek(1) {
                         Some('n') => out.push('\n'),
                         Some(c) => out.push(c),
-                        None => return Err(ExprError { message: format!("Close the text with {quote}"), at: start }),
+                        None => {
+                            return Err(ExprError {
+                                message: format!("Close the text with {quote}"),
+                                at: start,
+                            });
+                        }
                     }
                     self.i += 2;
                 }
@@ -415,7 +537,9 @@ impl Parser<'_> {
     fn primary(&mut self, depth: usize) -> Parsed {
         let d = self.deeper(depth)?;
         self.ws();
-        let Some(c) = self.peek(0) else { return Err(self.err("Something is missing at the end")) };
+        let Some(c) = self.peek(0) else {
+            return Err(self.err("Something is missing at the end"));
+        };
         match c {
             '(' => {
                 self.i += 1;
@@ -430,12 +554,22 @@ impl Parser<'_> {
             '{' => {
                 let start = self.i;
                 let close = (self.i + 1..self.s.len()).find(|k| self.s.get(*k) == Some(&'}'));
-                let Some(end) = close else { return Err(self.err("Add a closing }")) };
-                let name: String = self.s.get(start + 1..end).unwrap_or_default().iter().collect();
+                let Some(end) = close else {
+                    return Err(self.err("Add a closing }"));
+                };
+                let name: String = self
+                    .s
+                    .get(start + 1..end)
+                    .unwrap_or_default()
+                    .iter()
+                    .collect();
                 self.i = end + 1;
                 match self.vars.get(name.trim()) {
                     Some(v) => self.in_mode(v.id.clone()),
-                    None => Err(ExprError { message: format!("No variable `{}`", name.trim()), at: start }),
+                    None => Err(ExprError {
+                        message: format!("No variable `{}`", name.trim()),
+                        at: start,
+                    }),
                 }
             }
             '"' | '\'' => self.string(c),
@@ -447,9 +581,14 @@ impl Parser<'_> {
                     hex.push(h);
                     self.i += 1;
                 }
-                match figcraft_color::Color::from_hex(&hex).filter(|_| matches!(hex.len(), 3 | 4 | 6 | 8)) {
+                match figcraft_color::Color::from_hex(&hex)
+                    .filter(|_| matches!(hex.len(), 3 | 4 | 6 | 8))
+                {
                     Some(col) => Ok(Expr::Value(VariableValue::Color(col))),
-                    None => Err(ExprError { message: format!("`#{hex}` isn't a colour (use #RRGGBB)"), at: start }),
+                    None => Err(ExprError {
+                        message: format!("`#{hex}` isn't a colour (use #RRGGBB)"),
+                        at: start,
+                    }),
                 }
             }
             c if c.is_ascii_digit() || c == '.' => self.number(),
@@ -469,8 +608,17 @@ impl Parser<'_> {
                         return Ok(Expr::Value(VariableValue::Boolean(v)));
                     }
                 }
-                let word: String = self.s.iter().skip(self.i).take_while(|c| ident(**c)).collect();
-                if word.is_empty() { Err(self.err(format!("Unexpected {c}"))) } else { Err(self.err(format!("No variable `{word}`"))) }
+                let word: String = self
+                    .s
+                    .iter()
+                    .skip(self.i)
+                    .take_while(|c| ident(**c))
+                    .collect();
+                if word.is_empty() {
+                    Err(self.err(format!("Unexpected {c}")))
+                } else {
+                    Err(self.err(format!("No variable `{word}`")))
+                }
             }
         }
     }
@@ -484,8 +632,13 @@ impl Parser<'_> {
         self.i += 1;
         let name = self.argument(')', "collection")?;
         match self.vars.collection(&name) {
-            Some(c) => Ok(Expr::Mode { collection: c.id.clone() }),
-            None => Err(ExprError { message: format!("No variable collection `{name}`"), at: start }),
+            Some(c) => Ok(Expr::Mode {
+                collection: c.id.clone(),
+            }),
+            None => Err(ExprError {
+                message: format!("No variable collection `{name}`"),
+                at: start,
+            }),
         }
     }
 
@@ -498,12 +651,21 @@ impl Parser<'_> {
         self.i += 1;
         let start = self.i;
         let name = self.argument(']', "mode")?;
-        let coll = self.vars.get(&var).and_then(|v| self.vars.collection(&v.collection));
+        let coll = self
+            .vars
+            .get(&var)
+            .and_then(|v| self.vars.collection(&v.collection));
         match coll.and_then(|c| c.find_mode(&name)) {
-            Some(m) => Ok(Expr::InMode { variable: var, mode: m.id.clone() }),
+            Some(m) => Ok(Expr::InMode {
+                variable: var,
+                mode: m.id.clone(),
+            }),
             None => {
                 let whose = coll.map_or("The variable's collection", |c| c.name.as_str());
-                Err(ExprError { message: format!("{whose} has no mode `{name}`"), at: start })
+                Err(ExprError {
+                    message: format!("{whose} has no mode `{name}`"),
+                    at: start,
+                })
             }
         }
     }
@@ -519,7 +681,11 @@ impl Parser<'_> {
                 let mut raw = String::new();
                 self.take(&mut raw, |c| c != close);
                 let t = raw.trim();
-                t.strip_prefix('{').and_then(|x| x.strip_suffix('}')).unwrap_or(t).trim().to_string()
+                t.strip_prefix('{')
+                    .and_then(|x| x.strip_suffix('}'))
+                    .unwrap_or(t)
+                    .trim()
+                    .to_string()
             }
         };
         self.ws();
@@ -528,14 +694,22 @@ impl Parser<'_> {
         }
         self.i += 1;
         if name.is_empty() {
-            return Err(ExprError { message: format!("Name a {what} between the brackets"), at: start });
+            return Err(ExprError {
+                message: format!("Name a {what} between the brackets"),
+                at: start,
+            });
         }
         Ok(name)
     }
 
     /// What follows a complete expression that shouldn't.
     fn unexpected(&self) -> ExprError {
-        let word: String = self.s.iter().skip(self.i).take_while(|c| ident(**c)).collect();
+        let word: String = self
+            .s
+            .iter()
+            .skip(self.i)
+            .take_while(|c| ident(**c))
+            .collect();
         match self.peek(0) {
             Some(')') => self.err("Unexpected ): there's no ( to close"),
             _ if !word.is_empty() => self.err(format!("Add an operator before `{word}`")),

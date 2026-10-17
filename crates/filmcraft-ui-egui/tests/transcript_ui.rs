@@ -18,7 +18,15 @@ use serde_json::{Value, json};
 #[ignore = "manual transcript performance measurement"]
 fn long_transcript_redraw_benchmark() {
     let mut d = Driver::demo();
-    let item = d.harness.state().session.active_sequence().unwrap().audio_tracks[0].items[0].item;
+    let item = d
+        .harness
+        .state()
+        .session
+        .active_sequence()
+        .unwrap()
+        .audio_tracks[0]
+        .items[0]
+        .item;
     let words: Vec<Value> = (0..10_000)
         .map(|i| {
             json!({"text": "hello", "start": filmcraft_time::Tick::from_seconds_f64(i as f64 * 0.4).0,
@@ -35,11 +43,16 @@ fn long_transcript_redraw_benchmark() {
     // Extend only the synthetic fixture clip so all 10,000 words are actually laid out.
     let session = &mut d.harness.state_mut().session;
     let id = session.state.active_sequence.unwrap();
-    let seq = std::sync::Arc::make_mut(&mut session.project).sequence_mut(id).unwrap();
+    let seq = std::sync::Arc::make_mut(&mut session.project)
+        .sequence_mut(id)
+        .unwrap();
     seq.audio_tracks[0].items.truncate(1);
     seq.audio_tracks[0].items[0].source_in = filmcraft_time::Tick::ZERO;
     seq.audio_tracks[0].items[0].duration = filmcraft_time::Tick::from_seconds_f64(4000.0);
-    assert_eq!(filmcraft_engine::transcript::sequence_words(session).len(), 10_000);
+    assert_eq!(
+        filmcraft_engine::transcript::sequence_words(session).len(),
+        10_000
+    );
     for query in ["", "hello"] {
         d.harness.state_mut().ui.transcript_search = query.into();
         d.frames(5);
@@ -50,7 +63,10 @@ fn long_transcript_redraw_benchmark() {
             times.push(start.elapsed().as_secs_f64() * 1000.0);
         }
         times.sort_by(f64::total_cmp);
-        println!("transcript words=10000 query={query:?} p50_ms={:.3} p95_ms={:.3}", times[20], times[38]);
+        println!(
+            "transcript words=10000 query={query:?} p50_ms={:.3} p95_ms={:.3}",
+            times[20], times[38]
+        );
     }
 }
 
@@ -63,16 +79,24 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
         let snapshots = std::env::var_os("FILMCRAFT_UI_SNAPSHOT_DIR").map(std::path::PathBuf::from);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if snapshots.is_some() {
             b = b.wgpu();
         }
         let harness = b.build_eframe(move |_cc| app);
-        let mut d = Driver { harness, tx, snapshots };
+        let mut d = Driver {
+            harness,
+            tx,
+            snapshots,
+        };
         d.frames(4);
         d
     }
@@ -102,16 +126,23 @@ impl Driver {
 
     fn ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
 
     fn snapshot(&mut self, name: &str) {
-        let Some(dir) = self.snapshots.clone() else { return };
+        let Some(dir) = self.snapshots.clone() else {
+            return;
+        };
         self.frames(2);
         match self.harness.render() {
             Ok(img) => {
                 std::fs::create_dir_all(&dir).unwrap();
-                img.save(dir.join(format!("transcript-{name}.png"))).unwrap();
+                img.save(dir.join(format!("transcript-{name}.png")))
+                    .unwrap();
             }
             Err(e) => eprintln!("snapshot {name} skipped: {e}"),
         }
@@ -125,7 +156,11 @@ fn transcript_tab_selects_and_extracts_words() {
     d.frames(2);
     d.ok("ui.click", json!({"id": "text.tab.Transcript"}));
     d.frames(3);
-    assert_eq!(d.ids("text.transcript.generate"), vec!["text.transcript.generate".to_string()], "empty state offers Transcribe");
+    assert_eq!(
+        d.ids("text.transcript.generate"),
+        vec!["text.transcript.generate".to_string()],
+        "empty state offers Transcribe"
+    );
 
     // bring a transcript for the first A1 clip's media (as an agent without a speech model would)
     let mut probe = Session::default();
@@ -147,8 +182,16 @@ fn transcript_tab_selects_and_extracts_words() {
     d.frames(3);
     d.ok("ui.click", json!({"id": "text.transcript.extract"}));
     d.frames(3);
-    let r = d.ok("engine.execute", json!({"command": "transcript.inspect", "params": {}}));
-    let left: Vec<&str> = r["words"].as_array().unwrap().iter().filter_map(|w| w["text"].as_str()).collect();
+    let r = d.ok(
+        "engine.execute",
+        json!({"command": "transcript.inspect", "params": {}}),
+    );
+    let left: Vec<&str> = r["words"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|w| w["text"].as_str())
+        .collect();
     assert_eq!(left, ["Hello", "there", "friend."]);
     assert_eq!(d.ids("text.transcript.word.").len(), 3);
 }

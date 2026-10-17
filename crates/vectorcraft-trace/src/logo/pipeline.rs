@@ -4,7 +4,9 @@ use super::field::{blur_plane, upsample};
 use super::geom::{Cubic, finite};
 use super::march::{area2, contours};
 use super::outline::{Stats, Style, fit_outline};
-use super::palette::{WHITE_MIN, auto_palette, flat_fraction, fold_tones, parse_hex, unexplained_colours};
+use super::palette::{
+    WHITE_MIN, auto_palette, flat_fraction, fold_tones, parse_hex, unexplained_colours,
+};
 use super::restore::RestoreParams;
 use super::unmix::{Px, count_ambiguous, unmix};
 use crate::{Raster, TraceError, TraceParams, TraceResult, TracedPath};
@@ -62,7 +64,13 @@ fn working_copy(img: &Raster, at_least: usize) -> (Vec<Px>, usize, usize, usize)
 
 fn style(params: &TraceParams) -> Style {
     // Parameters come from users and agents: a NaN or infinity must not reach the geometry.
-    let unit = |v: f64, default: f64| if v.is_finite() { (v / 100.0).clamp(0.0, 1.0) } else { default };
+    let unit = |v: f64, default: f64| {
+        if v.is_finite() {
+            (v / 100.0).clamp(0.0, 1.0)
+        } else {
+            default
+        }
+    };
     let paths = unit(params.paths, 0.6);
     let corners = unit(params.corners, 0.5);
     Style {
@@ -78,7 +86,9 @@ fn style(params: &TraceParams) -> Style {
 /// the logo is still right on a dark background. Works on coverage planes in place.
 fn fill_knockouts(planes: &mut [Vec<f32>], w: usize, h: usize, white: usize, transparent: usize) {
     let n = w * h;
-    let Some(t) = planes.get(transparent) else { return };
+    let Some(t) = planes.get(transparent) else {
+        return;
+    };
     let seed: Vec<bool> = t.iter().take(n).map(|&v| v > 0.2).collect();
     // Components of "mostly transparent" pixels; the ones touching the border are the outside.
     let mut comp = vec![0u32; n];
@@ -119,7 +129,10 @@ fn fill_knockouts(planes: &mut [Vec<f32>], w: usize, h: usize, white: usize, tra
         }
         outside.push(touches);
     }
-    let enclosed: Vec<bool> = comp.iter().map(|&c| c != 0 && !outside.get(c as usize).copied().unwrap_or(true)).collect();
+    let enclosed: Vec<bool> = comp
+        .iter()
+        .map(|&c| c != 0 && !outside.get(c as usize).copied().unwrap_or(true))
+        .collect();
     // Grow by one pixel so the blended edge pixels around a knockout come with it.
     let mut grown = enclosed.clone();
     for y in 0..h {
@@ -135,7 +148,11 @@ fn fill_knockouts(planes: &mut [Vec<f32>], w: usize, h: usize, white: usize, tra
     }
     for (i, &is_grown) in grown.iter().enumerate() {
         if is_grown {
-            let tv = planes.get(transparent).and_then(|p| p.get(i)).copied().unwrap_or(0.0);
+            let tv = planes
+                .get(transparent)
+                .and_then(|p| p.get(i))
+                .copied()
+                .unwrap_or(0.0);
             if tv > 0.02 {
                 if let Some(v) = planes.get_mut(white).and_then(|p| p.get_mut(i)) {
                     *v += tv;
@@ -152,7 +169,10 @@ fn pad_plane(plane: &[f32], w: usize, h: usize, outside: f32) -> Vec<f32> {
     let (wp, hp) = (w + 2 * PAD, h + 2 * PAD);
     let mut out = vec![outside; wp * hp];
     for y in 0..h {
-        if let (Some(dst), Some(src)) = (out.get_mut((y + PAD) * wp + PAD..(y + PAD) * wp + PAD + w), plane.get(y * w..(y + 1) * w)) {
+        if let (Some(dst), Some(src)) = (
+            out.get_mut((y + PAD) * wp + PAD..(y + PAD) * wp + PAD + w),
+            plane.get(y * w..(y + 1) * w),
+        ) {
             dst.copy_from_slice(src);
         }
     }
@@ -161,14 +181,24 @@ fn pad_plane(plane: &[f32], w: usize, h: usize, outside: f32) -> Vec<f32> {
 
 /// A loop's `(x, y)` grid points as working-pixel coordinates.
 fn to_pixels(loop_pts: &[Point], u: usize) -> Vec<Point> {
-    loop_pts.iter().map(|p| Point::new((p.x + 0.5) / u as f64 - PAD as f64, (p.y + 0.5) / u as f64 - PAD as f64)).collect()
+    loop_pts
+        .iter()
+        .map(|p| {
+            Point::new(
+                (p.x + 0.5) / u as f64 - PAD as f64,
+                (p.y + 0.5) / u as f64 - PAD as f64,
+            )
+        })
+        .collect()
 }
 
 fn point_in_poly(p: Point, poly: &[Point]) -> bool {
     let n = poly.len();
     let mut inside = false;
     for i in 0..n {
-        let (Some(&a), Some(&b)) = (poly.get(i), poly.get((i + 1) % n)) else { continue };
+        let (Some(&a), Some(&b)) = (poly.get(i), poly.get((i + 1) % n)) else {
+            continue;
+        };
         if (a.y > p.y) != (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x {
             inside = !inside;
         }
@@ -193,7 +223,11 @@ fn grow_into_neighbours(p: &mut [Point], class: usize, map: &Around) {
     }
     let src = p.to_vec();
     for i in 0..n {
-        let (Some(&a), Some(&b), Some(&c)) = (src.get((i + n - 1) % n), src.get((i + 1) % n), src.get(i)) else { continue };
+        let (Some(&a), Some(&b), Some(&c)) =
+            (src.get((i + n - 1) % n), src.get((i + 1) % n), src.get(i))
+        else {
+            continue;
+        };
         let t = b - a;
         let len = t.hypot();
         if len.is_nan() || len <= 1e-12 {
@@ -210,7 +244,11 @@ fn grow_into_neighbours(p: &mut [Point], class: usize, map: &Around) {
         if ix >= map.w || iy >= map.h {
             continue;
         }
-        let d = map.dominant.get(iy * map.w + ix).copied().map_or(map.transparent, usize::from);
+        let d = map
+            .dominant
+            .get(iy * map.w + ix)
+            .copied()
+            .map_or(map.transparent, usize::from);
         if d != class
             && d != map.white
             && d != map.transparent
@@ -234,10 +272,17 @@ struct ToSource {
 impl ToSource {
     fn axis(&self, v: f64, work: usize, source: usize) -> f64 {
         let last = work.saturating_sub(1) as f64;
-        if v <= last { v * self.factor } else { last * self.factor + (v - last) * (source as f64 - last * self.factor) }
+        if v <= last {
+            v * self.factor
+        } else {
+            last * self.factor + (v - last) * (source as f64 - last * self.factor)
+        }
     }
     fn point(&self, p: Point) -> Point {
-        Point::new(self.axis(p.x, self.work.0, self.source.0), self.axis(p.y, self.work.1, self.source.1))
+        Point::new(
+            self.axis(p.x, self.work.0, self.source.0),
+            self.axis(p.y, self.work.1, self.source.1),
+        )
     }
 }
 
@@ -252,14 +297,26 @@ fn to_subpath(segs: &[Cubic], map: &ToSource) -> Option<SubPath> {
         let (cur, prev) = (segs.get(i)?, segs.get((i + n - 1) % n)?);
         let (p, h_out, h_in) = (sc(cur[0]), sc(cur[1]), sc(prev[2]));
         let (vi, vo) = (p - h_in, h_out - p);
-        let kind = if vi.hypot() > 1e-9 && vo.hypot() > 1e-9 && vi.cross(vo).abs() < 0.07 * vi.hypot() * vo.hypot() && vi.dot(vo) > 0.0 {
+        let kind = if vi.hypot() > 1e-9
+            && vo.hypot() > 1e-9
+            && vi.cross(vo).abs() < 0.07 * vi.hypot() * vo.hypot()
+            && vi.dot(vo) > 0.0
+        {
             AnchorKind::Smooth
         } else {
             AnchorKind::Corner
         };
-        anchors.push(Anchor { p, h_in, h_out, kind });
+        anchors.push(Anchor {
+            p,
+            h_in,
+            h_out,
+            kind,
+        });
     }
-    anchors.iter().all(|a| finite(a.p) && finite(a.h_in) && finite(a.h_out)).then(|| SubPath::new(anchors, true))
+    anchors
+        .iter()
+        .all(|a| finite(a.p) && finite(a.h_in) && finite(a.h_out))
+        .then(|| SubPath::new(anchors, true))
 }
 
 struct Shape {
@@ -274,14 +331,21 @@ struct Shape {
 /// outline a smooth edge to find. Sources with plenty of blended edge pixels are left alone.
 fn soften_if_aliased(planes: &mut [Vec<f32>], w: usize, h: usize) -> bool {
     let n = w * h;
-    let dominant: Vec<usize> =
-        (0..n).map(|i| (0..planes.len()).max_by(|&a, &b| plane_at(planes, a, i).total_cmp(&plane_at(planes, b, i))).unwrap_or(0)).collect();
+    let dominant: Vec<usize> = (0..n)
+        .map(|i| {
+            (0..planes.len())
+                .max_by(|&a, &b| plane_at(planes, a, i).total_cmp(&plane_at(planes, b, i)))
+                .unwrap_or(0)
+        })
+        .collect();
     let (mut boundary, mut blended) = (0usize, 0usize);
     for y in 0..h {
         for x in 0..w {
             let i = y * w + x;
             let d = dominant.get(i).copied().unwrap_or(0);
-            let strongest = (0..planes.len()).map(|c| plane_at(planes, c, i)).fold(0.0f32, f32::max);
+            let strongest = (0..planes.len())
+                .map(|c| plane_at(planes, c, i))
+                .fold(0.0f32, f32::max);
             if strongest < 0.9 {
                 blended += 1;
             }
@@ -301,20 +365,36 @@ fn soften_if_aliased(planes: &mut [Vec<f32>], w: usize, h: usize) -> bool {
 }
 
 fn plane_at(planes: &[Vec<f32>], class: usize, i: usize) -> f32 {
-    planes.get(class).and_then(|p| p.get(i)).copied().unwrap_or(0.0)
+    planes
+        .get(class)
+        .and_then(|p| p.get(i))
+        .copied()
+        .unwrap_or(0.0)
 }
 
 /// The unmixing classes for a palette: each colour, then white, then transparent.
 fn classes_for(palette: &[[u8; 3]]) -> Vec<[f64; 4]> {
-    let mut classes: Vec<[f64; 4]> =
-        palette.iter().map(|c| [f64::from(c[0]) / 255.0, f64::from(c[1]) / 255.0, f64::from(c[2]) / 255.0, 1.0]).collect();
+    let mut classes: Vec<[f64; 4]> = palette
+        .iter()
+        .map(|c| {
+            [
+                f64::from(c[0]) / 255.0,
+                f64::from(c[1]) / 255.0,
+                f64::from(c[2]) / 255.0,
+                1.0,
+            ]
+        })
+        .collect();
     classes.push([1.0, 1.0, 1.0, 1.0]);
     classes.push([0.0, 0.0, 0.0, 0.0]);
     classes
 }
 
 fn distance(a: [u8; 3], b: [u8; 3]) -> f64 {
-    (0..3).map(|k| (f64::from(a[k]) - f64::from(b[k])).powi(2)).sum::<f64>().sqrt()
+    (0..3)
+        .map(|k| (f64::from(a[k]) - f64::from(b[k])).powi(2))
+        .sum::<f64>()
+        .sqrt()
 }
 
 type Colours = Vec<[u8; 3]>;
@@ -322,7 +402,12 @@ type Colours = Vec<[u8; 3]>;
 /// The colours to trace: those the caller named (white is always its own class so it is skipped;
 /// colours closer than [`SAME_COLOUR`] count as one; at most [`MAX_COLOURS`]) or the ones found,
 /// the tones of one colour folded into it ([`fold_tones`]); and with them the colours before folding.
-fn choose_palette(params: &TraceParams, pix: &[Px], w: usize, h: usize) -> Result<(Colours, Colours), TraceError> {
+fn choose_palette(
+    params: &TraceParams,
+    pix: &[Px],
+    w: usize,
+    h: usize,
+) -> Result<(Colours, Colours), TraceError> {
     if params.logo_colors.is_empty() {
         let found = auto_palette(pix, w, h, (params.colors as usize).clamp(2, MAX_COLOURS));
         return Ok((fold_tones(pix, found.clone()), found));
@@ -332,7 +417,10 @@ fn choose_palette(params: &TraceParams, pix: &[Px], w: usize, h: usize) -> Resul
         // Every entry is checked, but only the first few distinct colours are kept.
         let c = parse_hex(s).ok_or_else(|| TraceError::BadPalette(s.clone()))?;
         let white = c.iter().all(|&v| v >= WHITE_MIN);
-        if palette.len() < MAX_COLOURS && !white && !palette.iter().any(|&q| distance(q, c) < SAME_COLOUR) {
+        if palette.len() < MAX_COLOURS
+            && !white
+            && !palette.iter().any(|&q| distance(q, c) < SAME_COLOUR)
+        {
             palette.push(c);
         }
     }
@@ -340,7 +428,11 @@ fn choose_palette(params: &TraceParams, pix: &[Px], w: usize, h: usize) -> Resul
 }
 
 /// Trace a flat-colour logo.
-pub(crate) fn trace_logo(img: &Raster, params: &TraceParams, max_anchors: usize) -> Result<TraceResult, TraceError> {
+pub(crate) fn trace_logo(
+    img: &Raster,
+    params: &TraceParams,
+    max_anchors: usize,
+) -> Result<TraceResult, TraceError> {
     let (w0, h0) = (img.width as usize, img.height as usize);
     if w0 == 0 || h0 == 0 || img.rgba.len() != w0 * h0 * 4 {
         return Ok(TraceResult::default());
@@ -385,14 +477,28 @@ pub(crate) fn trace_logo(img: &Raster, params: &TraceParams, max_anchors: usize)
     fill_knockouts(&mut planes, w, h, white, transparent);
     let n = w * h;
     let dominant: Vec<u8> = (0..n)
-        .map(|i| (0..planes.len()).max_by(|&a, &b| plane_at(&planes, a, i).total_cmp(&plane_at(&planes, b, i))).unwrap_or(transparent) as u8)
+        .map(|i| {
+            (0..planes.len())
+                .max_by(|&a, &b| plane_at(&planes, a, i).total_cmp(&plane_at(&planes, b, i)))
+                .unwrap_or(transparent) as u8
+        })
         .collect();
-    let around = Around { dominant: &dominant, w, h, white, transparent };
+    let around = Around {
+        dominant: &dominant,
+        w,
+        h,
+        white,
+        transparent,
+    };
     // Smooth fields: where each class is the most present, and by how much.
     let (wp, hp) = (w + 2 * PAD, h + 2 * PAD);
     let u = (((FIELD_CELLS_MAX / (wp * hp).max(1)) as f64).sqrt() as usize).clamp(2, 8);
     let (ow, oh) = (wp * u, hp * u);
-    let padded: Vec<Vec<f32>> = planes.iter().enumerate().map(|(c, p)| pad_plane(p, w, h, if c == transparent { 1.0 } else { 0.0 })).collect();
+    let padded: Vec<Vec<f32>> = planes
+        .iter()
+        .enumerate()
+        .map(|(c, p)| pad_plane(p, w, h, if c == transparent { 1.0 } else { 0.0 }))
+        .collect();
     let mut best = vec![f32::MIN; ow * oh];
     let mut second = vec![f32::MIN; ow * oh];
     let mut best_id = vec![0u8; ow * oh];
@@ -429,7 +535,17 @@ pub(crate) fn trace_logo(img: &Raster, params: &TraceParams, max_anchors: usize)
             continue;
         }
         let m = upsample(padded.get(class).map_or(&[][..], Vec::as_slice), wp, hp, u);
-        let f: Vec<f32> = m.iter().enumerate().map(|(i, &v)| v - if usize::from(best_id[i]) == class { second[i] } else { best[i] }).collect();
+        let f: Vec<f32> = m
+            .iter()
+            .enumerate()
+            .map(|(i, &v)| {
+                v - if usize::from(best_id[i]) == class {
+                    second[i]
+                } else {
+                    best[i]
+                }
+            })
+            .collect();
         drop(m);
         let mut outers: Vec<(f64, Vec<Point>)> = Vec::new();
         let mut holes: Vec<Vec<Point>> = Vec::new();
@@ -443,7 +559,11 @@ pub(crate) fn trace_logo(img: &Raster, params: &TraceParams, max_anchors: usize)
                 return Err(TraceError::TooComplex { max: max_anchors });
             }
             let pts = to_pixels(&lp, u);
-            if a2 < 0.0 { outers.push((a2.abs() / 2.0, pts)) } else { holes.push(pts) }
+            if a2 < 0.0 {
+                outers.push((a2.abs() / 2.0, pts))
+            } else {
+                holes.push(pts)
+            }
         }
         // Each hole belongs to the smallest outline that contains it, and to no other.
         let owner: Vec<Option<usize>> = if params.ignore_white {
@@ -451,7 +571,12 @@ pub(crate) fn trace_logo(img: &Raster, params: &TraceParams, max_anchors: usize)
                 .iter()
                 .map(|hole| {
                     let p = *hole.first()?;
-                    outers.iter().enumerate().filter(|(_, (_, o))| point_in_poly(p, o)).min_by(|a, b| a.1.0.total_cmp(&b.1.0)).map(|(i, _)| i)
+                    outers
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, (_, o))| point_in_poly(p, o))
+                        .min_by(|a, b| a.1.0.total_cmp(&b.1.0))
+                        .map(|(i, _)| i)
                 })
                 .collect()
         } else {
@@ -459,19 +584,34 @@ pub(crate) fn trace_logo(img: &Raster, params: &TraceParams, max_anchors: usize)
         };
         for (idx, (area, mut pts)) in outers.into_iter().enumerate() {
             grow_into_neighbours(&mut pts, class, &around);
-            let Some(outer) = fit_outline(&pts, &style, &mut stats) else { continue };
-            let hole_fits: Vec<Vec<Cubic>> =
-                holes.iter().zip(&owner).filter(|(_, o)| **o == Some(idx)).filter_map(|(hole, _)| fit_outline(hole, &style, &mut stats)).collect();
+            let Some(outer) = fit_outline(&pts, &style, &mut stats) else {
+                continue;
+            };
+            let hole_fits: Vec<Vec<Cubic>> = holes
+                .iter()
+                .zip(&owner)
+                .filter(|(_, o)| **o == Some(idx))
+                .filter_map(|(hole, _)| fit_outline(hole, &style, &mut stats))
+                .collect();
             anchors_made += outer.len() + hole_fits.iter().map(Vec::len).sum::<usize>();
             if anchors_made > max_anchors {
                 return Err(TraceError::TooComplex { max: max_anchors });
             }
-            shapes.push(Shape { class, area, outer, holes: hole_fits });
+            shapes.push(Shape {
+                class,
+                area,
+                outer,
+                holes: hole_fits,
+            });
         }
     }
     // Painter's order: biggest shapes first, so smaller ones sit on top of what they belong to.
     shapes.sort_by(|a, b| b.area.total_cmp(&a.area).then(a.class.cmp(&b.class)));
-    let to_source = ToSource { factor: factor as f64, work: (w, h), source: (w0, h0) };
+    let to_source = ToSource {
+        factor: factor as f64,
+        work: (w, h),
+        source: (w0, h0),
+    };
     let mut out = TraceResult::default();
     for s in shapes {
         let color = palette.get(s.class).copied().unwrap_or([255, 255, 255]);

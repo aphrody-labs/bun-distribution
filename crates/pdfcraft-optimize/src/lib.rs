@@ -17,7 +17,14 @@
 //! fields are discarded by `pdfcraft-redact`'s Remove Hidden Information, which the engine
 //! runs alongside.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod audit;
 mod images;
@@ -61,7 +68,13 @@ pub enum Compression {
 }
 
 /// Acrobat's JPEG quality steps.
-pub const QUALITIES: [(&str, u8); 5] = [("Minimum", 25), ("Low", 45), ("Medium", 60), ("High", 80), ("Maximum", 95)];
+pub const QUALITIES: [(&str, u8); 5] = [
+    ("Minimum", 25),
+    ("Low", 45),
+    ("Medium", 60),
+    ("High", 80),
+    ("Maximum", 95),
+];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ImageSettings {
@@ -74,7 +87,12 @@ pub struct ImageSettings {
 
 impl ImageSettings {
     /// Reduce File Size: bicubic to 150 ppi above 225 ppi, JPEG medium quality.
-    pub const REDUCE: ImageSettings = ImageSettings { downsample: true, target_ppi: 150.0, above_ppi: 225.0, compression: Compression::Jpeg(60) };
+    pub const REDUCE: ImageSettings = ImageSettings {
+        downsample: true,
+        target_ppi: 150.0,
+        above_ppi: 225.0,
+        compression: Compression::Jpeg(60),
+    };
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -141,7 +159,11 @@ pub fn optimize(doc: &mut Document, settings: &Settings) -> Result<Report, Optim
 /// [`optimize`], calling `progress` before each image and before the clean-up (and now and then
 /// during a long one). Returning `false` stops with [`OptimizeError::Cancelled`]; `doc` is then
 /// partly optimized and should be dropped.
-pub fn optimize_with_progress(doc: &mut Document, settings: &Settings, progress: &mut dyn FnMut(Stage) -> bool) -> Result<Report, OptimizeError> {
+pub fn optimize_with_progress(
+    doc: &mut Document,
+    settings: &Settings,
+    progress: &mut dyn FnMut(Stage) -> bool,
+) -> Result<Report, OptimizeError> {
     let mut report = Report::default();
     let pages = pdfcraft_annot::page_refs(doc).map_err(|_| OptimizeError::NoPages)?;
     images::run(doc, &pages, settings, &mut report, progress)?;
@@ -161,7 +183,10 @@ pub fn optimize_with_progress(doc: &mut Document, settings: &Settings, progress:
     }
     if settings.discard_alternate_images {
         for num in doc.object_numbers() {
-            let r = ObjRef { num, generation: doc.generation(num) };
+            let r = ObjRef {
+                num,
+                generation: doc.generation(num),
+            };
             let alt = matches!(&*doc.get(r), Object::Stream(s) if s.dict.name(b"Subtype") == Some(b"Image") && s.dict.contains(b"Alternates"));
             if alt {
                 if let Object::Stream(s) = &*doc.get(r) {
@@ -176,14 +201,21 @@ pub fn optimize_with_progress(doc: &mut Document, settings: &Settings, progress:
     let root = doc.root();
     if settings.discard_tags
         && let Some(root) = root
-        && doc.get(root).as_dict().is_some_and(|c| c.contains(b"StructTreeRoot"))
+        && doc
+            .get(root)
+            .as_dict()
+            .is_some_and(|c| c.contains(b"StructTreeRoot"))
     {
         doc.update_dict(root, |c| {
             c.remove(b"StructTreeRoot");
             c.remove(b"MarkInfo");
         })?;
         for p in &pages {
-            if doc.get(*p).as_dict().is_some_and(|d| d.contains(b"StructParents")) {
+            if doc
+                .get(*p)
+                .as_dict()
+                .is_some_and(|d| d.contains(b"StructParents"))
+            {
                 doc.update_dict(*p, |d| {
                     d.remove(b"StructParents");
                 })?;
@@ -194,9 +226,21 @@ pub fn optimize_with_progress(doc: &mut Document, settings: &Settings, progress:
     if settings.discard_print_settings
         && let Some(root) = root
     {
-        const PRINT: [&[u8]; 7] = [b"PrintScaling", b"Duplex", b"PickTrayByPDFSize", b"PrintPageRange", b"NumCopies", b"PrintArea", b"PrintClip"];
-        let vp = doc.get(root).as_dict().and_then(|c| c.get(b"ViewerPreferences").cloned());
-        let edit = |d: &mut pdfcraft_cos::Dict| PRINT.iter().filter(|k| d.remove(k).is_some()).count();
+        const PRINT: [&[u8]; 7] = [
+            b"PrintScaling",
+            b"Duplex",
+            b"PickTrayByPDFSize",
+            b"PrintPageRange",
+            b"NumCopies",
+            b"PrintArea",
+            b"PrintClip",
+        ];
+        let vp = doc
+            .get(root)
+            .as_dict()
+            .and_then(|c| c.get(b"ViewerPreferences").cloned());
+        let edit =
+            |d: &mut pdfcraft_cos::Dict| PRINT.iter().filter(|k| d.remove(k).is_some()).count();
         match vp {
             Some(Object::Ref(r)) => {
                 let mut n = 0;
@@ -225,11 +269,17 @@ pub fn optimize_with_progress(doc: &mut Document, settings: &Settings, progress:
     }
     if settings.flate_unencoded {
         for num in doc.object_numbers() {
-            let r = ObjRef { num, generation: doc.generation(num) };
+            let r = ObjRef {
+                num,
+                generation: doc.generation(num),
+            };
             let obj = doc.get(r);
             let Object::Stream(s) = &*obj else { continue };
             // XMP stays readable as plain text (PDF/A requires it); tiny streams don't gain.
-            if s.dict.name(b"Type") == Some(b"Metadata") || s.dict.name(b"Type") == Some(b"XRef") || s.raw.len() < 64 {
+            if s.dict.name(b"Type") == Some(b"Metadata")
+                || s.dict.name(b"Type") == Some(b"XRef")
+                || s.raw.len() < 64
+            {
                 continue;
             }
             let replacement = if s.dict.contains(b"Filter") {
@@ -253,19 +303,33 @@ pub fn optimize_with_progress(doc: &mut Document, settings: &Settings, progress:
 /// `[/FlateDecode]`), when that is smaller. Only the outer layer is decoded: strictly, and within
 /// the stored size, which ASCII text never falls below, so the inner encoded bytes stay exact.
 fn strip_ascii_wrapper(s: &Stream) -> Option<Stream> {
-    if s.dict.contains(b"DecodeParms") || s.dict.name(b"Type") == Some(b"ObjStm") || s.dict.name(b"Subtype") == Some(b"Image") {
+    if s.dict.contains(b"DecodeParms")
+        || s.dict.name(b"Type") == Some(b"ObjStm")
+        || s.dict.name(b"Subtype") == Some(b"Image")
+    {
         return None;
     }
-    let Some(Object::Array(filters)) = s.dict.get(b"Filter") else { return None };
-    let names = filters.iter().map(Object::as_name).collect::<Option<Vec<_>>>()?;
+    let Some(Object::Array(filters)) = s.dict.get(b"Filter") else {
+        return None;
+    };
+    let names = filters
+        .iter()
+        .map(Object::as_name)
+        .collect::<Option<Vec<_>>>()?;
     let (outer, inner) = names.split_first()?;
-    if !matches!(*outer, b"ASCII85Decode" | b"ASCIIHexDecode") || inner.is_empty() || inner.contains(&&b"Crypt"[..]) {
+    if !matches!(*outer, b"ASCII85Decode" | b"ASCIIHexDecode")
+        || inner.is_empty()
+        || inner.contains(&&b"Crypt"[..])
+    {
         return None;
     }
     let data = s.decoded_first_filter_strict(s.raw.len()).ok()?;
     let mut dict = s.dict.clone();
     dict.remove(b"Length");
-    dict.set(b"Filter".to_vec(), Object::Array(inner.iter().map(|n| Object::Name(n.to_vec())).collect()));
+    dict.set(
+        b"Filter".to_vec(),
+        Object::Array(inner.iter().map(|n| Object::Name(n.to_vec())).collect()),
+    );
     let candidate = Stream::from_raw(dict, data);
     (stored_len(&candidate)? < stored_len(s)?).then_some(candidate)
 }
@@ -274,7 +338,10 @@ fn strip_ascii_wrapper(s: &Stream) -> Option<Stream> {
 /// sets it, then its data.
 fn stored_len(s: &Stream) -> Option<usize> {
     let mut dict = s.dict.clone();
-    dict.set(b"Length".to_vec(), Object::Int(i64::try_from(s.raw.len()).ok()?));
+    dict.set(
+        b"Length".to_vec(),
+        Object::Int(i64::try_from(s.raw.len()).ok()?),
+    );
     let mut out = Vec::new();
     serialize(&Object::Dict(dict), &mut out);
     out.len().checked_add(s.raw.len())

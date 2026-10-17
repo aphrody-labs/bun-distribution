@@ -122,7 +122,9 @@ impl WgpuContext {
     /// Serializes error-scope sections on the shared device. Hold the guard from
     /// `push_error_scope` until the matching `pop`; GPU execution itself need not be held.
     pub fn error_scope_lock(&self) -> std::sync::MutexGuard<'_, ()> {
-        self.scope_lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.scope_lock
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Takes the last error the device reported outside of an error scope, if any.
@@ -146,10 +148,15 @@ impl Hub {
         let instance = create_instance(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapters =
             pollster::block_on(crate::enumerate_adapters(&instance, wgpu::Backends::all()));
-        let reports =
-            adapters.iter().map(|adapter| AdapterReport::new(&adapter.get_info())).collect();
+        let reports = adapters
+            .iter()
+            .map(|adapter| AdapterReport::new(&adapter.get_info()))
+            .collect();
         let context = Self::select(&instance, adapters).and_then(Self::open);
-        Self { adapters: reports, context }
+        Self {
+            adapters: reports,
+            context,
+        }
     }
 
     fn select(
@@ -169,7 +176,11 @@ impl Hub {
                 u8::from(cfg!(target_os = "windows") && info.backend != wgpu::Backend::Dx12);
             (device_rank, backend_rank)
         };
-        if let Some(best) = adapters.into_iter().min_by_key(rank).filter(|a| rank(a).0 < 2) {
+        if let Some(best) = adapters
+            .into_iter()
+            .min_by_key(rank)
+            .filter(|a| rank(a).0 < 2)
+        {
             return Ok(best);
         }
         let options = wgpu::RequestAdapterOptions {
@@ -186,12 +197,18 @@ impl Hub {
             .map_err(|error| HubError::Device(error.to_string()))?;
         let uncaptured = Arc::new(Mutex::new(None));
         let slot = Arc::clone(&uncaptured);
-        gpu.device.on_uncaptured_error(Arc::new(move |error: wgpu::Error| {
-            if let Ok(mut slot) = slot.lock() {
-                *slot = Some(error.to_string());
-            }
-        }));
-        Ok(WgpuContext { adapter, gpu, uncaptured, scope_lock: Mutex::new(()) })
+        gpu.device
+            .on_uncaptured_error(Arc::new(move |error: wgpu::Error| {
+                if let Ok(mut slot) = slot.lock() {
+                    *slot = Some(error.to_string());
+                }
+            }));
+        Ok(WgpuContext {
+            adapter,
+            gpu,
+            uncaptured,
+            scope_lock: Mutex::new(()),
+        })
     }
 }
 
@@ -219,7 +236,7 @@ pub fn report() -> GpuReport {
                 }),
                 None,
             )
-        },
+        }
         Err(error) => (None, None, Some(error.to_string())),
     };
     GpuReport {
@@ -251,7 +268,9 @@ pub fn run_wgsl(job: WgslJob<'_>) -> Result<Vec<u8>, HubError> {
 
     let size = job.data.len();
     if size == 0 || !size.is_multiple_of(4) {
-        return Err(HubError::InvalidJob("data must be a non-empty multiple of 4 bytes".into()));
+        return Err(HubError::InvalidJob(
+            "data must be a non-empty multiple of 4 bytes".into(),
+        ));
     }
     // The job allocates both a storage and a readback buffer. Check the binding
     // limit and whole-buffer limit before creating either resource so low-limit
@@ -267,7 +286,9 @@ pub fn run_wgsl(job: WgslJob<'_>) -> Result<Vec<u8>, HubError> {
     }
     let max_groups = limits.max_compute_workgroups_per_dimension;
     if job.workgroups.iter().any(|&n| n == 0 || n > max_groups) {
-        return Err(HubError::InvalidJob(format!("each workgroup count must be 1..={max_groups}")));
+        return Err(HubError::InvalidJob(format!(
+            "each workgroup count must be 1..={max_groups}"
+        )));
     }
     if job.entry_point.is_empty() {
         return Err(HubError::InvalidJob("entry point is empty".into()));
@@ -308,7 +329,10 @@ pub fn run_wgsl(job: WgslJob<'_>) -> Result<Vec<u8>, HubError> {
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("aphrody-gpu-hub job"),
         layout: &pipeline.get_bind_group_layout(0),
-        entries: &[wgpu::BindGroupEntry { binding: 0, resource: storage.as_entire_binding() }],
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: storage.as_entire_binding(),
+        }],
     });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("aphrody-gpu-hub job"),
@@ -338,14 +362,19 @@ pub fn run_wgsl(job: WgslJob<'_>) -> Result<Vec<u8>, HubError> {
         let _ = sender.send(result);
     });
     device
-        .poll(wgpu::PollType::Wait { submission_index: Some(submission), timeout: None })
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submission),
+            timeout: None,
+        })
         .map_err(|error| HubError::Gpu(error.to_string()))?;
     receiver
         .recv()
         .map_err(|_| HubError::Gpu("buffer mapping was dropped".into()))?
         .map_err(|error| HubError::Gpu(error.to_string()))?;
-    let bytes =
-        readback.get_mapped_range(..).map_err(|error| HubError::Gpu(error.to_string()))?.to_vec();
+    let bytes = readback
+        .get_mapped_range(..)
+        .map_err(|error| HubError::Gpu(error.to_string()))?
+        .to_vec();
     readback.unmap();
     if let Some(error) = context.take_uncaptured_error() {
         return Err(HubError::Gpu(error));

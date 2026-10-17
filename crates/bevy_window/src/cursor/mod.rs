@@ -18,7 +18,7 @@ pub use system_cursor::*;
 use bevy_ecs::reflect::ReflectComponent;
 use bevy_ecs::{component::Component, schedule::SystemSet};
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 
 #[cfg(feature = "custom_cursor")]
 pub use crate::cursor::{CustomCursor, CustomCursorImage};

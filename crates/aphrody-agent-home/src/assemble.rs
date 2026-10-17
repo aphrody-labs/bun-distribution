@@ -128,7 +128,11 @@ impl<'a> SystemPromptView<'a> {
             crate::budget::DEFAULT_WARNING_MAX_FILES,
         );
 
-        Self { sections, truncation, budget: *budget }
+        Self {
+            sections,
+            truncation,
+            budget: *budget,
+        }
     }
 
     /// Render the view to a single deterministic system-prompt string.
@@ -192,7 +196,11 @@ mod tests {
     use super::*;
 
     fn loaded(file: BootstrapFile, content: &str) -> LoadedFile<'_> {
-        LoadedFile { file, path: file.filename().to_string(), content: Some(content) }
+        LoadedFile {
+            file,
+            path: file.filename().to_string(),
+            content: Some(content),
+        }
     }
 
     #[test]
@@ -204,7 +212,14 @@ mod tests {
         ];
         let view = SystemPromptView::assemble(&files, &BootstrapBudget::default());
         let order: Vec<BootstrapFile> = view.sections.iter().map(|s| s.file).collect();
-        assert_eq!(order, vec![BootstrapFile::Agents, BootstrapFile::Soul, BootstrapFile::User]);
+        assert_eq!(
+            order,
+            vec![
+                BootstrapFile::Agents,
+                BootstrapFile::Soul,
+                BootstrapFile::User
+            ]
+        );
     }
 
     #[test]
@@ -217,8 +232,11 @@ mod tests {
 
     #[test]
     fn truncated_section_owns_prefix() {
-        let budget =
-            BootstrapBudget { max_chars: 4, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 4,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let files = vec![loaded(BootstrapFile::Soul, "0123456789")];
         let view = SystemPromptView::assemble(&files, &budget);
         assert!(matches!(view.sections[0].body, Cow::Owned(_)));
@@ -244,8 +262,11 @@ mod tests {
 
     #[test]
     fn render_appends_truncation_warning() {
-        let budget =
-            BootstrapBudget { max_chars: 3, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 3,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let files = vec![loaded(BootstrapFile::Soul, "abcdef")];
         let view = SystemPromptView::assemble(&files, &budget);
         let rendered = view.render();
@@ -255,7 +276,11 @@ mod tests {
     #[test]
     fn missing_files_are_skipped_in_output() {
         let files = vec![
-            LoadedFile { file: BootstrapFile::User, path: "USER.md".into(), content: None },
+            LoadedFile {
+                file: BootstrapFile::User,
+                path: "USER.md".into(),
+                content: None,
+            },
             loaded(BootstrapFile::Soul, "persona"),
         ];
         let view = SystemPromptView::assemble(&files, &BootstrapBudget::default());

@@ -935,7 +935,10 @@ fn cb_write_past_declared_size_follows_upstream_fail_soft_policy() {
     engine.write_reg(CB_CONFIG_BASE + 2, 0x10000);
     engine.write_reg(CB_CONFIG_BASE + 3, 0x168);
     engine.process_cb_multi_data(&[0x12345678, 0xabcdef01]);
-    assert_eq!(&backing[0x168..0x170], &[0x78, 0x56, 0x34, 0x12, 1, 0xef, 0xcd, 0xab]);
+    assert_eq!(
+        &backing[0x168..0x170],
+        &[0x78, 0x56, 0x34, 0x12, 1, 0xef, 0xcd, 0xab]
+    );
     assert_eq!(engine.regs[(CB_CONFIG_BASE + 3) as usize], 0x170);
 }
 
@@ -1770,12 +1773,19 @@ fn test_viewport_default() {
 #[test]
 fn viewport_swizzle_encodings_match_maxwell_registers() {
     assert_eq!(std::mem::size_of::<ViewportSwizzle>(), 4);
-    assert_eq!([
-        ViewportSwizzle::PositiveX as u32, ViewportSwizzle::NegativeX as u32,
-        ViewportSwizzle::PositiveY as u32, ViewportSwizzle::NegativeY as u32,
-        ViewportSwizzle::PositiveZ as u32, ViewportSwizzle::NegativeZ as u32,
-        ViewportSwizzle::PositiveW as u32, ViewportSwizzle::NegativeW as u32,
-    ], [0, 1, 2, 3, 4, 5, 6, 7]);
+    assert_eq!(
+        [
+            ViewportSwizzle::PositiveX as u32,
+            ViewportSwizzle::NegativeX as u32,
+            ViewportSwizzle::PositiveY as u32,
+            ViewportSwizzle::NegativeY as u32,
+            ViewportSwizzle::PositiveZ as u32,
+            ViewportSwizzle::NegativeZ as u32,
+            ViewportSwizzle::PositiveW as u32,
+            ViewportSwizzle::NegativeW as u32,
+        ],
+        [0, 1, 2, 3, 4, 5, 6, 7]
+    );
 }
 
 #[test]
@@ -2053,7 +2063,13 @@ fn test_instanced_draw_submits_each_end() {
     let draws = engine.take_draw_calls();
     assert_eq!(draws.len(), 3);
     assert!(draws.iter().all(|draw| draw.instance_count == 1));
-    assert_eq!(draws.iter().map(|draw| draw.base_instance).collect::<Vec<_>>(), vec![1, 2, 3]);
+    assert_eq!(
+        draws
+            .iter()
+            .map(|draw| draw.base_instance)
+            .collect::<Vec<_>>(),
+        vec![1, 2, 3]
+    );
     assert_eq!(engine.draw_manager_state().instance_count, 3);
 }
 
@@ -2126,8 +2142,7 @@ fn direct_instances_keep_the_shader_active_at_draw_end() {
     assert!(calls.draws.iter().all(|draw| draw.2[1] == 0x100));
     assert_eq!(calls.draws.iter().map(|draw| draw.0).sum::<u32>(), 2);
     assert!(calls.draw_registers.iter().all(|registers| {
-        registers.vertex_streams[4].address == 0x1000
-            && registers.vertex_streams[4].stride == 44
+        registers.vertex_streams[4].address == 0x1000 && registers.vertex_streams[4].stride == 44
     }));
 }
 
@@ -2152,8 +2167,13 @@ fn direct_instance_indices_support_first_next_and_unchanged() {
         let draws = engine.take_draw_calls();
         assert_eq!(draws.len(), 4);
         assert!(draws.iter().all(|draw| draw.instance_count == 1));
-        assert_eq!(draws.iter().map(|draw| draw.base_instance).collect::<Vec<_>>(),
-            vec![42, 43, 43, 42]);
+        assert_eq!(
+            draws
+                .iter()
+                .map(|draw| draw.base_instance)
+                .collect::<Vec<_>>(),
+            vec![42, 43, 43, 42]
+        );
     }
 }
 
@@ -2234,7 +2254,10 @@ fn inline_index_2x16_triggers_on_the_even_odd_word_like_upstream() {
     let mut engine = Maxwell3D::new();
     engine.write_reg(DRAW_BEGIN, 4);
     engine.write_reg(count_word, 6);
-    assert!(engine.draw_manager_state().inline_index_draw_indexes.is_empty());
+    assert!(engine
+        .draw_manager_state()
+        .inline_index_draw_indexes
+        .is_empty());
     for word in [0x0001_0000, 0x0000_0002, 0x0003_0002] {
         engine.write_reg(even_odd_word, word);
     }
@@ -2260,7 +2283,10 @@ fn inline_index_4x8_triggers_on_the_index_word_like_upstream() {
     let mut engine = Maxwell3D::new();
     engine.write_reg(DRAW_BEGIN, 4);
     engine.write_reg(count_word, 4);
-    assert!(engine.draw_manager_state().inline_index_draw_indexes.is_empty());
+    assert!(engine
+        .draw_manager_state()
+        .inline_index_draw_indexes
+        .is_empty());
     engine.write_reg(index_word, 0x0302_0100);
     engine.write_reg(DRAW_END, 0);
 
@@ -3920,13 +3946,20 @@ fn test_call_method_query_condition_if_equal_reads_compare_block() {
 
 #[test]
 fn test_cpu_query_condition_requires_both_initial_words_nonzero() {
-    let memory = Arc::new(crate::host1x::gpu_device_memory_manager::MaxwellDeviceMemoryManager::default());
+    let memory =
+        Arc::new(crate::host1x::gpu_device_memory_manager::MaxwellDeviceMemoryManager::default());
     let mut backing = vec![0u8; 0x1000];
     memory.smmu_set_physical_base_for_test(backing.as_mut_ptr() as usize);
     memory.smmu_map_with_cpu_backing(0x8000, backing.as_mut_ptr(), 0x4000, backing.len(), 1, true);
-    let mut channel_memory = crate::memory_manager::MemoryManager::new_with_geometry_and_device_memory(
-        1, memory, 32, 0x1_0000_0000, 16, 12,
-    );
+    let mut channel_memory =
+        crate::memory_manager::MemoryManager::new_with_geometry_and_device_memory(
+            1,
+            memory,
+            32,
+            0x1_0000_0000,
+            16,
+            12,
+        );
     channel_memory.map(0x10000, 0x8000, 0x1000, 0, false);
     let mut engine = Maxwell3D::new();
     engine.set_memory_manager(Arc::new(parking_lot::Mutex::new(channel_memory)));
@@ -3934,8 +3967,13 @@ fn test_cpu_query_condition_requires_both_initial_words_nonzero() {
     engine.call_method(RENDER_ENABLE_BASE + 1, 0x10100, true);
     engine.call_method(RENDER_ENABLE_OVERRIDE, 0, true);
     // The two words are independent, not one 64-bit nonzero comparison.
-    for (sequence, mode, expected) in [(0u32, 0u32, false), (1, 0, false),
-        (0, 1, false), (1, 1, true), (u32::MAX, u32::MAX, true)] {
+    for (sequence, mode, expected) in [
+        (0u32, 0u32, false),
+        (1, 0, false),
+        (0, 1, false),
+        (1, 1, true),
+        (u32::MAX, u32::MAX, true),
+    ] {
         backing[0x100..0x104].copy_from_slice(&sequence.to_le_bytes());
         backing[0x104..0x108].copy_from_slice(&mode.to_le_bytes());
         engine.call_method(RENDER_ENABLE_MODE, 2, true);

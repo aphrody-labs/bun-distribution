@@ -12,8 +12,8 @@ use indexmap::IndexSet;
 use super::{DiGraph, NodeId, ScheduleBuildError, ScheduleGraph};
 use crate::{
     schedule::{
-        graph::{Dag, DagAnalysis, DiGraphToposortError},
         SystemKey, SystemSetKey,
+        graph::{Dag, DagAnalysis, DiGraphToposortError},
     },
     world::World,
 };

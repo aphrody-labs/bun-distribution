@@ -23,7 +23,9 @@ struct Driver {
 
 impl Driver {
     fn new(name: &str) -> Self {
-        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/export-tests").join(format!("ui-{name}-{}", std::process::id()));
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../target/export-tests")
+            .join(format!("ui-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("data")).unwrap();
         let mut s = Session::default();
@@ -32,12 +34,19 @@ impl Driver {
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(s).with_control(rx);
         let snapshots = std::env::var_os("FILMCRAFT_UI_SNAPSHOT_DIR").map(PathBuf::from);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if snapshots.is_some() {
             b = b.wgpu();
         }
         let harness = b.build_eframe(move |_cc| app);
-        let mut d = Driver { harness, tx, snapshots, dir };
+        let mut d = Driver {
+            harness,
+            tx,
+            snapshots,
+            dir,
+        };
         d.frames(4);
         d
     }
@@ -75,7 +84,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn click(&mut self, id: &str) {
@@ -93,7 +105,10 @@ impl Driver {
     }
 
     fn queue(&mut self) -> Vec<Value> {
-        self.exec("export.queue.list", json!({}))["items"].as_array().unwrap().clone()
+        self.exec("export.queue.list", json!({}))["items"]
+            .as_array()
+            .unwrap()
+            .clone()
     }
 
     /// Step frames until `done` holds (the app advances the queue and jobs every frame).
@@ -107,7 +122,9 @@ impl Driver {
     }
 
     fn snapshot(&mut self, name: &str) {
-        let Some(dir) = self.snapshots.clone() else { return };
+        let Some(dir) = self.snapshots.clone() else {
+            return;
+        };
         self.frames(2);
         match self.harness.render() {
             Ok(img) => {
@@ -156,12 +173,21 @@ fn export_mode_settings_and_summary() {
     }
     // the default preset and the file name from the sequence
     let st = d.ok("ui.inspect", json!({}))["ui"]["export"].clone();
-    assert_eq!(st["preset"], filmcraft_engine::export::presets::DEFAULT_PRESET);
+    assert_eq!(
+        st["preset"],
+        filmcraft_engine::export::presets::DEFAULT_PRESET
+    );
     assert!(!st["fileName"].as_str().unwrap().is_empty());
     // a 4K preset shows in the summary
-    d.ok("ui.set", json!({"export": {"preset": "YouTube 2160p 4K Ultra HD"}}));
+    d.ok(
+        "ui.set",
+        json!({"export": {"preset": "YouTube 2160p 4K Ultra HD"}}),
+    );
     d.frames(3);
-    let sum = d.ok("ui.elements", json!({"prefix": "export.summary"}))[0]["label"].as_str().unwrap().to_string();
+    let sum = d.ok("ui.elements", json!({"prefix": "export.summary"}))[0]["label"]
+        .as_str()
+        .unwrap()
+        .to_string();
     assert!(sum.contains("3840x2160"), "{sum}");
     // editing a setting turns the preset into Custom
     d.click("export.video.maxQuality");
@@ -195,7 +221,12 @@ fn the_status_bar_and_the_queue_show_the_time_left() {
     );
     // a job at 25 %, doing 50 units a second: 750 left, 15 s (readings from the near future, because
     // the app reads the real clock, which is then behind them)
-    let job = Job { id: 900, label: "Exporting".into(), progress: Default::default(), result: Default::default() };
+    let job = Job {
+        id: 900,
+        label: "Exporting".into(),
+        progress: Default::default(),
+        result: Default::default(),
+    };
     job.progress.total.store(1000, Ordering::Relaxed);
     let t0 = web_time::Instant::now() + Duration::from_secs(60);
     for i in 0..=50u64 {
@@ -210,11 +241,17 @@ fn the_status_bar_and_the_queue_show_the_time_left() {
     }
     d.frames(4);
     // the status bar says it next to the percentage, and agents read it from the same label
-    let label = d.ok("ui.elements", json!({"prefix": "status.job.progress"}))[0]["label"].as_str().unwrap().to_string();
+    let label = d.ok("ui.elements", json!({"prefix": "status.job.progress"}))[0]["label"]
+        .as_str()
+        .unwrap()
+        .to_string();
     assert_eq!(label, "25% · 15 s left");
     // the queue item has it too
     let item = d.queue().into_iter().next().unwrap();
-    assert!((item["etaSeconds"].as_f64().unwrap() - 15.0).abs() < 0.5, "{item}");
+    assert!(
+        (item["etaSeconds"].as_f64().unwrap() - 15.0).abs() < 0.5,
+        "{item}"
+    );
     assert_eq!(item["status"], "encoding");
     d.snapshot("export-eta");
 }
@@ -226,10 +263,18 @@ fn h265_shows_the_h264_family_controls_without_the_h264_only_ones() {
     d.ok("ui.set", json!({"mode": "export"}));
     d.frames(4);
     // H.264, the default: profile, level and the hardware checkbox
-    for id in ["export.video.profile", "export.video.level", "export.video.hardwareEncoding", "export.video.bitrateMode"] {
+    for id in [
+        "export.video.profile",
+        "export.video.level",
+        "export.video.hardwareEncoding",
+        "export.video.bitrateMode",
+    ] {
         assert!(d.has(id), "H.264: {id}");
     }
-    d.app().ui.export.settings = ExportSettings { format: Format::Hevc, ..Default::default() };
+    d.app().ui.export.settings = ExportSettings {
+        format: Format::Hevc,
+        ..Default::default()
+    };
     d.frames(4);
     for id in [
         "export.video.bitrateMode",
@@ -243,11 +288,21 @@ fn h265_shows_the_h264_family_controls_without_the_h264_only_ones() {
         assert!(d.has(id), "H.265: {id}");
     }
     // Main is its only profile, the level is the encoder's choice, and hardware is the only encoder
-    for id in ["export.video.profile", "export.video.level", "export.video.hardwareEncoding"] {
+    for id in [
+        "export.video.profile",
+        "export.video.level",
+        "export.video.hardwareEncoding",
+    ] {
         assert!(!d.has(id), "H.265 has no {id}");
     }
-    let sum = d.ok("ui.elements", json!({"prefix": "export.summary"}))[0]["label"].as_str().unwrap().to_string();
-    assert!(sum.contains("HEVC Main") && sum.contains("Target 20.00 Mbps"), "{sum}");
+    let sum = d.ok("ui.elements", json!({"prefix": "export.summary"}))[0]["label"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert!(
+        sum.contains("HEVC Main") && sum.contains("Target 20.00 Mbps"),
+        "{sum}"
+    );
     d.snapshot("export-h265");
 }
 
@@ -258,41 +313,76 @@ fn preset_manager_search_favourite_save_apply() {
     d.frames(3);
     d.click("export.preset.more");
     assert!(d.app().ui.export.manager.is_some(), "Preset Manager opens");
-    for id in ["presetManager.search", "presetManager.favoritesOnly", "presetManager.ok", "presetManager.cancel", "presetManager.import", "presetManager.save"]
-    {
+    for id in [
+        "presetManager.search",
+        "presetManager.favoritesOnly",
+        "presetManager.ok",
+        "presetManager.cancel",
+        "presetManager.import",
+        "presetManager.save",
+    ] {
         assert!(d.has(id), "{id}");
     }
     // search
-    d.ok("ui.set", json!({"export": {"manager": {"query": "prores"}}}));
+    d.ok(
+        "ui.set",
+        json!({"export": {"manager": {"query": "prores"}}}),
+    );
     d.frames(3);
     assert!(d.has("presetManager.item.Apple ProRes 422 LT"));
-    assert!(!d.has("presetManager.item.YouTube 1080p Full HD"), "filtered out");
+    assert!(
+        !d.has("presetManager.item.YouTube 1080p Full HD"),
+        "filtered out"
+    );
     // favourite with the star
     d.click("presetManager.favorite.Apple ProRes 422 LT");
-    assert!(d.app().session.export_presets.is_favorite("Apple ProRes 422 LT"));
-    d.ok("ui.set", json!({"export": {"manager": {"query": "", "favoritesOnly": true}}}));
+    assert!(
+        d.app()
+            .session
+            .export_presets
+            .is_favorite("Apple ProRes 422 LT")
+    );
+    d.ok(
+        "ui.set",
+        json!({"export": {"manager": {"query": "", "favoritesOnly": true}}}),
+    );
     d.frames(3);
     assert!(d.has("presetManager.item.Apple ProRes 422 LT"));
     assert!(!d.has("presetManager.item.Apple ProRes 422 HQ"));
     d.snapshot("export-preset-manager");
     // save the current settings as a user preset
-    d.ok("ui.set", json!({"export": {"manager": {"favoritesOnly": false, "saveName": "My Review"}}}));
+    d.ok(
+        "ui.set",
+        json!({"export": {"manager": {"favoritesOnly": false, "saveName": "My Review"}}}),
+    );
     d.frames(2);
     d.click("presetManager.save");
     assert!(d.app().session.export_presets.find("My Review").is_some());
-    assert!(d.dir.join("data/export-presets.json").exists(), "persisted in the data directory");
+    assert!(
+        d.dir.join("data/export-presets.json").exists(),
+        "persisted in the data directory"
+    );
     // select + OK applies
-    d.ok("ui.set", json!({"export": {"manager": {"query": "422 LT"}}}));
+    d.ok(
+        "ui.set",
+        json!({"export": {"manager": {"query": "422 LT"}}}),
+    );
     d.frames(2);
     d.click("presetManager.item.Apple ProRes 422 LT");
     d.click("presetManager.ok");
     assert!(d.app().ui.export.manager.is_none(), "closed on OK");
     assert_eq!(d.app().ui.export.preset, "Apple ProRes 422 LT");
-    assert_eq!(d.app().ui.export.settings.format, filmcraft_engine::export::Format::ProRes);
+    assert_eq!(
+        d.app().ui.export.settings.format,
+        filmcraft_engine::export::Format::ProRes
+    );
     assert_eq!(d.app().ui.export.settings.prores_profile, "lt");
     // delete the user preset through the manager
     d.click("export.preset.more");
-    d.ok("ui.set", json!({"export": {"manager": {"selected": "My Review"}}}));
+    d.ok(
+        "ui.set",
+        json!({"export": {"manager": {"selected": "My Review"}}}),
+    );
     d.frames(2);
     d.click("presetManager.delete");
     assert!(d.app().session.export_presets.find("My Review").is_none());
@@ -316,30 +406,60 @@ fn queue_panel_send_reorder_cancel_start_retry() {
     set(&mut d, "q1");
     set(&mut d, "q2");
     set(&mut d, "q3");
-    let ids: Vec<u64> = d.queue().iter().map(|i| i["id"].as_u64().unwrap()).collect();
+    let ids: Vec<u64> = d
+        .queue()
+        .iter()
+        .map(|i| i["id"].as_u64().unwrap())
+        .collect();
     assert_eq!(ids.len(), 3);
     assert_eq!(d.queue()[0]["preset"], "Waveform Audio 48 kHz 16-bit");
     d.frames(2);
     // reorder: the first one down, the last one up
     d.click(&format!("export.queue.item.{}.down", ids[0]));
     d.click(&format!("export.queue.item.{}.up", ids[2]));
-    let order: Vec<u64> = d.queue().iter().map(|i| i["id"].as_u64().unwrap()).collect();
+    let order: Vec<u64> = d
+        .queue()
+        .iter()
+        .map(|i| i["id"].as_u64().unwrap())
+        .collect();
     assert_eq!(order, [ids[1], ids[2], ids[0]]);
     // cancel the second item before starting
     d.click(&format!("export.queue.item.{}.cancel", ids[2]));
-    assert_eq!(d.queue().iter().find(|i| i["id"] == ids[2]).unwrap()["status"], "cancelled");
+    assert_eq!(
+        d.queue().iter().find(|i| i["id"] == ids[2]).unwrap()["status"],
+        "cancelled"
+    );
     d.snapshot("export-queue");
     d.click("export.queue.start");
     d.wait_until("the queue", |d| !d.app().session.export_queue.is_active());
-    let st: Vec<(u64, String)> = d.queue().iter().map(|i| (i["id"].as_u64().unwrap(), i["status"].as_str().unwrap().to_string())).collect();
-    assert_eq!(st, [(ids[1], "done".into()), (ids[2], "cancelled".into()), (ids[0], "done".into())]);
+    let st: Vec<(u64, String)> = d
+        .queue()
+        .iter()
+        .map(|i| {
+            (
+                i["id"].as_u64().unwrap(),
+                i["status"].as_str().unwrap().to_string(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        st,
+        [
+            (ids[1], "done".into()),
+            (ids[2], "cancelled".into()),
+            (ids[0], "done".into())
+        ]
+    );
     assert!(Path::new(&d.path("q1.wav")).exists() && Path::new(&d.path("q2.wav")).exists());
     assert!(!Path::new(&d.path("q3.wav")).exists());
     // retry the cancelled one from its row
     d.frames(2);
     d.click(&format!("export.queue.item.{}.retry", ids[2]));
     d.wait_until("the retry", |d| !d.app().session.export_queue.is_active());
-    assert_eq!(d.queue().iter().find(|i| i["id"] == ids[2]).unwrap()["status"], "done");
+    assert_eq!(
+        d.queue().iter().find(|i| i["id"] == ids[2]).unwrap()["status"],
+        "done"
+    );
     assert!(Path::new(&d.path("q3.wav")).exists());
     // clear finished
     d.frames(2);
@@ -356,13 +476,22 @@ fn export_button_and_quick_export_popup() {
     d.frames(2);
     d.click("export.button");
     let out = d.path("button.wav");
-    d.wait_until("the export", |_| std::fs::metadata(&out).map(|m| m.len() >= 44 + 24_000 * 6).unwrap_or(false));
+    d.wait_until("the export", |_| {
+        std::fs::metadata(&out)
+            .map(|m| m.len() >= 44 + 24_000 * 6)
+            .unwrap_or(false)
+    });
     // Quick Export: header button → popup with presets → Export
     d.exec("markers.markIn", json!({"seconds": 0.0}));
     d.exec("markers.markOut", json!({"seconds": 0.2}));
     d.click("header.quickExport");
     assert!(d.app().ui.export.quick_open);
-    for id in ["quickExport.path", "quickExport.go", "quickExport.preset.Match Source – Adaptive High Bitrate", "quickExport.preset.YouTube 1080p Full HD"] {
+    for id in [
+        "quickExport.path",
+        "quickExport.go",
+        "quickExport.preset.Match Source – Adaptive High Bitrate",
+        "quickExport.preset.YouTube 1080p Full HD",
+    ] {
         assert!(d.has(id), "{id}");
     }
     d.snapshot("export-quick");
@@ -373,9 +502,18 @@ fn export_button_and_quick_export_popup() {
     d.frames(2);
     d.click("quickExport.go");
     assert!(!d.app().ui.export.quick_open, "closes on Export");
-    d.wait_until("quick export", |d| d.app().session.jobs.iter().all(|j| j.progress.finished.load(std::sync::atomic::Ordering::Relaxed)));
+    d.wait_until("quick export", |d| {
+        d.app().session.jobs.iter().all(|j| {
+            j.progress
+                .finished
+                .load(std::sync::atomic::Ordering::Relaxed)
+        })
+    });
     assert!(Path::new(&quick).exists(), "{quick}");
-    assert_eq!(d.app().session.export_queue.quick_preset.as_deref(), Some("Match Source – Adaptive Low Bitrate"));
+    assert_eq!(
+        d.app().session.export_queue.quick_preset.as_deref(),
+        Some("Match Source – Adaptive Low Bitrate")
+    );
     // the popup closes with its Close button too
     d.click("header.quickExport");
     assert!(d.app().ui.export.quick_open);
@@ -390,7 +528,10 @@ fn quick_export_file_name_can_be_typed_and_the_folder_link_opens_the_save_dialog
     d.exec("markers.markIn", json!({"seconds": 0.0}));
     d.exec("markers.markOut", json!({"seconds": 0.2}));
     d.click("header.quickExport");
-    d.ok("ui.set", json!({"export": {"quickPreset": "Waveform Audio 48 kHz 16-bit"}}));
+    d.ok(
+        "ui.set",
+        json!({"export": {"quickPreset": "Waveform Audio 48 kHz 16-bit"}}),
+    );
     d.frames(2);
     let start = PathBuf::from(&d.app().ui.export.quick_path);
     assert_eq!(start.extension().unwrap(), "wav", "{start:?}");
@@ -408,11 +549,17 @@ fn quick_export_file_name_can_be_typed_and_the_folder_link_opens_the_save_dialog
     let answer: Arc<Mutex<Option<String>>> = Arc::default();
     let (log, reply) = (asked.clone(), answer.clone());
     d.app().hooks.pick_save_as = Some(Box::new(move |_, exts, suggested| {
-        log.lock().unwrap().push((exts.iter().map(|e| e.to_string()).collect(), suggested.to_string()));
+        log.lock().unwrap().push((
+            exts.iter().map(|e| e.to_string()).collect(),
+            suggested.to_string(),
+        ));
         reply.lock().unwrap().clone()
     }));
     d.click("quickExport.location");
-    assert_eq!(asked.lock().unwrap().clone(), [(vec!["wav".to_string()], typed.to_string_lossy().to_string())]);
+    assert_eq!(
+        asked.lock().unwrap().clone(),
+        [(vec!["wav".to_string()], typed.to_string_lossy().to_string())]
+    );
     assert_eq!(PathBuf::from(&d.app().ui.export.quick_path), typed);
     assert!(d.app().ui.export.quick_open, "the popup stays open");
     // a chosen path is applied and shown; another format's extension follows the preset
@@ -420,12 +567,25 @@ fn quick_export_file_name_can_be_typed_and_the_folder_link_opens_the_save_dialog
     d.click("quickExport.location");
     let picked = d.path("picked.wav");
     assert_eq!(d.app().ui.export.quick_path, picked);
-    let shown = d.ok("ui.elements", json!({"prefix": "quickExport.location"}))[0]["label"].as_str().unwrap().to_string();
+    let shown = d.ok("ui.elements", json!({"prefix": "quickExport.location"}))[0]["label"]
+        .as_str()
+        .unwrap()
+        .to_string();
     assert_eq!(shown, d.dir.to_string_lossy());
     d.snapshot("export-quick-location");
     d.click("quickExport.go");
-    d.wait_until("quick export", |d| d.app().session.jobs.iter().all(|j| j.progress.finished.load(std::sync::atomic::Ordering::Relaxed)));
-    assert!(Path::new(&d.path("picked.wav")).exists(), "{}", d.app().ui.status);
+    d.wait_until("quick export", |d| {
+        d.app().session.jobs.iter().all(|j| {
+            j.progress
+                .finished
+                .load(std::sync::atomic::Ordering::Relaxed)
+        })
+    });
+    assert!(
+        Path::new(&d.path("picked.wav")).exists(),
+        "{}",
+        d.app().ui.status
+    );
 }
 
 #[test]
@@ -454,7 +614,10 @@ fn sample_size_lists_every_size_and_greys_out_what_the_format_cannot_store() {
     d.frames(4);
     // collapse Video so the Audio section sits under the format
     d.click("export.section.video");
-    d.app().ui.export.settings = ExportSettings { format: Format::Wav, ..Default::default() };
+    d.app().ui.export.settings = ExportSettings {
+        format: Format::Wav,
+        ..Default::default()
+    };
     d.frames(4);
     let sizes = ["16 bit", "24 bit", "32 bit", "32 bit float"];
     let open_sizes = |d: &mut Driver| {
@@ -464,7 +627,13 @@ fn sample_size_lists_every_size_and_greys_out_what_the_format_cannot_store() {
         for (i, label) in sizes.iter().enumerate() {
             let id = format!("export.audio.bits.option.{i}");
             let e = d.ok("ui.elements", json!({"prefix": id}));
-            assert_eq!(e.as_array().and_then(|a| a.iter().find(|e| e["id"] == json!(id))).map(|e| e["label"].clone()), Some(json!(label)), "{id}");
+            assert_eq!(
+                e.as_array()
+                    .and_then(|a| a.iter().find(|e| e["id"] == json!(id)))
+                    .map(|e| e["label"].clone()),
+                Some(json!(label)),
+                "{id}"
+            );
         }
     };
 
@@ -472,41 +641,66 @@ fn sample_size_lists_every_size_and_greys_out_what_the_format_cannot_store() {
     open_sizes(&mut d);
     d.snapshot("export-sample-size-wav");
     d.click("export.audio.bits.option.3");
-    assert_eq!(d.app().ui.export.settings.audio.sample_format(), SampleFormat::Float32);
+    assert_eq!(
+        d.app().ui.export.settings.audio.sample_format(),
+        SampleFormat::Float32
+    );
 
     // FLAC: float is greyed out, so the float choice becomes 32-bit integer and clicking float
     // changes nothing
     d.app().ui.export.settings.format = Format::Flac;
     d.frames(4);
     assert_eq!(d.app().ui.export.settings.audio_codec(), AudioCodec::Flac);
-    assert_eq!(d.app().ui.export.settings.audio.sample_format(), SampleFormat::Int32);
+    assert_eq!(
+        d.app().ui.export.settings.audio.sample_format(),
+        SampleFormat::Int32
+    );
     open_sizes(&mut d);
     d.snapshot("export-sample-size-flac");
     d.click("export.audio.bits.option.3");
-    assert_eq!(d.app().ui.export.settings.audio.sample_format(), SampleFormat::Int32, "32 bit float is not available for FLAC");
+    assert_eq!(
+        d.app().ui.export.settings.audio.sample_format(),
+        SampleFormat::Int32,
+        "32 bit float is not available for FLAC"
+    );
     if d.has("export.audio.bits.option.0") {
         d.click("export.audio.bits");
     }
     d.click("export.audio.bits");
     d.click("export.audio.bits.option.1");
-    assert_eq!(d.app().ui.export.settings.audio.sample_format(), SampleFormat::Int24);
+    assert_eq!(
+        d.app().ui.export.settings.audio.sample_format(),
+        SampleFormat::Int24
+    );
 
     // MXF: integer PCM only
-    d.app().ui.export.settings = ExportSettings { format: Format::MxfOp1a, ..Default::default() };
+    d.app().ui.export.settings = ExportSettings {
+        format: Format::MxfOp1a,
+        ..Default::default()
+    };
     d.frames(4);
     open_sizes(&mut d);
     d.snapshot("export-sample-size-mxf");
     d.click("export.audio.bits.option.3");
-    assert!(!d.app().ui.export.settings.audio.float, "32 bit float is not available for MXF");
+    assert!(
+        !d.app().ui.export.settings.audio.float,
+        "32 bit float is not available for MXF"
+    );
     if d.has("export.audio.bits.option.0") {
         d.click("export.audio.bits");
     }
 
     // QuickTime PCM (ProRes): all four again
-    d.app().ui.export.settings = ExportSettings { format: Format::ProRes, ..Default::default() };
+    d.app().ui.export.settings = ExportSettings {
+        format: Format::ProRes,
+        ..Default::default()
+    };
     d.frames(4);
     open_sizes(&mut d);
     d.click("export.audio.bits.option.3");
-    assert_eq!(d.app().ui.export.settings.audio.sample_format(), SampleFormat::Float32);
+    assert_eq!(
+        d.app().ui.export.settings.audio.sample_format(),
+        SampleFormat::Float32
+    );
     d.snapshot("export-sample-size-prores");
 }

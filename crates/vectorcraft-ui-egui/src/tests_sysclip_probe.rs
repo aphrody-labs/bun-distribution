@@ -36,9 +36,17 @@ struct Slow {
 }
 
 impl Slow {
-    fn boxed(rec: &Arc<Recorder>, delay: Duration, verdict: Option<bool>) -> Box<dyn SystemClipboard> {
+    fn boxed(
+        rec: &Arc<Recorder>,
+        delay: Duration,
+        verdict: Option<bool>,
+    ) -> Box<dyn SystemClipboard> {
         rec.alive.fetch_add(1, Ordering::SeqCst);
-        Box::new(Self { rec: Arc::clone(rec), delay, verdict })
+        Box::new(Self {
+            rec: Arc::clone(rec),
+            delay,
+            verdict,
+        })
     }
 }
 
@@ -59,7 +67,11 @@ impl SystemClipboard for Slow {
         None
     }
     fn has(&mut self, _mimes: &[&'static str]) -> bool {
-        self.rec.threads.lock().unwrap().push(std::thread::current().name().map(str::to_owned));
+        self.rec
+            .threads
+            .lock()
+            .unwrap()
+            .push(std::thread::current().name().map(str::to_owned));
         std::thread::sleep(self.delay);
         self.verdict.expect("the clipboard failed")
     }
@@ -72,8 +84,11 @@ fn app(rec: &Arc<Recorder>, delay: Duration, inline: bool, probe: Option<bool>) 
         let rec = Arc::clone(rec);
         move || Slow::boxed(&rec, delay, probe)
     };
-    let services =
-        Services { system_clipboard: Some(Slow::boxed(rec, delay, Some(inline))), clipboard_probe: Some(Box::new(make)), ..Default::default() };
+    let services = Services {
+        system_clipboard: Some(Slow::boxed(rec, delay, Some(inline))),
+        clipboard_probe: Some(Box::new(make)),
+        ..Default::default()
+    };
     VectorcraftApp::new(Session::new(), services)
 }
 
@@ -88,12 +103,23 @@ fn frame(app: &mut VectorcraftApp) {
         t.set(t.get() + 0.5);
         t.get()
     });
-    let input = egui::RawInput { time: Some(time), ..Default::default() };
-    CTX.with(|ctx| ctx.run_ui(input, |ui| app.logic(ui.ctx())).textures_delta.clear());
+    let input = egui::RawInput {
+        time: Some(time),
+        ..Default::default()
+    };
+    CTX.with(|ctx| {
+        ctx.run_ui(input, |ui| app.logic(ui.ctx()))
+            .textures_delta
+            .clear()
+    });
 }
 
 /// Frames for `wait`, or until `done` holds; whether it does.
-fn frames_until(app: &mut VectorcraftApp, wait: Duration, done: impl Fn(&VectorcraftApp) -> bool) -> bool {
+fn frames_until(
+    app: &mut VectorcraftApp,
+    wait: Duration,
+    done: impl Fn(&VectorcraftApp) -> bool,
+) -> bool {
     let end = Instant::now() + wait;
     loop {
         frame(app);
@@ -110,17 +136,31 @@ fn a_slow_clipboard_is_read_off_the_ui_thread() {
     let mut app = app(&rec, Duration::from_secs(1), false, Some(true));
     // The first frames install the UI fonts. Without a document Paste is off whatever the clipboard
     // holds: nobody looks.
-    assert!(!frames_until(&mut app, Duration::from_millis(100), |_| rec.looks() > 0));
+    assert!(!frames_until(&mut app, Duration::from_millis(100), |_| rec
+        .looks()
+        > 0));
     run(&mut app, "file.new", json!({"width": 100, "height": 100}));
     frame(&mut app);
     let t0 = Instant::now();
     frame(&mut app);
-    assert!(t0.elapsed() < Duration::from_millis(300), "the frame waited on the clipboard: {:?}", t0.elapsed());
+    assert!(
+        t0.elapsed() < Duration::from_millis(300),
+        "the frame waited on the clipboard: {:?}",
+        t0.elapsed()
+    );
     // The probe's verdict (the UI's own handle would say no) enables Paste once it arrives.
-    assert!(frames_until(&mut app, Duration::from_secs(3), |app| app.system_paste), "the probe's verdict never arrived");
+    assert!(
+        frames_until(&mut app, Duration::from_secs(3), |app| app.system_paste),
+        "the probe's verdict never arrived"
+    );
     assert!(menus::enabled(&app, "edit.paste"));
     let threads = rec.threads.lock().unwrap().clone();
-    assert!(threads.iter().all(|n| n.as_deref() == Some("vectorcraft-clip")), "checked on: {threads:?}");
+    assert!(
+        threads
+            .iter()
+            .all(|n| n.as_deref() == Some("vectorcraft-clip")),
+        "checked on: {threads:?}"
+    );
 }
 
 #[test]
@@ -140,7 +180,11 @@ fn the_probe_rests_after_a_copy_and_stops_with_the_app() {
     // alive hands what the app copied to the clipboard manager.
     assert_eq!(rec.alive.load(Ordering::SeqCst), 2);
     drop(app);
-    assert_eq!(rec.alive.load(Ordering::SeqCst), 0, "the probe's thread kept its clipboard");
+    assert_eq!(
+        rec.alive.load(Ordering::SeqCst),
+        0,
+        "the probe's thread kept its clipboard"
+    );
 }
 
 #[test]
@@ -149,8 +193,15 @@ fn without_its_thread_the_check_runs_in_line_again() {
     // The probe's clipboard panics: its thread ends.
     let mut app = app(&rec, Duration::ZERO, true, None);
     run(&mut app, "file.new", json!({"width": 100, "height": 100}));
-    assert!(frames_until(&mut app, Duration::from_secs(2), |app| app.system_paste), "no fallback");
+    assert!(
+        frames_until(&mut app, Duration::from_secs(2), |app| app.system_paste),
+        "no fallback"
+    );
     assert!(app.clipboard_probe.is_none());
     let threads = rec.threads.lock().unwrap().clone();
-    assert_eq!(threads.first().cloned().flatten().as_deref(), Some("vectorcraft-clip"), "{threads:?}");
+    assert_eq!(
+        threads.first().cloned().flatten().as_deref(),
+        Some("vectorcraft-clip"),
+        "{threads:?}"
+    );
 }

@@ -3,7 +3,14 @@
 //! A thin shell over [`figcraft_engine::Session`]: panels read engine state and act by running
 //! commands; the canvas forwards pointer events to the engine's tools and draws overlays. Nothing
 //! below this crate knows about egui, so the frontend can be replaced.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod a11y;
 pub mod assets_panel;
@@ -262,7 +269,10 @@ pub fn fit_panels(avail: f32, left: Option<f32>, right: f32) -> (f32, f32) {
     };
     let left_min = left.map_or(0.0, |_| *LEFT_PANEL.start());
     let right = fit(right, &RIGHT_PANEL, avail - left_min - CANVAS_MIN);
-    (left.map_or(0.0, |l| fit(l, &LEFT_PANEL, avail - right - CANVAS_MIN)), right)
+    (
+        left.map_or(0.0, |l| fit(l, &LEFT_PANEL, avail - right - CANVAS_MIN)),
+        right,
+    )
 }
 
 /// UI-only state (serialisable for `ui.inspect`).
@@ -505,7 +515,11 @@ impl FigApp {
         // The main window's panels open as wide as they were left.
         let (left_width, right_width) = session.prefs.panel_widths;
         Self {
-            ui: UiState { left_width, right_width, ..UiState::default() },
+            ui: UiState {
+                left_width,
+                right_width,
+                ..UiState::default()
+            },
             session,
             canvas: canvas::CanvasState::default(),
             services,
@@ -565,7 +579,11 @@ impl FigApp {
     fn background_done(&mut self, ctx: &egui::Context) {
         while let Some((id, r)) = self.session.take_background_done() {
             self.handle_ui_requests();
-            let done = self.waiting.iter().position(|(c, _)| *c == id).map(|i| self.waiting.remove(i).1);
+            let done = self
+                .waiting
+                .iter()
+                .position(|(c, _)| *c == id)
+                .map(|i| self.waiting.remove(i).1);
             match (r, done) {
                 (Ok(v), Some(done)) => done(self, ctx, v),
                 (Ok(_), None) => {}
@@ -587,7 +605,13 @@ impl FigApp {
         {
             return;
         }
-        let shown = self.session.execute("text.preview", &json!({"command": command, "params": params})).is_ok();
+        let shown = self
+            .session
+            .execute(
+                "text.preview",
+                &json!({"command": command, "params": params}),
+            )
+            .is_ok();
         let revision = self.session.ds().map_or(0, |d| d.revision);
         self.ui.text_preview = shown.then(|| (command.to_string(), params, revision));
         // The canvas drew before the panels: show the preview next frame.
@@ -635,10 +659,18 @@ impl FigApp {
                 "panel.design" => self.ui.right_tab = RightTab::Design,
                 "panel.prototype" => self.ui.right_tab = RightTab::Prototype,
                 "panel.designPrototype" => {
-                    self.ui.right_tab = if self.ui.right_tab == RightTab::Prototype { RightTab::Design } else { RightTab::Prototype };
+                    self.ui.right_tab = if self.ui.right_tab == RightTab::Prototype {
+                        RightTab::Design
+                    } else {
+                        RightTab::Prototype
+                    };
                 }
                 "panel.devMode" => {
-                    self.ui.right_tab = if self.ui.right_tab == RightTab::Inspect { RightTab::Design } else { RightTab::Inspect };
+                    self.ui.right_tab = if self.ui.right_tab == RightTab::Inspect {
+                        RightTab::Design
+                    } else {
+                        RightTab::Inspect
+                    };
                 }
                 "panel.leftSidebar" => self.ui.left_collapsed = !self.ui.left_collapsed,
                 "panel.widths" => {
@@ -646,17 +678,35 @@ impl FigApp {
                     let (left, right) = (width("left"), width("right"));
                     let reset = left.is_none() && right.is_none();
                     self.set_panel_widths(
-                        left.unwrap_or(if reset { PANEL_DEFAULT } else { self.ui.left_width }),
-                        right.unwrap_or(if reset { PANEL_DEFAULT } else { self.ui.right_width }),
+                        left.unwrap_or(if reset {
+                            PANEL_DEFAULT
+                        } else {
+                            self.ui.left_width
+                        }),
+                        right.unwrap_or(if reset {
+                            PANEL_DEFAULT
+                        } else {
+                            self.ui.right_width
+                        }),
                     );
                     self.services.save_prefs(&self.session.prefs);
                 }
-                "focus.region" => self.ui.nav.step(r.data.get("step").and_then(Value::as_i64).unwrap_or(1).clamp(-4, 4) as i32),
+                "focus.region" => self.ui.nav.step(
+                    r.data
+                        .get("step")
+                        .and_then(Value::as_i64)
+                        .unwrap_or(1)
+                        .clamp(-4, 4) as i32,
+                ),
                 "panel.layers" => self.ui.left_tab = LeftTab::File,
                 "panel.assets" => self.ui.left_tab = LeftTab::Assets,
                 "panel.versionHistory" => versions::open(self),
                 "view.devCompare" => {
-                    self.ui.dev.compare = r.data.get("id").and_then(figcraft_engine::params::id_of).map(dev_compare::CompareView::new);
+                    self.ui.dev.compare = r
+                        .data
+                        .get("id")
+                        .and_then(figcraft_engine::params::id_of)
+                        .map(dev_compare::CompareView::new);
                 }
                 "panel.libraries" => {
                     self.ui.left_tab = LeftTab::Assets;
@@ -674,9 +724,13 @@ impl FigApp {
                     self.services.save_prefs(&self.session.prefs);
                 }
                 "dialog.saveAs" => self.save_as_dialog(),
-                "dialog.colorProfile" => self.ui.color_profile = self.session.doc().ok().map(|d| d.color_profile),
+                "dialog.colorProfile" => {
+                    self.ui.color_profile = self.session.doc().ok().map(|d| d.color_profile)
+                }
                 "present" => {
-                    if let Some(start) = r.data.get("start").and_then(figcraft_engine::params::id_of) {
+                    if let Some(start) =
+                        r.data.get("start").and_then(figcraft_engine::params::id_of)
+                    {
                         let mut p = present::Presenter::new(start);
                         p.view = self.ui.present_view;
                         self.ui.present = Some(p);
@@ -684,7 +738,12 @@ impl FigApp {
                 }
                 "present.options" => {
                     let v = &mut self.ui.present_view;
-                    if let Some(s) = r.data.get("scale").and_then(|s| s.as_str()).and_then(present::PresentScale::parse) {
+                    if let Some(s) = r
+                        .data
+                        .get("scale")
+                        .and_then(|s| s.as_str())
+                        .and_then(present::PresentScale::parse)
+                    {
                         v.scale = s;
                     }
                     if let Some(f) = r.data.get("deviceFrame").and_then(|f| f.as_bool()) {
@@ -704,18 +763,28 @@ impl FigApp {
                     }
                 }
                 "preview" => {
-                    if let Some(start) = r.data.get("start").and_then(figcraft_engine::params::id_of) {
+                    if let Some(start) =
+                        r.data.get("start").and_then(figcraft_engine::params::id_of)
+                    {
                         self.ui.preview = Some(present::Pane::new(start, &self.session));
                     }
                 }
                 "preview.close" => self.ui.preview = None,
-                "open.help" => self.services.open_url("https://getartcraft.com/apps/figcraft"),
+                "open.help" => self
+                    .services
+                    .open_url("https://getartcraft.com/apps/figcraft"),
                 "layers.collapseAll" => layers::collapse_all(self),
                 "contextMenu" => self.ui.key_menu = true,
                 "selectArea" => self.start_key_box(),
                 "layers.rename" => {
-                    let ids: Vec<NodeId> =
-                        r.data.get("ids").and_then(Value::as_array).into_iter().flatten().filter_map(figcraft_engine::params::id_of).collect();
+                    let ids: Vec<NodeId> = r
+                        .data
+                        .get("ids")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(figcraft_engine::params::id_of)
+                        .collect();
                     if ids.len() > 1 {
                         dialogs::open_batch_rename(self, &ids);
                     } else {
@@ -747,8 +816,15 @@ impl FigApp {
     /// Set the widths asked for this window's side panels (within their limits); the main
     /// window's are kept in the preferences.
     pub fn set_panel_widths(&mut self, left: f32, right: f32) {
-        let within = |w: f32, range: std::ops::RangeInclusive<f32>| if w.is_finite() { w.clamp(*range.start(), *range.end()) } else { PANEL_DEFAULT };
-        (self.ui.left_width, self.ui.right_width) = (within(left, LEFT_PANEL), within(right, RIGHT_PANEL));
+        let within = |w: f32, range: std::ops::RangeInclusive<f32>| {
+            if w.is_finite() {
+                w.clamp(*range.start(), *range.end())
+            } else {
+                PANEL_DEFAULT
+            }
+        };
+        (self.ui.left_width, self.ui.right_width) =
+            (within(left, LEFT_PANEL), within(right, RIGHT_PANEL));
         if self.windows.current == 0 {
             self.session.prefs.panel_widths = (self.ui.left_width, self.ui.right_width);
         }
@@ -757,14 +833,25 @@ impl FigApp {
     /// The edge between a side panel and the canvas, at `x` down `rows`: dragging it sizes the
     /// panel (`grows`: +1 for the left panel, whose edge is on its right, −1 for the right one), a
     /// double-click puts back the default width. Returns the width asked for, when it changed.
-    fn panel_edge(ui: &mut egui::Ui, name: &str, x: f32, rows: egui::Rangef, width: f32, grows: f32) -> Option<f32> {
+    fn panel_edge(
+        ui: &mut egui::Ui,
+        name: &str,
+        x: f32,
+        rows: egui::Rangef,
+        width: f32,
+        grows: f32,
+    ) -> Option<f32> {
         let grab = ui.style().interaction.resize_grab_radius_side;
         let rect = egui::Rect::from_x_y_ranges(x - grab..=x + grab, rows);
         let id = egui::Id::new(("panel_edge", name));
         let resp = ui.interact(rect, id, egui::Sense::click_and_drag());
         if resp.hovered() || resp.dragged() {
             ui.ctx().set_cursor_icon(egui::CursorIcon::ResizeHorizontal);
-            ui.painter().vline(x, rows, egui::Stroke::new(2.0, theme::Tokens::get(ui.ctx()).accent));
+            ui.painter().vline(
+                x,
+                rows,
+                egui::Stroke::new(2.0, theme::Tokens::get(ui.ctx()).accent),
+            );
         }
         if resp.double_clicked() {
             return Some(PANEL_DEFAULT);
@@ -781,11 +868,27 @@ impl FigApp {
     }
 
     pub fn save_as_dialog(&mut self) {
-        let name = self.session.doc().map(|d| d.name.clone()).unwrap_or_else(|_| "Untitled".into());
-        if let Some(p) = self.services.pick_save(i18n::tr("Save as"), &format!("{name}.figcraft"), &["figcraft"]) {
+        let name = self
+            .session
+            .doc()
+            .map(|d| d.name.clone())
+            .unwrap_or_else(|_| "Untitled".into());
+        if let Some(p) = self.services.pick_save(
+            i18n::tr("Save as"),
+            &format!("{name}.figcraft"),
+            &["figcraft"],
+        ) {
             let ps = p.to_string_lossy().to_string();
             if self.run("file.saveAs", json!({"path": ps})).is_some() {
-                self.toast(i18n::trf("Saved {name}", &[("name", &p.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default())]));
+                self.toast(i18n::trf(
+                    "Saved {name}",
+                    &[(
+                        "name",
+                        &p.file_name()
+                            .map(|f| f.to_string_lossy().to_string())
+                            .unwrap_or_default(),
+                    )],
+                ));
             }
         }
     }
@@ -803,9 +906,13 @@ impl FigApp {
     }
 
     pub fn open_dialog(&mut self) {
-        if let Some(p) =
-            self.services.pick_open(i18n::tr("Open"), &["figcraft", "fig", "json", "svg", "png", "jpg", "jpeg", "webp", "gif", "tif", "tiff"])
-        {
+        if let Some(p) = self.services.pick_open(
+            i18n::tr("Open"),
+            &[
+                "figcraft", "fig", "json", "svg", "png", "jpg", "jpeg", "webp", "gif", "tif",
+                "tiff",
+            ],
+        ) {
             let ps = p.to_string_lossy().to_string();
             if self.run("file.open", json!({"path": ps})).is_some() {
                 self.ui.home = false;
@@ -817,9 +924,18 @@ impl FigApp {
         let exts: &[&str] = if place {
             &["png", "jpg", "jpeg", "webp", "gif", "tif", "tiff"]
         } else {
-            &["svg", "png", "jpg", "jpeg", "webp", "gif", "tif", "tiff", "figcraft", "fig"]
+            &[
+                "svg", "png", "jpg", "jpeg", "webp", "gif", "tif", "tiff", "figcraft", "fig",
+            ]
         };
-        if let Some(p) = self.services.pick_open(if place { i18n::tr("Place image") } else { i18n::tr("Import") }, exts) {
+        if let Some(p) = self.services.pick_open(
+            if place {
+                i18n::tr("Place image")
+            } else {
+                i18n::tr("Import")
+            },
+            exts,
+        ) {
             let ps = p.to_string_lossy().to_string();
             self.run("file.import", json!({"path": ps}));
         }
@@ -839,20 +955,38 @@ impl FigApp {
         }
         let mut need = i18n::current().map_or(0, |l| cjk::language(l.code));
         if self.ui.preferences {
-            need |= i18n::languages().iter().filter(|l| cjk::can_show(l.code)).fold(0, |m, l| m | cjk::language(l.code));
+            need |= i18n::languages()
+                .iter()
+                .filter(|l| cjk::can_show(l.code))
+                .fold(0, |m, l| m | cjk::language(l.code));
         }
         need |= ctx.input(|i| {
             i.events.iter().fold(0, |m, e| match e {
-                egui::Event::Text(t) | egui::Event::Ime(egui::ImeEvent::Preedit { text: t, .. } | egui::ImeEvent::Commit(t)) => m | cjk::scripts(t),
+                egui::Event::Text(t)
+                | egui::Event::Ime(
+                    egui::ImeEvent::Preedit { text: t, .. } | egui::ImeEvent::Commit(t),
+                ) => m | cjk::scripts(t),
                 _ => m,
             })
         });
         let dragging = ctx.input(|i| i.pointer.any_down());
-        if let Some(d) = self.session.docs.get(self.session.active).filter(|d| !dragging && self.cjk_checked != Some((d.uid, d.revision))) {
+        if let Some(d) = self
+            .session
+            .docs
+            .get(self.session.active)
+            .filter(|d| !dragging && self.cjk_checked != Some((d.uid, d.revision)))
+        {
             self.cjk_checked = Some((d.uid, d.revision));
             let doc = &d.doc;
-            let comments = doc.comments.iter().flat_map(|c| std::iter::once(&c.first).chain(&c.replies)).flat_map(|m| [&m.author, &m.text]);
-            need |= std::iter::once(&doc.name).chain(doc.nodes().map(|n| &n.name)).chain(comments).fold(0, |m, s| m | cjk::scripts(s));
+            let comments = doc
+                .comments
+                .iter()
+                .flat_map(|c| std::iter::once(&c.first).chain(&c.replies))
+                .flat_map(|m| [&m.author, &m.text]);
+            need |= std::iter::once(&doc.name)
+                .chain(doc.nodes().map(|n| &n.name))
+                .chain(comments)
+                .fold(0, |m, s| m | cjk::scripts(s));
         }
         need
     }
@@ -860,7 +994,10 @@ impl FigApp {
     /// Per-frame logic that doesn't draw (control requests, theme, language).
     pub fn logic(&mut self, ctx: &egui::Context) {
         if self.language.as_ref() != Some(&self.session.prefs.language) {
-            i18n::set(&self.session.prefs.language, self.services.system_language().as_deref());
+            i18n::set(
+                &self.session.prefs.language,
+                self.services.system_language().as_deref(),
+            );
             self.language = Some(self.session.prefs.language.clone());
         }
         if !self.fonts_installed {
@@ -886,7 +1023,15 @@ impl FigApp {
         self.ui.dark = dark;
         // New files and pages take the theme's page colour (existing pages keep theirs).
         self.session.set_ui_dark(dark);
-        theme::apply_with(ctx, if dark { theme::Tokens::dark() } else { theme::Tokens::light() }, self.reduce_motion());
+        theme::apply_with(
+            ctx,
+            if dark {
+                theme::Tokens::dark()
+            } else {
+                theme::Tokens::light()
+            },
+            self.reduce_motion(),
+        );
         if self.worker.is_none() {
             self.worker = Some(render_worker::Worker::new(ctx.clone()));
         }
@@ -944,7 +1089,9 @@ impl FigApp {
         windows::show(self, &ctx);
         // Plugins installed, removed or set up are kept at once: a crash doesn't lose them.
         // So are the owner tokens of files put online.
-        if std::mem::take(&mut self.session.plugins.unsaved) | std::mem::take(&mut self.session.live.unsaved) {
+        if std::mem::take(&mut self.session.plugins.unsaved)
+            | std::mem::take(&mut self.session.live.unsaved)
+        {
             self.services.save_prefs(&self.session.prefs);
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -972,8 +1119,17 @@ impl FigApp {
         if self.ui.icon_gallery {
             icons::gallery(&ctx);
         }
-        theme::set_doc_profile(&ctx, self.session.doc().map_or(figcraft_color::ColorProfile::Srgb, |d| d.color_profile));
-        widgets::set_nudge(&ctx, self.session.prefs.nudge_small, self.session.prefs.nudge_big);
+        theme::set_doc_profile(
+            &ctx,
+            self.session
+                .doc()
+                .map_or(figcraft_color::ColorProfile::Srgb, |d| d.color_profile),
+        );
+        widgets::set_nudge(
+            &ctx,
+            self.session.prefs.nudge_small,
+            self.session.prefs.nudge_big,
+        );
         // The Inspect tab measures on hover without Alt.
         self.session.tool.redlines = self.ui.right_tab == RightTab::Inspect;
         if self.ui.present.is_some() {
@@ -997,65 +1153,115 @@ impl FigApp {
             egui::Panel::left("left_rail")
                 .exact_size(56.0)
                 .resizable(false)
-                .frame(egui::Frame::NONE.fill(t.panel).stroke(egui::Stroke::new(1.0, t.border)))
+                .frame(
+                    egui::Frame::NONE
+                        .fill(t.panel)
+                        .stroke(egui::Stroke::new(1.0, t.border)),
+                )
                 .show(ui, |ui| {
-                    a11y::region(&mut self.ui.nav, ui, a11y::Region::Layers, egui::accesskit::Role::Navigation, i18n::tr("Sidebar"));
+                    a11y::region(
+                        &mut self.ui.nav,
+                        ui,
+                        a11y::Region::Layers,
+                        egui::accesskit::Role::Navigation,
+                        i18n::tr("Sidebar"),
+                    );
                     layers::rail(self, ui)
                 });
         }
         // The panels are as wide as asked, less in a window too small for them and the canvas.
         let left_open = !hidden && !self.ui.left_collapsed;
-        let (left_w, right_w) = fit_panels(ui.available_width(), left_open.then_some(self.ui.left_width), self.ui.right_width);
+        let (left_w, right_w) = fit_panels(
+            ui.available_width(),
+            left_open.then_some(self.ui.left_width),
+            self.ui.right_width,
+        );
         let rows = ui.available_rect_before_wrap().y_range();
         let mut edges: Vec<(&str, f32, f32, f32)> = Vec::new();
         if left_open {
-            edges.push(("left", ui.available_rect_before_wrap().min.x + left_w, left_w, 1.0));
+            edges.push((
+                "left",
+                ui.available_rect_before_wrap().min.x + left_w,
+                left_w,
+                1.0,
+            ));
             egui::Panel::left("left_panel")
                 .resizable(false)
                 .exact_size(left_w)
-                .frame(egui::Frame::NONE.fill(t.panel).stroke(egui::Stroke::new(1.0, t.border)))
+                .frame(
+                    egui::Frame::NONE
+                        .fill(t.panel)
+                        .stroke(egui::Stroke::new(1.0, t.border)),
+                )
                 .show(ui, |ui| {
                     let label = match self.ui.left_tab {
                         _ if self.ui.versions.open => i18n::tr("Version history"),
                         LeftTab::File => i18n::tr("Layers"),
                         LeftTab::Assets => i18n::tr("Assets"),
                     };
-                    a11y::region(&mut self.ui.nav, ui, a11y::Region::Layers, egui::accesskit::Role::Pane, label);
+                    a11y::region(
+                        &mut self.ui.nav,
+                        ui,
+                        a11y::Region::Layers,
+                        egui::accesskit::Role::Pane,
+                        label,
+                    );
                     layers::left_panel(self, ui)
                 });
         }
         if !hidden {
-            edges.push(("right", ui.available_rect_before_wrap().max.x - right_w, right_w, -1.0));
+            edges.push((
+                "right",
+                ui.available_rect_before_wrap().max.x - right_w,
+                right_w,
+                -1.0,
+            ));
             egui::Panel::right("right_panel")
                 .resizable(false)
                 .exact_size(right_w)
-                .frame(egui::Frame::NONE.fill(t.panel).stroke(egui::Stroke::new(1.0, t.border)))
+                .frame(
+                    egui::Frame::NONE
+                        .fill(t.panel)
+                        .stroke(egui::Stroke::new(1.0, t.border)),
+                )
                 .show(ui, |ui| {
                     let label = match self.ui.right_tab {
                         RightTab::Design => i18n::tr("Design"),
                         RightTab::Prototype => i18n::tr("Prototype"),
                         RightTab::Inspect => i18n::tr("Dev Mode"),
                     };
-                    a11y::region(&mut self.ui.nav, ui, a11y::Region::Properties, egui::accesskit::Role::Pane, label);
+                    a11y::region(
+                        &mut self.ui.nav,
+                        ui,
+                        a11y::Region::Properties,
+                        egui::accesskit::Role::Pane,
+                        label,
+                    );
                     right::right_panel(self, ui)
                 });
         }
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.canvas)).show(ui, |ui| {
-            let worker = self.worker.take();
-            let mut worker = worker.unwrap_or_else(|| render_worker::Worker::new(ctx.clone()));
-            canvas::show(self, ui, &mut worker);
-            self.worker = Some(worker);
-            if !hidden {
-                ui.scope_builder(egui::UiBuilder::new().id_salt("toolbar"), |ui| {
-                    a11y::container(ui, egui::accesskit::Role::Toolbar, i18n::tr("Tools"));
-                    toolbar::show(self, ui);
-                });
-            }
-        });
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(t.canvas))
+            .show(ui, |ui| {
+                let worker = self.worker.take();
+                let mut worker = worker.unwrap_or_else(|| render_worker::Worker::new(ctx.clone()));
+                canvas::show(self, ui, &mut worker);
+                self.worker = Some(worker);
+                if !hidden {
+                    ui.scope_builder(egui::UiBuilder::new().id_salt("toolbar"), |ui| {
+                        a11y::container(ui, egui::accesskit::Role::Toolbar, i18n::tr("Tools"));
+                        toolbar::show(self, ui);
+                    });
+                }
+            });
         // The panels' edges, over the canvas and the panels (drawn after them: they take the press).
         for (name, x, shown, grows) in edges {
             if let Some(w) = Self::panel_edge(ui, name, x, rows, shown, grows) {
-                let (l, r) = if name == "left" { (w, self.ui.right_width) } else { (self.ui.left_width, w) };
+                let (l, r) = if name == "left" {
+                    (w, self.ui.right_width)
+                } else {
+                    (self.ui.left_width, w)
+                };
                 self.set_panel_widths(l, r);
                 self.panels_unsaved = true;
             }
@@ -1082,7 +1288,11 @@ impl FigApp {
         self.toast_ui(&ctx);
         // A rename started after the layers panel drew (Cmd/Ctrl+R, a double-click) opens its field
         // next frame.
-        if self.ui.rename.is_some_and(|r| r.start) && !hidden && !self.ui.left_collapsed && self.ui.left_tab == LeftTab::File {
+        if self.ui.rename.is_some_and(|r| r.start)
+            && !hidden
+            && !self.ui.left_collapsed
+            && self.ui.left_tab == LeftTab::File
+        {
             ctx.request_repaint();
         }
         a11y::end(self, &ctx);
@@ -1091,11 +1301,14 @@ impl FigApp {
         // Your pointer, selection and view to the others in each live session (when they
         // changed), from the window with its file.
         let windows = &self.windows;
-        self.session.live_sync_in(|uid| uid.map_or(0, |u| windows.of(u)) == windows.current);
+        self.session
+            .live_sync_in(|uid| uid.map_or(0, |u| windows.of(u)) == windows.current);
     }
 
     fn toast_ui(&mut self, ctx: &egui::Context) {
-        let Some((msg, shown)) = &mut self.ui.toast else { return };
+        let Some((msg, shown)) = &mut self.ui.toast else {
+            return;
+        };
         let now = ctx.input(|i| i.time);
         let left = TOAST_SECS - (now - *shown.get_or_insert(now));
         if left <= 0.0 {
@@ -1118,7 +1331,12 @@ impl FigApp {
                     .show(ui, |ui| {
                         // Wrapped at a readable width (the area alone would wrap at a sliver).
                         let width = (screen.width() - 64.0).clamp(120.0, 480.0);
-                        let galley = ui.painter().layout(msg, theme::regular(12.0), egui::Color32::WHITE, width);
+                        let galley = ui.painter().layout(
+                            msg,
+                            theme::regular(12.0),
+                            egui::Color32::WHITE,
+                            width,
+                        );
                         ui.label(galley);
                     });
             });

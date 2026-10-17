@@ -18,14 +18,26 @@ pub struct LfFrame {
 }
 
 impl LfFrame {
-    pub fn new(lf: &LoopFilterParams, seg: &Segmentation, mi_rows: usize, mi_cols: usize, ss_x: bool, ss_y: bool, bit_depth: u8) -> LfFrame {
+    pub fn new(
+        lf: &LoopFilterParams,
+        seg: &Segmentation,
+        mi_rows: usize,
+        mi_cols: usize,
+        ss_x: bool,
+        ss_y: bool,
+        bit_depth: u8,
+    ) -> LfFrame {
         let mut lvl = [[[0u8; 2]; 4]; 8];
         let n_shift = lf.level >> 5;
         for (seg_id, l) in lvl.iter_mut().enumerate() {
             let mut lvl_seg = lf.level as i32;
             if seg.feature_active(seg_id as u8, SEG_LVL_ALT_L) {
                 let d = seg.feature_data[seg_id][SEG_LVL_ALT_L] as i32;
-                lvl_seg = if seg.abs_or_delta_update { d } else { d + lf.level as i32 };
+                lvl_seg = if seg.abs_or_delta_update {
+                    d
+                } else {
+                    d + lf.level as i32
+                };
                 lvl_seg = lvl_seg.clamp(0, MAX_LOOP_FILTER);
             }
             if !lf.delta_enabled {
@@ -36,7 +48,9 @@ impl LfFrame {
                 l[0][1] = l[0][0];
                 for rf in 1..4 {
                     for mode in 0..2 {
-                        let v = lvl_seg + ((lf.ref_deltas[rf] as i32) << n_shift) + ((lf.mode_deltas[mode] as i32) << n_shift);
+                        let v = lvl_seg
+                            + ((lf.ref_deltas[rf] as i32) << n_shift)
+                            + ((lf.mode_deltas[mode] as i32) << n_shift);
                         l[rf][mode] = v.clamp(0, MAX_LOOP_FILTER) as u8;
                     }
                 }
@@ -53,10 +67,22 @@ impl LfFrame {
         };
         for (l, e) in limits.iter_mut().enumerate() {
             let l = l as i32;
-            let limit = if sh > 0 { (l >> shift).clamp(1, 9 - sh) } else { (l >> shift).max(1) };
+            let limit = if sh > 0 {
+                (l >> shift).clamp(1, 9 - sh)
+            } else {
+                (l >> shift).max(1)
+            };
             *e = (limit, 2 * (l + 2) + limit, l >> 4);
         }
-        LfFrame { lvl, limits, mi_rows, mi_cols, ss_x: ss_x as usize, ss_y: ss_y as usize, bit_depth }
+        LfFrame {
+            lvl,
+            limits,
+            mi_rows,
+            mi_cols,
+            ss_x: ss_x as usize,
+            ss_y: ss_y as usize,
+            bit_depth,
+        }
     }
 
     fn level(&self, mi: &MiInfo) -> u8 {
@@ -75,7 +101,13 @@ pub struct PlaneView<'a> {
 }
 
 /// Loop filter one superblock (all planes, both passes) at (`row`, `col`) in MI units (8.8.2).
-pub fn filter_superblock(views: &mut [PlaneView; 3], mi: &MiGrid, f: &LfFrame, row: usize, col: usize) {
+pub fn filter_superblock(
+    views: &mut [PlaneView; 3],
+    mi: &MiGrid,
+    f: &LfFrame,
+    row: usize,
+    col: usize,
+) {
     for (plane, view) in views.iter_mut().enumerate() {
         for pass in 0..2 {
             filter_sb_plane(view, mi, f, plane, pass, row, col);
@@ -83,9 +115,21 @@ pub fn filter_superblock(views: &mut [PlaneView; 3], mi: &MiGrid, f: &LfFrame, r
     }
 }
 
-fn filter_sb_plane(v: &mut PlaneView, mi: &MiGrid, f: &LfFrame, plane: usize, pass: usize, row: usize, col: usize) {
+fn filter_sb_plane(
+    v: &mut PlaneView,
+    mi: &MiGrid,
+    f: &LfFrame,
+    plane: usize,
+    pass: usize,
+    row: usize,
+    col: usize,
+) {
     let (sub_x, sub_y) = if plane > 0 { (f.ss_x, f.ss_y) } else { (0, 0) };
-    let (sub, edge_len) = if pass == 0 { (sub_x, 64 >> sub_y) } else { (sub_y, 64 >> sub_x) };
+    let (sub, edge_len) = if pass == 0 {
+        (sub_x, 64 >> sub_y)
+    } else {
+        (sub_y, 64 >> sub_x)
+    };
     let (mi_rows, mi_cols) = (f.mi_rows, f.mi_cols);
     // Step between the samples across the edge.
     let across = if pass == 0 { 1isize } else { v.stride as isize };
@@ -93,10 +137,17 @@ fn filter_sb_plane(v: &mut PlaneView, mi: &MiGrid, f: &LfFrame, plane: usize, pa
         let mut i = 0;
         while i < edge_len {
             // Group of 8 samples sharing loopRow / loopCol.
-            let (x, y) =
-                if pass == 0 { (col * 8 + edge * (4 << sub_x), row * 8 + (i << sub_y)) } else { (col * 8 + (i << sub_x), row * 8 + edge * (4 << sub_y)) };
+            let (x, y) = if pass == 0 {
+                (col * 8 + edge * (4 << sub_x), row * 8 + (i << sub_y))
+            } else {
+                (col * 8 + (i << sub_x), row * 8 + edge * (4 << sub_y))
+            };
             // Skip groups entirely off screen (the varying coordinate is re-checked per sample).
-            if x >= 8 * mi_cols || y >= 8 * mi_rows || (pass == 0 && x == 0) || (pass == 1 && y == 0) {
+            if x >= 8 * mi_cols
+                || y >= 8 * mi_rows
+                || (pass == 0 && x == 0)
+                || (pass == 1 && y == 0)
+            {
                 i += 8;
                 continue;
             }
@@ -104,14 +155,29 @@ fn filter_sb_plane(v: &mut PlaneView, mi: &MiGrid, f: &LfFrame, plane: usize, pa
             let loop_row = ((y >> 3) >> sub_y) << sub_y;
             let m = mi.at(loop_row, loop_col);
             let tx_sz = if plane > 0 {
-                if m.sb_size < BLOCK_8X8 { 0 } else { m.tx_size.min(MAX_TXSIZE[SS_SIZE_LOOKUP[m.sb_size as usize][f.ss_x][f.ss_y].min(12) as usize]) }
+                if m.sb_size < BLOCK_8X8 {
+                    0
+                } else {
+                    m.tx_size.min(
+                        MAX_TXSIZE
+                            [SS_SIZE_LOOKUP[m.sb_size as usize][f.ss_x][f.ss_y].min(12) as usize],
+                    )
+                }
             } else {
                 m.tx_size
             };
-            let sb_size = if sub == 0 { m.sb_size } else { m.sb_size.max(BLOCK_16X16) } as usize;
+            let sb_size = if sub == 0 {
+                m.sb_size
+            } else {
+                m.sb_size.max(BLOCK_16X16)
+            } as usize;
             let is_intra = m.ref_frame[0] <= INTRA_FRAME;
             // Block sizes are powers of two, so the modulo is a mask.
-            let is_block_edge = if pass == 0 { x & (8 * NUM_8X8_WIDE[sb_size] as usize - 1) == 0 } else { y & (8 * NUM_8X8_HIGH[sb_size] as usize - 1) == 0 };
+            let is_block_edge = if pass == 0 {
+                x & (8 * NUM_8X8_WIDE[sb_size] as usize - 1) == 0
+            } else {
+                y & (8 * NUM_8X8_HIGH[sb_size] as usize - 1) == 0
+            };
             let tx_ok = edge & ((1 << tx_sz) - 1) == 0 && (is_intra || !m.skip);
             if !is_block_edge && !tx_ok {
                 i += 8;
@@ -123,16 +189,28 @@ fn filter_sb_plane(v: &mut PlaneView, mi: &MiGrid, f: &LfFrame, plane: usize, pa
                 continue;
             }
             let is32 = edge % 8 == 0;
-            let base_size = if tx_sz == TX_4X4 && is32 { TX_8X8 } else { tx_sz.min(TX_16X16) };
-            let filter_size =
-                if base_size == TX_16X16 && ((pass == 0 && sub_x == 1 && (x >> 3) == mi_cols - 1) || (pass == 1 && sub_y == 1 && (y >> 3) == mi_rows - 1)) {
-                    TX_8X8
-                } else {
-                    base_size
-                };
+            let base_size = if tx_sz == TX_4X4 && is32 {
+                TX_8X8
+            } else {
+                tx_sz.min(TX_16X16)
+            };
+            let filter_size = if base_size == TX_16X16
+                && ((pass == 0 && sub_x == 1 && (x >> 3) == mi_cols - 1)
+                    || (pass == 1 && sub_y == 1 && (y >> 3) == mi_rows - 1))
+            {
+                TX_8X8
+            } else {
+                base_size
+            };
             let (limit, blimit, thresh) = f.limits[lvl as usize];
             // Lanes of the group (the 8 samples along the edge) inside the MI grid.
-            let n = if pass == 0 { (8 * mi_rows - y).div_ceil(1 << sub_y) } else { (8 * mi_cols - x).div_ceil(1 << sub_x) }.min(LANES).min(edge_len - i);
+            let n = if pass == 0 {
+                (8 * mi_rows - y).div_ceil(1 << sub_y)
+            } else {
+                (8 * mi_cols - x).div_ceil(1 << sub_x)
+            }
+            .min(LANES)
+            .min(edge_len - i);
             // A transform edge is not filtered in the last odd chroma column (8.8.2).
             let odd_last = pass == 1 && sub_x == 1 && mi_cols & 1 == 1 && edge & 1 == 1;
             let mut apply = [false; LANES];
@@ -145,17 +223,38 @@ fn filter_sb_plane(v: &mut PlaneView, mi: &MiGrid, f: &LfFrame, plane: usize, pa
                 let py = y >> sub_y;
                 let pos = (py - v.oy) * v.stride + px - v.ox;
                 let along = if pass == 0 { v.stride } else { 1 };
-                let lim = Limits { apply, limit, blimit, thresh, filter_size, bit_depth: f.bit_depth };
+                let lim = Limits {
+                    apply,
+                    limit,
+                    blimit,
+                    thresh,
+                    filter_size,
+                    bit_depth: f.bit_depth,
+                };
                 let (d, st) = (&mut *v.data, across as usize);
                 match (f.bit_depth <= 10, filter_size == TX_16X16, pass == 1) {
-                    (true, false, false) => lanes16::filter_group::<4, false>(d, pos, along, st, &lim),
-                    (true, false, true) => lanes16::filter_group::<4, true>(d, pos, along, st, &lim),
-                    (true, true, false) => lanes16::filter_group::<8, false>(d, pos, along, st, &lim),
+                    (true, false, false) => {
+                        lanes16::filter_group::<4, false>(d, pos, along, st, &lim)
+                    }
+                    (true, false, true) => {
+                        lanes16::filter_group::<4, true>(d, pos, along, st, &lim)
+                    }
+                    (true, true, false) => {
+                        lanes16::filter_group::<8, false>(d, pos, along, st, &lim)
+                    }
                     (true, true, true) => lanes16::filter_group::<8, true>(d, pos, along, st, &lim),
-                    (false, false, false) => lanes32::filter_group::<4, false>(d, pos, along, st, &lim),
-                    (false, false, true) => lanes32::filter_group::<4, true>(d, pos, along, st, &lim),
-                    (false, true, false) => lanes32::filter_group::<8, false>(d, pos, along, st, &lim),
-                    (false, true, true) => lanes32::filter_group::<8, true>(d, pos, along, st, &lim),
+                    (false, false, false) => {
+                        lanes32::filter_group::<4, false>(d, pos, along, st, &lim)
+                    }
+                    (false, false, true) => {
+                        lanes32::filter_group::<4, true>(d, pos, along, st, &lim)
+                    }
+                    (false, true, false) => {
+                        lanes32::filter_group::<8, false>(d, pos, along, st, &lim)
+                    }
+                    (false, true, true) => {
+                        lanes32::filter_group::<8, true>(d, pos, along, st, &lim)
+                    }
                 }
             }
             i += 8;
@@ -192,15 +291,30 @@ macro_rules! group_filter {
             /// lane (8.8.5.1 decides which), so the arithmetic is branch-free and vectorizes; unmodified
             /// samples are written back unchanged.
             #[inline(always)]
-            pub(super) fn filter_group<const R: usize, const ROWS: bool>(d: &mut [u16], pos: usize, along: usize, step: usize, g: &Limits) {
-                let Limits { apply, limit, blimit, thresh, filter_size, bit_depth } = *g;
+            pub(super) fn filter_group<const R: usize, const ROWS: bool>(
+                d: &mut [u16],
+                pos: usize,
+                along: usize,
+                step: usize,
+                g: &Limits,
+            ) {
+                let Limits {
+                    apply,
+                    limit,
+                    blimit,
+                    thresh,
+                    filter_size,
+                    bit_depth,
+                } = *g;
                 let (limit, blimit, thresh) = (limit as T, blimit as T, thresh as T);
                 // v[8 + k][l] = sample at offset k across the edge in lane l.
                 let mut v = [[0 as T; LANES]; 16];
                 let start = pos - R * step;
                 if ROWS {
                     for k in 0..2 * R {
-                        let row: &[u16; LANES] = d[start + k * step..start + k * step + LANES].try_into().expect("lanes");
+                        let row: &[u16; LANES] = d[start + k * step..start + k * step + LANES]
+                            .try_into()
+                            .expect("lanes");
                         v[8 - R + k] = std::array::from_fn(|l| row[l] as T);
                     }
                 } else {
@@ -217,7 +331,8 @@ macro_rules! group_filter {
                 let blimit_bd = blimit << shift;
                 let thresh_bd = thresh << shift;
                 let one = 1 << shift;
-                let (p3, p2, p1, p0, q0, q1, q2, q3) = (&v[4], &v[5], &v[6], &v[7], &v[8], &v[9], &v[10], &v[11]);
+                let (p3, p2, p1, p0, q0, q1, q2, q3) =
+                    (&v[4], &v[5], &v[6], &v[7], &v[8], &v[9], &v[10], &v[11]);
                 // Filter mask process (8.8.5.1). Masks are 0 / -1 per lane, selects are bitwise
                 // and clipping uses min / max (`clamp` asserts its bounds), so every lane loop
                 // below compiles to vector instructions.
@@ -240,7 +355,10 @@ macro_rules! group_filter {
                         & le(d_q1q0, limit_bd)
                         & le((q2[l] - q1[l]).abs(), limit_bd)
                         & le((q3[l] - q2[l]).abs(), limit_bd)
-                        & le((p0[l] - q0[l]).abs() * 2 + ((p1[l] - q1[l]).abs() >> 1), blimit_bd);
+                        & le(
+                            (p0[l] - q0[l]).abs() * 2 + ((p1[l] - q1[l]).abs() >> 1),
+                            blimit_bd,
+                        );
                     hev[l] = !(le(d_p1p0, thresh_bd) & le(d_q1q0, thresh_bd));
                     flat[l] = can_flat
                         & mask[l]
@@ -278,7 +396,8 @@ macro_rules! group_filter {
                     let c = |x: T| x.max(lo).min(hi);
                     let off: T = 0x80 << shift;
                     for l in 0..LANES {
-                        let (ps1, ps0, qs0, qs1) = (p1[l] - off, p0[l] - off, q0[l] - off, q1[l] - off);
+                        let (ps1, ps0, qs0, qs1) =
+                            (p1[l] - off, p0[l] - off, q0[l] - off, q1[l] - off);
                         let filter = c((c(ps1 - qs1) & hev[l]) + 3 * (qs0 - ps0));
                         let filter1 = c(filter + 4) >> 3;
                         let filter2 = c(filter + 3) >> 3;
@@ -319,7 +438,8 @@ macro_rules! group_filter {
                 if ROWS {
                     for k in lo..hi {
                         let o = start + (k + R - 8) * step; // k >= 8 - R
-                        let row: &mut [u16; LANES] = (&mut d[o..o + LANES]).try_into().expect("lanes");
+                        let row: &mut [u16; LANES] =
+                            (&mut d[o..o + LANES]).try_into().expect("lanes");
                         for l in 0..LANES {
                             row[l] = out[k][l] as u16;
                         }

@@ -3,7 +3,9 @@
 use effectcraft_color::{BlendMode, Label};
 use effectcraft_keyframe::{TextDoc, Value};
 use effectcraft_project::build::{self, Ids};
-use effectcraft_project::{BitDepth, Comp, ItemId, ItemKind, Layer, LayerSource, Project, Quality, Solid};
+use effectcraft_project::{
+    BitDepth, Comp, ItemId, ItemKind, Layer, LayerSource, Project, Quality, Solid,
+};
 use effectcraft_time::{FrameRate, Tick};
 
 use crate::{EvalCtx, Image, NoFootage, RenderOpts, Renderer, render_frame};
@@ -15,7 +17,17 @@ fn project() -> Project {
 }
 
 fn solid(p: &mut Project, comp: &Comp, color: [f32; 3], size: (u32, u32), pos: [f64; 3]) -> Layer {
-    let sid = p.add_item("S", Label::Red, None, ItemKind::Solid(Solid { color, width: size.0, height: size.1, pixel_aspect: 1.0 }));
+    let sid = p.add_item(
+        "S",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color,
+            width: size.0,
+            height: size.1,
+            pixel_aspect: 1.0,
+        }),
+    );
     let mut l = build::layer(p, comp, "S", LayerSource::Solid { item: sid }, size, None);
     l.props.prop_mut("transform/position").unwrap().value = Value::Vec3(pos);
     l
@@ -26,7 +38,11 @@ fn set(l: &mut Layer, path: &str, v: Value) {
 }
 
 fn max_diff(a: &Image, b: &Image) -> f32 {
-    a.data.iter().zip(&b.data).flat_map(|(p, q)| (0..4).map(move |c| (p[c] - q[c]).abs())).fold(0.0, f32::max)
+    a.data
+        .iter()
+        .zip(&b.data)
+        .flat_map(|(p, q)| (0..4).map(move |c| (p[c] - q[c]).abs()))
+        .fold(0.0, f32::max)
 }
 
 /// Outer 200×100 comp: a grey background, and either a precomp (scaled 150%, rotated) of two
@@ -39,7 +55,13 @@ fn scene(collapse: bool, flatten: bool) -> (Project, ItemId) {
     let mut a = solid(&mut p, &inner, [0.6, 0.1, 0.1], (40, 40), [40.0, 50.0, 0.0]);
     let mut b = solid(&mut p, &inner, [0.1, 0.3, 0.6], (40, 40), [60.0, 50.0, 0.0]);
     b.blend_mode = BlendMode::Add;
-    let bg = solid(&mut p, &outer, [0.3, 0.3, 0.3], (200, 100), [100.0, 50.0, 0.0]);
+    let bg = solid(
+        &mut p,
+        &outer,
+        [0.3, 0.3, 0.3],
+        (200, 100),
+        [100.0, 50.0, 0.0],
+    );
     let xf = |l: &mut Layer| {
         set(l, "transform/anchor", Value::Vec3([50.0, 50.0, 0.0]));
         set(l, "transform/position", Value::Vec3([100.0, 50.0, 0.0]));
@@ -58,8 +80,20 @@ fn scene(collapse: bool, flatten: bool) -> (Project, ItemId) {
     } else {
         let mut inner = inner;
         inner.layers = vec![b, a];
-        let iid = p.add_item("Inner", Label::Sandstone, None, ItemKind::Comp(inner.into()));
-        let mut pre = build::layer(&mut p, &outer, "Inner", LayerSource::Comp { item: iid }, (100, 100), None);
+        let iid = p.add_item(
+            "Inner",
+            Label::Sandstone,
+            None,
+            ItemKind::Comp(inner.into()),
+        );
+        let mut pre = build::layer(
+            &mut p,
+            &outer,
+            "Inner",
+            LayerSource::Comp { item: iid },
+            (100, 100),
+            None,
+        );
         xf(&mut pre);
         pre.switches.collapse = collapse;
         let mut c = outer.clone();
@@ -75,7 +109,11 @@ fn collapsed_precomp_equals_manual_flattening() {
     let flat = render_frame(&p, cid, Tick::ZERO, 1.0);
     let (p, cid) = scene(true, false);
     let collapsed = render_frame(&p, cid, Tick::ZERO, 1.0);
-    assert!(max_diff(&flat, &collapsed) < 1e-4, "collapsed differs from flattening by {}", max_diff(&flat, &collapsed));
+    assert!(
+        max_diff(&flat, &collapsed) < 1e-4,
+        "collapsed differs from flattening by {}",
+        max_diff(&flat, &collapsed)
+    );
     // Without collapsing, Add only sees the precomp's own layers (not the grey below), and the
     // precomp is resampled twice.
     let (p, cid) = scene(false, false);
@@ -83,11 +121,19 @@ fn collapsed_precomp_equals_manual_flattening() {
     assert!(max_diff(&flat, &nested) > 0.2);
     // Opacity of the collapsed layer fades every nested layer.
     let (mut p, cid) = scene(true, false);
-    set(&mut p.comp_mut(cid).unwrap().layers[0], "transform/opacity", Value::Scalar(50.0));
+    set(
+        &mut p.comp_mut(cid).unwrap().layers[0],
+        "transform/opacity",
+        Value::Scalar(50.0),
+    );
     let half = render_frame(&p, cid, Tick::ZERO, 1.0);
     let (x, y) = (100, 50);
     let (bg, full) = (0.3, collapsed.get(x, y)[0]);
-    assert!((half.get(x, y)[0] - (bg + (full - bg) * 0.5)).abs() < 0.03, "{:?} vs {full}", half.get(x, y));
+    assert!(
+        (half.get(x, y)[0] - (bg + (full - bg) * 0.5)).abs() < 0.03,
+        "{:?} vs {full}",
+        half.get(x, y)
+    );
 }
 
 #[test]
@@ -104,7 +150,12 @@ fn masks_on_a_collapsed_layer_force_a_flattened_render() {
         [255, 255, 0],
     );
     p.next_id = next;
-    p.comp_mut(cid).unwrap().layers[0].props.sub_mut("masks").unwrap().children.push(mask.into());
+    p.comp_mut(cid).unwrap().layers[0]
+        .props
+        .sub_mut("masks")
+        .unwrap()
+        .children
+        .push(mask.into());
     let a = render_frame(&p, cid, Tick::ZERO, 1.0);
     let b = render_frame(&p2, cid2, Tick::ZERO, 1.0);
     assert!(max_diff(&a, &b) < 1e-4, "{}", max_diff(&a, &b));
@@ -119,15 +170,39 @@ fn collapsed_3d_layers_join_the_parent_scene() {
         let mut p = project();
         let outer = Comp::new(200, 200, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
         let inner = Comp::new(200, 200, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-        let mut blue = solid(&mut p, &inner, [0.0, 0.0, 1.0], (60, 60), [100.0, 100.0, -200.0]);
+        let mut blue = solid(
+            &mut p,
+            &inner,
+            [0.0, 0.0, 1.0],
+            (60, 60),
+            [100.0, 100.0, -200.0],
+        );
         blue.switches.three_d = true;
         let mut inner = inner;
         inner.layers = vec![blue];
-        let iid = p.add_item("Inner", Label::Sandstone, None, ItemKind::Comp(inner.into()));
-        let mut pre = build::layer(&mut p, &outer, "Inner", LayerSource::Comp { item: iid }, (200, 200), None);
+        let iid = p.add_item(
+            "Inner",
+            Label::Sandstone,
+            None,
+            ItemKind::Comp(inner.into()),
+        );
+        let mut pre = build::layer(
+            &mut p,
+            &outer,
+            "Inner",
+            LayerSource::Comp { item: iid },
+            (200, 200),
+            None,
+        );
         pre.switches.three_d = true;
         pre.switches.collapse = collapse;
-        let mut red = solid(&mut p, &outer, [1.0, 0.0, 0.0], (100, 100), [100.0, 100.0, 0.0]);
+        let mut red = solid(
+            &mut p,
+            &outer,
+            [1.0, 0.0, 0.0],
+            (100, 100),
+            [100.0, 100.0, 0.0],
+        );
         red.switches.three_d = true;
         let mut c = outer;
         c.layers = vec![red, pre];
@@ -142,7 +217,9 @@ fn collapsed_3d_layers_join_the_parent_scene() {
 
 /// Pixels along row `y` from `x0` to `x1` with partial coverage (an edge's width).
 fn edge_width(img: &Image, y: i64, x0: i64, x1: i64) -> usize {
-    (x0..x1).filter(|&x| (0.02..0.98).contains(&img.get(x, y)[3])).count()
+    (x0..x1)
+        .filter(|&x| (0.02..0.98).contains(&img.get(x, y)[3]))
+        .count()
 }
 
 /// A 10 px white square in a 200×200 comp, scaled 800% either by its own Scale or by a parent
@@ -164,14 +241,30 @@ fn scaled_square(cr: bool, via_parent: bool) -> Image {
     if via_parent {
         let mut null = build::layer(&mut p, &comp, "Null", LayerSource::Null, (100, 100), None);
         set(&mut null, "transform/anchor", Value::Vec3([0.0, 0.0, 0.0]));
-        set(&mut null, "transform/position", Value::Vec3([100.3, 100.3, 0.0]));
-        set(&mut null, "transform/scale", Value::Vec3([800.0, 800.0, 100.0]));
+        set(
+            &mut null,
+            "transform/position",
+            Value::Vec3([100.3, 100.3, 0.0]),
+        );
+        set(
+            &mut null,
+            "transform/scale",
+            Value::Vec3([800.0, 800.0, 100.0]),
+        );
         set(&mut l, "transform/position", Value::Vec3([0.0, 0.0, 0.0]));
         l.parent = Some(null.id);
         c.layers = vec![l, null];
     } else {
-        set(&mut l, "transform/position", Value::Vec3([100.3, 100.3, 0.0]));
-        set(&mut l, "transform/scale", Value::Vec3([800.0, 800.0, 100.0]));
+        set(
+            &mut l,
+            "transform/position",
+            Value::Vec3([100.3, 100.3, 0.0]),
+        );
+        set(
+            &mut l,
+            "transform/scale",
+            Value::Vec3([800.0, 800.0, 100.0]),
+        );
         c.layers = vec![l];
     }
     let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(c.into()));
@@ -188,7 +281,10 @@ fn shape_scaled_up_stays_sharp_without_the_switch() {
         for via_parent in [false, true] {
             let img = scaled_square(cr, via_parent);
             let w = edge_width(&img, 100, 50, 75);
-            assert!(w <= 1, "switch {cr}, scaled by parent {via_parent}: edge {w} px wide");
+            assert!(
+                w <= 1,
+                "switch {cr}, scaled by parent {via_parent}: edge {w} px wide"
+            );
             assert!(img.get(100, 100)[3] > 0.99 && img.get(55, 100)[3] < 0.01);
         }
     }
@@ -227,18 +323,43 @@ fn collapsed_precomp_of_another_size_renders_through_the_parent_camera() {
         let mut p = project();
         let outer = Comp::new(300, 200, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
         let inner = Comp::new(1000, 600, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-        let mut blue = solid(&mut p, &inner, [0.0, 0.0, 1.0], (40, 40), [500.0, 300.0, 0.0]);
+        let mut blue = solid(
+            &mut p,
+            &inner,
+            [0.0, 0.0, 1.0],
+            (40, 40),
+            [500.0, 300.0, 0.0],
+        );
         blue.switches.three_d = true;
         let mut inner = inner;
         inner.layers = vec![blue];
-        let iid = p.add_item("Scene", Label::Sandstone, None, ItemKind::Comp(inner.into()));
-        let mut pre = build::layer(&mut p, &outer, "Scene", LayerSource::Comp { item: iid }, (1000, 600), None);
+        let iid = p.add_item(
+            "Scene",
+            Label::Sandstone,
+            None,
+            ItemKind::Comp(inner.into()),
+        );
+        let mut pre = build::layer(
+            &mut p,
+            &outer,
+            "Scene",
+            LayerSource::Comp { item: iid },
+            (1000, 600),
+            None,
+        );
         pre.switches.three_d = three_d_precomp;
         pre.switches.collapse = true;
         let mut c = outer.clone();
         c.layers = vec![pre];
         if camera {
-            let cam = build::layer(&mut p, &outer, "Camera", LayerSource::Camera, (300, 200), None);
+            let cam = build::layer(
+                &mut p,
+                &outer,
+                "Camera",
+                LayerSource::Camera,
+                (300, 200),
+                None,
+            );
             c.layers.insert(0, cam);
         }
         let cid = p.add_item("Face", Label::Sandstone, None, ItemKind::Comp(c.into()));
@@ -247,7 +368,10 @@ fn collapsed_precomp_of_another_size_renders_through_the_parent_camera() {
     for (three_d, camera) in [(true, true), (true, false), (false, true)] {
         let img = run(three_d, camera);
         let c = img.get(150, 100);
-        assert!(c[2] > 0.99 && c[3] > 0.99, "3D precomp {three_d}, camera {camera}: centre {c:?}");
+        assert!(
+            c[2] > 0.99 && c[3] > 0.99,
+            "3D precomp {three_d}, camera {camera}: centre {c:?}"
+        );
         assert!(img.get(100, 100)[3] < 0.01, "only the 40 px solid is drawn");
     }
 }
@@ -261,25 +385,51 @@ fn text_scaled_up_stays_sharp_without_the_switch() {
         let mut p = project();
         let comp = Comp::new(240, 160, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
         let mut l = build::layer(&mut p, &comp, "Text", LayerSource::Text, (240, 160), None);
-        l.props.prop_mut("text/sourceText").unwrap().value = Value::Text(Box::new(TextDoc { text: "HE".into(), size, ..Default::default() }));
+        l.props.prop_mut("text/sourceText").unwrap().value = Value::Text(Box::new(TextDoc {
+            text: "HE".into(),
+            size,
+            ..Default::default()
+        }));
         set(&mut l, "transform/anchor", Value::Vec3([0.0, 0.0, 0.0]));
-        set(&mut l, "transform/position", Value::Vec3([40.0, 120.0, 0.0]));
-        set(&mut l, "transform/scale", Value::Vec3([scale, scale, 100.0]));
+        set(
+            &mut l,
+            "transform/position",
+            Value::Vec3([40.0, 120.0, 0.0]),
+        );
+        set(
+            &mut l,
+            "transform/scale",
+            Value::Vec3([scale, scale, 100.0]),
+        );
         assert!(!l.switches.collapse);
         let mut c = comp;
         c.layers = vec![l];
         let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(c.into()));
         render_frame(&p, cid, Tick::ZERO, 1.0)
     };
-    let partial = |img: &Image| img.data.iter().filter(|px| (0.02..0.98).contains(&px[3])).count();
+    let partial = |img: &Image| {
+        img.data
+            .iter()
+            .filter(|px| (0.02..0.98).contains(&px[3]))
+            .count()
+    };
     let scaled = run(10.0, 800.0);
     let native = run(80.0, 100.0);
     let (ps, pn) = (partial(&scaled), partial(&native));
     let d = max_diff(&scaled, &native);
     eprintln!("partially covered pixels: scaled {ps}, native {pn}; max difference {d}");
-    assert!(native.data.iter().filter(|px| px[3] > 0.98).count() > 1000, "the text renders");
-    assert!(ps <= pn + pn / 2, "scaled text is blurred: {ps} soft pixels against {pn}");
-    assert!(d < 0.05, "scaled text differs from text set at that size by {d}");
+    assert!(
+        native.data.iter().filter(|px| px[3] > 0.98).count() > 1000,
+        "the text renders"
+    );
+    assert!(
+        ps <= pn + pn / 2,
+        "scaled text is blurred: {ps} soft pixels against {pn}"
+    );
+    assert!(
+        d < 0.05,
+        "scaled text differs from text set at that size by {d}"
+    );
 }
 
 /// Unscaled text is drawn at the output scale wherever it sits: the lengths a position that isn't a
@@ -290,12 +440,20 @@ fn unscaled_text_rasterises_at_the_output_scale() {
     let mut p = project();
     let mut comp = Comp::new(240, 160, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
     let mut l = build::layer(&mut p, &comp, "Text", LayerSource::Text, (240, 160), None);
-    l.props.prop_mut("text/sourceText").unwrap().value = Value::Text(Box::new(TextDoc { text: "HE".into(), size: 30.0, ..Default::default() }));
+    l.props.prop_mut("text/sourceText").unwrap().value = Value::Text(Box::new(TextDoc {
+        text: "HE".into(),
+        size: 30.0,
+        ..Default::default()
+    }));
     comp.layers = vec![l];
     let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.into()));
     for i in 0..500 {
         let pos = [3.1 + i as f64 * 0.37, 7.3 + i as f64 * 0.29, 0.0];
-        set(&mut p.comp_mut(cid).unwrap().layers[0], "transform/position", Value::Vec3(pos));
+        set(
+            &mut p.comp_mut(cid).unwrap().layers[0],
+            "transform/position",
+            Value::Vec3(pos),
+        );
         let r = Renderer::new(&p, &NoFootage, RenderOpts::default());
         let c = p.comp(cid).unwrap();
         let k = r.raster_scale(&EvalCtx::new(&p, cid, c, Tick::ZERO), &c.layers[0]);
@@ -324,8 +482,16 @@ fn effects_on_a_scaled_shape_follow_its_scale() {
         l.props.sub_mut("contents").unwrap().children.push(g.into());
         l.props.sub_mut("effects").unwrap().children.push(fx.into());
         set(&mut l, "transform/anchor", Value::Vec3([0.0, 0.0, 0.0]));
-        set(&mut l, "transform/position", Value::Vec3([100.0, 100.0, 0.0]));
-        set(&mut l, "transform/scale", Value::Vec3([scale, scale, 100.0]));
+        set(
+            &mut l,
+            "transform/position",
+            Value::Vec3([100.0, 100.0, 0.0]),
+        );
+        set(
+            &mut l,
+            "transform/scale",
+            Value::Vec3([scale, scale, 100.0]),
+        );
         let mut c = comp;
         c.layers = vec![l];
         let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(c.into()));
@@ -334,6 +500,12 @@ fn effects_on_a_scaled_shape_follow_its_scale() {
     let scaled = run(10.0, 800.0, 2.0);
     let native = run(80.0, 100.0, 16.0);
     let d = max_diff(&scaled, &native);
-    assert!(scaled.get(100, 100)[3] > 0.99 && scaled.get(70, 100)[3] > 0.05, "the blur spreads the edge");
-    assert!(d < 0.05, "scaled blurred shape differs from the native one by {d}");
+    assert!(
+        scaled.get(100, 100)[3] > 0.99 && scaled.get(70, 100)[3] > 0.05,
+        "the blur spreads the edge"
+    );
+    assert!(
+        d < 0.05,
+        "scaled blurred shape differs from the native one by {d}"
+    );
 }

@@ -5,7 +5,14 @@
 //! [`Session::execute`] entry point: the egui UI, the CLI, the remote-control channel and the MCP
 //! server. This is what makes the UI swappable and the app fully scriptable.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod actions_cmds;
 pub mod actions_edit_cmds;
@@ -160,7 +167,9 @@ pub type Result<T> = std::result::Result<T, EngineError>;
 
 impl From<photocraft_raster::AllocationError> for EngineError {
     fn from(error: photocraft_raster::AllocationError) -> Self {
-        Self::Other(format!("not enough memory for this operation ({error}); the document was not changed"))
+        Self::Other(format!(
+            "not enough memory for this operation ({error}); the document was not changed"
+        ))
     }
 }
 
@@ -168,13 +177,16 @@ impl From<photocraft_raster::AllocationError> for EngineError {
 /// of a panic if the layer has none.
 pub(crate) fn pixels_mut(l: &mut photocraft_doc::Layer) -> Result<&mut photocraft_raster::Surface> {
     let id = l.id;
-    l.surface_mut().ok_or_else(|| EngineError::Other(format!("layer {id:?} has no pixels")))
+    l.surface_mut()
+        .ok_or_else(|| EngineError::Other(format!("layer {id:?} has no pixels")))
 }
 
 /// The active document's active layer, for `enabled` predicates.
 pub(crate) fn active_layer_of(s: &Session) -> std::result::Result<&photocraft_doc::Layer, String> {
     let d = s.active().ok_or("no document open")?;
-    d.active_layer.and_then(|id| d.doc.layer(id)).ok_or_else(|| "no active layer".into())
+    d.active_layer
+        .and_then(|id| d.doc.layer(id))
+        .ok_or_else(|| "no active layer".into())
 }
 
 /// Per-document editing state.
@@ -231,7 +243,10 @@ impl DocState {
     pub fn new(doc: Document, path: Option<String>) -> Self {
         let active_layer = doc.top_layer();
         let mut history = History::default();
-        history.set_current_layers(LayerTarget { active: active_layer, selected: active_layer.into_iter().collect() });
+        history.set_current_layers(LayerTarget {
+            active: active_layer,
+            selected: active_layer.into_iter().collect(),
+        });
         Self {
             doc: Arc::new(doc),
             history,
@@ -259,19 +274,37 @@ impl DocState {
     /// Robust against stale state: ids no longer in the document are skipped, and if the active
     /// layer was changed without updating the set, the selection is just the active layer.
     pub fn selected_layers(&self) -> Vec<LayerId> {
-        let Some(active) = self.active_layer else { return Vec::new() };
-        let set: &[LayerId] = if self.selected_layers.contains(&active) { &self.selected_layers } else { std::slice::from_ref(&active) };
-        self.doc.walk().into_iter().map(|(_, _, l)| l.id).filter(|id| set.contains(id)).collect()
+        let Some(active) = self.active_layer else {
+            return Vec::new();
+        };
+        let set: &[LayerId] = if self.selected_layers.contains(&active) {
+            &self.selected_layers
+        } else {
+            std::slice::from_ref(&active)
+        };
+        self.doc
+            .walk()
+            .into_iter()
+            .map(|(_, _, l)| l.id)
+            .filter(|id| set.contains(id))
+            .collect()
     }
     pub fn is_layer_selected(&self, id: LayerId) -> bool {
-        self.active_layer == Some(id) || (self.active_layer.is_some_and(|a| self.selected_layers.contains(&a)) && self.selected_layers.contains(&id))
+        self.active_layer == Some(id)
+            || (self
+                .active_layer
+                .is_some_and(|a| self.selected_layers.contains(&a))
+                && self.selected_layers.contains(&id))
     }
     pub fn is_dirty(&self) -> bool {
         self.revision != self.saved_revision
     }
     /// The targeted layers, as history stores them with each state.
     fn layer_target(&self) -> LayerTarget {
-        LayerTarget { active: self.active_layer, selected: self.selected_layers.clone() }
+        LayerTarget {
+            active: self.active_layer,
+            selected: self.selected_layers.clone(),
+        }
     }
 }
 
@@ -322,7 +355,11 @@ impl ToolState {
 
     /// The inks `rgb` was picked as, if it was picked as CMYK.
     pub fn picked_cmyk(&self, rgb: [f32; 3]) -> Option<[f32; 4]> {
-        self.cmyk_picks.iter().rev().find(|(c, _)| *c == rgb).map(|(_, k)| *k)
+        self.cmyk_picks
+            .iter()
+            .rev()
+            .find(|(c, _)| *c == rgb)
+            .map(|(_, k)| *k)
     }
 
     /// Photoshop's colour pair for a layer mask that has none yet: white foreground, black
@@ -339,7 +376,8 @@ impl ToolState {
             return false;
         }
         self.mask_targeted = mask;
-        let [fg, bg] = std::mem::replace(&mut self.other_colors, [self.foreground, self.background]);
+        let [fg, bg] =
+            std::mem::replace(&mut self.other_colors, [self.foreground, self.background]);
         self.foreground = fg;
         self.background = bg;
         true
@@ -353,7 +391,10 @@ impl Default for ToolState {
             background: [1.0, 1.0, 1.0, 1.0],
             // Photoshop's Brush tool starts at 10 % Smoothing.
             brush: photocraft_paint::BrushSettings {
-                smoothing: photocraft_paint::brush::Smoothing { amount: 0.1, ..Default::default() },
+                smoothing: photocraft_paint::brush::Smoothing {
+                    amount: 0.1,
+                    ..Default::default()
+                },
                 ..Default::default()
             },
             presets: photocraft_paint::presets::builtin(),
@@ -381,7 +422,12 @@ pub struct Session {
     pub clipboard: Option<edit_cmds::Clip>,
     /// Layer › Layer Style › Copy Layer Style: effects, blend mode, fill opacity and the Advanced
     /// Blending switches.
-    pub style_clipboard: Option<(photocraft_doc::Effects, photocraft_color::BlendMode, f32, photocraft_doc::AdvancedBlending)>,
+    pub style_clipboard: Option<(
+        photocraft_doc::Effects,
+        photocraft_color::BlendMode,
+        f32,
+        photocraft_doc::AdvancedBlending,
+    )>,
     /// Shape path context menu: copied vector fill and stroke styles.
     pub path_fill_clipboard: Option<photocraft_doc::Fill>,
     pub path_stroke_clipboard: Option<photocraft_doc::ShapeStroke>,
@@ -390,7 +436,10 @@ pub struct Session {
     /// Open Edit Contents documents and the smart objects they update.
     pub smart_links: Vec<smart_cmds::SmartLink>,
     /// Type › Save Default Type Styles: character and paragraph style new type layers start from.
-    pub type_defaults: Option<(photocraft_doc::text::CharStyle, photocraft_doc::text::ParagraphStyle)>,
+    pub type_defaults: Option<(
+        photocraft_doc::text::CharStyle,
+        photocraft_doc::text::ParagraphStyle,
+    )>,
     /// Quick Mask Options (colour, opacity, colour indicates) used when entering Quick Mask.
     pub quick_mask_options: channel_cmds::QuickMaskOptions,
     /// Colour channel the running command may change (a single colour channel is targeted).
@@ -494,7 +543,9 @@ impl Session {
     }
 
     pub fn sync_tools_mask_target(&mut self) {
-        let mask = self.active().is_some_and(|st| st.channel_view.target == crate::channel_cmds::ChannelTarget::LayerMask);
+        let mask = self.active().is_some_and(|st| {
+            st.channel_view.target == crate::channel_cmds::ChannelTarget::LayerMask
+        });
         self.tools.target_mask(mask);
     }
 
@@ -605,27 +656,49 @@ impl Session {
 
     /// [`Self::disabled_reason`] for a call with `params`.
     pub fn disabled_reason_with(&self, id: &str, params: &Value) -> Option<String> {
-        let Some(s) = commands::find(id) else { return Some(format!("unknown command `{id}`")) };
-        self.precondition(s, &channel_cmds::inject_target(self, id, params.clone())).err().or_else(|| self.job_conflict(id, s.journal))
+        let Some(s) = commands::find(id) else {
+            return Some(format!("unknown command `{id}`"));
+        };
+        self.precondition(s, &channel_cmds::inject_target(self, id, params.clone()))
+            .err()
+            .or_else(|| self.job_conflict(id, s.journal))
     }
 
     /// The command's own precondition for a call with `params` (their target filled in).
-    fn precondition(&self, spec: &commands::CommandSpec, params: &Value) -> std::result::Result<(), String> {
+    fn precondition(
+        &self,
+        spec: &commands::CommandSpec,
+        params: &Value,
+    ) -> std::result::Result<(), String> {
         if self.names_existing_layer(spec.id, params) {
             return Ok(());
         }
         // `ifPresent`: with no Background there is nothing to do, which isn't an error.
-        if spec.id == "layer.new.layerFromBackground" && params.get("ifPresent").and_then(Value::as_bool) == Some(true) {
-            return self.active().map(|_| ()).ok_or_else(|| "no document open".into());
+        if spec.id == "layer.new.layerFromBackground"
+            && params.get("ifPresent").and_then(Value::as_bool) == Some(true)
+        {
+            return self
+                .active()
+                .map(|_| ())
+                .ok_or_else(|| "no document open".into());
         }
-        channel_cmds::mask_target_enabled(self, spec.id, params).unwrap_or_else(|| (spec.enabled)(self))
+        channel_cmds::mask_target_enabled(self, spec.id, params)
+            .unwrap_or_else(|| (spec.enabled)(self))
     }
 
     /// Whether `id` is a layer command whose `"layer"` param names an existing layer, so it needs no
     /// active layer (#2457). Matches how `layer_param` resolves the layer when the command runs.
     fn names_existing_layer(&self, id: &str, params: &Value) -> bool {
-        matches!(id, "layer.hideLayers" | "layer.showLayers" | "layer.renameLayer")
-            && params.get("layer").and_then(Value::as_u64).is_some_and(|l| self.active().is_some_and(|st| st.doc.layer(LayerId(l)).is_some()))
+        matches!(
+            id,
+            "layer.hideLayers" | "layer.showLayers" | "layer.renameLayer"
+        ) && params
+            .get("layer")
+            .and_then(Value::as_u64)
+            .is_some_and(|l| {
+                self.active()
+                    .is_some_and(|st| st.doc.layer(LayerId(l)).is_some())
+            })
     }
 
     /// The precondition of a command whose params document `"layer":id` (it acts on that layer),
@@ -633,7 +706,11 @@ impl Session {
     /// than on the active one, which stays active (#466). A script, action or agent can then
     /// Replace Contents, Rasterize or Merge Down a layer without selecting it first. `None` for
     /// other commands, or without such a layer.
-    pub(crate) fn explicit_layer_enabled(&mut self, spec: &commands::CommandSpec, params: &Value) -> Option<std::result::Result<(), String>> {
+    pub(crate) fn explicit_layer_enabled(
+        &mut self,
+        spec: &commands::CommandSpec,
+        params: &Value,
+    ) -> Option<std::result::Result<(), String>> {
         if !spec.params.contains("\"layer\":id") {
             return None;
         }
@@ -649,7 +726,11 @@ impl Session {
     }
 
     /// Apply an undoable edit to the active document.
-    pub fn edit<R>(&mut self, label: &str, f: impl FnOnce(&mut Document, &mut Option<LayerId>) -> Result<R>) -> Result<R> {
+    pub fn edit<R>(
+        &mut self,
+        label: &str,
+        f: impl FnOnce(&mut Document, &mut Option<LayerId>) -> Result<R>,
+    ) -> Result<R> {
         let restrict = self.color_restrict;
         let sampler_map = self.sampler_map.take();
         let st = self.active_mut().ok_or(EngineError::NoDocument)?;
@@ -684,7 +765,8 @@ impl Session {
         } else if st.doc.size != before.size {
             let bounds = st.doc.bounds();
             let n = st.color_samplers.len();
-            st.color_samplers.retain(|p| bounds.contains(p[0].floor() as i32, p[1].floor() as i32));
+            st.color_samplers
+                .retain(|p| bounds.contains(p[0].floor() as i32, p[1].floor() as i32));
             samplers_removed = n - st.color_samplers.len();
         }
         // The pixels the edit can have changed, as its undo would report them: nothing for a
@@ -740,7 +822,10 @@ impl Session {
     /// unchanged, so this is no history step and leaves a clean document clean. Unknown documents
     /// and layers are skipped. A document a background job is computing from must not move under
     /// it: its layers are returned, to try again later.
-    pub fn refresh_type_layers(&mut self, layers: &[(photocraft_doc::DocId, LayerId)]) -> Vec<(photocraft_doc::DocId, LayerId)> {
+    pub fn refresh_type_layers(
+        &mut self,
+        layers: &[(photocraft_doc::DocId, LayerId)],
+    ) -> Vec<(photocraft_doc::DocId, LayerId)> {
         let mut busy = Vec::new();
         let mut docs: Vec<photocraft_doc::DocId> = Vec::new();
         for (d, _) in layers {
@@ -754,12 +839,18 @@ impl Session {
                 busy.extend(mine);
                 continue;
             }
-            let Some(st) = self.docs.iter_mut().find(|st| st.doc.id == doc_id) else { continue };
+            let Some(st) = self.docs.iter_mut().find(|st| st.doc.id == doc_id) else {
+                continue;
+            };
             let snapshot = st.doc.clone();
             let mut doc = (*snapshot).clone();
             let mut changed = false;
             for (_, id) in mine {
-                if let Some(photocraft_doc::Layer { content: photocraft_doc::LayerContent::Text(t), .. }) = doc.layer_mut(*id) {
+                if let Some(photocraft_doc::Layer {
+                    content: photocraft_doc::LayerContent::Text(t),
+                    ..
+                }) = doc.layer_mut(*id)
+                {
                     type_cmds::refresh(&snapshot, t);
                     changed = true;
                 }
@@ -782,7 +873,9 @@ impl Session {
         if self.active_job().is_some() {
             return false;
         }
-        let Some(st) = self.active_mut() else { return false };
+        let Some(st) = self.active_mut() else {
+            return false;
+        };
         st.coalesce = None;
         match st.history.undo(st.doc.clone()) {
             Some((mut d, layers)) => {
@@ -807,7 +900,9 @@ impl Session {
         if self.active_job().is_some() {
             return false;
         }
-        let Some(st) = self.active_mut() else { return false };
+        let Some(st) = self.active_mut() else {
+            return false;
+        };
         st.coalesce = None;
         match st.history.redo(st.doc.clone()) {
             Some((mut d, layers)) => {
@@ -862,12 +957,16 @@ pub(crate) fn fix_selection(st: &mut DocState) {
     if !st.selected_layers.contains(&active) {
         st.selected_layers = vec![active];
     } else {
-        let live: std::collections::HashSet<LayerId> = st.doc.walk().into_iter().map(|(_, _, l)| l.id).collect();
+        let live: std::collections::HashSet<LayerId> =
+            st.doc.walk().into_iter().map(|(_, _, l)| l.id).collect();
         st.selected_layers.retain(|id| live.contains(id));
         let mut seen = std::collections::HashSet::new();
         st.selected_layers.retain(|id| seen.insert(*id));
     }
-    if st.layer_anchor.is_some_and(|a| !st.selected_layers.contains(&a)) {
+    if st
+        .layer_anchor
+        .is_some_and(|a| !st.selected_layers.contains(&a))
+    {
         st.layer_anchor = Some(active);
     }
 }

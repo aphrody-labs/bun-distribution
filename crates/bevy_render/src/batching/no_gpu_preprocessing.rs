@@ -6,7 +6,7 @@ use bevy_ecs::resource::Resource;
 use bevy_ecs::system::{Res, ResMut, StaticSystemParam};
 use bevy_ecs::world::{FromWorld, World};
 use bevy_log::error;
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 use wgpu::{BindingResource, Limits};
 
 use crate::{

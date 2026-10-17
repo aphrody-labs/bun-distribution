@@ -7,7 +7,9 @@ pub const INSERT_SLOTS: usize = 10;
 pub const SEND_SLOTS: usize = 10;
 
 /// Channel formats (track widths).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum ChannelFormat {
     #[default]
     Mono,
@@ -86,7 +88,10 @@ impl ChannelFormat {
             ChannelFormat::Quad | ChannelFormat::Lcrs => 4,
             ChannelFormat::Surround50 => 5,
             ChannelFormat::Surround51 | ChannelFormat::Surround60 => 6,
-            ChannelFormat::Surround61 | ChannelFormat::Sdds70 | ChannelFormat::Surround70 | ChannelFormat::Atmos502 => 7,
+            ChannelFormat::Surround61
+            | ChannelFormat::Sdds70
+            | ChannelFormat::Surround70
+            | ChannelFormat::Atmos502 => 7,
             ChannelFormat::Sdds71 | ChannelFormat::Surround71 | ChannelFormat::Atmos512 => 8,
             ChannelFormat::Atmos702 | ChannelFormat::Atmos504 => 9,
             ChannelFormat::Atmos712 | ChannelFormat::Atmos514 => 10,
@@ -141,7 +146,9 @@ impl ChannelFormat {
         }
     }
     pub fn from_id(s: &str) -> Option<ChannelFormat> {
-        ChannelFormat::ALL.into_iter().find(|f| f.label().eq_ignore_ascii_case(s.trim()))
+        ChannelFormat::ALL
+            .into_iter()
+            .find(|f| f.label().eq_ignore_ascii_case(s.trim()))
     }
     /// Speakers in channel order, or empty for Ambisonics (ACN order, SN3D).
     ///
@@ -175,11 +182,19 @@ impl ChannelFormat {
             ChannelFormat::Atmos704 => &[L, R, C, Lrs, Rrs, Lss, Rss, Ltf, Rtf, Ltr, Rtr],
             ChannelFormat::Atmos714 => &[L, R, C, Lfe, Lrs, Rrs, Lss, Rss, Ltf, Rtf, Ltr, Rtr],
             ChannelFormat::Atmos706 => &[L, R, C, Lrs, Rrs, Lss, Rss, Ltf, Rtf, Ltr, Rtr, Ltm, Rtm],
-            ChannelFormat::Atmos716 => &[L, R, C, Lfe, Lrs, Rrs, Lss, Rss, Ltf, Rtf, Ltr, Rtr, Ltm, Rtm],
+            ChannelFormat::Atmos716 => &[
+                L, R, C, Lfe, Lrs, Rrs, Lss, Rss, Ltf, Rtf, Ltr, Rtr, Ltm, Rtm,
+            ],
             ChannelFormat::Atmos904 => &[L, R, C, Lrs, Rrs, Lw, Rw, Lss, Rss, Ltf, Rtf, Ltr, Rtr],
-            ChannelFormat::Atmos914 => &[L, R, C, Lfe, Lrs, Rrs, Lw, Rw, Lss, Rss, Ltf, Rtf, Ltr, Rtr],
-            ChannelFormat::Atmos906 => &[L, R, C, Lrs, Rrs, Lw, Rw, Lss, Rss, Ltf, Rtf, Ltr, Rtr, Ltm, Rtm],
-            ChannelFormat::Atmos916 => &[L, R, C, Lfe, Lrs, Rrs, Lw, Rw, Lss, Rss, Ltf, Rtf, Ltr, Rtr, Ltm, Rtm],
+            ChannelFormat::Atmos914 => {
+                &[L, R, C, Lfe, Lrs, Rrs, Lw, Rw, Lss, Rss, Ltf, Rtf, Ltr, Rtr]
+            }
+            ChannelFormat::Atmos906 => &[
+                L, R, C, Lrs, Rrs, Lw, Rw, Lss, Rss, Ltf, Rtf, Ltr, Rtr, Ltm, Rtm,
+            ],
+            ChannelFormat::Atmos916 => &[
+                L, R, C, Lfe, Lrs, Rrs, Lw, Rw, Lss, Rss, Ltf, Rtf, Ltr, Rtr, Ltm, Rtm,
+            ],
             ChannelFormat::Ambisonics(_) => &[],
         }
     }
@@ -196,7 +211,9 @@ impl ChannelFormat {
     pub fn channel_label(self, ch: usize) -> String {
         match self.speakers().get(ch) {
             Some(s) => s.label().to_string(),
-            None if self.is_ambisonic() => ["W", "Y", "Z", "X"].get(ch).map_or_else(|| format!("{}", ch + 1), |s| s.to_string()),
+            None if self.is_ambisonic() => ["W", "Y", "Z", "X"]
+                .get(ch)
+                .map_or_else(|| format!("{}", ch + 1), |s| s.to_string()),
             None => format!("{}", ch + 1),
         }
     }
@@ -225,7 +242,11 @@ impl ChannelFormat {
         ]
         .into_iter()
         .find(|f| f.channels() == n)
-        .unwrap_or(if n <= 1 { ChannelFormat::Mono } else { ChannelFormat::Stereo })
+        .unwrap_or(if n <= 1 {
+            ChannelFormat::Mono
+        } else {
+            ChannelFormat::Stereo
+        })
     }
 }
 
@@ -296,7 +317,10 @@ impl Speaker {
         if self.is_height() { 45.0 } else { 0.0 }
     }
     pub fn is_height(self) -> bool {
-        matches!(self, Speaker::Ltf | Speaker::Rtf | Speaker::Ltm | Speaker::Rtm | Speaker::Ltr | Speaker::Rtr)
+        matches!(
+            self,
+            Speaker::Ltf | Speaker::Rtf | Speaker::Ltm | Speaker::Rtm | Speaker::Ltr | Speaker::Rtr
+        )
     }
     pub fn is_lfe(self) -> bool {
         self == Speaker::Lfe
@@ -370,14 +394,24 @@ pub struct SurroundPan {
 
 impl Default for SurroundPan {
     fn default() -> Self {
-        SurroundPan { x: 0.0, y: 1.0, z: 0.0, divergence: 0.0, center: 100.0, lfe_db: -144.0 }
+        SurroundPan {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+            divergence: 0.0,
+            center: 100.0,
+            lfe_db: -144.0,
+        }
     }
 }
 
 impl SurroundPan {
     /// Puck at the stereo pan position (front edge).
     pub fn from_stereo(pan: f32) -> Self {
-        SurroundPan { x: finite_or(pan, 0.0).clamp(-1.0, 1.0), ..SurroundPan::default() }
+        SurroundPan {
+            x: finite_or(pan, 0.0).clamp(-1.0, 1.0),
+            ..SurroundPan::default()
+        }
     }
     /// Clamp into range (NaN → defaults).
     pub fn sanitize(&mut self) {
@@ -488,7 +522,15 @@ pub struct SendSlot {
 
 impl SendSlot {
     pub fn new(target: Route) -> Self {
-        SendSlot { target, level_db: -144.0, pan: 0.0, mute: false, pre_fader: false, follow_main_pan: true, surround: None }
+        SendSlot {
+            target,
+            level_db: -144.0,
+            pan: 0.0,
+            mute: false,
+            pre_fader: false,
+            follow_main_pan: true,
+            surround: None,
+        }
     }
 }
 
@@ -590,9 +632,14 @@ pub(crate) fn finite_or(v: f32, d: f32) -> f32 {
 
 /// Parameters saved as `null` (how JSON writes NaN and infinity) or beyond `f32` are dropped, so
 /// they keep their defaults instead of failing the whole session.
-fn finite_params<'de, D: serde::Deserializer<'de>>(d: D) -> Result<BTreeMap<String, f32>, D::Error> {
+fn finite_params<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<BTreeMap<String, f32>, D::Error> {
     let params: BTreeMap<String, Option<f64>> = serde::Deserialize::deserialize(d)?;
-    Ok(params.into_iter().filter_map(|(k, v)| Some((k, v.map(|v| v as f32).filter(|v| v.is_finite())?))).collect())
+    Ok(params
+        .into_iter()
+        .filter_map(|(k, v)| Some((k, v.map(|v| v as f32).filter(|v| v.is_finite())?)))
+        .collect())
 }
 
 /// Fader taper used by Pro Tools-style faders: position 0..1 ↔ dB (-inf..+12).
@@ -602,7 +649,11 @@ pub fn fader_pos_to_db(pos: f32) -> f32 {
         return -144.0;
     }
     // Piecewise: top 75 % covers -24..+12 linearly-ish, the bottom compresses to -inf.
-    if p >= 0.25 { -24.0 + (p - 0.25) / 0.75 * 36.0 } else { -24.0 - (1.0 - p / 0.25).powf(1.5) * 120.0 }
+    if p >= 0.25 {
+        -24.0 + (p - 0.25) / 0.75 * 36.0
+    } else {
+        -24.0 - (1.0 - p / 0.25).powf(1.5) * 120.0
+    }
 }
 
 pub fn fader_db_to_pos(db: f32) -> f32 {
@@ -645,10 +696,12 @@ mod tests {
     #[test]
     fn params_saved_as_null_or_out_of_range_are_dropped() {
         let mut i = Insert::new("eq_7band");
-        i.params.extend([("gain".to_string(), f32::NAN), ("q".to_string(), 0.7)]);
+        i.params
+            .extend([("gain".to_string(), f32::NAN), ("q".to_string(), 0.7)]);
         let back: Insert = serde_json::from_str(&serde_json::to_string(&i).unwrap()).unwrap();
         assert_eq!(back.params, BTreeMap::from([("q".to_string(), 0.7)]));
-        let big: Insert = serde_json::from_str(r#"{"plugin":"x","params":{"gain":1e39,"q":0.5}}"#).unwrap();
+        let big: Insert =
+            serde_json::from_str(r#"{"plugin":"x","params":{"gain":1e39,"q":0.5}}"#).unwrap();
         assert_eq!(big.params, BTreeMap::from([("q".to_string(), 0.5)]));
     }
 
@@ -679,8 +732,16 @@ mod tests {
             if !f.is_ambisonic() {
                 assert_eq!(f.speakers().len(), f.channels(), "{f:?}");
                 // Mask bits are unique and in ascending channel order.
-                let bits: Vec<u32> = f.speakers().iter().map(|s| s.wave_bit()).filter(|b| *b != 0).collect();
-                assert!(bits.windows(2).all(|w| w[0] < w[1]), "{f:?} not in WAV order");
+                let bits: Vec<u32> = f
+                    .speakers()
+                    .iter()
+                    .map(|s| s.wave_bit())
+                    .filter(|b| *b != 0)
+                    .collect();
+                assert!(
+                    bits.windows(2).all(|w| w[0] < w[1]),
+                    "{f:?} not in WAV order"
+                );
             }
         }
         assert_eq!(ChannelFormat::Surround51.channel_mask(), 0x3F);
@@ -707,6 +768,9 @@ mod tests {
     #[test]
     fn formats() {
         assert_eq!(ChannelFormat::for_channels(6), ChannelFormat::Surround51);
-        assert_eq!(ChannelFormat::from_id("stereo"), Some(ChannelFormat::Stereo));
+        assert_eq!(
+            ChannelFormat::from_id("stereo"),
+            Some(ChannelFormat::Stereo)
+        );
     }
 }

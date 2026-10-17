@@ -47,12 +47,20 @@ impl El {
     /// exists). Pass a qualified name (`r:id`) to require that prefix's local name with any prefix.
     pub fn attr(&self, name: &str) -> Option<&str> {
         if let Some((_, l)) = name.split_once(':') {
-            return self.attrs.iter().find(|(k, _)| k.contains(':') && !k.starts_with("xmlns") && local_of(k) == l).map(|(_, v)| v.as_str());
+            return self
+                .attrs
+                .iter()
+                .find(|(k, _)| k.contains(':') && !k.starts_with("xmlns") && local_of(k) == l)
+                .map(|(_, v)| v.as_str());
         }
         self.attrs
             .iter()
             .find(|(k, _)| k == name)
-            .or_else(|| self.attrs.iter().find(|(k, _)| !k.starts_with("xmlns") && local_of(k) == name))
+            .or_else(|| {
+                self.attrs
+                    .iter()
+                    .find(|(k, _)| !k.starts_with("xmlns") && local_of(k) == name)
+            })
             .map(|(_, v)| v.as_str())
     }
     pub fn has_attr(&self, name: &str) -> bool {
@@ -67,16 +75,26 @@ impl El {
     }
     pub fn i64(&self, name: &str) -> Option<i64> {
         let v = self.attr(name)?.trim();
-        v.parse::<i64>().ok().or_else(|| v.parse::<f64>().ok().filter(|f| f.is_finite()).map(|f| f.clamp(-9.0e18, 9.0e18) as i64))
+        v.parse::<i64>().ok().or_else(|| {
+            v.parse::<f64>()
+                .ok()
+                .filter(|f| f.is_finite())
+                .map(|f| f.clamp(-9.0e18, 9.0e18) as i64)
+        })
     }
     pub fn i32(&self, name: &str) -> Option<i32> {
-        self.i64(name).map(|v| v.clamp(i32::MIN as i64, i32::MAX as i64) as i32)
+        self.i64(name)
+            .map(|v| v.clamp(i32::MIN as i64, i32::MAX as i64) as i32)
     }
     pub fn u32(&self, name: &str) -> Option<u32> {
         self.i64(name).map(|v| v.clamp(0, u32::MAX as i64) as u32)
     }
     pub fn f64(&self, name: &str) -> Option<f64> {
-        self.attr(name)?.trim().parse::<f64>().ok().filter(|f| f.is_finite())
+        self.attr(name)?
+            .trim()
+            .parse::<f64>()
+            .ok()
+            .filter(|f| f.is_finite())
     }
     pub fn bool(&self, name: &str) -> Option<bool> {
         match self.attr(name)?.trim() {
@@ -177,7 +195,8 @@ impl El {
             if depth > MAX_DEPTH {
                 return;
             }
-            e.children.retain(|c| !matches!(c, Node::El(x) if locals.contains(&x.local())));
+            e.children
+                .retain(|c| !matches!(c, Node::El(x) if locals.contains(&x.local())));
             for c in e.elements_mut() {
                 rec(c, locals, depth + 1);
             }
@@ -220,7 +239,12 @@ pub struct Doc {
 impl Doc {
     /// Namespace declarations (`xmlns:x`, `xmlns`) on the root element.
     pub fn ns_decls(&self) -> Vec<(String, String)> {
-        self.root.attrs.iter().filter(|(k, _)| k == "xmlns" || k.starts_with("xmlns:")).cloned().collect()
+        self.root
+            .attrs
+            .iter()
+            .filter(|(k, _)| k == "xmlns" || k.starts_with("xmlns:"))
+            .cloned()
+            .collect()
     }
 }
 
@@ -247,7 +271,9 @@ pub fn parse(bytes: &[u8]) -> Result<Doc, PptxError> {
     let mut nodes = 0usize;
     let mut buf = Vec::new();
     loop {
-        let ev = reader.read_event_into(&mut buf).map_err(|e| PptxError::Xml(format!("{e}")))?;
+        let ev = reader
+            .read_event_into(&mut buf)
+            .map_err(|e| PptxError::Xml(format!("{e}")))?;
         match ev {
             Event::Start(b) | Event::Empty(b) if root.is_some() => {
                 // Content after the root element: ignore.
@@ -256,7 +282,9 @@ pub fn parse(bytes: &[u8]) -> Result<Doc, PptxError> {
             Event::Start(b) => {
                 nodes += 1;
                 if nodes > MAX_NODES || stack.len() >= MAX_DEPTH {
-                    return Err(PptxError::Xml("document too large or too deeply nested".into()));
+                    return Err(PptxError::Xml(
+                        "document too large or too deeply nested".into(),
+                    ));
                 }
                 stack.push(start_el(&b, &reader));
             }
@@ -294,9 +322,18 @@ pub fn parse(bytes: &[u8]) -> Result<Doc, PptxError> {
             Event::GeneralRef(r) => {
                 if let Some(p) = stack.last_mut() {
                     let s = if r.is_char_ref() {
-                        r.resolve_char_ref().ok().flatten().map(String::from).unwrap_or_default()
+                        r.resolve_char_ref()
+                            .ok()
+                            .flatten()
+                            .map(String::from)
+                            .unwrap_or_default()
                     } else {
-                        match r.decode().map(|c| c.into_owned()).unwrap_or_default().as_str() {
+                        match r
+                            .decode()
+                            .map(|c| c.into_owned())
+                            .unwrap_or_default()
+                            .as_str()
+                        {
                             "amp" => "&".into(),
                             "lt" => "<".into(),
                             "gt" => ">".into(),
@@ -340,20 +377,41 @@ fn start_el(b: &quick_xml::events::BytesStart, reader: &quick_xml::Reader<&[u8]>
     let mut attrs = vec![];
     for a in b.attributes().with_checks(false).flatten() {
         let k = String::from_utf8_lossy(a.key.as_ref()).into_owned();
-        let v =
-            a.decode_and_unescape_value(reader.decoder()).map(|c| c.into_owned()).unwrap_or_else(|_| String::from_utf8_lossy(&a.value).into_owned());
+        let v = a
+            .decode_and_unescape_value(reader.decoder())
+            .map(|c| c.into_owned())
+            .unwrap_or_else(|_| String::from_utf8_lossy(&a.value).into_owned());
         attrs.push((k, v));
     }
-    El { name, attrs, children: vec![] }
+    El {
+        name,
+        attrs,
+        children: vec![],
+    }
 }
 
 fn decode_utf16(bytes: &[u8]) -> String {
     let le = bytes.starts_with(&[0xFF, 0xFE]);
-    let units: Vec<u16> =
-        bytes.get(2..).unwrap_or(&[]).as_chunks::<2>().0.iter().map(|c| if le { u16::from_le_bytes(*c) } else { u16::from_be_bytes(*c) }).collect();
+    let units: Vec<u16> = bytes
+        .get(2..)
+        .unwrap_or(&[])
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| {
+            if le {
+                u16::from_le_bytes(*c)
+            } else {
+                u16::from_be_bytes(*c)
+            }
+        })
+        .collect();
     let s = String::from_utf16_lossy(&units);
     // Drop the encoding declaration so quick-xml reads it as UTF-8.
-    match s.strip_prefix("<?xml").and_then(|r| r.find("?>").map(|i| i + 7)) {
+    match s
+        .strip_prefix("<?xml")
+        .and_then(|r| r.find("?>").map(|i| i + 7))
+    {
         Some(end) => s.get(end..).unwrap_or("").to_string(),
         None => s,
     }
@@ -442,7 +500,9 @@ impl A {
 
 impl W {
     pub fn new() -> Self {
-        W { s: String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n") }
+        W {
+            s: String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"),
+        }
     }
     pub fn frag() -> Self {
         W { s: String::new() }
@@ -509,7 +569,10 @@ mod tests {
         let d = parse(b"<?xml version=\"1.0\"?><a:p xmlns:a=\"x\"><a:r><a:t>A &amp; B &#x41; &lt;</a:t></a:r><a:x r:id=\"rId1\" id=\"5\"/></a:p>")
             .unwrap();
         assert_eq!(d.root.local(), "p");
-        assert_eq!(d.root.find("t").map(|t| t.text()), Some("A & B A <".to_string()));
+        assert_eq!(
+            d.root.find("t").map(|t| t.text()),
+            Some("A & B A <".to_string())
+        );
         let x = d.root.child("x").unwrap();
         assert_eq!(x.attr("id"), Some("5"));
         assert_eq!(x.attr("r:id"), Some("rId1"));
@@ -533,6 +596,9 @@ mod tests {
     #[test]
     fn roundtrip_serialize() {
         let d = parse(b"<p:sp a=\"1\"><p:t>x &amp; y</p:t><e/></p:sp>").unwrap();
-        assert_eq!(d.root.to_xml(), "<p:sp a=\"1\"><p:t>x &amp; y</p:t><e/></p:sp>");
+        assert_eq!(
+            d.root.to_xml(),
+            "<p:sp a=\"1\"><p:t>x &amp; y</p:t><e/></p:sp>"
+        );
     }
 }

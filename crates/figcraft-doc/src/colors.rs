@@ -7,7 +7,10 @@ use figcraft_color::{Color, ColorProfile, ImageFilters};
 use serde::{Deserialize, Serialize};
 
 use crate::proto::Action;
-use crate::{Document, Effect, EffectKind, LayoutGrid, Node, NodeKind, Style, StyleKind, TextData, TextStyle, VariableValue, Variables};
+use crate::{
+    Document, Effect, EffectKind, LayoutGrid, Node, NodeKind, Style, StyleKind, TextData,
+    TextStyle, VariableValue, Variables,
+};
 
 /// A visitor over colour values.
 pub type ColorVisitor<'a> = dyn FnMut(&mut Color) + 'a;
@@ -27,32 +30,51 @@ impl Effect {
                 f(&mut n.color);
                 f(&mut n.secondary);
             }
-            EffectKind::LayerBlur { .. } | EffectKind::BackgroundBlur { .. } | EffectKind::Texture(_) | EffectKind::Glass(_) => {}
+            EffectKind::LayerBlur { .. }
+            | EffectKind::BackgroundBlur { .. }
+            | EffectKind::Texture(_)
+            | EffectKind::Glass(_) => {}
         }
     }
 }
 
 impl TextStyle {
     pub fn for_each_color_mut(&mut self, f: &mut ColorVisitor) {
-        self.fills.iter_mut().flatten().for_each(|p| p.for_each_color_mut(f));
+        self.fills
+            .iter_mut()
+            .flatten()
+            .for_each(|p| p.for_each_color_mut(f));
     }
 }
 
 impl TextData {
     pub fn for_each_color_mut(&mut self, f: &mut ColorVisitor) {
         self.style.for_each_color_mut(f);
-        self.runs.iter_mut().for_each(|r| r.style.for_each_color_mut(f));
+        self.runs
+            .iter_mut()
+            .for_each(|r| r.style.for_each_color_mut(f));
     }
 }
 
 impl Node {
     /// Visit every colour of this node (not its children).
     pub fn for_each_color_mut(&mut self, f: &mut ColorVisitor) {
-        self.fills.iter_mut().chain(self.strokes.iter_mut()).for_each(|p| p.for_each_color_mut(f));
-        self.effects.iter_mut().for_each(|e| e.for_each_color_mut(f));
-        self.grids.iter_mut().for_each(|g: &mut LayoutGrid| f(&mut g.color));
+        self.fills
+            .iter_mut()
+            .chain(self.strokes.iter_mut())
+            .for_each(|p| p.for_each_color_mut(f));
+        self.effects
+            .iter_mut()
+            .for_each(|e| e.for_each_color_mut(f));
+        self.grids
+            .iter_mut()
+            .for_each(|g: &mut LayoutGrid| f(&mut g.color));
         match &mut self.kind {
-            NodeKind::Page { background, prototype, .. } => {
+            NodeKind::Page {
+                background,
+                prototype,
+                ..
+            } => {
                 f(background);
                 f(&mut prototype.background);
             }
@@ -61,7 +83,11 @@ impl Node {
         }
         for it in &mut self.interactions {
             crate::proto::walk_mut(&mut it.actions, &mut |a| {
-                if let Action::OpenOverlay { background: Some(c), .. } = a {
+                if let Action::OpenOverlay {
+                    background: Some(c),
+                    ..
+                } = a
+                {
                     f(c);
                 }
             });
@@ -74,7 +100,9 @@ impl Style {
         match &mut self.kind {
             StyleKind::Paint { paints } => paints.iter_mut().for_each(|p| p.for_each_color_mut(f)),
             StyleKind::Text { style } => style.for_each_color_mut(f),
-            StyleKind::Effect { effects } => effects.iter_mut().for_each(|e| e.for_each_color_mut(f)),
+            StyleKind::Effect { effects } => {
+                effects.iter_mut().for_each(|e| e.for_each_color_mut(f))
+            }
             StyleKind::Grid { grids } => grids.iter_mut().for_each(|g| f(&mut g.color)),
         }
     }
@@ -82,7 +110,11 @@ impl Style {
 
 impl Variables {
     pub fn for_each_color_mut(&mut self, f: &mut ColorVisitor) {
-        for v in self.variables.iter_mut().flat_map(|v| v.values.values_mut()) {
+        for v in self
+            .variables
+            .iter_mut()
+            .flat_map(|v| v.values.values_mut())
+        {
             if let VariableValue::Color(c) = v {
                 f(c);
             }
@@ -100,7 +132,9 @@ impl Document {
                 n.for_each_color_mut(&mut f);
             }
         }
-        self.styles.iter_mut().for_each(|s| s.for_each_color_mut(&mut f));
+        self.styles
+            .iter_mut()
+            .for_each(|s| s.for_each_color_mut(&mut f));
         self.variables.for_each_color_mut(&mut f);
         self.document_colors.iter_mut().for_each(&mut f);
     }

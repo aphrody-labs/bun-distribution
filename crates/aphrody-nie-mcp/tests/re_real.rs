@@ -42,7 +42,10 @@ const PDATA_CONTAINMENT_FLOOR: f64 = 0.75;
 const SAMPLE: usize = 400;
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..").canonicalize().expect("repository root")
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../..")
+        .canonicalize()
+        .expect("repository root")
 }
 
 fn request(stdin: &mut impl Write, value: serde_json::Value) {
@@ -82,7 +85,11 @@ fn call(
         }),
     );
     let response = response_for(reader, id);
-    assert!(response.get("error").is_none(), "{name} failed: {}", response["error"]);
+    assert!(
+        response.get("error").is_none(),
+        "{name} failed: {}",
+        response["error"]
+    );
     let text = response["result"]["content"][0]["text"]
         .as_str()
         .unwrap_or_else(|| panic!("{name} returned no text content: {response}"));
@@ -149,13 +156,22 @@ fn the_server_answers_real_questions_about_the_binary() {
     );
 
     // --- 1. Coverage must be internally consistent, not merely present. ---------------
-    let coverage = call(&mut stdin, &mut reader, 2, "re_coverage", serde_json::json!({}));
+    let coverage = call(
+        &mut stdin,
+        &mut reader,
+        2,
+        "re_coverage",
+        serde_json::json!({}),
+    );
     let total = find_number(&coverage, &["total", "total_funcs", "functions"])
         .unwrap_or_else(|| panic!("no total in coverage report: {coverage}"));
     let classified = find_number(&coverage, &["classified"])
         .unwrap_or_else(|| panic!("no classified count in coverage report: {coverage}"));
     assert!(total > 0.0, "empty knowledge base: {coverage}");
-    assert!(classified <= total, "more classified than total: {classified} / {total}");
+    assert!(
+        classified <= total,
+        "more classified than total: {classified} / {total}"
+    );
     if let Some(pct) = find_number(&coverage, &["pct", "percent", "coverage_pct"]) {
         assert!(
             (pct - classified / total * 100.0).abs() < 0.05,
@@ -195,8 +211,13 @@ fn the_server_answers_real_questions_about_the_binary() {
         by_address.to_string().contains(&first_name),
         "re_function at 0x{first_vaddr:x} did not return {first_name}: {by_address}"
     );
-    let by_name =
-        call(&mut stdin, &mut reader, 5, "re_function", serde_json::json!({ "name": first_name }));
+    let by_name = call(
+        &mut stdin,
+        &mut reader,
+        5,
+        "re_function",
+        serde_json::json!({ "name": first_name }),
+    );
     let rendered = by_name.to_string();
     assert!(
         rendered.contains(&format!("0x{first_vaddr:x}"))
@@ -278,7 +299,10 @@ fn the_server_answers_real_questions_about_the_binary() {
         );
         let symbols = value_after(&line, "symbols=").expect("symbols count");
         let named = find_number(&coverage, &["named"]).unwrap_or(0.0);
-        assert!(symbols > 0.0, "the atlas digested no symbol while the base reports {named} named");
+        assert!(
+            symbols > 0.0,
+            "the atlas digested no symbol while the base reports {named} named"
+        );
         let gaps = call(
             &mut stdin,
             &mut reader,
@@ -291,7 +315,10 @@ fn the_server_answers_real_questions_about_the_binary() {
             "cli_atlas gaps returned no ranked road: {gaps}"
         );
     } else {
-        eprintln!("skip atlas cross-check: {} absent (just atlas)", atlas.display());
+        eprintln!(
+            "skip atlas cross-check: {} absent (just atlas)",
+            atlas.display()
+        );
     }
 }
 
@@ -305,7 +332,7 @@ fn find_number(value: &serde_json::Value, keys: &[&str]) -> Option<f64> {
                 }
             }
             map.values().find_map(|nested| find_number(nested, keys))
-        },
+        }
         serde_json::Value::Array(items) => items.iter().find_map(|item| find_number(item, keys)),
         _ => None,
     }
@@ -329,8 +356,11 @@ fn as_number(value: &serde_json::Value) -> Option<f64> {
 fn row_pair(row: &serde_json::Value, page: &serde_json::Value) -> (u64, String) {
     if let Some(map) = row.as_object() {
         let vaddr = map.get("vaddr").and_then(as_number).expect("vaddr column") as u64;
-        let name =
-            map.get("name").and_then(serde_json::Value::as_str).unwrap_or_default().to_string();
+        let name = map
+            .get("name")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_string();
         return (vaddr, name);
     }
     let columns = page["columns"].as_array().expect("columns");
@@ -342,13 +372,19 @@ fn row_pair(row: &serde_json::Value, page: &serde_json::Value) -> (u64, String) 
     };
     let items = row.as_array().expect("row array");
     let vaddr = as_number(&items[index("vaddr")]).expect("vaddr value") as u64;
-    let name = items[index("name")].as_str().unwrap_or_default().to_string();
+    let name = items[index("name")]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     (vaddr, name)
 }
 
 /// Numeric value following `key` in a `key=value` measured line.
 fn value_after(line: &str, key: &str) -> Option<f64> {
     let rest = line.split(key).nth(1)?;
-    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect();
+    let digits: String = rest
+        .chars()
+        .take_while(|c| c.is_ascii_digit() || *c == '.')
+        .collect();
     digits.parse().ok()
 }

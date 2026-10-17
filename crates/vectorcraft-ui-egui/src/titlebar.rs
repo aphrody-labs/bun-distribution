@@ -3,7 +3,10 @@
 //! double-click there maximizes it, caption buttons at the far right minimize, maximize/restore and
 //! close, and thin invisible zones along the window's edges resize it.
 
-use egui::{CursorIcon, Id, LayerId, Order, PointerButton, Rect, ResizeDirection, Sense, Stroke, Ui, ViewportCommand, pos2, vec2};
+use egui::{
+    CursorIcon, Id, LayerId, Order, PointerButton, Rect, ResizeDirection, Sense, Stroke, Ui,
+    ViewportCommand, pos2, vec2,
+};
 use serde_json::json;
 
 use crate::VectorcraftApp;
@@ -53,7 +56,9 @@ pub fn drag_area(ui: &Ui, rect: Rect) {
     }
     if resp.double_clicked() {
         toggle_maximize(ctx);
-    } else if resp.drag_started_by(PointerButton::Primary) && ctx.data(|d| d.get_temp(resp.id).unwrap_or(false)) {
+    } else if resp.drag_started_by(PointerButton::Primary)
+        && ctx.data(|d| d.get_temp(resp.id).unwrap_or(false))
+    {
         ctx.send_viewport_cmd(ViewportCommand::StartDrag);
     }
 }
@@ -66,7 +71,10 @@ pub fn caption_buttons(app: &mut VectorcraftApp, ui: &mut Ui, bar: Rect) {
     let max = maximized(ui.ctx());
     let mut clicked = None;
     for (i, c) in CAPTIONS.into_iter().enumerate() {
-        let r = Rect::from_min_size(pos2(bar.right() - WIDTH + i as f32 * BUTTON_WIDTH, bar.top()), vec2(BUTTON_WIDTH, bar.height() - 1.0));
+        let r = Rect::from_min_size(
+            pos2(bar.right() - WIDTH + i as f32 * BUTTON_WIDTH, bar.top()),
+            vec2(BUTTON_WIDTH, bar.height() - 1.0),
+        );
         let resp = ui.interact(r, caption_id(c), Sense::click());
         let close = c == Caption::Close;
         let fill = match (resp.is_pointer_button_down_on(), resp.hovered()) {
@@ -77,7 +85,11 @@ pub fn caption_buttons(app: &mut VectorcraftApp, ui: &mut Ui, bar: Rect) {
             _ => egui::Color32::TRANSPARENT,
         };
         ui.painter().rect_filled(r, 0.0, fill);
-        let ink = if close && resp.hovered() { t.caption_close_text } else { t.icon };
+        let ink = if close && resp.hovered() {
+            t.caption_close_text
+        } else {
+            t.icon
+        };
         paint_glyph(ui, c, max, r.center(), Stroke::new(1.0, ink));
         let tip = match c {
             Caption::Minimize => tl!("Minimize"),
@@ -111,7 +123,16 @@ fn paint_glyph(ui: &Ui, c: Caption, maximized: bool, at: egui::Pos2, s: Stroke) 
         Caption::Maximize if maximized => {
             let front = Rect::from_min_max(g.min + vec2(0.0, 2.0), g.max - vec2(2.0, 0.0));
             p.rect_stroke(front, 0.0, s, egui::StrokeKind::Middle);
-            p.line(vec![g.min + vec2(2.0, 2.0), g.min + vec2(2.0, 0.0), g.right_top(), g.max - vec2(0.0, 2.0), g.max - vec2(2.0, 2.0)], s);
+            p.line(
+                vec![
+                    g.min + vec2(2.0, 2.0),
+                    g.min + vec2(2.0, 0.0),
+                    g.right_top(),
+                    g.max - vec2(0.0, 2.0),
+                    g.max - vec2(2.0, 2.0),
+                ],
+                s,
+            );
         }
         Caption::Maximize => {
             p.rect_stroke(g, 0.0, s, egui::StrokeKind::Middle);
@@ -129,14 +150,46 @@ fn zones(w: Rect) -> [(Rect, ResizeDirection, CursorIcon); 8] {
     use ResizeDirection::*;
     let (e, c) = (EDGE, CORNER);
     [
-        (Rect::from_min_max(w.left_top(), pos2(w.right(), w.top() + e)), North, CursorIcon::ResizeVertical),
-        (Rect::from_min_max(pos2(w.left(), w.bottom() - e), w.right_bottom()), South, CursorIcon::ResizeVertical),
-        (Rect::from_min_max(w.left_top(), pos2(w.left() + e, w.bottom())), West, CursorIcon::ResizeHorizontal),
-        (Rect::from_min_max(pos2(w.right() - e, w.top()), w.right_bottom()), East, CursorIcon::ResizeHorizontal),
-        (Rect::from_min_size(w.left_top(), vec2(c, c)), NorthWest, CursorIcon::ResizeNwSe),
-        (Rect::from_min_size(w.right_top() - vec2(c, 0.0), vec2(c, c)), NorthEast, CursorIcon::ResizeNeSw),
-        (Rect::from_min_size(w.left_bottom() - vec2(0.0, c), vec2(c, c)), SouthWest, CursorIcon::ResizeNeSw),
-        (Rect::from_min_size(w.right_bottom() - vec2(c, c), vec2(c, c)), SouthEast, CursorIcon::ResizeNwSe),
+        (
+            Rect::from_min_max(w.left_top(), pos2(w.right(), w.top() + e)),
+            North,
+            CursorIcon::ResizeVertical,
+        ),
+        (
+            Rect::from_min_max(pos2(w.left(), w.bottom() - e), w.right_bottom()),
+            South,
+            CursorIcon::ResizeVertical,
+        ),
+        (
+            Rect::from_min_max(w.left_top(), pos2(w.left() + e, w.bottom())),
+            West,
+            CursorIcon::ResizeHorizontal,
+        ),
+        (
+            Rect::from_min_max(pos2(w.right() - e, w.top()), w.right_bottom()),
+            East,
+            CursorIcon::ResizeHorizontal,
+        ),
+        (
+            Rect::from_min_size(w.left_top(), vec2(c, c)),
+            NorthWest,
+            CursorIcon::ResizeNwSe,
+        ),
+        (
+            Rect::from_min_size(w.right_top() - vec2(c, 0.0), vec2(c, c)),
+            NorthEast,
+            CursorIcon::ResizeNeSw,
+        ),
+        (
+            Rect::from_min_size(w.left_bottom() - vec2(0.0, c), vec2(c, c)),
+            SouthWest,
+            CursorIcon::ResizeNeSw,
+        ),
+        (
+            Rect::from_min_size(w.right_bottom() - vec2(c, c), vec2(c, c)),
+            SouthEast,
+            CursorIcon::ResizeNwSe,
+        ),
     ]
 }
 
@@ -151,7 +204,9 @@ pub fn resize_zones(ui: &mut Ui) {
     let layer = LayerId::new(Order::Foreground, Id::new("titlebar-resize"));
     let zui = ui.new_child(egui::UiBuilder::new().layer_id(layer).max_rect(w));
     for (i, (r, dir, cursor)) in zones(w).into_iter().enumerate() {
-        let resp = zui.interact(r, Id::new(("titlebar-resize", i)), Sense::drag()).on_hover_cursor(cursor);
+        let resp = zui
+            .interact(r, Id::new(("titlebar-resize", i)), Sense::drag())
+            .on_hover_cursor(cursor);
         if resp.drag_started_by(PointerButton::Primary) {
             ctx.send_viewport_cmd(ViewportCommand::BeginResize(dir));
         }
@@ -180,7 +235,13 @@ mod tests {
             crate::theme::apply(&ctx, Default::default());
             let mut app = VectorcraftApp::new(Session::new(), Default::default());
             app.custom_titlebar = true;
-            Self { ctx, app, width, time: 0.0, maximized: false }
+            Self {
+                ctx,
+                app,
+                width,
+                time: 0.0,
+                maximized: false,
+            }
         }
 
         fn frame(&mut self, events: Vec<Event>) -> egui::FullOutput {
@@ -207,7 +268,10 @@ mod tests {
     fn texts(out: &egui::FullOutput) -> Vec<(String, Rect)> {
         fn walk(s: &egui::Shape, v: &mut Vec<(String, Rect)>) {
             match s {
-                egui::Shape::Text(t) => v.push((t.galley.text().to_string(), Rect::from_min_size(t.pos, t.galley.size()))),
+                egui::Shape::Text(t) => v.push((
+                    t.galley.text().to_string(),
+                    Rect::from_min_size(t.pos, t.galley.size()),
+                )),
                 egui::Shape::Vec(s) => s.iter().for_each(|s| walk(s, v)),
                 _ => {}
             }
@@ -218,17 +282,34 @@ mod tests {
     }
 
     fn button(p: Pos2, pressed: bool) -> Event {
-        Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() }
+        Event::PointerButton {
+            pos: p,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        }
     }
 
     impl Win {
         /// Frames for a pointer gesture: move to `path[0]`, press, move along `path`, release. The
         /// viewport commands the frames sent.
         fn gesture(&mut self, path: &[Pos2]) -> Vec<ViewportCommand> {
-            let mut events = vec![vec![Event::PointerMoved(path[0])], vec![button(path[0], true)]];
+            let mut events = vec![
+                vec![Event::PointerMoved(path[0])],
+                vec![button(path[0], true)],
+            ];
             events.extend(path[1..].iter().map(|p| vec![Event::PointerMoved(*p)]));
             events.push(vec![button(*path.last().unwrap_or(&path[0]), false)]);
-            events.into_iter().flat_map(|e| self.frame(e).viewport_output.remove(&ViewportId::ROOT).map(|v| v.commands).unwrap_or_default()).collect()
+            events
+                .into_iter()
+                .flat_map(|e| {
+                    self.frame(e)
+                        .viewport_output
+                        .remove(&ViewportId::ROOT)
+                        .map(|v| v.commands)
+                        .unwrap_or_default()
+                })
+                .collect()
         }
 
         fn click(&mut self, p: Pos2) -> Vec<ViewportCommand> {
@@ -236,19 +317,26 @@ mod tests {
         }
 
         fn caption(&self, c: Caption) -> Rect {
-            self.ctx.read_response(caption_id(c)).map(|r| r.rect).unwrap_or(Rect::NOTHING)
+            self.ctx
+                .read_response(caption_id(c))
+                .map(|r| r.rect)
+                .unwrap_or(Rect::NOTHING)
         }
 
         /// The bar's clickable widgets other than its background and the caption buttons.
         fn bar_widgets(&self) -> Vec<Rect> {
-            let skip: Vec<Id> = std::iter::once(Id::new("titlebar-drag")).chain(CAPTIONS.map(caption_id)).collect();
+            let skip: Vec<Id> = std::iter::once(Id::new("titlebar-drag"))
+                .chain(CAPTIONS.map(caption_id))
+                .collect();
             self.ctx.viewport(|v| {
                 v.prev_pass
                     .widgets
                     .layers()
                     .filter(|(l, _)| l.order != Order::Foreground)
                     .flat_map(|(_, ws)| ws.iter())
-                    .filter(|w| w.sense.senses_click() && w.rect.top() < 32.0 && !skip.contains(&w.id))
+                    .filter(|w| {
+                        w.sense.senses_click() && w.rect.top() < 32.0 && !skip.contains(&w.id)
+                    })
                     .map(|w| w.rect)
                     .collect()
             })
@@ -262,15 +350,31 @@ mod tests {
             w.frame(vec![]);
             let out = w.frame(vec![]);
             let [min, max, close] = CAPTIONS.map(|c| w.caption(c));
-            assert_eq!((close.right(), close.top()), (width, 0.0), "Close sits in the window's corner at {width}");
-            assert!(close.height() >= 30.0 && [min, max, close].iter().all(|r| r.width() == BUTTON_WIDTH));
+            assert_eq!(
+                (close.right(), close.top()),
+                (width, 0.0),
+                "Close sits in the window's corner at {width}"
+            );
+            assert!(
+                close.height() >= 30.0
+                    && [min, max, close].iter().all(|r| r.width() == BUTTON_WIDTH)
+            );
             assert_eq!((min.right(), max.right()), (max.left(), close.left()));
             let widgets = w.bar_widgets();
-            assert!(widgets.len() >= 11, "home, eight menus, workspace switcher, search: {widgets:?}");
+            assert!(
+                widgets.len() >= 11,
+                "home, eight menus, workspace switcher, search: {widgets:?}"
+            );
             for (i, a) in widgets.iter().enumerate() {
-                assert!(a.right() <= min.left() - 8.0, "{a:?} runs into the caption buttons at {width}");
+                assert!(
+                    a.right() <= min.left() - 8.0,
+                    "{a:?} runs into the caption buttons at {width}"
+                );
                 for b in &widgets[i + 1..] {
-                    assert!(!a.shrink(0.5).intersects(b.shrink(0.5)), "{a:?} overlaps {b:?} at {width}");
+                    assert!(
+                        !a.shrink(0.5).intersects(b.shrink(0.5)),
+                        "{a:?} overlaps {b:?} at {width}"
+                    );
                 }
             }
             // Wide windows show the whole group; narrow ones drop Discord, then the search icon.
@@ -285,14 +389,28 @@ mod tests {
     #[test]
     fn close_runs_the_quit_flow_instead_of_closing_the_window() {
         let mut w = Win::new(1000.0);
-        w.app.run("file.new", serde_json::json!({"width": 100, "height": 100})).unwrap();
-        w.app.run("shape.rectangle", serde_json::json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
+        w.app
+            .run("file.new", serde_json::json!({"width": 100, "height": 100}))
+            .unwrap();
+        w.app
+            .run(
+                "shape.rectangle",
+                serde_json::json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+            )
+            .unwrap();
         w.frame(vec![]);
         let close = w.caption(Caption::Close).center();
         let cmds = w.click(close);
-        assert!(!cmds.iter().any(|c| matches!(c, ViewportCommand::Close)), "{cmds:?}");
+        assert!(
+            !cmds.iter().any(|c| matches!(c, ViewportCommand::Close)),
+            "{cmds:?}"
+        );
         let dialog = w.app.ui.dialog.as_ref().map(|d| d.kind.clone());
-        assert_eq!(dialog.as_deref(), Some(crate::unsaved::KIND), "a modified document asks first");
+        assert_eq!(
+            dialog.as_deref(),
+            Some(crate::unsaved::KIND),
+            "a modified document asks first"
+        );
         assert_ne!(w.app.ui.status, "quit");
         // Nothing to save: the host is told to quit.
         w.app.ui.dialog = None;
@@ -305,11 +423,17 @@ mod tests {
     fn minimize_and_maximize_follow_the_window_state() {
         let mut w = Win::new(1000.0);
         w.frame(vec![]);
-        let (min, max) = (w.caption(Caption::Minimize).center(), w.caption(Caption::Maximize).center());
+        let (min, max) = (
+            w.caption(Caption::Minimize).center(),
+            w.caption(Caption::Maximize).center(),
+        );
         assert!(w.click(min).contains(&ViewportCommand::Minimized(true)));
         assert!(w.click(max).contains(&ViewportCommand::Maximized(true)));
         w.maximized = true;
-        assert!(w.click(max).contains(&ViewportCommand::Maximized(false)), "Restore");
+        assert!(
+            w.click(max).contains(&ViewportCommand::Maximized(false)),
+            "Restore"
+        );
     }
 
     #[test]
@@ -317,9 +441,18 @@ mod tests {
         let mut w = Win::new(1440.0);
         w.frame(vec![]);
         let empty = pos2(700.0, 16.0);
-        assert!(w.bar_widgets().iter().all(|r| !r.contains(empty)), "the probe point must be empty bar space");
+        assert!(
+            w.bar_widgets().iter().all(|r| !r.contains(empty)),
+            "the probe point must be empty bar space"
+        );
         let cmds = w.gesture(&[empty, empty + vec2(12.0, 4.0), empty + vec2(30.0, 8.0)]);
-        assert_eq!(cmds.iter().filter(|c| matches!(c, ViewportCommand::StartDrag)).count(), 1, "{cmds:?}");
+        assert_eq!(
+            cmds.iter()
+                .filter(|c| matches!(c, ViewportCommand::StartDrag))
+                .count(),
+            1,
+            "{cmds:?}"
+        );
         // Double-click toggles maximize.
         let mut cmds = w.click(empty);
         cmds.extend(w.click(empty));
@@ -328,12 +461,21 @@ mod tests {
         w.time += 1.0;
         let mut cmds = w.click(empty);
         cmds.extend(w.click(empty));
-        assert!(cmds.contains(&ViewportCommand::Maximized(false)), "{cmds:?}");
+        assert!(
+            cmds.contains(&ViewportCommand::Maximized(false)),
+            "{cmds:?}"
+        );
         // Widgets keep their clicks: dragging from a menu title doesn't move the window.
-        let file = texts(&w.frame(vec![])).into_iter().find(|(t, _)| t == "File").map(|(_, r)| r.center());
+        let file = texts(&w.frame(vec![]))
+            .into_iter()
+            .find(|(t, _)| t == "File")
+            .map(|(_, r)| r.center());
         let file = file.expect("the File menu title");
         let cmds = w.gesture(&[file, file + vec2(12.0, 4.0), file + vec2(30.0, 8.0)]);
-        assert!(!cmds.iter().any(|c| matches!(c, ViewportCommand::StartDrag)), "{cmds:?}");
+        assert!(
+            !cmds.iter().any(|c| matches!(c, ViewportCommand::StartDrag)),
+            "{cmds:?}"
+        );
     }
 
     #[test]
@@ -355,11 +497,19 @@ mod tests {
             assert_eq!(cmds, vec![ViewportCommand::BeginResize(dir)], "at {p:?}");
         }
         let out = w.frame(vec![Event::PointerMoved(pos2(1.0, 300.0))]);
-        assert_eq!(out.platform_output.cursor_icon, CursorIcon::ResizeHorizontal);
+        assert_eq!(
+            out.platform_output.cursor_icon,
+            CursorIcon::ResizeHorizontal
+        );
         // Maximized: no zones, and the window's top-right corner is Close.
         w.maximized = true;
         let cmds = w.gesture(&[pos2(1.0, 300.0), pos2(8.0, 300.0)]);
-        assert!(!cmds.iter().any(|c| matches!(c, ViewportCommand::BeginResize(_))), "{cmds:?}");
+        assert!(
+            !cmds
+                .iter()
+                .any(|c| matches!(c, ViewportCommand::BeginResize(_))),
+            "{cmds:?}"
+        );
         assert!(w.click(pos2(999.5, 0.5)).is_empty());
         assert_eq!(w.app.ui.status, "quit");
     }

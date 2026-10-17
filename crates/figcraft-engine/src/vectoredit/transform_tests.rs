@@ -42,7 +42,10 @@ fn the_box_shows_for_two_or_more_points_with_the_move_tool() {
     let doc = s.doc().unwrap().clone();
     assert!(shown_box(&doc, &ve(&s)).is_none(), "nothing selected");
     ex(&mut s, "vector.edit.select", json!({"vertices": [0]}));
-    assert!(shown_box(s.doc().unwrap(), &ve(&s)).is_none(), "one point has no box");
+    assert!(
+        shown_box(s.doc().unwrap(), &ve(&s)).is_none(),
+        "one point has no box"
+    );
     select_all(&mut s);
     let b = shown_box(s.doc().unwrap(), &ve(&s)).unwrap();
     assert_eq!((b.width, b.height, b.points.len()), (100.0, 100.0, 4));
@@ -95,16 +98,34 @@ fn edges_scale_one_axis_and_handles_follow() {
     let v = vertex_at(&net(&s, id), 100.0, 0.0);
     ex(&mut s, "vector.edit.select", json!({"vertices": [v]}));
     ex(&mut s, "vector.edit.smooth", json!({}));
-    let before: Vec<(f64, f64)> = net(&s, id).incident(v).iter().map(|(sg, st)| net(&s, id).handle(*sg, *st).unwrap()).collect();
+    let before: Vec<(f64, f64)> = net(&s, id)
+        .incident(v)
+        .iter()
+        .map(|(sg, st)| net(&s, id).handle(*sg, *st).unwrap())
+        .collect();
     select_all(&mut s);
     drag(&mut s, (100.0, 50.0), (200.0, 50.0));
     let n = net(&s, id);
-    let after: Vec<(f64, f64)> = n.incident(v).iter().map(|(sg, st)| n.handle(*sg, *st).unwrap()).collect();
+    let after: Vec<(f64, f64)> = n
+        .incident(v)
+        .iter()
+        .map(|(sg, st)| n.handle(*sg, *st).unwrap())
+        .collect();
     for (a, b) in before.iter().zip(&after) {
-        assert!((b.0 - a.0 * 2.0).abs() < 1e-6 && (b.1 - a.1).abs() < 1e-6, "{a:?} → {b:?}");
+        assert!(
+            (b.0 - a.0 * 2.0).abs() < 1e-6 && (b.1 - a.1).abs() < 1e-6,
+            "{a:?} → {b:?}"
+        );
     }
-    assert!(near(page_pt(&s, id, v), pt(200.0, 0.0)), "{:?}", page_pt(&s, id, v));
-    assert!((0..4).any(|i| near(page_pt(&s, id, i), pt(0.0, 100.0))), "the left side stays");
+    assert!(
+        near(page_pt(&s, id, v), pt(200.0, 0.0)),
+        "{:?}",
+        page_pt(&s, id, v)
+    );
+    assert!(
+        (0..4).any(|i| near(page_pt(&s, id, i), pt(0.0, 100.0))),
+        "the left side stays"
+    );
 }
 
 #[test]
@@ -117,9 +138,16 @@ fn outside_a_corner_rotates_and_inside_moves() {
     s.pointer(&ev(PointerKind::Down, 110.0, -10.0)).unwrap();
     s.pointer(&ev(PointerKind::Move, 110.0, 110.0)).unwrap();
     let c = s.vector_edit_box().unwrap();
-    assert!(near(c[0], pt(100.0, 0.0)), "the box turns with the points: {c:?}");
+    assert!(
+        near(c[0], pt(100.0, 0.0)),
+        "the box turns with the points: {c:?}"
+    );
     s.pointer(&ev(PointerKind::Up, 110.0, 110.0)).unwrap();
-    assert!(near(page_pt(&s, id, v), pt(100.0, 100.0)), "{:?}", page_pt(&s, id, v));
+    assert!(
+        near(page_pt(&s, id, v), pt(100.0, 100.0)),
+        "{:?}",
+        page_pt(&s, id, v)
+    );
     s.undo().unwrap();
     assert!(near(page_pt(&s, id, v), pt(100.0, 0.0)));
     // Inside the box (clear of the network) the selected points move together.
@@ -128,7 +156,13 @@ fn outside_a_corner_rotates_and_inside_moves() {
     ex(&mut s, "vector.edit.select", json!({"vertices": [a, w]}));
     drag(&mut s, (60.0, 40.0), (80.0, 50.0));
     assert!(near(page_pt(&s, id, w), pt(120.0, 110.0)) && near(page_pt(&s, id, a), pt(20.0, 10.0)));
-    assert!(near(page_pt(&s, id, vertex_at(&net(&s, id), 0.0, 100.0)), pt(0.0, 100.0)), "unselected points stay");
+    assert!(
+        near(
+            page_pt(&s, id, vertex_at(&net(&s, id), 0.0, 100.0)),
+            pt(0.0, 100.0)
+        ),
+        "unselected points stay"
+    );
     // A click inside without a drag clears the point selection; Shift-drag marquees instead.
     click(&mut s, 60.0, 50.0);
     assert!(ve(&s).vertices.is_empty());
@@ -138,14 +172,28 @@ fn outside_a_corner_rotates_and_inside_moves() {
 fn box_commands_resize_rotate_and_transform() {
     let mut s = Session::new();
     let id = rect(&mut s);
-    assert!(s.execute("vector.edit.bounds", &json!({})).is_err(), "nothing selected");
+    assert!(
+        s.execute("vector.edit.bounds", &json!({})).is_err(),
+        "nothing selected"
+    );
     select_all(&mut s);
     let b = ex(&mut s, "vector.edit.bounds", json!({}));
-    assert_eq!((b["x"].as_f64(), b["width"].as_f64(), b["height"].as_f64()), (Some(0.0), Some(100.0), Some(100.0)));
+    assert_eq!(
+        (b["x"].as_f64(), b["width"].as_f64(), b["height"].as_f64()),
+        (Some(0.0), Some(100.0), Some(100.0))
+    );
     ex(&mut s, "vector.edit.resize", json!({"width": 50}));
     let r = s.doc().unwrap().world_bounds(id).unwrap();
-    assert_eq!((r.x0, r.x1, r.height()), (0.0, 50.0, 100.0), "the top-left stays");
-    ex(&mut s, "vector.edit.resize", json!({"height": 200, "center": true}));
+    assert_eq!(
+        (r.x0, r.x1, r.height()),
+        (0.0, 50.0, 100.0),
+        "the top-left stays"
+    );
+    ex(
+        &mut s,
+        "vector.edit.resize",
+        json!({"height": 200, "center": true}),
+    );
     let r = s.doc().unwrap().world_bounds(id).unwrap();
     assert_eq!((r.y0, r.y1), (-50.0, 150.0), "about the centre");
     // Rotation is counter-clockwise like a layer's.
@@ -154,15 +202,30 @@ fn box_commands_resize_rotate_and_transform() {
     select_all(&mut s);
     let v = vertex_at(&net(&s, id), 100.0, 0.0);
     ex(&mut s, "vector.edit.rotate", json!({"angle": 90}));
-    assert!(near(page_pt(&s, id, v), pt(0.0, 0.0)), "{:?}", page_pt(&s, id, v));
+    assert!(
+        near(page_pt(&s, id, v), pt(0.0, 0.0)),
+        "{:?}",
+        page_pt(&s, id, v)
+    );
     s.undo().unwrap();
     select_all(&mut s);
-    ex(&mut s, "vector.edit.transform", json!({"matrix": [2, 0, 0, 1, 10, 0], "vertices": [v]}));
+    ex(
+        &mut s,
+        "vector.edit.transform",
+        json!({"matrix": [2, 0, 0, 1, 10, 0], "vertices": [v]}),
+    );
     assert!(near(page_pt(&s, id, v), pt(210.0, 0.0)));
-    assert!(s.execute("vector.edit.transform", &json!({"matrix": [1, 0]})).is_err());
+    assert!(
+        s.execute("vector.edit.transform", &json!({"matrix": [1, 0]}))
+            .is_err()
+    );
     // A singular or overflowing matrix changes nothing.
     let before = net(&s, id);
-    ex(&mut s, "vector.edit.transform", json!({"matrix": [1e308, 0, 0, 1e308, 1e308, 0]}));
+    ex(
+        &mut s,
+        "vector.edit.transform",
+        json!({"matrix": [1e308, 0, 0, 1e308, 1e308, 0]}),
+    );
     assert_eq!(net(&s, id), before);
 }
 
@@ -189,28 +252,56 @@ fn flip_and_rotate_act_on_selected_points_while_editing() {
 fn dragged_points_snap_to_other_vectors_points_and_midpoints() {
     let mut s = Session::new();
     // Another vector with a point clear of its box's edge and centre lines.
-    ex(&mut s, "vector.create", json!({"points": [[300, 0], [400, 100], [320, 60]], "closed": true}));
+    ex(
+        &mut s,
+        "vector.create",
+        json!({"points": [[300, 0], [400, 100], [320, 60]], "closed": true}),
+    );
     let id = rect(&mut s);
     let v = vertex_at(&net(&s, id), 100.0, 100.0);
     ex(&mut s, "vector.edit.select", json!({"vertices": [v]}));
     s.pointer(&ev(PointerKind::Down, 100.0, 100.0)).unwrap();
     s.pointer(&ev(PointerKind::Move, 318.0, 62.0)).unwrap();
-    let marker = s.tool.overlay.guides.iter().any(|g| g.x0 == g.x1 && g.y0 == g.y1 && near(pt(g.x0, g.y0), pt(320.0, 60.0)));
-    assert!(marker, "a marker on the point landed on: {:?}", s.tool.overlay.guides);
+    let marker = s
+        .tool
+        .overlay
+        .guides
+        .iter()
+        .any(|g| g.x0 == g.x1 && g.y0 == g.y1 && near(pt(g.x0, g.y0), pt(320.0, 60.0)));
+    assert!(
+        marker,
+        "a marker on the point landed on: {:?}",
+        s.tool.overlay.guides
+    );
     s.pointer(&ev(PointerKind::Up, 318.0, 62.0)).unwrap();
-    assert!(near(page_pt(&s, id, v), pt(320.0, 60.0)), "{:?}", page_pt(&s, id, v));
-    assert!(s.tool.overlay.guides.is_empty(), "guides go with the gesture");
+    assert!(
+        near(page_pt(&s, id, v), pt(320.0, 60.0)),
+        "{:?}",
+        page_pt(&s, id, v)
+    );
+    assert!(
+        s.tool.overlay.guides.is_empty(),
+        "guides go with the gesture"
+    );
     s.undo().unwrap();
     // Segment midpoints of the vector itself (the top edge's middle).
     ex(&mut s, "vector.edit.select", json!({"vertices": [v]}));
     drag(&mut s, (100.0, 100.0), (52.0, 3.0));
-    assert!(near(page_pt(&s, id, v), pt(50.0, 0.0)), "{:?}", page_pt(&s, id, v));
+    assert!(
+        near(page_pt(&s, id, v), pt(50.0, 0.0)),
+        "{:?}",
+        page_pt(&s, id, v)
+    );
 }
 
 #[test]
 fn ctrl_suppresses_snapping_and_the_pixel_grid_rounds() {
     let mut s = Session::new();
-    ex(&mut s, "vector.create", json!({"points": [[300, 0], [400, 100], [320, 60]], "closed": true}));
+    ex(
+        &mut s,
+        "vector.create",
+        json!({"points": [[300, 0], [400, 100], [320, 60]], "closed": true}),
+    );
     let id = rect(&mut s);
     let v = vertex_at(&net(&s, id), 100.0, 100.0);
     ex(&mut s, "vector.edit.select", json!({"vertices": [v]}));
@@ -223,14 +314,22 @@ fn ctrl_suppresses_snapping_and_the_pixel_grid_rounds() {
     s.pointer(&ev(PointerKind::Down, 100.0, 100.0)).unwrap();
     s.pointer(&cmd(PointerKind::Move, 318.4, 62.3)).unwrap();
     s.pointer(&cmd(PointerKind::Up, 318.4, 62.3)).unwrap();
-    assert!(near(page_pt(&s, id, v), pt(318.0, 62.0)), "no point snapping, whole pixels: {:?}", page_pt(&s, id, v));
+    assert!(
+        near(page_pt(&s, id, v), pt(318.0, 62.0)),
+        "no point snapping, whole pixels: {:?}",
+        page_pt(&s, id, v)
+    );
     s.undo().unwrap();
     ex(&mut s, "view.snapPixel", json!({"on": false}));
     ex(&mut s, "vector.edit.select", json!({"vertices": [v]}));
     s.pointer(&ev(PointerKind::Down, 100.0, 100.0)).unwrap();
     s.pointer(&cmd(PointerKind::Move, 318.4, 62.3)).unwrap();
     s.pointer(&cmd(PointerKind::Up, 318.4, 62.3)).unwrap();
-    assert!(near(page_pt(&s, id, v), pt(318.4, 62.3)), "{:?}", page_pt(&s, id, v));
+    assert!(
+        near(page_pt(&s, id, v), pt(318.4, 62.3)),
+        "{:?}",
+        page_pt(&s, id, v)
+    );
 }
 
 #[test]
@@ -249,7 +348,11 @@ fn handles_follow_the_pointer_while_the_vector_refits() {
             n.vertices[if *st { x.b } else { x.a }].y == 0.0
         })
         .unwrap();
-    ex(&mut s, "vector.edit.setHandle", json!({"segment": seg, "start": start, "x": 30, "y": 0, "independent": true}));
+    ex(
+        &mut s,
+        "vector.edit.setHandle",
+        json!({"segment": seg, "start": start, "x": 30, "y": 0, "independent": true}),
+    );
     ex(&mut s, "vector.edit.select", json!({"vertices": [a]}));
     s.pointer(&ev(PointerKind::Down, 30.0, 0.0)).unwrap();
     for (x, y) in [(-10.0, -40.0), (-30.0, -60.0), (-50.0, -80.0)] {
@@ -265,11 +368,18 @@ fn handles_follow_the_pointer_while_the_vector_refits() {
 #[test]
 fn pens_snap_their_clicks() {
     let mut s = Session::new();
-    ex(&mut s, "vector.create", json!({"points": [[300, 0], [400, 100], [320, 60]], "closed": true}));
+    ex(
+        &mut s,
+        "vector.create",
+        json!({"points": [[300, 0], [400, 100], [320, 60]], "closed": true}),
+    );
     let id = rect(&mut s);
     ex(&mut s, "vector.edit.tool", json!({"tool": "pen"}));
     s.pointer(&ev(PointerKind::Hover, 322.0, 58.0)).unwrap();
-    assert!(!s.tool.overlay.guides.is_empty(), "hovering shows where the click lands");
+    assert!(
+        !s.tool.overlay.guides.is_empty(),
+        "hovering shows where the click lands"
+    );
     click(&mut s, 322.0, 58.0);
     let n = net(&s, id);
     assert!(near(page_pt(&s, id, n.vertices.len() - 1), pt(320.0, 60.0)));
@@ -292,9 +402,15 @@ fn edit_mode_transform_commands_survive_junk() {
         json!({"width": -1e308, "height": "x", "center": "maybe", "angle": 1e308, "cx": "NaN", "matrix": [1, 2, 3, "a", 5, 6]}),
         json!({"matrix": [0, 0, 0, 0, 0, 0], "vertices": [1e12, -1], "width": 1e308, "height": 0}),
     ];
-    for c in
-        ["object.flipH", "object.flipV", "object.rotate180", "object.rotateLeft", "object.rotateRight", "vector.edit.resize", "vector.edit.rotate"]
-    {
+    for c in [
+        "object.flipH",
+        "object.flipV",
+        "object.rotate180",
+        "object.rotateLeft",
+        "object.rotateRight",
+        "vector.edit.resize",
+        "vector.edit.rotate",
+    ] {
         for j in &junk {
             let mut s = Session::new();
             let id = rect(&mut s);
@@ -303,7 +419,12 @@ fn edit_mode_transform_commands_survive_junk() {
                 panic!("{cmd} panicked on {j}: {msg}");
             }
             let n = net(&s, id);
-            assert!(n.vertices.iter().all(|v| v.x.is_finite() && v.y.is_finite()), "{c} broke the points on {j}");
+            assert!(
+                n.vertices
+                    .iter()
+                    .all(|v| v.x.is_finite() && v.y.is_finite()),
+                "{c} broke the points on {j}"
+            );
         }
     }
 }

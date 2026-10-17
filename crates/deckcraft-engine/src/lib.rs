@@ -4,7 +4,14 @@
 //! `text.insert`, `format.bold`…) and JSON parameters. The egui UI, the CLI, the control channel
 //! and MCP all go through [`Session::execute`]. Pointer tools reduce to commands too, so every
 //! gesture is journaled, undoable and replayable.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod cmd;
@@ -79,7 +86,11 @@ impl TextSel {
         self.anchor != self.caret
     }
     pub fn ordered(&self) -> ((usize, usize), (usize, usize)) {
-        if self.anchor <= self.caret { (self.anchor, self.caret) } else { (self.caret, self.anchor) }
+        if self.anchor <= self.caret {
+            (self.anchor, self.caret)
+        } else {
+            (self.caret, self.anchor)
+        }
     }
     /// Is the caret drawn at the end of the line before (upstream), not the start of the next?
     pub fn at_line_end(&self) -> bool {
@@ -184,7 +195,10 @@ impl DocState {
             saved_doc: doc.clone(),
             doc,
             selection: Selection::default(),
-            history: History { limit: 500, ..Default::default() },
+            history: History {
+                limit: 500,
+                ..Default::default()
+            },
             path,
             revision: 1,
             interaction: None,
@@ -205,34 +219,61 @@ impl DocState {
             .unwrap_or_else(|| self.title.clone())
     }
     pub fn current_slide(&self) -> Option<&Slide> {
-        self.doc.slides.get(self.selection.slide).map(|s| s.as_ref())
+        self.doc
+            .slides
+            .get(self.selection.slide)
+            .map(|s| s.as_ref())
     }
     /// Shapes of the edited tree (current slide, or the master/layout in Slide Master view).
     pub fn shapes(&self) -> &[Shape] {
         match self.selection.target {
-            Target::Slides => self.current_slide().map(|s| s.shapes.as_slice()).unwrap_or(&[]),
-            Target::Master { master } => self.doc.masters.get(master).map(|m| m.shapes.as_slice()).unwrap_or(&[]),
-            Target::Layout { master, layout } => {
-                self.doc.masters.get(master).and_then(|m| m.layouts.get(layout)).map(|l| l.shapes.as_slice()).unwrap_or(&[])
-            }
+            Target::Slides => self
+                .current_slide()
+                .map(|s| s.shapes.as_slice())
+                .unwrap_or(&[]),
+            Target::Master { master } => self
+                .doc
+                .masters
+                .get(master)
+                .map(|m| m.shapes.as_slice())
+                .unwrap_or(&[]),
+            Target::Layout { master, layout } => self
+                .doc
+                .masters
+                .get(master)
+                .and_then(|m| m.layouts.get(layout))
+                .map(|l| l.shapes.as_slice())
+                .unwrap_or(&[]),
         }
     }
     pub fn shape(&self, id: ShapeId) -> Option<&Shape> {
         deckcraft_model::find_shape(self.shapes(), id)
     }
     pub fn selected_shapes(&self) -> Vec<&Shape> {
-        self.selection.shapes.iter().filter_map(|id| self.shape(*id)).collect()
+        self.selection
+            .shapes
+            .iter()
+            .filter_map(|id| self.shape(*id))
+            .collect()
     }
 }
 
 /// Mutable access to the edited shape tree of a presentation.
 pub fn shapes_mut<'a>(doc: &'a mut Presentation, sel: &Selection) -> Option<&'a mut Vec<Shape>> {
     match sel.target {
-        Target::Slides => doc.slides.get_mut(sel.slide).map(|s| &mut Arc::make_mut(s).shapes),
-        Target::Master { master } => doc.masters.get_mut(master).map(|m| &mut Arc::make_mut(m).shapes),
-        Target::Layout { master, layout } => {
-            doc.masters.get_mut(master).and_then(|m| Arc::make_mut(m).layouts.get_mut(layout)).map(|l| &mut l.shapes)
-        }
+        Target::Slides => doc
+            .slides
+            .get_mut(sel.slide)
+            .map(|s| &mut Arc::make_mut(s).shapes),
+        Target::Master { master } => doc
+            .masters
+            .get_mut(master)
+            .map(|m| &mut Arc::make_mut(m).shapes),
+        Target::Layout { master, layout } => doc
+            .masters
+            .get_mut(master)
+            .and_then(|m| Arc::make_mut(m).layouts.get_mut(layout))
+            .map(|l| &mut l.shapes),
     }
 }
 
@@ -421,7 +462,11 @@ impl Session {
             if let Some(dir) = &self.recovery_dir {
                 recovery::discard(dir, d.uid);
             }
-            self.active = if self.docs.is_empty() { None } else { Some(i.min(self.docs.len() - 1)) };
+            self.active = if self.docs.is_empty() {
+                None
+            } else {
+                Some(i.min(self.docs.len() - 1))
+            };
         }
     }
     pub fn next_untitled(&mut self) -> String {
@@ -438,16 +483,22 @@ impl Session {
     fn execute_unguarded(&mut self, id: &str, params: &Value) -> Result<Value> {
         let spec = find_command(id).ok_or_else(|| EngineError::UnknownCommand(id.into()))?;
         // Any other edit (or a click, a key, undo) settles an input method's composition first.
-        if self.depth == 0 && (spec.journal || spec.undoable) && !matches!(id, "text.compose" | "text.commit") {
+        if self.depth == 0
+            && (spec.journal || spec.undoable)
+            && !matches!(id, "text.compose" | "text.commit")
+        {
             self.end_composition();
         }
         if let Err(e) = (spec.enabled)(self) {
-            let named = (e == cmd::NOTHING_SELECTED || e == cmd::SELECT_TWO) && (params.get("ids").is_some() || params.get("id").is_some());
+            let named = (e == cmd::NOTHING_SELECTED || e == cmd::SELECT_TWO)
+                && (params.get("ids").is_some() || params.get("id").is_some());
             if !named {
                 return Err(EngineError::Disabled(id.into(), e));
             }
         }
-        let before = self.active().map(|d| (d.uid, d.doc.clone(), d.selection.clone()));
+        let before = self
+            .active()
+            .map(|d| (d.uid, d.doc.clone(), d.selection.clone()));
         let outer = self.depth == 0;
         self.depth += 1;
         let r = (spec.run)(self, params);
@@ -463,7 +514,14 @@ impl Session {
             && spec.undoable
             && outer
         {
-            push_undo(st, HistoryEntry { label: spec.label.to_string(), doc: old, selection: sel });
+            push_undo(
+                st,
+                HistoryEntry {
+                    label: spec.label.to_string(),
+                    doc: old,
+                    selection: sel,
+                },
+            );
         }
         if spec.journal && outer {
             self.journal.push((id.to_string(), params.clone()));
@@ -479,7 +537,10 @@ impl Session {
     }
 
     /// Mutate the active presentation (copy-on-write) and bump the revision.
-    pub fn edit<T>(&mut self, f: impl FnOnce(&mut Presentation, &mut Selection) -> Result<T>) -> Result<T> {
+    pub fn edit<T>(
+        &mut self,
+        f: impl FnOnce(&mut Presentation, &mut Selection) -> Result<T>,
+    ) -> Result<T> {
         let st = self.doc_mut()?;
         let mut doc = (*st.doc).clone();
         let mut sel = st.selection.clone();
@@ -495,9 +556,18 @@ impl Session {
     /// composition becomes one undo step. Nothing happens without one.
     pub fn end_composition(&mut self) {
         let Some(st) = self.active_mut() else { return };
-        let Some(c) = st.composition.take() else { return };
+        let Some(c) = st.composition.take() else {
+            return;
+        };
         if !Arc::ptr_eq(&c.before, &st.doc) {
-            push_undo(st, HistoryEntry { label: "Type Text".into(), doc: c.before, selection: c.before_selection });
+            push_undo(
+                st,
+                HistoryEntry {
+                    label: "Type Text".into(),
+                    doc: c.before,
+                    selection: c.before_selection,
+                },
+            );
         }
     }
 
@@ -524,7 +594,13 @@ fn clamp_selection(st: &mut DocState) {
     } else if st.selection.slide >= n {
         st.selection.slide = n - 1;
     }
-    let ids: Vec<ShapeId> = st.selection.shapes.iter().copied().filter(|id| st.shape(*id).is_some()).collect();
+    let ids: Vec<ShapeId> = st
+        .selection
+        .shapes
+        .iter()
+        .copied()
+        .filter(|id| st.shape(*id).is_some())
+        .collect();
     st.selection.shapes = ids;
     if let Some(t) = &st.selection.text
         && !t.notes
@@ -532,11 +608,25 @@ fn clamp_selection(st: &mut DocState) {
     {
         st.selection.text = None;
     }
-    let slides: Vec<SlideId> = st.selection.slides.iter().copied().filter(|id| st.doc.slide(*id).is_some()).collect();
+    let slides: Vec<SlideId> = st
+        .selection
+        .slides
+        .iter()
+        .copied()
+        .filter(|id| st.doc.slide(*id).is_some())
+        .collect();
     st.selection.slides = slides;
     match st.selection.target {
-        Target::Master { master } if master >= st.doc.masters.len() => st.selection.target = Target::Slides,
-        Target::Layout { master, layout } if st.doc.masters.get(master).is_none_or(|m| layout >= m.layouts.len()) => {
+        Target::Master { master } if master >= st.doc.masters.len() => {
+            st.selection.target = Target::Slides
+        }
+        Target::Layout { master, layout }
+            if st
+                .doc
+                .masters
+                .get(master)
+                .is_none_or(|m| layout >= m.layouts.len()) =>
+        {
             st.selection.target = Target::Slides
         }
         _ => {}

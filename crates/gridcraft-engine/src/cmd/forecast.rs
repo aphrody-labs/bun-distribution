@@ -8,7 +8,10 @@ use std::sync::Arc;
 
 use gridcraft_core::{CellRef, RangeRef, Value};
 use gridcraft_functions::Timeline;
-use gridcraft_model::{Anchor, Cell, Chart, ChartKind, Formula, LegendPos, Series, Sheet, StyleId, Table, TableColumn, TotalsFn};
+use gridcraft_model::{
+    Anchor, Cell, Chart, ChartKind, Formula, LegendPos, Series, Sheet, StyleId, Table, TableColumn,
+    TotalsFn,
+};
 use serde_json::{Value as Json, json};
 
 use super::*;
@@ -27,13 +30,17 @@ const MAX_WORK: u64 = 500_000;
 
 /// Forecast rows by default: a third of the history, within [`max_periods`].
 fn default_periods(history: usize) -> u32 {
-    u32::try_from(history.div_ceil(3)).unwrap_or(u32::MAX).clamp(1, max_periods(history))
+    u32::try_from(history.div_ceil(3))
+        .unwrap_or(u32::MAX)
+        .clamp(1, max_periods(history))
 }
 
 /// Most forecast rows for `history` rows of history.
 fn max_periods(history: usize) -> u32 {
     let h = u64::try_from(history).unwrap_or(u64::MAX).max(1);
-    u32::try_from(MAX_WORK / h).unwrap_or(u32::MAX).clamp(1, MAX_PERIODS)
+    u32::try_from(MAX_WORK / h)
+        .unwrap_or(u32::MAX)
+        .clamp(1, MAX_PERIODS)
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -54,11 +61,18 @@ fn line_cells(r: RangeRef) -> Result<Vec<CellRef>> {
         return Err(bad(CMD, format!("at most {MAX_HISTORY} rows of history")));
     }
     if r.width() == 1 {
-        Ok((r.start.row..=r.end.row).map(|row| CellRef::new(row, r.start.col)).collect())
+        Ok((r.start.row..=r.end.row)
+            .map(|row| CellRef::new(row, r.start.col))
+            .collect())
     } else if r.height() == 1 {
-        Ok((r.start.col..=r.end.col).map(|col| CellRef::new(r.start.row, col)).collect())
+        Ok((r.start.col..=r.end.col)
+            .map(|col| CellRef::new(r.start.row, col))
+            .collect())
     } else {
-        Err(bad(CMD, "the timeline and the values are each one row or one column"))
+        Err(bad(
+            CMD,
+            "the timeline and the values are each one row or one column",
+        ))
     }
 }
 
@@ -67,13 +81,18 @@ fn range_on(s: &Session, t: &str) -> Result<(usize, RangeRef)> {
     let d = s.doc()?;
     let (sh, body) = split_sheet(t);
     let si = match sh {
-        Some(n) => d.wb.sheet_index(&n).ok_or_else(|| bad(CMD, format!("no sheet named `{n}`")))?,
+        Some(n) => {
+            d.wb.sheet_index(&n)
+                .ok_or_else(|| bad(CMD, format!("no sheet named `{n}`")))?
+        }
         None => d.wb.active_sheet,
     };
     let r = RangeRef::parse(body.trim()).ok_or_else(|| bad(CMD, format!("not a range: `{t}`")))?;
     let r = if r.is_full_cols() || r.is_full_rows() {
         match d.wb.sheet(si).and_then(|s| s.used_range()) {
-            Some(u) => r.intersection(&RangeRef::new(CellRef::new(0, 0), u.end)).unwrap_or(RangeRef::cell(r.start)),
+            Some(u) => r
+                .intersection(&RangeRef::new(CellRef::new(0, 0), u.end))
+                .unwrap_or(RangeRef::cell(r.start)),
             None => RangeRef::cell(r.start),
         }
     } else {
@@ -101,14 +120,28 @@ fn source(s: &Session, p: &Json) -> Result<(usize, Vec<CellRef>, Vec<CellRef>)> 
                 None => {
                     let sh = d.wb.active().ok_or(EngineError::NoDocument)?;
                     let sel = d.selection.current();
-                    (d.wb.active_sheet, if sel.is_single() { current_region(sh, d.selection.active) } else { sel })
+                    (
+                        d.wb.active_sheet,
+                        if sel.is_single() {
+                            current_region(sh, d.selection.active)
+                        } else {
+                            sel
+                        },
+                    )
                 }
             };
             if r.width() < 2 {
-                return Err(EngineError::Other("Select a timeline column and a values column for the forecast.".into()));
+                return Err(EngineError::Other(
+                    "Select a timeline column and a values column for the forecast.".into(),
+                ));
             }
-            let col = |c: u32| RangeRef::new(CellRef::new(r.start.row, c), CellRef::new(r.end.row, c));
-            Ok((si, line_cells(col(r.start.col))?, line_cells(col(r.start.col + 1))?))
+            let col =
+                |c: u32| RangeRef::new(CellRef::new(r.start.row, c), CellRef::new(r.end.row, c));
+            Ok((
+                si,
+                line_cells(col(r.start.col))?,
+                line_cells(col(r.start.col + 1))?,
+            ))
         }
         _ => Err(bad(CMD, "give both `timeline` and `values`, or neither")),
     }
@@ -120,9 +153,13 @@ fn number(p: &Json, key: &str) -> Result<Option<f64>> {
         None | Some(Json::Null) => Ok(None),
         Some(Json::Number(n)) => Ok(n.as_f64()),
         Some(Json::String(t)) if t.trim().is_empty() => Ok(None),
-        Some(Json::String(t)) => {
-            t.trim().trim_end_matches('%').trim().parse::<f64>().map(Some).map_err(|_| bad(CMD, format!("`{key}` is not a number")))
-        }
+        Some(Json::String(t)) => t
+            .trim()
+            .trim_end_matches('%')
+            .trim()
+            .parse::<f64>()
+            .map(Some)
+            .map_err(|_| bad(CMD, format!("`{key}` is not a number"))),
         Some(_) => Err(bad(CMD, format!("`{key}` is not a number"))),
     }
 }
@@ -142,14 +179,24 @@ fn options(p: &Json) -> Result<Options> {
         None | Some(Json::Null) => 1,
         _ => match number(p, "seasonality")? {
             Some(n) if n == n.trunc() && (0.0..=8760.0).contains(&n) => n as u32,
-            _ => return Err(bad(CMD, "`seasonality` is \"auto\", 0 (none) or a season length from 2 to 8,760")),
+            _ => {
+                return Err(bad(
+                    CMD,
+                    "`seasonality` is \"auto\", 0 (none) or a season length from 2 to 8,760",
+                ));
+            }
         },
     };
     let fill = match str_param(p, "fillMissing").map(|t| t.trim().to_ascii_lowercase()) {
         None => 1,
         Some(t) if t.is_empty() || t == "interpolate" || t == "interpolation" => 1,
         Some(t) if t == "zeros" || t == "zero" => 0,
-        Some(t) => return Err(bad(CMD, format!("`fillMissing` is interpolate or zeros, not `{t}`"))),
+        Some(t) => {
+            return Err(bad(
+                CMD,
+                format!("`fillMissing` is interpolate or zeros, not `{t}`"),
+            ));
+        }
     };
     let aggregate = match str_param(p, "aggregate").map(|t| t.trim().to_ascii_lowercase()) {
         None => None,
@@ -180,7 +227,14 @@ fn options(p: &Json) -> Result<Options> {
         Some(t) if t == "column" => true,
         Some(t) => return Err(bad(CMD, format!("`chart` is line or column, not `{t}`"))),
     };
-    Ok(Options { seasonality, fill, aggregate, confidence, statistics: bool_param(p, "statistics").unwrap_or(false), column_chart })
+    Ok(Options {
+        seasonality,
+        fill,
+        aggregate,
+        confidence,
+        statistics: bool_param(p, "statistics").unwrap_or(false),
+        column_chart,
+    })
 }
 
 fn col_letters(c: u32) -> String {
@@ -191,45 +245,74 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
     let opts = options(p)?;
     let (si, tcells, vcells) = source(s, p)?;
     if tcells.len() != vcells.len() {
-        return Err(bad(CMD, "the timeline and the values need the same number of cells"));
+        return Err(bad(
+            CMD,
+            "the timeline and the values need the same number of cells",
+        ));
     }
     let d = s.doc()?;
     if d.wb.protected_structure {
-        return Err(EngineError::Other("The workbook is protected and cannot be changed.".into()));
+        return Err(EngineError::Other(
+            "The workbook is protected and cannot be changed.".into(),
+        ));
     }
     let sys = d.wb.date_system;
     let sh = d.wb.sheet(si).ok_or(EngineError::NoDocument)?;
     // A text first cell is the header.
-    let header = tcells.first().is_some_and(|c| sh.value(*c).is_text()) || vcells.first().is_some_and(|c| sh.value(*c).is_text());
+    let header = tcells.first().is_some_and(|c| sh.value(*c).is_text())
+        || vcells.first().is_some_and(|c| sh.value(*c).is_text());
     let name_of = |c: Option<&CellRef>, fallback: &str| match c.map(|c| sh.value(*c)) {
         Some(v) if header && !v.is_empty() => v.display(),
         _ => fallback.to_string(),
     };
-    let (tname, vname) = (name_of(tcells.first(), "Timeline"), name_of(vcells.first(), "Values"));
+    let (tname, vname) = (
+        name_of(tcells.first(), "Timeline"),
+        name_of(vcells.first(), "Values"),
+    );
     let skip = usize::from(header);
     let mut rows: Vec<(f64, Value)> = Vec::new();
     for (t, v) in tcells.iter().zip(&vcells).skip(skip) {
         let (tv, vv) = (sh.value(*t), sh.value(*v));
         match tv {
-            Value::Number(x) => rows.push((x, if matches!(vv, Value::Number(_)) { vv } else { Value::Empty })),
+            Value::Number(x) => rows.push((
+                x,
+                if matches!(vv, Value::Number(_)) {
+                    vv
+                } else {
+                    Value::Empty
+                },
+            )),
             Value::Empty if vv.is_empty() => {}
-            _ => return Err(EngineError::Other(format!("The timeline must hold numbers or dates ({} isn't one).", t.a1()))),
+            _ => {
+                return Err(EngineError::Other(format!(
+                    "The timeline must hold numbers or dates ({} isn't one).",
+                    t.a1()
+                )));
+            }
         }
     }
     rows.sort_by(|a, b| a.0.total_cmp(&b.0));
     let times: Vec<f64> = rows.iter().map(|r| r.0).collect();
-    let timeline =
-        Timeline::detect(&times, sys).ok_or_else(|| EngineError::Other("The timeline needs at least two points a constant step apart.".into()))?;
+    let timeline = Timeline::detect(&times, sys).ok_or_else(|| {
+        EngineError::Other("The timeline needs at least two points a constant step apart.".into())
+    })?;
     if !rows.iter().any(|r| matches!(r.1, Value::Number(_))) {
-        return Err(EngineError::Other("There are no values to forecast.".into()));
+        return Err(EngineError::Other(
+            "There are no values to forecast.".into(),
+        ));
     }
     let time_param = |key: &str| -> Result<Option<f64>> {
         match p.get(key) {
             Some(Json::Number(n)) => Ok(n.as_f64()),
-            Some(Json::String(t)) if !t.trim().is_empty() => match gridcraft_core::parse::parse_input(t.trim(), sys).value {
-                Value::Number(x) => Ok(Some(x)),
-                _ => Err(bad(CMD, format!("`{key}` is not a number or a date: `{t}`"))),
-            },
+            Some(Json::String(t)) if !t.trim().is_empty() => {
+                match gridcraft_core::parse::parse_input(t.trim(), sys).value {
+                    Value::Number(x) => Ok(Some(x)),
+                    _ => Err(bad(
+                        CMD,
+                        format!("`{key}` is not a number or a date: `{t}`"),
+                    )),
+                }
+            }
             None | Some(Json::Null) => Ok(None),
             Some(Json::String(_)) => Ok(None),
             Some(_) => Err(bad(CMD, format!("`{key}` is not a number or a date"))),
@@ -250,7 +333,9 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
                     .iter()
                     .position(|t| tol(*t, start))
                     .ok_or_else(|| bad(CMD, "`forecastStart` is not on the timeline (it is a point of the history, before its last point)"))?;
-                if rows.get(..i).is_none_or(|h| h.iter().filter(|r| matches!(r.1, Value::Number(_))).count() < 2) {
+                if rows.get(..i).is_none_or(|h| {
+                    h.iter().filter(|r| matches!(r.1, Value::Number(_))).count() < 2
+                }) {
                     return Err(EngineError::Other("The forecast start needs at least two values before it to fit the forecast.".into()));
                 }
                 i
@@ -262,16 +347,32 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
         Some(end) => steps_to(&timeline, end, cap)?,
         None => match number(p, "periods")? {
             Some(n) if n >= 1.0 && n.ceil() <= f64::from(cap) => n.ceil() as u32,
-            Some(_) => return Err(bad(CMD, format!("`periods` is from 1 to {cap} for {} rows of history", rows.len()))),
+            Some(_) => {
+                return Err(bad(
+                    CMD,
+                    format!(
+                        "`periods` is from 1 to {cap} for {} rows of history",
+                        rows.len()
+                    ),
+                ));
+            }
             None => default_periods(rows.len()),
         },
     };
-    let future: Vec<f64> =
-        (1..=periods).map(|k| timeline.after_last(k)).collect::<Option<_>>().ok_or_else(|| bad(CMD, "the forecast runs past the last date"))?;
-    let fmt_of = |c: Option<&CellRef>| c.map(|c| d.wb.styles.get(sh.style_id(*c)).num_fmt.clone()).unwrap_or_default();
+    let future: Vec<f64> = (1..=periods)
+        .map(|k| timeline.after_last(k))
+        .collect::<Option<_>>()
+        .ok_or_else(|| bad(CMD, "the forecast runs past the last date"))?;
+    let fmt_of = |c: Option<&CellRef>| {
+        c.map(|c| d.wb.styles.get(sh.style_id(*c)).num_fmt.clone())
+            .unwrap_or_default()
+    };
     let (tfmt, vfmt) = (fmt_of(tcells.get(skip)), fmt_of(vcells.get(skip)));
     let sheet_name = d.wb.next_sheet_name();
-    let table_name = (1..).map(|n| format!("Table{n}")).find(|n| d.wb.table(n).is_none()).unwrap_or_else(|| "Table".into());
+    let table_name = (1..)
+        .map(|n| format!("Table{n}"))
+        .find(|n| d.wb.table(n).is_none())
+        .unwrap_or_else(|| "Table".into());
     let chart_id = d.wb.next_object_id();
     let table_id = chart_id.saturating_add(1);
 
@@ -295,7 +396,11 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
         let base = headers.get(i).cloned().unwrap_or_default();
         let mut name = base.clone();
         let mut k = 2;
-        while headers.iter().take(i).any(|h| h.eq_ignore_ascii_case(&name)) {
+        while headers
+            .iter()
+            .take(i)
+            .any(|h| h.eq_ignore_ascii_case(&name))
+        {
             name = format!("{base}{k}");
             k += 1;
         }
@@ -305,17 +410,37 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
     }
     let width = headers.len() as u32;
     let stats_col = width + 1;
-    let chart_col = if opts.statistics { stats_col + 3 } else { width + 1 };
+    let chart_col = if opts.statistics {
+        stats_col + 3
+    } else {
+        width + 1
+    };
 
     let at = s.doc()?.wb.active_sheet;
     let index = edit(s, |cx| {
         let at = at.min(cx.wb.sheets.len());
-        let bold = cx.wb.styles.derive(StyleId::DEFAULT, |st| st.font.bold = true);
-        let tstyle = cx.wb.styles.derive(StyleId::DEFAULT, |st| st.num_fmt = tfmt.clone());
-        let vstyle = cx.wb.styles.derive(StyleId::DEFAULT, |st| st.num_fmt = vfmt.clone());
+        let bold = cx
+            .wb
+            .styles
+            .derive(StyleId::DEFAULT, |st| st.font.bold = true);
+        let tstyle = cx
+            .wb
+            .styles
+            .derive(StyleId::DEFAULT, |st| st.num_fmt = tfmt.clone());
+        let vstyle = cx
+            .wb
+            .styles
+            .derive(StyleId::DEFAULT, |st| st.num_fmt = vfmt.clone());
         let mut sheet = Sheet::new(sheet_name.clone());
         let put = |sheet: &mut Sheet, row: u32, col: u32, v: Value, style: StyleId| {
-            sheet.set_cell(CellRef::new(row, col), Cell { value: v, formula: None, style });
+            sheet.set_cell(
+                CellRef::new(row, col),
+                Cell {
+                    value: v,
+                    formula: None,
+                    style,
+                },
+            );
         };
         let formula = |sheet: &mut Sheet, row: u32, col: u32, text: String, style: StyleId| {
             let mut cell = Cell::formula(Formula::new(&text));
@@ -323,7 +448,13 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
             sheet.set_cell(CellRef::new(row, col), cell);
         };
         for (c, h) in headers.iter().enumerate() {
-            put(&mut sheet, 0, c as u32, Value::text(h.as_str()), StyleId::DEFAULT);
+            put(
+                &mut sheet,
+                0,
+                c as u32,
+                Value::text(h.as_str()),
+                StyleId::DEFAULT,
+            );
         }
         for (i, (t, v)) in rows.iter().enumerate() {
             let r = i as u32 + 1;
@@ -341,7 +472,13 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
         }
         let (tl, vl) = (hist(0), hist(1));
         let forecast_row = |sheet: &mut Sheet, r: u32| {
-            formula(sheet, r - 1, 2, format!("=FORECAST.ETS(A{r},{vl},{tl},{tail})"), vstyle);
+            formula(
+                sheet,
+                r - 1,
+                2,
+                format!("=FORECAST.ETS(A{r},{vl},{tl},{tail})"),
+                vstyle,
+            );
             if let Some(c) = opts.confidence {
                 let ci = format!("FORECAST.ETS.CONFINT(A{r},{vl},{tl},{c},{tail})");
                 formula(sheet, r - 1, 3, format!("=C{r}-{ci}"), vstyle);
@@ -360,10 +497,25 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
         if opts.statistics {
             put(&mut sheet, 0, stats_col, Value::text("Statistic"), bold);
             put(&mut sheet, 0, stats_col + 1, Value::text("Value"), bold);
-            for (k, label) in ["Alpha", "Beta", "Gamma", "MASE", "SMAPE", "MAE", "RMSE"].iter().enumerate() {
+            for (k, label) in ["Alpha", "Beta", "Gamma", "MASE", "SMAPE", "MAE", "RMSE"]
+                .iter()
+                .enumerate()
+            {
                 let r = k as u32 + 1;
-                put(&mut sheet, r, stats_col, Value::text(*label), StyleId::DEFAULT);
-                formula(&mut sheet, r, stats_col + 1, format!("=FORECAST.ETS.STAT({vl},{tl},{},{tail})", k + 1), StyleId::DEFAULT);
+                put(
+                    &mut sheet,
+                    r,
+                    stats_col,
+                    Value::text(*label),
+                    StyleId::DEFAULT,
+                );
+                formula(
+                    &mut sheet,
+                    r,
+                    stats_col + 1,
+                    format!("=FORECAST.ETS.STAT({vl},{tl},{},{tail})", k + 1),
+                    StyleId::DEFAULT,
+                );
             }
         }
         for c in 0..width {
@@ -388,7 +540,14 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
             totals_row: false,
             columns: headers
                 .iter()
-                .map(|h| TableColumn { name: h.clone(), totals: TotalsFn::None, totals_label: None, formula: None, unique_name: None, xml: None })
+                .map(|h| TableColumn {
+                    name: h.clone(),
+                    totals: TotalsFn::None,
+                    totals_label: None,
+                    formula: None,
+                    unique_name: None,
+                    xml: None,
+                })
                 .collect(),
             style: "TableStyleMedium2".into(),
             banded_rows: true,
@@ -417,8 +576,19 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
             .collect();
         sheet.charts.push(Chart {
             id: chart_id,
-            kind: if opts.column_chart { ChartKind::ColumnClustered } else { ChartKind::Line },
-            anchor: Anchor { cell: CellRef::new(1, chart_col), dx: 0.0, dy: 0.0, width: 480.0, height: 288.0, mode: Default::default() },
+            kind: if opts.column_chart {
+                ChartKind::ColumnClustered
+            } else {
+                ChartKind::Line
+            },
+            anchor: Anchor {
+                cell: CellRef::new(1, chart_col),
+                dx: 0.0,
+                dy: 0.0,
+                width: 480.0,
+                height: 288.0,
+                mode: Default::default(),
+            },
             title: None,
             series,
             legend: LegendPos::Bottom,
@@ -445,20 +615,32 @@ fn forecast_sheet(s: &mut Session, p: &Json) -> Result<Json> {
         Ok(at)
     })?;
     if let Ok(d) = s.doc_mut() {
-        d.sheet_selections.insert(index.min(d.sheet_selections.len()), crate::Selection::default());
+        d.sheet_selections.insert(
+            index.min(d.sheet_selections.len()),
+            crate::Selection::default(),
+        );
     }
-    Ok(json!({"sheet": sheet_name, "table": table_name, "chart": chart_id, "history": n, "periods": periods, "fitted": fit}))
+    Ok(
+        json!({"sheet": sheet_name, "table": table_name, "chart": chart_id, "history": n, "periods": periods, "fitted": fit}),
+    )
 }
 
 /// Forecast rows needed to reach `end` (rounded up to whole steps).
 fn steps_to(timeline: &Timeline, end: f64, cap: u32) -> Result<u32> {
-    let steps = timeline.steps_after_last(end).ok_or_else(|| bad(CMD, "`end` is not on the timeline"))?;
+    let steps = timeline
+        .steps_after_last(end)
+        .ok_or_else(|| bad(CMD, "`end` is not on the timeline"))?;
     if steps < 1e-9 {
-        return Err(EngineError::Other("The forecast end must be after the last point of the timeline.".into()));
+        return Err(EngineError::Other(
+            "The forecast end must be after the last point of the timeline.".into(),
+        ));
     }
     let steps = steps.ceil();
     if steps > f64::from(cap) {
-        return Err(bad(CMD, format!("at most {cap} forecast steps for this much history")));
+        return Err(bad(
+            CMD,
+            format!("at most {cap} forecast steps for this much history"),
+        ));
     }
     Ok(steps as u32)
 }
@@ -479,24 +661,41 @@ mod tests {
         for t in 1..=16 {
             rows.push(json!([t, 10.0 + 2.0 * t as f64 + season[(t - 1) % 4]]));
         }
-        s.execute("range.setValues", json!({"range": "A1", "values": rows})).unwrap();
+        s.execute("range.setValues", json!({"range": "A1", "values": rows}))
+            .unwrap();
         s
     }
 
     fn value(s: &Session, sheet: usize, a1: &str) -> Value {
-        s.doc().unwrap().wb.sheet(sheet).unwrap().value(CellRef::parse(a1).unwrap())
+        s.doc()
+            .unwrap()
+            .wb
+            .sheet(sheet)
+            .unwrap()
+            .value(CellRef::parse(a1).unwrap())
     }
 
     fn formula(s: &Session, sheet: usize, a1: &str) -> String {
         let wb = &s.doc().unwrap().wb;
-        wb.sheet(sheet).unwrap().cell(CellRef::parse(a1).unwrap()).and_then(|c| c.formula.as_ref()).map(|f| f.text.clone()).unwrap_or_default()
+        wb.sheet(sheet)
+            .unwrap()
+            .cell(CellRef::parse(a1).unwrap())
+            .and_then(|c| c.formula.as_ref())
+            .map(|f| f.text.clone())
+            .unwrap_or_default()
     }
 
     #[test]
     fn forecast_sheet_builds_table_formulas_and_chart() {
         let mut s = session_with_history();
-        s.execute("selection.set", json!({"range": "A1:B17"})).unwrap();
-        let r = s.execute("data.forecastSheet", json!({"periods": 4, "statistics": true})).unwrap();
+        s.execute("selection.set", json!({"range": "A1:B17"}))
+            .unwrap();
+        let r = s
+            .execute(
+                "data.forecastSheet",
+                json!({"periods": 4, "statistics": true}),
+            )
+            .unwrap();
         assert_eq!(r["history"], 16);
         assert_eq!(r["periods"], 4);
         let wb = &s.doc().unwrap().wb;
@@ -505,23 +704,47 @@ mod tests {
         let sh = wb.sheet(0).unwrap();
         assert_eq!(sh.name, r["sheet"].as_str().unwrap());
         assert_eq!(value(&s, 0, "C1"), Value::text("Forecast(Sales)"));
-        assert_eq!(value(&s, 0, "D1"), Value::text("Lower Confidence Bound(Sales)"));
-        assert_eq!(value(&s, 0, "E1"), Value::text("Upper Confidence Bound(Sales)"));
+        assert_eq!(
+            value(&s, 0, "D1"),
+            Value::text("Lower Confidence Bound(Sales)")
+        );
+        assert_eq!(
+            value(&s, 0, "E1"),
+            Value::text("Upper Confidence Bound(Sales)")
+        );
         assert_eq!(formula(&s, 0, "C17"), "B17");
-        assert_eq!(formula(&s, 0, "C18"), "FORECAST.ETS(A18,$B$2:$B$17,$A$2:$A$17,1,1)");
-        assert_eq!(formula(&s, 0, "D18"), "C18-FORECAST.ETS.CONFINT(A18,$B$2:$B$17,$A$2:$A$17,0.95,1,1)");
-        assert_eq!(formula(&s, 0, "H2"), "FORECAST.ETS.STAT($B$2:$B$17,$A$2:$A$17,1,1,1)");
+        assert_eq!(
+            formula(&s, 0, "C18"),
+            "FORECAST.ETS(A18,$B$2:$B$17,$A$2:$A$17,1,1)"
+        );
+        assert_eq!(
+            formula(&s, 0, "D18"),
+            "C18-FORECAST.ETS.CONFINT(A18,$B$2:$B$17,$A$2:$A$17,0.95,1,1)"
+        );
+        assert_eq!(
+            formula(&s, 0, "H2"),
+            "FORECAST.ETS.STAT($B$2:$B$17,$A$2:$A$17,1,1,1)"
+        );
         // Future timeline and the exact continuation of the seasonal series (t = 17 → 10 + 34 + 3).
         assert_eq!(value(&s, 0, "A18"), Value::Number(17.0));
         assert_eq!(value(&s, 0, "A21"), Value::Number(20.0));
         let c18 = value(&s, 0, "C18").as_f64().unwrap();
         assert!((c18 - 47.0).abs() < 1e-6, "{c18}");
-        let (lo, hi) = (value(&s, 0, "D19").as_f64().unwrap(), value(&s, 0, "E19").as_f64().unwrap());
+        let (lo, hi) = (
+            value(&s, 0, "D19").as_f64().unwrap(),
+            value(&s, 0, "E19").as_f64().unwrap(),
+        );
         assert!(lo <= hi);
-        assert_eq!(sh.tables.first().map(|t| t.range.a1()), Some("A1:E21".into()));
+        assert_eq!(
+            sh.tables.first().map(|t| t.range.a1()),
+            Some("A1:E21".into())
+        );
         let chart = sh.charts.first().unwrap();
         assert_eq!(chart.series.len(), 4);
-        assert_eq!(chart.series[1].values, format!("{}!$C$2:$C$21", r["sheet"].as_str().unwrap()));
+        assert_eq!(
+            chart.series[1].values,
+            format!("{}!$C$2:$C$21", r["sheet"].as_str().unwrap())
+        );
         // One undo step removes the sheet again.
         let sheets = s.doc().unwrap().wb.sheets.len();
         s.execute("edit.undo", json!({})).unwrap();
@@ -538,27 +761,69 @@ mod tests {
         assert_eq!(default_periods(100_000), 5);
         assert_eq!(max_periods(10), MAX_PERIODS);
         assert_eq!(max_periods(0), MAX_PERIODS);
-        for h in [1usize, 2, 3, 50, 51, 1_000, 1_300, 3_000, 10_000, 100_000, usize::MAX] {
+        for h in [
+            1usize,
+            2,
+            3,
+            50,
+            51,
+            1_000,
+            1_300,
+            3_000,
+            10_000,
+            100_000,
+            usize::MAX,
+        ] {
             let (d, m) = (default_periods(h), max_periods(h));
             assert!(d >= 1 && d <= m && m <= MAX_PERIODS, "{h}: {d} {m}");
-            assert!(u64::try_from(h).unwrap_or(u64::MAX).saturating_mul(u64::from(m)) <= MAX_WORK.max(u64::try_from(h).unwrap_or(u64::MAX)), "{h}");
+            assert!(
+                u64::try_from(h)
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(u64::from(m))
+                    <= MAX_WORK.max(u64::try_from(h).unwrap_or(u64::MAX)),
+                "{h}"
+            );
         }
         // Explicit periods or an end past the cap are refused before anything is built.
         let mut s = Session::new();
         s.new_workbook();
         let mut rows = vec![json!(["t", "y"])];
         rows.extend((1..=1_300).map(|t| json!([t, (t % 7) as f64 + t as f64 * 0.5])));
-        s.execute("range.setValues", json!({"range": "A1", "values": rows})).unwrap();
+        s.execute("range.setValues", json!({"range": "A1", "values": rows}))
+            .unwrap();
         let sheets = s.doc().unwrap().wb.sheets.len();
         let cap = max_periods(1_300); // 384
-        let err = |r: crate::Result<serde_json::Value>| r.err().map(|e| e.to_string()).unwrap_or_default();
-        assert!(err(s.execute("data.forecastSheet", json!({"range": "A1:B1301", "periods": cap + 1}))).contains("from 1 to 384"));
-        assert!(err(s.execute("data.forecastSheet", json!({"range": "A1:B1301", "end": 1_300 + cap + 1}))).contains("at most 384"));
-        assert!(s.execute("data.forecastSheet", json!({"range": "A1:B1301", "periods": 10_000})).is_err());
+        let err = |r: crate::Result<serde_json::Value>| {
+            r.err().map(|e| e.to_string()).unwrap_or_default()
+        };
+        assert!(
+            err(s.execute(
+                "data.forecastSheet",
+                json!({"range": "A1:B1301", "periods": cap + 1})
+            ))
+            .contains("from 1 to 384")
+        );
+        assert!(
+            err(s.execute(
+                "data.forecastSheet",
+                json!({"range": "A1:B1301", "end": 1_300 + cap + 1})
+            ))
+            .contains("at most 384")
+        );
+        assert!(
+            s.execute(
+                "data.forecastSheet",
+                json!({"range": "A1:B1301", "periods": 10_000})
+            )
+            .is_err()
+        );
         assert_eq!(s.doc().unwrap().wb.sheets.len(), sheets);
         // More history rows than MAX_HISTORY are refused.
         let big = MAX_HISTORY + 2;
-        let r = s.execute("data.forecastSheet", json!({"timeline": format!("A1:A{big}"), "values": format!("B1:B{big}")}));
+        let r = s.execute(
+            "data.forecastSheet",
+            json!({"timeline": format!("A1:A{big}"), "values": format!("B1:B{big}")}),
+        );
         assert!(r.is_err());
     }
 
@@ -573,17 +838,43 @@ mod tests {
             .unwrap();
         assert_eq!(r["periods"], 6);
         assert_eq!(value(&s, 0, "B1"), Value::text("Values"));
-        assert_eq!(formula(&s, 0, "C18"), "FORECAST.ETS(A18,$B$2:$B$17,$A$2:$A$17,4,0,7)");
+        assert_eq!(
+            formula(&s, 0, "C18"),
+            "FORECAST.ETS(A18,$B$2:$B$17,$A$2:$A$17,4,0,7)"
+        );
         assert_eq!(value(&s, 0, "D1"), Value::Empty);
         let sh = s.doc().unwrap().wb.sheet(0).unwrap();
-        assert_eq!(sh.charts.first().map(|c| c.kind), Some(gridcraft_model::ChartKind::ColumnClustered));
+        assert_eq!(
+            sh.charts.first().map(|c| c.kind),
+            Some(gridcraft_model::ChartKind::ColumnClustered)
+        );
         // Errors: end before the data, bad seasonality, uneven timeline, one column only.
-        s.execute("sheet.activate", json!({"sheet": "Sheet1"})).unwrap();
-        assert!(s.execute("data.forecastSheet", json!({"range": "Sheet1!A1:B17", "end": 3})).is_err());
-        assert!(s.execute("data.forecastSheet", json!({"range": "Sheet1!A1:B17", "seasonality": 9000})).is_err());
-        assert!(s.execute("data.forecastSheet", json!({"range": "Sheet1!B1:B17"})).is_err());
-        s.execute("cell.set", json!({"cell": "A5", "input": "4.5"})).unwrap();
-        assert!(s.execute("data.forecastSheet", json!({"range": "Sheet1!A1:B17"})).is_err());
+        s.execute("sheet.activate", json!({"sheet": "Sheet1"}))
+            .unwrap();
+        assert!(
+            s.execute(
+                "data.forecastSheet",
+                json!({"range": "Sheet1!A1:B17", "end": 3})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "data.forecastSheet",
+                json!({"range": "Sheet1!A1:B17", "seasonality": 9000})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute("data.forecastSheet", json!({"range": "Sheet1!B1:B17"}))
+                .is_err()
+        );
+        s.execute("cell.set", json!({"cell": "A5", "input": "4.5"}))
+            .unwrap();
+        assert!(
+            s.execute("data.forecastSheet", json!({"range": "Sheet1!A1:B17"}))
+                .is_err()
+        );
     }
 
     #[test]
@@ -594,30 +885,65 @@ mod tests {
         // Fit to t = 1..12 (rows 2..13); the line joins at row 13 and forecasts rows 14..19.
         assert_eq!(formula(&s, 0, "C13"), "B13");
         assert_eq!(value(&s, 0, "C13"), value(&s, 0, "B13"));
-        assert_eq!(formula(&s, 0, "C14"), "FORECAST.ETS(A14,$B$2:$B$13,$A$2:$A$13,1,1)");
-        assert_eq!(formula(&s, 0, "C19"), "FORECAST.ETS(A19,$B$2:$B$13,$A$2:$A$13,1,1)");
+        assert_eq!(
+            formula(&s, 0, "C14"),
+            "FORECAST.ETS(A14,$B$2:$B$13,$A$2:$A$13,1,1)"
+        );
+        assert_eq!(
+            formula(&s, 0, "C19"),
+            "FORECAST.ETS(A19,$B$2:$B$13,$A$2:$A$13,1,1)"
+        );
         // The exact seasonal series is recovered, and the actual is still shown next to it.
         let c14 = value(&s, 0, "C14").as_f64().unwrap();
         assert!((c14 - 39.0).abs() < 1e-6, "{c14}"); // t = 13: 10 + 26 + 3
         assert!(value(&s, 0, "B14").as_f64().is_some());
         // Start at the last point or one step later: as without forecastStart.
         for start in [json!(16), json!(17)] {
-            let r = s.execute("data.forecastSheet", json!({"range": "Sheet1!A1:B17", "forecastStart": start, "periods": 2})).unwrap();
+            let r = s
+                .execute(
+                    "data.forecastSheet",
+                    json!({"range": "Sheet1!A1:B17", "forecastStart": start, "periods": 2}),
+                )
+                .unwrap();
             assert_eq!(r["fitted"], 16);
         }
-        assert_eq!(formula(&s, 0, "C18"), "FORECAST.ETS(A18,$B$2:$B$17,$A$2:$A$17,1,1)");
+        assert_eq!(
+            formula(&s, 0, "C18"),
+            "FORECAST.ETS(A18,$B$2:$B$17,$A$2:$A$17,1,1)"
+        );
     }
 
     #[test]
     fn forecast_start_invalid_values_are_errors() {
         let mut s = session_with_history();
         let sheets = s.doc().unwrap().wb.sheets.len();
-        for bad in [json!(0), json!(2), json!(3.5), json!(18), json!(1000), json!("abc"), json!([1]), json!(1e308)] {
-            assert!(s.execute("data.forecastSheet", json!({"range": "A1:B17", "forecastStart": bad})).is_err(), "{bad}");
+        for bad in [
+            json!(0),
+            json!(2),
+            json!(3.5),
+            json!(18),
+            json!(1000),
+            json!("abc"),
+            json!([1]),
+            json!(1e308),
+        ] {
+            assert!(
+                s.execute(
+                    "data.forecastSheet",
+                    json!({"range": "A1:B17", "forecastStart": bad})
+                )
+                .is_err(),
+                "{bad}"
+            );
         }
         assert_eq!(s.doc().unwrap().wb.sheets.len(), sheets);
         // Blank or null behaves like no start; empty params unchanged.
-        let r = s.execute("data.forecastSheet", json!({"range": "A1:B17", "forecastStart": ""})).unwrap();
+        let r = s
+            .execute(
+                "data.forecastSheet",
+                json!({"range": "A1:B17", "forecastStart": ""}),
+            )
+            .unwrap();
         assert_eq!(r["fitted"], 16);
     }
 }

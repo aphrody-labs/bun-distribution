@@ -48,15 +48,22 @@ impl NativeEmbedder {
         let spec = find_model(model)
             .ok_or_else(|| RagError::EmbeddingFailed(format!("unknown native model `{model}`")))?;
         let dir = spec.default_dir();
-        let dir = if install { ensure_model(&spec, &dir) } else { require_installed(&spec, &dir) }
-            .map_err(|error| RagError::EmbeddingFailed(error.to_string()))?;
+        let dir = if install {
+            ensure_model(&spec, &dir)
+        } else {
+            require_installed(&spec, &dir)
+        }
+        .map_err(|error| RagError::EmbeddingFailed(error.to_string()))?;
         Self::from_dir(&dir, &spec)
     }
 
     fn from_dir(dir: &Path, spec: &aphrody_embed::native::ModelSpec) -> Result<Self> {
         let engine = NativeEngine::load(dir, spec, EmbedOptions::default())
             .map_err(|error| RagError::EmbeddingFailed(error.to_string()))?;
-        Ok(Self { engine: Arc::new(engine), model_id: format!("native:{}", spec.versioned_id()) })
+        Ok(Self {
+            engine: Arc::new(engine),
+            model_id: format!("native:{}", spec.versioned_id()),
+        })
     }
 }
 
@@ -76,7 +83,11 @@ impl Embedder for NativeEmbedder {
         }
         let engine = Arc::clone(&self.engine);
         let texts = texts.to_vec();
-        let kind = if is_query { TextKind::Query } else { TextKind::Passage };
+        let kind = if is_query {
+            TextKind::Query
+        } else {
+            TextKind::Passage
+        };
         tokio::task::spawn_blocking(move || {
             let refs: Vec<&str> = texts.iter().map(String::as_str).collect();
             engine

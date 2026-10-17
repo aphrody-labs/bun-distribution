@@ -33,9 +33,13 @@
 use serde_json::{Value, json};
 
 use filmcraft_project::mixer::{
-    self as pm, FADER_MAX_DB, FADER_MIN_DB, LANE_MUTE, LANE_PAN, LANE_VOLUME, MASTER_STRIP, lane_info, parse_fx_lane, parse_send_lane, thin_points, write_lane,
+    self as pm, FADER_MAX_DB, FADER_MIN_DB, LANE_MUTE, LANE_PAN, LANE_VOLUME, MASTER_STRIP,
+    lane_info, parse_fx_lane, parse_send_lane, thin_points, write_lane,
 };
-use filmcraft_project::{AudioChannels, AutomationMode, InputMap, ItemId, Param, ParamValue, Sequence, Track, TrackId, TrackKind, TrackSend, find_effect};
+use filmcraft_project::{
+    AudioChannels, AutomationMode, InputMap, ItemId, Param, ParamValue, Sequence, Track, TrackId,
+    TrackKind, TrackSend, find_effect,
+};
 use filmcraft_time::{TICKS_PER_SECOND, Tick};
 
 use crate::commands::{CommandSpec, always, bad, bool_p, f64_p, has_seq, str_p, time_p, u64_p};
@@ -67,7 +71,15 @@ pub struct Gesture {
 
 impl Gesture {
     fn new(strip: TrackId, lane: &str, mode: AutomationMode, t: Tick, v: f64) -> Self {
-        Gesture { strip, lane: lane.to_string(), mode, points: vec![(t, v)], touching: true, released: None, last: (t, v) }
+        Gesture {
+            strip,
+            lane: lane.to_string(),
+            mode,
+            points: vec![(t, v)],
+            touching: true,
+            released: None,
+            last: (t, v),
+        }
     }
     /// A new value at `t`. Repeats of the same value extend the hold instead of adding points, so a
     /// fader held still records a flat line, not a ramp to the next move.
@@ -109,7 +121,9 @@ impl Recorder {
         self.seq.is_some()
     }
     fn find(&mut self, strip: TrackId, lane: &str) -> Option<&mut Gesture> {
-        self.gestures.iter_mut().find(|g| g.strip == strip && g.lane == lane)
+        self.gestures
+            .iter_mut()
+            .find(|g| g.strip == strip && g.lane == lane)
     }
 }
 
@@ -133,27 +147,44 @@ pub fn is_clip_lane(lane: &str) -> bool {
 
 /// The clip effect parameter behind a Clip Mixer lane.
 fn clip_target(lane: &str) -> (&'static str, &'static str) {
-    if lane == CLIP_LANE_PAN { ("panner", "balance") } else { ("volume", "level") }
+    if lane == CLIP_LANE_PAN {
+        ("panner", "balance")
+    } else {
+        ("volume", "level")
+    }
 }
 
 /// The Clip Mixer mode of an audio track (Read unless set).
 pub fn clip_mode(s: &Session, track: TrackId) -> AutomationMode {
-    s.state.clip_mixer_modes.get(&track.0).copied().unwrap_or_default()
+    s.state
+        .clip_mixer_modes
+        .get(&track.0)
+        .copied()
+        .unwrap_or_default()
 }
 
 /// The clip lane value at `t`: the clip under `t` on the track (its keyframes or static value).
 fn clip_underlying(tr: &Track, lane: &str, t: Tick) -> f64 {
     let (eff, par) = clip_target(lane);
-    tr.item_at(t).and_then(|c| c.effect(eff).map(|e| e.f64_at(par, c.source_time_at(t)))).unwrap_or(0.0)
+    tr.item_at(t)
+        .and_then(|c| c.effect(eff).map(|e| e.f64_at(par, c.source_time_at(t))))
+        .unwrap_or(0.0)
 }
 
 fn lane_underlying(tr: &Track, lane: &str, t: Tick) -> f64 {
-    if is_clip_lane(lane) { clip_underlying(tr, lane, t) } else { underlying(tr, lane, t) }
+    if is_clip_lane(lane) {
+        clip_underlying(tr, lane, t)
+    } else {
+        underlying(tr, lane, t)
+    }
 }
 
 /// Parse a Clip Mixer lane from `lane` / `param` (`volume`/`level`, `pan`/`balance`).
 fn clip_lane_p(p: &Value) -> String {
-    match str_p(p, "lane").or_else(|| str_p(p, "param")).unwrap_or("volume") {
+    match str_p(p, "lane")
+        .or_else(|| str_p(p, "param"))
+        .unwrap_or("volume")
+    {
         "pan" | "balance" | "clip.pan" => CLIP_LANE_PAN.to_string(),
         _ => CLIP_LANE_VOLUME.to_string(),
     }
@@ -162,9 +193,15 @@ fn clip_lane_p(p: &Value) -> String {
 /// Write recorded clip-lane points (sequence time) as keyframes into every clip of `tr` they cover.
 fn write_clip_points(tr: &mut Track, lane: &str, pts: &[(Tick, f64)], sr: i64) -> usize {
     let (eff, par) = clip_target(lane);
-    let (Some(t0), Some(t1)) = (pts.first().map(|p| p.0), pts.last().map(|p| p.0)) else { return 0 };
+    let (Some(t0), Some(t1)) = (pts.first().map(|p| p.0), pts.last().map(|p| p.0)) else {
+        return 0;
+    };
     let mut written = 0;
-    for c in tr.items.iter_mut().filter(|c| c.end() > t0 && c.start <= t1) {
+    for c in tr
+        .items
+        .iter_mut()
+        .filter(|c| c.end() > t0 && c.start <= t1)
+    {
         let c0 = t0.max(c.start);
         let c1 = t1.min(c.end() - Tick(1));
         if c1 < c0 {
@@ -174,7 +211,9 @@ fn write_clip_points(tr: &mut Track, lane: &str, pts: &[(Tick, f64)], sr: i64) -
         let at = |t: Tick| -> f64 {
             let i = pts.partition_point(|p| p.0 <= t);
             match (i.checked_sub(1).map(|j| pts[j]), pts.get(i)) {
-                (Some(a), Some(b)) if b.0 > a.0 => a.1 + (b.1 - a.1) * ((t - a.0).0 as f64 / (b.0 - a.0).0 as f64),
+                (Some(a), Some(b)) if b.0 > a.0 => {
+                    a.1 + (b.1 - a.1) * ((t - a.0).0 as f64 / (b.0 - a.0).0 as f64)
+                }
                 (Some(a), _) => a.1,
                 (None, Some(b)) => b.1,
                 (None, None) => 0.0,
@@ -185,15 +224,23 @@ fn write_clip_points(tr: &mut Track, lane: &str, pts: &[(Tick, f64)], sr: i64) -
         if c1 > c0 {
             local.push((c1, at(c1)));
         }
-        let mt: Vec<(Tick, f64)> = local.iter().map(|&(t, v)| (c.source_time_at(t), v)).collect();
-        let (m0, m1) = (mt[0].0.min(mt[mt.len() - 1].0), mt[0].0.max(mt[mt.len() - 1].0));
+        let mt: Vec<(Tick, f64)> = local
+            .iter()
+            .map(|&(t, v)| (c.source_time_at(t), v))
+            .collect();
+        let (m0, m1) = (
+            mt[0].0.min(mt[mt.len() - 1].0),
+            mt[0].0.max(mt[mt.len() - 1].0),
+        );
         let mut mt = mt;
         mt.sort_by_key(|p| p.0);
         let eps = Tick::from_units(1, sr).max(Tick(1));
         let starts_inside = c0 > c.start;
         let ends_inside = c1 < c.end() - Tick(1);
         let Some(e) = c.effect_mut(eff) else { continue };
-        let Some(param) = e.param_mut(par) else { continue };
+        let Some(param) = e.param_mut(par) else {
+            continue;
+        };
         let before = starts_inside.then(|| param.f64_at(m0 - eps));
         let after = ends_inside.then(|| param.f64_at(m1 + eps));
         write_lane(param, m0, m1, &mt, before, after, eps, false);
@@ -207,7 +254,10 @@ fn underlying(tr: &Track, lane: &str, t: Tick) -> f64 {
     let v = tr.lane_value(lane, t);
     if lane_info(lane).is_some_and(|i| i.hold) {
         // hold lanes: last keyframe at or before t
-        if let Some(p) = tr.lane(lane).filter(|p| p.is_animated() && tr.mixer.mode.reads()) {
+        if let Some(p) = tr
+            .lane(lane)
+            .filter(|p| p.is_animated() && tr.mixer.mode.reads())
+        {
             let i = p.keyframes.partition_point(|k| k.time <= t);
             return p.keyframes[i.saturating_sub(1)].value.as_f64().unwrap_or(v);
         }
@@ -262,7 +312,13 @@ pub fn record_start(s: &mut Session, t: Tick) -> Result<Value> {
             continue;
         }
         for lane in [CLIP_LANE_VOLUME, CLIP_LANE_PAN] {
-            let mut g = Gesture::new(tr.id, lane, AutomationMode::Write, t, clip_underlying(tr, lane, t));
+            let mut g = Gesture::new(
+                tr.id,
+                lane,
+                AutomationMode::Write,
+                t,
+                clip_underlying(tr, lane, t),
+            );
             g.touching = false;
             gestures.push(g);
         }
@@ -272,16 +328,32 @@ pub fn record_start(s: &mut Session, t: Tick) -> Result<Value> {
         s.previews.live.hold(g.strip, &g.lane, g.value());
     }
     let n = gestures.len();
-    s.mixrec = Recorder { seq: Some(seq_id), start: t, gestures };
+    s.mixrec = Recorder {
+        seq: Some(seq_id),
+        start: t,
+        gestures,
+    };
     Ok(json!({"recording": true, "writing": n}))
 }
 
 /// A control moved to `v` at `t`.
 pub fn touch(s: &mut Session, strip: TrackId, lane: &str, v: f64, t: Tick) -> Result<Value> {
     let v = clamp_lane(lane, v);
-    let seq_id = s.mixrec.seq.or(s.state.active_sequence).ok_or(EngineError::NoSequence)?;
-    let strip_mode = seq_of(s, seq_id)?.strip(strip).ok_or_else(|| bad("mixer.touch", "no such strip"))?.mixer.mode;
-    let mode = if is_clip_lane(lane) { clip_mode(s, strip) } else { strip_mode };
+    let seq_id = s
+        .mixrec
+        .seq
+        .or(s.state.active_sequence)
+        .ok_or(EngineError::NoSequence)?;
+    let strip_mode = seq_of(s, seq_id)?
+        .strip(strip)
+        .ok_or_else(|| bad("mixer.touch", "no such strip"))?
+        .mixer
+        .mode;
+    let mode = if is_clip_lane(lane) {
+        clip_mode(s, strip)
+    } else {
+        strip_mode
+    };
     s.previews.live.hold(strip, lane, v);
     if !s.mixrec.active() || !mode.writes() {
         return Ok(json!({"recording": false, "value": v}));
@@ -300,7 +372,10 @@ pub fn touch(s: &mut Session, strip: TrackId, lane: &str, v: f64, t: Tick) -> Re
             g.touching = true;
             g.push(t, v);
         }
-        None => s.mixrec.gestures.push(Gesture::new(strip, lane, mode, t, v)),
+        None => s
+            .mixrec
+            .gestures
+            .push(Gesture::new(strip, lane, mode, t, v)),
     }
     Ok(json!({"recording": true, "value": v}))
 }
@@ -349,7 +424,11 @@ pub fn record_stop(s: &mut Session, t_stop: Tick) -> Result<Value> {
     let prefs = s.prefs.audio.clone();
     let rate = seq_of(s, seq_id)?.settings.sample_rate.max(1) as i64;
     let eps = Tick::from_units(1, rate).max(Tick(1));
-    let min_interval = if prefs.minimum_time_interval_thinning { Tick(prefs.minimum_time_ms as i64 * TICKS_PER_SECOND / 1000) } else { Tick::ZERO };
+    let min_interval = if prefs.minimum_time_interval_thinning {
+        Tick(prefs.minimum_time_ms as i64 * TICKS_PER_SECOND / 1000)
+    } else {
+        Tick::ZERO
+    };
     let mut written = Vec::new();
     let mut keyframes = 0usize;
     let result = s.edit("Write Automation", |p, _| {
@@ -415,7 +494,9 @@ pub fn record_stop(s: &mut Session, t_stop: Tick) -> Result<Value> {
     s.previews.live.clear_all();
     s.previews.live.publish_project(s.project.clone());
     result?;
-    Ok(json!({"recording": false, "lanes": written.len(), "keyframes": keyframes, "written": written}))
+    Ok(
+        json!({"recording": false, "lanes": written.len(), "keyframes": keyframes, "written": written}),
+    )
 }
 
 /// Commit a Clip Mixer value outside a pass: the clip under `t` on the track gets the value (a
@@ -424,11 +505,20 @@ pub fn set_clip_value(s: &mut Session, track: TrackId, lane: &str, v: f64, t: Ti
     let (eff, par) = clip_target(lane);
     let v = clamp_lane(lane, v);
     s.edit_sequence("Audio Clip Mixer", move |q, _, _| {
-        let tr = q.mix_track_mut(track).ok_or_else(|| EngineError::Other("no such track".into()))?;
-        let idx = tr.items.iter().position(|c| c.start <= t && t < c.end()).ok_or_else(|| EngineError::Other("no clip under the playhead".into()))?;
+        let tr = q
+            .mix_track_mut(track)
+            .ok_or_else(|| EngineError::Other("no such track".into()))?;
+        let idx = tr
+            .items
+            .iter()
+            .position(|c| c.start <= t && t < c.end())
+            .ok_or_else(|| EngineError::Other("no clip under the playhead".into()))?;
         let c = &mut tr.items[idx];
         let mt = c.source_time_at(t);
-        let p = c.effect_mut(eff).and_then(|e| e.param_mut(par)).ok_or_else(|| EngineError::Other(format!("the clip has no {eff} effect")))?;
+        let p = c
+            .effect_mut(eff)
+            .and_then(|e| e.param_mut(par))
+            .ok_or_else(|| EngineError::Other(format!("the clip has no {eff} effect")))?;
         if p.is_animated() {
             p.put_keyframe(mt, ParamValue::Float(v));
         } else {
@@ -463,7 +553,10 @@ pub fn strip_ref(seq: &Sequence, v: &Value) -> Option<TrackId> {
         return Some(MASTER_STRIP);
     }
     let idx = |pre: &str| {
-        name.strip_prefix(pre).or_else(|| name.strip_prefix(&pre.to_lowercase())).and_then(|n| n.parse::<usize>().ok()).and_then(|n| n.checked_sub(1))
+        name.strip_prefix(pre)
+            .or_else(|| name.strip_prefix(&pre.to_lowercase()))
+            .and_then(|n| n.parse::<usize>().ok())
+            .and_then(|n| n.checked_sub(1))
     };
     if let Some(i) = idx("A") {
         return seq.audio_tracks.get(i).map(|t| t.id);
@@ -471,7 +564,11 @@ pub fn strip_ref(seq: &Sequence, v: &Value) -> Option<TrackId> {
     if let Some(i) = idx("S") {
         return seq.submix_tracks.get(i).map(|t| t.id);
     }
-    seq.audio_tracks.iter().chain(&seq.submix_tracks).find(|t| t.name.eq_ignore_ascii_case(name)).map(|t| t.id)
+    seq.audio_tracks
+        .iter()
+        .chain(&seq.submix_tracks)
+        .find(|t| t.name.eq_ignore_ascii_case(name))
+        .map(|t| t.id)
 }
 
 /// Display reference of a strip ("A1", "S2", "Mix").
@@ -490,7 +587,10 @@ pub fn strip_label(seq: &Sequence, id: TrackId) -> String {
 
 fn strip_p(s: &Session, p: &Value, cmd: &str) -> Result<TrackId> {
     let seq = active_seq(s)?;
-    let v = p.get("strip").or_else(|| p.get("track")).ok_or_else(|| bad(cmd, "need `strip` (\"A1\", \"S1\", \"Mix\" or an id)"))?;
+    let v = p
+        .get("strip")
+        .or_else(|| p.get("track"))
+        .ok_or_else(|| bad(cmd, "need `strip` (\"A1\", \"S1\", \"Mix\" or an id)"))?;
     strip_ref(seq, v).ok_or_else(|| bad(cmd, format!("no strip {v}")))
 }
 
@@ -499,13 +599,30 @@ fn lane_p(s: &Session, p: &Value, strip: TrackId, cmd: &str) -> Result<String> {
     let seq = active_seq(s)?;
     let tr = seq.strip(strip).ok_or_else(|| bad(cmd, "no such strip"))?;
     let ok = match parse_fx_lane(&lane) {
-        Some((slot, param)) => tr.effects.get(slot).and_then(|e| e.param(param)).is_some_and(|p| p.value.as_f64().is_some()),
-        None => lane_info(&lane).is_some() && (parse_send_lane(&lane).is_none_or(|i| i < tr.mixer.sends.len())),
+        Some((slot, param)) => tr
+            .effects
+            .get(slot)
+            .and_then(|e| e.param(param))
+            .is_some_and(|p| p.value.as_f64().is_some()),
+        None => {
+            lane_info(&lane).is_some()
+                && (parse_send_lane(&lane).is_none_or(|i| i < tr.mixer.sends.len()))
+        }
     };
     if !ok {
-        return Err(bad(cmd, format!("no lane `{lane}` on this strip (volume, pan, mute, send.<i>.level, fx.<slot>.<param>)")));
+        return Err(bad(
+            cmd,
+            format!(
+                "no lane `{lane}` on this strip (volume, pan, mute, send.<i>.level, fx.<slot>.<param>)"
+            ),
+        ));
     }
-    if strip == MASTER_STRIP && (lane == LANE_PAN || lane == LANE_MUTE || PAN51_LANES.contains(&lane.as_str()) || parse_send_lane(&lane).is_some()) {
+    if strip == MASTER_STRIP
+        && (lane == LANE_PAN
+            || lane == LANE_MUTE
+            || PAN51_LANES.contains(&lane.as_str())
+            || parse_send_lane(&lane).is_some())
+    {
         return Err(bad(cmd, "the Mix track has volume and effect lanes only"));
     }
     Ok(lane)
@@ -513,7 +630,10 @@ fn lane_p(s: &Session, p: &Value, strip: TrackId, cmd: &str) -> Result<String> {
 
 fn value_p(p: &Value, lane: &str, cmd: &str) -> Result<f64> {
     let v = p.get("value").ok_or_else(|| bad(cmd, "need `value`"))?;
-    let x = v.as_f64().or_else(|| v.as_bool().map(|b| if b { 1.0 } else { 0.0 })).ok_or_else(|| bad(cmd, "`value` must be a number"))?;
+    let x = v
+        .as_f64()
+        .or_else(|| v.as_bool().map(|b| if b { 1.0 } else { 0.0 }))
+        .ok_or_else(|| bad(cmd, "`value` must be a number"))?;
     Ok(clamp_lane(lane, x))
 }
 
@@ -572,14 +692,24 @@ pub(crate) fn channels_from(s: &str) -> Option<AudioChannels> {
 
 /// JSON view of one strip at time `t`.
 pub fn strip_json(s: &Session, seq: &Sequence, id: TrackId, t: Tick) -> Value {
-    let Some(tr) = seq.strip(id) else { return Value::Null };
+    let Some(tr) = seq.strip(id) else {
+        return Value::Null;
+    };
     let live = &s.previews.live;
-    let shown = |lane: &str| live.get(id, lane).map(|o| o.value).unwrap_or_else(|| underlying(&tr, lane, t));
+    let shown = |lane: &str| {
+        live.get(id, lane)
+            .map(|o| o.value)
+            .unwrap_or_else(|| underlying(&tr, lane, t))
+    };
     let lanes: serde_json::Map<String, Value> = tr
         .automated_lanes()
         .into_iter()
         .map(|k| {
-            let kf: Vec<Value> = tr.lane_keyframes(&k).iter().map(|kf| json!([kf.time.0, kf.value.as_f64()])).collect();
+            let kf: Vec<Value> = tr
+                .lane_keyframes(&k)
+                .iter()
+                .map(|kf| json!([kf.time.0, kf.value.as_f64()]))
+                .collect();
             (k, Value::Array(kf))
         })
         .collect();
@@ -618,7 +748,11 @@ pub fn strip_json(s: &Session, seq: &Sequence, id: TrackId, t: Tick) -> Value {
 fn inspect(s: &mut Session, p: &Value) -> Result<Value> {
     let t = time_p(s, p, "").unwrap_or(s.playhead());
     let seq = active_seq(s)?;
-    let strips: Vec<Value> = seq.strip_ids().into_iter().map(|id| strip_json(s, seq, id, t)).collect();
+    let strips: Vec<Value> = seq
+        .strip_ids()
+        .into_iter()
+        .map(|id| strip_json(s, seq, id, t))
+        .collect();
     Ok(json!({
         "strips": strips,
         "recording": s.mixrec.active(),
@@ -636,7 +770,8 @@ fn set_strip(s: &mut Session, p: &Value) -> Result<Value> {
         None => None,
         Some(Value::Null) => Some(None),
         Some(v) => {
-            let o = strip_ref(seq, v).ok_or_else(|| bad("mixer.setStrip", format!("no output {v}")))?;
+            let o =
+                strip_ref(seq, v).ok_or_else(|| bad("mixer.setStrip", format!("no output {v}")))?;
             if o == MASTER_STRIP {
                 Some(None)
             } else if o == id || !seq.submix_tracks.iter().any(|t| t.id == o) {
@@ -645,9 +780,17 @@ fn set_strip(s: &mut Session, p: &Value) -> Result<Value> {
                 .submix_tracks
                 .iter()
                 .position(|t| t.id == id)
-                .is_some_and(|me| seq.submix_tracks.iter().position(|t| t.id == o).is_some_and(|it| it <= me))
+                .is_some_and(|me| {
+                    seq.submix_tracks
+                        .iter()
+                        .position(|t| t.id == o)
+                        .is_some_and(|it| it <= me)
+                })
             {
-                return Err(bad("mixer.setStrip", "a submix can only feed a submix after it (no feedback)"));
+                return Err(bad(
+                    "mixer.setStrip",
+                    "a submix can only feed a submix after it (no feedback)",
+                ));
             } else {
                 Some(Some(o))
             }
@@ -698,13 +841,19 @@ fn set_strip(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn add_submix(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_p(p, "name").map(str::to_string);
-    let channels = str_p(p, "channels").and_then(channels_from).unwrap_or(AudioChannels::Stereo);
+    let channels = str_p(p, "channels")
+        .and_then(channels_from)
+        .unwrap_or(AudioChannels::Stereo);
     let seq_id = s.state.active_sequence.ok_or(EngineError::NoSequence)?;
     let id = s.edit("Add Submix Track", |pr, _| {
         let id = TrackId(pr.alloc_id());
         let seq = pr.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
         let n = seq.submix_tracks.len() + 1;
-        let mut t = Track::new(id, TrackKind::Audio, name.unwrap_or_else(|| format!("Submix {n}")));
+        let mut t = Track::new(
+            id,
+            TrackKind::Audio,
+            name.unwrap_or_else(|| format!("Submix {n}")),
+        );
         t.channels = channels;
         seq.submix_tracks.push(t);
         Ok(id)
@@ -737,7 +886,9 @@ fn delete_submix(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn slot_p(p: &Value, cmd: &str) -> Result<usize> {
-    u64_p(p, "slot").map(|v| v as usize).ok_or_else(|| bad(cmd, "need `slot` (0-based)"))
+    u64_p(p, "slot")
+        .map(|v| v as usize)
+        .ok_or_else(|| bad(cmd, "need `slot` (0-based)"))
 }
 
 /// An insert's scalar parameter values (numbers; toggles as booleans) for `mixer.inspect`.
@@ -755,20 +906,28 @@ fn insert_params(e: &filmcraft_project::EffectInstance) -> Value {
 
 fn add_insert(s: &mut Session, p: &Value) -> Result<Value> {
     let id = strip_p(s, p, "mixer.addInsert")?;
-    let eid = str_p(p, "effect").ok_or_else(|| bad("mixer.addInsert", "need `effect` (an audio effect id)"))?;
+    let eid = str_p(p, "effect")
+        .ok_or_else(|| bad("mixer.addInsert", "need `effect` (an audio effect id)"))?;
     let def = find_effect(eid)
         .filter(|d| d.kind == filmcraft_project::EffectKind::Audio && !d.intrinsic)
         .ok_or_else(|| bad("mixer.addInsert", format!("`{eid}` is not an audio effect")))?;
     let mut inst = def.instance();
     inst.post_fader = bool_p(p, "postFader").unwrap_or(false);
     let slot = u64_p(p, "slot").map(|v| v as usize);
-    let n = active_seq(s)?.strip(id).map(|t| t.effects.len()).unwrap_or(0);
+    let n = active_seq(s)?
+        .strip(id)
+        .map(|t| t.effects.len())
+        .unwrap_or(0);
     if n >= pm::MAX_INSERTS {
-        return Err(bad("mixer.addInsert", format!("all {} effect slots are in use", pm::MAX_INSERTS)));
+        return Err(bad(
+            "mixer.addInsert",
+            format!("all {} effect slots are in use", pm::MAX_INSERTS),
+        ));
     }
     let at = slot.unwrap_or(n).min(n);
     s.edit_sequence(&format!("Add Track Effect {}", def.name), move |q, _, _| {
-        q.with_strip_mut(id, |t| t.effects.insert(at, inst)).ok_or_else(|| EngineError::Other("no such strip".into()))
+        q.with_strip_mut(id, |t| t.effects.insert(at, inst))
+            .ok_or_else(|| EngineError::Other("no such strip".into()))
     })?;
     Ok(json!({"slot": at}))
 }
@@ -776,7 +935,10 @@ fn add_insert(s: &mut Session, p: &Value) -> Result<Value> {
 fn remove_insert(s: &mut Session, p: &Value) -> Result<Value> {
     let id = strip_p(s, p, "mixer.removeInsert")?;
     let slot = slot_p(p, "mixer.removeInsert")?;
-    let ok = s.edit_sequence("Remove Track Effect", move |q, _, _| Ok(q.with_strip_mut(id, |t| t.remove_insert(slot)).unwrap_or(false)))?;
+    let ok = s.edit_sequence("Remove Track Effect", move |q, _, _| {
+        Ok(q.with_strip_mut(id, |t| t.remove_insert(slot))
+            .unwrap_or(false))
+    })?;
     if !ok {
         return Err(bad("mixer.removeInsert", "no effect in that slot"));
     }
@@ -789,7 +951,10 @@ fn set_insert(s: &mut Session, p: &Value) -> Result<Value> {
     let p = p.clone();
     s.edit_sequence("Track Effect Settings", move |q, _, _| {
         q.with_strip_mut(id, |t| -> Result<()> {
-            let e = t.effects.get_mut(slot).ok_or_else(|| bad("mixer.setInsert", "no effect in that slot"))?;
+            let e = t
+                .effects
+                .get_mut(slot)
+                .ok_or_else(|| bad("mixer.setInsert", "no effect in that slot"))?;
             if let Some(v) = bool_p(&p, "enabled") {
                 e.enabled = v;
             }
@@ -802,13 +967,20 @@ fn set_insert(s: &mut Session, p: &Value) -> Result<Value> {
                     if e.param(k).is_none()
                         && let Some(d) = e.def().and_then(|d| d.param(k))
                     {
-                        e.params.insert(k.clone(), filmcraft_project::Param::new(d.default.clone()));
+                        e.params
+                            .insert(k.clone(), filmcraft_project::Param::new(d.default.clone()));
                     }
-                    let par = e.param_mut(k).ok_or_else(|| bad("mixer.setInsert", format!("no parameter `{k}`")))?;
+                    let par = e
+                        .param_mut(k)
+                        .ok_or_else(|| bad("mixer.setInsert", format!("no parameter `{k}`")))?;
                     par.value = match (&par.value, v) {
                         (ParamValue::Bool(_), Value::Bool(b)) => ParamValue::Bool(*b),
-                        (ParamValue::Choice(_), v) => ParamValue::Choice(v.as_u64().unwrap_or(0) as u32),
-                        (_, v) => ParamValue::Float(v.as_f64().ok_or_else(|| bad("mixer.setInsert", format!("`{k}` needs a number")))?),
+                        (ParamValue::Choice(_), v) => {
+                            ParamValue::Choice(v.as_u64().unwrap_or(0) as u32)
+                        }
+                        (_, v) => ParamValue::Float(v.as_f64().ok_or_else(|| {
+                            bad("mixer.setInsert", format!("`{k}` needs a number"))
+                        })?),
                     };
                 }
             }
@@ -821,11 +993,18 @@ fn set_insert(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn send_target(s: &Session, p: &Value, id: TrackId, cmd: &str) -> Result<TrackId> {
     let seq = active_seq(s)?;
-    let v = p.get("target").ok_or_else(|| bad(cmd, "need `target` (a submix)"))?;
-    let t = strip_ref(seq, v).filter(|t| seq.submix_tracks.iter().any(|x| x.id == *t)).ok_or_else(|| bad(cmd, "`target` must be a submix"))?;
+    let v = p
+        .get("target")
+        .ok_or_else(|| bad(cmd, "need `target` (a submix)"))?;
+    let t = strip_ref(seq, v)
+        .filter(|t| seq.submix_tracks.iter().any(|x| x.id == *t))
+        .ok_or_else(|| bad(cmd, "`target` must be a submix"))?;
     let pos = |x: TrackId| seq.submix_tracks.iter().position(|y| y.id == x);
     if t == id || pos(id).is_some_and(|me| pos(t).is_some_and(|it| it <= me)) {
-        return Err(bad(cmd, "a submix can only send to a submix after it (no feedback)"));
+        return Err(bad(
+            cmd,
+            "a submix can only send to a submix after it (no feedback)",
+        ));
     }
     Ok(t)
 }
@@ -837,11 +1016,19 @@ fn add_send(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let target = send_target(s, p, id, "mixer.addSend")?;
     let mut snd = TrackSend::new(target);
-    snd.level_db = f64_p(p, "levelDb").unwrap_or(0.0).clamp(FADER_MIN_DB, FADER_MAX_DB);
+    snd.level_db = f64_p(p, "levelDb")
+        .unwrap_or(0.0)
+        .clamp(FADER_MIN_DB, FADER_MAX_DB);
     snd.pre_fader = bool_p(p, "preFader").unwrap_or(false);
     snd.pan = f64_p(p, "pan").unwrap_or(0.0).clamp(-100.0, 100.0);
-    if active_seq(s)?.strip(id).is_some_and(|t| t.mixer.sends.len() >= pm::MAX_SENDS) {
-        return Err(bad("mixer.addSend", format!("all {} send slots are in use", pm::MAX_SENDS)));
+    if active_seq(s)?
+        .strip(id)
+        .is_some_and(|t| t.mixer.sends.len() >= pm::MAX_SENDS)
+    {
+        return Err(bad(
+            "mixer.addSend",
+            format!("all {} send slots are in use", pm::MAX_SENDS),
+        ));
     }
     let i = s.edit_sequence("Add Send", move |q, _, _| {
         q.with_strip_mut(id, |t| {
@@ -856,11 +1043,19 @@ fn add_send(s: &mut Session, p: &Value) -> Result<Value> {
 fn set_send(s: &mut Session, p: &Value) -> Result<Value> {
     let id = strip_p(s, p, "mixer.setSend")?;
     let i = u64_p(p, "send").ok_or_else(|| bad("mixer.setSend", "need `send` (0-based)"))? as usize;
-    let target = if p.get("target").is_some() { Some(send_target(s, p, id, "mixer.setSend")?) } else { None };
+    let target = if p.get("target").is_some() {
+        Some(send_target(s, p, id, "mixer.setSend")?)
+    } else {
+        None
+    };
     let p = p.clone();
     s.edit_sequence("Send Settings", move |q, _, _| {
         q.with_strip_mut(id, |t| -> Result<()> {
-            let sd = t.mixer.sends.get_mut(i).ok_or_else(|| bad("mixer.setSend", "no such send"))?;
+            let sd = t
+                .mixer
+                .sends
+                .get_mut(i)
+                .ok_or_else(|| bad("mixer.setSend", "no such send"))?;
             if let Some(v) = f64_p(&p, "levelDb") {
                 sd.level_db = v.clamp(FADER_MIN_DB, FADER_MAX_DB);
             }
@@ -885,8 +1080,11 @@ fn set_send(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn remove_send(s: &mut Session, p: &Value) -> Result<Value> {
     let id = strip_p(s, p, "mixer.removeSend")?;
-    let i = u64_p(p, "send").ok_or_else(|| bad("mixer.removeSend", "need `send` (0-based)"))? as usize;
-    let ok = s.edit_sequence("Remove Send", move |q, _, _| Ok(q.with_strip_mut(id, |t| t.remove_send(i)).unwrap_or(false)))?;
+    let i =
+        u64_p(p, "send").ok_or_else(|| bad("mixer.removeSend", "need `send` (0-based)"))? as usize;
+    let ok = s.edit_sequence("Remove Send", move |q, _, _| {
+        Ok(q.with_strip_mut(id, |t| t.remove_send(i)).unwrap_or(false))
+    })?;
     if !ok {
         return Err(bad("mixer.removeSend", "no such send"));
     }
@@ -920,7 +1118,11 @@ fn delete_kf(s: &mut Session, p: &Value) -> Result<Value> {
     let lane = lane_p(s, p, id, "mixer.deleteKeyframe")?;
     let t = time_p(s, p, "").ok_or_else(|| bad("mixer.deleteKeyframe", "need `time`"))?;
     let ok = s.edit_sequence("Delete Track Keyframe", move |q, _, _| {
-        Ok(q.with_strip_mut(id, |tr| tr.lane_mut(&lane).is_some_and(|par| par.remove_keyframe_at(t))).unwrap_or(false))
+        Ok(q.with_strip_mut(id, |tr| {
+            tr.lane_mut(&lane)
+                .is_some_and(|par| par.remove_keyframe_at(t))
+        })
+        .unwrap_or(false))
     })?;
     if !ok {
         return Err(bad("mixer.deleteKeyframe", "no keyframe at that time"));
@@ -931,18 +1133,33 @@ fn delete_kf(s: &mut Session, p: &Value) -> Result<Value> {
 fn move_kf(s: &mut Session, p: &Value) -> Result<Value> {
     let id = strip_p(s, p, "mixer.moveKeyframe")?;
     let lane = lane_p(s, p, id, "mixer.moveKeyframe")?;
-    let t = time_p(s, p, "").ok_or_else(|| bad("mixer.moveKeyframe", "need `time` (the keyframe)"))?;
+    let t =
+        time_p(s, p, "").ok_or_else(|| bad("mixer.moveKeyframe", "need `time` (the keyframe)"))?;
     let nt = time_p(s, p, "new");
-    let nv = p.get("value").map(|_| value_p(p, &lane, "mixer.moveKeyframe")).transpose()?;
+    let nv = p
+        .get("value")
+        .map(|_| value_p(p, &lane, "mixer.moveKeyframe"))
+        .transpose()?;
     let ok = s.edit_sequence("Move Track Keyframe", move |q, _, _| {
         Ok(q.with_strip_mut(id, |tr| {
-            let Some(par) = tr.lane_mut(&lane) else { return false };
-            let Ok(i) = par.keyframes.binary_search_by_key(&t, |k| k.time) else { return false };
+            let Some(par) = tr.lane_mut(&lane) else {
+                return false;
+            };
+            let Ok(i) = par.keyframes.binary_search_by_key(&t, |k| k.time) else {
+                return false;
+            };
             let mut k = par.keyframes.remove(i);
             if let Some(nt) = nt {
                 // keep keyframe order: clamp between the neighbours
-                let lo = i.checked_sub(1).map(|j| par.keyframes[j].time + Tick(1)).unwrap_or(Tick::ZERO);
-                let hi = par.keyframes.get(i).map(|n| n.time - Tick(1)).unwrap_or(Tick(i64::MAX));
+                let lo = i
+                    .checked_sub(1)
+                    .map(|j| par.keyframes[j].time + Tick(1))
+                    .unwrap_or(Tick::ZERO);
+                let hi = par
+                    .keyframes
+                    .get(i)
+                    .map(|n| n.time - Tick(1))
+                    .unwrap_or(Tick(i64::MAX));
                 k.time = nt.clamp(lo, hi);
             }
             if let Some(v) = nv {
@@ -986,9 +1203,19 @@ fn write_automation(s: &mut Session, p: &Value) -> Result<Value> {
     let pts: Vec<(Tick, f64)> = p
         .get("points")
         .and_then(Value::as_array)
-        .ok_or_else(|| bad("mixer.writeAutomation", "need `points`: [[ticks, value], …]"))?
+        .ok_or_else(|| {
+            bad(
+                "mixer.writeAutomation",
+                "need `points`: [[ticks, value], …]",
+            )
+        })?
         .iter()
-        .filter_map(|v| Some((Tick(v.get(0)?.as_i64()?), clamp_lane(&lane, v.get(1)?.as_f64()?))))
+        .filter_map(|v| {
+            Some((
+                Tick(v.get(0)?.as_i64()?),
+                clamp_lane(&lane, v.get(1)?.as_f64()?),
+            ))
+        })
         .collect();
     if pts.is_empty() {
         return Err(bad("mixer.writeAutomation", "no points"));
@@ -1003,7 +1230,10 @@ fn write_automation(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit_sequence("Write Automation", move |q, _, _| {
         q.with_strip_mut(id, |tr| {
             let before = (t0.0 > 0).then(|| underlying(tr, &lane, t0 - eps));
-            let after = tr.lane(&lane).filter(|p| p.keyframes.iter().any(|k| k.time > t1)).map(|_| underlying(tr, &lane, t1 + eps));
+            let after = tr
+                .lane(&lane)
+                .filter(|p| p.keyframes.iter().any(|k| k.time > t1))
+                .map(|_| underlying(tr, &lane, t1 + eps));
             if let Some(par) = tr.lane_mut(&lane) {
                 write_lane(par, t0, t1, &thinned, before, after, eps, hold);
             }
@@ -1017,7 +1247,9 @@ fn write_automation(s: &mut Session, p: &Value) -> Result<Value> {
 /// parameter) at the playhead. With `keyframe` (or when already animated) it writes a keyframe at the
 /// playhead; a drag (same clip and parameter, no other edit between) is one undo step.
 fn clip_set(s: &mut Session, p: &Value) -> Result<Value> {
-    let clip = filmcraft_project::ClipId(u64_p(p, "clip").ok_or_else(|| bad("clipMixer.set", "need `clip`"))?);
+    let clip = filmcraft_project::ClipId(
+        u64_p(p, "clip").ok_or_else(|| bad("clipMixer.set", "need `clip`"))?,
+    );
     let effect = str_p(p, "effect").unwrap_or("volume").to_string();
     let param = str_p(p, "param").unwrap_or("level").to_string();
     let v = f64_p(p, "value").ok_or_else(|| bad("clipMixer.set", "need `value`"))?;
@@ -1030,11 +1262,24 @@ fn clip_set(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.edit_merged("Audio Clip Mixer", &key, |pr, _| {
         let seq = pr.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
-        let (_, it) = seq.find_item_mut(clip).ok_or_else(|| bad("clipMixer.set", "no such clip"))?;
+        let (_, it) = seq
+            .find_item_mut(clip)
+            .ok_or_else(|| bad("clipMixer.set", "no such clip"))?;
         let mt = it.source_time_at(t.clamp(it.start, it.end()));
-        let e = it.effect_mut(&effect).ok_or_else(|| bad("clipMixer.set", format!("the clip has no `{effect}` effect")))?;
-        let par = e.param_mut(&param).ok_or_else(|| bad("clipMixer.set", format!("no parameter `{param}`")))?;
-        let v = if param == "level" { v.clamp(FADER_MIN_DB, FADER_MAX_DB) } else { v.clamp(-100.0, 100.0) };
+        let e = it.effect_mut(&effect).ok_or_else(|| {
+            bad(
+                "clipMixer.set",
+                format!("the clip has no `{effect}` effect"),
+            )
+        })?;
+        let par = e
+            .param_mut(&param)
+            .ok_or_else(|| bad("clipMixer.set", format!("no parameter `{param}`")))?;
+        let v = if param == "level" {
+            v.clamp(FADER_MIN_DB, FADER_MAX_DB)
+        } else {
+            v.clamp(-100.0, 100.0)
+        };
         if kf || par.is_animated() {
             par.put_keyframe(mt, ParamValue::Float(v));
         } else {
@@ -1048,19 +1293,27 @@ fn clip_set(s: &mut Session, p: &Value) -> Result<Value> {
 // ------------------------------------------------------------------------------------- audio gain
 
 /// Peak (dBFS, before clip gain) of each selected audio clip's source range.
-pub(crate) fn clip_peaks(s: &Session, clips: &[filmcraft_project::ClipId]) -> Vec<(filmcraft_project::ClipId, f64)> {
-    let Some(seq) = s.active_sequence() else { return Vec::new() };
+pub(crate) fn clip_peaks(
+    s: &Session,
+    clips: &[filmcraft_project::ClipId],
+) -> Vec<(filmcraft_project::ClipId, f64)> {
+    let Some(seq) = s.active_sequence() else {
+        return Vec::new();
+    };
     let sr = seq.settings.sample_rate.max(1);
     let provider = s.media.provider(s.project.clone(), s.services.clone());
     let mut out = Vec::new();
     for t in &seq.audio_tracks {
         for it in t.items.iter().filter(|i| clips.contains(&i.id)) {
-            let Some(src) = filmcraft_render::SourceProvider::source(&provider, it.item) else { continue };
+            let Some(src) = filmcraft_render::SourceProvider::source(&provider, it.item) else {
+                continue;
+            };
             if !src.info().has_audio() {
                 continue;
             }
             let s0 = it.source_in.to_units_floor(sr as i64);
-            let len = ((it.duration.to_units_floor(sr as i64) as f64) * it.speed.abs().max(1e-6)).ceil() as i64;
+            let len = ((it.duration.to_units_floor(sr as i64) as f64) * it.speed.abs().max(1e-6))
+                .ceil() as i64;
             let mut peak = 0f32;
             let mut pos = s0;
             while pos < s0 + len {
@@ -1078,7 +1331,10 @@ pub(crate) fn clip_peaks(s: &Session, clips: &[filmcraft_project::ClipId]) -> Ve
 
 fn gain_targets(s: &Session, p: &Value) -> Vec<filmcraft_project::ClipId> {
     let sel: Vec<filmcraft_project::ClipId> = match p.get("clips").and_then(Value::as_array) {
-        Some(a) => a.iter().filter_map(|v| v.as_u64().map(filmcraft_project::ClipId)).collect(),
+        Some(a) => a
+            .iter()
+            .filter_map(|v| v.as_u64().map(filmcraft_project::ClipId))
+            .collect(),
         None => s.state.selection.clone(),
     };
     crate::commands::with_links(s, &sel)
@@ -1089,9 +1345,13 @@ fn gain_targets(s: &Session, p: &Value) -> Vec<filmcraft_project::ClipId> {
 pub fn audio_peak(s: &mut Session, p: &Value) -> Result<Value> {
     let clips = gain_targets(s, p);
     let seq = active_seq(s)?;
-    let gain = |c: filmcraft_project::ClipId| seq.find_item(c).map(|(_, i)| i.gain_db).unwrap_or(0.0);
+    let gain =
+        |c: filmcraft_project::ClipId| seq.find_item(c).map(|(_, i)| i.gain_db).unwrap_or(0.0);
     let peaks = clip_peaks(s, &clips);
-    let max = peaks.iter().map(|(c, pk)| pk + gain(*c)).fold(f64::NEG_INFINITY, f64::max);
+    let max = peaks
+        .iter()
+        .map(|(c, pk)| pk + gain(*c))
+        .fold(f64::NEG_INFINITY, f64::max);
     Ok(json!({
         "peakDb": if max.is_finite() { json!(max) } else { Value::Null },
         "clips": peaks.iter().map(|(c, pk)| json!({"clip": c.0, "sourcePeakDb": pk, "gainDb": gain(*c)})).collect::<Vec<_>>(),
@@ -1103,31 +1363,52 @@ pub fn audio_gain(s: &mut Session, p: &Value) -> Result<Value> {
     let db = f64_p(p, "db").unwrap_or(0.0);
     let mode = match str_p(p, "mode") {
         Some(m) => m.to_string(),
-        None => if bool_p(p, "relative").unwrap_or(true) { "adjust" } else { "set" }.to_string(),
+        None => if bool_p(p, "relative").unwrap_or(true) {
+            "adjust"
+        } else {
+            "set"
+        }
+        .to_string(),
     };
     let clips = gain_targets(s, p);
     let new_gain: Vec<(filmcraft_project::ClipId, f64)> = match mode.as_str() {
         "set" => clips.iter().map(|c| (*c, db)).collect(),
         "adjust" => {
             let seq = active_seq(s)?;
-            clips.iter().filter_map(|c| seq.find_item(*c).map(|(_, i)| (*c, i.gain_db + db))).collect()
+            clips
+                .iter()
+                .filter_map(|c| seq.find_item(*c).map(|(_, i)| (*c, i.gain_db + db)))
+                .collect()
         }
         "normalizeMax" | "normalizeAll" => {
             let peaks = clip_peaks(s, &clips);
             if peaks.is_empty() {
-                return Err(bad("clip.audioGain", "no audio clips with audio in the selection"));
+                return Err(bad(
+                    "clip.audioGain",
+                    "no audio clips with audio in the selection",
+                ));
             }
             let seq = active_seq(s)?;
-            let gain = |c: filmcraft_project::ClipId| seq.find_item(c).map(|(_, i)| i.gain_db).unwrap_or(0.0);
+            let gain = |c: filmcraft_project::ClipId| {
+                seq.find_item(c).map(|(_, i)| i.gain_db).unwrap_or(0.0)
+            };
             if mode == "normalizeAll" {
                 peaks.iter().map(|(c, pk)| (*c, db - pk)).collect()
             } else {
-                let loudest = peaks.iter().map(|(c, pk)| pk + gain(*c)).fold(f64::NEG_INFINITY, f64::max);
+                let loudest = peaks
+                    .iter()
+                    .map(|(c, pk)| pk + gain(*c))
+                    .fold(f64::NEG_INFINITY, f64::max);
                 let delta = db - loudest;
                 peaks.iter().map(|(c, _)| (*c, gain(*c) + delta)).collect()
             }
         }
-        m => return Err(bad("clip.audioGain", format!("unknown mode `{m}` (set, adjust, normalizeMax, normalizeAll)"))),
+        m => {
+            return Err(bad(
+                "clip.audioGain",
+                format!("unknown mode `{m}` (set, adjust, normalizeMax, normalizeAll)"),
+            ));
+        }
     };
     let applied = s.edit_sequence("Audio Gain", move |q, _, _| {
         let mut applied = Vec::new();
@@ -1141,29 +1422,51 @@ pub fn audio_gain(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Ok(applied)
     })?;
-    Ok(json!({"mode": mode, "clips": applied.len(), "gainDb": applied.iter().map(|(c, g)| json!({"clip": c.0, "gainDb": g})).collect::<Vec<_>>()}))
+    Ok(
+        json!({"mode": mode, "clips": applied.len(), "gainDb": applied.iter().map(|(c, g)| json!({"clip": c.0, "gainDb": g})).collect::<Vec<_>>()}),
+    )
 }
 
 /// Effects panel ▸ Set Selected as Default Transition (video or audio, from the effect's kind).
 fn set_default_transition(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = str_p(p, "effect").ok_or_else(|| bad("effects.setDefaultTransition", "need `effect`"))?;
+    let id =
+        str_p(p, "effect").ok_or_else(|| bad("effects.setDefaultTransition", "need `effect`"))?;
     use filmcraft_project::vtransition::find_transition;
     let def = find_effect(id)
         .or_else(|| find_transition(id, filmcraft_project::EffectKind::VideoTransition))
         .or_else(|| find_transition(id, filmcraft_project::EffectKind::AudioTransition))
-        .or_else(|| filmcraft_project::effect_defs().iter().find(|d| d.name.eq_ignore_ascii_case(id)))
+        .or_else(|| {
+            filmcraft_project::effect_defs()
+                .iter()
+                .find(|d| d.name.eq_ignore_ascii_case(id))
+        })
         .ok_or_else(|| bad("effects.setDefaultTransition", format!("no effect `{id}`")))?;
     match def.kind {
-        filmcraft_project::EffectKind::AudioTransition => s.state.default_audio_transition = def.id.to_string(),
-        filmcraft_project::EffectKind::VideoTransition => s.state.default_video_transition = def.id.to_string(),
-        _ => return Err(bad("effects.setDefaultTransition", format!("`{}` is not a transition", def.name))),
+        filmcraft_project::EffectKind::AudioTransition => {
+            s.state.default_audio_transition = def.id.to_string()
+        }
+        filmcraft_project::EffectKind::VideoTransition => {
+            s.state.default_video_transition = def.id.to_string()
+        }
+        _ => {
+            return Err(bad(
+                "effects.setDefaultTransition",
+                format!("`{}` is not a transition", def.name),
+            ));
+        }
     }
-    Ok(json!({"video": s.state.default_video_transition, "audio": s.state.default_audio_transition}))
+    Ok(
+        json!({"video": s.state.default_video_transition, "audio": s.state.default_audio_transition}),
+    )
 }
 
 fn not_recording(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
-    if s.mixrec.active() { Err("an automation pass is already recording".into()) } else { Ok(()) }
+    if s.mixrec.active() {
+        Err("an automation pass is already recording".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn spec(
@@ -1176,12 +1479,30 @@ fn spec(
     run: Run,
     journal: bool,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu, shortcut, params, enabled, run, journal }
+    CommandSpec {
+        id,
+        label,
+        menu,
+        shortcut,
+        params,
+        enabled,
+        run,
+        journal,
+    }
 }
 
 pub fn commands() -> Vec<CommandSpec> {
     vec![
-        spec("mixer.inspect", "Inspect Audio Track Mixer", &[], None, r#"{"time":ticks?}"#, always, inspect, false),
+        spec(
+            "mixer.inspect",
+            "Inspect Audio Track Mixer",
+            &[],
+            None,
+            r#"{"time":ticks?}"#,
+            always,
+            inspect,
+            false,
+        ),
         spec(
             "mixer.setStrip",
             "Track Mixer Settings",
@@ -1289,7 +1610,12 @@ pub fn commands() -> Vec<CommandSpec> {
             has_seq,
             |s, p| {
                 let id = clip_track_p(s, p, "clipMixer.setMode")?;
-                let m = mode_p(p).ok_or_else(|| bad("clipMixer.setMode", "need `mode` (Off, Read, Latch, Touch, Write)"))?;
+                let m = mode_p(p).ok_or_else(|| {
+                    bad(
+                        "clipMixer.setMode",
+                        "need `mode` (Off, Read, Latch, Touch, Write)",
+                    )
+                })?;
                 s.state.clip_mixer_modes.insert(id.0, m);
                 Ok(json!({"track": id.0, "mode": m.label()}))
             },
@@ -1336,8 +1662,26 @@ pub fn commands() -> Vec<CommandSpec> {
             set_default_transition,
             true,
         ),
-        spec("mixer.addSubmix", "Add Audio Submix Track", &["Sequence"], None, r#"{"name":str?,"channels":"Mono|Stereo|5.1"?}"#, has_seq, add_submix, true),
-        spec("mixer.deleteSubmix", "Delete Submix Track", &[], None, r#"{"strip":"S1"|id}"#, has_seq, delete_submix, true),
+        spec(
+            "mixer.addSubmix",
+            "Add Audio Submix Track",
+            &["Sequence"],
+            None,
+            r#"{"name":str?,"channels":"Mono|Stereo|5.1"?}"#,
+            has_seq,
+            add_submix,
+            true,
+        ),
+        spec(
+            "mixer.deleteSubmix",
+            "Delete Submix Track",
+            &[],
+            None,
+            r#"{"strip":"S1"|id}"#,
+            has_seq,
+            delete_submix,
+            true,
+        ),
         spec(
             "mixer.addInsert",
             "Add Track Effect",
@@ -1348,7 +1692,16 @@ pub fn commands() -> Vec<CommandSpec> {
             add_insert,
             true,
         ),
-        spec("mixer.removeInsert", "Remove Track Effect", &[], None, r#"{"strip":"A1"|"S1"|"Mix"|id,"slot":n}"#, has_seq, remove_insert, true),
+        spec(
+            "mixer.removeInsert",
+            "Remove Track Effect",
+            &[],
+            None,
+            r#"{"strip":"A1"|"S1"|"Mix"|id,"slot":n}"#,
+            has_seq,
+            remove_insert,
+            true,
+        ),
         spec(
             "mixer.setInsert",
             "Track Effect Settings",
@@ -1379,7 +1732,16 @@ pub fn commands() -> Vec<CommandSpec> {
             set_send,
             true,
         ),
-        spec("mixer.removeSend", "Remove Send", &[], None, r#"{"strip":"A1"|"S1"|id,"send":n}"#, has_seq, remove_send, true),
+        spec(
+            "mixer.removeSend",
+            "Remove Send",
+            &[],
+            None,
+            r#"{"strip":"A1"|"S1"|id,"send":n}"#,
+            has_seq,
+            remove_send,
+            true,
+        ),
         spec(
             "mixer.setKeyframe",
             "Add Track Keyframe",
@@ -1390,7 +1752,16 @@ pub fn commands() -> Vec<CommandSpec> {
             set_kf,
             true,
         ),
-        spec("mixer.deleteKeyframe", "Delete Track Keyframe", &[], None, r#"{"strip":"A1"|"S1"|"Mix"|id,"lane":str?,"time":ticks}"#, has_seq, delete_kf, true),
+        spec(
+            "mixer.deleteKeyframe",
+            "Delete Track Keyframe",
+            &[],
+            None,
+            r#"{"strip":"A1"|"S1"|"Mix"|id,"lane":str?,"time":ticks}"#,
+            has_seq,
+            delete_kf,
+            true,
+        ),
         spec(
             "mixer.moveKeyframe",
             "Move Track Keyframe",
@@ -1401,7 +1772,16 @@ pub fn commands() -> Vec<CommandSpec> {
             move_kf,
             true,
         ),
-        spec("mixer.clearLane", "Clear Track Keyframes", &[], None, r#"{"strip":"A1"|"S1"|"Mix"|id,"lane":str?}"#, has_seq, clear_lane, true),
+        spec(
+            "mixer.clearLane",
+            "Clear Track Keyframes",
+            &[],
+            None,
+            r#"{"strip":"A1"|"S1"|"Mix"|id,"lane":str?}"#,
+            has_seq,
+            clear_lane,
+            true,
+        ),
         spec(
             "mixer.writeAutomation",
             "Write Automation Points",

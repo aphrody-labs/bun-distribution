@@ -8,7 +8,7 @@ use core::{
 };
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, embedded_asset, load_embedded_asset};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     resource::Resource,
@@ -18,8 +18,8 @@ use bevy_ecs::{
 use bevy_log::{debug, error, info};
 use bevy_material::{
     bind_group_layout_entries::{
-        binding_types::{storage_buffer, storage_buffer_read_only, uniform_buffer},
         BindGroupLayoutEntries,
+        binding_types::{storage_buffer, storage_buffer_read_only, uniform_buffer},
     },
     descriptor::{BindGroupLayoutDescriptor, CachedComputePipelineId, ComputePipelineDescriptor},
 };
@@ -30,6 +30,7 @@ use weak_table::WeakKeyHashMap;
 use wgpu::{BufferDescriptor, BufferUsages, ComputePassDescriptor, ShaderStages};
 
 use crate::{
+    ExtractSchedule, GpuResourceAppExt, RenderApp, RenderStartup,
     diagnostic::RecordDiagnostics as _,
     init_gpu_resource,
     render_resource::{
@@ -37,7 +38,6 @@ use crate::{
         SpecializedComputePipeline, SpecializedComputePipelines, UniformBuffer,
     },
     renderer::{RenderContext, RenderDevice, RenderGraph, RenderGraphSystems, RenderQueue},
-    ExtractSchedule, GpuResourceAppExt, RenderApp, RenderStartup,
 };
 
 /// A plugin that allows sparse updates of GPU buffers if only a small number of
@@ -1114,7 +1114,7 @@ fn calculate_allocation_size(length: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{BitIter, BITS_PER_WORD};
+    use super::{BITS_PER_WORD, BitIter};
     use core::{
         iter,
         sync::atomic::{AtomicU64, Ordering},

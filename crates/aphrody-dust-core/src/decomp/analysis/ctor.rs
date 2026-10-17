@@ -20,17 +20,27 @@ pub enum CtorRangeError {
     #[snafu(transparent)]
     FunctionAnalysis { source: FunctionAnalysisError },
     #[snafu(display("failed to analyze entrypoint function: {parse_result}\n{backtrace}"))]
-    EntryAnalysisFailed { parse_result: ParseFunctionError, backtrace: Backtrace },
+    EntryAnalysisFailed {
+        parse_result: ParseFunctionError,
+        backtrace: Backtrace,
+    },
     #[snafu(display("no function calls in entrypoint:\n{backtrace}"))]
     NoEntryFunctionCalls { backtrace: Backtrace },
     #[snafu(display("failed to parse static initializer function: {parse_result}\n{backtrace}"))]
-    InitFunctionAnalysisFailed { parse_result: ParseFunctionError, backtrace: Backtrace },
+    InitFunctionAnalysisFailed {
+        parse_result: ParseFunctionError,
+        backtrace: Backtrace,
+    },
     #[snafu(display("no pool constants found in static initializer function:\n{backtrace}"))]
     NoInitPoolConstants { backtrace: Backtrace },
     #[snafu(display(
         ".ctor runner at {address:#010x} not in range of module '{module_kind}:\n{backtrace}'"
     ))]
-    CtorRunnerNotInRange { address: u32, module_kind: ModuleKind, backtrace: Backtrace },
+    CtorRunnerNotInRange {
+        address: u32,
+        module_kind: ModuleKind,
+        backtrace: Backtrace,
+    },
 }
 
 impl CtorRange {
@@ -42,10 +52,14 @@ impl CtorRange {
         let mut last_called_function = None;
         for ins in function.parser(module_code, base_address) {
             match &ins {
-                Ins::Bl { target, .. } | Ins::Blx { target: BlxTarget::Direct(target), .. } => {
+                Ins::Bl { target, .. }
+                | Ins::Blx {
+                    target: BlxTarget::Direct(target),
+                    ..
+                } => {
                     last_called_function = Some(target.addr);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         last_called_function
@@ -77,8 +91,11 @@ impl CtorRange {
             Err(FunctionAnalysisError::IntoFunction {
                 source: IntoFunctionError::ParseFunction { source },
             }) => {
-                return EntryAnalysisFailedSnafu { parse_result: source }.fail();
-            },
+                return EntryAnalysisFailedSnafu {
+                    parse_result: source,
+                }
+                .fail();
+            }
             Err(e) => return Err(e.into()),
         };
 
@@ -88,7 +105,11 @@ impl CtorRange {
         let run_inits_offset = (run_inits_addr - arm9.base_address()) as usize;
         let (run_inits_module_start, run_inits_module_end, run_inits_code) =
             if run_inits_offset < code.len() {
-                (arm9.base_address(), arm9.end_address()?, &code[run_inits_offset..])
+                (
+                    arm9.base_address(),
+                    arm9.end_address()?,
+                    &code[run_inits_offset..],
+                )
             } else {
                 // .ctor is in one of the unknown autoloads
                 let run_inits_autoload = unknown_autoloads.iter().find(|autoload| {
@@ -132,8 +153,11 @@ impl CtorRange {
             Err(FunctionAnalysisError::IntoFunction {
                 source: IntoFunctionError::ParseFunction { source },
             }) => {
-                return InitFunctionAnalysisFailedSnafu { parse_result: source }.fail();
-            },
+                return InitFunctionAnalysisFailedSnafu {
+                    parse_result: source,
+                }
+                .fail();
+            }
             Err(e) => return Err(e.into()),
         };
 
@@ -159,6 +183,9 @@ impl CtorRange {
 
         let ctor_end = ctor_start + num_ctors as u32 * 4 + 4;
 
-        Ok(Self { start: ctor_start, end: ctor_end })
+        Ok(Self {
+            start: ctor_start,
+            end: ctor_end,
+        })
     }
 }

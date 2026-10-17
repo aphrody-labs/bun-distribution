@@ -64,7 +64,13 @@ pub fn folder_of(p: &Photo) -> Option<String> {
         // `/` and `\` are both separators whatever the platform (a catalog can move between them)
         Source::File { path } => {
             let key = crate::query::folder_key(path);
-            key.rsplit_once('/').map(|(dir, _)| if dir.is_empty() { "/".to_string() } else { dir.to_string() })
+            key.rsplit_once('/').map(|(dir, _)| {
+                if dir.is_empty() {
+                    "/".to_string()
+                } else {
+                    dir.to_string()
+                }
+            })
         }
         Source::Demo { .. } => None,
     }
@@ -94,7 +100,12 @@ impl Photo {
     /// A Local record nothing was changed on since it was browsed (see the module docs). Says
     /// nothing about albums, stacks or virtual copies referring to it.
     pub fn untouched_local(&self) -> bool {
-        if !self.local || self.deleted || self.copy_of.is_some() || self.copy_name.is_some() || folder_of(self).is_none() {
+        if !self.local
+            || self.deleted
+            || self.copy_of.is_some()
+            || self.copy_name.is_some()
+            || folder_of(self).is_none()
+        {
             return false;
         }
         match self.local_baseline {
@@ -158,9 +169,21 @@ pub struct ForgetPlan {
 impl ForgetPlan {
     /// The ops that carry the plan out (empty when there is nothing to do).
     pub fn ops(&self) -> Vec<Op> {
-        let mut ops: Vec<Op> = self.stamp.iter().map(|f| Op::SetBrowsed { folder: f.clone(), at: Some(self.now.clone()) }).collect();
-        ops.extend(self.evict.chunks(BATCH).map(|c| Op::Batch { ops: c.iter().map(|id| Op::RemovePhoto { id: *id }).collect() }));
-        ops.extend(self.unstamp.iter().map(|f| Op::SetBrowsed { folder: f.clone(), at: None }));
+        let mut ops: Vec<Op> = self
+            .stamp
+            .iter()
+            .map(|f| Op::SetBrowsed {
+                folder: f.clone(),
+                at: Some(self.now.clone()),
+            })
+            .collect();
+        ops.extend(self.evict.chunks(BATCH).map(|c| Op::Batch {
+            ops: c.iter().map(|id| Op::RemovePhoto { id: *id }).collect(),
+        }));
+        ops.extend(self.unstamp.iter().map(|f| Op::SetBrowsed {
+            folder: f.clone(),
+            at: None,
+        }));
         ops
     }
 }
@@ -168,7 +191,9 @@ impl ForgetPlan {
 impl Catalog {
     /// When `folder` was last browsed (ISO 8601), if known.
     pub fn last_browsed(&self, folder: &str) -> Option<&str> {
-        self.browsed.get(&crate::query::folder_key(folder)).map(String::as_str)
+        self.browsed
+            .get(&crate::query::folder_key(folder))
+            .map(String::as_str)
     }
 
     /// Folders with a last-browsed time.
@@ -179,8 +204,16 @@ impl Catalog {
     /// Plan forgetting untouched Local records whose folder wasn't browsed for `days` days (as of
     /// `now`, ISO 8601). `in_use` keeps records the caller still needs. `days == 0` (never) or an
     /// unreadable `now` forgets nothing. See the module docs.
-    pub fn forget_local_plan(&self, now: &str, days: u32, in_use: &dyn Fn(&Photo) -> bool) -> ForgetPlan {
-        let mut plan = ForgetPlan { now: now.to_string(), ..Default::default() };
+    pub fn forget_local_plan(
+        &self,
+        now: &str,
+        days: u32,
+        in_use: &dyn Fn(&Photo) -> bool,
+    ) -> ForgetPlan {
+        let mut plan = ForgetPlan {
+            now: now.to_string(),
+            ..Default::default()
+        };
         let now_s = crate::stacks::iso_seconds(now);
         let max_age = i64::from(days) * 86_400;
         let mut referenced: HashSet<PhotoId> = HashSet::new();
@@ -197,7 +230,11 @@ impl Catalog {
             .photos
             .values()
             .filter(|p| p.local && !referenced.contains(&p.id))
-            .filter(|p| folder_of(p).and_then(|f| self.browsed.get(&f)).is_some_and(|at| is_old(at, now_s, days, max_age)))
+            .filter(|p| {
+                folder_of(p)
+                    .and_then(|f| self.browsed.get(&f))
+                    .is_some_and(|at| is_old(at, now_s, days, max_age))
+            })
             .map(|p| &**p)
             .collect();
         let untouched: HashSet<PhotoId> = untouched_of(&candidates);
@@ -234,29 +271,49 @@ impl Catalog {
             }
         }
         plan.stamp = stamp.into_iter().collect();
-        plan.unstamp = self.browsed.keys().filter(|f| !remaining.contains(*f)).cloned().collect();
+        plan.unstamp = self
+            .browsed
+            .keys()
+            .filter(|f| !remaining.contains(*f))
+            .cloned()
+            .collect();
         plan
     }
 }
 
 /// A folder browsed at `at` is past the period (never when `days` is 0 or a time is unreadable).
 fn is_old(at: &str, now_s: Option<i64>, days: u32, max_age: i64) -> bool {
-    days > 0 && matches!((now_s, crate::stacks::iso_seconds(at)), (Some(n), Some(a)) if n - a >= max_age)
+    days > 0
+        && matches!((now_s, crate::stacks::iso_seconds(at)), (Some(n), Some(a)) if n - a >= max_age)
 }
 
 /// The untouched ones among `photos` ([`Photo::untouched_local`]), checked on several threads
 /// where there are many.
 fn untouched_of(photos: &[&Photo]) -> HashSet<PhotoId> {
-    let check = |chunk: &[&Photo]| chunk.iter().filter(|p| p.untouched_local()).map(|p| p.id).collect::<Vec<_>>();
+    let check = |chunk: &[&Photo]| {
+        chunk
+            .iter()
+            .filter(|p| p.untouched_local())
+            .map(|p| p.id)
+            .collect::<Vec<_>>()
+    };
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let threads = std::thread::available_parallelism().map_or(1, |n| n.get()).min(8);
+        let threads = std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .min(8);
         if threads > 1 && photos.len() >= 256 {
             let size = photos.len().div_ceil(threads);
             return std::thread::scope(|sc| {
-                let jobs: Vec<_> = photos.chunks(size).map(|c| sc.spawn(move || check(c))).collect();
+                let jobs: Vec<_> = photos
+                    .chunks(size)
+                    .map(|c| sc.spawn(move || check(c)))
+                    .collect();
                 // a job that panicked (it can't) leaves its photos out: they are kept
-                jobs.into_iter().filter_map(|j| j.join().ok()).flatten().collect()
+                jobs.into_iter()
+                    .filter_map(|j| j.join().ok())
+                    .flatten()
+                    .collect()
             });
         }
     }
@@ -291,7 +348,9 @@ impl Op {
                 album.photos.iter().for_each(|p| out(*p));
                 album.cover.into_iter().for_each(&mut *out);
             }
-            Op::SetAlbumPhotos { photos, .. } | Op::SetStack { photos, .. } => photos.iter().for_each(|p| out(*p)),
+            Op::SetAlbumPhotos { photos, .. } | Op::SetStack { photos, .. } => {
+                photos.iter().for_each(|p| out(*p))
+            }
             Op::SetAlbumCover { cover, .. } => cover.iter().for_each(|p| out(*p)),
             Op::AddStack { stack } => stack.photos.iter().for_each(|p| out(*p)),
             Op::Batch { ops } => ops.iter().for_each(|o| o.photo_ids(out)),

@@ -28,10 +28,15 @@ fn c_strings(bytes: &[u8]) -> Result<Vec<Vec<u8>>, CodecError> {
     while i < bytes.len() {
         if bytes[i..].starts_with(b"/*") {
             let tail = &bytes[i + 2..];
-            let Some(end) = tail.windows(2).position(|p| p == b"*/") else { return Err(bad("unterminated C comment")) };
+            let Some(end) = tail.windows(2).position(|p| p == b"*/") else {
+                return Err(bad("unterminated C comment"));
+            };
             i += end + 4;
         } else if bytes[i..].starts_with(b"//") {
-            i += bytes[i..].iter().position(|&c| c == b'\n').unwrap_or(bytes.len() - i);
+            i += bytes[i..]
+                .iter()
+                .position(|&c| c == b'\n')
+                .unwrap_or(bytes.len() - i);
         } else if bytes[i] == b'"' {
             i += 1;
             let mut s = Vec::new();
@@ -130,7 +135,9 @@ fn color(name: &str) -> Option<[u8; 4]> {
             12 => 4,
             _ => return None,
         };
-        let rgb = (0..3).map(|i| channel(&hex[i * digits..(i + 1) * digits])).collect::<Option<Vec<_>>>()?;
+        let rgb = (0..3)
+            .map(|i| channel(&hex[i * digits..(i + 1) * digits]))
+            .collect::<Option<Vec<_>>>()?;
         [rgb[0], rgb[1], rgb[2]]
     } else {
         named(name)?
@@ -140,7 +147,9 @@ fn color(name: &str) -> Option<[u8; 4]> {
 
 pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError> {
     if bytes.len() > MAX_SOURCE {
-        return Err(CodecError::LimitExceeded("XPM source exceeds 256 MiB".into()));
+        return Err(CodecError::LimitExceeded(
+            "XPM source exceeds 256 MiB".into(),
+        ));
     }
     let lines = if bytes.starts_with(b"/* XPM */") {
         c_strings(bytes)?
@@ -157,18 +166,33 @@ fn decode_lines(lines: &[Vec<u8>], limits: &Limits) -> Result<Image, CodecError>
     let parts = std::str::from_utf8(header).map_err(|_| bad("non-UTF-8 XPM header"))?;
     let mut parts = parts.split_ascii_whitespace();
     let number = |key: &str, s: Option<&str>| -> Result<usize, CodecError> {
-        s.ok_or_else(|| bad(format!("missing {key}")))?.parse::<usize>().map_err(|_| bad(format!("invalid {key}")))
+        s.ok_or_else(|| bad(format!("missing {key}")))?
+            .parse::<usize>()
+            .map_err(|_| bad(format!("invalid {key}")))
     };
     let width = number("width", parts.next())?;
     let height = number("height", parts.next())?;
     let colours = number("palette size", parts.next())?;
     let cpp = number("chars per pixel", parts.next())?;
-    if width == 0 || height == 0 || colours == 0 || colours > MAX_COLOURS || !(1..=MAX_CPP).contains(&cpp) {
-        return Err(bad("invalid XPM dimensions, palette size or chars per pixel"));
+    if width == 0
+        || height == 0
+        || colours == 0
+        || colours > MAX_COLOURS
+        || !(1..=MAX_CPP).contains(&cpp)
+    {
+        return Err(bad(
+            "invalid XPM dimensions, palette size or chars per pixel",
+        ));
     }
-    let (w, h) = (u32::try_from(width).map_err(|_| bad("width overflow"))?, u32::try_from(height).map_err(|_| bad("height overflow"))?);
+    let (w, h) = (
+        u32::try_from(width).map_err(|_| bad("width overflow"))?,
+        u32::try_from(height).map_err(|_| bad("height overflow"))?,
+    );
     limits.check(w, h, ChannelLayout::Rgba, SampleType::U8)?;
-    let required = 1usize.checked_add(colours).and_then(|n| n.checked_add(height)).ok_or_else(|| bad("row count overflow"))?;
+    let required = 1usize
+        .checked_add(colours)
+        .and_then(|n| n.checked_add(height))
+        .ok_or_else(|| bad("row count overflow"))?;
     if lines.len() < required {
         return Err(bad("truncated palette or image rows"));
     }
@@ -196,17 +220,33 @@ fn decode_lines(lines: &[Vec<u8>], limits: &Limits) -> Result<Image, CodecError>
             while i < terms.len() && !matches!(terms[i], "c" | "g" | "g4" | "m" | "s") {
                 i += 1;
             }
-            if priority > 0 && i > start && picked.as_ref().is_none_or(|(current, _)| priority > *current) {
+            if priority > 0
+                && i > start
+                && picked
+                    .as_ref()
+                    .is_none_or(|(current, _)| priority > *current)
+            {
                 picked = Some((priority, terms[start..i].join(" ")));
             }
         }
-        let value = picked.as_ref().and_then(|(_, name)| color(name)).ok_or_else(|| bad("unsupported or missing XPM colour"))?;
+        let value = picked
+            .as_ref()
+            .and_then(|(_, name)| color(name))
+            .ok_or_else(|| bad("unsupported or missing XPM colour"))?;
         if palette.insert(line[..cpp].to_vec(), value).is_some() {
             return Err(bad("duplicate XPM palette key"));
         }
     }
-    let row_len = width.checked_mul(cpp).ok_or_else(|| bad("row byte count overflow"))?;
-    let mut pixels = vec![0u8; width.checked_mul(height).and_then(|n| n.checked_mul(4)).ok_or_else(|| bad("pixel size overflow"))?];
+    let row_len = width
+        .checked_mul(cpp)
+        .ok_or_else(|| bad("row byte count overflow"))?;
+    let mut pixels = vec![
+        0u8;
+        width
+            .checked_mul(height)
+            .and_then(|n| n.checked_mul(4))
+            .ok_or_else(|| bad("pixel size overflow"))?
+    ];
     for (y, line) in lines[1 + colours..required].iter().enumerate() {
         if line.len() != row_len {
             return Err(bad("XPM row has the wrong width"));

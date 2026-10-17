@@ -70,7 +70,8 @@ fn alt_id() -> Id {
 impl Nav {
     /// A top-level menu button of the bar.
     pub fn top(&mut self, button: &Response) {
-        self.tops.push((button.id, Popup::default_response_id(button)));
+        self.tops
+            .push((button.id, Popup::default_response_id(button)));
     }
 
     /// An entry drawn at `depth` (0: a top-level menu) in the menu `ui`. Hovering an entry moves
@@ -79,18 +80,29 @@ impl Nav {
         while self.levels.len() <= depth {
             self.levels.push(Level::default());
         }
-        let Some(level) = self.levels.get_mut(depth) else { return };
+        let Some(level) = self.levels.get_mut(depth) else {
+            return;
+        };
         if level.menu.is_none() {
             level.menu = Some(find_menu_root(ui).id);
             level.sizing = ui.is_sizing_pass();
         }
-        level.rows.push(Row { id: r.id, enabled: r.enabled(), submenu });
+        level.rows.push(Row {
+            id: r.id,
+            enabled: r.enabled(),
+            submenu,
+        });
         if r.gained_focus() {
             r.scroll_to_me(None);
         }
         let ctx = ui.ctx();
         let keyboard = active(ctx) && ctx.memory(|m| m.focused()).is_some();
-        if keyboard && r.enabled() && !r.has_focus() && r.hovered() && ctx.input(|i| i.pointer.delta() != egui::Vec2::ZERO) {
+        if keyboard
+            && r.enabled()
+            && !r.has_focus()
+            && r.hovered()
+            && ctx.input(|i| i.pointer.delta() != egui::Vec2::ZERO)
+        {
             r.request_focus();
         }
     }
@@ -105,7 +117,11 @@ impl Nav {
     /// The keyboard highlight: (depth, index) of the focused entry.
     fn focused(&self, focus: Option<Id>) -> Option<(usize, usize)> {
         let f = focus?;
-        self.levels.iter().enumerate().rev().find_map(|(d, l)| l.rows.iter().position(|r| r.id == f).map(|i| (d, i)))
+        self.levels
+            .iter()
+            .enumerate()
+            .rev()
+            .find_map(|(d, l)| l.rows.iter().position(|r| r.id == f).map(|i| (d, i)))
     }
 }
 
@@ -123,7 +139,8 @@ fn alt_tapped(ctx: &Context) -> bool {
         return false;
     }
     // (armed, the modifiers held after the last change)
-    let (mut armed, mut held): (bool, Modifiers) = ctx.data(|d| d.get_temp(alt_id())).unwrap_or_default();
+    let (mut armed, mut held): (bool, Modifiers) =
+        ctx.data(|d| d.get_temp(alt_id())).unwrap_or_default();
     let mut tapped = false;
     ctx.input(|i| {
         for e in &i.events {
@@ -147,7 +164,11 @@ fn alt_tapped(ctx: &Context) -> bool {
 fn step(rows: &[Row], from: Option<usize>, step: isize) -> Option<Id> {
     let n = rows.len() as isize;
     let start = from.map_or(if step > 0 { -1 } else { n }, |i| i as isize);
-    (1..=n).map(|k| (start + step * k).rem_euclid(n.max(1))).filter_map(|i| rows.get(i as usize)).find(|r| r.enabled).map(|r| r.id)
+    (1..=n)
+        .map(|k| (start + step * k).rem_euclid(n.max(1)))
+        .filter_map(|i| rows.get(i as usize))
+        .find(|r| r.enabled)
+        .map(|r| r.id)
 }
 
 fn focus(ctx: &Context, id: Id) {
@@ -156,7 +177,9 @@ fn focus(ctx: &Context, id: Id) {
 
 /// The bar's menu `i`, wrapping around.
 fn nth_top(nav: &Nav, i: isize) -> Option<(Id, Id)> {
-    nav.tops.get(i.rem_euclid((nav.tops.len() as isize).max(1)) as usize).copied()
+    nav.tops
+        .get(i.rem_euclid((nav.tops.len() as isize).max(1)) as usize)
+        .copied()
 }
 
 /// Move the bar's keyboard focus to its menu `i` (wrapping).
@@ -168,7 +191,9 @@ fn focus_top(ctx: &Context, nav: &Nav, i: isize) {
 
 /// Open the top-level menu `i` (wrapping) with its first entry highlighted once drawn.
 fn open_top(ctx: &Context, nav: &Nav, i: isize) {
-    let Some((button, popup)) = nth_top(nav, i) else { return };
+    let Some((button, popup)) = nth_top(nav, i) else {
+        return;
+    };
     Popup::open_id(ctx, popup);
     focus(ctx, button);
     ctx.data_mut(|d| {
@@ -179,7 +204,9 @@ fn open_top(ctx: &Context, nav: &Nav, i: isize) {
 
 /// Open the submenu of entry `row` in the menu at `depth`, its first entry highlighted once drawn.
 fn open_submenu(ctx: &Context, nav: &Nav, depth: usize, row: Id) {
-    let Some(menu) = nav.levels.get(depth).and_then(|l| l.menu) else { return };
+    let Some(menu) = nav.levels.get(depth).and_then(|l| l.menu) else {
+        return;
+    };
     let sub = SubMenu::id_from_widget_id(row);
     show_submenu(ctx, menu, sub);
     let pointer = ctx.pointer_hover_pos();
@@ -196,7 +223,10 @@ fn open_submenu(ctx: &Context, nav: &Nav, depth: usize, row: Id) {
 /// Handle this frame's keys once the bar and its open menus are drawn (`nav`).
 pub fn handle(ctx: &Context, nav: &Nav) {
     let was_active = active(ctx);
-    let open = nav.tops.iter().position(|(_, p)| Popup::is_id_open(ctx, *p));
+    let open = nav
+        .tops
+        .iter()
+        .position(|(_, p)| Popup::is_id_open(ctx, *p));
     let focus_id = ctx.memory(|m| m.focused());
     let bar = focus_id.and_then(|f| nav.tops.iter().position(|(b, _)| *b == f));
     if alt_tapped(ctx) {
@@ -236,8 +266,9 @@ pub fn handle(ctx: &Context, nav: &Nav) {
         }
         ctx.data_mut(|d| d.remove::<FirstEntry>(pending_id()));
     }
-    let pressed =
-        |k: Key| ctx.input(|i| i.events.iter().any(|e| matches!(e, Event::Key { key, pressed: true, modifiers, .. } if *key == k && !modifiers.any())));
+    let pressed = |k: Key| {
+        ctx.input(|i| i.events.iter().any(|e| matches!(e, Event::Key { key, pressed: true, modifiers, .. } if *key == k && !modifiers.any())))
+    };
     let cur = nav.focused(focus_id);
     let row = cur.and_then(|(d, i)| nav.levels.get(d)?.rows.get(i).copied());
     for (key, dir) in [(Key::ArrowDown, 1), (Key::ArrowUp, -1)] {
@@ -271,7 +302,10 @@ pub fn handle(ctx: &Context, nav: &Nav) {
     if pressed(Key::ArrowLeft) {
         match cur {
             Some((d, _)) if d > 0 => {
-                let (menu, owner) = (nav.levels.get(d - 1).and_then(|l| l.menu), nav.levels.get(d).and_then(|l| l.owner));
+                let (menu, owner) = (
+                    nav.levels.get(d - 1).and_then(|l| l.menu),
+                    nav.levels.get(d).and_then(|l| l.owner),
+                );
                 if let Some(menu) = menu {
                     MenuState::from_id(ctx, menu, |s| s.open_item = None);
                     ctx.data_mut(|data| {
@@ -308,7 +342,9 @@ pub fn handle(ctx: &Context, nav: &Nav) {
 
 /// Keep the submenus opened from the keyboard open while the pointer hasn't moved.
 fn keep_key_opened(ctx: &Context) {
-    let Some(o) = ctx.data(|d| d.get_temp::<KeyOpened>(opened_id())) else { return };
+    let Some(o) = ctx.data(|d| d.get_temp::<KeyOpened>(opened_id())) else {
+        return;
+    };
     if ctx.pointer_hover_pos() != o.pointer {
         ctx.data_mut(|d| d.remove::<KeyOpened>(opened_id()));
         return;
@@ -327,5 +363,8 @@ fn show_submenu(ctx: &Context, menu: Id, sub: Id) {
 
 /// The rest of the frame (shortcuts, panels) doesn't see this frame's keys.
 fn strip_keys(ctx: &Context) {
-    ctx.input_mut(|i| i.events.retain(|e| !matches!(e, Event::Key { .. } | Event::Text(_))));
+    ctx.input_mut(|i| {
+        i.events
+            .retain(|e| !matches!(e, Event::Key { .. } | Event::Text(_)))
+    });
 }

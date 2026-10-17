@@ -124,17 +124,36 @@ pub fn stroke(m: &Mask, width: f32, kind: StrokeKind) -> Mask {
                 StrokeKind::Center => (width / 2.0 + 0.5 - d.abs()).clamp(0.0, 1.0),
                 StrokeKind::Inner => (width + 0.5 + d).clamp(0.0, 1.0).min(c),
             };
-            if kind == StrokeKind::Outer { v } else { v.min(1.0) }
+            if kind == StrokeKind::Outer {
+                v
+            } else {
+                v.min(1.0)
+            }
         })
         .collect();
     Mask { w: m.w, h: m.h, a }
 }
 
-fn box_pass(src: &[f32], dst: &mut [f32], n: usize, stride: usize, count: usize, lanes: usize, lane_stride: usize, r: usize) {
+fn box_pass(
+    src: &[f32],
+    dst: &mut [f32],
+    n: usize,
+    stride: usize,
+    count: usize,
+    lanes: usize,
+    lane_stride: usize,
+    r: usize,
+) {
     let norm = 1.0 / (2 * r + 1) as f32;
     for l in 0..lanes {
         let base = l * lane_stride;
-        let at = |i: isize| -> f32 { if i < 0 || i as usize >= count { 0.0 } else { src[base + i as usize * stride] } };
+        let at = |i: isize| -> f32 {
+            if i < 0 || i as usize >= count {
+                0.0
+            } else {
+                src[base + i as usize * stride]
+            }
+        };
         let mut acc = 0.0f32;
         for i in -(r as isize)..=(r as isize) {
             acc += at(i);
@@ -197,7 +216,12 @@ mod tests {
         let inner = stroke(&m, 4.0, StrokeKind::Inner);
         assert!(inner.get(12, 20) > 0.99 && inner.get(7, 20) < 0.01 && inner.get(20, 20) < 0.01);
         let centre = stroke(&m, 4.0, StrokeKind::Center);
-        assert!(centre.get(9, 20) > 0.99 && centre.get(11, 20) > 0.99 && centre.get(20, 20) < 0.01 && centre.get(5, 20) < 0.01);
+        assert!(
+            centre.get(9, 20) > 0.99
+                && centre.get(11, 20) > 0.99
+                && centre.get(20, 20) < 0.01
+                && centre.get(5, 20) < 0.01
+        );
     }
 
     #[test]

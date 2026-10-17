@@ -10,7 +10,14 @@
 //!
 //! No UI dependencies (L3): the egui frontend, the CLI and the MCP server share it.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod disk;
 pub mod hash;
@@ -37,12 +44,20 @@ pub struct PreviewCache {
 impl PreviewCache {
     /// Memory-only cache of at most `mem_bytes`.
     pub fn memory(mem_bytes: usize) -> PreviewCache {
-        PreviewCache { generation: RwLock::new(Some(0)), mem: Mutex::new(Lru::new(mem_bytes)), disk: None }
+        PreviewCache {
+            generation: RwLock::new(Some(0)),
+            mem: Mutex::new(Lru::new(mem_bytes)),
+            disk: None,
+        }
     }
 
     /// Memory LRU + disk cache in `dir` (at most `disk_bytes`).
     pub fn with_disk(mem_bytes: usize, dir: &Path, disk_bytes: u64) -> PreviewCache {
-        PreviewCache { generation: RwLock::new(Some(0)), mem: Mutex::new(Lru::new(mem_bytes)), disk: Some(DiskCache::new(dir, disk_bytes)) }
+        PreviewCache {
+            generation: RwLock::new(Some(0)),
+            mem: Mutex::new(Lru::new(mem_bytes)),
+            disk: Some(DiskCache::new(dir, disk_bytes)),
+        }
     }
 
     pub fn disk(&self) -> Option<&DiskCache> {
@@ -56,11 +71,17 @@ impl PreviewCache {
     /// Changes when explicitly cleared; jobs captured before that clear cannot repopulate it.
     /// A retired cache reports `u64::MAX`, which no job's generation matches.
     pub fn generation(&self) -> u64 {
-        self.generation.read().unwrap_or_else(std::sync::PoisonError::into_inner).unwrap_or(u64::MAX)
+        self.generation
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .unwrap_or(u64::MAX)
     }
 
     pub fn get_at(&self, generation: u64, key: Hash128) -> Option<Arc<Rgba8>> {
-        let current = self.generation.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let current = self
+            .generation
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if *current != Some(generation) {
             return None;
         }
@@ -68,7 +89,10 @@ impl PreviewCache {
             return Some(v.clone());
         }
         let img = Arc::new(self.disk.as_ref()?.get(key)?);
-        self.mem.lock().unwrap_or_else(|e| e.into_inner()).insert(key, img.clone(), cost(&img));
+        self.mem
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key, img.clone(), cost(&img));
         Some(img)
     }
 
@@ -77,7 +101,10 @@ impl PreviewCache {
     }
 
     pub fn put_at(&self, generation: u64, key: Hash128, img: Arc<Rgba8>) {
-        let current = self.generation.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let current = self
+            .generation
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if *current != Some(generation) {
             return;
         }
@@ -85,7 +112,10 @@ impl PreviewCache {
             d.put(key, &img);
         }
         let c = cost(&img);
-        self.mem.lock().unwrap_or_else(|e| e.into_inner()).insert(key, img, c);
+        self.mem
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key, img, c);
     }
 
     /// Like [`Self::put`], but the disk write (a JPEG encode) happens on a background thread, so
@@ -95,19 +125,28 @@ impl PreviewCache {
     }
 
     pub fn put_deferred_at(self: &Arc<Self>, generation: u64, key: Hash128, img: Arc<Rgba8>) {
-        let current = self.generation.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let current = self
+            .generation
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if *current != Some(generation) {
             return;
         }
         let c = cost(&img);
-        self.mem.lock().unwrap_or_else(|e| e.into_inner()).insert(key, img.clone(), c);
+        self.mem
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key, img.clone(), c);
         drop(current);
         if self.disk.is_none() {
             return;
         }
         let me = self.clone();
         let write = move || {
-            let current = me.generation.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let current = me
+                .generation
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             if *current != Some(generation) {
                 return;
             }
@@ -116,7 +155,11 @@ impl PreviewCache {
             }
         };
         #[cfg(not(target_arch = "wasm32"))]
-        if std::thread::Builder::new().name("lc-preview-write".into()).spawn(write).is_err() {
+        if std::thread::Builder::new()
+            .name("lc-preview-write".into())
+            .spawn(write)
+            .is_err()
+        {
             log::warn!("preview cache: could not start a writer thread");
         }
         #[cfg(target_arch = "wasm32")]
@@ -125,7 +168,10 @@ impl PreviewCache {
 
     /// Drop everything (memory and disk). Does nothing once [`Self::retire`]d.
     pub fn clear(&self) {
-        let mut generation = self.generation.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut generation = self
+            .generation
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         // a retired cache no longer owns its directory (its replacement may)
         let Some(g) = generation.as_mut() else { return };
         // (never reaches u64::MAX, which stands for "retired")
@@ -142,19 +188,28 @@ impl PreviewCache {
     /// (possibly the same one) can't be repopulated by them. Waits for writes in progress, like
     /// [`Self::clear`].
     pub fn retire(&self) {
-        let mut generation = self.generation.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut generation = self
+            .generation
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         *generation = None;
         self.mem.lock().unwrap_or_else(|e| e.into_inner()).clear();
     }
 
     /// Use tick ([`next_tick`]) of the least recently used image in memory.
     pub fn oldest_tick(&self) -> Option<u64> {
-        self.mem.lock().unwrap_or_else(|e| e.into_inner()).oldest_tick()
+        self.mem
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .oldest_tick()
     }
 
     /// Drop the least recently used image from memory (it stays on disk); returns its bytes.
     pub fn evict_oldest(&self) -> Option<usize> {
-        self.mem.lock().unwrap_or_else(|e| e.into_inner()).pop_oldest()
+        self.mem
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .pop_oldest()
     }
 
     /// Change the memory budget (bytes), evicting at once if needed.

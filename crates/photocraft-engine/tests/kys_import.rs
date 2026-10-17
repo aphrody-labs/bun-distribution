@@ -17,26 +17,60 @@ const SET: &str = "\u{feff}<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 #[test]
 fn import_kys_applies_the_set_and_reports_it() {
     let mut s = Session::new();
-    let r = s.execute("edit.keyboardShortcuts", json!({"importKys": SET})).unwrap();
+    let r = s
+        .execute("edit.keyboardShortcuts", json!({"importKys": SET}))
+        .unwrap();
     let import = &r["import"];
     assert_eq!(import["name"], "texcuts");
     assert_eq!(import["imported"], 3);
     assert_eq!(import["unknown"], json!(["Hide Photoshop"]));
     assert_eq!(import["toolKeys"], 1);
     let prefs = s.prefs();
-    assert_eq!(prefs.shortcuts.get("filter.blur.gaussianBlur").and_then(|k| normalize_shortcut(k)), normalize_shortcut("Ctrl+Alt+Cmd+G"));
-    assert_eq!(prefs.shortcuts.get("layer.new.layerViaCopy").map(String::as_str), Some("F7"));
+    assert_eq!(
+        prefs
+            .shortcuts
+            .get("filter.blur.gaussianBlur")
+            .and_then(|k| normalize_shortcut(k)),
+        normalize_shortcut("Ctrl+Alt+Cmd+G")
+    );
+    assert_eq!(
+        prefs
+            .shortcuts
+            .get("layer.new.layerViaCopy")
+            .map(String::as_str),
+        Some("F7")
+    );
     // Undo's key is its default, so it gets no override.
-    assert!(!prefs.shortcuts.contains_key("edit.undo"), "{:?}", prefs.shortcuts);
+    assert!(
+        !prefs.shortcuts.contains_key("edit.undo"),
+        "{:?}",
+        prefs.shortcuts
+    );
 }
 
 #[test]
 fn import_kys_keys_given_in_set_win_and_bad_input_is_an_error() {
     let mut s = Session::new();
-    s.execute("edit.keyboardShortcuts", json!({"importKys": SET, "set": {"layer.new.layerViaCopy": "F8"}})).unwrap();
-    assert_eq!(s.prefs().shortcuts.get("layer.new.layerViaCopy").map(String::as_str), Some("F8"));
+    s.execute(
+        "edit.keyboardShortcuts",
+        json!({"importKys": SET, "set": {"layer.new.layerViaCopy": "F8"}}),
+    )
+    .unwrap();
+    assert_eq!(
+        s.prefs()
+            .shortcuts
+            .get("layer.new.layerViaCopy")
+            .map(String::as_str),
+        Some("F8")
+    );
     let before = s.prefs().shortcuts.clone();
-    assert!(s.execute("edit.keyboardShortcuts", json!({"importKys": "<other/>"})).is_err());
-    assert!(s.execute("edit.keyboardShortcuts", json!({"importKys": 7})).is_err());
+    assert!(
+        s.execute("edit.keyboardShortcuts", json!({"importKys": "<other/>"}))
+            .is_err()
+    );
+    assert!(
+        s.execute("edit.keyboardShortcuts", json!({"importKys": 7}))
+            .is_err()
+    );
     assert_eq!(s.prefs().shortcuts, before, "a refused set changes nothing");
 }

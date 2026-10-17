@@ -2,8 +2,8 @@ use bevy_macro_utils::fq_std::{FQInto, FQSend, FQSync};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    parse_macro_input, parse_quote, spanned::Spanned, Data, DataStruct, DeriveInput, Fields, Index,
-    Member, Path, Result, Token, Type,
+    Data, DataStruct, DeriveInput, Fields, Index, Member, Path, Result, Token, Type,
+    parse_macro_input, parse_quote, spanned::Spanned,
 };
 
 pub const EVENT: &str = "event";

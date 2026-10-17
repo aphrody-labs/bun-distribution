@@ -201,7 +201,10 @@ fn panneaux(vfs: &Vfs, textes: &BTreeMap<u32, String>) -> Vec<Panneau> {
             Some((tete, queue)) if queue.chars().next().is_some_and(|c| c.is_ascii_digit()) => tete,
             _ => sans_ext,
         };
-        out.push(Panneau { nom: nom.to_string(), libelles });
+        out.push(Panneau {
+            nom: nom.to_string(),
+            libelles,
+        });
     }
     out
 }
@@ -224,7 +227,11 @@ fn roi(ecran: &str, layouts: &Path, out: Option<&Path>) -> Result<()> {
     let mut rois: Vec<Json> = Vec::new();
     let mut non_derivables: Vec<String> = Vec::new();
 
-    for o in doc["objects"].as_array().map(Vec::as_slice).unwrap_or_default() {
+    for o in doc["objects"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or_default()
+    {
         let nom = o["name"].as_str().unwrap_or_default();
         let bas = nom.to_ascii_lowercase();
         if !MOTIFS_DYNAMIQUES.iter().any(|m| bas.contains(m)) {
@@ -232,8 +239,14 @@ fn roi(ecran: &str, layouts: &Path, out: Option<&Path>) -> Result<()> {
         }
         let (sw, sh) = (o["sprite"]["w"].as_f64(), o["sprite"]["h"].as_f64());
         let t = &o["transform"];
-        let (sx, sy) = (t["scaleX"].as_f64().unwrap_or(1.0), t["scaleY"].as_f64().unwrap_or(1.0));
-        let (x, y) = (t["x"].as_f64().unwrap_or(0.0), t["y"].as_f64().unwrap_or(0.0));
+        let (sx, sy) = (
+            t["scaleX"].as_f64().unwrap_or(1.0),
+            t["scaleY"].as_f64().unwrap_or(1.0),
+        );
+        let (x, y) = (
+            t["x"].as_f64().unwrap_or(0.0),
+            t["y"].as_f64().unwrap_or(0.0),
+        );
 
         // Signature du repli documenté : sprite factice, ou objet parqué au centre exact à
         // l'échelle native. Dans les deux cas la géométrie du layout ne décrit PAS ce que la
@@ -472,7 +485,9 @@ fn extraire_planche(
     use aphrody_nie_formats::image_out;
     use aphrody_nie_formats::planche::Convention;
 
-    let brut = vfs.read(chemin).with_context(|| format!("lecture {chemin}"))?;
+    let brut = vfs
+        .read(chemin)
+        .with_context(|| format!("lecture {chemin}"))?;
     let Some((w, h, rgba)) =
         aphrody_nie_formats::g4tx_decode::decode_named_to_rgba(&brut, &fiche.nom)
     else {
@@ -503,7 +518,7 @@ fn extraire_planche(
                 copie[i + 3] = m[i];
             }
             Some(copie)
-        },
+        }
         (Convention::SansMasque, _) => Some(rgba.clone()),
         _ => None,
     };
@@ -544,7 +559,15 @@ struct OptionsPlanches<'a> {
 /// que la convention en tire. C'est la seule façon de vérifier une convention autrement que sur
 /// des pourcentages — un tracé de sourcil se reconnaît à l'œil, pas à ses 5,46 % de vert.
 fn planches(game_dir: &Path, o: &OptionsPlanches) -> Result<()> {
-    let &OptionsPlanches { prefix, filtre, detail, out, extraire, vignette, limit } = o;
+    let &OptionsPlanches {
+        prefix,
+        filtre,
+        detail,
+        out,
+        extraire,
+        vignette,
+        limit,
+    } = o;
     use aphrody_nie_formats::planche::{self, Role, Zone};
 
     let mut vfs = Vfs::new();
@@ -666,12 +689,18 @@ fn planches(game_dir: &Path, o: &OptionsPlanches) -> Result<()> {
         println!("  {png_ecrits} PNG écrits dans {}", dir.display());
     }
     println!();
-    println!("  {:<14} {:>5} {:>5}  {:<28} conventions", "famille", "cont.", "plan.", "rôles");
+    println!(
+        "  {:<14} {:>5} {:>5}  {:<28} conventions",
+        "famille", "cont.", "plan.", "rôles"
+    );
     for (famille, agr) in &par_famille {
         let liste = |m: &BTreeMap<&'static str, usize>| -> String {
             let mut v: Vec<(&&str, &usize)> = m.iter().collect();
             v.sort_by(|a, b| b.1.cmp(a.1));
-            v.iter().map(|(k, n)| format!("{k} {n}")).collect::<Vec<_>>().join(", ")
+            v.iter()
+                .map(|(k, n)| format!("{k} {n}"))
+                .collect::<Vec<_>>()
+                .join(", ")
         };
         println!(
             "  {:<14} {:>5} {:>5}  {:<28} {}",
@@ -697,20 +726,32 @@ fn planches(game_dir: &Path, o: &OptionsPlanches) -> Result<()> {
                 "    {famille:<14} {}/{} — {}",
                 agr.muettes.len(),
                 agr.planches,
-                agr.muettes.iter().take(4).cloned().collect::<Vec<_>>().join(", ")
+                agr.muettes
+                    .iter()
+                    .take(4)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
             );
         }
     }
 
     // Une convention minoritaire est le signal utile : elle dit qu'une règle codée par famille
     // ne couvre pas toute sa famille.
-    let mixtes: Vec<&String> =
-        par_famille.iter().filter(|(_, a)| a.conventions.len() > 1).map(|(f, _)| f).collect();
+    let mixtes: Vec<&String> = par_famille
+        .iter()
+        .filter(|(_, a)| a.conventions.len() > 1)
+        .map(|(f, _)| f)
+        .collect();
     if !mixtes.is_empty() {
         println!();
         println!(
             "  familles à convention non unique : {}",
-            mixtes.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+            mixtes
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
         );
     }
 
@@ -721,7 +762,11 @@ fn planches(game_dir: &Path, o: &OptionsPlanches) -> Result<()> {
         std::fs::write(fichier, serde_json::to_vec_pretty(&releve)?)
             .with_context(|| format!("écriture {}", fichier.display()))?;
         println!();
-        println!("  {} planche(s) relevée(s) → {}", releve.len(), fichier.display());
+        println!(
+            "  {} planche(s) relevée(s) → {}",
+            releve.len(),
+            fichier.display()
+        );
     }
     Ok(())
 }
@@ -897,7 +942,9 @@ fn find_one(vfs: &Vfs, contains: &str, prefix: &str) -> Result<String> {
         })
         .collect();
     hits.sort();
-    hits.into_iter().next().with_context(|| format!("{prefix}*.cfg.bin introuvable dans le VFS"))
+    hits.into_iter()
+        .next()
+        .with_context(|| format!("{prefix}*.cfg.bin introuvable dans le VFS"))
 }
 
 /// Lit un `cfg.bin` du VFS et le rend en JSON forme iecode (RDBN à listes ou T2B, indifféremment).
@@ -910,7 +957,8 @@ impl Sources {
     /// Ouvre le VFS et charge les cinq fichiers plus l'index des assets de `20_EDIT/`.
     fn load(game_dir: &Path) -> Result<Self> {
         let mut vfs = Vfs::new();
-        vfs.init(game_dir.join("data")).context("init VFS depuis cpk_list.cfg.bin")?;
+        vfs.init(game_dir.join("data"))
+            .context("init VFS depuis cpk_list.cfg.bin")?;
 
         let p_cat = find_one(&vfs, "/gamedata/character/", "chara_edit_")?;
         // `chara_edit_parts_type_config_*` commence aussi par `chara_edit_` : le tri alphabétique
@@ -944,7 +992,10 @@ impl Sources {
                 continue;
             };
             let stem = base.split_once('.').map_or(base, |(s, _)| s);
-            assets.entry(stem.to_string()).or_default().push(path.to_string());
+            assets
+                .entry(stem.to_string())
+                .or_default()
+                .push(path.to_string());
         }
         for v in assets.values_mut() {
             v.sort();
@@ -1057,8 +1108,14 @@ fn crop_rgba(
     rect: (i16, i16, i16, i16),
 ) -> Option<(u32, u32, Vec<u8>)> {
     let (rx, ry, rw, rh) = rect;
-    let (x0, y0) = (u32::try_from(rx.max(0)).ok()?, u32::try_from(ry.max(0)).ok()?);
-    let (cw, ch) = (u32::try_from(rw.max(0)).ok()?, u32::try_from(rh.max(0)).ok()?);
+    let (x0, y0) = (
+        u32::try_from(rx.max(0)).ok()?,
+        u32::try_from(ry.max(0)).ok()?,
+    );
+    let (cw, ch) = (
+        u32::try_from(rw.max(0)).ok()?,
+        u32::try_from(rh.max(0)).ok()?,
+    );
     if cw == 0 || ch == 0 || x0 >= w || y0 >= h {
         return None;
     }
@@ -1078,14 +1135,21 @@ fn crop_rgba(
 fn icon_dict(db_path: &Path) -> BTreeMap<u32, String> {
     let mut out = BTreeMap::new();
     let Ok(db) = aphrody_nie_index::Db::open(db_path) else {
-        eprintln!("  (base {} illisible : icônes non résolues)", db_path.display());
+        eprintln!(
+            "  (base {} illisible : icônes non résolues)",
+            db_path.display()
+        );
         return out;
     };
-    let Ok(mut stmt) = db.conn().prepare("SELECT hash, name FROM hash_name WHERE kind='texture'")
+    let Ok(mut stmt) = db
+        .conn()
+        .prepare("SELECT hash, name FROM hash_name WHERE kind='texture'")
     else {
         return out;
     };
-    let rows = stmt.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?))).ok();
+    let rows = stmt
+        .query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)))
+        .ok();
     if let Some(rows) = rows {
         for (hash, name) in rows.flatten() {
             out.insert(hash as u32, name);
@@ -1198,7 +1262,16 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
     if let AvatarCmd::Depliage { modele, limit } = cmd {
         return depliage(game_dir, modele, *limit);
     }
-    if let AvatarCmd::Planches { prefix, filtre, detail, out, extraire, vignette, limit } = cmd {
+    if let AvatarCmd::Planches {
+        prefix,
+        filtre,
+        detail,
+        out,
+        extraire,
+        vignette,
+        limit,
+    } = cmd
+    {
         return planches(
             game_dir,
             &OptionsPlanches {
@@ -1269,8 +1342,10 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                     .iter()
                     .filter(|p| !resource_paths(&src, &p.resource_name_str1).is_empty())
                     .count();
-                let with_icon =
-                    parts.iter().filter(|p| icons.contains_key(&(p.texture_name.get()))).count();
+                let with_icon = parts
+                    .iter()
+                    .filter(|p| icons.contains_key(&(p.texture_name.get())))
+                    .count();
                 println!(
                     "  {:>3}  {:>5}  {:>7}  {:>6}  {}",
                     info.face_setting_type,
@@ -1285,8 +1360,11 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                 .iter()
                 .filter(|p| !resource_paths(&src, &p.resource_name_str1).is_empty())
                 .count();
-            let total_icon =
-                cfg.parts.iter().filter(|p| icons.contains_key(&(p.texture_name.get()))).count();
+            let total_icon = cfg
+                .parts
+                .iter()
+                .filter(|p| icons.contains_key(&(p.texture_name.get())))
+                .count();
             println!(
                 "\n  résolu : {total_model}/{} modèles dans le VFS, {total_icon}/{} icônes dans hash_name",
                 cfg.parts.len(),
@@ -1320,7 +1398,7 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                 "  libellés : {libelles}/{} personnalités nommées par menu_text (fr)",
                 cfg.personalities.len()
             );
-        },
+        }
 
         AvatarCmd::Parts { category, limit } => {
             let sel: Vec<&aphrody_nie_data::chara_edit::CharaEditPartsData> = match category {
@@ -1348,7 +1426,7 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
             if sel.len() > *limit {
                 println!("  … {} de plus (--limit)", sel.len() - *limit);
             }
-        },
+        }
 
         AvatarCmd::Preset { id } => match id {
             None => {
@@ -1370,10 +1448,14 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                         pi.preset_id.to_hex_x8(),
                         nom,
                         pi.data_count,
-                        if morph.len() == 8 { String::from("toutes") } else { morph.join(",") }
+                        if morph.len() == 8 {
+                            String::from("toutes")
+                        } else {
+                            morph.join(",")
+                        }
                     );
                 }
-            },
+            }
             Some(arg) => {
                 let hash = if let Some(hex) = arg.strip_prefix("0x") {
                     u32::from_str_radix(hex, 16).context("hash de preset invalide")?
@@ -1382,11 +1464,17 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                 };
                 let key = aphrody_nie_data::hash::HashId::from_i64(i64::from(hash));
                 let recipe = cfg.recipe_of(key);
-                anyhow::ensure!(!recipe.is_empty(), "aucune recette pour {arg} (0x{hash:08X})");
+                anyhow::ensure!(
+                    !recipe.is_empty(),
+                    "aucune recette pour {arg} (0x{hash:08X})"
+                );
                 println!("recette {arg} (0x{hash:08X}) — {} lignes", recipe.len());
                 println!("  empl.  cat  val  couleur  part");
                 for line in recipe {
-                    let r = cfg.recipes.iter().find(|r| r.recipe_type == line.recipe_type);
+                    let r = cfg
+                        .recipes
+                        .iter()
+                        .find(|r| r.recipe_type == line.recipe_type);
                     let part = cfg.part(line.parts_id);
                     println!(
                         "  {:>5}  {:>3}  {:>3}  {:>7}  {}",
@@ -1408,7 +1496,7 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                         )
                     );
                 }
-            },
+            }
         },
 
         AvatarCmd::Export { out } => {
@@ -1544,14 +1632,22 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                 cfg.parts.len(),
                 cfg.preset_info.len()
             );
-        },
+        }
 
-        AvatarCmd::Roi { ecran, layouts, out } => return roi(ecran, layouts, out.as_deref()),
+        AvatarCmd::Roi {
+            ecran,
+            layouts,
+            out,
+        } => return roi(ecran, layouts, out.as_deref()),
 
         // Déjà traitées en tête, avant le chargement des sources.
-        AvatarCmd::Planches { .. } | AvatarCmd::Depliage { .. } => {},
+        AvatarCmd::Planches { .. } | AvatarCmd::Depliage { .. } => {}
 
-        AvatarCmd::Icons { out, atlas_prefix, limit } => {
+        AvatarCmd::Icons {
+            out,
+            atlas_prefix,
+            limit,
+        } => {
             // Les noms voulus : l'icône de chaque part, résolue depuis `hash_name`.
             let voulus: BTreeMap<u32, String> = cfg
                 .parts
@@ -1571,13 +1667,20 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                 localisees.len(),
                 voulus.len()
             );
-            let manquantes: Vec<&String> =
-                voulus.values().filter(|n| !localisees.contains_key(n.as_str())).collect();
+            let manquantes: Vec<&String> = voulus
+                .values()
+                .filter(|n| !localisees.contains_key(n.as_str()))
+                .collect();
             if !manquantes.is_empty() {
                 println!(
                     "  {} non localisée(s), ex. {}",
                     manquantes.len(),
-                    manquantes.iter().take(5).map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                    manquantes
+                        .iter()
+                        .take(5)
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 );
             }
 
@@ -1587,7 +1690,8 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                         "  {nom:<26} {} [{}]{}",
                         loc.texture,
                         loc.atlas.rsplit('/').next().unwrap_or(&loc.atlas),
-                        loc.rect.map_or(String::new(), |(x, y, w, h)| format!(" {x},{y} {w}×{h}"))
+                        loc.rect
+                            .map_or(String::new(), |(x, y, w, h)| format!(" {x},{y} {w}×{h}"))
                     );
                 }
                 return Ok(());
@@ -1626,12 +1730,15 @@ pub fn run(cmd: &AvatarCmd, game_dir: &Path, db_path: &Path) -> Result<()> {
                     Some(bytes) => {
                         std::fs::write(dir.join(format!("{nom}.png")), bytes)?;
                         ecrits += 1;
-                    },
+                    }
                     None => echecs += 1,
                 }
             }
-            println!("  {ecrits} PNG écrits dans {}, {echecs} échec(s)", dir.display());
-        },
+            println!(
+                "  {ecrits} PNG écrits dans {}, {echecs} échec(s)",
+                dir.display()
+            );
+        }
     }
     Ok(())
 }

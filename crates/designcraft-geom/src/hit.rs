@@ -15,12 +15,17 @@ pub fn fill_contains(path: &BezPath, rule: FillRule, p: Point) -> bool {
 
 /// Distance from `p` to the nearest point on the path outline.
 pub fn distance_to_outline(path: &BezPath, p: Point) -> f64 {
-    path.segments().map(|s| s.nearest(p, 1e-6).distance_sq).fold(f64::INFINITY, f64::min).sqrt()
+    path.segments()
+        .map(|s| s.nearest(p, 1e-6).distance_sq)
+        .fold(f64::INFINITY, f64::min)
+        .sqrt()
 }
 
 /// Is `p` within `tol` of the path's stroke of width `width`?
 pub fn stroke_contains(path: &BezPath, width: f64, tol: f64, p: Point) -> bool {
-    let quick = path.bounding_box().inflate(width / 2.0 + tol, width / 2.0 + tol);
+    let quick = path
+        .bounding_box()
+        .inflate(width / 2.0 + tol, width / 2.0 + tol);
     quick.contains(p) && distance_to_outline(path, p) <= width / 2.0 + tol
 }
 
@@ -70,7 +75,9 @@ mod tests {
     #[test]
     fn evenodd_hole() {
         let mut outer = shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
-        outer.subpaths.extend(shapes::rectangle(Rect::new(3.0, 3.0, 7.0, 7.0)).subpaths);
+        outer
+            .subpaths
+            .extend(shapes::rectangle(Rect::new(3.0, 3.0, 7.0, 7.0)).subpaths);
         let bp = outer.to_bezpath();
         assert!(!fill_contains(&bp, FillRule::EvenOdd, Point::new(5.0, 5.0)));
         assert!(fill_contains(&bp, FillRule::NonZero, Point::new(5.0, 5.0)));

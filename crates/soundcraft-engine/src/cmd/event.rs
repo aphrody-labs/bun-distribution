@@ -9,22 +9,81 @@ use soundcraft_time::TICKS_PER_QUARTER;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("event.tempo", "Tempo Change", [], None, "{bpm, at?: position (default session start)}", always, tempo),
-        cmd!("event.tempo_remove", "Remove Tempo Change", [], None, "{at}", always, |e, p| {
-            let at = position_param(e, "event.tempo_remove", p, "at")?.unwrap_or(0);
-            let s = e.session_mut();
-            let tick = s.tempo.samples_to_ticks(at, s.sample_rate);
-            Ok(json!({"removed": s.tempo.remove_tempo(tick)}))
-        }),
-        cmd!("event.meter", "Change Meter...", ["Event", "Time Operations"], None, "{numerator, denominator, at?: position}", always, meter),
-        cmd!("event.tempo_scale", "Scale...", ["Event", "Tempo Operations"], None, "{factor}", always, |e, p| {
-            let f = f64_or(p, "factor", 1.0);
-            e.session_mut().tempo.scale_tempos(f).map_err(|err| bad("event.tempo_scale", err.to_string()))?;
-            Ok(json!({}))
-        }),
-        cmd!("event.tempo_constant", "Constant...", ["Event", "Tempo Operations"], None, "{bpm, start?, end?}", always, tempo),
-        cmd!("event.insert_time", "Insert Time...", ["Event", "Time Operations"], None, "{start?, length | end}", has_tracks, insert_time),
-        cmd!("event.cut_time", "Cut Time...", ["Event", "Time Operations"], None, "{start?, end?}", has_tracks, cut_time),
+        cmd!(
+            "event.tempo",
+            "Tempo Change",
+            [],
+            None,
+            "{bpm, at?: position (default session start)}",
+            always,
+            tempo
+        ),
+        cmd!(
+            "event.tempo_remove",
+            "Remove Tempo Change",
+            [],
+            None,
+            "{at}",
+            always,
+            |e, p| {
+                let at = position_param(e, "event.tempo_remove", p, "at")?.unwrap_or(0);
+                let s = e.session_mut();
+                let tick = s.tempo.samples_to_ticks(at, s.sample_rate);
+                Ok(json!({"removed": s.tempo.remove_tempo(tick)}))
+            }
+        ),
+        cmd!(
+            "event.meter",
+            "Change Meter...",
+            ["Event", "Time Operations"],
+            None,
+            "{numerator, denominator, at?: position}",
+            always,
+            meter
+        ),
+        cmd!(
+            "event.tempo_scale",
+            "Scale...",
+            ["Event", "Tempo Operations"],
+            None,
+            "{factor}",
+            always,
+            |e, p| {
+                let f = f64_or(p, "factor", 1.0);
+                e.session_mut()
+                    .tempo
+                    .scale_tempos(f)
+                    .map_err(|err| bad("event.tempo_scale", err.to_string()))?;
+                Ok(json!({}))
+            }
+        ),
+        cmd!(
+            "event.tempo_constant",
+            "Constant...",
+            ["Event", "Tempo Operations"],
+            None,
+            "{bpm, start?, end?}",
+            always,
+            tempo
+        ),
+        cmd!(
+            "event.insert_time",
+            "Insert Time...",
+            ["Event", "Time Operations"],
+            None,
+            "{start?, length | end}",
+            has_tracks,
+            insert_time
+        ),
+        cmd!(
+            "event.cut_time",
+            "Cut Time...",
+            ["Event", "Time Operations"],
+            None,
+            "{start?, end?}",
+            has_tracks,
+            cut_time
+        ),
         cmd!(
             "event.quantize",
             "Quantize...",
@@ -34,10 +93,18 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             quantize
         ),
-        cmd!("event.transpose", "Transpose...", ["Event", "MIDI Operations"], Some("Alt+T"), "{semitones, clips?}", has_selection, |e, p| {
-            let st = i64_or(p, "semitones", 0).clamp(-127, 127) as i32;
-            midi_op(e, p, move |n| soundcraft_midi::ops::transpose(n, st))
-        }),
+        cmd!(
+            "event.transpose",
+            "Transpose...",
+            ["Event", "MIDI Operations"],
+            Some("Alt+T"),
+            "{semitones, clips?}",
+            has_selection,
+            |e, p| {
+                let st = i64_or(p, "semitones", 0).clamp(-127, 127) as i32;
+                midi_op(e, p, move |n| soundcraft_midi::ops::transpose(n, st))
+            }
+        ),
         cmd!(
             "event.change_velocity",
             "Change Velocity...",
@@ -56,34 +123,75 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             duration
         ),
-        cmd!("event.remove_duplicate_notes", "Remove Duplicate Notes", ["Event"], None, "{clips?}", has_selection, |e, p| {
-            let ids = clip_ids_param(e, p);
-            let s = e.session_mut();
-            let mut n = 0;
-            for id in ids {
-                if let Some(c) = s.find_clip_mut(id)
-                    && let ClipContent::Midi { sequence } = &mut c.content
-                {
-                    n += sequence.remove_duplicates()
+        cmd!(
+            "event.remove_duplicate_notes",
+            "Remove Duplicate Notes",
+            ["Event"],
+            None,
+            "{clips?}",
+            has_selection,
+            |e, p| {
+                let ids = clip_ids_param(e, p);
+                let s = e.session_mut();
+                let mut n = 0;
+                for id in ids {
+                    if let Some(c) = s.find_clip_mut(id)
+                        && let ClipContent::Midi { sequence } = &mut c.content
+                    {
+                        n += sequence.remove_duplicates()
+                    }
                 }
+                Ok(json!({"removed": n}))
             }
-            Ok(json!({"removed": n}))
-        }),
-        cmd!("event.add_key_change", "Add Key Change...", ["Event"], None, "{key: 'C major', at?}", always, |e, p| {
-            let key = str_param(p, "key").unwrap_or("C major").to_string();
-            let at = position_param(e, "event.add_key_change", p, "at")?.unwrap_or(0);
-            let s = e.session_mut();
-            s.key_signatures.retain(|(t, _)| *t != at);
-            s.key_signatures.push((at, key));
-            s.key_signatures.sort_by_key(|k| k.0);
-            Ok(json!({}))
-        }),
-        cmd!("event.renumber_bars", "Renumber Bars...", ["Event"], None, "{}", always, |_, _| Ok(json!({"note": "bars start at 1"}))),
-        cmd!("event.all_notes_off", "All MIDI Notes Off", ["Event"], Some("Cmd+Shift+."), "{}", always, |e, _| {
-            e.transport_requests.push(crate::TransportRequest::AllNotesOff);
-            Ok(json!({}))
-        }),
-        cmd!("event.midi_note", "Add MIDI Note", [], None, "{clip, pitch, start_ticks, length_ticks, velocity?: 100}", has_selection, add_note),
+        ),
+        cmd!(
+            "event.add_key_change",
+            "Add Key Change...",
+            ["Event"],
+            None,
+            "{key: 'C major', at?}",
+            always,
+            |e, p| {
+                let key = str_param(p, "key").unwrap_or("C major").to_string();
+                let at = position_param(e, "event.add_key_change", p, "at")?.unwrap_or(0);
+                let s = e.session_mut();
+                s.key_signatures.retain(|(t, _)| *t != at);
+                s.key_signatures.push((at, key));
+                s.key_signatures.sort_by_key(|k| k.0);
+                Ok(json!({}))
+            }
+        ),
+        cmd!(
+            "event.renumber_bars",
+            "Renumber Bars...",
+            ["Event"],
+            None,
+            "{}",
+            always,
+            |_, _| Ok(json!({"note": "bars start at 1"}))
+        ),
+        cmd!(
+            "event.all_notes_off",
+            "All MIDI Notes Off",
+            ["Event"],
+            Some("Cmd+Shift+."),
+            "{}",
+            always,
+            |e, _| {
+                e.transport_requests
+                    .push(crate::TransportRequest::AllNotesOff);
+                Ok(json!({}))
+            }
+        ),
+        cmd!(
+            "event.midi_note",
+            "Add MIDI Note",
+            [],
+            None,
+            "{clip, pitch, start_ticks, length_ticks, velocity?: 100}",
+            has_selection,
+            add_note
+        ),
         cmd!(
             "markers.add",
             "New Memory Location",
@@ -93,8 +201,24 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             add_marker
         ),
-        cmd!("markers.delete", "Delete Memory Location", [], None, "{number | id}", always, delete_marker),
-        cmd!("markers.edit", "Edit Memory Location", [], None, "{number | id, name?, comments?, at?, color?}", always, edit_marker),
+        cmd!(
+            "markers.delete",
+            "Delete Memory Location",
+            [],
+            None,
+            "{number | id}",
+            always,
+            delete_marker
+        ),
+        cmd!(
+            "markers.edit",
+            "Edit Memory Location",
+            [],
+            None,
+            "{number | id, name?, comments?, at?, color?}",
+            always,
+            edit_marker
+        ),
         cmd!(noundo "markers.recall", "Recall Memory Location", [], Some("Period + n + Period"), "{number}", always, recall_marker),
         cmd!(noundo "markers.next", "Go to Next Marker", [], None, "{}", always, |e, _| step_marker(e, 1)),
         cmd!(noundo "markers.previous", "Go to Previous Marker", [], None, "{}", always, |e, _| step_marker(e, -1)),
@@ -103,10 +227,14 @@ pub fn specs() -> Vec<CommandSpec> {
 
 fn tempo(e: &mut Engine, p: &Value) -> Result<Value> {
     let bpm = f64_or(p, "bpm", f64::NAN);
-    let at = position_param(e, "event.tempo", p, "at")?.or(position_param(e, "event.tempo", p, "start")?).unwrap_or(0);
+    let at = position_param(e, "event.tempo", p, "at")?
+        .or(position_param(e, "event.tempo", p, "start")?)
+        .unwrap_or(0);
     let s = e.session_mut();
     let tick = s.tempo.samples_to_ticks(at, s.sample_rate);
-    s.tempo.set_tempo(tick, bpm).map_err(|err| bad("event.tempo", err.to_string()))?;
+    s.tempo
+        .set_tempo(tick, bpm)
+        .map_err(|err| bad("event.tempo", err.to_string()))?;
     Ok(json!({"tick": tick, "bpm": bpm}))
 }
 
@@ -116,14 +244,19 @@ fn meter(e: &mut Engine, p: &Value) -> Result<Value> {
     let at = position_param(e, "event.meter", p, "at")?.unwrap_or(0);
     let s = e.session_mut();
     let tick = s.tempo.samples_to_ticks(at, s.sample_rate);
-    s.tempo.set_meter(tick, num, den).map_err(|err| bad("event.meter", err.to_string()))?;
+    s.tempo
+        .set_meter(tick, num, den)
+        .map_err(|err| bad("event.meter", err.to_string()))?;
     Ok(json!({"meter": format!("{num}/{den}")}))
 }
 
 fn insert_time(e: &mut Engine, p: &Value) -> Result<Value> {
     let r = range_param(e, "event.insert_time", p)?;
     if r.is_empty() {
-        return Err(bad("event.insert_time", "give `start` and `length` or `end`"));
+        return Err(bad(
+            "event.insert_time",
+            "give `start` and `length` or `end`",
+        ));
     }
     let s = e.session_mut();
     let ids: Vec<_> = s.tracks.iter().map(|t| t.id).collect();
@@ -222,7 +355,10 @@ fn velocity(e: &mut Engine, p: &Value) -> Result<Value> {
     } else if let Some(v) = p.get("scale").and_then(Value::as_f64) {
         VelocityOp::Scale((v as f32).clamp(0.0, 10.0))
     } else {
-        VelocityOp::Limit { min: i64_or(p, "min", 1).clamp(1, 127) as u8, max: i64_or(p, "max", 127).clamp(1, 127) as u8 }
+        VelocityOp::Limit {
+            min: i64_or(p, "min", 1).clamp(1, 127) as u8,
+            max: i64_or(p, "max", 127).clamp(1, 127) as u8,
+        }
     };
     midi_op(e, p, move |n| soundcraft_midi::ops::change_velocity(n, op))
 }
@@ -235,14 +371,18 @@ fn duration(e: &mut Engine, p: &Value) -> Result<Value> {
     } else if let Some(v) = p.get("scale").and_then(Value::as_f64) {
         DurationOp::Scale((v as f32).clamp(0.01, 100.0))
     } else {
-        DurationOp::Legato { gap: i64_or(p, "legato", 0).max(0) }
+        DurationOp::Legato {
+            gap: i64_or(p, "legato", 0).max(0),
+        }
     };
     midi_op(e, p, move |n| soundcraft_midi::ops::change_duration(n, op))
 }
 
 fn add_note(e: &mut Engine, p: &Value) -> Result<Value> {
     let ids = clip_ids_param(e, p);
-    let id = *ids.first().ok_or_else(|| bad("event.midi_note", "`clip` required"))?;
+    let id = *ids
+        .first()
+        .ok_or_else(|| bad("event.midi_note", "`clip` required"))?;
     let note = soundcraft_midi::Note {
         pitch: i64_or(p, "pitch", 60).clamp(0, 127) as u8,
         velocity: i64_or(p, "velocity", 100).clamp(1, 127) as u8,
@@ -276,7 +416,14 @@ fn add_marker(e: &mut Engine, p: &Value) -> Result<Value> {
         (Some(a), _, _) => (a, a),
         (None, Some(a), Some(b)) => (a, b),
         _ if kind == MarkerKind::Selection => (sel.start, sel.end),
-        _ => (if e.transport.playing { e.transport.position } else { sel.start }, sel.start),
+        _ => (
+            if e.transport.playing {
+                e.transport.position
+            } else {
+                sel.start
+            },
+            sel.start,
+        ),
     };
     let s = e.session_mut();
     let n = s.markers.len() + 1;
@@ -300,7 +447,12 @@ fn marker_index(e: &Engine, p: &Value, cmd: &str) -> Result<usize> {
     } else {
         None
     };
-    idx.ok_or_else(|| bad(cmd, "unknown memory location (give `number`, `id` or `name`)"))
+    idx.ok_or_else(|| {
+        bad(
+            cmd,
+            "unknown memory location (give `number`, `id` or `name`)",
+        )
+    })
 }
 
 fn delete_marker(e: &mut Engine, p: &Value) -> Result<Value> {
@@ -313,7 +465,9 @@ fn edit_marker(e: &mut Engine, p: &Value) -> Result<Value> {
     let i = marker_index(e, p, "markers.edit")?;
     let at = position_param(e, "markers.edit", p, "at")?;
     let s = e.session_mut();
-    let Some(m) = s.markers.get_mut(i) else { return Err(bad("markers.edit", "gone")) };
+    let Some(m) = s.markers.get_mut(i) else {
+        return Err(bad("markers.edit", "gone"));
+    };
     if let Some(n) = p.get("rename").and_then(Value::as_str) {
         m.name = n.to_string();
     }
@@ -332,7 +486,9 @@ fn edit_marker(e: &mut Engine, p: &Value) -> Result<Value> {
 fn recall_marker(e: &mut Engine, p: &Value) -> Result<Value> {
     let i = marker_index(e, p, "markers.recall")?;
     let s = e.session();
-    let Some(m) = s.markers.get(i).cloned() else { return Err(bad("markers.recall", "gone")) };
+    let Some(m) = s.markers.get(i).cloned() else {
+        return Err(bad("markers.recall", "gone"));
+    };
     let s = e.session_mut();
     match m.kind {
         MarkerKind::Marker => s.edit.selection = soundcraft_time::Range::point(m.start),
@@ -340,7 +496,8 @@ fn recall_marker(e: &mut Engine, p: &Value) -> Result<Value> {
         MarkerKind::None => {}
     }
     s.edit.playhead = m.start;
-    e.transport_requests.push(crate::TransportRequest::Locate(m.start));
+    e.transport_requests
+        .push(crate::TransportRequest::Locate(m.start));
     Ok(json!({"at": m.start}))
 }
 
@@ -352,11 +509,14 @@ fn step_marker(e: &mut Engine, dir: i64) -> Result<Value> {
     } else {
         s.markers.iter().map(|m| m.start).filter(|t| *t < cur).max()
     };
-    let Some(t) = target else { return Ok(json!({"moved": false})) };
+    let Some(t) = target else {
+        return Ok(json!({"moved": false}));
+    };
     let s = e.session_mut();
     s.edit.selection = soundcraft_time::Range::point(t);
     s.edit.playhead = t;
-    e.transport_requests.push(crate::TransportRequest::Locate(t));
+    e.transport_requests
+        .push(crate::TransportRequest::Locate(t));
     Ok(json!({"at": t}))
 }
 
@@ -371,7 +531,8 @@ mod tests {
         let mut e = demo_engine();
         let sr = e.session().sample_rate;
         let at = sr.samples(4.0);
-        e.execute("event.tempo", &json!({"bpm": 133.5, "at": at})).unwrap();
+        e.execute("event.tempo", &json!({"bpm": 133.5, "at": at}))
+            .unwrap();
         let s = e.session();
         let tick = s.tempo.samples_to_ticks(at, s.sample_rate);
         assert!((s.tempo.tempo_at_tick(tick) - 133.5).abs() < 1e-9);

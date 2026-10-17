@@ -628,7 +628,10 @@ impl Interface {
     /// StartDetection (cmd 3).
     /// Upstream: NfcInterface::StartDetection
     /// For NFP backend, tag_protocol is always NfcProtocol::All (not read from params).
-    pub(super) fn start_detection_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn start_detection_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -707,7 +710,10 @@ impl Interface {
 
     /// OpenApplicationArea (cmd 7).
     /// Upstream: Interface::OpenApplicationArea
-    pub(super) fn open_application_area_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn open_application_area_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -726,7 +732,10 @@ impl Interface {
 
     /// GetApplicationArea (cmd 8).
     /// Upstream: Interface::GetApplicationArea
-    pub(super) fn get_application_area_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn get_application_area_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -753,7 +762,10 @@ impl Interface {
 
     /// SetApplicationArea (cmd 9).
     /// Upstream: Interface::SetApplicationArea
-    pub(super) fn set_application_area_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn set_application_area_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -800,7 +812,10 @@ impl Interface {
 
     /// CreateApplicationArea (cmd 12).
     /// Upstream: Interface::CreateApplicationArea
-    pub(super) fn create_application_area_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn create_application_area_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -845,7 +860,10 @@ impl Interface {
 
     /// GetRegisterInfo (cmd 14).
     /// Upstream: Interface::GetRegisterInfo
-    pub(super) fn get_register_info_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn get_register_info_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -872,7 +890,10 @@ impl Interface {
 
     /// GetCommonInfo (cmd 15).
     /// Upstream: Interface::GetCommonInfo
-    pub(super) fn get_common_info_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn get_common_info_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -920,7 +941,10 @@ impl Interface {
 
     /// AttachActivateEvent (cmd 17).
     /// Upstream: NfcInterface::AttachActivateEvent
-    pub(super) fn attach_activate_event_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn attach_activate_event_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -941,7 +965,10 @@ impl Interface {
 
     /// AttachDeactivateEvent (cmd 18).
     /// Upstream: NfcInterface::AttachDeactivateEvent
-    pub(super) fn attach_deactivate_event_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn attach_deactivate_event_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -974,7 +1001,10 @@ impl Interface {
 
     /// GetDeviceState (cmd 20).
     /// Upstream: NfcInterface::GetDeviceState
-    pub(super) fn get_device_state_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn get_device_state_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();
@@ -1013,7 +1043,10 @@ impl Interface {
 
     /// GetApplicationAreaSize (cmd 22).
     /// Upstream: Interface::GetApplicationAreaSize
-    pub(super) fn get_application_area_size_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn get_application_area_size_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let _device_handle = rp.pop_u64();
@@ -1049,7 +1082,10 @@ impl Interface {
 
     /// RecreateApplicationArea (cmd 24).
     /// Upstream: Interface::RecreateApplicationArea
-    pub(super) fn recreate_application_area_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn recreate_application_area_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = Self::as_self(this);
         let mut rp = RequestParser::new(ctx);
         let device_handle = rp.pop_u64();

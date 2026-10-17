@@ -11,15 +11,27 @@ use crate::{EngineError, Result, Session, cmd, query};
 
 fn has_roi(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if s.state.region_of_interest.is_some() { Ok(()) } else { Err("draw a region of interest in the viewer first".into()) }
+    if s.state.region_of_interest.is_some() {
+        Ok(())
+    } else {
+        Err("draw a region of interest in the viewer first".into())
+    }
 }
 
 /// Crop the comp to `[x, y, w, h]`: the comp shrinks and every unparented layer moves by -x, -y
 /// (all position keys too) so nothing moves on screen.
-fn crop(s: &mut Session, cid: effectcraft_project::ItemId, r: [f64; 4], label: &str) -> Result<Value> {
+fn crop(
+    s: &mut Session,
+    cid: effectcraft_project::ItemId,
+    r: [f64; 4],
+    label: &str,
+) -> Result<Value> {
     let (x, y) = (r[0].round(), r[1].round());
     // At most 30,000 px a side, like any composition (#788).
-    let (w, h) = (effectcraft_project::limits::size_f64(r[2]), effectcraft_project::limits::size_f64(r[3]));
+    let (w, h) = (
+        effectcraft_project::limits::size_f64(r[2]),
+        effectcraft_project::limits::size_f64(r[3]),
+    );
     s.edit(label, None, |proj, st| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
         c.width = w;
@@ -40,7 +52,10 @@ fn crop(s: &mut Session, cid: effectcraft_project::ItemId, r: [f64; 4], label: &
 
 fn crop_to_roi(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
-    let r = s.state.region_of_interest.ok_or_else(|| bad("comp.cropToRegionOfInterest", "no region of interest"))?;
+    let r = s
+        .state
+        .region_of_interest
+        .ok_or_else(|| bad("comp.cropToRegionOfInterest", "no region of interest"))?;
     crop(s, cid, r, "Crop Comp to Region of Interest")
 }
 
@@ -51,7 +66,9 @@ fn crop_to_layers(s: &mut Session, p: &Value) -> Result<Value> {
     let ctx = effectcraft_render::EvalCtx::new(&s.project, cid, comp, t);
     let mut b = [f64::MAX, f64::MAX, f64::MIN, f64::MIN];
     for l in comp.layers.iter().filter(|l| ids.contains(&l.id)) {
-        let Some([x0, y0, x1, y1]) = effectcraft_render::content_bounds(&ctx, l) else { continue };
+        let Some([x0, y0, x1, y1]) = effectcraft_render::content_bounds(&ctx, l) else {
+            continue;
+        };
         let (m, _) = ctx.layer_to_comp(l);
         for (px, py) in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)] {
             let v = m.0;
@@ -63,17 +80,27 @@ fn crop_to_layers(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if b[0] > b[2] {
-        return Err(bad("comp.cropToLayerBounds", "the selected layers have no visible bounds"));
+        return Err(bad(
+            "comp.cropToLayerBounds",
+            "the selected layers have no visible bounds",
+        ));
     }
     let (x0, y0) = (b[0].floor(), b[1].floor());
-    crop(s, cid, [x0, y0, b[2].ceil() - x0, b[3].ceil() - y0], "Crop Comp to Selected Layer(s) Bounds")
+    crop(
+        s,
+        cid,
+        [x0, y0, b[2].ceil() - x0, b[3].ceil() - y0],
+        "Crop Comp to Selected Layer(s) Bounds",
+    )
 }
 
 /// Encode straight 8-bit RGBA as PNG.
 pub(crate) fn encode_png(rgba: &[u8], w: u32, h: u32) -> std::result::Result<Vec<u8>, String> {
     use image::ImageEncoder;
     let mut out = vec![];
-    image::codecs::png::PngEncoder::new(&mut out).write_image(rgba, w, h, image::ExtendedColorType::Rgba8).map_err(|e| e.to_string())?;
+    image::codecs::png::PngEncoder::new(&mut out)
+        .write_image(rgba, w, h, image::ExtendedColorType::Rgba8)
+        .map_err(|e| e.to_string())?;
     Ok(out)
 }
 
@@ -84,11 +111,22 @@ fn queue_frame(s: &mut Session, p: &Value) -> Result<Value> {
     use effectcraft_project::render_templates::TemplateSlot;
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let t = f_p(p, "time").map(Tick::from_seconds_f64).unwrap_or(s.time());
+    let t = f_p(p, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or(s.time());
     let mut it = RenderQueueItem::new(0, cid);
-    it.settings = s.project.render_templates.default_render_settings(TemplateSlot::Still);
-    it.settings.time_span = TimeSpan::Custom { start: t, end: t + comp.frame_duration() };
-    it.output = s.project.render_templates.default_output_module(TemplateSlot::Still);
+    it.settings = s
+        .project
+        .render_templates
+        .default_render_settings(TemplateSlot::Still);
+    it.settings.time_span = TimeSpan::Custom {
+        start: t,
+        end: t + comp.frame_duration(),
+    };
+    it.output = s
+        .project
+        .render_templates
+        .default_output_module(TemplateSlot::Still);
     if let Some(path) = str_p(p, "path") {
         it.output.output = path.to_string();
     } else if !it.output.format.is_sequence() {
@@ -100,7 +138,11 @@ fn queue_frame(s: &mut Session, p: &Value) -> Result<Value> {
         proj.render_queue.push(it);
         Ok(id)
     })?;
-    let path = s.project.render_queue.last().and_then(|i| s.resolve_output(i));
+    let path = s
+        .project
+        .render_queue
+        .last()
+        .and_then(|i| s.resolve_output(i));
     Ok(json!({"item": id, "queued": true, "output": path, "time": t.seconds()}))
 }
 
@@ -108,16 +150,31 @@ fn save_frame(s: &mut Session, p: &Value) -> Result<Value> {
     if p.get("queue").and_then(Value::as_bool) == Some(true) {
         return queue_frame(s, p);
     }
-    let path = str_p(p, "path").ok_or_else(|| bad("comp.saveFrameAs", "missing `path` (.png)"))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("comp.saveFrameAs", "missing `path` (.png)"))?
+        .to_string();
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let t = f_p(p, "time").map(Tick::from_seconds_f64).unwrap_or(s.time());
+    let t = f_p(p, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or(s.time());
     let scale = f_p(p, "scale").unwrap_or(1.0).clamp(0.01, 4.0);
     let bg = comp.background;
-    let img = s.render(cid, t, effectcraft_render::RenderOpts { scale, backend: effectcraft_render::Backend::Auto, ..Default::default() });
+    let img = s.render(
+        cid,
+        t,
+        effectcraft_render::RenderOpts {
+            scale,
+            backend: effectcraft_render::Backend::Auto,
+            ..Default::default()
+        },
+    );
     let rgba = img.to_rgba8_over(bg);
-    let png = encode_png(&rgba, img.width, img.height).map_err(|e| EngineError::Other(format!("PNG encoding failed: {e}")))?;
-    s.services.write_file(&path, &png).map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
+    let png = encode_png(&rgba, img.width, img.height)
+        .map_err(|e| EngineError::Other(format!("PNG encoding failed: {e}")))?;
+    s.services
+        .write_file(&path, &png)
+        .map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
     s.toast(format!("Saved frame to {path}"));
     Ok(json!({"path": path, "width": img.width, "height": img.height, "time": t.seconds()}))
 }
@@ -127,17 +184,35 @@ fn save_frame(s: &mut Session, p: &Value) -> Result<Value> {
 fn copy_frame(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let t = f_p(p, "time").map(Tick::from_seconds_f64).unwrap_or(s.time());
+    let t = f_p(p, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or(s.time());
     let scale = f_p(p, "scale").unwrap_or(1.0).clamp(0.01, 4.0);
     let bg = comp.background;
-    let img = s.render(cid, t, effectcraft_render::RenderOpts { scale, backend: effectcraft_render::Backend::Auto, ..Default::default() });
+    let img = s.render(
+        cid,
+        t,
+        effectcraft_render::RenderOpts {
+            scale,
+            backend: effectcraft_render::Backend::Auto,
+            ..Default::default()
+        },
+    );
     let (width, height) = (img.width, img.height);
     let rgba = img.to_rgba8_over(bg);
-    let expected = (width as usize).checked_mul(height as usize).and_then(|n| n.checked_mul(4));
+    let expected = (width as usize)
+        .checked_mul(height as usize)
+        .and_then(|n| n.checked_mul(4));
     if width == 0 || height == 0 || expected != Some(rgba.len()) {
-        return Err(EngineError::Other(format!("cannot copy an empty or malformed {width}×{height} frame")));
+        return Err(EngineError::Other(format!(
+            "cannot copy an empty or malformed {width}×{height} frame"
+        )));
     }
-    s.events.push(crate::Event::CopyImage { width, height, rgba });
+    s.events.push(crate::Event::CopyImage {
+        width,
+        height,
+        rgba,
+    });
     s.toast("Copied frame to the clipboard");
     Ok(json!({"width": width, "height": height, "time": t.seconds()}))
 }
@@ -151,14 +226,28 @@ fn responsive_time(s: &mut Session, p: &Value) -> Result<Value> {
         "intro" => (Tick::ZERO, t, "Intro"),
         "outro" => (t, comp.duration, "Outro"),
         "workArea" => (comp.work_area.0, comp.work_area.1, "Protected Region"),
-        o => return Err(bad("comp.responsiveTime", format!("op: intro|outro|workArea, not `{o}`"))),
+        o => {
+            return Err(bad(
+                "comp.responsiveTime",
+                format!("op: intro|outro|workArea, not `{o}`"),
+            ));
+        }
     };
     if end <= start {
-        return Err(bad("comp.responsiveTime", "move the current time first (the region would be empty)"));
+        return Err(bad(
+            "comp.responsiveTime",
+            "move the current time first (the region would be empty)",
+        ));
     }
     s.edit("Create Protected Region", None, |proj, _| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
-        c.markers.push(Marker { time: start, duration: end - start, comment: comment.into(), protected: true, ..Default::default() });
+        c.markers.push(Marker {
+            time: start,
+            duration: end - start,
+            comment: comment.into(),
+            protected: true,
+            ..Default::default()
+        });
         c.markers.sort_by_key(|m| m.time);
         Ok(())
     })?;
@@ -171,15 +260,27 @@ fn responsive_time(s: &mut Session, p: &Value) -> Result<Value> {
 /// settings (shown in Composition Settings ▸ Preset). A preset with the same name is replaced.
 fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "comp.savePreset";
-    let name = str_p(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(C, "missing `name`"))?;
+    let name = str_p(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(C, "missing `name`"))?;
     let num = |k: &str| f_p(p, k).ok_or_else(|| bad(C, format!("missing `{k}`")));
     let dim = |k: &str| {
         num(k).and_then(|v| {
-            if v.fract() == 0.0 && (0.0..=f64::from(u32::MAX)).contains(&v) { Ok(v as u32) } else { Err(bad(C, format!("`{k}` must be a whole number"))) }
+            if v.fract() == 0.0 && (0.0..=f64::from(u32::MAX)).contains(&v) {
+                Ok(v as u32)
+            } else {
+                Err(bad(C, format!("`{k}` must be a whole number")))
+            }
         })
     };
-    let preset =
-        CompPreset { name: name.to_string(), width: dim("width")?, height: dim("height")?, pixel_aspect: num("pixelAspect")?, frame_rate: num("frameRate")? };
+    let preset = CompPreset {
+        name: name.to_string(),
+        width: dim("width")?,
+        height: dim("height")?,
+        pixel_aspect: num("pixelAspect")?,
+        frame_rate: num("frameRate")?,
+    };
     if !preset.is_valid() {
         return Err(bad(
             C,
@@ -226,8 +327,24 @@ fn list_presets(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("comp.cropToRegionOfInterest", "Crop Comp to Region of Interest", ["Composition"], None, "{comp?}", has_roi, crop_to_roi),
-        cmd!("comp.cropToLayerBounds", "Crop Comp to Selected Layer(s) Bounds", ["Composition"], None, "{layers?}", has_layers, crop_to_layers),
+        cmd!(
+            "comp.cropToRegionOfInterest",
+            "Crop Comp to Region of Interest",
+            ["Composition"],
+            None,
+            "{comp?}",
+            has_roi,
+            crop_to_roi
+        ),
+        cmd!(
+            "comp.cropToLayerBounds",
+            "Crop Comp to Selected Layer(s) Bounds",
+            ["Composition"],
+            None,
+            "{layers?}",
+            has_layers,
+            crop_to_layers
+        ),
         cmd!(
             "comp.saveFrameAs",
             "File...",
@@ -237,7 +354,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             save_frame
         ),
-        cmd!("comp.copyFrame", "Copy Frame to Clipboard", ["Composition"], None, "{comp?, time?, scale?}", has_comp, copy_frame),
+        cmd!(
+            "comp.copyFrame",
+            "Copy Frame to Clipboard",
+            ["Composition"],
+            None,
+            "{comp?, time?, scale?}",
+            has_comp,
+            copy_frame
+        ),
         cmd!(
             "comp.savePreset",
             "Save Composition Preset",
@@ -247,8 +372,24 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             save_preset
         ),
-        cmd!("comp.deletePreset", "Delete Composition Preset", [], None, "{name}", always, delete_preset),
+        cmd!(
+            "comp.deletePreset",
+            "Delete Composition Preset",
+            [],
+            None,
+            "{name}",
+            always,
+            delete_preset
+        ),
         query!("comp.presets", "Composition Presets", "{}", list_presets),
-        cmd!("comp.responsiveTime", "Responsive Design — Time", [], None, "{op: intro|outro|workArea}", has_comp, responsive_time),
+        cmd!(
+            "comp.responsiveTime",
+            "Responsive Design — Time",
+            [],
+            None,
+            "{op: intro|outro|workArea}",
+            has_comp,
+            responsive_time
+        ),
     ]
 }

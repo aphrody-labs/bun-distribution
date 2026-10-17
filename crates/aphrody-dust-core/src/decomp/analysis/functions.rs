@@ -61,7 +61,11 @@ pub enum FunctionAnalysisError {
     #[snafu(display(
         "Cannot parse function at {function_address:#010x} because it is out of bounds {min_address:#010x}..{max_address:#010x}"
     ))]
-    FunctionOutOfBounds { function_address: u32, min_address: u32, max_address: u32 },
+    FunctionOutOfBounds {
+        function_address: u32,
+        min_address: u32,
+        max_address: u32,
+    },
 }
 
 pub const UNARM_OPTIONS: unarm::Options = unarm::Options {
@@ -109,14 +113,23 @@ impl Function {
     }
 
     fn is_branch(ins: &Ins) -> Option<u32> {
-        if let Ins::B { cond: _, target } = ins { Some(target.addr) } else { None }
+        if let Ins::B { cond: _, target } = ins {
+            Some(target.addr)
+        } else {
+            None
+        }
     }
 
     fn is_pool_load(ins: &Ins, address: u32, thumb: bool) -> Option<(u32, Reg)> {
         if let Ins::Ldr {
             cond: _,
             rd,
-            addr: AddrLdrStr::Pre { rn: Reg::Pc, offset: LdrStrOffset::Imm(offset), writeback: _ },
+            addr:
+                AddrLdrStr::Pre {
+                    rn: Reg::Pc,
+                    offset: LdrStrOffset::Imm(offset),
+                    writeback: _,
+                },
         } = ins
             && *rd != Reg::Pc
         {
@@ -131,10 +144,16 @@ impl Function {
 
     fn is_function_call(ins: &Ins, ins_code: u32, thumb: bool) -> Option<CalledFunction> {
         match ins {
-            Ins::Bl { cond: _, target } => {
-                Some(CalledFunction { ins: ins.clone(), ins_code, address: target.addr, thumb })
-            },
-            Ins::Blx { cond: _, target: BlxTarget::Direct(target) } => Some(CalledFunction {
+            Ins::Bl { cond: _, target } => Some(CalledFunction {
+                ins: ins.clone(),
+                ins_code,
+                address: target.addr,
+                thumb,
+            }),
+            Ins::Blx {
+                cond: _,
+                target: BlxTarget::Direct(target),
+            } => Some(CalledFunction {
                 ins: ins.clone(),
                 ins_code,
                 address: target.addr,
@@ -205,8 +224,15 @@ impl Function {
 
         let end_address = start_address + instruction_size(mode);
         let mut function_calls = FunctionCalls::new();
-        function_calls
-            .insert(address, CalledFunction { ins, ins_code, address: destination, thumb });
+        function_calls.insert(
+            address,
+            CalledFunction {
+                ins,
+                ins_code,
+                address: destination,
+                thumb,
+            },
+        );
         Some(Function {
             name: options.name.clone(),
             start_address,
@@ -241,7 +267,7 @@ impl Function {
                 } else {
                     Err(error)
                 }
-            },
+            }
         }
     }
 
@@ -303,7 +329,11 @@ impl Function {
         options: FunctionParseOptions,
     ) -> Result<Function, FunctionAnalysisError> {
         let FunctionParseOptions {
-            start_address, base_address, module_code, parse_options, ..
+            start_address,
+            base_address,
+            module_code,
+            parse_options,
+            ..
         } = &options;
 
         let start = (start_address - base_address) as usize;
@@ -318,9 +348,17 @@ impl Function {
         let thumb = parse_options
             .thumb
             .unwrap_or(Function::is_thumb_function(*start_address, function_code));
-        let parse_mode = if thumb { ParseMode::Thumb } else { ParseMode::Arm };
-        let mut parser =
-            Parser::new(function_code, parse_mode, ParseEndian::Little, UNARM_OPTIONS.clone());
+        let parse_mode = if thumb {
+            ParseMode::Thumb
+        } else {
+            ParseMode::Arm
+        };
+        let mut parser = Parser::new(
+            function_code,
+            parse_mode,
+            ParseEndian::Little,
+            UNARM_OPTIONS.clone(),
+        );
         parser.set_pc(*start_address);
 
         Self::function_parser_loop(parser, options, &BTreeMap::new())
@@ -344,15 +382,14 @@ impl Function {
         let start_address = search_options.start_address.unwrap_or(base_address);
         assert_eq!((start_address & 1), 0);
         let start_offset = start_address - base_address;
-        let end_address =
-            search_options.end_address.unwrap_or(base_address + module_code.len() as u32);
+        let end_address = search_options
+            .end_address
+            .unwrap_or(base_address + module_code.len() as u32);
         let end_offset = end_address - base_address;
         let module_code = &module_code[..end_offset as usize];
         let mut function_code = &module_code[start_offset as usize..end_offset as usize];
 
-        log::debug!(
-            "Searching for functions from {start_address:#010x} to {end_address:#010x}"
-        );
+        log::debug!("Searching for functions from {start_address:#010x} to {end_address:#010x}");
 
         // Upper bound for function search
         let last_function_address = search_options.last_function_address.unwrap_or(end_address);
@@ -403,9 +440,17 @@ impl Function {
 
             let thumb = Function::is_thumb_function(address, function_code);
 
-            let parse_mode = if thumb { ParseMode::Thumb } else { ParseMode::Arm };
-            let mut parser =
-                Parser::new(function_code, parse_mode, ParseEndian::Little, UNARM_OPTIONS.clone());
+            let parse_mode = if thumb {
+                ParseMode::Thumb
+            } else {
+                ParseMode::Arm
+            };
+            let mut parser = Parser::new(
+                function_code,
+                parse_mode,
+                ParseEndian::Little,
+                UNARM_OPTIONS.clone(),
+            );
             parser.set_pc(address);
 
             let (name, new) = if let Some((_, symbol)) = symbol_map.by_address(address)? {
@@ -414,8 +459,9 @@ impl Function {
                 (format!("{default_name_prefix}{address:08x}"), true)
             };
 
-            let overriden_size =
-                search_options.overriden_function_sizes.and_then(|sizes| sizes.get(&address));
+            let overriden_size = search_options
+                .overriden_function_sizes
+                .and_then(|sizes| sizes.get(&address));
 
             let start_address = address;
             let function_result = Function::function_parser_loop(
@@ -449,7 +495,7 @@ impl Function {
                     address += instruction_size(parse_mode);
                     function_code = &module_code[(address - base_address) as usize..];
                     continue;
-                },
+                }
                 Err(FunctionAnalysisError::IntoFunction {
                     source: IntoFunctionError::ParseFunction { source },
                 }) => {
@@ -488,14 +534,17 @@ impl Function {
                             address = (address + 1).next_multiple_of(4);
                             function_code = &module_code[(address - base_address) as usize..];
                             continue;
-                        },
+                        }
                         ParseFunctionError::NoEpilogue => {
                             log::debug!(
                                 "Terminating function analysis due to no epilogue in function starting from {address:#010x}"
                             );
                             break;
-                        },
-                        ParseFunctionError::InvalidStart { address: start_address, ins } => {
+                        }
+                        ParseFunctionError::InvalidStart {
+                            address: start_address,
+                            ins,
+                        } => {
                             let search_limit = prev_valid_address
                                 .saturating_add(search_options.max_function_start_search_distance);
                             let limit_reached = address >= search_limit;
@@ -511,9 +560,9 @@ impl Function {
                                 function_code = &function_code[ins_size..];
                                 continue;
                             }
-                        },
+                        }
                     }
-                },
+                }
                 Err(e) => return Err(e),
             };
             // A function was found
@@ -550,8 +599,10 @@ impl Function {
             function_code = &module_code[(address - base_address) as usize..];
 
             // Invalidate upper bounds if they are inside the function
-            let invalid_upper_bounds: Vec<u32> =
-                upper_bounds.range(..=function.end_address).copied().collect();
+            let invalid_upper_bounds: Vec<u32> = upper_bounds
+                .range(..=function.end_address)
+                .copied()
+                .collect();
             for invalid_upper_bound in invalid_upper_bounds {
                 upper_bounds.remove(&invalid_upper_bound);
                 log::debug!(
@@ -586,7 +637,11 @@ impl Function {
                                 Function::is_thumb_function(pointer_value, &module_code[offset..]);
                             let mut parser = Parser::new(
                                 &module_code[offset..],
-                                if thumb { ParseMode::Thumb } else { ParseMode::Arm },
+                                if thumb {
+                                    ParseMode::Thumb
+                                } else {
+                                    ParseMode::Arm
+                                },
                                 ParseEndian::Little,
                                 UNARM_OPTIONS.clone(),
                             );
@@ -595,7 +650,7 @@ impl Function {
                             if is_valid_function_start(&ins, thumb) {
                                 continue;
                             }
-                        },
+                        }
                     }
 
                     // The pool constant points to data, limit the upper bound
@@ -676,7 +731,11 @@ impl Function {
     pub fn parser<'a>(&'a self, module_code: &'a [u8], base_address: u32) -> Parser<'a> {
         let mut parser = Parser::new(
             self.code(module_code, base_address),
-            if self.thumb { ParseMode::Thumb } else { ParseMode::Arm },
+            if self.thumb {
+                ParseMode::Thumb
+            } else {
+                ParseMode::Arm
+            },
             ParseEndian::Little,
             UNARM_OPTIONS.clone(),
         );
@@ -954,8 +1013,9 @@ impl<'a> ParseFunctionContext<'a> {
             &self.register_values,
         );
         if let Some(table_end_address) = self.jump_table_state.table_end_address() {
-            self.last_conditional_destination =
-                self.last_conditional_destination.max(Some(table_end_address));
+            self.last_conditional_destination = self
+                .last_conditional_destination
+                .max(Some(table_end_address));
             self.jump_table_end_address = Some(table_end_address);
         }
 
@@ -1027,11 +1087,11 @@ impl<'a> ParseFunctionContext<'a> {
                         RegValueSrc::PoolConstant(pool_address) => {
                             self.pool_constants.get_mut(pool_address).unwrap().usage =
                                 PoolConstantUsage::Call;
-                        },
+                        }
                     }
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         // Clear tracked register values
@@ -1039,13 +1099,13 @@ impl<'a> ParseFunctionContext<'a> {
             match def {
                 DefUseArgument::Reg(reg) => {
                     self.register_values[reg as usize] = None;
-                },
+                }
                 DefUseArgument::RegList(reg_list) => {
                     for reg in reg_list.iter() {
                         self.register_values[reg as usize] = None;
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -1180,7 +1240,11 @@ impl<'a> ParseFunctionContext<'a> {
 
         self.inline_table_state = self.inline_table_state.handle(self.thumb, address, ins);
         if let Some(table) = self.inline_table_state.get_table() {
-            log::debug!("Inline table found at {:#x}, size {:#x}", table.address, table.size);
+            log::debug!(
+                "Inline table found at {:#x}, size {:#x}",
+                table.address,
+                table.size
+            );
             self.inline_tables.insert(table.address, table);
         }
 
@@ -1226,10 +1290,10 @@ impl<'a> ParseFunctionContext<'a> {
                         }
 
                         (!self.defined_registers.contains(&reg)).then_some(reg)
-                    },
-                    DefUseArgument::RegList(reg_list) => {
-                        reg_list.iter().find(|reg| !self.defined_registers.contains(reg))
-                    },
+                    }
+                    DefUseArgument::RegList(reg_list) => reg_list
+                        .iter()
+                        .find(|reg| !self.defined_registers.contains(reg)),
                     _ => continue,
                 };
                 if let Some(illegal_reg) = illegal_reg {
@@ -1246,12 +1310,12 @@ impl<'a> ParseFunctionContext<'a> {
                     match def {
                         DefUseArgument::Reg(reg) => {
                             self.defined_registers.insert(reg);
-                        },
+                        }
                         DefUseArgument::RegList(reg_list) => {
                             for reg in reg_list.iter() {
                                 self.defined_registers.insert(reg);
                             }
-                        },
+                        }
                         _ => continue,
                     }
                 }
@@ -1339,8 +1403,12 @@ impl<'a> ParseFunctionContext<'a> {
     }
 
     fn is_long_branch_destination(&self, address: u32) -> bool {
-        self.last_pool_address.is_some_and(|last_pool_address| address < last_pool_address)
-            && self.function_calls.values().any(|called| called.address == address)
+        self.last_pool_address
+            .is_some_and(|last_pool_address| address < last_pool_address)
+            && self
+                .function_calls
+                .values()
+                .any(|called| called.address == address)
             && !self.is_entry_instruction_at(address)
     }
 
@@ -1353,7 +1421,11 @@ impl<'a> ParseFunctionContext<'a> {
         };
         let mut parser = Parser::new(
             code,
-            if self.thumb { ParseMode::Thumb } else { ParseMode::Arm },
+            if self.thumb {
+                ParseMode::Thumb
+            } else {
+                ParseMode::Arm
+            },
             ParseEndian::Little,
             UNARM_OPTIONS.clone(),
         );
@@ -1368,11 +1440,20 @@ impl<'a> ParseFunctionContext<'a> {
         match state {
             ParseFunctionState::Continue => {
                 return NotDoneSnafu.fail();
-            },
-            ParseFunctionState::IllegalIns { address, ins, reason } => {
-                return IllegalInsSnafu { address, ins, reason }.fail()?;
-            },
-            ParseFunctionState::Done => {},
+            }
+            ParseFunctionState::IllegalIns {
+                address,
+                ins,
+                reason,
+            } => {
+                return IllegalInsSnafu {
+                    address,
+                    ins,
+                    reason,
+                }
+                .fail()?;
+            }
+            ParseFunctionState::Done => {}
         }
         let Some(end_address) = self.end_address else {
             return NoEpilogueSnafu.fail()?;
@@ -1409,21 +1490,43 @@ impl<'a> ParseFunctionContext<'a> {
                 // bx *
                 Ins::Bx { cond: Cond::Al, .. } => true,
                 // mov pc, *
-                Ins::Mov { s: false, cond: Cond::Al, rd: Reg::Pc, .. } => true,
+                Ins::Mov {
+                    s: false,
+                    cond: Cond::Al,
+                    rd: Reg::Pc,
+                    ..
+                } => true,
                 // ldmia *, {..., pc}
-                Ins::Ldm { mode: LdmStmMode::Ia, cond: Cond::Al, regs, .. }
-                    if regs.contains(Reg::Pc) =>
-                {
-                    true
-                },
+                Ins::Ldm {
+                    mode: LdmStmMode::Ia,
+                    cond: Cond::Al,
+                    regs,
+                    ..
+                } if regs.contains(Reg::Pc) => true,
                 // pop {..., pc}
-                Ins::Pop { cond: Cond::Al, regs } if regs.contains(Reg::Pc) => true,
+                Ins::Pop {
+                    cond: Cond::Al,
+                    regs,
+                } if regs.contains(Reg::Pc) => true,
                 // backwards branch or self-loop
-                Ins::B { cond: Cond::Al, target } if target.addr <= address => true,
+                Ins::B {
+                    cond: Cond::Al,
+                    target,
+                } if target.addr <= address => true,
                 // subs pc, lr, *
-                Ins::Sub { s: true, cond: Cond::Al, rd: Reg::Pc, rn: Reg::Lr, .. } => true,
+                Ins::Sub {
+                    s: true,
+                    cond: Cond::Al,
+                    rd: Reg::Pc,
+                    rn: Reg::Lr,
+                    ..
+                } => true,
                 // ldr pc, *
-                Ins::Ldr { cond: Cond::Al, rd: Reg::Pc, .. } => true,
+                Ins::Ldr {
+                    cond: Cond::Al,
+                    rd: Reg::Pc,
+                    ..
+                } => true,
                 // eor pc, r*, r*, ror r*
                 // Yeah this makes no sense but it's real and exists at 0x020d2888 of ov022 in the
                 // European version of Mario & Luigi: Bowser's Inside Story
@@ -1431,7 +1534,11 @@ impl<'a> ParseFunctionContext<'a> {
                     s: false,
                     cond: Cond::Al,
                     rd: Reg::Pc,
-                    op2: Op2::ShiftReg(ShiftReg { shift_op: ShiftOp::Ror, .. }),
+                    op2:
+                        Op2::ShiftReg(ShiftReg {
+                            shift_op: ShiftOp::Ror,
+                            ..
+                        }),
                     ..
                 } => true,
                 // add pc, r*, r*, lsl #*
@@ -1442,7 +1549,11 @@ impl<'a> ParseFunctionContext<'a> {
                     cond: Cond::Al,
                     rd: Reg::Pc,
                     rn,
-                    op2: Op2::ShiftImm(ShiftImm { shift_op: ShiftOp::Lsl, .. }),
+                    op2:
+                        Op2::ShiftImm(ShiftImm {
+                            shift_op: ShiftOp::Lsl,
+                            ..
+                        }),
                     ..
                 } if *rn != Reg::Pc => true,
                 _ => false,
@@ -1487,7 +1598,14 @@ impl<'a> ParseFunctionContext<'a> {
 
     fn is_push(ins: &Ins) -> Option<&RegList> {
         match ins {
-            Ins::Stm { mode: _, cond: _, rn: Reg::Sp, writeback: _, regs, user_mode: _ }
+            Ins::Stm {
+                mode: _,
+                cond: _,
+                rn: Reg::Sp,
+                writeback: _,
+                regs,
+                user_mode: _,
+            }
             | Ins::Push { cond: _, regs } => Some(regs),
             _ => None,
         }
@@ -1502,7 +1620,11 @@ pub struct ParseFunctionOptions {
 
 enum ParseFunctionState {
     Continue,
-    IllegalIns { address: u32, ins: Ins, reason: Cow<'static, str> },
+    IllegalIns {
+        address: u32,
+        ins: Ins,
+        reason: Cow<'static, str>,
+    },
     Done,
 }
 
@@ -1518,7 +1640,11 @@ impl ParseFunctionState {
 #[derive(Debug, Snafu)]
 pub enum ParseFunctionError {
     #[snafu(display("Illegal instruction at {address:#010x}, {reason}: {ins:?}"))]
-    IllegalIns { address: u32, ins: Ins, reason: Cow<'static, str> },
+    IllegalIns {
+        address: u32,
+        ins: Ins,
+        reason: Cow<'static, str>,
+    },
     #[snafu(display("No epilogue found"))]
     NoEpilogue,
     #[snafu(display("Illegal function start at {address:#010x}: {ins}"))]

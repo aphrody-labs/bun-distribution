@@ -35,8 +35,14 @@ fn tri(x: u32) -> String {
 /// group.
 fn tree(nodes: &[Arc<Node>]) -> String {
     let one = |n: &Arc<Node>| match &n.kind {
-        NodeKind::Group { children, clip: false } => format!("g[{}]", tree(children)),
-        NodeKind::Group { children, clip: true } => format!("k[{}]", tree(children)),
+        NodeKind::Group {
+            children,
+            clip: false,
+        } => format!("g[{}]", tree(children)),
+        NodeKind::Group {
+            children,
+            clip: true,
+        } => format!("k[{}]", tree(children)),
         NodeKind::Path { clipping: true, .. } => "c".into(),
         NodeKind::Path { .. } => "p".into(),
         k => format!("{k:?}"),
@@ -55,16 +61,28 @@ fn groups_and_nested_groups_come_in_as_groups() {
     assert_eq!(read(AI8, "", &body), ("g[p g[p p]] p".into(), vec![]));
     // Illustrator 3's header names it only as the creator; a prolog whose groups save and restore
     // the graphics state groups the same.
-    assert_eq!(read("%%Creator:Adobe Illustrator(TM) 3.2\n", "gsave", &body).0, "g[p g[p p]] p");
+    assert_eq!(
+        read("%%Creator:Adobe Illustrator(TM) 3.2\n", "gsave", &body).0,
+        "g[p g[p p]] p"
+    );
     // Groups of one object, and groups next to each other.
-    assert_eq!(read(AI8, "", &format!("u {} U u {} U", tri(10), tri(30))).0, "g[p] g[p]");
+    assert_eq!(
+        read(AI8, "", &format!("u {} U u {} U", tri(10), tri(30))).0,
+        "g[p] g[p]"
+    );
 }
 
 #[test]
 fn groups_nest_with_clipping_groups() {
     // A clipping group inside a group, a group inside a clipping group.
     let clip = "gsave 0 0 m 50 0 L 50 50 L 0 50 L closepath clip newpath";
-    let body = format!("u {} {clip} u {} {} U grestore {} U", tri(10), tri(20), tri(30), tri(40));
+    let body = format!(
+        "u {} {clip} u {} {} U grestore {} U",
+        tri(10),
+        tri(20),
+        tri(30),
+        tri(40)
+    );
     assert_eq!(read(AI8, "", &body).0, "g[p k[c g[p p]] p]");
     // A fill and a stroke of one path in a group stay one object.
     let body = "u 10 10 m 20 10 L 20 20 L closepath gsave 0 g fill grestore S U";
@@ -100,13 +118,40 @@ fn a_postscript_ai_that_names_its_prolog_without_including_it_opens_with_its_lay
     let r = import(NAMED_PROLOG.as_bytes()).unwrap();
     assert!(r.warnings.is_empty() && !r.preview, "{:?}", r.warnings);
     let d = &r.document;
-    let names: Vec<_> = d.layers.iter().map(|l| l.name.clone().unwrap_or_default()).collect();
+    let names: Vec<_> = d
+        .layers
+        .iter()
+        .map(|l| l.name.clone().unwrap_or_default())
+        .collect();
     assert_eq!(names, ["SECTION::Cut", "SECTION::Hatch"]);
-    let colors: Vec<_> = d.layers.iter().map(|l| if let NodeKind::Layer { color, .. } = l.kind { Some(color) } else { None }).collect();
-    assert_eq!(colors, [Some(LayerColor::Custom([0, 0, 0])), Some(LayerColor::Custom([191, 63, 255]))]);
-    assert_eq!(d.artboards[0].rect, Rect::new(0.0, 0.0, 200.0, 100.0), "the page is the bounding box");
+    let colors: Vec<_> = d
+        .layers
+        .iter()
+        .map(|l| {
+            if let NodeKind::Layer { color, .. } = l.kind {
+                Some(color)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert_eq!(
+        colors,
+        [
+            Some(LayerColor::Custom([0, 0, 0])),
+            Some(LayerColor::Custom([191, 63, 255]))
+        ]
+    );
+    assert_eq!(
+        d.artboards[0].rect,
+        Rect::new(0.0, 0.0, 200.0, 100.0),
+        "the page is the bounding box"
+    );
     let square = &d.layers[0].children().unwrap()[0];
-    assert_eq!(square.geometric_bounds(), Some(Rect::new(10.0, 10.0, 90.0, 90.0)));
+    assert_eq!(
+        square.geometric_bounds(),
+        Some(Rect::new(10.0, 10.0, 90.0, 90.0))
+    );
     let stroke = square.appearance.stroke().unwrap();
     assert_eq!((stroke.width, stroke.cap), (0.8, LineCap::Round));
     assert_eq!(tree(d.layers[1].children().unwrap()), "p");
@@ -118,16 +163,30 @@ fn a_postscript_ai_that_names_its_prolog_without_including_it_opens_with_its_lay
 fn a_postscript_ai_whose_layers_cant_be_read_says_why() {
     let damaged = NAMED_PROLOG.replace("0 D\n", "0 D\n1 2 frobnicate\n");
     let e = import(damaged.as_bytes()).unwrap_err();
-    assert!(e.contains("`Adobe_packedarray`") && e.contains("its layers couldn't be read either") && e.contains("`frobnicate`"), "{e}");
+    assert!(
+        e.contains("`Adobe_packedarray`")
+            && e.contains("its layers couldn't be read either")
+            && e.contains("`frobnicate`"),
+        "{e}"
+    );
 }
 
 /// The editing text of a newer file saved as PostScript (no prolog at all, a non-printing setup):
 /// it opens with its sublayers.
 #[test]
 fn newer_editing_text_as_postscript_opens_with_its_sublayers() {
-    let layer =
-        |name: &str, art: &str| format!("%AI5_BeginLayer\n1 1 1 1 0 0 1 -1 79 128 255 0 50 0 Lb\n({name}) Ln\n0 A\n0 Xw\n{art}LB\n%AI5_EndLayer--\n");
-    let ground = layer("Ground", &(layer("Lawn", "0 0 0 0.3 k\n10 20 m\n70 20 L\n70 80 L\n10 80 L\nf\n") + &layer("Paving", "")));
+    let layer = |name: &str, art: &str| {
+        format!(
+            "%AI5_BeginLayer\n1 1 1 1 0 0 1 -1 79 128 255 0 50 0 Lb\n({name}) Ln\n0 A\n0 Xw\n{art}LB\n%AI5_EndLayer--\n"
+        )
+    };
+    let ground = layer(
+        "Ground",
+        &(layer(
+            "Lawn",
+            "0 0 0 0.3 k\n10 20 m\n70 20 L\n70 80 L\n10 80 L\nf\n",
+        ) + &layer("Paving", "")),
+    );
     let text = format!(
         "%!PS-Adobe-3.0\n%%Creator: a script\n%%BoundingBox: 0 0 250 100\n%AI5_FileFormat 14.0\n%AI3_Cropmarks: 0 0 250 100\n%%EndComments\n\
          %%BeginProlog\n%%EndProlog\n%%BeginSetup\n%AI5_Begin_NonPrinting\nNp\n%AI5_End_NonPrinting--\n%%EndSetup\n{ground}%%PageTrailer\n%%Trailer\n%%EOF\n"
@@ -135,7 +194,12 @@ fn newer_editing_text_as_postscript_opens_with_its_sublayers() {
     let r = import(text.as_bytes()).unwrap();
     let d = &r.document;
     assert_eq!(d.layers.len(), 1, "{:?}", r.warnings);
-    let subs: Vec<_> = d.layers[0].children().unwrap().iter().map(|l| l.name.clone().unwrap_or_default()).collect();
+    let subs: Vec<_> = d.layers[0]
+        .children()
+        .unwrap()
+        .iter()
+        .map(|l| l.name.clone().unwrap_or_default())
+        .collect();
     assert_eq!(subs, ["Lawn", "Paving"]);
 }
 
@@ -143,11 +207,22 @@ fn newer_editing_text_as_postscript_opens_with_its_sublayers() {
 /// comes in through the layers its program has when they look like the page.
 #[test]
 fn a_legacy_file_with_its_prolog_comes_in_through_its_layers() {
-    let prolog = "/Lb {10 {pop} repeat} def /Ln {pop} def /LB {} def /A {pop} def /k {setcmykcolor} def";
-    let body = format!("%AI5_BeginLayer\n1 1 1 1 0 0 0 79 128 255 Lb\n(Back) Ln\n0 A\n0 0 0 1 k\n{} LB\n%AI5_EndLayer--\n", tri(10));
-    let file = String::from_utf8(ai(AI8, "", &body)).unwrap().replace("%%EndProlog", &format!("{prolog}\n%%EndProlog"));
+    let prolog =
+        "/Lb {10 {pop} repeat} def /Ln {pop} def /LB {} def /A {pop} def /k {setcmykcolor} def";
+    let body = format!(
+        "%AI5_BeginLayer\n1 1 1 1 0 0 0 79 128 255 Lb\n(Back) Ln\n0 A\n0 0 0 1 k\n{} LB\n%AI5_EndLayer--\n",
+        tri(10)
+    );
+    let file = String::from_utf8(ai(AI8, "", &body))
+        .unwrap()
+        .replace("%%EndProlog", &format!("{prolog}\n%%EndProlog"));
     let r = import(file.as_bytes()).unwrap();
-    let names: Vec<_> = r.document.layers.iter().map(|l| l.name.clone().unwrap_or_default()).collect();
+    let names: Vec<_> = r
+        .document
+        .layers
+        .iter()
+        .map(|l| l.name.clone().unwrap_or_default())
+        .collect();
     assert_eq!(names, ["Back"], "{:?}", r.warnings);
     assert!(r.warnings.is_empty(), "{:?}", r.warnings);
     // Without the editing data, it is its page.
@@ -158,12 +233,32 @@ fn a_legacy_file_with_its_prolog_comes_in_through_its_layers() {
 #[test]
 fn unbalanced_and_runaway_groups_are_read_safely() {
     // Ends without a beginning end nothing; groups left open hold the rest.
-    assert_eq!(read(AI8, "", &format!("U U {} u {} u {}", tri(10), tri(20), tri(30))).0, "p g[p g[p]]");
+    assert_eq!(
+        read(
+            AI8,
+            "",
+            &format!("U U {} u {} u {}", tri(10), tri(20), tri(30))
+        )
+        .0,
+        "p g[p g[p]]"
+    );
     // Groups nest only so deep: the deeper ones' art goes into the innermost group read, and the
     // groups around them close where they should.
     let n = MAX_NEST + 50;
-    let body = format!("{} {} {} {}", "u ".repeat(n), tri(10), "U ".repeat(n), tri(30));
+    let body = format!(
+        "{} {} {} {}",
+        "u ".repeat(n),
+        tri(10),
+        "U ".repeat(n),
+        tri(30)
+    );
     let (t, warnings) = read(AI8, "", &body);
-    assert_eq!(t, format!("{}p{} p", "g[".repeat(MAX_NEST), "]".repeat(MAX_NEST)));
-    assert!(warnings.iter().any(|w| w.contains("nested more than")), "{warnings:?}");
+    assert_eq!(
+        t,
+        format!("{}p{} p", "g[".repeat(MAX_NEST), "]".repeat(MAX_NEST))
+    );
+    assert!(
+        warnings.iter().any(|w| w.contains("nested more than")),
+        "{warnings:?}"
+    );
 }

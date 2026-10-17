@@ -11,7 +11,7 @@ use bevy_ecs::{
     name::Name,
     observer::On,
     query::{With, Without},
-    schedule::{common_conditions::on_message, IntoScheduleConfigs, ScheduleLabel, SystemSet},
+    schedule::{IntoScheduleConfigs, ScheduleLabel, SystemSet, common_conditions::on_message},
     system::Query,
 };
 use bevy_platform::prelude::format;
@@ -124,14 +124,9 @@ fn check_parent_has_component<C: Component>(
             This will cause inconsistent behaviors! See: https://bevy.org/learn/errors/b0004",
             caller.map(|c| format!("{c}: ")).unwrap_or_default(),
             ty_name = debug_name.shortname(),
-            name = name.map_or_else(
-                || format!("Entity {entity}"),
-                |s| format!("The {s} entity")
-            ),
-            parent_name = parent_name.map_or_else(
-                || format!("{parent} entity"),
-                |s| format!("the {s} entity")
-            ),
+            name = name.map_or_else(|| format!("Entity {entity}"), |s| format!("The {s} entity")),
+            parent_name = parent_name
+                .map_or_else(|| format!("{parent} entity"), |s| format!("the {s} entity")),
         );
     }
 }

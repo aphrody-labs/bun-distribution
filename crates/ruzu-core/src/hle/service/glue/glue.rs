@@ -63,7 +63,11 @@ pub fn loop_process(service_manager: &Arc<Mutex<ServiceManager>>, system: crate:
         let application = Arc::new(INotificationServicesForApplication::new());
         let system_notifications = Arc::new(INotificationServices::new());
         server_manager.register_named_service("notif:a", Box::new(move || application.clone()), 64);
-        server_manager.register_named_service("notif:s", Box::new(move || system_notifications.clone()), 64);
+        server_manager.register_named_service(
+            "notif:s",
+            Box::new(move || system_notifications.clone()),
+            64,
+        );
     }
 
     // Create the Glue::Time::TimeManager, matching upstream constructor.
@@ -154,12 +158,9 @@ pub fn loop_process(service_manager: &Arc<Mutex<ServiceManager>>, system: crate:
             ))
         });
         server_manager.register_named_service("time:r", factory, 64);
-
     }
 
-    log::debug!(
-        "Glue::LoopProcess: registered arp, bgtc, ectx, notif, time:u/a/r services"
-    );
+    log::debug!("Glue::LoopProcess: registered arp, bgtc, ectx, notif, time:u/a/r services");
 
     // First moment time:a and time:s both exist. Eden's TimeManager host thread
     // reaches this point during Services(), before the game's first screen;

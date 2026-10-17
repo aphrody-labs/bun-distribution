@@ -54,7 +54,9 @@ pub fn camera(bytes: &[u8]) -> Result<CameraPreview, String> {
     let mut owner: Vec<Option<usize>> = vec![None; anim.channels.len()];
     for (i, object) in anim.objects.iter().enumerate() {
         let start = object.first_channel as usize;
-        let end = start.saturating_add(object.channel_count as usize).min(anim.channels.len());
+        let end = start
+            .saturating_add(object.channel_count as usize)
+            .min(anim.channels.len());
         for slot in owner.iter_mut().take(end).skip(start) {
             *slot = Some(i);
         }
@@ -73,8 +75,12 @@ pub fn camera(bytes: &[u8]) -> Result<CameraPreview, String> {
             .cloned()
             .unwrap_or_else(|| format!("object{i}"));
 
-        let times: Vec<f32> =
-            channel.times(&anim).iter().take(MAX_SAMPLES).map(|t| f32::from(*t)).collect();
+        let times: Vec<f32> = channel
+            .times(&anim)
+            .iter()
+            .take(MAX_SAMPLES)
+            .map(|t| f32::from(*t))
+            .collect();
         for t in &times {
             frame_min = frame_min.min(*t);
             frame_max = frame_max.max(*t);
@@ -96,7 +102,10 @@ pub fn camera(bytes: &[u8]) -> Result<CameraPreview, String> {
             resolved,
             times,
             truncated: channel.times(&anim).len() > MAX_SAMPLES
-                || channel.track.values().is_some_and(|values| values.len() > MAX_SAMPLES),
+                || channel
+                    .track
+                    .values()
+                    .is_some_and(|values| values.len() > MAX_SAMPLES),
             values,
         });
     }
@@ -151,7 +160,12 @@ pub fn navmesh(bytes: &[u8]) -> Result<NavigationPreview, String> {
     let navm = aphrody_nie_formats::navm::parse(bytes).map_err(|e| format!("G4NV: {e}"))?;
 
     let truncated = navm.vertices.len() > MAX_VERTICES;
-    let vertices: Vec<[f32; 3]> = navm.vertices.iter().take(MAX_VERTICES).map(|v| v.pos).collect();
+    let vertices: Vec<[f32; 3]> = navm
+        .vertices
+        .iter()
+        .take(MAX_VERTICES)
+        .map(|v| v.pos)
+        .collect();
 
     let mut bbox_min = [f32::MAX; 3];
     let mut bbox_max = [f32::MIN; 3];

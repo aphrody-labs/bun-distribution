@@ -104,7 +104,7 @@ impl EvictionPolicy {
                     .filter(|r| r.created_at_unix_ms < cutoff)
                     .map(|r| r.id.clone())
                     .collect()
-            },
+            }
             Self::Lru { max_records } | Self::MaxSize { max_records } => {
                 if records.len() <= max_records {
                     return Vec::new();
@@ -113,8 +113,12 @@ impl EvictionPolicy {
                 // Sort newest-first; stable so records with identical timestamps
                 // keep their original relative order.
                 sorted.sort_by_key(|record| std::cmp::Reverse(record.created_at_unix_ms));
-                sorted.into_iter().skip(max_records).map(|r| r.id.clone()).collect()
-            },
+                sorted
+                    .into_iter()
+                    .skip(max_records)
+                    .map(|r| r.id.clone())
+                    .collect()
+            }
         }
     }
 
@@ -179,7 +183,10 @@ mod tests {
         let policy = EvictionPolicy::Ttl { ttl_ms: 1_000 };
         let records = vec![rec("edge", 9_000)];
         let evicted = policy.evict(&records, 10_000);
-        assert!(evicted.is_empty(), "record at the cutoff boundary must survive");
+        assert!(
+            evicted.is_empty(),
+            "record at the cutoff boundary must survive"
+        );
     }
 
     #[test]
@@ -197,7 +204,11 @@ mod tests {
     #[test]
     fn policy_lru_keeps_most_recent() {
         let policy = EvictionPolicy::Lru { max_records: 2 };
-        let records = vec![rec("oldest", 1_000), rec("middle", 2_000), rec("newest", 3_000)];
+        let records = vec![
+            rec("oldest", 1_000),
+            rec("middle", 2_000),
+            rec("newest", 3_000),
+        ];
         let mut evicted = policy.evict(&records, 0);
         evicted.sort(); // order-independent assertion
         assert_eq!(evicted, vec!["oldest".to_string()]);
@@ -254,22 +265,35 @@ mod tests {
     fn policy_kind_str_is_stable() {
         assert_eq!(EvictionPolicy::Ttl { ttl_ms: 0 }.kind_str(), "ttl");
         assert_eq!(EvictionPolicy::Lru { max_records: 0 }.kind_str(), "lru");
-        assert_eq!(EvictionPolicy::MaxSize { max_records: 0 }.kind_str(), "max_size");
+        assert_eq!(
+            EvictionPolicy::MaxSize { max_records: 0 }.kind_str(),
+            "max_size"
+        );
     }
 
     #[test]
     fn policy_serde_roundtrip_ttl() {
-        let policy = EvictionPolicy::Ttl { ttl_ms: 604_800_000 };
+        let policy = EvictionPolicy::Ttl {
+            ttl_ms: 604_800_000,
+        };
         let json = serde_json::to_string(&policy).expect("serialize");
-        assert!(json.contains("\"kind\":\"ttl\""), "kind tag must be present: {json}");
-        assert!(json.contains("\"ttl_ms\":604800000"), "ttl_ms must be present: {json}");
+        assert!(
+            json.contains("\"kind\":\"ttl\""),
+            "kind tag must be present: {json}"
+        );
+        assert!(
+            json.contains("\"ttl_ms\":604800000"),
+            "ttl_ms must be present: {json}"
+        );
         let back: EvictionPolicy = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back, policy);
     }
 
     #[test]
     fn policy_serde_roundtrip_lru() {
-        let policy = EvictionPolicy::Lru { max_records: 10_000 };
+        let policy = EvictionPolicy::Lru {
+            max_records: 10_000,
+        };
         let json = serde_json::to_string(&policy).expect("serialize");
         assert!(json.contains("\"kind\":\"lru\""));
         let back: EvictionPolicy = serde_json::from_str(&json).expect("deserialize");
@@ -280,7 +304,10 @@ mod tests {
     fn policy_serde_roundtrip_max_size() {
         let policy = EvictionPolicy::MaxSize { max_records: 256 };
         let json = serde_json::to_string(&policy).expect("serialize");
-        assert!(json.contains("\"kind\":\"max_size\""), "snake_case rename must apply: {json}");
+        assert!(
+            json.contains("\"kind\":\"max_size\""),
+            "snake_case rename must apply: {json}"
+        );
         let back: EvictionPolicy = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back, policy);
     }

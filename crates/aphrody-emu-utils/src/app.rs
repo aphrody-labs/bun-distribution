@@ -15,8 +15,10 @@ pub fn setup_current_dir() {
             if resource_path == nil {
                 return None;
             }
-            let result =
-                CStr::from_ptr(resource_path.UTF8String()).to_str().ok().map(str::to_string);
+            let result = CStr::from_ptr(resource_path.UTF8String())
+                .to_str()
+                .ok()
+                .map(str::to_string);
             let _: () = msg_send![resource_path, release];
             result
         })()

@@ -20,14 +20,20 @@ const H: i32 = 2000;
 
 fn harness() -> Option<Harness> {
     let built = std::panic::catch_unwind(|| {
-        egui_kittest::Harness::builder().with_size(egui::vec2(1100.0, 760.0)).with_pixels_per_point(1.0).with_max_steps(64).wgpu().build_eframe(|cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-            if let Some(rs) = cc.wgpu_render_state.as_ref() {
-                app.set_wgpu(rs.clone());
-            }
-            app
-        })
+        egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1100.0, 760.0))
+            .with_pixels_per_point(1.0)
+            .with_max_steps(64)
+            .wgpu()
+            .build_eframe(|cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                let mut app =
+                    PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+                if let Some(rs) = cc.wgpu_render_state.as_ref() {
+                    app.set_wgpu(rs.clone());
+                }
+                app
+            })
     });
     match built {
         Ok(h) => Some(h),
@@ -46,7 +52,13 @@ fn control(h: &mut Harness, method: &str, params: Value) {
 }
 
 fn columns_document() -> Document {
-    let mut doc = Document::with_background("columns", Size::new(W as u32, H as u32), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+    let mut doc = Document::with_background(
+        "columns",
+        Size::new(W as u32, H as u32),
+        ColorMode::Rgb,
+        SampleType::U8,
+        Color::WHITE,
+    );
     let s = doc.layers[0].surface_mut().expect("background pixels");
     for x in (0..W).step_by(2) {
         s.fill_rect(Rect::new(x, 0, x + 1, H), &[0.0, 0.0, 0.0, 1.0]);
@@ -76,7 +88,12 @@ fn on_gpu(h: &mut Harness) -> bool {
 }
 
 fn low_res(h: &mut Harness, on: bool) {
-    h.state_mut().run("prefs.set", json!({"path": "performance.lowResolutionPreviews", "value": on})).expect("prefs.set");
+    h.state_mut()
+        .run(
+            "prefs.set",
+            json!({"path": "performance.lowResolutionPreviews", "value": on}),
+        )
+        .expect("prefs.set");
     h.run_steps(4);
 }
 
@@ -117,21 +134,37 @@ fn adjustment_layer_drag_previews_at_full_resolution_when_low_res_is_off() {
     if !on_gpu(&mut h) {
         return;
     }
-    assert!(columns(&row(&mut h)) > 0.9, "the canvas shows the 1 px columns at 100 %");
+    assert!(
+        columns(&row(&mut h)) > 0.9,
+        "the canvas shows the 1 px columns at 100 %"
+    );
     let layer = {
         let app = h.state_mut();
-        app.run("layer.newAdjustmentLayer.invert", json!({})).expect("adjustment layer");
-        let id = app.session.active().and_then(|d| d.active_layer).expect("active layer");
+        app.run("layer.newAdjustmentLayer.invert", json!({}))
+            .expect("adjustment layer");
+        let id = app
+            .session
+            .active()
+            .and_then(|d| d.active_layer)
+            .expect("active layer");
         // What the Properties panel sets while a slider drags.
         app.live_adjust = Some((id, json!({})));
         id
     };
     let reduced = row(&mut h);
-    assert!(columns(&reduced) < 0.1, "default: the reduced copy loses the columns ({})", columns(&reduced));
+    assert!(
+        columns(&reduced) < 0.1,
+        "default: the reduced copy loses the columns ({})",
+        columns(&reduced)
+    );
     low_res(&mut h, false);
     h.state_mut().live_adjust = Some((layer, json!({})));
     let full = row(&mut h);
-    assert!(columns(&full) > 0.9, "low-res previews off: every column shows ({})", columns(&full));
+    assert!(
+        columns(&full) > 0.9,
+        "low-res previews off: every column shows ({})",
+        columns(&full)
+    );
 }
 
 #[test]
@@ -143,12 +176,21 @@ fn filter_dialog_previews_at_full_resolution_when_low_res_is_off() {
         return;
     }
     // Offset 0, 0 leaves the pixels as they are: any change is the preview's resolution.
-    photocraft_ui_egui::filter_dialog::open(h.state_mut(), "filter.other.offset").expect("Offset dialog");
+    photocraft_ui_egui::filter_dialog::open(h.state_mut(), "filter.other.offset")
+        .expect("Offset dialog");
     let reduced = row(&mut h);
-    assert!(columns(&reduced) < 0.1, "default: the reduced copy loses the columns ({})", columns(&reduced));
+    assert!(
+        columns(&reduced) < 0.1,
+        "default: the reduced copy loses the columns ({})",
+        columns(&reduced)
+    );
     low_res(&mut h, false);
     let full = row(&mut h);
-    assert!(columns(&full) > 0.9, "low-res previews off: every column shows ({})", columns(&full));
+    assert!(
+        columns(&full) > 0.9,
+        "low-res previews off: every column shows ({})",
+        columns(&full)
+    );
 }
 
 #[test]
@@ -160,14 +202,30 @@ fn adjustment_dialog_zoomed_out_skips_the_reduced_copy_when_low_res_is_off() {
         return;
     }
     let committed = mean(&row(&mut h));
-    assert!(committed > 60.0, "zoomed out the columns average to grey ({committed})");
-    photocraft_ui_egui::adjust_dialog::open(h.state_mut(), "image.adjustments.levels").expect("Levels dialog");
+    assert!(
+        committed > 60.0,
+        "zoomed out the columns average to grey ({committed})"
+    );
+    photocraft_ui_egui::adjust_dialog::open(h.state_mut(), "image.adjustments.levels")
+        .expect("Levels dialog");
     h.run_steps(4);
-    assert!(photocraft_ui_egui::adjust_preview::gpu_proxy(h.state_mut(), 0, 0.5).is_some(), "default: zoomed out on the reduced copy");
+    assert!(
+        photocraft_ui_egui::adjust_preview::gpu_proxy(h.state_mut(), 0, 0.5).is_some(),
+        "default: zoomed out on the reduced copy"
+    );
     let reduced = mean(&row(&mut h));
-    assert!(reduced < 30.0, "the reduced copy keeps only the black columns ({reduced})");
+    assert!(
+        reduced < 30.0,
+        "the reduced copy keeps only the black columns ({reduced})"
+    );
     low_res(&mut h, false);
-    assert!(photocraft_ui_egui::adjust_preview::gpu_proxy(h.state_mut(), 0, 0.5).is_none(), "off: no reduced copy");
+    assert!(
+        photocraft_ui_egui::adjust_preview::gpu_proxy(h.state_mut(), 0, 0.5).is_none(),
+        "off: no reduced copy"
+    );
     let full = mean(&row(&mut h));
-    assert!((full - committed).abs() < 8.0, "off: the preview matches the committed view ({full} vs {committed})");
+    assert!(
+        (full - committed).abs() < 8.0,
+        "off: the preview matches the committed view ({full} vs {committed})"
+    );
 }

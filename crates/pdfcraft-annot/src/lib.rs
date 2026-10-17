@@ -12,7 +12,14 @@
 //! Every edit mutates a `pdfcraft_cos::Document` (copy-on-write); callers snapshot it first
 //! for undo. Keys we do not understand are left alone.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use pdfcraft_cos::{Dict, Document, ObjRef, Object, PdfString, Stream};
 
@@ -93,7 +100,17 @@ impl NoteIcon {
     }
 
     pub fn from_name(n: &str) -> Option<Self> {
-        [Self::Comment, Self::Note, Self::Help, Self::Insert, Self::Key, Self::NewParagraph, Self::Paragraph].into_iter().find(|i| i.name() == n)
+        [
+            Self::Comment,
+            Self::Note,
+            Self::Help,
+            Self::Insert,
+            Self::Key,
+            Self::NewParagraph,
+            Self::Paragraph,
+        ]
+        .into_iter()
+        .find(|i| i.name() == n)
     }
 }
 
@@ -194,7 +211,9 @@ impl StampKind {
     pub fn group(self) -> StampGroup {
         use StampKind::*;
         match self {
-            DynApproved | DynConfidential | DynReceived | DynReviewed | DynRevised => StampGroup::Dynamic,
+            DynApproved | DynConfidential | DynReceived | DynReviewed | DynRevised => {
+                StampGroup::Dynamic
+            }
             Accepted | InitialHere | Rejected | SignHere | Witness => StampGroup::SignHere,
             _ => StampGroup::StandardBusiness,
         }
@@ -264,8 +283,11 @@ impl StampKind {
     pub fn color(self) -> Rgb {
         use StampKind::*;
         match self {
-            Approved | Completed | Final | Accepted | DynApproved | DynReceived | DynReviewed => [0.13, 0.55, 0.13],
-            NotApproved | Rejected | Void | Confidential | NotForPublicRelease | DynConfidential => [0.80, 0.10, 0.10],
+            Approved | Completed | Final | Accepted | DynApproved | DynReceived | DynReviewed => {
+                [0.13, 0.55, 0.13]
+            }
+            NotApproved | Rejected | Void | Confidential | NotForPublicRelease
+            | DynConfidential => [0.80, 0.10, 0.10],
             SignHere | InitialHere | Witness => [0.85, 0.35, 0.05],
             _ => [0.10, 0.30, 0.70],
         }
@@ -274,8 +296,16 @@ impl StampKind {
     /// The stamp's size (points) for its label, as placed with a click.
     pub fn size(self) -> (f64, f64) {
         let w = appearance::text_width(self.label(), 16.0) * 1.12 + 24.0;
-        let h = if self.group() == StampGroup::Dynamic { 42.0 } else { 30.0 };
-        let w = if self.group() == StampGroup::SignHere { w + 14.0 } else { w };
+        let h = if self.group() == StampGroup::Dynamic {
+            42.0
+        } else {
+            30.0
+        };
+        let w = if self.group() == StampGroup::SignHere {
+            w + 14.0
+        } else {
+            w
+        };
         (w.max(80.0), h)
     }
 }
@@ -453,7 +483,12 @@ pub enum AttachIcon {
 }
 
 impl AttachIcon {
-    pub const ALL: [AttachIcon; 4] = [AttachIcon::PushPin, AttachIcon::Paperclip, AttachIcon::Graph, AttachIcon::Tag];
+    pub const ALL: [AttachIcon; 4] = [
+        AttachIcon::PushPin,
+        AttachIcon::Paperclip,
+        AttachIcon::Graph,
+        AttachIcon::Tag,
+    ];
     pub fn name(self) -> &'static str {
         match self {
             AttachIcon::PushPin => "PushPin",
@@ -463,7 +498,9 @@ impl AttachIcon {
         }
     }
     pub fn from_name(n: &str) -> Option<AttachIcon> {
-        Self::ALL.into_iter().find(|i| i.name().eq_ignore_ascii_case(n))
+        Self::ALL
+            .into_iter()
+            .find(|i| i.name().eq_ignore_ascii_case(n))
     }
 }
 
@@ -484,7 +521,10 @@ impl Shape {
             Shape::Line { .. } => "Line",
             Shape::Ink { .. } | Shape::Signature { .. } => "Ink",
             Shape::TextBox { .. } | Shape::Typewriter { .. } | Shape::Callout { .. } => "FreeText",
-            Shape::Mark { .. } | Shape::Stamp { .. } | Shape::CustomStamp { .. } | Shape::TypedSignature { .. } => "Stamp",
+            Shape::Mark { .. }
+            | Shape::Stamp { .. }
+            | Shape::CustomStamp { .. }
+            | Shape::TypedSignature { .. } => "Stamp",
             Shape::Redact { .. } => "Redact",
             Shape::Polygon { .. } => "Polygon",
             Shape::PolyLine { .. } => "PolyLine",
@@ -504,7 +544,11 @@ pub enum OverlayFont {
 }
 
 impl OverlayFont {
-    pub const ALL: [OverlayFont; 3] = [OverlayFont::Helvetica, OverlayFont::Times, OverlayFont::Courier];
+    pub const ALL: [OverlayFont; 3] = [
+        OverlayFont::Helvetica,
+        OverlayFont::Times,
+        OverlayFont::Courier,
+    ];
 
     pub fn name(self) -> &'static str {
         match self {
@@ -547,7 +591,13 @@ pub struct OverlayLook {
 
 impl Default for OverlayLook {
     fn default() -> Self {
-        Self { font: OverlayFont::Helvetica, size: 0.0, color: [1.0, 0.0, 0.0], align: 1, repeat: false }
+        Self {
+            font: OverlayFont::Helvetica,
+            size: 0.0,
+            color: [1.0, 0.0, 0.0],
+            align: 1,
+            repeat: false,
+        }
     }
 }
 
@@ -566,7 +616,12 @@ pub struct Style {
 
 impl Default for Style {
     fn default() -> Self {
-        Self { color: [1.0, 0.82, 0.0], opacity: 1.0, width: 1.0, fill: None }
+        Self {
+            color: [1.0, 0.82, 0.0],
+            opacity: 1.0,
+            width: 1.0,
+            fill: None,
+        }
     }
 }
 
@@ -575,13 +630,27 @@ impl Style {
     pub fn default_for(shape: &Shape) -> Self {
         let (color, width) = match shape {
             Shape::Note { .. } => ([1.0, 0.82, 0.0], 1.0),
-            Shape::TextMarkup { kind: Markup::Highlight, .. } => ([1.0, 0.94, 0.0], 1.0),
-            Shape::TextMarkup { kind: Markup::Underline, .. } => ([0.0, 0.47, 0.84], 1.0),
-            Shape::TextMarkup { kind: Markup::StrikeOut, .. } => ([0.89, 0.13, 0.13], 1.0),
-            Shape::TextMarkup { kind: Markup::Squiggly, .. } => ([0.18, 0.62, 0.36], 1.0),
-            Shape::Rectangle { .. } | Shape::Oval { .. } | Shape::Line { .. } | Shape::Polygon { .. } | Shape::PolyLine { .. } => {
-                ([0.89, 0.13, 0.13], 2.0)
-            }
+            Shape::TextMarkup {
+                kind: Markup::Highlight,
+                ..
+            } => ([1.0, 0.94, 0.0], 1.0),
+            Shape::TextMarkup {
+                kind: Markup::Underline,
+                ..
+            } => ([0.0, 0.47, 0.84], 1.0),
+            Shape::TextMarkup {
+                kind: Markup::StrikeOut,
+                ..
+            } => ([0.89, 0.13, 0.13], 1.0),
+            Shape::TextMarkup {
+                kind: Markup::Squiggly,
+                ..
+            } => ([0.18, 0.62, 0.36], 1.0),
+            Shape::Rectangle { .. }
+            | Shape::Oval { .. }
+            | Shape::Line { .. }
+            | Shape::Polygon { .. }
+            | Shape::PolyLine { .. } => ([0.89, 0.13, 0.13], 2.0),
             Shape::Callout { .. } => ([0.0, 0.0, 0.0], 1.0),
             Shape::Caret { .. } | Shape::Attachment { .. } => ([0.0, 0.47, 0.84], 1.0),
             Shape::Ink { .. } => ([0.0, 0.4, 0.87], 2.0),
@@ -592,9 +661,21 @@ impl Style {
             Shape::CustomStamp { .. } => ([0.0, 0.0, 0.0], 0.0),
             Shape::TypedSignature { .. } => ([0.0, 0.0, 0.0], 0.0),
             // Red outline while marked; a black box once applied.
-            Shape::Redact { .. } => return Self { color: [0.89, 0.13, 0.13], opacity: 1.0, width: 1.0, fill: Some([0.0, 0.0, 0.0]) },
+            Shape::Redact { .. } => {
+                return Self {
+                    color: [0.89, 0.13, 0.13],
+                    opacity: 1.0,
+                    width: 1.0,
+                    fill: Some([0.0, 0.0, 0.0]),
+                };
+            }
         };
-        Self { color, opacity: 1.0, width, fill: None }
+        Self {
+            color,
+            opacity: 1.0,
+            width,
+            fill: None,
+        }
     }
 }
 
@@ -641,7 +722,15 @@ impl ReviewState {
     }
 
     pub fn from_name(n: &str) -> Option<Self> {
-        [Self::None, Self::Accepted, Self::Rejected, Self::Cancelled, Self::Completed].into_iter().find(|s| s.name().eq_ignore_ascii_case(n))
+        [
+            Self::None,
+            Self::Accepted,
+            Self::Rejected,
+            Self::Cancelled,
+            Self::Completed,
+        ]
+        .into_iter()
+        .find(|s| s.name().eq_ignore_ascii_case(n))
     }
 }
 
@@ -650,7 +739,11 @@ impl ReviewState {
 /// The page object of each leaf page, in order.
 pub fn page_refs(doc: &Document) -> Result<Vec<ObjRef>, AnnotError> {
     let root = doc.root().ok_or(AnnotError::NoPageTree)?;
-    let pages = doc.get(root).as_dict().and_then(|d| d.reference(b"Pages")).ok_or(AnnotError::NoPageTree)?;
+    let pages = doc
+        .get(root)
+        .as_dict()
+        .and_then(|d| d.reference(b"Pages"))
+        .ok_or(AnnotError::NoPageTree)?;
     let mut out = Vec::new();
     let mut seen = std::collections::HashSet::new();
     let mut stack = vec![pages];
@@ -673,13 +766,18 @@ pub fn page_refs(doc: &Document) -> Result<Vec<ObjRef>, AnnotError> {
 }
 
 fn page_ref(doc: &Document, page: usize) -> Result<ObjRef, AnnotError> {
-    page_refs(doc)?.get(page).copied().ok_or(AnnotError::NoSuchPage(page))
+    page_refs(doc)?
+        .get(page)
+        .copied()
+        .ok_or(AnnotError::NoSuchPage(page))
 }
 
 /// The entries of a page's `/Annots` (references or inline dictionaries).
 fn annots(doc: &Document, page: ObjRef) -> Vec<Object> {
     let obj = doc.get(page);
-    let Some(a) = obj.as_dict().and_then(|d| d.get(b"Annots")) else { return Vec::new() };
+    let Some(a) = obj.as_dict().and_then(|d| d.get(b"Annots")) else {
+        return Vec::new();
+    };
     doc.resolve(a).as_array().cloned().unwrap_or_default()
 }
 
@@ -700,10 +798,17 @@ fn set_annots(doc: &mut Document, page: ObjRef, list: Vec<Object>) -> Result<(),
 }
 
 /// The annotation at `(page, index)` as an indirect object (inline dictionaries are promoted).
-fn annot_ref(doc: &mut Document, page: usize, index: usize) -> Result<(ObjRef, ObjRef), AnnotError> {
+fn annot_ref(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+) -> Result<(ObjRef, ObjRef), AnnotError> {
     let p = page_ref(doc, page)?;
     let mut list = annots(doc, p);
-    let entry = list.get(index).cloned().ok_or(AnnotError::NoSuchAnnotation { page, index })?;
+    let entry = list
+        .get(index)
+        .cloned()
+        .ok_or(AnnotError::NoSuchAnnotation { page, index })?;
     let r = match entry {
         Object::Ref(r) if doc.get(r).as_dict().is_some() => r,
         Object::Dict(d) => {
@@ -727,7 +832,10 @@ fn annot_dict(doc: &Document, r: ObjRef) -> Dict {
 /// already writes (`/IT /FreeTextTypeWriter`, stamp `/Name`, drawn ink whose subject is
 /// "Signature").
 pub fn is_fill_sign(doc: &Document, d: &Dict) -> bool {
-    if matches!(d.get(b"PCFillSign").map(|o| doc.resolve(o)).as_deref(), Some(Object::Bool(true))) {
+    if matches!(
+        d.get(b"PCFillSign").map(|o| doc.resolve(o)).as_deref(),
+        Some(Object::Bool(true))
+    ) {
         return true;
     }
     let subtype = d.name(b"Subtype").unwrap_or_default();
@@ -735,12 +843,19 @@ pub fn is_fill_sign(doc: &Document, d: &Dict) -> bool {
         return true;
     }
     if subtype == b"Stamp" {
-        if matches!(d.name(b"Name"), Some(b"PCCheck" | b"PCCross" | b"PCDot" | b"PCLine" | b"PCTypedSignature")) {
+        if matches!(
+            d.name(b"Name"),
+            Some(b"PCCheck" | b"PCCross" | b"PCDot" | b"PCLine" | b"PCTypedSignature")
+        ) {
             return true;
         }
-        if matches!(d.name(b"Name"), Some(b"PCCustomSignature" | b"PCCustomInitials"))
-            && matches!(d.get(b"PCPictureImage").map(|o| doc.resolve(o)).as_deref(), Some(Object::Bool(true)))
-        {
+        if matches!(
+            d.name(b"Name"),
+            Some(b"PCCustomSignature" | b"PCCustomInitials")
+        ) && matches!(
+            d.get(b"PCPictureImage").map(|o| doc.resolve(o)).as_deref(),
+            Some(Object::Bool(true))
+        ) {
             return true;
         }
     }
@@ -748,12 +863,16 @@ pub fn is_fill_sign(doc: &Document, d: &Dict) -> bool {
 }
 
 fn annotation_flags(doc: &Document, d: &Dict) -> i64 {
-    d.get(b"F").and_then(|f| doc.resolve(f).as_int()).unwrap_or(0)
+    d.get(b"F")
+        .and_then(|f| doc.resolve(f).as_int())
+        .unwrap_or(0)
 }
 
 /// Whether any page has a Fill & Sign annotation that flatten would bake in (not hidden).
 pub fn has_visible_fill_sign(doc: &Document) -> bool {
-    let Ok(pages) = page_refs(doc) else { return false };
+    let Ok(pages) = page_refs(doc) else {
+        return false;
+    };
     for page in pages {
         for entry in annots(doc, page) {
             let obj = doc.resolve(&entry);
@@ -772,22 +891,38 @@ pub fn has_visible_fill_sign(doc: &Document) -> bool {
 
 fn fill_sign_shape(shape: &Shape) -> bool {
     match shape {
-        Shape::Typewriter { .. } | Shape::Mark { .. } | Shape::Signature { .. } | Shape::TypedSignature { .. } => true,
-        Shape::CustomStamp { name, image: true, .. } => name == "Signature" || name == "Initials",
+        Shape::Typewriter { .. }
+        | Shape::Mark { .. }
+        | Shape::Signature { .. }
+        | Shape::TypedSignature { .. } => true,
+        Shape::CustomStamp {
+            name, image: true, ..
+        } => name == "Signature" || name == "Initials",
         _ => false,
     }
 }
 
 /// The embedded image of a Fill & Sign image signature or initials (0-based target).
 /// Other stamps have appearances that can't be represented by this image alone.
-pub fn signature_image(doc: &Document, page: usize, index: usize) -> Result<Option<ObjRef>, AnnotError> {
+pub fn signature_image(
+    doc: &Document,
+    page: usize,
+    index: usize,
+) -> Result<Option<ObjRef>, AnnotError> {
     let p = page_ref(doc, page)?;
     let list = annots(doc, p);
-    let entry = list.get(index).ok_or(AnnotError::NoSuchAnnotation { page, index })?;
+    let entry = list
+        .get(index)
+        .ok_or(AnnotError::NoSuchAnnotation { page, index })?;
     let obj = doc.resolve(entry);
-    let Some(d) = obj.as_dict() else { return Ok(None) };
+    let Some(d) = obj.as_dict() else {
+        return Ok(None);
+    };
     Ok((d.name(b"Subtype") == Some(b"Stamp")
-        && matches!(d.name(b"Name"), Some(b"PCCustomSignature" | b"PCCustomInitials"))
+        && matches!(
+            d.name(b"Name"),
+            Some(b"PCCustomSignature" | b"PCCustomInitials")
+        )
         && matches!(d.get(b"PCPictureImage"), Some(Object::Bool(true))))
     .then(|| d.reference(b"PCPicture"))
     .flatten())
@@ -799,8 +934,13 @@ pub fn signature_image(doc: &Document, page: usize, index: usize) -> Result<Opti
 pub fn picture_rotation(doc: &Document, page: usize, index: usize) -> Result<i64, AnnotError> {
     let p = page_ref(doc, page)?;
     let list = annots(doc, p);
-    let entry = list.get(index).ok_or(AnnotError::NoSuchAnnotation { page, index })?;
-    Ok(doc.resolve(entry).as_dict().map_or(0, appearance::picture_turn))
+    let entry = list
+        .get(index)
+        .ok_or(AnnotError::NoSuchAnnotation { page, index })?;
+    Ok(doc
+        .resolve(entry)
+        .as_dict()
+        .map_or(0, appearance::picture_turn))
 }
 
 // ── building ────────────────────────────────────────────────────────────────────────────────
@@ -829,7 +969,12 @@ fn finite(v: &[f64]) -> bool {
 }
 
 fn normalize(r: [f64; 4]) -> [f64; 4] {
-    [r[0].min(r[2]), r[1].min(r[3]), r[0].max(r[2]), r[1].max(r[3])]
+    [
+        r[0].min(r[2]),
+        r[1].min(r[3]),
+        r[0].max(r[2]),
+        r[1].max(r[3]),
+    ]
 }
 
 fn bounds(points: impl Iterator<Item = [f64; 2]>) -> Option<[f64; 4]> {
@@ -866,8 +1011,14 @@ fn rect_for(shape: &Shape, style: &Style) -> Result<[f64; 4], AnnotError> {
             if quads.is_empty() || !quads.iter().all(|q| finite(q)) {
                 return Err(bad("text area (no quadrilaterals)"));
             }
-            bounds(quads.iter().flat_map(|q| q.as_chunks::<2>().0.iter().map(|p| [p[0], p[1]]).collect::<Vec<_>>()))
-                .ok_or_else(|| bad("text area"))?
+            bounds(quads.iter().flat_map(|q| {
+                q.as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|p| [p[0], p[1]])
+                    .collect::<Vec<_>>()
+            }))
+            .ok_or_else(|| bad("text area"))?
         }
         Shape::Rectangle { rect }
         | Shape::Oval { rect }
@@ -890,45 +1041,102 @@ fn rect_for(shape: &Shape, style: &Style) -> Result<[f64; 4], AnnotError> {
             }
             r
         }
-        Shape::Line { from, to, start, end } => {
+        Shape::Line {
+            from,
+            to,
+            start,
+            end,
+        } => {
             if !finite(from) || !finite(to) || (from[0] - to[0]).hypot(from[1] - to[1]) < 1.0 {
                 return Err(bad("line (too short)"));
             }
-            let pad = half + if ending_draws(*start) || ending_draws(*end) { appearance::arrow_size(style.width) } else { 0.0 };
-            grow(bounds([*from, *to].into_iter()).unwrap_or_default(), pad + 1.0)
+            let pad = half
+                + if ending_draws(*start) || ending_draws(*end) {
+                    appearance::arrow_size(style.width)
+                } else {
+                    0.0
+                };
+            grow(
+                bounds([*from, *to].into_iter()).unwrap_or_default(),
+                pad + 1.0,
+            )
         }
         Shape::Ink { strokes } | Shape::Signature { strokes } => {
-            if strokes.iter().all(|s| s.is_empty()) || !strokes.iter().flatten().all(|p| finite(p)) {
+            if strokes.iter().all(|s| s.is_empty()) || !strokes.iter().flatten().all(|p| finite(p))
+            {
                 return Err(bad("drawing (no points)"));
             }
             // Strokes of three or more points are drawn as curves, which stay within their
             // points and control points.
             let controls = strokes.iter().filter(|s| s.len() > 2).flat_map(|s| {
                 let pts: Vec<(f64, f64)> = s.iter().map(|p| (p[0], p[1])).collect();
-                appearance::smooth_segments(&pts).into_iter().flat_map(|[a, b, _]| [[a.0, a.1], [b.0, b.1]])
+                appearance::smooth_segments(&pts)
+                    .into_iter()
+                    .flat_map(|[a, b, _]| [[a.0, a.1], [b.0, b.1]])
             });
-            grow(bounds(strokes.iter().flatten().copied().chain(controls)).unwrap_or_default(), half + 1.0)
+            grow(
+                bounds(strokes.iter().flatten().copied().chain(controls)).unwrap_or_default(),
+                half + 1.0,
+            )
         }
         Shape::Polygon { vertices, cloud } => {
-            let b = bounds(vertices.iter().copied())
-                .filter(|b| vertices.len() >= 3 && vertices.iter().all(|p| finite(p)) && b[2] - b[0] >= 1.0 && b[3] - b[1] >= 1.0);
+            let b = bounds(vertices.iter().copied()).filter(|b| {
+                vertices.len() >= 3
+                    && vertices.iter().all(|p| finite(p))
+                    && b[2] - b[0] >= 1.0
+                    && b[3] - b[1] >= 1.0
+            });
             let b = b.ok_or_else(|| bad("polygon (it needs three points)"))?;
-            grow(b, half + 1.0 + if *cloud { 1.5 * appearance::cloud_radius(style.width) } else { 0.0 })
+            grow(
+                b,
+                half + 1.0
+                    + if *cloud {
+                        1.5 * appearance::cloud_radius(style.width)
+                    } else {
+                        0.0
+                    },
+            )
         }
-        Shape::PolyLine { vertices, start, end } => {
-            let b = bounds(vertices.iter().copied())
-                .filter(|b| vertices.len() >= 2 && vertices.iter().all(|p| finite(p)) && (b[2] - b[0]).max(b[3] - b[1]) >= 1.0);
-            let extra = if ending_draws(*start) || ending_draws(*end) { appearance::arrow_size(style.width) } else { 0.0 };
-            grow(b.ok_or_else(|| bad("connected lines (they need two points)"))?, half + 1.0 + extra)
+        Shape::PolyLine {
+            vertices,
+            start,
+            end,
+        } => {
+            let b = bounds(vertices.iter().copied()).filter(|b| {
+                vertices.len() >= 2
+                    && vertices.iter().all(|p| finite(p))
+                    && (b[2] - b[0]).max(b[3] - b[1]) >= 1.0
+            });
+            let extra = if ending_draws(*start) || ending_draws(*end) {
+                appearance::arrow_size(style.width)
+            } else {
+                0.0
+            };
+            grow(
+                b.ok_or_else(|| bad("connected lines (they need two points)"))?,
+                half + 1.0 + extra,
+            )
         }
-        Shape::Callout { rect, knee, point, .. } => {
+        Shape::Callout {
+            rect, knee, point, ..
+        } => {
             let r = normalize(*rect);
-            if !finite(rect) || !finite(knee) || !finite(point) || r[2] - r[0] < 1.0 || r[3] - r[1] < 1.0 {
+            if !finite(rect)
+                || !finite(knee)
+                || !finite(point)
+                || r[2] - r[0] < 1.0
+                || r[3] - r[1] < 1.0
+            {
                 return Err(bad("callout"));
             }
             let pad = half + appearance::arrow_size(style.width) + 1.0;
             let lead = grow(bounds([*knee, *point].into_iter()).unwrap_or_default(), pad);
-            [r[0].min(lead[0]), r[1].min(lead[1]), r[2].max(lead[2]), r[3].max(lead[3])]
+            [
+                r[0].min(lead[0]),
+                r[1].min(lead[1]),
+                r[2].max(lead[2]),
+                r[3].max(lead[3]),
+            ]
         }
         Shape::Caret { rect } => {
             let r = normalize(*rect);
@@ -941,7 +1149,14 @@ fn rect_for(shape: &Shape, style: &Style) -> Result<[f64; 4], AnnotError> {
     Ok(r)
 }
 
-fn base_dict(subtype: &str, rect: [f64; 4], page: ObjRef, contents: &str, author: &str, meta: &Meta) -> Dict {
+fn base_dict(
+    subtype: &str,
+    rect: [f64; 4],
+    page: ObjRef,
+    contents: &str,
+    author: &str,
+    meta: &Meta,
+) -> Dict {
     let mut d = Dict::new();
     d.set(b"Type".to_vec(), Object::name("Annot"));
     d.set(b"Subtype".to_vec(), Object::name(subtype));
@@ -952,7 +1167,10 @@ fn base_dict(subtype: &str, rect: [f64; 4], page: ObjRef, contents: &str, author
     }
     if let Some(date) = &meta.date {
         d.set(b"M".to_vec(), PdfString::literal(date.as_bytes().to_vec()));
-        d.set(b"CreationDate".to_vec(), PdfString::literal(date.as_bytes().to_vec()));
+        d.set(
+            b"CreationDate".to_vec(),
+            PdfString::literal(date.as_bytes().to_vec()),
+        );
     }
     if !meta.id.is_empty() {
         d.set(b"NM".to_vec(), PdfString::text(&meta.id));
@@ -966,13 +1184,29 @@ fn base_dict(subtype: &str, rect: [f64; 4], page: ObjRef, contents: &str, author
 fn subject(shape: &Shape) -> &'static str {
     match shape {
         Shape::Note { .. } => "Sticky Note",
-        Shape::TextMarkup { kind: Markup::Highlight, .. } => "Highlight",
-        Shape::TextMarkup { kind: Markup::Underline, .. } => "Underline",
-        Shape::TextMarkup { kind: Markup::StrikeOut, .. } => "Strikethrough",
-        Shape::TextMarkup { kind: Markup::Squiggly, .. } => "Squiggly",
+        Shape::TextMarkup {
+            kind: Markup::Highlight,
+            ..
+        } => "Highlight",
+        Shape::TextMarkup {
+            kind: Markup::Underline,
+            ..
+        } => "Underline",
+        Shape::TextMarkup {
+            kind: Markup::StrikeOut,
+            ..
+        } => "Strikethrough",
+        Shape::TextMarkup {
+            kind: Markup::Squiggly,
+            ..
+        } => "Squiggly",
         Shape::Rectangle { .. } => "Rectangle",
         Shape::Oval { .. } => "Oval",
-        Shape::Line { start: LineEnding::None, end: LineEnding::OpenArrow, .. } => "Arrow",
+        Shape::Line {
+            start: LineEnding::None,
+            end: LineEnding::OpenArrow,
+            ..
+        } => "Arrow",
         Shape::Line { .. } => "Line",
         Shape::Ink { .. } => "Pencil",
         Shape::TextBox { .. } => "Text Box",
@@ -1012,14 +1246,25 @@ pub fn callout_attach(rect: [f64; 4], knee: [f64; 2]) -> [f64; 2] {
 }
 
 /// Add a comment; returns its index in the page's `/Annots`.
-pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> Result<usize, AnnotError> {
+pub fn add_annotation(
+    doc: &mut Document,
+    new: &NewAnnotation,
+    meta: &Meta,
+) -> Result<usize, AnnotError> {
     let page = page_ref(doc, new.page)?;
     let style = &new.style;
     if !finite(&style.color) || !style.opacity.is_finite() || !style.width.is_finite() {
         return Err(AnnotError::Invalid("invalid style".into()));
     }
     let rect = rect_for(&new.shape, style)?;
-    let mut d = base_dict(new.shape.subtype(), rect, page, &new.contents, &new.author, meta);
+    let mut d = base_dict(
+        new.shape.subtype(),
+        rect,
+        page,
+        &new.contents,
+        &new.author,
+        meta,
+    );
     d.set(b"Subj".to_vec(), PdfString::text(subject(&new.shape)));
     let opacity = style.opacity.clamp(0.0, 1.0);
     if opacity < 1.0 {
@@ -1036,7 +1281,10 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
         Shape::Note { icon, .. } => {
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"Name".to_vec(), Object::name(icon.name()));
-            d.set(b"F".to_vec(), Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE));
+            d.set(
+                b"F".to_vec(),
+                Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE),
+            );
             d.set(b"Open".to_vec(), Object::Bool(false));
             popup = Some([rect[2] + 10.0, rect[3] - 120.0, rect[2] + 210.0, rect[3]]);
         }
@@ -1044,17 +1292,35 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"QuadPoints".to_vec(), num_array(&quads.concat()));
         }
-        Shape::Redact { quads, overlay, look } => {
+        Shape::Redact {
+            quads,
+            overlay,
+            look,
+        } => {
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"IC".to_vec(), rgb(style.fill.unwrap_or([0.0, 0.0, 0.0])));
             d.set(b"QuadPoints".to_vec(), num_array(&quads.concat()));
             if !overlay.is_empty() {
                 d.set(b"OverlayText".to_vec(), PdfString::text(overlay));
                 let [r, g, b] = look.color.map(|x| x.clamp(0.0, 1.0));
-                let size = if look.size > 0.0 { look.size.min(400.0) } else { 0.0 };
+                let size = if look.size > 0.0 {
+                    look.size.min(400.0)
+                } else {
+                    0.0
+                };
                 d.set(
                     b"DA".to_vec(),
-                    PdfString::literal(format!("{} {} {} rg /{} {} Tf", n(r), n(g), n(b), look.font.resource(), n(size)).into_bytes()),
+                    PdfString::literal(
+                        format!(
+                            "{} {} {} rg /{} {} Tf",
+                            n(r),
+                            n(g),
+                            n(b),
+                            look.font.resource(),
+                            n(size)
+                        )
+                        .into_bytes(),
+                    ),
                 );
                 d.set(b"Q".to_vec(), Object::Int(look.align.min(2) as i64));
                 if look.repeat {
@@ -1069,7 +1335,12 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
             }
             border(&mut d);
         }
-        Shape::Line { from, to, start, end } => {
+        Shape::Line {
+            from,
+            to,
+            start,
+            end,
+        } => {
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"L".to_vec(), num_array(&[from[0], from[1], to[0], to[1]]));
             if ending_draws(*start) || ending_draws(*end) {
@@ -1092,7 +1363,9 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
                 d.set(b"PCByLine".to_vec(), PdfString::text(b));
             }
             // The label is drawn for the page as displayed. A later page rotation is a new edit.
-            let turn = pdfcraft_model::pages(doc).get(new.page).map_or(0, |p| p.rotation(doc));
+            let turn = pdfcraft_model::pages(doc)
+                .get(new.page)
+                .map_or(0, |p| p.rotation(doc));
             if matches!(turn, 90 | 180 | 270) {
                 d.set(b"PCStampRotate".to_vec(), Object::Int(turn));
             }
@@ -1100,10 +1373,20 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
         Shape::TypedSignature { contours, .. } => {
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"Name".to_vec(), Object::name("PCTypedSignature"));
-            let list = contours.iter().filter(|c| c.len() > 2).map(|c| num_array(&c.iter().flat_map(|p| [p[0], p[1]]).collect::<Vec<_>>())).collect();
+            let list = contours
+                .iter()
+                .filter(|c| c.len() > 2)
+                .map(|c| num_array(&c.iter().flat_map(|p| [p[0], p[1]]).collect::<Vec<_>>()))
+                .collect();
             d.set(b"PCOutline".to_vec(), Object::Array(list));
         }
-        Shape::CustomStamp { name, picture, image, size, .. } => {
+        Shape::CustomStamp {
+            name,
+            picture,
+            image,
+            size,
+            ..
+        } => {
             let clean: String = name.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
             d.set(b"Name".to_vec(), Object::name(&format!("PCCustom{clean}")));
             d.set(b"PCPicture".to_vec(), Object::Ref(*picture));
@@ -1112,7 +1395,9 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
             // An image signature's rectangle is in user space; on a turned page its appearance is
             // turned back (see `appearance::build`), so it reads upright as displayed.
             if *image && matches!(clean.as_str(), "Signature" | "Initials") {
-                let turn = pdfcraft_model::pages(doc).get(new.page).map_or(0, |p| p.rotation(doc));
+                let turn = pdfcraft_model::pages(doc)
+                    .get(new.page)
+                    .map_or(0, |p| p.rotation(doc));
                 if turn != 0 {
                     d.set(b"PCPictureRotate".to_vec(), Object::Int(turn));
                 }
@@ -1120,7 +1405,11 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
         }
         Shape::Ink { strokes } | Shape::Signature { strokes } => {
             d.set(b"C".to_vec(), rgb(style.color));
-            let list = strokes.iter().filter(|s| !s.is_empty()).map(|s| num_array(&s.concat())).collect();
+            let list = strokes
+                .iter()
+                .filter(|s| !s.is_empty())
+                .map(|s| num_array(&s.concat()))
+                .collect();
             d.set(b"InkList".to_vec(), Object::Array(list));
             border(&mut d);
         }
@@ -1139,7 +1428,11 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
             }
             border(&mut d);
         }
-        Shape::PolyLine { vertices, start, end } => {
+        Shape::PolyLine {
+            vertices,
+            start,
+            end,
+        } => {
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"Vertices".to_vec(), num_array(&vertices.concat()));
             if ending_draws(*start) || ending_draws(*end) {
@@ -1151,18 +1444,26 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"Sy".to_vec(), Object::name("None"));
         }
-        Shape::Attachment { icon, file, data, .. } => {
+        Shape::Attachment {
+            icon, file, data, ..
+        } => {
             if file.trim().is_empty() {
                 return Err(AnnotError::Invalid("the attached file needs a name".into()));
             }
             d.set(b"C".to_vec(), rgb(style.color));
             d.set(b"Name".to_vec(), Object::name(icon.name()));
-            d.set(b"F".to_vec(), Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE));
+            d.set(
+                b"F".to_vec(),
+                Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE),
+            );
             // The file: an embedded file stream inside a file specification (§7.11.4).
             let mut params = Dict::new();
             params.set(b"Size".to_vec(), Object::Int(data.len() as i64));
             if let Some(date) = &meta.date {
-                params.set(b"ModDate".to_vec(), PdfString::literal(date.as_bytes().to_vec()));
+                params.set(
+                    b"ModDate".to_vec(),
+                    PdfString::literal(date.as_bytes().to_vec()),
+                );
             }
             let mut ef = Dict::new();
             ef.set(b"Type".to_vec(), Object::name("EmbeddedFile"));
@@ -1181,25 +1482,53 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
                 d.set(b"Contents".to_vec(), PdfString::text(file.trim()));
             }
         }
-        Shape::Callout { rect: tb, knee, point, ending, .. } => {
+        Shape::Callout {
+            rect: tb,
+            knee,
+            point,
+            ending,
+            ..
+        } => {
             let tb = normalize(*tb);
             let attach = callout_attach(tb, *knee);
             d.set(b"IT".to_vec(), Object::name("FreeTextCallout"));
-            d.set(b"CL".to_vec(), num_array(&[point[0], point[1], knee[0], knee[1], attach[0], attach[1]]));
+            d.set(
+                b"CL".to_vec(),
+                num_array(&[point[0], point[1], knee[0], knee[1], attach[0], attach[1]]),
+            );
             d.set(b"LE".to_vec(), Object::name(ending.name()));
             // The text box inside /Rect (§12.5.6.6 /RD).
-            d.set(b"RD".to_vec(), num_array(&[tb[0] - rect[0], tb[1] - rect[1], rect[2] - tb[2], rect[3] - tb[3]]));
+            d.set(
+                b"RD".to_vec(),
+                num_array(&[
+                    tb[0] - rect[0],
+                    tb[1] - rect[1],
+                    rect[2] - tb[2],
+                    rect[3] - tb[3],
+                ]),
+            );
         }
         _ => {}
     }
     match &new.shape {
-        Shape::TextBox { font_size, .. } | Shape::Typewriter { font_size, .. } | Shape::Callout { font_size, .. } => {
+        Shape::TextBox { font_size, .. }
+        | Shape::Typewriter { font_size, .. }
+        | Shape::Callout { font_size, .. } => {
             if matches!(new.shape, Shape::Typewriter { .. }) {
                 d.set(b"IT".to_vec(), Object::name("FreeTextTypeWriter"));
             }
-            let size = if font_size.is_finite() && *font_size > 0.0 { font_size.clamp(1.0, 400.0) } else { 12.0 };
+            let size = if font_size.is_finite() && *font_size > 0.0 {
+                font_size.clamp(1.0, 400.0)
+            } else {
+                12.0
+            };
             let [r, g, b] = style.color.map(|x| x.clamp(0.0, 1.0));
-            d.set(b"DA".to_vec(), PdfString::literal(format!("{} {} {} rg /Helv {} Tf", n(r), n(g), n(b), n(size)).into_bytes()));
+            d.set(
+                b"DA".to_vec(),
+                PdfString::literal(
+                    format!("{} {} {} rg /Helv {} Tf", n(r), n(g), n(b), n(size)).into_bytes(),
+                ),
+            );
             d.set(b"Q".to_vec(), Object::Int(0));
             if let Some(f) = style.fill {
                 d.set(b"C".to_vec(), rgb(f));
@@ -1219,7 +1548,9 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
     if d.name(b"Subtype") == Some(b"Redact")
         && let Some((what, c)) = appearance::undrawable_text(&d)
     {
-        return Err(AnnotError::Undrawable(pdfcraft_fonts::undrawable_message(what, c)));
+        return Err(AnnotError::Undrawable(pdfcraft_fonts::undrawable_message(
+            what, c,
+        )));
     }
     let r = doc.add(Object::Dict(d.clone()));
     draw_appearance(doc, r)?;
@@ -1233,7 +1564,10 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
         p.set(b"Rect".to_vec(), num_array(&pr));
         p.set(b"Parent".to_vec(), Object::Ref(r));
         p.set(b"Open".to_vec(), Object::Bool(false));
-        p.set(b"F".to_vec(), Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE));
+        p.set(
+            b"F".to_vec(),
+            Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE),
+        );
         let pref = doc.add(Object::Dict(p));
         doc.update_dict(r, |d| d.set(b"Popup".to_vec(), Object::Ref(pref)))?;
         list.push(Object::Ref(pref));
@@ -1245,7 +1579,12 @@ pub fn add_annotation(doc: &mut Document, new: &NewAnnotation, meta: &Meta) -> R
 /// Counterrotate a newly placed picture stamp's appearance into displayed-page axes.
 /// The picture may be an image or a PDF page. The normal appearance's transformed bounding
 /// box is fitted to `/Rect` by PDF viewers.
-pub fn orient_image_stamp(doc: &mut Document, page: usize, index: usize, rotation: i64) -> Result<(), AnnotError> {
+pub fn orient_image_stamp(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    rotation: i64,
+) -> Result<(), AnnotError> {
     let matrix = match rotation {
         90 => [0.0, 1.0, -1.0, 0.0, 0.0, 0.0],
         180 => [-1.0, 0.0, 0.0, -1.0, 0.0, 0.0],
@@ -1255,7 +1594,9 @@ pub fn orient_image_stamp(doc: &mut Document, page: usize, index: usize, rotatio
     let (_, r) = annot_ref(doc, page, index)?;
     let d = annot_dict(doc, r);
     if d.name(b"Subtype") != Some(b"Stamp") || d.get(b"PCPicture").is_none() {
-        return Err(AnnotError::Invalid("only a picture stamp can be oriented".into()));
+        return Err(AnnotError::Invalid(
+            "only a picture stamp can be oriented".into(),
+        ));
     }
     let normal = d
         .get(b"AP")
@@ -1263,7 +1604,9 @@ pub fn orient_image_stamp(doc: &mut Document, page: usize, index: usize, rotatio
         .and_then(|ap| ap.as_dict().and_then(|ap| ap.reference(b"N")))
         .ok_or_else(|| AnnotError::Invalid("the stamp has no normal appearance".into()))?;
     let Object::Stream(mut stream) = doc.get(normal).as_ref().clone() else {
-        return Err(AnnotError::Invalid("the stamp's normal appearance is not a stream".into()));
+        return Err(AnnotError::Invalid(
+            "the stamp's normal appearance is not a stream".into(),
+        ));
     };
     stream.dict.set(b"Matrix".to_vec(), num_array(&matrix));
     doc.set(normal, Object::Stream(stream));
@@ -1273,8 +1616,11 @@ pub fn orient_image_stamp(doc: &mut Document, page: usize, index: usize, rotatio
 /// A comment another program drew, whose text the standard fonts can't draw. Redrawing it would
 /// replace those characters with `?`, so the edit is refused before the dictionary changes.
 fn refuse_foreign_text(doc: &Document, d: &Dict) -> Result<(), AnnotError> {
-    let drawn_elsewhere =
-        d.get(b"AP").is_some_and(|ap| doc.resolve(ap).as_dict().is_some_and(|ap| ap.contains(b"N"))) && pdfcraft_fonts::undrawn_mark(d).is_none();
+    let drawn_elsewhere = d.get(b"AP").is_some_and(|ap| {
+        doc.resolve(ap)
+            .as_dict()
+            .is_some_and(|ap| ap.contains(b"N"))
+    }) && pdfcraft_fonts::undrawn_mark(d).is_none();
     if drawn_elsewhere && let Some((what, c)) = appearance::undrawable_text(d) {
         return Err(AnnotError::Undrawable(format!(
             "PdfCraft can't redraw this comment: the standard fonts can't draw \"{}\" (U+{:04X}) in {what}, which would then show as ? (the comment was left as it is)",
@@ -1314,7 +1660,9 @@ fn redraw_or_restore(doc: &mut Document, r: ObjRef, before: Dict) -> Result<(), 
 fn draw_appearance(doc: &mut Document, r: ObjRef) -> Result<(), AnnotError> {
     let d = annot_dict(doc, r);
     let subtype = String::from_utf8_lossy(d.name(b"Subtype").unwrap_or_default()).into_owned();
-    let Some(stream) = build_appearance(doc, &d) else { return Err(AnnotError::Unsupported(subtype)) };
+    let Some(stream) = build_appearance(doc, &d) else {
+        return Err(AnnotError::Unsupported(subtype));
+    };
     apply_appearance(doc, r, &d, stream)
 }
 
@@ -1327,7 +1675,9 @@ fn build_appearance(doc: &Document, d: &Dict) -> Option<Stream> {
         let matrix = d.get(b"AP").and_then(|ap| {
             let ap = doc.resolve(ap);
             let normal = doc.resolve(ap.as_dict()?.get(b"N")?);
-            let Object::Stream(normal) = normal.as_ref() else { return None };
+            let Object::Stream(normal) = normal.as_ref() else {
+                return None;
+            };
             normal.dict.get(b"Matrix").cloned()
         });
         if let Some(matrix) = matrix {
@@ -1338,13 +1688,22 @@ fn build_appearance(doc: &Document, d: &Dict) -> Option<Stream> {
 }
 
 /// Store a built appearance on the annotation: the cheap half of [`set_appearance`].
-fn apply_appearance(doc: &mut Document, r: ObjRef, d: &Dict, stream: Stream) -> Result<(), AnnotError> {
+fn apply_appearance(
+    doc: &mut Document,
+    r: ObjRef,
+    d: &Dict,
+    stream: Stream,
+) -> Result<(), AnnotError> {
     // Characters the standard fonts can't draw came out as `?`: mark the annotation with the first.
     let missing = appearance::undrawable_text(d).map(|(_, c)| c);
     let ap = doc.add(Object::Stream(stream));
     // A copy (a shared /AP is left alone) that keeps unknown entries; the old down and rollover
     // appearances would show the previous look on press or hover, so they go with the old /N.
-    let mut apd = d.get(b"AP").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().cloned()).unwrap_or_default();
+    let mut apd = d
+        .get(b"AP")
+        .map(|a| doc.resolve(a))
+        .and_then(|a| a.as_dict().cloned())
+        .unwrap_or_default();
     apd.remove(b"D");
     apd.remove(b"R");
     apd.set(b"N".to_vec(), Object::Ref(ap));
@@ -1424,15 +1783,25 @@ pub fn with_missing_appearances(doc: &Document) -> Option<Document> {
 /// A copy of `doc` with [`AppearanceCache`] reuse across refreshes: annotations whose
 /// dictionary is unchanged since the cached build keep their stored appearance instead of
 /// redrawing it. See [`AppearanceCache`] for when entries stay valid.
-pub fn with_missing_appearances_cached(doc: &Document, cache: &mut AppearanceCache) -> Option<Document> {
+pub fn with_missing_appearances_cached(
+    doc: &Document,
+    cache: &mut AppearanceCache,
+) -> Option<Document> {
     let mut copy: Option<Document> = None;
     for page in page_refs(doc).ok()? {
         for r in annots(doc, page).iter().filter_map(Object::as_ref) {
             let d = annot_dict(doc, r);
-            if matches!(d.name(b"Subtype"), None | Some(b"Link" | b"Widget" | b"Popup")) {
+            if matches!(
+                d.name(b"Subtype"),
+                None | Some(b"Link" | b"Widget" | b"Popup")
+            ) {
                 continue;
             }
-            let has_normal = d.get(b"AP").is_some_and(|ap| doc.resolve(ap).as_dict().is_some_and(|ap| ap.contains(b"N")));
+            let has_normal = d.get(b"AP").is_some_and(|ap| {
+                doc.resolve(ap)
+                    .as_dict()
+                    .is_some_and(|ap| ap.contains(b"N"))
+            });
             if has_normal {
                 continue;
             }
@@ -1441,7 +1810,9 @@ pub fn with_missing_appearances_cached(doc: &Document, cache: &mut AppearanceCac
                 apply_appearance(copy.get_or_insert_with(|| doc.clone()), r, &d, stream).ok();
                 continue;
             }
-            let Some(stream) = build_appearance(doc, &d) else { continue };
+            let Some(stream) = build_appearance(doc, &d) else {
+                continue;
+            };
             cache.insert(r, &stream);
             // Fails only when `r` isn't a dictionary, which the build just ruled out.
             apply_appearance(copy.get_or_insert_with(|| doc.clone()), r, &d, stream).ok();
@@ -1462,7 +1833,11 @@ pub(crate) fn n(v: f64) -> String {
 /// A text box's rich text (§12.7.4.3): `/DS` (default style) and `/RC` (XHTML) written from its
 /// plain `/Contents`, `/DA` and `/Q`, so viewers that edit rich text show the same thing.
 fn rich_text(d: &mut Dict) {
-    let text = d.get(b"Contents").and_then(|c| c.as_string()).map(PdfString::to_text).unwrap_or_default();
+    let text = d
+        .get(b"Contents")
+        .and_then(|c| c.as_string())
+        .map(PdfString::to_text)
+        .unwrap_or_default();
     let (col, size) = appearance::parse_da(d);
     let hex = format!(
         "#{:02X}{:02X}{:02X}",
@@ -1475,8 +1850,16 @@ fn rich_text(d: &mut Dict) {
         Some(2) => "right",
         _ => "left",
     };
-    let esc = |s: &str| s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;");
-    let body: String = text.split('\n').map(|line| format!("<p dir=\"ltr\">{}</p>", esc(line.trim_end_matches('\r')))).collect();
+    let esc = |s: &str| {
+        s.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;")
+    };
+    let body: String = text
+        .split('\n')
+        .map(|line| format!("<p dir=\"ltr\">{}</p>", esc(line.trim_end_matches('\r'))))
+        .collect();
     let style = format!(
         "font-size:{}pt;text-align:{align};color:{hex};font-weight:normal;font-style:normal;font-family:Helvetica;font-stretch:normal",
         n(size)
@@ -1484,7 +1867,13 @@ fn rich_text(d: &mut Dict) {
     let rc = format!(
         "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\" xfa:spec=\"2.0.2\" style=\"{style}\">{body}</body>"
     );
-    d.set(b"DS".to_vec(), PdfString::text(&format!("font: Helvetica {}pt; text-align:{align}; color:{hex}", n(size))));
+    d.set(
+        b"DS".to_vec(),
+        PdfString::text(&format!(
+            "font: Helvetica {}pt; text-align:{align}; color:{hex}",
+            n(size)
+        )),
+    );
     d.set(b"RC".to_vec(), PdfString::text(&rc));
 }
 
@@ -1498,7 +1887,10 @@ fn touch(d: &mut Dict, meta: &Meta) {
 pub fn delete_annotation(doc: &mut Document, page: usize, index: usize) -> Result<(), AnnotError> {
     let p = page_ref(doc, page)?;
     let list = annots(doc, p);
-    let target = list.get(index).cloned().ok_or(AnnotError::NoSuchAnnotation { page, index })?;
+    let target = list
+        .get(index)
+        .cloned()
+        .ok_or(AnnotError::NoSuchAnnotation { page, index })?;
     if let Some(r) = target.as_ref() {
         unlocked(doc, r)?;
     }
@@ -1529,14 +1921,24 @@ pub fn delete_annotation(doc: &mut Document, page: usize, index: usize) -> Resul
             break;
         }
     }
-    let kept: Vec<Object> =
-        list.into_iter().enumerate().filter(|(i, e)| *i != index && !e.as_ref().is_some_and(|r| doomed.contains(&r))).map(|(_, e)| e).collect();
+    let kept: Vec<Object> = list
+        .into_iter()
+        .enumerate()
+        .filter(|(i, e)| *i != index && !e.as_ref().is_some_and(|r| doomed.contains(&r)))
+        .map(|(_, e)| e)
+        .collect();
     set_annots(doc, p, kept)
 }
 
 /// Change a comment's text. Text boxes are redrawn to show it, and their rectangle follows the
 /// new text: the wrap width and top edge stay, the height fits the wrapped lines.
-pub fn set_contents(doc: &mut Document, page: usize, index: usize, text: &str, meta: &Meta) -> Result<(), AnnotError> {
+pub fn set_contents(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    text: &str,
+    meta: &Meta,
+) -> Result<(), AnnotError> {
     let (_, r) = annot_ref(doc, page, index)?;
     let free_text = annot_dict(doc, r).name(b"Subtype") == Some(b"FreeText");
     doc.update_dict(r, |d| {
@@ -1567,7 +1969,9 @@ pub fn set_contents(doc: &mut Document, page: usize, index: usize, text: &str, m
 /// rectangle (the box can't be measured, so only the appearance is redrawn).
 fn fitted_box(doc: &Document, r: ObjRef, text: &str) -> Option<[f64; 4]> {
     let d = annot_dict(doc, r);
-    let nums = |key: &[u8]| -> Option<Vec<f64>> { d.get(key)?.as_array()?.iter().map(|o| o.as_f64()).collect() };
+    let nums = |key: &[u8]| -> Option<Vec<f64>> {
+        d.get(key)?.as_array()?.iter().map(|o| o.as_f64()).collect()
+    };
     let (_, size) = appearance::parse_da(&d);
     let pad = 2.0 + border_width_of(&d);
     let rect = nums(b"Rect").filter(|v| v.len() == 4 && v.iter().all(|x| x.is_finite()))?;
@@ -1575,7 +1979,12 @@ fn fitted_box(doc: &Document, r: ObjRef, text: &str) -> Option<[f64; 4]> {
     // A callout re-fits its text box (`/Rect` inset by `/RD`); the leader line keeps its place.
     let tb = if d.contains(b"CL") {
         let rd = nums(b"RD").filter(|v| v.len() == 4 && v.iter().all(|x| *x >= 0.0))?;
-        [rect[0] + rd[0], rect[1] + rd[1], rect[2] - rd[2], rect[3] - rd[3]]
+        [
+            rect[0] + rd[0],
+            rect[1] + rd[1],
+            rect[2] - rd[2],
+            rect[3] - rd[3],
+        ]
     } else {
         rect
     };
@@ -1585,10 +1994,15 @@ fn fitted_box(doc: &Document, r: ObjRef, text: &str) -> Option<[f64; 4]> {
         w
     } else {
         // No usable old width: fall back to the creation-time width (at most 300 pt).
-        let longest = text.lines().map(|l| appearance::text_width(l, size)).fold(0.0, f64::max);
+        let longest = text
+            .lines()
+            .map(|l| appearance::text_width(l, size))
+            .fold(0.0, f64::max);
         (longest + 2.0 * pad + 4.0).clamp(40.0, 300.0)
     };
-    let lines = appearance::wrap(text, size, (w - 2.0 * pad).max(1.0)).len().max(1) as f64;
+    let lines = appearance::wrap(text, size, (w - 2.0 * pad).max(1.0))
+        .len()
+        .max(1) as f64;
     Some([x0, top - lines * size * 1.2 - 2.0 * pad - 2.0, x0 + w, top])
 }
 
@@ -1597,14 +2011,32 @@ fn fitted_box(doc: &Document, r: ObjRef, text: &str) -> Option<[f64; 4]> {
 /// A reply is a text annotation with `/IRT` pointing at its parent (§12.5.6.2). It gets the
 /// parent's rectangle and an empty appearance, so it shows in comment lists but never paints a
 /// second icon on the page.
-pub fn add_reply(doc: &mut Document, page: usize, index: usize, text: &str, author: &str, meta: &Meta) -> Result<usize, AnnotError> {
+pub fn add_reply(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    text: &str,
+    author: &str,
+    meta: &Meta,
+) -> Result<usize, AnnotError> {
     reply(doc, page, index, text, author, meta, None)
 }
 
 /// Set a comment's review status (Acrobat: "Set status ▸ Accepted"…). Like Acrobat this adds a
 /// state reply (`/State`, `/StateModel /Review`) by `author`; the latest one wins.
-pub fn set_review_state(doc: &mut Document, page: usize, index: usize, state: ReviewState, author: &str, meta: &Meta) -> Result<usize, AnnotError> {
-    let text = format!("{} set by {}", state.name(), if author.is_empty() { "unknown" } else { author });
+pub fn set_review_state(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    state: ReviewState,
+    author: &str,
+    meta: &Meta,
+) -> Result<usize, AnnotError> {
+    let text = format!(
+        "{} set by {}",
+        state.name(),
+        if author.is_empty() { "unknown" } else { author }
+    );
     reply(doc, page, index, &text, author, meta, Some(state))
 }
 
@@ -1622,11 +2054,17 @@ fn reply(
     if pd.name(b"Subtype") == Some(b"Popup") {
         return Err(AnnotError::Invalid("pop-ups can't be replied to".into()));
     }
-    let rect = pd.get(b"Rect").cloned().unwrap_or_else(|| num_array(&[0.0, 0.0, 0.0, 0.0]));
+    let rect = pd
+        .get(b"Rect")
+        .cloned()
+        .unwrap_or_else(|| num_array(&[0.0, 0.0, 0.0, 0.0]));
     let mut d = base_dict("Text", [0.0; 4], p, text, author, meta);
     d.set(b"Rect".to_vec(), rect);
     d.set(b"IRT".to_vec(), Object::Ref(parent));
-    d.set(b"F".to_vec(), Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE));
+    d.set(
+        b"F".to_vec(),
+        Object::Int(FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE),
+    );
     d.set(b"Name".to_vec(), Object::name("Comment"));
     if let Some(c) = pd.get(b"C") {
         d.set(b"C".to_vec(), c.clone());
@@ -1641,7 +2079,10 @@ fn reply(
     fd.set(b"Type".to_vec(), Object::name("XObject"));
     fd.set(b"Subtype".to_vec(), Object::name("Form"));
     fd.set(b"BBox".to_vec(), num_array(&[0.0, 0.0, 0.0, 0.0]));
-    let ap = doc.add(Object::Stream(pdfcraft_cos::Stream::from_raw(fd, Vec::new())));
+    let ap = doc.add(Object::Stream(pdfcraft_cos::Stream::from_raw(
+        fd,
+        Vec::new(),
+    )));
     let mut apd = Dict::new();
     apd.set(b"N".to_vec(), Object::Ref(ap));
     d.set(b"AP".to_vec(), Object::Dict(apd));
@@ -1654,37 +2095,71 @@ fn reply(
 }
 
 fn flags(doc: &Document, r: ObjRef) -> i64 {
-    doc.get(r).as_dict().map(|d| annotation_flags(doc, d)).unwrap_or(0)
+    doc.get(r)
+        .as_dict()
+        .map(|d| annotation_flags(doc, d))
+        .unwrap_or(0)
 }
 
 /// Refuse to change a locked comment (Acrobat: Properties ▸ Locked).
 fn unlocked(doc: &Document, r: ObjRef) -> Result<(), AnnotError> {
-    if flags(doc, r) & FLAG_LOCKED != 0 { Err(AnnotError::Invalid("the comment is locked".into())) } else { Ok(()) }
+    if flags(doc, r) & FLAG_LOCKED != 0 {
+        Err(AnnotError::Invalid("the comment is locked".into()))
+    } else {
+        Ok(())
+    }
 }
 
 /// Lock or unlock a comment (the Locked flag). A locked comment can't be moved, resized,
 /// restyled or deleted; its text and replies stay editable, as in Acrobat.
-pub fn set_locked(doc: &mut Document, page: usize, index: usize, locked: bool) -> Result<(), AnnotError> {
+pub fn set_locked(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    locked: bool,
+) -> Result<(), AnnotError> {
     let (_, r) = annot_ref(doc, page, index)?;
-    let f = if locked { flags(doc, r) | FLAG_LOCKED } else { flags(doc, r) & !FLAG_LOCKED };
+    let f = if locked {
+        flags(doc, r) | FLAG_LOCKED
+    } else {
+        flags(doc, r) & !FLAG_LOCKED
+    };
     doc.update_dict(r, |d| d.set(b"F".to_vec(), Object::Int(f)))?;
     Ok(())
 }
 
 /// Mark or unmark a comment with a checkmark. Like Acrobat this adds a hidden state reply with
 /// `/StateModel /Marked` by `author`; the latest one wins. It's private bookkeeping, not a status.
-pub fn set_marked(doc: &mut Document, page: usize, index: usize, marked: bool, author: &str, meta: &Meta) -> Result<usize, AnnotError> {
+pub fn set_marked(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    marked: bool,
+    author: &str,
+    meta: &Meta,
+) -> Result<usize, AnnotError> {
     let (p, parent) = annot_ref(doc, page, index)?;
     let pd = annot_dict(doc, parent);
     if pd.name(b"Subtype") == Some(b"Popup") {
         return Err(AnnotError::Invalid("pop-ups can't be marked".into()));
     }
     let state = if marked { "Marked" } else { "Unmarked" };
-    let text = format!("{state} set by {}", if author.is_empty() { "unknown" } else { author });
+    let text = format!(
+        "{state} set by {}",
+        if author.is_empty() { "unknown" } else { author }
+    );
     let mut d = base_dict("Text", [0.0; 4], p, &text, author, meta);
-    d.set(b"Rect".to_vec(), pd.get(b"Rect").cloned().unwrap_or_else(|| num_array(&[0.0; 4])));
+    d.set(
+        b"Rect".to_vec(),
+        pd.get(b"Rect")
+            .cloned()
+            .unwrap_or_else(|| num_array(&[0.0; 4])),
+    );
     d.set(b"IRT".to_vec(), Object::Ref(parent));
-    d.set(b"F".to_vec(), Object::Int(FLAG_HIDDEN | FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE));
+    d.set(
+        b"F".to_vec(),
+        Object::Int(FLAG_HIDDEN | FLAG_PRINT | FLAG_NO_ZOOM | FLAG_NO_ROTATE),
+    );
     d.set(b"State".to_vec(), PdfString::text(state));
     d.set(b"StateModel".to_vec(), PdfString::text("Marked"));
     let r = doc.add(Object::Dict(d));
@@ -1696,7 +2171,14 @@ pub fn set_marked(doc: &mut Document, page: usize, index: usize, marked: bool, a
 }
 
 /// Move a comment (and its pop-up) by `(dx, dy)` points. The appearance moves with `/Rect`.
-pub fn move_annotation(doc: &mut Document, page: usize, index: usize, dx: f64, dy: f64, meta: &Meta) -> Result<(), AnnotError> {
+pub fn move_annotation(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    dx: f64,
+    dy: f64,
+    meta: &Meta,
+) -> Result<(), AnnotError> {
     if !finite(&[dx, dy]) {
         return Err(AnnotError::Invalid("invalid offset".into()));
     }
@@ -1716,13 +2198,22 @@ pub fn move_annotation(doc: &mut Document, page: usize, index: usize, dx: f64, d
     };
     let popup = annot_dict(doc, r).reference(b"Popup");
     doc.update_dict(r, |d| {
-        for (k, every) in [(&b"Rect"[..], false), (b"QuadPoints", true), (b"L", false), (b"CL", true), (b"Vertices", true)] {
+        for (k, every) in [
+            (&b"Rect"[..], false),
+            (b"QuadPoints", true),
+            (b"L", false),
+            (b"CL", true),
+            (b"Vertices", true),
+        ] {
             if let Some(v) = d.get(k).and_then(|o| shift(o, every)) {
                 d.set(k.to_vec(), v);
             }
         }
         if let Some(Object::Array(list)) = d.get(b"InkList").cloned() {
-            let moved = list.iter().map(|s| shift(s, true).unwrap_or_else(|| s.clone())).collect();
+            let moved = list
+                .iter()
+                .map(|s| shift(s, true).unwrap_or_else(|| s.clone()))
+                .collect();
             d.set(b"InkList".to_vec(), Object::Array(moved));
         }
         touch(d, meta);
@@ -1742,7 +2233,13 @@ pub fn move_annotation(doc: &mut Document, page: usize, index: usize, dx: f64, d
 /// Resize a rectangle, oval, text box, stamp or drawing to `rect`. Stamps keep their appearance,
 /// which PDF viewers scale from its bounding box into the new rectangle; drawings scale their
 /// strokes and get a new one.
-pub fn set_rect(doc: &mut Document, page: usize, index: usize, rect: [f64; 4], meta: &Meta) -> Result<(), AnnotError> {
+pub fn set_rect(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    rect: [f64; 4],
+    meta: &Meta,
+) -> Result<(), AnnotError> {
     let (_, r) = annot_ref(doc, page, index)?;
     unlocked(doc, r)?;
     let d = annot_dict(doc, r);
@@ -1762,14 +2259,21 @@ pub fn set_rect(doc: &mut Document, page: usize, index: usize, rect: [f64; 4], m
         return resize_ink(doc, r, normalize(rect), meta);
     }
     if !matches!(subtype.as_str(), "Square" | "Circle" | "FreeText") {
-        return Err(AnnotError::Invalid(format!("{subtype} comments can't be resized")));
+        return Err(AnnotError::Invalid(format!(
+            "{subtype} comments can't be resized"
+        )));
     }
     apply_text_box(doc, r, rect, meta, false)
 }
 
 /// Scale a drawing's strokes into `rect`. The margin between the strokes and the old `/Rect` (half
 /// the line width and a little more) stays the same on each side, so the line isn't clipped.
-fn resize_ink(doc: &mut Document, r: ObjRef, rect: [f64; 4], meta: &Meta) -> Result<(), AnnotError> {
+fn resize_ink(
+    doc: &mut Document,
+    r: ObjRef,
+    rect: [f64; 4],
+    meta: &Meta,
+) -> Result<(), AnnotError> {
     let d = annot_dict(doc, r);
     let strokes: Vec<Vec<[f64; 2]>> = d
         .get(b"InkList")
@@ -1778,35 +2282,75 @@ fn resize_ink(doc: &mut Document, r: ObjRef, rect: [f64; 4], meta: &Meta) -> Res
         .unwrap_or_default()
         .iter()
         .map(|s| {
-            let v: Vec<f64> = doc.resolve(s).as_array().map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect()).unwrap_or_default();
+            let v: Vec<f64> = doc
+                .resolve(s)
+                .as_array()
+                .map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect())
+                .unwrap_or_default();
             v.as_chunks::<2>().0.iter().map(|p| [p[0], p[1]]).collect()
         })
         .collect();
     let Some(inner) = bounds(strokes.iter().flatten().copied()) else {
         return Err(AnnotError::Invalid("the drawing has no strokes".into()));
     };
-    let old = d.get(b"Rect").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default();
+    let old = d
+        .get(b"Rect")
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_array().cloned())
+        .unwrap_or_default();
     let old: Vec<f64> = old.iter().filter_map(|v| doc.resolve(v).as_f64()).collect();
     let old = match old[..] {
         [a, b, c, e] => normalize([a, b, c, e]),
         _ => inner,
     };
-    let margin = [inner[0] - old[0], inner[1] - old[1], old[2] - inner[2], old[3] - inner[3]].map(|m| m.max(0.0));
-    let target = [rect[0] + margin[0], rect[1] + margin[1], rect[2] - margin[2], rect[3] - margin[3]];
-    if !finite(&rect) || target[2] < target[0] || target[3] < target[1] || rect[2] - rect[0] < 1.0 || rect[3] - rect[1] < 1.0 {
+    let margin = [
+        inner[0] - old[0],
+        inner[1] - old[1],
+        old[2] - inner[2],
+        old[3] - inner[3],
+    ]
+    .map(|m| m.max(0.0));
+    let target = [
+        rect[0] + margin[0],
+        rect[1] + margin[1],
+        rect[2] - margin[2],
+        rect[3] - margin[3],
+    ];
+    if !finite(&rect)
+        || target[2] < target[0]
+        || target[3] < target[1]
+        || rect[2] - rect[0] < 1.0
+        || rect[3] - rect[1] < 1.0
+    {
         return Err(AnnotError::Invalid("invalid rectangle (too small)".into()));
     }
     // An axis with no extent (a straight stroke) is centred rather than scaled.
-    let axis = |v: f64, a0: f64, a1: f64, b0: f64, b1: f64| if a1 > a0 { b0 + (v - a0) / (a1 - a0) * (b1 - b0) } else { (b0 + b1) / 2.0 };
+    let axis = |v: f64, a0: f64, a1: f64, b0: f64, b1: f64| {
+        if a1 > a0 {
+            b0 + (v - a0) / (a1 - a0) * (b1 - b0)
+        } else {
+            (b0 + b1) / 2.0
+        }
+    };
     let scaled: Vec<Vec<[f64; 2]>> = strokes
         .iter()
         .map(|s| {
-            s.iter().map(|p| [axis(p[0], inner[0], inner[2], target[0], target[2]), axis(p[1], inner[1], inner[3], target[1], target[3])]).collect()
+            s.iter()
+                .map(|p| {
+                    [
+                        axis(p[0], inner[0], inner[2], target[0], target[2]),
+                        axis(p[1], inner[1], inner[3], target[1], target[3]),
+                    ]
+                })
+                .collect()
         })
         .collect();
     let before = annot_dict(doc, r);
     doc.update_dict(r, |d| {
-        d.set(b"InkList".to_vec(), Object::Array(scaled.iter().map(|s| num_array(&s.concat())).collect()));
+        d.set(
+            b"InkList".to_vec(),
+            Object::Array(scaled.iter().map(|s| num_array(&s.concat())).collect()),
+        );
         d.set(b"Rect".to_vec(), num_array(&rect));
         touch(d, meta);
     })?;
@@ -1816,7 +2360,13 @@ fn resize_ink(doc: &mut Document, r: ObjRef, rect: [f64; 4], meta: &Meta) -> Res
 /// Store `rect` as a FreeText annotation's text box (or a square's/oval's rectangle): a callout's
 /// leader line re-attaches and `/Rect` grows to hold it, and the appearance is redrawn
 /// (`new_text`: for changed contents, see [`set_appearance`] and `draw_appearance`).
-fn apply_text_box(doc: &mut Document, r: ObjRef, rect: [f64; 4], meta: &Meta, new_text: bool) -> Result<(), AnnotError> {
+fn apply_text_box(
+    doc: &mut Document,
+    r: ObjRef,
+    rect: [f64; 4],
+    meta: &Meta,
+    new_text: bool,
+) -> Result<(), AnnotError> {
     let rect = normalize(rect);
     if !finite(&rect) || rect[2] - rect[0] < 1.0 || rect[3] - rect[1] < 1.0 {
         return Err(AnnotError::Invalid("invalid rectangle (too small)".into()));
@@ -1826,14 +2376,29 @@ fn apply_text_box(doc: &mut Document, r: ObjRef, rect: [f64; 4], meta: &Meta, ne
         refuse_foreign_text(doc, &d)?;
     }
     // A callout's rectangle is its text box: the leader line re-attaches and `/Rect` grows to hold it.
-    let callout = d.get(b"CL").and_then(|o| o.as_array()).map(|a| a.iter().filter_map(|x| x.as_f64()).collect::<Vec<f64>>()).filter(|l| l.len() == 6);
+    let callout = d
+        .get(b"CL")
+        .and_then(|o| o.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_f64()).collect::<Vec<f64>>())
+        .filter(|l| l.len() == 6);
     let (outer, cl) = match callout {
         Some(mut l) => {
             let attach = callout_attach(rect, [l[2], l[3]]);
             (l[4], l[5]) = (attach[0], attach[1]);
             let pad = border_width_of(&d) / 2.0 + appearance::arrow_size(border_width_of(&d)) + 1.0;
-            let lead = grow(bounds([[l[0], l[1]], [l[2], l[3]]].into_iter()).unwrap_or_default(), pad);
-            ([rect[0].min(lead[0]), rect[1].min(lead[1]), rect[2].max(lead[2]), rect[3].max(lead[3])], Some(l))
+            let lead = grow(
+                bounds([[l[0], l[1]], [l[2], l[3]]].into_iter()).unwrap_or_default(),
+                pad,
+            );
+            (
+                [
+                    rect[0].min(lead[0]),
+                    rect[1].min(lead[1]),
+                    rect[2].max(lead[2]),
+                    rect[3].max(lead[3]),
+                ],
+                Some(l),
+            )
         }
         None => (rect, None),
     };
@@ -1842,7 +2407,15 @@ fn apply_text_box(doc: &mut Document, r: ObjRef, rect: [f64; 4], meta: &Meta, ne
         match &cl {
             Some(l) => {
                 d.set(b"CL".to_vec(), num_array(l));
-                d.set(b"RD".to_vec(), num_array(&[rect[0] - outer[0], rect[1] - outer[1], outer[2] - rect[2], outer[3] - rect[3]]));
+                d.set(
+                    b"RD".to_vec(),
+                    num_array(&[
+                        rect[0] - outer[0],
+                        rect[1] - outer[1],
+                        outer[2] - rect[2],
+                        outer[3] - rect[3],
+                    ]),
+                );
             }
             None => {
                 d.remove(b"RD");
@@ -1863,7 +2436,12 @@ fn apply_text_box(doc: &mut Document, r: ObjRef, rect: [f64; 4], meta: &Meta, ne
 }
 
 fn border_width_of(d: &Dict) -> f64 {
-    d.get(b"BS").and_then(|b| b.as_dict()).and_then(|b| b.get(b"W")).and_then(|w| w.as_f64()).unwrap_or(1.0).max(0.0)
+    d.get(b"BS")
+        .and_then(|b| b.as_dict())
+        .and_then(|b| b.get(b"W"))
+        .and_then(|w| w.as_f64())
+        .unwrap_or(1.0)
+        .max(0.0)
 }
 
 /// Change a comment's colour, opacity, line width and/or line endings, and redraw it.
@@ -1886,14 +2464,19 @@ pub fn set_style(
     if appearance::build(&d).is_none() {
         return Err(AnnotError::Unsupported(subtype.clone()));
     }
-    if color.is_some_and(|c| !finite(&c)) || opacity.is_some_and(|o| !o.is_finite()) || width.is_some_and(|w| !w.is_finite()) {
+    if color.is_some_and(|c| !finite(&c))
+        || opacity.is_some_and(|o| !o.is_finite())
+        || width.is_some_and(|w| !w.is_finite())
+    {
         return Err(AnnotError::Invalid("invalid style".into()));
     }
     if let Some(ends) = endings {
         let callout = subtype == "FreeText" && d.contains(b"CL");
         let pair = matches!(subtype.as_str(), "Line" | "PolyLine");
         if (callout && ends.len() != 1) || (pair && ends.len() != 2) || (!callout && !pair) {
-            return Err(AnnotError::Invalid("this comment has no line endings to change".into()));
+            return Err(AnnotError::Invalid(
+                "this comment has no line endings to change".into(),
+            ));
         }
     }
     refuse_foreign_text(doc, &d)?;
@@ -1904,7 +2487,12 @@ pub fn set_style(
             if free_text {
                 let (_, size) = appearance::parse_da(d);
                 let [r, g, b] = c.map(|x| x.clamp(0.0, 1.0));
-                d.set(b"DA".to_vec(), PdfString::literal(format!("{} {} {} rg /Helv {} Tf", n(r), n(g), n(b), n(size)).into_bytes()));
+                d.set(
+                    b"DA".to_vec(),
+                    PdfString::literal(
+                        format!("{} {} {} rg /Helv {} Tf", n(r), n(g), n(b), n(size)).into_bytes(),
+                    ),
+                );
                 rich_text(d);
             } else {
                 d.set(b"C".to_vec(), rgb(c));
@@ -1919,7 +2507,11 @@ pub fn set_style(
             }
         }
         if let Some(w) = width {
-            let mut bs = d.get(b"BS").and_then(|b| b.as_dict()).cloned().unwrap_or_default();
+            let mut bs = d
+                .get(b"BS")
+                .and_then(|b| b.as_dict())
+                .cloned()
+                .unwrap_or_default();
             bs.set(b"W".to_vec(), Object::Real(w.max(0.0)));
             d.set(b"BS".to_vec(), Object::Dict(bs));
             d.remove(b"Border");
@@ -1947,13 +2539,21 @@ pub fn fillable(subtype: &str) -> bool {
 
 /// Fill a rectangle, oval or polygon comment with `fill`, or remove its fill (`None`), and
 /// redraw its appearance (Acrobat: Properties ▸ Fill Color).
-pub fn set_fill(doc: &mut Document, page: usize, index: usize, fill: Option<Rgb>, meta: &Meta) -> Result<(), AnnotError> {
+pub fn set_fill(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    fill: Option<Rgb>,
+    meta: &Meta,
+) -> Result<(), AnnotError> {
     let (_, r) = annot_ref(doc, page, index)?;
     unlocked(doc, r)?;
     let d = annot_dict(doc, r);
     let subtype = String::from_utf8_lossy(d.name(b"Subtype").unwrap_or_default()).into_owned();
     if !fillable(&subtype) {
-        return Err(AnnotError::Invalid("only rectangles, ovals and polygons can be filled".into()));
+        return Err(AnnotError::Invalid(
+            "only rectangles, ovals and polygons can be filled".into(),
+        ));
     }
     // Check before changing anything: a stale appearance would contradict the new fill.
     if appearance::build(&d).is_none() {
@@ -1985,14 +2585,31 @@ fn ensure_ending_room(d: &mut Dict) {
     if !line_endings_of(d).is_some_and(|ends| ends.iter().any(|e| ending_draws(*e))) {
         return;
     }
-    let key: &[u8] = if subtype == b"Line" { b"L" } else { b"Vertices" };
-    let Some(pts) = pair_points(d, key) else { return };
-    let Some(bounds) = bounds(pts.iter().copied()) else { return };
+    let key: &[u8] = if subtype == b"Line" {
+        b"L"
+    } else {
+        b"Vertices"
+    };
+    let Some(pts) = pair_points(d, key) else {
+        return;
+    };
+    let Some(bounds) = bounds(pts.iter().copied()) else {
+        return;
+    };
     let w = border_width_of(d);
     let need = grow(bounds, w / 2.0 + appearance::arrow_size(w) + 1.0);
-    let vals: Vec<f64> = d.get(b"Rect").and_then(|o| o.as_array()).map(|a| a.iter().filter_map(|x| x.as_f64()).collect()).unwrap_or_default();
+    let vals: Vec<f64> = d
+        .get(b"Rect")
+        .and_then(|o| o.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_f64()).collect())
+        .unwrap_or_default();
     let Some(rect) = four(&vals) else { return };
-    let union = [rect[0].min(need[0]), rect[1].min(need[1]), rect[2].max(need[2]), rect[3].max(need[3])];
+    let union = [
+        rect[0].min(need[0]),
+        rect[1].min(need[1]),
+        rect[2].max(need[2]),
+        rect[3].max(need[3]),
+    ];
     if union != rect {
         d.set(b"Rect".to_vec(), num_array(&union));
     }
@@ -2003,7 +2620,12 @@ fn four(v: &[f64]) -> Option<[f64; 4]> {
 }
 
 fn pair_points(d: &Dict, key: &[u8]) -> Option<Vec<[f64; 2]>> {
-    let v: Vec<f64> = d.get(key)?.as_array()?.iter().filter_map(|o| o.as_f64()).collect();
+    let v: Vec<f64> = d
+        .get(key)?
+        .as_array()?
+        .iter()
+        .filter_map(|o| o.as_f64())
+        .collect();
     if v.len() < 4 || !v.len().is_multiple_of(2) || v.iter().any(|x| !x.is_finite()) {
         return None;
     }
@@ -2051,29 +2673,63 @@ fn text_value(doc: &Document, d: &Dict, key: &[u8]) -> Option<String> {
 /// multimedia and print-production annotations (ISO 32000-2 §12.5.6: Screen, Movie, RichMedia,
 /// 3D, PrinterMark, TrapNet, Watermark) are not.
 pub fn is_comment_subtype(subtype: &str) -> bool {
-    !matches!(subtype, "Link" | "Widget" | "Popup" | "Screen" | "Movie" | "RichMedia" | "3D" | "PrinterMark" | "TrapNet" | "Watermark")
+    !matches!(
+        subtype,
+        "Link"
+            | "Widget"
+            | "Popup"
+            | "Screen"
+            | "Movie"
+            | "RichMedia"
+            | "3D"
+            | "PrinterMark"
+            | "TrapNet"
+            | "Watermark"
+    )
 }
 
 /// Every comment (see [`is_comment_subtype`]), ordered by page and then top edge.
 pub fn summaries(doc: &Document) -> Vec<Summary> {
     let mut out = Vec::new();
-    let Ok(pages) = page_refs(doc) else { return out };
+    let Ok(pages) = page_refs(doc) else {
+        return out;
+    };
     for (page, p) in pages.iter().enumerate() {
         for (index, entry) in annots(doc, *p).iter().enumerate() {
             let obj = doc.resolve(entry);
             let Some(d) = obj.as_dict() else { continue };
-            let Some(subtype) = d.name(b"Subtype").map(|s| String::from_utf8_lossy(s).into_owned()) else { continue };
+            let Some(subtype) = d
+                .name(b"Subtype")
+                .map(|s| String::from_utf8_lossy(s).into_owned())
+            else {
+                continue;
+            };
             if !is_comment_subtype(&subtype) {
                 continue;
             }
             let nums = |k: &[u8]| -> Vec<f32> {
                 d.get(k)
                     .map(|o| doc.resolve(o))
-                    .and_then(|o| o.as_array().map(|a| a.iter().map(|x| doc.resolve(x).as_f64().unwrap_or(0.0) as f32).collect()))
+                    .and_then(|o| {
+                        o.as_array().map(|a| {
+                            a.iter()
+                                .map(|x| doc.resolve(x).as_f64().unwrap_or(0.0) as f32)
+                                .collect()
+                        })
+                    })
                     .unwrap_or_default()
             };
             let r = nums(b"Rect");
-            let rect = if r.len() == 4 { [r[0].min(r[2]), r[1].min(r[3]), r[0].max(r[2]), r[1].max(r[3])] } else { [0.0; 4] };
+            let rect = if r.len() == 4 {
+                [
+                    r[0].min(r[2]),
+                    r[1].min(r[3]),
+                    r[0].max(r[2]),
+                    r[1].max(r[3]),
+                ]
+            } else {
+                [0.0; 4]
+            };
             let c = nums(b"C");
             let mut color = (c.len() == 3).then(|| [c[0], c[1], c[2]]);
             if subtype == "FreeText"
@@ -2088,7 +2744,11 @@ pub fn summaries(doc: &Document) -> Vec<Summary> {
                 }
             }
             let quads = nums(b"QuadPoints").as_chunks::<8>().0.to_vec();
-            let in_reply_to = d.get(b"IRT").map(|o| doc.resolve(o)).and_then(|o| o.as_dict().cloned()).and_then(|p| text_value(doc, &p, b"NM"));
+            let in_reply_to = d
+                .get(b"IRT")
+                .map(|o| doc.resolve(o))
+                .and_then(|o| o.as_dict().cloned())
+                .and_then(|p| text_value(doc, &p, b"NM"));
             out.push(Summary {
                 page,
                 index,
@@ -2096,7 +2756,8 @@ pub fn summaries(doc: &Document) -> Vec<Summary> {
                 author: text_value(doc, d, b"T"),
                 // Acrobat ends lines with CR, which the interface would draw as nothing (keep in
                 // step with `pdfcraft_render::inspect`).
-                contents: text_value(doc, d, b"Contents").map(|s| s.replace("\r\n", "\n").replace('\r', "\n")),
+                contents: text_value(doc, d, b"Contents")
+                    .map(|s| s.replace("\r\n", "\n").replace('\r', "\n")),
                 modified: text_value(doc, d, b"M"),
                 name: text_value(doc, d, b"NM"),
                 in_reply_to,
@@ -2105,7 +2766,11 @@ pub fn summaries(doc: &Document) -> Vec<Summary> {
                 state: text_value(doc, d, b"State"),
                 quads,
                 locked: annotation_flags(doc, d) & FLAG_LOCKED != 0,
-                intent: d.get(b"IT").and_then(|o| doc.resolve(o).as_name().map(|n| String::from_utf8_lossy(n).into_owned())),
+                intent: d.get(b"IT").and_then(|o| {
+                    doc.resolve(o)
+                        .as_name()
+                        .map(|n| String::from_utf8_lossy(n).into_owned())
+                }),
                 fill_sign: is_fill_sign(doc, d),
             });
         }
@@ -2182,17 +2847,40 @@ pub fn props(doc: &Document, page: usize, index: usize) -> Option<Props> {
     let obj = doc.resolve(&entry);
     let d = obj.as_dict()?;
     let subtype = String::from_utf8_lossy(d.name(b"Subtype")?).into_owned();
-    let c: Vec<f64> = d.get(b"C").and_then(|o| o.as_array().map(|a| a.iter().filter_map(|x| x.as_f64()).collect())).unwrap_or_default();
-    let color = if subtype == "FreeText" { Some(appearance::parse_da(d).0) } else { (c.len() == 3).then(|| [c[0], c[1], c[2]]) };
-    let width = matches!(subtype.as_str(), "Square" | "Circle" | "Line" | "Ink" | "Polygon" | "PolyLine")
-        .then(|| d.get(b"BS").and_then(|b| b.as_dict()).and_then(|b| b.get(b"W")).and_then(|w| w.as_f64()).unwrap_or(1.0));
+    let c: Vec<f64> = d
+        .get(b"C")
+        .and_then(|o| {
+            o.as_array()
+                .map(|a| a.iter().filter_map(|x| x.as_f64()).collect())
+        })
+        .unwrap_or_default();
+    let color = if subtype == "FreeText" {
+        Some(appearance::parse_da(d).0)
+    } else {
+        (c.len() == 3).then(|| [c[0], c[1], c[2]])
+    };
+    let width = matches!(
+        subtype.as_str(),
+        "Square" | "Circle" | "Line" | "Ink" | "Polygon" | "PolyLine"
+    )
+    .then(|| {
+        d.get(b"BS")
+            .and_then(|b| b.as_dict())
+            .and_then(|b| b.get(b"W"))
+            .and_then(|w| w.as_f64())
+            .unwrap_or(1.0)
+    });
     Some(Props {
         author: text_value(doc, d, b"T").unwrap_or_default(),
         subject: text_value(doc, d, b"Subj").unwrap_or_default(),
         color,
         opacity: d.get(b"CA").and_then(|o| o.as_f64()).unwrap_or(1.0),
         width,
-        icon: (subtype == "Text").then(|| d.name(b"Name").and_then(|n| NoteIcon::from_name(&String::from_utf8_lossy(n))).unwrap_or(NoteIcon::Note)),
+        icon: (subtype == "Text").then(|| {
+            d.name(b"Name")
+                .and_then(|n| NoteIcon::from_name(&String::from_utf8_lossy(n)))
+                .unwrap_or(NoteIcon::Note)
+        }),
         modified: text_value(doc, d, b"M"),
         restylable: appearance::build(d).is_some(),
         locked: annotation_flags(doc, d) & FLAG_LOCKED != 0,
@@ -2205,11 +2893,20 @@ pub fn props(doc: &Document, page: usize, index: usize) -> Option<Props> {
 
 /// `/IC` as an RGB colour. An empty array means no fill; grey and CMYK fills are converted.
 fn fill_of(d: &Dict) -> Option<Rgb> {
-    let c: Vec<f64> = d.get(b"IC")?.as_array()?.iter().filter_map(|x| x.as_f64()).collect();
+    let c: Vec<f64> = d
+        .get(b"IC")?
+        .as_array()?
+        .iter()
+        .filter_map(|x| x.as_f64())
+        .collect();
     let rgb = match c.as_slice() {
         [g] => [*g; 3],
         [r, g, b] => [*r, *g, *b],
-        [c, m, y, k] => [(1.0 - c) * (1.0 - k), (1.0 - m) * (1.0 - k), (1.0 - y) * (1.0 - k)],
+        [c, m, y, k] => [
+            (1.0 - c) * (1.0 - k),
+            (1.0 - m) * (1.0 - k),
+            (1.0 - y) * (1.0 - k),
+        ],
         _ => return None,
     };
     finite(&rgb).then(|| rgb.map(|x| x.clamp(0.0, 1.0)))
@@ -2221,7 +2918,12 @@ fn line_endings_of(d: &Dict) -> Option<Vec<LineEnding>> {
     match d.name(b"Subtype")? {
         b"Line" | b"PolyLine" => match d.get(b"LE") {
             None => Some(vec![LineEnding::None, LineEnding::None]),
-            Some(o) => o.as_array().filter(|a| a.len() == 2)?.iter().map(|e| parse(e.as_name()?)).collect(),
+            Some(o) => o
+                .as_array()
+                .filter(|a| a.len() == 2)?
+                .iter()
+                .map(|e| parse(e.as_name()?))
+                .collect(),
         },
         b"FreeText" if d.contains(b"CL") => Some(vec![parse(d.name(b"LE").unwrap_or(b"None"))?]),
         _ => None,
@@ -2242,12 +2944,17 @@ pub fn add_text_replacement(
     caret: &Style,
     meta: &Meta,
 ) -> Result<usize, AnnotError> {
-    let last = *quads.last().ok_or_else(|| AnnotError::Invalid("select the text to replace first".into()))?;
+    let last = *quads
+        .last()
+        .ok_or_else(|| AnnotError::Invalid("select the text to replace first".into()))?;
     let s = add_annotation(
         doc,
         &NewAnnotation {
             page,
-            shape: Shape::TextMarkup { kind: Markup::StrikeOut, quads: quads.to_vec() },
+            shape: Shape::TextMarkup {
+                kind: Markup::StrikeOut,
+                quads: quads.to_vec(),
+            },
             style: strike.clone(),
             contents: String::new(),
             author: author.into(),
@@ -2255,17 +2962,28 @@ pub fn add_text_replacement(
         meta,
     )?;
     let (_, sr) = annot_ref(doc, page, s)?;
-    doc.update_dict(sr, |d| d.set(b"IT".to_vec(), Object::name("StrikeOutTextEdit")))?;
+    doc.update_dict(sr, |d| {
+        d.set(b"IT".to_vec(), Object::name("StrikeOutTextEdit"))
+    })?;
     // The caret sits on the baseline at the end of the last line, its point at the text.
     let xs = [last[0], last[2], last[4], last[6]];
     let ys = [last[1], last[3], last[5], last[7]];
     let x = xs.iter().copied().fold(f64::MIN, f64::max);
-    let (y0, y1) = (ys.iter().copied().fold(f64::MAX, f64::min), ys.iter().copied().fold(f64::MIN, f64::max));
+    let (y0, y1) = (
+        ys.iter().copied().fold(f64::MAX, f64::min),
+        ys.iter().copied().fold(f64::MIN, f64::max),
+    );
     let h = ((y1 - y0) * 0.6).clamp(4.0, 24.0);
     let rect = [x - h / 2.0, y0 - h * 0.6, x + h / 2.0, y0 + h * 0.4];
     let c = add_annotation(
         doc,
-        &NewAnnotation { page, shape: Shape::Caret { rect }, style: caret.clone(), contents: replacement.into(), author: author.into() },
+        &NewAnnotation {
+            page,
+            shape: Shape::Caret { rect },
+            style: caret.clone(),
+            contents: replacement.into(),
+            author: author.into(),
+        },
         meta,
     )?;
     let (_, cr) = annot_ref(doc, page, c)?;
@@ -2280,7 +2998,14 @@ pub fn add_text_replacement(
 /// The Eraser (Draw tools): remove the parts of drawing `(page, index)` within `radius` points
 /// of `path`, splitting strokes where they are cut. A drawing with nothing left is deleted.
 /// Returns whether anything was erased.
-pub fn erase_ink(doc: &mut Document, page: usize, index: usize, path: &[[f64; 2]], radius: f64, meta: &Meta) -> Result<bool, AnnotError> {
+pub fn erase_ink(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    path: &[[f64; 2]],
+    radius: f64,
+    meta: &Meta,
+) -> Result<bool, AnnotError> {
     let (_, r) = annot_ref(doc, page, index)?;
     unlocked(doc, r)?;
     let d = annot_dict(doc, r);
@@ -2297,7 +3022,11 @@ pub fn erase_ink(doc: &mut Document, page: usize, index: usize, path: &[[f64; 2]
         .unwrap_or_default()
         .iter()
         .map(|s| {
-            let v: Vec<f64> = doc.resolve(s).as_array().map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect()).unwrap_or_default();
+            let v: Vec<f64> = doc
+                .resolve(s)
+                .as_array()
+                .map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect())
+                .unwrap_or_default();
             v.as_chunks::<2>().0.iter().map(|p| [p[0], p[1]]).collect()
         })
         .collect();
@@ -2310,7 +3039,11 @@ pub fn erase_ink(doc: &mut Document, page: usize, index: usize, path: &[[f64; 2]
             let (a, b) = (w[0], w[1]);
             let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
             let len2 = dx * dx + dy * dy;
-            let t = if len2 > 0.0 { (((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2).clamp(0.0, 1.0) } else { 0.0 };
+            let t = if len2 > 0.0 {
+                (((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
             (p[0] - (a[0] + t * dx)).hypot(p[1] - (a[1] + t * dy)) <= radius
         })
     };
@@ -2320,10 +3053,15 @@ pub fn erase_ink(doc: &mut Document, page: usize, index: usize, path: &[[f64; 2]
         // Densify so long segments are cut where the eraser crosses them.
         let mut pts: Vec<[f64; 2]> = Vec::new();
         for w in s.windows(2) {
-            let n = ((w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1]) / (radius / 2.0)).ceil().clamp(1.0, 2000.0) as usize;
+            let n = ((w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1]) / (radius / 2.0))
+                .ceil()
+                .clamp(1.0, 2000.0) as usize;
             for k in 0..n {
                 let t = k as f64 / n as f64;
-                pts.push([w[0][0] + (w[1][0] - w[0][0]) * t, w[0][1] + (w[1][1] - w[0][1]) * t]);
+                pts.push([
+                    w[0][0] + (w[1][0] - w[0][0]) * t,
+                    w[0][1] + (w[1][1] - w[0][1]) * t,
+                ]);
             }
         }
         if let Some(last) = s.last() {
@@ -2352,10 +3090,21 @@ pub fn erase_ink(doc: &mut Document, page: usize, index: usize, path: &[[f64; 2]
         delete_annotation(doc, page, index)?;
         return Ok(true);
     }
-    let width = d.get(b"BS").and_then(|b| b.as_dict()).and_then(|b| b.get(b"W")).and_then(|w| w.as_f64()).unwrap_or(1.0);
-    let rect = grow(bounds(kept.iter().flatten().copied()).unwrap_or_default(), width / 2.0 + 1.0);
+    let width = d
+        .get(b"BS")
+        .and_then(|b| b.as_dict())
+        .and_then(|b| b.get(b"W"))
+        .and_then(|w| w.as_f64())
+        .unwrap_or(1.0);
+    let rect = grow(
+        bounds(kept.iter().flatten().copied()).unwrap_or_default(),
+        width / 2.0 + 1.0,
+    );
     doc.update_dict(r, |d| {
-        d.set(b"InkList".to_vec(), Object::Array(kept.iter().map(|s| num_array(&s.concat())).collect()));
+        d.set(
+            b"InkList".to_vec(),
+            Object::Array(kept.iter().map(|s| num_array(&s.concat())).collect()),
+        );
         d.set(b"Rect".to_vec(), num_array(&rect));
         touch(d, meta);
     })?;

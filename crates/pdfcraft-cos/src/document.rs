@@ -142,7 +142,8 @@ impl ObjectReader {
     const STREAM_BYTES: usize = 8 * 1024 * 1024;
 
     pub(crate) fn get(&mut self, reference: ObjRef) -> Arc<Object> {
-        self.try_get(reference).unwrap_or_else(|_| Arc::new(Object::Null))
+        self.try_get(reference)
+            .unwrap_or_else(|_| Arc::new(Object::Null))
     }
 
     pub(crate) fn try_get(&mut self, reference: ObjRef) -> Result<Arc<Object>, CosError> {
@@ -154,9 +155,12 @@ impl ObjectReader {
             // objects reuse a decoded stream: do not sum the whole store for every object.
             if streams.len() != self.decoded_count {
                 let bytes = streams.values().fold(0usize, |bytes, stream| {
-                    bytes
-                        .saturating_add(stream.data.capacity())
-                        .saturating_add(stream.index.capacity().saturating_mul(std::mem::size_of::<(u32, usize)>()))
+                    bytes.saturating_add(stream.data.capacity()).saturating_add(
+                        stream
+                            .index
+                            .capacity()
+                            .saturating_mul(std::mem::size_of::<(u32, usize)>()),
+                    )
                 });
                 if bytes > Self::STREAM_BYTES || streams.len() >= Self::OBJECTS {
                     // Retain one oversized active stream so its next object does not require
@@ -178,7 +182,12 @@ impl ObjectReader {
         // have cached large objects.
         if let Ok(mut cache) = self.document.cache.lock() {
             let data = &self.document.data;
-            if cache.len() >= Self::OBJECTS || cache.values().fold(0usize, |n, o| n.saturating_add(owned_bytes(o, data, 0))) > Self::STREAM_BYTES {
+            if cache.len() >= Self::OBJECTS
+                || cache
+                    .values()
+                    .fold(0usize, |n, o| n.saturating_add(owned_bytes(o, data, 0)))
+                    > Self::STREAM_BYTES
+            {
                 cache.clear();
             }
         }
@@ -197,17 +206,27 @@ fn owned_bytes(object: &Object, data: &Arc<Vec<u8>>, depth: usize) -> usize {
         Object::String(s) => s.bytes.len(),
         Object::Stream(s) => {
             let own = if s.raw.shares(data) { 0 } else { s.raw.len() };
-            s.dict.iter().fold(own, |n, (_, v)| n.saturating_add(owned_bytes(v, data, depth + 1)))
+            s.dict.iter().fold(own, |n, (_, v)| {
+                n.saturating_add(owned_bytes(v, data, depth + 1))
+            })
         }
-        Object::Array(a) => a.iter().fold(0usize, |n, v| n.saturating_add(owned_bytes(v, data, depth + 1))),
-        Object::Dict(d) => d.iter().fold(0usize, |n, (_, v)| n.saturating_add(owned_bytes(v, data, depth + 1))),
+        Object::Array(a) => a.iter().fold(0usize, |n, v| {
+            n.saturating_add(owned_bytes(v, data, depth + 1))
+        }),
+        Object::Dict(d) => d.iter().fold(0usize, |n, (_, v)| {
+            n.saturating_add(owned_bytes(v, data, depth + 1))
+        }),
         _ => 0,
     }
 }
 
 impl std::fmt::Debug for Document {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Document").field("bytes", &self.data.len()).field("objects", &self.entries.len()).field("edits", &self.overlay.len()).finish()
+        f.debug_struct("Document")
+            .field("bytes", &self.data.len())
+            .field("objects", &self.entries.len())
+            .field("edits", &self.overlay.len())
+            .finish()
     }
 }
 
@@ -258,7 +277,10 @@ impl Document {
 
     /// Parse a document, authenticating encrypted ones with `password` (owner or user; `None`
     /// tries the empty password). Fails with `NeedsPassword` / `WrongPassword` as appropriate.
-    pub fn open_with_password(data: Arc<Vec<u8>>, password: Option<&str>) -> Result<Self, CosError> {
+    pub fn open_with_password(
+        data: Arc<Vec<u8>>,
+        password: Option<&str>,
+    ) -> Result<Self, CosError> {
         Self::open_with_stream_limit(data, password, crate::object::MAX_DECODED)
     }
 
@@ -266,7 +288,11 @@ impl Document {
     /// Inspection can use this without changing the editing reader's default limit. Such a
     /// document is read-only: objects in a larger object stream read as missing, so the
     /// writers refuse to save it ([`CosError::ReadOnlyLimit`]).
-    pub fn open_with_stream_limit(data: Arc<Vec<u8>>, password: Option<&str>, stream_limit: usize) -> Result<Self, CosError> {
+    pub fn open_with_stream_limit(
+        data: Arc<Vec<u8>>,
+        password: Option<&str>,
+        stream_limit: usize,
+    ) -> Result<Self, CosError> {
         // Viewers accept files whose header is missing or damaged as long as the body looks
         // like PDF; so do we (a note goes to the repair log).
         let header = find(&data, b"%PDF-", 0, 1024);
@@ -276,7 +302,11 @@ impl Document {
         }
         let header_offset = header.unwrap_or(0);
         let version = match header {
-            Some(h) => String::from_utf8_lossy(&data[(h + 5).min(data.len())..(h + 8).min(data.len())]).trim().to_string(),
+            Some(h) => {
+                String::from_utf8_lossy(&data[(h + 5).min(data.len())..(h + 8).min(data.len())])
+                    .trim()
+                    .to_string()
+            }
             None => "1.4".to_string(),
         };
         let mut doc = Document {
@@ -322,7 +352,9 @@ impl Document {
                 doc.root_is_catalog()
             }
             Err(e) => {
-                log.push(format!("cross-reference data unreadable ({e}); rebuilding from object headers"));
+                log.push(format!(
+                    "cross-reference data unreadable ({e}); rebuilding from object headers"
+                ));
                 false
             }
         };
@@ -363,11 +395,14 @@ impl Document {
         };
         let params = crate::security::encrypt_dict(self, &dict);
         let id0 = self.first_id();
-        let handler = pdfcraft_crypt::SecurityHandler::open(params, &id0, password).map_err(|e| match e {
-            pdfcraft_crypt::CryptError::WrongPassword if password.is_none() => CosError::NeedsPassword,
-            pdfcraft_crypt::CryptError::WrongPassword => CosError::WrongPassword,
-            other => CosError::Security(other.to_string()),
-        })?;
+        let handler =
+            pdfcraft_crypt::SecurityHandler::open(params, &id0, password).map_err(|e| match e {
+                pdfcraft_crypt::CryptError::WrongPassword if password.is_none() => {
+                    CosError::NeedsPassword
+                }
+                pdfcraft_crypt::CryptError::WrongPassword => CosError::WrongPassword,
+                other => CosError::Security(other.to_string()),
+            })?;
         self.security = Some(Arc::new(handler));
         self.encrypt_num = num;
         // Objects read while locating the catalog were read before decryption was possible.
@@ -379,7 +414,11 @@ impl Document {
     /// The first file identifier, part of the encryption key (empty when there is none).
     fn first_id(&self) -> Vec<u8> {
         match self.trailer.get(b"ID") {
-            Some(Object::Array(a)) => a.first().and_then(|s| s.as_string()).map(|s| s.bytes.clone()).unwrap_or_default(),
+            Some(Object::Array(a)) => a
+                .first()
+                .and_then(|s| s.as_string())
+                .map(|s| s.bytes.clone())
+                .unwrap_or_default(),
             _ => Vec::new(),
         }
     }
@@ -389,14 +428,18 @@ impl Document {
     /// password. Does nothing when the document is unencrypted or already opened as owner.
     /// Both passwords unlock the same file key, so nothing read so far is decoded again.
     pub fn unlock(&mut self, password: &str) -> Result<(), CosError> {
-        let Some(current) = self.security.as_deref() else { return Ok(()) };
+        let Some(current) = self.security.as_deref() else {
+            return Ok(());
+        };
         if current.auth() == pdfcraft_crypt::Auth::Owner {
             return Ok(());
         }
-        let owner = current.authenticate_owner(&self.first_id(), password).map_err(|e| match e {
-            pdfcraft_crypt::CryptError::WrongPassword => CosError::WrongPassword,
-            other => CosError::Security(other.to_string()),
-        })?;
+        let owner = current
+            .authenticate_owner(&self.first_id(), password)
+            .map_err(|e| match e {
+                pdfcraft_crypt::CryptError::WrongPassword => CosError::WrongPassword,
+                other => CosError::Security(other.to_string()),
+            })?;
         self.security = Some(Arc::new(owner));
         Ok(())
     }
@@ -429,8 +472,14 @@ impl Document {
 
     /// The handler used to write: the new one after `set_encryption` / `remove_encryption`,
     /// otherwise the one the document was opened with.
-    pub(crate) fn output_security(&self) -> (Option<&pdfcraft_crypt::SecurityHandler>, Option<u32>) {
-        if self.encryption_changed { (self.out_security.as_deref(), self.out_encrypt_num) } else { (self.security.as_deref(), self.encrypt_num) }
+    pub(crate) fn output_security(
+        &self,
+    ) -> (Option<&pdfcraft_crypt::SecurityHandler>, Option<u32>) {
+        if self.encryption_changed {
+            (self.out_security.as_deref(), self.out_encrypt_num)
+        } else {
+            (self.security.as_deref(), self.encrypt_num)
+        }
     }
 
     /// The security the next save writes: protection applied with `set_encryption`, none after
@@ -441,21 +490,37 @@ impl Document {
 
     /// Protect the document with a password (§7.6.4). Takes effect on the next save, which is
     /// always a full rewrite. Returns the handler (authenticated as owner).
-    pub fn set_encryption(&mut self, params: &pdfcraft_crypt::NewEncryption) -> Result<(), CosError> {
+    pub fn set_encryption(
+        &mut self,
+        params: &pdfcraft_crypt::NewEncryption,
+    ) -> Result<(), CosError> {
         // The file identifier is part of the key; make sure it exists and keep it.
         let id0 = match self.trailer.get(b"ID") {
-            Some(Object::Array(a)) if a.len() == 2 => a[0].as_string().map(|s| s.bytes.clone()).unwrap_or_default(),
+            Some(Object::Array(a)) if a.len() == 2 => a[0]
+                .as_string()
+                .map(|s| s.bytes.clone())
+                .unwrap_or_default(),
             _ => {
                 let mut id = generated_id(&params.seed);
                 id.truncate(16);
-                let s = Object::String(crate::PdfString { bytes: id.clone(), hex: true });
-                self.trailer.set(b"ID".to_vec(), Object::Array(vec![s.clone(), s]));
+                let s = Object::String(crate::PdfString {
+                    bytes: id.clone(),
+                    hex: true,
+                });
+                self.trailer
+                    .set(b"ID".to_vec(), Object::Array(vec![s.clone(), s]));
                 id
             }
         };
-        let h = pdfcraft_crypt::create(params, &id0).map_err(|e| CosError::Security(e.to_string()))?;
+        let h =
+            pdfcraft_crypt::create(params, &id0).map_err(|e| CosError::Security(e.to_string()))?;
         let d = h.dict();
-        let s = |b: &[u8]| Object::String(crate::PdfString { bytes: b.to_vec(), hex: true });
+        let s = |b: &[u8]| {
+            Object::String(crate::PdfString {
+                bytes: b.to_vec(),
+                hex: true,
+            })
+        };
         let mut e = Dict::new();
         e.set(b"Filter".to_vec(), Object::name("Standard"));
         e.set(b"V".to_vec(), Object::Int(d.v));
@@ -468,7 +533,11 @@ impl Document {
             let mut cf = Dict::new();
             let mut std_cf = Dict::new();
             std_cf.set(b"Type".to_vec(), Object::name("CryptFilter"));
-            let (cfm, len) = if d.v >= 5 { ("AESV3", 32) } else { ("AESV2", 16) };
+            let (cfm, len) = if d.v >= 5 {
+                ("AESV3", 32)
+            } else {
+                ("AESV2", 16)
+            };
             std_cf.set(b"CFM".to_vec(), Object::name(cfm));
             std_cf.set(b"Length".to_vec(), Object::Int(len));
             std_cf.set(b"AuthEvent".to_vec(), Object::name("DocOpen"));
@@ -512,7 +581,9 @@ impl Document {
     /// Decrypt a freshly parsed indirect object if the document is encrypted.
     fn decrypted(&self, id: ObjRef, o: Object) -> Object {
         match &self.security {
-            Some(h) if Some(id.num) != self.encrypt_num => crate::security::transform(h, &o, id.num, id.generation, true),
+            Some(h) if Some(id.num) != self.encrypt_num => {
+                crate::security::transform(h, &o, id.num, id.generation, true)
+            }
             _ => o,
         }
     }
@@ -551,8 +622,12 @@ impl Document {
         let d = &self.data[..];
         let mut ends: Vec<usize> = Vec::with_capacity(self.revisions.len());
         for r in self.revisions.iter() {
-            let from = (r.xref_offset as usize).saturating_add(self.header_offset).min(d.len());
-            let Some(at) = d[from..].windows(5).position(|w| w == b"%%EOF") else { continue };
+            let from = (r.xref_offset as usize)
+                .saturating_add(self.header_offset)
+                .min(d.len());
+            let Some(at) = d[from..].windows(5).position(|w| w == b"%%EOF") else {
+                continue;
+            };
             let mut end = from + at + 5;
             while end < d.len() && matches!(d[end], b'\r' | b'\n') && end - (from + at + 5) < 2 {
                 end += 1;
@@ -614,11 +689,17 @@ impl Document {
             Some(XrefEntry::InFile { offset, .. }) => {
                 let at = |off: usize| matches!(parse_indirect_shared(&self.data, off, &|_| None), Ok((id, _)) if id.num == num);
                 // Offsets may count from a header that does not start the file.
-                usize::try_from(*offset).is_ok_and(|off| at(off) || (self.header_offset != 0 && at(off.saturating_add(self.header_offset))))
+                usize::try_from(*offset).is_ok_and(|off| {
+                    at(off)
+                        || (self.header_offset != 0 && at(off.saturating_add(self.header_offset)))
+                })
             }
-            Some(XrefEntry::InStream { stream, index }) => {
-                self.objstm(*stream).is_ok_and(|stm| usize::try_from(*index).ok().and_then(|i| stm.index.get(i)).is_some_and(|(n, _)| *n == num))
-            }
+            Some(XrefEntry::InStream { stream, index }) => self.objstm(*stream).is_ok_and(|stm| {
+                usize::try_from(*index)
+                    .ok()
+                    .and_then(|i| stm.index.get(i))
+                    .is_some_and(|(n, _)| *n == num)
+            }),
         }
     }
 
@@ -635,7 +716,8 @@ impl Document {
 
     /// Fetch an object by reference. Missing objects are `Null` (ISO 32000-2 §7.3.10).
     pub fn get(&self, r: ObjRef) -> Arc<Object> {
-        self.try_get(r.num).unwrap_or_else(|_| Arc::new(Object::Null))
+        self.try_get(r.num)
+            .unwrap_or_else(|_| Arc::new(Object::Null))
     }
 
     /// Follow a reference if `o` is one; otherwise return `o` itself.
@@ -662,13 +744,18 @@ impl Document {
         }
         // Loading can re-enter (indirect stream `/Length`, object streams); damaged files make
         // cycles such as `6 0 obj << /Length 6 0 R >>`. Bound the nesting on every path.
-        let _guard =
-            LoadGuard::enter(num).ok_or_else(|| CosError::Syntax { offset: 0, detail: format!("reference cycle while loading object {num}") })?;
+        let _guard = LoadGuard::enter(num).ok_or_else(|| CosError::Syntax {
+            offset: 0,
+            detail: format!("reference cycle while loading object {num}"),
+        })?;
         let obj = self.load(num, 0)?;
         let obj = Arc::new(obj);
         // The editing cache is bounded like the scan reader's: re-parsing a file-backed view
         // is cheap, and returned objects outlive eviction.
-        self.cache.lock().map_err(|_| CosError::Poisoned)?.insert(num, obj.clone());
+        self.cache
+            .lock()
+            .map_err(|_| CosError::Poisoned)?
+            .insert(num, obj.clone());
         self.evict_editor_cache_if_over_budget(num, &obj)?;
         Ok(obj)
     }
@@ -695,17 +782,31 @@ impl Document {
     /// byte budget can double.
     const EDITOR_LARGE_OBJECT: usize = 256 * 1024;
 
-    fn evict_editor_cache_if_over_budget(&self, fresh_num: u32, fresh: &Object) -> Result<(), CosError> {
+    fn evict_editor_cache_if_over_budget(
+        &self,
+        fresh_num: u32,
+        fresh: &Object,
+    ) -> Result<(), CosError> {
         // Fast path: the full fold is O(cache) per insert, so skip it for a small newcomer
         // below the count cap. `len` is copied out first; nothing here holds the lock.
         let len = self.cache.lock().map_err(|_| CosError::Poisoned)?.len();
-        if len <= Self::EDITOR_CACHE_OBJECTS && owned_bytes(fresh, &self.data, 0) <= Self::EDITOR_LARGE_OBJECT {
+        if len <= Self::EDITOR_CACHE_OBJECTS
+            && owned_bytes(fresh, &self.data, 0) <= Self::EDITOR_LARGE_OBJECT
+        {
             return Ok(());
         }
         // Walk a snapshot off-lock; re-lock only to evict.
-        let live: Vec<(u32, Arc<Object>)> = self.cache.lock().map_err(|_| CosError::Poisoned)?.iter().map(|(n, o)| (*n, o.clone())).collect();
+        let live: Vec<(u32, Arc<Object>)> = self
+            .cache
+            .lock()
+            .map_err(|_| CosError::Poisoned)?
+            .iter()
+            .map(|(n, o)| (*n, o.clone()))
+            .collect();
         let data = &self.data;
-        let owned: usize = live.iter().fold(0usize, |n, (_, o)| n.saturating_add(owned_bytes(o, data, 0)));
+        let owned: usize = live.iter().fold(0usize, |n, (_, o)| {
+            n.saturating_add(owned_bytes(o, data, 0))
+        });
         if live.len() <= Self::EDITOR_CACHE_OBJECTS && owned <= Self::EDITOR_CACHE_BYTES {
             return Ok(());
         }
@@ -715,7 +816,9 @@ impl Document {
         let mut cache = self.cache.lock().map_err(|_| CosError::Poisoned)?;
         if cache.len() <= Self::EDITOR_CACHE_OBJECTS {
             let data = &self.data;
-            let owned: usize = cache.values().fold(0usize, |n, o| n.saturating_add(owned_bytes(o, data, 0)));
+            let owned: usize = cache
+                .values()
+                .fold(0usize, |n, o| n.saturating_add(owned_bytes(o, data, 0)));
             if owned <= Self::EDITOR_CACHE_BYTES {
                 return Ok(());
             }
@@ -729,14 +832,20 @@ impl Document {
         let over = {
             let streams = self.objstms.lock().map_err(|_| CosError::Poisoned)?;
             let bytes = streams.values().fold(0usize, |bytes, stream| {
-                bytes
-                    .saturating_add(stream.data.capacity())
-                    .saturating_add(stream.index.capacity().saturating_mul(std::mem::size_of::<(u32, usize)>()))
+                bytes.saturating_add(stream.data.capacity()).saturating_add(
+                    stream
+                        .index
+                        .capacity()
+                        .saturating_mul(std::mem::size_of::<(u32, usize)>()),
+                )
             });
             bytes > Self::EDITOR_OBJSTM_BYTES || streams.len() > Self::EDITOR_OBJSTM_OBJECTS
         };
         if over {
-            self.objstms.lock().map_err(|_| CosError::Poisoned)?.retain(|n, _| *n == current);
+            self.objstms
+                .lock()
+                .map_err(|_| CosError::Poisoned)?
+                .retain(|n, _| *n == current);
         }
         Ok(())
     }
@@ -757,13 +866,18 @@ impl Document {
 
     /// Like [`Self::scan_objects`], preserving read errors for callers that must distinguish
     /// incomplete discovery from an actual null object. Caches remain private and bounded.
-    pub fn scan_objects_checked(&self) -> impl Iterator<Item = (ObjRef, Result<Arc<Object>, CosError>)> + use<> {
+    pub fn scan_objects_checked(
+        &self,
+    ) -> impl Iterator<Item = (ObjRef, Result<Arc<Object>, CosError>)> + use<> {
         self.scan_objects_subset(self.object_numbers())
     }
 
     /// Inspect selected current objects with the same bounded cache as a whole-file scan.
     /// Missing/freed numbers yield `Null`; malformed objects return their read error.
-    pub fn scan_objects_subset(&self, numbers: Vec<u32>) -> impl Iterator<Item = (ObjRef, Result<Arc<Object>, CosError>)> + use<> {
+    pub fn scan_objects_subset(
+        &self,
+        numbers: Vec<u32>,
+    ) -> impl Iterator<Item = (ObjRef, Result<Arc<Object>, CosError>)> + use<> {
         let mut reader = self.object_reader();
         numbers.into_iter().map(move |num| {
             let reference = ObjRef::new(num, reader.document.generation(num));
@@ -773,7 +887,10 @@ impl Document {
 
     /// Inspect selected objects in the immutable source, ignoring all unsaved edits. This
     /// allows a consumer to check an edit's dependencies without retaining an old document.
-    pub fn scan_original_objects_subset(&self, numbers: Vec<u32>) -> impl Iterator<Item = (ObjRef, Result<Arc<Object>, CosError>)> + use<> {
+    pub fn scan_original_objects_subset(
+        &self,
+        numbers: Vec<u32>,
+    ) -> impl Iterator<Item = (ObjRef, Result<Arc<Object>, CosError>)> + use<> {
         let mut reader = self.object_reader();
         reader.document.overlay.clear();
         numbers.into_iter().map(move |num| {
@@ -791,12 +908,18 @@ impl Document {
         let mut document = self.clone();
         document.cache = Arc::default();
         document.objstms = Arc::default();
-        ObjectReader { document, decoded_count: 0 }
+        ObjectReader {
+            document,
+            decoded_count: 0,
+        }
     }
 
     fn load(&self, num: u32, depth: u32) -> Result<Object, CosError> {
         if depth > 16 {
-            return Err(CosError::Syntax { offset: 0, detail: "reference cycle while loading".into() });
+            return Err(CosError::Syntax {
+                offset: 0,
+                detail: "reference cycle while loading".into(),
+            });
         }
         match self.entries.get(&num) {
             None | Some(XrefEntry::Free { .. }) => Ok(Object::Null),
@@ -816,7 +939,13 @@ impl Document {
                 };
                 // Offsets relative to a shifted header, or simply wrong: try both fixes.
                 at(off)
-                    .or_else(|| if self.header_offset == 0 { None } else { at(off.saturating_add(self.header_offset)) })
+                    .or_else(|| {
+                        if self.header_offset == 0 {
+                            None
+                        } else {
+                            at(off.saturating_add(self.header_offset))
+                        }
+                    })
                     .or_else(|| self.scan_for(num).map(|(id, o)| self.decrypted(id, o)))
                     .ok_or(CosError::MissingObject(num))
             }
@@ -828,31 +957,55 @@ impl Document {
                     .copied()
                     .or_else(|| stm.index.iter().find(|(n, _)| *n == num).copied())
                     .ok_or(CosError::MissingObject(num))?;
-                let off =
-                    if n == num { off } else { stm.index.iter().find(|(n, _)| *n == num).map(|(_, o)| *o).ok_or(CosError::MissingObject(num))? };
+                let off = if n == num {
+                    off
+                } else {
+                    stm.index
+                        .iter()
+                        .find(|(n, _)| *n == num)
+                        .map(|(_, o)| *o)
+                        .ok_or(CosError::MissingObject(num))?
+                };
                 Lexer::new(&stm.data, off).object()
             }
         }
     }
 
     fn objstm(&self, num: u32) -> Result<Arc<ObjStm>, CosError> {
-        if let Some(s) = self.objstms.lock().map_err(|_| CosError::Poisoned)?.get(&num) {
+        if let Some(s) = self
+            .objstms
+            .lock()
+            .map_err(|_| CosError::Poisoned)?
+            .get(&num)
+        {
             return Ok(s.clone());
         }
-        let Object::Stream(s) = &*self.try_get(num)? else { return Err(CosError::MissingObject(num)) };
+        let Object::Stream(s) = &*self.try_get(num)? else {
+            return Err(CosError::MissingObject(num));
+        };
         let n = s.dict.int(b"N").unwrap_or(0).clamp(0, 1_000_000) as usize;
         let first = s.dict.int(b"First").unwrap_or(0).max(0) as usize;
         let data = s.decoded_within(self.stream_limit)?;
         let mut lx = Lexer::new(&data, 0);
         let mut index = Vec::with_capacity(n);
         for _ in 0..n {
-            let (Some(Object::Int(onum)), Some(Object::Int(off))) = (lx.object().ok(), lx.object().ok()) else { break };
+            let (Some(Object::Int(onum)), Some(Object::Int(off))) =
+                (lx.object().ok(), lx.object().ok())
+            else {
+                break;
+            };
             index.push((onum.max(0) as u32, first + off.max(0) as usize));
         }
-        let stm = Arc::new(ObjStm { index, data: Arc::new(data) });
+        let stm = Arc::new(ObjStm {
+            index,
+            data: Arc::new(data),
+        });
         // Same bound as the object cache: decoded object streams can be megabytes each.
         // Insert first so the retained `num` is actually in the map.
-        self.objstms.lock().map_err(|_| CosError::Poisoned)?.insert(num, stm.clone());
+        self.objstms
+            .lock()
+            .map_err(|_| CosError::Poisoned)?
+            .insert(num, stm.clone());
         self.evict_editor_streams_if_over_budget(num)?;
         Ok(stm)
     }
@@ -894,7 +1047,8 @@ impl Document {
     /// Replace an object (keeping its generation).
     pub fn set(&mut self, r: ObjRef, obj: impl Into<Object>) {
         let obj = self.adopt(obj.into());
-        self.overlay.insert(r.num, Slot::Set(r.generation, Arc::new(obj)));
+        self.overlay
+            .insert(r.num, Slot::Set(r.generation, Arc::new(obj)));
         if r.num >= self.next_num {
             self.next_num = r.num + 1;
         }
@@ -911,7 +1065,8 @@ impl Document {
 
     /// Delete an object (its number becomes free with the next generation).
     pub fn free(&mut self, r: ObjRef) {
-        self.overlay.insert(r.num, Slot::Freed(r.generation.saturating_add(1)));
+        self.overlay
+            .insert(r.num, Slot::Freed(r.generation.saturating_add(1)));
     }
 
     /// Edit a dictionary (or stream dictionary) object in place.
@@ -936,7 +1091,9 @@ impl Document {
         }
     }
 
-    pub(crate) fn overlay_entries(&self) -> impl Iterator<Item = (u32, u16, Option<Arc<Object>>)> + '_ {
+    pub(crate) fn overlay_entries(
+        &self,
+    ) -> impl Iterator<Item = (u32, u16, Option<Arc<Object>>)> + '_ {
         self.overlay.iter().map(|(n, s)| match s {
             Slot::Set(g, o) => (*n, *g, Some(o.clone())),
             Slot::Freed(g) => (*n, *g, None),
@@ -968,7 +1125,11 @@ impl Document {
                 numbers.push(num);
             }
         }
-        numbers.extend(source.filter_map(|(&num, entry)| (!matches!(entry, XrefEntry::Free { .. })).then_some(num)));
+        numbers.extend(
+            source.filter_map(|(&num, entry)| {
+                (!matches!(entry, XrefEntry::Free { .. })).then_some(num)
+            }),
+        );
         numbers
     }
 
@@ -986,14 +1147,33 @@ impl Document {
     }
 
     #[allow(clippy::type_complexity)]
-    fn read_xref_chain(&self, log: &mut Vec<String>) -> Result<(BTreeMap<u32, XrefEntry>, Dict, Vec<Revision>, Vec<(u64, u32)>), CosError> {
+    fn read_xref_chain(
+        &self,
+        log: &mut Vec<String>,
+    ) -> Result<
+        (
+            BTreeMap<u32, XrefEntry>,
+            Dict,
+            Vec<Revision>,
+            Vec<(u64, u32)>,
+        ),
+        CosError,
+    > {
         let data = &self.data;
         let tail_start = data.len().saturating_sub(4096);
-        let sx = rfind(data, b"startxref", tail_start).ok_or(CosError::Syntax { offset: data.len(), detail: "no startxref".into() })?;
+        let sx = rfind(data, b"startxref", tail_start).ok_or(CosError::Syntax {
+            offset: data.len(),
+            detail: "no startxref".into(),
+        })?;
         let mut lx = Lexer::new(data, sx + 9);
         let first = match lx.object() {
             Ok(Object::Int(n)) if n >= 0 => n as u64,
-            _ => return Err(CosError::Syntax { offset: sx, detail: "bad startxref value".into() }),
+            _ => {
+                return Err(CosError::Syntax {
+                    offset: sx,
+                    detail: "bad startxref value".into(),
+                });
+            }
         };
         let mut entries = BTreeMap::new();
         let mut trailer: Option<Dict> = None;
@@ -1003,30 +1183,40 @@ impl Document {
         let mut next = Some(first);
         while let Some(off) = next.take() {
             if !visited.insert(off) || visited.len() > 10_000 {
-                log.push(format!("cross-reference chain loops at offset {off}; stopped"));
+                log.push(format!(
+                    "cross-reference chain loops at offset {off}; stopped"
+                ));
                 break;
             }
             // This section's own entries; older sections only fill what newer ones left out.
             let mut sect = BTreeMap::new();
             // Object numbers whose entry in this section was set aside ([`Self::xref_oddities`]).
             let mut odd = Vec::new();
-            let (sect_trailer, is_stream) = match self.read_section(off as usize, &mut sect, &mut odd) {
-                Ok(v) => v,
-                Err(e) if self.header_offset > 0 => {
-                    log.push(format!("xref at {off} unreadable ({e}); retrying relative to the header"));
-                    sect.clear();
-                    odd.clear();
-                    self.read_section(off as usize + self.header_offset, &mut sect, &mut odd)?
-                }
-                Err(e) => {
-                    if revisions.is_empty() {
-                        return Err(e);
+            let (sect_trailer, is_stream) =
+                match self.read_section(off as usize, &mut sect, &mut odd) {
+                    Ok(v) => v,
+                    Err(e) if self.header_offset > 0 => {
+                        log.push(format!(
+                            "xref at {off} unreadable ({e}); retrying relative to the header"
+                        ));
+                        sect.clear();
+                        odd.clear();
+                        self.read_section(off as usize + self.header_offset, &mut sect, &mut odd)?
                     }
-                    log.push(format!("older cross-reference section at {off} is unreadable: {e}"));
-                    break;
-                }
-            };
-            revisions.push(Revision { xref_offset: off, is_stream });
+                    Err(e) => {
+                        if revisions.is_empty() {
+                            return Err(e);
+                        }
+                        log.push(format!(
+                            "older cross-reference section at {off} is unreadable: {e}"
+                        ));
+                        break;
+                    }
+                };
+            revisions.push(Revision {
+                xref_offset: off,
+                is_stream,
+            });
             // Hybrid files (§7.5.8.4): the /XRefStm entries supplement the table and replace the
             // free entries it gives objects only a cross-reference stream can locate.
             if let Some(x) = sect_trailer.int(b"XRefStm").filter(|x| *x >= 0) {
@@ -1051,14 +1241,29 @@ impl Document {
             for (num, e) in sect {
                 entries.entry(num).or_insert(e);
             }
-            next = sect_trailer.int(b"Prev").filter(|p| *p >= 0).map(|p| p as u64);
+            next = sect_trailer
+                .int(b"Prev")
+                .filter(|p| *p >= 0)
+                .map(|p| p as u64);
             if trailer.is_none() {
                 trailer = Some(sect_trailer);
             }
         }
         revisions.reverse();
-        let mut trailer = trailer.ok_or(CosError::Syntax { offset: 0, detail: "no trailer".into() })?;
-        for k in [&b"Prev"[..], b"XRefStm", b"Type", b"W", b"Index", b"Filter", b"DecodeParms", b"Length"] {
+        let mut trailer = trailer.ok_or(CosError::Syntax {
+            offset: 0,
+            detail: "no trailer".into(),
+        })?;
+        for k in [
+            &b"Prev"[..],
+            b"XRefStm",
+            b"Type",
+            b"W",
+            b"Index",
+            b"Filter",
+            b"DecodeParms",
+            b"Length",
+        ] {
             trailer.remove(k);
         }
         Ok((entries, trailer, revisions, oddities))
@@ -1066,7 +1271,12 @@ impl Document {
 
     /// Read one section at `off`, adding entries not already known (newer sections win). `odd`
     /// collects the object numbers whose entry here is set aside ([`Self::xref_oddities`]).
-    fn read_section(&self, off: usize, entries: &mut BTreeMap<u32, XrefEntry>, odd: &mut Vec<u32>) -> Result<(Dict, bool), CosError> {
+    fn read_section(
+        &self,
+        off: usize,
+        entries: &mut BTreeMap<u32, XrefEntry>,
+        odd: &mut Vec<u32>,
+    ) -> Result<(Dict, bool), CosError> {
         let data = &self.data;
         let mut lx = Lexer::new(data, off);
         if lx.eat_keyword(b"xref") {
@@ -1074,14 +1284,24 @@ impl Document {
                 lx.skip_ws();
                 if lx.eat_keyword(b"trailer") {
                     let t = lx.object()?;
-                    let d = t.as_dict().cloned().ok_or(CosError::Syntax { offset: lx.pos, detail: "trailer is not a dictionary".into() })?;
+                    let d = t.as_dict().cloned().ok_or(CosError::Syntax {
+                        offset: lx.pos,
+                        detail: "trailer is not a dictionary".into(),
+                    })?;
                     return Ok((d, false));
                 }
-                let (Ok(Object::Int(start)), Ok(Object::Int(count))) = (lx.object(), lx.object()) else {
-                    return Err(CosError::Syntax { offset: lx.pos, detail: "bad xref subsection header".into() });
+                let (Ok(Object::Int(start)), Ok(Object::Int(count))) = (lx.object(), lx.object())
+                else {
+                    return Err(CosError::Syntax {
+                        offset: lx.pos,
+                        detail: "bad xref subsection header".into(),
+                    });
                 };
                 if !valid_xref_range(start, count) || count > 10_000_000 {
-                    return Err(CosError::Syntax { offset: lx.pos, detail: "invalid xref object range".into() });
+                    return Err(CosError::Syntax {
+                        offset: lx.pos,
+                        detail: "invalid xref object range".into(),
+                    });
                 }
                 for i in 0..count {
                     lx.skip_ws();
@@ -1091,12 +1311,25 @@ impl Document {
                     lx.skip_ws();
                     let kind = lx.token();
                     let num = (start + i) as u32;
-                    let offset = std::str::from_utf8(o).ok().and_then(|s| s.parse::<u64>().ok());
-                    let generation = std::str::from_utf8(g).ok().and_then(|s| s.parse::<u32>().ok()).unwrap_or(0).min(u16::MAX as u32) as u16;
+                    let offset = std::str::from_utf8(o)
+                        .ok()
+                        .and_then(|s| s.parse::<u64>().ok());
+                    let generation = std::str::from_utf8(g)
+                        .ok()
+                        .and_then(|s| s.parse::<u32>().ok())
+                        .unwrap_or(0)
+                        .min(u16::MAX as u32) as u16;
                     let entry = match (kind, offset) {
                         (b"n", Some(offset)) => XrefEntry::InFile { offset, generation },
-                        (b"f", _) => XrefEntry::Free { next_generation: generation },
-                        _ => return Err(CosError::Syntax { offset: lx.pos, detail: "bad xref entry".into() }),
+                        (b"f", _) => XrefEntry::Free {
+                            next_generation: generation,
+                        },
+                        _ => {
+                            return Err(CosError::Syntax {
+                                offset: lx.pos,
+                                detail: "bad xref entry".into(),
+                            });
+                        }
                     };
                     // Offset 0 "in use" entries are a known producer bug: ignore them. (Object 0
                     // is never a real object, so its entry cannot mislead anyone.)
@@ -1114,18 +1347,33 @@ impl Document {
         }
         // Cross-reference stream.
         let (_, obj) = parse_indirect(data, off, &|_| None)?;
-        let Object::Stream(s) = obj else { return Err(CosError::Syntax { offset: off, detail: "expected xref table or stream".into() }) };
+        let Object::Stream(s) = obj else {
+            return Err(CosError::Syntax {
+                offset: off,
+                detail: "expected xref table or stream".into(),
+            });
+        };
         if s.dict.name(b"Type") != Some(b"XRef") {
-            return Err(CosError::Syntax { offset: off, detail: "stream at startxref is not /Type /XRef".into() });
+            return Err(CosError::Syntax {
+                offset: off,
+                detail: "stream at startxref is not /Type /XRef".into(),
+            });
         }
         let w: Vec<usize> = s
             .dict
             .get(b"W")
             .and_then(Object::as_array)
-            .map(|a| a.iter().map(|x| x.as_int().unwrap_or(0).clamp(0, 8) as usize).collect())
+            .map(|a| {
+                a.iter()
+                    .map(|x| x.as_int().unwrap_or(0).clamp(0, 8) as usize)
+                    .collect()
+            })
             .unwrap_or_default();
         if w.len() < 3 {
-            return Err(CosError::Syntax { offset: off, detail: "xref stream /W invalid".into() });
+            return Err(CosError::Syntax {
+                offset: off,
+                detail: "xref stream /W invalid".into(),
+            });
         }
         let size = s.dict.int(b"Size").unwrap_or(0).max(0);
         let index: Vec<i64> = match s.dict.get(b"Index").and_then(Object::as_array) {
@@ -1134,7 +1382,10 @@ impl Document {
         };
         let row = w[0] + w[1] + w[2];
         if row == 0 {
-            return Err(CosError::Syntax { offset: off, detail: "xref stream row width 0".into() });
+            return Err(CosError::Syntax {
+                offset: off,
+                detail: "xref stream row width 0".into(),
+            });
         }
         // One row per object, and a document has at most 8,388,607 indirect objects (the classic
         // implementation limit): decoding more than that (about 200 MB at the widest rows) is a
@@ -1144,13 +1395,18 @@ impl Document {
             if len == 0 {
                 return default;
             }
-            r[from..from + len].iter().fold(0u64, |acc, b| acc << 8 | *b as u64)
+            r[from..from + len]
+                .iter()
+                .fold(0u64, |acc, b| acc << 8 | *b as u64)
         };
         let mut rows = raw.chunks_exact(row);
         for pair in index.chunks(2) {
             let [start, count] = pair else { break };
             if !valid_xref_range(*start, *count) {
-                return Err(CosError::Syntax { offset: off, detail: "invalid xref object range".into() });
+                return Err(CosError::Syntax {
+                    offset: off,
+                    detail: "invalid xref object range".into(),
+                });
             }
             for i in 0..*count {
                 let Some(r) = rows.next() else { break };
@@ -1159,9 +1415,17 @@ impl Document {
                 let b = field(r, w[0] + w[1], w[2], 0);
                 let num = (*start + i) as u32;
                 let entry = match t {
-                    0 => XrefEntry::Free { next_generation: b.min(u16::MAX as u64) as u16 },
-                    1 => XrefEntry::InFile { offset: a, generation: b.min(u16::MAX as u64) as u16 },
-                    2 => XrefEntry::InStream { stream: a.min(u32::MAX as u64) as u32, index: b.min(u32::MAX as u64) as u32 },
+                    0 => XrefEntry::Free {
+                        next_generation: b.min(u16::MAX as u64) as u16,
+                    },
+                    1 => XrefEntry::InFile {
+                        offset: a,
+                        generation: b.min(u16::MAX as u64) as u16,
+                    },
+                    2 => XrefEntry::InStream {
+                        stream: a.min(u32::MAX as u64) as u32,
+                        index: b.min(u32::MAX as u64) as u32,
+                    },
                     // Reserved types are treated as null references (§7.5.8.3).
                     _ => {
                         odd.push(num);
@@ -1196,11 +1460,27 @@ impl Document {
                 let n = lx.token();
                 lx.skip_ws();
                 let g = lx.token();
-                if !n.is_empty() && !g.is_empty() && n.iter().all(u8::is_ascii_digit) && g.iter().all(u8::is_ascii_digit) && lx.eat_keyword(b"obj") {
-                    let num = std::str::from_utf8(n).ok().and_then(|s| s.parse::<u32>().ok());
-                    let generation = std::str::from_utf8(g).ok().and_then(|s| s.parse::<u16>().ok()).unwrap_or(0);
+                if !n.is_empty()
+                    && !g.is_empty()
+                    && n.iter().all(u8::is_ascii_digit)
+                    && g.iter().all(u8::is_ascii_digit)
+                    && lx.eat_keyword(b"obj")
+                {
+                    let num = std::str::from_utf8(n)
+                        .ok()
+                        .and_then(|s| s.parse::<u32>().ok());
+                    let generation = std::str::from_utf8(g)
+                        .ok()
+                        .and_then(|s| s.parse::<u16>().ok())
+                        .unwrap_or(0);
                     if let Some(num) = num {
-                        entries.insert(num, XrefEntry::InFile { offset: i as u64, generation });
+                        entries.insert(
+                            num,
+                            XrefEntry::InFile {
+                                offset: i as u64,
+                                generation,
+                            },
+                        );
                         objstms.push(num);
                     }
                     i = lx.pos;
@@ -1210,7 +1490,10 @@ impl Document {
             i += 1;
         }
         if entries.is_empty() {
-            return Err(CosError::Syntax { offset: 0, detail: "no objects found".into() });
+            return Err(CosError::Syntax {
+                offset: 0,
+                detail: "no objects found".into(),
+            });
         }
         self.entries = Arc::new(entries.clone());
         self.cache.lock().map_err(|_| CosError::Poisoned)?.clear();
@@ -1222,7 +1505,10 @@ impl Document {
                 && let Ok(stm) = self.objstm(num)
             {
                 for (idx, (inner, _)) in stm.index.iter().enumerate() {
-                    entries.entry(*inner).or_insert(XrefEntry::InStream { stream: num, index: idx as u32 });
+                    entries.entry(*inner).or_insert(XrefEntry::InStream {
+                        stream: num,
+                        index: idx as u32,
+                    });
                 }
             }
         }
@@ -1235,7 +1521,8 @@ impl Document {
             from = p + 7;
             let mut lx = Lexer::new(&data, from);
             if let Ok(Object::Dict(d)) = lx.object()
-                && d.reference(b"Root").is_some_and(|r| matches!(self.try_get(r.num).as_deref(), Ok(Object::Dict(_))))
+                && d.reference(b"Root")
+                    .is_some_and(|r| matches!(self.try_get(r.num).as_deref(), Ok(Object::Dict(_))))
             {
                 trailer = Some(d);
             }
@@ -1248,9 +1535,17 @@ impl Document {
                     .keys()
                     .copied()
                     .find(|n| matches!(self.try_get(*n).as_deref(), Ok(Object::Dict(d)) if d.name(b"Type") == Some(b"Catalog")));
-                let Some(c) = catalog else { return Err(CosError::Syntax { offset: 0, detail: "no document catalog found".into() }) };
+                let Some(c) = catalog else {
+                    return Err(CosError::Syntax {
+                        offset: 0,
+                        detail: "no document catalog found".into(),
+                    });
+                };
                 let mut t = Dict::new();
-                t.set(b"Root".to_vec(), Object::Ref(ObjRef::new(c, self.generation(c))));
+                t.set(
+                    b"Root".to_vec(),
+                    Object::Ref(ObjRef::new(c, self.generation(c))),
+                );
                 t
             }
         };
@@ -1260,7 +1555,10 @@ impl Document {
         }
         self.trailer = trailer;
         self.revisions = Arc::new(Vec::new());
-        log.push(format!("rebuilt cross-reference index from {} object headers", self.entries.len()));
+        log.push(format!(
+            "rebuilt cross-reference index from {} object headers",
+            self.entries.len()
+        ));
         Ok(())
     }
 }
@@ -1270,14 +1568,19 @@ pub(crate) fn find(hay: &[u8], needle: &[u8], from: usize, to: usize) -> Option<
     if from >= to || needle.is_empty() || to - from < needle.len() {
         return None;
     }
-    hay[from..to].windows(needle.len()).position(|w| w == needle).map(|p| p + from)
+    hay[from..to]
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .map(|p| p + from)
 }
 
 fn rfind(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
     if hay.len() < needle.len() {
         return None;
     }
-    (from..=hay.len() - needle.len()).rev().find(|&i| &hay[i..i + needle.len()] == needle)
+    (from..=hay.len() - needle.len())
+        .rev()
+        .find(|&i| &hay[i..i + needle.len()] == needle)
 }
 
 /// A file identifier derived from entropy supplied by the caller.
@@ -1296,7 +1599,11 @@ fn generated_id(seed: &[u8; 32]) -> Vec<u8> {
 /// Validate the whole subsection before adding entries, so neither arithmetic overflow nor
 /// truncation can turn a damaged range into entries for unrelated objects.
 fn valid_xref_range(start: i64, count: i64) -> bool {
-    u32::try_from(start).is_ok() && count >= 0 && start.checked_add(count).is_some_and(|end| end <= i64::from(u32::MAX) + 1)
+    u32::try_from(start).is_ok()
+        && count >= 0
+        && start
+            .checked_add(count)
+            .is_some_and(|end| end <= i64::from(u32::MAX) + 1)
 }
 
 /// The most indirect objects a document can have (the classic implementation limit, ISO
@@ -1316,11 +1623,19 @@ mod tests {
             out.extend_from_slice(format!("{} 0 obj\n{b}\nendobj\n", i + 1).as_bytes());
         }
         let xref = out.len();
-        out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", bodies.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f \n", bodies.len() + 1).as_bytes(),
+        );
         for o in offsets {
             out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
         }
-        out.extend_from_slice(format!("trailer\n<< /Size {} {trailer} >>\nstartxref\n{xref}\n%%EOF\n", bodies.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {} {trailer} >>\nstartxref\n{xref}\n%%EOF\n",
+                bodies.len() + 1
+            )
+            .as_bytes(),
+        );
         out
     }
 
@@ -1328,7 +1643,14 @@ mod tests {
     /// that another reader may resolve the object differently.
     #[test]
     fn cross_reference_entries_that_are_set_aside_are_recorded() {
-        let base = build(&["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>", "(three)"], "/Root 1 0 R");
+        let base = build(
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+                "(three)",
+            ],
+            "/Root 1 0 R",
+        );
         let plain = Document::open(Arc::new(base.clone())).unwrap();
         assert!(plain.xref_oddities().is_empty());
         assert!((1..=3).all(|n| plain.xref_entry_is_exact(n)));
@@ -1343,21 +1665,51 @@ mod tests {
             format!("xref\n0 1\n0000000000 65535 n \n3 1\n0000000000 00000 n \n2 1\n0000000058 00000 n \n2 1\n0000000009 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R /Prev {prev} >>\nstartxref\n{section}\n%%EOF\n").as_bytes(),
         );
         let doc = Document::open(Arc::new(bytes)).unwrap();
-        assert_eq!(doc.xref_oddities(), [(section as u64, 3), (section as u64, 2)]);
+        assert_eq!(
+            doc.xref_oddities(),
+            [(section as u64, 3), (section as u64, 2)]
+        );
         // What the reader resolves is what it resolved before: the first entry it kept.
         assert_eq!(doc.xref_entry(3), Some(third));
-        assert_eq!(doc.xref_entry(2), Some(XrefEntry::InFile { offset: 58, generation: 0 }));
+        assert_eq!(
+            doc.xref_entry(2),
+            Some(XrefEntry::InFile {
+                offset: 58,
+                generation: 0
+            })
+        );
     }
 
     /// An entry that misses its object still resolves (by searching) but is not exact.
     #[test]
     fn an_entry_that_misses_its_object_is_found_by_searching_but_is_not_exact() {
-        let base = build(&["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>", "(three)"], "/Root 1 0 R");
+        let base = build(
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+                "(three)",
+            ],
+            "/Root 1 0 R",
+        );
         let text = String::from_utf8_lossy(&base).into_owned();
         let at = text.find("3 0 obj").unwrap();
-        let bytes = text.replacen(&format!("{at:010} 00000 n"), &format!("{:010} 00000 n", at + 2), 1).into_bytes();
+        let bytes = text
+            .replacen(
+                &format!("{at:010} 00000 n"),
+                &format!("{:010} 00000 n", at + 2),
+                1,
+            )
+            .into_bytes();
         let doc = Document::open(Arc::new(bytes)).unwrap();
-        assert_eq!(doc.get(ObjRef { num: 3, generation: 0 }).as_string().map(|s| s.bytes.clone()), Some(b"three".to_vec()));
+        assert_eq!(
+            doc.get(ObjRef {
+                num: 3,
+                generation: 0
+            })
+            .as_string()
+            .map(|s| s.bytes.clone()),
+            Some(b"three".to_vec())
+        );
         assert!(!doc.xref_entry_is_exact(3));
         assert!(doc.xref_entry_is_exact(1) && doc.xref_entry_is_exact(2));
     }
@@ -1366,7 +1718,12 @@ mod tests {
     fn invalid_xref_object_ranges_are_reconstructed() {
         // Original in-memory PDF: an intact catalog followed by a damaged xref section.
         for stream in [false, true] {
-            for (start, count) in [(i64::MAX, 2), (-1, 2), (4_294_967_296, 1), (4_294_967_295, 2)] {
+            for (start, count) in [
+                (i64::MAX, 2),
+                (-1, 2),
+                (4_294_967_296, 1),
+                (4_294_967_295, 2),
+            ] {
                 let mut bytes =
                     b"%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n".to_vec();
                 let offset = bytes.len();
@@ -1384,11 +1741,16 @@ mod tests {
                 bytes.extend_from_slice(format!("startxref\n{offset}\n%%EOF\n").as_bytes());
                 let doc = Document::open(Arc::new(bytes)).unwrap();
                 assert!(
-                    doc.repair_log().iter().any(|line| line.contains("xref") && line.contains("range")),
+                    doc.repair_log()
+                        .iter()
+                        .any(|line| line.contains("xref") && line.contains("range")),
                     "stream={stream}, start={start}, count={count}: {:?}",
                     doc.repair_log()
                 );
-                assert_eq!(doc.get(ObjRef::new(1, 0)).as_dict().unwrap().name(b"Type"), Some(b"Catalog".as_slice()));
+                assert_eq!(
+                    doc.get(ObjRef::new(1, 0)).as_dict().unwrap().name(b"Type"),
+                    Some(b"Catalog".as_slice())
+                );
             }
         }
     }
@@ -1396,7 +1758,11 @@ mod tests {
     #[test]
     fn self_referential_length_does_not_overflow() {
         let bytes = build(
-            &["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>", "<< /Length 3 0 R >>\nstream\nabc\nendstream"],
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+                "<< /Length 3 0 R >>\nstream\nabc\nendstream",
+            ],
             "/Root 1 0 R",
         );
         let doc = Document::open(Arc::new(bytes)).unwrap();
@@ -1425,14 +1791,36 @@ mod tests {
 
     #[test]
     fn reads_classic_revision_and_edits_are_copy_on_write() {
-        let bytes = build(&["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>"], "/Root 1 0 R");
+        let bytes = build(
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+            ],
+            "/Root 1 0 R",
+        );
         let doc = Document::open(Arc::new(bytes)).unwrap();
         assert_eq!(doc.revisions().len(), 1);
         assert!(doc.repair_log().is_empty());
         let mut edited = doc.clone();
-        edited.update_dict(ObjRef::new(1, 0), |d| d.set(b"Lang".to_vec(), Object::String(crate::PdfString::literal("en")))).unwrap();
-        assert!(edited.is_modified() && !doc.is_modified(), "clone is an independent snapshot");
-        assert!(doc.get(ObjRef::new(1, 0)).as_dict().unwrap().get(b"Lang").is_none());
+        edited
+            .update_dict(ObjRef::new(1, 0), |d| {
+                d.set(
+                    b"Lang".to_vec(),
+                    Object::String(crate::PdfString::literal("en")),
+                )
+            })
+            .unwrap();
+        assert!(
+            edited.is_modified() && !doc.is_modified(),
+            "clone is an independent snapshot"
+        );
+        assert!(
+            doc.get(ObjRef::new(1, 0))
+                .as_dict()
+                .unwrap()
+                .get(b"Lang")
+                .is_none()
+        );
     }
 
     #[test]
@@ -1440,13 +1828,48 @@ mod tests {
         let mut doc = Document::new_empty();
         doc.overlay.clear();
         doc.entries = Arc::new(BTreeMap::from([
-            (0, XrefEntry::Free { next_generation: 65535 }),
-            (2, XrefEntry::InFile { offset: 10, generation: 7 }),
+            (
+                0,
+                XrefEntry::Free {
+                    next_generation: 65535,
+                },
+            ),
+            (
+                2,
+                XrefEntry::InFile {
+                    offset: 10,
+                    generation: 7,
+                },
+            ),
             (4, XrefEntry::Free { next_generation: 9 }),
-            (6, XrefEntry::InStream { stream: 80, index: 1 }),
-            (8, XrefEntry::InFile { offset: 20, generation: 5 }),
-            (10, XrefEntry::InFile { offset: 30, generation: 3 }),
-            (u32::MAX, XrefEntry::InFile { offset: 40, generation: 1 }),
+            (
+                6,
+                XrefEntry::InStream {
+                    stream: 80,
+                    index: 1,
+                },
+            ),
+            (
+                8,
+                XrefEntry::InFile {
+                    offset: 20,
+                    generation: 5,
+                },
+            ),
+            (
+                10,
+                XrefEntry::InFile {
+                    offset: 30,
+                    generation: 3,
+                },
+            ),
+            (
+                u32::MAX,
+                XrefEntry::InFile {
+                    offset: 40,
+                    generation: 1,
+                },
+            ),
         ]));
         doc.set(ObjRef::new(1, 2), Object::Int(1)); // before the first live source slot
         doc.set(ObjRef::new(2, 8), Object::Int(2)); // override, without duplication
@@ -1471,7 +1894,10 @@ mod tests {
 
     #[test]
     fn full_object_scans_preserve_edits_without_retaining_the_scan() {
-        let mut bodies = vec!["<< /Type /Catalog /Pages 2 0 R >>".to_owned(), "<< /Type /Pages /Kids [] /Count 0 >>".to_owned()];
+        let mut bodies = vec![
+            "<< /Type /Catalog /Pages 2 0 R >>".to_owned(),
+            "<< /Type /Pages /Kids [] /Count 0 >>".to_owned(),
+        ];
         bodies.extend((0..400).map(|i| format!("<< /Value {i} >>")));
         let refs: Vec<_> = bodies.iter().map(String::as_str).collect();
         let mut doc = Document::open(Arc::new(build(&refs, "/Root 1 0 R"))).unwrap();
@@ -1481,15 +1907,43 @@ mod tests {
         let cached = doc.cache.lock().unwrap().len();
         let held: Vec<_> = doc.scan_objects().collect();
         assert_eq!(held.len(), 402);
-        assert_eq!(doc.cache.lock().unwrap().len(), cached, "scanning must not populate the editor cache");
+        assert_eq!(
+            doc.cache.lock().unwrap().len(),
+            cached,
+            "scanning must not populate the editor cache"
+        );
         assert!(doc.objstms.lock().unwrap().is_empty());
         assert!(!held.iter().any(|(r, _)| r.num == 4));
-        assert_eq!(held.iter().find(|(r, _)| r.num == 3).unwrap().1.as_int(), Some(900));
-        assert_eq!(held.iter().find(|(r, _)| *r == added).unwrap().1.as_int(), Some(901));
-        assert_eq!(held.iter().find(|(r, _)| r.num == 400).unwrap().1.as_dict().unwrap().int(b"Value"), Some(397));
+        assert_eq!(
+            held.iter().find(|(r, _)| r.num == 3).unwrap().1.as_int(),
+            Some(900)
+        );
+        assert_eq!(
+            held.iter().find(|(r, _)| *r == added).unwrap().1.as_int(),
+            Some(901)
+        );
+        assert_eq!(
+            held.iter()
+                .find(|(r, _)| r.num == 400)
+                .unwrap()
+                .1
+                .as_dict()
+                .unwrap()
+                .int(b"Value"),
+            Some(397)
+        );
         // Previously returned objects survive cache eviction and dropping the source.
         drop(doc);
-        assert_eq!(held.iter().find(|(r, _)| r.num == 128).unwrap().1.as_dict().unwrap().int(b"Value"), Some(125));
+        assert_eq!(
+            held.iter()
+                .find(|(r, _)| r.num == 128)
+                .unwrap()
+                .1
+                .as_dict()
+                .unwrap()
+                .int(b"Value"),
+            Some(125)
+        );
     }
 
     #[test]
@@ -1499,19 +1953,46 @@ mod tests {
         let body = "x".repeat(ObjectReader::STREAM_BYTES + 1);
         let stream = format!("<< /Length 4 0 R >>\nstream\n{body}\nendstream");
         let length = body.len().to_string();
-        let bytes = build(&["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>", &stream, &length], "/Root 1 0 R");
+        let bytes = build(
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+                &stream,
+                &length,
+            ],
+            "/Root 1 0 R",
+        );
         let doc = Document::open(Arc::new(bytes)).unwrap();
         let mut reader = doc.object_reader();
         let read = reader.get(ObjRef::new(3, 0));
-        let Object::Stream(s) = &*read else { panic!("stream") };
-        assert!(s.raw.shares(&reader.document.data), "no copy of the file's bytes");
-        assert!(reader.document.cache.lock().unwrap().contains_key(&3), "a view costs nothing to keep");
+        let Object::Stream(s) = &*read else {
+            panic!("stream")
+        };
+        assert!(
+            s.raw.shares(&reader.document.data),
+            "no copy of the file's bytes"
+        );
+        assert!(
+            reader.document.cache.lock().unwrap().contains_key(&3),
+            "a view costs nothing to keep"
+        );
         // Data of its own (decrypted streams, strings) counts: past the budget the cache is
         // cleared after the next read, including a failed one.
-        let owned = Object::Stream(crate::Stream::from_raw(Dict::new(), vec![b'y'; ObjectReader::STREAM_BYTES + 1]));
-        reader.document.cache.lock().unwrap().insert(3, Arc::new(owned));
+        let owned = Object::Stream(crate::Stream::from_raw(
+            Dict::new(),
+            vec![b'y'; ObjectReader::STREAM_BYTES + 1],
+        ));
+        reader
+            .document
+            .cache
+            .lock()
+            .unwrap()
+            .insert(3, Arc::new(owned));
         assert_eq!(*reader.get(ObjRef::new(99, 0)), Object::Null);
-        assert!(reader.document.cache.lock().unwrap().is_empty(), "owned data over budget is evicted");
+        assert!(
+            reader.document.cache.lock().unwrap().is_empty(),
+            "owned data over budget is evicted"
+        );
     }
 
     #[test]
@@ -1524,37 +2005,83 @@ mod tests {
                 Object::Ref(source.add(Object::String(crate::PdfString::literal(value))))
             })
             .collect();
-        source.update_dict(source.root().unwrap(), |d| d.set(b"Extension".to_vec(), Object::Array(objects))).unwrap();
+        source
+            .update_dict(source.root().unwrap(), |d| {
+                d.set(b"Extension".to_vec(), Object::Array(objects))
+            })
+            .unwrap();
         let bytes = Arc::new(crate::write_full(&source, &crate::SaveOptions::default()).unwrap());
         let doc = Document::open(bytes).unwrap();
         let root = doc.get(doc.root().unwrap());
-        let references = root.as_dict().unwrap().get(b"Extension").unwrap().as_array().unwrap();
+        let references = root
+            .as_dict()
+            .unwrap()
+            .get(b"Extension")
+            .unwrap()
+            .as_array()
+            .unwrap();
         let snapshot = doc.clone();
         let cached = doc.cache.lock().unwrap().len();
         let streams = doc.objstms.lock().unwrap().len();
         let mut reader = doc.object_reader();
         let mut held = None;
         for (i, reference) in references.iter().enumerate() {
-            let Object::Ref(reference) = reference else { panic!("indirect object") };
+            let Object::Ref(reference) = reference else {
+                panic!("indirect object")
+            };
             let object = reader.get(*reference);
-            assert_eq!(&object.as_string().unwrap().bytes[..4], &(i as u32).to_le_bytes());
+            assert_eq!(
+                &object.as_string().unwrap().bytes[..4],
+                &(i as u32).to_le_bytes()
+            );
             if i == 0 {
                 held = Some(object);
             }
             assert!(reader.document.cache.lock().unwrap().len() < ObjectReader::OBJECTS);
             let decoded = reader.document.objstms.lock().unwrap();
             assert!(decoded.len() < ObjectReader::OBJECTS);
-            let bytes: usize = decoded.values().map(|s| s.data.capacity() + s.index.capacity() * std::mem::size_of::<(u32, usize)>()).sum();
-            assert!(bytes <= ObjectReader::STREAM_BYTES || decoded.len() == 1, "only one oversized stream may remain");
+            let bytes: usize = decoded
+                .values()
+                .map(|s| {
+                    s.data.capacity() + s.index.capacity() * std::mem::size_of::<(u32, usize)>()
+                })
+                .sum();
+            assert!(
+                bytes <= ObjectReader::STREAM_BYTES || decoded.len() == 1,
+                "only one oversized stream may remain"
+            );
         }
         drop(reader);
-        assert_eq!(&held.unwrap().as_string().unwrap().bytes[..4], &0u32.to_le_bytes(), "owned results survive evictions");
+        assert_eq!(
+            &held.unwrap().as_string().unwrap().bytes[..4],
+            &0u32.to_le_bytes(),
+            "owned results survive evictions"
+        );
         for object_streams in [false, true] {
-            let saved = crate::write_full(&doc, &crate::SaveOptions { object_streams, ..Default::default() }).unwrap();
-            assert!(Document::open(Arc::new(saved)).unwrap().repair_log().is_empty());
-            assert_eq!(doc.cache.lock().unwrap().len(), cached, "full saves must not fill the editor cache");
+            let saved = crate::write_full(
+                &doc,
+                &crate::SaveOptions {
+                    object_streams,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert!(
+                Document::open(Arc::new(saved))
+                    .unwrap()
+                    .repair_log()
+                    .is_empty()
+            );
+            assert_eq!(
+                doc.cache.lock().unwrap().len(),
+                cached,
+                "full saves must not fill the editor cache"
+            );
             assert_eq!(doc.objstms.lock().unwrap().len(), streams);
-            assert!(Arc::ptr_eq(&doc.cache, &snapshot.cache), "do not detach or clear caller snapshots");
+            assert!(
+                Arc::ptr_eq(&doc.cache, &snapshot.cache),
+                "do not detach or clear caller snapshots"
+            );
         }
     }
 
@@ -1568,28 +2095,56 @@ mod tests {
                 Object::Ref(source.add(Object::String(crate::PdfString::literal(value))))
             })
             .collect();
-        source.update_dict(source.root().unwrap(), |d| d.set(b"Extension".to_vec(), Object::Array(objects))).unwrap();
+        source
+            .update_dict(source.root().unwrap(), |d| {
+                d.set(b"Extension".to_vec(), Object::Array(objects))
+            })
+            .unwrap();
         let bytes = Arc::new(crate::write_full(&source, &crate::SaveOptions::default()).unwrap());
         let doc = Document::open(bytes).unwrap();
         let root = doc.get(doc.root().unwrap());
-        let references = root.as_dict().unwrap().get(b"Extension").unwrap().as_array().unwrap().clone();
+        let references = root
+            .as_dict()
+            .unwrap()
+            .get(b"Extension")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .clone();
         let mut held = None;
         for (i, reference) in references.iter().enumerate() {
-            let Object::Ref(reference) = reference else { panic!("indirect object") };
+            let Object::Ref(reference) = reference else {
+                panic!("indirect object")
+            };
             let object = doc.get(*reference);
-            assert_eq!(&object.as_string().unwrap().bytes[..4], &(i as u32).to_le_bytes());
+            assert_eq!(
+                &object.as_string().unwrap().bytes[..4],
+                &(i as u32).to_le_bytes()
+            );
             if i == 0 {
                 held = Some(object);
             }
-            assert!(doc.cache.lock().unwrap().len() <= Document::EDITOR_CACHE_OBJECTS, "editing must not pin the whole object graph");
+            assert!(
+                doc.cache.lock().unwrap().len() <= Document::EDITOR_CACHE_OBJECTS,
+                "editing must not pin the whole object graph"
+            );
             // Eviction keeps the newcomer.
-            assert!(doc.cache.lock().unwrap().contains_key(&reference.num), "eviction must keep the newcomer");
+            assert!(
+                doc.cache.lock().unwrap().contains_key(&reference.num),
+                "eviction must keep the newcomer"
+            );
         }
         // Returned objects survive eviction, through both handles of the shared cache.
-        assert_eq!(&held.unwrap().as_string().unwrap().bytes[..4], &0u32.to_le_bytes());
+        assert_eq!(
+            &held.unwrap().as_string().unwrap().bytes[..4],
+            &0u32.to_le_bytes()
+        );
         let snapshot = doc.clone();
         let first = references[0].as_ref().unwrap();
-        assert_eq!(&snapshot.get(first).as_string().unwrap().bytes[..4], &0u32.to_le_bytes());
+        assert_eq!(
+            &snapshot.get(first).as_string().unwrap().bytes[..4],
+            &0u32.to_le_bytes()
+        );
     }
 
     #[test]
@@ -1604,33 +2159,66 @@ mod tests {
                 Object::Ref(source.add(Object::String(crate::PdfString::literal(value))))
             })
             .collect();
-        source.update_dict(source.root().unwrap(), |d| d.set(b"Extension".to_vec(), Object::Array(objects))).unwrap();
+        source
+            .update_dict(source.root().unwrap(), |d| {
+                d.set(b"Extension".to_vec(), Object::Array(objects))
+            })
+            .unwrap();
         let bytes = Arc::new(crate::write_full(&source, &crate::SaveOptions::default()).unwrap());
         let doc = Document::open(bytes).unwrap();
         let root = doc.get(doc.root().unwrap());
-        let references = root.as_dict().unwrap().get(b"Extension").unwrap().as_array().unwrap().clone();
+        let references = root
+            .as_dict()
+            .unwrap()
+            .get(b"Extension")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .clone();
         let mut held = None;
         for (i, reference) in references.iter().enumerate() {
-            let Object::Ref(reference) = reference else { panic!("indirect object") };
+            let Object::Ref(reference) = reference else {
+                panic!("indirect object")
+            };
             let object = doc.get(*reference);
-            assert_eq!(&object.as_string().unwrap().bytes[..4], &(i as u32).to_le_bytes());
+            assert_eq!(
+                &object.as_string().unwrap().bytes[..4],
+                &(i as u32).to_le_bytes()
+            );
             if i == 0 {
                 held = Some(object);
             }
             // Eviction keeps the newcomer.
-            assert!(doc.cache.lock().unwrap().contains_key(&reference.num), "eviction must keep the newcomer");
+            assert!(
+                doc.cache.lock().unwrap().contains_key(&reference.num),
+                "eviction must keep the newcomer"
+            );
         }
-        assert!(doc.cache.lock().unwrap().len() < references.len(), "the byte budget must evict even below the count cap");
+        assert!(
+            doc.cache.lock().unwrap().len() < references.len(),
+            "the byte budget must evict even below the count cap"
+        );
         let last = references[references.len() - 1].as_ref().unwrap();
-        assert!(doc.cache.lock().unwrap().contains_key(&last.num), "eviction must keep the newcomer");
-        assert_eq!(&held.unwrap().as_string().unwrap().bytes[..4], &0u32.to_le_bytes());
+        assert!(
+            doc.cache.lock().unwrap().contains_key(&last.num),
+            "eviction must keep the newcomer"
+        );
+        assert_eq!(
+            &held.unwrap().as_string().unwrap().bytes[..4],
+            &0u32.to_le_bytes()
+        );
     }
 
     #[test]
     fn a_stream_limited_document_cannot_be_saved() {
-        let bytes = Arc::new(crate::write_full(&Document::new_empty(), &crate::SaveOptions::default()).unwrap());
+        let bytes = Arc::new(
+            crate::write_full(&Document::new_empty(), &crate::SaveOptions::default()).unwrap(),
+        );
         let doc = Document::open_with_stream_limit(bytes.clone(), None, 1 << 20).unwrap();
-        for saved in [crate::write_full(&doc, &crate::SaveOptions::default()), crate::write_incremental(&doc, &crate::SaveOptions::default())] {
+        for saved in [
+            crate::write_full(&doc, &crate::SaveOptions::default()),
+            crate::write_incremental(&doc, &crate::SaveOptions::default()),
+        ] {
             assert!(matches!(saved, Err(CosError::ReadOnlyLimit)), "{saved:?}");
         }
         let doc = Document::open(bytes).unwrap();
@@ -1641,7 +2229,10 @@ mod tests {
     fn inspection_stream_limit_applies_before_loading_compressed_objects() {
         let mut doc = Document::new_empty();
         let large = doc.add(Object::String(crate::PdfString::literal(vec![b'x'; 4096])));
-        doc.update_dict(doc.root().unwrap(), |catalog| catalog.set(b"Extension".to_vec(), Object::Ref(large))).unwrap();
+        doc.update_dict(doc.root().unwrap(), |catalog| {
+            catalog.set(b"Extension".to_vec(), Object::Ref(large))
+        })
+        .unwrap();
         let bytes = Arc::new(crate::write_full(&doc, &crate::SaveOptions::default()).unwrap());
         assert!(Document::open(bytes.clone()).is_ok());
         assert!(Document::open_with_stream_limit(bytes, None, 512).is_err());
@@ -1650,7 +2241,13 @@ mod tests {
     /// A /Prev chain that loops back on itself stops at the loop (and says so).
     #[test]
     fn looping_revision_chains_stop() {
-        let mut bytes = build(&["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>"], "/Root 1 0 R");
+        let mut bytes = build(
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+            ],
+            "/Root 1 0 R",
+        );
         // An update whose /Prev points at itself.
         let at = bytes.len();
         bytes.extend_from_slice(
@@ -1658,7 +2255,11 @@ mod tests {
         );
         let doc = Document::open(Arc::new(bytes)).unwrap();
         assert_eq!(doc.root(), Some(ObjRef::new(1, 0)));
-        assert!(doc.repair_log().iter().any(|l| l.contains("loops")), "{:?}", doc.repair_log());
+        assert!(
+            doc.repair_log().iter().any(|l| l.contains("loops")),
+            "{:?}",
+            doc.repair_log()
+        );
     }
 
     /// A hybrid-reference file: the classic table leaves object 3 out; the `/XRefStm` stream
@@ -1674,51 +2275,107 @@ mod tests {
             out.extend_from_slice(b"\nendobj\n");
         };
         obj(&mut out, 1, b"<< /Type /Catalog /Pages 2 0 R >>");
-        obj(&mut out, 2, b"<< /Type /Pages /Kids [] /Count 0 /Extra 3 0 R >>");
+        obj(
+            &mut out,
+            2,
+            b"<< /Type /Pages /Kids [] /Count 0 /Extra 3 0 R >>",
+        );
         let inner = b"3 0 << /Hidden (yes) >>";
-        let mut stm = format!("<< /Type /ObjStm /N 1 /First 4 /Length {} >>\nstream\n", inner.len()).into_bytes();
+        let mut stm = format!(
+            "<< /Type /ObjStm /N 1 /First 4 /Length {} >>\nstream\n",
+            inner.len()
+        )
+        .into_bytes();
         stm.extend_from_slice(inner);
         stm.extend_from_slice(b"\nendstream");
         obj(&mut out, 4, &stm);
         let data = [2u8, 0, 4, 0];
-        let mut xs = format!("<< /Type /XRef /Size 6 /W [1 2 1] /Index [3 1] /Length {} >>\nstream\n", data.len()).into_bytes();
+        let mut xs = format!(
+            "<< /Type /XRef /Size 6 /W [1 2 1] /Index [3 1] /Length {} >>\nstream\n",
+            data.len()
+        )
+        .into_bytes();
         xs.extend_from_slice(&data);
         xs.extend_from_slice(b"\nendstream");
         obj(&mut out, 5, &xs);
         let table = out.len();
         out.extend_from_slice(b"xref\n0 6\n0000000000 65535 f \n");
         for (n, off) in offs.iter().enumerate().skip(1) {
-            let line = if n == 3 { "0000000000 65535 f \n".to_string() } else { format!("{off:010} 00000 n \n") };
+            let line = if n == 3 {
+                "0000000000 65535 f \n".to_string()
+            } else {
+                format!("{off:010} 00000 n \n")
+            };
             out.extend_from_slice(line.as_bytes());
         }
-        out.extend_from_slice(format!("trailer << /Size 6 /Root 1 0 R /XRefStm {} >>\nstartxref\n{table}\n%%EOF\n", offs[5]).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer << /Size 6 /Root 1 0 R /XRefStm {} >>\nstartxref\n{table}\n%%EOF\n",
+                offs[5]
+            )
+            .as_bytes(),
+        );
         let doc = Document::open(Arc::new(out)).unwrap();
         assert!(doc.repair_log().is_empty(), "{:?}", doc.repair_log());
         let hidden = doc.get(ObjRef::new(3, 0));
-        assert_eq!(hidden.as_dict().and_then(|d| d.get(b"Hidden").and_then(|h| h.as_string().map(|s| s.to_text()))), Some("yes".into()));
+        assert_eq!(
+            hidden.as_dict().and_then(|d| d
+                .get(b"Hidden")
+                .and_then(|h| h.as_string().map(|s| s.to_text()))),
+            Some("yes".into())
+        );
     }
 
     #[test]
     fn revision_ends_split_incremental_updates() {
-        let mut bytes = build(&["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>"], "/Root 1 0 R");
+        let mut bytes = build(
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+            ],
+            "/Root 1 0 R",
+        );
         let first = bytes.len();
         let doc = Document::open(Arc::new(bytes.clone())).unwrap();
         assert_eq!(doc.revision_ends(), vec![first]);
         let mut edited = doc.clone();
-        edited.update_dict(ObjRef::new(1, 0), |d| d.set(b"Lang".to_vec(), Object::String(crate::PdfString::literal("en")))).unwrap();
+        edited
+            .update_dict(ObjRef::new(1, 0), |d| {
+                d.set(
+                    b"Lang".to_vec(),
+                    Object::String(crate::PdfString::literal("en")),
+                )
+            })
+            .unwrap();
         bytes = crate::write_incremental(&edited, &crate::SaveOptions::default()).unwrap();
         let doc = Document::open(Arc::new(bytes.clone())).unwrap();
         let ends = doc.revision_ends();
         assert_eq!(ends.len(), 2, "{ends:?}");
-        assert!(ends[0] >= first && ends[0] < bytes.len() && ends[1] == bytes.len(), "{ends:?} of {}", bytes.len());
+        assert!(
+            ends[0] >= first && ends[0] < bytes.len() && ends[1] == bytes.len(),
+            "{ends:?} of {}",
+            bytes.len()
+        );
         // The first revision opens on its own, without the update.
         let old = Document::open(Arc::new(bytes[..ends[0]].to_vec())).unwrap();
-        assert!(old.get(ObjRef::new(1, 0)).as_dict().unwrap().get(b"Lang").is_none());
+        assert!(
+            old.get(ObjRef::new(1, 0))
+                .as_dict()
+                .unwrap()
+                .get(b"Lang")
+                .is_none()
+        );
     }
 
     #[test]
     fn damaged_xref_is_reconstructed() {
-        let mut bytes = build(&["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [] /Count 0 >>"], "/Root 1 0 R");
+        let mut bytes = build(
+            &[
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+            ],
+            "/Root 1 0 R",
+        );
         let n = bytes.len();
         bytes[n - 12..n - 6].copy_from_slice(b"999999"); // point startxref into nowhere
         let doc = Document::open(Arc::new(bytes)).unwrap();
@@ -1733,7 +2390,8 @@ mod tests {
         // /W [1 1 1]: at 3 bytes a row that is more than 8,388,607 objects' worth, so it is not
         // decoded (in full: the limit applies while inflating) and the objects are found by
         // reconstruction instead.
-        let bomb = pdfcraft_filters::encode_flate(&pdfcraft_filters::encode_flate(&vec![0u8; 32 << 20]));
+        let bomb =
+            pdfcraft_filters::encode_flate(&pdfcraft_filters::encode_flate(&vec![0u8; 32 << 20]));
         let mut bytes = b"%PDF-1.7\n".to_vec();
         let o1 = bytes.len();
         bytes.extend_from_slice(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
@@ -1749,7 +2407,11 @@ mod tests {
         assert!(o1 < o2 && o2 < x);
         let doc = Document::open(Arc::new(bytes)).unwrap();
         assert_eq!(doc.root(), Some(ObjRef::new(1, 0)));
-        assert!(doc.repair_log().iter().any(|l| l.contains("limit")), "{:?}", doc.repair_log());
+        assert!(
+            doc.repair_log().iter().any(|l| l.contains("limit")),
+            "{:?}",
+            doc.repair_log()
+        );
     }
 
     #[test]
@@ -1768,6 +2430,7 @@ mod tests {
             }
             let _ = tx.send(());
         });
-        rx.recv_timeout(std::time::Duration::from_secs(20)).expect("loading must not retry exponentially");
+        rx.recv_timeout(std::time::Duration::from_secs(20))
+            .expect("loading must not retry exponentially");
     }
 }

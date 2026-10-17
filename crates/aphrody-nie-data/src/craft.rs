@@ -73,7 +73,10 @@ impl RefRange {
     /// Parse un noeud de référence (`[offset, count]`).
     #[must_use]
     fn from_node(node: Node<'_>) -> Self {
-        Self { offset: node.int(0), count: node.int(1) }
+        Self {
+            offset: node.int(0),
+            count: node.int(1),
+        }
     }
 }
 
@@ -105,7 +108,10 @@ impl LotteryUniqueCharaInfo {
         if chara_id.is_zero() {
             return None;
         }
-        Some(Self { chara_id, weight: node_f64(node, 1) })
+        Some(Self {
+            chara_id,
+            weight: node_f64(node, 1),
+        })
     }
 }
 
@@ -130,7 +136,14 @@ impl SocketInfo {
     /// Parse un noeud (4 variables, jamais filtré).
     #[must_use]
     fn from_node(node: Node<'_>) -> Self {
-        Self { raw: [node_f64(node, 0), node_f64(node, 1), node_f64(node, 2), node_f64(node, 3)] }
+        Self {
+            raw: [
+                node_f64(node, 0),
+                node_f64(node, 1),
+                node_f64(node, 2),
+                node_f64(node, 3),
+            ],
+        }
     }
 }
 
@@ -188,7 +201,11 @@ impl VisualInfo {
         if visual_id.is_zero() {
             return None;
         }
-        Some(Self { visual_id, secondary: node.hash(1), count: node.int(2) })
+        Some(Self {
+            visual_id,
+            secondary: node.hash(1),
+            count: node.int(2),
+        })
     }
 }
 
@@ -241,7 +258,10 @@ impl CraftCategoryInfo {
     /// Parse un noeud (2 variables).
     #[must_use]
     fn from_node(node: Node<'_>) -> Self {
-        Self { category: node.int(0), value: node.int(1) }
+        Self {
+            category: node.int(0),
+            value: node.int(1),
+        }
     }
 }
 
@@ -401,13 +421,19 @@ impl CraftObjConfig {
     /// incohérente, pas un objet sans limite.
     #[must_use]
     pub fn max_placeable(&self, category: i64) -> Option<i64> {
-        self.categories.iter().find(|info| info.category == category).map(|info| info.value)
+        self.categories
+            .iter()
+            .find(|info| info.category == category)
+            .map(|info| info.value)
     }
 
     /// Les objets d'une catégorie de placement donnée.
     #[must_use]
     pub fn objs_in_category(&self, category: i64) -> Vec<&CraftObjInfo> {
-        self.objs.iter().filter(|obj| obj.category() == category).collect()
+        self.objs
+            .iter()
+            .filter(|obj| obj.category() == category)
+            .collect()
     }
 
     /// Renvoie la tranche de [`VisualInfo`] référencée par un groupe de visuels.
@@ -472,11 +498,14 @@ fn collect<'a>(root: &'a Value, prefix: &str, skip_ref: bool) -> Vec<Node<'a>> {
 /// 105 points d'accroche, 187 visuels, 167 groupes, 157 objets, 5 catégories.
 #[must_use]
 pub fn parse_craft_obj_config(root: &Value) -> CraftObjConfig {
-    let lottery_unique_charas =
-        collect(root, "CRAFT_OBJ_INTERREST_LOTTERY_UNIQUE_CHARA_INFO_", false)
-            .into_iter()
-            .filter_map(LotteryUniqueCharaInfo::from_node)
-            .collect();
+    let lottery_unique_charas = collect(
+        root,
+        "CRAFT_OBJ_INTERREST_LOTTERY_UNIQUE_CHARA_INFO_",
+        false,
+    )
+    .into_iter()
+    .filter_map(LotteryUniqueCharaInfo::from_node)
+    .collect();
 
     let sockets = collect(root, "CRAFT_OBJ_INTERREST_SOCKET_INFO_", false)
         .into_iter()
@@ -502,14 +531,21 @@ pub fn parse_craft_obj_config(root: &Value) -> CraftObjConfig {
         .zip(group_refs.iter())
         .map(|(g, r)| {
             let rng = RefRange::from_node(*r);
-            VisualGroupInfo { group_id: g.hash(0), visual_index: rng.offset, count: rng.count }
+            VisualGroupInfo {
+                group_id: g.hash(0),
+                visual_index: rng.offset,
+                count: rng.count,
+            }
         })
         .collect();
 
     // Objets de craft : noeud principal `CRAFT_OBJ_INFO_N` + 4 refs appariés par position.
     let obj_nodes = collect_obj_main(root);
-    let ref_lottery =
-        collect(root, "CRAFT_OBJ_INFO_REF_INTERREST_LOTTERY_UNIQUE_CHARA_INFO_", false);
+    let ref_lottery = collect(
+        root,
+        "CRAFT_OBJ_INFO_REF_INTERREST_LOTTERY_UNIQUE_CHARA_INFO_",
+        false,
+    );
     let ref_socket = collect(root, "CRAFT_OBJ_INFO_REF_INTERREST_SOCKET_INFO_", false);
     let ref_npc = collect(root, "CRAFT_OBJ_INFO_REF_NPC_STICK_POINT_INFO_", false);
     let ref_visual = collect(root, "CRAFT_OBJ_INFO_REF_VISUAL_GROUP_INFO_", false);
@@ -529,8 +565,14 @@ pub fn parse_craft_obj_config(root: &Value) -> CraftObjConfig {
                     .get(i)
                     .map(|n| RefRange::from_node(*n))
                     .unwrap_or_default(),
-                ref_socket: ref_socket.get(i).map(|n| RefRange::from_node(*n)).unwrap_or_default(),
-                ref_npc_stick: ref_npc.get(i).map(|n| RefRange::from_node(*n)).unwrap_or_default(),
+                ref_socket: ref_socket
+                    .get(i)
+                    .map(|n| RefRange::from_node(*n))
+                    .unwrap_or_default(),
+                ref_npc_stick: ref_npc
+                    .get(i)
+                    .map(|n| RefRange::from_node(*n))
+                    .unwrap_or_default(),
                 ref_visual_group: ref_visual
                     .get(i)
                     .map(|n| RefRange::from_node(*n))
@@ -595,12 +637,18 @@ pub fn parse_craft_theme_config(root: &Value) -> CraftThemeConfig {
                 theme_id,
                 hash1: node.hash(1),
                 hash2: node.hash(2),
-                ref_types: theme_refs.get(i).map(|n| RefRange::from_node(*n)).unwrap_or_default(),
+                ref_types: theme_refs
+                    .get(i)
+                    .map(|n| RefRange::from_node(*n))
+                    .unwrap_or_default(),
             })
         })
         .collect();
 
-    CraftThemeConfig { theme_types, themes }
+    CraftThemeConfig {
+        theme_types,
+        themes,
+    }
 }
 
 /// Collecte les noeuds principaux `CRAFT_THEME_INFO_N` (hors `_TYPE_`, `_REF_`, `_LIST_`).

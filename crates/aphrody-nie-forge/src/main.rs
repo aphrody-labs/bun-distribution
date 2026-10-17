@@ -68,7 +68,11 @@ impl Paths {
         if self.registry.is_file() {
             Registry::load(&self.registry)
         } else {
-            Ok(Registry { version: 1, target_sha256: None, entries: Vec::new() })
+            Ok(Registry {
+                version: 1,
+                target_sha256: None,
+                entries: Vec::new(),
+            })
         }
     }
 }
@@ -207,14 +211,32 @@ fn main() -> anyhow::Result<()> {
         Cmd::Build { paths, out } => cmd_build(&paths, &out),
         Cmd::Verify { reference, got } => cmd_verify(&reference, &got),
         Cmd::Report { paths, json } => cmd_report(&paths, json),
-        Cmd::Match { paths, obj, symbol, va } => cmd_match(&paths, &obj, &symbol, &va),
+        Cmd::Match {
+            paths,
+            obj,
+            symbol,
+            va,
+        } => cmd_match(&paths, &obj, &symbol, &va),
         Cmd::Unit { paths, va, id } => cmd_unit(&paths, va.as_deref(), id.as_deref()),
-        Cmd::Candidates { paths, max_len, top, no_reloc } => {
-            cmd_candidates(&paths, max_len, top, no_reloc)
-        },
-        Cmd::Lift { paths, max_len, out, top } => cmd_lift(&paths, max_len, &out, top),
+        Cmd::Candidates {
+            paths,
+            max_len,
+            top,
+            no_reloc,
+        } => cmd_candidates(&paths, max_len, top, no_reloc),
+        Cmd::Lift {
+            paths,
+            max_len,
+            out,
+            top,
+        } => cmd_lift(&paths, max_len, &out, top),
         Cmd::Kb { paths } => cmd_kb(&paths),
-        Cmd::Cc { paths, src, cl, register } => cmd_cc(&paths, &src, cl.as_deref(), register),
+        Cmd::Cc {
+            paths,
+            src,
+            cl,
+            register,
+        } => cmd_cc(&paths, &src, cl.as_deref(), register),
     }
 }
 
@@ -262,7 +284,10 @@ fn cmd_cc(paths: &Paths, src: &Path, cl: Option<&Path>, register: bool) -> anyho
 
         for a in anns {
             let Some(unit) = store.cover.find_va(a.va) else {
-                eprintln!("rejet {} @ {:#x} : aucune unité à cette adresse", a.symbol, a.va);
+                eprintln!(
+                    "rejet {} @ {:#x} : aucune unité à cette adresse",
+                    a.symbol, a.va
+                );
                 rejected += 1;
                 continue;
             };
@@ -285,7 +310,7 @@ fn cmd_cc(paths: &Paths, src: &Path, cl: Option<&Path>, register: bool) -> anyho
                     eprintln!("rejet {} @ {:#x} : {e}", a.symbol, a.va);
                     rejected += 1;
                     continue;
-                },
+                }
             };
             let d = diff::compare_masked(original, &code.bytes, &code.reloc_mask, 4);
             if d.is_identical() {
@@ -299,7 +324,9 @@ fn cmd_cc(paths: &Paths, src: &Path, cl: Option<&Path>, register: bool) -> anyho
                     s.display()
                 );
                 if register {
-                    registry.entries.retain(|e| e.va_value().map(|v| v != a.va).unwrap_or(true));
+                    registry
+                        .entries
+                        .retain(|e| e.va_value().map(|v| v != a.va).unwrap_or(true));
                     registry.entries.push(RegistryEntry {
                         va: format!("{:#x}", a.va),
                         rust: None,
@@ -377,7 +404,11 @@ fn cmd_lift(paths: &Paths, max_len: usize, out: &str, top: usize) -> anyhow::Res
 
     // Noms issus de l'échafaudage RE : la source produite devient navigable.
     let re = aphrody_nie_forge::ReNames::load(&paths.db)?;
-    let named = src.bodies.keys().filter(|va| re.get(**va).is_some()).count();
+    let named = src
+        .bodies
+        .keys()
+        .filter(|va| re.get(**va).is_some())
+        .count();
     let roots = store.cover.count_by_kind(UnitKind::Function);
     // Le recouvrement compte les racines `.pdata` **plus** les feuilles que
     // l'echafaudage RE a mesurees : un surplus est normal et attendu. Seul un
@@ -421,7 +452,11 @@ fn cmd_lift(paths: &Paths, max_len: usize, out: &str, top: usize) -> anyhow::Res
         src.len(),
         bytes,
         named,
-        if scanned == 0 { 0.0 } else { src.len() as f64 / scanned as f64 },
+        if scanned == 0 {
+            0.0
+        } else {
+            src.len() as f64 / scanned as f64
+        },
     );
     // Le total dit ce qui reste a conquerir ; sans lui, une liste tronquee
     // laisse croire que les quinze premieres causes epuisent le sujet.
@@ -464,7 +499,11 @@ fn cmd_kb(paths: &Paths) -> anyhow::Result<()> {
         b.classes,
         b.methodes,
         b.methodes_resolues,
-        if b.methodes == 0 { 0.0 } else { b.methodes_resolues as f64 * 100.0 / b.methodes as f64 },
+        if b.methodes == 0 {
+            0.0
+        } else {
+            b.methodes_resolues as f64 * 100.0 / b.methodes as f64
+        },
     );
     Ok(())
 }
@@ -590,7 +629,7 @@ fn cmd_build(paths: &Paths, out: &Path) -> anyhow::Result<()> {
                     from_rust_units += 1;
                     from_rust_bytes += u.len;
                     return Some(bytes);
-                },
+                }
                 Err(err) => rejected.push(format!("{}:{err}", u.id)),
             }
         }
@@ -636,7 +675,11 @@ fn codegen_payload(obj: &Path, symbol: &str, original: &[u8]) -> anyhow::Result<
     )?;
     let code = o.symbol_code(symbol)?;
     if code.bytes.len() != original.len() {
-        bail!("taille codegen {} != taille originale {}", code.bytes.len(), original.len());
+        bail!(
+            "taille codegen {} != taille originale {}",
+            code.bytes.len(),
+            original.len()
+        );
     }
     let d = diff::compare_masked(original, &code.bytes, &code.reloc_mask, 4);
     if !d.is_identical() {
@@ -703,8 +746,13 @@ fn cmd_match(paths: &Paths, obj: &Path, symbol: &str, va: &str) -> anyhow::Resul
         Err(_) => Cover::split(&img)?,
     };
     let va = parse_va(va)?;
-    let unit = cover.find_va(va).with_context(|| format!("aucune unité ne contient {va:#x}"))?;
-    let original = img.bytes.get(unit.range()).context("unité hors du fichier")?;
+    let unit = cover
+        .find_va(va)
+        .with_context(|| format!("aucune unité ne contient {va:#x}"))?;
+    let original = img
+        .bytes
+        .get(unit.range())
+        .context("unité hors du fichier")?;
 
     let o = CoffObject::parse(std::fs::read(obj)?)?;
     let code = o.symbol_code(symbol)?;
@@ -759,8 +807,8 @@ fn is_self_contained(bytes: &[u8], va: u64) -> bool {
                         && i.memory_displacement64() != 0 =>
                 {
                     return false;
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
     }
@@ -801,10 +849,14 @@ fn cmd_candidates(paths: &Paths, max_len: usize, top: usize, no_reloc: bool) -> 
         e.example = e.example.min(va);
     }
 
-    let mut rows: Vec<(&Vec<u8>, &Group)> =
-        groups.iter().filter(|(_, g)| !no_reloc || g.self_contained).collect();
+    let mut rows: Vec<(&Vec<u8>, &Group)> = groups
+        .iter()
+        .filter(|(_, g)| !no_reloc || g.self_contained)
+        .collect();
     rows.sort_by(|a, b| {
-        (b.1.count * b.1.len).cmp(&(a.1.count * a.1.len)).then(a.1.example.cmp(&b.1.example))
+        (b.1.count * b.1.len)
+            .cmp(&(a.1.count * a.1.len))
+            .then(a.1.example.cmp(&b.1.example))
     });
 
     let covered_units: usize = rows.iter().map(|(_, g)| g.count).sum();
@@ -836,9 +888,15 @@ fn cmd_unit(paths: &Paths, va: Option<&str>, id: Option<&str>) -> anyhow::Result
     let unit = match (va, id) {
         (Some(v), _) => {
             let v = parse_va(v)?;
-            store.cover.find_va(v).with_context(|| format!("aucune unité ne contient {v:#x}"))?
-        },
-        (None, Some(i)) => store.cover.find(i).with_context(|| format!("unité inconnue : {i}"))?,
+            store
+                .cover
+                .find_va(v)
+                .with_context(|| format!("aucune unité ne contient {v:#x}"))?
+        }
+        (None, Some(i)) => store
+            .cover
+            .find(i)
+            .with_context(|| format!("unité inconnue : {i}"))?,
         (None, None) => bail!("passer --va ou --id"),
     };
     println!(

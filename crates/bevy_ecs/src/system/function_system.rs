@@ -5,10 +5,10 @@ use crate::{
     prelude::FromWorld,
     schedule::{InternedSystemSet, SystemSet},
     system::{
-        check_system_change_tick, FromInput, ReadOnlySystemParam, System, SystemAccess, SystemIn,
-        SystemInput, SystemParam, SystemParamItem,
+        FromInput, ReadOnlySystemParam, System, SystemAccess, SystemIn, SystemInput, SystemParam,
+        SystemParamItem, check_system_change_tick,
     },
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, World, WorldId},
+    world::{DeferredWorld, World, WorldId, unsafe_world_cell::UnsafeWorldCell},
 };
 
 use alloc::{borrow::Cow, vec, vec::Vec};
@@ -17,7 +17,7 @@ use core::marker::PhantomData;
 use variadics_please::all_tuples;
 
 #[cfg(feature = "trace")]
-use tracing::{info_span, Span};
+use tracing::{Span, info_span};
 
 #[cfg(feature = "trace")]
 use alloc::string::ToString as _;
@@ -414,7 +414,9 @@ impl<Param: SystemParam> SystemState<Param> {
         #[track_caller]
         #[cold]
         fn panic_mismatched(this: WorldId, other: WorldId) -> ! {
-            panic!("Encountered a mismatched World. This SystemState was created from {this:?}, but a method was called using {other:?}.");
+            panic!(
+                "Encountered a mismatched World. This SystemState was created from {this:?}, but a method was called using {other:?}."
+            );
         }
 
         if !self.matches_world(world_id) {
@@ -690,7 +692,11 @@ where
         let input = F::In::from_inner(input);
 
         let state = self.state.as_mut().expect(Self::ERROR_UNINITIALIZED);
-        assert_eq!(state.world_id, world.id(), "Encountered a mismatched World. A System cannot be used with Worlds other than the one it was initialized with.");
+        assert_eq!(
+            state.world_id,
+            world.id(),
+            "Encountered a mismatched World. A System cannot be used with Worlds other than the one it was initialized with."
+        );
 
         let (change_tick, _guard) = if self.is_exclusive {
             // SAFETY: an exclusive system has sole access to the world.
@@ -820,11 +826,11 @@ where
     In: SystemInput + 'static,
     Out: 'static,
     F: SystemParamFunction<
-        Marker,
-        In: FromInput<In>,
-        Out: IntoResult<Out>,
-        Param: ReadOnlySystemParam,
-    >,
+            Marker,
+            In: FromInput<In>,
+            Out: IntoResult<Out>,
+            Param: ReadOnlySystemParam,
+        >,
 {
 }
 

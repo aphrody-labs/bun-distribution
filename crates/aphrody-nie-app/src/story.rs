@@ -40,7 +40,10 @@ mod tests {
 
     #[test]
     fn resout_les_tags_perso() {
-        assert_eq!(clean_dialogue("You good, <FLC:KISOJI>?"), "You good, Kisoji?");
+        assert_eq!(
+            clean_dialogue("You good, <FLC:KISOJI>?"),
+            "You good, Kisoji?"
+        );
         assert_eq!(clean_dialogue("<FUL:SAKURAZAKI>..."), "Sakurazaki...");
     }
 

@@ -281,9 +281,9 @@ pub fn predicate_combine(
         // Upstream throws a Shader::NotImplementedException, which pipeline
         // creation catches. An ordinary Rust panic bypasses that typed catch
         // and can abort when propagated through the macro JIT callback.
-        _ => std::panic::panic_any(crate::exception::NotImplementedException::new(
-            format!("Invalid bop {boolean_op}"),
-        )),
+        _ => std::panic::panic_any(crate::exception::NotImplementedException::new(format!(
+            "Invalid bop {boolean_op}"
+        ))),
     }
 }
 

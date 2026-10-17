@@ -18,7 +18,11 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Self { max_width: 8192, max_height: 8192, max_pixels: 16_777_216 }
+        Self {
+            max_width: 8192,
+            max_height: 8192,
+            max_pixels: 16_777_216,
+        }
     }
 }
 
@@ -68,7 +72,10 @@ impl Image {
         limits.checked_size(size.width, size.height)?;
         let len = usize::try_from(u64::from(size.width) * u64::from(size.height) * 4)
             .map_err(|_| Error::Budget)?;
-        Ok(Self { size, pixels: vec![0; len] })
+        Ok(Self {
+            size,
+            pixels: vec![0; len],
+        })
     }
 
     /// Construit une image depuis des octets validés.
@@ -125,7 +132,10 @@ impl Frame {
             width,
             height,
         );
-        Ok(Layer::Model { image: Image::from_rgba(size, pixels, limits)?, angle_millirad })
+        Ok(Layer::Model {
+            image: Image::from_rgba(size, pixels, limits)?,
+            angle_millirad,
+        })
     }
 }
 

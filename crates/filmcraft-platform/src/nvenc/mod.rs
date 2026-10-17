@@ -170,14 +170,18 @@ static HEVC_AVAILABLE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
 pub fn warm_hevc_probe() {
     static STARTED: std::sync::Once = std::sync::Once::new();
     STARTED.call_once(|| {
-        let spawned = std::thread::Builder::new().name("nvenc-hevc-probe".into()).spawn(|| {
-            if std::panic::catch_unwind(hevc_available).is_err() {
-                log::warn!("the hardware HEVC probe panicked; the format list will ask again");
-            }
-            if std::panic::catch_unwind(hevc_hdr_available).is_err() {
-                log::warn!("the hardware HEVC Main 10 probe panicked; the export will ask again");
-            }
-        });
+        let spawned = std::thread::Builder::new()
+            .name("nvenc-hevc-probe".into())
+            .spawn(|| {
+                if std::panic::catch_unwind(hevc_available).is_err() {
+                    log::warn!("the hardware HEVC probe panicked; the format list will ask again");
+                }
+                if std::panic::catch_unwind(hevc_hdr_available).is_err() {
+                    log::warn!(
+                        "the hardware HEVC Main 10 probe panicked; the export will ask again"
+                    );
+                }
+            });
         if let Err(e) = spawned {
             log::info!("hardware HEVC probe thread not started: {e}");
         }
@@ -261,11 +265,18 @@ impl Nvenc {
             return Err("H.264 here is BT.709 without SEI messages".into());
         }
         let level = match (codec, cfg.level) {
-            (Codec::Hevc, Some(l)) => Some(hevc::level_code(l).ok_or_else(|| format!("{}.{} is not an HEVC level", l / 10, l % 10))?),
+            (Codec::Hevc, Some(l)) => Some(
+                hevc::level_code(l)
+                    .ok_or_else(|| format!("{}.{} is not an HEVC level", l / 10, l % 10))?,
+            ),
             // left to itself NVENC answers a bitrate above its chosen level's Main tier limit with the
             // High tier, which many hardware decoders refuse: pick the lowest Main tier level instead
             (Codec::Hevc, None) => {
-                let max_kbps = if cfg.cbr { cfg.bitrate_kbps } else { cfg.max_bitrate_kbps.max(cfg.bitrate_kbps) };
+                let max_kbps = if cfg.cbr {
+                    cfg.bitrate_kbps
+                } else {
+                    cfg.max_bitrate_kbps.max(cfg.bitrate_kbps)
+                };
                 hevc::main_tier_level(w, h, cfg.fps, max_kbps).and_then(hevc::level_code)
             }
             (_, l) => l,
@@ -273,13 +284,22 @@ impl Nvenc {
         let mut session = Session::open()?;
         let caps = session.caps(codec)?;
         check_caps(&caps, cfg)?;
-        if w < caps.min_size.0 || h < caps.min_size.1 || w > caps.max_size.0 || h > caps.max_size.1 {
-            return Err(format!("{w}x{h} is outside NVENC's {}x{} - {}x{}", caps.min_size.0, caps.min_size.1, caps.max_size.0, caps.max_size.1));
+        if w < caps.min_size.0 || h < caps.min_size.1 || w > caps.max_size.0 || h > caps.max_size.1
+        {
+            return Err(format!(
+                "{w}x{h} is outside NVENC's {}x{} - {}x{}",
+                caps.min_size.0, caps.min_size.1, caps.max_size.0, caps.max_size.1
+            ));
         }
         // NVENC wants a GOP longer than the B-frame pattern: HEVC with a keyframe every one or two
         // pictures is simply written without B-frames (H.264 keeps declining those, to the software encoder)
         let room_for_bframes = codec == Codec::H264 || cfg.keyint > 2;
-        let bframes = u32::from(cfg.bframes && cfg.profile != Profile::Baseline && caps.max_bframes >= 1 && room_for_bframes);
+        let bframes = u32::from(
+            cfg.bframes
+                && cfg.profile != Profile::Baseline
+                && caps.max_bframes >= 1
+                && room_for_bframes,
+        );
         let ten_bit = cfg.profile == Profile::HevcMain10;
         let params = Params {
             codec,
@@ -312,7 +332,8 @@ impl Nvenc {
             Codec::Hevc => {
                 let (vps, sps, pps) = split_hevc_parameter_sets(&params)?;
                 // validated now: a stream whose parameter sets we cannot describe is a declined export
-                let record = hevc::hevc_config(&vps, &sps, &pps, (w, h), if ten_bit { 10 } else { 8 })?;
+                let record =
+                    hevc::hevc_config(&vps, &sps, &pps, (w, h), if ten_bit { 10 } else { 8 })?;
                 (vps, sps, pps, Some(record))
             }
         };
@@ -387,7 +408,13 @@ impl Nvenc {
     /// Encode picture `index` from planar 8-bit 4:2:0 (`u`, `v` at half size, rows `w` and `w / 2` bytes).
     /// Returns the pictures that came out (usually the oldest; none while the ring fills). An error
     /// for a Main 10 encoder.
-    pub fn encode(&mut self, y: &[u8], u: &[u8], v: &[u8], index: u64) -> Result<Vec<Packet>, String> {
+    pub fn encode(
+        &mut self,
+        y: &[u8],
+        u: &[u8],
+        v: &[u8],
+        index: u64,
+    ) -> Result<Vec<Packet>, String> {
         if self.ten_bit {
             return Err("an 8-bit picture for a Main 10 encoder".into());
         }
@@ -404,7 +431,13 @@ impl Nvenc {
 
     /// Encode picture `index` from planar 10-bit 4:2:0 (code values 0..=1023 in `u16`, `u`, `v` at
     /// half size). The pictures that came out, as for [`Nvenc::encode`]. An error for a Main encoder.
-    pub fn encode_10(&mut self, y: &[u16], u: &[u16], v: &[u16], index: u64) -> Result<Vec<Packet>, String> {
+    pub fn encode_10(
+        &mut self,
+        y: &[u16],
+        u: &[u16],
+        v: &[u16],
+        index: u64,
+    ) -> Result<Vec<Packet>, String> {
         if !self.ten_bit {
             return Err("a 10-bit picture for a Main (8-bit) encoder".into());
         }
@@ -416,7 +449,11 @@ impl Nvenc {
         self.submit_picture(index, |l| fill_p010(l, y, u, v, w, h))
     }
 
-    fn submit_picture(&mut self, index: u64, fill: impl FnOnce(Locked<'_>)) -> Result<Vec<Packet>, String> {
+    fn submit_picture(
+        &mut self,
+        index: u64,
+        fill: impl FnOnce(Locked<'_>),
+    ) -> Result<Vec<Packet>, String> {
         let mut out = Vec::new();
         let slot = match self.free.pop() {
             Some(s) => s,
@@ -467,7 +504,12 @@ impl Nvenc {
         let k = self.emitted;
         self.emitted = self.emitted.saturating_add(1);
         let pts = i64::try_from(o.pts).unwrap_or(i64::MAX);
-        Ok(Packet { data, key: o.pic_type == ffi::NV_ENC_PIC_TYPE_IDR, pts, dts: k.saturating_sub(i64::from(self.delay)) })
+        Ok(Packet {
+            data,
+            key: o.pic_type == ffi::NV_ENC_PIC_TYPE_IDR,
+            pts,
+            dts: k.saturating_sub(i64::from(self.delay)),
+        })
     }
 }
 
@@ -488,8 +530,15 @@ fn fill_nv12(l: Locked<'_>, y: &[u8], u: &[u8], v: &[u8], w: usize, h: usize) {
     if cw == 0 {
         return;
     }
-    for ((ur, vr), dst) in u.chunks_exact(cw).zip(v.chunks_exact(cw)).zip(chroma.chunks_exact_mut(pitch)).take(h / 2) {
-        let Some(dst) = dst.get_mut(..w) else { continue };
+    for ((ur, vr), dst) in u
+        .chunks_exact(cw)
+        .zip(v.chunks_exact(cw))
+        .zip(chroma.chunks_exact_mut(pitch))
+        .take(h / 2)
+    {
+        let Some(dst) = dst.get_mut(..w) else {
+            continue;
+        };
         for (([du, dv], a), b) in dst.as_chunks_mut::<2>().0.iter_mut().zip(ur).zip(vr) {
             *du = *a;
             *dv = *b;
@@ -504,7 +553,11 @@ fn fill_rgba(l: Locked<'_>, rgba: &[u8], w: usize, h: usize) {
     if row == 0 || l.pitch == 0 {
         return;
     }
-    for (src, dst) in rgba.chunks_exact(row).zip(l.data.chunks_mut(l.pitch)).take(h) {
+    for (src, dst) in rgba
+        .chunks_exact(row)
+        .zip(l.data.chunks_mut(l.pitch))
+        .take(h)
+    {
         if let Some(d) = dst.get_mut(..row) {
             d.copy_from_slice(src);
         }
@@ -516,13 +569,17 @@ fn fill_rgba(l: Locked<'_>, rgba: &[u8], w: usize, h: usize) {
 /// `pitch` in bytes. Codes above 10 bits are masked; a row the pitch cannot hold is skipped, never overrun.
 fn fill_p010(l: Locked<'_>, y: &[u16], u: &[u16], v: &[u16], w: usize, h: usize) {
     let pitch = l.pitch;
-    let (luma, chroma) = l.data.split_at_mut(pitch.saturating_mul(h).min(l.data.len()));
+    let (luma, chroma) = l
+        .data
+        .split_at_mut(pitch.saturating_mul(h).min(l.data.len()));
     if w == 0 || pitch == 0 {
         return;
     }
     let code = |c: u16| ((c & 0x3ff) << 6).to_le_bytes();
     for (row, dst) in y.chunks_exact(w).zip(luma.chunks_exact_mut(pitch)).take(h) {
-        let Some(dst) = dst.get_mut(..w.saturating_mul(2)) else { continue };
+        let Some(dst) = dst.get_mut(..w.saturating_mul(2)) else {
+            continue;
+        };
         for (d, c) in dst.as_chunks_mut::<2>().0.iter_mut().zip(row) {
             *d = code(*c);
         }
@@ -531,8 +588,15 @@ fn fill_p010(l: Locked<'_>, y: &[u16], u: &[u16], v: &[u16], w: usize, h: usize)
     if cw == 0 {
         return;
     }
-    for ((ur, vr), dst) in u.chunks_exact(cw).zip(v.chunks_exact(cw)).zip(chroma.chunks_exact_mut(pitch)).take(h / 2) {
-        let Some(dst) = dst.get_mut(..w.saturating_mul(2)) else { continue };
+    for ((ur, vr), dst) in u
+        .chunks_exact(cw)
+        .zip(v.chunks_exact(cw))
+        .zip(chroma.chunks_exact_mut(pitch))
+        .take(h / 2)
+    {
+        let Some(dst) = dst.get_mut(..w.saturating_mul(2)) else {
+            continue;
+        };
         for ((d, a), b) in dst.as_chunks_mut::<4>().0.iter_mut().zip(ur).zip(vr) {
             let ([u0, u1], [v0, v1]) = (code(*a), code(*b));
             *d = [u0, u1, v0, v1];
@@ -562,7 +626,9 @@ pub fn annex_b_nals(data: &[u8]) -> Vec<&[u8]> {
     }
     let mut out = Vec::with_capacity(starts.len());
     for (k, &s) in starts.iter().enumerate() {
-        let mut e = starts.get(k + 1).map_or(data.len(), |n| n.saturating_sub(3));
+        let mut e = starts
+            .get(k + 1)
+            .map_or(data.len(), |n| n.saturating_sub(3));
         // trailing zero bytes belong to the next start code (4-byte form) or are padding
         while e > s && data.get(e - 1) == Some(&0) {
             e -= 1;
@@ -623,7 +689,11 @@ pub fn annex_b_to_length_prefixed_for(codec: Codec, data: &[u8]) -> Result<Vec<u
 /// The SPS and PPS NAL units of an Annex B byte string.
 pub fn split_parameter_sets(data: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String> {
     let nals = annex_b_nals(data);
-    let find = |t: u8| nals.iter().find(|n| n.first().is_some_and(|b| b & 0x1f == t)).map(|n| n.to_vec());
+    let find = |t: u8| {
+        nals.iter()
+            .find(|n| n.first().is_some_and(|b| b & 0x1f == t))
+            .map(|n| n.to_vec())
+    };
     match (find(7), find(8)) {
         (Some(s), Some(p)) => Ok((s, p)),
         _ => Err("the encoder returned no SPS / PPS".into()),
@@ -633,7 +703,11 @@ pub fn split_parameter_sets(data: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String> {
 /// The VPS, SPS and PPS NAL units of an Annex B byte string from an HEVC encoder.
 pub fn split_hevc_parameter_sets(data: &[u8]) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), String> {
     let nals = annex_b_nals(data);
-    let find = |t: u8| nals.iter().find(|n| nal_type(Codec::Hevc, n) == Some(t)).map(|n| n.to_vec());
+    let find = |t: u8| {
+        nals.iter()
+            .find(|n| nal_type(Codec::Hevc, n) == Some(t))
+            .map(|n| n.to_vec())
+    };
     match (find(32), find(33), find(34)) {
         (Some(v), Some(s), Some(p)) => Ok((v, s, p)),
         _ => Err("the encoder returned no VPS / SPS / PPS".into()),
@@ -646,16 +720,33 @@ mod tests {
 
     #[test]
     fn splits_annex_b_with_both_start_code_forms() {
-        let s = [0, 0, 0, 1, 0x67, 1, 2, 0, 0, 1, 0x68, 3, 0, 0, 0, 1, 0x65, 9, 9, 0];
+        let s = [
+            0, 0, 0, 1, 0x67, 1, 2, 0, 0, 1, 0x68, 3, 0, 0, 0, 1, 0x65, 9, 9, 0,
+        ];
         let n = annex_b_nals(&s);
-        assert_eq!(n, vec![&[0x67, 1, 2][..], &[0x68, 3][..], &[0x65, 9, 9][..]]);
-        assert_eq!(annex_b_to_length_prefixed(&s).unwrap(), [0, 0, 0, 3, 0x65, 9, 9]);
-        assert_eq!(split_parameter_sets(&s).unwrap(), (vec![0x67, 1, 2], vec![0x68, 3]));
+        assert_eq!(
+            n,
+            vec![&[0x67, 1, 2][..], &[0x68, 3][..], &[0x65, 9, 9][..]]
+        );
+        assert_eq!(
+            annex_b_to_length_prefixed(&s).unwrap(),
+            [0, 0, 0, 3, 0x65, 9, 9]
+        );
+        assert_eq!(
+            split_parameter_sets(&s).unwrap(),
+            (vec![0x67, 1, 2], vec![0x68, 3])
+        );
     }
 
     #[test]
     fn hostile_streams_are_errors() {
-        for s in [&[][..], &[0, 0, 1], &[1, 2, 3], &[0, 0, 1, 0x09, 0xf0], &[0, 0, 0, 1, 0x67, 1]] {
+        for s in [
+            &[][..],
+            &[0, 0, 1],
+            &[1, 2, 3],
+            &[0, 0, 1, 0x09, 0xf0],
+            &[0, 0, 0, 1, 0x67, 1],
+        ] {
             assert!(annex_b_to_length_prefixed(s).is_err(), "{s:?}");
         }
         assert!(split_parameter_sets(&[0, 0, 1, 0x65, 1]).is_err());
@@ -667,7 +758,17 @@ mod tests {
         let y: Vec<u8> = (0..8).collect();
         let (u, v) = (vec![100, 101], vec![200, 201]);
         let mut buf = vec![0u8; pitch * h * 3 / 2];
-        fill_nv12(Locked { data: &mut buf, pitch }, &y, &u, &v, w, h);
+        fill_nv12(
+            Locked {
+                data: &mut buf,
+                pitch,
+            },
+            &y,
+            &u,
+            &v,
+            w,
+            h,
+        );
         assert_eq!(&buf[..4], &[0, 1, 2, 3]);
         assert_eq!(&buf[pitch..pitch + 4], &[4, 5, 6, 7]);
         assert_eq!(&buf[pitch * h..pitch * h + 4], &[100, 200, 101, 201]);
@@ -680,10 +781,40 @@ mod tests {
         let y = vec![7u8; w * h];
         let (u, v) = (vec![1u8; w * h / 4], vec![2u8; w * h / 4]);
         let mut buf = vec![0u8; pitch * h * 3 / 2];
-        fill_nv12(Locked { data: &mut buf, pitch }, &y, &u, &v, w, h);
+        fill_nv12(
+            Locked {
+                data: &mut buf,
+                pitch,
+            },
+            &y,
+            &u,
+            &v,
+            w,
+            h,
+        );
         // and empty or zero-sized inputs
-        fill_nv12(Locked { data: &mut [], pitch: 0 }, &[], &[], &[], 0, 0);
-        fill_nv12(Locked { data: &mut buf, pitch }, &[1], &[], &[], 1, 1);
+        fill_nv12(
+            Locked {
+                data: &mut [],
+                pitch: 0,
+            },
+            &[],
+            &[],
+            &[],
+            0,
+            0,
+        );
+        fill_nv12(
+            Locked {
+                data: &mut buf,
+                pitch,
+            },
+            &[1],
+            &[],
+            &[],
+            1,
+            1,
+        );
     }
 
     #[test]
@@ -692,19 +823,48 @@ mod tests {
         let y: Vec<u16> = vec![0, 1, 64, 1023, 940, 512, 4, 1019];
         let (u, v) = (vec![512, 960], vec![64, 1023]);
         let mut buf = vec![0xAAu8; pitch * h * 3 / 2];
-        fill_p010(Locked { data: &mut buf, pitch }, &y, &u, &v, w, h);
+        fill_p010(
+            Locked {
+                data: &mut buf,
+                pitch,
+            },
+            &y,
+            &u,
+            &v,
+            w,
+            h,
+        );
         let sample = |at: usize| u16::from_le_bytes([buf[at], buf[at + 1]]);
-        assert_eq!((0..4).map(|x| sample(x * 2)).collect::<Vec<_>>(), vec![0, 1 << 6, 64 << 6, 1023 << 6]);
-        assert_eq!((0..4).map(|x| sample(pitch + x * 2)).collect::<Vec<_>>(), vec![940 << 6, 512 << 6, 4 << 6, 1019 << 6]);
+        assert_eq!(
+            (0..4).map(|x| sample(x * 2)).collect::<Vec<_>>(),
+            vec![0, 1 << 6, 64 << 6, 1023 << 6]
+        );
+        assert_eq!(
+            (0..4).map(|x| sample(pitch + x * 2)).collect::<Vec<_>>(),
+            vec![940 << 6, 512 << 6, 4 << 6, 1019 << 6]
+        );
         // chroma after pitch * h bytes: Cb Cr Cb Cr
         let c = pitch * h;
-        assert_eq!((0..4).map(|x| sample(c + x * 2)).collect::<Vec<_>>(), vec![512 << 6, 64 << 6, 960 << 6, 1023 << 6]);
+        assert_eq!(
+            (0..4).map(|x| sample(c + x * 2)).collect::<Vec<_>>(),
+            vec![512 << 6, 64 << 6, 960 << 6, 1023 << 6]
+        );
         // the low 6 bits of every sample are zero and the padding is untouched
         assert!((0..4).all(|x| sample(x * 2) & 0x3f == 0));
         assert_eq!(&buf[8..12], &[0xAA; 4]);
         // a code beyond 10 bits is masked, not shifted into the next field
         let mut b2 = vec![0u8; pitch * h * 3 / 2];
-        fill_p010(Locked { data: &mut b2, pitch }, &[0xFFFF; 8], &[0xFFFF; 2], &[0xFFFF; 2], w, h);
+        fill_p010(
+            Locked {
+                data: &mut b2,
+                pitch,
+            },
+            &[0xFFFF; 8],
+            &[0xFFFF; 2],
+            &[0xFFFF; 2],
+            w,
+            h,
+        );
         assert_eq!(u16::from_le_bytes([b2[0], b2[1]]), 1023 << 6);
     }
 
@@ -716,13 +876,53 @@ mod tests {
             let mut buf = vec![0u8; pitch * h * 3 / 2];
             let y = vec![1000u16; w * h];
             let (u, v) = (vec![500u16; w * h / 4], vec![600u16; w * h / 4]);
-            fill_p010(Locked { data: &mut buf, pitch }, &y, &u, &v, w, h);
+            fill_p010(
+                Locked {
+                    data: &mut buf,
+                    pitch,
+                },
+                &y,
+                &u,
+                &v,
+                w,
+                h,
+            );
         }
         // empty and short inputs, a buffer shorter than the pitch says
-        fill_p010(Locked { data: &mut [], pitch: 0 }, &[], &[], &[], 0, 0);
-        fill_p010(Locked { data: &mut [0u8; 5], pitch: 64 }, &[1; 64], &[1; 16], &[1; 16], 8, 8);
+        fill_p010(
+            Locked {
+                data: &mut [],
+                pitch: 0,
+            },
+            &[],
+            &[],
+            &[],
+            0,
+            0,
+        );
+        fill_p010(
+            Locked {
+                data: &mut [0u8; 5],
+                pitch: 64,
+            },
+            &[1; 64],
+            &[1; 16],
+            &[1; 16],
+            8,
+            8,
+        );
         let mut buf = vec![0u8; 64];
-        fill_p010(Locked { data: &mut buf, pitch: 16 }, &[1], &[], &[], 1, 1);
+        fill_p010(
+            Locked {
+                data: &mut buf,
+                pitch: 16,
+            },
+            &[1],
+            &[],
+            &[],
+            1,
+            1,
+        );
     }
 
     #[test]
@@ -740,12 +940,25 @@ mod tests {
             sar: None,
             bframes: false,
         };
-        let caps = |ten_bit| Caps { ten_bit, max_bframes: 2, min_size: (130, 128), max_size: (8192, 8192) };
+        let caps = |ten_bit| Caps {
+            ten_bit,
+            max_bframes: 2,
+            min_size: (130, 128),
+            max_size: (8192, 8192),
+        };
         assert!(check_caps(&caps(true), &cfg(Profile::HevcMain10)).is_ok());
         let e = check_caps(&caps(false), &cfg(Profile::HevcMain10)).unwrap_err();
         assert!(e.contains("10-bit"), "{e}");
-        for p in [Profile::HevcMain, Profile::Main, Profile::High, Profile::Baseline] {
-            assert!(check_caps(&caps(false), &cfg(p)).is_ok(), "{p:?} does not need 10-bit");
+        for p in [
+            Profile::HevcMain,
+            Profile::Main,
+            Profile::High,
+            Profile::Baseline,
+        ] {
+            assert!(
+                check_caps(&caps(false), &cfg(p)).is_ok(),
+                "{p:?} does not need 10-bit"
+            );
         }
     }
 
@@ -781,12 +994,12 @@ mod tests {
             &[0, 0, 0, 1, 0x42, 0x01, 3],        // SPS
             &[0, 0, 1, 0x44, 0x01, 4],           // PPS
             &[0, 0, 1, 0x4e, 0x01, 5, 5],        // prefix SEI
-            &[0, 0, 0, 1, 0x28, 0x01, 6, 6, 6],  // IDR_N_LP: its header byte is 0x28, a PPS to an H.264 reader
-            &[0, 0, 1, 0x26, 0x01, 7],           // IDR_W_RADL
-            &[0, 0, 1, 0x02, 0x01, 8],           // TRAIL_R
-            &[0, 0, 1, 0x50, 0x01, 9],           // suffix SEI
-            &[0, 0, 1, 0x48, 0x01],              // end of sequence
-            &[0, 0, 1, 0x4a, 0x01],              // end of bitstream
+            &[0, 0, 0, 1, 0x28, 0x01, 6, 6, 6], // IDR_N_LP: its header byte is 0x28, a PPS to an H.264 reader
+            &[0, 0, 1, 0x26, 0x01, 7],          // IDR_W_RADL
+            &[0, 0, 1, 0x02, 0x01, 8],          // TRAIL_R
+            &[0, 0, 1, 0x50, 0x01, 9],          // suffix SEI
+            &[0, 0, 1, 0x48, 0x01],             // end of sequence
+            &[0, 0, 1, 0x4a, 0x01],             // end of bitstream
         ]
         .concat();
         let out = annex_b_to_length_prefixed_for(Codec::Hevc, &s).unwrap();
@@ -805,11 +1018,20 @@ mod tests {
 
     #[test]
     fn hevc_parameter_sets_are_found_by_type() {
-        let s = [0, 0, 0, 1, 0x40, 0x01, 1, 0, 0, 0, 1, 0x42, 0x01, 2, 0, 0, 1, 0x44, 0x01, 3, 0, 0, 1, 0x26, 0x01, 4];
-        assert_eq!(split_hevc_parameter_sets(&s).unwrap(), (vec![0x40, 1, 1], vec![0x42, 1, 2], vec![0x44, 1, 3]));
+        let s = [
+            0, 0, 0, 1, 0x40, 0x01, 1, 0, 0, 0, 1, 0x42, 0x01, 2, 0, 0, 1, 0x44, 0x01, 3, 0, 0, 1,
+            0x26, 0x01, 4,
+        ];
+        assert_eq!(
+            split_hevc_parameter_sets(&s).unwrap(),
+            (vec![0x40, 1, 1], vec![0x42, 1, 2], vec![0x44, 1, 3])
+        );
         // an H.264 SPS / PPS pair has none of them; one missing is an error
         assert!(split_hevc_parameter_sets(&[0, 0, 0, 1, 0x67, 1, 2, 0, 0, 1, 0x68, 3]).is_err());
-        assert!(split_hevc_parameter_sets(&[0, 0, 0, 1, 0x40, 0x01, 1, 0, 0, 1, 0x42, 0x01, 2]).is_err());
+        assert!(
+            split_hevc_parameter_sets(&[0, 0, 0, 1, 0x40, 0x01, 1, 0, 0, 1, 0x42, 0x01, 2])
+                .is_err()
+        );
     }
 
     #[test]
@@ -825,7 +1047,10 @@ mod tests {
             &[0, 0, 1, 0x48, 0x01],
             &[0, 0, 1, 0xff],
         ] {
-            assert!(annex_b_to_length_prefixed_for(Codec::Hevc, s).is_err(), "{s:?}");
+            assert!(
+                annex_b_to_length_prefixed_for(Codec::Hevc, s).is_err(),
+                "{s:?}"
+            );
         }
         // truncated slices are kept as they are (the decoder reports them), never panic
         assert!(annex_b_to_length_prefixed_for(Codec::Hevc, &[0, 0, 1, 0x26, 0x01]).is_ok());

@@ -93,7 +93,11 @@ pub trait RecoveryStore: Send + Sync {
     /// The areas in the store (default: those with entries).
     fn areas(&self) -> std::result::Result<Vec<String>, String> {
         let names = self.list()?;
-        let set: BTreeSet<String> = names.iter().filter_map(|n| n.split_once('/')).map(|(a, _)| a.to_string()).collect();
+        let set: BTreeSet<String> = names
+            .iter()
+            .filter_map(|n| n.split_once('/'))
+            .map(|(a, _)| a.to_string())
+            .collect();
         Ok(set.into_iter().collect())
     }
     /// Hold area `area` exclusively, if the store has locks (default: it hasn't).
@@ -133,27 +137,47 @@ pub struct MemoryStore {
 
 impl Default for MemoryStore {
     fn default() -> Self {
-        Self { entries: Default::default(), held: Default::default(), locks: true, announces: false, now: Mutex::new(Some(1_000_000)) }
+        Self {
+            entries: Default::default(),
+            held: Default::default(),
+            locks: true,
+            announces: false,
+            now: Mutex::new(Some(1_000_000)),
+        }
     }
 }
 
 impl MemoryStore {
     /// A store without locks: areas are held with heartbeats.
     pub fn without_locks() -> Self {
-        Self { locks: false, ..Self::default() }
+        Self {
+            locks: false,
+            ..Self::default()
+        }
     }
 
     /// A store without locks whose apps also announce the areas they hold for as long as they run
     /// (as the browser's Web Locks do).
     pub fn announcing() -> Self {
-        Self { announces: true, ..Self::without_locks() }
+        Self {
+            announces: true,
+            ..Self::without_locks()
+        }
     }
 
     fn hold(&self, area: &str) -> Option<Hold> {
-        if !self.held.lock().unwrap_or_else(|e| e.into_inner()).insert(area.to_string()) {
+        if !self
+            .held
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(area.to_string())
+        {
             return None;
         }
-        Some(Box::new(MemoryHold { held: self.held.clone(), area: area.to_string() }))
+        Some(Box::new(MemoryHold {
+            held: self.held.clone(),
+            area: area.to_string(),
+        }))
     }
 
     /// Set the clock heartbeats are judged by.
@@ -174,7 +198,10 @@ struct MemoryHold {
 
 impl Drop for MemoryHold {
     fn drop(&mut self) {
-        self.held.lock().unwrap_or_else(|e| e.into_inner()).remove(&self.area);
+        self.held
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&self.area);
     }
 }
 
@@ -183,7 +210,10 @@ impl RecoveryStore for MemoryStore {
         Ok(self.entries().keys().cloned().collect())
     }
     fn read(&self, name: &str) -> std::result::Result<Vec<u8>, String> {
-        self.entries().get(name).cloned().ok_or_else(|| format!("{name}: no such recovery entry"))
+        self.entries()
+            .get(name)
+            .cloned()
+            .ok_or_else(|| format!("{name}: no such recovery entry"))
     }
     fn write(&self, name: &str, bytes: &[u8]) -> std::result::Result<(), String> {
         self.entries().insert(name.to_string(), bytes.to_vec());
@@ -209,7 +239,12 @@ impl RecoveryStore for MemoryStore {
         self.hold(area)
     }
     fn announced(&self, area: &str) -> Option<bool> {
-        self.announces.then(|| self.held.lock().unwrap_or_else(|e| e.into_inner()).contains(area))
+        self.announces.then(|| {
+            self.held
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .contains(area)
+        })
     }
     fn now(&self) -> Option<i64> {
         *self.now.lock().unwrap_or_else(|e| e.into_inner())
@@ -233,7 +268,10 @@ impl FolderStore {
 
     /// Is `part` a plain file or folder name (no separators, not hidden)?
     fn plain(part: &str) -> bool {
-        !part.starts_with('.') && std::path::Path::new(part).file_name().is_some_and(|f| f == part)
+        !part.starts_with('.')
+            && std::path::Path::new(part)
+                .file_name()
+                .is_some_and(|f| f == part)
     }
 
     /// The folder of area `area`.
@@ -261,7 +299,10 @@ impl FolderStore {
         };
         Ok(entries
             .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_ok_and(|t| if dirs { t.is_dir() } else { t.is_file() }))
+            .filter(|e| {
+                e.file_type()
+                    .is_ok_and(|t| if dirs { t.is_dir() } else { t.is_file() })
+            })
             .filter_map(|e| e.file_name().to_str().map(str::to_string))
             // Lock files, and files left by an interrupted atomic write.
             .filter(|n| Self::plain(n))
@@ -274,7 +315,11 @@ impl RecoveryStore for FolderStore {
     fn list(&self) -> std::result::Result<Vec<String>, String> {
         let mut out = vec![];
         for area in self.areas()? {
-            out.extend(Self::names(&self.0.join(&area), false)?.into_iter().map(|f| format!("{area}/{f}")));
+            out.extend(
+                Self::names(&self.0.join(&area), false)?
+                    .into_iter()
+                    .map(|f| format!("{area}/{f}")),
+            );
         }
         Ok(out)
     }
@@ -292,7 +337,9 @@ impl RecoveryStore for FolderStore {
     fn remove(&self, name: &str) -> std::result::Result<(), String> {
         let f = self.file(name)?;
         match std::fs::remove_file(&f) {
-            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(format!("{}: {e}", f.display())),
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+                Err(format!("{}: {e}", f.display()))
+            }
             _ => Ok(()),
         }
     }
@@ -380,7 +427,10 @@ pub fn store(s: &Session) -> Option<Arc<dyn RecoveryStore>> {
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let folder = Some(s.prefs.recovery_folder.trim()).filter(|f| !f.is_empty()).map(str::to_string).or_else(|| s.recovery.default_folder.clone());
+        let folder = Some(s.prefs.recovery_folder.trim())
+            .filter(|f| !f.is_empty())
+            .map(str::to_string)
+            .or_else(|| s.recovery.default_folder.clone());
         folder.map(|f| Arc::new(FolderStore::new(f)) as Arc<dyn RecoveryStore>)
     }
     #[cfg(target_arch = "wasm32")]
@@ -416,7 +466,11 @@ fn beat(store: &dyn RecoveryStore, area: &str) -> std::result::Result<i64, Strin
 /// Without a clock every app counts as running.
 fn beating(store: &dyn RecoveryStore, area: &str, stale: i64, mine: Option<i64>) -> bool {
     let Some(now) = store.now() else { return true };
-    let at = store.read(&format!("{area}/{BEAT}")).ok().and_then(|b| String::from_utf8(b).ok()).and_then(|t| t.trim().parse::<i64>().ok());
+    let at = store
+        .read(&format!("{area}/{BEAT}"))
+        .ok()
+        .and_then(|b| String::from_utf8(b).ok())
+        .and_then(|t| t.trim().parse::<i64>().ok());
     at.is_some_and(|t| now.saturating_sub(t) <= stale && Some(t) != mine)
 }
 
@@ -437,10 +491,16 @@ pub fn heartbeat(s: &mut Session) -> Vec<u64> {
 /// gone (its heartbeat stopped while its timers were paused, as browsers do to background tabs); a
 /// copy it restored is its own now, so both are kept. A store that can't be listed changes nothing.
 pub fn repair(s: &mut Session) -> Vec<u64> {
-    let Some(names) = s.recovery.own.as_ref().and_then(|o| o.store.list().ok()) else { return vec![] };
+    let Some(names) = s.recovery.own.as_ref().and_then(|o| o.store.list().ok()) else {
+        return vec![];
+    };
     let mut lost = vec![];
     for st in &mut s.docs {
-        if st.recovery.as_ref().is_some_and(|c| !names.iter().any(|n| n.strip_suffix(DOC_EXT) == Some(c.file.as_str()))) {
+        if st.recovery.as_ref().is_some_and(|c| {
+            !names
+                .iter()
+                .any(|n| n.strip_suffix(DOC_EXT) == Some(c.file.as_str()))
+        }) {
             st.recovery = None;
             lost.push(st.uid);
         }
@@ -473,7 +533,12 @@ pub fn claim(s: &mut Session, store: &Arc<dyn RecoveryStore>) -> Result<String> 
                 (store.announce(&area), true)
             }
         };
-        s.recovery.own = Some(Own { store: store.clone(), area: area.clone(), hold, beats });
+        s.recovery.own = Some(Own {
+            store: store.clone(),
+            area: area.clone(),
+            hold,
+            beats,
+        });
         return Ok(area);
     }
     Err(EngineError::Other("no free recovery area".into()))
@@ -484,7 +549,12 @@ pub fn release(s: &mut Session) {
     for st in &mut s.docs {
         st.recovery = None;
     }
-    let Some(Own { store, area, hold, .. }) = s.recovery.own.take() else { return };
+    let Some(Own {
+        store, area, hold, ..
+    }) = s.recovery.own.take()
+    else {
+        return;
+    };
     let mine = |n: &String| n.split_once('/').is_some_and(|(a, _)| a == area);
     for name in store.list().unwrap_or_default().iter().filter(|n| mine(n)) {
         let _ = store.remove(name);
@@ -500,7 +570,15 @@ pub fn leave(s: &mut Session) {
     for st in &mut s.docs {
         st.recovery = None;
     }
-    let Some(Own { store, area, hold, beats }) = s.recovery.own.take() else { return };
+    let Some(Own {
+        store,
+        area,
+        hold,
+        beats,
+    }) = s.recovery.own.take()
+    else {
+        return;
+    };
     if beats {
         // Best effort: if the heartbeat stays, the copies are offered once it is stale.
         let _ = store.remove(&format!("{area}/{BEAT}"));
@@ -567,7 +645,10 @@ static NAMES: Mutex<Vec<Named>> = Mutex::new(Vec::new());
 fn blob_name(bytes: &Arc<Vec<u8>>) -> String {
     let mut names = NAMES.lock().unwrap_or_else(|e| e.into_inner());
     names.retain(|(w, _)| w.strong_count() > 0);
-    if let Some((_, name)) = names.iter().find(|(w, _)| std::ptr::eq(w.as_ptr(), Arc::as_ptr(bytes))) {
+    if let Some((_, name)) = names
+        .iter()
+        .find(|(w, _)| std::ptr::eq(w.as_ptr(), Arc::as_ptr(bytes)))
+    {
         return name.clone();
     }
     let hash = |seed: u8| {
@@ -576,14 +657,23 @@ fn blob_name(bytes: &Arc<Vec<u8>>) -> String {
         bytes.as_slice().hash(&mut h);
         h.finish()
     };
-    let name = format!("img-{:016x}{:016x}-{}{BLOB_EXT}", hash(1), hash(2), bytes.len());
+    let name = format!(
+        "img-{:016x}{:016x}-{}{BLOB_EXT}",
+        hash(1),
+        hash(2),
+        bytes.len()
+    );
     names.push((Arc::downgrade(bytes), name.clone()));
     name
 }
 
 /// The MIME type of a linked image's preview (JPEG or PNG), as a save names it.
 fn proxy_mime(bytes: &[u8]) -> &'static str {
-    if bytes.starts_with(&[0xff, 0xd8]) { "image/jpeg" } else { vectorcraft_doc::links::PROXY_MIME }
+    if bytes.starts_with(&[0xff, 0xd8]) {
+        "image/jpeg"
+    } else {
+        vectorcraft_doc::links::PROXY_MIME
+    }
 }
 
 /// Remove the image entries of `area` no copy's details name any more. Best effort: an entry left
@@ -592,10 +682,18 @@ fn sweep(store: &dyn RecoveryStore, area: &str) {
     let Ok(names) = store.list() else { return };
     let in_area = |n: &&String| n.split_once('/').is_some_and(|(a, _)| a == area);
     let mut named = BTreeSet::new();
-    for meta in names.iter().filter(in_area).filter_map(|n| n.strip_suffix(META_EXT)) {
+    for meta in names
+        .iter()
+        .filter(in_area)
+        .filter_map(|n| n.strip_suffix(META_EXT))
+    {
         named.extend(read_meta(store, meta).images.into_values().map(|r| r.blob));
     }
-    for n in names.iter().filter(in_area).filter(|n| n.ends_with(BLOB_EXT)) {
+    for n in names
+        .iter()
+        .filter(in_area)
+        .filter(|n| n.ends_with(BLOB_EXT))
+    {
         if n.split_once('/').is_some_and(|(_, b)| !named.contains(b)) {
             let _ = store.remove(n);
         }
@@ -603,7 +701,11 @@ fn sweep(store: &dyn RecoveryStore, area: &str) {
 }
 
 fn read_meta(store: &dyn RecoveryStore, file: &str) -> Meta {
-    store.read(&format!("{file}{META_EXT}")).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+    store
+        .read(&format!("{file}{META_EXT}"))
+        .ok()
+        .and_then(|b| serde_json::from_slice(&b).ok())
+        .unwrap_or_default()
 }
 
 /// A copy of one document, snapshotted and ready to encode and store anywhere (the background
@@ -630,7 +732,11 @@ impl RecoveryJob {
         let mut lean = Document::clone(doc);
         let blobs = std::mem::take(&mut lean.images);
         let enc = self.save.encode_doc(&lean).map_err(|e| e.to_string())?;
-        let bytes = enc.files.first().map(|f| f.1.as_slice()).ok_or("nothing encoded")?;
+        let bytes = enc
+            .files
+            .first()
+            .map(|f| f.1.as_slice())
+            .ok_or("nothing encoded")?;
         let mut meta = self.meta.clone();
         let mut images = vec![];
         for (key, b) in &blobs {
@@ -639,13 +745,24 @@ impl RecoveryJob {
                 None => (b.mime.as_str(), &b.bytes, false),
             };
             let blob = blob_name(data);
-            meta.images.insert(key.clone(), ImageRef { mime: mime.into(), blob: blob.clone(), proxy });
+            meta.images.insert(
+                key.clone(),
+                ImageRef {
+                    mime: mime.into(),
+                    blob: blob.clone(),
+                    proxy,
+                },
+            );
             images.push((blob, data));
         }
         let meta_bytes = serde_json::to_vec_pretty(&meta).map_err(|e| e.to_string())?;
         let area = self.file.split_once('/').map_or("", |(a, _)| a);
         let _turn = WRITES.lock().unwrap_or_else(|e| e.into_inner());
-        let have: BTreeSet<String> = if images.is_empty() { BTreeSet::new() } else { store.list()?.into_iter().collect() };
+        let have: BTreeSet<String> = if images.is_empty() {
+            BTreeSet::new()
+        } else {
+            store.list()?.into_iter().collect()
+        };
         let mut image_bytes = 0;
         for (blob, data) in images {
             let name = format!("{area}/{blob}");
@@ -659,18 +776,27 @@ impl RecoveryJob {
         // would pair the new document with the old copy's images: when the new document has
         // images the old details don't name, they name both until the new document is in.
         let old = read_meta(store, &self.file).images;
-        if meta.images.iter().any(|(k, r)| old.get(k).is_none_or(|o| o.blob != r.blob)) {
+        if meta
+            .images
+            .iter()
+            .any(|(k, r)| old.get(k).is_none_or(|o| o.blob != r.blob))
+        {
             let mut both = meta.clone();
             for (k, r) in old {
                 both.images.entry(k).or_insert(r);
             }
-            store.write(&meta_name, &serde_json::to_vec_pretty(&both).map_err(|e| e.to_string())?)?;
+            store.write(
+                &meta_name,
+                &serde_json::to_vec_pretty(&both).map_err(|e| e.to_string())?,
+            )?;
         }
         store.write(&format!("{}{DOC_EXT}", self.file), bytes)?;
         store.write(&meta_name, &meta_bytes)?;
         // Images this copy no longer shows, nor any other.
         sweep(store, area);
-        Ok(json!({ "file": self.file, "title": self.title, "bytes": bytes.len(), "imageBytes": image_bytes }))
+        Ok(
+            json!({ "file": self.file, "title": self.title, "bytes": bytes.len(), "imageBytes": image_bytes }),
+        )
     }
 
     /// Once stored: the document (if still open) remembers the copy, so it isn't written again
@@ -678,7 +804,10 @@ impl RecoveryJob {
     /// meanwhile has nothing left to recover: its copy goes at once.
     pub fn finish(self, s: &mut Session) {
         let snapshot = self.save.snapshot().clone();
-        let copy = RecoveryCopy { file: self.file.clone(), doc: snapshot };
+        let copy = RecoveryCopy {
+            file: self.file.clone(),
+            doc: snapshot,
+        };
         match s.document_mut(self.uid).filter(|st| st.is_dirty()) {
             Some(st) => st.recovery = Some(copy),
             None => remove_copy(s, &self.file),
@@ -697,7 +826,11 @@ pub fn skip_reason(s: &Session, st: &DocState) -> Option<&'static str> {
     if !st.is_dirty() {
         return Some("no unsaved changes");
     }
-    if st.recovery.as_ref().is_some_and(|c| Arc::ptr_eq(&c.doc, &st.doc)) {
+    if st
+        .recovery
+        .as_ref()
+        .is_some_and(|c| Arc::ptr_eq(&c.doc, &st.doc))
+    {
         return Some("unchanged since its last recovery copy");
     }
     if s.prefs.recovery_off_for_complex && object_count(&st.doc) > COMPLEX_OBJECTS {
@@ -708,15 +841,34 @@ pub fn skip_reason(s: &Session, st: &DocState) -> Option<&'static str> {
 
 /// A file name part from a title: letters, digits, `-`, `_` and spaces (others as `-`).
 fn safe_stem(title: &str) -> String {
-    let stem: String = fileio::file_stem(title).chars().map(|c| if c.is_alphanumeric() || matches!(c, '-' | '_' | ' ') { c } else { '-' }).collect();
+    let stem: String = fileio::file_stem(title)
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || matches!(c, '-' | '_' | ' ') {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
     let stem = stem.trim().chars().take(60).collect::<String>();
-    if stem.is_empty() { "Untitled".into() } else { stem }
+    if stem.is_empty() {
+        "Untitled".into()
+    } else {
+        stem
+    }
 }
 
 /// The copies among store entries `names`, each once, as `(area, "<area>/<name>")`.
 fn copies_in(names: &[String]) -> Vec<(String, String)> {
-    let mut v: Vec<(String, String)> =
-        names.iter().filter_map(|n| n.strip_suffix(DOC_EXT)).filter_map(|f| f.split_once('/').map(|(a, _)| (a.to_string(), f.to_string()))).collect();
+    let mut v: Vec<(String, String)> = names
+        .iter()
+        .filter_map(|n| n.strip_suffix(DOC_EXT))
+        .filter_map(|f| {
+            f.split_once('/')
+                .map(|(a, _)| (a.to_string(), f.to_string()))
+        })
+        .collect();
     v.sort();
     v.dedup();
     v
@@ -724,32 +876,53 @@ fn copies_in(names: &[String]) -> Vec<(String, String)> {
 
 /// A copy name `<area>/<stem>-<n>` none of `taken` has.
 fn fresh_name(area: &str, stem: &str, taken: &[String]) -> String {
-    (1..=10_000).map(|n| format!("{area}/{stem}-{n}")).find(|f| !taken.contains(f)).unwrap_or_else(|| format!("{area}/{stem}-x"))
+    (1..=10_000)
+        .map(|n| format!("{area}/{stem}-{n}"))
+        .find(|f| !taken.contains(f))
+        .unwrap_or_else(|| format!("{area}/{stem}-x"))
 }
 
 /// The jobs for every document that needs a copy now, in this session's area of `store` (taken
 /// when it has none and a copy is needed) → (jobs, skipped: `[{title, reason}]` for modified
 /// documents that get none).
-pub fn jobs(s: &mut Session, store: &Arc<dyn RecoveryStore>) -> Result<(Vec<RecoveryJob>, Vec<Value>)> {
+pub fn jobs(
+    s: &mut Session,
+    store: &Arc<dyn RecoveryStore>,
+) -> Result<(Vec<RecoveryJob>, Vec<Value>)> {
     // Copies another app removed are written again.
     repair(s);
     let skipped: Vec<Value> = s
         .documents()
         .iter()
         .filter(|st| st.is_dirty())
-        .filter_map(|st| skip_reason(s, st).map(|why| json!({ "title": st.title(), "reason": why })))
+        .filter_map(|st| {
+            skip_reason(s, st).map(|why| json!({ "title": st.title(), "reason": why }))
+        })
         .collect();
     if s.documents().iter().all(|st| skip_reason(s, st).is_some()) {
         return Ok((vec![], skipped));
     }
     let area = claim(s, store)?;
-    let mut taken: Vec<String> =
-        copies_in(&store.list().map_err(EngineError::Other)?).into_iter().filter(|(a, _)| *a == area).map(|(_, f)| f).collect();
-    taken.extend(s.documents().iter().filter_map(|d| d.recovery.as_ref()).map(|c| c.file.clone()));
-    let native = fileio::format("vectorcraft").ok_or_else(|| EngineError::Other("no native format".into()))?;
+    let mut taken: Vec<String> = copies_in(&store.list().map_err(EngineError::Other)?)
+        .into_iter()
+        .filter(|(a, _)| *a == area)
+        .map(|(_, f)| f)
+        .collect();
+    taken.extend(
+        s.documents()
+            .iter()
+            .filter_map(|d| d.recovery.as_ref())
+            .map(|c| c.file.clone()),
+    );
+    let native = fileio::format("vectorcraft")
+        .ok_or_else(|| EngineError::Other("no native format".into()))?;
     let saved = store.now();
     let mut out = vec![];
-    for st in s.documents().iter().filter(|st| skip_reason(s, st).is_none()) {
+    for st in s
+        .documents()
+        .iter()
+        .filter(|st| skip_reason(s, st).is_none())
+    {
         let title = st.title();
         let file = match &st.recovery {
             Some(c) => c.file.clone(),
@@ -780,7 +953,13 @@ pub fn jobs(s: &mut Session, store: &Arc<dyn RecoveryStore>) -> Result<(Vec<Reco
             // Filled in as the copy is written.
             images: BTreeMap::new(),
         };
-        out.push(RecoveryJob { uid: st.uid, file, title, meta, save });
+        out.push(RecoveryJob {
+            uid: st.uid,
+            file,
+            title,
+            meta,
+            save,
+        });
     }
     Ok((out, skipped))
 }
@@ -796,7 +975,9 @@ fn remove_copy(s: &Session, file: &str) {
 
 /// Document `uid` was saved, reverted or closed: its recovery copy goes.
 pub fn forget(s: &mut Session, uid: u64) {
-    let Some(copy) = s.document_mut(uid).and_then(|st| st.recovery.take()) else { return };
+    let Some(copy) = s.document_mut(uid).and_then(|st| st.recovery.take()) else {
+        return;
+    };
     remove_copy(s, &copy.file);
 }
 
@@ -807,7 +988,12 @@ pub fn forget_all(s: &mut Session) {
 
 /// The copies of documents with no unsaved changes left (undone back to the saved state) go.
 pub fn forget_clean(s: &mut Session) {
-    let uids: Vec<u64> = s.documents().iter().filter(|d| !d.is_dirty() && d.recovery.is_some()).map(|d| d.uid).collect();
+    let uids: Vec<u64> = s
+        .documents()
+        .iter()
+        .filter(|d| !d.is_dirty() && d.recovery.is_some())
+        .map(|d| d.uid)
+        .collect();
     for uid in uids {
         forget(s, uid);
     }
@@ -842,8 +1028,18 @@ enum Owner {
 /// another app leaves it alone meanwhile. In a store without locks an area is gone only when
 /// nothing says its app runs: no announcement (or the store can't tell) and no heartbeat for three
 /// intervals but the one this session wrote taking it over.
-fn owner(s: &mut Session, store: &dyn RecoveryStore, area: &str, hold: &mut Vec<Hold>, take: bool) -> Owner {
-    if s.recovery.own.as_ref().is_some_and(|o| o.area == area && o.store.location() == store.location()) {
+fn owner(
+    s: &mut Session,
+    store: &dyn RecoveryStore,
+    area: &str,
+    hold: &mut Vec<Hold>,
+    take: bool,
+) -> Owner {
+    if s.recovery
+        .own
+        .as_ref()
+        .is_some_and(|o| o.area == area && o.store.location() == store.location())
+    {
         return Owner::Mine;
     }
     match store.lock(area) {
@@ -853,7 +1049,14 @@ fn owner(s: &mut Session, store: &dyn RecoveryStore, area: &str, hold: &mut Vec<
         }
         Ok(Lock::Busy) | Err(_) => Owner::Running,
         Ok(Lock::Unsupported) => {
-            if store.announced(area).unwrap_or(false) || beating(store, area, stale_after(s), s.recovery.adopted.get(area).copied()) {
+            if store.announced(area).unwrap_or(false)
+                || beating(
+                    store,
+                    area,
+                    stale_after(s),
+                    s.recovery.adopted.get(area).copied(),
+                )
+            {
                 return Owner::Running;
             }
             // Best effort: without it another app might offer the copies too, which loses nothing.
@@ -868,7 +1071,10 @@ fn owner(s: &mut Session, store: &dyn RecoveryStore, area: &str, hold: &mut Vec<
 /// Tidy away a gone app's area `area` once no copies are left in it, then let it go (`hold`).
 fn tidy(store: &dyn RecoveryStore, area: &str, hold: Vec<Hold>) {
     let names = store.list().unwrap_or_default();
-    let mine: Vec<&String> = names.iter().filter(|n| n.split_once('/').is_some_and(|(a, _)| a == area)).collect();
+    let mine: Vec<&String> = names
+        .iter()
+        .filter(|n| n.split_once('/').is_some_and(|(a, _)| a == area))
+        .collect();
     if mine.iter().any(|n| n.ends_with(DOC_EXT)) {
         return;
     }
@@ -881,7 +1087,11 @@ fn tidy(store: &dyn RecoveryStore, area: &str, hold: Vec<Hold>) {
 
 /// The copies of documents open now in this session.
 fn open_copies(s: &Session) -> Vec<String> {
-    s.documents().iter().filter_map(|d| d.recovery.as_ref()).map(|c| c.file.clone()).collect()
+    s.documents()
+        .iter()
+        .filter_map(|d| d.recovery.as_ref())
+        .map(|c| c.file.clone())
+        .collect()
 }
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
@@ -892,10 +1102,18 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
     for area in store.areas().map_err(EngineError::Other)? {
         let mut hold = vec![];
         let who = owner(s, store.as_ref(), &area, &mut hold, false);
-        let files: Vec<&String> = copies.iter().filter(|(a, _)| *a == area).map(|(_, f)| f).collect();
+        let files: Vec<&String> = copies
+            .iter()
+            .filter(|(a, _)| *a == area)
+            .map(|(_, f)| f)
+            .collect();
         for f in &files {
             let meta = read_meta(store.as_ref(), f);
-            let title = if meta.title.is_empty() { f.rsplit('/').next().unwrap_or(f).to_string() } else { meta.title };
+            let title = if meta.title.is_empty() {
+                f.rsplit('/').next().unwrap_or(f).to_string()
+            } else {
+                meta.title
+            };
             rows.push(json!({
                 "file": f, "title": title, "path": meta.path, "format": meta.format, "saved": meta.saved,
                 "open": who == Owner::Mine && open.contains(f), "running": who == Owner::Running,
@@ -914,26 +1132,52 @@ type Target = (String, Vec<String>, Vec<Hold>);
 
 /// The copies a command acts on, by gone app's area, each area held until its hold is dropped:
 /// `file` (a copy a crash left behind), else every one.
-fn targets(s: &mut Session, store: &dyn RecoveryStore, cmd: &str, p: &Value) -> Result<Vec<Target>> {
+fn targets(
+    s: &mut Session,
+    store: &dyn RecoveryStore,
+    cmd: &str,
+    p: &Value,
+) -> Result<Vec<Target>> {
     let copies = copies_in(&store.list().map_err(EngineError::Other)?);
     let file = str_param(p, "file");
     if let Some(f) = file
         && !copies.iter().any(|(_, c)| c == f)
     {
-        return Err(bad(cmd, format!("no recovery copy `{f}` (see file.recovery.list)")));
+        return Err(bad(
+            cmd,
+            format!("no recovery copy `{f}` (see file.recovery.list)"),
+        ));
     }
     let picked = |c: &str| file.is_none_or(|f| f == c);
-    let areas: BTreeSet<&str> = copies.iter().filter(|(_, c)| picked(c)).map(|(a, _)| a.as_str()).collect();
+    let areas: BTreeSet<&str> = copies
+        .iter()
+        .filter(|(_, c)| picked(c))
+        .map(|(a, _)| a.as_str())
+        .collect();
     let mut out = vec![];
     for area in areas {
         let mut hold = vec![];
         match (owner(s, store, area, &mut hold, true), file) {
             (Owner::Gone, _) => {
-                let files = copies.iter().filter(|(a, c)| a == area && picked(c)).map(|(_, c)| c.clone()).collect();
+                let files = copies
+                    .iter()
+                    .filter(|(a, c)| a == area && picked(c))
+                    .map(|(_, c)| c.clone())
+                    .collect();
                 out.push((area.to_string(), files, hold));
             }
-            (Owner::Mine, Some(f)) => return Err(bad(cmd, format!("`{f}` is the copy of a document open now"))),
-            (Owner::Running, Some(f)) => return Err(bad(cmd, format!("`{f}` belongs to a VectorCraft that is running"))),
+            (Owner::Mine, Some(f)) => {
+                return Err(bad(
+                    cmd,
+                    format!("`{f}` is the copy of a document open now"),
+                ));
+            }
+            (Owner::Running, Some(f)) => {
+                return Err(bad(
+                    cmd,
+                    format!("`{f}` belongs to a VectorCraft that is running"),
+                ));
+            }
             _ => {}
         }
     }
@@ -943,10 +1187,13 @@ fn targets(s: &mut Session, store: &dyn RecoveryStore, cmd: &str, p: &Value) -> 
 /// Open copy `file` as a new document: "<name> [Recovered]", modified, with its original path
 /// (for Save As) and format. The copy moves into this session's area (another crash keeps it).
 fn restore_one(s: &mut Session, store: &Arc<dyn RecoveryStore>, file: &str) -> Result<Value> {
-    let bytes = store.read(&format!("{file}{DOC_EXT}")).map_err(EngineError::Other)?;
+    let bytes = store
+        .read(&format!("{file}{DOC_EXT}"))
+        .map_err(EngineError::Other)?;
     let meta_bytes = store.read(&format!("{file}{META_EXT}")).unwrap_or_default();
     let meta: Meta = serde_json::from_slice(&meta_bytes).unwrap_or_default();
-    let (mut doc, _, mut warnings) = fileio::native_file(&bytes).map_err(|e| EngineError::Other(format!("recovery copy `{file}`: {e}")))?;
+    let (mut doc, _, mut warnings) = fileio::native_file(&bytes)
+        .map_err(|e| EngineError::Other(format!("recovery copy `{file}`: {e}")))?;
     // The images, from the entries of the copy's area.
     let from = file.split_once('/').map_or("", |(a, _)| a);
     let mut blobs = vec![];
@@ -961,11 +1208,16 @@ fn restore_one(s: &mut Session, store: &Arc<dyn RecoveryStore>, file: &str) -> R
                 blobs.push((r.blob.clone(), blob.bytes.clone()));
                 doc.images.insert(key.clone(), blob);
             }
-            Err(e) => warnings.push(format!("the image “{key}” of the recovered document couldn't be read: {e}")),
+            Err(e) => warnings.push(format!(
+                "the image “{key}” of the recovered document couldn't be read: {e}"
+            )),
         }
     }
     let area = claim(s, store)?;
-    let mut taken: Vec<String> = copies_in(&store.list().map_err(EngineError::Other)?).into_iter().map(|(_, f)| f).collect();
+    let mut taken: Vec<String> = copies_in(&store.list().map_err(EngineError::Other)?)
+        .into_iter()
+        .map(|(_, f)| f)
+        .collect();
     taken.extend(open_copies(s));
     let stem = file.rsplit('/').next().unwrap_or(file);
     let mine = match format!("{area}/{stem}") {
@@ -975,30 +1227,58 @@ fn restore_one(s: &mut Session, store: &Arc<dyn RecoveryStore>, file: &str) -> R
     {
         let _turn = WRITES.lock().unwrap_or_else(|e| e.into_inner());
         for (blob, data) in &blobs {
-            store.write(&format!("{area}/{blob}"), data).map_err(EngineError::Other)?;
+            store
+                .write(&format!("{area}/{blob}"), data)
+                .map_err(EngineError::Other)?;
         }
-        store.write(&format!("{mine}{DOC_EXT}"), &bytes).map_err(EngineError::Other)?;
-        store.write(&format!("{mine}{META_EXT}"), &meta_bytes).map_err(EngineError::Other)?;
+        store
+            .write(&format!("{mine}{DOC_EXT}"), &bytes)
+            .map_err(EngineError::Other)?;
+        store
+            .write(&format!("{mine}{META_EXT}"), &meta_bytes)
+            .map_err(EngineError::Other)?;
     }
     // The copy's images in its old area go with the area, once no copy is left there.
-    store.remove(&format!("{file}{DOC_EXT}")).map_err(EngineError::Other)?;
-    store.remove(&format!("{file}{META_EXT}")).map_err(EngineError::Other)?;
+    store
+        .remove(&format!("{file}{DOC_EXT}"))
+        .map_err(EngineError::Other)?;
+    store
+        .remove(&format!("{file}{META_EXT}"))
+        .map_err(EngineError::Other)?;
     if doc.title.is_empty() {
-        doc.title = if meta.title.is_empty() { stem.to_string() } else { meta.title.clone() };
+        doc.title = if meta.title.is_empty() {
+            stem.to_string()
+        } else {
+            meta.title.clone()
+        };
     }
     // Linked files are looked for from the document's own folder.
-    let links = super::links::resolve(&mut doc, meta.path.as_deref(), s.prefs.update_links == "automatically");
+    let links = super::links::resolve(
+        &mut doc,
+        meta.path.as_deref(),
+        s.prefs.update_links == "automatically",
+    );
     let index = s.add_document(doc, meta.path.clone());
     let st = s.doc_mut()?;
     st.recovered = true;
     st.imported_from = meta.imported_from.clone();
     st.import_losses = meta.import_losses.clone();
-    st.format = SAVE_FORMATS.iter().copied().find(|f| *f == meta.format).unwrap_or("vectorcraft");
+    st.format = SAVE_FORMATS
+        .iter()
+        .copied()
+        .find(|f| *f == meta.format)
+        .unwrap_or("vectorcraft");
     st.mark_unsaved();
     // The copy stays until the document is saved or closed.
-    st.recovery = Some(RecoveryCopy { file: mine.clone(), doc: st.doc.clone() });
+    st.recovery = Some(RecoveryCopy {
+        file: mine.clone(),
+        doc: st.doc.clone(),
+    });
     let title = st.title();
-    Ok(super::fileio::merge(json!({ "index": index, "title": title, "file": mine, "path": meta.path, "warnings": warnings }), links.to_json()))
+    Ok(super::fileio::merge(
+        json!({ "index": index, "title": title, "file": mine, "path": meta.path, "warnings": warnings }),
+        links.to_json(),
+    ))
 }
 
 fn restore(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1026,8 +1306,12 @@ fn discard(s: &mut Session, p: &Value) -> Result<Value> {
     let mut discarded = vec![];
     for (area, files, hold) in targets(s, store.as_ref(), C, p)? {
         for f in files {
-            store.remove(&format!("{f}{DOC_EXT}")).map_err(EngineError::Other)?;
-            store.remove(&format!("{f}{META_EXT}")).map_err(EngineError::Other)?;
+            store
+                .remove(&format!("{f}{DOC_EXT}"))
+                .map_err(EngineError::Other)?;
+            store
+                .remove(&format!("{f}{META_EXT}"))
+                .map_err(EngineError::Other)?;
             discarded.push(f);
         }
         tidy(store.as_ref(), &area, hold);

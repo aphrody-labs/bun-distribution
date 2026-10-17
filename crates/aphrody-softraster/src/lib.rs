@@ -11,7 +11,11 @@
 //! call [`fill_triangle`] per triangle over an RGBA8 colour buffer and an `f32` depth buffer.
 
 #![forbid(unsafe_code)]
-#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 
 /// A 3D vector as plain `[x, y, z]`.
 pub type V3 = [f32; 3];
@@ -28,7 +32,11 @@ pub fn sub(a: V3, b: V3) -> V3 {
 /// Cross product `a x b`.
 #[must_use]
 pub fn cross(a: V3, b: V3) -> V3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 /// Dot product.
@@ -41,7 +49,11 @@ pub fn dot(a: V3, b: V3) -> f32 {
 #[must_use]
 pub fn normv(a: V3) -> V3 {
     let l = dot(a, a).sqrt();
-    if l > 1e-9 { [a[0] / l, a[1] / l, a[2] / l] } else { [0.0, 0.0, 1.0] }
+    if l > 1e-9 {
+        [a[0] / l, a[1] / l, a[2] / l]
+    } else {
+        [0.0, 0.0, 1.0]
+    }
 }
 
 /// Borrowed RGBA8 texture, row-major, `width * height * 4` bytes.
@@ -81,7 +93,12 @@ pub fn sample_nearest(t: &TextureView<'_>, u: f32, v: f32) -> [u8; 4] {
     let x = ((uu * t.width as f32) as u32).min(t.width.saturating_sub(1));
     let y = ((vv * t.height as f32) as u32).min(t.height.saturating_sub(1));
     let idx = ((y * t.width + x) * 4) as usize;
-    [t.rgba[idx], t.rgba[idx + 1], t.rgba[idx + 2], t.rgba[idx + 3]]
+    [
+        t.rgba[idx],
+        t.rgba[idx + 1],
+        t.rgba[idx + 2],
+        t.rgba[idx + 3],
+    ]
 }
 
 /// Texels whose alpha is below this value are discarded (alpha-card cutout).
@@ -124,7 +141,11 @@ pub fn fill_triangle(
         return;
     }
     let inv_area = 1.0 / area;
-    let flat = [base_rgb[0] * shade, base_rgb[1] * shade, base_rgb[2] * shade];
+    let flat = [
+        base_rgb[0] * shade,
+        base_rgb[1] * shade,
+        base_rgb[2] * shade,
+    ];
     for y in miny..=maxy {
         for x in minx..=maxx {
             let fx = x as f32 + 0.5;
@@ -169,7 +190,10 @@ mod tests {
     use super::*;
 
     fn buffers(w: u32, h: u32) -> (Vec<u8>, Vec<f32>) {
-        (vec![0; (w * h * 4) as usize], vec![f32::INFINITY; (w * h) as usize])
+        (
+            vec![0; (w * h * 4) as usize],
+            vec![f32::INFINITY; (w * h) as usize],
+        )
     }
 
     #[test]
@@ -232,7 +256,11 @@ mod tests {
     #[test]
     fn texture_sampling_and_cutout() {
         let rgba = [255, 0, 0, 255, 0, 0, 255, 0];
-        let t = TextureView { width: 2, height: 1, rgba: &rgba };
+        let t = TextureView {
+            width: 2,
+            height: 1,
+            rgba: &rgba,
+        };
         assert_eq!(sample_nearest(&t, 0.0, 0.0), [255, 0, 0, 255]);
         assert_eq!(sample_nearest(&t, 1.0, 1.0), [0, 0, 255, 0]);
         let (w, h) = (8, 8);
@@ -259,7 +287,11 @@ mod tests {
 
     #[test]
     fn invalid_inputs_draw_nothing() {
-        let bad = TextureView { width: 4, height: 4, rgba: &[0; 3] };
+        let bad = TextureView {
+            width: 4,
+            height: 4,
+            rgba: &[0; 3],
+        };
         assert_eq!(sample_nearest(&bad, 0.5, 0.5), [0; 4]);
         let mut px = vec![0u8; 16];
         let mut z = vec![f32::INFINITY; 3]; // wrong size for 2x2

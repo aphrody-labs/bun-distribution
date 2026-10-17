@@ -3,9 +3,9 @@ use crate::{
     generics::{Generics, TypeParamInfo},
     info::{MaybeTyped, TypeInfo, Typed},
     kind::{ReflectKind, ReflectMut, ReflectOwned, ReflectRef},
-    map::{map_apply, map_partial_cmp, map_partial_eq, map_try_apply, Map, MapInfo},
+    map::{Map, MapInfo, map_apply, map_partial_cmp, map_partial_eq, map_try_apply},
     prelude::*,
-    reflect::{impl_full_reflect, ApplyError},
+    reflect::{ApplyError, impl_full_reflect},
     type_registry::{GetTypeRegistration, ReflectFromPtr, TypeRegistration},
     utility::GenericTypeInfoCell,
 };

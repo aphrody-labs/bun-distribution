@@ -3,17 +3,17 @@ use bevy_ptr::ConstNonNull;
 use core::ptr::NonNull;
 
 use crate::{
-    archetype::{Archetype, ArchetypeCreated, ArchetypeId, Archetypes, ARCHETYPE_CREATED},
+    archetype::{ARCHETYPE_CREATED, Archetype, ArchetypeCreated, ArchetypeId, Archetypes},
     bundle::{Bundle, BundleId, BundleInfo},
     change_detection::{MaybeLocation, Tick},
     component::{ComponentId, Components, StorageType},
     entity::{Entity, EntityLocation},
     event::{EntityComponentsTrigger, GlobalTrigger},
-    lifecycle::{DiscardEvent, RemoveEvent, DISCARD, REMOVE},
+    lifecycle::{DISCARD, DiscardEvent, REMOVE, RemoveEvent},
     observer::Observers,
     relationship::RelationshipHookMode,
     storage::{SparseSets, Storages, Table, TableId},
-    world::{unsafe_world_cell::UnsafeWorldCell, World},
+    world::{World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 // SAFETY:

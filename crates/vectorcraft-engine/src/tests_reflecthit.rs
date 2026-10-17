@@ -8,7 +8,8 @@ use super::*;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
+    s.execute("file.new", &json!({"width": 800, "height": 600}))
+        .unwrap();
     s
 }
 
@@ -21,7 +22,8 @@ fn click(s: &mut Session, x: f64, y: f64) -> Vec<NodeId> {
     let v = ViewInfo::default();
     s.select_tool("selection", v).unwrap();
     for kind in [PointerKind::Down, PointerKind::Up] {
-        s.pointer(&PointerEvent::new(kind, x, y).with_mods(Mods::default()), v).unwrap();
+        s.pointer(&PointerEvent::new(kind, x, y).with_mods(Mods::default()), v)
+            .unwrap();
     }
     s.doc().unwrap().selection.objects.clone()
 }
@@ -30,10 +32,22 @@ fn click(s: &mut Session, x: f64, y: f64) -> Vec<NodeId> {
 fn a_reflected_shape_is_clicked_by_its_fill() {
     const HEART: &str = "M200 290C190 280 110 230 110 170C110 140 130 120 155 120C175 120 192 132 200 148C208 132 225 120 245 120C270 120 290 140 290 170C290 230 210 280 200 290Z";
     let makers: [(&str, Value); 5] = [
-        ("shape.rectangle", json!({"x": 150, "y": 150, "width": 100, "height": 100})),
-        ("shape.ellipse", json!({"x": 150, "y": 150, "width": 100, "height": 100})),
-        ("shape.polygon", json!({"cx": 200, "cy": 200, "radius": 60, "sides": 5})),
-        ("shape.star", json!({"cx": 200, "cy": 200, "radius1": 70, "radius2": 40, "points": 5})),
+        (
+            "shape.rectangle",
+            json!({"x": 150, "y": 150, "width": 100, "height": 100}),
+        ),
+        (
+            "shape.ellipse",
+            json!({"x": 150, "y": 150, "width": 100, "height": 100}),
+        ),
+        (
+            "shape.polygon",
+            json!({"cx": 200, "cy": 200, "radius": 60, "sides": 5}),
+        ),
+        (
+            "shape.star",
+            json!({"cx": 200, "cy": 200, "radius1": 70, "radius2": 40, "points": 5}),
+        ),
         ("path.create", json!({"d": HEART})),
     ];
     for (cmd, params) in makers {
@@ -45,7 +59,11 @@ fn a_reflected_shape_is_clicked_by_its_fill() {
             let b = s.doc().unwrap().doc.bounds_of(&[id], false).unwrap();
             s.execute("select.set", &json!({"ids": []})).unwrap();
             let c = b.center();
-            assert_eq!(click(&mut s, c.x, c.y), vec![id], "{cmd} reflected {axis}: a click in its fill at {c:?} (bounds {b:?})");
+            assert_eq!(
+                click(&mut s, c.x, c.y),
+                vec![id],
+                "{cmd} reflected {axis}: a click in its fill at {c:?} (bounds {b:?})"
+            );
         }
     }
 }
@@ -56,11 +74,15 @@ fn a_reflected_shape_is_clicked_by_its_fill() {
 fn a_reflected_imported_heart_is_clicked_by_its_fill() {
     const D: &str = "M200 290C190 280 110 230 110 170C110 140 130 120 155 120C175 120 192 132 200 148C208 132 225 120 245 120C270 120 290 140 290 170C290 230 210 280 200 290Z";
     let files = [
-        format!(r##"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><path fill="#e2384d" d="{D}"/></svg>"##),
+        format!(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><path fill="#e2384d" d="{D}"/></svg>"##
+        ),
         format!(
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><path fill="#e2384d" fill-rule="evenodd" d="{D} M190 200h20v20h-20z"/></svg>"##
         ),
-        format!(r##"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><g><g fill="#e2384d"><path d="{D}"/></g></g></svg>"##),
+        format!(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><g><g fill="#e2384d"><path d="{D}"/></g></g></svg>"##
+        ),
         format!(
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><g transform="translate(10 0) scale(1.2)"><path fill="#e2384d" transform="matrix(1 0 0 1 -20 -20)" d="{D}"/></g></svg>"##
         ),
@@ -80,11 +102,21 @@ fn a_reflected_imported_heart_is_clicked_by_its_fill() {
                 // Drag the top handle down past the bottom: a top-to-bottom flip.
                 let v = ViewInfo::default();
                 s.select_tool("selection", v).unwrap();
-                let (from, to) = (Point::new(b.center().x, b.y0), Point::new(b.center().x, b.y1 + b.height()));
-                for (kind, p) in
-                    [(PointerKind::Down, from), (PointerKind::Drag, Point::new(from.x, b.center().y)), (PointerKind::Drag, to), (PointerKind::Up, to)]
-                {
-                    s.pointer(&PointerEvent::new(kind, p.x, p.y).with_mods(Mods::default()), v).unwrap();
+                let (from, to) = (
+                    Point::new(b.center().x, b.y0),
+                    Point::new(b.center().x, b.y1 + b.height()),
+                );
+                for (kind, p) in [
+                    (PointerKind::Down, from),
+                    (PointerKind::Drag, Point::new(from.x, b.center().y)),
+                    (PointerKind::Drag, to),
+                    (PointerKind::Up, to),
+                ] {
+                    s.pointer(
+                        &PointerEvent::new(kind, p.x, p.y).with_mods(Mods::default()),
+                        v,
+                    )
+                    .unwrap();
                 }
             } else {
                 s.execute("object.reflect", &json!({"axis": how})).unwrap();
@@ -92,9 +124,19 @@ fn a_reflected_imported_heart_is_clicked_by_its_fill() {
             let b = s.doc().unwrap().doc.bounds_of(&ids, false).unwrap();
             s.execute("select.set", &json!({"ids": []})).unwrap();
             // Inside the heart away from the compound's square hole: a third of the way down.
-            let c = Point::new(b.center().x, if how == "horizontal" || how == "handle" { b.y1 - b.height() * 0.3 } else { b.y0 + b.height() * 0.3 });
+            let c = Point::new(
+                b.center().x,
+                if how == "horizontal" || how == "handle" {
+                    b.y1 - b.height() * 0.3
+                } else {
+                    b.y0 + b.height() * 0.3
+                },
+            );
             let picked = click(&mut s, c.x, c.y);
-            assert_eq!(picked, ids, "file {i} flipped by {how}: a click in its fill at {c:?} (bounds {b:?})");
+            assert_eq!(
+                picked, ids,
+                "file {i} flipped by {how}: a click in its fill at {c:?} (bounds {b:?})"
+            );
         }
     }
 }
@@ -104,9 +146,18 @@ fn a_reflected_imported_heart_is_clicked_by_its_fill() {
 fn a_reflected_selected_shape_drags_by_its_fill() {
     const HEART: &str = "M200 290C190 280 110 230 110 170C110 140 130 120 155 120C175 120 192 132 200 148C208 132 225 120 245 120C270 120 290 140 290 170C290 230 210 280 200 290Z";
     let makers: [(&str, Value); 4] = [
-        ("shape.rectangle", json!({"x": 150, "y": 150, "width": 100, "height": 100})),
-        ("shape.polygon", json!({"cx": 200, "cy": 200, "radius": 60, "sides": 3})),
-        ("shape.star", json!({"cx": 200, "cy": 200, "radius1": 70, "radius2": 40, "points": 5})),
+        (
+            "shape.rectangle",
+            json!({"x": 150, "y": 150, "width": 100, "height": 100}),
+        ),
+        (
+            "shape.polygon",
+            json!({"cx": 200, "cy": 200, "radius": 60, "sides": 3}),
+        ),
+        (
+            "shape.star",
+            json!({"cx": 200, "cy": 200, "radius1": 70, "radius2": 40, "points": 5}),
+        ),
         ("path.create", json!({"d": HEART})),
     ];
     for (cmd, params) in makers {
@@ -119,13 +170,23 @@ fn a_reflected_selected_shape_drags_by_its_fill() {
             let c = b.center();
             let v = ViewInfo::default();
             s.select_tool("selection", v).unwrap();
-            for (kind, x) in
-                [(PointerKind::Down, c.x), (PointerKind::Drag, c.x + 20.0), (PointerKind::Drag, c.x + 40.0), (PointerKind::Up, c.x + 40.0)]
-            {
-                s.pointer(&PointerEvent::new(kind, x, c.y).with_mods(Mods::default()), v).unwrap();
+            for (kind, x) in [
+                (PointerKind::Down, c.x),
+                (PointerKind::Drag, c.x + 20.0),
+                (PointerKind::Drag, c.x + 40.0),
+                (PointerKind::Up, c.x + 40.0),
+            ] {
+                s.pointer(
+                    &PointerEvent::new(kind, x, c.y).with_mods(Mods::default()),
+                    v,
+                )
+                .unwrap();
             }
             let after = s.doc().unwrap().doc.bounds_of(&[id], false).unwrap();
-            assert!((after.x0 - b.x0 - 40.0).abs() < 1e-6, "{cmd} reflected {axis}: a drag from {c:?} left it at {after:?} (was {b:?})");
+            assert!(
+                (after.x0 - b.x0 - 40.0).abs() < 1e-6,
+                "{cmd} reflected {axis}: a drag from {c:?} left it at {after:?} (was {b:?})"
+            );
         }
     }
 }
@@ -147,7 +208,15 @@ fn an_open_filled_path_is_clicked_by_its_fill_either_way_round() {
         let b = s.doc().unwrap().doc.bounds_of(&ids, false).unwrap();
         s.execute("select.set", &json!({"ids": []})).unwrap();
         // The middle of the sliver's widest part, well inside it.
-        let x = if axis == Some("vertical") { b.x0 + b.width() * 0.4 } else { b.x0 + b.width() * 0.6 };
-        assert_eq!(click(&mut s, x, b.center().y), ids, "reflected {axis:?}: a click in the fill (bounds {b:?})");
+        let x = if axis == Some("vertical") {
+            b.x0 + b.width() * 0.4
+        } else {
+            b.x0 + b.width() * 0.6
+        };
+        assert_eq!(
+            click(&mut s, x, b.center().y),
+            ids,
+            "reflected {axis:?}: a click in the fill (bounds {b:?})"
+        );
     }
 }

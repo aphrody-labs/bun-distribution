@@ -57,7 +57,14 @@ pub struct ScriptResult {
 /// Runs field scripts (JavaScript).
 pub trait Scripts {
     /// Run `script` for `event` on `target`, whose value is `value`; `fields` is the whole form.
-    fn run(&mut self, event: FieldEvent, script: &str, target: &Field, value: &str, fields: &[Field]) -> ScriptResult;
+    fn run(
+        &mut self,
+        event: FieldEvent,
+        script: &str,
+        target: &Field,
+        value: &str,
+        fields: &[Field],
+    ) -> ScriptResult;
 }
 
 /// No script engine (or JavaScript turned off): scripts change nothing.
@@ -65,24 +72,45 @@ pub struct NoScripts;
 
 impl Scripts for NoScripts {
     fn run(&mut self, _: FieldEvent, _: &str, _: &Field, value: &str, _: &[Field]) -> ScriptResult {
-        ScriptResult { rc: true, value: value.to_string(), changes: Vec::new(), message: None }
+        ScriptResult {
+            rc: true,
+            value: value.to_string(),
+            changes: Vec::new(),
+            message: None,
+        }
     }
 }
 
 /// Run the Keystroke (commit) and Validate scripts for a new text value. Returns the value to
 /// store, or why it is rejected.
-pub(crate) fn accept(doc: &mut Document, f: &Field, value: &str, scripts: &mut dyn Scripts) -> Result<String, FormError> {
+pub(crate) fn accept(
+    doc: &mut Document,
+    f: &Field,
+    value: &str,
+    scripts: &mut dyn Scripts,
+) -> Result<String, FormError> {
     let mut v = value.to_string();
     for (event, script, default) in [
-        (FieldEvent::Keystroke, &f.actions.scripts.keystroke, "The value entered does not match the format of the field"),
-        (FieldEvent::Validate, &f.actions.scripts.validate, "The value entered is not valid for the field"),
+        (
+            FieldEvent::Keystroke,
+            &f.actions.scripts.keystroke,
+            "The value entered does not match the format of the field",
+        ),
+        (
+            FieldEvent::Validate,
+            &f.actions.scripts.validate,
+            "The value entered is not valid for the field",
+        ),
     ] {
         let Some(js) = script else { continue };
         let all = fields(doc);
         let r = scripts.run(event, js, f, &v, &all);
         apply_changes(doc, &r.changes, &f.name)?;
         if !r.rc {
-            return Err(FormError::Invalid(r.message.unwrap_or_else(|| format!("{default} [ {} ]", f.name))));
+            return Err(FormError::Invalid(
+                r.message
+                    .unwrap_or_else(|| format!("{default} [ {} ]", f.name)),
+            ));
         }
         v = r.value;
     }
@@ -90,7 +118,12 @@ pub(crate) fn accept(doc: &mut Document, f: &Field, value: &str, scripts: &mut d
 }
 
 /// The text a custom Format script shows for `value`, if the field has one.
-pub(crate) fn formatted(doc: &Document, f: &Field, value: &str, scripts: &mut dyn Scripts) -> Option<String> {
+pub(crate) fn formatted(
+    doc: &Document,
+    f: &Field,
+    value: &str,
+    scripts: &mut dyn Scripts,
+) -> Option<String> {
     let js = f.actions.scripts.format.as_ref()?;
     let r = scripts.run(FieldEvent::Format, js, f, value, &fields(doc));
     Some(r.value)
@@ -99,13 +132,19 @@ pub(crate) fn formatted(doc: &Document, f: &Field, value: &str, scripts: &mut dy
 /// Apply script changes to other fields (values written without re-running their scripts;
 /// read-only, required and visibility as flags). `except` is the event's own field, whose value
 /// the event sets.
-pub(crate) fn apply_changes(doc: &mut Document, changes: &[FieldChange], except: &str) -> Result<(), FormError> {
+pub(crate) fn apply_changes(
+    doc: &mut Document,
+    changes: &[FieldChange],
+    except: &str,
+) -> Result<(), FormError> {
     if changes.is_empty() {
         return Ok(());
     }
     let all = fields(doc);
     for c in changes {
-        let Some(f) = all.iter().find(|f| f.name == c.name) else { continue };
+        let Some(f) = all.iter().find(|f| f.name == c.name) else {
+            continue;
+        };
         if let Some(v) = &c.value
             && c.name != except
             && *v != f.value
@@ -123,7 +162,10 @@ pub(crate) fn apply_changes(doc: &mut Document, changes: &[FieldChange], except:
             crate::write_value(doc, &tmp, &value, &mut NoScripts)?;
         }
         let mut ff = f.flags;
-        for (on, bit) in [(c.read_only, flags::READ_ONLY), (c.required, flags::REQUIRED)] {
+        for (on, bit) in [
+            (c.read_only, flags::READ_ONLY),
+            (c.required, flags::REQUIRED),
+        ] {
             match on {
                 Some(true) => ff |= bit,
                 Some(false) => ff &= !bit,
@@ -135,7 +177,11 @@ pub(crate) fn apply_changes(doc: &mut Document, changes: &[FieldChange], except:
         }
         if let Some(display) = c.display {
             for w in &f.widgets {
-                let old = doc.get(w.obj).as_dict().and_then(|d| d.int(b"F")).unwrap_or(0);
+                let old = doc
+                    .get(w.obj)
+                    .as_dict()
+                    .and_then(|d| d.int(b"F"))
+                    .unwrap_or(0);
                 // Hidden 2, Print 4, NoView 32 (Table 167).
                 let base = old & !(2 | 4 | 32);
                 let new = match display {
@@ -155,7 +201,11 @@ pub(crate) fn apply_changes(doc: &mut Document, changes: &[FieldChange], except:
 
 /// Apply what a button or console script changed (values, read-only, required, visibility),
 /// then recalculate.
-pub fn apply_script_changes(doc: &mut Document, changes: &[FieldChange], scripts: &mut dyn Scripts) -> Result<(), FormError> {
+pub fn apply_script_changes(
+    doc: &mut Document,
+    changes: &[FieldChange],
+    scripts: &mut dyn Scripts,
+) -> Result<(), FormError> {
     apply_changes(doc, changes, "")?;
     crate::recalculate_with(doc, scripts)?;
     Ok(())
@@ -164,15 +214,32 @@ pub fn apply_script_changes(doc: &mut Document, changes: &[FieldChange], scripts
 /// Document-level JavaScripts (the catalog's `/Names /JavaScript` tree), in name order: they
 /// define the functions field scripts call.
 pub fn document_scripts(doc: &Document) -> Vec<String> {
-    document_scripts_named(doc).into_iter().map(|(_, js)| js).collect()
+    document_scripts_named(doc)
+        .into_iter()
+        .map(|(_, js)| js)
+        .collect()
 }
 
 /// [`document_scripts`] with their names.
 pub fn document_scripts_named(doc: &Document) -> Vec<(String, String)> {
-    let Some(root) = doc.root() else { return Vec::new() };
+    let Some(root) = doc.root() else {
+        return Vec::new();
+    };
     let cat = doc.get(root);
-    let Some(names) = cat.as_dict().and_then(|c| c.get(b"Names")).map(|n| doc.resolve(n)) else { return Vec::new() };
-    let Some(tree) = names.as_dict().and_then(|n| n.get(b"JavaScript")).map(|t| doc.resolve(t)) else { return Vec::new() };
+    let Some(names) = cat
+        .as_dict()
+        .and_then(|c| c.get(b"Names"))
+        .map(|n| doc.resolve(n))
+    else {
+        return Vec::new();
+    };
+    let Some(tree) = names
+        .as_dict()
+        .and_then(|n| n.get(b"JavaScript"))
+        .map(|t| doc.resolve(t))
+    else {
+        return Vec::new();
+    };
     let mut out: Vec<(String, String)> = Vec::new();
     let mut stack = vec![(*tree).clone()];
     let mut seen = 0;
@@ -182,10 +249,18 @@ pub fn document_scripts_named(doc: &Document) -> Vec<(String, String)> {
             break;
         }
         let Some(d) = node.as_dict() else { continue };
-        if let Some(kids) = d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()) {
+        if let Some(kids) = d
+            .get(b"Kids")
+            .map(|k| doc.resolve(k))
+            .and_then(|k| k.as_array().cloned())
+        {
             stack.extend(kids.iter().map(|k| (*doc.resolve(k)).clone()));
         }
-        if let Some(pairs) = d.get(b"Names").map(|n| doc.resolve(n)).and_then(|n| n.as_array().cloned()) {
+        if let Some(pairs) = d
+            .get(b"Names")
+            .map(|n| doc.resolve(n))
+            .and_then(|n| n.as_array().cloned())
+        {
             for pair in pairs.chunks(2) {
                 let [k, v] = pair else { continue };
                 let key = match &*doc.resolve(k) {
@@ -203,15 +278,33 @@ pub fn document_scripts_named(doc: &Document) -> Vec<(String, String)> {
 }
 
 /// Add (or replace) a document-level JavaScript named `name`.
-pub fn set_document_script(doc: &mut Document, name: &str, js: Option<&str>) -> Result<(), FormError> {
+pub fn set_document_script(
+    doc: &mut Document,
+    name: &str,
+    js: Option<&str>,
+) -> Result<(), FormError> {
     let root = doc.root().ok_or(FormError::NoForm)?;
     let cat = doc.get(root).as_dict().cloned().unwrap_or_default();
-    let mut names = cat.get(b"Names").map(|n| doc.resolve(n)).and_then(|n| n.as_dict().cloned()).unwrap_or_default();
-    let tree = names.get(b"JavaScript").map(|t| doc.resolve(t)).and_then(|t| t.as_dict().cloned()).unwrap_or_default();
+    let mut names = cat
+        .get(b"Names")
+        .map(|n| doc.resolve(n))
+        .and_then(|n| n.as_dict().cloned())
+        .unwrap_or_default();
+    let tree = names
+        .get(b"JavaScript")
+        .map(|t| doc.resolve(t))
+        .and_then(|t| t.as_dict().cloned())
+        .unwrap_or_default();
     if tree.contains(b"Kids") {
-        return Err(FormError::Invalid("the document's JavaScript name tree has kids; edit it with a full editor".into()));
+        return Err(FormError::Invalid(
+            "the document's JavaScript name tree has kids; edit it with a full editor".into(),
+        ));
     }
-    let mut pairs: Vec<Object> = tree.get(b"Names").map(|n| doc.resolve(n)).and_then(|n| n.as_array().cloned()).unwrap_or_default();
+    let mut pairs: Vec<Object> = tree
+        .get(b"Names")
+        .map(|n| doc.resolve(n))
+        .and_then(|n| n.as_array().cloned())
+        .unwrap_or_default();
     let mut kept = Vec::new();
     for pair in pairs.chunks(2) {
         if let [k, v] = pair
@@ -243,9 +336,18 @@ pub fn set_document_script(doc: &mut Document, name: &str, js: Option<&str>) -> 
 /// Run a JavaScript: set (or remove, with `None`) field `name`'s script for `event` — one of
 /// `keystroke`, `format`, `validate`, `calculate` (the field's `/AA` K, F, V, C) or `mouse_up`
 /// (its widgets' `/A`). Calculated fields join the calculation order (`/CO`).
-pub fn set_field_script(doc: &mut Document, name: &str, event: &str, js: Option<&str>) -> Result<(), FormError> {
+pub fn set_field_script(
+    doc: &mut Document,
+    name: &str,
+    event: &str,
+    js: Option<&str>,
+) -> Result<(), FormError> {
     let all = fields(doc);
-    let f = all.iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?.clone();
+    let f = all
+        .iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?
+        .clone();
     let action = |doc: &mut Document, js: &str| {
         let mut a = pdfcraft_cos::Dict::new();
         a.set(b"S".to_vec(), Object::name("JavaScript"));
@@ -269,9 +371,18 @@ pub fn set_field_script(doc: &mut Document, name: &str, event: &str, js: Option<
         "format" => b"F",
         "validate" => b"V",
         "calculate" => b"C",
-        other => return Err(FormError::Invalid(format!("unknown field event {other:?} (keystroke, format, validate, calculate, mouse_up)"))),
+        other => {
+            return Err(FormError::Invalid(format!(
+                "unknown field event {other:?} (keystroke, format, validate, calculate, mouse_up)"
+            )));
+        }
     };
-    let mut aa = doc.get(f.obj).as_dict().and_then(|d| d.get(b"AA").map(|a| doc.resolve(a))).and_then(|a| a.as_dict().cloned()).unwrap_or_default();
+    let mut aa = doc
+        .get(f.obj)
+        .as_dict()
+        .and_then(|d| d.get(b"AA").map(|a| doc.resolve(a)))
+        .and_then(|a| a.as_dict().cloned())
+        .unwrap_or_default();
     match js {
         Some(j) => {
             let a = action(doc, j);

@@ -48,7 +48,10 @@ impl Hasher {
 /// entry or an OCI descriptor all compare equal.
 #[must_use]
 pub fn normalize_digest(raw: &str) -> String {
-    raw.trim().trim_start_matches("sha256:").trim_start_matches("SHA256:").to_ascii_lowercase()
+    raw.trim()
+        .trim_start_matches("sha256:")
+        .trim_start_matches("SHA256:")
+        .to_ascii_lowercase()
 }
 
 /// SHA-256 of a file on disk, streamed in 1 MiB chunks.
@@ -65,7 +68,9 @@ pub fn sha256_file(path: &std::path::Path) -> crate::Result<String> {
     let mut hasher = Hasher::new();
     let mut buf = vec![0_u8; 1 << 20];
     loop {
-        let n = file.read(&mut buf).map_err(|e| crate::ModelError::io(path.to_path_buf(), e))?;
+        let n = file
+            .read(&mut buf)
+            .map_err(|e| crate::ModelError::io(path.to_path_buf(), e))?;
         if n == 0 {
             break;
         }
@@ -100,7 +105,10 @@ mod tests {
     #[test]
     fn digest_prefix_and_case_are_normalised() {
         let bare = "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD";
-        assert_eq!(normalize_digest(&format!("sha256:{bare}")), normalize_digest(bare));
+        assert_eq!(
+            normalize_digest(&format!("sha256:{bare}")),
+            normalize_digest(bare)
+        );
         assert_eq!(normalize_digest(bare), sha256_hex(b"abc"));
     }
 

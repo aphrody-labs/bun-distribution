@@ -39,20 +39,34 @@ fn entries(xml: &str) -> Vec<Entry> {
             rest = comment.split_once("-->").map_or("", |(_, after)| after);
             continue;
         }
-        let Some((tag, after)) = rest.split_once('>') else { break };
+        let Some((tag, after)) = rest.split_once('>') else {
+            break;
+        };
         let name = tag.split_whitespace().next().unwrap_or_default();
         if !matches!(name, "dir" | "include") || tag.ends_with('/') {
             continue;
         }
-        let Some((text, after)) = after.split_once("</") else { break };
+        let Some((text, after)) = after.split_once("</") else {
+            break;
+        };
         rest = after;
         // No element is inside these: text with a tag in it isn't a path.
         if text.contains('<') {
             continue;
         }
-        let path = text.trim().replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'");
+        let path = text
+            .trim()
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'");
         if !path.is_empty() {
-            out.push(Entry { include: name == "include", prefix: attribute(tag, "prefix").unwrap_or_default().to_string(), path });
+            out.push(Entry {
+                include: name == "include",
+                prefix: attribute(tag, "prefix").unwrap_or_default().to_string(),
+                path,
+            });
         }
     }
     out
@@ -62,9 +76,13 @@ fn entries(xml: &str) -> Vec<Entry> {
 fn attribute<'a>(tag: &'a str, name: &str) -> Option<&'a str> {
     let mut rest = tag;
     while let Some(at) = rest.find(name) {
-        let before_ok = rest.get(..at).is_some_and(|b| b.ends_with(char::is_whitespace));
+        let before_ok = rest
+            .get(..at)
+            .is_some_and(|b| b.ends_with(char::is_whitespace));
         rest = rest.get(at + name.len()..)?;
-        let Some(value) = rest.trim_start().strip_prefix('=') else { continue };
+        let Some(value) = rest.trim_start().strip_prefix('=') else {
+            continue;
+        };
         let value = value.trim_start();
         let quote = value.chars().next().filter(|q| matches!(q, '"' | '\''))?;
         let (value, _) = value.get(1..)?.split_once(quote)?;
@@ -90,7 +108,11 @@ impl Places {
     /// folder the app was started in is none.
     fn resolve(&self, e: &Entry, from: &Path) -> Option<PathBuf> {
         // `~` alone or before a `/`: another user's home (`~name`) isn't looked up.
-        if let Some(rest) = e.path.strip_prefix('~').filter(|rest| rest.is_empty() || rest.starts_with('/')) {
+        if let Some(rest) = e
+            .path
+            .strip_prefix('~')
+            .filter(|rest| rest.is_empty() || rest.starts_with('/'))
+        {
             return Some(self.home.as_ref()?.join(rest.trim_start_matches('/')));
         }
         let path = Path::new(&e.path);
@@ -109,7 +131,11 @@ impl Places {
 /// The font folders the configuration file `root` and the files it includes list, in order, each
 /// once. Files that are missing or can't be read list none.
 pub(crate) fn font_dirs(root: &Path, places: &Places) -> Vec<PathBuf> {
-    let mut read = Reader { places, files: HashSet::new(), dirs: vec![] };
+    let mut read = Reader {
+        places,
+        files: HashSet::new(),
+        dirs: vec![],
+    };
     read.file(root, 0);
     read.dirs
 }
@@ -123,7 +149,10 @@ struct Reader<'a> {
 
 impl Reader<'_> {
     fn file(&mut self, path: &Path, depth: usize) {
-        if depth > MAX_DEPTH || self.files.len() >= MAX_FILES || !self.files.insert(path.to_path_buf()) {
+        if depth > MAX_DEPTH
+            || self.files.len() >= MAX_FILES
+            || !self.files.insert(path.to_path_buf())
+        {
             return;
         }
         // A folder of configuration files: those named as fontconfig reads them (a digit first,
@@ -149,9 +178,13 @@ impl Reader<'_> {
         if !std::fs::metadata(path).is_ok_and(|m| m.is_file() && m.len() <= MAX_FILE_BYTES) {
             return;
         }
-        let Ok(text) = std::fs::read_to_string(path) else { return };
+        let Ok(text) = std::fs::read_to_string(path) else {
+            return;
+        };
         for e in entries(&text) {
-            let Some(to) = self.places.resolve(&e, path) else { continue };
+            let Some(to) = self.places.resolve(&e, path) else {
+                continue;
+            };
             if e.include {
                 self.file(&to, depth + 1);
             } else if self.dirs.len() < MAX_DIRS && !self.dirs.contains(&to) {
@@ -164,8 +197,14 @@ impl Reader<'_> {
 /// The configuration file fontconfig starts from: `FONTCONFIG_FILE`, else `fonts.conf` in
 /// `FONTCONFIG_PATH`, else `/etc/fonts/fonts.conf`.
 pub(crate) fn root() -> PathBuf {
-    let var = |name| std::env::var_os(name).map(PathBuf::from).filter(|p| p.is_absolute());
-    var("FONTCONFIG_FILE").or_else(|| var("FONTCONFIG_PATH").map(|d| d.join("fonts.conf"))).unwrap_or_else(|| "/etc/fonts/fonts.conf".into())
+    let var = |name| {
+        std::env::var_os(name)
+            .map(PathBuf::from)
+            .filter(|p| p.is_absolute())
+    };
+    var("FONTCONFIG_FILE")
+        .or_else(|| var("FONTCONFIG_PATH").map(|d| d.join("fonts.conf")))
+        .unwrap_or_else(|| "/etc/fonts/fonts.conf".into())
 }
 
 #[cfg(test)]
@@ -173,7 +212,11 @@ mod tests {
     use super::*;
 
     fn entry(include: bool, prefix: &str, path: &str) -> Entry {
-        Entry { include, prefix: prefix.into(), path: path.into() }
+        Entry {
+            include,
+            prefix: prefix.into(),
+            path: path.into(),
+        }
     }
 
     #[test]
@@ -205,12 +248,24 @@ mod tests {
             ]
         );
         // Damaged files and files that aren't XML read as nothing, without a panic.
-        for junk in
-            ["", "<", "<dir", "<dir>", "<dir><dir></dir>", "</dir>", "<!--", "<dir prefix=>x</dir", "\u{0}<dir prefix=\"", "<dir prefix='é>ü</dir>"]
-        {
+        for junk in [
+            "",
+            "<",
+            "<dir",
+            "<dir>",
+            "<dir><dir></dir>",
+            "</dir>",
+            "<!--",
+            "<dir prefix=>x</dir",
+            "\u{0}<dir prefix=\"",
+            "<dir prefix='é>ü</dir>",
+        ] {
             let _ = entries(junk);
         }
-        assert_eq!(attribute("dir notprefix=\"a\" prefix=\"b\"", "prefix"), Some("b"));
+        assert_eq!(
+            attribute("dir notprefix=\"a\" prefix=\"b\"", "prefix"),
+            Some("b")
+        );
     }
 
     /// A configuration as distributions lay it out: the main file lists the usual folders and
@@ -235,18 +290,43 @@ mod tests {
                 etc.join("missing.conf").display()
             ),
         );
-        write(etc.join("conf.d/09-texlive.conf"), &format!("<dir>{}</dir>", texmf.display()));
-        write(etc.join("conf.d/50-user.conf"), "<include ignore_missing=\"yes\" prefix=\"xdg\">fontconfig/fonts.conf</include>");
+        write(
+            etc.join("conf.d/09-texlive.conf"),
+            &format!("<dir>{}</dir>", texmf.display()),
+        );
+        write(
+            etc.join("conf.d/50-user.conf"),
+            "<include ignore_missing=\"yes\" prefix=\"xdg\">fontconfig/fonts.conf</include>",
+        );
         write(etc.join("conf.d/README"), "<dir>/not/a/conf/file</dir>");
         write(etc.join("conf.d/user.conf"), "<dir>/no/digit/first</dir>");
-        write(home.join(".config/fontconfig/fonts.conf"), &format!("<dir prefix=\"relative\">mine</dir><dir>{}</dir>", texmf.display()));
-        let places = Places { home: Some(home.clone()), data_home: Some(home.join(".local/share")), config_home: Some(home.join(".config")) };
+        write(
+            home.join(".config/fontconfig/fonts.conf"),
+            &format!(
+                "<dir prefix=\"relative\">mine</dir><dir>{}</dir>",
+                texmf.display()
+            ),
+        );
+        let places = Places {
+            home: Some(home.clone()),
+            data_home: Some(home.join(".local/share")),
+            config_home: Some(home.join(".config")),
+        };
         assert_eq!(
             font_dirs(&etc.join("fonts.conf"), &places),
-            [tmp.join("usr/share/fonts"), home.join(".local/share/fonts"), home.join(".fonts"), texmf, home.join(".config/fontconfig/mine")]
+            [
+                tmp.join("usr/share/fonts"),
+                home.join(".local/share/fonts"),
+                home.join(".fonts"),
+                texmf,
+                home.join(".config/fontconfig/mine")
+            ]
         );
         // Without a home folder, what needs one is left out; a missing file lists nothing.
-        assert_eq!(font_dirs(&etc.join("fonts.conf"), &Places::default()).len(), 2);
+        assert_eq!(
+            font_dirs(&etc.join("fonts.conf"), &Places::default()).len(),
+            2
+        );
         assert!(font_dirs(&tmp.join("none.conf"), &places).is_empty());
         let _ = std::fs::remove_dir_all(&tmp);
     }

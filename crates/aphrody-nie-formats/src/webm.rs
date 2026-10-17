@@ -125,11 +125,16 @@ const SYNC_VP9: u32 = 0x0049_8342;
 /// pas du VP9.
 pub fn lire_trame_vp9(trame: &[u8]) -> Result<TrameVp9, FormatError> {
     if trame.len() < 2 {
-        return Err(FormatError::TooShort { got: trame.len(), need: 2 });
+        return Err(FormatError::TooShort {
+            got: trame.len(),
+            need: 2,
+        });
     }
     let mut b = Bits::new(trame);
     if b.u(2) != 2 {
-        return Err(FormatError::BadMagic { format: "VP9/frame_marker" });
+        return Err(FormatError::BadMagic {
+            format: "VP9/frame_marker",
+        });
     }
     let bas = b.u(1);
     let haut = b.u(1);
@@ -141,17 +146,29 @@ pub fn lire_trame_vp9(trame: &[u8]) -> Result<TrameVp9, FormatError> {
         // `show_existing_frame` : la trame ne fait que réafficher un tampon déjà décodé. Elle
         // n'est jamais une image-clé et ne porte aucune dimension.
         let _idx = b.u(3);
-        return Ok(TrameVp9 { cle: false, profil, largeur: 0, hauteur: 0 });
+        return Ok(TrameVp9 {
+            cle: false,
+            profil,
+            largeur: 0,
+            hauteur: 0,
+        });
     }
     let cle = b.u(1) == 0;
     let _show_frame = b.u(1);
     let _error_resilient = b.u(1);
     if !cle {
-        return Ok(TrameVp9 { cle: false, profil, largeur: 0, hauteur: 0 });
+        return Ok(TrameVp9 {
+            cle: false,
+            profil,
+            largeur: 0,
+            hauteur: 0,
+        });
     }
 
     if b.u(24) != SYNC_VP9 {
-        return Err(FormatError::BadMagic { format: "VP9/frame_sync_code" });
+        return Err(FormatError::BadMagic {
+            format: "VP9/frame_sync_code",
+        });
     }
     // `color_config()` — traversée exacte, sans quoi `frame_size()` serait lu de travers.
     if profil >= 2 {
@@ -173,7 +190,12 @@ pub fn lire_trame_vp9(trame: &[u8]) -> Result<TrameVp9, FormatError> {
     }
     let largeur = b.u(16) + 1;
     let hauteur = b.u(16) + 1;
-    Ok(TrameVp9 { cle: true, profil, largeur, hauteur })
+    Ok(TrameVp9 {
+        cle: true,
+        profil,
+        largeur,
+        hauteur,
+    })
 }
 
 // ── Écriture EBML ─────────────────────────────────────────────────────────────
@@ -190,7 +212,10 @@ struct Ebml {
 
 impl Ebml {
     fn new() -> Self {
-        Self { o: Vec::with_capacity(64 * 1024), ouverts: Vec::new() }
+        Self {
+            o: Vec::with_capacity(64 * 1024),
+            ouverts: Vec::new(),
+        }
     }
 
     /// Écrit un identifiant sur sa longueur naturelle (1 à 4 octets).
@@ -315,7 +340,11 @@ pub fn muxer_vp9(
     if trames.is_empty() {
         return Err(FormatError::Corrupt("WebM : aucune image à muxer"));
     }
-    let (num, den) = if cadence.0 > 0 && cadence.1 > 0 { cadence } else { (30, 1) };
+    let (num, den) = if cadence.0 > 0 && cadence.1 > 0 {
+        cadence
+    } else {
+        (30, 1)
+    };
 
     // Première passe : en-têtes de trame. Elle donne les dimensions, le profil et les clés.
     let mut entetes = Vec::with_capacity(trames.len());
@@ -325,8 +354,11 @@ pub fn muxer_vp9(
     let Some(premiere_cle) = entetes.iter().find(|e| e.cle && e.largeur > 0) else {
         return Err(FormatError::Corrupt("WebM : flux VP9 sans image-clé"));
     };
-    let (largeur, hauteur, profil) =
-        (premiere_cle.largeur, premiere_cle.hauteur, premiere_cle.profil);
+    let (largeur, hauteur, profil) = (
+        premiere_cle.largeur,
+        premiere_cle.hauteur,
+        premiere_cle.profil,
+    );
 
     // Horodatage : millisecondes exactes calculées en entiers depuis la cadence rationnelle.
     // Passer par un `f64` accumulé dériverait de plusieurs images sur 21 minutes de film.
@@ -520,7 +552,10 @@ pub struct WebmDemux {
 /// [`FormatError::Corrupt`] si aucune piste VP9 valide n'est trouvée.
 pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
     if data.len() < 4 {
-        return Err(FormatError::TooShort { got: data.len(), need: 4 });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: 4,
+        });
     }
     let Some((id, _)) = lire_id(data) else {
         return Err(FormatError::BadMagic { format: "EBML" });
@@ -608,7 +643,7 @@ pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
                     }
                     ip = ic_fin;
                 }
-            },
+            }
             ID_TRACKS => {
                 let mut tp = elem_debut;
                 while tp < elem_fin {
@@ -654,12 +689,12 @@ pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
                                     if lire_uint(c) == 1 {
                                         is_video = true
                                     }
-                                },
+                                }
                                 ID_CODEC_ID => {
                                     if c.starts_with(b"V_VP9") {
                                         is_vp9 = true;
                                     }
-                                },
+                                }
                                 ID_VIDEO => {
                                     let mut vp = ec_debut;
                                     while vp < ec_fin {
@@ -683,12 +718,12 @@ pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
                                             ID_PIXEL_HEIGHT => h = lire_uint(vc) as u32,
                                             ID_DISPLAY_WIDTH => dw = Some(lire_uint(vc) as u32),
                                             ID_DISPLAY_HEIGHT => dh = Some(lire_uint(vc) as u32),
-                                            _ => {},
+                                            _ => {}
                                         }
                                         vp = vc_fin;
                                     }
-                                },
-                                _ => {},
+                                }
+                                _ => {}
                             }
                             ep = ec_fin;
                         }
@@ -703,7 +738,7 @@ pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
                     }
                     tp = tc_fin;
                 }
-            },
+            }
             ID_CLUSTER => {
                 let mut cp = elem_debut;
                 let mut cluster_timecode = 0u64;
@@ -725,7 +760,7 @@ pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
                     match cid {
                         ID_TIMESTAMP => {
                             cluster_timecode = lire_uint(c);
-                        },
+                        }
                         ID_SIMPLE_BLOCK => {
                             if let Some((tnum, rel_tc, is_key, payload)) = parser_bloc(c)
                                 && (video_track_num.is_none() || video_track_num == Some(tnum))
@@ -754,7 +789,7 @@ pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
                                     octets: payload.to_vec(),
                                 });
                             }
-                        },
+                        }
                         ID_BLOCK_GROUP => {
                             let mut bgp = cc_debut;
                             let mut ref_block = false;
@@ -811,25 +846,29 @@ pub fn demuxer_webm_vp9(data: &[u8]) -> Result<WebmDemux, FormatError> {
                                     octets: payload.to_vec(),
                                 });
                             }
-                        },
-                        _ => {},
+                        }
+                        _ => {}
                     }
                     cp = cc_fin;
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
         p = elem_fin;
     }
 
     if trames.is_empty() {
-        return Err(FormatError::Corrupt("WebM : aucune trame vidéo VP9 trouvée"));
+        return Err(FormatError::Corrupt(
+            "WebM : aucune trame vidéo VP9 trouvée",
+        ));
     }
 
     let duree_secondes = if duree_brute > 0.0 {
         duree_brute * (timecode_scale_ns as f64) / 1_000_000_000.0
     } else {
-        trames.last().map_or(0.0, |t| t.timestamp_ms as f64 / 1000.0)
+        trames
+            .last()
+            .map_or(0.0, |t| t.timestamp_ms as f64 / 1000.0)
     };
 
     Ok(WebmDemux {
@@ -967,7 +1006,11 @@ mod tests {
 
     impl Ecrivain {
         fn new() -> Self {
-            Self { o: Vec::new(), n: 0, cur: 0 }
+            Self {
+                o: Vec::new(),
+                n: 0,
+                cur: 0,
+            }
         }
         fn u(&mut self, v: u32, bits: u32) {
             for i in (0..bits).rev() {
@@ -1020,7 +1063,11 @@ mod tests {
 
         let t = lire_trame_vp9(&trame(false, 1920, 1080)).expect("image intermédiaire");
         assert!(!t.cle);
-        assert_eq!((t.largeur, t.hauteur), (0, 0), "seule une image-clé porte les dimensions");
+        assert_eq!(
+            (t.largeur, t.hauteur),
+            (0, 0),
+            "seule une image-clé porte les dimensions"
+        );
     }
 
     #[test]
@@ -1028,9 +1075,14 @@ mod tests {
         // `frame_marker` doit valoir 2 (bits de tête `10`).
         assert!(matches!(
             lire_trame_vp9(&[0x00, 0x00, 0x00]),
-            Err(FormatError::BadMagic { format: "VP9/frame_marker" })
+            Err(FormatError::BadMagic {
+                format: "VP9/frame_marker"
+            })
         ));
-        assert!(matches!(lire_trame_vp9(&[0x82]), Err(FormatError::TooShort { .. })));
+        assert!(matches!(
+            lire_trame_vp9(&[0x82]),
+            Err(FormatError::TooShort { .. })
+        ));
         // Bon marqueur, image-clé annoncée, mais pas de code de synchronisation.
         let mut w = Ecrivain::new();
         w.u(2, 2);
@@ -1043,7 +1095,9 @@ mod tests {
         w.u(0x00_1234, 24); // mauvais code
         assert!(matches!(
             lire_trame_vp9(&w.fin()),
-            Err(FormatError::BadMagic { format: "VP9/frame_sync_code" })
+            Err(FormatError::BadMagic {
+                format: "VP9/frame_sync_code"
+            })
         ));
     }
 
@@ -1059,14 +1113,22 @@ mod tests {
         assert_eq!(r.cles, 1);
         // La durée est exprimée en millisecondes ENTIÈRES (base de temps du conteneur) :
         // 4 images à 30 i/s = 133 ms, pas 133,333 — l'arrondi appartient au format.
-        assert!((r.secondes - 0.133).abs() < 1e-9, "durée obtenue {}", r.secondes);
+        assert!(
+            (r.secondes - 0.133).abs() < 1e-9,
+            "durée obtenue {}",
+            r.secondes
+        );
 
         let racine = elements_racine(&webm);
         assert_eq!(racine.len(), 2, "un en-tête EBML et un segment");
         assert_eq!(racine[0].0, ID_EBML);
         assert_eq!(racine[1].0, ID_SEGMENT);
         let total: u64 = racine.iter().map(|(_, t)| t).sum();
-        assert_eq!(total, webm.len() as u64, "les tailles couvrent tout le fichier");
+        assert_eq!(
+            total,
+            webm.len() as u64,
+            "les tailles couvrent tout le fichier"
+        );
 
         // Le type de document doit être lisible tel quel — c'est lui que teste un navigateur.
         assert!(webm.windows(4).any(|w| w == b"webm"));
@@ -1132,8 +1194,14 @@ mod tests {
     fn un_flux_sans_image_cle_est_refuse() {
         let p = trame(false, 640, 480);
         let trames: Vec<&[u8]> = vec![&p, &p];
-        assert!(matches!(muxer_vp9(&trames, (30, 1), None), Err(FormatError::Corrupt(_))));
-        assert!(matches!(muxer_vp9(&[], (30, 1), None), Err(FormatError::Corrupt(_))));
+        assert!(matches!(
+            muxer_vp9(&trames, (30, 1), None),
+            Err(FormatError::Corrupt(_))
+        ));
+        assert!(matches!(
+            muxer_vp9(&[], (30, 1), None),
+            Err(FormatError::Corrupt(_))
+        ));
     }
 
     #[test]
@@ -1142,7 +1210,10 @@ mod tests {
         let trames: Vec<&[u8]> = vec![&k];
         let (avec, _) = muxer_vp9(&trames, (30, 1), Some((1920, 1080))).expect("muxage");
         let (sans, _) = muxer_vp9(&trames, (30, 1), Some((1920, 1088))).expect("muxage");
-        assert!(avec.len() > sans.len(), "DisplayWidth/Height ajoutent des octets");
+        assert!(
+            avec.len() > sans.len(),
+            "DisplayWidth/Height ajoutent des octets"
+        );
         assert_eq!(compter(&avec, ID_DISPLAY_WIDTH), 1);
         assert_eq!(compter(&sans, ID_DISPLAY_WIDTH), 0);
     }

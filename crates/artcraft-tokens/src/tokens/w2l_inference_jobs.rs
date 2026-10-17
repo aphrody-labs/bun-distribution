@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct W2lInferenceJobToken(pub String);
 
 impl_string_token!(W2lInferenceJobToken);
-impl_crockford_generator!(W2lInferenceJobToken, 32usize, LegacyTokenPrefix::W2lInferenceJob, CrockfordLower);
+impl_crockford_generator!(
+    W2lInferenceJobToken,
+    32usize,
+    LegacyTokenPrefix::W2lInferenceJob,
+    CrockfordLower
+);

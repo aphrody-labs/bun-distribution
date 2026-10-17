@@ -219,7 +219,11 @@ impl UniformInfo {
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
         let (model_start, model_count) = field_pair(v, "modelInfo");
-        Self { name_id: field_hash(v, "nameId"), model_start, model_count }
+        Self {
+            name_id: field_hash(v, "nameId"),
+            model_start,
+            model_count,
+        }
     }
 }
 
@@ -345,7 +349,11 @@ impl CharaUniformExInfo {
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
         let (uniform_start, uniform_count) = field_pair(v, "uniformInfo");
-        Self { chara_id: field_hash(v, "charaId"), uniform_start, uniform_count }
+        Self {
+            chara_id: field_hash(v, "charaId"),
+            uniform_start,
+            uniform_count,
+        }
     }
 }
 
@@ -396,13 +404,18 @@ impl UniformConfig {
     /// Recherche les tenues étendues d'un personnage par son `charaId`. `None` si absent.
     #[must_use]
     pub fn find_chara_ex(&self, chara_id: HashId) -> Option<&CharaUniformExInfo> {
-        self.chara_ex_uniforms.iter().find(|c| c.chara_id == chara_id)
+        self.chara_ex_uniforms
+            .iter()
+            .find(|c| c.chara_id == chara_id)
     }
 
     /// Renvoie les modèles ayant un `typeId` donné (port de `byTypeId`, uniform-config.ts l.164-169).
     #[must_use]
     pub fn models_with_type_id(&self, type_id: i64) -> Vec<&UniformModelInfo> {
-        self.models.iter().filter(|m| m.type_id == type_id).collect()
+        self.models
+            .iter()
+            .filter(|m| m.type_id == type_id)
+            .collect()
     }
 
     /// Résout chaque [`UniformInfo`] en joignant sa tranche `modelInfo=[start,count]` aux
@@ -456,5 +469,11 @@ pub fn parse_uniform_config(root: &Value) -> UniformConfig {
     let chara_ex_uniforms = list_values(root, "m_CharaUniformExInfoList")
         .map(|vals| vals.iter().map(CharaUniformExInfo::from_value).collect())
         .unwrap_or_default();
-    UniformConfig { models, uniforms, ex_models, ex_uniforms, chara_ex_uniforms }
+    UniformConfig {
+        models,
+        uniforms,
+        ex_models,
+        ex_uniforms,
+        chara_ex_uniforms,
+    }
 }

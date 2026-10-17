@@ -61,7 +61,11 @@ fn non_empty(key: &str) -> Option<String> {
 /// Same, for a path — kept on `OsString` so a non-UTF-8 path survives.
 fn non_empty_path(key: &str) -> Option<PathBuf> {
     let v = std::env::var_os(key)?;
-    if v.is_empty() { None } else { Some(PathBuf::from(v)) }
+    if v.is_empty() {
+        None
+    } else {
+        Some(PathBuf::from(v))
+    }
 }
 
 /// Anything that stops the game from being launched.
@@ -104,7 +108,10 @@ pub enum ProtonError {
 
 impl ProtonError {
     fn io(context: impl Into<String>, source: std::io::Error) -> Self {
-        Self::Io { context: context.into(), source }
+        Self::Io {
+            context: context.into(),
+            source,
+        }
     }
 }
 
@@ -251,7 +258,10 @@ impl Runtime {
     /// The two native library directories Proton's wine needs on `LD_LIBRARY_PATH`.
     #[must_use]
     pub fn library_dirs(&self) -> [PathBuf; 2] {
-        [self.files.join("lib/x86_64-linux-gnu"), self.files.join("lib/i386-linux-gnu")]
+        [
+            self.files.join("lib/x86_64-linux-gnu"),
+            self.files.join("lib/i386-linux-gnu"),
+        ]
     }
 
     /// Proton's pristine prefix, the only correct source for a new one.
@@ -328,11 +338,17 @@ pub fn launch_env(layout: &Layout, runtime: &Runtime) -> Vec<(OsString, OsString
     let mut env: BTreeMap<String, String> = BTreeMap::new();
 
     // ── Wine and its prefix ───────────────────────────────────────────────────────────────
-    env.insert("WINEPREFIX".to_owned(), layout.prefix.to_string_lossy().into_owned());
+    env.insert(
+        "WINEPREFIX".to_owned(),
+        layout.prefix.to_string_lossy().into_owned(),
+    );
     env.insert("WINEARCH".to_owned(), "win64".to_owned());
     env.insert("WINEESYNC".to_owned(), "1".to_owned());
     env.insert("WINEFSYNC".to_owned(), "1".to_owned());
-    env.insert("WINEDEBUG".to_owned(), or_env("WINEDEBUG", "fixme-all,err+module"));
+    env.insert(
+        "WINEDEBUG".to_owned(),
+        or_env("WINEDEBUG", "fixme-all,err+module"),
+    );
     env.insert("DISPLAY".to_owned(), layout.display.clone());
 
     let mut ld = runtime
@@ -362,8 +378,14 @@ pub fn launch_env(layout: &Layout, runtime: &Runtime) -> Vec<(OsString, OsString
         "DXVK_STATE_CACHE_PATH".to_owned(),
         layout.dxvk_cache.to_string_lossy().into_owned(),
     );
-    env.insert("DXVK_LOG_PATH".to_owned(), layout.logs.to_string_lossy().into_owned());
-    env.insert("DXVK_LOG_LEVEL".to_owned(), or_env("DXVK_LOG_LEVEL", "info"));
+    env.insert(
+        "DXVK_LOG_PATH".to_owned(),
+        layout.logs.to_string_lossy().into_owned(),
+    );
+    env.insert(
+        "DXVK_LOG_LEVEL".to_owned(),
+        or_env("DXVK_LOG_LEVEL", "info"),
+    );
     env.insert("DXVK_ENABLE_NVAPI".to_owned(), "0".to_owned());
     env.insert(
         "WINEDLLOVERRIDES".to_owned(),
@@ -384,7 +406,9 @@ pub fn launch_env(layout: &Layout, runtime: &Runtime) -> Vec<(OsString, OsString
     env.insert("PROTON_HIDE_NVIDIA_GPU".to_owned(), "1".to_owned());
     env.insert("PROTON_NO_EAC_RUNTIME".to_owned(), "1".to_owned());
 
-    env.into_iter().map(|(k, v)| (OsString::from(k), OsString::from(v))).collect()
+    env.into_iter()
+        .map(|(k, v)| (OsString::from(k), OsString::from(v)))
+        .collect()
 }
 
 /// Build the command that runs `exe` under Proton, without spawning it.
@@ -498,7 +522,11 @@ pub fn launch_and_wait(
         .map_err(|e| ProtonError::io(format!("spawning {}", runtime.wine.display()), e))?;
 
     let game_pid = crate::lancement::attendre_process(GAME_COMM, wait);
-    Ok(Launch { child, game_pid, log })
+    Ok(Launch {
+        child,
+        game_pid,
+        log,
+    })
 }
 
 /// One prerequisite, and whether this machine satisfies it.
@@ -514,7 +542,11 @@ pub struct Check {
 
 impl Check {
     fn new(name: &'static str, ok: bool, detail: impl Into<String>) -> Self {
-        Self { name, ok, detail: detail.into() }
+        Self {
+            name,
+            ok,
+            detail: detail.into(),
+        }
     }
 
     fn path(name: &'static str, p: &Path, ok: bool) -> Self {
@@ -531,7 +563,11 @@ pub fn doctor(layout: &Layout) -> Vec<Check> {
     // `vec![]` plutôt que `Vec::new()` suivi d'un `push` : `clippy::vec_init_then_push` est dans
     // le groupe `perf`, que ce workspace garde en `warn`, et la CI lance clippy avec
     // `-D warnings`.
-    let mut out = vec![Check::path("game_dir", &layout.game_dir, layout.game_dir.is_dir())];
+    let mut out = vec![Check::path(
+        "game_dir",
+        &layout.game_dir,
+        layout.game_dir.is_dir(),
+    )];
 
     let cpk = layout.game_dir.join("data/cpk_list.cfg.bin");
     out.push(Check::path("vfs_index", &cpk, cpk.is_file()));
@@ -544,9 +580,17 @@ pub fn doctor(layout: &Layout) -> Vec<Check> {
     ));
 
     let default_pfx = layout.proton_files().join("share/default_pfx");
-    out.push(Check::path("proton_default_prefix", &default_pfx, default_pfx.is_dir()));
+    out.push(Check::path(
+        "proton_default_prefix",
+        &default_pfx,
+        default_pfx.is_dir(),
+    ));
 
-    out.push(Check::path("prefix", &layout.prefix, layout.prefix.is_dir()));
+    out.push(Check::path(
+        "prefix",
+        &layout.prefix,
+        layout.prefix.is_dir(),
+    ));
 
     // The sentinel `nie-wine-setup.sh` itself uses to decide the prefix is complete: a prefix
     // built by `wineboot` on an empty directory lacks it, and the d3dcompiler_47 import then
@@ -558,7 +602,11 @@ pub fn doctor(layout: &Layout) -> Vec<Check> {
         ("dosdevice_c", layout.prefix.join("dosdevices/c:")),
         ("dosdevice_z", layout.prefix.join("dosdevices/z:")),
     ] {
-        out.push(Check::new(name, fs::symlink_metadata(&link).is_ok(), link.display().to_string()));
+        out.push(Check::new(
+            name,
+            fs::symlink_metadata(&link).is_ok(),
+            link.display().to_string(),
+        ));
     }
 
     match layout.x11_socket() {
@@ -591,7 +639,10 @@ pub fn doctor(layout: &Layout) -> Vec<Check> {
     out.push(Check::new(
         "virtual_desktop",
         true,
-        format!("explorer /desktop=nie,{} — required under Xvfb (0 Hz refresh)", layout.resolution),
+        format!(
+            "explorer /desktop=nie,{} — required under Xvfb (0 Hz refresh)",
+            layout.resolution
+        ),
     ));
 
     let scope = crate::wine_memory::read_ptrace_scope();
@@ -665,7 +716,9 @@ pub fn prepare_prefix(
 /// Path of the DLL whose presence means the prefix was built from `default_pfx` by value.
 #[must_use]
 pub fn vkd3d_sentinel(layout: &Layout) -> PathBuf {
-    layout.prefix.join("drive_c/windows/system32/libvkd3d-1.dll")
+    layout
+        .prefix
+        .join("drive_c/windows/system32/libvkd3d-1.dll")
 }
 
 /// Whether the prefix looks like a complete, dereferenced copy of `default_pfx`.
@@ -798,7 +851,10 @@ fn copy_graphics_dlls(layout: &Layout, runtime: &Runtime) -> Result<(), ProtonEr
     if let Ok(entries) = fs::read_dir(&vkd3d) {
         for entry in entries.flatten() {
             let from = entry.path();
-            if from.extension().is_some_and(|e| e.eq_ignore_ascii_case("dll")) {
+            if from
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("dll"))
+            {
                 let to = system32.join(entry.file_name());
                 fs::copy(&from, &to).map_err(|e| {
                     ProtonError::io(format!("copying {} to {}", from.display(), to.display()), e)
@@ -814,7 +870,11 @@ mod tests {
     use super::*;
 
     fn layout() -> Layout {
-        Layout::rooted(PathBuf::from("/games/inazuma"), PathBuf::from("/run/nie"), ":99".to_owned())
+        Layout::rooted(
+            PathBuf::from("/games/inazuma"),
+            PathBuf::from("/run/nie"),
+            ":99".to_owned(),
+        )
     }
 
     #[test]
@@ -829,10 +889,16 @@ mod tests {
 
     #[test]
     fn a_display_maps_to_its_x11_socket() {
-        assert_eq!(layout().x11_socket(), Some(PathBuf::from("/tmp/.X11-unix/X99")));
+        assert_eq!(
+            layout().x11_socket(),
+            Some(PathBuf::from("/tmp/.X11-unix/X99"))
+        );
         let with_screen =
             Layout::rooted(PathBuf::from("/g"), PathBuf::from("/r"), ":7.0".to_owned());
-        assert_eq!(with_screen.x11_socket(), Some(PathBuf::from("/tmp/.X11-unix/X7")));
+        assert_eq!(
+            with_screen.x11_socket(),
+            Some(PathBuf::from("/tmp/.X11-unix/X7"))
+        );
     }
 
     #[test]
@@ -863,7 +929,10 @@ mod tests {
             Some(&OsString::from("/run/nie/proton-prefix"))
         );
         // The game reads this one itself; it is not only Proton bookkeeping.
-        assert_eq!(env.get(&OsString::from("SteamAppId")), Some(&OsString::from("2799860")));
+        assert_eq!(
+            env.get(&OsString::from("SteamAppId")),
+            Some(&OsString::from("2799860"))
+        );
     }
 
     #[test]
@@ -915,7 +984,10 @@ mod tests {
         let exe = std::env::current_exe().expect("the test binary is a real file");
         let cmd =
             command(&layout(), &runtime(), &exe, &[], Some("1280x720")).expect("the exe exists");
-        let args: Vec<_> = cmd.get_args().map(|a| a.to_string_lossy().into_owned()).collect();
+        let args: Vec<_> = cmd
+            .get_args()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
         assert_eq!(args[0], "explorer");
         assert_eq!(args[1], "/desktop=nie,1280x720");
         assert_eq!(args[2], exe.to_string_lossy());
@@ -925,15 +997,24 @@ mod tests {
     fn without_a_virtual_desktop_the_executable_is_the_first_argument() {
         let exe = std::env::current_exe().expect("the test binary is a real file");
         let cmd = command(&layout(), &runtime(), &exe, &[], None).expect("the exe exists");
-        let args: Vec<_> = cmd.get_args().map(|a| a.to_string_lossy().into_owned()).collect();
+        let args: Vec<_> = cmd
+            .get_args()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
         assert_eq!(args.len(), 1);
         assert_eq!(args[0], exe.to_string_lossy());
     }
 
     #[test]
     fn a_missing_executable_is_refused_before_anything_is_launched() {
-        let err = command(&layout(), &runtime(), Path::new("/nonexistent/nie.exe"), &[], None)
-            .expect_err("a missing executable cannot be launched");
+        let err = command(
+            &layout(),
+            &runtime(),
+            Path::new("/nonexistent/nie.exe"),
+            &[],
+            None,
+        )
+        .expect_err("a missing executable cannot be launched");
         assert!(matches!(err, ProtonError::ExeMissing(_)), "{err:?}");
     }
 

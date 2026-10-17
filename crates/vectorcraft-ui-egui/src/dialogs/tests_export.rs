@@ -19,7 +19,9 @@ pub(super) fn app(artboards: usize) -> (VectorcraftApp, Written) {
     let written = Written::default();
     let w = written.clone();
     let services = Services {
-        pick_save: Some(Box::new(|p: &crate::FilePick| Some(format!("/out/{}", p.name)))),
+        pick_save: Some(Box::new(|p: &crate::FilePick| {
+            Some(format!("/out/{}", p.name))
+        })),
         write: Some(Box::new(move |p: &str, b: &[u8]| {
             w.borrow_mut().push((p.to_string(), b.to_vec()));
             Ok(())
@@ -27,9 +29,17 @@ pub(super) fn app(artboards: usize) -> (VectorcraftApp, Written) {
         ..Default::default()
     };
     let mut app = VectorcraftApp::new(Session::new(), services);
-    app.run("file.new", json!({"width": 60, "height": 40, "artboards": artboards})).unwrap();
+    app.run(
+        "file.new",
+        json!({"width": 60, "height": 40, "artboards": artboards}),
+    )
+    .unwrap();
     app.run("paint.setStroke", json!({"none": true})).unwrap();
-    app.run("shape.ellipse", json!({"x": 5, "y": 4, "width": 30, "height": 20})).unwrap();
+    app.run(
+        "shape.ellipse",
+        json!({"x": 5, "y": 4, "width": 30, "height": 20}),
+    )
+    .unwrap();
     (app, written)
 }
 
@@ -46,7 +56,12 @@ pub(super) fn kind(app: &VectorcraftApp) -> Option<&str> {
 }
 
 pub(super) fn set(app: &mut VectorcraftApp, field: &str, value: serde_json::Value) {
-    app.ui.dialog.as_mut().expect("a dialog is open").fields.insert(field.into(), value);
+    app.ui
+        .dialog
+        .as_mut()
+        .expect("a dialog is open")
+        .fields
+        .insert(field.into(), value);
 }
 
 pub(super) fn names(w: &Written) -> Vec<String> {
@@ -56,11 +71,27 @@ pub(super) fn names(w: &Written) -> Vec<String> {
 #[test]
 fn png_options_draw_and_export_with_the_chosen_options() {
     let (mut app, written) = app(2);
-    png_options::open(&mut app, fileio::format("png").unwrap(), json!({"format": "png", "path": "/out/a.png", "artboard": 1}));
+    png_options::open(
+        &mut app,
+        fileio::format("png").unwrap(),
+        json!({"format": "png", "path": "/out/a.png", "artboard": 1}),
+    );
     assert_eq!(kind(&app), Some("pngOptions"));
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.f64("ppi", 0.0), d.str("background"), d.str("antiAlias"), d.bool("interlaced")), (72.0, "transparent".into(), "art".into(), false));
-    assert_eq!(d.fields["__size"], json!([60.0, 40.0]), "the chosen artboard");
+    assert_eq!(
+        (
+            d.f64("ppi", 0.0),
+            d.str("background"),
+            d.str("antiAlias"),
+            d.bool("interlaced")
+        ),
+        (72.0, "transparent".into(), "art".into(), false)
+    );
+    assert_eq!(
+        d.fields["__size"],
+        json!([60.0, 40.0]),
+        "the chosen artboard"
+    );
     frame(&mut app);
     // Other resolution and an Other background colour draw their own field and colour button.
     set(&mut app, "__otherPpi", json!(true));
@@ -74,12 +105,19 @@ fn png_options_draw_and_export_with_the_chosen_options() {
     let png = written.borrow()[0].1.clone();
     assert_eq!(png[28], 1, "interlaced");
     let phys = png.windows(4).position(|w| w == b"pHYs").unwrap();
-    assert_eq!(&png[phys + 4..phys + 8], ((200.0f64 / 0.0254).round() as u32).to_be_bytes());
+    assert_eq!(
+        &png[phys + 4..phys + 8],
+        ((200.0f64 / 0.0254).round() as u32).to_be_bytes()
+    );
     let img = image::load_from_memory(&png).unwrap().to_rgba8();
     assert_eq!(img.dimensions(), (167, 111), "60 × 40 pt at 200 ppi");
     assert_eq!(img.get_pixel(0, 0).0, [0x20, 0x40, 0x80, 255]);
     // JPEG Options: quality, and no transparent background.
-    png_options::open(&mut app, fileio::format("jpg").unwrap(), json!({"format": "jpg", "path": "/out/a.jpg"}));
+    png_options::open(
+        &mut app,
+        fileio::format("jpg").unwrap(),
+        json!({"format": "jpg", "path": "/out/a.jpg"}),
+    );
     assert_eq!(kind(&app), Some("jpgOptions"));
     assert_eq!(app.ui.dialog.as_ref().unwrap().str("background"), "white");
     frame(&mut app);
@@ -93,12 +131,21 @@ fn export_as_png_picks_the_file_then_shows_png_options() {
     let (mut app, written) = app(1);
     app.run("file.export.png", json!({})).unwrap();
     assert_eq!(kind(&app), Some("pngOptions"));
-    assert_eq!(app.ui.dialog.as_ref().unwrap().str("path"), "/out/Untitled-1.png");
+    assert_eq!(
+        app.ui.dialog.as_ref().unwrap().str("path"),
+        "/out/Untitled-1.png"
+    );
     assert!(written.borrow().is_empty());
     app.ui.dialog = None;
-    let r = app.run("file.export.png", json!({"path": "/x/a.png", "ppi": 144})).unwrap();
+    let r = app
+        .run("file.export.png", json!({"path": "/x/a.png", "ppi": 144}))
+        .unwrap();
     assert_eq!(r["path"], "/x/a.png");
-    assert_eq!(&written.borrow()[0].1[16..20], 120u32.to_be_bytes(), "60 pt at 144 ppi");
+    assert_eq!(
+        &written.borrow()[0].1[16..20],
+        120u32.to_be_bytes(),
+        "60 pt at 144 ppi"
+    );
 }
 
 #[test]
@@ -114,10 +161,23 @@ fn export_as_with_a_range_then_png_options_writes_one_file_per_artboard() {
     frame(&mut app);
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("pngOptions"), "PNG Options follow");
-    assert!(written.borrow().is_empty(), "nothing is written before the options are confirmed");
+    assert!(
+        written.borrow().is_empty(),
+        "nothing is written before the options are confirmed"
+    );
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("path"), d.str("range"), d.str("background")), ("/out/Untitled-1.png".into(), "1, 3".into(), "transparent".into()));
-    assert!(!d.fields.contains_key("__size"), "two artboards: no single size to show");
+    assert_eq!(
+        (d.str("path"), d.str("range"), d.str("background")),
+        (
+            "/out/Untitled-1.png".into(),
+            "1, 3".into(),
+            "transparent".into()
+        )
+    );
+    assert!(
+        !d.fields.contains_key("__size"),
+        "two artboards: no single size to show"
+    );
     frame(&mut app);
     set(&mut app, "ppi", json!(144));
     set(&mut app, "interlaced", json!(true));
@@ -126,18 +186,28 @@ fn export_as_with_a_range_then_png_options_writes_one_file_per_artboard() {
     let r = confirm(&mut app).unwrap();
     assert!(app.ui.dialog.is_none());
     assert_eq!(r["files"].as_array().unwrap().len(), 2, "{r}");
-    assert_eq!(names(&written), ["/out/Untitled-1-Artboard-1.png", "/out/Untitled-1-Artboard-3.png"]);
+    assert_eq!(
+        names(&written),
+        [
+            "/out/Untitled-1-Artboard-1.png",
+            "/out/Untitled-1-Artboard-3.png"
+        ]
+    );
     let png = &written.borrow()[0].1;
     assert_eq!(png[28], 1, "interlaced");
     let img = image::load_from_memory(png).unwrap().to_rgba8();
     assert_eq!(img.dimensions(), (120, 80), "144 ppi");
-    assert!(img.pixels().all(|p| p[3] == 0 || p[3] == 255), "no anti-aliasing");
+    assert!(
+        img.pixels().all(|p| p[3] == 0 || p[3] == 255),
+        "no anti-aliasing"
+    );
 }
 
 #[test]
 fn a_bad_range_keeps_export_as_open() {
     let (mut app, written) = app(2);
-    app.run("file.exportAs", json!({"useArtboards": true, "range": "5"})).unwrap();
+    app.run("file.exportAs", json!({"useArtboards": true, "range": "5"}))
+        .unwrap();
     assert!(!app.ui.dialog.as_ref().unwrap().bool("all"));
     assert!(confirm(&mut app).is_err());
     assert_eq!(kind(&app), Some("exportAs"));
@@ -147,21 +217,41 @@ fn a_bad_range_keeps_export_as_open() {
 #[test]
 fn svg_continues_in_svg_options_and_pdf_art_is_written_directly() {
     let (mut app, written) = app(2);
-    app.run("file.exportAs", json!({"format": "svg", "useArtboards": true})).unwrap();
+    app.run(
+        "file.exportAs",
+        json!({"format": "svg", "useArtboards": true}),
+    )
+    .unwrap();
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("svgOptions"), "the SVG options follow");
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("path"), d.bool("useArtboards"), d.str("range")), ("/out/Untitled-1.svg".into(), true, "all".into()));
+    assert_eq!(
+        (d.str("path"), d.bool("useArtboards"), d.str("range")),
+        ("/out/Untitled-1.svg".into(), true, "all".into())
+    );
     frame(&mut app);
     confirm(&mut app).unwrap();
     assert!(app.ui.dialog.is_none());
-    assert_eq!(names(&written), ["/out/Untitled-1-Artboard-1.svg", "/out/Untitled-1-Artboard-2.svg"]);
+    assert_eq!(
+        names(&written),
+        [
+            "/out/Untitled-1-Artboard-1.svg",
+            "/out/Untitled-1-Artboard-2.svg"
+        ]
+    );
     // Without artboards: one file of the art's bounds, with no options dialog for a PDF.
     app.run("file.exportAs", json!({"format": "pdf"})).unwrap();
     let r = confirm(&mut app).unwrap();
     assert_eq!(r["path"], "/out/Untitled-1.pdf");
     let pdf = vectorcraft_pdf::import(&written.borrow()[2].1).unwrap();
-    assert_eq!((pdf.artboards[0].rect.width().round(), pdf.artboards[0].rect.height().round()), (30.0, 20.0), "the ellipse's bounds");
+    assert_eq!(
+        (
+            pdf.artboards[0].rect.width().round(),
+            pdf.artboards[0].rect.height().round()
+        ),
+        (30.0, 20.0),
+        "the ellipse's bounds"
+    );
 }
 
 #[test]
@@ -171,48 +261,83 @@ fn jpeg_and_webp_options_draw_and_export() {
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("jpgOptions"));
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("background"), d.f64("quality", 0.0)), ("white".into(), 90.0));
+    assert_eq!(
+        (d.str("background"), d.f64("quality", 0.0)),
+        ("white".into(), 90.0)
+    );
     assert_eq!(d.fields["__size"], json!([30.0, 20.0]), "the art's bounds");
     frame(&mut app);
     set(&mut app, "background", json!("#204080"));
     set(&mut app, "quality", json!(70));
     frame(&mut app);
     assert_eq!(confirm(&mut app).unwrap()["path"], "/out/Untitled-1.jpg");
-    let img = image::load_from_memory(&written.borrow()[0].1).unwrap().to_rgb8();
+    let img = image::load_from_memory(&written.borrow()[0].1)
+        .unwrap()
+        .to_rgb8();
     assert_eq!(img.dimensions(), (30, 20));
     let px = img.get_pixel(0, 0);
     assert!(px[2] > 100 && px[0] < 60, "the background colour: {px:?}");
 
-    app.run("file.exportAs", json!({"format": "webp", "useArtboards": true})).unwrap();
+    app.run(
+        "file.exportAs",
+        json!({"format": "webp", "useArtboards": true}),
+    )
+    .unwrap();
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("webpOptions"));
-    assert_eq!(app.ui.dialog.as_ref().unwrap().fields["__size"], json!([60.0, 40.0]), "the one artboard");
+    assert_eq!(
+        app.ui.dialog.as_ref().unwrap().fields["__size"],
+        json!([60.0, 40.0]),
+        "the one artboard"
+    );
     set(&mut app, "__otherPpi", json!(true));
     set(&mut app, "ppi", json!(36));
     frame(&mut app);
     confirm(&mut app).unwrap();
     let (path, bytes) = written.borrow().last().cloned().unwrap();
-    assert_eq!(path, "/out/Untitled-1.webp", "one artboard is one file, named as picked");
+    assert_eq!(
+        path, "/out/Untitled-1.webp",
+        "one artboard is one file, named as picked"
+    );
     assert_eq!(image::load_from_memory(&bytes).unwrap().width(), 30);
 }
 
 #[test]
 fn old_ids_and_agents_export_directly_with_a_path() {
     let (mut app, written) = app(2);
-    let r = app.run("file.export.png", json!({"path": "/x/a.png", "artboard": 1, "ppi": 144})).unwrap();
+    let r = app
+        .run(
+            "file.export.png",
+            json!({"path": "/x/a.png", "artboard": 1, "ppi": 144}),
+        )
+        .unwrap();
     assert_eq!(r["path"], "/x/a.png");
-    let r = app.run("file.exportAs", json!({"path": "/x/b.webp", "useArtboards": true})).unwrap();
-    assert_eq!(r["files"], json!(["/x/b-Artboard-1.webp", "/x/b-Artboard-2.webp"]));
+    let r = app
+        .run(
+            "file.exportAs",
+            json!({"path": "/x/b.webp", "useArtboards": true}),
+        )
+        .unwrap();
+    assert_eq!(
+        r["files"],
+        json!(["/x/b-Artboard-1.webp", "/x/b-Artboard-2.webp"])
+    );
     assert!(app.ui.dialog.is_none());
     assert_eq!(written.borrow().len(), 3);
-    assert_eq!(&written.borrow()[0].1[16..20], 120u32.to_be_bytes(), "60 pt at 144 ppi");
+    assert_eq!(
+        &written.borrow()[0].1[16..20],
+        120u32.to_be_bytes(),
+        "60 pt at 144 ppi"
+    );
     assert!(crate::menus::enabled(&app, "file.exportAs"));
 }
 
 #[test]
 fn nothing_to_export_keeps_export_as_open_before_the_save_dialog() {
     let (mut app, written) = app(1);
-    app.services.pick_save = Some(Box::new(|_: &crate::FilePick| panic!("no save dialog without art")));
+    app.services.pick_save = Some(Box::new(|_: &crate::FilePick| {
+        panic!("no save dialog without art")
+    }));
     app.run("select.all", json!({})).unwrap();
     app.run("edit.clear", json!({})).unwrap();
     app.run("file.exportAs", json!({})).unwrap();
@@ -220,7 +345,9 @@ fn nothing_to_export_keeps_export_as_open_before_the_save_dialog() {
     assert_eq!(kind(&app), Some("exportAs"));
     // With Use Artboards the empty artboard is exported.
     set(&mut app, "useArtboards", json!(true));
-    app.services.pick_save = Some(Box::new(|p: &crate::FilePick| Some(format!("/out/{}", p.name))));
+    app.services.pick_save = Some(Box::new(|p: &crate::FilePick| {
+        Some(format!("/out/{}", p.name))
+    }));
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("pngOptions"));
     assert!(written.borrow().is_empty());
@@ -229,11 +356,18 @@ fn nothing_to_export_keeps_export_as_open_before_the_save_dialog() {
 #[test]
 fn pdf_artboards_continue_in_the_save_pdf_dialog() {
     let (mut app, written) = app(3);
-    app.run("file.exportAs", json!({"format": "pdf", "useArtboards": true, "range": "2-3"})).unwrap();
+    app.run(
+        "file.exportAs",
+        json!({"format": "pdf", "useArtboards": true, "range": "2-3"}),
+    )
+    .unwrap();
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("savePdf"), "the PDF options follow");
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("path"), d.str("range")), ("/out/Untitled-1.pdf".into(), "2-3".into()));
+    assert_eq!(
+        (d.str("path"), d.str("range")),
+        ("/out/Untitled-1.pdf".into(), "2-3".into())
+    );
     assert!(written.borrow().is_empty());
     frame(&mut app);
     confirm(&mut app).unwrap();
@@ -258,7 +392,11 @@ fn export_as_writes_only_the_chosen_artboard_in_every_format() {
                 frame(&mut app);
                 confirm(&mut app).unwrap();
             }
-            assert_eq!(names(&written), [format!("/out/Untitled-1.{format}")], "{format} {range}");
+            assert_eq!(
+                names(&written),
+                [format!("/out/Untitled-1.{format}")],
+                "{format} {range}"
+            );
             if !ellipse.is_empty() {
                 let text = String::from_utf8_lossy(&written.borrow()[0].1).into_owned();
                 assert_eq!(text.contains(ellipse), on, "{format} {range}: {text}");

@@ -48,55 +48,63 @@ pub fn lighting(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         if white_high { l } else { 1.0 - l }
     };
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let p = &mut row[x * 4..x * 4 + 4];
-            if p[3] <= 1e-6 {
-                continue;
-            }
-            let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
-            let (gx, gy) = if bump != 0.0 {
-                (
-                    (lum(x as isize + 1, y as isize) - lum(x as isize - 1, y as isize)) * bump,
-                    (lum(x as isize, y as isize + 1) - lum(x as isize, y as isize - 1)) * bump,
-                )
-            } else {
-                (0.0, 0.0)
-            };
-            let mut light = amb;
-            let mut spec = [0.0f32; 3];
-            for l in &lights {
-                let (dx, dy) = (px - l.c.x, py - l.c.y);
-                let (s, c) = l.rot;
-                let (u, v) = (dx * c + dy * s, -dx * s + dy * c);
-                let fall = match l.kind {
-                    1 => 1.0,
-                    2 => {
-                        let d = ((dx * dx + dy * dy).sqrt() / l.major) as f32;
-                        (1.0 - d).max(0.0).powi(2)
-                    }
-                    _ => {
-                        let d = ((u / l.major).powi(2) + (v / l.minor).powi(2)).sqrt() as f32;
-                        1.0 - smoothstep(l.focus * 0.95, 1.0, d)
-                    }
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let p = &mut row[x * 4..x * 4 + 4];
+                if p[3] <= 1e-6 {
+                    continue;
+                }
+                let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
+                let (gx, gy) = if bump != 0.0 {
+                    (
+                        (lum(x as isize + 1, y as isize) - lum(x as isize - 1, y as isize)) * bump,
+                        (lum(x as isize, y as isize + 1) - lum(x as isize, y as isize - 1)) * bump,
+                    )
+                } else {
+                    (0.0, 0.0)
                 };
-                // bump shading: light direction in the image plane (towards the light), tilted 45°
-                let (lx, ly) = if l.kind == 1 { (l.rot.1 as f32, l.rot.0 as f32) } else { (-dx as f32, -dy as f32) };
-                let ln = (lx * lx + ly * ly).sqrt().max(1e-6);
-                let shade = (1.0 - (gx * lx + gy * ly) / ln).max(0.0);
+                let mut light = amb;
+                let mut spec = [0.0f32; 3];
+                for l in &lights {
+                    let (dx, dy) = (px - l.c.x, py - l.c.y);
+                    let (s, c) = l.rot;
+                    let (u, v) = (dx * c + dy * s, -dx * s + dy * c);
+                    let fall = match l.kind {
+                        1 => 1.0,
+                        2 => {
+                            let d = ((dx * dx + dy * dy).sqrt() / l.major) as f32;
+                            (1.0 - d).max(0.0).powi(2)
+                        }
+                        _ => {
+                            let d = ((u / l.major).powi(2) + (v / l.minor).powi(2)).sqrt() as f32;
+                            1.0 - smoothstep(l.focus * 0.95, 1.0, d)
+                        }
+                    };
+                    // bump shading: light direction in the image plane (towards the light), tilted 45°
+                    let (lx, ly) = if l.kind == 1 {
+                        (l.rot.1 as f32, l.rot.0 as f32)
+                    } else {
+                        (-dx as f32, -dy as f32)
+                    };
+                    let ln = (lx * lx + ly * ly).sqrt().max(1e-6);
+                    let shade = (1.0 - (gx * lx + gy * ly) / ln).max(0.0);
+                    for k in 0..3 {
+                        light[k] += l.color[k] * l.intensity * fall * shade;
+                        spec[k] +=
+                            l.color[k] * gloss.max(0.0) * fall.powi(8) * l.intensity.max(0.0);
+                    }
+                }
+                let c = Image::unpremul([p[0], p[1], p[2], p[3]]);
                 for k in 0..3 {
-                    light[k] += l.color[k] * l.intensity * fall * shade;
-                    spec[k] += l.color[k] * gloss.max(0.0) * fall.powi(8) * l.intensity.max(0.0);
+                    let s = spec[k] * (1.0 - material) + spec[k] * c[k] * material;
+                    let v = ((c[k] * light[k] + s) * exposure).max(0.0);
+                    p[k] = v * p[3];
                 }
             }
-            let c = Image::unpremul([p[0], p[1], p[2], p[3]]);
-            for k in 0..3 {
-                let s = spec[k] * (1.0 - material) + spec[k] * c[k] * material;
-                let v = ((c[k] * light[k] + s) * exposure).max(0.0);
-                p[k] = v * p[3];
-            }
-        }
-    });
+        });
 }
 
 /// ASC CDL (v1.2): clamp(in × slope + offset)^power per channel, then saturation (Rec. 709 luma),
@@ -147,7 +155,11 @@ pub fn logo_cutout(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         if invert {
             a = 1.0 - a;
         }
-        let col = if unmult && a0 > 1e-4 && !invert { [0, 1, 2].map(|k| (bg[k] + (v[k] - bg[k]) / a0).clamp(0.0, 1.0)) } else { v };
+        let col = if unmult && a0 > 1e-4 && !invert {
+            [0, 1, 2].map(|k| (bg[k] + (v[k] - bg[k]) / a0).clamp(0.0, 1.0))
+        } else {
+            v
+        };
         let l = dec(col);
         let na = a * p[3];
         p.copy_from_slice(&[l[0] * na, l[1] * na, l[2] * na, na]);
@@ -162,7 +174,11 @@ pub fn ultra_key(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let kmag2 = (k[1] * k[1] + k[2] * k[2]).max(1e-6);
     let setting = chv(e, "setting");
     let preset = filmcraft_project::effect::ultra_key_setting(setting);
-    let pf = |id: &str, fallback: f32| preset.and_then(|rows| rows.iter().find(|(k, _)| *k == id).map(|(_, v)| *v as f32)).unwrap_or(fallback);
+    let pf = |id: &str, fallback: f32| {
+        preset
+            .and_then(|rows| rows.iter().find(|(k, _)| *k == id).map(|(_, v)| *v as f32))
+            .unwrap_or(fallback)
+    };
     let transparency = pf("transparency", fv(e, "transparency", cx)) / 100.0;
     let highlight = pf("highlight", fv(e, "highlight", cx)) / 100.0;
     let shadow = pf("shadow", fv(e, "shadow", cx)) / 100.0;
@@ -180,21 +196,25 @@ pub fn ultra_key(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     // matte
     let n = img.w * img.h;
     let mut alpha = vec![1.0f32; n];
-    alpha.par_iter_mut().zip(img.px.par_chunks(4)).for_each(|(a, p)| {
-        if p[3] <= 1e-6 {
-            *a = 0.0;
-            return;
-        }
-        let v = enc(Image::unpremul([p[0], p[1], p[2], p[3]]));
-        let y = rgb_to_ycbcr(v[0], v[1], v[2], Matrix::Bt709);
-        let proj = (y[1] * k[1] + y[2] * k[2]) / kmag2;
-        let perp = ((y[1] - proj * k[1]).powi(2) + (y[2] - proj * k[2]).powi(2)).sqrt() / kmag2.sqrt();
-        let keyness = proj.clamp(0.0, 1.5) * (1.0 - smoothstep(0.0, tol, perp));
-        let mut m = (1.0 - keyness * gain).clamp(0.0, 1.0);
-        m += (y[0] - k[0]).max(0.0) * highlight * 2.0 * keyness.min(1.0);
-        m += (k[0] - y[0]).max(0.0) * shadow * 2.0 * keyness.min(1.0);
-        *a = ((m.clamp(0.0, 1.0) - pedestal) / (1.0 - pedestal)).clamp(0.0, 1.0);
-    });
+    alpha
+        .par_iter_mut()
+        .zip(img.px.par_chunks(4))
+        .for_each(|(a, p)| {
+            if p[3] <= 1e-6 {
+                *a = 0.0;
+                return;
+            }
+            let v = enc(Image::unpremul([p[0], p[1], p[2], p[3]]));
+            let y = rgb_to_ycbcr(v[0], v[1], v[2], Matrix::Bt709);
+            let proj = (y[1] * k[1] + y[2] * k[2]) / kmag2;
+            let perp =
+                ((y[1] - proj * k[1]).powi(2) + (y[2] - proj * k[2]).powi(2)).sqrt() / kmag2.sqrt();
+            let keyness = proj.clamp(0.0, 1.5) * (1.0 - smoothstep(0.0, tol, perp));
+            let mut m = (1.0 - keyness * gain).clamp(0.0, 1.0);
+            m += (y[0] - k[0]).max(0.0) * highlight * 2.0 * keyness.min(1.0);
+            m += (k[0] - y[0]).max(0.0) * shadow * 2.0 * keyness.min(1.0);
+            *a = ((m.clamp(0.0, 1.0) - pedestal) / (1.0 - pedestal)).clamp(0.0, 1.0);
+        });
     // cleanup
     let choke = pf("choke", fv(e, "choke", cx)) / 100.0;
     let soften = pf("soften", fv(e, "soften", cx)) / 100.0;
@@ -204,57 +224,73 @@ pub fn ultra_key(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         let r = (choke * 4.0 * cx.px_scale).max(0.5);
         let b = blur_plane(&alpha, img.w, img.h, r);
         let c = choke * 0.5;
-        alpha.par_iter_mut().zip(b.par_iter()).for_each(|(a, &bb)| *a = a.min(((bb - c) / (1.0 - c)).clamp(0.0, 1.0)));
+        alpha
+            .par_iter_mut()
+            .zip(b.par_iter())
+            .for_each(|(a, &bb)| *a = a.min(((bb - c) / (1.0 - c)).clamp(0.0, 1.0)));
     }
     if soften > 0.0 {
         alpha = blur_plane(&alpha, img.w, img.h, soften * 10.0 * cx.px_scale);
     }
     if contrast > 0.0 {
         let g = 1.0 + contrast * 4.0;
-        alpha.par_iter_mut().for_each(|a| *a = ((*a - mid) * g + mid).clamp(0.0, 1.0));
+        alpha
+            .par_iter_mut()
+            .for_each(|a| *a = ((*a - mid) * g + mid).clamp(0.0, 1.0));
     }
     // spill suppression + colour correction on the foreground
     let spill = pf("spill", fv(e, "spill", cx)) / 100.0;
     let desat = pf("desaturate", fv(e, "desaturate", cx)) / 100.0;
     let range = pf("range", fv(e, "range", cx)) / 100.0;
     let sluma = pf("spill_luma", fv(e, "spill_luma", cx)) / 100.0;
-    let (cc_s, cc_h, cc_l) = (fv(e, "cc_saturation", cx) / 100.0, fv(e, "cc_hue", cx) / 360.0, fv(e, "cc_luminance", cx) / 100.0);
+    let (cc_s, cc_h, cc_l) = (
+        fv(e, "cc_saturation", cx) / 100.0,
+        fv(e, "cc_hue", cx) / 360.0,
+        fv(e, "cc_luminance", cx) / 100.0,
+    );
     let cc = (cc_s - 1.0).abs() > 1e-4 || cc_h.abs() > 1e-6 || (cc_l - 1.0).abs() > 1e-4;
-    img.px.par_chunks_mut(4).zip(alpha.par_iter()).for_each(|(p, &a)| {
-        let src_a = p[3];
-        let mut v = enc(Image::unpremul([p[0], p[1], p[2], p[3]]));
-        let (o1, o2) = (v[(dom + 1) % 3], v[(dom + 2) % 3]);
-        let limit = o1.max(o2) * (1.0 - range) + (o1 + o2) * 0.5 * range;
-        let excess = (v[dom] - limit).max(0.0);
-        if excess > 0.0 && spill > 0.0 {
-            let l0 = luma(v);
-            v[dom] -= excess * spill;
-            let l1 = luma(v);
-            let lm = luma(v);
-            v = v.map(|q| lm + (q - lm) * (1.0 - desat * (excess * 4.0).min(1.0)));
-            let comp = (l0 - l1) * sluma;
-            v = v.map(|q| q + comp);
-        }
-        if cc {
-            let mut h = rgb_to_hsl(v[0].clamp(0.0, 1.0), v[1].clamp(0.0, 1.0), v[2].clamp(0.0, 1.0));
-            h[0] = (h[0] + cc_h).rem_euclid(1.0);
-            h[1] = (h[1] * cc_s).clamp(0.0, 1.0);
-            h[2] = (h[2] * cc_l).clamp(0.0, 1.0);
-            v = hsl_to_rgb(h[0], h[1], h[2]);
-        }
-        let l = dec(v);
-        match output {
-            1 => {
-                let g = filmcraft_color::srgb_to_linear(a);
-                p.copy_from_slice(&[g * src_a, g * src_a, g * src_a, src_a]);
+    img.px
+        .par_chunks_mut(4)
+        .zip(alpha.par_iter())
+        .for_each(|(p, &a)| {
+            let src_a = p[3];
+            let mut v = enc(Image::unpremul([p[0], p[1], p[2], p[3]]));
+            let (o1, o2) = (v[(dom + 1) % 3], v[(dom + 2) % 3]);
+            let limit = o1.max(o2) * (1.0 - range) + (o1 + o2) * 0.5 * range;
+            let excess = (v[dom] - limit).max(0.0);
+            if excess > 0.0 && spill > 0.0 {
+                let l0 = luma(v);
+                v[dom] -= excess * spill;
+                let l1 = luma(v);
+                let lm = luma(v);
+                v = v.map(|q| lm + (q - lm) * (1.0 - desat * (excess * 4.0).min(1.0)));
+                let comp = (l0 - l1) * sluma;
+                v = v.map(|q| q + comp);
             }
-            2 => p.copy_from_slice(&[l[0] * src_a, l[1] * src_a, l[2] * src_a, src_a]),
-            _ => {
-                let na = a * src_a;
-                p.copy_from_slice(&[l[0] * na, l[1] * na, l[2] * na, na]);
+            if cc {
+                let mut h = rgb_to_hsl(
+                    v[0].clamp(0.0, 1.0),
+                    v[1].clamp(0.0, 1.0),
+                    v[2].clamp(0.0, 1.0),
+                );
+                h[0] = (h[0] + cc_h).rem_euclid(1.0);
+                h[1] = (h[1] * cc_s).clamp(0.0, 1.0);
+                h[2] = (h[2] * cc_l).clamp(0.0, 1.0);
+                v = hsl_to_rgb(h[0], h[1], h[2]);
             }
-        }
-    });
+            let l = dec(v);
+            match output {
+                1 => {
+                    let g = filmcraft_color::srgb_to_linear(a);
+                    p.copy_from_slice(&[g * src_a, g * src_a, g * src_a, src_a]);
+                }
+                2 => p.copy_from_slice(&[l[0] * src_a, l[1] * src_a, l[2] * src_a, src_a]),
+                _ => {
+                    let na = a * src_a;
+                    p.copy_from_slice(&[l[0] * na, l[1] * na, l[2] * na, na]);
+                }
+            }
+        });
 }
 
 /// Track Matte Key: multiplies the layer by another video track's alpha or luma (sampled where
@@ -265,26 +301,47 @@ pub fn track_matte(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         return;
     }
     let Some(env) = cx.env else { return };
-    let Some(matte) = env.track(idx - 1) else { return };
-    apply_matte(img, &matte, &env.layer_to_output(), chv(e, "composite") == 1, bv(e, "reverse"));
+    let Some(matte) = env.track(idx - 1) else {
+        return;
+    };
+    apply_matte(
+        img,
+        &matte,
+        &env.layer_to_output(),
+        chv(e, "composite") == 1,
+        bv(e, "reverse"),
+    );
 }
 
 /// Multiply `img` (layer pixels) by `matte` (output pixels) mapped through `m`.
-pub(crate) fn apply_matte(img: &mut Image, matte: &Image, m: &Affine, use_luma: bool, reverse: bool) {
+pub(crate) fn apply_matte(
+    img: &mut Image,
+    matte: &Image,
+    m: &Affine,
+    use_luma: bool,
+    reverse: bool,
+) {
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let o = m.apply(Vec2::new(x as f64 + 0.5, y as f64 + 0.5));
-            let s = matte.sample_bilinear(o.x as f32, o.y as f32);
-            let mut v = if use_luma { filmcraft_color::linear_to_srgb(luma([s[0], s[1], s[2]]).clamp(0.0, 1.0)) } else { s[3] };
-            if reverse {
-                v = 1.0 - v;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let o = m.apply(Vec2::new(x as f64 + 0.5, y as f64 + 0.5));
+                let s = matte.sample_bilinear(o.x as f32, o.y as f32);
+                let mut v = if use_luma {
+                    filmcraft_color::linear_to_srgb(luma([s[0], s[1], s[2]]).clamp(0.0, 1.0))
+                } else {
+                    s[3]
+                };
+                if reverse {
+                    v = 1.0 - v;
+                }
+                for c in &mut row[x * 4..x * 4 + 4] {
+                    *c *= v.clamp(0.0, 1.0);
+                }
             }
-            for c in &mut row[x * 4..x * 4 + 4] {
-                *c *= v.clamp(0.0, 1.0);
-            }
-        }
-    });
+        });
 }
 
 /// Cineon Converter (Kodak Cineon printing-density model, film gamma 0.6, 0.002 density / code).
@@ -296,11 +353,22 @@ pub fn cineon(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let iw = fv(e, "white_internal", cx) / 255.0;
     let gamma = fv(e, "gamma", cx).max(0.1);
     let roll = fv(e, "rolloff", cx) / 255.0;
-    img.map_rgb(|c, _, _| dec(enc(c).map(|v| cineon_value(v, mode, black, white, ib, iw, gamma, roll))));
+    img.map_rgb(|c, _, _| {
+        dec(enc(c).map(|v| cineon_value(v, mode, black, white, ib, iw, gamma, roll)))
+    });
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn cineon_value(v: f32, mode: u32, black: f32, white: f32, ib: f32, iw: f32, gamma: f32, roll: f32) -> f32 {
+pub(crate) fn cineon_value(
+    v: f32,
+    mode: u32,
+    black: f32,
+    white: f32,
+    ib: f32,
+    iw: f32,
+    gamma: f32,
+    roll: f32,
+) -> f32 {
     let k = 0.002 / 0.6;
     let offset = 10f32.powf((black - white) * k);
     match mode {
@@ -339,26 +407,33 @@ pub fn noise(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let grain = (fv(e, "grain_size", cx).max(1.0) * cx.px_scale).max(1.0);
     let frame = crate::effects::noise_frame_seed(cx);
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let p = &mut row[x * 4..x * 4 + 4];
-            let a = p[3];
-            if a <= 0.0 {
-                continue;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let p = &mut row[x * 4..x * 4 + 4];
+                let a = p[3];
+                if a <= 0.0 {
+                    continue;
+                }
+                let (gx, gy) = ((x as f32 / grain) as usize, (y as f32 / grain) as usize);
+                let h = |z: u64| crate::effects::hash3(gx, gy, z) - 0.5;
+                let n0 = h(frame);
+                let ns = if colored {
+                    [n0, h(frame + 7777), h(frame + 99_991)]
+                } else {
+                    [n0; 3]
+                };
+                let c = enc([p[0] / a, p[1] / a, p[2] / a]);
+                let mut o = [c[0] + ns[0] * amt, c[1] + ns[1] * amt, c[2] + ns[2] * amt];
+                if clip {
+                    o = o.map(|v| v.clamp(0.0, 1.0));
+                }
+                let o = dec(o);
+                p[0] = o[0] * a;
+                p[1] = o[1] * a;
+                p[2] = o[2] * a;
             }
-            let (gx, gy) = ((x as f32 / grain) as usize, (y as f32 / grain) as usize);
-            let h = |z: u64| crate::effects::hash3(gx, gy, z) - 0.5;
-            let n0 = h(frame);
-            let ns = if colored { [n0, h(frame + 7777), h(frame + 99_991)] } else { [n0; 3] };
-            let c = enc([p[0] / a, p[1] / a, p[2] / a]);
-            let mut o = [c[0] + ns[0] * amt, c[1] + ns[1] * amt, c[2] + ns[2] * amt];
-            if clip {
-                o = o.map(|v| v.clamp(0.0, 1.0));
-            }
-            let o = dec(o);
-            p[0] = o[0] * a;
-            p[1] = o[1] * a;
-            p[2] = o[2] * a;
-        }
-    });
+        });
 }

@@ -45,7 +45,9 @@ pub fn style_at(runs: &[TextRun], byte: usize) -> CharStyle {
         }
         off = end;
     }
-    last.or(runs.first().map(|r| &r.style)).cloned().unwrap_or_default()
+    last.or(runs.first().map(|r| &r.style))
+        .cloned()
+        .unwrap_or_default()
 }
 
 /// Style for text typed over `start..end` (Illustrator: the first replaced character's style, or
@@ -78,12 +80,18 @@ pub fn normalize(runs: &mut Vec<TextRun>) {
             r.inline = None;
         }
         match out.last_mut() {
-            Some(l) if l.style == r.style && l.inline.is_none() && r.inline.is_none() => l.text.push_str(&r.text),
+            Some(l) if l.style == r.style && l.inline.is_none() && r.inline.is_none() => {
+                l.text.push_str(&r.text)
+            }
             _ => out.push(r),
         }
     }
     if out.is_empty() {
-        out.push(TextRun { text: String::new(), style: first_style.unwrap_or_default(), inline: None });
+        out.push(TextRun {
+            text: String::new(),
+            style: first_style.unwrap_or_default(),
+            inline: None,
+        });
     }
     *runs = out;
 }
@@ -104,7 +112,14 @@ fn split_at(runs: &mut Vec<TextRun>, byte: usize) -> usize {
             // An inline graphic is one character: a split lands before it (`at` == 0), the empty
             // head is dropped by `normalize` and the tail keeps the graphic.
             let inline = runs[i].inline.clone();
-            runs.insert(i + 1, TextRun { text: tail, style, inline });
+            runs.insert(
+                i + 1,
+                TextRun {
+                    text: tail,
+                    style,
+                    inline,
+                },
+            );
             return i + 1;
         }
         off += len;
@@ -117,11 +132,25 @@ fn split_at(runs: &mut Vec<TextRun>, byte: usize) -> usize {
 /// insertion.
 pub fn replace_range(runs: &mut Vec<TextRun>, start: usize, end: usize, insert: &str) -> usize {
     let style = insertion_style(runs, start, end);
-    replace_range_styled(runs, start, end, &[TextRun { text: insert.to_string(), style, inline: None }])
+    replace_range_styled(
+        runs,
+        start,
+        end,
+        &[TextRun {
+            text: insert.to_string(),
+            style,
+            inline: None,
+        }],
+    )
 }
 
 /// Replace `start..end` with styled runs (paste with formatting). Returns the caret after them.
-pub fn replace_range_styled(runs: &mut Vec<TextRun>, start: usize, end: usize, insert: &[TextRun]) -> usize {
+pub fn replace_range_styled(
+    runs: &mut Vec<TextRun>,
+    start: usize,
+    end: usize,
+    insert: &[TextRun],
+) -> usize {
     let plain: String = runs.iter().map(|r| r.text.as_str()).collect();
     let (mut a, mut b) = (floor_char(&plain, start), floor_char(&plain, end));
     if a > b {
@@ -135,7 +164,12 @@ pub fn replace_range_styled(runs: &mut Vec<TextRun>, start: usize, end: usize, i
 }
 
 /// Apply `f` to the character style of `start..end`, splitting runs at the range ends.
-pub fn style_range(runs: &mut Vec<TextRun>, start: usize, end: usize, mut f: impl FnMut(&mut CharStyle)) {
+pub fn style_range(
+    runs: &mut Vec<TextRun>,
+    start: usize,
+    end: usize,
+    mut f: impl FnMut(&mut CharStyle),
+) {
     let plain: String = runs.iter().map(|r| r.text.as_str()).collect();
     let (mut a, mut b) = (floor_char(&plain, start), floor_char(&plain, end));
     if a > b {
@@ -171,7 +205,11 @@ pub fn slice_runs(runs: &[TextRun], start: usize, end: usize) -> Vec<TextRun> {
                 off = re;
                 continue;
             }
-            out.push(TextRun { text: t.to_string(), style: r.style.clone(), inline: r.inline.clone() });
+            out.push(TextRun {
+                text: t.to_string(),
+                style: r.style.clone(),
+                inline: r.inline.clone(),
+            });
         }
         off = re;
     }
@@ -182,12 +220,20 @@ pub fn slice_runs(runs: &[TextRun], start: usize, end: usize) -> Vec<TextRun> {
 
 pub fn prev_char(s: &str, i: usize) -> usize {
     let i = floor_char(s, i);
-    s[..i].char_indices().next_back().map(|(k, _)| k).unwrap_or(0)
+    s[..i]
+        .char_indices()
+        .next_back()
+        .map(|(k, _)| k)
+        .unwrap_or(0)
 }
 
 pub fn next_char(s: &str, i: usize) -> usize {
     let i = floor_char(s, i);
-    s[i..].chars().next().map(|c| i + c.len_utf8()).unwrap_or(s.len())
+    s[i..]
+        .chars()
+        .next()
+        .map(|c| i + c.len_utf8())
+        .unwrap_or(s.len())
 }
 
 /// The start of the grapheme cluster before `i` (Left arrow): a Thai consonant with its vowel and
@@ -195,21 +241,34 @@ pub fn next_char(s: &str, i: usize) -> usize {
 pub fn prev_cluster(s: &str, i: usize) -> usize {
     use unicode_segmentation::GraphemeCursor;
     let i = floor_char(s, i);
-    GraphemeCursor::new(i, s.len(), true).prev_boundary(s, 0).ok().flatten().unwrap_or(0)
+    GraphemeCursor::new(i, s.len(), true)
+        .prev_boundary(s, 0)
+        .ok()
+        .flatten()
+        .unwrap_or(0)
 }
 
 /// The end of the grapheme cluster at `i` (Right arrow, Delete): see [`prev_cluster`].
 pub fn next_cluster(s: &str, i: usize) -> usize {
     use unicode_segmentation::GraphemeCursor;
     let i = floor_char(s, i);
-    GraphemeCursor::new(i, s.len(), true).next_boundary(s, 0).ok().flatten().unwrap_or(s.len())
+    GraphemeCursor::new(i, s.len(), true)
+        .next_boundary(s, 0)
+        .ok()
+        .flatten()
+        .unwrap_or(s.len())
 }
 
 /// Part of a word: a letter, digit or mark (Thai vowel and tone marks, combining accents), an
 /// underscore or an apostrophe.
 fn is_word_char(c: char) -> bool {
     use unicode_general_category::{GeneralCategory as G, get_general_category};
-    c.is_alphanumeric() || matches!(c, '_' | '\'' | '’') || matches!(get_general_category(c), G::NonspacingMark | G::SpacingMark | G::EnclosingMark)
+    c.is_alphanumeric()
+        || matches!(c, '_' | '\'' | '’')
+        || matches!(
+            get_general_category(c),
+            G::NonspacingMark | G::SpacingMark | G::EnclosingMark
+        )
 }
 
 /// Is byte `b` of `s` (with `breaks`, its [`crate::shape::unspaced_word_breaks`]) a boundary
@@ -217,8 +276,12 @@ fn is_word_char(c: char) -> bool {
 fn inner_word_break(s: &str, breaks: &[usize], b: usize) -> bool {
     use crate::shape::is_unspaced_script;
     breaks.binary_search(&b).is_ok()
-        && s.get(b..).and_then(|t| t.chars().next()).is_some_and(is_unspaced_script)
-        && s.get(..b).and_then(|t| t.chars().next_back()).is_some_and(is_unspaced_script)
+        && s.get(b..)
+            .and_then(|t| t.chars().next())
+            .is_some_and(is_unspaced_script)
+        && s.get(..b)
+            .and_then(|t| t.chars().next_back())
+            .is_some_and(is_unspaced_script)
 }
 
 /// Start of the previous word (Cmd/Alt+Left). Thai (Lao, Khmer, Myanmar) words end where their
@@ -232,7 +295,10 @@ pub fn prev_word(s: &str, i: usize) -> usize {
         k -= 1;
     }
     let end = k;
-    while k > 0 && is_word_char(chars[k - 1].1) && !(k < end && inner_word_break(s, &breaks, chars[k].0)) {
+    while k > 0
+        && is_word_char(chars[k - 1].1)
+        && !(k < end && inner_word_break(s, &breaks, chars[k].0))
+    {
         k -= 1;
     }
     chars.get(k).map(|c| c.0).unwrap_or(i)
@@ -247,7 +313,9 @@ pub fn next_word(s: &str, i: usize) -> usize {
         it.next();
     }
     let start = it.peek().map(|(k, _)| i + k);
-    while it.peek().is_some_and(|(k, c)| is_word_char(*c) && !(Some(i + k) != start && inner_word_break(s, &breaks, i + k))) {
+    while it.peek().is_some_and(|(k, c)| {
+        is_word_char(*c) && !(Some(i + k) != start && inner_word_break(s, &breaks, i + k))
+    }) {
         it.next();
     }
     it.peek().map(|(k, _)| i + k).unwrap_or(s.len())
@@ -278,7 +346,11 @@ pub fn word_at(s: &str, i: usize) -> Range<usize> {
         return at..at + c.len_utf8();
     }
     // Thai (Lao, Khmer, Myanmar) words also end where their script's word boundaries are.
-    let breaks = if k == 0 { crate::shape::unspaced_word_breaks(s) } else { vec![] };
+    let breaks = if k == 0 {
+        crate::shape::unspaced_word_breaks(s)
+    } else {
+        vec![]
+    };
     let mut a = at;
     for (p, d) in s[..at].char_indices().rev() {
         if class(d) != k || inner_word_break(s, &breaks, a) {

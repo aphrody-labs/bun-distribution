@@ -27,7 +27,13 @@ pub fn apply(p: &mut Pixmap, b: &Blur, size: (f64, f64), xf: Affine, scale: f64)
         return;
     }
     let at = |u: (f64, f64)| xf * Point::new(u.0 * size.0, u.1 * size.1);
-    progressive(p, sigma(b.start_radius), sigma(b.radius), at(b.start), at(b.end));
+    progressive(
+        p,
+        sigma(b.start_radius),
+        sigma(b.radius),
+        at(b.start),
+        at(b.end),
+    );
 }
 
 /// The blur's standard deviation along the line: `s0` at `a` and before it, `s1` at `b` and past
@@ -49,7 +55,13 @@ impl Ramp {
             return None;
         }
         let (tx, ty) = (d.x / len2, d.y / len2);
-        Some(Ramp { s0, s1, t0: (0.5 - a.x) * tx + (0.5 - a.y) * ty, tx, ty })
+        Some(Ramp {
+            s0,
+            s1,
+            t0: (0.5 - a.x) * tx + (0.5 - a.y) * ty,
+            tx,
+            ty,
+        })
     }
     fn sigma(&self, x: f64, y: f64) -> f64 {
         let t = (self.t0 + x * self.tx + y * self.ty).clamp(0.0, 1.0);
@@ -71,7 +83,9 @@ pub(crate) fn levels(lo: f64, hi: f64) -> Vec<f64> {
         }
         return out;
     }
-    let steps = ((hi / base).ln() / LEVEL_RATIO.ln()).ceil().clamp(1.0, (MAX_LEVELS - 2) as f64) as usize;
+    let steps = ((hi / base).ln() / LEVEL_RATIO.ln())
+        .ceil()
+        .clamp(1.0, (MAX_LEVELS - 2) as f64) as usize;
     out.extend((0..steps).map(|k| base * (hi / base).powf(k as f64 / steps as f64)));
     out.push(hi);
     out
@@ -83,16 +97,31 @@ fn bracket(levels: &[f64], s: f64) -> (u8, u8) {
     if n < 2 {
         return (0, 0);
     }
-    let k = levels.partition_point(|v| *v <= s).saturating_sub(1).min(n - 2);
-    let (Some(lo), Some(hi)) = (levels.get(k), levels.get(k + 1)) else { return (0, 0) };
-    let f = if hi > lo { ((s - lo) / (hi - lo)).clamp(0.0, 1.0) } else { 0.0 };
+    let k = levels
+        .partition_point(|v| *v <= s)
+        .saturating_sub(1)
+        .min(n - 2);
+    let (Some(lo), Some(hi)) = (levels.get(k), levels.get(k + 1)) else {
+        return (0, 0);
+    };
+    let f = if hi > lo {
+        ((s - lo) / (hi - lo)).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     (k as u8, (f * 255.0).round() as u8)
 }
 
 /// A progressive blur of `p`: standard deviation `s0` at pixel point `a` (and before it) to `s1`
 /// at `b` (and past it). A degenerate line blurs with `s1` everywhere.
 pub fn progressive(p: &mut Pixmap, s0: f64, s1: f64, a: Point, b: Point) {
-    let cap = |s: f64| if s.is_finite() { s.clamp(0.0, fx::MAX_SIGMA) } else { 0.0 };
+    let cap = |s: f64| {
+        if s.is_finite() {
+            s.clamp(0.0, fx::MAX_SIGMA)
+        } else {
+            0.0
+        }
+    };
     let (s0, s1) = (cap(s0), cap(s1));
     let Some(ramp) = Ramp::new(s0, s1, a, b).filter(|_| (s1 - s0).abs() >= 0.05) else {
         fx::blur(p, s1);
@@ -127,13 +156,19 @@ pub fn progressive(p: &mut Pixmap, s0: f64, s1: f64, a: Point, b: Point) {
     // Each pixel: Σ weight × level value, the weights of its two levels summing to 255.
     let mut acc = vec![0u16; p.data().len()];
     for (k, s) in lv.iter().enumerate() {
-        let Some(Some([x0, y0, x1, y1])) = used.get(k).copied() else { continue };
+        let Some(Some([x0, y0, x1, y1])) = used.get(k).copied() else {
+            continue;
+        };
         // A level is blurred only around the pixels that use it: a pixel's blur reads at most
         // 3 sigma + 3 pixels away (see `crate::backdrop_reach`), so the result is exact.
         let reach = (s * 3.0).ceil() as u32 + 3;
         let (cx, cy) = (x0.saturating_sub(reach), y0.saturating_sub(reach));
         let (cw, ch) = ((x1 + reach + 1).min(w) - cx, (y1 + reach + 1).min(h) - cy);
-        let Some(mut level) = tiny_skia::IntRect::from_xywh(cx as i32, cy as i32, cw, ch).and_then(|r| p.clone_rect(r)) else { continue };
+        let Some(mut level) = tiny_skia::IntRect::from_xywh(cx as i32, cy as i32, cw, ch)
+            .and_then(|r| p.clone_rect(r))
+        else {
+            continue;
+        };
         fx::blur(&mut level, *s);
         let ld = level.data();
         let row = cw as usize * 4;

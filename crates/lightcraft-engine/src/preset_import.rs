@@ -31,37 +31,68 @@ pub const PRESET_EXTS: &[&str] = &["xmp", "lrtemplate", "zip", "dng", "lmp", "mp
 /// The files of a zip archive: (path inside the archive, bytes). Stored and deflated entries;
 /// directories, macOS resource forks and hidden files are skipped.
 pub fn read_zip(bytes: &[u8]) -> Result<Vec<(String, Vec<u8>)>, String> {
-    let u16_at = |o: usize| bytes.get(o..o + 2).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize);
-    let u32_at = |o: usize| bytes.get(o..o + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize);
+    let u16_at = |o: usize| {
+        bytes
+            .get(o..o + 2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]) as usize)
+    };
+    let u32_at = |o: usize| {
+        bytes
+            .get(o..o + 4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize)
+    };
     // end of central directory: the last "PK\x05\x06" within the trailing 64 KiB + 22 bytes
     let tail = bytes.len().saturating_sub(65_557);
-    let eocd = (tail..bytes.len().saturating_sub(21)).rev().find(|&i| bytes[i..].starts_with(b"PK\x05\x06")).ok_or("not a zip file")?;
+    let eocd = (tail..bytes.len().saturating_sub(21))
+        .rev()
+        .find(|&i| bytes[i..].starts_with(b"PK\x05\x06"))
+        .ok_or("not a zip file")?;
     let count = u16_at(eocd + 10).ok_or("bad zip")?;
     let mut at = u32_at(eocd + 16).ok_or("bad zip")?;
     let mut out = Vec::new();
     for _ in 0..count {
-        if !bytes.get(at..).is_some_and(|b| b.starts_with(b"PK\x01\x02")) {
+        if !bytes
+            .get(at..)
+            .is_some_and(|b| b.starts_with(b"PK\x01\x02"))
+        {
             return Err("bad zip central directory".into());
         }
         let method = u16_at(at + 10).ok_or("bad zip")?;
         let csize = u32_at(at + 20).ok_or("bad zip")?;
         let usize_ = u32_at(at + 24).ok_or("bad zip")?;
-        let (nlen, xlen, clen) = (u16_at(at + 28).ok_or("bad zip")?, u16_at(at + 30).ok_or("bad zip")?, u16_at(at + 32).ok_or("bad zip")?);
+        let (nlen, xlen, clen) = (
+            u16_at(at + 28).ok_or("bad zip")?,
+            u16_at(at + 30).ok_or("bad zip")?,
+            u16_at(at + 32).ok_or("bad zip")?,
+        );
         let local = u32_at(at + 42).ok_or("bad zip")?;
-        let name = String::from_utf8_lossy(bytes.get(at + 46..at + 46 + nlen).ok_or("bad zip")?).replace('\\', "/");
+        let name = String::from_utf8_lossy(bytes.get(at + 46..at + 46 + nlen).ok_or("bad zip")?)
+            .replace('\\', "/");
         at += 46 + nlen + xlen + clen;
-        let skip = name.ends_with('/') || name.split('/').any(|p| p.starts_with('.') || p == "__MACOSX");
+        let skip = name.ends_with('/')
+            || name
+                .split('/')
+                .any(|p| p.starts_with('.') || p == "__MACOSX");
         if skip {
             continue;
         }
-        if !bytes.get(local..).is_some_and(|b| b.starts_with(b"PK\x03\x04")) {
+        if !bytes
+            .get(local..)
+            .is_some_and(|b| b.starts_with(b"PK\x03\x04"))
+        {
             return Err(format!("{name}: bad local header"));
         }
-        let data_at = local + 30 + u16_at(local + 26).ok_or("bad zip")? + u16_at(local + 28).ok_or("bad zip")?;
-        let data = bytes.get(data_at..data_at + csize).ok_or_else(|| format!("{name}: truncated"))?;
+        let data_at = local
+            + 30
+            + u16_at(local + 26).ok_or("bad zip")?
+            + u16_at(local + 28).ok_or("bad zip")?;
+        let data = bytes
+            .get(data_at..data_at + csize)
+            .ok_or_else(|| format!("{name}: truncated"))?;
         let content = match method {
             0 => data.to_vec(),
-            8 => miniz_oxide::inflate::decompress_to_vec_with_limit(data, usize_.max(1) * 2 + 1024).map_err(|e| format!("{name}: {e:?}"))?,
+            8 => miniz_oxide::inflate::decompress_to_vec_with_limit(data, usize_.max(1) * 2 + 1024)
+                .map_err(|e| format!("{name}: {e:?}"))?,
             m => return Err(format!("{name}: unsupported compression method {m}")),
         };
         out.push((name, content));
@@ -139,7 +170,10 @@ impl LuaParser<'_> {
         self.i += level + 2;
         let close = format!("]{}]", "=".repeat(level));
         let rest = &self.s[self.i..];
-        let end = rest.windows(close.len()).position(|w| w == close.as_bytes()).ok_or("unterminated long string")?;
+        let end = rest
+            .windows(close.len())
+            .position(|w| w == close.as_bytes())
+            .ok_or("unterminated long string")?;
         let mut text = String::from_utf8_lossy(&rest[..end]).to_string();
         if text.starts_with('\n') {
             text.remove(0);
@@ -187,10 +221,13 @@ impl LuaParser<'_> {
     }
     fn ident(&mut self) -> Option<String> {
         let start = self.i;
-        while self.i < self.s.len() && (self.s[self.i].is_ascii_alphanumeric() || self.s[self.i] == b'_') {
+        while self.i < self.s.len()
+            && (self.s[self.i].is_ascii_alphanumeric() || self.s[self.i] == b'_')
+        {
             self.i += 1;
         }
-        (self.i > start && !self.s[start].is_ascii_digit()).then(|| String::from_utf8_lossy(&self.s[start..self.i]).to_string())
+        (self.i > start && !self.s[start].is_ascii_digit())
+            .then(|| String::from_utf8_lossy(&self.s[start..self.i]).to_string())
     }
     fn number(&mut self) -> Result<f64, String> {
         let start = self.i;
@@ -200,15 +237,26 @@ impl LuaParser<'_> {
             while self.i < self.s.len() && self.s[self.i].is_ascii_hexdigit() {
                 self.i += 1;
             }
-            return i64::from_str_radix(std::str::from_utf8(&self.s[h..self.i]).unwrap_or(""), 16).map(|v| v as f64).map_err(|e| e.to_string());
+            return i64::from_str_radix(std::str::from_utf8(&self.s[h..self.i]).unwrap_or(""), 16)
+                .map(|v| v as f64)
+                .map_err(|e| e.to_string());
         }
-        while self.i < self.s.len() && (self.s[self.i].is_ascii_digit() || matches!(self.s[self.i], b'.' | b'e' | b'E' | b'+' | b'-')) {
-            if matches!(self.s[self.i], b'+' | b'-') && self.i > start && !matches!(self.s[self.i - 1], b'e' | b'E') {
+        while self.i < self.s.len()
+            && (self.s[self.i].is_ascii_digit()
+                || matches!(self.s[self.i], b'.' | b'e' | b'E' | b'+' | b'-'))
+        {
+            if matches!(self.s[self.i], b'+' | b'-')
+                && self.i > start
+                && !matches!(self.s[self.i - 1], b'e' | b'E')
+            {
                 break;
             }
             self.i += 1;
         }
-        std::str::from_utf8(&self.s[start..self.i]).ok().and_then(|t| t.parse().ok()).map_or_else(|| self.err("bad number"), Ok)
+        std::str::from_utf8(&self.s[start..self.i])
+            .ok()
+            .and_then(|t| t.parse().ok())
+            .map_or_else(|| self.err("bad number"), Ok)
     }
     fn value(&mut self) -> Result<Lua, String> {
         if self.depth >= 64 {
@@ -221,7 +269,9 @@ impl LuaParser<'_> {
     }
     fn value_inner(&mut self) -> Result<Lua, String> {
         self.skip_ws();
-        let Some(&c) = self.s.get(self.i) else { return self.err("unexpected end") };
+        let Some(&c) = self.s.get(self.i) else {
+            return self.err("unexpected end");
+        };
         match c {
             b'{' => self.table(),
             b'"' | b'\'' => self.string().map(Lua::Str),
@@ -299,7 +349,9 @@ impl LuaParser<'_> {
                     let save = self.i;
                     if let Some(name) = self.ident() {
                         self.skip_ws();
-                        if self.s.get(self.i) == Some(&b'=') && self.s.get(self.i + 1) != Some(&b'=') {
+                        if self.s.get(self.i) == Some(&b'=')
+                            && self.s.get(self.i + 1) != Some(&b'=')
+                        {
                             self.i += 1;
                             let v = self.value()?;
                             map.push((name, v));
@@ -328,7 +380,11 @@ pub fn parse_lua(text: &str) -> Result<Lua, String> {
     if text.len() > 16 << 20 {
         return Err("Lua settings exceed 16 MiB".into());
     }
-    let mut p = LuaParser { s: text.as_bytes(), i: 0, depth: 0 };
+    let mut p = LuaParser {
+        s: text.as_bytes(),
+        i: 0,
+        depth: 0,
+    };
     p.skip_ws();
     let save = p.i;
     match p.ident().as_deref() {
@@ -356,17 +412,31 @@ fn delocalize(s: &str) -> String {
 
 /// The develop settings of an `.lrtemplate` as `crs:` properties (flat, and structured for local
 /// corrections), plus its title.
-pub fn lrtemplate_props(text: &str) -> Result<(Option<String>, Props, crate::crs_masks::Values), String> {
+pub fn lrtemplate_props(
+    text: &str,
+) -> Result<(Option<String>, Props, crate::crs_masks::Values), String> {
     let root = parse_lua(text)?;
-    let title = root.get("title").or_else(|| root.get("internalName")).and_then(Lua::str).map(delocalize).filter(|t| !t.trim().is_empty());
-    let settings = root.get("value").and_then(|v| v.get("settings")).ok_or("no develop settings in this template")?;
+    let title = root
+        .get("title")
+        .or_else(|| root.get("internalName"))
+        .and_then(Lua::str)
+        .map(delocalize)
+        .filter(|t| !t.trim().is_empty());
+    let settings = root
+        .get("value")
+        .and_then(|v| v.get("settings"))
+        .ok_or("no develop settings in this template")?;
     let (props, values) = lua_settings_props(settings)?;
     Ok((title, props, values))
 }
 
 /// Data-only Lua settings shared by preset and native catalog import. Never executes Lua.
-pub(crate) fn lua_settings_props(settings: &Lua) -> Result<(Props, crate::crs_masks::Values), String> {
-    let Lua::Table(_, fields) = settings else { return Err("no develop settings in this template".into()) };
+pub(crate) fn lua_settings_props(
+    settings: &Lua,
+) -> Result<(Props, crate::crs_masks::Values), String> {
+    let Lua::Table(_, fields) = settings else {
+        return Err("no develop settings in this template".into());
+    };
     let mut props = Props::new();
     let mut values = crate::crs_masks::Values::new();
     for (k, v) in fields {
@@ -379,13 +449,18 @@ pub(crate) fn lua_settings_props(settings: &Lua) -> Result<(Props, crate::crs_ma
             Lua::Bool(b) => vec![if *b { "True" } else { "False" }.to_string()],
             Lua::Str(s) => vec![delocalize(s)],
             // point curves are flat lists x1, y1, x2, y2, …
-            Lua::Table(arr, map) if map.is_empty() && !arr.is_empty() && arr.iter().all(|a| matches!(a, Lua::Num(_))) => arr
-                .chunks(2)
-                .filter_map(|c| match c {
-                    [Lua::Num(x), Lua::Num(y)] => Some(format!("{x}, {y}")),
-                    _ => None,
-                })
-                .collect(),
+            Lua::Table(arr, map)
+                if map.is_empty()
+                    && !arr.is_empty()
+                    && arr.iter().all(|a| matches!(a, Lua::Num(_))) =>
+            {
+                arr.chunks(2)
+                    .filter_map(|c| match c {
+                        [Lua::Num(x), Lua::Num(y)] => Some(format!("{x}, {y}")),
+                        _ => None,
+                    })
+                    .collect()
+            }
             Lua::Table(a, m) if a.is_empty() && m.is_empty() => continue,
             // anything else (local corrections, retouch…) is only reported
             Lua::Table(..) => vec!["(table)".into()],
@@ -402,7 +477,11 @@ pub(crate) fn lua_settings_props(settings: &Lua) -> Result<(Props, crate::crs_ma
 /// `<x:xmpmeta` to `</x:xmpmeta>`.
 pub fn embedded_xmp(bytes: &[u8]) -> Option<String> {
     let start = bytes.windows(10).position(|w| w == b"<x:xmpmeta")?;
-    let end = bytes[start..].windows(12).position(|w| w == b"</x:xmpmeta>")? + start + 12;
+    let end = bytes[start..]
+        .windows(12)
+        .position(|w| w == b"</x:xmpmeta>")?
+        + start
+        + 12;
     Some(String::from_utf8_lossy(&bytes[start..end]).to_string())
 }
 
@@ -456,20 +535,41 @@ pub fn group_from_dir(dir: &str) -> Option<String> {
     ];
     let generic = |name: &str| {
         let lower = name.to_ascii_lowercase();
-        lower.split(|c: char| !c.is_alphanumeric()).filter(|w| !w.is_empty()).all(|w| FILLER.contains(&w) || w.chars().all(|c| c.is_ascii_digit()))
+        lower
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|w| !w.is_empty())
+            .all(|w| FILLER.contains(&w) || w.chars().all(|c| c.is_ascii_digit()))
     };
     // a macOS bundle (`Look.lmp/Contents/…`) is a file, not a group
     let bundle = |p: &str| p.to_ascii_lowercase().ends_with(".lmp");
-    dir.split(['/', '\\']).rev().find(|p| !p.is_empty() && !generic(p) && !bundle(p)).map(str::to_string)
+    dir.split(['/', '\\'])
+        .rev()
+        .find(|p| !p.is_empty() && !generic(p) && !bundle(p))
+        .map(str::to_string)
 }
 
-pub(crate) fn build(props: &Props, values: &crate::crs_masks::Values, name: String, group: Option<String>, from_photo: bool) -> Option<Imported> {
-    let (mut settings, unmapped) = crate::crs::to_partial_report(props, Some(values), crate::crs::Target::Any, crate::crs_masks::DEFAULT_ASPECT);
+pub(crate) fn build(
+    props: &Props,
+    values: &crate::crs_masks::Values,
+    name: String,
+    group: Option<String>,
+    from_photo: bool,
+) -> Option<Imported> {
+    let (mut settings, unmapped) = crate::crs::to_partial_report(
+        props,
+        Some(values),
+        crate::crs::Target::Any,
+        crate::crs_masks::DEFAULT_ASPECT,
+    );
     if from_photo && let Some(o) = settings.as_object_mut() {
         // a photo's own framing and absolute white balance don't belong in a look
         o.remove("crop");
         o.remove("geometry");
-        if o.get("wb").and_then(|w| w.get("mode")).and_then(Value::as_str).is_none_or(|m| m == "custom" || m == "asShot") {
+        if o.get("wb")
+            .and_then(|w| w.get("mode"))
+            .and_then(Value::as_str)
+            .is_none_or(|m| m == "custom" || m == "asShot")
+        {
             o.remove("wb");
         }
     }
@@ -483,35 +583,73 @@ pub(crate) fn build(props: &Props, values: &crate::crs_masks::Values, name: Stri
         .filter(|s| !s.is_empty())
         .or(group)
         .unwrap_or_else(|| "Imported Presets".into());
-    let uuid = props.get("crs:UUID").and_then(|v| v.first()).map(|u| u.to_ascii_lowercase());
-    let id = format!("user.xmp.{}", uuid.unwrap_or_else(|| crate::presets::slug(&format!("{group}-{name}"))));
-    Some(Imported { preset: Preset { id, name, group, settings, favorite: false, builtin: false }, unmapped })
+    let uuid = props
+        .get("crs:UUID")
+        .and_then(|v| v.first())
+        .map(|u| u.to_ascii_lowercase());
+    let id = format!(
+        "user.xmp.{}",
+        uuid.unwrap_or_else(|| crate::presets::slug(&format!("{group}-{name}")))
+    );
+    Some(Imported {
+        preset: Preset {
+            id,
+            name,
+            group,
+            settings,
+            favorite: false,
+            builtin: false,
+        },
+        unmapped,
+    })
 }
 
 /// Read the presets in file `name` (`bytes`); `group` names the group when the file doesn't
 /// (its folder). Zip bundles are read recursively.
-pub fn read_presets(name: &str, bytes: &[u8], group: Option<String>) -> Result<Vec<Imported>, String> {
+pub fn read_presets(
+    name: &str,
+    bytes: &[u8],
+    group: Option<String>,
+) -> Result<Vec<Imported>, String> {
     let path = Path::new(name);
-    let stem = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "Preset".into());
-    let ext = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Preset".into());
+    let ext = path
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
     match ext.as_str() {
         "zip" => {
             let mut out = Vec::new();
             let mut errors = Vec::new();
             for (inner, data) in read_zip(bytes)? {
-                let iext = Path::new(&inner).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-                if !(PRESET_EXTS.contains(&iext.as_str()) || iext == crate::presets::LCPRESET_EXT) || iext == "zip" {
+                let iext = Path::new(&inner)
+                    .extension()
+                    .map(|e| e.to_string_lossy().to_ascii_lowercase())
+                    .unwrap_or_default();
+                if !(PRESET_EXTS.contains(&iext.as_str()) || iext == crate::presets::LCPRESET_EXT)
+                    || iext == "zip"
+                {
                     continue;
                 }
-                let dir_group =
-                    inner.rsplit_once('/').and_then(|(d, _)| group_from_dir(d)).or_else(|| group_from_dir(&stem)).or_else(|| group.clone());
+                let dir_group = inner
+                    .rsplit_once('/')
+                    .and_then(|(d, _)| group_from_dir(d))
+                    .or_else(|| group_from_dir(&stem))
+                    .or_else(|| group.clone());
                 match read_presets(&inner, &data, dir_group) {
                     Ok(v) => out.extend(v),
                     Err(e) => errors.push(format!("{inner}: {e}")),
                 }
             }
             if out.is_empty() {
-                return Err(if errors.is_empty() { "no presets in this archive".into() } else { errors.join("; ") });
+                return Err(if errors.is_empty() {
+                    "no presets in this archive".into()
+                } else {
+                    errors.join("; ")
+                });
             }
             Ok(out)
         }
@@ -526,16 +664,26 @@ pub fn read_presets(name: &str, bytes: &[u8], group: Option<String>) -> Result<V
         }
         "xmp" => {
             let text = String::from_utf8_lossy(bytes);
-            let d = lightcraft_meta::parse_xmp(text.trim_start_matches('\u{feff}')).map_err(|e| e.to_string())?;
+            let d = lightcraft_meta::parse_xmp(text.trim_start_matches('\u{feff}'))
+                .map_err(|e| e.to_string())?;
             let props = &d.properties;
-            let name = props.get("crs:Name").and_then(|v| v.first()).map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).unwrap_or(stem);
-            build(props, &d.values, name, group, false).map(|i| vec![i]).ok_or_else(|| "no develop settings in this XMP file".into())
+            let name = props
+                .get("crs:Name")
+                .and_then(|v| v.first())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or(stem);
+            build(props, &d.values, name, group, false)
+                .map(|i| vec![i])
+                .ok_or_else(|| "no develop settings in this XMP file".into())
         }
         // a photo carrying its edits (mobile "DNG presets", edited JPEG / TIFF)
         "dng" | "jpg" | "jpeg" | "tif" | "tiff" => {
             let xmp = embedded_xmp(bytes).ok_or("this photo carries no edits (no XMP)")?;
             let d = lightcraft_meta::parse_xmp(&xmp).map_err(|e| e.to_string())?;
-            build(&d.properties, &d.values, stem, group, true).map(|i| vec![i]).ok_or_else(|| "this photo carries no edits we can use".into())
+            build(&d.properties, &d.values, stem, group, true)
+                .map(|i| vec![i])
+                .ok_or_else(|| "this photo carries no edits we can use".into())
         }
         _ => crate::presets::parse_preset_file(name, bytes).map(|v| {
             v.into_iter()
@@ -545,7 +693,10 @@ pub fn read_presets(name: &str, bytes: &[u8], group: Option<String>) -> Result<V
                     {
                         p.group = g.clone();
                     }
-                    Imported { preset: p, unmapped: Vec::new() }
+                    Imported {
+                        preset: p,
+                        unmapped: Vec::new(),
+                    }
                 })
                 .collect()
         }),
@@ -562,7 +713,11 @@ pub(crate) mod tests {
         let mut out = Vec::new();
         let mut central = Vec::new();
         for (name, data) in entries {
-            let (method, body) = if deflate { (8u16, miniz_oxide::deflate::compress_to_vec(data, 6)) } else { (0, data.to_vec()) };
+            let (method, body) = if deflate {
+                (8u16, miniz_oxide::deflate::compress_to_vec(data, 6))
+            } else {
+                (0, data.to_vec())
+            };
             let off = out.len() as u32;
             let head = |sig: &[u8], out: &mut Vec<u8>, central: bool| {
                 out.extend_from_slice(sig);
@@ -645,7 +800,10 @@ text]], z = ZSTR "loc" }"#,
         let v = read_presets("Warm Fade.lrtemplate", TEMPLATE.as_bytes(), None).unwrap();
         assert_eq!(v.len(), 1);
         let p = &v[0].preset;
-        assert_eq!((p.name.as_str(), p.group.as_str()), ("Warm Fade", "Imported Presets"));
+        assert_eq!(
+            (p.name.as_str(), p.group.as_str()),
+            ("Warm Fade", "Imported Presets")
+        );
         assert_eq!(p.settings["light"]["exposure"], json!(0.35));
         assert_eq!(p.settings["light"]["contrast"], json!(-20.0));
         assert_eq!(p.settings["treatment"], json!("color"));
@@ -654,9 +812,15 @@ text]], z = ZSTR "loc" }"#,
         let c = p.settings["curve"]["master"].as_array().unwrap();
         assert_eq!(c.len(), 3);
         assert!((c[0]["y"].as_f64().unwrap() - 20.0 / 255.0).abs() < 1e-9);
-        assert_eq!(v[0].unmapped, vec!["CameraProfile".to_string()], "profiles are ours; the rest is mapped or bookkeeping");
+        assert_eq!(
+            v[0].unmapped,
+            vec!["CameraProfile".to_string()],
+            "profiles are ours; the rest is mapped or bookkeeping"
+        );
         // it parses into real develop settings
-        let d = lightcraft_develop::DevelopSettings::default().merged(&p.settings).expect("valid develop settings");
+        let d = lightcraft_develop::DevelopSettings::default()
+            .merged(&p.settings)
+            .expect("valid develop settings");
         assert_eq!(d.light.exposure, 0.35);
     }
 
@@ -665,7 +829,11 @@ text]], z = ZSTR "loc" }"#,
         let t = "s = { title = \"Old\", value = { settings = { Exposure = 0.5, Contrast = 50, FillLight = 20, HighlightRecovery = 30, Clarity = 10, ToneCurve = { 0, 0, 64, 50, 255, 255 } } } }";
         let p = &read_presets("Old.lrtemplate", t.as_bytes(), None).unwrap()[0].preset;
         assert_eq!(p.settings["light"]["exposure"], json!(0.5));
-        assert_eq!(p.settings["light"]["contrast"], json!(25.0), "relative to the old default of 25");
+        assert_eq!(
+            p.settings["light"]["contrast"],
+            json!(25.0),
+            "relative to the old default of 25"
+        );
         assert_eq!(p.settings["light"]["shadows"], json!(20.0));
         assert_eq!(p.settings["light"]["highlights"], json!(-30.0));
         assert_eq!(p.settings["effects"]["clarity"], json!(10.0));
@@ -691,7 +859,10 @@ text]], z = ZSTR "loc" }"#,
         let v = read_presets("/x/Moody.dng", &file, None).unwrap();
         let p = &v[0].preset;
         assert_eq!(p.name, "Moody");
-        assert_eq!(p.settings, json!({"light": {"exposure": 0.5}, "color": {"vibrance": 20.0}}));
+        assert_eq!(
+            p.settings,
+            json!({"light": {"exposure": 0.5}, "color": {"vibrance": 20.0}})
+        );
         assert!(read_presets("plain.jpg", b"\xff\xd8 no xmp", None).is_err());
     }
 
@@ -708,8 +879,15 @@ text]], z = ZSTR "loc" }"#,
                 deflate,
             );
             let v = read_presets("pack.zip", &z, None).unwrap();
-            let names: Vec<_> = v.iter().map(|i| (i.preset.name.as_str(), i.preset.group.as_str())).collect();
-            assert_eq!(names, [("Warm Fade", "Film"), ("Bright", "Film")], "deflate={deflate}");
+            let names: Vec<_> = v
+                .iter()
+                .map(|i| (i.preset.name.as_str(), i.preset.group.as_str()))
+                .collect();
+            assert_eq!(
+                names,
+                [("Warm Fade", "Film"), ("Bright", "Film")],
+                "deflate={deflate}"
+            );
         }
         assert!(read_presets("empty.zip", &zip(&[("a.txt", b"x")], true), None).is_err());
         assert!(read_presets("bad.zip", b"not a zip", None).is_err());
@@ -719,12 +897,28 @@ text]], z = ZSTR "loc" }"#,
     fn generic_folder_names_are_not_groups() {
         assert_eq!(group_from_dir("Settings"), None);
         assert_eq!(group_from_dir("Develop Presets/"), None);
-        assert_eq!(group_from_dir("Looks/My Film Looks"), Some("My Film Looks".into()));
+        assert_eq!(
+            group_from_dir("Looks/My Film Looks"),
+            Some("My Film Looks".into())
+        );
         // commercial packs nest by format: the pack's name wins
-        assert_eq!(group_from_dir("Film Pack/Lightroom Classic"), Some("Film Pack".into()));
-        assert_eq!(group_from_dir("Film Pack/Mobile (DNG)/"), Some("Film Pack".into()));
-        assert_eq!(group_from_dir("Film Pack/XMP Presets for Lightroom CC 7.3+"), Some("Film Pack".into()));
-        assert_eq!(group_from_dir("Sacred Light"), Some("Sacred Light".into()), "whole words only");
+        assert_eq!(
+            group_from_dir("Film Pack/Lightroom Classic"),
+            Some("Film Pack".into())
+        );
+        assert_eq!(
+            group_from_dir("Film Pack/Mobile (DNG)/"),
+            Some("Film Pack".into())
+        );
+        assert_eq!(
+            group_from_dir("Film Pack/XMP Presets for Lightroom CC 7.3+"),
+            Some("Film Pack".into())
+        );
+        assert_eq!(
+            group_from_dir("Sacred Light"),
+            Some("Sacred Light".into()),
+            "whole words only"
+        );
     }
 
     #[test]
@@ -733,28 +927,66 @@ text]], z = ZSTR "loc" }"#,
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("Looks/Film")).unwrap();
         std::fs::write(dir.join("Looks/Film/Warm Fade.lrtemplate"), TEMPLATE).unwrap();
-        std::fs::write(dir.join("Looks/bundle.zip"), zip(&[("Street/Bright.xmp", XMP.as_bytes())], true)).unwrap();
+        std::fs::write(
+            dir.join("Looks/bundle.zip"),
+            zip(&[("Street/Bright.xmp", XMP.as_bytes())], true),
+        )
+        .unwrap();
         std::fs::write(dir.join("Looks/notes.txt"), "not a preset").unwrap();
         let mut s = crate::Session::with_demo();
         let before = s.presets.len();
         let paths = json!([dir.join("Looks").to_string_lossy()]);
         // a dry run reports without adding
-        let r = s.execute("preset.import", &json!({"paths": paths, "dryRun": true})).unwrap();
+        let r = s
+            .execute("preset.import", &json!({"paths": paths, "dryRun": true}))
+            .unwrap();
         assert_eq!(r["imported"].as_array().unwrap().len(), 2, "{r}");
         assert_eq!(s.presets.len(), before);
-        let r = s.execute("preset.import", &json!({"paths": paths})).unwrap();
-        let got: Vec<(String, String)> =
-            r["imported"].as_array().unwrap().iter().map(|i| (i["name"].as_str().unwrap().into(), i["group"].as_str().unwrap().into())).collect();
-        assert_eq!(got, [("Warm Fade".to_string(), "Film".to_string()), ("Bright".into(), "Street".into())]);
+        let r = s
+            .execute("preset.import", &json!({"paths": paths}))
+            .unwrap();
+        let got: Vec<(String, String)> = r["imported"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|i| {
+                (
+                    i["name"].as_str().unwrap().into(),
+                    i["group"].as_str().unwrap().into(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            [
+                ("Warm Fade".to_string(), "Film".to_string()),
+                ("Bright".into(), "Street".into())
+            ]
+        );
         assert_eq!(r["imported"][0]["unmapped"], json!(["CameraProfile"]));
         assert_eq!(s.presets.len(), before + 2);
         // importing again adds nothing
-        let r = s.execute("preset.import", &json!({"paths": paths})).unwrap();
-        assert_eq!((r["imported"].as_array().unwrap().len(), r["skipped"].as_u64()), (0, Some(2)));
+        let r = s
+            .execute("preset.import", &json!({"paths": paths}))
+            .unwrap();
+        assert_eq!(
+            (
+                r["imported"].as_array().unwrap().len(),
+                r["skipped"].as_u64()
+            ),
+            (0, Some(2))
+        );
         // and the imported look applies
         let id = s.catalog.photos().next().unwrap().id;
-        s.execute("library.select", &json!({"ids": [id.0]})).unwrap();
-        let pid = s.presets.iter().find(|p| p.name == "Warm Fade").unwrap().id.clone();
+        s.execute("library.select", &json!({"ids": [id.0]}))
+            .unwrap();
+        let pid = s
+            .presets
+            .iter()
+            .find(|p| p.name == "Warm Fade")
+            .unwrap()
+            .id
+            .clone();
         s.execute("preset.apply", &json!({"id": pid})).unwrap();
         let d = s.develop_of(id).unwrap();
         assert_eq!((d.light.exposure, d.light.contrast), (0.35, -20.0));

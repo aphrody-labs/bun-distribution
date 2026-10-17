@@ -50,7 +50,9 @@ pub enum EngineError {
     #[error("{0}")]
     Other(String),
     /// A bug: the command panicked. The document was rolled back to its state before the command.
-    #[error("internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)")]
+    #[error(
+        "internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)"
+    )]
     Internal { cmd: String, msg: String },
 }
 
@@ -83,10 +85,22 @@ pub struct HistoryEntry {
 
 impl HistoryEntry {
     /// A step keeping `doc` and `selection`, as they were before the edit that made `next`.
-    pub(crate) fn kept(label: String, doc: Arc<Document>, selection: Arc<Selection>, next: &Document) -> Self {
+    pub(crate) fn kept(
+        label: String,
+        doc: Arc<Document>,
+        selection: Arc<Selection>,
+        next: &Document,
+    ) -> Self {
         doc.drop_lookup_cache();
         let (bytes, next_bytes) = doc.retained_bytes_each(next);
-        HistoryEntry { label, doc, selection, bytes, next_bytes, next: std::ptr::from_ref(next) as usize }
+        HistoryEntry {
+            label,
+            doc,
+            selection,
+            bytes,
+            next_bytes,
+            next: std::ptr::from_ref(next) as usize,
+        }
     }
 
     /// The step that undoing (redoing) the step `costs` came from makes: it keeps `doc`, the
@@ -95,17 +109,34 @@ impl HistoryEntry {
     /// against (nothing replaced it since), so undo and redo needn't walk the documents again. A
     /// change made to it in place without an undo step (a setting, a refresh) goes unnoticed: a
     /// small error, for an estimate.
-    pub(crate) fn turned(label: String, doc: Arc<Document>, selection: Arc<Selection>, now: &Arc<Document>, costs: StepCosts) -> Self {
+    pub(crate) fn turned(
+        label: String,
+        doc: Arc<Document>,
+        selection: Arc<Selection>,
+        now: &Arc<Document>,
+        costs: StepCosts,
+    ) -> Self {
         if costs.next != Arc::as_ptr(&doc) as usize {
             return Self::kept(label, doc, selection, now);
         }
         doc.drop_lookup_cache();
-        HistoryEntry { label, doc, selection, bytes: costs.next_bytes, next_bytes: costs.bytes, next: Arc::as_ptr(now) as usize }
+        HistoryEntry {
+            label,
+            doc,
+            selection,
+            bytes: costs.next_bytes,
+            next_bytes: costs.bytes,
+            next: Arc::as_ptr(now) as usize,
+        }
     }
 
     /// The figures [`HistoryEntry::turned`] reuses.
     pub(crate) fn costs(&self) -> StepCosts {
-        StepCosts { bytes: self.bytes, next_bytes: self.next_bytes, next: self.next }
+        StepCosts {
+            bytes: self.bytes,
+            next_bytes: self.next_bytes,
+            next: self.next,
+        }
     }
 }
 
@@ -132,7 +163,12 @@ pub struct History {
 
 impl Default for History {
     fn default() -> Self {
-        History { undo: vec![], redo: vec![], limit: 0, byte_budget: default_history_budget() }
+        History {
+            undo: vec![],
+            redo: vec![],
+            limit: 0,
+            byte_budget: default_history_budget(),
+        }
     }
 }
 
@@ -197,7 +233,14 @@ fn physical_memory() -> Option<usize> {
         return None;
     }
     let info = std::fs::read_to_string("/proc/meminfo").ok()?;
-    let kb: usize = info.lines().find_map(|l| l.strip_prefix("MemTotal:"))?.trim().trim_end_matches("kB").trim().parse().ok()?;
+    let kb: usize = info
+        .lines()
+        .find_map(|l| l.strip_prefix("MemTotal:"))?
+        .trim()
+        .trim_end_matches("kB")
+        .trim()
+        .parse()
+        .ok()?;
     kb.checked_mul(1024)
 }
 
@@ -351,7 +394,11 @@ impl OpenRows {
     }
     /// Open or close row `id`.
     pub fn set(&mut self, id: NodeId, open: bool) {
-        let changed = if open { self.ids.insert(id) } else { self.ids.remove(&id) };
+        let changed = if open {
+            self.ids.insert(id)
+        } else {
+            self.ids.remove(&id)
+        };
         self.generation += u64::from(changed);
     }
     /// Changes so far: the same number means the same open rows.
@@ -387,7 +434,10 @@ impl DocState {
             saved_doc: doc.clone(),
             doc,
             selection: Selection::default(),
-            history: History { limit: 500, ..Default::default() },
+            history: History {
+                limit: 500,
+                ..Default::default()
+            },
             path,
             revision: 1,
             active_layer,
@@ -443,7 +493,12 @@ impl DocState {
     /// after it extend that step.
     fn push_undo(&mut self, mut label: String, doc: Arc<Document>, selection: Arc<Selection>) {
         if let Some(g) = &mut self.undo_group {
-            let recorded = |first: &Arc<Document>| self.history.undo.last().is_some_and(|l| Arc::ptr_eq(&l.doc, first));
+            let recorded = |first: &Arc<Document>| {
+                self.history
+                    .undo
+                    .last()
+                    .is_some_and(|l| Arc::ptr_eq(&l.doc, first))
+            };
             if g.first.as_ref().is_some_and(recorded) {
                 self.history.recost_last(&self.doc);
                 self.history.trim();
@@ -493,42 +548,61 @@ impl DocState {
     /// Where new art is inserted: the isolation container, else the active layer.
     /// The current layer, if the remembered id still names a layer (ids are reused after undo).
     pub fn current_layer(&self) -> Option<NodeId> {
-        self.active_layer.filter(|l| self.doc.node(*l).is_some_and(|n| n.is_layer()))
+        self.active_layer
+            .filter(|l| self.doc.node(*l).is_some_and(|n| n.is_layer()))
     }
     pub fn insertion_parent(&self) -> Option<NodeId> {
         // Ids are reused after undo (the id counter is part of the document), so a remembered
         // layer or isolated group must still be one: a pasted group must never land in a path.
         if let Some(i) = self.isolation
-            && self.doc.node(i).is_some_and(|n| matches!(n.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }))
+            && self
+                .doc
+                .node(i)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }))
         {
             return Some(i);
         }
         // A single object isolated: new art goes beside it, in its group or layer.
-        if let Some(p) = self.isolation.filter(|i| self.doc.node(*i).is_some_and(|n| !n.is_container())).and_then(|i| self.doc.parent_of(i))
-            && self.doc.node(p).is_some_and(|n| matches!(n.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }))
+        if let Some(p) = self
+            .isolation
+            .filter(|i| self.doc.node(*i).is_some_and(|n| !n.is_container()))
+            .and_then(|i| self.doc.parent_of(i))
+            && self
+                .doc
+                .node(p)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }))
         {
             return Some(p);
         }
         // A sublayer takes new art only while it and the layers around it are shown and unlocked.
-        self.active_layer.filter(|l| self.doc.node(*l).is_some_and(|n| n.is_layer()) && self.doc.is_editable(*l)).or_else(|| self.doc.default_layer())
+        self.active_layer
+            .filter(|l| self.doc.node(*l).is_some_and(|n| n.is_layer()) && self.doc.is_editable(*l))
+            .or_else(|| self.doc.default_layer())
     }
     /// [`Self::insertion_parent`] for new art, which a locked or hidden layer never takes: an error
     /// when no layer is shown and unlocked, so the art is refused rather than hidden or locked away.
     pub fn target_parent(&self) -> Result<Option<NodeId>> {
         match self.insertion_parent() {
-            Some(p) if !self.doc.is_editable(p) => Err(EngineError::Other("the target layer is locked or hidden".into())),
+            Some(p) if !self.doc.is_editable(p) => Err(EngineError::Other(
+                "the target layer is locked or hidden".into(),
+            )),
             parent => Ok(parent),
         }
     }
     /// The highlighted Layers panel rows that still exist (ids are reused after undo, so a
     /// remembered row must still be in the document).
     pub fn highlighted_rows(&self) -> Vec<NodeId> {
-        self.layer_rows.iter().copied().filter(|id| self.doc.node(*id).is_some()).collect()
+        self.layer_rows
+            .iter()
+            .copied()
+            .filter(|id| self.doc.node(*id).is_some())
+            .collect()
     }
     /// The object whose opacity mask View Opacity Mask shows ([`DocState::mask_view`]): only while
     /// its mask is being edited, so leaving editing by any route (undo, deleting the object) ends it.
     pub fn shown_mask(&self) -> Option<NodeId> {
-        self.mask_view.filter(|id| self.doc.mask_edit.is_some_and(|m| m.object == *id))
+        self.mask_view
+            .filter(|id| self.doc.mask_edit.is_some_and(|m| m.object == *id))
     }
 }
 
@@ -539,7 +613,13 @@ pub const MAX_COORD: f64 = 4.0e6;
 /// Paste in Place, in Front and in Back paste onto it, Align to Artboard aligns to it, and All on
 /// Active Artboard selects on it. A `command.batch` given `artboard` passes it on to each of their
 /// steps that names none.
-pub const ON_ACTIVE_ARTBOARD: [&str; 5] = ["edit.pasteInPlace", "edit.pasteInFront", "edit.pasteInBack", "object.align", "select.allOnArtboard"];
+pub const ON_ACTIVE_ARTBOARD: [&str; 5] = [
+    "edit.pasteInPlace",
+    "edit.pasteInFront",
+    "edit.pasteInBack",
+    "object.align",
+    "select.allOnArtboard",
+];
 
 /// `(command, param)` pairs the journal records only so a replay reproduces the original run
 /// (dates from the clock: `cmd::clock_date`; the active artboard the app passes to the
@@ -570,7 +650,11 @@ fn strip_replay_only(id: &str, p: &mut Value) {
         && let Some(Value::Array(steps)) = p.get_mut("commands")
     {
         for step in steps {
-            let id = step.get("command").and_then(Value::as_str).unwrap_or_default().to_string();
+            let id = step
+                .get("command")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
             if let Some(p) = step.get_mut("params") {
                 strip(&id, p);
             }
@@ -580,21 +664,34 @@ fn strip_replay_only(id: &str, p: &mut Value) {
 
 /// Is `id` a path made into a guide (View → Guides → Make Guides)?
 pub(crate) fn is_guide_path(d: &Document, id: NodeId) -> bool {
-    d.node(id).is_some_and(|n| matches!(n.kind, NodeKind::Path { guide: true, .. }))
+    d.node(id)
+        .is_some_and(|n| matches!(n.kind, NodeKind::Path { guide: true, .. }))
 }
 
 /// Cheap sanity check after an edit: artboards and the objects just touched (the selection) must
 /// have finite, in-range geometry, so saved files always reload and renderers never see NaN/∞.
 fn doc_sane(d: &Document, sel: &Selection) -> bool {
-    let ok = |r: vectorcraft_geom::Rect| [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD);
+    let ok = |r: vectorcraft_geom::Rect| {
+        [r.x0, r.y0, r.x1, r.y1]
+            .iter()
+            .all(|v| v.is_finite() && v.abs() <= MAX_COORD)
+    };
     d.ruler_origin.is_finite()
         && d.ruler_origin.x.abs() <= MAX_COORD
         && d.ruler_origin.y.abs() <= MAX_COORD
         && d.artboards.iter().all(|a| ok(a.rect))
-        && d.guides.iter().all(|g| g.pos.is_finite() && g.pos.abs() <= MAX_COORD)
+        && d.guides
+            .iter()
+            .all(|g| g.pos.is_finite() && g.pos.abs() <= MAX_COORD)
         && {
             let paths = d.index_paths(sel.objects.iter().copied());
-            sel.objects.iter().all(|id| paths.get(id).and_then(|p| d.node_at(p)).and_then(|n| n.geometric_bounds()).is_none_or(ok))
+            sel.objects.iter().all(|id| {
+                paths
+                    .get(id)
+                    .and_then(|p| d.node_at(p))
+                    .and_then(|n| n.geometric_bounds())
+                    .is_none_or(ok)
+            })
         }
 }
 
@@ -1296,14 +1393,30 @@ impl Session {
         if let Some(stash) = &mut self.batch_stash {
             stash.push(old);
         }
-        self.active = if self.docs.is_empty() { None } else { Some(index.min(self.docs.len() - 1)) };
+        self.active = if self.docs.is_empty() {
+            None
+        } else {
+            Some(index.min(self.docs.len() - 1))
+        };
         true
     }
 
     /// `spec`'s `enabled` with `ids` selected instead of the selection, which is then put back.
-    fn enabled_with_selection(&mut self, spec: &CommandSpec, ids: Vec<NodeId>) -> std::result::Result<(), String> {
-        let Some(d) = self.active_mut() else { return (spec.enabled)(self) };
-        let old = std::mem::replace(&mut d.selection, Selection { objects: ids, ..Selection::default() });
+    fn enabled_with_selection(
+        &mut self,
+        spec: &CommandSpec,
+        ids: Vec<NodeId>,
+    ) -> std::result::Result<(), String> {
+        let Some(d) = self.active_mut() else {
+            return (spec.enabled)(self);
+        };
+        let old = std::mem::replace(
+            &mut d.selection,
+            Selection {
+                objects: ids,
+                ..Selection::default()
+            },
+        );
         let r = (spec.enabled)(self);
         if let Some(d) = self.active_mut() {
             d.selection = old;
@@ -1339,12 +1452,17 @@ impl Session {
             self.note_depth = 1;
             self.batch_stash = None;
         }
-        let r = if self.depth == 0 { self.run_guarded(id, |s| (spec.run)(s, params)) } else { self.run_nested(|s| (spec.run)(s, params)) };
+        let r = if self.depth == 0 {
+            self.run_guarded(id, |s| (spec.run)(s, params))
+        } else {
+            self.run_nested(|s| (spec.run)(s, params))
+        };
         let r = r?;
         if self.depth == 0 {
             self.inherit_new_art();
         }
-        if spec.journal && self.depth == 0 && self.active().is_none_or(|d| d.interaction.is_none()) {
+        if spec.journal && self.depth == 0 && self.active().is_none_or(|d| d.interaction.is_none())
+        {
             let p = self.noted(params);
             self.journal.push((id.to_string(), p));
         }
@@ -1357,7 +1475,10 @@ impl Session {
     /// Is the interface in Japanese? Then new type starts with em box top-to-top leading and em
     /// box centre character alignment (#432).
     pub fn japanese_interface(&self) -> bool {
-        self.ui_language.as_deref().unwrap_or(&self.prefs.interface_language).eq_ignore_ascii_case("ja")
+        self.ui_language
+            .as_deref()
+            .unwrap_or(&self.prefs.interface_language)
+            .eq_ignore_ascii_case("ja")
     }
 
     /// Record `key: value` in the running top-level command's journal entry (or its interaction's
@@ -1418,8 +1539,19 @@ impl Session {
 
     /// A top-level command: a panic (a bug) becomes [`EngineError::Internal`] and the active
     /// document goes back to how it was before the command, instead of crashing the frontend.
-    fn run_guarded(&mut self, id: &str, f: impl FnOnce(&mut Self) -> Result<Value>) -> Result<Value> {
-        let snapshot = self.active().map(|d| (d.uid, d.doc.clone(), d.selection.clone(), d.interaction.clone()));
+    fn run_guarded(
+        &mut self,
+        id: &str,
+        f: impl FnOnce(&mut Self) -> Result<Value>,
+    ) -> Result<Value> {
+        let snapshot = self.active().map(|d| {
+            (
+                d.uid,
+                d.doc.clone(),
+                d.selection.clone(),
+                d.interaction.clone(),
+            )
+        });
         let active = self.active;
         match guard::catch_panic(|| self.run_nested(f)) {
             Ok(r) => r,
@@ -1437,14 +1569,21 @@ impl Session {
                 if active.is_some_and(|i| i < self.docs.len()) {
                     self.active = active;
                 }
-                Err(EngineError::Internal { cmd: id.to_string(), msg })
+                Err(EngineError::Internal {
+                    cmd: id.to_string(),
+                    msg,
+                })
             }
         }
     }
 
     /// Run `f` on a mutable copy of the active document. Outside an interaction this records one
     /// undo step labelled `label`; inside one it just mutates (the interaction commits later).
-    pub fn edit<T>(&mut self, label: &str, f: impl FnOnce(&mut Document, &mut Selection) -> Result<T>) -> Result<T> {
+    pub fn edit<T>(
+        &mut self,
+        label: &str,
+        f: impl FnOnce(&mut Document, &mut Selection) -> Result<T>,
+    ) -> Result<T> {
         let st = self.doc_mut()?;
         let before = st.doc.clone();
         let before_sel = st.selection.clone();
@@ -1476,7 +1615,9 @@ impl Session {
                     if doc_sane(&st.doc, &st.selection) {
                         Ok(v)
                     } else {
-                        Err(EngineError::Other("result would exceed the canvas (coordinates out of range)".into()))
+                        Err(EngineError::Other(
+                            "result would exceed the canvas (coordinates out of range)".into(),
+                        ))
                     }
                 }
             },
@@ -1513,7 +1654,13 @@ impl Session {
         st.selection.prune(&st.doc);
         // Lock Guides locks the paths made into guides too (#1534), whatever selects them.
         if guides_locked {
-            let locked: Vec<NodeId> = st.selection.objects.iter().copied().filter(|id| is_guide_path(&st.doc, *id)).collect();
+            let locked: Vec<NodeId> = st
+                .selection
+                .objects
+                .iter()
+                .copied()
+                .filter(|id| is_guide_path(&st.doc, *id))
+                .collect();
             for id in locked {
                 st.selection.remove(id);
             }
@@ -1521,7 +1668,12 @@ impl Session {
         // Selecting art makes its layer (or sublayer) the current one, as in the Layers panel of
         // the reference app: new art then goes beside it.
         if st.selection.objects != before
-            && let Some(layer) = st.selection.objects.last().and_then(|id| st.doc.layer_containing(*id)).filter(|l| st.doc.is_editable(*l))
+            && let Some(layer) = st
+                .selection
+                .objects
+                .last()
+                .and_then(|id| st.doc.layer_containing(*id))
+                .filter(|l| st.doc.is_editable(*l))
             && st.active_layer != Some(layer)
         {
             st.active_layer = Some(layer);
@@ -1529,7 +1681,12 @@ impl Session {
         }
         st.revision += 1;
         // Puppet Warp pins belong to the art they were placed on: another selection starts afresh.
-        if st.doc.puppet.as_ref().is_some_and(|p| p.ids != st.selection.objects) {
+        if st
+            .doc
+            .puppet
+            .as_ref()
+            .is_some_and(|p| p.ids != st.selection.objects)
+        {
             cmd::distortcmds::drop_puppet_pins(st);
         }
         Ok(())
@@ -1561,7 +1718,9 @@ impl Session {
     pub fn preview(&mut self, cmd: &str, params: &Value) -> Result<Value> {
         {
             let st = self.doc_mut()?;
-            let Some(it) = &st.interaction else { return Err(EngineError::Other("no interaction in progress".into())) };
+            let Some(it) = &st.interaction else {
+                return Err(EngineError::Other("no interaction in progress".into()));
+            };
             // Undoing the previous preview counts as a change, so views redraw even when the command
             // below returns without an edit.
             let selection_changed = st.selection != *it.selection;
@@ -1587,10 +1746,19 @@ impl Session {
     pub fn commit_interaction(&mut self) -> Result<()> {
         self.remember_pending_paint();
         let st = self.doc_mut()?;
-        let Some(mut it) = st.interaction.take() else { return Ok(()) };
-        let Some(preview) = it.preview.take() else { return Ok(()) };
+        let Some(mut it) = st.interaction.take() else {
+            return Ok(());
+        };
+        let Some(preview) = it.preview.take() else {
+            return Ok(());
+        };
         let perspective_again = it.perspective_again.take();
-        let copy = preview.0 == "object.transform" && preview.1.get("copy").and_then(Value::as_bool).unwrap_or(false);
+        let copy = preview.0 == "object.transform"
+            && preview
+                .1
+                .get("copy")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
         // Alt pressed or released during a move drag turns it into a copy or back: name it for
         // what it did in the end.
         match (it.label.as_str(), copy) {
@@ -1653,7 +1821,11 @@ impl Session {
         if let Some(st) = self.active_mut()
             && st.undo_group.is_none()
         {
-            st.undo_group = Some(UndoGroup { first: None, journal, label });
+            st.undo_group = Some(UndoGroup {
+                first: None,
+                journal,
+                label,
+            });
         }
     }
 
@@ -1662,11 +1834,17 @@ impl Session {
     pub fn end_undo_group(&mut self, cancel: bool) {
         let mut journal = None;
         for st in &mut self.docs {
-            let Some(g) = st.undo_group.take() else { continue };
+            let Some(g) = st.undo_group.take() else {
+                continue;
+            };
             // Only while the group's step is still the newest one.
             if cancel
                 && let Some(first) = g.first
-                && st.history.undo.last().is_some_and(|e| Arc::ptr_eq(&e.doc, &first))
+                && st
+                    .history
+                    .undo
+                    .last()
+                    .is_some_and(|e| Arc::ptr_eq(&e.doc, &first))
                 && let Some(e) = st.history.undo.pop()
             {
                 st.doc = e.doc;

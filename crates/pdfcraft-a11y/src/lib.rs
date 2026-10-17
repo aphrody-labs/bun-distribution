@@ -6,7 +6,14 @@
 //! accessibility report. Rules read the document only; the fixes that need edits (language,
 //! title, tab order) are applied by the engine.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -38,8 +45,15 @@ pub enum Category {
 }
 
 impl Category {
-    pub const ALL: [Category; 7] =
-        [Category::Document, Category::PageContent, Category::Forms, Category::AlternateText, Category::Tables, Category::Lists, Category::Headings];
+    pub const ALL: [Category; 7] = [
+        Category::Document,
+        Category::PageContent,
+        Category::Forms,
+        Category::AlternateText,
+        Category::Tables,
+        Category::Lists,
+        Category::Headings,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -150,7 +164,12 @@ impl Rule {
     pub fn manual(self) -> bool {
         matches!(
             self,
-            Rule::LogicalReadingOrder | Rule::ColorContrast | Rule::ScreenFlicker | Rule::Scripts | Rule::TimedResponses | Rule::NavigationLinks
+            Rule::LogicalReadingOrder
+                | Rule::ColorContrast
+                | Rule::ScreenFlicker
+                | Rule::Scripts
+                | Rule::TimedResponses
+                | Rule::NavigationLinks
         )
     }
 
@@ -168,7 +187,15 @@ impl Rule {
         Rule::ALL.into_iter().find(|r| r.id() == id)
     }
 
-    fn info(self) -> (&'static str, Category, &'static str, &'static str, &'static str) {
+    fn info(
+        self,
+    ) -> (
+        &'static str,
+        Category,
+        &'static str,
+        &'static str,
+        &'static str,
+    ) {
         use Category as C;
         match self {
             Rule::PermissionFlag => (
@@ -346,9 +373,13 @@ impl Rule {
                 "TR must be a child of Table, THead, TBody, or TFoot",
                 "Table rows belong directly in a table or its head, body or foot. Fix the table's tags.",
             ),
-            Rule::TableCells => {
-                ("table-cells", C::Tables, "TH and TD", "TH and TD must be children of TR", "Table cells belong in a row. Fix the table's tags.")
-            }
+            Rule::TableCells => (
+                "table-cells",
+                C::Tables,
+                "TH and TD",
+                "TH and TD must be children of TR",
+                "Table cells belong in a row. Fix the table's tags.",
+            ),
             Rule::TableHeaders => (
                 "table-headers",
                 C::Tables,
@@ -370,7 +401,13 @@ impl Rule {
                 "Tables must have a summary",
                 "A summary describes the table's purpose and layout. Add a Summary attribute to each table.",
             ),
-            Rule::ListItems => ("list-items", C::Lists, "List items", "LI must be a child of L", "List items belong in a list. Fix the list's tags."),
+            Rule::ListItems => (
+                "list-items",
+                C::Lists,
+                "List items",
+                "LI must be a child of L",
+                "List items belong in a list. Fix the list's tags.",
+            ),
             Rule::LblLBody => (
                 "lbl-lbody",
                 C::Lists,
@@ -440,13 +477,31 @@ pub struct Finding {
 impl Finding {
     /// A finding whose sentence says the same thing however the document is put together.
     pub fn plain(page: Option<usize>, sentence: &'static str) -> Self {
-        Finding { page, object: None, bbox: None, message: sentence.to_owned(), pattern: sentence, values: Vec::new() }
+        Finding {
+            page,
+            object: None,
+            bbox: None,
+            message: sentence.to_owned(),
+            pattern: sentence,
+            values: Vec::new(),
+        }
     }
 
     /// A finding built from a wording and what goes in its holes. The English `message` is filled
     /// in here, so it and `pattern` can never drift apart.
-    pub fn worded(page: Option<usize>, pattern: &'static str, values: Vec<(&'static str, String)>) -> Self {
-        Finding { page, object: None, bbox: None, message: say(pattern, &values), pattern, values }
+    pub fn worded(
+        page: Option<usize>,
+        pattern: &'static str,
+        values: Vec<(&'static str, String)>,
+    ) -> Self {
+        Finding {
+            page,
+            object: None,
+            bbox: None,
+            message: say(pattern, &values),
+            pattern,
+            values,
+        }
     }
 
     /// A finding that says where the problem is and, in `{what}`, what is wrong, each worded
@@ -455,10 +510,22 @@ impl Finding {
     /// `what` is one of our own wordings and may have holes of its own; they are filled from
     /// `values` along with the frame's. It goes in before the values do — it is ours, not the
     /// document's — which is what lets its holes be filled at all.
-    pub fn nested(page: Option<usize>, pattern: &'static str, what: &'static str, mut values: Vec<(&'static str, String)>) -> Self {
+    pub fn nested(
+        page: Option<usize>,
+        pattern: &'static str,
+        what: &'static str,
+        mut values: Vec<(&'static str, String)>,
+    ) -> Self {
         let message = say(&pattern.replace("{what}", what), &values);
         values.push(("{what}", what.to_owned()));
-        Finding { page, object: None, bbox: None, message, pattern, values }
+        Finding {
+            page,
+            object: None,
+            bbox: None,
+            message,
+            pattern,
+            values,
+        }
     }
 
     /// This finding as one sentence, said in the language `words` translates into.
@@ -506,7 +573,9 @@ pub fn say(pattern: &str, values: &[(&str, String)]) -> String {
             out.push_str(from_brace);
             return out;
         };
-        let Some(hole) = from_brace.get(..=close) else { return out + from_brace };
+        let Some(hole) = from_brace.get(..=close) else {
+            return out + from_brace;
+        };
         match values.iter().find(|(name, _)| *name == hole) {
             Some((_, value)) => out.push_str(value),
             None => out.push_str(hole),
@@ -580,7 +649,13 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Self { rules: Rule::ALL.into_iter().filter(|r| r.on_by_default()).collect(), pages: None }
+        Self {
+            rules: Rule::ALL
+                .into_iter()
+                .filter(|r| r.on_by_default())
+                .collect(),
+            pages: None,
+        }
     }
 }
 
@@ -624,11 +699,19 @@ pub fn check(doc: &Document, options: &Options) -> Report {
     let mut results = Vec::with_capacity(32);
     for rule in Rule::ALL {
         if !options.rules.contains(&rule) {
-            results.push(RuleResult { rule, status: Status::Skipped, findings: Vec::new() });
+            results.push(RuleResult {
+                rule,
+                status: Status::Skipped,
+                findings: Vec::new(),
+            });
             continue;
         }
         if rule.manual() {
-            results.push(RuleResult { rule, status: Status::Manual, findings: Vec::new() });
+            results.push(RuleResult {
+                rule,
+                status: Status::Manual,
+                findings: Vec::new(),
+            });
             continue;
         }
         // `total` counts every finding; `findings` holds the first MAX_FINDINGS of them.
@@ -645,13 +728,17 @@ pub fn check(doc: &Document, options: &Options) -> Report {
             }
             _ => tree_rules.remove(&rule).unwrap_or_default(),
         };
-        if rule.category() == Category::AlternateText && findings.iter().any(|f| f.object.is_some()) {
+        if rule.category() == Category::AlternateText && findings.iter().any(|f| f.object.is_some())
+        {
             let bounds = figure_bounds.get_or_insert_with(|| {
                 figures(doc)
                     .into_iter()
                     .filter_map(|figure| {
                         let (page, bbox) = (figure.page?, figure.bbox?);
-                        (bbox.iter().all(|v| v.is_finite()) && bbox[0] < bbox[2] && bbox[1] < bbox[3]).then_some((figure.obj, (page, bbox)))
+                        (bbox.iter().all(|v| v.is_finite())
+                            && bbox[0] < bbox[2]
+                            && bbox[1] < bbox[3])
+                            .then_some((figure.obj, (page, bbox)))
                     })
                     .collect()
             });
@@ -666,10 +753,22 @@ pub fn check(doc: &Document, options: &Options) -> Report {
         if total > MAX_FINDINGS {
             let more = total - MAX_FINDINGS;
             findings.truncate(MAX_FINDINGS);
-            findings.push(Finding::worded(None, AND_MORE, vec![("{n}", more.to_string())]));
+            findings.push(Finding::worded(
+                None,
+                AND_MORE,
+                vec![("{n}", more.to_string())],
+            ));
         }
-        let status = if findings.is_empty() { Status::Passed } else { Status::Failed };
-        results.push(RuleResult { rule, status, findings });
+        let status = if findings.is_empty() {
+            Status::Passed
+        } else {
+            Status::Failed
+        };
+        results.push(RuleResult {
+            rule,
+            status,
+            findings,
+        });
     }
     Report { results }
 }

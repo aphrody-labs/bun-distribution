@@ -52,10 +52,15 @@ impl Inacode {
         let mut s = seed;
         let mut chars = [0u8; 4];
         for b in &mut chars {
-            s = s.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s = s
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             *b = CHARSET[(s as usize) % CHARSET.len()];
         }
-        Self(format!("INA-{}", std::str::from_utf8(&chars).unwrap_or("7X29")))
+        Self(format!(
+            "INA-{}",
+            std::str::from_utf8(&chars).unwrap_or("7X29")
+        ))
     }
 
     /// Returns the raw room code string slice.
@@ -144,7 +149,10 @@ impl PlayerTickInput {
     /// Converts wire tick input into `aphrody_nie_runtime::Input`.
     #[must_use]
     pub fn to_runtime_input(&self) -> RuntimeInput {
-        RuntimeInput { dir: Vec2::new(self.dx, self.dy), shoot: self.shoot }
+        RuntimeInput {
+            dir: Vec2::new(self.dx, self.dy),
+            shoot: self.shoot,
+        }
     }
 
     /// Constructs a tick input from runtime input.
@@ -368,17 +376,33 @@ pub struct KizunaTownSnapshot {
 #[serde(tag = "type", content = "payload")]
 pub enum NetMessage {
     /// Initial client handshake request.
-    Hello { client_version: String, player_name: String },
+    Hello {
+        client_version: String,
+        player_name: String,
+    },
     /// Server handshake response.
-    Welcome { server_version: String, player_id: String },
+    Welcome {
+        server_version: String,
+        player_id: String,
+    },
     /// Request to create a new room.
     CreateRoom { config: RoomConfig },
     /// Response after room creation.
-    RoomCreated { inacode: Inacode, config: RoomConfig },
+    RoomCreated {
+        inacode: Inacode,
+        config: RoomConfig,
+    },
     /// Request to join an existing room by Inacode.
-    JoinRoom { inacode: Inacode, password: Option<String> },
+    JoinRoom {
+        inacode: Inacode,
+        password: Option<String>,
+    },
     /// Response after joining a room.
-    RoomJoined { inacode: Inacode, slot: PlayerSlot, room: RoomInfo },
+    RoomJoined {
+        inacode: Inacode,
+        slot: PlayerSlot,
+        room: RoomInfo,
+    },
     /// Broadcast room state update (member joined, left, ready change).
     RoomUpdate { room: RoomInfo },
     /// Request to leave current room.
@@ -392,21 +416,46 @@ pub enum NetMessage {
     /// Client cancels active matchmaking queue.
     CancelQueue,
     /// Match countdown / start signal broadcast to room.
-    MatchStart { match_id: String, seed: u64, home_player_id: String, away_player_id: String },
+    MatchStart {
+        match_id: String,
+        seed: u64,
+        home_player_id: String,
+        away_player_id: String,
+    },
     /// Client sends local player tick input.
     InputTick { tick: u64, input: PlayerTickInput },
     /// Server broadcasts synchronized inputs for a confirmed tick.
-    TickSync { tick: u64, inputs: [PlayerTickInput; 2], state_hash: u32 },
+    TickSync {
+        tick: u64,
+        inputs: [PlayerTickInput; 2],
+        state_hash: u32,
+    },
     /// Alert emitted when client or server detects a state hash divergence.
-    DesyncAlert { tick: u64, expected_hash: u32, actual_hash: u32 },
+    DesyncAlert {
+        tick: u64,
+        expected_hash: u32,
+        actual_hash: u32,
+    },
     /// State correction snapshot sent to resynchronize desynced clients.
-    StateCorrection { tick: u64, ball_pos: [f32; 3], ball_vel: [f32; 3], score: [u32; 2] },
+    StateCorrection {
+        tick: u64,
+        ball_pos: [f32; 3],
+        ball_vel: [f32; 3],
+        score: [u32; 2],
+    },
     /// Match concluded with final score.
-    MatchEnd { final_score: [u32; 2], duration_ticks: u64 },
+    MatchEnd {
+        final_score: [u32; 2],
+        duration_ticks: u64,
+    },
     /// Latency measurement ping.
     Ping { seq: u64, client_time_ms: u64 },
     /// Latency measurement pong.
-    Pong { seq: u64, client_time_ms: u64, server_time_ms: u64 },
+    Pong {
+        seq: u64,
+        client_time_ms: u64,
+        server_time_ms: u64,
+    },
     // --- Kizuna Town & Avatar Protocols ---
     /// Updates player's custom avatar.
     UpdateAvatar { avatar: KizunaAvatar },
@@ -415,9 +464,18 @@ pub enum NetMessage {
     /// Full snapshot of Kizuna Town synchronized upon entering.
     KizunaTownSnapshotSync { snapshot: KizunaTownSnapshot },
     /// Client sends local avatar movement in Kizuna Town.
-    TownMove { position: [f32; 3], velocity: [f32; 3], yaw: f32 },
+    TownMove {
+        position: [f32; 3],
+        velocity: [f32; 3],
+        yaw: f32,
+    },
     /// Server broadcasts visitor movement update to all visitors in town.
-    TownMoveSync { player_id: String, position: [f32; 3], velocity: [f32; 3], yaw: f32 },
+    TownMoveSync {
+        player_id: String,
+        position: [f32; 3],
+        velocity: [f32; 3],
+        yaw: f32,
+    },
     /// Client activates a social stamp / emote.
     TownEmote { stamp_id: u32 },
     /// Server broadcasts visitor emote to town.
@@ -425,7 +483,11 @@ pub enum NetMessage {
     /// Client sends a chat message in Kizuna Town.
     TownChat { message: String },
     /// Server broadcasts chat message in Kizuna Town.
-    TownChatSync { player_id: String, sender_name: String, message: String },
+    TownChatSync {
+        player_id: String,
+        sender_name: String,
+        message: String,
+    },
     /// Client places an object in their Kizuna Town.
     TownPlaceObject { object: PlacedTownObject },
     /// Server confirms object placement in Kizuna Town.
@@ -439,20 +501,37 @@ pub enum NetMessage {
     /// Client removes a character in their Kizuna Town.
     TownRemoveCharacter { instance_id: String },
     /// Direct match challenge to a visiting friend in Kizuna Town.
-    TownChallenge { target_player_id: String, mode: MatchMode },
+    TownChallenge {
+        target_player_id: String,
+        mode: MatchMode,
+    },
     /// Notification of an incoming match challenge.
-    TownChallengeReceived { from_player_id: String, from_player_name: String, mode: MatchMode },
+    TownChallengeReceived {
+        from_player_id: String,
+        from_player_name: String,
+        mode: MatchMode,
+    },
     /// Response to match challenge.
-    TownChallengeResponse { from_player_id: String, accept: bool },
+    TownChallengeResponse {
+        from_player_id: String,
+        accept: bool,
+    },
     /// Updates player's Ultimate Team squad summary in the persistent hub.
     UpdateSquadSummary { squad: UtSquadSummary },
     /// Client requests to inspect another player's Ultimate Team squad in town.
     TownInspectSquad { target_player_id: String },
     /// Server answers with inspected player's Ultimate Team squad.
-    TownSquadInspected { player_id: String, squad: Option<UtSquadSummary> },
+    TownSquadInspected {
+        player_id: String,
+        squad: Option<UtSquadSummary>,
+    },
     // --- Ranked & Tournament Protocols (Achillea Core) ---
     /// Submits match scoreline with mutual verification.
-    RankedSubmitScore { match_id: String, my_goals: u32, opponent_goals: u32 },
+    RankedSubmitScore {
+        match_id: String,
+        my_goals: u32,
+        opponent_goals: u32,
+    },
     /// Broadcast of score agreement, match finalization, and AP deltas.
     RankedMatchFinished {
         match_id: String,
@@ -463,7 +542,11 @@ pub enum NetMessage {
         is_disputed: bool,
     },
     /// Tournament bracket progression update.
-    TournamentBracketUpdate { tournament_id: String, current_round: u32, total_rounds: u32 },
+    TournamentBracketUpdate {
+        tournament_id: String,
+        current_round: u32,
+        total_rounds: u32,
+    },
     /// Generic protocol error.
     Error { message: String },
 }

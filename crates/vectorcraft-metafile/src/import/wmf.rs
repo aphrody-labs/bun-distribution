@@ -15,8 +15,8 @@ const DEFAULT_INCH: f64 = 1440.0;
 /// Records that change nothing VectorCraft keeps (background, raster and mapping details, palettes,
 /// escapes).
 const IGNORED: &[u16] = &[
-    0x0102, 0x0103, 0x0104, 0x0105, 0x0107, 0x0108, 0x0201, 0x020A, 0x020B, 0x020C, 0x020D, 0x020E, 0x020F, 0x0211, 0x0410, 0x0412, 0x0231, 0x0234,
-    0x0035, 0x0037, 0x0139, 0x0436, 0x0626,
+    0x0102, 0x0103, 0x0104, 0x0105, 0x0107, 0x0108, 0x0201, 0x020A, 0x020B, 0x020C, 0x020D, 0x020E,
+    0x020F, 0x0211, 0x0410, 0x0412, 0x0231, 0x0234, 0x0035, 0x0037, 0x0139, 0x0436, 0x0626,
 ];
 
 fn point(r: &mut Reader) -> Option<Point> {
@@ -32,7 +32,12 @@ fn point_yx(r: &mut Reader) -> Option<Point> {
 /// A rectangle stored bottom, right, top, left.
 fn rect_brtl(r: &mut Reader) -> Option<Rect> {
     let (b, rt, t, l) = (r.i16()?, r.i16()?, r.i16()?, r.i16()?);
-    Some(Rect::new(f64::from(l), f64::from(t), f64::from(rt), f64::from(b)))
+    Some(Rect::new(
+        f64::from(l),
+        f64::from(t),
+        f64::from(rt),
+        f64::from(b),
+    ))
 }
 
 fn color(r: &mut Reader) -> Option<[u8; 3]> {
@@ -59,8 +64,15 @@ fn header(bytes: &[u8]) -> Option<(usize, Option<(Rect, f64)>)> {
         r.skip(2)?;
         let (l, t, rt, b) = (r.i16()?, r.i16()?, r.i16()?, r.i16()?);
         let inch = r.u16()?;
-        let inch = if inch == 0 { DEFAULT_INCH } else { f64::from(inch) };
-        Some((Rect::new(f64::from(l), f64::from(t), f64::from(rt), f64::from(b)).abs(), inch))
+        let inch = if inch == 0 {
+            DEFAULT_INCH
+        } else {
+            f64::from(inch)
+        };
+        Some((
+            Rect::new(f64::from(l), f64::from(t), f64::from(rt), f64::from(b)).abs(),
+            inch,
+        ))
     } else {
         None
     };
@@ -103,12 +115,22 @@ pub(super) fn play(bytes: &[u8]) -> Result<Imported, String> {
     let (start, placeable) = header(bytes).ok_or("the WMF header is damaged")?;
     let (frame, inch) = match placeable {
         Some((b, inch)) if b.width() > 0.0 && b.height() > 0.0 => (Some(b), inch),
-        _ => (window(bytes, start).filter(|w| w.width() > 0.0 && w.height() > 0.0), DEFAULT_INCH),
+        _ => (
+            window(bytes, start).filter(|w| w.width() > 0.0 && w.height() > 0.0),
+            DEFAULT_INCH,
+        ),
     };
     let k = 72.0 / inch;
     let origin = frame.map_or(Point::ZERO, |f| f.origin());
-    let artboard = frame.map_or(Rect::new(0.0, 0.0, 1.0, 1.0), |f| Rect::new(0.0, 0.0, f.width() * k, f.height() * k));
-    let mut p = Player::new(Kind::Wmf, Affine::scale(k) * Affine::translate(-origin.to_vec2()), 25.4 / inch, artboard);
+    let artboard = frame.map_or(Rect::new(0.0, 0.0, 1.0, 1.0), |f| {
+        Rect::new(0.0, 0.0, f.width() * k, f.height() * k)
+    });
+    let mut p = Player::new(
+        Kind::Wmf,
+        Affine::scale(k) * Affine::translate(-origin.to_vec2()),
+        25.4 / inch,
+        artboard,
+    );
     let mut at = start;
     let mut ended = false;
     while let Some(head) = bytes.get(at..at + 6) {
@@ -118,7 +140,13 @@ pub(super) fn play(bytes: &[u8]) -> Result<Imported, String> {
             ended = true;
             break;
         }
-        let Some(rec) = words.checked_mul(2).and_then(|n| bytes.get(at..at.checked_add(n)?)).filter(|_| words >= 3) else { break };
+        let Some(rec) = words
+            .checked_mul(2)
+            .and_then(|n| bytes.get(at..at.checked_add(n)?))
+            .filter(|_| words >= 3)
+        else {
+            break;
+        };
         if !matches!(function, 0x0213 | 0x0214) {
             p.flush();
         }
@@ -133,7 +161,9 @@ pub(super) fn play(bytes: &[u8]) -> Result<Imported, String> {
     let mut out = p.finish();
     // No box given: the art's bounds.
     if frame.is_none()
-        && let Some(b) = out.document.layers.first().and_then(|l| vectorcraft_doc::live::nodes_bounds(l.children().map_or(&[][..], |c| c.as_slice())))
+        && let Some(b) = out.document.layers.first().and_then(|l| {
+            vectorcraft_doc::live::nodes_bounds(l.children().map_or(&[][..], |c| c.as_slice()))
+        })
         && let Some(a) = out.document.artboards.first_mut()
     {
         a.rect = Rect::from_origin_size(b.origin(), (b.width().max(1.0), b.height().max(1.0)));
@@ -142,15 +172,37 @@ pub(super) fn play(bytes: &[u8]) -> Result<Imported, String> {
 }
 
 /// An image record's source rectangle (from the bottom for a bottom-up DIB) and destination.
-fn blit(p: &mut Player, rop: u32, src: (i16, i16, i16, i16), dest: (i16, i16, i16, i16), packed: Option<&[u8]>) {
-    let (xd, yd, wd, hd) = (f64::from(dest.0), f64::from(dest.1), f64::from(dest.2), f64::from(dest.3));
+fn blit(
+    p: &mut Player,
+    rop: u32,
+    src: (i16, i16, i16, i16),
+    dest: (i16, i16, i16, i16),
+    packed: Option<&[u8]>,
+) {
+    let (xd, yd, wd, hd) = (
+        f64::from(dest.0),
+        f64::from(dest.1),
+        f64::from(dest.2),
+        f64::from(dest.3),
+    );
     let d = Rect::new(xd, yd, xd + wd, yd + hd);
-    let Some(packed) = packed else { return p.pattern_blit(d, rop) };
+    let Some(packed) = packed else {
+        return p.pattern_blit(d, rop);
+    };
     let parts = dib::split(packed);
-    let img = parts.ok_or_else(|| "damaged".to_string()).and_then(|(bmi, bits)| dib::decode(bmi, bits, Alpha::Ignore));
-    let bottom_up = parts.and_then(|(bmi, _)| bmi.get(8..12)).is_some_and(|h| i32::from_le_bytes([h[0], h[1], h[2], h[3]]) > 0);
+    let img = parts
+        .ok_or_else(|| "damaged".to_string())
+        .and_then(|(bmi, bits)| dib::decode(bmi, bits, Alpha::Ignore));
+    let bottom_up = parts
+        .and_then(|(bmi, _)| bmi.get(8..12))
+        .is_some_and(|h| i32::from_le_bytes([h[0], h[1], h[2], h[3]]) > 0);
     let ih = img.as_ref().map_or(0.0, |i| f64::from(i.height));
-    let (xs, ys, ws, hs) = (f64::from(src.0), f64::from(src.1), f64::from(src.2), f64::from(src.3));
+    let (xs, ys, ws, hs) = (
+        f64::from(src.0),
+        f64::from(src.1),
+        f64::from(src.2),
+        f64::from(src.3),
+    );
     let top = if bottom_up { ih - ys - hs } else { ys };
     p.image(img, Rect::new(xs, top, xs + ws, top + hs), d, rop, 1.0);
 }
@@ -179,14 +231,19 @@ fn record(p: &mut Player, function: u16, body: &[u8]) -> Option<()> {
             if r.rest().len() < n * 2 {
                 return None;
             }
-            let counts: Vec<usize> = (0..n).map(|_| r.u16().map(usize::from)).collect::<Option<_>>()?;
+            let counts: Vec<usize> = (0..n)
+                .map(|_| r.u16().map(usize::from))
+                .collect::<Option<_>>()?;
             let mut polys = Vec::with_capacity(n);
             for c in counts {
                 polys.push(points(&mut r, c)?);
             }
             p.poly_poly(&polys, true);
         }
-        0x041B => p.figure(shapes::rectangle(rect_brtl(&mut r)?.abs()).to_bezpath(), true),
+        0x041B => p.figure(
+            shapes::rectangle(rect_brtl(&mut r)?.abs()).to_bezpath(),
+            true,
+        ),
         0x0418 => p.figure(shapes::ellipse(rect_brtl(&mut r)?.abs()).to_bezpath(), true),
         0x061C => {
             let (h, w) = (f64::from(r.i16()?), f64::from(r.i16()?));
@@ -210,7 +267,12 @@ fn record(p: &mut Player, function: u16, body: &[u8]) -> Option<()> {
             let style = u32::from(r.u16()?);
             let width = f64::from(r.i16()?);
             r.skip(2)?;
-            p.create(Obj::Pen(PenObj { style, width, color: color(&mut r)?, entries: vec![] }));
+            p.create(Obj::Pen(PenObj {
+                style,
+                width,
+                color: color(&mut r)?,
+                entries: vec![],
+            }));
         }
         0x02FC => {
             let style = u32::from(r.u16()?);
@@ -224,8 +286,20 @@ fn record(p: &mut Player, function: u16, body: &[u8]) -> Option<()> {
             let weight = i32::from(r.i16()?);
             let italic = r.bytes(1)?.first().is_some_and(|b| *b != 0);
             r.skip(7)?;
-            let face: Vec<u8> = r.rest().iter().take(32).take_while(|b| **b != 0).copied().collect();
-            p.create(Obj::Font(FontObj { height, escapement, weight, italic, face: ansi(&face) }));
+            let face: Vec<u8> = r
+                .rest()
+                .iter()
+                .take(32)
+                .take_while(|b| **b != 0)
+                .copied()
+                .collect();
+            p.create(Obj::Font(FontObj {
+                height,
+                escapement,
+                weight,
+                italic,
+                face: ansi(&face),
+            }));
         }
         0x00F7 | 0x06FF => p.create(Obj::Other),
         0x01F9 | 0x0142 => p.create(Obj::Brush(BrushObj::Pattern)),
@@ -263,7 +337,13 @@ fn record(p: &mut Player, function: u16, body: &[u8]) -> Option<()> {
                 r.skip(2)?;
             }
             let (hd, wd, yd, xd) = (r.i16()?, r.i16()?, r.i16()?, r.i16()?);
-            blit(p, rop, (xs, ys, ws, hs), (xd, yd, wd, hd), with_bitmap.then(|| r.rest()));
+            blit(
+                p,
+                rop,
+                (xs, ys, ws, hs),
+                (xd, yd, wd, hd),
+                with_bitmap.then(|| r.rest()),
+            );
         }
         0x0940 => {
             let rop = r.u32()?;
@@ -273,11 +353,22 @@ fn record(p: &mut Player, function: u16, body: &[u8]) -> Option<()> {
                 r.skip(2)?;
             }
             let (h, w, yd, xd) = (r.i16()?, r.i16()?, r.i16()?, r.i16()?);
-            blit(p, rop, (xs, ys, w, h), (xd, yd, w, h), with_bitmap.then(|| r.rest()));
+            blit(
+                p,
+                rop,
+                (xs, ys, w, h),
+                (xd, yd, w, h),
+                with_bitmap.then(|| r.rest()),
+            );
         }
         0x061D => {
             let rop = r.u32()?;
-            let (h, w, y, x) = (f64::from(r.i16()?), f64::from(r.i16()?), f64::from(r.i16()?), f64::from(r.i16()?));
+            let (h, w, y, x) = (
+                f64::from(r.i16()?),
+                f64::from(r.i16()?),
+                f64::from(r.i16()?),
+                f64::from(r.i16()?),
+            );
             p.pattern_blit(Rect::new(x, y, x + w, y + h), rop);
         }
         f if IGNORED.contains(&f) => {}

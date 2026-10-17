@@ -46,7 +46,9 @@ pub struct Pipe {
 impl Pipe {
     pub fn of(s: &ProjectSettings) -> Pipe {
         // ACES working spaces are linear light by definition.
-        let linear = s.working_space.is_some_and(|w| s.linearize || w.is_linear());
+        let linear = s
+            .working_space
+            .is_some_and(|w| s.linearize || w.is_linear());
         Pipe {
             levels: s.bit_depth.levels(),
             space: s.working_space,
@@ -61,13 +63,21 @@ impl Pipe {
     /// The space whose curve encodes working-space pixels (unmanaged: the Working Gamma's, sRGB
     /// at 2.2 and Rec. 709's pure 2.4 power curve at 2.4).
     fn curve(&self) -> ColorSpace {
-        self.space.unwrap_or(if self.gamma24 { ColorSpace::Rec709 } else { ColorSpace::Srgb })
+        self.space.unwrap_or(if self.gamma24 {
+            ColorSpace::Rec709
+        } else {
+            ColorSpace::Srgb
+        })
     }
 
     /// The space Interpret As Linear Light encodes footage `f` in: its colour profile, else sRGB
     /// (managed; the working space converts from there) or the Working Gamma's curve (unmanaged).
     pub fn linear_footage_space(&self, f: &Footage) -> ColorSpace {
-        f.color_profile.unwrap_or(if self.space.is_some() { ColorSpace::Srgb } else { self.curve() })
+        f.color_profile.unwrap_or(if self.space.is_some() {
+            ColorSpace::Srgb
+        } else {
+            self.curve()
+        })
     }
 
     /// How float footage `f` (OpenEXR, float TIFF; linear light) is decoded: as stored when
@@ -75,20 +85,33 @@ impl Pipe {
     /// [`Pipe::linear_footage_space`]), else with the Working Gamma's curve when unmanaged and
     /// the sRGB curve otherwise (the working space converts from there).
     pub fn float_curve(&self, f: &Footage) -> crate::FloatCurve {
-        if f.linear_light_applies() { crate::FloatCurve::Linear } else { self.float_encoding() }
+        if f.linear_light_applies() {
+            crate::FloatCurve::Linear
+        } else {
+            self.float_encoding()
+        }
     }
 
     /// The curve float footage is encoded with when nothing interprets it afterwards: the
     /// Working Gamma's when unmanaged (sRGB at 2.2, a pure 2.4 power curve at 2.4), else sRGB.
     pub fn float_encoding(&self) -> crate::FloatCurve {
-        if self.space.is_none() && self.gamma24 { crate::FloatCurve::Gamma24 } else { crate::FloatCurve::Srgb }
+        if self.space.is_none() && self.gamma24 {
+            crate::FloatCurve::Gamma24
+        } else {
+            crate::FloatCurve::Srgb
+        }
     }
 
     /// Footage `f` from its colour profile (`None` = sRGB) → working space; nothing for
     /// Preserve RGB, whose values enter the working space as the file stores them.
     pub fn media_in(&self, f: &Footage) -> Option<Conversion> {
         let ws = self.space.filter(|_| !f.preserve_rgb)?;
-        Conversion::new(f.color_profile.unwrap_or(ColorSpace::Srgb), false, ws, self.linear)
+        Conversion::new(
+            f.color_profile.unwrap_or(ColorSpace::Srgb),
+            false,
+            ws,
+            self.linear,
+        )
     }
 
     /// Authored colours (solids, text, shapes) → working space: linearised in a linear working
@@ -99,12 +122,14 @@ impl Pipe {
 
     /// Working space → blending space (linear when blending with 1.0 gamma).
     pub fn to_blend(&self) -> Option<Conversion> {
-        self.linear_blend.then(|| Conversion::linearize(self.curve()))
+        self.linear_blend
+            .then(|| Conversion::linearize(self.curve()))
     }
 
     /// Blending space → working space.
     pub fn from_blend(&self) -> Option<Conversion> {
-        self.linear_blend.then(|| Conversion::delinearize(self.curve()))
+        self.linear_blend
+            .then(|| Conversion::delinearize(self.curve()))
     }
 
     /// Working space → the output space (top-level comp output; sRGB by default). `None` when
@@ -121,8 +146,13 @@ impl Pipe {
     /// space → linear output primaries, the HDR curve, then the output's encoding.
     pub fn output_hdr(&self) -> Option<(Option<Conversion>, HdrMode, Conversion)> {
         let ws = self.space?;
-        (self.hdr != HdrMode::Clip && !self.out.is_hdr())
-            .then(|| (Conversion::new(ws, self.linear, self.out, true), self.hdr, Conversion::delinearize(self.out)))
+        (self.hdr != HdrMode::Clip && !self.out.is_hdr()).then(|| {
+            (
+                Conversion::new(ws, self.linear, self.out, true),
+                self.hdr,
+                Conversion::delinearize(self.out),
+            )
+        })
     }
 
     /// One pixel clamped and quantised to the bit depth.
@@ -144,7 +174,12 @@ impl Pipe {
         let Some(l) = self.levels else { return };
         let r = match region {
             Region::Empty => None,
-            Region::Full => Some(PxRect { x0: 0, y0: 0, x1: img.width, y1: img.height }),
+            Region::Full => Some(PxRect {
+                x0: 0,
+                y0: 0,
+                x1: img.width,
+                y1: img.height,
+            }),
             Region::Rect(r) => Some(r.clamp_to(img.width, img.height)),
         };
         if let Some(r) = r {
@@ -173,9 +208,15 @@ impl Pipe {
     /// Hash of everything that changes pixels (for cache keys).
     pub fn key(&self) -> u64 {
         let mut k = self.levels.map_or(0, |l| l as u64);
-        k = k.wrapping_mul(31).wrapping_add(self.space.map_or(7, |s| s as u64 + 11));
-        k = k.wrapping_mul(31).wrapping_add(self.linear as u64 * 2 + self.linear_blend as u64);
-        k = k.wrapping_mul(31).wrapping_add(self.out as u64 * 4 + self.hdr as u64);
+        k = k
+            .wrapping_mul(31)
+            .wrapping_add(self.space.map_or(7, |s| s as u64 + 11));
+        k = k
+            .wrapping_mul(31)
+            .wrapping_add(self.linear as u64 * 2 + self.linear_blend as u64);
+        k = k
+            .wrapping_mul(31)
+            .wrapping_add(self.out as u64 * 4 + self.hdr as u64);
         k = k.wrapping_mul(31).wrapping_add(self.gamma24 as u64);
         k
     }
@@ -197,11 +238,21 @@ impl PxRect {
             return None;
         }
         let c = |v: f64| v.clamp(0.0, u32::MAX as f64) as u32;
-        Some(PxRect { x0: c((x0 - margin).floor()), y0: c((y0 - margin).floor()), x1: c((x1 + margin).ceil()), y1: c((y1 + margin).ceil()) })
+        Some(PxRect {
+            x0: c((x0 - margin).floor()),
+            y0: c((y0 - margin).floor()),
+            x1: c((x1 + margin).ceil()),
+            y1: c((y1 + margin).ceil()),
+        })
     }
     fn clamp_to(self, w: u32, h: u32) -> PxRect {
         let (x1, y1) = (self.x1.min(w), self.y1.min(h));
-        PxRect { x0: self.x0.min(x1), y0: self.y0.min(y1), x1, y1 }
+        PxRect {
+            x0: self.x0.min(x1),
+            y0: self.y0.min(y1),
+            x1,
+            y1,
+        }
     }
 }
 
@@ -215,7 +266,16 @@ pub enum Region {
 
 /// Clamp premultiplied pixels to 0..1 (colour ≤ alpha) and round to `levels` steps.
 pub fn quantize(img: &mut Image, levels: f32) {
-    quantize_rect(img, PxRect { x0: 0, y0: 0, x1: img.width, y1: img.height }, levels);
+    quantize_rect(
+        img,
+        PxRect {
+            x0: 0,
+            y0: 0,
+            x1: img.width,
+            y1: img.height,
+        },
+        levels,
+    );
 }
 
 /// Clamp (colour ≤ alpha ≤ 1, NaN → 0) and round half up; values are non-negative after the
@@ -236,7 +296,11 @@ fn quantize_px(p: &mut [f32; 4], levels: f32, inv: f32) {
 /// `floor` is one instruction and converting back from `u32` several (about 1.5× faster there).
 #[inline(always)]
 fn round_half_up(v: f32) -> f32 {
-    if cfg!(target_arch = "wasm32") { (v + 0.5).floor() } else { (v + 0.5) as u32 as f32 }
+    if cfg!(target_arch = "wasm32") {
+        (v + 0.5).floor()
+    } else {
+        (v + 0.5) as u32 as f32
+    }
 }
 
 /// [`quantize`] restricted to a rectangle (already clamped to the image), row-parallel.
@@ -247,11 +311,13 @@ fn quantize_rect(img: &mut Image, r: PxRect, levels: f32) {
     let inv = 1.0 / levels;
     let w = img.width as usize;
     let (x0, x1) = (r.x0 as usize, r.x1 as usize);
-    img.data[r.y0 as usize * w..r.y1 as usize * w].par_chunks_mut(w).for_each(|row| {
-        for p in &mut row[x0..x1] {
-            quantize_px(p, levels, inv);
-        }
-    });
+    img.data[r.y0 as usize * w..r.y1 as usize * w]
+        .par_chunks_mut(w)
+        .for_each(|row| {
+            for p in &mut row[x0..x1] {
+                quantize_px(p, levels, inv);
+            }
+        });
 }
 
 /// Convert premultiplied pixels (on straight colour).
@@ -269,7 +335,11 @@ pub fn convert(img: &mut Image, c: &Conversion) {
 /// Compand: an exponential knee from 80%, approaching 1.0 (linear light, per channel).
 pub fn compand(v: f32) -> f32 {
     const K: f32 = 0.8;
-    if v <= K { v } else { K + (1.0 - K) * (1.0 - (-(v - K) / (1.0 - K)).exp()) }
+    if v <= K {
+        v
+    } else {
+        K + (1.0 - K) * (1.0 - (-(v - K) / (1.0 - K)).exp())
+    }
 }
 
 /// Extended Reinhard tone mapping of luminance with white at `W` (linear light).
@@ -285,7 +355,12 @@ pub fn tone_map(c: [f32; 3]) -> [f32; 3] {
 }
 
 /// The HDR step of [`Pipe::output_hdr`] on premultiplied pixels.
-pub fn output_hdr(img: &mut Image, to_linear: Option<Conversion>, mode: HdrMode, encode: Conversion) {
+pub fn output_hdr(
+    img: &mut Image,
+    to_linear: Option<Conversion>,
+    mode: HdrMode,
+    encode: Conversion,
+) {
     img.data.par_iter_mut().for_each(|p| {
         let a = p[3];
         if a <= 0.0 {

@@ -48,10 +48,13 @@ pub fn compile(formula: &str, field: &dyn Fn(&str) -> Option<String>) -> Result<
     let mut out = String::with_capacity(text.len() + 16);
     let mut refs: Vec<String> = Vec::new();
     let slot = |name: String, refs: &mut Vec<String>| -> String {
-        let i = refs.iter().position(|r| r.eq_ignore_ascii_case(&name)).unwrap_or_else(|| {
-            refs.push(name);
-            refs.len() - 1
-        });
+        let i = refs
+            .iter()
+            .position(|r| r.eq_ignore_ascii_case(&name))
+            .unwrap_or_else(|| {
+                refs.push(name);
+                refs.len() - 1
+            });
         placeholder(i)
     };
     let mut i = 0;
@@ -99,10 +102,13 @@ pub fn compile(formula: &str, field: &dyn Fn(&str) -> Option<String>) -> Result<
                         }
                     }
                 }
-                let canon = field(&name).ok_or_else(|| format!("There's no field named '{name}'."))?;
+                let canon =
+                    field(&name).ok_or_else(|| format!("There's no field named '{name}'."))?;
                 out.push_str(&slot(canon, &mut refs));
             }
-            c if c.is_ascii_digit() || (c == '.' && at(i + 1).is_some_and(|d| d.is_ascii_digit())) => {
+            c if c.is_ascii_digit()
+                || (c == '.' && at(i + 1).is_some_and(|d| d.is_ascii_digit())) =>
+            {
                 while at(i).is_some_and(|d| d.is_ascii_digit() || d == '.') {
                     out.push(at(i).unwrap_or('0'));
                     i += 1;
@@ -126,7 +132,10 @@ pub fn compile(formula: &str, field: &dyn Fn(&str) -> Option<String>) -> Result<
                 while at(i).is_some_and(|d| d.is_alphanumeric() || d == '_' || d == '.') {
                     i += 1;
                 }
-                let word: String = chars.get(start..i).map(|w| w.iter().collect()).unwrap_or_default();
+                let word: String = chars
+                    .get(start..i)
+                    .map(|w| w.iter().collect())
+                    .unwrap_or_default();
                 let mut j = i;
                 while at(j).is_some_and(char::is_whitespace) {
                     j += 1;
@@ -143,7 +152,8 @@ pub fn compile(formula: &str, field: &dyn Fn(&str) -> Option<String>) -> Result<
             }
         }
     }
-    let body = gridcraft_formula::parse(&out).map_err(|_| "The formula contains an error.".to_string())?;
+    let body =
+        gridcraft_formula::parse(&out).map_err(|_| "The formula contains an error.".to_string())?;
     let mut problem: Option<String> = None;
     body.walk(&mut |e| {
         if problem.is_some() {
@@ -152,7 +162,11 @@ pub fn compile(formula: &str, field: &dyn Fn(&str) -> Option<String>) -> Result<
         match e {
             Expr::Name(n) if n.starts_with(PREFIX) => {}
             Expr::Name(n) => problem = Some(format!("There's no field named '{n}'.")),
-            Expr::Ref(_) | Expr::Struct(_) => problem = Some("A calculated field can't refer to cells or tables; use field names.".into()),
+            Expr::Ref(_) | Expr::Struct(_) => {
+                problem = Some(
+                    "A calculated field can't refer to cells or tables; use field names.".into(),
+                )
+            }
             _ => {}
         }
     });
@@ -200,22 +214,41 @@ pub struct CalcSet {
 
 impl CalcSet {
     pub fn new(pt: &PivotTable, headers: &[String]) -> CalcSet {
-        let names: Vec<String> = pt.calculated_fields.iter().take(MAX_CALC_FIELDS).map(|c| c.name.clone()).collect();
+        let names: Vec<String> = pt
+            .calculated_fields
+            .iter()
+            .take(MAX_CALC_FIELDS)
+            .map(|c| c.name.clone())
+            .collect();
         let lookup = |n: &str| -> Option<String> {
             let n = n.trim();
-            headers.iter().chain(names.iter()).find(|h| h.trim().eq_ignore_ascii_case(n)).cloned()
+            headers
+                .iter()
+                .chain(names.iter())
+                .find(|h| h.trim().eq_ignore_ascii_case(n))
+                .cloned()
         };
-        let compiled = pt.calculated_fields.iter().take(MAX_CALC_FIELDS).map(|c| compile(&c.formula, &lookup)).collect();
+        let compiled = pt
+            .calculated_fields
+            .iter()
+            .take(MAX_CALC_FIELDS)
+            .map(|c| compile(&c.formula, &lookup))
+            .collect();
         CalcSet { names, compiled }
     }
 
     pub fn index(&self, name: &str) -> Option<usize> {
-        self.names.iter().position(|n| n.eq_ignore_ascii_case(name.trim()))
+        self.names
+            .iter()
+            .position(|n| n.eq_ignore_ascii_case(name.trim()))
     }
 
     /// The compile error of a calculated field, if any.
     pub fn error(&self, i: usize) -> Option<&str> {
-        self.compiled.get(i).and_then(|c| c.as_ref().err()).map(String::as_str)
+        self.compiled
+            .get(i)
+            .and_then(|c| c.as_ref().err())
+            .map(String::as_str)
     }
 
     /// Source fields a calculated field needs, directly or through other calculated fields.
@@ -277,14 +310,24 @@ impl CalcSet {
         self.value_in(wb, i, sum, &mut memo, &mut active, 0)
     }
 
-    fn value_in(&self, wb: &Workbook, i: usize, sum: &dyn Fn(&str) -> Value, memo: &mut [Option<Value>], active: &mut [bool], depth: usize) -> Value {
+    fn value_in(
+        &self,
+        wb: &Workbook,
+        i: usize,
+        sum: &dyn Fn(&str) -> Value,
+        memo: &mut [Option<Value>],
+        active: &mut [bool],
+        depth: usize,
+    ) -> Value {
         if let Some(Some(v)) = memo.get(i) {
             return v.clone();
         }
         if depth > MAX_DEPTH || active.get(i).copied().unwrap_or(true) {
             return Value::Error(CellError::Ref);
         }
-        let Some(Ok(c)) = self.compiled.get(i) else { return Value::Error(CellError::Name) };
+        let Some(Ok(c)) = self.compiled.get(i) else {
+            return Value::Error(CellError::Name);
+        };
         if let Some(a) = active.get_mut(i) {
             *a = true;
         }
@@ -312,7 +355,10 @@ mod tests {
     use super::*;
 
     fn fields(n: &str) -> Option<String> {
-        ["Sales", "Units", "Unit Price", "Q1"].iter().find(|f| f.eq_ignore_ascii_case(n)).map(|f| f.to_string())
+        ["Sales", "Units", "Unit Price", "Q1"]
+            .iter()
+            .find(|f| f.eq_ignore_ascii_case(n))
+            .map(|f| f.to_string())
     }
 
     #[test]
@@ -324,7 +370,11 @@ mod tests {
         assert_eq!(c.refs, vec!["Q1"]);
         let wb = Workbook::new();
         assert_eq!(eval(&wb, &c, &[Value::Number(2.0)]), Value::Number(300.0));
-        assert!(compile("=Sales*Bogus", &fields).unwrap_err().contains("Bogus"));
+        assert!(
+            compile("=Sales*Bogus", &fields)
+                .unwrap_err()
+                .contains("Bogus")
+        );
         assert!(compile("=A1*2", &fields).is_err());
         assert!(compile("='Nope'*2", &fields).is_err());
         assert!(compile("=Sales*(", &fields).is_err());
@@ -336,12 +386,24 @@ mod tests {
     fn deep_and_cyclic_chains_are_bounded() {
         // 300 calculated fields, each using the previous one, and a two-field cycle.
         let mut pt = PivotTable::default();
-        pt.calculated_fields.push(gridcraft_model::PivotCalcField { name: "C0".into(), formula: "=Sales+1".into() });
+        pt.calculated_fields.push(gridcraft_model::PivotCalcField {
+            name: "C0".into(),
+            formula: "=Sales+1".into(),
+        });
         for i in 1..300 {
-            pt.calculated_fields.push(gridcraft_model::PivotCalcField { name: format!("C{i}"), formula: format!("=C{}+1", i - 1) });
+            pt.calculated_fields.push(gridcraft_model::PivotCalcField {
+                name: format!("C{i}"),
+                formula: format!("=C{}+1", i - 1),
+            });
         }
-        pt.calculated_fields.push(gridcraft_model::PivotCalcField { name: "P".into(), formula: "=Q".into() });
-        pt.calculated_fields.push(gridcraft_model::PivotCalcField { name: "Q".into(), formula: "=P*2".into() });
+        pt.calculated_fields.push(gridcraft_model::PivotCalcField {
+            name: "P".into(),
+            formula: "=Q".into(),
+        });
+        pt.calculated_fields.push(gridcraft_model::PivotCalcField {
+            name: "Q".into(),
+            formula: "=P*2".into(),
+        });
         let set = CalcSet::new(&pt, &["Sales".to_string()]);
         let wb = Workbook::new();
         let sum = |_: &str| Value::Number(10.0);
@@ -349,11 +411,25 @@ mod tests {
         assert_eq!(set.value(&wb, 10, &sum), Value::Number(21.0));
         // Past the depth bound (the list itself is capped at MAX_CALC_FIELDS).
         assert_eq!(set.value(&wb, 200, &sum), Value::Error(CellError::Ref));
-        assert_eq!(set.index("P"), None, "P is past the cap of {MAX_CALC_FIELDS} fields");
+        assert_eq!(
+            set.index("P"),
+            None,
+            "P is past the cap of {MAX_CALC_FIELDS} fields"
+        );
         // A small cycle within the cap.
         let mut small = PivotTable::default();
-        small.calculated_fields.push(gridcraft_model::PivotCalcField { name: "P".into(), formula: "=Q".into() });
-        small.calculated_fields.push(gridcraft_model::PivotCalcField { name: "Q".into(), formula: "=P*2".into() });
+        small
+            .calculated_fields
+            .push(gridcraft_model::PivotCalcField {
+                name: "P".into(),
+                formula: "=Q".into(),
+            });
+        small
+            .calculated_fields
+            .push(gridcraft_model::PivotCalcField {
+                name: "Q".into(),
+                formula: "=P*2".into(),
+            });
         let set = CalcSet::new(&small, &["Sales".to_string()]);
         assert!(set.is_cyclic(0));
         assert_eq!(set.value(&wb, 0, &sum), Value::Error(CellError::Ref));

@@ -55,7 +55,10 @@ impl MochaShape {
             return a.1.clone();
         }
         let u = ((t - a.0) / (b.0 - a.0).max(1e-12)).clamp(0.0, 1.0);
-        a.1.iter().zip(&b.1).map(|(p, q)| [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u]).collect()
+        a.1.iter()
+            .zip(&b.1)
+            .map(|(p, q)| [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u])
+            .collect()
     }
 }
 
@@ -75,20 +78,35 @@ fn pts(v: &serde_json::Value) -> Vec<[f64; 2]> {
 /// Parse shape data JSON (see the module docs). `None` when it is not valid.
 pub fn parse_shapes(text: &str) -> Option<Vec<MochaShape>> {
     let v: serde_json::Value = serde_json::from_str(text).ok()?;
-    let list = v.get("shapes").and_then(|s| s.as_array()).or_else(|| v.as_array())?;
+    let list = v
+        .get("shapes")
+        .and_then(|s| s.as_array())
+        .or_else(|| v.as_array())?;
     let mut out = vec![];
     for s in list {
         let mut frames: Vec<(f64, Vec<[f64; 2]>)> = s
             .get("frames")
             .and_then(|f| f.as_array())
-            .map(|a| a.iter().filter_map(|f| Some((f.get("time")?.as_f64()?, pts(f.get("points")?)))).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|f| Some((f.get("time")?.as_f64()?, pts(f.get("points")?))))
+                    .collect()
+            })
             .unwrap_or_default();
         frames.sort_by(|a, b| a.0.total_cmp(&b.0));
         out.push(MochaShape {
-            name: s.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string(),
+            name: s
+                .get("name")
+                .and_then(|n| n.as_str())
+                .unwrap_or("")
+                .to_string(),
             closed: s.get("closed").and_then(|c| c.as_bool()).unwrap_or(true),
             inverted: s.get("inverted").and_then(|c| c.as_bool()).unwrap_or(false),
-            feather: s.get("feather").and_then(|c| c.as_f64()).unwrap_or(0.0).max(0.0),
+            feather: s
+                .get("feather")
+                .and_then(|c| c.as_f64())
+                .unwrap_or(0.0)
+                .max(0.0),
             points: s.get("points").map(pts).unwrap_or_default(),
             frames,
         });
@@ -108,8 +126,14 @@ fn load(src: &str) -> Option<Arc<Vec<MochaShape>>> {
     if let Some(v) = cache.lock().ok().and_then(|c| c.get(src).cloned()) {
         return v;
     }
-    let parsed =
-        if s.starts_with('{') || s.starts_with('[') { parse_shapes(s) } else { std::fs::read_to_string(s).ok().and_then(|t| parse_shapes(&t)) }.map(Arc::new);
+    let parsed = if s.starts_with('{') || s.starts_with('[') {
+        parse_shapes(s)
+    } else {
+        std::fs::read_to_string(s)
+            .ok()
+            .and_then(|t| parse_shapes(&t))
+    }
+    .map(Arc::new);
     if let Ok(mut c) = cache.lock() {
         if c.len() > 64 {
             c.clear();
@@ -120,7 +144,9 @@ fn load(src: &str) -> Option<Arc<Vec<MochaShape>>> {
 }
 
 fn mocha_shape(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let Some(shapes) = load(ctx.params.s("shapeData")) else { return b };
+    let Some(shapes) = load(ctx.params.s("shapeData")) else {
+        return b;
+    };
     let (w, h) = (b.img.width as usize, b.img.height as usize);
     let blend = ctx.params.e("blendMode");
     let inv = 1.0 / b.scale.max(1e-9);
@@ -131,13 +157,20 @@ fn mocha_shape(ctx: &EffectCtx, mut b: Buf) -> Buf {
             continue;
         }
         let mut cov = Plane::new(w, h);
-        cov.data.par_chunks_mut(w.max(1)).enumerate().for_each(|(y, row)| {
-            for (x, v) in row.iter_mut().enumerate() {
-                let lx = (x as f64 + 0.5 - b.offset[0]) * inv;
-                let ly = (y as f64 + 0.5 - b.offset[1]) * inv;
-                *v = if point_in_poly(&outline, lx, ly) != s.inverted { 1.0 } else { 0.0 };
-            }
-        });
+        cov.data
+            .par_chunks_mut(w.max(1))
+            .enumerate()
+            .for_each(|(y, row)| {
+                for (x, v) in row.iter_mut().enumerate() {
+                    let lx = (x as f64 + 0.5 - b.offset[0]) * inv;
+                    let ly = (y as f64 + 0.5 - b.offset[1]) * inv;
+                    *v = if point_in_poly(&outline, lx, ly) != s.inverted {
+                        1.0
+                    } else {
+                        0.0
+                    };
+                }
+            });
         if s.feather > 0.0 {
             let f = s.feather * b.scale * 0.5;
             cov = gauss_plane(&cov, f, f);
@@ -160,24 +193,37 @@ fn mocha_shape(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let c = ctx.params.color("shapeColour");
     let op = (ctx.params.f("opacity") / 100.0) as f32;
     let edge = ctx.params.b("renderEdgeWidth");
-    b.img.data.par_iter_mut().zip(m.data.par_iter()).for_each(|(px, &k)| {
-        let k = if edge { (1.0 - (2.0 * k - 1.0).abs()).clamp(0.0, 1.0) } else { k.clamp(0.0, 1.0) };
-        match kind {
-            1 => {
-                let a = k * op;
-                let s = [c[0] * a, c[1] * a, c[2] * a, a];
-                *px = [s[0] + px[0] * (1.0 - a), s[1] + px[1] * (1.0 - a), s[2] + px[2] * (1.0 - a), s[3] + px[3] * (1.0 - a)];
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(m.data.par_iter())
+        .for_each(|(px, &k)| {
+            let k = if edge {
+                (1.0 - (2.0 * k - 1.0).abs()).clamp(0.0, 1.0)
+            } else {
+                k.clamp(0.0, 1.0)
+            };
+            match kind {
+                1 => {
+                    let a = k * op;
+                    let s = [c[0] * a, c[1] * a, c[2] * a, a];
+                    *px = [
+                        s[0] + px[0] * (1.0 - a),
+                        s[1] + px[1] * (1.0 - a),
+                        s[2] + px[2] * (1.0 - a),
+                        s[3] + px[3] * (1.0 - a),
+                    ];
+                }
+                2 => {
+                    let a = k * op;
+                    *px = [c[0] * a, c[1] * a, c[2] * a, a];
+                }
+                _ => {
+                    let a = 1.0 - (1.0 - k) * op;
+                    *px = px.map(|v| v * a);
+                }
             }
-            2 => {
-                let a = k * op;
-                *px = [c[0] * a, c[1] * a, c[2] * a, a];
-            }
-            _ => {
-                let a = 1.0 - (1.0 - k) * op;
-                *px = px.map(|v| v * a);
-            }
-        }
-    });
+        });
     b
 }
 
@@ -187,14 +233,44 @@ pub fn specs() -> Vec<EffectSpec> {
         name: "Mocha shape",
         category: "Matte",
         params: vec![
-            p("blendMode", "Blend mode", Value::Enum(0), popup(&["Add", "Subtract", "Intersect", "Difference"])),
+            p(
+                "blendMode",
+                "Blend mode",
+                Value::Enum(0),
+                popup(&["Add", "Subtract", "Intersect", "Difference"]),
+            ),
             p("invert", "Invert", Value::Bool(false), ParamUi::Checkbox),
-            p("renderEdgeWidth", "Render edge width", Value::Bool(false), ParamUi::Checkbox),
-            p("renderType", "Render type", Value::Enum(0), popup(&["Shape cutout", "Color composite", "Color shape cutout"])),
-            p("shapeColour", "Shape colour", col(1.0, 1.0, 1.0), ParamUi::Color),
-            p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+            p(
+                "renderEdgeWidth",
+                "Render edge width",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "renderType",
+                "Render type",
+                Value::Enum(0),
+                popup(&["Shape cutout", "Color composite", "Color shape cutout"]),
+            ),
+            p(
+                "shapeColour",
+                "Shape colour",
+                col(1.0, 1.0, 1.0),
+                ParamUi::Color,
+            ),
+            p(
+                "opacity",
+                "Opacity",
+                num(100.0),
+                slider(0.0, 100.0, 0.0, 100.0, 1),
+            ),
             // JSON shape data (see the module docs) or a path to a .json file.
-            p("shapeData", "Shape data", Value::Str(String::new()), ParamUi::Hidden),
+            p(
+                "shapeData",
+                "Shape data",
+                Value::Str(String::new()),
+                ParamUi::Hidden,
+            ),
         ],
         render: mocha_shape,
         gpu: false,
@@ -222,22 +298,44 @@ mod tests {
     #[test]
     fn cuts_out_the_shape_over_time() {
         let img = Image::filled(24, 12, [1.0, 0.0, 0.0, 1.0]);
-        let a = run_fx("ec.obsolete.mochashape", &[("shapeData", Value::Str(DATA.into()))], img.clone(), 0.0, EffectEnv::default());
+        let a = run_fx(
+            "ec.obsolete.mochashape",
+            &[("shapeData", Value::Str(DATA.into()))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(a.img.get(5, 5)[3], 1.0);
         assert_eq!(a.img.get(15, 5)[3], 0.0);
-        let b = run_fx("ec.obsolete.mochashape", &[("shapeData", Value::Str(DATA.into()))], img.clone(), 1.0, EffectEnv::default());
+        let b = run_fx(
+            "ec.obsolete.mochashape",
+            &[("shapeData", Value::Str(DATA.into()))],
+            img.clone(),
+            1.0,
+            EffectEnv::default(),
+        );
         assert_eq!(b.img.get(5, 5)[3], 0.0);
         assert_eq!(b.img.get(15, 5)[3], 1.0);
         // Color shape cutout fills with the shape colour; no data = pass-through.
         let c = run_fx(
             "ec.obsolete.mochashape",
-            &[("shapeData", Value::Str(DATA.into())), ("renderType", Value::Enum(2)), ("shapeColour", col(0.0, 1.0, 0.0))],
+            &[
+                ("shapeData", Value::Str(DATA.into())),
+                ("renderType", Value::Enum(2)),
+                ("shapeColour", col(0.0, 1.0, 0.0)),
+            ],
             img.clone(),
             0.0,
             EffectEnv::default(),
         );
         assert_eq!(c.img.get(5, 5), [0.0, 1.0, 0.0, 1.0]);
-        let none = run_fx("ec.obsolete.mochashape", &[], img.clone(), 0.0, EffectEnv::default());
+        let none = run_fx(
+            "ec.obsolete.mochashape",
+            &[],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(none.img.data, img.data);
     }
 }

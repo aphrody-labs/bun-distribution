@@ -30,9 +30,17 @@ fn comptes_listes() {
     let Some(cfg) = load_real() else { return };
     assert_eq!(cfg.banner_imgs.len(), 47, "m_PostNoticeBannerImgInfoList");
     assert_eq!(cfg.banner_bgs.len(), 18, "m_PostNoticeBannerBgInfoList");
-    assert_eq!(cfg.banner_badges.len(), 3, "m_PostNoticeBannerBadgeInfoList");
+    assert_eq!(
+        cfg.banner_badges.len(),
+        3,
+        "m_PostNoticeBannerBadgeInfoList"
+    );
     assert_eq!(cfg.banner_icons.len(), 9, "m_PostNoticeBannerIconInfoList");
-    assert_eq!(cfg.banner_graphics_texts.len(), 10, "m_PostNoticeBannerGraphicsTextInfo");
+    assert_eq!(
+        cfg.banner_graphics_texts.len(),
+        10,
+        "m_PostNoticeBannerGraphicsTextInfo"
+    );
     assert_eq!(cfg.infos.len(), 13, "m_PostNoticeInfoList");
 }
 
@@ -56,22 +64,37 @@ fn banner_bg_chemin_texture() {
     let bg0 = &cfg.banner_bgs[0];
     assert_eq!(bg0.id_crc, HashId(0x4E6E_E6A6));
     assert_eq!(bg0.banner_bg_texture_name_crc, HashId(0x60FF_D0B3));
-    assert_eq!(bg0.banner_bg_texture_path, "#/menu/220_img/banner_img/banner01_0001.g4tx");
+    assert_eq!(
+        bg0.banner_bg_texture_path,
+        "#/menu/220_img/banner_img/banner01_0001.g4tx"
+    );
     let bg2 = &cfg.banner_bgs[2];
     assert_eq!(bg2.id_crc, HashId(0x7C58_8424));
-    assert_eq!(bg2.banner_bg_texture_path, "#/menu/220_img/banner_img/banner_img_early.g4tx");
+    assert_eq!(
+        bg2.banner_bg_texture_path,
+        "#/menu/220_img/banner_img/banner_img_early.g4tx"
+    );
 }
 
 #[test]
 fn badges_et_icones() {
     let Some(cfg) = load_real() else { return };
     assert_eq!(cfg.banner_badges[0].id_crc, HashId(0x73FB_83C5));
-    assert_eq!(cfg.banner_badges[0].banner_badge_texture_name_crc, HashId(0xE586_163F));
+    assert_eq!(
+        cfg.banner_badges[0].banner_badge_texture_name_crc,
+        HashId(0xE586_163F)
+    );
     assert_eq!(cfg.banner_badges[2].id_crc, HashId(0x41CD_E147));
-    assert_eq!(cfg.banner_badges[2].banner_badge_texture_name_crc, HashId(0x0B88_7713));
+    assert_eq!(
+        cfg.banner_badges[2].banner_badge_texture_name_crc,
+        HashId(0x0B88_7713)
+    );
 
     assert_eq!(cfg.banner_icons[0].id_crc, HashId(0x2B4F_ECA6));
-    assert_eq!(cfg.banner_icons[0].banner_icon_texture_name_crc, HashId(0x24DE_C470));
+    assert_eq!(
+        cfg.banner_icons[0].banner_icon_texture_name_crc,
+        HashId(0x24DE_C470)
+    );
     assert_eq!(cfg.banner_icons[8].id_crc, HashId(0x4F23_29A2));
 }
 
@@ -87,7 +110,10 @@ fn graphics_text_seasonal_sample() {
     // The seasonal record is an exact-integer regression oracle for numeric hashes.
     let g7 = &cfg.banner_graphics_texts[7];
     assert_eq!(g7.id_crc, HashId(0xFAB5_9E86));
-    assert_eq!(g7.banner_graphics_text_texture_name_crc, HashId(0xF1AE_6783));
+    assert_eq!(
+        g7.banner_graphics_text_texture_name_crc,
+        HashId(0xF1AE_6783)
+    );
     assert_eq!(
         g7.banner_graphics_text_texture_path,
         "#/menu/220_img/banner_img/<LG>/gtxt_banner01_seasonal01.g4tx"

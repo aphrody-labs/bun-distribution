@@ -106,12 +106,20 @@ pub struct WidthTool {
 
 /// The object whose stroke path `id` draws with: its compound path, if it is a member of one.
 pub fn stroke_owner(doc: &Document, id: NodeId) -> NodeId {
-    doc.parent_of(id).filter(|p| doc.node(*p).is_some_and(|n| matches!(n.kind, NodeKind::Compound { .. }))).unwrap_or(id)
+    doc.parent_of(id)
+        .filter(|p| {
+            doc.node(*p)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Compound { .. }))
+        })
+        .unwrap_or(id)
 }
 
 /// The visible weighted stroke of `owner`.
 fn stroke_of(doc: &Document, owner: NodeId) -> Option<&StrokeLayer> {
-    doc.node(owner)?.appearance.stroke().filter(|s| s.visible && s.width > 0.0 && !s.paint.is_none())
+    doc.node(owner)?
+        .appearance
+        .stroke()
+        .filter(|s| s.visible && s.width > 0.0 && !s.paint.is_none())
 }
 
 /// The paths a stroke owner draws: itself, or a compound path's members.
@@ -141,10 +149,17 @@ impl WidthTool {
                 return None;
             }
             let n = cx.doc.node(id)?;
-            let NodeKind::Path { path, guide: false, .. } = &n.kind else { return None };
+            let NodeKind::Path {
+                path, guide: false, ..
+            } = &n.kind
+            else {
+                return None;
+            };
             let owner = stroke_owner(cx.doc, id);
             let st = stroke_of(cx.doc, owner)?;
-            let widest = st.profile.as_ref().map_or(1.0, |pr| pr.points.iter().map(|q| q.1.max(q.2)).fold(1.0, f64::max));
+            let widest = st.profile.as_ref().map_or(1.0, |pr| {
+                pr.points.iter().map(|q| q.1.max(q.2)).fold(1.0, f64::max)
+            });
             let reach = widest * st.width / 2.0 + cx.tol(4.0);
             if !path.bounds()?.inflate(reach, reach).contains(p) {
                 return None;
@@ -154,11 +169,31 @@ impl WidthTool {
                 return None;
             }
             let (left, right) = sides_at(st, t);
-            Some((d, Spot { owner, id, sub, t, p: q, n: left_normal(tan), left, right }))
+            Some((
+                d,
+                Spot {
+                    owner,
+                    id,
+                    sub,
+                    t,
+                    p: q,
+                    n: left_normal(tan),
+                    left,
+                    right,
+                },
+            ))
         };
-        let best_of = |ids: &mut dyn Iterator<Item = NodeId>| ids.filter_map(consider).min_by(|a, b| a.0.total_cmp(&b.0));
+        let best_of = |ids: &mut dyn Iterator<Item = NodeId>| {
+            ids.filter_map(consider).min_by(|a, b| a.0.total_cmp(&b.0))
+        };
         // The selected paths first (a selected compound path: its members).
-        if let Some(b) = best_of(&mut cx.selection.objects.iter().flat_map(|id| paths_of(cx.doc, *id))) {
+        if let Some(b) = best_of(
+            &mut cx
+                .selection
+                .objects
+                .iter()
+                .flat_map(|id| paths_of(cx.doc, *id)),
+        ) {
             return Some(b.1);
         }
         let mut all = vec![];
@@ -172,16 +207,29 @@ impl WidthTool {
 
     /// Width points of `owner`'s stroke on subpath `sub` of path `id`.
     fn points_of(cx: &ToolContext, owner: NodeId, id: NodeId, sub: usize) -> Vec<WPoint> {
-        let Some(st) = stroke_of(cx.doc, owner) else { return vec![] };
+        let Some(st) = stroke_of(cx.doc, owner) else {
+            return vec![];
+        };
         let Some(pr) = &st.profile else { return vec![] };
-        let Some(NodeKind::Path { path, .. }) = cx.doc.node(id).map(|n| &n.kind) else { return vec![] };
-        let Some(sp) = path.subpaths.get(sub) else { return vec![] };
+        let Some(NodeKind::Path { path, .. }) = cx.doc.node(id).map(|n| &n.kind) else {
+            return vec![];
+        };
+        let Some(sp) = path.subpaths.get(sub) else {
+            return vec![];
+        };
         pr.points
             .iter()
             .enumerate()
             .filter_map(|(index, (t, l, r))| {
                 let (p, tan) = eval_fraction(sp, *t)?;
-                Some(WPoint { index, t: *t, p, n: left_normal(tan), left: l * st.width / 2.0, right: r * st.width / 2.0 })
+                Some(WPoint {
+                    index,
+                    t: *t,
+                    p,
+                    n: left_normal(tan),
+                    left: l * st.width / 2.0,
+                    right: r * st.width / 2.0,
+                })
             })
             .collect()
     }
@@ -192,7 +240,12 @@ impl WidthTool {
             Some(NodeKind::Path { path, .. }) => path.subpaths.len(),
             _ => 0,
         };
-        paths_of(cx.doc, owner).into_iter().flat_map(|id| (0..subpaths(id)).flat_map(move |sub| Self::points_of(cx, owner, id, sub))).collect()
+        paths_of(cx.doc, owner)
+            .into_iter()
+            .flat_map(|id| {
+                (0..subpaths(id)).flat_map(move |sub| Self::points_of(cx, owner, id, sub))
+            })
+            .collect()
     }
 
     /// The width point part nearest to `p` within a few pixels: a centre (`None`) or the end of a
@@ -201,7 +254,13 @@ impl WidthTool {
         let tol = cx.tol(5.0);
         Self::points_of(cx, spot.owner, spot.id, spot.sub)
             .into_iter()
-            .flat_map(|w| [(w, None, w.p), (w, Some(true), w.p + w.n * w.left), (w, Some(false), w.p - w.n * w.right)])
+            .flat_map(|w| {
+                [
+                    (w, None, w.p),
+                    (w, Some(true), w.p + w.n * w.left),
+                    (w, Some(false), w.p - w.n * w.right),
+                ]
+            })
             .map(|(w, part, q)| (q.distance(p), w, part))
             .filter(|h| h.0 <= tol)
             .min_by(|a, b| a.0.total_cmp(&b.0))
@@ -209,23 +268,27 @@ impl WidthTool {
     }
 
     fn is_selected(&self, id: NodeId, t: f64) -> bool {
-        self.selected.as_ref().is_some_and(|(sid, ts)| *sid == id && ts.iter().any(|s| (s - t).abs() <= SAME_T))
+        self.selected
+            .as_ref()
+            .is_some_and(|(sid, ts)| *sid == id && ts.iter().any(|s| (s - t).abs() <= SAME_T))
     }
 
     /// Shift-click on the width point at `t` of `id`: add it to the selection or take it out.
     /// → whether it is selected now.
     fn toggle(&mut self, id: NodeId, t: f64) -> bool {
         match &mut self.selected {
-            Some((sid, ts)) if *sid == id => match ts.iter().position(|s| (s - t).abs() <= SAME_T) {
-                Some(i) => {
-                    ts.remove(i);
-                    false
+            Some((sid, ts)) if *sid == id => {
+                match ts.iter().position(|s| (s - t).abs() <= SAME_T) {
+                    Some(i) => {
+                        ts.remove(i);
+                        false
+                    }
+                    None => {
+                        ts.push(t);
+                        true
+                    }
                 }
-                None => {
-                    ts.push(t);
-                    true
-                }
-            },
+            }
             _ => {
                 self.selected = Some((id, vec![t]));
                 true
@@ -235,8 +298,12 @@ impl WidthTool {
 
     /// The indices of the selected width points of `id` (both sides of a discontinuous point).
     fn selected_indices(&self, cx: &ToolContext, id: NodeId) -> Vec<usize> {
-        let Some(pr) = stroke_of(cx.doc, id).and_then(|s| s.profile.as_ref()) else { return vec![] };
-        (0..pr.points.len()).filter(|i| self.is_selected(id, pr.points[*i].0)).collect()
+        let Some(pr) = stroke_of(cx.doc, id).and_then(|s| s.profile.as_ref()) else {
+            return vec![];
+        };
+        (0..pr.points.len())
+            .filter(|i| self.is_selected(id, pr.points[*i].0))
+            .collect()
     }
 
     /// A drag of `id`'s selected points together: a move when more than one profile point is
@@ -249,14 +316,26 @@ impl WidthTool {
             Mode::Width(_) => self.selected.as_ref().is_some_and(|(_, ts)| ts.len() > 1),
             Mode::Copy => false,
         };
-        several.then(|| Group { points: st.profile.as_ref().map(|p| p.points.clone()).unwrap_or_default(), moving, half: st.width / 2.0 })
+        several.then(|| Group {
+            points: st
+                .profile
+                .as_ref()
+                .map(|p| p.points.clone())
+                .unwrap_or_default(),
+            moving,
+            half: st.width / 2.0,
+        })
     }
 
     /// The command previewing drag `d`.
     fn preview(d: &Drag) -> Action {
         let id = d.spot.owner.0;
         if let Some(g) = &d.group {
-            let (dt, dl, dr) = (d.t - d.spot.t, (d.left - d.spot.left) / g.half, (d.right - d.spot.right) / g.half);
+            let (dt, dl, dr) = (
+                d.t - d.spot.t,
+                (d.left - d.spot.left) / g.half,
+                (d.right - d.spot.right) / g.half,
+            );
             let mut pts: Vec<[f64; 3]> = g
                 .points
                 .iter()
@@ -268,10 +347,16 @@ impl WidthTool {
                 })
                 .collect();
             pts.sort_by(|a, b| a[0].total_cmp(&b[0]));
-            return Action::Preview("stroke.widthProfile.set".into(), json!({"ids": [id], "points": pts}));
+            return Action::Preview(
+                "stroke.widthProfile.set".into(),
+                json!({"ids": [id], "points": pts}),
+            );
         }
         match (d.mode, d.index) {
-            (Mode::Copy, Some(i)) => Action::Preview("stroke.widthPoint.copy".into(), json!({"id": id, "index": i, "t": d.t})),
+            (Mode::Copy, Some(i)) => Action::Preview(
+                "stroke.widthPoint.copy".into(),
+                json!({"id": id, "index": i, "t": d.t}),
+            ),
             (_, index) => {
                 let mut v = json!({"id": id, "t": d.t, "left": d.left, "right": d.right});
                 if let Some(i) = index {
@@ -295,10 +380,17 @@ impl Tool for WidthTool {
                 vec![]
             }
             PointerKind::DoubleClick => {
-                let Some(spot) = Self::spot_at(cx, p) else { return vec![] };
-                let Some((w, _)) = Self::hit(cx, &spot, p) else { return vec![] };
+                let Some(spot) = Self::spot_at(cx, p) else {
+                    return vec![];
+                };
+                let Some((w, _)) = Self::hit(cx, &spot, p) else {
+                    return vec![];
+                };
                 self.selected = Some((spot.owner, vec![w.t]));
-                vec![Action::Dialog("widthPoint".into(), json!({"id": spot.owner.0, "index": w.index}))]
+                vec![Action::Dialog(
+                    "widthPoint".into(),
+                    json!({"id": spot.owner.0, "index": w.index}),
+                )]
             }
             PointerKind::Down => {
                 let Some(spot) = Self::spot_at(cx, p) else {
@@ -321,24 +413,60 @@ impl Tool for WidthTool {
                         } else if mode == Mode::Copy || !self.is_selected(spot.owner, w.t) {
                             self.selected = Some((spot.owner, vec![w.t]));
                         }
-                        let others = Self::points_of(cx, spot.owner, spot.id, spot.sub).into_iter().filter(|o| o.index != w.index).collect();
+                        let others = Self::points_of(cx, spot.owner, spot.id, spot.sub)
+                            .into_iter()
+                            .filter(|o| o.index != w.index)
+                            .collect();
                         let group = self.group(cx, spot.owner, mode);
-                        let spot = Spot { t: w.t, p: w.p, n: w.n, left: w.left, right: w.right, ..spot };
-                        Drag { spot, index: Some(w.index), mode, left: w.left, right: w.right, t: w.t, group, others, moved: false }
+                        let spot = Spot {
+                            t: w.t,
+                            p: w.p,
+                            n: w.n,
+                            left: w.left,
+                            right: w.right,
+                            ..spot
+                        };
+                        Drag {
+                            spot,
+                            index: Some(w.index),
+                            mode,
+                            left: w.left,
+                            right: w.right,
+                            t: w.t,
+                            group,
+                            others,
+                            moved: false,
+                        }
                     }
                     None => {
                         let side = (p - spot.p).dot(spot.n) >= 0.0;
                         self.selected = Some((spot.owner, vec![spot.t]));
                         let mode = Mode::Width(ev.mods.alt.then_some(side));
-                        Drag { spot, index: None, mode, left: spot.left, right: spot.right, t: spot.t, group: None, others: vec![], moved: false }
+                        Drag {
+                            spot,
+                            index: None,
+                            mode,
+                            left: spot.left,
+                            right: spot.right,
+                            t: spot.t,
+                            group: None,
+                            others: vec![],
+                            moved: false,
+                        }
                     }
                 };
-                let label = if drag.mode == Mode::Copy { "Copy Width Point" } else { "Width Point" };
+                let label = if drag.mode == Mode::Copy {
+                    "Copy Width Point"
+                } else {
+                    "Width Point"
+                };
                 self.drag = Some(drag);
                 vec![Action::Begin(label.into())]
             }
             PointerKind::Drag => {
-                let Some(d) = &mut self.drag else { return vec![] };
+                let Some(d) = &mut self.drag else {
+                    return vec![];
+                };
                 d.moved = true;
                 match d.mode {
                     Mode::Width(side) => {
@@ -353,9 +481,19 @@ impl Tool for WidthTool {
                         }
                     }
                     Mode::Move | Mode::Copy => {
-                        let Some(NodeKind::Path { path, .. }) = cx.doc.node(d.spot.id).map(|n| &n.kind) else { return vec![] };
-                        let Some(sp) = path.subpaths.get(d.spot.sub) else { return vec![] };
-                        let Some((_, t, q, tan, _)) = nearest_fraction(&vectorcraft_geom::PathData::single(sp.clone()), p) else { return vec![] };
+                        let Some(NodeKind::Path { path, .. }) =
+                            cx.doc.node(d.spot.id).map(|n| &n.kind)
+                        else {
+                            return vec![];
+                        };
+                        let Some(sp) = path.subpaths.get(d.spot.sub) else {
+                            return vec![];
+                        };
+                        let Some((_, t, q, tan, _)) =
+                            nearest_fraction(&vectorcraft_geom::PathData::single(sp.clone()), p)
+                        else {
+                            return vec![];
+                        };
                         (d.t, d.spot.p, d.spot.n) = (t, q, left_normal(tan));
                         // Dropped onto another width point (a single point only): it lands exactly
                         // there, making a discontinuous point.
@@ -376,7 +514,10 @@ impl Tool for WidthTool {
                         // A click on one of several selected points selects just that one.
                         (true, false, _) if !ev.mods.shift => Some((d.spot.owner, vec![d.spot.t])),
                         // Points moved together stay selected.
-                        (true, _, Some((id, ts))) if d.mode == Mode::Move => Some((id, ts.into_iter().map(|t| (t + dt).clamp(0.0, 1.0)).collect())),
+                        (true, _, Some((id, ts))) if d.mode == Mode::Move => Some((
+                            id,
+                            ts.into_iter().map(|t| (t + dt).clamp(0.0, 1.0)).collect(),
+                        )),
                         (true, _, sel) => sel,
                         (false, _, _) => Some((d.spot.owner, vec![d.t])),
                     };
@@ -391,19 +532,27 @@ impl Tool for WidthTool {
     fn claims_key(&self, cx: &ToolContext, key: ToolKey) -> bool {
         matches!(key, ToolKey::Delete | ToolKey::Backspace)
             && self.drag.is_none()
-            && self.selected.as_ref().is_some_and(|(id, _)| !self.selected_indices(cx, *id).is_empty())
+            && self
+                .selected
+                .as_ref()
+                .is_some_and(|(id, _)| !self.selected_indices(cx, *id).is_empty())
     }
     fn key(&mut self, cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
         if !matches!(key, ToolKey::Delete | ToolKey::Backspace) {
             return vec![];
         }
-        let Some(id) = self.selected.as_ref().map(|s| s.0) else { return vec![] };
+        let Some(id) = self.selected.as_ref().map(|s| s.0) else {
+            return vec![];
+        };
         let indices = self.selected_indices(cx, id);
         if indices.is_empty() {
             return vec![];
         }
         self.selected = None;
-        vec![Action::Exec("stroke.widthPoint.remove".into(), json!({"id": id.0, "indices": indices}))]
+        vec![Action::Exec(
+            "stroke.widthPoint.remove".into(),
+            json!({"id": id.0, "indices": indices}),
+        )]
     }
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
         let mut out = vec![];
@@ -413,10 +562,26 @@ impl Tool for WidthTool {
         let show = |owner: NodeId, out: &mut Vec<Overlay>| {
             for w in Self::all_points(cx, owner) {
                 let sel = self.is_selected(owner, w.t);
-                out.push(Overlay::Line { a: w.p + w.n * w.left, b: w.p - w.n * w.right, color: BLUE, dashed: false });
-                out.push(Overlay::Path { path: diamond(w.p, r), color: BLUE, width: if sel { 2.5 } else { 1.0 }, dashed: false });
-                out.push(Overlay::Handle { p: w.p + w.n * w.left, color: BLUE });
-                out.push(Overlay::Handle { p: w.p - w.n * w.right, color: BLUE });
+                out.push(Overlay::Line {
+                    a: w.p + w.n * w.left,
+                    b: w.p - w.n * w.right,
+                    color: BLUE,
+                    dashed: false,
+                });
+                out.push(Overlay::Path {
+                    path: diamond(w.p, r),
+                    color: BLUE,
+                    width: if sel { 2.5 } else { 1.0 },
+                    dashed: false,
+                });
+                out.push(Overlay::Handle {
+                    p: w.p + w.n * w.left,
+                    color: BLUE,
+                });
+                out.push(Overlay::Handle {
+                    p: w.p - w.n * w.right,
+                    color: BLUE,
+                });
             }
         };
         if let Some(s) = focus {
@@ -429,12 +594,35 @@ impl Tool for WidthTool {
         }
         if let Some(d) = &self.drag {
             let q = d.spot.p;
-            out.push(Overlay::Line { a: q + d.spot.n * d.left, b: q - d.spot.n * d.right, color: BLUE, dashed: false });
-            out.push(Overlay::Path { path: diamond(q, r), color: BLUE, width: 2.0, dashed: false });
-            out.push(Overlay::Measure { p: q + d.spot.n * (d.left + r * 3.0), text: format!("W: {}", cx.stroke_unit.readout(d.left + d.right)) });
+            out.push(Overlay::Line {
+                a: q + d.spot.n * d.left,
+                b: q - d.spot.n * d.right,
+                color: BLUE,
+                dashed: false,
+            });
+            out.push(Overlay::Path {
+                path: diamond(q, r),
+                color: BLUE,
+                width: 2.0,
+                dashed: false,
+            });
+            out.push(Overlay::Measure {
+                p: q + d.spot.n * (d.left + r * 3.0),
+                text: format!("W: {}", cx.stroke_unit.readout(d.left + d.right)),
+            });
         } else if let Some(h) = &self.hover {
-            out.push(Overlay::Line { a: h.p + h.n * h.left, b: h.p - h.n * h.right, color: BLUE, dashed: true });
-            out.push(Overlay::Path { path: diamond(h.p, r), color: BLUE, width: 1.0, dashed: false });
+            out.push(Overlay::Line {
+                a: h.p + h.n * h.left,
+                b: h.p - h.n * h.right,
+                color: BLUE,
+                dashed: true,
+            });
+            out.push(Overlay::Path {
+                path: diamond(h.p, r),
+                color: BLUE,
+                width: 1.0,
+                dashed: false,
+            });
         }
         out
     }
@@ -454,7 +642,11 @@ impl Tool for WidthTool {
     }
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         self.hover = None;
-        if self.drag.take().is_some() { vec![Action::Commit] } else { vec![] }
+        if self.drag.take().is_some() {
+            vec![Action::Commit]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -472,7 +664,10 @@ mod tests {
         let id = d.alloc_id();
         let mut ap = Appearance::default_art();
         ap.stroke_mut().unwrap().width = 10.0;
-        let path = PathData::single(SubPath::polyline(&[Point::new(100.0, 200.0), Point::new(300.0, 200.0)], false));
+        let path = PathData::single(SubPath::polyline(
+            &[Point::new(100.0, 200.0), Point::new(300.0, 200.0)],
+            false,
+        ));
         d.insert(Some(l), 0, Node::path(id, path, ap)).unwrap();
         (d, id)
     }
@@ -481,8 +676,19 @@ mod tests {
     /// the stroke's own width).
     fn doc_three_points() -> (Document, NodeId) {
         let (mut d, id) = doc_line();
-        let points = vec![(0.0, 1.0, 1.0), (0.25, 1.0, 1.0), (0.5, 1.0, 1.0), (0.75, 1.0, 1.0), (1.0, 1.0, 1.0)];
-        d.node_mut(id).unwrap().appearance.stroke_mut().unwrap().profile = Some(WidthProfile { points });
+        let points = vec![
+            (0.0, 1.0, 1.0),
+            (0.25, 1.0, 1.0),
+            (0.5, 1.0, 1.0),
+            (0.75, 1.0, 1.0),
+            (1.0, 1.0, 1.0),
+        ];
+        d.node_mut(id)
+            .unwrap()
+            .appearance
+            .stroke_mut()
+            .unwrap()
+            .profile = Some(WidthProfile { points });
         (d, id)
     }
 
@@ -503,41 +709,75 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = WidthTool::default();
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Down, 150.0, 201.0)), vec![Action::Begin("Width Point".into())]);
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Down, 150.0, 201.0)),
+            vec![Action::Begin("Width Point".into())]
+        );
         let acts = t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 150.0, 220.0));
         let (cmd, v) = preview(&acts);
         assert_eq!(cmd, "stroke.widthPoint.set");
         assert_eq!(v["id"], json!(id.0));
         assert!((v["t"].as_f64().unwrap() - 0.25).abs() < 1e-3);
-        assert!((v["left"].as_f64().unwrap() - 20.0).abs() < 1e-6 && (v["right"].as_f64().unwrap() - 20.0).abs() < 1e-6);
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Up, 150.0, 220.0)), vec![Action::Commit]);
+        assert!(
+            (v["left"].as_f64().unwrap() - 20.0).abs() < 1e-6
+                && (v["right"].as_f64().unwrap() - 20.0).abs() < 1e-6
+        );
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Up, 150.0, 220.0)),
+            vec![Action::Commit]
+        );
     }
 
     #[test]
     fn alt_drag_changes_one_side_and_move_slides() {
         let (mut d, id) = doc_line();
         let n = d.node_mut(id).unwrap();
-        n.appearance.stroke_mut().unwrap().profile = Some(WidthProfile { points: vec![(0.0, 1.0, 1.0), (0.5, 2.0, 2.0), (1.0, 1.0, 1.0)] });
+        n.appearance.stroke_mut().unwrap().profile = Some(WidthProfile {
+            points: vec![(0.0, 1.0, 1.0), (0.5, 2.0, 2.0), (1.0, 1.0, 1.0)],
+        });
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = WidthTool::default();
         // Alt-drag the left handle end (y = 200 - 10) further up.
-        let alt = Mods { alt: true, ..Default::default() };
-        t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 190.0).with_mods(alt));
-        let acts = t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 200.0, 170.0).with_mods(alt));
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
+        t.pointer(
+            &c,
+            &PointerEvent::new(PointerKind::Down, 200.0, 190.0).with_mods(alt),
+        );
+        let acts = t.pointer(
+            &c,
+            &PointerEvent::new(PointerKind::Drag, 200.0, 170.0).with_mods(alt),
+        );
         let (_, v) = preview(&acts);
         assert_eq!(v["index"], json!(1));
-        assert!((v["left"].as_f64().unwrap() - 30.0).abs() < 1e-6 && (v["right"].as_f64().unwrap() - 10.0).abs() < 1e-6);
+        assert!(
+            (v["left"].as_f64().unwrap() - 30.0).abs() < 1e-6
+                && (v["right"].as_f64().unwrap() - 10.0).abs() < 1e-6
+        );
         t.pointer(&c, &PointerEvent::new(PointerKind::Up, 200.0, 170.0));
         let del = t.key(&c, ToolKey::Delete, Mods::default());
-        assert_eq!(del, vec![Action::Exec("stroke.widthPoint.remove".into(), json!({"id": id.0, "indices": [1]}))]);
+        assert_eq!(
+            del,
+            vec![Action::Exec(
+                "stroke.widthPoint.remove".into(),
+                json!({"id": id.0, "indices": [1]})
+            )]
+        );
         // Drag the centre along the path.
         t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 200.0));
         let acts = t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 250.0, 205.0));
         let (_, v) = preview(&acts);
         assert!((v["t"].as_f64().unwrap() - 0.75).abs() < 1e-3);
         t.pointer(&c, &PointerEvent::new(PointerKind::Up, 250.0, 205.0));
-        assert!(t.selected.as_ref().is_some_and(|(_, ts)| (ts[0] - 0.75).abs() < 1e-3), "the moved point stays selected");
+        assert!(
+            t.selected
+                .as_ref()
+                .is_some_and(|(_, ts)| (ts[0] - 0.75).abs() < 1e-3),
+            "the moved point stays selected"
+        );
     }
 
     #[test]
@@ -546,25 +786,48 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = WidthTool::default();
-        let (none, shift) = (Mods::default(), Mods { shift: true, ..Default::default() });
+        let (none, shift) = (
+            Mods::default(),
+            Mods {
+                shift: true,
+                ..Default::default()
+            },
+        );
         // Click the point at t = 0.25, Shift-click the one at 0.75.
         t.pointer(&c, &ev(PointerKind::Down, 150.0, 200.0, none));
         t.pointer(&c, &ev(PointerKind::Up, 150.0, 200.0, none));
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Down, 250.0, 200.0, shift)), vec![Action::Begin("Width Point".into())]);
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Down, 250.0, 200.0, shift)),
+            vec![Action::Begin("Width Point".into())]
+        );
         t.pointer(&c, &ev(PointerKind::Up, 250.0, 200.0, shift));
         assert_eq!(t.selected_indices(&c, id), vec![1, 3]);
         // Dragging one of them 20 pt along moves both by a tenth of the path, as one command.
         t.pointer(&c, &ev(PointerKind::Down, 150.0, 200.0, none));
         let acts = t.pointer(&c, &ev(PointerKind::Drag, 170.0, 203.0, none));
         let (cmd, v) = preview(&acts);
-        assert_eq!((cmd, &v["ids"]), ("stroke.widthProfile.set", &json!([id.0])));
-        let ts: Vec<f64> = v["points"].as_array().unwrap().iter().map(|q| (q[0].as_f64().unwrap() * 1000.0).round() / 1000.0).collect();
+        assert_eq!(
+            (cmd, &v["ids"]),
+            ("stroke.widthProfile.set", &json!([id.0]))
+        );
+        let ts: Vec<f64> = v["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|q| (q[0].as_f64().unwrap() * 1000.0).round() / 1000.0)
+            .collect();
         assert_eq!(ts, vec![0.0, 0.35, 0.5, 0.85, 1.0]);
         t.pointer(&c, &ev(PointerKind::Up, 170.0, 203.0, none));
         let (_, sel) = t.selected.clone().unwrap();
-        assert!((sel[0] - 0.35).abs() < 1e-3 && (sel[1] - 0.85).abs() < 1e-3, "the selection moves with them: {sel:?}");
+        assert!(
+            (sel[0] - 0.35).abs() < 1e-3 && (sel[1] - 0.85).abs() < 1e-3,
+            "the selection moves with them: {sel:?}"
+        );
         // Widening one handle widens every selected point by as much.
-        let mut t = WidthTool { selected: Some((id, vec![0.25, 0.75])), ..Default::default() };
+        let mut t = WidthTool {
+            selected: Some((id, vec![0.25, 0.75])),
+            ..Default::default()
+        };
         t.pointer(&c, &ev(PointerKind::Down, 250.0, 195.0, none));
         let acts = t.pointer(&c, &ev(PointerKind::Drag, 250.0, 190.0, none));
         let pts = preview(&acts).1["points"].as_array().unwrap().clone();
@@ -572,10 +835,16 @@ mod tests {
         assert_eq!((w(1, 1), w(3, 2), w(2, 1)), (2.0, 2.0, 1.0));
         t.pointer(&c, &ev(PointerKind::Up, 250.0, 190.0, none));
         // Shift-clicking a selected point takes it out again (and drags nothing).
-        assert!(t.pointer(&c, &ev(PointerKind::Down, 150.0, 200.0, shift)).is_empty());
+        assert!(
+            t.pointer(&c, &ev(PointerKind::Down, 150.0, 200.0, shift))
+                .is_empty()
+        );
         assert_eq!(t.selected_indices(&c, id), vec![3]);
         // A plain click on one of several selected points selects just that one.
-        let mut t = WidthTool { selected: Some((id, vec![0.25, 0.75])), ..Default::default() };
+        let mut t = WidthTool {
+            selected: Some((id, vec![0.25, 0.75])),
+            ..Default::default()
+        };
         t.pointer(&c, &ev(PointerKind::Down, 250.0, 200.0, none));
         t.pointer(&c, &ev(PointerKind::Up, 250.0, 200.0, none));
         assert_eq!(t.selected_indices(&c, id), vec![3]);
@@ -587,18 +856,30 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = WidthTool::default();
-        let alt = Mods { alt: true, ..Default::default() };
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Down, 150.0, 200.0, alt)), vec![Action::Begin("Copy Width Point".into())]);
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Down, 150.0, 200.0, alt)),
+            vec![Action::Begin("Copy Width Point".into())]
+        );
         let acts = t.pointer(&c, &ev(PointerKind::Drag, 180.0, 200.0, alt));
         let (cmd, v) = preview(&acts);
-        assert_eq!((cmd, &v["id"], &v["index"]), ("stroke.widthPoint.copy", &json!(id.0), &json!(1)));
+        assert_eq!(
+            (cmd, &v["id"], &v["index"]),
+            ("stroke.widthPoint.copy", &json!(id.0), &json!(1))
+        );
         assert!((v["t"].as_f64().unwrap() - 0.4).abs() < 1e-3);
         t.pointer(&c, &ev(PointerKind::Up, 180.0, 200.0, alt));
         // Sliding the point at 0.25 to within a few pixels of the one at 0.5 lands exactly on it.
         t.pointer(&c, &ev(PointerKind::Down, 150.0, 200.0, Mods::default()));
         let acts = t.pointer(&c, &ev(PointerKind::Drag, 197.0, 200.0, Mods::default()));
         let (cmd, v) = preview(&acts);
-        assert_eq!((cmd, v["t"].as_f64(), v["index"].as_u64()), ("stroke.widthPoint.set", Some(0.5), Some(1)));
+        assert_eq!(
+            (cmd, v["t"].as_f64(), v["index"].as_u64()),
+            ("stroke.widthPoint.set", Some(0.5), Some(1))
+        );
     }
 
     /// A compound path of two 200 pt lines (y = 200 and 300) with a 10 pt stroke on the compound
@@ -608,14 +889,33 @@ mod tests {
         let l = d.layers[0].id;
         let (c, a, b) = (d.alloc_id(), d.alloc_id(), d.alloc_id());
         let line = |id, y| {
-            let path = PathData::single(SubPath::polyline(&[Point::new(100.0, y), Point::new(300.0, y)], false));
-            std::sync::Arc::new(Node::path(id, path, Appearance::basic(vectorcraft_color::Paint::None, vectorcraft_color::Paint::None, 0.0)))
+            let path = PathData::single(SubPath::polyline(
+                &[Point::new(100.0, y), Point::new(300.0, y)],
+                false,
+            ));
+            std::sync::Arc::new(Node::path(
+                id,
+                path,
+                Appearance::basic(
+                    vectorcraft_color::Paint::None,
+                    vectorcraft_color::Paint::None,
+                    0.0,
+                ),
+            ))
         };
-        let mut comp = Node::new(c, NodeKind::Compound { children: vec![line(a, 200.0), line(b, 300.0)], rule: Default::default() });
+        let mut comp = Node::new(
+            c,
+            NodeKind::Compound {
+                children: vec![line(a, 200.0), line(b, 300.0)],
+                rule: Default::default(),
+            },
+        );
         comp.appearance = Appearance::default_art().into();
         let st = comp.appearance.stroke_mut().unwrap();
         st.width = 10.0;
-        st.profile = Some(WidthProfile { points: vec![(0.0, 1.0, 1.0), (0.5, 1.0, 1.0), (1.0, 1.0, 1.0)] });
+        st.profile = Some(WidthProfile {
+            points: vec![(0.0, 1.0, 1.0), (0.5, 1.0, 1.0), (1.0, 1.0, 1.0)],
+        });
         d.insert(Some(l), 0, comp).unwrap();
         (d, c, b)
     }
@@ -624,11 +924,20 @@ mod tests {
     fn compound_path_strokes_are_edited_through_the_compound() {
         let (d, c, b) = doc_compound();
         assert_eq!(stroke_owner(&d, b), c);
-        let (s, p) = (Selection { objects: vec![c], ..Default::default() }, paint());
+        let (s, p) = (
+            Selection {
+                objects: vec![c],
+                ..Default::default()
+            },
+            paint(),
+        );
         let cx = cx(&d, &s, &p);
         let mut t = WidthTool::default();
         // Drag out from the second member: the compound's stroke gets the width point.
-        assert_eq!(t.pointer(&cx, &ev(PointerKind::Down, 150.0, 301.0, Mods::default())), vec![Action::Begin("Width Point".into())]);
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Down, 150.0, 301.0, Mods::default())),
+            vec![Action::Begin("Width Point".into())]
+        );
         let acts = t.pointer(&cx, &ev(PointerKind::Drag, 150.0, 320.0, Mods::default()));
         let (cmd, v) = preview(&acts);
         assert_eq!((cmd, &v["id"]), ("stroke.widthPoint.set", &json!(c.0)));
@@ -639,17 +948,31 @@ mod tests {
         assert!(t.claims_key(&cx, ToolKey::Delete));
         assert_eq!(
             t.key(&cx, ToolKey::Delete, Mods::default()),
-            vec![Action::Exec("stroke.widthPoint.remove".into(), json!({"id": c.0, "indices": [1]}))]
+            vec![Action::Exec(
+                "stroke.widthPoint.remove".into(),
+                json!({"id": c.0, "indices": [1]})
+            )]
         );
     }
 
     #[test]
     fn width_points_show_on_every_subpath() {
         let (d, c, _) = doc_compound();
-        let (s, p) = (Selection { objects: vec![c], ..Default::default() }, paint());
+        let (s, p) = (
+            Selection {
+                objects: vec![c],
+                ..Default::default()
+            },
+            paint(),
+        );
         let cx = cx(&d, &s, &p);
         let mut t = WidthTool::default();
-        let handles = |t: &WidthTool| t.overlays(&cx).iter().filter(|o| matches!(o, Overlay::Handle { .. })).count();
+        let handles = |t: &WidthTool| {
+            t.overlays(&cx)
+                .iter()
+                .filter(|o| matches!(o, Overlay::Handle { .. }))
+                .count()
+        };
         // Hovering one member shows the 3 width points on both (two handle ends each).
         t.pointer(&cx, &ev(PointerKind::Move, 150.0, 302.0, Mods::default()));
         assert_eq!(handles(&t), 3 * 2 * 2);
@@ -662,17 +985,38 @@ mod tests {
         let (mut d2, id) = doc_line();
         let n = d2.node_mut(id).unwrap();
         if let NodeKind::Path { path, .. } = &mut n.kind {
-            path.subpaths.push(SubPath::polyline(&[Point::new(100.0, 260.0), Point::new(300.0, 260.0)], false));
+            path.subpaths.push(SubPath::polyline(
+                &[Point::new(100.0, 260.0), Point::new(300.0, 260.0)],
+                false,
+            ));
         }
-        n.appearance.stroke_mut().unwrap().profile = Some(WidthProfile { points: vec![(0.0, 1.0, 1.0), (0.5, 2.0, 2.0), (1.0, 1.0, 1.0)] });
-        let s2 = Selection { objects: vec![id], ..Default::default() };
+        n.appearance.stroke_mut().unwrap().profile = Some(WidthProfile {
+            points: vec![(0.0, 1.0, 1.0), (0.5, 2.0, 2.0), (1.0, 1.0, 1.0)],
+        });
+        let s2 = Selection {
+            objects: vec![id],
+            ..Default::default()
+        };
         let cx2 = crate::testutil::cx(&d2, &s2, &p);
         let mut t = WidthTool::default();
         t.pointer(&cx2, &ev(PointerKind::Down, 200.0, 260.0, Mods::default()));
         t.pointer(&cx2, &ev(PointerKind::Up, 200.0, 260.0, Mods::default()));
         t.pointer(&cx2, &ev(PointerKind::Move, 450.0, 450.0, Mods::default()));
-        let ends: Vec<Point> = t.overlays(&cx2).iter().filter_map(|o| if let Overlay::Handle { p, .. } = o { Some(*p) } else { None }).collect();
-        assert!(ends.iter().any(|q| q.y < 230.0) && ends.iter().any(|q| q.y > 230.0), "both subpaths: {ends:?}");
+        let ends: Vec<Point> = t
+            .overlays(&cx2)
+            .iter()
+            .filter_map(|o| {
+                if let Overlay::Handle { p, .. } = o {
+                    Some(*p)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert!(
+            ends.iter().any(|q| q.y < 230.0) && ends.iter().any(|q| q.y > 230.0),
+            "both subpaths: {ends:?}"
+        );
     }
 
     #[test]
@@ -681,12 +1025,27 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = WidthTool::default();
-        assert_eq!(t.cursor(&c, Point::new(400.0, 400.0), Mods::default()), Cursor::Width);
+        assert_eq!(
+            t.cursor(&c, Point::new(400.0, 400.0), Mods::default()),
+            Cursor::Width
+        );
         t.pointer(&c, &ev(PointerKind::Move, 170.0, 201.0, Mods::default()));
-        assert_eq!(t.cursor(&c, Point::new(170.0, 201.0), Mods::default()), Cursor::WidthAdd, "on the stroke: adds a point");
+        assert_eq!(
+            t.cursor(&c, Point::new(170.0, 201.0), Mods::default()),
+            Cursor::WidthAdd,
+            "on the stroke: adds a point"
+        );
         t.pointer(&c, &ev(PointerKind::Move, 150.0, 200.0, Mods::default()));
-        assert_eq!(t.cursor(&c, Point::new(150.0, 200.0), Mods::default()), Cursor::WidthPoint, "on a width point");
-        assert_eq!(t.cursor(&c, Point::new(150.0, 195.0), Mods::default()), Cursor::WidthPoint, "on a handle end");
+        assert_eq!(
+            t.cursor(&c, Point::new(150.0, 200.0), Mods::default()),
+            Cursor::WidthPoint,
+            "on a width point"
+        );
+        assert_eq!(
+            t.cursor(&c, Point::new(150.0, 195.0), Mods::default()),
+            Cursor::WidthPoint,
+            "on a handle end"
+        );
     }
 
     #[test]
@@ -695,8 +1054,24 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = WidthTool::default();
-        let acts = t.pointer(&c, &ev(PointerKind::DoubleClick, 200.0, 195.0, Mods::default()));
-        assert_eq!(acts, vec![Action::Dialog("widthPoint".into(), json!({"id": id.0, "index": 2}))]);
-        assert!(t.pointer(&c, &ev(PointerKind::DoubleClick, 120.0, 200.0, Mods::default())).is_empty(), "not on a width point");
+        let acts = t.pointer(
+            &c,
+            &ev(PointerKind::DoubleClick, 200.0, 195.0, Mods::default()),
+        );
+        assert_eq!(
+            acts,
+            vec![Action::Dialog(
+                "widthPoint".into(),
+                json!({"id": id.0, "index": 2})
+            )]
+        );
+        assert!(
+            t.pointer(
+                &c,
+                &ev(PointerKind::DoubleClick, 120.0, 200.0, Mods::default())
+            )
+            .is_empty(),
+            "not on a width point"
+        );
     }
 }

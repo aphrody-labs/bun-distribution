@@ -101,16 +101,22 @@ mod tests {
             left: AnalogStickState { x: 123, y: -456 },
             right: AnalogStickState { x: -789, y: 321 },
         };
-        common::settings::values_mut().debug_pad_enabled.set_value(true);
+        common::settings::values_mut()
+            .debug_pad_enabled
+            .set_value(true);
         pad.on_update(&mut memory, &buttons, &sticks);
         assert_eq!(memory.debug_pad_lifo.buffer_count, 0);
         pad.activation.activate();
-        common::settings::values_mut().debug_pad_enabled.set_value(false);
+        common::settings::values_mut()
+            .debug_pad_enabled
+            .set_value(false);
         pad.on_update(&mut memory, &buttons, &sticks);
         let disabled = memory.debug_pad_lifo.read_current_entry().state;
         assert!(!disabled.attribute.connected());
         assert_eq!(disabled.pad_state.raw, 0);
-        common::settings::values_mut().debug_pad_enabled.set_value(true);
+        common::settings::values_mut()
+            .debug_pad_enabled
+            .set_value(true);
         pad.on_update(&mut memory, &buttons, &sticks);
         let enabled = memory.debug_pad_lifo.read_current_entry().state;
         assert!(enabled.attribute.connected());
@@ -121,8 +127,14 @@ mod tests {
         assert_eq!(enabled.r_stick.y, 321);
         assert_eq!(enabled.sampling_number, disabled.sampling_number + 1);
         // Upstream leaves the previous input in next_state when disabled.
-        common::settings::values_mut().debug_pad_enabled.set_value(false);
-        pad.on_update(&mut memory, &DebugPadButton::default(), &StickState::default());
+        common::settings::values_mut()
+            .debug_pad_enabled
+            .set_value(false);
+        pad.on_update(
+            &mut memory,
+            &DebugPadButton::default(),
+            &StickState::default(),
+        );
         let retained = memory.debug_pad_lifo.read_current_entry().state;
         assert_eq!(retained.pad_state.raw, 5);
         assert_eq!(retained.sampling_number, enabled.sampling_number + 1);
@@ -143,14 +155,18 @@ mod tests {
             left: AnalogStickState { x: 123, y: -456 },
             right: AnalogStickState { x: -789, y: 321 },
         };
-        common::settings::values_mut().debug_pad_enabled.set_value(false);
+        common::settings::values_mut()
+            .debug_pad_enabled
+            .set_value(false);
         pad.activation.activate();
         pad.on_update(&mut memory, &buttons, &sticks);
         let sample = memory.debug_pad_lifo.read_current_entry().state;
         assert_eq!(sample.sampling_number, 1);
         assert!(!sample.attribute.connected());
         assert_eq!(sample.pad_state.raw, 0);
-        common::settings::values_mut().debug_pad_enabled.set_value(true);
+        common::settings::values_mut()
+            .debug_pad_enabled
+            .set_value(true);
         pad.on_update(&mut memory, &buttons, &sticks);
         let sample = memory.debug_pad_lifo.read_current_entry().state;
         assert_eq!(sample.sampling_number, 2);
@@ -160,8 +176,14 @@ mod tests {
         assert_eq!((sample.r_stick.x, sample.r_stick.y), (-789, 321));
         // Upstream keeps next_state when disabled; it does not synthesize
         // a disconnect or reset the existing buttons here.
-        common::settings::values_mut().debug_pad_enabled.set_value(false);
-        pad.on_update(&mut memory, &DebugPadButton::default(), &StickState::default());
+        common::settings::values_mut()
+            .debug_pad_enabled
+            .set_value(false);
+        pad.on_update(
+            &mut memory,
+            &DebugPadButton::default(),
+            &StickState::default(),
+        );
         let sample = memory.debug_pad_lifo.read_current_entry().state;
         assert_eq!(sample.sampling_number, 3);
         assert_eq!(sample.pad_state.raw, 0x123);

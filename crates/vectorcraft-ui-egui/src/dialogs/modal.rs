@@ -10,18 +10,35 @@ use crate::theme::{self, Tokens};
 /// Show the modal dialog window `id` (`title` is its accessible name), `nudge` points below the
 /// screen's centre until it is moved, with `margin` inside its frame. `add` draws the contents and
 /// should start with [`heading`] (or [`drag_band`]) so the window can be moved.
-pub(crate) fn show<R>(ctx: &egui::Context, title: &str, id: Id, nudge: f32, margin: i8, add: impl FnOnce(&mut egui::Ui) -> R) -> Option<R> {
+pub(crate) fn show<R>(
+    ctx: &egui::Context,
+    title: &str,
+    id: Id,
+    nudge: f32,
+    margin: i8,
+    add: impl FnOnce(&mut egui::Ui) -> R,
+) -> Option<R> {
     show_at(ctx, title, id, egui::vec2(0.0, nudge), margin, add)
 }
 
 /// A modal that starts at a chosen offset, then keeps the user's dragged position.
-pub(crate) fn show_at<R>(ctx: &egui::Context, title: &str, id: Id, initial: Vec2, margin: i8, add: impl FnOnce(&mut egui::Ui) -> R) -> Option<R> {
+pub(crate) fn show_at<R>(
+    ctx: &egui::Context,
+    title: &str,
+    id: Id,
+    initial: Vec2,
+    margin: i8,
+    add: impl FnOnce(&mut egui::Ui) -> R,
+) -> Option<R> {
     let t = Tokens::get(ctx);
     let dim = backdrop();
-    egui::Area::new(dim.id).order(dim.order).fixed_pos(egui::Pos2::ZERO).show(ctx, |ui| {
-        // Modal, but the canvas isn't dimmed so previews stay readable (as in the reference app).
-        ui.allocate_rect(ctx.content_rect(), egui::Sense::click());
-    });
+    egui::Area::new(dim.id)
+        .order(dim.order)
+        .fixed_pos(egui::Pos2::ZERO)
+        .show(ctx, |ui| {
+            // Modal, but the canvas isn't dimmed so previews stay readable (as in the reference app).
+            ui.allocate_rect(ctx.content_rect(), egui::Sense::click());
+        });
     egui::Window::new(title)
         .id(id)
         .order(egui::Order::Foreground)
@@ -29,7 +46,11 @@ pub(crate) fn show_at<R>(ctx: &egui::Context, title: &str, id: Id, initial: Vec2
         .resizable(false)
         .title_bar(false)
         .anchor(egui::Align2::CENTER_CENTER, offset(ctx, id, initial))
-        .frame(egui::Frame::window(&ctx.global_style()).fill(t.panel).inner_margin(egui::Margin::same(margin)))
+        .frame(
+            egui::Frame::window(&ctx.global_style())
+                .fill(t.panel)
+                .inner_margin(egui::Margin::same(margin)),
+        )
         .show(ctx, add)
         .and_then(|r| r.inner)
 }
@@ -44,7 +65,14 @@ pub(crate) fn backdrop() -> egui::LayerId {
 pub(crate) fn heading(ui: &mut egui::Ui, text: &str) {
     let t = Tokens::get(ui.ctx());
     // Not selectable: a drag on it moves the window instead of selecting its text.
-    let r = ui.add(egui::Label::new(egui::RichText::new(text).font(theme::semibold(16.0)).color(t.text)).selectable(false));
+    let r = ui.add(
+        egui::Label::new(
+            egui::RichText::new(text)
+                .font(theme::semibold(16.0))
+                .color(t.text),
+        )
+        .selectable(false),
+    );
     drag_band(ui, r.rect.bottom());
 }
 
@@ -53,7 +81,9 @@ pub(crate) fn heading(ui: &mut egui::Ui, text: &str) {
 pub(crate) fn drag_band(ui: &mut egui::Ui, bottom: f32) {
     let id = ui.layer_id().id;
     // Last frame's rectangle: none while the window measures itself the first time it shows.
-    let Some(outer) = ui.ctx().memory(|m| m.area_rect(id)) else { return };
+    let Some(outer) = ui.ctx().memory(|m| m.area_rect(id)) else {
+        return;
+    };
     let band = Rect::from_x_y_ranges(outer.x_range(), outer.top()..=bottom.max(outer.top()));
     let r = ui.interact(band, handle(id), egui::Sense::drag());
     if r.dragged() {
@@ -83,7 +113,12 @@ fn offset(ctx: &egui::Context, id: Id, initial: Vec2) -> Vec2 {
     };
     let start = ctx.data_mut(|m| *m.get_temp_mut_or(start_key, offset));
     let screen = ctx.content_rect();
-    let to = on_screen(Rect::from_center_size(screen.center() + start + moved, rect.size()), screen).center() - screen.center();
+    let to = on_screen(
+        Rect::from_center_size(screen.center() + start + moved, rect.size()),
+        screen,
+    )
+    .center()
+        - screen.center();
     ctx.data_mut(|m| m.insert_temp(key, to));
     to
 }
@@ -102,11 +137,25 @@ mod tests {
     #[test]
     fn a_moved_window_stays_on_screen() {
         let screen = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0));
-        let r = |x: f32, y: f32, w: f32, h: f32| Rect::from_min_size(egui::pos2(x, y), egui::vec2(w, h));
-        assert_eq!(on_screen(r(100.0, 100.0, 200.0, 100.0), screen), r(100.0, 100.0, 200.0, 100.0));
-        assert_eq!(on_screen(r(-50.0, 550.0, 200.0, 100.0), screen), r(0.0, 500.0, 200.0, 100.0));
-        assert_eq!(on_screen(r(700.0, -20.0, 200.0, 100.0), screen), r(600.0, 0.0, 200.0, 100.0));
+        let r = |x: f32, y: f32, w: f32, h: f32| {
+            Rect::from_min_size(egui::pos2(x, y), egui::vec2(w, h))
+        };
+        assert_eq!(
+            on_screen(r(100.0, 100.0, 200.0, 100.0), screen),
+            r(100.0, 100.0, 200.0, 100.0)
+        );
+        assert_eq!(
+            on_screen(r(-50.0, 550.0, 200.0, 100.0), screen),
+            r(0.0, 500.0, 200.0, 100.0)
+        );
+        assert_eq!(
+            on_screen(r(700.0, -20.0, 200.0, 100.0), screen),
+            r(600.0, 0.0, 200.0, 100.0)
+        );
         // Larger than the screen: its top left stays in view.
-        assert_eq!(on_screen(r(-10.0, -10.0, 900.0, 700.0), screen), r(0.0, 0.0, 900.0, 700.0));
+        assert_eq!(
+            on_screen(r(-10.0, -10.0, 900.0, 700.0), screen),
+            r(0.0, 0.0, 900.0, 700.0)
+        );
     }
 }

@@ -94,7 +94,12 @@ fn disambiguate_file_labels(nodes: &mut [Node]) {
             .map(|parts| {
                 for depth in 2..=parts.len() {
                     let candidate = suffix(parts, depth);
-                    if paths.iter().filter(|other| suffix(other, depth) == candidate).count() == 1 {
+                    if paths
+                        .iter()
+                        .filter(|other| suffix(other, depth) == candidate)
+                        .count()
+                        == 1
+                    {
                         return candidate;
                     }
                 }
@@ -161,8 +166,9 @@ const NODE_BUILTINS: &[&str] = &[
     "zlib",
 ];
 
-const JS_EXTENSIONS: &[&str] =
-    &[".ts", ".tsx", ".d.ts", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"];
+const JS_EXTENSIONS: &[&str] = &[
+    ".ts", ".tsx", ".d.ts", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts",
+];
 
 fn is_builtin_module(spec: &str) -> bool {
     if spec.starts_with("node:") || spec.starts_with("bun:") || spec == "bun" {
@@ -194,10 +200,10 @@ fn join_relative(dir: &str, rel: &str) -> Option<String> {
     let mut parts: Vec<&str> = dir.split('/').filter(|p| !p.is_empty()).collect();
     for part in rel.split('/') {
         match part {
-            "" | "." => {},
+            "" | "." => {}
             ".." => {
                 parts.pop()?;
-            },
+            }
             p => parts.push(p),
         }
     }
@@ -214,7 +220,8 @@ enum Target {
 }
 
 fn module_stem(path: &str) -> &str {
-    path.strip_suffix(".d.ts").unwrap_or_else(|| path.rsplit_once('.').map_or(path, |(s, _)| s))
+    path.strip_suffix(".d.ts")
+        .unwrap_or_else(|| path.rsplit_once('.').map_or(path, |(s, _)| s))
 }
 
 struct Files {
@@ -230,12 +237,19 @@ impl Files {
         let mut by_stem: HashMap<String, Vec<String>> = HashMap::new();
         for p in &all {
             let name = p.rsplit('/').next().unwrap_or(p);
-            by_stem.entry(module_stem(name).to_lowercase()).or_default().push(p.clone());
+            by_stem
+                .entry(module_stem(name).to_lowercase())
+                .or_default()
+                .push(p.clone());
         }
         for v in by_stem.values_mut() {
             v.sort();
         }
-        Self { all, by_stem, cache: HashMap::new() }
+        Self {
+            all,
+            by_stem,
+            cache: HashMap::new(),
+        }
     }
 
     fn probe(&self, base: &str) -> Option<String> {
@@ -301,7 +315,7 @@ impl Files {
             match self.by_stem.get(&spec.to_lowercase()).map(Vec::as_slice) {
                 Some([only]) if !only.contains("node_modules/") => {
                     Some(Target::File(only.clone(), false))
-                },
+                }
                 _ => Some(Target::External),
             }
         };
@@ -313,8 +327,10 @@ impl Files {
         match import.kind {
             ImportKind::Link => {
                 let path = join_relative(parent_dir(importer), &import.specifier)?;
-                self.all.contains(&path).then_some((path, Confidence::Extracted))
-            },
+                self.all
+                    .contains(&path)
+                    .then_some((path, Confidence::Extracted))
+            }
             ImportKind::Wiki => {
                 let wanted = import.specifier.trim_end_matches(".md").to_lowercase();
                 let candidates = self.by_stem.get(&wanted)?;
@@ -322,14 +338,16 @@ impl Files {
                     .iter()
                     .filter(|p| p.ends_with(".md") || p.ends_with(".mdx"))
                     .collect();
-                let near: Vec<&&String> =
-                    md.iter().filter(|p| parent_dir(p) == parent_dir(importer)).collect();
+                let near: Vec<&&String> = md
+                    .iter()
+                    .filter(|p| parent_dir(p) == parent_dir(importer))
+                    .collect();
                 match (near.as_slice(), md.as_slice()) {
                     ([only], _) => Some(((**only).clone(), Confidence::Inferred)),
                     ([], [only]) => Some(((*only).clone(), Confidence::Inferred)),
                     _ => None,
                 }
-            },
+            }
             ImportKind::Module => None,
         }
     }
@@ -343,9 +361,16 @@ fn module_segments<'f>(file: &'f str, dir: Option<&str>) -> Vec<&'f str> {
         .and_then(|d| file.strip_prefix(d).and_then(|rest| rest.strip_prefix('/')))
         .unwrap_or(file);
     let inside = inside.strip_prefix("src/").unwrap_or(inside);
-    let mut segs: Vec<&str> =
-        inside.strip_suffix(".rs").unwrap_or(inside).split('/').filter(|s| !s.is_empty()).collect();
-    if segs.last().is_some_and(|last| matches!(*last, "lib" | "main" | "mod")) {
+    let mut segs: Vec<&str> = inside
+        .strip_suffix(".rs")
+        .unwrap_or(inside)
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .collect();
+    if segs
+        .last()
+        .is_some_and(|last| matches!(*last, "lib" | "main" | "mod"))
+    {
         segs.pop();
     }
     if dir.is_none() {
@@ -359,7 +384,11 @@ fn module_segments<'f>(file: &'f str, dir: Option<&str>) -> Vec<&'f str> {
 fn module_score(file: &str, dir: Option<&str>, modules: &[&str]) -> usize {
     let segs = module_segments(file, dir);
     if modules.is_empty() {
-        return if dir.is_some() && segs.is_empty() { 3 } else { 1 };
+        return if dir.is_some() && segs.is_empty() {
+            3
+        } else {
+            1
+        };
     }
     if segs.ends_with(modules) {
         3
@@ -388,15 +417,25 @@ impl Resolver<'_> {
         let scored: Vec<(usize, &Def)> = candidates
             .iter()
             .map(|d| {
-                let dir = self.package_dir.get(self.package(&d.file)).map(String::as_str);
+                let dir = self
+                    .package_dir
+                    .get(self.package(&d.file))
+                    .map(String::as_str);
                 (module_score(&d.file, dir, modules), *d)
             })
             .filter(|(s, _)| *s > 0)
             .collect();
         let top = scored.iter().map(|(s, _)| *s).max()?;
-        let winners: Vec<&Def> =
-            scored.into_iter().filter(|(s, _)| *s == top).map(|(_, d)| d).collect();
-        if let [only] = winners.as_slice() { Some(*only) } else { None }
+        let winners: Vec<&Def> = scored
+            .into_iter()
+            .filter(|(s, _)| *s == top)
+            .map(|(_, d)| d)
+            .collect();
+        if let [only] = winners.as_slice() {
+            Some(*only)
+        } else {
+            None
+        }
     }
 
     /// Resolve a Rust call that carries a path.
@@ -419,9 +458,15 @@ impl Resolver<'_> {
         };
         let all = self.defs.get(&call.name)?;
         if let Some(ty) = ty {
-            let typed: Vec<&Def> = all.iter().filter(|d| d.owner.as_deref() == Some(ty)).collect();
-            let in_crate: Vec<&Def> =
-                typed.iter().copied().filter(|d| self.package(&d.file) == krate).collect();
+            let typed: Vec<&Def> = all
+                .iter()
+                .filter(|d| d.owner.as_deref() == Some(ty))
+                .collect();
+            let in_crate: Vec<&Def> = typed
+                .iter()
+                .copied()
+                .filter(|d| self.package(&d.file) == krate)
+                .collect();
             if let Some(d) = self.best(&in_crate, modules) {
                 return Some((d.id.clone(), 0.9));
             }
@@ -433,8 +478,10 @@ impl Resolver<'_> {
             }
             return None;
         }
-        let free: Vec<&Def> =
-            all.iter().filter(|d| !d.method && self.package(&d.file) == krate).collect();
+        let free: Vec<&Def> = all
+            .iter()
+            .filter(|d| !d.method && self.package(&d.file) == krate)
+            .collect();
         self.best(&free, modules)
             .map(|d| (d.id.clone(), if modules.is_empty() { 0.8 } else { 0.9 }))
     }
@@ -443,8 +490,10 @@ impl Resolver<'_> {
     fn rust_plain(&self, call: &RawCall) -> Option<(String, f64)> {
         let own = self.package(&call.file);
         let all = self.defs.get(&call.name)?;
-        let local: Vec<&Def> =
-            all.iter().filter(|d| !d.method && self.package(&d.file) == own).collect();
+        let local: Vec<&Def> = all
+            .iter()
+            .filter(|d| !d.method && self.package(&d.file) == own)
+            .collect();
         if let [only] = local.as_slice() {
             return Some((only.id.clone(), 0.8));
         }
@@ -476,7 +525,11 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
     let mut imports: Vec<(String, RawImport)> = Vec::new();
     let mut globs: HashMap<String, Vec<String>> = HashMap::new();
     for f in files {
-        let file = f.nodes.iter().find(|n| n.class == NodeClass::File).map(|n| n.file.clone());
+        let file = f
+            .nodes
+            .iter()
+            .find(|n| n.class == NodeClass::File)
+            .map(|n| n.file.clone());
         for n in f.nodes {
             match nodes.get_mut(&n.id) {
                 Some(existing) if existing.file.is_empty() && n.file.is_empty() => {
@@ -484,11 +537,11 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
                     if existing.label == existing.id && n.label != n.id {
                         existing.label = n.label;
                     }
-                },
-                Some(existing) if !existing.file.is_empty() || n.file.is_empty() => {},
+                }
+                Some(existing) if !existing.file.is_empty() || n.file.is_empty() => {}
                 _ => {
                     nodes.insert(n.id.clone(), n);
-                },
+                }
             }
         }
         edges.extend(f.edges);
@@ -503,8 +556,14 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
 
     // 2. Fold sourceless stubs onto a unique sourced node of the same label (types only).
     let mut by_label: HashMap<String, Vec<String>> = HashMap::new();
-    for n in nodes.values().filter(|n| matches!(n.class, NodeClass::Type | NodeClass::Variant)) {
-        by_label.entry(n.label.to_lowercase()).or_default().push(n.id.clone());
+    for n in nodes
+        .values()
+        .filter(|n| matches!(n.class, NodeClass::Type | NodeClass::Variant))
+    {
+        by_label
+            .entry(n.label.to_lowercase())
+            .or_default()
+            .push(n.id.clone());
     }
     let mut rewire: HashMap<String, String> = HashMap::new();
     for n in nodes.values().filter(|n| n.file.is_empty()) {
@@ -529,23 +588,30 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
     let mut by_stem: HashMap<String, Vec<String>> = HashMap::new();
     for n in nodes.values().filter(|n| n.class == NodeClass::File) {
         let stem = file_stem(n.file.rsplit('/').next().unwrap_or(&n.file));
-        by_stem.entry(stem.to_lowercase()).or_default().push(n.id.clone());
+        by_stem
+            .entry(stem.to_lowercase())
+            .or_default()
+            .push(n.id.clone());
     }
     let mut import_targets: HashMap<String, String> = HashMap::new();
     let mut concepts: Vec<String> = Vec::new();
-    for e in edges.iter().filter(|e| e.relation == "imports_from" && !nodes.contains_key(&e.dst)) {
+    for e in edges
+        .iter()
+        .filter(|e| e.relation == "imports_from" && !nodes.contains_key(&e.dst))
+    {
         if import_targets.contains_key(&e.dst) {
             continue;
         }
-        let resolved =
-            match (by_label.get(&e.dst).map(Vec::as_slice), by_stem.get(&e.dst).map(Vec::as_slice))
-            {
-                (Some([only]), _) | (None | Some([]), Some([only])) => only.clone(),
-                _ => {
-                    concepts.push(e.dst.clone());
-                    e.dst.clone()
-                },
-            };
+        let resolved = match (
+            by_label.get(&e.dst).map(Vec::as_slice),
+            by_stem.get(&e.dst).map(Vec::as_slice),
+        ) {
+            (Some([only]), _) | (None | Some([]), Some([only])) => only.clone(),
+            _ => {
+                concepts.push(e.dst.clone());
+                e.dst.clone()
+            }
+        };
         import_targets.insert(e.dst.clone(), resolved);
     }
     for e in &mut edges {
@@ -567,13 +633,22 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
     stats.stubs_folded += import_targets.len();
 
     // 3. JS/TS imports and Markdown links.
-    let mut file_index =
-        Files::new(nodes.values().filter(|n| n.class == NodeClass::File).map(|n| n.file.clone()));
+    let mut file_index = Files::new(
+        nodes
+            .values()
+            .filter(|n| n.class == NodeClass::File)
+            .map(|n| n.file.clone()),
+    );
     let mut symbols_by_file: HashMap<(String, String), String> = HashMap::new();
-    for n in nodes.values().filter(|n| !n.file.is_empty() && n.class != NodeClass::File) {
+    for n in nodes
+        .values()
+        .filter(|n| !n.file.is_empty() && n.class != NodeClass::File)
+    {
         if !n.label.starts_with('.') {
             let bare = n.label.trim_end_matches("()").to_owned();
-            symbols_by_file.entry((n.file.clone(), bare)).or_insert_with(|| n.id.clone());
+            symbols_by_file
+                .entry((n.file.clone(), bare))
+                .or_insert_with(|| n.id.clone());
         }
     }
     let mut module_of: HashMap<(String, String), Option<Target>> = HashMap::new();
@@ -587,7 +662,11 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
                     dst: make_id(&[&target]),
                     relation: "references".into(),
                     confidence,
-                    score: if confidence == Confidence::Extracted { 1.0 } else { 0.9 },
+                    score: if confidence == Confidence::Extracted {
+                        1.0
+                    } else {
+                        0.9
+                    },
                     file: file.clone(),
                     loc: import.loc.clone(),
                     context: Some("link".into()),
@@ -629,9 +708,9 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
                         });
                     }
                 }
-            },
+            }
             Some(Target::External) => stats.imports_external += 1,
-            None => {},
+            None => {}
         }
     }
 
@@ -645,13 +724,18 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
     let mut defs: HashMap<String, Vec<Def>> = HashMap::new();
     for n in nodes.values().filter(|n| !n.file.is_empty()) {
         if let Some(inner) = n.label.strip_suffix("()") {
-            let (name, method) =
-                inner.strip_prefix('.').map_or((inner, false), |name| (name, true));
+            let (name, method) = inner
+                .strip_prefix('.')
+                .map_or((inner, false), |name| (name, true));
             defs.entry(name.to_owned()).or_default().push(Def {
                 id: n.id.clone(),
                 file: n.file.clone(),
                 method,
-                owner: if method { owner_of.get(&n.id).cloned() } else { None },
+                owner: if method {
+                    owner_of.get(&n.id).cloned()
+                } else {
+                    None
+                },
             });
         }
     }
@@ -678,31 +762,43 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
                 .iter()
                 .filter(|d| d.file == call.file && (d.method == call.method || !rust))
                 .collect();
-            if let [only] = same.as_slice() { Some(only.id.clone()) } else { None }
+            if let [only] = same.as_slice() {
+                Some(only.id.clone())
+            } else {
+                None
+            }
         };
         let resolved: Option<(String, Confidence, f64)> = if let Some(module) = &call.module {
-            match module_of.get(&(call.file.clone(), module.clone())).cloned().flatten() {
+            match module_of
+                .get(&(call.file.clone(), module.clone()))
+                .cloned()
+                .flatten()
+            {
                 Some(Target::File(path, relative)) => {
                     resolver.defs.get(&call.name).and_then(|found| {
-                        let in_module: Vec<&Def> =
-                            found.iter().filter(|d| d.file == path && !d.method).collect();
+                        let in_module: Vec<&Def> = found
+                            .iter()
+                            .filter(|d| d.file == path && !d.method)
+                            .collect();
                         match in_module.as_slice() {
                             [only] if relative => {
                                 Some((only.id.clone(), Confidence::Extracted, 1.0))
-                            },
+                            }
                             [only] => Some((only.id.clone(), Confidence::Inferred, 0.85)),
                             _ => None,
                         }
                     })
-                },
+                }
                 Some(Target::External) => {
                     stats.external += 1;
                     continue;
-                },
+                }
                 None => None,
             }
         } else if let Some(path) = &call.path {
-            resolver.rust_path(&call, path).map(|(id, score)| (id, Confidence::Inferred, score))
+            resolver
+                .rust_path(&call, path)
+                .map(|(id, score)| (id, Confidence::Inferred, score))
         } else if let Some(id) = same_file() {
             Some((id, Confidence::Extracted, 0.85))
         } else if call.method {
@@ -711,14 +807,18 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
             if is_blocklisted(&call.name) {
                 None
             } else {
-                resolver.rust_plain(&call).map(|(id, score)| (id, Confidence::Inferred, score))
+                resolver
+                    .rust_plain(&call)
+                    .map(|(id, score)| (id, Confidence::Inferred, score))
             }
         } else {
             // JS/TS: a name neither local nor imported is a global; only an ambient declaration
             // (`declare function` in a `.d.ts`) can define it.
             resolver.defs.get(&call.name).and_then(|found| {
-                let ambient: Vec<&Def> =
-                    found.iter().filter(|d| d.file.ends_with(".d.ts") && !d.method).collect();
+                let ambient: Vec<&Def> = found
+                    .iter()
+                    .filter(|d| d.file.ends_with(".d.ts") && !d.method)
+                    .collect();
                 if let [only] = ambient.as_slice() {
                     Some((only.id.clone(), Confidence::Inferred, 0.6))
                 } else {
@@ -760,8 +860,15 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
     let mut graph_nodes: Vec<Node> = Vec::new();
     for (id, n) in &nodes {
         index.insert(id.clone(), graph_nodes.len());
-        let mut node =
-            Node::code(id, &n.label, if n.file.is_empty() { None } else { Some(&n.file) });
+        let mut node = Node::code(
+            id,
+            &n.label,
+            if n.file.is_empty() {
+                None
+            } else {
+                Some(&n.file)
+            },
+        );
         node.lang = lang_of(&n.file);
         node.kind = if n.file.is_empty() {
             NodeKind::Concept
@@ -770,14 +877,20 @@ pub fn assemble_with(files: Vec<FileExtract>, context: &AssembleContext) -> (Gra
         } else {
             NodeKind::Code
         };
-        node.loc = if n.loc.is_empty() { None } else { Some(n.loc.clone()) };
+        node.loc = if n.loc.is_empty() {
+            None
+        } else {
+            Some(n.loc.clone())
+        };
         node.package = context.package_of.get(&n.file).cloned();
         graph_nodes.push(node);
     }
     disambiguate_file_labels(&mut graph_nodes);
     let mut graph_edges = Vec::new();
     for e in edges {
-        let (Some(&s), Some(&d)) = (index.get(&e.src), index.get(&e.dst)) else { continue };
+        let (Some(&s), Some(&d)) = (index.get(&e.src), index.get(&e.dst)) else {
+            continue;
+        };
         graph_edges.push(Edge {
             src: s,
             dst: d,
@@ -812,8 +925,14 @@ mod tests {
         );
         let b = extract_file("b.rs", b"pub fn remote() {}\npub fn new() {}");
         let (g, stats) = assemble(vec![a, b]);
-        assert_eq!(edge(&g, "run()", "local()").map(|e| e.confidence), Some(Confidence::Extracted));
-        assert_eq!(edge(&g, "run()", "remote()").map(|e| e.confidence), Some(Confidence::Inferred));
+        assert_eq!(
+            edge(&g, "run()", "local()").map(|e| e.confidence),
+            Some(Confidence::Extracted)
+        );
+        assert_eq!(
+            edge(&g, "run()", "remote()").map(|e| e.confidence),
+            Some(Confidence::Inferred)
+        );
         assert!(
             edge(&g, "run()", "new()").is_none(),
             "generic names are not resolved across files"
@@ -839,18 +958,26 @@ mod tests {
             .into_iter()
             .map(|(k, d)| (k.to_owned(), d.to_owned()))
             .collect();
-        AssembleContext { package_of, package_dir }
+        AssembleContext {
+            package_of,
+            package_dir,
+        }
     }
 
     #[test]
     fn rust_calls_cross_crates_through_use_paths_qualified_names_and_receiver_types() {
-        let sys = extract_file("src/sys/lib.rs", b"pub fn open(p: &str) {}\npub fn close() {}\n");
+        let sys = extract_file(
+            "src/sys/lib.rs",
+            b"pub fn open(p: &str) {}\npub fn close() {}\n",
+        );
         let file = extract_file(
             "src/sys/file.rs",
             b"pub struct File;\nimpl File {\n pub fn read_all(&self) {}\n pub fn new() -> Self { File }\n}\n",
         );
-        let windows =
-            extract_file("src/sys/windows/mod.rs", b"pub fn open(p: &str) {}\npub fn close() {}\n");
+        let windows = extract_file(
+            "src/sys/windows/mod.rs",
+            b"pub fn open(p: &str) {}\npub fn close() {}\n",
+        );
         let core = extract_file(
             "src/core/strings.rs",
             b"pub fn eql(a: &str, b: &str) -> bool { a == b }\n",
@@ -867,12 +994,25 @@ mod tests {
         );
         let (g, stats) = assemble_with(vec![sys, file, windows, core, install, fs], &crates());
         let to = |from: &str, to: &str| {
-            edge(&g, from, to)
-                .map(|e| (g.nodes[e.dst].file.clone().unwrap_or_default(), e.confidence))
+            edge(&g, from, to).map(|e| {
+                (
+                    g.nodes[e.dst].file.clone().unwrap_or_default(),
+                    e.confidence,
+                )
+            })
         };
-        assert_eq!(to("read()", "open()"), Some(("src/sys/lib.rs".into(), Confidence::Inferred)));
-        assert_eq!(to("read()", "close()"), Some(("src/sys/lib.rs".into(), Confidence::Inferred)));
-        assert_eq!(to("read()", ".new()"), Some(("src/sys/file.rs".into(), Confidence::Inferred)));
+        assert_eq!(
+            to("read()", "open()"),
+            Some(("src/sys/lib.rs".into(), Confidence::Inferred))
+        );
+        assert_eq!(
+            to("read()", "close()"),
+            Some(("src/sys/lib.rs".into(), Confidence::Inferred))
+        );
+        assert_eq!(
+            to("read()", ".new()"),
+            Some(("src/sys/file.rs".into(), Confidence::Inferred))
+        );
         assert_eq!(
             to("read()", ".read_all()"),
             Some(("src/sys/file.rs".into(), Confidence::Inferred))
@@ -891,7 +1031,11 @@ mod tests {
             "no homonym of another crate"
         );
         assert!(stats.cross_file >= 6, "{stats:?}");
-        assert!(g.nodes.iter().any(|n| n.package.as_deref() == Some("bun_sys")));
+        assert!(
+            g.nodes
+                .iter()
+                .any(|n| n.package.as_deref() == Some("bun_sys"))
+        );
     }
 
     #[test]
@@ -910,8 +1054,10 @@ mod tests {
             b"import { join } from \"node:path\";\nconst { validate } = require(\"internal/validators\");\nimport { square } from './math';\nexport function run() { join(); validate(); square(); local(); }\nfunction local() {}\n",
         );
         let math = extract_file("src/js/node/math.ts", b"export function square() {}\n");
-        let validators =
-            extract_file("src/js/internal/validators.ts", b"export function validate() {}\n");
+        let validators = extract_file(
+            "src/js/internal/validators.ts",
+            b"export function validate() {}\n",
+        );
         let path = extract_file("src/node-fallbacks/path.js", b"export function join() {}\n");
         let (g, stats) = assemble(vec![main, math, validators, path]);
         assert_eq!(
@@ -922,7 +1068,10 @@ mod tests {
             edge(&g, "run()", "validate()").map(|e| e.confidence),
             Some(Confidence::Inferred)
         );
-        assert_eq!(edge(&g, "run()", "local()").map(|e| e.confidence), Some(Confidence::Extracted));
+        assert_eq!(
+            edge(&g, "run()", "local()").map(|e| e.confidence),
+            Some(Confidence::Extracted)
+        );
         assert!(
             edge(&g, "run()", "join()").is_none(),
             "node:path is not src/node-fallbacks/path.js"
@@ -951,8 +1100,10 @@ mod tests {
 
     #[test]
     fn markdown_links_connect_notes() {
-        let index =
-            extract_file("memory/MEMORY.md", b"# Index\n- [Build](build.md)\n- [[idioms]]\n");
+        let index = extract_file(
+            "memory/MEMORY.md",
+            b"# Index\n- [Build](build.md)\n- [[idioms]]\n",
+        );
         let build = extract_file("memory/build.md", b"# Build\n");
         let idioms = extract_file("memory/idioms.md", b"# Idioms\n");
         let (g, stats) = assemble(vec![index, build, idioms]);
@@ -964,10 +1115,17 @@ mod tests {
             .collect();
         assert_eq!(
             refs,
-            [("build.md", Confidence::Extracted), ("idioms.md", Confidence::Inferred)]
+            [
+                ("build.md", Confidence::Extracted),
+                ("idioms.md", Confidence::Inferred)
+            ]
         );
         assert_eq!(stats.imports_resolved, 2);
-        assert!(g.nodes.iter().any(|n| n.label == "Index" && n.kind == NodeKind::Document));
+        assert!(
+            g.nodes
+                .iter()
+                .any(|n| n.label == "Index" && n.kind == NodeKind::Document)
+        );
     }
 
     #[test]
@@ -995,8 +1153,16 @@ mod tests {
         let b = extract_file("b.rs", b"fn use_it(t: Thing) {}");
         let (g, stats) = assemble(vec![a, b]);
         assert_eq!(stats.stubs_folded, 1);
-        let r = g.edges.iter().find(|e| e.relation == "references").expect("reference edge");
+        let r = g
+            .edges
+            .iter()
+            .find(|e| e.relation == "references")
+            .expect("reference edge");
         assert_eq!(g.nodes[r.dst].file.as_deref(), Some("a.rs"));
-        assert!(!g.nodes.iter().any(|n| n.file.is_none() && n.label == "Thing"));
+        assert!(
+            !g.nodes
+                .iter()
+                .any(|n| n.file.is_none() && n.label == "Thing")
+        );
     }
 }

@@ -1,4 +1,4 @@
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 
 /// Render method used for opaque materials.
 ///

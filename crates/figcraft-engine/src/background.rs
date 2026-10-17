@@ -60,8 +60,14 @@ impl Session {
     pub fn start_background(&mut self, id: &str, params: Value) -> Result<Option<Value>> {
         self.cancel_background(id);
         self.background.next += 1;
-        let job =
-            Job { id: self.background.next, command: id.to_string(), params, doc: self.ds().ok().map(|d| d.uid), answers: Vec::new(), out: None };
+        let job = Job {
+            id: self.background.next,
+            command: id.to_string(),
+            params,
+            doc: self.ds().ok().map(|d| d.uid),
+            answers: Vec::new(),
+            out: None,
+        };
         self.run_job(job)
     }
 
@@ -87,17 +93,30 @@ impl Session {
         let shown = self.ds().ok().map(|d| d.uid);
         if let Some(uid) = job.doc {
             // A closed file leaves no document to act on.
-            self.active = self.docs.iter().position(|d| d.uid == uid).unwrap_or(self.docs.len());
+            self.active = self
+                .docs
+                .iter()
+                .position(|d| d.uid == uid)
+                .unwrap_or(self.docs.len());
         }
         let used = vec![false; job.answers.len()];
-        self.background.run = Some(Run { job: job.id, answers: std::mem::take(&mut job.answers), used, out: None });
+        self.background.run = Some(Run {
+            job: job.id,
+            answers: std::mem::take(&mut job.answers),
+            used,
+            out: None,
+        });
         let result = self.execute(&job.command, &job.params);
         let run = self.background.run.take();
         if let Some(i) = shown.and_then(|uid| self.docs.iter().position(|d| d.uid == uid)) {
             self.active = i;
         }
         match run {
-            Some(Run { answers, out: Some(out), .. }) => {
+            Some(Run {
+                answers,
+                out: Some(out),
+                ..
+            }) => {
                 job.answers = answers;
                 job.out = Some(out);
                 self.background.jobs.push(job);
@@ -110,7 +129,9 @@ impl Session {
     /// The answer to background request `job` arrived: run its command again (an answer for a
     /// cancelled command is dropped).
     pub(crate) fn background_answer(&mut self, job: u64, reply: NetReply) {
-        let Some(i) = self.background.jobs.iter().position(|j| j.id == job) else { return };
+        let Some(i) = self.background.jobs.iter().position(|j| j.id == job) else {
+            return;
+        };
         let mut j = self.background.jobs.remove(i);
         let Some(sent) = j.out.take() else { return };
         j.answers.push((sent, reply));
@@ -127,9 +148,15 @@ impl Session {
     /// time ([`EngineError::Waiting`]), else waited for. With the answer, the request that was
     /// answered when it was an earlier one (what it carried then).
     pub(crate) fn net(&mut self, req: NetRequest) -> Result<(NetReply, Option<NetRequest>)> {
-        let Some(link) = self.live.link() else { return Err(EngineError::Other(req.unavailable().into())) };
+        let Some(link) = self.live.link() else {
+            return Err(EngineError::Other(req.unavailable().into()));
+        };
         if let Some(run) = self.background.run.as_mut() {
-            let earlier = run.answers.iter().zip(run.used.iter_mut()).find(|((sent, _), used)| !**used && sent.stands_for(&req));
+            let earlier = run
+                .answers
+                .iter()
+                .zip(run.used.iter_mut())
+                .find(|((sent, _), used)| !**used && sent.stands_for(&req));
             if let Some(((sent, reply), used)) = earlier {
                 *used = true;
                 return Ok((reply.clone(), Some(sent.clone())));

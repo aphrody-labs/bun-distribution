@@ -18,14 +18,45 @@ pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
     let (w, h) = d.dimensions();
     check_size(F, w as u64, h as u64, opts)?;
     let alpha = d.has_alpha();
-    let size = d.output_buffer_size().ok_or_else(|| err("buffer size overflow"))?;
+    let size = d
+        .output_buffer_size()
+        .ok_or_else(|| err("buffer size overflow"))?;
     let mut buf = vec![0u8; size];
     d.read_image(&mut buf).map_err(err)?;
     let icc = d.icc_profile().ok().flatten();
-    let exif = d.exif_metadata().ok().flatten().map(|e| if e.starts_with(b"Exif\0\0") { e[6..].to_vec() } else { e });
-    let xmp = d.xmp_metadata().ok().flatten().map(|x| String::from_utf8_lossy(&x).trim_end_matches('\0').to_string());
-    let raw = Raw { width: w as usize, height: h as usize, model: Model::Rgb, alpha, premultiplied: false, buf: Buf::U8(buf), bit_depth: 8 };
-    finish(F, raw, Meta { icc, exif, xmp, ..Default::default() }, (w, h), opts)
+    let exif = d.exif_metadata().ok().flatten().map(|e| {
+        if e.starts_with(b"Exif\0\0") {
+            e[6..].to_vec()
+        } else {
+            e
+        }
+    });
+    let xmp = d.xmp_metadata().ok().flatten().map(|x| {
+        String::from_utf8_lossy(&x)
+            .trim_end_matches('\0')
+            .to_string()
+    });
+    let raw = Raw {
+        width: w as usize,
+        height: h as usize,
+        model: Model::Rgb,
+        alpha,
+        premultiplied: false,
+        buf: Buf::U8(buf),
+        bit_depth: 8,
+    };
+    finish(
+        F,
+        raw,
+        Meta {
+            icc,
+            exif,
+            xmp,
+            ..Default::default()
+        },
+        (w, h),
+        opts,
+    )
 }
 
 /// Stored dimensions and EXIF orientation from the RIFF chunks and the bitstream header, without
@@ -35,7 +66,9 @@ pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
 pub(crate) fn header(bytes: &[u8]) -> Result<(u32, u32, u16)> {
     let mut p = 12usize;
     loop {
-        let Some(h) = bytes.get(p..p.saturating_add(8)) else { return Err(err("no image data")) };
+        let Some(h) = bytes.get(p..p.saturating_add(8)) else {
+            return Err(err("no image data"));
+        };
         let size = u32::from_le_bytes([h[4], h[5], h[6], h[7]]) as usize;
         let end = p.saturating_add(8).saturating_add(size);
         if matches!(&h[0..4], b"VP8 " | b"VP8L" | b"ANMF") {
@@ -51,6 +84,15 @@ pub(crate) fn header(bytes: &[u8]) -> Result<(u32, u32, u16)> {
     let (w, h) = d.dimensions();
     check_size(F, w as u64, h as u64, &DecodeOptions::default())?;
     let exif = d.exif_metadata().ok().flatten();
-    let exif = exif.as_deref().map(|e| e.strip_prefix(b"Exif\0\0").unwrap_or(e));
-    Ok((w, h, exif.map(crate::exif::summarize).unwrap_or_default().orientation.unwrap_or(1)))
+    let exif = exif
+        .as_deref()
+        .map(|e| e.strip_prefix(b"Exif\0\0").unwrap_or(e));
+    Ok((
+        w,
+        h,
+        exif.map(crate::exif::summarize)
+            .unwrap_or_default()
+            .orientation
+            .unwrap_or(1),
+    ))
 }

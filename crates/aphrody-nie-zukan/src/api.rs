@@ -74,7 +74,9 @@ pub fn rank_json(
     max_results: u32,
 ) -> Result<String, String> {
     if entry_json.len() > MAX_ZUKAN_ENTRY_JSON_BYTES {
-        return Err(format!("Zukan entry JSON exceeds {MAX_ZUKAN_ENTRY_JSON_BYTES} bytes"));
+        return Err(format!(
+            "Zukan entry JSON exceeds {MAX_ZUKAN_ENTRY_JSON_BYTES} bytes"
+        ));
     }
     if candidates_json.len() > MAX_ZUKAN_CANDIDATES_JSON_BYTES {
         return Err(format!(
@@ -106,7 +108,9 @@ pub fn rank_json(
     })
     .to_string();
     if output.len() > MAX_ZUKAN_RESULT_JSON_BYTES {
-        return Err(format!("Zukan result JSON exceeds {MAX_ZUKAN_RESULT_JSON_BYTES} bytes"));
+        return Err(format!(
+            "Zukan result JSON exceeds {MAX_ZUKAN_RESULT_JSON_BYTES} bytes"
+        ));
     }
     Ok(output)
 }

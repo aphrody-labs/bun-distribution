@@ -16,7 +16,7 @@ use wgpu::{
     RenderPass,
 };
 
-use crate::renderer::{wgpu_wrapper, RenderAdapterInfo, RenderDevice, RenderQueue};
+use crate::renderer::{RenderAdapterInfo, RenderDevice, RenderQueue, wgpu_wrapper};
 
 use super::RecordDiagnostics;
 

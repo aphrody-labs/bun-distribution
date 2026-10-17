@@ -25,7 +25,13 @@ fn adjustment_scene(depth: BitDepth, stack: &[(&str, Vec<(&str, Value)>)], maske
     }
     if masked {
         let mut next = s.p.next_id;
-        let m = build::mask(&mut Ids(&mut next), "Mask 1", ShapePath::ellipse([40.0, 25.0], 60.0, 40.0), MaskMode::Add, [255, 255, 0]);
+        let m = build::mask(
+            &mut Ids(&mut next),
+            "Mask 1",
+            ShapePath::ellipse([40.0, 25.0], 60.0, 40.0),
+            MaskMode::Add,
+            [255, 255, 0],
+        );
         s.p.next_id = next;
         adj.props.sub_mut("masks").unwrap().children.push(m.into());
     }
@@ -38,8 +44,14 @@ fn adjustment_scene(depth: BitDepth, stack: &[(&str, Vec<(&str, Value)>)], maske
 fn gpu_stack() -> Vec<(&'static str, Vec<(&'static str, Value)>)> {
     vec![
         ("ec.blur.gaussian", vec![("blurriness", n(6.0))]),
-        ("ec.color.levels", vec![("inBlack", n(0.1)), ("gamma", n(1.4))]),
-        ("ec.color.tint", vec![("black", c(0.1, 0.0, 0.2)), ("amount", n(60.0))]),
+        (
+            "ec.color.levels",
+            vec![("inBlack", n(0.1)), ("gamma", n(1.4))],
+        ),
+        (
+            "ec.color.tint",
+            vec![("black", c(0.1, 0.0, 0.2)), ("amount", n(60.0))],
+        ),
     ]
 }
 
@@ -48,8 +60,23 @@ fn gpu_adjustment_chains_match_the_cpu() {
     for depth in [BitDepth::Bpc8, BitDepth::Bpc16, BitDepth::Bpc32] {
         for masked in [false, true] {
             let s = adjustment_scene(depth, &gpu_stack(), masked);
-            check(&format!("gpu adjustment {depth:?} masked {masked}"), compare_at(&s, opts(), Tick::ZERO), 0.0);
-            check(&format!("gpu adjustment {depth:?} masked {masked} half"), compare_at(&s, RenderOpts { scale: 0.5, ..opts() }, Tick::ZERO), 0.0);
+            check(
+                &format!("gpu adjustment {depth:?} masked {masked}"),
+                compare_at(&s, opts(), Tick::ZERO),
+                0.0,
+            );
+            check(
+                &format!("gpu adjustment {depth:?} masked {masked} half"),
+                compare_at(
+                    &s,
+                    RenderOpts {
+                        scale: 0.5,
+                        ..opts()
+                    },
+                    Tick::ZERO,
+                ),
+                0.0,
+            );
         }
     }
 }
@@ -61,14 +88,22 @@ fn mixed_adjustment_chains_fall_back_per_effect() {
     stack.push(("ec.stylize.glow", vec![("threshold", n(30.0))]));
     for depth in [BitDepth::Bpc8, BitDepth::Bpc32] {
         let s = adjustment_scene(depth, &stack, true);
-        check(&format!("mixed adjustment {depth:?}"), compare_at(&s, opts(), Tick::ZERO), 0.0);
+        check(
+            &format!("mixed adjustment {depth:?}"),
+            compare_at(&s, opts(), Tick::ZERO),
+            0.0,
+        );
     }
     // Colour-managed: effects run in the working space, compositing in linear light.
     for depth in [BitDepth::Bpc8, BitDepth::Bpc32] {
         let mut s = adjustment_scene(depth, &stack, false);
         s.p.settings.working_space = Some(ColorSpace::Rec709);
         s.p.settings.blend_linear = true;
-        check(&format!("colour-managed adjustment {depth:?}"), compare_at(&s, opts(), Tick::ZERO), 0.0);
+        check(
+            &format!("colour-managed adjustment {depth:?}"),
+            compare_at(&s, opts(), Tick::ZERO),
+            0.0,
+        );
     }
 }
 
@@ -95,10 +130,22 @@ fn adjustment_stacks_split_into_gpu_runs_and_cpu_steps() {
     let mut stack = gpu_stack();
     stack.insert(1, ("ec.generate.fractal", vec![]));
     let s = adjustment_scene(BitDepth::Bpc32, &stack, false);
-    let mut r = Renderer::new(&s.p, &Pattern, RenderOpts { backend: Backend::Gpu, ..opts() });
+    let mut r = Renderer::new(
+        &s.p,
+        &Pattern,
+        RenderOpts {
+            backend: Backend::Gpu,
+            ..opts()
+        },
+    );
     r.accel = Some(g);
     let ctx = r.eval_ctx(s.cid, Tick::ZERO).unwrap();
-    let adj = ctx.comp.layers.iter().find(|l| l.switches.adjustment).unwrap();
+    let adj = ctx
+        .comp
+        .layers
+        .iter()
+        .find(|l| l.switches.adjustment)
+        .unwrap();
     let mut p = Probe::default();
     r.run_effects_on(&ctx, adj, true, &mut p);
     assert_eq!((p.gpu, p.cpu), (3, 1));
@@ -111,10 +158,28 @@ fn composite_reads_the_original_adjustment_input_on_gpu() {
             for rgb in [false, true] {
                 let stack = vec![
                     ("ec.channel.invert", vec![]),
-                    ("ec.channel.cccomposite", vec![("compositeOriginal", Value::Enum(mode)), ("opacity", n(65.0)), ("rgbOnly", Value::Bool(rgb))]),
+                    (
+                        "ec.channel.cccomposite",
+                        vec![
+                            ("compositeOriginal", Value::Enum(mode)),
+                            ("opacity", n(65.0)),
+                            ("rgbOnly", Value::Bool(rgb)),
+                        ],
+                    ),
                 ];
                 let s = adjustment_scene(depth, &stack, true);
-                check(&format!("original adjustment {depth:?} mode {mode} rgb {rgb}"), compare_at(&s, RenderOpts { scale: 0.5, ..opts() }, Tick::ZERO), 0.0);
+                check(
+                    &format!("original adjustment {depth:?} mode {mode} rgb {rgb}"),
+                    compare_at(
+                        &s,
+                        RenderOpts {
+                            scale: 0.5,
+                            ..opts()
+                        },
+                        Tick::ZERO,
+                    ),
+                    0.0,
+                );
             }
         }
     }

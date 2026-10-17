@@ -76,10 +76,17 @@ impl ObjectSelection {
                         o.target.kind == old.target.kind
                             && o.content_type == old.content_type
                             && o.text == old.text
-                            && o.rect.iter().zip(old.rect).all(|(a, b)| (a - b).abs() < 0.01)
+                            && o.rect
+                                .iter()
+                                .zip(old.rect)
+                                .all(|(a, b)| (a - b).abs() < 0.01)
                     });
                     let object = matches.next()?;
-                    if matches.next().is_some() || out.iter().any(|o: &EditableObject| o.target == object.target) {
+                    if matches.next().is_some()
+                        || out
+                            .iter()
+                            .any(|o: &EditableObject| o.target == object.target)
+                    {
                         return None;
                     }
                     out.push(object.clone());
@@ -96,7 +103,9 @@ impl ObjectSelection {
             // A refused edit keeps the generation and the original selection.
             self.pending = None;
         }
-        if self.page.is_some() && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+        if self.page.is_some()
+            && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+        {
             self.clear();
         }
     }
@@ -105,17 +114,29 @@ impl ObjectSelection {
     fn move_by(&mut self, page: usize, offset: [f64; 2]) -> Edit {
         let mut expected = self.selected.clone();
         for object in &mut expected {
-            object.rect = [object.rect[0] + offset[0], object.rect[1] + offset[1], object.rect[2] + offset[0], object.rect[3] + offset[1]];
+            object.rect = [
+                object.rect[0] + offset[0],
+                object.rect[1] + offset[1],
+                object.rect[2] + offset[0],
+                object.rect[3] + offset[1],
+            ];
         }
         self.pending = Some(expected);
-        Edit::MoveObjects { page, objects: self.selected.iter().map(|o| o.target).collect(), offset }
+        Edit::MoveObjects {
+            page,
+            objects: self.selected.iter().map(|o| o.target).collect(),
+            offset,
+        }
     }
 
     fn inventory(&mut self, doc: &Document, page: usize) -> Result<Vec<EditableObject>, String> {
         if self.cache.len() >= 8 && !self.cache.contains_key(&page) {
             self.cache.clear();
         }
-        self.cache.entry(page).or_insert_with(|| doc.editable_objects(page)).clone()
+        self.cache
+            .entry(page)
+            .or_insert_with(|| doc.editable_objects(page))
+            .clone()
     }
 }
 
@@ -129,7 +150,12 @@ fn modified(ui: &egui::Ui) -> bool {
             .events
             .iter()
             .find_map(|e| match e {
-                egui::Event::PointerButton { button: egui::PointerButton::Primary, pressed: true, modifiers, .. } => Some(*modifiers),
+                egui::Event::PointerButton {
+                    button: egui::PointerButton::Primary,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } => Some(*modifiers),
                 _ => None,
             })
             .unwrap_or(i.modifiers);
@@ -139,11 +165,23 @@ fn modified(ui: &egui::Ui) -> bool {
 
 fn single(view: &DocView, page: usize) -> Option<ObjectTarget> {
     if let Some((_, index)) = view.content.selected.filter(|(p, _)| *p == page) {
-        Some(ObjectTarget { kind: ObjectKind::Added, index })
+        Some(ObjectTarget {
+            kind: ObjectKind::Added,
+            index,
+        })
     } else if let Some(s) = view.image_selection.as_ref().filter(|s| s.page == page) {
-        Some(ObjectTarget { kind: ObjectKind::Image, index: s.index })
+        Some(ObjectTarget {
+            kind: ObjectKind::Image,
+            index: s.index,
+        })
     } else {
-        view.line_editor.as_ref().filter(|e| e.page == page).map(|e| ObjectTarget { kind: ObjectKind::Text, index: e.block })
+        view.line_editor
+            .as_ref()
+            .filter(|e| e.page == page)
+            .map(|e| ObjectTarget {
+                kind: ObjectKind::Text,
+                index: e.block,
+            })
     }
 }
 
@@ -156,7 +194,14 @@ fn leave_single(view: &mut DocView) {
 
 /// Returns true while group selection owns the interaction. Ordinary clicks still reach the
 /// single-object text/resize tools. A text draft is finished or discarded through its editor.
-pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, page: usize, doc: &Document, view: &mut DocView) -> bool {
+pub(crate) fn page_input(
+    ui: &egui::Ui,
+    resp: &egui::Response,
+    xf: &PageXform,
+    page: usize,
+    doc: &Document,
+    view: &mut DocView,
+) -> bool {
     if view.objects.input_blocked {
         return true;
     }
@@ -164,12 +209,19 @@ pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, p
         let blocked = view.objects.blocked_page == Some(page);
         let modifier_press = ui.input(|i| i.pointer.primary_pressed())
             && modified(ui)
-            && ui.input(|i| i.pointer.interact_pos()).is_some_and(|p| xf.rect.contains(p) && ui.clip_rect().contains(p));
+            && ui
+                .input(|i| i.pointer.interact_pos())
+                .is_some_and(|p| xf.rect.contains(p) && ui.clip_rect().contains(p));
         if blocked || modifier_press {
             view.objects.hold_editor = true;
             view.objects.blocked_page = ui.input(|i| i.pointer.primary_down()).then_some(page);
             if modifier_press {
-                view.objects.notice = Some(tl!("Finish or discard the text being edited before selecting several objects.").into());
+                view.objects.notice = Some(
+                    tl!(
+                        "Finish or discard the text being edited before selecting several objects."
+                    )
+                    .into(),
+                );
             }
             return true;
         }
@@ -182,8 +234,22 @@ pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, p
 }
 
 #[allow(clippy::too_many_arguments)]
-fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, page: usize, doc: &Document, view: &mut DocView) -> bool {
-    let (pointer, pressed, down) = ui.input(|i| (i.pointer.interact_pos(), i.pointer.primary_pressed(), i.pointer.primary_down()));
+fn input(
+    s: &mut ObjectSelection,
+    ui: &egui::Ui,
+    resp: &egui::Response,
+    xf: &PageXform,
+    page: usize,
+    doc: &Document,
+    view: &mut DocView,
+) -> bool {
+    let (pointer, pressed, down) = ui.input(|i| {
+        (
+            i.pointer.interact_pos(),
+            i.pointer.primary_pressed(),
+            i.pointer.primary_down(),
+        )
+    });
     let info = &doc.info;
     if s.page == Some(page)
         && let Some(mut gesture) = s.gesture
@@ -192,7 +258,10 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
             gesture.now = p;
         }
         if !down {
-            if !gesture.marquee && gesture.start.distance(gesture.now) <= 3.0 && resp.double_clicked() {
+            if !gesture.marquee
+                && gesture.start.distance(gesture.now) <= 3.0
+                && resp.double_clicked()
+            {
                 s.clear();
                 return false;
             }
@@ -206,7 +275,10 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
                     && area.height() > 3.0
                     && let Ok(objects) = s.inventory(doc, page)
                 {
-                    let candidates: Vec<_> = objects.into_iter().filter(|o| area.intersects(screen(xf, info, page, o))).collect();
+                    let candidates: Vec<_> = objects
+                        .into_iter()
+                        .filter(|o| area.intersects(screen(xf, info, page, o)))
+                        .collect();
                     let mut selected = s.selected.clone();
                     for object in candidates {
                         if !selected.iter().any(|o| o.target == object.target) {
@@ -223,7 +295,10 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
                     s.clear();
                 }
             } else if gesture.start.distance(gesture.now) > 3.0 && view.pending_edit.is_none() {
-                let (a, b) = (xf.screen_to_view(gesture.start), xf.screen_to_view(gesture.now));
+                let (a, b) = (
+                    xf.screen_to_view(gesture.start),
+                    xf.screen_to_view(gesture.now),
+                );
                 match doc.object_move_offset(page, [f64::from(b.0 - a.0), f64::from(b.1 - a.1)]) {
                     Ok(offset) => view.pending_edit = Some(s.move_by(page, offset)),
                     Err(_) => s.notice = Some(tl!("These objects could not be moved. Select them again and try a smaller move.").into()),
@@ -232,15 +307,24 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
         } else {
             s.gesture = Some(gesture);
         }
-        ui.ctx().set_cursor_icon(if gesture.marquee { egui::CursorIcon::Crosshair } else { egui::CursorIcon::Grabbing });
+        ui.ctx().set_cursor_icon(if gesture.marquee {
+            egui::CursorIcon::Crosshair
+        } else {
+            egui::CursorIcon::Grabbing
+        });
         return true;
     }
-    let Some(p) = pointer.filter(|p| xf.rect.contains(*p) && ui.clip_rect().contains(*p) && resp.rect.contains(*p)) else {
+    let Some(p) = pointer
+        .filter(|p| xf.rect.contains(*p) && ui.clip_rect().contains(*p) && resp.rect.contains(*p))
+    else {
         return s.page == Some(page) && !s.selected.is_empty();
     };
     if !pressed {
         if s.page == Some(page) && !s.selected.is_empty() {
-            let union = s.selected.iter().fold(Rect::NOTHING, |r, o| r.union(screen(xf, info, page, o)));
+            let union = s
+                .selected
+                .iter()
+                .fold(Rect::NOTHING, |r, o| r.union(screen(xf, info, page, o)));
             if union.contains(p) {
                 ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
             }
@@ -252,7 +336,9 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
         Ok(objects) => objects,
         Err(_) => {
             if modified(ui) {
-                s.notice = Some(tl!("This page contains objects that cannot be selected together.").into());
+                s.notice = Some(
+                    tl!("This page contains objects that cannot be selected together.").into(),
+                );
                 return true;
             }
             return false;
@@ -263,7 +349,11 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
     // Within each kind, prefer the last object as the ordinary single-item tools do.
     let hit = [ObjectKind::Added, ObjectKind::Text, ObjectKind::Image]
         .into_iter()
-        .find_map(|kind| objects.iter().rev().find(|o| o.target.kind == kind && screen(xf, info, page, o).expand(2.0).contains(p)));
+        .find_map(|kind| {
+            objects.iter().rev().find(|o| {
+                o.target.kind == kind && screen(xf, info, page, o).expand(2.0).contains(p)
+            })
+        });
     if additive {
         if s.page != Some(page) {
             s.clear();
@@ -283,29 +373,57 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
                 s.notice = Some(tl!("Select at most 1000 objects at a time.").into());
             }
         } else {
-            s.gesture = Some(Gesture { start: p, now: p, marquee: true, additive: true });
+            s.gesture = Some(Gesture {
+                start: p,
+                now: p,
+                marquee: true,
+                additive: true,
+            });
         }
         leave_single(view);
         view.current = page;
         return true;
     }
     if s.page == Some(page) && !s.selected.is_empty() {
-        let union = s.selected.iter().fold(Rect::NOTHING, |r, o| r.union(screen(xf, info, page, o)));
+        let union = s
+            .selected
+            .iter()
+            .fold(Rect::NOTHING, |r, o| r.union(screen(xf, info, page, o)));
         if union.contains(p) && !resp.double_clicked() {
-            s.gesture = Some(Gesture { start: p, now: p, marquee: false, additive: false });
+            s.gesture = Some(Gesture {
+                start: p,
+                now: p,
+                marquee: false,
+                additive: false,
+            });
             return true;
         }
     }
     // The frame of the paragraph open for typing takes hold of the box, as in Acrobat: a click
     // selects it (for the arrow keys), a drag moves it. Its text keeps the caret.
-    if let Some(block) = view.line_editor.as_ref().filter(|e| e.page == page && !e.has_changes()).map(|e| e.block)
-        && let Some(object) = objects.iter().find(|o| o.target == ObjectTarget { kind: ObjectKind::Text, index: block })
+    if let Some(block) = view
+        .line_editor
+        .as_ref()
+        .filter(|e| e.page == page && !e.has_changes())
+        .map(|e| e.block)
+        && let Some(object) = objects.iter().find(|o| {
+            o.target
+                == ObjectTarget {
+                    kind: ObjectKind::Text,
+                    index: block,
+                }
+        })
         && on_frame(screen(xf, info, page, object), p)
     {
         s.clear();
         s.page = Some(page);
         s.selected.push(object.clone());
-        s.gesture = Some(Gesture { start: p, now: p, marquee: false, additive: false });
+        s.gesture = Some(Gesture {
+            start: p,
+            now: p,
+            marquee: false,
+            additive: false,
+        });
         leave_single(view);
         view.current = page;
         return true;
@@ -316,7 +434,12 @@ fn input(s: &mut ObjectSelection, ui: &egui::Ui, resp: &egui::Response, xf: &Pag
     }
     leave_single(view);
     s.page = Some(page);
-    s.gesture = Some(Gesture { start: p, now: p, marquee: true, additive: false });
+    s.gesture = Some(Gesture {
+        start: p,
+        now: p,
+        marquee: true,
+        additive: false,
+    });
     view.current = page;
     true
 }
@@ -336,10 +459,21 @@ pub(crate) fn nudge_keys(ctx: &egui::Context, view: &mut DocView, doc: &Document
     if ctx.egui_wants_keyboard_input() || view.pending_edit.is_some() {
         return;
     }
-    let image = view.image_selection.as_ref().filter(|s| !s.dragging()).map(|s| (s.page, s.index));
-    let objects = view.objects.page.filter(|_| !view.objects.selected.is_empty() && view.objects.gesture.is_none());
-    let Some(page) = objects.or(image.map(|(page, _)| page)) else { return };
-    let Some(xf) = view.page_xform(page) else { return };
+    let image = view
+        .image_selection
+        .as_ref()
+        .filter(|s| !s.dragging())
+        .map(|s| (s.page, s.index));
+    let objects = view
+        .objects
+        .page
+        .filter(|_| !view.objects.selected.is_empty() && view.objects.gesture.is_none());
+    let Some(page) = objects.or(image.map(|(page, _)| page)) else {
+        return;
+    };
+    let Some(xf) = view.page_xform(page) else {
+        return;
+    };
     use egui::{Key, Modifiers};
     let mut step = egui::Vec2::ZERO;
     ctx.input_mut(|i| {
@@ -366,25 +500,49 @@ pub(crate) fn nudge_keys(ctx: &egui::Context, view: &mut DocView, doc: &Document
     let unit = |d: egui::Vec2| {
         let (a, b) = (xf.screen_to_view(c), xf.screen_to_view(c + d));
         let v = egui::vec2(b.0 - a.0, b.1 - a.1);
-        if v.length() > 0.0 { v / v.length() } else { egui::Vec2::ZERO }
+        if v.length() > 0.0 {
+            v / v.length()
+        } else {
+            egui::Vec2::ZERO
+        }
     };
     let delta = unit(egui::vec2(1.0, 0.0)) * step.x + unit(egui::vec2(0.0, 1.0)) * step.y;
-    let Ok(offset) = doc.object_move_offset(page, [f64::from(delta.x), f64::from(delta.y)]) else { return };
+    let Ok(offset) = doc.object_move_offset(page, [f64::from(delta.x), f64::from(delta.y)]) else {
+        return;
+    };
     if objects.is_some() {
         view.pending_edit = Some(view.objects.move_by(page, offset));
     } else if let Some((page, index)) = image
         && let Some(r) = doc.page_images(page).get(index).map(|im| im.rect)
     {
-        let rect = [r[0] + offset[0], r[1] + offset[1], r[2] + offset[0], r[3] + offset[1]];
-        view.pending_edit = Some(Edit::EditPageImage { page, index, change: pdfcraft_engine::ImageEdit::Move(rect) });
+        let rect = [
+            r[0] + offset[0],
+            r[1] + offset[1],
+            r[2] + offset[0],
+            r[3] + offset[1],
+        ];
+        view.pending_edit = Some(Edit::EditPageImage {
+            page,
+            index,
+            change: pdfcraft_engine::ImageEdit::Move(rect),
+        });
     }
 }
 
-pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, info: &DocInfo, selection: &ObjectSelection) {
+pub(crate) fn paint(
+    painter: &egui::Painter,
+    xf: &PageXform,
+    page: usize,
+    info: &DocInfo,
+    selection: &ObjectSelection,
+) {
     if selection.page != Some(page) {
         return;
     }
-    let delta = selection.gesture.filter(|g| !g.marquee).map_or(egui::Vec2::ZERO, |g| g.now - g.start);
+    let delta = selection
+        .gesture
+        .filter(|g| !g.marquee)
+        .map_or(egui::Vec2::ZERO, |g| g.now - g.start);
     let mut union = Rect::NOTHING;
     for object in &selection.selected {
         let rect = screen(xf, info, page, object).translate(delta);
@@ -393,7 +551,12 @@ pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, info: 
         union = union.union(rect);
     }
     if selection.selected.len() > 1 {
-        painter.rect_stroke(union.expand(4.0), 0.0, Stroke::new(1.0, BLUE.gamma_multiply(0.7)), egui::StrokeKind::Outside);
+        painter.rect_stroke(
+            union.expand(4.0),
+            0.0,
+            Stroke::new(1.0, BLUE.gamma_multiply(0.7)),
+            egui::StrokeKind::Outside,
+        );
     }
     if let Some(g) = selection.gesture.filter(|g| g.marquee) {
         let area = Rect::from_two_pos(g.start, g.now).intersect(xf.rect);
@@ -406,9 +569,14 @@ pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, info: 
 pub(crate) fn move_error(error: &pdfcraft_engine::EditError) -> String {
     let detail = error.to_string();
     match detail.as_str() {
-        "vertical text cannot be moved in a group" => tl!("Vertical text cannot be moved with this selection.").into(),
-        "text used as a clipping path cannot be moved in a group" => tl!("Text used as a clipping path cannot be moved with this selection.").into(),
-        _ => tl!("These objects could not be moved. Select them again and try a smaller move.").into(),
+        "vertical text cannot be moved in a group" => {
+            tl!("Vertical text cannot be moved with this selection.").into()
+        }
+        "text used as a clipping path cannot be moved in a group" => {
+            tl!("Text used as a clipping path cannot be moved with this selection.").into()
+        }
+        _ => tl!("These objects could not be moved. Select them again and try a smaller move.")
+            .into(),
     }
 }
 
@@ -416,7 +584,10 @@ pub(crate) fn move_error(error: &pdfcraft_engine::EditError) -> String {
 mod tests {
     #[test]
     fn selection_labels_and_refusals_are_translated_in_every_catalog() {
-        for language in crate::i18n::LANGUAGES.iter().filter(|l| !l.source.is_empty()) {
+        for language in crate::i18n::LANGUAGES
+            .iter()
+            .filter(|l| !l.source.is_empty())
+        {
             let lang = crate::i18n::Lang::from_code(language.code).unwrap();
             for label in [
                 "Drag the selection to move it. Esc clears the selection.",
@@ -430,9 +601,19 @@ mod tests {
                 "These objects could not be moved. Select them again and try a smaller move.",
                 "This page contains objects that cannot be selected together.",
             ] {
-                assert_ne!(crate::i18n::tr(lang, label), label, "{}: {label}", language.code);
+                assert_ne!(
+                    crate::i18n::tr(lang, label),
+                    label,
+                    "{}: {label}",
+                    language.code
+                );
             }
-            assert_ne!(crate::i18n::trn(lang, 2, "{n} object selected", "{n} objects selected"), "2 objects selected", "{}", language.code);
+            assert_ne!(
+                crate::i18n::trn(lang, 2, "{n} object selected", "{n} objects selected"),
+                "2 objects selected",
+                "{}",
+                language.code
+            );
         }
     }
 }

@@ -31,7 +31,11 @@ impl AnchorTool {
 
 /// The paths the tool works on.
 fn targets(cx: &ToolContext, p: Point) -> Vec<ItemId> {
-    if cx.selection.items.is_empty() { cx.hit(p).map(|(_, id)| vec![id]).unwrap_or_default() } else { cx.selection.items.clone() }
+    if cx.selection.items.is_empty() {
+        cx.hit(p).map(|(_, id)| vec![id]).unwrap_or_default()
+    } else {
+        cx.selection.items.clone()
+    }
 }
 
 impl Tool for AnchorTool {
@@ -48,25 +52,42 @@ impl Tool for AnchorTool {
         let p = ev.pos;
         match (self.kind, ev.kind) {
             (Kind::Add | Kind::Scissors, PointerKind::Down) => {
-                let Some((_, sp)) = cx.layout.spread_at(p) else { return vec![] };
+                let Some((_, sp)) = cx.layout.spread_at(p) else {
+                    return vec![];
+                };
                 // The first target whose outline passes near the pointer.
                 for id in targets(cx, p) {
                     let Some(it) = cx.doc.item(id) else { continue };
-                    let Some(xf) = cx.item_canvas_xf(id) else { continue };
+                    let Some(xf) = cx.item_canvas_xf(id) else {
+                        continue;
+                    };
                     let inner = (xf * it.xf).inverse() * p;
                     let scale = (xf * it.xf).inverse().determinant().abs().sqrt();
-                    if it.path.nearest(inner).is_some_and(|n| n.4 <= cx.tol(5.0) * scale) {
+                    if it
+                        .path
+                        .nearest(inner)
+                        .is_some_and(|n| n.4 <= cx.tol(5.0) * scale)
+                    {
                         return vec![if self.kind == Kind::Scissors {
-                            Action::Exec("path.split".into(), json!({"id": id.0, "at": [sp.x, sp.y]}))
+                            Action::Exec(
+                                "path.split".into(),
+                                json!({"id": id.0, "at": [sp.x, sp.y]}),
+                            )
                         } else {
-                            Action::Exec("path.addAnchor".into(), json!({"id": id.0, "at": [sp.x, sp.y], "tolerance": cx.tol(5.0)}))
+                            Action::Exec(
+                                "path.addAnchor".into(),
+                                json!({"id": id.0, "at": [sp.x, sp.y], "tolerance": cx.tol(5.0)}),
+                            )
                         }];
                     }
                 }
                 vec![]
             }
             (Kind::Delete, PointerKind::Down) => match anchor_at_in(cx, &targets(cx, p), p) {
-                Some((id, si, ai, None)) => vec![Action::Exec("path.deleteAnchor".into(), json!({"id": id, "subpath": si, "anchor": ai}))],
+                Some((id, si, ai, None)) => vec![Action::Exec(
+                    "path.deleteAnchor".into(),
+                    json!({"id": id, "subpath": si, "anchor": ai}),
+                )],
                 _ => vec![],
             },
             (Kind::Convert, PointerKind::Down) => {
@@ -76,23 +97,33 @@ impl Tool for AnchorTool {
                 vec![]
             }
             (Kind::Convert, PointerKind::Drag) => {
-                let Some((id, si, ai, start, dragged)) = self.press else { return vec![] };
+                let Some((id, si, ai, start, dragged)) = self.press else {
+                    return vec![];
+                };
                 if !dragged && (p - start).hypot() < cx.tol(3.0) {
                     return vec![];
                 }
-                let Some((_, sp)) = cx.layout.spread_at(p) else { return vec![] };
+                let Some((_, sp)) = cx.layout.spread_at(p) else {
+                    return vec![];
+                };
                 let mut out = vec![];
                 if !dragged {
                     out.push(Action::Begin("Convert Direction Point".into()));
                     self.press = Some((id, si, ai, start, true));
                 }
-                out.push(Action::Preview("path.convertAnchor".into(), json!({"id": id, "subpath": si, "anchor": ai, "to": [sp.x, sp.y]})));
+                out.push(Action::Preview(
+                    "path.convertAnchor".into(),
+                    json!({"id": id, "subpath": si, "anchor": ai, "to": [sp.x, sp.y]}),
+                ));
                 out
             }
             (Kind::Convert, PointerKind::Up) => match self.press.take() {
                 Some((_, _, _, _, true)) => vec![Action::Commit],
                 // A click toggles smooth ↔ corner.
-                Some((id, si, ai, _, false)) => vec![Action::Exec("path.convertAnchor".into(), json!({"id": id, "subpath": si, "anchor": ai}))],
+                Some((id, si, ai, _, false)) => vec![Action::Exec(
+                    "path.convertAnchor".into(),
+                    json!({"id": id, "subpath": si, "anchor": ai}),
+                )],
                 None => vec![],
             },
             _ => vec![],
@@ -100,7 +131,11 @@ impl Tool for AnchorTool {
     }
 
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
-        if self.kind == Kind::Scissors { Cursor::Crosshair } else { Cursor::Pen }
+        if self.kind == Kind::Scissors {
+            Cursor::Crosshair
+        } else {
+            Cursor::Pen
+        }
     }
 
     fn busy(&self) -> bool {

@@ -45,8 +45,10 @@ const OP_GETTABUP: u8 = 6;
 
 /// Les scripts du jeu présents sur ce montage.
 fn scripts() -> Vec<PathBuf> {
-    let racine = std::env::var("NIE_GAME_DIR")
-        .map_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."), PathBuf::from);
+    let racine = std::env::var("NIE_GAME_DIR").map_or_else(
+        |_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."),
+        PathBuf::from,
+    );
     let mut trouves = Vec::new();
     collecter(&racine.join("data"), &mut trouves);
     trouves.sort();
@@ -121,7 +123,7 @@ fn la_surface_lua_reellement_employee_par_le_jeu() {
                     lus_menu += 1;
                     parcourir(&chunk.main, &mut opcodes_menu, &mut globales_menu);
                 }
-            },
+            }
             Err(_) => illisibles += 1,
         }
     }
@@ -145,8 +147,10 @@ fn la_surface_lua_reellement_employee_par_le_jeu() {
         "— dont MENUS + includes ({lus_menu} scripts) : {opcodes_menu_atteints} opcodes, {} globales",
         globales_menu.len()
     );
-    let mut par_frequence: Vec<(&str, usize)> =
-        opcodes.iter().map(|(op, n)| (OPCODE_NAMES[*op as usize], *n)).collect();
+    let mut par_frequence: Vec<(&str, usize)> = opcodes
+        .iter()
+        .map(|(op, n)| (OPCODE_NAMES[*op as usize], *n))
+        .collect();
     par_frequence.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
     eprintln!(
         "10 plus fréquents : {}",
@@ -174,11 +178,22 @@ fn la_surface_lua_reellement_employee_par_le_jeu() {
     );
     eprintln!(
         "globales          : {}",
-        globales.iter().take(50).cloned().collect::<Vec<_>>().join(" ")
+        globales
+            .iter()
+            .take(50)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(" ")
     );
 
     // Le relevé doit porter sur le corpus, pas sur un échantillon : un montage qui ne rend que
     // quelques scripts donnerait une surface faussement petite, donc une VM faussement facile.
-    assert!(lus >= 100, "corpus trop mince pour conclure : {lus} scripts");
-    assert!(!atteints.is_empty(), "aucun opcode atteint : le décodeur ou le corpus est cassé");
+    assert!(
+        lus >= 100,
+        "corpus trop mince pour conclure : {lus} scripts"
+    );
+    assert!(
+        !atteints.is_empty(),
+        "aucun opcode atteint : le décodeur ou le corpus est cassé"
+    );
 }

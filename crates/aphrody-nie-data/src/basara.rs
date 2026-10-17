@@ -82,7 +82,10 @@ impl BasaraBuildInfo {
             .and_then(Value::as_array)
             .map(|a| a.iter().filter_map(Value::as_i64).collect())
             .unwrap_or_default();
-        Some(Self { chara_param_id: field_hash(v, "charaParamId"), type_info })
+        Some(Self {
+            chara_param_id: field_hash(v, "charaParamId"),
+            type_info,
+        })
     }
 
     /// Index de début (`typeInfo[0]`) dans `m_basaraBuildTypeList`, ou 0 si absent.
@@ -193,7 +196,9 @@ impl BasaraCharaConfig {
     /// Recherche une variante de personnage par son `charaParamId`. `None` si absente.
     #[must_use]
     pub fn find_build(&self, chara_param_id: HashId) -> Option<&BasaraBuildInfo> {
-        self.build_infos.iter().find(|b| b.chara_param_id == chara_param_id)
+        self.build_infos
+            .iter()
+            .find(|b| b.chara_param_id == chara_param_id)
     }
 }
 

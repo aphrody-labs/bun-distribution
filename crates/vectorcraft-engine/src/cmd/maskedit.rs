@@ -83,14 +83,20 @@ fn enter(s: &mut Session, p: &Value) -> Result<Value> {
     if st.doc.mask_edit.is_some() {
         return Err(bad(C, "already editing an opacity mask"));
     }
-    let id = id_param(p, "id").or_else(|| first_masked(st)).ok_or_else(|| bad(C, "select an object with an opacity mask"))?;
+    let id = id_param(p, "id")
+        .or_else(|| first_masked(st))
+        .ok_or_else(|| bad(C, "select an object with an opacity mask"))?;
     let layer = start(s, id)?;
     Ok(json!({ "layer": layer.0 }))
 }
 
 /// The first selected object with an opacity mask.
 fn first_masked(st: &crate::DocState) -> Option<NodeId> {
-    st.selection.subjects().iter().copied().find(|i| st.doc.node(*i).is_some_and(|n| n.extras().mask.is_some()))
+    st.selection
+        .subjects()
+        .iter()
+        .copied()
+        .find(|i| st.doc.node(*i).is_some_and(|n| n.extras().mask.is_some()))
 }
 
 /// Enter mask editing for `id` (one undo step) and isolate the editing layer. Returns the layer.
@@ -104,13 +110,20 @@ fn view_mask(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "transparency.viewOpacityMask";
     let st = s.doc()?;
     let editing = st.doc.mask_edit.map(|m| m.object);
-    if !p.get("on").and_then(Value::as_bool).unwrap_or(st.shown_mask().is_none()) {
+    if !p
+        .get("on")
+        .and_then(Value::as_bool)
+        .unwrap_or(st.shown_mask().is_none())
+    {
         let st = s.doc_mut()?;
         let id = st.mask_view.take();
         st.revision += 1;
         return Ok(json!({ "on": false, "id": id.map(|i| i.0) }));
     }
-    let id = id_param(p, "id").or(editing).or_else(|| first_masked(st)).ok_or_else(|| bad(C, "select an object with an opacity mask"))?;
+    let id = id_param(p, "id")
+        .or(editing)
+        .or_else(|| first_masked(st))
+        .ok_or_else(|| bad(C, "select an object with an opacity mask"))?;
     match editing {
         Some(e) if e != id => return Err(bad(C, "already editing another object's opacity mask")),
         Some(_) => {}
@@ -146,7 +159,12 @@ pub(crate) fn begin(d: &mut Document, sel: &mut Selection, id: NodeId) -> Result
 }
 
 fn leave(s: &mut Session, _: &Value) -> Result<Value> {
-    let Some(me) = s.doc()?.doc.mask_edit else { return Err(bad("transparency.stopEditingOpacityMask", "not editing an opacity mask")) };
+    let Some(me) = s.doc()?.doc.mask_edit else {
+        return Err(bad(
+            "transparency.stopEditingOpacityMask",
+            "not editing an opacity mask",
+        ));
+    };
     s.edit("Stop Editing Opacity Mask", |d, sel| {
         finish(d, sel);
         Ok(())
@@ -205,7 +223,10 @@ pub(crate) fn follow_history(st: &mut crate::DocState, was: Option<NodeId>) {
 pub(crate) fn sync(d: &mut Document) {
     let Some(me) = d.mask_edit else { return };
     let art: Option<Vec<Arc<Node>>> = d.node(me.layer).and_then(|l| l.children().cloned());
-    let (Some(art), true) = (art, d.node(me.object).is_some_and(|n| n.extras().mask.is_some())) else {
+    let (Some(art), true) = (
+        art,
+        d.node(me.object).is_some_and(|n| n.extras().mask.is_some()),
+    ) else {
         d.mask_edit = None;
         let _ = d.remove(me.layer);
         return;
@@ -220,7 +241,10 @@ pub(crate) fn sync(d: &mut Document) {
     {
         return;
     }
-    if let Some(m) = d.node_mut(me.object).and_then(|n| n.extras_if_any().and_then(|e| e.mask.as_mut())) {
+    if let Some(m) = d
+        .node_mut(me.object)
+        .and_then(|n| n.extras_if_any().and_then(|e| e.mask.as_mut()))
+    {
         m.art = new_art;
     }
 }
@@ -234,39 +258,104 @@ mod tests {
     #[test]
     fn edit_mask_art_in_place() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 300, "height": 300})).unwrap();
-        let obj = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 200, "height": 200})).unwrap()["id"].as_u64().unwrap();
-        let m = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 100, "height": 200})).unwrap()["id"].as_u64().unwrap();
-        s.execute("paint.setFill", &json!({"color": "#ffffff", "ids": [m]})).unwrap();
+        s.execute("file.new", &json!({"width": 300, "height": 300}))
+            .unwrap();
+        let obj = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 200, "height": 200}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let m = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 100, "height": 200}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute("paint.setFill", &json!({"color": "#ffffff", "ids": [m]}))
+            .unwrap();
         s.execute("select.set", &json!({"ids": [obj, m]})).unwrap();
-        s.execute("transparency.makeOpacityMask", &json!({})).unwrap();
-        let layer = s.execute("transparency.editOpacityMask", &json!({})).unwrap()["layer"].as_u64().unwrap();
+        s.execute("transparency.makeOpacityMask", &json!({}))
+            .unwrap();
+        let layer = s
+            .execute("transparency.editOpacityMask", &json!({}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
         assert_eq!(s.doc().unwrap().isolation, Some(NodeId(layer)));
         // Edit the mask art with ordinary commands: widen it; the object's mask follows live.
-        s.execute("object.move", &json!({"dx": 50, "dy": 0})).unwrap();
-        let mask_bounds =
-            |s: &Session| s.doc().unwrap().doc.node(NodeId(obj)).unwrap().extras().mask.as_ref().unwrap().art.geometric_bounds().unwrap();
+        s.execute("object.move", &json!({"dx": 50, "dy": 0}))
+            .unwrap();
+        let mask_bounds = |s: &Session| {
+            s.doc()
+                .unwrap()
+                .doc
+                .node(NodeId(obj))
+                .unwrap()
+                .extras()
+                .mask
+                .as_ref()
+                .unwrap()
+                .art
+                .geometric_bounds()
+                .unwrap()
+        };
         assert!((mask_bounds(&s).x0 - 50.0).abs() < 1e-6);
         // Drawing while editing adds to the mask.
-        s.execute("shape.ellipse", &json!({"x": 180, "y": 150, "width": 40, "height": 40})).unwrap();
+        s.execute(
+            "shape.ellipse",
+            &json!({"x": 180, "y": 150, "width": 40, "height": 40}),
+        )
+        .unwrap();
         assert!(mask_bounds(&s).x1 > 185.0);
         // Rendered: the object shows through the moved mask; the mask art itself isn't painted
         // (the ellipse pokes out of the object at x = 210).
         let doc = s.doc().unwrap().doc.clone();
-        let img = vectorcraft_render::Renderer::new().render(&doc, 300, 300, vectorcraft_geom::Affine::IDENTITY, &Default::default());
+        let img = vectorcraft_render::Renderer::new().render(
+            &doc,
+            300,
+            300,
+            vectorcraft_geom::Affine::IDENTITY,
+            &Default::default(),
+        );
         assert!(img.pixel(100, 100)[3] > 200);
         assert_eq!(img.pixel(25, 100)[3], 0);
         assert_eq!(img.pixel(212, 170)[3], 0);
-        s.execute("transparency.stopEditingOpacityMask", &json!({})).unwrap();
+        s.execute("transparency.stopEditingOpacityMask", &json!({}))
+            .unwrap();
         let st = s.doc().unwrap();
         assert!(st.doc.mask_edit.is_none() && st.isolation.is_none());
-        assert!(!st.doc.layers.iter().any(|l| l.name.as_deref() == Some(super::MASK_EDIT_LAYER)));
+        assert!(
+            !st.doc
+                .layers
+                .iter()
+                .any(|l| l.name.as_deref() == Some(super::MASK_EDIT_LAYER))
+        );
         assert_eq!(st.selection.objects, vec![NodeId(obj)]);
         // Two mask objects went back as one group; editing again spreads them out on the layer.
-        let layer = s.execute("transparency.editOpacityMask", &json!({"id": obj})).unwrap()["layer"].as_u64().unwrap();
-        assert_eq!(s.doc().unwrap().doc.node(NodeId(layer)).unwrap().children().unwrap().len(), 2);
+        let layer = s
+            .execute("transparency.editOpacityMask", &json!({"id": obj}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        assert_eq!(
+            s.doc()
+                .unwrap()
+                .doc
+                .node(NodeId(layer))
+                .unwrap()
+                .children()
+                .unwrap()
+                .len(),
+            2
+        );
         assert_eq!(s.doc().unwrap().selection.len(), 2);
-        s.execute("transparency.stopEditingOpacityMask", &json!({})).unwrap();
+        s.execute("transparency.stopEditingOpacityMask", &json!({}))
+            .unwrap();
         // Undo returns to editing mode's last state, then to before.
         s.execute("edit.undo", &json!({})).unwrap();
         assert!(s.doc().unwrap().doc.mask_edit.is_some());

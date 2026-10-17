@@ -5,7 +5,9 @@
 use egui::{Align2, Rect, Sense, Stroke, StrokeKind, pos2, vec2};
 use serde::{Deserialize, Serialize};
 
-use craft_ui::layout::{ResizeHandle, ResizeHandleStyle, SplitAxis, SplitSize as SharedSplitSize, split_rect};
+use craft_ui::layout::{
+    ResizeHandle, ResizeHandleStyle, SplitAxis, SplitSize as SharedSplitSize, split_rect,
+};
 
 use crate::icons::{self, Icon};
 use crate::theme::Tokens;
@@ -110,7 +112,10 @@ impl PanelKind {
     }
     pub fn from_name(s: &str) -> Option<PanelKind> {
         let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "");
-        Self::ALL.iter().copied().find(|p| format!("{p:?}").to_ascii_lowercase() == n || p.title().to_ascii_lowercase().replace(' ', "") == n)
+        Self::ALL.iter().copied().find(|p| {
+            format!("{p:?}").to_ascii_lowercase() == n
+                || p.title().to_ascii_lowercase().replace(' ', "") == n
+        })
     }
     /// Window-menu shortcut (Premiere: Shift+1..9).
     pub fn window_shortcut(self) -> Option<&'static str> {
@@ -168,16 +173,39 @@ pub enum DockNode {
 }
 
 fn tabs(p: &[PanelKind], active: usize) -> DockNode {
-    DockNode::Tabs { panels: p.to_vec(), active }
+    DockNode::Tabs {
+        panels: p.to_vec(),
+        active,
+    }
 }
 fn hsplit(size: SplitSize, a: DockNode, b: DockNode) -> DockNode {
-    DockNode::Split { vertical: false, size, a: Box::new(a), b: Box::new(b) }
+    DockNode::Split {
+        vertical: false,
+        size,
+        a: Box::new(a),
+        b: Box::new(b),
+    }
 }
 fn vsplit(size: SplitSize, a: DockNode, b: DockNode) -> DockNode {
-    DockNode::Split { vertical: true, size, a: Box::new(a), b: Box::new(b) }
+    DockNode::Split {
+        vertical: true,
+        size,
+        a: Box::new(a),
+        b: Box::new(b),
+    }
 }
 
-pub const WORKSPACES: [&str; 9] = ["Editing", "Assembly", "Color", "Effects", "Audio", "Captions and Graphics", "Learning", "Review", "All Panels"];
+pub const WORKSPACES: [&str; 9] = [
+    "Editing",
+    "Assembly",
+    "Color",
+    "Effects",
+    "Audio",
+    "Captions and Graphics",
+    "Learning",
+    "Review",
+    "All Panels",
+];
 
 /// The user's workspaces file, beside `preferences.json` in the data directory.
 pub const WORKSPACES_FILE: &str = "workspaces.json";
@@ -222,7 +250,10 @@ impl WorkspacePrefs {
             std::fs::create_dir_all(d)?;
         }
         let tmp = path.with_extension("json.tmp");
-        std::fs::write(&tmp, serde_json::to_vec_pretty(self).map_err(std::io::Error::other)?)?;
+        std::fs::write(
+            &tmp,
+            serde_json::to_vec_pretty(self).map_err(std::io::Error::other)?,
+        )?;
         std::fs::rename(tmp, path)
     }
 }
@@ -260,38 +291,63 @@ pub fn saved_layout(prefs: &WorkspacePrefs, name: &str) -> DockNode {
 }
 
 pub fn saved_docking(prefs: &WorkspacePrefs, name: &str) -> Layout {
-    let saved = prefs.saved.iter().find(|saved| saved.name == name).and_then(|saved| {
-        let mut layout = Layout {
-            root: serde_json::from_value(saved.layout.clone()).ok()?,
-            floating: if saved.floating.is_null() { vec![] } else { serde_json::from_value(saved.floating.clone()).ok()? },
-        };
-        if layout.floating.is_empty() {
-            migrate_legacy_effects(&mut layout.root);
-        }
-        layout.validate().ok().map(|()| layout)
-    });
-    saved.unwrap_or_else(|| Layout { root: workspace(name), floating: vec![] })
+    let saved = prefs
+        .saved
+        .iter()
+        .find(|saved| saved.name == name)
+        .and_then(|saved| {
+            let mut layout = Layout {
+                root: serde_json::from_value(saved.layout.clone()).ok()?,
+                floating: if saved.floating.is_null() {
+                    vec![]
+                } else {
+                    serde_json::from_value(saved.floating.clone()).ok()?
+                },
+            };
+            if layout.floating.is_empty() {
+                migrate_legacy_effects(&mut layout.root);
+            }
+            layout.validate().ok().map(|()| layout)
+        });
+    saved.unwrap_or_else(|| Layout {
+        root: workspace(name),
+        floating: vec![],
+    })
 }
 
 /// Older Effects workspaces stored the same Effect Controls panel twice: selected beside
 /// Source, and an inactive duplicate beside Essential Graphics. Remove only that known
 /// duplicate shape; unrelated malformed or ambiguous saved layouts still fail validation.
 fn migrate_legacy_effects(root: &mut DockNode) {
-    let Ok(shared) = crate::dock_shared::encode(root, &[]) else { return };
-    if shared.panels().iter().filter(|panel| ***panel == PanelKind::EffectControls).count() != 2 {
+    let Ok(shared) = crate::dock_shared::encode(root, &[]) else {
+        return;
+    };
+    if shared
+        .panels()
+        .iter()
+        .filter(|panel| ***panel == PanelKind::EffectControls)
+        .count()
+        != 2
+    {
         return;
     }
     fn selected_source(node: &DockNode) -> bool {
         match node {
             DockNode::Tabs { panels, active } => {
-                panels.contains(&PanelKind::Source) && panels.contains(&PanelKind::AudioClipMixer) && panels.get(*active) == Some(&PanelKind::EffectControls)
+                panels.contains(&PanelKind::Source)
+                    && panels.contains(&PanelKind::AudioClipMixer)
+                    && panels.get(*active) == Some(&PanelKind::EffectControls)
             }
             DockNode::Split { a, b, .. } => selected_source(a) || selected_source(b),
         }
     }
     fn remove_inactive(node: &mut DockNode) {
         match node {
-            DockNode::Tabs { panels, active } if panels.as_slice() == [PanelKind::EffectControls, PanelKind::EssentialGraphics] && *active == 1 => {
+            DockNode::Tabs { panels, active }
+                if panels.as_slice()
+                    == [PanelKind::EffectControls, PanelKind::EssentialGraphics]
+                    && *active == 1 =>
+            {
                 panels.remove(0);
                 *active = 0;
             }
@@ -311,14 +367,35 @@ fn migrate_legacy_effects(root: &mut DockNode) {
 pub fn workspace(name: &str) -> DockNode {
     use PanelKind::*;
     use SplitSize::*;
-    let bottom_editing = || hsplit(FixedA(64.0), tabs(&[Tools], 0), hsplit(FixedB(116.0), tabs(&[Timeline], 0), tabs(&[AudioMeters], 0)));
+    let bottom_editing = || {
+        hsplit(
+            FixedA(64.0),
+            tabs(&[Tools], 0),
+            hsplit(FixedB(116.0), tabs(&[Timeline], 0), tabs(&[AudioMeters], 0)),
+        )
+    };
     match name {
         "Assembly" => vsplit(
             Ratio(0.52),
             hsplit(
                 Ratio(0.46),
-                tabs(&[Project, MediaBrowser, Libraries, Info, Effects, Markers, History], 0),
-                hsplit(Ratio(0.5), tabs(&[Source, EffectControls, AudioClipMixer, Metadata], 0), tabs(&[Program], 0)),
+                tabs(
+                    &[
+                        Project,
+                        MediaBrowser,
+                        Libraries,
+                        Info,
+                        Effects,
+                        Markers,
+                        History,
+                    ],
+                    0,
+                ),
+                hsplit(
+                    Ratio(0.5),
+                    tabs(&[Source, EffectControls, AudioClipMixer, Metadata], 0),
+                    tabs(&[Program], 0),
+                ),
             ),
             bottom_editing(),
         ),
@@ -326,8 +403,16 @@ pub fn workspace(name: &str) -> DockNode {
             FixedB(340.0),
             vsplit(
                 Ratio(0.58),
-                hsplit(Ratio(0.42), tabs(&[LumetriScopes, Source, EffectControls], 0), tabs(&[Program], 0)),
-                hsplit(Ratio(0.3), tabs(&[Project, Info, Markers, History], 0), bottom_editing()),
+                hsplit(
+                    Ratio(0.42),
+                    tabs(&[LumetriScopes, Source, EffectControls], 0),
+                    tabs(&[Program], 0),
+                ),
+                hsplit(
+                    Ratio(0.3),
+                    tabs(&[Project, Info, Markers, History], 0),
+                    bottom_editing(),
+                ),
             ),
             tabs(&[LumetriColor, Effects], 0),
         ),
@@ -335,17 +420,40 @@ pub fn workspace(name: &str) -> DockNode {
             FixedB(320.0),
             vsplit(
                 Ratio(0.5),
-                hsplit(Ratio(0.5), tabs(&[Source, EffectControls, AudioClipMixer], 1), tabs(&[Program], 0)),
-                hsplit(Ratio(0.3), tabs(&[Project, MediaBrowser, Info, Markers, History], 0), bottom_editing()),
+                hsplit(
+                    Ratio(0.5),
+                    tabs(&[Source, EffectControls, AudioClipMixer], 1),
+                    tabs(&[Program], 0),
+                ),
+                hsplit(
+                    Ratio(0.3),
+                    tabs(&[Project, MediaBrowser, Info, Markers, History], 0),
+                    bottom_editing(),
+                ),
             ),
-            vsplit(Ratio(0.5), tabs(&[Effects], 0), tabs(&[EssentialGraphics], 0)),
+            vsplit(
+                Ratio(0.5),
+                tabs(&[Effects], 0),
+                tabs(&[EssentialGraphics], 0),
+            ),
         ),
         "Audio" => hsplit(
             FixedB(320.0),
             vsplit(
                 Ratio(0.5),
-                hsplit(Ratio(0.5), tabs(&[AudioTrackMixer, Source, AudioClipMixer, EffectControls], 0), tabs(&[Program], 0)),
-                hsplit(Ratio(0.3), tabs(&[Project, MediaBrowser, Effects, Markers, History], 0), bottom_editing()),
+                hsplit(
+                    Ratio(0.5),
+                    tabs(
+                        &[AudioTrackMixer, Source, AudioClipMixer, EffectControls],
+                        0,
+                    ),
+                    tabs(&[Program], 0),
+                ),
+                hsplit(
+                    Ratio(0.3),
+                    tabs(&[Project, MediaBrowser, Effects, Markers, History], 0),
+                    bottom_editing(),
+                ),
             ),
             tabs(&[EssentialSound, TextToSpeech], 0),
         ),
@@ -353,8 +461,16 @@ pub fn workspace(name: &str) -> DockNode {
             FixedB(330.0),
             vsplit(
                 Ratio(0.5),
-                hsplit(Ratio(0.4), tabs(&[Text, Source, EffectControls], 0), tabs(&[Program], 0)),
-                hsplit(Ratio(0.3), tabs(&[Project, MediaBrowser, Libraries], 0), bottom_editing()),
+                hsplit(
+                    Ratio(0.4),
+                    tabs(&[Text, Source, EffectControls], 0),
+                    tabs(&[Program], 0),
+                ),
+                hsplit(
+                    Ratio(0.3),
+                    tabs(&[Project, MediaBrowser, Libraries], 0),
+                    bottom_editing(),
+                ),
             ),
             tabs(&[EssentialGraphics, Properties], 0),
         ),
@@ -362,10 +478,49 @@ pub fn workspace(name: &str) -> DockNode {
             Ratio(0.5),
             hsplit(
                 Ratio(0.5),
-                tabs(&[Source, EffectControls, AudioClipMixer, Metadata, LumetriScopes, Text], 0),
-                hsplit(Ratio(0.6), tabs(&[Program], 0), tabs(&[LumetriColor, EssentialGraphics, EssentialSound, TextToSpeech, Properties, AudioTrackMixer], 0)),
+                tabs(
+                    &[
+                        Source,
+                        EffectControls,
+                        AudioClipMixer,
+                        Metadata,
+                        LumetriScopes,
+                        Text,
+                    ],
+                    0,
+                ),
+                hsplit(
+                    Ratio(0.6),
+                    tabs(&[Program], 0),
+                    tabs(
+                        &[
+                            LumetriColor,
+                            EssentialGraphics,
+                            EssentialSound,
+                            TextToSpeech,
+                            Properties,
+                            AudioTrackMixer,
+                        ],
+                        0,
+                    ),
+                ),
             ),
-            hsplit(Ratio(0.26), tabs(&[Project, MediaBrowser, Libraries, Info, Effects, Markers, History], 0), bottom_editing()),
+            hsplit(
+                Ratio(0.26),
+                tabs(
+                    &[
+                        Project,
+                        MediaBrowser,
+                        Libraries,
+                        Info,
+                        Effects,
+                        Markers,
+                        History,
+                    ],
+                    0,
+                ),
+                bottom_editing(),
+            ),
         ),
         // Editing (default), Learning, Review — Premiere 26 factory layout:
         // top: Source group | Program | Properties; bottom: Project group | Tools | Timeline | Meters.
@@ -373,13 +528,32 @@ pub fn workspace(name: &str) -> DockNode {
             Ratio(0.57),
             hsplit(
                 FixedB(450.0),
-                hsplit(Ratio(0.5), tabs(&[Source, EffectControls, AudioClipMixer, Metadata], 0), tabs(&[Program], 0)),
+                hsplit(
+                    Ratio(0.5),
+                    tabs(&[Source, EffectControls, AudioClipMixer, Metadata], 0),
+                    tabs(&[Program], 0),
+                ),
                 tabs(&[Properties, EssentialGraphics, Text], 0),
             ),
             hsplit(
                 Ratio(0.29),
-                tabs(&[Project, MediaBrowser, Libraries, Info, Effects, Markers, History], 0),
-                hsplit(FixedA(64.0), tabs(&[Tools], 0), hsplit(FixedB(116.0), tabs(&[Timeline], 0), tabs(&[AudioMeters], 0))),
+                tabs(
+                    &[
+                        Project,
+                        MediaBrowser,
+                        Libraries,
+                        Info,
+                        Effects,
+                        Markers,
+                        History,
+                    ],
+                    0,
+                ),
+                hsplit(
+                    FixedA(64.0),
+                    tabs(&[Tools], 0),
+                    hsplit(FixedB(116.0), tabs(&[Timeline], 0), tabs(&[AudioMeters], 0)),
+                ),
             ),
         ),
     }
@@ -425,7 +599,11 @@ impl DockNode {
             match n {
                 DockNode::Split { a, b, .. } => beside_meters(a) || beside_meters(b),
                 DockNode::Tabs { panels, .. } if panels.as_slice() == [PanelKind::AudioMeters] => {
-                    *n = hsplit(SplitSize::FixedB(116.0), tabs(&[PanelKind::Timeline], 0), tabs(&[PanelKind::AudioMeters], 0));
+                    *n = hsplit(
+                        SplitSize::FixedB(116.0),
+                        tabs(&[PanelKind::Timeline], 0),
+                        tabs(&[PanelKind::AudioMeters], 0),
+                    );
                     true
                 }
                 DockNode::Tabs { .. } => false,
@@ -440,11 +618,14 @@ impl DockNode {
         if crate::dock_shared::encode(self, &[]).is_err() {
             return;
         }
-        let anchor = [near, PanelKind::Project, PanelKind::Program].into_iter().find(|panel| self.contains(*panel)).or_else(|| {
-            let mut panels = Vec::new();
-            self.panels(&mut panels);
-            panels.first().copied()
-        });
+        let anchor = [near, PanelKind::Project, PanelKind::Program]
+            .into_iter()
+            .find(|panel| self.contains(*panel))
+            .or_else(|| {
+                let mut panels = Vec::new();
+                self.panels(&mut panels);
+                panels.first().copied()
+            });
         crate::dock_shared::apply_tree(self, craft_ui::docking::Action::Open { panel: p, anchor });
     }
 }
@@ -471,10 +652,16 @@ impl Layout {
         crate::dock_shared::apply(self, action)
     }
     pub fn validate(&self) -> Result<(), String> {
-        crate::dock_shared::encode(&self.root, &self.floating)?.validate().map_err(|error| error.to_string())
+        crate::dock_shared::encode(&self.root, &self.floating)?
+            .validate()
+            .map_err(|error| error.to_string())
     }
     pub fn contains(&self, panel: PanelKind) -> bool {
-        self.root.contains(panel) || self.floating.iter().any(|group| group.panels.contains(&panel))
+        self.root.contains(panel)
+            || self
+                .floating
+                .iter()
+                .any(|group| group.panels.contains(&panel))
     }
 }
 
@@ -503,7 +690,15 @@ pub enum DockAction {
 }
 
 /// Lay out the tree into group rects (with `gap` gutters) and handle gutter dragging.
-pub fn layout(ui: &mut egui::Ui, node: &mut DockNode, rect: Rect, t: &Tokens, path: &str, out: &mut Vec<Group>, reg: &mut crate::automation::Registry) {
+pub fn layout(
+    ui: &mut egui::Ui,
+    node: &mut DockNode,
+    rect: Rect,
+    t: &Tokens,
+    path: &str,
+    out: &mut Vec<Group>,
+    reg: &mut crate::automation::Registry,
+) {
     let mut actions = Vec::new();
     layout_with_actions(ui, node, rect, t, path, out, reg, &mut actions);
     for action in actions {
@@ -538,29 +733,83 @@ fn layout_inner(
 ) {
     match node {
         DockNode::Tabs { panels, active } => {
-            let tab_h = if panels.len() == 1 && panels[0].compact() { 8.0 } else { t.tab_h };
+            let tab_h = if panels.len() == 1 && panels[0].compact() {
+                8.0
+            } else {
+                t.tab_h
+            };
             let content = Rect::from_min_max(pos2(rect.min.x, rect.min.y + tab_h), rect.max);
-            out.push(Group { path: path.to_string(), rect, content, panels: panels.clone(), active: *active });
+            out.push(Group {
+                path: path.to_string(),
+                rect,
+                content,
+                panels: panels.clone(),
+                active: *active,
+            });
         }
-        DockNode::Split { vertical, size, a, b } => {
-            let axis = if *vertical { SplitAxis::Vertical } else { SplitAxis::Horizontal };
-            let Some(split) = split_rect(rect, axis, size.shared(), t.gap, 20.0) else { return };
+        DockNode::Split {
+            vertical,
+            size,
+            a,
+            b,
+        } => {
+            let axis = if *vertical {
+                SplitAxis::Vertical
+            } else {
+                SplitAxis::Horizontal
+            };
+            let Some(split) = split_rect(rect, axis, size.shared(), t.gap, 20.0) else {
+                return;
+            };
             let id = egui::Id::new(("dock-gutter", path.to_string()));
-            let handle_style = ResizeHandleStyle { hovered: t.focus.gamma_multiply(0.4), dragged: t.focus.gamma_multiply(0.9), focused: t.focus };
-            let label = if *vertical { tl!("Height:") } else { tl!("Width:") };
-            let response = ResizeHandle::new(id, axis, split.divider, label, handle_style).value(split.first_size(), 0.0..=split.available()).show(ui);
+            let handle_style = ResizeHandleStyle {
+                hovered: t.focus.gamma_multiply(0.4),
+                dragged: t.focus.gamma_multiply(0.9),
+                focused: t.focus,
+            };
+            let label = if *vertical {
+                tl!("Height:")
+            } else {
+                tl!("Width:")
+            };
+            let response = ResizeHandle::new(id, axis, split.divider, label, handle_style)
+                .value(split.first_size(), 0.0..=split.available())
+                .show(ui);
             reg.add_response(&format!("dock.gutter.{path}"), &response.response, "gutter");
             if response.delta != 0.0
                 && let Some(resized) = split.resized(size.shared(), response.delta, 40.0)
             {
-                actions.push(craft_ui::docking::Action::ResizeSplit { path: tree_path.to_vec(), size: resized });
+                actions.push(craft_ui::docking::Action::ResizeSplit {
+                    path: tree_path.to_vec(),
+                    size: resized,
+                });
             }
             let mut first_path = tree_path.to_vec();
             first_path.push(false);
             let mut second_path = tree_path.to_vec();
             second_path.push(true);
-            layout_inner(ui, a, split.first, t, &format!("{path}a"), &first_path, out, reg, actions);
-            layout_inner(ui, b, split.second, t, &format!("{path}b"), &second_path, out, reg, actions);
+            layout_inner(
+                ui,
+                a,
+                split.first,
+                t,
+                &format!("{path}a"),
+                &first_path,
+                out,
+                reg,
+                actions,
+            );
+            layout_inner(
+                ui,
+                b,
+                split.second,
+                t,
+                &format!("{path}b"),
+                &second_path,
+                out,
+                reg,
+                actions,
+            );
         }
     }
 }
@@ -592,7 +841,13 @@ pub struct Chrome {
     pub tabs: Vec<(PanelKind, Rect)>,
 }
 
-pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t: &Tokens, reg: &mut crate::automation::Registry) -> Chrome {
+pub fn draw_group_chrome_details(
+    ui: &mut egui::Ui,
+    g: &Group,
+    seqs: &SeqTabs,
+    t: &Tokens,
+    reg: &mut crate::automation::Registry,
+) -> Chrome {
     let mut actions = Vec::new();
     let mut tab_rects: Vec<(PanelKind, Rect)> = Vec::new();
     let painter = ui.painter().clone();
@@ -602,9 +857,23 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
     // A narrow header grip moves the entire panel, including Timeline panels whose tabs
     // separately reorder open sequences.
     if let Some(panel) = active_panel {
-        let grip = Rect::from_min_size(g.rect.min, vec2(if compact { g.rect.width() } else { 10.0 }, if compact { 8.0 } else { t.tab_h }));
-        let response = ui.interact(grip, egui::Id::new(("panel-drag", g.path.clone())), Sense::drag());
-        reg.add_response(&format!("panel.drag.{}", panel.id()), &response, "Move panel");
+        let grip = Rect::from_min_size(
+            g.rect.min,
+            vec2(
+                if compact { g.rect.width() } else { 10.0 },
+                if compact { 8.0 } else { t.tab_h },
+            ),
+        );
+        let response = ui.interact(
+            grip,
+            egui::Id::new(("panel-drag", g.path.clone())),
+            Sense::drag(),
+        );
+        reg.add_response(
+            &format!("panel.drag.{}", panel.id()),
+            &response,
+            "Move panel",
+        );
         if response.drag_started() {
             actions.push(DockAction::BeginDrag(panel));
         }
@@ -628,12 +897,31 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
         for (i, p) in g.panels.iter().enumerate() {
             let active = i == g.active;
             if *p == PanelKind::Timeline && active && !seqs.open.is_empty() {
-                tabs.extend(seqs.open.iter().map(|(id, name)| Tab { panel: *p, seq: Some(*id), title: name.clone(), active: seqs.active == Some(*id) }));
+                tabs.extend(seqs.open.iter().map(|(id, name)| Tab {
+                    panel: *p,
+                    seq: Some(*id),
+                    title: name.clone(),
+                    active: seqs.active == Some(*id),
+                }));
             } else if *p == PanelKind::Timeline {
-                let name = seqs.open.iter().find(|(id, _)| seqs.active == Some(*id)).map(|(_, n)| n.clone());
-                tabs.push(Tab { panel: *p, seq: None, title: name.unwrap_or_else(|| tl!("Timeline: (no sequences)").into()), active });
+                let name = seqs
+                    .open
+                    .iter()
+                    .find(|(id, _)| seqs.active == Some(*id))
+                    .map(|(_, n)| n.clone());
+                tabs.push(Tab {
+                    panel: *p,
+                    seq: None,
+                    title: name.unwrap_or_else(|| tl!("Timeline: (no sequences)").into()),
+                    active,
+                });
             } else {
-                tabs.push(Tab { panel: *p, seq: None, title: crate::i18n::t(p.title()).to_string(), active });
+                tabs.push(Tab {
+                    panel: *p,
+                    seq: None,
+                    title: crate::i18n::t(p.title()).to_string(),
+                    active,
+                });
             }
         }
         let activate = |tab: &Tab, actions: &mut Vec<DockAction>| match tab.seq {
@@ -648,11 +936,25 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
         let widths: Vec<f32> = tabs
             .iter()
             .map(|tab| {
-                let label = painter.layout_no_wrap(tab.title.clone(), Tokens::ui(12.0), t.tab_text).size().x;
-                label + 16.0 + if tab.active { 20.0 } else { 0.0 } + if tab.active && tab.seq.is_some() { 16.0 } else { 0.0 }
+                let label = painter
+                    .layout_no_wrap(tab.title.clone(), Tokens::ui(12.0), t.tab_text)
+                    .size()
+                    .x;
+                label
+                    + 16.0
+                    + if tab.active { 20.0 } else { 0.0 }
+                    + if tab.active && tab.seq.is_some() {
+                        16.0
+                    } else {
+                        0.0
+                    }
             })
             .collect();
-        let span = |from: usize, to: usize| widths.get(from..=to).map_or(0.0, |w| w.iter().sum::<f32>() + 8.0 * w.len() as f32);
+        let span = |from: usize, to: usize| {
+            widths
+                .get(from..=to)
+                .map_or(0.0, |w| w.iter().sum::<f32>() + 8.0 * w.len() as f32)
+        };
         let room = strip.width() - 12.0;
         let all_fit = span(0, tabs.len().saturating_sub(1)) <= room;
         let room = if all_fit { room } else { room - 24.0 };
@@ -665,19 +967,51 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
             last += 1;
         }
         let list_id = egui::Id::new(("tab-list", g.path.clone()));
-        let more = (!all_fit).then(|| Rect::from_min_size(pos2(strip.max.x - 22.0, strip.min.y + 6.0), vec2(18.0, 20.0)));
+        let more = (!all_fit).then(|| {
+            Rect::from_min_size(
+                pos2(strip.max.x - 22.0, strip.min.y + 6.0),
+                vec2(18.0, 20.0),
+            )
+        });
         let mut list_opened = false;
         if let Some(r) = more {
-            let resp = ui.interact(r, egui::Id::new(("tab-overflow", g.path.clone())), Sense::click());
-            let name = if g.panels.contains(&PanelKind::Timeline) { "timeline.tabs.more".to_string() } else { format!("panel.tabs.more.{}", g.path) };
-            resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, resp.enabled(), "more tabs"));
+            let resp = ui.interact(
+                r,
+                egui::Id::new(("tab-overflow", g.path.clone())),
+                Sense::click(),
+            );
+            let name = if g.panels.contains(&PanelKind::Timeline) {
+                "timeline.tabs.more".to_string()
+            } else {
+                format!("panel.tabs.more.{}", g.path)
+            };
+            resp.widget_info(|| {
+                egui::WidgetInfo::labeled(egui::WidgetType::Button, resp.enabled(), "more tabs")
+            });
             reg.add_response(&name, &resp, "more tabs");
-            let c = if resp.hovered() { t.tab_text_active } else { t.tab_text };
-            icons::paint(&painter, r.shrink(4.0).translate(vec2(-2.0, 0.0)), Icon::ChevronRight, c);
-            icons::paint(&painter, r.shrink(4.0).translate(vec2(2.0, 0.0)), Icon::ChevronRight, c);
+            let c = if resp.hovered() {
+                t.tab_text_active
+            } else {
+                t.tab_text
+            };
+            icons::paint(
+                &painter,
+                r.shrink(4.0).translate(vec2(-2.0, 0.0)),
+                Icon::ChevronRight,
+                c,
+            );
+            icons::paint(
+                &painter,
+                r.shrink(4.0).translate(vec2(2.0, 0.0)),
+                Icon::ChevronRight,
+                c,
+            );
             paint_widget_focus(&painter, &resp, t);
             if resp.clicked() {
-                let open = ui.ctx().data(|d| d.get_temp::<bool>(list_id)).unwrap_or(false);
+                let open = ui
+                    .ctx()
+                    .data(|d| d.get_temp::<bool>(list_id))
+                    .unwrap_or(false);
                 ui.ctx().data_mut(|d| d.insert_temp(list_id, !open));
                 list_opened = !open;
             }
@@ -687,10 +1021,17 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
         let wheel_id = egui::Id::new(("tab-wheel", g.path.clone()));
         if ui.rect_contains_pointer(strip) && !tabs.is_empty() {
             const NOTCH: f32 = 40.0;
-            let total = ui.ctx().data(|d| d.get_temp::<f32>(wheel_id)).unwrap_or(0.0) + crate::panels::timeline::wheel_input(ui.ctx()).delta.y;
+            let total = ui
+                .ctx()
+                .data(|d| d.get_temp::<f32>(wheel_id))
+                .unwrap_or(0.0)
+                + crate::panels::timeline::wheel_input(ui.ctx()).delta.y;
             let steps = (total / NOTCH).trunc();
-            ui.ctx().data_mut(|d| d.insert_temp(wheel_id, total - steps * NOTCH));
-            let to = (active_at as i64).saturating_sub(steps as i64).clamp(0, tabs.len() as i64 - 1) as usize;
+            ui.ctx()
+                .data_mut(|d| d.insert_temp(wheel_id, total - steps * NOTCH));
+            let to = (active_at as i64)
+                .saturating_sub(steps as i64)
+                .clamp(0, tabs.len() as i64 - 1) as usize;
             if let Some(tab) = tabs.get(to).filter(|_| to != active_at) {
                 activate(tab, &mut actions);
                 actions.push(DockAction::Focus(tab.panel));
@@ -705,14 +1046,34 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
         for (i, tab) in tabs.iter().enumerate().take(last + 1).skip(first) {
             let p = &tab.panel;
             let is_active = tab.active;
-            let galley = painter.layout_no_wrap(tab.title.clone(), Tokens::ui(12.0), if is_active { t.tab_text_active } else { t.tab_text });
-            let close_w = if is_active && tab.seq.is_some() { 16.0 } else { 0.0 };
+            let galley = painter.layout_no_wrap(
+                tab.title.clone(),
+                Tokens::ui(12.0),
+                if is_active {
+                    t.tab_text_active
+                } else {
+                    t.tab_text
+                },
+            );
+            let close_w = if is_active && tab.seq.is_some() {
+                16.0
+            } else {
+                0.0
+            };
             let w = widths.get(i).copied().unwrap_or(0.0);
             let tab_rect = Rect::from_min_size(pos2(x, strip.min.y), vec2(w, t.tab_h));
             // a sequence tab keeps its identity when the tabs are reordered under the pointer
             let resp = match tab.seq {
-                Some(id) => ui.interact(tab_rect, egui::Id::new(("tab-seq", g.path.clone(), id)), Sense::click_and_drag()),
-                None => ui.interact(tab_rect, egui::Id::new(("tab", g.path.clone(), i)), Sense::click_and_drag()),
+                Some(id) => ui.interact(
+                    tab_rect,
+                    egui::Id::new(("tab-seq", g.path.clone(), id)),
+                    Sense::click_and_drag(),
+                ),
+                None => ui.interact(
+                    tab_rect,
+                    egui::Id::new(("tab", g.path.clone(), i)),
+                    Sense::click_and_drag(),
+                ),
             };
             if tab.seq.is_none() && resp.drag_started() {
                 actions.push(DockAction::BeginDrag(*p));
@@ -722,7 +1083,14 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
             } else {
                 tab_rects.push((*p, tab_rect));
             }
-            resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, resp.enabled(), is_active, &tab.title));
+            resp.widget_info(|| {
+                egui::WidgetInfo::selected(
+                    egui::WidgetType::SelectableLabel,
+                    resp.enabled(),
+                    is_active,
+                    &tab.title,
+                )
+            });
             ui.ctx().accesskit_node_builder(resp.id, |node| {
                 node.set_role(egui::accesskit::Role::Tab);
                 node.set_selected(is_active);
@@ -755,16 +1123,43 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
             }
             let label_x = tab_rect.min.x + 8.0 + close_w;
             let label_w = galley.size().x;
-            let col = if is_active || resp.hovered() { t.tab_text_active } else { t.tab_text };
-            painter.galley_with_override_text_color(pos2(label_x, text_y - galley.size().y / 2.0), galley, col);
+            let col = if is_active || resp.hovered() {
+                t.tab_text_active
+            } else {
+                t.tab_text
+            };
+            painter.galley_with_override_text_color(
+                pos2(label_x, text_y - galley.size().y / 2.0),
+                galley,
+                col,
+            );
             let mut closed = false;
             if let Some(id) = tab.seq.filter(|_| is_active) {
                 // × closes the sequence's tab (the sequence stays in the project)
-                let cr = Rect::from_center_size(pos2(tab_rect.min.x + 10.0, text_y), vec2(8.0, 8.0));
-                let cresp = ui.interact(cr.expand(4.0), egui::Id::new(("tab-close", g.path.clone(), id)), Sense::click());
-                cresp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, cresp.enabled(), "close sequence"));
-                reg.add_response(&format!("timeline.tab.{id}.close"), &cresp, "close sequence");
-                let cc = if cresp.hovered() { t.tab_text_active } else { t.tab_text };
+                let cr =
+                    Rect::from_center_size(pos2(tab_rect.min.x + 10.0, text_y), vec2(8.0, 8.0));
+                let cresp = ui.interact(
+                    cr.expand(4.0),
+                    egui::Id::new(("tab-close", g.path.clone(), id)),
+                    Sense::click(),
+                );
+                cresp.widget_info(|| {
+                    egui::WidgetInfo::labeled(
+                        egui::WidgetType::Button,
+                        cresp.enabled(),
+                        "close sequence",
+                    )
+                });
+                reg.add_response(
+                    &format!("timeline.tab.{id}.close"),
+                    &cresp,
+                    "close sequence",
+                );
+                let cc = if cresp.hovered() {
+                    t.tab_text_active
+                } else {
+                    t.tab_text
+                };
                 painter.line_segment([cr.left_top(), cr.right_bottom()], Stroke::new(1.2, cc));
                 painter.line_segment([cr.right_top(), cr.left_bottom()], Stroke::new(1.2, cc));
                 paint_widget_focus(&painter, &cresp, t);
@@ -774,15 +1169,40 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
                 }
             }
             if is_active {
-                let mr = Rect::from_center_size(pos2(label_x + label_w + 12.0, text_y), vec2(12.0, 10.0));
-                let mresp = ui.interact(mr.expand(3.0), egui::Id::new(("tab-menu", g.path.clone())), Sense::click());
-                mresp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, mresp.enabled(), "panel menu"));
+                let mr = Rect::from_center_size(
+                    pos2(label_x + label_w + 12.0, text_y),
+                    vec2(12.0, 10.0),
+                );
+                let mresp = ui.interact(
+                    mr.expand(3.0),
+                    egui::Id::new(("tab-menu", g.path.clone())),
+                    Sense::click(),
+                );
+                mresp.widget_info(|| {
+                    egui::WidgetInfo::labeled(
+                        egui::WidgetType::Button,
+                        mresp.enabled(),
+                        "panel menu",
+                    )
+                });
                 reg.add_response(&format!("panel.menu.{}", p.id()), &mresp, "panel menu");
-                let mc = if mresp.hovered() { t.tab_text_active } else { t.tab_text };
-                icons::paint(&painter, Rect::from_center_size(mr.center(), vec2(16.0, 16.0)), Icon::Hamburger, mc);
+                let mc = if mresp.hovered() {
+                    t.tab_text_active
+                } else {
+                    t.tab_text
+                };
+                icons::paint(
+                    &painter,
+                    Rect::from_center_size(mr.center(), vec2(16.0, 16.0)),
+                    Icon::Hamburger,
+                    mc,
+                );
                 // 1 pt underline spanning label + ≡, 23 pt below the frame top
                 let uy = strip.min.y + 23.0;
-                painter.line_segment([pos2(label_x, uy), pos2(mr.max.x, uy)], Stroke::new(1.0, t.tab_text_active));
+                painter.line_segment(
+                    [pos2(label_x, uy), pos2(mr.max.x, uy)],
+                    Stroke::new(1.0, t.tab_text_active),
+                );
                 paint_widget_focus(&painter, &mresp, t);
                 if mresp.clicked() {
                     actions.push(DockAction::PanelMenu(*p, mr.left_bottom()));
@@ -796,12 +1216,17 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
             if resp.secondary_clicked() {
                 activate(tab, &mut actions);
                 actions.push(DockAction::Focus(*p));
-                let at = resp.interact_pointer_pos().unwrap_or(tab_rect.left_bottom());
+                let at = resp
+                    .interact_pointer_pos()
+                    .unwrap_or(tab_rect.left_bottom());
                 actions.push(DockAction::PanelMenu(*p, at));
             }
             if resp.middle_clicked() {
                 // a sequence tab closes its sequence; the Timeline panel itself stays
-                match tab.seq.or(seqs.active.filter(|_| *p == PanelKind::Timeline)) {
+                match tab
+                    .seq
+                    .or(seqs.active.filter(|_| *p == PanelKind::Timeline))
+                {
                     Some(id) => actions.push(DockAction::CloseSequence(id)),
                     None => actions.push(DockAction::Close(*p)),
                 }
@@ -824,31 +1249,49 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
             }
         }
         // the » list: every tab of the group, the shown one ticked
-        let list_open = ui.ctx().data(|d| d.get_temp::<bool>(list_id)).unwrap_or(false);
+        let list_open = ui
+            .ctx()
+            .data(|d| d.get_temp::<bool>(list_id))
+            .unwrap_or(false);
         if let Some(r) = more.filter(|_| list_open) {
             let mut picked = None;
-            let area = egui::Area::new(list_id.with("area")).order(egui::Order::Foreground).pivot(Align2::RIGHT_TOP).fixed_pos(r.right_bottom()).show(
-                ui.ctx(),
-                |ui| {
+            let area = egui::Area::new(list_id.with("area"))
+                .order(egui::Order::Foreground)
+                .pivot(Align2::RIGHT_TOP)
+                .fixed_pos(r.right_bottom())
+                .show(ui.ctx(), |ui| {
                     egui::Frame::popup(ui.style()).show(ui, |ui| {
                         ui.set_min_width(160.0);
                         // many open sequences: the list scrolls instead of leaving the window
-                        egui::ScrollArea::vertical().max_height(360.0).show(ui, |ui| {
-                            for tab in &tabs {
-                                let label = if tab.active { format!("✓ {}", tab.title) } else { tab.title.clone() };
-                                let resp = ui.button(label);
-                                match tab.seq {
-                                    Some(id) => reg.add_response(&format!("timeline.tabs.list.{id}"), &resp, &tab.title),
-                                    None => reg.add_response(&format!("panel.tabs.list.{}", tab.panel.id()), &resp, &tab.title),
+                        egui::ScrollArea::vertical()
+                            .max_height(360.0)
+                            .show(ui, |ui| {
+                                for tab in &tabs {
+                                    let label = if tab.active {
+                                        format!("✓ {}", tab.title)
+                                    } else {
+                                        tab.title.clone()
+                                    };
+                                    let resp = ui.button(label);
+                                    match tab.seq {
+                                        Some(id) => reg.add_response(
+                                            &format!("timeline.tabs.list.{id}"),
+                                            &resp,
+                                            &tab.title,
+                                        ),
+                                        None => reg.add_response(
+                                            &format!("panel.tabs.list.{}", tab.panel.id()),
+                                            &resp,
+                                            &tab.title,
+                                        ),
+                                    }
+                                    if resp.clicked() {
+                                        picked = Some(tab);
+                                    }
                                 }
-                                if resp.clicked() {
-                                    picked = Some(tab);
-                                }
-                            }
-                        });
+                            });
                     });
-                },
-            );
+                });
             if let Some(tab) = picked {
                 activate(tab, &mut actions);
                 actions.push(DockAction::Focus(tab.panel));
@@ -868,30 +1311,58 @@ pub fn draw_group_chrome_details(ui: &mut egui::Ui, g: &Group, seqs: &SeqTabs, t
         && ui.input(|i| i.pointer.any_pressed())
     {
         let panel = ui
-            .input(|i| i.pointer.interact_pos().filter(|_| i.pointer.primary_pressed() || i.pointer.secondary_pressed()))
-            .and_then(|pos| tab_rects.iter().find(|(_, rect)| rect.contains(pos)).map(|(panel, _)| *panel))
+            .input(|i| {
+                i.pointer
+                    .interact_pos()
+                    .filter(|_| i.pointer.primary_pressed() || i.pointer.secondary_pressed())
+            })
+            .and_then(|pos| {
+                tab_rects
+                    .iter()
+                    .find(|(_, rect)| rect.contains(pos))
+                    .map(|(panel, _)| *panel)
+            })
             .unwrap_or(p);
         actions.push(DockAction::Focus(panel));
     }
-    Chrome { actions, tabs: tab_rects }
+    Chrome {
+        actions,
+        tabs: tab_rects,
+    }
 }
 
 /// Paint once after the group's contents so child backgrounds cannot hide its focus (#1075).
 pub(crate) fn paint_group_focus(ui: &egui::Ui, group: &Group, focused: PanelKind, tokens: &Tokens) {
     if group.panels.get(group.active).copied() == Some(focused) {
-        ui.painter().rect_stroke(group.rect, 0.0, Stroke::new(1.0, tokens.focus), StrokeKind::Inside);
+        ui.painter().rect_stroke(
+            group.rect,
+            0.0,
+            Stroke::new(1.0, tokens.focus),
+            StrokeKind::Inside,
+        );
     }
 }
 
 fn paint_widget_focus(painter: &egui::Painter, response: &egui::Response, tokens: &Tokens) {
     if response.has_focus() {
-        painter.rect_stroke(response.rect.shrink(2.0), 2.0, Stroke::new(1.5, tokens.focus), StrokeKind::Inside);
+        painter.rect_stroke(
+            response.rect.shrink(2.0),
+            2.0,
+            Stroke::new(1.5, tokens.focus),
+            StrokeKind::Inside,
+        );
     }
 }
 
 /// Placeholder body for panels that are not implemented yet.
 pub fn placeholder(ui: &mut egui::Ui, rect: Rect, t: &Tokens, text: &str) {
-    ui.painter().text(rect.center(), Align2::CENTER_CENTER, text, Tokens::ui(12.0), t.text_faint);
+    ui.painter().text(
+        rect.center(),
+        Align2::CENTER_CENTER,
+        text,
+        Tokens::ui(12.0),
+        t.text_faint,
+    );
 }
 
 #[cfg(test)]
@@ -901,7 +1372,15 @@ mod tests {
     #[test]
     fn split_first_never_panics_on_tiny_areas() {
         let split_first = |size: SplitSize, avail: f32| {
-            split_rect(Rect::from_min_size(egui::Pos2::ZERO, vec2(avail, 100.0)), SplitAxis::Horizontal, size.shared(), 0.0, 20.0).unwrap().first_size()
+            split_rect(
+                Rect::from_min_size(egui::Pos2::ZERO, vec2(avail, 100.0)),
+                SplitAxis::Horizontal,
+                size.shared(),
+                0.0,
+                20.0,
+            )
+            .unwrap()
+            .first_size()
         };
         for avail in [0.0, 1.0, 15.0, 20.0, 35.0, 39.9, 40.0, 100.0, 2000.0] {
             for size in [
@@ -951,15 +1430,32 @@ mod tests {
         for p in all {
             d.close(p);
         }
-        assert_eq!(d, DockNode::Tabs { panels: vec![], active: 0 });
+        assert_eq!(
+            d,
+            DockNode::Tabs {
+                panels: vec![],
+                active: 0
+            }
+        );
         d.open_near(PanelKind::Program, PanelKind::Project);
         assert!(d.is_visible(PanelKind::Program));
         d.restore_timeline();
         assert!(d.is_visible(PanelKind::Timeline));
         // a tree without Project or Program: the panel joins the first group
-        let mut d = hsplit(SplitSize::Ratio(0.5), tabs(&[PanelKind::Effects], 0), tabs(&[PanelKind::Markers], 0));
+        let mut d = hsplit(
+            SplitSize::Ratio(0.5),
+            tabs(&[PanelKind::Effects], 0),
+            tabs(&[PanelKind::Markers], 0),
+        );
         d.open_near(PanelKind::Info, PanelKind::Source);
         assert!(d.is_visible(PanelKind::Info));
-        assert_eq!(d, hsplit(SplitSize::Ratio(0.5), tabs(&[PanelKind::Effects, PanelKind::Info], 1), tabs(&[PanelKind::Markers], 0)));
+        assert_eq!(
+            d,
+            hsplit(
+                SplitSize::Ratio(0.5),
+                tabs(&[PanelKind::Effects, PanelKind::Info], 1),
+                tabs(&[PanelKind::Markers], 0)
+            )
+        );
     }
 }

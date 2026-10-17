@@ -4,7 +4,10 @@ use std::io::Read;
 use std::sync::Arc;
 
 use gridcraft_core::{CellRef, Value};
-use gridcraft_model::{Anchor, Chart, ChartKind, Color, LegendPos, LineDash, Series, Sheet, Trendline, TrendlineKind, Workbook};
+use gridcraft_model::{
+    Anchor, Chart, ChartKind, Color, LegendPos, LineDash, Series, Sheet, Trendline, TrendlineKind,
+    Workbook,
+};
 
 use crate::{read_xlsx, write_xlsx};
 
@@ -18,7 +21,12 @@ fn all_trendlines() -> Vec<Trendline> {
             display_r_squared: true,
             ..Trendline::default()
         },
-        Trendline { kind: TrendlineKind::Exponential, name: Some("Growth & decay".into()), intercept: Some(1.5), ..Trendline::default() },
+        Trendline {
+            kind: TrendlineKind::Exponential,
+            name: Some("Growth & decay".into()),
+            intercept: Some(1.5),
+            ..Trendline::default()
+        },
         Trendline {
             kind: TrendlineKind::Logarithmic,
             color: Some(Color::Rgb(0xC00000)),
@@ -26,10 +34,26 @@ fn all_trendlines() -> Vec<Trendline> {
             dash: Some(LineDash::SysDot),
             ..Trendline::default()
         },
-        Trendline { kind: TrendlineKind::Polynomial(2), ..Trendline::default() },
-        Trendline { kind: TrendlineKind::Polynomial(6), intercept: Some(-3.0), display_equation: true, ..Trendline::default() },
-        Trendline { kind: TrendlineKind::Power, display_r_squared: true, dash: Some(LineDash::LgDashDot), ..Trendline::default() },
-        Trendline { kind: TrendlineKind::MovingAverage(4), ..Trendline::default() },
+        Trendline {
+            kind: TrendlineKind::Polynomial(2),
+            ..Trendline::default()
+        },
+        Trendline {
+            kind: TrendlineKind::Polynomial(6),
+            intercept: Some(-3.0),
+            display_equation: true,
+            ..Trendline::default()
+        },
+        Trendline {
+            kind: TrendlineKind::Power,
+            display_r_squared: true,
+            dash: Some(LineDash::LgDashDot),
+            ..Trendline::default()
+        },
+        Trendline {
+            kind: TrendlineKind::MovingAverage(4),
+            ..Trendline::default()
+        },
     ]
 }
 
@@ -37,7 +61,12 @@ fn chart(id: u32, kind: ChartKind, trendlines: Vec<Trendline>) -> Chart {
     Chart {
         id,
         kind,
-        anchor: Anchor { cell: CellRef::new(id * 16, 3), width: 480.0, height: 300.0, ..Anchor::default() },
+        anchor: Anchor {
+            cell: CellRef::new(id * 16, 3),
+            width: 480.0,
+            height: 300.0,
+            ..Anchor::default()
+        },
         title: None,
         series: vec![Series {
             name: Some("Data!$B$1".into()),
@@ -83,7 +112,10 @@ fn workbook() -> Workbook {
     for (i, k) in KINDS.iter().enumerate() {
         s.charts.push(chart(i as u32 + 1, *k, all_trendlines()));
     }
-    Workbook { sheets: vec![Arc::new(s)], ..Workbook::default() }
+    Workbook {
+        sheets: vec![Arc::new(s)],
+        ..Workbook::default()
+    }
 }
 
 #[test]
@@ -103,8 +135,10 @@ fn every_trendline_kind_round_trips_in_every_chart_group() {
 
 fn chart_parts(bytes: &[u8]) -> Vec<String> {
     let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes.to_vec())).unwrap();
-    let mut names: Vec<String> =
-        (0..z.len()).map(|i| z.name_for_index(i).unwrap().to_string()).filter(|n| n.starts_with("xl/charts/chart")).collect();
+    let mut names: Vec<String> = (0..z.len())
+        .map(|i| z.name_for_index(i).unwrap().to_string())
+        .filter(|n| n.starts_with("xl/charts/chart"))
+        .collect();
     names.sort();
     names
         .iter()
@@ -124,7 +158,14 @@ fn trendlines_follow_the_series_schema_sequence() {
         let at = |tag: &str| xml.find(tag).unwrap_or_else(|| panic!("{k:?}: no {tag}"));
         let first = at("<c:trendline>");
         // After spPr / marker / invertIfNegative, before the data references.
-        let data = if matches!(k, ChartKind::Scatter | ChartKind::ScatterLines | ChartKind::Bubble) { "<c:xVal>" } else { "<c:cat>" };
+        let data = if matches!(
+            k,
+            ChartKind::Scatter | ChartKind::ScatterLines | ChartKind::Bubble
+        ) {
+            "<c:xVal>"
+        } else {
+            "<c:cat>"
+        };
         assert!(at("<c:spPr>") < first && first < at(data), "{k:?}");
         if let Some(m) = xml.find("<c:marker>") {
             assert!(m < first, "{k:?}: marker after trendline");
@@ -132,7 +173,11 @@ fn trendlines_follow_the_series_schema_sequence() {
         if let Some(m) = xml.find("<c:invertIfNegative") {
             assert!(m < first, "{k:?}: invertIfNegative after trendline");
         }
-        assert_eq!(xml.matches("<c:trendline>").count(), all_trendlines().len(), "{k:?}");
+        assert_eq!(
+            xml.matches("<c:trendline>").count(),
+            all_trendlines().len(),
+            "{k:?}"
+        );
     }
     // Children in CT_Trendline order.
     let xml = &parts[0];
@@ -150,8 +195,13 @@ fn trendlines_follow_the_series_schema_sequence() {
     .map(|t| lin.find(t).unwrap_or_else(|| panic!("missing {t}")))
     .collect();
     assert!(pos.windows(2).all(|w| w[0] < w[1]), "{lin}");
-    let exp = &xml[xml.find("<c:name>Growth &amp; decay</c:name>").expect("escaped name")..];
-    assert!(exp.find("<c:trendlineType val=\"exp\"/>").unwrap() < exp.find("<c:intercept val=\"1.5\"/>").unwrap());
+    let exp = &xml[xml
+        .find("<c:name>Growth &amp; decay</c:name>")
+        .expect("escaped name")..];
+    assert!(
+        exp.find("<c:trendlineType val=\"exp\"/>").unwrap()
+            < exp.find("<c:intercept val=\"1.5\"/>").unwrap()
+    );
 }
 
 #[test]
@@ -164,8 +214,15 @@ fn excel_style_trendlines_are_read() {
     let t = &c.series[0].trendlines;
     assert_eq!(t.len(), 2);
     assert_eq!(t[0].kind, TrendlineKind::Polynomial(3));
-    assert!(t[0].display_equation && !t[0].display_r_squared, "an empty CT_Boolean means true");
+    assert!(
+        t[0].display_equation && !t[0].display_r_squared,
+        "an empty CT_Boolean means true"
+    );
     assert_eq!((t[0].width, t[0].dash), (Some(1.5), Some(LineDash::SysDot)));
     assert_eq!(t[0].color, Some(Color::Theme(5, 0)));
-    assert_eq!(t[1].kind, TrendlineKind::MovingAverage(2), "period clamps to 2..255");
+    assert_eq!(
+        t[1].kind,
+        TrendlineKind::MovingAverage(2),
+        "period clamps to 2..255"
+    );
 }

@@ -95,7 +95,8 @@ impl Ty {
             let v = if let Some(h) = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")) {
                 u64::from_str_radix(h, 16).map_err(|_| format!("hex invalide: {s}"))?
             } else {
-                s.parse::<u64>().map_err(|_| format!("entier invalide: {s}"))?
+                s.parse::<u64>()
+                    .map_err(|_| format!("entier invalide: {s}"))?
             };
             if max_bits < 64 && v >= (1u64 << max_bits) {
                 return Err(format!("{s} déborde {} bits", max_bits));
@@ -111,10 +112,14 @@ impl Ty {
                 let v = if let Some(h) = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")) {
                     i64::from_str_radix(h, 16).map_err(|_| format!("hex invalide: {s}"))?
                 } else {
-                    s.parse::<i64>().map_err(|_| format!("entier signé invalide: {s}"))?
+                    s.parse::<i64>()
+                        .map_err(|_| format!("entier signé invalide: {s}"))?
                 };
-                i32::try_from(v).map_err(|_| format!("{s} déborde i32"))?.to_le_bytes().to_vec()
-            },
+                i32::try_from(v)
+                    .map_err(|_| format!("{s} déborde i32"))?
+                    .to_le_bytes()
+                    .to_vec()
+            }
             Ty::F32 => s
                 .parse::<f32>()
                 .map_err(|_| format!("flottant invalide: {s}"))?
@@ -136,7 +141,7 @@ impl Ty {
             Ty::I32 => i32::from_le_bytes([b[0], b[1], b[2], b[3]]).to_string(),
             Ty::U64 => {
                 u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]).to_string()
-            },
+            }
             Ty::F32 => f32::from_le_bytes([b[0], b[1], b[2], b[3]]).to_string(),
         }
     }
@@ -688,7 +693,8 @@ mod tests {
         for e in CATALOG {
             assert!(seen.insert(e.id), "id dupliqué: {}", e.id);
             assert!(
-                e.id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
+                e.id.chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
                 "id non kebab: {}",
                 e.id
             );
@@ -700,7 +706,11 @@ mod tests {
     fn rvas_within_image() {
         for e in CATALOG {
             if let Some(r) = e.rva {
-                assert!((0x1000..NIE_IMAGE_SIZE).contains(&r), "{}: rva 0x{r:x} hors image", e.id);
+                assert!(
+                    (0x1000..NIE_IMAGE_SIZE).contains(&r),
+                    "{}: rva 0x{r:x} hors image",
+                    e.id
+                );
                 assert_eq!(e.static_addr(), Some(NIE_IMAGE_BASE + r));
             }
         }
@@ -740,10 +750,17 @@ mod tests {
         for ty in ALL_TY {
             assert_eq!(
                 ty.size(),
-                ty.name().trim_start_matches(['u', 'i', 'f']).parse::<usize>().unwrap() / 8
+                ty.name()
+                    .trim_start_matches(['u', 'i', 'f'])
+                    .parse::<usize>()
+                    .unwrap()
+                    / 8
             );
             assert_eq!(Ty::from_tag(ty.name()), Some(ty));
-            assert_eq!(Ty::from_tag(&format!(":{}", ty.name().to_uppercase())), Some(ty));
+            assert_eq!(
+                Ty::from_tag(&format!(":{}", ty.name().to_uppercase())),
+                Some(ty)
+            );
             // décodage d'un tampon trop court.
             assert_eq!(ty.decode(&[]), "<court>");
             // encode d'une valeur nominale ("1" parse pour chaque type) puis vérifie la taille.
@@ -761,8 +778,14 @@ mod tests {
             Ty::U64.encode("0x0102030405060708").unwrap(),
             0x0102_0304_0506_0708u64.to_le_bytes()
         );
-        assert_eq!(Ty::U64.decode(&0x1122_3344_5566_7788u64.to_le_bytes()), "1234605616436508552");
-        assert_eq!(Ty::I32.encode("0x7FFFFFFF").unwrap(), 0x7FFF_FFFFi32.to_le_bytes());
+        assert_eq!(
+            Ty::U64.decode(&0x1122_3344_5566_7788u64.to_le_bytes()),
+            "1234605616436508552"
+        );
+        assert_eq!(
+            Ty::I32.encode("0x7FFFFFFF").unwrap(),
+            0x7FFF_FFFFi32.to_le_bytes()
+        );
         assert_eq!(Ty::F32.encode("2.5").unwrap(), 2.5f32.to_le_bytes());
         assert_eq!(Ty::U16.decode(&0x1234u16.to_le_bytes()), "4660");
     }
@@ -782,9 +805,13 @@ mod tests {
 
     #[test]
     fn category_labels_all() {
-        for cat in
-            [Category::Player, Category::Match, Category::Shop, Category::Spirit, Category::Passive]
-        {
+        for cat in [
+            Category::Player,
+            Category::Match,
+            Category::Shop,
+            Category::Spirit,
+            Category::Passive,
+        ] {
             assert!(!cat.label().is_empty());
             // chaque catégorie a au moins une entrée.
             assert!(CATALOG.iter().any(|e| e.category == cat));
@@ -797,7 +824,10 @@ mod tests {
         // Comparé à la rva du catalogue, pas à une constante : un ré-ancrage sur un
         // nouveau build déplace les rva sans invalider la relation testée ici.
         let with_rva = find("tension").unwrap();
-        assert_eq!(with_rva.static_addr(), Some(NIE_IMAGE_BASE + with_rva.rva.unwrap()));
+        assert_eq!(
+            with_rva.static_addr(),
+            Some(NIE_IMAGE_BASE + with_rva.rva.unwrap())
+        );
         assert!(with_rva.pattern().unwrap().is_ok());
         // `rank` porte désormais une rva ré-ancrée *et* une chaîne de pointeurs.
         assert!(find("rank").unwrap().chain.is_some());

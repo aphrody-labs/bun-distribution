@@ -86,20 +86,20 @@ fn quantize<const SYSTEM: SystemId>(
         4 => {
             let v = (value as f32 * scale).clamp(u8::MIN as f32, u8::MAX as f32) as u8;
             ctx.write_u8(addr, v);
-        },
+        }
         5 => {
             let v = (value as f32 * scale).clamp(u16::MIN as f32, u16::MAX as f32) as u16;
             ctx.write_u16(addr, v);
-        },
+        }
         6 => {
             let v = (value as f32 * scale).clamp(i8::MIN as f32, i8::MAX as f32) as i8;
             ctx.write_u8(addr, v as u8);
-        },
+        }
         7 => {
             let v = (value as f32 * scale).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
             ctx.write_u16(addr, v as u16);
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -154,42 +154,52 @@ pub fn store_load_psq<const OP: u32, const SYSTEM: SystemId>(
     match OP {
         // D-form loads
         OP_PSQ_L | OP_PSQ_LU => {
-            let ea = ctx.gekko.read_gpr_or_zero(instr.ra()).wrapping_add_signed(instr.disp_psq());
+            let ea = ctx
+                .gekko
+                .read_gpr_or_zero(instr.ra())
+                .wrapping_add_signed(instr.disp_psq());
             let gqr = ctx.gekko.spr.read_gqr(instr.psq_i());
             psq_load(ctx, instr.fd(), ea, instr.psq_w(), gqr);
             if OP == OP_PSQ_LU {
                 ctx.gekko.write_gpr(instr.ra(), ea);
             }
-        },
+        }
         // D-form stores
         OP_PSQ_ST | OP_PSQ_STU => {
-            let ea = ctx.gekko.read_gpr_or_zero(instr.ra()).wrapping_add_signed(instr.disp_psq());
+            let ea = ctx
+                .gekko
+                .read_gpr_or_zero(instr.ra())
+                .wrapping_add_signed(instr.disp_psq());
             let gqr = ctx.gekko.spr.read_gqr(instr.psq_i());
             psq_store(ctx, instr.fs(), ea, instr.psq_w(), gqr);
             if OP == OP_PSQ_STU {
                 ctx.gekko.write_gpr(instr.ra(), ea);
             }
-        },
+        }
         // X-form loads
         OP_PSQ_LX | OP_PSQ_LUX => {
-            let ea =
-                ctx.gekko.read_gpr_or_zero(instr.ra()).wrapping_add(ctx.gekko.read_gpr(instr.rb()));
+            let ea = ctx
+                .gekko
+                .read_gpr_or_zero(instr.ra())
+                .wrapping_add(ctx.gekko.read_gpr(instr.rb()));
             let gqr = ctx.gekko.spr.read_gqr(instr.psq_ix());
             psq_load(ctx, instr.fd(), ea, instr.psq_wx(), gqr);
             if OP == OP_PSQ_LUX {
                 ctx.gekko.write_gpr(instr.ra(), ea);
             }
-        },
+        }
         // X-form stores
         OP_PSQ_STX | OP_PSQ_STUX => {
-            let ea =
-                ctx.gekko.read_gpr_or_zero(instr.ra()).wrapping_add(ctx.gekko.read_gpr(instr.rb()));
+            let ea = ctx
+                .gekko
+                .read_gpr_or_zero(instr.ra())
+                .wrapping_add(ctx.gekko.read_gpr(instr.rb()));
             let gqr = ctx.gekko.spr.read_gqr(instr.psq_ix());
             psq_store(ctx, instr.fs(), ea, instr.psq_wx(), gqr);
             if OP == OP_PSQ_STUX {
                 ctx.gekko.write_gpr(instr.ra(), ea);
             }
-        },
+        }
         _ => unreachable!(),
     }
 }

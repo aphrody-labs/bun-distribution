@@ -14,13 +14,16 @@
 
 use std::sync::Arc;
 
-use vectorcraft_doc::{Appearance, AppearanceItem, Document, FillLayer, Node, NodeKind, StrokeLayer};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, Document, FillLayer, Node, NodeKind, StrokeLayer,
+};
 use vectorcraft_geom::{FillRule, PathData};
 
 use crate::group::{has_own_paint, paints};
 use crate::{
-    GeomContext, adjust_in_document, apply_geometry_with, crop_marks_art, evaluate_container, has_adjustment, has_crop_marks, has_geometry,
-    has_pathfinder, is_geometry, needs_outline, reshape,
+    GeomContext, adjust_in_document, apply_geometry_with, crop_marks_art, evaluate_container,
+    has_adjustment, has_crop_marks, has_geometry, has_pathfinder, is_geometry, needs_outline,
+    reshape,
 };
 
 fn item_effects(item: &AppearanceItem) -> &[vectorcraft_doc::Effect] {
@@ -47,16 +50,32 @@ pub fn needs_bake(n: &Node) -> bool {
         || has_own_paint(n)
         || has_geometry(&n.appearance.effects)
         || n.projection().is_some()
-        || n.appearance.items.iter().any(|i| has_geometry(item_effects(i)))
-        || n.children().is_some_and(|ch| ch.iter().any(|c| needs_bake(c)))
+        || n.appearance
+            .items
+            .iter()
+            .any(|i| has_geometry(item_effects(i)))
+        || n.children()
+            .is_some_and(|ch| ch.iter().any(|c| needs_bake(c)))
 }
 
 fn geometry(n: &Node) -> Option<(PathData, FillRule)> {
     match &n.kind {
-        NodeKind::Path { path, rule, guide: false, .. } => Some((path.clone(), *rule)),
-        NodeKind::Compound { children, rule } => {
-            Some((PathData::new(children.iter().filter_map(|c| c.path_data()).flat_map(|p| p.subpaths.iter().cloned()).collect()), *rule))
-        }
+        NodeKind::Path {
+            path,
+            rule,
+            guide: false,
+            ..
+        } => Some((path.clone(), *rule)),
+        NodeKind::Compound { children, rule } => Some((
+            PathData::new(
+                children
+                    .iter()
+                    .filter_map(|c| c.path_data())
+                    .flat_map(|p| p.subpaths.iter().cloned())
+                    .collect(),
+            ),
+            *rule,
+        )),
         _ => None,
     }
 }
@@ -72,10 +91,26 @@ fn apply(effects: &[vectorcraft_doc::Effect], path: &PathData, ctx: &GeomContext
 /// A path node of `kind`'s flavour (compound when the result has several subpaths).
 fn path_kind(d: &mut Document, path: PathData, rule: FillRule) -> NodeKind {
     if path.subpaths.len() > 1 {
-        let children = path.subpaths.into_iter().map(|sp| Arc::new(Node::path(d.alloc_id(), PathData::single(sp), Appearance::default()))).collect();
+        let children = path
+            .subpaths
+            .into_iter()
+            .map(|sp| {
+                Arc::new(Node::path(
+                    d.alloc_id(),
+                    PathData::single(sp),
+                    Appearance::default(),
+                ))
+            })
+            .collect();
         NodeKind::Compound { children, rule }
     } else {
-        NodeKind::Path { path, rule, live: None, clipping: false, guide: false }
+        NodeKind::Path {
+            path,
+            rule,
+            live: None,
+            clipping: false,
+            guide: false,
+        }
     }
 }
 
@@ -101,7 +136,11 @@ fn bake_node(d: &mut Document, n: &Node) -> Option<Node> {
     // Type, images, symbol instances and live objects: reshaped through their outlines.
     if needs_outline(n) && (has_geometry(&n.appearance.effects) || n.projection().is_some()) {
         let symbol = match &n.kind {
-            NodeKind::SymbolInstance { symbol, .. } => d.symbols.iter().find(|s| s.name == *symbol).map(|s| s.art.clone()),
+            NodeKind::SymbolInstance { symbol, .. } => d
+                .symbols
+                .iter()
+                .find(|s| s.name == *symbol)
+                .map(|s| s.art.clone()),
             _ => None,
         };
         let m = reshape(n, symbol.as_deref())?;
@@ -114,12 +153,19 @@ fn bake_node(d: &mut Document, n: &Node) -> Option<Node> {
     }
     if let Some(ch) = n.children() {
         if matches!(n.kind, NodeKind::Compound { .. })
-            && (has_geometry(&n.appearance.effects) || n.appearance.items.iter().any(|i| has_geometry(item_effects(i))))
+            && (has_geometry(&n.appearance.effects)
+                || n.appearance
+                    .items
+                    .iter()
+                    .any(|i| has_geometry(item_effects(i))))
         {
             return bake_leaf(d, n);
         }
         let mut m = n.clone();
-        let baked: Vec<Arc<Node>> = ch.iter().map(|c| bake_node(d, c).map(Arc::new).unwrap_or_else(|| c.clone())).collect();
+        let baked: Vec<Arc<Node>> = ch
+            .iter()
+            .map(|c| bake_node(d, c).map(Arc::new).unwrap_or_else(|| c.clone()))
+            .collect();
         if let Some(ch) = m.children_mut() {
             *ch = baked;
         }
@@ -149,7 +195,11 @@ fn bake_pieces(d: &mut Document, mut m: Node) -> Node {
 
 /// Give `n` and its descendants a new id wherever one was already `seen` (the pieces evaluated art
 /// copies from its source keep ids of their own).
-pub fn fresh_ids(d: &mut Document, n: &mut Node, seen: &mut std::collections::HashSet<vectorcraft_doc::NodeId>) {
+pub fn fresh_ids(
+    d: &mut Document,
+    n: &mut Node,
+    seen: &mut std::collections::HashSet<vectorcraft_doc::NodeId>,
+) {
     if !seen.insert(n.id) {
         n.id = d.alloc_id();
         seen.insert(n.id);
@@ -167,7 +217,11 @@ fn piece(d: &mut Document, n: &Node, path: PathData, rule: FillRule, item: Appea
     let mut out = n.clone();
     out.id = id;
     out.name = None;
-    out.appearance = Appearance { items: vec![item], ..Default::default() }.into();
+    out.appearance = Appearance {
+        items: vec![item],
+        ..Default::default()
+    }
+    .into();
     out.opacity = 1.0;
     out.blend = Default::default();
     out.isolate = false;
@@ -198,7 +252,12 @@ fn leaf_base(n: &Node) -> Option<(PathData, FillRule, GeomContext<'_>, Node)> {
 
 fn bake_leaf(d: &mut Document, n: &Node) -> Option<Node> {
     let (g, rule, ctx, mut m) = leaf_base(n)?;
-    if !n.appearance.items.iter().any(|i| has_geometry(item_effects(i))) {
+    if !n
+        .appearance
+        .items
+        .iter()
+        .any(|i| has_geometry(item_effects(i)))
+    {
         m.kind = path_kind(d, g, rule);
         return Some(m);
     }
@@ -216,14 +275,18 @@ fn bake_leaf(d: &mut Document, n: &Node) -> Option<Node> {
         })
         .collect();
     m.appearance.items.clear();
-    m.kind = NodeKind::Group { children, clip: false };
+    m.kind = NodeKind::Group {
+        children,
+        clip: false,
+    };
     Some(m)
 }
 
 /// Turns one stroke of a path (the path after its geometry effects, its fill rule, the stroke
 /// without geometry effects) into filled art for [`expand_leaf`]: its outline filled with its
 /// paint, or its brush art. `None` when it paints nothing.
-pub type StrokeArt<'a> = &'a mut dyn FnMut(&mut Document, &PathData, FillRule, &StrokeLayer) -> Option<Node>;
+pub type StrokeArt<'a> =
+    &'a mut dyn FnMut(&mut Document, &PathData, FillRule, &StrokeLayer) -> Option<Node>;
 
 /// Object → Expand Appearance of a path or compound path `n`: its geometry effects applied, every
 /// visible fill becomes a copy of the path painted by that fill alone and every visible stroke the
@@ -254,11 +317,20 @@ pub fn expand_leaf(d: &mut Document, n: &Node, stroke_art: StrokeArt) -> Option<
     m.appearance.items.clear();
     m.appearance.contents_index = None;
     match pieces.as_slice() {
-        [one] if m.appearance.effects.is_empty() && one.has_default_transparency() && one.appearance.effects.is_empty() => {
+        [one]
+            if m.appearance.effects.is_empty()
+                && one.has_default_transparency()
+                && one.appearance.effects.is_empty() =>
+        {
             m.kind = one.kind.clone();
             m.appearance = one.appearance.clone();
         }
-        _ => m.kind = NodeKind::Group { children: pieces.into_iter().map(Arc::new).collect(), clip: false },
+        _ => {
+            m.kind = NodeKind::Group {
+                children: pieces.into_iter().map(Arc::new).collect(),
+                clip: false,
+            }
+        }
     }
     Some(m)
 }
@@ -282,7 +354,14 @@ fn hoist_transparency(mut p: Node) -> Node {
 /// [`expand_leaf`] every path and compound path in `n` (art made for Expand Appearance, such as a
 /// group's own fills and strokes or outlined type), in place.
 pub fn expand_art(d: &mut Document, n: &mut Node, stroke_art: StrokeArt) {
-    if matches!(n.kind, NodeKind::Path { clipping: false, guide: false, .. } | NodeKind::Compound { .. }) {
+    if matches!(
+        n.kind,
+        NodeKind::Path {
+            clipping: false,
+            guide: false,
+            ..
+        } | NodeKind::Compound { .. }
+    ) {
         if let Some(m) = expand_leaf(d, n, stroke_art) {
             *n = m;
         }
@@ -303,17 +382,37 @@ pub fn bake_appearance(n: &Node) -> Option<Node> {
     if let Some(m) = crate::revolve_art(n).or_else(|| crate::solid_art(n)) {
         return Some(m);
     }
-    if !matches!(n.kind, NodeKind::Path { clipping: false, guide: false, .. } | NodeKind::Compound { .. }) {
+    if !matches!(
+        n.kind,
+        NodeKind::Path {
+            clipping: false,
+            guide: false,
+            ..
+        } | NodeKind::Compound { .. }
+    ) {
         return None;
     }
-    let outlined = |i: &AppearanceItem| paints(i) && matches!(i, AppearanceItem::Stroke(s) if s.brush.is_none());
-    let geometric = has_geometry(&n.appearance.effects) || n.appearance.items.iter().any(|i| has_geometry(item_effects(i)));
+    let outlined = |i: &AppearanceItem| {
+        paints(i) && matches!(i, AppearanceItem::Stroke(s) if s.brush.is_none())
+    };
+    let geometric = has_geometry(&n.appearance.effects)
+        || n.appearance
+            .items
+            .iter()
+            .any(|i| has_geometry(item_effects(i)));
     if !geometric && !n.appearance.items.iter().any(outlined) {
         return None;
     }
     let (g, rule, ctx, mut m) = leaf_base(n)?;
     let piece = |path: PathData, rule: FillRule, item: AppearanceItem| {
-        let mut p = Node::path(n.id, path, Appearance { items: vec![item], ..Default::default() });
+        let mut p = Node::path(
+            n.id,
+            path,
+            Appearance {
+                items: vec![item],
+                ..Default::default()
+            },
+        );
         if let NodeKind::Path { rule: r, .. } = &mut p.kind {
             *r = rule;
         }
@@ -326,15 +425,26 @@ pub fn bake_appearance(n: &Node) -> Option<Node> {
         clear_item_effects(&mut it);
         pieces.push(match &it {
             AppearanceItem::Stroke(st) if st.brush.is_none() => {
-                let fill = FillLayer { opacity: st.opacity, blend: st.blend, ..FillLayer::new(st.paint.clone()) };
-                piece(crate::stroke::outline_region(&ig, rule, st), FillRule::NonZero, AppearanceItem::Fill(fill))
+                let fill = FillLayer {
+                    opacity: st.opacity,
+                    blend: st.blend,
+                    ..FillLayer::new(st.paint.clone())
+                };
+                piece(
+                    crate::stroke::outline_region(&ig, rule, st),
+                    FillRule::NonZero,
+                    AppearanceItem::Fill(fill),
+                )
             }
             _ => piece(ig, rule, it),
         });
     }
     m.appearance.items.clear();
     m.appearance.contents_index = None;
-    m.kind = NodeKind::Group { children: pieces, clip: false };
+    m.kind = NodeKind::Group {
+        children: pieces,
+        clip: false,
+    };
     Some(m)
 }
 
@@ -351,7 +461,14 @@ pub fn bake_document(doc: &Document) -> Option<Document> {
     }
     let mut d = placed.into_owned();
     let layers = d.layers.clone();
-    d.layers = layers.iter().map(|l| bake_node(&mut d, l).map(Arc::new).unwrap_or_else(|| l.clone())).collect();
+    d.layers = layers
+        .iter()
+        .map(|l| {
+            bake_node(&mut d, l)
+                .map(Arc::new)
+                .unwrap_or_else(|| l.clone())
+        })
+        .collect();
     Some(d)
 }
 
@@ -363,7 +480,11 @@ mod tests {
     use vectorcraft_geom::{Rect, shapes};
 
     fn fx(id: &str, params: serde_json::Value) -> Effect {
-        Effect { id: id.into(), params, visible: true }
+        Effect {
+            id: id.into(),
+            params,
+            visible: true,
+        }
     }
 
     fn doc_with(n: Node) -> Document {
@@ -377,15 +498,27 @@ mod tests {
     fn plain_documents_are_not_copied() {
         let mut d = Document::new(100.0, 100.0);
         let id = d.alloc_id();
-        let d = doc_with(Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art()));
+        let d = doc_with(Node::path(
+            id,
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            Appearance::default_art(),
+        ));
         assert!(bake_document(&d).is_none());
     }
 
     #[test]
     fn object_effects_become_geometry_and_raster_effects_stay() {
-        let mut n = Node::path(NodeId(50), shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)), Appearance::default_art());
-        n.appearance.effects.push(fx("path.offsetPath", json!({"offset": 10.0})));
-        n.appearance.effects.push(fx("stylize.dropShadow", json!({})));
+        let mut n = Node::path(
+            NodeId(50),
+            shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)),
+            Appearance::default_art(),
+        );
+        n.appearance
+            .effects
+            .push(fx("path.offsetPath", json!({"offset": 10.0})));
+        n.appearance
+            .effects
+            .push(fx("stylize.dropShadow", json!({})));
         let d = bake_document(&doc_with(n)).unwrap();
         let m = d.node(NodeId(50)).unwrap();
         let b = m.geometric_bounds().unwrap();
@@ -396,9 +529,14 @@ mod tests {
 
     #[test]
     fn item_effects_split_into_one_path_per_item() {
-        let mut n = Node::path(NodeId(50), shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)), Appearance::default_art());
+        let mut n = Node::path(
+            NodeId(50),
+            shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)),
+            Appearance::default_art(),
+        );
         if let AppearanceItem::Stroke(s) = &mut n.appearance.items[1] {
-            s.effects.push(fx("path.offsetPath", json!({"offset": 5.0})));
+            s.effects
+                .push(fx("path.offsetPath", json!({"offset": 5.0})));
         }
         let d = bake_document(&doc_with(n)).unwrap();
         let m = d.node(NodeId(50)).unwrap();

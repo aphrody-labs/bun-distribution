@@ -25,9 +25,16 @@ pub async fn begin_drag(
         let session_id = uuid::Uuid::new_v4().to_string();
         let items_json = serde_json::to_string(&config.items)
             .map_err(|error| format!("Failed to serialize items: {error}"))?;
-        coordinator.begin_drag(&app, session_id.clone(), config, source_window_label.clone())?;
+        coordinator.begin_drag(
+            &app,
+            session_id.clone(),
+            config,
+            source_window_label.clone(),
+        )?;
 
-        let overlay = DriveWindow::DragOverlay { session_id: session_id.clone() };
+        let overlay = DriveWindow::DragOverlay {
+            session_id: session_id.clone(),
+        };
         let overlay_label = overlay.label();
         if let Err(error) = overlay.show(&app).await {
             coordinator.force_clear_state(&app);
@@ -69,7 +76,9 @@ pub async fn begin_drag(
         })
         .map_err(|error| format!("Failed to run on main thread: {error}"))?;
 
-        let started = rx.recv().map_err(|error| format!("Failed to receive result: {error}"))??;
+        let started = rx
+            .recv()
+            .map_err(|error| format!("Failed to receive result: {error}"))??;
         if !started {
             coordinator.force_clear_state(&app);
             if let Some(overlay) = app.get_webview_window(&overlay_label) {

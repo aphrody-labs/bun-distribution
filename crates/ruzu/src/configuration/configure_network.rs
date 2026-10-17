@@ -106,12 +106,16 @@ mod tests {
             let page = page(runtime_lock);
             let mut widgets = Vec::new();
             descendants(&page.widget, &mut widgets);
-            let interfaces: Vec<_> = widgets.iter()
-                .filter_map(|widget| widget.downcast_ref::<gtk::DropDown>()).collect();
+            let interfaces: Vec<_> = widgets
+                .iter()
+                .filter_map(|widget| widget.downcast_ref::<gtk::DropDown>())
+                .collect();
             assert_eq!(interfaces.len(), 1);
             assert_eq!(interfaces[0].is_sensitive(), runtime_lock);
-            let toggles: Vec<_> = widgets.iter()
-                .filter_map(|widget| widget.downcast_ref::<gtk::CheckButton>()).collect();
+            let toggles: Vec<_> = widgets
+                .iter()
+                .filter_map(|widget| widget.downcast_ref::<gtk::CheckButton>())
+                .collect();
             assert_eq!(toggles.len(), 1);
             assert!(toggles[0].is_sensitive());
         }

@@ -36,7 +36,16 @@ pub const PROBLEMS: &[&str] = &[
 /// Every id in [`Report::outside`], in the order the report lists them: files written, moved or
 /// deleted; files opened in other apps; network connections; native code; messages to other apps;
 /// environment variables; code the checker can't read; the reference app's preferences changed.
-pub const OUTSIDE: &[&str] = &["filesWritten", "filesOpened", "network", "nativeCode", "otherApps", "environment", "unseenCode", "preferences"];
+pub const OUTSIDE: &[&str] = &[
+    "filesWritten",
+    "filesOpened",
+    "network",
+    "nativeCode",
+    "otherApps",
+    "environment",
+    "unseenCode",
+    "preferences",
+];
 
 /// What [`crate::check`] found in a script. Lists of located things (targets, directives,
 /// includes, problems) give a line and, for an included file, its path (`file`); tallies (features,
@@ -325,17 +334,41 @@ impl<'l> Acc<'l> {
         }
     }
 
-    pub fn problem(&mut self, code: &'static str, line: Option<usize>, file: Option<&str>, detail: Option<&str>) {
+    pub fn problem(
+        &mut self,
+        code: &'static str,
+        line: Option<usize>,
+        file: Option<&str>,
+        detail: Option<&str>,
+    ) {
         if self.room(self.problems.len()) {
             let detail = detail.map(|d| self.echo(d));
-            self.problems.push(Problem { code, line, file: file.map(str::to_string), detail });
+            self.problems.push(Problem {
+                code,
+                line,
+                file: file.map(str::to_string),
+                detail,
+            });
         }
     }
 
-    pub fn directive(&mut self, name: &'static str, value: &str, line: usize, form: &'static str, file: Option<&str>) {
+    pub fn directive(
+        &mut self,
+        name: &'static str,
+        value: &str,
+        line: usize,
+        form: &'static str,
+        file: Option<&str>,
+    ) {
         if self.room(self.directives.len()) {
             let value = self.echo(value);
-            self.directives.push(Directive { name, value, line, form, file: file.map(str::to_string) });
+            self.directives.push(Directive {
+                name,
+                value,
+                line,
+                form,
+                file: file.map(str::to_string),
+            });
         }
     }
 
@@ -357,9 +390,22 @@ impl<'l> Acc<'l> {
         self.targets.push(target);
     }
 
-    pub fn include(&mut self, value: &str, line: usize, file: Option<&str>, status: IncludeStatus, path: Option<&str>) {
+    pub fn include(
+        &mut self,
+        value: &str,
+        line: usize,
+        file: Option<&str>,
+        status: IncludeStatus,
+        path: Option<&str>,
+    ) {
         if self.room(self.includes.len()) {
-            let include = Include { value: self.echo(value), line, file: file.map(str::to_string), status, path: path.map(|p| self.echo(p)) };
+            let include = Include {
+                value: self.echo(value),
+                line,
+                file: file.map(str::to_string),
+                status,
+                path: path.map(|p| self.echo(p)),
+            };
             self.includes.push(include);
         }
     }
@@ -367,19 +413,53 @@ impl<'l> Acc<'l> {
     /// The report for a file of `kind` with `lines` lines.
     pub fn finish(self, kind: Kind, lines: usize) -> Report {
         let declared = self.declared;
-        let mut members: Vec<Named> = self.members.into_iter().map(|(name, count)| Named { name, count }).collect();
+        let mut members: Vec<Named> = self
+            .members
+            .into_iter()
+            .map(|(name, count)| Named { name, count })
+            .collect();
         members.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.name.cmp(&b.name)));
-        let mut types: Vec<Named> =
-            self.types.into_iter().filter(|(name, _)| !declared.contains(name)).map(|(name, count)| Named { name, count }).collect();
+        let mut types: Vec<Named> = self
+            .types
+            .into_iter()
+            .filter(|(name, _)| !declared.contains(name))
+            .map(|(name, count)| Named { name, count })
+            .collect();
         types.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.name.cmp(&b.name)));
-        let mut menu_strings: Vec<MenuString> =
-            self.menu.into_iter().map(|(value, t)| MenuString { value, count: t.count, lines: t.lines }).collect();
+        let mut menu_strings: Vec<MenuString> = self
+            .menu
+            .into_iter()
+            .map(|(value, t)| MenuString {
+                value,
+                count: t.count,
+                lines: t.lines,
+            })
+            .collect();
         menu_strings.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.value.cmp(&b.value)));
-        let features: Vec<Feature> = self.features.into_iter().map(|(id, t)| Feature { id, count: t.count, lines: t.lines }).collect();
-        let mut outside: Vec<Outside> =
-            self.outside.into_iter().map(|(id, (t, modes))| Outside { id, count: t.count, lines: t.lines, modes }).collect();
+        let features: Vec<Feature> = self
+            .features
+            .into_iter()
+            .map(|(id, t)| Feature {
+                id,
+                count: t.count,
+                lines: t.lines,
+            })
+            .collect();
+        let mut outside: Vec<Outside> = self
+            .outside
+            .into_iter()
+            .map(|(id, (t, modes))| Outside {
+                id,
+                count: t.count,
+                lines: t.lines,
+                modes,
+            })
+            .collect();
         outside.sort_by_key(|o| OUTSIDE.iter().position(|id| *id == o.id));
-        let mut needs: BTreeSet<Need> = features.iter().filter_map(|f| catalog::need(f.id)).collect();
+        let mut needs: BTreeSet<Need> = features
+            .iter()
+            .filter_map(|f| catalog::need(f.id))
+            .collect();
         if !members.is_empty() || !types.is_empty() {
             needs.insert(Need::Dom);
         }
@@ -408,7 +488,10 @@ pub(crate) fn echo(s: &str, max: usize) -> String {
     match s.char_indices().nth(max) {
         None => s.to_string(),
         Some(_) => {
-            let keep = s.char_indices().nth(max.saturating_sub(1)).map_or(0, |(i, _)| i);
+            let keep = s
+                .char_indices()
+                .nth(max.saturating_sub(1))
+                .map_or(0, |(i, _)| i);
             let mut out = s.get(..keep).unwrap_or_default().to_string();
             out.push('…');
             out

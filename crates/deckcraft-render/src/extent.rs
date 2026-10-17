@@ -61,10 +61,20 @@ fn shape_box(rctx: &Ctx, s: &Shape) -> Option<Rect> {
     }
     let b = match &s.kind {
         ShapeKind::Ink { strokes } => {
-            let mut pts = strokes.iter().flat_map(|k| k.points.iter()).filter(|(px, py, _)| px.is_finite() && py.is_finite());
+            let mut pts = strokes
+                .iter()
+                .flat_map(|k| k.points.iter())
+                .filter(|(px, py, _)| px.is_finite() && py.is_finite());
             let (px, py, _) = pts.next()?;
-            let r = pts.fold(Rect::new(*px, *py, *px, *py), |r, (px, py, _)| r.union_pt(kurbo::Point::new(*px, *py)));
-            let w = strokes.iter().map(|k| k.width).filter(|w| w.is_finite()).fold(0.0_f64, f64::max).min(MAX_SPILL);
+            let r = pts.fold(Rect::new(*px, *py, *px, *py), |r, (px, py, _)| {
+                r.union_pt(kurbo::Point::new(*px, *py))
+            });
+            let w = strokes
+                .iter()
+                .map(|k| k.width)
+                .filter(|w| w.is_finite())
+                .fold(0.0_f64, f64::max)
+                .min(MAX_SPILL);
             return Some(r.inflate(w, w));
         }
         _ => x.bounds(),
@@ -76,7 +86,11 @@ fn shape_box(rctx: &Ctx, s: &Shape) -> Option<Rect> {
 }
 
 fn union_boxes<'a>(rctx: &Ctx, shapes: impl IntoIterator<Item = &'a Shape>, into: Rect) -> Rect {
-    shapes.into_iter().filter_map(|s| shape_box(rctx, s)).filter(|r| r.is_finite()).fold(into, |a, r| a.union(r))
+    shapes
+        .into_iter()
+        .filter_map(|s| shape_box(rctx, s))
+        .filter(|r| r.is_finite())
+        .fold(into, |a, r| a.union(r))
 }
 
 fn slide_rect(pres: &Presentation) -> Rect {
@@ -88,13 +102,21 @@ fn slide_rect(pres: &Presentation) -> Rect {
 /// text spilling out of its box is found while rendering ([`crate::render_slide_drawn`]).
 pub fn slide_extent(pres: &Presentation, index: usize) -> Rect {
     let page = slide_rect(pres);
-    let Some(slide) = pres.slides.get(index) else { return page };
-    let Some(rctx) = Ctx::for_slide(pres, slide) else { return page };
+    let Some(slide) = pres.slides.get(index) else {
+        return page;
+    };
+    let Some(rctx) = Ctx::for_slide(pres, slide) else {
+        return page;
+    };
     let mut r = union_boxes(&rctx, &slide.shapes, page);
     let (show_layout, show_master) = resolve::show_master_shapes(slide, rctx.layout);
     if show_master {
         let mctx = Ctx::for_master(pres, rctx.master);
-        r = union_boxes(&mctx, rctx.master.shapes.iter().filter(|s| s.ph.is_none()), r);
+        r = union_boxes(
+            &mctx,
+            rctx.master.shapes.iter().filter(|s| s.ph.is_none()),
+            r,
+        );
     }
     if show_layout && let Some(l) = rctx.layout {
         let lctx = Ctx::for_layout(pres, rctx.master, l);
@@ -106,12 +128,18 @@ pub fn slide_extent(pres: &Presentation, index: usize) -> Rect {
 /// What a layout (or the master, `layout: None`) draws in Slide Master view, in slide space.
 pub fn layout_extent(pres: &Presentation, master: usize, layout: Option<usize>) -> Rect {
     let page = slide_rect(pres);
-    let Some(m) = pres.masters.get(master) else { return page };
+    let Some(m) = pres.masters.get(master) else {
+        return page;
+    };
     match layout.and_then(|i| m.layouts.get(i)) {
         Some(l) => {
             let mut r = union_boxes(&Ctx::for_layout(pres, m, l), &l.shapes, page);
             if l.show_master_shapes {
-                r = union_boxes(&Ctx::for_master(pres, m), m.shapes.iter().filter(|s| s.ph.is_none()), r);
+                r = union_boxes(
+                    &Ctx::for_master(pres, m),
+                    m.shapes.iter().filter(|s| s.ph.is_none()),
+                    r,
+                );
             }
             r
         }
@@ -131,7 +159,12 @@ pub struct Region {
 impl Region {
     /// The slide itself, `w` × `h` pixels.
     pub fn slide(w: u32, h: u32) -> Self {
-        Region { x: 0, y: 0, w: w.max(1), h: h.max(1) }
+        Region {
+            x: 0,
+            y: 0,
+            w: w.max(1),
+            h: h.max(1),
+        }
     }
 
     fn edges(&self) -> (i64, i64, i64, i64) {
@@ -142,7 +175,12 @@ impl Region {
     fn from_edges(x0: i64, y0: i64, x1: i64, y1: i64) -> Self {
         let clamp = |v: i64| v.clamp(i32::MIN as i64, i32::MAX as i64) as i32;
         let side = |a: i64, b: i64| (b - a).clamp(1, MAX_SIDE as i64) as u32;
-        Region { x: clamp(x0), y: clamp(y0), w: side(x0, x1), h: side(y0, y1) }
+        Region {
+            x: clamp(x0),
+            y: clamp(y0),
+            w: side(x0, x1),
+            h: side(y0, y1),
+        }
     }
 
     /// Does this region cover all of `other`?
@@ -170,7 +208,13 @@ impl Region {
 /// `r` (slide space) in pixels at `scale` pixels per point, rounded outwards; `None` when not finite.
 fn to_px(r: Rect, scale: f64) -> Option<(i64, i64, i64, i64)> {
     let lim = i32::MAX as f64 / 2.0;
-    let px = |v: f64| if v.is_finite() { Some(v.clamp(-lim, lim)) } else { None };
+    let px = |v: f64| {
+        if v.is_finite() {
+            Some(v.clamp(-lim, lim))
+        } else {
+            None
+        }
+    };
     Some((
         px((r.x0 * scale).floor())? as i64,
         px((r.y0 * scale).floor())? as i64,
@@ -183,15 +227,25 @@ fn to_px(r: Rect, scale: f64) -> Option<(i64, i64, i64, i64)> {
 /// point) plus the part of `extent` (slide space, from [`slide_extent`] or what a render drew) that
 /// falls within `visible`, the canvas's area relative to the slide's top-left corner. The visible
 /// area is rounded out to whole [`TILE`]s.
-pub fn pasteboard_region(slide_px: (u32, u32), scale: f64, extent: Rect, visible: Region) -> Region {
+pub fn pasteboard_region(
+    slide_px: (u32, u32),
+    scale: f64,
+    extent: Rect,
+    visible: Region,
+) -> Region {
     let page = Region::slide(slide_px.0, slide_px.1);
     if !(scale.is_finite() && scale > 0.0) {
         return page;
     }
-    let Some((ex0, ey0, ex1, ey1)) = to_px(extent, scale) else { return page };
+    let Some((ex0, ey0, ex1, ey1)) = to_px(extent, scale) else {
+        return page;
+    };
     let (vx0, vy0, vx1, vy1) = visible.edges();
     let (vx0, vy0) = (vx0.div_euclid(TILE) * TILE, vy0.div_euclid(TILE) * TILE);
-    let (vx1, vy1) = ((vx1 + TILE - 1).div_euclid(TILE) * TILE, (vy1 + TILE - 1).div_euclid(TILE) * TILE);
+    let (vx1, vy1) = (
+        (vx1 + TILE - 1).div_euclid(TILE) * TILE,
+        (vy1 + TILE - 1).div_euclid(TILE) * TILE,
+    );
     let (cx0, cy0, cx1, cy1) = (ex0.max(vx0), ey0.max(vy0), ex1.min(vx1), ey1.min(vy1));
     if cx0 >= cx1 || cy0 >= cy1 {
         return page;
@@ -214,14 +268,21 @@ mod tests {
     fn deck_with(x: f64, y: f64, w: f64, h: f64) -> Presentation {
         let mut p = Presentation::default();
         let sl = std::sync::Arc::make_mut(&mut p.slides[0]);
-        sl.shapes.push(Shape { id: deckcraft_model::ShapeId(900), xfrm: Some(Xfrm::new(x, y, w, h)), ..Default::default() });
+        sl.shapes.push(Shape {
+            id: deckcraft_model::ShapeId(900),
+            xfrm: Some(Xfrm::new(x, y, w, h)),
+            ..Default::default()
+        });
         p
     }
 
     #[test]
     fn a_slide_with_nothing_off_it_extends_no_further_than_the_slide() {
         let p = deck_with(100.0, 100.0, 50.0, 50.0);
-        assert_eq!(slide_extent(&p, 0), Rect::new(0.0, 0.0, p.slide_size.width, p.slide_size.height));
+        assert_eq!(
+            slide_extent(&p, 0),
+            Rect::new(0.0, 0.0, p.slide_size.width, p.slide_size.height)
+        );
     }
 
     #[test]
@@ -232,13 +293,20 @@ mod tests {
         assert_eq!(e.y0, 0.0);
         assert_eq!(e.x1, p.slide_size.width);
         // Missing slides are just the page.
-        assert_eq!(slide_extent(&p, 7), Rect::new(0.0, 0.0, p.slide_size.width, p.slide_size.height));
+        assert_eq!(
+            slide_extent(&p, 7),
+            Rect::new(0.0, 0.0, p.slide_size.width, p.slide_size.height)
+        );
     }
 
     #[test]
     fn hidden_shapes_and_hostile_boxes_do_not_grow_it() {
         let mut p = deck_with(-5000.0, 0.0, 10.0, 10.0);
-        std::sync::Arc::make_mut(&mut p.slides[0]).shapes.last_mut().unwrap().hidden = true;
+        std::sync::Arc::make_mut(&mut p.slides[0])
+            .shapes
+            .last_mut()
+            .unwrap()
+            .hidden = true;
         let page = Rect::new(0.0, 0.0, p.slide_size.width, p.slide_size.height);
         assert_eq!(slide_extent(&p, 0), page);
         let p = deck_with(f64::NAN, 0.0, 10.0, 10.0);
@@ -250,7 +318,10 @@ mod tests {
     #[test]
     fn effects_count_towards_the_extent() {
         let mut p = deck_with(10.0, -100.0, 100.0, 50.0);
-        let sh = std::sync::Arc::make_mut(&mut p.slides[0]).shapes.last_mut().unwrap();
+        let sh = std::sync::Arc::make_mut(&mut p.slides[0])
+            .shapes
+            .last_mut()
+            .unwrap();
         sh.effects = Some(Effects {
             outer_shadow: Some(deckcraft_model::style::Shadow {
                 color: black(),
@@ -271,7 +342,13 @@ mod tests {
         assert_eq!(
             spill(
                 None,
-                Some(&Effects { glow: Some(deckcraft_model::style::Glow { color: black(), radius: f64::MAX }), ..Default::default() }),
+                Some(&Effects {
+                    glow: Some(deckcraft_model::style::Glow {
+                        color: black(),
+                        radius: f64::MAX
+                    }),
+                    ..Default::default()
+                }),
                 1.0,
                 1.0
             ),
@@ -283,17 +360,29 @@ mod tests {
     fn master_graphics_off_the_slide_count_but_not_master_placeholders() {
         let mut p = Presentation::default();
         let m = std::sync::Arc::make_mut(&mut p.masters[0]);
-        m.shapes.push(Shape { id: deckcraft_model::ShapeId(901), xfrm: Some(Xfrm::new(-150.0, 10.0, 100.0, 50.0)), ..Default::default() });
+        m.shapes.push(Shape {
+            id: deckcraft_model::ShapeId(901),
+            xfrm: Some(Xfrm::new(-150.0, 10.0, 100.0, 50.0)),
+            ..Default::default()
+        });
         assert!(slide_extent(&p, 0).x0 <= -150.0);
         assert!(layout_extent(&p, 0, None).x0 <= -150.0);
-        assert!(layout_extent(&p, 0, Some(0)).x0 <= -150.0 || !p.masters[0].layouts[0].show_master_shapes);
+        assert!(
+            layout_extent(&p, 0, Some(0)).x0 <= -150.0
+                || !p.masters[0].layouts[0].show_master_shapes
+        );
     }
 
     #[test]
     fn the_region_is_the_slide_unless_something_off_it_is_in_view() {
         let slide = (960, 540);
         let page = Region::slide(960, 540);
-        let view = Region { x: -100, y: -50, w: 1160, h: 640 };
+        let view = Region {
+            x: -100,
+            y: -50,
+            w: 1160,
+            h: 640,
+        };
         let whole = Rect::new(0.0, 0.0, 960.0, 540.0);
         assert_eq!(pasteboard_region(slide, 1.0, whole, view), page);
         assert!(!pasteboard_region(slide, 1.0, whole, view).beyond(slide));
@@ -306,15 +395,40 @@ mod tests {
         let r = pasteboard_region(slide, 1.0, Rect::new(-5000.0, 0.0, 960.0, 540.0), view);
         assert_eq!(r.x, -256);
         // Wholly out of view: the slide.
-        assert_eq!(pasteboard_region(slide, 1.0, Rect::new(-5000.0, 0.0, -4000.0, 540.0).union(whole), Region { x: 0, y: 0, w: 960, h: 540 }), page);
+        assert_eq!(
+            pasteboard_region(
+                slide,
+                1.0,
+                Rect::new(-5000.0, 0.0, -4000.0, 540.0).union(whole),
+                Region {
+                    x: 0,
+                    y: 0,
+                    w: 960,
+                    h: 540
+                }
+            ),
+            page
+        );
         // Scale applies; nonsense falls back to the slide.
         let r = pasteboard_region((480, 270), 0.5, Rect::new(-80.0, 0.0, 960.0, 540.0), view);
         assert_eq!(r.x, -40);
         assert_eq!(pasteboard_region(slide, f64::NAN, whole, view), page);
-        assert_eq!(pasteboard_region(slide, 1.0, Rect::new(f64::NAN, 0.0, 1.0, 1.0), view), page);
+        assert_eq!(
+            pasteboard_region(slide, 1.0, Rect::new(f64::NAN, 0.0, 1.0, 1.0), view),
+            page
+        );
         // Huge extents are capped.
-        let r =
-            pasteboard_region(slide, 1.0, Rect::new(-1e12, -1e12, 1e12, 1e12), Region { x: -1_000_000, y: -1_000_000, w: 2_000_000, h: 2_000_000 });
+        let r = pasteboard_region(
+            slide,
+            1.0,
+            Rect::new(-1e12, -1e12, 1e12, 1e12),
+            Region {
+                x: -1_000_000,
+                y: -1_000_000,
+                w: 2_000_000,
+                h: 2_000_000,
+            },
+        );
         assert!(r.w <= MAX_SIDE && r.h <= MAX_SIDE);
     }
 
@@ -322,8 +436,28 @@ mod tests {
     fn scrolling_within_a_tile_keeps_the_region() {
         let slide = (2000, 1125);
         let e = Rect::new(-500.0, 0.0, 960.0, 540.0);
-        let a = pasteboard_region(slide, 2.0, e, Region { x: -300, y: 0, w: 1000, h: 700 });
-        let b = pasteboard_region(slide, 2.0, e, Region { x: -290, y: 10, w: 1000, h: 700 });
+        let a = pasteboard_region(
+            slide,
+            2.0,
+            e,
+            Region {
+                x: -300,
+                y: 0,
+                w: 1000,
+                h: 700,
+            },
+        );
+        let b = pasteboard_region(
+            slide,
+            2.0,
+            e,
+            Region {
+                x: -290,
+                y: 10,
+                w: 1000,
+                h: 700,
+            },
+        );
         assert_eq!(a, b);
     }
 }

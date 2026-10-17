@@ -90,13 +90,24 @@ fn renderer(app: &mut SoundApp, ctx: &egui::Context) {
     }
     let t = Tokens::current();
     let fmt = app.engine.session().main_format();
-    let peaks: Vec<f32> = app.player.as_ref().map(|p| p.meters().main.peaks).unwrap_or_default();
+    let peaks: Vec<f32> = app
+        .player
+        .as_ref()
+        .map(|p| p.meters().main.peaks)
+        .unwrap_or_default();
     let objects: Vec<(String, f32, f32, f32)> = app
         .engine
         .session()
         .tracks
         .iter()
-        .filter(|tr| tr.kind != TrackKind::Master && app.engine.session().edit.flag(&format!("object.{}", tr.id.0)))
+        .filter(|tr| {
+            tr.kind != TrackKind::Master
+                && app
+                    .engine
+                    .session()
+                    .edit
+                    .flag(&format!("object.{}", tr.id.0))
+        })
         .map(|tr| {
             let sp = tr.mixer.surround.unwrap_or_default();
             (tr.name.clone(), sp.x, sp.y, sp.z)
@@ -150,39 +161,55 @@ fn ui_customization(app: &mut SoundApp, ctx: &egui::Context) {
     if !open {
         return;
     }
-    egui::Window::new(egui::RichText::new("Appearance").font(bold(13.0))).open(&mut open).default_size(vec2(320.0, 180.0)).resizable(false).show(
-        ctx,
-        |ui| {
-            egui::Grid::new("ui_custom").num_columns(2).spacing(vec2(12.0, 8.0)).show(ui, |ui| {
-                ui.label("Interface scale");
-                ui.add(egui::Slider::new(&mut app.extra.ui_scale, 0.75..=1.5).step_by(0.05).custom_formatter(|v, _| format!("{:.0} %", v * 100.0)));
-                ui.end_row();
-                ui.label("Reduce motion");
-                ui.checkbox(&mut app.extra.reduce_motion, "");
-                ui.end_row();
-                ui.label("Theme");
-                let mut chosen = None;
-                egui::ComboBox::from_id_salt("theme_mode").selected_text(app.ui.theme.label()).show_ui(ui, |ui| {
-                    for mode in crate::theme::ThemeMode::ALL {
-                        if ui.selectable_label(app.ui.theme == mode, mode.label()).clicked() {
-                            chosen = Some(mode);
-                        }
+    egui::Window::new(egui::RichText::new("Appearance").font(bold(13.0)))
+        .open(&mut open)
+        .default_size(vec2(320.0, 180.0))
+        .resizable(false)
+        .show(ctx, |ui| {
+            egui::Grid::new("ui_custom")
+                .num_columns(2)
+                .spacing(vec2(12.0, 8.0))
+                .show(ui, |ui| {
+                    ui.label("Interface scale");
+                    ui.add(
+                        egui::Slider::new(&mut app.extra.ui_scale, 0.75..=1.5)
+                            .step_by(0.05)
+                            .custom_formatter(|v, _| format!("{:.0} %", v * 100.0)),
+                    );
+                    ui.end_row();
+                    ui.label("Reduce motion");
+                    ui.checkbox(&mut app.extra.reduce_motion, "");
+                    ui.end_row();
+                    ui.label("Theme");
+                    let mut chosen = None;
+                    egui::ComboBox::from_id_salt("theme_mode")
+                        .selected_text(app.ui.theme.label())
+                        .show_ui(ui, |ui| {
+                            for mode in crate::theme::ThemeMode::ALL {
+                                if ui
+                                    .selectable_label(app.ui.theme == mode, mode.label())
+                                    .clicked()
+                                {
+                                    chosen = Some(mode);
+                                }
+                            }
+                        });
+                    if let Some(mode) = chosen {
+                        let _ = app.run("ui.theme", json!({"mode": mode.id()}));
                     }
+                    ui.end_row();
+                    ui.label("Auto-update configuration");
+                    ui.checkbox(&mut app.extra.auto_update_config, "");
+                    ui.end_row();
                 });
-                if let Some(mode) = chosen {
-                    let _ = app.run("ui.theme", json!({"mode": mode.id()}));
-                }
-                ui.end_row();
-                ui.label("Auto-update configuration");
-                ui.checkbox(&mut app.extra.auto_update_config, "");
-                ui.end_row();
-            });
             if ui.button("Reset").clicked() {
                 app.extra.ui_scale = 1.0;
                 app.extra.reduce_motion = false;
-                let _ = app.run("ui.theme", json!({"mode": crate::theme::ThemeMode::default().id()}));
+                let _ = app.run(
+                    "ui.theme",
+                    json!({"mode": crate::theme::ThemeMode::default().id()}),
+                );
             }
-        },
-    );
+        });
     app.extra.show_ui_customization = open;
 }

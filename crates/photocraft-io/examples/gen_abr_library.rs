@@ -20,7 +20,9 @@ use photocraft_psd::descriptor::{Descriptor, UnicodeString, Value};
 use std::path::PathBuf;
 use std::time::Instant;
 
-const KINDS: [&str; 9] = ["Chalk", "Spatter", "Bristle", "Charcoal", "Leaf", "Grass", "Sponge", "Star", "Rake"];
+const KINDS: [&str; 9] = [
+    "Chalk", "Spatter", "Bristle", "Charcoal", "Leaf", "Grass", "Sponge", "Star", "Rake",
+];
 
 fn tip(kind: usize, n: u32, seed: u32) -> GrayTile {
     match kind {
@@ -37,11 +39,18 @@ fn tip(kind: usize, n: u32, seed: u32) -> GrayTile {
 }
 
 fn prc(v: f64) -> Value {
-    Value::UnitFloat { unit: *b"#Prc", value: v }
+    Value::UnitFloat {
+        unit: *b"#Prc",
+        value: v,
+    }
 }
 
 fn var(control: i32, jitter: f64) -> Value {
-    Value::Descriptor(Descriptor::new("brVr").with("bVTy", Value::Integer(control)).with("jitter", prc(jitter)))
+    Value::Descriptor(
+        Descriptor::new("brVr")
+            .with("bVTy", Value::Integer(control))
+            .with("jitter", prc(jitter)),
+    )
 }
 
 fn text(s: &str) -> Value {
@@ -58,20 +67,37 @@ fn h(i: u32, salt: u32) -> f64 {
 }
 
 fn preset(i: u32, id: &str, name: &str, edge: u32) -> Descriptor {
-    let mut d = Descriptor::new("brushPreset").with("Nm  ", text(name)).with(
-        "Brsh",
-        Value::Descriptor(
-            Descriptor::new("sampledBrush")
-                .with("Dmtr", Value::UnitFloat { unit: *b"#Pxl", value: f64::from(edge) * (0.1 + 0.4 * h(i, 1)) })
-                .with("Angl", Value::UnitFloat { unit: *b"#Ang", value: (h(i, 2) * 360.0 - 180.0).round() })
-                .with("Rndn", prc((50.0 + 50.0 * h(i, 3)).round()))
-                .with("Spcn", prc((5.0 + 60.0 * h(i, 4)).round()))
-                .with("Intr", Value::Boolean(true))
-                .with("flipX", Value::Boolean(h(i, 5) < 0.2))
-                .with("sampledData", text(id)),
-        ),
-    );
-    d = d.with("useTipDynamics", Value::Boolean(true)).with("szVr", var(2, (h(i, 6) * 40.0).round())).with("angleDynamics", var(0, (h(i, 7) * 100.0).round()));
+    let mut d = Descriptor::new("brushPreset")
+        .with("Nm  ", text(name))
+        .with(
+            "Brsh",
+            Value::Descriptor(
+                Descriptor::new("sampledBrush")
+                    .with(
+                        "Dmtr",
+                        Value::UnitFloat {
+                            unit: *b"#Pxl",
+                            value: f64::from(edge) * (0.1 + 0.4 * h(i, 1)),
+                        },
+                    )
+                    .with(
+                        "Angl",
+                        Value::UnitFloat {
+                            unit: *b"#Ang",
+                            value: (h(i, 2) * 360.0 - 180.0).round(),
+                        },
+                    )
+                    .with("Rndn", prc((50.0 + 50.0 * h(i, 3)).round()))
+                    .with("Spcn", prc((5.0 + 60.0 * h(i, 4)).round()))
+                    .with("Intr", Value::Boolean(true))
+                    .with("flipX", Value::Boolean(h(i, 5) < 0.2))
+                    .with("sampledData", text(id)),
+            ),
+        );
+    d = d
+        .with("useTipDynamics", Value::Boolean(true))
+        .with("szVr", var(2, (h(i, 6) * 40.0).round()))
+        .with("angleDynamics", var(0, (h(i, 7) * 100.0).round()));
     if h(i, 8) < 0.5 {
         d = d
             .with("useScatter", Value::Boolean(true))
@@ -79,15 +105,25 @@ fn preset(i: u32, id: &str, name: &str, edge: u32) -> Descriptor {
             .with("Cnt ", Value::Integer(1 + (h(i, 10) * 4.0) as i32));
     }
     if h(i, 11) < 0.6 {
-        d = d.with("usePaintDynamics", Value::Boolean(true)).with("opVr", var(2, 0.0)).with("prVr", var(2, 0.0));
+        d = d
+            .with("usePaintDynamics", Value::Boolean(true))
+            .with("opVr", var(2, 0.0))
+            .with("prVr", var(2, 0.0));
     }
     d
 }
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let arg = |name: &str| args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned();
-    let num = |name: &str, default: u32| arg(name).map_or(default, |v| v.parse().expect("numeric option"));
+    let arg = |name: &str| {
+        args.iter()
+            .position(|a| a == name)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+    };
+    let num = |name: &str, default: u32| {
+        arg(name).map_or(default, |v| v.parse().expect("numeric option"))
+    };
     let out = PathBuf::from(arg("--out").unwrap_or_else(|| "target/abr-library".into()));
     let brushes = num("--brushes", 600);
     let max_edge = num("--edge", 2000).clamp(16, photocraft_psd::abr::MAX_EDGE);
@@ -130,26 +166,56 @@ fn main() {
                                 } else {
                                     t.data.iter().map(|v| (v >> 8) as u8).collect()
                                 };
-                                AbrSample { id: format!("$pc-gen-{i:05}"), width: edge, height: edge, depth, data }
+                                AbrSample {
+                                    id: format!("$pc-gen-{i:05}"),
+                                    width: edge,
+                                    height: edge,
+                                    depth,
+                                    data,
+                                }
                             })
                             .collect::<Vec<_>>()
                     })
                 })
                 .collect();
-            handles.into_iter().flat_map(|h| h.join().unwrap()).collect()
+            handles
+                .into_iter()
+                .flat_map(|h| h.join().unwrap())
+                .collect()
         });
         let presets: Vec<Descriptor> = ids
             .iter()
-            .map(|&(i, edge)| preset(i, &format!("$pc-gen-{i:05}"), &format!("{} {:03} ({edge} px)", KINDS[i as usize % KINDS.len()], i + 1), edge))
+            .map(|&(i, edge)| {
+                preset(
+                    i,
+                    &format!("$pc-gen-{i:05}"),
+                    &format!(
+                        "{} {:03} ({edge} px)",
+                        KINDS[i as usize % KINDS.len()],
+                        i + 1
+                    ),
+                    edge,
+                )
+            })
             .collect();
         let bytes = write_v6(2, &samples, &[], &presets, rle).unwrap();
         // Sanity: our own importer must accept every preset.
         let imported = photocraft_io::abr_map::read_abr(&bytes, "Generated").unwrap();
-        assert_eq!(imported.presets.len(), ids.len(), "every generated preset imports");
+        assert_eq!(
+            imported.presets.len(),
+            ids.len(),
+            "every generated preset imports"
+        );
         file_no += 1;
         let path = out.join(format!("photocraft-test-brushes-{file_no:02}.abr"));
         std::fs::write(&path, &bytes).unwrap();
-        println!("{}: {} brushes, {:.1} MB on disk, {:.1} MB decoded", path.display(), ids.len(), bytes.len() as f64 / 1e6, decoded as f64 / 1e6);
+        println!(
+            "{}: {} brushes, {:.1} MB on disk, {:.1} MB decoded",
+            path.display(),
+            ids.len(),
+            bytes.len() as f64 / 1e6,
+            decoded as f64 / 1e6
+        );
         total_bytes += bytes.len() as u64;
         total_decoded += decoded as u64;
         first = i;

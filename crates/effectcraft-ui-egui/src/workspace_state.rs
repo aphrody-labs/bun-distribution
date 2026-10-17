@@ -57,12 +57,19 @@ impl Snapshot {
         ui.saved_workspaces = self.saved_workspaces;
         ui.saved_floating = self.saved_floating;
         // A window is only kept for a panel that still floats, and only where a window can be.
-        let floating = |panel: PanelKind| ui.floating.iter().any(|group| group.panels.contains(&panel));
+        let floating = |panel: PanelKind| {
+            ui.floating
+                .iter()
+                .any(|group| group.panels.contains(&panel))
+        };
         ui.panel_windows = self
             .panel_windows
             .into_iter()
             .filter(|window| floating(window.panel))
-            .map(|window| PanelWindow { panel: window.panel, rect: PanelWindow::sanitized(window.rect) })
+            .map(|window| PanelWindow {
+                panel: window.panel,
+                rect: PanelWindow::sanitized(window.rect),
+            })
             .collect();
         // Reserve restored viewer slots without restoring any project-specific composition
         // links. New Viewer allocates from this map, including after switching named layouts.
@@ -90,18 +97,27 @@ impl Snapshot {
         if !name_ok(&self.workspace)
             || self.saved_workspaces.len() > MAX_WORKSPACES
             || self.saved_floating.len() > MAX_WORKSPACES
-            || self.saved_workspaces.keys().chain(self.saved_floating.keys()).any(|name| !name_ok(name))
+            || self
+                .saved_workspaces
+                .keys()
+                .chain(self.saved_floating.keys())
+                .any(|name| !name_ok(name))
         {
             return Err("workspace names or count exceed supported limits".into());
         }
-        if !crate::dock::WORKSPACES.contains(&self.workspace.as_str()) && !self.saved_workspaces.contains_key(&self.workspace) {
+        if !crate::dock::WORKSPACES.contains(&self.workspace.as_str())
+            && !self.saved_workspaces.contains_key(&self.workspace)
+        {
             return Err("current workspace has no saved definition".into());
         }
         let panel_ok = |panel: PanelKind| match panel {
             PanelKind::Viewer(id) => (1..=MAX_VIEWER_ID).contains(&id),
             _ => true,
         };
-        if !panel_ok(self.focused) || self.maximized.is_some_and(|panel| !panel_ok(panel)) || self.panel_windows.iter().any(|w| !panel_ok(w.panel)) {
+        if !panel_ok(self.focused)
+            || self.maximized.is_some_and(|panel| !panel_ok(panel))
+            || self.panel_windows.iter().any(|w| !panel_ok(w.panel))
+        {
             return Err("workspace viewer ID is outside the supported range 1–65535".into());
         }
         let mut nodes = 0usize;
@@ -116,7 +132,9 @@ impl Snapshot {
                     DockNode::Split { size, a, b, .. } => {
                         let valid = match *size {
                             SplitSize::Ratio(v) => v.is_finite() && (0.0..=1.0).contains(&v),
-                            SplitSize::FixedA(v) | SplitSize::FixedB(v) => v.is_finite() && (0.0..=MAX_COORD).contains(&v),
+                            SplitSize::FixedA(v) | SplitSize::FixedB(v) => {
+                                v.is_finite() && (0.0..=MAX_COORD).contains(&v)
+                            }
                         };
                         if !valid {
                             return Err("invalid workspace split size".into());
@@ -126,7 +144,10 @@ impl Snapshot {
                     }
                     DockNode::Tabs { panels, active } => {
                         // Closing the last docked panel leaves an empty group with active=0.
-                        if panels.len() > MAX_PANELS || *active >= panels.len().max(1) || panels.iter().any(|panel| !panel_ok(*panel)) {
+                        if panels.len() > MAX_PANELS
+                            || *active >= panels.len().max(1)
+                            || panels.iter().any(|panel| !panel_ok(*panel))
+                        {
                             return Err("invalid workspace tab group".into());
                         }
                     }
@@ -137,7 +158,9 @@ impl Snapshot {
                                     || e.panels.len() > MAX_PANELS
                                     || e.active >= e.panels.len()
                                     || e.panels.iter().any(|p| !panel_ok(*p))
-                                    || e.height.is_some_and(|v| !v.is_finite() || !(0.0..=MAX_COORD).contains(&v))
+                                    || e.height.is_some_and(|v| {
+                                        !v.is_finite() || !(0.0..=MAX_COORD).contains(&v)
+                                    })
                             })
                         {
                             return Err("invalid workspace panel stack".into());
@@ -146,7 +169,12 @@ impl Snapshot {
                 }
             }
         }
-        if self.panel_windows.len() > MAX_PANELS || self.panel_windows.iter().any(|w| !w.rect.iter().all(|v| v.is_finite())) {
+        if self.panel_windows.len() > MAX_PANELS
+            || self
+                .panel_windows
+                .iter()
+                .any(|w| !w.rect.iter().all(|v| v.is_finite()))
+        {
             return Err("invalid workspace panel windows".into());
         }
         for groups in std::iter::once(&self.floating).chain(self.saved_floating.values()) {
@@ -169,10 +197,18 @@ impl Snapshot {
                 }
             }
         }
-        crate::dock_shared::encode(&self.dock, &self.floating)?.validate().map_err(|error| error.to_string())?;
+        crate::dock_shared::encode(&self.dock, &self.floating)?
+            .validate()
+            .map_err(|error| error.to_string())?;
         for (name, root) in &self.saved_workspaces {
-            let floating = self.saved_floating.get(name).map(Vec::as_slice).unwrap_or(&[]);
-            crate::dock_shared::encode(root, floating)?.validate().map_err(|error| error.to_string())?;
+            let floating = self
+                .saved_floating
+                .get(name)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            crate::dock_shared::encode(root, floating)?
+                .validate()
+                .map_err(|error| error.to_string())?;
         }
         Ok(())
     }
@@ -187,34 +223,42 @@ pub(crate) struct WorkspaceStore {
 
 impl WorkspaceStore {
     pub(crate) fn load(config: Option<&dyn ConfigStore>, ui: &mut UiState) -> Self {
-        let loaded = config.map_or(Ok(None), |c| c.read_bounded(FILE, MAX_BYTES)).map_err(|e| e.to_string()).and_then(|text| {
-            text.map(|text| {
-                let value: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-                // Only an explicitly legacy-shaped record can migrate. A versioned future
-                // snapshot must never deserialize as an empty defaulted legacy record.
-                let snapshot = if value.get("version").is_none()
-                    && value.as_object().is_some_and(|fields| fields.contains_key("workspaces") || fields.contains_key("floating"))
-                {
-                    let legacy: crate::SavedWorkspaces = serde_json::from_value(value).map_err(|e| e.to_string())?;
-                    let mut snapshot = Snapshot::capture(ui);
-                    snapshot.saved_workspaces = legacy.workspaces;
-                    snapshot.saved_floating = legacy.floating;
-                    snapshot
-                } else {
-                    serde_json::from_value::<Snapshot>(value).map_err(|e| e.to_string())?
-                };
-                snapshot.validate()?;
-                Ok(snapshot)
-            })
-            .transpose()
-        });
+        let loaded = config
+            .map_or(Ok(None), |c| c.read_bounded(FILE, MAX_BYTES))
+            .map_err(|e| e.to_string())
+            .and_then(|text| {
+                text.map(|text| {
+                    let value: serde_json::Value =
+                        serde_json::from_str(&text).map_err(|e| e.to_string())?;
+                    // Only an explicitly legacy-shaped record can migrate. A versioned future
+                    // snapshot must never deserialize as an empty defaulted legacy record.
+                    let snapshot = if value.get("version").is_none()
+                        && value.as_object().is_some_and(|fields| {
+                            fields.contains_key("workspaces") || fields.contains_key("floating")
+                        }) {
+                        let legacy: crate::SavedWorkspaces =
+                            serde_json::from_value(value).map_err(|e| e.to_string())?;
+                        let mut snapshot = Snapshot::capture(ui);
+                        snapshot.saved_workspaces = legacy.workspaces;
+                        snapshot.saved_floating = legacy.floating;
+                        snapshot
+                    } else {
+                        serde_json::from_value::<Snapshot>(value).map_err(|e| e.to_string())?
+                    };
+                    snapshot.validate()?;
+                    Ok(snapshot)
+                })
+                .transpose()
+            });
         let error = match loaded {
             Ok(Some(snapshot)) => {
                 snapshot.apply(ui);
                 None
             }
             Ok(None) => None,
-            Err(e) => Some(format!("Could not load workspaces: {e}. The existing file will be preserved for this session.")),
+            Err(e) => Some(format!(
+                "Could not load workspaces: {e}. The existing file will be preserved for this session."
+            )),
         };
         if let Some(error) = &error {
             log::warn!("{error}");
@@ -222,7 +266,12 @@ impl WorkspaceStore {
         }
         // An unreadable or newer file is never replaced by this session, even after a later
         // layout edit. Ordinary failed writes remain dirty and retryable.
-        Self { saved: Snapshot::capture(ui), last_attempt: f64::NEG_INFINITY, writable: error.is_none(), error }
+        Self {
+            saved: Snapshot::capture(ui),
+            last_attempt: f64::NEG_INFINITY,
+            writable: error.is_none(),
+            error,
+        }
     }
 
     pub(crate) fn due(&mut self, now: f64) -> bool {
@@ -247,18 +296,27 @@ impl WorkspaceStore {
             || self.saved.panel_windows != ui.panel_windows
     }
 
-    pub(crate) fn save(&mut self, config: Option<&dyn ConfigStore>, ui: &UiState) -> Result<bool, String> {
-        let Some(config) = config else { return Ok(false) };
+    pub(crate) fn save(
+        &mut self,
+        config: Option<&dyn ConfigStore>,
+        ui: &UiState,
+    ) -> Result<bool, String> {
+        let Some(config) = config else {
+            return Ok(false);
+        };
         if !self.has_changes(ui) {
             return Ok(false);
         }
         let snapshot = Snapshot::capture(ui);
         snapshot.validate()?;
-        let text = serde_json::to_string_pretty(&snapshot).map_err(|e| format!("serialize workspaces: {e}"))?;
+        let text = serde_json::to_string_pretty(&snapshot)
+            .map_err(|e| format!("serialize workspaces: {e}"))?;
         if text.len() > MAX_BYTES {
             return Err("workspace file exceeds 1 MiB".into());
         }
-        config.write(FILE, &text).map_err(|e| format!("save workspaces: {e}"))?;
+        config
+            .write(FILE, &text)
+            .map_err(|e| format!("save workspaces: {e}"))?;
         self.saved = snapshot;
         self.error = None;
         Ok(true)
@@ -273,7 +331,15 @@ mod tests {
     #[test]
     fn corrupt_or_future_workspace_keeps_defaults_and_original_file() {
         let valid = Snapshot::capture(&UiState::default());
-        for text in ["{".into(), serde_json::to_string(&Snapshot { version: 2, ..valid }).unwrap(), " ".repeat(MAX_BYTES + 1)] {
+        for text in [
+            "{".into(),
+            serde_json::to_string(&Snapshot {
+                version: 2,
+                ..valid
+            })
+            .unwrap(),
+            " ".repeat(MAX_BYTES + 1),
+        ] {
             let config = MemoryConfig::default();
             config.write(FILE, &text).unwrap();
             let mut ui = UiState::default();
@@ -290,7 +356,10 @@ mod tests {
     #[test]
     fn invalid_tabs_split_and_deep_tree_are_rejected() {
         let mut snapshot = Snapshot::capture(&UiState::default());
-        snapshot.dock = DockNode::Tabs { panels: vec![], active: usize::MAX };
+        snapshot.dock = DockNode::Tabs {
+            panels: vec![],
+            active: usize::MAX,
+        };
         assert!(snapshot.validate().is_err());
         snapshot.dock = DockNode::Split {
             vertical: false,
@@ -305,7 +374,10 @@ mod tests {
                 vertical: false,
                 size: SplitSize::Ratio(0.5),
                 a: Box::new(snapshot.dock),
-                b: Box::new(DockNode::Tabs { panels: vec![PanelKind::Project], active: 0 }),
+                b: Box::new(DockNode::Tabs {
+                    panels: vec![PanelKind::Project],
+                    active: 0,
+                }),
             };
         }
         assert!(snapshot.validate().is_err());
@@ -335,9 +407,15 @@ mod tests {
         let mut store = WorkspaceStore::load(Some(&config), &mut ui);
         ui.workspace = "Floating".into();
         ui.dock.close(PanelKind::Preview);
-        ui.floating = vec![Floating { panels: vec![PanelKind::Preview], active: 0, rect: [50.0, 80.0, 200.0, 160.0] }];
-        ui.saved_workspaces.insert(ui.workspace.clone(), ui.dock.clone());
-        ui.saved_floating.insert(ui.workspace.clone(), ui.floating.clone());
+        ui.floating = vec![Floating {
+            panels: vec![PanelKind::Preview],
+            active: 0,
+            rect: [50.0, 80.0, 200.0, 160.0],
+        }];
+        ui.saved_workspaces
+            .insert(ui.workspace.clone(), ui.dock.clone());
+        ui.saved_floating
+            .insert(ui.workspace.clone(), ui.floating.clone());
         ui.maximized = Some(PanelKind::Composition);
         ui.project_search = "do not persist".into();
         assert!(store.save(Some(&config), &ui).unwrap());
@@ -352,8 +430,17 @@ mod tests {
         let config = MemoryConfig::default();
         let mut ui = UiState::default();
         let mut store = WorkspaceStore::load(Some(&config), &mut ui);
-        ui.dock = DockNode::Tabs { panels: vec![PanelKind::Composition, PanelKind::Viewer(2)], active: 0 };
-        ui.saved_workspaces.insert("Two views".into(), DockNode::Tabs { panels: vec![PanelKind::Composition, PanelKind::Viewer(5)], active: 0 });
+        ui.dock = DockNode::Tabs {
+            panels: vec![PanelKind::Composition, PanelKind::Viewer(2)],
+            active: 0,
+        };
+        ui.saved_workspaces.insert(
+            "Two views".into(),
+            DockNode::Tabs {
+                panels: vec![PanelKind::Composition, PanelKind::Viewer(5)],
+                active: 0,
+            },
+        );
         ui.viewers.insert(2, Some(42));
         assert!(store.save(Some(&config), &ui).unwrap());
         let mut app = crate::EffectcraftApp::new(effectcraft_engine::Session::default());
@@ -370,9 +457,18 @@ mod tests {
             for location in 0..8 {
                 let mut snapshot = Snapshot::capture(&UiState::default());
                 let panel = PanelKind::Viewer(id);
-                let dock = DockNode::Tabs { panels: vec![panel], active: 0 };
-                let stack = DockNode::Stack { entries: vec![crate::dock::StackEntry::new(panel, true, None)] };
-                let floating = vec![Floating { panels: vec![panel], active: 0, rect: [0.0, 0.0, 200.0, 100.0] }];
+                let dock = DockNode::Tabs {
+                    panels: vec![panel],
+                    active: 0,
+                };
+                let stack = DockNode::Stack {
+                    entries: vec![crate::dock::StackEntry::new(panel, true, None)],
+                };
+                let floating = vec![Floating {
+                    panels: vec![panel],
+                    active: 0,
+                    rect: [0.0, 0.0, 200.0, 100.0],
+                }];
                 match location {
                     0 => snapshot.focused = panel,
                     1 => snapshot.maximized = Some(panel),
@@ -389,7 +485,10 @@ mod tests {
                         snapshot.saved_floating.insert("Saved".into(), floating);
                     }
                 }
-                assert!(snapshot.validate().is_err(), "viewer {id} at location {location} must be rejected");
+                assert!(
+                    snapshot.validate().is_err(),
+                    "viewer {id} at location {location} must be rejected"
+                );
             }
         }
     }
@@ -415,7 +514,12 @@ mod tests {
         assert!(store.save(Some(&config), &ui).unwrap());
         let previous = config.read(FILE).unwrap();
         ui.focused = PanelKind::Timeline;
-        assert!(store.save(Some(&Fails(&config)), &ui).unwrap_err().contains("synthetic full disk"));
+        assert!(
+            store
+                .save(Some(&Fails(&config)), &ui)
+                .unwrap_err()
+                .contains("synthetic full disk")
+        );
         assert_eq!(config.read(FILE).as_deref(), Some(previous.as_str()));
         assert!(store.has_changes(&ui));
         assert!(store.save(Some(&config), &ui).unwrap());

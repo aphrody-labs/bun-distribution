@@ -68,7 +68,8 @@ fn expand_placed_under(d: &mut Document, roots: &[NodeId]) -> Result<()> {
             }
         });
     }
-    ids.into_iter().try_for_each(|id| super::place::document::expand(d, id, C))
+    ids.into_iter()
+        .try_for_each(|id| super::place::document::expand(d, id, C))
 }
 
 /// Expand Gradient To.
@@ -122,8 +123,17 @@ impl Expandable {
                 e.placed |= matches!(c.kind, NodeKind::PlacedDocument(_));
                 e.stroke |= shape && !c.appearance.stroke_paint().is_none();
                 e.fill |= match &c.kind {
-                    NodeKind::Text(t) => t.runs.iter().any(|r| matches!(r.style.fill, Paint::Gradient(_))),
-                    _ => shape && c.appearance.items.iter().any(|i| gradient_fill(i).is_some()),
+                    NodeKind::Text(t) => t
+                        .runs
+                        .iter()
+                        .any(|r| matches!(r.style.fill, Paint::Gradient(_))),
+                    _ => {
+                        shape
+                            && c.appearance
+                                .items
+                                .iter()
+                                .any(|i| gradient_fill(i).is_some())
+                    }
                 };
             });
         }
@@ -162,7 +172,9 @@ fn expand(s: &mut Session, p: &Value) -> Result<Value> {
     // Blends first: what their steps hold (type, effects, strokes, gradients) expands below.
     if object && e.blends {
         let roots = selected_roots(s)?;
-        s.edit("Expand", |d, _| super::live::expand_blends(d, &roots).map(|_| ()))?;
+        s.edit("Expand", |d, _| {
+            super::live::expand_blends(d, &roots).map(|_| ())
+        })?;
     }
     if object && e.effects {
         let _ = run_raw(s, "effect.expandAppearance", &json!({}));
@@ -235,7 +247,13 @@ fn expand_gradient_fills(s: &mut Session, to: GradientTo) -> Result<()> {
 /// Path `l` with each gradient fill turned into art, in appearance order: the other items stay
 /// on plain copies of the path. `None` when it has no gradient fill.
 fn expand_fills(d: &mut Document, l: &Node, to: GradientTo) -> Option<Node> {
-    if !matches!(l.kind, NodeKind::Path { .. } | NodeKind::Compound { .. }) || !l.appearance.items.iter().any(|i| gradient_fill(i).is_some()) {
+    if !matches!(l.kind, NodeKind::Path { .. } | NodeKind::Compound { .. })
+        || !l
+            .appearance
+            .items
+            .iter()
+            .any(|i| gradient_fill(i).is_some())
+    {
         return None;
     }
     let (path, _) = node_path(l)?;
@@ -244,7 +262,9 @@ fn expand_fills(d: &mut Document, l: &Node, to: GradientTo) -> Option<Node> {
     let mut rest = vec![];
     for item in &l.appearance.items {
         // Items that paint nothing go; a gradient that can't be expanded stays.
-        let Some(art) = gradient_fill(item).and_then(|(f, g)| gradient_art(d, l, &path, bounds, f, g, to)) else {
+        let Some(art) =
+            gradient_fill(item).and_then(|(f, g)| gradient_art(d, l, &path, bounds, f, g, to))
+        else {
             if item.visible() && !item.paint().is_none() {
                 rest.push(item.clone());
             }
@@ -263,20 +283,47 @@ fn expand_fills(d: &mut Document, l: &Node, to: GradientTo) -> Option<Node> {
 
 /// Gradient fill `f` (gradient `g`) of path `l` (outline `path`, box `bounds`) as art, with the
 /// fill's opacity, blend mode and effects.
-fn gradient_art(d: &mut Document, l: &Node, path: &PathData, bounds: Rect, f: &FillLayer, g: &GradientPaint, to: GradientTo) -> Option<Node> {
+fn gradient_art(
+    d: &mut Document,
+    l: &Node,
+    path: &PathData,
+    bounds: Rect,
+    f: &FillLayer,
+    g: &GradientPaint,
+    to: GradientTo,
+) -> Option<Node> {
     let content = if g.gradient.kind == GradientKind::Freeform {
-        let m = GradientMesh::for_path_with(path, FREEFORM_MESH, FREEFORM_MESH, &*gradient_sampler(g, bounds))?;
+        let m = GradientMesh::for_path_with(
+            path,
+            FREEFORM_MESH,
+            FREEFORM_MESH,
+            &*gradient_sampler(g, bounds),
+        )?;
         vec![Node::new(d.alloc_id(), NodeKind::Mesh(m))]
     } else {
         let frame = Frame::new(g, bounds);
         match to {
-            GradientTo::Mesh => vec![Node::new(d.alloc_id(), NodeKind::Mesh(frame.mesh(&g.gradient)))],
+            GradientTo::Mesh => vec![Node::new(
+                d.alloc_id(),
+                NodeKind::Mesh(frame.mesh(&g.gradient)),
+            )],
             GradientTo::Objects(n) => frame
                 .pieces(&g.gradient, n as usize)
                 .into_iter()
                 .map(|(shape, (color, opacity))| {
-                    let fill = FillLayer { opacity, overprint: f.overprint, ..FillLayer::new(Paint::solid(color)) };
-                    Node::path(d.alloc_id(), shape, Appearance { items: vec![AppearanceItem::Fill(fill)], ..Default::default() })
+                    let fill = FillLayer {
+                        opacity,
+                        overprint: f.overprint,
+                        ..FillLayer::new(Paint::solid(color))
+                    };
+                    Node::path(
+                        d.alloc_id(),
+                        shape,
+                        Appearance {
+                            items: vec![AppearanceItem::Fill(fill)],
+                            ..Default::default()
+                        },
+                    )
                 })
                 .collect(),
         }
@@ -288,7 +335,13 @@ fn gradient_art(d: &mut Document, l: &Node, path: &PathData, bounds: Rect, f: &F
         let mut clip = styled_copy(d, l, vec![]);
         as_clipping_path(&mut clip).ok()?;
         let children = std::iter::once(clip).chain(content).map(Arc::new).collect();
-        Node::new(d.alloc_id(), NodeKind::Group { children, clip: true })
+        Node::new(
+            d.alloc_id(),
+            NodeKind::Group {
+                children,
+                clip: true,
+            },
+        )
     };
     let mut art = with_transparency(d, art, f.opacity, f.blend);
     art.appearance.effects = f.effects.clone();
@@ -298,7 +351,10 @@ fn gradient_art(d: &mut Document, l: &Node, path: &PathData, bounds: Rect, f: &F
 /// The colour and opacity gradient fill `g` paints at a document point of an object whose box is
 /// `bounds`, as the canvas draws it (the end colours continue past the ends). Colours stay in the
 /// colour model their stops (or freeform points) share; display RGB where models differ.
-pub(crate) fn gradient_sampler(g: &GradientPaint, bounds: Rect) -> Box<dyn Fn(Point) -> (Color, f32) + '_> {
+pub(crate) fn gradient_sampler(
+    g: &GradientPaint,
+    bounds: Rect,
+) -> Box<dyn Fn(Point) -> (Color, f32) + '_> {
     if g.gradient.kind == GradientKind::Freeform {
         let b = bounds.abs();
         let f = g.freeform_on(b);
@@ -311,7 +367,10 @@ pub(crate) fn gradient_sampler(g: &GradientPaint, bounds: Rect) -> Box<dyn Fn(Po
         });
     }
     let geom = g.resolve(bounds);
-    Box::new(move |p| g.gradient.sample_with(geom.param_at(g.gradient.kind, p) as f32, lerp_color))
+    Box::new(move |p| {
+        g.gradient
+            .sample_with(geom.param_at(g.gradient.kind, p) as f32, lerp_color)
+    })
 }
 
 /// The colour model all of `colors` share.
@@ -376,27 +435,59 @@ impl Frame {
         let geom = g.resolve(bounds);
         let radial = g.gradient.kind == GradientKind::Radial;
         // A vector of no length paints as one pointing right (as the canvas does).
-        let along = if geom.start.distance(geom.end) < 1e-9 { Vec2::new(1.0, 0.0) } else { geom.end - geom.start };
+        let along = if geom.start.distance(geom.end) < 1e-9 {
+            Vec2::new(1.0, 0.0)
+        } else {
+            geom.end - geom.start
+        };
         let normal = Vec2::new(-along.y, along.x) / along.hypot();
-        let across = if radial { normal * along.hypot() * geom.aspect } else { normal };
-        let corners = [bounds.origin(), Point::new(bounds.x1, bounds.y0), Point::new(bounds.x1, bounds.y1), Point::new(bounds.x0, bounds.y1)];
-        let range = |f: &dyn Fn(Point) -> f64| corners.iter().map(|c| f(*c)).fold((f64::MAX, f64::MIN), |(lo, hi), x| (lo.min(x), hi.max(x)));
+        let across = if radial {
+            normal * along.hypot() * geom.aspect
+        } else {
+            normal
+        };
+        let corners = [
+            bounds.origin(),
+            Point::new(bounds.x1, bounds.y0),
+            Point::new(bounds.x1, bounds.y1),
+            Point::new(bounds.x0, bounds.y1),
+        ];
+        let range = |f: &dyn Fn(Point) -> f64| {
+            corners
+                .iter()
+                .map(|c| f(*c))
+                .fold((f64::MAX, f64::MIN), |(lo, hi), x| (lo.min(x), hi.max(x)))
+        };
         let (mut t0, mut t1) = range(&|c| (c - geom.start).dot(along) / along.hypot2());
         let (s0, s1) = range(&|c| (c - geom.start).dot(normal));
         if radial {
-            let geom = vectorcraft_color::GradientGeom { end: geom.start + along, ..geom };
+            let geom = vectorcraft_color::GradientGeom {
+                end: geom.start + along,
+                ..geom
+            };
             (t0, t1) = (0.0, range(&|c| geom.param_at(GradientKind::Radial, c)).1);
         }
         // Keep a sliver of span so the art maps back invertibly.
         t1 = t1.max(t0 + 1e-6);
-        Self { radial, start: geom.start, focal: geom.focal_point(), along, across, t0, t1, s0, s1 }
+        Self {
+            radial,
+            start: geom.start,
+            focal: geom.focal_point(),
+            along,
+            across,
+            t0,
+            t1,
+            s0,
+            s1,
+        }
     }
 
     /// Linear: the point at parameter `t` along and `s` across. Radial: the point at parameter `t`
     /// and angle `s` (radians).
     fn at(&self, t: f64, s: f64) -> Point {
         if self.radial {
-            self.focal + (self.start - self.focal + self.along * s.cos() + self.across * s.sin()) * t
+            self.focal
+                + (self.start - self.focal + self.along * s.cos() + self.across * s.sin()) * t
         } else {
             self.start + self.along * t + self.across * s
         }
@@ -406,15 +497,34 @@ impl Frame {
     /// changes, so it paints the gradient exactly.
     fn mesh(&self, g: &Gradient) -> GradientMesh {
         // Rings as close as the columns around them, so the mesh draws smoothly.
-        let gap = if self.radial { (self.t1 - self.t0) / RADIAL_MESH_COLS as f64 } else { f64::INFINITY };
+        let gap = if self.radial {
+            (self.t1 - self.t0) / RADIAL_MESH_COLS as f64
+        } else {
+            f64::INFINITY
+        };
         let br = breaks(g, self.t0, self.t1, gap);
-        let ts: Vec<f64> = br.iter().map(|(t, _)| (t - self.t0) / (self.t1 - self.t0)).collect();
+        let ts: Vec<f64> = br
+            .iter()
+            .map(|(t, _)| (t - self.t0) / (self.t1 - self.t0))
+            .collect();
         let t = |x: f64| self.t0 + x * (self.t1 - self.t0);
         if self.radial {
-            let angles: Vec<f64> = (0..=RADIAL_MESH_COLS).map(|i| i as f64 / RADIAL_MESH_COLS as f64).collect();
-            GradientMesh::from_grid(&angles, &ts, &|u, v| self.at(t(v), u * std::f64::consts::TAU), &|r, _, _| br[r].1)
+            let angles: Vec<f64> = (0..=RADIAL_MESH_COLS)
+                .map(|i| i as f64 / RADIAL_MESH_COLS as f64)
+                .collect();
+            GradientMesh::from_grid(
+                &angles,
+                &ts,
+                &|u, v| self.at(t(v), u * std::f64::consts::TAU),
+                &|r, _, _| br[r].1,
+            )
         } else {
-            GradientMesh::from_grid(&ts, &[0.0, 1.0], &|u, v| self.at(t(u), self.s0 + v * (self.s1 - self.s0)), &|_, c, _| br[c].1)
+            GradientMesh::from_grid(
+                &ts,
+                &[0.0, 1.0],
+                &|u, v| self.at(t(u), self.s0 + v * (self.s1 - self.s0)),
+                &|_, c, _| br[c].1,
+            )
         }
     }
 
@@ -425,12 +535,20 @@ impl Frame {
     /// is just its band, so nothing doubles up.
     fn pieces(&self, g: &Gradient, n: usize) -> Vec<(PathData, (Color, f32))> {
         let step = (self.t1 - self.t0) / n as f64;
-        let color = |k: usize| g.sample_with((self.t0 + (k as f64 + 0.5) * step) as f32, lerp_color);
+        let color =
+            |k: usize| g.sample_with((self.t0 + (k as f64 + 0.5) * step) as f32, lerp_color);
         let opaque = g.stops.iter().all(|s| s.opacity >= 1.0);
         if self.radial {
             let ellipse = |t: f64| {
                 let c = self.focal + (self.start - self.focal) * t;
-                let m = Affine::new([self.along.x * t, self.along.y * t, self.across.x * t, self.across.y * t, c.x, c.y]);
+                let m = Affine::new([
+                    self.along.x * t,
+                    self.along.y * t,
+                    self.across.x * t,
+                    self.across.y * t,
+                    c.x,
+                    c.y,
+                ]);
                 shapes::ellipse(Rect::new(-1.0, -1.0, 1.0, 1.0)).transformed(m)
             };
             return (0..n)
@@ -450,7 +568,12 @@ impl Frame {
             .map(|k| {
                 let a = self.t0 + k as f64 * step;
                 let b = if opaque { self.t1 } else { a + step };
-                let pts = [self.at(a, self.s0), self.at(b, self.s0), self.at(b, self.s1), self.at(a, self.s1)];
+                let pts = [
+                    self.at(a, self.s0),
+                    self.at(b, self.s0),
+                    self.at(b, self.s1),
+                    self.at(a, self.s1),
+                ];
                 (PathData::single(SubPath::polyline(&pts, true)), color(k))
             })
             .collect()

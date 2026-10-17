@@ -57,7 +57,10 @@ pub fn symbol_char(family: &str, c: char) -> Option<char> {
         _ => return None,
     };
     let i = usize::try_from(code.checked_sub(0x20)?).ok()?;
-    t.get(i).copied().filter(|v| *v != 0).and_then(char::from_u32)
+    t.get(i)
+        .copied()
+        .filter(|v| *v != 0)
+        .and_then(char::from_u32)
 }
 
 /// `text` (in a run set in `family`) with every symbol-font character replaced by its Unicode
@@ -66,7 +69,9 @@ pub fn map_text(family: &str, text: &str) -> String {
     if !is_symbol_font(family) {
         return text.to_string();
     }
-    text.chars().map(|c| symbol_char(family, c).unwrap_or(c)).collect()
+    text.chars()
+        .map(|c| symbol_char(family, c).unwrap_or(c))
+        .collect()
 }
 
 const SYMBOL: [u32; 224] = [
@@ -230,10 +235,20 @@ mod tests {
 
     #[test]
     fn both_storage_forms_map_alike() {
-        for f in ["Symbol", "Wingdings", "Wingdings 2", "Wingdings 3", "Webdings"] {
+        for f in [
+            "Symbol",
+            "Wingdings",
+            "Wingdings 2",
+            "Wingdings 3",
+            "Webdings",
+        ] {
             assert!(is_symbol_font(f));
             for code in 0x20u32..=0xFF {
-                let (Some(pua), Some(plain)) = (char::from_u32(0xF000 + code), char::from_u32(code)) else { continue };
+                let (Some(pua), Some(plain)) =
+                    (char::from_u32(0xF000 + code), char::from_u32(code))
+                else {
+                    continue;
+                };
                 if code == 0xAD {
                     assert_eq!(symbol_char(f, plain), None);
                     continue;

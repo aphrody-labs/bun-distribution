@@ -171,7 +171,6 @@ pub fn page(runtime_lock: bool) -> BuildResult {
     );
     content.append(&buffer_history);
 
-
     // Apply the same per-setting policy as Eden's shared Widget builder.
     // Snapshot before ConfigurePerGame prepares its custom values for saving.
     let configuring_global = common::settings::is_configuring_global();

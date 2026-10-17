@@ -17,7 +17,8 @@ fn read_mips(gpu: &GpuCanvas, key: u64) -> Vec<Vec<[f32; 4]>> {
     (0..tile.levels.len())
         .map(|level| {
             let (w, h) = ((doc.size[0] >> level).max(1), (doc.size[1] >> level).max(1));
-            let row = (w as usize * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize);
+            let row =
+                (w as usize * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize);
             let buffer = device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("mip_test_readback"),
                 size: (row * h as usize) as u64,
@@ -26,15 +27,30 @@ fn read_mips(gpu: &GpuCanvas, key: u64) -> Vec<Vec<[f32; 4]>> {
             });
             let mut encoder = device.create_command_encoder(&Default::default());
             encoder.copy_texture_to_buffer(
-                wgpu::TexelCopyTextureInfo { texture: &tile.texture, mip_level: level as u32, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+                wgpu::TexelCopyTextureInfo {
+                    texture: &tile.texture,
+                    mip_level: level as u32,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
                 wgpu::TexelCopyBufferInfo {
                     buffer: &buffer,
-                    layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row as u32), rows_per_image: Some(h) },
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(row as u32),
+                        rows_per_image: Some(h),
+                    },
                 },
-                wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+                wgpu::Extent3d {
+                    width: w,
+                    height: h,
+                    depth_or_array_layers: 1,
+                },
             );
             queue.submit([encoder.finish()]);
-            buffer.slice(..).map_async(wgpu::MapMode::Read, |result| result.unwrap());
+            buffer
+                .slice(..)
+                .map_async(wgpu::MapMode::Read, |result| result.unwrap());
             assert!(gpu.health.wait(device, None));
             let data = buffer.slice(..).get_mapped_range().unwrap();
             let mut pixels = Vec::new();
@@ -51,7 +67,9 @@ fn read_mips(gpu: &GpuCanvas, key: u64) -> Vec<Vec<[f32; 4]>> {
 
 #[test]
 fn canvas_mips_preserve_opaque_pixels_and_partial_updates() {
-    let rs = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| egui_kittest::wgpu::create_render_state(wgpu_setup(), Default::default())));
+    let rs = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        egui_kittest::wgpu::create_render_state(wgpu_setup(), Default::default())
+    }));
     let Ok(rs) = rs else {
         eprintln!("skipping mip readback: no GPU adapter");
         return;
@@ -60,7 +78,13 @@ fn canvas_mips_preserve_opaque_pixels_and_partial_updates() {
     let gpu = GpuCanvas::new(&rs);
     // Both mip paths: straight into the level, and the DX12 scratch-texture workaround.
     for separate in [false, true] {
-        gpu.rs.renderer.write().callback_resources.get_mut::<Resources>().unwrap().separate_mip_targets = separate;
+        gpu.rs
+            .renderer
+            .write()
+            .callback_resources
+            .get_mut::<Resources>()
+            .unwrap()
+            .separate_mip_targets = separate;
         check_mips(&gpu);
     }
 }
@@ -73,13 +97,24 @@ fn check_mips(gpu: &GpuCanvas) {
             gpu.upload_buffer_full(1, &full, depth);
             for (level, pixels) in read_mips(gpu, 1).iter().enumerate() {
                 for pixel in pixels {
-                    assert!((pixel[3] - 1.0).abs() < 0.001, "{depth:?} {w}x{h} mip {level}: {pixel:?}");
+                    assert!(
+                        (pixel[3] - 1.0).abs() < 0.001,
+                        "{depth:?} {w}x{h} mip {level}: {pixel:?}"
+                    );
                     for (actual, expected) in pixel.iter().zip([0.25, 0.5, 0.75, 1.0]) {
-                        assert!((actual - expected).abs() < 0.005, "{depth:?} {w}x{h} mip {level}: {pixel:?}");
+                        assert!(
+                            (actual - expected).abs() < 0.005,
+                            "{depth:?} {w}x{h} mip {level}: {pixel:?}"
+                        );
                     }
                 }
             }
-            let patch = Rect::from_xywh((w / 2) as i32, (h / 2) as i32, (w / 3).max(1), (h / 3).max(1));
+            let patch = Rect::from_xywh(
+                (w / 2) as i32,
+                (h / 2) as i32,
+                (w / 3).max(1),
+                (h / 3).max(1),
+            );
             let changed = Buffer::filled(patch, [1.0, 0.0, 0.0, 1.0]);
             assert!(gpu.upload_buffer_rect(1, &changed));
             for y in patch.y0..patch.y1 {
@@ -92,9 +127,15 @@ fn check_mips(gpu: &GpuCanvas) {
             let rebuilt = read_mips(gpu, 2);
             for (level, (actual, expected)) in partial.iter().zip(&rebuilt).enumerate() {
                 for (a, b) in actual.iter().zip(expected) {
-                    assert!((a[3] - 1.0).abs() < 0.001, "partial {depth:?} mip {level}: {a:?}");
+                    assert!(
+                        (a[3] - 1.0).abs() < 0.001,
+                        "partial {depth:?} mip {level}: {a:?}"
+                    );
                     for (a, b) in a.iter().zip(b) {
-                        assert!((a - b).abs() < 0.005, "partial/full mismatch {depth:?} {w}x{h} mip {level}: {a} != {b}");
+                        assert!(
+                            (a - b).abs() < 0.005,
+                            "partial/full mismatch {depth:?} {w}x{h} mip {level}: {a} != {b}"
+                        );
                     }
                 }
             }

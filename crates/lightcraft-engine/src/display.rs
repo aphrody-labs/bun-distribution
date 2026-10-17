@@ -39,8 +39,13 @@ impl Display {
 
     pub fn from_bytes(path: &str, bytes: &[u8]) -> Result<Display, String> {
         let profile = DisplayProfile::from_icc(bytes).map_err(|e| format!("{path}: {e}"))?;
-        let space = DisplaySpace::new(profile.to_rec2020, profile.id).ok_or_else(|| format!("{path}: the profile's primaries are degenerate"))?;
-        Ok(Display { path: path.to_string(), profile, space })
+        let space = DisplaySpace::new(profile.to_rec2020, profile.id)
+            .ok_or_else(|| format!("{path}: the profile's primaries are degenerate"))?;
+        Ok(Display {
+            path: path.to_string(),
+            profile,
+            space,
+        })
     }
 
     pub fn id(&self) -> u64 {
@@ -49,16 +54,27 @@ impl Display {
 
     /// Load the profile at `path` (`""`: none, the display is treated as sRGB).
     pub fn load_opt(path: &str) -> Result<Option<Arc<Display>>, String> {
-        if path.trim().is_empty() { Ok(None) } else { Display::load(path).map(|d| Some(Arc::new(d))) }
+        if path.trim().is_empty() {
+            Ok(None)
+        } else {
+            Display::load(path).map(|d| Some(Arc::new(d)))
+        }
     }
 
     /// For `app.displayProfile` and Settings: path, description, kind, primaries (xy).
     pub fn describe(&self) -> Value {
-        let to_xyz = lightcraft_color::REC2020.to_xyz().mul(&self.profile.to_rec2020).0;
+        let to_xyz = lightcraft_color::REC2020
+            .to_xyz()
+            .mul(&self.profile.to_rec2020)
+            .0;
         let xy = |c: usize| {
             let (x, y, z) = (to_xyz[0][c], to_xyz[1][c], to_xyz[2][c]);
             let s = x + y + z;
-            if s.abs() < 1e-12 { json!([0.0, 0.0]) } else { json!([round4(x / s), round4(y / s)]) }
+            if s.abs() < 1e-12 {
+                json!([0.0, 0.0])
+            } else {
+                json!([round4(x / s), round4(y / s)])
+            }
         };
         json!({
             "path": self.path,
@@ -92,7 +108,11 @@ pub fn present(r: &mut RenderResult, display: &Display) {
 /// its sRGB histogram, plus (`full_srgb`: for the cached view preview) its whole sRGB version.
 /// The histogram samples the same pixels [`Histogram::of_srgb8`] would, so only those are
 /// converted when the sRGB image itself isn't needed (slider drags).
-pub(crate) fn finish_render(image: &mut Rgba8, display: &Display, full_srgb: bool) -> (Option<Rgba8>, Option<Histogram>) {
+pub(crate) fn finish_render(
+    image: &mut Rgba8,
+    display: &Display,
+    full_srgb: bool,
+) -> (Option<Rgba8>, Option<Histogram>) {
     let warn = |e: String| log::warn!("display profile: {e}");
     let (srgb, histogram) = if full_srgb {
         let srgb = display.profile.to_srgb(image).map_err(warn).ok();
@@ -100,7 +120,15 @@ pub(crate) fn finish_render(image: &mut Rgba8, display: &Display, full_srgb: boo
         (srgb, h)
     } else {
         let sample = histogram_sample(image);
-        (None, display.profile.to_srgb(&sample).map_err(warn).ok().map(|s| Histogram::of_srgb8(&s)))
+        (
+            None,
+            display
+                .profile
+                .to_srgb(&sample)
+                .map_err(warn)
+                .ok()
+                .map(|s| Histogram::of_srgb8(&s)),
+        )
     };
     if let Err(e) = display.profile.correct(image) {
         warn(e);
@@ -122,7 +150,11 @@ fn histogram_sample(img: &Rgba8) -> Rgba8 {
             data.push(img.get(x, y));
         }
     }
-    Rgba8 { width: w, height: h, data }
+    Rgba8 {
+        width: w,
+        height: h,
+        data,
+    }
 }
 
 #[cfg(test)]
@@ -130,11 +162,28 @@ mod tests {
     use super::*;
 
     fn p3() -> Display {
-        Display::from_bytes("p3.icc", &lightcraft_codecs::icc::write_named(lightcraft_codecs::NamedSpace::DisplayP3)).unwrap()
+        Display::from_bytes(
+            "p3.icc",
+            &lightcraft_codecs::icc::write_named(lightcraft_codecs::NamedSpace::DisplayP3),
+        )
+        .unwrap()
     }
 
     fn picture(w: usize, h: usize) -> Rgba8 {
-        Rgba8 { width: w, height: h, data: (0..w * h).map(|i| [(i * 7 % 256) as u8, (i * 13 % 256) as u8, (i * 29 % 256) as u8, 255]).collect() }
+        Rgba8 {
+            width: w,
+            height: h,
+            data: (0..w * h)
+                .map(|i| {
+                    [
+                        (i * 7 % 256) as u8,
+                        (i * 13 % 256) as u8,
+                        (i * 29 % 256) as u8,
+                        255,
+                    ]
+                })
+                .collect(),
+        }
     }
 
     /// The sampled histogram of a drag render is exactly the histogram of the whole sRGB image.
@@ -157,7 +206,11 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("lightcraft-display-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let good = dir.join("p3.icc");
-        std::fs::write(&good, lightcraft_codecs::icc::write_named(lightcraft_codecs::NamedSpace::DisplayP3)).unwrap();
+        std::fs::write(
+            &good,
+            lightcraft_codecs::icc::write_named(lightcraft_codecs::NamedSpace::DisplayP3),
+        )
+        .unwrap();
         let bad = dir.join("bad.icc");
         std::fs::write(&bad, b"not a profile").unwrap();
 
@@ -166,7 +219,11 @@ mod tests {
         assert_eq!(r["kind"], "matrix");
         assert_eq!(r["description"], "Display P3");
         let red = r["primaries"]["red"].as_array().unwrap();
-        assert!((red[0].as_f64().unwrap() - 0.68).abs() < 2e-3 && (red[1].as_f64().unwrap() - 0.32).abs() < 2e-3, "{r}");
+        assert!(
+            (red[0].as_f64().unwrap() - 0.68).abs() < 2e-3
+                && (red[1].as_f64().unwrap() - 0.32).abs() < 2e-3,
+            "{r}"
+        );
         assert!(Display::load_opt("  ").unwrap().is_none());
         let e = Display::load(&bad.to_string_lossy()).unwrap_err();
         assert!(e.contains("not a valid ICC profile"), "{e}");

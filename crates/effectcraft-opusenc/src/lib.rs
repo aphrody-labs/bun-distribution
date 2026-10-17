@@ -23,7 +23,14 @@
 //! assert_eq!(voip.mode(), Mode::Silk);
 //! ```
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 // The bit-allocation code mirrors the normative integer arithmetic; keep C-like shift expressions.
 #![allow(clippy::precedence, clippy::int_plus_one)]
 
@@ -182,16 +189,30 @@ impl OpusEncoder {
             Mode::Hybrid => bandwidth >= Bandwidth::SuperWideband,
             Mode::Celt => bandwidth == Bandwidth::Fullband,
         };
-        assert!(ok, "unsupported mode/bandwidth combination {mode:?}/{bandwidth:?}");
+        assert!(
+            ok,
+            "unsupported mode/bandwidth combination {mode:?}/{bandwidth:?}"
+        );
         Self::build(channels, bitrate_bps, Application::Audio, mode, bandwidth)
     }
 
-    fn build(channels: u8, bitrate_bps: u32, application: Application, mode: Mode, bandwidth: Bandwidth) -> Self {
-        assert!(channels == 1 || channels == 2, "Opus family-0 streams have 1 or 2 channels");
+    fn build(
+        channels: u8,
+        bitrate_bps: u32,
+        application: Application,
+        mode: Mode,
+        bandwidth: Bandwidth,
+    ) -> Self {
+        assert!(
+            channels == 1 || channels == 2,
+            "Opus family-0 streams have 1 or 2 channels"
+        );
         let c = channels as usize;
         let bitrate_bps = bitrate_bps.clamp(6_000 * c as u32, 510_000);
         let packet_bytes = (bitrate_bps as usize).div_ceil(400);
-        let frame_bytes = packet_bytes.saturating_sub(1).clamp(MIN_FRAME_BYTES, MAX_FRAME_BYTES);
+        let frame_bytes = packet_bytes
+            .saturating_sub(1)
+            .clamp(MIN_FRAME_BYTES, MAX_FRAME_BYTES);
         let silk = match mode {
             Mode::Celt => None,
             Mode::Silk | Mode::Hybrid => {
@@ -205,12 +226,18 @@ impl OpusEncoder {
                 } else {
                     // SILK gets most of a hybrid packet; CELT codes 8 kHz and up with the rest.
                     let per = (bitrate_bps / c as u32) as f64;
-                    let share = if bandwidth == Bandwidth::SuperWideband { 0.72 } else { 0.62 };
+                    let share = if bandwidth == Bandwidth::SuperWideband {
+                        0.72
+                    } else {
+                        0.62
+                    };
                     c as f64 * (per * share).min(per - 6_000.0).max(per * 0.5) / 50.0
                 };
                 Some(SilkPath {
                     enc: SilkEncoder::new(fs_khz, c),
-                    down: (0..c).map(|_| Downsampler::new(fs_khz as u32 * 1000)).collect(),
+                    down: (0..c)
+                        .map(|_| Downsampler::new(fs_khz as u32 * 1000))
+                        .collect(),
                     target_bits,
                     reservoir: 0.0,
                 })
@@ -308,13 +335,24 @@ impl OpusEncoder {
     /// `FRAME_SIZE * channels` values) and returns one Opus packet.
     pub fn encode_float(&mut self, pcm: &[f32]) -> Vec<u8> {
         let c = self.channels;
-        assert_eq!(pcm.len(), N * c, "encode_float takes exactly FRAME_SIZE samples per channel");
+        assert_eq!(
+            pcm.len(),
+            N * c,
+            "encode_float takes exactly FRAME_SIZE samples per channel"
+        );
         let mut packet = vec![self.toc()];
         match self.mode {
             Mode::Celt => {
                 let (log_e, silence) = self.celt_analysis(pcm);
                 let len = self.frame_bytes;
-                packet.extend_from_slice(&self.encode_celt(RangeEncoder::new(), len, 0, NB_EBANDS, &log_e, silence));
+                packet.extend_from_slice(&self.encode_celt(
+                    RangeEncoder::new(),
+                    len,
+                    0,
+                    NB_EBANDS,
+                    &log_e,
+                    silence,
+                ));
             }
             Mode::Silk => {
                 let x = self.silk_input(pcm);
@@ -322,10 +360,12 @@ impl OpusEncoder {
                 if let Some(sp) = self.silk.as_mut() {
                     let target = sp.target_bits + 0.25 * sp.reservoir;
                     let mut enc = RangeEncoder::new();
-                    sp.enc.encode(&x, target.max(24.0), (MAX_FRAME_BYTES * 8) as i32, &mut enc);
+                    sp.enc
+                        .encode(&x, target.max(24.0), (MAX_FRAME_BYTES * 8) as i32, &mut enc);
                     let bytes = (enc.tell() as usize).div_ceil(8).max(2);
                     let lim = 4.0 * sp.target_bits;
-                    sp.reservoir = (sp.reservoir + sp.target_bits - (bytes * 8) as f64).clamp(-lim, lim);
+                    sp.reservoir =
+                        (sp.reservoir + sp.target_bits - (bytes * 8) as f64).clamp(-lim, lim);
                     packet.extend_from_slice(&enc.done(bytes));
                 }
             }
@@ -336,15 +376,27 @@ impl OpusEncoder {
                 let celt_min = (total / 5).max(80);
                 let mut enc = RangeEncoder::new();
                 if let Some(sp) = self.silk.as_mut() {
-                    sp.enc.encode(&x, sp.target_bits, total - celt_min, &mut enc);
+                    sp.enc
+                        .encode(&x, sp.target_bits, total - celt_min, &mut enc);
                 }
                 // No redundancy (RFC 6716 §4.5.1); the flag is present when there is room.
                 if enc.tell() + 17 + 20 <= total {
                     enc.bit_logp(false, 12);
                 }
                 let (log_e, _) = self.celt_analysis(pcm);
-                let end = if self.bandwidth == Bandwidth::SuperWideband { 19 } else { NB_EBANDS };
-                packet.extend_from_slice(&self.encode_celt(enc, len, HYBRID_START_BAND, end, &log_e, false));
+                let end = if self.bandwidth == Bandwidth::SuperWideband {
+                    19
+                } else {
+                    NB_EBANDS
+                };
+                packet.extend_from_slice(&self.encode_celt(
+                    enc,
+                    len,
+                    HYBRID_START_BAND,
+                    end,
+                    &log_e,
+                    false,
+                ));
             }
         }
         packet
@@ -353,13 +405,19 @@ impl OpusEncoder {
     /// Decimates the input to the SILK internal rate (16-bit scale), one vector per channel.
     fn silk_input(&mut self, pcm: &[f32]) -> Vec<Vec<f32>> {
         let c = self.channels;
-        let Some(sp) = self.silk.as_mut() else { return vec![vec![]; c] };
+        let Some(sp) = self.silk.as_mut() else {
+            return vec![vec![]; c];
+        };
         let mut out = Vec::with_capacity(c);
         let mut tmp = vec![0f32; N];
         for ch in 0..c {
             for (j, t) in tmp.iter_mut().enumerate() {
                 let s = pcm[j * c + ch];
-                *t = if s.is_finite() { s.clamp(-1.0, 1.0) * 32768.0 } else { 0.0 };
+                *t = if s.is_finite() {
+                    s.clamp(-1.0, 1.0) * 32768.0
+                } else {
+                    0.0
+                };
             }
             let mut y = Vec::with_capacity(N / 3);
             sp.down[ch].process(&tmp, &mut y);
@@ -379,7 +437,11 @@ impl OpusEncoder {
             let mut mem = self.preemph_mem[ch];
             for j in 0..N {
                 let s = pcm[j * c + ch];
-                let s = if s.is_finite() { s.clamp(-2.0, 2.0) * 32768.0 } else { 0.0 };
+                let s = if s.is_finite() {
+                    s.clamp(-2.0, 2.0) * 32768.0
+                } else {
+                    0.0
+                };
                 let v = s - PREEMPH * mem;
                 mem = s;
                 self.block[OVERLAP + j] = v;
@@ -407,7 +469,15 @@ impl OpusEncoder {
     /// (which already holds the SILK frame in hybrid mode), coding bands `start..end`, and
     /// finalises the frame.
     #[allow(clippy::too_many_arguments)]
-    fn encode_celt(&mut self, mut enc: RangeEncoder, len: usize, start: usize, end: usize, log_e: &[f32; 2 * NB_EBANDS], silence: bool) -> Vec<u8> {
+    fn encode_celt(
+        &mut self,
+        mut enc: RangeEncoder,
+        len: usize,
+        start: usize,
+        end: usize,
+        log_e: &[f32; 2 * NB_EBANDS],
+        silence: bool,
+    ) -> Vec<u8> {
         let m = celt_mode();
         let c = self.channels;
         if c == 1 {
@@ -438,10 +508,30 @@ impl OpusEncoder {
             let mut enc_intra = enc.clone();
             let mut old_intra = self.old_band_e;
             enc_intra.bit_logp(true, 3);
-            quant_coarse_energy(start, end, log_e, &mut old_intra, true, &mut enc_intra, c, LM, total_bits_raw);
+            quant_coarse_energy(
+                start,
+                end,
+                log_e,
+                &mut old_intra,
+                true,
+                &mut enc_intra,
+                c,
+                LM,
+                total_bits_raw,
+            );
             enc.bit_logp(false, 3);
             let mut old_inter = self.old_band_e;
-            quant_coarse_energy(start, end, log_e, &mut old_inter, false, &mut enc, c, LM, total_bits_raw);
+            quant_coarse_energy(
+                start,
+                end,
+                log_e,
+                &mut old_inter,
+                false,
+                &mut enc,
+                c,
+                LM,
+                total_bits_raw,
+            );
             if enc_intra.tell_frac() < enc.tell_frac() {
                 enc = enc_intra;
                 self.old_band_e = old_intra;
@@ -449,7 +539,17 @@ impl OpusEncoder {
                 self.old_band_e = old_inter;
             }
         } else {
-            quant_coarse_energy(start, end, log_e, &mut self.old_band_e, false, &mut enc, c, LM, total_bits_raw);
+            quant_coarse_energy(
+                start,
+                end,
+                log_e,
+                &mut self.old_band_e,
+                false,
+                &mut enc,
+                c,
+                LM,
+                total_bits_raw,
+            );
         }
         // TF resolution: no changes.
         {
@@ -488,8 +588,18 @@ impl OpusEncoder {
             enc.icdf(alloc_trim as usize, &TRIM_ICDF, 7);
         }
         let bits = (total_bits_raw << BITRES) - enc.tell_frac() - 1;
-        let alloc = compute_allocation(m, start, end, &offsets, &cap, alloc_trim, bits, c, LM, &mut enc);
-        quant_fine_energy(start, end, log_e, &mut self.old_band_e, &alloc.fine_quant, &mut enc, c);
+        let alloc = compute_allocation(
+            m, start, end, &offsets, &cap, alloc_trim, bits, c, LM, &mut enc,
+        );
+        quant_fine_energy(
+            start,
+            end,
+            log_e,
+            &mut self.old_band_e,
+            &alloc.fine_quant,
+            &mut enc,
+            c,
+        );
         quant_all_bands(
             m,
             start,
@@ -508,8 +618,23 @@ impl OpusEncoder {
             alloc.coded_bands,
         );
         let bits_left = total_bits_raw - enc.tell();
-        quant_energy_finalise(start, end, log_e, &mut self.old_band_e, &alloc.fine_quant, &alloc.fine_priority, bits_left, &mut enc, c);
-        debug_assert!(enc.tell() <= total_bits_raw, "frame overflow: {} > {}", enc.tell(), total_bits_raw);
+        quant_energy_finalise(
+            start,
+            end,
+            log_e,
+            &mut self.old_band_e,
+            &alloc.fine_quant,
+            &alloc.fine_priority,
+            bits_left,
+            &mut enc,
+            c,
+        );
+        debug_assert!(
+            enc.tell() <= total_bits_raw,
+            "frame overflow: {} > {}",
+            enc.tell(),
+            total_bits_raw
+        );
         if c == 1 {
             let (a, b) = self.old_band_e.split_at_mut(NB_EBANDS);
             b.copy_from_slice(a);
@@ -544,7 +669,9 @@ mod tests {
     fn packet_sizes_follow_bitrate() {
         for (ch, rate) in [(1u8, 64_000u32), (2, 128_000), (2, 256_000)] {
             let mut e = OpusEncoder::new(ch, rate);
-            let pcm: Vec<f32> = (0..N * ch as usize).map(|i| (i as f32 * 0.05).sin() * 0.5).collect();
+            let pcm: Vec<f32> = (0..N * ch as usize)
+                .map(|i| (i as f32 * 0.05).sin() * 0.5)
+                .collect();
             let p = e.encode_float(&pcm);
             assert_eq!(p.len(), rate as usize / 400);
             assert_eq!(p[0], 0xF8 | if ch == 2 { 4 } else { 0 });

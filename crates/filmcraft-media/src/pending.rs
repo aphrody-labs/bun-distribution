@@ -34,7 +34,10 @@ pub fn take() -> bool {
 /// The error a deferring reader returns.
 pub fn would_block() -> std::io::Error {
     mark();
-    std::io::Error::new(std::io::ErrorKind::WouldBlock, "media data is still loading")
+    std::io::Error::new(
+        std::io::ErrorKind::WouldBlock,
+        "media data is still loading",
+    )
 }
 
 #[cfg(test)]

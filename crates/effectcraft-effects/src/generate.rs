@@ -11,8 +11,22 @@ use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 /// Checkerboard / Grid "Size From" options.
 pub(crate) const SIZE_FROM: [&str; 3] = ["Corner Point", "Width Slider", "Width & Height Sliders"];
 
-fn spec(id: &'static str, name: &'static str, category: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category, params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    category: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category,
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 /// Blend a generated straight colour `g` (with alpha `ga`) over the original pixel.
@@ -38,12 +52,20 @@ fn gradient_ramp(ctx: &EffectCtx, mut b: Buf) -> Buf {
     b.img.rows_mut().for_each(|(y, row)| {
         for (x, px) in row.iter_mut().enumerate() {
             let (vx, vy) = (x as f64 + 0.5 - s.0, y as f64 + 0.5 - s.1);
-            let mut t = if radial { ((vx * vx + vy * vy) / len2).sqrt() } else { (vx * dx + vy * dy) / len2 } as f32;
+            let mut t = if radial {
+                ((vx * vx + vy * vy) / len2).sqrt()
+            } else {
+                (vx * dx + vy * dy) / len2
+            } as f32;
             if scatter > 0.0 {
                 t += (effectcraft_raster::hash_noise(x as u32, y as u32, seed) - 0.5) * scatter;
             }
             let t = t.clamp(0.0, 1.0);
-            let c = [c0[0] + (c1[0] - c0[0]) * t, c0[1] + (c1[1] - c0[1]) * t, c0[2] + (c1[2] - c0[2]) * t];
+            let c = [
+                c0[0] + (c1[0] - c0[0]) * t,
+                c0[1] + (c1[1] - c0[1]) * t,
+                c0[2] + (c1[2] - c0[2]) * t,
+            ];
             put(px, c, 1.0, blend);
         }
     });
@@ -111,8 +133,14 @@ pub(crate) fn gen_blend(o: Px, g: Px, mode: u32) -> Px {
 }
 
 fn four_color(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let pts: Vec<((f64, f64), [f32; 4])> =
-        (1..=4).map(|i| (b.to_px(ctx.params.v2(&format!("positionsColors/point{i}"))), ctx.params.color(&format!("positionsColors/color{i}")))).collect();
+    let pts: Vec<((f64, f64), [f32; 4])> = (1..=4)
+        .map(|i| {
+            (
+                b.to_px(ctx.params.v2(&format!("positionsColors/point{i}"))),
+                ctx.params.color(&format!("positionsColors/color{i}")),
+            )
+        })
+        .collect();
     let blend = ctx.params.f("blend").max(1.0);
     let jitter = (ctx.params.f("jitter") / 100.0).clamp(0.0, 1.0) as f32;
     let op = ctx.params.f("opacity") as f32 / 100.0;
@@ -133,7 +161,9 @@ fn four_color(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let mut c = acc.map(|v| (v / wsum) as f32);
             if jitter > 0.0 {
                 // Dither against banding: a few code values of noise.
-                let n = (effectcraft_raster::hash_noise(x as u32, y as u32, seed) - 0.5) * jitter * (8.0 / 255.0);
+                let n = (effectcraft_raster::hash_noise(x as u32, y as u32, seed) - 0.5)
+                    * jitter
+                    * (8.0 / 255.0);
                 c = c.map(|v| v + n);
             }
             *px = gen_blend(*px, [c[0] * op, c[1] * op, c[2] * op, op], mode);
@@ -150,8 +180,14 @@ fn cell_size(ctx: &EffectCtx, b: &Buf, anchor: (f64, f64)) -> (f64, f64) {
             let c = b.to_px(ctx.params.v2("corner"));
             ((c.0 - anchor.0).abs(), (c.1 - anchor.1).abs())
         }
-        1 => (ctx.params.f("width") * b.scale, ctx.params.f("width") * b.scale),
-        _ => (ctx.params.f("width") * b.scale, ctx.params.f("height") * b.scale),
+        1 => (
+            ctx.params.f("width") * b.scale,
+            ctx.params.f("width") * b.scale,
+        ),
+        _ => (
+            ctx.params.f("width") * b.scale,
+            ctx.params.f("height") * b.scale,
+        ),
     };
     (w.max(1.0), h.max(1.0))
 }
@@ -170,7 +206,11 @@ fn checkerboard(ctx: &EffectCtx, mut b: Buf) -> Buf {
         let u = p / size;
         let fr = u - u.floor();
         let d = fr.min(1.0 - fr) * size;
-        let s = if (u.floor() as i64).rem_euclid(2) == 0 { 1.0 } else { -1.0 };
+        let s = if (u.floor() as i64).rem_euclid(2) == 0 {
+            1.0
+        } else {
+            -1.0
+        };
         s * (d / (f * 0.5)).min(1.0)
     };
     b.img.rows_mut().for_each(|(y, row)| {
@@ -201,7 +241,11 @@ fn grid(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let (dx, dy) = (gx.min(w - gx), gy.min(h - gy));
             let cx = ((border / 2.0 - dx) / fw + 0.5).clamp(0.0, 1.0);
             let cy = ((border / 2.0 - dy) / fh + 0.5).clamp(0.0, 1.0);
-            let mut cov = if border <= 0.0 { 0.0 } else { cx.max(cy) as f32 };
+            let mut cov = if border <= 0.0 {
+                0.0
+            } else {
+                cx.max(cy) as f32
+            };
             if invert {
                 cov = 1.0 - cov;
             }
@@ -213,7 +257,13 @@ fn grid(ctx: &EffectCtx, mut b: Buf) -> Buf {
 }
 
 /// Circle Edge options.
-pub(crate) const CIRCLE_EDGES: [&str; 5] = ["None", "Edge Radius", "Thickness", "Thickness * Radius", "Thickness & Feather * Radius"];
+pub(crate) const CIRCLE_EDGES: [&str; 5] = [
+    "None",
+    "Edge Radius",
+    "Thickness",
+    "Thickness * Radius",
+    "Thickness & Feather * Radius",
+];
 
 fn circle(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let c = b.to_px(ctx.params.v2("center"));
@@ -263,8 +313,10 @@ fn circle(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 #[inline]
 pub(crate) fn lattice(ix: i32, iy: i32, iz: i32, seed: u32) -> f32 {
-    let mut h =
-        (ix as u32).wrapping_mul(0x27d4_eb2d) ^ (iy as u32).wrapping_mul(0x1656_67b1) ^ (iz as u32).wrapping_mul(0x9e37_79b9) ^ seed.wrapping_mul(0x85eb_ca6b);
+    let mut h = (ix as u32).wrapping_mul(0x27d4_eb2d)
+        ^ (iy as u32).wrapping_mul(0x1656_67b1)
+        ^ (iz as u32).wrapping_mul(0x9e37_79b9)
+        ^ seed.wrapping_mul(0x85eb_ca6b);
     h ^= h >> 15;
     h = h.wrapping_mul(0x2c1b_3c6d);
     h ^= h >> 12;
@@ -285,8 +337,16 @@ pub fn value_noise(x: f32, y: f32, z: f32, seed: u32) -> f32 {
     let (ix, iy, iz) = (x0 as i32, y0 as i32, z0 as i32);
     let l = |a: f32, b: f32, t: f32| a + (b - a) * t;
     let c = |dx: i32, dy: i32, dz: i32| lattice(ix + dx, iy + dy, iz + dz, seed);
-    let a = l(l(c(0, 0, 0), c(1, 0, 0), fx), l(c(0, 1, 0), c(1, 1, 0), fx), fy);
-    let b = l(l(c(0, 0, 1), c(1, 0, 1), fx), l(c(0, 1, 1), c(1, 1, 1), fx), fy);
+    let a = l(
+        l(c(0, 0, 0), c(1, 0, 0), fx),
+        l(c(0, 1, 0), c(1, 1, 0), fx),
+        fy,
+    );
+    let b = l(
+        l(c(0, 0, 1), c(1, 0, 1), fx),
+        l(c(0, 1, 1), c(1, 1, 1), fx),
+        fy,
+    );
     l(a, b, fz)
 }
 
@@ -301,12 +361,32 @@ pub fn specs() -> Vec<EffectSpec> {
             "Generate",
             vec![
                 p("start", "Start of Ramp", pt(0.5, 0.0), ParamUi::Point),
-                p("startColor", "Start Color", col(0.0, 0.0, 0.0), ParamUi::Color),
+                p(
+                    "startColor",
+                    "Start Color",
+                    col(0.0, 0.0, 0.0),
+                    ParamUi::Color,
+                ),
                 p("end", "End of Ramp", pt(0.5, 1.0), ParamUi::Point),
                 p("endColor", "End Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("shape", "Ramp Shape", Value::Enum(0), popup(&["Linear Ramp", "Radial Ramp"])),
-                p("scatter", "Ramp Scatter", num(0.0), slider(0.0, 512.0, 0.0, 512.0, 1)),
-                p("blend", "Blend With Original", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "shape",
+                    "Ramp Shape",
+                    Value::Enum(0),
+                    popup(&["Linear Ramp", "Radial Ramp"]),
+                ),
+                p(
+                    "scatter",
+                    "Ramp Scatter",
+                    num(0.0),
+                    slider(0.0, 512.0, 0.0, 512.0, 1),
+                ),
+                p(
+                    "blend",
+                    "Blend With Original",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
             ],
             gradient_ramp,
         ),
@@ -315,18 +395,78 @@ pub fn specs() -> Vec<EffectSpec> {
             "4-Color Gradient",
             "Generate",
             vec![
-                p("positionsColors/point1", "Point 1", pt(0.1, 0.1), ParamUi::Point),
-                p("positionsColors/color1", "Color 1", col(1.0, 1.0, 0.0), ParamUi::Color),
-                p("positionsColors/point2", "Point 2", pt(0.9, 0.1), ParamUi::Point),
-                p("positionsColors/color2", "Color 2", col(0.0, 1.0, 0.0), ParamUi::Color),
-                p("positionsColors/point3", "Point 3", pt(0.1, 0.9), ParamUi::Point),
-                p("positionsColors/color3", "Color 3", col(1.0, 0.0, 1.0), ParamUi::Color),
-                p("positionsColors/point4", "Point 4", pt(0.9, 0.9), ParamUi::Point),
-                p("positionsColors/color4", "Color 4", col(0.0, 0.0, 1.0), ParamUi::Color),
-                p("blend", "Blend", num(100.0), slider(1.0, 1000.0, 1.0, 1000.0, 1)),
-                p("jitter", "Jitter", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("blendingMode", "Blending Mode", Value::Enum(0), popup(&GEN_BLEND_MODES[..18])),
+                p(
+                    "positionsColors/point1",
+                    "Point 1",
+                    pt(0.1, 0.1),
+                    ParamUi::Point,
+                ),
+                p(
+                    "positionsColors/color1",
+                    "Color 1",
+                    col(1.0, 1.0, 0.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "positionsColors/point2",
+                    "Point 2",
+                    pt(0.9, 0.1),
+                    ParamUi::Point,
+                ),
+                p(
+                    "positionsColors/color2",
+                    "Color 2",
+                    col(0.0, 1.0, 0.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "positionsColors/point3",
+                    "Point 3",
+                    pt(0.1, 0.9),
+                    ParamUi::Point,
+                ),
+                p(
+                    "positionsColors/color3",
+                    "Color 3",
+                    col(1.0, 0.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "positionsColors/point4",
+                    "Point 4",
+                    pt(0.9, 0.9),
+                    ParamUi::Point,
+                ),
+                p(
+                    "positionsColors/color4",
+                    "Color 4",
+                    col(0.0, 0.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "blend",
+                    "Blend",
+                    num(100.0),
+                    slider(1.0, 1000.0, 1.0, 1000.0, 1),
+                ),
+                p(
+                    "jitter",
+                    "Jitter",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(0),
+                    popup(&GEN_BLEND_MODES[..18]),
+                ),
             ],
             four_color,
         ),
@@ -338,13 +478,43 @@ pub fn specs() -> Vec<EffectSpec> {
                 p("anchor", "Anchor", pt(0.0, 0.0), ParamUi::Point),
                 p("sizeFrom", "Size From", Value::Enum(1), popup(&SIZE_FROM)),
                 p("corner", "Corner", pt(0.1, 0.1), ParamUi::Point),
-                p("width", "Width", num(64.0), slider(1.0, 4000.0, 1.0, 400.0, 1)),
-                p("height", "Height", num(64.0), slider(1.0, 4000.0, 1.0, 400.0, 1)),
-                p("feather/featherWidth", "Width", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 1)),
-                p("feather/featherHeight", "Height", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 1)),
+                p(
+                    "width",
+                    "Width",
+                    num(64.0),
+                    slider(1.0, 4000.0, 1.0, 400.0, 1),
+                ),
+                p(
+                    "height",
+                    "Height",
+                    num(64.0),
+                    slider(1.0, 4000.0, 1.0, 400.0, 1),
+                ),
+                p(
+                    "feather/featherWidth",
+                    "Width",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 50.0, 1),
+                ),
+                p(
+                    "feather/featherHeight",
+                    "Height",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 50.0, 1),
+                ),
                 p("color", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("blendingMode", "Blending Mode", Value::Enum(0), popup(&GEN_BLEND_MODES)),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(0),
+                    popup(&GEN_BLEND_MODES),
+                ),
             ],
             checkerboard,
         ),
@@ -356,15 +526,55 @@ pub fn specs() -> Vec<EffectSpec> {
                 p("anchor", "Anchor", pt(0.0, 0.0), ParamUi::Point),
                 p("sizeFrom", "Size From", Value::Enum(1), popup(&SIZE_FROM)),
                 p("corner", "Corner", pt(0.1, 0.1), ParamUi::Point),
-                p("width", "Width", num(64.0), slider(1.0, 4000.0, 1.0, 400.0, 1)),
-                p("height", "Height", num(64.0), slider(1.0, 4000.0, 1.0, 400.0, 1)),
-                p("border", "Border", num(2.0), slider(0.0, 400.0, 0.0, 40.0, 1)),
-                p("feather/featherWidth", "Width", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 1)),
-                p("feather/featherHeight", "Height", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 1)),
-                p("invertGrid", "Invert Grid", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "width",
+                    "Width",
+                    num(64.0),
+                    slider(1.0, 4000.0, 1.0, 400.0, 1),
+                ),
+                p(
+                    "height",
+                    "Height",
+                    num(64.0),
+                    slider(1.0, 4000.0, 1.0, 400.0, 1),
+                ),
+                p(
+                    "border",
+                    "Border",
+                    num(2.0),
+                    slider(0.0, 400.0, 0.0, 40.0, 1),
+                ),
+                p(
+                    "feather/featherWidth",
+                    "Width",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 50.0, 1),
+                ),
+                p(
+                    "feather/featherHeight",
+                    "Height",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 50.0, 1),
+                ),
+                p(
+                    "invertGrid",
+                    "Invert Grid",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
                 p("color", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("blendingMode", "Blending Mode", Value::Enum(0), popup(&GEN_BLEND_MODES)),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(0),
+                    popup(&GEN_BLEND_MODES),
+                ),
             ],
             grid,
         ),
@@ -374,16 +584,56 @@ pub fn specs() -> Vec<EffectSpec> {
             "Generate",
             vec![
                 p("center", "Center", pt(0.5, 0.5), ParamUi::Point),
-                p("radius", "Radius", num(75.0), slider(0.0, 4000.0, 0.0, 1000.0, 1)),
+                p(
+                    "radius",
+                    "Radius",
+                    num(75.0),
+                    slider(0.0, 4000.0, 0.0, 1000.0, 1),
+                ),
                 p("edge", "Edge", Value::Enum(0), popup(&CIRCLE_EDGES)),
-                p("edgeRadius", "Edge Radius", num(0.0), slider(0.0, 4000.0, 0.0, 1000.0, 1)),
-                p("thickness", "Thickness", num(10.0), slider(0.0, 4000.0, 0.0, 100.0, 1)),
-                p("feather/feather", "Feather Outer Edge", num(0.0), slider(0.0, 1000.0, 0.0, 100.0, 1)),
-                p("feather/featherInner", "Feather Inner Edge", num(0.0), slider(0.0, 1000.0, 0.0, 100.0, 1)),
-                p("invert", "Invert Circle", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "edgeRadius",
+                    "Edge Radius",
+                    num(0.0),
+                    slider(0.0, 4000.0, 0.0, 1000.0, 1),
+                ),
+                p(
+                    "thickness",
+                    "Thickness",
+                    num(10.0),
+                    slider(0.0, 4000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "feather/feather",
+                    "Feather Outer Edge",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "feather/featherInner",
+                    "Feather Inner Edge",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "invert",
+                    "Invert Circle",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
                 p("color", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("blendingMode", "Blending Mode", Value::Enum(0), popup(&GEN_BLEND_MODES)),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(0),
+                    popup(&GEN_BLEND_MODES),
+                ),
             ],
             circle,
         ),
@@ -404,21 +654,51 @@ mod generator_tests {
     fn checkerboard_blending_none_shows_pattern_only_and_size_from_width() {
         let set = [("width", num(8.0)), ("height", num(2.0))];
         // None (default): the off squares are transparent; Width Slider makes 8×8 squares.
-        let o = run_fx("ec.generate.checkerboard", &set, red(), 0.0, EffectEnv::default());
-        assert!(o.img.get(3, 3)[3] > 0.99 && o.img.get(3, 3)[1] > 0.99, "{:?}", o.img.get(3, 3));
-        assert!(o.img.get(11, 3)[3] < 0.01);
-        assert!(o.img.get(3, 6)[3] > 0.99, "height ignored with Width Slider");
-        // Width & Height Sliders: 8×2 cells; Normal keeps the layer under the off squares.
         let o = run_fx(
             "ec.generate.checkerboard",
-            &[set[0].clone(), set[1].clone(), ("sizeFrom", Value::Enum(2)), ("blendingMode", Value::Enum(1))],
+            &set,
             red(),
             0.0,
             EffectEnv::default(),
         );
-        assert!(o.img.get(3, 2)[0] > 0.99 && o.img.get(3, 2)[1] < 0.01, "second row of cells is off");
+        assert!(
+            o.img.get(3, 3)[3] > 0.99 && o.img.get(3, 3)[1] > 0.99,
+            "{:?}",
+            o.img.get(3, 3)
+        );
+        assert!(o.img.get(11, 3)[3] < 0.01);
+        assert!(
+            o.img.get(3, 6)[3] > 0.99,
+            "height ignored with Width Slider"
+        );
+        // Width & Height Sliders: 8×2 cells; Normal keeps the layer under the off squares.
+        let o = run_fx(
+            "ec.generate.checkerboard",
+            &[
+                set[0].clone(),
+                set[1].clone(),
+                ("sizeFrom", Value::Enum(2)),
+                ("blendingMode", Value::Enum(1)),
+            ],
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
+        assert!(
+            o.img.get(3, 2)[0] > 0.99 && o.img.get(3, 2)[1] < 0.01,
+            "second row of cells is off"
+        );
         // Corner Point: cell size from the anchor-corner rectangle.
-        let o = run_fx("ec.generate.checkerboard", &[("sizeFrom", Value::Enum(0)), ("corner", Value::Vec2([4.0, 4.0]))], red(), 0.0, EffectEnv::default());
+        let o = run_fx(
+            "ec.generate.checkerboard",
+            &[
+                ("sizeFrom", Value::Enum(0)),
+                ("corner", Value::Vec2([4.0, 4.0])),
+            ],
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(o.img.get(1, 1)[3] > 0.99 && o.img.get(5, 1)[3] < 0.01);
     }
 
@@ -427,30 +707,74 @@ mod generator_tests {
         let set = [("width", num(10.0)), ("border", num(2.0))];
         let o = run_fx("ec.generate.grid", &set, red(), 0.0, EffectEnv::default());
         assert!(o.img.get(0, 5)[3] > 0.9, "line at the anchor");
-        assert!(o.img.get(5, 5)[3] < 0.01, "cell interior is empty with None");
-        let o = run_fx("ec.generate.grid", &[set[0].clone(), set[1].clone(), ("invertGrid", Value::Bool(true))], red(), 0.0, EffectEnv::default());
+        assert!(
+            o.img.get(5, 5)[3] < 0.01,
+            "cell interior is empty with None"
+        );
+        let o = run_fx(
+            "ec.generate.grid",
+            &[
+                set[0].clone(),
+                set[1].clone(),
+                ("invertGrid", Value::Bool(true)),
+            ],
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(o.img.get(5, 5)[3] > 0.99 && o.img.get(0, 5)[3] < 0.1);
         // Stencil Alpha: the layer shows only through the grid lines.
-        let o = run_fx("ec.generate.grid", &[set[0].clone(), set[1].clone(), ("blendingMode", Value::Enum(18))], red(), 0.0, EffectEnv::default());
+        let o = run_fx(
+            "ec.generate.grid",
+            &[
+                set[0].clone(),
+                set[1].clone(),
+                ("blendingMode", Value::Enum(18)),
+            ],
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(o.img.get(0, 5)[0] > 0.9 && o.img.get(5, 5)[3] < 0.01);
     }
 
     #[test]
     fn circle_edge_makes_a_ring() {
         let c = ("center", Value::Vec2([16.0, 16.0]));
-        let disk = run_fx("ec.generate.circle", &[c.clone(), ("radius", num(10.0))], red(), 0.0, EffectEnv::default());
+        let disk = run_fx(
+            "ec.generate.circle",
+            &[c.clone(), ("radius", num(10.0))],
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(disk.img.get(16, 16)[3] > 0.99 && disk.img.get(30, 16)[3] < 0.01);
         let ring = run_fx(
             "ec.generate.circle",
-            &[c.clone(), ("radius", num(10.0)), ("edge", Value::Enum(2)), ("thickness", num(3.0))],
+            &[
+                c.clone(),
+                ("radius", num(10.0)),
+                ("edge", Value::Enum(2)),
+                ("thickness", num(3.0)),
+            ],
             red(),
             0.0,
             EffectEnv::default(),
         );
         assert!(ring.img.get(16, 16)[3] < 0.01, "hole in the middle");
         assert!(ring.img.get(24, 16)[3] > 0.99, "{:?}", ring.img.get(24, 16));
-        let er =
-            run_fx("ec.generate.circle", &[c, ("radius", num(10.0)), ("edge", Value::Enum(1)), ("edgeRadius", num(5.0))], red(), 0.0, EffectEnv::default());
+        let er = run_fx(
+            "ec.generate.circle",
+            &[
+                c,
+                ("radius", num(10.0)),
+                ("edge", Value::Enum(1)),
+                ("edgeRadius", num(5.0)),
+            ],
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(er.img.get(16, 16)[3] < 0.01 && er.img.get(23, 16)[3] > 0.99);
     }
 
@@ -467,11 +791,23 @@ mod generator_tests {
         let mut half = pts.clone();
         half.push(("opacity", num(50.0)));
         // None: the gradient alone at half opacity.
-        let o = run_fx("ec.generate.fourcolor", &half, red(), 0.0, EffectEnv::default());
+        let o = run_fx(
+            "ec.generate.fourcolor",
+            &half,
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!((o.img.get(16, 16)[3] - 0.5).abs() < 1e-3);
         // Normal: over the opaque layer.
         half.push(("blendingMode", Value::Enum(1)));
-        let o = run_fx("ec.generate.fourcolor", &half, red(), 0.0, EffectEnv::default());
+        let o = run_fx(
+            "ec.generate.fourcolor",
+            &half,
+            red(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!((o.img.get(16, 16)[3] - 1.0).abs() < 1e-3);
     }
 }

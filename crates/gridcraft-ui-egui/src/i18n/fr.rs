@@ -17,7 +17,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Insert Paste" => "Insérer en collant",
         "Cut (⌘X)" => "Couper (⌘X)",
         "Copy (⌘C)" => "Copier (⌘C)",
-        "Format Painter (double-click to keep it on)" => "Reproduire la mise en forme (double-clic pour la conserver)",
+        "Format Painter (double-click to keep it on)" => {
+            "Reproduire la mise en forme (double-clic pour la conserver)"
+        }
         "Bold (⌘B)" => "Gras (⌘B)",
         "Italic (⌘I)" => "Italique (⌘I)",
         "Underline (⌘U)" => "Souligné (⌘U)",
@@ -116,7 +118,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Symbol" => "Symbole",
         "Sparklines" => "Courbes de tendance",
         "Checkbox" => "Case à cocher",
-        "Insert checkboxes in the selected cells" => "Insérer des cases à cocher dans les cellules sélectionnées",
+        "Insert checkboxes in the selected cells" => {
+            "Insérer des cases à cocher dans les cellules sélectionnées"
+        }
         "Header & Footer" => "En-tête et pied de page",
         "Draw with ink" => "Dessiner à l'encre",
         "Eraser" => "Gomme",
@@ -283,7 +287,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "Modifier",
         "Point" => "Point",
         "Calculate" => "Calculer",
-        "Select destination and press Enter or choose Paste" => "Sélectionnez la destination et appuyez sur Entrée ou choisissez Coller",
+        "Select destination and press Enter or choose Paste" => {
+            "Sélectionnez la destination et appuyez sur Entrée ou choisissez Coller"
+        }
         "General" => "Standard",
         "Number" => "Nombre",
         "Currency" => "Monétaire",
@@ -384,7 +390,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
             "Un fichier CSV, une page web ou un PDF est une copie : le classeur conserve son propre fichier."
         }
-        "Save the workbook under another name or in another folder." => "Enregistrer le classeur sous un autre nom ou dans un autre dossier.",
+        "Save the workbook under another name or in another folder." => {
+            "Enregistrer le classeur sous un autre nom ou dans un autre dossier."
+        }
         "Print Active Sheets" => "Imprimer les feuilles actives",
         "Print Entire Workbook" => "Imprimer tout le classeur",
         "Fit Sheet on One Page" => "Ajuster la feuille sur une page",
@@ -399,17 +407,25 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         }
         "Change File Type" => "Changer le type de fichier",
         "CSV (Comma delimited)" => "CSV (séparateur point-virgule)",
-        "Save the active sheet as comma-separated text." => "Enregistrer la feuille active sous forme de texte séparé par des points-virgules.",
+        "Save the active sheet as comma-separated text." => {
+            "Enregistrer la feuille active sous forme de texte séparé par des points-virgules."
+        }
         "Web Page (.html)" => "Page web (.html)",
         "Save the workbook as a web page." => "Enregistrer le classeur en tant que page web.",
         "Options|General" => "Options|Général",
         "Options|Save" => "Options|Enregistrer",
         "Show formula bar" => "Afficher la barre de formule",
-        "Enable AutoComplete for cell values" => "Activer la saisie semi-automatique des valeurs de cellule",
-        "Save .xlsx workbooks automatically after every change" => "Enregistrer automatiquement les classeurs .xlsx après chaque modification",
+        "Enable AutoComplete for cell values" => {
+            "Activer la saisie semi-automatique des valeurs de cellule"
+        }
+        "Save .xlsx workbooks automatically after every change" => {
+            "Enregistrer automatiquement les classeurs .xlsx après chaque modification"
+        }
         "Workbook calculation" => "Calcul du classeur",
         "Enable iterative calculation" => "Activer le calcul itératif",
-        "Calculation settings are saved with the workbook." => "Les paramètres de calcul sont enregistrés avec le classeur.",
+        "Calculation settings are saved with the workbook." => {
+            "Les paramètres de calcul sont enregistrés avec le classeur."
+        }
         _ => return None,
     })
 }

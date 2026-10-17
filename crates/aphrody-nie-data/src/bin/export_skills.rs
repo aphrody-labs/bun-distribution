@@ -27,8 +27,10 @@ fn default_data_root() -> String {
 }
 
 fn main() {
-    let data_root =
-        std::env::args().skip_while(|a| a != "--data").nth(1).unwrap_or_else(default_data_root);
+    let data_root = std::env::args()
+        .skip_while(|a| a != "--data")
+        .nth(1)
+        .unwrap_or_else(default_data_root);
     let out_path = std::env::args()
         .skip_while(|a| a != "--out")
         .nth(1)
@@ -91,7 +93,10 @@ fn main() {
         "[export_skills] OK — {} skills ({with_cutin} avec cut-in), {kb}Ko → {out_path}",
         skills.len()
     );
-    println!("skill_count={} cutin_count={with_cutin} size_kb={kb}", skills.len());
+    println!(
+        "skill_count={} cutin_count={with_cutin} size_kb={kb}",
+        skills.len()
+    );
 }
 
 /// Trouve le `*.cfg.bin.json` le plus récent de `subdir` commençant par `prefix`.

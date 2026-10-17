@@ -130,7 +130,9 @@ impl Plugin for ChannelStrip {
     }
 
     fn set_param(&mut self, id: &str, value: f32) -> bool {
-        let Some(idx) = self.p.set(id, value) else { return false };
+        let Some(idx) = self.p.set(id, value) else {
+            return false;
+        };
         self.forward(idx);
         self.update();
         true

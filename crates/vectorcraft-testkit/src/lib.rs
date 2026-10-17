@@ -34,11 +34,15 @@ pub mod strategies;
 pub use serde_json::{Value, json};
 pub use vectorcraft_engine::{Session, doc::NodeId};
 /// Re-exports so dependents without direct dependencies (e.g. app test crates) can use them.
-pub use {vectorcraft_doc as doc, vectorcraft_format as format, vectorcraft_render as render, vectorcraft_svg as svg};
+pub use {
+    vectorcraft_doc as doc, vectorcraft_format as format, vectorcraft_render as render,
+    vectorcraft_svg as svg,
+};
 
 /// A per-process temporary directory for test output (created on first use).
 pub fn temp_dir(tag: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("vectorcraft-testkit-{tag}-{}", std::process::id()));
+    let dir =
+        std::env::temp_dir().join(format!("vectorcraft-testkit-{tag}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("create temp dir");
     dir
 }
@@ -62,5 +66,10 @@ pub fn catch_quiet<T>(f: impl FnOnce() -> T) -> Result<T, String> {
     QUIET.with(|q| q.set(true));
     let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f));
     QUIET.with(|q| q.set(false));
-    r.map_err(|p| p.downcast_ref::<String>().cloned().or_else(|| p.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_else(|| "panic".into()))
+    r.map_err(|p| {
+        p.downcast_ref::<String>()
+            .cloned()
+            .or_else(|| p.downcast_ref::<&str>().map(|s| s.to_string()))
+            .unwrap_or_else(|| "panic".into())
+    })
 }

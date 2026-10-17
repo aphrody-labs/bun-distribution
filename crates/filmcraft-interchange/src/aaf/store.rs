@@ -62,7 +62,10 @@ pub(crate) struct Obj {
 
 impl Obj {
     pub fn new(class: Auid) -> Obj {
-        Obj { class, props: Vec::new() }
+        Obj {
+            class,
+            props: Vec::new(),
+        }
     }
     pub fn set(&mut self, pid: u16, v: Value) -> &mut Obj {
         match self.props.iter_mut().find(|(p, _)| *p == pid) {
@@ -117,10 +120,14 @@ impl Obj {
         self.data(pid).and_then(|d| d.first().copied())
     }
     pub fn u16(&self, pid: u16) -> Option<u16> {
-        self.data(pid).filter(|d| d.len() >= 2).map(|d| u16::from_le_bytes([d[0], d[1]]))
+        self.data(pid)
+            .filter(|d| d.len() >= 2)
+            .map(|d| u16::from_le_bytes([d[0], d[1]]))
     }
     pub fn u32(&self, pid: u16) -> Option<u32> {
-        self.data(pid).filter(|d| d.len() >= 4).map(|d| u32::from_le_bytes([d[0], d[1], d[2], d[3]]))
+        self.data(pid)
+            .filter(|d| d.len() >= 4)
+            .map(|d| u32::from_le_bytes([d[0], d[1], d[2], d[3]]))
     }
     pub fn i64(&self, pid: u16) -> Option<i64> {
         let d = self.data(pid)?;
@@ -137,19 +144,30 @@ impl Obj {
         self.data(pid).map(utf16_of)
     }
     pub fn auid(&self, pid: u16) -> Option<Auid> {
-        self.data(pid).and_then(|d| d.get(..16)).and_then(|d| d.try_into().ok())
+        self.data(pid)
+            .and_then(|d| d.get(..16))
+            .and_then(|d| d.try_into().ok())
     }
     pub fn mob_id(&self, pid: u16) -> Option<[u8; 32]> {
-        self.data(pid).and_then(|d| d.get(..32)).and_then(|d| d.try_into().ok())
+        self.data(pid)
+            .and_then(|d| d.get(..32))
+            .and_then(|d| d.try_into().ok())
     }
 }
 
 pub(crate) fn rational_of(d: &[u8]) -> Option<(i64, i64)> {
-    (d.len() >= 8).then(|| (i32::from_le_bytes([d[0], d[1], d[2], d[3]]) as i64, i32::from_le_bytes([d[4], d[5], d[6], d[7]]) as i64))
+    (d.len() >= 8).then(|| {
+        (
+            i32::from_le_bytes([d[0], d[1], d[2], d[3]]) as i64,
+            i32::from_le_bytes([d[4], d[5], d[6], d[7]]) as i64,
+        )
+    })
 }
 
 pub(crate) fn rational(num: i64, den: i64) -> Vec<u8> {
-    let mut v = (num.clamp(i32::MIN as i64, i32::MAX as i64) as i32).to_le_bytes().to_vec();
+    let mut v = (num.clamp(i32::MIN as i64, i32::MAX as i64) as i32)
+        .to_le_bytes()
+        .to_vec();
     v.extend_from_slice(&(den.clamp(i32::MIN as i64, i32::MAX as i64) as i32).to_le_bytes());
     v
 }
@@ -162,7 +180,13 @@ pub(crate) fn utf16z(s: &str) -> Vec<u8> {
 }
 
 pub(crate) fn utf16_of(d: &[u8]) -> String {
-    let u: Vec<u16> = d.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes([c[0], c[1]])).take_while(|&c| c != 0).collect();
+    let u: Vec<u16> = d
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| u16::from_le_bytes([c[0], c[1]]))
+        .take_while(|&c| c != 0)
+        .collect();
     String::from_utf16_lossy(&u)
 }
 
@@ -234,7 +258,10 @@ struct W {
 
 /// Serialise `root` (the Root object: MetaDictionary 0x0001, Header 0x0002) into a compound file.
 pub(crate) fn write(root: &Obj, version: Version) -> Result<Vec<u8>, String> {
-    let mut w = W { cfb: Writer::new(version), paths: Vec::new() };
+    let mut w = W {
+        cfb: Writer::new(version),
+        paths: Vec::new(),
+    };
     w.obj(Writer::ROOT, root)?;
     let mut rp = vec![BYTE_ORDER_LE];
     rp.extend_from_slice(&(w.paths.len() as u16).to_le_bytes());
@@ -246,7 +273,9 @@ pub(crate) fn write(root: &Obj, version: Version) -> Result<Vec<u8>, String> {
         }
         rp.extend_from_slice(&0u16.to_le_bytes());
     }
-    w.cfb.stream(Writer::ROOT, "referenced properties", rp).map_err(|e| e.to_string())?;
+    w.cfb
+        .stream(Writer::ROOT, "referenced properties", rp)
+        .map_err(|e| e.to_string())?;
     Ok(w.cfb.finish())
 }
 
@@ -270,7 +299,10 @@ impl W {
                 Value::Data(d) => (SF_DATA, d.clone()),
                 Value::Strong(child) => {
                     let name = storage_name(pid);
-                    let s = self.cfb.storage(node, &name, child.class).map_err(|e| e.to_string())?;
+                    let s = self
+                        .cfb
+                        .storage(node, &name, child.class)
+                        .map_err(|e| e.to_string())?;
                     self.obj(s, child)?;
                     (SF_STRONG, utf16z(&name))
                 }
@@ -280,14 +312,28 @@ impl W {
                     index.extend_from_slice(&(items.len() as u32).to_le_bytes());
                     index.extend_from_slice(&(items.len() as u32).to_le_bytes()); // first free key
                     index.extend_from_slice(&u32::MAX.to_le_bytes()); // last free key
-                    let set_key = if let Value::StrongSet(_, k) = v { Some(*k) } else { None };
-                    let key_size = set_key.map(|k| items.first().and_then(|i| i.data(k)).map_or_else(|| set_key_size(k), <[u8]>::len)).unwrap_or(0);
+                    let set_key = if let Value::StrongSet(_, k) = v {
+                        Some(*k)
+                    } else {
+                        None
+                    };
+                    let key_size = set_key
+                        .map(|k| {
+                            items
+                                .first()
+                                .and_then(|i| i.data(k))
+                                .map_or_else(|| set_key_size(k), <[u8]>::len)
+                        })
+                        .unwrap_or(0);
                     if let Some(k) = set_key {
                         index.extend_from_slice(&k.to_le_bytes());
                         index.push(key_size as u8);
                     }
                     for (i, item) in items.iter().enumerate() {
-                        let s = self.cfb.storage(node, &format!("{name}{{{i:x}}}"), item.class).map_err(|e| e.to_string())?;
+                        let s = self
+                            .cfb
+                            .storage(node, &format!("{name}{{{i:x}}}"), item.class)
+                            .map_err(|e| e.to_string())?;
                         self.obj(s, item)?;
                         index.extend_from_slice(&(i as u32).to_le_bytes());
                         if let Some(k) = set_key {
@@ -297,8 +343,17 @@ impl W {
                             index.extend_from_slice(&key);
                         }
                     }
-                    self.cfb.stream(node, &format!("{name} index"), index).map_err(|e| e.to_string())?;
-                    (if set_key.is_some() { SF_STRONG_SET } else { SF_STRONG_VECTOR }, utf16z(&name))
+                    self.cfb
+                        .stream(node, &format!("{name} index"), index)
+                        .map_err(|e| e.to_string())?;
+                    (
+                        if set_key.is_some() {
+                            SF_STRONG_SET
+                        } else {
+                            SF_STRONG_VECTOR
+                        },
+                        utf16z(&name),
+                    )
                 }
                 Value::Weak(path, key_pid, key) => {
                     let mut d = self.tag(path).to_le_bytes().to_vec();
@@ -320,19 +375,26 @@ impl W {
                         k.resize(size, 0);
                         index.extend_from_slice(&k);
                     }
-                    self.cfb.stream(node, &format!("{name} index"), index).map_err(|e| e.to_string())?;
+                    self.cfb
+                        .stream(node, &format!("{name} index"), index)
+                        .map_err(|e| e.to_string())?;
                     (SF_WEAK_VECTOR, utf16z(&name))
                 }
                 Value::Stream(data) => {
                     let name = storage_name(pid);
-                    self.cfb.stream(node, &name, data.clone()).map_err(|e| e.to_string())?;
+                    self.cfb
+                        .stream(node, &name, data.clone())
+                        .map_err(|e| e.to_string())?;
                     let mut d = vec![BYTE_ORDER_LE];
                     d.extend_from_slice(&utf16z(&name));
                     (SF_DATA_STREAM, d)
                 }
             };
             if value.len() > u16::MAX as usize {
-                return Err(format!("property {pid:#06x} is {} bytes (the limit is 65535)", value.len()));
+                return Err(format!(
+                    "property {pid:#06x} is {} bytes (the limit is 65535)",
+                    value.len()
+                ));
             }
             entries.push((pid, sf, value));
         }
@@ -346,7 +408,9 @@ impl W {
         for (_, _, v) in &entries {
             props.extend_from_slice(v);
         }
-        self.cfb.stream(node, "properties", props).map_err(|e| e.to_string())?;
+        self.cfb
+            .stream(node, "properties", props)
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 }
@@ -385,7 +449,11 @@ pub(crate) fn read(bytes: &[u8]) -> Result<Obj, String> {
             }
         }
     }
-    let mut r = R { cf, paths, objects: 0 };
+    let mut r = R {
+        cf,
+        paths,
+        objects: 0,
+    };
     r.obj(0, 0)
 }
 
@@ -393,12 +461,15 @@ fn rd_u16(b: &[u8], at: usize) -> Option<u16> {
     b.get(at..at + 2).map(|s| u16::from_le_bytes([s[0], s[1]]))
 }
 fn rd_u32(b: &[u8], at: usize) -> Option<u32> {
-    b.get(at..at + 4).map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
+    b.get(at..at + 4)
+        .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
 }
 
 impl R<'_> {
     fn child(&self, parent: usize, name: &str) -> Result<usize, String> {
-        self.cf.child(parent, name).ok_or_else(|| bad(format!("missing storage or stream \"{name}\"")))
+        self.cf
+            .child(parent, name)
+            .ok_or_else(|| bad(format!("missing storage or stream \"{name}\"")))
     }
 
     fn stream(&self, parent: usize, name: &str) -> Result<Vec<u8>, String> {
@@ -414,7 +485,10 @@ impl R<'_> {
         if self.objects > MAX_OBJECTS {
             return Err(bad("too many objects"));
         }
-        let e = self.cf.entry(entry).ok_or_else(|| bad("bad directory entry"))?;
+        let e = self
+            .cf
+            .entry(entry)
+            .ok_or_else(|| bad("bad directory entry"))?;
         if !matches!(e.kind, EntryKind::Root | EntryKind::Storage) {
             return Err(bad(format!("\"{}\" is not a storage", e.name)));
         }
@@ -432,10 +506,16 @@ impl R<'_> {
             return Err(bad("truncated property index"));
         }
         for i in 0..n {
-            let (Some(pid), Some(sf), Some(len)) = (rd_u16(&props, 4 + i * 6), rd_u16(&props, 6 + i * 6), rd_u16(&props, 8 + i * 6)) else {
+            let (Some(pid), Some(sf), Some(len)) = (
+                rd_u16(&props, 4 + i * 6),
+                rd_u16(&props, 6 + i * 6),
+                rd_u16(&props, 8 + i * 6),
+            ) else {
                 return Err(bad("truncated property index"));
             };
-            let v = props.get(at..at + len as usize).ok_or_else(|| bad("truncated property value"))?;
+            let v = props
+                .get(at..at + len as usize)
+                .ok_or_else(|| bad("truncated property value"))?;
             at += len as usize;
             let value = match sf {
                 SF_STRONG => {
@@ -445,11 +525,13 @@ impl R<'_> {
                 SF_STRONG_VECTOR | SF_STRONG_SET => {
                     let name = utf16_of(v);
                     let idx = self.stream(entry, &format!("{name} index"))?;
-                    let count = rd_u32(&idx, 0).ok_or_else(|| bad("short collection index"))? as usize;
+                    let count =
+                        rd_u32(&idx, 0).ok_or_else(|| bad("short collection index"))? as usize;
                     let mut items = Vec::new();
                     if sf == SF_STRONG_VECTOR {
                         for k in 0..count {
-                            let key = rd_u32(&idx, 12 + k * 4).ok_or_else(|| bad("short vector index"))?;
+                            let key = rd_u32(&idx, 12 + k * 4)
+                                .ok_or_else(|| bad("short vector index"))?;
                             let c = self.child(entry, &format!("{name}{{{key:x}}}"))?;
                             items.push(self.obj(c, depth + 1)?);
                         }
@@ -459,7 +541,8 @@ impl R<'_> {
                         let key_size = *idx.get(14).ok_or_else(|| bad("short set index"))? as usize;
                         let stride = 8 + key_size;
                         for k in 0..count {
-                            let key = rd_u32(&idx, 15 + k * stride).ok_or_else(|| bad("short set index"))?;
+                            let key = rd_u32(&idx, 15 + k * stride)
+                                .ok_or_else(|| bad("short set index"))?;
                             let c = self.child(entry, &format!("{name}{{{key:x}}}"))?;
                             items.push(self.obj(c, depth + 1)?);
                         }
@@ -467,16 +550,30 @@ impl R<'_> {
                     }
                 }
                 SF_WEAK => {
-                    let (Some(tag), Some(key_pid), Some(&size)) = (rd_u16(v, 0), rd_u16(v, 2), v.get(4)) else {
+                    let (Some(tag), Some(key_pid), Some(&size)) =
+                        (rd_u16(v, 0), rd_u16(v, 2), v.get(4))
+                    else {
                         return Err(bad("short weak reference"));
                     };
-                    let key = v.get(5..5 + size as usize).ok_or_else(|| bad("short weak reference"))?.to_vec();
-                    Value::Weak(self.paths.get(tag as usize).cloned().unwrap_or_default(), key_pid, key)
+                    let key = v
+                        .get(5..5 + size as usize)
+                        .ok_or_else(|| bad("short weak reference"))?
+                        .to_vec();
+                    Value::Weak(
+                        self.paths.get(tag as usize).cloned().unwrap_or_default(),
+                        key_pid,
+                        key,
+                    )
                 }
                 SF_WEAK_VECTOR | SF_WEAK_SET => {
                     let name = utf16_of(v);
                     let idx = self.stream(entry, &format!("{name} index"))?;
-                    let (Some(count), Some(tag), Some(key_pid), Some(&size)) = (rd_u32(&idx, 0), rd_u16(&idx, 4), rd_u16(&idx, 6), idx.get(8)) else {
+                    let (Some(count), Some(tag), Some(key_pid), Some(&size)) = (
+                        rd_u32(&idx, 0),
+                        rd_u16(&idx, 4),
+                        rd_u16(&idx, 6),
+                        idx.get(8),
+                    ) else {
                         return Err(bad("short weak collection index"));
                     };
                     let size = size as usize;
@@ -484,14 +581,26 @@ impl R<'_> {
                         return Err(bad("zero-size weak collection key"));
                     }
                     // every key must lie in the index, so its length (not the count) bounds the loop
-                    if (count as usize).checked_mul(size).and_then(|n| n.checked_add(9)).is_none_or(|end| end > idx.len()) {
+                    if (count as usize)
+                        .checked_mul(size)
+                        .and_then(|n| n.checked_add(9))
+                        .is_none_or(|end| end > idx.len())
+                    {
                         return Err(bad("short weak collection index"));
                     }
                     let mut keys = Vec::new();
                     for k in 0..count as usize {
-                        keys.push(idx.get(9 + k * size..9 + (k + 1) * size).ok_or_else(|| bad("short weak collection index"))?.to_vec());
+                        keys.push(
+                            idx.get(9 + k * size..9 + (k + 1) * size)
+                                .ok_or_else(|| bad("short weak collection index"))?
+                                .to_vec(),
+                        );
                     }
-                    Value::WeakVec(self.paths.get(tag as usize).cloned().unwrap_or_default(), key_pid, keys)
+                    Value::WeakVec(
+                        self.paths.get(tag as usize).cloned().unwrap_or_default(),
+                        key_pid,
+                        keys,
+                    )
                 }
                 SF_DATA_STREAM => {
                     let name = utf16_of(v.get(1..).unwrap_or(&[]));

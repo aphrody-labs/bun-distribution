@@ -5,9 +5,9 @@
 //!
 //! PSC::Time::ServiceManager — the "time:m" service.
 
+use crate::hle::service::server_manager::ServerManager;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, Weak};
-use crate::hle::service::server_manager::ServerManager;
 
 use crate::core::SystemRef;
 use crate::device_memory::DeviceMemory;
@@ -210,34 +210,55 @@ impl TimeServiceManager {
     fn check_and_setup_services_s_and_p(&self) {
         let ready = {
             let time = self.time.lock().unwrap();
-            let steady_ready = time.standard_steady_clock.lock().unwrap().state.is_initialized();
+            let steady_ready = time
+                .standard_steady_clock
+                .lock()
+                .unwrap()
+                .state
+                .is_initialized();
             time.standard_local_system_clock.clock.is_initialized()
                 && time.standard_user_system_clock.is_initialized()
                 && time.standard_network_system_clock.clock.is_initialized()
-                && steady_ready && time.time_zone.is_initialized()
+                && steady_ready
+                && time.time_zone.is_initialized()
                 && time.ephemeral_network_clock.clock.is_initialized()
         };
-        if ready { self.setup_s_and_p(); }
+        if ready {
+            self.setup_s_and_p();
+        }
     }
 
     fn setup_s_and_p(&self) {
         // Standalone clock unit tests have no service process. Runtime uses
         // new_with_server_manager and always supplies its owning PSC server.
-        let Some(server) = &self.server_manager else { return; };
-        let server = server.upgrade().expect("PSC time server must outlive time:m");
+        let Some(server) = &self.server_manager else {
+            return;
+        };
+        let server = server
+            .upgrade()
+            .expect("PSC time server must outlive time:m");
         let mut setup = self.is_s_and_p_setup.lock().unwrap();
-        if *setup { return; }
+        if *setup {
+            return;
+        }
         *setup = true;
-        let service = self.get_static_service(StaticServiceSetupInfo {
-            can_write_network_clock: true,
-            can_write_local_clock: false,
-            can_write_user_clock: false,
-            can_write_timezone_device_location: false,
-            can_write_steady_clock: false,
-            can_write_uninitialized_clock: false,
-        }, "time:s");
+        let service = self.get_static_service(
+            StaticServiceSetupInfo {
+                can_write_network_clock: true,
+                can_write_local_clock: false,
+                can_write_user_clock: false,
+                can_write_timezone_device_location: false,
+                can_write_steady_clock: false,
+                can_write_uninitialized_clock: false,
+            },
+            "time:s",
+        );
         let power = Arc::new(super::power_state_service::PowerStateRequestHandler::new(
-            self.time.lock().unwrap().power_state_request_manager.clone(),
+            self.time
+                .lock()
+                .unwrap()
+                .power_state_request_manager
+                .clone(),
         ));
         let mut server = server.lock().unwrap();
         server.register_named_service("time:s", Box::new(move || service.clone()), 64);
@@ -257,10 +278,7 @@ impl TimeServiceManager {
         setup_info: StaticServiceSetupInfo,
         name: &str,
     ) -> Arc<StaticService> {
-        let mut service = StaticService::with_time_manager(
-            setup_info,
-            Arc::clone(&self.time),
-        );
+        let mut service = StaticService::with_time_manager(setup_info, Arc::clone(&self.time));
         service.service_name = name.into();
         Arc::new(service)
     }
@@ -919,54 +937,100 @@ mod tests {
 
     #[test]
     fn time_s_registration_waits_for_all_components_and_exposes_psc_clock() {
-        std::thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(|| {
-            for last in 0..6 {
-                let system = Box::new(crate::core::System::new_for_test());
-                let system_ref = SystemRef::from_ref(&system);
-                let server = ServerManager::new_shared(system_ref);
-                let service = TimeServiceManager::new_with_server_manager(
-                    system_ref, std::ptr::null(), std::ptr::null_mut(), Arc::downgrade(&server),
-                );
-                let registry = system.service_manager().unwrap();
-                // Each component is the last prerequisite once. Early checks
-                // must not publish partially initialized clock services.
-                for component in (0..6).filter(|&component| component != last).chain([last]) {
-                    assert!(registry.lock().unwrap().get_service("time:s").is_none());
-                    assert!(registry.lock().unwrap().get_service("time:p").is_none());
-                    let rc = match component {
-                        0 => service.setup_standard_steady_clock_core(false, [0; 16], 0, 0, 0),
-                        1 => service.setup_standard_local_system_clock_core(&SystemClockContext::default(), 100),
-                        2 => service.setup_standard_network_system_clock_core(SystemClockContext::default(), i64::MAX),
-                        3 => service.setup_standard_user_system_clock_core(false, SteadyClockTimePoint::default()),
-                        // Eden marks timezone initialized even if parsing a
-                        // nonempty rule fails; an empty rule must not do so.
-                        4 => {
-                            assert!(service.setup_time_zone_service_core(&[0; 0x24], &[0; 16], 0,
-                                &SteadyClockTimePoint::default(), &[]).is_error());
-                            service.setup_time_zone_service_core(&[0; 0x24], &[0; 16], 0,
-                                &SteadyClockTimePoint::default(), b"invalid rule")
-                        }
-                        _ => service.setup_ephemeral_network_system_clock_core(),
-                    };
-                    assert_eq!(rc, RESULT_SUCCESS);
+        std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024)
+            .spawn(|| {
+                for last in 0..6 {
+                    let system = Box::new(crate::core::System::new_for_test());
+                    let system_ref = SystemRef::from_ref(&system);
+                    let server = ServerManager::new_shared(system_ref);
+                    let service = TimeServiceManager::new_with_server_manager(
+                        system_ref,
+                        std::ptr::null(),
+                        std::ptr::null_mut(),
+                        Arc::downgrade(&server),
+                    );
+                    let registry = system.service_manager().unwrap();
+                    // Each component is the last prerequisite once. Early checks
+                    // must not publish partially initialized clock services.
+                    for component in (0..6).filter(|&component| component != last).chain([last]) {
+                        assert!(registry.lock().unwrap().get_service("time:s").is_none());
+                        assert!(registry.lock().unwrap().get_service("time:p").is_none());
+                        let rc = match component {
+                            0 => service.setup_standard_steady_clock_core(false, [0; 16], 0, 0, 0),
+                            1 => service.setup_standard_local_system_clock_core(
+                                &SystemClockContext::default(),
+                                100,
+                            ),
+                            2 => service.setup_standard_network_system_clock_core(
+                                SystemClockContext::default(),
+                                i64::MAX,
+                            ),
+                            3 => service.setup_standard_user_system_clock_core(
+                                false,
+                                SteadyClockTimePoint::default(),
+                            ),
+                            // Eden marks timezone initialized even if parsing a
+                            // nonempty rule fails; an empty rule must not do so.
+                            4 => {
+                                assert!(service
+                                    .setup_time_zone_service_core(
+                                        &[0; 0x24],
+                                        &[0; 16],
+                                        0,
+                                        &SteadyClockTimePoint::default(),
+                                        &[]
+                                    )
+                                    .is_error());
+                                service.setup_time_zone_service_core(
+                                    &[0; 0x24],
+                                    &[0; 16],
+                                    0,
+                                    &SteadyClockTimePoint::default(),
+                                    b"invalid rule",
+                                )
+                            }
+                            _ => service.setup_ephemeral_network_system_clock_core(),
+                        };
+                        assert_eq!(rc, RESULT_SUCCESS);
+                    }
+                    let handler = registry.lock().unwrap().get_service("time:s").unwrap();
+                    assert_eq!(handler.service_name(), "time:s");
+                    let clock_service = handler
+                        .as_any()
+                        .downcast_ref::<StaticService>()
+                        .expect("System::RefreshTime requires PSC time:s, not a Glue wrapper");
+                    assert!(clock_service.setup_info.can_write_network_clock);
+                    assert!(!clock_service.setup_info.can_write_local_clock);
+                    let network = clock_service.get_standard_network_system_clock();
+                    assert_eq!(network.set_current_time(12345), RESULT_SUCCESS);
+                    let shared_network = service
+                        .get_static_service_as_service_manager()
+                        .get_standard_network_system_clock();
+                    assert_eq!(
+                        network.get_system_clock_context(),
+                        shared_network.get_system_clock_context()
+                    );
+                    assert_eq!(
+                        registry
+                            .lock()
+                            .unwrap()
+                            .get_service("time:p")
+                            .unwrap()
+                            .service_name(),
+                        "time:p"
+                    );
+                    service.check_and_setup_services_s_and_p();
+                    let again = registry.lock().unwrap().get_service("time:s").unwrap();
+                    assert!(
+                        Arc::ptr_eq(&handler, &again),
+                        "registration must happen only once"
+                    );
                 }
-                let handler = registry.lock().unwrap().get_service("time:s").unwrap();
-                assert_eq!(handler.service_name(), "time:s");
-                let clock_service = handler.as_any().downcast_ref::<StaticService>()
-                    .expect("System::RefreshTime requires PSC time:s, not a Glue wrapper");
-                assert!(clock_service.setup_info.can_write_network_clock);
-                assert!(!clock_service.setup_info.can_write_local_clock);
-                let network = clock_service.get_standard_network_system_clock();
-                assert_eq!(network.set_current_time(12345), RESULT_SUCCESS);
-                let shared_network = service.get_static_service_as_service_manager()
-                    .get_standard_network_system_clock();
-                assert_eq!(network.get_system_clock_context(), shared_network.get_system_clock_context());
-                assert_eq!(registry.lock().unwrap().get_service("time:p").unwrap().service_name(), "time:p");
-                service.check_and_setup_services_s_and_p();
-                let again = registry.lock().unwrap().get_service("time:s").unwrap();
-                assert!(Arc::ptr_eq(&handler, &again), "registration must happen only once");
-            }
-        }).unwrap().join().unwrap();
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
 
     #[test]

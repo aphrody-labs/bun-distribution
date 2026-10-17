@@ -166,7 +166,8 @@ impl<const SYSTEM: SystemId> Scheduler<SYSTEM> {
     /// Insert an event keeping the deque sorted by deadline (earliest first).
     pub fn schedule_at(&mut self, deadline: u64, handler: Handler) {
         let pos = self.events.partition_point(|e| e.deadline <= deadline);
-        self.events.insert(pos, ScheduledEvent { deadline, handler });
+        self.events
+            .insert(pos, ScheduledEvent { deadline, handler });
         self.next_deadline = self.next_deadline.min(deadline);
     }
 
@@ -224,8 +225,9 @@ impl<const SYSTEM: SystemId> Scheduler<SYSTEM> {
         for _ in 0..count {
             let id = r.u16()?;
             let deadline = r.u64()?;
-            let handler = Handler::from_u16(id)
-                .ok_or(crate::savestate::StateError::Corrupt("unknown scheduler handler id"))?;
+            let handler = Handler::from_u16(id).ok_or(crate::savestate::StateError::Corrupt(
+                "unknown scheduler handler id",
+            ))?;
             self.events.push_back(ScheduledEvent { deadline, handler });
         }
 
@@ -250,8 +252,14 @@ impl<const SYSTEM: SystemId> Scheduler<SYSTEM> {
     fn with_default_events() -> Self {
         let mut s = Self::empty();
         let initial_refresh_rate = RefreshRate::Hz60;
-        s.schedule_at(initial_refresh_rate.cycles_per_frame(SYSTEM), Handler::Vsync);
-        s.schedule_at(crate::gekko::dec::cycles_until_underflow(u32::MAX), Handler::DecUnderflow);
+        s.schedule_at(
+            initial_refresh_rate.cycles_per_frame(SYSTEM),
+            Handler::Vsync,
+        );
+        s.schedule_at(
+            crate::gekko::dec::cycles_until_underflow(u32::MAX),
+            Handler::DecUnderflow,
+        );
         s.schedule_at(crate::flipper::cp::PUMP_INTERVAL_CYCLES, Handler::CpPump);
         s.schedule_at(self::input_poll_interval(SYSTEM), Handler::InputPoll);
         #[cfg(feature = "fps-counter")]
@@ -273,13 +281,15 @@ pub fn vsync_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
 
     sys.vi_present_seen_this_frame = false;
     let rate = sys.vi.dcr.video_format().refresh_rate();
-    sys.scheduler.schedule_in(rate.cycles_per_frame(SYSTEM), Handler::Vsync);
+    sys.scheduler
+        .schedule_in(rate.cycles_per_frame(SYSTEM), Handler::Vsync);
 }
 
 pub fn reseed_vsync<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
     let rate = sys.vi.dcr.video_format().refresh_rate();
     sys.scheduler.cancel(Handler::Vsync);
-    sys.scheduler.schedule_in(rate.cycles_per_frame(SYSTEM), Handler::Vsync);
+    sys.scheduler
+        .schedule_in(rate.cycles_per_frame(SYSTEM), Handler::Vsync);
 }
 
 #[inline(always)]
@@ -297,7 +307,8 @@ pub fn input_poll_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
         sys.starlet.tick_wiimote();
     }
 
-    sys.scheduler.schedule_in(self::input_poll_interval(SYSTEM), Handler::InputPoll);
+    sys.scheduler
+        .schedule_in(self::input_poll_interval(SYSTEM), Handler::InputPoll);
 }
 
 #[inline(always)]
@@ -318,5 +329,6 @@ pub fn dsp_batch_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
         return;
     }
 
-    sys.scheduler.schedule_in(self::dsp_batch_interval(SYSTEM), Handler::DspBatch);
+    sys.scheduler
+        .schedule_in(self::dsp_batch_interval(SYSTEM), Handler::DspBatch);
 }

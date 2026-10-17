@@ -59,15 +59,60 @@ fn rgb(c: [f32; 4]) -> [f32; 4] {
 
 /// Same selective colour ids as `color2::SC_IDS`.
 const SC_IDS: [[&str; 4]; 9] = [
-    ["details/reds/redsCyan", "details/reds/redsMagenta", "details/reds/redsYellow", "details/reds/redsBlack"],
-    ["details/yellows/yellowsCyan", "details/yellows/yellowsMagenta", "details/yellows/yellowsYellow", "details/yellows/yellowsBlack"],
-    ["details/greens/greensCyan", "details/greens/greensMagenta", "details/greens/greensYellow", "details/greens/greensBlack"],
-    ["details/cyans/cyansCyan", "details/cyans/cyansMagenta", "details/cyans/cyansYellow", "details/cyans/cyansBlack"],
-    ["details/blues/bluesCyan", "details/blues/bluesMagenta", "details/blues/bluesYellow", "details/blues/bluesBlack"],
-    ["details/magentas/magentasCyan", "details/magentas/magentasMagenta", "details/magentas/magentasYellow", "details/magentas/magentasBlack"],
-    ["details/whites/whitesCyan", "details/whites/whitesMagenta", "details/whites/whitesYellow", "details/whites/whitesBlack"],
-    ["details/neutrals/neutralsCyan", "details/neutrals/neutralsMagenta", "details/neutrals/neutralsYellow", "details/neutrals/neutralsBlack"],
-    ["details/blacks/blacksCyan", "details/blacks/blacksMagenta", "details/blacks/blacksYellow", "details/blacks/blacksBlack"],
+    [
+        "details/reds/redsCyan",
+        "details/reds/redsMagenta",
+        "details/reds/redsYellow",
+        "details/reds/redsBlack",
+    ],
+    [
+        "details/yellows/yellowsCyan",
+        "details/yellows/yellowsMagenta",
+        "details/yellows/yellowsYellow",
+        "details/yellows/yellowsBlack",
+    ],
+    [
+        "details/greens/greensCyan",
+        "details/greens/greensMagenta",
+        "details/greens/greensYellow",
+        "details/greens/greensBlack",
+    ],
+    [
+        "details/cyans/cyansCyan",
+        "details/cyans/cyansMagenta",
+        "details/cyans/cyansYellow",
+        "details/cyans/cyansBlack",
+    ],
+    [
+        "details/blues/bluesCyan",
+        "details/blues/bluesMagenta",
+        "details/blues/bluesYellow",
+        "details/blues/bluesBlack",
+    ],
+    [
+        "details/magentas/magentasCyan",
+        "details/magentas/magentasMagenta",
+        "details/magentas/magentasYellow",
+        "details/magentas/magentasBlack",
+    ],
+    [
+        "details/whites/whitesCyan",
+        "details/whites/whitesMagenta",
+        "details/whites/whitesYellow",
+        "details/whites/whitesBlack",
+    ],
+    [
+        "details/neutrals/neutralsCyan",
+        "details/neutrals/neutralsMagenta",
+        "details/neutrals/neutralsYellow",
+        "details/neutrals/neutralsBlack",
+    ],
+    [
+        "details/blacks/blacksCyan",
+        "details/blacks/blacksMagenta",
+        "details/blacks/blacksYellow",
+        "details/blacks/blacksBlack",
+    ],
 ];
 
 fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
@@ -88,7 +133,8 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             p.f[0] = [f("vibrance") / 100.0, f("saturation") / 100.0, 0.0, 0.0];
         }
         "ec.color.blackwhite" => {
-            let w = ["reds", "yellows", "greens", "cyans", "blues", "magentas"].map(|k| f(k) / 100.0);
+            let w =
+                ["reds", "yellows", "greens", "cyans", "blues", "magentas"].map(|k| f(k) / 100.0);
             let tc = pr.color("tintColor");
             let (th, ts, _) = rgb_to_hsl(tc[0], tc[1], tc[2]);
             p.u[0] = [3, pr.b("tint") as u32, 0, 0];
@@ -104,14 +150,21 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             p.f[3][0] = 1.0 - f("blend") / 100.0;
         }
         "ec.color.colorama" => {
-            let smooth = pr.get("outputCycle/interpolatePalette").is_none_or(|v| v.as_bool());
+            let smooth = pr
+                .get("outputCycle/interpolatePalette")
+                .is_none_or(|v| v.as_bool());
             // The posterized palette is discontinuous: phases on a step (common with 8 bpc
             // input) can round to the other side in the GPU's float maths, so it runs on the CPU.
             if !smooth {
                 return None;
             }
             p.u[0] = [5, pr.e("inputPhase/mode"), smooth as u32, 0];
-            p.f[0] = [pr.f("outputCycle/cycles").max(0.0) as f32, f("inputPhase/phaseShift") / 360.0, 1.0 - f("blend") / 100.0, 0.0];
+            p.f[0] = [
+                pr.f("outputCycle/cycles").max(0.0) as f32,
+                f("inputPhase/phaseShift") / 360.0,
+                1.0 - f("blend") / 100.0,
+                0.0,
+            ];
         }
         "ec.color.channelmixer" => {
             let g = |k: &str| f(k) / 100.0;
@@ -121,7 +174,10 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             p.f[2] = [g("br"), g("bg"), g("bb"), g("bc")];
         }
         "ec.color.selectivecolor" => {
-            let adj: Vec<f32> = SC_IDS.iter().flat_map(|ids| ids.map(|k| f(k) / 100.0)).collect();
+            let adj: Vec<f32> = SC_IDS
+                .iter()
+                .flat_map(|ids| ids.map(|k| f(k) / 100.0))
+                .collect();
             if adj.iter().all(|v| *v == 0.0) {
                 return Some(b);
             }
@@ -135,9 +191,18 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             }
             let k = pr.color("keyColor");
             let s = k[0] + k[1] + k[2];
-            let kc = if s <= 1e-6 { [1.0 / 3.0, 1.0 / 3.0] } else { [k[0] / s, k[1] / s] };
+            let kc = if s <= 1e-6 {
+                [1.0 / 3.0, 1.0 / 3.0]
+            } else {
+                [k[0] / s, k[1] / s]
+            };
             let (kh, _, _) = rgb_to_hsl(k[0], k[1], k[2]);
-            p.u[0] = [8, pr.e("matchColors"), (pr.e("keyOperation") == 1) as u32, view];
+            p.u[0] = [
+                8,
+                pr.e("matchColors"),
+                (pr.e("keyOperation") == 1) as u32,
+                view,
+            ];
             p.f[0] = [k[0], k[1], k[2], f("tolerance") / 100.0];
             p.f[1] = [f("softness") / 100.0, kc[0], kc[1], kh];
         }
@@ -199,8 +264,16 @@ fn lumetri(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     debug_assert_eq!(d.len(), 50);
     // Input LUT and Look (data[50..53]: look, input LUT offset, look LUT offset; tables after).
     let look = pr.e("creative/look");
-    let input_lut = if pr.e("basicCorrection/inputLut") == 1 { effectcraft_effects::load_lut(pr.s("basicCorrection/inputLutFile")) } else { None };
-    let look_lut = if look == 1 { effectcraft_effects::load_lut(pr.s("creative/lookFile")) } else { None };
+    let input_lut = if pr.e("basicCorrection/inputLut") == 1 {
+        effectcraft_effects::load_lut(pr.s("basicCorrection/inputLutFile"))
+    } else {
+        None
+    };
+    let look_lut = if look == 1 {
+        effectcraft_effects::load_lut(pr.s("creative/lookFile"))
+    } else {
+        None
+    };
     d.extend([look as f32, -1.0, -1.0]);
     if let Some(l) = &input_lut {
         d[51] = crate::fx_lut::push_lut(&mut d, l);
@@ -210,7 +283,14 @@ fn lumetri(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     }
     let buf = e.data(&d);
     let out = e.scratch(b.img.width, b.img.height);
-    e.pixels("fxc_lumetri", &Params::default(), &b.img, None, &out, Some(&buf));
+    e.pixels(
+        "fxc_lumetri",
+        &Params::default(),
+        &b.img,
+        None,
+        &out,
+        Some(&buf),
+    );
     let sharpen = f("creative/adjustments/sharpen");
     if sharpen == 0.0 {
         return Some(GBuf { img: out, ..b });
@@ -299,7 +379,11 @@ fn key_light(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         return Some(b);
     }
     // Inside / Outside masks (polygon coverage) run on the CPU.
-    let has_mask = |id: &str| pr.e(id).checked_sub(1).is_some_and(|i| ctx.env.masks.get(i as usize).is_some());
+    let has_mask = |id: &str| {
+        pr.e(id)
+            .checked_sub(1)
+            .is_some_and(|i| ctx.env.masks.get(i as usize).is_some())
+    };
     if has_mask("insideMask/insideMask") || has_mask("outsideMask/outsideMask") {
         return None;
     }
@@ -310,8 +394,15 @@ fn key_light(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let gain = pr.f("screenGain") as f32 / 100.0;
     let bal = pr.f("screenBalance") as f32 / 100.0;
     let dbias = pr.color("despillBias");
-    let abias = if pr.b("lockBiasesTogether") { dbias } else { pr.color("alphaBias") };
-    let (dbias, abias) = ([dbias[0], dbias[1], dbias[2]], [abias[0], abias[1], abias[2]]);
+    let abias = if pr.b("lockBiasesTogether") {
+        dbias
+    } else {
+        pr.color("alphaBias")
+    };
+    let (dbias, abias) = (
+        [dbias[0], dbias[1], dbias[2]],
+        [abias[0], abias[1], abias[2]],
+    );
     let s_alpha = neutralise(screen, abias);
     let sd = (s_alpha[pi] - (bal * s_alpha[o1] + (1.0 - bal) * s_alpha[o2])).max(1e-3);
     let cb = pr.f("screenMatte/clipBlack") as f32 / 100.0;
@@ -329,7 +420,11 @@ fn key_light(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     }
     let (w, h) = (b.img.width, b.img.height);
 
-    let key_src = if preblur > 0.0 { gaussian_blur(e, &b.img, preblur * 0.5, preblur * 0.5, true) } else { b.img.clone() };
+    let key_src = if preblur > 0.0 {
+        gaussian_blur(e, &b.img, preblur * 0.5, preblur * 0.5, true)
+    } else {
+        b.img.clone()
+    };
     let mut p = Params::default();
     p.u[0] = [ix[0], ix[1], ix[2], 0];
     p.f[0] = [abias[0], abias[1], abias[2], sd];
@@ -340,7 +435,14 @@ fn key_light(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     if rollback > 0.0 {
         let sg_img = morph_frac(e, &m, rollback, [0, 1, 2, 2]);
         let out = e.scratch(w, h);
-        e.pixels("fxc_kl_rollback", &Params::default(), &sg_img, Some(&raw), &out, None);
+        e.pixels(
+            "fxc_kl_rollback",
+            &Params::default(),
+            &sg_img,
+            Some(&raw),
+            &out,
+            None,
+        );
         m = out;
     }
     if despot_b > 0.0 {
@@ -360,7 +462,14 @@ fn key_light(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         m = gaussian_blur(e, &m, soft * 0.5, soft * 0.5, true);
     }
     let mut planes = e.image(w, h);
-    e.pixels("fxc_kl_pack", &Params::default(), &m, Some(&raw), &planes, None);
+    e.pixels(
+        "fxc_kl_pack",
+        &Params::default(),
+        &m,
+        Some(&raw),
+        &planes,
+        None,
+    );
     let src_alpha_mode = pr.e("insideMask/sourceAlpha");
     if pr.b("edgeColourCorrection/enableEdgeColourCorrection") {
         let grow = pr.f("edgeColourCorrection/edgeGrow") * b.scale;
@@ -395,12 +504,32 @@ fn key_light(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     p.f[0] = [screen[0], screen[1], screen[2], bal];
     p.f[1] = [dbias[0], dbias[1], dbias[2], l0];
     p.f[2] = pr.color("screenMatte/replaceColour");
-    p.f[3] =
-        [pc("foregroundColourCorrection/saturation"), pc("foregroundColourCorrection/contrast") + 1.0, pc("foregroundColourCorrection/brightness") + 1.0, 0.0];
-    p.f[4] = [pc("edgeColourCorrection/edgeSaturation"), pc("edgeColourCorrection/edgeContrast") + 1.0, pc("edgeColourCorrection/edgeBrightness") + 1.0, 0.0];
-    p.f[5] = ["sourceCrops/cropLeft", "sourceCrops/cropRight", "sourceCrops/cropTop", "sourceCrops/cropBottom"].map(|k| (pr.f(k) / 100.0) as f32);
+    p.f[3] = [
+        pc("foregroundColourCorrection/saturation"),
+        pc("foregroundColourCorrection/contrast") + 1.0,
+        pc("foregroundColourCorrection/brightness") + 1.0,
+        0.0,
+    ];
+    p.f[4] = [
+        pc("edgeColourCorrection/edgeSaturation"),
+        pc("edgeColourCorrection/edgeContrast") + 1.0,
+        pc("edgeColourCorrection/edgeBrightness") + 1.0,
+        0.0,
+    ];
+    p.f[5] = [
+        "sourceCrops/cropLeft",
+        "sourceCrops/cropRight",
+        "sourceCrops/cropTop",
+        "sourceCrops/cropBottom",
+    ]
+    .map(|k| (pr.f(k) / 100.0) as f32);
     p.f[6] = [b.offset[0] as f32, b.offset[1] as f32, b.scale as f32, 0.0];
-    p.f[7] = [ctx.layer_size[0].max(1e-9) as f32, ctx.layer_size[1].max(1e-9) as f32, 0.0, 0.0];
+    p.f[7] = [
+        ctx.layer_size[0].max(1e-9) as f32,
+        ctx.layer_size[1].max(1e-9) as f32,
+        0.0,
+        0.0,
+    ];
     let out = e.scratch(w, h);
     e.pixels("fxc_kl_final", &p, &b.img, Some(&planes), &out, None);
     Some(GBuf { img: out, ..b })

@@ -38,25 +38,41 @@ pub(crate) fn copy(s: &mut Session) -> Result<Option<Value>> {
     let canvas = doc.bounds();
     // The surface the values come from, and which of its samples is the channel.
     let (src, k) = match d.channel_view.target {
-        ChannelTarget::Composite | ChannelTarget::LayerMask | ChannelTarget::VectorMask => return Ok(None),
+        ChannelTarget::Composite | ChannelTarget::LayerMask | ChannelTarget::VectorMask => {
+            return Ok(None);
+        }
         ChannelTarget::Color(k) => {
-            let id = d.active_layer.ok_or_else(|| EngineError::Other("no active layer".into()))?;
-            let surf = doc.layer(id).and_then(Layer::surface).ok_or_else(|| EngineError::Other("the active layer has no pixels".into()))?;
+            let id = d
+                .active_layer
+                .ok_or_else(|| EngineError::Other("no active layer".into()))?;
+            let surf = doc
+                .layer(id)
+                .and_then(Layer::surface)
+                .ok_or_else(|| EngineError::Other("the active layer has no pixels".into()))?;
             (surf, k)
         }
         ChannelTarget::Alpha(i) => {
-            let c = doc.channels.get(i).ok_or_else(|| EngineError::Other(format!("no alpha channel {i} (document has {})", doc.channels.len())))?;
+            let c = doc.channels.get(i).ok_or_else(|| {
+                EngineError::Other(format!(
+                    "no alpha channel {i} (document has {})",
+                    doc.channels.len()
+                ))
+            })?;
             (&c.surface, 0)
         }
     };
     let n = src.format().channels();
     if k >= n {
-        return Err(EngineError::Other(format!("no colour channel {k} in this layer")));
+        return Err(EngineError::Other(format!(
+            "no colour channel {k} in this layer"
+        )));
     }
     let sel = doc.selection.as_ref();
     let area = sel.map_or(canvas, |m| m.content_bounds().intersect(&canvas));
     if area.is_empty() {
-        return Err(EngineError::Other("Could not copy: the selected area is empty".into()));
+        return Err(EngineError::Other(
+            "Could not copy: the selected area is empty".into(),
+        ));
     }
     let fmt = PixelFormat::new(ColorMode::Grayscale, doc.pixel_format().sample, true);
     let values = src.read_region(area);
@@ -64,27 +80,52 @@ pub(crate) fn copy(s: &mut Session) -> Result<Option<Value>> {
     let mut px = Vec::with_capacity(values.len() / n * 2);
     for (i, p) in values.chunks_exact(n).enumerate() {
         px.push(p.get(k).copied().unwrap_or(0.0));
-        px.push(cover.as_ref().map_or(1.0, |(m, mk)| m.get(i * mk).copied().unwrap_or(0.0)));
+        px.push(
+            cover
+                .as_ref()
+                .map_or(1.0, |(m, mk)| m.get(i * mk).copied().unwrap_or(0.0)),
+        );
     }
     let mut surface = Surface::new(fmt);
     surface.write_region(area, &px);
     surface.prune();
     let bounds = surface.content_bounds();
     if bounds.is_empty() {
-        return Err(EngineError::Other("Could not copy: the selected area is empty".into()));
+        return Err(EngineError::Other(
+            "Could not copy: the selected area is empty".into(),
+        ));
     }
-    s.clipboard = Some(Clip { surface, bounds, layers: None, resolution: Some(doc.resolution_dpi) });
-    Ok(Some(json!({"bounds": [bounds.x0, bounds.y0, bounds.width(), bounds.height()], "channel": k})))
+    s.clipboard = Some(Clip {
+        surface,
+        bounds,
+        layers: None,
+        resolution: Some(doc.resolution_dpi),
+    });
+    Ok(Some(
+        json!({"bounds": [bounds.x0, bounds.y0, bounds.width(), bounds.height()], "channel": k}),
+    ))
 }
 
 /// Paste the clip's luminosity into colour channel `k` of the active layer, placed as a paste
 /// places it. The clip's transparency, and `limit` (Paste Into / Outside), let the old values show
 /// through. One history step.
-pub(crate) fn paste(s: &mut Session, p: &Value, k: usize, in_place: bool, limit: Option<&Surface>, label: &str) -> Result<Value> {
-    let clip = s.clipboard.clone().ok_or_else(|| EngineError::Other("the clipboard is empty".into()))?;
+pub(crate) fn paste(
+    s: &mut Session,
+    p: &Value,
+    k: usize,
+    in_place: bool,
+    limit: Option<&Surface>,
+    label: &str,
+) -> Result<Value> {
+    let clip = s
+        .clipboard
+        .clone()
+        .ok_or_else(|| EngineError::Other("the clipboard is empty".into()))?;
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let canvas = d.doc.bounds();
-    let id = d.active_layer.ok_or_else(|| EngineError::Other("no active layer".into()))?;
+    let id = d
+        .active_layer
+        .ok_or_else(|| EngineError::Other("no active layer".into()))?;
     let (dx, dy) = crate::edit_cmds::paste_offset(&clip, canvas, p, in_place);
     let src = crate::edit_cmds::shifted(&clip.surface, dx, dy);
     let area = src.content_bounds().intersect(&canvas);
@@ -92,7 +133,9 @@ pub(crate) fn paste(s: &mut Session, p: &Value, k: usize, in_place: bool, limit:
         let surf = crate::commands::paint_surface(doc, id, &Value::Null)?;
         let n = surf.format().channels();
         if k >= n {
-            return Err(EngineError::Other(format!("no colour channel {k} in this layer")));
+            return Err(EngineError::Other(format!(
+                "no colour channel {k} in this layer"
+            )));
         }
         if !area.is_empty() {
             let mut rgba = vec![[0.0f32; 4]; area.width() as usize * area.height() as usize];
@@ -100,7 +143,10 @@ pub(crate) fn paste(s: &mut Session, p: &Value, k: usize, in_place: bool, limit:
             let weight = limit.map(|m| (m.read_region(area), m.format().channels().max(1)));
             let mut px = surf.read_region(area);
             for (i, (dst, s)) in px.chunks_exact_mut(n).zip(&rgba).enumerate() {
-                let w = s[3] * weight.as_ref().map_or(1.0, |(m, mk)| m.get(i * mk).copied().unwrap_or(0.0));
+                let w = s[3]
+                    * weight
+                        .as_ref()
+                        .map_or(1.0, |(m, mk)| m.get(i * mk).copied().unwrap_or(0.0));
                 let v = photocraft_color::convert::rgb_to_gray([s[0], s[1], s[2]]);
                 if let Some(c) = dst.get_mut(k) {
                     *c += (v - *c) * w.clamp(0.0, 1.0);
@@ -122,13 +168,17 @@ pub(crate) fn paste(s: &mut Session, p: &Value, k: usize, in_place: bool, limit:
 pub(crate) fn cut(s: &mut Session, id: LayerId, k: usize) -> Result<Value> {
     let r = copy(s)?.ok_or_else(|| EngineError::Other("no colour channel is targeted".into()))?;
     let bg = s.tools.background;
-    s.edit("Cut Pixels", |doc, _| crate::channel_cmds::clear_color_channel(doc, id, k, bg))?;
+    s.edit("Cut Pixels", |doc, _| {
+        crate::channel_cmds::clear_color_channel(doc, id, k, bg)
+    })?;
     Ok(r)
 }
 
 /// Copy reads only: with an alpha channel targeted it needs no pixel layer.
 pub(crate) fn copies_alpha_channel(s: &Session) -> bool {
-    s.active().is_some_and(|st| matches!(st.channel_view.target, ChannelTarget::Alpha(i) if i < st.doc.channels.len()))
+    s.active().is_some_and(
+        |st| matches!(st.channel_view.target, ChannelTarget::Alpha(i) if i < st.doc.channels.len()),
+    )
 }
 
 #[cfg(test)]

@@ -53,7 +53,11 @@ pub fn to_rgba<T: Copy + Into<u32>>(p: &Planes<T>, m: Matrix, full_range: bool) 
     let max = ((1u32 << p.bits) - 1) as f32;
     let scale = (1u32 << p.bits.saturating_sub(8)) as f32;
     // Normalised luma / chroma: Y in 0..1, Cb/Cr in -0.5..0.5.
-    let (y_off, y_mul, c_mul) = if full_range { (0.0, 1.0 / max, 1.0 / max) } else { (16.0 * scale, 1.0 / (219.0 * scale), 1.0 / (224.0 * scale)) };
+    let (y_off, y_mul, c_mul) = if full_range {
+        (0.0, 1.0 / max, 1.0 / max)
+    } else {
+        (16.0 * scale, 1.0 / (219.0 * scale), 1.0 / (224.0 * scale))
+    };
     let mid = (1u32 << (p.bits - 1)) as f32;
     let cr_r = 2.0 * (1.0 - kr);
     let cb_b = 2.0 * (1.0 - kb);
@@ -91,7 +95,19 @@ mod tests {
     use super::*;
 
     fn one(y: u8, u: u8, v: u8, full: bool) -> [u8; 4] {
-        let p = Planes { y: &[y], u: &[u], v: &[v], y_stride: 1, c_stride: 1, width: 1, height: 1, sx: 0, sy: 0, bits: 8, mono: false };
+        let p = Planes {
+            y: &[y],
+            u: &[u],
+            v: &[v],
+            y_stride: 1,
+            c_stride: 1,
+            width: 1,
+            height: 1,
+            sx: 0,
+            sy: 0,
+            bits: 8,
+            mono: false,
+        };
         let o = to_rgba(&p, Matrix::Bt709, full);
         [o[0], o[1], o[2], o[3]]
     }
@@ -114,7 +130,19 @@ mod tests {
     fn ten_bit_white() {
         let y = [940u16];
         let c = [512u16];
-        let p = Planes { y: &y, u: &c, v: &c, y_stride: 1, c_stride: 1, width: 1, height: 1, sx: 0, sy: 0, bits: 10, mono: false };
+        let p = Planes {
+            y: &y,
+            u: &c,
+            v: &c,
+            y_stride: 1,
+            c_stride: 1,
+            width: 1,
+            height: 1,
+            sx: 0,
+            sy: 0,
+            bits: 10,
+            mono: false,
+        };
         assert_eq!(to_rgba(&p, Matrix::Bt709, false), vec![255, 255, 255, 255]);
     }
 }

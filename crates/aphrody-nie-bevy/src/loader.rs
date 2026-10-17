@@ -91,12 +91,13 @@ impl AssetLoader for G4mdLoader {
         let source = load_context.path().source().clone_owned();
         let sibling_path = load_context.path().path().with_extension("g4mg");
         let sibling = AssetPath::from(sibling_path.clone()).with_source(source);
-        let mg = load_context.read_asset_bytes(sibling).await.map_err(|error| {
-            NieAssetError::Dependency {
+        let mg = load_context
+            .read_asset_bytes(sibling)
+            .await
+            .map_err(|error| NieAssetError::Dependency {
                 path: sibling_path.display().to_string(),
                 reason: error.to_string(),
-            }
-        })?;
+            })?;
 
         let meshes = meshes_from_g4md_g4mg(&md, &mg)?;
         let submesh_count = meshes.len();
@@ -106,7 +107,11 @@ impl AssetLoader for G4mdLoader {
             vertex_counts.push(mesh.count_vertices());
             handles.push(load_context.add_labeled_asset(format!("Mesh{index}"), mesh));
         }
-        Ok(NieModel { meshes: handles, submesh_count, vertex_counts })
+        Ok(NieModel {
+            meshes: handles,
+            submesh_count,
+            vertex_counts,
+        })
     }
 
     fn extensions(&self) -> &[&str] {

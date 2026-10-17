@@ -14,8 +14,17 @@ use crate::{Result, Session};
 fn dng_names(path: &str) -> impl Iterator<Item = std::path::PathBuf> {
     let p = Path::new(path);
     let dir = p.parent().unwrap_or(Path::new("")).to_path_buf();
-    let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "photo".into());
-    (1u64..).map(move |n| if n == 1 { dir.join(format!("{stem}.dng")) } else { dir.join(format!("{stem}-{n}.dng")) })
+    let stem = p
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "photo".into());
+    (1u64..).map(move |n| {
+        if n == 1 {
+            dir.join(format!("{stem}.dng"))
+        } else {
+            dir.join(format!("{stem}-{n}.dng"))
+        }
+    })
 }
 
 /// Write the DNG for raw file `path` (develop settings in `packet`) next to it under a free name;
@@ -25,21 +34,37 @@ fn dng_names(path: &str) -> impl Iterator<Item = std::path::PathBuf> {
 /// DNG deletes the raw copy): the encoded file must decode to the same raw data, and it is
 /// written to a temp file, synced, read back identical and only then given its name — never
 /// replacing an existing file. On any failure no DNG is left behind and the raw stays in use.
-pub(crate) fn write_dng_for(s: &Session, path: &str, packet: String) -> std::result::Result<String, String> {
+pub(crate) fn write_dng_for(
+    s: &Session,
+    path: &str,
+    packet: String,
+) -> std::result::Result<String, String> {
     write_dng_with(s.media.file_bytes.as_ref(), path, packet)
 }
 
 /// [`write_dng_for`] without the session (imports convert on a worker thread).
-pub(crate) fn write_dng_with(file_bytes: Option<&crate::merge::ByteReader>, path: &str, packet: String) -> std::result::Result<String, String> {
+pub(crate) fn write_dng_with(
+    file_bytes: Option<&crate::merge::ByteReader>,
+    path: &str,
+    packet: String,
+) -> std::result::Result<String, String> {
     let bytes = match file_bytes {
         Some(r) => r(path)?,
         None => std::fs::read(path).map_err(|e| format!("{path}: {e}"))?,
     };
     let raw = lightcraft_raw::decode(&bytes).map_err(|e| format!("{path}: {e}"))?;
     drop(bytes);
-    let dng = lightcraft_raw::write_dng(&raw, &lightcraft_raw::DngWriteOptions { xmp: (!packet.is_empty()).then_some(packet), ..Default::default() })
-        .map_err(|e| e.to_string())?;
-    let back = lightcraft_raw::decode(&dng).map_err(|e| format!("{path}: the DNG written for it doesn't decode ({e}); the raw is kept"))?;
+    let dng = lightcraft_raw::write_dng(
+        &raw,
+        &lightcraft_raw::DngWriteOptions {
+            xmp: (!packet.is_empty()).then_some(packet),
+            ..Default::default()
+        },
+    )
+    .map_err(|e| e.to_string())?;
+    let back = lightcraft_raw::decode(&dng).map_err(|e| {
+        format!("{path}: the DNG written for it doesn't decode ({e}); the raw is kept")
+    })?;
     let same = match (&back.data, &raw.data) {
         (lightcraft_raw::RawData::U16(a), lightcraft_raw::RawData::U16(b)) => a == b,
         (lightcraft_raw::RawData::F32(a), lightcraft_raw::RawData::F32(b)) => {
@@ -48,7 +73,9 @@ pub(crate) fn write_dng_with(file_bytes: Option<&crate::merge::ByteReader>, path
         _ => false,
     };
     if (back.width, back.height, back.cpp) != (raw.width, raw.height, raw.cpp) || !same {
-        return Err(format!("{path}: the DNG written for it doesn't hold the same raw data; the raw is kept"));
+        return Err(format!(
+            "{path}: the DNG written for it doesn't hold the same raw data; the raw is kept"
+        ));
     }
     drop((raw, back));
     let out = lightcraft_catalog::safe_file::write_new_unique(&mut dng_names(path), &dng)
@@ -63,12 +90,17 @@ fn convert(s: &mut Session, p: &Value) -> Result<Value> {
     let mut converted = Vec::new();
     let mut skipped = Vec::new();
     for id in ids {
-        let Some(ph) = s.catalog.photo(id).cloned() else { continue };
+        let Some(ph) = s.catalog.photo(id).cloned() else {
+            continue;
+        };
         let Source::File { path } = &ph.source else {
             skipped.push(json!([id.0, "not a file"]));
             continue;
         };
-        if ph.kind != MediaKind::Raw || ph.format.eq_ignore_ascii_case("DNG") || ph.copy_of.is_some() {
+        if ph.kind != MediaKind::Raw
+            || ph.format.eq_ignore_ascii_case("DNG")
+            || ph.copy_of.is_some()
+        {
             skipped.push(json!([
                 id.0,
                 if ph.kind != MediaKind::Raw {
@@ -84,7 +116,10 @@ fn convert(s: &mut Session, p: &Value) -> Result<Value> {
         let packet = crate::sidecar::sidecar_packet(&ph, &s.catalog);
         match write_dng_for(s, path, packet) {
             Ok(out) => {
-                let file_name = Path::new(&out).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                let file_name = Path::new(&out)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
                 // virtual copies of this photo follow it to the DNG
                 for c in s.catalog.photos().filter(|c| c.copy_of == Some(id)) {
                     ops.push(Op::Relink {
@@ -94,7 +129,12 @@ fn convert(s: &mut Session, p: &Value) -> Result<Value> {
                         format: Some("DNG".into()),
                     });
                 }
-                ops.push(Op::Relink { id, file_name, source: Source::File { path: out.clone() }, format: Some("DNG".into()) });
+                ops.push(Op::Relink {
+                    id,
+                    file_name,
+                    source: Source::File { path: out.clone() },
+                    format: Some("DNG".into()),
+                });
                 converted.push(json!({"id": id.0, "path": out, "original": path}));
             }
             Err(e) => skipped.push(json!([id.0, e])),
@@ -102,7 +142,11 @@ fn convert(s: &mut Session, p: &Value) -> Result<Value> {
     }
     if !ops.is_empty() {
         let n = converted.len();
-        s.commit(&format!("Convert {n} Photo{} to DNG", if n == 1 { "" } else { "s" }), Op::Batch { ops }).map_err(|e| bad(C, e.to_string()))?;
+        s.commit(
+            &format!("Convert {n} Photo{} to DNG", if n == 1 { "" } else { "s" }),
+            Op::Batch { ops },
+        )
+        .map_err(|e| bad(C, e.to_string()))?;
     }
     Ok(json!({"converted": converted, "skipped": skipped}))
 }
@@ -130,7 +174,13 @@ fn edit_external(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "no active photo"));
     }
     if ids.len() > MAX_EDIT_COPIES {
-        return Err(bad(C, format!("{} photos selected: edit at most {MAX_EDIT_COPIES} at a time", ids.len())));
+        return Err(bad(
+            C,
+            format!(
+                "{} photos selected: edit at most {MAX_EDIT_COPIES} at a time",
+                ids.len()
+            ),
+        ));
     }
     let space = match super::str_param(p, "colorSpace").unwrap_or("adobeRgb") {
         "srgb" => lightcraft_pipeline::OutputSpace::Srgb,
@@ -160,10 +210,19 @@ fn edit_external(s: &mut Session, p: &Value) -> Result<Value> {
     for id in ids {
         copies.push(edit_copy(s, p, id, &opts)?);
     }
-    let new: Vec<lightcraft_catalog::PhotoId> = copies.iter().filter_map(|c| c["id"].as_u64()).map(lightcraft_catalog::PhotoId).collect();
-    s.selection = crate::Selection { active: new.first().copied(), ids: new };
+    let new: Vec<lightcraft_catalog::PhotoId> = copies
+        .iter()
+        .filter_map(|c| c["id"].as_u64())
+        .map(lightcraft_catalog::PhotoId)
+        .collect();
+    s.selection = crate::Selection {
+        active: new.first().copied(),
+        ids: new,
+    };
     let first = copies.first().cloned().unwrap_or(Value::Null);
-    Ok(json!({"path": first["path"], "id": first["id"], "original": first["original"], "copies": copies}))
+    Ok(
+        json!({"path": first["path"], "id": first["id"], "original": first["original"], "copies": copies}),
+    )
 }
 
 /// Most photos one Edit In renders (each becomes a full-size file on disk and a library photo).
@@ -171,11 +230,23 @@ const MAX_EDIT_COPIES: usize = 50;
 
 /// One photo's edit copy for [`edit_external`]: rendered with `opts` next to its original (a demo
 /// photo into `dir`), added to the library and stacked on top of the original, expanded.
-fn edit_copy(s: &mut Session, p: &Value, id: lightcraft_catalog::PhotoId, opts: &crate::export::ExportOptions) -> Result<Value> {
+fn edit_copy(
+    s: &mut Session,
+    p: &Value,
+    id: lightcraft_catalog::PhotoId,
+    opts: &crate::export::ExportOptions,
+) -> Result<Value> {
     const C: &str = "photo.editExternal";
-    let ph = s.catalog.photo(id).cloned().ok_or_else(|| bad(C, format!("no photo {}", id.0)))?;
+    let ph = s
+        .catalog
+        .photo(id)
+        .cloned()
+        .ok_or_else(|| bad(C, format!("no photo {}", id.0)))?;
     let dir = match &ph.source {
-        Source::File { path } => Path::new(path).parent().map(|d| d.to_string_lossy().to_string()).unwrap_or_default(),
+        Source::File { path } => Path::new(path)
+            .parent()
+            .map(|d| d.to_string_lossy().to_string())
+            .unwrap_or_default(),
         Source::Demo { .. } => match super::str_param(p, "dir") {
             Some(d) => d.to_string(),
             None => return Err(bad(C, "a generated demo photo has no folder: give `dir`")),
@@ -189,20 +260,36 @@ fn edit_copy(s: &mut Session, p: &Value, id: lightcraft_catalog::PhotoId, opts: 
         Ok(())
     };
     let to = crate::export::Destination { dir, exact: None };
-    crate::export::export_batch(s, &[id], opts, &to, &mut write, &|path| Path::new(path).exists()).map_err(|e| bad(C, e))?;
+    crate::export::export_batch(s, &[id], opts, &to, &mut write, &|path| {
+        Path::new(path).exists()
+    })
+    .map_err(|e| bad(C, e))?;
     let ext = format!(".{}", opts.format.extension());
-    let out = written.into_iter().find(|w| w.ends_with(&ext)).ok_or_else(|| bad(C, "nothing was written"))?;
+    let out = written
+        .into_iter()
+        .find(|w| w.ends_with(&ext))
+        .ok_or_else(|| bad(C, "nothing was written"))?;
     let r = s.execute("library.import", &json!({"paths": [out]}))?;
-    let new = r["imported"].get(0).and_then(Value::as_u64).ok_or_else(|| bad(C, "the edit copy could not be added"))?;
+    let new = r["imported"]
+        .get(0)
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(C, "the edit copy could not be added"))?;
     // stack: the edit on top of the original, expanded so both show
-    let _ = s.execute("stack.group", &json!({"ids": [new, id.0], "top": new, "collapsed": false}));
+    let _ = s.execute(
+        "stack.group",
+        &json!({"ids": [new, id.0], "top": new, "collapsed": false}),
+    );
     Ok(json!({"path": out, "id": new, "original": id.0}))
 }
 
 /// The op that brings a photo up to date with what its file is now (`info`, a fresh probe), or
 /// `None` when nothing changed. Covers a raw that became decodable (or stopped being: a different
 /// file relinked), i.e. a change of [`lightcraft_catalog::Photo::preview_only`].
-pub(crate) fn content_op(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalog::Photo, info: crate::media::ProbeInfo) -> Option<Op> {
+pub(crate) fn content_op(
+    id: lightcraft_catalog::PhotoId,
+    ph: &lightcraft_catalog::Photo,
+    info: crate::media::ProbeInfo,
+) -> Option<Op> {
     let same = info.content_hash == ph.content_hash
         && info.file_size == ph.file_size
         && (info.width, info.height) == (ph.width, ph.height)
@@ -218,7 +305,11 @@ pub(crate) fn content_op(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalo
 }
 
 /// Ops that fill a photo's empty camera fields (camera, lens, exposure, GPS, capture time) from a fresh probe.
-fn fill_missing_meta(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalog::Photo, info: &crate::media::ProbeInfo) -> Vec<Op> {
+fn fill_missing_meta(
+    id: lightcraft_catalog::PhotoId,
+    ph: &lightcraft_catalog::Photo,
+    info: &crate::media::ProbeInfo,
+) -> Vec<Op> {
     let (mut m, src) = (ph.meta.clone(), &info.meta);
     let before = m.clone();
     if m.camera.is_empty() {
@@ -236,10 +327,16 @@ fn fill_missing_meta(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalog::P
     m.gps = m.gps.or(src.gps);
     let mut ops = Vec::new();
     if m != before {
-        ops.push(Op::SetMeta { id, meta: Box::new(m) });
+        ops.push(Op::SetMeta {
+            id,
+            meta: Box::new(m),
+        });
     }
     if ph.captured.is_none() && info.captured.is_some() {
-        ops.push(Op::SetCaptured { id, captured: info.captured.clone() });
+        ops.push(Op::SetCaptured {
+            id,
+            captured: info.captured.clone(),
+        });
     }
     ops
 }
@@ -249,16 +346,33 @@ fn fill_missing_meta(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalog::P
 /// photo's correction stayed off. When the photo gains lens data and its develop settings are still
 /// what import gave it, the lens correction is turned on as import would; an edited photo keeps
 /// its settings.
-pub(crate) fn lens_ops(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalog::Photo, info: &crate::media::ProbeInfo) -> Vec<Op> {
+pub(crate) fn lens_ops(
+    id: lightcraft_catalog::PhotoId,
+    ph: &lightcraft_catalog::Photo,
+    info: &crate::media::ProbeInfo,
+) -> Vec<Op> {
     if info.embedded_lens == ph.embedded_lens {
         return Vec::new();
     }
-    let mut ops = vec![Op::SetEmbeddedLens { id, lens: info.embedded_lens.map(Box::new) }];
+    let mut ops = vec![Op::SetEmbeddedLens {
+        id,
+        lens: info.embedded_lens.map(Box::new),
+    }];
     // (a photo with a default-preset look keeps it: that look is its import state)
-    if ph.embedded_lens.is_none() && info.embedded_lens.is_some() && ph.import_look.is_none() && !ph.is_edited() && !ph.develop.optics.lens_profile {
+    if ph.embedded_lens.is_none()
+        && info.embedded_lens.is_some()
+        && ph.import_look.is_none()
+        && !ph.is_edited()
+        && !ph.develop.optics.lens_profile
+    {
         let mut d = (*ph.develop).clone();
         d.optics.lens_profile = true;
-        ops.push(Op::SetDevelop { id, settings: std::sync::Arc::new(d), label: "Lens Corrections".into(), edited: ph.edited.clone() });
+        ops.push(Op::SetDevelop {
+            id,
+            settings: std::sync::Arc::new(d),
+            label: "Lens Corrections".into(),
+            edited: ph.edited.clone(),
+        });
     }
     ops
 }
@@ -266,9 +380,16 @@ pub(crate) fn lens_ops(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalog:
 /// The op that gives a raw the as-shot white balance its file reads now (`info`, a fresh probe), or none when the
 /// catalog already has it or the photo is not a raw edited in Kelvin. A raw imported before its camera's matrices
 /// gave it a Kelvin scale keeps the relative scale's 6500 / 0 until a decode or Reload reads the file (issue #730).
-pub(crate) fn as_shot_wb_op(id: lightcraft_catalog::PhotoId, ph: &lightcraft_catalog::Photo, info: &crate::media::ProbeInfo) -> Option<Op> {
-    let read = info.as_shot_wb.filter(|(t, tint)| t.is_finite() && tint.is_finite())?;
-    (ph.develops_raw() && !ph.relative_wb() && ph.as_shot_wb != Some(read)).then_some(Op::SetAsShotWb { id, wb: Some(read) })
+pub(crate) fn as_shot_wb_op(
+    id: lightcraft_catalog::PhotoId,
+    ph: &lightcraft_catalog::Photo,
+    info: &crate::media::ProbeInfo,
+) -> Option<Op> {
+    let read = info
+        .as_shot_wb
+        .filter(|(t, tint)| t.is_finite() && tint.is_finite())?;
+    (ph.develops_raw() && !ph.relative_wb() && ph.as_shot_wb != Some(read))
+        .then_some(Op::SetAsShotWb { id, wb: Some(read) })
 }
 
 /// Re-read photos whose files changed on disk (an external editor saved them): new size,
@@ -277,29 +398,41 @@ fn reload(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = s.targets(p);
     let paths: Vec<(lightcraft_catalog::PhotoId, String)> = ids
         .iter()
-        .filter_map(|id| match s.catalog.photo(*id).map(|ph| ph.source.clone()) {
-            Some(Source::File { path }) => Some((*id, path)),
-            _ => None,
-        })
+        .filter_map(
+            |id| match s.catalog.photo(*id).map(|ph| ph.source.clone()) {
+                Some(Source::File { path }) => Some((*id, path)),
+                _ => None,
+            },
+        )
         .collect();
-    let probed = crate::import::probe_paths(s, &paths.iter().map(|(_, p)| p.clone()).collect::<Vec<_>>());
+    let probed =
+        crate::import::probe_paths(s, &paths.iter().map(|(_, p)| p.clone()).collect::<Vec<_>>());
     let mut ops = Vec::new();
     let mut reloaded = Vec::new();
     for ((id, _), info) in paths.into_iter().zip(probed) {
-        let (Ok(info), Some(ph)) = (info, s.catalog.photo(id)) else { continue };
+        let (Ok(info), Some(ph)) = (info, s.catalog.photo(id)) else {
+            continue;
+        };
         // camera fields the catalog lacks (e.g. a raw imported before its format was read) are filled in;
         // nothing already set is overwritten
         let meta_ops = fill_missing_meta(id, ph, &info);
-        let mut mine: Vec<Op> =
-            content_op(id, ph, info.clone()).into_iter().chain(meta_ops).chain(lens_ops(id, ph, &info)).chain(as_shot_wb_op(id, ph, &info)).collect();
+        let mut mine: Vec<Op> = content_op(id, ph, info.clone())
+            .into_iter()
+            .chain(meta_ops)
+            .chain(lens_ops(id, ph, &info))
+            .chain(as_shot_wb_op(id, ph, &info))
+            .collect();
         if !mine.is_empty() {
             ops.append(&mut mine);
             reloaded.push(id);
         }
         // virtual copies share the file
         for c in s.catalog.photos().filter(|c| c.copy_of == Some(id)) {
-            let theirs: Vec<Op> =
-                content_op(c.id, c, info.clone()).into_iter().chain(lens_ops(c.id, c, &info)).chain(as_shot_wb_op(c.id, c, &info)).collect();
+            let theirs: Vec<Op> = content_op(c.id, c, info.clone())
+                .into_iter()
+                .chain(lens_ops(c.id, c, &info))
+                .chain(as_shot_wb_op(c.id, c, &info))
+                .collect();
             if !theirs.is_empty() {
                 ops.extend(theirs);
                 reloaded.push(c.id);
@@ -321,11 +454,21 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "photo.duplicate";
     let mut made = Vec::new();
     for id in s.targets(p) {
-        let Some(ph) = s.catalog.photo(id).map(|p| (**p).clone()) else { continue };
-        let Source::File { path } = &ph.source else { return Err(bad(C, "a generated demo photo has no file to duplicate")) };
+        let Some(ph) = s.catalog.photo(id).map(|p| (**p).clone()) else {
+            continue;
+        };
+        let Source::File { path } = &ph.source else {
+            return Err(bad(C, "a generated demo photo has no file to duplicate"));
+        };
         let src = Path::new(path);
-        let stem = src.file_stem().map(|x| x.to_string_lossy().to_string()).unwrap_or_else(|| "photo".into());
-        let ext = src.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+        let stem = src
+            .file_stem()
+            .map(|x| x.to_string_lossy().to_string())
+            .unwrap_or_else(|| "photo".into());
+        let ext = src
+            .extension()
+            .map(|e| format!(".{}", e.to_string_lossy()))
+            .unwrap_or_default();
         let dir = src.parent().unwrap_or(Path::new(""));
         let mut dst = dir.join(format!("{stem}-copy{ext}"));
         let mut n = 2;
@@ -337,8 +480,13 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
         let new = s.catalog.alloc_photo_id();
         let mut q = ph.clone();
         q.id = new;
-        q.source = Source::File { path: dst.to_string_lossy().to_string() };
-        q.file_name = dst.file_name().map(|x| x.to_string_lossy().to_string()).unwrap_or_default();
+        q.source = Source::File {
+            path: dst.to_string_lossy().to_string(),
+        };
+        q.file_name = dst
+            .file_name()
+            .map(|x| x.to_string_lossy().to_string())
+            .unwrap_or_default();
         // the same bytes, but its own photo: no duplicate-content clash, no shared history
         q.content_hash = q.content_hash.map(|h| format!("{h}:dup{}", new.0));
         q.copy_of = None;
@@ -346,7 +494,11 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
         q.history.clear();
         q.versions.retain(|v| !v.auto);
         let mut ops = vec![Op::AddPhoto { photo: Box::new(q) }];
-        for a in s.catalog.albums().filter(|a| !a.is_smart() && !a.folder && a.photos.contains(&id)) {
+        for a in s
+            .catalog
+            .albums()
+            .filter(|a| !a.is_smart() && !a.folder && a.photos.contains(&id))
+        {
             let mut photos = a.photos.clone();
             photos.push(new);
             ops.push(Op::SetAlbumPhotos { id: a.id, photos });
@@ -356,7 +508,10 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.merge_undo(made.len(), "Duplicate");
     if let Some(last) = made.last() {
-        s.selection = crate::Selection { ids: made.clone(), active: Some(*last) };
+        s.selection = crate::Selection {
+            ids: made.clone(),
+            active: Some(*last),
+        };
     }
     Ok(json!({"ids": made.iter().map(|i| i.0).collect::<Vec<_>>()}))
 }
@@ -402,19 +557,47 @@ mod tests {
     /// everything already set.
     #[test]
     fn reload_fills_only_missing_camera_fields() {
-        let mut ph = Photo::new(PhotoId(1), Source::File { path: "/x.cr3".into() }, "x.cr3", "CR3", 1620, 1080, "2026-10-06T00:00:00");
+        let mut ph = Photo::new(
+            PhotoId(1),
+            Source::File {
+                path: "/x.cr3".into(),
+            },
+            "x.cr3",
+            "CR3",
+            1620,
+            1080,
+            "2026-10-06T00:00:00",
+        );
         ph.meta.title = "Mine".into();
         ph.meta.iso = Some(800);
-        let mut info = crate::media::ProbeInfo { captured: Some("2026-10-04T08:16:11".into()), ..Default::default() };
+        let mut info = crate::media::ProbeInfo {
+            captured: Some("2026-10-04T08:16:11".into()),
+            ..Default::default()
+        };
         info.meta.camera = "Canon EOS R6 Mark III".into();
         info.meta.lens = "RF24-105mm".into();
         info.meta.iso = Some(400);
         info.meta.aperture = Some(6.3);
         let ops = fill_missing_meta(PhotoId(1), &ph, &info);
-        let Some(Op::SetMeta { meta, .. }) = ops.first() else { panic!("{ops:?}") };
-        assert_eq!((meta.camera.as_str(), meta.lens.as_str(), meta.aperture), ("Canon EOS R6 Mark III", "RF24-105mm", Some(6.3)));
-        assert_eq!((meta.title.as_str(), meta.iso), ("Mine", Some(800)), "set fields are kept");
-        assert!(matches!(ops.get(1), Some(Op::SetCaptured { captured: Some(_), .. })));
+        let Some(Op::SetMeta { meta, .. }) = ops.first() else {
+            panic!("{ops:?}")
+        };
+        assert_eq!(
+            (meta.camera.as_str(), meta.lens.as_str(), meta.aperture),
+            ("Canon EOS R6 Mark III", "RF24-105mm", Some(6.3))
+        );
+        assert_eq!(
+            (meta.title.as_str(), meta.iso),
+            ("Mine", Some(800)),
+            "set fields are kept"
+        );
+        assert!(matches!(
+            ops.get(1),
+            Some(Op::SetCaptured {
+                captured: Some(_),
+                ..
+            })
+        ));
         // nothing missing → nothing to do
         ph.meta = (**meta).clone();
         ph.captured = Some("2026-10-04T08:16:11".into());
@@ -423,7 +606,10 @@ mod tests {
 
     fn lens() -> lightcraft_develop::EmbeddedLens {
         lightcraft_develop::EmbeddedLens {
-            warp: Some(lightcraft_develop::EmbeddedWarp { planes: [[1.0, -0.1, 0.03, 0.0, 0.0, 0.0]; 3], ..Default::default() }),
+            warp: Some(lightcraft_develop::EmbeddedWarp {
+                planes: [[1.0, -0.1, 0.03, 0.0, 0.0, 0.0]; 3],
+                ..Default::default()
+            }),
             vignette: None,
             stages: Default::default(),
         }
@@ -432,7 +618,9 @@ mod tests {
         // as an older build catalogued it: no lens data, correction off
         lightcraft_catalog::Photo::new(
             lightcraft_catalog::PhotoId(1),
-            Source::File { path: "/x.rw2".into() },
+            Source::File {
+                path: "/x.rw2".into(),
+            },
             "x.rw2",
             "RW2",
             4592,
@@ -444,14 +632,25 @@ mod tests {
     #[test]
     fn reload_adds_lens_data_and_turns_the_correction_on_for_an_untouched_photo() {
         let ph = old_rw2();
-        let info = crate::media::ProbeInfo { embedded_lens: Some(lens()), ..Default::default() };
+        let info = crate::media::ProbeInfo {
+            embedded_lens: Some(lens()),
+            ..Default::default()
+        };
         let ops = lens_ops(ph.id, &ph, &info);
-        assert!(matches!(ops.first(), Some(Op::SetEmbeddedLens { lens: Some(_), .. })), "{ops:?}");
-        let Some(Op::SetDevelop { settings, .. }) = ops.get(1) else { panic!("{ops:?}") };
+        assert!(
+            matches!(ops.first(), Some(Op::SetEmbeddedLens { lens: Some(_), .. })),
+            "{ops:?}"
+        );
+        let Some(Op::SetDevelop { settings, .. }) = ops.get(1) else {
+            panic!("{ops:?}")
+        };
         assert!(settings.optics.lens_profile);
         // once applied, the photo is still "unedited" and has what import would have given it
         let mut c = lightcraft_catalog::Catalog::default();
-        c.apply(Op::AddPhoto { photo: Box::new(ph) }).unwrap();
+        c.apply(Op::AddPhoto {
+            photo: Box::new(ph),
+        })
+        .unwrap();
         for op in ops {
             c.apply(op).unwrap();
         }
@@ -459,7 +658,10 @@ mod tests {
         assert_eq!(after.embedded_lens, Some(lens()));
         assert!(!after.is_edited());
         assert_eq!(*after.develop, after.camera_defaults());
-        assert!(lens_ops(after.id, after, &info).is_empty(), "nothing more to do the second time");
+        assert!(
+            lens_ops(after.id, after, &info).is_empty(),
+            "nothing more to do the second time"
+        );
     }
 
     #[test]
@@ -469,9 +671,15 @@ mod tests {
         d.light.exposure = 0.7;
         ph.develop = std::sync::Arc::new(d);
         assert!(ph.is_edited());
-        let info = crate::media::ProbeInfo { embedded_lens: Some(lens()), ..Default::default() };
+        let info = crate::media::ProbeInfo {
+            embedded_lens: Some(lens()),
+            ..Default::default()
+        };
         let ops = lens_ops(ph.id, &ph, &info);
-        assert!(matches!(ops.as_slice(), [Op::SetEmbeddedLens { lens: Some(_), .. }]), "{ops:?}");
+        assert!(
+            matches!(ops.as_slice(), [Op::SetEmbeddedLens { lens: Some(_), .. }]),
+            "{ops:?}"
+        );
     }
 
     #[test]
@@ -481,7 +689,10 @@ mod tests {
         let mut d = ph.camera_defaults();
         d.optics.lens_profile = false;
         ph.develop = std::sync::Arc::new(d);
-        let info = crate::media::ProbeInfo { embedded_lens: Some(lens()), ..Default::default() };
+        let info = crate::media::ProbeInfo {
+            embedded_lens: Some(lens()),
+            ..Default::default()
+        };
         assert!(lens_ops(ph.id, &ph, &info).is_empty());
     }
 
@@ -498,15 +709,28 @@ mod tests {
             return;
         }
         let mut s = Session::new().with_fs();
-        s.execute("library.import", &json!({"paths": [f.to_string_lossy()]})).unwrap();
+        s.execute("library.import", &json!({"paths": [f.to_string_lossy()]}))
+            .unwrap();
         let id = s.active().unwrap();
         let ph = s.catalog.photo(id).unwrap().clone();
-        assert!(ph.embedded_lens.is_some() && ph.develop.optics.lens_profile, "import reads it");
+        assert!(
+            ph.embedded_lens.is_some() && ph.develop.optics.lens_profile,
+            "import reads it"
+        );
         // back to how 0.4.0 catalogued it
         let mut old = (*ph.develop).clone();
         old.optics.lens_profile = false;
-        s.catalog.apply(Op::SetEmbeddedLens { id, lens: None }).unwrap();
-        s.catalog.apply(Op::SetDevelop { id, settings: std::sync::Arc::new(old), label: "x".into(), edited: None }).unwrap();
+        s.catalog
+            .apply(Op::SetEmbeddedLens { id, lens: None })
+            .unwrap();
+        s.catalog
+            .apply(Op::SetDevelop {
+                id,
+                settings: std::sync::Arc::new(old),
+                label: "x".into(),
+                edited: None,
+            })
+            .unwrap();
         s.media.forget(id);
         let before = s.render_now(id, 160, 120).unwrap().image.data;
         let r = s.execute("photo.reload", &json!({"ids": [id.0]})).unwrap();
@@ -514,9 +738,16 @@ mod tests {
         let now = s.catalog.photo(id).unwrap().clone();
         assert_eq!(now.embedded_lens, ph.embedded_lens);
         assert!(now.develop.optics.lens_profile && !now.is_edited());
-        assert_ne!(s.render_now(id, 160, 120).unwrap().image.data, before, "the corrected render differs");
+        assert_ne!(
+            s.render_now(id, 160, 120).unwrap().image.data,
+            before,
+            "the corrected render differs"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         let undone = s.catalog.photo(id).unwrap();
-        assert!(undone.embedded_lens.is_none() && !undone.develop.optics.lens_profile, "one undo step");
+        assert!(
+            undone.embedded_lens.is_none() && !undone.develop.optics.lens_profile,
+            "one undo step"
+        );
     }
 }

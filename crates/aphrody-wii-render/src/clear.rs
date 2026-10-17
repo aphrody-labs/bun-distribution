@@ -250,7 +250,13 @@ impl EfbClear {
         let w = w.min(target_width.saturating_sub(x));
         let h = h.min(target_height.saturating_sub(y));
         if w == 0 || h == 0 {
-            tracing::warn!(x, y, w, h, "clear: zero-area after clamping to target, skipping");
+            tracing::warn!(
+                x,
+                y,
+                w,
+                h,
+                "clear: zero-area after clamping to target, skipping"
+            );
             return false;
         }
 
@@ -266,7 +272,11 @@ impl EfbClear {
             (false, false, false) => unreachable!(),
         };
 
-        let uniforms = ClearUniforms { color, depth, _pad: [0.0; 3] };
+        let uniforms = ClearUniforms {
+            color,
+            depth,
+            _pad: [0.0; 3],
+        };
         queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
 
         let group_label = format!(
@@ -292,7 +302,10 @@ impl EfbClear {
                     } else {
                         Some(resolve_color_view)
                     },
-                    ops: wgpu::Operations { load: wgpu::LoadOp::Load, store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
                     depth_slice: None,
                 })],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {

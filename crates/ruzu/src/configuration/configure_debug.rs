@@ -45,8 +45,14 @@ pub fn page(runtime_lock: bool) -> Page {
     let log_filter_value = common::settings::values().log_filter.get_value().clone();
     let (log_filter_row, log_filter) = w::entry_row("Global Log Filter", &log_filter_value);
     logging.append(&log_filter_row);
-    let flush_line = w::check_row("Flush log output on each line", *common::settings::values().log_flush_line.get_value());
-    let censor_username = w::check_row("Censor username in logs", *common::settings::values().censor_username.get_value());
+    let flush_line = w::check_row(
+        "Flush log output on each line",
+        *common::settings::values().log_flush_line.get_value(),
+    );
+    let censor_username = w::check_row(
+        "Censor username in logs",
+        *common::settings::values().censor_username.get_value(),
+    );
     logging.append(&flush_line);
     logging.append(&censor_username);
     let (gpu_log_row, gpu_log_level) = w::combo_row(
@@ -55,7 +61,9 @@ pub fn page(runtime_lock: bool) -> Page {
         *common::settings::values().gpu_log_level.get_value() as u32,
     );
     gpu_log_level.set_sensitive(runtime_lock);
-    gpu_log_level.set_tooltip_text(Some("Detail level for GPU logs. Off disables logging entirely."));
+    gpu_log_level.set_tooltip_text(Some(
+        "Detail level for GPU logs. Off disables logging entirely.",
+    ));
     logging.append(&gpu_log_row);
     let show_console = w::check_row(
         "Show Log in Console",
@@ -143,7 +151,9 @@ pub fn page(runtime_lock: bool) -> Page {
     );
     // Upstream's tooltip still says LogDir/shaders, but DumpSpirvShader writes
     // directly into DumpDir in both implementations.
-    gpu_log_shader_dumps.set_tooltip_text(Some("Dump compiled SPIR-V binaries (.spv) to the configured dump directory."));
+    gpu_log_shader_dumps.set_tooltip_text(Some(
+        "Dump compiled SPIR-V binaries (.spv) to the configured dump directory.",
+    ));
     for check in [
         &renderer_debug,
         &renderdoc_hotkey,
@@ -214,11 +224,17 @@ pub fn page(runtime_lock: bool) -> Page {
 
     let (battery_row, serial_battery) = w::entry_row(
         "Battery Serial:",
-        &common::settings::values().serial_battery.get_value().to_string(),
+        &common::settings::values()
+            .serial_battery
+            .get_value()
+            .to_string(),
     );
     let (unit_row, serial_unit) = w::entry_row(
         "Unit Serial:",
-        &common::settings::values().serial_unit.get_value().to_string(),
+        &common::settings::values()
+            .serial_unit
+            .get_value()
+            .to_string(),
     );
     advanced.append(&battery_row);
     advanced.append(&unit_row);
@@ -274,12 +290,16 @@ pub fn page(runtime_lock: bool) -> Page {
         values.gdbstub_port.set_value(port);
         values.log_filter.set_value(filter);
         values.log_flush_line.set_value(flush_line.is_active());
-        values.censor_username.set_value(censor_username.is_active());
+        values
+            .censor_username
+            .set_value(censor_username.is_active());
         values.gpu_log_level.set_value(
             common::settings_enums::GpuLogLevel::from_u32(gpu_log_level.selected())
                 .unwrap_or(common::settings_enums::GpuLogLevel::Off),
         );
-        values.gpu_log_shader_dumps.set_value(gpu_log_shader_dumps.is_active());
+        values
+            .gpu_log_shader_dumps
+            .set_value(gpu_log_shader_dumps.is_active());
         values.extended_logging.set_value(extended);
         values.program_args.set_value(args);
 
@@ -325,8 +345,12 @@ pub fn page(runtime_lock: bool) -> Page {
             .set_value(all_controllers.is_active());
         values.use_auto_stub.set_value(auto_stub.is_active());
         // QString::toUInt uses base 10 and returns zero for invalid/overflowing input.
-        values.serial_battery.set_value(serial_battery.text().trim().parse().unwrap_or(0));
-        values.serial_unit.set_value(serial_unit.text().trim().parse().unwrap_or(0));
+        values
+            .serial_battery
+            .set_value(serial_battery.text().trim().parse().unwrap_or(0));
+        values
+            .serial_unit
+            .set_value(serial_unit.text().trim().parse().unwrap_or(0));
 
         values
             .enable_fs_access_log
@@ -366,17 +390,35 @@ mod tests {
         set_ruzu_path(RuzuPath::KeysDir, directory.path());
         std::env::remove_var("RUZU_LOG_FILTER");
         std::env::remove_var("RUST_LOG");
-        common::settings::values_mut().log_filter.set_value("*:Warning".to_owned());
-        common::logging::backend::initialize_with_config(Some(directory.path().join("log")), "*:Warning", false);
+        common::settings::values_mut()
+            .log_filter
+            .set_value("*:Warning".to_owned());
+        common::logging::backend::initialize_with_config(
+            Some(directory.path().join("log")),
+            "*:Warning",
+            false,
+        );
         log::info!("before_apply_hidden");
         // Artificial bytes only: these fixtures do not contain usable console keys.
-        std::fs::write(directory.path().join("prod.keys"),
-            "master_key_00 = 11111111111111111111111111111111\n").unwrap();
-        std::fs::write(directory.path().join("dev.keys"),
-            "master_key_00 = 22222222222222222222222222222222\n").unwrap();
+        std::fs::write(
+            directory.path().join("prod.keys"),
+            "master_key_00 = 11111111111111111111111111111111\n",
+        )
+        .unwrap();
+        std::fs::write(
+            directory.path().join("dev.keys"),
+            "master_key_00 = 22222222222222222222222222222222\n",
+        )
+        .unwrap();
         common::settings::values_mut().use_dev_keys.set_value(false);
         let manager = KeyManager::instance();
-        assert_eq!(manager.lock().unwrap().get_key_128(S128KeyType::Master, 0, 0), [0x11; 16]);
+        assert_eq!(
+            manager
+                .lock()
+                .unwrap()
+                .get_key_128(S128KeyType::Master, 0, 0),
+            [0x11; 16]
+        );
 
         fn find_switch(widget: &gtk::Widget, label: &str) -> Option<gtk::CheckButton> {
             if let Some(check) = widget.downcast_ref::<gtk::CheckButton>() {
@@ -386,23 +428,31 @@ mod tests {
             }
             let mut child = widget.first_child();
             while let Some(widget) = child {
-                if let Some(check) = find_switch(&widget, label) { return Some(check); }
+                if let Some(check) = find_switch(&widget, label) {
+                    return Some(check);
+                }
                 child = widget.next_sibling();
             }
             None
         }
         fn find_gpu_level(widget: &gtk::Widget) -> Option<gtk::DropDown> {
-            if let Some(combo) = widget.downcast_ref::<gtk::DropDown>() { return Some(combo.clone()); }
+            if let Some(combo) = widget.downcast_ref::<gtk::DropDown>() {
+                return Some(combo.clone());
+            }
             let mut child = widget.first_child();
             while let Some(widget) = child {
-                if let Some(combo) = find_gpu_level(&widget) { return Some(combo); }
+                if let Some(combo) = find_gpu_level(&widget) {
+                    return Some(combo);
+                }
                 child = widget.next_sibling();
             }
             None
         }
         {
             let mut values = common::settings::values_mut();
-            values.gpu_log_level.set_value(common::settings_enums::GpuLogLevel::Standard);
+            values
+                .gpu_log_level
+                .set_value(common::settings_enums::GpuLogLevel::Standard);
             values.gpu_log_shader_dumps.set_value(true);
             values.serial_battery.set_value(12345);
             values.serial_unit.set_value(98765);
@@ -410,12 +460,22 @@ mod tests {
             values.program_args.set_value("--before".into());
         }
         let locked_page = page(false);
-        for label in ["Disable Macro JIT", "Disable Macro HLE", "Dump Maxwell Macros"] {
-            assert!(!find_switch(&locked_page.widget, label).unwrap().is_sensitive());
+        for label in [
+            "Disable Macro JIT",
+            "Disable Macro HLE",
+            "Dump Maxwell Macros",
+        ] {
+            assert!(!find_switch(&locked_page.widget, label)
+                .unwrap()
+                .is_sensitive());
         }
-        assert!(!find_switch(&locked_page.widget, "Enable FS Access Log").unwrap().is_sensitive());
+        assert!(!find_switch(&locked_page.widget, "Enable FS Access Log")
+            .unwrap()
+            .is_sensitive());
         assert!(!find_gpu_level(&locked_page.widget).unwrap().is_sensitive());
-        assert!(!find_switch(&locked_page.widget, "Dump SPIR-V Shaders").unwrap().is_sensitive());
+        assert!(!find_switch(&locked_page.widget, "Dump SPIR-V Shaders")
+            .unwrap()
+            .is_sensitive());
         let page = page(true);
         let system_page = super::super::configure_system::page(true);
         let macro_jit = find_switch(&page.widget, "Disable Macro JIT").unwrap();
@@ -423,7 +483,9 @@ mod tests {
         let macro_dump = find_switch(&page.widget, "Dump Maxwell Macros").unwrap();
         let guest_shaders = find_switch(&page.widget, "Dump Game Shaders").unwrap();
         assert!(!guest_shaders.is_active());
-        assert!(!find_switch(&locked_page.widget, "Dump Game Shaders").unwrap().is_sensitive());
+        assert!(!find_switch(&locked_page.widget, "Dump Game Shaders")
+            .unwrap()
+            .is_sensitive());
         assert!(!macro_jit.is_active() && !macro_hle.is_active() && !macro_dump.is_active());
         let gpu_level = find_gpu_level(&page.widget).unwrap();
         let gpu_dumps = find_switch(&page.widget, "Dump SPIR-V Shaders").unwrap();
@@ -437,7 +499,9 @@ mod tests {
         assert!(!quest_flag.is_active());
         assert!(web_applet.is_active());
         assert!(!web_applet.is_sensitive());
-        assert!(find_switch(&locked_page.widget, "Kiosk (Quest) Mode").unwrap().is_sensitive());
+        assert!(find_switch(&locked_page.widget, "Kiosk (Quest) Mode")
+            .unwrap()
+            .is_sensitive());
         let fs_access_log = find_switch(&page.widget, "Enable FS Access Log").unwrap();
         assert!(!fs_access_log.is_active());
         assert!(fs_access_log.is_sensitive());
@@ -449,31 +513,58 @@ mod tests {
         assert!(gpu_level.is_sensitive() && gpu_dumps.is_sensitive());
         fn find_entry(widget: &gtk::Widget, text: &str) -> Option<gtk::Entry> {
             if let Some(entry) = widget.downcast_ref::<gtk::Entry>() {
-                if entry.text() == text { return Some(entry.clone()); }
+                if entry.text() == text {
+                    return Some(entry.clone());
+                }
             }
             let mut child = widget.first_child();
             while let Some(widget) = child {
-                if let Some(entry) = find_entry(&widget, text) { return Some(entry); }
+                if let Some(entry) = find_entry(&widget, text) {
+                    return Some(entry);
+                }
                 child = widget.next_sibling();
             }
             None
         }
-        find_entry(&page.widget, "*:Warning").expect("global log filter entry").set_text("*:Info");
+        find_entry(&page.widget, "*:Warning")
+            .expect("global log filter entry")
+            .set_text("*:Info");
         let args_text = "--label \"café au lait\" --path=/tmp/example";
-        find_entry(&page.widget, "--before").unwrap().set_text(args_text);
+        find_entry(&page.widget, "--before")
+            .unwrap()
+            .set_text(args_text);
         let battery = find_entry(&page.widget, "12345").expect("battery serial entry");
         let unit = find_entry(&page.widget, "98765").expect("unit serial entry");
-        assert!(find_entry(&locked_page.widget, "12345").unwrap().is_sensitive());
-        assert!(find_entry(&locked_page.widget, "98765").unwrap().is_sensitive());
+        assert!(find_entry(&locked_page.widget, "12345")
+            .unwrap()
+            .is_sensitive());
+        assert!(find_entry(&locked_page.widget, "98765")
+            .unwrap()
+            .is_sensitive());
         let check = find_switch(&page.widget, "Use dev.keys").expect("Use dev.keys row");
         assert!(!check.is_active());
         for (enabled, expected) in [(true, 0x22), (false, 0x11)] {
             check.set_active(enabled);
             (page.apply)();
-            assert_eq!(*common::settings::values().use_dev_keys.get_value(), enabled);
-            assert_eq!(manager.lock().unwrap().get_key_128(S128KeyType::Master, 0, 0), [expected; 16]);
+            assert_eq!(
+                *common::settings::values().use_dev_keys.get_value(),
+                enabled
+            );
+            assert_eq!(
+                manager
+                    .lock()
+                    .unwrap()
+                    .get_key_128(S128KeyType::Master, 0, 0),
+                [expected; 16]
+            );
         }
-        let serial_cases = [("0", 0), ("4294967295", u32::MAX), ("4294967296", 0), ("-1", 0), (" +42 ", 42)];
+        let serial_cases = [
+            ("0", 0),
+            ("4294967295", u32::MAX),
+            ("4294967296", 0),
+            ("-1", 0),
+            (" +42 ", 42),
+        ];
         fn find_port(widget: &gtk::Widget) -> Option<gtk::SpinButton> {
             if let Some(spin) = widget.downcast_ref::<gtk::SpinButton>() {
                 return Some(spin.clone());
@@ -530,13 +621,22 @@ mod tests {
             assert_eq!(*values.enable_all_controllers.get_value(), index % 2 != 0);
             assert!(*values.disable_web_applet.get_value());
             assert_eq!(*values.enable_fs_access_log.get_value(), index % 2 != 0);
-            assert_eq!(*values.serial_battery.get_value(), serial_cases[index as usize].1);
-            assert_eq!(*values.serial_unit.get_value(), serial_cases[4 - index as usize].1);
+            assert_eq!(
+                *values.serial_battery.get_value(),
+                serial_cases[index as usize].1
+            );
+            assert_eq!(
+                *values.serial_unit.get_value(),
+                serial_cases[4 - index as usize].1
+            );
         }
         // ConfigureDialog applies General/Debug before System. The System page
         // was constructed with --before and must not overwrite the new text.
         (system_page.apply)();
-        assert_eq!(common::settings::values().program_args.get_value(), args_text);
+        assert_eq!(
+            common::settings::values().program_args.get_value(),
+            args_text
+        );
         log::info!("after_apply_visible");
         common::logging::backend::stop();
         let log = std::fs::read_to_string(directory.path().join("log/ruzu_log.txt")).unwrap();

@@ -39,14 +39,19 @@ pub enum SymbolMapsParseError {
 #[derive(Debug, Snafu)]
 pub enum SymbolMapsWriteError {
     #[snafu(display("Symbol map not found for {module}:\n{backtrace}"))]
-    SymbolMapNotFound { module: ModuleKind, backtrace: Backtrace },
+    SymbolMapNotFound {
+        module: ModuleKind,
+        backtrace: Backtrace,
+    },
     #[snafu(transparent)]
     SymbolMapWrite { source: SymbolMapWriteError },
 }
 
 impl SymbolMaps {
     pub fn new() -> Self {
-        Self { symbol_maps: BTreeMap::new() }
+        Self {
+            symbol_maps: BTreeMap::new(),
+        }
     }
 
     pub fn get(&self, module: ModuleKind) -> Option<&SymbolMap> {
@@ -54,7 +59,9 @@ impl SymbolMaps {
     }
 
     pub fn get_mut(&mut self, module: ModuleKind) -> &mut SymbolMap {
-        self.symbol_maps.entry(module).or_insert_with(SymbolMap::new)
+        self.symbol_maps
+            .entry(module)
+            .or_insert_with(SymbolMap::new)
     }
 
     pub fn from_config<P: AsRef<Path>>(
@@ -88,7 +95,12 @@ impl SymbolMaps {
     ) -> Result<(), SymbolMapsWriteError> {
         let config_path = config_path.as_ref();
         self.get(ModuleKind::Arm9)
-            .ok_or_else(|| SymbolMapNotFoundSnafu { module: ModuleKind::Arm9 }.build())?
+            .ok_or_else(|| {
+                SymbolMapNotFoundSnafu {
+                    module: ModuleKind::Arm9,
+                }
+                .build()
+            })?
             .to_file(config_path.join(&config.main_module.symbols))?;
         for autoload in &config.autoloads {
             let module = ModuleKind::Autoload(autoload.kind);
@@ -107,11 +119,15 @@ impl SymbolMaps {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (ModuleKind, &'_ SymbolMap)> {
-        self.symbol_maps.iter().map(|(module, symbol_map)| (*module, symbol_map))
+        self.symbol_maps
+            .iter()
+            .map(|(module, symbol_map)| (*module, symbol_map))
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (ModuleKind, &'_ mut SymbolMap)> {
-        self.symbol_maps.iter_mut().map(|(module, symbol_map)| (*module, symbol_map))
+        self.symbol_maps
+            .iter_mut()
+            .map(|(module, symbol_map)| (*module, symbol_map))
     }
 
     pub fn find_symbols_by_name(
@@ -160,17 +176,35 @@ pub enum SymbolMapWriteError {
 #[derive(Debug, Snafu)]
 pub enum SymbolMapError {
     #[snafu(display("multiple symbols at {address:#010x}: {name}, {other_name}:\n{backtrace}"))]
-    MultipleSymbols { address: u32, name: String, other_name: String, backtrace: Backtrace },
+    MultipleSymbols {
+        address: u32,
+        name: String,
+        other_name: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display(
         "multiple symbols with name '{name}': {old_address:#010x}, {new_address:#010x}:\n{backtrace}"
     ))]
-    DuplicateName { name: String, new_address: u32, old_address: u32, backtrace: Backtrace },
+    DuplicateName {
+        name: String,
+        new_address: u32,
+        old_address: u32,
+        backtrace: Backtrace,
+    },
     #[snafu(display("no symbol at {address:#010x} to rename to '{new_name}':\n{backtrace}"))]
-    NoSymbolToRename { address: u32, new_name: String, backtrace: Backtrace },
+    NoSymbolToRename {
+        address: u32,
+        new_name: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display(
         "there must be exactly one symbol at {address:#010x} to rename to '{new_name}':\n{backtrace}"
     ))]
-    RenameMultiple { address: u32, new_name: String, backtrace: Backtrace },
+    RenameMultiple {
+        address: u32,
+        new_name: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl SymbolMap {
@@ -186,10 +220,17 @@ impl SymbolMap {
 
         for (id, symbol) in symbols.iter() {
             symbols_by_address.entry(symbol.addr).or_default().push(*id);
-            symbols_by_name.entry(symbol.name.clone()).or_default().push(*id);
+            symbols_by_name
+                .entry(symbol.name.clone())
+                .or_default()
+                .push(*id);
         }
 
-        Self { symbols, symbols_by_address, symbols_by_name }
+        Self {
+            symbols,
+            symbols_by_address,
+            symbols_by_name,
+        }
     }
 
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, SymbolMapParseError> {
@@ -200,14 +241,19 @@ impl SymbolMap {
 
     pub fn load<P: AsRef<Path>>(&mut self, path: P) -> Result<(), SymbolMapParseError> {
         let path = path.as_ref();
-        let mut context = ParseContext { file_path: path.to_str().unwrap().to_string(), row: 0 };
+        let mut context = ParseContext {
+            file_path: path.to_str().unwrap().to_string(),
+            row: 0,
+        };
 
         let lines = CommentedLine::read(path)?;
         for line in lines {
             let line = line?;
             context.row = line.row;
 
-            let Some(symbol) = Symbol::parse(line, &context)? else { continue };
+            let Some(symbol) = Symbol::parse(line, &context)? else {
+                continue;
+            };
             self.add(symbol);
         }
         Ok(())
@@ -235,7 +281,12 @@ impl SymbolMap {
         &self,
         address: u32,
     ) -> Option<impl DoubleEndedIterator<Item = (SymbolId, &Symbol)> + ExactSizeIterator> {
-        Some(self.symbols_by_address.get(&address)?.iter().map(|&id| (id, self.get(id).unwrap())))
+        Some(
+            self.symbols_by_address
+                .get(&address)?
+                .iter()
+                .map(|&id| (id, self.get(id).unwrap())),
+        )
     }
 
     pub fn by_address(&self, address: u32) -> Result<Option<(SymbolId, &Symbol)>, SymbolMapError> {
@@ -262,7 +313,12 @@ impl SymbolMap {
         &self,
         name: &str,
     ) -> Option<impl DoubleEndedIterator<Item = (SymbolId, &Symbol)> + ExactSizeIterator> {
-        Some(self.symbols_by_name.get(name)?.iter().map(|&id| (id, self.get(id).unwrap())))
+        Some(
+            self.symbols_by_name
+                .get(name)?
+                .iter()
+                .map(|&id| (id, self.get(id).unwrap())),
+        )
     }
 
     pub fn by_name(&self, name: &str) -> Result<Option<(SymbolId, &Symbol)>, SymbolMapError> {
@@ -271,8 +327,12 @@ impl SymbolMap {
         };
         let (id, symbol) = symbols.next().unwrap();
         if let Some((_, other)) = symbols.next() {
-            return DuplicateNameSnafu { name, new_address: symbol.addr, old_address: other.addr }
-                .fail();
+            return DuplicateNameSnafu {
+                name,
+                new_address: symbol.addr,
+                old_address: other.addr,
+            }
+            .fail();
         }
         Ok(Some((id, symbol)))
     }
@@ -287,34 +347,42 @@ impl SymbolMap {
 
     /// Returns the first symbol before the given address, or multiple symbols if they are at the same address.
     pub fn first_symbol_before(&self, max_address: u32) -> Option<Vec<(SymbolId, &Symbol)>> {
-        self.symbols_by_address.range(0..=max_address).rev().find_map(|(_, ids)| {
-            let symbols = ids
-                .iter()
-                .filter_map(|&id| {
-                    let symbol = self.get(id).unwrap();
-                    symbol.is_external().then_some((id, symbol))
-                })
-                .collect::<Vec<_>>();
-            (!symbols.is_empty()).then_some(symbols)
-        })
+        self.symbols_by_address
+            .range(0..=max_address)
+            .rev()
+            .find_map(|(_, ids)| {
+                let symbols = ids
+                    .iter()
+                    .filter_map(|&id| {
+                        let symbol = self.get(id).unwrap();
+                        symbol.is_external().then_some((id, symbol))
+                    })
+                    .collect::<Vec<_>>();
+                (!symbols.is_empty()).then_some(symbols)
+            })
     }
 
     /// Returns the first symbol after the given address, or multiple symbols if they are at the same address.
     pub fn first_symbol_after(&self, min_address: u32) -> Option<Vec<(SymbolId, &Symbol)>> {
-        self.symbols_by_address.range(min_address + 1..).find_map(|(_, ids)| {
-            let symbols = ids
-                .iter()
-                .filter_map(|&id| {
-                    let symbol = self.get(id).unwrap();
-                    symbol.is_external().then_some((id, symbol))
-                })
-                .collect::<Vec<_>>();
-            (!symbols.is_empty()).then_some(symbols)
-        })
+        self.symbols_by_address
+            .range(min_address + 1..)
+            .find_map(|(_, ids)| {
+                let symbols = ids
+                    .iter()
+                    .filter_map(|&id| {
+                        let symbol = self.get(id).unwrap();
+                        symbol.is_external().then_some((id, symbol))
+                    })
+                    .collect::<Vec<_>>();
+                (!symbols.is_empty()).then_some(symbols)
+            })
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &'_ Symbol> {
-        self.symbols_by_address.values().flat_map(|ids| ids.iter()).map(|&id| self.get(id).unwrap())
+        self.symbols_by_address
+            .values()
+            .flat_map(|ids| ids.iter())
+            .map(|&id| self.get(id).unwrap())
     }
 
     #[deprecated(note = "use ids_by_address instead")]
@@ -349,13 +417,22 @@ impl SymbolMap {
         };
         let next_symbol = symbols.first().unwrap().1;
 
-        Ok(Some((symbol, symbol.size(next_symbol.addr.min(section_end)))))
+        Ok(Some((
+            symbol,
+            symbol.size(next_symbol.addr.min(section_end)),
+        )))
     }
 
     pub fn add(&mut self, symbol: Symbol) -> (SymbolId, &Symbol) {
         let (id, symbol) = self.symbols.add(symbol);
-        self.symbols_by_address.entry(symbol.addr).or_default().push(id);
-        self.symbols_by_name.entry(symbol.name.clone()).or_default().push(id);
+        self.symbols_by_address
+            .entry(symbol.addr)
+            .or_default()
+            .push(id);
+        self.symbols_by_name
+            .entry(symbol.name.clone())
+            .or_default()
+            .push(id);
         (id, symbol)
     }
 
@@ -451,7 +528,9 @@ impl SymbolMap {
     }
 
     pub fn clone_functions(&self) -> Vec<(SymFunction, Symbol)> {
-        self.functions().map(|(function, symbol)| (function, symbol.clone())).collect()
+        self.functions()
+            .map(|(function, symbol)| (function, symbol.clone()))
+            .collect()
     }
 
     pub fn data_symbols(&self) -> impl Iterator<Item = (SymData, &'_ Symbol)> {
@@ -466,7 +545,11 @@ impl SymbolMap {
 
     pub fn bss_symbols(&self) -> impl Iterator<Item = (SymBss, &'_ Symbol)> {
         self.symbols.iter().filter_map(|(_, symbol)| {
-            if let SymbolKind::Bss(sym_bss) = symbol.kind { Some((sym_bss, symbol)) } else { None }
+            if let SymbolKind::Bss(sym_bss) = symbol.kind {
+                Some((sym_bss, symbol))
+            } else {
+                None
+            }
         })
     }
 
@@ -564,7 +647,12 @@ impl SymbolMap {
         table: &JumpTable,
     ) -> Result<(SymbolId, &Symbol), SymbolMapError> {
         let name = Self::label_name(table.address);
-        self.add_if_new_address(Symbol::new_jump_table(name, table.address, table.size, table.kind))
+        self.add_if_new_address(Symbol::new_jump_table(
+            name,
+            table.address,
+            table.size,
+            table.kind,
+        ))
     }
 
     pub fn add_data(
@@ -638,7 +726,10 @@ impl SymbolMap {
             .symbols_by_address
             .get(&address)
             .ok_or_else(|| NoSymbolToRenameSnafu { address, new_name }.build())?;
-        ensure!(symbol_ids.len() == 1, RenameMultipleSnafu { address, new_name });
+        ensure!(
+            symbol_ids.len() == 1,
+            RenameMultipleSnafu { address, new_name }
+        );
 
         let symbol_id = symbol_ids[0];
         let name = &self.symbols.get(symbol_id).unwrap().name;
@@ -656,21 +747,21 @@ impl SymbolMap {
                     let pos = symbol_ids.iter().position(|&id| id == symbol_id).unwrap();
                     symbol_ids.remove(pos);
                 }
-            },
+            }
             hash_map::Entry::Vacant(_) => {
                 panic!(
                     "No symbol name entry found for '{name}' when trying to rename to '{new_name}'"
                 );
-            },
+            }
         }
 
         match self.symbols_by_name.entry(new_name.to_string()) {
             hash_map::Entry::Occupied(mut entry) => {
                 entry.get_mut().push(symbol_id);
-            },
+            }
             hash_map::Entry::Vacant(entry) => {
                 entry.insert(vec![symbol_id]);
-            },
+            }
         }
 
         self.get_mut(symbol_id).unwrap().name = new_name.to_string();
@@ -682,25 +773,25 @@ impl SymbolMap {
         let symbol = self.symbols.remove(id)?;
 
         match self.symbols_by_address.entry(symbol.addr) {
-            btree_map::Entry::Vacant(_) => {},
+            btree_map::Entry::Vacant(_) => {}
             btree_map::Entry::Occupied(mut entry) => {
                 let ids = entry.get_mut();
                 ids.retain(|&id_| id_ != id);
                 if ids.is_empty() {
                     entry.remove();
                 }
-            },
+            }
         }
 
         match self.symbols_by_name.entry(symbol.name.clone()) {
-            hash_map::Entry::Vacant(_) => {},
+            hash_map::Entry::Vacant(_) => {}
             hash_map::Entry::Occupied(mut entry) => {
                 let ids = entry.get_mut();
                 ids.retain(|&id_| id_ != id);
                 if ids.is_empty() {
                     entry.remove();
                 }
-            },
+            }
         }
 
         Some(symbol)
@@ -861,11 +952,24 @@ pub enum SymbolParseError {
     #[snafu(display(
         "{context}: unknown symbol attribute '{key}', expected 'kind', 'addr', 'ambiguous', 'local' or 'weak':\n{backtrace}"
     ))]
-    UnknownAttribute { context: ParseContext, key: String, backtrace: Backtrace },
+    UnknownAttribute {
+        context: ParseContext,
+        key: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: missing '{attribute}' attribute:\n{backtrace}"))]
-    MissingAttribute { context: ParseContext, attribute: String, backtrace: Backtrace },
+    MissingAttribute {
+        context: ParseContext,
+        attribute: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: the symbol cannot be both {old} and {new}:\n{backtrace}"))]
-    DoubleScope { context: ParseContext, old: SymbolScope, new: SymbolScope, backtrace: Backtrace },
+    DoubleScope {
+        context: ParseContext,
+        old: SymbolScope,
+        new: SymbolScope,
+        backtrace: Backtrace,
+    },
 }
 
 impl Symbol {
@@ -874,7 +978,9 @@ impl Symbol {
         context: &ParseContext,
     ) -> Result<Option<Self>, SymbolParseError> {
         let mut words = iter_words(&line.text);
-        let Some(name) = words.next() else { return Ok(None) };
+        let Some(name) = words.next() else {
+            return Ok(None);
+        };
 
         let mut kind = None;
         let mut addr = None;
@@ -884,35 +990,57 @@ impl Symbol {
             match key {
                 "kind" => kind = Some(SymbolKind::parse(value, context)?),
                 "addr" => {
-                    addr = Some(
-                        parse_u32(value)
-                            .map_err(|error| ParseAddressSnafu { context, value, error }.build())?,
-                    );
-                },
+                    addr = Some(parse_u32(value).map_err(|error| {
+                        ParseAddressSnafu {
+                            context,
+                            value,
+                            error,
+                        }
+                        .build()
+                    })?);
+                }
                 "ambiguous" => ambiguous = true,
                 "local" => {
                     if let Some(scope) = scope {
-                        return DoubleScopeSnafu { context, old: scope, new: SymbolScope::Local }
-                            .fail();
+                        return DoubleScopeSnafu {
+                            context,
+                            old: scope,
+                            new: SymbolScope::Local,
+                        }
+                        .fail();
                     }
                     scope = Some(SymbolScope::Local);
-                },
+                }
                 "weak" => {
                     if let Some(scope) = scope {
-                        return DoubleScopeSnafu { context, old: scope, new: SymbolScope::Weak }
-                            .fail();
+                        return DoubleScopeSnafu {
+                            context,
+                            old: scope,
+                            new: SymbolScope::Weak,
+                        }
+                        .fail();
                     }
                     scope = Some(SymbolScope::Weak);
-                },
+                }
                 _ => return UnknownAttributeSnafu { context, key }.fail(),
             }
         }
 
         let name = name.to_string();
-        let kind =
-            kind.ok_or_else(|| MissingAttributeSnafu { context, attribute: "kind" }.build())?;
-        let addr =
-            addr.ok_or_else(|| MissingAttributeSnafu { context, attribute: "addr" }.build())?;
+        let kind = kind.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "kind",
+            }
+            .build()
+        })?;
+        let addr = addr.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "addr",
+            }
+            .build()
+        })?;
         let scope = scope.unwrap_or(SymbolScope::Global);
 
         Ok(Some(Symbol {
@@ -940,7 +1068,10 @@ impl Symbol {
                 dsprot: if let encryption = function.dsprot_encryption()
                     && encryption != dsprot::EncryptionType::None
                 {
-                    Some(DsProtFunctionData { encryption, code_size: function.code_size() })
+                    Some(DsProtFunctionData {
+                        encryption,
+                        code_size: function.code_size(),
+                    })
                 } else {
                     None
                 },
@@ -1079,7 +1210,11 @@ impl Symbol {
 impl Display for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.comments.display_pre_comments())?;
-        write!(f, "{} kind:{} addr:{:#010x}", self.name, self.kind, self.addr)?;
+        write!(
+            f,
+            "{} kind:{} addr:{:#010x}",
+            self.name, self.kind, self.addr
+        )?;
         if !self.scope.is_global() {
             write!(f, " {}", self.scope)?;
         }
@@ -1150,7 +1285,11 @@ pub enum SymbolKindParseError {
     #[snafu(display(
         "{context}: unknown symbol kind '{kind}', must be one of: function, data, bss, label:\n{backtrace}"
     ))]
-    UnknownKind { context: ParseContext, kind: String, backtrace: Backtrace },
+    UnknownKind {
+        context: ParseContext,
+        kind: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl SymbolKind {
@@ -1195,13 +1334,13 @@ impl SymbolKind {
 impl Display for SymbolKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SymbolKind::Undefined => {},
+            SymbolKind::Undefined => {}
             SymbolKind::Function(function) => write!(f, "function({function})")?,
             SymbolKind::Data(data) => write!(f, "data({data})")?,
             SymbolKind::Bss(bss) => write!(f, "bss{bss}")?,
             SymbolKind::Label(label) => write!(f, "label({label})")?,
-            SymbolKind::PoolConstant => {},
-            SymbolKind::JumpTable(_) => {},
+            SymbolKind::PoolConstant => {}
+            SymbolKind::JumpTable(_) => {}
         }
         Ok(())
     }
@@ -1241,19 +1380,39 @@ pub enum SymFunctionParseError {
     #[snafu(display(
         "{context}: unknown function attribute '{key}', must be one of: size, unknown, arm, thumb:\n{backtrace}"
     ))]
-    UnknownFunctionAttribute { context: ParseContext, key: String, backtrace: Backtrace },
+    UnknownFunctionAttribute {
+        context: ParseContext,
+        key: String,
+        backtrace: Backtrace,
+    },
     #[snafu(transparent)]
     InstructionModeParse { source: InstructionModeParseError },
     #[snafu(display("{context}: function must have an instruction mode: arm or thumb"))]
-    MissingInstructionMode { context: ParseContext, backtrace: Backtrace },
+    MissingInstructionMode {
+        context: ParseContext,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: missing '{attribute}' attribute:\n{backtrace}"))]
-    MissingFunctionAttribute { context: ParseContext, attribute: String, backtrace: Backtrace },
+    MissingFunctionAttribute {
+        context: ParseContext,
+        attribute: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: failed to parse '{value}' as an integer: {error}\n{backtrace}"))]
-    ParseInt { context: ParseContext, value: String, error: ParseIntError, backtrace: Backtrace },
+    ParseInt {
+        context: ParseContext,
+        value: String,
+        error: ParseIntError,
+        backtrace: Backtrace,
+    },
     #[snafu(display(
         "{context}: invalid DS Protect encryption range format '{value}'\n{backtrace}"
     ))]
-    ParseDsProtRange { context: ParseContext, value: String, backtrace: Backtrace },
+    ParseDsProtRange {
+        context: ParseContext,
+        value: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl SymFunction {
@@ -1274,30 +1433,51 @@ impl SymFunction {
                 match key {
                     "size" => {
                         size = Some(parse_u32(value).map_err(|error| {
-                            ParseFunctionSizeSnafu { context, value, error }.build()
+                            ParseFunctionSizeSnafu {
+                                context,
+                                value,
+                                error,
+                            }
+                            .build()
                         })?);
-                    },
+                    }
                     "dsprot" => {
                         if let Some((code_size, seed_key)) = value.split_once(',') {
                             let code_size = parse_u32(code_size).map_err(|error| {
-                                ParseIntSnafu { context, value: code_size, error }.build()
+                                ParseIntSnafu {
+                                    context,
+                                    value: code_size,
+                                    error,
+                                }
+                                .build()
                             })?;
                             let seed_key = parse_u32(seed_key).map_err(|error| {
-                                ParseIntSnafu { context, value: seed_key, error }.build()
+                                ParseIntSnafu {
+                                    context,
+                                    value: seed_key,
+                                    error,
+                                }
+                                .build()
                             })?;
                             dsprot = Some(DsProtFunctionData {
                                 encryption: dsprot::EncryptionType::Keyed(seed_key),
                                 code_size,
                             });
                         } else {
-                            let code_size = parse_u32(value)
-                                .map_err(|error| ParseIntSnafu { context, value, error }.build())?;
+                            let code_size = parse_u32(value).map_err(|error| {
+                                ParseIntSnafu {
+                                    context,
+                                    value,
+                                    error,
+                                }
+                                .build()
+                            })?;
                             dsprot = Some(DsProtFunctionData {
                                 encryption: dsprot::EncryptionType::Unkeyed,
                                 code_size,
                             });
                         }
-                    },
+                    }
                     "dsprot_range" => {
                         let Some((range, seed_key)) = value.split_once(',') else {
                             return ParseDsProtRangeSnafu { context, value }.fail();
@@ -1307,16 +1487,31 @@ impl SymFunction {
                         };
                         dsprot_ranges.push(dsprot::EncryptedRange {
                             start_address: parse_u32(start).map_err(|error| {
-                                ParseIntSnafu { context, value: start, error }.build()
+                                ParseIntSnafu {
+                                    context,
+                                    value: start,
+                                    error,
+                                }
+                                .build()
                             })?,
                             end_address: parse_u32(end).map_err(|error| {
-                                ParseIntSnafu { context, value: end, error }.build()
+                                ParseIntSnafu {
+                                    context,
+                                    value: end,
+                                    error,
+                                }
+                                .build()
                             })?,
                             seed_key: parse_u32(seed_key).map_err(|error| {
-                                ParseIntSnafu { context, value: seed_key, error }.build()
+                                ParseIntSnafu {
+                                    context,
+                                    value: seed_key,
+                                    error,
+                                }
+                                .build()
                             })?,
                         });
-                    },
+                    }
                     _ => return UnknownFunctionAttributeSnafu { context, key }.fail(),
                 }
             }
@@ -1325,7 +1520,11 @@ impl SymFunction {
         Ok(Self {
             mode: mode.ok_or_else(|| MissingInstructionModeSnafu { context }.build())?,
             size: size.ok_or_else(|| {
-                MissingFunctionAttributeSnafu { context, attribute: "size" }.build()
+                MissingFunctionAttributeSnafu {
+                    context,
+                    attribute: "size",
+                }
+                .build()
             })?,
             unknown,
             dsprot,
@@ -1353,13 +1552,13 @@ impl Display for SymFunction {
         }
         if let Some(dsprot) = &self.dsprot {
             match dsprot.encryption {
-                dsprot::EncryptionType::None => {},
+                dsprot::EncryptionType::None => {}
                 dsprot::EncryptionType::Unkeyed => {
                     write!(f, ",dsprot={:#x}", dsprot.code_size)?;
-                },
+                }
                 dsprot::EncryptionType::Keyed(seed_key) => {
                     write!(f, ",dsprot=({:#x},{:#x})", dsprot.code_size, seed_key)?;
-                },
+                }
             }
         }
         for range in &self.dsprot_ranges {
@@ -1391,7 +1590,10 @@ pub enum SymLabelParseError {
 
 impl SymLabel {
     fn parse(options: &str, context: &ParseContext) -> Result<Self, SymLabelParseError> {
-        Ok(Self { external: true, mode: InstructionMode::parse(options, context)? })
+        Ok(Self {
+            external: true,
+            mode: InstructionMode::parse(options, context)?,
+        })
     }
 }
 
@@ -1412,7 +1614,11 @@ pub enum InstructionModeParseError {
     #[snafu(display(
         "{context}: expected instruction mode 'arm' or 'thumb' but got '{value}':\n{backtrace}"
     ))]
-    UnknownInstructionMode { context: ParseContext, value: String, backtrace: Backtrace },
+    UnknownInstructionMode {
+        context: ParseContext,
+        value: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl InstructionMode {
@@ -1464,17 +1670,35 @@ pub enum SymDataParseError {
     #[snafu(display(
         "{context}: expected data kind 'any', 'byte', 'short' or 'word' but got nothing:\n{backtrace}"
     ))]
-    EmptyData { context: ParseContext, backtrace: Backtrace },
+    EmptyData {
+        context: ParseContext,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: failed to parse count '{value}': {error}\n{backtrace}"))]
-    ParseCount { context: ParseContext, value: String, error: ParseIntError, backtrace: Backtrace },
+    ParseCount {
+        context: ParseContext,
+        value: String,
+        error: ParseIntError,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: unexpected characters after ']':\n{backtrace}"))]
-    CharacterAfterArray { context: ParseContext, backtrace: Backtrace },
+    CharacterAfterArray {
+        context: ParseContext,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: data type 'any' cannot be an array:\n{backtrace}"))]
-    ArrayOfAny { context: ParseContext, backtrace: Backtrace },
+    ArrayOfAny {
+        context: ParseContext,
+        backtrace: Backtrace,
+    },
     #[snafu(display(
         "{context}: expected data kind 'any', 'byte', 'short' or 'word' but got '{kind}':\n{backtrace}"
     ))]
-    UnknownDataKind { context: ParseContext, kind: String, backtrace: Backtrace },
+    UnknownDataKind {
+        context: ParseContext,
+        kind: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl SymData {
@@ -1490,9 +1714,14 @@ impl SymData {
                 let count = if count.is_empty() {
                     Ok(None)
                 } else {
-                    parse_u32(count)
-                        .map(Some)
-                        .map_err(|error| ParseCountSnafu { context, value: count, error }.build())
+                    parse_u32(count).map(Some).map_err(|error| {
+                        ParseCountSnafu {
+                            context,
+                            value: count,
+                            error,
+                        }
+                        .build()
+                    })
                 };
                 (count, rest)
             })
@@ -1510,7 +1739,7 @@ impl SymData {
                 } else {
                     ArrayOfAnySnafu { context }.fail()
                 }
-            },
+            }
             "short" => Ok(Self::Short { count }),
             "byte" => Ok(Self::Byte { count }),
             "word" => Ok(Self::Word { count }),
@@ -1574,7 +1803,11 @@ pub enum SymBssParseError {
         backtrace: Backtrace,
     },
     #[snafu(display("{context}: unknown attribute '{key}', must be one of: size:\n{backtrace}'"))]
-    UnknownBssAttribute { context: ParseContext, key: String, backtrace: Backtrace },
+    UnknownBssAttribute {
+        context: ParseContext,
+        key: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl SymBss {
@@ -1583,11 +1816,15 @@ impl SymBss {
         for (key, value) in split_attributes(iter_comma_separated(options), '=') {
             match key {
                 "size" => {
-                    size =
-                        Some(parse_u32(value).map_err(|error| {
-                            ParseBssSizeSnafu { context, value, error }.build()
-                        })?);
-                },
+                    size = Some(parse_u32(value).map_err(|error| {
+                        ParseBssSizeSnafu {
+                            context,
+                            value,
+                            error,
+                        }
+                        .build()
+                    })?);
+                }
                 _ => return UnknownBssAttributeSnafu { context, key }.fail(),
             }
         }

@@ -87,7 +87,14 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 }
 
 /// A same-size per-pixel kernel over the buffer.
-fn run(e: &mut Enc, entry: &str, p: &Params, mut b: GBuf, aux: Option<&GpuImage>, data: Option<&wgpu::Buffer>) -> Option<GBuf> {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    mut b: GBuf,
+    aux: Option<&GpuImage>,
+    data: Option<&wgpu::Buffer>,
+) -> Option<GBuf> {
     let out = e.scratch(b.img.width, b.img.height);
     e.pixels(entry, p, &b.img, aux, &out, data);
     b.img = out;
@@ -155,7 +162,12 @@ fn radial_blur(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let c = b.to_px(ctx.params.v2("center"));
     let mut p = Params::default();
     p.u[0][0] = ctx.params.e("type");
-    p.f[0] = [c.0 as f32, c.1 as f32, ((amount / 100.0).clamp(-1.0, 1.0) * 0.5) as f32, (amount.to_radians() * 0.25) as f32];
+    p.f[0] = [
+        c.0 as f32,
+        c.1 as f32,
+        ((amount / 100.0).clamp(-1.0, 1.0) * 0.5) as f32,
+        (amount.to_radians() * 0.25) as f32,
+    ];
     p.f[1][0] = ctx.params.f("quality").clamp(1.0, 100.0) as f32;
     run(e, "fp2_radial", &p, b, None, None)
 }
@@ -169,7 +181,12 @@ fn vector_blur(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let map = plane(e, &b.img, 0, 0, soft);
     let mut p = Params::default();
     p.u[0][0] = ctx.params.e("type");
-    p.f[0] = [amount as f32, ctx.params.f("angleOffset").to_radians() as f32, 0.0, 0.0];
+    p.f[0] = [
+        amount as f32,
+        ctx.params.f("angleOffset").to_radians() as f32,
+        0.0,
+        0.0,
+    ];
     run(e, "fp2_vector", &p, b, Some(&map), None)
 }
 
@@ -227,12 +244,22 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             let knee = 1.0 - (rolloff / 100.0).clamp(0.0, 0.99);
             p.u[0] = [0, pr.e("conversionType"), 0, 0];
             p.f[0] = [offset(black, white), knee, white, pr.f("gamma") as f32];
-            p.f[1] = [pr.f("internalBlackPoint") as f32, pr.f("internalWhitePoint") as f32, 0.0, 0.0];
+            p.f[1] = [
+                pr.f("internalBlackPoint") as f32,
+                pr.f("internalWhitePoint") as f32,
+                0.0,
+                0.0,
+            ];
             p.f[2] = [offset(95.0, 685.0), knee, 685.0, 1.7];
         }
         "ec.utility.hdrcompander" => {
             p.u[0] = [1, (pr.e("mode") == 1) as u32, 0, 0];
-            p.f[0] = [pr.f("gain").max(1e-6) as f32, pr.f("gamma").max(1e-3) as f32, 0.0, 0.0];
+            p.f[0] = [
+                pr.f("gain").max(1e-6) as f32,
+                pr.f("gamma").max(1e-3) as f32,
+                0.0,
+                0.0,
+            ];
         }
         "ec.utility.hdrcompression" => {
             let t = (pr.f("amount") / 100.0).clamp(0.0, 1.0) as f32;
@@ -248,18 +275,32 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         }
         "ec.channel.cccomposite" => {
             if let Some(source) = ctx.env.host.and_then(|h| h.original()) {
-                let fitted = effectcraft_effects::util::fit_buffer(source, b.img.width, b.img.height, b.offset, b.scale);
+                let fitted = effectcraft_effects::util::fit_buffer(
+                    source,
+                    b.img.width,
+                    b.img.height,
+                    b.offset,
+                    b.scale,
+                );
                 original = Some(e.g.upload_image(&fitted)?);
             }
             p.u[1][0] = original.is_some() as u32;
             let m = pr.e("compositeOriginal");
-            let mode = if m == 1 { BlendMode::Normal } else { composite_mode(m) };
+            let mode = if m == 1 {
+                BlendMode::Normal
+            } else {
+                composite_mode(m)
+            };
             p.u[0] = [6, (m == 1) as u32, mode_id(mode), pr.b("rgbOnly") as u32];
             p.f[0][0] = (pr.f("opacity") as f32 / 100.0).clamp(0.0, 1.0);
         }
         "ec.color.colorlink" => {
             // The sample statistics run on the CPU (the layer's own pixels are read back).
-            let own = if ctx.layer_param("sourceLayer", false).is_none() { Some(e.download(&b.img)?) } else { None };
+            let own = if ctx.layer_param("sourceLayer", false).is_none() {
+                Some(e.download(&b.img)?)
+            } else {
+                None
+            };
             let (c, sa) = effectcraft_effects::color_link_sample(ctx, own.as_ref())?;
             let op = (pr.f("opacity") / 100.0).clamp(0.0, 1.0) as f32;
             let stencil = pr.b("stencilOriginalAlpha") as u32;
@@ -267,7 +308,12 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
                 p.u[0] = [4, stencil, 0, 0];
                 p.f[0] = [sa, op, 0.0, 0.0];
             } else {
-                p.u[0] = [5, stencil, mode_id(effectcraft_effects::color_link_mode(ctx)), 0];
+                p.u[0] = [
+                    5,
+                    stencil,
+                    mode_id(effectcraft_effects::color_link_mode(ctx)),
+                    0,
+                ];
                 p.f[0] = [c[0] * op, c[1] * op, c[2] * op, op];
             }
         }
@@ -305,10 +351,22 @@ fn block_load(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         | (old.is_some() as u32) << 3
         | (ctx.params.b("startCleared") as u32) << 4;
     let mut p = Params::default();
-    p.u[0] = [s_new as u32, old.as_ref().map_or(1, |o| o.0 as u32), flags, 0];
+    p.u[0] = [
+        s_new as u32,
+        old.as_ref().map_or(1, |o| o.0 as u32),
+        flags,
+        0,
+    ];
     p.f[0] = [frac, h.div_ceil(s_new) as f32, 0.0, 0.0];
     let out = e.scratch(w as u32, h as u32);
-    e.pixels("fp2_block_load", &p, &new, old.as_ref().map(|o| &o.1), &out, None);
+    e.pixels(
+        "fp2_block_load",
+        &p,
+        &new,
+        old.as_ref().map(|o| &o.1),
+        &out,
+        None,
+    );
     b.img = out;
     Some(b)
 }
@@ -337,7 +395,15 @@ fn burn_film(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 fn bump(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let glass = id == "ec.stylize.ccglass";
     // stylize3::height_field.
-    let src = crate::fx_key::fitted(e, ctx, &b, effectcraft_effects::bump_layer_id(ctx), true, false)?.unwrap_or_else(|| b.img.clone());
+    let src = crate::fx_key::fitted(
+        e,
+        ctx,
+        &b,
+        effectcraft_effects::bump_layer_id(ctx),
+        true,
+        false,
+    )?
+    .unwrap_or_else(|| b.img.clone());
     let soft = ctx.params.f("softness") * b.scale * 0.5;
     let mut hf = plane(e, &src, 1, ctx.params.e("property"), soft);
     let height = ctx.params.f("height") as f32 / 100.0;
@@ -364,7 +430,15 @@ fn bump(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 
 /// An empty CPU buffer with `b`'s geometry (for CPU helpers that only read positions).
 fn geo(b: &GBuf) -> effectcraft_effects::Buf {
-    effectcraft_effects::Buf { img: Image { width: b.img.width, height: b.img.height, data: vec![] }, offset: b.offset, scale: b.scale }
+    effectcraft_effects::Buf {
+        img: Image {
+            width: b.img.width,
+            height: b.img.height,
+            data: vec![],
+        },
+        offset: b.offset,
+        scale: b.scale,
+    }
 }
 
 /// Clamp a plane (x) into [lo, hi] (Plane::map with f32::clamp).
@@ -385,27 +459,40 @@ fn hextile(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (sn, cs) = ctx.params.f("rotate").to_radians().sin_cos();
     let mut p = Params::default();
     p.u[0][0] = ctx.params.e("render");
-    p.f[0] = [c.0 as f32, c.1 as f32, r as f32, (ctx.params.f("smearing") / 100.0).clamp(0.0, 1.0) as f32];
+    p.f[0] = [
+        c.0 as f32,
+        c.1 as f32,
+        r as f32,
+        (ctx.params.f("smearing") / 100.0).clamp(0.0, 1.0) as f32,
+    ];
     p.f[1] = [sn as f32, cs as f32, 0.0, 0.0];
     run(e, "fp2_hextile", &p, b, None, None)
 }
 
 fn smoothie(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
-    let flow = crate::fx_key::fitted(e, ctx, &b, "flowLayer", true, false)?.unwrap_or_else(|| b.img.clone());
+    let flow = crate::fx_key::fitted(e, ctx, &b, "flowLayer", true, false)?
+        .unwrap_or_else(|| b.img.clone());
     let sm = ctx.params.f("smoothness") * b.scale * 0.5;
     let pl = plane(e, &flow, 2, ctx.params.e("property"), sm);
     let a = b.to_px(ctx.params.v2("sampleA"));
     let bb = b.to_px(ctx.params.v2("sampleB"));
     let mut p = Params::default();
     p.f[0] = [a.0 as f32, a.1 as f32, bb.0 as f32, bb.1 as f32];
-    p.f[1] = [(ctx.params.f("phase") / 360.0) as f32, (ctx.params.e("colorLoop") + 1) as f32, 0.0, 0.0];
+    p.f[1] = [
+        (ctx.params.f("phase") / 360.0) as f32,
+        (ctx.params.e("colorLoop") + 1) as f32,
+        0.0,
+        0.0,
+    ];
     run(e, "fp2_smoothie", &p, b, Some(&pl), None)
 }
 
 // ---------------------------------------------------------------- Inner/Outer Key (keying2)
 
 fn inner_outer(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
-    let Some(plan) = effectcraft_effects::inner_outer_plan(ctx, &geo(&b)) else { return Some(b) };
+    let Some(plan) = effectcraft_effects::inner_outer_plan(ctx, &geo(&b)) else {
+        return Some(b);
+    };
     let (w, h) = (b.img.width, b.img.height);
     let mut tri = Image::new(w, h);
     for (px, &t) in tri.data.iter_mut().zip(&plan.tri.data) {
@@ -415,7 +502,14 @@ fn inner_outer(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     // The matte (x, or w of the estimate) and the estimate's colours.
     let (mut matte, est) = if plan.unknown {
         let t = e.scratch(w, h);
-        e.pixels("fp2_io_prep", &Params::default(), &b.img, Some(&tri), &t, None);
+        e.pixels(
+            "fp2_io_prep",
+            &Params::default(),
+            &b.img,
+            Some(&tri),
+            &t,
+            None,
+        );
         let known = |e: &mut Enc, side: u32| {
             let mut p = Params::default();
             p.u[0][0] = side;
@@ -450,7 +544,11 @@ fn inner_outer(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         matte = out;
     }
     if plan.thin.abs() > 0.01 {
-        let modes = if plan.thin < 0.0 { crate::fx_color::DILATE_X } else { crate::fx_color::ERODE_X };
+        let modes = if plan.thin < 0.0 {
+            crate::fx_color::DILATE_X
+        } else {
+            crate::fx_color::ERODE_X
+        };
         matte = crate::fx_color::morph_frac(e, &matte, plan.thin.abs(), modes);
     }
     if plan.feather > 0.05 {
@@ -477,7 +575,10 @@ fn wire_removal(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         return Some(b);
     }
     // Frame Offset reads another frame from the effect host: that renders on the CPU.
-    if ctx.params.e("removalStyle") == 1 && ctx.params.f("frameOffset").round() != 0.0 && ctx.env.host.is_some() {
+    if ctx.params.e("removalStyle") == 1
+        && ctx.params.f("frameOffset").round() != 0.0
+        && ctx.env.host.is_some()
+    {
         return None;
     }
     let slope = (ctx.params.f("slope") / 100.0).clamp(0.0, 1.0) as f32;
@@ -508,7 +609,12 @@ fn basic_3d(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     if swivel == 0.0 && tilt == 0.0 && dist == 0.0 && !spec_on && !wire {
         return Some(b);
     }
-    let (lx, ly, lw, lh) = (b.offset[0], b.offset[1], ctx.layer_size[0] * b.scale, ctx.layer_size[1] * b.scale);
+    let (lx, ly, lw, lh) = (
+        b.offset[0],
+        b.offset[1],
+        ctx.layer_size[0] * b.scale,
+        ctx.layer_size[1] * b.scale,
+    );
     let (cx, cy) = (lx + lw * 0.5, ly + lh * 0.5);
     let f = lw.max(lh).max(1.0) * 1.4;
     let (cs, ss) = (swivel.cos(), swivel.sin());

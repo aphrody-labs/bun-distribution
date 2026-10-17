@@ -33,7 +33,11 @@ impl OutlineGroup {
 
 /// The deepest outline level used by these lines (0 = no outline).
 pub fn max_level(lines: &BTreeMap<u32, LineInfo>) -> u8 {
-    lines.values().map(|l| l.outline.min(MAX_LEVEL)).max().unwrap_or(0)
+    lines
+        .values()
+        .map(|l| l.outline.min(MAX_LEVEL))
+        .max()
+        .unwrap_or(0)
 }
 
 /// Every group, ordered by where it ends (inner groups before the group around them).
@@ -42,12 +46,20 @@ pub fn groups(lines: &BTreeMap<u32, LineInfo>) -> Vec<OutlineGroup> {
     // Open group per level (index level - 1): start line and whether all its lines are hidden.
     let mut open: [Option<(u32, bool)>; MAX_LEVEL as usize] = [None; MAX_LEVEL as usize];
     let mut prev: Option<u32> = None;
-    let close_from = |open: &mut [Option<(u32, bool)>; MAX_LEVEL as usize], from: u8, end: u32, out: &mut Vec<OutlineGroup>| {
+    let close_from = |open: &mut [Option<(u32, bool)>; MAX_LEVEL as usize],
+                      from: u8,
+                      end: u32,
+                      out: &mut Vec<OutlineGroup>| {
         for level in (from..=MAX_LEVEL).rev() {
             if let Some(slot) = open.get_mut(level as usize - 1)
                 && let Some((start, hidden)) = slot.take()
             {
-                out.push(OutlineGroup { level, start, end, collapsed: hidden });
+                out.push(OutlineGroup {
+                    level,
+                    start,
+                    end,
+                    collapsed: hidden,
+                });
             }
         }
     };
@@ -75,7 +87,9 @@ pub fn groups(lines: &BTreeMap<u32, LineInfo>) -> Vec<OutlineGroup> {
 
 /// The group at `level` that holds `line`.
 pub fn group_at(lines: &BTreeMap<u32, LineInfo>, line: u32, level: u8) -> Option<OutlineGroup> {
-    groups(lines).into_iter().find(|g| g.level == level && g.contains(line))
+    groups(lines)
+        .into_iter()
+        .find(|g| g.level == level && g.contains(line))
 }
 
 #[cfg(test)]
@@ -83,7 +97,18 @@ mod tests {
     use super::*;
 
     fn lines(spec: &[(u32, u8, bool)]) -> BTreeMap<u32, LineInfo> {
-        spec.iter().map(|&(i, outline, hidden)| (i, LineInfo { outline, hidden, ..Default::default() })).collect()
+        spec.iter()
+            .map(|&(i, outline, hidden)| {
+                (
+                    i,
+                    LineInfo {
+                        outline,
+                        hidden,
+                        ..Default::default()
+                    },
+                )
+            })
+            .collect()
     }
 
     #[test]
@@ -96,15 +121,37 @@ mod tests {
     #[test]
     fn nested_and_separate_groups() {
         // Rows 5..8 at level 1 with 6..7 at level 2; rows 12..13 at level 1 after a gap.
-        let l = lines(&[(4, 1, false), (5, 2, false), (6, 2, false), (7, 1, false), (11, 1, true), (12, 1, true)]);
+        let l = lines(&[
+            (4, 1, false),
+            (5, 2, false),
+            (6, 2, false),
+            (7, 1, false),
+            (11, 1, true),
+            (12, 1, true),
+        ]);
         assert_eq!(max_level(&l), 2);
         let g = groups(&l);
         assert_eq!(
             g,
             vec![
-                OutlineGroup { level: 2, start: 5, end: 6, collapsed: false },
-                OutlineGroup { level: 1, start: 4, end: 7, collapsed: false },
-                OutlineGroup { level: 1, start: 11, end: 12, collapsed: true },
+                OutlineGroup {
+                    level: 2,
+                    start: 5,
+                    end: 6,
+                    collapsed: false
+                },
+                OutlineGroup {
+                    level: 1,
+                    start: 4,
+                    end: 7,
+                    collapsed: false
+                },
+                OutlineGroup {
+                    level: 1,
+                    start: 11,
+                    end: 12,
+                    collapsed: true
+                },
             ]
         );
         assert_eq!(g[1].summary(), 8);
@@ -118,8 +165,18 @@ mod tests {
         let l = lines(&[(0, 2, true), (1, 2, true), (2, 1, false), (3, 2, false)]);
         let g = groups(&l);
         assert_eq!(g.iter().filter(|g| g.level == 2).count(), 2);
-        assert_eq!(g.iter().find(|g| g.level == 2 && g.start == 0).map(|g| g.collapsed), Some(true));
-        assert_eq!(g.iter().find(|g| g.level == 1).map(|g| (g.start, g.end, g.collapsed)), Some((0, 3, false)));
+        assert_eq!(
+            g.iter()
+                .find(|g| g.level == 2 && g.start == 0)
+                .map(|g| g.collapsed),
+            Some(true)
+        );
+        assert_eq!(
+            g.iter()
+                .find(|g| g.level == 1)
+                .map(|g| (g.start, g.end, g.collapsed)),
+            Some((0, 3, false))
+        );
     }
 
     #[test]
@@ -127,7 +184,10 @@ mod tests {
         let l = lines(&[(u32::MAX - 1, 9, false), (u32::MAX, 7, false)]);
         let g = groups(&l);
         assert_eq!(g.len(), 7);
-        assert!(g.iter().all(|g| g.start == u32::MAX - 1 && g.end == u32::MAX));
+        assert!(
+            g.iter()
+                .all(|g| g.start == u32::MAX - 1 && g.end == u32::MAX)
+        );
         assert_eq!(g[0].summary(), u32::MAX);
     }
 }

@@ -68,7 +68,11 @@ mod tests {
 
     #[test]
     fn projections_round_trip() {
-        for p in [Projection::Perspective, Projection::Cylindrical, Projection::Spherical] {
+        for p in [
+            Projection::Perspective,
+            Projection::Cylindrical,
+            Projection::Spherical,
+        ] {
             for d in [[0.1, -0.2, 1.0], [-0.5, 0.3, 0.8], [0.0, 0.0, 1.0]] {
                 let (x, y) = p.forward(d, 1000.0).unwrap();
                 let back = p.inverse(x, y, 1000.0);
@@ -78,6 +82,10 @@ mod tests {
                 }
             }
         }
-        assert!(Projection::Perspective.forward([1.0, 0.0, -0.1], 1.0).is_none());
+        assert!(
+            Projection::Perspective
+                .forward([1.0, 0.0, -0.1], 1.0)
+                .is_none()
+        );
     }
 }

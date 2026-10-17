@@ -19,13 +19,33 @@ fn id(v: serde_json::Value) -> NodeId {
 
 fn press(u: &mut Ui, key: Key, modifiers: Modifiers) {
     u.frame(vec![
-        Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers },
-        Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: false,
+            repeat: false,
+            modifiers,
+        },
     ]);
 }
 
 fn f6(u: &mut Ui, back: bool) {
-    press(u, Key::F6, if back { Modifiers::SHIFT } else { Modifiers::NONE });
+    press(
+        u,
+        Key::F6,
+        if back {
+            Modifiers::SHIFT
+        } else {
+            Modifiers::NONE
+        },
+    );
 }
 
 fn name(u: &Ui) -> String {
@@ -39,10 +59,22 @@ fn region(u: &Ui) -> Region {
 /// Two rectangles, "Rect A" and "Rect B" (listed above A: it's on top), A selected.
 fn setup() -> (Ui, NodeId, NodeId) {
     let mut s = Session::new();
-    let a = id(s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 40, "height": 30})).unwrap());
-    let b = id(s.execute("shape.rectangle", &json!({"x": 100, "y": 30, "width": 20, "height": 20})).unwrap());
-    s.execute("object.rename", &json!({"ids": [a], "name": "Rect A"})).unwrap();
-    s.execute("object.rename", &json!({"ids": [b], "name": "Rect B"})).unwrap();
+    let a = id(s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": 40, "height": 30}),
+        )
+        .unwrap());
+    let b = id(s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 100, "y": 30, "width": 20, "height": 20}),
+        )
+        .unwrap());
+    s.execute("object.rename", &json!({"ids": [a], "name": "Rect A"}))
+        .unwrap();
+    s.execute("object.rename", &json!({"ids": [b], "name": "Rect B"}))
+        .unwrap();
     s.execute("select.set", &json!({"ids": [a]})).unwrap();
     let mut u = Ui::new(s);
     u.frame(vec![]);
@@ -54,11 +86,20 @@ fn tree(u: &mut Ui) -> Vec<Node> {
     u.ctx.enable_accesskit();
     u.frame(vec![]);
     let out = u.frame_output(vec![]);
-    out.platform_output.accesskit_update.expect("an AccessKit update").nodes.into_iter().map(|(_, n)| n).collect()
+    out.platform_output
+        .accesskit_update
+        .expect("an AccessKit update")
+        .nodes
+        .into_iter()
+        .map(|(_, n)| n)
+        .collect()
 }
 
 fn find<'a>(nodes: &'a [Node], role: Role, label: &str) -> &'a Node {
-    nodes.iter().find(|n| n.role() == role && n.label() == Some(label)).unwrap_or_else(|| panic!("no {role:?} named {label:?}"))
+    nodes
+        .iter()
+        .find(|n| n.role() == role && n.label() == Some(label))
+        .unwrap_or_else(|| panic!("no {role:?} named {label:?}"))
 }
 
 #[test]
@@ -73,25 +114,49 @@ fn the_screen_reader_tree_names_tools_layers_fields_tabs_and_the_canvas() {
     let mv = find(&nodes, Role::Button, "Move");
     assert_eq!(mv.toggled(), Some(Toggled::True));
     assert_eq!(mv.keyboard_shortcut(), Some("V"));
-    assert_eq!(find(&nodes, Role::Button, "Rectangle").toggled(), Some(Toggled::False));
-    assert_eq!(find(&nodes, Role::Button, "Shape tools").is_expanded(), Some(false));
+    assert_eq!(
+        find(&nodes, Role::Button, "Rectangle").toggled(),
+        Some(Toggled::False)
+    );
+    assert_eq!(
+        find(&nodes, Role::Button, "Shape tools").is_expanded(),
+        Some(false)
+    );
     // Layer rows: tree items with their type, level and selection.
     let a = find(&nodes, Role::TreeItem, "Rect A");
-    assert_eq!((a.level(), a.is_selected(), a.description()), (Some(1), Some(true), Some("Rectangle")));
-    assert_eq!(find(&nodes, Role::TreeItem, "Rect B").is_selected(), Some(false));
+    assert_eq!(
+        (a.level(), a.is_selected(), a.description()),
+        (Some(1), Some(true), Some("Rectangle"))
+    );
+    assert_eq!(
+        find(&nodes, Role::TreeItem, "Rect B").is_selected(),
+        Some(false)
+    );
     // Number fields: name and value.
     let w = find(&nodes, Role::SpinButton, "Width");
     assert_eq!((w.value(), w.numeric_value()), (Some("40"), Some(40.0)));
-    assert_eq!(find(&nodes, Role::SpinButton, "Rotation").value(), Some("0°"));
+    assert_eq!(
+        find(&nodes, Role::SpinButton, "Rotation").value(),
+        Some("0°")
+    );
     // Tabs and dropdowns.
     assert_eq!(find(&nodes, Role::Tab, "Design").is_selected(), Some(true));
-    assert_eq!(find(&nodes, Role::Tab, "Prototype").is_selected(), Some(false));
-    assert_eq!(find(&nodes, Role::ComboBox, "Zoom").is_expanded(), Some(false));
+    assert_eq!(
+        find(&nodes, Role::Tab, "Prototype").is_selected(),
+        Some(false)
+    );
+    assert_eq!(
+        find(&nodes, Role::ComboBox, "Zoom").is_expanded(),
+        Some(false)
+    );
     // Icon buttons are named by their tooltip.
     find(&nodes, Role::Button, "Add new page");
     // The canvas describes the selection.
     let canvas = find(&nodes, Role::Group, "Canvas");
-    assert_eq!(canvas.description(), Some("Rect A, Rectangle, 40 by 30, selected"));
+    assert_eq!(
+        canvas.description(),
+        Some("Rect A, Rectangle, 40 by 30, selected")
+    );
 }
 
 #[test]
@@ -102,11 +167,20 @@ fn f6_cycles_the_regions_and_lands_on_the_active_tool_and_the_selected_row() {
     f6(&mut u, false);
     assert_eq!(region(&u), Region::Properties);
     assert!(u.app.ui.nav.keyboard, "keyboard mode: the focus ring shows");
-    assert!(!name(&u).is_empty(), "a control in the properties panel has the keyboard");
+    assert!(
+        !name(&u).is_empty(),
+        "a control in the properties panel has the keyboard"
+    );
     f6(&mut u, false);
-    assert_eq!((region(&u), name(&u)), (Region::Toolbar, "Move".to_string()));
+    assert_eq!(
+        (region(&u), name(&u)),
+        (Region::Toolbar, "Move".to_string())
+    );
     f6(&mut u, false);
-    assert_eq!((region(&u), name(&u)), (Region::Layers, "Rect A".to_string()));
+    assert_eq!(
+        (region(&u), name(&u)),
+        (Region::Layers, "Rect A".to_string())
+    );
     f6(&mut u, false);
     assert_eq!(region(&u), Region::Canvas);
     assert_eq!(name(&u), "Canvas");
@@ -140,9 +214,16 @@ fn tab_moves_between_the_properties_controls_and_wraps_without_leaving_the_panel
         }
         seen.push(name(&u));
     }
-    assert_eq!(name(&u), first, "Tab wraps round to the panel's first control");
+    assert_eq!(
+        name(&u),
+        first,
+        "Tab wraps round to the panel's first control"
+    );
     for want in ["Width", "Height", "Rotation", "Opacity"] {
-        assert!(seen.iter().any(|n| n == want), "{want} not reached by Tab: {seen:?}");
+        assert!(
+            seen.iter().any(|n| n == want),
+            "{want} not reached by Tab: {seen:?}"
+        );
     }
     // Shift+Tab steps back.
     press(&mut u, Key::Tab, Modifiers::SHIFT);
@@ -173,7 +254,11 @@ fn enter_edits_a_focused_field_up_steps_it_and_tab_commits_and_moves_on() {
     assert!(crate::a11y::field_focused(&u.ctx), "still editing");
     press(&mut u, Key::Tab, Modifiers::NONE);
     u.frame(vec![]);
-    assert_eq!(u.app.session.doc().unwrap().node(a).unwrap().width, 65.0, "the edited width is kept");
+    assert_eq!(
+        u.app.session.doc().unwrap().node(a).unwrap().width,
+        65.0,
+        "the edited width is kept"
+    );
     assert_eq!(name(&u), "Height");
     assert_eq!(region(&u), Region::Properties);
 }
@@ -183,7 +268,10 @@ fn arrows_and_enter_pick_a_toolbar_tool() {
     let (mut u, ..) = setup();
     f6(&mut u, true);
     f6(&mut u, true);
-    assert_eq!((region(&u), name(&u)), (Region::Toolbar, "Move".to_string()));
+    assert_eq!(
+        (region(&u), name(&u)),
+        (Region::Toolbar, "Move".to_string())
+    );
     // Move, its flyout button, Frame, its flyout button, Rectangle.
     for _ in 0..4 {
         press(&mut u, Key::ArrowRight, Modifiers::NONE);
@@ -209,8 +297,15 @@ fn escape_returns_to_the_canvas_where_shortcuts_and_tab_work_again() {
     press(&mut u, Key::R, Modifiers::NONE);
     assert_eq!(u.app.session.tool.tool, ToolId::Move);
     press(&mut u, Key::Escape, Modifiers::NONE);
-    assert_eq!((region(&u), name(&u)), (Region::Canvas, "Canvas".to_string()));
-    assert_eq!(u.app.session.selection(), vec![a], "leaving the toolbar doesn't deselect");
+    assert_eq!(
+        (region(&u), name(&u)),
+        (Region::Canvas, "Canvas".to_string())
+    );
+    assert_eq!(
+        u.app.session.selection(),
+        vec![a],
+        "leaving the toolbar doesn't deselect"
+    );
     // Tab on the canvas selects the next layer and keeps the keyboard there.
     press(&mut u, Key::Tab, Modifiers::NONE);
     assert_eq!(u.app.session.selection(), vec![b]);
@@ -225,14 +320,20 @@ fn tab_on_the_canvas_selects_the_next_layer_without_keyboard_mode() {
     press(&mut u, Key::Tab, Modifiers::NONE);
     u.frame(vec![]);
     assert_eq!(u.app.session.selection(), vec![b]);
-    assert!(u.ctx.memory(|m| m.focused()).is_none(), "Tab doesn't wander into the tab bar");
+    assert!(
+        u.ctx.memory(|m| m.focused()).is_none(),
+        "Tab doesn't wander into the tab bar"
+    );
 }
 
 #[test]
 fn arrows_walk_the_layer_rows_and_the_keyboard_follows_the_selection() {
     let (mut u, a, b) = setup();
     f6(&mut u, true);
-    assert_eq!((region(&u), name(&u)), (Region::Layers, "Rect A".to_string()));
+    assert_eq!(
+        (region(&u), name(&u)),
+        (Region::Layers, "Rect A".to_string())
+    );
     // B is listed above A.
     press(&mut u, Key::ArrowUp, Modifiers::NONE);
     u.frame(vec![]);
@@ -245,7 +346,18 @@ fn arrows_walk_the_layer_rows_and_the_keyboard_follows_the_selection() {
     sel.sort();
     assert_eq!(sel, vec![a, b], "Shift extends");
     // Nothing moved on the canvas.
-    assert_eq!(u.app.session.doc().unwrap().node(a).unwrap().transform.translation().x, 0.0);
+    assert_eq!(
+        u.app
+            .session
+            .doc()
+            .unwrap()
+            .node(a)
+            .unwrap()
+            .transform
+            .translation()
+            .x,
+        0.0
+    );
 }
 
 #[test]
@@ -262,11 +374,19 @@ fn a_menu_opened_from_the_keyboard_takes_it_and_escape_gives_it_back() {
     press(&mut u, Key::Enter, Modifiers::NONE);
     u.frame(vec![]);
     u.frame(vec![]);
-    assert_eq!(name(&u), "Zoom in", "the menu's first item has the keyboard");
+    assert_eq!(
+        name(&u),
+        "Zoom in",
+        "the menu's first item has the keyboard"
+    );
     press(&mut u, Key::Escape, Modifiers::NONE);
     u.frame(vec![]);
     assert_eq!(name(&u), "Zoom");
-    assert_eq!(region(&u), Region::Properties, "closing the menu stays in the panel");
+    assert_eq!(
+        region(&u),
+        Region::Properties,
+        "closing the menu stays in the panel"
+    );
 }
 
 #[test]
@@ -285,13 +405,27 @@ fn a_pointer_press_ends_keyboard_mode() {
 fn focus_region_from_the_control_channel() {
     let (mut u, ..) = setup();
     let ctx = u.ctx.clone();
-    crate::control::handle(&mut u.app, &ctx, "ui.set", &json!({"focusRegion": "layers"})).unwrap();
+    crate::control::handle(
+        &mut u.app,
+        &ctx,
+        "ui.set",
+        &json!({"focusRegion": "layers"}),
+    )
+    .unwrap();
     u.frame(vec![]);
     let v = crate::control::handle(&mut u.app, &ctx, "ui.inspect", &json!({})).unwrap();
     assert_eq!(v["focus"]["region"], "layers");
     assert_eq!(v["focus"]["keyboard"], true);
     assert_eq!(v["focus"]["control"], "Rect A");
-    assert!(crate::control::handle(&mut u.app, &ctx, "ui.set", &json!({"focusRegion": "nowhere"})).is_err());
+    assert!(
+        crate::control::handle(
+            &mut u.app,
+            &ctx,
+            "ui.set",
+            &json!({"focusRegion": "nowhere"})
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -318,7 +452,11 @@ fn a_tool_flyout_opened_from_the_keyboard_picks_a_tool() {
     u.frame(vec![]);
     u.frame(vec![]);
     assert_eq!(u.app.ui.tool_flyout, Some("shape"));
-    assert_eq!(name(&u), "Rectangle", "the flyout's first tool has the keyboard");
+    assert_eq!(
+        name(&u),
+        "Rectangle",
+        "the flyout's first tool has the keyboard"
+    );
     // egui moves the focus between a menu's items at the end of the frame.
     press(&mut u, Key::ArrowDown, Modifiers::NONE);
     u.frame(vec![]);
@@ -328,7 +466,11 @@ fn a_tool_flyout_opened_from_the_keyboard_picks_a_tool() {
     u.frame(vec![]);
     assert_eq!(u.app.session.tool.tool, ToolId::Line);
     assert_eq!(u.app.ui.tool_flyout, None);
-    assert_eq!((region(&u), name(&u)), (Region::Toolbar, "Shape tools".to_string()), "back on the flyout's button");
+    assert_eq!(
+        (region(&u), name(&u)),
+        (Region::Toolbar, "Shape tools".to_string()),
+        "back on the flyout's button"
+    );
     // Escape closes an open flyout and stays in the toolbar.
     press(&mut u, Key::Enter, Modifiers::NONE);
     u.frame(vec![]);
@@ -336,7 +478,10 @@ fn a_tool_flyout_opened_from_the_keyboard_picks_a_tool() {
     press(&mut u, Key::Escape, Modifiers::NONE);
     u.frame(vec![]);
     assert_eq!(u.app.ui.tool_flyout, None);
-    assert_eq!((region(&u), name(&u)), (Region::Toolbar, "Shape tools".to_string()));
+    assert_eq!(
+        (region(&u), name(&u)),
+        (Region::Toolbar, "Shape tools".to_string())
+    );
 }
 
 /// Every keyboard and naming path with the screen reader tree on: the node writers and the shared

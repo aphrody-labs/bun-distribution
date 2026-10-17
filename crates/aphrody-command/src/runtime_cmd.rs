@@ -84,7 +84,8 @@ fn project_root(project: Option<PathBuf>) -> Result<PathBuf> {
 }
 
 fn run_uv(project: &std::path::Path, args: &[&str]) -> Result<std::process::Output> {
-    Command::new(std::env::var_os("APHRODY_UV_BIN").unwrap_or_else(|| "uv".into())).no_window()
+    Command::new(std::env::var_os("APHRODY_UV_BIN").unwrap_or_else(|| "uv".into()))
+        .no_window()
         .current_dir(project)
         .args(args)
         .output()
@@ -103,9 +104,12 @@ fn output_text(output: &std::process::Output) -> String {
 
 fn status(project: Option<PathBuf>, json: bool) -> Result<()> {
     let project = project_root(project)?;
-    let uv = run_uv(&project, &["--version"]).ok().map(|out| output_text(&out));
-    let python =
-        run_uv(&project, &["run", "python", "--version"]).ok().map(|out| output_text(&out));
+    let uv = run_uv(&project, &["--version"])
+        .ok()
+        .map(|out| output_text(&out));
+    let python = run_uv(&project, &["run", "python", "--version"])
+        .ok()
+        .map(|out| output_text(&out));
     let hardware = aphrody_models::accel::probe();
     #[cfg(feature = "infer")]
     let onnx_runtime = aphrody_infer::discover().label().to_owned();
@@ -139,11 +143,17 @@ fn status(project: Option<PathBuf>, json: bool) -> Result<()> {
             .collect(),
     };
     if json {
-        println!("{}", serde_json::to_string_pretty(&report).into_diagnostic()?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&report).into_diagnostic()?
+        );
     } else {
         println!("project: {}", report.project);
         println!("uv: {}", report.uv.as_deref().unwrap_or("unavailable"));
-        println!("python: {}", report.python.as_deref().unwrap_or("unavailable"));
+        println!(
+            "python: {}",
+            report.python.as_deref().unwrap_or("unavailable")
+        );
         println!("accelerator: {}", report.accelerators.best());
         println!("onnx-runtime: {}", report.onnx_runtime);
         for surface in &report.ecosystem {
@@ -152,7 +162,9 @@ fn status(project: Option<PathBuf>, json: bool) -> Result<()> {
                 surface.surface,
                 surface.owner,
                 surface.boundary,
-                surface.binary_found.map_or("n/a", |found| if found { "yes" } else { "no" })
+                surface
+                    .binary_found
+                    .map_or("n/a", |found| if found { "yes" } else { "no" })
             );
         }
     }
@@ -183,6 +195,9 @@ fn check(project: Option<PathBuf>) -> Result<()> {
     if output.status.success() {
         Ok(())
     } else {
-        Err(miette::miette!("uv lock --check a échoué ({})", output.status))
+        Err(miette::miette!(
+            "uv lock --check a échoué ({})",
+            output.status
+        ))
     }
 }

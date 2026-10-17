@@ -20,7 +20,10 @@ fn me() -> i32 {
 }
 
 fn comm() -> String {
-    std::fs::read_to_string(format!("/proc/{}/comm", me())).unwrap().trim().to_owned()
+    std::fs::read_to_string(format!("/proc/{}/comm", me()))
+        .unwrap()
+        .trim()
+        .to_owned()
 }
 
 fn region_over(buf: &[u8]) -> MapEntry {
@@ -101,13 +104,21 @@ fn scan_self_exact_and_masked() {
     assert!(masked[0].perms.starts_with('r'));
 
     // motif absent → 0 hit.
-    let none =
-        scan_regions_masked(me(), &regions, base, &Pattern::parse("DE AD BE EF").unwrap(), 8);
+    let none = scan_regions_masked(
+        me(),
+        &regions,
+        base,
+        &Pattern::parse("DE AD BE EF").unwrap(),
+        8,
+    );
     assert!(none.is_empty());
 
     // garde-fous : aiguille/motif vide → 0 hit.
     assert!(scan_regions(me(), &regions, base, &[], 8).is_empty());
-    let empty_pat = Pattern { bytes: vec![], mask: vec![] };
+    let empty_pat = Pattern {
+        bytes: vec![],
+        mask: vec![],
+    };
     assert!(scan_regions_masked(me(), &regions, base, &empty_pat, 8).is_empty());
     // limite 0 → 0 hit même si présent.
     assert!(
@@ -146,9 +157,10 @@ fn read_exact_partial_at_mapping_gap() {
             continue;
         };
         let Some(dash) = r.find('-') else { continue };
-        let (Ok(s), Ok(e)) =
-            (u64::from_str_radix(&r[..dash], 16), u64::from_str_radix(&r[dash + 1..], 16))
-        else {
+        let (Ok(s), Ok(e)) = (
+            u64::from_str_radix(&r[..dash], 16),
+            u64::from_str_radix(&r[dash + 1..], 16),
+        ) else {
             continue;
         };
         ranges.push((s, e, perms.starts_with('r')));
@@ -162,7 +174,10 @@ fn read_exact_partial_at_mapping_gap() {
     if let Some(end) = gap_end {
         // 4 octets à cheval sur la frontière : 2 mappés (end-2,end-1) + 2 dans le trou.
         let r = read_exact(me(), end - 2, 4);
-        assert!(r.is_err(), "lecture à cheval sur un trou devrait être partielle/erreur");
+        assert!(
+            r.is_err(),
+            "lecture à cheval sur un trou devrait être partielle/erreur"
+        );
     }
 }
 
@@ -190,8 +205,13 @@ fn scan_and_dump_skip_bad_regions() {
         offset: 0,
         path: "zero".into(),
     };
-    let unmapped =
-        MapEntry { start: 0x1, end: 0x100, perms: "rw-".into(), offset: 0, path: "gap".into() };
+    let unmapped = MapEntry {
+        start: 0x1,
+        end: 0x100,
+        perms: "rw-".into(),
+        offset: 0,
+        path: "gap".into(),
+    };
     let regions = vec![unreadable, zero, unmapped, good.clone()];
 
     // scan saute illisible/vide/non-mappé, ne garde que `good`.
@@ -224,8 +244,13 @@ fn write_exact_partial_or_err_at_gap() {
 fn dump_regions_writes_self_region() {
     let buf: Vec<u8> = (0..64u8).collect();
     let start = buf.as_ptr() as u64;
-    let region =
-        MapEntry { start, end: start + 64, perms: "rw-".into(), offset: 0, path: "self".into() };
+    let region = MapEntry {
+        start,
+        end: start + 64,
+        perms: "rw-".into(),
+        offset: 0,
+        path: "self".into(),
+    };
     let dir = std::env::temp_dir().join(format!("nie-trace-dump-{}", me()));
     let stats = dump_regions(me(), &[region], &dir).unwrap();
     assert_eq!(stats.regions, 1);

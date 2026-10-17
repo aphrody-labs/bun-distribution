@@ -9,8 +9,14 @@
 use photocraft_doc::LayerContent;
 use photocraft_geom::Rect;
 use photocraft_paint::mixer::{MixerSettings, apply_mixer_stroke};
-use photocraft_paint::replace::{Limits, ReplaceMode, ReplaceSettings, Sampling, apply_color_replacement, color_replacement_effect};
-use photocraft_paint::{BrushPreset, BrushSettings, GrayTile, PresetCaptures, Stroke, StrokePoint, StrokeRenderer, TipShape, render_stroke};
+use photocraft_paint::replace::{
+    Limits, ReplaceMode, ReplaceSettings, Sampling, apply_color_replacement,
+    color_replacement_effect,
+};
+use photocraft_paint::{
+    BrushPreset, BrushSettings, GrayTile, PresetCaptures, Stroke, StrokePoint, StrokeRenderer,
+    TipShape, render_stroke,
+};
 use photocraft_raster::Surface;
 use serde_json::{Value, json};
 
@@ -18,7 +24,10 @@ use crate::commands::{CommandSpec, has_paintable, is_mask_target, paint_surface}
 use crate::{EngineError, Result, Session};
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 fn num(p: &Value, k: &str) -> Option<f32> {
     p.get(k).and_then(Value::as_f64).map(|v| v as f32)
@@ -34,9 +43,15 @@ fn color(v: Option<&Value>, d: [f32; 4]) -> [f32; 4] {
         }
         Some(Value::String(h)) => {
             let h = h.trim_start_matches('#');
-            let c = |i: usize| h.get(i..i + 2).and_then(|x| u8::from_str_radix(x, 16).ok()).map(|v| f32::from(v) / 255.0);
+            let c = |i: usize| {
+                h.get(i..i + 2)
+                    .and_then(|x| u8::from_str_radix(x, 16).ok())
+                    .map(|v| f32::from(v) / 255.0)
+            };
             match (c(0), c(2), c(4)) {
-                (Some(r), Some(g), Some(b)) if h.len() == 6 || h.len() == 8 => [r, g, b, c(6).unwrap_or(1.0)],
+                (Some(r), Some(g), Some(b)) if h.len() == 6 || h.len() == 8 => {
+                    [r, g, b, c(6).unwrap_or(1.0)]
+                }
                 _ => d,
             }
         }
@@ -53,7 +68,10 @@ pub(crate) const MAX_COORD: f64 = 1_000_000.0;
 /// Parse `points`: arrays `[x, y, pressure?, tiltX?, tiltY?, rotation?, timeMs?, wheel?]` or
 /// objects `{"x":…, "y":…, "pressure":…, "tiltX":…, …, "time":…}`.
 pub fn parse_points(p: &Value, cmd: &str) -> Result<Vec<StrokePoint>> {
-    let arr = p.get("points").and_then(Value::as_array).ok_or_else(|| bad(cmd, "missing `points`"))?;
+    let arr = p
+        .get("points")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(cmd, "missing `points`"))?;
     let pts: Vec<StrokePoint> = arr
         .iter()
         .filter_map(|v| match v {
@@ -81,8 +99,14 @@ pub fn parse_points(p: &Value, cmd: &str) -> Result<Vec<StrokePoint>> {
 /// A stroke runs dab by dab along its length: an absurd coordinate would mean billions of dabs.
 /// Shared by the painting and the retouch tools' `points` (#976).
 pub(crate) fn check_coords(pts: &[StrokePoint], cmd: &str) -> Result<()> {
-    if pts.iter().any(|q| !(q.x.abs() <= MAX_COORD && q.y.abs() <= MAX_COORD)) {
-        return Err(bad(cmd, format!("point coordinates must be finite and within ±{MAX_COORD}")));
+    if pts
+        .iter()
+        .any(|q| !(q.x.abs() <= MAX_COORD && q.y.abs() <= MAX_COORD))
+    {
+        return Err(bad(
+            cmd,
+            format!("point coordinates must be finite and within ±{MAX_COORD}"),
+        ));
     }
     Ok(())
 }
@@ -92,7 +116,9 @@ fn merge(base: &mut Value, patch: &Value) {
     match (base, patch) {
         // A different variant of an externally tagged enum (`{"tile":…}` → `{"procedural":…}`)
         // replaces the old one instead of merging into a two-variant object.
-        (Value::Object(b), Value::Object(p)) if b.len() == 1 && p.len() == 1 && b.keys().next() != p.keys().next() => {
+        (Value::Object(b), Value::Object(p))
+            if b.len() == 1 && p.len() == 1 && b.keys().next() != p.keys().next() =>
+        {
             *b = p.clone();
         }
         (Value::Object(b), Value::Object(p)) => {
@@ -126,11 +152,14 @@ pub fn merge_brush(base: &BrushSettings, patch: &Value, cmd: &str) -> Result<Bru
     };
     let mut light = base.clone();
     let tip = (!touches(&["tip"])).then(|| std::mem::take(&mut light.tip));
-    let dual_tip = (!touches(&["dualBrush", "tip"])).then(|| std::mem::take(&mut light.dual_brush.tip));
-    let pattern = (!touches(&["texture", "pattern"])).then(|| std::mem::take(&mut light.texture.pattern));
+    let dual_tip =
+        (!touches(&["dualBrush", "tip"])).then(|| std::mem::take(&mut light.dual_brush.tip));
+    let pattern =
+        (!touches(&["texture", "pattern"])).then(|| std::mem::take(&mut light.texture.pattern));
     let mut v = serde_json::to_value(&light).map_err(|e| bad(cmd, e.to_string()))?;
     merge(&mut v, patch);
-    let mut out: BrushSettings = serde_json::from_value(v).map_err(|e| bad(cmd, format!("invalid brush: {e}")))?;
+    let mut out: BrushSettings =
+        serde_json::from_value(v).map_err(|e| bad(cmd, format!("invalid brush: {e}")))?;
     if let Some(t) = tip {
         out.tip = t;
     }
@@ -148,10 +177,18 @@ pub fn merge_brush(base: &BrushSettings, patch: &Value, cmd: &str) -> Result<Bru
 pub(crate) fn validate_brush(brush: &BrushSettings, cmd: &str) -> Result<()> {
     let max = photocraft_paint::MAX_BRUSH_SIZE;
     if !brush.size.is_finite() || brush.size > max {
-        return Err(bad(cmd, format!("brush size must be finite and at most {max} px")));
+        return Err(bad(
+            cmd,
+            format!("brush size must be finite and at most {max} px"),
+        ));
     }
-    if brush.dual_brush.enabled && (!brush.dual_brush.size.is_finite() || brush.dual_brush.size > max) {
-        return Err(bad(cmd, format!("dual brush size must be finite and at most {max} px")));
+    if brush.dual_brush.enabled
+        && (!brush.dual_brush.size.is_finite() || brush.dual_brush.size > max)
+    {
+        return Err(bad(
+            cmd,
+            format!("dual brush size must be finite and at most {max} px"),
+        ));
     }
     // Scatter may exceed 1 (100 %) but not the 1000 % maximum: a huge amount pushed dab centres to
     // infinity (#977). `{:?}` keeps 1e38 short and shows infinity as `inf`.
@@ -159,17 +196,28 @@ pub(crate) fn validate_brush(brush: &BrushSettings, cmd: &str) -> Result<()> {
     let in_range = |v: f32| (0.0..=scatter_max).contains(&v);
     let sc = brush.scattering.scatter.jitter;
     if brush.scattering.enabled && !in_range(sc) {
-        return Err(bad(cmd, format!("scatter amount {sc:?} is out of range: it must be between 0 and {scatter_max} (1000 %)")));
+        return Err(bad(
+            cmd,
+            format!(
+                "scatter amount {sc:?} is out of range: it must be between 0 and {scatter_max} (1000 %)"
+            ),
+        ));
     }
     let ds = brush.dual_brush.scatter;
     if brush.dual_brush.enabled && !in_range(ds) {
-        return Err(bad(cmd, format!("dual brush scatter amount {ds:?} is out of range: it must be between 0 and {scatter_max} (1000 %)")));
+        return Err(bad(
+            cmd,
+            format!(
+                "dual brush scatter amount {ds:?} is out of range: it must be between 0 and {scatter_max} (1000 %)"
+            ),
+        ));
     }
     Ok(())
 }
 
 fn find_preset<'a>(s: &'a Session, name: &str, cmd: &str) -> Result<&'a BrushPreset> {
-    photocraft_paint::presets::find(&s.tools.presets, name).ok_or_else(|| bad(cmd, format!("no brush preset named `{name}`")))
+    photocraft_paint::presets::find(&s.tools.presets, name)
+        .ok_or_else(|| bad(cmd, format!("no brush preset named `{name}`")))
 }
 
 /// Resolve the brush for a stroke command: session brush ← `preset` ← `brush` ← legacy scalar
@@ -204,12 +252,20 @@ pub fn resolve_brush(s: &Session, p: &Value, cmd: &str) -> Result<BrushSettings>
         b.smoothing.amount = v.clamp(0.0, 1.0);
     }
     b.color = color(p.get("color"), s.tools.foreground);
-    b.color_cmyk = s.tools.picked_cmyk([b.color[0], b.color[1], b.color[2]]).map(|k| ([b.color[0], b.color[1], b.color[2]], k));
+    b.color_cmyk = s
+        .tools
+        .picked_cmyk([b.color[0], b.color[1], b.color[2]])
+        .map(|k| ([b.color[0], b.color[1], b.color[2]], k));
     b.background = s.tools.background;
     b.erase = flag(p, "erase", false);
     b.seed = match p.get("seed").and_then(Value::as_u64) {
         Some(v) => v,
-        None => photocraft_paint::rng::seed_from_bytes(p.get("points").map(|v| v.to_string()).unwrap_or_default().as_bytes()),
+        None => photocraft_paint::rng::seed_from_bytes(
+            p.get("points")
+                .map(|v| v.to_string())
+                .unwrap_or_default()
+                .as_bytes(),
+        ),
     };
     validate_brush(&b, cmd)?;
     Ok(b)
@@ -218,7 +274,10 @@ pub fn resolve_brush(s: &Session, p: &Value, cmd: &str) -> Result<BrushSettings>
 fn layer_id(s: &Session, p: &Value) -> Result<photocraft_doc::LayerId> {
     match p.get("layer").and_then(Value::as_u64) {
         Some(id) => Ok(photocraft_doc::LayerId(id)),
-        None => s.active().and_then(|d| d.active_layer).ok_or(EngineError::Other("no active layer".into())),
+        None => s
+            .active()
+            .and_then(|d| d.active_layer)
+            .ok_or(EngineError::Other("no active layer".into())),
     }
 }
 
@@ -231,10 +290,26 @@ fn damage_json(s: &mut Session, dmg: Rect) -> Value {
 
 /// The target layer (`None` for a channel), brush and zoom of a stroke. On a mask or channel the
 /// eraser paints the background colour (Photoshop).
-fn stroke_target(s: &Session, p: &Value, brush: BrushSettings) -> Result<(Option<photocraft_doc::LayerId>, BrushSettings, f32)> {
+fn stroke_target(
+    s: &Session,
+    p: &Value,
+    brush: BrushSettings,
+) -> Result<(Option<photocraft_doc::LayerId>, BrushSettings, f32)> {
     let gray = is_mask_target(p) || crate::channel_cmds::is_channel_target(p);
-    let id = if crate::channel_cmds::is_channel_target(p) { None } else { Some(layer_id(s, p)?) };
-    let brush = if gray && brush.erase { BrushSettings { erase: false, color: s.tools.background, ..brush } } else { brush };
+    let id = if crate::channel_cmds::is_channel_target(p) {
+        None
+    } else {
+        Some(layer_id(s, p)?)
+    };
+    let brush = if gray && brush.erase {
+        BrushSettings {
+            erase: false,
+            color: s.tools.background,
+            ..brush
+        }
+    } else {
+        brush
+    };
     Ok((id, brush, num(p, "zoom").unwrap_or(1.0)))
 }
 
@@ -250,12 +325,24 @@ fn erase_locked(brush: &mut BrushSettings, lock: bool, bg: [f32; 4]) {
 /// The document's own CMYK profile (absent, built-in or not a CMYK document: `None`, the
 /// default conversions), which the stroke's colour conversions must honour — the compositors
 /// and composite exports enter the same scope.
-pub(crate) fn doc_cmyk_space(s: &Session) -> Option<std::sync::Arc<photocraft_color::convert::CmykSpace>> {
-    photocraft_color::convert::CmykSpace::for_profile(s.active().and_then(|d| d.doc.icc_profile.as_ref()))
+pub(crate) fn doc_cmyk_space(
+    s: &Session,
+) -> Option<std::sync::Arc<photocraft_color::convert::CmykSpace>> {
+    photocraft_color::convert::CmykSpace::for_profile(
+        s.active().and_then(|d| d.doc.icc_profile.as_ref()),
+    )
 }
 
 /// Stroke with a resolved brush onto the target layer (pixels or mask).
-fn stroke_with(s: &mut Session, cmd: &str, p: &Value, label: &str, brush: BrushSettings, pts: Vec<StrokePoint>, auto_erase: bool) -> Result<Value> {
+fn stroke_with(
+    s: &mut Session,
+    cmd: &str,
+    p: &Value,
+    label: &str,
+    brush: BrushSettings,
+    pts: Vec<StrokePoint>,
+    auto_erase: bool,
+) -> Result<Value> {
     let bg = s.tools.background;
     let fg = brush.color;
     let symmetry = s.active().and_then(|st| st.symmetry.clone());
@@ -315,7 +402,13 @@ fn stroke_with(s: &mut Session, cmd: &str, p: &Value, label: &str, brush: BrushS
 
 /// Pencil Auto Erase: a stroke that starts on a pixel of the foreground colour paints the
 /// background colour instead (Photoshop).
-fn apply_auto_erase(brush: &mut BrushSettings, surf: &Surface, start: Option<&StrokePoint>, fg: [f32; 4], bg: [f32; 4]) {
+fn apply_auto_erase(
+    brush: &mut BrushSettings,
+    surf: &Surface,
+    start: Option<&StrokePoint>,
+    fg: [f32; 4],
+    bg: [f32; 4],
+) {
     let Some(p0) = start else { return };
     let c = surf.rgba(p0.x.floor() as i32, p0.y.floor() as i32);
     if c[3] > 0.0 && (0..3).all(|i| (c[i] - fg[i]).abs() < 1.5 / 255.0) {
@@ -347,8 +440,14 @@ pub const BLOCK_SCREEN_PX: f64 = 16.0;
 /// The Eraser's Block edge in document pixels at view `zoom`: `16 / zoom`, rounded to whole
 /// pixels (a zoom that is not a positive number counts as 100 %).
 pub fn block_size(zoom: f64) -> f32 {
-    let zoom = if zoom.is_finite() && zoom > 0.0 { zoom } else { 1.0 };
-    (BLOCK_SCREEN_PX / zoom).round().clamp(1.0, f64::from(photocraft_paint::brush::MAX_BRUSH_SIZE)) as f32
+    let zoom = if zoom.is_finite() && zoom > 0.0 {
+        zoom
+    } else {
+        1.0
+    };
+    (BLOCK_SCREEN_PX / zoom)
+        .round()
+        .clamp(1.0, f64::from(photocraft_paint::brush::MAX_BRUSH_SIZE)) as f32
 }
 
 /// The Eraser's Block mode (`"block": true`): a hard, aliased square of
@@ -358,7 +457,10 @@ pub fn block_size(zoom: f64) -> f32 {
 fn block_brush(b: BrushSettings, p: &Value) -> Result<BrushSettings> {
     let zoom = match p.get("zoom") {
         None => 1.0,
-        Some(v) => v.as_f64().filter(|z| z.is_finite() && *z > 0.0).ok_or_else(|| bad("paint.pencil", "`zoom` must be a positive number"))?,
+        Some(v) => v
+            .as_f64()
+            .filter(|z| z.is_finite() && *z > 0.0)
+            .ok_or_else(|| bad("paint.pencil", "`zoom` must be a positive number"))?,
     };
     Ok(BrushSettings {
         size: block_size(zoom),
@@ -381,7 +483,9 @@ fn block_brush(b: BrushSettings, p: &Value) -> Result<BrushSettings> {
 /// Brush's or Pencil's own brush; unlike a blend mode it is not a layer mode, so it is not a
 /// [`photocraft_color::BlendMode`].
 fn clear_mode(p: &Value) -> bool {
-    p.get("mode").and_then(Value::as_str).is_some_and(|m| m.eq_ignore_ascii_case("clear"))
+    p.get("mode")
+        .and_then(Value::as_str)
+        .is_some_and(|m| m.eq_ignore_ascii_case("clear"))
 }
 
 /// Applies the options-bar blend `mode` to a brush. `"mode"` accepts any blend-mode name
@@ -391,7 +495,11 @@ fn with_blend_mode(mut b: BrushSettings, p: &Value) -> BrushSettings {
     b.erase |= clear_mode(p);
     if b.erase {
         b.mode = photocraft_color::BlendMode::Normal;
-    } else if let Some(m) = p.get("mode").and_then(Value::as_str).and_then(crate::commands::blend_from_str) {
+    } else if let Some(m) = p
+        .get("mode")
+        .and_then(Value::as_str)
+        .and_then(crate::commands::blend_from_str)
+    {
         b.mode = m;
     }
     b
@@ -401,7 +509,11 @@ fn with_blend_mode(mut b: BrushSettings, p: &Value) -> BrushSettings {
 pub fn paint_stroke(s: &mut Session, p: &Value) -> Result<Value> {
     let pts = parse_points(p, "paint.stroke")?;
     let brush = with_blend_mode(resolve_brush(s, p, "paint.stroke")?, p);
-    let label = if brush.erase && !clear_mode(p) { "Eraser" } else { "Brush Tool" };
+    let label = if brush.erase && !clear_mode(p) {
+        "Eraser"
+    } else {
+        "Brush Tool"
+    };
     stroke_with(s, "paint.stroke", p, label, brush, pts, false)
 }
 
@@ -487,9 +599,18 @@ impl LiveStroke {
         let pencil = match cmd {
             "paint.stroke" => false,
             "paint.pencil" => true,
-            other => return Err(bad(other, "live strokes are `paint.stroke` or `paint.pencil`")),
+            other => {
+                return Err(bad(
+                    other,
+                    "live strokes are `paint.stroke` or `paint.pencil`",
+                ));
+            }
         };
-        let brush = if pencil { pencil_brush(s, p)? } else { with_blend_mode(resolve_brush(s, p, cmd)?, p) };
+        let brush = if pencil {
+            pencil_brush(s, p)?
+        } else {
+            with_blend_mode(resolve_brush(s, p, cmd)?, p)
+        };
         let (seed, fg) = (brush.seed, brush.color);
         let (layer, mut brush, zoom) = stroke_target(s, p, brush)?;
         let st = s.active().ok_or(EngineError::NoDocument)?;
@@ -503,7 +624,9 @@ impl LiveStroke {
         }
         let renderer = StrokeRenderer::new(&brush, Some(surf.format()), zoom);
         let symmetry = s.active().and_then(|st| st.symmetry.clone());
-        let mirrors: Vec<_> = (0..symmetry.as_ref().map_or(0, |s| s.mirror_count())).map(|_| StrokeRenderer::new(&brush, Some(surf.format()), zoom)).collect();
+        let mirrors: Vec<_> = (0..symmetry.as_ref().map_or(0, |s| s.mirror_count()))
+            .map(|_| StrokeRenderer::new(&brush, Some(surf.format()), zoom))
+            .collect();
         let mirror_distinct = vec![false; mirrors.len()];
         let pre = surf.clone();
         let mut live = Self {
@@ -532,14 +655,30 @@ impl LiveStroke {
     /// The stroke as its commit would take it over (see [`LiveCommit`]).
     pub fn into_commit(mut self) -> Result<LiveCommit> {
         let bounds = self.bounds();
-        let (surf, _) = crate::channel_cmds::target_surface(std::sync::Arc::make_mut(&mut self.doc), self.layer, &self.params)?;
-        Ok(LiveCommit { cmd: self.cmd, base: self.base, params: self.params, seed: Some(self.seed), points: self.points, surface: surf.clone(), bounds })
+        let (surf, _) = crate::channel_cmds::target_surface(
+            std::sync::Arc::make_mut(&mut self.doc),
+            self.layer,
+            &self.params,
+        )?;
+        Ok(LiveCommit {
+            cmd: self.cmd,
+            base: self.base,
+            params: self.params,
+            seed: Some(self.seed),
+            points: self.points,
+            surface: surf.clone(),
+            bounds,
+        })
     }
 
     /// Everything the stroke has touched so far.
     pub fn bounds(&self) -> Rect {
         let bounds = self.renderer.bounds().union(&self.tail);
-        self.mirrors.iter().zip(&self.mirror_distinct).filter(|(_, distinct)| **distinct).fold(bounds, |b, (r, _)| b.union(&r.bounds()))
+        self.mirrors
+            .iter()
+            .zip(&self.mirror_distinct)
+            .filter(|(_, distinct)| **distinct)
+            .fold(bounds, |b, (r, _)| b.union(&r.bounds()))
     }
 
     /// `(brush, pointer)` document positions while smoothing holds the brush back from the
@@ -566,12 +705,22 @@ impl LiveStroke {
         photocraft_color::convert::with_cmyk_space(cmyk.as_ref(), || {
             self.renderer.push(pts);
             if let Some(symmetry) = &self.symmetry {
-                for ((mirror, distinct), reflected) in self.mirrors.iter_mut().zip(&mut self.mirror_distinct).zip(symmetry.reflected_passes(pts)) {
-                    *distinct |= crate::symmetry_cmds::SymmetryAxis::has_distinct_mirror(pts, &reflected);
+                for ((mirror, distinct), reflected) in self
+                    .mirrors
+                    .iter_mut()
+                    .zip(&mut self.mirror_distinct)
+                    .zip(symmetry.reflected_passes(pts))
+                {
+                    *distinct |=
+                        crate::symmetry_cmds::SymmetryAxis::has_distinct_mirror(pts, &reflected);
                     mirror.push(&reflected);
                 }
             }
-            let (surf, _) = crate::channel_cmds::target_surface(std::sync::Arc::make_mut(&mut self.doc), self.layer, &self.params)?;
+            let (surf, _) = crate::channel_cmds::target_surface(
+                std::sync::Arc::make_mut(&mut self.doc),
+                self.layer,
+                &self.params,
+            )?;
             if self.mirror_distinct.iter().any(|d| *d) {
                 // The stroke and its distinct mirrors composite as one stroke, as the commit
                 // merges them; only the tiles that changed are redrawn.
@@ -588,9 +737,23 @@ impl LiveStroke {
                     }
                 };
                 let mut renderers: Vec<&mut StrokeRenderer> = std::iter::once(&mut self.renderer)
-                    .chain(self.mirrors.iter_mut().zip(&self.mirror_distinct).filter(|(_, d)| **d).map(|(r, _)| r))
+                    .chain(
+                        self.mirrors
+                            .iter_mut()
+                            .zip(&self.mirror_distinct)
+                            .filter(|(_, d)| **d)
+                            .map(|(r, _)| r),
+                    )
                     .collect();
-                dmg = dmg.union(&StrokeRenderer::composite_union_live(&mut renderers, &mut live, full, &self.pre, surf, self.sel.as_ref(), self.lock));
+                dmg = dmg.union(&StrokeRenderer::composite_union_live(
+                    &mut renderers,
+                    &mut live,
+                    full,
+                    &self.pre,
+                    surf,
+                    self.sel.as_ref(),
+                    self.lock,
+                ));
                 self.tail = old.union(&live.bounds());
                 self.union_live = Some((live, passes));
                 return Ok(dmg);
@@ -603,7 +766,13 @@ impl LiveStroke {
                 self.renderer.mark_dirty(old);
                 dmg = old;
             }
-            dmg = dmg.union(&self.renderer.composite(&self.pre, surf, self.sel.as_ref(), self.lock, false));
+            dmg = dmg.union(&self.renderer.composite(
+                &self.pre,
+                surf,
+                self.sel.as_ref(),
+                self.lock,
+                false,
+            ));
             if let Some(mut tail) = self.renderer.tail_preview() {
                 self.tail = tail.composite(&self.pre, surf, self.sel.as_ref(), self.lock, false);
                 dmg = dmg.union(&self.tail);
@@ -616,8 +785,20 @@ impl LiveStroke {
 fn pencil(s: &mut Session, p: &Value) -> Result<Value> {
     let pts = parse_points(p, "paint.pencil")?;
     let brush = pencil_brush(s, p)?;
-    let label = if brush.erase && !clear_mode(p) { "Eraser" } else { "Pencil" };
-    stroke_with(s, "paint.pencil", p, label, brush, pts, flag(p, "autoErase", false))
+    let label = if brush.erase && !clear_mode(p) {
+        "Eraser"
+    } else {
+        "Pencil"
+    };
+    stroke_with(
+        s,
+        "paint.pencil",
+        p,
+        label,
+        brush,
+        pts,
+        flag(p, "autoErase", false),
+    )
 }
 
 fn pct(p: &Value, k: &str, d: f32) -> f32 {
@@ -638,19 +819,28 @@ fn mixer_brush(s: &mut Session, p: &Value) -> Result<Value> {
         sample_all_layers: flag(p, "sampleAllLayers", bm.sample_all_layers),
     };
     let sample_all = m.sample_all_layers;
-    let (clean, load_after) = (flag(p, "cleanAfterStroke", true), flag(p, "loadAfterStroke", true));
+    let (clean, load_after) = (
+        flag(p, "cleanAfterStroke", true),
+        flag(p, "loadAfterStroke", true),
+    );
     let mut state = s.tools.mixer.clone();
     if load_after || state.reservoir.is_none() {
         state.load(color(p.get("color"), s.tools.foreground));
     }
-    let id = if crate::channel_cmds::is_channel_target(p) { None } else { Some(layer_id(s, p)?) };
+    let id = if crate::channel_cmds::is_channel_target(p) {
+        None
+    } else {
+        Some(layer_id(s, p)?)
+    };
     let stroke = Stroke { brush, points: pts };
     let dmg = s.edit("Mixer Brush", |doc, _| {
         let sel = doc.selection.clone();
         let sample = if sample_all {
             let ds = photocraft_paint::dabs(&stroke);
             let ctx = photocraft_paint::BrushContext::new(&stroke.brush);
-            let area = ds.iter().fold(Rect::EMPTY, |r, d| r.union(&ctx.dab_rect(d, false)));
+            let area = ds
+                .iter()
+                .fold(Rect::EMPTY, |r, d| r.union(&ctx.dab_rect(d, false)));
             let buf = photocraft_compose::render(doc, area);
             let mut surf = Surface::new(photocraft_color::PixelFormat::RGBA32F);
             let flat: Vec<f32> = buf.px.iter().flatten().copied().collect();
@@ -662,7 +852,15 @@ fn mixer_brush(s: &mut Session, p: &Value) -> Result<Value> {
             None
         };
         let (surf, lock) = crate::channel_cmds::target_surface(doc, id, p)?;
-        Ok(apply_mixer_stroke(surf, sample.as_ref(), &stroke, &m, &mut state, sel.as_ref(), lock))
+        Ok(apply_mixer_stroke(
+            surf,
+            sample.as_ref(),
+            &stroke,
+            &m,
+            &mut state,
+            sel.as_ref(),
+            lock,
+        ))
     })?;
     if clean {
         state.clean();
@@ -674,15 +872,25 @@ fn mixer_brush(s: &mut Session, p: &Value) -> Result<Value> {
 /// `paint.colorReplacement`'s stroke and settings. The replacement colour is the brush colour
 /// (the foreground unless `color` says otherwise). It paints layer pixels only: a mask, alpha
 /// channel or Quick Mask `target` is refused rather than recolouring the layer instead.
-fn color_replacement_setup(s: &Session, p: &Value) -> Result<(Stroke, ReplaceSettings, photocraft_doc::LayerId)> {
+fn color_replacement_setup(
+    s: &Session,
+    p: &Value,
+) -> Result<(Stroke, ReplaceSettings, photocraft_doc::LayerId)> {
     let cmd = "paint.colorReplacement";
     if let Some(t) = p.get("target").filter(|t| t.as_str() != Some("pixels")) {
-        return Err(bad(cmd, format!("Color Replacement paints layer pixels only (`target` {t} is not \"pixels\")")));
+        return Err(bad(
+            cmd,
+            format!("Color Replacement paints layer pixels only (`target` {t} is not \"pixels\")"),
+        ));
     }
     let pts = parse_points(p, cmd)?;
     let brush = resolve_brush(s, p, cmd)?;
     fn parse<T: serde::de::DeserializeOwned>(p: &Value, cmd: &str, k: &str) -> Result<Option<T>> {
-        p.get(k).cloned().map(serde_json::from_value).transpose().map_err(|e| bad(cmd, format!("`{k}`: {e}")))
+        p.get(k)
+            .cloned()
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(|e| bad(cmd, format!("`{k}`: {e}")))
     }
     let rs = ReplaceSettings {
         mode: parse(p, cmd, "mode")?.unwrap_or(ReplaceMode::Color),
@@ -703,7 +911,13 @@ fn color_replacement(s: &mut Session, p: &Value) -> Result<Value> {
         let sel = doc.selection.clone();
         let lock = doc.effective_locks(id).transparency;
         let surf = paint_surface(doc, id, &json!({}))?;
-        Ok(apply_color_replacement(surf, &stroke, &rs, sel.as_ref(), lock))
+        Ok(apply_color_replacement(
+            surf,
+            &stroke,
+            &rs,
+            sel.as_ref(),
+            lock,
+        ))
     })?;
     Ok(damage_json(s, dmg))
 }
@@ -712,9 +926,15 @@ fn color_replacement(s: &mut Session, p: &Value) -> Result<Value> {
 /// recolouring per dab as the commit, so the preview at the last point is the committed result.
 pub fn live_color_replacement(s: &Session, p: &Value) -> Result<crate::retouch_cmds::LiveDab> {
     let (stroke, rs, id) = color_replacement_setup(s, p)?;
-    crate::retouch_cmds::LiveDab::with_effect(s, "paint.colorReplacement", &json!({}), stroke, Some(id), 0, |pre| {
-        Box::new(color_replacement_effect(pre.clone(), rs))
-    })?
+    crate::retouch_cmds::LiveDab::with_effect(
+        s,
+        "paint.colorReplacement",
+        &json!({}),
+        stroke,
+        Some(id),
+        0,
+        |pre| Box::new(color_replacement_effect(pre.clone(), rs)),
+    )?
     .with_tail_preview()
 }
 
@@ -746,12 +966,22 @@ fn presets_list(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn name_param(p: &Value, cmd: &str) -> Result<String> {
-    p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string).ok_or_else(|| bad(cmd, "missing `name`"))
+    p.get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| bad(cmd, "missing `name`"))
 }
 
 /// Replace the preset of that name, or append it at the end of the list.
 fn upsert(s: &mut Session, preset: BrushPreset) {
-    match s.tools.presets.iter_mut().find(|x| x.name.eq_ignore_ascii_case(&preset.name)) {
+    match s
+        .tools
+        .presets
+        .iter_mut()
+        .find(|x| x.name.eq_ignore_ascii_case(&preset.name))
+    {
         Some(x) => *x = preset,
         None => s.tools.presets.push(preset),
     }
@@ -766,11 +996,25 @@ fn presets_save(s: &mut Session, p: &Value) -> Result<Value> {
         None => s.tools.brush.clone(),
     };
     // The New Brush Preset dialog's boxes; without them the preset captures what it always did.
-    let captures = PresetCaptures { size: flag(p, "captureSize", true), tool_settings: flag(p, "toolSettings", true), color: flag(p, "color", false) };
+    let captures = PresetCaptures {
+        size: flag(p, "captureSize", true),
+        tool_settings: flag(p, "toolSettings", true),
+        color: flag(p, "color", false),
+    };
     if captures.color {
         brush.color = s.tools.foreground;
     }
-    upsert(s, BrushPreset { name: name.clone(), brush, builtin: false, group: String::new(), folder: Vec::new(), captures });
+    upsert(
+        s,
+        BrushPreset {
+            name: name.clone(),
+            brush,
+            builtin: false,
+            group: String::new(),
+            folder: Vec::new(),
+            captures,
+        },
+    );
     // The saved brush is the current brush now (Photoshop selects the brush it just saved).
     s.tools.current_preset = Some(name.clone());
     Ok(json!({ "name": name, "count": s.tools.presets.len() }))
@@ -780,11 +1024,17 @@ fn presets_delete(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "brush.presets.delete";
     let name = name_param(p, cmd)?;
     let before = s.tools.presets.len();
-    s.tools.presets.retain(|x| !x.name.eq_ignore_ascii_case(&name));
+    s.tools
+        .presets
+        .retain(|x| !x.name.eq_ignore_ascii_case(&name));
     if s.tools.presets.len() == before {
         return Err(bad(cmd, format!("no brush preset named `{name}`")));
     }
-    if s.tools.current_preset.as_ref().is_some_and(|c| c.eq_ignore_ascii_case(&name)) {
+    if s.tools
+        .current_preset
+        .as_ref()
+        .is_some_and(|c| c.eq_ignore_ascii_case(&name))
+    {
         s.tools.current_preset = None;
     }
     s.brush_presets_changed();
@@ -799,13 +1049,22 @@ fn presets_update(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "brush.presets.update";
     let name = match p.get("name").filter(|v| !v.is_null()) {
         Some(_) => name_param(p, cmd)?,
-        None => s.tools.current_preset.clone().ok_or_else(|| bad(cmd, "the current brush was not picked from a preset"))?,
+        None => s
+            .tools
+            .current_preset
+            .clone()
+            .ok_or_else(|| bad(cmd, "the current brush was not picked from a preset"))?,
     };
     let brush = match p.get("brush").filter(|v| v.is_object()) {
         Some(patch) => merge_brush(&s.tools.brush, patch, cmd)?,
         None => s.tools.brush.clone(),
     };
-    let pr = s.tools.presets.iter_mut().find(|x| x.name.eq_ignore_ascii_case(&name)).ok_or_else(|| bad(cmd, format!("no brush preset named `{name}`")))?;
+    let pr = s
+        .tools
+        .presets
+        .iter_mut()
+        .find(|x| x.name.eq_ignore_ascii_case(&name))
+        .ok_or_else(|| bad(cmd, format!("no brush preset named `{name}`")))?;
     pr.brush = brush;
     pr.builtin = false;
     let (name, group) = (pr.name.clone(), pr.group.clone());
@@ -819,7 +1078,12 @@ fn presets_update(s: &mut Session, p: &Value) -> Result<Value> {
 fn presets_set_current(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "brush.presets.setCurrent";
     let name = name_param(p, cmd)?;
-    if !s.tools.presets.iter().any(|x| x.name.eq_ignore_ascii_case(&name)) {
+    if !s
+        .tools
+        .presets
+        .iter()
+        .any(|x| x.name.eq_ignore_ascii_case(&name))
+    {
         return Err(bad(cmd, format!("no brush preset named `{name}`")));
     }
     s.tools.current_preset = Some(name.clone());
@@ -831,8 +1095,15 @@ fn has_selection_and_pixels(s: &Session) -> std::result::Result<(), String> {
     if d.doc.selection.is_none() {
         return Err("no selection".into());
     }
-    let l = d.active_layer.and_then(|id| d.doc.layer(id)).ok_or("no active layer")?;
-    if matches!(l.content, LayerContent::Raster(_)) { Ok(()) } else { Err("active layer is not a pixel layer".into()) }
+    let l = d
+        .active_layer
+        .and_then(|id| d.doc.layer(id))
+        .ok_or("no active layer")?;
+    if matches!(l.content, LayerContent::Raster(_)) {
+        Ok(())
+    } else {
+        Err("active layer is not a pixel layer".into())
+    }
 }
 
 /// Largest sampled tip side (like Photoshop's 5000 px limit, kept smaller for preset size).
@@ -842,9 +1113,19 @@ fn define_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "brush.defineFromSelection";
     let name = name_param(p, cmd)?;
     let d = s.active().ok_or(EngineError::NoDocument)?;
-    let sel = d.doc.selection.as_ref().ok_or_else(|| bad(cmd, "no selection"))?;
-    let id = d.active_layer.ok_or(EngineError::Other("no active layer".into()))?;
-    let surf = d.doc.layer(id).and_then(|l| l.surface()).ok_or_else(|| bad(cmd, "not a pixel layer"))?;
+    let sel = d
+        .doc
+        .selection
+        .as_ref()
+        .ok_or_else(|| bad(cmd, "no selection"))?;
+    let id = d
+        .active_layer
+        .ok_or(EngineError::Other("no active layer".into()))?;
+    let surf = d
+        .doc
+        .layer(id)
+        .and_then(|l| l.surface())
+        .ok_or_else(|| bad(cmd, "not a pixel layer"))?;
     let area = sel.content_bounds().intersect(&d.doc.bounds());
     if area.is_empty() {
         return Err(bad(cmd, "the selection is empty"));
@@ -874,19 +1155,41 @@ fn define_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if x1 <= x0 || y1 <= y0 {
-        return Err(bad(cmd, "the selected pixels contain no paint (all white or transparent)"));
+        return Err(bad(
+            cmd,
+            "the selected pixels contain no paint (all white or transparent)",
+        ));
     }
     let (tw, th) = ((x1 - x0) as u32, (y1 - y0) as u32);
     if tw.max(th) > MAX_TIP {
-        return Err(bad(cmd, format!("selection too large for a brush tip ({tw}×{th}; max {MAX_TIP} px)")));
+        return Err(bad(
+            cmd,
+            format!("selection too large for a brush tip ({tw}×{th}; max {MAX_TIP} px)"),
+        ));
     }
     let mut data = Vec::with_capacity((tw * th) as usize);
     for y in y0..y1 {
         data.extend_from_slice(&v[y * w + x0..y * w + x1]);
     }
     let tip = GrayTile::from_f32(tw, th, &data);
-    let brush = BrushSettings { tip: TipShape::Sampled(tip), size: tw.max(th) as f32, spacing: 0.25, pressure_size: false, ..BrushSettings::default() };
-    upsert(s, BrushPreset { name: name.clone(), brush: brush.clone(), builtin: false, group: String::new(), folder: Vec::new(), captures: Default::default() });
+    let brush = BrushSettings {
+        tip: TipShape::Sampled(tip),
+        size: tw.max(th) as f32,
+        spacing: 0.25,
+        pressure_size: false,
+        ..BrushSettings::default()
+    };
+    upsert(
+        s,
+        BrushPreset {
+            name: name.clone(),
+            brush: brush.clone(),
+            builtin: false,
+            group: String::new(),
+            folder: Vec::new(),
+            captures: Default::default(),
+        },
+    );
     s.tools.brush = brush;
     s.tools.current_preset = Some(name.clone());
     Ok(json!({ "name": name, "width": tw, "height": th }))
@@ -938,10 +1241,15 @@ pub(crate) fn set_brush(s: &mut Session, p: &Value) -> Result<Value> {
     s.load_brush_tips(&mut b).map_err(|e| bad(cmd, e))?;
     let before = std::mem::replace(&mut s.tools.brush, b);
     // A coalesced gesture (one slider drag) journals as one call: remember the brush it started from.
-    let key = p.get("coalesce").and_then(Value::as_str).filter(|_| p.get("preset").is_none() && p.get("reset").is_none());
+    let key = p
+        .get("coalesce")
+        .and_then(Value::as_str)
+        .filter(|_| p.get("preset").is_none() && p.get("reset").is_none());
     let continuing = |s: &Session, k: &str| {
         s.tools.brush_gesture.as_ref().is_some_and(|(g, _)| g == k)
-            && s.journal.last().is_some_and(|(id, lp)| id == cmd && lp.get("coalesce").and_then(Value::as_str) == Some(k))
+            && s.journal.last().is_some_and(|(id, lp)| {
+                id == cmd && lp.get("coalesce").and_then(Value::as_str) == Some(k)
+            })
     };
     match key {
         Some(k) if continuing(s, k) => {}
@@ -970,7 +1278,11 @@ fn light_json(b: &BrushSettings, skip: (bool, bool, bool)) -> Value {
 /// Fields of `new` that differ from `old`, nested objects diffed key by key: the minimal
 /// `tools.setBrush` `brush` patch that turns `old` into `new` (`{}` when nothing changed).
 pub fn brush_patch(old: &BrushSettings, new: &BrushSettings) -> Value {
-    let skip = (old.tip == new.tip, old.dual_brush.tip == new.dual_brush.tip, old.texture.pattern == new.texture.pattern);
+    let skip = (
+        old.tip == new.tip,
+        old.dual_brush.tip == new.dual_brush.tip,
+        old.texture.pattern == new.texture.pattern,
+    );
     fn diff(a: &Value, b: &Value) -> Option<Value> {
         match (a, b) {
             (Value::Object(ao), Value::Object(bo)) => {
@@ -1004,14 +1316,20 @@ pub fn coalesce_journal(s: &mut Session, id: &str, params: &Value) -> bool {
     if id != "tools.setBrush" {
         return false;
     }
-    let Some(key) = params.get("coalesce").and_then(Value::as_str) else { return false };
-    let Some((gk, start)) = s.tools.brush_gesture.as_ref() else { return false };
+    let Some(key) = params.get("coalesce").and_then(Value::as_str) else {
+        return false;
+    };
+    let Some((gk, start)) = s.tools.brush_gesture.as_ref() else {
+        return false;
+    };
     if gk != key {
         return false;
     }
     let patch = brush_patch(start, &s.tools.brush);
     match s.journal.last_mut() {
-        Some((last, lp)) if last == id && lp.get("coalesce").and_then(Value::as_str) == Some(key) => {
+        Some((last, lp))
+            if last == id && lp.get("coalesce").and_then(Value::as_str) == Some(key) =>
+        {
             *lp = json!({ "brush": patch, "coalesce": key });
             true
         }
@@ -1021,7 +1339,16 @@ pub fn coalesce_journal(s: &mut Session, id: &str, params: &Value) -> bool {
 
 macro_rules! spec {
     ($id:literal, $label:literal, $params:literal, $en:expr, $run:expr, $journal:expr) => {
-        CommandSpec { id: $id, label: $label, menu: &[], shortcut: None, params: $params, enabled: $en, run: $run, journal: $journal }
+        CommandSpec {
+            id: $id,
+            label: $label,
+            menu: &[],
+            shortcut: None,
+            params: $params,
+            enabled: $en,
+            run: $run,
+            journal: $journal,
+        }
     };
 }
 
@@ -1052,7 +1379,14 @@ pub fn specs() -> Vec<CommandSpec> {
             color_replacement,
             true
         ),
-        spec!("brush.presets.list", "List Brush Presets", r##"{"full":bool=false}"##, always, presets_list, false),
+        spec!(
+            "brush.presets.list",
+            "List Brush Presets",
+            r##"{"full":bool=false}"##,
+            always,
+            presets_list,
+            false
+        ),
         spec!(
             "brush.presets.save",
             "Save Brush Preset",
@@ -1069,11 +1403,46 @@ pub fn specs() -> Vec<CommandSpec> {
             presets_update,
             true
         ),
-        spec!("brush.presets.delete", "Delete Brush Preset", r##"{"name":string}"##, always, presets_delete, true),
-        spec!("brush.presets.setCurrent", "Set Current Brush Preset", r##"{"name":string}"##, always, presets_set_current, true),
-        spec!("brush.defineFromSelection", "Define Brush Preset…", r##"{"name":string}"##, has_selection_and_pixels, define_from_selection, true),
-        spec!("brush.get", "Get Brush", "{}", always, |s, _| Ok(brush_json(&s.tools.brush)), false),
-        spec!("tools.setBrush", "Set Brush", r##"{"preset":name?,"reset":bool?,…BrushSettings fields (camelCase, deep-merged)}"##, always, set_brush, true),
+        spec!(
+            "brush.presets.delete",
+            "Delete Brush Preset",
+            r##"{"name":string}"##,
+            always,
+            presets_delete,
+            true
+        ),
+        spec!(
+            "brush.presets.setCurrent",
+            "Set Current Brush Preset",
+            r##"{"name":string}"##,
+            always,
+            presets_set_current,
+            true
+        ),
+        spec!(
+            "brush.defineFromSelection",
+            "Define Brush Preset…",
+            r##"{"name":string}"##,
+            has_selection_and_pixels,
+            define_from_selection,
+            true
+        ),
+        spec!(
+            "brush.get",
+            "Get Brush",
+            "{}",
+            always,
+            |s, _| Ok(brush_json(&s.tools.brush)),
+            false
+        ),
+        spec!(
+            "tools.setBrush",
+            "Set Brush",
+            r##"{"preset":name?,"reset":bool?,…BrushSettings fields (camelCase, deep-merged)}"##,
+            always,
+            set_brush,
+            true
+        ),
     ]
 }
 

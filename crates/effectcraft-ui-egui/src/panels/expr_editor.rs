@@ -207,7 +207,12 @@ pub fn completions(text: &str, cursor: usize) -> (String, Vec<&'static str>) {
     if word.chars().count() < 2 || word.chars().next().is_some_and(|c| c.is_ascii_digit()) {
         return (word, vec![]);
     }
-    let c: Vec<&str> = COMPLETIONS.iter().copied().filter(|w| w.starts_with(word.as_str()) && *w != word).take(6).collect();
+    let c: Vec<&str> = COMPLETIONS
+        .iter()
+        .copied()
+        .filter(|w| w.starts_with(word.as_str()) && *w != word)
+        .take(6)
+        .collect();
     (word, c)
 }
 
@@ -270,14 +275,32 @@ pub fn highlight(text: &str, base: Color32, sx: &Syntax) -> Vec<(usize, usize, C
 
 /// Byte index of char index `ci`.
 fn byte_of(text: &str, ci: usize) -> usize {
-    text.char_indices().nth(ci).map(|(b, _)| b).unwrap_or(text.len())
+    text.char_indices()
+        .nth(ci)
+        .map(|(b, _)| b)
+        .unwrap_or(text.len())
 }
 
 /// The layout job of the editor text: syntax colours, the matched brackets' background, wrap.
-fn layout(text: &str, font: FontId, base: Color32, sx: &Syntax, p: &Scripting, brackets: Option<(usize, usize)>, wrap: f32) -> LayoutJob {
+fn layout(
+    text: &str,
+    font: FontId,
+    base: Color32,
+    sx: &Syntax,
+    p: &Scripting,
+    brackets: Option<(usize, usize)>,
+    wrap: f32,
+) -> LayoutJob {
     let mut job = LayoutJob::default();
-    let runs = if p.syntax_highlighting { highlight(text, base, sx) } else { vec![(0, text.len(), base)] };
-    let marks: Vec<usize> = brackets.filter(|_| p.bracket_matching).map(|(a, b)| vec![byte_of(text, a), byte_of(text, b)]).unwrap_or_default();
+    let runs = if p.syntax_highlighting {
+        highlight(text, base, sx)
+    } else {
+        vec![(0, text.len(), base)]
+    };
+    let marks: Vec<usize> = brackets
+        .filter(|_| p.bracket_matching)
+        .map(|(a, b)| vec![byte_of(text, a), byte_of(text, b)])
+        .unwrap_or_default();
     for (s, e, col) in runs {
         // Split runs at the marked brackets.
         let mut cuts = vec![s];
@@ -291,8 +314,21 @@ fn layout(text: &str, font: FontId, base: Color32, sx: &Syntax, p: &Scripting, b
         cuts.sort_unstable();
         cuts.dedup();
         for w in cuts.windows(2) {
-            let bg = if marks.contains(&w[0]) { sx.bracket_bg } else { Color32::TRANSPARENT };
-            job.append(&text[w[0]..w[1]], 0.0, TextFormat { font_id: font.clone(), color: col, background: bg, ..Default::default() });
+            let bg = if marks.contains(&w[0]) {
+                sx.bracket_bg
+            } else {
+                Color32::TRANSPARENT
+            };
+            job.append(
+                &text[w[0]..w[1]],
+                0.0,
+                TextFormat {
+                    font_id: font.clone(),
+                    color: col,
+                    background: bg,
+                    ..Default::default()
+                },
+            );
         }
     }
     job.wrap.max_width = if p.word_wrap { wrap } else { f32::INFINITY };
@@ -300,13 +336,28 @@ fn layout(text: &str, font: FontId, base: Color32, sx: &Syntax, p: &Scripting, b
 }
 
 /// The editor: returns the response; `buf` is edited in place.
-pub fn editor(ui: &mut egui::Ui, id: egui::Id, buf: &mut String, rect: Rect, p: &Scripting, color: Color32, rows: usize, t: &Tokens) -> egui::Response {
+pub fn editor(
+    ui: &mut egui::Ui,
+    id: egui::Id,
+    buf: &mut String,
+    rect: Rect,
+    p: &Scripting,
+    color: Color32,
+    rows: usize,
+    t: &Tokens,
+) -> egui::Response {
     let size = (p.editor_font_size.clamp(8, 40) as f32) * 0.9;
     let font = Tokens::mono(size);
     // Line numbers in a gutter on the left.
-    let gutter = if p.line_numbers { (size * 0.62) * (buf.lines().count().max(1).to_string().len() as f32 + 1.0) + 6.0 } else { 0.0 };
+    let gutter = if p.line_numbers {
+        (size * 0.62) * (buf.lines().count().max(1).to_string().len() as f32 + 1.0) + 6.0
+    } else {
+        0.0
+    };
     let er = Rect::from_min_max(pos2(rect.min.x + gutter, rect.min.y), rect.max);
-    let cursor = egui::TextEdit::load_state(ui.ctx(), id).and_then(|s| s.cursor.char_range()).map(|r| r.primary.index.0);
+    let cursor = egui::TextEdit::load_state(ui.ctx(), id)
+        .and_then(|s| s.cursor.char_range())
+        .map(|r| r.primary.index.0);
     let brackets = cursor.and_then(|c| matching_bracket(buf, c));
     let pc = p.clone();
     let sx = Syntax::for_tokens(t);
@@ -341,7 +392,9 @@ pub fn editor(ui: &mut egui::Ui, id: egui::Id, buf: &mut String, rect: Rect, p: 
         .show(&mut child);
     if let Some(c) = accepted {
         let mut st = out.state.clone();
-        st.cursor.set_char_range(Some(egui::text::CCursorRange::one(egui::text::CCursor::new(c))));
+        st.cursor.set_char_range(Some(egui::text::CCursorRange::one(
+            egui::text::CCursor::new(c),
+        )));
         st.store(ui.ctx(), id);
     }
     let painter = ui.painter();
@@ -352,12 +405,24 @@ pub fn editor(ui: &mut egui::Ui, id: egui::Id, buf: &mut String, rect: Rect, p: 
         for row in &g.rows {
             if new_line {
                 let y = out.galley_pos.y + row.rect().center().y;
-                painter.text(pos2(rect.min.x + gutter - 6.0, y), egui::Align2::RIGHT_CENTER, line.to_string(), Tokens::mono(size * 0.85), t.text_faint);
+                painter.text(
+                    pos2(rect.min.x + gutter - 6.0, y),
+                    egui::Align2::RIGHT_CENTER,
+                    line.to_string(),
+                    Tokens::mono(size * 0.85),
+                    t.text_faint,
+                );
                 line += 1;
             }
             new_line = row.ends_with_newline;
         }
-        painter.line_segment([pos2(rect.min.x + gutter - 3.0, rect.min.y), pos2(rect.min.x + gutter - 3.0, rect.max.y)], Stroke::new(1.0, t.separator));
+        painter.line_segment(
+            [
+                pos2(rect.min.x + gutter - 3.0, rect.min.y),
+                pos2(rect.min.x + gutter - 3.0, rect.max.y),
+            ],
+            Stroke::new(1.0, t.separator),
+        );
     }
     // Candidate list under the editor.
     if p.auto_complete
@@ -366,15 +431,32 @@ pub fn editor(ui: &mut egui::Ui, id: egui::Id, buf: &mut String, rect: Rect, p: 
     {
         let (_, cands) = completions(buf, c);
         if !cands.is_empty() {
-            let pos = out.galley_pos + out.galley.pos_from_cursor(egui::text::CCursor::new(c)).left_bottom().to_vec2() + vec2(0.0, 2.0);
-            egui::Area::new(id.with("complete")).order(egui::Order::Tooltip).fixed_pos(pos).show(ui.ctx(), |ui| {
-                egui::Frame::popup(ui.style()).show(ui, |ui| {
-                    for (i, w) in cands.iter().enumerate() {
-                        let txt = if i == 0 { format!("{w}    Tab") } else { w.to_string() };
-                        ui.label(egui::RichText::new(txt).font(Tokens::mono(size * 0.9)).color(if i == 0 { t.text } else { t.text_dim }));
-                    }
+            let pos = out.galley_pos
+                + out
+                    .galley
+                    .pos_from_cursor(egui::text::CCursor::new(c))
+                    .left_bottom()
+                    .to_vec2()
+                + vec2(0.0, 2.0);
+            egui::Area::new(id.with("complete"))
+                .order(egui::Order::Tooltip)
+                .fixed_pos(pos)
+                .show(ui.ctx(), |ui| {
+                    egui::Frame::popup(ui.style()).show(ui, |ui| {
+                        for (i, w) in cands.iter().enumerate() {
+                            let txt = if i == 0 {
+                                format!("{w}    Tab")
+                            } else {
+                                w.to_string()
+                            };
+                            ui.label(
+                                egui::RichText::new(txt)
+                                    .font(Tokens::mono(size * 0.9))
+                                    .color(if i == 0 { t.text } else { t.text_dim }),
+                            );
+                        }
+                    });
                 });
-            });
         }
     }
     out.response.response
@@ -390,7 +472,11 @@ mod contrast_tests {
         let lum = |c: Color32| {
             let f = |v: u8| {
                 let v = v as f32 / 255.0;
-                if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+                if v <= 0.04045 {
+                    v / 12.92
+                } else {
+                    ((v + 0.055) / 1.055).powf(2.4)
+                }
             };
             0.2126 * f(c.r()) + 0.7152 * f(c.g()) + 0.0722 * f(c.b())
         };
@@ -406,10 +492,20 @@ mod contrast_tests {
         for kind in [ThemeKind::Dark, ThemeKind::Darker, ThemeKind::Light] {
             let t = Tokens::for_kind(kind);
             let sx = Syntax::for_tokens(&t);
-            for (what, bg) in [("effect header", t.fx_header), ("active effect header", t.fx_header_active)] {
-                assert!(contrast(t.text, bg) >= 4.5, "{kind:?}: effect name on {what}: {:.2}", contrast(t.text, bg));
+            for (what, bg) in [
+                ("effect header", t.fx_header),
+                ("active effect header", t.fx_header_active),
+            ] {
+                assert!(
+                    contrast(t.text, bg) >= 4.5,
+                    "{kind:?}: effect name on {what}: {:.2}",
+                    contrast(t.text, bg)
+                );
             }
-            assert!(contrast(t.icon, t.switch_well) >= 3.0, "{kind:?}: switch icons on their wells");
+            assert!(
+                contrast(t.icon, t.switch_well) >= 3.0,
+                "{kind:?}: switch icons on their wells"
+            );
             if !kind.is_light() {
                 continue;
             }
@@ -424,12 +520,24 @@ mod contrast_tests {
                 ("line numbers", t.text_faint),
             ];
             for (what, c) in fg {
-                assert!(contrast(c, t.expr_bg) >= 4.5, "{kind:?}: {what} on the expression field: {:.2}", contrast(c, t.expr_bg));
-                assert!(contrast(c, sx.bracket_bg) >= 4.0, "{kind:?}: {what} on a matched bracket: {:.2}", contrast(c, sx.bracket_bg));
+                assert!(
+                    contrast(c, t.expr_bg) >= 4.5,
+                    "{kind:?}: {what} on the expression field: {:.2}",
+                    contrast(c, t.expr_bg)
+                );
+                assert!(
+                    contrast(c, sx.bracket_bg) >= 4.0,
+                    "{kind:?}: {what} on a matched bracket: {:.2}",
+                    contrast(c, sx.bracket_bg)
+                );
             }
             // The dark theme's syntax colours would not do on the light field.
             let dark = Syntax::for_tokens(&Tokens::for_kind(ThemeKind::Dark));
-            assert!([dark.keyword, dark.number, dark.string, dark.api].iter().all(|c| contrast(*c, t.expr_bg) < 4.5));
+            assert!(
+                [dark.keyword, dark.number, dark.string, dark.api]
+                    .iter()
+                    .all(|c| contrast(*c, t.expr_bg) < 4.5)
+            );
         }
     }
 
@@ -440,7 +548,11 @@ mod contrast_tests {
         let sx = Syntax::for_tokens(&t);
         let text = "var amount = 12; // note";
         let runs = highlight(text, t.expr_text, &sx);
-        let col = |s: &str| runs.iter().find(|(a, e, _)| text.get(*a..*e) == Some(s)).map(|r| r.2);
+        let col = |s: &str| {
+            runs.iter()
+                .find(|(a, e, _)| text.get(*a..*e) == Some(s))
+                .map(|r| r.2)
+        };
         assert_eq!(col("var"), Some(sx.keyword));
         assert_eq!(col("12"), Some(sx.number));
         assert_eq!(col("// note"), Some(sx.comment));

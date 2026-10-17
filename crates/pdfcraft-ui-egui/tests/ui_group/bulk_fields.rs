@@ -9,18 +9,65 @@ fn fixture() -> Vec<u8> {
     let bytes = s.create_blank(300.0, 400.0, 2).unwrap();
     let id = s.open("form.pdf", None, bytes, None).unwrap();
     for (name, page, rect, kind) in [
-        ("alpha", 0, [40.0, 290.0, 230.0, 314.0], NewField::Text { multiline: false }),
-        ("beta", 0, [40.0, 240.0, 230.0, 264.0], NewField::Text { multiline: false }),
+        (
+            "alpha",
+            0,
+            [40.0, 290.0, 230.0, 314.0],
+            NewField::Text { multiline: false },
+        ),
+        (
+            "beta",
+            0,
+            [40.0, 240.0, 230.0, 264.0],
+            NewField::Text { multiline: false },
+        ),
         ("consent", 0, [40.0, 180.0, 54.0, 194.0], NewField::CheckBox),
-        ("gamma", 1, [40.0, 290.0, 230.0, 314.0], NewField::Text { multiline: false }),
+        (
+            "gamma",
+            1,
+            [40.0, 290.0, 230.0, 314.0],
+            NewField::Text { multiline: false },
+        ),
     ] {
-        s.apply(id, Edit::AddField { name: Some(name.into()), page, rect, kind }).unwrap();
+        s.apply(
+            id,
+            Edit::AddField {
+                name: Some(name.into()),
+                page,
+                rect,
+                kind,
+            },
+        )
+        .unwrap();
     }
     for (name, value, fill, font, width, size, required) in [
-        ("alpha", "Ada", [1.0, 0.9, 0.8], FieldFont::Courier, 1.0, 11.0, true),
-        ("beta", "Lovelace", [0.8, 0.9, 1.0], FieldFont::Times, 3.0, 18.0, false),
+        (
+            "alpha",
+            "Ada",
+            [1.0, 0.9, 0.8],
+            FieldFont::Courier,
+            1.0,
+            11.0,
+            true,
+        ),
+        (
+            "beta",
+            "Lovelace",
+            [0.8, 0.9, 1.0],
+            FieldFont::Times,
+            3.0,
+            18.0,
+            false,
+        ),
     ] {
-        s.apply(id, Edit::SetFieldValue { name: name.into(), value: FieldValue::Text(value.into()) }).unwrap();
+        s.apply(
+            id,
+            Edit::SetFieldValue {
+                name: name.into(),
+                value: FieldValue::Text(value.into()),
+            },
+        )
+        .unwrap();
         let mut look = s.get(id).unwrap().field_look(name).unwrap();
         look.fill = Some(fill);
         look.font = font;
@@ -44,16 +91,19 @@ fn fixture() -> Vec<u8> {
 }
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).with_step_dt(1.0 / 60.0).build_eframe(|_| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        // Saves stamp /ModDate from the clock; pinned, two saves compare equal across a second.
-        app.session = std::mem::take(&mut app.session).with_clock(|| 1_700_000_000);
-        app.open_bytes("form.pdf", None, fixture()).unwrap();
-        app.set_option("zoom", "150").unwrap();
-        app.execute("form.prepare");
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_eframe(|_| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            // Saves stamp /ModDate from the clock; pinned, two saves compare equal across a second.
+            app.session = std::mem::take(&mut app.session).with_clock(|| 1_700_000_000);
+            app.open_bytes("form.pdf", None, fixture()).unwrap();
+            app.set_option("zoom", "150").unwrap();
+            app.execute("form.prepare");
+            app
+        });
     h.run_steps(4);
     h
 }
@@ -64,7 +114,12 @@ fn doc<'a>(h: &'a Harness<'static, PdfCraftApp>) -> &'a pdfcraft_engine::Documen
 }
 
 fn bytes(h: &Harness<'static, PdfCraftApp>) -> Vec<u8> {
-    h.state().session.save_bytes(h.state().views[0].id).unwrap().as_ref().clone()
+    h.state()
+        .session
+        .save_bytes(h.state().views[0].id)
+        .unwrap()
+        .as_ref()
+        .clone()
 }
 
 fn select(h: &mut Harness<'static, PdfCraftApp>, names: &[&str]) {
@@ -79,14 +134,22 @@ fn select(h: &mut Harness<'static, PdfCraftApp>, names: &[&str]) {
 fn shared_properties_preserve_mixed_values_and_undo_the_whole_change() {
     let mut h = harness();
     let before = bytes(&h);
-    let original = [doc(&h).field_look("alpha").unwrap(), doc(&h).field_look("beta").unwrap()];
+    let original = [
+        doc(&h).field_look("alpha").unwrap(),
+        doc(&h).field_look("beta").unwrap(),
+    ];
     select(&mut h, &["alpha", "beta"]);
     h.get_by_label("Shared Field Properties");
     h.get_by_label("2 fields selected");
     assert!(h.state().bulk_field_props.as_ref().unwrap().required.mixed);
     h.get_by_label("Required").click();
     h.run_steps(4);
-    h.state_mut().bulk_field_props.as_mut().unwrap().required.value = true;
+    h.state_mut()
+        .bulk_field_props
+        .as_mut()
+        .unwrap()
+        .required
+        .value = true;
     h.get_by_label("Appearance").click();
     h.run_steps(4);
     // Below the fold of the dialog's scroll area with the roomier rows (#487).
@@ -94,19 +157,31 @@ fn shared_properties_preserve_mixed_values_and_undo_the_whole_change() {
     h.run_steps(4);
     h.get_by_label("Line Thickness:").click();
     h.run_steps(4);
-    assert!(h.state().bulk_field_props.as_ref().unwrap().width.apply, "thickness click enables the property");
+    assert!(
+        h.state().bulk_field_props.as_ref().unwrap().width.apply,
+        "thickness click enables the property"
+    );
     h.state_mut().bulk_field_props.as_mut().unwrap().width.value = 4.0;
     h.get_by_label("OK").click();
     h.run_steps(4);
     assert!(h.state().dialog.is_none());
-    for (name, look, value) in [("alpha", original[0], "Ada"), ("beta", original[1], "Lovelace")] {
+    for (name, look, value) in [
+        ("alpha", original[0], "Ada"),
+        ("beta", original[1], "Lovelace"),
+    ] {
         let field = doc(&h).form.iter().find(|f| f.name == name).unwrap();
         assert!(field.has(field_flags::REQUIRED));
         assert_eq!(field.value, [value]);
-        assert_eq!(field.tooltip.as_deref(), Some(format!("Help for {name}").as_str()));
+        assert_eq!(
+            field.tooltip.as_deref(),
+            Some(format!("Help for {name}").as_str())
+        );
         let new = doc(&h).field_look(name).unwrap();
         assert_eq!(new.width, 4.0);
-        assert_eq!((new.fill, new.font, new.text, new.border), (look.fill, look.font, look.text, look.border));
+        assert_eq!(
+            (new.fill, new.font, new.text, new.border),
+            (look.fill, look.font, look.text, look.border)
+        );
     }
     assert_eq!(doc(&h).can_undo(), Some("Change field properties"));
     assert_eq!(h.state().views[0].prepare.names(), ["alpha", "beta"]);
@@ -118,9 +193,23 @@ fn shared_properties_preserve_mixed_values_and_undo_the_whole_change() {
     assert_eq!(doc(&h).field_look("beta").unwrap().width, 4.0);
     // The regenerated look also survives a real Save/open round trip.
     let mut s = Session::new();
-    let id = s.open("saved.pdf", None, std::sync::Arc::new(bytes(&h)), None).unwrap();
-    assert_eq!(s.get(id).unwrap().field_look("beta").unwrap().fill, original[1].fill);
-    assert_eq!(s.get(id).unwrap().form.iter().find(|f| f.name == "beta").unwrap().value, ["Lovelace"]);
+    let id = s
+        .open("saved.pdf", None, std::sync::Arc::new(bytes(&h)), None)
+        .unwrap();
+    assert_eq!(
+        s.get(id).unwrap().field_look("beta").unwrap().fill,
+        original[1].fill
+    );
+    assert_eq!(
+        s.get(id)
+            .unwrap()
+            .form
+            .iter()
+            .find(|f| f.name == "beta")
+            .unwrap()
+            .value,
+        ["Lovelace"]
+    );
 }
 
 #[test]
@@ -151,13 +240,22 @@ fn cancelling_shared_properties_discards_only_the_draft() {
     h.run_steps(4);
     assert_eq!(bytes(&h), before);
     assert!(h.state().bulk_field_props.is_none());
-    assert_eq!(h.state().views[0].prepare.names(), ["alpha", "beta", "consent"]);
+    assert_eq!(
+        h.state().views[0].prepare.names(),
+        ["alpha", "beta", "consent"]
+    );
 }
 
 #[test]
 fn locked_field_refuses_the_entire_batch_and_keeps_the_draft_for_correction() {
     let mut h = harness();
-    h.state_mut().apply_edit(Edit::SetFieldProps { name: "beta".into(), props: Box::new(FieldProps { locked: Some(true), ..Default::default() }) });
+    h.state_mut().apply_edit(Edit::SetFieldProps {
+        name: "beta".into(),
+        props: Box::new(FieldProps {
+            locked: Some(true),
+            ..Default::default()
+        }),
+    });
     let before = bytes(&h);
     select(&mut h, &["alpha", "beta"]);
     let d = h.state_mut().bulk_field_props.as_mut().unwrap();
@@ -165,9 +263,22 @@ fn locked_field_refuses_the_entire_batch_and_keeps_the_draft_for_correction() {
     d.tooltip.value = "Shared help".into();
     h.get_by_label("OK").click();
     h.run_steps(4);
-    assert_eq!(bytes(&h), before, "alpha must not be committed before beta refuses");
+    assert_eq!(
+        bytes(&h),
+        before,
+        "alpha must not be committed before beta refuses"
+    );
     assert_eq!(h.state().dialog, Some(Dialog::BulkFieldProps));
-    assert!(h.state().bulk_field_props.as_ref().unwrap().error.as_ref().unwrap().contains("locked"));
+    assert!(
+        h.state()
+            .bulk_field_props
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .unwrap()
+            .contains("locked")
+    );
     let d = h.state_mut().bulk_field_props.as_mut().unwrap();
     d.locked.apply = true;
     d.locked.value = false;
@@ -194,14 +305,25 @@ fn shared_properties_cannot_apply_to_a_different_active_document() {
     let d = h.state_mut().bulk_field_props.as_mut().unwrap();
     d.required.apply = true;
     d.required.value = true;
-    h.state_mut().open_bytes("other.pdf", None, fixture()).unwrap();
+    h.state_mut()
+        .open_bytes("other.pdf", None, fixture())
+        .unwrap();
     h.run_steps(4);
     h.get_by_label("OK").click();
     h.run_steps(4);
     assert_eq!(bytes(&h), before);
     let id = h.state().views[1].id;
     assert!(!h.state().session.get(id).unwrap().dirty);
-    assert!(h.state().bulk_field_props.as_ref().unwrap().error.as_ref().unwrap().contains("document changed"));
+    assert!(
+        h.state()
+            .bulk_field_props
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .unwrap()
+            .contains("document changed")
+    );
 }
 
 #[test]
@@ -211,12 +333,23 @@ fn deleting_a_field_while_properties_are_open_does_not_partly_apply_the_draft() 
     let d = h.state_mut().bulk_field_props.as_mut().unwrap();
     d.tooltip.apply = true;
     d.tooltip.value = "New help".into();
-    h.state_mut().apply_edit(Edit::DeleteField { name: "beta".into() });
+    h.state_mut().apply_edit(Edit::DeleteField {
+        name: "beta".into(),
+    });
     let before = bytes(&h);
     h.get_by_label("OK").click();
     h.run_steps(4);
     assert_eq!(bytes(&h), before);
-    assert!(h.state().bulk_field_props.as_ref().unwrap().error.as_ref().unwrap().contains("no longer exists"));
+    assert!(
+        h.state()
+            .bulk_field_props
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .unwrap()
+            .contains("no longer exists")
+    );
 }
 
 #[test]
@@ -224,7 +357,10 @@ fn select_all_in_prepare_a_form_selects_only_the_current_pages_fields() {
     let mut h = harness();
     h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
     h.run_steps(4);
-    assert_eq!(h.state().views[0].prepare.names(), ["alpha", "beta", "consent"]);
+    assert_eq!(
+        h.state().views[0].prepare.names(),
+        ["alpha", "beta", "consent"]
+    );
     assert!(!doc(&h).dirty);
     h.state_mut().views[0].go_to_page(1);
     h.run_steps(4);
@@ -238,7 +374,8 @@ fn fields_panel_selects_multiple_fields_and_opens_their_shared_properties() {
     let mut h = harness();
     h.get_by_label("alpha").click();
     h.run_steps(4);
-    h.get_by_label("beta").click_modifiers(egui::Modifiers::SHIFT);
+    h.get_by_label("beta")
+        .click_modifiers(egui::Modifiers::SHIFT);
     h.run_steps(4);
     assert_eq!(h.state().views[0].prepare.names(), ["alpha", "beta"]);
     h.get_by_label("Properties…").click();
@@ -246,7 +383,8 @@ fn fields_panel_selects_multiple_fields_and_opens_their_shared_properties() {
     h.get_by_label("Shared Field Properties");
     h.get_by_label("Cancel").click();
     h.run_steps(4);
-    h.get_by_label("beta").click_modifiers(egui::Modifiers::COMMAND);
+    h.get_by_label("beta")
+        .click_modifiers(egui::Modifiers::COMMAND);
     h.run_steps(4);
     assert_eq!(h.state().views[0].prepare.names(), ["alpha"]);
 }
@@ -292,7 +430,10 @@ fn selecting_several_widgets_of_one_radio_group_does_not_duplicate_field_edits()
         h.state_mut().apply_edit(Edit::AddField {
             page: 0,
             rect: [x, 180.0, x + 14.0, 194.0],
-            kind: NewField::Radio { group: Some("group".into()), export: export.into() },
+            kind: NewField::Radio {
+                group: Some("group".into()),
+                export: export.into(),
+            },
             name: None,
         });
     }
@@ -349,7 +490,10 @@ fn shared_properties_preserve_unchecked_changes_made_after_the_dialog_opened() {
     h.state_mut().apply_edit(Edit::SetFieldProps {
         name: "beta".into(),
         props: Box::new(FieldProps {
-            appearance: Some(pdfcraft_engine::FieldLookPatch { fill: Some(Some([0.3, 0.7, 0.1])), ..Default::default() }),
+            appearance: Some(pdfcraft_engine::FieldLookPatch {
+                fill: Some(Some([0.3, 0.7, 0.1])),
+                ..Default::default()
+            }),
             ..Default::default()
         }),
     });
@@ -357,7 +501,10 @@ fn shared_properties_preserve_unchecked_changes_made_after_the_dialog_opened() {
     h.run_steps(4);
     h.get_by_label("OK").click();
     h.run_steps(4);
-    assert_eq!(doc(&h).field_look("beta").unwrap().fill, Some([0.3, 0.7, 0.1]));
+    assert_eq!(
+        doc(&h).field_look("beta").unwrap().fill,
+        Some([0.3, 0.7, 0.1])
+    );
     assert_eq!(doc(&h).field_look("beta").unwrap().width, 2.0);
     h.state_mut().execute("edit.undo");
     h.run_steps(4);

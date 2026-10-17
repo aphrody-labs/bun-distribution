@@ -143,7 +143,8 @@ fn play(s: &Session, seq: ItemId, mode: &str, seconds: f64) -> Run {
 fn main() {
     filmcraft_platform::register();
     let mut args = std::env::args().skip(1);
-    let (mut project, mut seconds, mut only, mut mode, mut json_out, mut wav_dir) = (None, 20.0, Vec::new(), "both".to_string(), None, None);
+    let (mut project, mut seconds, mut only, mut mode, mut json_out, mut wav_dir) =
+        (None, 20.0, Vec::new(), "both".to_string(), None, None);
     while let Some(a) = args.next() {
         match a.as_str() {
             "--seconds" => seconds = args.next().and_then(|v| v.parse().ok()).unwrap_or(seconds),
@@ -155,7 +156,9 @@ fn main() {
         }
     }
     let Some(project) = project else {
-        eprintln!("usage: bench_audio <project.fcproj> [--seconds N] [--sequence NAME] [--mode direct|ahead|both] [--json PATH] [--wav DIR]");
+        eprintln!(
+            "usage: bench_audio <project.fcproj> [--seconds N] [--sequence NAME] [--mode direct|ahead|both] [--json PATH] [--wav DIR]"
+        );
         std::process::exit(2);
     };
     let mut s = Session::default();
@@ -163,12 +166,29 @@ fn main() {
         eprintln!("{project}: {e}");
         std::process::exit(1);
     }
-    let mut seqs: Vec<(ItemId, String)> = s.project.sequences().map(|i| (i.id, i.name.clone())).filter(|(_, n)| only.is_empty() || only.contains(n)).collect();
+    let mut seqs: Vec<(ItemId, String)> = s
+        .project
+        .sequences()
+        .map(|i| (i.id, i.name.clone()))
+        .filter(|(_, n)| only.is_empty() || only.contains(n))
+        .collect();
     seqs.sort_by(|a, b| a.1.cmp(&b.1));
-    let modes: Vec<&str> = if mode == "both" { vec!["direct", "ahead"] } else { vec![mode.as_str()] };
+    let modes: Vec<&str> = if mode == "both" {
+        vec!["direct", "ahead"]
+    } else {
+        vec![mode.as_str()]
+    };
     println!(
         "{:<48} {:<7} {:>9} {:>8} {:>9} {:>9} {:>8} {:>11} {:>9}",
-        "sequence", "mode", "callbacks", "dropouts", "overruns", "underruns", "late", "max cb (ms)", "min lead"
+        "sequence",
+        "mode",
+        "callbacks",
+        "dropouts",
+        "overruns",
+        "underruns",
+        "late",
+        "max cb (ms)",
+        "min lead"
     );
     let mut out = Vec::<Value>::new();
     for (id, name) in &seqs {
@@ -180,7 +200,9 @@ fn main() {
                 eprintln!("{}: {e}", d.display());
             }
             let lost_ms = r.lost_cycles as f64 * PERIOD as f64 * 1e3 / SR as f64;
-            let lead = r.min_lead_ms.map_or("-".to_string(), |v| format!("{v:.0} ms"));
+            let lead = r
+                .min_lead_ms
+                .map_or("-".to_string(), |v| format!("{v:.0} ms"));
             println!(
                 "{:<48} {:<7} {:>9} {:>8} {:>9} {:>9} {:>8} {:>11.1} {:>9}",
                 name,

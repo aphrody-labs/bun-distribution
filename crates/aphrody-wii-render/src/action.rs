@@ -185,7 +185,8 @@ impl GxRenderer {
     ) {
         if external_scratch.len() > self.scratch_vertices.len() {
             let start = self.scratch_vertices.len();
-            self.scratch_vertices.extend_from_slice(&external_scratch[start..]);
+            self.scratch_vertices
+                .extend_from_slice(&external_scratch[start..]);
         }
         self.process_action(device, queue, action);
         if self.scratch_vertices.len() < external_scratch.len() {
@@ -212,33 +213,45 @@ impl GxRenderer {
         }
 
         match action {
-            GxAction::SetProjection { matrix, is_perspective } => {
+            GxAction::SetProjection {
+                matrix,
+                is_perspective,
+            } => {
                 self.current_projection = Mat4::from_cols_array_2d(matrix);
                 self.current_projection_perspective = *is_perspective;
-            },
+            }
             GxAction::SetFreelook { matrix, enabled } => {
                 self.freelook = Mat4::from_cols_array_2d(matrix);
                 self.freelook_enabled = *enabled;
-            },
+            }
             GxAction::SetViewport(vp) => {
                 self.current_viewport = *vp;
-            },
+            }
             GxAction::SetScissor(sc) => {
                 self.current_scissor = *sc;
-            },
+            }
             GxAction::SetDepthMode(zm) => {
                 self.current_zmode = *zm;
-            },
+            }
             GxAction::SetBlendMode(bm) => {
                 self.current_blend_mode = *bm;
-            },
+            }
             GxAction::SetAlphaCompare(ac) => {
                 self.current_alpha_compare = *ac;
-            },
-            GxAction::LoadTexture { id, width, height, fmt, rgba } => {
+            }
+            GxAction::LoadTexture {
+                id,
+                width,
+                height,
+                fmt,
+                rgba,
+            } => {
                 let tid = *id;
-                let copy_size =
-                    wgpu::Extent3d { width: *width, height: *height, depth_or_array_layers: 1 };
+                let copy_size = wgpu::Extent3d {
+                    width: *width,
+                    height: *height,
+                    depth_or_array_layers: 1,
+                };
                 let direct_copy_layout = wgpu::TexelCopyBufferLayout {
                     offset: 0,
                     bytes_per_row: Some(*width * 4),
@@ -291,7 +304,10 @@ impl GxRenderer {
                     }
                 }
 
-                let pooled = self.texture_pool.get_mut(&(*width, *height)).and_then(|v| v.pop());
+                let pooled = self
+                    .texture_pool
+                    .get_mut(&(*width, *height))
+                    .and_then(|v| v.pop());
 
                 let tex = pooled.unwrap_or_else(|| {
                     let texture_label = format!(
@@ -335,33 +351,43 @@ impl GxRenderer {
                 if let Some((_, old_tex, _)) = prior {
                     self.return_load_texture_to_pool(old_tex);
                 }
-            },
+            }
             GxAction::InvalidateCaches => {
                 self.flush_pending_draws(device, queue);
                 let _ = self.submit_pending(queue);
                 self.texture_cache.clear();
-                let drained: Vec<_> =
-                    self.efb_copy_cache.drain().map(|(_, e)| (e.texture, e.view)).collect();
+                let drained: Vec<_> = self
+                    .efb_copy_cache
+                    .drain()
+                    .map(|(_, e)| (e.texture, e.view))
+                    .collect();
                 for (tex, view) in drained {
                     self.return_to_pool(tex, view);
                 }
                 self.bind_group_cache.clear();
                 self.invalidate_pipeline_caches();
-            },
+            }
             #[cfg(not(target_arch = "wasm32"))]
             GxAction::DumpTextures { dir } => {
                 self.flush_pending_draws(device, queue);
                 self.dump_textures(device, queue, dir);
-            },
-            GxAction::SetTexture { slot, id, wrap_s, wrap_t, mag_filter, min_filter } => {
+            }
+            GxAction::SetTexture {
+                slot,
+                id,
+                wrap_s,
+                wrap_t,
+                mag_filter,
+                min_filter,
+            } => {
                 self.current_texture_ids[*slot] = Some(*id);
                 let sampler_key: SamplerKey = (*wrap_s, *wrap_t, *mag_filter, *min_filter);
                 self.current_sampler_keys[*slot] = Some(sampler_key);
                 self.ensure_sampler(device, &sampler_key);
-            },
+            }
             GxAction::SetCullMode(mode) => {
                 self.current_cull_mode = *mode;
-            },
+            }
 
             GxAction::Draw(draw) => {
                 let batch_state_changed = draw.state.is_some();
@@ -437,7 +463,9 @@ impl GxRenderer {
                     let next_frame_uniform = (state_changed
                         || self.last_frame_uniform_index.is_none())
                     .then(|| build_frame_uniform(state, self.current_alpha_compare));
-                    if let std::collections::hash_map::Entry::Vacant(e) = self.shader_cache.entry(shader_key) {
+                    if let std::collections::hash_map::Entry::Vacant(e) =
+                        self.shader_cache.entry(shader_key)
+                    {
                         #[cfg(feature = "gx-stats")]
                         let shader_started = std::time::Instant::now();
                         let wgsl = shader_specialization::compile_variant(shader_key);
@@ -448,7 +476,9 @@ impl GxRenderer {
                         e.insert(module);
                         #[cfg(feature = "gx-stats")]
                         {
-                            self.stats.shader_modules_created.fetch_add(1, Ordering::Relaxed);
+                            self.stats
+                                .shader_modules_created
+                                .fetch_add(1, Ordering::Relaxed);
                             self.stats.shader_create_cpu_ns.fetch_add(
                                 shader_started.elapsed().as_nanos() as u64,
                                 Ordering::Relaxed,
@@ -458,8 +488,11 @@ impl GxRenderer {
                     }
 
                     let pipeline_key = self.current_pipeline_key(ztex_enabled);
-                    let full_key =
-                        FullPipelineKey { shader: shader_key, specialization, fixed: pipeline_key };
+                    let full_key = FullPipelineKey {
+                        shader: shader_key,
+                        specialization,
+                        fixed: pipeline_key,
+                    };
 
                     if !self.pipeline_cache.contains_key(&full_key) {
                         let uber_key = UberPipelineKey::from(full_key);
@@ -614,7 +647,7 @@ impl GxRenderer {
                     );
                     self.draw_fast_path_compatible = true;
                 }
-            },
+            }
 
             GxAction::CopyXfb {
                 id,
@@ -651,17 +684,25 @@ impl GxRenderer {
                     *z_update,
                     *alpha_supported,
                 );
-            },
+            }
 
-            GxAction::PresentXfb { width, height, parts } => {
+            GxAction::PresentXfb {
+                width,
+                height,
+                parts,
+            } => {
                 self.flush_pending_draws(device, queue);
                 self.execute_present_xfb(device, queue, *width, *height, parts);
-            },
+            }
 
-            GxAction::PresentRawXfb { width, height, pixels } => {
+            GxAction::PresentRawXfb {
+                width,
+                height,
+                pixels,
+            } => {
                 self.flush_pending_draws(device, queue);
                 self.execute_present_raw_xfb(device, queue, *width, *height, pixels);
-            },
+            }
 
             GxAction::CopyEfbToTexture {
                 dest_addr,
@@ -713,7 +754,7 @@ impl GxRenderer {
                         *z_update,
                     );
                 }
-            },
+            }
         }
     }
 
@@ -784,8 +825,12 @@ impl GxRenderer {
         let target_width = self.scaled(crate::EFB_WIDTH);
         let target_height = self.scaled(crate::EFB_HEIGHT);
         let scale = self.efb_scale as f32;
-        let fallback_sampler_key =
-            (WrapMode::Clamp, WrapMode::Clamp, MagFilter::Linear, MinFilter::Linear);
+        let fallback_sampler_key = (
+            WrapMode::Clamp,
+            WrapMode::Clamp,
+            MagFilter::Linear,
+            MinFilter::Linear,
+        );
         let frame_stride = self.frame_stride;
 
         let num_draws = self.draw_bg_keys.len();
@@ -822,9 +867,10 @@ impl GxRenderer {
                         }
 
                         if let Some(sk) = &bg_key.sampler_keys[slot]
-                            && let Some(sampler) = self.sampler_cache.get(sk) {
-                                tex_samplers[slot] = sampler;
-                            }
+                            && let Some(sampler) = self.sampler_cache.get(sk)
+                        {
+                            tex_samplers[slot] = sampler;
+                        }
                     }
                 }
 
@@ -861,7 +907,8 @@ impl GxRenderer {
                     entries: &entries,
                 })
             };
-            self.bind_group_cache.insert(self.draw_bg_keys[i].clone(), new_bg);
+            self.bind_group_cache
+                .insert(self.draw_bg_keys[i].clone(), new_bg);
             #[cfg(feature = "gx-stats")]
             {
                 bind_groups_created += 1;
@@ -885,8 +932,11 @@ impl GxRenderer {
             } else {
                 wgpu::LoadOp::Load
             };
-            let depth_load =
-                if needs_initial_clear { wgpu::LoadOp::Clear(1.0) } else { wgpu::LoadOp::Load };
+            let depth_load = if needs_initial_clear {
+                wgpu::LoadOp::Clear(1.0)
+            } else {
+                wgpu::LoadOp::Load
+            };
 
             let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("efb_rendering"),
@@ -901,7 +951,10 @@ impl GxRenderer {
                     } else {
                         Some(&self.efb_view)
                     },
-                    ops: wgpu::Operations { load: color_load, store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load: color_load,
+                        store: wgpu::StoreOp::Store,
+                    },
                     depth_slice: None,
                 })],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
@@ -1175,21 +1228,46 @@ impl GxRenderer {
 
         #[cfg(feature = "gx-stats")]
         {
-            self.stats.draws_encoded.fetch_add(num_draws as u64, Ordering::Relaxed);
-            self.stats.draw_render_passes.fetch_add(1, Ordering::Relaxed);
-            self.stats.pipeline_changes.fetch_add(pipeline_changes, Ordering::Relaxed);
-            self.stats.bind_group_sets.fetch_add(num_draws as u64, Ordering::Relaxed);
-            self.stats.bind_groups_created.fetch_add(bind_groups_created, Ordering::Relaxed);
-            self.stats.bind_group_key_changes.fetch_add(bind_group_key_changes, Ordering::Relaxed);
-            self.stats.frame_uniform_changes.fetch_add(frame_uniform_changes, Ordering::Relaxed);
-            self.stats.draw_uniform_changes.fetch_add(draw_uniform_changes, Ordering::Relaxed);
-            self.stats.vertex_stride_changes.fetch_add(vertex_stride_changes, Ordering::Relaxed);
-            self.stats.potential_merged_draws.fetch_add(potential_merged_draws, Ordering::Relaxed);
-            self.stats.viewport_changes.fetch_add(viewport_changes, Ordering::Relaxed);
-            self.stats.scissor_changes.fetch_add(scissor_changes, Ordering::Relaxed);
             self.stats
-                .draw_pass_encode_ns
-                .fetch_add(encode_started.elapsed().as_nanos() as u64, Ordering::Relaxed);
+                .draws_encoded
+                .fetch_add(num_draws as u64, Ordering::Relaxed);
+            self.stats
+                .draw_render_passes
+                .fetch_add(1, Ordering::Relaxed);
+            self.stats
+                .pipeline_changes
+                .fetch_add(pipeline_changes, Ordering::Relaxed);
+            self.stats
+                .bind_group_sets
+                .fetch_add(num_draws as u64, Ordering::Relaxed);
+            self.stats
+                .bind_groups_created
+                .fetch_add(bind_groups_created, Ordering::Relaxed);
+            self.stats
+                .bind_group_key_changes
+                .fetch_add(bind_group_key_changes, Ordering::Relaxed);
+            self.stats
+                .frame_uniform_changes
+                .fetch_add(frame_uniform_changes, Ordering::Relaxed);
+            self.stats
+                .draw_uniform_changes
+                .fetch_add(draw_uniform_changes, Ordering::Relaxed);
+            self.stats
+                .vertex_stride_changes
+                .fetch_add(vertex_stride_changes, Ordering::Relaxed);
+            self.stats
+                .potential_merged_draws
+                .fetch_add(potential_merged_draws, Ordering::Relaxed);
+            self.stats
+                .viewport_changes
+                .fetch_add(viewport_changes, Ordering::Relaxed);
+            self.stats
+                .scissor_changes
+                .fetch_add(scissor_changes, Ordering::Relaxed);
+            self.stats.draw_pass_encode_ns.fetch_add(
+                encode_started.elapsed().as_nanos() as u64,
+                Ordering::Relaxed,
+            );
         }
     }
 
@@ -1227,7 +1305,7 @@ fn draw_emits_triangles(draw: &DrawSegment) -> bool {
         _ => {
             tracing::error!(?draw.primitive, "draw_emits_triangles: skipping unsupported primitive");
             false
-        },
+        }
     }
 }
 
@@ -1246,7 +1324,7 @@ fn emit_draw_indices(
             indices_out.extend((0..emitted).map(|i| vertex_bias + i));
 
             (n, emitted)
-        },
+        }
         Primitive::Quads => {
             let chunks = n / 4;
             for q in 0..chunks {
@@ -1270,7 +1348,7 @@ fn emit_draw_indices(
             }
 
             (n, index_count)
-        },
+        }
         Primitive::TriangleStrip => {
             if n < 3 {
                 return (0, 0);
@@ -1293,7 +1371,7 @@ fn emit_draw_indices(
                 }
             }
             (n, tris * 3)
-        },
+        }
         Primitive::TriangleFan => {
             if n < 3 {
                 return (0, 0);
@@ -1308,10 +1386,10 @@ fn emit_draw_indices(
                 ]);
             }
             (n, tris * 3)
-        },
+        }
         _ => {
             tracing::error!(?draw.primitive, "emit_draw_indices: skipping unsupported primitive");
             (0, 0)
-        },
+        }
     }
 }

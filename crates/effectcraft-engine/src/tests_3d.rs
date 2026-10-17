@@ -8,22 +8,51 @@ use crate::Session;
 
 fn session() -> Session {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "C", "width": 640, "height": 360, "duration": 2})).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "C", "width": 640, "height": 360, "duration": 2}),
+    )
+    .unwrap();
     s
 }
 
 #[test]
 fn auto_orient_command() {
     let mut s = session();
-    let id = s.execute("layer.newSolid", json!({"width": 100, "height": 100})).unwrap()["layer"].as_u64().unwrap();
-    s.execute("layer.autoOrient", json!({"layer": id, "mode": "towardsCamera"})).unwrap();
-    assert_eq!(s.active_comp().unwrap().layers[0].auto_orient, AutoOrient::TowardsCamera);
+    let id = s
+        .execute("layer.newSolid", json!({"width": 100, "height": 100}))
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "layer.autoOrient",
+        json!({"layer": id, "mode": "towardsCamera"}),
+    )
+    .unwrap();
+    assert_eq!(
+        s.active_comp().unwrap().layers[0].auto_orient,
+        AutoOrient::TowardsCamera
+    );
     s.undo();
-    assert_eq!(s.active_comp().unwrap().layers[0].auto_orient, AutoOrient::Off);
-    let cam = s.execute("layer.newCamera", json!({})).unwrap()["layer"].as_u64().unwrap();
-    assert!(s.execute("layer.autoOrient", json!({"layer": cam, "mode": "towardsCamera"})).is_err());
-    s.execute("layer.autoOrient", json!({"layer": cam, "mode": "off"})).unwrap();
-    assert!(!effectcraft_render::three_d::camera::is_two_node(&s.active_comp().unwrap().layers[0]));
+    assert_eq!(
+        s.active_comp().unwrap().layers[0].auto_orient,
+        AutoOrient::Off
+    );
+    let cam = s.execute("layer.newCamera", json!({})).unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    assert!(
+        s.execute(
+            "layer.autoOrient",
+            json!({"layer": cam, "mode": "towardsCamera"})
+        )
+        .is_err()
+    );
+    s.execute("layer.autoOrient", json!({"layer": cam, "mode": "off"}))
+        .unwrap();
+    assert!(!effectcraft_render::three_d::camera::is_two_node(
+        &s.active_comp().unwrap().layers[0]
+    ));
 }
 
 fn layer_count(s: &Session) -> usize {
@@ -31,14 +60,24 @@ fn layer_count(s: &Session) -> usize {
 }
 
 fn prop(s: &Session, layer: u64, path: &str) -> effectcraft_keyframe::Value {
-    let l = s.active_comp().unwrap().layer(effectcraft_project::LayerId(layer)).unwrap();
-    l.props.prop(path).unwrap_or_else(|| panic!("no {path}")).value.clone()
+    let l = s
+        .active_comp()
+        .unwrap()
+        .layer(effectcraft_project::LayerId(layer))
+        .unwrap();
+    l.props
+        .prop(path)
+        .unwrap_or_else(|| panic!("no {path}"))
+        .value
+        .clone()
 }
 
 #[test]
 fn new_camera_with_preset_undo_redo() {
     let mut s = session();
-    let r = s.execute("layer.newCamera", json!({"preset": "35mm"})).unwrap();
+    let r = s
+        .execute("layer.newCamera", json!({"preset": "35mm"}))
+        .unwrap();
     let id = r["layer"].as_u64().unwrap();
     assert_eq!(layer_count(&s), 1);
     let zoom = prop(&s, id, "cameraOptions/zoom").as_f64();
@@ -51,13 +90,23 @@ fn new_camera_with_preset_undo_redo() {
     assert_eq!(layer_count(&s), 0);
     assert!(s.redo());
     assert_eq!(layer_count(&s), 1);
-    assert!(s.execute("layer.newCamera", json!({"preset": "13mm-fisheye"})).is_err());
+    assert!(
+        s.execute("layer.newCamera", json!({"preset": "13mm-fisheye"}))
+            .is_err()
+    );
 }
 
 #[test]
 fn camera_settings_one_node_keeps_view() {
     let mut s = session();
-    let id = s.execute("layer.newCamera", json!({"poi": [100, 50, 0], "position": [320, 180, -400]})).unwrap()["layer"].as_u64().unwrap();
+    let id = s
+        .execute(
+            "layer.newCamera",
+            json!({"poi": [100, 50, 0], "position": [320, 180, -400]}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
     let cid = s.active_comp_id().unwrap();
     let fwd = |s: &Session| {
         let c = s.project.comp(cid).unwrap();
@@ -65,13 +114,21 @@ fn camera_settings_one_node_keeps_view() {
         effectcraft_render::three_d::active_camera(&ctx).forward()
     };
     let before = fwd(&s);
-    s.execute("layer.cameraSettings", json!({"layer": id, "type": "oneNode", "dof": true, "aperture": 30})).unwrap();
+    s.execute(
+        "layer.cameraSettings",
+        json!({"layer": id, "type": "oneNode", "dof": true, "aperture": 30}),
+    )
+    .unwrap();
     let l = s.active_comp().unwrap().layers[0].clone();
     assert_eq!(l.auto_orient, AutoOrient::Off);
-    assert!((fwd(&s) - before).length() < 1e-9, "one-node camera keeps looking the same way");
+    assert!(
+        (fwd(&s) - before).length() < 1e-9,
+        "one-node camera keeps looking the same way"
+    );
     assert!(prop(&s, id, "cameraOptions/dof").as_bool());
     // Layer Settings (Cmd+Shift+Y) on a camera opens Camera Settings.
-    s.execute("layer.settings", json!({"layer": id, "zoom": 500})).unwrap();
+    s.execute("layer.settings", json!({"layer": id, "zoom": 500}))
+        .unwrap();
     assert_eq!(prop(&s, id, "cameraOptions/zoom").as_f64(), 500.0);
     s.undo();
     s.undo();
@@ -95,15 +152,33 @@ fn new_light_and_change_type() {
     assert_eq!(prop(&s, id, "lightOptions/coneAngle").as_f64(), 60.0);
     assert_eq!(prop(&s, id, "lightOptions/falloff").as_enum(), 1);
     assert!(prop(&s, id, "lightOptions/castsShadows").as_bool());
-    s.execute("layer.lightSettings", json!({"layer": id, "kind": "Point"})).unwrap();
+    s.execute("layer.lightSettings", json!({"layer": id, "kind": "Point"}))
+        .unwrap();
     let l = s.active_comp().unwrap().layers[0].clone();
-    assert_eq!(l.source, LayerSource::Light { kind: LightKind::Point });
+    assert_eq!(
+        l.source,
+        LayerSource::Light {
+            kind: LightKind::Point
+        }
+    );
     assert!(l.props.prop("lightOptions/coneAngle").is_none());
-    assert_eq!(prop(&s, id, "lightOptions/intensity").as_f64(), 150.0, "shared values carry over");
+    assert_eq!(
+        prop(&s, id, "lightOptions/intensity").as_f64(),
+        150.0,
+        "shared values carry over"
+    );
     s.undo();
     let l = s.active_comp().unwrap().layers[0].clone();
-    assert_eq!(l.source, LayerSource::Light { kind: LightKind::Spot });
-    assert!(s.execute("layer.newLight", json!({"kind": "Laser"})).is_err());
+    assert_eq!(
+        l.source,
+        LayerSource::Light {
+            kind: LightKind::Spot
+        }
+    );
+    assert!(
+        s.execute("layer.newLight", json!({"kind": "Laser"}))
+            .is_err()
+    );
 }
 
 /// The Environment light is listed in `layer.newLight`'s help and in the kind errors, and takes
@@ -111,21 +186,82 @@ fn new_light_and_change_type() {
 #[test]
 fn environment_light_is_listed_and_takes_a_source_layer() {
     let mut s = session();
-    let spec = crate::command_specs().iter().find(|c| c.id == "layer.newLight").unwrap();
-    assert!(spec.params.contains("lightOptions/source"), "{}", spec.params);
-    let e = s.execute("layer.newLight", json!({"kind": "Laser"})).unwrap_err().to_string();
-    let point = s.execute("layer.newLight", json!({"kind": "Point"})).unwrap()["layer"].as_u64().unwrap();
-    let e2 = s.execute("layer.lightSettings", json!({"layer": point, "kind": "Laser"})).unwrap_err().to_string();
+    let spec = crate::command_specs()
+        .iter()
+        .find(|c| c.id == "layer.newLight")
+        .unwrap();
+    assert!(
+        spec.params.contains("lightOptions/source"),
+        "{}",
+        spec.params
+    );
+    let e = s
+        .execute("layer.newLight", json!({"kind": "Laser"}))
+        .unwrap_err()
+        .to_string();
+    let point = s
+        .execute("layer.newLight", json!({"kind": "Point"}))
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    let e2 = s
+        .execute(
+            "layer.lightSettings",
+            json!({"layer": point, "kind": "Laser"}),
+        )
+        .unwrap_err()
+        .to_string();
     for k in LightKind::ALL {
-        assert!(spec.params.contains(k.label()), "help lists {}: {}", k.label(), spec.params);
-        assert!(e.contains(k.label()) && e2.contains(k.label()), "{e} / {e2}");
+        assert!(
+            spec.params.contains(k.label()),
+            "help lists {}: {}",
+            k.label(),
+            spec.params
+        );
+        assert!(
+            e.contains(k.label()) && e2.contains(k.label()),
+            "{e} / {e2}"
+        );
     }
-    let sky = s.execute("layer.newSolid", json!({"width": 256, "height": 128, "name": "Sky"})).unwrap()["layer"].as_u64().unwrap();
-    let env = s.execute("layer.newLight", json!({"kind": "Environment", "name": "Env"})).unwrap()["layer"].as_u64().unwrap();
-    let source = s.active_comp().unwrap().layer(effectcraft_project::LayerId(env)).unwrap().source.clone();
-    assert_eq!(source, LayerSource::Light { kind: LightKind::Environment });
-    assert_eq!(prop(&s, env, "lightOptions/source").as_layer(), None, "empty: the comp's Environment Layer");
-    s.execute("prop.set", json!({"layer": env, "path": "lightOptions/source", "value": sky})).unwrap();
+    let sky = s
+        .execute(
+            "layer.newSolid",
+            json!({"width": 256, "height": 128, "name": "Sky"}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    let env = s
+        .execute(
+            "layer.newLight",
+            json!({"kind": "Environment", "name": "Env"}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    let source = s
+        .active_comp()
+        .unwrap()
+        .layer(effectcraft_project::LayerId(env))
+        .unwrap()
+        .source
+        .clone();
+    assert_eq!(
+        source,
+        LayerSource::Light {
+            kind: LightKind::Environment
+        }
+    );
+    assert_eq!(
+        prop(&s, env, "lightOptions/source").as_layer(),
+        None,
+        "empty: the comp's Environment Layer"
+    );
+    s.execute(
+        "prop.set",
+        json!({"layer": env, "path": "lightOptions/source", "value": sky}),
+    )
+    .unwrap();
     assert_eq!(prop(&s, env, "lightOptions/source").as_layer(), Some(sky));
     s.undo();
     assert_eq!(prop(&s, env, "lightOptions/source").as_layer(), None);
@@ -134,33 +270,81 @@ fn environment_light_is_listed_and_takes_a_source_layer() {
 #[test]
 fn three_d_switch_undo_redo() {
     let mut s = session();
-    let id = s.execute("layer.newSolid", json!({"width": 100, "height": 100})).unwrap()["layer"].as_u64().unwrap();
-    s.execute("layer.setSwitch", json!({"layer": id, "switch": "threeD", "value": true})).unwrap();
+    let id = s
+        .execute("layer.newSolid", json!({"width": 100, "height": 100}))
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "layer.setSwitch",
+        json!({"layer": id, "switch": "threeD", "value": true}),
+    )
+    .unwrap();
     assert!(s.active_comp().unwrap().layers[0].is_3d());
     s.undo();
     assert!(!s.active_comp().unwrap().layers[0].is_3d());
     s.redo();
     assert!(s.active_comp().unwrap().layers[0].is_3d());
     // Turning 3D off discards Z and the 3D-only rotations.
-    s.execute("prop.set", json!({"layer": id, "path": "transform/position", "value": [10, 20, 300]})).unwrap();
-    s.execute("prop.set", json!({"layer": id, "path": "transform/rotationX", "value": 45})).unwrap();
-    s.execute("layer.setSwitch", json!({"layer": id, "switch": "threeD", "value": false})).unwrap();
-    assert_eq!(prop(&s, id, "transform/position").as_vec3(), [10.0, 20.0, 0.0]);
+    s.execute(
+        "prop.set",
+        json!({"layer": id, "path": "transform/position", "value": [10, 20, 300]}),
+    )
+    .unwrap();
+    s.execute(
+        "prop.set",
+        json!({"layer": id, "path": "transform/rotationX", "value": 45}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.setSwitch",
+        json!({"layer": id, "switch": "threeD", "value": false}),
+    )
+    .unwrap();
+    assert_eq!(
+        prop(&s, id, "transform/position").as_vec3(),
+        [10.0, 20.0, 0.0]
+    );
     assert_eq!(prop(&s, id, "transform/rotationX").as_f64(), 0.0);
     s.undo();
-    assert_eq!(prop(&s, id, "transform/position").as_vec3(), [10.0, 20.0, 300.0]);
+    assert_eq!(
+        prop(&s, id, "transform/position").as_vec3(),
+        [10.0, 20.0, 300.0]
+    );
 }
 
 #[test]
 fn draft_3d_turns_off_lighting() {
     let mut s = session();
     let cid = s.active_comp_id().unwrap();
-    let id = s.execute("layer.newSolid", json!({"width": 640, "height": 360, "color": [1, 1, 1]})).unwrap()["layer"].as_u64().unwrap();
-    s.execute("layer.setSwitch", json!({"layer": id, "switch": "threeD", "value": true})).unwrap();
-    s.execute("layer.newLight", json!({"kind": "Point", "intensity": 50, "position": [320, 180, -400]})).unwrap();
-    let px = |s: &Session| s.render(cid, s.time(), effectcraft_render::RenderOpts::default()).get(320, 180)[0];
+    let id = s
+        .execute(
+            "layer.newSolid",
+            json!({"width": 640, "height": 360, "color": [1, 1, 1]}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "layer.setSwitch",
+        json!({"layer": id, "switch": "threeD", "value": true}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.newLight",
+        json!({"kind": "Point", "intensity": 50, "position": [320, 180, -400]}),
+    )
+    .unwrap();
+    let px = |s: &Session| {
+        s.render(cid, s.time(), effectcraft_render::RenderOpts::default())
+            .get(320, 180)[0]
+    };
     assert!(px(&s) < 0.5);
-    s.execute("comp.setSwitch", json!({"switch": "draft3d", "value": true})).unwrap();
+    s.execute(
+        "comp.setSwitch",
+        json!({"switch": "draft3d", "value": true}),
+    )
+    .unwrap();
     assert!((px(&s) - 1.0).abs() < 1e-5);
 }
 
@@ -168,14 +352,23 @@ fn draft_3d_turns_off_lighting() {
 fn views_switch_and_override_camera() {
     let mut s = session();
     let cid = s.active_comp_id().unwrap();
-    let id = s.execute("layer.newSolid", json!({"width": 100, "height": 100})).unwrap()["layer"].as_u64().unwrap();
-    s.execute("layer.setSwitch", json!({"layer": id, "switch": "threeD", "value": true})).unwrap();
+    let id = s
+        .execute("layer.newSolid", json!({"width": 100, "height": 100}))
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "layer.setSwitch",
+        json!({"layer": id, "switch": "threeD", "value": true}),
+    )
+    .unwrap();
     assert!(s.view_camera(cid).is_none());
     s.execute("view.3d.top", json!({})).unwrap();
     let cam = s.view_camera(cid).unwrap();
     assert!(cam.ortho);
     assert!((cam.forward().y - 1.0).abs() < 1e-9);
-    s.execute("view.set3DView", json!({"view": "Custom View 2"})).unwrap();
+    s.execute("view.set3DView", json!({"view": "Custom View 2"}))
+        .unwrap();
     assert!(!s.view_camera(cid).unwrap().ortho);
     s.execute("view.3d.last", json!({})).unwrap();
     assert_eq!(s.state.views3d[&cid].current, View3D::Top);
@@ -192,7 +385,10 @@ fn views_switch_and_override_camera() {
     assert!(s.view_camera(cid).is_none());
     let q = s.execute("view.get3D", json!({})).unwrap();
     assert_eq!(q["view"], "activeCamera");
-    assert!(s.execute("view.set3DView", json!({"view": "sideways"})).is_err());
+    assert!(
+        s.execute("view.set3DView", json!({"view": "sideways"}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -200,18 +396,29 @@ fn camera_tools_edit_active_camera_with_undo() {
     let mut s = session();
     // No camera layer: the tools explain what is needed.
     assert!(s.execute("camera.orbit", json!({"yaw": 10})).is_err());
-    let id = s.execute("layer.newCamera", json!({})).unwrap()["layer"].as_u64().unwrap();
+    let id = s.execute("layer.newCamera", json!({})).unwrap()["layer"]
+        .as_u64()
+        .unwrap();
     let p0 = prop(&s, id, "transform/position").as_vec3();
     let poi = prop(&s, id, "transform/poi").as_vec3();
-    let dist = |a: [f64; 3], b: [f64; 3]| ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt();
+    let dist = |a: [f64; 3], b: [f64; 3]| {
+        ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
+    };
     // A drag = several merged steps → one undo.
     let undo_len = s.history.undo.len();
     for _ in 0..5 {
-        s.execute("camera.orbit", json!({"yaw": 6, "pitch": -2, "merge": "drag-1"})).unwrap();
+        s.execute(
+            "camera.orbit",
+            json!({"yaw": 6, "pitch": -2, "merge": "drag-1"}),
+        )
+        .unwrap();
     }
     assert_eq!(s.history.undo.len(), undo_len + 1);
     let p1 = prop(&s, id, "transform/position").as_vec3();
-    assert!((dist(p1, poi) - dist(p0, poi)).abs() < 1e-6, "orbit keeps the distance to the POI");
+    assert!(
+        (dist(p1, poi) - dist(p0, poi)).abs() < 1e-6,
+        "orbit keeps the distance to the POI"
+    );
     assert!(dist(p1, p0) > 10.0);
     s.execute("camera.pan", json!({"dx": 50, "dy": 0})).unwrap();
     let poi2 = prop(&s, id, "transform/poi").as_vec3();
@@ -222,7 +429,11 @@ fn camera_tools_edit_active_camera_with_undo() {
     s.undo();
     assert_eq!(prop(&s, id, "transform/position").as_vec3(), p0);
     // One-node cameras orbit by re-orienting.
-    s.execute("layer.cameraSettings", json!({"layer": id, "type": "oneNode"})).unwrap();
+    s.execute(
+        "layer.cameraSettings",
+        json!({"layer": id, "type": "oneNode"}),
+    )
+    .unwrap();
     s.execute("camera.orbit", json!({"yaw": 30})).unwrap();
     let o = prop(&s, id, "transform/orientation").as_vec3();
     assert!(o[1].abs() > 1.0, "{o:?}");
@@ -238,9 +449,20 @@ fn demo_has_3d_showcase() {
     assert!(c.layers.iter().any(|l| l.is_camera()));
     assert!(c.layers.iter().any(|l| l.is_light()));
     assert!(c.layers.iter().filter(|l| l.switches.three_d).count() >= 4);
-    let img =
-        s.render(cid, effectcraft_time::Tick::from_seconds_f64(4.0), effectcraft_render::RenderOpts { scale: 0.125, motion_blur: false, ..Default::default() });
-    let lit = img.data.iter().filter(|p| p[3] > 0.99 && p[0] + p[1] + p[2] > 0.3).count();
+    let img = s.render(
+        cid,
+        effectcraft_time::Tick::from_seconds_f64(4.0),
+        effectcraft_render::RenderOpts {
+            scale: 0.125,
+            motion_blur: false,
+            ..Default::default()
+        },
+    );
+    let lit = img
+        .data
+        .iter()
+        .filter(|p| p[3] > 0.99 && p[0] + p[1] + p[2] > 0.3)
+        .count();
     assert!(lit > 2_000, "{lit}");
 }
 
@@ -250,18 +472,50 @@ fn demo_has_3d_showcase() {
 fn layout_panes_choose_their_view() {
     use effectcraft_render::three_d::{View3D, Views3D};
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "C", "width": 640, "height": 360, "duration": 2})).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "C", "width": 640, "height": 360, "duration": 2}),
+    )
+    .unwrap();
     let cid = s.active_comp_id().unwrap();
-    assert_eq!(s.state.views3d.get(&cid).cloned().unwrap_or_default().pane(0), View3D::Top);
-    let r = s.execute("view.setPaneView", json!({"pane": 2, "view": "bottom"})).unwrap();
-    assert_eq!(r["views"], json!(["activeCamera", "top", "bottom", "right"]));
-    assert_eq!(s.state.views3d[&cid].current, View3D::ActiveCamera, "the main view is untouched");
-    s.execute("view.setPaneView", json!({"pane": 0, "view": "custom1"})).unwrap();
+    assert_eq!(
+        s.state
+            .views3d
+            .get(&cid)
+            .cloned()
+            .unwrap_or_default()
+            .pane(0),
+        View3D::Top
+    );
+    let r = s
+        .execute("view.setPaneView", json!({"pane": 2, "view": "bottom"}))
+        .unwrap();
+    assert_eq!(
+        r["views"],
+        json!(["activeCamera", "top", "bottom", "right"])
+    );
+    assert_eq!(
+        s.state.views3d[&cid].current,
+        View3D::ActiveCamera,
+        "the main view is untouched"
+    );
+    s.execute("view.setPaneView", json!({"pane": 0, "view": "custom1"}))
+        .unwrap();
     assert_eq!(s.state.views3d[&cid].current, View3D::Custom1);
-    assert!(s.execute("view.setPaneView", json!({"pane": 4, "view": "top"})).is_err());
-    assert!(s.execute("view.setPaneView", json!({"pane": 1, "view": "nope"})).is_err());
-    let back: crate::EditorState = serde_json::from_value(serde_json::to_value(&s.state).unwrap()).unwrap();
+    assert!(
+        s.execute("view.setPaneView", json!({"pane": 4, "view": "top"}))
+            .is_err()
+    );
+    assert!(
+        s.execute("view.setPaneView", json!({"pane": 1, "view": "nope"}))
+            .is_err()
+    );
+    let back: crate::EditorState =
+        serde_json::from_value(serde_json::to_value(&s.state).unwrap()).unwrap();
     assert_eq!(back.views3d[&cid].pane(1), View3D::Bottom);
     let old: Views3D = serde_json::from_value(json!({"current": "Front"})).unwrap();
-    assert_eq!((old.current, old.pane(0), old.pane(1), old.pane(2)), (View3D::Front, View3D::Top, View3D::Front, View3D::Right));
+    assert_eq!(
+        (old.current, old.pane(0), old.pane(1), old.pane(2)),
+        (View3D::Front, View3D::Top, View3D::Front, View3D::Right)
+    );
 }

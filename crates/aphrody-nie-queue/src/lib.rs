@@ -33,15 +33,21 @@ impl FrontierLimits {
         max_seen: usize,
         max_batch: usize,
     ) -> std::result::Result<Self, MemoryFrontierError> {
-        for (name, value) in
-            [("max_pending", max_pending), ("max_seen", max_seen), ("max_batch", max_batch)]
-        {
+        for (name, value) in [
+            ("max_pending", max_pending),
+            ("max_seen", max_seen),
+            ("max_batch", max_batch),
+        ] {
             if value == 0 {
                 return Err(MemoryFrontierError::ZeroLimit(name));
             }
         }
 
-        Ok(Self { max_pending, max_seen, max_batch })
+        Ok(Self {
+            max_pending,
+            max_seen,
+            max_batch,
+        })
     }
 
     /// Maximum number of addresses waiting in the FIFO queue.
@@ -65,7 +71,11 @@ impl FrontierLimits {
 
 impl Default for FrontierLimits {
     fn default() -> Self {
-        Self { max_pending: 4_096, max_seen: 65_536, max_batch: 1_024 }
+        Self {
+            max_pending: 4_096,
+            max_seen: 65_536,
+            max_batch: 1_024,
+        }
     }
 }
 
@@ -92,7 +102,7 @@ impl fmt::Display for MemoryFrontierError {
                     formatter,
                     "batch contains {supplied} addresses, exceeding the limit of {maximum}"
                 )
-            },
+            }
         }
     }
 }
@@ -336,7 +346,9 @@ impl Frontier {
 
     /// Clears both the pending queue and deduplication set for this binary.
     pub fn reset(&mut self) -> Result<()> {
-        let _: i64 = self.conn.del(&[self.seen_key.clone(), self.list_key.clone()])?;
+        let _: i64 = self
+            .conn
+            .del(&[self.seen_key.clone(), self.list_key.clone()])?;
         Ok(())
     }
 }
@@ -412,7 +424,10 @@ mod tests {
 
         assert_eq!(
             frontier.push_many(&[6, 7, 8]),
-            Err(MemoryFrontierError::BatchTooLarge { supplied: 3, maximum: 2 })
+            Err(MemoryFrontierError::BatchTooLarge {
+                supplied: 3,
+                maximum: 2
+            })
         );
         assert_eq!(frontier.pending().collect::<Vec<_>>(), [5]);
         assert_eq!(frontier.seen_count(), 1);
@@ -424,7 +439,13 @@ mod tests {
             FrontierLimits::new(0, 1, 1),
             Err(MemoryFrontierError::ZeroLimit("max_pending"))
         );
-        assert_eq!(FrontierLimits::new(1, 0, 1), Err(MemoryFrontierError::ZeroLimit("max_seen")));
-        assert_eq!(FrontierLimits::new(1, 1, 0), Err(MemoryFrontierError::ZeroLimit("max_batch")));
+        assert_eq!(
+            FrontierLimits::new(1, 0, 1),
+            Err(MemoryFrontierError::ZeroLimit("max_seen"))
+        );
+        assert_eq!(
+            FrontierLimits::new(1, 1, 0),
+            Err(MemoryFrontierError::ZeroLimit("max_batch"))
+        );
     }
 }

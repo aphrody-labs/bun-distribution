@@ -21,7 +21,10 @@ pub enum Backend {
 
 /// A panic payload as text.
 fn panic_message(p: Box<dyn std::any::Any + Send>) -> String {
-    p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into())
+    p.downcast_ref::<&str>()
+        .map(|s| s.to_string())
+        .or_else(|| p.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "panic".into())
 }
 
 /// A failed blocking task: a panic is reported as an internal error and the session stays usable.
@@ -179,13 +182,21 @@ pub struct ControlParams {
 }
 
 fn ok_json(v: &Value) -> CallToolResult {
-    CallToolResult::success(vec![Content::text(serde_json::to_string_pretty(v).unwrap_or_default())])
+    CallToolResult::success(vec![Content::text(
+        serde_json::to_string_pretty(v).unwrap_or_default(),
+    )])
 }
 fn fail(e: impl std::fmt::Display) -> CallToolResult {
     CallToolResult::error(vec![Content::text(e.to_string())])
 }
 fn png_result(png: &[u8], note: &str) -> CallToolResult {
-    CallToolResult::success(vec![Content::image(base64::engine::general_purpose::STANDARD.encode(png), "image/png"), Content::text(note.to_string())])
+    CallToolResult::success(vec![
+        Content::image(
+            base64::engine::general_purpose::STANDARD.encode(png),
+            "image/png",
+        ),
+        Content::text(note.to_string()),
+    ])
 }
 fn wrap(r: Result<Value, AutomationError>) -> Result<CallToolResult, McpError> {
     Ok(match r {
@@ -196,10 +207,16 @@ fn wrap(r: Result<Value, AutomationError>) -> Result<CallToolResult, McpError> {
 
 impl FilmcraftMcp {
     pub fn headless(session: Session) -> Self {
-        Self { backend: Arc::new(Backend::Headless(Arc::new(Mutex::new(session)))), tool_router: Self::tool_router() }
+        Self {
+            backend: Arc::new(Backend::Headless(Arc::new(Mutex::new(session)))),
+            tool_router: Self::tool_router(),
+        }
     }
     pub fn bridge(addr: &str) -> Result<Self, AutomationError> {
-        Ok(Self { backend: Arc::new(Backend::Bridge(Arc::new(BridgeClient::new(addr)?))), tool_router: Self::tool_router() })
+        Ok(Self {
+            backend: Arc::new(Backend::Bridge(Arc::new(BridgeClient::new(addr)?))),
+            tool_router: Self::tool_router(),
+        })
     }
 
     pub async fn serve_stdio(self) -> Result<(), AutomationError> {
@@ -226,7 +243,11 @@ impl FilmcraftMcp {
                 }
                 match serde_json::from_str::<Value>(&line) {
                     Ok(_) => {
-                        if to_service.write_all(format!("{line}\n").as_bytes()).await.is_err() {
+                        if to_service
+                            .write_all(format!("{line}\n").as_bytes())
+                            .await
+                            .is_err()
+                        {
                             break;
                         }
                     }
@@ -247,13 +268,24 @@ impl FilmcraftMcp {
                     l = replies.next_line() => match l { Ok(Some(l)) => l, _ => break },
                     Some(e) = err_rx.recv() => e,
                 };
-                if output.write_all(format!("{line}\n").as_bytes()).await.is_err() || output.flush().await.is_err() {
+                if output
+                    .write_all(format!("{line}\n").as_bytes())
+                    .await
+                    .is_err()
+                    || output.flush().await.is_err()
+                {
                     break;
                 }
             }
         });
-        let running = self.serve((service_in, service_out)).await.map_err(|e| AutomationError::Other(format!("MCP init: {e}")))?;
-        let r = running.waiting().await.map_err(|e| AutomationError::Other(e.to_string()));
+        let running = self
+            .serve((service_in, service_out))
+            .await
+            .map_err(|e| AutomationError::Other(format!("MCP init: {e}")))?;
+        let r = running
+            .waiting()
+            .await
+            .map_err(|e| AutomationError::Other(e.to_string()));
         reader.abort();
         let _ = writer.await;
         r.map(|_| ())
@@ -306,9 +338,17 @@ impl FilmcraftMcp {
     #[tool(
         title = "List commands",
         description = "List every command (id, label, menu path, shortcut, parameter doc, enabled now). Menus, shortcuts, panels and timeline gestures all map to these ids.",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
-    async fn command_list(&self, Parameters(p): Parameters<ListParams>) -> Result<CallToolResult, McpError> {
+    async fn command_list(
+        &self,
+        Parameters(p): Parameters<ListParams>,
+    ) -> Result<CallToolResult, McpError> {
         let r = self.run("command.list", json!({})).await.map(|v| {
             let f = p.filter.unwrap_or_default().to_ascii_lowercase();
             let only = p.enabled_only.unwrap_or(false);
@@ -320,7 +360,8 @@ impl FilmcraftMcp {
                     .filter(|c| {
                         let id = c["id"].as_str().unwrap_or("").to_ascii_lowercase();
                         let label = c["label"].as_str().unwrap_or("").to_ascii_lowercase();
-                        (f.is_empty() || id.contains(&f) || label.contains(&f)) && (!only || c["enabled"].as_bool() == Some(true))
+                        (f.is_empty() || id.contains(&f) || label.contains(&f))
+                            && (!only || c["enabled"].as_bool() == Some(true))
                     })
                     .collect(),
             )
@@ -331,18 +372,34 @@ impl FilmcraftMcp {
     #[tool(
         title = "Run a command",
         description = "Run a command by id with JSON params, e.g. {\"id\":\"timeline.razor\",\"params\":{\"seconds\":3.5}} or {\"id\":\"effects.apply\",\"params\":{\"effect\":\"Gaussian Blur\"}}. Undoable edits land in History.",
-        annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn command_run(&self, Parameters(p): Parameters<RunParams>) -> Result<CallToolResult, McpError> {
+    async fn command_run(
+        &self,
+        Parameters(p): Parameters<RunParams>,
+    ) -> Result<CallToolResult, McpError> {
         wrap(self.run(&p.id, p.params.unwrap_or(json!({}))).await)
     }
 
     #[tool(
         title = "Run several commands",
         description = "Run several commands in order: {steps: [{id, params?}], stop_on_error?: true}. Returns {completed, failed, results: [{ok, result | error}]}; each edit is its own undo step.",
-        annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn command_batch(&self, Parameters(p): Parameters<BatchParams>) -> Result<CallToolResult, McpError> {
+    async fn command_batch(
+        &self,
+        Parameters(p): Parameters<BatchParams>,
+    ) -> Result<CallToolResult, McpError> {
         let stop = p.stop_on_error.unwrap_or(true);
         let (mut completed, mut failed, mut results) = (0u32, 0u32, Vec::new());
         for st in p.steps {
@@ -361,13 +418,22 @@ impl FilmcraftMcp {
             }
         }
         let v = json!({"completed": completed, "failed": failed, "results": results});
-        Ok(if failed > 0 { CallToolResult::error(vec![Content::text(v.to_string())]) } else { ok_json(&v) })
+        Ok(if failed > 0 {
+            CallToolResult::error(vec![Content::text(v.to_string())])
+        } else {
+            ok_json(&v)
+        })
     }
 
     #[tool(
         title = "Inspect the document",
         description = "The project as JSON: the tree (as project_inspect) plus the active sequence (as sequence_inspect; null when there is none).",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn doc_inspect(&self) -> Result<CallToolResult, McpError> {
         wrap(self.document().await)
@@ -376,16 +442,29 @@ impl FilmcraftMcp {
     #[tool(
         title = "Render a preview",
         description = "The active sequence's frame at `seconds` (default: the playhead) as PNG, same as render_frame (bridge mode: Program monitor screenshot).",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
-    async fn render_preview(&self, p: Parameters<RenderParams>) -> Result<CallToolResult, McpError> {
+    async fn render_preview(
+        &self,
+        p: Parameters<RenderParams>,
+    ) -> Result<CallToolResult, McpError> {
         self.render_frame(p).await
     }
 
     #[tool(
         title = "Inspect the project tree",
         description = "Project tree (bins and items with ids, types, durations), active sequence, source clip.",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn project_inspect(&self) -> Result<CallToolResult, McpError> {
         wrap(self.run("project.inspect", json!({})).await)
@@ -394,7 +473,12 @@ impl FilmcraftMcp {
     #[tool(
         title = "Inspect the active sequence",
         description = "The active sequence as JSON: settings, tracks, clips (ids, start/duration in ticks and frames, effects), transitions, markers, in/out, playhead, selection. 254016000000 ticks = 1 second.",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn sequence_inspect(&self) -> Result<CallToolResult, McpError> {
         wrap(self.run("sequence.inspect", json!({})).await)
@@ -403,18 +487,34 @@ impl FilmcraftMcp {
     #[tool(
         title = "Import media",
         description = "Import media files by absolute path (MP4/MOV, WAV/MP3/FLAC/AIFF/Ogg, PNG/JPEG/…).",
-        annotations(read_only_hint = false, destructive_hint = false, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn media_import(&self, Parameters(p): Parameters<MediaImportParams>) -> Result<CallToolResult, McpError> {
+    async fn media_import(
+        &self,
+        Parameters(p): Parameters<MediaImportParams>,
+    ) -> Result<CallToolResult, McpError> {
         wrap(self.run("file.import", media_import_params(p)).await)
     }
 
     #[tool(
         title = "Render a frame",
         description = "Render the active sequence's frame (at `seconds` or the playhead) and return it as PNG.",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
-    async fn render_frame(&self, Parameters(p): Parameters<RenderParams>) -> Result<CallToolResult, McpError> {
+    async fn render_frame(
+        &self,
+        Parameters(p): Parameters<RenderParams>,
+    ) -> Result<CallToolResult, McpError> {
         let max = p.max_side.unwrap_or(960);
         match &*self.backend {
             Backend::Headless(s) => {
@@ -422,11 +522,17 @@ impl FilmcraftMcp {
                 let r = tokio::task::spawn_blocking(move || -> Result<Vec<u8>, AutomationError> {
                     let g = s.lock().unwrap_or_else(PoisonError::into_inner);
                     // read-only: render at `seconds` without moving the playhead (#114)
-                    let t = p.seconds.map_or_else(|| g.playhead(), filmcraft_time::Tick::from_seconds_f64);
-                    let (w, h) =
-                        g.active_sequence().map(|q| (q.settings.width, q.settings.height)).ok_or_else(|| AutomationError::Other("no sequence".into()))?;
+                    let t = p
+                        .seconds
+                        .map_or_else(|| g.playhead(), filmcraft_time::Tick::from_seconds_f64);
+                    let (w, h) = g
+                        .active_sequence()
+                        .map(|q| (q.settings.width, q.settings.height))
+                        .ok_or_else(|| AutomationError::Other("no sequence".into()))?;
                     let scale = render_scale(max, w, h);
-                    let img = g.try_render_program_at(scale, t).map_err(|e| AutomationError::Other(e.to_string()))?;
+                    let img = g
+                        .try_render_program_at(scale, t)
+                        .map_err(|e| AutomationError::Other(e.to_string()))?;
                     png_rgba(img.w as u32, img.h as u32, img.over_black_rgba8(), max)
                 })
                 .await
@@ -438,7 +544,9 @@ impl FilmcraftMcp {
             }
             Backend::Bridge(b) => {
                 let Some(sec) = p.seconds else {
-                    return self.screenshot(&b.clone(), Some("Program".into()), max).await;
+                    return self
+                        .screenshot(&b.clone(), Some("Program".into()), max)
+                        .await;
                 };
                 // The Program monitor shows the playhead's frame, so the live playhead has to move
                 // for the screenshot; put it (and the selection, which may follow it) back after,
@@ -450,7 +558,9 @@ impl FilmcraftMcp {
                 if let Err(e) = self.run("playhead.set", json!({"seconds": sec})).await {
                     return Ok(fail(e));
                 }
-                let shot = self.screenshot(&b.clone(), Some("Program".into()), max).await;
+                let shot = self
+                    .screenshot(&b.clone(), Some("Program".into()), max)
+                    .await;
                 if let Some(t) = before.get("playhead").and_then(Value::as_i64) {
                     let _ = self.run("playhead.set", json!({"time": t})).await;
                 }
@@ -469,7 +579,12 @@ impl FilmcraftMcp {
     #[tool(
         title = "Live app: UI state",
         description = "Live app: UI state (tool, workspace, panels, timeline zoom, playback, selection, fps).",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn ui_inspect(&self) -> Result<CallToolResult, McpError> {
         self.ui("ui.inspect", json!({})).await
@@ -478,18 +593,38 @@ impl FilmcraftMcp {
     #[tool(
         title = "Live app: on-screen elements",
         description = "Live app: every on-screen interactive element with id, label and rect (points). Use ids with ui_click/ui_drag.",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
-    async fn ui_elements(&self, Parameters(p): Parameters<ElementsParams>) -> Result<CallToolResult, McpError> {
-        self.ui("ui.elements", json!({"prefix": p.prefix.unwrap_or_default()})).await
+    async fn ui_elements(
+        &self,
+        Parameters(p): Parameters<ElementsParams>,
+    ) -> Result<CallToolResult, McpError> {
+        self.ui(
+            "ui.elements",
+            json!({"prefix": p.prefix.unwrap_or_default()}),
+        )
+        .await
     }
 
     #[tool(
         title = "Live app: click",
         description = "Live app: click an element by id or at x,y (points). Supports right/middle button, double-click (count=2) and modifiers.",
-        annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn ui_click(&self, Parameters(p): Parameters<ClickParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_click(
+        &self,
+        Parameters(p): Parameters<ClickParams>,
+    ) -> Result<CallToolResult, McpError> {
         let mut v = json!({"button": p.button, "count": p.count, "modifiers": p.modifiers});
         if let Some(id) = p.id {
             v["id"] = json!(id);
@@ -503,38 +638,77 @@ impl FilmcraftMcp {
     #[tool(
         title = "Live app: drag",
         description = "Live app: press-drag-release from one point/element to another (move clips, trim edges, scrub, resize panels, drop project items onto tracks).",
-        annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn ui_drag(&self, Parameters(p): Parameters<DragParams>) -> Result<CallToolResult, McpError> {
-        self.ui("ui.drag", json!({"from": p.from, "to": p.to, "steps": p.steps, "modifiers": p.modifiers})).await
+    async fn ui_drag(
+        &self,
+        Parameters(p): Parameters<DragParams>,
+    ) -> Result<CallToolResult, McpError> {
+        self.ui(
+            "ui.drag",
+            json!({"from": p.from, "to": p.to, "steps": p.steps, "modifiers": p.modifiers}),
+        )
+        .await
     }
 
     #[tool(
         title = "Live app: press a key",
         description = "Live app: press a key or shortcut (e.g. `Space`, `L`, `Cmd+K`, `Shift+Delete`, `Cmd+Z`).",
-        annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn ui_key(&self, Parameters(p): Parameters<KeyParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_key(
+        &self,
+        Parameters(p): Parameters<KeyParams>,
+    ) -> Result<CallToolResult, McpError> {
         self.ui("ui.key", json!({"key": p.key})).await
     }
 
     #[tool(
         title = "Live app: type text",
         description = "Live app: type text into the focused field.",
-        annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn ui_type(&self, Parameters(p): Parameters<TypeParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_type(
+        &self,
+        Parameters(p): Parameters<TypeParams>,
+    ) -> Result<CallToolResult, McpError> {
         self.ui("ui.type", json!({"text": p.text})).await
     }
 
     #[tool(
         title = "Live app: screenshot",
         description = "Live app: screenshot of the window or one panel (PNG).",
-        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
-    async fn ui_screenshot(&self, Parameters(p): Parameters<ShotParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_screenshot(
+        &self,
+        Parameters(p): Parameters<ShotParams>,
+    ) -> Result<CallToolResult, McpError> {
         match self.bridge_client() {
-            Some(b) => self.screenshot(&b, p.panel, p.max_side.unwrap_or(1600)).await,
+            Some(b) => {
+                self.screenshot(&b, p.panel, p.max_side.unwrap_or(1600))
+                    .await
+            }
             None => Ok(fail("ui_screenshot needs bridge mode")),
         }
     }
@@ -542,17 +716,36 @@ impl FilmcraftMcp {
     #[tool(
         title = "Live app: control-channel call",
         description = "Live app: call any control-channel method directly (ui.set, ui.scroll, ui.timeline.hit, ui.timeline.locate, ui.playback, ui.panel.show, ui.menu.list, …).",
-        annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
     )]
-    async fn ui_control(&self, Parameters(p): Parameters<ControlParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_control(
+        &self,
+        Parameters(p): Parameters<ControlParams>,
+    ) -> Result<CallToolResult, McpError> {
         self.ui(&p.method, p.params.unwrap_or(json!({}))).await
     }
 }
 
 impl FilmcraftMcp {
-    async fn screenshot(&self, b: &BridgeClient, panel: Option<String>, max: u32) -> Result<CallToolResult, McpError> {
+    async fn screenshot(
+        &self,
+        b: &BridgeClient,
+        panel: Option<String>,
+        max: u32,
+    ) -> Result<CallToolResult, McpError> {
         let path = std::env::temp_dir().join(format!("filmcraft-mcp-{}.png", std::process::id()));
-        if let Err(e) = b.call("ui.screenshot", json!({"path": path.to_string_lossy(), "panel": panel})).await {
+        if let Err(e) = b
+            .call(
+                "ui.screenshot",
+                json!({"path": path.to_string_lossy(), "panel": panel}),
+            )
+            .await
+        {
             return Ok(fail(e));
         }
         let bytes = match std::fs::read(&path) {
@@ -568,7 +761,10 @@ impl FilmcraftMcp {
             }
             Err(_) => bytes,
         };
-        Ok(png_result(&bytes, "screenshot of the live FilmCraft window"))
+        Ok(png_result(
+            &bytes,
+            "screenshot of the live FilmCraft window",
+        ))
     }
 }
 
@@ -576,11 +772,22 @@ impl FilmcraftMcp {
     /// The first argument `tool` doesn't take, as a message naming the ones it does.
     fn unknown_arg(&self, tool: &str, args: Option<&rmcp::model::JsonObject>) -> Option<String> {
         let def = self.tool_router.get(tool)?;
-        let props = def.input_schema.get("properties").and_then(Value::as_object).cloned().unwrap_or_default();
+        let props = def
+            .input_schema
+            .get("properties")
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
         let bad = args?.keys().find(|k| !props.contains_key(*k))?;
         let accepted: Vec<&str> = props.keys().map(String::as_str).collect();
-        let accepted = if accepted.is_empty() { "no arguments".to_string() } else { accepted.join(", ") };
-        Some(format!("unknown argument \"{bad}\" for {tool}; expected: {accepted}"))
+        let accepted = if accepted.is_empty() {
+            "no arguments".to_string()
+        } else {
+            accepted.join(", ")
+        };
+        Some(format!(
+            "unknown argument \"{bad}\" for {tool}; expected: {accepted}"
+        ))
     }
 }
 
@@ -593,16 +800,30 @@ const COMMANDS_URI: &str = "filmcraft://commands";
 /// MCP 2026-07-28 clients (current Claude Code) require `ttlMs` and `cacheScope` on list and read
 /// results; rmcp fills `resultType` and leaves the cache hints to the server, as the generated
 /// `tools/list` does. The resource list never changes; the document does, so reads aren't cached.
-fn cache_hints(context: &rmcp::service::RequestContext<rmcp::RoleServer>, ttl_ms: u64) -> Option<(u64, rmcp::model::CacheScope)> {
-    context.protocol_version().is_some_and(|v| v >= rmcp::model::ProtocolVersion::V_2026_07_28).then_some((ttl_ms, rmcp::model::CacheScope::Private))
+fn cache_hints(
+    context: &rmcp::service::RequestContext<rmcp::RoleServer>,
+    ttl_ms: u64,
+) -> Option<(u64, rmcp::model::CacheScope)> {
+    context
+        .protocol_version()
+        .is_some_and(|v| v >= rmcp::model::ProtocolVersion::V_2026_07_28)
+        .then_some((ttl_ms, rmcp::model::CacheScope::Private))
 }
 
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for FilmcraftMcp {
     fn get_info(&self) -> rmcp::model::ServerConfig {
-        rmcp::model::ServerConfig::new(rmcp::model::ServerCapabilities::builder().enable_tools().enable_resources().build())
-            .with_server_info(rmcp::model::Implementation::new("filmcraft", env!("CARGO_PKG_VERSION")))
-            .with_instructions(INSTRUCTIONS.to_string())
+        rmcp::model::ServerConfig::new(
+            rmcp::model::ServerCapabilities::builder()
+                .enable_tools()
+                .enable_resources()
+                .build(),
+        )
+        .with_server_info(rmcp::model::Implementation::new(
+            "filmcraft",
+            env!("CARGO_PKG_VERSION"),
+        ))
+        .with_instructions(INSTRUCTIONS.to_string())
     }
 
     /// Strict arguments and long exports in front of the tool router.
@@ -620,7 +841,11 @@ impl ServerHandler for FilmcraftMcp {
             && let Some(a) = &request.arguments
             && let Some(id) = a.get("id").and_then(Value::as_str)
         {
-            let params = a.get("params").cloned().filter(Value::is_object).unwrap_or_else(|| json!({}));
+            let params = a
+                .get("params")
+                .cloned()
+                .filter(Value::is_object)
+                .unwrap_or_else(|| json!({}));
             if crate::long_job::is_long(id, &params) {
                 return Ok(self.run_long(id, params, &context).await.into());
             }
@@ -659,11 +884,20 @@ impl ServerHandler for FilmcraftMcp {
         let v = match request.uri.as_str() {
             DOCUMENT_URI => self.document().await,
             COMMANDS_URI => self.run("command.list", json!({})).await,
-            other => return Err(McpError::resource_not_found(format!("resource not found: {other}"), None)),
+            other => {
+                return Err(McpError::resource_not_found(
+                    format!("resource not found: {other}"),
+                    None,
+                ));
+            }
         }
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-        let text = serde_json::to_string_pretty(&v).map_err(|e| McpError::internal_error(e.to_string(), None))?;
-        let mut r = rmcp::model::ReadResourceResult::new(vec![rmcp::model::ResourceContents::text(text, request.uri).with_mime_type("application/json")]);
+        let text = serde_json::to_string_pretty(&v)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        let mut r = rmcp::model::ReadResourceResult::new(vec![
+            rmcp::model::ResourceContents::text(text, request.uri)
+                .with_mime_type("application/json"),
+        ]);
         if let Some((ttl, scope)) = cache_hints(&context, 0) {
             r = r.with_ttl_ms(ttl).with_cache_scope(scope);
         }
@@ -696,9 +930,18 @@ mod tests {
         let mut s = Session::default();
         s.execute("file.openDemoProject", json!({})).unwrap();
         let m = FilmcraftMcp::headless(s);
-        let v = m.run("sequence.addEditAllTracks", json!({"seconds": 2.0})).await.unwrap();
+        let v = m
+            .run("sequence.addEditAllTracks", json!({"seconds": 2.0}))
+            .await
+            .unwrap();
         assert!(v["cuts"].as_u64().unwrap() >= 2);
-        let r = m.render_frame(Parameters(RenderParams { seconds: Some(1.0), max_side: Some(320) })).await.unwrap();
+        let r = m
+            .render_frame(Parameters(RenderParams {
+                seconds: Some(1.0),
+                max_side: Some(320),
+            }))
+            .await
+            .unwrap();
         assert_ne!(r.is_error, Some(true));
     }
 
@@ -708,15 +951,36 @@ mod tests {
     #[tokio::test]
     async fn rendering_at_a_time_does_not_move_the_playhead() {
         let m = FilmcraftMcp::headless(demo());
-        m.run("sequence.selectionFollowsPlayhead", json!({"on": true})).await.unwrap();
-        m.run("playhead.set", json!({"seconds": 1.0})).await.unwrap();
+        m.run("sequence.selectionFollowsPlayhead", json!({"on": true}))
+            .await
+            .unwrap();
+        m.run("playhead.set", json!({"seconds": 1.0}))
+            .await
+            .unwrap();
         let before = m.run("sequence.inspect", json!({})).await.unwrap();
         let png = |r: CallToolResult| serde_json::to_string(&r.content).unwrap();
-        let at_playhead = png(m.render_frame(Parameters(RenderParams { seconds: None, max_side: Some(64) })).await.unwrap());
+        let at_playhead = png(m
+            .render_frame(Parameters(RenderParams {
+                seconds: None,
+                max_side: Some(64),
+            }))
+            .await
+            .unwrap());
         for seconds in [5.0, 8.0] {
-            let r = m.render_frame(Parameters(RenderParams { seconds: Some(seconds), max_side: Some(64) })).await.unwrap();
+            let r = m
+                .render_frame(Parameters(RenderParams {
+                    seconds: Some(seconds),
+                    max_side: Some(64),
+                }))
+                .await
+                .unwrap();
             assert_ne!(png(r), at_playhead, "renders the frame at {seconds} s");
-            m.render_preview(Parameters(RenderParams { seconds: Some(seconds), max_side: Some(64) })).await.unwrap();
+            m.render_preview(Parameters(RenderParams {
+                seconds: Some(seconds),
+                max_side: Some(64),
+            }))
+            .await
+            .unwrap();
         }
         let after = m.run("sequence.inspect", json!({})).await.unwrap();
         assert_eq!(after["playhead"], before["playhead"]);
@@ -735,11 +999,17 @@ mod tests {
             let (tx, server_in) = tokio::io::duplex(1 << 22);
             let (server_out, rx) = tokio::io::duplex(1 << 22);
             tokio::spawn(FilmcraftMcp::headless(s).serve_io(server_in, server_out));
-            Self { tx, rx: tokio::io::BufReader::new(rx).lines() }
+            Self {
+                tx,
+                rx: tokio::io::BufReader::new(rx).lines(),
+            }
         }
         async fn send(&mut self, line: &str) {
             use tokio::io::AsyncWriteExt;
-            self.tx.write_all(format!("{line}\n").as_bytes()).await.unwrap();
+            self.tx
+                .write_all(format!("{line}\n").as_bytes())
+                .await
+                .unwrap();
         }
         async fn next(&mut self) -> Value {
             serde_json::from_str(&self.rx.next_line().await.unwrap().unwrap()).unwrap()
@@ -750,7 +1020,8 @@ mod tests {
         }
         async fn init(&mut self) -> Value {
             let r = self.ask(json!({"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"t","version":"1"}}})).await;
-            self.send(&json!({"jsonrpc":"2.0","method":"notifications/initialized"}).to_string()).await;
+            self.send(&json!({"jsonrpc":"2.0","method":"notifications/initialized"}).to_string())
+                .await;
             r
         }
         async fn call(&mut self, id: u64, name: &str, arguments: Value) -> Value {
@@ -765,9 +1036,21 @@ mod tests {
         let def = m.tool_router.get("media_import").unwrap();
         let schema = Value::Object((*def.input_schema).clone());
         assert_eq!(schema["properties"]["paths"]["type"], "array", "{schema}");
-        assert!(schema["required"].as_array().unwrap().iter().any(|r| r == "paths"), "{schema}");
-        let p: MediaImportParams = serde_json::from_value(json!({"paths": ["/a.png"], "bin": 7, "image_sequence": true})).unwrap();
-        assert_eq!(media_import_params(p), json!({"paths": ["/a.png"], "bin": 7, "imageSequence": true}));
+        assert!(
+            schema["required"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|r| r == "paths"),
+            "{schema}"
+        );
+        let p: MediaImportParams =
+            serde_json::from_value(json!({"paths": ["/a.png"], "bin": 7, "image_sequence": true}))
+                .unwrap();
+        assert_eq!(
+            media_import_params(p),
+            json!({"paths": ["/a.png"], "bin": 7, "imageSequence": true})
+        );
         let p: MediaImportParams = serde_json::from_value(json!({"paths": ["/a.wav"]})).unwrap();
         assert_eq!(media_import_params(p), json!({"paths": ["/a.wav"]}));
         assert!(serde_json::from_value::<MediaImportParams>(json!({"text": "/a.wav"})).is_err());
@@ -785,19 +1068,46 @@ mod tests {
         let mut c = Client::start(demo());
         let init = c.init().await;
         assert_eq!(init["result"]["serverInfo"]["name"], "filmcraft");
-        let tools = c.ask(json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})).await["result"]["tools"].as_array().cloned().unwrap();
+        let tools = c
+            .ask(json!({"jsonrpc":"2.0","id":1,"method":"tools/list"}))
+            .await["result"]["tools"]
+            .as_array()
+            .cloned()
+            .unwrap();
         for t in &tools {
             assert!(t["title"].is_string(), "{} has no title", t["name"]);
-            for h in ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"] {
+            for h in [
+                "readOnlyHint",
+                "destructiveHint",
+                "idempotentHint",
+                "openWorldHint",
+            ] {
                 assert!(t["annotations"][h].is_boolean(), "{} lacks {h}", t["name"]);
             }
         }
         let names: Vec<&str> = tools.iter().filter_map(|t| t["name"].as_str()).collect();
-        for want in ["command_list", "command_run", "command_batch", "doc_inspect", "render_preview", "project_inspect", "render_frame", "ui_click"] {
+        for want in [
+            "command_list",
+            "command_run",
+            "command_batch",
+            "doc_inspect",
+            "render_preview",
+            "project_inspect",
+            "render_frame",
+            "ui_click",
+        ] {
             assert!(names.contains(&want), "{want} not listed");
         }
-        let ro = |n: &str| tools.iter().find(|t| t["name"] == n).map(|t| t["annotations"]["readOnlyHint"].clone());
-        assert_eq!((ro("command_list"), ro("command_run")), (Some(json!(true)), Some(json!(false))));
+        let ro = |n: &str| {
+            tools
+                .iter()
+                .find(|t| t["name"] == n)
+                .map(|t| t["annotations"]["readOnlyHint"].clone())
+        };
+        assert_eq!(
+            (ro("command_list"), ro("command_run")),
+            (Some(json!(true)), Some(json!(false)))
+        );
     }
 
     /// Strict arguments, malformed JSON, batch, doc_inspect and render_preview over the raw line
@@ -806,32 +1116,67 @@ mod tests {
     async fn strict_arguments_and_parse_errors() {
         let mut c = Client::start(demo());
         c.init().await;
-        let r = c.call(1, "command_list", json!({"filter": "razor", "enabled_only": true})).await;
-        assert!(r["result"]["content"][0]["text"].as_str().unwrap().contains("timeline.razor"), "{r}");
+        let r = c
+            .call(
+                1,
+                "command_list",
+                json!({"filter": "razor", "enabled_only": true}),
+            )
+            .await;
+        assert!(
+            r["result"]["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("timeline.razor"),
+            "{r}"
+        );
         // an unknown argument names itself and the accepted ones
         let r = c.call(2, "command_list", json!({"filtr": "x"})).await;
         assert_eq!(r["error"]["code"], -32602, "{r}");
         let m = r["error"]["message"].as_str().unwrap();
-        assert!(m.contains("\"filtr\"") && m.contains("filter") && m.contains("enabled_only"), "{m}");
+        assert!(
+            m.contains("\"filtr\"") && m.contains("filter") && m.contains("enabled_only"),
+            "{m}"
+        );
         let r = c.call(3, "doc_inspect", json!({"verbose": true})).await;
         assert_eq!(r["error"]["code"], -32602, "{r}");
         // command params stay free-form
-        let r = c.call(4, "command_run", json!({"id": "playhead.set", "params": {"seconds": 0.5}})).await;
+        let r = c
+            .call(
+                4,
+                "command_run",
+                json!({"id": "playhead.set", "params": {"seconds": 0.5}}),
+            )
+            .await;
         assert_eq!(r["result"]["isError"], false, "{r}");
         // malformed JSON: a parse error, and the server keeps serving
         c.send("{\"jsonrpc\": \"2.0\", \"id\": 5, BROKEN").await;
         let r = c.next().await;
-        assert_eq!((r["error"]["code"].as_i64(), r["id"].is_null()), (Some(-32700), true), "{r}");
+        assert_eq!(
+            (r["error"]["code"].as_i64(), r["id"].is_null()),
+            (Some(-32700), true),
+            "{r}"
+        );
         let r = c.ask(json!({"jsonrpc":"2.0","id":6,"method":"ping"})).await;
         assert!(r["result"].is_object(), "{r}");
         // batch: stops at the first failure and reports both
         let r =
             c.call(7, "command_batch", json!({"steps": [{"id": "playhead.set", "params": {"seconds": 0.5}}, {"id": "no.such"}, {"id": "playhead.set"}]})).await;
         assert_eq!(r["result"]["isError"], true, "{r}");
-        let v: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-        assert_eq!((v["completed"].as_u64(), v["failed"].as_u64(), v["results"].as_array().map(Vec::len)), (Some(1), Some(1), Some(2)), "{v}");
+        let v: Value =
+            serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+        assert_eq!(
+            (
+                v["completed"].as_u64(),
+                v["failed"].as_u64(),
+                v["results"].as_array().map(Vec::len)
+            ),
+            (Some(1), Some(1), Some(2)),
+            "{v}"
+        );
         let r = c.call(8, "doc_inspect", json!({})).await;
-        let v: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+        let v: Value =
+            serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
         assert!(v["project"].is_object() && v["sequence"].is_object(), "{v}");
         let r = c.call(9, "render_preview", json!({"max_side": 64})).await;
         assert_eq!(r["result"]["content"][0]["type"], "image", "{r}");
@@ -842,17 +1187,43 @@ mod tests {
     async fn resources_document_and_commands() {
         let mut c = Client::start(demo());
         let init = c.init().await;
-        assert!(init["result"]["capabilities"]["resources"].is_object(), "{init}");
-        assert!(init["result"]["instructions"].as_str().unwrap().contains("doc_inspect"), "{init}");
-        let r = c.ask(json!({"jsonrpc":"2.0","id":1,"method":"resources/list"})).await;
-        let uris: Vec<&str> = r["result"]["resources"].as_array().unwrap().iter().filter_map(|x| x["uri"].as_str()).collect();
+        assert!(
+            init["result"]["capabilities"]["resources"].is_object(),
+            "{init}"
+        );
+        assert!(
+            init["result"]["instructions"]
+                .as_str()
+                .unwrap()
+                .contains("doc_inspect"),
+            "{init}"
+        );
+        let r = c
+            .ask(json!({"jsonrpc":"2.0","id":1,"method":"resources/list"}))
+            .await;
+        let uris: Vec<&str> = r["result"]["resources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|x| x["uri"].as_str())
+            .collect();
         assert_eq!(uris, [DOCUMENT_URI, COMMANDS_URI], "{r}");
         let r = c.ask(json!({"jsonrpc":"2.0","id":2,"method":"resources/read","params":{"uri":DOCUMENT_URI}})).await;
-        assert_eq!(r["result"]["contents"][0]["mimeType"], "application/json", "{r}");
-        let v: Value = serde_json::from_str(r["result"]["contents"][0]["text"].as_str().unwrap()).unwrap();
+        assert_eq!(
+            r["result"]["contents"][0]["mimeType"], "application/json",
+            "{r}"
+        );
+        let v: Value =
+            serde_json::from_str(r["result"]["contents"][0]["text"].as_str().unwrap()).unwrap();
         assert!(v["project"].is_object() && v["sequence"].is_object(), "{v}");
         let r = c.ask(json!({"jsonrpc":"2.0","id":3,"method":"resources/read","params":{"uri":COMMANDS_URI}})).await;
-        assert!(r["result"]["contents"][0]["text"].as_str().unwrap().contains("timeline.razor"), "{r}");
+        assert!(
+            r["result"]["contents"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("timeline.razor"),
+            "{r}"
+        );
         let r = c.ask(json!({"jsonrpc":"2.0","id":4,"method":"resources/read","params":{"uri":"filmcraft://nope"}})).await;
         assert!(r["error"]["code"].is_i64(), "{r}");
     }
@@ -868,23 +1239,54 @@ mod tests {
             "io.modelcontextprotocol/clientInfo": {"name": "t", "version": "1"},
             "io.modelcontextprotocol/clientCapabilities": {},
         });
-        let r = c.ask(json!({"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":meta}})).await;
-        assert!(r["result"]["supportedVersions"].as_array().unwrap().contains(&json!("2026-07-28")), "{r}");
+        let r = c
+            .ask(json!({"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":meta}}))
+            .await;
+        assert!(
+            r["result"]["supportedVersions"]
+                .as_array()
+                .unwrap()
+                .contains(&json!("2026-07-28")),
+            "{r}"
+        );
         for (id, method, params) in [
             (2, "tools/list", json!({"_meta": meta})),
             (3, "resources/list", json!({"_meta": meta})),
-            (4, "resources/read", json!({"_meta": meta, "uri": DOCUMENT_URI})),
+            (
+                4,
+                "resources/read",
+                json!({"_meta": meta, "uri": DOCUMENT_URI}),
+            ),
         ] {
-            let r = c.ask(json!({"jsonrpc":"2.0","id":id,"method":method,"params":params})).await;
+            let r = c
+                .ask(json!({"jsonrpc":"2.0","id":id,"method":method,"params":params}))
+                .await;
             assert_eq!(r["result"]["resultType"], "complete", "{method}: {r}");
             assert!(r["result"]["ttlMs"].is_u64(), "{method}: {r}");
-            assert!(matches!(r["result"]["cacheScope"].as_str(), Some("public" | "private")), "{method}: {r}");
+            assert!(
+                matches!(
+                    r["result"]["cacheScope"].as_str(),
+                    Some("public" | "private")
+                ),
+                "{method}: {r}"
+            );
         }
         let mut c = Client::start(Session::default());
         c.init().await;
-        for (id, method, params) in [(2, "tools/list", json!({})), (3, "resources/list", json!({})), (4, "resources/read", json!({"uri": DOCUMENT_URI}))] {
-            let r = c.ask(json!({"jsonrpc":"2.0","id":id,"method":method,"params":params})).await;
-            assert!(r["result"].is_object() && r["result"].get("resultType").is_none() && r["result"].get("ttlMs").is_none(), "{method}: {r}");
+        for (id, method, params) in [
+            (2, "tools/list", json!({})),
+            (3, "resources/list", json!({})),
+            (4, "resources/read", json!({"uri": DOCUMENT_URI})),
+        ] {
+            let r = c
+                .ask(json!({"jsonrpc":"2.0","id":id,"method":method,"params":params}))
+                .await;
+            assert!(
+                r["result"].is_object()
+                    && r["result"].get("resultType").is_none()
+                    && r["result"].get("ttlMs").is_none(),
+                "{method}: {r}"
+            );
         }
     }
 
@@ -893,15 +1295,15 @@ mod tests {
     /// it, deletes the partial file and sends no response.
     #[tokio::test(flavor = "multi_thread")]
     async fn export_progress_and_cancel() {
-        let dir = std::env::temp_dir().join(format!("filmcraft-mcp-progress-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("filmcraft-mcp-progress-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let mut c = Client::start(demo());
         c.init().await;
         let export = |id: u64, name: &str, token: Option<Value>, seconds: f64| {
             let path = dir.join(name).to_string_lossy().to_string();
             let params = json!({"path": path, "format": "h264", "width": 640, "height": 360, "audio": false, "range": "custom", "startSeconds": 0, "endSeconds": seconds, "wait": true});
-            let mut call =
-                json!({"jsonrpc":"2.0","id":id,"method":"tools/call","params":{"name":"command_run","arguments":{"id":"file.exportMedia","params":params}}});
+            let mut call = json!({"jsonrpc":"2.0","id":id,"method":"tools/call","params":{"name":"command_run","arguments":{"id":"file.exportMedia","params":params}}});
             if let Some(t) = token {
                 call["params"]["_meta"] = json!({"progressToken": t});
             }
@@ -910,14 +1312,23 @@ mod tests {
         // no token: no notifications, the same response as before
         c.send(&export(1, "quiet.mp4", None, 0.5)).await;
         let m = c.next().await;
-        assert_eq!((m["id"].as_u64(), &m["result"]["isError"]), (Some(1), &json!(false)), "{m}");
+        assert_eq!(
+            (m["id"].as_u64(), &m["result"]["isError"]),
+            (Some(1), &json!(false)),
+            "{m}"
+        );
         // progress, strictly increasing, with a total; ping answered while the export runs. The
         // job is polled every 100 ms, so a fast machine finishes a short export within one poll:
         // a longer one is tried until the export outlasts a few polls.
         let (mut notes, mut pong) = (0, false);
         for (attempt, seconds) in [1.0, 4.0, 16.0].into_iter().enumerate() {
-            let (id, ping, name) = (20 + attempt as u64, 30 + attempt as u64, format!("a{attempt}.mp4"));
-            c.send(&export(id, &name, Some(json!("tok")), seconds)).await;
+            let (id, ping, name) = (
+                20 + attempt as u64,
+                30 + attempt as u64,
+                format!("a{attempt}.mp4"),
+            );
+            c.send(&export(id, &name, Some(json!("tok")), seconds))
+                .await;
             let (mut last, mut pinged) = (-1.0, false);
             (notes, pong) = (0, false);
             let done = loop {
@@ -925,12 +1336,18 @@ mod tests {
                 if m["method"] == "notifications/progress" {
                     assert_eq!(m["params"]["progressToken"], "tok", "{m}");
                     let p = m["params"]["progress"].as_f64().unwrap();
-                    assert!(p > last && m["params"]["total"].as_f64().unwrap() >= p, "{m}");
+                    assert!(
+                        p > last && m["params"]["total"].as_f64().unwrap() >= p,
+                        "{m}"
+                    );
                     last = p;
                     notes += 1;
                     if !pinged {
                         pinged = true;
-                        c.send(&json!({"jsonrpc": "2.0", "id": ping, "method": "ping"}).to_string()).await;
+                        c.send(
+                            &json!({"jsonrpc": "2.0", "id": ping, "method": "ping"}).to_string(),
+                        )
+                        .await;
                     }
                 } else if m["id"] == ping {
                     pong = true;
@@ -939,7 +1356,10 @@ mod tests {
                 }
             };
             assert_eq!(done["result"]["isError"], false, "{done}");
-            assert!(notes >= 1, "a finished export reports its progress at least once");
+            assert!(
+                notes >= 1,
+                "a finished export reports its progress at least once"
+            );
             assert!(dir.join(&name).exists());
             if notes >= 2 && pong {
                 break;
@@ -950,7 +1370,10 @@ mod tests {
             }
             pong = false;
         }
-        assert!(notes >= 2 && pong, "{notes} notifications, ping answered during the export: {pong}");
+        assert!(
+            notes >= 2 && pong,
+            "{notes} notifications, ping answered during the export: {pong}"
+        );
         // cancel after the first notification: no response, no partial file
         c.send(&export(4, "b.mp4", Some(json!(7)), 20.0)).await;
         loop {
@@ -960,7 +1383,8 @@ mod tests {
                 break;
             }
         }
-        c.send(r#"{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":4}}"#).await;
+        c.send(r#"{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":4}}"#)
+            .await;
         let t0 = std::time::Instant::now();
         while dir.join("b.mp4").exists() || t0.elapsed() < std::time::Duration::from_millis(500) {
             assert!(t0.elapsed().as_secs() < 30, "partial file still there");
@@ -974,8 +1398,13 @@ mod tests {
                 break m;
             }
         };
-        let jobs: Value = serde_json::from_str(m["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-        let last = jobs.as_array().and_then(|a| a.last()).cloned().unwrap_or_default();
+        let jobs: Value =
+            serde_json::from_str(m["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+        let last = jobs
+            .as_array()
+            .and_then(|a| a.last())
+            .cloned()
+            .unwrap_or_default();
         assert_eq!(last["result"]["error"], "cancelled", "{jobs}");
         assert!(!dir.join("b.mp4").exists());
         let _ = std::fs::remove_dir_all(&dir);
@@ -986,7 +1415,9 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn a_poisoned_session_lock_keeps_serving() {
         let m = FilmcraftMcp::headless(demo());
-        let Backend::Headless(s) = &*m.backend else { panic!("headless backend") };
+        let Backend::Headless(s) = &*m.backend else {
+            panic!("headless backend")
+        };
         let s = s.clone();
         let _ = std::thread::spawn(move || {
             let _g = s.lock().unwrap();
@@ -995,7 +1426,13 @@ mod tests {
         .join();
         let v = m.run("sequence.inspect", json!({})).await.unwrap();
         assert!(v.is_object(), "{v}");
-        let r = m.render_frame(Parameters(RenderParams { seconds: Some(0.5), max_side: Some(64) })).await.unwrap();
+        let r = m
+            .render_frame(Parameters(RenderParams {
+                seconds: Some(0.5),
+                max_side: Some(64),
+            }))
+            .await
+            .unwrap();
         assert_ne!(r.is_error, Some(true));
     }
 }

@@ -132,7 +132,7 @@ impl CtrlKind {
             CtrlKind::CameraCtrl => None,
             CtrlKind::CameraAnimeCtrl | CtrlKind::GameCameraBlender | CtrlKind::GameCameraCtrl => {
                 Some(CtrlKind::CameraCtrl)
-            },
+            }
             CtrlKind::Chase | CtrlKind::ChaseSoccer => Some(CtrlKind::ChaseBase),
             _ => Some(CtrlKind::GameCameraCtrl),
         }
@@ -244,7 +244,11 @@ impl CameraState {
         let r0 = normalize(cross(f, up0));
         let u0 = cross(r0, f);
         let (s, c) = (roll.sin(), roll.cos());
-        let up = [u0[0] * c + r0[0] * s, u0[1] * c + r0[1] * s, u0[2] * c + r0[2] * s];
+        let up = [
+            u0[0] * c + r0[0] * s,
+            u0[1] * c + r0[1] * s,
+            u0[2] * c + r0[2] * s,
+        ];
         let r = normalize(cross(f, up));
         let u = cross(r, f);
         (f, r, u)
@@ -305,7 +309,11 @@ impl CameraState {
         let t = t.clamp(0.0, 1.0);
         let l = |x: f32, y: f32| x + (y - x) * t;
         CameraState {
-            pos: [l(a.pos[0], b.pos[0]), l(a.pos[1], b.pos[1]), l(a.pos[2], b.pos[2])],
+            pos: [
+                l(a.pos[0], b.pos[0]),
+                l(a.pos[1], b.pos[1]),
+                l(a.pos[2], b.pos[2]),
+            ],
             ref_pos: [
                 l(a.ref_pos[0], b.ref_pos[0]),
                 l(a.ref_pos[1], b.ref_pos[1]),
@@ -346,14 +354,22 @@ pub fn dot(a: V3, b: V3) -> f32 {
 /// Produit vectoriel.
 #[must_use]
 pub fn cross(a: V3, b: V3) -> V3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 /// Normalise (renvoie le vecteur tel quel s'il est nul).
 #[must_use]
 pub fn normalize(a: V3) -> V3 {
     let n = dot(a, a).sqrt();
-    if n <= f32::EPSILON { a } else { scale(a, 1.0 / n) }
+    if n <= f32::EPSILON {
+        a
+    } else {
+        scale(a, 1.0 / n)
+    }
 }
 
 #[cfg(test)]
@@ -472,7 +488,10 @@ mod tests {
     #[test]
     fn lerp_borne() {
         let a = CameraState::default();
-        let b = CameraState { fov_deg: 90.0, ..CameraState::default() };
+        let b = CameraState {
+            fov_deg: 90.0,
+            ..CameraState::default()
+        };
         assert_eq!(CameraState::lerp(&a, &b, -1.0).fov_deg, 45.0);
         assert_eq!(CameraState::lerp(&a, &b, 2.0).fov_deg, 90.0);
         assert!((CameraState::lerp(&a, &b, 0.5).fov_deg - 67.5).abs() < 1e-4);

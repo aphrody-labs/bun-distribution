@@ -56,7 +56,14 @@ impl Warp {
         let style = d.enum_value("warpStyle").unwrap_or("warpNone").to_string();
         let b = d.obj("bounds");
         let bounds = b
-            .map(|b| [b.num("Left").unwrap_or(0.0), b.num("Top ").unwrap_or(0.0), b.num("Rght").unwrap_or(0.0), b.num("Btom").unwrap_or(0.0)])
+            .map(|b| {
+                [
+                    b.num("Left").unwrap_or(0.0),
+                    b.num("Top ").unwrap_or(0.0),
+                    b.num("Rght").unwrap_or(0.0),
+                    b.num("Btom").unwrap_or(0.0),
+                ]
+            })
             .unwrap_or([0.0; 4]);
         let mut w = Warp {
             bend: d.num("warpValue").unwrap_or(0.0),
@@ -70,8 +77,14 @@ impl Warp {
             style,
         };
         if let Some(env) = d.obj("customEnvelopeWarp") {
-            let cols = floats(env.get("quiltSliceX")).len().saturating_sub(1).max(1);
-            let rows = floats(env.get("quiltSliceY")).len().saturating_sub(1).max(1);
+            let cols = floats(env.get("quiltSliceX"))
+                .len()
+                .saturating_sub(1)
+                .max(1);
+            let rows = floats(env.get("quiltSliceY"))
+                .len()
+                .saturating_sub(1)
+                .max(1);
             if let Some(DValue::ObjectArray(_, pts)) = env.get("meshPoints") {
                 let xs = floats(pts.get("Hrzn"));
                 let ys = floats(pts.get("Vrtc"));
@@ -83,29 +96,49 @@ impl Warp {
                 }
             }
         }
-        let identity = w.style == "warpNone" || (w.style != "warpCustom" && w.bend == 0.0 && w.horizontal == 0.0 && w.vertical == 0.0);
+        let identity = w.style == "warpNone"
+            || (w.style != "warpCustom"
+                && w.bend == 0.0
+                && w.horizontal == 0.0
+                && w.vertical == 0.0);
         let custom_ok = w.style != "warpCustom" || !w.mesh.is_empty();
         (!identity && custom_ok).then_some(w)
     }
 
     /// The warp of a content point (content pixels → content pixels).
     pub fn apply(&self, p: [f64; 2], w: f64, h: f64) -> [f64; 2] {
-        let [l, t, r, b] = if self.bounds[2] > self.bounds[0] && self.bounds[3] > self.bounds[1] { self.bounds } else { [0.0, 0.0, w, h] };
+        let [l, t, r, b] = if self.bounds[2] > self.bounds[0] && self.bounds[3] > self.bounds[1] {
+            self.bounds
+        } else {
+            [0.0, 0.0, w, h]
+        };
         let (bw, bh) = (r - l, b - t);
         let (u, v) = ((p[0] - l) / bw, (p[1] - t) / bh);
         if self.style == "warpCustom" {
             return self.mesh_point(u.clamp(0.0, 1.0), v.clamp(0.0, 1.0));
         }
         // Styles work in a centred frame (pixels), optionally rotated a quarter turn.
-        let (x, y, fw, fh) = if self.rotate_vertical { (bh * (v - 0.5), -bw * (u - 0.5), bh, bw) } else { (bw * (u - 0.5), bh * (v - 0.5), bw, bh) };
+        let (x, y, fw, fh) = if self.rotate_vertical {
+            (bh * (v - 0.5), -bw * (u - 0.5), bh, bw)
+        } else {
+            (bw * (u - 0.5), bh * (v - 0.5), bw, bh)
+        };
         let [mut x2, mut y2] = style_map(&self.style, self.bend / 100.0, x, y, fw, fh);
         // Distortions: a perspective-like taper across the width (horizontal) or height.
-        let (hd, vd) = if self.rotate_vertical { (self.vertical / 100.0, self.horizontal / 100.0) } else { (self.horizontal / 100.0, self.vertical / 100.0) };
+        let (hd, vd) = if self.rotate_vertical {
+            (self.vertical / 100.0, self.horizontal / 100.0)
+        } else {
+            (self.horizontal / 100.0, self.vertical / 100.0)
+        };
         let s = (x2 / (fw / 2.0)).clamp(-1.5, 1.5);
         let tt = (y2 / (fh / 2.0)).clamp(-1.5, 1.5);
         y2 *= 1.0 + hd * s;
         x2 *= 1.0 + vd * tt;
-        let (ox, oy) = if self.rotate_vertical { (-y2, x2) } else { (x2, y2) };
+        let (ox, oy) = if self.rotate_vertical {
+            (-y2, x2)
+        } else {
+            (x2, y2)
+        };
         [l + bw / 2.0 + ox, t + bh / 2.0 + oy]
     }
 
@@ -168,17 +201,39 @@ fn style_map(style: &str, b: f64, x: f64, y: f64, fw: f64, fh: f64) -> [f64; 2] 
         }
         "warpArch" => [x, y - b * hh * bump],
         "warpBulge" => [x, y + t * b * hh * bump],
-        "warpShellLower" => [x * (1.0 - b * 0.25 * (1.0 - t) / 2.0), y + (t + 1.0) / 2.0 * b * hh * bump],
-        "warpShellUpper" => [x * (1.0 - b * 0.25 * (t + 1.0) / 2.0), y - (1.0 - t) / 2.0 * b * hh * bump],
+        "warpShellLower" => [
+            x * (1.0 - b * 0.25 * (1.0 - t) / 2.0),
+            y + (t + 1.0) / 2.0 * b * hh * bump,
+        ],
+        "warpShellUpper" => [
+            x * (1.0 - b * 0.25 * (t + 1.0) / 2.0),
+            y - (1.0 - t) / 2.0 * b * hh * bump,
+        ],
         "warpFlag" => [x, y - b * hh * 0.5 * (PI * s).sin()],
-        "warpWave" => [x + b * hw * 0.1 * (PI * t).sin(), y - b * hh * 0.5 * (PI * s).sin() * (1.0 - 0.5 * t)],
-        "warpFish" => [x, y + t * b * hh * (PI * (s + 1.0) / 2.0).sin() * (1.0 - 0.5 * (s + 1.0) / 2.0)],
+        "warpWave" => [
+            x + b * hw * 0.1 * (PI * t).sin(),
+            y - b * hh * 0.5 * (PI * s).sin() * (1.0 - 0.5 * t),
+        ],
+        "warpFish" => [
+            x,
+            y + t * b * hh * (PI * (s + 1.0) / 2.0).sin() * (1.0 - 0.5 * (s + 1.0) / 2.0),
+        ],
         "warpRise" => [x, y - b * hh * (PI * s / 2.0).sin()],
         "warpFisheye" | "warpInflate" => {
-            let k = if style == "warpFisheye" { (1.0 - (s * s + t * t) / 2.0).max(0.0) } else { 1.0 };
-            [x * (1.0 + b * 0.5 * k * (1.0 - t * t)), y * (1.0 + b * 0.5 * k * bump)]
+            let k = if style == "warpFisheye" {
+                (1.0 - (s * s + t * t) / 2.0).max(0.0)
+            } else {
+                1.0
+            };
+            [
+                x * (1.0 + b * 0.5 * k * (1.0 - t * t)),
+                y * (1.0 + b * 0.5 * k * bump),
+            ]
         }
-        "warpSqueeze" => [x * (1.0 - b * 0.5 * (1.0 - t * t)), y * (1.0 + b * 0.5 * bump)],
+        "warpSqueeze" => [
+            x * (1.0 - b * 0.5 * (1.0 - t * t)),
+            y * (1.0 + b * 0.5 * bump),
+        ],
         "warpTwist" => {
             let r = ((s * s + t * t) / 2.0).sqrt().min(1.0);
             let a = b * PI / 2.0 * (1.0 - r);
@@ -196,14 +251,22 @@ fn square_to_quad(q: [[f64; 2]; 4]) -> [[f64; 3]; 3] {
     let sx = p0[0] - p1[0] + p2[0] - p3[0];
     let sy = p0[1] - p1[1] + p2[1] - p3[1];
     if sx.abs() < 1e-12 && sy.abs() < 1e-12 {
-        return [[p1[0] - p0[0], p2[0] - p1[0], p0[0]], [p1[1] - p0[1], p2[1] - p1[1], p0[1]], [0.0, 0.0, 1.0]];
+        return [
+            [p1[0] - p0[0], p2[0] - p1[0], p0[0]],
+            [p1[1] - p0[1], p2[1] - p1[1], p0[1]],
+            [0.0, 0.0, 1.0],
+        ];
     }
     let (dx1, dx2) = (p1[0] - p2[0], p3[0] - p2[0]);
     let (dy1, dy2) = (p1[1] - p2[1], p3[1] - p2[1]);
     let den = dx1 * dy2 - dx2 * dy1;
     let g = (sx * dy2 - dx2 * sy) / den;
     let h = (dx1 * sy - sx * dy1) / den;
-    [[p1[0] - p0[0] + g * p1[0], p3[0] - p0[0] + h * p3[0], p0[0]], [p1[1] - p0[1] + g * p1[1], p3[1] - p0[1] + h * p3[1], p0[1]], [g, h, 1.0]]
+    [
+        [p1[0] - p0[0] + g * p1[0], p3[0] - p0[0] + h * p3[0], p0[0]],
+        [p1[1] - p0[1] + g * p1[1], p3[1] - p0[1] + h * p3[1], p0[1]],
+        [g, h, 1.0],
+    ]
 }
 
 impl SmartObject {
@@ -230,7 +293,10 @@ impl SmartObject {
         let (u, v) = (p[0] / w.max(1e-9), p[1] / h.max(1e-9));
         let z = m[2][0] * u + m[2][1] * v + m[2][2];
         let z = if z.abs() < 1e-12 { 1e-12 } else { z };
-        [(m[0][0] * u + m[0][1] * v + m[0][2]) / z, (m[1][0] * u + m[1][1] * v + m[1][2]) / z]
+        [
+            (m[0][0] * u + m[0][1] * v + m[0][2]) / z,
+            (m[1][0] * u + m[1][1] * v + m[1][2]) / z,
+        ]
     }
 
     /// The document-space bounds (x0, y0, x1, y1) of the placed (warped) content.
@@ -240,7 +306,12 @@ impl SmartObject {
         for j in 0..=n {
             for i in 0..=n {
                 let p = self.map([i as f64 / n as f64 * w, j as f64 / n as f64 * h], w, h);
-                b = [b[0].min(p[0]), b[1].min(p[1]), b[2].max(p[0]), b[3].max(p[1])];
+                b = [
+                    b[0].min(p[0]),
+                    b[1].min(p[1]),
+                    b[2].max(p[0]),
+                    b[3].max(p[1]),
+                ];
             }
         }
         [b[0].floor(), b[1].floor(), b[2].ceil(), b[3].ceil()]
@@ -249,13 +320,21 @@ impl SmartObject {
     /// The baked size for a `w`×`h` content at `k` pixels per document pixel.
     pub fn placed_size(&self, w: f64, h: f64, k: f64) -> (u32, u32) {
         let bb = self.placed_bounds(w, h);
-        (((bb[2] - bb[0]) * k).ceil().clamp(1.0, 16384.0) as u32, ((bb[3] - bb[1]) * k).ceil().clamp(1.0, 16384.0) as u32)
+        (
+            ((bb[2] - bb[0]) * k).ceil().clamp(1.0, 16384.0) as u32,
+            ((bb[3] - bb[1]) * k).ceil().clamp(1.0, 16384.0) as u32,
+        )
     }
 
     /// Bake the content (straight RGBA) as placed: warped and mapped by the quad, rendered at
     /// `k` pixels per document pixel (into `size` pixels when given; see [`Self::placed_size`]).
     /// Returns the pixels and their document-space origin.
-    pub fn render_placed(&self, content: &Pixels, k: f64, size: Option<(u32, u32)>) -> Option<(Pixels, [f64; 2])> {
+    pub fn render_placed(
+        &self,
+        content: &Pixels,
+        k: f64,
+        size: Option<(u32, u32)>,
+    ) -> Option<(Pixels, [f64; 2])> {
         let (cw, ch) = (content.width as f64, content.height as f64);
         if content.width == 0 || content.height == 0 {
             return None;
@@ -280,9 +359,15 @@ impl SmartObject {
         }
         let mut out = vec![[0.0f32; 4]; ow * oh];
         let sample = |x: f64, y: f64| -> [f32; 4] {
-            let (fx, fy) = ((x - 0.5).clamp(0.0, cw - 1.0), (y - 0.5).clamp(0.0, ch - 1.0));
+            let (fx, fy) = (
+                (x - 0.5).clamp(0.0, cw - 1.0),
+                (y - 0.5).clamp(0.0, ch - 1.0),
+            );
             let (x0, y0) = (fx.floor() as usize, fy.floor() as usize);
-            let (x1, y1) = ((x0 + 1).min(content.width as usize - 1), (y0 + 1).min(content.height as usize - 1));
+            let (x1, y1) = (
+                (x0 + 1).min(content.width as usize - 1),
+                (y0 + 1).min(content.height as usize - 1),
+            );
             let (a, b) = ((fx - x0 as f64) as f32, (fy - y0 as f64) as f32);
             let at = |x: usize, y: usize| {
                 let p = content.data[y * content.width as usize + x];
@@ -291,14 +376,18 @@ impl SmartObject {
             let (p00, p10, p01, p11) = (at(x0, y0), at(x1, y0), at(x0, y1), at(x1, y1));
             let mut o = [0.0; 4];
             for c in 0..4 {
-                o[c] = (p00[c] * (1.0 - a) + p10[c] * a) * (1.0 - b) + (p01[c] * (1.0 - a) + p11[c] * a) * b;
+                o[c] = (p00[c] * (1.0 - a) + p10[c] * a) * (1.0 - b)
+                    + (p01[c] * (1.0 - a) + p11[c] * a) * b;
             }
             o
         };
         let idx = |i: usize, j: usize| j * (n + 1) + i;
         for j in 0..n {
             for i in 0..n {
-                for tri in [[idx(i, j), idx(i + 1, j), idx(i + 1, j + 1)], [idx(i, j), idx(i + 1, j + 1), idx(i, j + 1)]] {
+                for tri in [
+                    [idx(i, j), idx(i + 1, j), idx(i + 1, j + 1)],
+                    [idx(i, j), idx(i + 1, j + 1), idx(i, j + 1)],
+                ] {
                     let [a, b, c] = tri.map(|t| dst[t]);
                     let den = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]);
                     if den.abs() < 1e-12 {
@@ -311,8 +400,10 @@ impl SmartObject {
                     for y in y0..y1 {
                         for x in x0..x1 {
                             let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
-                            let l1 = ((b[1] - c[1]) * (px - c[0]) + (c[0] - b[0]) * (py - c[1])) / den;
-                            let l2 = ((c[1] - a[1]) * (px - c[0]) + (a[0] - c[0]) * (py - c[1])) / den;
+                            let l1 =
+                                ((b[1] - c[1]) * (px - c[0]) + (c[0] - b[0]) * (py - c[1])) / den;
+                            let l2 =
+                                ((c[1] - a[1]) * (px - c[0]) + (a[0] - c[0]) * (py - c[1])) / den;
                             let l3 = 1.0 - l1 - l2;
                             if l1 < -1e-9 || l2 < -1e-9 || l3 < -1e-9 {
                                 continue;
@@ -334,7 +425,14 @@ impl SmartObject {
                 }
             }
         }
-        Some((Pixels { width: ow as u32, height: oh as u32, data: out }, [bb[0], bb[1]]))
+        Some((
+            Pixels {
+                width: ow as u32,
+                height: oh as u32,
+                data: out,
+            },
+            [bb[0], bb[1]],
+        ))
     }
 }
 
@@ -343,7 +441,12 @@ mod tests {
     use super::*;
 
     fn so(quad: [[f64; 2]; 4], warp: Option<Warp>) -> SmartObject {
-        SmartObject { uuid: "x".into(), quad, size: Some([20.0, 10.0]), warp }
+        SmartObject {
+            uuid: "x".into(),
+            quad,
+            size: Some([20.0, 10.0]),
+            warp,
+        }
     }
 
     #[test]
@@ -351,9 +454,17 @@ mod tests {
         let q = [[10.0, 10.0], [50.0, 0.0], [50.0, 40.0], [10.0, 30.0]];
         let s = so(q, None);
         assert!(!s.is_affine() && s.needs_bake());
-        for (c, want) in [([0.0, 0.0], q[0]), ([20.0, 0.0], q[1]), ([20.0, 10.0], q[2]), ([0.0, 10.0], q[3])] {
+        for (c, want) in [
+            ([0.0, 0.0], q[0]),
+            ([20.0, 0.0], q[1]),
+            ([20.0, 10.0], q[2]),
+            ([0.0, 10.0], q[3]),
+        ] {
             let p = s.map(c, 20.0, 10.0);
-            assert!((p[0] - want[0]).abs() < 1e-9 && (p[1] - want[1]).abs() < 1e-9, "{c:?} → {p:?}");
+            assert!(
+                (p[0] - want[0]).abs() < 1e-9 && (p[1] - want[1]).abs() < 1e-9,
+                "{c:?} → {p:?}"
+            );
         }
         // Projective, not bilinear: the content centre is where the diagonals cross.
         let c = s.map([10.0, 5.0], 20.0, 10.0);
@@ -368,21 +479,42 @@ mod tests {
         let mut mesh = vec![];
         for j in 0..4 {
             for i in 0..4 {
-                mesh.push([i as f64 * 20.0 / 3.0 + if j == 1 || j == 2 { 3.0 } else { 0.0 }, j as f64 * 10.0 / 3.0]);
+                mesh.push([
+                    i as f64 * 20.0 / 3.0 + if j == 1 || j == 2 { 3.0 } else { 0.0 },
+                    j as f64 * 10.0 / 3.0,
+                ]);
             }
         }
-        let w = Warp { style: "warpCustom".into(), bounds: [0.0, 0.0, 20.0, 10.0], cols: 1, rows: 1, mesh, ..Default::default() };
+        let w = Warp {
+            style: "warpCustom".into(),
+            bounds: [0.0, 0.0, 20.0, 10.0],
+            cols: 1,
+            rows: 1,
+            mesh,
+            ..Default::default()
+        };
         let p = w.apply([10.0, 5.0], 20.0, 10.0);
-        assert!((p[0] - 12.25).abs() < 1e-9 && (p[1] - 5.0).abs() < 1e-9, "{p:?}");
+        assert!(
+            (p[0] - 12.25).abs() < 1e-9 && (p[1] - 5.0).abs() < 1e-9,
+            "{p:?}"
+        );
         assert_eq!(w.apply([0.0, 0.0], 20.0, 10.0), [0.0, 0.0]);
         // Arc: the top centre rises, the bottom centre too (concentric arcs); Bulge: top up,
         // bottom down; Flag keeps the centre.
-        let style = |s: &str| Warp { style: s.into(), bend: 50.0, bounds: [0.0, 0.0, 200.0, 100.0], ..Default::default() };
+        let style = |s: &str| Warp {
+            style: s.into(),
+            bend: 50.0,
+            bounds: [0.0, 0.0, 200.0, 100.0],
+            ..Default::default()
+        };
         let top = style("warpArc").apply([100.0, 0.0], 200.0, 100.0);
         let corner = style("warpArc").apply([0.0, 0.0], 200.0, 100.0);
         assert!(top[1] < corner[1], "arc {top:?} {corner:?}");
         let b = style("warpBulge");
-        assert!(b.apply([100.0, 0.0], 200.0, 100.0)[1] < 0.0 && b.apply([100.0, 100.0], 200.0, 100.0)[1] > 100.0);
+        assert!(
+            b.apply([100.0, 0.0], 200.0, 100.0)[1] < 0.0
+                && b.apply([100.0, 100.0], 200.0, 100.0)[1] > 100.0
+        );
         assert!((style("warpFlag").apply([100.0, 50.0], 200.0, 100.0)[1] - 50.0).abs() < 1e-9);
         // Vertical rotation swaps the roles of the axes.
         let mut v = style("warpBulge");
@@ -390,15 +522,29 @@ mod tests {
         let l = v.apply([0.0, 50.0], 200.0, 100.0);
         assert!(l[0] < 0.0 && (l[1] - 50.0).abs() < 1e-9, "{l:?}");
         // Horizontal distortion: the right side grows taller.
-        let d = Warp { style: "warpArc".into(), horizontal: 50.0, bounds: [0.0, 0.0, 200.0, 100.0], ..Default::default() };
+        let d = Warp {
+            style: "warpArc".into(),
+            horizontal: 50.0,
+            bounds: [0.0, 0.0, 200.0, 100.0],
+            ..Default::default()
+        };
         assert!(d.apply([200.0, 0.0], 200.0, 100.0)[1] < d.apply([0.0, 0.0], 200.0, 100.0)[1]);
     }
 
     #[test]
     fn render_placed_bakes_a_perspective_quad() {
         // 2×1 content: red | green, pinned to a trapezoid.
-        let content = Pixels { width: 2, height: 1, data: vec![[1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0]] };
-        let s = SmartObject { uuid: "x".into(), quad: [[0.0, 0.0], [40.0, 5.0], [40.0, 15.0], [0.0, 20.0]], size: None, warp: None };
+        let content = Pixels {
+            width: 2,
+            height: 1,
+            data: vec![[1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0]],
+        };
+        let s = SmartObject {
+            uuid: "x".into(),
+            quad: [[0.0, 0.0], [40.0, 5.0], [40.0, 15.0], [0.0, 20.0]],
+            size: None,
+            warp: None,
+        };
         let (px, origin) = s.render_placed(&content, 1.0, None).unwrap();
         assert_eq!(origin, [0.0, 0.0]);
         assert_eq!((px.width, px.height), (40, 20));

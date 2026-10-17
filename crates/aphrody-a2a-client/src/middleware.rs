@@ -81,15 +81,18 @@ mod tests {
     async fn test_logging_interceptor_before() {
         let interceptor = LoggingInterceptor;
         let mut params = ServiceParams::new();
-        let result =
-            interceptor.before(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, &mut params).await;
+        let result = interceptor
+            .before(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, &mut params)
+            .await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_logging_interceptor_after_ok() {
         let interceptor = LoggingInterceptor;
-        let result = interceptor.after(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, &Ok(())).await;
+        let result = interceptor
+            .after(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, &Ok(()))
+            .await;
         assert!(result.is_ok());
     }
 
@@ -97,7 +100,9 @@ mod tests {
     async fn test_logging_interceptor_after_err() {
         let interceptor = LoggingInterceptor;
         let err = Err(A2AError::internal("boom"));
-        let result = interceptor.after(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, &err).await;
+        let result = interceptor
+            .after(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, &err)
+            .await;
         assert!(result.is_ok());
     }
 }

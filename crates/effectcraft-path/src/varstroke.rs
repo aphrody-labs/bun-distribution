@@ -24,7 +24,8 @@ pub struct Taper {
 
 impl Taper {
     pub fn is_active(&self) -> bool {
-        (self.start_len > 0.0 && self.start_width < 1.0) || (self.end_len > 0.0 && self.end_width < 1.0)
+        (self.start_len > 0.0 && self.start_width < 1.0)
+            || (self.end_len > 0.0 && self.end_width < 1.0)
     }
 }
 
@@ -58,7 +59,11 @@ fn ease(u: f64, e: f64) -> f64 {
 pub fn width_factor(taper: Option<&Taper>, wave: Option<&Wave>, s: f64, len: f64) -> f64 {
     let mut k = 1.0;
     if let Some(t) = taper.filter(|t| t.is_active()) {
-        let (mut ls, mut le) = if t.percent { (t.start_len * len, t.end_len * len) } else { (t.start_len, t.end_len) };
+        let (mut ls, mut le) = if t.percent {
+            (t.start_len * len, t.end_len * len)
+        } else {
+            (t.start_len, t.end_len)
+        };
         ls = ls.max(0.0);
         le = le.max(0.0);
         // Overlapping tapers share the path in proportion.
@@ -102,9 +107,16 @@ impl Poly {
     }
     /// Point at arc length `t` (clamped), and the index of the segment it lies on.
     fn at(&self, t: f64) -> (Point, usize) {
-        let i = self.s.partition_point(|&x| x <= t).clamp(1, self.pts.len() - 1);
+        let i = self
+            .s
+            .partition_point(|&x| x <= t)
+            .clamp(1, self.pts.len() - 1);
         let (a, b) = (self.s[i - 1], self.s[i]);
-        let u = if b > a { ((t - a) / (b - a)).clamp(0.0, 1.0) } else { 0.0 };
+        let u = if b > a {
+            ((t - a) / (b - a)).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         (self.pts[i - 1].lerp(self.pts[i], u), i)
     }
 }
@@ -144,7 +156,11 @@ fn flatten(path: &BezPath, tol: f64, step: f64) -> Vec<Poly> {
             acc += w[0].distance(w[1]);
             s.push(acc);
         }
-        out.push(Poly { pts: fine, s, closed });
+        out.push(Poly {
+            pts: fine,
+            s,
+            closed,
+        });
     };
     kurbo::flatten(path.elements().iter().copied(), tol, |el| match el {
         PathEl::MoveTo(p) => {
@@ -167,7 +183,11 @@ fn flatten(path: &BezPath, tol: f64, step: f64) -> Vec<Poly> {
 /// Arc-length intervals that are "on" for a dash pattern on a path `len` long.
 pub fn dash_intervals(pattern: &[f64], offset: f64, len: f64) -> Vec<(f64, f64)> {
     let pat: Vec<f64> = pattern.iter().map(|v| v.max(0.0)).collect();
-    let pat = if pat.len() % 2 == 1 { [pat.clone(), pat].concat() } else { pat };
+    let pat = if pat.len() % 2 == 1 {
+        [pat.clone(), pat].concat()
+    } else {
+        pat
+    };
     let period: f64 = pat.iter().sum();
     if pat.len() < 2 || period <= 1e-9 || len <= 0.0 {
         return vec![(0.0, len)];
@@ -198,7 +218,11 @@ pub fn dash_intervals(pattern: &[f64], offset: f64, len: f64) -> Vec<(f64, f64)>
 
 /// Append `p` to `out`, wound positively.
 fn push_pos(out: &mut BezPath, p: BezPath) {
-    let p = if p.area() < 0.0 { p.reverse_subpaths() } else { p };
+    let p = if p.area() < 0.0 {
+        p.reverse_subpaths()
+    } else {
+        p
+    };
     out.extend(p.elements().iter().copied());
 }
 
@@ -243,9 +267,13 @@ pub fn outline(paths: &[BezPath], style: &StrokeStyle, res_scale: f64) -> Option
                 bp.line_to(*p);
             }
             let poly = flatten(&bp, 0.1 / rs, step).pop()?;
-            let poly = Poly { closed: poly0.closed, ..poly };
+            let poly = Poly {
+                closed: poly0.closed,
+                ..poly
+            };
             let len = poly.len();
-            let wf = |s: f64| half * width_factor(style.taper.as_ref(), style.wave.as_ref(), s, len);
+            let wf =
+                |s: f64| half * width_factor(style.taper.as_ref(), style.wave.as_ref(), s, len);
             let intervals = match &style.dash {
                 Some((d, off)) if d.iter().any(|v| *v > 0.0) => dash_intervals(d, *off, len),
                 _ => vec![(0.0, len)],
@@ -276,7 +304,10 @@ pub fn outline(paths: &[BezPath], style: &StrokeStyle, res_scale: f64) -> Option
                     let (p0, s0) = pts[i];
                     let (p1, s1) = pts[i + 1];
                     let (w0, w1) = (wf(s0), wf(s1));
-                    quad(&mut out, [p0 + n * w0, p1 + n * w1, p1 - n * w1, p0 - n * w0]);
+                    quad(
+                        &mut out,
+                        [p0 + n * w0, p1 + n * w1, p1 - n * w1, p0 - n * w0],
+                    );
                     // Joins: a disc where the direction turns.
                     if i > 0 && dir(i - 1).dot(d) < 0.9999 {
                         disc(&mut out, p0, w0);
@@ -288,7 +319,10 @@ pub fn outline(paths: &[BezPath], style: &StrokeStyle, res_scale: f64) -> Option
                 }
                 // Caps.
                 let last = pts.len() - 1;
-                let ends = [(pts[0].0, wf(pts[0].1), -dir(0)), (pts[last].0, wf(pts[last].1), dir(last - 1))];
+                let ends = [
+                    (pts[0].0, wf(pts[0].1), -dir(0)),
+                    (pts[last].0, wf(pts[last].1), dir(last - 1)),
+                ];
                 for (p, w, outward) in ends {
                     match style.cap {
                         Cap::Butt => {}
@@ -320,39 +354,85 @@ mod tests {
     }
 
     fn column(m: &effectcraft_raster::Mask, x: usize) -> f32 {
-        (0..m.height as usize).map(|y| m.data[y * m.width as usize + x]).sum()
+        (0..m.height as usize)
+            .map(|y| m.data[y * m.width as usize + x])
+            .sum()
     }
 
     #[test]
     fn taper_width_profile() {
-        let t = Taper { percent: false, start_len: 50.0, end_len: 0.0, start_width: 0.0, end_width: 1.0, start_ease: 0.0, end_ease: 0.0 };
+        let t = Taper {
+            percent: false,
+            start_len: 50.0,
+            end_len: 0.0,
+            start_width: 0.0,
+            end_width: 1.0,
+            start_ease: 0.0,
+            end_ease: 0.0,
+        };
         assert!(width_factor(Some(&t), None, 0.0, 200.0).abs() < 1e-9);
         assert!((width_factor(Some(&t), None, 25.0, 200.0) - 0.5).abs() < 1e-9);
         assert!((width_factor(Some(&t), None, 100.0, 200.0) - 1.0).abs() < 1e-9);
         // Ease bulges the profile outwards.
-        let e = Taper { start_ease: 1.0, ..t.clone() };
+        let e = Taper {
+            start_ease: 1.0,
+            ..t.clone()
+        };
         assert!(width_factor(Some(&e), None, 25.0, 200.0) > 0.8);
         // Percent units and overlapping tapers.
-        let p = Taper { percent: true, start_len: 0.75, end_len: 0.75, start_width: 0.0, end_width: 0.0, ..t };
-        assert!((width_factor(Some(&p), None, 100.0, 200.0) - 1.0).abs() < 1e-9, "meet in the middle at full width");
+        let p = Taper {
+            percent: true,
+            start_len: 0.75,
+            end_len: 0.75,
+            start_width: 0.0,
+            end_width: 0.0,
+            ..t
+        };
+        assert!(
+            (width_factor(Some(&p), None, 100.0, 200.0) - 1.0).abs() < 1e-9,
+            "meet in the middle at full width"
+        );
         assert!(width_factor(Some(&p), None, 50.0, 200.0) < 0.6);
     }
 
     #[test]
     fn wave_width_profile() {
-        let w = Wave { amount: 1.0, cycles: None, wavelength: 40.0, phase: 0.0 };
+        let w = Wave {
+            amount: 1.0,
+            cycles: None,
+            wavelength: 40.0,
+            phase: 0.0,
+        };
         assert!((width_factor(None, Some(&w), 0.0, 200.0) - 1.0).abs() < 1e-9);
         assert!(width_factor(None, Some(&w), 20.0, 200.0).abs() < 1e-9);
-        let c = Wave { cycles: Some(5.0), ..w.clone() };
-        assert!(width_factor(None, Some(&c), 20.0, 200.0).abs() < 1e-9, "5 cycles over 200 px = 40 px");
+        let c = Wave {
+            cycles: Some(5.0),
+            ..w.clone()
+        };
+        assert!(
+            width_factor(None, Some(&c), 20.0, 200.0).abs() < 1e-9,
+            "5 cycles over 200 px = 40 px"
+        );
         let ph = Wave { phase: 180.0, ..w };
         assert!(width_factor(None, Some(&ph), 0.0, 200.0).abs() < 1e-9);
     }
 
     #[test]
     fn tapered_line_coverage_grows_along_the_path() {
-        let t = Taper { percent: false, start_len: 100.0, end_len: 0.0, start_width: 0.0, end_width: 1.0, start_ease: 0.0, end_ease: 0.0 };
-        let st = StrokeStyle { width: 20.0, taper: Some(t), ..Default::default() };
+        let t = Taper {
+            percent: false,
+            start_len: 100.0,
+            end_len: 0.0,
+            start_width: 0.0,
+            end_width: 1.0,
+            start_ease: 0.0,
+            end_ease: 0.0,
+        };
+        let st = StrokeStyle {
+            width: 20.0,
+            taper: Some(t),
+            ..Default::default()
+        };
         let o = outline(&[line(150.0)], &st, 1.0).unwrap();
         let m = fill_coverage(&[o], &Mat3::IDENTITY, 200, 100, FillRule::NonZero);
         let (c1, c2, c3) = (column(&m, 30), column(&m, 70), column(&m, 140));
@@ -366,7 +446,16 @@ mod tests {
     #[test]
     fn dash_intervals_multi_segment() {
         let iv = dash_intervals(&[10.0, 5.0, 2.0, 3.0], 0.0, 45.0);
-        assert_eq!(iv, vec![(0.0, 10.0), (15.0, 17.0), (20.0, 30.0), (35.0, 37.0), (40.0, 45.0)]);
+        assert_eq!(
+            iv,
+            vec![
+                (0.0, 10.0),
+                (15.0, 17.0),
+                (20.0, 30.0),
+                (35.0, 37.0),
+                (40.0, 45.0)
+            ]
+        );
         let off = dash_intervals(&[10.0, 10.0], 5.0, 30.0);
         assert_eq!(off, vec![(0.0, 5.0), (15.0, 25.0)]);
     }
@@ -376,24 +465,49 @@ mod tests {
         let st = StrokeStyle {
             width: 10.0,
             dash: Some((vec![20.0, 10.0], 0.0)),
-            wave: Some(Wave { amount: 0.5, cycles: None, wavelength: 30.0, phase: 0.0 }),
+            wave: Some(Wave {
+                amount: 0.5,
+                cycles: None,
+                wavelength: 30.0,
+                phase: 0.0,
+            }),
             ..Default::default()
         };
         let o = outline(&[line(150.0)], &st, 1.0).unwrap();
         let m = fill_coverage(&[o], &Mat3::IDENTITY, 200, 100, FillRule::NonZero);
-        assert!(column(&m, 41) > 9.0, "dash at full width (wave crest): {}", column(&m, 41));
+        assert!(
+            column(&m, 41) > 9.0,
+            "dash at full width (wave crest): {}",
+            column(&m, 41)
+        );
         assert!(column(&m, 35) < 0.01, "gap");
-        assert!(column(&m, 55) > 4.0 && column(&m, 55) < 6.5, "wave trough ≈ half width: {}", column(&m, 55));
+        assert!(
+            column(&m, 55) > 4.0 && column(&m, 55) < 6.5,
+            "wave trough ≈ half width: {}",
+            column(&m, 55)
+        );
     }
 
     #[test]
     fn closed_tapered_path_is_continuous() {
         let r = crate::rect([60.0, 60.0], [50.0, 50.0], 0.0);
-        let st = StrokeStyle { width: 6.0, wave: Some(Wave { amount: 0.2, cycles: Some(4.0), wavelength: 0.0, phase: 0.0 }), ..Default::default() };
+        let st = StrokeStyle {
+            width: 6.0,
+            wave: Some(Wave {
+                amount: 0.2,
+                cycles: Some(4.0),
+                wavelength: 0.0,
+                phase: 0.0,
+            }),
+            ..Default::default()
+        };
         let o = outline(&[r], &st, 1.0).unwrap();
         let m = fill_coverage(&[o], &Mat3::IDENTITY, 100, 100, FillRule::NonZero);
         assert!(m.data.iter().all(|v| *v <= 1.0001));
         let area: f32 = m.data.iter().sum();
-        assert!(area > 240.0 * 6.0 * 0.8 && area < 240.0 * 6.0 * 1.05, "{area}");
+        assert!(
+            area > 240.0 * 6.0 * 0.8 && area < 240.0 * 6.0 * 1.05,
+            "{area}"
+        );
     }
 }

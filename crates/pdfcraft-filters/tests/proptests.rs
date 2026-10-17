@@ -7,7 +7,13 @@ use proptest::prelude::*;
 const MAX: usize = 1 << 24;
 
 fn encodable() -> impl Strategy<Value = Filter> {
-    prop_oneof![Just(Filter::Flate), Just(Filter::Lzw), Just(Filter::AsciiHex), Just(Filter::Ascii85), Just(Filter::RunLength),]
+    prop_oneof![
+        Just(Filter::Flate),
+        Just(Filter::Lzw),
+        Just(Filter::AsciiHex),
+        Just(Filter::Ascii85),
+        Just(Filter::RunLength),
+    ]
 }
 
 fn any_filter() -> impl Strategy<Value = Filter> {
@@ -23,19 +29,34 @@ fn any_filter() -> impl Strategy<Value = Filter> {
 }
 
 fn valid_params() -> impl Strategy<Value = Params> {
-    (prop::sample::select(vec![1i64, 2, 10, 11, 12, 13, 14, 15]), 1i64..=5, prop::sample::select(vec![1i64, 2, 4, 8, 16]), 1i64..=40, 0i64..=1)
-        .prop_map(|(predictor, colors, bits_per_component, columns, early_change)| Params {
-            predictor,
-            colors,
-            bits_per_component,
-            columns,
-            early_change,
-        })
+    (
+        prop::sample::select(vec![1i64, 2, 10, 11, 12, 13, 14, 15]),
+        1i64..=5,
+        prop::sample::select(vec![1i64, 2, 4, 8, 16]),
+        1i64..=40,
+        0i64..=1,
+    )
+        .prop_map(
+            |(predictor, colors, bits_per_component, columns, early_change)| Params {
+                predictor,
+                colors,
+                bits_per_component,
+                columns,
+                early_change,
+            },
+        )
 }
 
 /// Anything, including nonsense values.
 fn wild_params() -> impl Strategy<Value = Params> {
-    let wild = prop_oneof![Just(i64::MIN), Just(i64::MAX), Just(-1i64), Just(0i64), 0i64..=40, any::<i64>()];
+    let wild = prop_oneof![
+        Just(i64::MIN),
+        Just(i64::MAX),
+        Just(-1i64),
+        Just(0i64),
+        0i64..=40,
+        any::<i64>()
+    ];
     (
         prop_oneof![valid_params().prop_map(|p| p.predictor), wild.clone()],
         prop_oneof![1i64..=5, wild.clone()],
@@ -43,18 +64,23 @@ fn wild_params() -> impl Strategy<Value = Params> {
         prop_oneof![1i64..=40, wild.clone()],
         wild,
     )
-        .prop_map(|(predictor, colors, bits_per_component, columns, early_change)| Params {
-            predictor,
-            colors,
-            bits_per_component,
-            columns,
-            early_change,
-        })
+        .prop_map(
+            |(predictor, colors, bits_per_component, columns, early_change)| Params {
+                predictor,
+                colors,
+                bits_per_component,
+                columns,
+                early_change,
+            },
+        )
 }
 
 /// Low-entropy data (so LZW/Flate/RunLength exercise their repeat paths) mixed with noise.
 fn data() -> impl Strategy<Value = Vec<u8>> {
-    prop_oneof![prop::collection::vec(any::<u8>(), 0..2000), prop::collection::vec(prop::sample::select(vec![0u8, 1, 7, 255]), 0..6000),]
+    prop_oneof![
+        prop::collection::vec(any::<u8>(), 0..2000),
+        prop::collection::vec(prop::sample::select(vec![0u8, 1, 7, 255]), 0..6000),
+    ]
 }
 
 proptest! {
@@ -144,7 +170,16 @@ proptest! {
 fn flate_bomb_in_chain() {
     let bomb = pdfcraft_filters::encode_flate(&vec![0u8; 32 << 20]);
     let a85 = encode(&Filter::Ascii85, &Params::default(), &bomb).unwrap();
-    let chain = [(Filter::Ascii85, Params::default()), (Filter::Flate, Params::default())];
-    assert!(matches!(decode(&chain, &a85, 1 << 20), Err(FilterError::LimitExceeded(_))));
-    assert!(matches!(decode_tolerant(&chain, &a85, 1 << 20), Err(FilterError::LimitExceeded(_))));
+    let chain = [
+        (Filter::Ascii85, Params::default()),
+        (Filter::Flate, Params::default()),
+    ];
+    assert!(matches!(
+        decode(&chain, &a85, 1 << 20),
+        Err(FilterError::LimitExceeded(_))
+    ));
+    assert!(matches!(
+        decode_tolerant(&chain, &a85, 1 << 20),
+        Err(FilterError::LimitExceeded(_))
+    ));
 }

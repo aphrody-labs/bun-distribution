@@ -14,14 +14,36 @@ const SETTLE: Duration = Duration::from_secs(120);
 /// The Library grid with the Keywords panel open and two photos selected: the first with beach and
 /// Weddings, the second with beach.
 fn two_selected() -> (Headless, Vec<u64>) {
-    let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        lightcraft_engine::Session::with_demo(),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1400.0, 1000.0], 1.0);
-    let ids: Vec<u64> = h.app.session.visible_cloned().iter().take(2).map(|p| p.0).collect();
+    let ids: Vec<u64> = h
+        .app
+        .session
+        .visible_cloned()
+        .iter()
+        .take(2)
+        .map(|p| p.0)
+        .collect();
     for (method, params) in [
         ("ui.set", json!({"view": "photoGrid", "right": "keywords"})),
-        ("engine.execute", json!({"command": "photo.setMeta", "params": {"ids": [ids[0]], "keywords": ["beach", "Weddings"]}})),
-        ("engine.execute", json!({"command": "photo.setMeta", "params": {"ids": [ids[1]], "keywords": ["beach"]}})),
-        ("engine.execute", json!({"command": "library.select", "params": {"ids": ids}})),
+        (
+            "engine.execute",
+            json!({"command": "photo.setMeta", "params": {"ids": [ids[0]], "keywords": ["beach", "Weddings"]}}),
+        ),
+        (
+            "engine.execute",
+            json!({"command": "photo.setMeta", "params": {"ids": [ids[1]], "keywords": ["beach"]}}),
+        ),
+        (
+            "engine.execute",
+            json!({"command": "library.select", "params": {"ids": ids}}),
+        ),
     ] {
         let r = h.request(method, params, T);
         assert_eq!(r["ok"], true, "{r}");
@@ -41,7 +63,14 @@ fn has(h: &Headless, id: &str) -> bool {
 }
 
 fn keywords_of(h: &Headless, id: u64) -> Vec<String> {
-    h.app.session.catalog.photo(lightcraft_catalog::PhotoId(id)).unwrap().meta.keywords.clone()
+    h.app
+        .session
+        .catalog
+        .photo(lightcraft_catalog::PhotoId(id))
+        .unwrap()
+        .meta
+        .keywords
+        .clone()
 }
 
 /// The chips are the keywords of every selected photo, not only the active one's; a keyword only
@@ -52,9 +81,16 @@ fn the_chips_are_the_selections_keywords() {
     assert!(
         has(&h, "keywordChip:beach") && has(&h, "keywordChip:Weddings"),
         "{:?}",
-        h.app.widgets.iter().filter(|(w, _)| w.starts_with("keywordChip")).collect::<Vec<_>>()
+        h.app
+            .widgets
+            .iter()
+            .filter(|(w, _)| w.starts_with("keywordChip"))
+            .collect::<Vec<_>>()
     );
-    assert!(has(&h, "keywordChipPartial:Weddings"), "only one of the two has Weddings");
+    assert!(
+        has(&h, "keywordChipPartial:Weddings"),
+        "only one of the two has Weddings"
+    );
     assert!(!has(&h, "keywordChipPartial:beach"), "both have beach");
 }
 
@@ -63,9 +99,21 @@ fn the_chips_are_the_selections_keywords() {
 fn only_the_cross_removes_a_keyword() {
     let (mut h, ids) = two_selected();
     ask(&mut h, "ui.clickWidget", json!({"id": "keywordChip:beach"}));
-    assert!(ids.iter().all(|id| keywords_of(&h, *id).contains(&"beach".to_string())), "a click on the chip keeps it");
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordChipRemove:beach"}));
-    assert!(ids.iter().all(|id| !keywords_of(&h, *id).contains(&"beach".to_string())), "× took it off both");
+    assert!(
+        ids.iter()
+            .all(|id| keywords_of(&h, *id).contains(&"beach".to_string())),
+        "a click on the chip keeps it"
+    );
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordChipRemove:beach"}),
+    );
+    assert!(
+        ids.iter()
+            .all(|id| !keywords_of(&h, *id).contains(&"beach".to_string())),
+        "× took it off both"
+    );
 }
 
 /// A chip's menu acts on the selection, never on the whole library: give a keyword only some have
@@ -74,17 +122,41 @@ fn only_the_cross_removes_a_keyword() {
 #[test]
 fn a_chips_menu_acts_on_the_selection() {
     let (mut h, ids) = two_selected();
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordChip:Weddings", "button": "right"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordChip:Weddings", "button": "right"}),
+    );
     for item in ["add", "remove", "show", "edit"] {
         assert!(has(&h, &format!("keywordChipMenu:{item}")), "{item}");
     }
     assert!(!has(&h, "keywordChipMenu:delete"), "no library-wide delete");
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordChipMenu:add"}));
-    assert!(ids.iter().all(|id| keywords_of(&h, *id).contains(&"Weddings".to_string())), "given to both");
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordChip:Weddings", "button": "right"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordChipMenu:add"}),
+    );
+    assert!(
+        ids.iter()
+            .all(|id| keywords_of(&h, *id).contains(&"Weddings".to_string())),
+        "given to both"
+    );
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordChip:Weddings", "button": "right"}),
+    );
     assert!(!has(&h, "keywordChipMenu:add"), "both have it now");
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordChipMenu:edit"}));
-    assert!(matches!(&h.app.ui.dialog, Some(crate::state::Dialog::KeywordTag { editing: Some(k), .. }) if k == "Weddings"), "{:?}", h.app.ui.dialog);
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordChipMenu:edit"}),
+    );
+    assert!(
+        matches!(&h.app.ui.dialog, Some(crate::state::Dialog::KeywordTag { editing: Some(k), .. }) if k == "Weddings"),
+        "{:?}",
+        h.app.ui.dialog
+    );
 }
 
 /// The "Add keyword" box is a shared text field: right-click ▸ Paste fills it, Return gives the
@@ -93,19 +165,34 @@ fn a_chips_menu_acts_on_the_selection() {
 fn the_add_keyword_box_pastes_adds_and_gives_up() {
     let (mut h, ids) = two_selected();
     h.view.clipboard = "travel, sunset".into();
-    ask(&mut h, "ui.clickWidget", json!({"id": "field:keyword", "button": "right"}));
-    ask(&mut h, "ui.clickWidget", json!({"id": "field:keyword:paste"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "field:keyword", "button": "right"}),
+    );
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "field:keyword:paste"}),
+    );
     ask(&mut h, "ui.key", json!({"key": "Enter"}));
     for id in &ids {
         let k = keywords_of(&h, *id);
-        assert!(k.contains(&"travel".to_string()) && k.contains(&"sunset".to_string()), "{k:?}");
+        assert!(
+            k.contains(&"travel".to_string()) && k.contains(&"sunset".to_string()),
+            "{k:?}"
+        );
     }
     ask(&mut h, "ui.clickWidget", json!({"id": "field:keyword"}));
     ask(&mut h, "ui.text", json!({"text": "harbour"}));
     ask(&mut h, "ui.key", json!({"key": "Escape"}));
     ask(&mut h, "ui.clickWidget", json!({"id": "field:keyword"}));
     ask(&mut h, "ui.key", json!({"key": "Enter"}));
-    assert!(ids.iter().all(|id| !keywords_of(&h, *id).contains(&"harbour".to_string())), "Esc gave it up");
+    assert!(
+        ids.iter()
+            .all(|id| !keywords_of(&h, *id).contains(&"harbour".to_string())),
+        "Esc gave it up"
+    );
 }
 
 /// The keyword set's buttons say whether the selection has each keyword, as their ⌥1–⌥9 toggle it
@@ -114,9 +201,23 @@ fn the_add_keyword_box_pastes_adds_and_gives_up() {
 fn keyword_set_buttons_reflect_the_selection() {
     let (mut h, _) = two_selected();
     let sets = h.app.session.execute("keyword.sets", &json!({})).unwrap();
-    let at = |k: &str| sets["keywords"].as_array().unwrap().iter().position(|x| x == k).map(|i| i + 1).unwrap_or_else(|| panic!("{k} in {sets}"));
-    assert!(has(&h, &format!("kwSetOn:{}", at("beach"))), "both have beach");
-    assert!(has(&h, &format!("kwSetSome:{}", at("Weddings"))), "only the active one has Weddings");
+    let at = |k: &str| {
+        sets["keywords"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|x| x == k)
+            .map(|i| i + 1)
+            .unwrap_or_else(|| panic!("{k} in {sets}"))
+    };
+    assert!(
+        has(&h, &format!("kwSetOn:{}", at("beach"))),
+        "both have beach"
+    );
+    assert!(
+        has(&h, &format!("kwSetSome:{}", at("Weddings"))),
+        "only the active one has Weddings"
+    );
     assert!(!has(&h, &format!("kwSetOn:{}", at("Weddings"))));
 }
 
@@ -127,11 +228,19 @@ fn will_export_shows_what_exports_carry() {
     let (mut h, _) = two_selected();
     let r = h.request("engine.execute", json!({"command": "keyword.edit", "params": {"keyword": "Weddings", "includeOnExport": false}}), T);
     assert_eq!(r["ok"], true, "{r}");
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordView:willExport"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordView:willExport"}),
+    );
     assert!(has(&h, "keywordExport:beach"));
     assert!(!has(&h, "keywordExport:Weddings"), "left out of export");
     assert!(!has(&h, "keywordChip:beach"), "the chips give way");
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordView:keywords"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordView:keywords"}),
+    );
     assert!(has(&h, "keywordChip:beach") && !has(&h, "keywordExport:beach"));
 }
 
@@ -141,8 +250,16 @@ fn will_export_shows_what_exports_carry() {
 fn the_painters_field_pastes_and_return_paints() {
     let (mut h, _) = two_selected();
     h.view.clipboard = "Weddings".into();
-    ask(&mut h, "ui.clickWidget", json!({"id": "field:keywordPainter", "button": "right"}));
-    ask(&mut h, "ui.clickWidget", json!({"id": "field:keywordPainter:paste"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "field:keywordPainter", "button": "right"}),
+    );
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "field:keywordPainter:paste"}),
+    );
     ask(&mut h, "ui.key", json!({"key": "Enter"}));
     assert_eq!(h.app.ui.keyword_painter.as_deref(), Some("Weddings"));
 }
@@ -170,12 +287,27 @@ fn chips_wrap_whole_inside_the_panel() {
     );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    let panel = h.app.widgets.iter().find(|(w, _)| w == "panel:right_panel").map(|(_, r)| *r).expect("the right panel");
-    let chips: Vec<(String, egui::Rect)> = h.app.widgets.iter().filter(|(w, _)| w.starts_with("keywordChip:")).cloned().collect();
+    let panel = h
+        .app
+        .widgets
+        .iter()
+        .find(|(w, _)| w == "panel:right_panel")
+        .map(|(_, r)| *r)
+        .expect("the right panel");
+    let chips: Vec<(String, egui::Rect)> = h
+        .app
+        .widgets
+        .iter()
+        .filter(|(w, _)| w.starts_with("keywordChip:"))
+        .cloned()
+        .collect();
     assert!(chips.len() >= 6, "{chips:?}");
     for (i, (id, r)) in chips.iter().enumerate() {
         assert!(r.height() < 30.0, "{id} on one line: {r:?}");
-        assert!(r.left() >= panel.left() && r.right() <= panel.right(), "{id} inside the panel: {r:?} in {panel:?}");
+        assert!(
+            r.left() >= panel.left() && r.right() <= panel.right(),
+            "{id} inside the panel: {r:?} in {panel:?}"
+        );
         for (other, o) in chips.iter().skip(i + 1) {
             assert!(!r.intersects(o.shrink(0.5)), "{id} overlaps {other}");
         }
@@ -187,12 +319,25 @@ fn chips_wrap_whole_inside_the_panel() {
 #[test]
 fn the_active_photo_alone_is_the_selection() {
     let (mut h, ids) = two_selected();
-    ask(&mut h, "engine.execute", json!({"command": "library.select", "params": {"ids": [], "active": ids[0]}}));
+    ask(
+        &mut h,
+        "engine.execute",
+        json!({"command": "library.select", "params": {"ids": [], "active": ids[0]}}),
+    );
     assert_eq!(h.app.session.selection.active.map(|p| p.0), Some(ids[0]));
     assert!(h.app.session.selection.ids.is_empty());
-    assert!(has(&h, "keywordChip:Weddings") && !has(&h, "keywordChipPartial:Weddings"), "the active photo's keywords");
-    let ticks = crate::panels::keyword_list::Ticks::of(&h.app.session.catalog, &h.app.session.targets(&json!({})));
-    assert_eq!(ticks.tick("Weddings"), crate::panels::keyword_list::Tick::All);
+    assert!(
+        has(&h, "keywordChip:Weddings") && !has(&h, "keywordChipPartial:Weddings"),
+        "the active photo's keywords"
+    );
+    let ticks = crate::panels::keyword_list::Ticks::of(
+        &h.app.session.catalog,
+        &h.app.session.targets(&json!({})),
+    );
+    assert_eq!(
+        ticks.tick("Weddings"),
+        crate::panels::keyword_list::Tick::All
+    );
     assert!(has(&h, "keywordCheck:beach"));
 }
 
@@ -211,7 +356,10 @@ fn escape_gives_back_the_text_from_before_the_edit() {
     ask(&mut h, "ui.clickWidget", json!({"id": "field:keyword"}));
     ask(&mut h, "ui.key", json!({"key": "Enter"}));
     let k = keywords_of(&h, ids[0]);
-    assert!(k.contains(&"harbour".to_string()) && !k.contains(&"sea".to_string()), "{k:?}");
+    assert!(
+        k.contains(&"harbour".to_string()) && !k.contains(&"sea".to_string()),
+        "{k:?}"
+    );
 }
 
 /// "Keywords & Containing Keywords" lists the selection's keywords with the keywords containing
@@ -221,7 +369,11 @@ fn containing_keywords_view_lists_parents_too() {
     let (mut h, ids) = two_selected();
     let r = h.request("engine.execute", json!({"command": "photo.setMeta", "params": {"ids": [ids[0]], "addKeywords": ["Events|Birthdays"]}}), T);
     assert_eq!(r["ok"], true, "{r}");
-    ask(&mut h, "ui.clickWidget", json!({"id": "keywordView:containing"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "keywordView:containing"}),
+    );
     for name in ["Events", "Birthdays", "beach"] {
         assert!(has(&h, &format!("keywordContaining:{name}")), "{name}");
     }

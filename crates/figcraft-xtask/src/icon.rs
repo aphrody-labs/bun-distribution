@@ -12,9 +12,17 @@ const MAC_VIEW_BOX: &str = r#"viewBox="-62 -62 636 636""#;
 
 fn render(svg: &Path, size: u32, out: &Path) -> bool {
     let s = size.to_string();
-    let ok = Command::new("resvg").args(["-w", &s, "-h", &s]).arg(svg).arg(out).status().is_ok_and(|st| st.success());
+    let ok = Command::new("resvg")
+        .args(["-w", &s, "-h", &s])
+        .arg(svg)
+        .arg(out)
+        .status()
+        .is_ok_and(|st| st.success());
     if !ok {
-        eprintln!("icon: resvg failed for {} (is it installed? `cargo install resvg`)", out.display());
+        eprintln!(
+            "icon: resvg failed for {} (is it installed? `cargo install resvg`)",
+            out.display()
+        );
     }
     ok
 }
@@ -32,7 +40,8 @@ pub fn generate(root: &Path) -> bool {
     let tmp = root.join("target/icon");
     // Windows and Linux show the tile edge to edge, rounded corners and all: the master as it is.
     let (mac, tile) = (tmp.join("mac.svg"), dir.join("figcraft.svg"));
-    let mut ok = std::fs::create_dir_all(&tmp).is_ok() && std::fs::write(&mac, master.replacen(VIEW_BOX, MAC_VIEW_BOX, 1)).is_ok();
+    let mut ok = std::fs::create_dir_all(&tmp).is_ok()
+        && std::fs::write(&mac, master.replacen(VIEW_BOX, MAC_VIEW_BOX, 1)).is_ok();
     if !ok {
         eprintln!("icon: cannot write {}", tmp.display());
         return false;
@@ -51,7 +60,9 @@ pub fn generate(root: &Path) -> bool {
         .iter()
         .filter_map(|s| {
             let png = tmp.join(format!("ico-{s}.png"));
-            render(&tile, *s, &png).then(|| std::fs::read(png).ok()).flatten()
+            render(&tile, *s, &png)
+                .then(|| std::fs::read(png).ok())
+                .flatten()
         })
         .collect();
     ok &= pngs.len() == sizes.len();
@@ -71,7 +82,11 @@ pub fn generate(root: &Path) -> bool {
     // The lighter trace keeps the scalable theme icon cheap to render.
     let sd = dir.join("hicolor/scalable/apps");
     let _ = std::fs::create_dir_all(&sd);
-    ok &= std::fs::copy(dir.join("figcraft-small.svg"), sd.join("ai.storyteller.figcraft.svg")).is_ok();
+    ok &= std::fs::copy(
+        dir.join("figcraft-small.svg"),
+        sd.join("ai.storyteller.figcraft.svg"),
+    )
+    .is_ok();
     eprintln!("icon: wrote {}", dir.display());
     ok
 }

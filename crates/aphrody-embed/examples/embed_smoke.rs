@@ -40,8 +40,10 @@ fn main() -> aphrody_embed::Result<()> {
     println!("model            = {}", embedder.model());
     println!("dimension        = {dim}");
 
-    let texts =
-        ["passage: aphrody is the ultimate cross-platform Rust CLI", "query: what is aphrody"];
+    let texts = [
+        "passage: aphrody is the ultimate cross-platform Rust CLI",
+        "query: what is aphrody",
+    ];
     let vectors = embedder.embed_texts(&texts)?;
 
     assert_eq!(vectors.len(), texts.len(), "one vector per input text");
@@ -52,10 +54,17 @@ fn main() -> aphrody_embed::Result<()> {
         let norm: f32 = v.iter().map(|x| x * x).sum::<f32>().sqrt();
         assert!(norm > 0.0, "vector {i} must be non-zero (norm={norm})");
         assert!(v.iter().all(|x| x.is_finite()), "vector {i} has NaN/Inf");
-        println!("vec[{i}] len={} norm={norm:.4} head={:?}", v.len(), &v[..v.len().min(4)]);
+        println!(
+            "vec[{i}] len={} norm={norm:.4} head={:?}",
+            v.len(),
+            &v[..v.len().min(4)]
+        );
     }
     assert_ne!(vectors[0], vectors[1], "distinct texts -> distinct vectors");
 
-    println!("SMOKE OK: embedded {} texts into {dim}-d vectors", texts.len());
+    println!(
+        "SMOKE OK: embedded {} texts into {dim}-d vectors",
+        texts.len()
+    );
     Ok(())
 }

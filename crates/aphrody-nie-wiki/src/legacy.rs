@@ -94,11 +94,18 @@ fn truthy(value: &Value) -> bool {
 }
 
 fn value_or(value: &Value, fallback: Value) -> Value {
-    if truthy(value) { value.clone() } else { fallback }
+    if truthy(value) {
+        value.clone()
+    } else {
+        fallback
+    }
 }
 
 fn source_row(connection: &Connection, id: &str) -> anyhow::Result<Value> {
-    let sql = format!("SELECT {} FROM inagle_characters WHERE id=?1", COLUMNS.join(","));
+    let sql = format!(
+        "SELECT {} FROM inagle_characters WHERE id=?1",
+        COLUMNS.join(",")
+    );
     connection
         .query_row(&sql, [id], |row| {
             let mut fields = Map::new();
@@ -112,13 +119,14 @@ fn source_row(connection: &Connection, id: &str) -> anyhow::Result<Value> {
                         if matches!(text.as_ref(), "\\N" | "\\\\N") {
                             Value::Null
                         } else if name == "zukan_order" {
-                            text.parse::<i64>().map_or_else(|_| json!(text), |value| json!(value))
+                            text.parse::<i64>()
+                                .map_or_else(|_| json!(text), |value| json!(value))
                         } else if text.starts_with(['{', '[']) {
                             serde_json::from_str(&text).unwrap_or_else(|_| json!(text))
                         } else {
                             json!(text)
                         }
-                    },
+                    }
                     ValueRef::Blob(_) => Value::Null,
                 };
                 fields.insert(name.into(), value);
@@ -142,7 +150,10 @@ fn stats(row: &Value, prefix: &str) -> Value {
         fields
             .into_iter()
             .map(|(public, native)| {
-                (public.to_owned(), value_or(&row[format!("{prefix}{native}")], json!(0)))
+                (
+                    public.to_owned(),
+                    value_or(&row[format!("{prefix}{native}")], json!(0)),
+                )
             })
             .collect(),
     )
@@ -201,7 +212,10 @@ fn project(row: &Value) -> anyhow::Result<Value> {
         "legacy character asset URL requires native resource resolution"
     );
     let label = row["rarity_label"].as_str().unwrap_or("Normal");
-    let code = row["internal_code"].as_str().or(row["id"].as_str()).unwrap_or_default();
+    let code = row["internal_code"]
+        .as_str()
+        .or(row["id"].as_str())
+        .unwrap_or_default();
     let mut progression = json!({"lv99": stats(row, "stat_")});
     if !row["stat_lv1_frappe"].is_null() {
         progression["lv1"] = stats(row, "stat_lv1_");
@@ -218,9 +232,11 @@ fn project(row: &Value) -> anyhow::Result<Value> {
                 .as_str()
                 .and_then(|id| u64::from_str_radix(id.trim_start_matches("0x"), 16).ok())
         });
-        let learn_number = skill["learnLevel"]
-            .as_i64()
-            .or_else(|| skill["learnLevel"].as_str().and_then(|value| value.parse().ok()));
+        let learn_number = skill["learnLevel"].as_i64().or_else(|| {
+            skill["learnLevel"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        });
         if let (Some(skill_number), Some(learn_number)) = (skill_number, learn_number)
             && skill_number < 1000
             && learn_number.unsigned_abs() > 1_000_000
@@ -232,9 +248,11 @@ fn project(row: &Value) -> anyhow::Result<Value> {
         "positionRaw":0,"element":value_or(&row["element"],json!("Void")),"elementRaw":0,
         "rarity":label,"rarityCode":rarity_code(label),"stats":progression,"skills":skills,
         "image":image,"sheetData":row["sheet_data"],"slug":row["slug"],"zukanOrder":row["zukan_order"],"internalCode":code});
-    for (target, source) in
-        [("zukanHash", "zukan_hash"), ("series", "series"), ("heroType", "hero_type")]
-    {
+    for (target, source) in [
+        ("zukanHash", "zukan_hash"),
+        ("series", "series"),
+        ("heroType", "hero_type"),
+    ] {
         if truthy(&row[source]) {
             variant[target] = row[source].clone();
         }
@@ -285,7 +303,10 @@ fn group(rows: Vec<Value>) -> Vec<Value> {
             if !truthy(&existing["constellation"]) && row.get("constellation").is_some() {
                 existing["constellation"] = row["constellation"].clone();
             }
-            if existing["wikiSections"].as_array().is_none_or(Vec::is_empty) {
+            if existing["wikiSections"]
+                .as_array()
+                .is_none_or(Vec::is_empty)
+            {
                 existing["wikiSections"] = row["wikiSections"].clone();
             }
         } else {
@@ -297,16 +318,24 @@ fn group(rows: Vec<Value>) -> Vec<Value> {
         let mut seen = BTreeSet::new();
         let mut deduped: Vec<Value> = Vec::new();
         let key = |variant: &Value| {
-            ["position", "element", "rarity", "heroType", "internalCode", "series"]
-                .map(|field| variant[field].as_str().unwrap_or_default())
-                .join("|")
+            [
+                "position",
+                "element",
+                "rarity",
+                "heroType",
+                "internalCode",
+                "series",
+            ]
+            .map(|field| variant[field].as_str().unwrap_or_default())
+            .join("|")
         };
         for variant in variants.drain(..) {
             let identity = key(&variant);
             if seen.insert(identity.clone()) {
                 deduped.push(variant);
-            } else if let Some(existing) =
-                deduped.iter_mut().find(|candidate| key(candidate) == identity)
+            } else if let Some(existing) = deduped
+                .iter_mut()
+                .find(|candidate| key(candidate) == identity)
                 && ((!truthy(&existing["sheetData"]) && truthy(&variant["sheetData"]))
                     || variant["skills"].as_array().map_or(0, Vec::len)
                         > existing["skills"].as_array().map_or(0, Vec::len))
@@ -318,7 +347,10 @@ fn group(rows: Vec<Value>) -> Vec<Value> {
             (
                 variant["zukanOrder"].as_i64().unwrap_or(999_999),
                 u64::from_str_radix(
-                    variant["charaParamId"].as_str().unwrap_or_default().trim_start_matches("0x"),
+                    variant["charaParamId"]
+                        .as_str()
+                        .unwrap_or_default()
+                        .trim_start_matches("0x"),
                     16,
                 )
                 .unwrap_or(0),
@@ -346,17 +378,26 @@ fn character_ids(
     constellation_only: bool,
 ) -> anyhow::Result<Vec<String>> {
     // Column names are internal constants, never interpolated request input.
-    anyhow::ensure!(matches!(column, "id" | "slug" | "base_slug" | "chara_id" | "name_en"));
+    anyhow::ensure!(matches!(
+        column,
+        "id" | "slug" | "base_slug" | "chara_id" | "name_en"
+    ));
     let condition = if constellation_only {
         " AND constellation IS NOT NULL AND constellation NOT IN ('\\N', '\\\\N')"
     } else {
         ""
     };
-    let order = if ordered { " ORDER BY zukan_order ASC NULLS LAST, id ASC" } else { "" };
+    let order = if ordered {
+        " ORDER BY zukan_order ASC NULLS LAST, id ASC"
+    } else {
+        ""
+    };
     let mut statement = connection.prepare(&format!(
         "SELECT id FROM inagle_characters WHERE {column}=?1{condition}{order}"
     ))?;
-    Ok(statement.query_map([value], |row| row.get(0))?.collect::<Result<Vec<_>, _>>()?)
+    Ok(statement
+        .query_map([value], |row| row.get(0))?
+        .collect::<Result<Vec<_>, _>>()?)
 }
 
 /// Preserve the historical base-slug, variant-slug, then exact-ID resolution order.
@@ -379,7 +420,11 @@ pub fn character(connection: &Connection, key: &str) -> anyhow::Result<Option<Va
             return Ok(None);
         };
         let selected = source_row(connection, id)?;
-        let field = if truthy(&selected["base_slug"]) { "base_slug" } else { "chara_id" };
+        let field = if truthy(&selected["base_slug"]) {
+            "base_slug"
+        } else {
+            "chara_id"
+        };
         if let Some(value) = selected[field].as_str() {
             ids = character_ids(connection, field, value, true, false)?;
         }
@@ -474,11 +519,21 @@ pub fn characters(connection: &Connection, input: &CharacterListRequest) -> anyh
             query: input.q.as_deref().map(crate::query::sanitize_filter),
             element: translate(
                 &input.element,
-                &[("Fire", "Feu"), ("Wind", "Vent"), ("Forest", "Forêt"), ("Mountain", "Montagne")],
+                &[
+                    ("Fire", "Feu"),
+                    ("Wind", "Vent"),
+                    ("Forest", "Forêt"),
+                    ("Mountain", "Montagne"),
+                ],
             ),
             position: translate(
                 &input.position,
-                &[("GK", "Gardien"), ("DF", "Défenseur"), ("MF", "Milieu"), ("FW", "Attaquant")],
+                &[
+                    ("GK", "Gardien"),
+                    ("DF", "Défenseur"),
+                    ("MF", "Milieu"),
+                    ("FW", "Attaquant"),
+                ],
             ),
             rarity: input.rarity.clone(),
             series: input.series.clone(),
@@ -571,7 +626,10 @@ pub fn coordinators(
 ) -> anyhow::Result<Value> {
     let page = input.page.unwrap_or(1).max(1);
     let limit = input.limit.unwrap_or(24).clamp(1, 200);
-    let q = format!("%{}%", crate::query::sanitize_filter(input.q.as_deref().unwrap_or_default()));
+    let q = format!(
+        "%{}%",
+        crate::query::sanitize_filter(input.q.as_deref().unwrap_or_default())
+    );
     let element = match input.element.as_deref() {
         Some("Wind") => Some("風"),
         Some("Wood" | "Forest") => Some("林"),
@@ -628,7 +686,7 @@ pub fn coordinators(
                             } else {
                                 json!(value)
                             }
-                        },
+                        }
                         _ => Value::Null,
                     };
                     fields.insert((*column).into(), value);
@@ -667,16 +725,61 @@ mod tests {
     #[test]
     fn character_detail_resolves_variants_and_inherits_hero_constellations() {
         let connection = Connection::open_in_memory().unwrap();
-        let columns =
-            COLUMNS.iter().map(|name| format!("{name} TEXT")).collect::<Vec<_>>().join(",");
-        connection.execute_batch(&format!("CREATE TABLE inagle_characters ({columns});")).unwrap();
+        let columns = COLUMNS
+            .iter()
+            .map(|name| format!("{name} TEXT"))
+            .collect::<Vec<_>>()
+            .join(",");
+        connection
+            .execute_batch(&format!("CREATE TABLE inagle_characters ({columns});"))
+            .unwrap();
         for (id, slug, base, family, rarity, order, constellation) in [
-            ("0x0", "byron-null", "missing1", "family0", "Normal", "0", Some("\\N")),
-            ("0x00", "byron-null-double", "missing2", "family00", "Normal", "0", Some("\\\\N")),
-            ("0x1", "byron-normal", "byron", "family1", "Normal", "2", Some("Main")),
-            ("0x2", "byron-basara", "byron", "family1", "BASARA", "10", None),
+            (
+                "0x0",
+                "byron-null",
+                "missing1",
+                "family0",
+                "Normal",
+                "0",
+                Some("\\N"),
+            ),
+            (
+                "0x00",
+                "byron-null-double",
+                "missing2",
+                "family00",
+                "Normal",
+                "0",
+                Some("\\\\N"),
+            ),
+            (
+                "0x1",
+                "byron-normal",
+                "byron",
+                "family1",
+                "Normal",
+                "2",
+                Some("Main"),
+            ),
+            (
+                "0x2",
+                "byron-basara",
+                "byron",
+                "family1",
+                "BASARA",
+                "10",
+                None,
+            ),
             ("0x3", "byron-hero", "hero", "family2", "Héros", "3", None),
-            ("0x4", "byron-other", "other", "family3", "Héros", "4", Some("Other")),
+            (
+                "0x4",
+                "byron-other",
+                "other",
+                "family3",
+                "Héros",
+                "4",
+                Some("Other"),
+            ),
         ] {
             connection.execute("INSERT INTO inagle_characters(id,slug,base_slug,chara_id,rarity_label,zukan_order,constellation,name_en,internal_code,skills) VALUES (?1,?2,?3,?4,?5,?6,?7,'Byron','c01001900','[]')", rusqlite::params![id,slug,base,family,rarity,order,constellation]).unwrap();
         }
@@ -711,7 +814,7 @@ mod tests {
                     }
                     (left.len() != right.len())
                         .then(|| format!("{path}: optional field presence differs"))
-                },
+                }
                 (Value::Array(left), Value::Array(right)) if left.len() == right.len() => left
                     .iter()
                     .zip(right)
@@ -729,7 +832,9 @@ mod tests {
                 .unwrap();
         for case in cases {
             let input = case["input"].as_str().unwrap();
-            let actual = character(&connection, input).unwrap().unwrap_or(Value::Null);
+            let actual = character(&connection, input)
+                .unwrap()
+                .unwrap_or(Value::Null);
             assert!(
                 actual == case["expected"],
                 "Historical character detail differs for {input}: {}",
@@ -748,7 +853,9 @@ mod tests {
             .map(|name| format!("{name} TEXT"))
             .collect::<Vec<_>>()
             .join(",");
-        connection.execute_batch(&format!("CREATE TABLE inagle_characters ({columns});")).unwrap();
+        connection
+            .execute_batch(&format!("CREATE TABLE inagle_characters ({columns});"))
+            .unwrap();
         for (id, code, order, primary, rarity) in [
             ("0x1", "c1", "2", "t", "Normal"),
             ("0x2", "c2", "10", "t", "Normal"),
@@ -762,7 +869,11 @@ mod tests {
         }
         let page = characters(
             &connection,
-            &CharacterListRequest { page: Some(1), limit: Some(1), ..Default::default() },
+            &CharacterListRequest {
+                page: Some(1),
+                limit: Some(1),
+                ..Default::default()
+            },
         )
         .unwrap();
         assert_eq!(page["total"], 2);
@@ -770,14 +881,20 @@ mod tests {
         assert_eq!(page["data"].as_array().unwrap().len(), 1);
         let basara = characters(
             &connection,
-            &CharacterListRequest { rarity: Some("BASARA".into()), ..Default::default() },
+            &CharacterListRequest {
+                rarity: Some("BASARA".into()),
+                ..Default::default()
+            },
         )
         .unwrap();
         assert_eq!(basara["total"], 1);
         assert_eq!(basara["data"][0]["isBasara"], true);
         let absent = characters(
             &connection,
-            &CharacterListRequest { q: Some("absent".into()), ..Default::default() },
+            &CharacterListRequest {
+                q: Some("absent".into()),
+                ..Default::default()
+            },
         )
         .unwrap();
         assert_eq!(absent["total"], 0);
@@ -799,7 +916,10 @@ mod tests {
         assert_eq!(projected["isControllable"], "f");
         assert_eq!(projected["variants"][0]["skills"][0]["learnLevel"], 10);
         assert_eq!(
-            group(vec![projected.clone(), projected])[0]["variants"].as_array().unwrap().len(),
+            group(vec![projected.clone(), projected])[0]["variants"]
+                .as_array()
+                .unwrap()
+                .len(),
             1
         );
     }
@@ -833,24 +953,29 @@ mod tests {
                             match (actual.get(key), expected.get(key)) {
                                 (Some(actual), Some(expected)) => {
                                     differences(actual, expected, format!("{path}.{key}"), output)
-                                },
+                                }
                                 _ => output.push(format!("{path}.{key} (presence)")),
                             }
                         }
-                    },
+                    }
                     (Value::Array(actual), Value::Array(expected))
                         if actual.len() == expected.len() =>
                     {
                         for (index, (actual, expected)) in actual.iter().zip(expected).enumerate() {
                             differences(actual, expected, format!("{path}[{index}]"), output);
                         }
-                    },
+                    }
                     _ => output.push(path),
                 }
             }
             let mut paths = Vec::new();
             differences(&actual, &case["expected"], "response".into(), &mut paths);
-            assert!(paths.is_empty(), "request {} differs at {:?}", case["input"], paths);
+            assert!(
+                paths.is_empty(),
+                "request {} differs at {:?}",
+                case["input"],
+                paths
+            );
         }
     }
 }

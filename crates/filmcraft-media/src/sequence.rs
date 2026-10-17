@@ -15,7 +15,10 @@ use std::sync::Arc;
 use filmcraft_frame::{AudioBuffer, VideoFrame};
 use filmcraft_time::FrameRate;
 
-use crate::{FrameCache, FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, Result, VideoStreamInfo};
+use crate::{
+    FrameCache, FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, Result,
+    VideoStreamInfo,
+};
 
 /// Reads a file's bytes (the host's file access).
 pub type FrameLoader = Arc<dyn Fn(&str) -> std::io::Result<Vec<u8>> + Send + Sync>;
@@ -46,7 +49,9 @@ impl Numbered {
         }
         let stem = &name[..ext_at];
         let end = stem.rfind(|c: char| c.is_ascii_digit())? + 1;
-        let start = stem[..end].rfind(|c: char| !c.is_ascii_digit()).map_or(0, |i| i + 1);
+        let start = stem[..end]
+            .rfind(|c: char| !c.is_ascii_digit())
+            .map_or(0, |i| i + 1);
         let digits = &stem[start..end];
         if digits.len() > 18 {
             return None;
@@ -101,7 +106,11 @@ impl Numbered {
 /// The frames of the sequence `first` belongs to, from `first.number` to the highest number among
 /// `siblings` (file names in its directory): each frame's path, or `None` for a missing number.
 pub fn sequence_frames(first: &Numbered, siblings: &[String]) -> Vec<Option<String>> {
-    let mut nums: Vec<(u64, &String)> = siblings.iter().filter_map(|n| first.number_of(n).map(|k| (k, n))).filter(|(k, _)| *k >= first.number).collect();
+    let mut nums: Vec<(u64, &String)> = siblings
+        .iter()
+        .filter_map(|n| first.number_of(n).map(|k| (k, n)))
+        .filter(|(k, _)| *k >= first.number)
+        .collect();
     nums.sort();
     nums.dedup_by_key(|x| x.0);
     let last = nums.last().map_or(first.number, |x| x.0);
@@ -131,10 +140,24 @@ pub struct ImageSequenceSource {
 impl ImageSequenceSource {
     /// `frames`: path per frame (`None`: missing). The first present frame is decoded now (size,
     /// alpha); the rest on demand.
-    pub fn new(name: &str, frames: Vec<Option<String>>, rate: FrameRate, loader: FrameLoader) -> Result<Self> {
-        let first = frames.iter().flatten().next().ok_or_else(|| MediaError::Offline(format!("{name}: no frames")))?.clone();
+    pub fn new(
+        name: &str,
+        frames: Vec<Option<String>>,
+        rate: FrameRate,
+        loader: FrameLoader,
+    ) -> Result<Self> {
+        let first = frames
+            .iter()
+            .flatten()
+            .next()
+            .ok_or_else(|| MediaError::Offline(format!("{name}: no frames")))?
+            .clone();
         let bytes = loader(&first).map_err(|e| {
-            if e.kind() == std::io::ErrorKind::NotFound { MediaError::Offline(format!("{first}: {e}")) } else { MediaError::Io(format!("{first}: {e}")) }
+            if e.kind() == std::io::ErrorKind::NotFound {
+                MediaError::Offline(format!("{first}: {e}"))
+            } else {
+                MediaError::Io(format!("{first}: {e}"))
+            }
         })?;
         let (frame, has_alpha, pixel_format, timing) = decode_frame(&first, &bytes)?;
         let (w, h) = (frame.width, frame.height);
@@ -142,7 +165,11 @@ impl ImageSequenceSource {
             Some(info) => crate::still::dng::sequence_timing(&info, rate),
             None => (rate, None),
         };
-        let ext = first.rsplit('.').next().unwrap_or("image").to_ascii_uppercase();
+        let ext = first
+            .rsplit('.')
+            .next()
+            .unwrap_or("image")
+            .to_ascii_uppercase();
         let n = frames.len() as i64;
         let info = MediaInfo {
             name: name.to_string(),
@@ -166,8 +193,16 @@ impl ImageSequenceSource {
             file_size: None,
         };
         let cache = FrameCache::new(256 << 20);
-        cache.insert(frames.iter().position(Option::is_some).unwrap_or(0), Arc::new(frame));
-        Ok(Self { info, frames, loader, cache })
+        cache.insert(
+            frames.iter().position(Option::is_some).unwrap_or(0),
+            Arc::new(frame),
+        );
+        Ok(Self {
+            info,
+            frames,
+            loader,
+            cache,
+        })
     }
 
     pub fn frame_count(&self) -> usize {
@@ -176,7 +211,12 @@ impl ImageSequenceSource {
 
     /// Indices of missing frames.
     pub fn missing_frames(&self) -> Vec<usize> {
-        self.frames.iter().enumerate().filter(|(_, f)| f.is_none()).map(|(i, _)| i).collect()
+        self.frames
+            .iter()
+            .enumerate()
+            .filter(|(_, f)| f.is_none())
+            .map(|(i, _)| i)
+            .collect()
     }
 
     /// Path of frame `i` (`None` when missing).
@@ -188,7 +228,11 @@ impl ImageSequenceSource {
         if let Some(f) = self.cache.get(&i) {
             return Ok(f);
         }
-        let path = self.frames.get(i).and_then(|f| f.as_deref()).ok_or(MediaError::NoStream("video"))?;
+        let path = self
+            .frames
+            .get(i)
+            .and_then(|f| f.as_deref())
+            .ok_or(MediaError::NoStream("video"))?;
         let bytes = (self.loader)(path).map_err(|e| MediaError::Io(format!("{path}: {e}")))?;
         let f = Arc::new(decode_frame(path, &bytes)?.0);
         self.cache.insert(i, f.clone());
@@ -203,7 +247,11 @@ impl MediaSource for ImageSequenceSource {
 
     fn video_frame(&self, req: FrameRequest) -> Result<Arc<VideoFrame>> {
         let n = self.frames.len();
-        let want = self.info.frame_rate().frame_at(req.time.max(filmcraft_time::Tick::ZERO)).clamp(0, n as i64 - 1) as usize;
+        let want = self
+            .info
+            .frame_rate()
+            .frame_at(req.time.max(filmcraft_time::Tick::ZERO))
+            .clamp(0, n as i64 - 1) as usize;
         // the wanted frame, else the nearest earlier present frame, else the nearest later one
         let candidates = (0..=want).rev().chain(want + 1..n);
         let mut last_err = None;
@@ -224,7 +272,10 @@ impl MediaSource for ImageSequenceSource {
 /// Decode one frame file: OpenEXR, Radiance HDR and DNG camera raw as linear floats (DNG with its metadata, for
 /// the sequence's timing), every other format through the still decoders as RGBA8. Returns the
 /// frame, whether it has alpha, and its pixel format for the media info.
-fn decode_frame(name: &str, bytes: &[u8]) -> Result<(VideoFrame, bool, String, Option<filmcraft_dng::Info>)> {
+fn decode_frame(
+    name: &str,
+    bytes: &[u8],
+) -> Result<(VideoFrame, bool, String, Option<filmcraft_dng::Info>)> {
     if crate::still::exr::sniff(bytes) {
         let d = crate::still::exr::decode(name, bytes)?;
         return Ok((d.frame, d.has_alpha, d.pixel_format, None));
@@ -238,8 +289,18 @@ fn decode_frame(name: &str, bytes: &[u8]) -> Result<(VideoFrame, bool, String, O
         return Ok((d.frame, false, d.pixel_format, Some(d.info)));
     }
     let img = crate::still::decode_raster(name, bytes)?;
-    let pixel_format = if img.has_alpha { "RGBA 8-bit" } else { "RGB 8-bit" }.to_string();
-    Ok((VideoFrame::rgba8(img.width, img.height, img.rgba), img.has_alpha, pixel_format, None))
+    let pixel_format = if img.has_alpha {
+        "RGBA 8-bit"
+    } else {
+        "RGB 8-bit"
+    }
+    .to_string();
+    Ok((
+        VideoFrame::rgba8(img.width, img.height, img.rgba),
+        img.has_alpha,
+        pixel_format,
+        None,
+    ))
 }
 
 #[cfg(test)]
@@ -251,30 +312,63 @@ mod tests {
     #[test]
     fn numbered_names() {
         let n = Numbered::parse("/shots/A001_C002_0099.png").unwrap();
-        assert_eq!((n.dir.as_str(), n.prefix.as_str(), n.number, n.digits, n.suffix.as_str()), ("/shots/", "A001_C002_", 99, 4, ".png"));
+        assert_eq!(
+            (
+                n.dir.as_str(),
+                n.prefix.as_str(),
+                n.number,
+                n.digits,
+                n.suffix.as_str()
+            ),
+            ("/shots/", "A001_C002_", 99, 4, ".png")
+        );
         assert!(n.padded());
         assert_eq!(n.path(100), "/shots/A001_C002_0100.png");
         assert_eq!(n.number_of("A001_C002_0100.png"), Some(100));
         assert_eq!(n.number_of("A001_C002_100.png"), None, "padding differs");
-        assert_eq!(n.number_of("A001_C002_12345.png"), Some(12345), "overflowing the padding");
+        assert_eq!(
+            n.number_of("A001_C002_12345.png"),
+            Some(12345),
+            "overflowing the padding"
+        );
         assert_eq!(n.number_of("A001_C002_0100.jpg"), None);
         assert_eq!(n.number_of("B001_C002_0100.png"), None);
         let u = Numbered::parse("frame7.TIF").unwrap();
-        assert_eq!((u.prefix.as_str(), u.number, u.suffix.as_str()), ("frame", 7, ".TIF"));
+        assert_eq!(
+            (u.prefix.as_str(), u.number, u.suffix.as_str()),
+            ("frame", 7, ".TIF")
+        );
         assert!(!u.padded());
         assert_eq!(u.file_name(10), "frame10.TIF");
         assert_eq!(u.number_of("frame10.TIF"), Some(10));
-        assert_eq!(u.number_of("frame10.tif"), Some(10), "Linux stills often mix .TIF and .tif");
+        assert_eq!(
+            u.number_of("frame10.tif"),
+            Some(10),
+            "Linux stills often mix .TIF and .tif"
+        );
         assert_eq!(Numbered::parse("clip.mov"), None, "not a still");
         assert_eq!(Numbered::parse("nodigits.png"), None);
         let w = Numbered::parse("C:\\renders\\out.0010.exr.png").unwrap();
-        assert_eq!((w.dir.as_str(), w.prefix.as_str(), w.number), ("C:\\renders\\", "out.", 10));
+        assert_eq!(
+            (w.dir.as_str(), w.prefix.as_str(), w.number),
+            ("C:\\renders\\", "out.", 10)
+        );
     }
 
     #[test]
     fn frames_with_gaps() {
         let n = Numbered::parse("/d/s_003.png").unwrap();
-        let names: Vec<String> = ["s_001.png", "s_003.png", "s_004.png", "s_007.png", "other.png", "s_005.jpg"].iter().map(|s| s.to_string()).collect();
+        let names: Vec<String> = [
+            "s_001.png",
+            "s_003.png",
+            "s_004.png",
+            "s_007.png",
+            "other.png",
+            "s_005.jpg",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
         let f = sequence_frames(&n, &names);
         assert_eq!(f.len(), 5);
         assert_eq!(f[0].as_deref(), Some("/d/s_003.png"));
@@ -293,18 +387,40 @@ mod tests {
     #[test]
     fn webp_frames_lossless() {
         let enc = |v: u8| {
-            let img = image::RgbaImage::from_fn(6, 4, |x, y| image::Rgba([v, (x * 40) as u8, (y * 60) as u8, 255]));
+            let img = image::RgbaImage::from_fn(6, 4, |x, y| {
+                image::Rgba([v, (x * 40) as u8, (y * 60) as u8, 255])
+            });
             let mut out = Vec::new();
-            image::codecs::webp::WebPEncoder::new_lossless(&mut out).encode(img.as_raw(), 6, 4, image::ExtendedColorType::Rgba8).unwrap();
+            image::codecs::webp::WebPEncoder::new_lossless(&mut out)
+                .encode(img.as_raw(), 6, 4, image::ExtendedColorType::Rgba8)
+                .unwrap();
             (img.into_raw(), out)
         };
         let (a, wa) = enc(1);
         let (b, wb) = enc(2);
-        let files: HashMap<String, Vec<u8>> = [("w1.webp".to_string(), wa), ("w2.webp".to_string(), wb)].into_iter().collect();
-        let loader: FrameLoader = Arc::new(move |p: &str| files.get(p).cloned().ok_or_else(|| std::io::Error::other("missing")));
-        let s = ImageSequenceSource::new("w1.webp", vec![Some("w1.webp".into()), Some("w2.webp".into())], FrameRate::FPS_24, loader).unwrap();
+        let files: HashMap<String, Vec<u8>> =
+            [("w1.webp".to_string(), wa), ("w2.webp".to_string(), wb)]
+                .into_iter()
+                .collect();
+        let loader: FrameLoader = Arc::new(move |p: &str| {
+            files
+                .get(p)
+                .cloned()
+                .ok_or_else(|| std::io::Error::other("missing"))
+        });
+        let s = ImageSequenceSource::new(
+            "w1.webp",
+            vec![Some("w1.webp".into()), Some("w2.webp".into())],
+            FrameRate::FPS_24,
+            loader,
+        )
+        .unwrap();
         for (i, want) in [a, b].iter().enumerate() {
-            match &s.video_frame(FrameRequest::full(FrameRate::FPS_24.tick_of(i as i64))).unwrap().data {
+            match &s
+                .video_frame(FrameRequest::full(FrameRate::FPS_24.tick_of(i as i64)))
+                .unwrap()
+                .data
+            {
                 filmcraft_frame::PixelData::Rgba8(p) => assert_eq!(&p[..], &want[..]),
                 _ => panic!(),
             }
@@ -313,19 +429,34 @@ mod tests {
 
     #[test]
     fn plays_frames_holds_missing_and_caches() {
-        let files: HashMap<String, Vec<u8>> = [(0, 10u8), (1, 20), (3, 40)].iter().map(|(i, v)| (format!("f{i}.png"), png(8, 4, *v))).collect();
+        let files: HashMap<String, Vec<u8>> = [(0, 10u8), (1, 20), (3, 40)]
+            .iter()
+            .map(|(i, v)| (format!("f{i}.png"), png(8, 4, *v)))
+            .collect();
         let reads = Arc::new(Mutex::new(0usize));
         let r = reads.clone();
         let loader: FrameLoader = Arc::new(move |p: &str| {
             *r.lock().unwrap() += 1;
-            files.get(p).cloned().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, p.to_string()))
+            files
+                .get(p)
+                .cloned()
+                .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, p.to_string()))
         });
-        let frames = vec![Some("f0.png".to_string()), Some("f1.png".into()), None, Some("f3.png".into())];
+        let frames = vec![
+            Some("f0.png".to_string()),
+            Some("f1.png".into()),
+            None,
+            Some("f3.png".into()),
+        ];
         let s = ImageSequenceSource::new("f0.png", frames, FrameRate::FPS_25, loader).unwrap();
         assert_eq!(s.info().kind, MediaKind::ImageSequence);
         assert_eq!(s.info().duration, FrameRate::FPS_25.tick_of(4));
         assert_eq!(s.missing_frames(), vec![2]);
-        let px = |i: i64| match &s.video_frame(FrameRequest::full(FrameRate::FPS_25.tick_of(i))).unwrap().data {
+        let px = |i: i64| match &s
+            .video_frame(FrameRequest::full(FrameRate::FPS_25.tick_of(i)))
+            .unwrap()
+            .data
+        {
             filmcraft_frame::PixelData::Rgba8(p) => p[0],
             _ => panic!(),
         };

@@ -63,7 +63,12 @@ pub(crate) fn decode(data: &[u8], early: bool, max: usize) -> Step {
     let mut next = FIRST;
     let mut w = 9;
     let mut prev: Option<usize> = None;
-    let mut r = BitReader { data, pos: 0, acc: 0, bits: 0 };
+    let mut r = BitReader {
+        data,
+        pos: 0,
+        acc: 0,
+        bits: 0,
+    };
     let mut out = Vec::with_capacity(data.len().saturating_mul(2).min(max));
 
     while let Some(code) = r.read(w) {
@@ -84,7 +89,11 @@ pub(crate) fn decode(data: &[u8], early: bool, max: usize) -> Step {
             } else if code == next && next < TABLE {
                 first[p]
             } else {
-                return Err(Failure::corrupt(NAME, format!("code {code} not in table (next {next})"), out));
+                return Err(Failure::corrupt(
+                    NAME,
+                    format!("code {code} not in table (next {next})"),
+                    out,
+                ));
             };
             if next < TABLE {
                 prefix[next] = p as u16;
@@ -94,7 +103,11 @@ pub(crate) fn decode(data: &[u8], early: bool, max: usize) -> Step {
                 next += 1;
             }
         } else if code >= 256 {
-            return Err(Failure::corrupt(NAME, format!("code {code} before any table entry"), out));
+            return Err(Failure::corrupt(
+                NAME,
+                format!("code {code} before any table entry"),
+                out,
+            ));
         }
         // Emit the string for `code`, walking the prefix chain backwards.
         let n = usize::from(len[code]);
@@ -141,7 +154,11 @@ impl BitWriter {
 
 /// Greedy LZW with a leading clear-table code and a trailing EOD.
 pub(crate) fn encode(data: &[u8], early: bool) -> Vec<u8> {
-    let mut wr = BitWriter { out: Vec::with_capacity(data.len() / 2 + 8), acc: 0, bits: 0 };
+    let mut wr = BitWriter {
+        out: Vec::with_capacity(data.len() / 2 + 8),
+        acc: 0,
+        bits: 0,
+    };
     let mut dict: HashMap<(u16, u8), u16> = HashMap::new();
     // `next` is the encoder's next free code; `dnext` mirrors the decoder's, which lags
     // one entry behind (the decoder adds an entry only once it sees the following code).
@@ -207,7 +224,11 @@ mod tests {
     #[test]
     fn missing_eod_and_clear() {
         // Drop the EOD (last 9 bits span the final 2 bytes; keep bits for 66 only).
-        let mut w = BitWriter { out: vec![], acc: 0, bits: 0 };
+        let mut w = BitWriter {
+            out: vec![],
+            acc: 0,
+            bits: 0,
+        };
         for c in [45u16, 258, 258, 65, 259, 66] {
             w.write(c, 9);
         }
@@ -216,22 +237,49 @@ mod tests {
 
     #[test]
     fn invalid_codes() {
-        let mut w = BitWriter { out: vec![], acc: 0, bits: 0 };
+        let mut w = BitWriter {
+            out: vec![],
+            acc: 0,
+            bits: 0,
+        };
         for c in [256u16, 65, 300] {
             w.write(c, 9);
         }
         let f = decode(&w.finish(), true, 1000).err().unwrap();
         assert!(matches!(f.error, FilterError::Corrupt { .. }));
         assert_eq!(f.partial, b"A");
-        let mut w = BitWriter { out: vec![], acc: 0, bits: 0 };
+        let mut w = BitWriter {
+            out: vec![],
+            acc: 0,
+            bits: 0,
+        };
         w.write(258, 9);
-        assert!(matches!(dec(&w.finish(), true), Err(FilterError::Corrupt { .. })));
+        assert!(matches!(
+            dec(&w.finish(), true),
+            Err(FilterError::Corrupt { .. })
+        ));
     }
 
     #[test]
     fn widths() {
-        assert_eq!((width(510, true), width(511, true), width(511, false), width(512, false)), (9, 10, 9, 10));
-        assert_eq!((width(1022, true), width(1023, true), width(2047, true), width(4095, false)), (10, 11, 12, 12));
+        assert_eq!(
+            (
+                width(510, true),
+                width(511, true),
+                width(511, false),
+                width(512, false)
+            ),
+            (9, 10, 9, 10)
+        );
+        assert_eq!(
+            (
+                width(1022, true),
+                width(1023, true),
+                width(2047, true),
+                width(4095, false)
+            ),
+            (10, 11, 12, 12)
+        );
     }
 
     fn noisy(n: usize, seed: u32) -> Vec<u8> {
@@ -247,7 +295,11 @@ mod tests {
     #[test]
     fn all_widths_and_clears_round_trip() {
         for early in [false, true] {
-            for data in [noisy(200_000, 1), (0..=255u8).cycle().take(70_000).collect(), vec![9u8; 100_000]] {
+            for data in [
+                noisy(200_000, 1),
+                (0..=255u8).cycle().take(70_000).collect(),
+                vec![9u8; 100_000],
+            ] {
                 let e = encode(&data, early);
                 assert_eq!(dec(&e, early).unwrap(), data);
             }
@@ -259,14 +311,24 @@ mod tests {
         use weezl::BitOrder::Msb;
         for data in [noisy(150_000, 7), SPEC_IN.to_vec(), vec![]] {
             // early change 1 is the TIFF size switch; 0 is the plain variant.
-            let tiff = weezl::encode::Encoder::with_tiff_size_switch(Msb, 8).encode(&data).unwrap();
+            let tiff = weezl::encode::Encoder::with_tiff_size_switch(Msb, 8)
+                .encode(&data)
+                .unwrap();
             assert_eq!(dec(&tiff, true).unwrap(), data);
             let plain = weezl::encode::Encoder::new(Msb, 8).encode(&data).unwrap();
             assert_eq!(dec(&plain, false).unwrap(), data);
             let ours = encode(&data, true);
-            assert_eq!(weezl::decode::Decoder::with_tiff_size_switch(Msb, 8).decode(&ours).unwrap(), data);
+            assert_eq!(
+                weezl::decode::Decoder::with_tiff_size_switch(Msb, 8)
+                    .decode(&ours)
+                    .unwrap(),
+                data
+            );
             let ours = encode(&data, false);
-            assert_eq!(weezl::decode::Decoder::new(Msb, 8).decode(&ours).unwrap(), data);
+            assert_eq!(
+                weezl::decode::Decoder::new(Msb, 8).decode(&ours).unwrap(),
+                data
+            );
         }
     }
 
@@ -274,8 +336,13 @@ mod tests {
     fn full_table_without_clear() {
         // Hand-roll a stream that fills the table and keeps going at 12 bits.
         let data = noisy(40_000, 3);
-        let mut w = BitWriter { out: vec![], acc: 0, bits: 0 };
-        let mut dict: HashMap<Vec<u8>, u16> = (0..=255u8).map(|b| (vec![b], u16::from(b))).collect();
+        let mut w = BitWriter {
+            out: vec![],
+            acc: 0,
+            bits: 0,
+        };
+        let mut dict: HashMap<Vec<u8>, u16> =
+            (0..=255u8).map(|b| (vec![b], u16::from(b))).collect();
         let (mut next, mut dnext, mut since) = (FIRST, FIRST, 0usize);
         let mut cur: Vec<u8> = vec![];
         let mut put = |w: &mut BitWriter, code: u16, dnext: &mut usize| {
@@ -308,7 +375,10 @@ mod tests {
     #[test]
     fn limit() {
         let e = encode(&vec![0u8; 100_000], true);
-        assert!(matches!(decode(&e, true, 50_000).map_err(|f| f.error), Err(FilterError::LimitExceeded(50_000))));
+        assert!(matches!(
+            decode(&e, true, 50_000).map_err(|f| f.error),
+            Err(FilterError::LimitExceeded(50_000))
+        ));
         assert_eq!(decode(&e, true, 100_000).ok().unwrap().len(), 100_000);
     }
 }

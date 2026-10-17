@@ -4,7 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use filmcraft_apv::{
-    ChromaFormat, ContentLightLevel, DecodeOptions, Encoder, EncoderConfig, Frame, MasteringDisplay, Profile, decode_frame, decode_frame_with, probe,
+    ChromaFormat, ContentLightLevel, DecodeOptions, Encoder, EncoderConfig, Frame,
+    MasteringDisplay, Profile, decode_frame, decode_frame_with, probe,
 };
 
 fn ffmpeg() -> Option<PathBuf> {
@@ -38,8 +39,19 @@ fn ffmpeg_decode_raw(ff: &Path, apv_path: &Path, pix_fmt: &str) -> (Vec<u16>, St
         .output()
         .expect("run ffmpeg");
     let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
-    assert!(out.status.success(), "ffmpeg failed on {:?}: {}", apv_path, stderr);
-    let samples = out.stdout.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+    assert!(
+        out.status.success(),
+        "ffmpeg failed on {:?}: {}",
+        apv_path,
+        stderr
+    );
+    let samples = out
+        .stdout
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| u16::from_le_bytes([c[0], c[1]]))
+        .collect();
     (samples, stderr)
 }
 
@@ -56,7 +68,11 @@ fn synthetic_frame(profile: Profile, w: u32, h: u32) -> Frame {
         for x in 0..w {
             // Mix smooth gradients, diagonal edges, and high-frequency patterns
             let grad = (x * 7 + y * 13) % span;
-            let checker = if ((x / 3) ^ (y / 5)) & 1 == 0 { 40 << (depth - 10) } else { 0 };
+            let checker = if ((x / 3) ^ (y / 5)) & 1 == 0 {
+                40 << (depth - 10)
+            } else {
+                0
+            };
             f.y[(y * w + x) as usize] = (lo + (grad + checker) % span).min(max_v) as u16;
         }
     }
@@ -75,8 +91,11 @@ fn synthetic_frame(profile: Profile, w: u32, h: u32) -> Frame {
             for x in 0..w {
                 let dx = x as i32 - (w as i32) / 2;
                 let dy = y as i32 - (h as i32) / 2;
-                a[(y * w + x) as usize] =
-                    if dx * dx + dy * dy < ((w.min(h) as i32) / 3).pow(2) { max_v as u16 } else { ((x * 19 + y * 23) % (max_v + 1)) as u16 };
+                a[(y * w + x) as usize] = if dx * dx + dy * dy < ((w.min(h) as i32) / 3).pow(2) {
+                    max_v as u16
+                } else {
+                    ((x * 19 + y * 23) % (max_v + 1)) as u16
+                };
             }
         }
     }
@@ -98,8 +117,17 @@ fn psnr(a: &[u16], b: &[u16], peak: f64) -> f64 {
     if a.is_empty() {
         return 99.0;
     }
-    let mse: f64 = a.iter().zip(b).map(|(&x, &y)| (x as f64 - y as f64).powi(2)).sum::<f64>() / a.len() as f64;
-    if mse == 0.0 { 99.0 } else { 10.0 * (peak * peak / mse).log10() }
+    let mse: f64 = a
+        .iter()
+        .zip(b)
+        .map(|(&x, &y)| (x as f64 - y as f64).powi(2))
+        .sum::<f64>()
+        / a.len() as f64;
+    if mse == 0.0 {
+        99.0
+    } else {
+        10.0 * (peak * peak / mse).log10()
+    }
 }
 
 #[test]
@@ -119,18 +147,36 @@ fn all_profiles_bit_exact_with_ffmpeg() {
         std::fs::write(&apv_path, &raw_au).expect("write .apv");
 
         let (ff_samples, stderr) = ffmpeg_decode_raw(&ff, &apv_path, native_pix_fmt(profile));
-        assert!(stderr.trim().is_empty(), "{profile:?}: ffmpeg stderr: {stderr}");
+        assert!(
+            stderr.trim().is_empty(),
+            "{profile:?}: ffmpeg stderr: {stderr}"
+        );
 
         let ours = decode_frame(&raw_au).expect("our decode");
         let our_samples = flatten_frame(&ours);
-        assert_eq!(our_samples.len(), ff_samples.len(), "{profile:?}: sample count mismatch");
+        assert_eq!(
+            our_samples.len(),
+            ff_samples.len(),
+            "{profile:?}: sample count mismatch"
+        );
 
-        let max_diff = our_samples.iter().zip(&ff_samples).map(|(&a, &b)| (a as i32 - b as i32).unsigned_abs()).max().unwrap_or(0);
-        assert_eq!(max_diff, 0, "{profile:?}: our decoder must be 100% bit-exact with ffmpeg (max_diff={max_diff})");
+        let max_diff = our_samples
+            .iter()
+            .zip(&ff_samples)
+            .map(|(&a, &b)| (a as i32 - b as i32).unsigned_abs())
+            .max()
+            .unwrap_or(0);
+        assert_eq!(
+            max_diff, 0,
+            "{profile:?}: our decoder must be 100% bit-exact with ffmpeg (max_diff={max_diff})"
+        );
 
         let peak = ((1u32 << profile.default_bit_depth()) - 1) as f64;
         let y_psnr = psnr(&ours.y, &src.y, peak);
-        assert!(y_psnr > 45.0, "{profile:?}: expected high PSNR at qp=12, got {y_psnr:.2} dB");
+        assert!(
+            y_psnr > 45.0,
+            "{profile:?}: expected high PSNR at qp=12, got {y_psnr:.2} dB"
+        );
     }
 }
 
@@ -153,7 +199,10 @@ fn odd_dimensions_and_multi_tile_bit_exact_with_ffmpeg() {
             max_luminance: 1000 << 8,
             min_luminance: 1,
         });
-        src.content_light = Some(ContentLightLevel { max_cll: 1000, max_fall: 400 });
+        src.content_light = Some(ContentLightLevel {
+            max_cll: 1000,
+            max_fall: 400,
+        });
 
         let mut enc = Encoder::new(profile, w, h).expect("encoder init");
         let raw_au = enc.encode_raw_au(&src).expect("encode");
@@ -171,10 +220,20 @@ fn odd_dimensions_and_multi_tile_bit_exact_with_ffmpeg() {
         assert_eq!(ours.content_light, src.content_light);
 
         let our_samples = flatten_frame(&ours);
-        assert_eq!(our_samples, ff_samples, "{profile:?} {w}x{h}: bit-exact match with ffmpeg failed");
+        assert_eq!(
+            our_samples, ff_samples,
+            "{profile:?} {w}x{h}: bit-exact match with ffmpeg failed"
+        );
 
         // Also verify single-threaded decode produces identical output
-        let ours_st = decode_frame_with(&raw_au, &DecodeOptions { bit_depth: None, threads: false }).expect("decode single-threaded");
+        let ours_st = decode_frame_with(
+            &raw_au,
+            &DecodeOptions {
+                bit_depth: None,
+                threads: false,
+            },
+        )
+        .expect("decode single-threaded");
         assert_eq!(ours, ours_st);
     }
 }
@@ -220,13 +279,30 @@ fn custom_q_matrix_and_fh_tile_sizes_bit_exact_with_ffmpeg() {
 
     let ours = decode_frame(&raw_au).expect("decode");
     let our_samples = flatten_frame(&ours);
-    assert_eq!(our_samples, ff_samples, "asymmetric q_matrix decode must be bit-exact with ffmpeg");
+    assert_eq!(
+        our_samples, ff_samples,
+        "asymmetric q_matrix decode must be bit-exact with ffmpeg"
+    );
 
     // Verify 8-bit and 16-bit rescaled output
-    let d8 = decode_frame_with(&raw_au, &DecodeOptions { bit_depth: Some(8), threads: true }).expect("decode 8-bit");
+    let d8 = decode_frame_with(
+        &raw_au,
+        &DecodeOptions {
+            bit_depth: Some(8),
+            threads: true,
+        },
+    )
+    .expect("decode 8-bit");
     assert_eq!(d8.bit_depth, 8);
     assert!(d8.y.iter().all(|&s| s <= 255));
 
-    let d16 = decode_frame_with(&raw_au, &DecodeOptions { bit_depth: Some(16), threads: true }).expect("decode 16-bit");
+    let d16 = decode_frame_with(
+        &raw_au,
+        &DecodeOptions {
+            bit_depth: Some(16),
+            threads: true,
+        },
+    )
+    .expect("decode 16-bit");
     assert_eq!(d16.bit_depth, 16);
 }

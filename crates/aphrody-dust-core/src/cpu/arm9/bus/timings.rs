@@ -45,11 +45,23 @@ impl Timings {
         //   same as the BIOS region's.
         // - GBA slot
 
-        self.0.fill(Cycles { n32_data: 8, s32_data: 2, n16_data: 8, s16_data: 2, code: 8 });
+        self.0.fill(Cycles {
+            n32_data: 8,
+            s32_data: 2,
+            n16_data: 8,
+            s16_data: 2,
+            code: 8,
+        });
 
         // Main RAM
         self.set_range(
-            Cycles { n32_data: 20, s32_data: 4, n16_data: 18, s16_data: 2, code: 18 },
+            Cycles {
+                n32_data: 20,
+                s32_data: 4,
+                n16_data: 18,
+                s16_data: 2,
+                code: 18,
+            },
             (0x0200_0000, 0x02FF_FFFF),
         );
 
@@ -57,7 +69,13 @@ impl Timings {
 
         // Palette, VRAM
         self.set_range(
-            Cycles { n32_data: 10, s32_data: 4, n16_data: 8, s16_data: 2, code: 10 },
+            Cycles {
+                n32_data: 10,
+                s32_data: 4,
+                n16_data: 8,
+                s16_data: 2,
+                code: 10,
+            },
             (0x0500_0000, 0x06FF_FFFF),
         );
 

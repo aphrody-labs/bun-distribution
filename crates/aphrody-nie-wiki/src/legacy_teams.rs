@@ -45,7 +45,10 @@ fn ordered(value: &Value) -> Vec<(String, Value)> {
         .unwrap_or_default()
 }
 fn parsed(value: &Value) -> Value {
-    value.as_str().and_then(|raw| serde_json::from_str(raw).ok()).unwrap_or(Value::Null)
+    value
+        .as_str()
+        .and_then(|raw| serde_json::from_str(raw).ok())
+        .unwrap_or(Value::Null)
 }
 fn present(value: &Value) -> bool {
     !value.is_null()
@@ -54,10 +57,18 @@ fn present(value: &Value) -> bool {
         && value.as_i64() != Some(0)
 }
 fn first(values: &[&Value]) -> Value {
-    values.iter().find(|value| present(value)).map_or(Value::Null, |value| (*value).clone())
+    values
+        .iter()
+        .find(|value| present(value))
+        .map_or(Value::Null, |value| (*value).clone())
 }
 fn name(row: &Value) -> Value {
-    first(&[&row["name_fr"], &row["name_en"], &row["name_ja"], &row["id"]])
+    first(&[
+        &row["name_fr"],
+        &row["name_en"],
+        &row["name_ja"],
+        &row["id"],
+    ])
 }
 fn series_label(series: &str) -> &str {
     match series {
@@ -85,18 +96,30 @@ fn emblem(row: &Value) -> Value {
                 .find(|(key, value)| key == series && present(value))
                 .map(|(_, value)| value)
         })
-        .or_else(|| entries.iter().find(|(_, value)| present(value)).map(|(_, value)| value));
+        .or_else(|| {
+            entries
+                .iter()
+                .find(|(_, value)| present(value))
+                .map(|(_, value)| value)
+        });
     let Some(crc) = value.and_then(Value::as_str) else {
         return Value::Null;
     };
-    let raw = crc.strip_prefix("0x").or_else(|| crc.strip_prefix("0X")).unwrap_or(crc);
+    let raw = crc
+        .strip_prefix("0x")
+        .or_else(|| crc.strip_prefix("0X"))
+        .unwrap_or(crc);
     let Some(code) = map[format!("0x{}", raw.to_uppercase())].as_str() else {
         return Value::Null;
     };
     let known = crate::legacy_equipment::menu_manifest()["emblems"]
         .as_array()
         .is_some_and(|codes| codes.iter().any(|entry| entry == code));
-    if known { json!(format!("{CDN}/200_icon/01_icon_emblem/{code}.png")) } else { Value::Null }
+    if known {
+        json!(format!("{CDN}/200_icon/01_icon_emblem/{code}.png"))
+    } else {
+        Value::Null
+    }
 }
 
 fn face(code: &str) -> String {
@@ -115,16 +138,27 @@ fn face(code: &str) -> String {
 
 pub fn list(connection: &Connection) -> anyhow::Result<Value> {
     let mut rosters: HashMap<String, HashSet<String>> = HashMap::new();
-    for row in rows(connection, "SELECT chara_id,team_id FROM inagle_characters", &[])? {
+    for row in rows(
+        connection,
+        "SELECT chara_id,team_id FROM inagle_characters",
+        &[],
+    )? {
         if let (Some(team), Some(character)) = (
             row["team_id"].as_str().filter(|v| !v.is_empty()),
             row["chara_id"].as_str().filter(|v| !v.is_empty()),
         ) {
-            rosters.entry(team.into()).or_default().insert(character.into());
+            rosters
+                .entry(team.into())
+                .or_default()
+                .insert(character.into());
         }
     }
     let mut result = Vec::new();
-    for row in rows(connection, &format!("SELECT {COLUMNS} FROM inagle_teams"), &[])? {
+    for row in rows(
+        connection,
+        &format!("SELECT {COLUMNS} FROM inagle_teams"),
+        &[],
+    )? {
         let data = parsed(&row["data"]);
         let name = name(&row);
         let name_rank = rank(name.as_str().unwrap_or(""))?;
@@ -134,13 +168,21 @@ pub fn list(connection: &Connection) -> anyhow::Result<Value> {
         } else {
             json!(9999)
         };
-        let seasons =
-            data.get("seasons").filter(|v| !v.is_null()).cloned().unwrap_or_else(|| json!({}));
-        let count = row["id"].as_str().and_then(|id| rosters.get(id)).map_or(0, HashSet::len);
+        let seasons = data
+            .get("seasons")
+            .filter(|v| !v.is_null())
+            .cloned()
+            .unwrap_or_else(|| json!({}));
+        let count = row["id"]
+            .as_str()
+            .and_then(|id| rosters.get(id))
+            .map_or(0, HashSet::len);
         result.push((order,name_rank,json!({"id":row["id"],"name":name,"nameJa":first(&[&row["name_ja"]]),"nameEn":first(&[&row["name_en"]]),"emblemUrl":emblem(&row),"seasons":seasons,"seriesKeys":ordered(&row["kits"]).into_iter().map(|(key,_)|key).collect::<Vec<_>>(),"rosterCount":count,"order":order_value})));
     }
     result.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
-    Ok(Value::Array(result.into_iter().map(|(_, _, row)| row).collect()))
+    Ok(Value::Array(
+        result.into_iter().map(|(_, _, row)| row).collect(),
+    ))
 }
 
 fn models(value: &Value) -> Vec<Value> {
@@ -168,7 +210,10 @@ pub fn detail(connection: &Connection, id: &str) -> anyhow::Result<Option<Value>
         .map(|(series, crc)| json!({"series":series,"seriesLabel":series_label(&series),"crc":crc}))
         .collect::<Vec<_>>();
     let mut kits = Vec::new();
-    for (series, name_id) in ordered(&row["kits"]).into_iter().filter(|(_, id)| present(id)) {
+    for (series, name_id) in ordered(&row["kits"])
+        .into_iter()
+        .filter(|(_, id)| present(id))
+    {
         let uniforms = rows(
             connection,
             "SELECT models FROM inagle_uniforms WHERE name_id=?1",

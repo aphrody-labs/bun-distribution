@@ -4,7 +4,8 @@
 use super::tests::pointers;
 use super::*;
 use figcraft_doc::proto::{
-    Action, DeviceRotation, Direction, Easing, Overflow, OverlayPosition, PrototypeSettings, ScrollPosition, Transition, Trigger,
+    Action, DeviceRotation, Direction, Easing, Overflow, OverlayPosition, PrototypeSettings,
+    ScrollPosition, Transition, Trigger,
 };
 use figcraft_doc::{VariableType, VariableValue};
 use serde_json::json;
@@ -117,7 +118,9 @@ fn file_json() -> Value {
 }
 
 fn named<'a>(doc: &'a Document, name: &str) -> &'a Node {
-    doc.nodes().find(|n| n.name == name).unwrap_or_else(|| panic!("no node {name}"))
+    doc.nodes()
+        .find(|n| n.name == name)
+        .unwrap_or_else(|| panic!("no node {name}"))
 }
 
 fn has(warnings: &[String], s: &str) -> bool {
@@ -135,22 +138,51 @@ fn variables_collections_modes_aliases_and_scopes() {
     assert_eq!(modes, ["Dark", "Light"], "the default mode comes first");
 
     let ids: Vec<&str> = vars.variables.iter().map(|v| v.id.as_str()).collect();
-    assert!(!ids.contains(&"VariableID:1:5") && !ids.contains(&"VariableID:1:8"), "{ids:?}");
+    assert!(
+        !ids.contains(&"VariableID:1:5") && !ids.contains(&"VariableID:1:8"),
+        "{ids:?}"
+    );
     assert_eq!(ids.len(), 5);
     let brand = vars.get(BRAND).unwrap();
-    assert_eq!((brand.name.as_str(), brand.kind, brand.description.as_str()), ("color/brand", VariableType::Color, "Brand"));
-    assert_eq!(brand.scopes, Some(vec!["FRAME_FILL".to_string(), "SHAPE_FILL".to_string()]));
+    assert_eq!(
+        (brand.name.as_str(), brand.kind, brand.description.as_str()),
+        ("color/brand", VariableType::Color, "Brand")
+    );
+    assert_eq!(
+        brand.scopes,
+        Some(vec!["FRAME_FILL".to_string(), "SHAPE_FILL".to_string()])
+    );
     let space = vars.get(SPACE).unwrap();
     assert_eq!(space.scopes, None, "ALL_SCOPES is no limit");
-    assert_eq!(space.values.get("1:1"), Some(&VariableValue::Number(8.0)), "modes without a value take the default's");
-    assert_eq!(vars.get(LABEL).unwrap().scopes, Some(vec!["TEXT_CONTENT".to_string()]), "unknown scopes are dropped");
-    assert_eq!(vars.get("VariableID:1:4").unwrap().values.get("1:0"), Some(&VariableValue::Alias(BRAND.into())));
+    assert_eq!(
+        space.values.get("1:1"),
+        Some(&VariableValue::Number(8.0)),
+        "modes without a value take the default's"
+    );
+    assert_eq!(
+        vars.get(LABEL).unwrap().scopes,
+        Some(vec!["TEXT_CONTENT".to_string()]),
+        "unknown scopes are dropped"
+    );
+    assert_eq!(
+        vars.get("VariableID:1:4").unwrap().values.get("1:0"),
+        Some(&VariableValue::Alias(BRAND.into()))
+    );
     // Aliases resolve through the default mode (Dark: blue).
     let modes = Default::default();
-    assert_eq!(vars.resolve("VariableID:1:4", &modes).and_then(|v| v.type_of()), Some(VariableType::Color));
-    let VariableValue::Color(c) = vars.resolve("VariableID:1:4", &modes).unwrap() else { panic!() };
+    assert_eq!(
+        vars.resolve("VariableID:1:4", &modes)
+            .and_then(|v| v.type_of()),
+        Some(VariableType::Color)
+    );
+    let VariableValue::Color(c) = vars.resolve("VariableID:1:4", &modes).unwrap() else {
+        panic!()
+    };
     assert!(c.b > 0.99 && c.r < 0.01);
-    for w in ["aliases to variables that aren't", "collection isn't in the variables JSON"] {
+    for w in [
+        "aliases to variables that aren't",
+        "collection isn't in the variables JSON",
+    ] {
         assert!(has(&warnings, w), "{w}: {warnings:?}");
     }
 }
@@ -162,21 +194,46 @@ fn bound_variables_and_explicit_modes() {
     fn bound<'a>(n: &'a Node, f: &str) -> Option<&'a str> {
         n.bound.get(f).map(String::as_str)
     }
-    assert_eq!(bound(home, "fill"), Some(BRAND), "paint colour bindings bind the fill");
+    assert_eq!(
+        bound(home, "fill"),
+        Some(BRAND),
+        "paint colour bindings bind the fill"
+    );
     assert_eq!(bound(home, "width"), Some(SPACE));
     assert_eq!(bound(home, "gap"), Some(SPACE));
-    assert_eq!(bound(home, "paddingHorizontal"), Some(SPACE), "left and right on one variable");
-    assert_eq!(bound(home, "opacity"), None, "unknown variables are skipped");
+    assert_eq!(
+        bound(home, "paddingHorizontal"),
+        Some(SPACE),
+        "left and right on one variable"
+    );
+    assert_eq!(
+        bound(home, "opacity"),
+        None,
+        "unknown variables are skipped"
+    );
     assert_eq!(home.var_modes.get(THEME).map(String::as_str), Some("1:0"));
     assert_eq!(home.var_modes.len(), 1);
     let sticky = named(&doc, "Sticky");
-    assert_eq!(bound(sticky, "cornerRadius"), Some(SPACE), "four equal corners bind the radius");
+    assert_eq!(
+        bound(sticky, "cornerRadius"),
+        Some(SPACE),
+        "four equal corners bind the radius"
+    );
     let label = named(&doc, "Label");
     assert_eq!(bound(label, "characters"), Some(LABEL));
     assert_eq!(bound(label, "visible"), Some(FLAG));
     assert_eq!(bound(label, "fontSize"), Some(SPACE));
-    assert_eq!(bound(label, "fill"), None, "a string variable can't colour a fill");
-    for w in ["`effects`", "aren't in the variables JSON (library", "type doesn't fit", "modes of collections"] {
+    assert_eq!(
+        bound(label, "fill"),
+        None,
+        "a string variable can't colour a fill"
+    );
+    for w in [
+        "`effects`",
+        "aren't in the variables JSON (library",
+        "type doesn't fit",
+        "modes of collections",
+    ] {
         assert!(has(&warnings, w), "{w}: {warnings:?}");
     }
     // The bindings feed values like ones made with `variable.bind`.
@@ -185,7 +242,10 @@ fn bound_variables_and_explicit_modes() {
     // Without variable definitions the bindings are dropped with a hint.
     let (doc, warnings) = import(&file_json(), &no_images).unwrap();
     assert!(doc.nodes().all(|n| n.bound.is_empty()));
-    assert!(has(&warnings, "pass the local variables JSON"), "{warnings:?}");
+    assert!(
+        has(&warnings, "pass the local variables JSON"),
+        "{warnings:?}"
+    );
 }
 
 #[test]
@@ -198,12 +258,21 @@ fn embedded_variables_match_separate_ones() {
     // Top-level collections (the `meta` object itself) work too, and the first definition wins.
     let (c, _) = import_with(&embedded, Some(&variables_json()["meta"]), &no_images).unwrap();
     assert_eq!(c.variables, b.variables);
-    assert!(is_variables_json(&variables_json()) && is_variables_json(&variables_json()["meta"]) && !is_variables_json(&file_json()));
+    assert!(
+        is_variables_json(&variables_json())
+            && is_variables_json(&variables_json()["meta"])
+            && !is_variables_json(&file_json())
+    );
     let bytes = serde_json::to_vec(&file_json()).unwrap();
-    let (d, _) = try_import_with(&bytes, Some(&variables_json()), &no_images).unwrap().unwrap();
+    let (d, _) = try_import_with(&bytes, Some(&variables_json()), &no_images)
+        .unwrap()
+        .unwrap();
     assert_eq!(d.variables, b.variables);
     let (_, warnings) = import_with(&file_json(), Some(&json!({"nope": 1})), &no_images).unwrap();
-    assert!(has(&warnings, "has no `variableCollections`"), "{warnings:?}");
+    assert!(
+        has(&warnings, "has no `variableCollections`"),
+        "{warnings:?}"
+    );
 }
 
 #[test]
@@ -215,36 +284,127 @@ fn interactions_triggers_actions_and_transitions() {
     assert_eq!(its.len(), 8, "{its:#?}");
 
     assert_eq!(its[0].trigger, Trigger::OnClick);
-    assert_eq!(its[0].actions, [Action::Navigate { dest: id("Details"), preserve_scroll: false }]);
-    assert_eq!((its[0].transition, its[0].duration_ms), (Transition::SmartAnimate, 450));
-    assert_eq!(its[0].easing, Easing::CustomBezier { x1: 0.1, y1: 0.2, x2: 0.3, y2: 1.4 });
+    assert_eq!(
+        its[0].actions,
+        [Action::Navigate {
+            dest: id("Details"),
+            preserve_scroll: false
+        }]
+    );
+    assert_eq!(
+        (its[0].transition, its[0].duration_ms),
+        (Transition::SmartAnimate, 450)
+    );
+    assert_eq!(
+        its[0].easing,
+        Easing::CustomBezier {
+            x1: 0.1,
+            y1: 0.2,
+            x2: 0.3,
+            y2: 1.4
+        }
+    );
 
     assert_eq!(its[1].trigger, Trigger::AfterDelay { ms: 800 });
-    assert_eq!(its[1].transition, Transition::MoveIn { direction: Direction::Right });
-    assert_eq!(its[1].easing, Easing::CustomSpring { mass: 1.0, stiffness: 200.0, damping: 20.0 });
-    let Action::OpenOverlay { dest, position, close_on_outside, background, .. } = &its[1].actions[0] else { panic!("{:?}", its[1]) };
-    assert_eq!((*dest, *position, *close_on_outside), (id("Menu"), OverlayPosition::TopRight, false));
+    assert_eq!(
+        its[1].transition,
+        Transition::MoveIn {
+            direction: Direction::Right
+        }
+    );
+    assert_eq!(
+        its[1].easing,
+        Easing::CustomSpring {
+            mass: 1.0,
+            stiffness: 200.0,
+            damping: 20.0
+        }
+    );
+    let Action::OpenOverlay {
+        dest,
+        position,
+        close_on_outside,
+        background,
+        ..
+    } = &its[1].actions[0]
+    else {
+        panic!("{:?}", its[1])
+    };
+    assert_eq!(
+        (*dest, *position, *close_on_outside),
+        (id("Menu"), OverlayPosition::TopRight, false)
+    );
     assert!(background.is_some_and(|b| (b.a - 0.4).abs() < 1e-3));
 
-    assert_eq!(its[2].trigger, Trigger::KeyPress { key: "Shift+A".into() }, "modifier keys make a combination");
+    assert_eq!(
+        its[2].trigger,
+        Trigger::KeyPress {
+            key: "Shift+A".into()
+        },
+        "modifier keys make a combination"
+    );
     assert_eq!(its[2].actions, [Action::Back]);
     assert_eq!(its[3].trigger, Trigger::MouseEnter);
-    assert_eq!(its[3].actions, [Action::OpenUrl { url: "https://example.com".into() }]);
+    assert_eq!(
+        its[3].actions,
+        [Action::OpenUrl {
+            url: "https://example.com".into()
+        }]
+    );
     assert_eq!(its[4].trigger, Trigger::OnHover);
-    assert_eq!(its[4].actions, [Action::SetVariable { variable: FLAG.into(), value: json!(false), expr: None }]);
-    assert_eq!((its[4].transition, its[4].duration_ms), (Transition::Instant, 300));
-    assert_eq!(its[5].actions, [Action::CloseOverlay], "a lone unconditional block is inlined");
+    assert_eq!(
+        its[4].actions,
+        [Action::SetVariable {
+            variable: FLAG.into(),
+            value: json!(false),
+            expr: None
+        }]
+    );
+    assert_eq!(
+        (its[4].transition, its[4].duration_ms),
+        (Transition::Instant, 300)
+    );
+    assert_eq!(
+        its[5].actions,
+        [Action::CloseOverlay],
+        "a lone unconditional block is inlined"
+    );
     assert_eq!(its[6].trigger, Trigger::OnDrag);
-    assert_eq!(its[6].actions, [Action::SetVariableMode { collection: THEME.into(), mode: "1:0".into() }]);
+    assert_eq!(
+        its[6].actions,
+        [Action::SetVariableMode {
+            collection: THEME.into(),
+            mode: "1:0".into()
+        }]
+    );
     assert_eq!(its[7].trigger, Trigger::MouseUp);
-    assert_eq!(its[7].actions, [Action::ScrollTo { dest: id("Home"), offset: [0.0, 0.0] }], "unresolved destinations are dropped");
+    assert_eq!(
+        its[7].actions,
+        [Action::ScrollTo {
+            dest: id("Home"),
+            offset: [0.0, 0.0]
+        }],
+        "unresolved destinations are dropped"
+    );
 
     // The legacy single transition.
     let details = named(&doc, "Details");
     assert_eq!(details.interactions.len(), 1);
     let legacy = &details.interactions[0];
-    assert_eq!((&legacy.trigger, &legacy.actions[..]), (&Trigger::OnClick, &[Action::Navigate { dest: id("Home"), preserve_scroll: false }][..]));
-    assert_eq!((legacy.transition, legacy.duration_ms, legacy.easing), (Transition::Dissolve, 200, Easing::EaseIn));
+    assert_eq!(
+        (&legacy.trigger, &legacy.actions[..]),
+        (
+            &Trigger::OnClick,
+            &[Action::Navigate {
+                dest: id("Home"),
+                preserve_scroll: false
+            }][..]
+        )
+    );
+    assert_eq!(
+        (legacy.transition, legacy.duration_ms, legacy.easing),
+        (Transition::Dissolve, 200, Easing::EaseIn)
+    );
 
     assert!(!has(&warnings, "modifier keys"), "{warnings:?}");
     for w in ["video triggers", "without a destination"] {
@@ -253,7 +413,10 @@ fn interactions_triggers_actions_and_transitions() {
     // Without variables, set-variable actions have nothing to set.
     let (doc, warnings) = import(&file_json(), &no_images).unwrap();
     assert_eq!(named(&doc, "Button").interactions.len(), 6);
-    assert!(has(&warnings, "set-variable actions") && has(&warnings, "set-variable-mode actions"), "{warnings:?}");
+    assert!(
+        has(&warnings, "set-variable actions") && has(&warnings, "set-variable-mode actions"),
+        "{warnings:?}"
+    );
 }
 
 #[test]
@@ -261,11 +424,25 @@ fn scrolling_flows_and_prototype_device() {
     let (doc, _) = import(&file_json(), &no_images).unwrap();
     assert_eq!(named(&doc, "Home").overflow, Overflow::Vertical);
     assert_eq!(named(&doc, "Header").scroll_position, ScrollPosition::Fixed);
-    assert_eq!(named(&doc, "Sticky").scroll_position, ScrollPosition::Sticky);
-    assert_eq!(named(&doc, "Button").scroll_position, ScrollPosition::Scrolls);
-    let NodeKind::Page { flows, prototype, .. } = &doc.node(doc.pages[0]).unwrap().kind else { panic!() };
+    assert_eq!(
+        named(&doc, "Sticky").scroll_position,
+        ScrollPosition::Sticky
+    );
+    assert_eq!(
+        named(&doc, "Button").scroll_position,
+        ScrollPosition::Scrolls
+    );
+    let NodeKind::Page {
+        flows, prototype, ..
+    } = &doc.node(doc.pages[0]).unwrap().kind
+    else {
+        panic!()
+    };
     assert_eq!(flows.len(), 1);
-    assert_eq!((flows[0].name.as_str(), flows[0].start), ("Main flow", named(&doc, "Home").id));
+    assert_eq!(
+        (flows[0].name.as_str(), flows[0].start),
+        ("Main flow", named(&doc, "Home").id)
+    );
     assert_eq!(prototype.device, "iPhone 16 Pro Max");
     assert!((prototype.background.r - 0.2).abs() < 1e-3);
 
@@ -276,33 +453,69 @@ fn scrolling_flows_and_prototype_device() {
         f["document"]["children"][0]["flowStartingPoints"] = json!([]);
         f["document"]["children"][0]["prototypeStartNodeID"] = json!("1:20");
         let (doc, _) = import(&f, &no_images).unwrap();
-        let NodeKind::Page { flows, prototype, .. } = &doc.node(doc.pages[0]).unwrap().kind else { panic!() };
-        assert_eq!(flows.iter().map(|f| f.start).collect::<Vec<_>>(), [named(&doc, "Details").id]);
+        let NodeKind::Page {
+            flows, prototype, ..
+        } = &doc.node(doc.pages[0]).unwrap().kind
+        else {
+            panic!()
+        };
+        assert_eq!(
+            flows.iter().map(|f| f.start).collect::<Vec<_>>(),
+            [named(&doc, "Details").id]
+        );
         prototype.clone()
     };
     for (d, want) in [
         (json!({"type": "NONE", "rotation": "NONE"}), "None"),
         (json!({"type": "PRESENTATION", "rotation": "NONE"}), "None"),
-        (json!({"type": "PRESET", "presetIdentifier": "GOOGLE_PIXEL_8", "rotation": "NONE"}), "Android Compact"),
-        (json!({"type": "PRESET", "presetIdentifier": "APPLE_IPAD_MINI", "rotation": "NONE"}), "iPad mini"),
-        (json!({"type": "PRESET", "presetIdentifier": "MACBOOK_PRO_14", "rotation": "NONE"}), "MacBook Air"),
-        (json!({"type": "CUSTOM", "size": {"width": 0, "height": 1080}, "rotation": "NONE"}), "None"),
-        (json!({"type": "CUSTOM", "size": {"width": "wide", "height": 667}, "rotation": "NONE"}), "None"),
+        (
+            json!({"type": "PRESET", "presetIdentifier": "GOOGLE_PIXEL_8", "rotation": "NONE"}),
+            "Android Compact",
+        ),
+        (
+            json!({"type": "PRESET", "presetIdentifier": "APPLE_IPAD_MINI", "rotation": "NONE"}),
+            "iPad mini",
+        ),
+        (
+            json!({"type": "PRESET", "presetIdentifier": "MACBOOK_PRO_14", "rotation": "NONE"}),
+            "MacBook Air",
+        ),
+        (
+            json!({"type": "CUSTOM", "size": {"width": 0, "height": 1080}, "rotation": "NONE"}),
+            "None",
+        ),
+        (
+            json!({"type": "CUSTOM", "size": {"width": "wide", "height": 667}, "rotation": "NONE"}),
+            "None",
+        ),
     ] {
         let got = device(d).device;
         assert_eq!(got, want);
-        assert!(got == "None" || PrototypeSettings::DEVICES.iter().any(|d| d.name == got), "{got}");
+        assert!(
+            got == "None" || PrototypeSettings::DEVICES.iter().any(|d| d.name == got),
+            "{got}"
+        );
     }
     // Custom sizes keep their screen (turned ones swap their sides).
     for (rotation, want) in [("NONE", (1920.0, 1080.0)), ("CCW_90", (1080.0, 1920.0))] {
-        let got = device(json!({"type": "CUSTOM", "size": {"width": 1920, "height": 1080}, "rotation": rotation}));
+        let got = device(
+            json!({"type": "CUSTOM", "size": {"width": 1920, "height": 1080}, "rotation": rotation}),
+        );
         assert_eq!(got.device, PrototypeSettings::CUSTOM_DEVICE);
         assert_eq!(got.device().map(|d| (d.width, d.height)), Some(want));
     }
     // A device turned a quarter turn presents in landscape.
-    let turned = device(json!({"type": "PRESET", "presetIdentifier": "APPLE_IPHONE_16", "rotation": "CCW_90"}));
-    assert_eq!((turned.device.as_str(), turned.rotation), ("iPhone 16", DeviceRotation::Landscape));
-    assert_eq!(turned.device().map(|d| (d.width, d.height)), Some((852.0, 393.0)));
+    let turned = device(
+        json!({"type": "PRESET", "presetIdentifier": "APPLE_IPHONE_16", "rotation": "CCW_90"}),
+    );
+    assert_eq!(
+        (turned.device.as_str(), turned.rotation),
+        ("iPhone 16", DeviceRotation::Landscape)
+    );
+    assert_eq!(
+        turned.device().map(|d| (d.width, d.height)),
+        Some((852.0, 393.0))
+    );
 }
 
 // ---- robustness ----
@@ -316,7 +529,16 @@ fn combined() -> Value {
 
 #[test]
 fn junk_in_prototypes_and_variables_never_panics() {
-    let junk = [json!(null), json!(-1), json!(1e308), json!("x"), json!([]), json!({}), json!(true), json!({"type": "VARIABLE_ALIAS", "id": BRAND})];
+    let junk = [
+        json!(null),
+        json!(-1),
+        json!(1e308),
+        json!("x"),
+        json!([]),
+        json!({}),
+        json!(true),
+        json!({"type": "VARIABLE_ALIAS", "id": BRAND}),
+    ];
     let base = combined();
     let mut ptrs = Vec::new();
     pointers(&base, String::new(), &mut ptrs);
@@ -330,9 +552,17 @@ fn junk_in_prototypes_and_variables_never_panics() {
                 assert!(doc.validate().is_empty(), "{p} = {j}");
                 for n in doc.nodes() {
                     for it in &n.interactions {
-                        assert!(figcraft_doc::proto::walk(&it.actions).filter_map(Action::dest).all(|d| doc.contains(d)), "{p} = {j}");
+                        assert!(
+                            figcraft_doc::proto::walk(&it.actions)
+                                .filter_map(Action::dest)
+                                .all(|d| doc.contains(d)),
+                            "{p} = {j}"
+                        );
                     }
-                    assert!(n.bound.values().all(|v| doc.variables.get(v).is_some()), "{p} = {j}");
+                    assert!(
+                        n.bound.values().all(|v| doc.variables.get(v).is_some()),
+                        "{p} = {j}"
+                    );
                 }
             }
         }
@@ -369,7 +599,11 @@ fn alias_cycles_and_huge_variable_sets_are_bounded() {
     let mut vars = serde_json::Map::new();
     // A long alias chain and a cycle: imported, resolving stays bounded.
     for i in 0..2000 {
-        let next = if i == 1999 { "VariableID:c:0".to_string() } else { format!("VariableID:c:{}", i + 1) };
+        let next = if i == 1999 {
+            "VariableID:c:0".to_string()
+        } else {
+            format!("VariableID:c:{}", i + 1)
+        };
         vars.insert(
             format!("VariableID:c:{i}"),
             json!({"id": format!("VariableID:c:{i}"), "name": format!("v{i}"), "variableCollectionId": THEME, "resolvedType": "FLOAT",
@@ -380,5 +614,9 @@ fn alias_cycles_and_huge_variable_sets_are_bounded() {
     v["meta"]["variables"] = Value::Object(vars);
     let (doc, _) = import_with(&file_json(), Some(&v), &no_images).unwrap();
     assert_eq!(doc.variables.variables.len(), 2000);
-    assert!(doc.variables.resolve("VariableID:c:0", &Default::default()).is_none());
+    assert!(
+        doc.variables
+            .resolve("VariableID:c:0", &Default::default())
+            .is_none()
+    );
 }

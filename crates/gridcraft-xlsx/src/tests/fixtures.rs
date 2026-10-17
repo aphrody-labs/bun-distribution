@@ -1,7 +1,9 @@
 //! Hand-written packages exercising specific reader paths.
 
 use gridcraft_core::{CellError, CellRef, DateSystem, RangeRef, Value};
-use gridcraft_model::{CalcMode, CfRule, Color, HAlign, PatternType, StyleId, Underline, Visibility};
+use gridcraft_model::{
+    CalcMode, CfRule, Color, HAlign, PatternType, StyleId, Underline, Visibility,
+};
 
 use super::minimal;
 use crate::read_xlsx;
@@ -24,22 +26,37 @@ fn shared_formulas_and_value_types() {
     let (wb, rep) = read_xlsx(&minimal(body, &[], "", "")).unwrap();
     let s = wb.sheet(0).unwrap();
     assert_eq!(s.name, "Data");
-    assert_eq!(s.cell(at("B2")).unwrap().formula.as_ref().unwrap().text, "A2*2+$A$1");
-    assert_eq!(s.cell(at("B3")).unwrap().formula.as_ref().unwrap().text, "A3*2+$A$1");
+    assert_eq!(
+        s.cell(at("B2")).unwrap().formula.as_ref().unwrap().text,
+        "A2*2+$A$1"
+    );
+    assert_eq!(
+        s.cell(at("B3")).unwrap().formula.as_ref().unwrap().text,
+        "A3*2+$A$1"
+    );
     assert_eq!(s.value(at("B2")), Value::Number(5.0));
     assert_eq!(s.value(at("A3")), Value::text("rich text"));
     assert_eq!(s.value(at("A4")), Value::Bool(true));
     assert_eq!(s.value(at("B4")), Value::Error(CellError::Div0));
-    assert_eq!(s.cell(at("C4")).unwrap().formula.as_ref().unwrap().text, "CONCAT(\"a\",\"b\")");
+    assert_eq!(
+        s.cell(at("C4")).unwrap().formula.as_ref().unwrap().text,
+        "CONCAT(\"a\",\"b\")"
+    );
     assert_eq!(s.value(at("C4")), Value::text("ab"));
     assert_eq!(s.value(at("D4")), Value::Number(45292.5));
     let a5 = s.cell(at("A5")).unwrap().formula.clone().unwrap();
     assert_eq!(a5.array, Some(RangeRef::parse("A5:B6").unwrap()));
-    assert!(s.cell(at("B5")).is_none() && s.cell(at("A6")).is_none(), "a legacy array's cached values are dropped too");
+    assert!(
+        s.cell(at("B5")).is_none() && s.cell(at("A6")).is_none(),
+        "a legacy array's cached values are dropped too"
+    );
     let c5 = s.cell(at("C5")).unwrap().formula.clone().unwrap();
     assert_eq!(c5.array, None, "dynamic arrays are not legacy CSE arrays");
     assert_eq!(c5.text, "SEQUENCE(3)");
-    assert!(s.cell(at("C6")).is_none(), "spilled cached values are dropped so the formula can spill");
+    assert!(
+        s.cell(at("C6")).is_none(),
+        "spilled cached values are dropped so the formula can spill"
+    );
     // Rows/cells without r continue from the previous position.
     assert_eq!(s.value(at("A7")), Value::Number(9.0));
     assert_eq!(s.value(at("B7")), Value::Number(10.0));
@@ -83,9 +100,19 @@ fn workbook_settings_names_and_states() {
     assert_eq!(p.title_cols, Some((0, 1)));
     assert_eq!(wb.names.len(), 3);
     let local = wb.names.iter().find(|n| n.name == "Local").unwrap();
-    assert_eq!(local.scope, Some(2), "localSheetId maps past the skipped chart sheet");
-    assert_eq!(wb.names.iter().find(|n| n.name == "Rate").unwrap().comment, "tax");
-    assert_eq!(wb.names.iter().find(|n| n.name == "Fut").unwrap().formula, "XLOOKUP(1,A!A:A,A!B:B)");
+    assert_eq!(
+        local.scope,
+        Some(2),
+        "localSheetId maps past the skipped chart sheet"
+    );
+    assert_eq!(
+        wb.names.iter().find(|n| n.name == "Rate").unwrap().comment,
+        "tax"
+    );
+    assert_eq!(
+        wb.names.iter().find(|n| n.name == "Fut").unwrap().formula,
+        "XLOOKUP(1,A!A:A,A!B:B)"
+    );
     assert!(rep.warnings.iter().any(|w| w.contains("chartsheet")));
 }
 
@@ -124,7 +151,12 @@ fn styles_theme_and_sizes() {
       <row r="2" hidden="1" outlineLevel="2" s="1" customFormat="1"/></sheetData>
       <conditionalFormatting sqref="A1:A10"><cfRule type="cellIs" dxfId="0" priority="1" operator="greaterThan"><formula>5</formula></cfRule></conditionalFormatting>
       <pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>"#;
-    let bytes = minimal(body, &[("xl/styles.xml", styles), ("xl/theme/theme1.xml", theme)], rels, "");
+    let bytes = minimal(
+        body,
+        &[("xl/styles.xml", styles), ("xl/theme/theme1.xml", theme)],
+        rels,
+        "",
+    );
     let (wb, _) = read_xlsx(&bytes).unwrap();
     let s = wb.sheet(0).unwrap();
     let st1 = wb.styles.get(s.cell(at("A1")).unwrap().style);
@@ -146,12 +178,22 @@ fn styles_theme_and_sizes() {
     let st2 = wb.styles.get(s.cell(at("B1")).unwrap().style);
     assert_eq!(st2.num_fmt.as_str(), "m/d/yyyy");
     assert_eq!(st2.font.color, Color::Theme(4, -250));
-    assert_eq!(st2.fill.fg, Color::Rgb(0x00FF00), "gradient approximated by first stop");
+    assert_eq!(
+        st2.fill.fg,
+        Color::Rgb(0x00FF00),
+        "gradient approximated by first stop"
+    );
     let st3 = wb.styles.get(s.cell(at("C1")).unwrap().style);
     assert_eq!(st3.num_fmt.as_str(), "0.00%");
     assert_eq!(st3.fill.pattern, PatternType::DarkGrid);
     assert_eq!(st3.fill.fg, Color::Theme(5, 0));
-    assert_eq!(wb.styles.get(s.cell(at("D1")).unwrap().style).num_fmt.as_str(), "General");
+    assert_eq!(
+        wb.styles
+            .get(s.cell(at("D1")).unwrap().style)
+            .num_fmt
+            .as_str(),
+        "General"
+    );
     // Theme: file order dk1, lt1… maps to lt1, dk1… in the model.
     assert_eq!(wb.theme.colors[0], 0xFFFFFF);
     assert_eq!(wb.theme.colors[1], 0x000000);
@@ -233,7 +275,11 @@ fn hyperlinks_comments_tables_validation_filters() {
 Check this</t></r></text></comment></commentList></comments>"#;
     let bytes = minimal(
         body,
-        &[("xl/worksheets/_rels/sheet1.xml.rels", sheet_rels), ("xl/tables/table1.xml", table), ("xl/comments1.xml", comments)],
+        &[
+            ("xl/worksheets/_rels/sheet1.xml.rels", sheet_rels),
+            ("xl/tables/table1.xml", table),
+            ("xl/comments1.xml", comments),
+        ],
         "",
         "",
     );
@@ -251,7 +297,10 @@ Check this</t></r></text></comment></commentList></comments>"#;
     assert!(t.totals_row && t.header_row && t.filter_button && t.last_col && t.banded_rows);
     assert_eq!(t.columns[0].totals_label.as_deref(), Some("Total"));
     assert_eq!(t.columns[1].totals, gridcraft_model::TotalsFn::Sum);
-    assert_eq!(t.columns[2].totals_label.as_deref(), Some("SUBTOTAL(109,[Tax])"));
+    assert_eq!(
+        t.columns[2].totals_label.as_deref(),
+        Some("SUBTOTAL(109,[Tax])")
+    );
     assert!(t.columns[2].formula.is_some());
     assert_eq!(t.style, "TableStyleMedium9");
     assert_eq!(s.validations.len(), 3);
@@ -273,7 +322,11 @@ Check this</t></r></text></comment></commentList></comments>"#;
     // The legacy sheet password is imported (CBEB is the hash of "test") and verifies.
     let pw = p.password.as_ref().unwrap();
     assert!(pw.verify("test").unwrap() && !pw.verify("Test").unwrap());
-    assert!(!rep.warnings.iter().any(|w| w.contains("password")), "{:?}", rep.warnings);
+    assert!(
+        !rep.warnings.iter().any(|w| w.contains("password")),
+        "{:?}",
+        rep.warnings
+    );
     assert_eq!(s.sparklines.len(), 1);
     assert_eq!(s.sparklines[0].kind, gridcraft_model::SparklineKind::Column);
 }
@@ -283,16 +336,24 @@ fn written_links(bytes: &[u8]) -> Vec<(String, Option<String>, Option<String>)> 
     let mut pkg = crate::package::Package::open(bytes).unwrap();
     let rels = pkg.rels("xl/worksheets/sheet1.xml").unwrap();
     let sheet = pkg.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
-    let Some(links) = sheet.child("hyperlinks") else { return vec![] };
+    let Some(links) = sheet.child("hyperlinks") else {
+        return vec![];
+    };
     links
         .kids("hyperlink")
         .map(|h| {
-            let rel = h.attr("id").map(|id| rels.iter().find(|r| r.id == id).unwrap());
+            let rel = h
+                .attr("id")
+                .map(|id| rels.iter().find(|r| r.id == id).unwrap());
             let target = rel.map(|r| {
                 assert!(r.external && r.kind == "hyperlink", "{r:?}");
                 r.target.clone()
             });
-            (h.attr("ref").unwrap().to_string(), target, h.attr("location").map(str::to_string))
+            (
+                h.attr("ref").unwrap().to_string(),
+                target,
+                h.attr("location").map(str::to_string),
+            )
         })
         .collect()
 }
@@ -316,7 +377,12 @@ fn hyperlink_to_another_file_stays_external() {
         rel("rId4", r"..\Reports\Q1.xlsx"),
         rel("rId5", "https://example.com/a.xlsx"),
     );
-    let bytes = minimal(body, &[("xl/worksheets/_rels/sheet1.xml.rels", &sheet_rels)], "", "");
+    let bytes = minimal(
+        body,
+        &[("xl/worksheets/_rels/sheet1.xml.rels", &sheet_rels)],
+        "",
+        "",
+    );
     let (wb, _) = read_xlsx(&bytes).unwrap();
     let s = wb.sheet(0).unwrap();
     assert!(s.hyperlinks[&at("C16")].external && !s.hyperlinks[&at("C19")].external);
@@ -375,7 +441,10 @@ fn drawing_with_picture_and_chart() {
             parts.push((f.name().to_string(), d));
         }
         parts.push(("xl/media/image1.png".into(), png.to_vec()));
-        let refs: Vec<(&str, &[u8])> = parts.iter().map(|(n, d)| (n.as_str(), d.as_slice())).collect();
+        let refs: Vec<(&str, &[u8])> = parts
+            .iter()
+            .map(|(n, d)| (n.as_str(), d.as_slice()))
+            .collect();
         bytes = super::make_zip(&refs);
     }
     let (wb, _) = read_xlsx(&bytes).unwrap();
@@ -402,7 +471,10 @@ fn drawing_with_picture_and_chart() {
     assert_eq!(ch.series[0].color, Some(Color::Rgb(0xFF0000)));
     assert_eq!(ch.series[1].name.as_deref(), Some("Lit"));
     assert!(ch.series[1].secondary);
-    assert_eq!(ch.series[1].kind, Some(gridcraft_model::ChartKind::LineMarkers));
+    assert_eq!(
+        ch.series[1].kind,
+        Some(gridcraft_model::ChartKind::LineMarkers)
+    );
     assert!(ch.data_labels && ch.gridlines);
     assert_eq!(ch.legend, gridcraft_model::LegendPos::Top);
     assert_eq!(ch.x_title.as_deref(), Some("Region"));
@@ -444,7 +516,10 @@ fn drawing_with_chartex_in_alternate_content() {
     let s = wb.sheet(0).unwrap();
     assert_eq!(s.charts.len(), 1);
     assert!(s.shapes.is_empty(), "the fallback isn't read as well");
-    assert!(wb.names.is_empty(), "the chart's names aren't workbook names");
+    assert!(
+        wb.names.is_empty(),
+        "the chart's names aren't workbook names"
+    );
     let ch = &s.charts[0];
     assert_eq!(ch.kind, gridcraft_model::ChartKind::Waterfall);
     assert_eq!(ch.title.as_deref(), Some("Bridge"));
@@ -488,28 +563,58 @@ fn chartex_parts_as_excel_expects_them() {
     let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes.clone())).unwrap();
     let mut part = |n: &str| {
         let mut s = String::new();
-        std::io::Read::read_to_string(&mut z.by_name(n).unwrap_or_else(|_| panic!("{n}")), &mut s).unwrap();
+        std::io::Read::read_to_string(&mut z.by_name(n).unwrap_or_else(|_| panic!("{n}")), &mut s)
+            .unwrap();
         s
     };
     // Data through hidden `_xlchart` names, with style and colour parts.
     let cx = part("xl/charts/chartEx1.xml");
-    assert!(cx.contains("<cx:f>_xlchart.v1.2</cx:f>") && !cx.contains("Data!"), "{cx}");
+    assert!(
+        cx.contains("<cx:f>_xlchart.v1.2</cx:f>") && !cx.contains("Data!"),
+        "{cx}"
+    );
     // Fills are spelled out, not left to the style part.
-    assert!(cx.contains(r#"<cx:spPr><a:solidFill><a:schemeClr val="accent1"/></a:solidFill></cx:spPr>"#), "{cx}");
-    assert!(cx.contains(r#"</cx:chart><cx:spPr><a:solidFill><a:schemeClr val="bg1"/>"#), "{cx}");
+    assert!(
+        cx.contains(
+            r#"<cx:spPr><a:solidFill><a:schemeClr val="accent1"/></a:solidFill></cx:spPr>"#
+        ),
+        "{cx}"
+    );
+    assert!(
+        cx.contains(r#"</cx:chart><cx:spPr><a:solidFill><a:schemeClr val="bg1"/>"#),
+        "{cx}"
+    );
     let book = part("xl/workbook.xml");
-    assert!(book.contains(r#"<definedName name="_xlchart.v1.1" hidden="1">Data!$B$2:$B$5</definedName>"#), "{book}");
+    assert!(
+        book.contains(
+            r#"<definedName name="_xlchart.v1.1" hidden="1">Data!$B$2:$B$5</definedName>"#
+        ),
+        "{book}"
+    );
     let rels = part("xl/charts/_rels/chartEx1.xml.rels");
-    assert!(rels.contains("relationships/chartStyle") && rels.contains("relationships/chartColorStyle"));
+    assert!(
+        rels.contains("relationships/chartStyle") && rels.contains("relationships/chartColorStyle")
+    );
     assert!(part("xl/charts/style1.xml").contains("<cs:chartStyle"));
     assert!(part("xl/charts/colors1.xml").contains("<cs:colorStyle"));
     let types = part("[Content_Types].xml");
-    assert!(types.contains("chartstyle+xml") && types.contains("chartcolorstyle+xml") && types.contains("chartex+xml"));
+    assert!(
+        types.contains("chartstyle+xml")
+            && types.contains("chartcolorstyle+xml")
+            && types.contains("chartex+xml")
+    );
     // Reading resolves the names and doesn't keep them.
     let (back, _) = read_xlsx(&bytes).unwrap();
     assert!(back.names.is_empty());
     let s = &back.sheet(0).unwrap().charts[0].series[0];
-    assert_eq!((s.name.as_deref(), s.categories.as_deref(), s.values.as_str()), (Some("Data!$B$1"), Some("Data!$A$2:$A$5"), "Data!$B$2:$B$5"));
+    assert_eq!(
+        (
+            s.name.as_deref(),
+            s.categories.as_deref(),
+            s.values.as_str()
+        ),
+        (Some("Data!$B$1"), Some("Data!$A$2:$A$5"), "Data!$B$2:$B$5")
+    );
 }
 
 /// #377: a WordArt-style text box keeps its run size, bold, typeface, text fill and outline, its
@@ -525,7 +630,10 @@ fn text_box_formatting_is_read_and_written() {
     let srels = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>"#;
     let bytes = minimal(
         r#"<sheetData/><drawing r:id="rId1"/>"#,
-        &[("xl/worksheets/_rels/sheet1.xml.rels", srels), ("xl/drawings/drawing1.xml", drawing)],
+        &[
+            ("xl/worksheets/_rels/sheet1.xml.rels", srels),
+            ("xl/drawings/drawing1.xml", drawing),
+        ],
         "",
         "",
     );
@@ -546,10 +654,16 @@ fn text_box_formatting_is_read_and_written() {
     let (back, _) = read_xlsx(&crate::write_xlsx(&wb).unwrap()).unwrap();
     let g = &back.sheet(0).unwrap().shapes[0].format;
     let rgb = |c: Option<Color>| c.and_then(|c| c.resolve(&wb.theme));
-    assert_eq!((g.no_line, g.font_size, g.bold, g.font.as_deref()), (true, Some(54.0), true, Some("Arial Black")));
+    assert_eq!(
+        (g.no_line, g.font_size, g.bold, g.font.as_deref()),
+        (true, Some(54.0), true, Some("Arial Black"))
+    );
     assert_eq!((g.align, g.anchor), (f.align, f.anchor));
     assert_eq!(rgb(g.text_color), rgb(f.text_color));
-    assert_eq!(rgb(g.text_outline.map(|o| o.0)), rgb(f.text_outline.map(|o| o.0)));
+    assert_eq!(
+        rgb(g.text_outline.map(|o| o.0)),
+        rgb(f.text_outline.map(|o| o.0))
+    );
     assert_eq!(g.text_outline.map(|o| o.1), Some(1.5));
 }
 
@@ -557,23 +671,50 @@ fn text_box_formatting_is_read_and_written() {
 /// the call into the built-in, and `_xludf.EOMONTH()` into a call Excel repairs away (#726).
 #[test]
 fn user_defined_function_prefix_round_trips() {
-    let cases =
-        [("A1", "_xludf.EOMONTH()"), ("A2", "_xludf.CONCAT(\"a\",\"b\")"), ("A3", "_xludf.SUM(1,2)"), ("A4", "MYUDF(1)"), ("A5", "_xludf.MYUDF(1)")];
+    let cases = [
+        ("A1", "_xludf.EOMONTH()"),
+        ("A2", "_xludf.CONCAT(\"a\",\"b\")"),
+        ("A3", "_xludf.SUM(1,2)"),
+        ("A4", "MYUDF(1)"),
+        ("A5", "_xludf.MYUDF(1)"),
+    ];
     let rows: String = cases
         .iter()
         .enumerate()
-        .map(|(i, (a, f))| format!(r#"<row r="{}"><c r="{a}"><f>{}</f></c></row>"#, i + 1, f.replace('"', "&quot;")))
+        .map(|(i, (a, f))| {
+            format!(
+                r#"<row r="{}"><c r="{a}"><f>{}</f></c></row>"#,
+                i + 1,
+                f.replace('"', "&quot;")
+            )
+        })
         .collect();
-    let (wb, _) = read_xlsx(&minimal(&format!("<sheetData>{rows}</sheetData>"), &[], "", "")).unwrap();
+    let (wb, _) = read_xlsx(&minimal(
+        &format!("<sheetData>{rows}</sheetData>"),
+        &[],
+        "",
+        "",
+    ))
+    .unwrap();
     let s = wb.sheet(0).unwrap();
     for (a, f) in cases {
-        assert_eq!(s.cell(at(a)).unwrap().formula.as_ref().unwrap().text, f, "read {a}");
+        assert_eq!(
+            s.cell(at(a)).unwrap().formula.as_ref().unwrap().text,
+            f,
+            "read {a}"
+        );
     }
     let bytes = crate::write_xlsx(&wb).unwrap();
     let mut pkg = crate::package::Package::open(&bytes).unwrap();
     let sheet = pkg.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
     for (a, f) in cases {
-        let cell = sheet.child("sheetData").unwrap().kids("row").flat_map(|r| r.kids("c")).find(|c| c.attr("r") == Some(a)).unwrap();
+        let cell = sheet
+            .child("sheetData")
+            .unwrap()
+            .kids("row")
+            .flat_map(|r| r.kids("c"))
+            .find(|c| c.attr("r") == Some(a))
+            .unwrap();
         assert_eq!(cell.child("f").unwrap().text, f, "written {a}");
     }
 }

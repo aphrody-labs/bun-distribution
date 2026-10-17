@@ -35,7 +35,10 @@ pub fn discover_sources(
 ) -> (Vec<SessionSource>, Vec<SyncIssue>) {
     let mut issues = Vec::new();
     let mut sources = Vec::new();
-    for agent in AgentKind::ALL.into_iter().filter(|agent| agents.contains(agent)) {
+    for agent in AgentKind::ALL
+        .into_iter()
+        .filter(|agent| agents.contains(agent))
+    {
         let root = roots.root(agent);
         let mut found = match agent {
             AgentKind::Agy => agy::discover(root, &mut issues),
@@ -129,7 +132,7 @@ where
                     error.to_string(),
                 ));
                 false
-            },
+            }
         });
     }
 
@@ -139,12 +142,18 @@ where
             Ok(outcome) => outcome,
             Err(SourceFailure::Fatal(error)) => return Err(error),
             Err(SourceFailure::Skipped(message)) => {
-                report.issues.push(SyncIssue::new(Some(source.agent), Some(&source.path), message));
+                report.issues.push(SyncIssue::new(
+                    Some(source.agent),
+                    Some(&source.path),
+                    message,
+                ));
                 SourceOutcome::default()
-            },
+            }
         };
-        if let Some(agent_report) =
-            report.agents.iter_mut().find(|entry| entry.agent == source.agent)
+        if let Some(agent_report) = report
+            .agents
+            .iter_mut()
+            .find(|entry| entry.agent == source.agent)
         {
             agent_report.sources += 1;
             agent_report.records += outcome.new_records;
@@ -169,8 +178,10 @@ where
     report.records_ingested = outcomes.iter().map(|outcome| outcome.new_records).sum();
 
     let live = options.probe_processes.then(probe_live_processes);
-    let live_pids =
-        live.as_deref().map(|live| attribute_live(&sources, &state, live)).unwrap_or_default();
+    let live_pids = live
+        .as_deref()
+        .map(|live| attribute_live(&sources, &state, live))
+        .unwrap_or_default();
     for (index, source) in sources.iter().enumerate() {
         let new_records = outcomes[index].new_records;
         let pids = live_pids.get(&index).cloned().unwrap_or_default();
@@ -180,8 +191,10 @@ where
         let entry = state.sources.get(&source_key(&source.path));
         report.sessions.push(SessionReport {
             agent: source.agent,
-            session_id: entry
-                .map_or_else(|| source.session_id.clone(), |entry| entry.session_id.clone()),
+            session_id: entry.map_or_else(
+                || source.session_id.clone(),
+                |entry| entry.session_id.clone(),
+            ),
             title: source.title.clone(),
             workspace: entry
                 .and_then(|entry| entry.workspace.clone())
@@ -242,10 +255,16 @@ fn reconcile_short_mirrors(
     for mirror in &short {
         let path = mirror_abs(output_dir, mirror);
         if path.exists()
-            && let Err(error) =
-                OpenOptions::new().write(true).open(&path).and_then(|file| file.set_len(0))
+            && let Err(error) = OpenOptions::new()
+                .write(true)
+                .open(&path)
+                .and_then(|file| file.set_len(0))
         {
-            issues.push(SyncIssue::new(None, Some(&path), format!("cannot reset mirror: {error}")));
+            issues.push(SyncIssue::new(
+                None,
+                Some(&path),
+                format!("cannot reset mirror: {error}"),
+            ));
         }
         let feeders: Vec<String> = state.sources_of_mirror(mirror).cloned().collect();
         for key in feeders {
@@ -298,7 +317,13 @@ pub(super) fn source_key(path: &Path) -> String {
 pub(super) fn mirror_rel(agent: AgentKind, session_id: &str) -> String {
     let mut name: String = session_id
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     name = name.trim_matches('.').to_owned();
     if name.is_empty() {
@@ -345,13 +370,17 @@ where
     let previous = state.sources.get(&key).cloned();
     let mut outcome = SourceOutcome::default();
 
-    let len = fs::metadata(&source.path).map_err(|error| skipped("cannot stat", &error))?.len();
-    let session_id = previous
-        .as_ref()
-        .map_or_else(|| source.session_id.clone(), |entry| entry.session_id.clone());
-    let mirror = previous
-        .as_ref()
-        .map_or_else(|| mirror_rel(source.agent, &session_id), |entry| entry.mirror.clone());
+    let len = fs::metadata(&source.path)
+        .map_err(|error| skipped("cannot stat", &error))?
+        .len();
+    let session_id = previous.as_ref().map_or_else(
+        || source.session_id.clone(),
+        |entry| entry.session_id.clone(),
+    );
+    let mirror = previous.as_ref().map_or_else(
+        || mirror_rel(source.agent, &session_id),
+        |entry| entry.mirror.clone(),
+    );
     let mut start = previous.as_ref().map_or(0, |entry| entry.offset);
     let mut restarted = false;
 
@@ -412,8 +441,10 @@ where
         .truncate(false)
         .open(&mirror_path)
         .map_err(|error| skipped("cannot open mirror", &error))?;
-    let actual =
-        mirror_file.metadata().map_err(|error| skipped("cannot stat mirror", &error))?.len();
+    let actual = mirror_file
+        .metadata()
+        .map_err(|error| skipped("cannot stat mirror", &error))?
+        .len();
     if actual < committed {
         // Shrunk after this run's reconciliation (removed by hand while the
         // run held the lock). Extending it would write zeros; the next run's
@@ -463,7 +494,10 @@ where
     let rollback = |message: String| {
         let mut message = message;
         if let Err(error) = mirror_file.set_len(committed) {
-            message.push_str(&format!("; rollback of {} failed: {error}", mirror_path.display()));
+            message.push_str(&format!(
+                "; rollback of {} failed: {error}",
+                mirror_path.display()
+            ));
         }
         SourceFailure::Skipped(message)
     };
@@ -475,7 +509,9 @@ where
         .sync_data()
         .map_err(|error| format!("cannot flush mirror: {error}"))
         .and_then(|()| {
-            mirror_file.metadata().map_err(|error| format!("cannot stat mirror: {error}"))
+            mirror_file
+                .metadata()
+                .map_err(|error| format!("cannot stat mirror: {error}"))
         })
         .and_then(|meta| {
             head_fingerprint(&source.path, end.min(HEAD_BYTES))
@@ -484,8 +520,11 @@ where
         })
         .map_err(rollback)?;
 
-    let records_before =
-        if restarted { 0 } else { previous.as_ref().map_or(0, |entry| entry.records) };
+    let records_before = if restarted {
+        0
+    } else {
+        previous.as_ref().map_or(0, |entry| entry.records)
+    };
     state.mirrors.insert(mirror.clone(), mirror_len);
     state.sources.insert(
         key,
@@ -533,7 +572,9 @@ where
     let mut reader = BufReader::with_capacity(64 * 1024, file);
     reader.seek(SeekFrom::Start(start)).map_err(read_error)?;
     let mut writer = BufWriter::with_capacity(64 * 1024, mirror);
-    writer.seek(SeekFrom::Start(mirror_start)).map_err(write_error)?;
+    writer
+        .seek(SeekFrom::Start(mirror_start))
+        .map_err(write_error)?;
 
     let source_path = source.path.display().to_string();
     let mut position = start;
@@ -556,7 +597,10 @@ where
             outcome.malformed_lines += 1;
             continue;
         };
-        for (part, draft) in parse_line(source.agent, &value, ctx).into_iter().enumerate() {
+        for (part, draft) in parse_line(source.agent, &value, ctx)
+            .into_iter()
+            .enumerate()
+        {
             if draft.role == Role::User
                 && let Some(expected) = domain_filter
                 && let Some(rest) = draft.text.strip_prefix("[APHRODY_AGENT_DOMAIN=")
@@ -603,9 +647,13 @@ where
     for record in batch.iter() {
         serde_json::to_writer(&mut *writer, record)
             .map_err(|error| format!("cannot encode record: {error}"))?;
-        writer.write_all(b"\n").map_err(|error| format!("cannot write mirror: {error}"))?;
+        writer
+            .write_all(b"\n")
+            .map_err(|error| format!("cannot write mirror: {error}"))?;
     }
-    writer.flush().map_err(|error| format!("cannot write mirror: {error}"))?;
+    writer
+        .flush()
+        .map_err(|error| format!("cannot write mirror: {error}"))?;
     on_batch(batch).map_err(|error| format!("record sink rejected a batch: {error}"))?;
     outcome.new_records += batch.len() as u64;
     batch.clear();
@@ -615,13 +663,17 @@ where
 // ---------------------------------------------------------------------------
 // Scan explicit transcript provenance before writing or feeding any record.
 fn source_matches_filters(source: &SessionSource, options: &SyncOptions) -> io::Result<bool> {
-    let mut context = LineContext { workspace: source.workspace.clone() };
+    let mut context = LineContext {
+        workspace: source.workspace.clone(),
+    };
     let mut domains = std::collections::HashSet::new();
     let mut first_user_domain = None;
     let mut saw_user = false;
     for line in BufReader::new(File::open(&source.path)?).lines() {
         let line = line?;
-        let Ok(value) = serde_json::from_str::<Value>(&line) else { continue };
+        let Ok(value) = serde_json::from_str::<Value>(&line) else {
+            continue;
+        };
         for draft in parse_line(source.agent, &value, &mut context) {
             if draft.role == Role::User {
                 if !saw_user {
@@ -671,7 +723,9 @@ fn attribute_live(
             .and_then(|entry| entry.workspace.clone())
             .or_else(|| source.workspace.clone());
         let Some(workspace) = workspace else { continue };
-        let slot = best.entry((source.agent, normalize_workspace(&workspace))).or_insert(index);
+        let slot = best
+            .entry((source.agent, normalize_workspace(&workspace)))
+            .or_insert(index);
         let incumbent = &sources[*slot];
         let better = (source.current, source.modified) > (incumbent.current, incumbent.modified);
         if better {
@@ -680,7 +734,9 @@ fn attribute_live(
     }
     let mut attributed: HashMap<usize, Vec<u32>> = HashMap::new();
     for process in live {
-        let Some(cwd) = process.cwd.as_deref() else { continue };
+        let Some(cwd) = process.cwd.as_deref() else {
+            continue;
+        };
         if let Some(index) = best.get(&(process.agent, normalize_workspace(cwd))) {
             attributed.entry(*index).or_default().push(process.pid);
         }
@@ -744,7 +800,10 @@ mod domain_isolation_tests {
             &mut outcome,
         );
         assert!(result.is_err());
-        assert!(fed.is_empty(), "cross-domain records must not reach the memory sink");
+        assert!(
+            fed.is_empty(),
+            "cross-domain records must not reach the memory sink"
+        );
         write(&["dbfr"], "user");
         let tagged = fs::read_to_string(&path).unwrap();
         let unknown = serde_json::json!({"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"untagged earlier task"}]}}).to_string();

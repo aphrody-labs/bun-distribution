@@ -30,16 +30,24 @@ pub enum SaveTarget {
 impl PdfCraftApp {
     /// Apply an edit to the active document. Returns `true` on success; failures are shown.
     pub fn apply_edit(&mut self, edit: Edit) -> bool {
-        let Some((i, id)) = self.active_ids() else { return false };
+        let Some((i, id)) = self.active_ids() else {
+            return false;
+        };
         let label = edit.label();
         let (form_before, page_count_before, had_xfa) = if let Some(d) = self.session.get(id) {
-            (Some(std::sync::Arc::clone(&d.form)), d.info.pages.len(), d.xfa.is_some())
+            (
+                Some(std::sync::Arc::clone(&d.form)),
+                d.info.pages.len(),
+                d.xfa.is_some(),
+            )
         } else {
             (None, 0, false)
         };
         match self.session.apply(id, edit.clone()) {
             Ok(()) => {
-                let Some(doc) = self.session.get(id) else { return true };
+                let Some(doc) = self.session.get(id) else {
+                    return true;
+                };
                 let info = &doc.info;
                 let view = &mut self.views[i];
                 view.signature_drag.committed(&edit, doc.edit_generation());
@@ -105,30 +113,51 @@ impl PdfCraftApp {
                 // Keep the pages the user acted on selected, where they now are.
                 match edit {
                     Edit::MovePages { pages, to } => {
-                        let n = pages.iter().collect::<std::collections::BTreeSet<_>>().len();
+                        let n = pages
+                            .iter()
+                            .collect::<std::collections::BTreeSet<_>>()
+                            .len();
                         let to = to.min(info.pages.len() - n);
                         view.select_pages(&(to..to + n).collect::<Vec<_>>());
                     }
-                    Edit::InsertBlankPage { at, .. } => view.select_pages(&[at.min(info.pages.len() - 1)]),
+                    Edit::InsertBlankPage { at, .. } => {
+                        view.select_pages(&[at.min(info.pages.len() - 1)])
+                    }
                     Edit::DeletePages { .. } => view.select_pages(&[]),
                     // A stroke drawn with the pen stays unselected, so the selection box and
                     // author popup don't sit over the next stroke (#429).
                     Edit::AddAnnotation(a)
                         if matches!(a.shape, pdfcraft_engine::Shape::Ink { .. })
-                            && self.quick_tool == crate::QuickTool::Comment(crate::comments::CommentTool::Ink) =>
+                            && self.quick_tool
+                                == crate::QuickTool::Comment(crate::comments::CommentTool::Ink) =>
                     {
                         view.comments.selected = None;
                     }
                     Edit::AddAnnotation(a) => {
                         // Select the new comment (appended last among the page's comments).
-                        let newest = info.annotations.iter().filter(|x| x.page == a.page && x.in_reply_to.is_none()).map(|x| x.index).max();
+                        let newest = info
+                            .annotations
+                            .iter()
+                            .filter(|x| x.page == a.page && x.in_reply_to.is_none())
+                            .map(|x| x.index)
+                            .max();
                         view.comments.selected = newest.map(|n| (a.page, n));
                         view.comments.reveal = true;
                         // A new highlight opens its note for typing straight away, as in Acrobat,
                         // unless a note typed into another card is still unsaved.
-                        if let (pdfcraft_engine::Shape::TextMarkup { kind: pdfcraft_engine::Markup::Highlight, .. }, Some(n)) = (&a.shape, newest)
+                        if let (
+                            pdfcraft_engine::Shape::TextMarkup {
+                                kind: pdfcraft_engine::Markup::Highlight,
+                                ..
+                            },
+                            Some(n),
+                        ) = (&a.shape, newest)
                             && a.contents.is_empty()
-                            && view.comments.editing.as_ref().is_none_or(|(_, _, text)| text.is_empty())
+                            && view
+                                .comments
+                                .editing
+                                .as_ref()
+                                .is_none_or(|(_, _, text)| text.is_empty())
                         {
                             view.comments.editing = Some((a.page, n, String::new()));
                         }
@@ -141,7 +170,12 @@ impl PdfCraftApp {
                 }
                 // Text saved as typed but drawn with `?` (its font can't draw it): said, not silent.
                 // Before the scripts' output, so an alert they raise still shows.
-                if let Some(n) = self.session.get(id).and_then(|d| d.edit_notices.first()).cloned() {
+                if let Some(n) = self
+                    .session
+                    .get(id)
+                    .and_then(|d| d.edit_notices.first())
+                    .cloned()
+                {
                     self.notify(crate::content_ui::undrawn_message(&n));
                 }
                 let out = self.session.take_js_output(id);
@@ -149,8 +183,15 @@ impl PdfCraftApp {
                 true
             }
             Err(e) => {
-                let message = if matches!(edit, Edit::MoveObjects { .. }) { crate::object_ui::move_error(&e) } else { e.to_string() };
-                self.notify_fmt("{label} failed: {e}", &[("label", &crate::i18n::edit_label(&label)), ("e", &message)]);
+                let message = if matches!(edit, Edit::MoveObjects { .. }) {
+                    crate::object_ui::move_error(&e)
+                } else {
+                    e.to_string()
+                };
+                self.notify_fmt(
+                    "{label} failed: {e}",
+                    &[("label", &crate::i18n::edit_label(&label)), ("e", &message)],
+                );
                 false
             }
         }
@@ -174,8 +215,14 @@ impl PdfCraftApp {
     }
 
     fn history_step(&mut self, undo: bool) {
-        let Some((i, id)) = self.active_ids() else { return };
-        let result = if undo { self.session.undo(id) } else { self.session.redo(id) };
+        let Some((i, id)) = self.active_ids() else {
+            return;
+        };
+        let result = if undo {
+            self.session.undo(id)
+        } else {
+            self.session.redo(id)
+        };
         match result {
             Ok(label) => {
                 if let Some(doc) = self.session.get(id) {
@@ -204,7 +251,9 @@ impl PdfCraftApp {
         }
         match self.views.get_mut(i).and_then(|v| v.pending_action.take()) {
             Some(crate::canvas::ViewAction::InsertFromFile) => self.insert_from_file_dialog(),
-            Some(crate::canvas::ViewAction::InsertFromFileAt(at)) => self.insert_from_file_at(Some(at)),
+            Some(crate::canvas::ViewAction::InsertFromFileAt(at)) => {
+                self.insert_from_file_at(Some(at))
+            }
             Some(crate::canvas::ViewAction::ReplacePages) => self.replace_pages_dialog(),
             Some(crate::canvas::ViewAction::Save) => {
                 self.save_active(SaveTarget::InPlace);
@@ -218,8 +267,11 @@ impl PdfCraftApp {
             Some(crate::canvas::ViewAction::CameraRotate { clockwise }) => {
                 if let Some(done) = self.views.get(i).and_then(|v| v.camera_done) {
                     let degrees = if clockwise { 90 } else { -90 };
-                    if self.apply_edit(Edit::RotatePages { pages: vec![done.page], degrees })
-                        && let Some(d) = self.views.get_mut(i).and_then(|v| v.camera_done.as_mut())
+                    if self.apply_edit(Edit::RotatePages {
+                        pages: vec![done.page],
+                        degrees,
+                    }) && let Some(d) =
+                        self.views.get_mut(i).and_then(|v| v.camera_done.as_mut())
                     {
                         d.turns += degrees;
                         d.steps += 1;
@@ -240,11 +292,19 @@ impl PdfCraftApp {
     /// and enhance again from the photo at the new level, turning it as before. Only when the
     /// top of the undo history is still those steps; otherwise the slider goes back.
     fn camera_level(&mut self, i: usize) {
-        let Some(view) = self.views.get(i) else { return };
-        let (id, Some(done)) = (view.id, view.camera_done) else { return };
+        let Some(view) = self.views.get(i) else {
+            return;
+        };
+        let (id, Some(done)) = (view.id, view.camera_done) else {
+            return;
+        };
         let ours = |s: &pdfcraft_engine::Session, k: usize| {
             let label = s.get(id).and_then(|d| d.can_undo().map(str::to_owned));
-            let want = if k + 1 == done.steps { "Enhance camera image" } else { "Rotate page" };
+            let want = if k + 1 == done.steps {
+                "Enhance camera image"
+            } else {
+                "Rotate page"
+            };
             label.as_deref() == Some(want)
         };
         // Undo the run this tool applied, checking each step's label first. If the run was
@@ -268,10 +328,25 @@ impl PdfCraftApp {
             restore(self);
             return;
         }
-        let result = self.session.enhance_camera_page_at(id, done.page, done.corners, done.look, done.level).and_then(|()| {
-            let turn = done.turns.rem_euclid(360);
-            if turn == 0 { Ok(1) } else { self.session.apply(id, Edit::RotatePages { pages: vec![done.page], degrees: turn }).map(|()| 2) }
-        });
+        let result = self
+            .session
+            .enhance_camera_page_at(id, done.page, done.corners, done.look, done.level)
+            .and_then(|()| {
+                let turn = done.turns.rem_euclid(360);
+                if turn == 0 {
+                    Ok(1)
+                } else {
+                    self.session
+                        .apply(
+                            id,
+                            Edit::RotatePages {
+                                pages: vec![done.page],
+                                degrees: turn,
+                            },
+                        )
+                        .map(|()| 2)
+                }
+            });
         if let (Some(doc), Some(view)) = (self.session.get(id), self.views.get_mut(i)) {
             view.document_changed(&doc.info);
             if let Some(d) = view.camera_done.as_mut() {
@@ -286,7 +361,10 @@ impl PdfCraftApp {
         }
         if let Err(e) = result {
             let label = crate::i18n::action_label("Enhance camera image");
-            self.notify_fmt("{label} failed: {e}", &[("label", &label), ("e", &e.to_string())]);
+            self.notify_fmt(
+                "{label} failed: {e}",
+                &[("label", &label), ("e", &e.to_string())],
+            );
         }
     }
 
@@ -305,27 +383,53 @@ impl PdfCraftApp {
     /// bar offers rotate, crop and organize for the page; on failure the corners stay so they
     /// can be adjusted.
     fn enhance_camera(&mut self, i: usize) {
-        let Some(view) = self.views.get(i) else { return };
-        let (id, Some(q)) = (view.id, view.camera) else { return };
-        let Some(page) = self.session.get(id).and_then(|d| d.info.pages.get(q.page).cloned()) else { return };
+        let Some(view) = self.views.get(i) else {
+            return;
+        };
+        let (id, Some(q)) = (view.id, view.camera) else {
+            return;
+        };
+        let Some(page) = self
+            .session
+            .get(id)
+            .and_then(|d| d.info.pages.get(q.page).cloned())
+        else {
+            return;
+        };
         let corners = q.corners.map(|[x, y]| {
             let [u, v] = page.view_to_user(x, y);
             [u as f64, v as f64]
         });
-        let (look, level) = (crate::camera_ui::Look::Colour, crate::camera_ui::DEFAULT_LEVEL);
-        match self.session.enhance_camera_page_at(id, q.page, corners, look, level) {
+        let (look, level) = (
+            crate::camera_ui::Look::Colour,
+            crate::camera_ui::DEFAULT_LEVEL,
+        );
+        match self
+            .session
+            .enhance_camera_page_at(id, q.page, corners, look, level)
+        {
             Ok(()) => {
                 // The tool stays open with the clean-up slider, rotate, crop and organize.
                 if let (Some(doc), Some(view)) = (self.session.get(id), self.views.get_mut(i)) {
                     view.document_changed(&doc.info);
                     view.camera = None;
-                    view.camera_done =
-                        Some(crate::camera_ui::CameraDone { page: q.page, corners, look, level, applied: (look, level), turns: 0, steps: 1 });
+                    view.camera_done = Some(crate::camera_ui::CameraDone {
+                        page: q.page,
+                        corners,
+                        look,
+                        level,
+                        applied: (look, level),
+                        turns: 0,
+                        steps: 1,
+                    });
                 }
             }
             Err(e) => {
                 let label = crate::i18n::action_label("Enhance camera image");
-                self.notify_fmt("{label} failed: {e}", &[("label", &label), ("e", &e.to_string())]);
+                self.notify_fmt(
+                    "{label} failed: {e}",
+                    &[("label", &label), ("e", &e.to_string())],
+                );
             }
         }
     }
@@ -337,19 +441,34 @@ impl PdfCraftApp {
         if !self.commit_form_typing() {
             return;
         }
-        let Some((i, id)) = self.active_ids() else { return };
-        let Some(doc) = self.session.get(id) else { return };
+        let Some((i, id)) = self.active_ids() else {
+            return;
+        };
+        let Some(doc) = self.session.get(id) else {
+            return;
+        };
         let pages = self.views[i].target_pages();
         let n = doc.info.pages.len();
         if cut && pages.len() >= n {
             self.notify_tr("A document needs at least one page: copy instead");
             return;
         }
-        self.page_clipboard = Some(crate::PageClip { from: id, name: doc.name.clone(), bytes: doc.bytes.clone(), pages: pages.clone() });
+        self.page_clipboard = Some(crate::PageClip {
+            from: id,
+            name: doc.name.clone(),
+            bytes: doc.bytes.clone(),
+            pages: pages.clone(),
+        });
         if cut {
-            self.apply_edit(Edit::DeletePages { pages: pages.clone() });
+            self.apply_edit(Edit::DeletePages {
+                pages: pages.clone(),
+            });
         }
-        let what = if pages.len() == 1 { tl!("1 page").to_string() } else { crate::i18n::fmt(tl!("{n} pages"), &[("n", &pages.len().to_string())]) };
+        let what = if pages.len() == 1 {
+            tl!("1 page").to_string()
+        } else {
+            crate::i18n::fmt(tl!("{n} pages"), &[("n", &pages.len().to_string())])
+        };
         if cut {
             self.notify_fmt("Cut {what}", &[("what", &what)]);
         } else {
@@ -364,12 +483,19 @@ impl PdfCraftApp {
             return;
         };
         let Some(i) = self.active else { return };
-        let at = self.views[i].target_pages().into_iter().max().map_or(0, |p| p + 1);
+        let at = self.views[i]
+            .target_pages()
+            .into_iter()
+            .max()
+            .map_or(0, |p| p + 1);
         let count = clip.pages.len();
         // Pasting into the document the pages came from is a duplicate (or, after Cut, a move):
         // its fields keep their names. Pasting into another document renames colliding ones.
-        let field_conflicts =
-            if self.views[i].id == clip.from { pdfcraft_engine::FieldConflicts::Merge } else { pdfcraft_engine::FieldConflicts::Rename };
+        let field_conflicts = if self.views[i].id == clip.from {
+            pdfcraft_engine::FieldConflicts::Merge
+        } else {
+            pdfcraft_engine::FieldConflicts::Rename
+        };
         if self.apply_edit(Edit::InsertPagesFrom {
             name: clip.name.clone(),
             bytes: clip.bytes.clone(),
@@ -391,12 +517,20 @@ impl PdfCraftApp {
     /// is told why). The editor stays open with the text, and the caller must stop: nothing is
     /// saved, printed or exported without it.
     pub(crate) fn commit_form_typing(&mut self) -> bool {
-        let Some((i, id)) = self.active_ids() else { return true };
+        let Some((i, id)) = self.active_ids() else {
+            return true;
+        };
         if !self.apply_queued_edit(i) {
             return false;
         }
-        let Some(draft) = self.views.get(i).and_then(|v| v.forms.focus.clone()) else { return true };
-        let Some(edit) = self.session.get(id).and_then(|d| crate::forms_ui::draft_edit(&draft, &d.form)) else {
+        let Some(draft) = self.views.get(i).and_then(|v| v.forms.focus.clone()) else {
+            return true;
+        };
+        let Some(edit) = self
+            .session
+            .get(id)
+            .and_then(|d| crate::forms_ui::draft_edit(&draft, &d.form))
+        else {
             return true; // nothing typed that the document doesn't already have
         };
         if let Some(view) = self.views.get_mut(i) {
@@ -417,8 +551,13 @@ impl PdfCraftApp {
     /// field's typing and the field refused it (#166): the editor reopens with the text, and the
     /// user has been told why, so the typing isn't lost and the caller can stop.
     fn apply_queued_edit(&mut self, i: usize) -> bool {
-        let Some(edit) = self.views.get_mut(i).and_then(|v| v.pending_edit.take()) else { return true };
-        let signature_page = self.views.get_mut(i).and_then(|v| v.fill_signature_page.take());
+        let Some(edit) = self.views.get_mut(i).and_then(|v| v.pending_edit.take()) else {
+            return true;
+        };
+        let signature_page = self
+            .views
+            .get_mut(i)
+            .and_then(|v| v.fill_signature_page.take());
         let committed = self.views.get_mut(i).and_then(|v| v.forms.committed.take());
         let typed = match (&edit, &committed) {
             (Edit::SetFieldValue { name, .. }, Some(draft)) => *name == draft.name,
@@ -432,8 +571,13 @@ impl PdfCraftApp {
                 && let Some(view) = self.views.get_mut(i)
                 && let Some(focus) = view.forms.focus.as_mut()
                 && focus.request_focus
-                && committed.as_ref().is_some_and(|draft| draft.name == focus.name)
-                && let Some(field) = self.session.get(view.id).and_then(|doc| doc.form.iter().find(|field| field.name == focus.name))
+                && committed
+                    .as_ref()
+                    .is_some_and(|draft| draft.name == focus.name)
+                && let Some(field) = self
+                    .session
+                    .get(view.id)
+                    .and_then(|doc| doc.form.iter().find(|field| field.name == focus.name))
             {
                 focus.text = field.value.first().cloned().unwrap_or_default();
                 focus.picked = field.value.clone();
@@ -443,10 +587,14 @@ impl PdfCraftApp {
             {
                 // Signature imports are a labeled batch; select their appended stamp just
                 // as AddAnnotation selects a typed or drawn signature.
-                let newest = self
-                    .session
-                    .get(view.id)
-                    .and_then(|d| d.info.annotations.iter().filter(|a| a.page == page && a.in_reply_to.is_none()).map(|a| a.index).max());
+                let newest = self.session.get(view.id).and_then(|d| {
+                    d.info
+                        .annotations
+                        .iter()
+                        .filter(|a| a.page == page && a.in_reply_to.is_none())
+                        .map(|a| a.index)
+                        .max()
+                });
                 view.comments.selected = newest.map(|index| (page, index));
                 view.comments.reveal = true;
                 self.quick_tool = crate::QuickTool::Select;
@@ -467,7 +615,9 @@ impl PdfCraftApp {
     /// panel answering later, Close All). If its tab has typing or a queued edit, the tab is
     /// brought forward first, so the commit and any field scripts act on that document.
     pub(crate) fn commit_typing_in(&mut self, id: pdfcraft_engine::DocId) -> bool {
-        let Some(i) = self.views.iter().position(|v| v.id == id) else { return true };
+        let Some(i) = self.views.iter().position(|v| v.id == id) else {
+            return true;
+        };
         // Added text the standard fonts can't draw can't be saved: show it rather than drop it.
         // Its page is brought into view, so the text, the warning and Discard are on screen.
         let blocked = self.views.get_mut(i).and_then(|v| {
@@ -483,10 +633,13 @@ impl PdfCraftApp {
             self.notify(crate::content_ui::undrawable_message(c));
             return false;
         }
-        let typing = self
-            .views
-            .get(i)
-            .is_some_and(|v| v.pending_edit.is_some() || v.forms.focus.is_some() || v.fill_text.as_ref().is_some_and(|t| !t.text.trim().is_empty()));
+        let typing = self.views.get(i).is_some_and(|v| {
+            v.pending_edit.is_some()
+                || v.forms.focus.is_some()
+                || v.fill_text
+                    .as_ref()
+                    .is_some_and(|t| !t.text.trim().is_empty())
+        });
         if self.active != Some(i) {
             if !typing {
                 return true;
@@ -499,8 +652,12 @@ impl PdfCraftApp {
     /// The Fill & Sign type box commits on click-away. Save does that first, so the text is in
     /// the file (and can be flattened) instead of being left on the screen.
     fn commit_open_fill_text(&mut self, id: pdfcraft_engine::DocId) -> bool {
-        let Some(i) = self.views.iter().position(|v| v.id == id) else { return true };
-        let Some(tb) = self.views[i].fill_text.clone() else { return true };
+        let Some(i) = self.views.iter().position(|v| v.id == id) else {
+            return true;
+        };
+        let Some(tb) = self.views[i].fill_text.clone() else {
+            return true;
+        };
         let text = tb.text.trim().to_string();
         if text.is_empty() {
             if let Some(view) = self.views.get_mut(i) {
@@ -543,14 +700,25 @@ impl PdfCraftApp {
 
     /// Whether tab `index` has work that isn't saved: edits, or form typing not committed yet.
     pub(crate) fn has_unsaved_work(&self, index: usize) -> bool {
-        let Some(v) = self.views.get(index) else { return false };
-        let Some(doc) = self.session.get(v.id) else { return false };
+        let Some(v) = self.views.get(index) else {
+            return false;
+        };
+        let Some(doc) = self.session.get(v.id) else {
+            return false;
+        };
         doc.dirty
             || v.pending_edit.is_some()
             || v.content.blocked().is_some()
-            || v.forms.focus.as_ref().is_some_and(|f| crate::forms_ui::draft_edit(f, &doc.form).is_some())
-            || v.fill_text.as_ref().is_some_and(|t| !t.text.trim().is_empty())
-            || v.line_editor.as_ref().map_or_else(|| false, |ed| ed.has_unsaved_text())
+            || v.forms
+                .focus
+                .as_ref()
+                .is_some_and(|f| crate::forms_ui::draft_edit(f, &doc.form).is_some())
+            || v.fill_text
+                .as_ref()
+                .is_some_and(|t| !t.text.trim().is_empty())
+            || v.line_editor
+                .as_ref()
+                .map_or_else(|| false, |ed| ed.has_unsaved_text())
     }
 
     /// Save the active document. Returns `true` if it was written.
@@ -570,15 +738,24 @@ impl PdfCraftApp {
 
     /// [`Self::save_view`], then `after` once the document is written: now, or on a later frame
     /// when the user had to choose where. `after` never runs when the save fails or is cancelled.
-    pub(crate) fn save_then(&mut self, index: usize, target: SaveTarget, after: impl FnOnce(&mut Self) + Send + 'static) -> bool {
+    pub(crate) fn save_then(
+        &mut self,
+        index: usize,
+        target: SaveTarget,
+        after: impl FnOnce(&mut Self) + Send + 'static,
+    ) -> bool {
         // What's typed in a field is part of what's saved (#166).
         if let Some(id) = self.views.get(index).map(|v| v.id)
             && !self.commit_typing_in(id)
         {
             return false;
         }
-        let Some(id) = self.views.get(index).map(|v| v.id) else { return false };
-        let Some(doc) = self.session.get(id) else { return false };
+        let Some(id) = self.views.get(index).map(|v| v.id) else {
+            return false;
+        };
+        let Some(doc) = self.session.get(id) else {
+            return false;
+        };
         let (name, path) = (doc.name.clone(), doc.path.clone());
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -588,8 +765,14 @@ impl PdfCraftApp {
                 // document (`is_mail_temp_copy`).
                 (SaveTarget::InPlace, Some(p), _) if !is_mail_temp_copy(&p) => p,
                 _ => {
-                    let name = if name.to_ascii_lowercase().ends_with(".pdf") { name } else { format!("{name}.pdf") };
-                    let dialog = rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).set_file_name(name);
+                    let name = if name.to_ascii_lowercase().ends_with(".pdf") {
+                        name
+                    } else {
+                        format!("{name}.pdf")
+                    };
+                    let dialog = rfd::AsyncFileDialog::new()
+                        .add_filter("PDF", &["pdf"])
+                        .set_file_name(name);
                     // The bytes are taken once the user has chosen, so edits made meanwhile are saved too.
                     self.ask_one(crate::pickers::Ask::Save(dialog), None, move |app, dest| {
                         if app.save_doc_to(id, &dest.to_string_lossy()) {
@@ -614,7 +797,10 @@ impl PdfCraftApp {
             let bytes = match self.session.save_bytes(id) {
                 Ok(b) => b,
                 Err(e) => {
-                    self.notify_fmt("Couldn't save {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                    self.notify_fmt(
+                        "Couldn't save {name}: {e}",
+                        &[("name", &name), ("e", &e.to_string())],
+                    );
                     return false;
                 }
             };
@@ -645,7 +831,10 @@ impl PdfCraftApp {
                     false
                 }
                 Err(e) => {
-                    self.notify_fmt("Couldn't download {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                    self.notify_fmt(
+                        "Couldn't download {name}: {e}",
+                        &[("name", &name), ("e", &e.to_string())],
+                    );
                     false
                 }
             }
@@ -667,12 +856,18 @@ impl PdfCraftApp {
         let bytes = match self.session.save_bytes(id) {
             Ok(b) => b,
             Err(e) => {
-                self.notify_fmt("Couldn't save {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                self.notify_fmt(
+                    "Couldn't save {name}: {e}",
+                    &[("name", &name), ("e", &e.to_string())],
+                );
                 return false;
             }
         };
         if let Err(e) = write_atomically(dest, &bytes) {
-            self.notify_fmt("Couldn't save {name}: {e}", &[("name", dest), ("e", &e.to_string())]);
+            self.notify_fmt(
+                "Couldn't save {name}: {e}",
+                &[("name", dest), ("e", &e.to_string())],
+            );
             return false;
         }
         // Our own write is not a change on disk to reload (#431).
@@ -723,7 +918,9 @@ impl PdfCraftApp {
 
     /// File ▸ Revert (after the confirmation).
     pub fn revert_active(&mut self) {
-        let Some((_, id)) = self.active_ids() else { return };
+        let Some((_, id)) = self.active_ids() else {
+            return;
+        };
         match self.session.revert(id) {
             Ok(()) => {
                 if let Some(i) = self.active
@@ -751,7 +948,9 @@ impl PdfCraftApp {
 
     /// Answer the save prompt: `Some(true)` save, `Some(false)` discard, `None` cancel.
     pub fn resolve_close(&mut self, ctx: &egui::Context, choice: Option<bool>) {
-        let Some(req) = self.close_request.take() else { return };
+        let Some(req) = self.close_request.take() else {
+            return;
+        };
         let index = match req {
             CloseRequest::Tab(id) => match self.views.iter().position(|v| v.id == id) {
                 Some(i) => i,
@@ -779,7 +978,9 @@ impl PdfCraftApp {
             None => {} // cancelled: nothing closes
             Some(false) => self.close_and_continue(ctx, index, req),
             Some(true) => {
-                let Some(id) = self.views.get(index).map(|v| v.id) else { return };
+                let Some(id) = self.views.get(index).map(|v| v.id) else {
+                    return;
+                };
                 // Bring the document forward: what's typed in its form is committed and saved
                 // with it, and a field that rejects the value is shown where the user can fix it.
                 self.active = Some(index);
@@ -830,7 +1031,10 @@ impl PdfCraftApp {
 
     /// Publish whether any document has unsaved work, for the browser's reload warning (#812).
     pub(crate) fn sync_unsaved_flag(&self) {
-        self.unsaved_flag.store(self.first_dirty().is_some(), std::sync::atomic::Ordering::Relaxed);
+        self.unsaved_flag.store(
+            self.first_dirty().is_some(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
     }
 
     /// Intercept window close while documents have unsaved changes.
@@ -922,7 +1126,11 @@ pub fn write_atomically(path: &str, bytes: &[u8]) -> std::io::Result<()> {
 }
 
 /// [`write_atomically`], trying the staging names that `suffixes` give.
-fn write_atomically_with(path: &str, bytes: &[u8], suffixes: impl IntoIterator<Item = u64>) -> std::io::Result<()> {
+fn write_atomically_with(
+    path: &str,
+    bytes: &[u8],
+    suffixes: impl IntoIterator<Item = u64>,
+) -> std::io::Result<()> {
     write_atomically_syncing(path, bytes, suffixes, std::fs::File::sync_all)
 }
 
@@ -936,8 +1144,14 @@ fn write_atomically_syncing(
 ) -> std::io::Result<()> {
     use std::io::Write;
     let target = std::path::Path::new(path);
-    let dir = target.parent().filter(|d| !d.as_os_str().is_empty()).unwrap_or(std::path::Path::new("."));
-    let name = target.file_name().and_then(|n| n.to_str()).unwrap_or("save");
+    let dir = target
+        .parent()
+        .filter(|d| !d.as_os_str().is_empty())
+        .unwrap_or(std::path::Path::new("."));
+    let name = target
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("save");
     let (tmp, f) = create_staging(dir, name, StagingName::TagThenSuffix, suffixes)?;
     let result = (|| {
         // Closed at the end of the block, before the rename.
@@ -958,12 +1172,17 @@ fn write_atomically_syncing(
 /// for a full flush (`F_FULLFSYNC`), which SMB and FUSE volumes, such as a mounted Cryptomator
 /// vault, refuse as unsupported: there a plain `fsync` is the strongest flush the volume offers.
 /// Any other failure still fails the save.
-fn sync_staged(f: &std::fs::File, sync_all: impl FnOnce(&std::fs::File) -> std::io::Result<()>) -> std::io::Result<()> {
+fn sync_staged(
+    f: &std::fs::File,
+    sync_all: impl FnOnce(&std::fs::File) -> std::io::Result<()>,
+) -> std::io::Result<()> {
     #[cfg(target_os = "macos")]
     {
         use rustix::io::Errno;
         match sync_all(f) {
-            Err(e) if matches!(Errno::from_io_error(&e), Some(Errno::NOTSUP | Errno::NOTTY)) => Ok(rustix::fs::fsync(f)?),
+            Err(e) if matches!(Errno::from_io_error(&e), Some(Errno::NOTSUP | Errno::NOTTY)) => {
+                Ok(rustix::fs::fsync(f)?)
+            }
             other => other,
         }
     }
@@ -973,7 +1192,10 @@ fn sync_staged(f: &std::fs::File, sync_all: impl FnOnce(&std::fs::File) -> std::
 
 #[cfg(not(target_arch = "wasm32"))]
 fn short_name(path: &str) -> String {
-    std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_string())
+    std::path::Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| path.to_string())
 }
 
 /// Offer bytes as a browser download.
@@ -987,8 +1209,14 @@ pub(crate) fn download(name: &str, bytes: &[u8]) -> Result<(), String> {
     opts.set_type("application/pdf");
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(err)?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(err)?;
-    let document = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
-    let a: web_sys::HtmlAnchorElement = document.create_element("a").map_err(err)?.dyn_into().map_err(|_| "anchor")?;
+    let document = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
+    let a: web_sys::HtmlAnchorElement = document
+        .create_element("a")
+        .map_err(err)?
+        .dyn_into()
+        .map_err(|_| "anchor")?;
     a.set_href(&url);
     a.set_download(name);
     a.click();
@@ -1000,44 +1228,75 @@ impl PdfCraftApp {
     /// Carry out a Bookmarks-panel action as an undoable edit.
     pub fn bookmark_action(&mut self, action: crate::panels::BmAction) {
         use crate::panels::BmAction as A;
-        let Some((i, id)) = self.active_ids() else { return };
+        let Some((i, id)) = self.active_ids() else {
+            return;
+        };
         let current = self.views[i].current;
         let parent_of = |p: &[usize]| p[..p.len() - 1].to_vec();
         let edit = match action {
             A::New => {
                 let n = self.session.get(id).map_or(0, |d| d.info.outline.len());
-                self.apply_edit(Edit::AddBookmark { parent: vec![], index: n, title: "Untitled".into(), page: current });
+                self.apply_edit(Edit::AddBookmark {
+                    parent: vec![],
+                    index: n,
+                    title: "Untitled".into(),
+                    page: current,
+                });
                 // Like Acrobat: the new bookmark starts in rename mode.
                 self.bookmark_rename = Some((vec![n], "Untitled".into()));
                 self.right = Some(crate::RightPanel::Bookmarks);
                 return;
             }
             A::StartRename(path) => {
-                let title = self.session.get(id).and_then(|d| bookmark_at(&d.info.outline, &path)).map(|b| b.title.clone()).unwrap_or_default();
+                let title = self
+                    .session
+                    .get(id)
+                    .and_then(|d| bookmark_at(&d.info.outline, &path))
+                    .map(|b| b.title.clone())
+                    .unwrap_or_default();
                 self.bookmark_rename = Some((path, title));
                 return;
             }
             A::Rename(path, title) => Edit::RenameBookmark { path, title },
-            A::SetToCurrentPage(path) => Edit::SetBookmarkPage { path, page: current },
+            A::SetToCurrentPage(path) => Edit::SetBookmarkPage {
+                path,
+                page: current,
+            },
             A::Delete(path) => Edit::DeleteBookmark { path },
             A::MoveUp(path) => {
                 let at = path[path.len() - 1].saturating_sub(1);
-                Edit::MoveBookmark { to_parent: parent_of(&path), from: path, index: at }
+                Edit::MoveBookmark {
+                    to_parent: parent_of(&path),
+                    from: path,
+                    index: at,
+                }
             }
             A::MoveDown(path) => {
                 let at = path[path.len() - 1] + 1;
-                Edit::MoveBookmark { to_parent: parent_of(&path), from: path, index: at }
+                Edit::MoveBookmark {
+                    to_parent: parent_of(&path),
+                    from: path,
+                    index: at,
+                }
             }
             A::Indent(path) => {
                 let mut to_parent = parent_of(&path);
                 to_parent.push(path[path.len() - 1].saturating_sub(1));
-                Edit::MoveBookmark { from: path, to_parent, index: usize::MAX }
+                Edit::MoveBookmark {
+                    from: path,
+                    to_parent,
+                    index: usize::MAX,
+                }
             }
             A::Outdent(path) => {
                 let parent = parent_of(&path);
                 let grand = parent_of(&parent);
                 let at = parent[parent.len() - 1] + 1;
-                Edit::MoveBookmark { from: path, to_parent: grand, index: at }
+                Edit::MoveBookmark {
+                    from: path,
+                    to_parent: grand,
+                    index: at,
+                }
             }
             A::FromStructure => {
                 self.right = Some(crate::RightPanel::Bookmarks);
@@ -1048,21 +1307,32 @@ impl PdfCraftApp {
     }
 }
 
-fn bookmark_at<'a>(items: &'a [pdfcraft_render::OutlineItem], path: &[usize]) -> Option<&'a pdfcraft_render::OutlineItem> {
+fn bookmark_at<'a>(
+    items: &'a [pdfcraft_render::OutlineItem],
+    path: &[usize],
+) -> Option<&'a pdfcraft_render::OutlineItem> {
     let (first, rest) = path.split_first()?;
     let item = items.get(*first)?;
-    if rest.is_empty() { Some(item) } else { bookmark_at(&item.children, rest) }
+    if rest.is_empty() {
+        Some(item)
+    } else {
+        bookmark_at(&item.children, rest)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{SaveTarget, is_mail_temp_copy, write_atomically, write_atomically_syncing, write_atomically_with};
+    use super::{
+        SaveTarget, is_mail_temp_copy, write_atomically, write_atomically_syncing,
+        write_atomically_with,
+    };
     use pdfcraft_platform::staging::{STAGING_ATTEMPTS, staging_suffixes};
     use std::path::{Path, PathBuf};
 
     /// A fresh, empty folder for one staging test.
     fn staging_dir(test: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-ui-staging-{}-{test}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcraft-ui-staging-{}-{test}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
@@ -1089,7 +1359,11 @@ mod tests {
         }
         #[cfg(not(any(unix, windows)))]
         {
-            Err(std::io::Error::other(format!("no symbolic links here: {} {}", target.display(), link.display())))
+            Err(std::io::Error::other(format!(
+                "no symbolic links here: {} {}",
+                target.display(),
+                link.display()
+            )))
         }
     }
 
@@ -1108,7 +1382,10 @@ mod tests {
         assert_eq!(read(&outside), "PRECIOUS");
         assert_eq!(read(&staged(&dir, 1)), "PRECIOUS");
         assert_eq!(read(&staged(&dir, 2)), "PLANTED");
-        assert!(!staged(&dir, 3).exists(), "the staging file was renamed into place");
+        assert!(
+            !staged(&dir, 3).exists(),
+            "the staging file was renamed into place"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1139,7 +1416,10 @@ mod tests {
         }
         write_atomically_with(&target.to_string_lossy(), b"NEW", [1, 2]).unwrap();
         assert_eq!(read(&target), "NEW");
-        assert!(!unborn.exists(), "nothing was created through the dangling link");
+        assert!(
+            !unborn.exists(),
+            "nothing was created through the dangling link"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1173,14 +1453,21 @@ mod tests {
 
     /// The names in a folder: what a test can see was left behind.
     fn listing(dir: &Path) -> Vec<String> {
-        let mut names: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        let mut names: Vec<_> = std::fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
         names.sort();
         names
     }
 
     #[test]
     fn saving_a_long_name_leaves_only_the_saved_file() {
-        assert_ne!(staging_suffixes().next(), staging_suffixes().next(), "each save draws new names");
+        assert_ne!(
+            staging_suffixes().next(),
+            staging_suffixes().next(),
+            "each save draws new names"
+        );
         // 60 four-byte characters: a 244-byte name, within every system's limit. Its staging name
         // must be too (on Linux the whole name in it would be 275 bytes).
         let dir = staging_dir("clean");
@@ -1205,7 +1492,11 @@ mod tests {
         perms.set_readonly(true);
         std::fs::set_permissions(&target, perms.clone()).unwrap();
         let e = write_atomically_with(&target.to_string_lossy(), b"NEW", [7]).unwrap_err();
-        assert_eq!(e.kind(), std::io::ErrorKind::PermissionDenied, "the rename failed: {e}");
+        assert_eq!(
+            e.kind(),
+            std::io::ErrorKind::PermissionDenied,
+            "the rename failed: {e}"
+        );
         assert_eq!(read(&target), "OLD");
         assert_eq!(listing(&dir), ["out.pdf"], "the staging file was removed");
         #[allow(clippy::permissions_set_readonly_false)]
@@ -1243,7 +1534,10 @@ mod tests {
         let dir = staging_dir("syncfails");
         let target = dir.join("out.pdf");
         std::fs::write(&target, "OLD").unwrap();
-        let e = write_atomically_syncing(&target.to_string_lossy(), b"NEW", [7], |_| Err(std::io::Error::other("disk gone"))).unwrap_err();
+        let e = write_atomically_syncing(&target.to_string_lossy(), b"NEW", [7], |_| {
+            Err(std::io::Error::other("disk gone"))
+        })
+        .unwrap_err();
         assert_eq!(e.to_string(), "disk gone");
         assert_eq!(read(&target), "OLD");
         assert_eq!(listing(&dir), ["out.pdf"], "the staging file was removed");
@@ -1290,18 +1584,29 @@ mod tests {
             out.extend_from_slice(format!("{} 0 obj\n{o}\nendobj\n", i + 1).as_bytes());
         }
         let xref = out.len();
-        out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes(),
+        );
         for o in offsets {
             out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
         }
-        out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+                objs.len() + 1
+            )
+            .as_bytes(),
+        );
         out
     }
 
     #[test]
     fn save_asks_where_to_keep_an_email_attachment_and_leaves_the_temporary_copy_alone() {
         let dir = staging_dir("mail-temp");
-        let cache = dir.join("INetCache").join("Content.Outlook").join("AB12CD34");
+        let cache = dir
+            .join("INetCache")
+            .join("Content.Outlook")
+            .join("AB12CD34");
         std::fs::create_dir_all(&cache).unwrap();
         let attachment = cache.join("Quote.pdf");
         let original = one_page_pdf();
@@ -1310,18 +1615,39 @@ mod tests {
 
         let mut app = crate::PdfCraftApp::new();
         app.set_option("language", "en").unwrap();
-        app.open_bytes("Quote.pdf", Some(attachment.to_string_lossy().into_owned()), original.clone()).unwrap();
-        assert!(app.apply_edit(pdfcraft_engine::Edit::RotatePages { pages: vec![0], degrees: 90 }));
+        app.open_bytes(
+            "Quote.pdf",
+            Some(attachment.to_string_lossy().into_owned()),
+            original.clone(),
+        )
+        .unwrap();
+        assert!(app.apply_edit(pdfcraft_engine::Edit::RotatePages {
+            pages: vec![0],
+            degrees: 90
+        }));
         app.pick_override = Some(vec![kept.to_string_lossy().into_owned()]);
 
-        assert!(!app.save_active(SaveTarget::InPlace), "Save asks instead of writing the temporary copy");
+        assert!(
+            !app.save_active(SaveTarget::InPlace),
+            "Save asks instead of writing the temporary copy"
+        );
         app.process_picked();
-        assert_eq!(std::fs::read(&attachment).unwrap(), original, "the attachment's copy is untouched");
-        assert!(std::fs::read(&kept).unwrap().starts_with(b"%PDF"), "the document went where the user chose");
+        assert_eq!(
+            std::fs::read(&attachment).unwrap(),
+            original,
+            "the attachment's copy is untouched"
+        );
+        assert!(
+            std::fs::read(&kept).unwrap().starts_with(b"%PDF"),
+            "the document went where the user chose"
+        );
 
         // The chosen file is the document's file now: the next Save writes it without asking.
         app.pick_override = None;
-        assert!(app.apply_edit(pdfcraft_engine::Edit::RotatePages { pages: vec![0], degrees: 90 }));
+        assert!(app.apply_edit(pdfcraft_engine::Edit::RotatePages {
+            pages: vec![0],
+            degrees: 90
+        }));
         assert!(app.save_active(SaveTarget::InPlace));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1348,7 +1674,12 @@ mod revert_draft_tests {
 
     fn app() -> PdfCraftApp {
         let mut app = PdfCraftApp::new();
-        app.open_bytes("source.pdf", None, include_bytes!("../tests/data/form.pdf").to_vec()).unwrap();
+        app.open_bytes(
+            "source.pdf",
+            None,
+            include_bytes!("../tests/data/form.pdf").to_vec(),
+        )
+        .unwrap();
         app
     }
 
@@ -1356,7 +1687,9 @@ mod revert_draft_tests {
         app.views[index].forms.focus = Some(focus(text));
         let form = app.session.get(app.views[index].id).unwrap().form.clone();
         crate::forms_ui::commit(&mut app.views[index], &form);
-        assert!(app.views[index].forms.committed.is_some() && app.views[index].pending_edit.is_some());
+        assert!(
+            app.views[index].forms.committed.is_some() && app.views[index].pending_edit.is_some()
+        );
     }
 
     #[test]
@@ -1364,7 +1697,12 @@ mod revert_draft_tests {
         for queued in [false, true] {
             let mut app = app();
             let id = app.views[0].id;
-            app.open_bytes("other.pdf", None, include_bytes!("../tests/data/form.pdf").to_vec()).unwrap();
+            app.open_bytes(
+                "other.pdf",
+                None,
+                include_bytes!("../tests/data/form.pdf").to_vec(),
+            )
+            .unwrap();
             if queued {
                 queue_draft(&mut app, 0, "Unsaved typing");
             } else {
@@ -1387,7 +1725,10 @@ mod revert_draft_tests {
                     matches!(&app.views[0].pending_edit, Some(Edit::SetFieldValue { value: FieldValue::Text(text), .. }) if text == "Unsaved typing")
                 );
             } else {
-                assert_eq!(app.views[0].forms.focus.as_ref().unwrap().text, "Unsaved typing");
+                assert_eq!(
+                    app.views[0].forms.focus.as_ref().unwrap().text,
+                    "Unsaved typing"
+                );
             }
         }
     }
@@ -1397,19 +1738,39 @@ mod revert_draft_tests {
     #[test]
     fn a_value_its_font_cannot_draw_is_kept_and_explained() {
         let mut app = app();
-        let fill =
-            |app: &mut PdfCraftApp, text: &str| app.apply_edit(Edit::SetFieldValue { name: "name".into(), value: FieldValue::Text(text.into()) });
+        let fill = |app: &mut PdfCraftApp, text: &str| {
+            app.apply_edit(Edit::SetFieldValue {
+                name: "name".into(),
+                value: FieldValue::Text(text.into()),
+            })
+        };
         assert!(fill(&mut app, "张三"));
         let toast = app.toast.as_ref().map(|t| t.0.clone()).expect("a notice");
-        assert!(toast.contains("“张” (U+5F20)") && toast.contains("other PDF viewers redraw the field"), "{toast}");
-        assert_eq!(app.session.get(app.views[0].id).unwrap().form.iter().find(|f| f.name == "name").unwrap().value, ["张三"]);
+        assert!(
+            toast.contains("“张” (U+5F20)") && toast.contains("other PDF viewers redraw the field"),
+            "{toast}"
+        );
+        assert_eq!(
+            app.session
+                .get(app.views[0].id)
+                .unwrap()
+                .form
+                .iter()
+                .find(|f| f.name == "name")
+                .unwrap()
+                .value,
+            ["张三"]
+        );
         // The shell sets the drawing language each frame; here, directly (per thread).
         let previous = crate::i18n::current();
         crate::i18n::set_current(crate::i18n::Lang::from_code("zh-hans").expect("registered"));
         assert!(fill(&mut app, "李四"));
         crate::i18n::set_current(previous);
         let toast = app.toast.as_ref().map(|t| t.0.clone()).expect("a notice");
-        assert!(toast.contains("此字段的字体无法显示“李”（U+674E）"), "{toast}");
+        assert!(
+            toast.contains("此字段的字体无法显示“李”（U+674E）"),
+            "{toast}"
+        );
         app.toast = None;
         assert!(fill(&mut app, "Ada"));
         assert!(app.toast.is_none(), "{:?}", app.toast);
@@ -1423,7 +1784,10 @@ mod revert_draft_tests {
         let mut app = app();
         app.guard_quit(&ctx);
         assert!(!app.unsaved_flag.load(Ordering::Relaxed));
-        assert!(app.apply_edit(Edit::SetFieldValue { name: "name".into(), value: FieldValue::Text("Changed".into()) }));
+        assert!(app.apply_edit(Edit::SetFieldValue {
+            name: "name".into(),
+            value: FieldValue::Text("Changed".into())
+        }));
         app.guard_quit(&ctx);
         assert!(app.unsaved_flag.load(Ordering::Relaxed));
     }
@@ -1433,15 +1797,26 @@ mod revert_draft_tests {
         for queued in [false, true] {
             let mut app = app();
             let source = app.views[0].id;
-            assert!(app.apply_edit(Edit::SetFieldValue { name: "name".into(), value: FieldValue::Text("Committed change".into()) }));
+            assert!(app.apply_edit(Edit::SetFieldValue {
+                name: "name".into(),
+                value: FieldValue::Text("Committed change".into())
+            }));
             if queued {
                 queue_draft(&mut app, 0, "Queued source draft");
             } else {
                 app.views[0].forms.focus = Some(focus("Focused source draft"));
             }
-            app.open_bytes("other.pdf", None, include_bytes!("../tests/data/form.pdf").to_vec()).unwrap();
+            app.open_bytes(
+                "other.pdf",
+                None,
+                include_bytes!("../tests/data/form.pdf").to_vec(),
+            )
+            .unwrap();
             let other = app.views[1].id;
-            assert!(app.apply_edit(Edit::SetFieldValue { name: "name".into(), value: FieldValue::Text("Other committed value".into()) }));
+            assert!(app.apply_edit(Edit::SetFieldValue {
+                name: "name".into(),
+                value: FieldValue::Text("Other committed value".into())
+            }));
             queue_draft(&mut app, 1, "Other queued draft");
             app.views[1].forms.focus = Some(focus("Other focused draft"));
             let other_bytes = app.session.get(other).unwrap().bytes.clone();
@@ -1452,11 +1827,29 @@ mod revert_draft_tests {
             let reverted = app.session.get(source).unwrap();
             assert!(!reverted.dirty);
             assert_eq!(reverted.edit_generation(), source_generation + 1);
-            assert!(reverted.form.iter().find(|field| field.name == "name").unwrap().value.is_empty());
-            assert!(app.views[0].forms.focus.is_none() && app.views[0].forms.committed.is_none() && app.views[0].pending_edit.is_none());
+            assert!(
+                reverted
+                    .form
+                    .iter()
+                    .find(|field| field.name == "name")
+                    .unwrap()
+                    .value
+                    .is_empty()
+            );
+            assert!(
+                app.views[0].forms.focus.is_none()
+                    && app.views[0].forms.committed.is_none()
+                    && app.views[0].pending_edit.is_none()
+            );
             assert!(!app.has_unsaved_work(0));
-            assert_eq!(app.views[1].forms.focus.as_ref().unwrap().text, "Other focused draft");
-            assert_eq!(app.views[1].forms.committed.as_ref().unwrap().text, "Other queued draft");
+            assert_eq!(
+                app.views[1].forms.focus.as_ref().unwrap().text,
+                "Other focused draft"
+            );
+            assert_eq!(
+                app.views[1].forms.committed.as_ref().unwrap().text,
+                "Other queued draft"
+            );
             assert!(
                 matches!(&app.views[1].pending_edit, Some(Edit::SetFieldValue { name, value: FieldValue::Text(text) }) if name == "name" && text == "Other queued draft")
             );
@@ -1478,13 +1871,22 @@ mod revert_draft_tests {
         // This verifies UI failure preservation, not other engine refresh failures.
         app.session.close(source);
         app.revert_active();
-        assert_eq!(app.views[0].forms.focus.as_ref().unwrap().text, "Focused draft");
-        assert_eq!(app.views[0].forms.committed.as_ref().unwrap().text, "Queued draft");
+        assert_eq!(
+            app.views[0].forms.focus.as_ref().unwrap().text,
+            "Focused draft"
+        );
+        assert_eq!(
+            app.views[0].forms.committed.as_ref().unwrap().text,
+            "Queued draft"
+        );
         assert!(
             matches!(&app.views[0].pending_edit, Some(Edit::SetFieldValue { name, value: FieldValue::Text(text) }) if name == "name" && text == "Queued draft")
         );
         assert_eq!(app.active_ids(), Some((0, source)));
-        assert_eq!(app.toast.as_ref().unwrap().0, pdfcraft_engine::EditError::NoDocument.to_string());
+        assert_eq!(
+            app.toast.as_ref().unwrap().0,
+            pdfcraft_engine::EditError::NoDocument.to_string()
+        );
     }
 }
 
@@ -1497,9 +1899,28 @@ mod content_page_tests {
     /// invalidates the whole document.
     #[test]
     fn single_page_content_edits_map_to_their_page() {
-        let moved = Edit::MoveObjects { page: 3, objects: vec![ObjectTarget { kind: ObjectKind::Text, index: 0 }], offset: [1.0, 0.0] };
+        let moved = Edit::MoveObjects {
+            page: 3,
+            objects: vec![ObjectTarget {
+                kind: ObjectKind::Text,
+                index: 0,
+            }],
+            offset: [1.0, 0.0],
+        };
         assert_eq!(content_page(&moved), Some(3));
-        assert_eq!(content_page(&Edit::RotatePages { pages: vec![0], degrees: 90 }), None);
-        assert_eq!(content_page(&Edit::SetInfo { key: "Title".into(), value: "x".into() }), None);
+        assert_eq!(
+            content_page(&Edit::RotatePages {
+                pages: vec![0],
+                degrees: 90
+            }),
+            None
+        );
+        assert_eq!(
+            content_page(&Edit::SetInfo {
+                key: "Title".into(),
+                value: "x".into()
+            }),
+            None
+        );
     }
 }

@@ -80,21 +80,41 @@ mod tests {
 
     #[test]
     fn gradient_params_carry_placement_only_when_placed() {
-        let mut g = GradientPaint::new(Gradient { kind: GradientKind::Radial, ..Default::default() });
+        let mut g = GradientPaint::new(Gradient {
+            kind: GradientKind::Radial,
+            ..Default::default()
+        });
         let v = gradient_params(&g);
         assert_eq!(v["kind"], "radial");
         assert!(v.get("start").is_none() && v.get("aspect").is_none());
         assert_eq!(v["stops"][0]["midpoint"], json!(0.5));
-        g.geom = Some(GradientGeom { start: Point::new(1.0, 2.0), end: Point::new(3.0, 4.0), aspect: 0.5, focal: None });
+        g.geom = Some(GradientGeom {
+            start: Point::new(1.0, 2.0),
+            end: Point::new(3.0, 4.0),
+            aspect: 0.5,
+            focal: None,
+        });
         g.swatch = Some("Sky".into());
         let v = gradient_params(&g);
-        assert_eq!((v["start"].clone(), v["end"].clone(), v["aspect"].clone()), (json!([1.0, 2.0]), json!([3.0, 4.0]), json!(50.0)));
+        assert_eq!(
+            (v["start"].clone(), v["end"].clone(), v["aspect"].clone()),
+            (json!([1.0, 2.0]), json!([3.0, 4.0]), json!(50.0))
+        );
         assert_eq!(v["swatch"], "Sky");
-        assert!(v["stops"][0].get("swatch").is_none(), "unlinked stops carry no link");
+        assert!(
+            v["stops"][0].get("swatch").is_none(),
+            "unlinked stops carry no link"
+        );
         g.gradient.stops[1].swatch = Some("Ink".into());
         g.gradient.stops[1].tint = 0.25;
         let v = gradient_params(&g);
-        assert_eq!((v["stops"][1]["swatch"].clone(), v["stops"][1]["tint"].clone()), (json!("Ink"), json!(25.0)));
+        assert_eq!(
+            (
+                v["stops"][1]["swatch"].clone(),
+                v["stops"][1]["tint"].clone()
+            ),
+            (json!("Ink"), json!(25.0))
+        );
         assert_eq!(color_json(&Color::gray(0.25)), json!({"gray": 0.25}));
     }
 }

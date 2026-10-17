@@ -88,7 +88,11 @@ pub(crate) fn reg_gamma_p(a: f64, x: f64) -> f64 {
     if x.is_infinite() {
         return 1.0;
     }
-    if x < a + 1.0 { gamma_series(a, x) } else { 1.0 - gamma_cf(a, x) }
+    if x < a + 1.0 {
+        gamma_series(a, x)
+    } else {
+        1.0 - gamma_cf(a, x)
+    }
 }
 
 /// Regularised upper incomplete gamma Q(a, x) = 1 − P(a, x).
@@ -102,7 +106,11 @@ pub(crate) fn reg_gamma_q(a: f64, x: f64) -> f64 {
     if x.is_infinite() {
         return 0.0;
     }
-    if x < a + 1.0 { 1.0 - gamma_series(a, x) } else { gamma_cf(a, x) }
+    if x < a + 1.0 {
+        1.0 - gamma_series(a, x)
+    } else {
+        gamma_cf(a, x)
+    }
 }
 
 fn gamma_series(a: f64, x: f64) -> f64 {
@@ -182,7 +190,11 @@ pub(crate) fn erfc(x: f64) -> f64 {
     if x.abs() < 0.5 {
         return 1.0 - erf(x);
     }
-    if x > 0.0 { reg_gamma_q(0.5, x * x) } else { 1.0 + reg_gamma_p(0.5, x * x) }
+    if x > 0.0 {
+        reg_gamma_q(0.5, x * x)
+    } else {
+        1.0 + reg_gamma_p(0.5, x * x)
+    }
 }
 
 /// Regularised incomplete beta I_x(a, b).
@@ -198,7 +210,11 @@ pub(crate) fn reg_inc_beta(x: f64, a: f64, b: f64) -> f64 {
     }
     let ln_bt = -ln_beta(a, b) + a * x.ln() + b * (1.0 - x).ln();
     let bt = ln_bt.exp();
-    if x < (a + 1.0) / (a + b + 2.0) { bt * beta_cf(a, b, x) / a } else { 1.0 - bt * beta_cf(b, a, 1.0 - x) / b }
+    if x < (a + 1.0) / (a + b + 2.0) {
+        bt * beta_cf(a, b, x) / a
+    } else {
+        1.0 - bt * beta_cf(b, a, 1.0 - x) / b
+    }
 }
 
 fn beta_cf(a: f64, b: f64, x: f64) -> f64 {
@@ -270,8 +286,13 @@ pub(crate) fn norm_inv(p: f64) -> f64 {
         -3.066_479_806_614_716e1,
         2.506_628_277_459_239,
     ];
-    const B: [f64; 5] =
-        [-5.447_609_879_822_406e1, 1.615_858_368_580_409e2, -1.556_989_798_598_866e2, 6.680_131_188_771_972e1, -1.328_068_155_288_572e1];
+    const B: [f64; 5] = [
+        -5.447_609_879_822_406e1,
+        1.615_858_368_580_409e2,
+        -1.556_989_798_598_866e2,
+        6.680_131_188_771_972e1,
+        -1.328_068_155_288_572e1,
+    ];
     const C: [f64; 6] = [
         -7.784_894_002_430_293e-3,
         -3.223_964_580_411_365e-1,
@@ -280,11 +301,17 @@ pub(crate) fn norm_inv(p: f64) -> f64 {
         4.374_664_141_464_968,
         2.938_163_982_698_783,
     ];
-    const D: [f64; 4] = [7.784_695_709_041_462e-3, 3.224_671_290_700_398e-1, 2.445_134_137_142_996, 3.754_408_661_907_416];
+    const D: [f64; 4] = [
+        7.784_695_709_041_462e-3,
+        3.224_671_290_700_398e-1,
+        2.445_134_137_142_996,
+        3.754_408_661_907_416,
+    ];
     let plow = 0.02425;
     let x = if p < plow {
         let q = (-2.0 * p.ln()).sqrt();
-        (((((C[0] * q + C[1]) * q + C[2]) * q + C[3]) * q + C[4]) * q + C[5]) / ((((D[0] * q + D[1]) * q + D[2]) * q + D[3]) * q + 1.0)
+        (((((C[0] * q + C[1]) * q + C[2]) * q + C[3]) * q + C[4]) * q + C[5])
+            / ((((D[0] * q + D[1]) * q + D[2]) * q + D[3]) * q + 1.0)
     } else if p <= 1.0 - plow {
         let q = p - 0.5;
         let r = q * q;
@@ -292,7 +319,8 @@ pub(crate) fn norm_inv(p: f64) -> f64 {
             / (((((B[0] * r + B[1]) * r + B[2]) * r + B[3]) * r + B[4]) * r + 1.0)
     } else {
         let q = (-2.0 * (1.0 - p).ln()).sqrt();
-        -(((((C[0] * q + C[1]) * q + C[2]) * q + C[3]) * q + C[4]) * q + C[5]) / ((((D[0] * q + D[1]) * q + D[2]) * q + D[3]) * q + 1.0)
+        -(((((C[0] * q + C[1]) * q + C[2]) * q + C[3]) * q + C[4]) * q + C[5])
+            / ((((D[0] * q + D[1]) * q + D[2]) * q + D[3]) * q + 1.0)
     };
     let mut x = x;
     for _ in 0..2 {

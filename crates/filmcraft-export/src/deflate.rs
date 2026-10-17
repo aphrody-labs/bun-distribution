@@ -20,17 +20,33 @@ const MAX_CHAIN: usize = 48;
 const BLOCK_TOKENS: usize = 1 << 15;
 const MAX_STORED: usize = 65_535;
 
-const LEN_BASE: [u16; 29] = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258];
-const LEN_EXTRA: [u8; 29] = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
-const DIST_BASE: [u16; 30] =
-    [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577];
-const DIST_EXTRA: [u8; 30] = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+const LEN_BASE: [u16; 29] = [
+    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131,
+    163, 195, 227, 258,
+];
+const LEN_EXTRA: [u8; 29] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
+];
+const DIST_BASE: [u16; 30] = [
+    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537,
+    2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+];
+const DIST_EXTRA: [u8; 30] = [
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13,
+    13,
+];
 /// Order in which the code-length code's lengths are sent.
-const CL_ORDER: [usize; 19] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+const CL_ORDER: [usize; 19] = [
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+];
 
 /// `data` compressed as a zlib stream (CMF 0x78: deflate, 32 KB window).
 pub(crate) fn zlib(data: &[u8]) -> Vec<u8> {
-    let mut w = Bits { out: Vec::with_capacity(data.len() / 2 + 64), acc: 0, n: 0 };
+    let mut w = Bits {
+        out: Vec::with_capacity(data.len() / 2 + 64),
+        acc: 0,
+        n: 0,
+    };
     w.out.extend_from_slice(&[0x78, 0x9C]); // (0x78 << 8 | 0x9C) % 31 == 0
     deflate(data, &mut w);
     w.align();
@@ -110,7 +126,12 @@ impl<'a> Matcher<'a> {
         // tables sized to the input, so short chunks (single scan lines) stay cheap
         let span = data.len().clamp(256, WINDOW).next_power_of_two();
         let bits = span.trailing_zeros().clamp(8, 15);
-        Matcher { data, head: vec![0; 1 << bits], prev: vec![0; span], bits }
+        Matcher {
+            data,
+            head: vec![0; 1 << bits],
+            prev: vec![0; span],
+            bits,
+        }
     }
 
     fn hash(&self, p: usize) -> Option<usize> {
@@ -140,7 +161,11 @@ impl<'a> Matcher<'a> {
             if c >= p || p - c > WINDOW {
                 break;
             }
-            let l = self.data[c..].iter().zip(here).take_while(|(a, b)| a == b).count();
+            let l = self.data[c..]
+                .iter()
+                .zip(here)
+                .take_while(|(a, b)| a == b)
+                .count();
             if l > best {
                 (best, best_dist) = (l, p - c);
                 if l == max {
@@ -174,7 +199,10 @@ fn deflate(data: &[u8], w: &mut Bits) {
     while i < data.len() {
         let (len, dist) = m.as_ref().map_or((0, 0), |m| m.longest(i));
         let step = if len >= MIN_MATCH {
-            toks.push(Tok::Match { len: len as u16, dist: dist as u16 });
+            toks.push(Tok::Match {
+                len: len as u16,
+                dist: dist as u16,
+            });
             len
         } else {
             toks.push(Tok::Lit(data[i]));
@@ -198,7 +226,11 @@ fn deflate(data: &[u8], w: &mut Bits) {
 fn data_bits(lf: &[u32], df: &[u32], ll: &[u8], dl: &[u8]) -> u64 {
     let mut n = 0_u64;
     for (s, (&f, &l)) in lf.iter().zip(ll).enumerate() {
-        let extra = s.checked_sub(257).and_then(|k| LEN_EXTRA.get(k)).copied().unwrap_or(0);
+        let extra = s
+            .checked_sub(257)
+            .and_then(|k| LEN_EXTRA.get(k))
+            .copied()
+            .unwrap_or(0);
         n += u64::from(f) * u64::from(l + extra);
     }
     for (d, (&f, &l)) in df.iter().zip(dl).enumerate() {
@@ -225,7 +257,10 @@ fn block(w: &mut Bits, toks: &[Tok], raw: &[u8], last: bool) {
     // dynamic codes and their header
     let ll = lengths(&lf, 15);
     let dl = lengths(&df, 15);
-    let hlit = ll.iter().rposition(|&l| l > 0).map_or(257, |p| (p + 1).max(257));
+    let hlit = ll
+        .iter()
+        .rposition(|&l| l > 0)
+        .map_or(257, |p| (p + 1).max(257));
     let hdist = dl.iter().rposition(|&l| l > 0).map_or(1, |p| p + 1);
     let seq = rle_lengths(&[&ll[..hlit], &dl[..hdist]].concat());
     let mut cf = [0_u32; 19];
@@ -233,8 +268,20 @@ fn block(w: &mut Bits, toks: &[Tok], raw: &[u8], last: bool) {
         cf[s as usize] += 1;
     }
     let cl = lengths(&cf, 7);
-    let hclen = CL_ORDER.iter().rposition(|&s| cl[s] > 0).map_or(4, |p| (p + 1).max(4));
-    let seq_bits: u64 = seq.iter().map(|&(s, _)| u64::from(cl[s as usize]) + [2_u64, 3, 7].get((s as usize).wrapping_sub(16)).copied().unwrap_or(0)).sum();
+    let hclen = CL_ORDER
+        .iter()
+        .rposition(|&s| cl[s] > 0)
+        .map_or(4, |p| (p + 1).max(4));
+    let seq_bits: u64 = seq
+        .iter()
+        .map(|&(s, _)| {
+            u64::from(cl[s as usize])
+                + [2_u64, 3, 7]
+                    .get((s as usize).wrapping_sub(16))
+                    .copied()
+                    .unwrap_or(0)
+        })
+        .sum();
     let dyn_bits = 3 + 14 + 3 * hclen as u64 + seq_bits + data_bits(&lf, &df, &ll, &dl);
 
     let (fll, fdl) = fixed_lengths();
@@ -365,11 +412,18 @@ fn lengths(freq: &[u32], limit: u8) -> Vec<u8> {
 /// Huffman tree depths of the symbols with non-zero frequency (0 for the rest).
 fn huffman(f: &[u64]) -> Vec<u8> {
     let n = f.len();
-    let mut heap: BinaryHeap<Reverse<(u64, usize)>> = f.iter().enumerate().filter(|(_, w)| **w > 0).map(|(i, &w)| Reverse((w, i))).collect();
+    let mut heap: BinaryHeap<Reverse<(u64, usize)>> = f
+        .iter()
+        .enumerate()
+        .filter(|(_, w)| **w > 0)
+        .map(|(i, &w)| Reverse((w, i)))
+        .collect();
     let mut parent = vec![usize::MAX; 2 * n];
     let mut next = n;
     while heap.len() > 1 {
-        let (Some(Reverse((wa, a))), Some(Reverse((wb, b)))) = (heap.pop(), heap.pop()) else { break };
+        let (Some(Reverse((wa, a))), Some(Reverse((wb, b)))) = (heap.pop(), heap.pop()) else {
+            break;
+        };
         parent[a] = next;
         parent[b] = next;
         heap.push(Reverse((wa + wb, next)));
@@ -382,7 +436,10 @@ fn huffman(f: &[u64]) -> Vec<u8> {
             depth[i] = depth[p].saturating_add(1);
         }
     }
-    depth[..n].iter().map(|&d| d.min(u32::from(u8::MAX)) as u8).collect()
+    depth[..n]
+        .iter()
+        .map(|&d| d.min(u32::from(u8::MAX)) as u8)
+        .collect()
 }
 
 /// Code lengths run-length coded with the code-length alphabet: (symbol, extra-bits value).
@@ -495,10 +552,19 @@ pub(crate) mod tests {
                                 s @ 0..=15 => lens.push(s as u8),
                                 16 => {
                                     let p = *lens.last()?;
-                                    lens.extend(std::iter::repeat_n(p, 3 + bits(&mut pos, 2)? as usize));
+                                    lens.extend(std::iter::repeat_n(
+                                        p,
+                                        3 + bits(&mut pos, 2)? as usize,
+                                    ));
                                 }
-                                17 => lens.extend(std::iter::repeat_n(0, 3 + bits(&mut pos, 3)? as usize)),
-                                _ => lens.extend(std::iter::repeat_n(0, 11 + bits(&mut pos, 7)? as usize)),
+                                17 => lens.extend(std::iter::repeat_n(
+                                    0,
+                                    3 + bits(&mut pos, 3)? as usize,
+                                )),
+                                _ => lens.extend(std::iter::repeat_n(
+                                    0,
+                                    11 + bits(&mut pos, 7)? as usize,
+                                )),
                             }
                         }
                         if lens.len() != hlit + hdist {
@@ -514,9 +580,11 @@ pub(crate) mod tests {
                             break;
                         } else {
                             let k = s - 257;
-                            let len = *LEN_BASE.get(k)? as usize + bits(&mut pos, u32::from(LEN_EXTRA[k]))? as usize;
+                            let len = *LEN_BASE.get(k)? as usize
+                                + bits(&mut pos, u32::from(LEN_EXTRA[k]))? as usize;
                             let d = decode(&mut pos, &dl)?;
-                            let dist = *DIST_BASE.get(d)? as usize + bits(&mut pos, u32::from(DIST_EXTRA[d]))? as usize;
+                            let dist = *DIST_BASE.get(d)? as usize
+                                + bits(&mut pos, u32::from(DIST_EXTRA[d]))? as usize;
                             let from = out.len().checked_sub(dist)?;
                             for j in 0..len {
                                 out.push(out[from + j]);
@@ -550,13 +618,27 @@ pub(crate) mod tests {
 
     #[test]
     fn round_trips() {
-        let mut cases: Vec<Vec<u8>> = vec![vec![], vec![7], vec![1, 2], vec![0; 1], vec![0; 300_000], b"abcabcabcabcabcabd".to_vec()];
+        let mut cases: Vec<Vec<u8>> = vec![
+            vec![],
+            vec![7],
+            vec![1, 2],
+            vec![0; 1],
+            vec![0; 300_000],
+            b"abcabcabcabcabcabd".to_vec(),
+        ];
         cases.push(noise(100_000, 9)); // incompressible: stored blocks
         cases.push(noise(70_000, 3).iter().map(|b| b % 4).collect()); // few symbols: dynamic
         cases.push((0..200_000_u32).map(|i| ((i / 7) % 251) as u8).collect()); // long repeats
         // text-like: a small vocabulary repeated at varying distances
-        let words: [&[u8]; 6] = [b"red ", b"green ", b"blue ", b"alpha ", b"half ", b"linear "];
-        cases.push(noise(40_000, 5).iter().flat_map(|b| words[*b as usize % 6].iter().copied()).collect());
+        let words: [&[u8]; 6] = [
+            b"red ", b"green ", b"blue ", b"alpha ", b"half ", b"linear ",
+        ];
+        cases.push(
+            noise(40_000, 5)
+                .iter()
+                .flat_map(|b| words[*b as usize % 6].iter().copied())
+                .collect(),
+        );
         // skewed frequencies: Huffman lengths beyond 15 before limiting
         let mut fib = Vec::new();
         let (mut a, mut b) = (1_usize, 1_usize);
@@ -574,7 +656,12 @@ pub(crate) mod tests {
             let z = zlib(data);
             assert_eq!(inflate(&z).as_deref(), Some(data.as_slice()), "case {k}");
             // worst case: stored overhead only
-            assert!(z.len() <= data.len() + (data.len().div_ceil(BLOCK_TOKENS) + 1) * 5 + 6, "case {k}: {} > {}", z.len(), data.len());
+            assert!(
+                z.len() <= data.len() + (data.len().div_ceil(BLOCK_TOKENS) + 1) * 5 + 6,
+                "case {k}: {} > {}",
+                z.len(),
+                data.len()
+            );
         }
         // repetitive data actually compresses
         assert!(zlib(&cases[4]).len() < 2_000);
@@ -593,7 +680,11 @@ pub(crate) mod tests {
         let l = lengths(&f, 15);
         assert!(l.iter().all(|&d| d <= 15));
         // a complete code: Kraft sum exactly 1
-        let kraft: f64 = l.iter().filter(|&&d| d > 0).map(|&d| 0.5_f64.powi(i32::from(d))).sum();
+        let kraft: f64 = l
+            .iter()
+            .filter(|&&d| d > 0)
+            .map(|&d| 0.5_f64.powi(i32::from(d)))
+            .sum();
         assert!((kraft - 1.0).abs() < 1e-12);
         // one used symbol still gets a two-symbol code
         let l = lengths(&[0, 5, 0], 7);

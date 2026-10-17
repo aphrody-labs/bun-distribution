@@ -53,12 +53,20 @@ struct Scene {
 }
 
 fn scene(s: &mut Session) -> Scene {
-    let f = id(&ex(s, "frame.create", json!({"x": 0, "y": 0, "width": 400, "height": 300})));
+    let f = id(&ex(
+        s,
+        "frame.create",
+        json!({"x": 0, "y": 0, "width": 400, "height": 300}),
+    ));
     let a = rect(s, 20.0, 20.0, Some(f));
     let b = rect(s, 80.0, 20.0, Some(f));
     let g = id(&ex(s, "object.group", json!({"ids": [a, b]})));
     let c = rect(s, 20.0, 120.0, Some(f));
-    let n = id(&ex(s, "frame.create", json!({"x": 200, "y": 20, "width": 150, "height": 150, "parent": f})));
+    let n = id(&ex(
+        s,
+        "frame.create",
+        json!({"x": 200, "y": 20, "width": 150, "height": 150, "parent": f}),
+    ));
     // Positions are in the parent's space.
     let d = rect(s, 20.0, 20.0, Some(n));
     let e1 = rect(s, 20.0, 200.0, Some(f));
@@ -69,10 +77,32 @@ fn scene(s: &mut Session) -> Scene {
     let lk = rect(s, 500.0, 100.0, None);
     ex(s, "object.toggleLock", json!({"ids": [lk], "locked": true}));
     let hid = rect(s, 500.0, 200.0, None);
-    ex(s, "object.toggleVisible", json!({"ids": [hid], "visible": false}));
-    let empty = id(&ex(s, "frame.create", json!({"x": 600, "y": 0, "width": 80, "height": 80})));
+    ex(
+        s,
+        "object.toggleVisible",
+        json!({"ids": [hid], "visible": false}),
+    );
+    let empty = id(&ex(
+        s,
+        "frame.create",
+        json!({"x": 600, "y": 0, "width": 80, "height": 80}),
+    ));
     ex(s, "select.none", json!({}));
-    Scene { f, g, a, b, c, n, d, u, r, r2, lk, hid, empty }
+    Scene {
+        f,
+        g,
+        a,
+        b,
+        c,
+        n,
+        d,
+        u,
+        r,
+        r2,
+        lk,
+        hid,
+        empty,
+    }
 }
 
 #[derive(Clone, Copy, Default)]
@@ -81,9 +111,18 @@ struct Mods {
     cmd: bool,
 }
 
-const NONE: Mods = Mods { shift: false, cmd: false };
-const SHIFT: Mods = Mods { shift: true, cmd: false };
-const CMD: Mods = Mods { shift: false, cmd: true };
+const NONE: Mods = Mods {
+    shift: false,
+    cmd: false,
+};
+const SHIFT: Mods = Mods {
+    shift: true,
+    cmd: false,
+};
+const CMD: Mods = Mods {
+    shift: false,
+    cmd: true,
+};
 
 fn ev(kind: PointerKind, x: f64, y: f64, m: Mods) -> PointerEvent {
     let mut e = PointerEvent::at(kind, x, y, 1.0);
@@ -114,23 +153,125 @@ fn clicking_selects_by_the_documented_rules() {
     let k = scene(&mut s);
     // (point, modifiers, selection before, selection after, derivation)
     let rows: Vec<((f64, f64), Mods, Vec<NodeId>, Vec<NodeId>, &str)> = vec![
-        ((520.0, 20.0), NONE, vec![], vec![k.r], "a click selects the layer under the pointer"),
-        ((30.0, 30.0), NONE, vec![], vec![k.g], "a group is selected as a whole"),
-        ((30.0, 130.0), NONE, vec![], vec![k.c], "a layer in a top-level frame is selected directly (frames hold their layers like the canvas)"),
-        ((230.0, 50.0), NONE, vec![], vec![k.n], "silent: a nested frame selects as a whole, like a group (pinned)"),
-        ((30.0, 210.0), NONE, vec![], vec![k.u], "a boolean group is selected as a whole"),
-        ((30.0, 30.0), CMD, vec![], vec![k.a], "Cmd/Ctrl-click selects the deepest layer"),
-        ((230.0, 50.0), CMD, vec![], vec![k.d], "Cmd/Ctrl-click reaches into nested frames"),
-        ((30.0, 210.0), CMD, vec![], vec![sel_operand(&s, k.u, 30.0)], "Cmd/Ctrl-click reaches a boolean's operand"),
-        ((90.0, 30.0), NONE, vec![k.a], vec![k.b], "with a layer selected, its siblings select at its level"),
-        ((520.0, 20.0), SHIFT, vec![k.c], vec![k.c, k.r], "Shift-click adds to the selection"),
-        ((30.0, 130.0), SHIFT, vec![k.c, k.r], vec![k.r], "Shift-click on a selected layer removes it"),
-        ((520.0, 120.0), NONE, vec![], vec![k.r2], "a locked layer can't be selected on the canvas: the click goes to what is under it"),
-        ((520.0, 220.0), NONE, vec![k.r], vec![], "a hidden layer can't be selected on the canvas (empty canvas deselects)"),
-        ((390.0, 290.0), NONE, vec![k.r], vec![], "the background of a top-level frame with layers is like the canvas: a click deselects"),
-        ((390.0, 290.0), NONE, vec![k.f], vec![k.f], "a selected top-level frame stays selected when its background is clicked"),
-        ((390.0, 290.0), CMD, vec![], vec![k.f], "silent: Cmd/Ctrl-click on a frame's background selects the frame (the deepest layer there)"),
-        ((640.0, 40.0), NONE, vec![], vec![k.empty], "an empty top-level frame is selected by a click on it"),
+        (
+            (520.0, 20.0),
+            NONE,
+            vec![],
+            vec![k.r],
+            "a click selects the layer under the pointer",
+        ),
+        (
+            (30.0, 30.0),
+            NONE,
+            vec![],
+            vec![k.g],
+            "a group is selected as a whole",
+        ),
+        (
+            (30.0, 130.0),
+            NONE,
+            vec![],
+            vec![k.c],
+            "a layer in a top-level frame is selected directly (frames hold their layers like the canvas)",
+        ),
+        (
+            (230.0, 50.0),
+            NONE,
+            vec![],
+            vec![k.n],
+            "silent: a nested frame selects as a whole, like a group (pinned)",
+        ),
+        (
+            (30.0, 210.0),
+            NONE,
+            vec![],
+            vec![k.u],
+            "a boolean group is selected as a whole",
+        ),
+        (
+            (30.0, 30.0),
+            CMD,
+            vec![],
+            vec![k.a],
+            "Cmd/Ctrl-click selects the deepest layer",
+        ),
+        (
+            (230.0, 50.0),
+            CMD,
+            vec![],
+            vec![k.d],
+            "Cmd/Ctrl-click reaches into nested frames",
+        ),
+        (
+            (30.0, 210.0),
+            CMD,
+            vec![],
+            vec![sel_operand(&s, k.u, 30.0)],
+            "Cmd/Ctrl-click reaches a boolean's operand",
+        ),
+        (
+            (90.0, 30.0),
+            NONE,
+            vec![k.a],
+            vec![k.b],
+            "with a layer selected, its siblings select at its level",
+        ),
+        (
+            (520.0, 20.0),
+            SHIFT,
+            vec![k.c],
+            vec![k.c, k.r],
+            "Shift-click adds to the selection",
+        ),
+        (
+            (30.0, 130.0),
+            SHIFT,
+            vec![k.c, k.r],
+            vec![k.r],
+            "Shift-click on a selected layer removes it",
+        ),
+        (
+            (520.0, 120.0),
+            NONE,
+            vec![],
+            vec![k.r2],
+            "a locked layer can't be selected on the canvas: the click goes to what is under it",
+        ),
+        (
+            (520.0, 220.0),
+            NONE,
+            vec![k.r],
+            vec![],
+            "a hidden layer can't be selected on the canvas (empty canvas deselects)",
+        ),
+        (
+            (390.0, 290.0),
+            NONE,
+            vec![k.r],
+            vec![],
+            "the background of a top-level frame with layers is like the canvas: a click deselects",
+        ),
+        (
+            (390.0, 290.0),
+            NONE,
+            vec![k.f],
+            vec![k.f],
+            "a selected top-level frame stays selected when its background is clicked",
+        ),
+        (
+            (390.0, 290.0),
+            CMD,
+            vec![],
+            vec![k.f],
+            "silent: Cmd/Ctrl-click on a frame's background selects the frame (the deepest layer there)",
+        ),
+        (
+            (640.0, 40.0),
+            NONE,
+            vec![],
+            vec![k.empty],
+            "an empty top-level frame is selected by a click on it",
+        ),
     ];
     for (p, m, before, after, why) in rows {
         ex(&mut s, "select.set", json!({"ids": before}));
@@ -152,27 +293,66 @@ fn double_click_enters_one_level() {
     let mut s = Session::new();
     let k = scene(&mut s);
     let comp_child = rect(&mut s, 800.0, 0.0, None);
-    let comp = id(&ex(&mut s, "component.create", json!({"ids": [comp_child]})));
-    let inst = id(&ex(&mut s, "instance.create", json!({"component": comp, "x": 300, "y": 200, "parent": k.f})));
+    let comp = id(&ex(
+        &mut s,
+        "component.create",
+        json!({"ids": [comp_child]}),
+    ));
+    let inst = id(&ex(
+        &mut s,
+        "instance.create",
+        json!({"component": comp, "x": 300, "y": 200, "parent": k.f}),
+    ));
     let inst_child = s.doc().unwrap().node(inst).unwrap().children[0];
     // (point, selection before, selection after, derivation)
     let rows: Vec<((f64, f64), Vec<NodeId>, Vec<NodeId>, &str)> = vec![
-        ((30.0, 30.0), vec![k.g], vec![k.a], "double-click on a group selects the layer inside it"),
-        ((230.0, 50.0), vec![k.n], vec![k.d], "double-click on a nested frame selects the layer inside it"),
-        ((30.0, 210.0), vec![k.u], vec![sel_operand(&s, k.u, 30.0)], "double-click on a boolean group selects its operand"),
-        ((320.0, 220.0), vec![inst], vec![inst_child], "double-click on an instance selects the layer inside it"),
-        ((30.0, 30.0), vec![], vec![k.a], "a double-click's first click selects the group, the second enters it"),
+        (
+            (30.0, 30.0),
+            vec![k.g],
+            vec![k.a],
+            "double-click on a group selects the layer inside it",
+        ),
+        (
+            (230.0, 50.0),
+            vec![k.n],
+            vec![k.d],
+            "double-click on a nested frame selects the layer inside it",
+        ),
+        (
+            (30.0, 210.0),
+            vec![k.u],
+            vec![sel_operand(&s, k.u, 30.0)],
+            "double-click on a boolean group selects its operand",
+        ),
+        (
+            (320.0, 220.0),
+            vec![inst],
+            vec![inst_child],
+            "double-click on an instance selects the layer inside it",
+        ),
+        (
+            (30.0, 30.0),
+            vec![],
+            vec![k.a],
+            "a double-click's first click selects the group, the second enters it",
+        ),
     ];
     for (p, before, after, why) in rows {
         ex(&mut s, "select.set", json!({"ids": before}));
         click(&mut s, p.0, p.1, NONE);
-        s.pointer(&ev(PointerKind::DoubleClick, p.0, p.1, NONE)).unwrap();
+        s.pointer(&ev(PointerKind::DoubleClick, p.0, p.1, NONE))
+            .unwrap();
         assert_eq!(s.selection(), after, "{why}");
     }
     // A selected shape: vector edit mode.
     ex(&mut s, "select.set", json!({"ids": [k.r]}));
-    s.pointer(&ev(PointerKind::DoubleClick, 520.0, 20.0, NONE)).unwrap();
-    assert_eq!(s.ds().unwrap().vector_edit.as_ref().map(|v| v.id), Some(k.r), "double-click on a shape edits its points");
+    s.pointer(&ev(PointerKind::DoubleClick, 520.0, 20.0, NONE))
+        .unwrap();
+    assert_eq!(
+        s.ds().unwrap().vector_edit.as_ref().map(|v| v.id),
+        Some(k.r),
+        "double-click on a shape edits its points"
+    );
 }
 
 #[test]
@@ -181,8 +361,22 @@ fn marquee_selects_what_it_touches() {
     let k = scene(&mut s);
     // (from, to, modifiers, selection before, selection after, derivation)
     let rows: Vec<((f64, f64), (f64, f64), Mods, Vec<NodeId>, Vec<NodeId>, &str)> = vec![
-        ((480.0, -20.0), (505.0, 10.0), NONE, vec![], vec![k.r], "a marquee selects layers it touches, not only those it contains"),
-        ((480.0, -20.0), (560.0, 260.0), NONE, vec![], vec![k.r, k.r2], "locked and hidden layers aren't selected by a marquee"),
+        (
+            (480.0, -20.0),
+            (505.0, 10.0),
+            NONE,
+            vec![],
+            vec![k.r],
+            "a marquee selects layers it touches, not only those it contains",
+        ),
+        (
+            (480.0, -20.0),
+            (560.0, 260.0),
+            NONE,
+            vec![],
+            vec![k.r, k.r2],
+            "locked and hidden layers aren't selected by a marquee",
+        ),
         (
             (-10.0, -10.0),
             (450.0, 40.0),
@@ -191,7 +385,14 @@ fn marquee_selects_what_it_touches() {
             vec![],
             "from the canvas, a top-level frame is selected only when the marquee covers all of it",
         ),
-        ((-10.0, -10.0), (450.0, 310.0), NONE, vec![], vec![k.f], "a marquee covering a top-level frame selects the frame"),
+        (
+            (-10.0, -10.0),
+            (450.0, 310.0),
+            NONE,
+            vec![],
+            vec![k.f],
+            "a marquee covering a top-level frame selects the frame",
+        ),
         (
             (390.0, 290.0),
             (25.0, 125.0),
@@ -208,8 +409,22 @@ fn marquee_selects_what_it_touches() {
             vec![k.a, k.b, k.c, k.d, k.u],
             "silent: Cmd/Ctrl-marquee selects the innermost layers it touches (pinned)",
         ),
-        ((480.0, -20.0), (505.0, 10.0), SHIFT, vec![k.c], vec![k.c, k.r], "Shift-marquee adds to the selection"),
-        ((480.0, -20.0), (505.0, 10.0), SHIFT, vec![k.c, k.r], vec![k.c], "Shift-marquee takes out what was selected and is touched again"),
+        (
+            (480.0, -20.0),
+            (505.0, 10.0),
+            SHIFT,
+            vec![k.c],
+            vec![k.c, k.r],
+            "Shift-marquee adds to the selection",
+        ),
+        (
+            (480.0, -20.0),
+            (505.0, 10.0),
+            SHIFT,
+            vec![k.c, k.r],
+            vec![k.c],
+            "Shift-marquee takes out what was selected and is touched again",
+        ),
     ];
     for (a, b, m, before, after, why) in rows {
         ex(&mut s, "select.set", json!({"ids": before}));
@@ -222,21 +437,70 @@ fn marquee_selects_what_it_touches() {
 fn keyboard_selection() {
     let mut s = Session::new();
     let k = scene(&mut s);
-    let page_layers = |s: &Session| s.doc().unwrap().node(s.page().unwrap()).unwrap().children.clone();
-    let visible_unlocked: Vec<NodeId> = page_layers(&s).into_iter().filter(|i| ![k.lk, k.hid].contains(i)).collect();
+    let page_layers = |s: &Session| {
+        s.doc()
+            .unwrap()
+            .node(s.page().unwrap())
+            .unwrap()
+            .children
+            .clone()
+    };
+    let visible_unlocked: Vec<NodeId> = page_layers(&s)
+        .into_iter()
+        .filter(|i| ![k.lk, k.hid].contains(i))
+        .collect();
     // (command, selection before, selection after, derivation)
     let rows: Vec<(&str, Vec<NodeId>, Vec<NodeId>, &str)> = vec![
-        ("select.children", vec![k.g], vec![k.a, k.b], "Enter selects the children"),
-        ("select.parent", vec![k.a], vec![k.g], "Shift+Enter selects the parent"),
-        ("select.parent", vec![k.f], vec![k.f], "silent: Shift+Enter on a top-level layer keeps it (pinned)"),
-        ("select.next", vec![k.b], vec![k.a], "Tab selects the next layer down the layers list"),
-        ("select.previous", vec![k.a], vec![k.b], "Shift+Tab selects the previous one"),
-        ("select.all", vec![k.a], vec![k.a, k.b], "Select all selects the selection's siblings"),
-        ("select.all", vec![], visible_unlocked.clone(), "with nothing selected, all layers on the page (hidden and locked ones can't be selected)"),
+        (
+            "select.children",
+            vec![k.g],
+            vec![k.a, k.b],
+            "Enter selects the children",
+        ),
+        (
+            "select.parent",
+            vec![k.a],
+            vec![k.g],
+            "Shift+Enter selects the parent",
+        ),
+        (
+            "select.parent",
+            vec![k.f],
+            vec![k.f],
+            "silent: Shift+Enter on a top-level layer keeps it (pinned)",
+        ),
+        (
+            "select.next",
+            vec![k.b],
+            vec![k.a],
+            "Tab selects the next layer down the layers list",
+        ),
+        (
+            "select.previous",
+            vec![k.a],
+            vec![k.b],
+            "Shift+Tab selects the previous one",
+        ),
+        (
+            "select.all",
+            vec![k.a],
+            vec![k.a, k.b],
+            "Select all selects the selection's siblings",
+        ),
+        (
+            "select.all",
+            vec![],
+            visible_unlocked.clone(),
+            "with nothing selected, all layers on the page (hidden and locked ones can't be selected)",
+        ),
         (
             "select.inverse",
             vec![k.r],
-            visible_unlocked.iter().copied().filter(|i| *i != k.r).collect(),
+            visible_unlocked
+                .iter()
+                .copied()
+                .filter(|i| *i != k.r)
+                .collect(),
             "Select inverse: the other layers Select all would select",
         ),
     ];
@@ -252,7 +516,11 @@ fn keyboard_selection() {
     s.escape().unwrap();
     assert_eq!(s.selection(), vec![k.f]);
     s.escape().unwrap();
-    assert_eq!(s.selection(), Vec::<NodeId>::new(), "Esc on a top-level layer deselects");
+    assert_eq!(
+        s.selection(),
+        Vec::<NodeId>::new(),
+        "Esc on a top-level layer deselects"
+    );
 }
 
 #[test]
@@ -264,14 +532,36 @@ fn locked_layers_selected_in_the_layers_panel_stay_put() {
     ex(&mut s, "select.set", json!({"ids": [k.lk]}));
     let doc = s.doc().unwrap().clone();
     let corner = Point::new(540.0, 140.0);
-    assert_eq!(handle_at(&doc, &[k.lk], corner, 1.0), None, "a locked layer has no resize handles");
-    assert!(handle_at(&doc, &[k.r2], corner, 1.0).is_some(), "the same box unlocked has");
+    assert_eq!(
+        handle_at(&doc, &[k.lk], corner, 1.0),
+        None,
+        "a locked layer has no resize handles"
+    );
+    assert!(
+        handle_at(&doc, &[k.r2], corner, 1.0).is_some(),
+        "the same box unlocked has"
+    );
     ex(&mut s, "select.set", json!({"ids": [k.lk, k.r]}));
     drag(&mut s, (520.0, 20.0), (530.0, 30.0), NONE);
     let doc = s.doc().unwrap();
-    assert_eq!(doc.world_bounds(k.r).unwrap().origin(), Point::new(510.0, 10.0), "the unlocked layer moves");
-    assert_eq!(doc.world_bounds(k.lk).unwrap().origin(), Point::new(500.0, 100.0), "the locked one doesn't");
+    assert_eq!(
+        doc.world_bounds(k.r).unwrap().origin(),
+        Point::new(510.0, 10.0),
+        "the unlocked layer moves"
+    );
+    assert_eq!(
+        doc.world_bounds(k.lk).unwrap().origin(),
+        Point::new(500.0, 100.0),
+        "the locked one doesn't"
+    );
     // Layers inside a locked layer are locked too.
-    ex(&mut s, "object.toggleLock", json!({"ids": [k.g], "locked": true}));
-    assert_eq!(handle_at(s.doc().unwrap(), &[k.a], Point::new(60.0, 60.0), 1.0), None);
+    ex(
+        &mut s,
+        "object.toggleLock",
+        json!({"ids": [k.g], "locked": true}),
+    );
+    assert_eq!(
+        handle_at(s.doc().unwrap(), &[k.a], Point::new(60.0, 60.0), 1.0),
+        None
+    );
 }

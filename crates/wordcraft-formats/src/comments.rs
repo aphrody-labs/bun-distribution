@@ -36,11 +36,18 @@ fn root(doc: &Document, id: u32) -> u32 {
 }
 
 fn author(a: &str) -> String {
-    if a.trim().is_empty() { "Author".to_string() } else { a.trim().to_string() }
+    if a.trim().is_empty() {
+        "Author".to_string()
+    } else {
+        a.trim().to_string()
+    }
 }
 
 fn text_of(doc: &Document, part: u32) -> String {
-    doc.plain_text(StoryRef::Part(part)).split_whitespace().collect::<Vec<_>>().join(" ")
+    doc.plain_text(StoryRef::Part(part))
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// The document's top-level comments: those anchored in the body in document order, then the
@@ -55,7 +62,9 @@ pub fn notes(doc: &Document) -> Vec<Note> {
     let mut quotes: HashMap<u32, String> = HashMap::new();
     let mut open: Vec<u32> = Vec::new();
     for path in doc.para_paths(StoryRef::Body) {
-        let Some(p) = doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         for (off, c) in p.text.char_indices() {
             if c == OBJ {
                 match p.object_at(off) {
@@ -100,15 +109,34 @@ pub fn notes(doc: &Document) -> Vec<Note> {
     }
     let mut out = Vec::new();
     for id in order {
-        let Some(c) = doc.comments.get(&id) else { continue };
+        let Some(c) = doc.comments.get(&id) else {
+            continue;
+        };
         if root(doc, id) != id {
             continue;
         }
-        let quote = quotes.get(&id).map(|q| q.split_whitespace().collect::<Vec<_>>().join(" ")).unwrap_or_default();
-        let quote = if quote.chars().count() > MAX_QUOTE { format!("{}…", quote.chars().take(MAX_QUOTE).collect::<String>()) } else { quote };
-        let replies =
-            replies.get(&id).into_iter().flatten().filter_map(|r| doc.comments.get(r)).map(|r| (author(&r.author), text_of(doc, r.part))).collect();
-        out.push(Note { author: author(&c.author), quote, text: text_of(doc, c.part), replies });
+        let quote = quotes
+            .get(&id)
+            .map(|q| q.split_whitespace().collect::<Vec<_>>().join(" "))
+            .unwrap_or_default();
+        let quote = if quote.chars().count() > MAX_QUOTE {
+            format!("{}…", quote.chars().take(MAX_QUOTE).collect::<String>())
+        } else {
+            quote
+        };
+        let replies = replies
+            .get(&id)
+            .into_iter()
+            .flatten()
+            .filter_map(|r| doc.comments.get(r))
+            .map(|r| (author(&r.author), text_of(doc, r.part)))
+            .collect();
+        out.push(Note {
+            author: author(&c.author),
+            quote,
+            text: text_of(doc, c.part),
+            replies,
+        });
         if out.len() >= MAX_COMMENTS {
             break;
         }
@@ -150,7 +178,11 @@ fn html(notes: &[Note]) -> String {
     use crate::html::esc;
     let mut s = String::from("<section class=\"comments\">\n<h2>Comments</h2>\n<ol>\n");
     for (i, n) in notes.iter().enumerate() {
-        s.push_str(&format!("<li id=\"comment-{}\"><p><strong>{}</strong>", i + 1, esc(&n.author)));
+        s.push_str(&format!(
+            "<li id=\"comment-{}\"><p><strong>{}</strong>",
+            i + 1,
+            esc(&n.author)
+        ));
         if !n.quote.is_empty() {
             s.push_str(&format!(" on <q>{}</q>", esc(&n.quote)));
         }

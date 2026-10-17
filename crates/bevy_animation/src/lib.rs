@@ -42,7 +42,7 @@ use bevy_asset::{Asset, AssetApp, AssetEventSystems, Assets};
 use bevy_ecs::{prelude::*, resource::IsResource, world::EntityMutExcept};
 use bevy_math::FloatOrd;
 use bevy_platform::{collections::HashMap, hash::NoOpHash};
-use bevy_reflect::{prelude::ReflectDefault, Reflect, TypePath};
+use bevy_reflect::{Reflect, TypePath, prelude::ReflectDefault};
 use bevy_time::Time;
 use bevy_transform::TransformSystems;
 use bevy_utils::{PreHashMap, PreHashMapExt, TypeIdHashMap};
@@ -57,8 +57,8 @@ use uuid::Uuid;
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{
-        animatable::*, animation_curves::*, graph::*, transition::*, AnimationClip,
-        AnimationPlayer, AnimationPlugin, VariableCurve,
+        AnimationClip, AnimationPlayer, AnimationPlugin, VariableCurve, animatable::*,
+        animation_curves::*, graph::*, transition::*,
     };
 }
 

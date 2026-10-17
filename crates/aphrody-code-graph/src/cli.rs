@@ -85,21 +85,30 @@ enum Command {
 fn delete_source(db: &HomeDb, label: &str) -> Result<String> {
     let found: Option<(i64, String)> = db
         .conn()
-        .query_row("SELECT id, kind FROM sources WHERE label = ?1", [label], |r| {
-            Ok((r.get(0)?, r.get(1)?))
-        })
+        .query_row(
+            "SELECT id, kind FROM sources WHERE label = ?1",
+            [label],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
         .ok();
-    let Some((id, kind)) = found else { return Err(GraphError::UnknownSource(label.to_owned())) };
+    let Some((id, kind)) = found else {
+        return Err(GraphError::UnknownSource(label.to_owned()));
+    };
     let count = |table: &str| -> i64 {
         db.conn()
-            .query_row(&format!("SELECT count(*) FROM {table} WHERE source_id = ?1"), [id], |r| {
-                r.get(0)
-            })
+            .query_row(
+                &format!("SELECT count(*) FROM {table} WHERE source_id = ?1"),
+                [id],
+                |r| r.get(0),
+            )
             .unwrap_or(0)
     };
     let (nodes, edges) = (count("graph_nodes"), count("graph_edges"));
-    db.conn().execute("DELETE FROM sources WHERE id = ?1", [id])?;
-    Ok(format!("deleted {kind} source {label}: {nodes} nodes, {edges} edges"))
+    db.conn()
+        .execute("DELETE FROM sources WHERE id = ?1", [id])?;
+    Ok(format!(
+        "deleted {kind} source {label}: {nodes} nodes, {edges} edges"
+    ))
 }
 
 fn pick_source(db: &HomeDb, wanted: Option<&str>) -> Result<String> {
@@ -109,11 +118,14 @@ fn pick_source(db: &HomeDb, wanted: Option<&str>) -> Result<String> {
     let mut statement = db.conn().prepare(
         "SELECT label FROM sources WHERE kind IN ('code-graph', 'graphify') ORDER BY label",
     )?;
-    let labels: Vec<String> =
-        statement.query_map([], |r| r.get(0))?.collect::<std::result::Result<_, _>>()?;
+    let labels: Vec<String> = statement
+        .query_map([], |r| r.get(0))?
+        .collect::<std::result::Result<_, _>>()?;
     match labels.as_slice() {
         [only] => Ok(only.clone()),
-        [] => Err(GraphError::UnknownSource("(no graph in this database)".into())),
+        [] => Err(GraphError::UnknownSource(
+            "(no graph in this database)".into(),
+        )),
         many => Err(GraphError::UnknownSource(format!(
             "several graphs, pass --source: {}",
             many.join(", ")
@@ -125,7 +137,9 @@ fn run(cli: &Cli) -> Result<String> {
     let layout = cli.store.layout()?;
     if matches!(cli.command, Command::Delete) {
         let Some(label) = cli.source.as_deref() else {
-            return Err(GraphError::UnknownSource("delete needs --source <label>".into()));
+            return Err(GraphError::UnknownSource(
+                "delete needs --source <label>".into(),
+            ));
         };
         let db = HomeDb::open(&layout)?;
         return delete_source(&db, label);
@@ -163,10 +177,18 @@ fn run(cli: &Cli) -> Result<String> {
     let graph = Graph::load(&db, &label)?;
     Ok(match &cli.command {
         Command::Build { .. } | Command::Delete => unreachable!("handled above"),
-        Command::Query { question, depth, budget } => {
+        Command::Query {
+            question,
+            depth,
+            budget,
+        } => {
             let result = graph.query(
                 question,
-                &QueryOptions { depth: *depth, budget_tokens: *budget, ..QueryOptions::default() },
+                &QueryOptions {
+                    depth: *depth,
+                    budget_tokens: *budget,
+                    ..QueryOptions::default()
+                },
             );
             let mut out = result.text;
             if result.truncated > 0 {
@@ -177,15 +199,26 @@ fn run(cli: &Cli) -> Result<String> {
                 );
             }
             out
-        },
+        }
         Command::Explain { node } => graph.explain(node)?.to_string(),
-        Command::Path { from, to, directed, relations } => {
+        Command::Path {
+            from,
+            to,
+            directed,
+            relations,
+        } => {
             let relations = if *directed && relations.is_empty() {
-                PathOptions::DEPENDENCY_RELATIONS.iter().map(|r| (*r).to_owned()).collect()
+                PathOptions::DEPENDENCY_RELATIONS
+                    .iter()
+                    .map(|r| (*r).to_owned())
+                    .collect()
             } else {
                 relations.clone()
             };
-            let options = PathOptions { directed: *directed, relations };
+            let options = PathOptions {
+                directed: *directed,
+                relations,
+            };
             match graph.shortest_path_with(from, to, &options)? {
                 None => "no path".to_owned(),
                 Some(path) => {
@@ -195,18 +228,18 @@ fn run(cli: &Cli) -> Result<String> {
                         match hop.via {
                             None => {
                                 let _ = writeln!(out, "{}", n.label);
-                            },
+                            }
                             Some((e, forward)) => {
                                 let edge = &graph.edges[e];
                                 let arrow = if forward { "-->" } else { "<--" };
                                 let _ = writeln!(out, "  {arrow} [{}] {}", edge.relation, n.label);
-                            },
+                            }
                         }
                     }
                     out
-                },
+                }
             }
-        },
+        }
         Command::Report => graph.report(&label, 15),
         Command::Export { out } => {
             graph.write_graph_json(
@@ -217,7 +250,7 @@ fn run(cli: &Cli) -> Result<String> {
                 None,
             )?;
             format!("wrote {}", out.display())
-        },
+        }
     })
 }
 
@@ -229,17 +262,17 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return i32::from(error.use_stderr());
-        },
+        }
     };
     match run(&cli) {
         Ok(text) => {
             println!("{}", text.trim_end());
             0
-        },
+        }
         Err(error) => {
             eprintln!("aphrody graph: {error}");
             1
-        },
+        }
     }
 }
 
@@ -250,12 +283,18 @@ mod tests {
     #[test]
     fn delete_removes_the_source_and_its_cascaded_rows() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("a.rs"), "fn run() { helper(); }\nfn helper() {}\n")
-            .unwrap();
+        std::fs::write(
+            dir.path().join("a.rs"),
+            "fn run() { helper(); }\nfn helper() {}\n",
+        )
+        .unwrap();
         let mut db = HomeDb::open_in_memory().unwrap();
         build_graph(&mut db, "graph:gone", dir.path(), &ScanOptions::default()).unwrap();
         let text = delete_source(&db, "graph:gone").unwrap();
-        assert!(text.starts_with("deleted code-graph source graph:gone: "), "{text}");
+        assert!(
+            text.starts_with("deleted code-graph source graph:gone: "),
+            "{text}"
+        );
         for table in ["graph_nodes", "graph_edges", "graph_file_cache", "files"] {
             let left: i64 = db
                 .conn()
@@ -263,6 +302,9 @@ mod tests {
                 .unwrap();
             assert_eq!(left, 0, "{table}");
         }
-        assert!(matches!(delete_source(&db, "graph:gone"), Err(GraphError::UnknownSource(_))));
+        assert!(matches!(
+            delete_source(&db, "graph:gone"),
+            Err(GraphError::UnknownSource(_))
+        ));
     }
 }

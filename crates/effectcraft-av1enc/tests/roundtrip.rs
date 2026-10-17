@@ -18,7 +18,11 @@ fn cfg(w: u32, h: u32, bd: u8, q: u8, keyint: u32) -> EncoderConfig {
 fn intra_8bit_smooth_high_quality() {
     let pics = vec![synth(128, 96, 8, 0)];
     let run = encode_and_check(cfg(128, 96, 8, 40, 1), &pics);
-    eprintln!("intra 8-bit q40: {} bytes, PSNR-Y {:.2} dB", run.packets[0].data.len(), run.psnr_y[0]);
+    eprintln!(
+        "intra 8-bit q40: {} bytes, PSNR-Y {:.2} dB",
+        run.packets[0].data.len(),
+        run.psnr_y[0]
+    );
     assert!(run.packets[0].keyframe);
     assert!(run.psnr_y[0] > 35.0, "PSNR {:.2}", run.psnr_y[0]);
 }
@@ -47,7 +51,11 @@ fn inter_moving_pattern() {
     eprintln!("inter sizes {sizes:?} psnr {:?}", run.psnr_y);
     assert!(run.packets[0].keyframe && run.packets[1..].iter().all(|p| !p.keyframe));
     let inter_avg = sizes[1..].iter().sum::<usize>() as f64 / (sizes.len() - 1) as f64;
-    assert!(inter_avg < sizes[0] as f64 * 0.5, "inter frames {inter_avg} vs key {}", sizes[0]);
+    assert!(
+        inter_avg < sizes[0] as f64 * 0.5,
+        "inter frames {inter_avg} vs key {}",
+        sizes[0]
+    );
     assert!(run.psnr_y.iter().all(|&p| p > 33.0));
 }
 
@@ -76,7 +84,10 @@ fn bitrate_mode_tracks_target() {
     let run = encode_and_check(c, &pics);
     let bits: usize = run.packets.iter().map(|p| p.data.len() * 8).sum();
     let kbps = bits as f64 / (n as f64 / 30.0) / 1000.0;
-    eprintln!("bitrate mode: {kbps:.1} kbit/s for a 400 kbit/s target, psnr {:?}", run.psnr_y);
+    eprintln!(
+        "bitrate mode: {kbps:.1} kbit/s for a 400 kbit/s target, psnr {:?}",
+        run.psnr_y
+    );
     assert!(kbps > 400.0 / 2.0 && kbps < 400.0 * 2.0, "{kbps} kbit/s");
 }
 

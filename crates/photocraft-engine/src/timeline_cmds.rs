@@ -44,27 +44,46 @@ fn with_timeline(s: &mut Session, f: impl FnOnce(&mut Option<Timeline>)) -> Resu
 }
 
 fn bad(cmd: &str, msg: String) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg,
+    }
 }
 
 /// The optional `duration` param, rejected unless it's a whole number in `1..=MAX_DURATION`.
 /// Before #1009 any `u64` was kept and stepping panicked on it.
 fn duration_param(cmd: &str, p: &Value) -> Result<Option<usize>> {
-    let Some(v) = p.get("duration").filter(|v| !v.is_null()) else { return Ok(None) };
+    let Some(v) = p.get("duration").filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
     v.as_u64()
         .and_then(|d| usize::try_from(d).ok())
         .filter(|d| (1..=MAX_DURATION).contains(d))
         .map(Some)
-        .ok_or_else(|| bad(cmd, format!("`duration` must be a whole number of frames from 1 to {MAX_DURATION}, got {v}")))
+        .ok_or_else(|| {
+            bad(
+                cmd,
+                format!(
+                    "`duration` must be a whole number of frames from 1 to {MAX_DURATION}, got {v}"
+                ),
+            )
+        })
 }
 
 /// The optional `fps` param, rejected unless it's a finite number in `(0, MAX_FPS]` (#1009).
 fn fps_param(cmd: &str, p: &Value) -> Result<Option<f32>> {
-    let Some(v) = p.get("fps").filter(|v| !v.is_null()) else { return Ok(None) };
+    let Some(v) = p.get("fps").filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
     v.as_f64()
         .filter(|f| f.is_finite() && *f > 0.0 && *f <= f64::from(MAX_FPS))
         .map(|f| Some(f as f32))
-        .ok_or_else(|| bad(cmd, format!("`fps` must be a number above 0 and at most {MAX_FPS}, got {v}")))
+        .ok_or_else(|| {
+            bad(
+                cmd,
+                format!("`fps` must be a number above 0 and at most {MAX_FPS}, got {v}"),
+            )
+        })
 }
 
 fn create(s: &mut Session, p: &Value) -> Result<Value> {
@@ -78,8 +97,13 @@ fn delete(s: &mut Session) -> Result<Value> {
 }
 
 fn set_frame(s: &mut Session, p: &Value) -> Result<Value> {
-    let f =
-        p.get("frame").and_then(Value::as_u64).ok_or_else(|| EngineError::BadParams { cmd: "timeline.setFrame".into(), msg: "need `frame`".into() })? as usize;
+    let f = p
+        .get("frame")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| EngineError::BadParams {
+            cmd: "timeline.setFrame".into(),
+            msg: "need `frame`".into(),
+        })? as usize;
     with_timeline(s, |t| {
         if let Some(t) = t {
             t.current = f;
@@ -128,19 +152,70 @@ fn info(s: &mut Session) -> Result<Value> {
 
 macro_rules! spec {
     ($id:expr, $label:expr, $params:expr, $en:expr, $run:expr) => {
-        CommandSpec { id: $id, label: $label, menu: &[], shortcut: None, params: $params, enabled: $en, journal: false, run: $run }
+        CommandSpec {
+            id: $id,
+            label: $label,
+            menu: &[],
+            shortcut: None,
+            params: $params,
+            enabled: $en,
+            journal: false,
+            run: $run,
+        }
     };
 }
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        spec!("timeline.create", "Create Video Timeline", r#"{duration?:30, fps?:30} → {timeline}"#, has_doc, |s, p| create(s, p)),
-        spec!("timeline.delete", "Delete Timeline", "{} → {timeline:null}", has_timeline, |s, _| delete(s)),
-        spec!("timeline.setFrame", "Go to Frame", r#"{frame} → {timeline}"#, has_timeline, |s, p| set_frame(s, p)),
-        spec!("timeline.nextFrame", "Next Frame", "{} → {timeline}", has_timeline, |s, _| step(s, 1)),
-        spec!("timeline.previousFrame", "Previous Frame", "{} → {timeline}", has_timeline, |s, _| step(s, -1)),
-        spec!("timeline.setProps", "Timeline Settings", r#"{fps?, duration?, workStart?, workEnd?} → {timeline}"#, has_timeline, |s, p| set_props(s, p)),
-        spec!("timeline.info", "Timeline Info", "{} → {timeline}", has_doc, |s, _| info(s)),
+        spec!(
+            "timeline.create",
+            "Create Video Timeline",
+            r#"{duration?:30, fps?:30} → {timeline}"#,
+            has_doc,
+            |s, p| create(s, p)
+        ),
+        spec!(
+            "timeline.delete",
+            "Delete Timeline",
+            "{} → {timeline:null}",
+            has_timeline,
+            |s, _| delete(s)
+        ),
+        spec!(
+            "timeline.setFrame",
+            "Go to Frame",
+            r#"{frame} → {timeline}"#,
+            has_timeline,
+            |s, p| set_frame(s, p)
+        ),
+        spec!(
+            "timeline.nextFrame",
+            "Next Frame",
+            "{} → {timeline}",
+            has_timeline,
+            |s, _| step(s, 1)
+        ),
+        spec!(
+            "timeline.previousFrame",
+            "Previous Frame",
+            "{} → {timeline}",
+            has_timeline,
+            |s, _| step(s, -1)
+        ),
+        spec!(
+            "timeline.setProps",
+            "Timeline Settings",
+            r#"{fps?, duration?, workStart?, workEnd?} → {timeline}"#,
+            has_timeline,
+            |s, p| set_props(s, p)
+        ),
+        spec!(
+            "timeline.info",
+            "Timeline Info",
+            "{} → {timeline}",
+            has_doc,
+            |s, _| info(s)
+        ),
     ]
 }
 
@@ -151,26 +226,48 @@ mod tests {
     #[test]
     fn create_navigate_delete() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
-        assert_eq!(s.execute("timeline.info", json!({})).unwrap()["timeline"], Value::Null);
-        let r = s.execute("timeline.create", json!({"duration": 24, "fps": 24.0})).unwrap();
+        s.execute("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
+        assert_eq!(
+            s.execute("timeline.info", json!({})).unwrap()["timeline"],
+            Value::Null
+        );
+        let r = s
+            .execute("timeline.create", json!({"duration": 24, "fps": 24.0}))
+            .unwrap();
         assert_eq!(r["timeline"]["duration"], 24);
         assert_eq!(r["timeline"]["current"], 0);
         // Navigate.
-        s.execute("timeline.setFrame", json!({"frame": 10})).unwrap();
+        s.execute("timeline.setFrame", json!({"frame": 10}))
+            .unwrap();
         s.execute("timeline.nextFrame", json!({})).unwrap();
-        assert_eq!(s.execute("timeline.info", json!({})).unwrap()["timeline"]["current"], 11);
+        assert_eq!(
+            s.execute("timeline.info", json!({})).unwrap()["timeline"]["current"],
+            11
+        );
         s.execute("timeline.previousFrame", json!({})).unwrap();
-        assert_eq!(s.execute("timeline.info", json!({})).unwrap()["timeline"]["current"], 10);
+        assert_eq!(
+            s.execute("timeline.info", json!({})).unwrap()["timeline"]["current"],
+            10
+        );
         // Clamp beyond the end.
-        let r = s.execute("timeline.setFrame", json!({"frame": 999})).unwrap();
+        let r = s
+            .execute("timeline.setFrame", json!({"frame": 999}))
+            .unwrap();
         assert_eq!(r["timeline"]["current"], 23);
         // Props.
-        s.execute("timeline.setProps", json!({"fps": 30.0})).unwrap();
-        assert_eq!(s.execute("timeline.info", json!({})).unwrap()["timeline"]["fps"], 30.0);
+        s.execute("timeline.setProps", json!({"fps": 30.0}))
+            .unwrap();
+        assert_eq!(
+            s.execute("timeline.info", json!({})).unwrap()["timeline"]["fps"],
+            30.0
+        );
         // Delete.
         s.execute("timeline.delete", json!({})).unwrap();
-        assert_eq!(s.execute("timeline.info", json!({})).unwrap()["timeline"], Value::Null);
+        assert_eq!(
+            s.execute("timeline.info", json!({})).unwrap()["timeline"],
+            Value::Null
+        );
     }
 
     /// The document's timeline, revision and history depth, to show a rejected command changed nothing.
@@ -188,8 +285,10 @@ mod tests {
     #[test]
     fn create_rejects_out_of_range_params() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        s.execute("timeline.create", json!({"duration": 24, "fps": 24.0})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
+        s.execute("timeline.create", json!({"duration": 24, "fps": 24.0}))
+            .unwrap();
         s.execute("timeline.setFrame", json!({"frame": 5})).unwrap();
         let before = snapshot(&s);
         let too_long = MAX_DURATION as u64 + 1;
@@ -207,7 +306,9 @@ mod tests {
             json!({"fps": 1e300}),
             json!({"fps": "fast"}),
         ] {
-            let e = s.execute("timeline.create", p.clone()).expect_err(&format!("{p} must be rejected"));
+            let e = s
+                .execute("timeline.create", p.clone())
+                .expect_err(&format!("{p} must be rejected"));
             assert!(matches!(e, EngineError::BadParams { .. }), "{p}: {e}");
             assert_eq!(snapshot(&s), before, "{p}: nothing changes");
         }
@@ -217,27 +318,51 @@ mod tests {
         s.execute("timeline.previousFrame", json!({})).unwrap();
         assert_eq!(current(&mut s), 5);
         // Control: the largest accepted values still create a timeline that steps at both ends.
-        let r = s.execute("timeline.create", json!({"duration": MAX_DURATION, "fps": MAX_FPS as f64})).unwrap();
+        let r = s
+            .execute(
+                "timeline.create",
+                json!({"duration": MAX_DURATION, "fps": MAX_FPS as f64}),
+            )
+            .unwrap();
         assert_eq!(r["timeline"]["duration"], MAX_DURATION);
         s.execute("timeline.previousFrame", json!({})).unwrap();
         assert_eq!(current(&mut s), 0);
-        s.execute("timeline.setFrame", json!({"frame": MAX_DURATION})).unwrap();
+        s.execute("timeline.setFrame", json!({"frame": MAX_DURATION}))
+            .unwrap();
         s.execute("timeline.nextFrame", json!({})).unwrap();
         assert_eq!(current(&mut s), MAX_DURATION - 1);
         // Control: `null` means "use the default", as before.
-        let r = s.execute("timeline.create", json!({"duration": null, "fps": null})).unwrap();
-        assert_eq!((r["timeline"]["duration"].as_u64(), r["timeline"]["fps"].as_f64()), (Some(30), Some(30.0)));
+        let r = s
+            .execute("timeline.create", json!({"duration": null, "fps": null}))
+            .unwrap();
+        assert_eq!(
+            (
+                r["timeline"]["duration"].as_u64(),
+                r["timeline"]["fps"].as_f64()
+            ),
+            (Some(30), Some(30.0))
+        );
     }
 
     /// #1009: `timeline.setProps` could store the same out-of-range `duration` and `fps`.
     #[test]
     fn set_props_rejects_out_of_range_params() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        s.execute("timeline.create", json!({"duration": 24, "fps": 24.0})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
+        s.execute("timeline.create", json!({"duration": 24, "fps": 24.0}))
+            .unwrap();
         let before = snapshot(&s);
-        for p in [json!({"duration": 0}), json!({"duration": u64::MAX}), json!({"fps": 0.0}), json!({"fps": -1.0}), json!({"fps": 30.0, "duration": 0})] {
-            let e = s.execute("timeline.setProps", p.clone()).expect_err(&format!("{p} must be rejected"));
+        for p in [
+            json!({"duration": 0}),
+            json!({"duration": u64::MAX}),
+            json!({"fps": 0.0}),
+            json!({"fps": -1.0}),
+            json!({"fps": 30.0, "duration": 0}),
+        ] {
+            let e = s
+                .execute("timeline.setProps", p.clone())
+                .expect_err(&format!("{p} must be rejected"));
             assert!(matches!(e, EngineError::BadParams { .. }), "{p}: {e}");
             assert_eq!(snapshot(&s), before, "{p}: nothing changes");
         }
@@ -253,12 +378,21 @@ mod tests {
             for current in [0, usize::MAX] {
                 for (cmd, delta) in [("timeline.nextFrame", 1i64), ("timeline.previousFrame", -1)] {
                     let mut s = Session::new();
-                    s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
+                    s.execute("file.new", json!({"width": 8, "height": 8}))
+                        .unwrap();
                     let st = s.active_mut().unwrap();
                     let mut doc = (*st.doc).clone();
-                    doc.timeline = Some(Timeline { fps: f32::NAN, duration, current, work_start: usize::MAX, work_end: 0 });
+                    doc.timeline = Some(Timeline {
+                        fps: f32::NAN,
+                        duration,
+                        current,
+                        work_start: usize::MAX,
+                        work_end: 0,
+                    });
                     st.doc = Arc::new(doc);
-                    let r = s.execute(cmd, json!({})).unwrap_or_else(|e| panic!("{cmd} d={duration} c={current}: {e}"));
+                    let r = s
+                        .execute(cmd, json!({}))
+                        .unwrap_or_else(|e| panic!("{cmd} d={duration} c={current}: {e}"));
                     let t = &r["timeline"];
                     let d = t["duration"].as_u64().unwrap();
                     let c = t["current"].as_u64().unwrap();
@@ -274,7 +408,8 @@ mod tests {
     #[test]
     fn navigation_without_timeline_errors() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
         assert!(s.execute("timeline.setFrame", json!({"frame": 1})).is_err());
     }
 }

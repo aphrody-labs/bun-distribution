@@ -29,7 +29,11 @@ impl RomsTest {
                 Err(e) => return Some(Err(anyhow!(e))),
             };
             let path = entry.path();
-            if path.extension() != Some(OsStr::new("nds")) { None } else { Some(Ok(path)) }
+            if path.extension() != Some(OsStr::new("nds")) {
+                None
+            } else {
+                Some(Ok(path))
+            }
         });
         Ok(iter)
     }

@@ -5,7 +5,14 @@
 //! Word styles are imported by name (their font, size, bold/italic and space before/after become
 //! the style definition, like InDesign's "Use Word styles" import option). RTF keeps bold,
 //! italic, underline, size and paragraph breaks.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod docx;
@@ -40,7 +47,9 @@ impl Utf16Units {
     /// The character that `unit` is or completes. Half a pair without its partner is no character.
     pub(crate) fn push(&mut self, unit: u32) -> Option<char> {
         match (self.high.take(), unit) {
-            (Some(high), 0xDC00..=0xDFFF) => char::from_u32(0x10000 + ((high - 0xD800) << 10) + (unit - 0xDC00)),
+            (Some(high), 0xDC00..=0xDFFF) => {
+                char::from_u32(0x10000 + ((high - 0xD800) << 10) + (unit - 0xDC00))
+            }
             (_, 0xD800..=0xDBFF) => {
                 self.high = Some(unit);
                 None
@@ -92,7 +101,12 @@ impl std::fmt::Display for ImportError {
 /// Text files this crate reads, by extension.
 pub fn is_text_file(name: &str) -> bool {
     let l = name.to_ascii_lowercase();
-    l.ends_with(".txt") || l.ends_with(".text") || l.ends_with(".md") || l.ends_with(".docx") || l.ends_with(".rtf") || l.ends_with(".xlsx")
+    l.ends_with(".txt")
+        || l.ends_with(".text")
+        || l.ends_with(".md")
+        || l.ends_with(".docx")
+        || l.ends_with(".rtf")
+        || l.ends_with(".xlsx")
 }
 
 /// Import `bytes` (format from the file name, else sniffed).
@@ -111,16 +125,26 @@ pub fn import(name: &str, bytes: &[u8]) -> Result<Imported, ImportError> {
         return tagged::import(bytes);
     }
     if l.ends_with(".doc") {
-        return Err(ImportError::Unsupported("legacy Word .doc (save it as .docx)".into()));
+        return Err(ImportError::Unsupported(
+            "legacy Word .doc (save it as .docx)".into(),
+        ));
     }
     Ok(plain(&String::from_utf8_lossy(bytes)))
 }
 
 /// Plain text: line breaks become paragraphs (CRLF / CR normalised).
 pub fn plain(text: &str) -> Imported {
-    let t = text.trim_start_matches('\u{FEFF}').replace("\r\n", "\n").replace('\r', "\n");
+    let t = text
+        .trim_start_matches('\u{FEFF}')
+        .replace("\r\n", "\n")
+        .replace('\r', "\n");
     let story = Story::with_text(designcraft_doc::StoryId(0), &t, Default::default());
-    Imported { story, para_styles: vec![], char_styles: vec![], warnings: vec![] }
+    Imported {
+        story,
+        para_styles: vec![],
+        char_styles: vec![],
+        warnings: vec![],
+    }
 }
 
 #[cfg(test)]
@@ -133,6 +157,9 @@ mod tests {
         assert_eq!(i.story.text, "One\nTwo\nThree");
         assert_eq!(i.story.paras.len(), 3);
         assert!(is_text_file("Report.DOCX") && !is_text_file("a.png"));
-        assert!(matches!(import("x.doc", b"\xD0\xCF"), Err(ImportError::Unsupported(_))));
+        assert!(matches!(
+            import("x.doc", b"\xD0\xCF"),
+            Err(ImportError::Unsupported(_))
+        ));
     }
 }

@@ -65,7 +65,13 @@ pub struct Metrics {
 
 fn nums(doc: &Document, o: Option<&Object>) -> Vec<f64> {
     o.map(|o| doc.resolve(o))
-        .and_then(|a| a.as_array().map(|a| a.iter().map(|x| doc.resolve(x).as_f64().unwrap_or(0.0)).collect()))
+        .and_then(|a| {
+            a.as_array().map(|a| {
+                a.iter()
+                    .map(|x| doc.resolve(x).as_f64().unwrap_or(0.0))
+                    .collect()
+            })
+        })
         .unwrap_or_default()
 }
 
@@ -76,10 +82,16 @@ fn dict(doc: &Document, o: Option<&Object>) -> Option<Dict> {
 /// Whether `base_font` (subset tag allowed) names a legacy Indic font family that is laid out in
 /// visual order (Kruti Dev, DevLys, Chanakya, Shusha, Shivaji, Walkman, Akruti, APS-DV, DV-TT…).
 fn legacy_indic_font(base_font: &str) -> bool {
-    let name =
-        base_font.split_once('+').filter(|(tag, _)| tag.len() == 6 && tag.bytes().all(|b| b.is_ascii_uppercase())).map_or(base_font, |(_, n)| n);
+    let name = base_font
+        .split_once('+')
+        .filter(|(tag, _)| tag.len() == 6 && tag.bytes().all(|b| b.is_ascii_uppercase()))
+        .map_or(base_font, |(_, n)| n);
     let name = name.to_ascii_lowercase();
-    ["kruti", "devlys", "chanakya", "shusha", "shivaji", "walkman", "akruti"].iter().any(|n| name.contains(n))
+    [
+        "kruti", "devlys", "chanakya", "shusha", "shivaji", "walkman", "akruti",
+    ]
+    .iter()
+    .any(|n| name.contains(n))
         || ["aps-", "dv-"].iter().any(|p| name.starts_with(p))
 }
 
@@ -87,15 +99,38 @@ fn legacy_indic_font(base_font: &str) -> bool {
 /// fallback. Type 1/Type 3 programs cannot be consumed by an sfnt text renderer.
 pub fn embedded_sfnt(doc: &Document, font: &Dict) -> Option<Vec<u8>> {
     use skrifa::{MetadataProvider as _, raw::TableProvider as _};
-    let descendant = dict(doc, font.get(b"DescendantFonts").and_then(|o| doc.resolve(o).as_array().and_then(|a| a.first()).cloned()).as_ref());
-    let descriptor = dict(doc, descendant.as_ref().unwrap_or(font).get(b"FontDescriptor"))?;
+    let descendant = dict(
+        doc,
+        font.get(b"DescendantFonts")
+            .and_then(|o| doc.resolve(o).as_array().and_then(|a| a.first()).cloned())
+            .as_ref(),
+    );
+    let descriptor = dict(
+        doc,
+        descendant.as_ref().unwrap_or(font).get(b"FontDescriptor"),
+    )?;
     for key in [b"FontFile2".as_slice(), b"FontFile3".as_slice()] {
-        let Some(object) = descriptor.get(key) else { continue };
+        let Some(object) = descriptor.get(key) else {
+            continue;
+        };
         let object = doc.resolve(object);
-        let Object::Stream(stream) = object.as_ref() else { continue };
-        let Ok(mut bytes) = stream.decoded_within(16 << 20) else { continue };
-        let Ok(face) = skrifa::FontRef::from_index(&bytes, 0) else { continue };
-        if face.metrics(skrifa::instance::Size::unscaled(), skrifa::instance::LocationRef::default()).units_per_em == 0 {
+        let Object::Stream(stream) = object.as_ref() else {
+            continue;
+        };
+        let Ok(mut bytes) = stream.decoded_within(16 << 20) else {
+            continue;
+        };
+        let Ok(face) = skrifa::FontRef::from_index(&bytes, 0) else {
+            continue;
+        };
+        if face
+            .metrics(
+                skrifa::instance::Size::unscaled(),
+                skrifa::instance::LocationRef::default(),
+            )
+            .units_per_em
+            == 0
+        {
             continue;
         }
         if face.charmap().mappings().next().is_some() {
@@ -111,9 +146,16 @@ pub fn embedded_sfnt(doc: &Document, font: &Dict) -> Option<Vec<u8>> {
         }
         let mut mappings = std::collections::BTreeMap::new();
         for code in 0..=255 {
-            let Some(text) = metrics.unicode.text(code) else { continue };
+            let Some(text) = metrics.unicode.text(code) else {
+                continue;
+            };
             let Some(ch) = only_char(&text) else { continue };
-            let Some(glyph) = cmap.map_codepoint(code).or_else(|| cmap.map_codepoint(code + 0xf000)) else { continue };
+            let Some(glyph) = cmap
+                .map_codepoint(code)
+                .or_else(|| cmap.map_codepoint(code + 0xf000))
+            else {
+                continue;
+            };
             let glyph = glyph.to_u32();
             if glyph > 0 {
                 mappings.entry(u32::from(ch)).or_insert(glyph);
@@ -121,7 +163,8 @@ pub fn embedded_sfnt(doc: &Document, font: &Dict) -> Option<Vec<u8>> {
         }
         if !mappings.is_empty()
             && append_editor_cmap(&mut bytes, &mappings).is_some()
-            && skrifa::FontRef::new(&bytes).is_ok_and(|font| font.charmap().mappings().next().is_some())
+            && skrifa::FontRef::new(&bytes)
+                .is_ok_and(|font| font.charmap().mappings().next().is_some())
         {
             return Some(bytes);
         }
@@ -131,7 +174,10 @@ pub fn embedded_sfnt(doc: &Document, font: &Dict) -> Option<Vec<u8>> {
 
 /// Replace an existing cmap directory entry with a bounded Unicode format-12 table.
 /// Checked ranges prevent damaged sfnt offsets from indexing outside the source program.
-fn append_editor_cmap(bytes: &mut Vec<u8>, mappings: &std::collections::BTreeMap<u32, u32>) -> Option<()> {
+fn append_editor_cmap(
+    bytes: &mut Vec<u8>,
+    mappings: &std::collections::BTreeMap<u32, u32>,
+) -> Option<()> {
     if mappings.len() > 65536 {
         return None;
     }
@@ -175,20 +221,33 @@ fn append_editor_cmap(bytes: &mut Vec<u8>, mappings: &std::collections::BTreeMap
             sum.wrapping_add(u32::from_be_bytes(word))
         })
     };
-    bytes.get_mut(entry + 4..entry + 8)?.copy_from_slice(&checksum(&cmap).to_be_bytes());
-    bytes.get_mut(entry + 8..entry + 12)?.copy_from_slice(&offset.to_be_bytes());
-    bytes.get_mut(entry + 12..entry + 16)?.copy_from_slice(&u32::try_from(cmap.len()).ok()?.to_be_bytes());
+    bytes
+        .get_mut(entry + 4..entry + 8)?
+        .copy_from_slice(&checksum(&cmap).to_be_bytes());
+    bytes
+        .get_mut(entry + 8..entry + 12)?
+        .copy_from_slice(&offset.to_be_bytes());
+    bytes
+        .get_mut(entry + 12..entry + 16)?
+        .copy_from_slice(&u32::try_from(cmap.len()).ok()?.to_be_bytes());
     bytes.extend_from_slice(&cmap);
     if let Some(head) = head {
-        bytes.get_mut(head.checked_add(8)?..head.checked_add(12)?)?.fill(0);
+        bytes
+            .get_mut(head.checked_add(8)?..head.checked_add(12)?)?
+            .fill(0);
         let adjustment = 0xb1b0afba_u32.wrapping_sub(checksum(bytes));
-        bytes.get_mut(head + 8..head + 12)?.copy_from_slice(&adjustment.to_be_bytes());
+        bytes
+            .get_mut(head + 8..head + 12)?
+            .copy_from_slice(&adjustment.to_be_bytes());
     }
     Some(())
 }
 
 fn descriptor_flags(doc: &Document, descriptor: &Dict) -> u32 {
-    let value = descriptor.get(b"Flags").and_then(|v| doc.resolve(v).as_f64()).unwrap_or(0.0) as i64;
+    let value = descriptor
+        .get(b"Flags")
+        .and_then(|v| doc.resolve(v).as_f64())
+        .unwrap_or(0.0) as i64;
     u32::try_from(value).unwrap_or(0)
 }
 
@@ -234,7 +293,11 @@ impl Unicode {
     /// Whether `code` may have an explicit entry; false is certain for codes below 65 536 without one.
     #[inline]
     fn may_be_explicit(&self, code: u32) -> bool {
-        code >= 0x1_0000 || self.explicit_low.get(code as usize / 64).is_some_and(|w| (*w >> (code % 64)) & 1 == 1)
+        code >= 0x1_0000
+            || self
+                .explicit_low
+                .get(code as usize / 64)
+                .is_some_and(|w| (*w >> (code % 64)) & 1 == 1)
     }
 
     /// The latest-declared range that covers `code`.
@@ -243,7 +306,9 @@ impl Unicode {
         if code < 0x1_0000 {
             return self.ranges.get(*self.low.get(code as usize)? as usize);
         }
-        let step = self.cover.partition_point(|&(start, _)| start <= u64::from(code));
+        let step = self
+            .cover
+            .partition_point(|&(start, _)| start <= u64::from(code));
         let &(_, record) = self.cover.get(step.checked_sub(1)?)?;
         self.ranges.get(record?)
     }
@@ -253,7 +318,11 @@ impl Unicode {
     #[inline]
     fn text(&self, code: u32) -> Option<Cow<'_, str>> {
         let range = self.covering(code);
-        let explicit = if self.may_be_explicit(code) { self.explicit.get(&code) } else { None };
+        let explicit = if self.may_be_explicit(code) {
+            self.explicit.get(&code)
+        } else {
+            None
+        };
         if let Some((seq, text)) = explicit
             && range.is_none_or(|r| r.seq < *seq)
         {
@@ -272,8 +341,14 @@ impl BfRange {
         // The offset is below 65 536 (the width limit in `parse_to_unicode`), so truncating it is exact.
         let offset = code.saturating_sub(self.lo) as u16;
         let last = self.units.len().saturating_sub(1);
-        let units = self.units.iter().enumerate().map(|(i, &u)| if i == last { u.wrapping_add(offset) } else { u });
-        char::decode_utf16(units).map(|r| r.unwrap_or(char::REPLACEMENT_CHARACTER)).collect()
+        let units = self
+            .units
+            .iter()
+            .enumerate()
+            .map(|(i, &u)| if i == last { u.wrapping_add(offset) } else { u });
+        char::decode_utf16(units)
+            .map(|r| r.unwrap_or(char::REPLACEMENT_CHARACTER))
+            .collect()
     }
 
     /// The lowest code of this range whose own text is `c` and that `valid` accepts. Only a single
@@ -357,7 +432,10 @@ fn is_cmap_space(b: u8) -> bool {
 }
 
 fn is_cmap_delimiter(b: u8) -> bool {
-    matches!(b, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%')
+    matches!(
+        b,
+        b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+    )
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -408,7 +486,12 @@ impl<'a> Iterator for Lexer<'a> {
                     return Some(Tok::Hex(None));
                 }
                 // `chunks` never yields an empty slice, so `p[0]` exists.
-                Some(Tok::Hex(Some(digits.chunks(2).map(|p| p[0] << 4 | p.get(1).copied().unwrap_or(0)).collect())))
+                Some(Tok::Hex(Some(
+                    digits
+                        .chunks(2)
+                        .map(|p| p[0] << 4 | p.get(1).copied().unwrap_or(0))
+                        .collect(),
+                )))
             }
             b'(' => {
                 // Literal strings nest and escape their parentheses; only skipping them matters.
@@ -423,12 +506,17 @@ impl<'a> Iterator for Lexer<'a> {
                     }
                     self.pos += 1;
                 }
-                Some(Tok::Word(self.data.get(start..self.pos.min(self.data.len()))?))
+                Some(Tok::Word(
+                    self.data.get(start..self.pos.min(self.data.len()))?,
+                ))
             }
             _ => {
                 // A name keeps its `/`; other delimiters (`)`, `>`, `{`, `}`) stand alone.
                 if b == b'/' || !is_cmap_delimiter(b) {
-                    while self.at(self.pos).is_some_and(|c| !is_cmap_space(c) && !is_cmap_delimiter(c)) {
+                    while self
+                        .at(self.pos)
+                        .is_some_and(|c| !is_cmap_space(c) && !is_cmap_delimiter(c))
+                    {
                         self.pos += 1;
                     }
                 }
@@ -446,8 +534,12 @@ fn style_from_name(name: &str) -> (bool, bool) {
     let name = name.to_ascii_lowercase();
     let name = name.split_once('+').map_or(name.as_str(), |(_, n)| n);
     (
-        ["bold", "black", "heavy", "semibold", "demi"].iter().any(|s| name.contains(s)),
-        ["italic", "oblique", "slanted"].iter().any(|s| name.contains(s)),
+        ["bold", "black", "heavy", "semibold", "demi"]
+            .iter()
+            .any(|s| name.contains(s)),
+        ["italic", "oblique", "slanted"]
+            .iter()
+            .any(|s| name.contains(s)),
     )
 }
 
@@ -491,7 +583,8 @@ fn parse_cmap(data: &[u8]) -> (Vec<(usize, Vec<u8>, Vec<u8>)>, Vec<(u32, u32, u3
             }
             Tok::Word(b"begincidrange") => {
                 while let Some([lo, hi, c]) = entry(&mut toks, b"endcidrange") {
-                    if let (Tok::Hex(Some(lo)), Tok::Hex(Some(hi)), Some(c)) = (&lo, &hi, number(&c))
+                    if let (Tok::Hex(Some(lo)), Tok::Hex(Some(hi)), Some(c)) =
+                        (&lo, &hi, number(&c))
                         && cids.len() < MAX_CMAP_RANGES
                     {
                         cids.push((be(lo), be(hi), c));
@@ -530,7 +623,12 @@ impl Metrics {
             ascent: 0.9,
             descent: -0.25,
             composite: false,
-            unicode: Unicode { encoding: (32..127u8).map(|c| (u32::from(c), char::from(c).to_string())).collect(), ..Unicode::default() },
+            unicode: Unicode {
+                encoding: (32..127u8)
+                    .map(|c| (u32::from(c), char::from(c).to_string()))
+                    .collect(),
+                ..Unicode::default()
+            },
             base_font: "Helvetica".into(),
             subset: false,
             bold: false,
@@ -550,10 +648,15 @@ impl Metrics {
                 (font.name(b"Subtype") == Some(b"Type3"))
                     .then(|| dict(doc, font.get(b"FontDescriptor")))
                     .flatten()
-                    .and_then(|d| d.name(b"FontName").map(|name| String::from_utf8_lossy(name).into_owned()))
+                    .and_then(|d| {
+                        d.name(b"FontName")
+                            .map(|name| String::from_utf8_lossy(name).into_owned())
+                    })
             })
             .unwrap_or_default();
-        m.subset = base.len() > 7 && base.as_bytes()[6] == b'+' && base[..6].bytes().all(|b| b.is_ascii_uppercase());
+        m.subset = base.len() > 7
+            && base.as_bytes()[6] == b'+'
+            && base[..6].bytes().all(|b| b.is_ascii_uppercase());
         let (bold, italic) = style_from_name(&base);
         m.bold |= bold;
         m.italic |= italic;
@@ -565,7 +668,13 @@ impl Metrics {
         };
         m.unicode = unicode_map(doc, font, m.composite);
         let mut reverse = HashMap::new();
-        for (&code, text) in m.unicode.explicit.iter().map(|(c, (_, t))| (c, t)).chain(m.unicode.encoding.iter()) {
+        for (&code, text) in m
+            .unicode
+            .explicit
+            .iter()
+            .map(|(c, (_, t))| (c, t))
+            .chain(m.unicode.encoding.iter())
+        {
             if let Some(ch) = only_char(text)
                 && m.shows(code, ch)
             {
@@ -577,9 +686,16 @@ impl Metrics {
         // (bare CFF and subset fonts often drop it), and the font program is never decoded here.
         if legacy_indic_font(&m.base_font) {
             let indic = |c: char| matches!(u32::from(c), 0x0900..=0x0D7F);
-            m.visual_order = m.unicode.explicit.values().any(|(_, t)| t.chars().any(indic))
+            m.visual_order = m
+                .unicode
+                .explicit
+                .values()
+                .any(|(_, t)| t.chars().any(indic))
                 || m.unicode.encoding.values().any(|t| t.chars().any(indic))
-                || m.unicode.ranges.iter().any(|r| r.units.iter().any(|&u| matches!(u, 0x0900..=0x0D7F)));
+                || m.unicode
+                    .ranges
+                    .iter()
+                    .any(|r| r.units.iter().any(|&u| matches!(u, 0x0900..=0x0D7F)));
         }
         m
     }
@@ -612,15 +728,25 @@ impl Metrics {
             if let Some(dw) = desc.get(b"DW").and_then(|d| doc.resolve(d).as_f64()) {
                 m.default = dw;
             }
-            if let Some(w) = desc.get(b"W").map(|w| doc.resolve(w)).and_then(|w| w.as_array().cloned()) {
+            if let Some(w) = desc
+                .get(b"W")
+                .map(|w| doc.resolve(w))
+                .and_then(|w| w.as_array().cloned())
+            {
                 let mut i = 0;
                 while i < w.len() {
-                    let Some(c0) = doc.resolve(&w[i]).as_f64().map(|v| v as u32) else { break };
+                    let Some(c0) = doc.resolve(&w[i]).as_f64().map(|v| v as u32) else {
+                        break;
+                    };
                     match w.get(i + 1).map(|o| doc.resolve(o)) {
                         Some(a) if a.as_array().is_some() => {
                             for (k, x) in a.as_array().into_iter().flatten().enumerate() {
                                 // A run past the last CID ends there: wrapping would give CID 0 its width.
-                                let Some(cid) = u32::try_from(k).ok().and_then(|k| c0.checked_add(k)) else { break };
+                                let Some(cid) =
+                                    u32::try_from(k).ok().and_then(|k| c0.checked_add(k))
+                                else {
+                                    break;
+                                };
                                 if let Some(v) = doc.resolve(x).as_f64() {
                                     m.cid_widths.insert(cid, v);
                                 }
@@ -628,7 +754,10 @@ impl Metrics {
                             i += 2;
                         }
                         Some(c1) => {
-                            if let (Some(c1), Some(v)) = (c1.as_f64(), w.get(i + 2).and_then(|x| doc.resolve(x).as_f64())) {
+                            if let (Some(c1), Some(v)) = (
+                                c1.as_f64(),
+                                w.get(i + 2).and_then(|x| doc.resolve(x).as_f64()),
+                            ) {
                                 m.cid_ranges.push((c0, c1 as u32, v));
                             }
                             i += 3;
@@ -639,10 +768,18 @@ impl Metrics {
             }
             descriptor = dict(doc, desc.get(b"FontDescriptor"));
         } else {
-            m.first = font.get(b"FirstChar").and_then(|f| doc.resolve(f).as_f64()).unwrap_or(0.0).max(0.0) as u32;
+            m.first = font
+                .get(b"FirstChar")
+                .and_then(|f| doc.resolve(f).as_f64())
+                .unwrap_or(0.0)
+                .max(0.0) as u32;
             m.widths = nums(doc, font.get(b"Widths"));
             descriptor = dict(doc, font.get(b"FontDescriptor"));
-            m.default = descriptor.as_ref().and_then(|d| d.get(b"MissingWidth")).and_then(|w| doc.resolve(w).as_f64()).unwrap_or(0.0);
+            m.default = descriptor
+                .as_ref()
+                .and_then(|d| d.get(b"MissingWidth"))
+                .and_then(|w| doc.resolve(w).as_f64())
+                .unwrap_or(0.0);
             if subtype == b"Type3" {
                 let fm = nums(doc, font.get(b"FontMatrix"));
                 if fm.len() == 6 {
@@ -654,7 +791,8 @@ impl Metrics {
                     }
                 }
             } else if m.widths.is_empty() {
-                let base = String::from_utf8_lossy(font.name(b"BaseFont").unwrap_or(b"")).into_owned();
+                let base =
+                    String::from_utf8_lossy(font.name(b"BaseFont").unwrap_or(b"")).into_owned();
                 // The real face, bold and italic included: the published metrics differ by style,
                 // so Times-Bold is not Times-Roman and neither is Helvetica scaled.
                 m.std14 = crate::Std14::from_base_font(&base).or(Some(crate::Std14::Helvetica));
@@ -662,8 +800,14 @@ impl Metrics {
         }
         if let Some(d) = descriptor {
             let flags = descriptor_flags(doc, &d);
-            let angle = d.get(b"ItalicAngle").and_then(|v| doc.resolve(v).as_f64()).unwrap_or(0.0);
-            let weight = d.get(b"FontWeight").and_then(|v| doc.resolve(v).as_f64()).unwrap_or(0.0);
+            let angle = d
+                .get(b"ItalicAngle")
+                .and_then(|v| doc.resolve(v).as_f64())
+                .unwrap_or(0.0);
+            let weight = d
+                .get(b"FontWeight")
+                .and_then(|v| doc.resolve(v).as_f64())
+                .unwrap_or(0.0);
             m.italic |= flags & 64 != 0 || angle.abs() > 0.1;
             m.bold |= flags & 262_144 != 0 || weight >= 600.0;
             // Type 3 descriptors may omit these metrics; the glyph-space FontBBox still applies.
@@ -692,7 +836,13 @@ impl Metrics {
                 Codes::Two => 2,
                 Codes::Ranges(r) => r
                     .iter()
-                    .find(|(len, lo, hi)| s.get(i..i + len).is_some_and(|b| b.iter().zip(lo.iter().zip(hi)).all(|(x, (l, h))| x >= l && x <= h)))
+                    .find(|(len, lo, hi)| {
+                        s.get(i..i + len).is_some_and(|b| {
+                            b.iter()
+                                .zip(lo.iter().zip(hi))
+                                .all(|(x, (l, h))| x >= l && x <= h)
+                        })
+                    })
                     .map_or(r.first().map_or(1, |x| x.0), |x| x.0),
             };
             let len = len.min(s.len() - i).max(1);
@@ -706,17 +856,28 @@ impl Metrics {
         if self.cid_map.is_empty() {
             return code;
         }
-        self.cid_map.iter().find(|(lo, hi, _)| code >= *lo && code <= *hi).map_or(0, |(lo, _, c)| c.saturating_add(code - lo))
+        self.cid_map
+            .iter()
+            .find(|(lo, hi, _)| code >= *lo && code <= *hi)
+            .map_or(0, |(lo, _, c)| c.saturating_add(code - lo))
     }
 
     /// The advance of `code` in text space per unit of font size.
     pub fn width(&self, code: u32) -> f64 {
         if self.composite {
             let cid = self.cid(code);
-            let w = self.cid_widths.get(&cid).copied().or_else(|| self.cid_ranges.iter().find(|(a, b, _)| cid >= *a && cid <= *b).map(|r| r.2));
+            let w = self.cid_widths.get(&cid).copied().or_else(|| {
+                self.cid_ranges
+                    .iter()
+                    .find(|(a, b, _)| cid >= *a && cid <= *b)
+                    .map(|r| r.2)
+            });
             return w.unwrap_or(self.default) * self.scale;
         }
-        if let Some(w) = code.checked_sub(self.first).and_then(|i| self.widths.get(i as usize)) {
+        if let Some(w) = code
+            .checked_sub(self.first)
+            .and_then(|i| self.widths.get(i as usize))
+        {
             return w * self.scale;
         }
         match self.std14 {
@@ -739,7 +900,10 @@ impl Metrics {
 impl Metrics {
     /// The text a string shows (codes without a known meaning are left out).
     pub fn decode(&self, s: &[u8]) -> String {
-        self.codes(s).into_iter().filter_map(|(c, _)| self.text_of(c)).collect()
+        self.codes(s)
+            .into_iter()
+            .filter_map(|(c, _)| self.text_of(c))
+            .collect()
     }
 
     /// The Unicode text of one code, if known.
@@ -752,9 +916,17 @@ impl Metrics {
     fn has_glyph(&self, code: u32) -> bool {
         if self.composite {
             let cid = self.cid(code);
-            return self.cid_widths.contains_key(&cid) || self.cid_ranges.iter().any(|(a, b, _)| cid >= *a && cid <= *b) || !self.subset;
+            return self.cid_widths.contains_key(&cid)
+                || self
+                    .cid_ranges
+                    .iter()
+                    .any(|(a, b, _)| cid >= *a && cid <= *b)
+                || !self.subset;
         }
-        match code.checked_sub(self.first).and_then(|i| self.widths.get(i as usize)) {
+        match code
+            .checked_sub(self.first)
+            .and_then(|i| self.widths.get(i as usize))
+        {
             Some(w) => *w > 0.0 || code == 32,
             None => self.widths.is_empty() && !self.subset,
         }
@@ -762,7 +934,10 @@ impl Metrics {
 
     /// Whether `code` shows exactly `c` and has a glyph for it.
     fn shows(&self, code: u32, c: char) -> bool {
-        self.unicode.text(code).is_some_and(|t| t.chars().eq(std::iter::once(c))) && self.has_glyph(code)
+        self.unicode
+            .text(code)
+            .is_some_and(|t| t.chars().eq(std::iter::once(c)))
+            && self.has_glyph(code)
     }
 
     /// The bytes that show `text` in this font, or `None` if some character has no code or
@@ -796,7 +971,9 @@ impl Metrics {
 
 /// The UTF-16 code units of CMap hex bytes.
 fn code_units(b: &[u8]) -> Vec<u16> {
-    b.chunks(2).map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)])).collect()
+    b.chunks(2)
+        .map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)]))
+        .collect()
 }
 
 /// UTF-16BE (with surrogates) from CMap hex bytes.
@@ -813,18 +990,29 @@ fn only_char(s: &str) -> Option<char> {
 
 /// Keeps the lowest code found for `c`.
 fn keep(reverse: &mut HashMap<char, u32>, c: char, code: u32) {
-    reverse.entry(c).and_modify(|r| *r = (*r).min(code)).or_insert(code);
+    reverse
+        .entry(c)
+        .and_modify(|r| *r = (*r).min(code))
+        .or_insert(code);
 }
 
 /// Spends `cost` of the budget; `false` when less is left.
 fn spend(budget: &mut usize, cost: usize) -> bool {
-    let Some(left) = budget.checked_sub(cost) else { return false };
+    let Some(left) = budget.checked_sub(cost) else {
+        return false;
+    };
     *budget = left;
     true
 }
 
 /// Adds an explicit mapping; `false` once the budget is spent.
-fn add_explicit(out: &mut Unicode, budget: &mut usize, seq: &mut u32, code: u32, text: String) -> bool {
+fn add_explicit(
+    out: &mut Unicode,
+    budget: &mut usize,
+    seq: &mut u32,
+    code: u32,
+    text: String,
+) -> bool {
     if !spend(budget, 1) {
         return false;
     }
@@ -834,12 +1022,24 @@ fn add_explicit(out: &mut Unicode, budget: &mut usize, seq: &mut u32, code: u32,
 }
 
 /// Adds a sequential range, which covers at least two codes and so costs two; `false` once the budget is spent.
-fn add_range(out: &mut Unicode, budget: &mut usize, seq: &mut u32, lo: u32, hi: u32, units: Box<[u16]>) -> bool {
+fn add_range(
+    out: &mut Unicode,
+    budget: &mut usize,
+    seq: &mut u32,
+    lo: u32,
+    hi: u32,
+    units: Box<[u16]>,
+) -> bool {
     if !spend(budget, 2) {
         return false;
     }
     *seq = seq.saturating_add(1);
-    out.ranges.push(BfRange { lo, hi, seq: *seq, units });
+    out.ranges.push(BfRange {
+        lo,
+        hi,
+        seq: *seq,
+        units,
+    });
     true
 }
 
@@ -848,7 +1048,11 @@ fn add_range(out: &mut Unicode, budget: &mut usize, seq: &mut u32, lo: u32, hi: 
 fn cover_index(ranges: &[BfRange]) -> Vec<(u64, Option<usize>)> {
     // Openings (first code, record) and closings (one past the last code), each in code order. The cover
     // can only change at one of their codes, so the sweep visits those codes in order.
-    let mut opens: Vec<(u32, u32)> = ranges.iter().enumerate().map(|(i, r)| (r.lo, i as u32)).collect();
+    let mut opens: Vec<(u32, u32)> = ranges
+        .iter()
+        .enumerate()
+        .map(|(i, r)| (r.lo, i as u32))
+        .collect();
     opens.sort_unstable();
     let mut closes: Vec<u64> = ranges.iter().map(|r| u64::from(r.hi) + 1).collect();
     closes.sort_unstable();
@@ -872,7 +1076,10 @@ fn cover_index(ranges: &[BfRange]) -> Vec<(u64, Option<usize>)> {
         while closes.get(next_close).is_some_and(|&end| end <= p) {
             next_close += 1;
         }
-        while open.peek().is_some_and(|&top| ranges.get(top as usize).is_none_or(|r| u64::from(r.hi) < p)) {
+        while open
+            .peek()
+            .is_some_and(|&top| ranges.get(top as usize).is_none_or(|r| u64::from(r.hi) < p))
+        {
             open.pop();
         }
         let winner = open.peek().map(|&top| top as usize);
@@ -887,7 +1094,9 @@ fn cover_index(ranges: &[BfRange]) -> Vec<(u64, Option<usize>)> {
 /// Sized to the highest such code, so a font with a few low codes costs a few words, not 8 KB.
 fn bit_set_below_64k(codes: impl Iterator<Item = u32>) -> Vec<u64> {
     let low: Vec<u32> = codes.filter(|&code| code < 0x1_0000).collect();
-    let Some(&max) = low.iter().max() else { return Vec::new() };
+    let Some(&max) = low.iter().max() else {
+        return Vec::new();
+    };
     let mut bits = vec![0u64; max as usize / 64 + 1];
     for code in low {
         if let Some(word) = bits.get_mut(code as usize / 64) {
@@ -904,7 +1113,11 @@ fn bit_set_below_64k(codes: impl Iterator<Item = u32>) -> Vec<u64> {
 /// The table ends with the last covered code: a code past it has no covering range, and a font whose
 /// ranges cover a few low codes costs that many entries, not a fixed 256 KB.
 fn owners_below_64k(cover: &[(u64, Option<usize>)]) -> Vec<u32> {
-    let stretch_end = |i: usize| cover.get(i + 1).map_or(0x1_0000, |&(next, _)| next.min(0x1_0000));
+    let stretch_end = |i: usize| {
+        cover
+            .get(i + 1)
+            .map_or(0x1_0000, |&(next, _)| next.min(0x1_0000))
+    };
     let len = cover
         .iter()
         .enumerate()
@@ -949,7 +1162,9 @@ fn parse_to_unicode_within(data: &[u8], out: &mut Unicode, mut budget: usize) {
             }
             Tok::Word(b"beginbfrange") => {
                 while let Some([lo, hi, dst]) = entry(&mut toks, b"endbfrange") {
-                    let (Tok::Hex(Some(lo)), Tok::Hex(Some(hi))) = (lo, hi) else { break };
+                    let (Tok::Hex(Some(lo)), Tok::Hex(Some(hi))) = (lo, hi) else {
+                        break;
+                    };
                     let (lo, hi) = (be(&lo), be(&hi));
                     match dst {
                         // One destination per code, from `lo` up to `hi`.
@@ -965,7 +1180,8 @@ fn parse_to_unicode_within(data: &[u8], out: &mut Unicode, mut budget: usize) {
                                 match t {
                                     Tok::Close => break,
                                     Tok::Hex(Some(u)) => {
-                                        let added = add_explicit(out, &mut budget, &mut seq, c, utf16(&u));
+                                        let added =
+                                            add_explicit(out, &mut budget, &mut seq, c, utf16(&u));
                                         if !added {
                                             break 'scan;
                                         }
@@ -980,7 +1196,14 @@ fn parse_to_unicode_within(data: &[u8], out: &mut Unicode, mut budget: usize) {
                             let added = if lo == hi {
                                 add_explicit(out, &mut budget, &mut seq, lo, utf16(&u))
                             } else {
-                                add_range(out, &mut budget, &mut seq, lo, hi, code_units(&u).into_boxed_slice())
+                                add_range(
+                                    out,
+                                    &mut budget,
+                                    &mut seq,
+                                    lo,
+                                    hi,
+                                    code_units(&u).into_boxed_slice(),
+                                )
                             };
                             if !added {
                                 break 'scan;
@@ -1025,16 +1248,26 @@ fn glyph_component(part: &str) -> Option<String> {
     }
     // `from_str_radix` accepts a leading `+`, which is not a glyph name, so the digits are checked.
     let hexish = |h: &str| !h.is_empty() && h.bytes().all(|b| b.is_ascii_hexdigit());
-    if let Some(hex) = part.strip_prefix("uni").filter(|h| h.len() >= 4 && h.len() % 4 == 0 && hexish(h)) {
+    if let Some(hex) = part
+        .strip_prefix("uni")
+        .filter(|h| h.len() >= 4 && h.len() % 4 == 0 && hexish(h))
+    {
         let mut s = String::new();
         for i in (0..hex.len()).step_by(4) {
             // A lone surrogate half is not a character; such a name is not usable text.
-            s.push(char::from_u32(u32::from_str_radix(hex.get(i..i.saturating_add(4))?, 16).ok()?)?);
+            s.push(char::from_u32(
+                u32::from_str_radix(hex.get(i..i.saturating_add(4))?, 16).ok()?,
+            )?);
         }
         return Some(s);
     }
-    let hex = part.strip_prefix('u').filter(|h| (4..=6).contains(&h.len()) && hexish(h))?;
-    u32::from_str_radix(hex, 16).ok().and_then(char::from_u32).map(String::from)
+    let hex = part
+        .strip_prefix('u')
+        .filter(|h| (4..=6).contains(&h.len()) && hexish(h))?;
+    u32::from_str_radix(hex, 16)
+        .ok()
+        .and_then(char::from_u32)
+        .map(String::from)
 }
 
 /// [`glyph_text`] for names that stand for exactly one character.
@@ -1065,7 +1298,8 @@ fn unicode_map(doc: &Document, font: &Dict, composite: bool) -> Unicode {
         // An explicitly named base encoding is a deliberate statement and is always honoured,
         // even on Symbol.
         let symbolic_builtin = matches!(
-            font.name(b"BaseFont").map(|b| crate::Std14::from_base_font(&String::from_utf8_lossy(b))),
+            font.name(b"BaseFont")
+                .map(|b| crate::Std14::from_base_font(&String::from_utf8_lossy(b))),
             Some(Some(crate::Std14::Symbol | crate::Std14::ZapfDingbats))
         );
         let table: Option<&[u32; 256]> = match base_name.as_deref() {
@@ -1085,7 +1319,10 @@ fn unicode_map(doc: &Document, font: &Dict, composite: bool) -> Unicode {
             }
         }
         if let Some(Object::Dict(d)) = enc.as_deref()
-            && let Some(diffs) = d.get(b"Differences").map(|x| doc.resolve(x)).and_then(|x| x.as_array().cloned())
+            && let Some(diffs) = d
+                .get(b"Differences")
+                .map(|x| doc.resolve(x))
+                .and_then(|x| x.as_array().cloned())
         {
             let mut code = 0u32;
             for item in diffs {
@@ -1128,7 +1365,10 @@ mod tests {
         let owner = super::owners_below_64k(&cover);
         assert_eq!(owner.len(), 0x22);
         assert_eq!((owner[0x1F], owner[0x20], owner[0x21]), (u32::MAX, 0, 0));
-        assert!(super::owners_below_64k(&[(0x2_0000, Some(0))]).is_empty(), "no code below 65 536");
+        assert!(
+            super::owners_below_64k(&[(0x2_0000, Some(0))]).is_empty(),
+            "no code below 65 536"
+        );
         let bits = super::bit_set_below_64k([3u32, 130, 0x2_0000].into_iter());
         assert_eq!(bits.len(), 3);
         assert_eq!((bits[0], bits[2]), (1 << 3, 1 << 2));
@@ -1153,9 +1393,18 @@ mod tests {
         let program = doc.add(Object::Stream(Stream::flate(Dict::new(), bytes)));
         let mut descriptor = Dict::new();
         descriptor.set(b"FontFile2".to_vec(), Object::Ref(program));
-        let simple = font(&mut doc, vec![("FontDescriptor", Object::Dict(descriptor.clone()))]);
+        let simple = font(
+            &mut doc,
+            vec![("FontDescriptor", Object::Dict(descriptor.clone()))],
+        );
         assert_eq!(embedded_sfnt(&doc, &simple).unwrap(), bytes);
-        let composite = font(&mut doc, vec![("DescendantFonts", Object::Array(vec![Object::Dict(simple.clone())]))]);
+        let composite = font(
+            &mut doc,
+            vec![(
+                "DescendantFonts",
+                Object::Array(vec![Object::Dict(simple.clone())]),
+            )],
+        );
         assert_eq!(embedded_sfnt(&doc, &composite).unwrap(), bytes);
         let broken = doc.add(Object::Stream(Stream::flate(Dict::new(), b"broken font")));
         descriptor.set(b"FontFile2".to_vec(), Object::Ref(broken));
@@ -1172,7 +1421,10 @@ mod tests {
         let expected = face.charmap().map('Ω').unwrap();
         let mut subset = original.to_vec();
         let count = u16::from_be_bytes(subset[4..6].try_into().unwrap()) as usize;
-        let entry = (0..count).map(|i| 12 + i * 16).find(|i| &subset[*i..*i + 4] == b"cmap").unwrap();
+        let entry = (0..count)
+            .map(|i| 12 + i * 16)
+            .find(|i| &subset[*i..*i + 4] == b"cmap")
+            .unwrap();
         let mut cmap = vec![0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 12];
         cmap.extend_from_slice(&[0, 6, 0, 12, 0, 0, 0, 65, 0, 1]);
         cmap.extend_from_slice(&u16::try_from(expected.to_u32()).unwrap().to_be_bytes());
@@ -1181,23 +1433,45 @@ mod tests {
         subset[entry + 12..entry + 16].copy_from_slice(&(cmap.len() as u32).to_be_bytes());
         subset.extend_from_slice(&cmap);
         let face = skrifa::FontRef::new(&subset).unwrap();
-        assert!(!face.charmap().has_map(), "egui cannot directly use Mac format 6");
+        assert!(
+            !face.charmap().has_map(),
+            "egui cannot directly use Mac format 6"
+        );
         assert_eq!(face.cmap().unwrap().map_codepoint(65_u32), Some(expected));
         let mut doc = Document::new_empty();
         let program = doc.add(Object::Stream(Stream::flate(Dict::new(), &subset)));
         let mut descriptor = Dict::new();
         descriptor.set(b"FontFile2".to_vec(), Object::Ref(program));
-        let unicode = doc.add(Object::Stream(Stream::flate(Dict::new(), b"1 beginbfchar <41> <03A9> endbfchar")));
-        let source = font(&mut doc, vec![("FontDescriptor", Object::Dict(descriptor)), ("ToUnicode", Object::Ref(unicode))]);
+        let unicode = doc.add(Object::Stream(Stream::flate(
+            Dict::new(),
+            b"1 beginbfchar <41> <03A9> endbfchar",
+        )));
+        let source = font(
+            &mut doc,
+            vec![
+                ("FontDescriptor", Object::Dict(descriptor)),
+                ("ToUnicode", Object::Ref(unicode)),
+            ],
+        );
         let editor = embedded_sfnt(&doc, &source).unwrap();
         let face = skrifa::FontRef::new(&editor).unwrap();
-        assert_eq!(face.charmap().map('Ω'), Some(expected), "Unicode selects the original glyph");
+        assert_eq!(
+            face.charmap().map('Ω'),
+            Some(expected),
+            "Unicode selects the original glyph"
+        );
         let Object::Stream(source) = doc.resolve(&Object::Ref(program)).as_ref().clone() else {
             panic!("source stream");
         };
-        assert_eq!(source.decoded().unwrap(), subset, "only an in-memory editor copy is adapted");
+        assert_eq!(
+            source.decoded().unwrap(),
+            subset,
+            "only an in-memory editor copy is adapted"
+        );
         let mut broken = vec![0; 16];
-        assert!(append_editor_cmap(&mut broken, &std::collections::BTreeMap::from([(65, 1)])).is_none());
+        assert!(
+            append_editor_cmap(&mut broken, &std::collections::BTreeMap::from([(65, 1)])).is_none()
+        );
     }
 
     fn metrics_with_flags(flags: Option<Object>) -> Metrics {
@@ -1206,7 +1480,13 @@ mod tests {
         if let Some(flags) = flags {
             descriptor.set(b"Flags".to_vec(), flags);
         }
-        let font = font(&mut doc, vec![("Subtype", Object::name("TrueType")), ("FontDescriptor", Object::Dict(descriptor))]);
+        let font = font(
+            &mut doc,
+            vec![
+                ("Subtype", Object::name("TrueType")),
+                ("FontDescriptor", Object::Dict(descriptor)),
+            ],
+        );
         Metrics::from_dict(&doc, &font)
     }
 
@@ -1215,7 +1495,12 @@ mod tests {
         let valid = metrics_with_flags(Some(Object::Int(64 | 262_144)));
         assert!(valid.italic && valid.bold);
 
-        for flags in [Some(Object::Int(-1)), Some(Object::Int(4_294_967_296)), Some(Object::Bool(true)), None] {
+        for flags in [
+            Some(Object::Int(-1)),
+            Some(Object::Int(4_294_967_296)),
+            Some(Object::Bool(true)),
+            None,
+        ] {
             let metrics = metrics_with_flags(flags);
             assert!(!metrics.italic && !metrics.bold);
         }
@@ -1230,9 +1515,24 @@ mod tests {
                 ("Subtype", Object::name("Type3")),
                 (
                     "FontMatrix",
-                    Object::Array(vec![Object::Real(0.001), Object::Int(0), Object::Int(0), Object::Real(0.001), Object::Int(0), Object::Int(0)]),
+                    Object::Array(vec![
+                        Object::Real(0.001),
+                        Object::Int(0),
+                        Object::Int(0),
+                        Object::Real(0.001),
+                        Object::Int(0),
+                        Object::Int(0),
+                    ]),
                 ),
-                ("FontBBox", Object::Array(vec![Object::Int(0), Object::Int(-300), Object::Int(1000), Object::Int(1000)])),
+                (
+                    "FontBBox",
+                    Object::Array(vec![
+                        Object::Int(0),
+                        Object::Int(-300),
+                        Object::Int(1000),
+                        Object::Int(1000),
+                    ]),
+                ),
             ],
         );
         let before = Metrics::from_dict(&doc, &f);
@@ -1245,10 +1545,17 @@ mod tests {
         f.set(b"FontDescriptor".to_vec(), Object::Ref(reference));
         let after = Metrics::from_dict(&doc, &f);
         assert_eq!(after.base_font, "ExampleMincho-Regular");
-        assert_eq!((after.ascent, after.descent, after.scale), (before.ascent, before.descent, before.scale));
+        assert_eq!(
+            (after.ascent, after.descent, after.scale),
+            (before.ascent, before.descent, before.scale)
+        );
         assert!(!after.bold && !after.italic && !after.subset);
         f.set(b"BaseFont".to_vec(), Object::name("ExplicitName"));
-        assert_eq!(Metrics::from_dict(&doc, &f).base_font, "ExplicitName", "an explicit BaseFont takes precedence");
+        assert_eq!(
+            Metrics::from_dict(&doc, &f).base_font,
+            "ExplicitName",
+            "an explicit BaseFont takes precedence"
+        );
     }
 
     #[test]
@@ -1256,7 +1563,11 @@ mod tests {
         let mut doc = Document::new_empty();
         let f = font(
             &mut doc,
-            vec![("Subtype", Object::name("Type1")), ("BaseFont", Object::name("Helvetica")), ("Encoding", Object::name("WinAnsiEncoding"))],
+            vec![
+                ("Subtype", Object::name("Type1")),
+                ("BaseFont", Object::name("Helvetica")),
+                ("Encoding", Object::name("WinAnsiEncoding")),
+            ],
         );
         let m = Metrics::from_dict(&doc, &f);
         assert_eq!(m.decode(b"Caf\xe9 \x80 \x93x\x94"), "Café € “x”");
@@ -1264,8 +1575,22 @@ mod tests {
         assert_eq!(m.encode("Ω"), None, "not in WinAnsi");
         // Differences rename codes by glyph name.
         let mut enc = Dict::new();
-        enc.set(b"Differences".to_vec(), Object::Array(vec![Object::Int(65), Object::name("eacute"), Object::name("uni03A9")]));
-        let f = font(&mut doc, vec![("Subtype", Object::name("Type1")), ("BaseFont", Object::name("Custom")), ("Encoding", Object::Dict(enc))]);
+        enc.set(
+            b"Differences".to_vec(),
+            Object::Array(vec![
+                Object::Int(65),
+                Object::name("eacute"),
+                Object::name("uni03A9"),
+            ]),
+        );
+        let f = font(
+            &mut doc,
+            vec![
+                ("Subtype", Object::name("Type1")),
+                ("BaseFont", Object::name("Custom")),
+                ("Encoding", Object::Dict(enc)),
+            ],
+        );
         let m = Metrics::from_dict(&doc, &f);
         assert_eq!(m.decode(b"AB"), "éΩ");
         assert_eq!(m.encode("Ω").as_deref(), Some(&b"B"[..]));
@@ -1325,8 +1650,14 @@ mod tests {
             ],
         );
         let m = Metrics::from_dict(&doc, &f);
-        assert_eq!(m.decode(&[0, 0x24, 0, 0x25, 0, 3, 0, 0x30, 0, 0x31, 0, 0x10]), "AB Hié");
-        assert_eq!(m.encode("Hi A").as_deref(), Some(&[0, 0x30, 0, 0x31, 0, 3, 0, 0x24][..]));
+        assert_eq!(
+            m.decode(&[0, 0x24, 0, 0x25, 0, 3, 0, 0x30, 0, 0x31, 0, 0x10]),
+            "AB Hié"
+        );
+        assert_eq!(
+            m.encode("Hi A").as_deref(),
+            Some(&[0, 0x30, 0, 0x31, 0, 3, 0, 0x24][..])
+        );
         assert_eq!(m.encode("Z"), None);
     }
 
@@ -1338,7 +1669,13 @@ mod tests {
             let mut desc = Dict::new();
             desc.set(b"Subtype".to_vec(), Object::name("CIDFontType2"));
             desc.set(b"DW".to_vec(), Object::Int(1000));
-            desc.set(b"W".to_vec(), Object::Array(vec![Object::Int(first), Object::Array(vec![Object::Int(100), Object::Int(200)])]));
+            desc.set(
+                b"W".to_vec(),
+                Object::Array(vec![
+                    Object::Int(first),
+                    Object::Array(vec![Object::Int(100), Object::Int(200)]),
+                ]),
+            );
             let f = font(
                 &mut doc,
                 vec![
@@ -1366,8 +1703,16 @@ mod tests {
     fn to_unicode(cmap: &[u8]) -> HashMap<u32, String> {
         let mut u = Unicode::default();
         parse_to_unicode(cmap, &mut u);
-        let codes: Vec<u32> = u.explicit.keys().copied().chain(u.ranges.iter().flat_map(|r| r.lo..=r.hi)).collect();
-        codes.into_iter().filter_map(|c| u.text(c).map(|t| (c, t.into_owned()))).collect()
+        let codes: Vec<u32> = u
+            .explicit
+            .keys()
+            .copied()
+            .chain(u.ranges.iter().flat_map(|r| r.lo..=r.hi))
+            .collect();
+        codes
+            .into_iter()
+            .filter_map(|c| u.text(c).map(|t| (c, t.into_owned())))
+            .collect()
     }
 
     #[test]
@@ -1379,8 +1724,21 @@ mod tests {
         let map = to_unicode(cmap);
         let mut got: Vec<_> = map.iter().map(|(c, u)| (*c, u.as_str())).collect();
         got.sort_unstable();
-        assert_eq!(got, [(3, " "), (0x10, "é"), (0x24, "A"), (0x25, "B"), (0x26, "C"), (0x30, "H"), (0x31, "i")]);
-        let (spaces, cids) = parse_cmap(b"1 begincodespacerange<00><FF>endcodespacerange 1 begincidrange<20><7E>1 endcidrange");
+        assert_eq!(
+            got,
+            [
+                (3, " "),
+                (0x10, "é"),
+                (0x24, "A"),
+                (0x25, "B"),
+                (0x26, "C"),
+                (0x30, "H"),
+                (0x31, "i")
+            ]
+        );
+        let (spaces, cids) = parse_cmap(
+            b"1 begincodespacerange<00><FF>endcodespacerange 1 begincidrange<20><7E>1 endcidrange",
+        );
         assert_eq!(spaces, [(1, vec![0], vec![0xff])]);
         assert_eq!(cids, [(0x20, 0x7e, 1)]);
     }
@@ -1402,20 +1760,40 @@ mod tests {
             parse_cmap(cmap);
         }
         // Code counters at the top of the range stop instead of overflowing.
-        let map = to_unicode(b"1 beginbfrange <FFFFFFFE> <FFFFFFFF> [<0041> <0042> <0043>] endbfrange");
+        let map =
+            to_unicode(b"1 beginbfrange <FFFFFFFE> <FFFFFFFF> [<0041> <0042> <0043>] endbfrange");
         assert_eq!(map.len(), 2);
         assert_eq!(map.get(&u32::MAX).map(String::as_str), Some("B"));
         // A malformed array entry keeps its place, so the next one maps the next code.
         let map = to_unicode(b"1 beginbfrange <0001> <0003> [<0041> <zz> <0043>] endbfrange");
-        assert_eq!((map.get(&2), map.get(&3).map(String::as_str)), (None, Some("C")));
+        assert_eq!(
+            (map.get(&2), map.get(&3).map(String::as_str)),
+            (None, Some("C"))
+        );
         let mut m = Metrics::fallback();
         (_, m.cid_map) = parse_cmap(b"1 begincidrange <0000> <FFFF> 4294967295 endcidrange");
         assert_eq!(m.cid(5), u32::MAX);
         let mut doc = Document::new_empty();
         let mut enc = Dict::new();
-        enc.set(b"Differences".to_vec(), Object::Array(vec![Object::Int(i64::MAX), Object::name("A"), Object::name("B")]));
-        let f = font(&mut doc, vec![("Subtype", Object::name("Type1")), ("Encoding", Object::Dict(enc))]);
-        assert_eq!(unicode_map(&doc, &f, false).text(u32::MAX).as_deref(), Some("B"));
+        enc.set(
+            b"Differences".to_vec(),
+            Object::Array(vec![
+                Object::Int(i64::MAX),
+                Object::name("A"),
+                Object::name("B"),
+            ]),
+        );
+        let f = font(
+            &mut doc,
+            vec![
+                ("Subtype", Object::name("Type1")),
+                ("Encoding", Object::Dict(enc)),
+            ],
+        );
+        assert_eq!(
+            unicode_map(&doc, &f, false).text(u32::MAX).as_deref(),
+            Some("B")
+        );
     }
 
     #[test]
@@ -1462,7 +1840,14 @@ mod tests {
         many.extend(b"endbfchar");
         let mut u = Unicode::default();
         parse_to_unicode_within(&many, &mut u, 250);
-        assert_eq!((u.explicit.len(), u.text(249).is_some(), u.text(250).is_some()), (250, true, false));
+        assert_eq!(
+            (
+                u.explicit.len(),
+                u.text(249).is_some(),
+                u.text(250).is_some()
+            ),
+            (250, true, false)
+        );
         let mut many = b"begincidrange ".to_vec();
         for k in 0..MAX_CMAP_RANGES + 10 {
             many.extend(format!("<{k:08X}> <{k:08X}> 1 ").bytes());
@@ -1475,7 +1860,11 @@ mod tests {
         let mut u = Unicode::default();
         parse_to_unicode(b"1 beginbfrange <0000> <FFFF> <0041> endbfrange", &mut u);
         assert_eq!((u.ranges.len(), u.explicit.len()), (1, 0));
-        assert_eq!(u.text(0xFFFF).as_deref(), Some("@"), "0x41 + 0xFFFF wraps to U+0040");
+        assert_eq!(
+            u.text(0xFFFF).as_deref(),
+            Some("@"),
+            "0x41 + 0xFFFF wraps to U+0040"
+        );
     }
 
     #[test]
@@ -1483,17 +1872,27 @@ mod tests {
         // Range k maps codes k and k + 1 and costs two, so a budget of 250 keeps ranges 0 to 124.
         let mut cmap = Vec::new();
         for k in 0..300u32 {
-            cmap.extend(format!("1 beginbfrange <{k:08X}> <{:08X}> <0041> endbfrange ", k + 1).bytes());
+            cmap.extend(
+                format!(
+                    "1 beginbfrange <{k:08X}> <{:08X}> <0041> endbfrange ",
+                    k + 1
+                )
+                .bytes(),
+            );
         }
         let mut u = Unicode::default();
         parse_to_unicode_within(&cmap, &mut u, 250);
-        assert_eq!((u.ranges.len(), u.text(125).is_some(), u.text(126).is_none()), (125, true, true));
+        assert_eq!(
+            (u.ranges.len(), u.text(125).is_some(), u.text(126).is_none()),
+            (125, true, true)
+        );
     }
 
     #[test]
     fn explicit_and_range_mappings_override_the_encoding() {
         let mut doc = Document::new_empty();
-        let cmap = b"1 beginbfchar <41> <0058> endbfchar 1 beginbfrange <42> <43> <0059> endbfrange";
+        let cmap =
+            b"1 beginbfchar <41> <0058> endbfchar 1 beginbfrange <42> <43> <0059> endbfrange";
         let tu = doc.add(Object::Stream(Stream::from_raw(Dict::new(), cmap.to_vec())));
         let f = font(
             &mut doc,
@@ -1505,8 +1904,18 @@ mod tests {
             ],
         );
         let m = Metrics::from_dict(&doc, &f);
-        let shown: Vec<Option<String>> = (0x41..=0x44).map(|c| m.text_of(c).map(|t| t.into_owned())).collect();
-        assert_eq!(shown, [Some("X".to_string()), Some("Y".to_string()), Some("Z".to_string()), Some("D".to_string())]);
+        let shown: Vec<Option<String>> = (0x41..=0x44)
+            .map(|c| m.text_of(c).map(|t| t.into_owned()))
+            .collect();
+        assert_eq!(
+            shown,
+            [
+                Some("X".to_string()),
+                Some("Y".to_string()),
+                Some("Z".to_string()),
+                Some("D".to_string())
+            ]
+        );
     }
 
     /// Deterministic input for the differential test below.
@@ -1514,13 +1923,19 @@ mod tests {
 
     impl Gen {
         fn below(&mut self, n: u32) -> u32 {
-            self.0 = self.0.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+            self.0 = self
+                .0
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
             ((self.0 >> 33) % u64::from(n)) as u32
         }
 
         /// A destination: a unit from a pool of edge cases, a surrogate pair, or a lone high surrogate.
         fn units(&mut self) -> Vec<u16> {
-            const POOL: [u16; 12] = [0x41, 0x42, 0xE9, 0x0, 0xFFFD, 0xFFFE, 0xFFFF, 0x100, 0x3042, 0xD800, 0xDC00, 0xDFFF];
+            const POOL: [u16; 12] = [
+                0x41, 0x42, 0xE9, 0x0, 0xFFFD, 0xFFFE, 0xFFFF, 0x100, 0x3042, 0xD800, 0xDC00,
+                0xDFFF,
+            ];
             match self.below(6) {
                 0 => vec![0xD835, 0xDC00 + self.below(0x400) as u16],
                 1 => vec![0xD800, 0x41],
@@ -1549,7 +1964,11 @@ mod tests {
                     }
                     1 => {
                         let (lo, width, u) = (g.below(300), g.below(13), g.units());
-                        cmap += &format!("1 beginbfrange <{lo:04X}> <{:04X}> <{}> endbfrange ", lo + width, hex(&u));
+                        cmap += &format!(
+                            "1 beginbfrange <{lo:04X}> <{:04X}> <{}> endbfrange ",
+                            lo + width,
+                            hex(&u)
+                        );
                         for k in 0..=width {
                             let mut v = u.clone();
                             if let Some(last) = v.last_mut() {
@@ -1561,8 +1980,13 @@ mod tests {
                     _ => {
                         let (lo, width) = (g.below(300), g.below(5));
                         let dests: Vec<Vec<u16>> = (0..=width).map(|_| g.units()).collect();
-                        let list: Vec<String> = dests.iter().map(|d| format!("<{}>", hex(d))).collect();
-                        cmap += &format!("1 beginbfrange <{lo:04X}> <{:04X}> [{}] endbfrange ", lo + width, list.join(" "));
+                        let list: Vec<String> =
+                            dests.iter().map(|d| format!("<{}>", hex(d))).collect();
+                        cmap += &format!(
+                            "1 beginbfrange <{lo:04X}> <{:04X}> [{}] endbfrange ",
+                            lo + width,
+                            list.join(" ")
+                        );
                         for (k, d) in dests.iter().enumerate() {
                             expected.insert(lo + k as u32, String::from_utf16_lossy(d));
                         }
@@ -1570,7 +1994,10 @@ mod tests {
                 }
             }
             let mut doc = Document::new_empty();
-            let tu = doc.add(Object::Stream(Stream::from_raw(Dict::new(), cmap.clone().into_bytes())));
+            let tu = doc.add(Object::Stream(Stream::from_raw(
+                Dict::new(),
+                cmap.clone().into_bytes(),
+            )));
             let f = font(
                 &mut doc,
                 vec![
@@ -1583,7 +2010,11 @@ mod tests {
             let m = Metrics::from_dict(&doc, &f);
             for code in 0..=320u32 {
                 let got = m.text_of(code).map(|t| t.into_owned());
-                assert_eq!(got, expected.get(&code).cloned(), "code {code:#06x} in {cmap}");
+                assert_eq!(
+                    got,
+                    expected.get(&code).cloned(),
+                    "code {code:#06x} in {cmap}"
+                );
             }
             let mut reverse: HashMap<char, u32> = HashMap::new();
             for (&code, text) in &expected {
@@ -1591,7 +2022,11 @@ mod tests {
                     keep(&mut reverse, c, code);
                 }
             }
-            let mut chars: Vec<char> = expected.values().flat_map(|t| t.chars()).chain(['A', '\u{FFFD}', '\u{0}', '\u{1D400}']).collect();
+            let mut chars: Vec<char> = expected
+                .values()
+                .flat_map(|t| t.chars())
+                .chain(['A', '\u{FFFD}', '\u{0}', '\u{1D400}'])
+                .collect();
             chars.sort_unstable();
             chars.dedup();
             for c in chars {
@@ -1608,7 +2043,10 @@ mod tests {
         let mut cmap = "1 beginbfrange <0000> <FFFF> <0000> endbfrange ".repeat(300);
         cmap.push_str("1 beginbfrange <D800> <DFFF> <0041> endbfrange");
         let mut doc = Document::new_empty();
-        let tu = doc.add(Object::Stream(Stream::from_raw(Dict::new(), cmap.into_bytes())));
+        let tu = doc.add(Object::Stream(Stream::from_raw(
+            Dict::new(),
+            cmap.into_bytes(),
+        )));
         let f = font(
             &mut doc,
             vec![
@@ -1631,7 +2069,10 @@ mod tests {
             1 beginbfrange <0005> <0001> <0041> endbfrange \
             1 beginbfrange <FFFFFFFF> <FFFFFFFF> <FFFF> endbfrange";
         parse_to_unicode(cmap, &mut u);
-        assert_eq!((u.ranges.len(), u.text(u32::MAX).as_deref()), (0, Some("\u{FFFF}")));
+        assert_eq!(
+            (u.ranges.len(), u.text(u32::MAX).as_deref()),
+            (0, Some("\u{FFFF}"))
+        );
     }
 
     #[test]
@@ -1642,7 +2083,14 @@ mod tests {
         parse_to_unicode(cmap, &mut u);
         let covered: Vec<u32> = (0..0x70).filter(|&c| u.covering(c).is_some()).collect();
         assert_eq!(covered, [5, 6, 7, 100, 101]);
-        assert_eq!((u.covering(0xFFFF).is_some(), u.covering(0x1_0001).is_some(), u.covering(0x1_0002).is_none()), (true, true, true));
+        assert_eq!(
+            (
+                u.covering(0xFFFF).is_some(),
+                u.covering(0x1_0001).is_some(),
+                u.covering(0x1_0002).is_none()
+            ),
+            (true, true, true)
+        );
     }
 }
 
@@ -1701,12 +2149,20 @@ mod encoding_tests {
         assert_eq!(glyph_text("nonsense"), None);
         assert_eq!(glyph_text(""), None);
         assert_eq!(glyph_text(".notdef"), None);
-        assert_eq!(glyph_text("f_nonsense"), None, "half a ligature is not an answer");
+        assert_eq!(
+            glyph_text("f_nonsense"),
+            None,
+            "half a ligature is not an answer"
+        );
         assert_eq!(glyph_text("uni00"), None, "not a whole four-digit value");
         assert_eq!(glyph_text("uni0041004"), None);
         assert_eq!(glyph_text("uni+041"), None, "a sign is not a hex digit");
         assert_eq!(glyph_text("u+0041"), None);
-        assert_eq!(glyph_text("uniD800"), None, "a lone surrogate half is not a character");
+        assert_eq!(
+            glyph_text("uniD800"),
+            None,
+            "a lone surrogate half is not a character"
+        );
         // Glyph-index names carry no meaning, and must not be guessed at.
         assert_eq!(glyph_text("g3"), None);
         assert_eq!(glyph_text("index42"), None);
@@ -1714,22 +2170,38 @@ mod encoding_tests {
         // `glyph_unicode` is the single-character view of the same algorithm.
         assert_eq!(glyph_unicode("uni20AC"), Some('\u{20ac}'));
         assert_eq!(glyph_unicode("a.sc"), Some('a'));
-        assert_eq!(glyph_unicode("f_i"), None, "a ligature is not one character");
+        assert_eq!(
+            glyph_unicode("f_i"),
+            None,
+            "a ligature is not one character"
+        );
     }
 
     #[test]
     fn a_ligature_or_unreadable_name_in_differences_is_handled() {
         // A ligature name maps one code to two characters, so text extraction reads "fi".
-        let (doc, d) = simple("Custom", None, Some(differences(vec![Object::Int(65), Object::name("f_i")])));
+        let (doc, d) = simple(
+            "Custom",
+            None,
+            Some(differences(vec![Object::Int(65), Object::name("f_i")])),
+        );
         let m = Metrics::from_dict(&doc, &d);
         assert_eq!(m.decode(b"A"), "fi");
 
         // An unreadable name must *remove* the base encoding's letter rather than leave it
         // standing in: code 65 is no longer "A", because the font says it is something else.
-        let (doc, d) = simple("Custom", None, Some(differences(vec![Object::Int(65), Object::name("g7")])));
+        let (doc, d) = simple(
+            "Custom",
+            None,
+            Some(differences(vec![Object::Int(65), Object::name("g7")])),
+        );
         let m = Metrics::from_dict(&doc, &d);
         assert_eq!(m.text_of(65), None);
-        assert_eq!(m.text_of(66).as_deref(), Some("B"), "neighbouring codes keep their meaning");
+        assert_eq!(
+            m.text_of(66).as_deref(),
+            Some("B"),
+            "neighbouring codes keep their meaning"
+        );
     }
 
     #[test]
@@ -1749,9 +2221,20 @@ mod encoding_tests {
         assert_eq!(m.text_of(0x61), None);
 
         // /Differences still applies on top of a built-in encoding we cannot read.
-        let (doc, d) = simple("Symbol", Some(4), Some(differences(vec![Object::Int(0x61), Object::name("uni03B1")])));
+        let (doc, d) = simple(
+            "Symbol",
+            Some(4),
+            Some(differences(vec![
+                Object::Int(0x61),
+                Object::name("uni03B1"),
+            ])),
+        );
         let m = Metrics::from_dict(&doc, &d);
-        assert_eq!(m.text_of(0x61).as_deref(), Some("\u{3b1}"), "the font told us this one");
+        assert_eq!(
+            m.text_of(0x61).as_deref(),
+            Some("\u{3b1}"),
+            "the font told us this one"
+        );
         assert_eq!(m.text_of(0x62), None, "and nothing about this one");
     }
 
@@ -1763,7 +2246,11 @@ mod encoding_tests {
             enc.set(b"BaseEncoding".to_vec(), Object::name(name));
             let (doc, d) = simple("Symbol", Some(4), Some(Object::Dict(enc)));
             let m = Metrics::from_dict(&doc, &d);
-            assert_eq!(m.text_of(0x61).as_deref(), Some("a"), "{name} was asked for by name");
+            assert_eq!(
+                m.text_of(0x61).as_deref(),
+                Some("a"),
+                "{name} was asked for by name"
+            );
         }
     }
 

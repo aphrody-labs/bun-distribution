@@ -52,11 +52,18 @@ impl Values {
 /// The values of one live catalogue, read fresh so a suggestion is never stale.
 pub(crate) fn live_values(b: &mut dyn Backend, live: Live) -> Vec<String> {
     match live {
-        Live::Formats => FORMATS.iter().filter(|f| f.write).map(|f| f.id.to_string()).collect(),
+        Live::Formats => FORMATS
+            .iter()
+            .filter(|f| f.write)
+            .map(|f| f.id.to_string())
+            .collect(),
         Live::TracePresets => names(b, "imageTrace.presets", Some("presets")),
         Live::Effects => names(b, "effect.list", Some("catalog")),
         // The command catalogue is a control method, not an engine command.
-        Live::Commands => b.call("engine.commands", json!({})).map(|v| ids_in(&v, None)).unwrap_or_default(),
+        Live::Commands => b
+            .call("engine.commands", json!({}))
+            .map(|v| ids_in(&v, None))
+            .unwrap_or_default(),
         Live::Swatches => names(b, "swatch.list", Some("swatches")),
         Live::Objects => object_ids(b),
     }
@@ -67,23 +74,38 @@ pub(crate) fn live_values(b: &mut dyn Backend, live: Live) -> Vec<String> {
 /// These are engine commands, so they go through `engine.execute`; that reaches the same commands
 /// in both backends, where a control method the headless session doesn't implement would not.
 fn names(b: &mut dyn Backend, command: &str, key: Option<&str>) -> Vec<String> {
-    b.call("engine.execute", json!({"command": command, "params": {}})).map(|v| ids_in(&v, key)).unwrap_or_default()
+    b.call("engine.execute", json!({"command": command, "params": {}}))
+        .map(|v| ids_in(&v, key))
+        .unwrap_or_default()
 }
 
 fn ids_in(reply: &Value, key: Option<&str>) -> Vec<String> {
     let items = match key {
-        Some(k) => reply.get(k).and_then(Value::as_array).map_or(&[][..], Vec::as_slice),
+        Some(k) => reply
+            .get(k)
+            .and_then(Value::as_array)
+            .map_or(&[][..], Vec::as_slice),
         None => reply.as_array().map_or(&[][..], Vec::as_slice),
     };
     // Catalogs are small, but never trust a document that grew one.
-    items.iter().take(MAX_VALUES * 8).filter_map(|i| i.get("id").or_else(|| i.get("name"))).filter_map(Value::as_str).map(str::to_string).collect()
+    items
+        .iter()
+        .take(MAX_VALUES * 8)
+        .filter_map(|i| i.get("id").or_else(|| i.get("name")))
+        .filter_map(Value::as_str)
+        .map(str::to_string)
+        .collect()
 }
 
 /// Ids of every layer and object in the active document, for `vectorcraft://object/{id}`.
 fn object_ids(b: &mut dyn Backend) -> Vec<String> {
     let mut out = Vec::new();
-    let Ok(v) = b.call("document.inspect", json!({})) else { return out };
-    let Some(layers) = v.get("layers").and_then(Value::as_array) else { return out };
+    let Ok(v) = b.call("document.inspect", json!({})) else {
+        return out;
+    };
+    let Some(layers) = v.get("layers").and_then(Value::as_array) else {
+        return out;
+    };
     let mut stack: Vec<&Value> = layers.iter().rev().collect();
     while let Some(node) = stack.pop() {
         if let Some(id) = node.get("id").and_then(Value::as_i64) {
@@ -117,7 +139,13 @@ pub struct PromptDef {
 }
 
 /// Recolour methods (`recolor.apply`'s `method`), written here because they are a closed set.
-const RECOLOR_METHODS: &[&str] = &["exact", "preserveTints", "scaleTints", "tintsShades", "hueShift"];
+const RECOLOR_METHODS: &[&str] = &[
+    "exact",
+    "preserveTints",
+    "scaleTints",
+    "tintsShades",
+    "hueShift",
+];
 
 static NONE: &[&str] = &[];
 
@@ -186,7 +214,13 @@ rasterise unless the brief asks for it.",
         title: "Draw an icon set",
         description: "Build a row of consistent icons as live vector shapes on a grid, then check them as a set.",
         arguments: &[
-            PromptArg { name: "subject", description: "What the icons depict", required: true, default: "", values: Values::Fixed(NONE) },
+            PromptArg {
+                name: "subject",
+                description: "What the icons depict",
+                required: true,
+                default: "",
+                values: Values::Fixed(NONE),
+            },
             PromptArg {
                 name: "count",
                 description: "How many icons in the set",
@@ -272,7 +306,13 @@ One undo step covers the whole change; gradients and linked swatches stay linked
         title: "Trace an image and style it",
         description: "Trace a placed raster with Image Trace, then apply a live effect and paint over the result.",
         arguments: &[
-            PromptArg { name: "path", description: "Path to the image file", required: true, default: "", values: Values::Fixed(NONE) },
+            PromptArg {
+                name: "path",
+                description: "Path to the image file",
+                required: true,
+                default: "",
+                values: Values::Fixed(NONE),
+            },
             PromptArg {
                 name: "preset",
                 description: "Image Trace preset to start from",
@@ -383,7 +423,9 @@ fn is_item(line: &str) -> bool {
     if let Some(body) = line.strip_prefix("- ") {
         return !body.is_empty();
     }
-    line.split_once(". ").is_some_and(|(number, _)| !number.is_empty() && number.len() <= 3 && number.chars().all(|c| c.is_ascii_digit()))
+    line.split_once(". ").is_some_and(|(number, _)| {
+        !number.is_empty() && number.len() <= 3 && number.chars().all(|c| c.is_ascii_digit())
+    })
 }
 
 /// `prompts/list`.
@@ -413,7 +455,12 @@ pub fn get(name: &str, args: &Value) -> Result<Value, String> {
         });
         let value = match given {
             Some(v) if !v.is_empty() => v,
-            _ if a.required => return Err(format!("prompt `{name}` needs the `{a_name}` argument", a_name = a.name)),
+            _ if a.required => {
+                return Err(format!(
+                    "prompt `{name}` needs the `{a_name}` argument",
+                    a_name = a.name
+                ));
+            }
             _ => a.default.to_string(),
         };
         text = text.replace(&format!("{{{}}}", a.name), &value);
@@ -430,19 +477,37 @@ pub fn get(name: &str, args: &Value) -> Result<Value, String> {
 /// completion is a convenience, and the caller is usually mid-typing.
 pub fn complete(b: &mut dyn Backend, params: &Value) -> Value {
     let empty = json!({"completion": {"values": [], "total": 0, "hasMore": false}});
-    let Some(reference) = params.get("ref") else { return empty };
-    let typed = params.get("argument").and_then(|a| a.get("value")).and_then(Value::as_str).unwrap_or("");
-    let name = params.get("argument").and_then(|a| a.get("name")).and_then(Value::as_str).unwrap_or("");
+    let Some(reference) = params.get("ref") else {
+        return empty;
+    };
+    let typed = params
+        .get("argument")
+        .and_then(|a| a.get("value"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let name = params
+        .get("argument")
+        .and_then(|a| a.get("name"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
 
     let values = match reference.get("type").and_then(Value::as_str) {
-        Some("ref/prompt") => match reference.get("name").and_then(Value::as_str).and_then(|n| PROMPTS.iter().find(|p| p.name == n)) {
+        Some("ref/prompt") => match reference
+            .get("name")
+            .and_then(Value::as_str)
+            .and_then(|n| PROMPTS.iter().find(|p| p.name == n))
+        {
             Some(p) => match p.arguments.iter().find(|a| a.name == name) {
                 Some(a) => a.values.resolve(b),
                 None => Vec::new(),
             },
             None => Vec::new(),
         },
-        Some("ref/resource") => match reference.get("uri").and_then(Value::as_str).map(crate::resources::template_source) {
+        Some("ref/resource") => match reference
+            .get("uri")
+            .and_then(Value::as_str)
+            .map(crate::resources::template_source)
+        {
             Some((_, Some(live))) => live_values(b, live),
             _ => Vec::new(),
         },
@@ -451,9 +516,17 @@ pub fn complete(b: &mut dyn Backend, params: &Value) -> Value {
 
     // Rank by prefix first (what the user is typing), then by substring.
     let needle = typed.to_lowercase();
-    let mut matches: Vec<String> = values.iter().filter(|v| v.to_lowercase().starts_with(&needle)).cloned().collect();
+    let mut matches: Vec<String> = values
+        .iter()
+        .filter(|v| v.to_lowercase().starts_with(&needle))
+        .cloned()
+        .collect();
     if matches.is_empty() && !needle.is_empty() {
-        matches = values.iter().filter(|v| v.to_lowercase().contains(&needle)).cloned().collect();
+        matches = values
+            .iter()
+            .filter(|v| v.to_lowercase().contains(&needle))
+            .cloned()
+            .collect();
     }
     let total = matches.len();
     let has_more = total > MAX_VALUES;
@@ -480,36 +553,64 @@ mod tests {
             assert_eq!(entry["description"], p.description);
             // Arguments are advertised with the names prompts/get will accept.
             let names: Vec<&str> = p.arguments.iter().map(|a| a.name).collect();
-            let listed: Vec<String> =
-                entry["arguments"].as_array().map_or(Vec::new(), |a| a.iter().filter_map(|x| x["name"].as_str().map(str::to_string)).collect());
+            let listed: Vec<String> = entry["arguments"].as_array().map_or(Vec::new(), |a| {
+                a.iter()
+                    .filter_map(|x| x["name"].as_str().map(str::to_string))
+                    .collect()
+            });
             let names: Vec<String> = names.into_iter().map(str::to_string).collect();
             assert_eq!(names, listed, "{}: listed arguments", p.name);
 
             // Every required argument supplied: the prompt renders.
-            let args: Value = json!(p.arguments.iter().filter(|a| a.required).map(|a| (a.name, "x")).collect::<std::collections::BTreeMap<_, _>>());
+            let args: Value = json!(
+                p.arguments
+                    .iter()
+                    .filter(|a| a.required)
+                    .map(|a| (a.name, "x"))
+                    .collect::<std::collections::BTreeMap<_, _>>()
+            );
             let v = get(p.name, &args).unwrap_or_else(|e| panic!("{} renders: {e}", p.name));
             assert_eq!(v["messages"].as_array().map(Vec::len), Some(1));
             assert_eq!(v["messages"][0]["role"], "user");
-            let text = v["messages"][0]["content"]["text"].as_str().unwrap_or_default();
+            let text = v["messages"][0]["content"]["text"]
+                .as_str()
+                .unwrap_or_default();
             assert!(text.len() > 200, "{}: too short", p.name);
             // Templating left nothing behind, and the source's line wrapping is gone.
             // Only a declared argument's braces are placeholders; JSON examples carry braces too.
             for a in p.arguments {
-                assert!(!text.contains(&format!("{{{}}}", a.name)), "{}: `{}` left in place", p.name, a.name);
+                assert!(
+                    !text.contains(&format!("{{{}}}", a.name)),
+                    "{}: `{}` left in place",
+                    p.name,
+                    a.name
+                );
             }
-            assert!(!text.contains('\n') || text.contains("\n\n") || p.arguments.is_empty(), "{}: stray line break", p.name);
+            assert!(
+                !text.contains('\n') || text.contains("\n\n") || p.arguments.is_empty(),
+                "{}: stray line break",
+                p.name
+            );
             assert!(!text.contains("  "), "{}: double space", p.name);
 
             // Only a missing required argument may stop it.
             let missing: Value = json!({});
-            assert_eq!(get(p.name, &missing).is_err(), p.arguments.iter().any(|a| a.required), "{}", p.name);
+            assert_eq!(
+                get(p.name, &missing).is_err(),
+                p.arguments.iter().any(|a| a.required),
+                "{}",
+                p.name
+            );
         }
     }
 
     #[test]
     fn flow_keeps_paragraphs_and_list_items() {
         let flowed = flow("first line\nsecond line\n\nnew paragraph\n1. one\n2. two\n- bullet");
-        assert_eq!(flowed, "first line second line\n\nnew paragraph\n1. one\n2. two\n- bullet");
+        assert_eq!(
+            flowed,
+            "first line second line\n\nnew paragraph\n1. one\n2. two\n- bullet"
+        );
         assert_eq!(flow(""), "");
         assert_eq!(flow("no breaks"), "no breaks");
     }
@@ -517,7 +618,9 @@ mod tests {
     #[test]
     fn prompt_arguments_are_filled_in() {
         let v = get("export-set", &json!({"formats": "pdf, tiff", "scale": "4"})).unwrap();
-        let text = v["messages"][0]["content"]["text"].as_str().unwrap_or_default();
+        let text = v["messages"][0]["content"]["text"]
+            .as_str()
+            .unwrap_or_default();
         assert!(text.contains("pdf, tiff"), "{text}");
         assert!(text.contains("4 pixels per point"), "{text}");
     }
@@ -538,10 +641,20 @@ mod tests {
         );
         let values = v["completion"]["values"].as_array().unwrap();
         assert!(!values.is_empty(), "imageTrace.presets should answer: {v}");
-        assert!(values.iter().all(|x| x.as_str().unwrap_or_default().to_lowercase().contains("photo")), "{v}");
+        assert!(
+            values.iter().all(|x| x
+                .as_str()
+                .unwrap_or_default()
+                .to_lowercase()
+                .contains("photo")),
+            "{v}"
+        );
 
         // A nonsense prefix falls back to substring matches, and never exceeds 100.
-        let v = complete(b.as_mut(), &json!({"ref": {"type": "ref/prompt", "name": "export-set"}, "argument": {"name": "formats", "value": ""}}));
+        let v = complete(
+            b.as_mut(),
+            &json!({"ref": {"type": "ref/prompt", "name": "export-set"}, "argument": {"name": "formats", "value": ""}}),
+        );
         let all = v["completion"]["values"].as_array().unwrap().len();
         assert!(all > 3, "formats should answer: {v}");
         assert!(v["completion"]["total"].as_u64().unwrap() >= all as u64);

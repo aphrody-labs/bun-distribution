@@ -43,7 +43,10 @@ impl Dtd {
     }
 
     fn model(&self, name: &str) -> Option<&Model> {
-        self.elements.iter().find(|(n, _)| n == name).map(|(_, m)| m)
+        self.elements
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, m)| m)
     }
 }
 
@@ -118,16 +121,30 @@ fn particle(t: &[String], i: &mut usize) -> Result<Cp, String> {
                         *i += 1;
                         items.push(particle(t, i)?);
                     }
-                    other => return Err(format!("unexpected `{}` in a content model", other.unwrap_or("end"))),
+                    other => {
+                        return Err(format!(
+                            "unexpected `{}` in a content model",
+                            other.unwrap_or("end")
+                        ));
+                    }
                 }
             }
-            if sep == Some("|") { Cp::Choice(items) } else { Cp::Seq(items) }
+            if sep == Some("|") {
+                Cp::Choice(items)
+            } else {
+                Cp::Seq(items)
+            }
         }
         Some(n) if !"),|?*+".contains(n) => {
             *i += 1;
             Cp::Name(n.to_string())
         }
-        other => return Err(format!("unexpected `{}` in a content model", other.unwrap_or("end"))),
+        other => {
+            return Err(format!(
+                "unexpected `{}` in a content model",
+                other.unwrap_or("end")
+            ));
+        }
     };
     Ok(match t.get(*i).map(String::as_str) {
         Some(r @ ("?" | "*" | "+")) => {
@@ -147,7 +164,11 @@ fn parse_model(s: &str) -> Result<Model, String> {
     }
     if s.contains("#PCDATA") {
         let t = tokens(&s.replace("#PCDATA", " #PCDATA "));
-        return Ok(Model::Mixed(t.into_iter().filter(|x| !"()|*".contains(x.as_str()) && x != "#PCDATA").collect()));
+        return Ok(Model::Mixed(
+            t.into_iter()
+                .filter(|x| !"()|*".contains(x.as_str()) && x != "#PCDATA")
+                .collect(),
+        ));
     }
     let t = tokens(s);
     let mut i = 0;
@@ -191,7 +212,8 @@ pub fn parse(src: &str) -> Result<Dtd, String> {
         if let Some(rest) = d.strip_prefix("ELEMENT") {
             let rest = rest.trim_start();
             let name: String = rest.chars().take_while(|c| !c.is_whitespace()).collect();
-            let model = parse_model(&rest[name.len()..]).map_err(|e| format!("<!ELEMENT {name}>: {e}"))?;
+            let model =
+                parse_model(&rest[name.len()..]).map_err(|e| format!("<!ELEMENT {name}>: {e}"))?;
             dtd.elements.push((name, model));
         } else if let Some(rest) = d.strip_prefix("ATTLIST") {
             // name (attr type default)*; only `#REQUIRED` matters here.
@@ -229,13 +251,18 @@ pub fn parse(src: &str) -> Result<Dtd, String> {
             if !cur.is_empty() {
                 words.push(cur);
             }
-            let Some((el, attrs)) = words.split_first() else { continue };
+            let Some((el, attrs)) = words.split_first() else {
+                continue;
+            };
             let mut k = 0;
             while k + 2 < attrs.len() {
                 let name = &attrs[k];
                 let default = attrs.get(k + 2).map(String::as_str).unwrap_or("");
                 if default == "#REQUIRED" {
-                    dtd.required.entry(el.clone()).or_default().push(name.clone());
+                    dtd.required
+                        .entry(el.clone())
+                        .or_default()
+                        .push(name.clone());
                 }
                 k += if default == "#FIXED" { 4 } else { 3 };
             }
@@ -257,7 +284,9 @@ fn ends(cp: &Cp, seq: &[&str], i: usize) -> Vec<usize> {
                 vec![]
             }
         }
-        Cp::Seq(items) => items.iter().fold(vec![i], |at, c| at.into_iter().flat_map(|p| ends(c, seq, p)).collect()),
+        Cp::Seq(items) => items.iter().fold(vec![i], |at, c| {
+            at.into_iter().flat_map(|p| ends(c, seq, p)).collect()
+        }),
         Cp::Choice(items) => items.iter().flat_map(|c| ends(c, seq, i)).collect(),
         Cp::Rep(c, r) => {
             let mut all = if *r == '+' { vec![] } else { vec![i] };
@@ -266,9 +295,18 @@ fn ends(cp: &Cp, seq: &[&str], i: usize) -> Vec<usize> {
                 all.extend(frontier);
             } else {
                 while !frontier.is_empty() {
-                    let new: Vec<usize> = frontier.iter().copied().filter(|p| !all.contains(p)).collect();
+                    let new: Vec<usize> = frontier
+                        .iter()
+                        .copied()
+                        .filter(|p| !all.contains(p))
+                        .collect();
                     all.extend(&new);
-                    frontier = new.into_iter().filter(|&p| p > i).flat_map(|p| ends(c, seq, p)).filter(|p| !all.contains(p)).collect();
+                    frontier = new
+                        .into_iter()
+                        .filter(|&p| p > i)
+                        .flat_map(|p| ends(c, seq, p))
+                        .filter(|p| !all.contains(p))
+                        .collect();
                 }
             }
             all
@@ -302,7 +340,11 @@ fn read_tree(xml: &str) -> Result<Node, String> {
     let mut stack: Vec<Node> = Vec::new();
     let node = |e: &quick_xml::events::BytesStart| Node {
         name: String::from_utf8_lossy(e.name().as_ref()).to_string(),
-        attrs: e.attributes().flatten().map(|a| String::from_utf8_lossy(a.key.as_ref()).to_string()).collect(),
+        attrs: e
+            .attributes()
+            .flatten()
+            .map(|a| String::from_utf8_lossy(a.key.as_ref()).to_string())
+            .collect(),
         children: vec![],
         text: false,
     };
@@ -342,7 +384,12 @@ fn read_tree(xml: &str) -> Result<Node, String> {
 }
 
 fn check(dtd: &Dtd, n: &Node, path: &str, out: &mut Vec<Problem>) {
-    let mut problem = |m: String| out.push(Problem { path: path.to_string(), message: m });
+    let mut problem = |m: String| {
+        out.push(Problem {
+            path: path.to_string(),
+            message: m,
+        })
+    };
     match dtd.model(&n.name) {
         None => problem(format!("`{}` isn't declared in the DTD", n.name)),
         Some(Model::Any) => {}
@@ -364,14 +411,25 @@ fn check(dtd: &Dtd, n: &Node, path: &str, out: &mut Vec<Problem>) {
             }
             let seq: Vec<&str> = n.children.iter().map(|c| c.name.as_str()).collect();
             if !ends(cp, &seq, 0).contains(&seq.len()) {
-                let got = if seq.is_empty() { "nothing".to_string() } else { seq.join(", ") };
-                problem(format!("`{}` contains {got}; the DTD asks for {}", n.name, show(cp)));
+                let got = if seq.is_empty() {
+                    "nothing".to_string()
+                } else {
+                    seq.join(", ")
+                };
+                problem(format!(
+                    "`{}` contains {got}; the DTD asks for {}",
+                    n.name,
+                    show(cp)
+                ));
             }
         }
     }
     for a in dtd.required.get(&n.name).into_iter().flatten() {
         if !n.attrs.contains(a) {
-            problem(format!("`{}` is missing the required attribute `{a}`", n.name));
+            problem(format!(
+                "`{}` is missing the required attribute `{a}`",
+                n.name
+            ));
         }
     }
     let mut seen: HashMap<&str, usize> = HashMap::new();
@@ -391,7 +449,10 @@ pub fn validate(dtd: &Dtd, xml: &str) -> Vec<Problem> {
             check(dtd, &root, &path, &mut out);
             out
         }
-        Err(e) => vec![Problem { path: String::new(), message: format!("not well-formed XML: {e}") }],
+        Err(e) => vec![Problem {
+            path: String::new(),
+            message: format!("not well-formed XML: {e}"),
+        }],
     }
 }
 
@@ -419,24 +480,57 @@ mod tests {
         assert_eq!(validate(&dtd, ok), vec![]);
         let bad = r#"<Root><story><para>no title</para></story><figure/><figure href="b"><em>x</em></figure><aside/></Root>"#;
         let p = validate(&dtd, bad);
-        let msgs: Vec<String> = p.iter().map(|p| format!("{}: {}", p.path, p.message)).collect();
-        assert!(msgs.iter().any(|m| m.starts_with("Root/story[1]: `story` contains para; the DTD asks for (title, (para | list)*)")), "{msgs:?}");
-        assert!(msgs.iter().any(|m| m == "Root/figure[1]: `figure` is missing the required attribute `href`"), "{msgs:?}");
-        assert!(msgs.iter().any(|m| m == "Root/figure[2]: `figure` should be empty"), "{msgs:?}");
-        assert!(msgs.iter().any(|m| m == "Root/aside[1]: `aside` isn't declared in the DTD"), "{msgs:?}");
+        let msgs: Vec<String> = p
+            .iter()
+            .map(|p| format!("{}: {}", p.path, p.message))
+            .collect();
+        assert!(
+            msgs.iter().any(|m| m.starts_with(
+                "Root/story[1]: `story` contains para; the DTD asks for (title, (para | list)*)"
+            )),
+            "{msgs:?}"
+        );
+        assert!(
+            msgs.iter()
+                .any(|m| m == "Root/figure[1]: `figure` is missing the required attribute `href`"),
+            "{msgs:?}"
+        );
+        assert!(
+            msgs.iter()
+                .any(|m| m == "Root/figure[2]: `figure` should be empty"),
+            "{msgs:?}"
+        );
+        assert!(
+            msgs.iter()
+                .any(|m| m == "Root/aside[1]: `aside` isn't declared in the DTD"),
+            "{msgs:?}"
+        );
         // The root's model fails too (aside isn't in it).
         assert!(msgs.iter().any(|m| m.starts_with("Root: ")), "{msgs:?}");
         // Text where only elements are allowed; an element not in a mixed model.
-        let p = validate(&dtd, "<Root><story>loose<title><list/></title></story></Root>");
-        assert!(p.iter().any(|p| p.message == "`story` can't contain text"), "{p:?}");
-        assert!(p.iter().any(|p| p.message == "`list` isn't allowed in `title`"), "{p:?}");
+        let p = validate(
+            &dtd,
+            "<Root><story>loose<title><list/></title></story></Root>",
+        );
+        assert!(
+            p.iter().any(|p| p.message == "`story` can't contain text"),
+            "{p:?}"
+        );
+        assert!(
+            p.iter()
+                .any(|p| p.message == "`list` isn't allowed in `title`"),
+            "{p:?}"
+        );
         assert!(parse("<!ELEMENT a (b, c | d)>").is_err());
         assert!(parse("just text").is_err());
     }
 
     #[test]
     fn repetition_matches_like_a_regular_expression() {
-        let dtd = parse("<!ELEMENT r ((a, b?)+, c*)><!ELEMENT a EMPTY><!ELEMENT b EMPTY><!ELEMENT c EMPTY>").unwrap();
+        let dtd = parse(
+            "<!ELEMENT r ((a, b?)+, c*)><!ELEMENT a EMPTY><!ELEMENT b EMPTY><!ELEMENT c EMPTY>",
+        )
+        .unwrap();
         for (xml, ok) in [
             ("<r><a/></r>", true),
             ("<r><a/><b/><a/><c/><c/></r>", true),

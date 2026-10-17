@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct NewsStoryToken(pub String);
 
 impl_string_token!(NewsStoryToken);
-impl_crockford_generator!(NewsStoryToken, 32usize, TokenPrefix::NewsStory, CrockfordMixed);
+impl_crockford_generator!(
+    NewsStoryToken,
+    32usize,
+    TokenPrefix::NewsStory,
+    CrockfordMixed
+);

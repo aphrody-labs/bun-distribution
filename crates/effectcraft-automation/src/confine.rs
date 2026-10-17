@@ -87,7 +87,12 @@ const WRITES: &[(&str, &[&str])] = &[
 ];
 
 /// Commands that write where they are not told: the project's file, the Render Queue's outputs.
-const IMPLICIT_WRITES: &[&str] = &["file.save", "file.incrementAndSave", "renderQueue.render", "render.preRender"];
+const IMPLICIT_WRITES: &[&str] = &[
+    "file.save",
+    "file.incrementAndSave",
+    "renderQueue.render",
+    "render.preRender",
+];
 
 /// What must be looked up before an implicitly writing command may run.
 #[derive(Debug, PartialEq, Eq)]
@@ -102,24 +107,44 @@ impl Confinement {
     /// Roots that must exist (each resolved to its real path). With no write root nothing may be
     /// written; write roots may also be read.
     pub fn new(read: &[PathBuf], write: &[PathBuf]) -> Result<Self> {
-        let real = |p: &PathBuf| p.canonicalize().map_err(|e| Error::BadArgs(format!("automation root {}: {e}", p.display())));
+        let real = |p: &PathBuf| {
+            p.canonicalize()
+                .map_err(|e| Error::BadArgs(format!("automation root {}: {e}", p.display())))
+        };
         let read = read.iter().map(real).collect::<Result<Vec<_>>>()?;
         let write = write.iter().map(real).collect::<Result<Vec<_>>>()?;
         Ok(Self { read, write })
     }
 
     fn roots(&self, access: Access) -> impl Iterator<Item = &PathBuf> {
-        let read = if access == Access::Read { &self.read[..] } else { &[] };
+        let read = if access == Access::Read {
+            &self.read[..]
+        } else {
+            &[]
+        };
         read.iter().chain(&self.write)
     }
 
     /// `path` resolved, if it is inside the roots for `access`.
     pub fn check(&self, path: &str, access: Access) -> Result<PathBuf> {
         let denied = |why: &str| {
-            let kind = if access == Access::Read { "read" } else { "write" };
-            let roots: Vec<String> = self.roots(access).map(|r| r.display().to_string()).collect();
-            let roots = if roots.is_empty() { "none".to_string() } else { roots.join(", ") };
-            Error::BadArgs(format!("cannot {kind} `{path}`: {why} (automation {kind} roots: {roots})"))
+            let kind = if access == Access::Read {
+                "read"
+            } else {
+                "write"
+            };
+            let roots: Vec<String> = self
+                .roots(access)
+                .map(|r| r.display().to_string())
+                .collect();
+            let roots = if roots.is_empty() {
+                "none".to_string()
+            } else {
+                roots.join(", ")
+            };
+            Error::BadArgs(format!(
+                "cannot {kind} `{path}`: {why} (automation {kind} roots: {roots})"
+            ))
         };
         let p = Path::new(path);
         if !p.is_absolute() {
@@ -129,26 +154,53 @@ impl Confinement {
             return Err(denied("`..` is not allowed"));
         }
         let real = resolve(p).ok_or_else(|| denied("it can't be resolved"))?;
-        if self.roots(access).any(|r| real.starts_with(r)) { Ok(real) } else { Err(denied("it is outside the automation roots")) }
+        if self.roots(access).any(|r| real.starts_with(r)) {
+            Ok(real)
+        } else {
+            Err(denied("it is outside the automation roots"))
+        }
     }
 
     /// Check engine command `id` with `params` before it runs. Returns what must still be looked
     /// up and passed to [`Confinement::check_lookup`] for commands that write implicitly.
     pub fn check_command(&self, id: &str, params: &Value) -> Result<Option<Lookup>> {
         if REFUSED.contains(&id) {
-            return Err(Error::BadArgs(format!("`{id}` is not available while file access is confined (--automation-read-root/--automation-write-root)")));
+            return Err(Error::BadArgs(format!(
+                "`{id}` is not available while file access is confined (--automation-read-root/--automation-write-root)"
+            )));
         }
         if id == "engine.batch" {
-            for step in params.get("steps").and_then(Value::as_array).into_iter().flatten() {
-                let Some(inner) = step.get("command").or_else(|| step.get("id")).and_then(Value::as_str) else { continue };
+            for step in params
+                .get("steps")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+            {
+                let Some(inner) = step
+                    .get("command")
+                    .or_else(|| step.get("id"))
+                    .and_then(Value::as_str)
+                else {
+                    continue;
+                };
                 let inner_params = step.get("params").cloned().unwrap_or(Value::Null);
-                let named = keys_of(READS, inner).or_else(|| keys_of(WRITES, inner)).unwrap_or(&[]);
+                let named = keys_of(READS, inner)
+                    .or_else(|| keys_of(WRITES, inner))
+                    .unwrap_or(&[]);
                 // A step's `$N` reference is resolved only as the batch runs: never for a file.
-                if named.iter().filter_map(|k| inner_params.get(*k)).any(has_reference) {
-                    return Err(Error::BadArgs(format!("`{inner}` in a batch: file paths can't be `$N` references while file access is confined")));
+                if named
+                    .iter()
+                    .filter_map(|k| inner_params.get(*k))
+                    .any(has_reference)
+                {
+                    return Err(Error::BadArgs(format!(
+                        "`{inner}` in a batch: file paths can't be `$N` references while file access is confined"
+                    )));
                 }
                 if self.check_command(inner, &inner_params)?.is_some() {
-                    return Err(Error::BadArgs(format!("`{inner}` writes to its project's or queue's files: run it on its own while file access is confined")));
+                    return Err(Error::BadArgs(format!(
+                        "`{inner}` writes to its project's or queue's files: run it on its own while file access is confined"
+                    )));
                 }
             }
             return Ok(None);
@@ -156,12 +208,16 @@ impl Confinement {
         let (named, access) = match (keys_of(WRITES, id), keys_of(READS, id)) {
             (Some(k), _) => (k, Access::Write),
             (None, Some(k)) => (k, Access::Read),
-            (None, None) if id.starts_with("renderQueue.") || id == "prefs.set" => (&[][..], Access::Write),
+            (None, None) if id.starts_with("renderQueue.") || id == "prefs.set" => {
+                (&[][..], Access::Write)
+            }
             (None, None) => (&[][..], Access::Read),
         };
         let mut given = false;
         for key in named {
-            let Some(v) = params.get(*key).filter(|v| !v.is_null()) else { continue };
+            let Some(v) = params.get(*key).filter(|v| !v.is_null()) else {
+                continue;
+            };
             given = true;
             let paths: Vec<&Value> = match v {
                 Value::Array(a) => a.iter().collect(),
@@ -185,11 +241,23 @@ impl Confinement {
             self.check(&s, access)?;
         }
         // An entry of a recent list by index is a path the agent didn't give.
-        if matches!(id, "file.openRecent" | "file.importRecent" | "anim.applyRecentPreset") && !given {
-            return Err(Error::BadArgs(format!("`{id}`: give `path` while file access is confined")));
+        if matches!(
+            id,
+            "file.openRecent" | "file.importRecent" | "anim.applyRecentPreset"
+        ) && !given
+        {
+            return Err(Error::BadArgs(format!(
+                "`{id}`: give `path` while file access is confined"
+            )));
         }
         if IMPLICIT_WRITES.contains(&id) && !(given && id == "file.save") {
-            return Ok(Some(if id == "file.save" || id == "file.incrementAndSave" { Lookup::ProjectFile } else { Lookup::RenderOutputs }));
+            return Ok(Some(
+                if id == "file.save" || id == "file.incrementAndSave" {
+                    Lookup::ProjectFile
+                } else {
+                    Lookup::RenderOutputs
+                },
+            ));
         }
         Ok(None)
     }
@@ -245,8 +313,15 @@ fn absolute_strings(v: &Value, skip: &[&str], out: &mut Vec<String>) {
         match v {
             Value::String(s) => {
                 let t = s.trim();
-                let drive = t.len() > 2 && t.as_bytes().get(1) == Some(&b':') && t.as_bytes().first().is_some_and(u8::is_ascii_alphabetic);
-                if t.starts_with('/') || t.starts_with('\\') || t.starts_with('~') || drive || t.to_ascii_lowercase().starts_with("file:") {
+                let drive = t.len() > 2
+                    && t.as_bytes().get(1) == Some(&b':')
+                    && t.as_bytes().first().is_some_and(u8::is_ascii_alphabetic);
+                if t.starts_with('/')
+                    || t.starts_with('\\')
+                    || t.starts_with('~')
+                    || drive
+                    || t.to_ascii_lowercase().starts_with("file:")
+                {
                     out.push(t.to_string());
                 }
             }
@@ -256,7 +331,10 @@ fn absolute_strings(v: &Value, skip: &[&str], out: &mut Vec<String>) {
         }
     }
     match v {
-        Value::Object(o) => o.iter().filter(|(k, _)| !skip.contains(&k.as_str())).for_each(|(_, x)| walk(x, out, 0)),
+        Value::Object(o) => o
+            .iter()
+            .filter(|(k, _)| !skip.contains(&k.as_str()))
+            .for_each(|(_, x)| walk(x, out, 0)),
         v => walk(v, out, 0),
     }
 }

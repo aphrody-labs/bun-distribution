@@ -38,7 +38,10 @@ impl ZukanClient {
     /// `cache_key` is an opaque identifier such as `page_1` or `c01000010`.
     #[must_use]
     pub fn cache_path(&self, lang: &str, route: &str, cache_key: &str) -> PathBuf {
-        self.cache_root.join(lang).join(route).join(format!("{cache_key}.html"))
+        self.cache_root
+            .join(lang)
+            .join(route)
+            .join(format!("{cache_key}.html"))
     }
 
     /// Reads an existing cache entry or acquires it through the shared crawler.
@@ -77,13 +80,19 @@ mod tests {
     fn cache_path_structure() {
         let client = ZukanClient::new(PathBuf::from("/tmp/test-cache")).unwrap();
         let p = client.cache_path("ja", "chara_list", "page_1");
-        assert_eq!(p, PathBuf::from("/tmp/test-cache/ja/chara_list/page_1.html"));
+        assert_eq!(
+            p,
+            PathBuf::from("/tmp/test-cache/ja/chara_list/page_1.html")
+        );
     }
 
     #[test]
     fn cache_path_fr() {
         let client = ZukanClient::new(PathBuf::from("/tmp/test-cache")).unwrap();
         let p = client.cache_path("fr", "chara_param", "c01000010");
-        assert_eq!(p, PathBuf::from("/tmp/test-cache/fr/chara_param/c01000010.html"));
+        assert_eq!(
+            p,
+            PathBuf::from("/tmp/test-cache/fr/chara_param/c01000010.html")
+        );
     }
 }

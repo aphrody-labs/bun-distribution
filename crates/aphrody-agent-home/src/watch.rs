@@ -29,7 +29,9 @@ impl SharedHome {
     /// Wrap a home in a swap cell.
     #[must_use]
     pub fn new(home: AgentHome) -> Self {
-        Self { cell: Arc::new(ArcSwap::from_pointee(home)) }
+        Self {
+            cell: Arc::new(ArcSwap::from_pointee(home)),
+        }
     }
 
     /// Load the current home (a cheap `Arc` clone; never blocks).
@@ -46,7 +48,9 @@ impl SharedHome {
 
 impl std::fmt::Debug for SharedHome {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SharedHome").field("root", &self.load().root().to_path_buf()).finish()
+        f.debug_struct("SharedHome")
+            .field("root", &self.load().root().to_path_buf())
+            .finish()
     }
 }
 
@@ -69,7 +73,9 @@ impl std::fmt::Debug for HomeWatcher {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // `_watcher` (the OS notify handle) has no useful Debug; mark the
         // struct non-exhaustive rather than printing a placeholder.
-        f.debug_struct("HomeWatcher").field("shared", &self.shared).finish_non_exhaustive()
+        f.debug_struct("HomeWatcher")
+            .field("shared", &self.shared)
+            .finish_non_exhaustive()
     }
 }
 
@@ -108,8 +114,10 @@ pub fn watch(workspace: PathBuf, opts: HomeOptions) -> Result<HomeWatcher, HomeE
 
     let mut watcher = notify::recommended_watcher(move |res: notify::Result<Event>| {
         let Ok(event) = res else { return };
-        if !matches!(event.kind, EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_))
-        {
+        if !matches!(
+            event.kind,
+            EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_)
+        ) {
             return;
         }
         if !event.paths.iter().any(|p| is_bootstrap_path(p)) {
@@ -121,10 +129,10 @@ pub fn watch(workspace: PathBuf, opts: HomeOptions) -> Result<HomeWatcher, HomeE
             Ok(reloaded) => {
                 cb_shared.store(reloaded);
                 tracing::debug!(root = %cb_workspace.display(), "agent-home hot-reloaded");
-            },
+            }
             Err(err) => {
                 tracing::warn!(error = %err, "agent-home reload skipped (kept previous)");
-            },
+            }
         }
     })
     .map_err(|e| HomeError::Watch(e.to_string()))?;
@@ -133,7 +141,10 @@ pub fn watch(workspace: PathBuf, opts: HomeOptions) -> Result<HomeWatcher, HomeE
         .watch(&workspace, RecursiveMode::NonRecursive)
         .map_err(|e| HomeError::Watch(e.to_string()))?;
 
-    Ok(HomeWatcher { _watcher: watcher, shared })
+    Ok(HomeWatcher {
+        _watcher: watcher,
+        shared,
+    })
 }
 
 #[cfg(test)]
@@ -154,8 +165,11 @@ mod tests {
         let ws2 = td.path().join("workspace2");
         std::fs::create_dir_all(&ws2).unwrap();
         std::fs::write(ws2.join("IDENTITY.md"), "---\nname: Nova\n---\n").unwrap();
-        let home2 = AgentHome::open(HomeOptions { workspace: Some(ws2), ..HomeOptions::default() })
-            .unwrap();
+        let home2 = AgentHome::open(HomeOptions {
+            workspace: Some(ws2),
+            ..HomeOptions::default()
+        })
+        .unwrap();
         shared.store(home2);
         assert_eq!(shared.load().identity().name, "Nova");
     }

@@ -13,8 +13,10 @@ use deckcraft_color::Rgba;
 
 /// The next stop's share of the linear-light mix at sixteenths of a segment (0 at the first stop,
 /// 1 at the second). Measured, then made symmetric: `w(1 - t) = 1 - w(t)`.
-const WEIGHT: [f64; 17] =
-    [0.0, 0.0205, 0.0469, 0.0878, 0.1431, 0.2143, 0.2989, 0.3972, 0.5, 0.6028, 0.7011, 0.7857, 0.8569, 0.9122, 0.9531, 0.9795, 1.0];
+const WEIGHT: [f64; 17] = [
+    0.0, 0.0205, 0.0469, 0.0878, 0.1431, 0.2143, 0.2989, 0.3972, 0.5, 0.6028, 0.7011, 0.7857,
+    0.8569, 0.9122, 0.9531, 0.9795, 1.0,
+];
 
 /// Pieces each segment between two stops is cut into.
 const PIECES: usize = 16;
@@ -27,18 +29,29 @@ pub fn weight(t: f64) -> f64 {
     let x = t.clamp(0.0, 1.0) * (WEIGHT.len() - 1) as f64;
     let i = (x.floor() as usize).min(WEIGHT.len() - 2);
     let f = x - i as f64;
-    let (a, b) = (WEIGHT.get(i).copied().unwrap_or(0.0), WEIGHT.get(i + 1).copied().unwrap_or(1.0));
+    let (a, b) = (
+        WEIGHT.get(i).copied().unwrap_or(0.0),
+        WEIGHT.get(i + 1).copied().unwrap_or(1.0),
+    );
     a + (b - a) * f
 }
 
 fn to_linear(v: u8) -> f64 {
     let v = v as f64 / 255.0;
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 fn to_srgb(v: f64) -> u8 {
     let v = v.clamp(0.0, 1.0);
-    let s = if v <= 0.0031308 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 };
+    let s = if v <= 0.0031308 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    };
     (s * 255.0).round().clamp(0.0, 255.0) as u8
 }
 
@@ -46,7 +59,14 @@ fn to_srgb(v: f64) -> u8 {
 pub fn mix(a: Rgba, b: Rgba, t: f64) -> Rgba {
     let w = weight(t);
     let ch = |x: u8, y: u8| to_srgb(to_linear(x) + (to_linear(y) - to_linear(x)) * w);
-    Rgba { r: ch(a.r, b.r), g: ch(a.g, b.g), b: ch(a.b, b.b), a: (a.a as f64 + (b.a as f64 - a.a as f64) * w).round().clamp(0.0, 255.0) as u8 }
+    Rgba {
+        r: ch(a.r, b.r),
+        g: ch(a.g, b.g),
+        b: ch(a.b, b.b),
+        a: (a.a as f64 + (b.a as f64 - a.a as f64) * w)
+            .round()
+            .clamp(0.0, 255.0) as u8,
+    }
 }
 
 /// Sorted stops (position 0..1, colour) as a renderer interpolating linearly in sRGB should get
@@ -60,7 +80,9 @@ pub fn expand(stops: &[(f64, Rgba)]) -> Vec<(f64, Rgba)> {
     let mut out = Vec::with_capacity(stops.len() * PIECES + 1);
     for (i, &(p, c)) in stops.iter().enumerate() {
         out.push((p, c));
-        let Some(&(q, d)) = stops.get(i + 1) else { continue };
+        let Some(&(q, d)) = stops.get(i + 1) else {
+            continue;
+        };
         if q - p <= 1e-6 || c == d {
             continue;
         }
@@ -90,10 +112,18 @@ mod tests {
     fn colour_pairs_follow_powerpoint() {
         // Blue (4472C4) to orange (ED7D31) half way: PowerPoint draws (178, 120, 146).
         let m = mix(Rgba::rgb(68, 114, 196), Rgba::rgb(237, 125, 49), 0.5);
-        assert!((m.r as i32 - 178).abs() <= 3 && (m.g as i32 - 120).abs() <= 3 && (m.b as i32 - 146).abs() <= 3, "{m:?}");
+        assert!(
+            (m.r as i32 - 178).abs() <= 3
+                && (m.g as i32 - 120).abs() <= 3
+                && (m.b as i32 - 146).abs() <= 3,
+            "{m:?}"
+        );
         // Red to blue a quarter of the way: (238, 0, 105).
         let m = mix(Rgba::rgb(255, 0, 0), Rgba::rgb(0, 0, 255), 0.25);
-        assert!((m.r as i32 - 238).abs() <= 3 && (m.b as i32 - 105).abs() <= 3, "{m:?}");
+        assert!(
+            (m.r as i32 - 238).abs() <= 3 && (m.b as i32 - 105).abs() <= 3,
+            "{m:?}"
+        );
     }
 
     #[test]

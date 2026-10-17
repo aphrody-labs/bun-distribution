@@ -33,16 +33,27 @@ pub fn bindable() -> &'static [Bindable] {
         let mut v: Vec<Bindable> = Vec::new();
         for (id, label, sc, _) in crate::menus::ui_commands() {
             if !v.iter().any(|b| b.id == *id) {
-                v.push(Bindable { id, label, default: *sc });
+                v.push(Bindable {
+                    id,
+                    label,
+                    default: *sc,
+                });
             }
         }
-        let ui_keys: Vec<(Modifiers, Key)> = v.iter().filter_map(|b| b.default.and_then(parse)).collect();
+        let ui_keys: Vec<(Modifiers, Key)> =
+            v.iter().filter_map(|b| b.default.and_then(parse)).collect();
         for c in lightcraft_engine::command_specs() {
             if v.iter().any(|b| b.id == c.id) {
                 continue;
             }
-            let default = c.shortcut.filter(|sc| parse(sc).is_some_and(|k| !ui_keys.contains(&k)));
-            v.push(Bindable { id: c.id, label: c.label, default });
+            let default = c
+                .shortcut
+                .filter(|sc| parse(sc).is_some_and(|k| !ui_keys.contains(&k)));
+            v.push(Bindable {
+                id: c.id,
+                label: c.label,
+                default,
+            });
         }
         v
     })
@@ -76,7 +87,12 @@ pub fn conflicts(keymap: &Keymap, id: &str, sc: &str) -> Vec<&'static str> {
     let Some(key) = parse(sc) else { return vec![] };
     bindable()
         .iter()
-        .filter(|b| b.id != id && !CONTEXTUAL.iter().any(|(x, y)| (*x == id && *y == b.id) || (*y == id && *x == b.id)))
+        .filter(|b| {
+            b.id != id
+                && !CONTEXTUAL
+                    .iter()
+                    .any(|(x, y)| (*x == id && *y == b.id) || (*y == id && *x == b.id))
+        })
         .filter(|b| binding(keymap, b.id, b.default).and_then(parse) == Some(key))
         .map(|b| b.id)
         .collect()
@@ -84,7 +100,11 @@ pub fn conflicts(keymap: &Keymap, id: &str, sc: &str) -> Vec<&'static str> {
 
 /// Give `id` the shortcut `sc` (`None` = no shortcut), taking it away from commands that had the
 /// same key. Returns the commands that lost it.
-pub fn assign(keymap: &mut Keymap, id: &str, sc: Option<&str>) -> Result<Vec<&'static str>, String> {
+pub fn assign(
+    keymap: &mut Keymap,
+    id: &str,
+    sc: Option<&str>,
+) -> Result<Vec<&'static str>, String> {
     let b = find_bindable(id).ok_or_else(|| format!("unknown command: {id}"))?;
     let sc = match sc.map(str::trim).filter(|s| !s.is_empty()) {
         None => None,
@@ -98,7 +118,10 @@ pub fn assign(keymap: &mut Keymap, id: &str, sc: Option<&str>) -> Result<Vec<&'s
             Some(canonical)
         }
     };
-    let lost = sc.as_deref().map(|s| conflicts(keymap, id, s)).unwrap_or_default();
+    let lost = sc
+        .as_deref()
+        .map(|s| conflicts(keymap, id, s))
+        .unwrap_or_default();
     for other in &lost {
         set(keymap, other, None);
     }
@@ -148,7 +171,14 @@ pub fn set_shortcut(app: &mut LightcraftApp, p: &Value) -> Result<Value, String>
 pub fn is_modifier(k: Key) -> bool {
     matches!(
         k,
-        Key::ShiftLeft | Key::ShiftRight | Key::ControlLeft | Key::ControlRight | Key::AltLeft | Key::AltRight | Key::SuperLeft | Key::SuperRight
+        Key::ShiftLeft
+            | Key::ShiftRight
+            | Key::ControlLeft
+            | Key::ControlRight
+            | Key::AltLeft
+            | Key::AltRight
+            | Key::SuperLeft
+            | Key::SuperRight
     )
 }
 
@@ -203,13 +233,41 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("F6", "view.filmstrip", "{}"),
     ("F7", "view.leftPanel", "{}"),
     ("Shift+M", "version.create", "{}"),
-    ("Shift+X", "photo.flag", r#"{"flag": "reject", "advance": true}"#),
-    ("Shift+Z", "photo.flag", r#"{"flag": "pick", "advance": true}"#),
-    ("Shift+U", "photo.flag", r#"{"flag": "none", "advance": true}"#),
-    ("Shift+6", "photo.label", r#"{"label": "red", "advance": true}"#),
-    ("Shift+7", "photo.label", r#"{"label": "yellow", "advance": true}"#),
-    ("Shift+8", "photo.label", r#"{"label": "green", "advance": true}"#),
-    ("Shift+9", "photo.label", r#"{"label": "blue", "advance": true}"#),
+    (
+        "Shift+X",
+        "photo.flag",
+        r#"{"flag": "reject", "advance": true}"#,
+    ),
+    (
+        "Shift+Z",
+        "photo.flag",
+        r#"{"flag": "pick", "advance": true}"#,
+    ),
+    (
+        "Shift+U",
+        "photo.flag",
+        r#"{"flag": "none", "advance": true}"#,
+    ),
+    (
+        "Shift+6",
+        "photo.label",
+        r#"{"label": "red", "advance": true}"#,
+    ),
+    (
+        "Shift+7",
+        "photo.label",
+        r#"{"label": "yellow", "advance": true}"#,
+    ),
+    (
+        "Shift+8",
+        "photo.label",
+        r#"{"label": "green", "advance": true}"#,
+    ),
+    (
+        "Shift+9",
+        "photo.label",
+        r#"{"label": "blue", "advance": true}"#,
+    ),
     // Shift+[ / Shift+] arrive as { / } on most layouts
     ("Shift+{", "brush.featherLess", "{}"),
     ("Shift+}", "brush.featherMore", "{}"),
@@ -267,10 +325,20 @@ fn matches(i: &egui::InputState, m: Modifiers, k: Key) -> bool {
     // the windowing layer turns ⌘C / ⌘X / ⌘V (with any other modifiers held) and the keyboard's
     // Copy / Cut / Paste keys into these on Windows and Linux (macOS's menu bar takes them first);
     // without ⌘/Ctrl held they came from a key that is the plain command (Windows' ⇧Insert pastes)
-    let clipboard = if i.modifiers.command { i.modifiers } else { Modifiers::COMMAND };
+    let clipboard = if i.modifiers.command {
+        i.modifiers
+    } else {
+        Modifiers::COMMAND
+    };
     i.events.iter().any(|e| {
         let (key, physical_key, modifiers) = match e {
-            egui::Event::Key { key, physical_key, pressed: true, modifiers, .. } => (key, physical_key, modifiers),
+            egui::Event::Key {
+                key,
+                physical_key,
+                pressed: true,
+                modifiers,
+                ..
+            } => (key, physical_key, modifiers),
             egui::Event::Copy => (&Key::C, &None, &clipboard),
             egui::Event::Cut => (&Key::X, &None, &clipboard),
             egui::Event::Paste(_) => (&Key::V, &None, &clipboard),
@@ -278,13 +346,29 @@ fn matches(i: &egui::InputState, m: Modifiers, k: Key) -> bool {
         };
         // `Ctrl` is the physical Control key (on macOS distinct from Cmd; elsewhere Cmd = Ctrl);
         // "Delete" (⌫ = Backspace) also matches forward-delete
-        let ctrl_ok = if m.ctrl { modifiers.ctrl } else { !modifiers.ctrl || modifiers.command };
+        let ctrl_ok = if m.ctrl {
+            modifiers.ctrl
+        } else {
+            !modifiers.ctrl || modifiers.command
+        };
         let cmd_ok = m.ctrl || modifiers.command == m.command;
         // winit can report shifted digits as punctuation (Shift+1 = `!`). Recognize the
         // physical number key for culling, without changing layout-aware letter shortcuts.
         let shifted_digit = m.shift
             && *physical_key == Some(k)
-            && matches!(k, Key::Num0 | Key::Num1 | Key::Num2 | Key::Num3 | Key::Num4 | Key::Num5 | Key::Num6 | Key::Num7 | Key::Num8 | Key::Num9);
+            && matches!(
+                k,
+                Key::Num0
+                    | Key::Num1
+                    | Key::Num2
+                    | Key::Num3
+                    | Key::Num4
+                    | Key::Num5
+                    | Key::Num6
+                    | Key::Num7
+                    | Key::Num8
+                    | Key::Num9
+            );
         (*key == k || shifted_digit || (k == Key::Backspace && *key == Key::Delete))
             && ctrl_ok
             && cmd_ok
@@ -295,13 +379,28 @@ fn matches(i: &egui::InputState, m: Modifiers, k: Key) -> bool {
 
 /// Default brackets rate in grids. Remapped brush keys retain their brush action, and a
 /// saved assignment of either bracket to another command takes precedence over this default.
-fn grid_bracket_command(keymap: &Keymap, grid: bool, id: &'static str, shortcut: (Modifiers, Key)) -> Option<&'static str> {
+fn grid_bracket_command(
+    keymap: &Keymap,
+    grid: bool,
+    id: &'static str,
+    shortcut: (Modifiers, Key),
+) -> Option<&'static str> {
     let command = match (grid, id, shortcut) {
-        (true, "brush.smaller", (m, Key::OpenBracket)) if m == Modifiers::NONE => "photo.decreaseRating",
-        (true, "brush.larger", (m, Key::CloseBracket)) if m == Modifiers::NONE => "photo.increaseRating",
+        (true, "brush.smaller", (m, Key::OpenBracket)) if m == Modifiers::NONE => {
+            "photo.decreaseRating"
+        }
+        (true, "brush.larger", (m, Key::CloseBracket)) if m == Modifiers::NONE => {
+            "photo.increaseRating"
+        }
         _ => return Some(id),
     };
-    if keymap.iter().any(|(other, sc)| other != id && find_bindable(other).is_some() && parse(sc) == Some(shortcut)) { None } else { Some(command) }
+    if keymap.iter().any(|(other, sc)| {
+        other != id && find_bindable(other).is_some() && parse(sc) == Some(shortcut)
+    }) {
+        None
+    } else {
+        Some(command)
+    }
 }
 
 /// Content widgets keep keyboard ownership, including text fields and arrow-driven sliders.
@@ -310,24 +409,43 @@ fn keyboard_owned(app: &LightcraftApp, ctx: &egui::Context) -> bool {
     if !ctx.egui_wants_keyboard_input() {
         // Escape drops egui focus before shortcuts run; keep the numeric edit's whole input batch.
         return ctx.input(|input| input.key_pressed(Key::Escape))
-            && app.widgets.iter().any(|(widget, _)| widget.starts_with("sliderField:") && crate::text_field::was_editing(ctx, widget));
+            && app.widgets.iter().any(|(widget, _)| {
+                widget.starts_with("sliderField:") && crate::text_field::was_editing(ctx, widget)
+            });
     }
     // a selected slider keeps its arrow keys; everything else is a shortcut
     if crate::widgets::slider_has_focus(ctx) {
-        return ctx.input(|input| [Key::ArrowLeft, Key::ArrowRight, Key::ArrowUp, Key::ArrowDown].iter().any(|key| input.key_pressed(*key)));
+        return ctx.input(|input| {
+            [
+                Key::ArrowLeft,
+                Key::ArrowRight,
+                Key::ArrowUp,
+                Key::ArrowDown,
+            ]
+            .iter()
+            .any(|key| input.key_pressed(*key))
+        });
     }
-    let chrome = app
-        .ui
-        .docking
-        .as_ref()
-        .is_some_and(|workspace| craft_ui::docking::DockArea::new(egui::Id::new("lightcraft-docking")).chrome_has_focus(ctx, &workspace.layout));
+    let chrome = app.ui.docking.as_ref().is_some_and(|workspace| {
+        craft_ui::docking::DockArea::new(egui::Id::new("lightcraft-docking"))
+            .chrome_has_focus(ctx, &workspace.layout)
+    });
     if !chrome {
         return true;
     }
     ctx.input(|input| {
-        [Key::Enter, Key::Space, Key::Tab, Key::Escape, Key::ArrowLeft, Key::ArrowRight, Key::ArrowUp, Key::ArrowDown]
-            .iter()
-            .any(|key| input.key_pressed(*key))
+        [
+            Key::Enter,
+            Key::Space,
+            Key::Tab,
+            Key::Escape,
+            Key::ArrowLeft,
+            Key::ArrowRight,
+            Key::ArrowUp,
+            Key::ArrowDown,
+        ]
+        .iter()
+        .any(|key| input.key_pressed(*key))
     })
 }
 
@@ -378,16 +496,37 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
             }
         }
         // rating 0-5, colour labels 6-9 (with Shift: and advance)
-        for (n, key) in [Key::Num0, Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5].iter().enumerate() {
-            if matches(i, Modifiers::NONE, *key) && !native(&n.to_string()) && !taken.contains(&(Modifiers::NONE, *key)) {
+        for (n, key) in [
+            Key::Num0,
+            Key::Num1,
+            Key::Num2,
+            Key::Num3,
+            Key::Num4,
+            Key::Num5,
+        ]
+        .iter()
+        .enumerate()
+        {
+            if matches(i, Modifiers::NONE, *key)
+                && !native(&n.to_string())
+                && !taken.contains(&(Modifiers::NONE, *key))
+            {
                 fire.push(format!("rate:{n}:0"));
             }
             if matches(i, Modifiers::SHIFT, *key) && !taken.contains(&(Modifiers::SHIFT, *key)) {
                 fire.push(format!("rate:{n}:1"));
             }
         }
-        for (label, key, sc) in [("red", Key::Num6, "6"), ("yellow", Key::Num7, "7"), ("green", Key::Num8, "8"), ("blue", Key::Num9, "9")] {
-            if matches(i, Modifiers::NONE, key) && !native(sc) && !taken.contains(&(Modifiers::NONE, key)) {
+        for (label, key, sc) in [
+            ("red", Key::Num6, "6"),
+            ("yellow", Key::Num7, "7"),
+            ("green", Key::Num8, "8"),
+            ("blue", Key::Num9, "9"),
+        ] {
+            if matches(i, Modifiers::NONE, key)
+                && !native(sc)
+                && !taken.contains(&(Modifiers::NONE, key))
+            {
                 fire.push(format!("label:{label}"));
             }
         }
@@ -409,14 +548,24 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
         {
             let now = ctx.input(|i| i.time);
             app.ui.slideshow = Some((interval, now + interval, !paused));
-            app.toast(ctx, if paused { "Slideshow resumed" } else { "Slideshow paused" });
+            app.toast(
+                ctx,
+                if paused {
+                    "Slideshow resumed"
+                } else {
+                    "Slideshow paused"
+                },
+            );
             continue;
         }
         // flag/rate aliases (Shift+X…) go through the culling path: active photo in Compare/Survey,
         // `advance` moves to the next candidate there
         if matches!(id, "photo.flag" | "photo.rate" | "photo.label") {
             let mut params = params;
-            let advance = params.get("advance").and_then(serde_json::Value::as_bool).unwrap_or(false);
+            let advance = params
+                .get("advance")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false);
             if let Some(o) = params.as_object_mut() {
                 o.remove("advance");
             }
@@ -431,7 +580,12 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
     for f in fire {
         if let Some(rest) = f.strip_prefix("rate:") {
             let (n, adv) = rest.split_once(':').unwrap_or(("0", "0"));
-            cull(app, "photo.rate", json!({"rating": n.parse::<u8>().unwrap_or(0)}), adv == "1");
+            cull(
+                app,
+                "photo.rate",
+                json!({"rating": n.parse::<u8>().unwrap_or(0)}),
+                adv == "1",
+            );
             let label = if n == "0" {
                 crate::i18n::tr("Rating cleared").to_string()
             } else {
@@ -445,13 +599,24 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
         } else if f == "panel.presets" && library_grid(app) {
             // Classic's Shift+P picks and advances in Library; keep the Presets binding elsewhere.
             cull(app, "photo.flag", json!({"flag": "pick"}), true);
-        } else if f == "view.softProof" && matches!(app.ui.view, crate::state::ViewMode::PhotoGrid | crate::state::ViewMode::SquareGrid) {
+        } else if f == "view.softProof"
+            && matches!(
+                app.ui.view,
+                crate::state::ViewMode::PhotoGrid | crate::state::ViewMode::SquareGrid
+            )
+        {
             // S in a grid: expand / collapse the stack (Lightroom's Library binding)
             let _ = app.run("stack.toggle", json!({}));
         } else if compare::culling(app) && (f == "library.next" || f == "library.previous") {
             let d = if f == "library.next" { 1 } else { -1 };
-            let _ = if app.ui.view == crate::state::ViewMode::Compare { compare::compare_step(app, d) } else { compare::survey_step(app, d) };
-        } else if matches!(f.as_str(), "photo.pick" | "photo.reject" | "photo.unflag") && app.ui.right != crate::state::RightPanel::Crop {
+            let _ = if app.ui.view == crate::state::ViewMode::Compare {
+                compare::compare_step(app, d)
+            } else {
+                compare::survey_step(app, d)
+            };
+        } else if matches!(f.as_str(), "photo.pick" | "photo.reject" | "photo.unflag")
+            && app.ui.right != crate::state::RightPanel::Crop
+        {
             cull(app, &f, json!({}), false);
             match f.as_str() {
                 "photo.pick" => app.toast(ctx, crate::i18n::tr("Flagged as Pick")),
@@ -489,17 +654,34 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
                 }
             }
             // B: the brush while editing; in the grids, add to the target album (Quick Collection)
-            if f == "tool.brush" && matches!(app.ui.view, crate::state::ViewMode::PhotoGrid | crate::state::ViewMode::SquareGrid) {
+            if f == "tool.brush"
+                && matches!(
+                    app.ui.view,
+                    crate::state::ViewMode::PhotoGrid | crate::state::ViewMode::SquareGrid
+                )
+            {
                 if let Ok(r) = app.run("album.toggleTarget", json!({})) {
                     let n = app.session.targets(&json!({})).len();
-                    let what = crate::i18n::tr_format!("{n} photo{}", if n == 1 { "" } else { "s" }, n = n);
+                    let what = crate::i18n::tr_format!(
+                        "{n} photo{}",
+                        if n == 1 { "" } else { "s" },
+                        n = n
+                    );
                     let name = r["name"].as_str().unwrap_or("Quick Collection").to_string();
                     app.toast(
                         ctx,
                         if r["added"] == true {
-                            crate::i18n::tr_format!("Added {what} to {name}", name = name, what = what)
+                            crate::i18n::tr_format!(
+                                "Added {what} to {name}",
+                                name = name,
+                                what = what
+                            )
                         } else {
-                            crate::i18n::tr_format!("Removed {what} from {name}", name = name, what = what)
+                            crate::i18n::tr_format!(
+                                "Removed {what} from {name}",
+                                name = name,
+                                what = what
+                            )
                         },
                     );
                 }
@@ -514,7 +696,10 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
                 continue;
             }
             // / refreshes the selected spot's source in the Remove tool (the filmstrip elsewhere)
-            if f == "view.filmstrip" && app.ui.right == crate::state::RightPanel::Remove && app.session.active_spot.is_some() {
+            if f == "view.filmstrip"
+                && app.ui.right == crate::state::RightPanel::Remove
+                && app.session.active_spot.is_some()
+            {
                 let _ = app.run("spot.refreshSource", json!({}));
                 continue;
             }
@@ -539,8 +724,11 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
             // Up / Down in the grids go to the cell above / below (the filmstrip steps one photo)
             if matches!(f.as_str(), "library.up" | "library.down") {
                 // over a slider the arrows nudge it (widgets::slider takes the key)
-                let over_slider =
-                    ctx.pointer_hover_pos().is_some_and(|p| app.widgets.iter().any(|(id, r)| id.starts_with("slider:") && r.contains(p)));
+                let over_slider = ctx.pointer_hover_pos().is_some_and(|p| {
+                    app.widgets
+                        .iter()
+                        .any(|(id, r)| id.starts_with("slider:") && r.contains(p))
+                });
                 if over_slider {
                     continue;
                 }
@@ -574,7 +762,10 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
 }
 
 pub(crate) fn library_grid(app: &LightcraftApp) -> bool {
-    matches!(app.ui.view, crate::state::ViewMode::PhotoGrid | crate::state::ViewMode::SquareGrid)
+    matches!(
+        app.ui.view,
+        crate::state::ViewMode::PhotoGrid | crate::state::ViewMode::SquareGrid
+    )
 }
 
 #[cfg(test)]
@@ -586,18 +777,38 @@ mod tests {
         for id in 1..=4 {
             let photo = Photo::new(
                 PhotoId(id),
-                Source::File { path: format!("/lightcraft-shortcuts/{id}.jpg") },
+                Source::File {
+                    path: format!("/lightcraft-shortcuts/{id}.jpg"),
+                },
                 &format!("{id}.jpg"),
                 "JPEG",
                 100,
                 100,
                 "2026-10-08",
             );
-            session.catalog.apply(Op::AddPhoto { photo: Box::new(photo) }).unwrap();
+            session
+                .catalog
+                .apply(Op::AddPhoto {
+                    photo: Box::new(photo),
+                })
+                .unwrap();
         }
-        session.execute("library.sort", &json!({"key": "fileName", "ascending": true})).unwrap();
-        session.execute("library.select", &json!({"ids": [1]})).unwrap();
-        let app = LightcraftApp::new(session, crate::Services { png: None, ..Default::default() });
+        session
+            .execute(
+                "library.sort",
+                &json!({"key": "fileName", "ascending": true}),
+            )
+            .unwrap();
+        session
+            .execute("library.select", &json!({"ids": [1]}))
+            .unwrap();
+        let app = LightcraftApp::new(
+            session,
+            crate::Services {
+                png: None,
+                ..Default::default()
+            },
+        );
         let mut h = crate::headless::Headless::new(app, [1200.0, 800.0], 1.0);
         h.app.ui.view = crate::state::ViewMode::PhotoGrid;
         for _ in 0..3 {
@@ -607,27 +818,51 @@ mod tests {
     }
 
     fn key(h: &mut crate::headless::Headless, key: &str, shift: bool) {
-        let r = h.request("ui.key", json!({"key": key, "shift": shift}), std::time::Duration::from_secs(20));
+        let r = h.request(
+            "ui.key",
+            json!({"key": key, "shift": shift}),
+            std::time::Duration::from_secs(20),
+        );
         assert_eq!(r["ok"], true, "{r}");
     }
 
     #[test]
     fn library_rating_labels_flags_and_undo() {
         use lightcraft_catalog::{ColorLabel, Flag, PhotoId};
-        for view in [crate::state::ViewMode::PhotoGrid, crate::state::ViewMode::SquareGrid] {
+        for view in [
+            crate::state::ViewMode::PhotoGrid,
+            crate::state::ViewMode::SquareGrid,
+        ] {
             let mut h = library();
             h.app.ui.view = view;
-            h.app.session.execute("library.select", &json!({"ids": [1, 2], "active": 1})).unwrap();
+            h.app
+                .session
+                .execute("library.select", &json!({"ids": [1, 2], "active": 1}))
+                .unwrap();
             for rating in [1, 2, 3, 4, 5, 0] {
                 key(&mut h, &rating.to_string(), false);
                 for id in [1, 2] {
-                    assert_eq!(h.app.session.catalog.photo(PhotoId(id)).unwrap().rating, rating);
+                    assert_eq!(
+                        h.app.session.catalog.photo(PhotoId(id)).unwrap().rating,
+                        rating
+                    );
                 }
             }
-            for (k, label) in [("6", ColorLabel::Red), ("7", ColorLabel::Yellow), ("8", ColorLabel::Green), ("9", ColorLabel::Blue)] {
+            for (k, label) in [
+                ("6", ColorLabel::Red),
+                ("7", ColorLabel::Yellow),
+                ("8", ColorLabel::Green),
+                ("9", ColorLabel::Blue),
+            ] {
                 key(&mut h, k, false);
-                assert_eq!(h.app.session.catalog.photo(PhotoId(1)).unwrap().label, Some(label));
-                assert_eq!(h.app.session.catalog.photo(PhotoId(2)).unwrap().label, Some(label));
+                assert_eq!(
+                    h.app.session.catalog.photo(PhotoId(1)).unwrap().label,
+                    Some(label)
+                );
+                assert_eq!(
+                    h.app.session.catalog.photo(PhotoId(2)).unwrap().label,
+                    Some(label)
+                );
             }
             for (k, flag) in [("P", Flag::Pick), ("X", Flag::Reject), ("U", Flag::None)] {
                 key(&mut h, k, false);
@@ -635,10 +870,19 @@ mod tests {
                 assert_eq!(h.app.session.catalog.photo(PhotoId(2)).unwrap().flag, flag);
             }
             h.app.session.execute("edit.undo", &json!({})).unwrap();
-            assert_eq!(h.app.session.catalog.photo(PhotoId(1)).unwrap().flag, Flag::Reject);
-            assert_eq!(h.app.session.catalog.photo(PhotoId(2)).unwrap().flag, Flag::Reject);
+            assert_eq!(
+                h.app.session.catalog.photo(PhotoId(1)).unwrap().flag,
+                Flag::Reject
+            );
+            assert_eq!(
+                h.app.session.catalog.photo(PhotoId(2)).unwrap().flag,
+                Flag::Reject
+            );
             h.app.session.execute("edit.redo", &json!({})).unwrap();
-            assert_eq!(h.app.session.catalog.photo(PhotoId(1)).unwrap().flag, Flag::None);
+            assert_eq!(
+                h.app.session.catalog.photo(PhotoId(1)).unwrap().flag,
+                Flag::None
+            );
             assert_eq!(h.app.session.active(), Some(PhotoId(1)));
         }
     }
@@ -674,20 +918,34 @@ mod tests {
             ] {
                 let mut h = library();
                 h.app.ui.auto_advance = auto;
-                h.app.session.execute("photo.rate", &json!({"rating": 3})).unwrap();
+                h.app
+                    .session
+                    .execute("photo.rate", &json!({"rating": 3}))
+                    .unwrap();
                 h.app.session.execute("photo.pick", &json!({})).unwrap();
                 key(&mut h, k, true);
                 let p = h.app.session.catalog.photo(PhotoId(1)).unwrap();
                 assert_eq!(p.rating, rating, "Shift+{k}");
                 assert_eq!(p.label, label, "Shift+{k}");
                 assert_eq!(p.flag, flag, "Shift+{k}");
-                assert_eq!(h.app.session.active(), Some(PhotoId(2)), "Shift+{k}, auto={auto}");
+                assert_eq!(
+                    h.app.session.active(),
+                    Some(PhotoId(2)),
+                    "Shift+{k}, auto={auto}"
+                );
             }
         }
         let mut h = library();
-        h.app.session.execute("library.select", &json!({"ids": [4]})).unwrap();
+        h.app
+            .session
+            .execute("library.select", &json!({"ids": [4]}))
+            .unwrap();
         key(&mut h, "6", true);
-        assert_eq!(h.app.session.active(), Some(PhotoId(4)), "last photo stays selected");
+        assert_eq!(
+            h.app.session.active(),
+            Some(PhotoId(4)),
+            "last photo stays selected"
+        );
     }
 
     #[test]
@@ -708,11 +966,17 @@ mod tests {
     fn shift_label_targets_only_candidate_in_compare() {
         use lightcraft_catalog::{ColorLabel, PhotoId};
         let mut h = library();
-        h.app.session.execute("library.select", &json!({"ids": [1, 2], "active": 1})).unwrap();
+        h.app
+            .session
+            .execute("library.select", &json!({"ids": [1, 2], "active": 1}))
+            .unwrap();
         crate::panels::compare::enter_compare(&mut h.app).unwrap();
         key(&mut h, "6", true);
         assert_eq!(h.app.session.catalog.photo(PhotoId(1)).unwrap().label, None);
-        assert_eq!(h.app.session.catalog.photo(PhotoId(2)).unwrap().label, Some(ColorLabel::Red));
+        assert_eq!(
+            h.app.session.catalog.photo(PhotoId(2)).unwrap().label,
+            Some(ColorLabel::Red)
+        );
         assert_eq!(h.app.session.active(), Some(PhotoId(3)));
     }
 
@@ -733,31 +997,70 @@ mod tests {
         let mut h = library();
         for shift in [false, true] {
             for (k, name) in [("6", "Red"), ("7", "Yellow"), ("8", "Green"), ("9", "Blue")] {
-                h.app.session.execute("library.select", &json!({"ids": [1]})).unwrap();
+                h.app
+                    .session
+                    .execute("library.select", &json!({"ids": [1]}))
+                    .unwrap();
                 h.app.ui.toast = None;
                 key(&mut h, k, shift);
-                assert_eq!(h.app.ui.toast.as_ref().map(|t| t.0.as_str()), Some(format!("{name} Label").as_str()));
-                assert_eq!(h.app.ui.toast.as_ref().and_then(|t| t.2), h.app.session.catalog.photo(PhotoId(1)).unwrap().label);
-                assert_eq!(h.app.session.active(), Some(PhotoId(if shift { 2 } else { 1 })));
+                assert_eq!(
+                    h.app.ui.toast.as_ref().map(|t| t.0.as_str()),
+                    Some(format!("{name} Label").as_str())
+                );
+                assert_eq!(
+                    h.app.ui.toast.as_ref().and_then(|t| t.2),
+                    h.app.session.catalog.photo(PhotoId(1)).unwrap().label
+                );
+                assert_eq!(
+                    h.app.session.active(),
+                    Some(PhotoId(if shift { 2 } else { 1 }))
+                );
             }
         }
         // Menus and the Info-panel swatches dispatch the same command, including purple/clear.
-        h.app.run("photo.label", json!({"label": "purple"})).unwrap();
-        assert_eq!(h.app.ui.toast.as_ref().map(|t| t.0.as_str()), Some("Purple Label"));
+        h.app
+            .run("photo.label", json!({"label": "purple"}))
+            .unwrap();
+        assert_eq!(
+            h.app.ui.toast.as_ref().map(|t| t.0.as_str()),
+            Some("Purple Label")
+        );
         h.app.run("photo.label", json!({"label": "none"})).unwrap();
-        assert_eq!(h.app.ui.toast.as_ref().map(|t| t.0.as_str()), Some("Color label cleared"));
-        assert!(h.app.ui.toast.as_ref().is_some_and(|t| t.2.is_none()), "clear uses neutral feedback");
-        h.app.session.execute("label.setNames", &json!({"names": {"red": "Needs review"}})).unwrap();
+        assert_eq!(
+            h.app.ui.toast.as_ref().map(|t| t.0.as_str()),
+            Some("Color label cleared")
+        );
+        assert!(
+            h.app.ui.toast.as_ref().is_some_and(|t| t.2.is_none()),
+            "clear uses neutral feedback"
+        );
+        h.app
+            .session
+            .execute("label.setNames", &json!({"names": {"red": "Needs review"}}))
+            .unwrap();
         key(&mut h, "6", false);
-        assert_eq!(h.app.ui.toast.as_ref().map(|t| t.0.as_str()), Some("Needs review Label"));
+        assert_eq!(
+            h.app.ui.toast.as_ref().map(|t| t.0.as_str()),
+            Some("Needs review Label")
+        );
         // Native menu callbacks run before logic() catches up to the current frame's clock.
         let now = h.view.ctx.input(|i| i.time);
         h.app.last_time = now - 10.0;
         h.app.run("photo.label", json!({"label": "blue"})).unwrap();
-        assert!(h.app.ui.toast.as_ref().is_some_and(|t| t.1 > now), "menu feedback must survive an idle gap");
+        assert!(
+            h.app.ui.toast.as_ref().is_some_and(|t| t.1 > now),
+            "menu feedback must survive an idle gap"
+        );
         h.app.ui.toast = None;
-        assert!(h.app.run("photo.label", json!({"label": "invalid"})).is_err());
-        assert!(h.app.ui.toast.is_none(), "failed actions must not announce success");
+        assert!(
+            h.app
+                .run("photo.label", json!({"label": "invalid"}))
+                .is_err()
+        );
+        assert!(
+            h.app.ui.toast.is_none(),
+            "failed actions must not announce success"
+        );
     }
 
     #[test]
@@ -783,7 +1086,11 @@ mod tests {
     fn library_keys_yield_to_search_and_crop_context() {
         use lightcraft_catalog::{Flag, PhotoId};
         let mut h = library();
-        let r = h.request("ui.clickWidget", json!({"id": "field:search"}), std::time::Duration::from_secs(20));
+        let r = h.request(
+            "ui.clickWidget",
+            json!({"id": "field:search"}),
+            std::time::Duration::from_secs(20),
+        );
         assert_eq!(r["ok"], true, "{r}");
         for k in ["5", "6", "P", "X", "U"] {
             key(&mut h, k, false);
@@ -799,13 +1106,19 @@ mod tests {
         h.app.ui.view = crate::state::ViewMode::Detail;
         h.app.ui.right = crate::state::RightPanel::Crop;
         key(&mut h, "X", false);
-        assert_eq!(h.app.session.catalog.photo(PhotoId(1)).unwrap().flag, Flag::None);
+        assert_eq!(
+            h.app.session.catalog.photo(PhotoId(1)).unwrap().flag,
+            Flag::None
+        );
     }
 
     #[test]
     fn delete_means_the_backspace_key() {
         assert_eq!(parse("Delete"), Some((Modifiers::NONE, Key::Backspace)));
-        assert_eq!(parse("Cmd+Delete"), Some((Modifiers::COMMAND, Key::Backspace)));
+        assert_eq!(
+            parse("Cmd+Delete"),
+            Some((Modifiers::COMMAND, Key::Backspace))
+        );
     }
     use super::*;
 
@@ -834,24 +1147,45 @@ mod tests {
         let ui: Vec<&str> = crate::menus::ui_commands().map(|c| c.0).collect();
         for (sc, id, params) in ALIASES {
             assert!(parse(sc).is_some(), "{id}: {sc}");
-            assert!(ui.contains(id) || lightcraft_engine::find_command(id).is_some(), "alias {sc} → unknown command {id}");
-            assert!(serde_json::from_str::<serde_json::Value>(params).is_ok(), "alias {sc}: bad params");
+            assert!(
+                ui.contains(id) || lightcraft_engine::find_command(id).is_some(),
+                "alias {sc} → unknown command {id}"
+            );
+            assert!(
+                serde_json::from_str::<serde_json::Value>(params).is_ok(),
+                "alias {sc}: bad params"
+            );
         }
     }
 
     #[test]
     fn key_presses_format_to_shortcuts_that_parse_back() {
         for k in Key::ALL {
-            for m in [Modifiers::NONE, Modifiers::SHIFT, Modifiers::COMMAND, Modifiers::ALT | Modifiers::SHIFT] {
+            for m in [
+                Modifiers::NONE,
+                Modifiers::SHIFT,
+                Modifiers::COMMAND,
+                Modifiers::ALT | Modifiers::SHIFT,
+            ] {
                 if let Some(sc) = format(m, *k) {
-                    let want = if *k == Key::Delete { Key::Backspace } else { *k };
+                    let want = if *k == Key::Delete {
+                        Key::Backspace
+                    } else {
+                        *k
+                    };
                     assert_eq!(parse(&sc).map(|p| p.1), Some(want), "{sc}");
                 }
             }
         }
-        assert_eq!(format(Modifiers::COMMAND | Modifiers::SHIFT, Key::K).as_deref(), Some("Cmd+Shift+K"));
+        assert_eq!(
+            format(Modifiers::COMMAND | Modifiers::SHIFT, Key::K).as_deref(),
+            Some("Cmd+Shift+K")
+        );
         assert_eq!(format(Modifiers::NONE, Key::Slash).as_deref(), Some("/"));
-        assert_eq!(format(Modifiers::NONE, Key::Backspace).as_deref(), Some("Delete"));
+        assert_eq!(
+            format(Modifiers::NONE, Key::Backspace).as_deref(),
+            Some("Delete")
+        );
     }
 
     #[test]
@@ -868,7 +1202,10 @@ mod tests {
         assert_eq!(lost, vec!["view.survey"]);
         assert_eq!(shortcut_of(&keymap, "view.detail"), Some("D"));
         reset(&mut keymap, "view.survey").unwrap();
-        assert!(keymap.is_empty(), "declared shortcuts aren't stored: {keymap:?}");
+        assert!(
+            keymap.is_empty(),
+            "declared shortcuts aren't stored: {keymap:?}"
+        );
         // a command without a declared shortcut can get one, and lose it again
         assign(&mut keymap, "view.photoGrid", Some("cmd+shift+1")).unwrap_err();
         assign(&mut keymap, "view.photoGrid", Some("Cmd+Shift+1")).unwrap();
@@ -927,7 +1264,10 @@ mod tests {
         }
         for (sc, id, _) in ALIASES {
             let k = parse(sc).unwrap();
-            assert!(!engine.iter().any(|(k2, _)| *k2 == k), "alias {sc} ({id}) shadows an engine shortcut");
+            assert!(
+                !engine.iter().any(|(k2, _)| *k2 == k),
+                "alias {sc} ({id}) shadows an engine shortcut"
+            );
         }
         for (i, (k, a)) in ui.iter().enumerate() {
             for (k2, b) in &ui[i + 1..] {
@@ -936,7 +1276,9 @@ mod tests {
         }
         for (i, (k, a)) in engine.iter().enumerate() {
             for (k2, b) in &engine[i + 1..] {
-                let contextual = CONTEXTUAL.iter().any(|(x, y)| (x == a && y == b) || (x == b && y == a));
+                let contextual = CONTEXTUAL
+                    .iter()
+                    .any(|(x, y)| (x == a && y == b) || (x == b && y == a));
                 assert!(k != k2 || contextual, "{a} and {b} share a key");
             }
         }

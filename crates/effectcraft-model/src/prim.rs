@@ -22,8 +22,14 @@ pub enum PrimitiveKind {
 }
 
 impl PrimitiveKind {
-    pub const ALL: [PrimitiveKind; 6] =
-        [PrimitiveKind::Cube, PrimitiveKind::Sphere, PrimitiveKind::Plane, PrimitiveKind::Torus, PrimitiveKind::Cone, PrimitiveKind::Cylinder];
+    pub const ALL: [PrimitiveKind; 6] = [
+        PrimitiveKind::Cube,
+        PrimitiveKind::Sphere,
+        PrimitiveKind::Plane,
+        PrimitiveKind::Torus,
+        PrimitiveKind::Cone,
+        PrimitiveKind::Cylinder,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             PrimitiveKind::Cube => "Cube",
@@ -35,7 +41,9 @@ impl PrimitiveKind {
         }
     }
     pub fn parse(s: &str) -> Option<PrimitiveKind> {
-        PrimitiveKind::ALL.into_iter().find(|k| k.label().eq_ignore_ascii_case(s.trim()))
+        PrimitiveKind::ALL
+            .into_iter()
+            .find(|k| k.label().eq_ignore_ascii_case(s.trim()))
     }
 }
 
@@ -58,7 +66,14 @@ pub struct PrimParams {
 
 impl Default for PrimParams {
     fn default() -> Self {
-        PrimParams { size: [300.0; 3], radius: 150.0, tube: 50.0, height: 300.0, segments: 48, rings: 24 }
+        PrimParams {
+            size: [300.0; 3],
+            radius: 150.0,
+            tube: 50.0,
+            height: 300.0,
+            segments: 48,
+            rings: 24,
+        }
     }
 }
 
@@ -68,7 +83,12 @@ struct B {
 
 impl B {
     fn new() -> B {
-        B { p: Primitive { material: Some(0), ..Default::default() } }
+        B {
+            p: Primitive {
+                material: Some(0),
+                ..Default::default()
+            },
+        }
     }
     fn v(&mut self, pos: [f32; 3], n: [f32; 3], uv: [f32; 2]) -> u32 {
         self.p.positions.push(pos);
@@ -105,7 +125,9 @@ pub fn mesh(kind: PrimitiveKind, pr: &PrimParams) -> Primitive {
             ];
             let half = [w, h, d];
             for (n, u, v) in faces {
-                let c = |su: f32, sv: f32| -> [f32; 3] { [0, 1, 2].map(|k| (n[k] + u[k] * su + v[k] * sv) * half[k]) };
+                let c = |su: f32, sv: f32| -> [f32; 3] {
+                    [0, 1, 2].map(|k| (n[k] + u[k] * su + v[k] * sv) * half[k])
+                };
                 let i0 = b.v(c(-1.0, -1.0), n, [0.0, 0.0]);
                 let i1 = b.v(c(1.0, -1.0), n, [1.0, 0.0]);
                 let i2 = b.v(c(1.0, 1.0), n, [1.0, 1.0]);
@@ -138,7 +160,11 @@ pub fn mesh(kind: PrimitiveKind, pr: &PrimParams) -> Primitive {
                 for i in 0..=seg {
                     let ph = TAU * (i % seg) as f32 / seg as f32;
                     let n = [st * ph.sin(), ct, st * ph.cos()];
-                    b.v([n[0] * r, n[1] * r, n[2] * r], n, [i as f32 / seg as f32, j as f32 / rings as f32]);
+                    b.v(
+                        [n[0] * r, n[1] * r, n[2] * r],
+                        n,
+                        [i as f32 / seg as f32, j as f32 / rings as f32],
+                    );
                 }
             }
             let row = seg + 1;
@@ -204,7 +230,11 @@ pub fn mesh(kind: PrimitiveKind, pr: &PrimParams) -> Primitive {
                     b.quad(t0, b0, b1, t1);
                 }
             }
-            let caps: &[(f32, f32)] = if kind == PrimitiveKind::Cone { &[(-1.0, r)] } else { &[(1.0, r), (-1.0, r)] };
+            let caps: &[(f32, f32)] = if kind == PrimitiveKind::Cone {
+                &[(-1.0, r)]
+            } else {
+                &[(1.0, r), (-1.0, r)]
+            };
             for &(side, rad) in caps {
                 let n = [0.0, side, 0.0];
                 let c = b.v([0.0, h * side, 0.0], n, [0.5, 0.5]);
@@ -212,11 +242,19 @@ pub fn mesh(kind: PrimitiveKind, pr: &PrimParams) -> Primitive {
                 for i in 0..=seg {
                     let a = TAU * (i % seg) as f32 / seg as f32;
                     let (s, co) = a.sin_cos();
-                    b.v([s * rad, h * side, co * rad], n, [0.5 + 0.5 * s, 0.5 - 0.5 * co * side]);
+                    b.v(
+                        [s * rad, h * side, co * rad],
+                        n,
+                        [0.5 + 0.5 * s, 0.5 - 0.5 * co * side],
+                    );
                 }
                 for i in 0..seg {
                     let (p0, p1) = (first + i, first + i + 1);
-                    if side > 0.0 { b.tri(c, p0, p1) } else { b.tri(c, p1, p0) }
+                    if side > 0.0 {
+                        b.tri(c, p0, p1)
+                    } else {
+                        b.tri(c, p1, p0)
+                    }
                 }
             }
         }
@@ -231,5 +269,11 @@ pub fn model(kind: PrimitiveKind, pr: &PrimParams, material: Material) -> Model 
     if kind == PrimitiveKind::Plane {
         material.double_sided = true;
     }
-    Model::single(Mesh { name: kind.label().to_string(), primitives: vec![mesh(kind, pr)] }, vec![material])
+    Model::single(
+        Mesh {
+            name: kind.label().to_string(),
+            primitives: vec![mesh(kind, pr)],
+        },
+        vec![material],
+    )
 }

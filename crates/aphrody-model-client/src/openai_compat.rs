@@ -122,7 +122,7 @@ fn percent_encode(input: &str) -> String {
         match byte {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
                 encoded.push(char::from(byte));
-            },
+            }
             other => encoded.push_str(&format!("%{other:02X}")),
         }
     }
@@ -145,8 +145,15 @@ pub fn merge_options(defaults: &TurnOptions, turn: &TurnOptions) -> TurnOptions 
             .reasoning_effort
             .clone()
             .or_else(|| defaults.reasoning_effort.clone()),
-        response_schema: turn.response_schema.clone().or_else(|| defaults.response_schema.clone()),
-        stop: if turn.stop.is_empty() { defaults.stop.clone() } else { turn.stop.clone() },
+        response_schema: turn
+            .response_schema
+            .clone()
+            .or_else(|| defaults.response_schema.clone()),
+        stop: if turn.stop.is_empty() {
+            defaults.stop.clone()
+        } else {
+            turn.stop.clone()
+        },
         extra,
     }
 }
@@ -235,7 +242,12 @@ impl OpenAiCompatClient {
         wire: OpenAiWire,
         model: impl Into<String>,
     ) -> Self {
-        Self { http: reqwest::Client::new(), runtime, wire, model: model.into() }
+        Self {
+            http: reqwest::Client::new(),
+            runtime,
+            wire,
+            model: model.into(),
+        }
     }
 
     /// Reuse a configured HTTP client and its connection pool across provider APIs.
@@ -272,13 +284,16 @@ impl OpenAiCompatClient {
     /// successful response ready to stream.
     async fn send(&self, body: &serde_json::Value) -> Result<reqwest::Response, ModelError> {
         let url = self.runtime.endpoint_url(self.wire);
-        send_streaming_post(&self.http, &url, &self.runtime, body, &|request| match &self
-            .runtime
-            .bearer_token
-        {
-            Some(token) => request.bearer_auth(token),
-            None => request,
-        })
+        send_streaming_post(
+            &self.http,
+            &url,
+            &self.runtime,
+            body,
+            &|request| match &self.runtime.bearer_token {
+                Some(token) => request.bearer_auth(token),
+                None => request,
+            },
+        )
         .await
     }
 }
@@ -297,7 +312,11 @@ pub(crate) async fn send_streaming_post(
     authorize: &(dyn Fn(reqwest::RequestBuilder) -> reqwest::RequestBuilder + Sync),
 ) -> Result<reqwest::Response, ModelError> {
     send_with_retry(runtime, &|| {
-        authorize(http.post(url).header(reqwest::header::ACCEPT, "text/event-stream").json(body))
+        authorize(
+            http.post(url)
+                .header(reqwest::header::ACCEPT, "text/event-stream")
+                .json(body),
+        )
     })
     .await
 }
@@ -333,7 +352,7 @@ pub(crate) async fn send_with_retry(
                     "provider request failed, retrying"
                 );
                 tokio::time::sleep(delay).await;
-            },
+            }
             Ok(response) => {
                 let status = response.status().as_u16();
                 let message = response.text().await.unwrap_or_default();
@@ -345,13 +364,13 @@ pub(crate) async fn send_with_retry(
                         message
                     },
                 });
-            },
+            }
             // Nothing reached the provider: safe to repeat.
             Err(error) if can_retry && (error.is_connect() || error.is_timeout()) => {
                 let delay = backoff(attempt, None);
                 tracing::warn!(%error, attempt, "provider unreachable, retrying");
                 tokio::time::sleep(delay).await;
-            },
+            }
             Err(error) => return Err(ModelError::Http(error)),
         }
         attempt += 1;
@@ -422,7 +441,9 @@ mod tests {
     );
 
     async fn serve(router: Router) -> String {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
         let address = listener.local_addr().expect("addr");
         tokio::spawn(async move {
             let _ = axum::serve(listener, router).await;
@@ -457,8 +478,10 @@ mod tests {
             runtime.endpoint_url(OpenAiWire::Chat),
             "http://localhost:11434/v1/chat/completions"
         );
-        runtime.query_params =
-            vec![("api-version".into(), "2025-01-01 preview".into()), ("x".into(), "a&b".into())];
+        runtime.query_params = vec![
+            ("api-version".into(), "2025-01-01 preview".into()),
+            ("x".into(), "a&b".into()),
+        ];
         assert_eq!(
             runtime.endpoint_url(OpenAiWire::Responses),
             "http://localhost:11434/v1/responses?api-version=2025-01-01%20preview&x=a%26b"
@@ -478,8 +501,11 @@ mod tests {
         };
         let mut turn_extra = serde_json::Map::new();
         turn_extra.insert("top_k".into(), json!(1));
-        let turn =
-            TurnOptions { temperature: Some(0.9), extra: turn_extra, ..TurnOptions::default() };
+        let turn = TurnOptions {
+            temperature: Some(0.9),
+            extra: turn_extra,
+            ..TurnOptions::default()
+        };
 
         let merged = merge_options(&defaults, &turn);
         assert_eq!(merged.temperature, Some(0.9));
@@ -493,8 +519,14 @@ mod tests {
         assert!(backoff(0, None) >= Duration::from_millis(200));
         assert!(backoff(0, None) < Duration::from_millis(260));
         assert!(backoff(20, None) <= Duration::from_secs(10));
-        assert_eq!(backoff(0, Some(Duration::from_secs(3))), Duration::from_secs(3));
-        assert_eq!(backoff(0, Some(Duration::from_secs(3600))), Duration::from_secs(60));
+        assert_eq!(
+            backoff(0, Some(Duration::from_secs(3))),
+            Duration::from_secs(3)
+        );
+        assert_eq!(
+            backoff(0, Some(Duration::from_secs(3600))),
+            Duration::from_secs(60)
+        );
     }
 
     #[tokio::test]
@@ -532,17 +564,28 @@ mod tests {
             vec![
                 ModelStreamEvent::Created,
                 ModelStreamEvent::TextDelta("hi".into()),
-                ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
+                ModelStreamEvent::Completed {
+                    usage: None,
+                    finish_reason: Some("stop".into())
+                },
             ]
         );
 
-        let (headers, query, body) = seen.last.lock().expect("lock").take().expect("request seen");
+        let (headers, query, body) = seen
+            .last
+            .lock()
+            .expect("lock")
+            .take()
+            .expect("request seen");
         assert_eq!(headers["authorization"], "Bearer sk-test");
         assert_eq!(headers["x-provider"], "aphrody");
         assert_eq!(query, vec![("api-version".to_string(), "v9".to_string())]);
         assert_eq!(body["model"], "qwen2.5-coder");
         assert_eq!(body["temperature"], json!(0.1_f32));
-        assert_eq!(body["messages"][0], json!({ "role": "user", "content": "hello" }));
+        assert_eq!(
+            body["messages"][0],
+            json!({ "role": "user", "content": "hello" })
+        );
     }
 
     #[tokio::test]
@@ -605,7 +648,11 @@ mod tests {
             OpenAiWire::Chat,
             "m",
         );
-        let error = client.stream(user_turn("hello")).await.err().expect("error");
+        let error = client
+            .stream(user_turn("hello"))
+            .await
+            .err()
+            .expect("error");
         assert!(matches!(
             error,
             ModelError::Api { status: 400, ref message } if message == "context length exceeded"
@@ -625,7 +672,10 @@ mod tests {
                     ))
                 });
                 let stalled = first.chain(futures::stream::pending());
-                ([("content-type", "text/event-stream")], axum::body::Body::from_stream(stalled))
+                (
+                    [("content-type", "text/event-stream")],
+                    axum::body::Body::from_stream(stalled),
+                )
             }),
         );
         let base = serve(router).await;
@@ -634,27 +684,43 @@ mod tests {
         runtime.stream_idle_timeout = Duration::from_millis(150);
         let client = OpenAiCompatClient::from_provider(runtime, OpenAiWire::Chat, "m");
 
-        let results: Vec<_> =
-            client.stream(user_turn("hello")).await.expect("stream").collect().await;
+        let results: Vec<_> = client
+            .stream(user_turn("hello"))
+            .await
+            .expect("stream")
+            .collect()
+            .await;
         assert!(
             matches!(results[1], Ok(ModelStreamEvent::TextDelta(ref text)) if text == "partial")
         );
-        let failure = results.iter().find_map(|item| item.as_ref().err()).expect("idle failure");
-        assert!(failure.to_string().contains("stream idle timeout"), "{failure}");
+        let failure = results
+            .iter()
+            .find_map(|item| item.as_ref().err())
+            .expect("idle failure");
+        assert!(
+            failure.to_string().contains("stream idle timeout"),
+            "{failure}"
+        );
     }
 
     #[tokio::test]
     async fn an_unreachable_provider_fails_after_its_retry_budget() {
         install_rustls_provider();
         // A port nothing listens on: bind, read the address, drop the listener.
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
         let address = listener.local_addr().expect("addr");
         drop(listener);
 
         let mut runtime = ProviderRuntime::keyless(format!("http://{address}/v1"));
         runtime.request_max_retries = 1;
         let client = OpenAiCompatClient::from_provider(runtime, OpenAiWire::Chat, "m");
-        let error = client.stream(user_turn("hello")).await.err().expect("error");
+        let error = client
+            .stream(user_turn("hello"))
+            .await
+            .err()
+            .expect("error");
         assert!(matches!(error, ModelError::Http(_)), "{error}");
     }
 
@@ -689,7 +755,9 @@ mod tests {
 
         let mut runtime = ProviderRuntime::keyless(format!("{base}/v1"));
         runtime.bearer_token = Some("test-token-xyz".to_string());
-        runtime.headers.push(("x-custom-key".to_string(), "custom-val-123".to_string()));
+        runtime
+            .headers
+            .push(("x-custom-key".to_string(), "custom-val-123".to_string()));
         let client = OpenAiCompatClient::from_provider(runtime, OpenAiWire::Chat, "test-model");
 
         let events = collect(&client, user_turn("hi")).await;

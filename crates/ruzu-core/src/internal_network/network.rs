@@ -232,8 +232,11 @@ fn initialize() {
             let result = unsafe { winsock::WSAStartup(0x0202, &mut data) };
             assert_eq!(result, 0, "Winsock initialization failed");
             state.socket = unsafe {
-                winsock::socket(winapi::shared::ws2def::AF_INET, winsock::SOCK_DGRAM,
-                    winapi::shared::ws2def::IPPROTO_UDP as i32)
+                winsock::socket(
+                    winapi::shared::ws2def::AF_INET,
+                    winsock::SOCK_DGRAM,
+                    winapi::shared::ws2def::IPPROTO_UDP as i32,
+                )
             };
             if state.socket == winsock::INVALID_SOCKET {
                 let error = unsafe { winsock::WSAGetLastError() };
@@ -362,10 +365,17 @@ pub fn restart_socket_operations() {
             return;
         }
         state.socket = unsafe {
-            winsock::socket(winapi::shared::ws2def::AF_INET, winsock::SOCK_DGRAM,
-                winapi::shared::ws2def::IPPROTO_UDP as i32)
+            winsock::socket(
+                winapi::shared::ws2def::AF_INET,
+                winsock::SOCK_DGRAM,
+                winapi::shared::ws2def::IPPROTO_UDP as i32,
+            )
         };
-        assert_ne!(state.socket, winsock::INVALID_SOCKET, "Failed to recreate interrupt socket");
+        assert_ne!(
+            state.socket,
+            winsock::INVALID_SOCKET,
+            "Failed to recreate interrupt socket"
+        );
         state.cancelled = false;
     }
     #[cfg(unix)]
@@ -410,9 +420,20 @@ mod windows_tests {
         fn socket_type(socket: winsock::SOCKET) -> Result<i32, i32> {
             let mut value = 0i32;
             let mut size = std::mem::size_of_val(&value) as i32;
-            let result = unsafe { winsock::getsockopt(socket, winsock::SOL_SOCKET,
-                winsock::SO_TYPE, &mut value as *mut i32 as *mut i8, &mut size) };
-            if result == 0 { Ok(value) } else { Err(unsafe { winsock::WSAGetLastError() }) }
+            let result = unsafe {
+                winsock::getsockopt(
+                    socket,
+                    winsock::SOL_SOCKET,
+                    winsock::SO_TYPE,
+                    &mut value as *mut i32 as *mut i8,
+                    &mut size,
+                )
+            };
+            if result == 0 {
+                Ok(value)
+            } else {
+                Err(unsafe { winsock::WSAGetLastError() })
+            }
         }
         assert_eq!(get_interrupt_socket(), winsock::INVALID_SOCKET);
         cancel_pending_socket_operations();
@@ -431,8 +452,13 @@ mod windows_tests {
         assert_eq!(socket_type(initial), Err(winsock::WSAENOTSOCK));
         // A new socket may reuse the cancelled handle. Repeated cancellation
         // must not accidentally close this unrelated socket.
-        let unrelated = unsafe { winsock::socket(winapi::shared::ws2def::AF_INET,
-            winsock::SOCK_DGRAM, winapi::shared::ws2def::IPPROTO_UDP as i32) };
+        let unrelated = unsafe {
+            winsock::socket(
+                winapi::shared::ws2def::AF_INET,
+                winsock::SOCK_DGRAM,
+                winapi::shared::ws2def::IPPROTO_UDP as i32,
+            )
+        };
         assert_ne!(unrelated, winsock::INVALID_SOCKET);
         cancel_pending_socket_operations();
         assert_eq!(socket_type(unrelated), Ok(winsock::SOCK_DGRAM));

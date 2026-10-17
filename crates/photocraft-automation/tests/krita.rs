@@ -29,13 +29,19 @@ fn kra() -> Vec<u8> {
     let mut z = photocraft_format::zip::ZipWriter::new();
     z.add("mimetype", b"application/x-krita").unwrap();
     z.add("maindoc.xml", maindoc.as_bytes()).unwrap();
-    z.add("art/layers/layer2", &tiles([0, 0, 255, 255])).unwrap();
-    z.add("art/layers/layer4", &tiles([255, 255, 255, 255])).unwrap();
+    z.add("art/layers/layer2", &tiles([0, 0, 255, 255]))
+        .unwrap();
+    z.add("art/layers/layer4", &tiles([255, 255, 255, 255]))
+        .unwrap();
     z.finish().unwrap()
 }
 
 fn exec(h: &mut Headless, command: &str, params: serde_json::Value) -> serde_json::Value {
-    h.handle("engine.execute", json!({"command": command, "params": params})).unwrap()
+    h.handle(
+        "engine.execute",
+        json!({"command": command, "params": params}),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -45,23 +51,45 @@ fn krita_documents_open_with_layers_and_save_as_openraster() {
     let path = dir.join("art.kra");
     std::fs::write(&path, kra()).unwrap();
     let mut h = Headless::trusted_local();
-    let opened = h.handle("doc.open", json!({"path": path.to_str().unwrap()})).unwrap();
+    let opened = h
+        .handle("doc.open", json!({"path": path.to_str().unwrap()}))
+        .unwrap();
     let warnings = opened["warnings"].to_string();
-    assert!(warnings.contains("vector layers") && warnings.contains("Speech bubble"), "{opened}");
+    assert!(
+        warnings.contains("vector layers") && warnings.contains("Speech bubble"),
+        "{opened}"
+    );
     let doc = &h.session.active().unwrap().doc;
     let names: Vec<&str> = doc.layers.iter().map(|l| l.name.as_str()).collect();
     assert_eq!(names, ["Paper", "Inks"]);
     let line = doc.layers[1].children().unwrap()[0].clone();
-    assert_eq!((line.name.as_str(), line.blend), ("Line", photocraft_doc::BlendMode::Multiply));
+    assert_eq!(
+        (line.name.as_str(), line.blend),
+        ("Line", photocraft_doc::BlendMode::Multiply)
+    );
     let flat = photocraft_compose::flatten(doc);
-    assert!((flat.px[0][1] - 0.2).abs() < 0.01, "80% red multiplied over white: {:?}", flat.px[0]);
+    assert!(
+        (flat.px[0][1] - 0.2).abs() < 0.01,
+        "80% red multiplied over white: {:?}",
+        flat.px[0]
+    );
 
     // Read-only source: the file itself is never overwritten as Krita.
-    assert!(h.handle("doc.save", json!({"path": path.to_str().unwrap()})).is_err());
-    exec(&mut h, "layer.setProps", json!({"layer": line.id.0, "opacity": 0.5}));
+    assert!(
+        h.handle("doc.save", json!({"path": path.to_str().unwrap()}))
+            .is_err()
+    );
+    exec(
+        &mut h,
+        "layer.setProps",
+        json!({"layer": line.id.0, "opacity": 0.5}),
+    );
     let ora = dir.join("art.ora");
-    h.handle("doc.save", json!({"path": ora.to_str().unwrap()})).unwrap();
-    let back = photocraft_io::import("art.ora", &std::fs::read(&ora).unwrap()).unwrap().document;
+    h.handle("doc.save", json!({"path": ora.to_str().unwrap()}))
+        .unwrap();
+    let back = photocraft_io::import("art.ora", &std::fs::read(&ora).unwrap())
+        .unwrap()
+        .document;
     assert_eq!(back.layers.len(), 2);
     assert_eq!(back.layers[1].children().unwrap()[0].opacity, 0.5);
     let _ = std::fs::remove_dir_all(&dir);

@@ -38,15 +38,24 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
 
 /// [`write_atomic`] for a command's `path` parameter: the error names the path.
 pub(crate) fn write_file(path: &str, bytes: &[u8]) -> crate::Result<()> {
-    write_atomic(Path::new(path), bytes).map_err(|e| crate::EngineError::Other(format!("{path}: {e}")))
+    write_atomic(Path::new(path), bytes)
+        .map_err(|e| crate::EngineError::Other(format!("{path}: {e}")))
 }
 
 /// Atomically replace (or create) `path` with what `fill` writes into the temporary file. When
 /// `fill`, the flush or the rename fails, the temporary file is removed, `path` is untouched and
 /// the error is returned.
-pub fn write_atomic_with(path: &Path, fill: impl FnOnce(&mut File) -> io::Result<()>) -> io::Result<()> {
+pub fn write_atomic_with(
+    path: &Path,
+    fill: impl FnOnce(&mut File) -> io::Result<()>,
+) -> io::Result<()> {
     let target = resolve_links(path)?;
-    target.file_name().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, format!("{}: not a file path", path.display())))?;
+    target.file_name().ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("{}: not a file path", path.display()),
+        )
+    })?;
     let dir = match target.parent() {
         Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
         _ => PathBuf::from("."),
@@ -75,7 +84,10 @@ pub fn write_atomic_with(path: &Path, fill: impl FnOnce(&mut File) -> io::Result
 
 /// Create a fresh temporary file beside the target (the same folder, so the rename stays on one
 /// volume). A short randomized name supports long destination names and skips existing entries.
-fn create_temp(dir: &Path, existing: Option<&std::fs::Metadata>) -> io::Result<tempfile::NamedTempFile> {
+fn create_temp(
+    dir: &Path,
+    existing: Option<&std::fs::Metadata>,
+) -> io::Result<tempfile::NamedTempFile> {
     let mut builder = tempfile::Builder::new();
     builder.prefix(".designcraft-save-").suffix(".tmp");
     #[cfg(unix)]
@@ -108,7 +120,10 @@ fn resolve_links(path: &Path) -> io::Result<PathBuf> {
             _ => return Ok(p),
         }
     }
-    Err(io::Error::new(io::ErrorKind::InvalidInput, format!("{}: too many levels of symbolic links", path.display())))
+    Err(io::Error::new(
+        io::ErrorKind::InvalidInput,
+        format!("{}: too many levels of symbolic links", path.display()),
+    ))
 }
 
 /// A rename replaces a file the user can't write (Unix only needs the folder to be writable);
@@ -178,7 +193,10 @@ mod tests {
 
     /// The names in `d`, sorted.
     fn names(d: &Path) -> Vec<String> {
-        let mut v: Vec<String> = std::fs::read_dir(d).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        let mut v: Vec<String> = std::fs::read_dir(d)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
         v.sort();
         v
     }
@@ -208,7 +226,11 @@ mod tests {
         });
         assert_eq!(r.unwrap_err().to_string(), "disk full");
         assert_eq!(std::fs::read(&path).unwrap(), b"original");
-        assert_eq!(names(&d), ["doc.designcraft"], "the temporary file is removed");
+        assert_eq!(
+            names(&d),
+            ["doc.designcraft"],
+            "the temporary file is removed"
+        );
         // A folder that doesn't exist: an error, nothing written.
         assert!(write_atomic(&d.join("missing").join("x.designcraft"), b"x").is_err());
         assert_eq!(names(&d), ["doc.designcraft"]);
@@ -247,7 +269,10 @@ mod tests {
         })
         .unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"private document");
-        assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
         assert_eq!(names(&d), ["private.designcraft"]);
         let _ = std::fs::remove_dir_all(&d);
     }
@@ -274,7 +299,11 @@ mod tests {
         let mut calls = 0;
         let r = retry_rename(3, || {
             calls += 1;
-            if calls < 3 { Err(io::Error::from(io::ErrorKind::PermissionDenied)) } else { Ok(()) }
+            if calls < 3 {
+                Err(io::Error::from(io::ErrorKind::PermissionDenied))
+            } else {
+                Ok(())
+            }
         });
         assert!(r.is_ok() && calls == 3);
         calls = 0;
@@ -282,7 +311,10 @@ mod tests {
             calls += 1;
             Err(io::Error::from(io::ErrorKind::PermissionDenied))
         });
-        assert_eq!(r.map_err(|e| e.kind()), Err(io::ErrorKind::PermissionDenied));
+        assert_eq!(
+            r.map_err(|e| e.kind()),
+            Err(io::ErrorKind::PermissionDenied)
+        );
         assert_eq!(calls, 3, "gives up after the last try");
         calls = 0;
         let r = retry_rename(3, || {
@@ -302,7 +334,10 @@ mod tests {
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
         write_atomic(&path, b"new").unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"new");
-        assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
         // A read-only file stays as it is (root may write it anyway).
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o400)).unwrap();
         if OpenOptions::new().write(true).open(&path).is_err() {
@@ -346,7 +381,12 @@ mod tests {
         let link = d.join("link.designcraft");
         std::os::unix::fs::symlink("real/doc.designcraft", &link).unwrap();
         write_atomic(&link, b"new").unwrap();
-        assert!(std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+        assert!(
+            std::fs::symlink_metadata(&link)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
         assert_eq!(std::fs::read(&target).unwrap(), b"new");
         assert_eq!(names(&d), ["link.designcraft", "real"]);
         assert_eq!(names(&d.join("real")), ["doc.designcraft"]);

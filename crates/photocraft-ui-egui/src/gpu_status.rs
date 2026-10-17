@@ -27,7 +27,9 @@ pub fn check(app: &mut PhotocraftApp, ctx: &egui::Context) {
     if app.started.is_some() {
         // Frames 1–2 set up fonts; by frame 3 the window has presented, and a document open at
         // launch has drawn its canvas (or the GPU path was abandoned).
-        let drawn = app.session.documents().is_empty() || !app.perf.last_refresh.is_empty() || app.gpu.is_none();
+        let drawn = app.session.documents().is_empty()
+            || !app.perf.last_refresh.is_empty()
+            || app.gpu.is_none();
         if app.frame >= 3 && (drawn || app.frame >= STARTED_MAX_FRAMES) {
             if let Some(hook) = app.started.take() {
                 hook(app);
@@ -52,7 +54,11 @@ pub fn fall_back(app: &mut PhotocraftApp, fault: &photocraft_gpu::Fault) {
     app.perf.gpu_fallback = Some(fault.to_string());
     app.perf.gpu_info.canvas = "cpu".into();
     app.perf.gpu_info.lost = Some(fault.to_string());
-    let title = if fault.is_lost() { LOST_MESSAGE } else { ERROR_MESSAGE };
+    let title = if fault.is_lost() {
+        LOST_MESSAGE
+    } else {
+        ERROR_MESSAGE
+    };
     queue_fallback_notice(app, fault.to_string());
     app.ui.status = tl!(title).to_string();
     app.ui.status_error = true;
@@ -65,10 +71,22 @@ pub fn system_info(app: &PhotocraftApp) -> Vec<String> {
 
 /// Help › System Info's on-screen text: version, platform and the graphics state.
 pub fn system_info_ui(app: &PhotocraftApp) -> Vec<String> {
-    let mut v = vec![format!("PhotoCraft {}", photocraft_engine::build_info::long_version()), {
-        let template = "Platform: {os} {arch}";
-        crate::i18n::fmt(tl!(template), &[("os", std::env::consts::OS), ("arch", std::env::consts::ARCH)])
-    }];
+    let mut v = vec![
+        format!(
+            "PhotoCraft {}",
+            photocraft_engine::build_info::long_version()
+        ),
+        {
+            let template = "Platform: {os} {arch}";
+            crate::i18n::fmt(
+                tl!(template),
+                &[
+                    ("os", std::env::consts::OS),
+                    ("arch", std::env::consts::ARCH),
+                ],
+            )
+        },
+    ];
     v.extend(app.perf.gpu_info.lines());
     v.extend(crate::monitor_status::summary_lines(app));
     v
@@ -118,7 +136,9 @@ fn choose_recovery(app: &mut PhotocraftApp, retry: bool) -> Result<(), String> {
 
 /// Recovery is an explicit choice; the CPU document renderer stays active while the user works.
 pub fn show_fallback(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let Some(reason) = app.ui.gpu_fallback_notice.clone() else { return };
+    let Some(reason) = app.ui.gpu_fallback_notice.clone() else {
+        return;
+    };
     let t = crate::theme::Tokens::get(ctx);
     let mut choice = None;
     egui::Window::new(tl!("Switched to CPU rendering"))
@@ -157,25 +177,59 @@ mod tests {
 
     #[test]
     fn system_info_copy_and_api_stay_english_in_czech_ui() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.perf.gpu_info.adapter = "Test GPU".into();
         app.perf.gpu_info.preference = "auto".into();
         let english = crate::i18n::with_language(crate::i18n::Lang::EN, || system_info(&app));
         crate::i18n::with_language(crate::i18n::Lang::from_code("cs").unwrap(), || {
-            assert_eq!(system_info(&app), english, "clipboard diagnostics include English monitor profiles too");
-            let result = crate::menus::invoke(&mut app, &egui::Context::default(), "help.systemInfo", json!({})).unwrap();
+            assert_eq!(
+                system_info(&app),
+                english,
+                "clipboard diagnostics include English monitor profiles too"
+            );
+            let result = crate::menus::invoke(
+                &mut app,
+                &egui::Context::default(),
+                "help.systemInfo",
+                json!({}),
+            )
+            .unwrap();
             assert_eq!(result["info"]["lines"], json!(english));
-            assert_eq!(crate::i18n::current().code(), "cs", "diagnostics restore the drawing language");
+            assert_eq!(
+                crate::i18n::current().code(),
+                "cs",
+                "diagnostics restore the drawing language"
+            );
             let screen = system_info_ui(&app);
-            assert!(screen.iter().any(|line| line == "Grafický adaptér: Test GPU"), "{screen:?}");
-            assert!(screen.iter().any(|line| line.starts_with("Profil monitoru:")), "{screen:?}");
-            assert!(english.iter().any(|line| line == "GPU backend preference: auto"));
+            assert!(
+                screen
+                    .iter()
+                    .any(|line| line == "Grafický adaptér: Test GPU"),
+                "{screen:?}"
+            );
+            assert!(
+                screen
+                    .iter()
+                    .any(|line| line.starts_with("Profil monitoru:")),
+                "{screen:?}"
+            );
+            assert!(
+                english
+                    .iter()
+                    .any(|line| line == "GPU backend preference: auto")
+            );
         });
     }
 
     #[test]
     fn system_info_translates_empty_and_stored_auto_only_for_display() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         // Hardware names are opaque even when they happen to match a lookup key.
         app.perf.gpu_info.adapter = "auto".into();
         crate::i18n::with_language(crate::i18n::Lang::from_code("cs").unwrap(), || {
@@ -184,7 +238,12 @@ mod tests {
             app.perf.gpu_info.selected = "auto".into();
             assert_eq!(system_info_ui(&app), empty);
             assert!(empty.iter().any(|line| line == "Grafický adaptér: auto"));
-            assert!(empty.iter().any(|line| line == "Preferovaný backend GPU: automaticky"), "{empty:?}");
+            assert!(
+                empty
+                    .iter()
+                    .any(|line| line == "Preferovaný backend GPU: automaticky"),
+                "{empty:?}"
+            );
             assert_eq!(app.perf.gpu_info.preference, "auto");
             assert_eq!(app.perf.gpu_info.selected, "auto");
         });
@@ -192,16 +251,25 @@ mod tests {
 
     #[test]
     fn fallback_warning_keeps_reason_in_inspectable_state() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         queue_fallback_notice(&mut app, "device unavailable");
         let state = serde_json::to_value(&app.ui).unwrap();
         assert_eq!(state["gpu_fallback_notice"], "device unavailable");
-        assert_eq!(crate::control::inspect(&app, &egui::Context::default())["gpuFallbackNotice"], "device unavailable");
+        assert_eq!(
+            crate::control::inspect(&app, &egui::Context::default())["gpuFallbackNotice"],
+            "device unavailable"
+        );
     }
 
     #[test]
     fn failed_preference_save_keeps_recovery_warning_open() {
-        let services = crate::Services { save_prefs: Some(Box::new(|_| Err("disk full".into()))), ..Default::default() };
+        let services = crate::Services {
+            save_prefs: Some(Box::new(|_| Err("disk full".into()))),
+            ..Default::default()
+        };
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
         queue_fallback_notice(&mut app, "GPU fault");
         assert!(choose_recovery(&mut app, true).is_err());
@@ -224,13 +292,19 @@ mod tests {
         queue_fallback_notice(&mut app, "device unavailable");
         choose_recovery(&mut app, false).unwrap();
         assert!(!app.session.prefs().performance.use_gpu);
-        assert_eq!(app.session.prefs().get("performance.renderingMode"), Some(json!("cpu")));
+        assert_eq!(
+            app.session.prefs().get("performance.renderingMode"),
+            Some(json!("cpu"))
+        );
         assert!(app.ui.gpu_fallback_notice.is_none());
         crate::prefs_ui::tick(&mut app, &egui::Context::default());
         assert_eq!(saves.get(), 1, "recovery choice writes once");
         choose_recovery(&mut app, true).unwrap();
         assert!(app.session.prefs().performance.use_gpu);
-        assert_eq!(app.session.prefs().get("performance.renderingMode"), Some(json!("gpu")));
+        assert_eq!(
+            app.session.prefs().get("performance.renderingMode"),
+            Some(json!("gpu"))
+        );
         assert!(app.gpu.is_none());
         crate::prefs_ui::tick(&mut app, &egui::Context::default());
         assert_eq!(saves.get(), 2, "retry choice writes once");

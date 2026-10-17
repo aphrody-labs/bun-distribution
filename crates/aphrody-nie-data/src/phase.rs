@@ -165,7 +165,10 @@ impl PurposeTextItem {
     /// Parse un noeud `PURPOSE_TEXT_ITEM_N`.
     #[must_use]
     pub fn from_node(node: Node<'_>) -> Self {
-        Self { text_hash: node.hash(0), lua_data: owned(node.string(1)) }
+        Self {
+            text_hash: node.hash(0),
+            lua_data: owned(node.string(1)),
+        }
     }
 }
 
@@ -301,7 +304,11 @@ impl PhaseTitleTexInfo {
     /// Parse un noeud `PHASE_TITLE_TEX_INFO_N`.
     #[must_use]
     pub fn from_node(node: Node<'_>) -> Self {
-        Self { hash_a: node.hash(0), hash_b: node.hash(1), tex_path: owned(node.string(2)) }
+        Self {
+            hash_a: node.hash(0),
+            hash_b: node.hash(1),
+            tex_path: owned(node.string(2)),
+        }
     }
 }
 
@@ -400,7 +407,11 @@ pub fn parse_phase_set(root: &Value) -> PhaseSet {
         purpose_positions.push(PurposePosItem::from_node(node));
     });
 
-    PhaseSet { items, purpose_texts, purpose_positions }
+    PhaseSet {
+        items,
+        purpose_texts,
+        purpose_positions,
+    }
 }
 
 /// Parse un `phase_set_layout_cNN_*.cfg.bin.json` complet.
@@ -423,7 +434,12 @@ pub fn parse_phase_set_layout(root: &Value) -> PhaseSetLayout {
             let point_node = children[i + 2];
             bases.push(LayoutBase {
                 base_hash: base_node.hash(0),
-                shape: [shape_node.int(0), shape_node.int(1), shape_node.int(2), shape_node.int(3)],
+                shape: [
+                    shape_node.int(0),
+                    shape_node.int(1),
+                    shape_node.int(2),
+                    shape_node.int(3),
+                ],
                 point: [
                     point_node.var(0).map_or(0.0_f64, |v| v.as_f64()),
                     point_node.var(1).map_or(0.0_f64, |v| v.as_f64()),

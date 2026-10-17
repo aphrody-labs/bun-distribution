@@ -11,8 +11,9 @@ use anyhow::{Context, bail};
 use rayon::prelude::*;
 
 /// Extensions décodées vers JSON.
-const EXT_JSON: &[&str] =
-    &["bin", "objbin", "g4pkm", "lip", "p3lip", "mev", "mevbin", "g4md", "g4pk", "cfg"];
+const EXT_JSON: &[&str] = &[
+    "bin", "objbin", "g4pkm", "lip", "p3lip", "mev", "mevbin", "g4md", "g4pk", "cfg",
+];
 /// Extensions décodées vers PNG.
 const EXT_PNG: &[&str] = &["g4tx"];
 
@@ -57,7 +58,9 @@ pub fn file(src: &Path, out: Option<&Path>, quiet: bool) -> anyhow::Result<()> {
     };
 
     let dest = match out {
-        Some(p) if p.is_dir() => p.join(src.file_name().unwrap_or_default()).with_extension(ext),
+        Some(p) if p.is_dir() => p
+            .join(src.file_name().unwrap_or_default())
+            .with_extension(ext),
         Some(p) => p.to_path_buf(),
         None => src.with_extension(ext),
     };
@@ -256,7 +259,13 @@ pub fn format(src: &Path) -> anyhow::Result<()> {
         let data = fs::read(p).with_context(|| format!("lecture de {}", p.display()))?;
         let detect = aphrody_nie_formats::decode::format_name(&data);
         let decode = aphrody_nie_formats::decode::decode(&data).map_or("-", |d| d.format);
-        println!("path={} detect={} decode={} bytes={}", p.display(), detect, decode, data.len());
+        println!(
+            "path={} detect={} decode={} bytes={}",
+            p.display(),
+            detect,
+            decode,
+            data.len()
+        );
     }
     Ok(())
 }

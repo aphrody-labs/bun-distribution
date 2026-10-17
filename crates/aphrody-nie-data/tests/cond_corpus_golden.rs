@@ -12,8 +12,9 @@ use aphrody_nie_data::cond::CondBlob;
 fn b64(s: &str) -> Option<Vec<u8>> {
     const INV: u8 = 0xFF;
     let mut table = [INV; 256];
-    for (i, c) in
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".iter().enumerate()
+    for (i, c) in b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        .iter()
+        .enumerate()
     {
         table[*c as usize] = i as u8;
     }
@@ -70,9 +71,9 @@ fn collect(v: &serde_json::Value, out: &mut Vec<Vec<u8>>) {
                 }
                 collect(vv, out);
             }
-        },
+        }
         serde_json::Value::Array(a) => a.iter().for_each(|x| collect(x, out)),
-        _ => {},
+        _ => {}
     }
 }
 
@@ -126,7 +127,11 @@ fn cadrage_version0_prouve_sur_corpus_reel() {
             collect(&v, &mut blobs);
         }
     }
-    assert!(blobs.len() > 1000, "corpus de blobs cond conséquent (eu {})", blobs.len());
+    assert!(
+        blobs.len() > 1000,
+        "corpus de blobs cond conséquent (eu {})",
+        blobs.len()
+    );
 
     let mut v0 = 0usize;
     let mut v0_bad = 0usize;
@@ -139,7 +144,7 @@ fn cadrage_version0_prouve_sur_corpus_reel() {
                 if !c.framing_valid_v0() {
                     v0_bad += 1;
                 }
-            },
+            }
             1 => versions_other += 1,
             // Some fields named like conditions contain opaque base64 payloads rather than
             // condition blobs; keep them out of the framing population.
@@ -147,7 +152,10 @@ fn cadrage_version0_prouve_sur_corpus_reel() {
         }
     }
     // Cadrage version-0 prouvé : AUCUN blob version-0 ne viole declared_len == len-5.
-    assert_eq!(v0_bad, 0, "{v0_bad} blobs version-0 violent le cadrage (sur {v0})");
+    assert_eq!(
+        v0_bad, 0,
+        "{v0_bad} blobs version-0 violent le cadrage (sur {v0})"
+    );
     assert!(v0 > 1000, "majorité de blobs version-0 (eu {v0})");
     eprintln!(
         "cond corpus: {} blobs | v0={v0} (cadrage OK) | autres={versions_other}",
@@ -184,8 +192,15 @@ fn cadrage_version0_prouve_sur_corpus_reel() {
         "seuils de progression story décodés (eu {})",
         story + composite
     );
-    assert!(eventflag + composite > 100, "event-flags décodés (eu {})", eventflag + composite);
-    assert!(total_events > 1000, "feuilles event-flag décodées (eu {total_events})");
+    assert!(
+        eventflag + composite > 100,
+        "event-flags décodés (eu {})",
+        eventflag + composite
+    );
+    assert!(
+        total_events > 1000,
+        "feuilles event-flag décodées (eu {total_events})"
+    );
     eprintln!(
         "unlock_condition corpus: always={always} story={story} eventFlag={eventflag} composite={composite} | story alignés grille={story_on_grid} | feuilles event={total_events}"
     );

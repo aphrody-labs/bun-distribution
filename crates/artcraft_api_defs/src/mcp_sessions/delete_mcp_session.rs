@@ -5,5 +5,5 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, ToSchema)]
 pub struct DeleteMcpSessionSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 }

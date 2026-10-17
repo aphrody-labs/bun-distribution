@@ -1131,30 +1131,30 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 "{}",
                 serde_json::to_string_pretty(&value).map_err(|error| miette::miette!("{error}"))?
             );
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Ai { action }) => {
             ai_cmd::run(action, &overrides, ctx).await?;
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Tui) => {
             return Err(miette::miette!(
                 "Interactive TUI dashboard is not wired by this command. Use `aphrody shell status` for capability declarations."
             ));
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Voice { action }) => {
             ai_cmd::run_voice(action).await?;
-        },
+        }
         #[cfg(feature = "rag")]
         Some(Commands::Rag(args)) => rag_cmd::run(args, overrides).await?,
         Some(Commands::LlamaDaemon { state_root, role }) => {
             oss_cmd::run_daemon(state_root, role).await?
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Gateway { action }) => {
             gateway_cmd::run(action.unwrap_or_default()).await?;
-        },
+        }
         Some(Commands::Config { action }) => {
             config_cmd::run(
                 action,
@@ -1164,90 +1164,146 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 cli.agent_options.local_provider.clone(),
             )
             .await?;
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Codex(args)) => {
             codex_cmd::run(args).await?;
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Native { action }) => {
             pillars_cmd::handle_native(action)?;
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Os { action }) => {
             pillars_cmd::handle_os(action).await?;
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Web { action }) => {
             pillars_cmd::handle_web(action).await?;
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Shell { action }) => {
             let action = action.unwrap_or(pillars_cmd::ShellAction::Start { args: Vec::new() });
             pillars_cmd::handle_shell(action)?;
-        },
+        }
         #[cfg(feature = "train")]
         Some(Commands::Train(args)) => train_cmd::run(args).await?,
         Some(Commands::Pure(args)) => {
             let output = aphrody_command_pure::run(&args.command, &mut aphrody_command_pure::StdIo)
                 .map_err(|e| miette::miette!("{e}"))?;
             print!("{output}");
-        },
+        }
         Some(Commands::Version { json }) => {
             VersionCommand { json }.execute(ctx).await?;
-        },
+        }
         Some(Commands::Doctor { json }) => {
             DoctorCommand { json_output: json }.execute(ctx).await?;
-        },
+        }
 
         Some(Commands::A2a { action }) => {
             commands::dispatch_a2a(action, ctx).await?;
-        },
-        Some(Commands::Search { provider, count, offset, freshness, country, json, query }) => {
-            commands::SearchCommand { provider, count, offset, freshness, country, json, query }
-                .execute(ctx)
-                .await?;
-        },
+        }
+        Some(Commands::Search {
+            provider,
+            count,
+            offset,
+            freshness,
+            country,
+            json,
+            query,
+        }) => {
+            commands::SearchCommand {
+                provider,
+                count,
+                offset,
+                freshness,
+                country,
+                json,
+                query,
+            }
+            .execute(ctx)
+            .await?;
+        }
         Some(Commands::Google { args }) => {
             commands::GoogleCommand { args }.execute(ctx).await?;
-        },
-        Some(Commands::Translate { text, source, target, backend, file, json }) => {
-            commands::TranslateCommand { text, source, target, backend, file, json }
-                .execute(ctx)
-                .await?;
-        },
+        }
+        Some(Commands::Translate {
+            text,
+            source,
+            target,
+            backend,
+            file,
+            json,
+        }) => {
+            commands::TranslateCommand {
+                text,
+                source,
+                target,
+                backend,
+                file,
+                json,
+            }
+            .execute(ctx)
+            .await?;
+        }
         Some(Commands::N2b { args }) => {
             commands::N2bCommand { args }.execute(ctx).await?;
-        },
+        }
         Some(Commands::Ssh { args }) => {
             commands::SshCommand { args }.execute(ctx).await?;
-        },
-        Some(Commands::Term { addr, shell, cwd, token }) => {
-            commands::TermCommand { addr, shell, cwd, token }.execute(ctx).await?;
-        },
+        }
+        Some(Commands::Term {
+            addr,
+            shell,
+            cwd,
+            token,
+        }) => {
+            commands::TermCommand {
+                addr,
+                shell,
+                cwd,
+                token,
+            }
+            .execute(ctx)
+            .await?;
+        }
         Some(Commands::Mcp { action }) => match action {
             McpAction::Add { name, url, command } => {
                 mcp_cmd::add_server(&name, url.as_deref(), &command)?;
-            },
+            }
             McpAction::Remove { name } => {
                 mcp_cmd::remove_server(&name)?;
-            },
+            }
             McpAction::Get { name } => {
                 mcp_cmd::get_server(&name)?;
-            },
+            }
             McpAction::List { config, no_probe } => {
-                mcp_cmd::McpListCommand { config, no_probe }.execute(ctx).await?;
-            },
-            McpAction::Call { config, server, tool, args } => {
-                mcp_cmd::McpCallCommand { config, server, tool, args }.execute(ctx).await?;
-            },
+                mcp_cmd::McpListCommand { config, no_probe }
+                    .execute(ctx)
+                    .await?;
+            }
+            McpAction::Call {
+                config,
+                server,
+                tool,
+                args,
+            } => {
+                mcp_cmd::McpCallCommand {
+                    config,
+                    server,
+                    tool,
+                    args,
+                }
+                .execute(ctx)
+                .await?;
+            }
         },
         Some(Commands::Discord { action }) => {
             discord_cmd::run_discord(action).await?;
-        },
+        }
         Some(Commands::Git { action }) => {
             git_cmd::run(action).await?;
-        },
+        }
         Some(Commands::Ingest {
             source,
             max_size,
@@ -1273,13 +1329,13 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 json,
             })
             .await?;
-        },
+        }
         Some(Commands::Docs { action }) => {
             docs_cmd::execute_docs(action).await?;
-        },
+        }
         Some(Commands::Awesome { action }) => {
             docs_cmd::execute_awesome(action).await?;
-        },
+        }
         Some(Commands::Memory { action }) => match action {
             MemoryAction::Local(action) => memory_cmd::execute_local(action, &overrides).await?,
             MemoryAction::Migrate {
@@ -1327,7 +1383,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .execute(ctx)
                 .await?;
-            },
+            }
         },
         Some(Commands::Re { action }) => match action {
             ReAction::Triage { path, pretty } => {
@@ -1342,8 +1398,13 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .map_err(|e| miette::miette!("JSON encode failed: {e}"))?;
                 println!("{json}");
-            },
-            ReAction::Strings { path, min_len, limit, pretty } => {
+            }
+            ReAction::Strings {
+                path,
+                min_len,
+                limit,
+                pretty,
+            } => {
                 let bytes = std::fs::read(&path)
                     .map_err(|e| miette::miette!("failed to read {}: {e}", path.display()))?;
                 let strings = aphrody_re::extract_strings(&bytes, min_len, limit);
@@ -1354,7 +1415,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .map_err(|e| miette::miette!("JSON encode failed: {e}"))?;
                 println!("{json}");
-            },
+            }
             ReAction::Sections { path, pretty } => {
                 let bytes = std::fs::read(&path)
                     .map_err(|e| miette::miette!("failed to read {}: {e}", path.display()))?;
@@ -1367,8 +1428,13 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .map_err(|e| miette::miette!("JSON encode failed: {e}"))?;
                 println!("{json}");
-            },
-            ReAction::Disasm { path, rip, limit, pretty } => {
+            }
+            ReAction::Disasm {
+                path,
+                rip,
+                limit,
+                pretty,
+            } => {
                 let bytes = std::fs::read(&path)
                     .map_err(|e| miette::miette!("failed to read {}: {e}", path.display()))?;
                 let effective_limit = limit.unwrap_or(aphrody_re::DISASM_LIMIT);
@@ -1380,7 +1446,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .map_err(|e| miette::miette!("JSON encode failed: {e}"))?;
                 println!("{json}");
-            },
+            }
             ReAction::Google { path, pretty } => {
                 let bytes = std::fs::read(&path)
                     .map_err(|e| miette::miette!("failed to read {}: {e}", path.display()))?;
@@ -1392,7 +1458,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .map_err(|e| miette::miette!("JSON encode failed: {e}"))?;
                 println!("{json}");
-            },
+            }
             #[cfg(feature = "magika")]
             ReAction::Classify { path, pretty } => {
                 let report = aphrody_re::magika::classify_path(&path)
@@ -1404,7 +1470,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .map_err(|e| miette::miette!("JSON encode failed: {e}"))?;
                 println!("{json}");
-            },
+            }
             ReAction::Go { path, pretty, deep } => {
                 let bytes = std::fs::read(&path)
                     .map_err(|e| miette::miette!("failed to read {}: {e}", path.display()))?;
@@ -1438,8 +1504,13 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .map_err(|e| miette::miette!("JSON encode failed: {e}"))?;
                 println!("{json}");
-            },
-            ReAction::Auto { path, deep, json, limit } => {
+            }
+            ReAction::Auto {
+                path,
+                deep,
+                json,
+                limit,
+            } => {
                 let result = tokio::task::spawn_blocking(move || {
                     re_auto::run_auto(&path, deep, json, limit)
                 })
@@ -1447,8 +1518,12 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 .map_err(|e| miette::miette!("task panicked: {e}"))?
                 .map_err(|e| miette::miette!("re auto failed: {e}"))?;
                 println!("{result}");
-            },
-            ReAction::Yara { rules, path, pretty } => {
+            }
+            ReAction::Yara {
+                rules,
+                path,
+                pretty,
+            } => {
                 #[cfg(feature = "yara")]
                 {
                     // Both files are read in a spawn_blocking so we never block
@@ -1482,35 +1557,35 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                          Rebuild with: cargo build -p aphrody --features yara"
                     ));
                 }
-            },
+            }
         },
         #[cfg(feature = "index")]
         Some(Commands::Index { action }) => {
             index_cmd::run(action).await?;
-        },
+        }
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Model { action }) => {
             model_cmd::run(action).await?;
-        },
+        }
         #[cfg(all(not(target_arch = "wasm32"), feature = "infer"))]
         Some(Commands::Infer { action }) => {
             infer_cmd::run(action)?;
-        },
+        }
         #[cfg(all(not(target_arch = "wasm32"), feature = "jobs"))]
         Some(Commands::Job { action }) => {
             job_cmd::run(action).await?;
-        },
+        }
         #[cfg(all(not(target_arch = "wasm32"), feature = "ocr"))]
         Some(Commands::Ocr { action }) => {
             // Synchrone de bout en bout (llama.cpp en processus fils), sauf le
             // pont `dbfr` qui parle HTTP.
             ocr_cmd::run(action).await?;
-        },
+        }
 
         #[cfg(feature = "forensics")]
         Some(Commands::Forensics { action }) => {
             forensics_cmd::run(action).await?;
-        },
+        }
         Some(Commands::Completions { shell }) => {
             let mut cmd = Cli::command();
             // clap_complete::generate writes straight to the sink and `expect`s
@@ -1528,23 +1603,52 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
             );
             use std::io::Write as _;
             match std::io::stdout().write_all(&buf) {
-                Ok(()) => {},
-                Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => {},
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => {}
                 Err(e) => return Err(miette::miette!("failed to write completions: {e}")),
             }
-        },
+        }
         Some(Commands::SelfCmd { action }) => match action {
-            SelfAction::InstallPath { bin, build, dry_run } => {
-                self_cmd::InstallPathCommand { bin, build_if_missing: build, dry_run }
-                    .execute(ctx)
-                    .await?;
-            },
-            SelfAction::Update { base, components, check, force, rollback } => {
-                self_update::UpdateCommand { base, components, check, force, rollback }
-                    .execute(ctx)
-                    .await?;
-            },
-            SelfAction::Install { bin, root, target, host, url, no_boot, keep_legacy, dry_run } => {
+            SelfAction::InstallPath {
+                bin,
+                build,
+                dry_run,
+            } => {
+                self_cmd::InstallPathCommand {
+                    bin,
+                    build_if_missing: build,
+                    dry_run,
+                }
+                .execute(ctx)
+                .await?;
+            }
+            SelfAction::Update {
+                base,
+                components,
+                check,
+                force,
+                rollback,
+            } => {
+                self_update::UpdateCommand {
+                    base,
+                    components,
+                    check,
+                    force,
+                    rollback,
+                }
+                .execute(ctx)
+                .await?;
+            }
+            SelfAction::Install {
+                bin,
+                root,
+                target,
+                host,
+                url,
+                no_boot,
+                keep_legacy,
+                dry_run,
+            } => {
                 self_install::InstallCommand {
                     bin,
                     root,
@@ -1557,32 +1661,47 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 }
                 .execute(ctx)
                 .await?;
-            },
+            }
             SelfAction::Bootstrap { check } => {
                 self_cmd::BootstrapCommand { check }.execute(ctx).await?;
-            },
+            }
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Package { action }) => {
             package_cmd::run(action)?;
-        },
+        }
         Some(Commands::Runtime { action }) => {
             runtime_cmd::run(action)?;
-        },
+        }
         Some(Commands::Scan { action }) => match action {
-            ScanAction::Tree { root, groups, output, top_ext } => {
-                scan_cmd::TreeCommand { root, groups, output, top_ext_count: top_ext }
+            ScanAction::Tree {
+                root,
+                groups,
+                output,
+                top_ext,
+            } => {
+                scan_cmd::TreeCommand {
+                    root,
+                    groups,
+                    output,
+                    top_ext_count: top_ext,
+                }
+                .execute(ctx)
+                .await?;
+            }
+            ScanAction::Manifests { root, output } => {
+                scan_cmd::ManifestsCommand { root, output }
                     .execute(ctx)
                     .await?;
-            },
-            ScanAction::Manifests { root, output } => {
-                scan_cmd::ManifestsCommand { root, output }.execute(ctx).await?;
-            },
+            }
         },
         Some(Commands::Winclean { action }) => winclean_cmd::run(action).await?,
         Some(Commands::Auto(args)) => {
             if let Some(feature) = missing_command_feature(&args) {
-                return Err(miette::miette!("`aphrody {}` requires --features {feature}", args[0]));
+                return Err(miette::miette!(
+                    "`aphrody {}` requires --features {feature}",
+                    args[0]
+                ));
             }
             // Route NL prompts to the native A2A JSON-RPC client; defer to
             // the legacy bun/uv/cargo engine dispatcher only for tokens
@@ -1591,22 +1710,22 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
             if is_natural_language_prompt(&args) {
                 let opts = auto_command::AutoCommand::new(args.join(" "));
                 match auto_command::run(opts).await {
-                    Ok(_) => {},
+                    Ok(_) => {}
                     Err(err) => {
                         eprintln!("aphrody: {err}");
                         return Err(miette::miette!(
                             "auto_command failed (exit {})",
                             err.exit_code()
                         ));
-                    },
+                    }
                 }
             } else {
                 commands::AutoCommand { args }.execute(ctx).await?;
             }
-        },
+        }
         None => {
             pillars_cmd::handle_shell(pillars_cmd::ShellAction::Start { args: Vec::new() })?;
-        },
+        }
     }
 
     Ok(())
@@ -1655,12 +1774,15 @@ where
         return ocr_cmd::run_sync_server_batch(&argv);
     }
 
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(err) => {
             eprintln!("aphrody: failed to start the async runtime: {err}");
             return 70; // EX_SOFTWARE (sysexits.h)
-        },
+        }
     };
     runtime.block_on(run_async(argv))
 }
@@ -1714,7 +1836,7 @@ where
                 clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => 0,
                 _ => 2,
             };
-        },
+        }
     };
 
     let ctx = match shared_context() {
@@ -1722,7 +1844,7 @@ where
         Err(err) => {
             eprintln!("aphrody: {err}");
             return 1;
-        },
+        }
     };
 
     match dispatch(ctx, cli).await {
@@ -1735,7 +1857,7 @@ where
             }
             eprintln!("{report:?}");
             1
-        },
+        }
     }
 }
 
@@ -1784,7 +1906,11 @@ where
 {
     let (code, stdout, stderr) =
         aphrody_backend::stdio_capture::with_captured_stdio(|| run_from_args(args));
-    CapturedRun { code, stdout, stderr }
+    CapturedRun {
+        code,
+        stdout,
+        stderr,
+    }
 }
 
 // ===========================================================================
@@ -1804,13 +1930,13 @@ pub fn run_wasm() {
                 "aphrody {} — wasm stub. Use the native binary for full command surface.",
                 env!("CARGO_PKG_VERSION"),
             );
-        },
+        }
         Some(Commands::Pure(args)) => {
             match aphrody_command_pure::run(&args.command, &mut aphrody_command_pure::StdIo) {
                 Ok(output) => print!("{output}"),
                 Err(error) => eprintln!("{error}"),
             }
-        },
+        }
         Some(other) => {
             let name = match other {
                 Commands::Pure(_) => unreachable!(),
@@ -1832,7 +1958,7 @@ pub fn run_wasm() {
                 "command `{name}` is not available on the wasm target — use the native aphrody \
                  binary (Linux / Windows / macOS) instead."
             );
-        },
+        }
     }
 }
 
@@ -1872,12 +1998,18 @@ mod tests {
             ])
             .expect("translation command");
             match cli.command {
-                Some(Commands::Translate { text, source, target, json, .. }) => {
+                Some(Commands::Translate {
+                    text,
+                    source,
+                    target,
+                    json,
+                    ..
+                }) => {
                     assert_eq!(text.as_deref(), Some("--悟空"));
                     assert_eq!(source, "ja");
                     assert_eq!(target, "en");
                     assert!(json);
-                },
+                }
                 _ => panic!("expected translation"),
             }
         });
@@ -1905,14 +2037,24 @@ mod tests {
                 "async",
             ])
             .expect("search parses");
-            let Some(Commands::Search { provider, count, offset, freshness, country, json, query }) =
-                cli.command
+            let Some(Commands::Search {
+                provider,
+                count,
+                offset,
+                freshness,
+                country,
+                json,
+                query,
+            }) = cli.command
             else {
                 panic!("expected search")
             };
             assert_eq!(provider, "brave");
             assert_eq!((count, offset), (Some(5), Some(2)));
-            assert_eq!((freshness.as_deref(), country.as_deref()), (Some("pw"), Some("FR")));
+            assert_eq!(
+                (freshness.as_deref(), country.as_deref()),
+                (Some("pw"), Some("FR"))
+            );
             assert!(json);
             assert_eq!(query, ["rust", "async"]);
             assert!(Cli::try_parse_from(["aphrody", "search", "--provider", "bing", "x"]).is_err());
@@ -1925,7 +2067,9 @@ mod tests {
         in_large_stack(|| {
             let cli = Cli::try_parse_from(["aphrody", "rag", "search", "query"])
                 .expect("external subcommand parses");
-            let Some(Commands::Auto(args)) = cli.command else { panic!("external command") };
+            let Some(Commands::Auto(args)) = cli.command else {
+                panic!("external command")
+            };
             assert_eq!(missing_command_feature(&args), Some("rag"));
         });
     }
@@ -1947,7 +2091,7 @@ mod tests {
             match cli.command {
                 Some(Commands::Ssh { args }) => {
                     assert_eq!(args, vec!["status", "--host", "vps"]);
-                },
+                }
                 _ => panic!("expected Commands::Ssh"),
             }
         });
@@ -1956,8 +2100,14 @@ mod tests {
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn ssh_config_dump_is_limited_to_the_read_only_openssh_form() {
-        assert!(commands::is_openssh_config_dump(&["-G".into(), "vps".into()]));
+        assert!(commands::is_openssh_config_dump(&[
+            "-G".into(),
+            "vps".into()
+        ]));
         assert!(!commands::is_openssh_config_dump(&["-G".into()]));
-        assert!(!commands::is_openssh_config_dump(&["-o".into(), "x=y".into()]));
+        assert!(!commands::is_openssh_config_dump(&[
+            "-o".into(),
+            "x=y".into()
+        ]));
     }
 }

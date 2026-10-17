@@ -27,14 +27,19 @@ impl ExternalKey for KeychainKey {
             (false, DigestAlg::Sha512) => Algorithm::ECDSASignatureMessageX962SHA512,
             (false, _) => Algorithm::ECDSASignatureMessageX962SHA256,
         };
-        self.key.create_signature(a, msg).map_err(|e| SignError::Crypto(format!("the Keychain didn't sign: {e}")))
+        self.key
+            .create_signature(a, msg)
+            .map_err(|e| SignError::Crypto(format!("the Keychain didn't sign: {e}")))
     }
 }
 
 /// The `keychain:<SHA-256 of the certificate>` reference PdfCraft keeps for an identity.
 pub fn reference(c: &Certificate) -> String {
     let d = DigestAlg::Sha256.digest(&[&c.raw]);
-    format!("keychain:{}", d.iter().map(|b| format!("{b:02x}")).collect::<String>())
+    format!(
+        "keychain:{}",
+        d.iter().map(|b| format!("{b:02x}")).collect::<String>()
+    )
 }
 
 /// The identity a reference (or a certificate common name) names.
@@ -43,7 +48,8 @@ pub fn find(reference_or_name: &str) -> Result<DigitalId, SignError> {
         .into_iter()
         .find(|id| {
             reference(&id.certificate) == reference_or_name
-                || id.certificate.subject.common_name() == Some(reference_or_name.trim_start_matches("keychain:"))
+                || id.certificate.subject.common_name()
+                    == Some(reference_or_name.trim_start_matches("keychain:"))
         })
         .ok_or_else(|| SignError::Crypto(format!("no Keychain identity {reference_or_name}")))
 }
@@ -54,16 +60,24 @@ pub fn find(reference_or_name: &str) -> Result<DigitalId, SignError> {
 /// signing. Identities with keys PdfCraft can't use (other curves, Ed25519) are left out.
 pub fn identities(keychain: Option<&Path>) -> Result<Vec<DigitalId>, SignError> {
     let mut search = ItemSearchOptions::new();
-    search.class(ItemClass::identity()).load_refs(true).limit(Limit::All);
+    search
+        .class(ItemClass::identity())
+        .load_refs(true)
+        .limit(Limit::All);
     let kc;
     if let Some(p) = keychain {
-        kc = SecKeychain::open(p).map_err(|e| SignError::Crypto(format!("{}: {e}", p.display())))?;
+        kc =
+            SecKeychain::open(p).map_err(|e| SignError::Crypto(format!("{}: {e}", p.display())))?;
         search.keychains(std::slice::from_ref(&kc));
     }
     let mut out = collect(search.search(), false)?;
     if keychain.is_none() {
         let mut tokens = ItemSearchOptions::new();
-        tokens.class(ItemClass::identity()).load_refs(true).limit(Limit::All).access_group_token();
+        tokens
+            .class(ItemClass::identity())
+            .load_refs(true)
+            .limit(Limit::All)
+            .access_group_token();
         // A smart card that can't be searched (none inserted, reader unplugged) only means
         // there are no card identities; the Keychain's own identities still count.
         for id in collect(tokens.search(), true).unwrap_or_default() {
@@ -77,18 +91,31 @@ pub fn identities(keychain: Option<&Path>) -> Result<Vec<DigitalId>, SignError> 
 
 /// The usable identities in one search's results. `card` marks them as smart card identities
 /// in their friendly name.
-fn collect(found: Result<Vec<SearchResult>, security_framework::base::Error>, card: bool) -> Result<Vec<DigitalId>, SignError> {
+fn collect(
+    found: Result<Vec<SearchResult>, security_framework::base::Error>,
+    card: bool,
+) -> Result<Vec<DigitalId>, SignError> {
     let found = match found {
         Ok(f) => f,
         // "The specified item could not be found in the keychain."
         Err(e) if e.code() == -25300 => return Ok(Vec::new()),
-        Err(e) => return Err(SignError::Crypto(format!("the Keychain couldn't be searched: {e}"))),
+        Err(e) => {
+            return Err(SignError::Crypto(format!(
+                "the Keychain couldn't be searched: {e}"
+            )));
+        }
     };
     let mut out = Vec::new();
     for r in found {
-        let SearchResult::Ref(Reference::Identity(id)) = r else { continue };
-        let (Ok(cert), Ok(key)) = (id.certificate(), id.private_key()) else { continue };
-        let Ok(certificate) = Certificate::parse(&cert.to_der()) else { continue };
+        let SearchResult::Ref(Reference::Identity(id)) = r else {
+            continue;
+        };
+        let (Ok(cert), Ok(key)) = (id.certificate(), id.private_key()) else {
+            continue;
+        };
+        let Ok(certificate) = Certificate::parse(&cert.to_der()) else {
+            continue;
+        };
         // A CAC carries an encryption-only certificate beside its signing ones; a signature
         // made with it would fail validation, so only offer certificates allowed to sign
         // (key usage digitalSignature or nonRepudiation).
@@ -96,10 +123,22 @@ fn collect(found: Result<Vec<SearchResult>, security_framework::base::Error>, ca
             continue;
         }
         let rsa = matches!(certificate.public_key, PublicKey::Rsa { .. });
-        let key = PrivateKey::external(certificate.public_key.clone(), Arc::new(KeychainKey { key, rsa }));
+        let key = PrivateKey::external(
+            certificate.public_key.clone(),
+            Arc::new(KeychainKey { key, rsa }),
+        );
         let name = certificate.display_name();
-        let friendly_name = Some(if card { format!("{name} (smart card)") } else { name });
-        out.push(DigitalId { key, certificate, chain: Vec::new(), friendly_name });
+        let friendly_name = Some(if card {
+            format!("{name} (smart card)")
+        } else {
+            name
+        });
+        out.push(DigitalId {
+            key,
+            certificate,
+            chain: Vec::new(),
+            friendly_name,
+        });
     }
     Ok(out)
 }

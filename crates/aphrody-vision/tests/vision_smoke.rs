@@ -27,7 +27,7 @@ fn describer(mode: VisionMode) -> Option<Describer> {
         Err(error) => {
             eprintln!("SKIP: {error}");
             None
-        },
+        }
     }
 }
 
@@ -76,27 +76,57 @@ fn fill(image: &mut image::RgbImage, x: u32, y: u32, scale: u32) {
 /// A 5x7 bitmap for the characters this test draws.
 fn glyph(ch: char) -> Option<[u8; 7]> {
     Some(match ch {
-        'A' => [0b01110, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001],
-        'P' => [0b11110, 0b10001, 0b10001, 0b11110, 0b10000, 0b10000, 0b10000],
-        'H' => [0b10001, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001],
-        'R' => [0b11110, 0b10001, 0b10001, 0b11110, 0b10100, 0b10010, 0b10001],
-        'O' => [0b01110, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01110],
-        'D' => [0b11110, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b11110],
-        'Y' => [0b10001, 0b10001, 0b01010, 0b00100, 0b00100, 0b00100, 0b00100],
-        'V' => [0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01010, 0b00100],
-        'I' => [0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b11111],
-        'S' => [0b01111, 0b10000, 0b10000, 0b01110, 0b00001, 0b00001, 0b11110],
-        'N' => [0b10001, 0b11001, 0b10101, 0b10101, 0b10011, 0b10001, 0b10001],
-        '2' => [0b01110, 0b10001, 0b00001, 0b00110, 0b01000, 0b10000, 0b11111],
-        '0' => [0b01110, 0b10001, 0b10011, 0b10101, 0b11001, 0b10001, 0b01110],
-        '6' => [0b00110, 0b01000, 0b10000, 0b11110, 0b10001, 0b10001, 0b01110],
+        'A' => [
+            0b01110, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001,
+        ],
+        'P' => [
+            0b11110, 0b10001, 0b10001, 0b11110, 0b10000, 0b10000, 0b10000,
+        ],
+        'H' => [
+            0b10001, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001,
+        ],
+        'R' => [
+            0b11110, 0b10001, 0b10001, 0b11110, 0b10100, 0b10010, 0b10001,
+        ],
+        'O' => [
+            0b01110, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01110,
+        ],
+        'D' => [
+            0b11110, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b11110,
+        ],
+        'Y' => [
+            0b10001, 0b10001, 0b01010, 0b00100, 0b00100, 0b00100, 0b00100,
+        ],
+        'V' => [
+            0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01010, 0b00100,
+        ],
+        'I' => [
+            0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b11111,
+        ],
+        'S' => [
+            0b01111, 0b10000, 0b10000, 0b01110, 0b00001, 0b00001, 0b11110,
+        ],
+        'N' => [
+            0b10001, 0b11001, 0b10101, 0b10101, 0b10011, 0b10001, 0b10001,
+        ],
+        '2' => [
+            0b01110, 0b10001, 0b00001, 0b00110, 0b01000, 0b10000, 0b11111,
+        ],
+        '0' => [
+            0b01110, 0b10001, 0b10011, 0b10101, 0b11001, 0b10001, 0b01110,
+        ],
+        '6' => [
+            0b00110, 0b01000, 0b10000, 0b11110, 0b10001, 0b10001, 0b01110,
+        ],
         _ => return None,
     })
 }
 
 #[test]
 fn full_page_ocr_reads_a_generated_page_and_locates_it() {
-    let Some(describer) = describer(VisionMode::FullPageOcr) else { return };
+    let Some(describer) = describer(VisionMode::FullPageOcr) else {
+        return;
+    };
     let dir = tempfile::tempdir().unwrap();
     let page = dir.path().join("page.png");
     write_test_page(&page);
@@ -106,7 +136,10 @@ fn full_page_ocr_reads_a_generated_page_and_locates_it() {
     eprintln!("raw    : {}", report.raw.as_deref().unwrap_or("<none>"));
 
     let Description::Page { text } = &report.description else {
-        panic!("full-page OCR must report a page verdict, got {:?}", report.description);
+        panic!(
+            "full-page OCR must report a page verdict, got {:?}",
+            report.description
+        );
     };
     // Either verdict is legitimate on a synthetic page; what must NOT happen is
     // a description of the image being filed as its transcription.
@@ -115,7 +148,7 @@ fn full_page_ocr_reads_a_generated_page_and_locates_it() {
             assert!(!markdown.is_empty());
             assert!(markdown.contains("APHRODY"), "{markdown}");
             eprintln!("page   : {markdown}");
-        },
+        }
         PageText::None => eprintln!("page   : <no text>"),
     }
     assert!(report.elapsed_ms > 0);
@@ -123,25 +156,36 @@ fn full_page_ocr_reads_a_generated_page_and_locates_it() {
 
 #[test]
 fn dense_region_returns_boxes_from_a_real_model() {
-    let Some(describer) = describer(VisionMode::DenseRegion) else { return };
+    let Some(describer) = describer(VisionMode::DenseRegion) else {
+        return;
+    };
     let dir = tempfile::tempdir().unwrap();
     let page = dir.path().join("page.png");
     write_test_page(&page);
 
     let report = describer.describe(&page).expect("describe");
     let Description::Regions { regions } = &report.description else {
-        panic!("dense-region must report regions, got {:?}", report.description);
+        panic!(
+            "dense-region must report regions, got {:?}",
+            report.description
+        );
     };
     eprintln!("raw    : {}", report.raw.as_deref().unwrap_or("<none>"));
     for region in regions {
-        eprintln!("region : {:<24} {:?} {}", region.label, region.bbox, region.text);
+        eprintln!(
+            "region : {:<24} {:?} {}",
+            region.label, region.bbox, region.text
+        );
     }
 
     // Measured on granite-docling-258m b10549: the three drawn lines come back
     // as three `<text>` blocks. Asserting on the first one keeps the test
     // honest without pinning the model's exact block count, which a future
     // build may legitimately change.
-    assert!(!regions.is_empty(), "the model located nothing on a page of text");
+    assert!(
+        !regions.is_empty(),
+        "the model located nothing on a page of text"
+    );
     assert!(
         regions.iter().any(|region| region.text.contains("APHRODY")),
         "expected the drawn text back, got {regions:?}"

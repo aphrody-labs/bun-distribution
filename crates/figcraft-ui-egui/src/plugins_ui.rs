@@ -94,17 +94,35 @@ pub(crate) fn set_field(app: &mut FigApp, plugin: &str, control: &str, hex: &str
         Some(f) if f.id == plugin => {
             f.values.insert(control.to_string(), json!(hex));
         }
-        _ => run(app, "plugin.event", json!({"id": plugin, "control": control, "value": hex})),
+        _ => run(
+            app,
+            "plugin.event",
+            json!({"id": plugin, "control": control, "value": hex}),
+        ),
     }
 }
 
 /// Start plugin `id`'s `command` (empty: its first): ask for its parameters first when it has any.
 pub fn start(app: &mut FigApp, id: &str, command: &str) {
-    let found = app.session.prefs.plugins.iter().find(|p| p.manifest.id == id).and_then(|p| p.manifest.command(Some(command)));
+    let found = app
+        .session
+        .prefs
+        .plugins
+        .iter()
+        .find(|p| p.manifest.id == id)
+        .and_then(|p| p.manifest.command(Some(command)));
     match found {
         Some(c) if !c.params.is_empty() => {
-            let values = c.params.iter().map(|p| (p.name.clone(), p.default_value())).collect();
-            app.ui.plugin_form = Some(PluginForm { id: id.to_string(), command: c.id.clone(), values });
+            let values = c
+                .params
+                .iter()
+                .map(|p| (p.name.clone(), p.default_value()))
+                .collect();
+            app.ui.plugin_form = Some(PluginForm {
+                id: id.to_string(),
+                command: c.id.clone(),
+                values,
+            });
         }
         _ => run(app, "plugin.run", json!({"id": id, "command": command})),
     }
@@ -114,7 +132,9 @@ pub fn start(app: &mut FigApp, id: &str, command: &str) {
 /// a message.
 fn run(app: &mut FigApp, cmd: &str, params: Value) {
     let toast = app.ui.toast.clone();
-    let Some(out) = app.run(cmd, params) else { return };
+    let Some(out) = app.run(cmd, params) else {
+        return;
+    };
     if app.ui.toast == toast
         && let Some(text) = out["output"].as_str().filter(|t| !t.trim().is_empty())
     {
@@ -124,9 +144,17 @@ fn run(app: &mut FigApp, cmd: &str, params: Value) {
 
 /// Plugins ▸ Development ▸ Import plugin from manifest…: pick a `figcraft-plugin.json`.
 pub fn import_dialog(app: &mut FigApp) {
-    let Some(p) = app.services.pick_open(tr("Import plugin from manifest"), &["json"]) else { return };
+    let Some(p) = app
+        .services
+        .pick_open(tr("Import plugin from manifest"), &["json"])
+    else {
+        return;
+    };
     if let Some(v) = app.run("plugin.import", json!({"path": p.to_string_lossy()})) {
-        app.toast(trf("Imported {name}", &[("name", &v["name"].as_str().unwrap_or(tr("the plugin")))]));
+        app.toast(trf(
+            "Imported {name}",
+            &[("name", &v["name"].as_str().unwrap_or(tr("the plugin")))],
+        ));
     }
 }
 
@@ -144,27 +172,50 @@ pub fn menu(app: &mut FigApp, ui: &mut Ui, t: &Tokens) -> bool {
             [] => {}
             [only] => {
                 // An ellipsis: it asks for parameters first.
-                let label = if only.params.is_empty() { m.name.clone() } else { format!("{}…", m.name) };
+                let label = if only.params.is_empty() {
+                    m.name.clone()
+                } else {
+                    format!("{}…", m.name)
+                };
                 if crate::menus::item(ui, &label, "", true, false, t) {
                     chosen = Some((m.id.clone(), only.id.clone()));
                 }
             }
             commands => {
-                let picked = crate::menus::submenu(ui, "Plugins", &format!("Plugins/plugin:{}", m.id), &m.name, t, |ui| {
-                    commands.iter().find(|c| crate::menus::item(ui, &c.label, "", true, false, t)).map(|c| c.id.clone())
-                });
+                let picked = crate::menus::submenu(
+                    ui,
+                    "Plugins",
+                    &format!("Plugins/plugin:{}", m.id),
+                    &m.name,
+                    t,
+                    |ui| {
+                        commands
+                            .iter()
+                            .find(|c| crate::menus::item(ui, &c.label, "", true, false, t))
+                            .map(|c| c.id.clone())
+                    },
+                );
                 if let Some(c) = picked {
                     chosen = Some((m.id.clone(), c));
                 }
             }
         }
     }
-    let widgets: Vec<(&str, &str)> =
-        app.session.prefs.plugins.iter().filter(|p| p.manifest.widget).map(|p| (p.manifest.id.as_str(), p.manifest.name.as_str())).collect();
+    let widgets: Vec<(&str, &str)> = app
+        .session
+        .prefs
+        .plugins
+        .iter()
+        .filter(|p| p.manifest.widget)
+        .map(|p| (p.manifest.id.as_str(), p.manifest.name.as_str()))
+        .collect();
     let widget = (!widgets.is_empty())
         .then(|| {
             crate::menus::submenu(ui, "Plugins", "Plugins/widgets", tr("Widgets"), t, |ui| {
-                widgets.iter().find(|(_, name)| crate::menus::item(ui, name, "", true, false, t)).map(|(id, _)| id.to_string())
+                widgets
+                    .iter()
+                    .find(|(_, name)| crate::menus::item(ui, name, "", true, false, t))
+                    .map(|(id, _)| id.to_string())
             })
         })
         .flatten();
@@ -173,7 +224,9 @@ pub fn menu(app: &mut FigApp, ui: &mut Ui, t: &Tokens) -> bool {
         app.run("widget.insert", json!({"plugin": plugin}));
         return true;
     }
-    let Some((id, command)) = chosen else { return false };
+    let Some((id, command)) = chosen else {
+        return false;
+    };
     start(app, &id, &command);
     true
 }
@@ -204,11 +257,19 @@ fn panel_windows(app: &mut FigApp, ctx: &Context) {
         let mut keep = true;
         let mut used = None;
         // Side by side leftwards from the properties panel, three to a row.
-        let at = egui::pos2(right - PANEL_STEP * (i % 3) as f32, 52.0 + 28.0 * (i / 3) as f32);
-        floating(open.title(), ctx).id(Id::new(("plugin_panel", id))).pivot(Align2::RIGHT_TOP).default_pos(at).open(&mut keep).show(ctx, |ui| {
-            ui.set_width(320.0);
-            used = controls(ui, id, &open.panel.controls, &open.values, &t);
-        });
+        let at = egui::pos2(
+            right - PANEL_STEP * (i % 3) as f32,
+            52.0 + 28.0 * (i / 3) as f32,
+        );
+        floating(open.title(), ctx)
+            .id(Id::new(("plugin_panel", id)))
+            .pivot(Align2::RIGHT_TOP)
+            .default_pos(at)
+            .open(&mut keep)
+            .show(ctx, |ui| {
+                ui.set_width(320.0);
+                used = controls(ui, id, &open.panel.controls, &open.values, &t);
+            });
         if !keep {
             actions.push((id.to_string(), None));
         } else if used.is_some() {
@@ -220,8 +281,18 @@ fn panel_windows(app: &mut FigApp, ctx: &Context) {
             None => {
                 app.run("plugin.close", json!({"id": id}));
             }
-            Some(Used::Set(control, value)) => run(app, "plugin.event", json!({"id": id, "control": control, "value": value})),
-            Some(Used::Pick(control)) => app.ui.picker = Some(PickerTarget::PluginField { plugin: id, control, pending: None }),
+            Some(Used::Set(control, value)) => run(
+                app,
+                "plugin.event",
+                json!({"id": id, "control": control, "value": value}),
+            ),
+            Some(Used::Pick(control)) => {
+                app.ui.picker = Some(PickerTarget::PluginField {
+                    plugin: id,
+                    control,
+                    pending: None,
+                })
+            }
         }
     }
 }
@@ -249,15 +320,18 @@ fn manage_window(app: &mut FigApp, ctx: &Context) {
     let mut open = true;
     let mut asked = None;
     let mut tab = app.ui.plugins_manage.tab;
-    window(tr("Plugins"), ctx).id(Id::new("Plugins")).open(&mut open).show(ctx, |ui| {
-        ui.set_width(MANAGE_W);
-        tab_strip(ui, &t, &PluginsTab::ALL, PluginsTab::label, &mut tab);
-        ui.add_space(12.0);
-        asked = match tab {
-            PluginsTab::Installed => installed_tab(app, ui, &t),
-            PluginsTab::Browse => browse_tab(app, ui, &t),
-        };
-    });
+    window(tr("Plugins"), ctx)
+        .id(Id::new("Plugins"))
+        .open(&mut open)
+        .show(ctx, |ui| {
+            ui.set_width(MANAGE_W);
+            tab_strip(ui, &t, &PluginsTab::ALL, PluginsTab::label, &mut tab);
+            ui.add_space(12.0);
+            asked = match tab {
+                PluginsTab::Installed => installed_tab(app, ui, &t),
+                PluginsTab::Browse => browse_tab(app, ui, &t),
+            };
+        });
     app.ui.plugins_manage.tab = tab;
     app.ui.plugins_window = open;
     match asked {
@@ -289,7 +363,11 @@ fn installed_tab(app: &FigApp, ui: &mut Ui, t: &Tokens) -> Option<Manage> {
     let mut asked = None;
     let plugins = &app.session.prefs.plugins;
     if plugins.is_empty() {
-        widgets::label(ui, tr("No plugins yet. Import a development plugin from its figcraft-plugin.json."), t.text_secondary);
+        widgets::label(
+            ui,
+            tr("No plugins yet. Import a development plugin from its figcraft-plugin.json."),
+            t.text_secondary,
+        );
     }
     for (i, p) in plugins.iter().enumerate() {
         if i > 0 {
@@ -298,7 +376,11 @@ fn installed_tab(app: &FigApp, ui: &mut Ui, t: &Tokens) -> Option<Manage> {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(ROW_TEXT_W);
-                ui.label(RichText::new(&p.manifest.name).font(semibold(12.0)).color(t.text));
+                ui.label(
+                    RichText::new(&p.manifest.name)
+                        .font(semibold(12.0))
+                        .color(t.text),
+                );
                 widgets::label(ui, &summary(p), t.text_secondary);
             });
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
@@ -319,14 +401,24 @@ fn installed_tab(app: &FigApp, ui: &mut Ui, t: &Tokens) -> Option<Manage> {
 /// Remove. Nothing is fetched until Browse is pressed.
 fn browse_tab(app: &mut FigApp, ui: &mut Ui, t: &Tokens) -> Option<Manage> {
     let mut asked = None;
-    let mut server = app.ui.plugins_manage.server.clone().or_else(|| app.session.prefs.plugin_directory.clone()).unwrap_or_default();
+    let mut server = app
+        .ui
+        .plugins_manage
+        .server
+        .clone()
+        .or_else(|| app.session.prefs.plugin_directory.clone())
+        .unwrap_or_default();
     let loading = app.session.waiting_for(LIST);
     ui.horizontal(|ui| {
         // The field commits on Enter (which also browses) or when Browse takes the focus.
         let mut enter = false;
-        if let Some(s) =
-            widgets::text_field(ui, Id::new("plugin_directory_server"), &server, MANAGE_W - 90.0, tr("Server address (ws://host:47900/)"))
-        {
+        if let Some(s) = widgets::text_field(
+            ui,
+            Id::new("plugin_directory_server"),
+            &server,
+            MANAGE_W - 90.0,
+            tr("Server address (ws://host:47900/)"),
+        ) {
             enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
             server = s.clone();
             app.ui.plugins_manage.server = Some(s);
@@ -335,7 +427,9 @@ fn browse_tab(app: &mut FigApp, ui: &mut Ui, t: &Tokens) -> Option<Manage> {
             if widgets::button(ui, tr("Cancel"), false, true).clicked() {
                 asked = Some(Manage::StopBrowsing);
             }
-        } else if (widgets::button(ui, tr("Browse"), true, true).clicked() || enter) && !server.trim().is_empty() {
+        } else if (widgets::button(ui, tr("Browse"), true, true).clicked() || enter)
+            && !server.trim().is_empty()
+        {
             asked = Some(Manage::Browse(server.trim().to_string()));
         }
     });
@@ -346,11 +440,23 @@ fn browse_tab(app: &mut FigApp, ui: &mut Ui, t: &Tokens) -> Option<Manage> {
     }
     let Some(listing) = app.session.plugins.directory.as_ref() else {
         ui.add_space(8.0);
-        widgets::label(ui, tr("Enter the address of a figcraft-server and press Browse to see the plugins it offers."), t.text_secondary);
+        widgets::label(
+            ui,
+            tr(
+                "Enter the address of a figcraft-server and press Browse to see the plugins it offers.",
+            ),
+            t.text_secondary,
+        );
         return asked;
     };
     ui.add_space(8.0);
-    if let Some(q) = widgets::text_field(ui, Id::new("plugin_directory_query"), &app.ui.plugins_manage.query, MANAGE_W, tr("Search plugins")) {
+    if let Some(q) = widgets::text_field(
+        ui,
+        Id::new("plugin_directory_query"),
+        &app.ui.plugins_manage.query,
+        MANAGE_W,
+        tr("Search plugins"),
+    ) {
         app.ui.plugins_manage.query = q;
     }
     ui.add_space(8.0);
@@ -358,40 +464,61 @@ fn browse_tab(app: &mut FigApp, ui: &mut Ui, t: &Tokens) -> Option<Manage> {
     let shown: Vec<&PluginEntry> = listing
         .entries
         .iter()
-        .filter(|e| q.is_empty() || [&e.name, &e.description, &e.author, &e.id].iter().any(|f| f.to_lowercase().contains(&q)))
+        .filter(|e| {
+            q.is_empty()
+                || [&e.name, &e.description, &e.author, &e.id]
+                    .iter()
+                    .any(|f| f.to_lowercase().contains(&q))
+        })
         .collect();
     if shown.is_empty() {
-        widgets::label(ui, &trf("No plugins on {server}.", &[("server", &listing.server)]), t.text_secondary);
+        widgets::label(
+            ui,
+            &trf("No plugins on {server}.", &[("server", &listing.server)]),
+            t.text_secondary,
+        );
     }
     // One install at a time: the rows wait for it.
     let installing = app.session.waiting_for(INSTALL);
-    egui::ScrollArea::vertical().max_height(360.0).show(ui, |ui| {
-        for (i, e) in shown.iter().enumerate() {
-            if i > 0 {
-                ui.add_space(10.0);
+    egui::ScrollArea::vertical()
+        .max_height(360.0)
+        .show(ui, |ui| {
+            for (i, e) in shown.iter().enumerate() {
+                if i > 0 {
+                    ui.add_space(10.0);
+                }
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        ui.set_width(ROW_TEXT_W);
+                        ui.label(RichText::new(&e.name).font(semibold(12.0)).color(t.text));
+                        widgets::label(ui, &entry_summary(e), t.text_secondary);
+                        if !e.description.is_empty() {
+                            ui.add(
+                                egui::Label::new(
+                                    RichText::new(&e.description)
+                                        .font(regular(11.0))
+                                        .color(t.text),
+                                )
+                                .wrap(),
+                            );
+                        }
+                    });
+                    let (label, primary, ask): (&str, bool, fn(String) -> Manage) =
+                        match installed_version(&app.session, &e.id) {
+                            None => (tr("Install"), true, Manage::Confirm),
+                            Some(have) if newer_version(&e.version, have) => {
+                                (tr("Update"), true, Manage::Confirm)
+                            }
+                            Some(_) => (tr("Remove"), false, Manage::Remove),
+                        };
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                        if widgets::button(ui, label, primary, !installing).clicked() {
+                            asked = Some(ask(e.id.clone()));
+                        }
+                    });
+                });
             }
-            ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    ui.set_width(ROW_TEXT_W);
-                    ui.label(RichText::new(&e.name).font(semibold(12.0)).color(t.text));
-                    widgets::label(ui, &entry_summary(e), t.text_secondary);
-                    if !e.description.is_empty() {
-                        ui.add(egui::Label::new(RichText::new(&e.description).font(regular(11.0)).color(t.text)).wrap());
-                    }
-                });
-                let (label, primary, ask): (&str, bool, fn(String) -> Manage) = match installed_version(&app.session, &e.id) {
-                    None => (tr("Install"), true, Manage::Confirm),
-                    Some(have) if newer_version(&e.version, have) => (tr("Update"), true, Manage::Confirm),
-                    Some(_) => (tr("Remove"), false, Manage::Remove),
-                };
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                    if widgets::button(ui, label, primary, !installing).clicked() {
-                        asked = Some(ask(e.id.clone()));
-                    }
-                });
-            });
-        }
-    });
+        });
     asked
 }
 
@@ -407,7 +534,11 @@ fn entry_summary(e: &PluginEntry) -> String {
 }
 
 fn access_text(access: &str) -> &'static str {
-    if access == "write" { tr("can edit the document") } else { tr("reads the document") }
+    if access == "write" {
+        tr("can edit the document")
+    } else {
+        tr("reads the document")
+    }
 }
 
 fn size(bytes: u64) -> String {
@@ -422,14 +553,23 @@ fn size(bytes: u64) -> String {
 /// from and its SHA-256, and installs only when Install is pressed.
 fn confirm_window(app: &mut FigApp, ctx: &Context, t: &Tokens) {
     let id = app.ui.plugins_manage.confirm.clone().unwrap_or_default();
-    let found = app.session.plugins.directory.as_ref().and_then(|l| Some((l.server.clone(), l.entries.iter().find(|e| e.id == id)?.clone())));
+    let found = app.session.plugins.directory.as_ref().and_then(|l| {
+        Some((
+            l.server.clone(),
+            l.entries.iter().find(|e| e.id == id)?.clone(),
+        ))
+    });
     let Some((server, e)) = found else {
         app.ui.plugins_manage.confirm = None;
         return;
     };
     let update = installed_version(&app.session, &e.id).is_some();
     let installing = app.session.waiting_for(INSTALL);
-    let title = if update { tr("Update plugin") } else { tr("Install plugin") };
+    let title = if update {
+        tr("Update plugin")
+    } else {
+        tr("Install plugin")
+    };
     let (mut open, mut install, mut cancel) = (true, false, false);
     window(title, ctx).id(Id::new("plugin_install_confirm")).open(&mut open).show(ctx, |ui| {
         ui.set_width(340.0);
@@ -482,7 +622,11 @@ fn confirm_window(app: &mut FigApp, ctx: &Context, t: &Tokens) {
                 app.ui.plugins_manage.confirm = None;
                 let name = v["name"].as_str().unwrap_or(tr("the plugin")).to_string();
                 let args: &[(&str, &dyn std::fmt::Display)] = &[("name", &name)];
-                app.toast(if update { trf("Updated {name}", args) } else { trf("Installed {name}", args) });
+                app.toast(if update {
+                    trf("Updated {name}", args)
+                } else {
+                    trf("Installed {name}", args)
+                });
             }),
         );
     }
@@ -509,14 +653,21 @@ fn summary(p: &InstalledPlugin) -> String {
 }
 
 fn form_window(app: &mut FigApp, ctx: &Context) {
-    let Some(mut form) = app.ui.plugin_form.clone() else { return };
+    let Some(mut form) = app.ui.plugin_form.clone() else {
+        return;
+    };
     let Some((name, command)) = app
         .session
         .prefs
         .plugins
         .iter()
         .find(|p| p.manifest.id == form.id)
-        .and_then(|p| Some((p.manifest.name.clone(), p.manifest.command(Some(&form.command))?.clone())))
+        .and_then(|p| {
+            Some((
+                p.manifest.name.clone(),
+                p.manifest.command(Some(&form.command))?.clone(),
+            ))
+        })
     else {
         app.ui.plugin_form = None;
         return;
@@ -527,73 +678,134 @@ fn form_window(app: &mut FigApp, ctx: &Context) {
     let mut cancel = false;
     let mut pick = None;
     let label = command.label.trim_end_matches(['…', '.']).trim();
-    let title = if label.contains(name.as_str()) { label.to_string() } else { format!("{name}: {label}") };
-    window(&title, ctx).id(Id::new("plugin_form")).open(&mut open).show(ctx, |ui| {
-        ui.set_width(320.0);
-        match controls(ui, &format!("{}/{}", form.id, form.command), &command.params, &form.values, &t) {
-            Some(Used::Set(name, v)) => {
-                form.values.insert(name, v);
+    let title = if label.contains(name.as_str()) {
+        label.to_string()
+    } else {
+        format!("{name}: {label}")
+    };
+    window(&title, ctx)
+        .id(Id::new("plugin_form"))
+        .open(&mut open)
+        .show(ctx, |ui| {
+            ui.set_width(320.0);
+            match controls(
+                ui,
+                &format!("{}/{}", form.id, form.command),
+                &command.params,
+                &form.values,
+                &t,
+            ) {
+                Some(Used::Set(name, v)) => {
+                    form.values.insert(name, v);
+                }
+                Some(Used::Pick(control)) => pick = Some(control),
+                None => {}
             }
-            Some(Used::Pick(control)) => pick = Some(control),
-            None => {}
-        }
-        ui.add_space(12.0);
-        ui.horizontal(|ui| {
-            submit = widgets::button(ui, tr("Run"), true, true).clicked();
-            cancel = widgets::button(ui, tr("Cancel"), false, true).clicked();
+            ui.add_space(12.0);
+            ui.horizontal(|ui| {
+                submit = widgets::button(ui, tr("Run"), true, true).clicked();
+                cancel = widgets::button(ui, tr("Cancel"), false, true).clicked();
+            });
         });
-    });
     app.ui.plugin_form = (open && !submit && !cancel).then_some(form.clone());
     if let Some(control) = pick {
-        app.ui.picker = Some(PickerTarget::PluginField { plugin: form.id.clone(), control, pending: None });
+        app.ui.picker = Some(PickerTarget::PluginField {
+            plugin: form.id.clone(),
+            control,
+            pending: None,
+        });
     }
     if submit {
-        run(app, "plugin.run", json!({"id": form.id, "command": form.command, "params": form.values}));
+        run(
+            app,
+            "plugin.run",
+            json!({"id": form.id, "command": form.command, "params": form.values}),
+        );
     }
 }
 
 /// Parameters or panel controls in two columns (label, field); buttons in a row share one line,
 /// the first button filled. Returns what the user did to which control.
-fn controls(ui: &mut Ui, salt: &str, params: &[Param], values: &Map<String, Value>, t: &Tokens) -> Option<Used> {
+fn controls(
+    ui: &mut Ui,
+    salt: &str,
+    params: &[Param],
+    values: &Map<String, Value>,
+    t: &Tokens,
+) -> Option<Used> {
     let mut changed = None;
     let mut first_button = true;
-    egui::Grid::new(("plugin_controls", salt)).num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-        for row in params.chunk_by(|a, b| a.kind == ParamKind::Button && b.kind == ParamKind::Button) {
-            let Some(p) = row.first() else { continue };
-            // Checkboxes and buttons carry their own label; a list's sits by its first item.
-            let caption = if matches!(p.kind, ParamKind::Boolean | ParamKind::Button | ParamKind::Note) { "" } else { p.title() };
-            let caption = RichText::new(caption).font(regular(11.0)).color(t.text_secondary);
-            if p.kind == ParamKind::List {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| ui.label(caption));
-            } else {
-                ui.label(caption);
-            }
-            let hit = match p.kind {
-                ParamKind::Note => {
-                    ui.vertical(|ui| {
-                        ui.set_max_width(FIELD_W);
-                        ui.add(egui::Label::new(RichText::new(&p.label).font(regular(11.0)).color(t.text)).wrap());
+    egui::Grid::new(("plugin_controls", salt))
+        .num_columns(2)
+        .spacing([12.0, 8.0])
+        .show(ui, |ui| {
+            for row in
+                params.chunk_by(|a, b| a.kind == ParamKind::Button && b.kind == ParamKind::Button)
+            {
+                let Some(p) = row.first() else { continue };
+                // Checkboxes and buttons carry their own label; a list's sits by its first item.
+                let caption = if matches!(
+                    p.kind,
+                    ParamKind::Boolean | ParamKind::Button | ParamKind::Note
+                ) {
+                    ""
+                } else {
+                    p.title()
+                };
+                let caption = RichText::new(caption)
+                    .font(regular(11.0))
+                    .color(t.text_secondary);
+                if p.kind == ParamKind::List {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
+                        ui.label(caption)
                     });
-                    None
+                } else {
+                    ui.label(caption);
                 }
-                ParamKind::Button => {
-                    ui.horizontal(|ui| {
-                        let pressed = row.iter().filter(|b| widgets::button(ui, b.title(), std::mem::take(&mut first_button), true).clicked());
-                        pressed.last().map(|b| Used::Set(b.name.clone(), Value::Null))
-                    })
-                    .inner
+                let hit = match p.kind {
+                    ParamKind::Note => {
+                        ui.vertical(|ui| {
+                            ui.set_max_width(FIELD_W);
+                            ui.add(
+                                egui::Label::new(
+                                    RichText::new(&p.label).font(regular(11.0)).color(t.text),
+                                )
+                                .wrap(),
+                            );
+                        });
+                        None
+                    }
+                    ParamKind::Button => {
+                        ui.horizontal(|ui| {
+                            let pressed = row.iter().filter(|b| {
+                                widgets::button(
+                                    ui,
+                                    b.title(),
+                                    std::mem::take(&mut first_button),
+                                    true,
+                                )
+                                .clicked()
+                            });
+                            pressed
+                                .last()
+                                .map(|b| Used::Set(b.name.clone(), Value::Null))
+                        })
+                        .inner
+                    }
+                    _ => {
+                        let current = values
+                            .get(&p.name)
+                            .cloned()
+                            .unwrap_or_else(|| p.default_value());
+                        field(ui, Id::new(("plugin_control", salt, &p.name)), p, &current)
+                    }
+                };
+                if hit.is_some() {
+                    changed = hit;
                 }
-                _ => {
-                    let current = values.get(&p.name).cloned().unwrap_or_else(|| p.default_value());
-                    field(ui, Id::new(("plugin_control", salt, &p.name)), p, &current)
-                }
-            };
-            if hit.is_some() {
-                changed = hit;
+                ui.end_row();
             }
-            ui.end_row();
-        }
-    });
+        });
     changed
 }
 
@@ -601,8 +813,19 @@ fn controls(ui: &mut Ui, salt: &str, params: &[Param], values: &Map<String, Valu
 fn field(ui: &mut Ui, id: Id, p: &Param, current: &Value) -> Option<Used> {
     let name = p.title();
     let v = match p.kind {
-        ParamKind::Text => widgets::text_field_named(ui, id, current.as_str().unwrap_or_default(), FIELD_W, name).map(Value::String),
-        ParamKind::Number => match widgets::number_field(ui, id, Lead::Named(name), current.as_f64(), "", FIELD_W, 1.0)? {
+        ParamKind::Text => {
+            widgets::text_field_named(ui, id, current.as_str().unwrap_or_default(), FIELD_W, name)
+                .map(Value::String)
+        }
+        ParamKind::Number => match widgets::number_field(
+            ui,
+            id,
+            Lead::Named(name),
+            current.as_f64(),
+            "",
+            FIELD_W,
+            1.0,
+        )? {
             FieldEdit::Set(v) | FieldEdit::Scrub(v, true) => p.coerce(&json!(v)).ok(),
             FieldEdit::Scrub(_, false) => None,
         },
@@ -630,7 +853,10 @@ fn field(ui: &mut Ui, id: Id, p: &Param, current: &Value) -> Option<Used> {
             ui.vertical(|ui| {
                 p.options
                     .iter()
-                    .filter(|o| widgets::radio(ui, value == Some(o.as_str()), o) && value != Some(o.as_str()))
+                    .filter(|o| {
+                        widgets::radio(ui, value == Some(o.as_str()), o)
+                            && value != Some(o.as_str())
+                    })
                     .last()
                     .map(|o| Value::String(o.clone()))
             })
@@ -641,9 +867,22 @@ fn field(ui: &mut Ui, id: Id, p: &Param, current: &Value) -> Option<Used> {
             let hex = current.as_str().unwrap_or_default();
             let (picked, typed) = ui
                 .horizontal(|ui| {
-                    let color = figcraft_color::Color::from_hex(hex).unwrap_or(figcraft_color::Color::BLACK);
-                    let picked = widgets::swatch(ui, &figcraft_color::Paint::solid(color), widgets::FIELD_H).clicked();
-                    (picked, widgets::text_field_named(ui, id, hex, FIELD_W - widgets::FIELD_H - 8.0, name).and_then(|s| p.coerce(&json!(s)).ok()))
+                    let color = figcraft_color::Color::from_hex(hex)
+                        .unwrap_or(figcraft_color::Color::BLACK);
+                    let picked =
+                        widgets::swatch(ui, &figcraft_color::Paint::solid(color), widgets::FIELD_H)
+                            .clicked();
+                    (
+                        picked,
+                        widgets::text_field_named(
+                            ui,
+                            id,
+                            hex,
+                            FIELD_W - widgets::FIELD_H - 8.0,
+                            name,
+                        )
+                        .and_then(|s| p.coerce(&json!(s)).ok()),
+                    )
                 })
                 .inner;
             if picked {

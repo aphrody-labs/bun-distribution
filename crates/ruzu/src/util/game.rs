@@ -272,15 +272,14 @@ fn get_ruzu_command() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("ruzu"))
 }
 
-#[cfg_attr(
-    target_os = "android",
-    allow(unused_variables)
-)]
+#[cfg_attr(target_os = "android", allow(unused_variables))]
 pub fn get_shortcut_path(target: ShortcutTarget) -> Option<PathBuf> {
     #[cfg(target_os = "macos")]
     {
         return match target {
-            ShortcutTarget::Desktop => gtk::glib::user_special_dir(gtk::glib::UserDirectory::Desktop),
+            ShortcutTarget::Desktop => {
+                gtk::glib::user_special_dir(gtk::glib::UserDirectory::Desktop)
+            }
             ShortcutTarget::Applications => {
                 let path = gtk::glib::home_dir().join("Applications");
                 if let Err(error) = std::fs::create_dir_all(&path) {
@@ -532,7 +531,10 @@ fn create_shortcut_link(
         std::fs::set_permissions(&path, permissions)
     });
     if let Err(error) = executable {
-        log::error!("Failed to make shortcut executable {}: {error}", path.display());
+        log::error!(
+            "Failed to make shortcut executable {}: {error}",
+            path.display()
+        );
         return false;
     }
     true
@@ -620,13 +622,18 @@ fn create_macos_shortcut(
     }
     let destination = directory.join(format!("{name}.app"));
     if destination.symlink_metadata().is_ok() {
-        return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists, "Shortcut already exists"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "Shortcut already exists",
+        ));
     }
     // Resolve before writing: a missing target must not leave a broken shortcut.
     let command = command.canonicalize()?;
     let argv = gtk::glib::shell_parse_argv(arguments)
         .map_err(|error| std::io::Error::other(error.to_string()))?;
-    let staging = tempfile::Builder::new().prefix(".ruzu-shortcut-").tempdir_in(directory)?;
+    let staging = tempfile::Builder::new()
+        .prefix(".ruzu-shortcut-")
+        .tempdir_in(directory)?;
     let bundle = staging.path().join("Launcher.app");
     let contents = bundle.join("Contents");
     std::fs::create_dir_all(contents.join("MacOS"))?;
@@ -634,7 +641,10 @@ fn create_macos_shortcut(
 
     // Never evaluate the original argument string. Parse it and quote each argv
     // element separately so $, backticks, quotes and newlines stay literal.
-    let mut script = format!("#!/bin/sh\nexec {}", gtk::glib::shell_quote(&command).to_string_lossy());
+    let mut script = format!(
+        "#!/bin/sh\nexec {}",
+        gtk::glib::shell_quote(&command).to_string_lossy()
+    );
     for argument in argv {
         script.push(' ');
         script.push_str(&gtk::glib::shell_quote(argument).to_string_lossy());
@@ -648,17 +658,29 @@ fn create_macos_shortcut(
         let iconset = staging.path().join("game.iconset");
         std::fs::create_dir(&iconset)?;
         for (size, filename) in [(256, "icon_256x256.png"), (512, "icon_256x256@2x.png")] {
-            let output = Command::new("/usr/bin/sips").arg("-z")
-                .args([size.to_string(), size.to_string()]).arg(icon)
-                .arg("--out").arg(iconset.join(filename)).output()?;
+            let output = Command::new("/usr/bin/sips")
+                .arg("-z")
+                .args([size.to_string(), size.to_string()])
+                .arg(icon)
+                .arg("--out")
+                .arg(iconset.join(filename))
+                .output()?;
             if !output.status.success() {
-                return Err(std::io::Error::other(String::from_utf8_lossy(&output.stderr).into_owned()));
+                return Err(std::io::Error::other(
+                    String::from_utf8_lossy(&output.stderr).into_owned(),
+                ));
             }
         }
-        let output = Command::new("/usr/bin/iconutil").args(["-c", "icns"])
-            .arg(&iconset).arg("-o").arg(contents.join("Resources/game.icns")).output()?;
+        let output = Command::new("/usr/bin/iconutil")
+            .args(["-c", "icns"])
+            .arg(&iconset)
+            .arg("-o")
+            .arg(contents.join("Resources/game.icns"))
+            .output()?;
         if !output.status.success() {
-            return Err(std::io::Error::other(String::from_utf8_lossy(&output.stderr).into_owned()));
+            return Err(std::io::Error::other(
+                String::from_utf8_lossy(&output.stderr).into_owned(),
+            ));
         }
         "<key>CFBundleIconFile</key><string>game.icns</string>"
     } else {
@@ -741,21 +763,39 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let command = directory.path().join("fake ruzu '$`.sh");
         let log = directory.path().join("argv");
-        std::fs::write(&command, format!(
-            "#!/bin/sh\nprintf '%s\\0' \"$@\" > {}\n",
-            gtk::glib::shell_quote(&log).to_string_lossy()
-        )).unwrap();
+        std::fs::write(
+            &command,
+            format!(
+                "#!/bin/sh\nprintf '%s\\0' \"$@\" > {}\n",
+                gtk::glib::shell_quote(&log).to_string_lossy()
+            ),
+        )
+        .unwrap();
         std::fs::set_permissions(&command, std::fs::Permissions::from_mode(0o755)).unwrap();
         let game = "/games/L'été & $(touch injected) `test` \"quoted\"\nnew line.nsp";
         let arguments = format!("-f -g {}", gtk::glib::shell_quote(game).to_string_lossy());
-        create_macos_shortcut(directory.path(), Path::new(""), &command, &arguments, "Game & Friends").unwrap();
+        create_macos_shortcut(
+            directory.path(),
+            Path::new(""),
+            &command,
+            &arguments,
+            "Game & Friends",
+        )
+        .unwrap();
         let app = directory.path().join("Game & Friends.app");
         let expected = format!("-f\0-g\0{game}\0").into_bytes();
-        assert!(Command::new(app.join("Contents/MacOS/launch")).status().unwrap().success());
+        assert!(Command::new(app.join("Contents/MacOS/launch"))
+            .status()
+            .unwrap()
+            .success());
         assert_eq!(std::fs::read(&log).unwrap(), expected);
         std::fs::remove_file(&log).unwrap();
         // Exercise LaunchServices too, without starting Ruzu or opening a game.
-        let mut child = Command::new("/usr/bin/open").args(["-n", "-W"]).arg(&app).spawn().unwrap();
+        let mut child = Command::new("/usr/bin/open")
+            .args(["-n", "-W"])
+            .arg(&app)
+            .spawn()
+            .unwrap();
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
         loop {
             if let Some(status) = child.try_wait().unwrap() {
@@ -770,10 +810,24 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_millis(50));
         }
         assert_eq!(std::fs::read(&log).unwrap(), expected);
-        assert!(Command::new("/usr/bin/plutil").arg("-lint").arg(app.join("Contents/Info.plist"))
-            .status().unwrap().success());
-        assert_eq!(create_macos_shortcut(directory.path(), Path::new(""), &command, "-qlaunch", "Game & Friends")
-            .unwrap_err().kind(), std::io::ErrorKind::AlreadyExists);
+        assert!(Command::new("/usr/bin/plutil")
+            .arg("-lint")
+            .arg(app.join("Contents/Info.plist"))
+            .status()
+            .unwrap()
+            .success());
+        assert_eq!(
+            create_macos_shortcut(
+                directory.path(),
+                Path::new(""),
+                &command,
+                "-qlaunch",
+                "Game & Friends"
+            )
+            .unwrap_err()
+            .kind(),
+            std::io::ErrorKind::AlreadyExists
+        );
         assert!(app.join("Contents/MacOS/launch").is_file());
     }
 
@@ -784,11 +838,29 @@ mod tests {
         let command = Path::new("/usr/bin/true");
         let icon = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/ruzu-rusty-lemon.png");
         create_macos_shortcut(directory.path(), &icon, command, "-qlaunch", "Icon test").unwrap();
-        let bytes = std::fs::read(directory.path().join("Icon test.app/Contents/Resources/game.icns")).unwrap();
+        let bytes = std::fs::read(
+            directory
+                .path()
+                .join("Icon test.app/Contents/Resources/game.icns"),
+        )
+        .unwrap();
         assert_eq!(&bytes[..4], b"icns");
-        assert!(create_macos_shortcut(directory.path(), &icon, command, "'unterminated", "Broken").is_err());
-        assert!(create_macos_shortcut(directory.path(), &icon, command, "-qlaunch", "../escape").is_err());
-        assert!(create_macos_shortcut(directory.path(), &icon, Path::new("/nonexistent/ruzu"), "-qlaunch", "Missing").is_err());
+        assert!(
+            create_macos_shortcut(directory.path(), &icon, command, "'unterminated", "Broken")
+                .is_err()
+        );
+        assert!(
+            create_macos_shortcut(directory.path(), &icon, command, "-qlaunch", "../escape")
+                .is_err()
+        );
+        assert!(create_macos_shortcut(
+            directory.path(),
+            &icon,
+            Path::new("/nonexistent/ruzu"),
+            "-qlaunch",
+            "Missing"
+        )
+        .is_err());
         assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 1);
     }
 
@@ -1040,13 +1112,18 @@ mod tests {
             )
         };
         assert!(create());
-        assert_ne!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o100, 0);
+        assert_ne!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o100,
+            0
+        );
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
         assert!(create());
         assert_eq!(
             std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
             0o700
         );
-        assert!(std::fs::read_to_string(&path).unwrap().contains("Name=Homebrew\n"));
+        assert!(std::fs::read_to_string(&path)
+            .unwrap()
+            .contains("Name=Homebrew\n"));
     }
 }

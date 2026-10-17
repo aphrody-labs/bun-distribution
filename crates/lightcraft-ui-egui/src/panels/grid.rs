@@ -78,12 +78,22 @@ pub struct GridCache {
 }
 
 impl GridCache {
-    fn runs(&mut self, stats: &mut GridStats, cat: &Catalog, ids: &[PhotoId], key: RunsKey) -> Arc<Vec<DateRun>> {
+    fn runs(
+        &mut self,
+        stats: &mut GridStats,
+        cat: &Catalog,
+        ids: &[PhotoId],
+        key: RunsKey,
+    ) -> Arc<Vec<DateRun>> {
         match &self.runs {
             Some((k, r)) if *k == key => r.clone(),
             _ => {
                 stats.view_builds += 1;
-                let r = Arc::new(key.1.map(|sort| cat.date_runs(ids, sort, key.2)).unwrap_or_default());
+                let r = Arc::new(
+                    key.1
+                        .map(|sort| cat.date_runs(ids, sort, key.2))
+                        .unwrap_or_default(),
+                );
                 self.runs = Some((key, r.clone()));
                 r
             }
@@ -106,7 +116,10 @@ impl GridCache {
         match self.local {
             Some((g, n)) if g == generation => n,
             _ => {
-                let n = ids.iter().filter(|id| cat.photo(**id).is_some_and(|p| p.local)).count();
+                let n = ids
+                    .iter()
+                    .filter(|id| cat.photo(**id).is_some_and(|p| p.local))
+                    .count();
                 self.local = Some((generation, n));
                 n
             }
@@ -119,9 +132,13 @@ fn aspects(cat: &Catalog, ids: &[PhotoId]) -> Vec<f32> {
     ids.iter()
         .map(|id| {
             let p = cat.photo(*id);
-            let (w, h) = p.map(|p| (p.width.max(1) as f32, p.height.max(1) as f32)).unwrap_or((3.0, 2.0));
+            let (w, h) = p
+                .map(|p| (p.width.max(1) as f32, p.height.max(1) as f32))
+                .unwrap_or((3.0, 2.0));
             let swap = p.is_some_and(|p| p.develop.orientation.swaps_axes());
-            let crop = p.map(|p| p.develop.crop.geometry.rect).unwrap_or(lightcraft_geom::Rect::UNIT);
+            let crop = p
+                .map(|p| p.develop.crop.geometry.rect)
+                .unwrap_or(lightcraft_geom::Rect::UNIT);
             let (w, h) = if swap { (h, w) } else { (w, h) };
             (w * crop.width() as f32) / (h * crop.height() as f32).max(1e-3)
         })
@@ -145,27 +162,65 @@ fn show_inner(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let chips = lightcraft_engine::filter_chips(&app.session.filter, &app.session.catalog);
     let total = app.session.source_total();
     let counted = super::chips::count_text(ids.len(), total, !chips.is_empty());
-    let cnt = if sel_n > 1 { crate::i18n::tr_format!("{sel_n} selected · {counted}", counted = counted, sel_n = sel_n) } else { counted };
-    match app.session.browse.clone().filter(|_| app.session.source == lightcraft_engine::LibrarySource::Folder) {
+    let cnt = if sel_n > 1 {
+        crate::i18n::tr_format!(
+            "{sel_n} selected · {counted}",
+            counted = counted,
+            sel_n = sel_n
+        )
+    } else {
+        counted
+    };
+    match app
+        .session
+        .browse
+        .clone()
+        .filter(|_| app.session.source == lightcraft_engine::LibrarySource::Folder)
+    {
         Some(b) => {
-            let local = app.caches.grid.local(&app.session.catalog, &ids, generation);
+            let local = app
+                .caches
+                .grid
+                .local(&app.session.catalog, &ids, generation);
             folder_header(app, ui, &b, &ids, local, &cnt);
         }
         None => {
             let (hr, _) = ui.allocate_exact_size(vec2(ui.available_width(), 44.0), Sense::hover());
             ui.painter().rect_filled(hr, 0.0, t.canvas);
             let full = crate::i18n::source_title(&app.session);
-            let count_w = ui.painter().layout_no_wrap(cnt.clone(), t.font(12.5), t.text_dim).size().x;
+            let count_w = ui
+                .painter()
+                .layout_no_wrap(cnt.clone(), t.font(12.5), t.text_dim)
+                .size()
+                .x;
             // the title gives way to the count: a long album or folder name is trimmed, in full on hover
             let room = (hr.width() - 20.0 - count_w - 36.0).max(0.0);
             let font = t.semibold(17.0);
-            let title = crate::widgets::elide_head(&full, room, |s| ui.painter().layout_no_wrap(s.to_string(), font.clone(), t.text).size().x);
-            let title_rect = ui.painter().text(pos2(hr.left() + 20.0, hr.center().y), Align2::LEFT_CENTER, &title, font, t.text);
-            let count_rect = ui.painter().text(pos2(hr.right() - 20.0, hr.center().y), Align2::RIGHT_CENTER, cnt, t.font(12.5), t.text_dim);
+            let title = crate::widgets::elide_head(&full, room, |s| {
+                ui.painter()
+                    .layout_no_wrap(s.to_string(), font.clone(), t.text)
+                    .size()
+                    .x
+            });
+            let title_rect = ui.painter().text(
+                pos2(hr.left() + 20.0, hr.center().y),
+                Align2::LEFT_CENTER,
+                &title,
+                font,
+                t.text,
+            );
+            let count_rect = ui.painter().text(
+                pos2(hr.right() - 20.0, hr.center().y),
+                Align2::RIGHT_CENTER,
+                cnt,
+                t.font(12.5),
+                t.text_dim,
+            );
             crate::widgets::register(ui.ctx(), "grid:title", title_rect);
             crate::widgets::register(ui.ctx(), "grid:count", count_rect);
             if title != full {
-                ui.interact(title_rect, ui.id().with("grid-title"), Sense::hover()).on_hover_text(full);
+                ui.interact(title_rect, ui.id().with("grid-title"), Sense::hover())
+                    .on_hover_text(full);
             }
         }
     }
@@ -178,11 +233,20 @@ fn show_inner(app: &mut LightcraftApp, ui: &mut egui::Ui) {
         if !chips.is_empty() {
             let body = match total {
                 Some(n) if n > 0 => {
-                    crate::i18n::tr_format!("{n} photos in {} are hidden by the filters above", crate::i18n::source_title(&app.session), n = n)
+                    crate::i18n::tr_format!(
+                        "{n} photos in {} are hidden by the filters above",
+                        crate::i18n::source_title(&app.session),
+                        n = n
+                    )
                 }
                 _ => "Remove a filter above, or choose Clear all".to_string(),
             };
-            super::empty_message(ui, ui.max_rect(), "No photos match the active filters", &body);
+            super::empty_message(
+                ui,
+                ui.max_rect(),
+                "No photos match the active filters",
+                &body,
+            );
         } else if app.session.filter != Default::default() {
             super::empty_message(
                 ui,
@@ -191,9 +255,19 @@ fn show_inner(app: &mut LightcraftApp, ui: &mut egui::Ui) {
                 "A filter is hiding this view's photos: change it, or clear it (View → Clear Filters)",
             );
         } else if app.session.source == lightcraft_engine::LibrarySource::Folder {
-            super::empty_message(ui, ui.max_rect(), "No photos in this folder", "Turn on Include subfolders, or pick another folder under Local");
+            super::empty_message(
+                ui,
+                ui.max_rect(),
+                "No photos in this folder",
+                "Turn on Include subfolders, or pick another folder under Local",
+            );
         } else {
-            super::empty_message(ui, ui.max_rect(), "No photos", "Import photos with File → Import Photos… (Cmd+Shift+I), or drop them here");
+            super::empty_message(
+                ui,
+                ui.max_rect(),
+                "No photos",
+                "Import photos with File → Import Photos… (Cmd+Shift+I), or drop them here",
+            );
         }
         return;
     }
@@ -209,7 +283,10 @@ fn show_inner(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     };
     let runs_key = (generation, group_key, by);
     let stats = &mut app.caches.grid_stats;
-    let runs = app.caches.grid.runs(stats, &app.session.catalog, &ids, runs_key);
+    let runs = app
+        .caches
+        .grid
+        .runs(stats, &app.session.catalog, &ids, runs_key);
     // the layout only changes with the photos (and their shapes), the grouping, the width and
     // the thumbnail size
     let lay_key = (runs_key, avail_w.to_bits(), target.to_bits(), square);
@@ -217,74 +294,102 @@ fn show_inner(app: &mut LightcraftApp, ui: &mut egui::Ui) {
         Some((k, l)) if *k == lay_key => l.clone(),
         _ => {
             stats.layout_builds += 1;
-            let aspects = if square { vec![1.0; ids.len()] } else { aspects(&app.session.catalog, &ids) };
+            let aspects = if square {
+                vec![1.0; ids.len()]
+            } else {
+                aspects(&app.session.catalog, &ids)
+            };
             let spans: Vec<(usize, usize)> = runs.iter().map(|r| (r.start, r.count)).collect();
             let l = Arc::new(layout(&aspects, &spans, avail_w, target, square));
             app.caches.grid.layout = Some((lay_key, l.clone()));
             l
         }
     };
-    let stacks = app.caches.grid.stacks(stats, &app.session.catalog, generation);
+    let stacks = app
+        .caches
+        .grid
+        .stacks(stats, &app.session.catalog, generation);
     let total_h = lay.height + 12.0;
     let active = app.session.selection.active;
     // bring the active photo into view when it changes (keyboard, click, command) or the grid
     // comes back on screen; otherwise the scroll position is the user's
-    let scroll_to: Option<Rect> = if follow_active(ui.ctx(), egui::Id::new("grid-follow-active"), active, app.session.source) {
-        active.and_then(|a| ids.iter().position(|x| *x == a)).and_then(|i| lay.cells.get(i).copied())
+    let scroll_to: Option<Rect> = if follow_active(
+        ui.ctx(),
+        egui::Id::new("grid-follow-active"),
+        active,
+        app.session.source,
+    ) {
+        active
+            .and_then(|a| ids.iter().position(|x| *x == a))
+            .and_then(|i| lay.cells.get(i).copied())
     } else {
         None
     };
     let mut visible_ids = HashSet::new();
     let mut visited = 0u64;
-    egui::ScrollArea::vertical().id_salt("grid-scroll").auto_shrink([false, false]).show_viewport(ui, |ui, viewport| {
-        let (area, _) = ui.allocate_exact_size(vec2(ui.available_width(), total_h), Sense::hover());
-        let origin = area.min;
-        app.grid_scroll = Some(viewport.top());
-        if let Some(r) = scroll_to {
-            ui.scroll_to_rect(r.translate(origin.to_vec2()), None);
-        }
-        // only the rows on screen and a screen above and below it (their thumbnails are prefetched)
-        let prefetch = viewport.expand2(vec2(0.0, viewport.height()));
-        for row in rows_between(&lay.rows, prefetch.top(), prefetch.bottom()) {
-            for i in row.start..row.end {
-                let (Some(&id), Some(&rect)) = (ids.get(i), lay.cells.get(i)) else { continue };
-                visited += 1;
-                if !rect.intersects(prefetch) {
-                    continue;
+    egui::ScrollArea::vertical()
+        .id_salt("grid-scroll")
+        .auto_shrink([false, false])
+        .show_viewport(ui, |ui, viewport| {
+            let (area, _) =
+                ui.allocate_exact_size(vec2(ui.available_width(), total_h), Sense::hover());
+            let origin = area.min;
+            app.grid_scroll = Some(viewport.top());
+            if let Some(r) = scroll_to {
+                ui.scroll_to_rect(r.translate(origin.to_vec2()), None);
+            }
+            // only the rows on screen and a screen above and below it (their thumbnails are prefetched)
+            let prefetch = viewport.expand2(vec2(0.0, viewport.height()));
+            for row in rows_between(&lay.rows, prefetch.top(), prefetch.bottom()) {
+                for i in row.start..row.end {
+                    let (Some(&id), Some(&rect)) = (ids.get(i), lay.cells.get(i)) else {
+                        continue;
+                    };
+                    visited += 1;
+                    if !rect.intersects(prefetch) {
+                        continue;
+                    }
+                    visible_ids.insert(id);
+                    let r = rect.translate(origin.to_vec2());
+                    let onscreen = rect.intersects(viewport);
+                    cell(app, ui, id, r, square, onscreen, ppp);
+                    if let Some((sid, pos)) = stacks.get(&id) {
+                        stack_badge(app, ui, id, *sid, *pos, r, square);
+                    }
                 }
-                visible_ids.insert(id);
-                let r = rect.translate(origin.to_vec2());
-                let onscreen = rect.intersects(viewport);
-                cell(app, ui, id, r, square, onscreen, ppp);
-                if let Some((sid, pos)) = stacks.get(&id) {
-                    stack_badge(app, ui, id, *sid, *pos, r, square);
+            }
+            // date headers (top to bottom); the current group's header sticks to the top while its
+            // photos scroll by
+            let first = lay.headers.partition_point(|h| h.bottom() < viewport.top());
+            for (g, hr) in lay.headers.iter().enumerate().skip(first) {
+                if hr.top() > viewport.bottom() {
+                    break;
+                }
+                if let Some(run) = runs.get(g) {
+                    group_header(app, ui, run, &ids, hr.translate(origin.to_vec2()), false);
                 }
             }
-        }
-        // date headers (top to bottom); the current group's header sticks to the top while its
-        // photos scroll by
-        let first = lay.headers.partition_point(|h| h.bottom() < viewport.top());
-        for (g, hr) in lay.headers.iter().enumerate().skip(first) {
-            if hr.top() > viewport.bottom() {
-                break;
+            let sticky = lay
+                .headers
+                .partition_point(|h| h.top() <= viewport.top())
+                .checked_sub(1);
+            if let Some(g) = sticky
+                && let Some(head) = lay.headers.get(g)
+                && head.top() < viewport.top()
+                && let Some(run) = runs.get(g)
+            {
+                // pushed up by the next header as it arrives
+                let next_top = lay
+                    .headers
+                    .get(g + 1)
+                    .map(|h| h.top())
+                    .unwrap_or(f32::INFINITY);
+                let y = viewport.top().min(next_top - HEADER_H);
+                let hr = Rect::from_min_size(pos2(0.0, y), vec2(area.width(), HEADER_H))
+                    .translate(origin.to_vec2());
+                group_header(app, ui, run, &ids, hr, true);
             }
-            if let Some(run) = runs.get(g) {
-                group_header(app, ui, run, &ids, hr.translate(origin.to_vec2()), false);
-            }
-        }
-        let sticky = lay.headers.partition_point(|h| h.top() <= viewport.top()).checked_sub(1);
-        if let Some(g) = sticky
-            && let Some(head) = lay.headers.get(g)
-            && head.top() < viewport.top()
-            && let Some(run) = runs.get(g)
-        {
-            // pushed up by the next header as it arrives
-            let next_top = lay.headers.get(g + 1).map(|h| h.top()).unwrap_or(f32::INFINITY);
-            let y = viewport.top().min(next_top - HEADER_H);
-            let hr = Rect::from_min_size(pos2(0.0, y), vec2(area.width(), HEADER_H)).translate(origin.to_vec2());
-            group_header(app, ui, run, &ids, hr, true);
-        }
-    });
+        });
     app.caches.grid_stats.cells_visited += visited;
     app.renderer.evict_thumbs(&visible_ids, 600);
     let _ = (Color32::BLACK, StrokeKind::Inside, Stroke::NONE);
@@ -295,9 +400,15 @@ fn show_inner(app: &mut LightcraftApp, ui: &mut egui::Ui) {
 /// the strip was not drawn on the previous pass (view switch, panel shown again). Otherwise the
 /// scroll position is the user's: time passing, finished renders, edits to the photo or a released
 /// scroll bar never move it (issue #11).
-pub(crate) fn follow_active(ctx: &egui::Context, key: egui::Id, active: Option<PhotoId>, source: lightcraft_engine::LibrarySource) -> bool {
+pub(crate) fn follow_active(
+    ctx: &egui::Context,
+    key: egui::Id,
+    active: Option<PhotoId>,
+    source: lightcraft_engine::LibrarySource,
+) -> bool {
     let pass = ctx.cumulative_pass_nr();
-    let last: Option<(Option<PhotoId>, lightcraft_engine::LibrarySource, u64)> = ctx.data(|d| d.get_temp(key));
+    let last: Option<(Option<PhotoId>, lightcraft_engine::LibrarySource, u64)> =
+        ctx.data(|d| d.get_temp(key));
     ctx.data_mut(|d| d.insert_temp(key, (active, source, pass)));
     match last {
         Some((was, where_, drawn)) => follow_changed(was, where_, drawn, active, source, pass),
@@ -336,11 +447,21 @@ pub struct GridLayout {
 /// centre is nearest horizontally (justified rows don't line up in columns). None in the first /
 /// last row or for an index outside the layout.
 pub fn vertical_neighbor(lay: &GridLayout, i: usize, down: bool) -> Option<usize> {
-    let row = lay.rows.iter().position(|r| (r.start..r.end).contains(&i))?;
-    let next = if down { row.checked_add(1)? } else { row.checked_sub(1)? };
+    let row = lay
+        .rows
+        .iter()
+        .position(|r| (r.start..r.end).contains(&i))?;
+    let next = if down {
+        row.checked_add(1)?
+    } else {
+        row.checked_sub(1)?
+    };
     let target = lay.rows.get(next)?;
     let x = lay.cells.get(i)?.center().x;
-    (target.start..target.end).filter_map(|k| Some((k, (lay.cells.get(k)?.center().x - x).abs()))).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(k, _)| k)
+    (target.start..target.end)
+        .filter_map(|k| Some((k, (lay.cells.get(k)?.center().x - x).abs())))
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(k, _)| k)
 }
 
 /// Up / Down in the grids: how many photos `library.up` / `library.down` move to reach the cell
@@ -387,17 +508,35 @@ pub fn resolve_group(by: GroupBy, thumb_size: f32) -> GroupBy {
 /// about `target` high (square cells about `target` wide). Every group starts on a new row
 /// below its header. Justified rows fill the width exactly except a group's last row, which keeps
 /// the target height.
-pub fn layout(aspects: &[f32], groups: &[(usize, usize)], avail_w: f32, target: f32, square: bool) -> GridLayout {
+pub fn layout(
+    aspects: &[f32],
+    groups: &[(usize, usize)],
+    avail_w: f32,
+    target: f32,
+    square: bool,
+) -> GridLayout {
     let n = aspects.len();
     let whole = [(0, n)];
-    let (groups, headed) = if groups.is_empty() { (&whole[..], false) } else { (groups, true) };
+    let (groups, headed) = if groups.is_empty() {
+        (&whole[..], false)
+    } else {
+        (groups, true)
+    };
     let gap = if square { 1.0 } else { 6.0 };
-    let mut out = GridLayout { cells: vec![Rect::NOTHING; n], headers: Vec::with_capacity(groups.len()), rows: Vec::new(), height: 0.0 };
+    let mut out = GridLayout {
+        cells: vec![Rect::NOTHING; n],
+        headers: Vec::with_capacity(groups.len()),
+        rows: Vec::new(),
+        height: 0.0,
+    };
     let mut y = 4.0f32;
     for &(start, count) in groups {
         let end = (start + count).min(n);
         if headed {
-            out.headers.push(Rect::from_min_size(pos2(0.0, y), vec2(avail_w + 8.0, HEADER_H)));
+            out.headers.push(Rect::from_min_size(
+                pos2(0.0, y),
+                vec2(avail_w + 8.0, HEADER_H),
+            ));
             y += HEADER_H;
         }
         if start >= end {
@@ -409,12 +548,20 @@ pub fn layout(aspects: &[f32], groups: &[(usize, usize)], avail_w: f32, target: 
             for i in start..end {
                 let k = (i - start) as f32;
                 let (c, r) = (k % cols, (k / cols).floor());
-                out.cells[i] = Rect::from_min_size(pos2(4.0 + c * (cw + gap), y + r * (cw + gap)), vec2(cw, cw));
+                out.cells[i] = Rect::from_min_size(
+                    pos2(4.0 + c * (cw + gap), y + r * (cw + gap)),
+                    vec2(cw, cw),
+                );
             }
             let per_row = (cols as usize).max(1);
             for (r, row_start) in (start..end).step_by(per_row).enumerate() {
                 let top = y + r as f32 * (cw + gap);
-                out.rows.push(GridRow { top, bottom: top + cw, start: row_start, end: (row_start + per_row).min(end) });
+                out.rows.push(GridRow {
+                    top,
+                    bottom: top + cw,
+                    start: row_start,
+                    end: (row_start + per_row).min(end),
+                });
             }
             let rows = ((end - start) as f32 / cols).ceil();
             y += rows * (cw + gap);
@@ -433,14 +580,23 @@ pub fn layout(aspects: &[f32], groups: &[(usize, usize)], avail_w: f32, target: 
                     }
                 }
                 let row_h = (avail_w - gap * (j - i - 1) as f32) / sum;
-                let h = if j < end || row_h <= target { row_h } else { target };
+                let h = if j < end || row_h <= target {
+                    row_h
+                } else {
+                    target
+                };
                 let mut x = 4.0;
                 for k in i..j {
                     let w = aspects[k].max(0.05) * h;
                     out.cells[k] = Rect::from_min_size(pos2(x, y), vec2(w, h));
                     x += w + gap;
                 }
-                out.rows.push(GridRow { top: y, bottom: y + h, start: i, end: j });
+                out.rows.push(GridRow {
+                    top: y,
+                    bottom: y + h,
+                    start: i,
+                    end: j,
+                });
                 y += h + gap;
                 i = j;
             }
@@ -455,18 +611,44 @@ pub fn layout(aspects: &[f32], groups: &[(usize, usize)], avail_w: f32, target: 
 
 /// A date header: "Wednesday, 30 September 2026 · 12 photos". Clicking it selects the group
 /// (Cmd/Shift: adds to the selection).
-fn group_header(app: &mut LightcraftApp, ui: &mut egui::Ui, run: &DateRun, ids: &[PhotoId], r: Rect, pinned: bool) {
+fn group_header(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    run: &DateRun,
+    ids: &[PhotoId],
+    r: Rect,
+    pinned: bool,
+) {
     let t = Tokens::get(ui.ctx());
-    let resp = ui.interact(r, egui::Id::new(("group-header", run.start, pinned)), Sense::click());
+    let resp = ui.interact(
+        r,
+        egui::Id::new(("group-header", run.start, pinned)),
+        Sense::click(),
+    );
     if !pinned {
-        register(ui.ctx(), format!("group:{}", if run.key.is_empty() { "unknown" } else { &run.key }), r);
+        register(
+            ui.ctx(),
+            format!(
+                "group:{}",
+                if run.key.is_empty() {
+                    "unknown"
+                } else {
+                    &run.key
+                }
+            ),
+            r,
+        );
     }
     let p = ui.painter();
     if pinned {
         p.rect_filled(r, 0.0, t.canvas);
         p.hline(r.x_range(), r.bottom(), Stroke::new(1.0, t.divider));
     }
-    let g = p.layout_no_wrap(crate::i18n::date_group_label(&run.key, false), t.semibold(15.0), if resp.hovered() { t.text } else { t.text_label });
+    let g = p.layout_no_wrap(
+        crate::i18n::date_group_label(&run.key, false),
+        t.semibold(15.0),
+        if resp.hovered() { t.text } else { t.text_label },
+    );
     let x = r.left() + 8.0;
     let gw = g.size().x;
     p.galley(pos2(x, r.center().y - g.size().y / 2.0), g, t.text);
@@ -479,9 +661,16 @@ fn group_header(app: &mut LightcraftApp, ui: &mut egui::Ui, run: &DateRun, ids: 
         t.text_dim,
     );
     if resp.clicked() {
-        let group: Vec<u64> = ids[run.start..(run.start + run.count).min(ids.len())].iter().map(|p| p.0).collect();
+        let group: Vec<u64> = ids[run.start..(run.start + run.count).min(ids.len())]
+            .iter()
+            .map(|p| p.0)
+            .collect();
         let m = ui.input(|i| i.modifiers);
-        let mode = if m.command || m.shift { "add" } else { "replace" };
+        let mode = if m.command || m.shift {
+            "add"
+        } else {
+            "replace"
+        };
         let _ = app.run("library.select", json!({"ids": group, "mode": mode}));
     }
 }
@@ -494,7 +683,13 @@ fn group_header(app: &mut LightcraftApp, ui: &mut egui::Ui, run: &DateRun, ids: 
 pub fn request_thumb(app: &mut LightcraftApp, id: PhotoId, size: usize, priority: u32) {
     // A slider drag changes the photo every frame: its thumbnail follows once the drag ends, so its
     // renders (a raw decode the first time) don't compete with the loupe's drafts.
-    if app.session.interaction.as_ref().is_some_and(|i| i.photo == id) && app.renderer.thumb(id).is_some() {
+    if app
+        .session
+        .interaction
+        .as_ref()
+        .is_some_and(|i| i.photo == id)
+        && app.renderer.thumb(id).is_some()
+    {
         return;
     }
     let bucket = lightcraft_engine::media::thumb_bucket(size);
@@ -507,32 +702,45 @@ pub fn request_thumb(app: &mut LightcraftApp, id: PhotoId, size: usize, priority
     // has arrived there is nothing left to ask for. Without this the grid would rebuild the render
     // job — and its cache key — on every frame, which is what the embedded-thumbnail record settles.
     if let Some(photo) = app.session.catalog.photo(id)
-        && (app.renderer.thumb_quick_is_final(photo, bucket, priority) || app.renderer.thumb_quick_pending(photo, bucket))
+        && (app.renderer.thumb_quick_is_final(photo, bucket, priority)
+            || app.renderer.thumb_quick_pending(photo, bucket))
     {
         return;
     }
-    let Some(job) = app.session.thumb_job(id, size) else { return };
+    let Some(job) = app.session.thumb_job(id, size) else {
+        return;
+    };
     #[cfg(test)]
     {
         app.renderer.thumb_jobs_built += 1;
     }
-    let quick = if app.renderer.textures.contains_key(&Slot::Thumb(id)) { None } else { app.session.quick_thumb_job(&job) };
+    let quick = if app.renderer.textures.contains_key(&Slot::Thumb(id)) {
+        None
+    } else {
+        app.session.quick_thumb_job(&job)
+    };
     // A cached render is a stand-in for whatever comes next; an embedded camera preview of an
     // unedited raw is the picture itself, so no sensor decode is scheduled behind it.
     let embedded_is_final =
-        quick.is_some() && app.session.catalog.photo(id).is_some_and(|p| skips_the_real_render(app.session.embedded_thumb_is_final(p), true));
+        quick.is_some()
+            && app.session.catalog.photo(id).is_some_and(|p| {
+                skips_the_real_render(app.session.embedded_thumb_is_final(p), true)
+            });
     if let Some(photo) = app.session.catalog.photo(id) {
         if embedded_is_final {
             app.renderer.remember_embedded_thumb(photo, bucket, job.key);
         } else {
-            app.renderer.remember_thumb(photo, bucket, job.key, quick.is_some());
+            app.renderer
+                .remember_thumb(photo, bucket, job.key, quick.is_some());
         }
     }
     match quick {
         Some(q) => {
-            app.renderer.request_quick(Slot::ThumbQuick(id), q, priority + 1);
+            app.renderer
+                .request_quick(Slot::ThumbQuick(id), q, priority + 1);
             if !embedded_is_final && !app.renderer.is_pending(Slot::ThumbQuick(id)) {
-                app.renderer.request(Slot::Thumb(id), job, BACKGROUND_THUMB_PRIORITY);
+                app.renderer
+                    .request(Slot::Thumb(id), job, BACKGROUND_THUMB_PRIORITY);
             }
         }
         None => app.renderer.request(Slot::Thumb(id), job, priority),
@@ -555,9 +763,19 @@ pub(crate) fn skips_the_real_render(embedded_is_final: bool, from_embedded: bool
 /// Rendered thumbnails replacing embedded previews: after everything on screen.
 pub const BACKGROUND_THUMB_PRIORITY: u32 = 3;
 
-fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square: bool, onscreen: bool, ppp: f32) {
+fn cell(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    id: PhotoId,
+    r: Rect,
+    square: bool,
+    onscreen: bool,
+    ppp: f32,
+) {
     let t = Tokens::get(ui.ctx());
-    let Some(photo) = app.session.catalog.photo(id).cloned() else { return };
+    let Some(photo) = app.session.catalog.photo(id).cloned() else {
+        return;
+    };
     let resp = ui.interact(r, egui::Id::new(("cell", id.0)), Sense::click_and_drag());
     register(ui.ctx(), format!("thumb:{}", id.0), r);
     let state = app.session.selection.state_of(id);
@@ -565,7 +783,11 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
     // screen readers: the file, then rating / flag / label
     let mut spoken = photo.file_name.clone();
     if photo.rating > 0 {
-        spoken.push_str(&crate::i18n::tr_format!(", {} star{}", photo.rating, if photo.rating == 1 { "" } else { "s" }));
+        spoken.push_str(&crate::i18n::tr_format!(
+            ", {} star{}",
+            photo.rating,
+            if photo.rating == 1 { "" } else { "s" }
+        ));
     }
     match photo.flag {
         lightcraft_catalog::Flag::Pick => spoken.push_str(crate::i18n::tr(", picked")),
@@ -573,14 +795,23 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
         lightcraft_catalog::Flag::None => {}
     }
     if let Some(l) = photo.label {
-        spoken.push_str(&crate::i18n::tr_format!(", {} label", crate::i18n::color_label(&app.session.catalog, l)));
+        spoken.push_str(&crate::i18n::tr_format!(
+            ", {} label",
+            crate::i18n::color_label(&app.session.catalog, l)
+        ));
     }
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, selected, &spoken));
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, selected, &spoken)
+    });
     let active = state == lightcraft_engine::SelectionState::Active;
     let p = ui.painter();
     let img_rect = if square {
         let base = if selected { t.cell_selected } else { t.cell };
-        p.rect_filled(r, 0.0, crate::theme::label_background(base, photo.label, selected));
+        p.rect_filled(
+            r,
+            0.0,
+            crate::theme::label_background(base, photo.label, selected),
+        );
         Rect::from_min_max(r.min + vec2(10.0, 24.0), r.max - vec2(10.0, 10.0))
     } else {
         r
@@ -592,24 +823,55 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
         let [tw, th] = tex.size;
         // Preserve the decoded preview's ratio when it differs from the catalog dimensions.
         let fit = super::detail::fit_texture_rect(img_rect, [tw, th]);
-        p.image(tex.tex.id(), fit, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        p.image(
+            tex.tex.id(),
+            fit,
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
         if active {
-            p.rect_stroke(fit.expand(if square { 2.0 } else { 0.0 }), 0.0, Stroke::new(2.0, Color32::WHITE), StrokeKind::Outside);
+            p.rect_stroke(
+                fit.expand(if square { 2.0 } else { 0.0 }),
+                0.0,
+                Stroke::new(2.0, Color32::WHITE),
+                StrokeKind::Outside,
+            );
         } else if selected {
-            p.rect_stroke(fit, 0.0, Stroke::new(2.0, Color32::from_gray(170)), StrokeKind::Outside);
+            p.rect_stroke(
+                fit,
+                0.0,
+                Stroke::new(2.0, Color32::from_gray(170)),
+                StrokeKind::Outside,
+            );
         }
     } else {
         let ph = img_rect.shrink(if square { 20.0 } else { 0.0 });
         p.rect_filled(ph, 0.0, Color32::from_gray(38));
         // not drawn yet (or unreadable): the selection is still visible
         if active {
-            p.rect_stroke(ph, 0.0, Stroke::new(2.0, Color32::WHITE), StrokeKind::Outside);
+            p.rect_stroke(
+                ph,
+                0.0,
+                Stroke::new(2.0, Color32::WHITE),
+                StrokeKind::Outside,
+            );
         } else if selected {
-            p.rect_stroke(ph, 0.0, Stroke::new(2.0, Color32::from_gray(170)), StrokeKind::Outside);
+            p.rect_stroke(
+                ph,
+                0.0,
+                Stroke::new(2.0, Color32::from_gray(170)),
+                StrokeKind::Outside,
+            );
         }
         if app.renderer.failure(Slot::Thumb(id)).is_some() {
             // unreadable / missing file
-            p.text(ph.center(), Align2::CENTER_CENTER, "!", t.semibold(18.0), t.text_dim);
+            p.text(
+                ph.center(),
+                Align2::CENTER_CENTER,
+                "!",
+                t.semibold(18.0),
+                t.text_dim,
+            );
         }
     }
     // labels and badges
@@ -619,8 +881,13 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
             "exposure" => {
                 let parts: Vec<String> = [
                     // whole seconds read "8 s"; fractions as written ("1/250")
-                    (!m.shutter.is_empty())
-                        .then(|| if m.shutter.contains('/') || m.shutter.ends_with('s') { m.shutter.clone() } else { format!("{} s", m.shutter) }),
+                    (!m.shutter.is_empty()).then(|| {
+                        if m.shutter.contains('/') || m.shutter.ends_with('s') {
+                            m.shutter.clone()
+                        } else {
+                            format!("{} s", m.shutter)
+                        }
+                    }),
                     m.aperture.map(|a| format!("f/{a:.1}").replace(".0", "")),
                     m.iso.map(|i| format!("ISO {i}")),
                     m.focal_mm.map(|f| format!("{f:.0} mm")),
@@ -628,28 +895,62 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
                 .into_iter()
                 .flatten()
                 .collect();
-                if parts.is_empty() { "—".to_string() } else { parts.join(" · ") }
+                if parts.is_empty() {
+                    "—".to_string()
+                } else {
+                    parts.join(" · ")
+                }
             }
-            "date" => photo.captured.as_deref().map(crate::i18n::display_time).unwrap_or_else(|| crate::i18n::tr("No date").into()),
-            _ => photo.file_name.rsplit_once('.').map(|(n, _)| n.to_string()).unwrap_or(photo.file_name.clone()),
+            "date" => photo
+                .captured
+                .as_deref()
+                .map(crate::i18n::display_time)
+                .unwrap_or_else(|| crate::i18n::tr("No date").into()),
+            _ => photo
+                .file_name
+                .rsplit_once('.')
+                .map(|(n, _)| n.to_string())
+                .unwrap_or(photo.file_name.clone()),
         };
-        p.text(pos2(r.left() + 8.0, r.top() + 12.0), Align2::LEFT_CENTER, name, t.font(10.5), t.text_dim);
+        p.text(
+            pos2(r.left() + 8.0, r.top() + 12.0),
+            Align2::LEFT_CENTER,
+            name,
+            t.font(10.5),
+            t.text_dim,
+        );
         let fmt = photo.format.clone();
         let g = p.layout_no_wrap(fmt, t.semibold(9.0), t.text_label);
-        let br = Rect::from_min_size(pos2(r.right() - g.size().x - 14.0, r.top() + 5.0), g.size() + vec2(8.0, 3.0));
+        let br = Rect::from_min_size(
+            pos2(r.right() - g.size().x - 14.0, r.top() + 5.0),
+            g.size() + vec2(8.0, 3.0),
+        );
         p.rect_filled(br, 2.0, Color32::from_gray(26));
         p.galley(br.min + vec2(4.0, 1.5), g, t.text_label);
     }
     let show_badges = match app.ui.settings.grid_badges {
-        crate::state::GridBadges::Auto => resp.hovered() || selected || photo.rating > 0 || photo.flag != Flag::None || photo.label.is_some(),
+        crate::state::GridBadges::Auto => {
+            resp.hovered()
+                || selected
+                || photo.rating > 0
+                || photo.flag != Flag::None
+                || photo.label.is_some()
+        }
         crate::state::GridBadges::Always => true,
         crate::state::GridBadges::Never => false,
     };
-    let badge_bar = Rect::from_min_max(pos2(img_rect.left(), img_rect.bottom() - 24.0), img_rect.right_bottom());
+    let badge_bar = Rect::from_min_max(
+        pos2(img_rect.left(), img_rect.bottom() - 24.0),
+        img_rect.right_bottom(),
+    );
     if !square && photo.label.is_some() {
         // Justified photos fill the whole cell, so the label shows as a translucent tinted footer
         // over the photo's bottom edge (opaque, it would hide 24 px of every labelled photo).
-        p.rect_filled(badge_bar, 0.0, crate::theme::label_background(t.cell, photo.label, selected).gamma_multiply(0.7));
+        p.rect_filled(
+            badge_bar,
+            0.0,
+            crate::theme::label_background(t.cell, photo.label, selected).gamma_multiply(0.7),
+        );
     }
     if show_badges {
         let bar = badge_bar;
@@ -658,52 +959,123 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
         }
         let mut x = bar.left() + 6.0;
         for i in 0..photo.rating {
-            paint(p, Rect::from_min_size(pos2(x + i as f32 * 13.0, bar.center().y - 6.0), vec2(12.0, 12.0)), Icon::StarFilled, t.star);
+            paint(
+                p,
+                Rect::from_min_size(
+                    pos2(x + i as f32 * 13.0, bar.center().y - 6.0),
+                    vec2(12.0, 12.0),
+                ),
+                Icon::StarFilled,
+                t.star,
+            );
         }
         x += photo.rating as f32 * 13.0 + 4.0;
         match photo.flag {
-            Flag::Pick => paint(p, Rect::from_min_size(pos2(x, bar.center().y - 7.0), vec2(14.0, 14.0)), Icon::FlagPick, t.pick),
-            Flag::Reject => paint(p, Rect::from_min_size(pos2(x, bar.center().y - 7.0), vec2(14.0, 14.0)), Icon::FlagReject, t.reject),
+            Flag::Pick => paint(
+                p,
+                Rect::from_min_size(pos2(x, bar.center().y - 7.0), vec2(14.0, 14.0)),
+                Icon::FlagPick,
+                t.pick,
+            ),
+            Flag::Reject => paint(
+                p,
+                Rect::from_min_size(pos2(x, bar.center().y - 7.0), vec2(14.0, 14.0)),
+                Icon::FlagReject,
+                t.reject,
+            ),
             Flag::None => {}
         }
         let mut right = bar.right();
         if photo.is_edited() {
-            paint(p, Rect::from_min_size(pos2(right - 20.0, bar.center().y - 7.0), vec2(14.0, 14.0)), Icon::Sliders, t.text_label);
+            paint(
+                p,
+                Rect::from_min_size(pos2(right - 20.0, bar.center().y - 7.0), vec2(14.0, 14.0)),
+                Icon::Sliders,
+                t.text_label,
+            );
             right -= 20.0;
         }
         if let Some(l) = photo.label {
-            p.circle(pos2(right - 12.0, bar.center().y), 5.0, label_color(l), Stroke::new(1.0, Color32::from_black_alpha(120)));
+            p.circle(
+                pos2(right - 12.0, bar.center().y),
+                5.0,
+                label_color(l),
+                Stroke::new(1.0, Color32::from_black_alpha(120)),
+            );
         }
     }
     if let Some(name) = &photo.copy_name {
         // virtual copy: a folded-corner tag at the top right
         let g = p.layout_no_wrap(name.clone(), t.semibold(10.5), Color32::WHITE);
-        let tr = if square { img_rect.right_top() + vec2(-6.0, 6.0) } else { img_rect.right_top() + vec2(-5.0, 5.0) };
-        let br = Rect::from_min_max(pos2(tr.x - g.size().x - 26.0, tr.y), pos2(tr.x, tr.y + 20.0));
+        let tr = if square {
+            img_rect.right_top() + vec2(-6.0, 6.0)
+        } else {
+            img_rect.right_top() + vec2(-5.0, 5.0)
+        };
+        let br = Rect::from_min_max(
+            pos2(tr.x - g.size().x - 26.0, tr.y),
+            pos2(tr.x, tr.y + 20.0),
+        );
         p.rect_filled(br, 10.0, Color32::from_black_alpha(165));
         let c = pos2(br.left() + 13.0, br.center().y);
         let s = 5.0;
         p.add(egui::Shape::convex_polygon(
-            vec![c + vec2(-s, -s), c + vec2(s * 0.3, -s), c + vec2(s, -s * 0.3), c + vec2(s, s), c + vec2(-s, s)],
+            vec![
+                c + vec2(-s, -s),
+                c + vec2(s * 0.3, -s),
+                c + vec2(s, -s * 0.3),
+                c + vec2(s, s),
+                c + vec2(-s, s),
+            ],
             Color32::TRANSPARENT,
             Stroke::new(1.2, Color32::WHITE),
         ));
-        p.line_segment([c + vec2(s * 0.3, -s), c + vec2(s * 0.3, -s * 0.3)], Stroke::new(1.2, Color32::WHITE));
-        p.line_segment([c + vec2(s * 0.3, -s * 0.3), c + vec2(s, -s * 0.3)], Stroke::new(1.2, Color32::WHITE));
-        p.galley(pos2(br.left() + 22.0, br.center().y - g.size().y / 2.0), g, Color32::WHITE);
+        p.line_segment(
+            [c + vec2(s * 0.3, -s), c + vec2(s * 0.3, -s * 0.3)],
+            Stroke::new(1.2, Color32::WHITE),
+        );
+        p.line_segment(
+            [c + vec2(s * 0.3, -s * 0.3), c + vec2(s, -s * 0.3)],
+            Stroke::new(1.2, Color32::WHITE),
+        );
+        p.galley(
+            pos2(br.left() + 22.0, br.center().y - g.size().y / 2.0),
+            g,
+            Color32::WHITE,
+        );
     }
     if let Some(why) = &photo.preview_only {
         // a raw shown from its embedded JPEG: a small amber "Preview" pill at the image's bottom
         // left, above the badge bar (always shown: it changes what editing does)
-        let g = p.layout_no_wrap(crate::i18n::tr("Preview").into(), t.semibold(9.5), Color32::WHITE);
+        let g = p.layout_no_wrap(
+            crate::i18n::tr("Preview").into(),
+            t.semibold(9.5),
+            Color32::WHITE,
+        );
         let at = pos2(img_rect.left() + 6.0, img_rect.bottom() - 30.0 - 16.0);
         let br = Rect::from_min_size(at, vec2(g.size().x + 24.0, 16.0));
         p.rect_filled(br, 8.0, Color32::from_black_alpha(170));
-        paint(p, Rect::from_center_size(pos2(br.left() + 9.0, br.center().y), vec2(12.0, 12.0)), Icon::Info, t.caution);
-        p.galley(pos2(br.left() + 17.0, br.center().y - g.size().y / 2.0), g, Color32::WHITE);
+        paint(
+            p,
+            Rect::from_center_size(pos2(br.left() + 9.0, br.center().y), vec2(12.0, 12.0)),
+            Icon::Info,
+            t.caution,
+        );
+        p.galley(
+            pos2(br.left() + 17.0, br.center().y - g.size().y / 2.0),
+            g,
+            Color32::WHITE,
+        );
         register(ui.ctx(), format!("badge:previewOnly:{}", id.0), br);
-        ui.interact(br, egui::Id::new(("preview-only-badge", id.0)), Sense::hover())
-            .on_hover_text(crate::i18n::tr_format!("Preview only — {}", crate::widgets::preview_only_explanation(why)));
+        ui.interact(
+            br,
+            egui::Id::new(("preview-only-badge", id.0)),
+            Sense::hover(),
+        )
+        .on_hover_text(crate::i18n::tr_format!(
+            "Preview only — {}",
+            crate::widgets::preview_only_explanation(why)
+        ));
     }
     if photo.flag == Flag::Reject {
         p.rect_filled(img_rect, 0.0, Color32::from_black_alpha(110));
@@ -715,7 +1087,11 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
             ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
         }
         if resp.clicked() {
-            let has = photo.meta.keywords.iter().any(|x| x.eq_ignore_ascii_case(&k));
+            let has = photo
+                .meta
+                .keywords
+                .iter()
+                .any(|x| x.eq_ignore_ascii_case(&k));
             let key = if has { "removeKeywords" } else { "addKeywords" };
             let _ = app.run("photo.setMeta", json!({"ids": [id.0], key: [k]}));
         }
@@ -748,50 +1124,92 @@ fn cell(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, r: Rect, square
 
 /// The header of a Local folder view: the path as a breadcrumb (each part opens that folder),
 /// Include subfolders, Add to My Photos.
-fn folder_header(app: &mut LightcraftApp, ui: &mut egui::Ui, b: &lightcraft_engine::Browse, ids: &[PhotoId], local_n: usize, cnt: &str) -> Rect {
+fn folder_header(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    b: &lightcraft_engine::Browse,
+    ids: &[PhotoId],
+    local_n: usize,
+    cnt: &str,
+) -> Rect {
     let t = Tokens::get(ui.ctx());
     // The path/count and actions need independent rows. The frame reserves the actual height,
     // including any wrapped actions, so the grid below never paints under the header.
-    let header = egui::Frame::NONE.fill(t.canvas).inner_margin(egui::Margin::symmetric(16, 6)).show(ui, |ui| {
-        ui.set_width(ui.available_width());
-        ui.horizontal(|ui| {
-            ui.spacing_mut().item_spacing.x = 8.0;
-            let count_w =
-                ui.painter().layout_no_wrap(cnt.to_owned(), t.font(12.5), t.text_dim).size().x.ceil().min((ui.available_width() * 0.45).floor());
-            let path_w = (ui.available_width() - count_w - 8.0).max(0.0).floor();
-            ui.allocate_ui_with_layout(vec2(path_w, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                folder_breadcrumbs(app, ui, &b.path);
+    let header = egui::Frame::NONE
+        .fill(t.canvas)
+        .inner_margin(egui::Margin::symmetric(16, 6))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 8.0;
+                let count_w = ui
+                    .painter()
+                    .layout_no_wrap(cnt.to_owned(), t.font(12.5), t.text_dim)
+                    .size()
+                    .x
+                    .ceil()
+                    .min((ui.available_width() * 0.45).floor());
+                let path_w = (ui.available_width() - count_w - 8.0).max(0.0).floor();
+                ui.allocate_ui_with_layout(
+                    vec2(path_w, 24.0),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| {
+                        folder_breadcrumbs(app, ui, &b.path);
+                    },
+                );
+                let count = ui.add_sized(
+                    vec2(count_w, 24.0),
+                    egui::Label::new(egui::RichText::new(cnt).size(12.5).color(t.text_dim))
+                        .truncate(),
+                );
+                register(ui.ctx(), "grid:count", count.rect);
+                count.on_hover_text(cnt);
             });
-            let count = ui.add_sized(vec2(count_w, 24.0), egui::Label::new(egui::RichText::new(cnt).size(12.5).color(t.text_dim)).truncate());
-            register(ui.ctx(), "grid:count", count.rect);
-            count.on_hover_text(cnt);
-        });
-        ui.horizontal_wrapped(|ui| {
-            ui.spacing_mut().item_spacing.x = 12.0;
-            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Wrap);
-            let mut sub = b.subfolders;
-            let c = ui.checkbox(&mut sub, crate::i18n::tr("Include subfolders"));
-            register(ui.ctx(), "check:includeSubfolders", c.rect);
-            if c.changed() {
-                let _ = app.run("library.browse", json!({"path": b.path, "subfolders": sub}));
-            }
-            // Counted once per view (cached); the ids are only gathered on a click.
-            if local_n > 0 {
-                let label = crate::i18n::tr_format!("Add {local_n} to My Photos", local_n = local_n);
-                let button =
-                    ui.add(egui::Button::new(egui::RichText::new(label).font(t.semibold(11.5)).color(t.text)).wrap().min_size(vec2(37.0, 24.0)));
-                register(ui.ctx(), "button:addToLibrary", button.rect);
-                if button.clicked() {
-                    let local: Vec<u64> = ids.iter().filter(|id| app.session.catalog.photo(**id).is_some_and(|p| p.local)).map(|id| id.0).collect();
-                    let n = local.len();
-                    match app.run("photo.addToLibrary", json!({"ids": local})) {
-                        Ok(_) => app.toast(ui.ctx(), crate::i18n::tr_format!("Added {n} photo{} to My Photos", if n == 1 { "" } else { "s" }, n = n)),
-                        Err(e) => app.toast(ui.ctx(), e),
+            ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing.x = 12.0;
+                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Wrap);
+                let mut sub = b.subfolders;
+                let c = ui.checkbox(&mut sub, crate::i18n::tr("Include subfolders"));
+                register(ui.ctx(), "check:includeSubfolders", c.rect);
+                if c.changed() {
+                    let _ = app.run("library.browse", json!({"path": b.path, "subfolders": sub}));
+                }
+                // Counted once per view (cached); the ids are only gathered on a click.
+                if local_n > 0 {
+                    let label =
+                        crate::i18n::tr_format!("Add {local_n} to My Photos", local_n = local_n);
+                    let button = ui.add(
+                        egui::Button::new(
+                            egui::RichText::new(label)
+                                .font(t.semibold(11.5))
+                                .color(t.text),
+                        )
+                        .wrap()
+                        .min_size(vec2(37.0, 24.0)),
+                    );
+                    register(ui.ctx(), "button:addToLibrary", button.rect);
+                    if button.clicked() {
+                        let local: Vec<u64> = ids
+                            .iter()
+                            .filter(|id| app.session.catalog.photo(**id).is_some_and(|p| p.local))
+                            .map(|id| id.0)
+                            .collect();
+                        let n = local.len();
+                        match app.run("photo.addToLibrary", json!({"ids": local})) {
+                            Ok(_) => app.toast(
+                                ui.ctx(),
+                                crate::i18n::tr_format!(
+                                    "Added {n} photo{} to My Photos",
+                                    if n == 1 { "" } else { "s" },
+                                    n = n
+                                ),
+                            ),
+                            Err(e) => app.toast(ui.ctx(), e),
+                        }
                     }
                 }
-            }
+            });
         });
-    });
     register(ui.ctx(), "grid:folderHeader", header.response.rect);
     header.response.rect
 }
@@ -802,7 +1220,10 @@ fn folder_header(app: &mut LightcraftApp, ui: &mut egui::Ui, b: &lightcraft_engi
 pub(crate) fn crumbs(path: &str) -> Vec<(&str, String)> {
     let mut out = Vec::new();
     let mut start = 0;
-    for (i, c) in path.char_indices().chain(std::iter::once((path.len(), '/'))) {
+    for (i, c) in path
+        .char_indices()
+        .chain(std::iter::once((path.len(), '/')))
+    {
         if c != '/' && c != '\\' {
             continue;
         }
@@ -828,16 +1249,33 @@ fn folder_breadcrumbs(app: &mut LightcraftApp, ui: &mut egui::Ui, path: &str) {
     let visible = ((ui.available_width() / 80.0) as usize).clamp(1, 4);
     let skip = parts.len().saturating_sub(visible);
     if skip > 0 {
-        ui.label(egui::RichText::new("…  ›").color(t.text_dim)).on_hover_text(path);
+        ui.label(egui::RichText::new("…  ›").color(t.text_dim))
+            .on_hover_text(path);
     }
-    let separator_w = ui.painter().layout_no_wrap("›".into(), t.font(13.0), t.text_dim).size().x + 8.0;
+    let separator_w = ui
+        .painter()
+        .layout_no_wrap("›".into(), t.font(13.0), t.text_dim)
+        .size()
+        .x
+        + 8.0;
     for (i, part) in parts.iter().enumerate().skip(skip) {
         let remaining = parts.len() - i;
         let last = remaining == 1;
         // Share the bounded row among the remaining crumbs, leaving room for every separator.
-        let width = ((ui.available_width() - separator_w * (remaining - 1) as f32) / remaining as f32).max(0.0).floor();
-        let text = egui::RichText::new(*part).size(13.0).color(if last { t.text } else { t.text_label });
-        let r = ui.add_sized(vec2(width, 24.0), egui::Label::new(if last { text.strong() } else { text }).truncate().sense(Sense::click()));
+        let width = ((ui.available_width() - separator_w * (remaining - 1) as f32)
+            / remaining as f32)
+            .max(0.0)
+            .floor();
+        let text =
+            egui::RichText::new(*part)
+                .size(13.0)
+                .color(if last { t.text } else { t.text_label });
+        let r = ui.add_sized(
+            vec2(width, 24.0),
+            egui::Label::new(if last { text.strong() } else { text })
+                .truncate()
+                .sense(Sense::click()),
+        );
         register(ui.ctx(), format!("crumb:{i}"), r.rect);
         if !last {
             if r.hovered() {
@@ -857,8 +1295,16 @@ fn folder_breadcrumbs(app: &mut LightcraftApp, ui: &mut egui::Ui, path: &str) {
 /// While photos are dragged: a badge at the pointer; the drag ends when the button is up
 /// (drop targets act on the release frame, before this runs).
 pub fn drag_feedback(app: &mut LightcraftApp, ctx: &egui::Context) {
-    let Some(ids) = &app.ui.dragging_photos else { return };
-    let (released, down, pos) = ctx.input(|i| (i.pointer.any_released(), i.pointer.any_down(), i.pointer.latest_pos()));
+    let Some(ids) = &app.ui.dragging_photos else {
+        return;
+    };
+    let (released, down, pos) = ctx.input(|i| {
+        (
+            i.pointer.any_released(),
+            i.pointer.any_down(),
+            i.pointer.latest_pos(),
+        )
+    });
     if released || !down {
         app.ui.dragging_photos = None;
         return;
@@ -867,15 +1313,27 @@ pub fn drag_feedback(app: &mut LightcraftApp, ctx: &egui::Context) {
     let t = Tokens::get(ctx);
     let n = ids.len();
     ctx.set_cursor_icon(egui::CursorIcon::Grabbing);
-    egui::Area::new(egui::Id::new("drag-photos")).order(egui::Order::Tooltip).interactable(false).fixed_pos(pos + vec2(14.0, 10.0)).show(ctx, |ui| {
-        egui::Frame::NONE.fill(t.accent).corner_radius(10.0).inner_margin(egui::Margin::symmetric(9, 3)).show(ui, |ui| {
-            ui.label(
-                egui::RichText::new(crate::i18n::tr_format!("{n} photo{}", if n == 1 { "" } else { "s" }, n = n))
-                    .color(Color32::WHITE)
-                    .font(t.semibold(12.0)),
-            );
+    egui::Area::new(egui::Id::new("drag-photos"))
+        .order(egui::Order::Tooltip)
+        .interactable(false)
+        .fixed_pos(pos + vec2(14.0, 10.0))
+        .show(ctx, |ui| {
+            egui::Frame::NONE
+                .fill(t.accent)
+                .corner_radius(10.0)
+                .inner_margin(egui::Margin::symmetric(9, 3))
+                .show(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new(crate::i18n::tr_format!(
+                            "{n} photo{}",
+                            if n == 1 { "" } else { "s" },
+                            n = n
+                        ))
+                        .color(Color32::WHITE)
+                        .font(t.semibold(12.0)),
+                    );
+                });
         });
-    });
 }
 
 pub use super::filterbar::label_color;
@@ -883,7 +1341,10 @@ pub use super::filterbar::label_color;
 /// Albums hold library photos (issue #684): true when `ids` are photos and all of them are
 /// browsed (Local) ones, which album views never show.
 pub fn local_only(app: &LightcraftApp, ids: &[PhotoId]) -> bool {
-    !ids.is_empty() && ids.iter().all(|id| app.session.catalog.photo(*id).is_some_and(|p| p.local))
+    !ids.is_empty()
+        && ids
+            .iter()
+            .all(|id| app.session.catalog.photo(*id).is_some_and(|p| p.local))
 }
 
 /// Why an album action is off for Local photos.
@@ -894,7 +1355,11 @@ pub fn albums_hint() -> String {
 /// Tell the user when an album command skipped Local photos of the selection (`skipped` in its
 /// result).
 pub fn toast_skipped(app: &mut LightcraftApp, ctx: &egui::Context, r: &serde_json::Value) {
-    if let Some(n) = r.get("skipped").and_then(serde_json::Value::as_u64).filter(|n| *n > 0) {
+    if let Some(n) = r
+        .get("skipped")
+        .and_then(serde_json::Value::as_u64)
+        .filter(|n| *n > 0)
+    {
         app.toast(
             ctx,
             crate::i18n::tr_format!(
@@ -908,7 +1373,11 @@ pub fn toast_skipped(app: &mut LightcraftApp, ctx: &egui::Context, r: &serde_jso
 
 /// "Set Color Label" items for the active photo, shared by context menus.
 pub fn label_menu(app: &mut LightcraftApp, ui: &mut egui::Ui) {
-    let current = app.session.active().and_then(|id| app.session.catalog.photo(id)).and_then(|p| p.label);
+    let current = app
+        .session
+        .active()
+        .and_then(|id| app.session.catalog.photo(id))
+        .and_then(|p| p.label);
     if let Some(l) = label_items(app, ui, current, "photoLabel") {
         let _ = app.run("photo.label", json!({"label": label_param(l)}));
         ui.close();
@@ -918,7 +1387,12 @@ pub fn label_menu(app: &mut LightcraftApp, ui: &mut egui::Ui) {
 /// The colour label items of a menu (coloured dot + the label's name, then None and Edit Label
 /// Names…), `current` checked; each colour is widget `<widget>:<colour>` (`<widget>:none`) for
 /// the control channel. Returns the choice (`Some(None)`: None).
-pub fn label_items(app: &mut LightcraftApp, ui: &mut egui::Ui, current: Option<ColorLabel>, widget: &str) -> Option<Option<ColorLabel>> {
+pub fn label_items(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    current: Option<ColorLabel>,
+    widget: &str,
+) -> Option<Option<ColorLabel>> {
     let mut chosen = None;
     for l in ColorLabel::ALL {
         let name = crate::i18n::color_label(&app.session.catalog, l);
@@ -927,7 +1401,11 @@ pub fn label_items(app: &mut LightcraftApp, ui: &mut egui::Ui, current: Option<C
             ui.painter().circle_filled(r.center(), 5.0, label_color(l));
             ui.selectable_label(current == Some(l), name)
         });
-        register(ui.ctx(), format!("{widget}:{}", label_param(Some(l))), resp.inner.rect);
+        register(
+            ui.ctx(),
+            format!("{widget}:{}", label_param(Some(l))),
+            resp.inner.rect,
+        );
         if resp.inner.clicked() {
             chosen = Some(Some(l));
         }
@@ -951,29 +1429,62 @@ pub fn label_param(l: Option<ColorLabel>) -> String {
 
 /// Stack badge at the cell's top-left: the photo count on a collapsed stack's top, `i/n` on the
 /// members of an expanded stack. Clicking it expands/collapses the stack.
-pub fn stack_badge(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, sid: lightcraft_catalog::StackId, pos: usize, r: Rect, square: bool) {
+pub fn stack_badge(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    id: PhotoId,
+    sid: lightcraft_catalog::StackId,
+    pos: usize,
+    r: Rect,
+    square: bool,
+) {
     let t = Tokens::get(ui.ctx());
-    let Some(st) = app.session.catalog.stack(sid) else { return };
+    let Some(st) = app.session.catalog.stack(sid) else {
+        return;
+    };
     let n = st.photos.len();
     let collapsed = st.collapsed;
-    let text = if collapsed { n.to_string() } else { format!("{}/{n}", pos + 1) };
+    let text = if collapsed {
+        n.to_string()
+    } else {
+        format!("{}/{n}", pos + 1)
+    };
     let p = ui.painter();
     let g = p.layout_no_wrap(text, t.semibold(11.0), Color32::WHITE);
-    let origin = if square { r.min + vec2(10.0, 26.0) } else { r.min + vec2(5.0, 5.0) };
-    let br = Rect::from_min_size(origin, vec2(g.size().x + 30.0, 20.0));
-    let resp = ui.interact(br, egui::Id::new(("stack-badge", id.0)), Sense::click()).on_hover_text(if collapsed {
-        "Stack — click to expand (S)"
+    let origin = if square {
+        r.min + vec2(10.0, 26.0)
     } else {
-        "Stack — click to collapse (S)"
-    });
+        r.min + vec2(5.0, 5.0)
+    };
+    let br = Rect::from_min_size(origin, vec2(g.size().x + 30.0, 20.0));
+    let resp = ui
+        .interact(br, egui::Id::new(("stack-badge", id.0)), Sense::click())
+        .on_hover_text(if collapsed {
+            "Stack — click to expand (S)"
+        } else {
+            "Stack — click to collapse (S)"
+        });
     register(ui.ctx(), format!("stack:{}", id.0), br);
-    let fill = if resp.hovered() { Color32::from_black_alpha(220) } else { Color32::from_black_alpha(165) };
+    let fill = if resp.hovered() {
+        Color32::from_black_alpha(220)
+    } else {
+        Color32::from_black_alpha(165)
+    };
     p.rect_filled(br, 10.0, fill);
     if pos == 0 && !collapsed {
         p.rect_stroke(br, 10.0, Stroke::new(1.0, t.accent), StrokeKind::Inside);
     }
-    paint(p, Rect::from_min_size(br.min + vec2(6.0, 3.0), vec2(14.0, 14.0)), Icon::Stack, Color32::WHITE);
-    p.galley(pos2(br.min.x + 24.0, br.center().y - g.size().y / 2.0), g, Color32::WHITE);
+    paint(
+        p,
+        Rect::from_min_size(br.min + vec2(6.0, 3.0), vec2(14.0, 14.0)),
+        Icon::Stack,
+        Color32::WHITE,
+    );
+    p.galley(
+        pos2(br.min.x + 24.0, br.center().y - g.size().y / 2.0),
+        g,
+        Color32::WHITE,
+    );
     if resp.clicked() {
         let _ = app.run("stack.toggle", json!({"ids": [id.0]}));
     }
@@ -988,26 +1499,31 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
     }
     // Photo ▸ Edit In: a copy with this photo's edits, opened in PhotoCraft or another editor
     // (desktop only: the web can't start programs)
-    ui.add_enabled_ui(crate::menus::ui_enabled(app, "photo.editInPhotoCraft"), |ui| {
-        ui.menu_button(crate::i18n::tr("Edit In"), |ui| {
-            if ui.button(crate::i18n::tr("Edit in PhotoCraft")).clicked() {
-                let _ = app.run("photo.editInPhotoCraft", json!({}));
-            }
-            if ui.button(crate::i18n::tr("Edit in Other Editor")).clicked() {
-                let _ = app.run("photo.editInExternal", json!({}));
-            }
-            // the raw itself, unrendered: for a raw developer set as the other editor
-            if ui
-                .add_enabled(
-                    crate::menus::ui_enabled(app, "photo.openOriginalInExternal"),
-                    egui::Button::new(crate::i18n::tr("Open Original in Other Editor (RAW, no copy)")),
-                )
-                .clicked()
-            {
-                let _ = app.run("photo.openOriginalInExternal", json!({}));
-            }
-        });
-    });
+    ui.add_enabled_ui(
+        crate::menus::ui_enabled(app, "photo.editInPhotoCraft"),
+        |ui| {
+            ui.menu_button(crate::i18n::tr("Edit In"), |ui| {
+                if ui.button(crate::i18n::tr("Edit in PhotoCraft")).clicked() {
+                    let _ = app.run("photo.editInPhotoCraft", json!({}));
+                }
+                if ui.button(crate::i18n::tr("Edit in Other Editor")).clicked() {
+                    let _ = app.run("photo.editInExternal", json!({}));
+                }
+                // the raw itself, unrendered: for a raw developer set as the other editor
+                if ui
+                    .add_enabled(
+                        crate::menus::ui_enabled(app, "photo.openOriginalInExternal"),
+                        egui::Button::new(crate::i18n::tr(
+                            "Open Original in Other Editor (RAW, no copy)",
+                        )),
+                    )
+                    .clicked()
+                {
+                    let _ = app.run("photo.openOriginalInExternal", json!({}));
+                }
+            });
+        },
+    );
     if ui.button(crate::i18n::tr("Find Similar Photos")).clicked() {
         match app.run("library.findSimilar", json!({"id": id.0})) {
             Ok(r) => {
@@ -1015,25 +1531,43 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
                 app.ui.view = crate::state::ViewMode::PhotoGrid;
                 app.toast(
                     ui.ctx(),
-                    crate::i18n::tr_format!("{n} similar photo{} · View ▸ Clear Filters to see all", if n == 1 { "" } else { "s" }, n = n),
+                    crate::i18n::tr_format!(
+                        "{n} similar photo{} · View ▸ Clear Filters to see all",
+                        if n == 1 { "" } else { "s" },
+                        n = n
+                    ),
                 );
             }
             Err(e) => app.toast(ui.ctx(), e),
         }
     }
-    if ui.button(crate::i18n::tr("Set as Reference Photo")).clicked() {
+    if ui
+        .button(crate::i18n::tr("Set as Reference Photo"))
+        .clicked()
+    {
         let _ = app.run("photo.setReference", json!({"id": id.0}));
     }
     ui.separator();
     ui.menu_button(crate::i18n::tr("Set Rating"), |ui| {
         for r in 0..=5 {
-            if ui.button(if r == 0 { crate::i18n::tr("No Stars").to_string() } else { "★".repeat(r) }).clicked() {
+            if ui
+                .button(if r == 0 {
+                    crate::i18n::tr("No Stars").to_string()
+                } else {
+                    "★".repeat(r)
+                })
+                .clicked()
+            {
                 let _ = app.run("photo.rate", json!({"rating": r}));
             }
         }
     });
     ui.menu_button(crate::i18n::tr("Set Flag"), |ui| {
-        for (l, f) in [("Pick", "pick"), ("Reject", "reject"), ("Unflagged", "none")] {
+        for (l, f) in [
+            ("Pick", "pick"),
+            ("Reject", "reject"),
+            ("Unflagged", "none"),
+        ] {
             if ui.button(crate::i18n::tr(l)).clicked() {
                 let _ = app.run("photo.flag", json!({"flag": f}));
             }
@@ -1042,11 +1576,19 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
     ui.menu_button(crate::i18n::tr("Set Color Label"), |ui| label_menu(app, ui));
     if local_only(app, &app.session.targets(&serde_json::Value::Null)) {
         // albums hold library photos (issue #684): nothing here to add until they join My Photos
-        let add = ui.add_enabled(false, egui::Button::new(crate::i18n::tr("Add to Album"))).on_disabled_hover_text(albums_hint());
+        let add = ui
+            .add_enabled(false, egui::Button::new(crate::i18n::tr("Add to Album")))
+            .on_disabled_hover_text(albums_hint());
         register(ui.ctx(), "button:contextAddToAlbum", add.rect);
     } else {
         let add = ui.menu_button(crate::i18n::tr("Add to Album"), |ui| {
-            let albums: Vec<_> = app.session.catalog.albums().filter(|a| !a.folder && !a.is_smart()).map(|a| (a.id.0, a.name.clone())).collect();
+            let albums: Vec<_> = app
+                .session
+                .catalog
+                .albums()
+                .filter(|a| !a.folder && !a.is_smart())
+                .map(|a| (a.id.0, a.name.clone()))
+                .collect();
             let any = !albums.is_empty();
             for (aid, name) in albums {
                 let b = ui.button(name);
@@ -1073,7 +1615,11 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
     }
     // in a (non-smart) album: take the selection out of it, or make this photo its cover
     if let lightcraft_engine::LibrarySource::Album(aid) = app.session.source
-        && app.session.catalog.album(aid).is_some_and(|a| !a.folder && !a.is_smart())
+        && app
+            .session
+            .catalog
+            .album(aid)
+            .is_some_and(|a| !a.folder && !a.is_smart())
     {
         if ui.button(crate::i18n::tr("Remove from Album")).clicked() {
             let _ = app.run("album.removePhotos", json!({"id": aid.0}));
@@ -1090,13 +1636,17 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
         // the folder dialog goes through the shared picker (off the UI thread where the host has
         // one: then photo.moveToFolder runs when it closes)
         let req = crate::pick::PickRequest::folder(crate::i18n::tr("Move to Folder…"));
-        let picked =
-            crate::pick::ask(app, "photo.moveToFolder", &json!({}), "folder", req, |s| s.pick_folder.as_mut().and_then(|f| f()).map(|x| vec![x]));
+        let picked = crate::pick::ask(app, "photo.moveToFolder", &json!({}), "folder", req, |s| {
+            s.pick_folder.as_mut().and_then(|f| f()).map(|x| vec![x])
+        });
         if let crate::pick::Picked::Now(v) = picked
             && let Some(into) = v.into_iter().next()
         {
             match app.run("photo.moveToFolder", json!({"folder": into})) {
-                Ok(r) => app.toast(ui.ctx(), crate::i18n::tr_format!("Moved {} photo(s)", r["moved"])),
+                Ok(r) => app.toast(
+                    ui.ctx(),
+                    crate::i18n::tr_format!("Moved {} photo(s)", r["moved"]),
+                ),
                 Err(e) => app.toast(ui.ctx(), e),
             }
         }
@@ -1123,12 +1673,18 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
             ("Split Stack", "stack.split", stacked),
             ("Expand/Collapse Stack", "stack.toggle", stacked),
         ] {
-            if ui.add_enabled(on, egui::Button::new(crate::i18n::tr(label))).clicked() {
+            if ui
+                .add_enabled(on, egui::Button::new(crate::i18n::tr(label)))
+                .clicked()
+            {
                 let _ = app.run(cmd, json!({}));
             }
         }
         ui.separator();
-        if ui.button(crate::i18n::tr("Auto-Stack by Capture Time…")).clicked() {
+        if ui
+            .button(crate::i18n::tr("Auto-Stack by Capture Time…"))
+            .clicked()
+        {
             let _ = app.run("dialog.autoStack", json!({}));
         }
     });
@@ -1136,10 +1692,22 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
     if ui.button(crate::i18n::tr("Copy Edit Settings")).clicked() {
         let _ = app.run("develop.copy", json!({}));
     }
-    if ui.add_enabled(app.session.clipboard.is_some(), egui::Button::new(crate::i18n::tr("Paste Edit Settings"))).clicked() {
+    if ui
+        .add_enabled(
+            app.session.clipboard.is_some(),
+            egui::Button::new(crate::i18n::tr("Paste Edit Settings")),
+        )
+        .clicked()
+    {
         let _ = app.run("develop.paste", json!({}));
     }
-    if ui.add_enabled(app.session.clipboard.is_some(), egui::Button::new(crate::i18n::tr("Paste Selected Settings…"))).clicked() {
+    if ui
+        .add_enabled(
+            app.session.clipboard.is_some(),
+            egui::Button::new(crate::i18n::tr("Paste Selected Settings…")),
+        )
+        .clicked()
+    {
         let _ = app.run("dialog.pasteSettings", json!({}));
     }
     if ui.button(crate::i18n::tr("Reset Edits")).clicked() {
@@ -1147,8 +1715,15 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
     }
     ui.menu_button(crate::i18n::tr("Photo Merge"), |ui| {
         let n = app.session.targets(&json!({})).len();
-        for (id, label) in [("dialog.mergeHdr", "HDR…"), ("dialog.mergePanorama", "Panorama…"), ("dialog.mergeHdrPanorama", "HDR Panorama…")] {
-            if ui.add_enabled(n >= 2, egui::Button::new(crate::i18n::tr(label))).clicked() {
+        for (id, label) in [
+            ("dialog.mergeHdr", "HDR…"),
+            ("dialog.mergePanorama", "Panorama…"),
+            ("dialog.mergeHdrPanorama", "HDR Panorama…"),
+        ] {
+            if ui
+                .add_enabled(n >= 2, egui::Button::new(crate::i18n::tr(label)))
+                .clicked()
+            {
                 let _ = app.run(id, json!({}));
             }
         }
@@ -1167,7 +1742,13 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
     if missing && ui.button(crate::i18n::tr("Locate Missing File…")).clicked() {
         let _ = app.run("photo.locate", json!({}));
     }
-    if ui.add_enabled(crate::menus::ui_enabled(app, "app.showInFinder"), egui::Button::new(crate::i18n::tr(crate::menus::reveal_label()))).clicked() {
+    if ui
+        .add_enabled(
+            crate::menus::ui_enabled(app, "app.showInFinder"),
+            egui::Button::new(crate::i18n::tr(crate::menus::reveal_label())),
+        )
+        .clicked()
+    {
         let _ = app.run("app.showInFinder", json!({}));
     }
     if ui.button(crate::i18n::tr("Export…")).clicked() {
@@ -1180,7 +1761,14 @@ pub fn context_menu(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId) {
                     Ok(r) if r.get("background").is_some() => {}
                     Ok(r) => {
                         let n = r["files"].as_array().map_or(0, Vec::len);
-                        app.toast(ui.ctx(), crate::i18n::tr_format!("Exported {n} photo{}", if n == 1 { "" } else { "s" }, n = n));
+                        app.toast(
+                            ui.ctx(),
+                            crate::i18n::tr_format!(
+                                "Exported {n} photo{}",
+                                if n == 1 { "" } else { "s" },
+                                n = n
+                            ),
+                        );
                     }
                     Err(e) => app.toast(ui.ctx(), e),
                 }
@@ -1224,9 +1812,16 @@ mod tests {
         assert!(l.headers.is_empty());
         assert_eq!(l.cells.len(), aspects.len());
         // full rows end at the right edge; rows are at most the target height
-        let first_row: Vec<&Rect> = l.cells.iter().filter(|c| (c.top() - l.cells[0].top()).abs() < 0.01).collect();
+        let first_row: Vec<&Rect> = l
+            .cells
+            .iter()
+            .filter(|c| (c.top() - l.cells[0].top()).abs() < 0.01)
+            .collect();
         assert!(first_row.len() >= 2);
-        assert!((first_row.last().unwrap().right() - 604.0).abs() < 0.5, "{first_row:?}");
+        assert!(
+            (first_row.last().unwrap().right() - 604.0).abs() < 0.5,
+            "{first_row:?}"
+        );
         assert!(first_row.iter().all(|c| c.height() <= 150.0 + 0.01));
         let last = l.cells.last().unwrap();
         assert!(last.right() <= 604.0 + 0.5);
@@ -1247,7 +1842,10 @@ mod tests {
         // group 2 starts on a new row below its own header, after group 1's photos
         assert!(l.headers[1].top() >= l.cells[1].bottom());
         assert_eq!(l.cells[2].top(), l.headers[1].bottom());
-        assert!((l.cells[2].left() - 4.0).abs() < 0.01, "a group's first photo starts the row");
+        assert!(
+            (l.cells[2].left() - 4.0).abs() < 0.01,
+            "a group's first photo starts the row"
+        );
         for c in &l.cells[2..] {
             assert!(c.top() >= l.headers[1].bottom());
         }
@@ -1276,7 +1874,10 @@ mod tests {
                 assert_eq!(row.start, next, "rows are contiguous");
                 assert!(row.end > row.start);
                 for c in &l.cells[row.start..row.end] {
-                    assert!((c.top() - row.top).abs() < 0.01 && (c.bottom() - row.bottom).abs() < 0.01, "{c:?} {row:?}");
+                    assert!(
+                        (c.top() - row.top).abs() < 0.01 && (c.bottom() - row.bottom).abs() < 0.01,
+                        "{c:?} {row:?}"
+                    );
                 }
                 if let Some(prev) = k.checked_sub(1).map(|p| l.rows[p]) {
                     assert!(row.top > prev.bottom, "{prev:?} {row:?}");
@@ -1285,10 +1886,20 @@ mod tests {
             }
             assert_eq!(next, aspects.len());
             // the binary search finds exactly the cells a linear scan does
-            for (top, bottom) in [(0.0, 300.0), (1234.0, 2100.0), (l.height - 50.0, l.height + 900.0), (-500.0, -1.0)] {
+            for (top, bottom) in [
+                (0.0, 300.0),
+                (1234.0, 2100.0),
+                (l.height - 50.0, l.height + 900.0),
+                (-500.0, -1.0),
+            ] {
                 let band = Rect::from_min_max(pos2(0.0, top), pos2(2000.0, bottom));
-                let want: Vec<usize> = (0..aspects.len()).filter(|i| l.cells[*i].intersects(band)).collect();
-                let got: Vec<usize> = rows_between(&l.rows, top, bottom).iter().flat_map(|r| r.start..r.end).collect();
+                let want: Vec<usize> = (0..aspects.len())
+                    .filter(|i| l.cells[*i].intersects(band))
+                    .collect();
+                let got: Vec<usize> = rows_between(&l.rows, top, bottom)
+                    .iter()
+                    .flat_map(|r| r.start..r.end)
+                    .collect();
                 assert_eq!(got, want, "square {square} {top}..{bottom}");
             }
         }
@@ -1298,9 +1909,12 @@ mod tests {
     fn library_context_menu_labels_have_french_translations() {
         let saved = crate::i18n::language();
         crate::i18n::set_language(crate::i18n::Locale::Fr);
-        for (label, expected) in
-            [("Pick", "Sélectionnée"), ("Reject", "Rejeter"), ("Group into Stack", "Regrouper en pile"), ("HDR Panorama…", "Panorama HDR…")]
-        {
+        for (label, expected) in [
+            ("Pick", "Sélectionnée"),
+            ("Reject", "Rejeter"),
+            ("Group into Stack", "Regrouper en pile"),
+            ("HDR Panorama…", "Panorama HDR…"),
+        ] {
             assert_eq!(crate::i18n::tr(label), expected);
         }
         crate::i18n::set_language(saved);

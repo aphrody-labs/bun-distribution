@@ -86,7 +86,13 @@ pub(crate) fn check_size(format: Format, w: u64, h: u64, opts: &DecodeOptions) -
     Ok(())
 }
 
-pub(crate) fn finish(format: Format, raw: Raw, meta: Meta, source_dims: (u32, u32), opts: &DecodeOptions) -> Result<Decoded> {
+pub(crate) fn finish(
+    format: Format,
+    raw: Raw,
+    meta: Meta,
+    source_dims: (u32, u32),
+    opts: &DecodeOptions,
+) -> Result<Decoded> {
     let n = raw.width * raw.height;
     let ch = raw.model.channels() + raw.alpha as usize;
     if n == 0 || raw.buf.len() < n * ch {
@@ -123,13 +129,27 @@ pub(crate) fn finish(format: Format, raw: Raw, meta: Meta, source_dims: (u32, u3
         }
     }
 
-    let summary = meta.exif.as_deref().map(exif::summarize).unwrap_or_default();
-    let orientation = meta.orientation.or(summary.orientation).filter(|o| (1..=8).contains(o)).unwrap_or(1);
+    let summary = meta
+        .exif
+        .as_deref()
+        .map(exif::summarize)
+        .unwrap_or_default();
+    let orientation = meta
+        .orientation
+        .or(summary.orientation)
+        .filter(|o| (1..=8).contains(o))
+        .unwrap_or(1);
 
     let (image, alpha) = match opts.max_size {
-        Some((mw, mh)) if (image.width as u32 > mw || image.height as u32 > mh) && mw > 0 && mh > 0 => {
+        Some((mw, mh))
+            if (image.width as u32 > mw || image.height as u32 > mh) && mw > 0 && mh > 0 =>
+        {
             let factor = (image.width as f64 / mw as f64).max(image.height as f64 / mh as f64);
-            let f = if factor >= 2.0 { Filter::Box } else { Filter::Mitchell };
+            let f = if factor >= 2.0 {
+                Filter::Box
+            } else {
+                Filter::Mitchell
+            };
             let img = fit(&image, mw as usize, mh as usize, f);
             let alpha = alpha.map(|a| fit(&a, mw as usize, mh as usize, f));
             (img, alpha)
@@ -190,7 +210,11 @@ fn linearize(raw: &Raw, ch: usize, trc: &[Trc; 3]) -> Rgb32f {
                         let l = luts[1][v[i] as usize];
                         [l, l, l]
                     } else {
-                        [luts[0][v[i] as usize], luts[1][v[i + 1] as usize], luts[2][v[i + 2] as usize]]
+                        [
+                            luts[0][v[i] as usize],
+                            luts[1][v[i + 1] as usize],
+                            luts[2][v[i + 2] as usize],
+                        ]
                     };
                 }
             });
@@ -198,7 +222,11 @@ fn linearize(raw: &Raw, ch: usize, trc: &[Trc; 3]) -> Rgb32f {
         Buf::U16(v) => {
             let same = trc[0] == trc[1] && trc[1] == trc[2];
             let l0 = trc[1].lut16();
-            let (l1, l2) = if same || gray { (None, None) } else { (Some(trc[0].lut16()), Some(trc[2].lut16())) };
+            let (l1, l2) = if same || gray {
+                (None, None)
+            } else {
+                (Some(trc[0].lut16()), Some(trc[2].lut16()))
+            };
             let lr = l1.as_ref().unwrap_or(&l0);
             let lb = l2.as_ref().unwrap_or(&l0);
             par_rows(&mut img.data, w, |y, row| {
@@ -208,7 +236,11 @@ fn linearize(raw: &Raw, ch: usize, trc: &[Trc; 3]) -> Rgb32f {
                         let l = l0[v[i] as usize];
                         [l, l, l]
                     } else {
-                        [lr[v[i] as usize], l0[v[i + 1] as usize], lb[v[i + 2] as usize]]
+                        [
+                            lr[v[i] as usize],
+                            l0[v[i + 1] as usize],
+                            lb[v[i + 2] as usize],
+                        ]
                     };
                 }
             });
@@ -228,7 +260,11 @@ fn linearize(raw: &Raw, ch: usize, trc: &[Trc; 3]) -> Rgb32f {
                     } else if lin {
                         [s(0), s(1), s(2)]
                     } else {
-                        [trc[0].to_linear(s(0)), trc[1].to_linear(s(1)), trc[2].to_linear(s(2))]
+                        [
+                            trc[0].to_linear(s(0)),
+                            trc[1].to_linear(s(1)),
+                            trc[2].to_linear(s(2)),
+                        ]
                     };
                 }
             });
@@ -249,21 +285,41 @@ fn device_samples(raw: &Raw, ch: usize, n_color: usize) -> Vec<f32> {
 }
 
 fn from_vec(w: usize, h: usize, data: Vec<[f32; 3]>) -> Rgb32f {
-    Rgb32f { width: w, height: h, data }
+    Rgb32f {
+        width: w,
+        height: h,
+        data,
+    }
 }
 
-fn rgb_or_gray(raw: &Raw, ch: usize, meta: &Meta, info: Option<&icc::IccInfo>, float: bool) -> (Rgb32f, SourceSpace) {
+fn rgb_or_gray(
+    raw: &Raw,
+    ch: usize,
+    meta: &Meta,
+    info: Option<&icc::IccInfo>,
+    float: bool,
+) -> (Rgb32f, SourceSpace) {
     let gray = raw.model == Model::Gray;
     if let (Some(bytes), Some(info)) = (meta.icc.as_deref(), info) {
         match (&info.kind, gray) {
             (IccKind::MatrixTrc { to_xyz_d50, trc }, false) => {
-                let space = SourceSpace { named: info.named, to_xyz_d50: *to_xyz_d50, trc: Some(trc.clone()), origin: SpaceOrigin::IccMatrixTrc };
+                let space = SourceSpace {
+                    named: info.named,
+                    to_xyz_d50: *to_xyz_d50,
+                    trc: Some(trc.clone()),
+                    origin: SpaceOrigin::IccMatrixTrc,
+                };
                 return (linearize(raw, ch, trc), space);
             }
             (IccKind::MatrixTrc { to_xyz_d50, trc }, true) => {
                 // Gray data with an RGB profile: neutral axis only needs the green curve.
                 let t = [trc[1].clone(), trc[1].clone(), trc[1].clone()];
-                let space = SourceSpace { named: info.named, to_xyz_d50: *to_xyz_d50, trc: Some(t.clone()), origin: SpaceOrigin::IccMatrixTrc };
+                let space = SourceSpace {
+                    named: info.named,
+                    to_xyz_d50: *to_xyz_d50,
+                    trc: Some(t.clone()),
+                    origin: SpaceOrigin::IccMatrixTrc,
+                };
                 return (linearize(raw, ch, &t), space);
             }
             (IccKind::Gray { trc }, true) => {
@@ -273,7 +329,11 @@ fn rgb_or_gray(raw: &Raw, ch: usize, meta: &Meta, info: Option<&icc::IccInfo>, f
                 return (linearize(raw, ch, &t), space);
             }
             (IccKind::NeedsCms, _) => {
-                let wanted = if gray { IccColorModel::Gray } else { IccColorModel::Rgb };
+                let wanted = if gray {
+                    IccColorModel::Gray
+                } else {
+                    IccColorModel::Rgb
+                };
                 if info.model == wanted {
                     let nc = raw.model.channels();
                     let samples = device_samples(raw, ch, nc);
@@ -297,7 +357,11 @@ fn rgb_or_gray(raw: &Raw, ch: usize, meta: &Meta, info: Option<&icc::IccInfo>, f
         let t = h.trc.clone().unwrap_or([Trc::Srgb, Trc::Srgb, Trc::Srgb]);
         return (linearize(raw, ch, &t), h.clone());
     }
-    let adobe = meta.exif.as_deref().map(exif::summarize).is_some_and(|s| s.adobe_rgb_hint);
+    let adobe = meta
+        .exif
+        .as_deref()
+        .map(exif::summarize)
+        .is_some_and(|s| s.adobe_rgb_hint);
     let mut s = if adobe {
         SourceSpace::named(NamedSpace::AdobeRgb, SpaceOrigin::Container)
     } else {
@@ -311,7 +375,12 @@ fn rgb_or_gray(raw: &Raw, ch: usize, meta: &Meta, info: Option<&icc::IccInfo>, f
     (linearize(raw, ch, &t), s)
 }
 
-fn cmyk(raw: &Raw, ch: usize, icc_bytes: Option<&[u8]>, info: Option<&icc::IccInfo>) -> (Rgb32f, SourceSpace) {
+fn cmyk(
+    raw: &Raw,
+    ch: usize,
+    icc_bytes: Option<&[u8]>,
+    info: Option<&icc::IccInfo>,
+) -> (Rgb32f, SourceSpace) {
     let samples = device_samples(raw, ch, 4);
     if let (Some(bytes), Some(info)) = (icc_bytes, info)
         && info.model == IccColorModel::Cmyk
@@ -328,9 +397,17 @@ fn cmyk(raw: &Raw, ch: usize, icc_bytes: Option<&[u8]>, info: Option<&icc::IccIn
         .iter()
         .map(|c| {
             let k = 1.0 - c[3];
-            [(1.0 - c[0]) * k, (1.0 - c[1]) * k, (1.0 - c[2]) * k].map(lightcraft_color::transfer::srgb_to_linear)
+            [(1.0 - c[0]) * k, (1.0 - c[1]) * k, (1.0 - c[2]) * k]
+                .map(lightcraft_color::transfer::srgb_to_linear)
         })
         .collect();
-    let origin = if icc_bytes.is_some() { SpaceOrigin::IccUnsupported } else { SpaceOrigin::Naive };
-    (from_vec(raw.width, raw.height, px), SourceSpace::named(NamedSpace::Srgb, origin))
+    let origin = if icc_bytes.is_some() {
+        SpaceOrigin::IccUnsupported
+    } else {
+        SpaceOrigin::Naive
+    };
+    (
+        from_vec(raw.width, raw.height, px),
+        SourceSpace::named(NamedSpace::Srgb, origin),
+    )
 }

@@ -1,8 +1,8 @@
 use crate::{
+    FutureRenderResources,
     error_handler::DeviceErrorHandler,
     render_resource::PipelineCache,
     renderer::{self, RenderAdapter, RenderAdapterInfo, RenderDevice, RenderInstance, RenderQueue},
-    FutureRenderResources,
 };
 use alloc::borrow::Cow;
 use bevy_ecs::world::World;

@@ -4,12 +4,13 @@ use std::collections::HashMap;
 
 use wordcraft_doc::para::cap_alt;
 use wordcraft_doc::props::{
-    Align, Border, BorderStyle, Borders, CellProps, CharProps, HeightRule, Highlight, LineSpacing, NumRef, ParaProps, Rgb, RowProps, TabAlign,
-    TabLeader, TabStop, TableFloat, TableLook, TableProps, TextColor, TextDirection, Underline, VAlign, VMerge, VertAlign,
+    Align, Border, BorderStyle, Borders, CellProps, CharProps, HeightRule, Highlight, LineSpacing,
+    NumRef, ParaProps, Rgb, RowProps, TabAlign, TabLeader, TabStop, TableFloat, TableLook,
+    TableProps, TextColor, TextDirection, Underline, VAlign, VMerge, VertAlign,
 };
 use wordcraft_doc::section::{
-    Columns, DocGrid, DocGridType, LineNumberRestart, LineNumbering, MAX_CHAR_SPACE, MAX_GRID_PITCH, NotePos, NoteProps, NoteRestart, NumFormat,
-    SectionProps, SectionStart,
+    Columns, DocGrid, DocGridType, LineNumberRestart, LineNumbering, MAX_CHAR_SPACE,
+    MAX_GRID_PITCH, NotePos, NoteProps, NoteRestart, NumFormat, SectionProps, SectionStart,
 };
 
 use super::drawing_color::adjust_lum;
@@ -18,20 +19,43 @@ use crate::units::{int, measure, on_off, tw, u32_of};
 /// A text frame (`w:framePr` without a drop cap, ECMA-376 §17.3.1.11), sizes and offsets in
 /// points (clamped), names kept as OOXML writes them.
 fn text_frame(k: &El) -> wordcraft_doc::props::TextFrame {
-    let len = |name: &str| tw(k, name).filter(|v| v.is_finite()).map(|v| v.clamp(-1584.0, 1584.0));
-    let word = |name: &str, allowed: &[&str], default: &str| k.attr(name).filter(|v| allowed.contains(v)).unwrap_or(default).to_string();
-    let align = |name: &str, allowed: &[&str]| k.attr(name).filter(|v| allowed.contains(v)).map(str::to_string);
+    let len = |name: &str| {
+        tw(k, name)
+            .filter(|v| v.is_finite())
+            .map(|v| v.clamp(-1584.0, 1584.0))
+    };
+    let word = |name: &str, allowed: &[&str], default: &str| {
+        k.attr(name)
+            .filter(|v| allowed.contains(v))
+            .unwrap_or(default)
+            .to_string()
+    };
+    let align = |name: &str, allowed: &[&str]| {
+        k.attr(name)
+            .filter(|v| allowed.contains(v))
+            .map(str::to_string)
+    };
     wordcraft_doc::props::TextFrame {
         w: len("w:w").filter(|v| *v > 0.0),
         h: len("w:h").map(f32::abs).filter(|v| *v > 0.0),
         h_exact: k.attr("w:hRule") == Some("exact"),
         x: len("w:x").unwrap_or(0.0),
         y: len("w:y").unwrap_or(0.0),
-        x_align: align("w:xAlign", &["left", "center", "right", "inside", "outside"]),
-        y_align: align("w:yAlign", &["top", "center", "bottom", "inside", "outside"]),
+        x_align: align(
+            "w:xAlign",
+            &["left", "center", "right", "inside", "outside"],
+        ),
+        y_align: align(
+            "w:yAlign",
+            &["top", "center", "bottom", "inside", "outside"],
+        ),
         h_anchor: word("w:hAnchor", &["text", "margin", "page"], "page"),
         v_anchor: word("w:vAnchor", &["text", "margin", "page"], "page"),
-        wrap: word("w:wrap", &["around", "auto", "notBeside", "none", "tight", "through"], "auto"),
+        wrap: word(
+            "w:wrap",
+            &["around", "auto", "notBeside", "none", "tight", "through"],
+            "auto",
+        ),
         h_space: len("w:hSpace").unwrap_or(0.0).max(0.0),
         v_space: len("w:vSpace").unwrap_or(0.0).max(0.0),
     }
@@ -63,11 +87,21 @@ pub(crate) const LEVEL_ONLY: u32 = u32::MAX;
 /// The list a level-only `numPr` refers to: the nearest numbering in style `style`'s based-on chain
 /// (its own included) that names a list. `None` when no style in the chain has one.
 pub(crate) fn chain_list(sheet: &wordcraft_doc::styles::StyleSheet, style: &str) -> Option<u32> {
-    sheet.chain(style).iter().rev().filter_map(|s| s.para.numbering).map(|n| n.num).find(|n| *n != LEVEL_ONLY)
+    sheet
+        .chain(style)
+        .iter()
+        .rev()
+        .filter_map(|s| s.para.numbering)
+        .map(|n| n.num)
+        .find(|n| *n != LEVEL_ONLY)
 }
 
 /// Resolve level-only numbering in `p` against its style chain (`style` when it has none).
-pub(crate) fn resolve_level_only(sheet: &wordcraft_doc::styles::StyleSheet, p: &mut ParaProps, style: &str) {
+pub(crate) fn resolve_level_only(
+    sheet: &wordcraft_doc::styles::StyleSheet,
+    p: &mut ParaProps,
+    style: &str,
+) {
     if let Some(n) = p.numbering.as_mut().filter(|n| n.num == LEVEL_ONLY) {
         match chain_list(sheet, p.style.as_deref().unwrap_or(style)) {
             Some(num) => n.num = num,
@@ -78,11 +112,18 @@ pub(crate) fn resolve_level_only(sheet: &wordcraft_doc::styles::StyleSheet, p: &
 
 impl PropCtx {
     pub fn style_id(&self, id: &str) -> String {
-        self.alias.get(id).cloned().unwrap_or_else(|| id.to_string())
+        self.alias
+            .get(id)
+            .cloned()
+            .unwrap_or_else(|| id.to_string())
     }
 
     fn theme_font(&self, t: &str) -> Option<String> {
-        let f = if t.starts_with("major") { &self.major_font } else { &self.minor_font };
+        let f = if t.starts_with("major") {
+            &self.major_font
+        } else {
+            &self.minor_font
+        };
         (!f.is_empty()).then(|| f.clone())
     }
 
@@ -111,7 +152,11 @@ impl PropCtx {
             _ => return None,
         };
         let mut c = *self.theme_colors.get(slot)?;
-        let byte = |a: &str| e.attr(a).and_then(|v| u8::from_str_radix(v.trim(), 16).ok()).map(|v| f64::from(v) / 255.0);
+        let byte = |a: &str| {
+            e.attr(a)
+                .and_then(|v| u8::from_str_radix(v.trim(), 16).ok())
+                .map(|v| f64::from(v) / 255.0)
+        };
         if let Some(t) = byte(tint) {
             c = adjust_lum(c, |l| l * t + (1.0 - t));
         }
@@ -140,34 +185,46 @@ impl PropCtx {
         let mut c = CharProps::default();
         for k in e.els() {
             match k.name.as_str() {
-                "w:rStyle" => c.style = k.attr("w:val").filter(|v| !v.is_empty()).map(|v| self.style_id(v)),
+                "w:rStyle" => {
+                    c.style = k
+                        .attr("w:val")
+                        .filter(|v| !v.is_empty())
+                        .map(|v| self.style_id(v))
+                }
                 "w:rFonts" => {
                     // A theme font supersedes the fixed font beside it (`w:asciiTheme` over
                     // `w:ascii`, `w:hAnsiTheme` over `w:hAnsi`).
                     let named = |a: &str| k.attr(a).filter(|f| !f.is_empty()).map(str::to_string);
                     let themed = |a: &str| k.attr(a).and_then(|t| self.theme_font(t));
-                    c.font =
-                        themed("w:asciiTheme").or_else(|| named("w:ascii")).or_else(|| themed("w:hAnsiTheme")).or_else(|| named("w:hAnsi")).or_else(
-                            || {
-                                // `w:eastAsia` and `w:cs` name fonts for other scripts; they stand in for the
-                                // Latin font only when the run is hinted as that script. Otherwise the Latin
-                                // font is inherited (a Normal style with only `w:eastAsia`/`w:cs` keeps the
-                                // `docDefaults` font, as in Word).
-                                match k.attr("w:hint") {
-                                    Some("eastAsia") => k.attr("w:eastAsia"),
-                                    Some("cs") => k.attr("w:cs"),
-                                    _ => None,
-                                }
-                                .filter(|f| !f.is_empty())
-                                .map(str::to_string)
-                            },
-                        );
+                    c.font = themed("w:asciiTheme")
+                        .or_else(|| named("w:ascii"))
+                        .or_else(|| themed("w:hAnsiTheme"))
+                        .or_else(|| named("w:hAnsi"))
+                        .or_else(|| {
+                            // `w:eastAsia` and `w:cs` name fonts for other scripts; they stand in for the
+                            // Latin font only when the run is hinted as that script. Otherwise the Latin
+                            // font is inherited (a Normal style with only `w:eastAsia`/`w:cs` keeps the
+                            // `docDefaults` font, as in Word).
+                            match k.attr("w:hint") {
+                                Some("eastAsia") => k.attr("w:eastAsia"),
+                                Some("cs") => k.attr("w:cs"),
+                                _ => None,
+                            }
+                            .filter(|f| !f.is_empty())
+                            .map(str::to_string)
+                        });
                     // The complex-script font (Persian, Arabic, Hebrew text). A `w:cstheme` font is
                     // left to inherit: the theme's per-script fonts aren't read.
-                    c.font_cs = k.attr("w:cs").filter(|f| !f.is_empty() && f.len() < 256).map(str::to_string);
+                    c.font_cs = k
+                        .attr("w:cs")
+                        .filter(|f| !f.is_empty() && f.len() < 256)
+                        .map(str::to_string);
                     // The East Asian font (Chinese, Japanese, Korean text). A `w:eastAsiaTheme` font
                     // is left to inherit, like `w:cstheme`.
-                    c.font_ea = k.attr("w:eastAsia").filter(|f| !f.is_empty() && f.len() < 256).map(str::to_string);
+                    c.font_ea = k
+                        .attr("w:eastAsia")
+                        .filter(|f| !f.is_empty() && f.len() < 256)
+                        .map(str::to_string);
                 }
                 "w:b" => c.bold = Some(on_off(k)),
                 "w:bCs" => c.bold_cs = Some(on_off(k)),
@@ -186,7 +243,10 @@ impl PropCtx {
                 "w:vanish" => c.hidden = Some(on_off(k)),
                 "w:rtl" => c.rtl = Some(on_off(k)),
                 "w:color" => {
-                    c.color = match (self.theme_color(k, "w:themeColor", "w:themeTint", "w:themeShade"), k.attr("w:val")) {
+                    c.color = match (
+                        self.theme_color(k, "w:themeColor", "w:themeTint", "w:themeShade"),
+                        k.attr("w:val"),
+                    ) {
                         (Some(t), _) => Some(TextColor::Rgb(t)),
                         (None, Some(v)) if v.eq_ignore_ascii_case("auto") => Some(TextColor::Auto),
                         (None, Some(v)) => Rgb::parse(v).map(TextColor::Rgb),
@@ -194,11 +254,38 @@ impl PropCtx {
                     }
                 }
                 "w:spacing" => c.spacing = tw(k, "w:val").map(|v| v.clamp(-1584.0, 1584.0)),
-                "w:w" => c.scale = k.attr("w:val").and_then(|v| measure(v.trim_end_matches('%'), 1.0)).map(|v| v.clamp(1.0, 600.0)),
-                "w:kern" => c.kern = k.attr("w:val").and_then(|v| measure(v, 2.0)).map(|v| v.clamp(0.0, 1638.0)),
-                "w:position" => c.position = k.attr("w:val").and_then(|v| measure(v, 2.0)).map(|v| v.clamp(-1584.0, 1584.0)),
-                "w:sz" => c.size = k.attr("w:val").and_then(|v| measure(v, 2.0)).filter(|v| *v > 0.0).map(|v| v.clamp(1.0, 1638.0)),
-                "w:szCs" => c.size_cs = k.attr("w:val").and_then(|v| measure(v, 2.0)).filter(|v| *v > 0.0).map(|v| v.clamp(1.0, 1638.0)),
+                "w:w" => {
+                    c.scale = k
+                        .attr("w:val")
+                        .and_then(|v| measure(v.trim_end_matches('%'), 1.0))
+                        .map(|v| v.clamp(1.0, 600.0))
+                }
+                "w:kern" => {
+                    c.kern = k
+                        .attr("w:val")
+                        .and_then(|v| measure(v, 2.0))
+                        .map(|v| v.clamp(0.0, 1638.0))
+                }
+                "w:position" => {
+                    c.position = k
+                        .attr("w:val")
+                        .and_then(|v| measure(v, 2.0))
+                        .map(|v| v.clamp(-1584.0, 1584.0))
+                }
+                "w:sz" => {
+                    c.size = k
+                        .attr("w:val")
+                        .and_then(|v| measure(v, 2.0))
+                        .filter(|v| *v > 0.0)
+                        .map(|v| v.clamp(1.0, 1638.0))
+                }
+                "w:szCs" => {
+                    c.size_cs = k
+                        .attr("w:val")
+                        .and_then(|v| measure(v, 2.0))
+                        .filter(|v| *v > 0.0)
+                        .map(|v| v.clamp(1.0, 1638.0))
+                }
                 "w:highlight" => c.highlight = k.attr("w:val").map(Highlight::from_ooxml),
                 "w:u" => {
                     if let Some(v) = k.attr("w:val") {
@@ -206,8 +293,9 @@ impl PropCtx {
                     } else {
                         c.underline = Some(Underline::Single);
                     }
-                    c.underline_color =
-                        self.theme_color(k, "w:themeColor", "w:themeTint", "w:themeShade").or_else(|| k.attr("w:color").and_then(Rgb::parse));
+                    c.underline_color = self
+                        .theme_color(k, "w:themeColor", "w:themeTint", "w:themeShade")
+                        .or_else(|| k.attr("w:color").and_then(Rgb::parse));
                 }
                 "w:bdr" => c.border = Some(border(k)),
                 "w:shd" => c.shading = self.shd_fill(k),
@@ -219,8 +307,14 @@ impl PropCtx {
                     })
                 }
                 "w:lang" => {
-                    c.lang = k.attr("w:val").filter(|v| !v.is_empty() && v.len() < 64).map(str::to_string);
-                    c.lang_bidi = k.attr("w:bidi").filter(|v| !v.is_empty() && v.len() < 64).map(str::to_string);
+                    c.lang = k
+                        .attr("w:val")
+                        .filter(|v| !v.is_empty() && v.len() < 64)
+                        .map(str::to_string);
+                    c.lang_bidi = k
+                        .attr("w:bidi")
+                        .filter(|v| !v.is_empty() && v.len() < 64)
+                        .map(str::to_string);
                 }
                 n if n.starts_with("w14:") => {
                     let fx = c.text_effects.get_or_insert_with(Default::default);
@@ -242,7 +336,12 @@ impl PropCtx {
         let mut mark = CharProps::default();
         for k in e.els() {
             match k.name.as_str() {
-                "w:pStyle" => p.style = k.attr("w:val").filter(|v| !v.is_empty()).map(|v| self.style_id(v)),
+                "w:pStyle" => {
+                    p.style = k
+                        .attr("w:val")
+                        .filter(|v| !v.is_empty())
+                        .map(|v| self.style_id(v))
+                }
                 "w:keepNext" => p.keep_next = Some(on_off(k)),
                 "w:keepLines" => p.keep_lines = Some(on_off(k)),
                 "w:pageBreakBefore" => p.page_break_before = Some(on_off(k)),
@@ -261,7 +360,9 @@ impl PropCtx {
                 "w:snapToGrid" => p.snap_to_grid = Some(on_off(k)),
                 "w:framePr" => {
                     if matches!(k.attr("w:dropCap"), Some("drop") | Some("margin")) {
-                        p.drop_cap = Some(k.attr("w:lines").and_then(u32_of).unwrap_or(3).clamp(1, 10) as u8);
+                        p.drop_cap = Some(
+                            k.attr("w:lines").and_then(u32_of).unwrap_or(3).clamp(1, 10) as u8,
+                        );
                     } else {
                         p.frame = Some(text_frame(k));
                     }
@@ -275,14 +376,20 @@ impl PropCtx {
                         // A level without a list: the list comes from the based-on style, as in
                         // a Heading 3 that only says "level 3" of Heading 2's list. Resolved once
                         // the styles are read (`resolve_list_levels`).
-                        (None, Some(_)) => p.numbering = Some(NumRef { num: LEVEL_ONLY, level }),
+                        (None, Some(_)) => {
+                            p.numbering = Some(NumRef {
+                                num: LEVEL_ONLY,
+                                level,
+                            })
+                        }
                         (None, None) => {}
                     }
                 }
                 "w:pBdr" => p.borders = Some(borders(k)),
                 "w:shd" => p.shading = self.shd_fill(k),
                 "w:tabs" => {
-                    let tabs: Vec<TabStop> = k.children("w:tab").take(64).filter_map(tab_stop).collect();
+                    let tabs: Vec<TabStop> =
+                        k.children("w:tab").take(64).filter_map(tab_stop).collect();
                     p.tabs = Some(tabs);
                 }
                 "w:spacing" => {
@@ -293,7 +400,10 @@ impl PropCtx {
                         p.space_after = Some(v.max(0.0));
                     }
                     // HTML-style automatic spacing; "0" switches an inherited one off.
-                    let auto = |name| k.attr(name).map(|v| matches!(v.trim(), "1" | "true" | "on"));
+                    let auto = |name| {
+                        k.attr(name)
+                            .map(|v| matches!(v.trim(), "1" | "true" | "on"))
+                    };
                     if let Some(a) = auto("w:beforeAutospacing") {
                         p.space_before_auto = Some(a);
                     }
@@ -306,7 +416,8 @@ impl PropCtx {
                         p.line_spacing = match rule.as_str() {
                             "exact" => measure(line, 20.0).map(|v| LineSpacing::Exactly(v.abs())),
                             "atleast" => measure(line, 20.0).map(|v| LineSpacing::AtLeast(v.abs())),
-                            _ => measure(line, 240.0).map(|v| LineSpacing::Multiple(v.abs().clamp(0.06, 132.0))),
+                            _ => measure(line, 240.0)
+                                .map(|v| LineSpacing::Multiple(v.abs().clamp(0.06, 132.0))),
                         };
                     }
                 }
@@ -323,7 +434,11 @@ impl PropCtx {
                         p.indent_first = Some(v);
                     }
                     // Character units (hundredths of a character), which win when non-zero.
-                    let chars = |a: &str| k.attr(a).and_then(int).map(|v| v.clamp(-158_400, 158_400) as f32 / 100.0);
+                    let chars = |a: &str| {
+                        k.attr(a)
+                            .and_then(int)
+                            .map(|v| v.clamp(-158_400, 158_400) as f32 / 100.0)
+                    };
                     if let Some(v) = chars("w:leftChars").or_else(|| chars("w:startChars")) {
                         p.indent_left_chars = Some(v);
                     }
@@ -337,7 +452,9 @@ impl PropCtx {
                     }
                 }
                 "w:jc" => p.align = k.attr("w:val").map(align),
-                "w:outlineLvl" => p.outline_level = k.attr("w:val").and_then(u32_of).map(|v| v.min(9) as u8),
+                "w:outlineLvl" => {
+                    p.outline_level = k.attr("w:val").and_then(u32_of).map(|v| v.min(9) as u8)
+                }
                 "w:rPr" => mark = self.rpr(k),
                 _ => {}
             }
@@ -391,10 +508,23 @@ fn shd_fill(e: &El) -> Option<Rgb> {
 
 pub fn border(e: &El) -> Border {
     let style = BorderStyle::from_ooxml(e.attr("w:val").unwrap_or("single"));
-    let width = e.attr("w:sz").and_then(|v| measure(v, 8.0)).unwrap_or(0.5).clamp(0.0, 12.0);
+    let width = e
+        .attr("w:sz")
+        .and_then(|v| measure(v, 8.0))
+        .unwrap_or(0.5)
+        .clamp(0.0, 12.0);
     let color = e.attr("w:color").and_then(Rgb::parse);
-    let space = e.attr("w:space").and_then(|v| measure(v, 1.0)).unwrap_or(0.0).clamp(0.0, 31.0);
-    Border { style, width, color, space }
+    let space = e
+        .attr("w:space")
+        .and_then(|v| measure(v, 1.0))
+        .unwrap_or(0.0)
+        .clamp(0.0, 31.0);
+    Border {
+        style,
+        width,
+        color,
+        space,
+    }
 }
 
 /// `w:pBdr`, `w:tblBorders`, `w:tcBorders`, `w:pgBorders`.
@@ -416,8 +546,20 @@ pub fn borders(e: &El) -> Borders {
 
 /// Margins element (`w:tblCellMar`, `w:tcMar`) → [top, left, bottom, right].
 pub fn margins(e: &El) -> [f32; 4] {
-    let get = |names: &[&str]| names.iter().find_map(|n| e.child(n)).and_then(|c| tw(c, "w:w")).unwrap_or(0.0).clamp(0.0, 1584.0);
-    [get(&["w:top"]), get(&["w:left", "w:start"]), get(&["w:bottom"]), get(&["w:right", "w:end"])]
+    let get = |names: &[&str]| {
+        names
+            .iter()
+            .find_map(|n| e.child(n))
+            .and_then(|c| tw(c, "w:w"))
+            .unwrap_or(0.0)
+            .clamp(0.0, 1584.0)
+    };
+    [
+        get(&["w:top"]),
+        get(&["w:left", "w:start"]),
+        get(&["w:bottom"]),
+        get(&["w:right", "w:end"]),
+    ]
 }
 
 impl PropCtx {
@@ -425,15 +567,24 @@ impl PropCtx {
         let mut t = TableProps::default();
         for k in e.els() {
             match k.name.as_str() {
-                "w:tblStyle" => t.style = k.attr("w:val").filter(|v| !v.is_empty()).map(|v| self.style_id(v)),
+                "w:tblStyle" => {
+                    t.style = k
+                        .attr("w:val")
+                        .filter(|v| !v.is_empty())
+                        .map(|v| self.style_id(v))
+                }
                 "w:tblW" => {
                     let ty = k.attr("w:type").unwrap_or("dxa");
                     let w = k.attr("w:w").unwrap_or("0");
                     match ty {
                         "pct" => {
-                            t.width_pct = if let Some(p) = w.strip_suffix('%') { measure(p, 1.0) } else { measure(w, 50.0) }
-                                .map(|v| v.clamp(0.0, 1000.0))
-                                .filter(|v| *v > 0.0)
+                            t.width_pct = if let Some(p) = w.strip_suffix('%') {
+                                measure(p, 1.0)
+                            } else {
+                                measure(w, 50.0)
+                            }
+                            .map(|v| v.clamp(0.0, 1000.0))
+                            .filter(|v| *v > 0.0)
                         }
                         "auto" | "nil" => {}
                         _ => t.width = measure(w, 20.0).filter(|v| *v > 0.0),
@@ -518,7 +669,10 @@ pub fn trpr(e: &El) -> RowProps {
 
 /// `w:tcPr`; returns the props and whether the cell is a legacy `hMerge` continuation.
 pub fn tcpr(pc: &PropCtx, e: &El) -> (CellProps, bool) {
-    let mut c = CellProps { span: 1, ..Default::default() };
+    let mut c = CellProps {
+        span: 1,
+        ..Default::default()
+    };
     let mut hcont = false;
     for k in e.els() {
         match k.name.as_str() {
@@ -526,21 +680,33 @@ pub fn tcpr(pc: &PropCtx, e: &El) -> (CellProps, bool) {
                 None | Some("dxa") => c.width = tw(k, "w:w").filter(|v| *v > 0.0),
                 Some("pct") => {
                     let w = k.attr("w:w").unwrap_or("0");
-                    c.width_pct = if let Some(p) = w.strip_suffix('%') { measure(p, 1.0) } else { measure(w, 50.0) }
-                        .map(|v| v.clamp(0.0, 100.0))
-                        .filter(|v| *v > 0.0);
+                    c.width_pct = if let Some(p) = w.strip_suffix('%') {
+                        measure(p, 1.0)
+                    } else {
+                        measure(w, 50.0)
+                    }
+                    .map(|v| v.clamp(0.0, 100.0))
+                    .filter(|v| *v > 0.0);
                 }
                 _ => {}
             },
             "w:gridSpan" => c.span = k.attr("w:val").and_then(u32_of).unwrap_or(1).clamp(1, 63),
             "w:hMerge" => hcont = k.attr("w:val") != Some("restart"),
-            "w:vMerge" => c.vmerge = if k.attr("w:val") == Some("restart") { VMerge::Restart } else { VMerge::Continue },
+            "w:vMerge" => {
+                c.vmerge = if k.attr("w:val") == Some("restart") {
+                    VMerge::Restart
+                } else {
+                    VMerge::Continue
+                }
+            }
             "w:tcBorders" => c.borders = Some(borders(k)),
             "w:shd" => c.shading = pc.shd_fill(k),
             "w:noWrap" => c.no_wrap = on_off(k),
             "w:hideMark" => c.hide_mark = on_off(k),
             "w:tcMar" => c.margins = Some(margins(k)),
-            "w:textDirection" => c.text_direction = TextDirection::from_ooxml(k.attr("w:val").unwrap_or("")),
+            "w:textDirection" => {
+                c.text_direction = TextDirection::from_ooxml(k.attr("w:val").unwrap_or(""))
+            }
             "w:vAlign" => {
                 c.valign = match k.attr("w:val") {
                     Some("center") => VAlign::Center,
@@ -599,7 +765,12 @@ pub fn sectpr(e: &El) -> (SectionProps, Vec<HfRef>) {
                 };
             }
             "w:pgMar" => {
-                let m = |n: &str, d: f32| tw(k, n).map(f32::abs).unwrap_or(d).min(s.page_w.max(s.page_h));
+                let m = |n: &str, d: f32| {
+                    tw(k, n)
+                        .map(f32::abs)
+                        .unwrap_or(d)
+                        .min(s.page_w.max(s.page_h))
+                };
                 s.margin_top = m("w:top", s.margin_top);
                 s.margin_bottom = m("w:bottom", s.margin_bottom);
                 s.margin_left = m("w:left", s.margin_left);
@@ -609,17 +780,29 @@ pub fn sectpr(e: &El) -> (SectionProps, Vec<HfRef>) {
                 s.gutter = m("w:gutter", s.gutter);
             }
             "w:cols" => {
-                let mut c = Columns { count: k.attr("w:num").and_then(u32_of).unwrap_or(1).clamp(1, 45), ..Columns::default() };
+                let mut c = Columns {
+                    count: k.attr("w:num").and_then(u32_of).unwrap_or(1).clamp(1, 45),
+                    ..Columns::default()
+                };
                 if let Some(sp) = tw(k, "w:space") {
                     c.space = sp.max(0.0);
                 }
-                c.separator = k.attr("w:sep").is_some_and(|v| !matches!(v, "0" | "false" | "off"));
-                let equal = k.attr("w:equalWidth").is_none_or(|v| !matches!(v, "0" | "false" | "off"));
+                c.separator = k
+                    .attr("w:sep")
+                    .is_some_and(|v| !matches!(v, "0" | "false" | "off"));
+                let equal = k
+                    .attr("w:equalWidth")
+                    .is_none_or(|v| !matches!(v, "0" | "false" | "off"));
                 if !equal {
                     c.widths = k
                         .children("w:col")
                         .take(45)
-                        .map(|col| (tw(col, "w:w").unwrap_or(0.0).max(0.0), tw(col, "w:space").unwrap_or(0.0).max(0.0)))
+                        .map(|col| {
+                            (
+                                tw(col, "w:w").unwrap_or(0.0).max(0.0),
+                                tw(col, "w:space").unwrap_or(0.0).max(0.0),
+                            )
+                        })
                         .collect();
                     if !c.widths.is_empty() {
                         c.count = c.widths.len() as u32;
@@ -631,7 +814,10 @@ pub fn sectpr(e: &El) -> (SectionProps, Vec<HfRef>) {
             "w:endnotePr" => s.endnote_pr = note_pr(k, true),
             "w:titlePg" => s.title_page = on_off(k),
             "w:bidi" => s.rtl = on_off(k),
-            "w:textDirection" => s.text_direction = wordcraft_doc::props::TextDirection::from_ooxml(k.attr("w:val").unwrap_or("")),
+            "w:textDirection" => {
+                s.text_direction =
+                    wordcraft_doc::props::TextDirection::from_ooxml(k.attr("w:val").unwrap_or(""))
+            }
             "w:pgNumType" => {
                 s.page_num_start = k.attr("w:start").and_then(u32_of);
                 if let Some(f) = k.attr("w:fmt") {
@@ -687,16 +873,30 @@ pub fn sectpr(e: &El) -> (SectionProps, Vec<HfRef>) {
 pub fn note_pr(e: &El, fmt: bool) -> NoteProps {
     NoteProps {
         pos: e.child_val("w:pos").and_then(NotePos::from_ooxml),
-        num_fmt: if fmt { e.child_val("w:numFmt").map(NumFormat::from_ooxml) } else { None },
-        num_start: e.child_val("w:numStart").and_then(int).map(|v| v.clamp(1, wordcraft_doc::section::MAX_NOTE_START as i64) as u32),
-        num_restart: e.child_val("w:numRestart").and_then(NoteRestart::from_ooxml),
+        num_fmt: if fmt {
+            e.child_val("w:numFmt").map(NumFormat::from_ooxml)
+        } else {
+            None
+        },
+        num_start: e
+            .child_val("w:numStart")
+            .and_then(int)
+            .map(|v| v.clamp(1, wordcraft_doc::section::MAX_NOTE_START as i64) as u32),
+        num_restart: e
+            .child_val("w:numRestart")
+            .and_then(NoteRestart::from_ooxml),
     }
 }
 
 /// `w:tblpPr`: a floating table's anchors, offsets or alignments and distances from text.
 fn table_float(e: &El) -> TableFloat {
     use wordcraft_doc::para::{Anchor, FloatAlign};
-    let pt = |n: &str| e.attr(n).and_then(|v| measure(v, 20.0)).map(|v| v.clamp(-31_680.0, 31_680.0)).unwrap_or(0.0);
+    let pt = |n: &str| {
+        e.attr(n)
+            .and_then(|v| measure(v, 20.0))
+            .map(|v| v.clamp(-31_680.0, 31_680.0))
+            .unwrap_or(0.0)
+    };
     let dist = |n: &str| pt(n).clamp(0.0, 1584.0);
     let rel = |n: &str, text: Anchor| match e.attr(n) {
         Some("page") => Anchor::Page,
@@ -711,7 +911,12 @@ fn table_float(e: &El) -> TableFloat {
         y: pt("w:tblpY"),
         h_align: align("w:tblpXSpec"),
         v_align: align("w:tblpYSpec"),
-        dist: [dist("w:leftFromText"), dist("w:topFromText"), dist("w:rightFromText"), dist("w:bottomFromText")],
+        dist: [
+            dist("w:leftFromText"),
+            dist("w:topFromText"),
+            dist("w:rightFromText"),
+            dist("w:bottomFromText"),
+        ],
         overlap: true,
     }
 }

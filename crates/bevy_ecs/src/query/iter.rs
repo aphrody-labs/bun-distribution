@@ -10,8 +10,8 @@ use crate::{
     },
     storage::{Table, TableRow, Tables},
     world::{
-        unsafe_world_cell::UnsafeWorldCell, EntityMut, EntityMutExcept, EntityRef, EntityRefExcept,
-        FilteredEntityMut, FilteredEntityRef,
+        EntityMut, EntityMutExcept, EntityRef, EntityRefExcept, FilteredEntityMut,
+        FilteredEntityRef, unsafe_world_cell::UnsafeWorldCell,
     },
 };
 use alloc::vec::Vec;
@@ -1425,11 +1425,8 @@ where
     }
 }
 
-impl<
-        D: ArchetypeQueryData + IterQueryData,
-        F: QueryFilter,
-        I: ExactSizeIterator<Item = Entity>,
-    > ExactSizeIterator for QuerySortedIter<'_, '_, D, F, I>
+impl<D: ArchetypeQueryData + IterQueryData, F: QueryFilter, I: ExactSizeIterator<Item = Entity>>
+    ExactSizeIterator for QuerySortedIter<'_, '_, D, F, I>
 {
 }
 
@@ -1727,9 +1724,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     >
     where
         for<'lw, 'ls> L::Item<'lw, 'ls>: Ord,
@@ -1794,9 +1791,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     >
     where
         for<'lw, 'ls> L::Item<'lw, 'ls>: Ord,
@@ -1868,9 +1865,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     > {
         self.sort_impl::<L>(move |keyed_query| {
             keyed_query.sort_by(|result_1, result_2| match (result_1, result_2) {
@@ -1911,9 +1908,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     > {
         self.sort_impl::<L>(move |keyed_query| {
             keyed_query.sort_unstable_by(|result_1, result_2| match (result_1, result_2) {
@@ -2018,9 +2015,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     >
     where
         K: Ord,
@@ -2059,9 +2056,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     >
     where
         K: Ord,
@@ -2100,9 +2097,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     >
     where
         K: Ord,
@@ -2140,9 +2137,9 @@ impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item: EntityEquivalent>>
         D,
         F,
         impl ExactSizeIterator<Item = Result<Entity, QueryEntityError>>
-            + DoubleEndedIterator
-            + FusedIterator
-            + 'w,
+        + DoubleEndedIterator
+        + FusedIterator
+        + 'w,
     > {
         let world = self.world;
 
@@ -2242,13 +2239,8 @@ impl<'w, 's, D: ReadOnlyQueryData, F: QueryFilter, I: Iterator<Item: EntityEquiv
     }
 }
 
-impl<
-        'w,
-        's,
-        D: ReadOnlyQueryData,
-        F: QueryFilter,
-        I: DoubleEndedIterator<Item: EntityEquivalent>,
-    > DoubleEndedIterator for QueryManyIter<'w, 's, D, F, I>
+impl<'w, 's, D: ReadOnlyQueryData, F: QueryFilter, I: DoubleEndedIterator<Item: EntityEquivalent>>
+    DoubleEndedIterator for QueryManyIter<'w, 's, D, F, I>
 {
     #[inline(always)]
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -2555,13 +2547,8 @@ pub struct QuerySortedManyIter<
     query_state: &'s QueryState<D, F>,
 }
 
-impl<
-        'w,
-        's,
-        D: QueryData,
-        F: QueryFilter,
-        I: Iterator<Item = Result<Entity, QueryEntityError>>,
-    > QuerySortedManyIter<'w, 's, D, F, I>
+impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item = Result<Entity, QueryEntityError>>>
+    QuerySortedManyIter<'w, 's, D, F, I>
 {
     /// # Safety
     /// - `world` must have permission to access any of the components registered in `query_state`.
@@ -2652,12 +2639,12 @@ impl<
 }
 
 impl<
-        'w,
-        's,
-        D: QueryData,
-        F: QueryFilter,
-        I: DoubleEndedIterator<Item = Result<Entity, QueryEntityError>>,
-    > QuerySortedManyIter<'w, 's, D, F, I>
+    'w,
+    's,
+    D: QueryData,
+    F: QueryFilter,
+    I: DoubleEndedIterator<Item = Result<Entity, QueryEntityError>>,
+> QuerySortedManyIter<'w, 's, D, F, I>
 {
     /// Get the next result from the query
     #[inline(always)]
@@ -2674,12 +2661,12 @@ impl<
 }
 
 impl<
-        'w,
-        's,
-        D: ReadOnlyQueryData,
-        F: QueryFilter,
-        I: Iterator<Item = Result<Entity, QueryEntityError>>,
-    > Iterator for QuerySortedManyIter<'w, 's, D, F, I>
+    'w,
+    's,
+    D: ReadOnlyQueryData,
+    F: QueryFilter,
+    I: Iterator<Item = Result<Entity, QueryEntityError>>,
+> Iterator for QuerySortedManyIter<'w, 's, D, F, I>
 {
     type Item = Result<D::Item<'w, 's>, QueryEntityError>;
 
@@ -2703,12 +2690,12 @@ impl<
 }
 
 impl<
-        'w,
-        's,
-        D: ReadOnlyQueryData,
-        F: QueryFilter,
-        I: DoubleEndedIterator<Item = Result<Entity, QueryEntityError>>,
-    > DoubleEndedIterator for QuerySortedManyIter<'w, 's, D, F, I>
+    'w,
+    's,
+    D: ReadOnlyQueryData,
+    F: QueryFilter,
+    I: DoubleEndedIterator<Item = Result<Entity, QueryEntityError>>,
+> DoubleEndedIterator for QuerySortedManyIter<'w, 's, D, F, I>
 {
     #[inline(always)]
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -2726,20 +2713,15 @@ impl<
 }
 
 impl<
-        D: ReadOnlyQueryData,
-        F: QueryFilter,
-        I: ExactSizeIterator<Item = Result<Entity, QueryEntityError>>,
-    > ExactSizeIterator for QuerySortedManyIter<'_, '_, D, F, I>
+    D: ReadOnlyQueryData,
+    F: QueryFilter,
+    I: ExactSizeIterator<Item = Result<Entity, QueryEntityError>>,
+> ExactSizeIterator for QuerySortedManyIter<'_, '_, D, F, I>
 {
 }
 
-impl<
-        'w,
-        's,
-        D: QueryData,
-        F: QueryFilter,
-        I: Iterator<Item = Result<Entity, QueryEntityError>>,
-    > Debug for QuerySortedManyIter<'w, 's, D, F, I>
+impl<'w, 's, D: QueryData, F: QueryFilter, I: Iterator<Item = Result<Entity, QueryEntityError>>>
+    Debug for QuerySortedManyIter<'w, 's, D, F, I>
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("QuerySortedManyIter").finish()

@@ -60,7 +60,12 @@ pub(crate) enum WidthGesture {
     /// Slide point `index` along the path.
     Slide { index: usize, moved: bool },
     /// Set the width of point `index`; `added` = the gesture added it at `t`.
-    Size { index: usize, added: Option<f64>, moved: bool, side: WidthSide },
+    Size {
+        index: usize,
+        added: Option<f64>,
+        moved: bool,
+        side: WidthSide,
+    },
 }
 
 /// The edited node's stroke path flattened (local coordinates) with its weight and profile.
@@ -73,12 +78,22 @@ struct Stroked {
 fn stroked(doc: &Document, id: NodeId) -> Option<Stroked> {
     let n = doc.node(id)?;
     let path = figcraft_doc::geometry::stroke_geometry(n)?;
-    Some(Stroked { lines: polylines(&path)?, weight: n.stroke.weight, profile: n.stroke.profile().cloned() })
+    Some(Stroked {
+        lines: polylines(&path)?,
+        weight: n.stroke.weight,
+        profile: n.stroke.profile().cloned(),
+    })
 }
 
 /// Width handles for `(index, t, (left, right) side scales)` on every subpath, as drawn at `zoom`
 /// (page coordinates).
-fn handles(doc: &Document, id: NodeId, st: &Stroked, pts: impl Iterator<Item = (usize, f64, (f64, f64))> + Clone, zoom: f64) -> Vec<WidthHandle> {
+fn handles(
+    doc: &Document,
+    id: NodeId,
+    st: &Stroked,
+    pts: impl Iterator<Item = (usize, f64, (f64, f64))> + Clone,
+    zoom: f64,
+) -> Vec<WidthHandle> {
     let w = doc.world_transform(id);
     let min = HANDLE_MIN_PX / zoom.max(1e-6);
     let mut out = Vec::new();
@@ -88,7 +103,11 @@ fn handles(doc: &Document, id: NodeId, st: &Stroked, pts: impl Iterator<Item = (
             let (hl, hr) = (0.5 * st.weight * left, 0.5 * st.weight * right);
             let c = w * at;
             let dir = w * (at + n) - c;
-            let dir = if dir.hypot() > 1e-12 { dir / dir.hypot() } else { Vec2::new(0.0, 1.0) };
+            let dir = if dir.hypot() > 1e-12 {
+                dir / dir.hypot()
+            } else {
+                Vec2::new(0.0, 1.0)
+            };
             let side = |half: f64, s: f64| {
                 let reach = ((w * (at + n * half)) - c).hypot().max(min);
                 let q = c + dir * (reach * s);
@@ -108,16 +127,43 @@ fn handles(doc: &Document, id: NodeId, st: &Stroked, pts: impl Iterator<Item = (
 
 /// The width points of the vector being edited as drawn at `zoom` (page coordinates).
 pub fn width_handles(doc: &Document, ve: &super::VectorEdit, zoom: f64) -> Vec<WidthHandle> {
-    let Some(st) = stroked(doc, ve.id) else { return vec![] };
-    let Some(profile) = st.profile.clone() else { return vec![] };
-    handles(doc, ve.id, &st, profile.points.iter().enumerate().map(|(i, p)| (i, p.t, p.sides())), zoom)
+    let Some(st) = stroked(doc, ve.id) else {
+        return vec![];
+    };
+    let Some(profile) = st.profile.clone() else {
+        return vec![];
+    };
+    handles(
+        doc,
+        ve.id,
+        &st,
+        profile
+            .points
+            .iter()
+            .enumerate()
+            .map(|(i, p)| (i, p.t, p.sides())),
+        zoom,
+    )
 }
 
 /// Where a width point added at `t` would go, with the width there (the hover preview).
-pub fn width_preview(doc: &Document, ve: &super::VectorEdit, t: f64, zoom: f64) -> Vec<WidthHandle> {
-    let Some(st) = stroked(doc, ve.id) else { return vec![] };
+pub fn width_preview(
+    doc: &Document,
+    ve: &super::VectorEdit,
+    t: f64,
+    zoom: f64,
+) -> Vec<WidthHandle> {
+    let Some(st) = stroked(doc, ve.id) else {
+        return vec![];
+    };
     let sides = st.profile.as_ref().map_or((1.0, 1.0), |p| p.sides_at(t));
-    handles(doc, ve.id, &st, std::iter::once((usize::MAX, t, sides)), zoom)
+    handles(
+        doc,
+        ve.id,
+        &st,
+        std::iter::once((usize::MAX, t, sides)),
+        zoom,
+    )
 }
 
 /// Hit test the Variable width tool at page point `p`: handles, then points, then the path.
@@ -126,12 +172,27 @@ pub fn width_hit(doc: &Document, ve: &super::VectorEdit, p: Point, zoom: f64) ->
     let near = |q: [f64; 2]| (Point::new(q[0], q[1]) - p).hypot();
     let handles = width_handles(doc, ve, zoom);
     let best = |pick: &dyn Fn(&WidthHandle) -> f64| {
-        handles.iter().map(|h| (h.index, pick(h))).filter(|(_, d)| *d <= tol).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(i, _)| i)
+        handles
+            .iter()
+            .map(|h| (h.index, pick(h)))
+            .filter(|(_, d)| *d <= tol)
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(i, _)| i)
     };
     if let Some(index) = best(&|h| near(h.sides[0]).min(near(h.sides[1]))) {
         // The nearer of its handles (across subpaths).
-        let d = |k: usize| handles.iter().filter(|h| h.index == index).map(|h| near(h.sides[k])).fold(f64::INFINITY, f64::min);
-        let side = if d(0) <= d(1) { WidthSide::Right } else { WidthSide::Left };
+        let d = |k: usize| {
+            handles
+                .iter()
+                .filter(|h| h.index == index)
+                .map(|h| near(h.sides[k]))
+                .fold(f64::INFINITY, f64::min)
+        };
+        let side = if d(0) <= d(1) {
+            WidthSide::Right
+        } else {
+            WidthSide::Left
+        };
         return Some(WHit::Handle { index, side });
     }
     if let Some(index) = best(&|h| near(h.at)) {
@@ -143,7 +204,11 @@ pub fn width_hit(doc: &Document, ve: &super::VectorEdit, p: Point, zoom: f64) ->
     let lp = w.inverse() * p;
     let (sub, t, _) = nearest(&st.lines, lp)?;
     let (q, n) = st.lines.get(sub)?.at(t)?;
-    let side = if (lp - q).dot(n) >= 0.0 { WidthSide::Right } else { WidthSide::Left };
+    let side = if (lp - q).dot(n) >= 0.0 {
+        WidthSide::Right
+    } else {
+        WidthSide::Left
+    };
     let scale = st.profile.as_ref().map_or(1.0, |pr| {
         let (l, r) = pr.sides_at(t);
         if side == WidthSide::Right { r } else { l }
@@ -155,20 +220,39 @@ pub fn width_hit(doc: &Document, ve: &super::VectorEdit, p: Point, zoom: f64) ->
 /// Write node `id`'s width profile (through `node.set`'s key, so instances record the override).
 fn put_profile(doc: &mut Document, id: NodeId, profile: Option<&WidthProfile>) -> Result<()> {
     let v = crate::cmd::props::width_points_json(profile);
-    crate::cmd::props::apply("vector.edit.widthPoint", doc, id, &serde_json::Map::from_iter([("widthProfile".to_string(), v)]))
+    crate::cmd::props::apply(
+        "vector.edit.widthPoint",
+        doc,
+        id,
+        &serde_json::Map::from_iter([("widthProfile".to_string(), v)]),
+    )
 }
 
 /// The node's profile to edit: its own, or uniform with a point at each end.
 fn profile_of(doc: &Document, id: NodeId) -> WidthProfile {
-    doc.node(id).and_then(|n| n.stroke.profile()).cloned().unwrap_or_else(WidthProfile::uniform)
+    doc.node(id)
+        .and_then(|n| n.stroke.profile())
+        .cloned()
+        .unwrap_or_else(WidthProfile::uniform)
 }
 
 /// Local point `lp` seen from point `t` of the path (the nearest subpath's point there): how far
 /// out it is along the normal (negative to the left) and the side it is on.
 fn pointer_at(st: &Stroked, t: f64, lp: Point) -> Option<(f64, WidthSide)> {
-    let (q, n) = st.lines.iter().filter_map(|l| l.at(t)).min_by(|a, b| (a.0 - lp).hypot().total_cmp(&(b.0 - lp).hypot()))?;
+    let (q, n) = st
+        .lines
+        .iter()
+        .filter_map(|l| l.at(t))
+        .min_by(|a, b| (a.0 - lp).hypot().total_cmp(&(b.0 - lp).hypot()))?;
     let along = (lp - q).dot(n);
-    Some((along, if along >= 0.0 { WidthSide::Right } else { WidthSide::Left }))
+    Some((
+        along,
+        if along >= 0.0 {
+            WidthSide::Right
+        } else {
+            WidthSide::Left
+        },
+    ))
 }
 
 /// The width scale for a handle dragged to local point `lp` from point `t` (the nearest
@@ -176,7 +260,12 @@ fn pointer_at(st: &Stroked, t: f64, lp: Point) -> Option<(f64, WidthSide)> {
 /// is out to that side (0 past the centre line).
 fn scale_at_pointer(st: &Stroked, t: f64, lp: Point, side: Option<WidthSide>) -> Option<f64> {
     let d = match side {
-        None => st.lines.iter().filter_map(|l| l.at(t)).map(|(q, _)| (q - lp).hypot()).fold(f64::INFINITY, f64::min),
+        None => st
+            .lines
+            .iter()
+            .filter_map(|l| l.at(t))
+            .map(|(q, _)| (q - lp).hypot())
+            .fold(f64::INFINITY, f64::min),
         Some(s) => {
             let (along, _) = pointer_at(st, t, lp)?;
             (along * if s == WidthSide::Right { 1.0 } else { -1.0 }).max(0.0)
@@ -196,8 +285,18 @@ fn width_point(s: &mut Session, p: &Value) -> Result<Value> {
     };
     // A side's width runs from the centre line to that edge: half of what both sides make.
     let per_px = if side.is_some() { 2.0 } else { 1.0 };
-    let scale = num(p, "scale").or_else(|| num(p, "width").filter(|_| weight > 0.0).map(|w| per_px * w / weight));
-    let action = string(p, "action").unwrap_or_else(|| if get(p, "index").is_some() { "set".into() } else { "add".into() });
+    let scale = num(p, "scale").or_else(|| {
+        num(p, "width")
+            .filter(|_| weight > 0.0)
+            .map(|w| per_px * w / weight)
+    });
+    let action = string(p, "action").unwrap_or_else(|| {
+        if get(p, "index").is_some() {
+            "set".into()
+        } else {
+            "add".into()
+        }
+    });
     let mut prof = profile_of(doc, ve.id);
     if action != "add" && doc.get(ve.id)?.stroke.profile().is_none() {
         return Err(bad(cmd, "the stroke has no width points (add one first)"));
@@ -217,7 +316,10 @@ fn width_point(s: &mut Session, p: &Value) -> Result<Value> {
         "set" | "move" => {
             let i = req_index(cmd, p, "index")?;
             let ok = match side {
-                Some(sd) => prof.set_point(i, num(p, "t"), None) && scale.is_none_or(|sc| prof.set_side(i, sd, sc)),
+                Some(sd) => {
+                    prof.set_point(i, num(p, "t"), None)
+                        && scale.is_none_or(|sc| prof.set_side(i, sd, sc))
+                }
                 None => prof.set_point(i, num(p, "t"), scale),
             };
             if !ok {
@@ -266,8 +368,16 @@ impl Session {
             return Ok(());
         }
         let g = match h {
-            Some(WHit::Handle { index, side }) => WidthGesture::Size { index, added: None, moved: false, side },
-            Some(WHit::Point { index }) => WidthGesture::Slide { index, moved: false },
+            Some(WHit::Handle { index, side }) => WidthGesture::Size {
+                index,
+                added: None,
+                moved: false,
+                side,
+            },
+            Some(WHit::Point { index }) => WidthGesture::Slide {
+                index,
+                moved: false,
+            },
             Some(WHit::Path { t, side }) => {
                 self.begin_interaction("Variable width")?;
                 let mut index = 0;
@@ -276,7 +386,12 @@ impl Session {
                     index = prof.insert_here(t);
                     put_profile(doc, id, Some(&prof))
                 })?;
-                WidthGesture::Size { index, added: Some(t), moved: false, side }
+                WidthGesture::Size {
+                    index,
+                    added: Some(t),
+                    moved: false,
+                    side,
+                }
             }
             None => {
                 return set_state(self, |e| e.width_point = None);
@@ -290,30 +405,45 @@ impl Session {
     }
 
     /// Drag with the Variable width tool (previewed against the gesture's snapshot).
-    pub(crate) fn width_drag(&mut self, ve: &super::VectorEdit, g: WidthGesture, ev: &PointerEvent) -> Result<()> {
+    pub(crate) fn width_drag(
+        &mut self,
+        ve: &super::VectorEdit,
+        g: WidthGesture,
+        ev: &PointerEvent,
+    ) -> Result<()> {
         let id = ve.id;
         let lp = self.doc()?.world_transform(id).inverse() * ev.p();
         let g = match g {
             WidthGesture::Slide { index, .. } => {
                 self.preview(|doc, _| {
-                    let Some(st) = stroked(doc, id) else { return Ok(()) };
-                    let Some((_, t, _)) = nearest(&st.lines, lp) else { return Ok(()) };
+                    let Some(st) = stroked(doc, id) else {
+                        return Ok(());
+                    };
+                    let Some((_, t, _)) = nearest(&st.lines, lp) else {
+                        return Ok(());
+                    };
                     let mut prof = profile_of(doc, id);
                     prof.set_point(index, Some(t), None);
                     put_profile(doc, id, Some(&prof))
                 })?;
                 WidthGesture::Slide { index, moved: true }
             }
-            WidthGesture::Size { index, added, side, .. } => {
+            WidthGesture::Size {
+                index, added, side, ..
+            } => {
                 // A handle keeps its side; a point being added widens the side the pointer is on.
                 let mut side = side;
                 self.preview(|doc, _| {
-                    let Some(st) = stroked(doc, id) else { return Ok(()) };
+                    let Some(st) = stroked(doc, id) else {
+                        return Ok(());
+                    };
                     let mut prof = profile_of(doc, id);
                     if let Some(t) = added {
                         prof.insert_here(t);
                     }
-                    let Some(t) = prof.points.get(index).map(|q| q.t) else { return Ok(()) };
+                    let Some(t) = prof.points.get(index).map(|q| q.t) else {
+                        return Ok(());
+                    };
                     if added.is_some()
                         && let Some((_, s)) = pointer_at(&st, t, lp)
                     {
@@ -328,7 +458,12 @@ impl Session {
                     };
                     put_profile(doc, id, Some(&prof))
                 })?;
-                WidthGesture::Size { index, added, moved: true, side }
+                WidthGesture::Size {
+                    index,
+                    added,
+                    moved: true,
+                    side,
+                }
             }
         };
         self.tool.gesture = Gesture::Vector(super::VGesture::Width(g));
@@ -338,9 +473,9 @@ impl Session {
     /// Release: a drag (or a click that added a point) is one undo step.
     pub(crate) fn width_up(&mut self, g: WidthGesture) -> Result<()> {
         match g {
-            WidthGesture::Slide { moved: true, .. } | WidthGesture::Size { moved: true, .. } | WidthGesture::Size { added: Some(_), .. } => {
-                self.commit_interaction()
-            }
+            WidthGesture::Slide { moved: true, .. }
+            | WidthGesture::Size { moved: true, .. }
+            | WidthGesture::Size { added: Some(_), .. } => self.commit_interaction(),
             _ => self.cancel_interaction(),
         }
     }

@@ -13,7 +13,11 @@ fn sub(a: V3, b: V3) -> V3 {
 }
 #[inline]
 fn cross(a: V3, b: V3) -> V3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 #[inline]
 fn dot(a: V3, b: V3) -> f32 {
@@ -31,17 +35,34 @@ pub struct Card {
 impl Card {
     /// The identity card (covers the frame at z = 0).
     pub fn flat() -> Self {
-        Card { origin: [0.0; 3], ex: [1.0, 0.0, 0.0], ey: [0.0, 1.0, 0.0] }
+        Card {
+            origin: [0.0; 3],
+            ex: [1.0, 0.0, 0.0],
+            ey: [0.0, 1.0, 0.0],
+        }
     }
     fn map(&self, f: impl Fn(V3) -> V3, lin: impl Fn(V3) -> V3) -> Self {
-        Card { origin: f(self.origin), ex: lin(self.ex), ey: lin(self.ey) }
+        Card {
+            origin: f(self.origin),
+            ex: lin(self.ex),
+            ey: lin(self.ey),
+        }
     }
     pub fn translate(self, d: V3) -> Self {
         self.map(|p| [p[0] + d[0], p[1] + d[1], p[2] + d[2]], |v| v)
     }
     /// Uniform scale about `c`.
     pub fn scale_about(self, c: V3, s: f32) -> Self {
-        self.map(|p| [c[0] + (p[0] - c[0]) * s, c[1] + (p[1] - c[1]) * s, c[2] + (p[2] - c[2]) * s], |v| [v[0] * s, v[1] * s, v[2] * s])
+        self.map(
+            |p| {
+                [
+                    c[0] + (p[0] - c[0]) * s,
+                    c[1] + (p[1] - c[1]) * s,
+                    c[2] + (p[2] - c[2]) * s,
+                ]
+            },
+            |v| [v[0] * s, v[1] * s, v[2] * s],
+        )
     }
     /// Rotate about the vertical (y) axis through `c` by `a` radians (positive turns the right edge away).
     pub fn rot_y(self, c: V3, a: f32) -> Self {

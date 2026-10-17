@@ -22,16 +22,17 @@ use bevy_ecs::{
 use bevy_encase_derive::ShaderType;
 use bevy_log::{error, info_once};
 use bevy_math::UVec4;
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
 use bevy_tasks::ComputeTaskPool;
-use bevy_utils::{default, TypeIdHashMap};
+use bevy_utils::{TypeIdHashMap, default};
 use bytemuck::{Pod, Zeroable};
-use encase::{internal::WriteInto, ShaderSize};
+use encase::{ShaderSize, internal::WriteInto};
 use nonmax::NonMaxU32;
 use static_assertions::assert_eq_size;
 use wgpu::{BindingResource, BufferUsages, DownlevelFlags, Features};
 
 use crate::{
+    GpuResourceAppExt, Render, RenderApp, RenderDebugFlags, RenderSystems,
     occlusion_culling::OcclusionCulling,
     render_phase::{
         BinnedPhaseItem, BinnedRenderPhaseBatch, BinnedRenderPhaseBatchSet,
@@ -48,7 +49,6 @@ use crate::{
     renderer::{RenderAdapter, RenderAdapterInfo, RenderDevice, RenderQueue},
     sync_world::{MainEntity, MainEntityHashMap},
     view::{ExtractedView, NoIndirectDrawing, RetainedViewEntity},
-    GpuResourceAppExt, Render, RenderApp, RenderDebugFlags, RenderSystems,
 };
 
 use super::{BatchSetMeta, GetBatchData, GetFullBatchData};
@@ -1013,12 +1013,14 @@ pub struct IndirectParametersBuildJobs {
 
 impl FromWorld for IndirectParametersBuildJobs {
     fn from_world(world: &mut World) -> IndirectParametersBuildJobs {
-        debug_assert!(size_of::<IndirectParametersBuildJob>().is_multiple_of(
-            world
-                .resource::<RenderDevice>()
-                .limits()
-                .min_uniform_buffer_offset_alignment as usize
-        ));
+        debug_assert!(
+            size_of::<IndirectParametersBuildJob>().is_multiple_of(
+                world
+                    .resource::<RenderDevice>()
+                    .limits()
+                    .min_uniform_buffer_offset_alignment as usize
+            )
+        );
         IndirectParametersBuildJobs {
             buffer: RawBufferVec::new(
                 BufferUsages::UNIFORM | BufferUsages::COPY_DST | BufferUsages::COPY_SRC,

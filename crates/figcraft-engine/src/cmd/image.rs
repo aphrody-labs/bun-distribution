@@ -24,20 +24,38 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             save_preset
         ),
-        spec!("image.deletePreset", "Delete image preset", "{name}", true, |s, p| {
-            let name = req_string("image.deletePreset", p, "name")?;
-            let doc = s.doc_mut()?;
-            let before = doc.image_presets.len();
-            doc.image_presets.retain(|x| x.name != name);
-            if doc.image_presets.len() == before {
-                return Err(bad("image.deletePreset", format!("no preset named `{name}`")));
+        spec!(
+            "image.deletePreset",
+            "Delete image preset",
+            "{name}",
+            true,
+            |s, p| {
+                let name = req_string("image.deletePreset", p, "name")?;
+                let doc = s.doc_mut()?;
+                let before = doc.image_presets.len();
+                doc.image_presets.retain(|x| x.name != name);
+                if doc.image_presets.len() == before {
+                    return Err(bad(
+                        "image.deletePreset",
+                        format!("no preset named `{name}`"),
+                    ));
+                }
+                ok()
             }
-            ok()
-        }),
-        spec!("image.presets", "Image presets", "{} → {builtIn: [{id, label, filters}], saved: [{name, filters}]}", false, |s, _| {
-            let built_in: Vec<Value> = ImageFilters::PRESETS.iter().map(|(id, label, f)| json!({"id": id, "label": label, "filters": f})).collect();
-            Ok(json!({"builtIn": built_in, "saved": s.doc()?.image_presets}))
-        }),
+        ),
+        spec!(
+            "image.presets",
+            "Image presets",
+            "{} → {builtIn: [{id, label, filters}], saved: [{name, filters}]}",
+            false,
+            |s, _| {
+                let built_in: Vec<Value> = ImageFilters::PRESETS
+                    .iter()
+                    .map(|(id, label, f)| json!({"id": id, "label": label, "filters": f}))
+                    .collect();
+                Ok(json!({"builtIn": built_in, "saved": s.doc()?.image_presets}))
+            }
+        ),
     ]
 }
 
@@ -57,12 +75,18 @@ fn strokes(cmd: &str, p: &Value) -> Result<bool> {
 
 /// The preset `name`: one saved in the file under that exact name, else a built-in one.
 pub fn find_preset(doc: &Document, name: &str) -> Option<ImageFilters> {
-    doc.image_presets.iter().find(|x| x.name == name).map(|x| x.filters).or_else(|| ImageFilters::preset(name))
+    doc.image_presets
+        .iter()
+        .find(|x| x.name == name)
+        .map(|x| x.filters)
+        .or_else(|| ImageFilters::preset(name))
 }
 
 /// `base` with the adjustments `v` names (an object of -1..1 numbers) set.
 fn with_values(cmd: &str, base: ImageFilters, v: &Value) -> Result<ImageFilters> {
-    let Value::Object(m) = v else { return Err(bad(cmd, "filters: an object of adjustments")) };
+    let Value::Object(m) = v else {
+        return Err(bad(cmd, "filters: an object of adjustments"));
+    };
     let mut f = base;
     for (k, val) in m {
         let x = f64_of(val).ok_or_else(|| bad(cmd, format!("filters.{k}: a number")))? as f32;
@@ -90,7 +114,10 @@ fn adjust(s: &mut Session, p: &Value) -> Result<Value> {
         Some(_) => Some(req_index(cmd, p, "index")?),
     };
     let preset = match string(p, "preset") {
-        Some(name) => Some(find_preset(s.doc()?, &name).ok_or_else(|| bad(cmd, format!("no preset named `{name}`")))?),
+        Some(name) => Some(
+            find_preset(s.doc()?, &name)
+                .ok_or_else(|| bad(cmd, format!("no preset named `{name}`")))?,
+        ),
         None => None,
     };
     let values = get(p, "filters").filter(|v| !v.is_null());
@@ -101,14 +128,19 @@ fn adjust(s: &mut Session, p: &Value) -> Result<Value> {
     let mut changed = 0;
     for id in ids {
         let n = doc.get(id)?;
-        if !if stroke { &n.strokes } else { &n.fills }.iter().any(|x| matches!(x.kind, PaintKind::Image(_))) {
+        if !if stroke { &n.strokes } else { &n.fills }
+            .iter()
+            .any(|x| matches!(x.kind, PaintKind::Image(_)))
+        {
             continue;
         }
         let n = doc.get_mut(id)?;
         let list = if stroke { &mut n.strokes } else { &mut n.fills };
         let mut touched = false;
         for (i, paint) in list.iter_mut().enumerate() {
-            let PaintKind::Image(img) = &mut paint.kind else { continue };
+            let PaintKind::Image(img) = &mut paint.kind else {
+                continue;
+            };
             if index.is_some_and(|k| k != i) {
                 continue;
             }
@@ -130,14 +162,26 @@ fn adjust(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if changed == 0 {
-        return Err(bad(cmd, if index.is_some() { "no image paint at that index" } else { "the layers have no image paints" }));
+        return Err(bad(
+            cmd,
+            if index.is_some() {
+                "no image paint at that index"
+            } else {
+                "the layers have no image paints"
+            },
+        ));
     }
     Ok(json!({"changed": changed}))
 }
 
 fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "image.savePreset";
-    let name: String = req_string(cmd, p, "name")?.trim().chars().filter(|c| !c.is_control()).take(MAX_NAME).collect();
+    let name: String = req_string(cmd, p, "name")?
+        .trim()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_NAME)
+        .collect();
     if name.is_empty() {
         return Err(bad(cmd, "`name` is empty"));
     }
@@ -145,12 +189,21 @@ fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
         Some(v) => with_values(cmd, ImageFilters::NONE, v)?,
         None => {
             let stroke = strokes(cmd, p)?;
-            let index = num(p, "index").filter(|k| k.is_finite() && *k >= 0.0).map(|k| k as usize);
+            let index = num(p, "index")
+                .filter(|k| k.is_finite() && *k >= 0.0)
+                .map(|k| k as usize);
             let doc = s.doc()?;
             targets(s, p)
                 .iter()
                 .filter_map(|id| doc.node(*id))
-                .flat_map(|n| if stroke { n.strokes.iter() } else { n.fills.iter() }.enumerate())
+                .flat_map(|n| {
+                    if stroke {
+                        n.strokes.iter()
+                    } else {
+                        n.fills.iter()
+                    }
+                    .enumerate()
+                })
                 .find_map(|(i, x)| match &x.kind {
                     PaintKind::Image(img) if index.is_none_or(|k| k == i) => Some(img.filters),
                     _ => None,
@@ -159,14 +212,22 @@ fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
         }
     };
     let doc = s.doc_mut()?;
-    let preset = ImagePreset { name: name.clone(), filters };
+    let preset = ImagePreset {
+        name: name.clone(),
+        filters,
+    };
     match doc.image_presets.iter().position(|x| x.name == name) {
         Some(i) => {
             if let Some(x) = doc.image_presets.get_mut(i) {
                 *x = preset;
             }
         }
-        None if doc.image_presets.len() >= MAX_PRESETS => return Err(bad(cmd, format!("a file keeps at most {MAX_PRESETS} presets"))),
+        None if doc.image_presets.len() >= MAX_PRESETS => {
+            return Err(bad(
+                cmd,
+                format!("a file keeps at most {MAX_PRESETS} presets"),
+            ));
+        }
         None => doc.image_presets.push(preset),
     }
     Ok(json!({"name": name, "filters": filters}))

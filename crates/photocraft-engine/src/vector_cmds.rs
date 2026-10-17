@@ -19,8 +19,9 @@
 use photocraft_algo::selection::{self as sel, SelectionMode};
 use photocraft_color::{BlendMode, Color};
 use photocraft_doc::{
-    ClippingPath, Document, Fill, FillRule, GradientStyle, Knot, Layer, LayerContent, LayerId, LineCap, LineJoin, LiveShape, NamedPath, Path, PathOp,
-    ShapeLayer, ShapeStroke, StrokeAlign, Subpath, VectorMask,
+    ClippingPath, Document, Fill, FillRule, GradientStyle, Knot, Layer, LayerContent, LayerId,
+    LineCap, LineJoin, LiveShape, NamedPath, Path, PathOp, ShapeLayer, ShapeStroke, StrokeAlign,
+    Subpath, VectorMask,
 };
 use photocraft_geom::{Affine, Point, Rect};
 use photocraft_vector as vector;
@@ -30,23 +31,36 @@ use crate::commands::{CommandSpec, blend_from_str};
 use crate::{EngineError, Result, Session};
 
 /// Keys PSD uses for a shape layer's vector data; dropped when a shape is rasterized.
-const SHAPE_BLOCKS: [&[u8; 4]; 8] = [b"vmsk", b"vsms", b"vogk", b"vstk", b"vscg", b"SoCo", b"GdFl", b"PtFl"];
+const SHAPE_BLOCKS: [&[u8; 4]; 8] = [
+    b"vmsk", b"vsms", b"vogk", b"vstk", b"vscg", b"SoCo", b"GdFl", b"PtFl",
+];
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 pub(crate) fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn has_layer(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    d.active_layer.filter(|id| d.doc.layer(*id).is_some()).map(|_| ()).ok_or_else(|| "no active layer".into())
+    d.active_layer
+        .filter(|id| d.doc.layer(*id).is_some())
+        .map(|_| ())
+        .ok_or_else(|| "no active layer".into())
 }
 
 fn has_selection(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| d.doc.selection.is_some()).map(|_| ()).ok_or_else(|| "no selection".into())
+    s.active()
+        .filter(|d| d.doc.selection.is_some())
+        .map(|_| ())
+        .ok_or_else(|| "no selection".into())
 }
 
 fn active_shape(s: &Session) -> std::result::Result<&ShapeLayer, String> {
@@ -60,37 +74,62 @@ fn active_shape(s: &Session) -> std::result::Result<&ShapeLayer, String> {
 }
 
 fn has_shape_fill(s: &Session) -> std::result::Result<(), String> {
-    active_shape(s)?.fill.as_ref().map(|_| ()).ok_or_else(|| "shape has no fill".into())
+    active_shape(s)?
+        .fill
+        .as_ref()
+        .map(|_| ())
+        .ok_or_else(|| "shape has no fill".into())
 }
 
 fn has_shape_stroke(s: &Session) -> std::result::Result<(), String> {
-    active_shape(s)?.stroke.as_ref().map(|_| ()).ok_or_else(|| "shape has no stroke".into())
+    active_shape(s)?
+        .stroke
+        .as_ref()
+        .map(|_| ())
+        .ok_or_else(|| "shape has no stroke".into())
 }
 
 fn can_paste_shape_fill(s: &Session) -> std::result::Result<(), String> {
     active_shape(s)?;
-    s.path_fill_clipboard.as_ref().map(|_| ()).ok_or_else(|| "no shape fill copied".into())
+    s.path_fill_clipboard
+        .as_ref()
+        .map(|_| ())
+        .ok_or_else(|| "no shape fill copied".into())
 }
 
 fn can_paste_shape_stroke(s: &Session) -> std::result::Result<(), String> {
     active_shape(s)?;
-    s.path_stroke_clipboard.as_ref().map(|_| ()).ok_or_else(|| "no shape stroke copied".into())
+    s.path_stroke_clipboard
+        .as_ref()
+        .map(|_| ())
+        .ok_or_else(|| "no shape stroke copied".into())
 }
 
 fn copy_shape_fill(s: &mut Session, _p: &Value) -> Result<Value> {
-    let fill = active_shape(s).map_err(EngineError::Other)?.fill.clone().ok_or_else(|| EngineError::Other("shape has no fill".into()))?;
+    let fill = active_shape(s)
+        .map_err(EngineError::Other)?
+        .fill
+        .clone()
+        .ok_or_else(|| EngineError::Other("shape has no fill".into()))?;
     s.path_fill_clipboard = Some(fill);
     Ok(Value::Null)
 }
 
 fn copy_shape_stroke(s: &mut Session, _p: &Value) -> Result<Value> {
-    let stroke = active_shape(s).map_err(EngineError::Other)?.stroke.clone().ok_or_else(|| EngineError::Other("shape has no stroke".into()))?;
+    let stroke = active_shape(s)
+        .map_err(EngineError::Other)?
+        .stroke
+        .clone()
+        .ok_or_else(|| EngineError::Other("shape has no stroke".into()))?;
     s.path_stroke_clipboard = Some(stroke);
     Ok(Value::Null)
 }
 
 fn paste_shape_fill(s: &mut Session, p: &Value) -> Result<Value> {
-    let fill = s.path_fill_clipboard.clone().ok_or_else(|| EngineError::Other("no shape fill copied".into()))?;
+    let fill = s
+        .path_fill_clipboard
+        .clone()
+        .ok_or_else(|| EngineError::Other("no shape fill copied".into()))?;
     let id = layer_id(s, p)?;
     with_shape(s, id, "Paste Fill", |shape, _| {
         shape.fill = Some(fill);
@@ -100,7 +139,10 @@ fn paste_shape_fill(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn paste_shape_stroke(s: &mut Session, p: &Value) -> Result<Value> {
-    let stroke = s.path_stroke_clipboard.clone().ok_or_else(|| EngineError::Other("no shape stroke copied".into()))?;
+    let stroke = s
+        .path_stroke_clipboard
+        .clone()
+        .ok_or_else(|| EngineError::Other("no shape stroke copied".into()))?;
     let id = layer_id(s, p)?;
     with_shape(s, id, "Paste Complete Stroke", |shape, _| {
         shape.stroke = Some(stroke);
@@ -112,7 +154,10 @@ fn paste_shape_stroke(s: &mut Session, p: &Value) -> Result<Value> {
 pub(crate) fn layer_id(s: &Session, p: &Value) -> Result<LayerId> {
     match p.get("layer").and_then(Value::as_u64) {
         Some(id) => Ok(LayerId(id)),
-        None => s.active().and_then(|d| d.active_layer).ok_or(EngineError::Other("no active layer".into())),
+        None => s
+            .active()
+            .and_then(|d| d.active_layer)
+            .ok_or(EngineError::Other("no active layer".into())),
     }
 }
 
@@ -152,11 +197,20 @@ pub(crate) fn color(v: &Value) -> Option<Color> {
     match v {
         Value::Array(a) if a.len() >= 3 => {
             let c: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(0.0) as f32).collect();
-            Some(Color::rgba(c[0], c[1], c[2], c.get(3).copied().unwrap_or(1.0)))
+            Some(Color::rgba(
+                c[0],
+                c[1],
+                c[2],
+                c.get(3).copied().unwrap_or(1.0),
+            ))
         }
         Value::String(s) => {
             let s = s.trim_start_matches('#');
-            let h = |i: usize| s.get(i..i + 2).and_then(|x| u8::from_str_radix(x, 16).ok()).map(|v| f32::from(v) / 255.0);
+            let h = |i: usize| {
+                s.get(i..i + 2)
+                    .and_then(|x| u8::from_str_radix(x, 16).ok())
+                    .map(|v| f32::from(v) / 255.0)
+            };
             match s.len() {
                 6 => Some(Color::rgb(h(0)?, h(2)?, h(4)?)),
                 8 => Some(Color::rgba(h(0)?, h(2)?, h(4)?, h(6)?)),
@@ -170,7 +224,11 @@ pub(crate) fn color(v: &Value) -> Option<Color> {
 fn hex(c: &Color) -> String {
     let [r, g, b] = c.to_rgb();
     let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    if c.alpha < 1.0 { format!("#{:02x}{:02x}{:02x}{:02x}", q(r), q(g), q(b), q(c.alpha)) } else { format!("#{:02x}{:02x}{:02x}", q(r), q(g), q(b)) }
+    if c.alpha < 1.0 {
+        format!("#{:02x}{:02x}{:02x}{:02x}", q(r), q(g), q(b), q(c.alpha))
+    } else {
+        format!("#{:02x}{:02x}{:02x}", q(r), q(g), q(b))
+    }
 }
 
 fn op_from(s: &str) -> Option<PathOp> {
@@ -196,17 +254,26 @@ fn op_name(op: PathOp) -> &'static str {
 
 /// Parses a path from the compact JSON form (or the serde form).
 pub fn parse_path(v: &Value) -> std::result::Result<Path, String> {
-    let subs = v.get("subpaths").and_then(Value::as_array).ok_or("path needs `subpaths`")?;
+    let subs = v
+        .get("subpaths")
+        .and_then(Value::as_array)
+        .ok_or("path needs `subpaths`")?;
     let mut out = Vec::with_capacity(subs.len());
     for (i, s) in subs.iter().enumerate() {
-        let knots_v = s.get("knots").and_then(Value::as_array).ok_or(format!("subpath {i} needs `knots`"))?;
+        let knots_v = s
+            .get("knots")
+            .and_then(Value::as_array)
+            .ok_or(format!("subpath {i} needs `knots`"))?;
         let mut knots = Vec::with_capacity(knots_v.len());
         for (j, k) in knots_v.iter().enumerate() {
             let knot = if k.is_array() {
                 let a = pt(k).ok_or(format!("knot {i}.{j}: expected [x, y]"))?;
                 Knot::corner(a.x, a.y)
             } else {
-                let a = k.get("anchor").and_then(pt).ok_or(format!("knot {i}.{j}: missing anchor"))?;
+                let a = k
+                    .get("anchor")
+                    .and_then(pt)
+                    .ok_or(format!("knot {i}.{j}: missing anchor"))?;
                 let get = |keys: &[&str]| keys.iter().find_map(|key| k.get(*key).and_then(pt));
                 Knot {
                     anchor: a,
@@ -221,13 +288,27 @@ pub fn parse_path(v: &Value) -> std::result::Result<Path, String> {
             Some(o) => op_from(o).ok_or(format!("subpath {i}: unknown op `{o}`"))?,
             None => PathOp::Combine,
         };
-        out.push(Subpath { closed: s.get("closed").and_then(Value::as_bool).unwrap_or(true), knots, op });
+        out.push(Subpath {
+            closed: s.get("closed").and_then(Value::as_bool).unwrap_or(true),
+            knots,
+            op,
+        });
     }
-    let fill_rule = match v.get("fillRule").or_else(|| v.get("fill_rule")).and_then(Value::as_str).map(str::to_ascii_lowercase).as_deref() {
+    let fill_rule = match v
+        .get("fillRule")
+        .or_else(|| v.get("fill_rule"))
+        .and_then(Value::as_str)
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
         Some("evenodd" | "even-odd" | "even_odd") => FillRule::EvenOdd,
         _ => FillRule::NonZero,
     };
-    Ok(Path { subpaths: out, fill_rule, inverted: v.get("inverted").and_then(Value::as_bool).unwrap_or(false) })
+    Ok(Path {
+        subpaths: out,
+        fill_rule,
+        inverted: v.get("inverted").and_then(Value::as_bool).unwrap_or(false),
+    })
 }
 
 /// The compact JSON form of a path.
@@ -247,7 +328,14 @@ pub fn path_json(p: &Path) -> Value {
 fn fill_json(f: &Fill) -> Value {
     match f {
         Fill::Solid(c) => json!(hex(c)),
-        Fill::Gradient { stops, angle, scale, style, reverse, .. } => json!({ "gradient": {
+        Fill::Gradient {
+            stops,
+            angle,
+            scale,
+            style,
+            reverse,
+            ..
+        } => json!({ "gradient": {
             "stops": stops.iter().map(|(t, c)| json!([t, hex(c)])).collect::<Vec<_>>(),
             "angle": angle, "scale": scale * 100.0, "style": format!("{style:?}").to_ascii_lowercase(), "reverse": reverse } }),
         Fill::Pattern { name, scale, .. } => json!({ "pattern": name, "scale": scale * 100.0 }),
@@ -267,7 +355,11 @@ fn parse_fill(v: &Value) -> std::result::Result<Option<Fill>, String> {
         let stops: Vec<(f32, Color)> = g
             .get("stops")
             .and_then(Value::as_array)
-            .map(|a| a.iter().filter_map(|s| Some((s.get(0)?.as_f64()? as f32, color(s.get(1)?)?))).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|s| Some((s.get(0)?.as_f64()? as f32, color(s.get(1)?)?)))
+                    .collect()
+            })
             .unwrap_or_else(|| vec![(0.0, Color::BLACK), (1.0, Color::WHITE)]);
         let style = match g.get("style").and_then(Value::as_str).unwrap_or("linear") {
             "radial" => GradientStyle::Radial,
@@ -306,18 +398,31 @@ fn stroke_json(s: &ShapeStroke) -> Value {
 }
 
 /// Applies stroke keys onto `base` (`null` → no stroke).
-pub fn parse_stroke(v: &Value, base: Option<ShapeStroke>, fg: Color) -> std::result::Result<Option<ShapeStroke>, String> {
+pub fn parse_stroke(
+    v: &Value,
+    base: Option<ShapeStroke>,
+    fg: Color,
+) -> std::result::Result<Option<ShapeStroke>, String> {
     if v.is_null() || v.as_bool() == Some(false) {
         return Ok(None);
     }
     if !v.is_object() {
         return Err("stroke must be an object or null".into());
     }
-    for (key, lo, hi) in [("width", 0.0, 1_000_000.0), ("opacity", 0.0, 100.0), ("miterLimit", 1.0, 500.0), ("dashOffset", -1_000_000.0, 1_000_000.0)] {
+    for (key, lo, hi) in [
+        ("width", 0.0, 1_000_000.0),
+        ("opacity", 0.0, 100.0),
+        ("miterLimit", 1.0, 500.0),
+        ("dashOffset", -1_000_000.0, 1_000_000.0),
+    ] {
         if let Some(value) = v.get(key)
-            && !value.as_f64().is_some_and(|n| n.is_finite() && (lo..=hi).contains(&n))
+            && !value
+                .as_f64()
+                .is_some_and(|n| n.is_finite() && (lo..=hi).contains(&n))
         {
-            return Err(format!("`{key}` must be a finite number between {lo} and {hi}"));
+            return Err(format!(
+                "`{key}` must be a finite number between {lo} and {hi}"
+            ));
         }
     }
     for key in ["align", "cap", "join"] {
@@ -325,7 +430,10 @@ pub fn parse_stroke(v: &Value, base: Option<ShapeStroke>, fg: Color) -> std::res
             return Err(format!("`{key}` must be a string"));
         }
     }
-    let mut s = base.unwrap_or(ShapeStroke { paint: Fill::Solid(fg), ..Default::default() });
+    let mut s = base.unwrap_or(ShapeStroke {
+        paint: Fill::Solid(fg),
+        ..Default::default()
+    });
     if let Some(w) = f64p(v, "width") {
         s.width = w as f32;
     }
@@ -371,7 +479,10 @@ pub fn parse_stroke(v: &Value, base: Option<ShapeStroke>, fg: Color) -> std::res
                     x.as_f64()
                         .filter(|n| n.is_finite() && (0.0..=10000.0).contains(n))
                         .map(|x| x as f32)
-                        .ok_or_else(|| "dash lengths must be finite numbers between 0 and 10000 widths".to_string())
+                        .ok_or_else(|| {
+                            "dash lengths must be finite numbers between 0 and 10000 widths"
+                                .to_string()
+                        })
                 })
                 .collect::<std::result::Result<Vec<_>, _>>()?,
             _ => return Err("`dashes` must be an array (multiples of the width)".into()),
@@ -389,36 +500,68 @@ fn live_json(l: &LiveShape) -> Value {
 }
 
 /// Builds a live shape from `kind` + geometry params.
-fn live_from_params(cmd: &str, kind: &str, p: &Value, prev: Option<&LiveShape>) -> Result<LiveShape> {
+fn live_from_params(
+    cmd: &str,
+    kind: &str,
+    p: &Value,
+    prev: Option<&LiveShape>,
+) -> Result<LiveShape> {
     let prev_rect = match prev {
-        Some(LiveShape::Rect { rect, .. } | LiveShape::Ellipse { rect } | LiveShape::Polygon { rect, .. }) => Some(*rect),
+        Some(
+            LiveShape::Rect { rect, .. }
+            | LiveShape::Ellipse { rect }
+            | LiveShape::Polygon { rect, .. },
+        ) => Some(*rect),
         _ => None,
     };
-    let rect = || nums::<4>(p, "rect").or(prev_rect).ok_or_else(|| bad(cmd, "`rect`: [x, y, w, h] is required"));
+    let rect = || {
+        nums::<4>(p, "rect")
+            .or(prev_rect)
+            .ok_or_else(|| bad(cmd, "`rect`: [x, y, w, h] is required"))
+    };
     Ok(match kind {
         "rect" | "rectangle" => {
             let r = match prev {
                 Some(LiveShape::Rect { radii, .. }) => *radii,
                 _ => [0.0; 4],
             };
-            LiveShape::Rect { rect: rect()?, radii: radii(p).unwrap_or(r) }
+            LiveShape::Rect {
+                rect: rect()?,
+                radii: radii(p).unwrap_or(r),
+            }
         }
         "roundedRect" | "roundRect" => {
             let r = match prev {
                 Some(LiveShape::Rect { radii, .. }) if radii.iter().any(|v| *v > 0.0) => *radii,
                 _ => [10.0; 4],
             };
-            LiveShape::Rect { rect: rect()?, radii: radii(p).unwrap_or(r) }
+            LiveShape::Rect {
+                rect: rect()?,
+                radii: radii(p).unwrap_or(r),
+            }
         }
         "ellipse" => LiveShape::Ellipse { rect: rect()? },
         "polygon" | "star" => {
             let (ps, pr) = match prev {
-                Some(LiveShape::Polygon { sides, star_ratio, .. }) => (*sides, *star_ratio),
+                Some(LiveShape::Polygon {
+                    sides, star_ratio, ..
+                }) => (*sides, *star_ratio),
                 _ => (5, if kind == "star" { 0.5 } else { 1.0 }),
             };
             let sides = f64p(p, "sides").map_or(ps, |v| v.round().clamp(3.0, 100.0) as u32);
-            let ratio = f64p(p, "starRatio").map_or(if kind == "star" && pr >= 1.0 { 0.5 } else { pr }, |v| v.clamp(0.01, 1.0));
-            LiveShape::Polygon { rect: rect()?, sides, star_ratio: if kind == "polygon" && f64p(p, "starRatio").is_none() { 1.0 } else { ratio } }
+            let ratio = f64p(p, "starRatio")
+                .map_or(if kind == "star" && pr >= 1.0 { 0.5 } else { pr }, |v| {
+                    v.clamp(0.01, 1.0)
+                });
+            LiveShape::Polygon {
+                rect: rect()?,
+                sides,
+                star_ratio: if kind == "polygon" && f64p(p, "starRatio").is_none() {
+                    1.0
+                } else {
+                    ratio
+                },
+            }
         }
         "line" => {
             let (pf, pto, pw) = match prev {
@@ -426,8 +569,12 @@ fn live_from_params(cmd: &str, kind: &str, p: &Value, prev: Option<&LiveShape>) 
                 _ => (None, None, 1.0),
             };
             LiveShape::Line {
-                from: nums::<2>(p, "from").or(pf).ok_or_else(|| bad(cmd, "`from`: [x, y] is required"))?,
-                to: nums::<2>(p, "to").or(pto).ok_or_else(|| bad(cmd, "`to`: [x, y] is required"))?,
+                from: nums::<2>(p, "from")
+                    .or(pf)
+                    .ok_or_else(|| bad(cmd, "`from`: [x, y] is required"))?,
+                to: nums::<2>(p, "to")
+                    .or(pto)
+                    .ok_or_else(|| bad(cmd, "`to`: [x, y] is required"))?,
                 weight: f64p(p, "weight").unwrap_or(pw).max(0.0),
             }
         }
@@ -438,7 +585,12 @@ fn live_from_params(cmd: &str, kind: &str, p: &Value, prev: Option<&LiveShape>) 
 /// The path `shape.create` draws for live-shape params `p` (the Shape tools preview it while dragging).
 pub fn shape_path(p: &Value) -> Result<Path> {
     let kind = p.get("kind").and_then(Value::as_str).unwrap_or("rect");
-    Ok(vector::shapes::live_path(&live_from_params("shape.create", kind, p, None)?))
+    Ok(vector::shapes::live_path(&live_from_params(
+        "shape.create",
+        kind,
+        p,
+        None,
+    )?))
 }
 
 fn live_kind(l: &LiveShape) -> &'static str {
@@ -463,10 +615,14 @@ pub fn preview_shape_stroke(doc: &Document, id: LayerId, params: &Value) -> Resu
     let mut result = doc.clone();
     let layer = result.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
     let LayerContent::Shape(shape) = &mut layer.content else {
-        return Err(EngineError::Other("preview target is not a shape layer".into()));
+        return Err(EngineError::Other(
+            "preview target is not a shape layer".into(),
+        ));
     };
-    shape.stroke = parse_stroke(params, shape.stroke.clone(), Color::BLACK).map_err(|e| bad("shape.edit", e))?;
-    vector::flatten::validate_shape(&shape.path, shape.stroke.as_ref()).map_err(|e| bad("shape.edit", e))?;
+    shape.stroke = parse_stroke(params, shape.stroke.clone(), Color::BLACK)
+        .map_err(|e| bad("shape.edit", e))?;
+    vector::flatten::validate_shape(&shape.path, shape.stroke.as_ref())
+        .map_err(|e| bad("shape.edit", e))?;
     refresh_shape(doc, shape);
     Ok(result)
 }
@@ -507,10 +663,21 @@ pub fn transform_shape(sh: &mut ShapeLayer, a: &Affine) {
             Some(match l {
                 LiveShape::Rect { rect, radii } => {
                     let k = m0.min(m3);
-                    LiveShape::Rect { rect: r(rect), radii: radii.map(|v| v * k) }
+                    LiveShape::Rect {
+                        rect: r(rect),
+                        radii: radii.map(|v| v * k),
+                    }
                 }
                 LiveShape::Ellipse { rect } => LiveShape::Ellipse { rect: r(rect) },
-                LiveShape::Polygon { rect, sides, star_ratio } => LiveShape::Polygon { rect: r(rect), sides, star_ratio },
+                LiveShape::Polygon {
+                    rect,
+                    sides,
+                    star_ratio,
+                } => LiveShape::Polygon {
+                    rect: r(rect),
+                    sides,
+                    star_ratio,
+                },
                 LiveShape::Line { from, to, weight } => {
                     // Live-shape edits regenerate the line's filled bar from its parameters.
                     // Keep the weight in sync with a positive scale of the path, or an
@@ -519,26 +686,50 @@ pub fn transform_shape(sh: &mut ShapeLayer, a: &Affine) {
                     let (dx, dy) = (to[0] - from[0], to[1] - from[1]);
                     let old_length = dx.hypot(dy);
                     let new_length = (dx * m0).hypot(dy * m3);
-                    let width_scale = if old_length > 0.0 && new_length > 0.0 { m0 * m3 * old_length / new_length } else { m0.min(m3) };
-                    LiveShape::Line { from: pt(from), to: pt(to), weight: weight * width_scale }
+                    let width_scale = if old_length > 0.0 && new_length > 0.0 {
+                        m0 * m3 * old_length / new_length
+                    } else {
+                        m0.min(m3)
+                    };
+                    LiveShape::Line {
+                        from: pt(from),
+                        to: pt(to),
+                        weight: weight * width_scale,
+                    }
                 }
             })
         }
         // Flips and 90° turns keep rectangles, ellipses and lines live (Image Rotation): the new
         // live box is the mapped box. Polygons/stars would change orientation, so they don't.
-        (Some(l), false) if (m1.abs() < 1e-12 && m2.abs() < 1e-12) || (m0.abs() < 1e-12 && m3.abs() < 1e-12) => {
+        (Some(l), false)
+            if (m1.abs() < 1e-12 && m2.abs() < 1e-12) || (m0.abs() < 1e-12 && m3.abs() < 1e-12) =>
+        {
             let pt = |p: [f64; 2]| [m0 * p[0] + m2 * p[1] + tx, m1 * p[0] + m3 * p[1] + ty];
             let r = |r: [f64; 4]| {
                 let (p, q) = (pt([r[0], r[1]]), pt([r[0] + r[2], r[1] + r[3]]));
-                [p[0].min(q[0]), p[1].min(q[1]), (q[0] - p[0]).abs(), (q[1] - p[1]).abs()]
+                [
+                    p[0].min(q[0]),
+                    p[1].min(q[1]),
+                    (q[0] - p[0]).abs(),
+                    (q[1] - p[1]).abs(),
+                ]
             };
             let k = (m0.abs() + m1.abs()).min(m2.abs() + m3.abs());
             match l {
-                LiveShape::Rect { rect, radii } if radii.iter().all(|v| (v - radii[0]).abs() < 1e-9) => {
-                    Some(LiveShape::Rect { rect: r(rect), radii: radii.map(|v| v * k) })
+                LiveShape::Rect { rect, radii }
+                    if radii.iter().all(|v| (v - radii[0]).abs() < 1e-9) =>
+                {
+                    Some(LiveShape::Rect {
+                        rect: r(rect),
+                        radii: radii.map(|v| v * k),
+                    })
                 }
                 LiveShape::Ellipse { rect } => Some(LiveShape::Ellipse { rect: r(rect) }),
-                LiveShape::Line { from, to, weight } => Some(LiveShape::Line { from: pt(from), to: pt(to), weight: weight * k }),
+                LiveShape::Line { from, to, weight } => Some(LiveShape::Line {
+                    from: pt(from),
+                    to: pt(to),
+                    weight: weight * k,
+                }),
                 _ => None,
             }
         }
@@ -549,13 +740,21 @@ pub fn transform_shape(sh: &mut ShapeLayer, a: &Affine) {
 
 /// Is every anchor and control point of `path` a finite point?
 fn finite_path(path: &Path) -> bool {
-    path.subpaths.iter().flat_map(|s| &s.knots).all(|k| [k.anchor, k.in_ctrl, k.out_ctrl].iter().all(|p| p.x.is_finite() && p.y.is_finite()))
+    path.subpaths.iter().flat_map(|s| &s.knots).all(|k| {
+        [k.anchor, k.in_ctrl, k.out_ctrl]
+            .iter()
+            .all(|p| p.x.is_finite() && p.y.is_finite())
+    })
 }
 
 /// `path` through Distort / Perspective (`h`, a projective map of its points: exact for straight
 /// segments, the end tangents of curves exact) or, with `warp`, Warp (split where the warp bends
 /// it). Refused when the map sends a point to infinity (past a perspective's horizon).
-pub(crate) fn map_path(path: &Path, h: Option<&photocraft_algo::transform::Homography>, warp: Option<&photocraft_geom::warp::Warp>) -> Result<Path> {
+pub(crate) fn map_path(
+    path: &Path,
+    h: Option<&photocraft_algo::transform::Homography>,
+    warp: Option<&photocraft_geom::warp::Warp>,
+) -> Result<Path> {
     let out = match (h, warp) {
         (_, Some(w)) => vector::map::map_path(
             path,
@@ -572,7 +771,9 @@ pub(crate) fn map_path(path: &Path, h: Option<&photocraft_algo::transform::Homog
         (None, None) => path.clone(),
     };
     if !finite_path(&out) {
-        return Err(EngineError::Other("the distortion sends part of the path out of bounds".into()));
+        return Err(EngineError::Other(
+            "the distortion sends part of the path out of bounds".into(),
+        ));
     }
     Ok(out)
 }
@@ -580,7 +781,11 @@ pub(crate) fn map_path(path: &Path, h: Option<&photocraft_algo::transform::Homog
 /// Distort, Perspective or Warp of a shape layer (#3009): the shape stays a shape, its path
 /// mapped ([`map_path`]), as in Photoshop. A live rectangle, ellipse, polygon or line becomes a
 /// plain path, as its parameters can't describe the distorted outline.
-pub(crate) fn map_shape(sh: &mut ShapeLayer, h: Option<&photocraft_algo::transform::Homography>, warp: Option<&photocraft_geom::warp::Warp>) -> Result<()> {
+pub(crate) fn map_shape(
+    sh: &mut ShapeLayer,
+    h: Option<&photocraft_algo::transform::Homography>,
+    warp: Option<&photocraft_geom::warp::Warp>,
+) -> Result<()> {
     sh.path = map_path(&sh.path, h, warp)?;
     sh.live = None;
     sh.psd_raw = None;
@@ -591,9 +796,19 @@ fn shape_info(s: &Session, id: LayerId) -> Result<Value> {
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let l = d.doc.layer(id).ok_or(EngineError::NoLayer(id))?;
     let LayerContent::Shape(sh) = &l.content else {
-        return Err(EngineError::Other(format!("layer {} is {} {} layer, not a shape layer", id.0, l.content.article(), l.content.kind_name())));
+        return Err(EngineError::Other(format!(
+            "layer {} is {} {} layer, not a shape layer",
+            id.0,
+            l.content.article(),
+            l.content.kind_name()
+        )));
     };
-    let bounds = sh.cache.as_ref().map(|c| c.content_bounds()).filter(|r| !r.is_empty()).map(|r| json!([r.x0, r.y0, r.width(), r.height()]));
+    let bounds = sh
+        .cache
+        .as_ref()
+        .map(|c| c.content_bounds())
+        .filter(|r| !r.is_empty())
+        .map(|r| json!([r.x0, r.y0, r.width(), r.height()]));
     Ok(json!({
         "layer": id.0,
         "name": l.name,
@@ -606,7 +821,12 @@ fn shape_info(s: &Session, id: LayerId) -> Result<Value> {
     }))
 }
 
-pub(crate) fn with_shape<R>(s: &mut Session, id: LayerId, label: &str, f: impl FnOnce(&mut ShapeLayer, &mut Layer) -> Result<R>) -> Result<R> {
+pub(crate) fn with_shape<R>(
+    s: &mut Session,
+    id: LayerId,
+    label: &str,
+    f: impl FnOnce(&mut ShapeLayer, &mut Layer) -> Result<R>,
+) -> Result<R> {
     if let Some(st) = s.active() {
         let locks = st.doc.effective_locks(id);
         if locks.all || locks.pixels {
@@ -617,10 +837,21 @@ pub(crate) fn with_shape<R>(s: &mut Session, id: LayerId, label: &str, f: impl F
         let snapshot = doc.clone();
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         if !matches!(l.content, LayerContent::Shape(_)) {
-            return Err(EngineError::Other(format!("layer {} is {} {} layer, not a shape layer", id.0, l.content.article(), l.content.kind_name())));
+            return Err(EngineError::Other(format!(
+                "layer {} is {} {} layer, not a shape layer",
+                id.0,
+                l.content.article(),
+                l.content.kind_name()
+            )));
         }
-        let LayerContent::Shape(mut sh) = std::mem::replace(&mut l.content, LayerContent::Fill(Fill::Solid(Color::BLACK))) else {
-            return Err(EngineError::Other(format!("layer {} is not a shape layer", id.0)));
+        let LayerContent::Shape(mut sh) = std::mem::replace(
+            &mut l.content,
+            LayerContent::Fill(Fill::Solid(Color::BLACK)),
+        ) else {
+            return Err(EngineError::Other(format!(
+                "layer {} is not a shape layer",
+                id.0
+            )));
         };
         let r = f(&mut sh, l);
         if r.is_ok() {
@@ -647,7 +878,9 @@ fn shape_create(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "shape.create";
     let kind = p.get("kind").and_then(Value::as_str).unwrap_or("rect");
     let (path, live) = if kind == "path" {
-        let v = p.get("path").ok_or_else(|| bad(CMD, "kind \"path\" needs `path`"))?;
+        let v = p
+            .get("path")
+            .ok_or_else(|| bad(CMD, "kind \"path\" needs `path`"))?;
         (parse_path(v).map_err(|e| bad(CMD, e))?, None)
     } else {
         let l = live_from_params(CMD, kind, p, None)?;
@@ -666,7 +899,11 @@ fn shape_create(s: &mut Session, p: &Value) -> Result<Value> {
     vector::flatten::validate_shape(&path, stroke.as_ref()).map_err(|e| bad(CMD, e))?;
     // Add to an existing shape layer with a path operation (Shape tool in combine/subtract… mode).
     if let Some(target) = p.get("addTo").and_then(Value::as_u64) {
-        let op = p.get("op").and_then(Value::as_str).map_or(Some(PathOp::Combine), op_from).ok_or_else(|| bad(CMD, "unknown `op`"))?;
+        let op = p
+            .get("op")
+            .and_then(Value::as_str)
+            .map_or(Some(PathOp::Combine), op_from)
+            .ok_or_else(|| bad(CMD, "unknown `op`"))?;
         let id = LayerId(target);
         with_shape(s, id, "Add Shape", |sh, _| {
             for mut sp in path.subpaths {
@@ -675,13 +912,20 @@ fn shape_create(s: &mut Session, p: &Value) -> Result<Value> {
             }
             sh.live = None;
             sh.psd_raw = None;
-            vector::flatten::validate_shape(&sh.path, sh.stroke.as_ref()).map_err(|e| bad(CMD, e))?;
+            vector::flatten::validate_shape(&sh.path, sh.stroke.as_ref())
+                .map_err(|e| bad(CMD, e))?;
             Ok(())
         })?;
         return shape_info(s, id);
     }
     let name = p.get("name").and_then(Value::as_str).map(str::to_string);
-    let mut sh = ShapeLayer { path, fill, stroke, live, ..Default::default() };
+    let mut sh = ShapeLayer {
+        path,
+        fill,
+        stroke,
+        live,
+        ..Default::default()
+    };
     let id = s.edit("New Shape Layer", |doc, active| {
         refresh_shape(doc, &mut sh);
         let name = name.unwrap_or_else(|| doc.next_layer_name(default_name(kind)));
@@ -704,12 +948,35 @@ fn shape_edit(s: &mut Session, p: &Value) -> Result<Value> {
             sh.live = None;
             sh.psd_raw = None;
         }
-        let geom_keys = ["kind", "rect", "radii", "radius", "sides", "starRatio", "from", "to", "weight"];
+        let geom_keys = [
+            "kind",
+            "rect",
+            "radii",
+            "radius",
+            "sides",
+            "starRatio",
+            "from",
+            "to",
+            "weight",
+        ];
         if geom_keys.iter().any(|k| p.get(*k).is_some()) {
-            let kind = p.get("kind").and_then(Value::as_str).map(str::to_string).or_else(|| sh.live.as_ref().map(|l| live_kind(l).to_string()));
-            let kind = kind.ok_or_else(|| bad(CMD, "this shape has no live-shape parameters; pass `kind` or `path`"))?;
+            let kind = p
+                .get("kind")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+                .or_else(|| sh.live.as_ref().map(|l| live_kind(l).to_string()));
+            let kind = kind.ok_or_else(|| {
+                bad(
+                    CMD,
+                    "this shape has no live-shape parameters; pass `kind` or `path`",
+                )
+            })?;
             // Explicit radii on a plain rectangle keep it a (now rounded) rectangle.
-            let kind = if kind == "rect" && radii(p).is_some_and(|r| r.iter().any(|v| *v > 0.0)) { "roundedRect".to_string() } else { kind };
+            let kind = if kind == "rect" && radii(p).is_some_and(|r| r.iter().any(|v| *v > 0.0)) {
+                "roundedRect".to_string()
+            } else {
+                kind
+            };
             let l = live_from_params(CMD, &kind, p, sh.live.as_ref())?;
             // A transformed live shape's path may carry nonuniform corner scaling
             // that its scalar radii cannot represent. Re-entering unchanged values
@@ -730,13 +997,28 @@ fn shape_edit(s: &mut Session, p: &Value) -> Result<Value> {
             // Operation of the selected subpath(s) (`subpath`: index, default all but the first).
             let op = op_from(op).ok_or_else(|| bad(CMD, format!("unknown op `{op}`")))?;
             match p.get("subpath").and_then(Value::as_u64) {
-                Some(i) => sh.path.subpaths.get_mut(i as usize).ok_or_else(|| bad(CMD, "no such subpath"))?.op = op,
-                None => sh.path.subpaths.iter_mut().skip(1).for_each(|sp| sp.op = op),
+                Some(i) => {
+                    sh.path
+                        .subpaths
+                        .get_mut(i as usize)
+                        .ok_or_else(|| bad(CMD, "no such subpath"))?
+                        .op = op
+                }
+                None => sh
+                    .path
+                    .subpaths
+                    .iter_mut()
+                    .skip(1)
+                    .for_each(|sp| sp.op = op),
             }
             sh.live = None;
         }
         if let Some(r) = p.get("fillRule").and_then(Value::as_str) {
-            sh.path.fill_rule = if r.eq_ignore_ascii_case("evenodd") { FillRule::EvenOdd } else { FillRule::NonZero };
+            sh.path.fill_rule = if r.eq_ignore_ascii_case("evenodd") {
+                FillRule::EvenOdd
+            } else {
+                FillRule::NonZero
+            };
         }
         if let Some(v) = p.get("fill") {
             sh.fill = parse_fill(v).map_err(|e| bad(CMD, e))?;
@@ -759,14 +1041,24 @@ fn shape_rasterize(s: &mut Session, p: &Value) -> Result<Value> {
         let snapshot = doc.clone();
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         let LayerContent::Shape(sh) = &mut l.content else {
-            return Err(EngineError::Other(format!("layer {} is not a shape layer", id.0)));
+            return Err(EngineError::Other(format!(
+                "layer {} is not a shape layer",
+                id.0
+            )));
         };
         if sh.cache.is_none() {
             refresh_shape(&snapshot, sh);
         }
         let fmt = snapshot.pixel_format();
-        let surface = sh.cache.take().unwrap_or_else(|| photocraft_raster::Surface::new(fmt));
-        let surface = if surface.format() == fmt { surface } else { surface.convert(fmt) };
+        let surface = sh
+            .cache
+            .take()
+            .unwrap_or_else(|| photocraft_raster::Surface::new(fmt));
+        let surface = if surface.format() == fmt {
+            surface
+        } else {
+            surface.convert(fmt)
+        };
         l.content = LayerContent::Raster(surface);
         l.psd_blocks.retain(|(k, _)| !SHAPE_BLOCKS.contains(&k));
         Ok(())
@@ -795,26 +1087,55 @@ fn resolve_path(s: &Session, name: Option<&str>) -> Result<Path> {
         }
     };
     if name == Some("layer") {
-        return layer_path().ok_or_else(|| EngineError::Other("active layer has no shape path or vector mask".into()));
+        return layer_path().ok_or_else(|| {
+            EngineError::Other("active layer has no shape path or vector mask".into())
+        });
     }
     if is_work(name) {
-        return d.doc.work_path.clone().or_else(layer_path).ok_or_else(|| EngineError::Other("no work path".into()));
+        return d
+            .doc
+            .work_path
+            .clone()
+            .or_else(layer_path)
+            .ok_or_else(|| EngineError::Other("no work path".into()));
     }
     let n = name.unwrap_or_default();
-    d.doc.paths.iter().find(|p| p.name == n).map(|p| p.path.clone()).ok_or_else(|| EngineError::Other(format!("no path named \"{n}\"")))
+    d.doc
+        .paths
+        .iter()
+        .find(|p| p.name == n)
+        .map(|p| p.path.clone())
+        .ok_or_else(|| EngineError::Other(format!("no path named \"{n}\"")))
 }
 
 /// The path an edit targets, except a shape layer's (edit those with [`with_shape`], which
 /// re-renders them): `layer`'s vector mask when given, else the work path or a saved path.
-pub(crate) fn path_mut<'a>(doc: &'a mut Document, name: &str, layer: Option<LayerId>) -> Result<&'a mut Path> {
+pub(crate) fn path_mut<'a>(
+    doc: &'a mut Document,
+    name: &str,
+    layer: Option<LayerId>,
+) -> Result<&'a mut Path> {
     if let Some(id) = layer {
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
-        return l.vector_mask.as_mut().map(|vm| &mut vm.path).ok_or_else(|| EngineError::Other("active layer has no shape path or vector mask".into()));
+        return l
+            .vector_mask
+            .as_mut()
+            .map(|vm| &mut vm.path)
+            .ok_or_else(|| {
+                EngineError::Other("active layer has no shape path or vector mask".into())
+            });
     }
     if is_work(Some(name)) {
-        return doc.work_path.as_mut().ok_or_else(|| EngineError::Other("no work path".into()));
+        return doc
+            .work_path
+            .as_mut()
+            .ok_or_else(|| EngineError::Other("no work path".into()));
     }
-    doc.paths.iter_mut().find(|q| q.name == name).map(|q| &mut q.path).ok_or_else(|| EngineError::Other(format!("no path named \"{name}\"")))
+    doc.paths
+        .iter_mut()
+        .find(|q| q.name == name)
+        .map(|q| &mut q.path)
+        .ok_or_else(|| EngineError::Other(format!("no path named \"{name}\"")))
 }
 
 fn paths_list(s: &Session) -> Result<Value> {
@@ -837,34 +1158,50 @@ fn paths_list(s: &Session) -> Result<Value> {
 
 fn path_set(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "path.set";
-    let path = parse_path(p.get("path").ok_or_else(|| bad(CMD, "missing `path`"))?).map_err(|e| bad(CMD, e))?;
+    let path = parse_path(p.get("path").ok_or_else(|| bad(CMD, "missing `path`"))?)
+        .map_err(|e| bad(CMD, e))?;
     let name = p.get("name").and_then(Value::as_str).map(str::to_string);
-    let append = p.get("op").and_then(Value::as_str).map(|o| op_from(o).ok_or_else(|| bad(CMD, format!("unknown op `{o}`")))).transpose()?;
-    s.edit(if is_work(name.as_deref()) { "Work Path" } else { "Save Path" }, |doc, _| {
-        let merge = |old: Option<&Path>, new: Path| match (old, append) {
-            (Some(o), Some(op)) => {
-                let mut o = o.clone();
-                o.subpaths.extend(new.subpaths.into_iter().map(|mut sp| {
-                    sp.op = op;
-                    sp
-                }));
-                o
-            }
-            _ => new,
-        };
+    let append = p
+        .get("op")
+        .and_then(Value::as_str)
+        .map(|o| op_from(o).ok_or_else(|| bad(CMD, format!("unknown op `{o}`"))))
+        .transpose()?;
+    s.edit(
         if is_work(name.as_deref()) {
-            doc.work_path = Some(merge(doc.work_path.as_ref(), path));
+            "Work Path"
         } else {
-            let n = name.clone().unwrap_or_default();
-            match doc.paths.iter_mut().find(|q| q.name == n) {
-                Some(q) => {
-                    q.path = merge(Some(&q.path), path);
+            "Save Path"
+        },
+        |doc, _| {
+            let merge = |old: Option<&Path>, new: Path| match (old, append) {
+                (Some(o), Some(op)) => {
+                    let mut o = o.clone();
+                    o.subpaths.extend(new.subpaths.into_iter().map(|mut sp| {
+                        sp.op = op;
+                        sp
+                    }));
+                    o
                 }
-                None => doc.paths.push(NamedPath { name: n, path, psd_raw: None }),
+                _ => new,
+            };
+            if is_work(name.as_deref()) {
+                doc.work_path = Some(merge(doc.work_path.as_ref(), path));
+            } else {
+                let n = name.clone().unwrap_or_default();
+                match doc.paths.iter_mut().find(|q| q.name == n) {
+                    Some(q) => {
+                        q.path = merge(Some(&q.path), path);
+                    }
+                    None => doc.paths.push(NamedPath {
+                        name: n,
+                        path,
+                        psd_raw: None,
+                    }),
+                }
             }
-        }
-        Ok(())
-    })?;
+            Ok(())
+        },
+    )?;
     let path = resolve_path(s, name.as_deref())?;
     Ok(json!({ "name": name.unwrap_or_else(|| "work".into()), "path": path_json(&path) }))
 }
@@ -873,7 +1210,11 @@ fn path_delete(s: &mut Session, p: &Value) -> Result<Value> {
     let name = p.get("name").and_then(Value::as_str).map(str::to_string);
     s.edit("Delete Path", |doc, _| {
         if is_work(name.as_deref()) {
-            return doc.work_path.take().map(|_| ()).ok_or_else(|| EngineError::Other("no work path".into()));
+            return doc
+                .work_path
+                .take()
+                .map(|_| ())
+                .ok_or_else(|| EngineError::Other("no work path".into()));
         }
         let n = name.clone().unwrap_or_default();
         let before = doc.paths.len();
@@ -891,19 +1232,30 @@ fn path_delete(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn clipping_path_set(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "path.clippingPath.set";
-    let name = p.get("name").and_then(Value::as_str).filter(|name| !name.is_empty()).ok_or_else(|| bad(CMD, "missing saved path `name`"))?.to_owned();
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .filter(|name| !name.is_empty())
+        .ok_or_else(|| bad(CMD, "missing saved path `name`"))?
+        .to_owned();
     let flatness = match p.get("flatness") {
-        Some(value) => {
-            value.as_f64().filter(|value| value.is_finite() && (0.0..=100.0).contains(value)).ok_or_else(|| bad(CMD, "`flatness` must be between 0 and 100"))?
-                as f32
-        }
+        Some(value) => value
+            .as_f64()
+            .filter(|value| value.is_finite() && (0.0..=100.0).contains(value))
+            .ok_or_else(|| bad(CMD, "`flatness` must be between 0 and 100"))?
+            as f32,
         None => 0.0,
     };
     s.edit("Clipping Path", |doc, _| {
         if !doc.paths.iter().any(|path| path.name == name) {
-            return Err(EngineError::Other(format!("no saved path named \"{name}\"")));
+            return Err(EngineError::Other(format!(
+                "no saved path named \"{name}\""
+            )));
         }
-        doc.clipping_path = Some(ClippingPath { name: name.clone(), flatness });
+        doc.clipping_path = Some(ClippingPath {
+            name: name.clone(),
+            flatness,
+        });
         Ok(())
     })?;
     Ok(json!({ "name": name, "flatness": flatness }))
@@ -911,7 +1263,9 @@ fn clipping_path_set(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn clipping_path_clear(s: &mut Session, _p: &Value) -> Result<Value> {
     s.edit("Clear Clipping Path", |doc, _| {
-        doc.clipping_path.take().ok_or_else(|| EngineError::Other("no clipping path".into()))?;
+        doc.clipping_path
+            .take()
+            .ok_or_else(|| EngineError::Other("no clipping path".into()))?;
         Ok(())
     })?;
     Ok(Value::Null)
@@ -920,12 +1274,20 @@ fn clipping_path_clear(s: &mut Session, _p: &Value) -> Result<Value> {
 /// The path `path.transform` edits: `layer`'s shape path or vector mask, else the work path or a
 /// saved path.
 fn transform_target(s: &Session, name: &str, layer: Option<LayerId>) -> Result<Path> {
-    let Some(id) = layer else { return resolve_path(s, Some(name)) };
+    let Some(id) = layer else {
+        return resolve_path(s, Some(name));
+    };
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let l = d.doc.layer(id).ok_or(EngineError::NoLayer(id))?;
     match &l.content {
         LayerContent::Shape(sh) => Ok(sh.path.clone()),
-        _ => l.vector_mask.as_ref().map(|v| v.path.clone()).ok_or_else(|| EngineError::Other("target layer has no shape path or vector mask".into())),
+        _ => l
+            .vector_mask
+            .as_ref()
+            .map(|v| v.path.clone())
+            .ok_or_else(|| {
+                EngineError::Other("target layer has no shape path or vector mask".into())
+            }),
     }
 }
 
@@ -935,13 +1297,22 @@ fn coords(p: &Value, key: &str, n: usize) -> Result<Option<Vec<f64>>> {
     const CMD: &str = "path.transform";
     let Some(v) = p.get(key) else { return Ok(None) };
     let flat: Vec<&Value> = match v.as_array() {
-        Some(a) if a.iter().all(Value::is_array) => a.iter().filter_map(Value::as_array).flatten().collect(),
+        Some(a) if a.iter().all(Value::is_array) => {
+            a.iter().filter_map(Value::as_array).flatten().collect()
+        }
         Some(a) => a.iter().collect(),
         None => Vec::new(),
     };
-    let nums: Vec<f64> = flat.iter().filter_map(|v| v.as_f64()).filter(|x| x.is_finite() && x.abs() <= 1_000_000.0).collect();
+    let nums: Vec<f64> = flat
+        .iter()
+        .filter_map(|v| v.as_f64())
+        .filter(|x| x.is_finite() && x.abs() <= 1_000_000.0)
+        .collect();
     if flat.len() != n || nums.len() != n {
-        return Err(bad(CMD, format!("`{key}` must hold {n} finite numbers with magnitude at most 1000000")));
+        return Err(bad(
+            CMD,
+            format!("`{key}` must hold {n} finite numbers with magnitude at most 1000000"),
+        ));
     }
     Ok(Some(nums))
 }
@@ -956,30 +1327,51 @@ enum PathMap {
 
 fn path_transform(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "path.transform";
-    let name = p.get("name").and_then(Value::as_str).unwrap_or("work").to_owned();
-    let layer_id = if name == "layer" { Some(layer_id(s, p)?) } else { None };
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("work")
+        .to_owned();
+    let layer_id = if name == "layer" {
+        Some(layer_id(s, p)?)
+    } else {
+        None
+    };
     // The box Distort, Perspective and Warp frame: `rect`, else the path's control bounds.
     let frame = |s: &Session| -> Result<[f64; 4]> {
         let r = match coords(p, "rect", 4)? {
             Some(r) => [r[0], r[1], r[2], r[3]],
             None => {
-                let (x0, y0, x1, y1) = transform_target(s, &name, layer_id)?.control_bounds().ok_or_else(|| bad(CMD, "path has no points to transform"))?;
+                let (x0, y0, x1, y1) = transform_target(s, &name, layer_id)?
+                    .control_bounds()
+                    .ok_or_else(|| bad(CMD, "path has no points to transform"))?;
                 [x0, y0, x1, y1]
             }
         };
         if r[2] - r[0] <= 0.0 || r[3] - r[1] <= 0.0 {
-            return Err(bad(CMD, "`rect` must have a positive width and height (a straight path needs a `rect`)"));
+            return Err(bad(
+                CMD,
+                "`rect` must have a positive width and height (a straight path needs a `rect`)",
+            ));
         }
         Ok(r)
     };
     let map = if let Some(values) = p.get("matrix") {
-        let values = values.as_array().filter(|values| values.len() == 6).ok_or_else(|| bad(CMD, "`matrix` must contain six numbers"))?;
+        let values = values
+            .as_array()
+            .filter(|values| values.len() == 6)
+            .ok_or_else(|| bad(CMD, "`matrix` must contain six numbers"))?;
         let mut m = [0.0; 6];
         for (slot, value) in m.iter_mut().zip(values) {
             *slot = value
                 .as_f64()
                 .filter(|number| number.is_finite() && number.abs() <= 1_000_000.0)
-                .ok_or_else(|| bad(CMD, "matrix entries must be finite numbers with magnitude at most 1000000"))?;
+                .ok_or_else(|| {
+                    bad(
+                        CMD,
+                        "matrix entries must be finite numbers with magnitude at most 1000000",
+                    )
+                })?;
         }
         PathMap::Affine(Affine { m })
     } else if let Some(q) = coords(p, "quad", 8)? {
@@ -991,14 +1383,26 @@ fn path_transform(s: &mut Session, p: &Value) -> Result<Value> {
         let [a, b, c, d, e, f, g, hh, i] = h.0;
         if g.abs() < 1e-12 && hh.abs() < 1e-12 && i.abs() > 1e-12 {
             // A parallelogram is affine: a live shape stays live.
-            PathMap::Affine(Affine { m: [a / i, d / i, b / i, e / i, c / i, f / i] })
+            PathMap::Affine(Affine {
+                m: [a / i, d / i, b / i, e / i, c / i, f / i],
+            })
         } else {
             PathMap::Projective(h)
         }
-    } else if ["warp", "style", "mesh"].iter().any(|key| p.get(*key).is_some()) {
+    } else if ["warp", "style", "mesh"]
+        .iter()
+        .any(|key| p.get(*key).is_some())
+    {
         let w = crate::warp_cmds::warp_from_params(CMD, p, frame(s)?)?;
-        if [w.bend, w.h_distort, w.v_distort].iter().chain(w.bounds.iter()).any(|v| !v.is_finite() || v.abs() > 1_000_000.0) {
-            return Err(bad(CMD, "warp values must be finite numbers with magnitude at most 1000000"));
+        if [w.bend, w.h_distort, w.v_distort]
+            .iter()
+            .chain(w.bounds.iter())
+            .any(|v| !v.is_finite() || v.abs() > 1_000_000.0)
+        {
+            return Err(bad(
+                CMD,
+                "warp values must be finite numbers with magnitude at most 1000000",
+            ));
         }
         PathMap::Warp(Box::new(w))
     } else {
@@ -1007,23 +1411,40 @@ fn path_transform(s: &mut Session, p: &Value) -> Result<Value> {
                 Some(value) => value
                     .as_f64()
                     .filter(|n| n.is_finite() && n.abs() <= 1_000_000.0)
-                    .ok_or_else(|| bad(CMD, format!("`{key}` must be a finite number with magnitude at most 1000000"))),
+                    .ok_or_else(|| {
+                        bad(
+                            CMD,
+                            format!(
+                                "`{key}` must be a finite number with magnitude at most 1000000"
+                            ),
+                        )
+                    }),
                 None => Ok(default),
             }
         };
-        if !["translateX", "translateY", "scaleX", "scaleY", "angle"].iter().any(|key| p.get(*key).is_some()) {
-            return Err(bad(CMD, "pass `matrix`, `quad`, a warp (`style`, `mesh` or `warp`) or translate/scale/angle parameters"));
+        if !["translateX", "translateY", "scaleX", "scaleY", "angle"]
+            .iter()
+            .any(|key| p.get(*key).is_some())
+        {
+            return Err(bad(
+                CMD,
+                "pass `matrix`, `quad`, a warp (`style`, `mesh` or `warp`) or translate/scale/angle parameters",
+            ));
         }
         let (tx, ty) = (number("translateX", 0.0)?, number("translateY", 0.0)?);
         let (sx, sy) = (number("scaleX", 1.0)?, number("scaleY", 1.0)?);
         let angle = number("angle", 0.0)?;
         // An explicit `layer` parameter determines both the transformed path and its pivot (#3062).
         let path = transform_target(s, &name, layer_id)?;
-        let (x0, y0, x1, y1) = path.control_bounds().ok_or_else(|| bad(CMD, "path has no points to transform"))?;
+        let (x0, y0, x1, y1) = path
+            .control_bounds()
+            .ok_or_else(|| bad(CMD, "path has no points to transform"))?;
         let (cx, cy) = ((x0 + x1) * 0.5, (y0 + y1) * 0.5);
         PathMap::Affine(
             Affine::translate(-cx, -cy)
-                .then(&Affine { m: [sx, 0.0, 0.0, sy, 0.0, 0.0] })
+                .then(&Affine {
+                    m: [sx, 0.0, 0.0, sy, 0.0, 0.0],
+                })
                 .then(&Affine::rotate(angle.to_radians()))
                 .then(&Affine::translate(cx + tx, cy + ty)),
         )
@@ -1034,7 +1455,9 @@ fn path_transform(s: &mut Session, p: &Value) -> Result<Value> {
         PathMap::Warp(_) => json!({ "name": name, "warp": true }),
     };
     if let Some(id) = layer_id
-        && s.active().and_then(|d| d.doc.layer(id)).is_some_and(|layer| matches!(layer.content, LayerContent::Shape(_)))
+        && s.active()
+            .and_then(|d| d.doc.layer(id))
+            .is_some_and(|layer| matches!(layer.content, LayerContent::Shape(_)))
     {
         with_shape(s, id, "Transform Path", |shape, _| {
             match &map {
@@ -1062,30 +1485,55 @@ fn path_transform(s: &mut Session, p: &Value) -> Result<Value> {
 fn path_rename(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "path.rename";
     let name = p.get("name").and_then(Value::as_str).map(str::to_string);
-    let to = p.get("to").and_then(Value::as_str).filter(|t| !t.is_empty()).ok_or_else(|| bad(CMD, "missing `to`"))?.to_string();
+    let to = p
+        .get("to")
+        .and_then(Value::as_str)
+        .filter(|t| !t.is_empty())
+        .ok_or_else(|| bad(CMD, "missing `to`"))?
+        .to_string();
     if is_work(Some(&to)) {
         return Err(bad(CMD, "`to` cannot name the work path"));
     }
-    s.edit(if is_work(name.as_deref()) { "Save Path" } else { "Rename Path" }, |doc, _| {
-        if doc.paths.iter().any(|q| q.name == to) {
-            return Err(EngineError::Other(format!("a path named \"{to}\" already exists")));
-        }
+    s.edit(
         if is_work(name.as_deref()) {
-            // Photoshop: saving the work path turns it into a named path.
-            let path = doc.work_path.take().ok_or_else(|| EngineError::Other("no work path".into()))?;
-            doc.paths.push(NamedPath { name: to.clone(), path, psd_raw: None });
-            return Ok(());
-        }
-        let n = name.clone().unwrap_or_default();
-        let q = doc.paths.iter_mut().find(|q| q.name == n).ok_or_else(|| EngineError::Other(format!("no path named \"{n}\"")))?;
-        q.name = to.clone();
-        if let Some(c) = doc.clipping_path.as_mut()
-            && c.name == n
-        {
-            c.name = to.clone();
-        }
-        Ok(())
-    })?;
+            "Save Path"
+        } else {
+            "Rename Path"
+        },
+        |doc, _| {
+            if doc.paths.iter().any(|q| q.name == to) {
+                return Err(EngineError::Other(format!(
+                    "a path named \"{to}\" already exists"
+                )));
+            }
+            if is_work(name.as_deref()) {
+                // Photoshop: saving the work path turns it into a named path.
+                let path = doc
+                    .work_path
+                    .take()
+                    .ok_or_else(|| EngineError::Other("no work path".into()))?;
+                doc.paths.push(NamedPath {
+                    name: to.clone(),
+                    path,
+                    psd_raw: None,
+                });
+                return Ok(());
+            }
+            let n = name.clone().unwrap_or_default();
+            let q = doc
+                .paths
+                .iter_mut()
+                .find(|q| q.name == n)
+                .ok_or_else(|| EngineError::Other(format!("no path named \"{n}\"")))?;
+            q.name = to.clone();
+            if let Some(c) = doc.clipping_path.as_mut()
+                && c.name == n
+            {
+                c.name = to.clone();
+            }
+            Ok(())
+        },
+    )?;
     Ok(json!({ "name": to }))
 }
 
@@ -1102,7 +1550,12 @@ fn path_to_selection(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if feather > 0.0 {
-        mask = sel::feather(&mask, area.width() as usize, area.height() as usize, feather);
+        mask = sel::feather(
+            &mask,
+            area.width() as usize,
+            area.height() as usize,
+            feather,
+        );
     }
     let selected = s.edit("Make Selection", |doc, _| {
         doc.selection = sel::combine(doc.selection.as_ref(), &mask, area, mode);
@@ -1115,7 +1568,11 @@ fn select_to_work_path(s: &mut Session, p: &Value) -> Result<Value> {
     let tol = f64p(p, "tolerance").unwrap_or(2.0).clamp(0.5, 10.0);
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let area = d.doc.bounds();
-    let sel_surface = d.doc.selection.as_ref().ok_or_else(|| EngineError::Other("no selection".into()))?;
+    let sel_surface = d
+        .doc
+        .selection
+        .as_ref()
+        .ok_or_else(|| EngineError::Other("no selection".into()))?;
     let mask = sel::mask_from_surface(Some(sel_surface), area);
     let path = vector::trace::trace_mask(&mask, area, 0.0, tol);
     let knots: usize = path.subpaths.iter().map(|s| s.knots.len()).sum();
@@ -1130,11 +1587,18 @@ fn select_to_work_path(s: &mut Session, p: &Value) -> Result<Value> {
 fn path_fill(s: &mut Session, p: &Value) -> Result<Value> {
     let path = resolve_path(s, p.get("name").and_then(Value::as_str))?;
     let fg = s.tools.foreground;
-    let c = p.get("color").and_then(color).unwrap_or(Color::rgba(fg[0], fg[1], fg[2], fg[3]));
+    let c = p
+        .get("color")
+        .and_then(color)
+        .unwrap_or(Color::rgba(fg[0], fg[1], fg[2], fg[3]));
     let rgb = c.to_rgb();
     let src = [rgb[0], rgb[1], rgb[2], c.alpha];
     let opacity = (f64p(p, "opacity").unwrap_or(100.0) / 100.0).clamp(0.0, 1.0) as f32;
-    let mode = p.get("mode").and_then(Value::as_str).and_then(blend_from_str).unwrap_or(BlendMode::Normal);
+    let mode = p
+        .get("mode")
+        .and_then(Value::as_str)
+        .and_then(blend_from_str)
+        .unwrap_or(BlendMode::Normal);
     let feather = f64p(p, "feather").unwrap_or(0.0) as f32;
     let aa = p.get("antiAlias").and_then(Value::as_bool).unwrap_or(true);
     let id = layer_id(s, p)?;
@@ -1143,13 +1607,16 @@ fn path_fill(s: &mut Session, p: &Value) -> Result<Value> {
         let r = vector::fill_rasterizer(&path, vector::DEFAULT_TOLERANCE);
         // The feather reaches 3σ = 3 × radius (σ = radius, as in Photoshop), plus a pixel.
         let feather_pad = (feather.ceil() as i32).saturating_mul(3).saturating_add(1);
-        let area = r.pixel_bounds().map_or(area, |b| b.inflate(feather_pad).intersect(&area));
+        let area = r
+            .pixel_bounds()
+            .map_or(area, |b| b.inflate(feather_pad).intersect(&area));
         if area.is_empty() {
             return Ok(());
         }
         let mut cov = r.render(area);
         if !aa {
-            cov.iter_mut().for_each(|v| *v = if *v >= 0.5 { 1.0 } else { 0.0 });
+            cov.iter_mut()
+                .for_each(|v| *v = if *v >= 0.5 { 1.0 } else { 0.0 });
         }
         if feather > 0.0 {
             cov = sel::feather(&cov, area.width() as usize, area.height() as usize, feather);
@@ -1162,10 +1629,15 @@ fn path_fill(s: &mut Session, p: &Value) -> Result<Value> {
         let locks = doc.effective_locks(id);
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         if locks.pixels || locks.all {
-            return Err(EngineError::Other(format!("Could not complete your request because the layer \"{}\" is locked", l.name)));
+            return Err(EngineError::Other(format!(
+                "Could not complete your request because the layer \"{}\" is locked",
+                l.name
+            )));
         }
         let lock = locks.transparency;
-        let surf = l.surface_mut().ok_or_else(|| EngineError::Other("Fill Path needs a pixel layer".into()))?;
+        let surf = l
+            .surface_mut()
+            .ok_or_else(|| EngineError::Other("Fill Path needs a pixel layer".into()))?;
         paint_coverage(surf, area, &cov, src, opacity, mode, lock);
         Ok(())
     })?;
@@ -1173,7 +1645,15 @@ fn path_fill(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Composites `src` × coverage onto a surface over `area` (any pixel format).
-fn paint_coverage(surf: &mut photocraft_raster::Surface, area: Rect, cov: &[f32], src: [f32; 4], opacity: f32, mode: BlendMode, lock_alpha: bool) {
+fn paint_coverage(
+    surf: &mut photocraft_raster::Surface,
+    area: Rect,
+    cov: &[f32],
+    src: [f32; 4],
+    opacity: f32,
+    mode: BlendMode,
+    lock_alpha: bool,
+) {
     let fmt = surf.format();
     let ch = fmt.channels();
     let mut vals = surf.read_region(area);
@@ -1182,7 +1662,12 @@ fn paint_coverage(surf: &mut photocraft_raster::Surface, area: Rect, cov: &[f32]
             continue;
         }
         let dst = photocraft_raster::to_rgba(&fmt, px);
-        let mut out = photocraft_compose::psblend::composite(mode, dst, [src[0], src[1], src[2], src[3] * c], opacity);
+        let mut out = photocraft_compose::psblend::composite(
+            mode,
+            dst,
+            [src[0], src[1], src[2], src[3] * c],
+            opacity,
+        );
         if lock_alpha {
             out[3] = dst[3];
         }
@@ -1218,18 +1703,30 @@ const MAX_PRESSURE_POINTS: f64 = 200_000.0;
 /// Pressure) the subpath is resampled about every pixel and the pressure rises from 0 at its start
 /// to full at the middle and falls back to 0 at its end, so a brush whose size or opacity follows
 /// pen pressure tapers at both ends, as in Photoshop. Otherwise every point has full pressure.
-fn stroke_points(pts: &[(f64, f64)], closed: bool, simulate: bool) -> Vec<photocraft_paint::StrokePoint> {
+fn stroke_points(
+    pts: &[(f64, f64)],
+    closed: bool,
+    simulate: bool,
+) -> Vec<photocraft_paint::StrokePoint> {
     use photocraft_paint::StrokePoint;
     let mut line = pts.to_vec();
     if closed && let Some(&first) = pts.first() {
         line.push(first);
     }
-    let full = |line: Vec<(f64, f64)>| line.into_iter().map(|(x, y)| StrokePoint::new(x, y, 1.0)).collect();
+    let full = |line: Vec<(f64, f64)>| {
+        line.into_iter()
+            .map(|(x, y)| StrokePoint::new(x, y, 1.0))
+            .collect()
+    };
     if !simulate {
         return full(line);
     }
     let seg = |a: &(f64, f64), b: &(f64, f64)| (b.0 - a.0).hypot(b.1 - a.1);
-    let total: f64 = line.iter().zip(line.iter().skip(1)).map(|(a, b)| seg(a, b)).sum();
+    let total: f64 = line
+        .iter()
+        .zip(line.iter().skip(1))
+        .map(|(a, b)| seg(a, b))
+        .sum();
     if !(total.is_finite() && total > 0.0) {
         return full(line);
     }
@@ -1242,7 +1739,11 @@ fn stroke_points(pts: &[(f64, f64)], closed: bool, simulate: bool) -> Vec<photoc
         let n = (len / step).ceil().clamp(1.0, MAX_PRESSURE_POINTS) as usize;
         for i in 0..n {
             let t = i as f64 / n as f64;
-            out.push(StrokePoint::new(a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t, pressure(walked + len * t)));
+            out.push(StrokePoint::new(
+                a.0 + (b.0 - a.0) * t,
+                a.1 + (b.1 - a.1) * t,
+                pressure(walked + len * t),
+            ));
         }
         walked += len;
     }
@@ -1255,7 +1756,13 @@ fn stroke_points(pts: &[(f64, f64)], closed: bool, simulate: bool) -> Vec<photoc
 /// Stroke Path with a tool that has its own `paint.*` command: the command runs once per subpath,
 /// with the caller's params (size, opacity, the tool's options) and the path's points, all in one
 /// history step. Only `path.stroke` itself is journalled, so a recorded action replays it once.
-fn stroke_with_command(s: &mut Session, p: &Value, cmd: &str, lines: &[vector::Polyline], simulate: bool) -> Result<Value> {
+fn stroke_with_command(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    lines: &[vector::Polyline],
+    simulate: bool,
+) -> Result<Value> {
     let mut params = p.as_object().cloned().unwrap_or_default();
     for k in ["name", "tool", "simulatePressure", "coalesce"] {
         params.remove(k);
@@ -1270,7 +1777,10 @@ fn stroke_with_command(s: &mut Session, p: &Value, cmd: &str, lines: &[vector::P
                 continue;
             }
             let mut call = params.clone();
-            call.insert("points".into(), Value::Array(pts.iter().map(|q| json!([q.x, q.y, q.pressure])).collect()));
+            call.insert(
+                "points".into(),
+                Value::Array(pts.iter().map(|q| json!([q.x, q.y, q.pressure])).collect()),
+            );
             s.execute(cmd, Value::Object(call))?;
             let r = s.active().and_then(|d| d.last_damage);
             dmg = dmg.zip(r).map(|(a, b)| {
@@ -1299,7 +1809,9 @@ fn path_stroke(s: &mut Session, p: &Value) -> Result<Value> {
     let tool = p.get("tool").and_then(Value::as_str).unwrap_or("brush");
     let simulate = match p.get("simulatePressure") {
         None | Some(Value::Null) => false,
-        Some(v) => v.as_bool().ok_or_else(|| bad("path.stroke", "`simulatePressure` must be true or false"))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad("path.stroke", "`simulatePressure` must be true or false"))?,
     };
     if let Some(&(_, cmd)) = STROKE_PATH_TOOLS.iter().find(|(t, _)| *t == tool) {
         let lines = vector::flatten_path(&path, 0.1);
@@ -1324,8 +1836,14 @@ fn path_stroke(s: &mut Session, p: &Value) -> Result<Value> {
         "pencil" => brush.hardness = 1.0,
         "brush" | "eraser" => {}
         o => {
-            let tools: Vec<&str> = ["brush", "pencil", "eraser"].into_iter().chain(STROKE_PATH_TOOLS.iter().map(|(t, _)| *t)).collect();
-            return Err(bad("path.stroke", format!("unknown tool `{o}` ({})", tools.join("|"))));
+            let tools: Vec<&str> = ["brush", "pencil", "eraser"]
+                .into_iter()
+                .chain(STROKE_PATH_TOOLS.iter().map(|(t, _)| *t))
+                .collect();
+            return Err(bad(
+                "path.stroke",
+                format!("unknown tool `{o}` ({})", tools.join("|")),
+            ));
         }
     }
     crate::brush_cmds::validate_brush(&brush, "path.stroke")?;
@@ -1338,10 +1856,15 @@ fn path_stroke(s: &mut Session, p: &Value) -> Result<Value> {
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         // Pixel and full locks (the layer's own or a parent group's) refuse the stroke, as Fill Path does (#2388).
         if locks.pixels || locks.all {
-            return Err(EngineError::Other(format!("Could not complete your request because the layer \"{}\" is locked", l.name)));
+            return Err(EngineError::Other(format!(
+                "Could not complete your request because the layer \"{}\" is locked",
+                l.name
+            )));
         }
         let lock = locks.transparency;
-        let surf = l.surface_mut().ok_or_else(|| EngineError::Other("Stroke Path needs a pixel layer".into()))?;
+        let surf = l
+            .surface_mut()
+            .ok_or_else(|| EngineError::Other("Stroke Path needs a pixel layer".into()))?;
         let mut brush = brush.clone();
         if brush.erase && lock {
             // Locked transparency (e.g. the Background): the Eraser paints the background colour (#76).
@@ -1354,7 +1877,15 @@ fn path_stroke(s: &mut Session, p: &Value) -> Result<Value> {
             if pts.is_empty() {
                 continue;
             }
-            let r = photocraft_paint::apply_stroke(surf, &photocraft_paint::Stroke { brush: brush.clone(), points: pts }, sel.as_ref(), lock);
+            let r = photocraft_paint::apply_stroke(
+                surf,
+                &photocraft_paint::Stroke {
+                    brush: brush.clone(),
+                    points: pts,
+                },
+                sel.as_ref(),
+                lock,
+            );
             dmg = if dmg.is_empty() { r } else { dmg.union(&r) };
         }
         Ok(dmg)
@@ -1386,7 +1917,9 @@ fn vector_mask_add(s: &mut Session, p: &Value, from_path: bool) -> Result<Value>
             let name = p.get("name").and_then(Value::as_str);
             // Never fall back to the layer's own path here.
             if is_work(name) {
-                s.active().and_then(|d| d.doc.work_path.clone()).ok_or_else(|| EngineError::Other("no work path".into()))?
+                s.active()
+                    .and_then(|d| d.doc.work_path.clone())
+                    .ok_or_else(|| EngineError::Other("no work path".into()))?
             } else {
                 resolve_path(s, name)?
             }
@@ -1400,10 +1933,15 @@ fn vector_mask_add(s: &mut Session, p: &Value, from_path: bool) -> Result<Value>
         let locked = doc.effective_locks(id).all;
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         if matches!(l.content, LayerContent::Shape(_)) {
-            return Err(EngineError::Other("a shape layer's path is already its vector mask".into()));
+            return Err(EngineError::Other(
+                "a shape layer's path is already its vector mask".into(),
+            ));
         }
         if locked {
-            return Err(EngineError::Other(format!("layer \"{}\" is locked", l.name)));
+            return Err(EngineError::Other(format!(
+                "layer \"{}\" is locked",
+                l.name
+            )));
         }
         l.vector_mask = Some(VectorMask::new(path));
         Ok(())
@@ -1414,7 +1952,11 @@ fn vector_mask_add(s: &mut Session, p: &Value, from_path: bool) -> Result<Value>
 fn vector_mask_edit(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "layer.vectorMask.edit";
     let id = layer_id(s, p)?;
-    let path = p.get("path").map(parse_path).transpose().map_err(|e| bad(CMD, e))?;
+    let path = p
+        .get("path")
+        .map(parse_path)
+        .transpose()
+        .map_err(|e| bad(CMD, e))?;
     // Same range as a pixel mask's feather (`layer.layerMask.edit`), checked before any edit (#4201).
     let feather = p
         .get("feather")
@@ -1427,7 +1969,10 @@ fn vector_mask_edit(s: &mut Session, p: &Value) -> Result<Value> {
         .transpose()?;
     s.edit("Edit Vector Mask", |doc, _| {
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
-        let vm = l.vector_mask.as_mut().ok_or_else(|| EngineError::Other("layer has no vector mask".into()))?;
+        let vm = l
+            .vector_mask
+            .as_mut()
+            .ok_or_else(|| EngineError::Other("layer has no vector mask".into()))?;
         if let Some(pth) = path {
             vm.path = pth;
         }
@@ -1457,7 +2002,10 @@ fn vector_mask_delete(s: &mut Session, p: &Value) -> Result<Value> {
     let id = layer_id(s, p)?;
     s.edit("Delete Vector Mask", |doc, _| {
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
-        l.vector_mask.take().map(|_| ()).ok_or_else(|| EngineError::Other("layer has no vector mask".into()))
+        l.vector_mask
+            .take()
+            .map(|_| ())
+            .ok_or_else(|| EngineError::Other("layer has no vector mask".into()))
     })?;
     Ok(Value::Null)
 }
@@ -1473,20 +2021,37 @@ fn vector_mask_rasterize(s: &mut Session, p: &Value) -> Result<Value> {
         let depth = doc.depth;
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         let soft = l.vector_mask.as_ref().is_some_and(|v| v.enabled)
-            && (l.vector_mask.as_ref().is_some_and(|v| feather_sigma(v.feather) > 0.0)
-                || l.mask.as_ref().is_some_and(|m| m.enabled && (feather_sigma(m.feather) > 0.0 || m.density < 1.0)));
+            && (l
+                .vector_mask
+                .as_ref()
+                .is_some_and(|v| feather_sigma(v.feather) > 0.0)
+                || l.mask.as_ref().is_some_and(|m| {
+                    m.enabled && (feather_sigma(m.feather) > 0.0 || m.density < 1.0)
+                }));
         let shown = if soft { combined_mask(l, area) } else { None };
-        let vm = l.vector_mask.take().ok_or_else(|| EngineError::Other("layer has no vector mask".into()))?;
+        let vm = l
+            .vector_mask
+            .take()
+            .ok_or_else(|| EngineError::Other("layer has no vector mask".into()))?;
         let mut mask = l.mask.take().unwrap_or_else(|| {
             let mut m = photocraft_doc::LayerMask::reveal_all();
-            m.surface =
-                photocraft_raster::Surface::with_default(photocraft_color::PixelFormat::new(photocraft_color::ColorMode::Grayscale, depth, false), &[1.0]);
+            m.surface = photocraft_raster::Surface::with_default(
+                photocraft_color::PixelFormat::new(
+                    photocraft_color::ColorMode::Grayscale,
+                    depth,
+                    false,
+                ),
+                &[1.0],
+            );
             m
         });
         if let Some(shown) = shown {
             // Past the canvas the pixel mask keeps its own (density-applied) default, as below.
             let d = mask.surface.default_pixel().first().copied().unwrap_or(1.0);
-            let mut surface = photocraft_raster::Surface::with_default(mask.surface.format(), &[1.0 - mask.density * (1.0 - d)]);
+            let mut surface = photocraft_raster::Surface::with_default(
+                mask.surface.format(),
+                &[1.0 - mask.density * (1.0 - d)],
+            );
             surface.write_region(area, &shown.read_region(area));
             surface.prune();
             (mask.surface, mask.feather, mask.density) = (surface, 0.0, 1.0);
@@ -1516,8 +2081,18 @@ fn toggle_vector_mask(s: &mut Session, p: &Value, key: &str) -> Result<Value> {
     let id = layer_id(s, p)?;
     let cur = {
         let d = s.active().ok_or(EngineError::NoDocument)?;
-        let vm = d.doc.layer(id).ok_or(EngineError::NoLayer(id))?.vector_mask.as_ref().ok_or_else(|| EngineError::Other("layer has no vector mask".into()))?;
-        if key == "enabled" { vm.enabled } else { vm.linked }
+        let vm = d
+            .doc
+            .layer(id)
+            .ok_or(EngineError::NoLayer(id))?
+            .vector_mask
+            .as_ref()
+            .ok_or_else(|| EngineError::Other("layer has no vector mask".into()))?;
+        if key == "enabled" {
+            vm.enabled
+        } else {
+            vm.linked
+        }
     };
     let v = p.get(key).and_then(Value::as_bool).unwrap_or(!cur);
     vector_mask_edit(s, &json!({ "layer": id.0, key: v }))
@@ -1530,7 +2105,9 @@ fn merge_components(s: &mut Session, p: &Value) -> Result<Value> {
         return merge_shape_layers(s, &ids, None, "Merge Shape Components", Some(tol));
     }
     let id = layer_id(s, p)?;
-    with_shape(s, id, "Merge Shape Components", |sh, _| bake_components(sh, tol))?;
+    with_shape(s, id, "Merge Shape Components", |sh, _| {
+        bake_components(sh, tol)
+    })?;
     shape_info(s, id)
 }
 
@@ -1566,7 +2143,14 @@ fn combine_targets(s: &Session, p: &Value, narrow: &[&str]) -> Result<Option<Vec
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let sel = d.selected_layers();
     let ids = crate::layer_multi_cmds::top_level(&d.doc, &sel);
-    let ids: Vec<LayerId> = ids.into_iter().filter(|id| d.doc.layer(*id).is_some_and(|l| matches!(l.content, LayerContent::Shape(_)))).collect();
+    let ids: Vec<LayerId> = ids
+        .into_iter()
+        .filter(|id| {
+            d.doc
+                .layer(*id)
+                .is_some_and(|l| matches!(l.content, LayerContent::Shape(_)))
+        })
+        .collect();
     Ok((ids.len() > 1).then_some(ids))
 }
 
@@ -1575,13 +2159,23 @@ fn combine_targets(s: &Session, p: &Value, narrow: &[&str]) -> Result<Option<Vec
 /// layers above takes `op` (front shapes subtract, intersect… in stacking order), or, with no
 /// `op` (Merge Shape Components), keeps its own with each layer's first component combined, and
 /// the result is then baked with tolerance `bake`. The other layers are removed; one history step.
-fn merge_shape_layers(s: &mut Session, ids: &[LayerId], op: Option<PathOp>, label: &str, bake: Option<f64>) -> Result<Value> {
-    let (&keep, _) = ids.split_last().ok_or_else(|| EngineError::Other("Combine Shapes needs two or more shape layers".into()))?;
+fn merge_shape_layers(
+    s: &mut Session,
+    ids: &[LayerId],
+    op: Option<PathOp>,
+    label: &str,
+    bake: Option<f64>,
+) -> Result<Value> {
+    let (&keep, _) = ids.split_last().ok_or_else(|| {
+        EngineError::Other("Combine Shapes needs two or more shape layers".into())
+    })?;
     if let Some(st) = s.active() {
         for id in ids {
             let locks = st.doc.effective_locks(*id);
             if locks.all || locks.pixels {
-                return Err(EngineError::Other("a selected shape layer is locked".into()));
+                return Err(EngineError::Other(
+                    "a selected shape layer is locked".into(),
+                ));
             }
         }
     }
@@ -1590,7 +2184,10 @@ fn merge_shape_layers(s: &mut Session, ids: &[LayerId], op: Option<PathOp>, labe
         for id in ids {
             let l = doc.layer(*id).ok_or(EngineError::NoLayer(*id))?;
             let LayerContent::Shape(sh) = &l.content else {
-                return Err(EngineError::Other(format!("layer {} is not a shape layer", id.0)));
+                return Err(EngineError::Other(format!(
+                    "layer {} is not a shape layer",
+                    id.0
+                )));
             };
             let Some(acc) = path.as_mut() else {
                 path = Some(sh.path.clone());
@@ -1606,17 +2203,29 @@ fn merge_shape_layers(s: &mut Session, ids: &[LayerId], op: Option<PathOp>, labe
                 acc.subpaths.push(sp);
             }
         }
-        let path = path.ok_or_else(|| EngineError::Other("Combine Shapes needs two or more shape layers".into()))?;
+        let path = path.ok_or_else(|| {
+            EngineError::Other("Combine Shapes needs two or more shape layers".into())
+        })?;
         let snapshot = doc.clone();
         let l = doc.layer_mut(keep).ok_or(EngineError::NoLayer(keep))?;
         let LayerContent::Shape(sh) = &mut l.content else {
-            return Err(EngineError::Other(format!("layer {} is not a shape layer", keep.0)));
+            return Err(EngineError::Other(format!(
+                "layer {} is not a shape layer",
+                keep.0
+            )));
         };
-        let mut merged = ShapeLayer { path, live: None, psd_raw: None, cache: None, ..sh.clone() };
+        let mut merged = ShapeLayer {
+            path,
+            live: None,
+            psd_raw: None,
+            cache: None,
+            ..sh.clone()
+        };
         if let Some(tol) = bake {
             bake_components(&mut merged, tol)?;
         }
-        vector::flatten::validate_shape(&merged.path, merged.stroke.as_ref()).map_err(|e| bad(label, e))?;
+        vector::flatten::validate_shape(&merged.path, merged.stroke.as_ref())
+            .map_err(|e| bad(label, e))?;
         refresh_shape(&snapshot, &mut merged);
         *sh = merged;
         for id in ids.iter().filter(|id| **id != keep) {
@@ -1641,7 +2250,10 @@ fn combine_shapes(s: &mut Session, p: &Value, op: &str, label: &str) -> Result<V
 }
 
 fn selection_to_shape(s: &mut Session, p: &Value) -> Result<Value> {
-    let tol = f64p(p, "tolerance").or_else(|| f64p(p, "simplifyTolerance")).unwrap_or(2.0).clamp(0.5, 10.0);
+    let tol = f64p(p, "tolerance")
+        .or_else(|| f64p(p, "simplifyTolerance"))
+        .unwrap_or(2.0)
+        .clamp(0.5, 10.0);
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let area = d.doc.bounds();
     let mask = sel::mask_from_surface(d.doc.selection.as_ref(), area);
@@ -1711,7 +2323,14 @@ pub fn specs() -> Vec<CommandSpec> {
             },
             journal: false,
         },
-        spec!("shape.rasterize", "Rasterize Shape", ["Layer", "Rasterize"], r##"{"layer":id?}"##, has_layer, shape_rasterize),
+        spec!(
+            "shape.rasterize",
+            "Rasterize Shape",
+            ["Layer", "Rasterize"],
+            r##"{"layer":id?}"##,
+            has_layer,
+            shape_rasterize
+        ),
         CommandSpec {
             id: "path.list",
             label: "List Paths",
@@ -1746,7 +2365,14 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             path_set
         ),
-        spec!("path.delete", "Delete Path", [], r##"{"name":str|"work"="work"}"##, has_doc, path_delete),
+        spec!(
+            "path.delete",
+            "Delete Path",
+            [],
+            r##"{"name":str|"work"="work"}"##,
+            has_doc,
+            path_delete
+        ),
         spec!(
             "path.transform",
             "Free Transform Path",
@@ -1763,9 +2389,30 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             clipping_path_set
         ),
-        spec!("path.clippingPath.clear", "Clear Clipping Path", [], r##"{}"##, has_doc, clipping_path_clear),
-        spec!("path.style.copyFill", "Copy Fill", [], r##"{} (copies active shape layer fill)"##, has_shape_fill, copy_shape_fill),
-        spec!("path.style.copyStroke", "Copy Complete Stroke", [], r##"{} (copies active shape layer stroke)"##, has_shape_stroke, copy_shape_stroke),
+        spec!(
+            "path.clippingPath.clear",
+            "Clear Clipping Path",
+            [],
+            r##"{}"##,
+            has_doc,
+            clipping_path_clear
+        ),
+        spec!(
+            "path.style.copyFill",
+            "Copy Fill",
+            [],
+            r##"{} (copies active shape layer fill)"##,
+            has_shape_fill,
+            copy_shape_fill
+        ),
+        spec!(
+            "path.style.copyStroke",
+            "Copy Complete Stroke",
+            [],
+            r##"{} (copies active shape layer stroke)"##,
+            has_shape_stroke,
+            copy_shape_stroke
+        ),
         spec!(
             "path.style.pasteFill",
             "Paste Fill",
@@ -1782,7 +2429,14 @@ pub fn specs() -> Vec<CommandSpec> {
             can_paste_shape_stroke,
             paste_shape_stroke
         ),
-        spec!("path.rename", "Rename Path", [], r##"{"name":str|"work"="work","to":str} (renaming the work path saves it)"##, has_doc, path_rename),
+        spec!(
+            "path.rename",
+            "Rename Path",
+            [],
+            r##"{"name":str|"work"="work","to":str} (renaming the work path saves it)"##,
+            has_doc,
+            path_rename
+        ),
         // ⌘↩ / Ctrl+Enter, as in Photoshop (the UI loads the path selected in the Paths panel, #306).
         CommandSpec {
             id: "path.toSelection",
@@ -1794,7 +2448,14 @@ pub fn specs() -> Vec<CommandSpec> {
             run: path_to_selection,
             journal: true,
         },
-        spec!("select.toWorkPath", "Make Work Path", [], r##"{"tolerance":0.5..10 px=2} → {subpaths,knots}"##, has_selection, select_to_work_path),
+        spec!(
+            "select.toWorkPath",
+            "Make Work Path",
+            [],
+            r##"{"tolerance":0.5..10 px=2} → {subpaths,knots}"##,
+            has_selection,
+            select_to_work_path
+        ),
         spec!(
             "path.fill",
             "Fill Path",
@@ -1837,7 +2498,14 @@ pub fn specs() -> Vec<CommandSpec> {
             has_layer,
             vector_mask_edit
         ),
-        spec!("layer.vectorMask.delete", "Delete Vector Mask", ["Layer", "Vector Mask"], r##"{"layer":id?}"##, has_layer, vector_mask_delete),
+        spec!(
+            "layer.vectorMask.delete",
+            "Delete Vector Mask",
+            ["Layer", "Vector Mask"],
+            r##"{"layer":id?}"##,
+            has_layer,
+            vector_mask_delete
+        ),
         spec!(
             "layer.rasterize.vectorMask",
             "Rasterize Vector Mask",
@@ -1847,47 +2515,95 @@ pub fn specs() -> Vec<CommandSpec> {
             vector_mask_rasterize
         ),
         // Menu ids of Photoshop's Layer › Vector Mask / Rasterize / Combine Shapes.
-        spec!("layer.vectorMask.revealAll", "Vector Mask: Reveal All", [], r##"{"layer":id?}"##, has_layer, |s, p| vector_mask_add(
-            s,
-            &with(p, "hide", json!(false)),
-            false
-        )),
-        spec!("layer.vectorMask.hideAll", "Vector Mask: Hide All", [], r##"{"layer":id?}"##, has_layer, |s, p| vector_mask_add(
-            s,
-            &with(p, "hide", json!(true)),
-            false
-        )),
-        spec!("layer.vectorMask.currentPath", "Vector Mask: Current Path", [], r##"{"layer":id?,"name":str|"work"="work"}"##, has_layer, |s, p| {
-            vector_mask_add(s, p, true)
-        }),
-        spec!("layer.vectorMask.enabled", "Enable Vector Mask", [], r##"{"layer":id?,"enabled":bool? (default: toggle)}"##, has_layer, |s, p| {
-            toggle_vector_mask(s, p, "enabled")
-        }),
-        spec!("layer.vectorMask.linked", "Link Vector Mask", [], r##"{"layer":id?,"linked":bool? (default: toggle)}"##, has_layer, |s, p| toggle_vector_mask(
-            s, p, "linked"
-        )),
+        spec!(
+            "layer.vectorMask.revealAll",
+            "Vector Mask: Reveal All",
+            [],
+            r##"{"layer":id?}"##,
+            has_layer,
+            |s, p| vector_mask_add(s, &with(p, "hide", json!(false)), false)
+        ),
+        spec!(
+            "layer.vectorMask.hideAll",
+            "Vector Mask: Hide All",
+            [],
+            r##"{"layer":id?}"##,
+            has_layer,
+            |s, p| vector_mask_add(s, &with(p, "hide", json!(true)), false)
+        ),
+        spec!(
+            "layer.vectorMask.currentPath",
+            "Vector Mask: Current Path",
+            [],
+            r##"{"layer":id?,"name":str|"work"="work"}"##,
+            has_layer,
+            |s, p| { vector_mask_add(s, p, true) }
+        ),
+        spec!(
+            "layer.vectorMask.enabled",
+            "Enable Vector Mask",
+            [],
+            r##"{"layer":id?,"enabled":bool? (default: toggle)}"##,
+            has_layer,
+            |s, p| { toggle_vector_mask(s, p, "enabled") }
+        ),
+        spec!(
+            "layer.vectorMask.linked",
+            "Link Vector Mask",
+            [],
+            r##"{"layer":id?,"linked":bool? (default: toggle)}"##,
+            has_layer,
+            |s, p| toggle_vector_mask(s, p, "linked")
+        ),
         // Without `layer`, every selected shape layer (the shared Rasterize logic calls back here with one).
-        spec!("layer.rasterize.shape", "Rasterize Shape", [], r##"{"layer":id?} (no layer: every selected shape layer)"##, has_layer, |s, p| {
-            if p.get("layer").is_some() { shape_rasterize(s, p) } else { crate::extra_cmds::rasterize(s, p, Some("shape")) }
-        }),
+        spec!(
+            "layer.rasterize.shape",
+            "Rasterize Shape",
+            [],
+            r##"{"layer":id?} (no layer: every selected shape layer)"##,
+            has_layer,
+            |s, p| {
+                if p.get("layer").is_some() {
+                    shape_rasterize(s, p)
+                } else {
+                    crate::extra_cmds::rasterize(s, p, Some("shape"))
+                }
+            }
+        ),
         // With two or more shape layers selected (and no `layer`/`subpath`), these merge them into
         // the top-most one, as in Photoshop; with one, they set the operation of its components.
-        spec!("layer.combineShapes.unite", "Unite Shapes", [], COMBINE_PARAMS, has_layer, |s, p| combine_shapes(s, p, "combine", "Unite Shapes")),
-        spec!("layer.combineShapes.subtractFrontShape", "Subtract Front Shape", [], COMBINE_PARAMS, has_layer, |s, p| combine_shapes(
-            s,
-            p,
-            "subtract",
-            "Subtract Front Shape"
-        )),
-        spec!("layer.combineShapes.intersectShapeAreas", "Intersect Shape Areas", [], COMBINE_PARAMS, has_layer, |s, p| combine_shapes(
-            s,
-            p,
-            "intersect",
-            "Intersect Shape Areas"
-        )),
-        spec!("layer.combineShapes.excludeOverlappingShapes", "Exclude Overlapping Shapes", [], COMBINE_PARAMS, has_layer, |s, p| {
-            combine_shapes(s, p, "exclude", "Exclude Overlapping Shapes")
-        }),
+        spec!(
+            "layer.combineShapes.unite",
+            "Unite Shapes",
+            [],
+            COMBINE_PARAMS,
+            has_layer,
+            |s, p| combine_shapes(s, p, "combine", "Unite Shapes")
+        ),
+        spec!(
+            "layer.combineShapes.subtractFrontShape",
+            "Subtract Front Shape",
+            [],
+            COMBINE_PARAMS,
+            has_layer,
+            |s, p| combine_shapes(s, p, "subtract", "Subtract Front Shape")
+        ),
+        spec!(
+            "layer.combineShapes.intersectShapeAreas",
+            "Intersect Shape Areas",
+            [],
+            COMBINE_PARAMS,
+            has_layer,
+            |s, p| combine_shapes(s, p, "intersect", "Intersect Shape Areas")
+        ),
+        spec!(
+            "layer.combineShapes.excludeOverlappingShapes",
+            "Exclude Overlapping Shapes",
+            [],
+            COMBINE_PARAMS,
+            has_layer,
+            |s, p| { combine_shapes(s, p, "exclude", "Exclude Overlapping Shapes") }
+        ),
         spec!(
             "layer.combineShapes.mergeShapeComponents",
             "Merge Shape Components",
@@ -1896,7 +2612,14 @@ pub fn specs() -> Vec<CommandSpec> {
             has_layer,
             merge_components
         ),
-        spec!("select.convertToShape", "Convert to Shape", [], r##"{"tolerance":0.5..10 px=2} → shape.info"##, has_selection, selection_to_shape),
+        spec!(
+            "select.convertToShape",
+            "Convert to Shape",
+            [],
+            r##"{"tolerance":0.5..10 px=2} → shape.info"##,
+            has_selection,
+            selection_to_shape
+        ),
         CommandSpec {
             id: "layer.vectorMask.info",
             label: "Vector Mask Info",

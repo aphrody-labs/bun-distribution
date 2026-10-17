@@ -22,15 +22,24 @@ async fn import_is_idempotent_and_readers_cannot_write() {
     tokio::spawn(connection);
 
     migrate(&mut client).await.unwrap();
-    assert!(migrate(&mut client).await.unwrap().is_empty(), "migrations must be replayable");
-    client.execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&PATH]).await.unwrap();
+    assert!(
+        migrate(&mut client).await.unwrap().is_empty(),
+        "migrations must be replayable"
+    );
+    client
+        .execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&PATH])
+        .await
+        .unwrap();
 
     let decoded = decode(&fixture).unwrap();
     assert_eq!(
         store_file(&mut client, PATH, &decoded).await.unwrap(),
         ImportOutcome::Written { rows: 448 }
     );
-    assert_eq!(store_file(&mut client, PATH, &decoded).await.unwrap(), ImportOutcome::Unchanged);
+    assert_eq!(
+        store_file(&mut client, PATH, &decoded).await.unwrap(),
+        ImportOutcome::Unchanged
+    );
 
     let row = client
         .query_one(
@@ -46,11 +55,20 @@ async fn import_is_idempotent_and_readers_cannot_write() {
     // Azalée boundary: the reader role sees the data and cannot change it.
     let tx = client.transaction().await.unwrap();
     tx.batch_execute("SET LOCAL ROLE nie_reader").await.unwrap();
-    let seen: i64 = tx.query_one("SELECT count(*) FROM nie.cfgbin_file", &[]).await.unwrap().get(0);
+    let seen: i64 = tx
+        .query_one("SELECT count(*) FROM nie.cfgbin_file", &[])
+        .await
+        .unwrap()
+        .get(0);
     assert!(seen >= 1);
-    let denied = tx.execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&PATH]).await;
+    let denied = tx
+        .execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&PATH])
+        .await;
     assert!(denied.is_err(), "nie_reader must not be able to write");
     drop(tx);
 
-    client.execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&PATH]).await.unwrap();
+    client
+        .execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&PATH])
+        .await
+        .unwrap();
 }

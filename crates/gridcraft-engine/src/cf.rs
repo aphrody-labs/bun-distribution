@@ -77,7 +77,9 @@ fn threshold(wb: &Workbook, sheet: usize, at: CellRef, st: &RuleStats, k: &CfVal
         CfValueKind::Number(n) => *n,
         CfValueKind::Percent(p) => min + (max - min) * p / 100.0,
         CfValueKind::Percentile(p) => percentile(&st.sorted, *p),
-        CfValueKind::Formula(f) => gridcraft_calc::evaluate(wb, sheet, at, f).to_number().unwrap_or(0.0),
+        CfValueKind::Formula(f) => gridcraft_calc::evaluate(wb, sheet, at, f)
+            .to_number()
+            .unwrap_or(0.0),
     }
 }
 
@@ -105,8 +107,12 @@ impl CfCache {
         }
         let mut out = CfLook::default();
         let mut any = false;
-        let mut rules: Vec<(usize, &CondFormat)> =
-            sh.cond_formats.iter().enumerate().filter(|(_, cf)| cf.ranges.iter().any(|r| r.contains(c))).collect();
+        let mut rules: Vec<(usize, &CondFormat)> = sh
+            .cond_formats
+            .iter()
+            .enumerate()
+            .filter(|(_, cf)| cf.ranges.iter().any(|r| r.contains(c)))
+            .collect();
         rules.sort_by_key(|(_, cf)| cf.priority);
         let v = sh.value(c);
         for (idx, cf) in rules {
@@ -119,20 +125,35 @@ impl CfCache {
                     let n = sorted.len().max(1) as f64;
                     let avg = sorted.iter().sum::<f64>() / n;
                     let std = (sorted.iter().map(|x| (x - avg).powi(2)).sum::<f64>() / n).sqrt();
-                    RuleStats { sorted, avg, std, counts }
+                    RuleStats {
+                        sorted,
+                        avg,
+                        std,
+                        counts,
+                    }
                 })
                 .clone();
             let text = v.display();
             let matched_style: Option<&Style> = match &cf.rule {
                 CfRule::CellIs { op, a, b, style } => {
-                    let eval = |f: &str| gridcraft_calc::evaluate(wb, sheet, c, &relative(f, first, c));
+                    let eval =
+                        |f: &str| gridcraft_calc::evaluate(wb, sheet, c, &relative(f, first, c));
                     let av = eval(a);
                     let ok = match op {
                         CfOperator::Between | CfOperator::NotBetween => {
                             let bv = b.as_deref().map(eval).unwrap_or_default();
-                            let (lo, hi) = if compare(&av, &bv) == std::cmp::Ordering::Greater { (bv, av) } else { (av, bv) };
-                            let inside = compare(&v, &lo) != std::cmp::Ordering::Less && compare(&v, &hi) != std::cmp::Ordering::Greater;
-                            if *op == CfOperator::Between { inside } else { !inside }
+                            let (lo, hi) = if compare(&av, &bv) == std::cmp::Ordering::Greater {
+                                (bv, av)
+                            } else {
+                                (av, bv)
+                            };
+                            let inside = compare(&v, &lo) != std::cmp::Ordering::Less
+                                && compare(&v, &hi) != std::cmp::Ordering::Greater;
+                            if *op == CfOperator::Between {
+                                inside
+                            } else {
+                                !inside
+                            }
                         }
                         CfOperator::Equal => compare(&v, &av) == std::cmp::Ordering::Equal,
                         CfOperator::NotEqual => compare(&v, &av) != std::cmp::Ordering::Equal,
@@ -145,25 +166,54 @@ impl CfCache {
                     (ok && !v.is_error()).then_some(style.as_ref())
                 }
                 CfRule::Expression { formula, style } => {
-                    gridcraft_calc::evaluate(wb, sheet, c, &relative(formula, first, c)).to_bool().unwrap_or(false).then_some(style.as_ref())
+                    gridcraft_calc::evaluate(wb, sheet, c, &relative(formula, first, c))
+                        .to_bool()
+                        .unwrap_or(false)
+                        .then_some(style.as_ref())
                 }
-                CfRule::ContainsText { text: t, style } => text.to_lowercase().contains(&t.to_lowercase()).then_some(style.as_ref()),
-                CfRule::NotContainsText { text: t, style } => (!text.to_lowercase().contains(&t.to_lowercase())).then_some(style.as_ref()),
-                CfRule::BeginsWith { text: t, style } => text.to_lowercase().starts_with(&t.to_lowercase()).then_some(style.as_ref()),
-                CfRule::EndsWith { text: t, style } => text.to_lowercase().ends_with(&t.to_lowercase()).then_some(style.as_ref()),
-                CfRule::Blanks { style } => (v.is_empty() || text.trim().is_empty()).then_some(style.as_ref()),
-                CfRule::NoBlanks { style } => (!v.is_empty() && !text.trim().is_empty()).then_some(style.as_ref()),
+                CfRule::ContainsText { text: t, style } => text
+                    .to_lowercase()
+                    .contains(&t.to_lowercase())
+                    .then_some(style.as_ref()),
+                CfRule::NotContainsText { text: t, style } => {
+                    (!text.to_lowercase().contains(&t.to_lowercase())).then_some(style.as_ref())
+                }
+                CfRule::BeginsWith { text: t, style } => text
+                    .to_lowercase()
+                    .starts_with(&t.to_lowercase())
+                    .then_some(style.as_ref()),
+                CfRule::EndsWith { text: t, style } => text
+                    .to_lowercase()
+                    .ends_with(&t.to_lowercase())
+                    .then_some(style.as_ref()),
+                CfRule::Blanks { style } => {
+                    (v.is_empty() || text.trim().is_empty()).then_some(style.as_ref())
+                }
+                CfRule::NoBlanks { style } => {
+                    (!v.is_empty() && !text.trim().is_empty()).then_some(style.as_ref())
+                }
                 CfRule::Errors { style } => v.is_error().then_some(style.as_ref()),
                 CfRule::NoErrors { style } => (!v.is_error()).then_some(style.as_ref()),
-                CfRule::Duplicate { style } => {
-                    (!v.is_empty() && st.counts.get(&text.to_lowercase()).copied().unwrap_or(0) > 1).then_some(style.as_ref())
-                }
-                CfRule::Unique { style } => {
-                    (!v.is_empty() && st.counts.get(&text.to_lowercase()).copied().unwrap_or(0) == 1).then_some(style.as_ref())
-                }
-                CfRule::Top10 { bottom, percent, rank, style } => match v.as_f64() {
+                CfRule::Duplicate { style } => (!v.is_empty()
+                    && st.counts.get(&text.to_lowercase()).copied().unwrap_or(0) > 1)
+                    .then_some(style.as_ref()),
+                CfRule::Unique { style } => (!v.is_empty()
+                    && st.counts.get(&text.to_lowercase()).copied().unwrap_or(0) == 1)
+                    .then_some(style.as_ref()),
+                CfRule::Top10 {
+                    bottom,
+                    percent,
+                    rank,
+                    style,
+                } => match v.as_f64() {
                     Some(n) if !st.sorted.is_empty() => {
-                        let k = if *percent { ((st.sorted.len() as f64) * (*rank as f64) / 100.0).floor().max(1.0) as usize } else { *rank as usize };
+                        let k = if *percent {
+                            ((st.sorted.len() as f64) * (*rank as f64) / 100.0)
+                                .floor()
+                                .max(1.0) as usize
+                        } else {
+                            *rank as usize
+                        };
                         let k = k.clamp(1, st.sorted.len());
                         let ok = if *bottom {
                             n <= st.sorted.get(k - 1).copied().unwrap_or(n)
@@ -174,23 +224,42 @@ impl CfCache {
                     }
                     _ => None,
                 },
-                CfRule::AboveAverage { below, equal, std_dev, style } => match v.as_f64() {
+                CfRule::AboveAverage {
+                    below,
+                    equal,
+                    std_dev,
+                    style,
+                } => match v.as_f64() {
                     Some(n) => {
-                        let thr = st.avg + if *below { -1.0 } else { 1.0 } * st.std * *std_dev as f64;
-                        let ok = if *below { n < thr || (*equal && n == thr) } else { n > thr || (*equal && n == thr) };
+                        let thr =
+                            st.avg + if *below { -1.0 } else { 1.0 } * st.std * *std_dev as f64;
+                        let ok = if *below {
+                            n < thr || (*equal && n == thr)
+                        } else {
+                            n > thr || (*equal && n == thr)
+                        };
                         ok.then_some(style.as_ref())
                     }
                     None => None,
                 },
                 CfRule::TimePeriod { period, style } => match v.as_f64() {
                     Some(n) => {
-                        let today = gridcraft_core::date::serial_in_system(wb.date_system, gridcraft_calc::now_serial()).floor();
+                        let today = gridcraft_core::date::serial_in_system(
+                            wb.date_system,
+                            gridcraft_calc::now_serial(),
+                        )
+                        .floor();
                         let d = n.floor();
-                        let wd = gridcraft_core::date::datetime_from_serial(wb.date_system, today).map(|x| x.weekday as f64).unwrap_or(0.0);
+                        let wd = gridcraft_core::date::datetime_from_serial(wb.date_system, today)
+                            .map(|x| x.weekday as f64)
+                            .unwrap_or(0.0);
                         let week_start = today - wd;
                         let (ty, tm) =
-                            gridcraft_core::date::datetime_from_serial(wb.date_system, today).map(|x| (x.year, x.month)).unwrap_or((2026, 1));
-                        let ym = gridcraft_core::date::datetime_from_serial(wb.date_system, d).map(|x| (x.year, x.month));
+                            gridcraft_core::date::datetime_from_serial(wb.date_system, today)
+                                .map(|x| (x.year, x.month))
+                                .unwrap_or((2026, 1));
+                        let ym = gridcraft_core::date::datetime_from_serial(wb.date_system, d)
+                            .map(|x| (x.year, x.month));
                         let month_off = |k: i32| {
                             let m = tm as i32 + k;
                             let y = ty + (m - 1).div_euclid(12);
@@ -218,10 +287,17 @@ impl CfCache {
                     if let Some(n) = v.as_f64() {
                         let pts: Vec<(f64, [u8; 3])> = stops
                             .iter()
-                            .map(|(k, col)| (threshold(wb, sheet, c, &st, k), col.resolve(&wb.theme).unwrap_or([255, 255, 255])))
+                            .map(|(k, col)| {
+                                (
+                                    threshold(wb, sheet, c, &st, k),
+                                    col.resolve(&wb.theme).unwrap_or([255, 255, 255]),
+                                )
+                            })
                             .collect();
                         let rgb = match pts.as_slice() {
-                            [(a, ca), (b, cb)] => lerp(*ca, *cb, if b > a { (n - a) / (b - a) } else { 0.0 }),
+                            [(a, ca), (b, cb)] => {
+                                lerp(*ca, *cb, if b > a { (n - a) / (b - a) } else { 0.0 })
+                            }
                             [(a, ca), (m, cm), (b, cb)] => {
                                 if n <= *m {
                                     lerp(*ca, *cm, if m > a { (n - a) / (m - a) } else { 0.0 })
@@ -238,12 +314,22 @@ impl CfCache {
                     }
                     None
                 }
-                CfRule::DataBar { min, max, color, gradient, show_value } => {
+                CfRule::DataBar {
+                    min,
+                    max,
+                    color,
+                    gradient,
+                    show_value,
+                } => {
                     if let Some(n) = v.as_f64() {
                         let lo = threshold(wb, sheet, c, &st, min);
                         let hi = threshold(wb, sheet, c, &st, max);
                         let lo = if lo > 0.0 { 0.0 } else { lo };
-                        let frac = if hi > lo { ((n - lo) / (hi - lo)).clamp(0.0, 1.0) } else { 1.0 };
+                        let frac = if hi > lo {
+                            ((n - lo) / (hi - lo)).clamp(0.0, 1.0)
+                        } else {
+                            1.0
+                        };
                         if out.bar.is_none() {
                             out.bar = Some((
                                 (frac as f32) * 0.9 + 0.1 * (frac > 0.0) as u8 as f32,
@@ -256,7 +342,12 @@ impl CfCache {
                     }
                     None
                 }
-                CfRule::IconSet { set, thresholds, reverse, show_value } => {
+                CfRule::IconSet {
+                    set,
+                    thresholds,
+                    reverse,
+                    show_value,
+                } => {
                     if let Some(n) = v.as_f64() {
                         let k = icon_count(set);
                         // One threshold per icon, the first being the lower bound (as in the file);
@@ -270,7 +361,10 @@ impl CfCache {
                                 defaults.get(1..).unwrap_or_default()
                             }
                         };
-                        let cuts: Vec<f64> = lower.iter().map(|t| threshold(wb, sheet, c, &st, t)).collect();
+                        let cuts: Vec<f64> = lower
+                            .iter()
+                            .map(|t| threshold(wb, sheet, c, &st, t))
+                            .collect();
                         let mut idx = cuts.iter().filter(|cut| n >= **cut).count();
                         if *reverse {
                             idx = k - 1 - idx.min(k - 1);
@@ -340,9 +434,11 @@ fn relative(f: &str, first: CellRef, c: CellRef) -> String {
         return f.to_string();
     }
     match gridcraft_formula::parse(f.trim_start_matches('=')) {
-        Ok(e) => {
-            gridcraft_formula::print(&gridcraft_formula::adjust::shift_relative(e, c.row as i64 - first.row as i64, c.col as i64 - first.col as i64))
-        }
+        Ok(e) => gridcraft_formula::print(&gridcraft_formula::adjust::shift_relative(
+            e,
+            c.row as i64 - first.row as i64,
+            c.col as i64 - first.col as i64,
+        )),
         Err(_) => f.to_string(),
     }
 }
@@ -357,13 +453,29 @@ mod tests {
     fn every_matching_rule_applies() {
         let mut s = crate::Session::new();
         s.new_workbook();
-        s.execute("range.setValues", json!({"range": "A1", "values": [[200], [400], [510]]})).unwrap();
+        s.execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [[200], [400], [510]]}),
+        )
+        .unwrap();
         let rule = |op: &str, value: &str, preset: &str| json!({"range": "A1:A3", "rule": {"type": "cellIs", "operator": op, "value": value, "preset": preset}});
-        s.execute("home.conditionalFormat", rule("greaterThan", "300", "lightRedFill")).unwrap();
-        s.execute("home.conditionalFormat", rule("greaterThan", "500", "redBorder")).unwrap();
+        s.execute(
+            "home.conditionalFormat",
+            rule("greaterThan", "300", "lightRedFill"),
+        )
+        .unwrap();
+        s.execute(
+            "home.conditionalFormat",
+            rule("greaterThan", "500", "redBorder"),
+        )
+        .unwrap();
         let d = s.doc().unwrap();
         let mut cache = CfCache::new();
-        let mut look = |a: &str| cache.look(&d.wb, 0, CellRef::parse(a).unwrap()).and_then(|l| l.style);
+        let mut look = |a: &str| {
+            cache
+                .look(&d.wb, 0, CellRef::parse(a).unwrap())
+                .and_then(|l| l.style)
+        };
         assert!(look("A1").is_none());
         let only_fill = look("A2").unwrap();
         assert_eq!(only_fill.fill.pattern, PatternType::Solid);
@@ -381,33 +493,60 @@ mod tests {
         let rule = |range: &str, r: serde_json::Value| json!({"range": range, "rule": r});
         s.execute("home.conditionalFormat", rule("A1:A5", json!({"type": "cellIs", "operator": "less", "value": "5", "preset": "lightRedFill"})))
             .unwrap();
-        s.execute("home.conditionalFormat", rule("A1:A5", json!({"type": "noBlanks", "preset": "redBorder"}))).unwrap();
+        s.execute(
+            "home.conditionalFormat",
+            rule("A1:A5", json!({"type": "noBlanks", "preset": "redBorder"})),
+        )
+        .unwrap();
         s.execute("home.conditionalFormat", rule("B1:B2", json!({"type": "cellIs", "operator": "greater", "value": "5", "preset": "lightRedFill"})))
             .unwrap();
         let d = s.doc().unwrap();
         let mut cache = CfCache::new();
-        let mut look = |a: &str| cache.look(&d.wb, 0, CellRef::parse(a).unwrap()).and_then(|l| l.style);
+        let mut look = |a: &str| {
+            cache
+                .look(&d.wb, 0, CellRef::parse(a).unwrap())
+                .and_then(|l| l.style)
+        };
         let fill = |st: Option<Style>| st.is_some_and(|st| st.fill.pattern == PatternType::Solid);
         let border = |st: Option<Style>| st.is_some_and(|st| !st.borders.top.is_none());
         // Less than 5: 3 and the blank cell (as 0), not #N/A.
-        assert_eq!([look("A1"), look("A2"), look("A3"), look("A5")].map(fill), [true, true, false, false]);
+        assert_eq!(
+            [look("A1"), look("A2"), look("A3"), look("A5")].map(fill),
+            [true, true, false, false]
+        );
         // Greater than 5: 7, not #N/A.
         assert_eq!([look("B1"), look("B2")].map(fill), [false, true]);
         // No blanks: neither the empty cell nor the one holding a space.
-        assert_eq!([look("A1"), look("A2"), look("A4")].map(border), [true, false, false]);
+        assert_eq!(
+            [look("A1"), look("A2"), look("A4")].map(border),
+            [true, false, false]
+        );
     }
 
     #[test]
     fn cell_value_operator_names() {
         let mut s = crate::Session::new();
         s.new_workbook();
-        s.execute("range.setValues", json!({"range": "A1", "values": [[3], [7]]})).unwrap();
+        s.execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [[3], [7]]}),
+        )
+        .unwrap();
         let rule = |op: &str| json!({"range": "A1:A2", "rule": {"type": "cellIs", "operator": op, "value": "5", "preset": "lightRedFill"}});
-        s.execute("home.conditionalFormat", rule("lessThan")).unwrap();
-        assert!(s.execute("home.conditionalFormat", rule("smaller")).is_err());
+        s.execute("home.conditionalFormat", rule("lessThan"))
+            .unwrap();
+        assert!(
+            s.execute("home.conditionalFormat", rule("smaller"))
+                .is_err()
+        );
         let d = s.doc().unwrap();
         let mut cache = CfCache::new();
-        let mut look = |a: &str| cache.look(&d.wb, 0, CellRef::parse(a).unwrap()).and_then(|l| l.style).is_some();
+        let mut look = |a: &str| {
+            cache
+                .look(&d.wb, 0, CellRef::parse(a).unwrap())
+                .and_then(|l| l.style)
+                .is_some()
+        };
         assert_eq!([look("A1"), look("A2")], [true, false]);
     }
 }

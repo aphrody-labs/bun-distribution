@@ -86,7 +86,10 @@ impl DragCoordinator {
 
     #[must_use]
     pub fn with_stale_after(stale_after: Duration) -> Self {
-        Self { state: RwLock::new(None), stale_after }
+        Self {
+            state: RwLock::new(None),
+            stale_after,
+        }
     }
 
     /// Open a session; a stale one is dropped, a live one is an error.
@@ -106,7 +109,10 @@ impl DragCoordinator {
                 log::error!("drag already in progress: {} ({elapsed:?})", session.id);
                 return Err("A drag operation is already in progress".to_string());
             }
-            log::warn!("dropping stale drag session {} started {elapsed:?} ago", session.id);
+            log::warn!(
+                "dropping stale drag session {} started {elapsed:?} ago",
+                session.id
+            );
         }
         let session = DragSession::with_id(session_id, config, source_window);
         let event = session.to_event();
@@ -117,17 +123,30 @@ impl DragCoordinator {
     /// Close the session with `result`; `None` when no session was active.
     pub fn close(&self, result: DragResult) -> Option<DragEndEvent> {
         let (session, started) = self.state.write().take()?;
-        log::info!("drag session {} ended after {:?}: {result:?}", session.id, started.elapsed());
-        Some(DragEndEvent { session_id: session.id, result })
+        log::info!(
+            "drag session {} ended after {:?}: {result:?}",
+            session.id,
+            started.elapsed()
+        );
+        Some(DragEndEvent {
+            session_id: session.id,
+            result,
+        })
     }
 
     #[must_use]
     pub fn current_session(&self) -> Option<DragSession> {
-        self.state.read().as_ref().map(|(session, _)| session.clone())
+        self.state
+            .read()
+            .as_ref()
+            .map(|(session, _)| session.clone())
     }
 
     fn current_id(&self) -> Option<String> {
-        self.state.read().as_ref().map(|(session, _)| session.id.clone())
+        self.state
+            .read()
+            .as_ref()
+            .map(|(session, _)| session.id.clone())
     }
 
     /// Begin a session and announce it.
@@ -156,14 +175,26 @@ impl DragCoordinator {
     /// Announce that the drag entered a window.
     pub fn enter_window(&self, app: &AppHandle<tauri::DynRuntime>, window_label: String) {
         if let Some(session_id) = self.current_id() {
-            let _ = app.emit("drag:entered", DragWindowEvent { session_id, window_label });
+            let _ = app.emit(
+                "drag:entered",
+                DragWindowEvent {
+                    session_id,
+                    window_label,
+                },
+            );
         }
     }
 
     /// Announce that the drag left a window.
     pub fn leave_window(&self, app: &AppHandle<tauri::DynRuntime>, window_label: String) {
         if let Some(session_id) = self.current_id() {
-            let _ = app.emit("drag:left", DragWindowEvent { session_id, window_label });
+            let _ = app.emit(
+                "drag:left",
+                DragWindowEvent {
+                    session_id,
+                    window_label,
+                },
+            );
         }
     }
 
@@ -172,7 +203,7 @@ impl DragCoordinator {
         match self.close(result) {
             Some(event) => {
                 let _ = app.emit("drag:ended", event);
-            },
+            }
             None => log::warn!("end_drag without an active session"),
         }
     }
@@ -212,14 +243,20 @@ mod tests {
             "overlaySize": [200.0, 150.0],
             "allowedOperations": ["copy", "move"]
         });
-        assert_eq!(serde_json::from_value::<DragConfig>(value.clone()).unwrap(), config());
+        assert_eq!(
+            serde_json::from_value::<DragConfig>(value.clone()).unwrap(),
+            config()
+        );
         assert_eq!(serde_json::to_value(config()).unwrap(), value);
         let promise = json!({"type": "filePromise", "name": "n", "mimeType": "text/plain"});
         assert!(matches!(
             serde_json::from_value(promise).unwrap(),
             DragItemKind::FilePromise { .. }
         ));
-        let dropped = DragResult::Dropped { operation: DragOperation::Link, target: None };
+        let dropped = DragResult::Dropped {
+            operation: DragOperation::Link,
+            target: None,
+        };
         assert_eq!(
             serde_json::to_value(dropped).unwrap(),
             json!({"type": "dropped", "operation": "link", "target": null})
@@ -229,10 +266,16 @@ mod tests {
     #[test]
     fn one_live_session_at_a_time() {
         let coordinator = DragCoordinator::new();
-        let began = coordinator.open("s1".into(), config(), "drive".into()).unwrap();
+        let began = coordinator
+            .open("s1".into(), config(), "drive".into())
+            .unwrap();
         assert_eq!(began.session_id, "s1");
         assert_eq!(began.source_window, "drive");
-        assert!(coordinator.open("s2".into(), config(), "drive".into()).is_err());
+        assert!(
+            coordinator
+                .open("s2".into(), config(), "drive".into())
+                .is_err()
+        );
         assert_eq!(coordinator.current_session().unwrap().id, "s1");
         let ended = coordinator.close(DragResult::Cancelled).unwrap();
         assert_eq!(ended.session_id, "s1");
@@ -243,8 +286,12 @@ mod tests {
     #[test]
     fn stale_sessions_are_replaced() {
         let coordinator = DragCoordinator::with_stale_after(Duration::ZERO);
-        coordinator.open("old".into(), config(), "drive".into()).unwrap();
-        coordinator.open("new".into(), config(), "drive".into()).unwrap();
+        coordinator
+            .open("old".into(), config(), "drive".into())
+            .unwrap();
+        coordinator
+            .open("new".into(), config(), "drive".into())
+            .unwrap();
         assert_eq!(coordinator.current_session().unwrap().id, "new");
     }
 }

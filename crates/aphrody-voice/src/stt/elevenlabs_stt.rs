@@ -74,7 +74,11 @@ impl ElevenLabsSttProvider {
     pub fn with_base_url(api_key: impl Into<String>, base_url: impl Into<String>) -> Self {
         let raw = base_url.into();
         let base_url = raw.trim_end_matches('/').to_owned();
-        Self { api_key: api_key.into(), base_url, client: reqwest::Client::new() }
+        Self {
+            api_key: api_key.into(),
+            base_url,
+            client: reqwest::Client::new(),
+        }
     }
 
     /// Construct by reading `ELEVENLABS_API_KEY` from the environment.
@@ -163,7 +167,10 @@ async fn check_status(resp: reqwest::Response) -> Result<reqwest::Response, SttE
         return Ok(resp);
     }
     let code = status.as_u16();
-    let body = resp.text().await.unwrap_or_else(|_| String::from("<unreadable body>"));
+    let body = resp
+        .text()
+        .await
+        .unwrap_or_else(|_| String::from("<unreadable body>"));
     Err(SttError::Api { status: code, body })
 }
 
@@ -239,7 +246,11 @@ impl SttProvider for ElevenLabsSttProvider {
 
         let transcript = self.transcribe(&buf, opts).await?;
 
-        let delta = TranscriptDelta { text: transcript.text, is_final: true, segment_id: 0 };
+        let delta = TranscriptDelta {
+            text: transcript.text,
+            is_final: true,
+            segment_id: 0,
+        };
 
         Ok(futures::stream::once(async move { Ok(delta) }))
     }

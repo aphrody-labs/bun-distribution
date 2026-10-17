@@ -31,7 +31,11 @@ fn default_budget() -> usize {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn default_budget() -> usize {
-    physical_memory().map_or(IMAGE_CACHE_MAX, |m| usize::try_from(m / 8).unwrap_or(usize::MAX).min(IMAGE_CACHE_MAX))
+    physical_memory().map_or(IMAGE_CACHE_MAX, |m| {
+        usize::try_from(m / 8)
+            .unwrap_or(usize::MAX)
+            .min(IMAGE_CACHE_MAX)
+    })
 }
 
 /// Installed memory in bytes, where the system says without a native call (Linux).
@@ -97,7 +101,13 @@ fn pixmap_bytes(pm: &Pixmap) -> usize {
 
 impl ImageStore {
     pub(crate) fn new(budget: usize) -> Self {
-        Self { entries: HashMap::new(), bytes: 0, budget, tick: 0, ids: HashMap::new() }
+        Self {
+            entries: HashMap::new(),
+            bytes: 0,
+            budget,
+            tick: 0,
+            ids: HashMap::new(),
+        }
     }
 
     /// The pixels of `key`, marked as just used.
@@ -124,7 +134,13 @@ impl ImageStore {
             return e.pm.clone();
         }
         self.bytes += pixmap_bytes(&pm);
-        self.entries.insert(key, Entry { pm: pm.clone(), used: tick });
+        self.entries.insert(
+            key,
+            Entry {
+                pm: pm.clone(),
+                used: tick,
+            },
+        );
         self.evict();
         pm
     }
@@ -134,8 +150,12 @@ impl ImageStore {
         if self.bytes <= self.budget {
             return;
         }
-        let mut free: Vec<(u64, ImageKey)> =
-            self.entries.iter().filter(|(_, e)| Arc::strong_count(&e.pm) == 1).map(|(k, e)| (e.used, k.clone())).collect();
+        let mut free: Vec<(u64, ImageKey)> = self
+            .entries
+            .iter()
+            .filter(|(_, e)| Arc::strong_count(&e.pm) == 1)
+            .map(|(k, e)| (e.used, k.clone()))
+            .collect();
         free.sort_unstable_by_key(|(used, _)| *used);
         for (_, k) in free {
             if self.bytes <= self.budget {
@@ -165,11 +185,13 @@ impl ImageStore {
         if self.ids.len() > 1024 {
             self.ids.retain(|_, (w, _)| w.strong_count() > 0);
         }
-        self.ids.insert(Arc::as_ptr(bytes) as usize, (Arc::downgrade(bytes), id));
+        self.ids
+            .insert(Arc::as_ptr(bytes) as usize, (Arc::downgrade(bytes), id));
     }
 }
 
-static STORE: LazyLock<Mutex<ImageStore>> = LazyLock::new(|| Mutex::new(ImageStore::new(default_budget())));
+static STORE: LazyLock<Mutex<ImageStore>> =
+    LazyLock::new(|| Mutex::new(ImageStore::new(default_budget())));
 
 /// The process's image store (still usable after a panic elsewhere while it was locked: every
 /// change to it is complete when made).
@@ -193,7 +215,10 @@ pub(crate) fn blob_id(blob: &ImageBlob) -> BlobId {
         return id;
     }
     // Outside the lock: hashing a large image takes a while.
-    let id = BlobId { content: format!("{}:{}", blob.content_key(), blob.bytes.len()).into(), cmyk: blob.is_cmyk() };
+    let id = BlobId {
+        content: format!("{}:{}", blob.content_key(), blob.bytes.len()).into(),
+        cmyk: blob.is_cmyk(),
+    };
     store().remember_id(&blob.bytes, id.clone());
     id
 }
@@ -205,14 +230,33 @@ pub(crate) fn half(pm: &Pixmap) -> Pixmap {
     let (ow, oh) = (w.div_ceil(2).max(1), h.div_ceil(2).max(1));
     let src = pm.data();
     let at = |x: usize, y: usize| {
-        src.get(y.min(h.saturating_sub(1)) * w + x.min(w.saturating_sub(1))).copied().unwrap_or(PremulRgba8 { r: 0, g: 0, b: 0, a: 0 })
+        src.get(y.min(h.saturating_sub(1)) * w + x.min(w.saturating_sub(1)))
+            .copied()
+            .unwrap_or(PremulRgba8 {
+                r: 0,
+                g: 0,
+                b: 0,
+                a: 0,
+            })
     };
     let mut data = Vec::with_capacity(ow * oh);
     for y in 0..oh {
         for x in 0..ow {
-            let q = [at(2 * x, 2 * y), at(2 * x + 1, 2 * y), at(2 * x, 2 * y + 1), at(2 * x + 1, 2 * y + 1)];
-            let mean = |c: fn(&PremulRgba8) -> u8| ((q.iter().map(|p| u32::from(c(p))).sum::<u32>() + 2) / 4) as u8;
-            data.push(PremulRgba8 { r: mean(|p| p.r), g: mean(|p| p.g), b: mean(|p| p.b), a: mean(|p| p.a) });
+            let q = [
+                at(2 * x, 2 * y),
+                at(2 * x + 1, 2 * y),
+                at(2 * x, 2 * y + 1),
+                at(2 * x + 1, 2 * y + 1),
+            ];
+            let mean = |c: fn(&PremulRgba8) -> u8| {
+                ((q.iter().map(|p| u32::from(c(p))).sum::<u32>() + 2) / 4) as u8
+            };
+            data.push(PremulRgba8 {
+                r: mean(|p| p.r),
+                g: mean(|p| p.g),
+                b: mean(|p| p.b),
+                a: mean(|p| p.a),
+            });
         }
     }
     Pixmap::from_parts(data, ow as u16, oh as u16)
@@ -238,7 +282,14 @@ mod tests {
     use super::*;
 
     fn key(content: &str) -> ImageKey {
-        ImageKey { content: content.into(), adjust: None, grey: false, ink: Ink::Display, luts: (0, 0), mip: 0 }
+        ImageKey {
+            content: content.into(),
+            adjust: None,
+            grey: false,
+            ink: Ink::Display,
+            luts: (0, 0),
+            mip: 0,
+        }
     }
 
     #[test]
@@ -251,17 +302,28 @@ mod tests {
         assert!(s.get(&key("a")).is_some(), "a is now the most recent");
         let _ = s.insert(key("c"), Arc::new(Pixmap::new(10, 10)));
         assert_eq!(s.bytes(), 800);
-        assert!(s.peek(&key("b")).is_some(), "b is held outside the store: kept though least recently used");
+        assert!(
+            s.peek(&key("b")).is_some(),
+            "b is held outside the store: kept though least recently used"
+        );
         assert!(s.peek(&key("a")).is_none(), "a went instead");
         drop(held);
         s.set_budget(400);
-        assert!(s.peek(&key("b")).is_none() && s.peek(&key("c")).is_some(), "now b goes first");
+        assert!(
+            s.peek(&key("b")).is_none() && s.peek(&key("c")).is_some(),
+            "now b goes first"
+        );
         assert_eq!(s.bytes(), 400);
     }
 
     #[test]
     fn half_averages_and_rounds_up_odd_sizes() {
-        let px = |v: u8| PremulRgba8 { r: v, g: v, b: v, a: 255 };
+        let px = |v: u8| PremulRgba8 {
+            r: v,
+            g: v,
+            b: v,
+            a: 255,
+        };
         let pm = Pixmap::from_parts(vec![px(0), px(100), px(200), px(40), px(60), px(80)], 3, 2);
         let h = half(&pm);
         assert_eq!((h.width(), h.height()), (2, 1));
@@ -276,7 +338,15 @@ mod tests {
         assert_eq!(mip_level(Affine::scale(0.6), 1000, 1000), 0);
         assert_eq!(mip_level(Affine::scale(0.5), 1000, 1000), 1);
         assert_eq!(mip_level(Affine::scale(0.2), 1000, 1000), 2);
-        assert_eq!(mip_level(Affine::scale_non_uniform(0.1, 0.9), 1000, 1000), 0, "never blurrier than one axis needs");
-        assert_eq!(mip_level(Affine::scale(0.001), 8, 8), 3, "down to one pixel at most");
+        assert_eq!(
+            mip_level(Affine::scale_non_uniform(0.1, 0.9), 1000, 1000),
+            0,
+            "never blurrier than one axis needs"
+        );
+        assert_eq!(
+            mip_level(Affine::scale(0.001), 8, 8),
+            3,
+            "down to one pixel at most"
+        );
     }
 }

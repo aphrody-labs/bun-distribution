@@ -12,7 +12,11 @@ use photocraft_io::*;
 use photocraft_psd::PsdFile;
 
 fn be(b: &[u8], at: usize, long: bool) -> usize {
-    if long { u64::from_be_bytes(b[at..at + 8].try_into().unwrap()) as usize } else { u32::from_be_bytes(b[at..at + 4].try_into().unwrap()) as usize }
+    if long {
+        u64::from_be_bytes(b[at..at + 8].try_into().unwrap()) as usize
+    } else {
+        u32::from_be_bytes(b[at..at + 4].try_into().unwrap()) as usize
+    }
 }
 
 /// Walks the raw file to the first global block and returns (key, declared length, the bytes
@@ -30,7 +34,13 @@ fn first_global_block(bytes: &[u8]) -> ([u8; 4], usize, Vec<u8>) {
     let key: [u8; 4] = bytes[p + 4..p + 8].try_into().unwrap();
     let len = be(bytes, p + 8, psb);
     let data_end = p + 8 + if psb { 8 } else { 4 } + len;
-    let next = (data_end..end).find(|&q| bytes.get(q..q + 4).is_some_and(|s| s == b"8BIM" || s == b"8B64")).unwrap_or(end);
+    let next = (data_end..end)
+        .find(|&q| {
+            bytes
+                .get(q..q + 4)
+                .is_some_and(|s| s == b"8BIM" || s == b"8B64")
+        })
+        .unwrap_or(end);
     (key, len, bytes[data_end..next].to_vec())
 }
 
@@ -43,13 +53,24 @@ fn lr16_lr32_length_excludes_padding() {
                 let doc = common::gen_doc(mode, depth, features);
                 for path in ["x.psd", "x.psb"] {
                     let name = format!("{depth:?} {mode:?} {path}");
-                    let bytes = export(&doc, path, &ExportOptions::default()).expect("export").bytes;
+                    let bytes = export(&doc, path, &ExportOptions::default())
+                        .expect("export")
+                        .bytes;
                     let file = PsdFile::from_bytes(&bytes).expect("reparse");
-                    let body = file.layer_info.as_ref().expect("layers").unpadded_len(file.header.version).unwrap() as usize;
+                    let body = file
+                        .layer_info
+                        .as_ref()
+                        .expect("layers")
+                        .unpadded_len(file.header.version)
+                        .unwrap() as usize;
                     let (k, len, after) = first_global_block(&bytes);
                     assert_eq!(k, key, "{name}: first global block");
                     assert_eq!(len, body, "{name}: declared length vs layer data");
-                    assert_eq!(after, vec![0; (4 - body % 4) % 4], "{name}: padding after the block");
+                    assert_eq!(
+                        after,
+                        vec![0; (4 - body % 4) % 4],
+                        "{name}: padding after the block"
+                    );
                     unaligned += usize::from(!body.is_multiple_of(4));
                 }
             }

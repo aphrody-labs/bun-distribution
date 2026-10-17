@@ -8,7 +8,7 @@ use crate::{
     type_registry::{
         GetTypeRegistration, ReflectDeserialize, ReflectFromPtr, ReflectSerialize, TypeRegistration,
     },
-    utility::{reflect_hasher, NonGenericTypeInfoCell},
+    utility::{NonGenericTypeInfoCell, reflect_hasher},
 };
 use alloc::borrow::Cow;
 use bevy_platform::prelude::*;

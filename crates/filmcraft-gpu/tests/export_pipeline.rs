@@ -3,7 +3,10 @@
 //! `GpuRendering::Off` (CPU reference) frames within the GPU-vs-CPU parity tolerance — p99 of the
 //! per-pixel max RGB difference over black ≤ 6 and mean < 1.5 (the golden-test criterion).
 
-use filmcraft_export::{ExportSettings, Format, FrameRenderer, GpuRenderStats, GpuRendering, Progress, export, register_frame_renderer};
+use filmcraft_export::{
+    ExportSettings, Format, FrameRenderer, GpuRenderStats, GpuRendering, Progress, export,
+    register_frame_renderer,
+};
 use filmcraft_media::generators::GeneratorSource;
 use filmcraft_media::{Generator, MediaSource};
 use filmcraft_project::{ItemKind, Label, MediaClip, MediaRef, SequenceSettings, TrackKind};
@@ -28,10 +31,19 @@ impl FrameRenderer for GpuFrameRenderer {
     }
 }
 
-fn project(width: u32, height: u32) -> (Arc<filmcraft_project::Project>, filmcraft_project::ItemId, SourceMap) {
+fn project(
+    width: u32,
+    height: u32,
+) -> (
+    Arc<filmcraft_project::Project>,
+    filmcraft_project::ItemId,
+    SourceMap,
+) {
     let mut p = filmcraft_project::Project::new("x");
     let g = GeneratorSource::new(
-        Generator::ColorMatte { color: [0.2, 0.5, 0.9, 1.0] },
+        Generator::ColorMatte {
+            color: [0.2, 0.5, 0.9, 1.0],
+        },
         320,
         180,
         filmcraft_time::FrameRate::FPS_24,
@@ -54,13 +66,27 @@ fn project(width: u32, height: u32) -> (Arc<filmcraft_project::Project>, filmcra
         }),
         None,
     );
-    let seq = p.new_sequence("s", SequenceSettings { width, height, frame_rate: filmcraft_time::FrameRate::FPS_24, ..Default::default() }, 1, 1, None);
+    let seq = p.new_sequence(
+        "s",
+        SequenceSettings {
+            width,
+            height,
+            frame_rate: filmcraft_time::FrameRate::FPS_24,
+            ..Default::default()
+        },
+        1,
+        1,
+        None,
+    );
     let v = p
         .make_track_item(
             red,
             TrackKind::Video,
             filmcraft_time::Tick::ZERO,
-            TimeRange::new(filmcraft_time::Tick::ZERO, filmcraft_time::FrameRate::FPS_24.tick_of(2)),
+            TimeRange::new(
+                filmcraft_time::Tick::ZERO,
+                filmcraft_time::FrameRate::FPS_24.tick_of(2),
+            ),
             filmcraft_time::FrameRate::FPS_24,
         )
         .unwrap();
@@ -72,7 +98,11 @@ fn project(width: u32, height: u32) -> (Arc<filmcraft_project::Project>, filmcra
 
 fn png(dir: &str, name: &str) -> Vec<u8> {
     // image_sequence_path flattens the path stem: <stem><index>.png in the temp dir itself.
-    let index: u64 = name.trim_start_matches("img").trim_end_matches(".png").parse().unwrap_or(0);
+    let index: u64 = name
+        .trim_start_matches("img")
+        .trim_end_matches(".png")
+        .parse()
+        .unwrap_or(0);
     std::fs::read(std::env::temp_dir().join(format!("fc-gpu-export-{dir}{index:03}.png"))).unwrap()
 }
 
@@ -80,10 +110,16 @@ fn export_png(dir: &str, gpu: GpuRendering, (w, h): (u32, u32)) {
     let (p, seq, m) = project(w, h);
     let mut s = ExportSettings {
         format: Format::PngSequence,
-        path: std::env::temp_dir().join(format!("fc-gpu-export-{dir}")).to_string_lossy().into_owned(),
+        path: std::env::temp_dir()
+            .join(format!("fc-gpu-export-{dir}"))
+            .to_string_lossy()
+            .into_owned(),
         ..Default::default()
     };
-    s.range = Some(TimeRange::new(filmcraft_time::Tick::ZERO, filmcraft_time::FrameRate::FPS_24.tick_of(2)));
+    s.range = Some(TimeRange::new(
+        filmcraft_time::Tick::ZERO,
+        filmcraft_time::FrameRate::FPS_24.tick_of(2),
+    ));
     s.gpu_rendering = gpu;
     export(&p, seq, &s, &m, &Progress::default()).unwrap();
 }
@@ -98,14 +134,22 @@ fn assert_parity(cpu_png: &[u8], gpu_png: &[u8], what: &str) {
         .0
         .iter()
         .zip(b.as_raw().as_chunks::<4>().0)
-        .map(|(x, y)| (0..3).map(|k| (x[k] as u32).abs_diff(y[k] as u32)).max().unwrap_or(0))
+        .map(|(x, y)| {
+            (0..3)
+                .map(|k| (x[k] as u32).abs_diff(y[k] as u32))
+                .max()
+                .unwrap_or(0)
+        })
         .collect();
     let mut d = d;
     d.sort_unstable();
     let p99 = d[d.len() * 99 / 100];
     let mean = d.iter().sum::<u32>() as f64 / d.len() as f64;
     eprintln!("{what}: GPU vs CPU p99 {p99}, mean {mean:.3}");
-    assert!(p99 <= 6 && mean < 1.5, "{what}: GPU parity p99 {p99}, mean {mean:.3}");
+    assert!(
+        p99 <= 6 && mean < 1.5,
+        "{what}: GPU parity p99 {p99}, mean {mean:.3}"
+    );
 }
 
 #[test]
@@ -117,18 +161,33 @@ fn gpu_export_matches_cpu_and_counts() {
     // Clean registry first: Auto with no factory must be byte-equal to Off.
     export_png("off-cpu", GpuRendering::Off, (320, 180));
     export_png("off-auto", GpuRendering::Auto, (320, 180));
-    assert_eq!(png("off-cpu", "img000.png"), png("off-auto", "img000.png"), "Auto with no registered renderer must be byte-equal to Off");
+    assert_eq!(
+        png("off-cpu", "img000.png"),
+        png("off-auto", "img000.png"),
+        "Auto with no registered renderer must be byte-equal to Off"
+    );
 
-    register_frame_renderer(|| Some(Box::new(GpuFrameRenderer(filmcraft_gpu::ExportRenderer::new().expect("adapter present")))));
+    register_frame_renderer(|| {
+        Some(Box::new(GpuFrameRenderer(
+            filmcraft_gpu::ExportRenderer::new().expect("adapter present"),
+        )))
+    });
     let sizes = [(320u32, 180u32), (17, 13), (1, 1), (257, 129)];
     for (i, size) in sizes.into_iter().enumerate() {
         export_png("cpu", GpuRendering::Off, size);
         export_png("gpu", GpuRendering::Auto, size);
         for f in ["000", "001"] {
-            assert_parity(&png("cpu", &format!("img{f}.png")), &png("gpu", &format!("img{f}.png")), &format!("{:?} frame {f}", size));
+            assert_parity(
+                &png("cpu", &format!("img{f}.png")),
+                &png("gpu", &format!("img{f}.png")),
+                &format!("{:?} frame {f}", size),
+            );
         }
         let _ = i;
     }
     let GpuRenderStats { frames, .. } = filmcraft_export::gpu_render_stats();
-    assert!(frames >= 8, "gpu frames counted across the parity exports: {frames}");
+    assert!(
+        frames >= 8,
+        "gpu frames counted across the parity exports: {frames}"
+    );
 }

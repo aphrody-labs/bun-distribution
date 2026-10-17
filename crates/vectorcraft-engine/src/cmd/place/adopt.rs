@@ -116,7 +116,12 @@ fn names<T: PartialEq>(
         let entry = match existing(name) {
             None => (Some(name.clone()), true),
             Some(e) if e == d => (Some(name.clone()), false),
-            Some(_) => (Some(unique_name(name, |c| taken(c) || out.values().any(|(n, _)| n.as_deref() == Some(c)))), true),
+            Some(_) => (
+                Some(unique_name(name, |c| {
+                    taken(c) || out.values().any(|(n, _)| n.as_deref() == Some(c))
+                })),
+                true,
+            ),
         };
         out.insert(name.clone(), entry);
     }
@@ -125,7 +130,10 @@ fn names<T: PartialEq>(
 
 /// The renamed resources whose definitions are copied: (name in `src`, name in `dst`).
 fn copies(m: &Renames) -> Vec<(&str, &str)> {
-    m.iter().filter(|(_, (_, copy))| *copy).filter_map(|(old, (new, _))| Some((old.as_str(), new.as_deref()?))).collect()
+    m.iter()
+        .filter(|(_, (_, copy))| *copy)
+        .filter_map(|(old, (new, _))| Some((old.as_str(), new.as_deref()?)))
+        .collect()
 }
 
 /// Bring the resources `nodes` (art from `src`) use into `dst`, renaming on conflict, and point
@@ -142,10 +150,19 @@ pub(crate) fn adopt(dst: &mut Document, src: &Document, nodes: &mut [Node]) {
         let mut art: Vec<Node> = vec![];
         if let Some(name) = used.symbols.get(si) {
             si += 1;
-            art.extend(src.symbols.iter().find(|s| s.name == *name).map(|s| (*s.art).clone()));
+            art.extend(
+                src.symbols
+                    .iter()
+                    .find(|s| s.name == *name)
+                    .map(|s| (*s.art).clone()),
+            );
         } else if let Some(name) = used.patterns.get(pi) {
             pi += 1;
-            art.extend(src.pattern(name).into_iter().flat_map(|p| p.art.iter().map(|a| (**a).clone())));
+            art.extend(
+                src.pattern(name)
+                    .into_iter()
+                    .flat_map(|p| p.art.iter().map(|a| (**a).clone())),
+            );
         } else if let Some(name) = used.swatches.get(wi) {
             wi += 1;
             if let Some(mut paint) = src.swatch(name).map(|w| w.paint.clone()) {
@@ -159,14 +176,24 @@ pub(crate) fn adopt(dst: &mut Document, src: &Document, nodes: &mut [Node]) {
         }
     }
 
-    let images = names(&used.images, |k| src.images.get(k), |k| dst.images.get(k), |c| dst.images.contains_key(c));
+    let images = names(
+        &used.images,
+        |k| src.images.get(k),
+        |k| dst.images.get(k),
+        |c| dst.images.contains_key(c),
+    );
     let symbols = names(
         &used.symbols,
         |n| src.symbols.iter().find(|s| s.name == n),
         |n| dst.symbols.iter().find(|s| s.name == n),
         |c| dst.symbols.iter().any(|s| s.name == c),
     );
-    let patterns = names(&used.patterns, |n| src.pattern(n), |n| dst.pattern(n), |c| dst.pattern(c).is_some());
+    let patterns = names(
+        &used.patterns,
+        |n| src.pattern(n),
+        |n| dst.pattern(n),
+        |c| dst.pattern(c).is_some(),
+    );
     // A swatch the document defines differently isn't renamed (that would add look-alike swatches):
     // the colours linked to it keep their look, unlinked.
     let swatches: Renames = used

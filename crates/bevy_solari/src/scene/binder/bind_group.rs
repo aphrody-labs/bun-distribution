@@ -1,6 +1,6 @@
 use super::{
-    allocator::RetainedBindingArray, lights::GpuLightSource, RaytracingSceneBindings,
-    TlasInstanceSetupPipeline,
+    RaytracingSceneBindings, TlasInstanceSetupPipeline, allocator::RetainedBindingArray,
+    lights::GpuLightSource,
 };
 use crate::scene::extract::ExtractedEnvironmentMapLight;
 use bevy_ecs::system::{Res, ResMut};

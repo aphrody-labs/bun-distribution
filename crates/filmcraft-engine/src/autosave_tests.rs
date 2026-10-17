@@ -19,7 +19,10 @@ fn temp_dir(tag: &str) -> std::path::PathBuf {
 fn wait_for(what: &str, mut f: impl FnMut() -> bool) {
     let t0 = std::time::Instant::now();
     while !f() {
-        assert!(t0.elapsed() < std::time::Duration::from_secs(10), "timed out waiting for {what}");
+        assert!(
+            t0.elapsed() < std::time::Duration::from_secs(10),
+            "timed out waiting for {what}"
+        );
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
 }
@@ -40,16 +43,46 @@ fn preferences_get_set_and_persist() {
     let d = temp_dir("prefs");
     let mut s = Session::default();
     start(&mut s, &d);
-    assert_eq!(s.execute("prefs.get", json!({"key": "autoSave.intervalMinutes"})).unwrap(), json!(5));
-    assert_eq!(s.execute("prefs.get", json!({"key": "autoSave.maxVersions"})).unwrap(), json!(20));
-    s.execute("prefs.set", json!({"key": "autoSave.intervalMinutes", "value": 12.0})).unwrap();
-    s.execute("prefs.set", json!({"values": {"autoSave.maxVersions": 5000, "autoSave.saveCurrentProject": true}})).unwrap();
+    assert_eq!(
+        s.execute("prefs.get", json!({"key": "autoSave.intervalMinutes"}))
+            .unwrap(),
+        json!(5)
+    );
+    assert_eq!(
+        s.execute("prefs.get", json!({"key": "autoSave.maxVersions"}))
+            .unwrap(),
+        json!(20)
+    );
+    s.execute(
+        "prefs.set",
+        json!({"key": "autoSave.intervalMinutes", "value": 12.0}),
+    )
+    .unwrap();
+    s.execute(
+        "prefs.set",
+        json!({"values": {"autoSave.maxVersions": 5000, "autoSave.saveCurrentProject": true}}),
+    )
+    .unwrap();
     assert_eq!(s.prefs.auto_save.interval_minutes, 12);
     assert_eq!(s.prefs.auto_save.max_versions, 1000, "clamped");
-    assert!(s.execute("prefs.set", json!({"key": "autoSave.nope", "value": 1})).is_err());
-    assert!(s.execute("prefs.set", json!({"key": "autoSave.enabled", "value": "yes"})).is_err());
+    assert!(
+        s.execute("prefs.set", json!({"key": "autoSave.nope", "value": 1}))
+            .is_err()
+    );
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "autoSave.enabled", "value": "yes"})
+        )
+        .is_err()
+    );
     let keys = s.execute("prefs.get", json!({})).unwrap()["keys"].clone();
-    assert!(keys.as_array().unwrap().iter().any(|k| k == "autoSave.recoveryJournal"));
+    assert!(
+        keys.as_array()
+            .unwrap()
+            .iter()
+            .any(|k| k == "autoSave.recoveryJournal")
+    );
     s.shutdown();
     let mut t = Session::default();
     start(&mut t, &d);
@@ -67,8 +100,10 @@ fn crash_recovery_end_to_end() {
     let mut a = demo();
     start(&mut a, &d);
     a.execute("file.saveAs", json!({"path": proj})).unwrap();
-    a.execute("sequence.addEdit", json!({"seconds": 1.5})).unwrap();
-    a.execute("sequence.addEdit", json!({"seconds": 2.5})).unwrap();
+    a.execute("sequence.addEdit", json!({"seconds": 1.5}))
+        .unwrap();
+    a.execute("sequence.addEdit", json!({"seconds": 2.5}))
+        .unwrap();
     let rev = a.revision;
     wait_for("journal", || journaled(&mut a) == rev);
     let st = a.execute("file.autoSaveStatus", json!({})).unwrap();
@@ -77,7 +112,10 @@ fn crash_recovery_end_to_end() {
     // Session B starts while A is alive: A's journal is not stale.
     let mut b = Session::default();
     start(&mut b, &d);
-    assert!(b.recovery_candidates().is_empty(), "a live session's journal is never offered");
+    assert!(
+        b.recovery_candidates().is_empty(),
+        "a live session's journal is never offered"
+    );
     b.shutdown();
     a.persistence.take().unwrap().simulate_crash();
 
@@ -86,7 +124,10 @@ fn crash_recovery_end_to_end() {
     start(&mut c, &d);
     assert_eq!(c.recovery_candidates().len(), 1);
     let list = c.execute("file.recoveryList", json!({})).unwrap();
-    assert_eq!(list[0]["projectName"], "film", "named after the file it was saved as");
+    assert_eq!(
+        list[0]["projectName"], "film",
+        "named after the file it was saved as"
+    );
     assert_eq!(list[0]["projectPath"], proj.as_str());
     assert_eq!(list[0]["cleanExit"], false);
     assert_eq!(list[0]["savedAt"].as_str().unwrap().len(), 19);
@@ -101,11 +142,19 @@ fn crash_recovery_end_to_end() {
     c.execute("file.save", json!({})).unwrap();
     wait_for("journal cleared", || {
         c.poll_persistence();
-        !c.persistence.as_ref().unwrap().session_dir.join("snapshot.fcproj").exists()
+        !c.persistence
+            .as_ref()
+            .unwrap()
+            .session_dir
+            .join("snapshot.fcproj")
+            .exists()
     });
     let session_dir = c.persistence.as_ref().unwrap().session_dir.clone();
     c.shutdown();
-    assert!(!session_dir.exists(), "clean exit with nothing unsaved removes the journal");
+    assert!(
+        !session_dir.exists(),
+        "clean exit with nothing unsaved removes the journal"
+    );
     let mut e = Session::default();
     start(&mut e, &d);
     assert!(e.recovery_candidates().is_empty());
@@ -118,7 +167,8 @@ fn quitting_with_unsaved_changes_keeps_them_for_next_launch() {
     let d = temp_dir("quitdirty");
     let mut a = demo();
     start(&mut a, &d);
-    a.execute("sequence.addEdit", json!({"seconds": 1.0})).unwrap();
+    a.execute("sequence.addEdit", json!({"seconds": 1.0}))
+        .unwrap();
     a.shutdown();
     let mut b = Session::default();
     start(&mut b, &d);
@@ -141,29 +191,52 @@ fn auto_save_ring_rotates_and_can_save_the_project() {
     let proj = d.join("ring.fcproj").to_string_lossy().to_string();
     let mut s = demo();
     start(&mut s, &d);
-    s.execute("prefs.set", json!({"values": {"autoSave.maxVersions": 2}})).unwrap();
+    s.execute("prefs.set", json!({"values": {"autoSave.maxVersions": 2}}))
+        .unwrap();
     s.execute("file.saveAs", json!({"path": proj})).unwrap();
     // Nothing unsaved: no auto-save.
     assert!(s.execute("file.autoSaveNow", json!({})).unwrap()["path"].is_null());
     let mut written = Vec::new();
     for i in 0..3 {
-        s.execute("sequence.addEdit", json!({"seconds": 1.0 + i as f64})).unwrap();
+        s.execute("sequence.addEdit", json!({"seconds": 1.0 + i as f64}))
+            .unwrap();
         let r = s.execute("file.autoSaveNow", json!({})).unwrap();
         written.push(r["path"].as_str().unwrap().to_string());
         // File names have one-second resolution.
         std::thread::sleep(std::time::Duration::from_millis(1100));
     }
     let sep = std::path::MAIN_SEPARATOR;
-    assert!(written[0].contains(&format!("{sep}Auto-Save{sep}ring-")), "{}", written[0]);
+    assert!(
+        written[0].contains(&format!("{sep}Auto-Save{sep}ring-")),
+        "{}",
+        written[0]
+    );
     let list = s.execute("file.listAutoSaves", json!({})).unwrap();
-    let files: Vec<String> = list["files"].as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-    assert_eq!(files, vec![written[2].clone(), written[1].clone()], "newest first, oldest pruned");
+    let files: Vec<String> = list["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(
+        files,
+        vec![written[2].clone(), written[1].clone()],
+        "newest first, oldest pruned"
+    );
     let mut t = Session::default();
     t.execute("file.open", json!({"path": written[2]})).unwrap();
     assert_eq!(*t.project, *s.project);
-    assert!(s.is_dirty(), "auto-save does not save the project itself by default");
-    s.execute("prefs.set", json!({"key": "autoSave.saveCurrentProject", "value": true})).unwrap();
-    s.execute("sequence.addEdit", json!({"seconds": 5.0})).unwrap();
+    assert!(
+        s.is_dirty(),
+        "auto-save does not save the project itself by default"
+    );
+    s.execute(
+        "prefs.set",
+        json!({"key": "autoSave.saveCurrentProject", "value": true}),
+    )
+    .unwrap();
+    s.execute("sequence.addEdit", json!({"seconds": 5.0}))
+        .unwrap();
     s.execute("file.autoSaveNow", json!({})).unwrap();
     wait_for("project saved", || {
         s.poll_persistence();
@@ -190,7 +263,10 @@ fn scan_keeps_snapshot_when_session_metadata_is_unreadable() {
     let found = autosave::scan_candidates(&d, None);
     assert_eq!(found.len(), 1);
     assert_eq!(found[0].id, "123-1");
-    assert!(sess.join("snapshot.fcproj").is_file(), "snapshot must survive the scan");
+    assert!(
+        sess.join("snapshot.fcproj").is_file(),
+        "snapshot must survive the scan"
+    );
     std::fs::remove_file(sess.join("session.json")).unwrap();
     let found = autosave::scan_candidates(&d, None);
     assert_eq!(found.len(), 1, "missing metadata still lists the snapshot");
@@ -204,7 +280,11 @@ fn portable_marker_keeps_data_next_to_the_executable() {
     let d = temp_dir("portable");
     assert_eq!(autosave::portable_data_dir(&d), None);
     std::fs::create_dir_all(d.join(autosave::PORTABLE_MARKER)).unwrap();
-    assert_eq!(autosave::portable_data_dir(&d), None, "a directory is not the marker");
+    assert_eq!(
+        autosave::portable_data_dir(&d),
+        None,
+        "a directory is not the marker"
+    );
     std::fs::remove_dir_all(d.join(autosave::PORTABLE_MARKER)).unwrap();
     std::fs::write(d.join(autosave::PORTABLE_MARKER), "").unwrap();
     assert_eq!(autosave::portable_data_dir(&d), Some(d.join("data")));
@@ -219,13 +299,17 @@ fn journal_costs_the_ui_thread_only_a_handoff() {
     start(&mut s, &d);
     let t0 = std::time::Instant::now();
     for i in 0..50 {
-        s.execute("playhead.set", json!({"seconds": i as f64 * 0.1})).unwrap();
+        s.execute("playhead.set", json!({"seconds": i as f64 * 0.1}))
+            .unwrap();
         let _ = s.execute("sequence.addEdit", json!({}));
     }
     let per_cmd = t0.elapsed() / 100;
     let rev = s.revision;
     wait_for("journal", || journaled(&mut s) == rev);
-    assert!(per_cmd < std::time::Duration::from_millis(50), "{per_cmd:?}");
+    assert!(
+        per_cmd < std::time::Duration::from_millis(50),
+        "{per_cmd:?}"
+    );
     s.shutdown();
     let _ = std::fs::remove_dir_all(&d);
 }

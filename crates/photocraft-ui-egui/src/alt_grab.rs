@@ -29,19 +29,36 @@ struct Watch {
 
 /// Tools whose ⌥-click does something: the ⌥ Eyedropper, the clone source point and Zoom Out.
 pub(crate) fn alt_click_tool(tool: Tool, mods: egui::Modifiers) -> bool {
-    crate::canvas::alt_samples(tool, mods) || (mods.alt && !mods.ctrl && matches!(tool, Tool::CloneStamp | Tool::Healing | Tool::Zoom))
+    crate::canvas::alt_samples(tool, mods)
+        || (mods.alt && !mods.ctrl && matches!(tool, Tool::CloneStamp | Tool::Healing | Tool::Zoom))
 }
 
 /// The status-bar message for an ⌥-click the desktop took.
 pub(crate) fn message() -> &'static str {
-    tl!("Alt-click went to the desktop, which moves windows with Alt-drag. Set its window-move key to Super, or latch Alt in Window › Modifier Keys.")
+    tl!(
+        "Alt-click went to the desktop, which moves windows with Alt-drag. Set its window-move key to Super, or latch Alt in Window › Modifier Keys."
+    )
 }
 
 /// Watch one canvas view's frame for an ⌥-click the window manager grabbed. `rect` is the view's
 /// canvas area, `tool` the tool in effect, `active` false while a dialog owns the canvas.
-pub(crate) fn watch(app: &mut PhotocraftApp, ctx: &Context, id: Id, rect: Rect, tool: Tool, active: bool) {
-    let (gone, hover, mods, down, focused) =
-        ctx.input(|i| (i.events.iter().any(|e| matches!(e, Event::PointerGone)), i.pointer.hover_pos(), i.modifiers, i.pointer.any_down(), i.focused));
+pub(crate) fn watch(
+    app: &mut PhotocraftApp,
+    ctx: &Context,
+    id: Id,
+    rect: Rect,
+    tool: Tool,
+    active: bool,
+) {
+    let (gone, hover, mods, down, focused) = ctx.input(|i| {
+        (
+            i.events.iter().any(|e| matches!(e, Event::PointerGone)),
+            i.pointer.hover_pos(),
+            i.modifiers,
+            i.pointer.any_down(),
+            i.focused,
+        )
+    });
     let mut w = ctx.data(|d| d.get_temp::<Watch>(id)).unwrap_or_default();
     if gone && w.armed.is_some() {
         w.pending = true;
@@ -57,6 +74,13 @@ pub(crate) fn watch(app: &mut PhotocraftApp, ctx: &Context, id: Id, rect: Rect, 
         }
     }
     // Only the physical key: a latched Window › Modifier Keys ⌥ isn't held on the keyboard.
-    w.armed = hover.filter(|p| active && !gone && !down && rect.shrink(MARGIN).contains(*p) && alt_click_tool(tool, mods) && !mods.command);
+    w.armed = hover.filter(|p| {
+        active
+            && !gone
+            && !down
+            && rect.shrink(MARGIN).contains(*p)
+            && alt_click_tool(tool, mods)
+            && !mods.command
+    });
     ctx.data_mut(|d| d.insert_temp(id, w));
 }

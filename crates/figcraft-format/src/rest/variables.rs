@@ -7,7 +7,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use figcraft_doc::color::PaintKind;
 use figcraft_doc::{
-    ALL_SCOPES, CODE_PLATFORMS, Collection, Mode, Node, NodeKind, Variable, VariableType, VariableValue, Variables, normalize_scopes,
+    ALL_SCOPES, CODE_PLATFORMS, Collection, Mode, Node, NodeKind, Variable, VariableType,
+    VariableValue, Variables, normalize_scopes,
 };
 use serde_json::{Map, Value, json};
 
@@ -24,7 +25,10 @@ const MAX_STRING: usize = 10_000;
 /// The object holding `variableCollections` and `variables`: a local variables response's `meta`,
 /// or `v` itself.
 pub fn source(v: &Value) -> Option<&Value> {
-    [v.get("meta"), Some(v)].into_iter().flatten().find(|m| m.get("variableCollections").is_some_and(Value::is_object))
+    [v.get("meta"), Some(v)]
+        .into_iter()
+        .flatten()
+        .find(|m| m.get("variableCollections").is_some_and(Value::is_object))
 }
 
 pub(super) fn kind_of(t: &str) -> Option<VariableType> {
@@ -39,7 +43,10 @@ pub(super) fn kind_of(t: &str) -> Option<VariableType> {
 
 /// The id a `VariableAlias` (`{type: "VARIABLE_ALIAS", id}`) points at.
 pub(super) fn alias(v: &Value) -> Option<&str> {
-    (text(v, "type") == Some("VARIABLE_ALIAS")).then(|| text(v, "id")).flatten().filter(|s| !s.is_empty())
+    (text(v, "type") == Some("VARIABLE_ALIAS"))
+        .then(|| text(v, "id"))
+        .flatten()
+        .filter(|s| !s.is_empty())
 }
 
 /// A raw variable value of type `kind` (or an alias).
@@ -49,8 +56,12 @@ pub(super) fn value(kind: VariableType, v: &Value) -> Option<VariableValue> {
     }
     Some(match kind {
         VariableType::Color => VariableValue::Color(color(v)?),
-        VariableType::Number => VariableValue::Number(v.as_f64().filter(|x| x.is_finite())?.clamp(-1e9, 1e9)),
-        VariableType::String => VariableValue::String(v.as_str()?.chars().take(MAX_STRING).collect()),
+        VariableType::Number => {
+            VariableValue::Number(v.as_f64().filter(|x| x.is_finite())?.clamp(-1e9, 1e9))
+        }
+        VariableType::String => {
+            VariableValue::String(v.as_str()?.chars().take(MAX_STRING).collect())
+        }
         VariableType::Boolean => VariableValue::Boolean(v.as_bool()?),
     })
 }
@@ -60,12 +71,24 @@ pub(super) fn value(kind: VariableType, v: &Value) -> Option<VariableValue> {
 /// resolve to in the default modes.
 pub fn export(vars: &Variables, collections: &[&Collection]) -> Value {
     let ids: BTreeSet<&str> = collections.iter().map(|c| c.id.as_str()).collect();
-    let members: Vec<&Variable> = vars.variables.iter().filter(|v| ids.contains(v.collection.as_str())).collect();
+    let members: Vec<&Variable> = vars
+        .variables
+        .iter()
+        .filter(|v| ids.contains(v.collection.as_str()))
+        .collect();
     let exported: BTreeSet<&str> = members.iter().map(|v| v.id.as_str()).collect();
     let mut colls = Map::new();
     for c in collections {
-        let modes: Vec<Value> = c.modes.iter().map(|m| json!({"modeId": m.id, "name": m.name})).collect();
-        let var_ids: Vec<&str> = members.iter().filter(|v| v.collection == c.id).map(|v| v.id.as_str()).collect();
+        let modes: Vec<Value> = c
+            .modes
+            .iter()
+            .map(|m| json!({"modeId": m.id, "name": m.name}))
+            .collect();
+        let var_ids: Vec<&str> = members
+            .iter()
+            .filter(|v| v.collection == c.id)
+            .map(|v| v.id.as_str())
+            .collect();
         colls.insert(
             c.id.clone(),
             json!({"id": c.id, "name": c.name, "key": c.id, "modes": modes, "defaultModeId": c.default_mode(), "remote": false,
@@ -77,10 +100,12 @@ pub fn export(vars: &Variables, collections: &[&Collection]) -> Value {
         let mut values = Map::new();
         for (mode, val) in &v.values {
             let val = match val {
-                VariableValue::Alias(a) if !exported.contains(a.as_str()) => match vars.resolve(a, &BTreeMap::new()) {
-                    Some(r) => r,
-                    None => continue,
-                },
+                VariableValue::Alias(a) if !exported.contains(a.as_str()) => {
+                    match vars.resolve(a, &BTreeMap::new()) {
+                        Some(r) => r,
+                        None => continue,
+                    }
+                }
                 other => other.clone(),
             };
             values.insert(mode.clone(), raw(&val));
@@ -91,7 +116,10 @@ pub fn export(vars: &Variables, collections: &[&Collection]) -> Value {
             VariableType::String => "STRING",
             VariableType::Boolean => "BOOLEAN",
         };
-        let scopes = v.scopes.clone().unwrap_or_else(|| vec![ALL_SCOPES.to_string()]);
+        let scopes = v
+            .scopes
+            .clone()
+            .unwrap_or_else(|| vec![ALL_SCOPES.to_string()]);
         out.insert(
             v.id.clone(),
             json!({"id": v.id, "name": v.name, "key": v.id, "variableCollectionId": v.collection, "resolvedType": kind, "valuesByMode": values,
@@ -113,8 +141,16 @@ fn raw(v: &VariableValue) -> Value {
     }
 }
 
-fn objects<'v>(v: &'v Value, key: &str, max: usize) -> impl Iterator<Item = (&'v String, &'v Value)> {
-    v.get(key).and_then(Value::as_object).into_iter().flat_map(Map::iter).take(max)
+fn objects<'v>(
+    v: &'v Value,
+    key: &str,
+    max: usize,
+) -> impl Iterator<Item = (&'v String, &'v Value)> {
+    v.get(key)
+        .and_then(Value::as_object)
+        .into_iter()
+        .flat_map(Map::iter)
+        .take(max)
 }
 
 impl Ctx<'_> {
@@ -138,13 +174,24 @@ impl Ctx<'_> {
         }
         // Objects have no order: `collectionOrder` and `variableOrder` (written by the `.fig`
         // import) list the ids in theirs. Ids they leave out keep their place after the listed.
-        let rank = |key: &str| -> BTreeMap<&str, usize> { list(src, key).iter().filter_map(Value::as_str).zip(0..).collect() };
+        let rank = |key: &str| -> BTreeMap<&str, usize> {
+            list(src, key)
+                .iter()
+                .filter_map(Value::as_str)
+                .zip(0..)
+                .collect()
+        };
         let (collections, variables) = (rank("collectionOrder"), rank("variableOrder"));
         if !variables.is_empty() {
             found.sort_by_key(|v| variables.get(v.id.as_str()).copied().unwrap_or(usize::MAX));
         }
         if !collections.is_empty() {
-            self.doc.variables.collections.sort_by_key(|c| collections.get(c.id.as_str()).copied().unwrap_or(usize::MAX));
+            self.doc.variables.collections.sort_by_key(|c| {
+                collections
+                    .get(c.id.as_str())
+                    .copied()
+                    .unwrap_or(usize::MAX)
+            });
         }
         self.doc.variables.variables.extend(found);
     }
@@ -152,12 +199,24 @@ impl Ctx<'_> {
     /// The modes a layer or page sets explicitly (`explicitVariableModes`): collection → mode.
     pub(super) fn modes(&mut self, j: &Value) -> BTreeMap<String, String> {
         let mut out = BTreeMap::new();
-        for (coll, mode) in j.get("explicitVariableModes").and_then(Value::as_object).into_iter().flatten() {
+        for (coll, mode) in j
+            .get("explicitVariableModes")
+            .and_then(Value::as_object)
+            .into_iter()
+            .flatten()
+        {
             match mode.as_str() {
-                Some(m) if self.var_modes.get(coll.as_str()).is_some_and(|ms| ms.iter().any(|x| x == m)) => {
+                Some(m)
+                    if self
+                        .var_modes
+                        .get(coll.as_str())
+                        .is_some_and(|ms| ms.iter().any(|x| x == m)) =>
+                {
                     out.insert(coll.clone(), m.to_string());
                 }
-                _ => self.warn("variable modes of collections that aren't in the variables JSON were skipped"),
+                _ => self.warn(
+                    "variable modes of collections that aren't in the variables JSON were skipped",
+                ),
             }
         }
         out
@@ -170,15 +229,25 @@ impl Ctx<'_> {
         }
         let mut modes: Vec<Mode> = Vec::new();
         for m in list(c, "modes").iter().take(MAX_MODES) {
-            let Some(mid) = text(m, "modeId").filter(|s| !s.is_empty()).map(clip_str) else { continue };
+            let Some(mid) = text(m, "modeId").filter(|s| !s.is_empty()).map(clip_str) else {
+                continue;
+            };
             if !modes.iter().any(|x| x.id == mid) {
-                let name =
-                    text(m, "name").filter(|s| !s.trim().is_empty()).map_or_else(|| format!("Mode {}", modes.len() + 1), |s| clip_str(s).to_string());
-                modes.push(Mode { id: mid.to_string(), name });
+                let name = text(m, "name")
+                    .filter(|s| !s.trim().is_empty())
+                    .map_or_else(
+                        || format!("Mode {}", modes.len() + 1),
+                        |s| clip_str(s).to_string(),
+                    );
+                modes.push(Mode {
+                    id: mid.to_string(),
+                    name,
+                });
             }
         }
         // Our default mode is the first one.
-        if let Some(i) = text(c, "defaultModeId").and_then(|d| modes.iter().position(|m| m.id == d)) {
+        if let Some(i) = text(c, "defaultModeId").and_then(|d| modes.iter().position(|m| m.id == d))
+        {
             let m = modes.remove(i);
             modes.insert(0, m);
         }
@@ -186,9 +255,18 @@ impl Ctx<'_> {
             self.warn("variable collections without modes were skipped");
             return;
         }
-        let name = text(c, "name").filter(|s| !s.trim().is_empty()).map_or("Collection", clip_str).to_string();
-        self.var_modes.insert(id.clone(), modes.iter().map(|m| m.id.clone()).collect());
-        self.doc.variables.collections.push(Collection { id, name, modes, extends: None });
+        let name = text(c, "name")
+            .filter(|s| !s.trim().is_empty())
+            .map_or("Collection", clip_str)
+            .to_string();
+        self.var_modes
+            .insert(id.clone(), modes.iter().map(|m| m.id.clone()).collect());
+        self.doc.variables.collections.push(Collection {
+            id,
+            name,
+            modes,
+            extends: None,
+        });
     }
 
     fn variable(&mut self, key: &str, v: &Value) -> Option<Variable> {
@@ -200,14 +278,18 @@ impl Ctx<'_> {
             self.warn("variables of unknown types were skipped");
             return None;
         };
-        let Some((collection, mode_ids)) = text(v, "variableCollectionId").and_then(|c| self.var_modes.get_key_value(c)) else {
+        let Some((collection, mode_ids)) =
+            text(v, "variableCollectionId").and_then(|c| self.var_modes.get_key_value(c))
+        else {
             self.warn("variables whose collection isn't in the variables JSON were skipped");
             return None;
         };
         let collection = collection.clone();
         let mut values = BTreeMap::new();
         let mut unreadable = false;
-        for (mode, raw) in objects(v, "valuesByMode", MAX_MODES).filter(|(m, _)| mode_ids.contains(m)) {
+        for (mode, raw) in
+            objects(v, "valuesByMode", MAX_MODES).filter(|(m, _)| mode_ids.contains(m))
+        {
             match value(kind, raw) {
                 Some(val) => {
                     values.insert(mode.clone(), val);
@@ -216,27 +298,45 @@ impl Ctx<'_> {
             }
         }
         if unreadable {
-            self.warn("variable values that don't match their type (or composed colours) were skipped");
+            self.warn(
+                "variable values that don't match their type (or composed colours) were skipped",
+            );
         }
         if values.is_empty() {
             self.warn("variables without readable values were skipped");
             return None;
         }
-        let scopes = v.get("scopes").and_then(Value::as_array).map(|a| normalize_scopes(kind, a.iter().filter_map(Value::as_str)));
+        let scopes = v
+            .get("scopes")
+            .and_then(Value::as_array)
+            .map(|a| normalize_scopes(kind, a.iter().filter_map(Value::as_str)));
         Some(Variable {
             id,
-            name: text(v, "name").filter(|s| !s.trim().is_empty()).map_or("Variable", clip_str).to_string(),
+            name: text(v, "name")
+                .filter(|s| !s.trim().is_empty())
+                .map_or("Variable", clip_str)
+                .to_string(),
             collection,
             kind,
             values,
-            description: text(v, "description").map(|s| s.chars().take(MAX_STRING).collect()).unwrap_or_default(),
+            description: text(v, "description")
+                .map(|s| s.chars().take(MAX_STRING).collect())
+                .unwrap_or_default(),
             scopes: scopes.flatten(),
-            hidden_from_publishing: v.get("hiddenFromPublishing").and_then(Value::as_bool).unwrap_or(false),
+            hidden_from_publishing: v
+                .get("hiddenFromPublishing")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
             extends: None,
             overrides: Default::default(),
             code_syntax: objects(v, "codeSyntax", 16)
                 .filter(|(k, _)| CODE_PLATFORMS.contains(&k.as_str()))
-                .filter_map(|(k, x)| Some((k.clone(), clip_str(x.as_str().filter(|x| !x.trim().is_empty())?).to_string())))
+                .filter_map(|(k, x)| {
+                    Some((
+                        k.clone(),
+                        clip_str(x.as_str().filter(|x| !x.trim().is_empty())?).to_string(),
+                    ))
+                })
                 .collect(),
         })
     }
@@ -248,11 +348,18 @@ impl Ctx<'_> {
         // Removing a variable can break aliases to it: repeat a few rounds (a dangling alias left
         // after that only resolves to nothing).
         for _ in 0..8 {
-            let kinds: BTreeMap<String, VariableType> =
-                found.iter().map(|v| (v.id.clone(), v.kind)).chain(self.var_kinds.iter().map(|(k, t)| (k.clone(), *t))).collect();
+            let kinds: BTreeMap<String, VariableType> = found
+                .iter()
+                .map(|v| (v.id.clone(), v.kind))
+                .chain(self.var_kinds.iter().map(|(k, t)| (k.clone(), *t)))
+                .collect();
             let bad: BTreeSet<String> = found
                 .iter()
-                .filter(|v| v.values.values().any(|x| matches!(x, VariableValue::Alias(t) if kinds.get(t) != Some(&v.kind))))
+                .filter(|v| {
+                    v.values.values().any(
+                        |x| matches!(x, VariableValue::Alias(t) if kinds.get(t) != Some(&v.kind)),
+                    )
+                })
                 .map(|v| v.id.clone())
                 .collect();
             if bad.is_empty() {
@@ -260,7 +367,9 @@ impl Ctx<'_> {
             }
             dropped = true;
             for v in found.iter_mut().filter(|v| bad.contains(&v.id)) {
-                v.values.retain(|_, x| !matches!(x, VariableValue::Alias(t) if kinds.get(t) != Some(&v.kind)));
+                v.values.retain(
+                    |_, x| !matches!(x, VariableValue::Alias(t) if kinds.get(t) != Some(&v.kind)),
+                );
             }
             found.retain(|v| !v.values.is_empty());
         }
@@ -268,8 +377,14 @@ impl Ctx<'_> {
             self.warn("variable aliases to variables that aren't in the variables JSON (or of another type) were skipped");
         }
         for v in found.iter_mut() {
-            let Some(modes) = self.var_modes.get(&v.collection) else { continue };
-            let fallback = modes.first().and_then(|m| v.values.get(m)).or_else(|| v.values.values().next()).cloned();
+            let Some(modes) = self.var_modes.get(&v.collection) else {
+                continue;
+            };
+            let fallback = modes
+                .first()
+                .and_then(|m| v.values.get(m))
+                .or_else(|| v.values.values().next())
+                .cloned();
             if let Some(f) = fallback {
                 for m in modes {
                     v.values.entry(m.clone()).or_insert_with(|| f.clone());
@@ -304,11 +419,21 @@ impl Ctx<'_> {
                     _ => 0,
                 };
                 for (s, stop) in list(p, "gradientStops").iter().enumerate().take(stops) {
-                    if let Some(var) = stop.get("boundVariables").and_then(|b| b.get("color")).and_then(alias) {
+                    if let Some(var) = stop
+                        .get("boundVariables")
+                        .and_then(|b| b.get("color"))
+                        .and_then(alias)
+                    {
                         found.push((format!("{key}/{i}/stops/{s}/color"), var));
                     }
                 }
-                let Some(var) = p.get("boundVariables").and_then(|b| b.get("color")).and_then(alias) else { continue };
+                let Some(var) = p
+                    .get("boundVariables")
+                    .and_then(|b| b.get("color"))
+                    .and_then(alias)
+                else {
+                    continue;
+                };
                 if i == 0 && single_solid(n, field) {
                     found.retain(|(f, _)| f != field);
                     found.push((field.to_string(), var));
@@ -328,17 +453,30 @@ impl Ctx<'_> {
             ("offsetY", "offsetY"),
             ("startRadius", "startRadius"),
         ];
-        const GRID: [(&str, &str); 4] = [("sectionSize", "size"), ("count", "count"), ("gutterSize", "gutter"), ("offset", "offset")];
-        for (key, prefix, fields, len) in
-            [("effects", "effects", &EFFECT[..], n.effects.len()), ("layoutGrids", "layoutGrids", &GRID[..], n.grids.len())]
-        {
+        const GRID: [(&str, &str); 4] = [
+            ("sectionSize", "size"),
+            ("count", "count"),
+            ("gutterSize", "gutter"),
+            ("offset", "offset"),
+        ];
+        for (key, prefix, fields, len) in [
+            ("effects", "effects", &EFFECT[..], n.effects.len()),
+            ("layoutGrids", "layoutGrids", &GRID[..], n.grids.len()),
+        ] {
             if list(j, key).len() != len {
                 continue;
             }
             for (i, item) in list(j, key).iter().enumerate() {
-                for (k, v) in item.get("boundVariables").and_then(Value::as_object).into_iter().flatten() {
+                for (k, v) in item
+                    .get("boundVariables")
+                    .and_then(Value::as_object)
+                    .into_iter()
+                    .flatten()
+                {
                     match (fields.iter().find(|(from, _)| from == k), alias(v)) {
-                        (Some((_, to)), Some(var)) => found.push((format!("{prefix}/{i}/{to}"), var)),
+                        (Some((_, to)), Some(var)) => {
+                            found.push((format!("{prefix}/{i}/{to}"), var))
+                        }
                         (Some(_), None) => {}
                         (None, _) => {
                             skipped.insert(key);
@@ -348,9 +486,17 @@ impl Ctx<'_> {
             }
         }
         if matches!(n.kind, NodeKind::Text(_)) {
-            for (k, v) in j.get("style").and_then(|s| s.get("boundVariables")).and_then(Value::as_object).into_iter().flatten() {
+            for (k, v) in j
+                .get("style")
+                .and_then(|s| s.get("boundVariables"))
+                .and_then(Value::as_object)
+                .into_iter()
+                .flatten()
+            {
                 match (text_field(k), alias(v)) {
-                    (Some(f), Some(var)) if !found.iter().any(|(x, _)| x == f) => found.push((f.to_string(), var)),
+                    (Some(f), Some(var)) if !found.iter().any(|(x, _)| x == f) => {
+                        found.push((f.to_string(), var))
+                    }
                     (Some(_), _) => {}
                     (None, _) => {
                         skipped.insert(k.as_str());
@@ -359,7 +505,10 @@ impl Ctx<'_> {
             }
         }
         for k in skipped {
-            self.warn(format!("variables bound to `{}` are not supported and were skipped", clip_str(k)));
+            self.warn(format!(
+                "variables bound to `{}` are not supported and were skipped",
+                clip_str(k)
+            ));
         }
         for (field, var) in collapse(found) {
             if !applies(n, &field) {
@@ -395,9 +544,11 @@ fn node_binding<'v>(k: &str, v: &'v Value, n: &Node, out: &mut Vec<(String, &'v 
         }
         "itemSpacing" => push("gap", alias(v)),
         "counterAxisSpacing" => push("crossGap", alias(v)),
-        "characters" | "visible" | "opacity" | "strokeWeight" | "strokeTopWeight" | "strokeRightWeight" | "strokeBottomWeight"
-        | "strokeLeftWeight" | "paddingLeft" | "paddingRight" | "paddingTop" | "paddingBottom" | "topLeftRadius" | "topRightRadius"
-        | "bottomLeftRadius" | "bottomRightRadius" | "minWidth" | "maxWidth" | "minHeight" | "maxHeight" => push(k, alias(v)),
+        "characters" | "visible" | "opacity" | "strokeWeight" | "strokeTopWeight"
+        | "strokeRightWeight" | "strokeBottomWeight" | "strokeLeftWeight" | "paddingLeft"
+        | "paddingRight" | "paddingTop" | "paddingBottom" | "topLeftRadius" | "topRightRadius"
+        | "bottomLeftRadius" | "bottomRightRadius" | "minWidth" | "maxWidth" | "minHeight"
+        | "maxHeight" => push(k, alias(v)),
         "rectangleCornerRadii" => {
             for (key, f) in [
                 ("RECTANGLE_TOP_LEFT_CORNER_RADIUS", "topLeftRadius"),
@@ -456,18 +607,33 @@ fn text_field(k: &str) -> Option<&'static str> {
 
 /// A colour binding replaces the paints with one solid colour: only for layers with one solid paint.
 fn single_solid(n: &Node, field: &str) -> bool {
-    let paints = if field == "fill" { &n.fills } else { &n.strokes };
+    let paints = if field == "fill" {
+        &n.fills
+    } else {
+        &n.strokes
+    };
     matches!(paints.as_slice(), [p] if p.solid_color().is_some())
 }
 
 /// Paired sides bound to one variable become the combined field the panels show.
 fn collapse(mut found: Vec<(String, &str)>) -> Vec<(String, &str)> {
     for (parts, into) in [
-        (&["topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"][..], "cornerRadius"),
+        (
+            &[
+                "topLeftRadius",
+                "topRightRadius",
+                "bottomLeftRadius",
+                "bottomRightRadius",
+            ][..],
+            "cornerRadius",
+        ),
         (&["paddingLeft", "paddingRight"][..], "paddingHorizontal"),
         (&["paddingTop", "paddingBottom"][..], "paddingVertical"),
     ] {
-        let vars: Vec<Option<&str>> = parts.iter().map(|p| found.iter().find(|(f, _)| f == p).map(|(_, v)| *v)).collect();
+        let vars: Vec<Option<&str>> = parts
+            .iter()
+            .map(|p| found.iter().find(|(f, _)| f == p).map(|(_, v)| *v))
+            .collect();
         if let Some(Some(var)) = vars.first().copied()
             && vars.iter().all(|v| *v == Some(var))
         {
@@ -482,10 +648,10 @@ fn collapse(mut found: Vec<(String, &str)>) -> Vec<(String, &str)> {
 /// give it one when the value is applied).
 fn applies(n: &Node, field: &str) -> bool {
     match field {
-        "gap" | "crossGap" | "paddingLeft" | "paddingRight" | "paddingTop" | "paddingBottom" | "paddingHorizontal" | "paddingVertical" => {
-            n.layout.is_some()
-        }
-        "cornerRadius" | "topLeftRadius" | "topRightRadius" | "bottomLeftRadius" | "bottomRightRadius" => n.kind.has_corner_radius(),
+        "gap" | "crossGap" | "paddingLeft" | "paddingRight" | "paddingTop" | "paddingBottom"
+        | "paddingHorizontal" | "paddingVertical" => n.layout.is_some(),
+        "cornerRadius" | "topLeftRadius" | "topRightRadius" | "bottomLeftRadius"
+        | "bottomRightRadius" => n.kind.has_corner_radius(),
         f if f == "characters" || text_field(f).is_some() => matches!(n.kind, NodeKind::Text(_)),
         _ => true,
     }

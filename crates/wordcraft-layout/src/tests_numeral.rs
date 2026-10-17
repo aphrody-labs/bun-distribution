@@ -9,23 +9,42 @@ fn lay_opts(text: &str, rtl_para: bool, numeral: NumeralMode) -> DocLayout {
     let mut d = Document::from_text(text);
     if rtl_para {
         let at = Pos::body(0, 0);
-        d.format_paragraphs(&at, &at, &|p: &mut ParaProps| p.bidi = Some(true)).unwrap();
+        d.format_paragraphs(&at, &at, &|p: &mut ParaProps| p.bidi = Some(true))
+            .unwrap();
     }
     let mut c = LayoutCache::new();
-    layout(&d, &mut c, &LayoutOptions { numeral, ..LayoutOptions::default() })
+    layout(
+        &d,
+        &mut c,
+        &LayoutOptions {
+            numeral,
+            ..LayoutOptions::default()
+        },
+    )
 }
 
 /// Glyph ids of the first line's clusters covering `text`, in cluster order.
 fn line_gids(l: &DocLayout, text: &str) -> Vec<Vec<u32>> {
     for p in &l.pages {
         for it in &p.items {
-            if let Placed::Lines { story: StoryRef::Body, para, .. } = it {
+            if let Placed::Lines {
+                story: StoryRef::Body,
+                para,
+                ..
+            } = it
+            {
                 let line = &para.lines[0];
                 let mut out = Vec::new();
                 for k in line.c0..line.c1 {
                     let cl = &para.clusters[k];
-                    assert!(cl.start <= cl.end && cl.end <= text.len(), "cluster indexes the original text");
-                    let gids: Vec<u32> = para.glyphs[cl.g0 as usize..cl.g1 as usize].iter().map(|g| g.gid).collect();
+                    assert!(
+                        cl.start <= cl.end && cl.end <= text.len(),
+                        "cluster indexes the original text"
+                    );
+                    let gids: Vec<u32> = para.glyphs[cl.g0 as usize..cl.g1 as usize]
+                        .iter()
+                        .map(|g| g.gid)
+                        .collect();
                     out.push(gids);
                 }
                 return out;
@@ -53,9 +72,17 @@ fn map_substitutes_digits_both_ways() {
     for d in '0'..='9' {
         let hindi = char::from_u32(0x660 + (d as u32 - '0' as u32)).unwrap();
         assert_eq!(NumeralMode::Hindi.map(d, false), hindi);
-        assert_eq!(NumeralMode::Hindi.map(d, true), hindi, "Hindi mode ignores direction");
+        assert_eq!(
+            NumeralMode::Hindi.map(d, true),
+            hindi,
+            "Hindi mode ignores direction"
+        );
         assert_eq!(NumeralMode::Arabic.map(hindi, false), d);
-        assert_eq!(NumeralMode::Arabic.map(hindi, true), d, "Arabic mode converts back both ways");
+        assert_eq!(
+            NumeralMode::Arabic.map(hindi, true),
+            d,
+            "Arabic mode converts back both ways"
+        );
         assert_eq!(NumeralMode::Arabic.map(d, false), d);
         assert_eq!(NumeralMode::Context.map(d, true), hindi);
         assert_eq!(NumeralMode::Context.map(d, false), d);
@@ -64,7 +91,11 @@ fn map_substitutes_digits_both_ways() {
     }
     // Letters, punctuation and Persian digits are never touched.
     for c in ['A', 'ب', '.', ' ', '(', '۰', '۹'] {
-        for m in [NumeralMode::Arabic, NumeralMode::Hindi, NumeralMode::Context] {
+        for m in [
+            NumeralMode::Arabic,
+            NumeralMode::Hindi,
+            NumeralMode::Context,
+        ] {
             assert_eq!(m.map(c, false), c, "{m:?} leaves {c:?} alone (ltr)");
             assert_eq!(m.map(c, true), c, "{m:?} leaves {c:?} alone (rtl)");
         }
@@ -73,16 +104,32 @@ fn map_substitutes_digits_both_ways() {
 
 #[test]
 fn resolve_uses_the_given_system_locale() {
-    for m in [NumeralMode::Arabic, NumeralMode::Hindi, NumeralMode::Context] {
+    for m in [
+        NumeralMode::Arabic,
+        NumeralMode::Hindi,
+        NumeralMode::Context,
+    ] {
         assert_eq!(m.resolve(Some("ar-EG")), m, "only System is resolved");
     }
     for tag in ["ar", "ar-EG", "fa_IR.UTF-8", "ur-PK", "ckb-IQ", "AR-sa"] {
-        assert_eq!(NumeralMode::System.resolve(Some(tag)), NumeralMode::Hindi, "{tag}");
+        assert_eq!(
+            NumeralMode::System.resolve(Some(tag)),
+            NumeralMode::Hindi,
+            "{tag}"
+        );
     }
     for tag in ["en-US", "C", "", "tr_TR", "ary"] {
-        assert_eq!(NumeralMode::System.resolve(Some(tag)), NumeralMode::Arabic, "{tag}");
+        assert_eq!(
+            NumeralMode::System.resolve(Some(tag)),
+            NumeralMode::Arabic,
+            "{tag}"
+        );
     }
-    assert_eq!(NumeralMode::System.resolve(None), NumeralMode::Arabic, "unknown locale: Western digits");
+    assert_eq!(
+        NumeralMode::System.resolve(None),
+        NumeralMode::Arabic,
+        "unknown locale: Western digits"
+    );
 }
 
 #[test]
@@ -92,10 +139,17 @@ fn context_mode_on_a_very_long_digit_run_stays_linear() {
     let start = std::time::Instant::now();
     let l = lay_opts(&text, false, NumeralMode::Context);
     assert!(!l.pages.is_empty());
-    assert!(start.elapsed() < std::time::Duration::from_secs(60), "took {:?}", start.elapsed());
+    assert!(
+        start.elapsed() < std::time::Duration::from_secs(60),
+        "took {:?}",
+        start.elapsed()
+    );
     // The digits follow the Arabic word before them.
     let short = "سنة 1 2 3";
-    assert_eq!(line_gids(&lay_opts(short, false, NumeralMode::Context), short), line_gids(&lay_opts(short, false, NumeralMode::Hindi), short));
+    assert_eq!(
+        line_gids(&lay_opts(short, false, NumeralMode::Context), short),
+        line_gids(&lay_opts(short, false, NumeralMode::Hindi), short)
+    );
 }
 
 #[test]
@@ -134,7 +188,10 @@ fn arabic_mode_converts_hindi_digits_back() {
             changed += 1;
         }
     }
-    assert!(changed > 0, "typed Hindi digits display Western in Arabic mode");
+    assert!(
+        changed > 0,
+        "typed Hindi digits display Western in Arabic mode"
+    );
 }
 
 #[test]
@@ -173,6 +230,9 @@ fn remap_range_maps_display_bytes_to_original() {
     assert_eq!(remap_range(&map_starts, &orig_of, orig.len(), 0, 5), (0, 4));
     // Hostile inputs never panic and stay in range.
     assert_eq!(remap_range(&[], &[], 0, 0, 0), (0, 0));
-    assert_eq!(remap_range(&map_starts, &orig_of, orig.len(), 99, 200), (4, 4));
+    assert_eq!(
+        remap_range(&map_starts, &orig_of, orig.len(), 99, 200),
+        (4, 4)
+    );
     assert_eq!(remap_range(&map_starts, &orig_of, orig.len(), 3, 1), (1, 2));
 }

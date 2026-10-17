@@ -19,7 +19,10 @@ pub enum MainFunctionError {
     #[snafu(transparent)]
     FunctionAnalysis { source: FunctionAnalysisError },
     #[snafu(display("failed to analyze entrypoint function: {parse_result:x?}:\n{backtrace}"))]
-    MainAnalysisFailed { parse_result: ParseFunctionError, backtrace: Backtrace },
+    MainAnalysisFailed {
+        parse_result: ParseFunctionError,
+        backtrace: Backtrace,
+    },
     #[snafu(display("Expected entry function to contain pool constants:\n{backtrace}"))]
     NoPoolConstants { backtrace: Backtrace },
     #[snafu(display("Expected last instruction of entry function to be 'bx <reg>':\n{backtrace}"))]
@@ -66,7 +69,11 @@ impl MainFunction {
                 cond: Cond::Al,
                 rd,
                 addr:
-                    AddrLdrStr::Pre { rn: Reg::Pc, offset: LdrStrOffset::Imm(offset), writeback: false },
+                    AddrLdrStr::Pre {
+                        rn: Reg::Pc,
+                        offset: LdrStrOffset::Imm(offset),
+                        writeback: false,
+                    },
             } = ins
                 && rd == tail_call_reg
             {
@@ -112,8 +119,11 @@ impl MainFunction {
             Err(FunctionAnalysisError::IntoFunction {
                 source: IntoFunctionError::ParseFunction { source },
             }) => {
-                return MainAnalysisFailedSnafu { parse_result: source }.fail();
-            },
+                return MainAnalysisFailedSnafu {
+                    parse_result: source,
+                }
+                .fail();
+            }
             Err(e) => return Err(e.into()),
         };
 

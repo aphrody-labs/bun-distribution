@@ -138,7 +138,9 @@ impl MenuLayerState {
     }
     /// Return or create an object within this layer.
     pub fn obj(&mut self, object_id: u32) -> &mut MenuObjectState {
-        self.objects.entry(object_id).or_insert_with(|| MenuObjectState::new(object_id))
+        self.objects
+            .entry(object_id)
+            .or_insert_with(|| MenuObjectState::new(object_id))
     }
 }
 #[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -181,7 +183,9 @@ impl MenuState {
 
     /// Return or create a layer.
     pub fn layer(&mut self, layer_id: u32) -> &mut MenuLayerState {
-        self.layers.entry(layer_id).or_insert_with(|| MenuLayerState::new(layer_id))
+        self.layers
+            .entry(layer_id)
+            .or_insert_with(|| MenuLayerState::new(layer_id))
     }
     /// Inject an observed scene attribute before menu callbacks.
     pub fn set_object_attr(&mut self, id: u32, value: i32) {
@@ -222,7 +226,10 @@ impl MenuState {
 pub struct ObservedMenuFlags<T, const CAPACITY: usize> {
     #[serde(default, deserialize_with = "deserialize_flag_descriptors")]
     pub descriptors: BTreeMap<u32, Option<u16>>,
-    #[serde(default, deserialize_with = "deserialize_flag_values::<_, T, CAPACITY>")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_flag_values::<_, T, CAPACITY>"
+    )]
     pub values: BTreeMap<u16, T>,
 }
 
@@ -309,9 +316,13 @@ impl<T: Copy + Default, const CAPACITY: usize> ObservedMenuFlags<T, CAPACITY> {
             None => Some(T::default()),
             Some(index) => {
                 // All three native getters read index zero for an out-of-range descriptor.
-                let index = if usize::from(*index) < CAPACITY { *index } else { 0 };
+                let index = if usize::from(*index) < CAPACITY {
+                    *index
+                } else {
+                    0
+                };
                 self.values.get(&index).copied()
-            },
+            }
         }
     }
 }
@@ -445,21 +456,31 @@ impl ObservedMenuNativeState {
         if args[0] < 2 {
             match query.primary_override.as_ref()? {
                 ObservedMenuStringOverride::Value { bytes } => return Some(Some(&bytes.0)),
-                ObservedMenuStringOverride::SavedFallback => {},
+                ObservedMenuStringOverride::SavedFallback => {}
             }
         }
         // Native table VA1419d7e28, binary file offset 0x19d6a28.
         const SLOTS: [u16; 16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 15, 11, 12, 13];
         let key = SLOTS[usize::from(args[0])] * 3 + u16::from(args[1]);
-        Some(query.saved_slots.get(&key)?.as_ref().map(|bytes| bytes.0.as_slice()))
+        Some(
+            query
+                .saved_slots
+                .get(&key)?
+                .as_ref()
+                .map(|bytes| bytes.0.as_slice()),
+        )
     }
 
     /// Count supplied observations without treating absent bytes as zero.
     pub fn observed_field_count(&self) -> usize {
-        [self.context_69c8_field_2cac6f, self.context_69a8_field_9f10, self.context_69a8_field_9f13]
-            .iter()
-            .filter(|value| value.is_some())
-            .count()
+        [
+            self.context_69c8_field_2cac6f,
+            self.context_69a8_field_9f10,
+            self.context_69a8_field_9f13,
+        ]
+        .iter()
+        .filter(|value| value.is_some())
+        .count()
             + usize::from(self.category_0_flags.is_some())
             + usize::from(self.category_1_values.is_some())
             + usize::from(self.category_5_flags.is_some())
@@ -501,7 +522,7 @@ impl ObservedMenuNativeState {
                 } else {
                     self.context_69a8_field_9f10.map(Byte)
                 }
-            },
+            }
             _ => None,
         }
     }
@@ -525,18 +546,32 @@ mod observed_native_tests {
             ..Default::default()
         };
         assert_eq!(state.resolve_general_string_query(&[0, 0, 6]), None);
-        assert_eq!(state.resolve_general_string_query(&[11, 0, 6]), Some(Some(&b"B"[..])));
+        assert_eq!(
+            state.resolve_general_string_query(&[11, 0, 6]),
+            Some(Some(&b"B"[..]))
+        );
         assert_eq!(state.resolve_general_string_query(&[12, 2, 6]), Some(None));
         assert_eq!(state.resolve_general_string_query(&[13, 0, 6]), None);
         assert_eq!(state.resolve_general_string_query(&[16, 0, 7]), Some(None));
         assert_eq!(state.resolve_general_string_query(&[0, 0, 7]), None);
         state.string_query.as_mut().unwrap().primary_override =
             Some(ObservedMenuStringOverride::SavedFallback);
-        assert_eq!(state.resolve_general_string_query(&[0, 0, 6]), Some(Some(&b"A"[..])));
+        assert_eq!(
+            state.resolve_general_string_query(&[0, 0, 6]),
+            Some(Some(&b"A"[..]))
+        );
         state.string_query.as_mut().unwrap().primary_override =
-            Some(ObservedMenuStringOverride::Value { bytes: ObservedMenuCString(vec![]) });
-        assert_eq!(state.resolve_general_string_query(&[1, 2, 6]), Some(Some(&b""[..])));
-        assert_eq!(state.resolve_general_string_query(&[11, 0, 6]), Some(Some(&b"B"[..])));
+            Some(ObservedMenuStringOverride::Value {
+                bytes: ObservedMenuCString(vec![]),
+            });
+        assert_eq!(
+            state.resolve_general_string_query(&[1, 2, 6]),
+            Some(Some(&b""[..]))
+        );
+        assert_eq!(
+            state.resolve_general_string_query(&[11, 0, 6]),
+            Some(Some(&b"B"[..]))
+        );
     }
 
     #[test]
@@ -550,11 +585,21 @@ mod observed_native_tests {
         assert!(ObservedMenuCString::from_bytes(vec![1; 4096]).is_some());
         assert!(ObservedMenuCString::from_bytes(vec![1; 4097]).is_none());
         assert!(ObservedMenuCString::from_bytes(vec![0]).is_none());
-        assert_eq!(ObservedMenuCString::from_bytes(vec![255]).unwrap().as_bytes(), &[255]);
+        assert_eq!(
+            ObservedMenuCString::from_bytes(vec![255])
+                .unwrap()
+                .as_bytes(),
+            &[255]
+        );
         assert_eq!(observed_menu_argument_byte(-256.9), Some(0));
         assert_eq!(observed_menu_argument_byte(-1.9), Some(255));
         assert_eq!(observed_menu_argument_byte(262.9), Some(6));
-        for input in [f64::NAN, f64::INFINITY, -2147483649.0, 9223372036854775808.0] {
+        for input in [
+            f64::NAN,
+            f64::INFINITY,
+            -2147483649.0,
+            9223372036854775808.0,
+        ] {
             assert_eq!(observed_menu_argument_byte(input), None);
         }
     }
@@ -563,7 +608,10 @@ mod observed_native_tests {
     fn flag_queries_distinguish_unobserved_missing_and_saved_false() {
         use ObservedMenuQueryValue::Boolean;
         let mut state = ObservedMenuNativeState::default();
-        assert_eq!(state.resolve_general_command_with_key(0x8815_4DF4, Some(42)), None);
+        assert_eq!(
+            state.resolve_general_command_with_key(0x8815_4DF4, Some(42)),
+            None
+        );
         let mut flags = ObservedMenuFlags::<bool, 256>::default();
         flags.descriptors.insert(42, None);
         state.category_5_flags = Some(flags);
@@ -573,19 +621,38 @@ mod observed_native_tests {
         );
         let flags = state.category_5_flags.as_mut().unwrap();
         flags.descriptors.insert(42, Some(7));
-        assert_eq!(state.resolve_general_command_with_key(0x8815_4DF4, Some(42)), None);
-        state.category_5_flags.as_mut().unwrap().values.insert(7, false);
+        assert_eq!(
+            state.resolve_general_command_with_key(0x8815_4DF4, Some(42)),
+            None
+        );
+        state
+            .category_5_flags
+            .as_mut()
+            .unwrap()
+            .values
+            .insert(7, false);
         assert_eq!(
             state.resolve_general_command_with_key(0x8815_4DF4, Some(42)),
             Some(Boolean(false))
         );
-        state.category_5_flags.as_mut().unwrap().values.insert(7, true);
+        state
+            .category_5_flags
+            .as_mut()
+            .unwrap()
+            .values
+            .insert(7, true);
         assert_eq!(
             state.resolve_general_command_with_key(0x8815_4DF4, Some(42)),
             Some(Boolean(true))
         );
-        assert_eq!(state.resolve_general_command_with_key(0x8815_4DF4, Some(43)), None);
-        assert_eq!(state.resolve_general_command_with_key(0x8815_4DF4, None), None);
+        assert_eq!(
+            state.resolve_general_command_with_key(0x8815_4DF4, Some(43)),
+            None
+        );
+        assert_eq!(
+            state.resolve_general_command_with_key(0x8815_4DF4, None),
+            None
+        );
     }
 
     #[test]
@@ -610,7 +677,10 @@ mod observed_native_tests {
             state.resolve_general_command_with_key(0x381D_0910, Some(42)),
             Some(Boolean(true))
         );
-        assert_eq!(state.resolve_general_command_with_key(0xA50C_0747, Some(42)), Some(Byte(255)));
+        assert_eq!(
+            state.resolve_general_command_with_key(0xA50C_0747, Some(42)),
+            Some(Byte(255))
+        );
         assert_eq!(
             state.resolve_general_command_with_key(0x8815_4DF4, Some(42)),
             Some(Boolean(false))
@@ -647,7 +717,12 @@ mod observed_native_tests {
     fn observed_flag_deserialization_rejects_out_of_bounds_and_duplicate_entries() {
         use serde::de::value::{Error, MapDeserializer};
         let valid = MapDeserializer::<_, Error>::new([(255u16, true)].into_iter());
-        assert_eq!(deserialize_flag_values::<_, bool, 256>(valid).unwrap().get(&255), Some(&true));
+        assert_eq!(
+            deserialize_flag_values::<_, bool, 256>(valid)
+                .unwrap()
+                .get(&255),
+            Some(&true)
+        );
         let invalid = MapDeserializer::<_, Error>::new([(256u16, true)].into_iter());
         assert!(deserialize_flag_values::<_, bool, 256>(invalid).is_err());
         let duplicate = MapDeserializer::<_, Error>::new([(1u16, true), (1, false)].into_iter());
@@ -670,7 +745,10 @@ mod observed_native_tests {
                 observed.resolve_general_command(0x1953_DBC1),
                 Some(Boolean(native_byte == 2))
             );
-            assert_eq!(observed.resolve_general_command(0xB314_C568), Some(Byte(native_byte)));
+            assert_eq!(
+                observed.resolve_general_command(0xB314_C568),
+                Some(Byte(native_byte))
+            );
             assert_eq!(
                 observed.resolve_general_command(0xEF7B_C853),
                 Some(Byte(if native_byte == 2 { 0 } else { 2 }))

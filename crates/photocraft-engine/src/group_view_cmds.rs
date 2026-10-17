@@ -15,18 +15,28 @@ use crate::{EngineError, Result, Session};
 const ID: &str = "layer.setExpanded";
 
 fn bad(msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: ID.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: ID.into(),
+        msg: msg.into(),
+    }
 }
 
 fn has_group(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    if d.doc.walk().iter().any(|(_, _, l)| l.is_group()) { Ok(()) } else { Err("the document has no layer groups".into()) }
+    if d.doc.walk().iter().any(|(_, _, l)| l.is_group()) {
+        Ok(())
+    } else {
+        Err("the document has no layer groups".into())
+    }
 }
 
 fn opt_bool(p: &Value, key: &str) -> Result<Option<bool>> {
     match p.get(key) {
         None | Some(Value::Null) => Ok(None),
-        Some(v) => v.as_bool().map(Some).ok_or_else(|| bad(format!("`{key}` must be true or false"))),
+        Some(v) => v
+            .as_bool()
+            .map(Some)
+            .ok_or_else(|| bad(format!("`{key}` must be true or false"))),
     }
 }
 
@@ -50,15 +60,25 @@ fn set_expanded(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let layer = match p.get("layer") {
         None | Some(Value::Null) if all => None,
-        None | Some(Value::Null) => Some(st.active_layer.ok_or_else(|| bad("no layer given and no active layer"))?),
-        Some(v) => Some(LayerId(v.as_u64().ok_or_else(|| bad("`layer` must be a layer id"))?)),
+        None | Some(Value::Null) => Some(
+            st.active_layer
+                .ok_or_else(|| bad("no layer given and no active layer"))?,
+        ),
+        Some(v) => Some(LayerId(
+            v.as_u64()
+                .ok_or_else(|| bad("`layer` must be a layer id"))?,
+        )),
     };
     let current = match layer {
         Some(id) => match &st.doc.layer(id).ok_or(EngineError::NoLayer(id))?.content {
             LayerContent::Group(g) => g.expanded,
             _ => return Err(bad(format!("layer {} is not a group", id.0))),
         },
-        None => st.doc.walk().iter().any(|(_, _, l)| matches!(&l.content, LayerContent::Group(g) if g.expanded)),
+        None => st
+            .doc
+            .walk()
+            .iter()
+            .any(|(_, _, l)| matches!(&l.content, LayerContent::Group(g) if g.expanded)),
     };
     let expanded = want.unwrap_or(!current);
     let st = s.active_mut().ok_or(EngineError::NoDocument)?;
@@ -98,10 +118,23 @@ mod tests {
 
     fn session() -> (Session, u64, u64) {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 32, "height": 32})).unwrap();
-        s.execute("layer.new.layer", json!({"name": "deep"})).unwrap();
-        let inner = s.execute("layer.groupLayers", json!({"name": "inner"})).unwrap()["layer"].as_u64().unwrap();
-        let outer = s.execute("layer.groupLayers", json!({"layer": inner, "name": "outer"})).unwrap()["layer"].as_u64().unwrap();
+        s.execute("file.new", json!({"width": 32, "height": 32}))
+            .unwrap();
+        s.execute("layer.new.layer", json!({"name": "deep"}))
+            .unwrap();
+        let inner = s
+            .execute("layer.groupLayers", json!({"name": "inner"}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        let outer = s
+            .execute(
+                "layer.groupLayers",
+                json!({"layer": inner, "name": "outer"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
         (s, inner, outer)
     }
 
@@ -116,15 +149,31 @@ mod tests {
         st.saved_revision = st.revision;
         let undo_steps = s.active().unwrap().history.entries().len();
         assert!(expanded(&s, inner) && expanded(&s, outer));
-        assert_eq!(s.execute(ID, json!({"layer": inner})).unwrap()["expanded"], false);
+        assert_eq!(
+            s.execute(ID, json!({"layer": inner})).unwrap()["expanded"],
+            false
+        );
         assert!(!expanded(&s, inner) && expanded(&s, outer));
-        assert_eq!(s.active().unwrap().history.entries().len(), undo_steps, "no history step");
-        assert_eq!(s.active().unwrap().saved_revision, s.active().unwrap().revision, "still clean");
-        s.execute(ID, json!({"layer": inner, "expanded": true})).unwrap();
+        assert_eq!(
+            s.active().unwrap().history.entries().len(),
+            undo_steps,
+            "no history step"
+        );
+        assert_eq!(
+            s.active().unwrap().saved_revision,
+            s.active().unwrap().revision,
+            "still clean"
+        );
+        s.execute(ID, json!({"layer": inner, "expanded": true}))
+            .unwrap();
         assert!(expanded(&s, inner));
         // The inspect JSON reports it.
-        s.execute(ID, json!({"layer": outer, "expanded": false})).unwrap();
-        assert_eq!(s.execute("document.inspect", json!({})).unwrap()["layers"][0]["expanded"], false);
+        s.execute(ID, json!({"layer": outer, "expanded": false}))
+            .unwrap();
+        assert_eq!(
+            s.execute("document.inspect", json!({})).unwrap()["layers"][0]["expanded"],
+            false
+        );
     }
 
     #[test]
@@ -152,7 +201,12 @@ mod tests {
         }
         let mut empty = Session::new();
         assert!(empty.execute(ID, json!({})).is_err());
-        empty.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        assert!(empty.execute(ID, json!({"all": true})).is_err(), "no groups: disabled");
+        empty
+            .execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
+        assert!(
+            empty.execute(ID, json!({"all": true})).is_err(),
+            "no groups: disabled"
+        );
     }
 }

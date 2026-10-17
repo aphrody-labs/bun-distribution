@@ -3,10 +3,10 @@ use bevy_app::prelude::*;
 use bevy_camera::CameraOutputMode;
 use bevy_ecs::prelude::*;
 use bevy_render::{
+    Render, RenderApp, RenderStartup, RenderSystems,
     camera::ExtractedCamera,
     render_resource::*,
     view::{ResolvedCompositingSpace, ViewTarget},
-    Render, RenderApp, RenderStartup, RenderSystems,
 };
 
 mod node;

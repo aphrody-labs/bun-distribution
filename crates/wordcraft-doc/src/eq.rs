@@ -30,7 +30,9 @@ const MAX_ARGS: usize = 16;
 /// Parse an `EQ \o` field code; `None` for any other field (or EQ switch).
 pub fn parse_overstrike(instr: &str) -> Option<Overstrike> {
     let t = instr.trim_start();
-    let name_end = t.find(|c: char| c.is_whitespace() || c == '\\').unwrap_or(t.len());
+    let name_end = t
+        .find(|c: char| c.is_whitespace() || c == '\\')
+        .unwrap_or(t.len());
     if !t.get(..name_end)?.eq_ignore_ascii_case("eq") {
         return None;
     }
@@ -119,7 +121,10 @@ fn arg_text(s: &str) -> String {
                 Some(_) => {
                     while it.next_if(|n| n.is_ascii_alphabetic()).is_some() {}
                     while it.next_if(|n| *n == ' ').is_some() {}
-                    while it.next_if(|n| n.is_ascii_digit() || *n == '-' || *n == '.').is_some() {}
+                    while it
+                        .next_if(|n| n.is_ascii_digit() || *n == '-' || *n == '.')
+                        .is_some()
+                    {}
                 }
                 None => {}
             },
@@ -152,7 +157,12 @@ pub enum EncloseShape {
 }
 
 impl EncloseShape {
-    pub const ALL: [EncloseShape; 4] = [EncloseShape::Circle, EncloseShape::Square, EncloseShape::Triangle, EncloseShape::Diamond];
+    pub const ALL: [EncloseShape; 4] = [
+        EncloseShape::Circle,
+        EncloseShape::Square,
+        EncloseShape::Triangle,
+        EncloseShape::Diamond,
+    ];
 
     /// The symbol in the field code.
     pub fn symbol(self) -> char {
@@ -188,7 +198,9 @@ impl EncloseShape {
         }
     }
     pub fn parse(s: &str) -> Option<EncloseShape> {
-        EncloseShape::ALL.into_iter().find(|k| k.name().eq_ignore_ascii_case(s.trim()))
+        EncloseShape::ALL
+            .into_iter()
+            .find(|k| k.name().eq_ignore_ascii_case(s.trim()))
     }
 }
 
@@ -232,7 +244,9 @@ impl Enclosure {
     /// enclosure symbol and the other non-empty text.
     pub fn parse(instr: &str) -> Option<Enclosure> {
         let o = parse_overstrike(instr)?;
-        let [a, b] = o.args.as_slice() else { return None };
+        let [a, b] = o.args.as_slice() else {
+            return None;
+        };
         let (shape, text) = match (EncloseShape::from_symbol(a), EncloseShape::from_symbol(b)) {
             (Some(s), _) => (s, b),
             (None, Some(s)) => (s, a),
@@ -243,8 +257,16 @@ impl Enclosure {
         }
         let close = instr.rfind(')')?;
         let tail = instr.get(close + 1..).unwrap_or("").trim();
-        let style = if tail.eq_ignore_ascii_case(ENLARGE) { EncloseStyle::Enlarge } else { EncloseStyle::Shrink };
-        Some(Enclosure { shape, style, text: text.clone() })
+        let style = if tail.eq_ignore_ascii_case(ENLARGE) {
+            EncloseStyle::Enlarge
+        } else {
+            EncloseStyle::Shrink
+        };
+        Some(Enclosure {
+            shape,
+            style,
+            text: text.clone(),
+        })
     }
 
     /// The field code in the model (with the style marker; see [`Enclosure::word_instr`]).
@@ -257,7 +279,11 @@ impl Enclosure {
 
     /// The field code as Word writes it: `eq \o\ac(○,字)`.
     pub fn word_instr(&self) -> String {
-        format!("eq \\o\\ac({},{})", self.shape.symbol(), escape_arg(&self.text))
+        format!(
+            "eq \\o\\ac({},{})",
+            self.shape.symbol(),
+            escape_arg(&self.text)
+        )
     }
 }
 
@@ -283,7 +309,10 @@ pub fn is_full_width(c: char) -> bool {
 pub fn fits_enclosure(text: &str) -> bool {
     let n = text.chars().count();
     let wide = text.chars().filter(|c| is_full_width(*c)).count();
-    !text.chars().any(|c| c.is_control() || c == crate::para::OBJ) && (n == 1 || (n == 2 && wide == 0))
+    !text
+        .chars()
+        .any(|c| c.is_control() || c == crate::para::OBJ)
+        && (n == 1 || (n == 2 && wide == 0))
 }
 
 #[cfg(test)]
@@ -293,19 +322,35 @@ mod tests {
     #[test]
     fn parses_word_enclosures_and_general_overstrike() {
         let e = Enclosure::parse(" eq \\o\\ac(○,字)").unwrap();
-        assert_eq!((e.shape, e.style, e.text.as_str()), (EncloseShape::Circle, EncloseStyle::Shrink, "字"));
+        assert_eq!(
+            (e.shape, e.style, e.text.as_str()),
+            (EncloseShape::Circle, EncloseStyle::Shrink, "字")
+        );
         // Nested switches flatten to their text; the list separator may be `;`.
         let e = Enclosure::parse("EQ \\o\\ac(□;\\s\\up 1(12))").unwrap();
         assert_eq!((e.shape, e.text.as_str()), (EncloseShape::Square, "12"));
-        let e = Enclosure { shape: EncloseShape::Diamond, style: EncloseStyle::Enlarge, text: "a,".into() };
+        let e = Enclosure {
+            shape: EncloseShape::Diamond,
+            style: EncloseStyle::Enlarge,
+            text: "a,".into(),
+        };
         assert_eq!(Enclosure::parse(&e.instr()), Some(e.clone()));
         assert_eq!(e.word_instr(), "eq \\o\\ac(◇,a\\,)");
         let o = parse_overstrike("eq \\o \\al(=,/)").unwrap();
-        assert_eq!((o.align, o.args), (OAlign::Left, vec!["=".to_string(), "/".to_string()]));
+        assert_eq!(
+            (o.align, o.args),
+            (OAlign::Left, vec!["=".to_string(), "/".to_string()])
+        );
         assert!(parse_overstrike("eq \\f(1,2)").is_none());
         assert!(parse_overstrike("PAGE").is_none());
         assert!(parse_overstrike("eq \\o(unclosed").is_none());
         assert!(Enclosure::parse("eq \\o(a,b)").is_none());
-        assert!(fits_enclosure("字") && fits_enclosure("12") && !fits_enclosure("字字") && !fits_enclosure("123") && !fits_enclosure(""));
+        assert!(
+            fits_enclosure("字")
+                && fits_enclosure("12")
+                && !fits_enclosure("字字")
+                && !fits_enclosure("123")
+                && !fits_enclosure("")
+        );
     }
 }

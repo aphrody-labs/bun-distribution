@@ -6,7 +6,14 @@
 //!
 //! Callers pass a list of spreads with their placement on a shared canvas and a canvas → pixel
 //! view transform, so the UI can render exactly its viewport with every visible spread.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 use std::collections::HashMap;
@@ -14,7 +21,9 @@ use std::sync::Arc;
 
 use designcraft_color::BlendMode as DcBlend;
 use designcraft_compose::{Cache, ComposedStory};
-use designcraft_doc::{Content, Document, Item, PageSide, SpreadRef, StoryId, StrokeAlign, StrokeType};
+use designcraft_doc::{
+    Content, Document, Item, PageSide, SpreadRef, StoryId, StrokeAlign, StrokeType,
+};
 use designcraft_geom::corners;
 use designcraft_geom::{Affine, BezPath, Rect, Shape, Vec2};
 use vello_cpu::kurbo;
@@ -72,7 +81,11 @@ impl Rendered {
         // `pixels` is public: a mismatched buffer is padded or cut to the stated size.
         px.resize(self.width as usize * self.height as usize * 4, 0);
         let Some(img) = image::RgbaImage::from_raw(self.width, self.height, px) else {
-            log::error!("PNG encode: {}×{} image is too large", self.width, self.height);
+            log::error!(
+                "PNG encode: {}×{} image is too large",
+                self.width,
+                self.height
+            );
             return Vec::new();
         };
         if let Err(e) = img.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png) {
@@ -94,8 +107,15 @@ impl Rendered {
             })
             .collect();
         let mut buf = Vec::new();
-        let enc = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, quality.clamp(1, 100));
-        let _ = image::ImageEncoder::write_image(enc, &rgb, self.width, self.height, image::ExtendedColorType::Rgb8);
+        let enc =
+            image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, quality.clamp(1, 100));
+        let _ = image::ImageEncoder::write_image(
+            enc,
+            &rgb,
+            self.width,
+            self.height,
+            image::ExtendedColorType::Rgb8,
+        );
         buf
     }
     /// Straight-alpha RGBA at (x, y).
@@ -248,10 +268,15 @@ pub fn default_threads() -> u16 {
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        if let Some(n) = std::env::var("DESIGNCRAFT_RENDER_THREADS").ok().and_then(|v| v.parse().ok()) {
+        if let Some(n) = std::env::var("DESIGNCRAFT_RENDER_THREADS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+        {
             return n;
         }
-        std::thread::available_parallelism().map(|n| (n.get().saturating_sub(1)).clamp(0, 8) as u16).unwrap_or(0)
+        std::thread::available_parallelism()
+            .map(|n| (n.get().saturating_sub(1)).clamp(0, 8) as u16)
+            .unwrap_or(0)
     }
 }
 
@@ -293,11 +318,22 @@ impl Renderer {
         let w = width.clamp(1, MAX_SIDE) as u16;
         let h = height.clamp(1, MAX_SIDE) as u16;
         let mut ctx = match self.ctx.take() {
-            Some(mut c) if c.width() == w && c.height() == h && c.render_settings().num_threads == self.threads => {
+            Some(mut c)
+                if c.width() == w
+                    && c.height() == h
+                    && c.render_settings().num_threads == self.threads =>
+            {
                 c.reset();
                 c
             }
-            _ => RenderContext::new_with(w, h, vello_cpu::RenderSettings { num_threads: self.threads, ..Default::default() }),
+            _ => RenderContext::new_with(
+                w,
+                h,
+                vello_cpu::RenderSettings {
+                    num_threads: self.threads,
+                    ..Default::default()
+                },
+            ),
         };
         let mt = ctx.render_settings().num_threads > 0;
         RICH_BLACK.with(|r| r.set(opts.rich_black));
@@ -311,9 +347,13 @@ impl Renderer {
             ctx.fill_rect(&kurbo::Rect::new(0.0, 0.0, w as f64, h as f64));
         }
         let px = 1.0 / view.determinant().abs().sqrt().max(1e-12);
-        let canvas_visible = view.inverse().transform_rect_bbox(Rect::new(0.0, 0.0, w as f64, h as f64));
+        let canvas_visible = view
+            .inverse()
+            .transform_rect_bbox(Rect::new(0.0, 0.0, w as f64, h as f64));
         for pl in spreads {
-            let Some(sp) = doc.spread(pl.spread) else { continue };
+            let Some(sp) = doc.spread(pl.spread) else {
+                continue;
+            };
             let sview = view * pl.xf;
             let visible = pl.xf.inverse().transform_rect_bbox(canvas_visible);
             let bounds = sp.bounds();
@@ -321,7 +361,15 @@ impl Renderer {
             if !rect_overlaps(bounds.inflate(2000.0, 2000.0), visible) {
                 continue;
             }
-            let f = Frame { doc, cache, view: sview, visible, px, opts, mt };
+            let f = Frame {
+                doc,
+                cache,
+                view: sview,
+                visible,
+                px,
+                opts,
+                mt,
+            };
             self.draw_spread(&mut ctx, &f, pl.spread);
         }
         ctx.flush();
@@ -330,11 +378,24 @@ impl Renderer {
         if let Some(pm) = vello_cpu::PixmapMut::new(w, h, &mut pixels) {
             ctx.render(pm, &mut self.resources);
         }
-        if opts.blend_space_view && doc.settings.blend_space == designcraft_doc::BlendSpace::Cmyk && opts.plate.is_none() {
-            let mut img = Rendered { width: w as u32, height: h as u32, pixels };
+        if opts.blend_space_view
+            && doc.settings.blend_space == designcraft_doc::BlendSpace::Cmyk
+            && opts.plate.is_none()
+        {
+            let mut img = Rendered {
+                width: w as u32,
+                height: h as u32,
+                pixels,
+            };
             for pl in spreads {
-                let Some(sp) = doc.spread(pl.spread) else { continue };
-                if sp.items.iter().any(|it| it.involves_transparency() && !it.hidden) {
+                let Some(sp) = doc.spread(pl.spread) else {
+                    continue;
+                };
+                if sp
+                    .items
+                    .iter()
+                    .any(|it| it.involves_transparency() && !it.hidden)
+                {
                     let r = (view * pl.xf).transform_rect_bbox(sp.bounds());
                     blend_space_view(&mut img, r);
                 }
@@ -344,17 +405,33 @@ impl Renderer {
         self.ctx = Some(ctx);
         self.stories.clear();
         self.stats.micros = now().saturating_sub(start);
-        Rendered { width: w as u32, height: h as u32, pixels }
+        Rendered {
+            width: w as u32,
+            height: h as u32,
+            pixels,
+        }
     }
 
     /// Render one document page (absolute index) at `scale` px/pt, optionally including bleed.
-    pub fn render_page(&mut self, doc: &Document, cache: &Cache, abs: usize, scale: f64, bleed: bool, opts: &RenderOptions) -> Option<Rendered> {
+    pub fn render_page(
+        &mut self,
+        doc: &Document,
+        cache: &Cache,
+        abs: usize,
+        scale: f64,
+        bleed: bool,
+        opts: &RenderOptions,
+    ) -> Option<Rendered> {
         let (si, pi) = doc.page_loc(abs)?;
         let page = &doc.spreads[si].pages[pi];
         let mut r = page.bounds();
         if bleed {
             let b = doc.settings.bleed;
-            let (l, rr) = if page.side == PageSide::Left { (b[3], b[2]) } else { (b[2], b[3]) };
+            let (l, rr) = if page.side == PageSide::Left {
+                (b[3], b[2])
+            } else {
+                (b[2], b[3])
+            };
             r = Rect::new(r.x0 - l, r.y0 - b[0], r.x1 + rr, r.y1 + b[1]);
         }
         let w = (r.width() * scale).round().max(1.0) as u32;
@@ -366,7 +443,18 @@ impl Renderer {
         let view = Affine::scale(scale) * Affine::translate(-r.origin().to_vec2());
         let mut o = opts.clone();
         o.background = Some([255, 255, 255, 255]);
-        Some(self.render(doc, cache, &[Placed { spread: SpreadRef::Doc(si), xf: Affine::translate(Vec2::ZERO) }], w, h, view, &o))
+        Some(self.render(
+            doc,
+            cache,
+            &[Placed {
+                spread: SpreadRef::Doc(si),
+                xf: Affine::translate(Vec2::ZERO),
+            }],
+            w,
+            h,
+            view,
+            &o,
+        ))
     }
 
     fn draw_spread(&mut self, ctx: &mut RenderContext, f: &Frame, sr: SpreadRef) {
@@ -374,7 +462,9 @@ impl Renderer {
         let Some(sp) = doc.spread(sr) else { return };
         // Paper.
         if f.opts.paper {
-            let paper = doc.resolve_color(designcraft_color::swatch::PAPER, 1.0).unwrap_or(designcraft_color::Color::WHITE);
+            let paper = doc
+                .resolve_color(designcraft_color::swatch::PAPER, 1.0)
+                .unwrap_or(designcraft_color::Color::WHITE);
             if f.opts.page_shadow {
                 ctx.set_transform(f.view);
                 ctx.set_paint(peniko::Color::from_rgba8(0, 0, 0, 90));
@@ -405,7 +495,9 @@ impl Renderer {
                     if !page.show_parent_items {
                         continue;
                     }
-                    let Some((ppi, ppage)) = doc.parent_page_for(first + pi) else { continue };
+                    let Some((ppi, ppage)) = doc.parent_page_for(first + pi) else {
+                        continue;
+                    };
                     let parent = &doc.parents[ppi];
                     let dx = page.x - parent.pages[ppage].x;
                     let pr = parent.pages[ppage].bounds();
@@ -414,7 +506,9 @@ impl Renderer {
                             continue;
                         }
                         // Parent items belong to the parent page they sit on.
-                        if parent.page_at_x(it.bounds().center().x) != Some(ppage) && parent.pages.len() > 1 {
+                        if parent.page_at_x(it.bounds().center().x) != Some(ppage)
+                            && parent.pages.len() > 1
+                        {
                             continue;
                         }
                         let _ = pr;
@@ -430,22 +524,41 @@ impl Renderer {
         }
     }
 
-    fn draw_item(&mut self, ctx: &mut RenderContext, f: &Frame, it: &Item, parent: Affine, page: Option<usize>) {
+    fn draw_item(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        it: &Item,
+        parent: Affine,
+        page: Option<usize>,
+    ) {
         if it.hidden || f.opts.hidden.contains(&it.id) || f.opts.printing_only && it.nonprinting {
             return;
         }
         let xf = parent * it.xf;
-        let vb = xf.transform_rect_bbox(it.inner_bounds()).inflate(it.stroke.extent() + 2.0, it.stroke.extent() + 2.0);
+        let vb = xf
+            .transform_rect_bbox(it.inner_bounds())
+            .inflate(it.stroke.extent() + 2.0, it.stroke.extent() + 2.0);
         if it.has_nested_items() {
             // A frame with items pasted into it: fill, the items clipped to the frame, stroke.
             if !rect_overlaps(vb, f.visible) {
                 return;
             }
-            let bp = if it.corners.is_none() { it.path.to_bezpath() } else { corners::apply(&it.path, &it.corners) };
+            let bp = if it.corners.is_none() {
+                it.path.to_bezpath()
+            } else {
+                corners::apply(&it.path, &it.corners)
+            };
             let layered = it.opacity < 0.999 || it.blend != DcBlend::Normal;
             if layered {
                 ctx.set_transform(Affine::IDENTITY);
-                ctx.push_layer(None, Some(blend_mode(it.blend)), Some(it.opacity), None, None);
+                ctx.push_layer(
+                    None,
+                    Some(blend_mode(it.blend)),
+                    Some(it.opacity),
+                    None,
+                    None,
+                );
             }
             if !it.fill.is_none() {
                 ctx.set_transform(f.view * xf);
@@ -471,10 +584,17 @@ impl Renderer {
         if !it.children().is_empty() {
             // Groups: children carry their own transforms relative to the group.
             // Isolate Blending / Knockout: the group is its own layer (blend modes stop at it).
-            let layered = it.opacity < 0.999 || it.blend != DcBlend::Normal || it.isolate || it.knockout;
+            let layered =
+                it.opacity < 0.999 || it.blend != DcBlend::Normal || it.isolate || it.knockout;
             if layered {
                 ctx.set_transform(Affine::IDENTITY);
-                ctx.push_layer(None, Some(blend_mode(it.blend)), Some(it.opacity), None, None);
+                ctx.push_layer(
+                    None,
+                    Some(blend_mode(it.blend)),
+                    Some(it.opacity),
+                    None,
+                    None,
+                );
             }
             if it.knockout {
                 // Knockout: each object first clears its area of those behind it, so it composites
@@ -482,7 +602,13 @@ impl Renderer {
                 for c in it.shown_children() {
                     if !c.hidden {
                         ctx.set_transform(Affine::IDENTITY);
-                        ctx.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::DestOut)), None, None, None);
+                        ctx.push_layer(
+                            None,
+                            Some(BlendMode::new(Mix::Normal, Compose::DestOut)),
+                            None,
+                            None,
+                            None,
+                        );
                         ctx.set_transform(f.view * xf * c.xf);
                         ctx.set_paint(peniko::Color::BLACK);
                         ctx.fill_path(&c.path.to_bezpath());
@@ -508,15 +634,28 @@ impl Renderer {
         };
         let effects = it.effects.any() && f.opts.quality != DisplayQuality::Fast;
         let fx_outset = if effects { fx::outset(it) } else { 0.0 };
-        if !rect_overlaps(vb.inflate(margin + fx_outset, margin + fx_outset), f.visible) {
+        if !rect_overlaps(
+            vb.inflate(margin + fx_outset, margin + fx_outset),
+            f.visible,
+        ) {
             return;
         }
         self.stats.items += 1;
-        let bp = if it.corners.is_none() { it.path.to_bezpath() } else { corners::apply(&it.path, &it.corners) };
+        let bp = if it.corners.is_none() {
+            it.path.to_bezpath()
+        } else {
+            corners::apply(&it.path, &it.corners)
+        };
         let layered = it.opacity < 0.999 || it.blend != DcBlend::Normal;
         if layered {
             ctx.set_transform(Affine::IDENTITY);
-            ctx.push_layer(None, Some(blend_mode(it.blend)), Some(it.opacity), None, None);
+            ctx.push_layer(
+                None,
+                Some(blend_mode(it.blend)),
+                Some(it.opacity),
+                None,
+                None,
+            );
         }
         if effects {
             self.draw_item_fx(ctx, f, it, &bp, xf, page);
@@ -541,14 +680,28 @@ impl Renderer {
     }
 
     /// Fill, content and stroke of a leaf item (no opacity, blend or effects).
-    pub(crate) fn draw_body(&mut self, ctx: &mut RenderContext, f: &Frame, it: &Item, bp: &BezPath, xf: Affine, page: Option<usize>) {
+    pub(crate) fn draw_body(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        it: &Item,
+        bp: &BezPath,
+        xf: Affine,
+        page: Option<usize>,
+    ) {
         let doc = f.doc;
         // Fill.
         if !it.fill.is_none() {
             ctx.set_transform(f.view * xf);
             let op = overprints(f, &it.fill.swatch, it.fill.tint, it.fill.overprint);
             if op {
-                ctx.push_layer(None, Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)), None, None, None);
+                ctx.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)),
+                    None,
+                    None,
+                    None,
+                );
             }
             if set_fill_paint(ctx, doc, &it.fill, bp.bounding_box()) && it.path.is_closed() {
                 ctx.fill_path(bp);
@@ -561,7 +714,11 @@ impl Renderer {
         // Content.
         match &it.content {
             Content::Graphic(g) => {
-                let g = &if it.media.is_some() { it.drawn_graphic(&f.doc.assets).unwrap_or_else(|| g.clone()) } else { g.clone() };
+                let g = &if it.media.is_some() {
+                    it.drawn_graphic(&f.doc.assets).unwrap_or_else(|| g.clone())
+                } else {
+                    g.clone()
+                };
                 ctx.set_transform(f.view * xf);
                 ctx.push_clip_layer(bp);
                 if !it.pdf_hidden_layers.is_empty() {
@@ -595,14 +752,21 @@ impl Renderer {
             ctx.set_paint(peniko::Color::from_rgba8(60, 110, 220, 200));
             ctx.set_stroke(kurbo::Stroke::new(0.75));
             ctx.stroke_path(&r.to_path(0.1));
-            if ff.kind == designcraft_doc::FieldKind::CheckBox && !ff.value.is_empty() && ff.value != "Off" {
+            if ff.kind == designcraft_doc::FieldKind::CheckBox
+                && !ff.value.is_empty()
+                && ff.value != "Off"
+            {
                 let (w, h) = (r.width(), r.height());
                 let mut c = BezPath::new();
                 c.move_to((r.x0 + w * 0.22, r.y0 + h * 0.48));
                 c.line_to((r.x0 + w * 0.42, r.y0 + h * 0.72));
                 c.line_to((r.x0 + w * 0.78, r.y0 + h * 0.24));
                 ctx.set_paint(peniko::Color::BLACK);
-                ctx.set_stroke(kurbo::Stroke::new((w.min(h) * 0.12).max(0.8)).with_caps(kurbo::Cap::Round).with_join(kurbo::Join::Round));
+                ctx.set_stroke(
+                    kurbo::Stroke::new((w.min(h) * 0.12).max(0.8))
+                        .with_caps(kurbo::Cap::Round)
+                        .with_join(kurbo::Join::Round),
+                );
                 ctx.stroke_path(&c);
             }
         }
@@ -611,7 +775,13 @@ impl Renderer {
             let op = overprints(f, &it.stroke.swatch, it.stroke.tint, it.stroke.overprint);
             if op {
                 ctx.set_transform(f.view * xf);
-                ctx.push_layer(None, Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)), None, None, None);
+                ctx.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)),
+                    None,
+                    None,
+                    None,
+                );
             }
             self.draw_stroke(ctx, f, it, bp, xf);
             if op {
@@ -620,9 +790,18 @@ impl Renderer {
         }
     }
 
-    fn draw_stroke(&mut self, ctx: &mut RenderContext, f: &Frame, it: &Item, bp: &BezPath, xf: Affine) {
+    fn draw_stroke(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        it: &Item,
+        bp: &BezPath,
+        xf: Affine,
+    ) {
         let st = &it.stroke;
-        let Some(c) = f.doc.resolve_color(&st.swatch, st.tint) else { return };
+        let Some(c) = f.doc.resolve_color(&st.swatch, st.tint) else {
+            return;
+        };
         let mut stroke = kurbo::Stroke::new(st.weight)
             .with_caps(match st.cap {
                 designcraft_doc::Cap::Butt => kurbo::Cap::Butt,
@@ -637,8 +816,14 @@ impl Renderer {
             .with_miter_limit(st.miter_limit);
         let kind = f.doc.stroke_kind(&st.kind);
         match &kind {
-            StrokeType::Dashed { pattern } if !pattern.is_empty() => stroke = stroke.with_dashes(0.0, pattern.iter().copied()),
-            StrokeType::Dotted => stroke = stroke.with_dashes(0.0, [0.0, st.weight * 2.0]).with_caps(kurbo::Cap::Round),
+            StrokeType::Dashed { pattern } if !pattern.is_empty() => {
+                stroke = stroke.with_dashes(0.0, pattern.iter().copied())
+            }
+            StrokeType::Dotted => {
+                stroke = stroke
+                    .with_dashes(0.0, [0.0, st.weight * 2.0])
+                    .with_caps(kurbo::Cap::Round)
+            }
             _ => {}
         }
         ctx.set_transform(f.view * xf);
@@ -648,14 +833,24 @@ impl Renderer {
         let arrows = designcraft_doc::arrow::apply(bp, st, closed);
         let bp = arrows.as_ref().map_or(bp, |a| &a.0);
         // Gap colour under dashes and dots: the whole path, undashed.
-        let gap = if matches!(kind, StrokeType::Solid) { None } else { f.doc.resolve_color(&st.gap_swatch, st.gap_tint) };
+        let gap = if matches!(kind, StrokeType::Solid) {
+            None
+        } else {
+            f.doc.resolve_color(&st.gap_swatch, st.gap_tint)
+        };
         if let Some(g) = gap
             && !matches!(st.align, StrokeAlign::Inside | StrokeAlign::Outside if closed)
         {
             let op = overprints(f, &st.gap_swatch, st.gap_tint, st.gap_overprint);
             if op {
                 ctx.set_transform(Affine::IDENTITY);
-                ctx.push_layer(None, Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)), None, None, None);
+                ctx.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)),
+                    None,
+                    None,
+                    None,
+                );
                 ctx.set_transform(f.view * xf);
             }
             ctx.set_paint(color_of(&g, 1.0));
@@ -689,7 +884,10 @@ impl Renderer {
             StrokeAlign::Inside if closed => {
                 // Clip a double-width stroke to the path.
                 ctx.push_clip_layer(bp);
-                ctx.set_stroke(kurbo::Stroke { width: st.weight * 2.0, ..stroke });
+                ctx.set_stroke(kurbo::Stroke {
+                    width: st.weight * 2.0,
+                    ..stroke
+                });
                 ctx.stroke_path(bp);
                 ctx.pop_layer();
             }
@@ -699,9 +897,18 @@ impl Renderer {
                 // Isolate the stroke so the subtraction leaves the item's fill/content and
                 // backdrop intact; the same nonzero fill rule also preserves compound holes.
                 ctx.push_layer(None, None, None, None, None);
-                ctx.set_stroke(kurbo::Stroke { width: st.weight * 2.0, ..stroke });
+                ctx.set_stroke(kurbo::Stroke {
+                    width: st.weight * 2.0,
+                    ..stroke
+                });
                 ctx.stroke_path(bp);
-                ctx.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::DestOut)), None, None, None);
+                ctx.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Normal, Compose::DestOut)),
+                    None,
+                    None,
+                    None,
+                );
                 ctx.fill_path(bp);
                 ctx.pop_layer();
                 ctx.pop_layer();
@@ -722,14 +929,26 @@ impl Renderer {
         }
     }
 
-    pub(crate) fn draw_graphic(&mut self, ctx: &mut RenderContext, f: &Frame, g: &designcraft_doc::Graphic, xf: Affine) {
-        let Some(asset) = f.doc.assets.get(&g.asset) else { return };
+    pub(crate) fn draw_graphic(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        g: &designcraft_doc::Graphic,
+        xf: Affine,
+    ) {
+        let Some(asset) = f.doc.assets.get(&g.asset) else {
+            return;
+        };
         if designcraft_doc::media_kind(&asset.mime).is_some() {
             // Video / sound: a dark frame with a play mark (the poster, when set, is drawn by the item).
             ctx.set_transform(f.view * xf * g.xf);
             ctx.set_paint(peniko::Color::from_rgba8(48, 48, 52, 255));
             ctx.fill_rect(&Rect::new(0.0, 0.0, g.size.0, g.size.1));
-            let (cx, cy, r) = (g.size.0 / 2.0, g.size.1 / 2.0, g.size.0.min(g.size.1) * 0.18);
+            let (cx, cy, r) = (
+                g.size.0 / 2.0,
+                g.size.1 / 2.0,
+                g.size.0.min(g.size.1) * 0.18,
+            );
             let mut tri = BezPath::new();
             tri.move_to((cx - r * 0.6, cy - r));
             tri.line_to((cx + r, cy));
@@ -747,10 +966,20 @@ impl Renderer {
         }
         // Pick a mip level close to the on-screen size (Typical: a 72 ppi proxy).
         let on_screen = (f.view * xf * g.xf).determinant().abs().sqrt();
-        let on_screen = if f.opts.quality == DisplayQuality::Typical { on_screen.min(1.0) } else { on_screen };
+        let on_screen = if f.opts.quality == DisplayQuality::Typical {
+            on_screen.min(1.0)
+        } else {
+            on_screen
+        };
         let hidden = HIDDEN_LAYERS.with(|h| h.borrow().clone());
-        let data = if !hidden.is_empty() && is_pdf(&asset.data) { pdf_layers::layered(&asset.data, &hidden) } else { asset.data.clone() };
-        let Some(pm) = images::mip(&data, asset.page, g.size.0, on_screen) else { return };
+        let data = if !hidden.is_empty() && is_pdf(&asset.data) {
+            pdf_layers::layered(&asset.data, &hidden)
+        } else {
+            asset.data.clone()
+        };
+        let Some(pm) = images::mip(&data, asset.page, g.size.0, on_screen) else {
+            return;
+        };
         let pm = match PLATE.with(|p| p.get()) {
             Some(plate) => plate_pixmap(&pm, plate),
             None => pm,
@@ -772,7 +1001,10 @@ impl Renderer {
 /// sRGB → working CMYK through a 17³ table built once per colour settings (trilinear).
 fn cmyk_lut(rgb: [f32; 3]) -> [f32; 4] {
     const N: usize = 17;
-    type Lut = (designcraft_color::cms::ColorSettings, std::sync::Arc<Vec<[f32; 4]>>);
+    type Lut = (
+        designcraft_color::cms::ColorSettings,
+        std::sync::Arc<Vec<[f32; 4]>>,
+    );
     static LUT: std::sync::Mutex<Option<Lut>> = std::sync::Mutex::new(None);
     let settings = designcraft_color::cms::active_settings();
     let table = {
@@ -784,7 +1016,10 @@ fn cmyk_lut(rgb: [f32; 3]) -> [f32; 4] {
                 let step = |i: usize| i as f32 / (N - 1) as f32;
                 let t: Vec<[f32; 4]> = (0..N * N * N)
                     .map(|i| {
-                        cms.srgb_to_cmyk([step(i / (N * N)), step(i / N % N), step(i % N)], designcraft_color::cms::Intent::RelativeColorimetric)
+                        cms.srgb_to_cmyk(
+                            [step(i / (N * N)), step(i / N % N), step(i % N)],
+                            designcraft_color::cms::Intent::RelativeColorimetric,
+                        )
                     })
                     .collect();
                 let t = std::sync::Arc::new(t);
@@ -799,7 +1034,9 @@ fn cmyk_lut(rgb: [f32; 3]) -> [f32; 4] {
     let mut out = [0.0f32; 4];
     for (corner, w) in (0..8).map(|c| {
         let (a, b, cc) = (c >> 2 & 1, c >> 1 & 1, c & 1);
-        let w = (if a == 1 { d[0] } else { 1.0 - d[0] }) * (if b == 1 { d[1] } else { 1.0 - d[1] }) * (if cc == 1 { d[2] } else { 1.0 - d[2] });
+        let w = (if a == 1 { d[0] } else { 1.0 - d[0] })
+            * (if b == 1 { d[1] } else { 1.0 - d[1] })
+            * (if cc == 1 { d[2] } else { 1.0 - d[2] });
         ((i[0] + a) * N * N + (i[1] + b) * N + i[2] + cc, w)
     }) {
         for k in 0..4 {
@@ -810,11 +1047,19 @@ fn cmyk_lut(rgb: [f32; 3]) -> [f32; 4] {
 }
 
 /// An image's ink coverage on one process plate, as grey (cached per image and plate).
-fn plate_pixmap(pm: &std::sync::Arc<vello_cpu::Pixmap>, plate: u8) -> std::sync::Arc<vello_cpu::Pixmap> {
+fn plate_pixmap(
+    pm: &std::sync::Arc<vello_cpu::Pixmap>,
+    plate: u8,
+) -> std::sync::Arc<vello_cpu::Pixmap> {
     type Cache = std::collections::HashMap<(usize, u8), std::sync::Arc<vello_cpu::Pixmap>>;
     static CACHE: std::sync::Mutex<Option<Cache>> = std::sync::Mutex::new(None);
     let key = (std::sync::Arc::as_ptr(pm) as usize, plate);
-    if let Some(v) = CACHE.lock().unwrap_or_else(|e| e.into_inner()).as_ref().and_then(|c| c.get(&key).cloned()) {
+    if let Some(v) = CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .and_then(|c| c.get(&key).cloned())
+    {
         return v;
     }
     let data: Vec<vello_cpu::color::PremulRgba8> = pm
@@ -827,8 +1072,14 @@ fn plate_pixmap(pm: &std::sync::Arc<vello_cpu::Pixmap>, plate: u8) -> std::sync:
             let k = 255.0 / p.a as f32;
             let rgb = [p.r, p.g, p.b].map(|v| (v as f32 * k / 255.0).min(1.0));
             let cmyk = cmyk_lut(rgb);
-            let v = ((1.0 - cmyk[plate.min(3) as usize].clamp(0.0, 1.0)) * p.a as f32).round() as u8;
-            vello_cpu::color::PremulRgba8 { r: v, g: v, b: v, a: p.a }
+            let v =
+                ((1.0 - cmyk[plate.min(3) as usize].clamp(0.0, 1.0)) * p.a as f32).round() as u8;
+            vello_cpu::color::PremulRgba8 {
+                r: v,
+                g: v,
+                b: v,
+                a: p.a,
+            }
         })
         .collect();
     let out = std::sync::Arc::new(vello_cpu::Pixmap::from_parts(data, pm.width(), pm.height()));
@@ -877,10 +1128,19 @@ pub fn color_of(c: &designcraft_color::Color, alpha: f32) -> peniko::Color {
 }
 
 /// Set a swatch fill (solid or gradient) as the paint. Returns false for [None]/unknown.
-fn set_fill_paint(ctx: &mut RenderContext, doc: &Document, fill: &designcraft_doc::Fill, bounds: Rect) -> bool {
+fn set_fill_paint(
+    ctx: &mut RenderContext,
+    doc: &Document,
+    fill: &designcraft_doc::Fill,
+    bounds: Rect,
+) -> bool {
     let (swatch, tint, angle) = (fill.swatch.as_str(), fill.tint, fill.gradient_angle);
     if let Some(g) = designcraft_color::swatch::resolve_gradient(&doc.swatches, swatch) {
-        let stops: Vec<peniko::ColorStop> = g.expanded_stops().iter().map(|(o, c, a)| peniko::ColorStop::from((*o, color_of(c, *a)))).collect();
+        let stops: Vec<peniko::ColorStop> = g
+            .expanded_stops()
+            .iter()
+            .map(|(o, c, a)| peniko::ColorStop::from((*o, color_of(c, *a))))
+            .collect();
         if stops.is_empty() {
             return false;
         }
@@ -890,7 +1150,9 @@ fn set_fill_paint(ctx: &mut RenderContext, doc: &Document, fill: &designcraft_do
                 let r = Vec2::new(x1 - x0, y1 - y0).hypot().max(1e-3);
                 peniko::Gradient::new_radial((x0, y0), r as f32).with_stops(stops.as_slice())
             }
-            (_, Some([x0, y0, x1, y1])) => peniko::Gradient::new_linear((x0, y0), (x1, y1)).with_stops(stops.as_slice()),
+            (_, Some([x0, y0, x1, y1])) => {
+                peniko::Gradient::new_linear((x0, y0), (x1, y1)).with_stops(stops.as_slice())
+            }
             (designcraft_color::GradientKind::Radial, None) => {
                 let r = bounds.width().max(bounds.height()) / 2.0;
                 peniko::Gradient::new_radial(c, r as f32).with_stops(stops.as_slice())
@@ -917,7 +1179,11 @@ fn set_fill_paint(ctx: &mut RenderContext, doc: &Document, fill: &designcraft_do
 /// Overprint Preview: does this paint overprint (its own flag, or 100% [Black], which
 /// overprints by default)? It's then multiplied over what's beneath.
 pub(crate) fn overprints(f: &Frame, swatch: &str, tint: f32, flag: bool) -> bool {
-    f.opts.overprint_preview && (flag || (f.doc.settings.overprint_black && swatch == designcraft_color::swatch::BLACK && tint >= 0.999))
+    f.opts.overprint_preview
+        && (flag
+            || (f.doc.settings.overprint_black
+                && swatch == designcraft_color::swatch::BLACK
+                && tint >= 0.999))
 }
 
 pub fn blend_mode(b: DcBlend) -> BlendMode {
@@ -955,8 +1221,22 @@ pub fn decode_pixmap_page(bytes: &[u8], page: u32) -> Option<Pixmap> {
     }
     if designcraft_images::is_svg(bytes) {
         let (px, w, h) = designcraft_images::render_svg(bytes, 3000)?;
-        let data = px.as_chunks::<4>().0.iter().map(|p| vello_cpu::color::PremulRgba8 { r: p[0], g: p[1], b: p[2], a: p[3] }).collect();
-        return Some(Pixmap::from_parts(data, w.min(u16::MAX as u32) as u16, h.min(u16::MAX as u32) as u16));
+        let data = px
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|p| vello_cpu::color::PremulRgba8 {
+                r: p[0],
+                g: p[1],
+                b: p[2],
+                a: p[3],
+            })
+            .collect();
+        return Some(Pixmap::from_parts(
+            data,
+            w.min(u16::MAX as u32) as u16,
+            h.min(u16::MAX as u32) as u16,
+        ));
     }
     let img = designcraft_images::decode_rgba(bytes)?;
     let (w, h) = img.dimensions();
@@ -968,7 +1248,12 @@ pub fn decode_pixmap_page(bytes: &[u8], page: u32) -> Option<Pixmap> {
         .map(|p| {
             let a = p[3] as u16;
             let m = |c: u8| ((c as u16 * a + 127) / 255) as u8;
-            vello_cpu::color::PremulRgba8 { r: m(p[0]), g: m(p[1]), b: m(p[2]), a: p[3] }
+            vello_cpu::color::PremulRgba8 {
+                r: m(p[0]),
+                g: m(p[1]),
+                b: m(p[2]),
+                a: p[3],
+            }
         })
         .collect();
     Some(Pixmap::from_parts(data, w as u16, h as u16))
@@ -992,7 +1277,12 @@ fn halve(pm: &Pixmap) -> Pixmap {
                 acc[2] += p.b as u32;
                 acc[3] += p.a as u32;
             }
-            out.push(vello_cpu::color::PremulRgba8 { r: (acc[0] / 4) as u8, g: (acc[1] / 4) as u8, b: (acc[2] / 4) as u8, a: (acc[3] / 4) as u8 });
+            out.push(vello_cpu::color::PremulRgba8 {
+                r: (acc[0] / 4) as u8,
+                g: (acc[1] / 4) as u8,
+                b: (acc[2] / 4) as u8,
+                a: (acc[3] / 4) as u8,
+            });
         }
     }
     Pixmap::from_parts(out, nw as u16, nh as u16)
@@ -1001,7 +1291,10 @@ fn halve(pm: &Pixmap) -> Pixmap {
 #[cfg(not(target_arch = "wasm32"))]
 fn now() -> u64 {
     use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_micros() as u64).unwrap_or(0)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_micros() as u64)
+        .unwrap_or(0)
 }
 #[cfg(target_arch = "wasm32")]
 fn now() -> u64 {
@@ -1012,11 +1305,13 @@ fn now() -> u64 {
 pub fn image_size(bytes: &[u8]) -> Option<(u32, u32)> {
     if is_pdf(bytes) {
         // Placed PDFs are sized by their page (crop box) in points.
-        return pdf_page_size(bytes, 0).map(|(w, h)| (w.round().max(1.0) as u32, h.round().max(1.0) as u32));
+        return pdf_page_size(bytes, 0)
+            .map(|(w, h)| (w.round().max(1.0) as u32, h.round().max(1.0) as u32));
     }
     if designcraft_images::is_svg(bytes) {
         // SVGs by their width and height (CSS pixels → points).
-        return designcraft_images::natural_size(bytes).map(|(w, h)| (w.round().max(1.0) as u32, h.round().max(1.0) as u32));
+        return designcraft_images::natural_size(bytes)
+            .map(|(w, h)| (w.round().max(1.0) as u32, h.round().max(1.0) as u32));
     }
     designcraft_images::pixel_size(bytes)
 }
@@ -1051,11 +1346,31 @@ pub fn pdf_page_size(bytes: &[u8], page: usize) -> Option<(f64, f64)> {
 }
 
 /// PDF page `page` as PNG, its longer side about `max_side` pixels, with the `hidden` layers off.
-pub fn pdf_page_png(bytes: &[u8], page: usize, max_side: u32, hidden: &[String]) -> Option<Vec<u8>> {
-    let data = if hidden.is_empty() { bytes.to_vec() } else { pdf_hide_layers(bytes, hidden).unwrap_or_else(|| bytes.to_vec()) };
+pub fn pdf_page_png(
+    bytes: &[u8],
+    page: usize,
+    max_side: u32,
+    hidden: &[String],
+) -> Option<Vec<u8>> {
+    let data = if hidden.is_empty() {
+        bytes.to_vec()
+    } else {
+        pdf_hide_layers(bytes, hidden).unwrap_or_else(|| bytes.to_vec())
+    };
     let pm = render_pdf_page(&data, page, max_side)?;
-    let pixels: Vec<u8> = pm.data().iter().flat_map(|p| [p.r, p.g, p.b, p.a]).collect();
-    Some(Rendered { width: pm.width() as u32, height: pm.height() as u32, pixels }.to_png())
+    let pixels: Vec<u8> = pm
+        .data()
+        .iter()
+        .flat_map(|p| [p.r, p.g, p.b, p.a])
+        .collect();
+    Some(
+        Rendered {
+            width: pm.width() as u32,
+            height: pm.height() as u32,
+            pixels,
+        }
+        .to_png(),
+    )
 }
 
 /// Rasterize PDF page `page` so its longer side is about `max_side` pixels (screen display; PDF
@@ -1065,11 +1380,30 @@ pub fn render_pdf_page(bytes: &[u8], page: usize, max_side: u32) -> Option<Pixma
     let p = pdf.pages().get(page)?;
     let (w, h) = p.render_dimensions();
     let scale = (max_side as f32 / w.max(h).max(1.0)).min(8.0);
-    let rs = hayro::RenderSettings { x_scale: scale, y_scale: scale, ..Default::default() };
-    let pm = hayro::render(p, &hayro::RenderCache::new(), &hayro::hayro_interpret::InterpreterSettings::default(), &rs);
+    let rs = hayro::RenderSettings {
+        x_scale: scale,
+        y_scale: scale,
+        ..Default::default()
+    };
+    let pm = hayro::render(
+        p,
+        &hayro::RenderCache::new(),
+        &hayro::hayro_interpret::InterpreterSettings::default(),
+        &rs,
+    );
     let (pw, ph) = (pm.width(), pm.height());
-    let data: Vec<vello_cpu::color::PremulRgba8> =
-        pm.data_as_u8_slice().as_chunks::<4>().0.iter().map(|c| vello_cpu::color::PremulRgba8 { r: c[0], g: c[1], b: c[2], a: c[3] }).collect();
+    let data: Vec<vello_cpu::color::PremulRgba8> = pm
+        .data_as_u8_slice()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| vello_cpu::color::PremulRgba8 {
+            r: c[0],
+            g: c[1],
+            b: c[2],
+            a: c[3],
+        })
+        .collect();
     Some(Pixmap::from_parts(data, pw, ph))
 }
 
@@ -1088,7 +1422,11 @@ pub fn pdf_page_box(bytes: &[u8], page: usize, kind: &str) -> Option<(f64, f64, 
         "media" => return Some(rel(visible, p.media_box())),
         _ => return Some(rel(visible, visible)),
     };
-    let b = p.raw().get::<PRect>(key).map(|b| b.intersect(p.media_box())).unwrap_or(visible);
+    let b = p
+        .raw()
+        .get::<PRect>(key)
+        .map(|b| b.intersect(p.media_box()))
+        .unwrap_or(visible);
     fn rel(v: PRect, b: PRect) -> (f64, f64, f64, f64) {
         (b.x0 - v.x0, v.y1 - b.y1, b.width(), b.height())
     }
@@ -1121,10 +1459,19 @@ pub fn proof_view(img: &mut Rendered, setup: &designcraft_color::cms::ProofSetup
 /// working CMYK profile and back, as a spread composited in that space looks.
 fn blend_space_view(img: &mut Rendered, area: Rect) {
     use designcraft_color::cms::{ProofSetup, ProofTarget};
-    let lut = designcraft_color::cms::active().proof_lut(&ProofSetup { target: ProofTarget::WorkingCmyk, ..Default::default() });
+    let lut = designcraft_color::cms::active().proof_lut(&ProofSetup {
+        target: ProofTarget::WorkingCmyk,
+        ..Default::default()
+    });
     let (w, h) = (img.width as i64, img.height as i64);
-    let (x0, y0) = ((area.x0.floor() as i64).clamp(0, w), (area.y0.floor() as i64).clamp(0, h));
-    let (x1, y1) = ((area.x1.ceil() as i64).clamp(0, w), (area.y1.ceil() as i64).clamp(0, h));
+    let (x0, y0) = (
+        (area.x0.floor() as i64).clamp(0, w),
+        (area.y0.floor() as i64).clamp(0, h),
+    );
+    let (x1, y1) = (
+        (area.x1.ceil() as i64).clamp(0, w),
+        (area.y1.ceil() as i64).clamp(0, h),
+    );
     for y in y0..y1 {
         let row = &mut img.pixels[((y * w + x0) * 4) as usize..((y * w + x1) * 4) as usize];
         for px in row.as_chunks_mut::<4>().0 {
@@ -1149,8 +1496,16 @@ pub fn separation_view(img: &mut Rendered, plate: Option<u8>, ink_limit: Option<
         let ch = |v: u8| (v as f32 / 255.0) + (1.0 - a);
         let (r, g, b) = (ch(px[0]).min(1.0), ch(px[1]).min(1.0), ch(px[2]).min(1.0));
         let k = 1.0 - r.max(g).max(b);
-        let inks =
-            if k >= 0.999 { [0.0, 0.0, 0.0, 1.0] } else { [(1.0 - r - k) / (1.0 - k), (1.0 - g - k) / (1.0 - k), (1.0 - b - k) / (1.0 - k), k] };
+        let inks = if k >= 0.999 {
+            [0.0, 0.0, 0.0, 1.0]
+        } else {
+            [
+                (1.0 - r - k) / (1.0 - k),
+                (1.0 - g - k) / (1.0 - k),
+                (1.0 - b - k) / (1.0 - k),
+                k,
+            ]
+        };
         let mut out = match plate {
             Some(p) => {
                 let v = ((1.0 - inks[p.min(3) as usize].clamp(0.0, 1.0)) * 255.0).round() as u8;
@@ -1186,36 +1541,105 @@ mod tests {
         let doc = Document::new(&NewDocument::default());
         let cache = Cache::new();
         let mut r = Renderer::new();
-        let img = r.render(&doc, &cache, &[], 70_000, 4, Affine::IDENTITY, &RenderOptions::default());
+        let img = r.render(
+            &doc,
+            &cache,
+            &[],
+            70_000,
+            4,
+            Affine::IDENTITY,
+            &RenderOptions::default(),
+        );
         assert_eq!(img.width, MAX_SIDE);
-        let page = [Placed { spread: SpreadRef::Doc(0), xf: Affine::IDENTITY }];
-        let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+        let page = [Placed {
+            spread: SpreadRef::Doc(0),
+            xf: Affine::IDENTITY,
+        }];
+        let opts = RenderOptions {
+            background: Some([255, 255, 255, 255]),
+            ..Default::default()
+        };
         let img = r.render(&doc, &cache, &page, 70_000, 64, Affine::scale(120.0), &opts);
         assert_eq!(img.width, MAX_SIDE);
-        assert!(r.render_page(&doc, &cache, 0, 500.0, true, &RenderOptions::default()).is_none());
+        assert!(
+            r.render_page(&doc, &cache, 0, 500.0, true, &RenderOptions::default())
+                .is_none()
+        );
     }
 
     #[test]
     fn to_png_survives_a_mismatched_buffer() {
-        let short = Rendered { width: 4, height: 4, pixels: vec![255; 10] };
+        let short = Rendered {
+            width: 4,
+            height: 4,
+            pixels: vec![255; 10],
+        };
         let png = short.to_png();
-        assert_eq!(image::load_from_memory(&png).map(|i| (i.width(), i.height())).ok(), Some((4, 4)));
-        assert!(Rendered { width: 0, height: 0, pixels: vec![] }.to_png().len() < 1024);
+        assert_eq!(
+            image::load_from_memory(&png)
+                .map(|i| (i.width(), i.height()))
+                .ok(),
+            Some((4, 4))
+        );
+        assert!(
+            Rendered {
+                width: 0,
+                height: 0,
+                pixels: vec![]
+            }
+            .to_png()
+            .len()
+                < 1024
+        );
     }
 
     #[test]
     fn proof_view_simulates_the_target() {
         use designcraft_color::cms::{ProofSetup, ProofTarget};
-        let red = |a: u8| Rendered { width: 1, height: 1, pixels: vec![a, 0, 0, a] };
+        let red = |a: u8| Rendered {
+            width: 1,
+            height: 1,
+            pixels: vec![a, 0, 0, a],
+        };
         let mut img = red(255);
-        proof_view(&mut img, &ProofSetup { target: ProofTarget::Protanopia, ..Default::default() });
-        assert!(img.pixels[1] > 40, "protanopia turns pure red olive: {:?}", img.pixels);
+        proof_view(
+            &mut img,
+            &ProofSetup {
+                target: ProofTarget::Protanopia,
+                ..Default::default()
+            },
+        );
+        assert!(
+            img.pixels[1] > 40,
+            "protanopia turns pure red olive: {:?}",
+            img.pixels
+        );
         let mut img = red(255);
-        proof_view(&mut img, &ProofSetup { target: ProofTarget::MonitorRgb, ..Default::default() });
-        assert!(img.pixels[0] > 245 && img.pixels[1] < 10, "monitor RGB is no simulation: {:?}", img.pixels);
+        proof_view(
+            &mut img,
+            &ProofSetup {
+                target: ProofTarget::MonitorRgb,
+                ..Default::default()
+            },
+        );
+        assert!(
+            img.pixels[0] > 245 && img.pixels[1] < 10,
+            "monitor RGB is no simulation: {:?}",
+            img.pixels
+        );
         // Transparent pixels stay transparent; premultiplication is kept.
-        let mut img = Rendered { width: 2, height: 1, pixels: vec![0, 0, 0, 0, 100, 0, 0, 128] };
-        proof_view(&mut img, &ProofSetup { target: ProofTarget::WorkingCmyk, ..Default::default() });
+        let mut img = Rendered {
+            width: 2,
+            height: 1,
+            pixels: vec![0, 0, 0, 0, 100, 0, 0, 128],
+        };
+        proof_view(
+            &mut img,
+            &ProofSetup {
+                target: ProofTarget::WorkingCmyk,
+                ..Default::default()
+            },
+        );
         assert_eq!(&img.pixels[..4], &[0, 0, 0, 0]);
         assert!(img.pixels[4] <= 128 && img.pixels[7] == 128);
     }
@@ -1224,23 +1648,39 @@ mod tests {
     fn renders_page_with_text_and_fill() {
         let mut d = Document::new(&NewDocument::default());
         let lid = d.default_layer();
-        let (fid, _) =
-            d.add_text_frame(SpreadRef::Doc(0), Rect::new(36.0, 36.0, 576.0, 300.0), lid, "Hello DesignCraft", ParaFormat::default()).unwrap();
+        let (fid, _) = d
+            .add_text_frame(
+                SpreadRef::Doc(0),
+                Rect::new(36.0, 36.0, 576.0, 300.0),
+                lid,
+                "Hello DesignCraft",
+                ParaFormat::default(),
+            )
+            .unwrap();
         let id = designcraft_doc::ItemId(d.alloc());
-        let mut box_ =
-            Item::new(id, lid, designcraft_doc::Shape::Rectangle, designcraft_geom::shapes::rectangle(Rect::new(36.0, 400.0, 136.0, 500.0)));
+        let mut box_ = Item::new(
+            id,
+            lid,
+            designcraft_doc::Shape::Rectangle,
+            designcraft_geom::shapes::rectangle(Rect::new(36.0, 400.0, 136.0, 500.0)),
+        );
         box_.fill = Fill::swatch("C=100 M=0 Y=0 K=0");
         d.insert_item(SpreadRef::Doc(0), box_, None).unwrap();
         let cache = Cache::new();
         let mut r = Renderer::new();
         r.threads = 0;
-        let img = r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default()).unwrap();
+        let img = r
+            .render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default())
+            .unwrap();
         assert_eq!((img.width, img.height), (612, 792));
         // Paper is white, the box is cyan-ish, text drew some dark pixels.
         assert_eq!(img.pixel(300, 700), [255, 255, 255, 255]);
         let c = img.pixel(80, 450);
         assert!(c[0] < 80 && c[2] > 150, "{c:?}");
-        let dark = (36..300).flat_map(|x| (36..60).map(move |y| (x, y))).filter(|&(x, y)| img.pixel(x, y)[0] < 100).count();
+        let dark = (36..300)
+            .flat_map(|x| (36..60).map(move |y| (x, y)))
+            .filter(|&(x, y)| img.pixel(x, y)[0] < 100)
+            .count();
         assert!(dark > 50, "text pixels: {dark}");
         let _ = fid;
         assert!(r.stats.glyphs >= 15);
@@ -1251,7 +1691,10 @@ mod tests {
         let mut d = Document::new(&NewDocument::default());
         let lid = d.default_layer();
         let id = designcraft_doc::ItemId(d.alloc());
-        let path = designcraft_geom::shapes::line(designcraft_geom::Point::new(100.0, 400.0), designcraft_geom::Point::new(400.0, 400.0));
+        let path = designcraft_geom::shapes::line(
+            designcraft_geom::Point::new(100.0, 400.0),
+            designcraft_geom::Point::new(400.0, 400.0),
+        );
         let mut line = Item::new(id, lid, designcraft_doc::Shape::GraphicLine, path);
         line.stroke = designcraft_doc::Stroke {
             swatch: designcraft_color::swatch::BLACK.into(),
@@ -1262,12 +1705,17 @@ mod tests {
         d.insert_item(SpreadRef::Doc(0), line, None).unwrap();
         // A dashed line with a gap colour: the gaps are painted.
         let id = designcraft_doc::ItemId(d.alloc());
-        let path = designcraft_geom::shapes::line(designcraft_geom::Point::new(100.0, 500.0), designcraft_geom::Point::new(400.0, 500.0));
+        let path = designcraft_geom::shapes::line(
+            designcraft_geom::Point::new(100.0, 500.0),
+            designcraft_geom::Point::new(400.0, 500.0),
+        );
         let mut dashed = Item::new(id, lid, designcraft_doc::Shape::GraphicLine, path);
         dashed.stroke = designcraft_doc::Stroke {
             swatch: designcraft_color::swatch::BLACK.into(),
             weight: 4.0,
-            kind: designcraft_doc::StrokeType::Dashed { pattern: vec![12.0, 4.0] },
+            kind: designcraft_doc::StrokeType::Dashed {
+                pattern: vec![12.0, 4.0],
+            },
             gap_swatch: "C=100 M=0 Y=0 K=0".into(),
             ..Default::default()
         };
@@ -1275,7 +1723,9 @@ mod tests {
         let cache = Cache::new();
         let mut r = Renderer::new();
         r.threads = 0;
-        let img = r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default()).unwrap();
+        let img = r
+            .render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default())
+            .unwrap();
         // The head is 6.4 × weight wide: ink 4 pt above the line near the tip, none at the start.
         assert!(img.pixel(393, 396)[0] < 128, "{:?}", img.pixel(393, 396));
         assert_eq!(img.pixel(105, 396), [255, 255, 255, 255]);
@@ -1292,38 +1742,79 @@ mod tests {
         let lid = d.default_layer();
         for (sw, op) in [("C=0 M=0 Y=100 K=0", false), ("C=0 M=100 Y=0 K=0", true)] {
             let id = designcraft_doc::ItemId(d.alloc());
-            let mut it =
-                Item::new(id, lid, designcraft_doc::Shape::Rectangle, designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)));
-            it.fill = Fill { overprint: op, ..Fill::swatch(sw) };
+            let mut it = Item::new(
+                id,
+                lid,
+                designcraft_doc::Shape::Rectangle,
+                designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)),
+            );
+            it.fill = Fill {
+                overprint: op,
+                ..Fill::swatch(sw)
+            };
             d.insert_item(SpreadRef::Doc(0), it, None).unwrap();
         }
         let cache = Cache::new();
         let mut r = Renderer::new();
         r.threads = 0;
         let px = |on: bool, r: &mut Renderer| {
-            r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions { overprint_preview: on, ..Default::default() }).unwrap().pixel(150, 150)
+            r.render_page(
+                &d,
+                &cache,
+                0,
+                1.0,
+                false,
+                &RenderOptions {
+                    overprint_preview: on,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+            .pixel(150, 150)
         };
         let off = px(false, &mut r);
         let on = px(true, &mut r);
         assert!(off[2] > 100, "magenta knocks out: {off:?}");
-        assert!(on[2] < 60 && on[0] > 180, "magenta over yellow → red: {on:?}");
+        assert!(
+            on[2] < 60 && on[0] > 180,
+            "magenta over yellow → red: {on:?}"
+        );
     }
 
     #[test]
     fn cmyk_blend_space_shows_transparent_spreads_in_cmyk() {
         let mut d = Document::new(&NewDocument::default());
-        d.swatches.push(designcraft_color::swatch::Swatch::color("Green", designcraft_color::Color::rgb8(0, 255, 0)));
+        d.swatches.push(designcraft_color::swatch::Swatch::color(
+            "Green",
+            designcraft_color::Color::rgb8(0, 255, 0),
+        ));
         let lid = d.default_layer();
         let id = designcraft_doc::ItemId(d.alloc());
-        let mut it =
-            Item::new(id, lid, designcraft_doc::Shape::Rectangle, designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)));
+        let mut it = Item::new(
+            id,
+            lid,
+            designcraft_doc::Shape::Rectangle,
+            designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)),
+        );
         it.fill = Fill::swatch("Green");
         d.insert_item(SpreadRef::Doc(0), it, None).unwrap();
         let cache = Cache::new();
         let mut r = Renderer::new();
         r.threads = 0;
         let px = |d: &Document, r: &mut Renderer| {
-            r.render_page(d, &cache, 0, 1.0, false, &RenderOptions { blend_space_view: true, ..Default::default() }).unwrap().pixel(150, 150)
+            r.render_page(
+                d,
+                &cache,
+                0,
+                1.0,
+                false,
+                &RenderOptions {
+                    blend_space_view: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+            .pixel(150, 150)
         };
         // No transparency on the spread: shown as is.
         assert_eq!(px(&d, &mut r)[1], 255);
@@ -1343,34 +1834,57 @@ mod tests {
         let mut kids = Vec::new();
         for (sw, x) in [("C=0 M=0 Y=100 K=0", 100.0), ("C=0 M=100 Y=0 K=0", 150.0)] {
             let id = designcraft_doc::ItemId(d.alloc());
-            let mut it =
-                Item::new(id, lid, designcraft_doc::Shape::Rectangle, designcraft_geom::shapes::rectangle(Rect::new(x, 100.0, x + 100.0, 200.0)));
+            let mut it = Item::new(
+                id,
+                lid,
+                designcraft_doc::Shape::Rectangle,
+                designcraft_geom::shapes::rectangle(Rect::new(x, 100.0, x + 100.0, 200.0)),
+            );
             it.fill = Fill::swatch(sw);
             it.opacity = 0.5;
             kids.push(std::sync::Arc::new(it));
         }
         let gid = designcraft_doc::ItemId(d.alloc());
-        let mut g = Item::new(gid, lid, designcraft_doc::Shape::Group, designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 250.0, 200.0)));
+        let mut g = Item::new(
+            gid,
+            lid,
+            designcraft_doc::Shape::Group,
+            designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 250.0, 200.0)),
+        );
         g.content = designcraft_doc::Content::Group { items: kids };
         d.insert_item(SpreadRef::Doc(0), g, None).unwrap();
         let cache = Cache::new();
         let mut r = Renderer::new();
         r.threads = 0;
-        let overlap = |d: &Document, r: &mut Renderer| r.render_page(d, &cache, 0, 1.0, false, &RenderOptions::default()).unwrap().pixel(175, 150);
+        let overlap = |d: &Document, r: &mut Renderer| {
+            r.render_page(d, &cache, 0, 1.0, false, &RenderOptions::default())
+                .unwrap()
+                .pixel(175, 150)
+        };
         let plain = overlap(&d, &mut r);
         d.item_mut(gid).unwrap().knockout = true;
         let ko = overlap(&d, &mut r);
-        let magenta_only = r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default()).unwrap().pixel(225, 150);
+        let magenta_only = r
+            .render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default())
+            .unwrap()
+            .pixel(225, 150);
         assert_ne!(plain, ko, "{plain:?} {ko:?}");
         for c in 0..3 {
-            assert!((ko[c] as i32 - magenta_only[c] as i32).abs() <= 3, "the overlap shows magenta alone: {ko:?} vs {magenta_only:?}");
+            assert!(
+                (ko[c] as i32 - magenta_only[c] as i32).abs() <= 3,
+                "the overlap shows magenta alone: {ko:?} vs {magenta_only:?}"
+            );
         }
     }
 
     #[test]
     fn separations_split_plates_and_flag_ink_limits() {
         // Pure cyan (0, 255, 255) and rich black-ish (20, 20, 20).
-        let mut img = Rendered { width: 2, height: 1, pixels: vec![0, 255, 255, 255, 20, 20, 20, 255] };
+        let mut img = Rendered {
+            width: 2,
+            height: 1,
+            pixels: vec![0, 255, 255, 255, 20, 20, 20, 255],
+        };
         let mut c = img.clone();
         separation_view(&mut c, Some(0), None);
         assert_eq!(c.pixel(0, 0)[0], 0, "cyan plate solid under cyan");
@@ -1385,22 +1899,43 @@ mod tests {
     fn black_overprints_only_with_the_preference() {
         let mut d = Document::new(&NewDocument::default());
         let lid = d.default_layer();
-        for (sw, r) in
-            [("C=100 M=0 Y=0 K=0", Rect::new(100.0, 100.0, 200.0, 200.0)), (designcraft_color::swatch::BLACK, Rect::new(150.0, 100.0, 250.0, 200.0))]
-        {
+        for (sw, r) in [
+            ("C=100 M=0 Y=0 K=0", Rect::new(100.0, 100.0, 200.0, 200.0)),
+            (
+                designcraft_color::swatch::BLACK,
+                Rect::new(150.0, 100.0, 250.0, 200.0),
+            ),
+        ] {
             let id = designcraft_doc::ItemId(d.alloc());
-            let mut it = Item::new(id, lid, designcraft_doc::Shape::Rectangle, designcraft_geom::shapes::rectangle(r));
+            let mut it = Item::new(
+                id,
+                lid,
+                designcraft_doc::Shape::Rectangle,
+                designcraft_geom::shapes::rectangle(r),
+            );
             it.fill = Fill::swatch(sw);
             d.insert_item(SpreadRef::Doc(0), it, None).unwrap();
         }
         let cache = Cache::new();
         let mut r = Renderer::new();
         r.threads = 0;
-        let o = RenderOptions { overprint_preview: true, ..Default::default() };
-        let on = r.render_page(&d, &cache, 0, 1.0, false, &o).unwrap().pixel(175, 150);
-        let alone = r.render_page(&d, &cache, 0, 1.0, false, &o).unwrap().pixel(225, 150);
+        let o = RenderOptions {
+            overprint_preview: true,
+            ..Default::default()
+        };
+        let on = r
+            .render_page(&d, &cache, 0, 1.0, false, &o)
+            .unwrap()
+            .pixel(175, 150);
+        let alone = r
+            .render_page(&d, &cache, 0, 1.0, false, &o)
+            .unwrap()
+            .pixel(225, 150);
         d.settings.overprint_black = false;
-        let off = r.render_page(&d, &cache, 0, 1.0, false, &o).unwrap().pixel(175, 150);
+        let off = r
+            .render_page(&d, &cache, 0, 1.0, false, &o)
+            .unwrap()
+            .pixel(175, 150);
         assert_eq!(off, alone, "knocks out: black alone");
         assert_ne!(on, alone, "overprints: the cyan shows through");
     }
@@ -1410,15 +1945,31 @@ mod tests {
         let mut d = Document::new(&NewDocument::default());
         let lid = d.default_layer();
         let id = designcraft_doc::ItemId(d.alloc());
-        let mut it =
-            Item::new(id, lid, designcraft_doc::Shape::Rectangle, designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)));
+        let mut it = Item::new(
+            id,
+            lid,
+            designcraft_doc::Shape::Rectangle,
+            designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)),
+        );
         it.fill = Fill::swatch(designcraft_color::swatch::BLACK);
         d.insert_item(SpreadRef::Doc(0), it, None).unwrap();
         let cache = Cache::new();
         let mut r = Renderer::new();
         r.threads = 0;
         let px = |rich: bool, r: &mut Renderer| {
-            r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions { rich_black: rich, ..Default::default() }).unwrap().pixel(150, 150)
+            r.render_page(
+                &d,
+                &cache,
+                0,
+                1.0,
+                false,
+                &RenderOptions {
+                    rich_black: rich,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+            .pixel(150, 150)
         };
         assert!(px(false, &mut r)[0] > 20, "accurate: a dark grey");
         assert_eq!(px(true, &mut r)[..3], [0, 0, 0]);
@@ -1447,8 +1998,12 @@ mod tests {
             }),
         );
         let id = designcraft_doc::ItemId(d.alloc());
-        let mut it =
-            Item::new(id, lid, designcraft_doc::Shape::Rectangle, designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)));
+        let mut it = Item::new(
+            id,
+            lid,
+            designcraft_doc::Shape::Rectangle,
+            designcraft_geom::shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)),
+        );
         it.content = designcraft_doc::Content::Graphic(designcraft_doc::Graphic {
             asset: aid,
             size: (100.0, 100.0),
@@ -1462,7 +2017,19 @@ mod tests {
         let mut r = Renderer::new();
         r.threads = 0;
         let px = |q: DisplayQuality, r: &mut Renderer| {
-            r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions { quality: q, ..Default::default() }).unwrap().pixel(150, 150)
+            r.render_page(
+                &d,
+                &cache,
+                0,
+                1.0,
+                false,
+                &RenderOptions {
+                    quality: q,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+            .pixel(150, 150)
         };
         assert_eq!(px(DisplayQuality::High, &mut r)[..3], [255, 0, 0]);
         assert_eq!(px(DisplayQuality::Typical, &mut r)[..3], [255, 0, 0]);
@@ -1473,19 +2040,46 @@ mod tests {
     fn missing_fonts_are_highlighted_on_screen_only() {
         let mut d = Document::new(&NewDocument::default());
         let lid = d.default_layer();
-        let (_, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(36.0, 36.0, 336.0, 100.0), lid, "Missing font", ParaFormat::default()).unwrap();
-        d.story_mut(sid).unwrap().format_chars(0..12, |f| f.over.font_family = Some("No Such Family".into()));
+        let (_, sid) = d
+            .add_text_frame(
+                SpreadRef::Doc(0),
+                Rect::new(36.0, 36.0, 336.0, 100.0),
+                lid,
+                "Missing font",
+                ParaFormat::default(),
+            )
+            .unwrap();
+        d.story_mut(sid).unwrap().format_chars(0..12, |f| {
+            f.over.font_family = Some("No Such Family".into())
+        });
         let cache = Cache::new();
         let cs = cache.get(&d, sid, None);
         assert!(cs.styles.iter().any(|s| s.missing_font));
         let l = &cs.frames[0].lines[0];
         // A point inside the line box but between glyph strokes: the space after "Missing".
         let g = l.glyphs.iter().find(|g| g.byte == 7).unwrap();
-        let (x, y) = ((g.x + g.adv / 2.0) as u32, (l.baseline - l.ascent * 0.5) as u32);
+        let (x, y) = (
+            (g.x + g.adv / 2.0) as u32,
+            (l.baseline - l.ascent * 0.5) as u32,
+        );
         let mut r = Renderer::new();
         r.threads = 0;
-        let plain = r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default()).unwrap();
-        let shown = r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions { highlight_missing_fonts: true, ..Default::default() }).unwrap();
+        let plain = r
+            .render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default())
+            .unwrap();
+        let shown = r
+            .render_page(
+                &d,
+                &cache,
+                0,
+                1.0,
+                false,
+                &RenderOptions {
+                    highlight_missing_fonts: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
         assert_eq!(plain.pixel(x, y)[1], 255, "no highlight in output");
         let p = shown.pixel(x, y);
         assert!(p[0] > 240 && p[1] < 200, "pink on screen: {p:?}");
@@ -1495,7 +2089,15 @@ mod tests {
     fn renders_tables() {
         let mut d = Document::new(&NewDocument::default());
         let lid = d.default_layer();
-        let (_, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(36.0, 36.0, 336.0, 400.0), lid, "", ParaFormat::default()).unwrap();
+        let (_, sid) = d
+            .add_text_frame(
+                SpreadRef::Doc(0),
+                Rect::new(36.0, 36.0, 336.0, 400.0),
+                lid,
+                "",
+                ParaFormat::default(),
+            )
+            .unwrap();
         let mut t = designcraft_doc::Table::new(5, 3, 3, 1, 0, 300.0);
         for c in 0..3 {
             let cell = t.cell_mut(0, c).unwrap();
@@ -1511,7 +2113,9 @@ mod tests {
         let body = tf.cell(2, 0).unwrap().rect;
         let mut r = Renderer::new();
         r.threads = 0;
-        let img = r.render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default()).unwrap();
+        let img = r
+            .render_page(&d, &cache, 0, 1.0, false, &RenderOptions::default())
+            .unwrap();
         // Header fill (cyan) near the right edge of the middle header cell.
         let c = img.pixel((head.x1 - 3.0) as u32, (head.y0 + 3.0) as u32);
         assert!(c[0] < 80 && c[2] > 150, "{c:?}");

@@ -2,23 +2,23 @@ use bevy_transform::components::Transform;
 pub use wgpu_types::PrimitiveTopology;
 
 use super::{
+    FourIterators, Indices, MeshAttributeData, MeshTrianglesError, MeshVertexAttribute,
+    MeshVertexAttributeId, MeshVertexBufferLayout, MeshVertexBufferLayoutRef,
+    MeshVertexBufferLayouts, MeshWindingInvertError, VertexAttributeValues, VertexBufferLayout,
     skinning::{SkinnedMeshBounds, SkinnedMeshBoundsError},
-    triangle_area_normal, triangle_normal, FourIterators, Indices, MeshAttributeData,
-    MeshTrianglesError, MeshVertexAttribute, MeshVertexAttributeId, MeshVertexBufferLayout,
-    MeshVertexBufferLayoutRef, MeshVertexBufferLayouts, MeshWindingInvertError,
-    VertexAttributeValues, VertexBufferLayout,
+    triangle_area_normal, triangle_normal,
 };
-#[cfg(feature = "morph")]
-use crate::morph::MorphAttributes;
 use crate::AttributeQuantization;
 #[cfg(feature = "serialize")]
 use crate::SerializedMeshAttributeData;
+#[cfg(feature = "morph")]
+use crate::morph::MorphAttributes;
 use alloc::borrow::Cow;
 use alloc::collections::BTreeMap;
 use bevy_asset::{Asset, RenderAssetUsages};
 use bevy_math::*;
-use bevy_platform::collections::{hash_map, HashMap};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_platform::collections::{HashMap, hash_map};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_shape::{Aabb2d, Aabb3d, Triangle3d};
 use bytemuck::cast_slice;
 use core::hash::{Hash, Hasher};
@@ -35,7 +35,9 @@ pub const VERTEX_ATTRIBUTE_BUFFER_ID: u64 = 10;
 /// Error from accessing mesh vertex attributes or indices
 #[derive(Error, Debug, Clone)]
 pub enum MeshAccessError {
-    #[error("The mesh vertex/index data has been extracted to the RenderWorld (via `Mesh::asset_usage`)")]
+    #[error(
+        "The mesh vertex/index data has been extracted to the RenderWorld (via `Mesh::asset_usage`)"
+    )]
     ExtractedToRenderWorld,
     #[error("The requested mesh data wasn't found in this mesh")]
     NotFound,
@@ -995,8 +997,10 @@ impl Mesh {
                         .map(|data| data.attribute.name.to_string())
                         .unwrap_or_else(|| format!("{attribute_id:?}"));
 
-                    warn!("{name} has a different vertex count ({attribute_len}) than other attributes ({previous_vertex_count}) in this mesh, \
-                        all attributes will be truncated to match the smallest.");
+                    warn!(
+                        "{name} has a different vertex count ({attribute_len}) than other attributes ({previous_vertex_count}) in this mesh, \
+                        all attributes will be truncated to match the smallest."
+                    );
                     vertex_count = Some(core::cmp::min(previous_vertex_count, attribute_len));
                 }
             } else {
@@ -2263,7 +2267,7 @@ impl Mesh {
                             other_attribute: other
                                 .try_attribute_data(attribute.id)?
                                 .map(|data| data.attribute),
-                        })
+                        });
                     }
                 }
             }
@@ -3185,7 +3189,9 @@ pub enum MeshAttributeCompressionError {
         attr: MeshVertexAttribute,
         expected: VertexFormat,
     },
-    #[error("Vertex attribute {attr:?} must have format `Float32`, `Float32x2` or `Float32x4` before quantizing")]
+    #[error(
+        "Vertex attribute {attr:?} must have format `Float32`, `Float32x2` or `Float32x4` before quantizing"
+    )]
     UnsupportedAttributeForQuantizing { attr: MeshVertexAttribute },
 }
 
@@ -3903,20 +3909,22 @@ mod tests {
         else {
             panic!("Color attribute is not quantized to Float16x4")
         };
-        assert!(color_f16
-            .iter()
-            .flatten()
-            .zip(
-                [
-                    [0.049987793, 1.0, 0.15002441, 1.0].map(half::f16::from_f32),
-                    [0.75, 0.070007324, 1.0, 1.0].map(half::f16::from_f32),
-                    [0.040008545, 0.10998535, 1.0, 1.0].map(half::f16::from_f32),
-                    [1.0, 0.10998535, 0.13000488, 1.0].map(half::f16::from_f32)
-                ]
+        assert!(
+            color_f16
                 .iter()
                 .flatten()
-            )
-            .all(|(a, b)| approx::relative_eq!(a.to_f32(), b.to_f32())));
+                .zip(
+                    [
+                        [0.049987793, 1.0, 0.15002441, 1.0].map(half::f16::from_f32),
+                        [0.75, 0.070007324, 1.0, 1.0].map(half::f16::from_f32),
+                        [0.040008545, 0.10998535, 1.0, 1.0].map(half::f16::from_f32),
+                        [1.0, 0.10998535, 0.13000488, 1.0].map(half::f16::from_f32)
+                    ]
+                    .iter()
+                    .flatten()
+                )
+                .all(|(a, b)| approx::relative_eq!(a.to_f32(), b.to_f32()))
+        );
     }
 
     #[test]
@@ -4047,10 +4055,12 @@ mod tests {
         let VertexAttributeValues::Float16(f16_values) = mesh.attribute(f1).unwrap() else {
             panic!("Attribute f1 is not quantized to Float16")
         };
-        assert!(f16_values
-            .iter()
-            .zip([10.0, 0.0, 2.0, 0.0, 0.1, 0.1, 0.1].map(half::f16::from_f32))
-            .all(|(a, b)| approx::relative_eq!(a.to_f32(), b.to_f32())));
+        assert!(
+            f16_values
+                .iter()
+                .zip([10.0, 0.0, 2.0, 0.0, 0.1, 0.1, 0.1].map(half::f16::from_f32))
+                .all(|(a, b)| approx::relative_eq!(a.to_f32(), b.to_f32()))
+        );
     }
 
     #[test]

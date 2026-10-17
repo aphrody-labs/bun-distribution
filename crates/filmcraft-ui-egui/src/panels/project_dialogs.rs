@@ -14,7 +14,9 @@ fn push(app: &mut FilmcraftApp, id: &str, r: &egui::Response, label: &str) {
 }
 
 pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.project_panel.dialog.clone() else { return };
+    let Some(mut d) = app.ui.project_panel.dialog.clone() else {
+        return;
+    };
     crate::widgets::revert_drag_on_escape(ctx, egui::Id::new("project-dialog-before-drag"), &mut d);
     let mut close = false;
     let mut run: Option<(String, Value)> = None;
@@ -25,7 +27,11 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
         ProjectDialog::FreeformOptions { .. } => tl!("Freeform View Options"),
         ProjectDialog::SaveArrangement { .. } => tl!("Save Arrangement"),
     };
-    let mut win = egui::Window::new(title).id(egui::Id::new("project-dialog")).collapsible(false).resizable(false).centered(ctx);
+    let mut win = egui::Window::new(title)
+        .id(egui::Id::new("project-dialog"))
+        .collapsible(false)
+        .resizable(false)
+        .centered(ctx);
     // a fixed size keeps the two-list dialog from shifting while its lists settle
     if matches!(d, ProjectDialog::MetadataDisplay { .. }) {
         win = win.fixed_size(egui::vec2(480.0, 470.0));
@@ -93,7 +99,16 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
         }
         // Manage keeps the dialog open: refresh its name field
         if let ProjectDialog::ManagePresets { selected, name } = &mut d {
-            *name = app.session.prefs.project_panel.presets.get(*selected).cloned().flatten().map(|p| p.name).unwrap_or_default();
+            *name = app
+                .session
+                .prefs
+                .project_panel
+                .presets
+                .get(*selected)
+                .cloned()
+                .flatten()
+                .map(|p| p.name)
+                .unwrap_or_default();
         }
     }
     if close {
@@ -120,11 +135,21 @@ fn ok_cancel(app: &mut FilmcraftApp, ui: &mut egui::Ui, close: &mut bool) -> boo
     ok
 }
 
-fn metadata_display(app: &mut FilmcraftApp, ui: &mut egui::Ui, columns: &mut Vec<String>, filter: &mut String, run: &mut Option<(String, Value)>) {
+fn metadata_display(
+    app: &mut FilmcraftApp,
+    ui: &mut egui::Ui,
+    columns: &mut Vec<String>,
+    filter: &mut String,
+    run: &mut Option<(String, Value)>,
+) {
     let all = filmcraft_engine::project_panel::all_columns(&app.session.project);
     ui.horizontal(|ui| {
         ui.label(tl!("Show:"));
-        let r = ui.add(egui::TextEdit::singleline(filter).hint_text(tl!("Search fields")).desired_width(220.0));
+        let r = ui.add(
+            egui::TextEdit::singleline(filter)
+                .hint_text(tl!("Search fields"))
+                .desired_width(220.0),
+        );
         push(app, "projectDialog.filter", &r, "Search fields");
     });
     ui.add_space(4.0);
@@ -133,26 +158,41 @@ fn metadata_display(app: &mut FilmcraftApp, ui: &mut egui::Ui, columns: &mut Vec
         // every field, checked when shown
         ui.vertical(|ui| {
             ui.label(egui::RichText::new(tl!("Project Metadata")).strong());
-            egui::ScrollArea::vertical().id_salt("md-all").max_height(340.0).min_scrolled_height(340.0).show(ui, |ui| {
-                ui.set_min_width(220.0);
-                for c in all.iter().filter(|c| f.is_empty() || c.to_ascii_lowercase().contains(&f)) {
-                    let mut on = columns.contains(c);
-                    let name_col = c == "Name";
-                    let r = ui.add_enabled(!name_col, egui::Checkbox::new(&mut on, crate::i18n::t(c)));
-                    push(app, &format!("projectDialog.field.{c}"), &r, c);
-                    if r.changed() {
-                        if on {
-                            columns.push(c.clone());
-                        } else {
-                            columns.retain(|x| x != c);
+            egui::ScrollArea::vertical()
+                .id_salt("md-all")
+                .max_height(340.0)
+                .min_scrolled_height(340.0)
+                .show(ui, |ui| {
+                    ui.set_min_width(220.0);
+                    for c in all
+                        .iter()
+                        .filter(|c| f.is_empty() || c.to_ascii_lowercase().contains(&f))
+                    {
+                        let mut on = columns.contains(c);
+                        let name_col = c == "Name";
+                        let r = ui.add_enabled(
+                            !name_col,
+                            egui::Checkbox::new(&mut on, crate::i18n::t(c)),
+                        );
+                        push(app, &format!("projectDialog.field.{c}"), &r, c);
+                        if r.changed() {
+                            if on {
+                                columns.push(c.clone());
+                            } else {
+                                columns.retain(|x| x != c);
+                            }
                         }
                     }
-                }
-            });
+                });
             ui.horizontal(|ui| {
                 let r = ui.button(tl!("Add Property…"));
                 push(app, "projectDialog.addProperty", &r, "Add Property…");
-                if r.clicked() && !filter.trim().is_empty() && !columns.iter().any(|c| c.eq_ignore_ascii_case(filter.trim())) {
+                if r.clicked()
+                    && !filter.trim().is_empty()
+                    && !columns
+                        .iter()
+                        .any(|c| c.eq_ignore_ascii_case(filter.trim()))
+                {
                     // a custom metadata field (typed in the search box)
                     columns.push(filter.trim().to_string());
                 }
@@ -162,29 +202,36 @@ fn metadata_display(app: &mut FilmcraftApp, ui: &mut egui::Ui, columns: &mut Vec
         // the shown columns, in order
         ui.vertical(|ui| {
             ui.label(egui::RichText::new(tl!("Column order")).strong());
-            egui::ScrollArea::vertical().id_salt("md-order").max_height(340.0).min_scrolled_height(340.0).show(ui, |ui| {
-                ui.set_min_width(200.0);
-                let mut mv: Option<(usize, isize)> = None;
-                for (i, c) in columns.iter().enumerate() {
-                    ui.horizontal(|ui| {
-                        let up = ui.add_enabled(i > 1, egui::Button::new("▲").small());
-                        push(app, &format!("projectDialog.up.{c}"), &up, "Move up");
-                        let down = ui.add_enabled(i > 0 && i + 1 < columns.len(), egui::Button::new("▼").small());
-                        push(app, &format!("projectDialog.down.{c}"), &down, "Move down");
-                        ui.label(crate::i18n::t(c));
-                        if up.clicked() {
-                            mv = Some((i, -1));
-                        }
-                        if down.clicked() {
-                            mv = Some((i, 1));
-                        }
-                    });
-                }
-                if let Some((i, d)) = mv {
-                    let j = (i as isize + d) as usize;
-                    columns.swap(i, j);
-                }
-            });
+            egui::ScrollArea::vertical()
+                .id_salt("md-order")
+                .max_height(340.0)
+                .min_scrolled_height(340.0)
+                .show(ui, |ui| {
+                    ui.set_min_width(200.0);
+                    let mut mv: Option<(usize, isize)> = None;
+                    for (i, c) in columns.iter().enumerate() {
+                        ui.horizontal(|ui| {
+                            let up = ui.add_enabled(i > 1, egui::Button::new("▲").small());
+                            push(app, &format!("projectDialog.up.{c}"), &up, "Move up");
+                            let down = ui.add_enabled(
+                                i > 0 && i + 1 < columns.len(),
+                                egui::Button::new("▼").small(),
+                            );
+                            push(app, &format!("projectDialog.down.{c}"), &down, "Move down");
+                            ui.label(crate::i18n::t(c));
+                            if up.clicked() {
+                                mv = Some((i, -1));
+                            }
+                            if down.clicked() {
+                                mv = Some((i, 1));
+                            }
+                        });
+                    }
+                    if let Some((i, d)) = mv {
+                        let j = (i as isize + d) as usize;
+                        columns.swap(i, j);
+                    }
+                });
         });
     });
     let mut close = false;
@@ -196,33 +243,48 @@ fn metadata_display(app: &mut FilmcraftApp, ui: &mut egui::Ui, columns: &mut Vec
     }
 }
 
-fn manage_presets(app: &mut FilmcraftApp, ui: &mut egui::Ui, selected: &mut usize, name: &mut String, run: &mut Option<(String, Value)>, close: &mut bool) {
+fn manage_presets(
+    app: &mut FilmcraftApp,
+    ui: &mut egui::Ui,
+    selected: &mut usize,
+    name: &mut String,
+    run: &mut Option<(String, Value)>,
+    close: &mut bool,
+) {
     let presets = app.session.prefs.project_panel.presets.clone();
-    egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
-        ui.set_min_width(300.0);
-        for i in 0..filmcraft_engine::project_panel::PRESET_SLOTS {
-            let p = presets.get(i).cloned().flatten();
-            let label = match &p {
-                Some(p) => format!("{}. {}", i + 1, p.name),
-                None => tlf!("{n}. (empty)", n = i + 1),
-            };
-            let r = ui.selectable_label(*selected == i, label.clone());
-            push(app, &format!("projectDialog.preset.{}", i + 1), &r, &label);
-            if r.clicked() {
-                *selected = i;
-                *name = p.map(|p| p.name).unwrap_or_default();
+    egui::ScrollArea::vertical()
+        .max_height(220.0)
+        .show(ui, |ui| {
+            ui.set_min_width(300.0);
+            for i in 0..filmcraft_engine::project_panel::PRESET_SLOTS {
+                let p = presets.get(i).cloned().flatten();
+                let label = match &p {
+                    Some(p) => format!("{}. {}", i + 1, p.name),
+                    None => tlf!("{n}. (empty)", n = i + 1),
+                };
+                let r = ui.selectable_label(*selected == i, label.clone());
+                push(app, &format!("projectDialog.preset.{}", i + 1), &r, &label);
+                if r.clicked() {
+                    *selected = i;
+                    *name = p.map(|p| p.name).unwrap_or_default();
+                }
             }
-        }
-    });
+        });
     let filled = presets.get(*selected).is_some_and(Option::is_some);
     ui.horizontal(|ui| {
         ui.label(tl!("Name:"));
-        let r = ui.add_enabled(filled, egui::TextEdit::singleline(name).desired_width(200.0));
+        let r = ui.add_enabled(
+            filled,
+            egui::TextEdit::singleline(name).desired_width(200.0),
+        );
         push(app, "projectDialog.name", &r, "Name");
         let b = ui.add_enabled(filled, egui::Button::new(tl!("Rename")));
         push(app, "projectDialog.rename", &b, "Rename");
         if b.clicked() {
-            *run = Some(("project.viewPreset.rename".into(), json!({"slot": *selected + 1, "name": name})));
+            *run = Some((
+                "project.viewPreset.rename".into(),
+                json!({"slot": *selected + 1, "name": name}),
+            ));
         }
     });
     ui.horizontal(|ui| {

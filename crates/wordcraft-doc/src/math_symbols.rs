@@ -346,8 +346,11 @@ pub fn symbol(name: &str) -> Option<char> {
     if let Some((_, c)) = SYMBOLS.iter().find(|(n, _)| *n == name) {
         return Some(*c);
     }
-    for (prefix, scr) in [("double", crate::math::MScr::DoubleStruck), ("script", crate::math::MScr::Script), ("fraktur", crate::math::MScr::Fraktur)]
-    {
+    for (prefix, scr) in [
+        ("double", crate::math::MScr::DoubleStruck),
+        ("script", crate::math::MScr::Script),
+        ("fraktur", crate::math::MScr::Fraktur),
+    ] {
         if let Some(rest) = name.strip_prefix(prefix) {
             let mut cs = rest.chars();
             if let (Some(c), None) = (cs.next(), cs.next())

@@ -5,12 +5,12 @@ use bevy_ecs::component::{Components, StorageType};
 use bevy_ecs::{component::ComponentInfo, relationship::RelationshipAccessor};
 use bevy_platform::collections::HashMap;
 use bevy_reflect::{
-    enums::VariantInfo, GetTypeRegistration, NamedField, OpaqueInfo, TypeInfo, TypeRegistration,
-    TypeRegistry,
+    GetTypeRegistration, NamedField, OpaqueInfo, TypeInfo, TypeRegistration, TypeRegistry,
+    enums::VariantInfo,
 };
 use core::any::TypeId;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 
 use crate::schemas::SchemaTypesMetadata;
 

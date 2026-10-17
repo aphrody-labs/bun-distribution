@@ -77,7 +77,10 @@ impl SuperTacticsEffect {
                 conditions.push(HashId::from_i64(raw));
             }
         }
-        Some(Self { effect_id, conditions })
+        Some(Self {
+            effect_id,
+            conditions,
+        })
     }
 }
 
@@ -149,7 +152,10 @@ impl SuperTacticsInfoRefEffect {
         if effect_count == 0 {
             return None;
         }
-        Some(Self { effect_offset: node.int(0), effect_count })
+        Some(Self {
+            effect_offset: node.int(0),
+            effect_count,
+        })
     }
 }
 

@@ -14,12 +14,25 @@ pub const AUTO_SAVE_DIR: &str = "Auto-Save";
 
 /// `Auto-Save` folder for a project file.
 pub fn auto_save_dir(project_path: &Path) -> PathBuf {
-    project_path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new(".")).join(AUTO_SAVE_DIR)
+    project_path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."))
+        .join(AUTO_SAVE_DIR)
 }
 
 /// A file-name-safe version of a project name (path separators and control characters replaced).
 pub fn file_stem(name: &str) -> String {
-    let s: String = name.chars().map(|c| if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') || c.is_control() { '_' } else { c }).collect();
+    let s: String = name
+        .chars()
+        .map(|c| {
+            if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') || c.is_control() {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
     let s = s.trim().trim_matches('.').to_string();
     if s.is_empty() { "Untitled".into() } else { s }
 }
@@ -40,7 +53,14 @@ pub fn civil(unix: i64, offset_secs: i32) -> (i64, u32, u32, u32, u32, u32) {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     let y = if m <= 2 { y + 1 } else { y };
-    (y, m, d, (secs / 3600) as u32, (secs % 3600 / 60) as u32, (secs % 60) as u32)
+    (
+        y,
+        m,
+        d,
+        (secs / 3600) as u32,
+        (secs % 3600 / 60) as u32,
+        (secs % 60) as u32,
+    )
 }
 
 /// `YYYY-MM-DD_HH-MM-SS` (the auto-save file-name stamp).
@@ -57,7 +77,11 @@ pub fn display_time(unix: i64, offset_secs: i32) -> String {
 
 /// `<stem>-YYYY-MM-DD_HH-MM-SS.fcproj`.
 pub fn auto_save_name(name: &str, unix: i64, offset_secs: i32) -> String {
-    format!("{}-{}.fcproj", file_stem(name), timestamp(unix, offset_secs))
+    format!(
+        "{}-{}.fcproj",
+        file_stem(name),
+        timestamp(unix, offset_secs)
+    )
 }
 
 fn is_stamp(s: &str) -> bool {
@@ -73,7 +97,9 @@ fn is_stamp(s: &str) -> bool {
 /// Auto-saves of project `name` in `dir`, oldest first.
 pub fn list_auto_saves(dir: &Path, name: &str) -> Vec<PathBuf> {
     let prefix = format!("{}-", file_stem(name));
-    let Ok(rd) = fs::read_dir(dir) else { return Vec::new() };
+    let Ok(rd) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut v: Vec<(String, PathBuf)> = rd
         .filter_map(|e| e.ok())
         .filter_map(|e| {
@@ -99,7 +125,14 @@ pub fn rotate(dir: &Path, name: &str, max: usize) -> io::Result<Vec<PathBuf>> {
 }
 
 /// Write one auto-save (atomically) into `dir` and rotate. Returns the new file.
-pub fn write_auto_save(dir: &Path, name: &str, unix: i64, offset_secs: i32, data: &[u8], max: usize) -> io::Result<PathBuf> {
+pub fn write_auto_save(
+    dir: &Path,
+    name: &str,
+    unix: i64,
+    offset_secs: i32,
+    data: &[u8],
+    max: usize,
+) -> io::Result<PathBuf> {
     fs::create_dir_all(dir)?;
     let path = dir.join(auto_save_name(name, unix, offset_secs));
     crate::atomic_write(&path, data)?;
@@ -124,10 +157,16 @@ mod tests {
 
     #[test]
     fn names_and_stems() {
-        assert_eq!(auto_save_name("My Film", 0, 0), "My Film-1970-01-01_00-00-00.fcproj");
+        assert_eq!(
+            auto_save_name("My Film", 0, 0),
+            "My Film-1970-01-01_00-00-00.fcproj"
+        );
         assert_eq!(file_stem("a/b:c"), "a_b_c");
         assert_eq!(file_stem("  "), "Untitled");
-        assert_eq!(auto_save_dir(Path::new("/x/y/p.fcproj")), Path::new("/x/y/Auto-Save"));
+        assert_eq!(
+            auto_save_dir(Path::new("/x/y/p.fcproj")),
+            Path::new("/x/y/Auto-Save")
+        );
     }
 
     #[test]
@@ -142,8 +181,16 @@ mod tests {
         fs::write(d.join("notes.txt"), b"keep").unwrap();
         let left = list_auto_saves(&d, "Cut");
         assert_eq!(left.len(), 5);
-        assert!(left[0].to_string_lossy().ends_with(&format!("Cut-{}.fcproj", timestamp(1_790_000_120, 0))));
-        assert!(left[4].to_string_lossy().ends_with(&format!("Cut-{}.fcproj", timestamp(1_790_000_360, 0))));
+        assert!(
+            left[0]
+                .to_string_lossy()
+                .ends_with(&format!("Cut-{}.fcproj", timestamp(1_790_000_120, 0)))
+        );
+        assert!(
+            left[4]
+                .to_string_lossy()
+                .ends_with(&format!("Cut-{}.fcproj", timestamp(1_790_000_360, 0)))
+        );
         assert_eq!(list_auto_saves(&d, "Cut-Two").len(), 1);
         assert!(d.join("notes.txt").exists());
         rotate(&d, "Cut", 2).unwrap();

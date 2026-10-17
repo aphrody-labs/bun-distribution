@@ -5,12 +5,12 @@
 //! See [`AssetTransformer`] for details.
 
 use crate::{
-    meta::Settings, Asset, AssetId, ErasedLoadedAsset, Handle, LabeledAsset, UntypedAssetId,
-    UntypedHandle,
+    Asset, AssetId, ErasedLoadedAsset, Handle, LabeledAsset, UntypedAssetId, UntypedHandle,
+    meta::Settings,
 };
 use alloc::{boxed::Box, vec::Vec};
 use atomicow::CowArc;
-use bevy_platform::collections::{hash_map::Entry, HashMap};
+use bevy_platform::collections::{HashMap, hash_map::Entry};
 use bevy_reflect::TypePath;
 use bevy_tasks::ConditionalSendFuture;
 use core::{

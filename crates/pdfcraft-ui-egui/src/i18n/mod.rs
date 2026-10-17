@@ -148,18 +148,49 @@ fn plural_sl(n: u64) -> usize {
 
 /// The registry. English first: it is the fallback and the source language.
 pub static LANGUAGES: [LangInfo; 22] = [
-    LangInfo { code: "en", name: "English", source: "", plural: plural_one_other, rtl: false, catalog: OnceLock::new() },
-    LangInfo { code: "ja", name: "日本語", source: include_str!("ja.tsv"), plural: plural_none, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "en",
+        name: "English",
+        source: "",
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "ja",
+        name: "日本語",
+        source: include_str!("ja.tsv"),
+        plural: plural_none,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Simplified Chinese; `zh`, `zh-CN`, `zh-SG` and `zh-Hans-*` locales resolve here (see `candidates`).
     LangInfo {
-        code: "zh-hans", name: "简体中文", source: include_str!("zh-hans.tsv"), plural: plural_none, rtl: false, catalog: OnceLock::new()
+        code: "zh-hans",
+        name: "简体中文",
+        source: include_str!("zh-hans.tsv"),
+        plural: plural_none,
+        rtl: false,
+        catalog: OnceLock::new(),
     },
     // Traditional Chinese in the vocabulary used in Taiwan; `zh-TW`, `zh-HK`, `zh-MO` and `zh-Hant-*`
     // locales all resolve here (see `candidates`).
     LangInfo {
-        code: "zh-hant", name: "繁體中文", source: include_str!("zh-hant.tsv"), plural: plural_none, rtl: false, catalog: OnceLock::new()
+        code: "zh-hant",
+        name: "繁體中文",
+        source: include_str!("zh-hant.tsv"),
+        plural: plural_none,
+        rtl: false,
+        catalog: OnceLock::new(),
     },
-    LangInfo { code: "cs", name: "Čeština", source: include_str!("cs.tsv"), plural: plural_cs, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "cs",
+        name: "Čeština",
+        source: include_str!("cs.tsv"),
+        plural: plural_cs,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Brazilian Portuguese; `pt`, `pt-BR` and `pt-PT` locales all resolve here (see `candidates`).
     LangInfo {
         code: "pt-br",
@@ -170,56 +201,169 @@ pub static LANGUAGES: [LangInfo; 22] = [
         catalog: OnceLock::new(),
     },
     // German (informal "du"); every `de-*` locale (`de-DE`, `de-AT`, `de-CH` ...) resolves here.
-    LangInfo { code: "de", name: "Deutsch", source: include_str!("de.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "de",
+        name: "Deutsch",
+        source: include_str!("de.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Spanish (European vocabulary); every `es-*` locale (`es-ES`, `es-MX`, `es-419` ...) resolves here.
-    LangInfo { code: "es", name: "Español", source: include_str!("es.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "es",
+        name: "Español",
+        source: include_str!("es.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // French; every `fr-*` locale (`fr-FR`, `fr-CA`, `fr-BE` ...) resolves here.
-    LangInfo { code: "fr", name: "Français", source: include_str!("fr.tsv"), plural: plural_fr, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "fr",
+        name: "Français",
+        source: include_str!("fr.tsv"),
+        plural: plural_fr,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Russian; every `ru-*` locale (`ru-RU`, `ru-BY`, `ru-KZ` ...) resolves here.
-    LangInfo { code: "ru", name: "Русский", source: include_str!("ru.tsv"), plural: plural_russian, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "ru",
+        name: "Русский",
+        source: include_str!("ru.tsv"),
+        plural: plural_russian,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Kazakh; every `kk-*` locale (`kk-KZ`, `kk-KZ.UTF-8`) resolves here.
-    LangInfo { code: "kk", name: "Қазақша", source: include_str!("kk.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "kk",
+        name: "Қазақша",
+        source: include_str!("kk.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Bulgarian; every `bg-*` locale (`bg-BG`) resolves here.
     LangInfo {
-        code: "bg", name: "Български", source: include_str!("bg.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new()
+        code: "bg",
+        name: "Български",
+        source: include_str!("bg.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
     },
     // Telugu; every `te-*` locale (`te-IN`) resolves here.
     LangInfo {
-        code: "te", name: "తెలుగు", source: include_str!("te.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new()
+        code: "te",
+        name: "తెలుగు",
+        source: include_str!("te.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
     },
     // Hungarian; every `hu-*` locale (`hu-HU`) resolves here.
-    LangInfo { code: "hu", name: "Magyar", source: include_str!("hu.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "hu",
+        name: "Magyar",
+        source: include_str!("hu.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Ukrainian; every `uk-*` locale (`uk-UA`, `uk_UA.UTF-8`) resolves here.
     LangInfo {
-        code: "uk", name: "Українська", source: include_str!("uk.tsv"), plural: plural_ukrainian, rtl: false, catalog: OnceLock::new()
+        code: "uk",
+        name: "Українська",
+        source: include_str!("uk.tsv"),
+        plural: plural_ukrainian,
+        rtl: false,
+        catalog: OnceLock::new(),
     },
     // Italian; every `it-*` locale (`it-IT`) resolves here.
-    LangInfo { code: "it", name: "Italiano", source: include_str!("it.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "it",
+        name: "Italiano",
+        source: include_str!("it.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Arabic (Modern Standard, Western digits); every `ar-*` locale (`ar-MA`, `ar-EG`, `ar-SA` ...)
     // resolves here. Right to left: see `LangInfo::rtl`.
-    LangInfo { code: "ar", name: "العربية", source: include_str!("ar.tsv"), plural: plural_arabic, rtl: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "ar",
+        name: "العربية",
+        source: include_str!("ar.tsv"),
+        plural: plural_arabic,
+        rtl: true,
+        catalog: OnceLock::new(),
+    },
     // Polish; every `pl-*` locale (`pl-pl`, `pl_pl.UTF-8`) resolves here.
-    LangInfo { code: "pl", name: "Polski", source: include_str!("pl.tsv"), plural: plural_polish, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "pl",
+        name: "Polski",
+        source: include_str!("pl.tsv"),
+        plural: plural_polish,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Slovene; every `sl-*` locale (`sl-SI`) resolves here. Four plural forms (one, two, few, other).
-    LangInfo { code: "sl", name: "Slovenščina", source: include_str!("sl.tsv"), plural: plural_sl, rtl: false, catalog: OnceLock::new() },
-    LangInfo { code: "el", name: "Ελληνικά", source: include_str!("el.tsv"), plural: plural_one_other, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "sl",
+        name: "Slovenščina",
+        source: include_str!("sl.tsv"),
+        plural: plural_sl,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "el",
+        name: "Ελληνικά",
+        source: include_str!("el.tsv"),
+        plural: plural_one_other,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Turkish; every `tr-*` locale (`tr-TR`, `tr_TR.UTF-8`) resolves here.
-    LangInfo { code: "tr", name: "Türkçe", source: include_str!("tr.tsv"), plural: plural_none, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "tr",
+        name: "Türkçe",
+        source: include_str!("tr.tsv"),
+        plural: plural_none,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
     // Lithuanian; every `lt-*` locale (`lt-LT`, `lt_LT.UTF-8`) resolves here. Three plural forms (one, few, other).
-    LangInfo { code: "lt", name: "Lietuvių", source: include_str!("lt.tsv"), plural: plural_lithuanian, rtl: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "lt",
+        name: "Lietuvių",
+        source: include_str!("lt.tsv"),
+        plural: plural_lithuanian,
+        rtl: false,
+        catalog: OnceLock::new(),
+    },
 ];
 
 impl LangInfo {
     /// How many plural forms the language's `@plural` entries list.
     fn plural_forms(&self) -> usize {
-        (0..=1000).map(self.plural).max().unwrap_or(0).saturating_add(1)
+        (0..=1000)
+            .map(self.plural)
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1)
     }
 
     fn catalog(&self) -> &Catalog {
         self.catalog.get_or_init(|| {
             let (mut catalog, errors) = Catalog::parse(self.source, self.plural_forms());
             for error in errors {
-                log::warn!("{} interface catalog: {error}; that entry shows in English", self.code);
+                log::warn!(
+                    "{} interface catalog: {error}; that entry shows in English",
+                    self.code
+                );
             }
             if self.rtl {
                 catalog.map_translations(crate::bidi::display_rtl);
@@ -256,7 +400,10 @@ impl Lang {
 
     /// A language by its exact code.
     pub fn from_code(code: &str) -> Option<Lang> {
-        LANGUAGES.iter().find(|l| l.code.eq_ignore_ascii_case(code)).map(Lang)
+        LANGUAGES
+            .iter()
+            .find(|l| l.code.eq_ignore_ascii_case(code))
+            .map(Lang)
     }
 
     /// Resolve the `language` preference: a language code, or [`AUTO`] (and anything unknown,
@@ -297,16 +444,27 @@ pub fn normalize_pref(pref: &str) -> Option<&'static str> {
 /// Candidate language codes for a locale tag, most specific first: `zh_TW.UTF-8` →
 /// `zh-tw`, `zh-hant`, `zh`.
 fn candidates(tag: &str) -> Vec<String> {
-    let base = tag.split(['.', '@']).next().unwrap_or("").replace('_', "-").to_ascii_lowercase();
+    let base = tag
+        .split(['.', '@'])
+        .next()
+        .unwrap_or("")
+        .replace('_', "-")
+        .to_ascii_lowercase();
     let parts: Vec<&str> = base.split('-').filter(|p| !p.is_empty()).collect();
-    let Some(&primary) = parts.first() else { return Vec::new() };
+    let Some(&primary) = parts.first() else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for n in (1..=parts.len()).rev() {
         out.push(parts.get(..n).unwrap_or_default().join("-"));
     }
     if primary == "zh" && !parts.iter().any(|p| matches!(*p, "hans" | "hant")) {
         // Chinese by region when no script is given.
-        let script = if parts.iter().any(|p| matches!(*p, "tw" | "hk" | "mo")) { "zh-hant" } else { "zh-hans" };
+        let script = if parts.iter().any(|p| matches!(*p, "tw" | "hk" | "mo")) {
+            "zh-hant"
+        } else {
+            "zh-hans"
+        };
         out.insert(out.len().saturating_sub(1), script.to_string());
     }
     if primary == "pt" && !out.iter().any(|c| c == "pt-br") {
@@ -348,7 +506,9 @@ fn detect_system_lang() -> Lang {
     // Apps started from the Finder don't inherit LANG: use the macOS preferred-languages list.
     // The absolute path keeps a `defaults` earlier on PATH from running; any failure means English.
     #[cfg(target_os = "macos")]
-    if let Ok(out) = std::process::Command::new("/usr/bin/defaults").args(["read", "-g", "AppleLanguages"]).output()
+    if let Ok(out) = std::process::Command::new("/usr/bin/defaults")
+        .args(["read", "-g", "AppleLanguages"])
+        .output()
         && out.status.success()
         && let Some(l) = first_supported(&String::from_utf8_lossy(&out.stdout))
     {
@@ -366,7 +526,12 @@ fn detect_system_lang() -> Lang {
 #[cfg(not(target_arch = "wasm32"))]
 fn language_override(tag: &str) -> Option<Lang> {
     let tag = tag.trim();
-    if cfg!(target_os = "windows") && matches!(candidates(tag).first().map(String::as_str), Some("c" | "posix")) {
+    if cfg!(target_os = "windows")
+        && matches!(
+            candidates(tag).first().map(String::as_str),
+            Some("c" | "posix")
+        )
+    {
         return None;
     }
     lang_from_tag(tag)
@@ -384,7 +549,10 @@ fn windows_ui_language() -> Option<String> {
 /// The first supported language in a macOS `defaults read` list or Windows UI-culture output.
 #[cfg_attr(not(any(target_os = "macos", target_os = "windows")), allow(dead_code))]
 fn first_supported(list: &str) -> Option<Lang> {
-    list.split(['(', ')', ',', '"', '\n']).map(str::trim).filter(|s| !s.is_empty()).find_map(lang_from_tag)
+    list.split(['(', ')', ',', '"', '\n'])
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .find_map(lang_from_tag)
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -408,7 +576,11 @@ pub fn set_current(lang: Lang) {
 /// `label` as it reads inside a sentence ("add a text box"): lowercased, except in languages
 /// that capitalise nouns (German), where lowercasing would misspell it.
 pub fn in_sentence(label: &str) -> std::borrow::Cow<'_, str> {
-    if current().code() == "de" { std::borrow::Cow::Borrowed(label) } else { std::borrow::Cow::Owned(label.to_lowercase()) }
+    if current().code() == "de" {
+        std::borrow::Cow::Borrowed(label)
+    } else {
+        std::borrow::Cow::Owned(label.to_lowercase())
+    }
 }
 
 pub fn current() -> Lang {
@@ -449,7 +621,9 @@ pub fn words(wording: &str) -> String {
 
 /// Like [`tr`], for an English string that needs a disambiguating `context`.
 pub fn tr_ctx<'a>(lang: Lang, context: &str, s: &'a str) -> &'a str {
-    lang.catalog().contextual(context, s).unwrap_or_else(|| tr(lang, s))
+    lang.catalog()
+        .contextual(context, s)
+        .unwrap_or_else(|| tr(lang, s))
 }
 
 /// A string keyed by its command id, falling back to the translation of the English `label`.
@@ -498,11 +672,18 @@ pub fn action_label(text: &str) -> String {
         }
     }
     if let Some(key) = text.strip_prefix("Change ")
-        && ["Title", "Author", "Subject", "Keywords", "Creator", "Producer"].contains(&key)
+        && [
+            "Title", "Author", "Subject", "Keywords", "Creator", "Producer",
+        ]
+        .contains(&key)
     {
         return fmt(t("Change {key}"), &[("key", t(key))]);
     }
-    if let Some(n) = text.strip_prefix("Delete ").and_then(|rest| rest.strip_suffix(" fields")).and_then(|n| n.parse::<u64>().ok()) {
+    if let Some(n) = text
+        .strip_prefix("Delete ")
+        .and_then(|rest| rest.strip_suffix(" fields"))
+        .and_then(|n| n.parse::<u64>().ok())
+    {
         return trn(current(), n, "Delete {n} field", "Delete {n} fields");
     }
     t(text).to_owned()
@@ -515,7 +696,11 @@ pub fn action_label(text: &str) -> String {
 pub fn edit_label(label: &pdfcraft_engine::Label) -> String {
     // A batch's wording is only the hole: it carries its name as text, which from below L7 is one
     // of `BATCH_LABELS` and so is looked up too.
-    if let Some(name) = label.value.as_deref().filter(|_| label.wording == "{batch}") {
+    if let Some(name) = label
+        .value
+        .as_deref()
+        .filter(|_| label.wording == "{batch}")
+    {
         return t(name).to_owned();
     }
     label.said(t(label.wording))
@@ -526,7 +711,10 @@ pub fn edit_label(label: &pdfcraft_engine::Label) -> String {
 /// as whole phrases; otherwise the translated verb goes before the action.
 pub fn command_label(text: &str) -> String {
     for (prefix, template) in [("Undo", "Undo {action}"), ("Redo", "Redo {action}")] {
-        if let Some(action) = text.strip_prefix(prefix).and_then(|tail| tail.strip_prefix(' ')) {
+        if let Some(action) = text
+            .strip_prefix(prefix)
+            .and_then(|tail| tail.strip_prefix(' '))
+        {
             let action = action_label(action);
             if has(current(), template) {
                 return fmt(t(template), &[("action", &action)]);
@@ -549,7 +737,10 @@ pub fn menu_label(id: &str, label: &str) -> String {
 /// A plural-aware message: `one`/`other` are the English forms (with `{n}` where the count goes).
 pub fn trn(lang: Lang, n: u64, one: &str, other: &str) -> String {
     let idx = (lang.0.plural)(n);
-    let text = lang.catalog().plural(one, other, idx).unwrap_or(if n == 1 { one } else { other });
+    let text = lang
+        .catalog()
+        .plural(one, other, idx)
+        .unwrap_or(if n == 1 { one } else { other });
     fmt(text, &[("n", &n.to_string())])
 }
 
@@ -567,14 +758,22 @@ mod tests {
     fn keyboard_key_names_have_a_separate_context_and_english_fallback() {
         for lang in Lang::all().filter(|l| *l != Lang::EN) {
             for key in ["Ctrl", "Shift", "Delete", "Esc", "Home", "End", "Space"] {
-                assert!(lang.catalog().contextual("key", key).is_some(), "{}: {key}", lang.code());
+                assert!(
+                    lang.catalog().contextual("key", key).is_some(),
+                    "{}: {key}",
+                    lang.code()
+                );
             }
         }
         let previous = current();
         set_current(Lang::from_code("de").unwrap());
         assert_eq!(key_name("Delete"), "Entf");
         assert_eq!(t("Delete"), "Löschen");
-        assert_eq!(key_name("Open"), "Open", "a missing key name must not borrow a command translation");
+        assert_eq!(
+            key_name("Open"),
+            "Open",
+            "a missing key name must not borrow a command translation"
+        );
         set_current(Lang::EN);
         assert_eq!(key_name("Delete"), "Delete");
         set_current(previous);
@@ -611,18 +810,30 @@ mod tests {
 
     #[test]
     fn macos_language_list_is_parsed() {
-        assert_eq!(first_supported("(\n    \"ja-JP\",\n    \"en-US\"\n)\n"), Some(JA()));
-        assert_eq!(first_supported("(\n    \"fr-FR\",\n    \"en-US\"\n)\n"), Lang::from_code("fr"));
+        assert_eq!(
+            first_supported("(\n    \"ja-JP\",\n    \"en-US\"\n)\n"),
+            Some(JA())
+        );
+        assert_eq!(
+            first_supported("(\n    \"fr-FR\",\n    \"en-US\"\n)\n"),
+            Lang::from_code("fr")
+        );
         assert_eq!(first_supported("("), None);
     }
 
     #[test]
     fn windows_display_language_resolves_chinese_scripts() {
         for tag in ["zh-CN", "zh-SG", "zh-Hans", "zh-Hans-CN"] {
-            assert_eq!(first_supported(&format!("{tag}\r\n")), Lang::from_code("zh-hans"));
+            assert_eq!(
+                first_supported(&format!("{tag}\r\n")),
+                Lang::from_code("zh-hans")
+            );
         }
         for tag in ["zh-TW", "zh-HK", "zh-MO", "zh-Hant", "zh-Hant-HK"] {
-            assert_eq!(first_supported(&format!("{tag}\r\n")), Lang::from_code("zh-hant"));
+            assert_eq!(
+                first_supported(&format!("{tag}\r\n")),
+                Lang::from_code("zh-hant")
+            );
         }
         assert_eq!(first_supported("en-US\r\n"), Some(Lang::EN));
         assert_eq!(first_supported("fr-FR\r\n"), Lang::from_code("fr"));
@@ -633,11 +844,27 @@ mod tests {
     #[test]
     fn neutral_locale_does_not_override_display_language() {
         let fr = Lang::from_code("fr").unwrap();
-        for tag in ["C", "C.UTF-8", "POSIX", "posix.UTF-8", "", "  C.UTF-8  ", "unsupported"] {
+        for tag in [
+            "C",
+            "C.UTF-8",
+            "POSIX",
+            "posix.UTF-8",
+            "",
+            "  C.UTF-8  ",
+            "unsupported",
+        ] {
             assert_eq!(language_override(tag), None, "{tag}");
-            assert_eq!(language_override(tag).or_else(|| first_supported("unsupported-XY\nfr-FR\nen-US")), Some(fr));
+            assert_eq!(
+                language_override(tag).or_else(|| first_supported("unsupported-XY\nfr-FR\nen-US")),
+                Some(fr)
+            );
         }
-        assert_eq!(["C.UTF-8", "POSIX", "fr_FR.UTF-8"].into_iter().find_map(language_override), Some(fr));
+        assert_eq!(
+            ["C.UTF-8", "POSIX", "fr_FR.UTF-8"]
+                .into_iter()
+                .find_map(language_override),
+            Some(fr)
+        );
         assert_eq!(language_override("fr_FR.UTF-8"), Some(fr));
         assert_eq!(language_override("en_US.UTF-8"), Some(Lang::EN));
         assert_eq!(language_override("ja_JP.UTF-8"), Some(JA()));
@@ -649,7 +876,11 @@ mod tests {
         // One tag per line, as `first_supported` reads them: a machine with several display
         // languages reports them all, so each line is checked rather than the list as a whole.
         let list = windows_ui_language().expect("Windows should report a display language");
-        let tags: Vec<&str> = list.lines().map(str::trim).filter(|t| !t.is_empty()).collect();
+        let tags: Vec<&str> = list
+            .lines()
+            .map(str::trim)
+            .filter(|t| !t.is_empty())
+            .collect();
         assert!(!tags.is_empty(), "no display language in {list:?}");
         for tag in tags {
             assert!(tag.split('-').all(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_alphanumeric())), "not a locale tag: {tag:?}");
@@ -692,17 +923,31 @@ mod tests {
         assert_eq!(c.contextual("menu", "Windows"), Some("ウィンドウ群"));
         assert_eq!(c.contextual("other", "Windows"), None);
         assert_eq!(c.plural("{n} file", "{n} files", 0), Some("{n} 個"));
-        assert_eq!(c.plural("{n} file", "{n} files", 5), Some("{n} 個"), "an index past the forms clamps");
+        assert_eq!(
+            c.plural("{n} file", "{n} files", 5),
+            Some("{n} 個"),
+            "an index past the forms clamps"
+        );
     }
 
     #[test]
     fn malformed_lines_are_reported_not_fatal() {
-        let (entries, errors) = parse_entries("\tok\tはい\nno tabs here\n\tonly\n\ta\tb\tc\textra\n\t\tempty source\n", 1);
+        let (entries, errors) = parse_entries(
+            "\tok\tはい\nno tabs here\n\tonly\n\ta\tb\tc\textra\n\t\tempty source\n",
+            1,
+        );
         assert_eq!(entries.len(), 1);
         assert_eq!(errors.len(), 4, "{errors:?}");
         let (entries, errors) = parse_entries("\ta\\tb\tx\\ny\\\\z\n", 1);
         assert!(errors.is_empty(), "{errors:?}");
-        assert_eq!(entries, [Entry { context: String::new(), source: "a\tb".into(), translation: "x\ny\\z".into() }]);
+        assert_eq!(
+            entries,
+            [Entry {
+                context: String::new(),
+                source: "a\tb".into(),
+                translation: "x\ny\\z".into()
+            }]
+        );
     }
 
     #[test]
@@ -722,20 +967,35 @@ mod tests {
             // The bad line comes first; the good line after it still loads.
             let (catalog, errors) = Catalog::parse(&format!("{text}\n\tSave\t保存\n"), forms);
             assert_eq!(errors.len(), 1, "{text:?}: {errors:?}");
-            assert!(errors[0].starts_with("line 1: ") && errors[0].contains(error), "{errors:?}");
+            assert!(
+                errors[0].starts_with("line 1: ") && errors[0].contains(error),
+                "{errors:?}"
+            );
             assert_eq!(catalog.plain("Save"), Some("保存"), "{text:?}");
         }
         let (catalog, errors) = Catalog::parse("\tFile\tファイル\n\tFile\t別\n", 1);
-        assert!(errors.len() == 1 && errors[0].contains("line 2: duplicate"), "{errors:?}");
-        assert_eq!(catalog.plain("File"), Some("ファイル"), "the first entry wins");
+        assert!(
+            errors.len() == 1 && errors[0].contains("line 2: duplicate"),
+            "{errors:?}"
+        );
+        assert_eq!(
+            catalog.plain("File"),
+            Some("ファイル"),
+            "the first entry wins"
+        );
     }
 
     #[test]
     fn catalogs_handle_escapes_crlf_and_distinct_contexts() {
-        let (catalog, errors) =
-            Catalog::parse("# comment\r\n\r\n\tLine\\nTab\\tPath\\\\\tOther\\nTab\\tPath\\\\\r\nweight\tLight\tThin\r\ntheme\tLight\tPale\r\n", 1);
+        let (catalog, errors) = Catalog::parse(
+            "# comment\r\n\r\n\tLine\\nTab\\tPath\\\\\tOther\\nTab\\tPath\\\\\r\nweight\tLight\tThin\r\ntheme\tLight\tPale\r\n",
+            1,
+        );
         assert!(errors.is_empty(), "{errors:?}");
-        assert_eq!(catalog.plain("Line\nTab\tPath\\"), Some("Other\nTab\tPath\\"));
+        assert_eq!(
+            catalog.plain("Line\nTab\tPath\\"),
+            Some("Other\nTab\tPath\\")
+        );
         assert_eq!(catalog.contextual("weight", "Light"), Some("Thin"));
         assert_eq!(catalog.contextual("theme", "Light"), Some("Pale"));
     }
@@ -773,14 +1033,23 @@ mod tests {
         assert_eq!(tr_id(l, "unknown", "Unknown"), "Unknown");
         assert_eq!(trn(l, 1, "{n} page", "{n} pages"), "One page: 1");
         assert_eq!(trn(l, 0, "{n} page", "{n} pages"), "Many pages: 0");
-        assert_eq!(trn(l, u64::MAX, "{n} page", "{n} pages"), format!("Many pages: {}", u64::MAX));
+        assert_eq!(
+            trn(l, u64::MAX, "{n} page", "{n} pages"),
+            format!("Many pages: {}", u64::MAX)
+        );
     }
 
     #[test]
     fn formatting_reorders_parameters_without_reinterpreting_user_text() {
         let args = [("file", "日本語-{n}.pdf"), ("n", "2")];
-        assert_eq!(fmt("{n}: {file}; {unknown}", &args), "2: 日本語-{n}.pdf; {unknown}");
-        assert_eq!(fmt("{file} / {file}", &args), "日本語-{n}.pdf / 日本語-{n}.pdf");
+        assert_eq!(
+            fmt("{n}: {file}; {unknown}", &args),
+            "2: 日本語-{n}.pdf; {unknown}"
+        );
+        assert_eq!(
+            fmt("{file} / {file}", &args),
+            "日本語-{n}.pdf / 日本語-{n}.pdf"
+        );
         assert_eq!(fmt("text {unfinished", &args), "text {unfinished");
         assert_eq!(fmt("}{n}{", &args), "}2{");
         assert_eq!(fmt("unchanged", &[]), "unchanged");
@@ -792,8 +1061,13 @@ mod tests {
     fn missing_ocr_models_messages_are_translated() {
         let error = pdfcraft_engine::ocr::OcrError::NoModels.to_string();
         let notice = "Text recognition isn't installed: its model files are missing. Reinstall PdfCraft, or set PDFCRAFT_MODELS to the folder that holds them.";
-        assert!(include_str!("../ocr_ui.rs").contains(notice), "keep in step with ocr_ui.rs");
-        for code in ["bg", "cs", "de", "es", "fr", "hu", "ja", "ru", "te", "uk", "zh-hans", "zh-hant"] {
+        assert!(
+            include_str!("../ocr_ui.rs").contains(notice),
+            "keep in step with ocr_ui.rs"
+        );
+        for code in [
+            "bg", "cs", "de", "es", "fr", "hu", "ja", "ru", "te", "uk", "zh-hans", "zh-hant",
+        ] {
             let lang = Lang::from_code(code).expect("registered");
             assert!(has(lang, notice) && has(lang, &error), "{code}");
         }
@@ -806,12 +1080,20 @@ mod tests {
     #[test]
     fn japanese_covers_commands_and_catalogue() {
         for command in pdfcraft_engine::commands::COMMANDS {
-            assert!(has(JA(), command.label), "missing command: {}", command.label);
+            assert!(
+                has(JA(), command.label),
+                "missing command: {}",
+                command.label
+            );
         }
         for group in pdfcraft_engine::catalog::TOOL_GROUPS {
             assert!(has(JA(), group.label), "missing group: {}", group.label);
             for section in group.sections {
-                assert!(has(JA(), section.title), "missing section: {}", section.title);
+                assert!(
+                    has(JA(), section.title),
+                    "missing section: {}",
+                    section.title
+                );
                 for item in section.items {
                     assert!(has(JA(), item.label), "missing item: {}", item.label);
                 }
@@ -839,27 +1121,49 @@ mod tests {
             None
         }
         let mut labels = std::collections::BTreeSet::new();
-        for marker in ["tl!(\"", "Err(\"", "ok_or(\"", "|| \"", "MISSING: &str = \"", "i18n::t(\"", "_ => \""] {
+        for marker in [
+            "tl!(\"",
+            "Err(\"",
+            "ok_or(\"",
+            "|| \"",
+            "MISSING: &str = \"",
+            "i18n::t(\"",
+            "_ => \"",
+        ] {
             for (at, _) in source.match_indices(marker) {
                 labels.extend(source.get(at + marker.len()..).and_then(literal));
             }
         }
         // Flag labels: `(field_flags::NAME, "Label", inverted)`.
         for (at, _) in source.match_indices("(field_flags::") {
-            let line = source.get(at..).and_then(|s| s.lines().next()).unwrap_or_default();
+            let line = source
+                .get(at..)
+                .and_then(|s| s.lines().next())
+                .unwrap_or_default();
             if let Some(q) = line.find(", \"") {
                 labels.extend(line.get(q + 3..).and_then(literal));
             }
         }
-        labels.retain(|l| l.chars().any(char::is_alphabetic) && !l.contains("credits") && !l.starts_with("bulk"));
+        labels.retain(|l| {
+            l.chars().any(char::is_alphabetic) && !l.contains("credits") && !l.starts_with("bulk")
+        });
         for label in ["Mixed", "Custom font", "The document is no longer open."] {
             labels.insert(label.to_string());
         }
-        assert!(labels.len() > 20 && labels.contains("Comb of characters"), "the scan found the dialog's labels: {labels:?}");
-        for code in ["bg", "cs", "de", "es", "fr", "hu", "it", "ja", "pt-br", "ru", "te", "tr", "uk", "zh-hans", "zh-hant"] {
+        assert!(
+            labels.len() > 20 && labels.contains("Comb of characters"),
+            "the scan found the dialog's labels: {labels:?}"
+        );
+        for code in [
+            "bg", "cs", "de", "es", "fr", "hu", "it", "ja", "pt-br", "ru", "te", "tr", "uk",
+            "zh-hans", "zh-hant",
+        ] {
             let lang = Lang::from_code(code).expect("registered");
             let missing: Vec<_> = labels.iter().filter(|l| !has(lang, l)).collect();
-            assert!(missing.is_empty(), "{code} lacks Shared Field Properties labels: {missing:#?}");
+            assert!(
+                missing.is_empty(),
+                "{code} lacks Shared Field Properties labels: {missing:#?}"
+            );
         }
     }
 
@@ -879,10 +1183,21 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n");
-                    let source = if expanded { source.replace("crate::i18n::t(", "tl!(") } else { source };
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
-                    while let Some((_, after)) = rest.split_once(if expanded { "tl!(" } else { "tl!(\"" }) {
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n");
+                    let source = if expanded {
+                        source.replace("crate::i18n::t(", "tl!(")
+                    } else {
+                        source
+                    };
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
+                    while let Some((_, after)) =
+                        rest.split_once(if expanded { "tl!(" } else { "tl!(\"" })
+                    {
                         let after = if expanded {
                             let after = after.trim_start();
                             let Some(after) = after.strip_prefix('"') else {
@@ -905,11 +1220,15 @@ mod tests {
                             })
                             .expect("closed tl! literal");
                         let (raw, tail) = after.split_at(end);
-                        let argument_end = tail.strip_prefix('"').expect("closing quote").trim_start();
-                        let literal_call =
-                            argument_end.starts_with(')') || argument_end.strip_prefix(',').is_some_and(|rest| rest.trim_start().starts_with(')'));
+                        let argument_end =
+                            tail.strip_prefix('"').expect("closing quote").trim_start();
+                        let literal_call = argument_end.starts_with(')')
+                            || argument_end
+                                .strip_prefix(',')
+                                .is_some_and(|rest| rest.trim_start().starts_with(')'));
                         if tail.starts_with("\")") || (expanded && literal_call) {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -923,7 +1242,10 @@ mod tests {
     /// Partial catalogs also translate every label of the absolute local GoToR consent prompt.
     #[test]
     fn local_gotor_confirmation_is_translated_in_all_supported_languages() {
-        for language in LANGUAGES.iter().filter(|language| !language.source.is_empty()) {
+        for language in LANGUAGES
+            .iter()
+            .filter(|language| !language.source.is_empty())
+        {
             let lang = Lang::from_code(language.code).expect("registered language");
             for label in [
                 "Open this local PDF?",
@@ -932,8 +1254,17 @@ mod tests {
                 "Allow",
                 "Cancel",
             ] {
-                assert!(has(lang, label), "{} lacks GoToR confirmation label: {label}", language.code);
-                assert_ne!(tr(lang, label), label, "{} falls back to English for {label}", language.code);
+                assert!(
+                    has(lang, label),
+                    "{} lacks GoToR confirmation label: {label}",
+                    language.code
+                );
+                assert_ne!(
+                    tr(lang, label),
+                    label,
+                    "{} falls back to English for {label}",
+                    language.code
+                );
             }
         }
     }
@@ -943,9 +1274,16 @@ mod tests {
     #[test]
     fn japanese_covers_ui_literals() {
         let literals = ui_literals();
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(JA(), label)).collect();
-        assert!(missing.is_empty(), "untranslated Japanese UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Japanese UI literals: {missing:#?}"
+        );
     }
 
     /// Italian translates every registered command and every All tools group, section and item.
@@ -974,9 +1312,16 @@ mod tests {
     fn italian_covers_ui_literals() {
         let it = Lang::from_code("it").expect("it registered");
         let literals = ui_literals();
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(it, label)).collect();
-        assert!(missing.is_empty(), "untranslated Italian UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Italian UI literals: {missing:#?}"
+        );
     }
 
     /// With craft-fonts, every Japanese translation has glyphs: with all interface faces (desktop)
@@ -984,22 +1329,46 @@ mod tests {
     #[test]
     fn japanese_labels_have_glyphs() {
         let craft = pdfcraft_fonts::ui_japanese_fonts();
-        let Some(web) = craft.iter().find(|f| f.family == "BIZ UDPGothic" && f.style == "Regular") else {
+        let Some(web) = craft
+            .iter()
+            .find(|f| f.family == "BIZ UDPGothic" && f.style == "Regular")
+        else {
             eprintln!("skipping Japanese glyph checks: build with CRAFT_FONTS_DIR to run them");
             return;
         };
         let (entries, _) = parse_entries(JA().0.source, 1);
-        let labels: String = entries.iter().flat_map(|e| e.translation.chars()).chain(JA().name().chars()).filter(|c| !c.is_control()).collect();
+        let labels: String = entries
+            .iter()
+            .flat_map(|e| e.translation.chars())
+            .chain(JA().name().chars())
+            .filter(|c| !c.is_control())
+            .collect();
         let web_name = web.name();
         let mut web_only = crate::theme::font_definitions();
         for family in web_only.families.values_mut() {
-            family.retain(|name| !pdfcraft_fonts::CRAFT_FONTS.iter().any(|face| face.name() == *name) || *name == web_name);
+            family.retain(|name| {
+                !pdfcraft_fonts::CRAFT_FONTS
+                    .iter()
+                    .any(|face| face.name() == *name)
+                    || *name == web_name
+            });
         }
         use egui::epaint::text::{Fonts, TextOptions};
-        for (build, defs) in [("desktop", crate::theme::font_definitions()), ("web", web_only)] {
+        for (build, defs) in [
+            ("desktop", crate::theme::font_definitions()),
+            ("web", web_only),
+        ] {
             let mut fonts = Fonts::new(TextOptions::default(), defs);
-            for id in [egui::FontId::proportional(13.0), egui::FontId::monospace(13.0), crate::theme::medium(13.0), crate::theme::semibold(17.0)] {
-                assert!(fonts.has_glyphs(&id, &labels), "{build}: {id:?} lacks a Japanese label glyph");
+            for id in [
+                egui::FontId::proportional(13.0),
+                egui::FontId::monospace(13.0),
+                crate::theme::medium(13.0),
+                crate::theme::semibold(17.0),
+            ] {
+                assert!(
+                    fonts.has_glyphs(&id, &labels),
+                    "{build}: {id:?} lacks a Japanese label glyph"
+                );
             }
         }
     }
@@ -1007,19 +1376,33 @@ mod tests {
     #[test]
     fn history_labels_keep_captured_names() {
         set_current(JA());
-        assert_eq!(action_label("Insert pages from Save {e}.pdf"), "Save {e}.pdf からページを挿入");
-        assert_eq!(command_label("Undo Insert pages from Save {e}.pdf"), "取り消し Save {e}.pdf からページを挿入");
-        assert_eq!(action_label("Untranslated custom action"), "Untranslated custom action");
+        assert_eq!(
+            action_label("Insert pages from Save {e}.pdf"),
+            "Save {e}.pdf からページを挿入"
+        );
+        assert_eq!(
+            command_label("Undo Insert pages from Save {e}.pdf"),
+            "取り消し Save {e}.pdf からページを挿入"
+        );
+        assert_eq!(
+            action_label("Untranslated custom action"),
+            "Untranslated custom action"
+        );
         assert_eq!(menu_label("file.open", "Open…"), "開く…");
         set_current(Lang::EN);
-        assert_eq!(command_label("Undo Fill in Save {e}"), "Undo Fill in Save {e}");
+        assert_eq!(
+            command_label("Undo Fill in Save {e}"),
+            "Undo Fill in Save {e}"
+        );
     }
 
     #[test]
     fn current_language_is_per_thread() {
         set_current(JA());
         assert_eq!(t("File"), "ファイル");
-        std::thread::spawn(|| assert_eq!(current(), Lang::EN)).join().unwrap();
+        std::thread::spawn(|| assert_eq!(current(), Lang::EN))
+            .join()
+            .unwrap();
         set_current(Lang::EN);
         assert_eq!(t("File"), "File");
     }
@@ -1031,7 +1414,10 @@ mod tests {
         assert_eq!(trn(Lang::EN, 7, "{n} item", "{n} items"), "7 items");
         // No `@plural` entry yet: Japanese falls back to the English forms.
         assert_eq!(trn(JA(), 7, "{n} item", "{n} items"), "7 items");
-        assert_eq!(fmt("{b} before {a}", &[("a", "x"), ("b", "y"), ("c", "z")]), "y before x");
+        assert_eq!(
+            fmt("{b} before {a}", &[("a", "x"), ("b", "y"), ("c", "z")]),
+            "y before x"
+        );
         assert_eq!(fmt("{missing}", &[]), "{missing}");
         assert_eq!(placeholders("a {x} b {y} {"), ["x", "y"]);
     }
@@ -1063,13 +1449,20 @@ mod tests {
         assert_eq!(pt.name(), "Português (Brasil)");
         assert_eq!(Lang::from_code("PT-BR"), Some(pt));
         assert_eq!(normalize_pref("pt-BR"), Some("pt-br"));
-        assert_eq!(normalize_pref("pt"), None, "only exact codes are preferences");
+        assert_eq!(
+            normalize_pref("pt"),
+            None,
+            "only exact codes are preferences"
+        );
         assert_eq!(lang_from_tag("pt_BR.UTF-8"), Some(pt));
         assert_eq!(lang_from_tag("pt_PT"), Some(pt));
         assert_eq!(tr(pt, "File"), "Arquivo");
         assert_eq!(tr(pt, "Save as…"), "Salvar como…");
         assert_eq!(tr(pt, "Arquivo do usuário.pdf"), "Arquivo do usuário.pdf");
-        assert_eq!((0..=3).map(|n| (pt.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 1, 1]);
+        assert_eq!(
+            (0..=3).map(|n| (pt.0.plural)(n)).collect::<Vec<_>>(),
+            [0, 0, 1, 1]
+        );
         let mut app = crate::PdfCraftApp::default();
         app.set_option("language", "pt-br").unwrap();
         assert_eq!(app.language, "pt-br");
@@ -1114,8 +1507,14 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n").replace("crate::i18n::t(", "tl!(");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n")
+                        .replace("crate::i18n::t(", "tl!(");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(") {
                         let after = after.trim_start();
                         let Some(after) = after.strip_prefix('"') else {
@@ -1137,7 +1536,8 @@ mod tests {
                         let closing = tail.strip_prefix('"').expect("closing quote").trim_start();
                         let closing = closing.strip_prefix(',').unwrap_or(closing).trim_start();
                         if closing.starts_with(')') {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -1145,9 +1545,16 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(pt, label)).collect();
-        assert!(missing.is_empty(), "untranslated Brazilian Portuguese UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Brazilian Portuguese UI literals: {missing:#?}"
+        );
     }
 
     #[test]
@@ -1205,7 +1612,10 @@ mod tests {
             ("accessibility report", pdfcraft_engine::a11y::REPORT_WORDS),
             ("PDF/A problem", pdfcraft_engine::pdfa::WORDINGS),
             ("signature detail", pdfcraft_engine::sign::pdf::WORDINGS),
-            ("change after signing", pdfcraft_engine::sign::pdf::kind::ALL),
+            (
+                "change after signing",
+                pdfcraft_engine::sign::pdf::kind::ALL,
+            ),
             ("pages to print", pdfcraft_engine::print::WORDINGS),
             ("edit label", pdfcraft_engine::EDIT_LABELS),
             ("batch label", pdfcraft_engine::BATCH_LABELS),
@@ -1233,9 +1643,22 @@ mod tests {
         for wording in lists.into_iter().flatten() {
             let said = tr(es, wording);
             // `{}` is one hole; `{name}` holes are named, and each name must survive by itself.
-            assert_eq!(wording.matches("{}").count(), said.matches("{}").count(), "the Spanish of {wording:?} loses a hole: {said:?}");
-            for hole in wording.split('{').skip(1).filter_map(|rest| rest.split_once('}')).map(|(name, _)| name).filter(|n| !n.is_empty()) {
-                assert!(said.contains(&format!("{{{hole}}}")), "the Spanish of {wording:?} loses {{{hole}}}: {said:?}");
+            assert_eq!(
+                wording.matches("{}").count(),
+                said.matches("{}").count(),
+                "the Spanish of {wording:?} loses a hole: {said:?}"
+            );
+            for hole in wording
+                .split('{')
+                .skip(1)
+                .filter_map(|rest| rest.split_once('}'))
+                .map(|(name, _)| name)
+                .filter(|n| !n.is_empty())
+            {
+                assert!(
+                    said.contains(&format!("{{{hole}}}")),
+                    "the Spanish of {wording:?} loses {{{hole}}}: {said:?}"
+                );
             }
         }
     }
@@ -1267,13 +1690,25 @@ mod tests {
         let te = Lang::from_code("te").expect("te registered");
         set_current(te);
         assert_eq!(command_label("Undo"), "రద్దు చేయి");
-        assert_eq!(command_label("Undo Untranslated custom action"), "రద్దు చేయి: Untranslated custom action");
-        assert_eq!(command_label("Redo Untranslated custom action"), "మళ్లీ చేయి: Untranslated custom action");
+        assert_eq!(
+            command_label("Undo Untranslated custom action"),
+            "రద్దు చేయి: Untranslated custom action"
+        );
+        assert_eq!(
+            command_label("Redo Untranslated custom action"),
+            "మళ్లీ చేయి: Untranslated custom action"
+        );
         let es = Lang::from_code("es").expect("es registered");
         set_current(es);
-        assert_eq!(command_label("Undo Untranslated custom action"), format!("{} Untranslated custom action", tr(es, "Undo")));
+        assert_eq!(
+            command_label("Undo Untranslated custom action"),
+            format!("{} Untranslated custom action", tr(es, "Undo"))
+        );
         set_current(Lang::EN);
-        assert_eq!(command_label("Undo Untranslated custom action"), "Undo Untranslated custom action");
+        assert_eq!(
+            command_label("Undo Untranslated custom action"),
+            "Undo Untranslated custom action"
+        );
     }
 
     /// A label that reads differently by use has its own contextual entry where a language needs
@@ -1310,23 +1745,49 @@ mod tests {
     /// it; Telugu labels must not need a Japanese or Arabic face).
     #[test]
     fn telugu_labels_have_glyphs() {
-        let telugu: Vec<String> = pdfcraft_fonts::ui_telugu_fonts().iter().map(|f| f.name()).collect();
+        let telugu: Vec<String> = pdfcraft_fonts::ui_telugu_fonts()
+            .iter()
+            .map(|f| f.name())
+            .collect();
         if telugu.is_empty() {
-            eprintln!("skipping Telugu glyph checks: build with CRAFT_FONTS_DIR and a Telugu face to run them");
+            eprintln!(
+                "skipping Telugu glyph checks: build with CRAFT_FONTS_DIR and a Telugu face to run them"
+            );
             return;
         }
         let te = Lang::from_code("te").expect("te registered");
         let (entries, _) = parse_entries(te.0.source, te.0.plural_forms());
-        let labels: String = entries.iter().flat_map(|e| e.translation.chars()).chain(te.name().chars()).filter(|c| !c.is_control()).collect();
+        let labels: String = entries
+            .iter()
+            .flat_map(|e| e.translation.chars())
+            .chain(te.name().chars())
+            .filter(|c| !c.is_control())
+            .collect();
         let mut telugu_only = crate::theme::font_definitions();
         for family in telugu_only.families.values_mut() {
-            family.retain(|name| !pdfcraft_fonts::CRAFT_FONTS.iter().any(|face| face.name() == *name) || telugu.contains(name));
+            family.retain(|name| {
+                !pdfcraft_fonts::CRAFT_FONTS
+                    .iter()
+                    .any(|face| face.name() == *name)
+                    || telugu.contains(name)
+            });
         }
         use egui::epaint::text::{Fonts, TextOptions};
-        for (build, defs) in [("all faces", crate::theme::font_definitions()), ("Telugu face only", telugu_only)] {
+        for (build, defs) in [
+            ("all faces", crate::theme::font_definitions()),
+            ("Telugu face only", telugu_only),
+        ] {
             let mut fonts = Fonts::new(TextOptions::default(), defs);
-            for id in [egui::FontId::proportional(13.0), egui::FontId::monospace(13.0), crate::theme::medium(13.0), crate::theme::semibold(17.0)] {
-                assert!(fonts.has_glyphs(&id, &labels), "{build}: {id:?} lacks a Telugu label glyph");
+            for id in [
+                egui::FontId::proportional(13.0),
+                egui::FontId::monospace(13.0),
+                crate::theme::medium(13.0),
+                crate::theme::semibold(17.0),
+            ] {
+                assert!(
+                    fonts.has_glyphs(&id, &labels),
+                    "{build}: {id:?} lacks a Telugu label glyph"
+                );
             }
         }
     }
@@ -1339,11 +1800,19 @@ mod tests {
         assert_eq!(cs.name(), "Čeština");
         assert_eq!(tr(cs, "File"), "Soubor");
         assert_eq!(tr(cs, "Žluťoučký kůň.pdf"), "Žluťoučký kůň.pdf");
-        assert_eq!((0..=6).map(|n| (cs.0.plural)(n)).collect::<Vec<_>>(), [2, 0, 1, 1, 1, 2, 2]);
+        assert_eq!(
+            (0..=6).map(|n| (cs.0.plural)(n)).collect::<Vec<_>>(),
+            [2, 0, 1, 1, 1, 2, 2]
+        );
         for spec in pdfcraft_engine::commands::COMMANDS {
             let Some(menu) = spec.menu else { continue };
             assert!(has(cs, menu), "Czech lacks the menu title {menu:?}");
-            assert!(has(cs, spec.label), "Czech lacks the {menu} menu label {:?} ({})", spec.label, spec.id);
+            assert!(
+                has(cs, spec.label),
+                "Czech lacks the {menu} menu label {:?} ({})",
+                spec.label,
+                spec.id
+            );
         }
         // Spelled the same in Czech: product and format names, abbreviations, key caps, words
         // Czech shares with English, and templates with no English words.
@@ -1374,9 +1843,22 @@ mod tests {
         let edges = |s: &str| (s.len() - s.trim_start().len(), s.len() - s.trim_end().len());
         for e in &entries {
             let key_cap = e.context == "key" && KEY_CAP_NAMES.contains(&e.source.as_str());
-            assert!(e.source != e.translation || KEEP_AS_IS.contains(&e.source.as_str()) || key_cap, "{:?} is untranslated", e.source);
-            assert!(!e.translation.contains("..."), "use … rather than three dots: {:?}", e.translation);
-            assert_eq!(edges(&e.translation), edges(&e.source), "stray whitespace: {:?}", e.translation);
+            assert!(
+                e.source != e.translation || KEEP_AS_IS.contains(&e.source.as_str()) || key_cap,
+                "{:?} is untranslated",
+                e.source
+            );
+            assert!(
+                !e.translation.contains("..."),
+                "use … rather than three dots: {:?}",
+                e.translation
+            );
+            assert_eq!(
+                edges(&e.translation),
+                edges(&e.source),
+                "stray whitespace: {:?}",
+                e.translation
+            );
         }
         let mut app = crate::PdfCraftApp::default();
         app.set_option("language", "cs").unwrap();
@@ -1413,9 +1895,16 @@ mod tests {
     fn czech_covers_ui_literals() {
         let cs = Lang::from_code("cs").expect("cs registered");
         let literals = ui_literals();
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(cs, label)).collect();
-        assert!(missing.is_empty(), "untranslated Czech UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Czech UI literals: {missing:#?}"
+        );
     }
 
     /// Czech counts take three forms (1; 2–4; 0 and 5+), dates use the genitive month after the
@@ -1429,17 +1918,35 @@ mod tests {
         assert_eq!(trn(cs, 0, "{n} field", "{n} fields"), "0 polí");
         assert_eq!(trn(cs, 1, "{n} byte", "{n} bytes"), "1 bajt");
         assert_eq!(trn(cs, 512, "{n} byte", "{n} bytes"), "512 bajtů");
-        assert_eq!(trn(cs, 3, "{n} image optimized", "{n} images optimized"), "3 obrázky optimalizovány");
+        assert_eq!(
+            trn(cs, 3, "{n} image optimized", "{n} images optimized"),
+            "3 obrázky optimalizovány"
+        );
         assert_eq!(tr(cs, "October"), "Říjen");
         let month = tr_ctx(cs, "calendar date", "October");
-        assert_eq!(fmt(tr(cs, "{month} {day}, {y}"), &[("month", month), ("day", "9"), ("y", "2026")]), "9. října 2026");
+        assert_eq!(
+            fmt(
+                tr(cs, "{month} {day}, {y}"),
+                &[("month", month), ("day", "9"), ("y", "2026")]
+            ),
+            "9. října 2026"
+        );
         set_current(cs);
-        assert_eq!(command_label("Undo Insert pages from Zpráva {n}.pdf"), "Zpět: Vložit stránky ze souboru Zpráva {n}.pdf");
-        assert_eq!(command_label("Redo Fill in Kontakt {key}"), "Znovu: Vyplnit Kontakt {key}");
+        assert_eq!(
+            command_label("Undo Insert pages from Zpráva {n}.pdf"),
+            "Zpět: Vložit stránky ze souboru Zpráva {n}.pdf"
+        );
+        assert_eq!(
+            command_label("Redo Fill in Kontakt {key}"),
+            "Znovu: Vyplnit Kontakt {key}"
+        );
         assert_eq!(action_label("Change Title"), "Změnit: Název");
         assert_eq!(action_label("Delete 3 fields"), "Odstranit 3 pole");
         assert_eq!(action_label("Delete 12 fields"), "Odstranit 12 polí");
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "Vybráno stránek: 3");
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "Vybráno stránek: 3"
+        );
         set_current(Lang::EN);
     }
 
@@ -1451,11 +1958,19 @@ mod tests {
         assert_eq!(tr_lang.name(), "Türkçe");
         assert_eq!(tr(tr_lang, "File"), "Dosya");
         assert_eq!(tr(tr_lang, "Türkçe Belge.pdf"), "Türkçe Belge.pdf");
-        assert_eq!((0..=6).map(|n| (tr_lang.0.plural)(n)).collect::<Vec<_>>(), [0; 7]);
+        assert_eq!(
+            (0..=6).map(|n| (tr_lang.0.plural)(n)).collect::<Vec<_>>(),
+            [0; 7]
+        );
         for spec in pdfcraft_engine::commands::COMMANDS {
             let Some(menu) = spec.menu else { continue };
             assert!(has(tr_lang, menu), "Turkish lacks the menu title {menu:?}");
-            assert!(has(tr_lang, spec.label), "Turkish lacks the {menu} menu label {:?} ({})", spec.label, spec.id);
+            assert!(
+                has(tr_lang, spec.label),
+                "Turkish lacks the {menu} menu label {:?} ({})",
+                spec.label,
+                spec.id
+            );
         }
         const KEEP_AS_IS: &[&str] = &[
             "OK",
@@ -1490,9 +2005,23 @@ mod tests {
                 "{:?} is untranslated",
                 e.source
             );
-            assert!(!e.translation.contains("..."), "use … rather than three dots: {:?}", e.translation);
-            assert_eq!(e.source.starts_with(' '), e.translation.starts_with(' '), "leading space mismatch: {:?}", e.translation);
-            assert_eq!(e.source.ends_with(' '), e.translation.ends_with(' '), "trailing space mismatch: {:?}", e.translation);
+            assert!(
+                !e.translation.contains("..."),
+                "use … rather than three dots: {:?}",
+                e.translation
+            );
+            assert_eq!(
+                e.source.starts_with(' '),
+                e.translation.starts_with(' '),
+                "leading space mismatch: {:?}",
+                e.translation
+            );
+            assert_eq!(
+                e.source.ends_with(' '),
+                e.translation.ends_with(' '),
+                "trailing space mismatch: {:?}",
+                e.translation
+            );
         }
         let mut app = crate::PdfCraftApp::default();
         app.set_option("language", "tr").unwrap();
@@ -1508,7 +2037,11 @@ mod tests {
     fn turkish_covers_commands_and_catalogue() {
         let tr_lang = Lang::from_code("tr").expect("tr registered");
         for command in pdfcraft_engine::commands::COMMANDS {
-            assert!(has(tr_lang, command.label), "missing command: {}", command.label);
+            assert!(
+                has(tr_lang, command.label),
+                "missing command: {}",
+                command.label
+            );
             if let Some(menu) = command.menu {
                 assert!(has(tr_lang, menu), "missing menu: {menu}");
             }
@@ -1516,7 +2049,11 @@ mod tests {
         for group in pdfcraft_engine::catalog::TOOL_GROUPS {
             assert!(has(tr_lang, group.label), "missing group: {}", group.label);
             for section in group.sections {
-                assert!(has(tr_lang, section.title), "missing section: {}", section.title);
+                assert!(
+                    has(tr_lang, section.title),
+                    "missing section: {}",
+                    section.title
+                );
                 for item in section.items {
                     assert!(has(tr_lang, item.label), "missing item: {}", item.label);
                 }
@@ -1528,10 +2065,20 @@ mod tests {
     #[test]
     fn turkish_covers_ui_literals() {
         let literals = ui_literals();
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let tr_lang = Lang::from_code("tr").expect("tr registered");
-        let missing: Vec<_> = literals.iter().filter(|label| !has(tr_lang, label)).collect();
-        assert!(missing.is_empty(), "untranslated Turkish UI literals: {missing:#?}");
+        let missing: Vec<_> = literals
+            .iter()
+            .filter(|label| !has(tr_lang, label))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "untranslated Turkish UI literals: {missing:#?}"
+        );
     }
 
     #[test]
@@ -1539,10 +2086,22 @@ mod tests {
         let zh = Lang::from_code("zh-hans").expect("zh-hans registered");
         assert_eq!(zh.name(), "简体中文");
         assert_eq!(normalize_pref("zh-Hans"), Some("zh-hans"));
-        assert_eq!(normalize_pref("zh"), None, "only exact codes are preferences");
+        assert_eq!(
+            normalize_pref("zh"),
+            None,
+            "only exact codes are preferences"
+        );
         assert_eq!(tr(zh, "File"), "文件");
         assert_eq!(tr(zh, "报告.pdf"), "报告.pdf");
-        for menu in ["File", "Edit", "Pages", "View", "Help", "Preferences…", "Interface language"] {
+        for menu in [
+            "File",
+            "Edit",
+            "Pages",
+            "View",
+            "Help",
+            "Preferences…",
+            "Interface language",
+        ] {
             assert!(has(zh, menu), "missing {menu}");
         }
     }
@@ -1571,7 +2130,10 @@ mod tests {
     #[test]
     fn simplified_chinese_covers_about_credit_labels() {
         let zh = Lang::from_code("zh-hans").expect("zh-hans registered");
-        for label in ["About", "Contributors", "Models"].into_iter().chain(crate::credits::MODEL_COLUMNS) {
+        for label in ["About", "Contributors", "Models"]
+            .into_iter()
+            .chain(crate::credits::MODEL_COLUMNS)
+        {
             assert!(has(zh, label), "missing About label: {label}");
         }
         for mode in crate::credits::NameMode::ALL {
@@ -1600,8 +2162,14 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n").replace("crate::i18n::t(", "tl!(");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n")
+                        .replace("crate::i18n::t(", "tl!(");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(") {
                         let after = after.trim_start();
                         let Some(after) = after.strip_prefix('"') else {
@@ -1624,7 +2192,8 @@ mod tests {
                         let closing = closing.strip_prefix(',').unwrap_or(closing).trim_start();
                         if closing.starts_with(')') {
                             // Current UI literals use the shared Rust/JSON string escapes.
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -1632,27 +2201,52 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(zh, label)).collect();
-        assert!(missing.is_empty(), "untranslated Simplified Chinese UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Simplified Chinese UI literals: {missing:#?}"
+        );
     }
 
     #[test]
     fn simplified_chinese_history_and_diagnostics_preserve_user_values() {
         let zh = Lang::from_code("zh-hans").expect("zh-hans registered");
         set_current(zh);
-        assert_eq!(command_label("Undo Insert pages from 报告 {n}.pdf"), "撤销 从 报告 {n}.pdf 插入页面");
-        assert_eq!(command_label("Redo Fill in 联系人 {key}"), "重做 填写 联系人 {key}");
+        assert_eq!(
+            command_label("Undo Insert pages from 报告 {n}.pdf"),
+            "撤销 从 报告 {n}.pdf 插入页面"
+        );
+        assert_eq!(
+            command_label("Redo Fill in 联系人 {key}"),
+            "重做 填写 联系人 {key}"
+        );
         assert_eq!(action_label("Change Title"), "更改标题");
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
-        assert_eq!(fmt(t("This page couldn't be displayed.\n{e}"), &[("e", "OS error {n}")]), "无法显示此页面。\nOS error {n}");
+        assert_eq!(
+            fmt(
+                t("This page couldn't be displayed.\n{e}"),
+                &[("e", "OS error {n}")]
+            ),
+            "无法显示此页面。\nOS error {n}"
+        );
         assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "已选择 3 页");
         assert_eq!(tr(zh, "CheckBox"), "复选框");
         assert_eq!(tr(zh, "pages"), "页");
         assert_eq!(trn(zh, 1, "{n} page", "{n} pages"), "1 页");
         assert_eq!(trn(zh, 0, "{n} field", "{n} fields"), "0 个字段");
         assert_eq!(trn(zh, 2, "{n} field", "{n} fields"), "2 个字段");
-        assert_eq!(fmt(t("{n} contributors · {c} commits"), &[("n", "2"), ("c", "1,234")]), "2 位贡献者 · 1,234 次提交");
+        assert_eq!(
+            fmt(
+                t("{n} contributors · {c} commits"),
+                &[("n", "2"), ("c", "1,234")]
+            ),
+            "2 位贡献者 · 1,234 次提交"
+        );
         let contributor = crate::credits::Contributor {
             login: "reader{n}",
             display_name: Some("Save"),
@@ -1670,7 +2264,10 @@ mod tests {
             contributor.summary(),
             "@reader{n}：2 个 PR，3 次提交，新增 10 行 / 删除 4 行（净增 +6 行），新增 1 个 / 删除 0 个二进制资源，2026-10-01 – 2026-10-09"
         );
-        assert_eq!(contributor.name(crate::credits::NameMode::DisplayName), "Save");
+        assert_eq!(
+            contributor.name(crate::credits::NameMode::DisplayName),
+            "Save"
+        );
         set_current(Lang::EN);
     }
 
@@ -1693,12 +2290,27 @@ mod tests {
         let zh = Lang::from_code("zh-hant").expect("zh-hant registered");
         assert_eq!(tr(zh, Status::Passed.label()), "通過");
         assert_eq!(tr(zh, Status::Failed.label()), "未通過");
-        assert_eq!(tr(zh, Rule::Scripts.description()), "沒有妨礙無障礙操作的指令碼");
+        assert_eq!(
+            tr(zh, Rule::Scripts.description()),
+            "沒有妨礙無障礙操作的指令碼"
+        );
         assert_eq!(tr(zh, Rule::TableRows.name()), "列");
-        assert_eq!(tr(zh, Rule::TableRows.explanation()), "表格列應直接位於表格或其表頭、主體、表尾內。請修正表格標記。");
-        assert_eq!(tr(zh, Rule::TableRegularity.description()), "表格每列的欄數必須相同，每欄的列數也必須相同");
-        assert_eq!(tr(zh, Rule::TableCells.explanation()), "表格儲存格應位於列內。請修正表格標記。");
-        assert_eq!(tr(zh, Rule::TableHeaders.explanation()), "表頭儲存格（TH）讓聽者知道每欄或每列的內容。請標記表頭儲存格。");
+        assert_eq!(
+            tr(zh, Rule::TableRows.explanation()),
+            "表格列應直接位於表格或其表頭、主體、表尾內。請修正表格標記。"
+        );
+        assert_eq!(
+            tr(zh, Rule::TableRegularity.description()),
+            "表格每列的欄數必須相同，每欄的列數也必須相同"
+        );
+        assert_eq!(
+            tr(zh, Rule::TableCells.explanation()),
+            "表格儲存格應位於列內。請修正表格標記。"
+        );
+        assert_eq!(
+            tr(zh, Rule::TableHeaders.explanation()),
+            "表頭儲存格（TH）讓聽者知道每欄或每列的內容。請標記表頭儲存格。"
+        );
     }
 
     /// A choice in a form is an item, not a project; field notices preserve user-supplied names.
@@ -1709,7 +2321,10 @@ mod tests {
         assert_eq!(tr(zh, "Item List"), "項目清單");
         assert_eq!(tr(zh, "Sort items"), "排序項目");
         assert_eq!(tr(zh, "Read Only"), "唯讀");
-        assert_eq!(fmt(tr(zh, "{name} is read-only"), &[("name", "Field{n}")]), "Field{n} 為唯讀");
+        assert_eq!(
+            fmt(tr(zh, "{name} is read-only"), &[("name", "Field{n}")]),
+            "Field{n} 為唯讀"
+        );
     }
 
     #[test]
@@ -1724,8 +2339,14 @@ mod tests {
         assert_eq!(tr(fr, "Save as…"), "Enregistrer sous…");
         assert_eq!(tr(fr, "Bookmarks"), "Signets");
         assert_eq!(tr(fr, "Layers"), "Calques");
-        assert_eq!(tr(fr, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
-        assert_eq!((0..=3).map(|n| (fr.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 1, 1]);
+        assert_eq!(
+            tr(fr, "Rapport de l'utilisateur.pdf"),
+            "Rapport de l'utilisateur.pdf"
+        );
+        assert_eq!(
+            (0..=3).map(|n| (fr.0.plural)(n)).collect::<Vec<_>>(),
+            [0, 0, 1, 1]
+        );
         assert_eq!(trn(fr, 0, "{n} page", "{n} pages"), "0 page");
         assert_eq!(trn(fr, 1, "{n} page", "{n} pages"), "1 page");
         assert_eq!(trn(fr, 2, "{n} page", "{n} pages"), "2 pages");
@@ -1774,8 +2395,13 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(\"") {
                         let mut escaped = false;
                         let end = after
@@ -1790,7 +2416,8 @@ mod tests {
                             .expect("closed tl! literal");
                         let (raw, tail) = after.split_at(end);
                         if tail.starts_with("\")") {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -1798,21 +2425,43 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(fr, label)).collect();
-        assert!(missing.is_empty(), "untranslated French UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated French UI literals: {missing:#?}"
+        );
     }
 
     #[test]
     fn french_history_and_diagnostics_preserve_user_values() {
         let fr = Lang::from_code("fr").expect("fr registered");
         set_current(fr);
-        assert_eq!(command_label("Undo Insert pages from Rapport {n}.pdf"), "Annuler Insérer des pages depuis Rapport {n}.pdf");
-        assert_eq!(command_label("Redo Fill in Contact {key}"), "Rétablir Remplir Contact {key}");
+        assert_eq!(
+            command_label("Undo Insert pages from Rapport {n}.pdf"),
+            "Annuler Insérer des pages depuis Rapport {n}.pdf"
+        );
+        assert_eq!(
+            command_label("Redo Fill in Contact {key}"),
+            "Rétablir Remplir Contact {key}"
+        );
         assert_eq!(action_label("Change Title"), "Modifier Titre");
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
-        assert_eq!(fmt(t("This page couldn't be displayed.\n{e}"), &[("e", "OS error {n}")]), "Impossible d'afficher cette page.\nOS error {n}");
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "3 pages sélectionnées");
+        assert_eq!(
+            fmt(
+                t("This page couldn't be displayed.\n{e}"),
+                &[("e", "OS error {n}")]
+            ),
+            "Impossible d'afficher cette page.\nOS error {n}"
+        );
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "3 pages sélectionnées"
+        );
         assert_eq!(tr(fr, "CheckBox"), "Case à cocher");
         set_current(Lang::EN);
     }
@@ -1831,7 +2480,10 @@ mod tests {
         assert_eq!(tr(de, "Bookmarks"), "Lesezeichen");
         assert_eq!(tr(de, "Layers"), "Ebenen");
         assert_eq!(tr(de, "Bericht des Nutzers.pdf"), "Bericht des Nutzers.pdf");
-        assert_eq!((0..=3).map(|n| (de.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
+        assert_eq!(
+            (0..=3).map(|n| (de.0.plural)(n)).collect::<Vec<_>>(),
+            [1, 0, 1, 1]
+        );
         assert_eq!(trn(de, 0, "{n} page", "{n} pages"), "0 Seiten");
         assert_eq!(trn(de, 1, "{n} page", "{n} pages"), "1 Seite");
         assert_eq!(trn(de, 2, "{n} page", "{n} pages"), "2 Seiten");
@@ -1880,8 +2532,13 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(\"") {
                         let mut escaped = false;
                         let end = after
@@ -1896,7 +2553,8 @@ mod tests {
                             .expect("closed tl! literal");
                         let (raw, tail) = after.split_at(end);
                         if tail.starts_with("\")") {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -1904,9 +2562,16 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(de, label)).collect();
-        assert!(missing.is_empty(), "untranslated German UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated German UI literals: {missing:#?}"
+        );
     }
 
     #[test]
@@ -1931,15 +2596,27 @@ mod tests {
     fn german_history_and_diagnostics_preserve_user_values() {
         let de = Lang::from_code("de").expect("de registered");
         set_current(de);
-        assert_eq!(command_label("Undo Insert pages from Rapport {n}.pdf"), "Seiten aus Rapport {n}.pdf einfügen rückgängig machen");
-        assert_eq!(command_label("Redo Fill in Contact {key}"), "Contact {key} ausfüllen wiederholen");
+        assert_eq!(
+            command_label("Undo Insert pages from Rapport {n}.pdf"),
+            "Seiten aus Rapport {n}.pdf einfügen rückgängig machen"
+        );
+        assert_eq!(
+            command_label("Redo Fill in Contact {key}"),
+            "Contact {key} ausfüllen wiederholen"
+        );
         assert_eq!(action_label("Change Title"), "Titel ändern");
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
         assert_eq!(
-            fmt(t("This page couldn't be displayed.\n{e}"), &[("e", "OS error {n}")]),
+            fmt(
+                t("This page couldn't be displayed.\n{e}"),
+                &[("e", "OS error {n}")]
+            ),
             "Diese Seite konnte nicht angezeigt werden.\nOS error {n}"
         );
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "3 Seiten ausgewählt");
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "3 Seiten ausgewählt"
+        );
         assert_eq!(tr(de, "CheckBox"), "Kontrollkästchen");
         set_current(Lang::EN);
     }
@@ -1956,9 +2633,15 @@ mod tests {
         assert_eq!(tr(ru, "Save as…"), "Сохранить как…");
         assert_eq!(tr(ru, "Bookmarks"), "Закладки");
         assert_eq!(tr(ru, "Layers"), "Слои");
-        assert_eq!(tr(ru, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
+        assert_eq!(
+            tr(ru, "Rapport de l'utilisateur.pdf"),
+            "Rapport de l'utilisateur.pdf"
+        );
         // one (1), few (2-4), many (0, 5+), with 11-14 exception
-        assert_eq!((0..=3).map(|n| (ru.0.plural)(n)).collect::<Vec<_>>(), [2, 0, 1, 1]);
+        assert_eq!(
+            (0..=3).map(|n| (ru.0.plural)(n)).collect::<Vec<_>>(),
+            [2, 0, 1, 1]
+        );
         assert_eq!(trn(ru, 0, "{n} page", "{n} pages"), "0 страниц");
         assert_eq!(trn(ru, 1, "{n} page", "{n} pages"), "1 страница");
         assert_eq!(trn(ru, 2, "{n} page", "{n} pages"), "2 страницы");
@@ -2012,8 +2695,13 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(\"") {
                         let mut escaped = false;
                         let end = after
@@ -2028,7 +2716,8 @@ mod tests {
                             .expect("closed tl! literal");
                         let (raw, tail) = after.split_at(end);
                         if tail.starts_with("\")") {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -2036,21 +2725,43 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(ru, label)).collect();
-        assert!(missing.is_empty(), "untranslated Russian UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Russian UI literals: {missing:#?}"
+        );
     }
 
     #[test]
     fn russian_history_and_diagnostics_preserve_user_values() {
         let ru = Lang::from_code("ru").expect("ru registered");
         set_current(ru);
-        assert_eq!(command_label("Undo Insert pages from Rapport {n}.pdf"), "Отменить Вставить страницы из Rapport {n}.pdf");
-        assert_eq!(command_label("Redo Fill in Contact {key}"), "Повторить Заполнить Contact {key}");
+        assert_eq!(
+            command_label("Undo Insert pages from Rapport {n}.pdf"),
+            "Отменить Вставить страницы из Rapport {n}.pdf"
+        );
+        assert_eq!(
+            command_label("Redo Fill in Contact {key}"),
+            "Повторить Заполнить Contact {key}"
+        );
         assert_eq!(action_label("Change Title"), "Изменить заголовок");
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
-        assert_eq!(fmt(t("This page couldn't be displayed.\n{e}"), &[("e", "OS error {n}")]), "Не удалось отобразить эту страницу.\nOS error {n}");
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "Выбрано 3 страницы");
+        assert_eq!(
+            fmt(
+                t("This page couldn't be displayed.\n{e}"),
+                &[("e", "OS error {n}")]
+            ),
+            "Не удалось отобразить эту страницу.\nOS error {n}"
+        );
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "Выбрано 3 страницы"
+        );
         assert_eq!(tr(ru, "CheckBox"), "Флажок");
         set_current(Lang::EN);
     }
@@ -2073,8 +2784,14 @@ mod tests {
         assert_eq!(trn(lt, 11, "{n} page", "{n} pages"), "11 puslapių");
         assert_eq!(trn(lt, 21, "{n} page", "{n} pages"), "21 puslapis");
         assert_eq!(trn(lt, 22, "{n} page", "{n} pages"), "22 puslapiai");
-        assert_eq!(trn(lt, 12, "{n} object selected", "{n} objects selected"), "Pažymėta 12 objektų");
-        assert_eq!(trn(lt, 22, "{n} object selected", "{n} objects selected"), "Pažymėti 22 objektai");
+        assert_eq!(
+            trn(lt, 12, "{n} object selected", "{n} objects selected"),
+            "Pažymėta 12 objektų"
+        );
+        assert_eq!(
+            trn(lt, 22, "{n} object selected", "{n} objects selected"),
+            "Pažymėti 22 objektai"
+        );
         let mut app = crate::PdfCraftApp::default();
         app.set_option("language", "LT").unwrap();
         assert_eq!(app.language, "lt");
@@ -2113,27 +2830,46 @@ mod tests {
                 }
             }
         }
-        assert!(missing.is_empty(), "Lithuanian misses commands/tools: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "Lithuanian misses commands/tools: {missing:#?}"
+        );
     }
 
     #[test]
     fn lithuanian_covers_ui_literals() {
         let lt = Lang::from_code("lt").expect("lt registered");
         let literals = scan_ui_literals(true);
-        assert!(literals.contains("Float panel"), "direct lookup literals are included");
+        assert!(
+            literals.contains("Float panel"),
+            "direct lookup literals are included"
+        );
         assert!(literals.contains("@{login}: {prs} PRs, {commits} commits, +{added} / −{deleted} lines (Δ {delta}), +{bin_added} / −{bin_deleted} binary assets, {first} – {last}"), "multiline literal arguments are included");
         let missing: Vec<_> = literals.iter().filter(|label| !has(lt, label)).collect();
-        assert!(missing.is_empty(), "Untranslated Lithuanian UI labels: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "Untranslated Lithuanian UI labels: {missing:#?}"
+        );
     }
 
     #[test]
     fn lithuanian_covers_contextual_calendar_certificate_and_preference_labels() {
         let lt = Lang::from_code("lt").expect("lt registered");
         assert_eq!(tr_ctx(lt, "signature pad", "Type"), "Tekstu");
-        for label in ["All tools", "Read", "E-Sign", "Tools", "View more", "View less"] {
+        for label in [
+            "All tools",
+            "Read",
+            "E-Sign",
+            "Tools",
+            "View more",
+            "View less",
+        ] {
             assert!(has(lt, label), "shell label remains untranslated: {label}");
         }
-        assert_eq!(["Slow", "Normal", "Fast"].map(|label| tr_ctx(lt, "scroll speed", label)), ["Lėtas", "Įprastas", "Greitas"]);
+        assert_eq!(
+            ["Slow", "Normal", "Fast"].map(|label| tr_ctx(lt, "scroll speed", label)),
+            ["Lėtas", "Įprastas", "Greitas"]
+        );
         let months = [
             ("January", "sausis", "sausio"),
             ("February", "vasaris", "vasario"),
@@ -2153,14 +2889,28 @@ mod tests {
             assert_eq!(tr_ctx(lt, "calendar date", source), in_date);
         }
         assert_eq!(
-            ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(|day| tr_ctx(lt, "calendar weekday", day)),
+            ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(|day| tr_ctx(
+                lt,
+                "calendar weekday",
+                day
+            )),
             ["Sk", "Pr", "An", "Tr", "Kt", "Pn", "Št"]
         );
         assert_eq!(
-            fmt(tr(lt, "{month} {day}, {y}"), &[("month", tr_ctx(lt, "calendar date", "March")), ("day", "9"), ("y", "2026")]),
+            fmt(
+                tr(lt, "{month} {day}, {y}"),
+                &[
+                    ("month", tr_ctx(lt, "calendar date", "March")),
+                    ("day", "9"),
+                    ("y", "2026")
+                ]
+            ),
             "2026 m. kovo 9 d."
         );
-        assert_eq!(tr_ctx(lt, "certificate", "Subject"), "Sertifikato subjektas");
+        assert_eq!(
+            tr_ctx(lt, "certificate", "Subject"),
+            "Sertifikato subjektas"
+        );
         for field in [
             "Issued to",
             "Issued by",
@@ -2178,7 +2928,11 @@ mod tests {
             "SHA-1 digest",
             "SHA-256 digest",
         ] {
-            assert_ne!(tr_ctx(lt, "certificate", field), field, "certificate field remains untranslated: {field}");
+            assert_ne!(
+                tr_ctx(lt, "certificate", field),
+                field,
+                "certificate field remains untranslated: {field}"
+            );
         }
     }
 
@@ -2187,7 +2941,10 @@ mod tests {
         let lt = Lang::from_code("lt").expect("lt registered");
         assert_eq!(tr(lt, "for images above"), "kai raiška viršija");
         assert_eq!(
-            fmt(tr(lt, "Checking Options ({on} of 32 in all categories)"), &[("on", "31")]),
+            fmt(
+                tr(lt, "Checking Options ({on} of 32 in all categories)"),
+                &[("on", "31")]
+            ),
             "Tikrinimo parinktys (visose kategorijose: 31 iš 32)"
         );
     }
@@ -2199,13 +2956,21 @@ mod tests {
         let lt = Lang::from_code("lt").expect("lt registered");
         let mut missing = std::collections::BTreeSet::new();
         for reference in LANGUAGES.iter().filter(|language| language.code != "lt") {
-            let (entries, errors) = catalog::parse_entries(reference.source, reference.plural_forms());
-            assert!(errors.is_empty(), "{}: invalid reference catalog: {errors:?}", reference.code);
+            let (entries, errors) =
+                catalog::parse_entries(reference.source, reference.plural_forms());
+            assert!(
+                errors.is_empty(),
+                "{}: invalid reference catalog: {errors:?}",
+                reference.code
+            );
             for entry in entries {
                 let translated = match entry.context.as_str() {
                     "" => lt.catalog().plain(&entry.source),
                     "@id" => lt.catalog().id(&entry.source),
-                    "@plural" => entry.source.split_once('|').and_then(|(one, other)| lt.catalog().plural(one, other, 0)),
+                    "@plural" => entry
+                        .source
+                        .split_once('|')
+                        .and_then(|(one, other)| lt.catalog().plural(one, other, 0)),
                     context => lt.catalog().contextual(context, &entry.source),
                 };
                 if translated.is_none() {
@@ -2213,7 +2978,10 @@ mod tests {
                 }
             }
         }
-        assert!(missing.is_empty(), "Lithuanian misses bundled catalog keys: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "Lithuanian misses bundled catalog keys: {missing:#?}"
+        );
     }
 
     #[test]
@@ -2228,14 +2996,21 @@ mod tests {
             }))
             .chain(crate::credits::MODEL_COLUMNS.iter().copied());
         let missing: Vec<_> = labels.filter(|label| !has(lt, label)).collect();
-        assert!(missing.is_empty(), "Lithuanian misses credits labels: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "Lithuanian misses credits labels: {missing:#?}"
+        );
     }
 
     #[test]
     fn lithuanian_wording_fixes_keep_context_and_meaning() {
         let lt = Lang::from_code("lt").expect("lt registered");
         assert_eq!(tr(lt, "of {name}"), "iš {name}");
-        assert_eq!(tr(lt, "Active"), "Aktyvi", "the adjective describes a theme (tema)");
+        assert_eq!(
+            tr(lt, "Active"),
+            "Aktyvi",
+            "the adjective describes a theme (tema)"
+        );
         for n in [1, 2, 12] {
             let renamed = trn(
                 lt,
@@ -2248,9 +3023,15 @@ mod tests {
             assert!(renamed.contains("{list}"));
         }
         assert_eq!(tr(lt, "Two-Up (Facing)"), "Du atgręžti puslapiai");
-        assert_eq!(tr(lt, "Windows store  ·  "), "„Windows“ sertifikatų saugykla  ·  ");
         assert_eq!(
-            tr(lt, "Adds invisible text over each word; the page image is not changed"),
+            tr(lt, "Windows store  ·  "),
+            "„Windows“ sertifikatų saugykla  ·  "
+        );
+        assert_eq!(
+            tr(
+                lt,
+                "Adds invisible text over each word; the page image is not changed"
+            ),
             "Virš kiekvieno žodžio prideda nematomą tekstą; puslapio vaizdas nesikeičia"
         );
         assert!(
@@ -2277,7 +3058,10 @@ mod tests {
         assert_eq!(tr_ctx(sl, "signature pad", "Type"), "Vtipkaj");
         assert_eq!(tr_ctx(sl, "action wizard", "Start"), "Začni");
         // one (1), two (2), few (3, 4), other (0, 5+)
-        assert_eq!((0..=5).map(|n| (sl.0.plural)(n)).collect::<Vec<_>>(), [3, 0, 1, 2, 2, 3]);
+        assert_eq!(
+            (0..=5).map(|n| (sl.0.plural)(n)).collect::<Vec<_>>(),
+            [3, 0, 1, 2, 2, 3]
+        );
         let mut app = crate::PdfCraftApp::default();
         app.set_option("language", "SL").unwrap();
         assert_eq!(app.language, "sl");
@@ -2295,11 +3079,41 @@ mod tests {
             (vec![1, 101, 201, 1001, 1101], "stran", "polje"),
             (vec![2, 102, 202, 1002], "strani", "polji"),
             (vec![3, 4, 103, 104, 1003], "strani", "polja"),
-            (vec![0, 5, 10, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 25, 31, 100, 111, 112, 121, 122, 1000, u64::MAX], "strani", "polj"),
+            (
+                vec![
+                    0,
+                    5,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    31,
+                    100,
+                    111,
+                    112,
+                    121,
+                    122,
+                    1000,
+                    u64::MAX,
+                ],
+                "strani",
+                "polj",
+            ),
         ] {
             for n in counts {
                 assert_eq!(trn(sl, n, "{n} page", "{n} pages"), format!("{n} {page}"));
-                assert_eq!(trn(sl, n, "{n} field", "{n} fields"), format!("{n} {field}"));
+                assert_eq!(
+                    trn(sl, n, "{n} field", "{n} fields"),
+                    format!("{n} {field}")
+                );
             }
         }
     }
@@ -2309,7 +3123,10 @@ mod tests {
         let sl = Lang::from_code("sl").expect("sl registered");
         set_current(sl);
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "Izbranih strani: 3");
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "Izbranih strani: 3"
+        );
         assert_eq!(tr(sl, "CheckBox"), "Potrditveno polje");
         set_current(Lang::EN);
     }
@@ -2349,8 +3166,13 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(\"") {
                         let mut escaped = false;
                         let end = after
@@ -2365,7 +3187,8 @@ mod tests {
                             .expect("closed tl! literal");
                         let (raw, tail) = after.split_at(end);
                         if tail.starts_with("\")") {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -2373,9 +3196,16 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(sl, label)).collect();
-        assert!(missing.is_empty(), "untranslated Slovene UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Slovene UI literals: {missing:#?}"
+        );
     }
 
     #[test]
@@ -2390,9 +3220,15 @@ mod tests {
         assert_eq!(tr(bg, "Save as…"), "Запиши като…");
         assert_eq!(tr(bg, "Bookmarks"), "Отметки");
         assert_eq!(tr(bg, "Layers"), "Слоеве");
-        assert_eq!(tr(bg, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
+        assert_eq!(
+            tr(bg, "Rapport de l'utilisateur.pdf"),
+            "Rapport de l'utilisateur.pdf"
+        );
         // one (1), other (0, 2+)
-        assert_eq!((0..=3).map(|n| (bg.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
+        assert_eq!(
+            (0..=3).map(|n| (bg.0.plural)(n)).collect::<Vec<_>>(),
+            [1, 0, 1, 1]
+        );
         assert_eq!(trn(bg, 0, "{n} page", "{n} pages"), "0 страници");
         assert_eq!(trn(bg, 1, "{n} page", "{n} pages"), "1 страница");
         assert_eq!(trn(bg, 2, "{n} page", "{n} pages"), "2 страници");
@@ -2442,8 +3278,13 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(\"") {
                         let mut escaped = false;
                         let end = after
@@ -2458,7 +3299,8 @@ mod tests {
                             .expect("closed tl! literal");
                         let (raw, tail) = after.split_at(end);
                         if tail.starts_with("\")") {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -2466,9 +3308,16 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(bg, label)).collect();
-        assert!(missing.is_empty(), "untranslated Bulgarian UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Bulgarian UI literals: {missing:#?}"
+        );
     }
 
     #[test]
@@ -2476,7 +3325,10 @@ mod tests {
         let bg = Lang::from_code("bg").expect("bg registered");
         set_current(bg);
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "Избрани страници: 3");
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "Избрани страници: 3"
+        );
         assert_eq!(tr(bg, "CheckBox"), "Квадратче за отметка");
         set_current(Lang::EN);
     }
@@ -2493,7 +3345,10 @@ mod tests {
         assert_eq!(tr(hu, "Save as…"), "Mentés másként…");
         assert_eq!(tr(hu, "Bookmarks"), "Könyvjelzők");
         assert_eq!(tr(hu, "Layers"), "Rétegek");
-        assert_eq!(tr(hu, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
+        assert_eq!(
+            tr(hu, "Rapport de l'utilisateur.pdf"),
+            "Rapport de l'utilisateur.pdf"
+        );
         assert_eq!(tr_ctx(hu, "signature pad", "Type"), "Gépelés");
         assert_eq!(tr_ctx(hu, "action wizard", "Start"), "Indítás");
         assert_eq!(tr(hu, "Windows store  ·  "), "Windows-tároló  ·  ");
@@ -2501,7 +3356,10 @@ mod tests {
         assert_eq!(tr(hu, "Remove saved {what}"), "Mentett {what} eltávolítása");
         assert_eq!(tr(hu, "Squiggly"), "Hullámos aláhúzás");
         // one (1), other (0, 2+)
-        assert_eq!((0..=3).map(|n| (hu.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
+        assert_eq!(
+            (0..=3).map(|n| (hu.0.plural)(n)).collect::<Vec<_>>(),
+            [1, 0, 1, 1]
+        );
         assert_eq!(trn(hu, 0, "{n} page", "{n} pages"), "0 oldal");
         assert_eq!(trn(hu, 1, "{n} page", "{n} pages"), "1 oldal");
         assert_eq!(trn(hu, 2, "{n} page", "{n} pages"), "2 oldal");
@@ -2550,8 +3408,13 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(\"") {
                         let mut escaped = false;
                         let end = after
@@ -2566,7 +3429,8 @@ mod tests {
                             .expect("closed tl! literal");
                         let (raw, tail) = after.split_at(end);
                         if tail.starts_with("\")") {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -2574,24 +3438,43 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(hu, label)).collect();
-        assert!(missing.is_empty(), "untranslated Hungarian UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Hungarian UI literals: {missing:#?}"
+        );
     }
 
     #[test]
     fn hungarian_history_and_diagnostics_preserve_user_values() {
         let hu = Lang::from_code("hu").expect("hu registered");
         set_current(hu);
-        assert_eq!(command_label("Undo Insert pages from Rapport {n}.pdf"), "Oldalak beszúrása ebből: Rapport {n}.pdf visszavonása");
-        assert_eq!(command_label("Redo Fill in Contact {key}"), "Contact {key} kitöltése megismétlése");
+        assert_eq!(
+            command_label("Undo Insert pages from Rapport {n}.pdf"),
+            "Oldalak beszúrása ebből: Rapport {n}.pdf visszavonása"
+        );
+        assert_eq!(
+            command_label("Redo Fill in Contact {key}"),
+            "Contact {key} kitöltése megismétlése"
+        );
         assert_eq!(action_label("Change Title"), "Cím módosítása");
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
         assert_eq!(
-            fmt(t("This page couldn't be displayed.\n{e}"), &[("e", "OS error {n}")]),
+            fmt(
+                t("This page couldn't be displayed.\n{e}"),
+                &[("e", "OS error {n}")]
+            ),
             "Ezt az oldalt nem sikerült megjeleníteni.\nOS error {n}"
         );
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "3 oldal kijelölve");
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "3 oldal kijelölve"
+        );
         assert_eq!(tr(hu, "CheckBox"), "Jelölőnégyzet");
         set_current(Lang::EN);
     }
@@ -2605,7 +3488,10 @@ mod tests {
             assert_eq!(lang_from_tag(tag), Some(uk), "{tag}");
         }
         assert_eq!(first_supported("uk-UA\r\nen-US"), Some(uk));
-        assert_eq!(first_supported("(\n    \"uk-UA\",\n    \"en-US\"\n)\n"), Some(uk));
+        assert_eq!(
+            first_supported("(\n    \"uk-UA\",\n    \"en-US\"\n)\n"),
+            Some(uk)
+        );
         assert_eq!(tr(uk, "File"), "Файл");
         assert_eq!(tr(uk, "Save as…"), "Зберегти як…");
         assert_eq!(tr(uk, "Bookmarks"), "Закладки");
@@ -2631,12 +3517,41 @@ mod tests {
         let uk = Lang::from_code("uk").expect("uk registered");
         for (counts, page, field) in [
             (vec![1, 21, 31, 101, 121, 1001], "сторінка", "поле"),
-            (vec![2, 3, 4, 22, 23, 24, 102, 104, 122, 1002], "сторінки", "поля"),
-            (vec![0, 5, 10, 11, 12, 13, 14, 19, 20, 25, 100, 110, 111, 112, 114, 1000, u64::MAX], "сторінок", "полів"),
+            (
+                vec![2, 3, 4, 22, 23, 24, 102, 104, 122, 1002],
+                "сторінки",
+                "поля",
+            ),
+            (
+                vec![
+                    0,
+                    5,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    19,
+                    20,
+                    25,
+                    100,
+                    110,
+                    111,
+                    112,
+                    114,
+                    1000,
+                    u64::MAX,
+                ],
+                "сторінок",
+                "полів",
+            ),
         ] {
             for n in counts {
                 assert_eq!(trn(uk, n, "{n} page", "{n} pages"), format!("{n} {page}"));
-                assert_eq!(trn(uk, n, "{n} field", "{n} fields"), format!("{n} {field}"));
+                assert_eq!(
+                    trn(uk, n, "{n} field", "{n} fields"),
+                    format!("{n} {field}")
+                );
             }
         }
     }
@@ -2661,7 +3576,13 @@ mod tests {
             assert_eq!(tr(uk, source), standalone);
             let month = tr_ctx(uk, "calendar date", source);
             assert_eq!(month, date);
-            assert_eq!(fmt(tr(uk, "{month} {day}, {y}"), &[("month", month), ("day", "9"), ("y", "2026")]), format!("9 {date} 2026"));
+            assert_eq!(
+                fmt(
+                    tr(uk, "{month} {day}, {y}"),
+                    &[("month", month), ("day", "9"), ("y", "2026")]
+                ),
+                format!("9 {date} 2026")
+            );
             // Catalogs without this context retain their existing month translation.
             assert_eq!(tr_ctx(Lang::EN, "calendar date", source), source);
             assert_eq!(tr_ctx(JA(), "calendar date", source), tr(JA(), source));
@@ -2702,7 +3623,10 @@ mod tests {
                 e.source == e.translation && !keep.contains(&e.source.as_str()) && !key_cap
             })
             .collect();
-        assert!(unchanged.is_empty(), "untranslated Ukrainian catalog entries: {unchanged:#?}");
+        assert!(
+            unchanged.is_empty(),
+            "untranslated Ukrainian catalog entries: {unchanged:#?}"
+        );
     }
 
     /// Ukrainian translates every registered command and every All tools label.
@@ -2780,7 +3704,10 @@ mod tests {
                 e.source == e.translation && !keep.contains(&e.source.as_str()) && !key_cap
             })
             .collect();
-        assert!(unchanged.is_empty(), "untranslated Kazakh catalog entries: {unchanged:#?}");
+        assert!(
+            unchanged.is_empty(),
+            "untranslated Kazakh catalog entries: {unchanged:#?}"
+        );
     }
     /// Kazakh translates every tl!("literal") in the UI source, including direct lookups and
     /// multiline literals, following the complete-catalog check for Simplified Chinese.
@@ -2797,8 +3724,14 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n").replace("crate::i18n::t(", "tl!(");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n")
+                        .replace("crate::i18n::t(", "tl!(");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(") {
                         let after = after.trim_start();
                         let Some(after) = after.strip_prefix('"') else {
@@ -2820,7 +3753,8 @@ mod tests {
                         let closing = tail.strip_prefix('"').expect("closing quote").trim_start();
                         let closing = closing.strip_prefix(',').unwrap_or(closing).trim_start();
                         if closing.starts_with(')') {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -2828,9 +3762,16 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(kk, label)).collect();
-        assert!(missing.is_empty(), "untranslated Kazakh UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Kazakh UI literals: {missing:#?}"
+        );
     }
     /// Check direct lookups and multiline literals as well as ordinary tl!("literal") calls,
     /// following the complete-catalog check for Simplified Chinese.
@@ -2847,8 +3788,14 @@ mod tests {
                         stack.push(path);
                     }
                 } else if path.extension().is_some_and(|ext| ext == "rs") {
-                    let source = std::fs::read_to_string(path).expect("UI source file").replace("\r\n", "\n").replace("crate::i18n::t(", "tl!(");
-                    let mut rest = source.split("#[cfg(test)]\nmod ").next().unwrap_or_default();
+                    let source = std::fs::read_to_string(path)
+                        .expect("UI source file")
+                        .replace("\r\n", "\n")
+                        .replace("crate::i18n::t(", "tl!(");
+                    let mut rest = source
+                        .split("#[cfg(test)]\nmod ")
+                        .next()
+                        .unwrap_or_default();
                     while let Some((_, after)) = rest.split_once("tl!(") {
                         let after = after.trim_start();
                         let Some(after) = after.strip_prefix('"') else {
@@ -2870,7 +3817,8 @@ mod tests {
                         let closing = tail.strip_prefix('"').expect("closing quote").trim_start();
                         let closing = closing.strip_prefix(',').unwrap_or(closing).trim_start();
                         if closing.starts_with(')') {
-                            let label: String = serde_json::from_str(&format!("\"{raw}\"")).expect("UI literal escapes");
+                            let label: String = serde_json::from_str(&format!("\"{raw}\""))
+                                .expect("UI literal escapes");
                             literals.insert(label);
                         }
                         rest = tail.strip_prefix('"').expect("closing quote");
@@ -2878,22 +3826,50 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
         let missing: Vec<_> = literals.iter().filter(|label| !has(uk, label)).collect();
-        assert!(missing.is_empty(), "untranslated Ukrainian UI literals: {missing:#?}");
+        assert!(
+            missing.is_empty(),
+            "untranslated Ukrainian UI literals: {missing:#?}"
+        );
     }
 
     #[test]
     fn ukrainian_history_and_diagnostics_preserve_user_values() {
         let uk = Lang::from_code("uk").expect("uk registered");
         set_current(uk);
-        assert_eq!(command_label("Undo Insert pages from Звіт {n}.pdf"), "Скасувати: Вставити сторінки з Звіт {n}.pdf");
-        assert_eq!(command_label("Redo Fill in Контакт {key}"), "Повторити: Заповнити Контакт {key}");
+        assert_eq!(
+            command_label("Undo Insert pages from Звіт {n}.pdf"),
+            "Скасувати: Вставити сторінки з Звіт {n}.pdf"
+        );
+        assert_eq!(
+            command_label("Redo Fill in Контакт {key}"),
+            "Повторити: Заповнити Контакт {key}"
+        );
         assert_eq!(action_label("Change Title"), "Змінити: Заголовок");
         assert_eq!(action_label("Custom action {n}"), "Custom action {n}");
-        assert_eq!(fmt(t("This page couldn't be displayed.\n{e}"), &[("e", "OS error {n}")]), "Не вдалося відобразити цю сторінку.\nOS error {n}");
-        assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "Вибрано сторінок: 3");
-        assert_eq!(fmt(t("{n} contributors · {c} commits"), &[("n", "2"), ("c", "1,234")]), "Учасників: 2 · Комітів: 1,234");
+        assert_eq!(
+            fmt(
+                t("This page couldn't be displayed.\n{e}"),
+                &[("e", "OS error {n}")]
+            ),
+            "Не вдалося відобразити цю сторінку.\nOS error {n}"
+        );
+        assert_eq!(
+            fmt(t("{n} pages selected"), &[("n", "3")]),
+            "Вибрано сторінок: 3"
+        );
+        assert_eq!(
+            fmt(
+                t("{n} contributors · {c} commits"),
+                &[("n", "2"), ("c", "1,234")]
+            ),
+            "Учасників: 2 · Комітів: 1,234"
+        );
         assert_eq!(tr(uk, "CheckBox"), "Прапорець");
         let contributor = crate::credits::Contributor {
             login: "reader{n}",
@@ -2912,7 +3888,10 @@ mod tests {
             contributor.summary(),
             "@reader{n}: PR: 2, комітів: 3, +10 / −4 рядків (Δ +6), +1 / −0 бінарних ресурсів, 2026-10-01 – 2026-10-09"
         );
-        assert_eq!(contributor.name(crate::credits::NameMode::DisplayName), "Save");
+        assert_eq!(
+            contributor.name(crate::credits::NameMode::DisplayName),
+            "Save"
+        );
         set_current(Lang::EN);
     }
 
@@ -2925,7 +3904,10 @@ mod tests {
         let ar = arabic();
         assert_eq!(ar.name(), "العربية");
         assert!(ar.rtl());
-        assert!(Lang::all().filter(|l| l.rtl()).eq([ar]), "Arabic is the only right-to-left language");
+        assert!(
+            Lang::all().filter(|l| l.rtl()).eq([ar]),
+            "Arabic is the only right-to-left language"
+        );
         assert_eq!(normalize_pref("AR"), Some("ar"));
         for tag in ["ar", "ar-MA", "ar_EG.UTF-8", "AR-sa", "ar_DZ@variant"] {
             assert_eq!(lang_from_tag(tag), Some(ar), "{tag}");
@@ -2961,10 +3943,22 @@ mod tests {
         assert_eq!(tr(ar, "Issued by: "), "عن صادرة: ");
         // Placeholders survive and are filled in place.
         assert_eq!(tr(ar, "Couldn't open {name}: {e}"), "{name}: {e} فتح تعذّر");
-        assert_eq!(fmt(tr(ar, "Couldn't open {name}: {e}"), &[("name", "a {e}.pdf"), ("e", "x")]), "a {e}.pdf: x فتح تعذّر");
-        assert_eq!(fmt(tr(ar, "Page {p} of {n}"), &[("p", "3"), ("n", "12")]), "12 من 3 الصفحة");
+        assert_eq!(
+            fmt(
+                tr(ar, "Couldn't open {name}: {e}"),
+                &[("name", "a {e}.pdf"), ("e", "x")]
+            ),
+            "a {e}.pdf: x فتح تعذّر"
+        );
+        assert_eq!(
+            fmt(tr(ar, "Page {p} of {n}"), &[("p", "3"), ("n", "12")]),
+            "12 من 3 الصفحة"
+        );
         set_current(ar);
-        assert_eq!(command_label("Undo Insert pages from a.pdf"), "a.pdf من صفحات إدراج عن التراجع");
+        assert_eq!(
+            command_label("Undo Insert pages from a.pdf"),
+            "a.pdf من صفحات إدراج عن التراجع"
+        );
         assert_eq!(menu_label("file.saveAs", "Save as…"), "…باسم حفظ");
         set_current(Lang::EN);
     }
@@ -3010,9 +4004,19 @@ mod tests {
     #[test]
     fn arabic_covers_ui_literals() {
         let literals = ui_literals();
-        assert!(literals.len() > 900, "source scan found only {} literals", literals.len());
-        let missing: Vec<_> = literals.iter().filter(|label| !has(arabic(), label)).collect();
-        assert!(missing.is_empty(), "untranslated Arabic UI literals: {missing:#?}");
+        assert!(
+            literals.len() > 900,
+            "source scan found only {} literals",
+            literals.len()
+        );
+        let missing: Vec<_> = literals
+            .iter()
+            .filter(|label| !has(arabic(), label))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "untranslated Arabic UI literals: {missing:#?}"
+        );
     }
 
     /// With a craft-fonts Arabic face, every Arabic translation has glyphs: with all interface
@@ -3020,24 +4024,53 @@ mod tests {
     /// it; Arabic labels must not need a Japanese face).
     #[test]
     fn arabic_labels_have_glyphs() {
-        let faces: Vec<String> = pdfcraft_fonts::ui_arabic_fonts().iter().map(|f| f.name()).collect();
+        let faces: Vec<String> = pdfcraft_fonts::ui_arabic_fonts()
+            .iter()
+            .map(|f| f.name())
+            .collect();
         if faces.is_empty() {
-            eprintln!("skipping Arabic glyph checks: build with CRAFT_FONTS_DIR and an Arabic face to run them");
+            eprintln!(
+                "skipping Arabic glyph checks: build with CRAFT_FONTS_DIR and an Arabic face to run them"
+            );
             return;
         }
         let ar = arabic();
         let (entries, _) = parse_entries(ar.0.source, ar.0.plural_forms());
-        let labels: String = entries.iter().flat_map(|e| e.translation.chars()).chain(ar.name().chars()).filter(|c| !c.is_control()).collect();
+        let labels: String = entries
+            .iter()
+            .flat_map(|e| e.translation.chars())
+            .chain(ar.name().chars())
+            .filter(|c| !c.is_control())
+            .collect();
         let mut arabic_only = crate::theme::font_definitions();
         for family in arabic_only.families.values_mut() {
-            family.retain(|name| !pdfcraft_fonts::CRAFT_FONTS.iter().any(|face| face.name() == *name) || faces.contains(name));
+            family.retain(|name| {
+                !pdfcraft_fonts::CRAFT_FONTS
+                    .iter()
+                    .any(|face| face.name() == *name)
+                    || faces.contains(name)
+            });
         }
         use egui::epaint::text::{Fonts, TextOptions};
-        for (build, defs) in [("all faces", crate::theme::font_definitions()), ("Arabic face only", arabic_only)] {
+        for (build, defs) in [
+            ("all faces", crate::theme::font_definitions()),
+            ("Arabic face only", arabic_only),
+        ] {
             let mut fonts = Fonts::new(TextOptions::default(), defs);
-            for id in [egui::FontId::proportional(13.0), egui::FontId::monospace(13.0), crate::theme::medium(13.0), crate::theme::semibold(17.0)] {
-                let missing: std::collections::BTreeSet<char> = labels.chars().filter(|c| !fonts.has_glyphs(&id, &c.to_string())).collect();
-                assert!(missing.is_empty(), "{build}: {id:?} lacks Arabic label glyphs {missing:?}");
+            for id in [
+                egui::FontId::proportional(13.0),
+                egui::FontId::monospace(13.0),
+                crate::theme::medium(13.0),
+                crate::theme::semibold(17.0),
+            ] {
+                let missing: std::collections::BTreeSet<char> = labels
+                    .chars()
+                    .filter(|c| !fonts.has_glyphs(&id, &c.to_string()))
+                    .collect();
+                assert!(
+                    missing.is_empty(),
+                    "{build}: {id:?} lacks Arabic label glyphs {missing:?}"
+                );
             }
         }
     }
@@ -3048,14 +4081,32 @@ mod tests {
         let mut codes = std::collections::HashSet::new();
         for l in &LANGUAGES {
             assert!(codes.insert(l.code), "duplicate code {}", l.code);
-            assert!(l.code == l.code.to_ascii_lowercase() && !l.name.is_empty(), "{}", l.code);
+            assert!(
+                l.code == l.code.to_ascii_lowercase() && !l.name.is_empty(),
+                "{}",
+                l.code
+            );
             let (entries, errors) = parse_entries(l.source, l.plural_forms());
             assert!(errors.is_empty(), "{}: {errors:?}", l.code);
             for e in entries.iter().filter(|e| e.context == "@id") {
                 let command = pdfcraft_engine::commands::command(&e.source);
-                let Some(command) = command else { panic!("{}: unknown command id {:?}", l.code, e.source) };
-                assert_eq!(placeholders(&e.translation), placeholders(command.label), "{}: {}", l.code, e.source);
-                assert_eq!(e.translation.ends_with('…'), command.label.ends_with('…'), "{}: ellipsis mismatch: {}", l.code, e.source);
+                let Some(command) = command else {
+                    panic!("{}: unknown command id {:?}", l.code, e.source)
+                };
+                assert_eq!(
+                    placeholders(&e.translation),
+                    placeholders(command.label),
+                    "{}: {}",
+                    l.code,
+                    e.source
+                );
+                assert_eq!(
+                    e.translation.ends_with('…'),
+                    command.label.ends_with('…'),
+                    "{}: ellipsis mismatch: {}",
+                    l.code,
+                    e.source
+                );
             }
         }
     }
@@ -3064,7 +4115,10 @@ mod tests {
     #[test]
     fn date_languages_are_the_interface_languages() {
         let interface: Vec<(&str, &str)> = Lang::all().map(|l| (l.code(), l.name())).collect();
-        let dates: Vec<(&str, &str)> = pdfcraft_engine::dates::DATE_LANGUAGES.iter().map(|l| (l.code, l.name)).collect();
+        let dates: Vec<(&str, &str)> = pdfcraft_engine::dates::DATE_LANGUAGES
+            .iter()
+            .map(|l| (l.code, l.name))
+            .collect();
         assert_eq!(dates, interface);
     }
 }

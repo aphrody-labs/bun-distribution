@@ -40,8 +40,12 @@ pub(super) fn ldr_str_sp_rel<const LOAD: bool>(ctx: &mut Context, instr: u16) {
     ctx.branch_addr_base = None;
     let dst_reg = instr >> 8 & 7;
     let offset = (instr & 0xFF) << 2;
-    ctx.next_instr.opcode =
-        format!("{} r{}, [r13 + #{:#05X}]", if LOAD { "ldr" } else { "str" }, dst_reg, offset);
+    ctx.next_instr.opcode = format!(
+        "{} r{}, [r13 + #{:#05X}]",
+        if LOAD { "ldr" } else { "str" },
+        dst_reg,
+        offset
+    );
 }
 
 pub(super) fn push_pop<const POP: bool>(ctx: &mut Context, instr: u16) {
@@ -56,14 +60,25 @@ pub(super) fn push_pop<const POP: bool>(ctx: &mut Context, instr: u16) {
             let _ = if start == reg - 1 {
                 write!(ctx.next_instr.opcode, "{separator} r{start}")
             } else {
-                write!(ctx.next_instr.opcode, "{} r{}-r{}", separator, start, reg - 1)
+                write!(
+                    ctx.next_instr.opcode,
+                    "{} r{}-r{}",
+                    separator,
+                    start,
+                    reg - 1
+                )
             };
             range_start = None;
             separator = ",";
         }
     }
     if instr & 1 << 8 != 0 {
-        let _ = write!(ctx.next_instr.opcode, "{} {}", separator, if POP { "r15" } else { "r14" });
+        let _ = write!(
+            ctx.next_instr.opcode,
+            "{} {}",
+            separator,
+            if POP { "r15" } else { "r14" }
+        );
     }
     if instr & 0x1FF != 0 {
         ctx.next_instr.opcode.push(' ');
@@ -84,7 +99,13 @@ pub(super) fn ldmia_stmia<const LOAD: bool>(ctx: &mut Context, instr: u16) {
             let _ = if start == reg - 1 {
                 write!(ctx.next_instr.opcode, "{separator} r{start}")
             } else {
-                write!(ctx.next_instr.opcode, "{} r{}-r{}", separator, start, reg - 1)
+                write!(
+                    ctx.next_instr.opcode,
+                    "{} r{}-r{}",
+                    separator,
+                    start,
+                    reg - 1
+                )
             };
             range_start = None;
             separator = ",";

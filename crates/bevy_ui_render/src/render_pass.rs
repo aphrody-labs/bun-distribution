@@ -6,7 +6,7 @@ use crate::UiCameraView;
 use bevy_ecs::{
     entity::EntityHash,
     prelude::*,
-    system::{lifetimeless::*, SystemParamItem},
+    system::{SystemParamItem, lifetimeless::*},
 };
 use bevy_math::FloatOrd;
 use bevy_render::{

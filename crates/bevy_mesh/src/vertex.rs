@@ -1,7 +1,7 @@
 use alloc::sync::Arc;
 use bevy_derive::EnumVariantMeta;
 use bevy_ecs::resource::Resource;
-use bevy_math::{vec2, Vec2, Vec3, Vec3A, Vec3Swizzles};
+use bevy_math::{Vec2, Vec3, Vec3A, Vec3Swizzles, vec2};
 #[cfg(feature = "serialize")]
 use bevy_platform::collections::HashMap;
 use bevy_platform::collections::HashSet;
@@ -1190,11 +1190,7 @@ pub fn octahedral_encode_signed(v: Vec3) -> Vec2 {
             vec2(1.0, 1.0),
             vec2(-1.0, -1.0),
         );
-    if n.z >= 0.0 {
-        n.xy()
-    } else {
-        octahedral_wrap
-    }
+    if n.z >= 0.0 { n.xy() } else { octahedral_wrap }
 }
 
 /// Encode tangent vectors as octahedral coordinates with range [-1, 1]. The sign is encoded in y component. Use [`octahedral_decode_tangent`] to decode.
@@ -1232,7 +1228,7 @@ pub fn octahedral_decode_tangent(v: Vec2) -> (Vec3, f32) {
 
 #[cfg(test)]
 mod tests {
-    use bevy_math::{vec2, vec3, Vec4Swizzles};
+    use bevy_math::{Vec4Swizzles, vec2, vec3};
 
     use crate::{
         octahedral_decode_signed, octahedral_decode_tangent,

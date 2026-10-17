@@ -45,7 +45,11 @@ struct Cluster {
 
 /// A space for word movement: absorbed into the token before it.
 pub fn is_space(c: char) -> bool {
-    matches!(c, ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'..='\u{200a}' | '\u{202f}' | '\u{205f}' | '\u{3000}')
+    matches!(
+        c,
+        ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
+            ..='\u{200a}' | '\u{202f}' | '\u{205f}' | '\u{3000}'
+    )
 }
 
 /// CJK ideographs, kana and Hangul: every one is a word of its own.
@@ -90,7 +94,11 @@ fn base_class(c: char) -> Class {
         c if c.is_alphanumeric() => Class::Word,
         c if is_symbol(c) => Class::Symbol,
         // A combining mark with no base (or any other mark) stays with letters.
-        '\u{300}'..='\u{36f}' | '\u{1ab0}'..='\u{1aff}' | '\u{1dc0}'..='\u{1dff}' | '\u{20d0}'..='\u{20ff}' | '\u{fe20}'..='\u{fe2f}' => Class::Word,
+        '\u{300}'..='\u{36f}'
+        | '\u{1ab0}'..='\u{1aff}'
+        | '\u{1dc0}'..='\u{1dff}'
+        | '\u{20d0}'..='\u{20ff}'
+        | '\u{fe20}'..='\u{fe2f}' => Class::Word,
         _ => Class::Punct,
     }
 }
@@ -103,7 +111,10 @@ fn clusters(text: &str) -> Vec<Cluster> {
         let n = g.chars().count();
         let first = g.chars().next().unwrap_or(' ');
         // "\r\n" is one grapheme; any other cluster takes the class of its first character.
-        out.push(Cluster { start: pos, class: base_class(first) });
+        out.push(Cluster {
+            start: pos,
+            class: base_class(first),
+        });
         firsts.push(first);
         pos += n;
     }
@@ -116,7 +127,9 @@ fn clusters(text: &str) -> Vec<Cluster> {
         let joins = match c {
             '\'' | '\u{2019}' => next.is_some_and(char::is_alphanumeric),
             '-' => prev.is_some_and(char::is_alphanumeric),
-            '.' | ',' | ':' => prev.is_some_and(char::is_numeric) && next.is_some_and(char::is_numeric),
+            '.' | ',' | ':' => {
+                prev.is_some_and(char::is_numeric) && next.is_some_and(char::is_numeric)
+            }
             _ => false,
         };
         if joins && classes.get(i) == Some(&Class::Punct) {
@@ -163,7 +176,10 @@ pub fn back_stops(text: &str) -> Vec<usize> {
     let mut out = vec![0];
     for w in cs.windows(2) {
         if let [a, b] = w {
-            let symbol_punct = matches!((a.class, b.class), (Class::Symbol, Class::Punct) | (Class::Punct, Class::Symbol));
+            let symbol_punct = matches!(
+                (a.class, b.class),
+                (Class::Symbol, Class::Punct) | (Class::Punct, Class::Symbol)
+            );
             if starts_token(a.class, b.class) && !symbol_punct {
                 out.push(b.start);
             }
@@ -207,7 +223,11 @@ fn content_end(text: &str, ch: usize) -> usize {
         e += 1;
     }
     // A token made only of spaces (leading spaces) ends at the next stop.
-    if e == ch && space_at(&chars, ch) { next } else { e }
+    if e == ch && space_at(&chars, ch) {
+        next
+    } else {
+        e
+    }
 }
 
 /// The word a double-click at `ch` selects: the token under the caret without its trailing
@@ -221,7 +241,11 @@ pub fn word_at(text: &str, ch: usize) -> (usize, usize) {
     let ch = ch.min(n);
     let on_space = ch >= n || space_at(&chars, ch);
     let after_token = ch > 0 && !space_at(&chars, ch - 1);
-    let at = if on_space && after_token { ch - 1 } else { ch.min(n - 1) };
+    let at = if on_space && after_token {
+        ch - 1
+    } else {
+        ch.min(n - 1)
+    };
     if space_at(&chars, at) {
         let mut s = at;
         while s > 0 && space_at(&chars, s - 1) {
@@ -233,7 +257,11 @@ pub fn word_at(text: &str, ch: usize) -> (usize, usize) {
         }
         return (s, e);
     }
-    let s = stops(text).into_iter().rev().find(|s| *s <= at).unwrap_or(0);
+    let s = stops(text)
+        .into_iter()
+        .rev()
+        .find(|s| *s <= at)
+        .unwrap_or(0);
     (s, content_end(text, s).max(at + 1).min(n))
 }
 
@@ -251,7 +279,10 @@ pub fn delete_forward_end(text: &str, ch: usize) -> Option<usize> {
     if !at_stop && !space_at(&chars, ch) {
         return Some(content_end(text, ch));
     }
-    let prev_is_text = ch > 0 && chars.get(ch - 1).is_some_and(|c| !is_space(*c) && !matches!(base_class(*c), Class::Tab | Class::Break));
+    let prev_is_text = ch > 0
+        && chars
+            .get(ch - 1)
+            .is_some_and(|c| !is_space(*c) && !matches!(base_class(*c), Class::Tab | Class::Break));
     if space_at(&chars, ch) && prev_is_text {
         let mut j = ch;
         while j < n && space_at(&chars, j) {
@@ -268,7 +299,22 @@ pub fn delete_forward_end(text: &str, ch: usize) -> Option<usize> {
 /// Closing punctuation that a smart delete pulls its word's spaces up to (`ab cd, ef` → Ctrl+Delete
 /// on `cd` gives `ab, ef`).
 pub fn is_closing_punct(c: char) -> bool {
-    matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}' | '%' | '\u{2026}' | '\u{201d}' | '\u{2019}' | '\u{bb}')
+    matches!(
+        c,
+        '.' | ','
+            | ';'
+            | ':'
+            | '!'
+            | '?'
+            | ')'
+            | ']'
+            | '}'
+            | '%'
+            | '\u{2026}'
+            | '\u{201d}'
+            | '\u{2019}'
+            | '\u{bb}'
+    )
 }
 
 /// Punctuation that a smart delete keeps a space after when a word follows (`cd...ef gh` →
@@ -323,7 +369,10 @@ mod tests {
             "|a-b |-|b |a-|-|b |a |- |b |a- |b |dogs|' |x |'q|' |1,000.5 |3:45 |v1.2.3 |$|5 |50|% |a|/|b |x|&|y |#|tag |a|+|b |c|++ |end|"
         );
         let t = "it’s x a?!b a.)b a),b 1.a a1.b 1.5.x 1-2 a1-b A-1 —x x— a's 'tis o'clock ‘q’ end";
-        assert_eq!(fwd(t), "|it’s |x |a|?!|b |a|.)|b |a|),|b |1|.|a |a1|.|b |1.5|.|x |1-2 |a1-b |A-1 |—|x |x|— |a's |'tis |o'clock |‘|q|’ |end|");
+        assert_eq!(
+            fwd(t),
+            "|it’s |x |a|?!|b |a|.)|b |a|),|b |1|.|a |a1|.|b |1.5|.|x |1-2 |a1-b |A-1 |—|x |x|— |a's |'tis |o'clock |‘|q|’ |end|"
+        );
     }
 
     #[test]
@@ -340,7 +389,10 @@ mod tests {
     #[test]
     fn cjk_each_character() {
         let t = "日本語のテキストです。カタカナ漢字 abc 中文字符，标点。한국어 문장 a。。b";
-        assert_eq!(fwd(t), "|日|本|語|の|テ|キ|ス|ト|で|す|。|カ|タ|カ|ナ|漢|字 |abc |中|文|字|符|，|标|点|。|한|국|어 |문|장 |a|。。|b|");
+        assert_eq!(
+            fwd(t),
+            "|日|本|語|の|テ|キ|ス|ト|で|す|。|カ|タ|カ|ナ|漢|字 |abc |中|文|字|符|，|标|点|。|한|국|어 |문|장 |a|。。|b|"
+        );
         assert_eq!(back(t), fwd(t));
     }
 
@@ -353,11 +405,23 @@ mod tests {
     #[test]
     fn tabs_breaks_and_other_spaces() {
         assert_eq!(fwd("  lead x   mid  "), "|  |lead |x   |mid  |");
-        assert_eq!(fwd("Five\u{b}six seven\tTab   x"), "|Five|↵|six |seven|→|Tab   |x|");
-        assert_eq!(fwd("a\t  b x  \u{b}  y q\u{b}\u{b}z"), "|a|→|  |b |x  |↵|  |y |q|↵|↵|z|");
+        assert_eq!(
+            fwd("Five\u{b}six seven\tTab   x"),
+            "|Five|↵|six |seven|→|Tab   |x|"
+        );
+        assert_eq!(
+            fwd("a\t  b x  \u{b}  y q\u{b}\u{b}z"),
+            "|a|→|  |b |x  |↵|  |y |q|↵|↵|z|"
+        );
         let t = "a\u{a0}\u{a0}b a\u{3000}b a\u{2003}b a \u{a0}b a\t\tb a \tb a\u{a0} b end";
-        assert_eq!(fwd(t), "|a\u{a0}\u{a0}|b |a\u{3000}|b |a\u{2003}|b |a \u{a0}|b |a|→|→|b |a |→|b |a\u{a0} |b |end|");
-        assert_eq!(back(t), "|a|\u{a0}|\u{a0}|b |a|\u{3000}|b |a|\u{2003}|b |a |\u{a0}|b |a|→|→|b |a |→|b |a\u{a0} |b |end|");
+        assert_eq!(
+            fwd(t),
+            "|a\u{a0}\u{a0}|b |a\u{3000}|b |a\u{2003}|b |a \u{a0}|b |a|→|→|b |a |→|b |a\u{a0} |b |end|"
+        );
+        assert_eq!(
+            back(t),
+            "|a|\u{a0}|\u{a0}|b |a|\u{3000}|b |a|\u{2003}|b |a |\u{a0}|b |a|→|→|b |a |→|b |a\u{a0} |b |end|"
+        );
     }
 
     #[test]

@@ -117,7 +117,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Hub,
                 evidence: announced,
                 source: SOURCE_WEST_CITY_TRAILER,
-                center: MapPoint { x: 0.0, y: 0.0, elevation: 0.0 },
+                center: MapPoint {
+                    x: 0.0,
+                    y: 0.0,
+                    elevation: 0.0,
+                },
                 radius: 840.0,
                 description: "Developed future-city hub named in the official AGE 1000 announcement.",
             },
@@ -127,7 +131,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::District,
                 evidence: announced,
                 source: SOURCE_WEST_CITY_TRAILER,
-                center: MapPoint { x: -460.0, y: 280.0, elevation: 0.0 },
+                center: MapPoint {
+                    x: -460.0,
+                    y: 280.0,
+                    elevation: 0.0,
+                },
                 radius: 270.0,
                 description: "University and student-life setting shown/described in official material.",
             },
@@ -137,7 +145,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::District,
                 evidence: announced,
                 source: SOURCE_WEST_CITY_TRAILER,
-                center: MapPoint { x: -220.0, y: -210.0, elevation: 0.0 },
+                center: MapPoint {
+                    x: -220.0,
+                    y: -210.0,
+                    elevation: 0.0,
+                },
                 radius: 230.0,
                 description: "Prototype placement for the announced squad activities in West City.",
             },
@@ -147,7 +159,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::District,
                 evidence: prototype,
                 source: SOURCE_WEST_CITY_TRAILER,
-                center: MapPoint { x: 400.0, y: 270.0, elevation: 0.0 },
+                center: MapPoint {
+                    x: 400.0,
+                    y: 270.0,
+                    elevation: 0.0,
+                },
                 radius: 260.0,
                 description: "Original connective district for city exploration; exact boundaries are not published.",
             },
@@ -157,7 +173,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::District,
                 evidence: prototype,
                 source: SOURCE_WEST_CITY_TRAILER,
-                center: MapPoint { x: 210.0, y: -110.0, elevation: 0.0 },
+                center: MapPoint {
+                    x: 210.0,
+                    y: -110.0,
+                    elevation: 0.0,
+                },
                 radius: 230.0,
                 description: "Original navigation landmark joining the prototype city routes.",
             },
@@ -167,7 +187,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::MissionArea,
                 evidence: announced,
                 source: SOURCE_GAMESCOM_DEMO,
-                center: MapPoint { x: -770.0, y: -560.0, elevation: 70.0 },
+                center: MapPoint {
+                    x: -770.0,
+                    y: -560.0,
+                    elevation: 70.0,
+                },
                 radius: 410.0,
                 description: "A glacier quest area was described for the Gamescom demo; this geometry is a prototype.",
             },
@@ -180,7 +204,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Interior,
                 evidence: announced,
                 source: SOURCE_OFFICIAL_DEMO_REPORT,
-                position: MapPoint { x: -480.0, y: 320.0, elevation: 0.0 },
+                position: MapPoint {
+                    x: -480.0,
+                    y: 320.0,
+                    elevation: 0.0,
+                },
                 description: "Campus anchor; interior layout is a prototype approximation.",
             },
             MapLandmark {
@@ -190,7 +218,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Interior,
                 evidence: announced,
                 source: SOURCE_OFFICIAL_DEMO_REPORT,
-                position: MapPoint { x: -555.0, y: 420.0, elevation: 12.0 },
+                position: MapPoint {
+                    x: -555.0,
+                    y: 420.0,
+                    elevation: 12.0,
+                },
                 description: "The official demo report describes the story opening in the protagonist's room.",
             },
             MapLandmark {
@@ -200,7 +232,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Landmark,
                 evidence: announced,
                 source: SOURCE_WEST_CITY_TRAILER,
-                position: MapPoint { x: -220.0, y: -210.0, elevation: 0.0 },
+                position: MapPoint {
+                    x: -220.0,
+                    y: -210.0,
+                    elevation: 0.0,
+                },
                 description: "Original map marker for joining the announced squad.",
             },
             MapLandmark {
@@ -210,7 +246,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Landmark,
                 evidence: announced,
                 source: SOURCE_WEST_CITY_TRAILER,
-                position: MapPoint { x: 430.0, y: 330.0, elevation: 0.0 },
+                position: MapPoint {
+                    x: 430.0,
+                    y: 330.0,
+                    elevation: 0.0,
+                },
                 description: "Named landmark represented with original coordinates and geometry.",
             },
             MapLandmark {
@@ -220,7 +260,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Landmark,
                 evidence: prototype,
                 source: SOURCE_WEST_CITY_TRAILER,
-                position: MapPoint { x: 210.0, y: -110.0, elevation: 0.0 },
+                position: MapPoint {
+                    x: 210.0,
+                    y: -110.0,
+                    elevation: 0.0,
+                },
                 description: "Original player orientation landmark.",
             },
             MapLandmark {
@@ -230,7 +274,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Landmark,
                 evidence: prototype,
                 source: SOURCE_WEST_CITY_TRAILER,
-                position: MapPoint { x: 360.0, y: -260.0, elevation: 0.0 },
+                position: MapPoint {
+                    x: 360.0,
+                    y: -260.0,
+                    elevation: 0.0,
+                },
                 description: "Original fast-travel node, not a confirmed named in-game station.",
             },
             MapLandmark {
@@ -240,7 +288,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::MissionArea,
                 evidence: announced,
                 source: SOURCE_GAMESCOM_DEMO,
-                position: MapPoint { x: -770.0, y: -560.0, elevation: 70.0 },
+                position: MapPoint {
+                    x: -770.0,
+                    y: -560.0,
+                    elevation: 70.0,
+                },
                 description: "Prototype mission entry for the officially described glacier demo area.",
             },
             MapLandmark {
@@ -250,7 +302,11 @@ pub fn xenoverse3_prototype_map() -> Xenoverse3Map {
                 kind: PlaceKind::Landmark,
                 evidence: prototype,
                 source: SOURCE_WEST_CITY_TRAILER,
-                position: MapPoint { x: 30.0, y: 40.0, elevation: 0.0 },
+                position: MapPoint {
+                    x: 30.0,
+                    y: 40.0,
+                    elevation: 0.0,
+                },
                 description: "Original gameplay marker for repeatable prototype missions.",
             },
         ],
@@ -343,11 +399,23 @@ mod tests {
         let landmark_ids: HashSet<_> = map.landmarks.iter().map(|landmark| landmark.id).collect();
         assert_eq!(landmark_ids.len(), map.landmarks.len());
         for landmark in &map.landmarks {
-            assert!(zone_ids.contains(landmark.zone_id), "unknown landmark zone: {}", landmark.id);
+            assert!(
+                zone_ids.contains(landmark.zone_id),
+                "unknown landmark zone: {}",
+                landmark.id
+            );
         }
         for route in &map.routes {
-            assert!(zone_ids.contains(route.from), "unknown route origin: {}", route.id);
-            assert!(zone_ids.contains(route.to), "unknown route destination: {}", route.id);
+            assert!(
+                zone_ids.contains(route.from),
+                "unknown route origin: {}",
+                route.id
+            );
+            assert!(
+                zone_ids.contains(route.to),
+                "unknown route destination: {}",
+                route.id
+            );
             assert!(route.distance > 0.0);
         }
     }
@@ -395,12 +463,26 @@ mod tests {
             );
         }
         for landmark in &map.landmarks {
-            let zone = map.zones.iter().find(|zone| zone.id == landmark.zone_id).unwrap();
+            let zone = map
+                .zones
+                .iter()
+                .find(|zone| zone.id == landmark.zone_id)
+                .unwrap();
             let dx = landmark.position.x - zone.center.x;
             let dy = landmark.position.y - zone.center.y;
-            assert!(dx.hypot(dy) <= zone.radius, "landmark lies outside its zone: {}", landmark.id);
-            assert!(landmark.position.x.abs() <= width / 2.0, "landmark exceeds x bounds");
-            assert!(landmark.position.y.abs() <= height / 2.0, "landmark exceeds y bounds");
+            assert!(
+                dx.hypot(dy) <= zone.radius,
+                "landmark lies outside its zone: {}",
+                landmark.id
+            );
+            assert!(
+                landmark.position.x.abs() <= width / 2.0,
+                "landmark exceeds x bounds"
+            );
+            assert!(
+                landmark.position.y.abs() <= height / 2.0,
+                "landmark exceeds y bounds"
+            );
             assert!(
                 landmark.position.elevation.abs() <= depth / 2.0,
                 "landmark exceeds elevation bounds"
@@ -412,9 +494,17 @@ mod tests {
     fn announced_places_are_cited_and_prototype_is_disclosed() {
         let map = xenoverse3_prototype_map();
         assert!(map.zones.iter().all(|zone| !zone.source.is_empty()));
-        assert!(map.landmarks.iter().all(|landmark| !landmark.source.is_empty()));
+        assert!(
+            map.landmarks
+                .iter()
+                .all(|landmark| !landmark.source.is_empty())
+        );
         assert!(map.routes.iter().all(|route| !route.source.is_empty()));
         assert!(map.caveat.contains("unreleased"));
-        assert!(map.zones.iter().any(|zone| zone.evidence == EvidenceStatus::Prototype));
+        assert!(
+            map.zones
+                .iter()
+                .any(|zone| zone.evidence == EvidenceStatus::Prototype)
+        );
     }
 }

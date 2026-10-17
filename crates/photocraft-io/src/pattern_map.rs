@@ -9,10 +9,14 @@ use std::sync::Arc;
 use photocraft_color::{ColorMode, PixelFormat, SampleType};
 use photocraft_doc::{Document, Pattern};
 use photocraft_geom::Rect;
-use photocraft_psd::patterns::{PsdPattern, block_key, mode_channels, parse_pattern_block, write_pattern_block};
+use photocraft_psd::patterns::{
+    PsdPattern, block_key, mode_channels, parse_pattern_block, write_pattern_block,
+};
 use photocraft_raster::Surface;
 
-use crate::pixels::{deinterleave, interleave, max_sample, psd_depth, sample_for_depth, zero_sample};
+use crate::pixels::{
+    deinterleave, interleave, max_sample, psd_depth, sample_for_depth, zero_sample,
+};
 
 /// Global block keys holding patterns.
 pub const PATTERN_KEYS: [[u8; 4]; 3] = [*b"Patt", *b"Pat2", *b"Pat3"];
@@ -36,7 +40,18 @@ pub fn from_psd(p: &PsdPattern) -> Option<Pattern> {
     let (channels, depth): (Vec<Vec<u8>>, u16) = if p.depth == 1 {
         let row = w.div_ceil(8);
         let expand = |plane: &Vec<u8>| -> Vec<u8> {
-            (0..w * h).map(|i| if plane.get((i / w) * row + (i % w) / 8).is_some_and(|b| b & (0x80 >> (i % w % 8)) != 0) { 0 } else { 255 }).collect()
+            (0..w * h)
+                .map(|i| {
+                    if plane
+                        .get((i / w) * row + (i % w) / 8)
+                        .is_some_and(|b| b & (0x80 >> (i % w % 8)) != 0)
+                    {
+                        0
+                    } else {
+                        255
+                    }
+                })
+                .collect()
         };
         (p.channels.iter().map(expand).collect(), 8)
     } else {
@@ -47,7 +62,13 @@ pub fn from_psd(p: &PsdPattern) -> Option<Pattern> {
         2 => {
             let pal = p.palette.as_deref()?;
             let idx = channels.first()?;
-            let ch: Vec<Vec<u8>> = (0..3).map(|c| idx.iter().map(|i| pal.get(usize::from(*i) * 3 + c).copied().unwrap_or(0)).collect()).collect();
+            let ch: Vec<Vec<u8>> = (0..3)
+                .map(|c| {
+                    idx.iter()
+                        .map(|i| pal.get(usize::from(*i) * 3 + c).copied().unwrap_or(0))
+                        .collect()
+                })
+                .collect();
             (ColorMode::Rgb, ch)
         }
         4 => (ColorMode::Cmyk, channels),
@@ -61,7 +82,11 @@ pub fn from_psd(p: &PsdPattern) -> Option<Pattern> {
     if channels.len() < cc {
         return None;
     }
-    let mut refs: Vec<Option<&[u8]>> = channels.iter().take(cc).map(|c| Some(c.as_slice())).collect();
+    let mut refs: Vec<Option<&[u8]>> = channels
+        .iter()
+        .take(cc)
+        .map(|c| Some(c.as_slice()))
+        .collect();
     let mut fill = vec![zero_sample(s); cc];
     let mut invert = vec![mode == ColorMode::Cmyk; cc];
     if let Some(a) = &p.alpha {
@@ -74,7 +99,13 @@ pub fn from_psd(p: &PsdPattern) -> Option<Pattern> {
         crate::pixels::lab16_chroma(&mut bytes, refs.len(), true);
     }
     let surface = Surface::from_interleaved(fmt, Rect::new(0, 0, w as i32, h as i32), &bytes);
-    Some(Pattern { id: p.id.clone(), name: p.name.clone(), width: p.width, height: p.height, surface })
+    Some(Pattern {
+        id: p.id.clone(),
+        name: p.name.clone(),
+        width: p.width,
+        height: p.height,
+        surface,
+    })
 }
 
 /// A document pattern as a PSD pattern (its own depth and colour model; other models as RGB).
@@ -85,7 +116,11 @@ pub fn to_psd(p: &Pattern) -> PsdPattern {
         _ => ColorMode::Rgb,
     };
     let fmt = PixelFormat::new(mode, f.sample, f.alpha);
-    let surf = if fmt == f { p.surface.clone() } else { p.surface.convert(fmt) };
+    let surf = if fmt == f {
+        p.surface.clone()
+    } else {
+        p.surface.convert(fmt)
+    };
     let mut bytes = surf.to_interleaved(p.rect());
     let ch = fmt.channels();
     if mode == ColorMode::Lab && fmt.sample == SampleType::U16 {
@@ -130,7 +165,8 @@ pub fn export_global_blocks(doc: &Document) -> Vec<photocraft_doc::PsdGlobalBloc
         return raw.clone();
     }
     let key = block_key(psd_depth(doc.depth));
-    let fresh = write_pattern_block(&doc.patterns.iter().map(to_psd).collect::<Vec<_>>()).unwrap_or_default();
+    let fresh = write_pattern_block(&doc.patterns.iter().map(to_psd).collect::<Vec<_>>())
+        .unwrap_or_default();
     let mut out = Vec::with_capacity(raw.len() + 1);
     let mut placed = false;
     for b in raw {
@@ -151,13 +187,15 @@ pub fn export_global_blocks(doc: &Document) -> Vec<photocraft_doc::PsdGlobalBloc
 
 /// Reads a `.pat` pattern file.
 pub fn read_pat(bytes: &[u8]) -> Result<Vec<Pattern>, String> {
-    let ps = photocraft_psd::patterns::parse_pat_file(bytes).map_err(|e| format!("not a readable .pat file: {e}"))?;
+    let ps = photocraft_psd::patterns::parse_pat_file(bytes)
+        .map_err(|e| format!("not a readable .pat file: {e}"))?;
     Ok(ps.iter().filter_map(from_psd).collect())
 }
 
 /// Writes patterns as a `.pat` file.
 pub fn write_pat(patterns: &[Pattern]) -> Result<Vec<u8>, String> {
-    photocraft_psd::patterns::write_pat_file(&patterns.iter().map(to_psd).collect::<Vec<_>>()).map_err(|e| e.to_string())
+    photocraft_psd::patterns::write_pat_file(&patterns.iter().map(to_psd).collect::<Vec<_>>())
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -171,7 +209,9 @@ mod tests {
         let n = fmt.channels();
         for y in 0..3 {
             for x in 0..5 {
-                let px: Vec<f32> = (0..n).map(|c| ((x * 3 + y * 7 + c as i32 * 5) % 11) as f32 / 10.0).collect();
+                let px: Vec<f32> = (0..n)
+                    .map(|c| ((x * 3 + y * 7 + c as i32 * 5) % 11) as f32 / 10.0)
+                    .collect();
                 surf.write_pixel(x, y, &px);
             }
         }
@@ -180,15 +220,29 @@ mod tests {
 
     #[test]
     fn patterns_round_trip_through_psd_at_every_depth_and_model() {
-        for mode in [ColorMode::Rgb, ColorMode::Grayscale, ColorMode::Cmyk, ColorMode::Lab] {
+        for mode in [
+            ColorMode::Rgb,
+            ColorMode::Grayscale,
+            ColorMode::Cmyk,
+            ColorMode::Lab,
+        ] {
             for s in [SampleType::U8, SampleType::U16, SampleType::F32] {
                 for alpha in [false, true] {
                     let p = pattern(mode, s, alpha);
                     let back = from_psd(&to_psd(&p)).unwrap();
-                    assert_eq!((&back.id, &back.name, back.width, back.surface.format()), (&p.id, &p.name, p.width, p.surface.format()));
+                    assert_eq!(
+                        (&back.id, &back.name, back.width, back.surface.format()),
+                        (&p.id, &p.name, p.width, p.surface.format())
+                    );
                     // Exact except float CMYK, whose stored inversion (1 − v) rounds.
-                    let (a, b) = (back.surface.read_region(p.rect()), p.surface.read_region(p.rect()));
-                    assert!(a.iter().zip(&b).all(|(x, y)| (x - y).abs() < 1e-6), "{mode:?} {s:?} {alpha}");
+                    let (a, b) = (
+                        back.surface.read_region(p.rect()),
+                        p.surface.read_region(p.rect()),
+                    );
+                    assert!(
+                        a.iter().zip(&b).all(|(x, y)| (x - y).abs() < 1e-6),
+                        "{mode:?} {s:?} {alpha}"
+                    );
                     if !(mode == ColorMode::Cmyk && s == SampleType::F32) {
                         assert_eq!(back, p, "{mode:?} {s:?} {alpha}");
                     }
@@ -199,20 +253,35 @@ mod tests {
 
     #[test]
     fn export_reuses_raw_blocks_until_patterns_change() {
-        let mut d = Document::new("x", photocraft_geom::Size { width: 4, height: 4 }, ColorMode::Rgb, SampleType::U8);
+        let mut d = Document::new(
+            "x",
+            photocraft_geom::Size {
+                width: 4,
+                height: 4,
+            },
+            ColorMode::Rgb,
+            SampleType::U8,
+        );
         let p = pattern(ColorMode::Rgb, SampleType::U8, false);
         let raw = write_pattern_block(&[to_psd(&p)]).unwrap();
-        d.metadata.psd_global_blocks = vec![(*b"8BIM", *b"Txt2", Arc::new(vec![1])), (*b"8BIM", *b"Patt", Arc::new(raw.clone()))];
+        d.metadata.psd_global_blocks = vec![
+            (*b"8BIM", *b"Txt2", Arc::new(vec![1])),
+            (*b"8BIM", *b"Patt", Arc::new(raw.clone())),
+        ];
         d.patterns = from_global_blocks(&d);
         assert_eq!(d.patterns.len(), 1);
         assert_eq!(export_global_blocks(&d), d.metadata.psd_global_blocks);
-        d.patterns.push(pattern(ColorMode::Grayscale, SampleType::U16, true));
+        d.patterns
+            .push(pattern(ColorMode::Grayscale, SampleType::U16, true));
         let out = export_global_blocks(&d);
         assert_eq!(out.len(), 2);
         assert_eq!(out[1].1, *b"Patt");
         let mut d2 = d.clone();
         d2.metadata.psd_global_blocks = out;
         assert_eq!(from_global_blocks(&d2), d.patterns);
-        assert_eq!(read_pat(&write_pat(&d.patterns).unwrap()).unwrap(), d.patterns);
+        assert_eq!(
+            read_pat(&write_pat(&d.patterns).unwrap()).unwrap(),
+            d.patterns
+        );
     }
 }

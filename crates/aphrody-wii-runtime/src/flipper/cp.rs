@@ -231,7 +231,11 @@ pub fn gather_pipe_bursted<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
             let mut burst = [0u8; GP_BURST as usize];
             burst.copy_from_slice(&sys.cp.gather_pipe[..GP_BURST as usize]);
 
-            match sys.mmio.ram_view_mut().slice_mut(wptr as usize, GP_BURST as usize) {
+            match sys
+                .mmio
+                .ram_view_mut()
+                .slice_mut(wptr as usize, GP_BURST as usize)
+            {
                 Some(dst) => dst.copy_from_slice(&burst),
                 None => tracing::warn!(
                     wptr = format!("{wptr:#010X}"),
@@ -248,12 +252,15 @@ pub fn gather_pipe_bursted<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
 
             sys.pi.fifo_wptr = next_wptr;
             sys.cp.set_fifo_write_ptr(next_wptr);
-            sys.cp.set_fifo_rw_distance(sys.cp.fifo_rw_distance().saturating_add(GP_BURST));
+            sys.cp
+                .set_fifo_rw_distance(sys.cp.fifo_rw_distance().saturating_add(GP_BURST));
         }
 
         let leftover = sys.cp.gather_pos - GP_BURST;
         if leftover > 0 {
-            sys.cp.gather_pipe.copy_within(GP_BURST as usize..(GP_BURST + leftover) as usize, 0);
+            sys.cp
+                .gather_pipe
+                .copy_within(GP_BURST as usize..(GP_BURST + leftover) as usize, 0);
         }
 
         sys.cp.gather_pos = leftover;
@@ -267,7 +274,8 @@ pub fn gather_pipe_bursted<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
 
 pub fn pump_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
     self::pump_fifo(sys);
-    sys.scheduler.schedule_in(PUMP_INTERVAL_CYCLES, crate::scheduler::Handler::CpPump);
+    sys.scheduler
+        .schedule_in(PUMP_INTERVAL_CYCLES, crate::scheduler::Handler::CpPump);
 }
 
 pub fn pump_fifo<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
@@ -285,7 +293,11 @@ pub fn pump_fifo<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
         }
 
         let mut burst = [0u8; GP_BURST as usize];
-        match sys.mmio.ram_view().slice(read_ptr as usize, GP_BURST as usize) {
+        match sys
+            .mmio
+            .ram_view()
+            .slice(read_ptr as usize, GP_BURST as usize)
+        {
             Some(src) => burst.copy_from_slice(src),
             None => unreachable!("pump_fifo: FIFO read pointer unmapped"),
         }
@@ -297,7 +309,8 @@ pub fn pump_fifo<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
             read_ptr.wrapping_add(GP_BURST)
         };
         sys.cp.set_fifo_read_ptr(next_read_ptr);
-        sys.cp.set_fifo_rw_distance(sys.cp.fifo_rw_distance().saturating_sub(GP_BURST));
+        sys.cp
+            .set_fifo_rw_distance(sys.cp.fifo_rw_distance().saturating_sub(GP_BURST));
         consumed += 1;
     }
 

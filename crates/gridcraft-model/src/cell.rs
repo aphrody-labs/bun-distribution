@@ -25,20 +25,37 @@ impl Formula {
     pub fn new(text: &str) -> Formula {
         let body = text.strip_prefix('=').unwrap_or(text);
         match gridcraft_formula::parse(body) {
-            Ok(e) => Formula { text: gridcraft_formula::print(&e), expr: Some(Arc::new(e)), array: None },
-            Err(_) => Formula { text: body.to_string(), expr: None, array: None },
+            Ok(e) => Formula {
+                text: gridcraft_formula::print(&e),
+                expr: Some(Arc::new(e)),
+                array: None,
+            },
+            Err(_) => Formula {
+                text: body.to_string(),
+                expr: None,
+                array: None,
+            },
         }
     }
     pub fn from_expr(e: Expr) -> Formula {
-        Formula { text: gridcraft_formula::print(&e), expr: Some(Arc::new(e)), array: None }
+        Formula {
+            text: gridcraft_formula::print(&e),
+            expr: Some(Arc::new(e)),
+            array: None,
+        }
     }
     /// The parsed expression, re-parsing after deserialization.
     pub fn expr(&self) -> Option<Expr> {
-        self.expr.as_deref().cloned().or_else(|| gridcraft_formula::parse(&self.text).ok())
+        self.expr
+            .as_deref()
+            .cloned()
+            .or_else(|| gridcraft_formula::parse(&self.text).ok())
     }
     /// The parsed expression without copying it (re-parses after deserialization).
     pub fn expr_arc(&self) -> Option<Arc<Expr>> {
-        self.expr.clone().or_else(|| gridcraft_formula::parse(&self.text).ok().map(Arc::new))
+        self.expr
+            .clone()
+            .or_else(|| gridcraft_formula::parse(&self.text).ok().map(Arc::new))
     }
 }
 
@@ -62,10 +79,18 @@ pub struct Cell {
 
 impl Cell {
     pub fn value(v: Value) -> Cell {
-        Cell { value: v, formula: None, style: StyleId::DEFAULT }
+        Cell {
+            value: v,
+            formula: None,
+            style: StyleId::DEFAULT,
+        }
     }
     pub fn formula(f: Formula) -> Cell {
-        Cell { value: Value::Empty, formula: Some(Arc::new(f)), style: StyleId::DEFAULT }
+        Cell {
+            value: Value::Empty,
+            formula: Some(Arc::new(f)),
+            style: StyleId::DEFAULT,
+        }
     }
     /// No value, no formula and the default style: storing it is pointless.
     pub fn is_blank(&self) -> bool {

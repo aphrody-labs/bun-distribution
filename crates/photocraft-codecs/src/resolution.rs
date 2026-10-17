@@ -47,13 +47,18 @@ fn ppi_pair(x: f64, y: f64) -> Option<(f32, f32)> {
 }
 
 fn same(a: (f32, f32), b: (f32, f32)) -> bool {
-    (f64::from(a.0) - f64::from(b.0)).abs() < SAME_PPI && (f64::from(a.1) - f64::from(b.1)).abs() < SAME_PPI
+    (f64::from(a.0) - f64::from(b.0)).abs() < SAME_PPI
+        && (f64::from(a.1) - f64::from(b.1)).abs() < SAME_PPI
 }
 
 /// `ppi` as a TIFF RATIONAL: a whole number over 1 when it is one, else over 1000.
 fn rational(ppi: f32) -> (u32, u32) {
     let p = f64::from(ppi);
-    if (p - p.round()).abs() < SAME_PPI { (p.round() as u32, 1) } else { ((p * 1000.0).round() as u32, 1000) }
+    if (p - p.round()).abs() < SAME_PPI {
+        (p.round() as u32, 1)
+    } else {
+        ((p * 1000.0).round() as u32, 1000)
+    }
 }
 
 /// One of the three resolution entries of IFD0.
@@ -99,15 +104,35 @@ impl Ifd0 {
         for i in 0..count {
             let e = first.checked_add(i.checked_mul(entry_bytes)?)?;
             let tag = order.u16(b, e)?;
-            if !matches!(tag, TAG_X_RESOLUTION | TAG_Y_RESOLUTION | TAG_RESOLUTION_UNIT) {
+            if !matches!(
+                tag,
+                TAG_X_RESOLUTION | TAG_Y_RESOLUTION | TAG_RESOLUTION_UNIT
+            ) {
                 continue;
             }
             let ty = order.u16(b, e.checked_add(2)?)?;
-            let count = if big { order.u64(b, e.checked_add(4)?)? } else { u64::from(order.u32(b, e.checked_add(4)?)?) };
+            let count = if big {
+                order.u64(b, e.checked_add(4)?)?
+            } else {
+                u64::from(order.u32(b, e.checked_add(4)?)?)
+            };
             let value = value_at(order, b, e, big, ty, count);
-            fields.push(Field { entry: e, tag, ty, count, value });
+            fields.push(Field {
+                entry: e,
+                tag,
+                ty,
+                count,
+                value,
+            });
         }
-        Some(Ifd0 { order, big, first, count, entry_bytes, fields })
+        Some(Ifd0 {
+            order,
+            big,
+            first,
+            count,
+            entry_bytes,
+            fields,
+        })
     }
 
     fn first_of(&self, tag: u16) -> Option<&Field> {
@@ -124,7 +149,11 @@ fn value_at(order: Order, b: &[u8], e: usize, big: bool, ty: u16, count: u64) ->
         _ => return None,
     }
     .checked_mul(count)?;
-    let (field, inline) = if big { (e.checked_add(12)?, 8) } else { (e.checked_add(8)?, 4) };
+    let (field, inline) = if big {
+        (e.checked_add(12)?, 8)
+    } else {
+        (e.checked_add(8)?, 4)
+    };
     let at = if size <= inline {
         field
     } else if big {
@@ -174,7 +203,9 @@ pub fn exif_with_resolution(exif: &[u8], ppi: (f32, f32)) -> Cow<'_, [u8]> {
     }
     let body = tiff_body(exif);
     let prefix = exif.len() - body.len();
-    let Some(ifd) = Ifd0::parse(body) else { return Cow::Borrowed(exif) };
+    let Some(ifd) = Ifd0::parse(body) else {
+        return Cow::Borrowed(exif);
+    };
     if ifd.fields.is_empty() || exif_resolution(body).is_some_and(|r| same(r, ppi)) {
         return Cow::Borrowed(exif);
     }
@@ -185,7 +216,11 @@ pub fn exif_with_resolution(exif: &[u8], ppi: (f32, f32)) -> Cow<'_, [u8]> {
         let bytes = match f.tag {
             TAG_RESOLUTION_UNIT if f.short(order, body).is_some() => put_u16(order, 2).to_vec(),
             TAG_X_RESOLUTION | TAG_Y_RESOLUTION if f.rational(order, body).is_some() => {
-                let (n, d) = rational(if f.tag == TAG_X_RESOLUTION { ppi.0 } else { ppi.1 });
+                let (n, d) = rational(if f.tag == TAG_X_RESOLUTION {
+                    ppi.0
+                } else {
+                    ppi.1
+                });
                 [put_u32(order, n), put_u32(order, d)].concat()
             }
             _ => {
@@ -193,7 +228,9 @@ pub fn exif_with_resolution(exif: &[u8], ppi: (f32, f32)) -> Cow<'_, [u8]> {
                 continue;
             }
         };
-        let slot = f.value.and_then(|at| out.get_mut(at..at.checked_add(bytes.len())?));
+        let slot = f
+            .value
+            .and_then(|at| out.get_mut(at..at.checked_add(bytes.len())?));
         match slot {
             Some(slot) => slot.copy_from_slice(&bytes),
             None => removed.push(f.entry),
@@ -204,7 +241,11 @@ pub fn exif_with_resolution(exif: &[u8], ppi: (f32, f32)) -> Cow<'_, [u8]> {
     }
     let mut full = exif.get(..prefix).unwrap_or_default().to_vec();
     full.extend_from_slice(&out);
-    if full == exif { Cow::Borrowed(exif) } else { Cow::Owned(full) }
+    if full == exif {
+        Cow::Borrowed(exif)
+    } else {
+        Cow::Owned(full)
+    }
 }
 
 fn put_u16(order: Order, v: u16) -> [u8; 2] {
@@ -233,8 +274,19 @@ fn remove_entries(b: &mut [u8], ifd: &Ifd0, removed: &[usize]) {
     let eb = ifd.entry_bytes;
     let next_bytes = if ifd.big { 8 } else { 4 };
     let count_bytes = if ifd.big { 8 } else { 2 };
-    let Some(table_end) = ifd.count.checked_mul(eb).and_then(|n| ifd.first.checked_add(n)) else { return };
-    let Some(old) = b.get(ifd.first..table_end.saturating_add(next_bytes)).map(<[u8]>::to_vec) else { return };
+    let Some(table_end) = ifd
+        .count
+        .checked_mul(eb)
+        .and_then(|n| ifd.first.checked_add(n))
+    else {
+        return;
+    };
+    let Some(old) = b
+        .get(ifd.first..table_end.saturating_add(next_bytes))
+        .map(<[u8]>::to_vec)
+    else {
+        return;
+    };
     let mut table = Vec::with_capacity(old.len());
     let mut kept = 0usize;
     for (i, entry) in old.chunks_exact(eb).take(ifd.count).enumerate() {
@@ -245,8 +297,14 @@ fn remove_entries(b: &mut [u8], ifd: &Ifd0, removed: &[usize]) {
     }
     table.extend_from_slice(old.get(ifd.count * eb..).unwrap_or_default());
     table.resize(old.len(), 0);
-    let count: Vec<u8> = if ifd.big { put_u64(ifd.order, kept as u64).to_vec() } else { put_u16(ifd.order, kept as u16).to_vec() };
-    let Some(count_at) = ifd.first.checked_sub(count_bytes) else { return };
+    let count: Vec<u8> = if ifd.big {
+        put_u64(ifd.order, kept as u64).to_vec()
+    } else {
+        put_u16(ifd.order, kept as u16).to_vec()
+    };
+    let Some(count_at) = ifd.first.checked_sub(count_bytes) else {
+        return;
+    };
     if let Some(slot) = b.get_mut(count_at..ifd.first) {
         slot.copy_from_slice(&count);
     }
@@ -259,8 +317,16 @@ fn remove_entries(b: &mut [u8], ifd: &Ifd0, removed: &[usize]) {
 /// JPEG's APP13 "Photoshop 3.0" segment or TIFF tag 34377): its ResolutionInfo (0x03ED), whose
 /// Fixed 16.16 hRes / vRes are pixels per inch whatever display unit follows them.
 pub fn photoshop_resolution(resources: &[u8]) -> Option<(f32, f32)> {
-    let be16 = |at: usize| resources.get(at..at.checked_add(2)?).map(|s| u16::from_be_bytes([s[0], s[1]]));
-    let be32 = |at: usize| resources.get(at..at.checked_add(4)?).map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]));
+    let be16 = |at: usize| {
+        resources
+            .get(at..at.checked_add(2)?)
+            .map(|s| u16::from_be_bytes([s[0], s[1]]))
+    };
+    let be32 = |at: usize| {
+        resources
+            .get(at..at.checked_add(4)?)
+            .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
+    };
     let mut i = 0usize;
     while i < resources.len() {
         let signature = resources.get(i..i.checked_add(4)?)?;
@@ -292,7 +358,11 @@ fn xmp_values(xmp: &str, key: &str) -> Vec<(usize, usize)> {
     while let Some(k) = xmp.get(from..).and_then(|s| s.find(key)).map(|k| k + from) {
         from = k + key.len();
         // An attribute or an opening tag of exactly this name (not `</key>`, not `xkey`).
-        if !xmp.get(..k).and_then(|h| h.chars().next_back()).is_some_and(|c| c == '<' || c.is_ascii_whitespace()) {
+        if !xmp
+            .get(..k)
+            .and_then(|h| h.chars().next_back())
+            .is_some_and(|c| c == '<' || c.is_ascii_whitespace())
+        {
             continue;
         }
         let rest = xmp.get(from..).unwrap_or_default();
@@ -309,7 +379,9 @@ fn xmp_values(xmp: &str, key: &str) -> Vec<(usize, usize)> {
             continue;
         };
         let start = xmp.len() - value.len();
-        let Some(len) = value.find(close) else { continue };
+        let Some(len) = value.find(close) else {
+            continue;
+        };
         out.push((start, start + len));
     }
     out
@@ -334,7 +406,11 @@ const XMP_UNIT: &str = "tiff:ResolutionUnit";
 /// The resolution (pixels per inch) in an XMP packet's `tiff:XResolution` / `tiff:YResolution`
 /// (with `tiff:ResolutionUnit`, 2 when absent, 3 converted from centimetres), or `None`.
 pub fn xmp_resolution(xmp: &str) -> Option<(f32, f32)> {
-    let first = |key: &str| xmp_values(xmp, key).first().and_then(|&(a, b)| xmp.get(a..b));
+    let first = |key: &str| {
+        xmp_values(xmp, key)
+            .first()
+            .and_then(|&(a, b)| xmp.get(a..b))
+    };
     let unit = match first(XMP_UNIT) {
         None => 2.0,
         Some(u) => xmp_number(u)?,
@@ -346,13 +422,18 @@ pub fn xmp_resolution(xmp: &str) -> Option<(f32, f32)> {
     } else {
         return None;
     };
-    ppi_pair(xmp_number(first(XMP_X)?)? * scale, xmp_number(first(XMP_Y)?)? * scale)
+    ppi_pair(
+        xmp_number(first(XMP_X)?)? * scale,
+        xmp_number(first(XMP_Y)?)? * scale,
+    )
 }
 
 /// `xmp` with its `tiff:` resolution properties set to `ppi` (and the unit to 2, inch),
 /// borrowed when it has none or already says so.
 pub fn xmp_with_resolution(xmp: &str, ppi: (f32, f32)) -> Cow<'_, str> {
-    if ppi_pair(f64::from(ppi.0), f64::from(ppi.1)).is_none() || xmp_resolution(xmp).is_some_and(|r| same(r, ppi)) {
+    if ppi_pair(f64::from(ppi.0), f64::from(ppi.1)).is_none()
+        || xmp_resolution(xmp).is_some_and(|r| same(r, ppi))
+    {
         return Cow::Borrowed(xmp);
     }
     let text = |v: f32| {
@@ -360,8 +441,16 @@ pub fn xmp_with_resolution(xmp: &str, ppi: (f32, f32)) -> Cow<'_, str> {
         format!("{n}/{d}")
     };
     let mut edits: Vec<(usize, usize, String)> = Vec::new();
-    for (key, value) in [(XMP_X, text(ppi.0)), (XMP_Y, text(ppi.1)), (XMP_UNIT, "2".to_owned())] {
-        edits.extend(xmp_values(xmp, key).into_iter().map(|(a, b)| (a, b, value.clone())));
+    for (key, value) in [
+        (XMP_X, text(ppi.0)),
+        (XMP_Y, text(ppi.1)),
+        (XMP_UNIT, "2".to_owned()),
+    ] {
+        edits.extend(
+            xmp_values(xmp, key)
+                .into_iter()
+                .map(|(a, b)| (a, b, value.clone())),
+        );
     }
     if edits.is_empty() {
         return Cow::Borrowed(xmp);
@@ -379,7 +468,11 @@ pub fn xmp_with_resolution(xmp: &str, ppi: (f32, f32)) -> Cow<'_, str> {
         at = b;
     }
     out.push_str(xmp.get(at..).unwrap_or_default());
-    if out == xmp { Cow::Borrowed(xmp) } else { Cow::Owned(out) }
+    if out == xmp {
+        Cow::Borrowed(xmp)
+    } else {
+        Cow::Owned(out)
+    }
 }
 
 /// `exif` without its embedded thumbnail, or `None` when it has none (or doesn't parse).
@@ -392,10 +485,16 @@ fn exif_without_thumbnail(exif: &[u8]) -> Option<Vec<u8>> {
     let body = tiff_body(exif);
     let prefix = exif.len() - body.len();
     let (_, first, count, entry_bytes, big_tiff) = ifd0_entries(body)?;
-    let next = prefix.checked_add(first)?.checked_add(count.checked_mul(entry_bytes)?)?;
+    let next = prefix
+        .checked_add(first)?
+        .checked_add(count.checked_mul(entry_bytes)?)?;
     let width = if big_tiff { 8 } else { 4 };
     // In bounds: `ifd0_entries` checked that the whole pointer is present.
-    if exif.get(next..next.checked_add(width)?)?.iter().all(|b| *b == 0) {
+    if exif
+        .get(next..next.checked_add(width)?)?
+        .iter()
+        .all(|b| *b == 0)
+    {
         return None;
     }
     let mut out = exif.to_vec();
@@ -433,5 +532,6 @@ pub fn export_xmp(xmp: &str, ppi: Option<(f32, f32)>) -> Cow<'_, str> {
 /// The resolution a decoded file's metadata blocks record, in precedence order: XMP, then
 /// EXIF (Photoshop's ResolutionInfo is format-specific and read by the decoder).
 pub(crate) fn from_metadata(exif: Option<&[u8]>, xmp: Option<&str>) -> Option<(f32, f32)> {
-    xmp.and_then(xmp_resolution).or_else(|| exif.and_then(exif_resolution))
+    xmp.and_then(xmp_resolution)
+        .or_else(|| exif.and_then(exif_resolution))
 }

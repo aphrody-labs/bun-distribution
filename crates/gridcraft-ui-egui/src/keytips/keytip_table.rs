@@ -25,12 +25,17 @@ pub enum Entry {
 
 /// Look up a complete sequence.
 pub fn lookup(sequence: &str) -> Option<Entry> {
-    SEQUENCES.iter().find(|(seq, _)| *seq == sequence).map(|(_, entry)| *entry)
+    SEQUENCES
+        .iter()
+        .find(|(seq, _)| *seq == sequence)
+        .map(|(_, entry)| *entry)
 }
 
 /// True if `prefix` is a strict prefix of any known sequence (badges wait for more keys).
 pub fn has_deeper(prefix: &str) -> bool {
-    SEQUENCES.iter().any(|(seq, _)| seq.len() > prefix.len() && seq.starts_with(prefix))
+    SEQUENCES
+        .iter()
+        .any(|(seq, _)| seq.len() > prefix.len() && seq.starts_with(prefix))
 }
 
 /// The sequence that switches to `tab_name`, if that tab has one (may be a multi-letter unit
@@ -89,7 +94,9 @@ pub fn group_extension(prefix: &str, targets: &[&str]) -> Vec<&'static str> {
 
 /// The badge for a menu item: its finish sequence exactly one key below the current prefix.
 pub fn item_letter(prefix: &str, target: &str) -> Option<&'static str> {
-    sequences_for(target).into_iter().find(|seq| seq.len() == prefix.len() + 1 && seq.starts_with(prefix))
+    sequences_for(target)
+        .into_iter()
+        .find(|seq| seq.len() == prefix.len() + 1 && seq.starts_with(prefix))
 }
 
 /// Badge sequences for a command control: every sequence for `target` that continues from the
@@ -98,7 +105,10 @@ pub fn control_badges(prefix: &str, target: &str) -> Vec<&'static str> {
     if prefix.is_empty() {
         return Vec::new(); // empty prefix shows only tab badges
     }
-    sequences_for(target).into_iter().filter(|seq| seq.len() > prefix.len() && seq.starts_with(prefix)).collect()
+    sequences_for(target)
+        .into_iter()
+        .filter(|seq| seq.len() > prefix.len() && seq.starts_with(prefix))
+        .collect()
 }
 
 /// The badge for a single control: the rest of its finish sequence when it has exactly one, or
@@ -108,13 +118,20 @@ pub fn control_badge(prefix: &str, target: &str) -> Option<&'static str> {
     if prefix.is_empty() {
         return None; // empty prefix shows only tab badges
     }
-    let seqs: Vec<&'static str> = sequences_for(target).into_iter().filter(|seq| seq.len() > prefix.len() && seq.starts_with(prefix)).collect();
+    let seqs: Vec<&'static str> = sequences_for(target)
+        .into_iter()
+        .filter(|seq| seq.len() > prefix.len() && seq.starts_with(prefix))
+        .collect();
     match seqs.as_slice() {
         [] => None,
         [single] => Some(single),
         many => {
-            let common = |a: &str, b: &str| a.chars().zip(b.chars()).take_while(|(x, y)| x == y).count();
-            let lcp = many.iter().skip(1).fold(many[0].len(), |acc, s| acc.min(common(many[0], s)));
+            let common =
+                |a: &str, b: &str| a.chars().zip(b.chars()).take_while(|(x, y)| x == y).count();
+            let lcp = many
+                .iter()
+                .skip(1)
+                .fold(many[0].len(), |acc, s| acc.min(common(many[0], s)));
             (lcp > prefix.len()).then_some(&many[0][..lcp])
         }
     }
@@ -128,12 +145,17 @@ pub fn anchor_badge(prefix: &str, targets: &[&str]) -> Option<&'static str> {
     if prefix.is_empty() {
         return None; // empty prefix shows only tab badges
     }
-    let all: Vec<&'static str> = targets.iter().flat_map(|t| sequences_for(t)).filter(|s| s.len() > prefix.len() && s.starts_with(prefix)).collect();
+    let all: Vec<&'static str> = targets
+        .iter()
+        .flat_map(|t| sequences_for(t))
+        .filter(|s| s.len() > prefix.len() && s.starts_with(prefix))
+        .collect();
     if all.is_empty() {
         return None;
     }
     let depth = prefix.len() + 1;
-    let mut candidates: Vec<&'static str> = all.iter().filter(|s| s.len() == depth).copied().collect();
+    let mut candidates: Vec<&'static str> =
+        all.iter().filter(|s| s.len() == depth).copied().collect();
     if candidates.is_empty() {
         for s in &all {
             let c = &s[..depth.min(s.len())];
@@ -182,9 +204,15 @@ mod tests {
 
     #[test]
     fn implicit_levels_wait_for_deeper_sequences() {
-        assert!(has_deeper("J"), "JI is reachable only through the implicit J level");
+        assert!(
+            has_deeper("J"),
+            "JI is reachable only through the implicit J level"
+        );
         assert!(is_group_level("J"), "implicit levels are group levels");
-        assert!(is_group_level("HV"), "explicit Continue levels are group levels");
+        assert!(
+            is_group_level("HV"),
+            "explicit Continue levels are group levels"
+        );
         assert!(!is_group_level("H"), "a terminal tab is not a group level");
         assert!(!is_group_level("HVS"), "a finish is not a group level");
         assert!(!has_deeper("X"));
@@ -193,42 +221,95 @@ mod tests {
     #[test]
     fn group_extension_paints_only_continue_levels() {
         assert_eq!(group_extension("H", &["dialog:pasteSpecial"]), vec!["HV"]);
-        assert!(group_extension("", &["dialog:pasteSpecial"]).is_empty(), "tab letters paint on tabs, not buttons");
-        assert!(group_extension("E", &["dialog:pasteSpecial"]).is_empty(), "the finish letter paints on the menu item");
+        assert!(
+            group_extension("", &["dialog:pasteSpecial"]).is_empty(),
+            "tab letters paint on tabs, not buttons"
+        );
+        assert!(
+            group_extension("E", &["dialog:pasteSpecial"]).is_empty(),
+            "the finish letter paints on the menu item"
+        );
     }
 
     #[test]
     fn item_letter_is_one_level_deep() {
         assert_eq!(item_letter("HV", "dialog:pasteSpecial"), Some("HVS"));
         assert_eq!(item_letter("HV", "edit.paste"), Some("HVP"));
-        assert_eq!(item_letter("H", "dialog:pasteSpecial"), None, "the item badge waits for its group letter");
+        assert_eq!(
+            item_letter("H", "dialog:pasteSpecial"),
+            None,
+            "the item badge waits for its group letter"
+        );
         assert_eq!(item_letter("HO", "home.autofitColumnWidth"), Some("HOI"));
     }
 
     #[test]
     fn control_badges_require_a_known_prefix() {
-        assert!(control_badges("", "home.alignRight").is_empty(), "empty prefix shows only tab badges");
+        assert!(
+            control_badges("", "home.alignRight").is_empty(),
+            "empty prefix shows only tab badges"
+        );
         assert_eq!(control_badges("HA", "home.alignRight"), vec!["HAR"]);
-        assert!(control_badges("HZ", "home.alignRight").is_empty(), "unknown prefixes show nothing");
+        assert!(
+            control_badges("HZ", "home.alignRight").is_empty(),
+            "unknown prefixes show nothing"
+        );
     }
 
     #[test]
     fn control_badge_shows_the_rest_or_the_group_letter() {
-        assert_eq!(control_badge("H", "home.bold"), Some("H1"), "a unique sequence paints its full rest");
+        assert_eq!(
+            control_badge("H", "home.bold"),
+            Some("H1"),
+            "a unique sequence paints its full rest"
+        );
         assert_eq!(control_badge("H", "home.fontColor"), Some("HFC"));
-        assert_eq!(control_badge("H", "home.borders"), Some("HB"), "many variants collapse to the group letter");
-        assert!(control_badge("", "home.bold").is_none(), "empty prefix shows only tab badges");
-        assert!(control_badge("HZ", "home.bold").is_none(), "unknown prefixes show nothing");
-        assert!(control_badge("H", "view.zoom").is_none(), "diverging sequences at the next letter show nothing");
+        assert_eq!(
+            control_badge("H", "home.borders"),
+            Some("HB"),
+            "many variants collapse to the group letter"
+        );
+        assert!(
+            control_badge("", "home.bold").is_none(),
+            "empty prefix shows only tab badges"
+        );
+        assert!(
+            control_badge("HZ", "home.bold").is_none(),
+            "unknown prefixes show nothing"
+        );
+        assert!(
+            control_badge("H", "view.zoom").is_none(),
+            "diverging sequences at the next letter show nothing"
+        );
     }
 
     #[test]
     fn anchor_badge_resolves_to_the_dominant_group() {
-        assert_eq!(anchor_badge("H", &["edit.paste", "edit.pasteSpecial", "dialog:pasteSpecial"]), Some("HV"));
-        assert_eq!(anchor_badge("P", &["pageLayout.orientation"]), Some("PO"), "a direct finish paints itself");
-        assert_eq!(anchor_badge("N", &["insert.picture"]), Some("NP"), "NP dominates the lone NM (SmartArt) entry");
+        assert_eq!(
+            anchor_badge(
+                "H",
+                &["edit.paste", "edit.pasteSpecial", "dialog:pasteSpecial"]
+            ),
+            Some("HV")
+        );
+        assert_eq!(
+            anchor_badge("P", &["pageLayout.orientation"]),
+            Some("PO"),
+            "a direct finish paints itself"
+        );
+        assert_eq!(
+            anchor_badge("N", &["insert.picture"]),
+            Some("NP"),
+            "NP dominates the lone NM (SmartArt) entry"
+        );
         assert_eq!(anchor_badge("H", &["table.style"]), Some("HT"));
-        assert!(anchor_badge("", &["edit.paste"]).is_none(), "empty prefix shows only tab badges");
-        assert!(anchor_badge("H", &["view.zoom"]).is_none(), "no sequences under this prefix");
+        assert!(
+            anchor_badge("", &["edit.paste"]).is_none(),
+            "empty prefix shows only tab badges"
+        );
+        assert!(
+            anchor_badge("H", &["view.zoom"]).is_none(),
+            "no sequences under this prefix"
+        );
     }
 }

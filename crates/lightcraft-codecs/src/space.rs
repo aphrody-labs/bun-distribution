@@ -1,6 +1,8 @@
 //! Source colour spaces, transfer curves and the conversion to the working space.
 
-use lightcraft_color::{ADOBE_RGB, D50, DISPLAY_P3, Mat3, PROPHOTO, REC2020, RgbSpace, SRGB, WORKING, bradford};
+use lightcraft_color::{
+    ADOBE_RGB, D50, DISPLAY_P3, Mat3, PROPHOTO, REC2020, RgbSpace, SRGB, WORKING, bradford,
+};
 use serde::{Deserialize, Serialize};
 
 /// A transfer curve (encoded value → linear light), as found in ICC `curv`/`para` tags and container
@@ -120,7 +122,9 @@ impl Trc {
         if self.is_linear() {
             return (0..65536).map(|i| i as f32 / 65535.0).collect();
         }
-        (0..65536).map(|i| self.to_linear(i as f32 / 65535.0)).collect()
+        (0..65536)
+            .map(|i| self.to_linear(i as f32 / 65535.0))
+            .collect()
     }
 }
 
@@ -130,11 +134,19 @@ fn eval_parametric(p: &[f32], x: f32) -> f32 {
         1 => pw(x, p[0]),
         3 => {
             let (g, a, b) = (p[0], p[1], p[2]);
-            if a != 0.0 && x >= -b / a { pw(a * x + b, g) } else { 0.0 }
+            if a != 0.0 && x >= -b / a {
+                pw(a * x + b, g)
+            } else {
+                0.0
+            }
         }
         4 => {
             let (g, a, b, c) = (p[0], p[1], p[2], p[3]);
-            if a != 0.0 && x >= -b / a { pw(a * x + b, g) + c } else { c }
+            if a != 0.0 && x >= -b / a {
+                pw(a * x + b, g) + c
+            } else {
+                c
+            }
         }
         5 => {
             let (g, a, b, c, d) = (p[0], p[1], p[2], p[3], p[4]);
@@ -142,7 +154,11 @@ fn eval_parametric(p: &[f32], x: f32) -> f32 {
         }
         7 => {
             let (g, a, b, c, d, e, f) = (p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
-            if x >= d { pw(a * x + b, g) + e } else { c * x + f }
+            if x >= d {
+                pw(a * x + b, g) + e
+            } else {
+                c * x + f
+            }
         }
         _ => x,
     }
@@ -174,7 +190,13 @@ pub enum NamedSpace {
 }
 
 impl NamedSpace {
-    pub const ALL: [NamedSpace; 5] = [NamedSpace::Srgb, NamedSpace::DisplayP3, NamedSpace::AdobeRgb, NamedSpace::ProPhoto, NamedSpace::Rec2020];
+    pub const ALL: [NamedSpace; 5] = [
+        NamedSpace::Srgb,
+        NamedSpace::DisplayP3,
+        NamedSpace::AdobeRgb,
+        NamedSpace::ProPhoto,
+        NamedSpace::Rec2020,
+    ];
 
     pub fn rgb_space(self) -> RgbSpace {
         match self {
@@ -252,7 +274,12 @@ pub struct SourceSpace {
 impl SourceSpace {
     pub fn named(n: NamedSpace, origin: SpaceOrigin) -> SourceSpace {
         let t = n.trc();
-        SourceSpace { named: Some(n), to_xyz_d50: n.to_xyz_d50(), trc: Some([t.clone(), t.clone(), t]), origin }
+        SourceSpace {
+            named: Some(n),
+            to_xyz_d50: n.to_xyz_d50(),
+            trc: Some([t.clone(), t.clone(), t]),
+            origin,
+        }
     }
 
     /// The space named by ITU-T H.273 code points (PNG `cICP`, HEIF `nclx`, HEVC VUI), when
@@ -285,7 +312,9 @@ impl SourceSpace {
             }
             return s.to_space(dst);
         }
-        dst.from_xyz().mul(&bradford(D50, dst.white)).mul(&self.to_xyz_d50)
+        dst.from_xyz()
+            .mul(&bradford(D50, dst.white))
+            .mul(&self.to_xyz_d50)
     }
 
     /// Linear source RGB → linear Rec.2020 D65 (the pipeline working space).
@@ -317,7 +346,11 @@ mod tests {
             Trc::Gamma(2.2),
             Trc::Rec709,
             Trc::Parametric(vec![2.4, 1.0 / 1.055, 0.055 / 1.055, 1.0 / 12.92, 0.04045]),
-            Trc::Table((0..1024).map(|i| ((i as f32 / 1023.0).powf(2.2) * 65535.0) as u16).collect()),
+            Trc::Table(
+                (0..1024)
+                    .map(|i| ((i as f32 / 1023.0).powf(2.2) * 65535.0) as u16)
+                    .collect(),
+            ),
         ];
         for c in curves {
             for i in 0..=20 {
@@ -326,7 +359,10 @@ mod tests {
                 assert!((c.from_linear(y) - x).abs() < 2e-3, "{c:?} {x}");
             }
         }
-        assert!(Trc::Srgb.approx_eq(&Trc::Parametric(vec![2.4, 1.0 / 1.055, 0.055 / 1.055, 1.0 / 12.92, 0.04045]), 1e-5));
+        assert!(Trc::Srgb.approx_eq(
+            &Trc::Parametric(vec![2.4, 1.0 / 1.055, 0.055 / 1.055, 1.0 / 12.92, 0.04045]),
+            1e-5
+        ));
     }
 
     #[test]

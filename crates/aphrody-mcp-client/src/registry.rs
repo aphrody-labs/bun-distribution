@@ -55,7 +55,11 @@ pub async fn assemble_tool_registry(
         warn!(%error, "Web compatibility tools could not be registered");
     }
 
-    Ok(AssembledRegistry { registry, catalog, plan_state })
+    Ok(AssembledRegistry {
+        registry,
+        catalog,
+        plan_state,
+    })
 }
 
 /// Connect to and register all enabled MCP servers defined in configuration.
@@ -68,7 +72,10 @@ pub async fn register_configured_mcp_servers(
 
     for (name, cfg) in servers {
         if !cfg.enabled {
-            info!(server = name, "MCP server is disabled by configuration; skipping");
+            info!(
+                server = name,
+                "MCP server is disabled by configuration; skipping"
+            );
             continue;
         }
 
@@ -113,23 +120,23 @@ pub async fn register_configured_mcp_servers(
                             "Registered MCP server tools"
                         );
                         total_registered += server_tool_count;
-                    },
+                    }
                     Err(err) => {
                         warn!(
                             server = name,
                             error = %err,
                             "Failed to list tools from MCP server"
                         );
-                    },
+                    }
                 }
-            },
+            }
             Err(err) => {
                 warn!(
                     server = name,
                     error = %err,
                     "Failed to create MCP client from configuration"
                 );
-            },
+            }
         }
     }
 
@@ -150,7 +157,10 @@ pub async fn register_selected_mcp_servers(
 
     for (name, cfg) in servers {
         if !cfg.enabled {
-            info!(server = name, "MCP server is disabled by configuration; skipping");
+            info!(
+                server = name,
+                "MCP server is disabled by configuration; skipping"
+            );
             continue;
         }
 
@@ -158,10 +168,18 @@ pub async fn register_selected_mcp_servers(
         let tools = client.list_tools().await?;
         let handle = McpClientHandle::new(name, client);
         for tool in tools {
-            if cfg.enabled_tools.as_ref().is_some_and(|allow| !allow.contains(&tool.name)) {
+            if cfg
+                .enabled_tools
+                .as_ref()
+                .is_some_and(|allow| !allow.contains(&tool.name))
+            {
                 continue;
             }
-            if cfg.disabled_tools.as_ref().is_some_and(|deny| deny.contains(&tool.name)) {
+            if cfg
+                .disabled_tools
+                .as_ref()
+                .is_some_and(|deny| deny.contains(&tool.name))
+            {
                 continue;
             }
 

@@ -38,7 +38,19 @@ pub enum Language {
 }
 
 impl Language {
-    pub const ALL: [Self; 11] = [Self::En, Self::Es, Self::Zh, Self::Ja, Self::Ko, Self::Ru, Self::PtBr, Self::De, Self::Cs, Self::Fr, Self::Sr];
+    pub const ALL: [Self; 11] = [
+        Self::En,
+        Self::Es,
+        Self::Zh,
+        Self::Ja,
+        Self::Ko,
+        Self::Ru,
+        Self::PtBr,
+        Self::De,
+        Self::Cs,
+        Self::Fr,
+        Self::Sr,
+    ];
 
     /// The language's own name, shown in the switcher.
     pub fn name(self) -> &'static str {
@@ -79,7 +91,13 @@ impl Language {
     }
 
     fn from_tag(tag: &str) -> Option<Self> {
-        match tag.trim().split(['-', '_']).next()?.to_ascii_lowercase().as_str() {
+        match tag
+            .trim()
+            .split(['-', '_'])
+            .next()?
+            .to_ascii_lowercase()
+            .as_str()
+        {
             "en" => Some(Self::En),
             "es" => Some(Self::Es),
             "zh" => Some(Self::Zh),
@@ -100,16 +118,25 @@ impl Language {
     pub fn system() -> Self {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            sys_locale::get_locale().and_then(|tag| Self::from_tag(&tag)).unwrap_or(Self::En)
+            sys_locale::get_locale()
+                .and_then(|tag| Self::from_tag(&tag))
+                .unwrap_or(Self::En)
         }
         #[cfg(target_arch = "wasm32")]
         {
-            web_sys::window().and_then(|window| window.navigator().language()).and_then(|tag| Self::from_tag(&tag)).unwrap_or(Self::En)
+            web_sys::window()
+                .and_then(|window| window.navigator().language())
+                .and_then(|tag| Self::from_tag(&tag))
+                .unwrap_or(Self::En)
         }
     }
 
     pub fn formula_locale(self) -> gridcraft_engine::formula::FormulaLocale {
-        if self == Self::Es { gridcraft_engine::formula::FormulaLocale::Es } else { gridcraft_engine::formula::FormulaLocale::En }
+        if self == Self::Es {
+            gridcraft_engine::formula::FormulaLocale::Es
+        } else {
+            gridcraft_engine::formula::FormulaLocale::En
+        }
     }
 
     /// Translates an interface label; untranslated labels fall back to English.
@@ -120,7 +147,10 @@ impl Language {
         let translated = match self {
             Self::En => None,
             Self::Es => es::translate(text),
-            Self::Ja => JAPANESE.iter().find(|(english, _)| *english == text).map(|(_, translated)| *translated),
+            Self::Ja => JAPANESE
+                .iter()
+                .find(|(english, _)| *english == text)
+                .map(|(_, translated)| *translated),
             Self::Zh => zh::translate(text),
             Self::Ko => ko::translate(text),
             Self::Ru => ru::translate(text),
@@ -154,7 +184,10 @@ pub fn lenient<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Language, D::Er
 /// to tell "saved English" from "nothing usable saved" (first run, an older file, an unknown
 /// value), which starts from [`Language::system`] instead.
 pub fn saved_language(ui_json: &serde_json::Value) -> Option<Language> {
-    ui_json.get("language").and_then(serde_json::Value::as_str).and_then(Language::parse)
+    ui_json
+        .get("language")
+        .and_then(serde_json::Value::as_str)
+        .and_then(Language::parse)
 }
 
 /// egui context-data key holding the language of the frame being drawn. Widgets that only get a
@@ -189,7 +222,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Insert Paste", "挿入貼り付け"),
     ("Cut (⌘X)", "切り取り (⌘X)"),
     ("Copy (⌘C)", "コピー (⌘C)"),
-    ("Format Painter (double-click to keep it on)", "書式のコピー/貼り付け (ダブルクリックで固定)"),
+    (
+        "Format Painter (double-click to keep it on)",
+        "書式のコピー/貼り付け (ダブルクリックで固定)",
+    ),
     ("Bold (⌘B)", "太字 (⌘B)"),
     ("Italic (⌘I)", "斜体 (⌘I)"),
     ("Underline (⌘U)", "下線 (⌘U)"),
@@ -288,7 +324,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Symbol", "記号"),
     ("Sparklines", "スパークライン"),
     ("Checkbox", "チェックボックス"),
-    ("Insert checkboxes in the selected cells", "選択したセルにチェックボックスを挿入"),
+    (
+        "Insert checkboxes in the selected cells",
+        "選択したセルにチェックボックスを挿入",
+    ),
     ("Header & Footer", "ヘッダーとフッター"),
     ("Draw with ink", "インクで描画"),
     ("Eraser", "消しゴム"),
@@ -334,7 +373,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Calculate Now", "再計算実行"),
     ("Calculate Sheet", "シートの再計算"),
     ("Automatic", "自動"),
-    ("Automatic Except for Data Tables", "データ テーブル以外は自動"),
+    (
+        "Automatic Except for Data Tables",
+        "データ テーブル以外は自動",
+    ),
     ("Manual", "手動"),
     ("Sort &\nFilter", "並べ替えとフィルター"),
     ("Sort", "並べ替え"),
@@ -435,8 +477,14 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Bottom 10%", "下位 10%"),
     ("Above Average", "平均より上"),
     ("Below Average", "平均より下"),
-    ("Clear Rules from Entire Sheet", "シート全体からルールをクリア"),
-    ("Clear Rules from Selected Cells", "選択したセルからルールをクリア"),
+    (
+        "Clear Rules from Entire Sheet",
+        "シート全体からルールをクリア",
+    ),
+    (
+        "Clear Rules from Selected Cells",
+        "選択したセルからルールをクリア",
+    ),
     ("Constants", "定数"),
     ("Data Bars", "データ バー"),
     ("Color Scales", "カラー スケール"),
@@ -456,7 +504,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Edit", "編集"),
     ("Point", "ポイント"),
     ("Calculate", "計算"),
-    ("Select destination and press Enter or choose Paste", "貼り付け先を選び、Enter キーを押すか [貼り付け] を選びます"),
+    (
+        "Select destination and press Enter or choose Paste",
+        "貼り付け先を選び、Enter キーを押すか [貼り付け] を選びます",
+    ),
     ("General", "標準"),
     ("Number", "数値"),
     ("Currency", "通貨"),
@@ -521,7 +572,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Options", "オプション"),
     ("Blank workbook", "空白のブック"),
     ("Recent", "最近使ったアイテム"),
-    ("No recent workbooks yet.", "最近使ったブックはまだありません。"),
+    (
+        "No recent workbooks yet.",
+        "最近使ったブックはまだありません。",
+    ),
     ("More workbooks", "その他のブック"),
     ("Modified", "更新日時"),
     ("Not available", "利用できません"),
@@ -556,7 +610,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("No workbook is open.", "ブックが開かれていません。"),
     ("Save as type", "ファイルの種類"),
     ("Excel Workbook (*.xlsx)", "Excel ブック (*.xlsx)"),
-    ("CSV UTF-8 (Comma delimited) (*.csv)", "CSV UTF-8 (コンマ区切り) (*.csv)"),
+    (
+        "CSV UTF-8 (Comma delimited) (*.csv)",
+        "CSV UTF-8 (コンマ区切り) (*.csv)",
+    ),
     ("Web Page (*.html)", "Web ページ (*.html)"),
     ("PDF (*.pdf)", "PDF ファイル (*.pdf)"),
     ("Download", "ダウンロード"),
@@ -564,7 +621,10 @@ const JAPANESE: &[(&str, &str)] = &[
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file.",
         "CSV ファイル、Web ページ、PDF はコピーです。ブックは元のファイルのままです。",
     ),
-    ("Save the workbook under another name or in another folder.", "ブックを別の名前または別のフォルダーに保存します。"),
+    (
+        "Save the workbook under another name or in another folder.",
+        "ブックを別の名前または別のフォルダーに保存します。",
+    ),
     ("Print Active Sheets", "作業中のシートを印刷"),
     ("Print Entire Workbook", "ブック全体を印刷"),
     ("Fit Sheet on One Page", "シートを 1 ページに印刷"),
@@ -574,20 +634,38 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Previous page", "前のページ"),
     ("Next page", "次のページ"),
     ("Create PDF", "PDF の作成"),
-    ("Save the sheet as a PDF document that keeps its page layout.", "ページ レイアウトを保ったまま、シートを PDF ドキュメントとして保存します。"),
+    (
+        "Save the sheet as a PDF document that keeps its page layout.",
+        "ページ レイアウトを保ったまま、シートを PDF ドキュメントとして保存します。",
+    ),
     ("Change File Type", "ファイルの種類の変更"),
     ("CSV (Comma delimited)", "CSV (コンマ区切り)"),
-    ("Save the active sheet as comma-separated text.", "作業中のシートをコンマ区切りのテキストとして保存します。"),
+    (
+        "Save the active sheet as comma-separated text.",
+        "作業中のシートをコンマ区切りのテキストとして保存します。",
+    ),
     ("Web Page (.html)", "Web ページ (.html)"),
-    ("Save the workbook as a web page.", "ブックを Web ページとして保存します。"),
+    (
+        "Save the workbook as a web page.",
+        "ブックを Web ページとして保存します。",
+    ),
     ("Options|General", "全般"),
     ("Options|Save", "保存"),
     ("Show formula bar", "数式バーを表示する"),
-    ("Enable AutoComplete for cell values", "セルの値にオートコンプリートを使用する"),
-    ("Save .xlsx workbooks automatically after every change", "変更のたびに .xlsx ブックを自動的に保存する"),
+    (
+        "Enable AutoComplete for cell values",
+        "セルの値にオートコンプリートを使用する",
+    ),
+    (
+        "Save .xlsx workbooks automatically after every change",
+        "変更のたびに .xlsx ブックを自動的に保存する",
+    ),
     ("Workbook calculation", "ブックの計算"),
     ("Enable iterative calculation", "反復計算を行う"),
-    ("Calculation settings are saved with the workbook.", "計算の設定はブックと共に保存されます。"),
+    (
+        "Calculation settings are saved with the workbook.",
+        "計算の設定はブックと共に保存されます。",
+    ),
 ];
 
 #[cfg(test)]
@@ -599,18 +677,48 @@ mod tests {
         for (i, (en, ja)) in JAPANESE.iter().enumerate() {
             assert!(!ja.is_empty());
             assert!(JAPANESE.iter().take(i).all(|(other, _)| en != other));
-            assert_eq!(Language::En.tr(en), en.rsplit_once('|').map_or(*en, |(_, label)| label));
+            assert_eq!(
+                Language::En.tr(en),
+                en.rsplit_once('|').map_or(*en, |(_, label)| label)
+            );
         }
         for (english, _) in JAPANESE {
-            assert!(zh::translate(english).is_some_and(|text| !text.is_empty()), "missing Simplified Chinese: {english}");
-            assert!(ko::translate(english).is_some_and(|text| !text.is_empty()), "missing Korean: {english}");
-            assert!(ru::translate(english).is_some_and(|text| !text.is_empty()), "missing Russian: {english}");
-            assert!(pt::translate(english).is_some_and(|text| !text.is_empty()), "missing Portuguese: {english}");
-            assert!(es::translate(english).is_some_and(|text| !text.is_empty()), "missing Spanish: {english}");
-            assert!(de::translate(english).is_some_and(|text| !text.is_empty()), "missing German: {english}");
-            assert!(cs::translate(english).is_some_and(|text| !text.is_empty()), "missing Czech: {english}");
-            assert!(fr::translate(english).is_some_and(|text| !text.is_empty()), "missing French: {english}");
-            assert!(sr::translate(english).is_some_and(|text| !text.is_empty()), "missing Serbian: {english}");
+            assert!(
+                zh::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing Simplified Chinese: {english}"
+            );
+            assert!(
+                ko::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing Korean: {english}"
+            );
+            assert!(
+                ru::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing Russian: {english}"
+            );
+            assert!(
+                pt::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing Portuguese: {english}"
+            );
+            assert!(
+                es::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing Spanish: {english}"
+            );
+            assert!(
+                de::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing German: {english}"
+            );
+            assert!(
+                cs::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing Czech: {english}"
+            );
+            assert!(
+                fr::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing French: {english}"
+            );
+            assert!(
+                sr::translate(english).is_some_and(|text| !text.is_empty()),
+                "missing Serbian: {english}"
+            );
         }
         assert_eq!(Language::Ja.tr("Data"), "データ");
         assert_eq!(Language::Zh.tr("Data"), "数据");
@@ -649,15 +757,23 @@ mod tests {
 
     #[test]
     fn unknown_saved_language_keeps_the_other_preferences() {
-        let ui: crate::UiState = serde_json::from_str(r#"{"dark": true, "language": "xx"}"#).unwrap();
+        let ui: crate::UiState =
+            serde_json::from_str(r#"{"dark": true, "language": "xx"}"#).unwrap();
         assert!(ui.dark);
         assert_eq!(ui.language, Language::En);
         let ui: crate::UiState = serde_json::from_str(r#"{"dark": true, "language": 7}"#).unwrap();
         assert!(ui.dark);
         let ui: crate::UiState = serde_json::from_str(r#"{"language": "ja"}"#).unwrap();
         assert_eq!(ui.language, Language::Ja);
-        assert_eq!(crate::UiState::default().language, Language::En, "the default never reads the host locale");
-        assert_eq!(saved_language(&serde_json::json!({"language": "ja"})), Some(Language::Ja));
+        assert_eq!(
+            crate::UiState::default().language,
+            Language::En,
+            "the default never reads the host locale"
+        );
+        assert_eq!(
+            saved_language(&serde_json::json!({"language": "ja"})),
+            Some(Language::Ja)
+        );
         assert_eq!(saved_language(&serde_json::json!({"language": "xx"})), None);
         assert_eq!(saved_language(&serde_json::json!({})), None);
     }
@@ -693,22 +809,40 @@ mod tests {
         // applies `Language::system()` itself when `ui.json` names no usable language.
         let restored: crate::UiState = serde_json::from_str("{}").unwrap();
         assert_eq!(restored.language, Language::En);
-        assert_eq!(saved_language(&serde_json::json!({"language": "zh"})), Some(Language::Zh));
+        assert_eq!(
+            saved_language(&serde_json::json!({"language": "zh"})),
+            Some(Language::Zh)
+        );
     }
 
     #[test]
     fn language_commands_switch_and_persist() {
-        let mut app = crate::SheetApp::new(gridcraft_engine::Session::default(), Default::default());
+        let mut app =
+            crate::SheetApp::new(gridcraft_engine::Session::default(), Default::default());
         for language in Language::ALL {
-            app.run("app.language.set", serde_json::json!({"language": language.code()})).unwrap();
+            app.run(
+                "app.language.set",
+                serde_json::json!({"language": language.code()}),
+            )
+            .unwrap();
             assert_eq!(app.ui.language, language);
-            let restored: crate::UiState = serde_json::from_str(&serde_json::to_string(&app.ui).unwrap()).unwrap();
+            let restored: crate::UiState =
+                serde_json::from_str(&serde_json::to_string(&app.ui).unwrap()).unwrap();
             assert_eq!(restored.language, language);
         }
-        app.run("app.language.set", serde_json::json!({"code": "ja"})).unwrap();
-        assert_eq!(app.ui.language, Language::Ja, "`code` is an alias for `language`");
-        assert!(app.run("app.language.set", serde_json::json!({})).is_err(), "no language is an error, not a dialog");
-        app.run("app.language.english", serde_json::json!({})).unwrap();
+        app.run("app.language.set", serde_json::json!({"code": "ja"}))
+            .unwrap();
+        assert_eq!(
+            app.ui.language,
+            Language::Ja,
+            "`code` is an alias for `language`"
+        );
+        assert!(
+            app.run("app.language.set", serde_json::json!({})).is_err(),
+            "no language is an error, not a dialog"
+        );
+        app.run("app.language.english", serde_json::json!({}))
+            .unwrap();
         assert_eq!(app.ui.language, Language::En);
         for l in Language::ALL {
             assert_eq!(Language::parse(l.code()), Some(l));

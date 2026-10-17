@@ -117,9 +117,13 @@ fn main() -> Result<()> {
     match cli.commande {
         Commande::Detect { fichier, indent } => cmd_detect(fichier, indent),
         Commande::Menu { fichier, indent } => cmd_menu(fichier, indent),
-        Commande::SimulerMatch { home, away, seed, home_stats, away_stats } => {
-            cmd_match(home, away, seed, home_stats, away_stats)
-        },
+        Commande::SimulerMatch {
+            home,
+            away,
+            seed,
+            home_stats,
+            away_stats,
+        } => cmd_match(home, away, seed, home_stats, away_stats),
     }
 }
 
@@ -163,12 +167,16 @@ fn read_menu_source(path: &std::path::Path) -> Result<(String, Vec<u8>)> {
     }
 
     let requested = path.to_string_lossy().replace('\\', "/");
-    let logical =
-        if requested.starts_with("data/") { requested } else { format!("data/{requested}") };
+    let logical = if requested.starts_with("data/") {
+        requested
+    } else {
+        format!("data/{requested}")
+    };
     let vfs = aphrody_nie_formats::vfs::open_game()
         .with_context(|| format!("impossible de monter le VFS pour '{logical}'"))?;
-    let bytes =
-        vfs.read(&logical).with_context(|| format!("fichier absent du VFS : '{logical}'"))?;
+    let bytes = vfs
+        .read(&logical)
+        .with_context(|| format!("fichier absent du VFS : '{logical}'"))?;
     Ok((logical, bytes))
 }
 
@@ -205,7 +213,9 @@ fn cmd_menu(fichier: PathBuf, indent: usize) -> Result<()> {
         let formatter = serde_json::ser::PrettyFormatter::with_indent(b"  ");
         let mut output = Vec::new();
         let mut serializer = serde_json::Serializer::with_formatter(&mut output, formatter);
-        summary.serialize(&mut serializer).context("sérialisation JSON")?;
+        summary
+            .serialize(&mut serializer)
+            .context("sérialisation JSON")?;
         String::from_utf8(output).context("UTF-8 JSON")?
     };
     println!("{json}");
@@ -238,8 +248,12 @@ fn cmd_detect(fichier: PathBuf, indent: usize) -> Result<()> {
     let format = inspection.format;
     let detail = legacy_detection_detail(&format, inspection.detail);
 
-    let resume =
-        Resume { chemin: chemin_str, taille_octets: inspection.byte_length as u64, format, detail };
+    let resume = Resume {
+        chemin: chemin_str,
+        taille_octets: inspection.byte_length as u64,
+        format,
+        detail,
+    };
 
     let json = if indent == 0 {
         serde_json::to_string(&resume).context("sérialisation JSON")?
@@ -298,8 +312,10 @@ fn parse_stats(s: &str) -> Result<StatBlock> {
     }
     let mut arr = [0u16; 7];
     for (i, part) in parts.iter().enumerate() {
-        arr[i] =
-            part.trim().parse::<u16>().with_context(|| format!("stat#{i} invalide : '{part}'"))?;
+        arr[i] = part
+            .trim()
+            .parse::<u16>()
+            .with_context(|| format!("stat#{i} invalide : '{part}'"))?;
     }
     Ok(StatBlock::from_array(arr))
 }

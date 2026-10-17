@@ -2714,7 +2714,8 @@ impl DrawManager {
     pub(crate) fn draw_end(&mut self, maxwell3d: &mut dyn Maxwell3DAccess) {
         match self.draw_state.draw_mode {
             DrawMode::Instance | DrawMode::General => {
-                self.draw_state.base_instance = maxwell3d.global_base_instance_index()
+                self.draw_state.base_instance = maxwell3d
+                    .global_base_instance_index()
                     .wrapping_add(self.draw_state.instance_count);
                 self.draw_state.base_index = maxwell3d.global_base_vertex_index();
                 if self.draw_state.draw_indexed {
@@ -2727,7 +2728,8 @@ impl DrawManager {
                 self.draw_state.draw_indexed = false;
             }
             DrawMode::InlineIndex => {
-                self.draw_state.base_instance = maxwell3d.global_base_instance_index()
+                self.draw_state.base_instance = maxwell3d
+                    .global_base_instance_index()
                     .wrapping_add(self.draw_state.instance_count);
                 self.draw_state.base_index = maxwell3d.global_base_vertex_index();
                 self.draw_state.index_buffer = maxwell3d.index_buffer();

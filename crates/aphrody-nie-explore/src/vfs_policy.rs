@@ -29,7 +29,11 @@ pub fn normalize_path(raw: &str) -> Result<String, PathError> {
 
 pub fn normalize_prefix(raw: &str) -> Result<String, PathError> {
     let raw = raw.trim_matches('/');
-    if raw.is_empty() { Ok(String::new()) } else { normalize_path(raw) }
+    if raw.is_empty() {
+        Ok(String::new())
+    } else {
+        normalize_path(raw)
+    }
 }
 
 #[must_use]

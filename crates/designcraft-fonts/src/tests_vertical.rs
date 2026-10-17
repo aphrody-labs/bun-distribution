@@ -6,12 +6,17 @@
 use skrifa::raw::TableProvider;
 
 use super::*;
-use crate::testing::{font_mapping, font_with, with_table_len, with_table_u16, with_vmtx, with_vorg};
+use crate::testing::{
+    font_mapping, font_with, with_table_len, with_table_u16, with_vmtx, with_vorg,
+};
 use crate::{ShapeContext, feature, shape_vertical, shape_with_context};
 
 /// Text in Japanese.
 fn japanese() -> ShapeContext<'static> {
-    ShapeContext { language: Some("ja"), ..Default::default() }
+    ShapeContext {
+        language: Some("ja"),
+        ..Default::default()
+    }
 }
 
 /// The synthetic font's characters and the Source Sans 3 glyphs that draw them.
@@ -26,7 +31,12 @@ fn vertical_font() -> Vec<u8> {
 }
 
 fn gid_in(font: &[u8], c: char) -> u16 {
-    let gid = skrifa::FontRef::new(font).unwrap().charmap().map(c).unwrap().to_u32();
+    let gid = skrifa::FontRef::new(font)
+        .unwrap()
+        .charmap()
+        .map(c)
+        .unwrap()
+        .to_u32();
     u16::try_from(gid).unwrap()
 }
 
@@ -42,7 +52,15 @@ fn shippori() -> Option<Arc<FontFace>> {
 }
 
 fn face_of(bytes: Vec<u8>) -> FontFace {
-    make_face(FontBytes::Owned(Arc::new(bytes)), FontSource::Memory, 0, "Test".into(), "Regular".into(), Vec::new()).unwrap()
+    make_face(
+        FontBytes::Owned(Arc::new(bytes)),
+        FontSource::Memory,
+        0,
+        "Test".into(),
+        "Regular".into(),
+        Vec::new(),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -50,7 +68,11 @@ fn reads_vmtx() {
     let face = face_of(vertical_font());
     let font = face.skrifa().unwrap();
     let gm = font.glyph_metrics(Size::unscaled(), LocationRef::default());
-    for (c, advance, tsb) in [('一', 1000.0, 120.0), ('、', 1000.0, 120.0), ('ヸ', 1024.0, 100.0)] {
+    for (c, advance, tsb) in [
+        ('一', 1000.0, 120.0),
+        ('、', 1000.0, 120.0),
+        ('ヸ', 1024.0, 100.0),
+    ] {
         let gid = face.glyph_for(c);
         assert_ne!(gid, 0, "{c}");
         assert_eq!(face.v_advance(gid), advance, "{c}");
@@ -71,7 +93,11 @@ fn vorg_gives_the_vertical_origin() {
     let face = face_of(with_vorg(&vertical_font(), 880, &[(wi, 900)]).unwrap());
     assert_eq!(face.v_origin(face.glyph_for('一')), 880.0);
     assert_eq!(face.v_origin(u32::from(wi)), 900.0);
-    assert_eq!(face.v_advance(u32::from(wi)), 1024.0, "advances still come from vmtx");
+    assert_eq!(
+        face.v_advance(u32::from(wi)),
+        1024.0,
+        "advances still come from vmtx"
+    );
     // VORG without vmtx: origins from VORG, one em down the line.
     let base = font_mapping("Vorg Only", GLYPHS).unwrap();
     let face = face_of(with_vorg(&base, 870, &[]).unwrap());
@@ -88,7 +114,11 @@ fn shippori_reads_vmtx() {
     for c in ['「', '、', '一', 'ヸ'] {
         let gid = face.glyph_for(c);
         let g = GlyphId::new(gid);
-        assert_eq!(face.v_advance(gid), f64::from(vmtx.advance(g).unwrap()), "{c}");
+        assert_eq!(
+            face.v_advance(gid),
+            f64::from(vmtx.advance(g).unwrap()),
+            "{c}"
+        );
         // No VORG (TrueType outlines): the origin is the glyph's top plus its top side bearing.
         let top = f64::from(gm.bounds(g).unwrap().y_max) + f64::from(vmtx.side_bearing(g).unwrap());
         assert_eq!(face.v_origin(gid), top, "{c}");
@@ -115,10 +145,20 @@ fn fonts_without_vmtx_use_the_em_box() {
     let face = face_of(with_table_len(font_with("No Base", &['一']).unwrap(), b"BASE", 0).unwrap());
     assert_eq!(face.em_box(), (837.0, -163.0));
     // Without OS/2: the ascender and descender, the same way.
-    let face = face_of(with_table_len(with_table_len(font_with("No OS2", &['一']).unwrap(), b"BASE", 0).unwrap(), b"OS/2", 0).unwrap());
+    let face = face_of(
+        with_table_len(
+            with_table_len(font_with("No OS2", &['一']).unwrap(), b"BASE", 0).unwrap(),
+            b"OS/2",
+            0,
+        )
+        .unwrap(),
+    );
     let (top, bottom) = face.em_box();
     assert_eq!(top - bottom, face.upem);
-    assert!((top + bottom - (face.ascent - face.descent)).abs() < 1e-9, "{top} {bottom}");
+    assert!(
+        (top + bottom - (face.ascent - face.descent)).abs() < 1e-9,
+        "{top} {bottom}"
+    );
 }
 
 #[test]
@@ -129,28 +169,70 @@ fn broken_vertical_tables_do_not_panic() {
     }
     let vorg = with_vorg(&vertical_font(), 880, &[(1, 900), (2, 910)]).unwrap();
     let mut cases = vec![
-        ("synthetic: VORG cut short".to_string(), with_table_len(vorg.clone(), b"VORG", 6).unwrap()),
-        ("synthetic: more origins than VORG holds".to_string(), with_table_u16(vorg, b"VORG", 6, u16::MAX).unwrap()),
-        ("BASE cut short".to_string(), with_table_len(crate::bundled()[0].to_vec(), b"BASE", 6).unwrap()),
+        (
+            "synthetic: VORG cut short".to_string(),
+            with_table_len(vorg.clone(), b"VORG", 6).unwrap(),
+        ),
+        (
+            "synthetic: more origins than VORG holds".to_string(),
+            with_table_u16(vorg, b"VORG", 6, u16::MAX).unwrap(),
+        ),
+        (
+            "BASE cut short".to_string(),
+            with_table_len(crate::bundled()[0].to_vec(), b"BASE", 6).unwrap(),
+        ),
     ];
     for (name, font) in fonts {
         cases.extend([
-            (format!("{name}: vmtx cut short"), with_table_len(font.clone(), b"vmtx", 2).unwrap()),
-            (format!("{name}: vmtx empty"), with_table_len(font.clone(), b"vmtx", 0).unwrap()),
-            (format!("{name}: more metrics than vmtx holds"), with_table_u16(font.clone(), b"vhea", 34, u16::MAX).unwrap()),
-            (format!("{name}: no long metrics"), with_table_u16(font.clone(), b"vhea", 34, 0).unwrap()),
-            (format!("{name}: vhea cut short"), with_table_len(font, b"vhea", 10).unwrap()),
+            (
+                format!("{name}: vmtx cut short"),
+                with_table_len(font.clone(), b"vmtx", 2).unwrap(),
+            ),
+            (
+                format!("{name}: vmtx empty"),
+                with_table_len(font.clone(), b"vmtx", 0).unwrap(),
+            ),
+            (
+                format!("{name}: more metrics than vmtx holds"),
+                with_table_u16(font.clone(), b"vhea", 34, u16::MAX).unwrap(),
+            ),
+            (
+                format!("{name}: no long metrics"),
+                with_table_u16(font.clone(), b"vhea", 34, 0).unwrap(),
+            ),
+            (
+                format!("{name}: vhea cut short"),
+                with_table_len(font, b"vhea", 10).unwrap(),
+            ),
         ]);
     }
     for (what, bytes) in cases {
         let face = face_of(bytes);
         let (top, bottom) = face.em_box();
-        assert!(top > bottom && (top - bottom - face.upem).abs() < 1e-9, "{what}: {top} {bottom}");
-        for gid in [0, face.glyph_for('一'), face.glyph_for('、'), u32::from(u16::MAX), u32::MAX] {
+        assert!(
+            top > bottom && (top - bottom - face.upem).abs() < 1e-9,
+            "{what}: {top} {bottom}"
+        );
+        for gid in [
+            0,
+            face.glyph_for('一'),
+            face.glyph_for('、'),
+            u32::from(u16::MAX),
+            u32::MAX,
+        ] {
             let (adv, origin) = (face.v_advance(gid), face.v_origin(gid));
-            assert!(adv.is_finite() && adv >= 0.0 && origin.is_finite(), "{what}: {gid} {adv} {origin}");
+            assert!(
+                adv.is_finite() && adv >= 0.0 && origin.is_finite(),
+                "{what}: {gid} {adv} {origin}"
+            );
         }
-        let g = shape_vertical(&face, "一、ま", &[feature("vpal").unwrap()], |c| c, japanese());
+        let g = shape_vertical(
+            &face,
+            "一、ま",
+            &[feature("vpal").unwrap()],
+            |c| c,
+            japanese(),
+        );
         assert_eq!(g.len(), 3, "{what}");
     }
 }
@@ -161,15 +243,36 @@ fn upright_text_shapes_top_to_bottom() {
     let h = shape_with_context(&face, "一ヸ、", &[], |c| c, japanese());
     let v = shape_vertical(&face, "一ヸ、", &[], |c| c, japanese());
     // This font has no vertical forms (`vert`): the same glyphs.
-    assert_eq!(v.iter().map(|g| g.gid).collect::<Vec<_>>(), h.iter().map(|g| g.gid).collect::<Vec<_>>());
+    assert_eq!(
+        v.iter().map(|g| g.gid).collect::<Vec<_>>(),
+        h.iter().map(|g| g.gid).collect::<Vec<_>>()
+    );
     // Advances run down the line, by vmtx; offsets are what GPOS moves a glyph from its vertical
     // origin (nothing here).
-    let placed: Vec<_> = v.iter().map(|g| (g.x_advance, g.y_advance, g.x_offset, g.y_offset)).collect();
-    assert_eq!(placed, [(0, -1000, 0, 0), (0, -1024, 0, 0), (0, -1000, 0, 0)]);
+    let placed: Vec<_> = v
+        .iter()
+        .map(|g| (g.x_advance, g.y_advance, g.x_offset, g.y_offset))
+        .collect();
+    assert_eq!(
+        placed,
+        [(0, -1000, 0, 0), (0, -1024, 0, 0), (0, -1000, 0, 0)]
+    );
     // Origins from VORG leave the offsets alone too.
-    let face = face_of(with_vorg(&vertical_font(), 880, &[(gid_in(&vertical_font(), 'ヸ'), 900)]).unwrap());
+    let face = face_of(
+        with_vorg(
+            &vertical_font(),
+            880,
+            &[(gid_in(&vertical_font(), 'ヸ'), 900)],
+        )
+        .unwrap(),
+    );
     let v = shape_vertical(&face, "一ヸ", &[], |c| c, ShapeContext::default());
-    assert_eq!(v.iter().map(|g| (g.y_advance, g.x_offset, g.y_offset)).collect::<Vec<_>>(), [(-1000, 0, 0), (-1024, 0, 0)]);
+    assert_eq!(
+        v.iter()
+            .map(|g| (g.y_advance, g.x_offset, g.y_offset))
+            .collect::<Vec<_>>(),
+        [(-1000, 0, 0), (-1024, 0, 0)]
+    );
 }
 
 #[test]
@@ -183,10 +286,23 @@ fn shippori_takes_vertical_forms_and_proportional_metrics() {
     assert_eq!(face.v_origin(v[1].gid), 880.0);
     // Advances run down the line; offsets are what GPOS moves a glyph from its vertical origin.
     for g in &v {
-        assert_eq!((g.x_advance, g.y_advance, g.x_offset, g.y_offset), (0, -1000, 0, 0), "{g:?}");
+        assert_eq!(
+            (g.x_advance, g.y_advance, g.x_offset, g.y_offset),
+            (0, -1000, 0, 0),
+            "{g:?}"
+        );
     }
-    assert_eq!(shape_vertical(&face, "ヸ", &[], |c| c, ShapeContext::default())[0].y_advance, -1024);
+    assert_eq!(
+        shape_vertical(&face, "ヸ", &[], |c| c, ShapeContext::default())[0].y_advance,
+        -1024
+    );
     // `vpal` (proportional vertical metrics) shortens kana and moves them along the line.
-    let ma = shape_vertical(&face, "ま", &[feature("vpal").unwrap()], |c| c, ShapeContext::default())[0];
+    let ma = shape_vertical(
+        &face,
+        "ま",
+        &[feature("vpal").unwrap()],
+        |c| c,
+        ShapeContext::default(),
+    )[0];
     assert_eq!((ma.y_advance, ma.x_offset, ma.y_offset), (-974, 0, 4));
 }

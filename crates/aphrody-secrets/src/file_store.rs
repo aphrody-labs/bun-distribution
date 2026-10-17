@@ -35,7 +35,10 @@ impl FileSecretStore {
     /// Create a new store rooted at `path` (file does not need to exist yet).
     #[must_use]
     pub fn new(path: impl Into<PathBuf>) -> Self {
-        Self { path: path.into(), lock: std::sync::Arc::new(tokio::sync::Mutex::new(())) }
+        Self {
+            path: path.into(),
+            lock: std::sync::Arc::new(tokio::sync::Mutex::new(())),
+        }
     }
 
     /// Public accessor — useful for tests and tooling.
@@ -85,7 +88,7 @@ impl SecretStore for FileSecretStore {
                     .decode(b64.as_bytes())
                     .map_err(|e| SecretsError::InvalidFormat(format!("base64: {e}")))?;
                 Ok(Some(SecretValue::from_bytes(raw)))
-            },
+            }
         }
     }
 
@@ -256,8 +259,9 @@ impl EncryptedFileSecretStore {
         let cipher = Aes256Gcm::new(&key);
         let nonce = Nonce::try_from(nonce_bytes.as_slice())
             .map_err(|_| SecretsError::InvalidFormat("nonce must be 12 bytes".into()))?;
-        let plaintext =
-            cipher.decrypt(&nonce, ciphertext.as_ref()).map_err(|_| SecretsError::BadPassphrase)?;
+        let plaintext = cipher
+            .decrypt(&nonce, ciphertext.as_ref())
+            .map_err(|_| SecretsError::BadPassphrase)?;
         let map: BTreeMap<String, String> = serde_json::from_slice(&plaintext)?;
         Ok(map)
     }
@@ -319,7 +323,7 @@ impl SecretStore for EncryptedFileSecretStore {
                     .decode(b64.as_bytes())
                     .map_err(|e| SecretsError::InvalidFormat(format!("base64: {e}")))?;
                 Ok(Some(SecretValue::from_bytes(raw)))
-            },
+            }
         }
     }
 

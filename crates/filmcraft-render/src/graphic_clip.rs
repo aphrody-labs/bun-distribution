@@ -12,11 +12,18 @@ use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use filmcraft_geom::{Affine, Vec2};
-use filmcraft_project::graphic::{LayerContent, LayerSpec, LinearGradient, ShapeProps, TextProps, eval_layer};
-use filmcraft_project::graphic_design::{GraphicMeta, PinNode, remap_time, resolve_pins, roll_offset};
+use filmcraft_project::graphic::{
+    LayerContent, LayerSpec, LinearGradient, ShapeProps, TextProps, eval_layer,
+};
+use filmcraft_project::graphic_design::{
+    GraphicMeta, PinNode, remap_time, resolve_pins, roll_offset,
+};
 use filmcraft_project::{EffectInstance, TrackItem};
 use filmcraft_text::raster::{Xform, apply, fill_into, xform_scale};
-use filmcraft_text::{Align, Caps, Layout, Mask, ParagraphStyle, StrokeKind, StyleRun, TextStyle, layout_rich, mask, render};
+use filmcraft_text::{
+    Align, Caps, Layout, Mask, ParagraphStyle, StrokeKind, StyleRun, TextStyle, layout_rich, mask,
+    render,
+};
 use filmcraft_time::Tick;
 use rayon::prelude::*;
 
@@ -25,7 +32,9 @@ use crate::image::Image;
 
 /// f64 affine → the text crate's f32 transform.
 pub fn xform(a: &Affine) -> Xform {
-    [a.a as f32, a.b as f32, a.c as f32, a.d as f32, a.e as f32, a.f as f32]
+    [
+        a.a as f32, a.b as f32, a.c as f32, a.d as f32, a.e as f32, a.f as f32,
+    ]
 }
 
 /// Layer pixels → graphic canvas pixels (position / anchor / scale / rotation).
@@ -38,8 +47,16 @@ pub fn layer_matrix(spec: &LayerSpec) -> Affine {
 pub fn text_styles(t: &TextProps) -> (TextStyle, ParagraphStyle) {
     (
         TextStyle {
-            family: if t.font.is_empty() { filmcraft_text::fonts::DEFAULT_FAMILY.into() } else { t.font.clone() },
-            style: if t.style.is_empty() { "Regular".into() } else { t.style.clone() },
+            family: if t.font.is_empty() {
+                filmcraft_text::fonts::DEFAULT_FAMILY.into()
+            } else {
+                t.font.clone()
+            },
+            style: if t.style.is_empty() {
+                "Regular".into()
+            } else {
+                t.style.clone()
+            },
             size: t.size,
             tracking: t.tracking,
             kerning: t.kerning,
@@ -59,7 +76,8 @@ pub fn text_styles(t: &TextProps) -> (TextStyle, ParagraphStyle) {
             },
             leading: t.leading,
             width: (t.box_width > 0.0 && !t.vertical).then_some(t.box_width),
-            height: (t.box_width > 0.0 && t.box_height > 0.0 && !t.vertical).then_some(t.box_height),
+            height: (t.box_width > 0.0 && t.box_height > 0.0 && !t.vertical)
+                .then_some(t.box_height),
             rtl: None,
             vertical: t.vertical,
         },
@@ -82,8 +100,16 @@ pub fn text_runs(t: &TextProps, base: &TextStyle) -> Vec<StyleRun> {
         .map(|(r, c)| StyleRun {
             range: r.clone(),
             style: TextStyle {
-                family: c.font.clone().filter(|f| !f.is_empty()).unwrap_or_else(|| base.family.clone()),
-                style: c.font_style.clone().filter(|f| !f.is_empty()).unwrap_or_else(|| base.style.clone()),
+                family: c
+                    .font
+                    .clone()
+                    .filter(|f| !f.is_empty())
+                    .unwrap_or_else(|| base.family.clone()),
+                style: c
+                    .font_style
+                    .clone()
+                    .filter(|f| !f.is_empty())
+                    .unwrap_or_else(|| base.style.clone()),
                 size: c.size.map_or(base.size, |s| s.max(0.1)),
                 tracking: c.tracking.unwrap_or(base.tracking),
                 baseline_shift: c.baseline_shift.unwrap_or(base.baseline_shift),
@@ -113,13 +139,16 @@ pub fn shape_path(s: &ShapeProps) -> filmcraft_text::Path {
             let n = s.sides.max(3);
             let pts: Vec<(f32, f32)> = (0..n)
                 .map(|i| {
-                    let a = std::f32::consts::TAU * i as f32 / n as f32 - std::f32::consts::FRAC_PI_2;
+                    let a =
+                        std::f32::consts::TAU * i as f32 / n as f32 - std::f32::consts::FRAC_PI_2;
                     (a.cos() * w, a.sin() * h)
                 })
                 .collect();
             filmcraft_text::Path::polygon(&pts)
         }
-        3 if s.points.len() >= 3 => filmcraft_text::Path::polygon(&s.points.iter().map(|p| (p[0], p[1])).collect::<Vec<_>>()),
+        3 if s.points.len() >= 3 => filmcraft_text::Path::polygon(
+            &s.points.iter().map(|p| (p[0], p[1])).collect::<Vec<_>>(),
+        ),
         _ => filmcraft_text::Path::round_rect(-w, -h, w, h, s.corner_radius),
     }
 }
@@ -140,8 +169,13 @@ pub fn layer_local_bounds(spec: &LayerSpec) -> [f32; 4] {
 pub fn layer_quad(spec: &LayerSpec) -> [Vec2; 4] {
     let b = layer_local_bounds(spec);
     let m = layer_matrix(spec);
-    [Vec2::new(b[0] as f64, b[1] as f64), Vec2::new(b[2] as f64, b[1] as f64), Vec2::new(b[2] as f64, b[3] as f64), Vec2::new(b[0] as f64, b[3] as f64)]
-        .map(|p| m.apply(p))
+    [
+        Vec2::new(b[0] as f64, b[1] as f64),
+        Vec2::new(b[2] as f64, b[1] as f64),
+        Vec2::new(b[2] as f64, b[3] as f64),
+        Vec2::new(b[0] as f64, b[3] as f64),
+    ]
+    .map(|p| m.apply(p))
 }
 
 /// A rendered layer: premultiplied linear RGBA at device position (`x`, `y`).
@@ -161,7 +195,12 @@ fn stroke_kind(k: u32) -> StrokeKind {
 }
 
 fn bbox_of(m: &Xform, b: [f32; 4], pad: f32) -> [f32; 4] {
-    let pts = [(b[0] - pad, b[1] - pad), (b[2] + pad, b[1] - pad), (b[0] - pad, b[3] + pad), (b[2] + pad, b[3] + pad)];
+    let pts = [
+        (b[0] - pad, b[1] - pad),
+        (b[2] + pad, b[1] - pad),
+        (b[0] - pad, b[3] + pad),
+        (b[2] + pad, b[3] + pad),
+    ];
     let mut o = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
     for (x, y) in pts {
         let (a, c) = apply(m, x, y);
@@ -171,7 +210,12 @@ fn bbox_of(m: &Xform, b: [f32; 4], pad: f32) -> [f32; 4] {
 }
 
 fn union(a: [f32; 4], b: [f32; 4]) -> [f32; 4] {
-    [a[0].min(b[0]), a[1].min(b[1]), a[2].max(b[2]), a[3].max(b[3])]
+    [
+        a[0].min(b[0]),
+        a[1].min(b[1]),
+        a[2].max(b[2]),
+        a[3].max(b[3]),
+    ]
 }
 
 /// Over-composite `c` (premultiplied) through `m` into `px` (premultiplied RGBA, same size).
@@ -179,16 +223,18 @@ fn over_mask(px: &mut [f32], m: &Mask, c: [f32; 4]) {
     if c[3] <= 0.0 || m.w == 0 {
         return;
     }
-    px.par_chunks_mut(4 * m.w).zip(m.a.par_chunks(m.w)).for_each(|(row, mrow)| {
-        for (p, &a) in row.as_chunks_mut::<4>().0.iter_mut().zip(mrow) {
-            if a > 0.0 {
-                let k = 1.0 - c[3] * a;
-                for i in 0..4 {
-                    p[i] = c[i] * a + p[i] * k;
+    px.par_chunks_mut(4 * m.w)
+        .zip(m.a.par_chunks(m.w))
+        .for_each(|(row, mrow)| {
+            for (p, &a) in row.as_chunks_mut::<4>().0.iter_mut().zip(mrow) {
+                if a > 0.0 {
+                    let k = 1.0 - c[3] * a;
+                    for i in 0..4 {
+                        p[i] = c[i] * a + p[i] * k;
+                    }
                 }
             }
-        }
-    });
+        });
 }
 
 fn invert_xform(m: &Xform) -> Option<Xform> {
@@ -206,44 +252,73 @@ fn invert_xform(m: &Xform) -> Option<Xform> {
 
 /// Paint `grad` through `msk`. 0° runs left to right across `lb` in layer space; the angle is
 /// clockwise on screen and turns with `inv` (the device→layer transform).
-fn over_linear_gradient(px: &mut [f32], msk: &Mask, grad: &LinearGradient, lb: [f32; 4], inv: &Xform, origin: (i32, i32)) {
+fn over_linear_gradient(
+    px: &mut [f32],
+    msk: &Mask,
+    grad: &LinearGradient,
+    lb: [f32; 4],
+    inv: &Xform,
+    origin: (i32, i32),
+) {
     if msk.w == 0 {
         return;
     }
     let (cx, cy) = ((lb[0] + lb[2]) * 0.5, (lb[1] + lb[3]) * 0.5);
     let (sin, cos) = grad.angle.to_radians().sin_cos();
     let (ax, ay) = (cos, sin);
-    let corners = [(lb[0], lb[1]), (lb[2], lb[1]), (lb[0], lb[3]), (lb[2], lb[3])];
-    let half = corners.iter().map(|(x, y)| ((x - cx) * ax + (y - cy) * ay).abs()).fold(1e-3_f32, f32::max);
+    let corners = [
+        (lb[0], lb[1]),
+        (lb[2], lb[1]),
+        (lb[0], lb[3]),
+        (lb[2], lb[3]),
+    ];
+    let half = corners
+        .iter()
+        .map(|(x, y)| ((x - cx) * ax + (y - cy) * ay).abs())
+        .fold(1e-3_f32, f32::max);
     let w = msk.w;
     let (start, end) = (grad.start, grad.end);
-    px.par_chunks_mut(4 * w).enumerate().for_each(|(row, dest)| {
-        let py = origin.1 as f32 + row as f32 + 0.5;
-        let mrow = &msk.a[row * w..(row + 1) * w];
-        for (col, (p, &cov)) in dest.as_chunks_mut::<4>().0.iter_mut().zip(mrow).enumerate() {
-            if cov <= 0.0 {
-                continue;
+    px.par_chunks_mut(4 * w)
+        .enumerate()
+        .for_each(|(row, dest)| {
+            let py = origin.1 as f32 + row as f32 + 0.5;
+            let mrow = &msk.a[row * w..(row + 1) * w];
+            for (col, (p, &cov)) in dest.as_chunks_mut::<4>().0.iter_mut().zip(mrow).enumerate() {
+                if cov <= 0.0 {
+                    continue;
+                }
+                let (lx, ly) = apply(inv, origin.0 as f32 + col as f32 + 0.5, py);
+                let t = (((((lx - cx) * ax + (ly - cy) * ay) / half) + 1.0) * 0.5).clamp(0.0, 1.0);
+                let c = premul_linear_lerp(start, end, t);
+                let k = 1.0 - c[3] * cov;
+                for i in 0..4 {
+                    p[i] = c[i] * cov + p[i] * k;
+                }
             }
-            let (lx, ly) = apply(inv, origin.0 as f32 + col as f32 + 0.5, py);
-            let t = (((((lx - cx) * ax + (ly - cy) * ay) / half) + 1.0) * 0.5).clamp(0.0, 1.0);
-            let c = premul_linear_lerp(start, end, t);
-            let k = 1.0 - c[3] * cov;
-            for i in 0..4 {
-                p[i] = c[i] * cov + p[i] * k;
-            }
-        }
-    });
+        });
 }
 
 /// Solid fill, one mask per distinct colour when text runs carry their own.
-fn paint_solid(px: &mut [f32], cover: &Mask, color: [f32; 4], text: Option<&Layout>, m: &Xform, run_fills: &[Option<[f32; 4]>], origin: (i32, i32)) {
+fn paint_solid(
+    px: &mut [f32],
+    cover: &Mask,
+    color: [f32; 4],
+    text: Option<&Layout>,
+    m: &Xform,
+    run_fills: &[Option<[f32; 4]>],
+    origin: (i32, i32),
+) {
     let Some(layout) = text.filter(|_| run_fills.iter().any(Option::is_some)) else {
         over_mask(px, cover, premul_linear(color));
         return;
     };
     let mut groups: Vec<([f32; 4], Vec<u16>)> = Vec::new();
     for r in 0..=run_fills.len() {
-        let col = if r == 0 { color } else { run_fills[r - 1].unwrap_or(color) };
+        let col = if r == 0 {
+            color
+        } else {
+            run_fills[r - 1].unwrap_or(color)
+        };
         match groups.iter_mut().find(|g| g.0 == col) {
             Some(g) => g.1.push(r as u16),
             None => groups.push((col, vec![r as u16])),
@@ -332,7 +407,9 @@ pub fn raster_layer(spec: &LayerSpec, m: &Xform, cw: usize, ch: usize) -> Option
             }
         })
         .fold(0.0f32, f32::max);
-    let overhang = text.as_ref().map_or(0.0, |l| l.glyphs.iter().map(|g| g.size).fold(0.0f32, f32::max) * 0.35);
+    let overhang = text.as_ref().map_or(0.0, |l| {
+        l.glyphs.iter().map(|g| g.size).fold(0.0f32, f32::max) * 0.35
+    });
     let mut bb = bbox_of(m, lb, overhang + stroke_out + 2.0 / s);
     if let Some((_, pad, _)) = ap.background {
         bb = union(bb, bbox_of(m, lb, pad + 1.0 / s));
@@ -340,12 +417,25 @@ pub fn raster_layer(spec: &LayerSpec, m: &Xform, cw: usize, ch: usize) -> Option
     let mut shadow_dev = (0.0f32, 0.0f32);
     if let Some(sh) = &ap.shadow {
         // the offset is in layer space, so it turns and scales with the layer
-        shadow_dev = (m[0] * sh.offset.0 + m[2] * sh.offset.1, m[1] * sh.offset.0 + m[3] * sh.offset.1);
+        shadow_dev = (
+            m[0] * sh.offset.0 + m[2] * sh.offset.1,
+            m[1] * sh.offset.0 + m[3] * sh.offset.1,
+        );
         let grow = (sh.size + sh.blur) * s + 2.0;
-        bb = union(bb, [bb[0] + shadow_dev.0 - grow, bb[1] + shadow_dev.1 - grow, bb[2] + shadow_dev.0 + grow, bb[3] + shadow_dev.1 + grow]);
+        bb = union(
+            bb,
+            [
+                bb[0] + shadow_dev.0 - grow,
+                bb[1] + shadow_dev.1 - grow,
+                bb[2] + shadow_dev.0 + grow,
+                bb[3] + shadow_dev.1 + grow,
+            ],
+        );
     }
     // clip to the canvas, keeping enough margin for blur to read content just outside it
-    let margin = ap.shadow.as_ref().map_or(2.0, |sh| (sh.blur + sh.size) * s + shadow_dev.0.abs().max(shadow_dev.1.abs()) + 2.0);
+    let margin = ap.shadow.as_ref().map_or(2.0, |sh| {
+        (sh.blur + sh.size) * s + shadow_dev.0.abs().max(shadow_dev.1.abs()) + 2.0
+    });
     let x0 = bb[0].floor().max(-margin) as i32;
     let y0 = bb[1].floor().max(-margin) as i32;
     let x1 = bb[2].ceil().min(cw as f32 + margin) as i32;
@@ -364,16 +454,26 @@ pub fn raster_layer(spec: &LayerSpec, m: &Xform, cw: usize, ch: usize) -> Option
     if let Some(p) = &shape {
         fill_into(p, &mut cover, -x0 as f32, -y0 as f32);
     }
-    let strokes: Vec<(Mask, [f32; 4])> = ap.strokes.iter().map(|(c, sw, k)| (mask::stroke(&cover, sw * s, stroke_kind(*k)), *c)).collect();
+    let strokes: Vec<(Mask, [f32; 4])> = ap
+        .strokes
+        .iter()
+        .map(|(c, sw, k)| (mask::stroke(&cover, sw * s, stroke_kind(*k)), *c))
+        .collect();
     let bg = ap.background.map(|(c, pad, r)| {
-        let p = filmcraft_text::Path::round_rect(lb[0] - pad, lb[1] - pad, lb[2] + pad, lb[3] + pad, r).transformed(m);
+        let p =
+            filmcraft_text::Path::round_rect(lb[0] - pad, lb[1] - pad, lb[2] + pad, lb[3] + pad, r)
+                .transformed(m);
         let mut bm = Mask::new(w, h);
         fill_into(&p, &mut bm, -x0 as f32, -y0 as f32);
         (bm, c)
     });
     let mut px = vec![0.0f32; w * h * 4];
     if let Some(sh) = &ap.shadow {
-        let mut u = if ap.fill.is_some() { cover.clone() } else { Mask::new(w, h) };
+        let mut u = if ap.fill.is_some() {
+            cover.clone()
+        } else {
+            Mask::new(w, h)
+        };
         for (sm, _) in &strokes {
             u.max_with(sm);
         }
@@ -407,7 +507,17 @@ pub fn raster_layer(spec: &LayerSpec, m: &Xform, cw: usize, ch: usize) -> Option
         if run_fills.iter().any(Option::is_some)
             && let Some(layout) = &text
         {
-            paint_mixed_gradient(&mut px, &cover, grad, lb, &inv, (x0, y0), layout, m, &run_fills);
+            paint_mixed_gradient(
+                &mut px,
+                &cover,
+                grad,
+                lb,
+                &inv,
+                (x0, y0),
+                layout,
+                m,
+                &run_fills,
+            );
         } else {
             over_linear_gradient(&mut px, &cover, grad, lb, &inv, (x0, y0));
         }
@@ -423,7 +533,11 @@ pub fn raster_layer(spec: &LayerSpec, m: &Xform, cw: usize, ch: usize) -> Option
     if op < 1.0 {
         px.iter_mut().for_each(|v| *v *= op);
     }
-    Some(LayerRaster { x: x0, y: y0, img: Image { w, h, px } })
+    Some(LayerRaster {
+        x: x0,
+        y: y0,
+        img: Image { w, h, px },
+    })
 }
 
 type Cache = Mutex<HashMap<u64, (u64, Option<Arc<LayerRaster>>)>>;
@@ -434,7 +548,12 @@ fn raster_cache() -> &'static Cache {
 }
 
 /// [`raster_layer`] through a small cache (static titles re-composite without re-rasterising).
-pub fn raster_layer_cached(spec: &LayerSpec, m: &Xform, cw: usize, ch: usize) -> Option<Arc<LayerRaster>> {
+pub fn raster_layer_cached(
+    spec: &LayerSpec,
+    m: &Xform,
+    cw: usize,
+    ch: usize,
+) -> Option<Arc<LayerRaster>> {
     let mut hs = std::collections::hash_map::DefaultHasher::new();
     format!("{spec:?}").hash(&mut hs);
     m.iter().for_each(|v| v.to_bits().hash(&mut hs));
@@ -442,7 +561,11 @@ pub fn raster_layer_cached(spec: &LayerSpec, m: &Xform, cw: usize, ch: usize) ->
     let key = hs.finish();
     static CLOCK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let now = CLOCK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if let Some(e) = raster_cache().lock().unwrap_or_else(|e| e.into_inner()).get_mut(&key) {
+    if let Some(e) = raster_cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get_mut(&key)
+    {
         e.0 = now;
         return e.1.clone();
     }
@@ -467,21 +590,24 @@ pub fn composite_raster(img: &mut Image, r: &LayerRaster, dx: i32, dy: i32) {
         return;
     }
     let iw = img.w;
-    img.px[ys.start as usize * iw * 4..ys.end as usize * iw * 4].par_chunks_mut(iw * 4).enumerate().for_each(|(row_i, row)| {
-        let sy = (ys.start + row_i as i32 - ry) as usize;
-        for x in xs.clone() {
-            let si = (sy * r.img.w + (x - rx) as usize) * 4;
-            let s = &r.img.px[si..si + 4];
-            if s[3] <= 0.0 {
-                continue;
+    img.px[ys.start as usize * iw * 4..ys.end as usize * iw * 4]
+        .par_chunks_mut(iw * 4)
+        .enumerate()
+        .for_each(|(row_i, row)| {
+            let sy = (ys.start + row_i as i32 - ry) as usize;
+            for x in xs.clone() {
+                let si = (sy * r.img.w + (x - rx) as usize) * 4;
+                let s = &r.img.px[si..si + 4];
+                if s[3] <= 0.0 {
+                    continue;
+                }
+                let d = &mut row[x as usize * 4..x as usize * 4 + 4];
+                let k = 1.0 - s[3];
+                for c in 0..4 {
+                    d[c] = s[c] + d[c] * k;
+                }
             }
-            let d = &mut row[x as usize * 4..x as usize * 4 + 4];
-            let k = 1.0 - s[3];
-            for c in 0..4 {
-                d[c] = s[c] + d[c] * k;
-            }
-        }
-    });
+        });
 }
 
 /// Axis-aligned bounds `[x0, y0, x1, y1]` of a layer's content box in canvas pixels.
@@ -502,7 +628,12 @@ pub fn apply_pins(specs: &mut [LayerSpec], canvas: (u32, u32)) {
     }
     let nodes: Vec<PinNode> = specs
         .iter()
-        .map(|s| PinNode { uid: s.uid, pin: s.pin.clone(), bounds: layer_bounds(s), resizable: matches!(s.content, LayerContent::Shape(_)) })
+        .map(|s| PinNode {
+            uid: s.uid,
+            pin: s.pin.clone(),
+            bounds: layer_bounds(s),
+            resizable: matches!(s.content, LayerContent::Shape(_)),
+        })
         .collect();
     let out = resolve_pins(&nodes, [0.0, 0.0, canvas.0 as f64, canvas.1 as f64]);
     for ((s, n), b) in specs.iter_mut().zip(&nodes).zip(out) {
@@ -515,19 +646,31 @@ pub fn apply_pins(specs: &mut [LayerSpec], canvas: (u32, u32)) {
             let kx = if ow > 1e-9 { nw / ow } else { 1.0 };
             let ky = if oh > 1e-9 { nh / oh } else { 1.0 };
             if (kx - 1.0).abs() > 1e-12 || (ky - 1.0).abs() > 1e-12 {
-                sh.size = ((sh.size.0 as f64 * kx) as f32, (sh.size.1 as f64 * ky) as f32);
-                sh.points.iter_mut().for_each(|p| *p = [(p[0] as f64 * kx) as f32, (p[1] as f64 * ky) as f32]);
+                sh.size = (
+                    (sh.size.0 as f64 * kx) as f32,
+                    (sh.size.1 as f64 * ky) as f32,
+                );
+                sh.points
+                    .iter_mut()
+                    .for_each(|p| *p = [(p[0] as f64 * kx) as f32, (p[1] as f64 * ky) as f32]);
             }
         }
         let now = layer_bounds(s);
-        s.transform.position = Vec2::new(s.transform.position.x + b[0] - now[0], s.transform.position.y + b[1] - now[1]);
+        s.transform.position = Vec2::new(
+            s.transform.position.x + b[0] - now[0],
+            s.transform.position.y + b[1] - now[1],
+        );
     }
 }
 
 /// Evaluated layers of a graphic clip's effect list at clip time `t`, in paint order, with pins
 /// resolved.
 pub fn graphic_specs(effects: &[EffectInstance], t: Tick, canvas: (u32, u32)) -> Vec<LayerSpec> {
-    let mut v: Vec<LayerSpec> = effects.iter().filter(|e| filmcraft_project::graphic::is_layer(e)).filter_map(|e| eval_layer(e, t, canvas)).collect();
+    let mut v: Vec<LayerSpec> = effects
+        .iter()
+        .filter(|e| filmcraft_project::graphic::is_layer(e))
+        .filter_map(|e| eval_layer(e, t, canvas))
+        .collect();
     apply_pins(&mut v, canvas);
     v
 }
@@ -555,7 +698,12 @@ fn content_bounds(specs: &[LayerSpec]) -> Option<[f64; 4]> {
             lb = [lb[0] - p, lb[1] - p, lb[2] + p, lb[3] + p];
         }
         b = Some(match b {
-            Some(a) => [a[0].min(lb[0]), a[1].min(lb[1]), a[2].max(lb[2]), a[3].max(lb[3])],
+            Some(a) => [
+                a[0].min(lb[0]),
+                a[1].min(lb[1]),
+                a[2].max(lb[2]),
+                a[3].max(lb[3]),
+            ],
             None => lb,
         });
     }
@@ -585,11 +733,19 @@ pub fn item_layer_specs(item: &TrackItem, mt: Tick, canvas: (u32, u32)) -> Vec<(
 }
 
 /// Move every layer by the roll / crawl offset at clip time `u` of a clip `d` long.
-pub fn apply_roll(meta: &GraphicMeta, specs: &mut [LayerSpec], u: Tick, d: Tick, canvas: (u32, u32)) {
+pub fn apply_roll(
+    meta: &GraphicMeta,
+    specs: &mut [LayerSpec],
+    u: Tick,
+    d: Tick,
+    canvas: (u32, u32),
+) {
     if meta.roll.mode == filmcraft_project::RollMode::Off {
         return;
     }
-    let Some(cb) = content_bounds(specs) else { return };
+    let Some(cb) = content_bounds(specs) else {
+        return;
+    };
     let (dx, dy) = roll_offset(&meta.roll, u, d, canvas, cb);
     for s in specs.iter_mut() {
         s.transform.position = Vec2::new(s.transform.position.x + dx, s.transform.position.y + dy);
@@ -599,12 +755,21 @@ pub fn apply_roll(meta: &GraphicMeta, specs: &mut [LayerSpec], u: Tick, d: Tick,
 /// Draw all layers of a graphic clip at media time `mt` onto `out`; `m` maps graphic canvas
 /// pixels to `out` pixels.
 pub fn render_graphic(item: &TrackItem, mt: Tick, canvas: (u32, u32), m: &Affine, out: &mut Image) {
-    let specs: Vec<LayerSpec> = item_layer_specs(item, mt, canvas).into_iter().map(|(_, s)| s).collect();
+    let specs: Vec<LayerSpec> = item_layer_specs(item, mt, canvas)
+        .into_iter()
+        .map(|(_, s)| s)
+        .collect();
     draw_specs(&specs, m, out);
 }
 
 /// Draw a graphic's layers (an effect list, without clip settings) at time `t` onto `out`.
-pub fn render_graphic_layers(effects: &[EffectInstance], t: Tick, canvas: (u32, u32), m: &Affine, out: &mut Image) {
+pub fn render_graphic_layers(
+    effects: &[EffectInstance],
+    t: Tick,
+    canvas: (u32, u32),
+    m: &Affine,
+    out: &mut Image,
+) {
     draw_specs(&graphic_specs(effects, t, canvas), m, out);
 }
 
@@ -618,13 +783,32 @@ fn draw_specs(specs: &[LayerSpec], m: &Affine, out: &mut Image) {
 }
 
 /// All layers composed into one tight image (for the GPU plan): `(image, x, y)` in output pixels.
-pub fn render_graphic_tight(item: &TrackItem, mt: Tick, canvas: (u32, u32), m: &Affine, w: usize, h: usize) -> Option<(Image, i32, i32)> {
-    let rasters: Vec<Arc<LayerRaster>> =
-        item_layer_specs(item, mt, canvas).iter().filter_map(|(_, spec)| raster_layer_cached(spec, &xform(&m.then_apply(&layer_matrix(spec))), w, h)).collect();
+pub fn render_graphic_tight(
+    item: &TrackItem,
+    mt: Tick,
+    canvas: (u32, u32),
+    m: &Affine,
+    w: usize,
+    h: usize,
+) -> Option<(Image, i32, i32)> {
+    let rasters: Vec<Arc<LayerRaster>> = item_layer_specs(item, mt, canvas)
+        .iter()
+        .filter_map(|(_, spec)| {
+            raster_layer_cached(spec, &xform(&m.then_apply(&layer_matrix(spec))), w, h)
+        })
+        .collect();
     let x0 = rasters.iter().map(|r| r.x).min()?.max(0);
     let y0 = rasters.iter().map(|r| r.y).min()?.max(0);
-    let x1 = rasters.iter().map(|r| r.x + r.img.w as i32).max()?.min(w as i32);
-    let y1 = rasters.iter().map(|r| r.y + r.img.h as i32).max()?.min(h as i32);
+    let x1 = rasters
+        .iter()
+        .map(|r| r.x + r.img.w as i32)
+        .max()?
+        .min(w as i32);
+    let y1 = rasters
+        .iter()
+        .map(|r| r.y + r.img.h as i32)
+        .max()?
+        .min(h as i32);
     if x1 <= x0 || y1 <= y0 {
         return None;
     }
@@ -649,9 +833,24 @@ mod tests {
     fn graphic_item(layers: Vec<EffectInstance>) -> TrackItem {
         let mut p = filmcraft_project::Project::new("t");
         let rate = filmcraft_time::FrameRate::FPS_25;
-        let g = p.add_item("G", filmcraft_project::Label::Rose, filmcraft_project::ItemKind::Graphic { width: 400, height: 300, rate }, None);
+        let g = p.add_item(
+            "G",
+            filmcraft_project::Label::Rose,
+            filmcraft_project::ItemKind::Graphic {
+                width: 400,
+                height: 300,
+                rate,
+            },
+            None,
+        );
         let mut it = p
-            .make_track_item(g, filmcraft_project::TrackKind::Video, Tick::ZERO, filmcraft_time::TimeRange::new(Tick::ZERO, Tick::from_seconds_f64(5.0)), rate)
+            .make_track_item(
+                g,
+                filmcraft_project::TrackKind::Video,
+                Tick::ZERO,
+                filmcraft_time::TimeRange::new(Tick::ZERO, Tick::from_seconds_f64(5.0)),
+                rate,
+            )
             .unwrap();
         it.effects.extend(layers);
         it
@@ -676,15 +875,37 @@ mod tests {
     fn per_character_fill_and_size() {
         use filmcraft_project::graphic_design::{CharStyle, LayerExtra, StyleRun};
         let mut e = new_text_layer("AAAA", Vec2::new(20.0, 100.0), 60.0);
-        set(&mut e, "fill_color", ParamValue::Color([1.0, 1.0, 1.0, 1.0]));
-        let red = CharStyle { fill: Some([1.0, 0.0, 0.0, 1.0]), ..Default::default() };
-        e.layer = Some(Box::new(LayerExtra { runs: vec![StyleRun { start: 2, end: 4, style: red }], ..Default::default() }));
+        set(
+            &mut e,
+            "fill_color",
+            ParamValue::Color([1.0, 1.0, 1.0, 1.0]),
+        );
+        let red = CharStyle {
+            fill: Some([1.0, 0.0, 0.0, 1.0]),
+            ..Default::default()
+        };
+        e.layer = Some(Box::new(LayerExtra {
+            runs: vec![StyleRun {
+                start: 2,
+                end: 4,
+                style: red,
+            }],
+            ..Default::default()
+        }));
         let mut img = Image::new(400, 200);
-        render_graphic_layers(&[e.clone()], Tick::ZERO, (400, 200), &Affine::IDENTITY, &mut img);
-        let l = text_layout(match &eval_layer(&e, Tick::ZERO, (400, 200)).unwrap().content {
-            LayerContent::Text(t) => t,
-            _ => unreachable!(),
-        });
+        render_graphic_layers(
+            &[e.clone()],
+            Tick::ZERO,
+            (400, 200),
+            &Affine::IDENTITY,
+            &mut img,
+        );
+        let l = text_layout(
+            match &eval_layer(&e, Tick::ZERO, (400, 200)).unwrap().content {
+                LayerContent::Text(t) => t,
+                _ => unreachable!(),
+            },
+        );
         let split = 20.0 + l.caret(2).0;
         let (mut white, mut red_px) = (0, 0);
         for y in 0..200 {
@@ -693,22 +914,41 @@ mod tests {
                 if p[3] > 0.9 {
                     if p[1] > 0.9 {
                         white += 1;
-                        assert!((x as f32) < split + 1.0, "white only in the first half at {x}");
+                        assert!(
+                            (x as f32) < split + 1.0,
+                            "white only in the first half at {x}"
+                        );
                     } else if p[0] > 0.9 && p[1] < 0.05 {
                         red_px += 1;
-                        assert!((x as f32) > split - 1.0, "red only in the second half at {x}");
+                        assert!(
+                            (x as f32) > split - 1.0,
+                            "red only in the second half at {x}"
+                        );
                     }
                 }
             }
         }
         assert!(white > 200 && red_px > 200, "{white} {red_px}");
         // a bigger run is taller and sits on the same baseline
-        let big = CharStyle { size: Some(120.0), ..Default::default() };
-        e.layer = Some(Box::new(LayerExtra { runs: vec![StyleRun { start: 3, end: 4, style: big }], ..Default::default() }));
+        let big = CharStyle {
+            size: Some(120.0),
+            ..Default::default()
+        };
+        e.layer = Some(Box::new(LayerExtra {
+            runs: vec![StyleRun {
+                start: 3,
+                end: 4,
+                style: big,
+            }],
+            ..Default::default()
+        }));
         let mut img2 = Image::new(400, 200);
         render_graphic_layers(&[e], Tick::ZERO, (400, 200), &Affine::IDENTITY, &mut img2);
         let (b1, b2) = (ink_box(&img).unwrap(), ink_box(&img2).unwrap());
-        assert!(b2[1] + 30 < b1[1], "the big letter rises higher: {b1:?} {b2:?}");
+        assert!(
+            b2[1] + 30 < b1[1],
+            "the big letter rises higher: {b1:?} {b2:?}"
+        );
         assert!(b2[3].abs_diff(b1[3]) <= 1, "same baseline: {b1:?} {b2:?}");
     }
 
@@ -716,19 +956,29 @@ mod tests {
     fn pinned_box_follows_text_growth() {
         use filmcraft_project::graphic_design::{LayerExtra, Pin, PinTarget};
         let mut t = new_text_layer("Hi", Vec2::new(50.0, 100.0), 40.0);
-        t.layer = Some(Box::new(LayerExtra { uid: 1, ..Default::default() }));
+        t.layer = Some(Box::new(LayerExtra {
+            uid: 1,
+            ..Default::default()
+        }));
         let mut bx = new_shape_layer(0, Vec2::new(60.0, 90.0), Vec2::new(40.0, 40.0), vec![]);
         let tb = layer_bounds(&eval_layer(&t, Tick::ZERO, (400, 300)).unwrap());
         let padded = [tb[0] - 10.0, tb[1] - 10.0, tb[2] + 10.0, tb[3] + 10.0];
         let pin = Pin::new(PinTarget::Layer(1), [true; 4], padded, tb);
-        bx.layer = Some(Box::new(LayerExtra { uid: 2, pin: Some(pin), ..Default::default() }));
+        bx.layer = Some(Box::new(LayerExtra {
+            uid: 2,
+            pin: Some(pin),
+            ..Default::default()
+        }));
         for text in ["Hi", "Hello there, world"] {
             set(&mut t, "text", ParamValue::Text(text.into()));
             let specs = graphic_specs(&[bx.clone(), t.clone()], Tick::ZERO, (400, 300));
             let (b, tt) = (layer_bounds(&specs[0]), layer_bounds(&specs[1]));
             for k in 0..4 {
                 let want = tt[k] + if k < 2 { -10.0 } else { 10.0 };
-                assert!((b[k] - want).abs() < 1e-3, "{text}: edge {k}: {b:?} vs {tt:?}");
+                assert!(
+                    (b[k] - want).abs() < 1e-3,
+                    "{text}: edge {k}: {b:?} vs {tt:?}"
+                );
             }
         }
     }
@@ -739,7 +989,12 @@ mod tests {
         let e = new_shape_layer(0, Vec2::new(200.0, 150.0), Vec2::new(100.0, 100.0), vec![]);
         let mut item = graphic_item(vec![e]);
         item.graphic = Some(Box::new(GraphicMeta {
-            roll: Roll { mode: RollMode::Roll, start_off_screen: true, end_off_screen: true, ..Default::default() },
+            roll: Roll {
+                mode: RollMode::Roll,
+                start_off_screen: true,
+                end_off_screen: true,
+                ..Default::default()
+            },
             ..Default::default()
         }));
         let at = |item: &TrackItem, s: f64| {
@@ -750,9 +1005,19 @@ mod tests {
         assert!((at(&item, 0.0)[1] - 300.0).abs() < 1e-6);
         assert!(at(&item, 5.0)[3].abs() < 1e-6);
         // half way: offset (200 + (-200)) / 2 = 0 → back where it was laid out
-        assert!((at(&item, 2.5)[1] - 100.0).abs() < 1e-6, "{:?}", at(&item, 2.5));
+        assert!(
+            (at(&item, 2.5)[1] - 100.0).abs() < 1e-6,
+            "{:?}",
+            at(&item, 2.5)
+        );
         let mut img = Image::new(400, 300);
-        render_graphic(&item, Tick::from_seconds_f64(2.5), (400, 300), &Affine::IDENTITY, &mut img);
+        render_graphic(
+            &item,
+            Tick::from_seconds_f64(2.5),
+            (400, 300),
+            &Affine::IDENTITY,
+            &mut img,
+        );
         assert!(img.get(200, 150)[3] > 0.9, "centre at mid-roll");
         let mut img0 = Image::new(400, 300);
         render_graphic(&item, Tick::ZERO, (400, 300), &Affine::IDENTITY, &mut img0);
@@ -764,7 +1029,10 @@ mod tests {
         let e = new_text_layer("HELLO", Vec2::new(100.0, 150.0), 60.0);
         let mut img = Image::new(400, 200);
         render_graphic_layers(&[e], Tick::ZERO, (400, 200), &Affine::IDENTITY, &mut img);
-        let ink: Vec<(usize, usize)> = (0..200).flat_map(|y| (0..400).map(move |x| (x, y))).filter(|&(x, y)| img.get(x, y)[3] > 0.5).collect();
+        let ink: Vec<(usize, usize)> = (0..200)
+            .flat_map(|y| (0..400).map(move |x| (x, y)))
+            .filter(|&(x, y)| img.get(x, y)[3] > 0.5)
+            .collect();
         assert!(ink.len() > 500);
         let minx = ink.iter().map(|p| p.0).min().unwrap();
         let maxy = ink.iter().map(|p| p.1).max().unwrap();
@@ -776,10 +1044,18 @@ mod tests {
     #[test]
     fn shape_appearance_layers() {
         let mut e = new_shape_layer(0, Vec2::new(100.0, 100.0), Vec2::new(80.0, 40.0), vec![]);
-        set(&mut e, "fill_color", ParamValue::Color([0.0, 0.0, 1.0, 1.0]));
+        set(
+            &mut e,
+            "fill_color",
+            ParamValue::Color([0.0, 0.0, 1.0, 1.0]),
+        );
         set(&mut e, "stroke", ParamValue::Bool(true));
         set(&mut e, "stroke_width", ParamValue::Float(6.0));
-        set(&mut e, "stroke_color", ParamValue::Color([1.0, 0.0, 0.0, 1.0]));
+        set(
+            &mut e,
+            "stroke_color",
+            ParamValue::Color([1.0, 0.0, 0.0, 1.0]),
+        );
         set(&mut e, "shadow", ParamValue::Bool(true));
         set(&mut e, "shadow_distance", ParamValue::Float(20.0));
         set(&mut e, "shadow_blur", ParamValue::Float(0.0));
@@ -788,10 +1064,16 @@ mod tests {
         let p = img.get(100, 100);
         assert!(p[2] > 0.9 && p[0] < 0.05, "blue fill {p:?}");
         let s = img.get(100, 78);
-        assert!(s[0] > 0.9 && s[2] < 0.05, "red outer stroke above the box {s:?}");
+        assert!(
+            s[0] > 0.9 && s[2] < 0.05,
+            "red outer stroke above the box {s:?}"
+        );
         // shadow: below-right of the box, outside the stroke
         let sh = img.get(150, 135);
-        assert!(sh[3] > 0.5 && sh[0] < 0.05 && sh[2] < 0.05, "black shadow {sh:?}");
+        assert!(
+            sh[3] > 0.5 && sh[0] < 0.05 && sh[2] < 0.05,
+            "black shadow {sh:?}"
+        );
         assert_eq!(img.get(20, 20)[3], 0.0);
     }
 
@@ -799,23 +1081,54 @@ mod tests {
     fn linear_gradient_runs_left_to_right_on_a_shape_and_on_text() {
         let mut shape = new_shape_layer(0, Vec2::new(100.0, 100.0), Vec2::new(80.0, 40.0), vec![]);
         set(&mut shape, "fill_kind", ParamValue::Choice(1));
-        set(&mut shape, "gradient_start", ParamValue::Color([1.0, 0.0, 0.0, 1.0]));
-        set(&mut shape, "gradient_end", ParamValue::Color([0.0, 0.0, 1.0, 1.0]));
+        set(
+            &mut shape,
+            "gradient_start",
+            ParamValue::Color([1.0, 0.0, 0.0, 1.0]),
+        );
+        set(
+            &mut shape,
+            "gradient_end",
+            ParamValue::Color([0.0, 0.0, 1.0, 1.0]),
+        );
         set(&mut shape, "gradient_angle", ParamValue::Float(0.0));
         let mut img = Image::new(200, 200);
-        render_graphic_layers(&[shape], Tick::ZERO, (200, 200), &Affine::IDENTITY, &mut img);
+        render_graphic_layers(
+            &[shape],
+            Tick::ZERO,
+            (200, 200),
+            &Affine::IDENTITY,
+            &mut img,
+        );
         let left = img.get(70, 100);
         let right = img.get(130, 100);
-        assert!(left[3] > 0.9 && left[0] > left[2], "redder on the left {left:?}");
-        assert!(right[3] > 0.9 && right[2] > right[0], "bluer on the right {right:?}");
+        assert!(
+            left[3] > 0.9 && left[0] > left[2],
+            "redder on the left {left:?}"
+        );
+        assert!(
+            right[3] > 0.9 && right[2] > right[0],
+            "bluer on the right {right:?}"
+        );
 
         let mut text = new_text_layer("HHHHHHHH", Vec2::new(16.0, 90.0), 64.0);
         set(&mut text, "fill_kind", ParamValue::Choice(1));
-        set(&mut text, "gradient_start", ParamValue::Color([1.0, 0.0, 0.0, 1.0]));
-        set(&mut text, "gradient_end", ParamValue::Color([0.0, 0.0, 1.0, 1.0]));
+        set(
+            &mut text,
+            "gradient_start",
+            ParamValue::Color([1.0, 0.0, 0.0, 1.0]),
+        );
+        set(
+            &mut text,
+            "gradient_end",
+            ParamValue::Color([0.0, 0.0, 1.0, 1.0]),
+        );
         let mut img = Image::new(500, 180);
         render_graphic_layers(&[text], Tick::ZERO, (500, 180), &Affine::IDENTITY, &mut img);
-        let ink: Vec<(usize, usize)> = (0..img.h).flat_map(|y| (0..img.w).map(move |x| (x, y))).filter(|&(x, y)| img.get(x, y)[3] > 0.8).collect();
+        let ink: Vec<(usize, usize)> = (0..img.h)
+            .flat_map(|y| (0..img.w).map(move |x| (x, y)))
+            .filter(|&(x, y)| img.get(x, y)[3] > 0.8)
+            .collect();
         let minx = ink.iter().map(|p| p.0).min().unwrap();
         let maxx = ink.iter().map(|p| p.0).max().unwrap();
         let span = (maxx - minx).max(1);
@@ -830,32 +1143,77 @@ mod tests {
                 rn += 1.0;
             }
         }
-        assert!(ln > 30.0 && rn > 30.0, "ink on both ends of the title: {ln} {rn} x {minx}..{maxx}");
-        assert!(ls / ln > rs / rn + 0.15, "text ramps from red to blue: {} {}", ls / ln, rs / rn);
+        assert!(
+            ln > 30.0 && rn > 30.0,
+            "ink on both ends of the title: {ln} {rn} x {minx}..{maxx}"
+        );
+        assert!(
+            ls / ln > rs / rn + 0.15,
+            "text ramps from red to blue: {} {}",
+            ls / ln,
+            rs / rn
+        );
     }
 
     #[test]
     fn linear_gradient_blends_in_linear_light_and_turns_with_the_layer() {
         let mut shape = new_shape_layer(0, Vec2::new(100.0, 100.0), Vec2::new(80.0, 40.0), vec![]);
         set(&mut shape, "fill_kind", ParamValue::Choice(1));
-        set(&mut shape, "gradient_start", ParamValue::Color([0.0, 0.0, 0.0, 1.0]));
-        set(&mut shape, "gradient_end", ParamValue::Color([1.0, 1.0, 1.0, 1.0]));
+        set(
+            &mut shape,
+            "gradient_start",
+            ParamValue::Color([0.0, 0.0, 0.0, 1.0]),
+        );
+        set(
+            &mut shape,
+            "gradient_end",
+            ParamValue::Color([1.0, 1.0, 1.0, 1.0]),
+        );
         let mut img = Image::new(200, 200);
-        render_graphic_layers(&[shape.clone()], Tick::ZERO, (200, 200), &Affine::IDENTITY, &mut img);
+        render_graphic_layers(
+            &[shape.clone()],
+            Tick::ZERO,
+            (200, 200),
+            &Affine::IDENTITY,
+            &mut img,
+        );
         let mid = img.get(100, 100)[0];
         // Linear-light midpoint is ~0.5. An sRGB midpoint converted to linear is ~0.21.
-        assert!(mid > 0.4 && mid < 0.6, "centre of black→white is linear 0.5, got {mid}");
+        assert!(
+            mid > 0.4 && mid < 0.6,
+            "centre of black→white is linear 0.5, got {mid}"
+        );
         assert!(img.get(70, 100)[0] < mid && mid < img.get(130, 100)[0]);
 
-        set(&mut shape, "gradient_start", ParamValue::Color([1.0, 0.0, 0.0, 1.0]));
-        set(&mut shape, "gradient_end", ParamValue::Color([0.0, 0.0, 1.0, 1.0]));
+        set(
+            &mut shape,
+            "gradient_start",
+            ParamValue::Color([1.0, 0.0, 0.0, 1.0]),
+        );
+        set(
+            &mut shape,
+            "gradient_end",
+            ParamValue::Color([0.0, 0.0, 1.0, 1.0]),
+        );
         set(&mut shape, "rotation", ParamValue::Float(90.0));
         let mut turned = Image::new(200, 200);
-        render_graphic_layers(&[shape], Tick::ZERO, (200, 200), &Affine::IDENTITY, &mut turned);
+        render_graphic_layers(
+            &[shape],
+            Tick::ZERO,
+            (200, 200),
+            &Affine::IDENTITY,
+            &mut turned,
+        );
         let top = turned.get(100, 70);
         let bot = turned.get(100, 130);
-        assert!(top[3] > 0.9 && bot[3] > 0.9, "the rotated ramp is inside the shape: {top:?} {bot:?}");
-        assert!(top[0] > top[2], "clockwise 90° carries the start colour to the top {top:?}");
+        assert!(
+            top[3] > 0.9 && bot[3] > 0.9,
+            "the rotated ramp is inside the shape: {top:?} {bot:?}"
+        );
+        assert!(
+            top[0] > top[2],
+            "clockwise 90° carries the start colour to the top {top:?}"
+        );
         assert!(bot[2] > bot[0], "and the end colour to the bottom {bot:?}");
     }
 
@@ -864,16 +1222,42 @@ mod tests {
         use filmcraft_project::graphic_design::{CharStyle, LayerExtra, StyleRun};
         let mut e = new_text_layer("AAAA", Vec2::new(20.0, 100.0), 60.0);
         set(&mut e, "fill_kind", ParamValue::Choice(1));
-        set(&mut e, "gradient_start", ParamValue::Color([0.0, 1.0, 0.0, 1.0]));
-        set(&mut e, "gradient_end", ParamValue::Color([0.0, 0.0, 1.0, 1.0]));
-        let red = CharStyle { fill: Some([1.0, 0.0, 0.0, 1.0]), ..Default::default() };
-        e.layer = Some(Box::new(LayerExtra { runs: vec![StyleRun { start: 2, end: 4, style: red }], ..Default::default() }));
+        set(
+            &mut e,
+            "gradient_start",
+            ParamValue::Color([0.0, 1.0, 0.0, 1.0]),
+        );
+        set(
+            &mut e,
+            "gradient_end",
+            ParamValue::Color([0.0, 0.0, 1.0, 1.0]),
+        );
+        let red = CharStyle {
+            fill: Some([1.0, 0.0, 0.0, 1.0]),
+            ..Default::default()
+        };
+        e.layer = Some(Box::new(LayerExtra {
+            runs: vec![StyleRun {
+                start: 2,
+                end: 4,
+                style: red,
+            }],
+            ..Default::default()
+        }));
         let mut img = Image::new(400, 200);
-        render_graphic_layers(&[e.clone()], Tick::ZERO, (400, 200), &Affine::IDENTITY, &mut img);
-        let l = text_layout(match &eval_layer(&e, Tick::ZERO, (400, 200)).unwrap().content {
-            LayerContent::Text(t) => t,
-            _ => unreachable!(),
-        });
+        render_graphic_layers(
+            &[e.clone()],
+            Tick::ZERO,
+            (400, 200),
+            &Affine::IDENTITY,
+            &mut img,
+        );
+        let l = text_layout(
+            match &eval_layer(&e, Tick::ZERO, (400, 200)).unwrap().content {
+                LayerContent::Text(t) => t,
+                _ => unreachable!(),
+            },
+        );
         let split = 20.0 + l.caret(2).0;
         let (mut green, mut red_px) = (0, 0);
         for y in 0..200 {
@@ -889,18 +1273,26 @@ mod tests {
                 }
             }
         }
-        assert!(green > 80 && red_px > 80, "gradient on the plain letters, solid red on the styled ones: {green} {red_px}");
+        assert!(
+            green > 80 && red_px > 80,
+            "gradient on the plain letters, solid red on the styled ones: {green} {red_px}"
+        );
     }
 
     #[test]
     fn inner_and_centre_strokes() {
         for (kind, inside, outside) in [(2u32, true, false), (1, true, true)] {
-            let mut e = new_shape_layer(2, Vec2::new(100.0, 100.0), Vec2::new(120.0, 120.0), vec![]);
+            let mut e =
+                new_shape_layer(2, Vec2::new(100.0, 100.0), Vec2::new(120.0, 120.0), vec![]);
             set(&mut e, "sides", ParamValue::Float(4.0));
             set(&mut e, "stroke", ParamValue::Bool(true));
             set(&mut e, "stroke_width", ParamValue::Float(6.0));
             set(&mut e, "stroke_type", ParamValue::Choice(kind));
-            set(&mut e, "stroke_color", ParamValue::Color([0.0, 1.0, 0.0, 1.0]));
+            set(
+                &mut e,
+                "stroke_color",
+                ParamValue::Color([0.0, 1.0, 0.0, 1.0]),
+            );
             let mut img = Image::new(200, 200);
             render_graphic_layers(&[e], Tick::ZERO, (200, 200), &Affine::IDENTITY, &mut img);
             // diamond: top vertex at y = 40; probe straight below/above the right vertex (160, 100)
@@ -920,14 +1312,36 @@ mod tests {
         set(&mut e, "rotation", ParamValue::Float(90.0));
         set(&mut e, "opacity", ParamValue::Float(50.0));
         let mut img = Image::new(200, 200);
-        render_graphic_layers(&[e.clone()], Tick::ZERO, (200, 200), &Affine::IDENTITY, &mut img);
-        assert!((img.get(100, 60)[3] - 0.5).abs() < 0.02, "vertical after 90°");
+        render_graphic_layers(
+            &[e.clone()],
+            Tick::ZERO,
+            (200, 200),
+            &Affine::IDENTITY,
+            &mut img,
+        );
+        assert!(
+            (img.get(100, 60)[3] - 0.5).abs() < 0.02,
+            "vertical after 90°"
+        );
         assert_eq!(img.get(60, 100)[3], 0.0);
         // a 2× output transform (e.g. Motion scale) draws vectors crisply at the larger size
         let mut big = Image::new(400, 400);
-        render_graphic_layers(&[e], Tick::ZERO, (200, 200), &Affine::scale(2.0, 2.0), &mut big);
+        render_graphic_layers(
+            &[e],
+            Tick::ZERO,
+            (200, 200),
+            &Affine::scale(2.0, 2.0),
+            &mut big,
+        );
         assert!((big.get(200, 110)[3] - 0.5).abs() < 0.02);
-        let q = layer_quad(&eval_layer(&find_effect("graphic_shape").unwrap().instance(), Tick::ZERO, (200, 200)).unwrap());
+        let q = layer_quad(
+            &eval_layer(
+                &find_effect("graphic_shape").unwrap().instance(),
+                Tick::ZERO,
+                (200, 200),
+            )
+            .unwrap(),
+        );
         assert!((q[0].x - (100.0 - 200.0)).abs() < 1e-6 && (q[2].y - (100.0 + 100.0)).abs() < 1e-6);
     }
 
@@ -939,11 +1353,16 @@ mod tests {
         let mut full = Image::new(220, 160);
         let item = graphic_item(fx);
         render_graphic(&item, Tick::ZERO, (220, 160), &Affine::IDENTITY, &mut full);
-        let (tight, x, y) = render_graphic_tight(&item, Tick::ZERO, (220, 160), &Affine::IDENTITY, 220, 160).unwrap();
+        let (tight, x, y) =
+            render_graphic_tight(&item, Tick::ZERO, (220, 160), &Affine::IDENTITY, 220, 160)
+                .unwrap();
         assert!(tight.w < 220 && tight.h < 160);
         for yy in 0..tight.h {
             for xx in 0..tight.w {
-                let (p, q) = (tight.get(xx, yy), full.get(xx + x as usize, yy + y as usize));
+                let (p, q) = (
+                    tight.get(xx, yy),
+                    full.get(xx + x as usize, yy + y as usize),
+                );
                 assert!((p[3] - q[3]).abs() < 1e-5);
             }
         }

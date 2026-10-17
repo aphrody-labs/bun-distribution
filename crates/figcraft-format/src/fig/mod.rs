@@ -46,11 +46,15 @@ pub fn is_fig(bytes: &[u8]) -> bool {
 }
 
 fn zip_has_canvas(bytes: &[u8]) -> bool {
-    zip::ZipArchive::new(std::io::Cursor::new(bytes)).is_ok_and(|z| z.file_names().any(|n| n == "canvas.fig"))
+    zip::ZipArchive::new(std::io::Cursor::new(bytes))
+        .is_ok_and(|z| z.file_names().any(|n| n == "canvas.fig"))
 }
 
 /// Import `bytes` when they are a `.fig` file; `None` when they are something else.
-pub fn try_import(bytes: &[u8], name: &str) -> Option<Result<(Document, Vec<String>), FormatError>> {
+pub fn try_import(
+    bytes: &[u8],
+    name: &str,
+) -> Option<Result<(Document, Vec<String>), FormatError>> {
     is_fig(bytes).then(|| import(bytes, name))
 }
 
@@ -59,9 +63,17 @@ pub fn try_import(bytes: &[u8], name: &str) -> Option<Result<(Document, Vec<Stri
 pub fn import(bytes: &[u8], name: &str) -> Result<(Document, Vec<String>), FormatError> {
     let archive = Archive::open(bytes)?;
     let (schema, message) = decode_canvas(&archive.canvas)?;
-    let root = schema.find("Message").ok_or_else(|| corrupt("the schema has no Message definition"))?;
-    let msg = schema.decode_message(root, &message).map_err(|e| corrupt(e.to_string()))?;
-    let file_name = archive.file_name.as_deref().filter(|n| !n.trim().is_empty()).unwrap_or(name);
+    let root = schema
+        .find("Message")
+        .ok_or_else(|| corrupt("the schema has no Message definition"))?;
+    let msg = schema
+        .decode_message(root, &message)
+        .map_err(|e| corrupt(e.to_string()))?;
+    let file_name = archive
+        .file_name
+        .as_deref()
+        .filter(|n| !n.trim().is_empty())
+        .unwrap_or(name);
     let (json, mut warnings) = map::to_rest(&msg, file_name);
     let images = |r: &str| archive.image(r);
     let (doc, more) = crate::rest::import(&json, &images)?;
@@ -73,15 +85,36 @@ pub fn import(bytes: &[u8], name: &str) -> Result<(Document, Vec<String>), Forma
 /// → "Semi Bold", "ExtraBoldItalic" → "Extra Bold Italic", "Regular Italic" → "Italic"). Other
 /// names stay as they are.
 fn style_name(style: &str) -> String {
-    const WEIGHTS: [&str; 12] =
-        ["Thin", "Extra Light", "Ultra Light", "Light", "Regular", "Medium", "Semi Bold", "Demi Bold", "Bold", "Extra Bold", "Ultra Bold", "Black"];
-    let compact = |s: &str| s.chars().filter(|c| !matches!(c, ' ' | '-' | '_')).flat_map(char::to_lowercase).collect::<String>();
+    const WEIGHTS: [&str; 12] = [
+        "Thin",
+        "Extra Light",
+        "Ultra Light",
+        "Light",
+        "Regular",
+        "Medium",
+        "Semi Bold",
+        "Demi Bold",
+        "Bold",
+        "Extra Bold",
+        "Ultra Bold",
+        "Black",
+    ];
+    let compact = |s: &str| {
+        s.chars()
+            .filter(|c| !matches!(c, ' ' | '-' | '_'))
+            .flat_map(char::to_lowercase)
+            .collect::<String>()
+    };
     let key = compact(style);
     let (base, italic) = match key.strip_suffix("italic") {
         Some(b) => (b, true),
         None => (key.as_str(), false),
     };
-    let weight = if base.is_empty() && italic { Some("Regular") } else { WEIGHTS.into_iter().find(|w| compact(w) == base) };
+    let weight = if base.is_empty() && italic {
+        Some("Regular")
+    } else {
+        WEIGHTS.into_iter().find(|w| compact(w) == base)
+    };
     match (weight, italic) {
         (None, _) => style.to_string(),
         (Some("Regular"), true) => "Italic".into(),
@@ -105,15 +138,28 @@ struct Archive<'b> {
 impl<'b> Archive<'b> {
     fn open(bytes: &'b [u8]) -> Result<Self, FormatError> {
         if bytes.starts_with(b"fig-") {
-            return Ok(Archive { canvas: bytes.to_vec(), file_name: None, zip: None });
+            return Ok(Archive {
+                canvas: bytes.to_vec(),
+                file_name: None,
+                zip: None,
+            });
         }
-        let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| corrupt(e.to_string()))?;
+        let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes))
+            .map_err(|e| corrupt(e.to_string()))?;
         let canvas = crate::read_member(&mut z, "canvas.fig", MAX_CANVAS)?;
         let file_name = crate::read_member(&mut z, "meta.json", 1 << 20)
             .ok()
             .and_then(|m| serde_json::from_slice::<serde_json::Value>(&m).ok())
-            .and_then(|m| m.get("file_name").and_then(serde_json::Value::as_str).map(str::to_string));
-        Ok(Archive { canvas, file_name, zip: Some(z) })
+            .and_then(|m| {
+                m.get("file_name")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_string)
+            });
+        Ok(Archive {
+            canvas,
+            file_name,
+            zip: Some(z),
+        })
     }
 
     /// Bytes of image `hash` (lowercase hex) from `images/`.
@@ -146,9 +192,16 @@ fn chunks(canvas: &[u8]) -> Result<Vec<&[u8]>, FormatError> {
     let mut out = Vec::new();
     let mut pos = 12usize;
     while pos < canvas.len() && out.len() < MAX_CHUNKS {
-        let len = canvas.get(pos..pos + 4).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes).ok_or_else(|| corrupt("truncated chunk"))?;
+        let len = canvas
+            .get(pos..pos + 4)
+            .and_then(|b| b.try_into().ok())
+            .map(u32::from_le_bytes)
+            .ok_or_else(|| corrupt("truncated chunk"))?;
         let start = pos + 4;
-        let end = start.checked_add(len as usize).filter(|e| *e <= canvas.len()).ok_or_else(|| corrupt("truncated chunk"))?;
+        let end = start
+            .checked_add(len as usize)
+            .filter(|e| *e <= canvas.len())
+            .ok_or_else(|| corrupt("truncated chunk"))?;
         out.push(canvas.get(start..end).unwrap_or_default());
         pos = end;
     }
@@ -164,7 +217,8 @@ fn inflate(data: &[u8]) -> Result<Vec<u8>, FormatError> {
     }
     if data.starts_with(&[0x28, 0xB5, 0x2F, 0xFD]) {
         let mut src = data;
-        let dec = ruzstd::decoding::StreamingDecoder::new(&mut src).map_err(|e| corrupt(format!("zstd: {e}")))?;
+        let dec = ruzstd::decoding::StreamingDecoder::new(&mut src)
+            .map_err(|e| corrupt(format!("zstd: {e}")))?;
         return capped(dec).ok_or_else(|| corrupt("damaged or oversized zstd chunk"));
     }
     capped(flate2::read::DeflateDecoder::new(data))
@@ -186,6 +240,10 @@ pub(crate) fn debug_json(v: &kiwi::Kv) -> serde_json::Value {
         Kv::Bytes(b) => json!(format!("<{} bytes>", b.len())),
         Kv::Enum(e) => json!(e),
         Kv::Array(a) => Value::Array(a.iter().map(debug_json).collect()),
-        Kv::Object(f) => Value::Object(f.iter().map(|(k, v)| (k.to_string(), debug_json(v))).collect()),
+        Kv::Object(f) => Value::Object(
+            f.iter()
+                .map(|(k, v)| (k.to_string(), debug_json(v)))
+                .collect(),
+        ),
     }
 }

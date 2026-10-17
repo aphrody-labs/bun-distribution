@@ -11,7 +11,9 @@ use crate::merge::{Key, Side, merge_items, plan};
 fn files() -> (Document, Document, Document, NodeId) {
     let mut base = Document::new("File");
     let page = base.first_page().unwrap();
-    let r = base.create(page, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 10.0).unwrap();
+    let r = base
+        .create(page, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
     let n = base.get_mut(r).unwrap();
     n.fills = vec![Paint::solid(Color::BLACK), Paint::solid(Color::WHITE)];
     n.strokes = vec![Paint::solid(Color::BLACK)];
@@ -88,7 +90,11 @@ fn the_same_item_changed_both_ways_conflicts() {
     let p = plan(&base, &branch, &main).unwrap();
     let mut keys: Vec<String> = p.conflicts.iter().map(|c| c.key.to_string()).collect();
     keys.sort();
-    let mut want = [format!("{r}/effects"), format!("{r}/fills"), format!("{r}/strokes")];
+    let mut want = [
+        format!("{r}/effects"),
+        format!("{r}/fills"),
+        format!("{r}/strokes"),
+    ];
     want.sort();
     assert_eq!(keys, want);
     // Resolving takes that side's whole list.
@@ -104,7 +110,10 @@ fn other_lists_still_conflict_as_a_whole() {
     // Docs silent: lists other than fills, strokes and effects (export settings here) still
     // conflict whole when both sides change them.
     let (mut base, _, _, r) = files();
-    let export = |suffix: &str| figcraft_doc::ExportSetting { suffix: suffix.into(), ..Default::default() };
+    let export = |suffix: &str| figcraft_doc::ExportSetting {
+        suffix: suffix.into(),
+        ..Default::default()
+    };
     base.get_mut(r).unwrap().exports = vec![export("@1"), export("@2")];
     let (mut branch, mut main) = (base.clone(), base.clone());
     branch.set_client_id(base.highest_id_space() + 1);
@@ -118,12 +127,34 @@ fn other_lists_still_conflict_as_a_whole() {
 #[test]
 fn item_merge_rules() {
     let v = |x: Value| x.as_array().unwrap().clone();
-    let (o, b, m) = (v(json!([1, 2, 3])), v(json!([9, 2, 3])), v(json!([1, 2, 8])));
+    let (o, b, m) = (
+        v(json!([1, 2, 3])),
+        v(json!([9, 2, 3])),
+        v(json!([1, 2, 8])),
+    );
     assert_eq!(merge_items(&o, &b, &m), Some(v(json!([9, 2, 8]))));
-    assert_eq!(merge_items(&o, &b, &b), Some(b.clone()), "the same change on both sides");
-    assert_eq!(merge_items(&o, &b, &v(json!([7, 2, 3]))), None, "the same item both ways");
-    assert_eq!(merge_items(&o, &v(json!([1, 2])), &m), None, "an item removed");
-    assert_eq!(merge_items(&o, &v(json!([1, 2, 3, 4])), &m), Some(v(json!([1, 2, 8, 4]))));
-    assert_eq!(merge_items(&o, &v(json!([1, 2, 3, 4])), &v(json!([1, 2, 3, 5]))), None);
+    assert_eq!(
+        merge_items(&o, &b, &b),
+        Some(b.clone()),
+        "the same change on both sides"
+    );
+    assert_eq!(
+        merge_items(&o, &b, &v(json!([7, 2, 3]))),
+        None,
+        "the same item both ways"
+    );
+    assert_eq!(
+        merge_items(&o, &v(json!([1, 2])), &m),
+        None,
+        "an item removed"
+    );
+    assert_eq!(
+        merge_items(&o, &v(json!([1, 2, 3, 4])), &m),
+        Some(v(json!([1, 2, 8, 4])))
+    );
+    assert_eq!(
+        merge_items(&o, &v(json!([1, 2, 3, 4])), &v(json!([1, 2, 3, 5]))),
+        None
+    );
     assert_eq!(merge_items(&[], &v(json!([1])), &[]), Some(v(json!([1]))));
 }

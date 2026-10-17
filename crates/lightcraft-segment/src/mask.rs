@@ -17,7 +17,9 @@ fn weights(src: usize, dst: usize) -> Vec<(usize, Vec<f32>)> {
             let center = (o as f64 + 0.5) * scale;
             let lo = ((center - support + 0.5).floor().max(0.0)) as usize;
             let hi = ((center + support + 0.5).floor() as usize).min(src);
-            let mut w: Vec<f32> = (lo..hi).map(|i| (1.0 - ((i as f64 - center + 0.5) / ss).abs()).max(0.0) as f32).collect();
+            let mut w: Vec<f32> = (lo..hi)
+                .map(|i| (1.0 - ((i as f64 - center + 0.5) / ss).abs()).max(0.0) as f32)
+                .collect();
             let sum: f32 = w.iter().sum();
             if sum > 0.0 {
                 w.iter_mut().for_each(|v| *v /= sum);
@@ -30,9 +32,15 @@ fn weights(src: usize, dst: usize) -> Vec<(usize, Vec<f32>)> {
 /// An 8-bit RGB image (`w × h`, row-major) stretched to `side × side`, scaled to −1..1 and laid
 /// out channel-first (`[3, side, side]`), as SAM 3's processor does.
 pub fn preprocess(rgb: &[u8], w: usize, h: usize, side: usize) -> Result<Vec<f32>> {
-    let n = w.checked_mul(h).and_then(|n| n.checked_mul(3)).ok_or_else(|| Error::Model("image too large".into()))?;
+    let n = w
+        .checked_mul(h)
+        .and_then(|n| n.checked_mul(3))
+        .ok_or_else(|| Error::Model("image too large".into()))?;
     if w == 0 || h == 0 || rgb.len() < n {
-        return Err(Error::Model(format!("image buffer of {} bytes for {w} × {h}", rgb.len())));
+        return Err(Error::Model(format!(
+            "image buffer of {} bytes for {w} × {h}",
+            rgb.len()
+        )));
     }
     let (wx, wy) = (weights(w, side), weights(h, side));
     // horizontal pass: h rows × side columns × 3
@@ -80,7 +88,12 @@ pub fn alpha(logits: &[f32], side: usize, w: usize, h: usize) -> Vec<f32> {
     if side == 0 || logits.len() < side * side {
         return out;
     }
-    let sample = |x: usize, y: usize| logits.get(y.min(side - 1) * side + x.min(side - 1)).copied().unwrap_or(-20.0);
+    let sample = |x: usize, y: usize| {
+        logits
+            .get(y.min(side - 1) * side + x.min(side - 1))
+            .copied()
+            .unwrap_or(-20.0)
+    };
     let (sx, sy) = (side as f32 / w.max(1) as f32, side as f32 / h.max(1) as f32);
     for y in 0..h {
         let fy = ((y as f32 + 0.5) * sy - 0.5).max(0.0);
@@ -111,7 +124,12 @@ mod tests {
         assert!(p.iter().all(|v| (-1.0..=1.0).contains(v)));
         // a flat image stays flat
         let flat = vec![255u8; 30 * 30 * 3];
-        assert!(preprocess(&flat, 30, 30, 7).unwrap().iter().all(|v| (*v - 1.0).abs() < 1e-6));
+        assert!(
+            preprocess(&flat, 30, 30, 7)
+                .unwrap()
+                .iter()
+                .all(|v| (*v - 1.0).abs() < 1e-6)
+        );
     }
 
     #[test]
@@ -122,7 +140,9 @@ mod tests {
 
     #[test]
     fn alpha_follows_the_logits() {
-        let logits: Vec<f32> = (0..16).map(|i| if i % 4 < 2 { 10.0 } else { -10.0 }).collect();
+        let logits: Vec<f32> = (0..16)
+            .map(|i| if i % 4 < 2 { 10.0 } else { -10.0 })
+            .collect();
         let a = alpha(&logits, 4, 8, 2);
         assert!(a[0] > 0.99 && a[7] < 0.01);
         assert!(alpha(&[], 4, 3, 3).iter().all(|v| *v == 0.0));

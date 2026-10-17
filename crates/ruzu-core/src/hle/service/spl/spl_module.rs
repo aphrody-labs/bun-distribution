@@ -74,7 +74,10 @@ impl ModuleInterface {
         service.get_config_handler(ctx);
     }
 
-    pub(super) fn modular_exponentiate_callback(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn modular_exponentiate_callback(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let result = service.modular_exponentiate();
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
@@ -88,38 +91,56 @@ impl ModuleInterface {
         rb.push_result(result);
     }
 
-    pub(super) fn generate_random_bytes_callback(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn generate_random_bytes_callback(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         service.generate_random_bytes_handler(ctx);
     }
 
-    pub(super) fn is_development_callback(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn is_development_callback(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let result = service.is_development();
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
         rb.push_result(result);
     }
 
-    pub(super) fn set_boot_reason_callback(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn set_boot_reason_callback(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let result = service.set_boot_reason();
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
         rb.push_result(result);
     }
 
-    pub(super) fn get_boot_reason_callback(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn get_boot_reason_callback(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let result = service.get_boot_reason();
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
         rb.push_result(result);
     }
 
-    pub(super) fn generate_aes_kek_callback(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn generate_aes_kek_callback(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         service.generate_aes_kek(ctx);
     }
 
-    pub(super) fn generate_aes_key_callback(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn generate_aes_key_callback(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         service.generate_aes_key(ctx);
     }
@@ -297,9 +318,18 @@ mod tests {
         let service = super::super::spl::Spl::new(Some(0)).module;
         for (item, result) in [
             (ConfigItem::ExosphereNeedsReboot as u32, RESULT_SUCCESS),
-            (ConfigItem::ExospherePayloadAddress as u32, spl_results::RESULT_SECURE_MONITOR_NOT_INITIALIZED),
-            (ConfigItem::DramId as u32, spl_results::RESULT_SECURE_MONITOR_NOT_IMPLEMENTED),
-            (u32::MAX, spl_results::RESULT_SECURE_MONITOR_INVALID_ARGUMENT),
+            (
+                ConfigItem::ExospherePayloadAddress as u32,
+                spl_results::RESULT_SECURE_MONITOR_NOT_INITIALIZED,
+            ),
+            (
+                ConfigItem::DramId as u32,
+                spl_results::RESULT_SECURE_MONITOR_NOT_IMPLEMENTED,
+            ),
+            (
+                u32::MAX,
+                spl_results::RESULT_SECURE_MONITOR_INVALID_ARGUMENT,
+            ),
         ] {
             let mut ctx = HLERequestContext::new();
             ctx.cmd_buf.fill(u32::MAX);
@@ -313,7 +343,10 @@ mod tests {
     #[test]
     fn migration_aes_stubs_return_full_zeroed_keys() {
         let service = ModuleInterface::new("spl:mig", Some(0));
-        for handler in [ModuleInterface::generate_aes_kek, ModuleInterface::generate_aes_key] {
+        for handler in [
+            ModuleInterface::generate_aes_kek,
+            ModuleInterface::generate_aes_key,
+        ] {
             let mut ctx = HLERequestContext::new();
             ctx.cmd_buf.fill(u32::MAX);
             handler(&service, &mut ctx);
@@ -326,18 +359,35 @@ mod tests {
     #[test]
     fn base_command_table_registers_only_general_commands() {
         let service = super::super::spl::Spl::new(Some(0)).module;
-        assert_eq!(service.handlers().keys().copied().collect::<Vec<_>>(), [0, 1, 5, 7, 11, 24, 25]);
-        assert!(service.handlers().values().all(|entry| entry.handler_callback.is_some()));
+        assert_eq!(
+            service.handlers().keys().copied().collect::<Vec<_>>(),
+            [0, 1, 5, 7, 11, 24, 25]
+        );
+        assert!(service
+            .handlers()
+            .values()
+            .all(|entry| entry.handler_callback.is_some()));
     }
 
     #[test]
     fn exosphere_version_uses_the_shared_api_version_owner() {
         let service = super::super::spl::Spl::new(Some(0)).module;
-        let value = service.get_config(ConfigItem::ExosphereApiVersion as u32).unwrap();
+        let value = service
+            .get_config(ConfigItem::ExosphereApiVersion as u32)
+            .unwrap();
         assert_eq!(value as u32, api_version::get_target_firmware());
-        assert_eq!((value >> 56) as u8, api_version::ATMOSPHERE_RELEASE_VERSION_MAJOR);
-        assert_eq!((value >> 48) as u8, api_version::ATMOSPHERE_RELEASE_VERSION_MINOR);
-        assert_eq!((value >> 40) as u8, api_version::ATMOSPHERE_RELEASE_VERSION_MICRO);
+        assert_eq!(
+            (value >> 56) as u8,
+            api_version::ATMOSPHERE_RELEASE_VERSION_MAJOR
+        );
+        assert_eq!(
+            (value >> 48) as u8,
+            api_version::ATMOSPHERE_RELEASE_VERSION_MINOR
+        );
+        assert_eq!(
+            (value >> 40) as u8,
+            api_version::ATMOSPHERE_RELEASE_VERSION_MICRO
+        );
         assert_eq!((value >> 32) as u8, 0);
     }
 }
@@ -368,14 +418,18 @@ impl ServiceFramework for ModuleInterface {
 
 /// Counterpart of SPL::LoopProcess in spl_module.cpp.
 pub fn loop_process(system: crate::core::SystemRef) {
-    use std::sync::Arc;
-    use super::spl::{Spl, SplMig, SplFs, SplSsl, SplEs, SplManu};
+    use super::spl::{Spl, SplEs, SplFs, SplManu, SplMig, SplSsl};
     use crate::hle::service::server_manager::ServerManager;
+    use std::sync::Arc;
 
     let manager = ServerManager::new_shared(system);
     {
         let mut manager = manager.lock().unwrap();
-        manager.register_named_service_handler("csrng", Arc::new(super::csrng::Csrng::new(None)), 0x40);
+        manager.register_named_service_handler(
+            "csrng",
+            Arc::new(super::csrng::Csrng::new(None)),
+            0x40,
+        );
         manager.register_named_service_handler("spl:", Arc::new(Spl::new(None)), 0x40);
         manager.register_named_service_handler("spl:mig", Arc::new(SplMig::new(None)), 0x40);
         manager.register_named_service_handler("spl:fs", Arc::new(SplFs::new(None)), 0x40);

@@ -155,7 +155,17 @@ pub fn build_cdp(seq: u16, data: &FrameData) -> Vec<u8> {
     }
     let len = 7 + 2 + cc.len() + 4;
     let [s1, s0] = seq.to_be_bytes();
-    let mut cdp = vec![0x96, 0x69, len as u8, rate_code(RATE) << 4 | 0x0f, 0x43, s1, s0, 0x72, 0xe0 | CC_COUNT as u8];
+    let mut cdp = vec![
+        0x96,
+        0x69,
+        len as u8,
+        rate_code(RATE) << 4 | 0x0f,
+        0x43,
+        s1,
+        s0,
+        0x72,
+        0xe0 | CC_COUNT as u8,
+    ];
     cdp.extend_from_slice(&cc);
     cdp.extend_from_slice(&[0x74, s1, s0]);
     let sum: u32 = cdp.iter().map(|&b| b as u32).sum();
@@ -170,7 +180,11 @@ pub fn build_cdp(seq: u16, data: &FrameData) -> Vec<u8> {
 
 /// The cc_data triplets of one line's bytes (an ancillary packet with a CDP, or a bare CDP).
 pub fn cc_triplets(b: &[u8]) -> Option<Vec<[u8; 3]>> {
-    let cdp = if b.starts_with(&[0x61, 0x01]) { b.get(3..)? } else { b };
+    let cdp = if b.starts_with(&[0x61, 0x01]) {
+        b.get(3..)?
+    } else {
+        b
+    };
     if !cdp.starts_with(&[0x96, 0x69]) {
         return None;
     }
@@ -239,11 +253,25 @@ fn char_atom(c: char) -> Vec<u8> {
 /// Atoms that define window `win` hidden and load `rows` into it.
 fn load_atoms(win: u8, rows: &[String]) -> Vec<Vec<u8>> {
     let rc = rows.len().clamp(1, 12) as u8 - 1;
-    let cols = rows.iter().map(|r| r.chars().count()).max().unwrap_or(1).clamp(1, 42) as u8 - 1;
+    let cols = rows
+        .iter()
+        .map(|r| r.chars().count())
+        .max()
+        .unwrap_or(1)
+        .clamp(1, 42) as u8
+        - 1;
     let mut v = vec![
         // DefineWindow: hidden, row/column lock, relative position 90 % down / 50 % across,
         // anchored at its bottom centre, rows / columns, window style 1, pen style 1
-        vec![0x98 + win, 0x18, 0x80 | 90, 50, 7 << 4 | rc, cols, 1 << 3 | 1],
+        vec![
+            0x98 + win,
+            0x18,
+            0x80 | 90,
+            50,
+            7 << 4 | rc,
+            cols,
+            1 << 3 | 1,
+        ],
         vec![0x88, 1 << win], // ClearWindows
     ];
     for (i, r) in rows.iter().enumerate() {
@@ -284,7 +312,11 @@ fn packets(atoms: &[Vec<u8>], seq: &mut u8) -> Vec<Vec<u8>> {
 }
 
 fn pairs_of(packet: &[u8]) -> Vec<(bool, u8, u8)> {
-    packet.chunks(2).enumerate().map(|(i, c)| (i == 0, c[0], *c.get(1).unwrap_or(&0))).collect()
+    packet
+        .chunks(2)
+        .enumerate()
+        .map(|(i, c)| (i == 0, c[0], *c.get(1).unwrap_or(&0)))
+        .collect()
 }
 
 /// Frames → DTVCC pairs, with per-frame capacity.
@@ -309,7 +341,9 @@ impl Dtv {
 
 /// Schedule CEA-708 service 1 pop-on captions (see the module docs).
 fn schedule_708(doc: &Document) -> BTreeMap<i64, Vec<(bool, u8, u8)>> {
-    let mut d = Dtv { frames: BTreeMap::new() };
+    let mut d = Dtv {
+        frames: BTreeMap::new(),
+    };
     let mut seq = 0u8;
     let mut cursor = 0i64;
     let mut cues: Vec<&Cue> = doc.cues.iter().filter(|c| c.end > c.start).collect();
@@ -326,7 +360,10 @@ fn schedule_708(doc: &Document) -> BTreeMap<i64, Vec<(bool, u8, u8)>> {
             last = d.place(f, p);
             f = last;
         }
-        let show = packets(&[vec![0x8a, 1 << (1 - win)], vec![0x89, 1 << win]], &mut seq);
+        let show = packets(
+            &[vec![0x8a, 1 << (1 - win)], vec![0x89, 1 << win]],
+            &mut seq,
+        );
         let shown = d.place(s.max(last), &show[0]);
         cursor = shown + 1;
         let next_start = cues.get(i + 1).map(|n| scc::frame_of(n.start));
@@ -357,18 +394,32 @@ struct Dec708 {
 
 impl Dec708 {
     fn new() -> Self {
-        Dec708 { win: Default::default(), cur: 0, packet: Vec::new(), want: 0, open: None, cues: Vec::new() }
+        Dec708 {
+            win: Default::default(),
+            cur: 0,
+            packet: Vec::new(),
+            want: 0,
+            open: None,
+            cues: Vec::new(),
+        }
     }
     fn visible_text(&self) -> String {
         let mut lines = Vec::new();
         for w in self.win.iter().filter(|w| w.defined && w.visible) {
-            lines.extend(w.rows.iter().map(|r| r.trim().to_string()).filter(|r| !r.is_empty()));
+            lines.extend(
+                w.rows
+                    .iter()
+                    .map(|r| r.trim().to_string())
+                    .filter(|r| !r.is_empty()),
+            );
         }
         lines.join("\n")
     }
     fn sync(&mut self, f: i64) {
         let now = self.visible_text();
-        if self.open.as_ref().map(|o| o.1.as_str()) == Some(now.as_str()) || (self.open.is_none() && now.is_empty()) {
+        if self.open.as_ref().map(|o| o.1.as_str()) == Some(now.as_str())
+            || (self.open.is_none() && now.is_empty())
+        {
             return;
         }
         if let Some((s, t)) = self.open.take()
@@ -402,7 +453,11 @@ impl Dec708 {
             if h == 0 {
                 break;
             }
-            let (svc, skip) = if svc == 7 { (b.get(1).map_or(0, |x| x & 0x3f), 2) } else { (svc, 1) };
+            let (svc, skip) = if svc == 7 {
+                (b.get(1).map_or(0, |x| x & 0x3f), 2)
+            } else {
+                (svc, 1)
+            };
             let data = b.get(skip..skip + len).unwrap_or(&[]);
             if svc == 1 {
                 self.service_data(data);
@@ -502,7 +557,11 @@ impl Dec708 {
                     let vis = arg(i) & 0x20 != 0;
                     let w = &mut self.win[n];
                     if !w.defined {
-                        *w = Win { defined: true, visible: vis, rows: vec![String::new()] };
+                        *w = Win {
+                            defined: true,
+                            visible: vis,
+                            rows: vec![String::new()],
+                        };
                     } else {
                         w.visible = vis;
                     }
@@ -527,15 +586,31 @@ pub fn write(doc: &Document, drop_frame: bool) -> String {
 
 /// [`write`] choosing which caption streams to include.
 pub fn write_with(doc: &Document, drop_frame: bool, cea608: bool, cea708: bool) -> String {
-    let f1 = if cea608 { scc::schedule(doc) } else { BTreeMap::new() };
-    let dtv = if cea708 { schedule_708(doc) } else { BTreeMap::new() };
+    let f1 = if cea608 {
+        scc::schedule(doc)
+    } else {
+        BTreeMap::new()
+    };
+    let dtv = if cea708 {
+        schedule_708(doc)
+    } else {
+        BTreeMap::new()
+    };
     let mut out = String::from("File Format=MacCaption_MCC V1.0\n\n");
-    out.push_str("///////////////////////////////////////////////////////////////////////////////////\n");
-    out.push_str("// Closed captions written by FilmCraft: SMPTE ST 334-2 caption distribution packets\n");
+    out.push_str(
+        "///////////////////////////////////////////////////////////////////////////////////\n",
+    );
+    out.push_str(
+        "// Closed captions written by FilmCraft: SMPTE ST 334-2 caption distribution packets\n",
+    );
     out.push_str("// carrying CEA-608 field 1 and CEA-708 service 1 data, one packet per frame.\n");
-    out.push_str("///////////////////////////////////////////////////////////////////////////////////\n\n");
+    out.push_str(
+        "///////////////////////////////////////////////////////////////////////////////////\n\n",
+    );
     let n = doc.cues.len() as u64;
-    let h = doc.cues.iter().fold(0xcbf2_9ce4_8422_2325u64 ^ n, |h, c| (h ^ c.start.0 as u64 ^ (c.end.0 as u64).rotate_left(17)).wrapping_mul(0x100_0000_01b3));
+    let h = doc.cues.iter().fold(0xcbf2_9ce4_8422_2325u64 ^ n, |h, c| {
+        (h ^ c.start.0 as u64 ^ (c.end.0 as u64).rotate_left(17)).wrapping_mul(0x100_0000_01b3)
+    });
     out.push_str(&format!(
         "UUID={:08X}-{:04X}-4{:03X}-8{:03X}-{:012X}\n",
         h >> 32,
@@ -545,15 +620,36 @@ pub fn write_with(doc: &Document, drop_frame: bool, cea608: bool, cea708: bool) 
         h.rotate_left(29) & 0xffff_ffff_ffff
     ));
     out.push_str("Creation Program=FilmCraft\n");
-    out.push_str(&format!("Time Code Rate={}\n\n", if drop_frame { "30DF" } else { "30" }));
-    let first = f1.keys().next().copied().into_iter().chain(dtv.keys().next().copied()).min();
-    let last = f1.keys().next_back().copied().into_iter().chain(dtv.keys().next_back().copied()).max();
+    out.push_str(&format!(
+        "Time Code Rate={}\n\n",
+        if drop_frame { "30DF" } else { "30" }
+    ));
+    let first = f1
+        .keys()
+        .next()
+        .copied()
+        .into_iter()
+        .chain(dtv.keys().next().copied())
+        .min();
+    let last = f1
+        .keys()
+        .next_back()
+        .copied()
+        .into_iter()
+        .chain(dtv.keys().next_back().copied())
+        .max();
     if let (Some(a), Some(b)) = (first, last) {
         for (seq, f) in (a..=b + 1).enumerate() {
-            let data = FrameData { f1: f1.get(&f).copied(), dtvcc: dtv.get(&f).cloned().unwrap_or_default() };
+            let data = FrameData {
+                f1: f1.get(&f).copied(),
+                dtvcc: dtv.get(&f).cloned().unwrap_or_default(),
+            };
             let (_, hh, mm, ss, ff) = frames_to_fields(f, RATE, drop_frame);
             let sep = if drop_frame { ';' } else { ':' };
-            out.push_str(&format!("{hh:02}:{mm:02}:{ss:02}{sep}{ff:02}\t{}\n", compress(&build_cdp(seq as u16, &data))));
+            out.push_str(&format!(
+                "{hh:02}:{mm:02}:{ss:02}{sep}{ff:02}\t{}\n",
+                compress(&build_cdp(seq as u16, &data))
+            ));
         }
     }
     out
@@ -589,7 +685,10 @@ pub fn parse(text: &str) -> Result<Document> {
             continue;
         }
         if let Some(v) = l.strip_prefix("Time Code Rate=") {
-            rate = tc_rate(v).ok_or_else(|| Error::Syntax { line: n + 1, msg: format!("unsupported time code rate \"{v}\"") })?;
+            rate = tc_rate(v).ok_or_else(|| Error::Syntax {
+                line: n + 1,
+                msg: format!("unsupported time code rate \"{v}\""),
+            })?;
             continue;
         }
         if l.contains('=') {
@@ -599,17 +698,25 @@ pub fn parse(text: &str) -> Result<Document> {
             continue;
         };
         let tc = tc.split('.').next().unwrap_or(tc);
-        let parts: Vec<i64> = tc.split([':', ';']).filter_map(|p| p.parse().ok()).collect();
+        let parts: Vec<i64> = tc
+            .split([':', ';'])
+            .filter_map(|p| p.parse().ok())
+            .collect();
         let [h, m, s, f] = parts[..] else {
-            return Err(Error::Syntax { line: n + 1, msg: format!("bad timecode \"{tc}\"") });
+            return Err(Error::Syntax {
+                line: n + 1,
+                msg: format!("bad timecode \"{tc}\""),
+            });
         };
         let frame = fields_to_frames(h, m, s, f, rate.0, rate.1 || tc.contains(';'));
         let Some(bytes) = expand(data) else {
-            doc.warnings.push(format!("line {}: bad caption data", n + 1));
+            doc.warnings
+                .push(format!("line {}: bad caption data", n + 1));
             continue;
         };
         let Some(trips) = cc_triplets(&bytes) else {
-            doc.warnings.push(format!("line {}: not a caption distribution packet", n + 1));
+            doc.warnings
+                .push(format!("line {}: not a caption distribution packet", n + 1));
             continue;
         };
         for [m0, a, b] in trips {
@@ -638,7 +745,16 @@ pub fn parse(text: &str) -> Result<Document> {
         if let Some((s, t)) = d.open.take() {
             d.cues.push((s, last.max(s + 1), t));
         }
-        doc.cues = d.cues.into_iter().map(|(s, e, text)| Cue { start: rate.0.tick_of(s), end: rate.0.tick_of(e), text, ..Default::default() }).collect();
+        doc.cues = d
+            .cues
+            .into_iter()
+            .map(|(s, e, text)| Cue {
+                start: rate.0.tick_of(s),
+                end: rate.0.tick_of(e),
+                text,
+                ..Default::default()
+            })
+            .collect();
     }
     Ok(doc)
 }
@@ -648,12 +764,20 @@ mod tests {
     use super::*;
 
     fn cue(s: i64, e: i64, text: &str) -> Cue {
-        Cue { start: RATE.tick_of(s), end: RATE.tick_of(e), text: text.into(), ..Default::default() }
+        Cue {
+            start: RATE.tick_of(s),
+            end: RATE.tick_of(e),
+            text: text.into(),
+            ..Default::default()
+        }
     }
 
     #[test]
     fn abbreviations_round_trip() {
-        let b = [0x61, 0x01, 0x49, 0x96, 0x69, 0xfa, 0, 0, 0xfa, 0, 0, 0xfc, 0x80, 0x80, 0x00, 0x12, 0xe1, 0, 0, 0, 0xfb, 0x80, 0x80, 0xfd, 0x80, 0x80];
+        let b = [
+            0x61, 0x01, 0x49, 0x96, 0x69, 0xfa, 0, 0, 0xfa, 0, 0, 0xfc, 0x80, 0x80, 0x00, 0x12,
+            0xe1, 0, 0, 0, 0xfb, 0x80, 0x80, 0xfd, 0x80, 0x80,
+        ];
         let s = compress(&b);
         assert_eq!(s, "T49SHQZ12UPR");
         assert_eq!(expand(&s).unwrap(), b);
@@ -662,7 +786,10 @@ mod tests {
 
     #[test]
     fn cdp_structure_and_checksum() {
-        let d = FrameData { f1: Some((0x14, 0x20)), dtvcc: vec![(true, 0x02, 0x21), (false, 0x89, 0x01)] };
+        let d = FrameData {
+            f1: Some((0x14, 0x20)),
+            dtvcc: vec![(true, 0x02, 0x21), (false, 0x89, 0x01)],
+        };
         let b = build_cdp(7, &d);
         assert_eq!(&b[..3], &[0x61, 0x01, 73]);
         // prefix (3) + CDP (73) + ancillary checksum byte (1)
@@ -672,7 +799,11 @@ mod tests {
         let cdp = &b[3..76];
         assert_eq!(cdp.len(), 73);
         assert_eq!(&cdp[..9], &[0x96, 0x69, 73, 0x4f, 0x43, 0, 7, 0x72, 0xf4]);
-        assert_eq!(cdp.iter().map(|&x| x as u32).sum::<u32>() % 256, 0, "checksum");
+        assert_eq!(
+            cdp.iter().map(|&x| x as u32).sum::<u32>() % 256,
+            0,
+            "checksum"
+        );
         let t = cc_triplets(&b).unwrap();
         assert_eq!(t.len(), 20);
         assert_eq!(t[0], [0xfc, 0x94, 0x20]);
@@ -683,20 +814,58 @@ mod tests {
     #[test]
     fn writes_and_reads_608_and_708() {
         let doc = Document {
-            cues: vec![cue(60, 120, "Hello, world!"), cue(120, 200, "Second caption\nwith two lines"), cue(260, 300, "Café “q” ♪")],
+            cues: vec![
+                cue(60, 120, "Hello, world!"),
+                cue(120, 200, "Second caption\nwith two lines"),
+                cue(260, 300, "Café “q” ♪"),
+            ],
             ..Default::default()
         };
         let s = write(&doc, true);
         assert!(s.starts_with("File Format=MacCaption_MCC V1.0\n"));
         assert!(s.contains("Time Code Rate=30DF"));
         let back = parse(&s).unwrap();
-        let got: Vec<(i64, i64, &str)> = back.cues.iter().map(|c| (RATE.frame_at(c.start), RATE.frame_at(c.end), c.text.as_str())).collect();
-        assert_eq!(got, vec![(60, 120, "Hello, world!"), (120, 200, "Second caption\nwith two lines"), (260, 300, "Café “q” ♪")]);
+        let got: Vec<(i64, i64, &str)> = back
+            .cues
+            .iter()
+            .map(|c| {
+                (
+                    RATE.frame_at(c.start),
+                    RATE.frame_at(c.end),
+                    c.text.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (60, 120, "Hello, world!"),
+                (120, 200, "Second caption\nwith two lines"),
+                (260, 300, "Café “q” ♪")
+            ]
+        );
         // 708 only
         let s708 = write_with(&doc, false, false, true);
         let back = parse(&s708).unwrap();
-        let got: Vec<(i64, i64, &str)> = back.cues.iter().map(|c| (RATE.frame_at(c.start), RATE.frame_at(c.end), c.text.as_str())).collect();
-        assert_eq!(got, vec![(60, 120, "Hello, world!"), (120, 200, "Second caption\nwith two lines"), (260, 300, "Café “q” ♪")]);
+        let got: Vec<(i64, i64, &str)> = back
+            .cues
+            .iter()
+            .map(|c| {
+                (
+                    RATE.frame_at(c.start),
+                    RATE.frame_at(c.end),
+                    c.text.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (60, 120, "Hello, world!"),
+                (120, 200, "Second caption\nwith two lines"),
+                (260, 300, "Café “q” ♪")
+            ]
+        );
         assert!(parse("garbage").is_err());
     }
 }

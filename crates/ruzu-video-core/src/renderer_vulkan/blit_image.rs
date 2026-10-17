@@ -464,7 +464,6 @@ fn pipeline_input_assembly_state(device: &Device) -> vk::PipelineInputAssemblySt
     vk::PipelineInputAssemblyStateCreateInfo::default()
         .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
         .primitive_restart_enable(device.is_molten_vk())
-        
 }
 
 fn pipeline_depth_stencil_state() -> vk::PipelineDepthStencilStateCreateInfo<'static> {
@@ -485,12 +484,13 @@ fn pipeline_depth_stencil_state() -> vk::PipelineDepthStencilStateCreateInfo<'st
         .stencil_test_enable(true)
         .front(stencil)
         .back(stencil)
-        
 }
 
 /// Depth/stencil state of upstream `FindOrEmplaceMSAACopyDepthPipeline`: depth
 /// always written, stencil replaced from `gl_FragStencilRefARB` when copied.
-fn msaa_copy_depth_stencil_state(copy_stencil: bool) -> vk::PipelineDepthStencilStateCreateInfo<'static> {
+fn msaa_copy_depth_stencil_state(
+    copy_stencil: bool,
+) -> vk::PipelineDepthStencilStateCreateInfo<'static> {
     const REPLACE_STENCIL_OP: vk::StencilOpState = vk::StencilOpState {
         fail_op: vk::StencilOp::REPLACE,
         pass_op: vk::StencilOp::REPLACE,
@@ -515,7 +515,6 @@ fn msaa_copy_depth_stencil_state(copy_stencil: bool) -> vk::PipelineDepthStencil
         .back(stencil)
         .min_depth_bounds(0.0)
         .max_depth_bounds(0.0)
-        
 }
 
 fn pipeline_depth_only_state() -> vk::PipelineDepthStencilStateCreateInfo<'static> {
@@ -525,7 +524,6 @@ fn pipeline_depth_only_state() -> vk::PipelineDepthStencilStateCreateInfo<'stati
         .depth_compare_op(vk::CompareOp::ALWAYS)
         .depth_bounds_test_enable(false)
         .stencil_test_enable(false)
-        
 }
 
 fn sample_count_flag(num_samples: u32) -> vk::SampleCountFlags {
@@ -778,8 +776,8 @@ impl BlitImageHelper {
                 ..Default::default()
             },
         ];
-        let two_tex_layout_ci = vk::DescriptorSetLayoutCreateInfo::default()
-            .bindings(&two_tex_bindings);
+        let two_tex_layout_ci =
+            vk::DescriptorSetLayoutCreateInfo::default().bindings(&two_tex_bindings);
         let two_textures_set_layout = unsafe {
             device
                 .create_descriptor_set_layout(&two_tex_layout_ci, None)
@@ -2967,13 +2965,12 @@ impl BlitImageHelper {
             .rasterization_samples(key.samples)
             .sample_shading_enable(true)
             .min_sample_shading(1.0);
-        let blend_attachment = vk::PipelineColorBlendAttachmentState::default()
-            .color_write_mask(
-                vk::ColorComponentFlags::R
-                    | vk::ColorComponentFlags::G
-                    | vk::ColorComponentFlags::B
-                    | vk::ColorComponentFlags::A,
-            );
+        let blend_attachment = vk::PipelineColorBlendAttachmentState::default().color_write_mask(
+            vk::ColorComponentFlags::R
+                | vk::ColorComponentFlags::G
+                | vk::ColorComponentFlags::B
+                | vk::ColorComponentFlags::A,
+        );
         let color_blend = vk::PipelineColorBlendStateCreateInfo::default()
             .attachments(std::slice::from_ref(&blend_attachment));
         let dynamic_states = [
@@ -2981,8 +2978,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let create_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
@@ -3068,8 +3065,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let layout = if resolve_stencil {
             self.two_textures_pipeline_layout
         } else {
@@ -3152,18 +3149,17 @@ impl BlitImageHelper {
             .rasterization_samples(key.samples)
             .sample_shading_enable(!key.msaa_to_non_msaa)
             .min_sample_shading(if key.msaa_to_non_msaa { 0.0 } else { 1.0 });
-        let blend_attachment = vk::PipelineColorBlendAttachmentState::default()
-            .color_write_mask(
-                vk::ColorComponentFlags::R
-                    | vk::ColorComponentFlags::G
-                    | vk::ColorComponentFlags::B
-                    | vk::ColorComponentFlags::A,
-            );
+        let blend_attachment = vk::PipelineColorBlendAttachmentState::default().color_write_mask(
+            vk::ColorComponentFlags::R
+                | vk::ColorComponentFlags::G
+                | vk::ColorComponentFlags::B
+                | vk::ColorComponentFlags::A,
+        );
         let color_blend = vk::PipelineColorBlendStateCreateInfo::default()
             .attachments(std::slice::from_ref(&blend_attachment));
         let dynamic_states = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let create_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
@@ -3249,8 +3245,8 @@ impl BlitImageHelper {
         let depth_stencil = msaa_copy_depth_stencil_state(copy_stencil);
         let color_blend = vk::PipelineColorBlendStateCreateInfo::default();
         let dynamic_states = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let layout = if copy_stencil {
             self.msaa_copy_depth_stencil_pipeline_layout
         } else {
@@ -3344,8 +3340,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let layout = if blit_stencil {
             self.two_textures_pipeline_layout
         } else {
@@ -3420,8 +3416,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let create_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
@@ -3510,8 +3506,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
@@ -3580,8 +3576,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
@@ -3668,8 +3664,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
@@ -3772,8 +3768,8 @@ impl BlitImageHelper {
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
@@ -3855,27 +3851,25 @@ impl BlitImageHelper {
         let multisample = vk::PipelineMultisampleStateCreateInfo::default()
             .rasterization_samples(vk::SampleCountFlags::TYPE_1);
         let depth_stencil = pipeline_depth_stencil_state();
-        let blend_attachment = vk::PipelineColorBlendAttachmentState::default()
-            .color_write_mask(
-                vk::ColorComponentFlags::R
-                    | vk::ColorComponentFlags::G
-                    | vk::ColorComponentFlags::B
-                    | vk::ColorComponentFlags::A,
-            );
+        let blend_attachment = vk::PipelineColorBlendAttachmentState::default().color_write_mask(
+            vk::ColorComponentFlags::R
+                | vk::ColorComponentFlags::G
+                | vk::ColorComponentFlags::B
+                | vk::ColorComponentFlags::A,
+        );
         let color_blend = if is_target_depth {
             vk::PipelineColorBlendStateCreateInfo::default()
         } else {
             vk::PipelineColorBlendStateCreateInfo::default()
                 .attachments(std::slice::from_ref(&blend_attachment))
-                
         };
         let dynamic_states = [
             vk::DynamicState::VIEWPORT,
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let layout = if single_texture {
             self.one_texture_pipeline_layout
         } else {
@@ -3968,27 +3962,25 @@ impl BlitImageHelper {
         let multisample = vk::PipelineMultisampleStateCreateInfo::default()
             .rasterization_samples(vk::SampleCountFlags::TYPE_1);
         let depth_stencil = pipeline_depth_stencil_state();
-        let blend_attachment = vk::PipelineColorBlendAttachmentState::default()
-            .color_write_mask(
-                vk::ColorComponentFlags::R
-                    | vk::ColorComponentFlags::G
-                    | vk::ColorComponentFlags::B
-                    | vk::ColorComponentFlags::A,
-            );
+        let blend_attachment = vk::PipelineColorBlendAttachmentState::default().color_write_mask(
+            vk::ColorComponentFlags::R
+                | vk::ColorComponentFlags::G
+                | vk::ColorComponentFlags::B
+                | vk::ColorComponentFlags::A,
+        );
         let color_blend = if is_target_depth {
             vk::PipelineColorBlendStateCreateInfo::default()
         } else {
             vk::PipelineColorBlendStateCreateInfo::default()
                 .attachments(std::slice::from_ref(&blend_attachment))
-                
         };
         let dynamic_states = [
             vk::DynamicState::VIEWPORT,
             vk::DynamicState::SCISSOR,
             vk::DynamicState::BLEND_CONSTANTS,
         ];
-        let dynamic_state = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_state =
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let mut create_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)

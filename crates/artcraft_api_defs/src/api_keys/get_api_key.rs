@@ -7,6 +7,6 @@ use crate::api_keys::common::ApiKeyInfo;
 
 #[derive(Serialize, ToSchema)]
 pub struct GetApiKeySuccessResponse {
-  pub success: bool,
-  pub api_key: ApiKeyInfo,
+    pub success: bool,
+    pub api_key: ApiKeyInfo,
 }

@@ -33,13 +33,35 @@ impl OriginalGuard {
 
     /// Protect `path` (an original named `label`) and its sidecars (`IMG_1.xmp`, `IMG_1.CR3.xmp`).
     pub fn add(&mut self, path: &Path, label: &str) {
-        let Some(name) = path.file_name().map(|n| n.to_string_lossy().to_string()) else { return };
+        let Some(name) = path.file_name().map(|n| n.to_string_lossy().to_string()) else {
+            return;
+        };
         self.links = std::sync::OnceLock::new();
-        let mut put = |file: String, p: PathBuf, what: String| self.by_name.entry(file.to_lowercase()).or_default().push((p, what));
-        put(name.clone(), path.to_path_buf(), format!("the original of {label}"));
-        let stem = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-        put(format!("{stem}.xmp"), path.with_extension("xmp"), format!("the XMP sidecar of {label}"));
-        put(format!("{name}.xmp"), PathBuf::from(format!("{}.xmp", path.to_string_lossy())), format!("the XMP sidecar of {label}"));
+        let mut put = |file: String, p: PathBuf, what: String| {
+            self.by_name
+                .entry(file.to_lowercase())
+                .or_default()
+                .push((p, what))
+        };
+        put(
+            name.clone(),
+            path.to_path_buf(),
+            format!("the original of {label}"),
+        );
+        let stem = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        put(
+            format!("{stem}.xmp"),
+            path.with_extension("xmp"),
+            format!("the XMP sidecar of {label}"),
+        );
+        put(
+            format!("{name}.xmp"),
+            PathBuf::from(format!("{}.xmp", path.to_string_lossy())),
+            format!("the XMP sidecar of {label}"),
+        );
     }
 
     /// `Err` (a message for the user) when writing `target` would replace a protected file.
@@ -47,8 +69,15 @@ impl OriginalGuard {
         if std::fs::symlink_metadata(target).is_err() {
             return Ok(()); // nothing there to replace
         }
-        let mut names: Vec<String> = target.file_name().map(|n| n.to_string_lossy().to_lowercase()).into_iter().collect();
-        if let Some(n) = std::fs::canonicalize(target).ok().and_then(|c| c.file_name().map(|n| n.to_string_lossy().to_lowercase())) {
+        let mut names: Vec<String> = target
+            .file_name()
+            .map(|n| n.to_string_lossy().to_lowercase())
+            .into_iter()
+            .collect();
+        if let Some(n) = std::fs::canonicalize(target)
+            .ok()
+            .and_then(|c| c.file_name().map(|n| n.to_string_lossy().to_lowercase()))
+        {
             names.push(n);
         }
         for n in &names {
@@ -65,7 +94,14 @@ impl OriginalGuard {
         // that original would change what the library reads through the link. Only do
         // this fallback for existing targets that the name index did not protect; the links are
         // looked up once per guard, not once per target.
-        let links = self.links.get_or_init(|| self.by_name.values().flatten().filter(|(p, _)| std::fs::read_link(p).is_ok()).cloned().collect());
+        let links = self.links.get_or_init(|| {
+            self.by_name
+                .values()
+                .flatten()
+                .filter(|(p, _)| std::fs::read_link(p).is_ok())
+                .cloned()
+                .collect()
+        });
         for (p, what) in links {
             if same_file(p, target) {
                 return Err(format!(
@@ -110,13 +146,37 @@ mod tests {
         std::fs::write(d.join("IMG_1.xmp"), b"<x/>").unwrap();
         std::fs::write(d.join("other.jpg"), b"other").unwrap();
         let mut c = Catalog::default();
-        let p = Photo::new(PhotoId(1), Source::File { path: orig.to_string_lossy().to_string() }, "IMG_1.jpg", "JPEG", 10, 10, "2026-01-01");
+        let p = Photo::new(
+            PhotoId(1),
+            Source::File {
+                path: orig.to_string_lossy().to_string(),
+            },
+            "IMG_1.jpg",
+            "JPEG",
+            10,
+            10,
+            "2026-01-01",
+        );
         c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
         let g = OriginalGuard::new(&c);
-        assert!(g.check(&orig).unwrap_err().contains("original of IMG_1.jpg"));
-        assert!(g.check(&d.join("sub/../IMG_1.jpg")).is_err(), "another spelling of the same file");
-        assert!(g.check(&d.join("IMG_1.xmp")).unwrap_err().contains("sidecar"));
-        assert!(g.check(&d.join("other.jpg")).is_ok(), "an ordinary existing file");
+        assert!(
+            g.check(&orig)
+                .unwrap_err()
+                .contains("original of IMG_1.jpg")
+        );
+        assert!(
+            g.check(&d.join("sub/../IMG_1.jpg")).is_err(),
+            "another spelling of the same file"
+        );
+        assert!(
+            g.check(&d.join("IMG_1.xmp"))
+                .unwrap_err()
+                .contains("sidecar")
+        );
+        assert!(
+            g.check(&d.join("other.jpg")).is_ok(),
+            "an ordinary existing file"
+        );
         assert!(g.check(&d.join("new.jpg")).is_ok(), "a free name");
         let _ = std::fs::remove_dir_all(&d);
     }

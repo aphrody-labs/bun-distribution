@@ -76,7 +76,10 @@ mod tests {
 
         assert_eq!(outcome.job_id, "test-dataset-001");
         assert_eq!(outcome.artifacts.len(), 1);
-        assert!(outcome.artifacts[0].1.is_file(), "artifact file must exist on disk");
+        assert!(
+            outcome.artifacts[0].1.is_file(),
+            "artifact file must exist on disk"
+        );
 
         // Validate that events.jsonl was written
         let events_file = out_dir.join("events.jsonl");

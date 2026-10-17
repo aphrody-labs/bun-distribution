@@ -13,12 +13,21 @@ fn ms_attr(e: &El, name: &str) -> Option<u32> {
     if v == "indefinite" {
         return None;
     }
-    v.parse::<f64>().ok().filter(|v| v.is_finite()).map(|v| v.clamp(0.0, 86_400_000.0) as u32)
+    v.parse::<f64>()
+        .ok()
+        .filter(|v| v.is_finite())
+        .map(|v| v.clamp(0.0, 86_400_000.0) as u32)
 }
 
 pub fn transition(imp: &mut Imp, part: &Part, t: &El) -> Option<Transition> {
-    let effect = t.elements().find(|e| !matches!(e.local(), "sndAc" | "extLst"));
-    let mut tr = Transition { advance_on_click: t.bool("advClick").unwrap_or(true), advance_after_ms: ms_attr(t, "advTm"), ..Default::default() };
+    let effect = t
+        .elements()
+        .find(|e| !matches!(e.local(), "sndAc" | "extLst"));
+    let mut tr = Transition {
+        advance_on_click: t.bool("advClick").unwrap_or(true),
+        advance_after_ms: ms_attr(t, "advTm"),
+        ..Default::default()
+    };
     match effect.and_then(maps::transition_from_xml) {
         Some((k, o)) => {
             tr.kind = k;
@@ -32,7 +41,11 @@ pub fn transition(imp: &mut Imp, part: &Part, t: &El) -> Option<Transition> {
             None => tr.kind = "none".into(),
         },
     }
-    let default_dur = deckcraft_model::anim::TRANSITIONS.iter().find(|x| x.0 == tr.kind).map(|x| x.3).unwrap_or(1000);
+    let default_dur = deckcraft_model::anim::TRANSITIONS
+        .iter()
+        .find(|x| x.0 == tr.kind)
+        .map(|x| x.3)
+        .unwrap_or(1000);
     tr.duration_ms = ms_attr(t, "dur").unwrap_or(match t.attr("spd") {
         Some("fast") => 500,
         Some("med") => 750,
@@ -42,7 +55,11 @@ pub fn transition(imp: &mut Imp, part: &Part, t: &El) -> Option<Transition> {
     if let Some(snd) = t.path(&["sndAc", "stSnd", "snd"]) {
         tr.sound = dml::media_ref(imp, part, snd);
     }
-    if tr.kind == "none" && tr.advance_on_click && tr.advance_after_ms.is_none() && tr.sound.is_none() {
+    if tr.kind == "none"
+        && tr.advance_on_click
+        && tr.advance_after_ms.is_none()
+        && tr.sound.is_none()
+    {
         return None;
     }
     Some(tr)
@@ -67,7 +84,9 @@ fn collect<'a>(e: &'a El, trigger: Option<u32>, out: &mut Vec<Found<'a>>, depth:
             && let Some(ctn) = c.child("cTn")
             && ctn.attr("nodeType") == Some("interactiveSeq")
         {
-            trig = ctn.path(&["stCondLst", "cond", "tgtEl", "spTgt"]).and_then(|s| s.u32("spid"));
+            trig = ctn
+                .path(&["stCondLst", "cond", "tgtEl", "spTgt"])
+                .and_then(|s| s.u32("spid"));
         }
         collect(c, trig, out, depth + 1);
     }
@@ -93,9 +112,17 @@ fn max_dur(e: &El, depth: usize) -> Option<u32> {
 }
 
 /// Flatten the timing tree into the Animation Pane list.
-pub fn animations(imp: &mut Imp, part: &Part, ctx: &IdCtx, timing: &El, _shapes: &[Shape]) -> Vec<Animation> {
+pub fn animations(
+    imp: &mut Imp,
+    part: &Part,
+    ctx: &IdCtx,
+    timing: &El,
+    _shapes: &[Shape],
+) -> Vec<Animation> {
     let _ = (imp, part);
-    let Some(tn) = timing.child("tnLst") else { return vec![] };
+    let Some(tn) = timing.child("tnLst") else {
+        return vec![];
+    };
     let mut found = vec![];
     collect(tn, None, &mut found, 0);
     // Paragraph builds (`bldP build="p"`) by (spid, grpId).
@@ -115,10 +142,15 @@ pub fn animations(imp: &mut Imp, part: &Part, ctx: &IdCtx, timing: &El, _shapes:
         let preset = c.u32("presetID").unwrap_or(0);
         let sub = c.u32("presetSubtype").unwrap_or(0);
         let Some(tgt) = c.find("spTgt") else { continue };
-        let Some(file_id) = tgt.u32("spid") else { continue };
-        let Some(shape) = ctx.lookup(file_id) else { continue };
+        let Some(file_id) = tgt.u32("spid") else {
+            continue;
+        };
+        let Some(shape) = ctx.lookup(file_id) else {
+            continue;
+        };
         let paragraph = tgt.path(&["txEl", "pRg"]).and_then(|p| p.u32("st"));
-        let effect = maps::effect_for_preset(class, preset).unwrap_or_else(|| maps::fallback_effect(class));
+        let effect =
+            maps::effect_for_preset(class, preset).unwrap_or_else(|| maps::fallback_effect(class));
         let start = match c.attr("nodeType") {
             Some("clickEffect") => AnimStart::OnClick,
             Some("afterEffect") => AnimStart::AfterPrevious,
@@ -131,7 +163,10 @@ pub fn animations(imp: &mut Imp, part: &Part, ctx: &IdCtx, timing: &El, _shapes:
             option: maps::option_from_subtype(effect, sub),
             start,
             duration_ms: max_dur(c, 0).unwrap_or(0),
-            delay_ms: c.path(&["stCondLst", "cond"]).and_then(|d| ms_attr(d, "delay")).unwrap_or(0),
+            delay_ms: c
+                .path(&["stCondLst", "cond"])
+                .and_then(|d| ms_attr(d, "delay"))
+                .unwrap_or(0),
             paragraph,
             trigger: f.trigger.and_then(|t| ctx.lookup(t)),
             preset_id: Some(preset),
@@ -143,7 +178,12 @@ pub fn animations(imp: &mut Imp, part: &Part, ctx: &IdCtx, timing: &El, _shapes:
         };
         a.repeat = match c.attr("repeatCount") {
             Some("indefinite") => u32::MAX,
-            Some(v) => v.parse::<f64>().ok().filter(|v| v.is_finite()).map(|v| (v / 1000.0).round().clamp(1.0, 10_000.0) as u32).unwrap_or(1),
+            Some(v) => v
+                .parse::<f64>()
+                .ok()
+                .filter(|v| v.is_finite())
+                .map(|v| (v / 1000.0).round().clamp(1.0, 10_000.0) as u32)
+                .unwrap_or(1),
             None => 1,
         };
         if let Some(m) = c.find("animMotion") {
@@ -163,7 +203,9 @@ pub fn animations(imp: &mut Imp, part: &Part, ctx: &IdCtx, timing: &El, _shapes:
         let grp = c.attr("grpId").unwrap_or("0").to_string();
         // Collapse a paragraph-by-paragraph build into one animation.
         if paragraph.is_some() && by_para.iter().any(|(s, g)| *s == file_id && *g == grp) {
-            if out.last().is_some_and(|(l, lf, lg)| *lf == file_id && *lg == grp && l.text_build == TextBuild::ByParagraph) {
+            if out.last().is_some_and(|(l, lf, lg)| {
+                *lf == file_id && *lg == grp && l.text_build == TextBuild::ByParagraph
+            }) {
                 continue;
             }
             a.text_build = TextBuild::ByParagraph;

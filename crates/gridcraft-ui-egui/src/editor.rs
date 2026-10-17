@@ -44,7 +44,13 @@ pub struct EditState {
 }
 
 impl EditState {
-    pub fn new(sheet: usize, cell: CellRef, text: String, enter_mode: bool, from_formula_bar: bool) -> EditState {
+    pub fn new(
+        sheet: usize,
+        cell: CellRef,
+        text: String,
+        enter_mode: bool,
+        from_formula_bar: bool,
+    ) -> EditState {
         let caret = text.chars().count();
         EditState {
             sheet,
@@ -68,11 +74,17 @@ impl EditState {
     pub fn is_formula(&self) -> bool {
         self.text.starts_with('=')
             || (self.text.starts_with('+') && self.text.len() > 1)
-            || (self.text.starts_with('-') && self.text.len() > 1 && !self.text[1..].starts_with(|c: char| c.is_ascii_digit()))
+            || (self.text.starts_with('-')
+                && self.text.len() > 1
+                && !self.text[1..].starts_with(|c: char| c.is_ascii_digit()))
     }
 
     fn byte_caret(&self) -> usize {
-        self.text.char_indices().nth(self.caret).map(|(i, _)| i).unwrap_or(self.text.len())
+        self.text
+            .char_indices()
+            .nth(self.caret)
+            .map(|(i, _)| i)
+            .unwrap_or(self.text.len())
     }
 
     /// Point mode: the caret follows an operator, `(`, `,` or `=` in a formula, so clicking a
@@ -88,7 +100,10 @@ impl EditState {
         }
         let before = self.text.get(..self.byte_caret()).unwrap_or("");
         let last = before.trim_end().chars().last();
-        matches!(last, Some('=' | '(' | ',' | '+' | '-' | '*' | '/' | '^' | '&' | '<' | '>' | ':' | ';' | '{'))
+        matches!(
+            last,
+            Some('=' | '(' | ',' | '+' | '-' | '*' | '/' | '^' | '&' | '<' | '>' | ':' | ';' | '{')
+        )
     }
 
     /// Inserts (or replaces the last pointed) reference text at the caret.
@@ -98,11 +113,17 @@ impl EditState {
             Some((s, e)) if e == caret_b => (s, e),
             _ => (caret_b, caret_b),
         };
-        let (Some(a), Some(b)) = (self.text.get(..start), self.text.get(end..)) else { return };
+        let (Some(a), Some(b)) = (self.text.get(..start), self.text.get(end..)) else {
+            return;
+        };
         self.text = format!("{a}{r}{b}");
         let new_end = start + r.len();
         self.point = Some((start, new_end));
-        self.caret = self.text.get(..new_end).map(|s| s.chars().count()).unwrap_or(0);
+        self.caret = self
+            .text
+            .get(..new_end)
+            .map(|s| s.chars().count())
+            .unwrap_or(0);
         self.caret_to_end = false;
         self.sync_caret = true;
     }
@@ -114,14 +135,25 @@ impl EditState {
             return;
         }
         let before = self.text.get(..self.byte_caret()).unwrap_or("");
-        let word: String =
-            before.chars().rev().take_while(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '_').collect::<String>().chars().rev().collect();
+        let word: String = before
+            .chars()
+            .rev()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '_')
+            .collect::<String>()
+            .chars()
+            .rev()
+            .collect();
         if word.is_empty() || word.chars().next().is_some_and(|c| c.is_ascii_digit()) {
             return;
         }
         let u = word.to_ascii_uppercase();
         // Not after a column letter of a reference like A1 (digits follow) – fine either way.
-        self.autocomplete = names.iter().filter(|n| n.starts_with(&u)).take(12).cloned().collect();
+        self.autocomplete = names
+            .iter()
+            .filter(|n| n.starts_with(&u))
+            .take(12)
+            .cloned()
+            .collect();
         if self.autocomplete.len() == 1 && self.autocomplete[0] == u {
             self.autocomplete.clear();
         }
@@ -130,14 +162,27 @@ impl EditState {
 
     /// Accepts the highlighted autocomplete entry: replaces the word and adds `(`.
     pub fn accept_autocomplete(&mut self) -> bool {
-        let Some(name) = self.autocomplete.get(self.ac_index).cloned() else { return false };
+        let Some(name) = self.autocomplete.get(self.ac_index).cloned() else {
+            return false;
+        };
         let caret_b = self.byte_caret();
         let before = self.text.get(..caret_b).unwrap_or("");
-        let wlen: usize = before.chars().rev().take_while(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '_').map(char::len_utf8).sum();
+        let wlen: usize = before
+            .chars()
+            .rev()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '_')
+            .map(char::len_utf8)
+            .sum();
         let start = caret_b - wlen;
-        let (Some(a), Some(b)) = (self.text.get(..start), self.text.get(caret_b..)) else { return false };
+        let (Some(a), Some(b)) = (self.text.get(..start), self.text.get(caret_b..)) else {
+            return false;
+        };
         self.text = format!("{a}{name}({b}");
-        self.caret = self.text.get(..start + name.len() + 1).map(|s| s.chars().count()).unwrap_or(0);
+        self.caret = self
+            .text
+            .get(..start + name.len() + 1)
+            .map(|s| s.chars().count())
+            .unwrap_or(0);
         self.autocomplete.clear();
         self.caret_to_end = false;
         self.sync_caret = true;
@@ -196,9 +241,14 @@ impl EditState {
 /// References in formula text with their byte spans and colour index (same reference text ⇒
 /// same colour), for colouring the editor and outlining ranges on the grid.
 pub fn formula_refs(text: &str) -> Vec<(usize, usize, RangeRef, Option<String>, usize)> {
-    let body = text.strip_prefix('=').or_else(|| text.strip_prefix('+')).unwrap_or(text);
+    let body = text
+        .strip_prefix('=')
+        .or_else(|| text.strip_prefix('+'))
+        .unwrap_or(text);
     let offset = text.len() - body.len();
-    let Ok(toks) = gridcraft_engine::formula::lexer::tokenize(body) else { return vec![] };
+    let Ok(toks) = gridcraft_engine::formula::lexer::tokenize(body) else {
+        return vec![];
+    };
     let mut out: Vec<(usize, usize, RangeRef, Option<String>, usize)> = Vec::new();
     let mut seen: Vec<String> = Vec::new();
     let mut i = 0;
@@ -213,8 +263,10 @@ pub fn formula_refs(text: &str) -> Vec<(usize, usize, RangeRef, Option<String>, 
         {
             let mut end = toks[j].end;
             let mut range = RangeRef::cell(c);
-            if let (Some(Tok::Colon | Tok::Trim(_)), Some(Tok::Word(w2))) = (toks.get(j + 1).map(|t| &t.tok), toks.get(j + 2).map(|t| &t.tok))
-                && let Some(c2) = CellRef::parse(w2)
+            if let (Some(Tok::Colon | Tok::Trim(_)), Some(Tok::Word(w2))) = (
+                toks.get(j + 1).map(|t| &t.tok),
+                toks.get(j + 2).map(|t| &t.tok),
+            ) && let Some(c2) = CellRef::parse(w2)
             {
                 range = RangeRef::new(c, c2);
                 end = toks[j + 2].end;
@@ -222,7 +274,11 @@ pub fn formula_refs(text: &str) -> Vec<(usize, usize, RangeRef, Option<String>, 
             } else {
                 i = j + 1;
             }
-            let key = body.get(start..end).unwrap_or("").replace('$', "").to_ascii_uppercase();
+            let key = body
+                .get(start..end)
+                .unwrap_or("")
+                .replace('$', "")
+                .to_ascii_uppercase();
             let idx = match seen.iter().position(|k| *k == key) {
                 Some(k) => k,
                 None => {
@@ -230,7 +286,13 @@ pub fn formula_refs(text: &str) -> Vec<(usize, usize, RangeRef, Option<String>, 
                     seen.len() - 1
                 }
             };
-            out.push((start + offset, end + offset, range, sheet, idx % REF_COLORS.len()));
+            out.push((
+                start + offset,
+                end + offset,
+                range,
+                sheet,
+                idx % REF_COLORS.len(),
+            ));
             continue;
         }
         i += 1;
@@ -240,8 +302,17 @@ pub fn formula_refs(text: &str) -> Vec<(usize, usize, RangeRef, Option<String>, 
 
 /// Excel-style AutoComplete: the one distinct text entry in the same column (contiguous data
 /// above and below) that starts with `typed` (case-insensitive). `None` when ambiguous.
-pub fn column_completion(sheet: &gridcraft_engine::model::Sheet, at: CellRef, typed: &str) -> Option<String> {
-    if typed.is_empty() || typed.starts_with('=') || typed.chars().all(|c| c.is_ascii_digit() || c == '.' || c == '-') {
+pub fn column_completion(
+    sheet: &gridcraft_engine::model::Sheet,
+    at: CellRef,
+    typed: &str,
+) -> Option<String> {
+    if typed.is_empty()
+        || typed.starts_with('=')
+        || typed
+            .chars()
+            .all(|c| c.is_ascii_digit() || c == '.' || c == '-')
+    {
         return None;
     }
     let lower = typed.to_lowercase();
@@ -311,13 +382,22 @@ mod tests {
 
     #[test]
     fn autocomplete_and_hints() {
-        let names: Vec<String> = ["SUM", "SUMIF", "SUMPRODUCT", "AVERAGE"].iter().map(|s| s.to_string()).collect();
+        let names: Vec<String> = ["SUM", "SUMIF", "SUMPRODUCT", "AVERAGE"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
         let mut e = EditState::new(0, CellRef::new(0, 0), "=su".into(), true, false);
         e.update_autocomplete(&names);
         assert_eq!(e.autocomplete.len(), 3);
         assert!(e.accept_autocomplete());
         assert_eq!(e.text, "=SUM(");
-        let e = EditState::new(0, CellRef::new(0, 0), "=IF(A1>0,SUM(B1,".into(), true, false);
+        let e = EditState::new(
+            0,
+            CellRef::new(0, 0),
+            "=IF(A1>0,SUM(B1,".into(),
+            true,
+            false,
+        );
         assert_eq!(e.current_function(), Some(("SUM".into(), 1)));
     }
 

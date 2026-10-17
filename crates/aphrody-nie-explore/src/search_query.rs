@@ -22,7 +22,12 @@ impl FacetField {
 /// Parse, validate, and deduplicate a comma-separated facet request.
 pub fn parse_facet_fields(raw: Option<&str>) -> Result<Vec<FacetField>, String> {
     let mut fields = Vec::new();
-    for name in raw.unwrap_or_default().split(',').map(str::trim).filter(|name| !name.is_empty()) {
+    for name in raw
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+    {
         let field = match name {
             "ext" => FacetField::Extension,
             "cpk" => FacetField::Cpk,
@@ -31,7 +36,7 @@ pub fn parse_facet_fields(raw: Option<&str>) -> Result<Vec<FacetField>, String> 
                     "`facets={name}` : seuls {} se comptent sur le VFS",
                     FacetField::NAMES.join(" et ")
                 ));
-            },
+            }
         };
         if !fields.contains(&field) {
             fields.push(field);

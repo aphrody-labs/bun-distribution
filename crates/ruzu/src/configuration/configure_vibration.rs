@@ -275,7 +275,9 @@ mod tests {
             let mut child = widget.first_child();
             while let Some(widget) = child {
                 child = widget.next_sibling();
-                if let Some(check) = find_accurate(&widget) { return Some(check); }
+                if let Some(check) = find_accurate(&widget) {
+                    return Some(check);
+                }
             }
             None
         }
@@ -284,11 +286,15 @@ mod tests {
         for global in [true, false] {
             common::settings::set_configuring_global(global);
             present(&source, Arc::clone(&core));
-            let window = gtk::Window::list_toplevels().into_iter()
+            let window = gtk::Window::list_toplevels()
+                .into_iter()
                 .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
                 .find(|window| window.title().as_deref() == Some("Configure Vibration"))
                 .unwrap();
-            assert_eq!(find_accurate(window.upcast_ref()).unwrap().is_sensitive(), global);
+            assert_eq!(
+                find_accurate(window.upcast_ref()).unwrap().is_sensitive(),
+                global
+            );
             window.close();
         }
         common::settings::set_configuring_global(true);

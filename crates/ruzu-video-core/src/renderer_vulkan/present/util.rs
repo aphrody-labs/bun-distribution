@@ -60,7 +60,10 @@ pub fn create_wrapped_image(
         .expect("Failed to create wrapped image")
 }
 
-fn wrapped_image_create_info(dimensions: vk::Extent2D, format: vk::Format) -> vk::ImageCreateInfo<'static> {
+fn wrapped_image_create_info(
+    dimensions: vk::Extent2D,
+    format: vk::Format,
+) -> vk::ImageCreateInfo<'static> {
     vk::ImageCreateInfo::default()
         .image_type(vk::ImageType::TYPE_2D)
         .format(format)
@@ -81,7 +84,6 @@ fn wrapped_image_create_info(dimensions: vk::Extent2D, format: vk::Format) -> vk
         )
         .sharing_mode(vk::SharingMode::EXCLUSIVE)
         .initial_layout(vk::ImageLayout::UNDEFINED)
-        
 }
 
 /// Port of `TransitionImageLayout`.
@@ -618,8 +620,7 @@ pub fn create_wrapped_descriptor_set_layout(
 ) -> vk::DescriptorSetLayout {
     let bindings = wrapped_descriptor_set_layout_bindings(types, stages);
 
-    let layout_ci = vk::DescriptorSetLayoutCreateInfo::default()
-        .bindings(&bindings);
+    let layout_ci = vk::DescriptorSetLayoutCreateInfo::default().bindings(&bindings);
 
     unsafe {
         device
@@ -674,8 +675,7 @@ pub fn create_wrapped_pipeline_layout(
     layout: vk::DescriptorSetLayout,
 ) -> vk::PipelineLayout {
     let layouts = [layout];
-    let pipeline_layout_ci = vk::PipelineLayoutCreateInfo::default()
-        .set_layouts(&layouts);
+    let pipeline_layout_ci = vk::PipelineLayoutCreateInfo::default().set_layouts(&layouts);
 
     unsafe {
         device
@@ -769,8 +769,8 @@ fn create_wrapped_pipeline_impl(
         .blend_constants([0.0, 0.0, 0.0, 0.0]);
 
     let dynamic_states = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
-    let dynamic_state_ci = vk::PipelineDynamicStateCreateInfo::default()
-        .dynamic_states(&dynamic_states);
+    let dynamic_state_ci =
+        vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
 
     let pipeline_ci = vk::GraphicsPipelineCreateInfo::default()
         .stages(&shader_stages)
@@ -800,7 +800,6 @@ fn wrapped_pipeline_input_assembly_state(
     vk::PipelineInputAssemblyStateCreateInfo::default()
         .topology(vk::PrimitiveTopology::TRIANGLE_STRIP)
         .primitive_restart_enable(is_molten_vk)
-        
 }
 
 /// Port of `CreateWrappedPipeline` — no blending.

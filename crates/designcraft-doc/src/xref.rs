@@ -51,19 +51,40 @@ pub struct XrefFormat {
 }
 
 pub fn default_formats() -> Vec<XrefFormat> {
-    let f = |name: &str, definition: &str| XrefFormat { name: name.into(), definition: definition.into() };
+    let f = |name: &str, definition: &str| XrefFormat {
+        name: name.into(),
+        definition: definition.into(),
+    };
     vec![
-        f("Full Paragraph & Page Number", "\"<fullPara />\" on page <pageNum />"),
+        f(
+            "Full Paragraph & Page Number",
+            "\"<fullPara />\" on page <pageNum />",
+        ),
         f("Full Paragraph", "\"<fullPara />\""),
-        f("Paragraph Text & Page Number", "\"<paraText />\" on page <pageNum />"),
+        f(
+            "Paragraph Text & Page Number",
+            "\"<paraText />\" on page <pageNum />",
+        ),
         f("Paragraph Text", "\"<paraText />\""),
-        f("Paragraph Number & Page Number", "<paraNum /> on page <pageNum />"),
+        f(
+            "Paragraph Number & Page Number",
+            "<paraNum /> on page <pageNum />",
+        ),
         f("Paragraph Number", "<paraNum />"),
-        f("Text Anchor Name & Page Number", "\"<txtAnchrName />\" on page <pageNum />"),
+        f(
+            "Text Anchor Name & Page Number",
+            "\"<txtAnchrName />\" on page <pageNum />",
+        ),
         f("Text Anchor Name", "\"<txtAnchrName />\""),
         f("Page Number", "page <pageNum />"),
-        f("Partial Paragraph & Page Number", "\"<partialPara delim=\":\" includeDelim=\"false\" />\" on page <pageNum />"),
-        f("Partial Paragraph", "\"<partialPara delim=\":\" includeDelim=\"false\" />\""),
+        f(
+            "Partial Paragraph & Page Number",
+            "\"<partialPara delim=\":\" includeDelim=\"false\" />\" on page <pageNum />",
+        ),
+        f(
+            "Partial Paragraph",
+            "\"<partialPara delim=\":\" includeDelim=\"false\" />\"",
+        ),
     ]
 }
 
@@ -158,12 +179,20 @@ impl Story {
         if !self.text[pos.min(self.text.len())..].starts_with(XREF_MARK) {
             return None;
         }
-        self.xrefs.get(self.marks_before(XREF_MARK, pos)).map(|x| &**x)
+        self.xrefs
+            .get(self.marks_before(XREF_MARK, pos))
+            .map(|x| &**x)
     }
 
     fn next_anchor_id(&self) -> u64 {
         let base = self.id.0 << 24;
-        self.anchors.iter().filter(|a| a.id >> 24 == self.id.0).map(|a| a.id + 1).max().unwrap_or(base + 1).max(base + 1)
+        self.anchors
+            .iter()
+            .filter(|a| a.id >> 24 == self.id.0)
+            .map(|a| a.id + 1)
+            .max()
+            .unwrap_or(base + 1)
+            .max(base + 1)
     }
 
     /// Insert a text anchor at `pos`. Returns its id.
@@ -191,21 +220,34 @@ impl Story {
             let k = self.marks_before(ANCHOR_MARK, pos);
             for i in 0..n {
                 let id = self.next_anchor_id();
-                self.anchors.insert(k + i, Arc::new(TextAnchor { id, name: format!("Anchor {}", id & 0xFF_FFFF) }));
+                self.anchors.insert(
+                    k + i,
+                    Arc::new(TextAnchor {
+                        id,
+                        name: format!("Anchor {}", id & 0xFF_FFFF),
+                    }),
+                );
             }
         }
         let n = text.matches(XREF_MARK).count();
         if n > 0 {
             let k = self.marks_before(XREF_MARK, pos);
             for i in 0..n {
-                self.xrefs.insert(k + i, Arc::new(CrossRef { target: 0, format: String::new() }));
+                self.xrefs.insert(
+                    k + i,
+                    Arc::new(CrossRef {
+                        target: 0,
+                        format: String::new(),
+                    }),
+                );
             }
         }
         let n = text.matches(crate::index::INDEX_MARK).count();
         if n > 0 {
             let k = self.marks_before(crate::index::INDEX_MARK, pos);
             for i in 0..n {
-                self.index_refs.insert(k + i, Arc::new(crate::index::IndexRef::default()));
+                self.index_refs
+                    .insert(k + i, Arc::new(crate::index::IndexRef::default()));
             }
         }
         let n = text.matches(crate::endnotes::NOTE_MARK).count();
@@ -213,14 +255,21 @@ impl Story {
             let k = self.marks_before(crate::endnotes::NOTE_MARK, pos);
             for i in 0..n {
                 let id = self.editorial.iter().map(|x| x.id).max().unwrap_or(0) + 1;
-                self.editorial.insert((k + i).min(self.editorial.len()), Arc::new(crate::endnotes::EditorialNote { id, ..Default::default() }));
+                self.editorial.insert(
+                    (k + i).min(self.editorial.len()),
+                    Arc::new(crate::endnotes::EditorialNote {
+                        id,
+                        ..Default::default()
+                    }),
+                );
             }
         }
         let n = text.matches(crate::anchored::OBJECT_MARK).count();
         if n > 0 {
             let k = self.marks_before(crate::anchored::OBJECT_MARK, pos);
             for i in 0..n {
-                self.objects.insert(k + i, Arc::new(crate::anchored::AnchoredObject::default()));
+                self.objects
+                    .insert(k + i, Arc::new(crate::anchored::AnchoredObject::default()));
             }
         }
     }
@@ -235,7 +284,13 @@ impl Story {
 
     /// Keep anchor/xref lists in step with a deletion of `a..b` (before it happens).
     pub(crate) fn marks_deleted(&mut self, a: usize, b: usize) {
-        for mark in [ANCHOR_MARK, XREF_MARK, crate::index::INDEX_MARK, crate::anchored::OBJECT_MARK, crate::endnotes::NOTE_MARK] {
+        for mark in [
+            ANCHOR_MARK,
+            XREF_MARK,
+            crate::index::INDEX_MARK,
+            crate::anchored::OBJECT_MARK,
+            crate::endnotes::NOTE_MARK,
+        ] {
             let n = self.text[a..b].matches(mark).count();
             if n == 0 {
                 continue;
@@ -263,47 +318,79 @@ impl Story {
         }
         while self.anchors.len() < n {
             let id = self.next_anchor_id();
-            self.anchors.push(Arc::new(TextAnchor { id, name: format!("Anchor {}", id & 0xFF_FFFF) }));
+            self.anchors.push(Arc::new(TextAnchor {
+                id,
+                name: format!("Anchor {}", id & 0xFF_FFFF),
+            }));
         }
         let n = self.text.matches(XREF_MARK).count();
         self.xrefs.truncate(n);
         while self.xrefs.len() < n {
-            self.xrefs.push(Arc::new(CrossRef { target: 0, format: String::new() }));
+            self.xrefs.push(Arc::new(CrossRef {
+                target: 0,
+                format: String::new(),
+            }));
         }
         let n = self.text.matches(crate::index::INDEX_MARK).count();
         self.index_refs.truncate(n);
         while self.index_refs.len() < n {
-            self.index_refs.push(Arc::new(crate::index::IndexRef::default()));
+            self.index_refs
+                .push(Arc::new(crate::index::IndexRef::default()));
         }
         let n = self.text.matches(crate::endnotes::NOTE_MARK).count();
         self.editorial.truncate(n);
         while self.editorial.len() < n {
             let id = self.editorial.iter().map(|x| x.id).max().unwrap_or(0) + 1;
-            self.editorial.push(Arc::new(crate::endnotes::EditorialNote { id, ..Default::default() }));
+            self.editorial
+                .push(Arc::new(crate::endnotes::EditorialNote {
+                    id,
+                    ..Default::default()
+                }));
         }
         let n = self.text.matches(crate::anchored::OBJECT_MARK).count();
         self.objects.truncate(n);
         while self.objects.len() < n {
-            self.objects.push(Arc::new(crate::anchored::AnchoredObject::default()));
+            self.objects
+                .push(Arc::new(crate::anchored::AnchoredObject::default()));
         }
     }
 
     pub(crate) fn check_marks(&self) -> Result<(), String> {
-        let (a, x) = (self.text.matches(ANCHOR_MARK).count(), self.text.matches(XREF_MARK).count());
+        let (a, x) = (
+            self.text.matches(ANCHOR_MARK).count(),
+            self.text.matches(XREF_MARK).count(),
+        );
         if a != self.anchors.len() || x != self.xrefs.len() {
-            return Err(format!("story {}: {a} anchor / {x} xref marks for {} anchors / {} xrefs", self.id.0, self.anchors.len(), self.xrefs.len()));
+            return Err(format!(
+                "story {}: {a} anchor / {x} xref marks for {} anchors / {} xrefs",
+                self.id.0,
+                self.anchors.len(),
+                self.xrefs.len()
+            ));
         }
         let o = self.text.matches(crate::anchored::OBJECT_MARK).count();
         if o != self.objects.len() {
-            return Err(format!("story {}: {o} object marks for {} anchored objects", self.id.0, self.objects.len()));
+            return Err(format!(
+                "story {}: {o} object marks for {} anchored objects",
+                self.id.0,
+                self.objects.len()
+            ));
         }
         let e = self.text.matches(crate::endnotes::NOTE_MARK).count();
         if e != self.editorial.len() {
-            return Err(format!("story {}: {e} note marks for {} notes", self.id.0, self.editorial.len()));
+            return Err(format!(
+                "story {}: {e} note marks for {} notes",
+                self.id.0,
+                self.editorial.len()
+            ));
         }
         let i = self.text.matches(crate::index::INDEX_MARK).count();
         if i != self.index_refs.len() {
-            return Err(format!("story {}: {i} index marks for {} references", self.id.0, self.index_refs.len()));
+            return Err(format!(
+                "story {}: {i} index marks for {} references",
+                self.id.0,
+                self.index_refs.len()
+            ));
         }
         Ok(())
     }
@@ -320,11 +407,15 @@ impl Document {
         if let Some(p) = self.story(home).and_then(|s| s.anchor_pos(id)) {
             return Some((home, p));
         }
-        self.stories.values().find_map(|s| s.anchor_pos(id).map(|p| (s.id, p)))
+        self.stories
+            .values()
+            .find_map(|s| s.anchor_pos(id).map(|p| (s.id, p)))
     }
 
     pub fn anchor(&self, id: u64) -> Option<&TextAnchor> {
-        self.stories.values().find_map(|s| s.anchors.iter().find(|a| a.id == id).map(|a| &**a))
+        self.stories
+            .values()
+            .find_map(|s| s.anchors.iter().find(|a| a.id == id).map(|a| &**a))
     }
 
     /// The anchor at the start of paragraph containing `pos` in `sid`, creating one if needed
@@ -355,10 +446,15 @@ impl Document {
                 // Count the run of numbered paragraphs before this one (empty ones have no number).
                 let n = (0..=pi)
                     .rev()
-                    .take_while(|&k| self.styles.resolve_para(&st.paras[k]).0.list_type == crate::ListType::Numbers)
+                    .take_while(|&k| {
+                        self.styles.resolve_para(&st.paras[k]).0.list_type
+                            == crate::ListType::Numbers
+                    })
                     .filter(|&k| ranges.get(k).is_some_and(|r| !r.is_empty()))
                     .count();
-                pp.number_label(u32::try_from(n).unwrap_or(u32::MAX)).trim_end().to_string()
+                pp.number_label(u32::try_from(n).unwrap_or(u32::MAX))
+                    .trim_end()
+                    .to_string()
             }
             _ => String::new(),
         };
@@ -379,8 +475,11 @@ impl Document {
 
 /// Paragraph text without markers, tabs and breaks.
 pub fn clean(s: &str) -> String {
-    let t: String =
-        s.chars().filter(|c| !('\u{E000}'..='\u{E1FF}').contains(c)).map(|c| if c == '\t' || c == '\u{2028}' { ' ' } else { c }).collect();
+    let t: String = s
+        .chars()
+        .filter(|c| !('\u{E000}'..='\u{E1FF}').contains(c))
+        .map(|c| if c == '\t' || c == '\u{2028}' { ' ' } else { c })
+        .collect();
     t.trim().to_string()
 }
 
@@ -390,11 +489,19 @@ mod tests {
 
     #[test]
     fn formats_expand() {
-        let v =
-            XrefValues { para: "Intro: the start".into(), page: "7".into(), para_num: "2.".into(), anchor_name: "A".into(), ..Default::default() };
+        let v = XrefValues {
+            para: "Intro: the start".into(),
+            page: "7".into(),
+            para_num: "2.".into(),
+            anchor_name: "A".into(),
+            ..Default::default()
+        };
         let fs = default_formats();
         let get = |n: &str| expand(&fs.iter().find(|f| f.name == n).unwrap().definition, &v);
-        assert_eq!(get("Full Paragraph & Page Number"), "\u{201C}2. Intro: the start\u{201D} on page 7");
+        assert_eq!(
+            get("Full Paragraph & Page Number"),
+            "\u{201C}2. Intro: the start\u{201D} on page 7"
+        );
         assert_eq!(get("Paragraph Text"), "\u{201C}Intro: the start\u{201D}");
         assert_eq!(get("Partial Paragraph"), "\u{201C}Intro\u{201D}");
         assert_eq!(get("Page Number"), "page 7");
@@ -407,7 +514,13 @@ mod tests {
         let mut s = Story::with_text(StoryId(3), "Heading\nBody text.", Default::default());
         let a = s.insert_anchor(0, "Heading");
         assert_eq!(a >> 24, 3);
-        s.insert_xref(13, CrossRef { target: a, format: "Page Number".into() });
+        s.insert_xref(
+            13,
+            CrossRef {
+                target: a,
+                format: "Page Number".into(),
+            },
+        );
         s.check().unwrap();
         assert_eq!(s.anchor_pos(a), Some(0));
         s.insert(0, "New ");

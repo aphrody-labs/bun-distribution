@@ -34,11 +34,36 @@ pub const ZERO_4X4: u8 = 2;
 pub const NEW_4X4: u8 = 3;
 
 /// `ymode_tree` (8.2).
-pub const YMODE_TREE: [i8; 8] = [-(DC_PRED as i8), 2, 4, 6, -(V_PRED as i8), -(H_PRED as i8), -(TM_PRED as i8), -(B_PRED as i8)];
+pub const YMODE_TREE: [i8; 8] = [
+    -(DC_PRED as i8),
+    2,
+    4,
+    6,
+    -(V_PRED as i8),
+    -(H_PRED as i8),
+    -(TM_PRED as i8),
+    -(B_PRED as i8),
+];
 /// `kf_ymode_tree` (8.2).
-pub const KF_YMODE_TREE: [i8; 8] = [-(B_PRED as i8), 2, 4, 6, -(DC_PRED as i8), -(V_PRED as i8), -(H_PRED as i8), -(TM_PRED as i8)];
+pub const KF_YMODE_TREE: [i8; 8] = [
+    -(B_PRED as i8),
+    2,
+    4,
+    6,
+    -(DC_PRED as i8),
+    -(V_PRED as i8),
+    -(H_PRED as i8),
+    -(TM_PRED as i8),
+];
 /// `uv_mode_tree` (8.2).
-pub const UV_MODE_TREE: [i8; 6] = [-(DC_PRED as i8), 2, -(V_PRED as i8), 4, -(H_PRED as i8), -(TM_PRED as i8)];
+pub const UV_MODE_TREE: [i8; 6] = [
+    -(DC_PRED as i8),
+    2,
+    -(V_PRED as i8),
+    4,
+    -(H_PRED as i8),
+    -(TM_PRED as i8),
+];
 /// `bmode_tree` (11.2).
 pub const BMODE_TREE: [i8; 18] = [
     -(B_DC_PRED as i8),
@@ -63,8 +88,16 @@ pub const BMODE_TREE: [i8; 18] = [
 /// `mb_segment_tree` (10).
 pub const SEGMENT_TREE: [i8; 6] = [2, 4, 0, -1, -2, -3];
 /// `mv_ref_tree` (16.2), values relative to `MV_NEAREST`.
-pub const MV_REF_TREE: [i8; 8] =
-    [-((MV_ZERO - MV_NEAREST) as i8), 2, 0, 4, -((MV_NEAR - MV_NEAREST) as i8), 6, -((MV_NEW - MV_NEAREST) as i8), -((MV_SPLIT - MV_NEAREST) as i8)];
+pub const MV_REF_TREE: [i8; 8] = [
+    -((MV_ZERO - MV_NEAREST) as i8),
+    2,
+    0,
+    4,
+    -((MV_NEAR - MV_NEAREST) as i8),
+    6,
+    -((MV_NEW - MV_NEAREST) as i8),
+    -((MV_SPLIT - MV_NEAREST) as i8),
+];
 
 // Split partitionings (16.4).
 pub const SPLIT_TOP_BOTTOM: u8 = 0;
@@ -72,9 +105,23 @@ pub const SPLIT_LEFT_RIGHT: u8 = 1;
 pub const SPLIT_QUARTERS: u8 = 2;
 pub const SPLIT_16: u8 = 3;
 /// `mvpartition_tree` (16.4).
-pub const MVPARTITION_TREE: [i8; 6] = [-(SPLIT_16 as i8), 2, -(SPLIT_QUARTERS as i8), 4, -(SPLIT_TOP_BOTTOM as i8), -(SPLIT_LEFT_RIGHT as i8)];
+pub const MVPARTITION_TREE: [i8; 6] = [
+    -(SPLIT_16 as i8),
+    2,
+    -(SPLIT_QUARTERS as i8),
+    4,
+    -(SPLIT_TOP_BOTTOM as i8),
+    -(SPLIT_LEFT_RIGHT as i8),
+];
 /// `sub_mv_ref_tree` (16.4).
-pub const SUB_MV_REF_TREE: [i8; 6] = [-(LEFT_4X4 as i8), 2, -(ABOVE_4X4 as i8), 4, -(ZERO_4X4 as i8), -(NEW_4X4 as i8)];
+pub const SUB_MV_REF_TREE: [i8; 6] = [
+    -(LEFT_4X4 as i8),
+    2,
+    -(ABOVE_4X4 as i8),
+    4,
+    -(ZERO_4X4 as i8),
+    -(NEW_4X4 as i8),
+];
 /// The partition of each Y subblock, per partitioning (the layouts listed with the MVpartition
 /// enumeration, 16.4).
 pub const SPLIT_MAPS: [[u8; 16]; 4] = [
@@ -100,10 +147,39 @@ pub const DCT_4: u8 = 4;
 pub const DCT_CAT1: u8 = 5;
 pub const DCT_EOB: u8 = 11;
 /// `coeff_tree` (13.2).
-pub const COEFF_TREE: [i8; 22] = [-(DCT_EOB as i8), 2, -(DCT_0 as i8), 4, -1, 6, 8, 12, -2, 10, -3, -4, 14, 16, -5, -6, 18, 20, -7, -8, -9, -10];
+pub const COEFF_TREE: [i8; 22] = [
+    -(DCT_EOB as i8),
+    2,
+    -(DCT_0 as i8),
+    4,
+    -1,
+    6,
+    8,
+    12,
+    -2,
+    10,
+    -3,
+    -4,
+    14,
+    16,
+    -5,
+    -6,
+    18,
+    20,
+    -7,
+    -8,
+    -9,
+    -10,
+];
 /// `Pcat1` ... `Pcat6` (13.2), without the terminating zeros.
-pub const PCAT: [&[u8]; 6] =
-    [&[159], &[165, 145], &[173, 148, 140], &[176, 155, 140, 135], &[180, 157, 141, 134, 130], &[254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129]];
+pub const PCAT: [&[u8]; 6] = [
+    &[159],
+    &[165, 145],
+    &[173, 148, 140],
+    &[176, 155, 140, 135],
+    &[180, 157, 141, 134, 130],
+    &[254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129],
+];
 /// `categoryBase` (13.3).
 pub const CAT_BASE: [i32; 6] = [5, 7, 11, 19, 35, 67];
 

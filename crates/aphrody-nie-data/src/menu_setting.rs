@@ -253,8 +253,10 @@ pub fn parse(root: &Value) -> MenuSetting {
         if is_list_marker(node.name()) || node.var_count() == 0 {
             return;
         }
-        resources
-            .push(MenuResource { logical_path: String::from(node.string(0)), kind: node.int(1) });
+        resources.push(MenuResource {
+            logical_path: String::from(node.string(0)),
+            kind: node.int(1),
+        });
     });
 
     let mut commands = Vec::new();
@@ -405,7 +407,10 @@ impl MenuSetting {
     /// `main_menu`, c'est celui qui porte les `MenuCommand`). `None` si aucun.
     #[must_use]
     pub fn interactive_layer_id(&self) -> Option<HashId> {
-        self.layer_groups.iter().find(|g| g.flags.first() == Some(&1)).map(|g| g.layer_id)
+        self.layer_groups
+            .iter()
+            .find(|g| g.flags.first() == Some(&1))
+            .map(|g| g.layer_id)
     }
 
     /// Vrai si **chaque** layer satisfait l'invariant `layer_id == CRC32(name)` — la propriété
@@ -475,14 +480,16 @@ impl MenuSetting {
     #[must_use]
     pub fn focus_elements(&self, index: usize) -> Option<&[MenuFocusBaseInfo]> {
         let r = self.focus_group_refs.get(index)?;
-        self.focus_base_infos.get(r.start..r.start.checked_add(r.count)?)
+        self.focus_base_infos
+            .get(r.start..r.start.checked_add(r.count)?)
     }
 
     /// États de layer du `index`-ième groupe nommé (tranche de `layer_groups`).
     #[must_use]
     pub fn group_layer_states(&self, index: usize) -> Option<&[MenuLayerGroupBase]> {
         let r = self.group_refs.get(index)?;
-        self.layer_groups.get(r.start..r.start.checked_add(r.count)?)
+        self.layer_groups
+            .get(r.start..r.start.checked_add(r.count)?)
     }
 
     /// Nombre total d'éléments focusables de l'écran (= unités de navigation).

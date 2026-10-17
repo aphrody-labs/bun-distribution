@@ -19,13 +19,21 @@
 //!
 //! Nothing here panics on hostile documents: sizes are clamped, unknown fonts or undecodable
 //! pictures are skipped (a grey box stands in for a picture).
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU16;
 use std::sync::Arc;
 
+use craft_metafile::{Picture, PlacedItem};
 use krilla::action::{Action, LinkAction};
 use krilla::annotation::{Annotation, LinkAnnotation, Target};
 use krilla::color::rgb;
@@ -39,7 +47,9 @@ use krilla::outline::{Outline, OutlineNode};
 use krilla::page::PageSettings;
 use krilla::paint::{Fill, FillRule, LineCap, LineJoin, Stroke, StrokeDash};
 use krilla::surface::Surface;
-use krilla::tagging::{Artifact, ArtifactType, ContentTag, Identifier, Node, SpanTag, Tag, TagGroup, TagKind, TagTree};
+use krilla::tagging::{
+    Artifact, ArtifactType, ContentTag, Identifier, Node, SpanTag, Tag, TagGroup, TagKind, TagTree,
+};
 use krilla::text::{Font, GlyphId, KrillaGlyph};
 use wordcraft_doc::graphic::GraphicKind;
 use wordcraft_doc::para::{InlineObject, ShapeKind};
@@ -49,7 +59,6 @@ use wordcraft_geom::Rect;
 use wordcraft_layout::display::{DisplayOptions, Draw, Stroke as LineStyle, page_display};
 use wordcraft_layout::wordart::ArtPaint;
 use wordcraft_layout::{DocLayout, LayoutCache, LayoutOptions, Page, Placed, layout};
-use craft_metafile::{Picture, PlacedItem};
 
 /// Largest page side we write (200", the PDF limit).
 const MAX_SIDE: f32 = 14_400.0;
@@ -87,7 +96,15 @@ pub struct PdfOptions {
 
 impl Default for PdfOptions {
     fn default() -> Self {
-        PdfOptions { pages: None, title: None, author: None, tagged: true, include_markup: false, comments: false, compress: true }
+        PdfOptions {
+            pages: None,
+            title: None,
+            author: None,
+            tagged: true,
+            include_markup: false,
+            comments: false,
+            compress: true,
+        }
     }
 }
 
@@ -95,13 +112,21 @@ impl Default for PdfOptions {
 /// deletions are left out, as in Word's "No Markup" view. With `comments` each page carries the
 /// markup area with the comment balloons.
 pub fn export(doc: &Document, opts: &PdfOptions) -> Result<Vec<u8>, PdfError> {
-    let lo = LayoutOptions { hide_deleted: !opts.include_markup, comment_balloons: opts.comments, ..Default::default() };
+    let lo = LayoutOptions {
+        hide_deleted: !opts.include_markup,
+        comment_balloons: opts.comments,
+        ..Default::default()
+    };
     let lay = layout(doc, &mut LayoutCache::new(), &lo);
     export_layout(doc, &lay, opts)
 }
 
 /// Write an existing layout of `doc` as PDF.
-pub fn export_layout(doc: &Document, lay: &DocLayout, opts: &PdfOptions) -> Result<Vec<u8>, PdfError> {
+pub fn export_layout(
+    doc: &Document,
+    lay: &DocLayout,
+    opts: &PdfOptions,
+) -> Result<Vec<u8>, PdfError> {
     let pages: Vec<usize> = match &opts.pages {
         Some(v) => {
             if let Some(bad) = v.iter().find(|p| **p >= lay.pages.len()) {
@@ -120,7 +145,9 @@ pub fn export_layout(doc: &Document, lay: &DocLayout, opts: &PdfOptions) -> Resu
     loop {
         match write(doc, lay, opts, &pages, &outlined)? {
             Attempt::Done(bytes) => return Ok(bytes),
-            Attempt::BadFont(id, msg) if outlined.len() < MAX_OUTLINED_FONTS && outlined.insert(id) => {
+            Attempt::BadFont(id, msg)
+                if outlined.len() < MAX_OUTLINED_FONTS && outlined.insert(id) =>
+            {
                 log::warn!("PDF: {msg}; its text is drawn as outlines");
             }
             Attempt::BadFont(_, msg) => return Err(PdfError::Write(msg)),
@@ -138,8 +165,18 @@ enum Attempt {
     BadFont(u32, String),
 }
 
-fn write(doc: &Document, lay: &DocLayout, opts: &PdfOptions, pages: &[usize], outlined: &HashSet<u32>) -> Result<Attempt, PdfError> {
-    let settings = krilla::SerializeSettings { compress_content_streams: opts.compress, enable_tagging: opts.tagged, ..Default::default() };
+fn write(
+    doc: &Document,
+    lay: &DocLayout,
+    opts: &PdfOptions,
+    pages: &[usize],
+    outlined: &HashSet<u32>,
+) -> Result<Attempt, PdfError> {
+    let settings = krilla::SerializeSettings {
+        compress_content_streams: opts.compress,
+        enable_tagging: opts.tagged,
+        ..Default::default()
+    };
     let mut pdf = krilla::Document::new_with(settings);
     pdf.set_metadata(metadata(doc, opts));
 
@@ -162,7 +199,9 @@ fn write(doc: &Document, lay: &DocLayout, opts: &PdfOptions, pages: &[usize], ou
         pdf.set_outline(o);
     }
     for &pi in pages {
-        let Some(page) = lay.pages.get(pi) else { return Err(PdfError::BadPage(pi + 1)) };
+        let Some(page) = lay.pages.get(pi) else {
+            return Err(PdfError::BadPage(pi + 1));
+        };
         let fit = Fit::of(page);
         let (w, h) = (clamp_side(fit.paper_w), clamp_side(page.h));
         let size = Size::from_wh(w, h).ok_or(PdfError::NoPages)?;
@@ -191,10 +230,21 @@ fn write(doc: &Document, lay: &DocLayout, opts: &PdfOptions, pages: &[usize], ou
     match pdf.finish() {
         Ok(bytes) => Ok(Attempt::Done(bytes)),
         Err(KrillaError::Font(font, msg)) => {
-            let bad = ex.fonts.iter().find(|(_, (_, f))| f.as_ref() == Some(&font));
+            let bad = ex
+                .fonts
+                .iter()
+                .find(|(_, (_, f))| f.as_ref() == Some(&font));
             match bad {
-                Some((id, (face, _))) => Ok(Attempt::BadFont(*id, format!("font {} {} could not be embedded ({msg})", face.family, face.style))),
-                None => Err(PdfError::Write(format!("a font could not be embedded ({msg})"))),
+                Some((id, (face, _))) => Ok(Attempt::BadFont(
+                    *id,
+                    format!(
+                        "font {} {} could not be embedded ({msg})",
+                        face.family, face.style
+                    ),
+                )),
+                None => Err(PdfError::Write(format!(
+                    "a font could not be embedded ({msg})"
+                ))),
             }
         }
         Err(e) => Err(PdfError::Write(format!("{e:?}"))),
@@ -215,9 +265,17 @@ impl Fit {
         let paper_w = page.w - page.markup;
         if page.markup > 0.0 && ok(page.markup) && ok(page.w) && paper_w > 1.0 {
             let k = paper_w / page.w;
-            Fit { paper_w, k, dy: page.h * (1.0 - k) / 2.0 }
+            Fit {
+                paper_w,
+                k,
+                dy: page.h * (1.0 - k) / 2.0,
+            }
         } else {
-            Fit { paper_w: page.w, k: 1.0, dy: 0.0 }
+            Fit {
+                paper_w: page.w,
+                k: 1.0,
+                dy: 0.0,
+            }
         }
     }
 
@@ -235,7 +293,9 @@ fn glyph_outlines(face: &FaceRef, size: f32, glyphs: &[(u32, f32, f32)]) -> Opti
     for &(g, x, y) in glyphs {
         // Outlines are in font units, y-down: scale to the size, move to the pen position.
         let mut outline = (*db.outline(face, g)).clone();
-        outline.apply_affine(kurbo::Affine::translate((f64::from(x), f64::from(y))) * kurbo::Affine::scale(scale));
+        outline.apply_affine(
+            kurbo::Affine::translate((f64::from(x), f64::from(y))) * kurbo::Affine::scale(scale),
+        );
         append_path(&mut pb, &outline);
     }
     pb.finish()
@@ -243,7 +303,11 @@ fn glyph_outlines(face: &FaceRef, size: f32, glyphs: &[(u32, f32, f32)]) -> Opti
 
 /// A chart's or diagram's alt text: its own, else what it is ("chart", "diagram").
 fn graphic_alt(alt: &str, kind: GraphicKind) -> &str {
-    if alt.trim().is_empty() { kind.noun() } else { alt }
+    if alt.trim().is_empty() {
+        kind.noun()
+    } else {
+        alt
+    }
 }
 
 /// Add the segments of a kurbo path to a krilla path.
@@ -254,19 +318,27 @@ fn append_path(pb: &mut PathBuilder, path: &kurbo::BezPath) {
             kurbo::PathEl::MoveTo(p) => pb.move_to(f(p.x), f(p.y)),
             kurbo::PathEl::LineTo(p) => pb.line_to(f(p.x), f(p.y)),
             kurbo::PathEl::QuadTo(a, p) => pb.quad_to(f(a.x), f(a.y), f(p.x), f(p.y)),
-            kurbo::PathEl::CurveTo(a, b, p) => pb.cubic_to(f(a.x), f(a.y), f(b.x), f(b.y), f(p.x), f(p.y)),
+            kurbo::PathEl::CurveTo(a, b, p) => {
+                pb.cubic_to(f(a.x), f(a.y), f(b.x), f(b.y), f(p.x), f(p.y))
+            }
             kurbo::PathEl::ClosePath => pb.close(),
         }
     }
 }
 
 fn clamp_side(v: f32) -> f32 {
-    if v.is_finite() { v.clamp(3.0, MAX_SIDE) } else { 612.0 }
+    if v.is_finite() {
+        v.clamp(3.0, MAX_SIDE)
+    } else {
+        612.0
+    }
 }
 
 fn metadata(doc: &Document, opts: &PdfOptions) -> Metadata {
     let c = &doc.core;
-    let mut m = Metadata::new().creator("WordCraft".into()).producer("WordCraft".into());
+    let mut m = Metadata::new()
+        .creator("WordCraft".into())
+        .producer("WordCraft".into());
     let title = opts.title.clone().unwrap_or_else(|| c.title.clone());
     if !title.trim().is_empty() {
         m = m.title(title);
@@ -280,17 +352,35 @@ fn metadata(doc: &Document, opts: &PdfOptions) -> Metadata {
     } else if !c.description.trim().is_empty() {
         m = m.description(c.description.clone());
     }
-    let kw: Vec<String> = c.keywords.split([',', ';']).map(|k| k.trim().to_string()).filter(|k| !k.is_empty()).collect();
+    let kw: Vec<String> = c
+        .keywords
+        .split([',', ';'])
+        .map(|k| k.trim().to_string())
+        .filter(|k| !k.is_empty())
+        .collect();
     if !kw.is_empty() {
         m = m.keywords(kw);
     }
-    if let Some(lang) = doc.styles.default_chr.lang.clone().filter(|l| !l.is_empty() && l.is_ascii()) {
+    if let Some(lang) = doc
+        .styles
+        .default_chr
+        .lang
+        .clone()
+        .filter(|l| !l.is_empty() && l.is_ascii())
+    {
         m = m.language(lang);
     }
     let date = parse_iso(&c.created).or_else(|| now_unix().map(civil));
     if let Some((y, mo, d, h, mi, s)) = date {
         m = m.creation_date(
-            DateTime::new(y.clamp(0, 9999) as u16).month(mo).day(d).hour(h).minute(mi).second(s).utc_offset_hour(0).utc_offset_minute(0),
+            DateTime::new(y.clamp(0, 9999) as u16)
+                .month(mo)
+                .day(d)
+                .hour(h)
+                .minute(mi)
+                .second(s)
+                .utc_offset_hour(0)
+                .utc_offset_minute(0),
         );
     }
     m
@@ -340,15 +430,31 @@ fn civil(t: i64) -> Civil {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
-    (year, month as u8, day as u8, (secs / 3600) as u8, (secs / 60 % 60) as u8, (secs % 60) as u8)
+    (
+        year,
+        month as u8,
+        day as u8,
+        (secs / 3600) as u8,
+        (secs / 60 % 60) as u8,
+        (secs % 60) as u8,
+    )
 }
 
 fn norm(v: f32) -> NormalizedF32 {
-    NormalizedF32::new(if v.is_finite() { v.clamp(0.0, 1.0) } else { 1.0 }).unwrap_or(NormalizedF32::ONE)
+    NormalizedF32::new(if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        1.0
+    })
+    .unwrap_or(NormalizedF32::ONE)
 }
 
 fn fill(c: Rgb, alpha: f32) -> Fill {
-    Fill { paint: rgb::Color::new(c.0, c.1, c.2).into(), opacity: norm(alpha), rule: FillRule::NonZero }
+    Fill {
+        paint: rgb::Color::new(c.0, c.1, c.2).into(),
+        opacity: norm(alpha),
+        rule: FillRule::NonZero,
+    }
 }
 
 fn ok(v: f32) -> bool {
@@ -366,13 +472,30 @@ fn rect_path(r: &Rect) -> Option<Path> {
 
 /// `r` grown by `g` points on every side and moved by (`dx`, `dy`).
 fn grown(r: &Rect, g: f32, dx: f32, dy: f32) -> Rect {
-    Rect { x: r.x - g + dx, y: r.y - g + dy, w: r.w + 2.0 * g, h: r.h + 2.0 * g }
+    Rect {
+        x: r.x - g + dx,
+        y: r.y - g + dy,
+        w: r.w + 2.0 * g,
+        h: r.h + 2.0 * g,
+    }
 }
 
 /// A shape's shadow and glow, behind it: bands of its silhouette (the same approximation of a
 /// blur as the raster renderer, see [`wordcraft_doc::effects::bands`]).
-fn shape_effects(s: &mut Surface, kind: ShapeKind, rect: &Rect, fx: &wordcraft_doc::effects::ShapeEffects, filled: bool, stroked: bool, sw: f32) {
-    let sw = if sw.is_finite() { sw.clamp(0.25, 200.0) } else { 0.75 };
+fn shape_effects(
+    s: &mut Surface,
+    kind: ShapeKind,
+    rect: &Rect,
+    fx: &wordcraft_doc::effects::ShapeEffects,
+    filled: bool,
+    stroked: bool,
+    sw: f32,
+) {
+    let sw = if sw.is_finite() {
+        sw.clamp(0.25, 200.0)
+    } else {
+        0.75
+    };
     let silhouette = |s: &mut Surface, c: Rgb, a: f32, g: f32, dx: f32, dy: f32| {
         if filled {
             let grow = g + if stroked { sw / 2.0 } else { 0.0 };
@@ -385,7 +508,12 @@ fn shape_effects(s: &mut Surface, kind: ShapeKind, rect: &Rect, fx: &wordcraft_d
             && let Some(p) = shape_path(kind, &grown(rect, 0.0, dx, dy))
         {
             s.set_fill(None);
-            s.set_stroke(Some(Stroke { paint: rgb::Color::new(c.0, c.1, c.2).into(), width: sw + 2.0 * g, opacity: norm(a), ..Default::default() }));
+            s.set_stroke(Some(Stroke {
+                paint: rgb::Color::new(c.0, c.1, c.2).into(),
+                width: sw + 2.0 * g,
+                opacity: norm(a),
+                ..Default::default()
+            }));
             s.draw_path(&p);
         }
     };
@@ -433,7 +561,9 @@ fn shape_path(kind: ShapeKind, r: &Rect) -> Option<Path> {
     };
     match kind {
         // A freeform is drawn from its own paths; without them, its frame.
-        ShapeKind::Rectangle | ShapeKind::TextBox | ShapeKind::Freeform => poly(&mut pb, &[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]),
+        ShapeKind::Rectangle | ShapeKind::TextBox | ShapeKind::Freeform => {
+            poly(&mut pb, &[(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
+        }
         ShapeKind::RoundedRectangle => {
             let rad = r.w.min(r.h) * 0.16;
             let k = rad * (1.0 - K);
@@ -481,7 +611,10 @@ fn shape_path(kind: ShapeKind, r: &Rect) -> Option<Path> {
                 .map(|i| {
                     let a = std::f32::consts::PI * i as f32 / 5.0 - std::f32::consts::FRAC_PI_2;
                     let rad = if i % 2 == 0 { 1.0 } else { 0.4 };
-                    (cx + a.cos() * r.w / 2.0 * rad, cy + a.sin() * r.h / 2.0 * rad)
+                    (
+                        cx + a.cos() * r.w / 2.0 * rad,
+                        cy + a.sin() * r.h / 2.0 * rad,
+                    )
                 })
                 .collect();
             poly(&mut pb, &pts);
@@ -491,7 +624,14 @@ fn shape_path(kind: ShapeKind, r: &Rect) -> Option<Path> {
             pb.move_to(cx, y0 + h * 0.3);
             pb.cubic_to(cx, y0, x0, y0, x0, y0 + h * 0.3);
             pb.cubic_to(x0, y0 + h * 0.6, cx - w * 0.1, y0 + h * 0.75, cx, y1);
-            pb.cubic_to(cx + w * 0.1, y0 + h * 0.75, x1, y0 + h * 0.6, x1, y0 + h * 0.3);
+            pb.cubic_to(
+                cx + w * 0.1,
+                y0 + h * 0.75,
+                x1,
+                y0 + h * 0.6,
+                x1,
+                y0 + h * 0.3,
+            );
             pb.cubic_to(x1, y0, cx, y0, cx, y0 + h * 0.3);
             pb.close();
         }
@@ -550,7 +690,11 @@ impl Exporter<'_> {
             .or_insert_with(|| {
                 let data: krilla::Data = face.data().to_vec().into();
                 let font = if face.is_variable() {
-                    let coords: Vec<(krilla::text::Tag, f32)> = face.coords.iter().map(|(t, v)| (krilla::text::Tag::new(t), *v)).collect();
+                    let coords: Vec<(krilla::text::Tag, f32)> = face
+                        .coords
+                        .iter()
+                        .map(|(t, v)| (krilla::text::Tag::new(t), *v))
+                        .collect();
                     Font::new_variable(data, face.index(), &coords)
                 } else {
                     Font::new(data, face.index())
@@ -606,7 +750,13 @@ impl Exporter<'_> {
     }
 
     /// Run `f` inside a marked-content section for `role`.
-    fn tagged(&mut self, s: &mut Surface, role: Role, alt: Option<&str>, f: impl FnOnce(&mut Self, &mut Surface)) {
+    fn tagged(
+        &mut self,
+        s: &mut Surface,
+        role: Role,
+        alt: Option<&str>,
+        f: impl FnOnce(&mut Self, &mut Surface),
+    ) {
         if !self.opts.tagged {
             f(self, s);
             return;
@@ -629,9 +779,15 @@ impl Exporter<'_> {
                 let id: Identifier = s.start_tagged(ContentTag::Other);
                 f(self, s);
                 s.end_tagged();
-                let alt = alt.map(str::to_string).filter(|a| !a.is_empty()).or_else(|| Some("picture".to_string()));
+                let alt = alt
+                    .map(str::to_string)
+                    .filter(|a| !a.is_empty())
+                    .or_else(|| Some("picture".to_string()));
                 let g = TagGroup::with_children(Tag::Figure(alt), vec![Node::Leaf(id)]);
-                self.tags.push(TagEntry { kind: Tag::Div.into(), children: vec![Node::Group(g)] });
+                self.tags.push(TagEntry {
+                    kind: Tag::Div.into(),
+                    children: vec![Node::Group(g)],
+                });
             }
         }
     }
@@ -650,7 +806,9 @@ impl Exporter<'_> {
         if let Some(wm) = self.doc.settings.watermark.clone()
             && !wm.text.trim().is_empty()
         {
-            self.tagged(s, Role::Artifact(ArtifactType::Watermark), None, |me, s| me.watermark(s, &wm, w, h));
+            self.tagged(s, Role::Artifact(ArtifactType::Watermark), None, |me, s| {
+                me.watermark(s, &wm, w, h)
+            });
         }
         let dopts = DisplayOptions {
             marks: false,
@@ -671,27 +829,51 @@ impl Exporter<'_> {
         for it in &page.items {
             let draws = self.draws(page, it, &dopts);
             match it {
-                Placed::Lines { story, path, para, .. } => {
+                Placed::Lines {
+                    story, path, para, ..
+                } => {
                     let idx = self.entry(*story, path, para);
                     for d in &draws {
                         match d {
-                            Draw::Glyphs { .. } | Draw::Turned { .. } => self.tagged(s, Role::Para(idx), None, |me, s| me.draw(s, d)),
-                            Draw::Image { .. } => self.tagged(s, Role::Figure, None, |me, s| me.draw(s, d)),
+                            Draw::Glyphs { .. } | Draw::Turned { .. } => {
+                                self.tagged(s, Role::Para(idx), None, |me, s| me.draw(s, d))
+                            }
+                            Draw::Image { .. } => {
+                                self.tagged(s, Role::Figure, None, |me, s| me.draw(s, d))
+                            }
                             // A rotated inline picture.
-                            Draw::Rotated { items, .. } if items.iter().any(|i| matches!(i, Draw::Image { .. })) => {
+                            Draw::Rotated { items, .. }
+                                if items.iter().any(|i| matches!(i, Draw::Image { .. })) =>
+                            {
                                 self.tagged(s, Role::Figure, None, |me, s| me.draw(s, d))
                             }
                             // An inline chart or diagram: its text is part of the figure, not the paragraph.
-                            Draw::Figure { alt, kind, draws: inner } => self.tagged(s, Role::Figure, Some(graphic_alt(alt, *kind)), |me, s| {
-                                for d in inner {
-                                    me.draw(s, d);
-                                }
-                            }),
-                            _ => self.tagged(s, Role::Artifact(ArtifactType::Other), None, |me, s| me.draw(s, d)),
+                            Draw::Figure {
+                                alt,
+                                kind,
+                                draws: inner,
+                            } => self.tagged(
+                                s,
+                                Role::Figure,
+                                Some(graphic_alt(alt, *kind)),
+                                |me, s| {
+                                    for d in inner {
+                                        me.draw(s, d);
+                                    }
+                                },
+                            ),
+                            _ => self.tagged(
+                                s,
+                                Role::Artifact(ArtifactType::Other),
+                                None,
+                                |me, s| me.draw(s, d),
+                            ),
                         }
                     }
                 }
-                Placed::Image { story, path, off, .. } => {
+                Placed::Image {
+                    story, path, off, ..
+                } => {
                     let alt = match self.doc.para(*story, path).and_then(|p| p.object_at(*off)) {
                         Some(InlineObject::Image { alt, .. }) => alt.clone(),
                         _ => String::new(),
@@ -702,9 +884,17 @@ impl Exporter<'_> {
                         }
                     });
                 }
-                Placed::Graphic { story, path, off, graphic, .. } => {
+                Placed::Graphic {
+                    story,
+                    path,
+                    off,
+                    graphic,
+                    ..
+                } => {
                     let alt = match self.doc.para(*story, path).and_then(|p| p.object_at(*off)) {
-                        Some(InlineObject::Graphic { alt, .. }) => graphic_alt(alt, graphic.kind).to_string(),
+                        Some(InlineObject::Graphic { alt, .. }) => {
+                            graphic_alt(alt, graphic.kind).to_string()
+                        }
                         _ => graphic.kind.noun().to_string(),
                     };
                     self.tagged(s, Role::Figure, Some(&alt), |me, s| {
@@ -724,15 +914,26 @@ impl Exporter<'_> {
 
     /// Display items for one placed item.
     fn draws(&self, page: &Page, it: &Placed, dopts: &DisplayOptions) -> Vec<Draw> {
-        let one =
-            Page { w: page.w, h: page.h, section: page.section, number: page.number, items: vec![it.clone()], body: page.body, ..Default::default() };
+        let one = Page {
+            w: page.w,
+            h: page.h,
+            section: page.section,
+            number: page.number,
+            items: vec![it.clone()],
+            body: page.body,
+            ..Default::default()
+        };
         page_display(self.doc, &one, dopts)
     }
 
     /// A heading's text for bookmarks and tags: what the pages show. That leaves out what its
     /// layout `pl` left out (hidden text, resolved as laid out, so table formatting counts too) and,
     /// without markup, tracked deletions.
-    fn title_text(&self, p: &wordcraft_doc::Paragraph, pl: &wordcraft_layout::para::ParaLayout) -> String {
+    fn title_text(
+        &self,
+        p: &wordcraft_doc::Paragraph,
+        pl: &wordcraft_layout::para::ParaLayout,
+    ) -> String {
         let mut dropped = pl.left_out.clone();
         if !self.opts.include_markup {
             dropped.extend(p.deleted_ranges());
@@ -741,18 +942,40 @@ impl Exporter<'_> {
     }
 
     /// The structure entry for a paragraph (created on first sight, in reading order).
-    fn entry(&mut self, story: StoryRef, path: &DocPath, pl: &wordcraft_layout::para::ParaLayout) -> usize {
+    fn entry(
+        &mut self,
+        story: StoryRef,
+        path: &DocPath,
+        pl: &wordcraft_layout::para::ParaLayout,
+    ) -> usize {
         if let Some(i) = self.tag_index.get(&(story, path.clone())) {
             return *i;
         }
-        let kind: TagKind = match self.doc.para(story, path).map(|p| self.doc.styles.resolve_para(&p.props).outline_level) {
+        let kind: TagKind = match self
+            .doc
+            .para(story, path)
+            .map(|p| self.doc.styles.resolve_para(&p.props).outline_level)
+        {
             Some(Some(l)) if l < 6 => {
-                let title = self.doc.para(story, path).map(|p| self.title_text(p, pl).trim().chars().take(200).collect::<String>());
-                Tag::Hn(NonZeroU16::new(u16::from(l) + 1).unwrap_or(NonZeroU16::MIN), title).into()
+                let title = self.doc.para(story, path).map(|p| {
+                    self.title_text(p, pl)
+                        .trim()
+                        .chars()
+                        .take(200)
+                        .collect::<String>()
+                });
+                Tag::Hn(
+                    NonZeroU16::new(u16::from(l) + 1).unwrap_or(NonZeroU16::MIN),
+                    title,
+                )
+                .into()
             }
             _ => Tag::P.into(),
         };
-        self.tags.push(TagEntry { kind, children: Vec::new() });
+        self.tags.push(TagEntry {
+            kind,
+            children: Vec::new(),
+        });
         let i = self.tags.len() - 1;
         self.tag_index.insert((story, path.clone()), i);
         i
@@ -776,8 +999,30 @@ impl Exporter<'_> {
                     self.draw(s, d);
                 }
             }
-            Draw::Glyphs { face, size, glyphs, color, alpha, synth_bold, synth_italic, text, link, ranges } => {
-                self.glyphs(s, face, *size, glyphs, *color, *alpha, *synth_bold, *synth_italic, text, ranges);
+            Draw::Glyphs {
+                face,
+                size,
+                glyphs,
+                color,
+                alpha,
+                synth_bold,
+                synth_italic,
+                text,
+                link,
+                ranges,
+            } => {
+                self.glyphs(
+                    s,
+                    face,
+                    *size,
+                    glyphs,
+                    *color,
+                    *alpha,
+                    *synth_bold,
+                    *synth_italic,
+                    text,
+                    ranges,
+                );
                 if let Some(l) = link {
                     self.link_rect(face, *size, glyphs, l);
                 }
@@ -790,9 +1035,28 @@ impl Exporter<'_> {
                     s.set_fill(None);
                 }
             }
-            Draw::Line { x0, y0, x1, y1, width, color, stroke, alpha } => self.line(s, (*x0, *y0, *x1, *y1), *width, *color, *stroke, *alpha),
-            Draw::Image { rect, media, crop, alpha } => self.picture(s, rect, media, crop, *alpha),
-            Draw::Path { segs, fill: f, stroke, stroke_width } => {
+            Draw::Line {
+                x0,
+                y0,
+                x1,
+                y1,
+                width,
+                color,
+                stroke,
+                alpha,
+            } => self.line(s, (*x0, *y0, *x1, *y1), *width, *color, *stroke, *alpha),
+            Draw::Image {
+                rect,
+                media,
+                crop,
+                alpha,
+            } => self.picture(s, rect, media, crop, *alpha),
+            Draw::Path {
+                segs,
+                fill: f,
+                stroke,
+                stroke_width,
+            } => {
                 let mut pb = PathBuilder::new();
                 append_path(&mut pb, &wordcraft_layout::display::seg_path(segs));
                 let Some(p) = pb.finish() else { return };
@@ -800,7 +1064,11 @@ impl Exporter<'_> {
                 s.set_stroke(stroke.map(|c| Stroke {
                     paint: rgb::Color::new(c.0, c.1, c.2).into(),
                     // Width 0 (or none) is a hairline.
-                    width: if stroke_width.is_finite() && *stroke_width > 0.0 { stroke_width.clamp(0.25, 200.0) } else { 0.75 },
+                    width: if stroke_width.is_finite() && *stroke_width > 0.0 {
+                        stroke_width.clamp(0.25, 200.0)
+                    } else {
+                        0.75
+                    },
                     ..Default::default()
                 }));
                 if f.is_some() || stroke.is_some() {
@@ -809,7 +1077,12 @@ impl Exporter<'_> {
                 s.set_fill(None);
                 s.set_stroke(None);
             }
-            Draw::Ink { pts, color, width, alpha } => {
+            Draw::Ink {
+                pts,
+                color,
+                width,
+                alpha,
+            } => {
                 let mut pb = PathBuilder::new();
                 let mut used = 0usize;
                 let mut last = (0.0, 0.0);
@@ -830,7 +1103,11 @@ impl Exporter<'_> {
                 s.set_fill(None);
                 s.set_stroke(Some(Stroke {
                     paint: rgb::Color::new(color.0, color.1, color.2).into(),
-                    width: if width.is_finite() { width.clamp(0.25, 200.0) } else { 1.0 },
+                    width: if width.is_finite() {
+                        width.clamp(0.25, 200.0)
+                    } else {
+                        1.0
+                    },
                     opacity: norm(*alpha),
                     line_cap: LineCap::Round,
                     line_join: LineJoin::Round,
@@ -839,12 +1116,29 @@ impl Exporter<'_> {
                 s.draw_path(&p);
                 s.set_stroke(None);
             }
-            Draw::Shape { rect, kind, fill: f, stroke, stroke_width, effects } => {
-                let Some(p) = shape_path(*kind, rect) else { return };
+            Draw::Shape {
+                rect,
+                kind,
+                fill: f,
+                stroke,
+                stroke_width,
+                effects,
+            } => {
+                let Some(p) = shape_path(*kind, rect) else {
+                    return;
+                };
                 let can_fill = *kind != ShapeKind::Line;
                 let fx = effects.sanitized();
                 if !fx.is_empty() && (f.is_some() && can_fill || stroke.is_some()) {
-                    shape_effects(s, *kind, rect, &fx, f.is_some() && can_fill, stroke.is_some(), *stroke_width);
+                    shape_effects(
+                        s,
+                        *kind,
+                        rect,
+                        &fx,
+                        f.is_some() && can_fill,
+                        stroke.is_some(),
+                        *stroke_width,
+                    );
                 }
                 // Soft edges: the fill fades out toward the outline (which fades with it).
                 if let (Some(rad), Some(c), true) = (fx.soft_edge, f, can_fill) {
@@ -862,7 +1156,11 @@ impl Exporter<'_> {
                 s.set_fill(f.filter(|_| can_fill).map(|c| fill(c, 1.0)));
                 s.set_stroke(stroke.map(|c| Stroke {
                     paint: rgb::Color::new(c.0, c.1, c.2).into(),
-                    width: if stroke_width.is_finite() { stroke_width.clamp(0.25, 200.0) } else { 0.75 },
+                    width: if stroke_width.is_finite() {
+                        stroke_width.clamp(0.25, 200.0)
+                    } else {
+                        0.75
+                    },
                     ..Default::default()
                 }));
                 if f.is_some() && can_fill || stroke.is_some() {
@@ -871,7 +1169,12 @@ impl Exporter<'_> {
                 s.set_fill(None);
                 s.set_stroke(None);
             }
-            Draw::Art { path, fx, color, alpha } => {
+            Draw::Art {
+                path,
+                fx,
+                color,
+                alpha,
+            } => {
                 for l in wordcraft_layout::wordart::art_layers(path, fx, *color, *alpha) {
                     let mut pb = PathBuilder::new();
                     append_path(&mut pb, &l.path);
@@ -913,7 +1216,11 @@ impl Exporter<'_> {
                         }
                         None => {
                             s.set_stroke(None);
-                            s.set_fill(Some(Fill { paint, opacity: norm(opacity), rule: FillRule::NonZero }));
+                            s.set_fill(Some(Fill {
+                                paint,
+                                opacity: norm(opacity),
+                                rule: FillRule::NonZero,
+                            }));
                         }
                     }
                     s.draw_path(&p);
@@ -941,7 +1248,12 @@ impl Exporter<'_> {
                 }
                 s.pop();
             }
-            Draw::Rotated { cx, cy, spin, items } => {
+            Draw::Rotated {
+                cx,
+                cy,
+                spin,
+                items,
+            } => {
                 if !ok(*cx) || !ok(*cy) {
                     return;
                 }
@@ -955,11 +1267,23 @@ impl Exporter<'_> {
         }
     }
 
-    fn line(&mut self, s: &mut Surface, (x0, y0, x1, y1): (f32, f32, f32, f32), width: f32, c: Rgb, style: LineStyle, alpha: f32) {
+    fn line(
+        &mut self,
+        s: &mut Surface,
+        (x0, y0, x1, y1): (f32, f32, f32, f32),
+        width: f32,
+        c: Rgb,
+        style: LineStyle,
+        alpha: f32,
+    ) {
         if ![x0, y0, x1, y1].iter().all(|v| ok(*v)) {
             return;
         }
-        let w = if width.is_finite() { width.clamp(0.1, 100.0) } else { 0.5 };
+        let w = if width.is_finite() {
+            width.clamp(0.1, 100.0)
+        } else {
+            0.5
+        };
         let paint: krilla::paint::Paint = rgb::Color::new(c.0, c.1, c.2).into();
         let stroke = |width: f32, dash: Option<StrokeDash>, cap: LineCap| Stroke {
             paint: paint.clone(),
@@ -984,11 +1308,25 @@ impl Exporter<'_> {
                 seg(s, 0.0, 0.0);
             }
             LineStyle::Dotted => {
-                s.set_stroke(Some(stroke(w, Some(StrokeDash { array: vec![w, w * 2.0], offset: 0.0 }), LineCap::Butt)));
+                s.set_stroke(Some(stroke(
+                    w,
+                    Some(StrokeDash {
+                        array: vec![w, w * 2.0],
+                        offset: 0.0,
+                    }),
+                    LineCap::Butt,
+                )));
                 seg(s, 0.0, 0.0);
             }
             LineStyle::Dashed => {
-                s.set_stroke(Some(stroke(w, Some(StrokeDash { array: vec![w * 4.0, w * 2.0], offset: 0.0 }), LineCap::Butt)));
+                s.set_stroke(Some(stroke(
+                    w,
+                    Some(StrokeDash {
+                        array: vec![w * 4.0, w * 2.0],
+                        offset: 0.0,
+                    }),
+                    LineCap::Butt,
+                )));
                 seg(s, 0.0, 0.0);
             }
             LineStyle::Double => {
@@ -1036,17 +1374,28 @@ impl Exporter<'_> {
             s.set_fill(None);
             return;
         };
-        let [cl, ct, cr, cb] = crop.map(|v| if v.is_finite() { v.clamp(0.0, 0.95) } else { 0.0 });
+        let [cl, ct, cr, cb] = crop.map(|v| {
+            if v.is_finite() {
+                v.clamp(0.0, 0.95)
+            } else {
+                0.0
+            }
+        });
         let vis_w = (1.0 - cl - cr).max(0.05);
         let vis_h = (1.0 - ct - cb).max(0.05);
         let (fw, fh) = (rect.w / vis_w, rect.h / vis_h);
-        let Some(size) = Size::from_wh(fw.max(0.01), fh.max(0.01)) else { return };
+        let Some(size) = Size::from_wh(fw.max(0.01), fh.max(0.01)) else {
+            return;
+        };
         let fade = alpha < 0.999;
         if fade {
             s.push_opacity(norm(alpha));
         }
         s.push_clip_path(&clip, &FillRule::NonZero);
-        s.push_transform(&Transform::from_translate(rect.x - cl * fw, rect.y - ct * fh));
+        s.push_transform(&Transform::from_translate(
+            rect.x - cl * fw,
+            rect.y - ct * fh,
+        ));
         s.draw_image(img, size);
         s.pop();
         s.pop();
@@ -1058,7 +1407,12 @@ impl Exporter<'_> {
     /// Unicode text for each glyph: (text, per-glyph byte range). Glyphs and the run's text are
     /// aligned through the font's reverse character map (ligatures take several characters,
     /// extra glyphs share their cluster's text).
-    fn map_text(&mut self, face: &FaceRef, glyphs: &[(u32, f32, f32)], text: &str) -> (String, Vec<std::ops::Range<usize>>) {
+    fn map_text(
+        &mut self,
+        face: &FaceRef,
+        glyphs: &[(u32, f32, f32)],
+        text: &str,
+    ) -> (String, Vec<std::ops::Range<usize>>) {
         let cmap = self.cmap(face);
         let rev = |g: u32| cmap.get(&g).copied();
         if text.is_empty() {
@@ -1137,19 +1491,32 @@ impl Exporter<'_> {
         if !size.is_finite() || size <= 0.0 || size > 5000.0 {
             return;
         }
-        let Some(&(_, x0, y0)) = glyphs.first() else { return };
+        let Some(&(_, x0, y0)) = glyphs.first() else {
+            return;
+        };
         if !glyphs.iter().all(|(_, x, y)| ok(*x) && ok(*y)) {
             return;
         }
         let font = self.font(face);
         if font.is_none() && !self.outlined.contains(&face.id()) {
-            log::warn!("PDF: font {} {} could not be embedded", face.family, face.style);
+            log::warn!(
+                "PDF: font {} {} could not be embedded",
+                face.family,
+                face.style
+            );
             return;
         }
         // Layout's glyph → text mapping when it has one (right-to-left text, contextual forms and
         // ligatures can't be guessed back from the font's cmap), else a guess.
-        let valid = known.len() == glyphs.len() && known.iter().all(|r| r.start < r.end && text.get(r.clone()).is_some());
-        let (txt, ranges) = if valid { (text.to_string(), known.to_vec()) } else { self.map_text(face, glyphs, text) };
+        let valid = known.len() == glyphs.len()
+            && known
+                .iter()
+                .all(|r| r.start < r.end && text.get(r.clone()).is_some());
+        let (txt, ranges) = if valid {
+            (text.to_string(), known.to_vec())
+        } else {
+            self.map_text(face, glyphs, text)
+        };
         let upem = face.upem.max(1.0) as f32;
         let kg: Vec<KrillaGlyph> = glyphs
             .iter()
@@ -1169,7 +1536,12 @@ impl Exporter<'_> {
         }
         s.set_fill(Some(fill(color, alpha)));
         s.set_stroke(if bold {
-            Some(Stroke { paint: rgb::Color::new(color.0, color.1, color.2).into(), width: size * 0.03, opacity: norm(alpha), ..Default::default() })
+            Some(Stroke {
+                paint: rgb::Color::new(color.0, color.1, color.2).into(),
+                width: size * 0.03,
+                opacity: norm(alpha),
+                ..Default::default()
+            })
         } else {
             None
         });
@@ -1191,7 +1563,9 @@ impl Exporter<'_> {
     }
 
     fn link_rect(&mut self, face: &FaceRef, size: f32, glyphs: &[(u32, f32, f32)], link: &str) {
-        let (Some(first), Some(last)) = (glyphs.first(), glyphs.last()) else { return };
+        let (Some(first), Some(last)) = (glyphs.first(), glyphs.last()) else {
+            return;
+        };
         let adv = face.advance(last.0) as f32 * size / face.upem.max(1.0) as f32;
         let (x0, x1) = (first.1.min(last.1), first.1.max(last.1) + adv);
         let (y0, y1) = (first.2 - size * 0.85, first.2 + size * 0.25);
@@ -1234,10 +1608,12 @@ impl Exporter<'_> {
                 .into_iter()
                 .flatten()
                 .filter(|(pi, _)| *pi == c.page)
-                .find_map(|(pi, ii)| match self.lay.pages.get(*pi).and_then(|p| p.items.get(*ii)) {
-                    Some(Placed::Lines { x, .. }) => Some(*x),
-                    _ => None,
-                })
+                .find_map(
+                    |(pi, ii)| match self.lay.pages.get(*pi).and_then(|p| p.items.get(*ii)) {
+                        Some(Placed::Lines { x, .. }) => Some(*x),
+                        _ => None,
+                    },
+                )
                 .unwrap_or(c.x);
             return Some((*out, x, c.top));
         }
@@ -1248,8 +1624,12 @@ impl Exporter<'_> {
     fn locate(&self, story: StoryRef, path: &DocPath) -> Option<(usize, f32, f32)> {
         let places = self.lay.index.get(&(story, path.clone()))?;
         for (pi, ii) in places {
-            let Some(out) = self.out_index.get(pi) else { continue };
-            let Some(page) = self.lay.pages.get(*pi) else { continue };
+            let Some(out) = self.out_index.get(pi) else {
+                continue;
+            };
+            let Some(page) = self.lay.pages.get(*pi) else {
+                continue;
+            };
             let (x, y) = match page.items.get(*ii) {
                 Some(Placed::Lines { x, y, .. }) => Fit::of(page).point(*x, *y),
                 _ => (0.0, 0.0),
@@ -1263,10 +1643,14 @@ impl Exporter<'_> {
         let mut v = Vec::new();
         for (x0, y0, x1, y1, target) in &self.links {
             let ((x0, y0), (x1, y1)) = (fit.point(*x0, *y0), fit.point(*x1, *y1));
-            let Some(rect) = krilla::geom::Rect::from_ltrb(x0, y0, x1, y1) else { continue };
+            let Some(rect) = krilla::geom::Rect::from_ltrb(x0, y0, x1, y1) else {
+                continue;
+            };
             let t = if let Some(name) = target.strip_prefix('#') {
                 match self.bookmark(name) {
-                    Some((page, x, y)) => Target::Destination(XyzDestination::new(page, Point::from_xy(x, y)).into()),
+                    Some((page, x, y)) => {
+                        Target::Destination(XyzDestination::new(page, Point::from_xy(x, y)).into())
+                    }
                     None => continue,
                 }
             } else {
@@ -1276,7 +1660,10 @@ impl Exporter<'_> {
                 }
                 Target::Action(Action::Link(LinkAction::new(url.to_string())))
             };
-            v.push(Annotation::new_link(LinkAnnotation::new(rect, t), Some(target.clone())));
+            v.push(Annotation::new_link(
+                LinkAnnotation::new(rect, t),
+                Some(target.clone()),
+            ));
         }
         v
     }
@@ -1285,12 +1672,36 @@ impl Exporter<'_> {
     fn outline(&self, pages: &[usize]) -> Option<Outline> {
         let mut flat: Vec<(u8, String, usize, f32, f32)> = Vec::new();
         for (out, pi) in pages.iter().enumerate() {
-            let Some(page) = self.lay.pages.get(*pi) else { continue };
+            let Some(page) = self.lay.pages.get(*pi) else {
+                continue;
+            };
             for it in &page.items {
-                let Placed::Lines { story: StoryRef::Body, path, para, l0: 0, x, y, .. } = it else { continue };
-                let Some(p) = self.doc.para(StoryRef::Body, path) else { continue };
-                let Some(level) = self.doc.styles.resolve_para(&p.props).outline_level else { continue };
-                let title: String = self.title_text(p, para).split_whitespace().collect::<Vec<_>>().join(" ").chars().take(200).collect();
+                let Placed::Lines {
+                    story: StoryRef::Body,
+                    path,
+                    para,
+                    l0: 0,
+                    x,
+                    y,
+                    ..
+                } = it
+                else {
+                    continue;
+                };
+                let Some(p) = self.doc.para(StoryRef::Body, path) else {
+                    continue;
+                };
+                let Some(level) = self.doc.styles.resolve_para(&p.props).outline_level else {
+                    continue;
+                };
+                let title: String = self
+                    .title_text(p, para)
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .chars()
+                    .take(200)
+                    .collect();
                 if title.is_empty() {
                     continue;
                 }
@@ -1301,14 +1712,21 @@ impl Exporter<'_> {
         if flat.is_empty() {
             return None;
         }
-        fn build(flat: &[(u8, String, usize, f32, f32)], i: &mut usize, level: u8) -> Vec<OutlineNode> {
+        fn build(
+            flat: &[(u8, String, usize, f32, f32)],
+            i: &mut usize,
+            level: u8,
+        ) -> Vec<OutlineNode> {
             let mut out = Vec::new();
             while let Some((l, title, page, x, y)) = flat.get(*i) {
                 if *l < level {
                     break;
                 }
                 *i += 1;
-                let mut node = OutlineNode::new(title.clone(), XyzDestination::new(*page, Point::from_xy(*x, *y)));
+                let mut node = OutlineNode::new(
+                    title.clone(),
+                    XyzDestination::new(*page, Point::from_xy(*x, *y)),
+                );
                 // Children: following entries with a deeper level.
                 if flat.get(*i).is_some_and(|n| n.0 > *l) {
                     for c in build(flat, i, l + 1) {
@@ -1344,9 +1762,17 @@ impl Exporter<'_> {
             return;
         }
         let hh = h.min(2000.0);
-        let diag = if wm.diagonal { (w * w + hh * hh).sqrt() } else { w };
+        let diag = if wm.diagonal {
+            (w * w + hh * hh).sqrt()
+        } else {
+            w
+        };
         let size = (diag * 0.7 / raw_w).min(300.0);
-        let angle = if wm.diagonal { -(hh / w.max(1.0)).atan() } else { 0.0 };
+        let angle = if wm.diagonal {
+            -(hh / w.max(1.0)).atan()
+        } else {
+            0.0
+        };
         let (c, sn) = (angle.cos(), angle.sin());
         let (dx, dy) = (-raw_w * size / 2.0, size * 0.35);
         let (cx, cy) = (w / 2.0, hh / 2.0);
@@ -1358,7 +1784,12 @@ impl Exporter<'_> {
             .iter()
             .enumerate()
             .map(|(i, g)| {
-                let end = shaped.iter().skip(i + 1).map(|n| n.cluster).find(|cl| *cl > g.cluster).unwrap_or(text.len());
+                let end = shaped
+                    .iter()
+                    .skip(i + 1)
+                    .map(|n| n.cluster)
+                    .find(|cl| *cl > g.cluster)
+                    .unwrap_or(text.len());
                 let start = g.cluster.min(end);
                 KrillaGlyph::new(
                     GlyphId::new(g.gid),
@@ -1371,9 +1802,19 @@ impl Exporter<'_> {
                 )
             })
             .collect();
-        s.push_transform(&Transform::from_row(c, sn, -sn, c, c * dx - sn * dy + cx, sn * dx + c * dy + cy));
+        s.push_transform(&Transform::from_row(
+            c,
+            sn,
+            -sn,
+            c,
+            c * dx - sn * dy + cx,
+            sn * dx + c * dy + cy,
+        ));
         s.set_stroke(None);
-        s.set_fill(Some(fill(wm.color, if wm.semitransparent { 0.5 } else { 1.0 })));
+        s.set_fill(Some(fill(
+            wm.color,
+            if wm.semitransparent { 0.5 } else { 1.0 },
+        )));
         match font {
             Some(font) => {
                 s.draw_glyphs(Point::from_xy(0.0, 0.0), &glyphs, font, &text, size, false);
@@ -1409,13 +1850,23 @@ fn build_vector(bytes: &[u8]) -> Option<Vector> {
     if !pic.has_size() {
         return None;
     }
-    let images = pic.items.iter_mut().map(|it| it.take_pixels().map(|(w, h, px)| Image::from_rgba8(px, w, h))).collect();
+    let images = pic
+        .items
+        .iter_mut()
+        .map(|it| {
+            it.take_pixels()
+                .map(|(w, h, px)| Image::from_rgba8(px, w, h))
+        })
+        .collect();
     Some(Vector { pic, images })
 }
 
 /// A straight RGBA colour as a krilla colour and opacity.
 fn paint_of(c: [u8; 4]) -> (rgb::Color, NormalizedF32) {
-    (rgb::Color::new(c[0], c[1], c[2]), norm(f32::from(c[3]) / 255.0))
+    (
+        rgb::Color::new(c[0], c[1], c[2]),
+        norm(f32::from(c[3]) / 255.0),
+    )
 }
 
 /// Narrowest metafile stroke in points. Cosmetic (width 0) pens get it rather than PDF's 0-width
@@ -1427,7 +1878,12 @@ const HAIRLINE: f64 = 0.25;
 /// space (strokes keep their width under non-uniform scaling), bitmaps stretched, all faded by `alpha`.
 /// Every path sets its fill and stroke, so none carries over; strokes have round caps and joins.
 fn vector_picture(s: &mut Surface, v: &Vector, r: &Rect, crop: &[f32; 4], clip: &Path, alpha: f32) {
-    let target = kurbo::Rect::new(f64::from(r.x), f64::from(r.y), f64::from(r.x + r.w), f64::from(r.y + r.h));
+    let target = kurbo::Rect::new(
+        f64::from(r.x),
+        f64::from(r.y),
+        f64::from(r.x + r.w),
+        f64::from(r.y + r.h),
+    );
     let fade = alpha < 0.999;
     if fade {
         s.push_opacity(norm(alpha));
@@ -1435,12 +1891,25 @@ fn vector_picture(s: &mut Surface, v: &Vector, r: &Rect, crop: &[f32; 4], clip: 
     s.push_clip_path(clip, &FillRule::NonZero);
     for it in v.pic.place(target, *crop) {
         match it {
-            PlacedItem::Path { path, fill, stroke, even_odd } => {
+            PlacedItem::Path {
+                path,
+                fill,
+                stroke,
+                even_odd,
+            } => {
                 let Some(p) = path_from(&path) else { continue };
                 let fill = fill.map(|c| {
                     let (paint, opacity) = paint_of(c);
-                    let rule = if even_odd { FillRule::EvenOdd } else { FillRule::NonZero };
-                    Fill { paint: paint.into(), opacity, rule }
+                    let rule = if even_odd {
+                        FillRule::EvenOdd
+                    } else {
+                        FillRule::NonZero
+                    };
+                    Fill {
+                        paint: paint.into(),
+                        opacity,
+                        rule,
+                    }
                 });
                 let stroke = stroke.map(|(c, w)| {
                     let (paint, opacity) = paint_of(c);
@@ -1458,8 +1927,12 @@ fn vector_picture(s: &mut Surface, v: &Vector, r: &Rect, crop: &[f32; 4], clip: 
                 s.draw_path(&p);
             }
             PlacedItem::Bitmap { index, rect } => {
-                let Some(Some(img)) = v.images.get(index) else { continue };
-                let Some(size) = Size::from_wh(rect.width() as f32, rect.height() as f32) else { continue };
+                let Some(Some(img)) = v.images.get(index) else {
+                    continue;
+                };
+                let Some(size) = Size::from_wh(rect.width() as f32, rect.height() as f32) else {
+                    continue;
+                };
                 s.push_transform(&Transform::from_translate(rect.x0 as f32, rect.y0 as f32));
                 s.draw_image(img.clone(), size);
                 s.pop();
@@ -1492,7 +1965,9 @@ fn load_image(data: &Arc<Vec<u8>>) -> Option<Image> {
     if w == 0 || h == 0 || w > MAX_IMAGE_SIDE || h > MAX_IMAGE_SIDE {
         return None;
     }
-    if fmt == image::ImageFormat::Jpeg && matches!(dec.color(), image::ColorType::L8 | image::ColorType::Rgb8) {
+    if fmt == image::ImageFormat::Jpeg
+        && matches!(dec.color(), image::ColorType::L8 | image::ColorType::Rgb8)
+    {
         return Image::from_jpeg(data.clone().into(), true).ok();
     }
     Some(Image::from_rgba8(dec.to_rgba8().into_raw(), w, h))

@@ -26,8 +26,10 @@ pub fn mcp_schema_to_toolcall_schema(raw: &JsonValue) -> JsonSchema {
     // Fallback parser if custom keywords or unconventional structure defeated direct serde:
     match raw {
         JsonValue::Object(map) => {
-            let description =
-                map.get("description").and_then(JsonValue::as_str).map(ToOwned::to_owned);
+            let description = map
+                .get("description")
+                .and_then(JsonValue::as_str)
+                .map(ToOwned::to_owned);
 
             let schema_type = map
                 .get("type")
@@ -36,10 +38,10 @@ pub fn mcp_schema_to_toolcall_schema(raw: &JsonValue) -> JsonSchema {
                     Some("number") => Some(JsonSchemaType::Single(JsonSchemaPrimitiveType::Number)),
                     Some("integer") => {
                         Some(JsonSchemaType::Single(JsonSchemaPrimitiveType::Integer))
-                    },
+                    }
                     Some("boolean") => {
                         Some(JsonSchemaType::Single(JsonSchemaPrimitiveType::Boolean))
-                    },
+                    }
                     Some("array") => Some(JsonSchemaType::Single(JsonSchemaPrimitiveType::Array)),
                     Some("object") => Some(JsonSchemaType::Single(JsonSchemaPrimitiveType::Object)),
                     Some("null") => Some(JsonSchemaType::Single(JsonSchemaPrimitiveType::Null)),
@@ -53,29 +55,42 @@ pub fn mcp_schema_to_toolcall_schema(raw: &JsonValue) -> JsonSchema {
                     }
                 });
 
-            let properties = map.get("properties").and_then(JsonValue::as_object).map(|props| {
-                let mut btree = BTreeMap::new();
-                for (k, v) in props {
-                    btree.insert(k.clone(), mcp_schema_to_toolcall_schema(v));
-                }
-                btree
-            });
+            let properties = map
+                .get("properties")
+                .and_then(JsonValue::as_object)
+                .map(|props| {
+                    let mut btree = BTreeMap::new();
+                    for (k, v) in props {
+                        btree.insert(k.clone(), mcp_schema_to_toolcall_schema(v));
+                    }
+                    btree
+                });
 
-            let required = map.get("required").and_then(JsonValue::as_array).map(|arr| {
-                arr.iter().filter_map(JsonValue::as_str).map(ToOwned::to_owned).collect()
-            });
+            let required = map
+                .get("required")
+                .and_then(JsonValue::as_array)
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(JsonValue::as_str)
+                        .map(ToOwned::to_owned)
+                        .collect()
+                });
 
             let additional_properties = map.get("additionalProperties").and_then(|v| {
                 if let Some(b) = v.as_bool() {
                     Some(AdditionalProperties::Boolean(b))
                 } else if v.is_object() {
-                    Some(AdditionalProperties::Schema(Box::new(mcp_schema_to_toolcall_schema(v))))
+                    Some(AdditionalProperties::Schema(Box::new(
+                        mcp_schema_to_toolcall_schema(v),
+                    )))
                 } else {
                     None
                 }
             });
 
-            let items = map.get("items").map(|it| Box::new(mcp_schema_to_toolcall_schema(it)));
+            let items = map
+                .get("items")
+                .map(|it| Box::new(mcp_schema_to_toolcall_schema(it)));
 
             JsonSchema {
                 schema_ref: None,
@@ -90,8 +105,12 @@ pub fn mcp_schema_to_toolcall_schema(raw: &JsonValue) -> JsonSchema {
                 defs: None,
                 definitions: None,
             }
-        },
-        _ => JsonSchema::object(BTreeMap::new(), None, Some(AdditionalProperties::Boolean(true))),
+        }
+        _ => JsonSchema::object(
+            BTreeMap::new(),
+            None,
+            Some(AdditionalProperties::Boolean(true)),
+        ),
     }
 }
 

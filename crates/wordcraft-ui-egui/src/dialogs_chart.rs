@@ -26,7 +26,10 @@ impl ChartTypeForm {
         if change && current.is_none() {
             return None;
         }
-        Some(ChartTypeForm { kind: current.map(|c| c.kind).unwrap_or_default(), change })
+        Some(ChartTypeForm {
+            kind: current.map(|c| c.kind).unwrap_or_default(),
+            change,
+        })
     }
 }
 
@@ -49,9 +52,26 @@ impl ChartDataForm {
 
     pub fn of(c: &ChartSpec) -> ChartDataForm {
         let cells = (0..c.points())
-            .map(|i| c.series.iter().map(|s| s.values.get(i).copied().flatten().map(|v| format!("{v}")).unwrap_or_default()).collect())
+            .map(|i| {
+                c.series
+                    .iter()
+                    .map(|s| {
+                        s.values
+                            .get(i)
+                            .copied()
+                            .flatten()
+                            .map(|v| format!("{v}"))
+                            .unwrap_or_default()
+                    })
+                    .collect()
+            })
             .collect();
-        ChartDataForm { categories: c.categories.clone(), names: c.series.iter().map(|s| s.name.clone()).collect(), cells, message: String::new() }
+        ChartDataForm {
+            categories: c.categories.clone(),
+            names: c.series.iter().map(|s| s.name.clone()).collect(),
+            cells,
+            message: String::new(),
+        }
     }
 
     /// The `chart.editData` params, or the first cell that isn't a number.
@@ -66,10 +86,20 @@ impl ChartDataForm {
                     continue;
                 }
                 // A decimal comma is read as a point.
-                match t.parse::<f64>().or_else(|_| t.replace(',', ".").parse::<f64>()).ok().filter(|v| v.is_finite()) {
+                match t
+                    .parse::<f64>()
+                    .or_else(|_| t.replace(',', ".").parse::<f64>())
+                    .ok()
+                    .filter(|v| v.is_finite())
+                {
                     Some(v) => values.push(json!(v)),
                     None => {
-                        let at = self.categories.get(i).filter(|c| !c.is_empty()).cloned().unwrap_or_else(|| (i + 1).to_string());
+                        let at = self
+                            .categories
+                            .get(i)
+                            .filter(|c| !c.is_empty())
+                            .cloned()
+                            .unwrap_or_else(|| (i + 1).to_string());
                         return Err(crate::i18n::fmt(
                             tl!("“{text}” ({row}, {series}) isn't a number."),
                             &[("text", t), ("row", &at), ("series", name)],
@@ -84,14 +114,20 @@ impl ChartDataForm {
 
     fn add_row(&mut self) {
         if self.categories.len() < MAX_POINTS {
-            self.categories.push(crate::i18n::fmt(tl!("Category {n}"), &[("n", &(self.categories.len() + 1).to_string())]));
+            self.categories.push(crate::i18n::fmt(
+                tl!("Category {n}"),
+                &[("n", &(self.categories.len() + 1).to_string())],
+            ));
             self.cells.push(vec![String::new(); self.names.len()]);
         }
     }
 
     fn add_series(&mut self) {
         if self.names.len() < MAX_SERIES {
-            self.names.push(crate::i18n::fmt(tl!("Series {n}"), &[("n", &(self.names.len() + 1).to_string())]));
+            self.names.push(crate::i18n::fmt(
+                tl!("Series {n}"),
+                &[("n", &(self.names.len() + 1).to_string())],
+            ));
             for r in &mut self.cells {
                 r.push(String::new());
             }
@@ -103,16 +139,26 @@ impl ChartDataForm {
 fn accents(app: &WordApp) -> [Color32; 3] {
     let t = &app.session.doc.settings.theme_colors;
     let at = |i: usize, d: Color32| t.get(i).map(|c| c32(*c)).unwrap_or(d);
-    [at(4, Color32::from_rgb(0x15, 0x60, 0x82)), at(5, Color32::from_rgb(0xE9, 0x71, 0x32)), at(6, Color32::from_rgb(0x19, 0x6B, 0x24))]
+    [
+        at(4, Color32::from_rgb(0x15, 0x60, 0x82)),
+        at(5, Color32::from_rgb(0xE9, 0x71, 0x32)),
+        at(6, Color32::from_rgb(0x19, 0x6B, 0x24)),
+    ]
 }
 
 /// A small picture of a chart type in `r`, in the accents `col` with axis lines in `line`.
 pub fn preview(p: &egui::Painter, r: Rect, kind: ChartType, col: [Color32; 3], line: Color32) {
     let r = r.shrink(r.width().min(r.height()) * 0.12);
     let at = |x: f32, y: f32| pos2(r.left() + x * r.width(), r.top() + y * r.height());
-    let bar = |x0: f32, y0: f32, x1: f32, y1: f32, c: Color32| p.rect_filled(Rect::from_min_max(at(x0, y0), at(x1, y1)), 0.0, c);
+    let bar = |x0: f32, y0: f32, x1: f32, y1: f32, c: Color32| {
+        p.rect_filled(Rect::from_min_max(at(x0, y0), at(x1, y1)), 0.0, c)
+    };
     let axis = Stroke::new(1.0, line);
-    let data: [[f32; 4]; 3] = [[0.45, 0.6, 0.5, 0.8], [0.3, 0.4, 0.65, 0.5], [0.2, 0.3, 0.35, 0.6]];
+    let data: [[f32; 4]; 3] = [
+        [0.45, 0.6, 0.5, 0.8],
+        [0.3, 0.4, 0.65, 0.5],
+        [0.2, 0.3, 0.35, 0.6],
+    ];
     match kind {
         ChartType::Column | ChartType::ColumnStacked | ChartType::Bar | ChartType::BarStacked => {
             let stacked = matches!(kind, ChartType::ColumnStacked | ChartType::BarStacked);
@@ -121,9 +167,16 @@ pub fn preview(p: &egui::Painter, r: Rect, kind: ChartType, col: [Color32; 3], l
                 let band = (i as f32) / 3.0;
                 let mut base = 0.0;
                 for (j, c) in col.iter().enumerate() {
-                    let v = data.get(j).and_then(|d| d.get(i)).copied().unwrap_or(0.5) * if stacked { 0.4 } else { 1.0 };
-                    let (a0, a1) =
-                        if stacked { (band + 0.06, band + 0.27) } else { (band + 0.04 + j as f32 * 0.085, band + 0.04 + (j + 1) as f32 * 0.085) };
+                    let v = data.get(j).and_then(|d| d.get(i)).copied().unwrap_or(0.5)
+                        * if stacked { 0.4 } else { 1.0 };
+                    let (a0, a1) = if stacked {
+                        (band + 0.06, band + 0.27)
+                    } else {
+                        (
+                            band + 0.04 + j as f32 * 0.085,
+                            band + 0.04 + (j + 1) as f32 * 0.085,
+                        )
+                    };
                     if horizontal {
                         bar(base, 1.0 - a1, base + v, 1.0 - a0, *c);
                     } else {
@@ -143,12 +196,20 @@ pub fn preview(p: &egui::Painter, r: Rect, kind: ChartType, col: [Color32; 3], l
         ChartType::Line | ChartType::Area => {
             for (j, c) in col.iter().enumerate().take(2) {
                 let Some(d) = data.get(j) else { continue };
-                let pts: Vec<Pos2> = d.iter().enumerate().map(|(i, v)| at(i as f32 / 3.0, 1.0 - v)).collect();
+                let pts: Vec<Pos2> = d
+                    .iter()
+                    .enumerate()
+                    .map(|(i, v)| at(i as f32 / 3.0, 1.0 - v))
+                    .collect();
                 if kind == ChartType::Area {
                     // Convex strips between neighbouring points.
                     for w in pts.windows(2) {
                         if let [a, b] = w {
-                            p.add(Shape::convex_polygon(vec![*a, *b, pos2(b.x, r.bottom()), pos2(a.x, r.bottom())], *c, Stroke::NONE));
+                            p.add(Shape::convex_polygon(
+                                vec![*a, *b, pos2(b.x, r.bottom()), pos2(a.x, r.bottom())],
+                                *c,
+                                Stroke::NONE,
+                            ));
                         }
                     }
                 } else {
@@ -171,7 +232,11 @@ pub fn preview(p: &egui::Painter, r: Rect, kind: ChartType, col: [Color32; 3], l
                     pts.push(c + vec2(t.cos(), t.sin()) * rad);
                 }
                 // Each slice is under half a turn, so its fan is convex.
-                p.add(Shape::convex_polygon(pts, col.get(k).copied().unwrap_or(line), Stroke::NONE));
+                p.add(Shape::convex_polygon(
+                    pts,
+                    col.get(k).copied().unwrap_or(line),
+                    Stroke::NONE,
+                ));
                 a = b;
             }
             if kind == ChartType::Doughnut {
@@ -182,7 +247,8 @@ pub fn preview(p: &egui::Painter, r: Rect, kind: ChartType, col: [Color32; 3], l
             for (j, c) in col.iter().enumerate().take(2) {
                 for i in 0..5 {
                     let x = 0.08 + i as f32 * 0.2;
-                    let y = 0.85 - (i as f32 * 0.15) - j as f32 * 0.2 + if i % 2 == 0 { 0.05 } else { -0.05 };
+                    let y = 0.85 - (i as f32 * 0.15) - j as f32 * 0.2
+                        + if i % 2 == 0 { 0.05 } else { -0.05 };
                     p.circle_filled(at(x, y.clamp(0.05, 0.95)), 2.5, *c);
                 }
             }
@@ -197,47 +263,55 @@ pub fn type_ui(app: &mut WordApp, ui: &mut Ui, f: &mut ChartTypeForm) -> bool {
     let t = Tokens::get(ui.ctx());
     let col = accents(app);
     let mut chosen = None;
-    egui::Grid::new("chart_types").spacing(vec2(8.0, 8.0)).show(ui, |ui| {
-        for (k, kind) in ChartType::ALL.into_iter().enumerate() {
-            let (rect, resp) = ui.allocate_exact_size(vec2(112.0, 92.0), Sense::click());
-            let on = f.kind == kind;
-            ui.painter().rect(
-                rect,
-                4.0,
-                if on {
-                    t.checked
-                } else if resp.hovered() {
-                    t.hover
-                } else {
-                    t.input
-                },
-                Stroke::new(1.0, if on { t.accent } else { t.border }),
-                egui::StrokeKind::Inside,
-            );
-            let pic = Rect::from_min_size(rect.min + vec2(18.0, 6.0), vec2(76.0, 60.0));
-            preview(ui.painter(), pic, kind, col, t.text_dim);
-            ui.painter().text(
-                pos2(rect.center().x, rect.bottom() - 13.0),
-                egui::Align2::CENTER_CENTER,
-                tl!(kind.label()),
-                crate::theme::regular(11.0),
-                t.text,
-            );
-            let resp = resp.on_hover_text(tl!(kind.label()));
-            if resp.clicked() {
-                f.kind = kind;
+    egui::Grid::new("chart_types")
+        .spacing(vec2(8.0, 8.0))
+        .show(ui, |ui| {
+            for (k, kind) in ChartType::ALL.into_iter().enumerate() {
+                let (rect, resp) = ui.allocate_exact_size(vec2(112.0, 92.0), Sense::click());
+                let on = f.kind == kind;
+                ui.painter().rect(
+                    rect,
+                    4.0,
+                    if on {
+                        t.checked
+                    } else if resp.hovered() {
+                        t.hover
+                    } else {
+                        t.input
+                    },
+                    Stroke::new(1.0, if on { t.accent } else { t.border }),
+                    egui::StrokeKind::Inside,
+                );
+                let pic = Rect::from_min_size(rect.min + vec2(18.0, 6.0), vec2(76.0, 60.0));
+                preview(ui.painter(), pic, kind, col, t.text_dim);
+                ui.painter().text(
+                    pos2(rect.center().x, rect.bottom() - 13.0),
+                    egui::Align2::CENTER_CENTER,
+                    tl!(kind.label()),
+                    crate::theme::regular(11.0),
+                    t.text,
+                );
+                let resp = resp.on_hover_text(tl!(kind.label()));
+                if resp.clicked() {
+                    f.kind = kind;
+                }
+                if resp.double_clicked() {
+                    chosen = Some(kind);
+                }
+                if k % 3 == 2 {
+                    ui.end_row();
+                }
             }
-            if resp.double_clicked() {
-                chosen = Some(kind);
-            }
-            if k % 3 == 2 {
-                ui.end_row();
-            }
-        }
-    });
+        });
     let (ok, cancel) = crate::dialogs::buttons(ui, tl!("OK"));
-    let Some(kind) = chosen.or(ok.then_some(f.kind)) else { return cancel };
-    let r = if f.change { app.run("chart.type", json!({"type": kind.id()})) } else { app.run("insert.chart", json!({"type": kind.id()})) };
+    let Some(kind) = chosen.or(ok.then_some(f.kind)) else {
+        return cancel;
+    };
+    let r = if f.change {
+        app.run("chart.type", json!({"type": kind.id()}))
+    } else {
+        app.run("insert.chart", json!({"type": kind.id()}))
+    };
     r.is_ok() || cancel
 }
 
@@ -249,53 +323,81 @@ pub fn data_ui(app: &mut WordApp, ui: &mut Ui, f: &mut ChartDataForm) -> bool {
     let gap = ui.spacing().item_spacing.x;
     let table_w = (f.names.len() as f32 + 1.0) * (CELL_W + X_W + 2.0 * gap) + 16.0;
     ui.set_min_width(table_w.clamp(360.0, 760.0));
-    ui.label(tl!("Type the categories down the side and a column of values per series."));
+    ui.label(tl!(
+        "Type the categories down the side and a column of values per series."
+    ));
     ui.add_space(6.0);
     let mut remove_series = None;
     let mut remove_row = None;
     let (can_remove_series, can_remove_row) = (f.names.len() > 1, f.categories.len() > 1);
-    egui::ScrollArea::horizontal().id_salt("chart_data_h").max_width(760.0).show(ui, |ui| {
-        ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                ui.add_sized([CELL_W, ROW_H - 4.0], egui::Label::new(egui::RichText::new(tl!("Categories")).strong()));
-                ui.allocate_exact_size(vec2(X_W, ROW_H - 4.0), Sense::hover());
-                for (j, n) in f.names.iter_mut().enumerate() {
-                    ui.add_sized([CELL_W, ROW_H - 4.0], egui::TextEdit::singleline(n).hint_text(tl!("Series name")));
-                    let x = ui
-                        .add_enabled_ui(can_remove_series, |ui| ui.add_sized([X_W, ROW_H - 4.0], egui::Button::new("×")))
-                        .inner
-                        .on_hover_text(tl!("Remove series"));
-                    if x.clicked() {
-                        remove_series = Some(j);
-                    }
-                }
-            });
-            ui.separator();
-            let rows = f.categories.len();
-            egui::ScrollArea::vertical().id_salt("chart_data_v").max_height(280.0).show_rows(ui, ROW_H, rows, |ui, range| {
-                for i in range {
-                    ui.horizontal(|ui| {
-                        if let Some(c) = f.categories.get_mut(i) {
-                            ui.add_sized([CELL_W, ROW_H - 4.0], egui::TextEdit::singleline(c));
-                        }
+    egui::ScrollArea::horizontal()
+        .id_salt("chart_data_h")
+        .max_width(760.0)
+        .show(ui, |ui| {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add_sized(
+                        [CELL_W, ROW_H - 4.0],
+                        egui::Label::new(egui::RichText::new(tl!("Categories")).strong()),
+                    );
+                    ui.allocate_exact_size(vec2(X_W, ROW_H - 4.0), Sense::hover());
+                    for (j, n) in f.names.iter_mut().enumerate() {
+                        ui.add_sized(
+                            [CELL_W, ROW_H - 4.0],
+                            egui::TextEdit::singleline(n).hint_text(tl!("Series name")),
+                        );
                         let x = ui
-                            .add_enabled_ui(can_remove_row, |ui| ui.add_sized([X_W, ROW_H - 4.0], egui::Button::new("×")))
+                            .add_enabled_ui(can_remove_series, |ui| {
+                                ui.add_sized([X_W, ROW_H - 4.0], egui::Button::new("×"))
+                            })
                             .inner
-                            .on_hover_text(tl!("Remove row"));
+                            .on_hover_text(tl!("Remove series"));
                         if x.clicked() {
-                            remove_row = Some(i);
+                            remove_series = Some(j);
                         }
-                        if let Some(row) = f.cells.get_mut(i) {
-                            for cell in row.iter_mut() {
-                                ui.add_sized([CELL_W, ROW_H - 4.0], egui::TextEdit::singleline(cell).horizontal_align(egui::Align::Max));
-                                ui.allocate_exact_size(vec2(X_W, ROW_H - 4.0), Sense::hover());
-                            }
+                    }
+                });
+                ui.separator();
+                let rows = f.categories.len();
+                egui::ScrollArea::vertical()
+                    .id_salt("chart_data_v")
+                    .max_height(280.0)
+                    .show_rows(ui, ROW_H, rows, |ui, range| {
+                        for i in range {
+                            ui.horizontal(|ui| {
+                                if let Some(c) = f.categories.get_mut(i) {
+                                    ui.add_sized(
+                                        [CELL_W, ROW_H - 4.0],
+                                        egui::TextEdit::singleline(c),
+                                    );
+                                }
+                                let x = ui
+                                    .add_enabled_ui(can_remove_row, |ui| {
+                                        ui.add_sized([X_W, ROW_H - 4.0], egui::Button::new("×"))
+                                    })
+                                    .inner
+                                    .on_hover_text(tl!("Remove row"));
+                                if x.clicked() {
+                                    remove_row = Some(i);
+                                }
+                                if let Some(row) = f.cells.get_mut(i) {
+                                    for cell in row.iter_mut() {
+                                        ui.add_sized(
+                                            [CELL_W, ROW_H - 4.0],
+                                            egui::TextEdit::singleline(cell)
+                                                .horizontal_align(egui::Align::Max),
+                                        );
+                                        ui.allocate_exact_size(
+                                            vec2(X_W, ROW_H - 4.0),
+                                            Sense::hover(),
+                                        );
+                                    }
+                                }
+                            });
                         }
                     });
-                }
             });
         });
-    });
     if let Some(j) = remove_series.filter(|_| f.names.len() > 1) {
         if j < f.names.len() {
             f.names.remove(j);
@@ -313,10 +415,22 @@ pub fn data_ui(app: &mut WordApp, ui: &mut Ui, f: &mut ChartDataForm) -> bool {
         }
     }
     ui.horizontal(|ui| {
-        if ui.add_enabled(f.categories.len() < MAX_POINTS, egui::Button::new(tl!("Add Row"))).clicked() {
+        if ui
+            .add_enabled(
+                f.categories.len() < MAX_POINTS,
+                egui::Button::new(tl!("Add Row")),
+            )
+            .clicked()
+        {
             f.add_row();
         }
-        if ui.add_enabled(f.names.len() < MAX_SERIES, egui::Button::new(tl!("Add Series"))).clicked() {
+        if ui
+            .add_enabled(
+                f.names.len() < MAX_SERIES,
+                egui::Button::new(tl!("Add Series")),
+            )
+            .clicked()
+        {
             f.add_series();
         }
     });

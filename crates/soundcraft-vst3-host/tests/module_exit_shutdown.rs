@@ -12,7 +12,11 @@ use std::process::{Command, Output};
 /// Makes, uses and releases a plugin, then shuts plugin hosting down unless `exit_handler_only`.
 fn child(exit_handler_only: bool) {
     let dir = common::fixture_dir();
-    let gain = soundcraft_vst3_host::scan_paths(&[dir.to_path_buf()]).into_iter().find(|d| d.name == "Fixture Gain").expect("fixture").id;
+    let gain = soundcraft_vst3_host::scan_paths(&[dir.to_path_buf()])
+        .into_iter()
+        .find(|d| d.name == "Fixture Gain")
+        .expect("fixture")
+        .id;
     let mut p = soundcraft_vst3_host::instantiate_plugin(&gain).expect("instantiate");
     p.prepare(48_000.0, 64, 2);
     let mut io = vec![vec![0.5f32; 64]; 2];
@@ -20,12 +24,19 @@ fn child(exit_handler_only: bool) {
     drop(p);
     if !exit_handler_only {
         soundcraft_vst3_host::shutdown();
-        assert!(soundcraft_vst3_host::instantiate_plugin(&gain).is_err(), "loads fail after shutdown");
+        assert!(
+            soundcraft_vst3_host::instantiate_plugin(&gain).is_err(),
+            "loads fail after shutdown"
+        );
     }
 }
 
 fn run(case: &str) -> Output {
-    Command::new(std::env::current_exe().expect("test binary")).arg(case).env("VST3_FIXTURE_LATE_STATE", "1").output().expect("run the child")
+    Command::new(std::env::current_exe().expect("test binary"))
+        .arg(case)
+        .env("VST3_FIXTURE_LATE_STATE", "1")
+        .output()
+        .expect("run the child")
 }
 
 fn main() {
@@ -35,10 +46,22 @@ fn main() {
         _ => {}
     }
     let up_front = run("shutdown");
-    assert!(up_front.status.success(), "shutdown before exit: {:?}\n{}", up_front.status, String::from_utf8_lossy(&up_front.stderr));
+    assert!(
+        up_front.status.success(),
+        "shutdown before exit: {:?}\n{}",
+        up_front.status,
+        String::from_utf8_lossy(&up_front.stderr)
+    );
     let too_late = run("exit-handler");
     let err = String::from_utf8_lossy(&too_late.stderr);
-    assert_eq!(too_late.status.code(), Some(3), "the exit handler alone comes too late: {err}");
-    assert!(err.contains("module exit after the process exit tore down state"), "{err}");
+    assert_eq!(
+        too_late.status.code(),
+        Some(3),
+        "the exit handler alone comes too late: {err}"
+    );
+    assert!(
+        err.contains("module exit after the process exit tore down state"),
+        "{err}"
+    );
     println!("module_exit_shutdown: ok");
 }

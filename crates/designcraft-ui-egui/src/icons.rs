@@ -22,11 +22,15 @@ impl Pen<'_> {
     }
     fn line(&self, pts: &[(f32, f32)]) {
         let v: Vec<Pos2> = pts.iter().map(|&(x, y)| self.pt(x, y)).collect();
-        self.p.add(Shape::line(v, Stroke::new(self.w * self.s(), self.c)));
+        self.p
+            .add(Shape::line(v, Stroke::new(self.w * self.s(), self.c)));
     }
     fn closed(&self, pts: &[(f32, f32)]) {
         let v: Vec<Pos2> = pts.iter().map(|&(x, y)| self.pt(x, y)).collect();
-        self.p.add(Shape::closed_line(v, Stroke::new(self.w * self.s(), self.c)));
+        self.p.add(Shape::closed_line(
+            v,
+            Stroke::new(self.w * self.s(), self.c),
+        ));
     }
     fn fill(&self, pts: &[(f32, f32)]) {
         let v: Vec<Pos2> = pts.iter().map(|&(x, y)| self.pt(x, y)).collect();
@@ -41,10 +45,18 @@ impl Pen<'_> {
         );
     }
     fn frect(&self, x0: f32, y0: f32, x1: f32, y1: f32) {
-        self.p.rect_filled(Rect::from_min_max(self.pt(x0, y0), self.pt(x1, y1)), 0.0, self.c);
+        self.p.rect_filled(
+            Rect::from_min_max(self.pt(x0, y0), self.pt(x1, y1)),
+            0.0,
+            self.c,
+        );
     }
     fn circle(&self, x: f32, y: f32, r: f32) {
-        self.p.circle_stroke(self.pt(x, y), r * self.s(), Stroke::new(self.w * self.s(), self.c));
+        self.p.circle_stroke(
+            self.pt(x, y),
+            r * self.s(),
+            Stroke::new(self.w * self.s(), self.c),
+        );
     }
     fn fcircle(&self, x: f32, y: f32, r: f32) {
         self.p.circle_filled(self.pt(x, y), r * self.s(), self.c);
@@ -60,17 +72,36 @@ impl Pen<'_> {
         self.closed(&pts);
     }
     fn text(&self, x: f32, y: f32, t: &str, size: f32) {
-        self.p.text(self.pt(x, y), egui::Align2::CENTER_CENTER, t, crate::theme::semibold(size * self.s()), self.c);
+        self.p.text(
+            self.pt(x, y),
+            egui::Align2::CENTER_CENTER,
+            t,
+            crate::theme::semibold(size * self.s()),
+            self.c,
+        );
     }
 }
 
 fn arrow(pen: &Pen, hollow: bool) {
-    let pts = [(5.0, 2.5), (5.0, 16.0), (8.4, 12.8), (10.8, 18.0), (13.0, 17.0), (10.6, 11.9), (15.0, 11.6)];
+    let pts = [
+        (5.0, 2.5),
+        (5.0, 16.0),
+        (8.4, 12.8),
+        (10.8, 18.0),
+        (13.0, 17.0),
+        (10.6, 11.9),
+        (15.0, 11.6),
+    ];
     if hollow {
         pen.closed(&pts);
     } else {
         let v: Vec<Pos2> = pts.iter().map(|&(x, y)| pen.pt(x, y)).collect();
-        pen.p.add(Shape::Path(egui::epaint::PathShape { points: v, closed: true, fill: pen.c, stroke: egui::epaint::PathStroke::NONE }));
+        pen.p.add(Shape::Path(egui::epaint::PathShape {
+            points: v,
+            closed: true,
+            fill: pen.c,
+            stroke: egui::epaint::PathStroke::NONE,
+        }));
     }
 }
 
@@ -81,7 +112,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         "tool-selection" => arrow(&pen, true),
         "tool-direct" => arrow(&pen, false),
         "tool-page" => {
-            pen.closed(&[(5.0, 3.0), (12.0, 3.0), (15.0, 6.0), (15.0, 17.0), (5.0, 17.0)]);
+            pen.closed(&[
+                (5.0, 3.0),
+                (12.0, 3.0),
+                (15.0, 6.0),
+                (15.0, 17.0),
+                (5.0, 17.0),
+            ]);
             pen.line(&[(12.0, 3.0), (12.0, 6.0), (15.0, 6.0)]);
             pen.line(&[(2.0, 17.0), (2.0, 3.0)]);
         }
@@ -111,7 +148,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "tool-line" => pen.line(&[(4.0, 16.0), (16.0, 4.0)]),
         "tool-pen" | "tool-pen-add" | "tool-pen-delete" | "tool-anchor" => {
-            pen.closed(&[(10.0, 2.5), (14.5, 11.0), (12.0, 15.0), (8.0, 15.0), (5.5, 11.0)]);
+            pen.closed(&[
+                (10.0, 2.5),
+                (14.5, 11.0),
+                (12.0, 15.0),
+                (8.0, 15.0),
+                (5.5, 11.0),
+            ]);
             pen.line(&[(10.0, 2.5), (10.0, 9.5)]);
             pen.fcircle(10.0, 10.5, 1.1);
             pen.line(&[(8.0, 15.0), (8.0, 18.0), (12.0, 18.0), (12.0, 15.0)]);
@@ -123,14 +166,26 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
             }
         }
         "tool-pencil" | "tool-smooth" | "tool-erase" => {
-            pen.closed(&[(4.0, 16.0), (5.0, 12.0), (14.0, 3.0), (17.0, 6.0), (8.0, 15.0)]);
+            pen.closed(&[
+                (4.0, 16.0),
+                (5.0, 12.0),
+                (14.0, 3.0),
+                (17.0, 6.0),
+                (8.0, 15.0),
+            ]);
             pen.line(&[(12.0, 5.0), (15.0, 8.0)]);
         }
         "tool-rect-frame" | "tool-ellipse-frame" | "tool-polygon-frame" => {
             if name == "tool-ellipse-frame" {
                 pen.ellipse(10.0, 10.0, 7.0, 6.0);
             } else if name == "tool-polygon-frame" {
-                pen.closed(&[(10.0, 3.0), (17.0, 8.0), (14.5, 16.5), (5.5, 16.5), (3.0, 8.0)]);
+                pen.closed(&[
+                    (10.0, 3.0),
+                    (17.0, 8.0),
+                    (14.5, 16.5),
+                    (5.5, 16.5),
+                    (3.0, 8.0),
+                ]);
             } else {
                 pen.rect(3.0, 4.0, 17.0, 16.0);
             }
@@ -140,7 +195,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "tool-rect" => pen.rect(3.0, 4.0, 17.0, 16.0),
         "tool-ellipse" => pen.ellipse(10.0, 10.0, 7.0, 6.0),
-        "tool-polygon" => pen.closed(&[(10.0, 3.0), (17.0, 8.0), (14.5, 16.5), (5.5, 16.5), (3.0, 8.0)]),
+        "tool-polygon" => pen.closed(&[
+            (10.0, 3.0),
+            (17.0, 8.0),
+            (14.5, 16.5),
+            (5.5, 16.5),
+            (3.0, 8.0),
+        ]),
         "tool-scissors" => {
             pen.circle(6.0, 14.5, 2.5);
             pen.circle(14.0, 14.5, 2.5);
@@ -156,14 +217,26 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "tool-scale" => {
             // A small square grown into a larger one from their shared corner.
-            Pen { p, r, c: c.gamma_multiply(0.45), w: 1.0 }.rect(3.0, 3.0, 17.0, 17.0);
+            Pen {
+                p,
+                r,
+                c: c.gamma_multiply(0.45),
+                w: 1.0,
+            }
+            .rect(3.0, 3.0, 17.0, 17.0);
             pen.rect(3.0, 10.0, 10.0, 17.0);
             pen.line(&[(10.0, 10.0), (15.0, 5.0)]);
             pen.line(&[(11.5, 5.0), (15.0, 5.0), (15.0, 8.5)]);
         }
         "tool-shear" => {
             // A rectangle slanted into a parallelogram along its base.
-            Pen { p, r, c: c.gamma_multiply(0.45), w: 1.0 }.rect(3.0, 8.0, 13.0, 17.0);
+            Pen {
+                p,
+                r,
+                c: c.gamma_multiply(0.45),
+                w: 1.0,
+            }
+            .rect(3.0, 8.0, 13.0, 17.0);
             pen.closed(&[(7.0, 8.0), (17.0, 8.0), (13.0, 17.0), (3.0, 17.0)]);
             pen.line(&[(7.0, 4.0), (16.0, 4.0)]);
             pen.line(&[(13.5, 2.0), (16.0, 4.0), (13.5, 6.0)]);
@@ -204,18 +277,40 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         "tool-gradient" | "tool-gradient-feather" => {
             for i in 0..6 {
                 let a = 30 + i * 35;
-                let pc = Pen { p, r, c: c.gamma_multiply(a as f32 / 255.0 * 1.2), w: 1.0 };
-                pc.frect(3.0 + i as f32 * 2.33, 4.0, 3.0 + (i + 1) as f32 * 2.33, 16.0);
+                let pc = Pen {
+                    p,
+                    r,
+                    c: c.gamma_multiply(a as f32 / 255.0 * 1.2),
+                    w: 1.0,
+                };
+                pc.frect(
+                    3.0 + i as f32 * 2.33,
+                    4.0,
+                    3.0 + (i + 1) as f32 * 2.33,
+                    16.0,
+                );
             }
             pen.rect(3.0, 4.0, 17.0, 16.0);
         }
         "tool-note" => {
-            pen.closed(&[(4.0, 3.0), (16.0, 3.0), (16.0, 13.0), (11.0, 17.0), (4.0, 17.0)]);
+            pen.closed(&[
+                (4.0, 3.0),
+                (16.0, 3.0),
+                (16.0, 13.0),
+                (11.0, 17.0),
+                (4.0, 17.0),
+            ]);
             pen.line(&[(7.0, 7.0), (13.0, 7.0)]);
             pen.line(&[(7.0, 10.0), (13.0, 10.0)]);
         }
         "tool-color-theme" | "tool-eyedropper" => {
-            pen.closed(&[(3.0, 17.0), (3.5, 14.5), (11.0, 7.0), (13.0, 9.0), (5.5, 16.5)]);
+            pen.closed(&[
+                (3.0, 17.0),
+                (3.5, 14.5),
+                (11.0, 7.0),
+                (13.0, 9.0),
+                (5.5, 16.5),
+            ]);
             pen.line(&[(11.0, 5.0), (15.0, 9.0)]);
             pen.closed(&[(12.5, 6.5), (15.0, 3.0), (17.0, 5.0), (13.5, 7.5)]);
         }
@@ -231,7 +326,15 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
             pen.line(&[(8.5, 10.0), (8.5, 3.5)]);
             pen.line(&[(11.0, 10.0), (11.0, 4.0)]);
             pen.line(&[(13.5, 10.5), (13.5, 6.0)]);
-            pen.line(&[(6.0, 11.0), (4.0, 9.0), (3.0, 10.0), (6.5, 16.5), (13.5, 17.5), (15.0, 13.0), (13.5, 10.5)]);
+            pen.line(&[
+                (6.0, 11.0),
+                (4.0, 9.0),
+                (3.0, 10.0),
+                (6.5, 16.5),
+                (13.5, 17.5),
+                (15.0, 13.0),
+                (13.5, 10.5),
+            ]);
         }
         "tool-zoom" => {
             pen.circle(8.5, 8.5, 5.5);
@@ -295,7 +398,12 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "panel-gradient" => {
             for i in 0..7 {
-                let pc = Pen { p, r, c: c.gamma_multiply(0.15 + i as f32 * 0.14), w: 1.0 };
+                let pc = Pen {
+                    p,
+                    r,
+                    c: c.gamma_multiply(0.15 + i as f32 * 0.14),
+                    w: 1.0,
+                };
                 pc.frect(3.0 + i as f32 * 2.0, 5.0, 5.0 + i as f32 * 2.0, 15.0);
             }
         }
@@ -335,7 +443,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "panel-transform" => {
             pen.rect(4.0, 4.0, 16.0, 16.0);
-            for (x, y) in [(4.0, 4.0), (16.0, 4.0), (4.0, 16.0), (16.0, 16.0), (10.0, 10.0)] {
+            for (x, y) in [
+                (4.0, 4.0),
+                (16.0, 4.0),
+                (4.0, 16.0),
+                (16.0, 16.0),
+                (10.0, 10.0),
+            ] {
                 pen.fcircle(x, y, 1.4);
             }
         }
@@ -349,8 +463,24 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "panel-hyperlinks" => {
             // Two chain links.
-            pen.closed(&[(3.0, 10.0), (7.0, 6.0), (10.0, 6.0), (7.0, 9.0), (6.0, 11.0), (7.0, 13.0), (5.0, 14.0)]);
-            pen.closed(&[(17.0, 10.0), (13.0, 14.0), (10.0, 14.0), (13.0, 11.0), (14.0, 9.0), (13.0, 7.0), (15.0, 6.0)]);
+            pen.closed(&[
+                (3.0, 10.0),
+                (7.0, 6.0),
+                (10.0, 6.0),
+                (7.0, 9.0),
+                (6.0, 11.0),
+                (7.0, 13.0),
+                (5.0, 14.0),
+            ]);
+            pen.closed(&[
+                (17.0, 10.0),
+                (13.0, 14.0),
+                (10.0, 14.0),
+                (13.0, 11.0),
+                (14.0, 9.0),
+                (13.0, 7.0),
+                (15.0, 6.0),
+            ]);
             pen.line(&[(8.0, 12.0), (12.0, 8.0)]);
         }
         "panel-tags" => {
@@ -367,7 +497,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
             pen.line(&[(14.0, 14.5), (17.0, 14.5)]);
         }
         "panel-bookmarks" => {
-            pen.closed(&[(6.0, 3.0), (14.0, 3.0), (14.0, 17.0), (10.0, 13.0), (6.0, 17.0)]);
+            pen.closed(&[
+                (6.0, 3.0),
+                (14.0, 3.0),
+                (14.0, 17.0),
+                (10.0, 13.0),
+                (6.0, 17.0),
+            ]);
         }
         "panel-library" => {
             // Books on a shelf.
@@ -377,7 +513,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "panel-notes" => {
             // A note with a folded corner.
-            pen.closed(&[(4.0, 3.0), (16.0, 3.0), (16.0, 13.0), (12.0, 17.0), (4.0, 17.0)]);
+            pen.closed(&[
+                (4.0, 3.0),
+                (16.0, 3.0),
+                (16.0, 13.0),
+                (12.0, 17.0),
+                (4.0, 17.0),
+            ]);
             pen.line(&[(16.0, 13.0), (12.0, 13.0), (12.0, 17.0)]);
         }
         "panel-conditions" => {
@@ -419,12 +561,28 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
             pen.fill(&[(5.0, 5.0), (5.0, 15.0), (13.0, 10.0)]);
         }
         "eye" => {
-            pen.closed(&[(2.0, 10.0), (6.0, 6.0), (10.0, 5.0), (14.0, 6.0), (18.0, 10.0), (14.0, 14.0), (10.0, 15.0), (6.0, 14.0)]);
+            pen.closed(&[
+                (2.0, 10.0),
+                (6.0, 6.0),
+                (10.0, 5.0),
+                (14.0, 6.0),
+                (18.0, 10.0),
+                (14.0, 14.0),
+                (10.0, 15.0),
+                (6.0, 14.0),
+            ]);
             pen.fcircle(10.0, 10.0, 2.5);
         }
         "lock" => {
             pen.frect(5.0, 9.0, 15.0, 17.0);
-            pen.line(&[(7.0, 9.0), (7.0, 6.0), (8.5, 4.0), (11.5, 4.0), (13.0, 6.0), (13.0, 9.0)]);
+            pen.line(&[
+                (7.0, 9.0),
+                (7.0, 6.0),
+                (8.5, 4.0),
+                (11.5, 4.0),
+                (13.0, 6.0),
+                (13.0, 9.0),
+            ]);
         }
         "plus" => {
             pen.line(&[(10.0, 4.0), (10.0, 16.0)]);
@@ -441,7 +599,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
             }
         }
         "home" => {
-            pen.closed(&[(3.0, 9.0), (10.0, 3.0), (17.0, 9.0), (17.0, 17.0), (3.0, 17.0)]);
+            pen.closed(&[
+                (3.0, 9.0),
+                (10.0, 3.0),
+                (17.0, 9.0),
+                (17.0, 17.0),
+                (3.0, 17.0),
+            ]);
             pen.rect(8.0, 11.0, 12.0, 17.0);
         }
         "search" => {
@@ -451,7 +615,14 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         "share" => {
             pen.line(&[(10.0, 3.0), (10.0, 13.0)]);
             pen.line(&[(6.5, 6.5), (10.0, 3.0), (13.5, 6.5)]);
-            pen.line(&[(5.0, 10.0), (4.0, 10.0), (4.0, 17.0), (16.0, 17.0), (16.0, 10.0), (15.0, 10.0)]);
+            pen.line(&[
+                (5.0, 10.0),
+                (4.0, 10.0),
+                (4.0, 17.0),
+                (16.0, 17.0),
+                (16.0, 10.0),
+                (15.0, 10.0),
+            ]);
         }
         "screen-normal" => pen.rect(3.0, 4.0, 17.0, 16.0),
         "screen-preview" => {
@@ -487,7 +658,10 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "none" => {
             pen.rect(3.0, 3.0, 17.0, 17.0);
-            pen.p.line_segment([pen.pt(3.0, 17.0), pen.pt(17.0, 3.0)], Stroke::new(1.6 * pen.s(), Color32::from_rgb(230, 40, 40)));
+            pen.p.line_segment(
+                [pen.pt(3.0, 17.0), pen.pt(17.0, 3.0)],
+                Stroke::new(1.6 * pen.s(), Color32::from_rgb(230, 40, 40)),
+            );
         }
         "fit-fill" | "fit-content" | "fit-frame" | "fit-center" | "fit-prop" => {
             pen.rect(3.0, 5.0, 17.0, 15.0);
@@ -594,7 +768,14 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
             }
         }
         "rulers" => {
-            pen.closed(&[(3.0, 3.0), (17.0, 3.0), (17.0, 7.0), (7.0, 7.0), (7.0, 17.0), (3.0, 17.0)]);
+            pen.closed(&[
+                (3.0, 3.0),
+                (17.0, 3.0),
+                (17.0, 7.0),
+                (7.0, 7.0),
+                (7.0, 17.0),
+                (3.0, 17.0),
+            ]);
             for k in 0..4 {
                 let v = 9.0 + k as f32 * 2.2;
                 pen.line(&[(v, 3.0), (v, 5.0)]);
@@ -633,12 +814,20 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "align-to" | "frame-dashed" => {
             pen.w = 1.0;
-            for (a, b) in [((3.0, 3.0), (15.0, 3.0)), ((15.0, 3.0), (15.0, 15.0)), ((15.0, 15.0), (3.0, 15.0)), ((3.0, 15.0), (3.0, 3.0))] {
+            for (a, b) in [
+                ((3.0, 3.0), (15.0, 3.0)),
+                ((15.0, 3.0), (15.0, 15.0)),
+                ((15.0, 15.0), (3.0, 15.0)),
+                ((3.0, 15.0), (3.0, 3.0)),
+            ] {
                 let n = 4;
                 for k in 0..n {
                     let f0 = k as f32 / n as f32;
                     let f1 = f0 + 0.6 / n as f32;
-                    pen.line(&[(a.0 + (b.0 - a.0) * f0, a.1 + (b.1 - a.1) * f0), (a.0 + (b.0 - a.0) * f1, a.1 + (b.1 - a.1) * f1)]);
+                    pen.line(&[
+                        (a.0 + (b.0 - a.0) * f0, a.1 + (b.1 - a.1) * f0),
+                        (a.0 + (b.0 - a.0) * f1, a.1 + (b.1 - a.1) * f1),
+                    ]);
                 }
             }
             pen.fill(&[(16.0, 17.0), (19.5, 17.0), (17.75, 19.0)]);
@@ -755,7 +944,12 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
             for i in 0..4 {
                 for j in 0..4 {
                     if (i + j) % 2 == 0 {
-                        pen.frect(3.0 + i as f32 * 3.5, 3.0 + j as f32 * 3.5, 6.5 + i as f32 * 3.5, 6.5 + j as f32 * 3.5);
+                        pen.frect(
+                            3.0 + i as f32 * 3.5,
+                            3.0 + j as f32 * 3.5,
+                            6.5 + i as f32 * 3.5,
+                            6.5 + j as f32 * 3.5,
+                        );
                     }
                 }
             }
@@ -795,7 +989,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         "style-load" => {
             pen.line(&[(2.0, 8.0), (9.0, 8.0)]);
             pen.line(&[(6.5, 5.5), (9.0, 8.0), (6.5, 10.5)]);
-            pen.closed(&[(11.0, 3.0), (17.0, 3.0), (17.0, 17.0), (8.0, 17.0), (8.0, 12.0)]);
+            pen.closed(&[
+                (11.0, 3.0),
+                (17.0, 3.0),
+                (17.0, 17.0),
+                (8.0, 17.0),
+                (8.0, 12.0),
+            ]);
         }
         "grip" => {
             for i in 0..3 {
@@ -822,11 +1022,26 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
         }
         "default-colors" => {
             pen.w = 1.2;
-            pen.p.rect_filled(Rect::from_min_max(pen.pt(8.0, 8.0), pen.pt(19.0, 19.0)), 0.0, Color32::BLACK);
-            pen.p.rect_filled(Rect::from_min_max(pen.pt(11.0, 11.0), pen.pt(16.0, 16.0)), 0.0, Color32::from_gray(0x53));
+            pen.p.rect_filled(
+                Rect::from_min_max(pen.pt(8.0, 8.0), pen.pt(19.0, 19.0)),
+                0.0,
+                Color32::BLACK,
+            );
+            pen.p.rect_filled(
+                Rect::from_min_max(pen.pt(11.0, 11.0), pen.pt(16.0, 16.0)),
+                0.0,
+                Color32::from_gray(0x53),
+            );
             pen.rect(8.0, 8.0, 19.0, 19.0);
-            pen.p.rect_filled(Rect::from_min_max(pen.pt(1.0, 1.0), pen.pt(12.0, 12.0)), 0.0, Color32::WHITE);
-            pen.p.line_segment([pen.pt(1.0, 12.0), pen.pt(12.0, 1.0)], Stroke::new(1.2 * pen.s(), Color32::from_rgb(230, 30, 30)));
+            pen.p.rect_filled(
+                Rect::from_min_max(pen.pt(1.0, 1.0), pen.pt(12.0, 12.0)),
+                0.0,
+                Color32::WHITE,
+            );
+            pen.p.line_segment(
+                [pen.pt(1.0, 12.0), pen.pt(12.0, 1.0)],
+                Stroke::new(1.2 * pen.s(), Color32::from_rgb(230, 30, 30)),
+            );
             pen.rect(1.0, 1.0, 12.0, 12.0);
         }
         "format-container" => pen.rect(4.0, 4.0, 16.0, 16.0),
@@ -850,7 +1065,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32) {
 }
 
 /// An icon-sized clickable button. Returns the response.
-pub fn button(ui: &mut egui::Ui, name: &str, size: f32, selected: bool, tip: &str) -> egui::Response {
+pub fn button(
+    ui: &mut egui::Ui,
+    name: &str,
+    size: f32,
+    selected: bool,
+    tip: &str,
+) -> egui::Response {
     let t = crate::theme::Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(vec2(size, size), egui::Sense::click());
     if selected {
@@ -859,9 +1080,16 @@ pub fn button(ui: &mut egui::Ui, name: &str, size: f32, selected: bool, tip: &st
         ui.painter().rect_filled(r, 3.0, t.hover);
     }
     let pad = size * 0.16;
-    paint(ui.painter(), r.shrink(pad), name, if selected { t.text_strong } else { t.icon });
+    paint(
+        ui.painter(),
+        r.shrink(pad),
+        name,
+        if selected { t.text_strong } else { t.icon },
+    );
     let enabled = ui.is_enabled();
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, selected, tip));
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, selected, tip)
+    });
     if tip.is_empty() {
         resp
     } else {
@@ -879,10 +1107,18 @@ mod tests {
     fn drawing(name: &str) -> String {
         let ctx = egui::Context::default();
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
-            paint(ui.painter(), Rect::from_min_size(pos2(0.0, 0.0), vec2(20.0, 20.0)), name, Color32::WHITE);
+            paint(
+                ui.painter(),
+                Rect::from_min_size(pos2(0.0, 0.0), vec2(20.0, 20.0)),
+                name,
+                Color32::WHITE,
+            );
         });
         out.textures_delta.clear();
-        format!("{:?}", out.shapes.iter().map(|s| &s.shape).collect::<Vec<_>>())
+        format!(
+            "{:?}",
+            out.shapes.iter().map(|s| &s.shape).collect::<Vec<_>>()
+        )
     }
 
     #[test]

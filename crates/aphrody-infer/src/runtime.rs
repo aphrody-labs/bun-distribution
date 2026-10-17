@@ -103,8 +103,14 @@ pub fn runtimes_dir() -> Result<PathBuf> {
 #[must_use]
 pub fn discover() -> RuntimeSource {
     for (var, wrap) in [
-        ("APHRODY_ORT_DYLIB", RuntimeSource::Override as fn(PathBuf) -> RuntimeSource),
-        ("ORT_DYLIB_PATH", RuntimeSource::OrtEnv as fn(PathBuf) -> RuntimeSource),
+        (
+            "APHRODY_ORT_DYLIB",
+            RuntimeSource::Override as fn(PathBuf) -> RuntimeSource,
+        ),
+        (
+            "ORT_DYLIB_PATH",
+            RuntimeSource::OrtEnv as fn(PathBuf) -> RuntimeSource,
+        ),
     ] {
         if let Ok(raw) = std::env::var(var)
             && !raw.is_empty()
@@ -155,7 +161,11 @@ pub fn find_managed_in(root: &Path) -> Option<PathBuf> {
         .collect();
 
     candidates.sort_by_key(|path| {
-        let name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+        let name = path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
         // `false` sorts first, so negate the GPU test to rank GPU builds ahead.
         (!is_gpu_build(&name), core::cmp::Reverse(name))
     });
@@ -256,7 +266,10 @@ pub fn colocate_cuda_libraries(
         if target.is_file() {
             continue;
         }
-        let Some(source) = sources.iter().map(|dir| dir.join(&name)).find(|path| path.is_file())
+        let Some(source) = sources
+            .iter()
+            .map(|dir| dir.join(&name))
+            .find(|path| path.is_file())
         else {
             tracing::debug!(library = %name, "CUDA library not found in any known location");
             continue;
@@ -271,10 +284,10 @@ pub fn colocate_cuda_libraries(
                     "CUDA library placed beside ONNX Runtime"
                 );
                 placed.push(target);
-            },
+            }
             Err(error) => {
                 tracing::warn!(library = %name, %error, "could not place CUDA library beside ONNX Runtime");
-            },
+            }
         }
     }
     placed
@@ -317,8 +330,14 @@ mod tests {
 
     #[test]
     fn cuda_major_is_read_from_the_runtime_directory_name() {
-        assert_eq!(cuda_major("onnxruntime-win-x64-gpu_cuda13-1.29.0"), Some(13));
-        assert_eq!(cuda_major("onnxruntime-win-x64-gpu_CUDA12-1.22.0"), Some(12));
+        assert_eq!(
+            cuda_major("onnxruntime-win-x64-gpu_cuda13-1.29.0"),
+            Some(13)
+        );
+        assert_eq!(
+            cuda_major("onnxruntime-win-x64-gpu_CUDA12-1.22.0"),
+            Some(12)
+        );
         assert_eq!(cuda_major("onnxruntime-linux-x64-cuda-1.22.0"), None);
         assert_eq!(cuda_major("onnxruntime-win-x64-1.29.0"), None);
     }
@@ -326,7 +345,10 @@ mod tests {
     #[test]
     fn missing_cuda_libraries_are_placed_beside_the_runtime_once() {
         let dir = tempfile::tempdir().unwrap();
-        let ort_lib = dir.path().join("onnxruntime-win-x64-gpu_cuda13-1.29.0").join("lib");
+        let ort_lib = dir
+            .path()
+            .join("onnxruntime-win-x64-gpu_cuda13-1.29.0")
+            .join("lib");
         let empty = dir.path().join("empty");
         let llama = dir.path().join("llama-b1");
         for path in [&ort_lib, &empty, &llama] {
@@ -340,8 +362,14 @@ mod tests {
         let sources = [empty, llama];
         let placed = colocate_cuda_libraries(&ort_lib, 13, &sources);
         assert_eq!(placed.len(), 2, "{placed:?}");
-        assert_eq!(std::fs::read(ort_lib.join("cublas64_13.dll")).unwrap(), b"cublas64_13.dll");
-        assert_eq!(std::fs::read(ort_lib.join("cudart64_13.dll")).unwrap(), b"already here");
+        assert_eq!(
+            std::fs::read(ort_lib.join("cublas64_13.dll")).unwrap(),
+            b"cublas64_13.dll"
+        );
+        assert_eq!(
+            std::fs::read(ort_lib.join("cudart64_13.dll")).unwrap(),
+            b"already here"
+        );
         assert!(colocate_cuda_libraries(&ort_lib, 13, &sources).is_empty());
     }
 
@@ -368,10 +396,16 @@ mod tests {
     #[test]
     fn source_labels_and_paths_line_up() {
         let managed = RuntimeSource::Managed(PathBuf::from("/opt/ort/lib/libonnxruntime.so"));
-        assert_eq!(managed.path(), Some(Path::new("/opt/ort/lib/libonnxruntime.so")));
+        assert_eq!(
+            managed.path(),
+            Some(Path::new("/opt/ort/lib/libonnxruntime.so"))
+        );
         assert!(managed.label().contains("managed"));
         assert_eq!(RuntimeSource::SystemSearchPath.path(), None);
-        assert_eq!(RuntimeSource::SystemSearchPath.label(), "system search path");
+        assert_eq!(
+            RuntimeSource::SystemSearchPath.label(),
+            "system search path"
+        );
     }
 
     #[test]
@@ -387,7 +421,10 @@ mod tests {
     #[test]
     fn managed_scan_prefers_a_gpu_build_over_a_cpu_one() {
         let dir = tempfile::tempdir().unwrap();
-        for name in ["onnxruntime-win-x64-1.29.0", "onnxruntime-win-x64-gpu_cuda13-1.29.0"] {
+        for name in [
+            "onnxruntime-win-x64-1.29.0",
+            "onnxruntime-win-x64-gpu_cuda13-1.29.0",
+        ] {
             let lib = dir.path().join(name).join("lib");
             std::fs::create_dir_all(&lib).unwrap();
             std::fs::write(lib.join(DYLIB_NAME), b"stub").unwrap();
@@ -404,16 +441,21 @@ mod tests {
     #[test]
     fn managed_scan_picks_the_highest_version_among_equals() {
         let dir = tempfile::tempdir().unwrap();
-        for name in
-            ["onnxruntime-win-x64-gpu_cuda13-1.27.1", "onnxruntime-win-x64-gpu_cuda13-1.29.0"]
-        {
+        for name in [
+            "onnxruntime-win-x64-gpu_cuda13-1.27.1",
+            "onnxruntime-win-x64-gpu_cuda13-1.29.0",
+        ] {
             let lib = dir.path().join(name).join("lib");
             std::fs::create_dir_all(&lib).unwrap();
             std::fs::write(lib.join(DYLIB_NAME), b"stub").unwrap();
         }
 
         let found = find_managed_in(dir.path()).unwrap();
-        assert!(found.to_string_lossy().contains("1.29.0"), "{}", found.display());
+        assert!(
+            found.to_string_lossy().contains("1.29.0"),
+            "{}",
+            found.display()
+        );
     }
 
     #[test]

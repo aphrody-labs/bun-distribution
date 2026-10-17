@@ -54,7 +54,11 @@ pub struct Sources {
 
 /// craft-fonts' Japanese fonts for the Japanese script, UI face first (empty without craft-fonts).
 pub fn craft_embedded(script: CjkScript) -> Vec<&'static CraftFont> {
-    if script == CjkScript::Japanese { craft_fonts::japanese_for_ui() } else { Vec::new() }
+    if script == CjkScript::Japanese {
+        craft_fonts::japanese_for_ui()
+    } else {
+        Vec::new()
+    }
 }
 
 /// No embedded fonts (tests that pin the system-font behaviour).
@@ -100,7 +104,10 @@ pub(crate) fn wait_for_fontconfig_cjk_scan() {
     while cjk::fontconfig_cjk_scan_pending() && std::time::Instant::now() < deadline {
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
-    assert!(!cjk::fontconfig_cjk_scan_pending(), "Fontconfig CJK lookup did not finish within 10 seconds");
+    assert!(
+        !cjk::fontconfig_cjk_scan_pending(),
+        "Fontconfig CJK lookup did not finish within 10 seconds"
+    );
 }
 
 /// The lazy loader's state: which scripts were tried and which files were read.
@@ -134,7 +141,9 @@ impl CjkFallback {
 
     /// Script order for the UI locale (resolved on first use, not at startup).
     pub fn order(&mut self) -> [CjkScript; 4] {
-        *self.order.get_or_insert_with(|| cjk::script_order((self.sources.locale)().as_deref()))
+        *self
+            .order
+            .get_or_insert_with(|| cjk::script_order((self.sources.locale)().as_deref()))
     }
 
     /// Every script and the last-resort fonts have been tried: nothing more to load.
@@ -147,7 +156,9 @@ impl CjkFallback {
     /// then the locale order), then the last-resort fonts. `None` when nothing is left.
     pub fn next_font(&mut self, kind: CjkChar) -> Option<(String, FontData)> {
         let order = self.order();
-        let scripts: Vec<CjkScript> = std::iter::once(kind.preferred(&order)).chain(order).collect();
+        let scripts: Vec<CjkScript> = std::iter::once(kind.preferred(&order))
+            .chain(order)
+            .collect();
         for s in scripts {
             if self.tried.contains(&s) {
                 continue;
@@ -195,12 +206,19 @@ impl CjkFallback {
             if self.loaded.contains(&path) {
                 continue;
             }
-            let Some(bytes) = read_font(&path) else { continue };
+            let Some(bytes) = read_font(&path) else {
+                continue;
+            };
             reads += 1;
-            let Some(index) = (self.sources.covers)(&bytes, c) else { continue };
+            let Some(index) = (self.sources.covers)(&bytes, c) else {
+                continue;
+            };
             self.loaded.push(path.clone());
             let name = format!("{FONT_PREFIX}-{}", self.registered.len());
-            log::info!("UI font fallback: registered {} (face {index}) for {script:?} as {name}", path.display());
+            log::info!(
+                "UI font fallback: registered {} (face {index}) for {script:?} as {name}",
+                path.display()
+            );
             self.registered.push((name.clone(), path, index));
             let mut data = FontData::from_owned(bytes);
             data.index = index;
@@ -212,14 +230,19 @@ impl CjkFallback {
 
     /// The first embedded (craft-fonts) font for `s`, registered from its static bytes.
     fn load_embedded(&mut self, s: CjkScript) -> Option<(String, FontData)> {
-        let f = (self.sources.embedded)(s).into_iter().find(|f| !f.bytes.is_empty())?;
+        let f = (self.sources.embedded)(s)
+            .into_iter()
+            .find(|f| !f.bytes.is_empty())?;
         let path = PathBuf::from(format!("craft-fonts/{} {}", f.family, f.style));
         if self.loaded.contains(&path) {
             return None;
         }
         self.loaded.push(path.clone());
         let name = format!("{FONT_PREFIX}-{}", self.registered.len());
-        log::info!("UI font fallback: registered embedded {} as {name}", path.display());
+        log::info!(
+            "UI font fallback: registered embedded {} as {name}",
+            path.display()
+        );
         self.registered.push((name.clone(), path, 0));
         Some((name, FontData::from_static(f.bytes)))
     }
@@ -229,11 +252,16 @@ impl CjkFallback {
             if self.loaded.contains(&f.path) {
                 continue;
             }
-            let Some(bytes) = read_font(&f.path) else { continue };
+            let Some(bytes) = read_font(&f.path) else {
+                continue;
+            };
             let index = cjk::face_index_for_family(&bytes, &f.family);
             self.loaded.push(f.path.clone());
             let name = format!("{FONT_PREFIX}-{}", self.registered.len());
-            log::info!("UI font fallback: registered {} (face {index}) as {name}", f.path.display());
+            log::info!(
+                "UI font fallback: registered {} (face {index}) as {name}",
+                f.path.display()
+            );
             self.registered.push((name.clone(), f.path.clone(), index));
             let mut data = FontData::from_owned(bytes);
             data.index = index;
@@ -253,9 +281,16 @@ fn read_font(path: &std::path::Path) -> Option<Vec<u8>> {
 }
 
 /// First supported missing character for which a fallback has not yet been exhausted.
-fn missing_char(ctx: &egui::Context, shapes: &[egui::epaint::ClippedShape], fallback: &CjkFallback) -> Option<char> {
+fn missing_char(
+    ctx: &egui::Context,
+    shapes: &[egui::epaint::ClippedShape],
+    fallback: &CjkFallback,
+) -> Option<char> {
     fn collect(shape: &Shape, out: &mut Vec<char>, fallback: &CjkFallback, cjk_pending: bool) {
-        let wanted = |c: char| (cjk_pending && cjk::classify(c).is_some()) || scripts::classify(c).is_some_and(|s| !fallback.scripts_tried.contains(&s));
+        let wanted = |c: char| {
+            (cjk_pending && cjk::classify(c).is_some())
+                || scripts::classify(c).is_some_and(|s| !fallback.scripts_tried.contains(&s))
+        };
         match shape {
             Shape::Text(t) => {
                 let text = &t.galley.job.text;
@@ -270,7 +305,9 @@ fn missing_char(ctx: &egui::Context, shapes: &[egui::epaint::ClippedShape], fall
                     }
                 }
             }
-            Shape::Vec(v) => v.iter().for_each(|s| collect(s, out, fallback, cjk_pending)),
+            Shape::Vec(v) => v
+                .iter()
+                .for_each(|s| collect(s, out, fallback, cjk_pending)),
             _ => {}
         }
     }
@@ -287,8 +324,14 @@ fn missing_char(ctx: &egui::Context, shapes: &[egui::epaint::ClippedShape], fall
 
 /// (ascent, descent, line gap) of a face in em, from its `hhea` table; `descent` is negative.
 fn vertical_metrics(font: &[u8], index: u32) -> Option<(f32, f32, f32)> {
-    let u16_at = |o: usize| font.get(o..o.checked_add(2)?).map(|b| u16::from_be_bytes([b[0], b[1]]));
-    let u32_at = |o: usize| font.get(o..o.checked_add(4)?).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+    let u16_at = |o: usize| {
+        font.get(o..o.checked_add(2)?)
+            .map(|b| u16::from_be_bytes([b[0], b[1]]))
+    };
+    let u32_at = |o: usize| {
+        font.get(o..o.checked_add(4)?)
+            .map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+    };
     let i16_at = |o: usize| u16_at(o).map(|v| v as i16 as f32);
     let dir = if font.get(..4)? == b"ttcf" {
         // Collection: the offset table of face `index` follows a 12-byte header.
@@ -313,7 +356,11 @@ fn vertical_metrics(font: &[u8], index: u32) -> Option<(f32, f32, f32)> {
     if upm <= 0.0 {
         return None;
     }
-    Some((i16_at(hhea.checked_add(4)?)? / upm, i16_at(hhea.checked_add(6)?)? / upm, i16_at(hhea.checked_add(8)?)? / upm))
+    Some((
+        i16_at(hhea.checked_add(4)?)? / upm,
+        i16_at(hhea.checked_add(6)?)? / upm,
+        i16_at(hhea.checked_add(8)?)? / upm,
+    ))
 }
 
 /// `y_offset_factor` that puts `face`'s baseline where `primary`'s would be. egui centres a
@@ -322,25 +369,45 @@ fn vertical_metrics(font: &[u8], index: u32) -> Option<(f32, f32, f32)> {
 fn baseline_offset(face: (f32, f32, f32), primary: (f32, f32, f32)) -> f32 {
     let height = |m: (f32, f32, f32)| m.0 - m.1 + m.2;
     let off = primary.0 - face.0 - 0.5 * (height(primary) - height(face));
-    if off.is_finite() { off.clamp(-0.5, 0.5) } else { 0.0 }
+    if off.is_finite() {
+        off.clamp(-0.5, 0.5)
+    } else {
+        0.0
+    }
 }
 
 /// Registers `name` at the lowest priority in every font family.
 fn add_to_all_families(ctx: &egui::Context, name: String, mut data: FontData) {
     // Align to Inter, the primary of every UI family; JetBrains Mono differs by under 0.005em.
-    let primary = ctx.fonts(|f| f.definitions().font_data.get("Inter").and_then(|p| vertical_metrics(&p.font, p.index)));
+    let primary = ctx.fonts(|f| {
+        f.definitions()
+            .font_data
+            .get("Inter")
+            .and_then(|p| vertical_metrics(&p.font, p.index))
+    });
     if let (Some(face), Some(primary)) = (vertical_metrics(&data.font, data.index), primary) {
         data.tweak.y_offset_factor = baseline_offset(face, primary);
     }
-    let mut families: Vec<FontFamily> = ctx.fonts(|f| f.definitions().families.keys().cloned().collect());
+    let mut families: Vec<FontFamily> =
+        ctx.fonts(|f| f.definitions().families.keys().cloned().collect());
     for f in [FontFamily::Proportional, FontFamily::Monospace] {
         if !families.contains(&f) {
             families.push(f);
         }
     }
-    let families = families.into_iter().map(|family| InsertFontFamily { family, priority: FontPriority::Lowest }).collect();
+    let families = families
+        .into_iter()
+        .map(|family| InsertFontFamily {
+            family,
+            priority: FontPriority::Lowest,
+        })
+        .collect();
     crate::theme::size_ui_font(ctx, &name, &mut data);
-    ctx.add_font(FontInsert { name, data, families });
+    ctx.add_font(FontInsert {
+        name,
+        data,
+        families,
+    });
 }
 
 /// The egui plugin that watches drawn text and loads fallback fonts on demand.
@@ -359,7 +426,9 @@ impl egui::Plugin for CjkFontPlugin {
         if self.0.exhausted() && self.0.scripts_exhausted() {
             return;
         }
-        let Some(c) = missing_char(ctx, &output.shapes, &self.0) else { return };
+        let Some(c) = missing_char(ctx, &output.shapes, &self.0) else {
+            return;
+        };
         let font = match cjk::classify(c) {
             Some(kind) => self.0.next_font(kind),
             None => self.0.next_script_font(c),
@@ -407,22 +476,41 @@ mod tests {
         use photocraft_engine::prefs::UiFontSize;
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(Default::default(), |_| {})
+            .textures_delta
+            .clear();
         crate::theme::set_ui_font_size(&ctx, UiFontSize::Large);
         let name = "test-lazy-fallback".to_string();
-        add_to_all_families(&ctx, name.clone(), FontData::from_static(photocraft_text::fonts::INTER_REGULAR.as_slice()));
-        for (size, scale) in [(UiFontSize::Large, 16.0 / 12.0), (UiFontSize::Tiny, 10.0 / 12.0), (UiFontSize::Small, 1.0)] {
+        add_to_all_families(
+            &ctx,
+            name.clone(),
+            FontData::from_static(photocraft_text::fonts::INTER_REGULAR.as_slice()),
+        );
+        for (size, scale) in [
+            (UiFontSize::Large, 16.0 / 12.0),
+            (UiFontSize::Tiny, 10.0 / 12.0),
+            (UiFontSize::Small, 1.0),
+        ] {
             crate::theme::set_ui_font_size(&ctx, size);
             for _ in 0..2 {
-                ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
+                ctx.run_ui(Default::default(), |_| {})
+                    .textures_delta
+                    .clear();
             }
             let fonts = ctx.fonts(|f| f.definitions().clone());
             let fallback = fonts.font_data.get(&name).unwrap();
             assert_eq!(fallback.tweak.scale, scale);
-            assert_eq!(fallback.tweak.y_offset_factor, 0.0, "same face as Inter keeps its baseline");
+            assert_eq!(
+                fallback.tweak.y_offset_factor, 0.0,
+                "same face as Inter keeps its baseline"
+            );
             for stack in fonts.families.values() {
                 assert_eq!(stack.iter().filter(|n| *n == &name).count(), 1);
-                assert_eq!(stack.last(), Some(&name), "fallback stays at the lowest priority");
+                assert_eq!(
+                    stack.last(),
+                    Some(&name),
+                    "fallback stays at the lowest priority"
+                );
             }
         }
     }
@@ -441,7 +529,11 @@ mod tests {
             })
             .expect("font plugin");
             crate::i18n::sync_context(&ctx, "ja");
-            assert!(ctx.with_plugin::<CjkFontPlugin, _>(|plugin| plugin.0.exhausted()).expect("font plugin"), "idle frames must not reload fonts");
+            assert!(
+                ctx.with_plugin::<CjkFontPlugin, _>(|plugin| plugin.0.exhausted())
+                    .expect("font plugin"),
+                "idle frames must not reload fonts"
+            );
             crate::i18n::sync_context(&ctx, "ko");
             ctx.with_plugin::<CjkFontPlugin, _>(|plugin| {
                 assert!(!plugin.0.exhausted());
@@ -456,18 +548,29 @@ mod tests {
         g.get_or_insert_with(|| {
             let dir = std::env::temp_dir().join(format!("photocraft-cjk-{}", std::process::id()));
             std::fs::create_dir_all(&dir).unwrap();
-            std::fs::write(dir.join("font.ttf"), include_bytes!("../../../assets/photocraft/fonts/Inter-Regular.ttf")).unwrap();
+            std::fs::write(
+                dir.join("font.ttf"),
+                include_bytes!("../../../assets/photocraft/fonts/Inter-Regular.ttf"),
+            )
+            .unwrap();
             std::fs::write(dir.join("empty.ttf"), b"").unwrap();
             std::fs::write(dir.join("thai.ttf"), synthetic_font(&[(0x0E01, 0x0E5B)])).unwrap();
             std::fs::write(dir.join("arabic.ttf"), synthetic_font(&[(0x0600, 0x06FF)])).unwrap();
-            std::fs::write(dir.join("devanagari.ttf"), synthetic_font(&[(0x0900, 0x097F)])).unwrap();
+            std::fs::write(
+                dir.join("devanagari.ttf"),
+                synthetic_font(&[(0x0900, 0x097F)]),
+            )
+            .unwrap();
             dir
         })
         .clone()
     }
 
     fn fake(name: &str) -> FontFile {
-        FontFile { path: fake_dir().join(name), family: String::new() }
+        FontFile {
+            path: fake_dir().join(name),
+            family: String::new(),
+        }
     }
 
     fn fake_sources(locale: fn() -> Option<String>) -> Sources {
@@ -499,7 +602,15 @@ mod tests {
         // already loaded, so nothing new; everything is now tried.
         assert!(fb.next_font(CjkChar::Han).is_none());
         assert!(fb.exhausted());
-        assert_eq!(fb.tried, vec![CjkScript::Korean, CjkScript::SimplifiedChinese, CjkScript::TraditionalChinese, CjkScript::Japanese]);
+        assert_eq!(
+            fb.tried,
+            vec![
+                CjkScript::Korean,
+                CjkScript::SimplifiedChinese,
+                CjkScript::TraditionalChinese,
+                CjkScript::Japanese
+            ]
+        );
         assert_eq!(fb.registered.len(), 1, "a file is read at most once");
         assert!(fb.next_font(CjkChar::Kana).is_none());
     }
@@ -565,7 +676,9 @@ mod tests {
         for x in [0x0001_0000, 0x0001_0000, 0, 0x5F0F_3CF5] {
             be32(&mut head, x);
         }
-        for x in [0x000B, 1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, -200, 600, 800, 0, 8, 2, 1, 0] {
+        for x in [
+            0x000B, 1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, -200, 600, 800, 0, 8, 2, 1, 0,
+        ] {
             be16(&mut head, x);
         }
         let mut hhea = Vec::new();
@@ -600,8 +713,15 @@ mod tests {
             }
             gid += b - a + 1;
         }
-        let tables: [(&[u8; 4], Vec<u8>); 7] =
-            [(b"cmap", cmap), (b"glyf", glyf), (b"head", head), (b"hhea", hhea), (b"hmtx", hmtx), (b"loca", loca), (b"maxp", maxp)];
+        let tables: [(&[u8; 4], Vec<u8>); 7] = [
+            (b"cmap", cmap),
+            (b"glyf", glyf),
+            (b"head", head),
+            (b"hhea", hhea),
+            (b"hmtx", hmtx),
+            (b"loca", loca),
+            (b"maxp", maxp),
+        ];
         let mut font = Vec::new();
         be32(&mut font, 0x0001_0000);
         for x in [7, 64, 2, 48] {
@@ -632,7 +752,12 @@ mod tests {
             scripts: |s| {
                 let f = |name: &str| fake_dir().join(name);
                 match s {
-                    Script::Thai => vec![f("missing.ttf"), f("empty.ttf"), f("font.ttf"), f("thai.ttf")],
+                    Script::Thai => vec![
+                        f("missing.ttf"),
+                        f("empty.ttf"),
+                        f("font.ttf"),
+                        f("thai.ttf"),
+                    ],
                     Script::Arabic => vec![f("arabic.ttf")],
                     Script::Devanagari => vec![f("devanagari.ttf")],
                     _ => vec![],
@@ -644,8 +769,13 @@ mod tests {
     }
 
     fn fallback_files(ctx: &egui::Context) -> Vec<String> {
-        ctx.with_plugin::<CjkFontPlugin, _>(|p| p.0.registered.iter().map(|(_, path, _)| path.file_name().unwrap().to_string_lossy().into_owned()).collect())
-            .unwrap()
+        ctx.with_plugin::<CjkFontPlugin, _>(|p| {
+            p.0.registered
+                .iter()
+                .map(|(_, path, _)| path.file_name().unwrap().to_string_lossy().into_owned())
+                .collect()
+        })
+        .unwrap()
     }
 
     #[test]
@@ -654,14 +784,21 @@ mod tests {
         for _ in 0..2 {
             crate::theme::install_fonts_with(&ctx, script_sources());
             assert!(render(&ctx, "Layer 1 – café"));
-            ctx.with_plugin::<CjkFontPlugin, _>(|p| assert!(p.0.scripts_tried.is_empty(), "Latin text reads no font")).unwrap();
+            ctx.with_plugin::<CjkFontPlugin, _>(|p| {
+                assert!(p.0.scripts_tried.is_empty(), "Latin text reads no font")
+            })
+            .unwrap();
             assert!(fallback_files(&ctx).is_empty());
             // A Thai type layer's name (#2275), Arabic (#1693) and Devanagari: no missing glyphs.
             for text in ["สวัสดี", "ภาพถ่าย/วันหยุดพักผ่อน", "مرحبا بالعالم", "नमस्ते दुनिया"]
             {
                 assert!(render(&ctx, text), "tofu in {text}");
             }
-            assert_eq!(fallback_files(&ctx), ["thai.ttf", "arabic.ttf", "devanagari.ttf"], "the first file that maps the character, never Inter");
+            assert_eq!(
+                fallback_files(&ctx),
+                ["thai.ttf", "arabic.ttf", "devanagari.ttf"],
+                "the first file that maps the character, never Inter"
+            );
             // Hebrew has no font here: tried once, then left alone (no reload or repaint loop).
             assert!(!render(&ctx, "שלום"));
             assert!(!render(&ctx, "שלום"));
@@ -671,10 +808,22 @@ mod tests {
             })
             .unwrap();
             let fonts = ctx.fonts(|f| f.definitions().clone());
-            assert_eq!(fonts.families[&FontFamily::Proportional].first().map(String::as_str), Some("Inter"));
+            assert_eq!(
+                fonts.families[&FontFamily::Proportional]
+                    .first()
+                    .map(String::as_str),
+                Some("Inter")
+            );
             for stack in fonts.families.values() {
-                assert_eq!(stack.iter().filter(|n| n.starts_with(FONT_PREFIX)).count(), 3);
-                assert_eq!(stack.last().map(String::as_str), Some("system-cjk-2"), "appended last so Latin keeps Inter");
+                assert_eq!(
+                    stack.iter().filter(|n| n.starts_with(FONT_PREFIX)).count(),
+                    3
+                );
+                assert_eq!(
+                    stack.last().map(String::as_str),
+                    Some("system-cjk-2"),
+                    "appended last so Latin keeps Inter"
+                );
             }
         }
     }
@@ -685,13 +834,17 @@ mod tests {
         crate::theme::install_fonts_with(&ctx, script_sources());
         assert!(!render(&ctx, "日本語/ภาพถ่าย/วันหยุดพักผ่อน.png"));
         assert!(render(&ctx, "ภาพถ่าย/วันหยุดพักผ่อน.png"));
-        ctx.with_plugin::<CjkFontPlugin, _>(|p| assert!(p.0.exhausted())).unwrap();
+        ctx.with_plugin::<CjkFontPlugin, _>(|p| assert!(p.0.exhausted()))
+            .unwrap();
         assert_eq!(fallback_files(&ctx), ["thai.ttf"]);
         // A script with no font leaves CJK available.
         let mut fallback = CjkFallback::new(fake_sources(|| Some("ko".into())));
         assert!(fallback.next_script_font('ส').is_none());
         assert!(fallback.next_script_font('ส').is_none());
-        assert!(fallback.next_script_font('A').is_none(), "Latin is never a fallback script");
+        assert!(
+            fallback.next_script_font('A').is_none(),
+            "Latin is never a fallback script"
+        );
         assert_eq!(fallback.scripts_tried, [Script::Thai]);
         assert!(fallback.next_font(CjkChar::Hangul).is_some());
     }
@@ -700,7 +853,11 @@ mod tests {
     fn script_candidates_are_read_a_bounded_number_of_times() {
         static CHECKED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let mut fallback = CjkFallback::new(Sources {
-            scripts: |_| (0..20).map(|i| fake_dir().join(if i % 2 == 0 { "font.ttf" } else { "thai.ttf" })).collect(),
+            scripts: |_| {
+                (0..20)
+                    .map(|i| fake_dir().join(if i % 2 == 0 { "font.ttf" } else { "thai.ttf" }))
+                    .collect()
+            },
             covers: |_, _| {
                 CHECKED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 None
@@ -709,7 +866,11 @@ mod tests {
         });
         assert!(fallback.next_script_font('ش').is_none());
         assert!(fallback.next_script_font('ش').is_none());
-        assert_eq!(CHECKED.load(std::sync::atomic::Ordering::Relaxed), MAX_SCRIPT_READS, "one bounded pass per script");
+        assert_eq!(
+            CHECKED.load(std::sync::atomic::Ordering::Relaxed),
+            MAX_SCRIPT_READS,
+            "one bounded pass per script"
+        );
         assert!(fallback.registered.is_empty());
         assert!(!fallback.scripts_exhausted());
     }
@@ -718,12 +879,23 @@ mod tests {
     fn system_fonts_cover_other_script_samples() {
         // Like the CJK system-font test, run per script when this machine has a font for it.
         // The deterministic tests above do not need installed fonts.
-        let samples = [("ภาพถ่าย/วันหยุดพักผ่อน", 'ภ'), ("مرحبا", 'م'), ("שלום", 'ש'), ("नमस्ते", 'न')];
+        let samples = [
+            ("ภาพถ่าย/วันหยุดพักผ่อน", 'ภ'),
+            ("مرحبا", 'م'),
+            ("שלום", 'ש'),
+            ("नमस्ते", 'न'),
+        ];
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         for (text, c) in samples {
-            let Some(script) = scripts::classify(c) else { continue };
-            if !scripts::system_candidates(script).iter().any(|p| read_font(p).and_then(|b| scripts::covering_face(&b, c)).is_some()) {
+            let Some(script) = scripts::classify(c) else {
+                continue;
+            };
+            if !scripts::system_candidates(script).iter().any(|p| {
+                read_font(p)
+                    .and_then(|b| scripts::covering_face(&b, c))
+                    .is_some()
+            }) {
                 eprintln!("skipping {text}: no {script:?} system font");
                 continue;
             }
@@ -733,9 +905,22 @@ mod tests {
 
     #[test]
     fn vertical_metrics_parse_and_reject_garbage() {
-        let (asc, desc, gap) = vertical_metrics(include_bytes!("../../../assets/photocraft/fonts/Inter-Regular.ttf"), 0).unwrap();
-        assert!((asc - 1984.0 / 2048.0).abs() < 1e-4 && (desc + 494.0 / 2048.0).abs() < 1e-4 && gap == 0.0);
-        for bad in [&b""[..], b"ttcf", b"ttcf\0\0\0\0\0\0\0\0\xff\xff\xff\xff", b"\0\x01\0\0\0\xff\0\0\0\0\0\0"] {
+        let (asc, desc, gap) = vertical_metrics(
+            include_bytes!("../../../assets/photocraft/fonts/Inter-Regular.ttf"),
+            0,
+        )
+        .unwrap();
+        assert!(
+            (asc - 1984.0 / 2048.0).abs() < 1e-4
+                && (desc + 494.0 / 2048.0).abs() < 1e-4
+                && gap == 0.0
+        );
+        for bad in [
+            &b""[..],
+            b"ttcf",
+            b"ttcf\0\0\0\0\0\0\0\0\xff\xff\xff\xff",
+            b"\0\x01\0\0\0\xff\0\0\0\0\0\0",
+        ] {
             assert!(vertical_metrics(bad, 0).is_none());
             assert!(vertical_metrics(bad, u32::MAX).is_none());
         }
@@ -749,7 +934,10 @@ mod tests {
         assert_eq!(baseline_offset(inter, inter), 0.0);
         assert_eq!(baseline_offset((f32::NAN, 0.0, 0.0), inter), 0.0);
         let jb = (1.02, -0.3, 0.0);
-        assert!((baseline_offset(hiragino, jb) - baseline_offset(hiragino, inter)).abs() < 0.005, "one offset serves the monospace family too");
+        assert!(
+            (baseline_offset(hiragino, jb) - baseline_offset(hiragino, inter)).abs() < 0.005,
+            "one offset serves the monospace family too"
+        );
     }
 
     #[test]
@@ -757,7 +945,13 @@ mod tests {
         let ctx = egui::Context::default();
         install_with(&ctx, fake_sources(|| Some("ko".into())));
         let _ = render(&ctx, "Layer 1 – café");
-        let n = ctx.fonts(|f| f.definitions().font_data.keys().filter(|k| k.starts_with(FONT_PREFIX)).count());
+        let n = ctx.fonts(|f| {
+            f.definitions()
+                .font_data
+                .keys()
+                .filter(|k| k.starts_with(FONT_PREFIX))
+                .count()
+        });
         assert_eq!(n, 0, "Latin text loads nothing");
         // Hangul isn't in the stand-in font, but the Korean candidate must have been registered.
         let _ = render(&ctx, "카드 배경");
@@ -765,32 +959,59 @@ mod tests {
         let name = format!("{FONT_PREFIX}-0");
         assert!(fonts.font_data.contains_key(&name));
         for (fam, stack) in &fonts.families {
-            assert_eq!(stack.last(), Some(&name), "{fam:?}: appended last so Latin keeps Inter");
+            assert_eq!(
+                stack.last(),
+                Some(&name),
+                "{fam:?}: appended last so Latin keeps Inter"
+            );
         }
     }
 
     /// No system fonts at all: craft-fonts alone draws Japanese.
     fn craft_only(locale: fn() -> Option<String>) -> Sources {
-        Sources { locale, files: |_| vec![], last_resort: Vec::new, scripts: |_| Vec::new(), covers: scripts::covering_face, embedded: craft_embedded }
+        Sources {
+            locale,
+            files: |_| vec![],
+            last_resort: Vec::new,
+            scripts: |_| Vec::new(),
+            covers: scripts::covering_face,
+            embedded: craft_embedded,
+        }
     }
 
     #[test]
     fn craft_fonts_render_japanese_without_system_fonts() {
         let Some(ui_font) = craft_fonts::japanese_for_ui().first().copied() else {
-            eprintln!("skipping: built without craft-fonts (set CRAFT_FONTS_DIR to a craft-fonts checkout)");
+            eprintln!(
+                "skipping: built without craft-fonts (set CRAFT_FONTS_DIR to a craft-fonts checkout)"
+            );
             return;
         };
         // An English locale tries Chinese first (none here), then Japanese: the craft font.
-        for locale in [(|| Some("en_US".into())) as fn() -> Option<String>, || Some("ja_JP".into()), || None] {
+        for locale in [
+            (|| Some("en_US".into())) as fn() -> Option<String>,
+            || Some("ja_JP".into()),
+            || None,
+        ] {
             let ctx = egui::Context::default();
             crate::theme::install_fonts_with(&ctx, craft_only(locale));
             assert!(render(&ctx, "日本語の文字"), "tofu in 日本語の文字");
             assert!(render(&ctx, "レイヤー 1"), "tofu in kana");
             let fonts = ctx.fonts(|f| f.definitions().clone());
             let name = format!("{FONT_PREFIX}-0");
-            assert!(fonts.font_data.get(&name).is_some_and(|d| std::ptr::eq(d.font.as_ref().as_ptr(), ui_font.bytes.as_ptr())), "BIZ UDPGothic Regular first");
+            assert!(
+                fonts.font_data.get(&name).is_some_and(|d| std::ptr::eq(
+                    d.font.as_ref().as_ptr(),
+                    ui_font.bytes.as_ptr()
+                )),
+                "BIZ UDPGothic Regular first"
+            );
             for (fam, stack) in &fonts.families {
-                assert_eq!(stack.last(), Some(&name), "{fam:?}: appended last so Latin keeps Inter");
+                assert_eq!(
+                    stack.last(),
+                    Some(&name),
+                    "{fam:?}: appended last so Latin keeps Inter"
+                );
                 assert!(stack.first().is_some_and(|f| f != &name), "{fam:?}");
             }
         }
@@ -814,7 +1035,13 @@ mod tests {
         );
         assert!(render(&ctx, "Layer 1 – café"));
         assert!(!render(&ctx, "日本語の文字"));
-        let n = ctx.fonts(|f| f.definitions().font_data.keys().filter(|k| k.starts_with(FONT_PREFIX)).count());
+        let n = ctx.fonts(|f| {
+            f.definitions()
+                .font_data
+                .keys()
+                .filter(|k| k.starts_with(FONT_PREFIX))
+                .count()
+        });
         assert_eq!(n, 0);
         if craft_fonts::CRAFT_FONTS.is_empty() {
             assert!(craft_embedded(CjkScript::Japanese).is_empty());
@@ -846,7 +1073,12 @@ mod tests {
         // All at once in a fresh context too (several scripts in one frame).
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        let all: String = samples.iter().filter(|(_, s)| available(*s)).map(|(t, _)| *t).collect::<Vec<_>>().join(" ");
+        let all: String = samples
+            .iter()
+            .filter(|(_, s)| available(*s))
+            .map(|(t, _)| *t)
+            .collect::<Vec<_>>()
+            .join(" ");
         assert!(render(&ctx, &all), "{all}");
     }
 }

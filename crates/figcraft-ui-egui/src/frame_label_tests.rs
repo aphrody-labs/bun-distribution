@@ -17,9 +17,20 @@ fn id(v: serde_json::Value) -> NodeId {
 /// Frames "Upright" at (0, 0) and "Turned" at (400, 0), the second rotated 30°.
 fn setup() -> (Ui, NodeId, NodeId) {
     let mut s = Session::new();
-    let a = id(s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 300, "height": 200, "name": "Upright"})).unwrap());
-    let b = id(s.execute("frame.create", &json!({"x": 400, "y": 0, "width": 300, "height": 200, "name": "Turned"})).unwrap());
-    s.execute("node.set", &json!({"id": b, "rotation": 30})).unwrap();
+    let a = id(s
+        .execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 300, "height": 200, "name": "Upright"}),
+        )
+        .unwrap());
+    let b = id(s
+        .execute(
+            "frame.create",
+            &json!({"x": 400, "y": 0, "width": 300, "height": 200, "name": "Turned"}),
+        )
+        .unwrap());
+    s.execute("node.set", &json!({"id": b, "rotation": 30}))
+        .unwrap();
     let mut u = Ui::new(s);
     u.frame(vec![]);
     (u, a, b)
@@ -27,7 +38,14 @@ fn setup() -> (Ui, NodeId, NodeId) {
 
 /// Frame `f`'s label on screen (corners) as the canvas published it.
 fn label(u: &Ui, f: NodeId) -> [Pos2; 4] {
-    let (_, q) = u.app.session.tool.labels.iter().find(|(id, _)| *id == f).expect("the frame has a label");
+    let (_, q) = u
+        .app
+        .session
+        .tool
+        .labels
+        .iter()
+        .find(|(id, _)| *id == f)
+        .expect("the frame has a label");
     q.map(|p| u.app.to_screen(p.x, p.y))
 }
 
@@ -38,7 +56,10 @@ fn local(u: &Ui, f: NodeId, x: f64, y: f64) -> Pos2 {
 }
 
 fn mid(q: &[Pos2; 4]) -> Pos2 {
-    pos2(q.iter().map(|p| p.x).sum::<f32>() / 4.0, q.iter().map(|p| p.y).sum::<f32>() / 4.0)
+    pos2(
+        q.iter().map(|p| p.x).sum::<f32>() / 4.0,
+        q.iter().map(|p| p.y).sum::<f32>() / 4.0,
+    )
 }
 
 #[test]
@@ -47,7 +68,10 @@ fn labels_run_along_the_frames_top_edge() {
     // Upright: a strip right above the top-left corner.
     let q = label(&u, a);
     let tl = local(&u, a, 0.0, 0.0);
-    assert!((q[0].x - tl.x).abs() < 0.5 && q[0].y < tl.y && q[3].y < tl.y + 0.5, "{q:?} vs {tl:?}");
+    assert!(
+        (q[0].x - tl.x).abs() < 0.5 && q[0].y < tl.y && q[3].y < tl.y + 0.5,
+        "{q:?} vs {tl:?}"
+    );
     assert!((q[0].y - q[1].y).abs() < 1e-3, "level");
     // Turned: the strip starts at the turned top-left corner and runs along the top edge.
     let q = label(&u, b);
@@ -72,10 +96,15 @@ fn pressing_a_rotated_label_selects_and_drags_the_frame() {
     u.button(at, true);
     assert_eq!(u.app.session.selection(), vec![b]);
     for k in 1..=10 {
-        u.frame(vec![Event::PointerMoved(at + vec2(4.0 * k as f32, 2.0 * k as f32))]);
+        u.frame(vec![Event::PointerMoved(
+            at + vec2(4.0 * k as f32, 2.0 * k as f32),
+        )]);
     }
     u.button(at + vec2(40.0, 20.0), false);
     let after = u.app.session.doc().unwrap().world_bounds(b).unwrap();
-    assert!(after.x0 > before.x0 + 1.0 && after.y0 > before.y0 + 1.0, "{before:?} → {after:?}");
+    assert!(
+        after.x0 > before.x0 + 1.0 && after.y0 > before.y0 + 1.0,
+        "{before:?} → {after:?}"
+    );
     assert_eq!(u.app.session.ds().unwrap().history.undo.len(), undo + 1);
 }

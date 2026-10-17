@@ -38,7 +38,9 @@ pub fn find(explicit: Option<&Path>) -> Result<PathBuf> {
     .map(PathBuf::from)
     .collect();
     if let Some(home) = env::var_os("HOME") {
-        candidates.push(Path::new(&home).join("Applications/Google Chrome.app/Contents/MacOS/Google Chrome"));
+        candidates.push(
+            Path::new(&home).join("Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+        );
     }
     for var in ["ProgramFiles", "ProgramFiles(x86)", "LocalAppData"] {
         if let Some(base) = env::var_os(var) {
@@ -51,7 +53,15 @@ pub fn find(explicit: Option<&Path>) -> Result<PathBuf> {
         return Ok(found);
     }
 
-    let names = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome", "chrome.exe", "msedge"];
+    let names = [
+        "google-chrome",
+        "google-chrome-stable",
+        "chromium",
+        "chromium-browser",
+        "chrome",
+        "chrome.exe",
+        "msedge",
+    ];
     let path = env::var_os("PATH").unwrap_or_default();
     for dir in env::split_paths(&path) {
         for name in names {
@@ -99,7 +109,11 @@ pub fn print_to_pdf(chrome: &Path, html: &Path, pdf: &Path, log: &Path) -> Resul
             if is_complete(pdf) {
                 return Ok(());
             }
-            bail!("Chrome exited with {status} without writing {}; see {}", pdf.display(), log.display());
+            bail!(
+                "Chrome exited with {status} without writing {}; see {}",
+                pdf.display(),
+                log.display()
+            );
         }
         let len = fs::metadata(pdf).map(|m| m.len()).ok();
         if len == last_len && len.is_some() && is_complete(pdf) {
@@ -114,7 +128,11 @@ pub fn print_to_pdf(chrome: &Path, html: &Path, pdf: &Path, log: &Path) -> Resul
         last_len = len;
         if started.elapsed() > Duration::from_secs(120) {
             stop(&mut child);
-            bail!("Chrome timed out printing {}; see {}", html.display(), log.display());
+            bail!(
+                "Chrome timed out printing {}; see {}",
+                html.display(),
+                log.display()
+            );
         }
         thread::sleep(Duration::from_millis(500));
     }
@@ -143,7 +161,10 @@ fn chrome_args(profile: &Path, print_arg: OsString, url: impl Into<OsString>) ->
 fn stop(child: &mut Child) {
     #[cfg(unix)]
     {
-        let _ = Command::new("kill").arg("-TERM").arg(child.id().to_string()).status();
+        let _ = Command::new("kill")
+            .arg("-TERM")
+            .arg(child.id().to_string())
+            .status();
         let deadline = Instant::now() + Duration::from_secs(5);
         while Instant::now() < deadline {
             if matches!(child.try_wait(), Ok(Some(_))) {
@@ -173,7 +194,14 @@ impl Drop for TempProfile {
 
 /// A PDF is complete once its trailer's `%%EOF` marker has been written.
 fn is_complete(pdf: &Path) -> bool {
-    fs::read(pdf).map(|bytes| bytes.len() > 1024 && bytes[bytes.len() - 1024..].windows(5).any(|w| w == b"%%EOF")).unwrap_or(false)
+    fs::read(pdf)
+        .map(|bytes| {
+            bytes.len() > 1024
+                && bytes[bytes.len() - 1024..]
+                    .windows(5)
+                    .any(|w| w == b"%%EOF")
+        })
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
@@ -182,10 +210,20 @@ mod tests {
 
     #[test]
     fn args_disable_code_sign_clone_and_use_throwaway_profile() {
-        let args = chrome_args(Path::new("/tmp/prof"), OsString::from("--print-to-pdf=out.pdf"), "file:///a.html");
-        assert!(args.iter().any(|a| a == "--disable-features=MacAppCodeSignClone"));
+        let args = chrome_args(
+            Path::new("/tmp/prof"),
+            OsString::from("--print-to-pdf=out.pdf"),
+            "file:///a.html",
+        );
+        assert!(
+            args.iter()
+                .any(|a| a == "--disable-features=MacAppCodeSignClone")
+        );
         assert!(args.iter().any(|a| a == "--user-data-dir=/tmp/prof"));
-        assert_eq!(args.last().map(|a| a.as_os_str()), Some(std::ffi::OsStr::new("file:///a.html")));
+        assert_eq!(
+            args.last().map(|a| a.as_os_str()),
+            Some(std::ffi::OsStr::new("file:///a.html"))
+        );
     }
 
     #[test]

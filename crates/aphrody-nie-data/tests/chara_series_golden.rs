@@ -62,7 +62,10 @@ fn chara_base_resolves_series() {
         series_id: Some(HashId(0x62E8_448F)),
         belong_team_id: None,
     };
-    assert_eq!(resolve_series_name_fr(&endou, &series), Some("Inazuma Eleven"));
+    assert_eq!(
+        resolve_series_name_fr(&endou, &series),
+        Some("Inazuma Eleven")
+    );
     // series_id absent → None.
     endou.series_id = None;
     assert_eq!(resolve_series_name_fr(&endou, &series), None);

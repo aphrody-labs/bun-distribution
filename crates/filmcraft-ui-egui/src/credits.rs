@@ -48,7 +48,11 @@ pub enum NameMode {
 }
 
 impl NameMode {
-    pub const ALL: [NameMode; 3] = [NameMode::Username, NameMode::DisplayName, NameMode::RealName];
+    pub const ALL: [NameMode; 3] = [
+        NameMode::Username,
+        NameMode::DisplayName,
+        NameMode::RealName,
+    ];
 
     /// Automation id suffix.
     pub fn id(self) -> &'static str {
@@ -115,7 +119,10 @@ impl SortKey {
 
     /// Names and dates read naturally oldest/A first; counts read biggest first.
     pub fn default_ascending(self) -> bool {
-        matches!(self, SortKey::Name | SortKey::FirstCommit | SortKey::LastCommit)
+        matches!(
+            self,
+            SortKey::Name | SortKey::FirstCommit | SortKey::LastCommit
+        )
     }
 }
 
@@ -177,12 +184,18 @@ fn dated(d: &str) -> (bool, &str) {
 }
 
 /// Contributors in display order. Ties fall back to the name (A–Z) so the order is stable.
-pub fn sorted(list: &[Contributor], mode: NameMode, key: SortKey, ascending: bool) -> Vec<&Contributor> {
+pub fn sorted(
+    list: &[Contributor],
+    mode: NameMode,
+    key: SortKey,
+    ascending: bool,
+) -> Vec<&Contributor> {
     let mut v: Vec<&Contributor> = list.iter().collect();
     v.sort_by(|a, b| {
         let o = compare(a, b, mode, key);
         let o = if ascending { o } else { o.reverse() };
-        o.then_with(|| compare(a, b, mode, SortKey::Name)).then_with(|| a.login.cmp(b.login))
+        o.then_with(|| compare(a, b, mode, SortKey::Name))
+            .then_with(|| a.login.cmp(b.login))
     });
     v
 }
@@ -201,11 +214,19 @@ fn group(n: u64) -> String {
 
 fn signed(n: i128) -> String {
     let g = group(u64::try_from(n.unsigned_abs()).unwrap_or(u64::MAX));
-    if n < 0 { format!("−{g}") } else { format!("+{g}") }
+    if n < 0 {
+        format!("−{g}")
+    } else {
+        format!("+{g}")
+    }
 }
 
 fn day(iso: &str) -> &str {
-    if iso.is_empty() { "—" } else { iso.get(..10).unwrap_or(iso) }
+    if iso.is_empty() {
+        "—"
+    } else {
+        iso.get(..10).unwrap_or(iso)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -218,7 +239,12 @@ struct View {
 
 impl Default for View {
     fn default() -> Self {
-        View { names: NameMode::Username, key: SortKey::FirstCommit, ascending: true, table: false }
+        View {
+            names: NameMode::Username,
+            key: SortKey::FirstCommit,
+            ascending: true,
+            table: false,
+        }
     }
 }
 
@@ -237,23 +263,34 @@ pub fn contributors_ui(ui: &mut egui::Ui, t: &Tokens, auto: &mut Registry) {
         ui.label(tl!("Show"));
         for m in NameMode::ALL {
             let r = ui.selectable_label(v.names == m, crate::i18n::t(m.label()));
-            auto.add(&format!("about.credits.names.{}", m.id()), r.rect, m.label());
+            auto.add(
+                &format!("about.credits.names.{}", m.id()),
+                r.rect,
+                m.label(),
+            );
             if r.clicked() {
                 v.names = m;
             }
         }
         ui.separator();
         ui.label(tl!("Sort"));
-        let combo = egui::ComboBox::from_id_salt("credits_sort").selected_text(crate::i18n::t(v.key.label().0)).show_ui(ui, |ui| {
-            for k in SortKey::ALL {
-                if ui.selectable_label(v.key == k, crate::i18n::t(k.label().0)).clicked() {
-                    v.key = k;
-                    v.ascending = k.default_ascending();
+        let combo = egui::ComboBox::from_id_salt("credits_sort")
+            .selected_text(crate::i18n::t(v.key.label().0))
+            .show_ui(ui, |ui| {
+                for k in SortKey::ALL {
+                    if ui
+                        .selectable_label(v.key == k, crate::i18n::t(k.label().0))
+                        .clicked()
+                    {
+                        v.key = k;
+                        v.ascending = k.default_ascending();
+                    }
                 }
-            }
-        });
+            });
         auto.add("about.credits.sort", combo.response.rect, "Sort");
-        let r = ui.button(if v.ascending { "▲" } else { "▼" }).on_hover_text(tl!("Reverse the order"));
+        let r = ui
+            .button(if v.ascending { "▲" } else { "▼" })
+            .on_hover_text(tl!("Reverse the order"));
         auto.add("about.credits.reverse", r.rect, "Reverse the order");
         if r.clicked() {
             v.ascending = !v.ascending;
@@ -271,57 +308,80 @@ pub fn contributors_ui(ui: &mut egui::Ui, t: &Tokens, auto: &mut Registry) {
         }
     });
     let list = sorted(CONTRIBUTORS, v.names, v.key, v.ascending);
-    ui.label(RichText::new(format!("{} contributors · {} commits", list.len(), group(TOTAL_COMMITS))).small().color(t.text_dim));
+    ui.label(
+        RichText::new(format!(
+            "{} contributors · {} commits",
+            list.len(),
+            group(TOTAL_COMMITS)
+        ))
+        .small()
+        .color(t.text_dim),
+    );
     ui.separator();
-    egui::ScrollArea::both().id_salt("credits_list").max_height(LIST_HEIGHT).auto_shrink([false, false]).show(ui, |ui| {
-        if list.is_empty() {
-            ui.label(tl!("No contributor data was built into this copy."));
-        } else if v.table {
-            table(ui, &list, &mut v, auto);
-        } else {
-            ui.horizontal_wrapped(|ui| {
-                for (i, c) in list.iter().enumerate() {
-                    if i > 0 {
-                        ui.label(RichText::new("·").color(t.text_dim));
+    egui::ScrollArea::both()
+        .id_salt("credits_list")
+        .max_height(LIST_HEIGHT)
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            if list.is_empty() {
+                ui.label(tl!("No contributor data was built into this copy."));
+            } else if v.table {
+                table(ui, &list, &mut v, auto);
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    for (i, c) in list.iter().enumerate() {
+                        if i > 0 {
+                            ui.label(RichText::new("·").color(t.text_dim));
+                        }
+                        ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login))
+                            .on_hover_text(c.summary());
                     }
-                    ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login)).on_hover_text(c.summary());
-                }
-            });
-        }
-    });
+                });
+            }
+        });
     ui.data_mut(|d| d.insert_temp(id, v));
 }
 
 fn table(ui: &mut egui::Ui, list: &[&Contributor], v: &mut View, auto: &mut Registry) {
-    egui::Grid::new("credits_table").striped(true).num_columns(SortKey::ALL.len()).show(ui, |ui| {
-        for (i, k) in SortKey::ALL.into_iter().enumerate() {
-            let arrow = if v.key == k { if v.ascending { " ▲" } else { " ▼" } } else { "" };
-            let r = ui.button(RichText::new(format!("{}{arrow}", k.label().1)).strong()).on_hover_text(crate::i18n::t(k.label().0));
-            auto.add(&format!("about.credits.header.{i}"), r.rect, k.label().0);
-            if r.clicked() {
-                if v.key == k {
-                    v.ascending = !v.ascending;
+    egui::Grid::new("credits_table")
+        .striped(true)
+        .num_columns(SortKey::ALL.len())
+        .show(ui, |ui| {
+            for (i, k) in SortKey::ALL.into_iter().enumerate() {
+                let arrow = if v.key == k {
+                    if v.ascending { " ▲" } else { " ▼" }
                 } else {
-                    v.key = k;
-                    v.ascending = k.default_ascending();
+                    ""
+                };
+                let r = ui
+                    .button(RichText::new(format!("{}{arrow}", k.label().1)).strong())
+                    .on_hover_text(crate::i18n::t(k.label().0));
+                auto.add(&format!("about.credits.header.{i}"), r.rect, k.label().0);
+                if r.clicked() {
+                    if v.key == k {
+                        v.ascending = !v.ascending;
+                    } else {
+                        v.key = k;
+                        v.ascending = k.default_ascending();
+                    }
                 }
             }
-        }
-        ui.end_row();
-        for c in list {
-            ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login)).on_hover_text(c.summary());
-            ui.label(group(c.prs));
-            ui.label(group(c.commits));
-            ui.label(group(c.lines_added));
-            ui.label(group(c.lines_deleted));
-            ui.label(signed(c.lines_delta()));
-            ui.label(group(c.binary_added));
-            ui.label(group(c.binary_deleted));
-            ui.label(day(c.first_commit));
-            ui.label(day(c.last_commit));
             ui.end_row();
-        }
-    });
+            for c in list {
+                ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login))
+                    .on_hover_text(c.summary());
+                ui.label(group(c.prs));
+                ui.label(group(c.commits));
+                ui.label(group(c.lines_added));
+                ui.label(group(c.lines_deleted));
+                ui.label(signed(c.lines_delta()));
+                ui.label(group(c.binary_added));
+                ui.label(group(c.binary_deleted));
+                ui.label(day(c.first_commit));
+                ui.label(day(c.last_commit));
+                ui.end_row();
+            }
+        });
 }
 
 /// About ▸ Models: AI models credited in Co-Authored-By trailers.
@@ -331,30 +391,58 @@ pub fn models_ui(ui: &mut egui::Ui) {
         return;
     }
     let assisted: u64 = MODELS.iter().map(|m| m.commits).max().unwrap_or(0).max(1);
-    egui::ScrollArea::both().id_salt("credits_models").max_height(LIST_HEIGHT).auto_shrink([false, true]).show(ui, |ui| {
-        egui::Grid::new("credits_models").striped(true).num_columns(6).show(ui, |ui| {
-            for h in [tl!("Company"), tl!("Model"), tl!("Version"), tl!("Commits"), tl!("% of all commits"), tl!("Lines +/−")] {
-                ui.label(RichText::new(h).strong());
-            }
-            ui.end_row();
-            for m in MODELS {
-                ui.label(m.company);
-                ui.label(m.model);
-                ui.label(m.version);
-                ui.label(group(m.commits));
-                ui.label(format!("{:.0}%", 100.0 * m.commits as f64 / TOTAL_COMMITS.max(assisted) as f64));
-                ui.label(format!("+{} / −{}", group(m.lines_added), group(m.lines_deleted)));
-                ui.end_row();
-            }
+    egui::ScrollArea::both()
+        .id_salt("credits_models")
+        .max_height(LIST_HEIGHT)
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            egui::Grid::new("credits_models")
+                .striped(true)
+                .num_columns(6)
+                .show(ui, |ui| {
+                    for h in [
+                        tl!("Company"),
+                        tl!("Model"),
+                        tl!("Version"),
+                        tl!("Commits"),
+                        tl!("% of all commits"),
+                        tl!("Lines +/−"),
+                    ] {
+                        ui.label(RichText::new(h).strong());
+                    }
+                    ui.end_row();
+                    for m in MODELS {
+                        ui.label(m.company);
+                        ui.label(m.model);
+                        ui.label(m.version);
+                        ui.label(group(m.commits));
+                        ui.label(format!(
+                            "{:.0}%",
+                            100.0 * m.commits as f64 / TOTAL_COMMITS.max(assisted) as f64
+                        ));
+                        ui.label(format!(
+                            "+{} / −{}",
+                            group(m.lines_added),
+                            group(m.lines_deleted)
+                        ));
+                        ui.end_row();
+                    }
+                });
         });
-    });
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn c(login: &'static str, display: Option<&'static str>, real: Option<&'static str>, added: u64, deleted: u64, first: &'static str) -> Contributor {
+    fn c(
+        login: &'static str,
+        display: Option<&'static str>,
+        real: Option<&'static str>,
+        added: u64,
+        deleted: u64,
+        first: &'static str,
+    ) -> Contributor {
         Contributor {
             login,
             display_name: display,

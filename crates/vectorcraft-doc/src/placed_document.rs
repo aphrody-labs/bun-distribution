@@ -23,7 +23,10 @@ use vectorcraft_geom::{Affine, Rect};
 
 use vectorcraft_color::Paint;
 
-use crate::{AppearanceItem, Document, ImageBlob, ImageObject, LinkInfo, Node, NodeKind, PatternDef, PlacementOptions, Symbol};
+use crate::{
+    AppearanceItem, Document, ImageBlob, ImageObject, LinkInfo, Node, NodeKind, PatternDef,
+    PlacementOptions, Symbol,
+};
 
 /// A placed document: an artboard of another VectorCraft file, shown as one locked object.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -66,7 +69,8 @@ impl PlacedDocument {
     /// The four corners of the box in the document.
     pub fn corners(&self) -> [vectorcraft_geom::Point; 4] {
         let r = self.natural();
-        [(r.x0, r.y0), (r.x1, r.y0), (r.x1, r.y1), (r.x0, r.y1)].map(|(x, y)| self.xf * vectorcraft_geom::Point::new(x, y))
+        [(r.x0, r.y0), (r.x1, r.y0), (r.x1, r.y1), (r.x0, r.y1)]
+            .map(|(x, y)| self.xf * vectorcraft_geom::Point::new(x, y))
     }
 
     /// The box in the document (axis-aligned).
@@ -77,9 +81,15 @@ impl PlacedDocument {
     /// The transform from the file's coordinates (its artboard or art bounds `frame`) to the
     /// document; `None` when either size is empty.
     pub fn art_xf(&self, frame: Rect) -> Option<Affine> {
-        let ok = self.width > 0.0 && self.height > 0.0 && frame.width() > 0.0 && frame.height() > 0.0;
+        let ok =
+            self.width > 0.0 && self.height > 0.0 && frame.width() > 0.0 && frame.height() > 0.0;
         ok.then(|| {
-            self.xf * Affine::scale_non_uniform(self.width / frame.width(), self.height / frame.height()) * Affine::translate((-frame.x0, -frame.y0))
+            self.xf
+                * Affine::scale_non_uniform(
+                    self.width / frame.width(),
+                    self.height / frame.height(),
+                )
+                * Affine::translate((-frame.x0, -frame.y0))
         })
     }
 
@@ -87,7 +97,10 @@ impl PlacedDocument {
     /// as [`Document::with_placed_art`] adds them (nothing until that has read it).
     pub fn art(&self, n: &Node) -> Vec<Node> {
         let prefix = prefix(&self.key);
-        read_cached(self).and_then(|e| self.art_node(n, &e, &prefix)).into_iter().collect()
+        read_cached(self)
+            .and_then(|e| self.art_node(n, &e, &prefix))
+            .into_iter()
+            .collect()
     }
 
     /// Read `e`'s art placed as this object `n` shows it (`n`'s id), its resources renamed with
@@ -97,7 +110,9 @@ impl PlacedDocument {
         let mut g = (*e.art).clone();
         rename(&mut g, prefix);
         g.transform(m, true);
-        each_mut(&mut g, &mut |c| crate::pattern::transform_pattern_paints(c, m));
+        each_mut(&mut g, &mut |c| {
+            crate::pattern::transform_pattern_paints(c, m)
+        });
         g.id = n.id;
         Some(g)
     }
@@ -107,7 +122,14 @@ impl PlacedDocument {
     pub fn preview_image(&self, bytes: &[u8]) -> Option<ImageObject> {
         let (w, h) = image_size(bytes).filter(|(w, h)| *w > 0 && *h > 0)?;
         let px = Affine::scale_non_uniform(self.width / w as f64, self.height / h as f64);
-        Some(ImageObject { key: self.key.clone(), width: w, height: h, xf: self.xf * px, link: None, placement: Default::default() })
+        Some(ImageObject {
+            key: self.key.clone(),
+            width: w,
+            height: h,
+            xf: self.xf * px,
+            link: None,
+            placement: Default::default(),
+        })
     }
 }
 
@@ -170,7 +192,9 @@ impl Document {
     pub fn placed_as_groups(&mut self) {
         fn holds(n: &Node) -> bool {
             let mut hit = false;
-            walk_all(n, &mut |c| hit |= matches!(c.kind, NodeKind::PlacedDocument(_)));
+            walk_all(n, &mut |c| {
+                hit |= matches!(c.kind, NodeKind::PlacedDocument(_))
+            });
             hit
         }
         fn update(n: &mut Arc<Node>) {
@@ -199,9 +223,18 @@ impl Document {
     /// Placed documents whose key is in `keys` replaced by images of their previews (for output
     /// when their files can't be read).
     pub fn placed_as_previews(&mut self, keys: &BTreeSet<String>) {
-        fn update(n: &mut Arc<Node>, keys: &BTreeSet<String>, images: &std::collections::BTreeMap<String, ImageBlob>) {
+        fn update(
+            n: &mut Arc<Node>,
+            keys: &BTreeSet<String>,
+            images: &std::collections::BTreeMap<String, ImageBlob>,
+        ) {
             let mut hit = false;
-            walk_all(n, &mut |c| hit |= matches!(&c.kind, NodeKind::PlacedDocument(p) if keys.contains(&p.key)));
+            walk_all(
+                n,
+                &mut |c| {
+                    hit |= matches!(&c.kind, NodeKind::PlacedDocument(p) if keys.contains(&p.key))
+                },
+            );
             if !hit {
                 return;
             }
@@ -268,7 +301,11 @@ pub fn full_bytes_cached(p: &PlacedDocument, blob: &ImageBlob) -> Option<Arc<Vec
     if !blob.is_proxy() {
         return Some(blob.bytes.clone());
     }
-    full().iter().rev().find(|(k, _)| *k == p.key).map(|(_, b)| b.clone())
+    full()
+        .iter()
+        .rev()
+        .find(|(k, _)| *k == p.key)
+        .map(|(_, b)| b.clone())
 }
 
 /// The file's bytes: stored, read again already, or read again now ([`set_file_reader`]). `None`
@@ -289,7 +326,11 @@ pub fn full_bytes(p: &PlacedDocument, blob: &ImageBlob) -> Option<Arc<Vec<u8>>> 
 
 /// The size in pixels of image bytes `bytes` (a preview), read from its header.
 pub fn image_size(bytes: &[u8]) -> Option<(u32, u32)> {
-    image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format().ok()?.into_dimensions().ok()
+    image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()?
+        .into_dimensions()
+        .ok()
 }
 
 // ---------- reading files ----------
@@ -354,7 +395,12 @@ fn cache() -> MutexGuard<'static, Cache> {
 
 impl Cache {
     /// The read of `key` (its preview's when `preview`; made from `bytes` when given), marked used.
-    fn get(&mut self, key: &str, preview: bool, bytes: Option<&Arc<Vec<u8>>>) -> Option<Arc<ReadDocument>> {
+    fn get(
+        &mut self,
+        key: &str,
+        preview: bool,
+        bytes: Option<&Arc<Vec<u8>>>,
+    ) -> Option<Arc<ReadDocument>> {
         self.clock += 1;
         let clock = self.clock;
         let e = self.entries.get_mut(&(key.to_string(), preview))?;
@@ -367,11 +413,24 @@ impl Cache {
 
     fn insert(&mut self, e: Arc<ReadDocument>) {
         self.clock += 1;
-        self.entries.insert((e.key.clone(), e.preview), Entry { e, used: self.clock });
+        self.entries.insert(
+            (e.key.clone(), e.preview),
+            Entry {
+                e,
+                used: self.clock,
+            },
+        );
         // The least recently used go while over both limits.
         let mut total: usize = self.entries.values().map(|x| x.e.bytes.len()).sum();
         while self.entries.len() > CACHE_SIZE && total > CACHE_BYTES {
-            let Some(k) = self.entries.iter().min_by_key(|(_, x)| x.used).map(|(k, _)| k.clone()) else { break };
+            let Some(k) = self
+                .entries
+                .iter()
+                .min_by_key(|(_, x)| x.used)
+                .map(|(k, _)| k.clone())
+            else {
+                break;
+            };
             if let Some(x) = self.entries.remove(&k) {
                 total = total.saturating_sub(x.e.bytes.len());
             }
@@ -387,7 +446,14 @@ pub fn read(p: &PlacedDocument, bytes: &Arc<Vec<u8>>) -> Option<Arc<ReadDocument
     }
     let loader = LOADER.get()?;
     let (doc, art, frame) = loader(p, bytes)?;
-    let e = Arc::new(ReadDocument { key: p.key.clone(), preview: false, bytes: bytes.clone(), frame, art: Arc::new(art), doc: Arc::new(doc) });
+    let e = Arc::new(ReadDocument {
+        key: p.key.clone(),
+        preview: false,
+        bytes: bytes.clone(),
+        frame,
+        art: Arc::new(art),
+        doc: Arc::new(doc),
+    });
     cache().insert(e.clone());
     Some(e)
 }
@@ -402,12 +468,43 @@ fn read_preview(p: &PlacedDocument, bytes: &Arc<Vec<u8>>) -> Option<Arc<ReadDocu
     let mut doc = Document::new(frame.width().max(1.0), frame.height().max(1.0));
     doc.layers.clear();
     doc.swatches.clear();
-    let mime = if bytes.starts_with(&[0xff, 0xd8]) { "image/jpeg" } else { "image/png" };
-    doc.images.insert("preview".into(), ImageBlob { mime: mime.into(), bytes: bytes.clone(), proxy: None });
+    let mime = if bytes.starts_with(&[0xff, 0xd8]) {
+        "image/jpeg"
+    } else {
+        "image/png"
+    };
+    doc.images.insert(
+        "preview".into(),
+        ImageBlob {
+            mime: mime.into(),
+            bytes: bytes.clone(),
+            proxy: None,
+        },
+    );
     let xf = Affine::scale_non_uniform(frame.width() / w as f64, frame.height() / h as f64);
-    let im = ImageObject { key: "preview".into(), width: w, height: h, xf, link: None, placement: Default::default() };
-    let art = Node::new(art_id(), NodeKind::Group { children: vec![Arc::new(Node::new(art_id(), NodeKind::Image(Box::new(im))))], clip: false });
-    let e = Arc::new(ReadDocument { key: p.key.clone(), preview: true, bytes: bytes.clone(), frame, art: Arc::new(art), doc: Arc::new(doc) });
+    let im = ImageObject {
+        key: "preview".into(),
+        width: w,
+        height: h,
+        xf,
+        link: None,
+        placement: Default::default(),
+    };
+    let art = Node::new(
+        art_id(),
+        NodeKind::Group {
+            children: vec![Arc::new(Node::new(art_id(), NodeKind::Image(Box::new(im))))],
+            clip: false,
+        },
+    );
+    let e = Arc::new(ReadDocument {
+        key: p.key.clone(),
+        preview: true,
+        bytes: bytes.clone(),
+        frame,
+        art: Arc::new(art),
+        doc: Arc::new(doc),
+    });
     cache().insert(e.clone());
     Some(e)
 }
@@ -415,13 +512,21 @@ fn read_preview(p: &PlacedDocument, bytes: &Arc<Vec<u8>>) -> Option<Arc<ReadDocu
 /// `p`'s file as read already (else its preview's), without reading it.
 pub fn read_cached(p: &PlacedDocument) -> Option<Arc<ReadDocument>> {
     let mut c = cache();
-    c.get(&p.key, false, None).or_else(|| c.get(&p.key, true, None))
+    c.get(&p.key, false, None)
+        .or_else(|| c.get(&p.key, true, None))
 }
 
 /// Keep `read` (what [`Loader`] gives), just read from `bytes` for `p` (when it was placed), so
 /// drawing it doesn't read it again.
 pub fn prime(p: &PlacedDocument, bytes: Arc<Vec<u8>>, (doc, art, frame): (Document, Node, Rect)) {
-    cache().insert(Arc::new(ReadDocument { key: p.key.clone(), preview: false, bytes, frame, art: Arc::new(art), doc: Arc::new(doc) }));
+    cache().insert(Arc::new(ReadDocument {
+        key: p.key.clone(),
+        preview: false,
+        bytes,
+        frame,
+        art: Arc::new(art),
+        doc: Arc::new(doc),
+    }));
 }
 
 /// The id the read art's own nodes take (their object's, once expanded).
@@ -490,10 +595,20 @@ impl Document {
         let mut d = self.clone();
         let mut found: Vec<Arc<ReadDocument>> = vec![];
         while let Some((p, depth)) = queue.pop() {
-            let Some(blob) = d.images.get(&p.key).cloned() else { continue };
-            let full = if depth < MAX_DEPTH { full_bytes(&p, &blob) } else { None };
+            let Some(blob) = d.images.get(&p.key).cloned() else {
+                continue;
+            };
+            let full = if depth < MAX_DEPTH {
+                full_bytes(&p, &blob)
+            } else {
+                None
+            };
             if full.and_then(|b| read(&p, &b)).is_none() {
-                let preview = if blob.is_proxy() { Some(blob.bytes.clone()) } else { blob.proxy.clone() };
+                let preview = if blob.is_proxy() {
+                    Some(blob.bytes.clone())
+                } else {
+                    blob.proxy.clone()
+                };
                 if let Some(bytes) = preview {
                     read_preview(&p, &bytes);
                 }
@@ -512,7 +627,13 @@ impl Document {
                     if let NodeKind::PlacedDocument(q) = &n.kind {
                         let key = format!("{prefix}{}", q.key);
                         if seen.insert(key.clone()) {
-                            queue.push((PlacedDocument { key, ..(**q).clone() }, depth + 1));
+                            queue.push((
+                                PlacedDocument {
+                                    key,
+                                    ..(**q).clone()
+                                },
+                                depth + 1,
+                            ));
                         }
                     }
                 });
@@ -531,8 +652,10 @@ impl Document {
 
     /// Drop the resources [`Self::with_placed_art`] added under its names (what a save leaves out).
     pub fn drop_placed_resources(&mut self) {
-        self.symbols.retain(|s| !s.name.starts_with(RESOURCE_PREFIX));
-        self.patterns.retain(|p| !p.name.starts_with(RESOURCE_PREFIX));
+        self.symbols
+            .retain(|s| !s.name.starts_with(RESOURCE_PREFIX));
+        self.patterns
+            .retain(|p| !p.name.starts_with(RESOURCE_PREFIX));
         self.images.retain(|k, _| !k.starts_with(RESOURCE_PREFIX));
     }
 }
@@ -552,12 +675,16 @@ fn add_resources(d: &mut Document, src: &Document, prefix: &str) {
         let name = format!("{prefix}{}", p.name);
         if d.pattern(&name).is_none() {
             let mut p = p.clone();
-            p.art.iter_mut().for_each(|a| rename(Arc::make_mut(a), prefix));
+            p.art
+                .iter_mut()
+                .for_each(|a| rename(Arc::make_mut(a), prefix));
             d.patterns.push(PatternDef { name, ..p });
         }
     }
     for (k, b) in &src.images {
-        d.images.entry(format!("{prefix}{k}")).or_insert_with(|| b.clone());
+        d.images
+            .entry(format!("{prefix}{k}"))
+            .or_insert_with(|| b.clone());
     }
     for w in &src.swatches {
         if d.swatch(&w.name).is_none() {
@@ -599,20 +726,55 @@ mod tests {
                 placement: Default::default(),
             })),
         );
-        d.symbols.push(Symbol { name: "Star".into(), art: Arc::new(art) });
-        d.images.insert("pic".into(), ImageBlob::new("image/png", vec![1, 2, 3]));
-        let mut children = vec![Arc::new(Node::new(NodeId(51), NodeKind::SymbolInstance { symbol: "Star".into(), xf: Affine::IDENTITY }))];
+        d.symbols.push(Symbol {
+            name: "Star".into(),
+            art: Arc::new(art),
+        });
+        d.images
+            .insert("pic".into(), ImageBlob::new("image/png", vec![1, 2, 3]));
+        let mut children = vec![Arc::new(Node::new(
+            NodeId(51),
+            NodeKind::SymbolInstance {
+                symbol: "Star".into(),
+                xf: Affine::IDENTITY,
+            },
+        ))];
         if bytes.starts_with(b"nest") {
-            d.images.insert("inner".into(), ImageBlob::new("application/json", b"leaf".to_vec()));
-            let inner = PlacedDocument { key: "inner".into(), width: 10.0, height: 10.0, xf: Affine::IDENTITY, ..placed("inner") };
-            children.push(Arc::new(Node::new(NodeId(52), NodeKind::PlacedDocument(Box::new(inner)))));
+            d.images.insert(
+                "inner".into(),
+                ImageBlob::new("application/json", b"leaf".to_vec()),
+            );
+            let inner = PlacedDocument {
+                key: "inner".into(),
+                width: 10.0,
+                height: 10.0,
+                xf: Affine::IDENTITY,
+                ..placed("inner")
+            };
+            children.push(Arc::new(Node::new(
+                NodeId(52),
+                NodeKind::PlacedDocument(Box::new(inner)),
+            )));
         }
-        Some((d, Node::new(NodeId(0), NodeKind::Group { children, clip: false }), Rect::new(0.0, 0.0, 40.0, 20.0)))
+        Some((
+            d,
+            Node::new(
+                NodeId(0),
+                NodeKind::Group {
+                    children,
+                    clip: false,
+                },
+            ),
+            Rect::new(0.0, 0.0, 40.0, 20.0),
+        ))
     }
 
     #[test]
     fn round_trips_through_json() {
-        let n = Node::new(NodeId(3), NodeKind::PlacedDocument(Box::new(placed("doc1-1"))));
+        let n = Node::new(
+            NodeId(3),
+            NodeKind::PlacedDocument(Box::new(placed("doc1-1"))),
+        );
         let v = serde_json::to_value(&n).unwrap();
         assert_eq!(v["kind"]["type"], "placeddocument");
         assert_eq!(v["kind"]["link"]["path"], "/art/logo.vectorcraft");
@@ -625,16 +787,40 @@ mod tests {
     fn the_art_and_its_resources_join_only_a_prepared_copy_under_their_own_names() {
         set_loader(stub_loader);
         let mut d = Document::new(200.0, 200.0);
-        d.symbols.push(Symbol { name: "Star".into(), art: Arc::new(Node::new(NodeId(60), NodeKind::Group { children: vec![], clip: false })) });
-        d.images.insert("doc1-1".into(), ImageBlob::new("application/json", b"nest".to_vec()));
+        d.symbols.push(Symbol {
+            name: "Star".into(),
+            art: Arc::new(Node::new(
+                NodeId(60),
+                NodeKind::Group {
+                    children: vec![],
+                    clip: false,
+                },
+            )),
+        });
+        d.images.insert(
+            "doc1-1".into(),
+            ImageBlob::new("application/json", b"nest".to_vec()),
+        );
         let p = placed("doc1-1");
         let layer = d.layers[0].id;
-        d.insert(Some(layer), 0, Node::new(NodeId(7), NodeKind::PlacedDocument(Box::new(p.clone())))).unwrap();
+        d.insert(
+            Some(layer),
+            0,
+            Node::new(NodeId(7), NodeKind::PlacedDocument(Box::new(p.clone()))),
+        )
+        .unwrap();
         assert!(d.has_placed());
         let prepared = d.with_placed_art();
         let names: Vec<&str> = prepared.symbols.iter().map(|s| s.name.as_str()).collect();
         // The placed document inside is read too, its resources under its own names.
-        assert_eq!(names, ["Star", "placed:doc1-1/Star", "placed:placed:doc1-1/inner/Star"]);
+        assert_eq!(
+            names,
+            [
+                "Star",
+                "placed:doc1-1/Star",
+                "placed:placed:doc1-1/inner/Star"
+            ]
+        );
         assert!(prepared.images.contains_key("placed:doc1-1/pic"));
         assert_eq!(d.symbols.len(), 1, "the document itself is unchanged");
         // The art: a group of the drawing, its resources renamed.
@@ -669,8 +855,19 @@ mod tests {
         let n = CACHE_SIZE + 10;
         for i in 0..n {
             let key = format!("many{i}-1");
-            d.images.insert(key.clone(), ImageBlob::new("application/json", format!("doc {i}").into_bytes()));
-            d.insert(Some(layer), i, Node::new(NodeId(100 + i as u64), NodeKind::PlacedDocument(Box::new(placed(&key))))).unwrap();
+            d.images.insert(
+                key.clone(),
+                ImageBlob::new("application/json", format!("doc {i}").into_bytes()),
+            );
+            d.insert(
+                Some(layer),
+                i,
+                Node::new(
+                    NodeId(100 + i as u64),
+                    NodeKind::PlacedDocument(Box::new(placed(&key))),
+                ),
+            )
+            .unwrap();
         }
         let _prepared = d.with_placed_art();
         let mut empty = 0;
@@ -690,13 +887,26 @@ mod tests {
         let mut d = Document::new(200.0, 200.0);
         d.images.insert("gone-1".into(), blob);
         let layer = d.layers[0].id;
-        d.insert(Some(layer), 0, Node::new(NodeId(7), NodeKind::PlacedDocument(Box::new(placed("gone-1"))))).unwrap();
+        d.insert(
+            Some(layer),
+            0,
+            Node::new(
+                NodeId(7),
+                NodeKind::PlacedDocument(Box::new(placed("gone-1"))),
+            ),
+        )
+        .unwrap();
         // No file reader: only the preview can be had.
         let prepared = d.with_placed_art();
         assert!(prepared.images.contains_key("placed:gone-1/preview"));
         let n = d.node(NodeId(7)).unwrap();
-        let NodeKind::PlacedDocument(p) = &n.kind else { panic!("not a placed document") };
+        let NodeKind::PlacedDocument(p) = &n.kind else {
+            panic!("not a placed document")
+        };
         let art = p.art(n);
-        assert_eq!(art.first().and_then(Node::geometric_bounds), Some(Rect::new(10.0, 10.0, 90.0, 50.0)));
+        assert_eq!(
+            art.first().and_then(Node::geometric_bounds),
+            Some(Rect::new(10.0, 10.0, 90.0, 50.0))
+        );
     }
 }

@@ -2,7 +2,9 @@
 //! prepare a form (add, change and delete fields).
 
 use pdfcraft_engine::form_scripts::{CalcOp, Calculate, Format, Validate};
-use pdfcraft_engine::{Edit, FieldProps, FieldValue, FormField, FormFieldKind, NewField, field_flags};
+use pdfcraft_engine::{
+    Edit, FieldProps, FieldValue, FormField, FormFieldKind, NewField, field_flags,
+};
 use serde_json::{Value, json};
 
 use crate::{Args, Automation, Result, ToolError, failed};
@@ -17,7 +19,9 @@ fn format_arg(v: &Value) -> Result<Format> {
     if v.as_str() == Some("none") {
         return Ok(Format::None);
     }
-    let o = v.as_object().ok_or_else(|| bad("format must be an object such as {\"type\": \"number\", \"decimals\": 2}, or \"none\""))?;
+    let o = v.as_object().ok_or_else(|| {
+        bad("format must be an object such as {\"type\": \"number\", \"decimals\": 2}, or \"none\"")
+    })?;
     let num = |k: &str, d: u64| o.get(k).and_then(Value::as_u64).unwrap_or(d).min(255) as u8;
     let s = |k: &str| o.get(k).and_then(Value::as_str).map(str::to_owned);
     Ok(match o.get("type").and_then(Value::as_str).unwrap_or("") {
@@ -27,9 +31,15 @@ fn format_arg(v: &Value) -> Result<Format> {
             sep: num("separator", 0).min(4),
             neg: num("negative", 0).min(3),
             currency: s("currency").unwrap_or_default(),
-            prepend: !o.get("currency_after").and_then(Value::as_bool).unwrap_or(false),
+            prepend: !o
+                .get("currency_after")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
         },
-        "percent" => Format::Percent { decimals: num("decimals", 2), sep: num("separator", 0).min(4) },
+        "percent" => Format::Percent {
+            decimals: num("decimals", 2),
+            sep: num("separator", 0).min(4),
+        },
         "date" => Format::Date(s("pattern").unwrap_or_else(|| "mm/dd/yyyy".into())),
         "time" => Format::Time(s("pattern").unwrap_or_else(|| "HH:MM".into())),
         "zip" => Format::Special(0),
@@ -37,7 +47,11 @@ fn format_arg(v: &Value) -> Result<Format> {
         "phone" => Format::Special(2),
         "ssn" => Format::Special(3),
         "mask" => Format::Mask(s("mask").ok_or_else(|| bad("mask needs \"mask\""))?),
-        t => return Err(bad(format!("unknown format type {t:?} (none, number, percent, date, time, zip, zip4, phone, ssn, mask)"))),
+        t => {
+            return Err(bad(format!(
+                "unknown format type {t:?} (none, number, percent, date, time, zip, zip4, phone, ssn, mask)"
+            )));
+        }
     })
 }
 
@@ -45,7 +59,9 @@ fn format_arg(v: &Value) -> Result<Format> {
 /// "font": "helvetica"|"times"|"courier"}`, changing only what is given.
 fn look_arg(v: &Value) -> Result<pdfcraft_engine::FieldLookPatch> {
     use pdfcraft_engine::{BorderStyle, FieldFont, FieldLookPatch};
-    let o = v.as_object().ok_or_else(|| bad("appearance must be an object"))?;
+    let o = v
+        .as_object()
+        .ok_or_else(|| bad("appearance must be an object"))?;
     for key in o.keys() {
         if !["border", "fill", "text_color", "width", "style", "font"].contains(&key.as_str()) {
             return Err(bad(format!("unknown appearance property {key:?}")));
@@ -59,8 +75,14 @@ fn look_arg(v: &Value) -> Result<pdfcraft_engine::FieldLookPatch> {
             Some(_) => Err(bad(format!("{k} must be a colour or \"none\""))),
         }
     };
-    let string =
-        |k: &str| -> Result<Option<&str>> { o.get(k).map(|v| v.as_str().ok_or_else(|| bad(format!("appearance.{k} must be a string")))).transpose() };
+    let string = |k: &str| -> Result<Option<&str>> {
+        o.get(k)
+            .map(|v| {
+                v.as_str()
+                    .ok_or_else(|| bad(format!("appearance.{k} must be a string")))
+            })
+            .transpose()
+    };
     Ok(FieldLookPatch {
         border: colour("border")?,
         fill: colour("fill")?,
@@ -88,7 +110,9 @@ fn look_arg(v: &Value) -> Result<pdfcraft_engine::FieldLookPatch> {
                 "helvetica" => Ok(FieldFont::Helvetica),
                 "times" => Ok(FieldFont::Times),
                 "courier" => Ok(FieldFont::Courier),
-                x => Err(bad(format!("unknown font {x:?} (helvetica, times, courier)"))),
+                x => Err(bad(format!(
+                    "unknown font {x:?} (helvetica, times, courier)"
+                ))),
             })
             .transpose()?,
     })
@@ -99,8 +123,13 @@ fn validate_arg(v: &Value) -> Result<Validate> {
     if v.as_str() == Some("none") {
         return Ok(Validate::None);
     }
-    let o = v.as_object().ok_or_else(|| bad("validate must be {\"min\": …, \"max\": …} or \"none\""))?;
-    let (min, max) = (o.get("min").and_then(Value::as_f64), o.get("max").and_then(Value::as_f64));
+    let o = v
+        .as_object()
+        .ok_or_else(|| bad("validate must be {\"min\": …, \"max\": …} or \"none\""))?;
+    let (min, max) = (
+        o.get("min").and_then(Value::as_f64),
+        o.get("max").and_then(Value::as_f64),
+    );
     if min.is_none() && max.is_none() {
         return Err(bad("validate needs min, max or both"));
     }
@@ -112,7 +141,9 @@ fn calculate_arg(v: &Value) -> Result<Calculate> {
     if v.as_str() == Some("none") {
         return Ok(Calculate::None);
     }
-    let o = v.as_object().ok_or_else(|| bad("calculate must be {\"op\": …, \"fields\": […]}, {\"notation\": …} or \"none\""))?;
+    let o = v.as_object().ok_or_else(|| {
+        bad("calculate must be {\"op\": …, \"fields\": […]}, {\"notation\": …} or \"none\"")
+    })?;
     if let Some(n) = o.get("notation").and_then(Value::as_str) {
         return Ok(Calculate::Notation(n.to_string()));
     }
@@ -122,10 +153,21 @@ fn calculate_arg(v: &Value) -> Result<Calculate> {
         "average" => CalcOp::Average,
         "min" | "minimum" => CalcOp::Minimum,
         "max" | "maximum" => CalcOp::Maximum,
-        x => return Err(bad(format!("unknown op {x:?} (sum, product, average, min, max)"))),
+        x => {
+            return Err(bad(format!(
+                "unknown op {x:?} (sum, product, average, min, max)"
+            )));
+        }
     };
-    let fields: Vec<String> =
-        o.get("fields").and_then(Value::as_array).map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect()).unwrap_or_default();
+    let fields: Vec<String> = o
+        .get("fields")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(str::to_owned))
+                .collect()
+        })
+        .unwrap_or_default();
     if fields.is_empty() {
         return Err(bad("calculate needs fields"));
     }
@@ -135,7 +177,9 @@ fn calculate_arg(v: &Value) -> Result<Calculate> {
 fn format_json(f: &Format) -> Value {
     match f {
         Format::None => Value::Null,
-        Format::Number { decimals, currency, .. } => json!({ "type": "number", "decimals": decimals, "currency": currency }),
+        Format::Number {
+            decimals, currency, ..
+        } => json!({ "type": "number", "decimals": decimals, "currency": currency }),
         Format::Percent { decimals, .. } => json!({ "type": "percent", "decimals": decimals }),
         Format::Date(p) => json!({ "type": "date", "pattern": p }),
         Format::Time(p) => json!({ "type": "time", "pattern": p }),
@@ -167,13 +211,29 @@ fn value_for(f: &FormField, v: &Value) -> Result<FieldValue> {
         (FormFieldKind::Radio, Value::Null) => FieldValue::Radio(None),
         (FormFieldKind::Radio, Value::String(s)) => FieldValue::Radio(Some(s.clone())),
         (FormFieldKind::Combo | FormFieldKind::List, Value::Array(a)) => FieldValue::Choice(
-            a.iter().map(|x| x.as_str().map(str::to_owned).ok_or_else(|| wrong("list values must be strings"))).collect::<Result<_>>()?,
+            a.iter()
+                .map(|x| {
+                    x.as_str()
+                        .map(str::to_owned)
+                        .ok_or_else(|| wrong("list values must be strings"))
+                })
+                .collect::<Result<_>>()?,
         ),
-        (FormFieldKind::Combo | FormFieldKind::List, Value::String(s)) => FieldValue::Choice(if s.is_empty() { Vec::new() } else { vec![s.clone()] }),
+        (FormFieldKind::Combo | FormFieldKind::List, Value::String(s)) => {
+            FieldValue::Choice(if s.is_empty() {
+                Vec::new()
+            } else {
+                vec![s.clone()]
+            })
+        }
         (_, Value::String(s)) => FieldValue::Text(s.clone()),
         (_, Value::Number(n)) => FieldValue::Text(n.to_string()),
         (_, Value::Bool(b)) => FieldValue::Text(b.to_string()),
-        _ => return Err(wrong("use a string (text, radio option, choice), true/false (check box) or an array (multi-select list)")),
+        _ => {
+            return Err(wrong(
+                "use a string (text, radio option, choice), true/false (check box) or an array (multi-select list)",
+            ));
+        }
     })
 }
 
@@ -260,26 +320,45 @@ impl Automation {
 
     pub(crate) fn form_fill(&mut self, a: &Args) -> Result<Value> {
         let doc = self.doc(a)?;
-        let values = a
-            .get("values")
-            .and_then(Value::as_object)
-            .ok_or_else(|| ToolError::InvalidArgs("values must be an object of field name → value".into()))?;
+        let values = a.get("values").and_then(Value::as_object).ok_or_else(|| {
+            ToolError::InvalidArgs("values must be an object of field name → value".into())
+        })?;
         if values.is_empty() {
             return Err(ToolError::InvalidArgs("values is empty".into()));
         }
         let mut edits = Vec::new();
         for (name, v) in values {
-            let f = doc.form.iter().find(|f| &f.name == name).ok_or_else(|| failed(format!("there is no field named {name:?} (see form_fields)")))?;
-            edits.push(Edit::SetFieldValue { name: name.clone(), value: value_for(f, v)? });
+            let f = doc.form.iter().find(|f| &f.name == name).ok_or_else(|| {
+                failed(format!(
+                    "there is no field named {name:?} (see form_fields)"
+                ))
+            })?;
+            edits.push(Edit::SetFieldValue {
+                name: name.clone(),
+                value: value_for(f, v)?,
+            });
         }
-        let edit = if edits.len() == 1 { edits.remove(0) } else { Edit::Batch { label: "Fill in form".into(), edits } };
+        let edit = if edits.len() == 1 {
+            edits.remove(0)
+        } else {
+            Edit::Batch {
+                label: "Fill in form".into(),
+                edits,
+            }
+        };
         let mut out = self.apply(a, edit)?;
         out["filled"] = json!(values.len());
         Ok(out)
     }
 
     pub(crate) fn form_reset(&mut self, a: &Args) -> Result<Value> {
-        let names = a.get("fields").map(|_| a.strs("fields").map(|v| v.into_iter().map(str::to_owned).collect::<Vec<_>>())).transpose()?;
+        let names = a
+            .get("fields")
+            .map(|_| {
+                a.strs("fields")
+                    .map(|v| v.into_iter().map(str::to_owned).collect::<Vec<_>>())
+            })
+            .transpose()?;
         self.apply(a, Edit::ResetForm { names })
     }
 
@@ -287,41 +366,84 @@ impl Automation {
         let page = self.page(a)?;
         let doc = self.doc(a)?;
         let options = || -> Result<Vec<String>> {
-            Ok(a.get("options").map(|_| a.strs("options")).transpose()?.unwrap_or_default().into_iter().map(str::to_owned).collect())
+            Ok(a.get("options")
+                .map(|_| a.strs("options"))
+                .transpose()?
+                .unwrap_or_default()
+                .into_iter()
+                .map(str::to_owned)
+                .collect())
         };
         let kind = match a.str("type")? {
-            "text" => NewField::Text { multiline: a.opt_bool("multiline")?.unwrap_or(false) },
+            "text" => NewField::Text {
+                multiline: a.opt_bool("multiline")?.unwrap_or(false),
+            },
             "date" => NewField::Date,
             "checkbox" => NewField::CheckBox,
-            "radio" => {
-                NewField::Radio { group: a.opt_str("group")?.map(str::to_owned), export: a.opt_str("export")?.unwrap_or("Choice1").to_owned() }
-            }
-            "combo" => NewField::Combo { options: options()?, editable: a.opt_bool("editable")?.unwrap_or(false) },
-            "list" => NewField::List { options: options()?, multi: a.opt_bool("multi_select")?.unwrap_or(false) },
-            "button" => NewField::Button { caption: a.opt_str("caption")?.unwrap_or("").to_owned() },
+            "radio" => NewField::Radio {
+                group: a.opt_str("group")?.map(str::to_owned),
+                export: a.opt_str("export")?.unwrap_or("Choice1").to_owned(),
+            },
+            "combo" => NewField::Combo {
+                options: options()?,
+                editable: a.opt_bool("editable")?.unwrap_or(false),
+            },
+            "list" => NewField::List {
+                options: options()?,
+                multi: a.opt_bool("multi_select")?.unwrap_or(false),
+            },
+            "button" => NewField::Button {
+                caption: a.opt_str("caption")?.unwrap_or("").to_owned(),
+            },
             "image" => NewField::Image,
             "signature" => NewField::Signature,
             t => return Err(ToolError::InvalidArgs(format!("unknown field type {t:?}"))),
         };
-        let r: Vec<f64> = a.get("rect").and_then(Value::as_array).map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
-        let r = <[f64; 4]>::try_from(r).map_err(|_| ToolError::InvalidArgs("rect must be 4 numbers".into()))?;
+        let r: Vec<f64> = a
+            .get("rect")
+            .and_then(Value::as_array)
+            .map(|x| x.iter().filter_map(Value::as_f64).collect())
+            .unwrap_or_default();
+        let r = <[f64; 4]>::try_from(r)
+            .map_err(|_| ToolError::InvalidArgs("rect must be 4 numbers".into()))?;
         // Top-left-origin points on the displayed page → user space.
         let p = &doc.info.pages[page];
-        let (u0, u1) = (p.view_to_user(r[0] as f32, r[1] as f32), p.view_to_user(r[2] as f32, r[3] as f32));
-        let rect = [u0[0].min(u1[0]) as f64, u0[1].min(u1[1]) as f64, u0[0].max(u1[0]) as f64, u0[1].max(u1[1]) as f64];
+        let (u0, u1) = (
+            p.view_to_user(r[0] as f32, r[1] as f32),
+            p.view_to_user(r[2] as f32, r[3] as f32),
+        );
+        let rect = [
+            u0[0].min(u1[0]) as f64,
+            u0[1].min(u1[1]) as f64,
+            u0[0].max(u1[0]) as f64,
+            u0[1].max(u1[1]) as f64,
+        ];
         if rect[2] - rect[0] < 1.0 || rect[3] - rect[1] < 1.0 {
             return Err(ToolError::InvalidArgs("rect is empty".into()));
         }
         let before: Vec<String> = doc.form.iter().map(|f| f.name.clone()).collect();
         let name = a.opt_str("name")?.map(str::to_owned);
-        let mut out = self.apply(a, Edit::AddField { page, rect, kind, name })?;
+        let mut out = self.apply(
+            a,
+            Edit::AddField {
+                page,
+                rect,
+                kind,
+                name,
+            },
+        )?;
         let doc = self.doc(a)?;
         let added = doc
             .form
             .iter()
             .map(|f| &f.name)
             .find(|n| !before.contains(n))
-            .or_else(|| a.opt_str("group").ok().flatten().and_then(|g| doc.form.iter().map(|f| &f.name).find(|n| *n == g)));
+            .or_else(|| {
+                a.opt_str("group")
+                    .ok()
+                    .flatten()
+                    .and_then(|g| doc.form.iter().map(|f| &f.name).find(|n| *n == g))
+            });
         out["field"] = json!(added);
         Ok(out)
     }
@@ -333,7 +455,11 @@ impl Automation {
             return Err(bad("give either field or fields, not both"));
         }
         let names: Vec<String> = if bulk {
-            let count = a.get("fields").and_then(Value::as_array).ok_or_else(|| bad("fields must be an array of field names"))?.len();
+            let count = a
+                .get("fields")
+                .and_then(Value::as_array)
+                .ok_or_else(|| bad("fields must be an array of field names"))?
+                .len();
             if count == 0 || count > 1_000 {
                 return Err(bad("fields must contain between 1 and 1000 names"));
             }
@@ -346,7 +472,9 @@ impl Automation {
             }
             for key in ["name", "rect", "rotation"] {
                 if a.get(key).is_some() {
-                    return Err(bad(format!("{key} applies to one field; use field instead of fields")));
+                    return Err(bad(format!(
+                        "{key} applies to one field; use field instead of fields"
+                    )));
                 }
             }
             names.into_iter().map(str::to_owned).collect()
@@ -363,10 +491,16 @@ impl Automation {
                 return Err(bad("nothing to change"));
             }
             new_name = Some(props.name.clone().unwrap_or_else(|| name.clone()));
-            edits.push(Edit::SetFieldProps { name: name.clone(), props: Box::new(props) });
+            edits.push(Edit::SetFieldProps {
+                name: name.clone(),
+                props: Box::new(props),
+            });
         }
         let edit = if bulk {
-            Edit::Batch { label: "Change field properties".into(), edits }
+            Edit::Batch {
+                label: "Change field properties".into(),
+                edits,
+            }
         } else {
             edits.pop().ok_or_else(|| bad("give a field name"))?
         };
@@ -381,17 +515,40 @@ impl Automation {
 
     fn field_props_arg(&self, a: &Args, name: &str) -> Result<FieldProps> {
         let doc = self.doc(a)?;
-        let f = doc.form.iter().find(|f| f.name == name).ok_or_else(|| failed(format!("there is no field named {name:?} (see form_fields)")))?;
+        let f = doc.form.iter().find(|f| f.name == name).ok_or_else(|| {
+            failed(format!(
+                "there is no field named {name:?} (see form_fields)"
+            ))
+        })?;
         // Position: top-left-origin points on the displayed page → user space.
         let rect = match a.get("rect") {
             None => None,
             Some(v) => {
-                let r: Vec<f64> = v.as_array().map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
-                let r = <[f64; 4]>::try_from(r).map_err(|_| ToolError::InvalidArgs("rect must be 4 numbers".into()))?;
-                let page = f.widgets.first().and_then(|w| w.page).ok_or_else(|| failed(format!("{name} is not on a page")))?;
+                let r: Vec<f64> = v
+                    .as_array()
+                    .map(|x| x.iter().filter_map(Value::as_f64).collect())
+                    .unwrap_or_default();
+                let r = <[f64; 4]>::try_from(r)
+                    .map_err(|_| ToolError::InvalidArgs("rect must be 4 numbers".into()))?;
+                let page = f
+                    .widgets
+                    .first()
+                    .and_then(|w| w.page)
+                    .ok_or_else(|| failed(format!("{name} is not on a page")))?;
                 let p = &doc.info.pages[page];
-                let (u0, u1) = (p.view_to_user(r[0] as f32, r[1] as f32), p.view_to_user(r[2] as f32, r[3] as f32));
-                Some((0, [u0[0].min(u1[0]) as f64, u0[1].min(u1[1]) as f64, u0[0].max(u1[0]) as f64, u0[1].max(u1[1]) as f64]))
+                let (u0, u1) = (
+                    p.view_to_user(r[0] as f32, r[1] as f32),
+                    p.view_to_user(r[2] as f32, r[3] as f32),
+                );
+                Some((
+                    0,
+                    [
+                        u0[0].min(u1[0]) as f64,
+                        u0[1].min(u1[1]) as f64,
+                        u0[0].max(u1[0]) as f64,
+                        u0[1].max(u1[1]) as f64,
+                    ],
+                ))
             }
         };
         Ok(FieldProps {
@@ -483,7 +640,13 @@ impl Automation {
                 "later" => false,
                 m => return Err(bad(format!("move must be earlier or later, not {m:?}"))),
             };
-            let mut out = self.apply(a, Edit::MoveInTabOrder { name: field.to_owned(), earlier })?;
+            let mut out = self.apply(
+                a,
+                Edit::MoveInTabOrder {
+                    name: field.to_owned(),
+                    earlier,
+                },
+            )?;
             out["tab_order"] = self.tab_sequence(a)?;
             return Ok(out);
         }
@@ -492,7 +655,11 @@ impl Automation {
             "column" | "columns" => pdfcraft_engine::TabOrder::Column,
             "structure" => pdfcraft_engine::TabOrder::Structure,
             "annotations" | "unspecified" => pdfcraft_engine::TabOrder::Annotations,
-            o => return Err(bad(format!("unknown order {o:?} (row, column, structure, annotations)"))),
+            o => {
+                return Err(bad(format!(
+                    "unknown order {o:?} (row, column, structure, annotations)"
+                )));
+            }
         };
         let mut out = self.apply(a, Edit::SetTabOrder { pages, order })?;
         out["tab_order"] = self.tab_sequence(a)?;
@@ -501,8 +668,16 @@ impl Automation {
 
     fn tab_sequence(&self, a: &Args) -> Result<Value> {
         let doc = self.doc(a)?;
-        let mut seq: Vec<(usize, &str)> =
-            doc.form.iter().flat_map(|f| f.widgets.iter().filter(|w| w.page.is_some()).map(move |w| (w.tab, f.name.as_str()))).collect();
+        let mut seq: Vec<(usize, &str)> = doc
+            .form
+            .iter()
+            .flat_map(|f| {
+                f.widgets
+                    .iter()
+                    .filter(|w| w.page.is_some())
+                    .map(move |w| (w.tab, f.name.as_str()))
+            })
+            .collect();
         seq.sort();
         seq.dedup_by(|x, y| x.1 == y.1);
         Ok(json!(seq.iter().map(|x| x.1).collect::<Vec<_>>()))
@@ -511,7 +686,9 @@ impl Automation {
     pub(crate) fn form_delete_field(&mut self, a: &Args) -> Result<Value> {
         let name = a.str("field")?.to_owned();
         if !self.doc(a)?.form.iter().any(|f| f.name == name) {
-            return Err(failed(format!("there is no field named {name:?} (see form_fields)")));
+            return Err(failed(format!(
+                "there is no field named {name:?} (see form_fields)"
+            )));
         }
         self.apply(a, Edit::DeleteField { name })
     }
@@ -519,19 +696,32 @@ impl Automation {
     pub(crate) fn doc_export_data(&mut self, a: &Args) -> Result<Value> {
         let id = self.doc(a)?.id;
         let path = self.resolve(a.str("path")?, true)?;
-        let ext = path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
-        let format =
-            pdfcraft_engine::DataFormat::from_extension(&ext).ok_or_else(|| bad("the path must end in .xfdf, .fdf, .xml, .xdp, .csv or .txt"))?;
+        let ext = path
+            .extension()
+            .map(|e| e.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let format = pdfcraft_engine::DataFormat::from_extension(&ext)
+            .ok_or_else(|| bad("the path must end in .xfdf, .fdf, .xml, .xdp, .csv or .txt"))?;
         let (comments, fields) = match a.opt_str("what")?.unwrap_or("all") {
             "all" => (true, true),
             "comments" => (true, false),
             "fields" => (false, true),
             w => return Err(bad(format!("unknown what {w:?} (all, comments, fields)"))),
         };
-        if comments && !matches!(format, pdfcraft_engine::DataFormat::Xfdf | pdfcraft_engine::DataFormat::Fdf) {
-            return Err(bad("comments travel as .xfdf or .fdf; .xml, .csv and .txt hold form data (use what: fields)"));
+        if comments
+            && !matches!(
+                format,
+                pdfcraft_engine::DataFormat::Xfdf | pdfcraft_engine::DataFormat::Fdf
+            )
+        {
+            return Err(bad(
+                "comments travel as .xfdf or .fdf; .xml, .csv and .txt hold form data (use what: fields)",
+            ));
         }
-        let bytes = self.session.export_data(id, format, comments, fields).map_err(failed)?;
+        let bytes = self
+            .session
+            .export_data(id, format, comments, fields)
+            .map_err(failed)?;
         crate::write_atomic(&path, &bytes)?;
         Ok(json!({ "path": path.to_string_lossy(), "bytes": bytes.len() }))
     }
@@ -539,9 +729,25 @@ impl Automation {
     pub(crate) fn doc_import_data(&mut self, a: &Args) -> Result<Value> {
         let path = self.resolve(a.str("path")?, false)?;
         let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let before = (self.doc(a)?.info.annotations.len(), self.doc(a)?.form.iter().filter(|f| !f.value.is_empty()).count());
-        let mut out = self.apply(a, Edit::ImportData { name, bytes: std::sync::Arc::new(bytes) })?;
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let before = (
+            self.doc(a)?.info.annotations.len(),
+            self.doc(a)?
+                .form
+                .iter()
+                .filter(|f| !f.value.is_empty())
+                .count(),
+        );
+        let mut out = self.apply(
+            a,
+            Edit::ImportData {
+                name,
+                bytes: std::sync::Arc::new(bytes),
+            },
+        )?;
         let doc = self.doc(a)?;
         out["comments"] = json!(doc.info.annotations.len() as i64 - before.0 as i64);
         out["filled_fields"] = json!(doc.form.iter().filter(|f| !f.value.is_empty()).count());

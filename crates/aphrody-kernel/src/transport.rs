@@ -38,7 +38,10 @@ pub(crate) async fn read_line_limited<R: AsyncRead + Unpin>(
         let newline = available.iter().position(|byte| *byte == b'\n');
         let consumed = newline.map_or(available.len(), |index| index + 1);
         if line.len().saturating_add(consumed) > limit {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "message too large"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "message too large",
+            ));
         }
         line.extend_from_slice(&available[..consumed]);
         reader.consume(consumed);
@@ -51,7 +54,10 @@ pub(crate) async fn read_line_limited<R: AsyncRead + Unpin>(
 fn encode_message(message: &Value) -> io::Result<Vec<u8>> {
     let mut line = serde_json::to_vec(message).map_err(io::Error::other)?;
     if line.len() >= MAX_LINE {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "outbound message too large"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "outbound message too large",
+        ));
     }
     line.push(b'\n');
     Ok(line)
@@ -81,7 +87,9 @@ where
             // Drain only the bounded queue; a single oversized response closes the peer.
             for item in std::iter::once(message).chain(std::iter::from_fn(|| queue.try_recv().ok()))
             {
-                let Ok(line) = encode_message(&item) else { break 'write };
+                let Ok(line) = encode_message(&item) else {
+                    break 'write;
+                };
                 if buf_writer.write_all(&line).await.is_err() {
                     break 'write;
                 }
@@ -106,8 +114,8 @@ where
                         if session.wants(&event) {
                             let _ = outbound.try_send(json!({"jsonrpc": "2.0", "method": "system/event", "params": event}));
                         }
-                    },
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                 }
             }
@@ -129,7 +137,7 @@ where
                     break;
                 }
                 continue;
-            },
+            }
         };
         // Replies to calls made by the kernel must not wait for a request permit: a
         // remote subsystem can answer while this connection is at its request limit.
@@ -218,7 +226,7 @@ pub async fn connect(endpoint: &str) -> std::io::Result<ClientStream> {
                 Err(error) if error.raw_os_error() == Some(ERROR_PIPE_BUSY) && attempts < 50 => {
                     attempts += 1;
                     tokio::time::sleep(std::time::Duration::from_millis(20)).await;
-                },
+                }
                 Err(error) => return Err(error),
             }
         }
@@ -230,7 +238,10 @@ pub async fn connect(endpoint: &str) -> std::io::Result<ClientStream> {
     #[cfg(not(any(windows, unix)))]
     {
         let _ = endpoint;
-        Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "no local socket on this target"))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "no local socket on this target",
+        ))
     }
 }
 
@@ -257,7 +268,9 @@ pub async fn serve_endpoint(kernel: Kernel, endpoint: impl Into<String>) -> std:
         loop {
             server.connect().await?;
             let connected = server;
-            server = ServerOptions::new().reject_remote_clients(true).create(endpoint)?;
+            server = ServerOptions::new()
+                .reject_remote_clients(true)
+                .create(endpoint)?;
             let (reader, writer) = tokio::io::split(connected);
             tokio::spawn(serve_connection(kernel.clone(), reader, writer));
         }
@@ -280,6 +293,9 @@ pub async fn serve_endpoint(kernel: Kernel, endpoint: impl Into<String>) -> std:
     #[cfg(not(any(windows, unix)))]
     {
         let _ = (kernel, endpoint);
-        Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "no local socket on this target"))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "no local socket on this target",
+        ))
     }
 }

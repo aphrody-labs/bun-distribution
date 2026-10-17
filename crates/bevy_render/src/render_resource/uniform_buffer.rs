@@ -1,16 +1,16 @@
 use core::{marker::PhantomData, num::NonZero};
 
 use crate::{
-    render_resource::{make_buffer_label, Buffer},
+    render_resource::{Buffer, make_buffer_label},
     renderer::{RenderDevice, RenderQueue},
 };
 use encase::{
-    internal::{AlignmentValue, BufferMut, WriteInto},
     DynamicUniformBuffer as DynamicUniformBufferWrapper, ShaderType,
     UniformBuffer as UniformBufferWrapper,
+    internal::{AlignmentValue, BufferMut, WriteInto},
 };
 use wgpu::{
-    util::BufferInitDescriptor, BindingResource, BufferBinding, BufferDescriptor, BufferUsages,
+    BindingResource, BufferBinding, BufferDescriptor, BufferUsages, util::BufferInitDescriptor,
 };
 
 use super::IntoBinding;

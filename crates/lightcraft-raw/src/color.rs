@@ -52,7 +52,10 @@ fn lerp(a: &Mat3, b: &Mat3, g: f64) -> Mat3 {
 /// Weight of calibration 1 for white `xy` (1 = use matrix 1 only).
 pub fn illuminant_weight(color: &ColorData, white: Xy) -> f64 {
     let t = cct::xy_to_temp_tint(white).0;
-    let (t1, t2) = (illuminant_temperature(color.illuminant[0]).unwrap_or(2856.0), illuminant_temperature(color.illuminant[1]).unwrap_or(6504.0));
+    let (t1, t2) = (
+        illuminant_temperature(color.illuminant[0]).unwrap_or(2856.0),
+        illuminant_temperature(color.illuminant[1]).unwrap_or(6504.0),
+    );
     if (t1 - t2).abs() < 1.0 {
         return 1.0;
     }
@@ -70,7 +73,10 @@ fn interp(pair: &[Option<Mat3>; 2], g: f64) -> Option<Mat3> {
 
 /// `AnalogBalance · CameraCalibration` for white `xy`.
 fn ab_cc(color: &ColorData, g: f64) -> Mat3 {
-    let ab = color.analog_balance.map(|a| Mat3::diag(a[0], a[1], a[2])).unwrap_or(Mat3::IDENTITY);
+    let ab = color
+        .analog_balance
+        .map(|a| Mat3::diag(a[0], a[1], a[2]))
+        .unwrap_or(Mat3::IDENTITY);
     let cc = interp(&color.camera_calibration, g).unwrap_or(Mat3::IDENTITY);
     ab.mul(&cc)
 }
@@ -93,7 +99,11 @@ pub fn xyz_to_camera(color: &ColorData, white: Xy) -> Mat3 {
 pub fn camera_neutral(color: &ColorData, white: Xy) -> [f64; 3] {
     let n = xyz_to_camera(color, white).apply(white.to_xyz());
     let mx = n.iter().cloned().fold(f64::MIN, f64::max);
-    if mx > 0.0 { n.map(|v| v / mx) } else { [1.0; 3] }
+    if mx > 0.0 {
+        n.map(|v| v / mx)
+    } else {
+        [1.0; 3]
+    }
 }
 
 /// White-balance multipliers for white `xy` (reciprocal camera neutral, minimum 1).
@@ -108,7 +118,9 @@ pub fn wb_multipliers(color: &ColorData, white: Xy) -> [f64; 3] {
 pub fn neutral_to_xy(color: &ColorData, neutral: [f64; 3]) -> Xy {
     let mut xy = D50;
     for _ in 0..50 {
-        let Some(inv) = xyz_to_camera(color, xy).inverse() else { return xy };
+        let Some(inv) = xyz_to_camera(color, xy).inverse() else {
+            return xy;
+        };
         let xyz = inv.apply(neutral);
         let next = Xy::from_xyz(xyz);
         if !(next.x.is_finite() && next.y.is_finite()) || next.y <= 0.0 {
@@ -163,11 +175,15 @@ pub fn camera_to_xyz_d50(color: &ColorData, white: Xy) -> Mat3 {
             let n = camera_neutral(color, white);
             let rn = abcc_inv.apply(n);
             if rn.iter().all(|v| *v > 1e-9) {
-                return fm.mul(&Mat3::diag(1.0 / rn[0], 1.0 / rn[1], 1.0 / rn[2])).mul(&abcc_inv);
+                return fm
+                    .mul(&Mat3::diag(1.0 / rn[0], 1.0 / rn[1], 1.0 / rn[2]))
+                    .mul(&abcc_inv);
             }
         }
     }
-    let cam_to_xyz = xyz_to_camera(color, white).inverse().unwrap_or(Mat3::IDENTITY);
+    let cam_to_xyz = xyz_to_camera(color, white)
+        .inverse()
+        .unwrap_or(Mat3::IDENTITY);
     bradford(white, D50).mul(&cam_to_xyz)
 }
 
@@ -194,11 +210,25 @@ pub fn camera_transform_of(color: &ColorData, wb_xy: Xy) -> CameraTransform {
     let fallback = !has_matrix(color);
     let wb = wb_multipliers(color, wb_xy);
     let to_d50 = camera_to_xyz_d50(color, wb_xy);
-    let m = REC2020.from_xyz().mul(&bradford(D50, D65)).mul(&to_d50).mul(&Mat3::diag(1.0 / wb[0], 1.0 / wb[1], 1.0 / wb[2]));
+    let m = REC2020
+        .from_xyz()
+        .mul(&bradford(D50, D65))
+        .mul(&to_d50)
+        .mul(&Mat3::diag(1.0 / wb[0], 1.0 / wb[1], 1.0 / wb[2]));
     let white = m.apply([1.0; 3]);
     let k = (white[0] + white[1] + white[2]) / 3.0;
-    let matrix = if k.abs() > 1e-12 { Mat3(m.0.map(|r| r.map(|v| v / k))) } else { m };
-    CameraTransform { matrix, wb: wb.map(|v| v as f32), white_xy: wb_xy, matrix_is_fallback: fallback, baseline_exposure: color.baseline_exposure }
+    let matrix = if k.abs() > 1e-12 {
+        Mat3(m.0.map(|r| r.map(|v| v / k)))
+    } else {
+        m
+    };
+    CameraTransform {
+        matrix,
+        wb: wb.map(|v| v as f32),
+        white_xy: wb_xy,
+        matrix_is_fallback: fallback,
+        baseline_exposure: color.baseline_exposure,
+    }
 }
 
 /// Linear Rec.2020 → linear Rec.2020 matrix that re-develops pixels developed with the camera
@@ -210,8 +240,15 @@ pub fn rebalance(color: &ColorData, from: Xy, to: Xy) -> Option<Mat3> {
     if !has_matrix(color) {
         return None;
     }
-    let (a, b) = (camera_transform_of(color, from), camera_transform_of(color, to));
-    let ratio = Mat3::diag(f64::from(b.wb[0] / a.wb[0]), f64::from(b.wb[1] / a.wb[1]), f64::from(b.wb[2] / a.wb[2]));
+    let (a, b) = (
+        camera_transform_of(color, from),
+        camera_transform_of(color, to),
+    );
+    let ratio = Mat3::diag(
+        f64::from(b.wb[0] / a.wb[0]),
+        f64::from(b.wb[1] / a.wb[1]),
+        f64::from(b.wb[2] / a.wb[2]),
+    );
     Some(b.matrix.mul(&ratio).mul(&a.matrix.inverse()?))
 }
 
@@ -226,7 +263,10 @@ pub fn neutral_white(color: &ColorData, developed_for: Xy, rgb: [f64; 3]) -> Opt
     let a = camera_transform_of(color, developed_for);
     let balanced = a.matrix.inverse()?.apply(rgb);
     let camera: [f64; 3] = std::array::from_fn(|i| balanced[i] / f64::from(a.wb[i]));
-    camera.iter().all(|v| v.is_finite() && *v > 0.0).then(|| neutral_to_xy(color, camera))
+    camera
+        .iter()
+        .all(|v| v.is_finite() && *v > 0.0)
+        .then(|| neutral_to_xy(color, camera))
 }
 
 /// `(matrix, multipliers)` with `rec2020 = matrix · (multipliers ⊙ camera)`, linear Rec.2020 D65.
@@ -267,7 +307,11 @@ mod tests {
     }
 
     fn color_single(m: Mat3, ill: u16) -> ColorData {
-        ColorData { illuminant: [ill, 0], color_matrix: [Some(m), None], ..Default::default() }
+        ColorData {
+            illuminant: [ill, 0],
+            color_matrix: [Some(m), None],
+            ..Default::default()
+        }
     }
 
     fn raw_with(color: ColorData) -> RawImage {
@@ -304,25 +348,46 @@ mod tests {
         // a surface with XYZ = Rec.2020 red primary under D65, seen by the camera
         let red_xyz = REC2020.to_xyz().apply([1.0, 0.0, 0.0]);
         let cam = cam_a().apply(red_xyz);
-        let wbd = [cam[0] * t.wb[0] as f64, cam[1] * t.wb[1] as f64, cam[2] * t.wb[2] as f64];
+        let wbd = [
+            cam[0] * t.wb[0] as f64,
+            cam[1] * t.wb[1] as f64,
+            cam[2] * t.wb[2] as f64,
+        ];
         let out = t.matrix.apply(wbd);
         let k = out[0];
-        assert!(close([out[0] / k, out[1] / k, out[2] / k], [1.0, 0.0, 0.0], 1e-6), "{out:?}");
+        assert!(
+            close([out[0] / k, out[1] / k, out[2] / k], [1.0, 0.0, 0.0], 1e-6),
+            "{out:?}"
+        );
         // white
         let n = cam_a().apply(D65.to_xyz());
-        let wbd = [n[0] * t.wb[0] as f64, n[1] * t.wb[1] as f64, n[2] * t.wb[2] as f64];
+        let wbd = [
+            n[0] * t.wb[0] as f64,
+            n[1] * t.wb[1] as f64,
+            n[2] * t.wb[2] as f64,
+        ];
         let out = t.matrix.apply(wbd);
-        assert!((out[0] - out[1]).abs() < 1e-6 && (out[1] - out[2]).abs() < 1e-6, "{out:?}");
+        assert!(
+            (out[0] - out[1]).abs() < 1e-6 && (out[1] - out[2]).abs() < 1e-6,
+            "{out:?}"
+        );
         assert!(close(t.matrix.apply([1.0; 3]), [1.0; 3], 1e-12));
         assert!(t.wb.iter().cloned().fold(f32::MAX, f32::min) == 1.0);
     }
 
     #[test]
     fn dual_illuminant_interpolation() {
-        let color = ColorData { illuminant: [17, 21], color_matrix: [Some(cam_a()), Some(cam_b())], ..Default::default() };
+        let color = ColorData {
+            illuminant: [17, 21],
+            color_matrix: [Some(cam_a()), Some(cam_b())],
+            ..Default::default()
+        };
         assert!((illuminant_weight(&color, cct::temp_tint_to_xy(2856.0, 0.0)) - 1.0).abs() < 0.01);
         assert!(illuminant_weight(&color, cct::temp_tint_to_xy(6504.0, 0.0)) < 0.01);
-        assert_eq!(illuminant_weight(&color, cct::temp_tint_to_xy(10000.0, 0.0)), 0.0);
+        assert_eq!(
+            illuminant_weight(&color, cct::temp_tint_to_xy(10000.0, 0.0)),
+            0.0
+        );
         let mid = cct::temp_tint_to_xy(4000.0, 0.0);
         let g = illuminant_weight(&color, mid);
         let expect = (1.0 / 4000.0 - 1.0 / 6504.0) / (1.0 / 2856.0 - 1.0 / 6504.0);
@@ -345,14 +410,20 @@ mod tests {
                 let xy = cct::temp_tint_to_xy(t, tint);
                 let n = camera_neutral(&color, xy);
                 let back = neutral_to_xy(&color, n);
-                assert!((back.x - xy.x).abs() < 1e-6 && (back.y - xy.y).abs() < 1e-6, "{t} {tint}: {back:?} vs {xy:?}");
+                assert!(
+                    (back.x - xy.x).abs() < 1e-6 && (back.y - xy.y).abs() < 1e-6,
+                    "{t} {tint}: {back:?} vs {xy:?}"
+                );
             }
         }
         let mut raw = raw_with(color.clone());
         raw.color.as_shot_neutral = Some(camera_neutral(&color, cct::temp_tint_to_xy(3300.0, 5.0)));
         let xy = as_shot_white_xy(&raw);
         let (t, tint) = cct::xy_to_temp_tint(xy);
-        assert!((t - 3300.0).abs() < 5.0 && (tint - 5.0).abs() < 0.5, "{t} {tint}");
+        assert!(
+            (t - 3300.0).abs() < 5.0 && (tint - 5.0).abs() < 0.5,
+            "{t} {tint}"
+        );
         raw.color.as_shot_white_xy = Some(D50);
         assert_eq!(as_shot_white_xy(&raw), D50);
     }
@@ -361,7 +432,9 @@ mod tests {
     fn forward_matrix_path_agrees_with_color_matrix_path() {
         let a = cam_a();
         let n = a.apply(D65.to_xyz());
-        let fm = bradford(D65, D50).mul(&a.inverse().unwrap()).mul(&Mat3::diag(n[0], n[1], n[2]));
+        let fm = bradford(D65, D50)
+            .mul(&a.inverse().unwrap())
+            .mul(&Mat3::diag(n[0], n[1], n[2]));
         // DNG forward matrices map (1,1,1) to D50 white (with Y=1): normalise like a real file would
         let w = fm.apply([1.0; 3]);
         let s = D50.to_xyz()[1] / w[1];
@@ -371,7 +444,12 @@ mod tests {
         with_fm.forward_matrix = [Some(fm), None];
         let fm_t = camera_transform(&raw_with(with_fm), D65);
         for i in 0..3 {
-            assert!(close(cm_only.matrix.0[i], fm_t.matrix.0[i], 1e-9), "{:?} vs {:?}", cm_only.matrix, fm_t.matrix);
+            assert!(
+                close(cm_only.matrix.0[i], fm_t.matrix.0[i], 1e-9),
+                "{:?} vs {:?}",
+                cm_only.matrix,
+                fm_t.matrix
+            );
         }
         assert_eq!(cm_only.wb, fm_t.wb);
     }
@@ -393,7 +471,11 @@ mod tests {
         let xy = as_shot_white_xy(&raw);
         let t = camera_transform(&raw, xy);
         assert!(t.matrix_is_fallback);
-        assert!((t.wb[0] / t.wb[1] - 2.0).abs() < 1e-3 && (t.wb[2] / t.wb[1] - 1.5).abs() < 1e-3, "{:?}", t.wb);
+        assert!(
+            (t.wb[0] / t.wb[1] - 2.0).abs() < 1e-3 && (t.wb[2] / t.wb[1] - 1.5).abs() < 1e-3,
+            "{:?}",
+            t.wb
+        );
         let t = camera_transform(&raw, D65);
         let expect = SRGB.to_space(&REC2020);
         for i in 0..3 {
@@ -415,21 +497,36 @@ mod tests {
     /// white is the identity; without a colour matrix there is nothing to re-evaluate.
     #[test]
     fn rebalance_redevelops_for_the_new_white() {
-        let color = ColorData { illuminant: [17, 21], color_matrix: [Some(cam_a()), Some(cam_b())], ..Default::default() };
-        let (from, to) = (cct::temp_tint_to_xy(5500.0, 0.0), cct::temp_tint_to_xy(3200.0, 10.0));
+        let color = ColorData {
+            illuminant: [17, 21],
+            color_matrix: [Some(cam_a()), Some(cam_b())],
+            ..Default::default()
+        };
+        let (from, to) = (
+            cct::temp_tint_to_xy(5500.0, 0.0),
+            cct::temp_tint_to_xy(3200.0, 10.0),
+        );
         let a = camera_transform_of(&color, from);
         // a grey card lit by `to`, as the camera records it, developed for `from`: warm
         let n = camera_neutral(&color, to);
-        let developed = a.matrix.apply(std::array::from_fn(|i| n[i] * a.wb[i] as f64));
+        let developed = a
+            .matrix
+            .apply(std::array::from_fn(|i| n[i] * a.wb[i] as f64));
         assert!(developed[0] > 1.2 * developed[2], "{developed:?}");
         let out = rebalance(&color, from, to).unwrap().apply(developed);
         assert!(close(out.map(|v| v / out[1]), [1.0; 3], 1e-6), "{out:?}");
         let same = rebalance(&color, from, from).unwrap();
-        assert!((0..3).all(|r| close(same.0[r], Mat3::IDENTITY.0[r], 1e-9)), "{same:?}");
+        assert!(
+            (0..3).all(|r| close(same.0[r], Mat3::IDENTITY.0[r], 1e-9)),
+            "{same:?}"
+        );
         assert!(rebalance(&ColorData::default(), from, to).is_none());
         // and back: the developed grey card names the white it was lit by
         let white = neutral_white(&color, from, developed).unwrap();
-        assert!((white.x - to.x).abs() < 1e-6 && (white.y - to.y).abs() < 1e-6, "{white:?} vs {to:?}");
+        assert!(
+            (white.x - to.x).abs() < 1e-6 && (white.y - to.y).abs() < 1e-6,
+            "{white:?} vs {to:?}"
+        );
         assert!(neutral_white(&color, from, [-1.0, 0.5, 0.5]).is_none());
         assert!(neutral_white(&ColorData::default(), from, developed).is_none());
     }
@@ -441,6 +538,9 @@ mod tests {
             [v * 0.5, v, v * 0.8]
         });
         let m = grey_world(&img);
-        assert!((m[0] - 2.0).abs() < 1e-3 && (m[1] - 1.0).abs() < 1e-6 && (m[2] - 1.25).abs() < 1e-3, "{m:?}");
+        assert!(
+            (m[0] - 2.0).abs() < 1e-3 && (m[1] - 1.0).abs() < 1e-6 && (m[2] - 1.25).abs() < 1e-3,
+            "{m:?}"
+        );
     }
 }

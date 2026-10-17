@@ -144,7 +144,10 @@ async fn subscribe_to_events(
         .await
         .map_err(|error| format!("Failed to connect to daemon events: {error}"))?;
     let line = rpc::encode_line(&rpc::subscribe_request(event_types, filter))?;
-    stream.write_all(line.as_bytes()).await.map_err(|error| error.to_string())?;
+    stream
+        .write_all(line.as_bytes())
+        .await
+        .map_err(|error| error.to_string())?;
     let id = state.next_subscription_id.fetch_add(1, Ordering::Relaxed);
     let (cancel, mut cancelled) = oneshot::channel();
     state.subscriptions.write().await.insert(id, cancel);
@@ -192,7 +195,12 @@ async fn unsubscribe_from_events(
 #[tauri::command]
 async fn get_daemon_status(state: State<'_, DriveState>) -> Result<DaemonStatusResponse, String> {
     let status = state.supervisor.status();
-    let server_url = state.sidecar_server.read().await.as_ref().map(|(url, _)| url.clone());
+    let server_url = state
+        .sidecar_server
+        .read()
+        .await
+        .as_ref()
+        .map(|(url, _)| url.clone());
     Ok(DaemonStatusResponse {
         is_running: status.running,
         socket_addr: state.supervisor.socket_addr().to_string(),
@@ -237,7 +245,12 @@ async fn open_macos_settings() -> Result<(), String> {
 
 #[tauri::command]
 async fn get_current_library_id(state: State<'_, DriveState>) -> Result<String, String> {
-    state.current_library_id.read().await.clone().ok_or_else(|| "No library selected".to_string())
+    state
+        .current_library_id
+        .read()
+        .await
+        .clone()
+        .ok_or_else(|| "No library selected".to_string())
 }
 
 #[tauri::command]
@@ -247,7 +260,8 @@ async fn set_current_library_id(
     state: State<'_, DriveState>,
 ) -> Result<(), String> {
     *state.current_library_id.write().await = Some(library_id.clone());
-    app.emit("library-changed", library_id).map_err(|error| error.to_string())
+    app.emit("library-changed", library_id)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -262,7 +276,8 @@ async fn set_selected_file_ids(
     state: State<'_, DriveState>,
 ) -> Result<(), String> {
     *state.selected_file_ids.write().await = file_ids.clone();
-    app.emit("selected-files-changed", file_ids).map_err(|error| error.to_string())
+    app.emit("selected-files-changed", file_ids)
+        .map_err(|error| error.to_string())
 }
 
 /// Browse remote files and directories via the kernel's native SFTP subsystem for Drive
@@ -272,7 +287,10 @@ async fn drive_list_remote(host: String, remote_path: String) -> Result<serde_js
     use aphrody_subsystem::SystemSubsystem;
     let infra = aphrody_kernel::InfraSubsystem::new();
     infra
-        .call("infra_sftp_list", serde_json::json!({ "host": host, "path": remote_path }))
+        .call(
+            "infra_sftp_list",
+            serde_json::json!({ "host": host, "path": remote_path }),
+        )
         .await
         .map_err(|e| format!("kernel infra_sftp_list error: {e}"))
 }
@@ -283,7 +301,10 @@ async fn drive_read_remote(host: String, remote_path: String) -> Result<serde_js
     use aphrody_subsystem::SystemSubsystem;
     let infra = aphrody_kernel::InfraSubsystem::new();
     infra
-        .call("infra_sftp_read", serde_json::json!({ "host": host, "path": remote_path }))
+        .call(
+            "infra_sftp_read",
+            serde_json::json!({ "host": host, "path": remote_path }),
+        )
         .await
         .map_err(|e| format!("kernel infra_sftp_read error: {e}"))
 }

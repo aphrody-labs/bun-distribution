@@ -71,7 +71,8 @@ impl Sequence {
     /// Sorts notes by `(start, pitch, channel, length, velocity)` and controller events by tick
     /// (stable, so same-tick events keep their order).
     pub fn sort(&mut self) {
-        self.notes.sort_by_key(|a| (a.start, a.pitch, a.channel, a.length, a.velocity));
+        self.notes
+            .sort_by_key(|a| (a.start, a.pitch, a.channel, a.length, a.velocity));
         self.ctrls.sort_by_key(|c| c.tick);
     }
 
@@ -88,12 +89,16 @@ impl Sequence {
 
     /// Notes whose start lies in the half-open range `[start, end)`.
     pub fn notes_in(&self, start: i64, end: i64) -> impl Iterator<Item = &Note> + '_ {
-        self.notes.iter().filter(move |n| n.start >= start && n.start < end)
+        self.notes
+            .iter()
+            .filter(move |n| n.start >= start && n.start < end)
     }
 
     /// Notes that sound anywhere inside the half-open range `[start, end)`.
     pub fn notes_overlapping(&self, start: i64, end: i64) -> impl Iterator<Item = &Note> + '_ {
-        self.notes.iter().filter(move |n| n.start < end && n.end() > start)
+        self.notes
+            .iter()
+            .filter(move |n| n.start < end && n.end() > start)
     }
 
     /// Removes duplicate notes (same channel, pitch and start; the longest one is kept) and
@@ -103,16 +108,23 @@ impl Sequence {
     pub fn remove_duplicates(&mut self) -> usize {
         let before = self.notes.len() + self.ctrls.len();
         // Longest first within each (start, pitch, channel) group, then keep the first.
-        self.notes.sort_by(|a, b| (a.start, a.pitch, a.channel, b.length).cmp(&(b.start, b.pitch, b.channel, a.length)));
-        self.notes.dedup_by(|later, kept| later.start == kept.start && later.pitch == kept.pitch && later.channel == kept.channel);
+        self.notes.sort_by(|a, b| {
+            (a.start, a.pitch, a.channel, b.length).cmp(&(b.start, b.pitch, b.channel, a.length))
+        });
+        self.notes.dedup_by(|later, kept| {
+            later.start == kept.start && later.pitch == kept.pitch && later.channel == kept.channel
+        });
 
         self.ctrls.sort_by_key(|c| c.tick);
         let mut kept: Vec<CtrlEvent> = Vec::with_capacity(self.ctrls.len());
         for c in self.ctrls.drain(..) {
             // Within a tick, replace an earlier event of the same channel+kind.
             // Only events at the same tick (the tail of `kept`) can match.
-            let slot =
-                kept.iter_mut().rev().take_while(|k| k.tick == c.tick).find(|k| k.channel == c.channel && kind_key(k.kind) == kind_key(c.kind));
+            let slot = kept
+                .iter_mut()
+                .rev()
+                .take_while(|k| k.tick == c.tick)
+                .find(|k| k.channel == c.channel && kind_key(k.kind) == kind_key(c.kind));
             match slot {
                 Some(slot) => *slot = c,
                 None => kept.push(c),

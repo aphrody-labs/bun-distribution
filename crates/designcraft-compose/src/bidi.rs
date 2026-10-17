@@ -49,14 +49,18 @@ pub fn paragraph_text(glyphs: &mut [Glyph], source: &str) -> String {
 pub fn resolve_mirroring(glyphs: &mut [Glyph], info: &unicode_bidi::BidiInfo<'_>) {
     for i in 0..glyphs.len() {
         let g = &glyphs[i];
-        if g.len != g.display_char.len_utf8() || glyphs.get(i + 1).is_some_and(|next| next.byte == g.byte) {
+        if g.len != g.display_char.len_utf8()
+            || glyphs.get(i + 1).is_some_and(|next| next.byte == g.byte)
+        {
             continue;
         }
         let rtl = info.levels.get(g.bidi_offset).is_some_and(|l| l.is_rtl());
         if rtl == g.shaping_rtl {
             continue;
         }
-        let Some(mirror) = unicode_bidi_mirroring::get_mirrored(g.display_char) else { continue };
+        let Some(mirror) = unicode_bidi_mirroring::get_mirrored(g.display_char) else {
+            continue;
+        };
         let gid = g.face.glyph_for(if rtl { mirror } else { g.display_char });
         if gid != 0 {
             let g = &mut glyphs[i];

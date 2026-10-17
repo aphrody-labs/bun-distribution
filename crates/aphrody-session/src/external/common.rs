@@ -59,9 +59,9 @@ pub(super) fn str_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
 /// the epoch.
 pub(super) fn parse_ts(value: Option<&Value>) -> Option<DateTime<Utc>> {
     match value? {
-        Value::String(text) => {
-            DateTime::parse_from_rfc3339(text.trim()).ok().map(|ts| ts.with_timezone(&Utc))
-        },
+        Value::String(text) => DateTime::parse_from_rfc3339(text.trim())
+            .ok()
+            .map(|ts| ts.with_timezone(&Utc)),
         Value::Number(number) => {
             let raw = number.as_f64()?;
             if !raw.is_finite() || raw < 0.0 {
@@ -71,7 +71,7 @@ pub(super) fn parse_ts(value: Option<&Value>) -> Option<DateTime<Utc>> {
             // cannot be seconds (year 5138), so they are milliseconds.
             let millis = if raw > 1e11 { raw } else { raw * 1000.0 };
             Utc.timestamp_millis_opt(millis as i64).single()
-        },
+        }
         _ => None,
     }
 }
@@ -120,9 +120,13 @@ pub(super) fn read_dir_or_issue(
         Ok(entries) => entries.filter_map(Result::ok).collect(),
         Err(error) if error.kind() == io::ErrorKind::NotFound => Vec::new(),
         Err(error) => {
-            issues.push(SyncIssue::new(Some(agent), Some(dir), format!("cannot list: {error}")));
+            issues.push(SyncIssue::new(
+                Some(agent),
+                Some(dir),
+                format!("cannot list: {error}"),
+            ));
             Vec::new()
-        },
+        }
     }
 }
 
@@ -137,16 +141,24 @@ pub(super) fn read_aux_json(
         Ok(raw) => raw,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return None,
         Err(error) => {
-            issues.push(SyncIssue::new(Some(agent), Some(path), format!("cannot read: {error}")));
+            issues.push(SyncIssue::new(
+                Some(agent),
+                Some(path),
+                format!("cannot read: {error}"),
+            ));
             return None;
-        },
+        }
     };
     match serde_json::from_slice(&raw) {
         Ok(value) => Some(value),
         Err(error) => {
-            issues.push(SyncIssue::new(Some(agent), Some(path), format!("invalid JSON: {error}")));
+            issues.push(SyncIssue::new(
+                Some(agent),
+                Some(path),
+                format!("invalid JSON: {error}"),
+            ));
             None
-        },
+        }
     }
 }
 
@@ -160,9 +172,13 @@ pub(super) fn read_aux_jsonl(
         Ok(raw) => raw,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Vec::new(),
         Err(error) => {
-            issues.push(SyncIssue::new(Some(agent), Some(path), format!("cannot read: {error}")));
+            issues.push(SyncIssue::new(
+                Some(agent),
+                Some(path),
+                format!("cannot read: {error}"),
+            ));
             return Vec::new();
-        },
+        }
     };
     raw.split(|byte| *byte == b'\n')
         .filter(|line| !line.trim_ascii().is_empty())
@@ -201,7 +217,11 @@ pub(super) fn normalize_workspace(raw: &str) -> String {
     while path.len() > 1 && path.ends_with('/') {
         path.pop();
     }
-    if cfg!(windows) { path.to_lowercase() } else { path }
+    if cfg!(windows) {
+        path.to_lowercase()
+    } else {
+        path
+    }
 }
 
 /// A `file://` URI as a local path (`file:///c%3A/Users/x` -> `%USERPROFILE%` on
@@ -219,7 +239,11 @@ pub(super) fn file_uri_to_path(uri: &str) -> Option<String> {
     {
         let mut drive = decoded[1..].to_owned();
         drive[..1].make_ascii_uppercase();
-        if cfg!(windows) { drive.replace('/', "\\") } else { drive }
+        if cfg!(windows) {
+            drive.replace('/', "\\")
+        } else {
+            drive
+        }
     } else {
         decoded
     };

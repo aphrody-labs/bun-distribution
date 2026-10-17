@@ -1,9 +1,9 @@
 use core::num::NonZero;
 
 use super::OitBuffers;
-use crate::{oit::OrderIndependentTransparencySettings, prepass::DepthPrepass, FullscreenShader};
+use crate::{FullscreenShader, oit::OrderIndependentTransparencySettings, prepass::DepthPrepass};
 use bevy_app::Plugin;
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetServer};
+use bevy_asset::{AssetServer, embedded_asset, load_embedded_asset};
 use bevy_derive::Deref;
 use bevy_ecs::{
     entity::{EntityHashMap, EntityHashSet},
@@ -11,19 +11,19 @@ use bevy_ecs::{
 };
 use bevy_log::warn;
 use bevy_render::{
+    Render, RenderApp, RenderSystems,
     camera::ExtractedCamera,
     render_resource::{
-        binding_types::{
-            storage_buffer_read_only_sized, storage_buffer_sized, texture_depth_2d, uniform_buffer,
-        },
         BindGroup, BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
         BlendComponent, BlendState, CachedRenderPipelineId, ColorTargetState, ColorWrites,
         DownlevelFlags, FragmentState, PipelineCache, RenderPipelineDescriptor, ShaderStages,
         TextureFormat,
+        binding_types::{
+            storage_buffer_read_only_sized, storage_buffer_sized, texture_depth_2d, uniform_buffer,
+        },
     },
     renderer::{RenderAdapter, RenderDevice},
     view::{ExtractedView, ViewUniform, ViewUniforms},
-    Render, RenderApp, RenderSystems,
 };
 use bevy_shader::ShaderDefVal;
 use bevy_utils::default;
@@ -73,7 +73,9 @@ pub fn is_oit_supported(adapter: &RenderAdapter, device: &RenderDevice, warn: bo
         .contains(DownlevelFlags::FRAGMENT_WRITABLE_STORAGE)
     {
         if warn {
-            warn!("OrderIndependentTransparencyPlugin not loaded. GPU lacks support: DownlevelFlags::FRAGMENT_WRITABLE_STORAGE.");
+            warn!(
+                "OrderIndependentTransparencyPlugin not loaded. GPU lacks support: DownlevelFlags::FRAGMENT_WRITABLE_STORAGE."
+            );
         }
         return false;
     }

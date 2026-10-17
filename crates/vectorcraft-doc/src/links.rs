@@ -43,7 +43,10 @@ pub struct LinkInfo {
 impl LinkInfo {
     /// A link to `path` with nothing known about the file.
     pub fn new(path: impl Into<String>) -> Self {
-        Self { path: path.into(), ..Self::default() }
+        Self {
+            path: path.into(),
+            ..Self::default()
+        }
     }
 
     /// The file name: the path's last component, whichever system's separators it uses.
@@ -77,7 +80,9 @@ const FNV_BASIS: u64 = 0xcbf29ce484222325;
 
 /// The 64-bit FNV-1a hash `h` of some bytes, carried on over `bytes`.
 fn fnv1a(h: u64, bytes: &[u8]) -> u64 {
-    bytes.iter().fold(h, |h, x| (h ^ *x as u64).wrapping_mul(0x100000001b3))
+    bytes
+        .iter()
+        .fold(h, |h, x| (h ^ *x as u64).wrapping_mul(0x100000001b3))
 }
 
 /// A hash of `bytes` (FNV-1a), the same for identical files: `img` and 16 hex digits.
@@ -102,7 +107,11 @@ pub fn hash_reader(mut r: impl std::io::Read) -> std::io::Result<String> {
 impl ImageBlob {
     /// A blob of encoded image `bytes` of type `mime`, without a preview.
     pub fn new(mime: impl Into<String>, bytes: Vec<u8>) -> Self {
-        Self { mime: mime.into(), bytes: Arc::new(bytes), proxy: None }
+        Self {
+            mime: mime.into(),
+            bytes: Arc::new(bytes),
+            proxy: None,
+        }
     }
 
     /// This blob with a preview of at most [`PROXY_SIZE`] pixels a side (PNG), when the image is
@@ -116,20 +125,30 @@ impl ImageBlob {
 
     /// Are the bytes the preview (the linked file hasn't been read)?
     pub fn is_proxy(&self) -> bool {
-        self.proxy.as_ref().is_some_and(|p| Arc::ptr_eq(p, &self.bytes))
+        self.proxy
+            .as_ref()
+            .is_some_and(|p| Arc::ptr_eq(p, &self.bytes))
     }
 }
 
 /// `bytes` decoded and shrunk to fit [`PROXY_SIZE`] as a PNG; `None` when small enough already or
 /// undecodable.
 fn proxy_png(bytes: &[u8]) -> Option<Vec<u8>> {
-    let (w, h) = image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().ok()?.into_dimensions().ok()?;
+    let (w, h) = image::ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()?
+        .into_dimensions()
+        .ok()?;
     if w.max(h) <= PROXY_SIZE {
         return None;
     }
-    let small = image::load_from_memory(bytes).ok()?.thumbnail(PROXY_SIZE, PROXY_SIZE);
+    let small = image::load_from_memory(bytes)
+        .ok()?
+        .thumbnail(PROXY_SIZE, PROXY_SIZE);
     let mut png = Vec::new();
-    small.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+    small
+        .write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+        .ok()?;
     Some(png)
 }
 
@@ -180,7 +199,10 @@ impl Document {
         });
         // A placed document saves its file's preview the same way.
         self.visit_placed(|_, p| uses.entry(p.key.as_str()).or_default().0 = true);
-        uses.into_iter().filter(|(_, (linked, embedded))| *linked && !embedded).map(|(k, _)| k.to_string()).collect()
+        uses.into_iter()
+            .filter(|(_, (linked, embedded))| *linked && !embedded)
+            .map(|(k, _)| k.to_string())
+            .collect()
     }
 }
 
@@ -216,7 +238,13 @@ pub enum Preserve {
 }
 
 impl Preserve {
-    pub const ALL: [Preserve; 5] = [Preserve::Transforms, Preserve::Bounds, Preserve::FileDimensions, Preserve::Fit, Preserve::Fill];
+    pub const ALL: [Preserve; 5] = [
+        Preserve::Transforms,
+        Preserve::Bounds,
+        Preserve::FileDimensions,
+        Preserve::Fit,
+        Preserve::Fill,
+    ];
 
     /// The id commands use (`transforms`, `bounds`, `fileDimensions`, `fit`, `fill`).
     pub fn id(self) -> &'static str {
@@ -251,8 +279,17 @@ pub enum Align {
 }
 
 impl Align {
-    pub const ALL: [Align; 9] =
-        [Align::TopLeft, Align::Top, Align::TopRight, Align::Left, Align::Center, Align::Right, Align::BottomLeft, Align::Bottom, Align::BottomRight];
+    pub const ALL: [Align; 9] = [
+        Align::TopLeft,
+        Align::Top,
+        Align::TopRight,
+        Align::Left,
+        Align::Center,
+        Align::Right,
+        Align::BottomLeft,
+        Align::Bottom,
+        Align::BottomRight,
+    ];
 
     /// The id commands use (`topLeft` … `bottomRight`).
     pub fn id(self) -> &'static str {
@@ -315,13 +352,23 @@ impl Document {
 
     /// Change every image object (in the layers, symbol definitions and pattern swatches, opacity-mask
     /// art included) for which `pick` holds; only the subtrees holding one are copied.
-    pub fn update_images(&mut self, pick: impl Fn(&ImageObject) -> bool, mut f: impl FnMut(&mut ImageObject)) {
+    pub fn update_images(
+        &mut self,
+        pick: impl Fn(&ImageObject) -> bool,
+        mut f: impl FnMut(&mut ImageObject),
+    ) {
         fn holds(n: &Node, pick: &dyn Fn(&ImageObject) -> bool) -> bool {
             let mut hit = false;
-            walk_all(n, &mut |c| hit |= matches!(&c.kind, NodeKind::Image(im) if pick(im)));
+            walk_all(n, &mut |c| {
+                hit |= matches!(&c.kind, NodeKind::Image(im) if pick(im))
+            });
             hit
         }
-        fn update(n: &mut Arc<Node>, pick: &dyn Fn(&ImageObject) -> bool, f: &mut dyn FnMut(&mut ImageObject)) {
+        fn update(
+            n: &mut Arc<Node>,
+            pick: &dyn Fn(&ImageObject) -> bool,
+            f: &mut dyn FnMut(&mut ImageObject),
+        ) {
             if !holds(n, pick) {
                 return;
             }
@@ -358,7 +405,9 @@ mod tests {
 
     fn png(w: u32, h: u32) -> Vec<u8> {
         let mut out = vec![];
-        image::RgbaImage::from_pixel(w, h, image::Rgba([10, 200, 30, 255])).write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png).unwrap();
+        image::RgbaImage::from_pixel(w, h, image::Rgba([10, 200, 30, 255]))
+            .write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png)
+            .unwrap();
         out
     }
 
@@ -385,17 +434,34 @@ mod tests {
 
     #[test]
     fn a_path_string_from_older_files_reads_as_a_link() {
-        let old: ImageObject = serde_json::from_str(r#"{"key":"k","width":2,"height":1,"xf":[1,0,0,1,0,0],"link":"C:\\art\\photo.png"}"#).unwrap();
+        let old: ImageObject = serde_json::from_str(
+            r#"{"key":"k","width":2,"height":1,"xf":[1,0,0,1,0,0],"link":"C:\\art\\photo.png"}"#,
+        )
+        .unwrap();
         let link = old.link.unwrap();
-        assert_eq!((link.path.as_str(), link.name(), link.hash.as_deref()), ("C:\\art\\photo.png", "photo.png", None));
+        assert_eq!(
+            (link.path.as_str(), link.name(), link.hash.as_deref()),
+            ("C:\\art\\photo.png", "photo.png", None)
+        );
         let new: ImageObject =
             serde_json::from_str(r#"{"key":"k","width":2,"height":1,"xf":[1,0,0,1,0,0],"link":{"path":"/a/b.png","size":9,"page":2}}"#).unwrap();
-        assert_eq!(new.link, Some(LinkInfo { size: Some(9), page: Some(2), ..LinkInfo::new("/a/b.png") }));
-        let none: ImageObject = serde_json::from_str(r#"{"key":"k","width":2,"height":1,"xf":[1,0,0,1,0,0]}"#).unwrap();
+        assert_eq!(
+            new.link,
+            Some(LinkInfo {
+                size: Some(9),
+                page: Some(2),
+                ..LinkInfo::new("/a/b.png")
+            })
+        );
+        let none: ImageObject =
+            serde_json::from_str(r#"{"key":"k","width":2,"height":1,"xf":[1,0,0,1,0,0]}"#).unwrap();
         assert_eq!(none.link, None);
         // Written as an object, with only what is known.
         let v = serde_json::to_value(&new).unwrap();
-        assert_eq!(v["link"], serde_json::json!({"path": "/a/b.png", "size": 9, "page": 2}));
+        assert_eq!(
+            v["link"],
+            serde_json::json!({"path": "/a/b.png", "size": 9, "page": 2})
+        );
     }
 
     #[test]
@@ -403,7 +469,13 @@ mod tests {
         // Several 64 KB reads, and none.
         let bytes: Vec<u8> = (0..200_000u32).map(|i| (i * 7 % 251) as u8).collect();
         assert_eq!(hash_reader(&bytes[..]).unwrap(), hash_bytes(&bytes));
-        assert_eq!((hash_reader(&b""[..]).unwrap(), hash_bytes(b"")), ("imgcbf29ce484222325".to_string(), "imgcbf29ce484222325".to_string()));
+        assert_eq!(
+            (hash_reader(&b""[..]).unwrap(), hash_bytes(b"")),
+            (
+                "imgcbf29ce484222325".to_string(),
+                "imgcbf29ce484222325".to_string()
+            )
+        );
     }
 
     #[test]
@@ -412,20 +484,38 @@ mod tests {
         let p = image::load_from_memory(big.proxy.as_ref().unwrap()).unwrap();
         assert_eq!((p.width(), p.height()), (256, 128));
         assert!(!big.is_proxy(), "the bytes are the full image");
-        assert!(ImageBlob::new("image/png", png(40, 20)).with_proxy().proxy.is_none(), "small images keep their pixels");
-        assert!(ImageBlob::new("image/png", vec![1, 2, 3]).with_proxy().proxy.is_none(), "undecodable");
+        assert!(
+            ImageBlob::new("image/png", png(40, 20))
+                .with_proxy()
+                .proxy
+                .is_none(),
+            "small images keep their pixels"
+        );
+        assert!(
+            ImageBlob::new("image/png", vec![1, 2, 3])
+                .with_proxy()
+                .proxy
+                .is_none(),
+            "undecodable"
+        );
     }
 
     #[test]
     fn only_blobs_no_embedded_image_shows_are_linked_only() {
         let mut d = Document::new(100.0, 100.0);
         for k in ["a", "b", "c"] {
-            d.images.insert(k.into(), ImageBlob::new("image/png", png(300, 10)).with_proxy());
+            d.images.insert(
+                k.into(),
+                ImageBlob::new("image/png", png(300, 10)).with_proxy(),
+            );
         }
         image(&mut d, "a", Some(LinkInfo::new("/a.png")));
         image(&mut d, "b", Some(LinkInfo::new("/b.png")));
         image(&mut d, "b", None);
         image(&mut d, "c", None);
-        assert_eq!(d.linked_only_images().into_iter().collect::<Vec<_>>(), ["a"]);
+        assert_eq!(
+            d.linked_only_images().into_iter().collect::<Vec<_>>(),
+            ["a"]
+        );
     }
 }

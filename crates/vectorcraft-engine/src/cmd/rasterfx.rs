@@ -18,7 +18,8 @@ use serde_json::{Map, Value, json};
 use vectorcraft_color::{BlendMode, Paint};
 use vectorcraft_doc::rastersettings::MAX_ADD_AROUND;
 use vectorcraft_doc::{
-    Appearance, AppearanceItem, ColorMode, Document, Effect, ImageBlob, ImageObject, Node, NodeId, NodeKind, RasterColorModel, StrokeLayer,
+    Appearance, AppearanceItem, ColorMode, Document, Effect, ImageBlob, ImageObject, Node, NodeId,
+    NodeKind, RasterColorModel, StrokeLayer,
 };
 use vectorcraft_geom::{Affine, FillRule, PathData, Rect};
 use vectorcraft_render::effects::{self, RasterFx};
@@ -68,9 +69,15 @@ fn resolution(v: &Value) -> Result<f64> {
             "screen" => 72.0,
             "medium" => 150.0,
             "high" => 300.0,
-            other => other.trim_end_matches("ppi").trim().parse::<f64>().map_err(|_| bad(C, format!("unknown resolution `{v}`")))?,
+            other => other
+                .trim_end_matches("ppi")
+                .trim()
+                .parse::<f64>()
+                .map_err(|_| bad(C, format!("unknown resolution `{v}`")))?,
         },
-        v => v.as_f64().ok_or_else(|| bad(C, "resolution must be a number or screen|medium|high"))?,
+        v => v
+            .as_f64()
+            .ok_or_else(|| bad(C, "resolution must be a number or screen|medium|high"))?,
     };
     if !(1.0..=2400.0).contains(&ppi) {
         return Err(bad(C, "resolution must be between 1 and 2400 ppi"));
@@ -82,23 +89,35 @@ fn resolution(v: &Value) -> Result<f64> {
 pub(crate) fn color_model(v: &Value, mode: ColorMode, cmd: &str) -> Result<RasterColorModel> {
     let s = v.as_str().unwrap_or_default().to_ascii_lowercase();
     match (s.as_str(), mode) {
-        ("document", _) | ("rgb", ColorMode::Rgb) | ("cmyk", ColorMode::Cmyk) => Ok(RasterColorModel::Document),
+        ("document", _) | ("rgb", ColorMode::Rgb) | ("cmyk", ColorMode::Cmyk) => {
+            Ok(RasterColorModel::Document)
+        }
         ("grayscale" | "gray", _) => Ok(RasterColorModel::Grayscale),
         ("bitmap", _) => Ok(RasterColorModel::Bitmap),
         _ => {
-            let own = if mode == ColorMode::Rgb { "rgb" } else { "cmyk" };
-            Err(bad(cmd, format!("colorModel must be {own} (the document's mode), grayscale or bitmap")))
+            let own = if mode == ColorMode::Rgb {
+                "rgb"
+            } else {
+                "cmyk"
+            };
+            Err(bad(
+                cmd,
+                format!("colorModel must be {own} (the document's mode), grayscale or bitmap"),
+            ))
         }
     }
 }
 
 /// `addAround`/`padding` in points.
 pub(crate) fn add_around(v: &Value, cmd: &str, key: &str) -> Result<f64> {
-    v.as_f64().filter(|x| (0.0..=MAX_ADD_AROUND).contains(x)).ok_or_else(|| bad(cmd, format!("{key} must be 0–{MAX_ADD_AROUND} pt")))
+    v.as_f64()
+        .filter(|x| (0.0..=MAX_ADD_AROUND).contains(x))
+        .ok_or_else(|| bad(cmd, format!("{key} must be 0–{MAX_ADD_AROUND} pt")))
 }
 
 fn flag(k: &str, v: &Value) -> Result<bool> {
-    v.as_bool().ok_or_else(|| bad(C, format!("{k} must be true or false")))
+    v.as_bool()
+        .ok_or_else(|| bad(C, format!("{k} must be true or false")))
 }
 
 fn settings(s: &mut Session, p: &Value) -> Result<Value> {
@@ -138,17 +157,35 @@ pub(crate) fn clip_group(d: &mut Document, path: PathData, rule: FillRule, art: 
     let mut clip = super::pathops::shape_node(d, path, None);
     clip.appearance = Appearance::basic(Paint::None, Paint::None, 0.0).into();
     match &mut clip.kind {
-        NodeKind::Path { clipping, rule: r, .. } => (*clipping, *r) = (true, rule),
+        NodeKind::Path {
+            clipping, rule: r, ..
+        } => (*clipping, *r) = (true, rule),
         NodeKind::Compound { rule: r, .. } => *r = rule,
         _ => {}
     }
-    Node::new(d.alloc_id(), NodeKind::Group { children: vec![Arc::new(clip), Arc::new(art)], clip: true })
+    Node::new(
+        d.alloc_id(),
+        NodeKind::Group {
+            children: vec![Arc::new(clip), Arc::new(art)],
+            clip: true,
+        },
+    )
 }
 
 /// Render `nodes` alone over transparency: (premultiplied pixels, width, height).
-fn render(doc: &Document, nodes: Vec<Node>, region: Rect, scale: f64, anti_alias: AntiAlias) -> vectorcraft_render::Rendered {
+fn render(
+    doc: &Document,
+    nodes: Vec<Node>,
+    region: Rect,
+    scale: f64,
+    anti_alias: AntiAlias,
+) -> vectorcraft_render::Rendered {
     let mut tmp = doc.clone();
-    let mut layer = Node::layer(NodeId(u64::MAX), "raster", vectorcraft_doc::LayerColor::Preset(0));
+    let mut layer = Node::layer(
+        NodeId(u64::MAX),
+        "raster",
+        vectorcraft_doc::LayerColor::Preset(0),
+    );
     if let Some(ch) = layer.children_mut() {
         *ch = nodes.into_iter().map(Arc::new).collect();
     }
@@ -156,7 +193,17 @@ fn render(doc: &Document, nodes: Vec<Node>, region: Rect, scale: f64, anti_alias
     let mut r = vectorcraft_render::Renderer::new();
     r.threads = 0;
     // Art Optimized is supersampled, as in exports: shapes meeting edge to edge leave no seam.
-    r.render_region_with(&tmp, region, scale, &RenderOptions { skip_templates: true, anti_alias, supersample: true, ..Default::default() })
+    r.render_region_with(
+        &tmp,
+        region,
+        scale,
+        &RenderOptions {
+            skip_templates: true,
+            anti_alias,
+            supersample: true,
+            ..Default::default()
+        },
+    )
 }
 
 /// Pixels per point of raster effects rendered as images (the document's raster effects
@@ -170,22 +217,49 @@ pub(crate) fn effects_scale(doc: &Document) -> f64 {
 /// fills' and strokes' raster effects included). With `knockout`, the coverage of that art is knocked out
 /// of the image, which then only holds what the effects add around it (a shadow to go under the
 /// vector object). The document's raster effects settings add room around it and finish its pixels.
-pub(crate) fn effect_image(out: &mut Document, whole: &Node, knockout: Option<&Node>, scale: f64) -> Option<Node> {
+pub(crate) fn effect_image(
+    out: &mut Document,
+    whole: &Node,
+    knockout: Option<&Node>,
+    scale: f64,
+) -> Option<Node> {
     // What it paints (its members' effects included), and how far its fills' and strokes' raster
     // effects reach beyond that.
     let b = vectorcraft_render::painted_bounds(whole)?;
     let look = out.raster_effects.clone();
-    let reach = whole.appearance.items.iter().map(|i| effects::outset(i.effects(), b)).fold(0.0, f64::max) + 2.0 + look.add_around;
+    let reach = whole
+        .appearance
+        .items
+        .iter()
+        .map(|i| effects::outset(i.effects(), b))
+        .fold(0.0, f64::max)
+        + 2.0
+        + look.add_around;
     let b = b.inflate(reach, reach);
     // Whole pixels, and no larger than 64 Mpx.
     let scale = scale.min((64.0e6 / (b.width() * b.height()).max(1.0)).sqrt());
-    let region = Rect::new(b.x0, b.y0, b.x0 + (b.width() * scale).ceil().max(1.0) / scale, b.y0 + (b.height() * scale).ceil().max(1.0) / scale);
+    let region = Rect::new(
+        b.x0,
+        b.y0,
+        b.x0 + (b.width() * scale).ceil().max(1.0) / scale,
+        b.y0 + (b.height() * scale).ceil().max(1.0) / scale,
+    );
     // Anti-alias off: hard edges (the effects themselves stay smooth).
-    let anti_alias = if look.anti_alias { AntiAlias::Art } else { AntiAlias::None };
+    let anti_alias = if look.anti_alias {
+        AntiAlias::Art
+    } else {
+        AntiAlias::None
+    };
     let mut img = render(out, vec![whole.clone()], region, scale, anti_alias);
     if let Some(bare) = knockout {
         let obj = render(out, vec![bare.clone()], region, scale, anti_alias);
-        for (px, o) in img.pixels.as_chunks_mut::<4>().0.iter_mut().zip(obj.pixels.as_chunks::<4>().0) {
+        for (px, o) in img
+            .pixels
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
+            .zip(obj.pixels.as_chunks::<4>().0)
+        {
             let keep = 1.0 - o[3] as f32 / 255.0;
             for c in px.iter_mut() {
                 *c = (*c as f32 * keep).round() as u8;
@@ -201,11 +275,19 @@ pub(crate) fn effect_image(out: &mut Document, whole: &Node, knockout: Option<&N
     while out.images.contains_key(&key) {
         key.push('+');
     }
-    out.images.insert(key.clone(), ImageBlob::new("image/png", png));
+    out.images
+        .insert(key.clone(), ImageBlob::new("image/png", png));
     let xf = Affine::translate(region.origin().to_vec2()) * Affine::scale(1.0 / scale);
     let mut image = Node::new(
         id,
-        NodeKind::Image(Box::new(ImageObject { key, width: img.width, height: img.height, xf, link: None, placement: Default::default() })),
+        NodeKind::Image(Box::new(ImageObject {
+            key,
+            width: img.width,
+            height: img.height,
+            xf,
+            link: None,
+            placement: Default::default(),
+        })),
     );
     image.name = Some("Raster effect".into());
     Some(image)
@@ -214,10 +296,16 @@ pub(crate) fn effect_image(out: &mut Document, whole: &Node, knockout: Option<&N
 /// The visible raster effects of `n`: its own and its fills' and strokes' (none on guides and
 /// clipping paths, which paint nothing).
 pub(crate) fn raster_fx(n: &Node) -> Vec<RasterFx> {
-    if matches!(n.kind, NodeKind::Path { guide: true, .. } | NodeKind::Path { clipping: true, .. }) {
+    if matches!(
+        n.kind,
+        NodeKind::Path { guide: true, .. } | NodeKind::Path { clipping: true, .. }
+    ) {
         return vec![];
     }
-    std::iter::once(&n.appearance.effects).chain(n.appearance.items.iter().map(|i| i.effects())).flat_map(|e| effects::raster_effects(e)).collect()
+    std::iter::once(&n.appearance.effects)
+        .chain(n.appearance.items.iter().map(|i| i.effects()))
+        .flat_map(|e| effects::raster_effects(e))
+        .collect()
 }
 
 /// Remove the raster effects of `n` (its own and its fills' and strokes') and, with `members`, of
@@ -242,7 +330,9 @@ fn retain_effects(n: &mut Node, members: bool, keep: &dyn Fn(&Effect) -> bool) {
 
 /// The blend mode raster effect `e` paints with (`None`: not a raster effect, or one without).
 fn effect_mode(e: &Effect) -> Option<BlendMode> {
-    effects::raster_effects(std::slice::from_ref(e)).first().and_then(RasterFx::mode)
+    effects::raster_effects(std::slice::from_ref(e))
+        .first()
+        .and_then(RasterFx::mode)
 }
 
 /// The images of the shadows and outer glows of `n`, one per blend mode they use (in the order
@@ -264,7 +354,9 @@ fn below_images(d: &mut Document, n: &Node) -> Option<Vec<Node>> {
         .into_iter()
         .map(|mode| {
             let mut only = n.clone();
-            retain_effects(&mut only, false, &|e| effect_mode(e).is_none_or(|m| m == mode));
+            retain_effects(&mut only, false, &|e| {
+                effect_mode(e).is_none_or(|m| m == mode)
+            });
             let mut image = raster_image(d, &only, true, false)?;
             image.blend = mode;
             Some(image)
@@ -300,7 +392,11 @@ pub(crate) fn raster_image(d: &mut Document, n: &Node, below: bool, members: boo
 /// member).
 pub(crate) fn replace_with_image(mut v: Node, image: Node) -> Node {
     if !v.is_layer() {
-        return Node { kind: image.kind, appearance: Default::default(), ..v };
+        return Node {
+            kind: image.kind,
+            appearance: Default::default(),
+            ..v
+        };
     }
     v.appearance = Default::default();
     v.set_clips(false);
@@ -315,19 +411,28 @@ pub(crate) fn replace_with_image(mut v: Node, image: Node) -> Node {
 /// id, name and transparency.
 pub(crate) fn put_below(d: &mut Document, m: &mut Node, image: Node) {
     match &mut m.kind {
-        NodeKind::Group { children, clip: false } => children.insert(0, Arc::new(image)),
-        NodeKind::Layer { children, clip, .. } => children.insert(usize::from(*clip).min(children.len()), Arc::new(image)),
+        NodeKind::Group {
+            children,
+            clip: false,
+        } => children.insert(0, Arc::new(image)),
+        NodeKind::Layer { children, clip, .. } => {
+            children.insert(usize::from(*clip).min(children.len()), Arc::new(image))
+        }
         _ => {
             let mut inner = m.clone();
             inner.id = d.alloc_id();
-            (inner.name, inner.opacity, inner.blend, inner.isolate) = (None, 1.0, Default::default(), false);
+            (inner.name, inner.opacity, inner.blend, inner.isolate) =
+                (None, 1.0, Default::default(), false);
             inner.extras_mut().mask = None;
             // Knockout is between the object's own parts (a blend's steps): it stays with them,
             // so the image doesn't knock out the art over it.
             m.knockout = Default::default();
             inner.knockout_shape = false;
             m.appearance = Default::default();
-            m.kind = NodeKind::Group { children: vec![Arc::new(image), Arc::new(inner)], clip: false };
+            m.kind = NodeKind::Group {
+                children: vec![Arc::new(image), Arc::new(inner)],
+                clip: false,
+            };
         }
     }
 }
@@ -341,7 +446,8 @@ fn is_container(n: &Node) -> bool {
 /// nothing painted under them (a stroke's shadow falls on the fills below it, and type's
 /// characters or a group's members paint below its upper fills and strokes).
 fn below_only(n: &Node) -> bool {
-    let contents = (is_container(n) || matches!(n.kind, NodeKind::Text(_))).then(|| n.appearance.contents_at());
+    let contents = (is_container(n) || matches!(n.kind, NodeKind::Text(_)))
+        .then(|| n.appearance.contents_at());
     let mut covered = false;
     for (i, item) in n.appearance.items.iter().enumerate() {
         covered |= contents == Some(i);
@@ -351,7 +457,9 @@ fn below_only(n: &Node) -> bool {
         }
         covered |= effects::paints(item);
     }
-    effects::raster_effects(&n.appearance.effects).iter().all(RasterFx::is_below)
+    effects::raster_effects(&n.appearance.effects)
+        .iter()
+        .all(RasterFx::is_below)
 }
 
 /// A path or compound path with several fills and strokes, some of them with raster effects, as a
@@ -361,13 +469,19 @@ fn split_items(out: &mut Document, n: &Node) -> Option<Node> {
     let items = &n.appearance.items;
     if !matches!(n.kind, NodeKind::Path { .. } | NodeKind::Compound { .. })
         || items.iter().filter(|i| effects::paints(i)).count() < 2
-        || items.iter().all(|i| effects::raster_effects(i.effects()).is_empty())
+        || items
+            .iter()
+            .all(|i| effects::raster_effects(i.effects()).is_empty())
     {
         return None;
     }
     let mut stroke_piece = |d: &mut Document, path: &PathData, rule: FillRule, st: &StrokeLayer| {
         let mut p = super::pathops::shape_node(d, path.clone(), None);
-        p.appearance = Appearance { items: vec![AppearanceItem::Stroke(st.clone())], ..Default::default() }.into();
+        p.appearance = Appearance {
+            items: vec![AppearanceItem::Stroke(st.clone())],
+            ..Default::default()
+        }
+        .into();
         if let NodeKind::Path { rule: r, .. } | NodeKind::Compound { rule: r, .. } = &mut p.kind {
             *r = rule;
         }
@@ -380,11 +494,17 @@ fn split_items(out: &mut Document, n: &Node) -> Option<Node> {
 /// it) with the instance's appearance and transparency, which PDF export draws the same: the
 /// instance alone has no size to render its effects' image over. `None` for other objects.
 fn placed_symbol(d: &Document, n: &Node) -> Option<Node> {
-    let NodeKind::SymbolInstance { symbol, xf } = &n.kind else { return None };
-    let mut art = vectorcraft_render::instance_art(&d.symbols.iter().find(|s| s.name == *symbol)?.art, n);
+    let NodeKind::SymbolInstance { symbol, xf } = &n.kind else {
+        return None;
+    };
+    let mut art =
+        vectorcraft_render::instance_art(&d.symbols.iter().find(|s| s.name == *symbol)?.art, n);
     art.transform(*xf, false);
     let mut g = n.clone();
-    g.kind = NodeKind::Group { children: vec![Arc::new(art)], clip: false };
+    g.kind = NodeKind::Group {
+        children: vec![Arc::new(art)],
+        clip: false,
+    };
     Some(g)
 }
 
@@ -413,8 +533,13 @@ fn needs(n: &Node, which: Which) -> bool {
     n.visible
         && !matches!(n.kind, NodeKind::Layer { template: true, .. })
         && (imaged(n, which)
-            || n.extras().mask.as_ref().is_some_and(|m| needs(&m.art, which))
-            || (is_container(n) && n.children().is_some_and(|ch| ch.iter().any(|c| needs(c, which)))))
+            || n.extras()
+                .mask
+                .as_ref()
+                .is_some_and(|m| needs(&m.art, which))
+            || (is_container(n)
+                && n.children()
+                    .is_some_and(|ch| ch.iter().any(|c| needs(c, which)))))
 }
 
 /// The art of `n`'s opacity mask with its raster effects as images.
@@ -483,11 +608,21 @@ fn walk_inner(out: &mut Document, n: &Node, report: &mut FlattenReport) -> Optio
 }
 
 /// `nodes` with their raster effects as images, `None` when none has any.
-fn walk_all(out: &mut Document, nodes: &[Arc<Node>], report: &mut FlattenReport) -> Option<Vec<Arc<Node>>> {
-    nodes
-        .iter()
-        .any(|n| needs(n, report.which))
-        .then(|| nodes.iter().map(|n| walk(out, n, report).map(Arc::new).unwrap_or_else(|| n.clone())).collect())
+fn walk_all(
+    out: &mut Document,
+    nodes: &[Arc<Node>],
+    report: &mut FlattenReport,
+) -> Option<Vec<Arc<Node>>> {
+    nodes.iter().any(|n| needs(n, report.which)).then(|| {
+        nodes
+            .iter()
+            .map(|n| {
+                walk(out, n, report)
+                    .map(Arc::new)
+                    .unwrap_or_else(|| n.clone())
+            })
+            .collect()
+    })
 }
 
 /// A copy of `doc` with raster effects turned into images at the document's raster effects
@@ -508,7 +643,10 @@ pub fn flatten_pixel_effects(doc: &Document) -> Option<Document> {
 fn flatten(doc: &Document, report: &mut FlattenReport) -> Option<Document> {
     let which = report.which;
     let any = |nodes: &[Arc<Node>]| nodes.iter().any(|n| needs(n, which));
-    if !any(&doc.layers) && !doc.symbols.iter().any(|s| needs(&s.art, which)) && !doc.patterns.iter().any(|p| any(&p.art)) {
+    if !any(&doc.layers)
+        && !doc.symbols.iter().any(|s| needs(&s.art, which))
+        && !doc.patterns.iter().any(|p| any(&p.art))
+    {
         return None;
     }
     // Geometry effects first, so the vector objects kept above shadows are final.
@@ -519,14 +657,22 @@ fn flatten(doc: &Document, report: &mut FlattenReport) -> Option<Document> {
         out.layers = layers;
     }
     for i in 0..out.symbols.len() {
-        if let Some(art) = out.symbols.get(i).map(|s| s.art.clone()).and_then(|a| walk(&mut out, &a, report))
+        if let Some(art) = out
+            .symbols
+            .get(i)
+            .map(|s| s.art.clone())
+            .and_then(|a| walk(&mut out, &a, report))
             && let Some(s) = out.symbols.get_mut(i)
         {
             s.art = Arc::new(art);
         }
     }
     for i in 0..out.patterns.len() {
-        if let Some(art) = out.patterns.get(i).map(|p| p.art.clone()).and_then(|a| walk_all(&mut out, &a, report))
+        if let Some(art) = out
+            .patterns
+            .get(i)
+            .map(|p| p.art.clone())
+            .and_then(|a| walk_all(&mut out, &a, report))
             && let Some(p) = out.patterns.get_mut(i)
         {
             p.art = art;
@@ -536,7 +682,10 @@ fn flatten(doc: &Document, report: &mut FlattenReport) -> Option<Document> {
 }
 
 /// PDF bytes for `doc`, with raster effects rendered as images.
-pub fn export_pdf(doc: &Document, opts: &vectorcraft_pdf::PdfOptions) -> std::result::Result<Vec<u8>, vectorcraft_pdf::PdfError> {
+pub fn export_pdf(
+    doc: &Document,
+    opts: &vectorcraft_pdf::PdfOptions,
+) -> std::result::Result<Vec<u8>, vectorcraft_pdf::PdfError> {
     export_pdf_with_report(doc, opts).map(|r| r.bytes)
 }
 
@@ -563,20 +712,58 @@ mod tests {
     #[test]
     fn settings_and_pdf_flattening() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 300, "height": 300})).unwrap();
-        assert_eq!(s.execute("document.rasterEffectsSettings", &json!({})).unwrap()["resolution"], json!(72.0));
-        s.execute("document.rasterEffectsSettings", &json!({"resolution": "high"})).unwrap();
-        assert!(s.execute("document.rasterEffectsSettings", &json!({"resolution": 0})).is_err());
-        let r = s.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
-        let b = s.execute("shape.ellipse", &json!({"x": 180, "y": 50, "width": 80, "height": 80})).unwrap()["id"].as_u64().unwrap();
-        s.execute("effect.apply", &json!({"effect": "stylize.dropShadow", "ids": [r]})).unwrap();
-        s.execute("effect.apply", &json!({"effect": "blur.gaussian", "params": {"radius": 4}, "ids": [b]})).unwrap();
+        s.execute("file.new", &json!({"width": 300, "height": 300}))
+            .unwrap();
+        assert_eq!(
+            s.execute("document.rasterEffectsSettings", &json!({}))
+                .unwrap()["resolution"],
+            json!(72.0)
+        );
+        s.execute(
+            "document.rasterEffectsSettings",
+            &json!({"resolution": "high"}),
+        )
+        .unwrap();
+        assert!(
+            s.execute("document.rasterEffectsSettings", &json!({"resolution": 0}))
+                .is_err()
+        );
+        let r = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 50, "y": 50, "width": 100, "height": 100}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let b = s
+            .execute(
+                "shape.ellipse",
+                &json!({"x": 180, "y": 50, "width": 80, "height": 80}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "effect.apply",
+            &json!({"effect": "stylize.dropShadow", "ids": [r]}),
+        )
+        .unwrap();
+        s.execute(
+            "effect.apply",
+            &json!({"effect": "blur.gaussian", "params": {"radius": 4}, "ids": [b]}),
+        )
+        .unwrap();
         let doc = s.doc().unwrap().doc.clone();
         let flat = super::flatten_raster_effects(&doc).unwrap();
         let kids = flat.layers[0].children().unwrap();
         // Shadow: an image (300 ppi) under the vector rectangle, which keeps no raster effect.
-        let NodeKind::Group { children, .. } = &kids[0].kind else { panic!("shadow becomes a group: {:?}", kids[0].kind_label()) };
-        let NodeKind::Image(im) = &children[0].kind else { panic!() };
+        let NodeKind::Group { children, .. } = &kids[0].kind else {
+            panic!("shadow becomes a group: {:?}", kids[0].kind_label())
+        };
+        let NodeKind::Image(im) = &children[0].kind else {
+            panic!()
+        };
         assert!(im.width as f64 > 100.0 * 300.0 / 72.0);
         assert!(children[1].path_data().is_some() && children[1].appearance.effects.is_empty());
         // Blur changes the object itself: an image alone.
@@ -585,6 +772,16 @@ mod tests {
         let text = String::from_utf8_lossy(&pdf);
         assert!(text.contains("/Image"), "the PDF embeds the effect images");
         // The source document is untouched.
-        assert!(s.doc().unwrap().doc.node(vectorcraft_doc::NodeId(r)).unwrap().appearance.effects.len() == 1);
+        assert!(
+            s.doc()
+                .unwrap()
+                .doc
+                .node(vectorcraft_doc::NodeId(r))
+                .unwrap()
+                .appearance
+                .effects
+                .len()
+                == 1
+        );
     }
 }

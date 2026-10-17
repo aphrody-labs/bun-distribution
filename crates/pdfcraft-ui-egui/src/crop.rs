@@ -29,7 +29,11 @@ pub(crate) fn page_input(
     let pointer = ui.input(|i| i.pointer.hover_pos());
     let origin = ui.input(|i| i.pointer.press_origin());
     if pointer.is_some_and(|p| xf.rect.contains(p)) {
-        ui.ctx().set_cursor_icon(if allowed { egui::CursorIcon::Crosshair } else { egui::CursorIcon::NotAllowed });
+        ui.ctx().set_cursor_icon(if allowed {
+            egui::CursorIcon::Crosshair
+        } else {
+            egui::CursorIcon::NotAllowed
+        });
     }
     if !allowed {
         return false;
@@ -43,25 +47,51 @@ pub(crate) fn page_input(
         && p == page
         && let Some(end) = pointer
     {
-        let end = Pos2::new(end.x.clamp(xf.rect.left(), xf.rect.right()), end.y.clamp(xf.rect.top(), xf.rect.bottom()));
+        let end = Pos2::new(
+            end.x.clamp(xf.rect.left(), xf.rect.right()),
+            end.y.clamp(xf.rect.top(), xf.rect.bottom()),
+        );
         let r = Rect::from_two_pos(start, end);
         // Dim what will be cut away.
         let painter = ui.painter();
         for band in [
             Rect::from_min_max(xf.rect.min, Pos2::new(xf.rect.right(), r.top())),
             Rect::from_min_max(Pos2::new(xf.rect.left(), r.bottom()), xf.rect.max),
-            Rect::from_min_max(Pos2::new(xf.rect.left(), r.top()), Pos2::new(r.left(), r.bottom())),
-            Rect::from_min_max(Pos2::new(r.right(), r.top()), Pos2::new(xf.rect.right(), r.bottom())),
+            Rect::from_min_max(
+                Pos2::new(xf.rect.left(), r.top()),
+                Pos2::new(r.left(), r.bottom()),
+            ),
+            Rect::from_min_max(
+                Pos2::new(r.right(), r.top()),
+                Pos2::new(xf.rect.right(), r.bottom()),
+            ),
         ] {
             painter.rect_filled(band, CornerRadius::ZERO, Color32::from_black_alpha(70));
         }
-        painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, Color32::from_rgb(0x14, 0x73, 0xE6)), egui::StrokeKind::Middle);
+        painter.rect_stroke(
+            r,
+            CornerRadius::ZERO,
+            Stroke::new(1.0, Color32::from_rgb(0x14, 0x73, 0xE6)),
+            egui::StrokeKind::Middle,
+        );
         if resp.drag_stopped() {
             view.crop_drag = None;
             if r.width() >= 4.0 && r.height() >= 4.0 {
-                let (a, b) = (to_user(xf, info, page, r.left_top()), to_user(xf, info, page, r.right_bottom()));
-                let rect = [a[0].min(b[0]), a[1].min(b[1]), a[0].max(b[0]), a[1].max(b[1])];
-                view.pending_edit = Some(Edit::SetPageBox { pages: vec![page], which: PageBox::Crop, spec: BoxSpec::Rect(rect) });
+                let (a, b) = (
+                    to_user(xf, info, page, r.left_top()),
+                    to_user(xf, info, page, r.right_bottom()),
+                );
+                let rect = [
+                    a[0].min(b[0]),
+                    a[1].min(b[1]),
+                    a[0].max(b[0]),
+                    a[1].max(b[1]),
+                ];
+                view.pending_edit = Some(Edit::SetPageBox {
+                    pages: vec![page],
+                    which: PageBox::Crop,
+                    spec: BoxSpec::Rect(rect),
+                });
             }
         }
     }

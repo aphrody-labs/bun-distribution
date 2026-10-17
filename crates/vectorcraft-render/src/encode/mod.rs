@@ -89,7 +89,8 @@ impl RasterExportOptions {
     /// What the renderer draws for `format`: template layers and guides left out, over the background
     /// (white for a JPEG or a flat PSD without one), composited in floating point.
     pub fn render_options(&self, format: RasterFormat) -> RenderOptions {
-        let flat = format == RasterFormat::Jpeg || (format == RasterFormat::Psd && !self.psd.layers);
+        let flat =
+            format == RasterFormat::Jpeg || (format == RasterFormat::Psd && !self.psd.layers);
         let background = self.background.or(flat.then_some([255; 3]));
         RenderOptions {
             background: background.map(|[r, g, b]| [r, g, b, 255]),
@@ -107,26 +108,53 @@ impl RasterExportOptions {
     /// flat; [`Renderer::export_region`] draws the inks and the layers instead.
     pub fn encode(&self, img: &Rendered, format: RasterFormat) -> Result<Vec<u8>, String> {
         match format {
-            RasterFormat::Png => {
-                png::encode(&img.to_straight(), img.width, img.height, &png::PngOptions { ppi: Some(self.ppi), interlaced: self.interlaced })
-            }
+            RasterFormat::Png => png::encode(
+                &img.to_straight(),
+                img.width,
+                img.height,
+                &png::PngOptions {
+                    ppi: Some(self.ppi),
+                    interlaced: self.interlaced,
+                },
+            ),
             RasterFormat::Jpeg => {
                 let px = match self.jpeg.color_model {
                     jpeg::ColorModel::Cmyk => jpeg::separated(img),
                     model => jpeg::screen_pixels(img, model == jpeg::ColorModel::Gray),
                 };
-                jpeg::encode(&px, img.width, img.height, self.quality, Some(self.ppi), &self.jpeg)
+                jpeg::encode(
+                    &px,
+                    img.width,
+                    img.height,
+                    self.quality,
+                    Some(self.ppi),
+                    &self.jpeg,
+                )
             }
             RasterFormat::WebP => webp(img),
             RasterFormat::Png8 | RasterFormat::Gif => {
-                let ix = quantize::quantize(&img.to_straight(), img.width, img.height, &self.palette);
+                let ix =
+                    quantize::quantize(&img.to_straight(), img.width, img.height, &self.palette);
                 match format {
                     RasterFormat::Gif => gif::encode(&ix, self.interlaced),
-                    _ => png::encode_indexed(&ix, &png::PngOptions { ppi: Some(self.ppi), interlaced: self.interlaced }),
+                    _ => png::encode_indexed(
+                        &ix,
+                        &png::PngOptions {
+                            ppi: Some(self.ppi),
+                            interlaced: self.interlaced,
+                        },
+                    ),
                 }
             }
             RasterFormat::Tiff => tiff::encode(img, self.ppi, &self.tiff),
-            RasterFormat::Bmp => bmp::encode(&img.to_straight(), img.width, img.height, self.ppi, &self.bmp, &self.palette),
+            RasterFormat::Bmp => bmp::encode(
+                &img.to_straight(),
+                img.width,
+                img.height,
+                self.ppi,
+                &self.bmp,
+                &self.palette,
+            ),
             RasterFormat::Tga => tga::encode(&img.to_straight(), img.width, img.height, &self.tga),
             RasterFormat::Psd => psd::encode(img, self.ppi, &self.psd),
         }
@@ -146,13 +174,20 @@ impl Renderer {
     /// Render `region` of `doc` (an artboard or any rect) as exported and encode it as `format`.
     /// Callers check the size first ([`crate::raster_size`]). A CMYK JPEG or TIFF is drawn as ink
     /// amounts ([`Renderer::render_region_inks`]); a PSD with its layers ([`psd::export`]).
-    pub fn export_region(&mut self, doc: &Document, region: Rect, format: RasterFormat, opts: &RasterExportOptions) -> Result<Vec<u8>, String> {
+    pub fn export_region(
+        &mut self,
+        doc: &Document,
+        region: Rect,
+        format: RasterFormat,
+        opts: &RasterExportOptions,
+    ) -> Result<Vec<u8>, String> {
         if format == RasterFormat::Psd {
             return psd::export(self, doc, region, opts);
         }
         if opts.cmyk(format) {
             let (w, h) = crate::region_pixels(region, opts.scale());
-            let inks = self.render_region_inks(doc, region, opts.scale(), &opts.render_options(format));
+            let inks =
+                self.render_region_inks(doc, region, opts.scale(), &opts.render_options(format));
             return match format {
                 RasterFormat::Tiff => tiff::encode_samples(&inks, w, h, opts.ppi, &opts.tiff),
                 _ => jpeg::encode(&inks, w, h, opts.quality, Some(opts.ppi), &opts.jpeg),
@@ -166,8 +201,18 @@ impl Renderer {
 /// Baseline RGB JPEG at `quality` 1–100, partly transparent pixels flattened on white, with the
 /// resolution `ppi` (if any) in the JFIF header and no colour profile.
 pub(crate) fn jpeg(img: &Rendered, quality: u8, ppi: Option<f64>) -> Result<Vec<u8>, String> {
-    let o = jpeg::JpegOptions { embed_icc: false, ..Default::default() };
-    jpeg::encode(&jpeg::screen_pixels(img, false), img.width, img.height, quality, ppi, &o)
+    let o = jpeg::JpegOptions {
+        embed_icc: false,
+        ..Default::default()
+    };
+    jpeg::encode(
+        &jpeg::screen_pixels(img, false),
+        img.width,
+        img.height,
+        quality,
+        ppi,
+        &o,
+    )
 }
 
 /// A straight-alpha pixel composited over white.
@@ -180,15 +225,23 @@ pub fn on_white(p: &[u8; 4]) -> [u8; 3] {
 pub(crate) fn webp(img: &Rendered) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
     let enc = image::codecs::webp::WebPEncoder::new_lossless(&mut buf);
-    image::ImageEncoder::write_image(enc, &img.to_straight(), img.width, img.height, image::ExtendedColorType::Rgba8)
-        .map_err(|e| format!("WebP encoding failed: {e}"))?;
+    image::ImageEncoder::write_image(
+        enc,
+        &img.to_straight(),
+        img.width,
+        img.height,
+        image::ExtendedColorType::Rgba8,
+    )
+    .map_err(|e| format!("WebP encoding failed: {e}"))?;
     Ok(buf)
 }
 
 /// Bounds of the art an export draws: visible objects off template layers (guides left out),
 /// with their strokes and live effects. `None` when nothing would be drawn.
 pub fn art_bounds(doc: &Document) -> Option<Rect> {
-    doc.layers.iter().fold(None, |acc, l| vectorcraft_geom::union_opt(acc, drawn_bounds(l)))
+    doc.layers.iter().fold(None, |acc, l| {
+        vectorcraft_geom::union_opt(acc, drawn_bounds(l))
+    })
 }
 
 fn drawn_bounds(n: &Node) -> Option<Rect> {
@@ -197,9 +250,17 @@ fn drawn_bounds(n: &Node) -> Option<Rect> {
     }
     match &n.kind {
         NodeKind::Layer { template: true, .. } | NodeKind::Path { guide: true, .. } => None,
-        NodeKind::Layer { children, clip: false, .. } | NodeKind::Group { children, clip: false } => {
-            children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, drawn_bounds(c)))
+        NodeKind::Layer {
+            children,
+            clip: false,
+            ..
         }
+        | NodeKind::Group {
+            children,
+            clip: false,
+        } => children.iter().fold(None, |acc, c| {
+            vectorcraft_geom::union_opt(acc, drawn_bounds(c))
+        }),
         _ if fx::has_fx(n) => fx::visual_bounds(n),
         _ => n.visual_bounds(),
     }

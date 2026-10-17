@@ -39,17 +39,29 @@ pub fn coverage_into(path: &BezPath, w: usize, h: usize, cov: &mut [f32]) -> (us
             }
         }
     }
-    let (lo, hi) = edges.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), e| (lo.min(e.0.y), hi.max(e.1.y)));
+    let (lo, hi) = edges
+        .iter()
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), e| {
+            (lo.min(e.0.y), hi.max(e.1.y))
+        });
     if edges.is_empty() {
         return (0, 0);
     }
-    let (r0, r1) = (lo.floor().clamp(0.0, h as f64) as usize, hi.ceil().clamp(0.0, h as f64) as usize);
+    let (r0, r1) = (
+        lo.floor().clamp(0.0, h as f64) as usize,
+        hi.ceil().clamp(0.0, h as f64) as usize,
+    );
     let mut xs: Vec<(f64, i32)> = vec![];
     for row in r0..r1 {
         for k in 0..SS {
             let y = row as f64 + (k as f64 + 0.5) / SS as f64;
             xs.clear();
-            xs.extend(edges.iter().filter(|(a, b, _)| a.y <= y && y < b.y).map(|(a, b, d)| (a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y), *d)));
+            xs.extend(
+                edges
+                    .iter()
+                    .filter(|(a, b, _)| a.y <= y && y < b.y)
+                    .map(|(a, b, d)| (a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y), *d)),
+            );
             xs.sort_by(|p, q| p.0.total_cmp(&q.0));
             let (mut wind, mut start) = (0, 0.0);
             for &(x, d) in &xs {
@@ -60,7 +72,9 @@ pub fn coverage_into(path: &BezPath, w: usize, h: usize, cov: &mut [f32]) -> (us
                 } else if wind == 0 {
                     let (x0, x1) = (start.clamp(0.0, w as f64), x.clamp(0.0, w as f64));
                     for px in x0.floor() as usize..(x1.ceil() as usize).min(w) {
-                        cov[row * w + px] += ((x1.min(px as f64 + 1.0) - x0.max(px as f64)).max(0.0) / SS as f64) as f32;
+                        cov[row * w + px] += ((x1.min(px as f64 + 1.0) - x0.max(px as f64))
+                            .max(0.0)
+                            / SS as f64) as f32;
                     }
                 }
             }
@@ -78,12 +92,18 @@ pub fn coverage(path: &BezPath, w: usize, h: usize) -> Vec<f32> {
 
 /// Paints `scene` (bottom first) over `bg`, anti-aliased, the way a renderer shows a trace.
 pub fn render(scene: &[(BezPath, [u8; 3])], bg: [u8; 3], w: usize, h: usize) -> Raster {
-    let scene: Vec<(BezPath, [u8; 3], Option<&TracedGradient>)> = scene.iter().map(|(p, c)| (p.clone(), *c, None)).collect();
+    let scene: Vec<(BezPath, [u8; 3], Option<&TracedGradient>)> =
+        scene.iter().map(|(p, c)| (p.clone(), *c, None)).collect();
     render_painted(&scene, bg, w, h)
 }
 
 /// [`render`], with the paths that have a gradient filled with it.
-pub fn render_painted(scene: &[(BezPath, [u8; 3], Option<&TracedGradient>)], bg: [u8; 3], w: usize, h: usize) -> Raster {
+pub fn render_painted(
+    scene: &[(BezPath, [u8; 3], Option<&TracedGradient>)],
+    bg: [u8; 3],
+    w: usize,
+    h: usize,
+) -> Raster {
     let mut buf = vec![bg.map(f32::from); w * h];
     let mut cov = vec![0.0f32; w * h];
     for (path, color, gradient) in scene {
@@ -92,7 +112,9 @@ pub fn render_painted(scene: &[(BezPath, [u8; 3], Option<&TracedGradient>)], bg:
             let a = cov[i].min(1.0);
             if a > 0.0 {
                 let color = match gradient {
-                    Some(g) => g.color_at(Point::new((i % w) as f64 + 0.5, (i / w) as f64 + 0.5)).map(|v| v as f32),
+                    Some(g) => g
+                        .color_at(Point::new((i % w) as f64 + 0.5, (i / w) as f64 + 0.5))
+                        .map(|v| v as f32),
                     None => color.map(f32::from),
                 };
                 for ch in 0..3 {
@@ -108,7 +130,13 @@ pub fn render_painted(scene: &[(BezPath, [u8; 3], Option<&TracedGradient>)], bg:
 /// Draws ground-truth art: each pixel is the average of `K × K` hard samples of the top-most
 /// shape, so abutting shapes blend with each other on their shared edge and never with the
 /// background behind them (which painting them one after another would let through).
-pub fn render_truth(scene: &[(BezPath, [u8; 3])], bg: [u8; 3], w: usize, h: usize, k: usize) -> Raster {
+pub fn render_truth(
+    scene: &[(BezPath, [u8; 3])],
+    bg: [u8; 3],
+    w: usize,
+    h: usize,
+    k: usize,
+) -> Raster {
     let (bw, bh) = (w * k, h * k);
     let mut top = vec![bg; bw * bh];
     let mut cov = vec![0.0f32; bw * bh];
@@ -145,7 +173,8 @@ fn from_rgb(w: usize, h: usize, buf: &[[f32; 3]]) -> Raster {
 
 /// A deterministic hash of a pixel position and a salt, as a value in `-1.0..1.0`.
 pub fn noise(x: u32, y: u32, salt: u32) -> f64 {
-    let mut v = x.wrapping_mul(0x9E37_79B1) ^ y.wrapping_mul(0x85EB_CA77) ^ salt.wrapping_mul(0xC2B2_AE3D);
+    let mut v =
+        x.wrapping_mul(0x9E37_79B1) ^ y.wrapping_mul(0x85EB_CA77) ^ salt.wrapping_mul(0xC2B2_AE3D);
     v ^= v >> 15;
     v = v.wrapping_mul(0x2C1B_3C6D);
     v ^= v >> 12;
@@ -158,7 +187,12 @@ fn map(img: &Raster, f: impl Fn(u32, u32, [f64; 3]) -> [f64; 3]) -> Raster {
     Raster::from_fn(img.width, img.height, |x, y| {
         let p = img.pixel(x, y);
         let c = f(x, y, [f64::from(p[0]), f64::from(p[1]), f64::from(p[2])]);
-        [c[0].round().clamp(0.0, 255.0) as u8, c[1].round().clamp(0.0, 255.0) as u8, c[2].round().clamp(0.0, 255.0) as u8, 255]
+        [
+            c[0].round().clamp(0.0, 255.0) as u8,
+            c[1].round().clamp(0.0, 255.0) as u8,
+            c[2].round().clamp(0.0, 255.0) as u8,
+            255,
+        ]
     })
 }
 
@@ -172,7 +206,10 @@ pub fn blur(img: &Raster) -> Raster {
             let mut s = [0.0; 3];
             for (k, wt) in K.iter().enumerate() {
                 let o = k as i64 - 2;
-                let p = src.pixel((i64::from(x) + o * dx).clamp(0, w - 1) as u32, (i64::from(y) + o * dy).clamp(0, h - 1) as u32);
+                let p = src.pixel(
+                    (i64::from(x) + o * dx).clamp(0, w - 1) as u32,
+                    (i64::from(y) + o * dy).clamp(0, h - 1) as u32,
+                );
                 for ch in 0..3 {
                     s[ch] += f64::from(p[ch]) * wt / 16.0;
                 }

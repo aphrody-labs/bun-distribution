@@ -17,9 +17,18 @@ pub fn leaves(catalog: &str) -> Vec<String> {
             stack.pop();
         }
         stack.push((ind, l.trim().to_string()));
-        let next_ind = lines.get(i + 1).map(|n| n.len() - n.trim_start().len()).unwrap_or(0);
+        let next_ind = lines
+            .get(i + 1)
+            .map(|n| n.len() - n.trim_start().len())
+            .unwrap_or(0);
         if next_ind <= ind && ind > 0 {
-            out.push(stack.iter().map(|(_, s)| s.as_str()).collect::<Vec<_>>().join(" > "));
+            out.push(
+                stack
+                    .iter()
+                    .map(|(_, s)| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" > "),
+            );
         }
     }
     out
@@ -30,7 +39,10 @@ pub const OUT: &str = "docs/parity-checklist.md";
 
 /// Today's UTC date as `YYYY-MM-DD` (from the system clock; no date crate needed).
 fn today() -> String {
-    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
     let (y, m, d) = civil_from_days((secs / 86_400) as i64);
     format!("{y:04}-{m:02}-{d:02}")
 }
@@ -50,8 +62,12 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 }
 
 pub fn run(root: &Path) -> Result<(), String> {
-    let catalog = std::fs::read_to_string(root.join("xtask/data/menu-catalog.txt")).map_err(|e| format!("menu catalog: {e}"))?;
-    let bun_os_root = root.parent().and_then(Path::parent).ok_or("CADCraft workspace is not nested under Bun OS")?;
+    let catalog = std::fs::read_to_string(root.join("xtask/data/menu-catalog.txt"))
+        .map_err(|e| format!("menu catalog: {e}"))?;
+    let bun_os_root = root
+        .parent()
+        .and_then(Path::parent)
+        .ok_or("CADCraft workspace is not nested under Bun OS")?;
     let cli_manifest = bun_os_root.join("crates/cadcraft-cli/Cargo.toml");
     let out = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
         .current_dir(bun_os_root)
@@ -60,18 +76,28 @@ pub fn run(root: &Path) -> Result<(), String> {
         .args(["--", "commands"])
         .output()
         .map_err(|e| format!("cadcraft-cli: {e}"))?;
-    let cmds: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| format!("commands JSON: {e}"))?;
+    let cmds: serde_json::Value =
+        serde_json::from_slice(&out.stdout).map_err(|e| format!("commands JSON: {e}"))?;
     let paths: Vec<String> = cmds
         .as_array()
         .map(|a| {
             a.iter()
                 .filter_map(|c| c["menu"].as_array())
                 .filter(|m| !m.is_empty())
-                .map(|m| m.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(" > ").to_ascii_lowercase())
+                .map(|m| {
+                    m.iter()
+                        .filter_map(|x| x.as_str())
+                        .collect::<Vec<_>>()
+                        .join(" > ")
+                        .to_ascii_lowercase()
+                })
                 .collect()
         })
         .unwrap_or_default();
-    let labels: Vec<String> = paths.iter().filter_map(|p| p.rsplit(" > ").next().map(str::to_string)).collect();
+    let labels: Vec<String> = paths
+        .iter()
+        .filter_map(|p| p.rsplit(" > ").next().map(str::to_string))
+        .collect();
     let ls = leaves(&catalog);
     let mut by_menu: Vec<(String, usize, usize)> = Vec::new();
     let mut missing = Vec::new();
@@ -94,7 +120,13 @@ pub fn run(root: &Path) -> Result<(), String> {
             None => by_menu.push((top, 1, usize::from(ok))),
         }
     }
-    let pct = |a: usize, b: usize| if b == 0 { 0.0 } else { 100.0 * a as f64 / b as f64 };
+    let pct = |a: usize, b: usize| {
+        if b == 0 {
+            0.0
+        } else {
+            100.0 * a as f64 / b as f64
+        }
+    };
     let mut md = format!(
         "# Parity checklist\n\n> **Generated:** {} by `cargo xtask parity`. Do not edit by hand.\n\nMenu-breadth parity: a reference menu item counts as covered when a CADCraft command is registered under the same menu label. It measures breadth, not depth; see [target-app-parity.md](target-app-parity.md) for the weighted assessment.\n\n**Menu breadth: {hit} / {} items ({:.0}%)** · {} registered commands.\n\n| Menu | Items | Covered | % |\n|---|---|---|---|\n",
         today(),
@@ -110,7 +142,11 @@ pub fn run(root: &Path) -> Result<(), String> {
         md += &format!("- {m}\n");
     }
     std::fs::write(root.join(OUT), md).map_err(|e| format!("{OUT}: {e}"))?;
-    println!("parity: {hit}/{} menu items ({:.0}%) → {OUT}", ls.len(), pct(hit, ls.len()));
+    println!(
+        "parity: {hit}/{} menu items ({:.0}%) → {OUT}",
+        ls.len(),
+        pct(hit, ls.len())
+    );
     Ok(())
 }
 
@@ -127,7 +163,16 @@ mod tests {
 
     #[test]
     fn leaves_with_paths() {
-        let c = "Draw\n    Line\n    Circle\n        3 Points\n        2 Points\nModify\n    Move\n";
-        assert_eq!(leaves(c), vec!["Draw > Line", "Draw > Circle > 3 Points", "Draw > Circle > 2 Points", "Modify > Move"]);
+        let c =
+            "Draw\n    Line\n    Circle\n        3 Points\n        2 Points\nModify\n    Move\n";
+        assert_eq!(
+            leaves(c),
+            vec![
+                "Draw > Line",
+                "Draw > Circle > 3 Points",
+                "Draw > Circle > 2 Points",
+                "Modify > Move"
+            ]
+        );
     }
 }

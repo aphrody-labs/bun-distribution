@@ -96,22 +96,44 @@ struct Node {
 }
 
 fn sort_key(s: &str) -> String {
-    let k: String = s.trim().trim_start_matches(|c: char| !c.is_alphanumeric()).to_lowercase();
+    let k: String = s
+        .trim()
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .to_lowercase();
     if k.is_empty() { s.to_lowercase() } else { k }
 }
 
 /// The index as paragraphs `(style, text)`; `page_name` formats an absolute page.
-pub fn build(spec: &IndexSpec, refs: &[Resolved], page_name: &dyn Fn(usize) -> String) -> Vec<(String, String)> {
+pub fn build(
+    spec: &IndexSpec,
+    refs: &[Resolved],
+    page_name: &dyn Fn(usize) -> String,
+) -> Vec<(String, String)> {
     let mut root: BTreeMap<String, Node> = BTreeMap::new();
     for res in refs {
-        let topics: Vec<&String> = res.r.topics.iter().filter(|t| !t.trim().is_empty()).take(4).collect();
+        let topics: Vec<&String> = res
+            .r
+            .topics
+            .iter()
+            .filter(|t| !t.trim().is_empty())
+            .take(4)
+            .collect();
         if topics.is_empty() {
             continue;
         }
         let keys: Vec<(String, String)> = topics
             .iter()
             .enumerate()
-            .map(|(i, t)| (format!("{}\u{0}{}", sort_key(res.r.sort.get(i).filter(|s| !s.is_empty()).unwrap_or(t)), t.trim()), t.trim().to_string()))
+            .map(|(i, t)| {
+                (
+                    format!(
+                        "{}\u{0}{}",
+                        sort_key(res.r.sort.get(i).filter(|s| !s.is_empty()).unwrap_or(t)),
+                        t.trim()
+                    ),
+                    t.trim().to_string(),
+                )
+            })
             .collect();
         let n = descend(&mut root, &keys);
         match &res.r.range {
@@ -137,11 +159,24 @@ pub fn build(spec: &IndexSpec, refs: &[Resolved], page_name: &dyn Fn(usize) -> S
     let mut heading: Option<char> = None;
     for (key, n) in &root {
         if spec.section_headings {
-            let c = key.chars().next().map(|c| if c.is_alphabetic() { c.to_uppercase().next().unwrap_or(c) } else { '#' });
+            let c = key.chars().next().map(|c| {
+                if c.is_alphabetic() {
+                    c.to_uppercase().next().unwrap_or(c)
+                } else {
+                    '#'
+                }
+            });
             if c != heading {
                 heading = c;
                 if let Some(c) = c {
-                    out.push(("Index Section Head".into(), if c == '#' { "Symbols".into() } else { c.to_string() }));
+                    out.push((
+                        "Index Section Head".into(),
+                        if c == '#' {
+                            "Symbols".into()
+                        } else {
+                            c.to_string()
+                        },
+                    ));
                 }
             }
         }
@@ -153,8 +188,15 @@ pub fn build(spec: &IndexSpec, refs: &[Resolved], page_name: &dyn Fn(usize) -> S
 /// The node for a topic path (created as needed).
 fn descend<'a>(level: &'a mut BTreeMap<String, Node>, keys: &[(String, String)]) -> &'a mut Node {
     let (k, name) = &keys[0];
-    let n = level.entry(k.clone()).or_insert_with(|| Node { name: name.clone(), ..Default::default() });
-    if keys.len() == 1 { n } else { descend(&mut n.children, &keys[1..]) }
+    let n = level.entry(k.clone()).or_insert_with(|| Node {
+        name: name.clone(),
+        ..Default::default()
+    });
+    if keys.len() == 1 {
+        n
+    } else {
+        descend(&mut n.children, &keys[1..])
+    }
 }
 
 fn entry_text(spec: &IndexSpec, n: &Node, page_name: &dyn Fn(usize) -> String) -> String {
@@ -164,15 +206,27 @@ fn entry_text(spec: &IndexSpec, n: &Node, page_name: &dyn Fn(usize) -> String) -
     // Drop single pages already inside a range.
     let ranges: Vec<(usize, usize)> = pages.iter().copied().filter(|&(a, b)| a != b).collect();
     pages.retain(|&(a, b)| a != b || !ranges.iter().any(|&(x, y)| x <= a && a <= y));
-    let list: Vec<String> =
-        pages.iter().map(|&(a, b)| if a == b { page_name(a) } else { format!("{}{}{}", page_name(a), spec.page_range, page_name(b)) }).collect();
+    let list: Vec<String> = pages
+        .iter()
+        .map(|&(a, b)| {
+            if a == b {
+                page_name(a)
+            } else {
+                format!("{}{}{}", page_name(a), spec.page_range, page_name(b))
+            }
+        })
+        .collect();
     let mut t = n.name.clone();
     if !list.is_empty() {
         t.push_str(&spec.following_topic);
         t.push_str(&list.join(&spec.between_pages));
     }
     if !n.see.is_empty() {
-        t.push_str(if list.is_empty() { &spec.following_topic } else { &spec.before_cross_ref });
+        t.push_str(if list.is_empty() {
+            &spec.following_topic
+        } else {
+            &spec.before_cross_ref
+        });
         t.push_str("See ");
         t.push_str(&n.see.join(&spec.between_entries));
     }
@@ -184,10 +238,20 @@ fn entry_text(spec: &IndexSpec, n: &Node, page_name: &dyn Fn(usize) -> String) -
     t
 }
 
-fn emit(spec: &IndexSpec, n: &Node, level: usize, page_name: &dyn Fn(usize) -> String, out: &mut Vec<(String, String)>) {
+fn emit(
+    spec: &IndexSpec,
+    n: &Node,
+    level: usize,
+    page_name: &dyn Fn(usize) -> String,
+    out: &mut Vec<(String, String)>,
+) {
     if spec.run_in && level == 1 {
         let mut t = entry_text(spec, n, page_name);
-        let subs: Vec<String> = n.children.values().map(|c| entry_text(spec, c, page_name)).collect();
+        let subs: Vec<String> = n
+            .children
+            .values()
+            .map(|c| entry_text(spec, c, page_name))
+            .collect();
         if !subs.is_empty() {
             t.push_str(": ");
             t.push_str(&subs.join(&spec.between_entries));
@@ -195,7 +259,10 @@ fn emit(spec: &IndexSpec, n: &Node, level: usize, page_name: &dyn Fn(usize) -> S
         out.push(("Index Level 1".into(), t));
         return;
     }
-    out.push((format!("Index Level {level}"), entry_text(spec, n, page_name)));
+    out.push((
+        format!("Index Level {level}"),
+        entry_text(spec, n, page_name),
+    ));
     for c in n.children.values() {
         emit(spec, c, (level + 1).min(4), page_name, out);
     }
@@ -206,19 +273,38 @@ mod tests {
     use super::*;
 
     fn r(topics: &[&str], range: IndexRange, pages: Option<(usize, usize)>) -> Resolved {
-        Resolved { r: IndexRef { topics: topics.iter().map(|s| s.to_string()).collect(), sort: vec![], range }, pages }
+        Resolved {
+            r: IndexRef {
+                topics: topics.iter().map(|s| s.to_string()).collect(),
+                sort: vec![],
+                range,
+            },
+            pages,
+        }
     }
 
     #[test]
     fn builds_nested_index() {
         let refs = vec![
-            r(&["Typography", "kerning"], IndexRange::CurrentPage, Some((4, 4))),
+            r(
+                &["Typography", "kerning"],
+                IndexRange::CurrentPage,
+                Some((4, 4)),
+            ),
             r(&["Typography"], IndexRange::ToEndOfStory, Some((1, 3))),
             r(&["Typography"], IndexRange::CurrentPage, Some((2, 2))),
-            r(&["typography", "Leading"], IndexRange::CurrentPage, Some((6, 6))),
+            r(
+                &["typography", "Leading"],
+                IndexRange::CurrentPage,
+                Some((6, 6)),
+            ),
             r(&["Baseline grid"], IndexRange::CurrentPage, Some((0, 0))),
             r(&["Grid"], IndexRange::See("Baseline grid".into()), None),
-            r(&["Ampersand"], IndexRange::SeeAlso("Glyphs".into()), Some((9, 9))),
+            r(
+                &["Ampersand"],
+                IndexRange::SeeAlso("Glyphs".into()),
+                Some((9, 9)),
+            ),
         ];
         let spec = IndexSpec::default();
         let out = build(&spec, &refs, &|p| (p + 1).to_string());
@@ -240,7 +326,22 @@ mod tests {
                 "Index Level 2|Leading  7",
             ]
         );
-        let run_in = build(&IndexSpec { run_in: true, section_headings: false, title: String::new(), ..spec }, &refs[..2], &|p| (p + 1).to_string());
-        assert_eq!(run_in, [("Index Level 1".to_string(), "Typography  2\u{2013}4: kerning  5".to_string())]);
+        let run_in = build(
+            &IndexSpec {
+                run_in: true,
+                section_headings: false,
+                title: String::new(),
+                ..spec
+            },
+            &refs[..2],
+            &|p| (p + 1).to_string(),
+        );
+        assert_eq!(
+            run_in,
+            [(
+                "Index Level 1".to_string(),
+                "Typography  2\u{2013}4: kerning  5".to_string()
+            )]
+        );
     }
 }

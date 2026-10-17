@@ -23,15 +23,23 @@ use crate::{EngineError, Result, Session};
 const FAMILY: &str = photocraft_text::fonts::DEFAULT_FAMILY;
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn exhausted_id(paragraph: bool) -> EngineError {
-    EngineError::Other(format!("{} style id space exhausted", if paragraph { "paragraph" } else { "character" }))
+    EngineError::Other(format!(
+        "{} style id space exhausted",
+        if paragraph { "paragraph" } else { "character" }
+    ))
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn text_of(doc: &Document, id: LayerId) -> Option<&TextLayer> {
@@ -43,7 +51,9 @@ fn text_of(doc: &Document, id: LayerId) -> Option<&TextLayer> {
 
 /// Type layers a style command acts on: `layer`, `layers`, else the selected type layers.
 fn targets(s: &Session, p: &Value) -> Vec<LayerId> {
-    let Some(st) = s.active() else { return Vec::new() };
+    let Some(st) = s.active() else {
+        return Vec::new();
+    };
     let ids: Vec<LayerId> = if let Some(id) = p.get("layer").and_then(Value::as_u64) {
         vec![LayerId(id)]
     } else if let Some(a) = p.get("layers").and_then(Value::as_array) {
@@ -51,12 +61,18 @@ fn targets(s: &Session, p: &Value) -> Vec<LayerId> {
     } else {
         st.selected_layers()
     };
-    ids.into_iter().filter(|id| text_of(&st.doc, *id).is_some()).collect()
+    ids.into_iter()
+        .filter(|id| text_of(&st.doc, *id).is_some())
+        .collect()
 }
 
 fn has_target(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if targets(s, &Value::Null).is_empty() { Err("select a type layer".into()) } else { Ok(()) }
+    if targets(s, &Value::Null).is_empty() {
+        Err("select a type layer".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn byte_at(text: &str, ci: usize) -> usize {
@@ -107,8 +123,14 @@ fn perturbed_char() -> CharStyle {
         caps: Caps::AllCaps,
         ligatures: false,
         discretionary_ligatures: true,
-        features: vec![FontFeature { tag: "\u{1}".into(), value: 9 }],
-        variations: vec![FontVariation { axis: "\u{1}".into(), value: -1.0 }],
+        features: vec![FontFeature {
+            tag: "\u{1}".into(),
+            value: 9,
+        }],
+        variations: vec![FontVariation {
+            axis: "\u{1}".into(),
+            value: -1.0,
+        }],
         language: Some("\u{1}".into()),
         style_sheet: None,
     }
@@ -132,7 +154,10 @@ fn perturbed_para() -> ParagraphStyle {
 
 /// Fields set by Character/Paragraph-panel keys (`size`, `font`, `align`, …): the fields whose
 /// value is the same whatever they were before.
-fn touched<T: serde::Serialize + Default + Clone>(perturbed: T, apply: impl Fn(&mut T)) -> StyleAttrs {
+fn touched<T: serde::Serialize + Default + Clone>(
+    perturbed: T,
+    apply: impl Fn(&mut T),
+) -> StyleAttrs {
     let (mut a, mut b) = (T::default(), perturbed);
     apply(&mut a);
     apply(&mut b);
@@ -141,7 +166,10 @@ fn touched<T: serde::Serialize + Default + Clone>(perturbed: T, apply: impl Fn(&
         _ => Map::new(),
     };
     let all_b = obj(&b);
-    obj(&a).into_iter().filter(|(k, v)| k != "style_sheet" && all_b.get(k) == Some(v)).collect()
+    obj(&a)
+        .into_iter()
+        .filter(|(k, v)| k != "style_sheet" && all_b.get(k) == Some(v))
+        .collect()
 }
 
 /// Splits `attrs` into character and paragraph attribute sets. Keys may be model field names
@@ -149,10 +177,20 @@ fn touched<T: serde::Serialize + Default + Clone>(perturbed: T, apply: impl Fn(&
 /// `type.setStyle` (`size`, `font`, `align`, …).
 fn parse_attrs(cmd: &str, v: &Value) -> Result<(StyleAttrs, StyleAttrs)> {
     let Some(obj) = v.as_object() else {
-        return if v.is_null() { Ok((Map::new(), Map::new())) } else { Err(bad(cmd, "`attrs` must be an object")) };
+        return if v.is_null() {
+            Ok((Map::new(), Map::new()))
+        } else {
+            Err(bad(cmd, "`attrs` must be an object"))
+        };
     };
-    let char_keys: HashSet<String> = ts::char_attrs(&CharStyle::default()).keys().cloned().collect();
-    let para_keys: HashSet<String> = ts::para_attrs(&ParagraphStyle::default()).keys().cloned().collect();
+    let char_keys: HashSet<String> = ts::char_attrs(&CharStyle::default())
+        .keys()
+        .cloned()
+        .collect();
+    let para_keys: HashSet<String> = ts::para_attrs(&ParagraphStyle::default())
+        .keys()
+        .cloned()
+        .collect();
     let (mut c, mut pa, mut friendly) = (Map::new(), Map::new(), Map::new());
     for (k, x) in obj {
         // Names shared by the model and the panels (`color`, `align`, `caps`, …) are read as
@@ -175,7 +213,13 @@ fn parse_attrs(cmd: &str, v: &Value) -> Result<(StyleAttrs, StyleAttrs)> {
             apply_para_props(st, &f);
         });
         if fc.is_empty() && fp.is_empty() {
-            return Err(bad(cmd, format!("unknown style attributes: {}", friendly.keys().cloned().collect::<Vec<_>>().join(", "))));
+            return Err(bad(
+                cmd,
+                format!(
+                    "unknown style attributes: {}",
+                    friendly.keys().cloned().collect::<Vec<_>>().join(", ")
+                ),
+            ));
         }
         c.extend(fc);
         pa.extend(fp);
@@ -202,7 +246,13 @@ struct Op {
 
 /// Re-resolves every run and paragraph of `t` against `new` (keeping overrides made against
 /// `old`), applying `op` to bytes `a..b`. Returns whether anything changed.
-fn restyle(t: &mut TextLayer, old: &TextStyles, new: &TextStyles, range: Option<(usize, usize)>, op: Op) -> bool {
+fn restyle(
+    t: &mut TextLayer,
+    old: &TextStyles,
+    new: &TextStyles,
+    range: Option<(usize, usize)>,
+    op: Op,
+) -> bool {
     let before = (t.runs.clone(), t.paragraphs.clone());
     let text = t.text.clone();
     let (a, b) = range.unwrap_or((0, text.len()));
@@ -217,16 +267,26 @@ fn restyle(t: &mut TextLayer, old: &TextStyles, new: &TextStyles, range: Option<
             Some(s)
         })
         .collect();
-    let para_at = |off: usize| old_paras[starts.iter().rposition(|&s| s <= off).unwrap_or(0)].style.clone();
+    let para_at = |off: usize| {
+        old_paras[starts.iter().rposition(|&s| s <= off).unwrap_or(0)]
+            .style
+            .clone()
+    };
     let mut paras: Vec<(std::ops::Range<usize>, ParagraphStyle, Option<u32>)> = Vec::new(); // range, new style, old ref
     for pr in photocraft_text::layout::split_paragraphs(&text) {
         let old_p = para_at(pr.start);
-        let touches = whole || (pr.start < b && pr.end > a) || (a == b && a >= pr.start && (a < pr.end || pr.end == text.len()));
+        let touches = whole
+            || (pr.start < b && pr.end > a)
+            || (a == b && a >= pr.start && (a < pr.end || pr.end == text.len()));
         let new_ref = match op.set_para {
             Some(r) if touches => r,
             _ => old_p.style_sheet,
         };
-        let np = if op.clear_para && touches { new.resolve_para(new_ref) } else { new.restyle_para(old, &old_p, new_ref) };
+        let np = if op.clear_para && touches {
+            new.resolve_para(new_ref)
+        } else {
+            new.restyle_para(old, &old_p, new_ref)
+        };
         paras.push((pr, np, old_p.style_sheet));
     }
     // Character runs, split at paragraph boundaries and the range edges.
@@ -272,18 +332,45 @@ fn restyle(t: &mut TextLayer, old: &TextStyles, new: &TextStyles, range: Option<
         }
     }
     if runs.is_empty() {
-        let first = t.char_runs().into_iter().next().map(|r| r.style).unwrap_or_default();
-        runs.push((0, new.restyle_char(old, &first, None, pruns.first().and_then(|p| p.1.style_sheet), op.set_char.unwrap_or(first.style_sheet), FAMILY)));
+        let first = t
+            .char_runs()
+            .into_iter()
+            .next()
+            .map(|r| r.style)
+            .unwrap_or_default();
+        runs.push((
+            0,
+            new.restyle_char(
+                old,
+                &first,
+                None,
+                pruns.first().and_then(|p| p.1.style_sheet),
+                op.set_char.unwrap_or(first.style_sheet),
+                FAMILY,
+            ),
+        ));
     }
-    t.runs = runs.into_iter().map(|(len, style)| TextRun { len, style }).collect();
-    t.paragraphs = pruns.into_iter().map(|(len, style)| ParagraphRun { len, style }).collect();
+    t.runs = runs
+        .into_iter()
+        .map(|(len, style)| TextRun { len, style })
+        .collect();
+    t.paragraphs = pruns
+        .into_iter()
+        .map(|(len, style)| ParagraphRun { len, style })
+        .collect();
     t.sync_summary();
     (t.runs.clone(), t.paragraphs.clone()) != before
 }
 
 /// Replaces the document's styles with `new` and re-resolves every type layer (as one history
 /// step), applying `op` to `target` (layer + optional byte range).
-fn commit(s: &mut Session, label: &str, new: TextStyles, target: &[Target], op: Op) -> Result<usize> {
+fn commit(
+    s: &mut Session,
+    label: &str,
+    new: TextStyles,
+    target: &[Target],
+    op: Op,
+) -> Result<usize> {
     s.edit(label, |doc, _| Ok(apply_styles(doc, &new, target, op)))
 }
 
@@ -292,11 +379,18 @@ fn apply_styles(doc: &mut Document, new: &TextStyles, target: &[Target], op: Op)
     let old = doc.text_styles.clone();
     doc.text_styles = new.clone();
     let snapshot = doc.clone();
-    let ids: Vec<LayerId> = doc.walk().into_iter().filter(|(_, _, l)| matches!(l.content, LayerContent::Text(_))).map(|(_, _, l)| l.id).collect();
+    let ids: Vec<LayerId> = doc
+        .walk()
+        .into_iter()
+        .filter(|(_, _, l)| matches!(l.content, LayerContent::Text(_)))
+        .map(|(_, _, l)| l.id)
+        .collect();
     let mut changed = 0;
     for id in ids {
         let tgt = target.iter().find(|(t, _)| *t == id);
-        let Some(LayerContent::Text(t)) = doc.layer_mut(id).map(|l| &mut l.content) else { continue };
+        let Some(LayerContent::Text(t)) = doc.layer_mut(id).map(|l| &mut l.content) else {
+            continue;
+        };
         let did = match tgt {
             Some((_, r)) => restyle(t, &old, new, *r, op),
             None => restyle(t, &old, new, Some((0, 0)), Op::default()),
@@ -317,12 +411,16 @@ fn target_ranges(s: &Session, p: &Value) -> Result<Vec<Target>> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let ids = targets(s, p);
     if ids.is_empty() {
-        return Err(EngineError::Other("no type layer to apply the style to".into()));
+        return Err(EngineError::Other(
+            "no type layer to apply the style to".into(),
+        ));
     }
     Ok(ids
         .into_iter()
         .map(|id| {
-            let r = (p.get("range").is_some() && p.get("layers").is_none()).then(|| text_of(&st.doc, id).map(|t| range_of(&t.text, p))).flatten();
+            let r = (p.get("range").is_some() && p.get("layers").is_none())
+                .then(|| text_of(&st.doc, id).map(|t| range_of(&t.text, p)))
+                .flatten();
             (id, r)
         })
         .collect())
@@ -373,7 +471,10 @@ fn current(s: &Session, p: &Value) -> Option<Value> {
         for x in &pr {
             let (s0, e0) = (at, at + x.len);
             at = e0;
-            if (s0 < b && e0 > a) || (a == b && a >= s0 && (a < e0 || e0 == t.text.len())) || t.text.is_empty() {
+            if (s0 < b && e0 > a)
+                || (a == b && a >= s0 && (a < e0 || e0 == t.text.len()))
+                || t.text.is_empty()
+            {
                 paras.push(x.style.style_sheet.unwrap_or(0));
                 p_over |= !styles.para_overrides(&x.style).is_empty();
             }
@@ -384,20 +485,30 @@ fn current(s: &Session, p: &Value) -> Option<Value> {
             let (s0, e0) = (at, at + x.len);
             at = e0;
             if (s0 < b && e0 > a) || (a == b && a >= s0 && a <= e0) || t.text.is_empty() {
-                let pref = para_spans.iter().rev().find(|p| p.0 <= s0).and_then(|p| p.2);
+                let pref = para_spans
+                    .iter()
+                    .rev()
+                    .find(|p| p.0 <= s0)
+                    .and_then(|p| p.2);
                 chars.push(x.style.style_sheet.unwrap_or(0));
                 c_over |= !styles.char_overrides(&x.style, pref, FAMILY).is_empty();
             }
         }
     }
     let one = |v: &Vec<u32>| (!v.is_empty() && v.iter().all(|x| *x == v[0])).then(|| v[0]);
-    Some(json!({ "character": one(&chars), "characterOverride": c_over, "paragraph": one(&paras), "paragraphOverride": p_over }))
+    Some(
+        json!({ "character": one(&chars), "characterOverride": c_over, "paragraph": one(&paras), "paragraphOverride": p_over }),
+    )
 }
 
 // ---------- commands ----------
 
 fn styles(s: &Session) -> Result<TextStyles> {
-    Ok(s.active().ok_or(EngineError::NoDocument)?.doc.text_styles.clone())
+    Ok(s.active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .text_styles
+        .clone())
 }
 
 fn char_json(d: &CharacterStyleDef, styles: &TextStyles) -> Value {
@@ -423,15 +534,28 @@ fn list(s: &Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn new_style(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.new" } else { "type.characterStyle.new" };
+    let cmd = if paragraph {
+        "type.paragraphStyle.new"
+    } else {
+        "type.characterStyle.new"
+    };
     let mut st = styles(s)?;
     let (mut ca, mut pa) = parse_attrs(cmd, p.get("attrs").unwrap_or(&Value::Null))?;
     // With a type layer targeted, the style starts from the text's formatting (as Photoshop).
-    let from_text = p.get("fromSelection").and_then(Value::as_bool).unwrap_or(true);
+    let from_text = p
+        .get("fromSelection")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     if from_text && let Some((run, para, _, _)) = sample(s, p) {
         if paragraph {
             let base_c = st.resolve_char(None, None, FAMILY);
-            let mut c = ts::diff_attrs(&CharStyle { style_sheet: None, ..run }, &base_c);
+            let mut c = ts::diff_attrs(
+                &CharStyle {
+                    style_sheet: None,
+                    ..run
+                },
+                &base_c,
+            );
             c.extend(ca);
             ca = c;
             let mut pp = ts::diff_attrs(&para, &st.resolve_para(None));
@@ -448,56 +572,137 @@ fn new_style(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
         .get("name")
         .and_then(Value::as_str)
         .map(str::to_string)
-        .unwrap_or_else(|| st.unique_name(paragraph, if paragraph { "Paragraph Style" } else { "Character Style" }));
+        .unwrap_or_else(|| {
+            st.unique_name(
+                paragraph,
+                if paragraph {
+                    "Paragraph Style"
+                } else {
+                    "Character Style"
+                },
+            )
+        });
     let id = if paragraph {
         let id = st.next_para_id().ok_or_else(|| exhausted_id(true))?;
-        st.paragraph.push(ParagraphStyleDef { id, name: name.clone(), para_attrs: pa, char_attrs: ca });
+        st.paragraph.push(ParagraphStyleDef {
+            id,
+            name: name.clone(),
+            para_attrs: pa,
+            char_attrs: ca,
+        });
         id
     } else {
         let id = st.next_char_id().ok_or_else(|| exhausted_id(false))?;
-        st.character.push(CharacterStyleDef { id, name: name.clone(), attrs: ca });
+        st.character.push(CharacterStyleDef {
+            id,
+            name: name.clone(),
+            attrs: ca,
+        });
         id
     };
     let apply = p.get("apply").and_then(Value::as_bool).unwrap_or(false);
     let (target, op) = if apply {
-        let op = if paragraph { Op { set_para: Some(Some(id)), ..Op::default() } } else { Op { set_char: Some(Some(id)), ..Op::default() } };
+        let op = if paragraph {
+            Op {
+                set_para: Some(Some(id)),
+                ..Op::default()
+            }
+        } else {
+            Op {
+                set_char: Some(Some(id)),
+                ..Op::default()
+            }
+        };
         (target_ranges(s, p)?, op)
     } else {
         (Vec::new(), Op::default())
     };
-    commit(s, if paragraph { "New Paragraph Style" } else { "New Character Style" }, st, &target, op)?;
+    commit(
+        s,
+        if paragraph {
+            "New Paragraph Style"
+        } else {
+            "New Character Style"
+        },
+        st,
+        &target,
+        op,
+    )?;
     Ok(json!({ "id": id, "name": name }))
 }
 
-fn lookup_id(cmd: &str, st: &TextStyles, p: &Value, paragraph: bool, allow_default: bool) -> Result<u32> {
+fn lookup_id(
+    cmd: &str,
+    st: &TextStyles,
+    p: &Value,
+    paragraph: bool,
+    allow_default: bool,
+) -> Result<u32> {
     let id = id_param(cmd, p)?.ok_or_else(|| bad(cmd, "missing `id`"))?;
-    let ok = if paragraph { st.para_style(id).is_some() } else { st.char_style(id).is_some() };
+    let ok = if paragraph {
+        st.para_style(id).is_some()
+    } else {
+        st.char_style(id).is_some()
+    };
     if !(ok || (allow_default && id == 0)) {
         return Err(bad(cmd, format!("no style with id {id}")));
     }
     if id == 0 && !allow_default {
-        return Err(bad(cmd, if paragraph { "Basic Paragraph can't be changed this way" } else { "\"None\" is not a style" }));
+        return Err(bad(
+            cmd,
+            if paragraph {
+                "Basic Paragraph can't be changed this way"
+            } else {
+                "\"None\" is not a style"
+            },
+        ));
     }
     Ok(id)
 }
 
 fn duplicate(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.duplicate" } else { "type.characterStyle.duplicate" };
+    let cmd = if paragraph {
+        "type.paragraphStyle.duplicate"
+    } else {
+        "type.characterStyle.duplicate"
+    };
     let mut st = styles(s)?;
     let id = lookup_id(cmd, &st, p, paragraph, paragraph)?;
     let (new_id, name) = if paragraph {
         let src = st.para_style(id).cloned().unwrap_or_default();
         let name = format!("{} copy", src.name);
         let nid = st.next_para_id().ok_or_else(|| exhausted_id(true))?;
-        let pos = st.paragraph.iter().position(|d| d.id == id).map_or(0, |i| i + 1);
-        st.paragraph.insert(pos, ParagraphStyleDef { id: nid, name: name.clone(), ..src });
+        let pos = st
+            .paragraph
+            .iter()
+            .position(|d| d.id == id)
+            .map_or(0, |i| i + 1);
+        st.paragraph.insert(
+            pos,
+            ParagraphStyleDef {
+                id: nid,
+                name: name.clone(),
+                ..src
+            },
+        );
         (nid, name)
     } else {
         let src = st.char_style(id).cloned().unwrap_or_default();
         let name = format!("{} copy", src.name);
         let nid = st.next_char_id().ok_or_else(|| exhausted_id(false))?;
-        let pos = st.character.iter().position(|d| d.id == id).map_or(0, |i| i + 1);
-        st.character.insert(pos, CharacterStyleDef { id: nid, name: name.clone(), ..src });
+        let pos = st
+            .character
+            .iter()
+            .position(|d| d.id == id)
+            .map_or(0, |i| i + 1);
+        st.character.insert(
+            pos,
+            CharacterStyleDef {
+                id: nid,
+                name: name.clone(),
+                ..src
+            },
+        );
         (nid, name)
     };
     commit(s, "Duplicate Style", st, &[], Op::default())?;
@@ -505,7 +710,11 @@ fn duplicate(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn delete(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.delete" } else { "type.characterStyle.delete" };
+    let cmd = if paragraph {
+        "type.paragraphStyle.delete"
+    } else {
+        "type.characterStyle.delete"
+    };
     let st = styles(s)?;
     let id = lookup_id(cmd, &st, p, paragraph, false)?;
     // Text keeps its look: references are dropped and the attributes become overrides.
@@ -519,7 +728,9 @@ fn delete(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
         let snapshot = doc.clone();
         let ids: Vec<LayerId> = doc.walk().into_iter().map(|(_, _, l)| l.id).collect();
         for lid in ids {
-            let Some(LayerContent::Text(t)) = doc.layer_mut(lid).map(|l| &mut l.content) else { continue };
+            let Some(LayerContent::Text(t)) = doc.layer_mut(lid).map(|l| &mut l.content) else {
+                continue;
+            };
             let mut hit = false;
             if paragraph {
                 for r in &mut t.paragraphs {
@@ -547,10 +758,20 @@ fn delete(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn rename(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.rename" } else { "type.characterStyle.rename" };
+    let cmd = if paragraph {
+        "type.paragraphStyle.rename"
+    } else {
+        "type.characterStyle.rename"
+    };
     let mut st = styles(s)?;
     let id = lookup_id(cmd, &st, p, paragraph, false)?;
-    let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(cmd, "missing `name`"))?.to_string();
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(cmd, "missing `name`"))?
+        .to_string();
     if paragraph {
         if let Some(d) = st.para_style_mut(id) {
             d.name = name.clone();
@@ -563,13 +784,30 @@ fn rename(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn prepare_options(mut st: TextStyles, p: &Value, paragraph: bool) -> Result<(TextStyles, u32)> {
-    let cmd = if paragraph { "type.paragraphStyle.set" } else { "type.characterStyle.set" };
+    let cmd = if paragraph {
+        "type.paragraphStyle.set"
+    } else {
+        "type.characterStyle.set"
+    };
     let id = lookup_id(cmd, &st, p, paragraph, paragraph)?;
     let (ca, pa) = parse_attrs(cmd, p.get("attrs").unwrap_or(&Value::Null))?;
     let replace = p.get("replace").and_then(Value::as_bool).unwrap_or(false);
-    let clear: Vec<String> =
-        p.get("clear").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default();
-    let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string);
+    let clear: Vec<String> = p
+        .get("clear")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string);
     let merge = |dst: &mut StyleAttrs, src: StyleAttrs| {
         if replace {
             dst.clear();
@@ -580,7 +818,9 @@ fn prepare_options(mut st: TextStyles, p: &Value, paragraph: bool) -> Result<(Te
         }
     };
     if paragraph {
-        let d = st.para_style_mut(id).ok_or_else(|| bad(cmd, "no such style"))?;
+        let d = st
+            .para_style_mut(id)
+            .ok_or_else(|| bad(cmd, "no such style"))?;
         merge(&mut d.char_attrs, ca);
         if replace {
             d.para_attrs.clear();
@@ -596,7 +836,9 @@ fn prepare_options(mut st: TextStyles, p: &Value, paragraph: bool) -> Result<(Te
         if !pa.is_empty() {
             return Err(bad(cmd, "character styles have no paragraph attributes"));
         }
-        let d = st.char_style_mut(id).ok_or_else(|| bad(cmd, "no such style"))?;
+        let d = st
+            .char_style_mut(id)
+            .ok_or_else(|| bad(cmd, "no such style"))?;
         merge(&mut d.attrs, ca);
         if let Some(n) = name {
             d.name = n;
@@ -624,58 +866,141 @@ fn set_options(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn apply(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.apply" } else { "type.characterStyle.apply" };
+    let cmd = if paragraph {
+        "type.paragraphStyle.apply"
+    } else {
+        "type.characterStyle.apply"
+    };
     let st = styles(s)?;
     let id = match p.get("id") {
         None | Some(Value::Null) => 0,
         Some(_) => lookup_id(cmd, &st, p, paragraph, true)?,
     };
     let target = target_ranges(s, p)?;
-    let clear = p.get("clearOverrides").and_then(Value::as_bool).unwrap_or(false);
+    let clear = p
+        .get("clearOverrides")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let r = Some(id).filter(|i| *i != 0);
     let op = if paragraph {
-        Op { set_para: Some(r), clear_para: clear, clear_char: clear, ..Op::default() }
+        Op {
+            set_para: Some(r),
+            clear_para: clear,
+            clear_char: clear,
+            ..Op::default()
+        }
     } else {
-        Op { set_char: Some(r), clear_char: clear, ..Op::default() }
+        Op {
+            set_char: Some(r),
+            clear_char: clear,
+            ..Op::default()
+        }
     };
-    let n = commit(s, if paragraph { "Apply Paragraph Style" } else { "Apply Character Style" }, st, &target, op)?;
+    let n = commit(
+        s,
+        if paragraph {
+            "Apply Paragraph Style"
+        } else {
+            "Apply Character Style"
+        },
+        st,
+        &target,
+        op,
+    )?;
     Ok(json!({ "id": id, "layers": n, "current": current(s, p) }))
 }
 
 fn clear_override(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
     let st = styles(s)?;
     let target = target_ranges(s, p)?;
-    let op = if paragraph { Op { clear_para: true, clear_char: true, ..Op::default() } } else { Op { clear_char: true, ..Op::default() } };
+    let op = if paragraph {
+        Op {
+            clear_para: true,
+            clear_char: true,
+            ..Op::default()
+        }
+    } else {
+        Op {
+            clear_char: true,
+            ..Op::default()
+        }
+    };
     let n = commit(s, "Clear Override", st, &target, op)?;
     Ok(json!({ "layers": n, "current": current(s, p) }))
 }
 
 fn redefine(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.redefine" } else { "type.characterStyle.redefine" };
+    let cmd = if paragraph {
+        "type.paragraphStyle.redefine"
+    } else {
+        "type.characterStyle.redefine"
+    };
     let mut st = styles(s)?;
-    let (run, para, layer, span) = sample(s, p).ok_or_else(|| bad(cmd, "select type to redefine the style from"))?;
+    let (run, para, layer, span) =
+        sample(s, p).ok_or_else(|| bad(cmd, "select type to redefine the style from"))?;
     let id = match id_param(cmd, p)? {
         Some(_) => lookup_id(cmd, &st, p, paragraph, paragraph)?,
         None if paragraph => para.style_sheet.unwrap_or(0),
-        None => run.style_sheet.ok_or_else(|| bad(cmd, "the selected text has no character style"))?,
+        None => run
+            .style_sheet
+            .ok_or_else(|| bad(cmd, "the selected text has no character style"))?,
     };
     if paragraph {
-        let char_keys: HashSet<String> = run.style_sheet.and_then(|c| st.char_style(c)).map(|d| d.attrs.keys().cloned().collect()).unwrap_or_default();
-        let c_over: StyleAttrs = st.char_overrides(&run, Some(id).filter(|i| *i != 0), FAMILY).into_iter().filter(|(k, _)| !char_keys.contains(k)).collect();
+        let char_keys: HashSet<String> = run
+            .style_sheet
+            .and_then(|c| st.char_style(c))
+            .map(|d| d.attrs.keys().cloned().collect())
+            .unwrap_or_default();
+        let c_over: StyleAttrs = st
+            .char_overrides(&run, Some(id).filter(|i| *i != 0), FAMILY)
+            .into_iter()
+            .filter(|(k, _)| !char_keys.contains(k))
+            .collect();
         let base_para = st.resolve_para(Some(id));
         let p_over = ts::diff_attrs(&para, &base_para);
-        let d = st.para_style_mut(id).ok_or_else(|| bad(cmd, "no such style"))?;
+        let d = st
+            .para_style_mut(id)
+            .ok_or_else(|| bad(cmd, "no such style"))?;
         d.char_attrs.extend(c_over);
         d.para_attrs.extend(p_over);
     } else {
-        let over = st.char_overrides(&CharStyle { style_sheet: Some(id), ..run }, para.style_sheet, FAMILY);
-        let d = st.char_style_mut(id).ok_or_else(|| bad(cmd, "no such style"))?;
+        let over = st.char_overrides(
+            &CharStyle {
+                style_sheet: Some(id),
+                ..run
+            },
+            para.style_sheet,
+            FAMILY,
+        );
+        let d = st
+            .char_style_mut(id)
+            .ok_or_else(|| bad(cmd, "no such style"))?;
         d.attrs.extend(over);
     }
     // The sampled run gets the style (its overrides are now part of it); others follow.
     let target = [(layer, Some(span))];
-    let op = if paragraph { Op { set_para: Some(Some(id).filter(|i| *i != 0)), ..Op::default() } } else { Op { set_char: Some(Some(id)), ..Op::default() } };
-    let n = commit(s, if paragraph { "Redefine Paragraph Style" } else { "Redefine Character Style" }, st, &target, op)?;
+    let op = if paragraph {
+        Op {
+            set_para: Some(Some(id).filter(|i| *i != 0)),
+            ..Op::default()
+        }
+    } else {
+        Op {
+            set_char: Some(Some(id)),
+            ..Op::default()
+        }
+    };
+    let n = commit(
+        s,
+        if paragraph {
+            "Redefine Paragraph Style"
+        } else {
+            "Redefine Character Style"
+        },
+        st,
+        &target,
+        op,
+    )?;
     Ok(json!({ "id": id, "layers": n, "current": current(s, p) }))
 }
 

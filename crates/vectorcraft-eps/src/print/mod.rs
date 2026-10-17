@@ -56,18 +56,31 @@ fn finite(a: Affine) -> bool {
 fn sheet(p: &PrintPage, job: &PrintJob) -> Result<(String, Vec<Page>), String> {
     let (w, h) = p.size;
     let r = p.area;
-    if !(w.is_finite() && h.is_finite() && w >= 1.0 && h >= 1.0 && [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite())) {
+    if !(w.is_finite()
+        && h.is_finite()
+        && w >= 1.0
+        && h >= 1.0
+        && [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite()))
+    {
         return Err(format!("page size {w} × {h}"));
     }
     if !finite(p.view) || !finite(p.place) {
         return Err("a page's placement is not finite".into());
     }
-    let opts = |region: Rect| EpsOptions { level: job.level, region, ..EpsOptions::default() };
+    let opts = |region: Rect| EpsOptions {
+        level: job.level,
+        region,
+        ..EpsOptions::default()
+    };
     let art_opts = opts(r);
     let art = Scene::new(p.doc, &art_opts).run();
     // The marks' area: the drawing space the page shows (within the tile).
     let paper = Rect::new(0.0, 0.0, w, h);
-    let shown = if p.view.determinant().abs() > 1e-12 { p.view.inverse().transform_rect_bbox(paper) } else { paper };
+    let shown = if p.view.determinant().abs() > 1e-12 {
+        p.view.inverse().transform_rect_bbox(paper)
+    } else {
+        paper
+    };
     let shown = p.window.map_or(shown, |t| t.intersect(shown));
     let marks_opts = opts(shown);
     let marks = p.marks.map(|m| Scene::new(p.doc, &marks_opts).run_node(m));
@@ -78,15 +91,30 @@ fn sheet(p: &PrintPage, job: &PrintJob) -> Result<(String, Vec<Page>), String> {
         let _ = writeln!(s, "%%PlateColor: {name}");
     }
     s.push_str("%%BeginPageSetup\n");
-    let _ = writeln!(s, "/setpagedevice where {{pop << /PageSize [{} {}] >> setpagedevice}} if", ps::num(w), ps::num(h));
+    let _ = writeln!(
+        s,
+        "/setpagedevice where {{pop << /PageSize [{} {}] >> setpagedevice}} if",
+        ps::num(w),
+        ps::num(h)
+    );
     s.push_str("%%EndPageSetup\nVCdict begin\nq\n");
     if p.negative {
         // Ink becomes clear and paper black: the inverted transfer paints the paper's white black.
-        let _ = writeln!(s, "{{1 exch sub}} settransfer 1 g 0 0 {} {} rectfill", ps::num(w), ps::num(h));
+        let _ = writeln!(
+            s,
+            "{{1 exch sub}} settransfer 1 g 0 0 {} {} rectfill",
+            ps::num(w),
+            ps::num(h)
+        );
     }
     if let Some((_, lpi, angle)) = p.ink {
         // A round dot.
-        let _ = writeln!(s, "{} {} {{dup mul exch dup mul add 1 exch sub}} setscreen", ps::num(lpi), ps::num(angle));
+        let _ = writeln!(
+            s,
+            "{} {} {{dup mul exch dup mul add 1 exch sub}} setscreen",
+            ps::num(lpi),
+            ps::num(angle)
+        );
     }
     if let Some(f) = job.flatness {
         let _ = writeln!(s, "{} setflat", ps::num(f));
@@ -141,13 +169,28 @@ pub fn print(pages: &[PrintPage], order: &[usize], job: &PrintJob) -> Result<Eps
         }
         drawn.push(s);
     }
-    let (w, h) = pages.iter().fold((0.0f64, 0.0f64), |(w, h), p| (w.max(p.size.0), h.max(p.size.1)));
-    let size: usize = order.iter().filter_map(|i| drawn.get(*i)).map(String::len).sum();
+    let (w, h) = pages.iter().fold((0.0f64, 0.0f64), |(w, h), p| {
+        (w.max(p.size.0), h.max(p.size.1))
+    });
+    let size: usize = order
+        .iter()
+        .filter_map(|i| drawn.get(*i))
+        .map(String::len)
+        .sum();
     let mut s = String::with_capacity(size + 4096);
     s.push_str("%!PS-Adobe-3.0\n"); // brand-ok: the DSC version line every conforming file starts with
     comments(&mut s, &job.title, job.created, job.level, &custom);
-    let _ = writeln!(s, "%%BoundingBox: 0 0 {} {}", w.ceil() as i64, h.ceil() as i64);
-    let _ = writeln!(s, "%%Pages: {}\n%%PageOrder: Ascend\n%%EndComments", order.len());
+    let _ = writeln!(
+        s,
+        "%%BoundingBox: 0 0 {} {}",
+        w.ceil() as i64,
+        h.ceil() as i64
+    );
+    let _ = writeln!(
+        s,
+        "%%Pages: {}\n%%PageOrder: Ascend\n%%EndComments",
+        order.len()
+    );
     s.push_str("%%BeginProlog\n");
     s.push_str(ps::PROLOG);
     s.push_str("%%EndProlog\n%%BeginSetup\n%%EndSetup\n");
@@ -157,7 +200,10 @@ pub fn print(pages: &[PrintPage], order: &[usize], job: &PrintJob) -> Result<Eps
         s.push_str(page);
     }
     s.push_str("%%Trailer\n%%EOF\n");
-    Ok(EpsOutput { bytes: s.into_bytes(), warnings })
+    Ok(EpsOutput {
+        bytes: s.into_bytes(),
+        warnings,
+    })
 }
 
 #[cfg(test)]

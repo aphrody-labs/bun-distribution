@@ -86,7 +86,9 @@ pub fn immutable_uri(path: &Path) -> String {
 
 pub fn open_read_only(path: &Path) -> Result<Connection, EpisodeError> {
     let readable = |connection: &Connection| {
-        connection.query_row("PRAGMA schema_version", [], |row| row.get::<_, i64>(0)).is_ok()
+        connection
+            .query_row("PRAGMA schema_version", [], |row| row.get::<_, i64>(0))
+            .is_ok()
     };
     if let Ok(connection) = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
         && readable(&connection)
@@ -112,9 +114,11 @@ pub fn open_read_only(path: &Path) -> Result<Connection, EpisodeError> {
 /// une fonctionnalité ajoutée ne doit pas retirer celle qui marchait.
 fn has_table(connection: &Connection, name: &str) -> Result<bool, EpisodeError> {
     connection
-        .query_row("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1", [name], |_| {
-            Ok(())
-        })
+        .query_row(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1",
+            [name],
+            |_| Ok(()),
+        )
         .map(|()| true)
         .or_else(|error| match error {
             rusqlite::Error::QueryReturnedNoRows => Ok(false),
@@ -159,12 +163,19 @@ pub fn read_page(path: &Path, since: i64, limit: u32) -> Result<EpisodePage, Epi
         .map_err(EpisodeError::Query)?
         .collect::<Result<Vec<_>, _>>()
         .map_err(EpisodeError::Query)?;
-    let latest_harvested = elements.iter().filter_map(|episode| episode.created_at).max();
+    let latest_harvested = elements
+        .iter()
+        .filter_map(|episode| episode.created_at)
+        .max();
     Ok(EpisodePage {
         total: elements.len(),
         latest_harvested,
         elements,
-        channels: if avec_chaines { read_channels(&connection)? } else { Vec::new() },
+        channels: if avec_chaines {
+            read_channels(&connection)?
+        } else {
+            Vec::new()
+        },
         seasons: if has_table(&connection, "seasons")? {
             read_seasons(&connection)?
         } else {
@@ -180,7 +191,11 @@ fn read_channels(connection: &Connection) -> Result<Vec<Channel>, EpisodeError> 
         .map_err(EpisodeError::Query)?;
     query
         .query_map([], |row| {
-            Ok(Channel { id: row.get(0)?, channel: row.get(1)?, title: row.get(2)? })
+            Ok(Channel {
+                id: row.get(0)?,
+                channel: row.get(1)?,
+                title: row.get(2)?,
+            })
         })
         .map_err(EpisodeError::Query)?
         .collect::<Result<Vec<_>, _>>()
@@ -242,7 +257,11 @@ pub fn rfc3339_timestamp(raw: &str) -> Option<String> {
     let valid_date = |date: &str| {
         date.len() == 10
             && date.as_bytes().iter().enumerate().all(|(index, byte)| {
-                if index == 4 || index == 7 { *byte == b'-' } else { byte.is_ascii_digit() }
+                if index == 4 || index == 7 {
+                    *byte == b'-'
+                } else {
+                    byte.is_ascii_digit()
+                }
             })
     };
     let Some((date, time)) = value.split_once('T') else {
@@ -258,14 +277,22 @@ pub fn rfc3339_timestamp(raw: &str) -> Option<String> {
     };
     let clock_ok = clock.len() == 8
         && clock.as_bytes().iter().enumerate().all(|(index, byte)| {
-            if index == 2 || index == 5 { *byte == b':' } else { byte.is_ascii_digit() }
+            if index == 2 || index == 5 {
+                *byte == b':'
+            } else {
+                byte.is_ascii_digit()
+            }
         });
     let offset_ok = offset.is_none_or(|offset| {
-        offset.as_bytes().iter().enumerate().all(|(index, byte)| match index {
-            0 => *byte == b'+' || *byte == b'-',
-            3 => *byte == b':',
-            _ => byte.is_ascii_digit(),
-        })
+        offset
+            .as_bytes()
+            .iter()
+            .enumerate()
+            .all(|(index, byte)| match index {
+                0 => *byte == b'+' || *byte == b'-',
+                3 => *byte == b':',
+                _ => byte.is_ascii_digit(),
+            })
     });
     (clock_ok && offset_ok).then(|| value.to_owned())
 }
@@ -297,7 +324,10 @@ mod tests {
 
     #[test]
     fn feed_orders_descending_and_normalizes_dates() {
-        assert_eq!(rfc3339_timestamp("2008-10-05").as_deref(), Some("2008-10-05T00:00:00Z"));
+        assert_eq!(
+            rfc3339_timestamp("2008-10-05").as_deref(),
+            Some("2008-10-05T00:00:00Z")
+        );
         assert!(rfc3339_timestamp("bad").is_none());
     }
 }

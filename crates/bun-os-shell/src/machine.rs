@@ -31,10 +31,14 @@ pub fn factory(
     move || {
         let rom = std::fs::read(&image).map_err(|e| format!("{}: {e}", image.display()))?;
         let mut machine: Box<dyn Machine> = match system.as_str() {
-            "nes" => Box::new(bun_engine::machine::nes::Nes::from_rom(&image.to_string_lossy(), &rom)?),
+            "nes" => Box::new(bun_engine::machine::nes::Nes::from_rom(
+                &image.to_string_lossy(),
+                &rom,
+            )?),
             "gba" => Box::new(bun_engine::machine::gba::Gba::from_rom(&rom, None)?),
             "psx" => {
-                let bios = bios.ok_or("PlayStation needs the free OpenBIOS: bep add free-firmware openbios")?;
+                let bios = bios
+                    .ok_or("PlayStation needs the free OpenBIOS: bep add free-firmware openbios")?;
                 let bios = std::fs::read(bios).map_err(|e| e.to_string())?;
                 Box::new(bun_engine::machine::psx::Psx::new(&bios, &rom)?)
             }

@@ -79,7 +79,13 @@ impl Huffman {
             code <<= 1;
         }
         maxcode[17] = i32::MAX;
-        Ok(Huffman { fast, maxcode, valptr, mincode, values: values[..total].to_vec() })
+        Ok(Huffman {
+            fast,
+            maxcode,
+            valptr,
+            mincode,
+            values: values[..total].to_vec(),
+        })
     }
 
     #[inline]
@@ -101,7 +107,10 @@ impl Huffman {
         }
         br.consume(len as u32);
         let idx = self.valptr[len] + code - self.mincode[len];
-        self.values.get(idx as usize).copied().ok_or_else(|| err("invalid Huffman code"))
+        self.values
+            .get(idx as usize)
+            .copied()
+            .ok_or_else(|| err("invalid Huffman code"))
     }
 }
 
@@ -146,7 +155,14 @@ pub struct BitReader<'a> {
 
 impl<'a> BitReader<'a> {
     pub fn new(data: &'a [u8]) -> Self {
-        Self { data, pos: 0, buf: 0, bits: 0, marker: None, overrun: 0 }
+        Self {
+            data,
+            pos: 0,
+            buf: 0,
+            bits: 0,
+            marker: None,
+            overrun: 0,
+        }
     }
     #[inline]
     fn fill(&mut self) {
@@ -226,7 +242,11 @@ pub fn diff_value<B: Bits>(br: &mut B, ssss: u8) -> i32 {
         s => {
             let s = s.min(16) as u32;
             let v = br.get(s) as i32;
-            if v < (1 << (s - 1)) { v - (1 << s) + 1 } else { v }
+            if v < (1 << (s - 1)) {
+                v - (1 << s) + 1
+            } else {
+                v
+            }
         }
     }
 }
@@ -246,7 +266,9 @@ struct Header {
 }
 
 fn be16(d: &[u8], i: usize) -> Result<usize, RawError> {
-    d.get(i..i + 2).map(|s| u16::from_be_bytes([s[0], s[1]]) as usize).ok_or_else(|| err("truncated header"))
+    d.get(i..i + 2)
+        .map(|s| u16::from_be_bytes([s[0], s[1]]) as usize)
+        .ok_or_else(|| err("truncated header"))
 }
 
 fn parse_header(d: &[u8]) -> Result<Header, RawError> {
@@ -276,7 +298,9 @@ fn parse_header(d: &[u8]) -> Result<Header, RawError> {
         while i < d.len() && d[i] == 0xff {
             i += 1;
         }
-        let Some(&m) = d.get(i) else { return Err(err("no scan")) };
+        let Some(&m) = d.get(i) else {
+            return Err(err("no scan"));
+        };
         i += 1;
         if m == 0xd8 || (0xd0..=0xd7).contains(&m) {
             continue;
@@ -315,7 +339,10 @@ fn parse_header(d: &[u8]) -> Result<Header, RawError> {
                 have_sof = true;
             }
             0xc0..=0xc2 | 0xc5..=0xc7 | 0xc9..=0xcb | 0xcd..=0xcf => {
-                return Err(RawError::Unsupported(format!("JPEG process SOF{:X} (not lossless Huffman)", m - 0xc0)));
+                return Err(RawError::Unsupported(format!(
+                    "JPEG process SOF{:X} (not lossless Huffman)",
+                    m - 0xc0
+                )));
             }
             0xc4 => {
                 let mut j = 0;
@@ -324,7 +351,9 @@ fn parse_header(d: &[u8]) -> Result<Header, RawError> {
                     let mut counts = [0u8; 16];
                     counts.copy_from_slice(&seg[j + 1..j + 17]);
                     let n: usize = counts.iter().map(|&c| c as usize).sum();
-                    let vals = seg.get(j + 17..j + 17 + n).ok_or_else(|| err("truncated DHT"))?;
+                    let vals = seg
+                        .get(j + 17..j + 17 + n)
+                        .ok_or_else(|| err("truncated DHT"))?;
                     if class == 0 && id < 4 {
                         h.tables[id] = Some(Huffman::new(&counts, vals)?);
                     }
@@ -338,11 +367,17 @@ fn parse_header(d: &[u8]) -> Result<Header, RawError> {
                 }
                 let ns = *seg.first().ok_or_else(|| err("short SOS"))? as usize;
                 if ns != h.comps.len() || seg.len() < 1 + 2 * ns + 3 {
-                    return Err(RawError::Unsupported("lossless JPEG with multiple scans".into()));
+                    return Err(RawError::Unsupported(
+                        "lossless JPEG with multiple scans".into(),
+                    ));
                 }
                 for c in 0..ns {
                     let cid = seg[1 + 2 * c];
-                    let pos = h.comps.iter().position(|&x| x == cid).ok_or_else(|| err("unknown scan component"))?;
+                    let pos = h
+                        .comps
+                        .iter()
+                        .position(|&x| x == cid)
+                        .ok_or_else(|| err("unknown scan component"))?;
                     if pos != c {
                         return Err(err("scan component order"));
                     }
@@ -384,14 +419,22 @@ pub fn frame_info(d: &[u8]) -> Result<(usize, usize, usize, u8), RawError> {
 
 fn check_full_resolution(h: &Header) -> Result<(), RawError> {
     if h.sampling.iter().any(|&s| s != 0x11) {
-        return Err(RawError::Unsupported("lossless JPEG with subsampled components".into()));
+        return Err(RawError::Unsupported(
+            "lossless JPEG with subsampled components".into(),
+        ));
     }
     Ok(())
 }
 
 /// The layout of every Hasselblad selection-value-8 scan measured; other layouts are not known to follow the rule.
 fn check_hasselblad(h: &Header) -> Result<(), RawError> {
-    if h.comps.len() != 1 || h.precision != 16 || h.pt != 0 || h.restart != 0 || h.width == 0 || !h.width.is_multiple_of(2) {
+    if h.comps.len() != 1
+        || h.precision != 16
+        || h.pt != 0
+        || h.restart != 0
+        || h.width == 0
+        || !h.width.is_multiple_of(2)
+    {
         return Err(RawError::Unsupported(format!(
             "lossless JPEG with selection value 8 and {} components, {} bits, point transform {}, restart interval {}, width {}",
             h.comps.len(),
@@ -417,7 +460,13 @@ struct WordBits<'a> {
 
 impl<'a> WordBits<'a> {
     fn new(data: &'a [u8]) -> Self {
-        Self { data, pos: 0, buf: 0, bits: 0, overrun: 0 }
+        Self {
+            data,
+            pos: 0,
+            buf: 0,
+            bits: 0,
+            overrun: 0,
+        }
     }
 
     #[inline]
@@ -490,8 +539,12 @@ fn hasselblad_frame(d: &[u8], h: &Header, max_samples: usize) -> Result<Frame, R
     if (entropy.len() as u64 + 64) * 8 < total as u64 {
         return Err(err("entropy data too short for frame"));
     }
-    let table =
-        h.table_for.first().and_then(|&t| h.tables.get(t)).and_then(Option::as_ref).ok_or_else(|| err("scan uses an undefined Huffman table"))?;
+    let table = h
+        .table_for
+        .first()
+        .and_then(|&t| h.tables.get(t))
+        .and_then(Option::as_ref)
+        .ok_or_else(|| err("scan uses an undefined Huffman table"))?;
     let mut out = vec![0u16; total];
     let mut br = WordBits::new(entropy);
     let start = 1u32 << (h.precision - 1);
@@ -519,19 +572,37 @@ fn hasselblad_frame(d: &[u8], h: &Header, max_samples: usize) -> Result<Frame, R
             return Err(err("entropy data exhausted"));
         }
     }
-    Ok(Frame { width: w, height: ht, components: 1, precision: h.precision, predictor: 8, point_transform: 0, data: out })
+    Ok(Frame {
+        width: w,
+        height: ht,
+        components: 1,
+        precision: h.precision,
+        predictor: 8,
+        point_transform: 0,
+        data: out,
+    })
 }
 
 fn check_subsampled(h: &Header) -> Result<usize, RawError> {
     let vertical = match h.sampling.as_slice() {
         [0x22, 0x11, 0x11] => 2,
         [0x21, 0x11, 0x11] => 1,
-        _ => return Err(RawError::Unsupported("lossless JPEG subsampling layout".into())),
+        _ => {
+            return Err(RawError::Unsupported(
+                "lossless JPEG subsampling layout".into(),
+            ));
+        }
     };
     if h.predictor != 1 || h.restart != 0 {
-        return Err(RawError::Unsupported("lossless JPEG subsampled predictor / restarts".into()));
+        return Err(RawError::Unsupported(
+            "lossless JPEG subsampled predictor / restarts".into(),
+        ));
     }
-    if h.width == 0 || h.height == 0 || !h.width.is_multiple_of(2) || !h.height.is_multiple_of(vertical) {
+    if h.width == 0
+        || h.height == 0
+        || !h.width.is_multiple_of(2)
+        || !h.height.is_multiple_of(vertical)
+    {
         return Err(err("subsampled frame dimensions do not match MCU size"));
     }
     Ok(vertical)
@@ -572,12 +643,25 @@ pub(crate) struct FrameSubsampled {
 /// Sony: at the first column, the top luma row predicts from the previous MCU row's top
 /// sample (two image rows above), and the bottom row from the current top sample.
 /// Observed black-box: using the immediately preceding image row introduces tile seams.
-pub(crate) fn decode_subsampled(d: &[u8], max_samples: usize, prediction: Prediction) -> Result<FrameSubsampled, RawError> {
+pub(crate) fn decode_subsampled(
+    d: &[u8],
+    max_samples: usize,
+    prediction: Prediction,
+) -> Result<FrameSubsampled, RawError> {
     let h = parse_header(d)?;
     let vertical = check_subsampled(&h)?;
-    let pixels = h.width.checked_mul(h.height).ok_or_else(|| err("frame too large"))?;
+    let pixels = h
+        .width
+        .checked_mul(h.height)
+        .ok_or_else(|| err("frame too large"))?;
     let chroma = pixels / (2 * vertical);
-    let total = pixels.checked_add(chroma.checked_mul(2).ok_or_else(|| err("frame too large"))?).ok_or_else(|| err("frame too large"))?;
+    let total = pixels
+        .checked_add(
+            chroma
+                .checked_mul(2)
+                .ok_or_else(|| err("frame too large"))?,
+        )
+        .ok_or_else(|| err("frame too large"))?;
     if total > max_samples {
         return Err(RawError::Limit("lossless JPEG frame larger than expected"));
     }
@@ -588,7 +672,12 @@ pub(crate) fn decode_subsampled(d: &[u8], max_samples: usize, prediction: Predic
     let tables: Vec<&Huffman> = h
         .table_for
         .iter()
-        .map(|&t| h.tables.get(t).and_then(Option::as_ref).ok_or_else(|| err("missing Huffman table")))
+        .map(|&t| {
+            h.tables
+                .get(t)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| err("missing Huffman table"))
+        })
         .collect::<Result<_, _>>()?;
     let mut planes = [vec![0u16; pixels], vec![0u16; chroma], vec![0u16; chroma]];
     let mut br = BitReader::new(entropy);
@@ -608,7 +697,9 @@ pub(crate) fn decode_subsampled(d: &[u8], max_samples: usize, prediction: Predic
                         let i = y * width + x;
                         let pred = match prediction {
                             Prediction::Geometric if x > 0 => plane[i - 1] as i32,
-                            Prediction::Geometric if c == 0 && dy == 0 && y >= vertical => plane[i - vertical * width] as i32,
+                            Prediction::Geometric if c == 0 && dy == 0 && y >= vertical => {
+                                plane[i - vertical * width] as i32
+                            }
                             Prediction::Geometric if y > 0 => plane[i - width] as i32,
                             Prediction::Geometric => init,
                             Prediction::Sequential if mx == 0 && dx == 0 && dy == 0 => row_first[c],
@@ -639,7 +730,12 @@ pub(crate) fn decode_subsampled(d: &[u8], max_samples: usize, prediction: Predic
             }
         }
     }
-    Ok(FrameSubsampled { width: h.width, height: h.height, vertical_subsampling: vertical, planes })
+    Ok(FrameSubsampled {
+        width: h.width,
+        height: h.height,
+        vertical_subsampling: vertical,
+        planes,
+    })
 }
 
 /// Decode a lossless JPEG stream. `max_samples` bounds the allocation (hostile headers).
@@ -653,7 +749,10 @@ pub fn decode(d: &[u8], max_samples: usize) -> Result<Frame, RawError> {
     if w == 0 || ht == 0 {
         return Err(err("zero frame size"));
     }
-    let total = w.checked_mul(ht).and_then(|v| v.checked_mul(nc)).ok_or_else(|| err("frame too large"))?;
+    let total = w
+        .checked_mul(ht)
+        .and_then(|v| v.checked_mul(nc))
+        .ok_or_else(|| err("frame too large"))?;
     if total > max_samples {
         return Err(RawError::Limit("lossless JPEG frame larger than expected"));
     }
@@ -665,7 +764,12 @@ pub fn decode(d: &[u8], max_samples: usize) -> Result<Frame, RawError> {
     let tables: Vec<&Huffman> = h
         .table_for
         .iter()
-        .map(|&t| h.tables.get(t).and_then(Option::as_ref).ok_or_else(|| err("scan uses an undefined Huffman table")))
+        .map(|&t| {
+            h.tables
+                .get(t)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| err("scan uses an undefined Huffman table"))
+        })
         .collect::<Result<_, RawError>>()?;
     let mut out = vec![0u16; total];
     let mut br = BitReader::new(entropy);
@@ -679,7 +783,11 @@ pub fn decode(d: &[u8], max_samples: usize) -> Result<Frame, RawError> {
     for y in 0..ht {
         let (prev_rows, cur_rows) = out.split_at_mut(y * row_len);
         let cur = &mut cur_rows[..row_len];
-        let prev = if y > 0 { &prev_rows[(y - 1) * row_len..] } else { &[][..] };
+        let prev = if y > 0 {
+            &prev_rows[(y - 1) * row_len..]
+        } else {
+            &[][..]
+        };
         for x in 0..w {
             if h.restart > 0 {
                 if restart_left == 0 {
@@ -697,7 +805,11 @@ pub fn decode(d: &[u8], max_samples: usize) -> Result<Frame, RawError> {
                 let p = if reset_pending {
                     init
                 } else if first_line {
-                    if x == 0 { prev.get(i).map_or(init, |&v| v as i32) } else { cur[i - nc] as i32 }
+                    if x == 0 {
+                        prev.get(i).map_or(init, |&v| v as i32)
+                    } else {
+                        cur[i - nc] as i32
+                    }
                 } else if x == 0 || pred == 0 {
                     if pred == 0 { 0 } else { prev[i] as i32 }
                 } else {
@@ -730,7 +842,15 @@ pub fn decode(d: &[u8], max_samples: usize) -> Result<Frame, RawError> {
             *v <<= h.pt;
         }
     }
-    Ok(Frame { width: w, height: ht, components: nc, precision: h.precision, predictor: pred, point_transform: h.pt, data: out })
+    Ok(Frame {
+        width: w,
+        height: ht,
+        components: nc,
+        precision: h.precision,
+        predictor: pred,
+        point_transform: h.pt,
+        data: out,
+    })
 }
 
 // ------------------------------------------------------------------------------------------------ encoder
@@ -881,8 +1001,20 @@ fn ssss_of(diff: i32) -> u8 {
 
 /// Encode samples (`width × height × components`, interleaved) as a lossless JPEG with `predictor` (1–7) and
 /// `precision` bits. `restart` > 0 inserts restart markers every `restart` MCUs (pixels).
-pub fn encode(data: &[u16], width: usize, height: usize, components: usize, precision: u8, predictor: u8, restart: usize) -> Vec<u8> {
-    assert!((1..=4).contains(&components) && (2..=16).contains(&precision) && (1..=7).contains(&predictor));
+pub fn encode(
+    data: &[u16],
+    width: usize,
+    height: usize,
+    components: usize,
+    precision: u8,
+    predictor: u8,
+    restart: usize,
+) -> Vec<u8> {
+    assert!(
+        (1..=4).contains(&components)
+            && (2..=16).contains(&precision)
+            && (1..=7).contains(&predictor)
+    );
     assert_eq!(data.len(), width * height * components);
     let init = 1i32 << (precision - 1);
     let row_len = width * components;
@@ -908,7 +1040,11 @@ pub fn encode(data: &[u16], width: usize, height: usize, components: usize, prec
                 let p = if reset_pending {
                     init
                 } else if first_line {
-                    if x == 0 { data[i - row_len] as i32 } else { data[i - components] as i32 }
+                    if x == 0 {
+                        data[i - row_len] as i32
+                    } else {
+                        data[i - components] as i32
+                    }
                 } else if x == 0 {
                     data[i - row_len] as i32
                 } else {
@@ -1009,13 +1145,29 @@ pub(crate) mod tests {
 
     /// Independent 4×4, 16-bit Sony 4:2:0 stream. Hand-specified differences in MCU order.
     pub(crate) fn fixture_420() -> Vec<u8> {
-        fixture_subsampled(4, 4, 0x22, &[-31768, 1, 1000, 1, -16384, -16284, 1, 1, 1, 1, 1, 2, 100, 1, 1000, 1, 100, 100, 1, 1, 1, 1, 1, 2])
+        fixture_subsampled(
+            4,
+            4,
+            0x22,
+            &[
+                -31768, 1, 1000, 1, -16384, -16284, 1, 1, 1, 1, 1, 2, 100, 1, 1000, 1, 100, 100, 1,
+                1, 1, 1, 1, 2,
+            ],
+        )
     }
 
     /// A 16-bit three-component frame of `width × height` pixels with the given luma `sampling` (`0x21` / `0x22`)
     /// and one shared 5-bit Huffman table, whose differences are written as given (MCU order).
-    pub(crate) fn fixture_subsampled(width: u8, height: u8, sampling: u8, differences: &[i32]) -> Vec<u8> {
-        let mut out = vec![0xff, 0xd8, 0xff, 0xc3, 0, 17, 16, 0, height, 0, width, 3, 1, sampling, 0, 2, 0x11, 0, 3, 0x11, 0];
+    pub(crate) fn fixture_subsampled(
+        width: u8,
+        height: u8,
+        sampling: u8,
+        differences: &[i32],
+    ) -> Vec<u8> {
+        let mut out = vec![
+            0xff, 0xd8, 0xff, 0xc3, 0, 17, 16, 0, height, 0, width, 3, 1, sampling, 0, 2, 0x11, 0,
+            3, 0x11, 0,
+        ];
         out.extend_from_slice(&[0xff, 0xc4, 0, 36, 0]);
         let mut counts = [0; 16];
         counts[4] = 17;
@@ -1039,14 +1191,30 @@ pub(crate) mod tests {
     #[test]
     fn horizontal_only_subsampling_preserves_rows_and_chroma() {
         // Independent 4×2, 16-bit 4:2:2 stream: two luma samples, Cb, Cr per MCU.
-        let enc = fixture_subsampled(4, 2, 0x21, &[-31768, 1, -16384, -16284, 1, 1, 1, 2, 100, 1, 100, 100, 1, 1, 1, 2]);
+        let enc = fixture_subsampled(
+            4,
+            2,
+            0x21,
+            &[
+                -31768, 1, -16384, -16284, 1, 1, 1, 2, 100, 1, 100, 100, 1, 1, 1, 2,
+            ],
+        );
         let frame = decode_subsampled(&enc, 16, Prediction::Geometric).unwrap();
-        assert_eq!((frame.width, frame.height, frame.vertical_subsampling), (4, 2, 1));
-        assert_eq!(frame.planes[0], [1000, 1001, 1002, 1003, 1100, 1101, 1102, 1103]);
+        assert_eq!(
+            (frame.width, frame.height, frame.vertical_subsampling),
+            (4, 2, 1)
+        );
+        assert_eq!(
+            frame.planes[0],
+            [1000, 1001, 1002, 1003, 1100, 1101, 1102, 1103]
+        );
         assert_eq!(frame.planes[1], [16384, 16385, 16484, 16485]);
         assert_eq!(frame.planes[2], [16484, 16486, 16584, 16586]);
         assert!(decode(&enc, 24).is_err());
-        assert!(matches!(decode_subsampled(&enc, 15, Prediction::Geometric), Err(RawError::Limit(_))));
+        assert!(matches!(
+            decode_subsampled(&enc, 15, Prediction::Geometric),
+            Err(RawError::Limit(_))
+        ));
         assert!(decode_subsampled(&enc[..enc.len() - 6], 16, Prediction::Geometric).is_err());
     }
 
@@ -1055,11 +1223,20 @@ pub(crate) mod tests {
         let enc = fixture_420();
         let frame = decode_subsampled(&enc, 24, Prediction::Geometric).unwrap();
         assert_eq!((frame.width, frame.height), (4, 4));
-        assert_eq!(frame.planes[0], [1000, 1001, 1002, 1003, 2000, 2001, 2002, 2003, 1100, 1101, 1102, 1103, 2100, 2101, 2102, 2103]);
+        assert_eq!(
+            frame.planes[0],
+            [
+                1000, 1001, 1002, 1003, 2000, 2001, 2002, 2003, 1100, 1101, 1102, 1103, 2100, 2101,
+                2102, 2103
+            ]
+        );
         assert_eq!(frame.planes[1], [16384, 16385, 16484, 16485]);
         assert_eq!(frame.planes[2], [16484, 16486, 16584, 16586]);
         assert!(decode(&enc, 48).is_err()); // CFA API must keep rejecting subsampling.
-        assert!(matches!(decode_subsampled(&enc, 23, Prediction::Geometric), Err(RawError::Limit(_))));
+        assert!(matches!(
+            decode_subsampled(&enc, 23, Prediction::Geometric),
+            Err(RawError::Limit(_))
+        ));
         assert!(decode_subsampled(&enc[..enc.len() - 6], 24, Prediction::Geometric).is_err());
         let mut bad = enc.clone();
         bad[10] = 3; // odd frame width
@@ -1077,15 +1254,35 @@ pub(crate) mod tests {
         // and a new MCU row starts from the first sample of the previous one. Worked out by hand from init 32768.
         let enc = fixture_420();
         let frame = decode_subsampled(&enc, 24, Prediction::Sequential).unwrap();
-        assert_eq!((frame.width, frame.height, frame.vertical_subsampling), (4, 4, 2));
-        assert_eq!(frame.planes[0], [1000, 1001, 2003, 2004, 2001, 2002, 2005, 2006, 1100, 1101, 2103, 2104, 2101, 2102, 2105, 2106]);
+        assert_eq!(
+            (frame.width, frame.height, frame.vertical_subsampling),
+            (4, 4, 2)
+        );
+        assert_eq!(
+            frame.planes[0],
+            [
+                1000, 1001, 2003, 2004, 2001, 2002, 2005, 2006, 1100, 1101, 2103, 2104, 2101, 2102,
+                2105, 2106
+            ]
+        );
         assert_eq!(frame.planes[1], [16384, 16385, 16484, 16485]);
         assert_eq!(frame.planes[2], [16484, 16486, 16584, 16586]);
         // 4:2:2 has one luma row per MCU row, so both predictions agree
-        let enc = fixture_subsampled(4, 2, 0x21, &[-31768, 1, -16384, -16284, 1, 1, 1, 2, 100, 1, 100, 100, 1, 1, 1, 2]);
+        let enc = fixture_subsampled(
+            4,
+            2,
+            0x21,
+            &[
+                -31768, 1, -16384, -16284, 1, 1, 1, 2, 100, 1, 100, 100, 1, 1, 1, 2,
+            ],
+        );
         assert_eq!(
-            decode_subsampled(&enc, 16, Prediction::Sequential).unwrap().planes,
-            decode_subsampled(&enc, 16, Prediction::Geometric).unwrap().planes
+            decode_subsampled(&enc, 16, Prediction::Sequential)
+                .unwrap()
+                .planes,
+            decode_subsampled(&enc, 16, Prediction::Geometric)
+                .unwrap()
+                .planes
         );
     }
 
@@ -1093,7 +1290,9 @@ pub(crate) mod tests {
         let mut s = seed;
         (0..n)
             .map(|i| {
-                s = s.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                s = s
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
                 let smooth = ((i % 97) as u32 * 37) % (1 << bits);
                 let jitter = ((s >> 33) as u32) % 64;
                 ((smooth + jitter) % (1 << bits)) as u16
@@ -1107,10 +1306,17 @@ pub(crate) mod tests {
             for comps in 1..=4usize {
                 for bits in [8u8, 12, 14, 16] {
                     let (w, h) = (13, 7);
-                    let data = noise(w * h * comps, bits as u32, (pred as u64) * 31 + comps as u64);
+                    let data = noise(
+                        w * h * comps,
+                        bits as u32,
+                        (pred as u64) * 31 + comps as u64,
+                    );
                     let enc = encode(&data, w, h, comps, bits, pred, 0);
                     let f = decode(&enc, usize::MAX).unwrap();
-                    assert_eq!((f.width, f.height, f.components, f.precision, f.predictor), (w, h, comps, bits, pred));
+                    assert_eq!(
+                        (f.width, f.height, f.components, f.precision, f.predictor),
+                        (w, h, comps, bits, pred)
+                    );
                     assert_eq!(f.data, data, "pred {pred} comps {comps} bits {bits}");
                 }
             }
@@ -1120,7 +1326,9 @@ pub(crate) mod tests {
     #[test]
     fn roundtrip_extremes_and_restarts() {
         // alternating 0 / 65535 forces SSSS = 16 differences
-        let data: Vec<u16> = (0..64).map(|i| if i % 2 == 0 { 0 } else { 65535 }).collect();
+        let data: Vec<u16> = (0..64)
+            .map(|i| if i % 2 == 0 { 0 } else { 65535 })
+            .collect();
         for pred in 1..=7 {
             let enc = encode(&data, 8, 8, 1, 16, pred, 0);
             assert_eq!(decode(&enc, usize::MAX).unwrap().data, data);
@@ -1128,7 +1336,11 @@ pub(crate) mod tests {
         let data = noise(20 * 9 * 2, 12, 5);
         for rst in [1usize, 7, 20, 40] {
             let enc = encode(&data, 20, 9, 2, 12, 6, rst);
-            assert_eq!(decode(&enc, usize::MAX).unwrap().data, data, "restart {rst}");
+            assert_eq!(
+                decode(&enc, usize::MAX).unwrap().data,
+                data,
+                "restart {rst}"
+            );
         }
     }
 
@@ -1160,7 +1372,13 @@ pub(crate) mod tests {
 
     /// SOI, SOF3 (16 bits, `height` x `width`, one component), a DHT and an SOS with selection value 8, then
     /// `entropy` and EOI.
-    fn hasselblad_stream(width: u16, height: u16, counts: &[u8; 16], values: &[u8], entropy: &[u8]) -> Vec<u8> {
+    fn hasselblad_stream(
+        width: u16,
+        height: u16,
+        counts: &[u8; 16],
+        values: &[u8],
+        entropy: &[u8],
+    ) -> Vec<u8> {
         let mut out = vec![0xff, 0xd8, 0xff, 0xc3, 0, 11, 16];
         out.extend_from_slice(&height.to_be_bytes());
         out.extend_from_slice(&width.to_be_bytes());
@@ -1210,7 +1428,10 @@ pub(crate) mod tests {
         plain[..4].reverse();
         plain[4..].reverse();
         let enc = hasselblad_stream(4, 2, &HAND_COUNTS, &HAND_VALUES, &plain);
-        assert_ne!(decode(&enc, 8).map(|f| f.data).ok(), Some(HAND_SAMPLES.to_vec()));
+        assert_ne!(
+            decode(&enc, 8).map(|f| f.data).ok(),
+            Some(HAND_SAMPLES.to_vec())
+        );
     }
 
     #[test]
@@ -1232,7 +1453,9 @@ pub(crate) mod tests {
         let mut nine = hasselblad_stream(4, 2, &HAND_COUNTS, &HAND_VALUES, &HAND_WORDS);
         let sos = nine.windows(2).position(|w| w == [0xff, 0xda]).unwrap();
         nine[sos + 7] = 9;
-        assert!(matches!(decode(&nine, 8), Err(RawError::Unsupported(w)) if w.contains("selection value 9")));
+        assert!(
+            matches!(decode(&nine, 8), Err(RawError::Unsupported(w)) if w.contains("selection value 9"))
+        );
         // every prefix fails cleanly
         let enc = hasselblad_stream(4, 2, &HAND_COUNTS, &HAND_VALUES, &HAND_WORDS);
         for n in 0..enc.len() {
@@ -1279,7 +1502,10 @@ pub(crate) mod tests {
         }
         let mut entropy = vec![];
         for word in bits.chunks(32) {
-            let w = word.iter().enumerate().fold(0u32, |a, (i, &b)| a | ((b as u32) << (31 - i)));
+            let w = word
+                .iter()
+                .enumerate()
+                .fold(0u32, |a, (i, &b)| a | ((b as u32) << (31 - i)));
             entropy.extend_from_slice(&w.to_le_bytes());
         }
         let mut counts = [0u8; 16];

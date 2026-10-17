@@ -117,7 +117,9 @@ impl VideoInfo {
     /// (a counter-clockwise angle, so −90 is a quarter turn clockwise). None for other
     /// projections, flips (non-zero yaw / pitch) or angles that are not a multiple of 90°.
     pub fn display_rotation(&self) -> Option<u8> {
-        let Some(p) = &self.projection else { return Some(0) };
+        let Some(p) = &self.projection else {
+            return Some(0);
+        };
         if p.projection_type != 0 || p.yaw != 0.0 || p.pitch != 0.0 || p.roll % 90.0 != 0.0 {
             return None;
         }
@@ -126,8 +128,13 @@ impl VideoInfo {
 
     /// Pixel aspect ratio derived from the display size (pixels or aspect-ratio units), reduced.
     pub fn pixel_aspect(&self) -> (u32, u32) {
-        let (pw, ph) = (self.pixel_width.saturating_sub(self.crop.2 + self.crop.3) as u64, self.pixel_height.saturating_sub(self.crop.0 + self.crop.1) as u64);
-        let (Some(dw), Some(dh)) = (self.display_width, self.display_height) else { return (1, 1) };
+        let (pw, ph) = (
+            self.pixel_width.saturating_sub(self.crop.2 + self.crop.3) as u64,
+            self.pixel_height.saturating_sub(self.crop.0 + self.crop.1) as u64,
+        );
+        let (Some(dw), Some(dh)) = (self.display_width, self.display_height) else {
+            return (1, 1);
+        };
         if pw == 0 || ph == 0 || dw == 0 || dh == 0 || !matches!(self.display_unit, 0 | 3) {
             return (1, 1);
         }
@@ -158,7 +165,12 @@ pub struct AudioInfo {
 
 impl Default for AudioInfo {
     fn default() -> Self {
-        Self { sampling_frequency: 8000.0, output_sampling_frequency: None, channels: 1, bit_depth: None }
+        Self {
+            sampling_frequency: 8000.0,
+            output_sampling_frequency: None,
+            channels: 1,
+            bit_depth: None,
+        }
     }
 }
 
@@ -168,7 +180,11 @@ pub enum ContentEncoding {
     /// `ContentCompAlgo` 3: the given bytes were stripped from the start of every frame.
     HeaderStripping { bytes: Vec<u8>, scope: u64 },
     /// Other compression (0 zlib, 1 bzlib, 2 lzo1x): not supported for reading frame data.
-    Compression { algo: u64, settings: Vec<u8>, scope: u64 },
+    Compression {
+        algo: u64,
+        settings: Vec<u8>,
+        scope: u64,
+    },
     /// Encryption (not supported for reading frame data).
     Encryption { scope: u64 },
 }
@@ -236,7 +252,9 @@ impl Track {
     /// Bytes prepended to every frame by header-stripping compression, if any.
     pub fn stripped_header(&self) -> Option<&[u8]> {
         self.encodings.iter().find_map(|e| match e {
-            ContentEncoding::HeaderStripping { bytes, scope } if scope & 1 != 0 => Some(bytes.as_slice()),
+            ContentEncoding::HeaderStripping { bytes, scope } if scope & 1 != 0 => {
+                Some(bytes.as_slice())
+            }
             _ => None,
         })
     }
@@ -245,7 +263,9 @@ impl Track {
     pub fn frames_readable(&self) -> bool {
         self.encodings.iter().all(|e| match e {
             ContentEncoding::HeaderStripping { .. } => true,
-            ContentEncoding::Compression { scope, .. } | ContentEncoding::Encryption { scope } => scope & 1 == 0,
+            ContentEncoding::Compression { scope, .. } | ContentEncoding::Encryption { scope } => {
+                scope & 1 == 0
+            }
         })
     }
 
@@ -253,7 +273,10 @@ impl Track {
     /// header-stripped bytes, or for `V_PRORES` the 8-byte frame header (`size` + `icpf`) that the
     /// Matroska ProRes mapping omits.
     pub fn frame_prefix(&self, stored_size: u64) -> Vec<u8> {
-        let mut p = self.stripped_header().map(<[u8]>::to_vec).unwrap_or_default();
+        let mut p = self
+            .stripped_header()
+            .map(<[u8]>::to_vec)
+            .unwrap_or_default();
         if matches!(self.codec, Codec::ProRes { .. }) {
             let total = stored_size + p.len() as u64 + 8;
             let mut h = (total as u32).to_be_bytes().to_vec();
@@ -328,24 +351,69 @@ mod rotation_tests {
     use super::{Projection, VideoInfo};
 
     fn with_roll(projection_type: u64, yaw: f64, pitch: f64, roll: f64) -> VideoInfo {
-        VideoInfo { projection: Some(Projection { projection_type, yaw, pitch, roll }), ..Default::default() }
+        VideoInfo {
+            projection: Some(Projection {
+                projection_type,
+                yaw,
+                pitch,
+                roll,
+            }),
+            ..Default::default()
+        }
     }
 
     #[test]
     fn display_rotation_maps_rectangular_roll_to_clockwise_quarter_turns() {
-        assert_eq!(VideoInfo::default().display_rotation(), Some(0), "no Projection: as stored");
+        assert_eq!(
+            VideoInfo::default().display_rotation(),
+            Some(0),
+            "no Projection: as stored"
+        );
         // ProjectionPoseRoll is counter-clockwise: -90 is a quarter turn clockwise
-        for (roll, turns) in [(0.0, 0), (-90.0, 1), (180.0, 2), (-180.0, 2), (90.0, 3), (-270.0, 3), (270.0, 1), (360.0, 0)] {
-            assert_eq!(with_roll(0, 0.0, 0.0, roll).display_rotation(), Some(turns), "roll {roll}");
+        for (roll, turns) in [
+            (0.0, 0),
+            (-90.0, 1),
+            (180.0, 2),
+            (-180.0, 2),
+            (90.0, 3),
+            (-270.0, 3),
+            (270.0, 1),
+            (360.0, 0),
+        ] {
+            assert_eq!(
+                with_roll(0, 0.0, 0.0, roll).display_rotation(),
+                Some(turns),
+                "roll {roll}"
+            );
         }
     }
 
     #[test]
     fn display_rotation_leaves_non_rectangular_flipped_and_odd_angles_alone() {
-        assert_eq!(with_roll(1, 0.0, 0.0, -90.0).display_rotation(), None, "equirectangular");
-        assert_eq!(with_roll(0, 180.0, 0.0, 0.0).display_rotation(), None, "yaw flip");
-        assert_eq!(with_roll(0, 0.0, 180.0, 0.0).display_rotation(), None, "pitch flip");
-        assert_eq!(with_roll(0, 0.0, 0.0, 45.0).display_rotation(), None, "not a quarter turn");
-        assert_eq!(with_roll(0, 0.0, 0.0, f64::NAN).display_rotation(), None, "malformed angle");
+        assert_eq!(
+            with_roll(1, 0.0, 0.0, -90.0).display_rotation(),
+            None,
+            "equirectangular"
+        );
+        assert_eq!(
+            with_roll(0, 180.0, 0.0, 0.0).display_rotation(),
+            None,
+            "yaw flip"
+        );
+        assert_eq!(
+            with_roll(0, 0.0, 180.0, 0.0).display_rotation(),
+            None,
+            "pitch flip"
+        );
+        assert_eq!(
+            with_roll(0, 0.0, 0.0, 45.0).display_rotation(),
+            None,
+            "not a quarter turn"
+        );
+        assert_eq!(
+            with_roll(0, 0.0, 0.0, f64::NAN).display_rotation(),
+            None,
+            "malformed angle"
+        );
     }
 }

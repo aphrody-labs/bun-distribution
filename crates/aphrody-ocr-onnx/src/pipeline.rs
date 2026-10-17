@@ -87,7 +87,10 @@ impl PpOcr {
             .map(|region| {
                 let crop = crop_region(image, &region)?;
                 let recognition = self.recognizer.recognise(&crop)?;
-                Ok(RecognisedRegion { region, recognition })
+                Ok(RecognisedRegion {
+                    region,
+                    recognition,
+                })
             })
             .collect()
     }
@@ -98,10 +101,16 @@ fn reading_order(left: &DetectedRegion, right: &DetectedRegion) -> std::cmp::Ord
     let right_y = right.points.iter().map(|point| point[1]).sum::<f32>() / 4.0;
     let left_x = left.points.iter().map(|point| point[0]).sum::<f32>() / 4.0;
     let right_x = right.points.iter().map(|point| point[0]).sum::<f32>() / 4.0;
-    left_y.total_cmp(&right_y).then_with(|| left_x.total_cmp(&right_x))
+    left_y
+        .total_cmp(&right_y)
+        .then_with(|| left_x.total_cmp(&right_x))
 }
 
-#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss, clippy::cast_sign_loss)]
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss
+)]
 fn crop_region(image: &DynamicImage, region: &DetectedRegion) -> Result<DynamicImage> {
     let max_x = image.width().saturating_sub(1) as f32;
     let max_y = image.height().saturating_sub(1) as f32;
@@ -164,8 +173,16 @@ mod tests {
         let image = image::open(path).unwrap();
         let regions = ocr.recognise(&image).unwrap();
         assert!(!regions.is_empty());
-        assert!(regions.iter().any(|region| !region.recognition.decoded.text.is_empty()));
-        assert!(regions.iter().all(|region| region.region.confidence.is_finite()
-            && region.recognition.decoded.confidence.is_finite()));
+        assert!(
+            regions
+                .iter()
+                .any(|region| !region.recognition.decoded.text.is_empty())
+        );
+        assert!(
+            regions
+                .iter()
+                .all(|region| region.region.confidence.is_finite()
+                    && region.recognition.decoded.confidence.is_finite())
+        );
     }
 }

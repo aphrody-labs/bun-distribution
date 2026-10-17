@@ -248,7 +248,12 @@ impl EventCommand {
             let cut_id = self.args.first().and_then(val_as_str)?;
             let start = self.args.get(1).map_or(0, val_as_int);
             let end = self.args.get(2).map_or(0, val_as_int);
-            let transition = self.args.get(3).and_then(val_as_str).unwrap_or("NONE").to_owned();
+            let transition = self
+                .args
+                .get(3)
+                .and_then(val_as_str)
+                .unwrap_or("NONE")
+                .to_owned();
             return Some(CutInfo {
                 cut_id: cut_id.to_owned(),
                 start_frame: start,
@@ -306,14 +311,40 @@ impl EventCommand {
     #[must_use]
     pub fn as_audio(&self) -> Option<AudioCue> {
         if self.opcode == OPCODE_AUDIO_PLAY || self.category == EventCategory::AudioPlay {
-            let sound_id = self.args.first().and_then(val_as_str).unwrap_or("").to_owned();
-            let cue_name = self.args.get(2).and_then(val_as_str).unwrap_or("").to_owned();
+            let sound_id = self
+                .args
+                .first()
+                .and_then(val_as_str)
+                .unwrap_or("")
+                .to_owned();
+            let cue_name = self
+                .args
+                .get(2)
+                .and_then(val_as_str)
+                .unwrap_or("")
+                .to_owned();
             let volume = self.args.get(3).map_or(1.0f32, val_as_float);
-            return Some(AudioCue { frame: self.frame, cue_name, sound_id, volume, is_play: true });
+            return Some(AudioCue {
+                frame: self.frame,
+                cue_name,
+                sound_id,
+                volume,
+                is_play: true,
+            });
         }
         if self.opcode == OPCODE_AUDIO_REG || self.category == EventCategory::AudioRegister {
-            let sound_id = self.args.first().and_then(val_as_str).unwrap_or("").to_owned();
-            let cue_name = self.args.get(2).and_then(val_as_str).unwrap_or("").to_owned();
+            let sound_id = self
+                .args
+                .first()
+                .and_then(val_as_str)
+                .unwrap_or("")
+                .to_owned();
+            let cue_name = self
+                .args
+                .get(2)
+                .and_then(val_as_str)
+                .unwrap_or("")
+                .to_owned();
             return Some(AudioCue {
                 frame: self.frame,
                 cue_name,
@@ -370,25 +401,37 @@ impl EventScriptDocument {
     /// Liste de tous les cuts définis dans l'événement.
     #[must_use]
     pub fn cuts(&self) -> Vec<CutInfo> {
-        self.commands.iter().filter_map(EventCommand::as_cut).collect()
+        self.commands
+            .iter()
+            .filter_map(EventCommand::as_cut)
+            .collect()
     }
 
     /// Liste de tous les acteurs spawnés dans l'événement.
     #[must_use]
     pub fn actors(&self) -> Vec<ActorSpawnInfo> {
-        self.commands.iter().filter_map(EventCommand::as_actor).collect()
+        self.commands
+            .iter()
+            .filter_map(EventCommand::as_actor)
+            .collect()
     }
 
     /// Liste de toutes les répliques de dialogue déclenchées.
     #[must_use]
     pub fn dialogues(&self) -> Vec<DialogueCue> {
-        self.commands.iter().filter_map(EventCommand::as_dialogue).collect()
+        self.commands
+            .iter()
+            .filter_map(EventCommand::as_dialogue)
+            .collect()
     }
 
     /// Liste de tous les événements sonores de la séquence.
     #[must_use]
     pub fn audio_cues(&self) -> Vec<AudioCue> {
-        self.commands.iter().filter_map(EventCommand::as_audio).collect()
+        self.commands
+            .iter()
+            .filter_map(EventCommand::as_audio)
+            .collect()
     }
 }
 
@@ -431,24 +474,30 @@ pub fn parse_entries(entries: &[CfgEntry]) -> Result<EventScriptDocument, Format
             if let Some(v) = entry.variables.first() {
                 header_command_count = val_as_int(v).max(0) as usize;
             }
-        } else if let Some(idx) =
-            name.strip_prefix("EVENT_COMMAND_HEADER_").and_then(|s| s.parse::<usize>().ok())
+        } else if let Some(idx) = name
+            .strip_prefix("EVENT_COMMAND_HEADER_")
+            .and_then(|s| s.parse::<usize>().ok())
         {
             let frame = entry.variables.first().map_or(-1, val_as_int);
             let opcode = entry.variables.get(1).map_or(0u32, val_as_uint);
             let cat = entry.variables.get(2).map_or(0, val_as_int);
             pending_headers.insert(idx, (frame, opcode, cat));
-        } else if let Some(idx) =
-            name.strip_prefix("EVENT_COMMAND_ARGS_").and_then(|s| s.parse::<usize>().ok())
+        } else if let Some(idx) = name
+            .strip_prefix("EVENT_COMMAND_ARGS_")
+            .and_then(|s| s.parse::<usize>().ok())
         {
             pending_args.insert(idx, entry.variables.clone());
-        } else if let Some(idx) =
-            name.strip_prefix("EVENT_COMMAND_").and_then(|s| s.parse::<usize>().ok())
+        } else if let Some(idx) = name
+            .strip_prefix("EVENT_COMMAND_")
+            .and_then(|s| s.parse::<usize>().ok())
         {
             let frame = entry.variables.first().map_or(-1, val_as_int);
             let opcode = entry.variables.get(1).map_or(0u32, val_as_uint);
-            let args =
-                if entry.variables.len() > 2 { entry.variables[2..].to_vec() } else { Vec::new() };
+            let args = if entry.variables.len() > 2 {
+                entry.variables[2..].to_vec()
+            } else {
+                Vec::new()
+            };
             commands.push(EventCommand {
                 index: idx,
                 frame,
@@ -478,7 +527,10 @@ pub fn parse_entries(entries: &[CfgEntry]) -> Result<EventScriptDocument, Format
         header_command_count = commands.len();
     }
 
-    Ok(EventScriptDocument { header_command_count, commands })
+    Ok(EventScriptDocument {
+        header_command_count,
+        commands,
+    })
 }
 
 /// Décode un conteneur d'événement sérialisé au format JSON (`.cfg.bin.json`).
@@ -549,7 +601,11 @@ fn json_to_cfg_entries(val: &serde_json::Value) -> Result<Vec<CfgEntry>, FormatE
 
     let mut out = Vec::with_capacity(arr.len());
     for item in arr {
-        let name = item.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string();
+        let name = item
+            .get("name")
+            .and_then(|n| n.as_str())
+            .unwrap_or("")
+            .to_string();
         let mut variables = Vec::new();
         if let Some(vars) = item.get("variables").and_then(|v| v.as_array()) {
             for v in vars {
@@ -559,7 +615,7 @@ fn json_to_cfg_entries(val: &serde_json::Value) -> Result<Vec<CfgEntry>, FormatE
                     "String" => {
                         let s = vval.and_then(|x| x.as_str()).unwrap_or("").to_string();
                         variables.push(Value::String(s));
-                    },
+                    }
                     "Int" => {
                         let n = vval
                             .and_then(|x| x.as_str())
@@ -567,7 +623,7 @@ fn json_to_cfg_entries(val: &serde_json::Value) -> Result<Vec<CfgEntry>, FormatE
                             .or_else(|| vval.and_then(|x| x.as_i64()).map(|n| n as i32))
                             .unwrap_or(0);
                         variables.push(Value::Int(n));
-                    },
+                    }
                     "Float" => {
                         let f = vval
                             .and_then(|x| x.as_str())
@@ -575,7 +631,7 @@ fn json_to_cfg_entries(val: &serde_json::Value) -> Result<Vec<CfgEntry>, FormatE
                             .or_else(|| vval.and_then(|x| x.as_f64()).map(|f| f as f32))
                             .unwrap_or(0.0);
                         variables.push(Value::Float(f));
-                    },
+                    }
                     _ => {
                         if let Some(s) = vval.and_then(|x| x.as_str()) {
                             if let Ok(i) = s.parse::<i32>() {
@@ -586,7 +642,7 @@ fn json_to_cfg_entries(val: &serde_json::Value) -> Result<Vec<CfgEntry>, FormatE
                                 variables.push(Value::String(s.to_string()));
                             }
                         }
-                    },
+                    }
                 }
             }
         }
@@ -595,7 +651,11 @@ fn json_to_cfg_entries(val: &serde_json::Value) -> Result<Vec<CfgEntry>, FormatE
         } else {
             Vec::new()
         };
-        out.push(CfgEntry { name, variables, children });
+        out.push(CfgEntry {
+            name,
+            variables,
+            children,
+        });
     }
 
     Ok(out)
@@ -613,14 +673,19 @@ mod tests {
     /// si bien qu'un chemin relatif nu comme `data/common/...` ne résolvait
     /// jamais : les tests concernés sautaient et rapportaient `ok` à vide.
     fn workspace_path(relative: &str) -> std::path::PathBuf {
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..").join(relative)
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../..")
+            .join(relative)
     }
 
     #[test]
     fn test_parse_real_event_json() {
         let path = workspace_path("data/common/event_cfg/evt/ev01_00300.cfg.bin.json");
         if !path.exists() {
-            eprintln!("skip test_parse_real_event_json : fichier {} absent", path.display());
+            eprintln!(
+                "skip test_parse_real_event_json : fichier {} absent",
+                path.display()
+            );
             return;
         }
         let content = std::fs::read_to_string(path).expect("lecture ev01_00300.cfg.bin.json");
@@ -696,7 +761,10 @@ mod tests {
 
         assert_eq!(doc.len(), 1);
         assert_eq!(doc.commands[0].frame, -1);
-        assert_eq!(val_as_str(&doc.commands[0].args[0]), Some("RunSystemMessageSelectEvent"));
+        assert_eq!(
+            val_as_str(&doc.commands[0].args[0]),
+            Some("RunSystemMessageSelectEvent")
+        );
     }
 
     #[test]
@@ -711,8 +779,14 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].name, "TEXT_WASHA_MAP_BEGIN_0");
         assert_eq!(entries[0].children.len(), 15);
-        assert_eq!(val_as_str(&entries[0].children[0].variables[15]), Some("ev98_99010_010_010"));
-        assert_eq!(val_as_str(&entries[0].children[14].variables[15]), Some("ev98_99010_030_060"));
+        assert_eq!(
+            val_as_str(&entries[0].children[0].variables[15]),
+            Some("ev98_99010_010_010")
+        );
+        assert_eq!(
+            val_as_str(&entries[0].children[14].variables[15]),
+            Some("ev98_99010_030_060")
+        );
     }
 
     #[test]

@@ -24,7 +24,10 @@ impl PerspectiveGrid {
 
     /// Plane coordinates `q` on the nearest gridlines within a quarter cell (each axis).
     pub fn snap_plane(&self, q: Point) -> Point {
-        Point::new(self.gridline_near(q.x).unwrap_or(q.x), self.gridline_near(q.y).unwrap_or(q.y))
+        Point::new(
+            self.gridline_near(q.x).unwrap_or(q.x),
+            self.gridline_near(q.y).unwrap_or(q.y),
+        )
     }
 
     /// A plane-space move `d` of art spanning `b` (plane coordinates) adjusted so the edge nearer
@@ -32,13 +35,21 @@ impl PerspectiveGrid {
     pub fn snap_offset(&self, b: Rect, d: Vec2) -> Vec2 {
         let axis = |lo: f64, hi: f64, d: f64| {
             let pulls = [lo + d, hi + d].map(|e| self.gridline_near(e).map(|l| l - e));
-            pulls.into_iter().flatten().min_by(|a, b| a.abs().total_cmp(&b.abs())).map_or(d, |c| d + c)
+            pulls
+                .into_iter()
+                .flatten()
+                .min_by(|a, b| a.abs().total_cmp(&b.abs()))
+                .map_or(d, |c| d + c)
         };
         Vec2::new(axis(b.x0, b.x1, d.x), axis(b.y0, b.y1, d.y))
     }
 
     /// The map that slides art lying on `plane` by `d` in plane coordinates.
-    pub fn move_map_by(&self, plane: Plane, d: Vec2) -> Option<impl Fn(Point) -> Option<Point> + use<>> {
+    pub fn move_map_by(
+        &self,
+        plane: Plane,
+        d: Vec2,
+    ) -> Option<impl Fn(Point) -> Option<Point> + use<>> {
         let h = self.homography(plane)?;
         let hi = h.inverse()?;
         Some(move |p: Point| h.apply(hi.apply(p)? + d))
@@ -70,20 +81,35 @@ impl PerspectiveGrid {
     /// A plane's gridline colour with the grid's opacity.
     pub fn line_color(&self, plane: Plane) -> [u8; 4] {
         let [r, g, b] = self.plane_color(plane);
-        [r, g, b, (self.opacity.clamp(0.0, 100.0) * 2.55).round() as u8]
+        [
+            r,
+            g,
+            b,
+            (self.opacity.clamp(0.0, 100.0) * 2.55).round() as u8,
+        ]
     }
 
     /// Show Rulers: ticks at the gridlines up the vertical line where the planes meet (the true
     /// height line), labelled in Define Grid's real-world units. `tol` = document units per
     /// screen pixel.
     pub fn ruler_overlays(&self, tol: f64) -> Vec<Overlay> {
-        let Some(h) = self.homography(Plane::Left) else { return vec![] };
+        let Some(h) = self.homography(Plane::Left) else {
+            return vec![];
+        };
         let unit = Unit::named(&self.units).unwrap_or_default();
         let ratio = unit.points() * self.scale[0] / self.scale[1];
         let color = [0x40, 0x40, 0x40];
         let mut out = vec![];
-        let (Some(o), Some(top)) = (h.apply(Point::ZERO), h.apply(Point::new(0.0, self.height))) else { return out };
-        out.push(Overlay::Line { a: o, b: top, color, dashed: false });
+        let (Some(o), Some(top)) = (h.apply(Point::ZERO), h.apply(Point::new(0.0, self.height)))
+        else {
+            return out;
+        };
+        out.push(Overlay::Line {
+            a: o,
+            b: top,
+            color,
+            dashed: false,
+        });
         // Labels every k cells, k the least that keeps them LABEL_PX apart at the origin.
         let cell_px = self.cell / tol.max(1e-9);
         let every = (LABEL_PX / cell_px.max(1e-9)).ceil().clamp(1.0, 1.0e6) as u64;
@@ -91,12 +117,23 @@ impl PerspectiveGrid {
         let count = (self.height / self.cell).floor().min(2000.0) as u64;
         for i in 0..=count {
             let v = i as f64 * self.cell;
-            let Some(p) = h.apply(Point::new(0.0, v)) else { continue };
+            let Some(p) = h.apply(Point::new(0.0, v)) else {
+                continue;
+            };
             let long = i % every == 0;
-            out.push(Overlay::Line { a: p, b: p + Vec2::new(if long { -2.0 * tick } else { -tick }, 0.0), color, dashed: false });
+            out.push(Overlay::Line {
+                a: p,
+                b: p + Vec2::new(if long { -2.0 * tick } else { -tick }, 0.0),
+                color,
+                dashed: false,
+            });
             if long {
                 let text = format!("{} {}", unit.number(unit.to_pt(v / ratio)), unit.suffix());
-                out.push(Overlay::Label { p: p + Vec2::new(-2.0 * tick, 0.0), text, color });
+                out.push(Overlay::Label {
+                    p: p + Vec2::new(-2.0 * tick, 0.0),
+                    text,
+                    color,
+                });
             }
         }
         out
@@ -108,7 +145,10 @@ mod tests {
     use super::*;
 
     fn grid() -> PerspectiveGrid {
-        PerspectiveGrid { cell: 20.0, ..PerspectiveGrid::normal(2, Rect::new(0.0, 0.0, 800.0, 600.0)) }
+        PerspectiveGrid {
+            cell: 20.0,
+            ..PerspectiveGrid::normal(2, Rect::new(0.0, 0.0, 800.0, 600.0))
+        }
     }
 
     #[test]
@@ -118,9 +158,20 @@ mod tests {
         assert_eq!(g.snap_plane(Point::new(-4.9, 61.0)), Point::new(0.0, 60.0));
         // The nearer edge lands on a line: the right one (1 from 60) rather than the left (3 from 40).
         let b = Rect::new(10.0, 10.0, 34.0, 20.0);
-        assert_eq!(g.snap_offset(b, Vec2::new(27.0, 30.0)), Vec2::new(26.0, 30.0));
-        assert_eq!(g.snap_offset(b, Vec2::new(30.0, 0.0)), Vec2::new(30.0, 0.0), "an edge on a line stays");
-        assert_eq!(g.snap_offset(b, Vec2::new(18.0, 0.0)), Vec2::new(18.0, 0.0), "nothing within reach");
+        assert_eq!(
+            g.snap_offset(b, Vec2::new(27.0, 30.0)),
+            Vec2::new(26.0, 30.0)
+        );
+        assert_eq!(
+            g.snap_offset(b, Vec2::new(30.0, 0.0)),
+            Vec2::new(30.0, 0.0),
+            "an edge on a line stays"
+        );
+        assert_eq!(
+            g.snap_offset(b, Vec2::new(18.0, 0.0)),
+            Vec2::new(18.0, 0.0),
+            "nothing within reach"
+        );
     }
 
     #[test]
@@ -131,12 +182,31 @@ mod tests {
         assert_eq!(g.line_color(Plane::Right), [1, 2, 3, 102]);
         g.units = "inches".into();
         g.cell = 72.0;
-        let labels: Vec<String> =
-            g.ruler_overlays(1.0).into_iter().filter_map(|o| if let Overlay::Label { text, .. } = o { Some(text) } else { None }).collect();
+        let labels: Vec<String> = g
+            .ruler_overlays(1.0)
+            .into_iter()
+            .filter_map(|o| {
+                if let Overlay::Label { text, .. } = o {
+                    Some(text)
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(labels.first().map(String::as_str), Some("0 in"));
         assert_eq!(labels.get(1).map(String::as_str), Some("1 in"));
         g.scale = [1.0, 4.0];
-        let second = g.ruler_overlays(1.0).into_iter().filter_map(|o| if let Overlay::Label { text, .. } = o { Some(text) } else { None }).nth(1);
+        let second = g
+            .ruler_overlays(1.0)
+            .into_iter()
+            .filter_map(|o| {
+                if let Overlay::Label { text, .. } = o {
+                    Some(text)
+                } else {
+                    None
+                }
+            })
+            .nth(1);
         assert_eq!(second.as_deref(), Some("4 in"), "real-world lengths at 1:4");
     }
 }

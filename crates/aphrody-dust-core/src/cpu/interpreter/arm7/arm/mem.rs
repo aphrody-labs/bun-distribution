@@ -355,10 +355,17 @@ pub fn ldm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
             reg!(emu.arm7, base_reg).wrapping_sub(0x40)
         };
         if WRITEBACK {
-            reg!(emu.arm7, base_reg) =
-                if UPWARDS { start_addr.wrapping_add(0x40) } else { start_addr };
+            reg!(emu.arm7, base_reg) = if UPWARDS {
+                start_addr.wrapping_add(0x40)
+            } else {
+                start_addr
+            };
         }
-        let addr = if PREINC { start_addr.wrapping_add(4) } else { start_addr };
+        let addr = if PREINC {
+            start_addr.wrapping_add(4)
+        } else {
+            start_addr
+        };
         let result = bus::read_32::<CpuAccess, _>(emu, addr);
         let cycles = emu.arm7.bus_timings.get(addr).n32;
         add_cycles(emu, cycles as RawTimestamp + 1);
@@ -456,10 +463,17 @@ pub fn stm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
             reg!(emu.arm7, base_reg).wrapping_sub(0x40)
         };
         if WRITEBACK {
-            reg!(emu.arm7, base_reg) =
-                if UPWARDS { start_addr.wrapping_add(0x40) } else { start_addr };
+            reg!(emu.arm7, base_reg) = if UPWARDS {
+                start_addr.wrapping_add(0x40)
+            } else {
+                start_addr
+            };
         }
-        let addr = if PREINC { start_addr.wrapping_add(4) } else { start_addr };
+        let addr = if PREINC {
+            start_addr.wrapping_add(4)
+        } else {
+            start_addr
+        };
         inc_r15!(emu.arm7, 4);
         bus::write_32::<CpuAccess, _>(emu, addr, reg!(emu.arm7, 15));
         let cycles = emu.arm7.bus_timings.get(addr).n32;
@@ -472,8 +486,11 @@ pub fn stm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
     } else {
         reg!(emu.arm7, base_reg).wrapping_sub((instr as u16).count_ones() << 2)
     };
-    let end_addr =
-        if UPWARDS { cur_addr.wrapping_add((instr as u16).count_ones() << 2) } else { cur_addr };
+    let end_addr = if UPWARDS {
+        cur_addr.wrapping_add((instr as u16).count_ones() << 2)
+    } else {
+        cur_addr
+    };
     inc_r15!(emu.arm7, 4);
     if S_BIT {
         emu.arm7

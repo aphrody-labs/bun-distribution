@@ -29,7 +29,11 @@ impl PathWarp {
         let n = self.segs.len();
         for (i, (seg, len)) in self.segs.iter().enumerate() {
             if s <= *len || i + 1 == n {
-                let t = if *len > 1e-9 { seg.inv_arclen(s.min(*len), 1e-4) } else { 0.0 };
+                let t = if *len > 1e-9 {
+                    seg.inv_arclen(s.min(*len), 1e-4)
+                } else {
+                    0.0
+                };
                 let p = seg.eval(t);
                 let d = match seg {
                     PathSeg::Line(l) => l.p1 - l.p0,
@@ -56,11 +60,18 @@ impl PathWarp {
         for (seg, len) in &self.segs {
             let n = seg.nearest(p, 1e-6);
             if n.distance_sq < best.0 {
-                best = (n.distance_sq, before + seg.subsegment(0.0..n.t).arclen(1e-4));
+                best = (
+                    n.distance_sq,
+                    before + seg.subsegment(0.0..n.t).arclen(1e-4),
+                );
             }
             before += len;
         }
-        if self.flip { self.total - best.1 } else { best.1 }
+        if self.flip {
+            self.total - best.1
+        } else {
+            best.1
+        }
     }
 
     /// Transform for something laid out on a straight line (x along the line, y down from the
@@ -68,7 +79,11 @@ impl PathWarp {
     /// the path, its line at `baseline` on the path.
     pub fn glyph(&self, mid: f64, baseline: f64) -> Option<Affine> {
         let (p, a) = self.at(mid)?;
-        Some(Affine::translate(p.to_vec2()) * Affine::rotate(a) * Affine::translate((-mid, -baseline)))
+        Some(
+            Affine::translate(p.to_vec2())
+                * Affine::rotate(a)
+                * Affine::translate((-mid, -baseline)),
+        )
     }
 }
 
@@ -94,7 +109,10 @@ mod tests {
         assert!((flipped.at(0.0).unwrap().0 - Point::new(100.0, 100.0)).hypot() < 1e-9);
         // The nearest point by arc length, off the path and on it; flipped counts from the end.
         assert!((w.nearest(Point::new(120.0, 50.0)) - 150.0).abs() < 1e-6);
-        assert!((w.nearest(Point::new(120.0, 150.0)) - 200.0).abs() < 1e-6, "past the end: the end");
+        assert!(
+            (w.nearest(Point::new(120.0, 150.0)) - 200.0).abs() < 1e-6,
+            "past the end: the end"
+        );
         assert!((w.nearest(Point::new(30.0, -8.0)) - 30.0).abs() < 1e-6);
         assert!((flipped.nearest(Point::new(30.0, -8.0)) - 170.0).abs() < 1e-6);
     }

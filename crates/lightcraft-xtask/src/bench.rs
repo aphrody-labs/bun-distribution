@@ -16,7 +16,9 @@ use std::process::Command;
 pub fn parse(output: &str) -> BTreeMap<String, f64> {
     let mut out = BTreeMap::new();
     for line in output.lines() {
-        let Some((name, rest)) = line.split_once(':') else { continue };
+        let Some((name, rest)) = line.split_once(':') else {
+            continue;
+        };
         if !rest.contains(" ms ") {
             continue;
         }
@@ -42,7 +44,11 @@ pub fn parse(output: &str) -> BTreeMap<String, f64> {
 }
 
 /// CPU-time metrics that got slower than `threshold` (fraction) vs `prev`: (key, prev, now).
-pub fn regressions(prev: &BTreeMap<String, f64>, now: &BTreeMap<String, f64>, threshold: f64) -> Vec<(String, f64, f64)> {
+pub fn regressions(
+    prev: &BTreeMap<String, f64>,
+    now: &BTreeMap<String, f64>,
+    threshold: f64,
+) -> Vec<(String, f64, f64)> {
     now.iter()
         .filter(|(k, _)| k.ends_with("/cpu"))
         .filter_map(|(k, &v)| prev.get(k).map(|&p| (k.clone(), p, v)))
@@ -54,7 +60,11 @@ fn load_avg() -> Option<f64> {
     let out = Command::new("uptime").output().ok()?;
     let s = String::from_utf8_lossy(&out.stdout);
     let tail = s.rsplit_once("load average")?.1;
-    tail.trim_start_matches(['s', ':', ' ']).split([',', ' ']).find(|t| !t.is_empty())?.parse().ok()
+    tail.trim_start_matches(['s', ':', ' '])
+        .split([',', ' '])
+        .find(|t| !t.is_empty())?
+        .parse()
+        .ok()
 }
 
 fn git_rev(root: &Path) -> String {
@@ -69,24 +79,49 @@ fn git_rev(root: &Path) -> String {
 
 pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
     let strict = args.contains(&"--strict");
-    let threshold =
-        args.iter().position(|a| *a == "--threshold").and_then(|i| args.get(i + 1)).and_then(|v| v.parse::<f64>().ok()).unwrap_or(20.0) / 100.0;
-    let file = args.iter().find(|a| !a.starts_with("--") && a.parse::<f64>().is_err()).map(|s| s.to_string());
+    let threshold = args
+        .iter()
+        .position(|a| *a == "--threshold")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|v| v.parse::<f64>().ok())
+        .unwrap_or(20.0)
+        / 100.0;
+    let file = args
+        .iter()
+        .find(|a| !a.starts_with("--") && a.parse::<f64>().is_err())
+        .map(|s| s.to_string());
     let file = file.or_else(|| {
         let default = root.join("corpus/raw/arw-sony-a7m3-compressed.arw");
-        default.exists().then(|| default.to_string_lossy().to_string())
+        default
+            .exists()
+            .then(|| default.to_string_lossy().to_string())
     });
     let mut cmd = crate::cargo();
-    cmd.args(["run", "--release", "-q", "-p", "lightcraft-engine", "--example", "render_bench", "--"]);
+    cmd.args([
+        "run",
+        "--release",
+        "-q",
+        "-p",
+        "lightcraft-engine",
+        "--example",
+        "render_bench",
+        "--",
+    ]);
     if let Some(f) = &file {
         cmd.arg(f);
     }
-    eprintln!("$ cargo run --release -p lightcraft-engine --example render_bench -- {}", file.as_deref().unwrap_or("(procedural 24 MP source)"));
+    eprintln!(
+        "$ cargo run --release -p lightcraft-engine --example render_bench -- {}",
+        file.as_deref().unwrap_or("(procedural 24 MP source)")
+    );
     let out = cmd.output().map_err(|e| format!("render_bench: {e}"))?;
     let text = String::from_utf8_lossy(&out.stdout).to_string();
     print!("{text}");
     if !out.status.success() {
-        return Err(format!("render_bench failed:\n{}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "render_bench failed:\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
     let metrics = parse(&text);
     if metrics.is_empty() {
@@ -97,7 +132,12 @@ pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
     let hist = dir.join("history.jsonl");
     let prev: Option<BTreeMap<String, f64>> = std::fs::read_to_string(&hist)
         .ok()
-        .and_then(|s| s.lines().rev().find(|l| !l.trim().is_empty()).map(str::to_string))
+        .and_then(|s| {
+            s.lines()
+                .rev()
+                .find(|l| !l.trim().is_empty())
+                .map(str::to_string)
+        })
         .and_then(|l| serde_json::from_str::<serde_json::Value>(&l).ok())
         .and_then(|v| serde_json::from_value(v["metrics"].clone()).ok());
     let rec = serde_json::json!({
@@ -110,21 +150,40 @@ pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
     let mut line = rec.to_string();
     line.push('\n');
     use std::io::Write;
-    std::fs::OpenOptions::new().create(true).append(true).open(&hist).and_then(|mut f| f.write_all(line.as_bytes())).map_err(|e| e.to_string())?;
-    eprintln!("bench: {} metrics recorded in {}", metrics.len(), hist.display());
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&hist)
+        .and_then(|mut f| f.write_all(line.as_bytes()))
+        .map_err(|e| e.to_string())?;
+    eprintln!(
+        "bench: {} metrics recorded in {}",
+        metrics.len(),
+        hist.display()
+    );
     let Some(prev) = prev else {
         eprintln!("bench: first run — nothing to compare");
         return Ok(());
     };
     let reg = regressions(&prev, &metrics, threshold);
     if reg.is_empty() {
-        eprintln!("bench: no CPU-time regressions > {:.0}% vs previous run", threshold * 100.0);
+        eprintln!(
+            "bench: no CPU-time regressions > {:.0}% vs previous run",
+            threshold * 100.0
+        );
         return Ok(());
     }
     for (k, p, v) in &reg {
-        eprintln!("bench: REGRESSION {k}: {p:.1} → {v:.1} ms (+{:.0}%)", (v / p - 1.0) * 100.0);
+        eprintln!(
+            "bench: REGRESSION {k}: {p:.1} → {v:.1} ms (+{:.0}%)",
+            (v / p - 1.0) * 100.0
+        );
     }
-    if strict { Err(format!("{} CPU-time regression(s)", reg.len())) } else { Ok(()) }
+    if strict {
+        Err(format!("{} CPU-time regression(s)", reg.len()))
+    } else {
+        Ok(())
+    }
 }
 
 #[cfg(test)]

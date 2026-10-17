@@ -86,7 +86,9 @@ impl DumpElfFunction {
         &self,
         object: &'a dsd_object::File<'_>,
     ) -> Result<dsd_object::Symbol<'a, '_>> {
-        object.symbol_by_name(&self.name).context("No function with that name was found")
+        object
+            .symbol_by_name(&self.name)
+            .context("No function with that name was found")
     }
 
     fn print_symbol(&self, symbol: &dsd_object::Symbol<'_, '_>) {
@@ -100,8 +102,12 @@ impl DumpElfFunction {
         object: &'a dsd_object::File<'_>,
         symbol: &dsd_object::Symbol<'_, '_>,
     ) -> Result<dsd_object::Section<'a, '_>> {
-        let section_index = symbol.section_index().context("Function symbol has no section")?;
-        object.section_by_index(section_index).context("Function's section not found")
+        let section_index = symbol
+            .section_index()
+            .context("Function symbol has no section")?;
+        object
+            .section_by_index(section_index)
+            .context("Function's section not found")
     }
 
     fn get_section_name<'a>(&self, section: &'a dsd_object::Section<'_, '_>) -> Result<&'a str> {
@@ -129,7 +135,10 @@ impl DumpElfFunction {
             .with_context(|| format!("{} not found in config.yaml", module_kind))?;
         let bin_file_path = config_path.join(&config_module.object);
         read_file(&bin_file_path).with_context(|| {
-            format!("Failed to read section data from {}", bin_file_path.display())
+            format!(
+                "Failed to read section data from {}",
+                bin_file_path.display()
+            )
         })
     }
 
@@ -182,8 +191,12 @@ impl DumpElfFunction {
         let symbol_maps =
             SymbolMaps::from_object(object).context("Failed to construct symbol maps from ELF")?;
         let symbol_map = symbol_maps.get(module_kind).unwrap();
-        let symbol_lookup =
-            SymbolLookup { module_kind, symbol_map, symbol_maps: &symbol_maps, relocations: None };
+        let symbol_lookup = SymbolLookup {
+            module_kind,
+            symbol_map,
+            symbol_maps: &symbol_maps,
+            relocations: None,
+        };
 
         println!("Disassembly:");
         function.write_assembly(

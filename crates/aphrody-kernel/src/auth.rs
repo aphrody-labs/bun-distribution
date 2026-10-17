@@ -25,7 +25,9 @@ impl SessionScope {
     }
 
     pub(crate) fn allows_tool(&self, tool: &str) -> bool {
-        self.tool_prefixes.iter().any(|prefix| prefix == "*" || tool.starts_with(prefix))
+        self.tool_prefixes
+            .iter()
+            .any(|prefix| prefix == "*" || tool.starts_with(prefix))
     }
 }
 

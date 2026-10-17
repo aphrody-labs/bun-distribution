@@ -83,7 +83,8 @@ fn repaired_directory_array_sections(contents: &str) -> Option<String> {
     let family = |line: &str| -> Option<usize> {
         let (key, _) = line.trim().split_once('=')?;
         [GAMEDIRS_PREFIX, EXTERNAL_CONTENT_DIRS_PREFIX]
-            .iter().position(|prefix| key.starts_with(prefix))
+            .iter()
+            .position(|prefix| key.starts_with(prefix))
     };
     let mut in_ui = false;
     let mut canonical = [false; 2];
@@ -103,10 +104,14 @@ fn repaired_directory_array_sections(contents: &str) -> Option<String> {
         }
         retained.push(line.to_owned());
     }
-    if misplaced.iter().all(Vec::is_empty) { return None; }
+    if misplaced.iter().all(Vec::is_empty) {
+        return None;
+    }
     let mut moved = Vec::new();
     for (index, lines) in misplaced.into_iter().enumerate() {
-        if !canonical[index] { moved.extend(lines); }
+        if !canonical[index] {
+            moved.extend(lines);
+        }
     }
     if !moved.is_empty() {
         let insert_at = match retained.iter().position(|line| line.trim() == UI_SECTION) {
@@ -119,7 +124,9 @@ fn repaired_directory_array_sections(contents: &str) -> Option<String> {
         retained.splice(insert_at..insert_at, moved);
     }
     let mut repaired = retained.join("\n");
-    if contents.ends_with('\n') { repaired.push('\n'); }
+    if contents.ends_with('\n') {
+        repaired.push('\n');
+    }
     Some(repaired)
 }
 
@@ -130,10 +137,15 @@ fn repair_directory_array_sections(path: &Path) -> io::Result<bool> {
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
         Err(error) => return Err(error),
     };
-    let Some(repaired) = repaired_directory_array_sections(&contents) else { return Ok(false); };
-    let parent = path.parent().ok_or_else(|| io::Error::other("configuration has no parent"))?;
+    let Some(repaired) = repaired_directory_array_sections(&contents) else {
+        return Ok(false);
+    };
+    let parent = path
+        .parent()
+        .ok_or_else(|| io::Error::other("configuration has no parent"))?;
     let mut backup = tempfile::Builder::new()
-        .prefix("qt-config.ini.before-directory-section-repair-").suffix(".bak")
+        .prefix("qt-config.ini.before-directory-section-repair-")
+        .suffix(".bak")
         .tempfile_in(parent)?;
     backup.write_all(contents.as_bytes())?;
     backup.as_file().sync_all()?;
@@ -142,7 +154,10 @@ fn repair_directory_array_sections(path: &Path) -> io::Result<bool> {
     replacement.write_all(repaired.as_bytes())?;
     replacement.as_file().sync_all()?;
     replacement.persist(path).map_err(|error| error.error)?;
-    log::info!("Repaired directory arrays in UI; original configuration saved to {}", backup_path.display());
+    log::info!(
+        "Repaired directory arrays in UI; original configuration saved to {}",
+        backup_path.display()
+    );
     Ok(true)
 }
 
@@ -379,8 +394,13 @@ pub fn load_recent_files() {
 fn read_recent_files(contents: &str) -> Vec<String> {
     parse_section_values(contents, UI_SECTION)
         .get("Paths\\recentFiles")
-        .map(|value| unquote(value).split(", ").filter(|path| !path.is_empty())
-            .map(str::to_owned).collect())
+        .map(|value| {
+            unquote(value)
+                .split(", ")
+                .filter(|path| !path.is_empty())
+                .map(str::to_owned)
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -412,7 +432,9 @@ pub fn load_view_values() {
 /// Match QtConfig's UI/UIGameList/Screenshots groups and Config's UiAudio group.
 /// The GTK registry lives separately from common::settings, so BaseConfig cannot
 /// discover these settings through the core registry.
-fn ui_setting_location(setting: &dyn common::settings_setting::BasicSetting) -> (&'static str, String) {
+fn ui_setting_location(
+    setting: &dyn common::settings_setting::BasicSetting,
+) -> (&'static str, String) {
     use common::settings_enums::Category;
     if setting.category() == Category::UiAudio {
         return ("Audio", setting.label().to_owned());
@@ -444,12 +466,18 @@ fn read_ui_values(contents: &str, values: &mut uisettings::Values) {
     if !ui.contains_key("font_scale_auto") && *values.font_scale.get_value() != 100 {
         values.font_scale_auto.set_value(false);
     }
-    let display = uisettings::THEMES.iter().find(|(name, internal)| *name == theme || *internal == theme)
-        .map(|(name, _)| *name).unwrap_or(&theme);
+    let display = uisettings::THEMES
+        .iter()
+        .find(|(name, internal)| *name == theme || *internal == theme)
+        .map(|(name, _)| *name)
+        .unwrap_or(&theme);
     values.theme.set_value(display.to_owned());
     // Upstream's screenshot_path is a plain string without a default marker.
-    values.screenshot_path.set_value(ui.get("Screenshots\\screenshot_path")
-        .map(|value| unquote(value).to_owned()).unwrap_or_default());
+    values.screenshot_path.set_value(
+        ui.get("Screenshots\\screenshot_path")
+            .map(|value| unquote(value).to_owned())
+            .unwrap_or_default(),
+    );
 }
 
 /// Read the multiplayer fields owned by upstream
@@ -466,28 +494,43 @@ fn read_multiplayer_values(contents: &str, ui: &mut uisettings::Values) {
         let default = setting.default_to_string();
         let value = if matches!(default.as_str(), "true" | "false") {
             read_ui_bool_setting(&values, &key, default == "true").to_string()
-        } else if values.get(&format!("{key}\\default")).is_none_or(|value| is_true(value)) {
+        } else if values
+            .get(&format!("{key}\\default"))
+            .is_none_or(|value| is_true(value))
+        {
             default
         } else {
-            values.get(&key).map(|value| decode_multiplayer_value(value))
+            values
+                .get(&key)
+                .map(|value| decode_multiplayer_value(value))
                 .unwrap_or_else(|| setting.default_to_string())
         };
         setting.load_string(&value);
     });
     for (array, field, list) in [
-        ("username_ban_list", "username", &mut ui.multiplayer_ban_list.0),
+        (
+            "username_ban_list",
+            "username",
+            &mut ui.multiplayer_ban_list.0,
+        ),
         ("ip_ban_list", "ip", &mut ui.multiplayer_ban_list.1),
     ] {
         let prefix = format!("Multiplayer\\{array}");
-        let size = values.get(&format!("{prefix}\\size"))
-            .and_then(|value| value.parse::<usize>().ok()).unwrap_or(0);
+        let size = values
+            .get(&format!("{prefix}\\size"))
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0);
         list.clear();
         for index in 1..=size {
             // Ban entries are plain array values, not defaulted settings.
             // Eden's IP reader mistakenly reads "username" without advancing
             // its index. Read the indexed "ip" keys emitted by its writer.
-            list.push(values.get(&format!("{prefix}\\{index}\\{field}"))
-                .map(|value| decode_multiplayer_value(value)).unwrap_or_default());
+            list.push(
+                values
+                    .get(&format!("{prefix}\\{index}\\{field}"))
+                    .map(|value| decode_multiplayer_value(value))
+                    .unwrap_or_default(),
+            );
         }
     }
 }
@@ -508,26 +551,47 @@ fn write_multiplayer_values(contents: &str, ui: &mut uisettings::Values) -> Stri
     // Remove only owned array keys in UI; shrinking a list must not leave stale
     // bans that can reappear later, and other sections must remain untouched.
     let mut in_ui = false;
-    let mut contents = contents.lines().filter(|line| {
-        let line = line.trim();
-        if line.starts_with('[') { in_ui = line == UI_SECTION; }
-        !in_ui || !line.split_once('=').is_some_and(|(key, _)|
-            key.starts_with("Multiplayer\\username_ban_list\\") || key.starts_with("Multiplayer\\ip_ban_list\\"))
-    }).collect::<Vec<_>>().join("\n");
+    let mut contents = contents
+        .lines()
+        .filter(|line| {
+            let line = line.trim();
+            if line.starts_with('[') {
+                in_ui = line == UI_SECTION;
+            }
+            !in_ui
+                || !line.split_once('=').is_some_and(|(key, _)| {
+                    key.starts_with("Multiplayer\\username_ban_list\\")
+                        || key.starts_with("Multiplayer\\ip_ban_list\\")
+                })
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
     ui.for_each_multiplayer_setting_mut(|setting| {
-        contents = replace_ui_string_setting(&contents,
+        contents = replace_ui_string_setting(
+            &contents,
             &format!("Multiplayer\\{}", setting.label()),
             &encode_multiplayer_value(&setting.to_string_global()),
-            &encode_multiplayer_value(&setting.default_to_string()));
+            &encode_multiplayer_value(&setting.default_to_string()),
+        );
     });
     for (array, field, list) in [
         ("username_ban_list", "username", &ui.multiplayer_ban_list.0),
         ("ip_ban_list", "ip", &ui.multiplayer_ban_list.1),
     ] {
         let prefix = format!("Multiplayer\\{array}");
-        contents = replace_ui_setting(&contents, &format!("{prefix}\\size"), &list.len().to_string(), None);
+        contents = replace_ui_setting(
+            &contents,
+            &format!("{prefix}\\size"),
+            &list.len().to_string(),
+            None,
+        );
         for (index, value) in list.iter().enumerate() {
-            contents = replace_ui_setting(&contents, &format!("{prefix}\\{}\\{field}", index + 1), &encode_multiplayer_value(value), None);
+            contents = replace_ui_setting(
+                &contents,
+                &format!("{prefix}\\{}\\{field}", index + 1),
+                &encode_multiplayer_value(value),
+                None,
+            );
         }
     }
     contents
@@ -538,7 +602,11 @@ fn write_multiplayer_values(contents: &str, ui: &mut uisettings::Values) -> Stri
 // newline/backslash/quote form matches QSettings; Eden's current SimpleIni
 // writer does not escape line breaks and cannot roundtrip that input safely.
 fn encode_multiplayer_value(value: &str) -> String {
-    if value.trim() != value || value.chars().any(|c| c.is_control() || matches!(c, '\\' | '"' | ',' | ';' | '=')) {
+    if value.trim() != value
+        || value
+            .chars()
+            .any(|c| c.is_control() || matches!(c, '\\' | '"' | ',' | ';' | '='))
+    {
         serde_json::to_string(value).expect("serializing a string cannot fail")
     } else {
         value.to_owned()
@@ -571,12 +639,20 @@ fn save_ui_values(contents: &str, values: &mut uisettings::Values) -> String {
     values.for_each_ui_setting_mut(|setting| {
         let (section, key) = ui_setting_location(setting);
         let value = setting.to_string_global();
-        contents = replace_section_setting(&contents, section, &key, &value,
-            value == setting.default_to_string());
+        contents = replace_section_setting(
+            &contents,
+            section,
+            &key,
+            &value,
+            value == setting.default_to_string(),
+        );
     });
     let theme = values.theme.get_value();
-    let internal = uisettings::THEMES.iter().find(|(name, internal)| *name == theme || *internal == theme)
-        .map(|(_, internal)| *internal).unwrap_or(theme);
+    let internal = uisettings::THEMES
+        .iter()
+        .find(|(name, internal)| *name == theme || *internal == theme)
+        .map(|(_, internal)| *internal)
+        .unwrap_or(theme);
     contents = replace_ui_string_setting(&contents, "theme", internal, "colorful");
     let path = frontend_common::config::adjust_output_string(values.screenshot_path.get_value());
     replace_ui_setting(&contents, "Screenshots\\screenshot_path", &path, None)
@@ -770,7 +846,9 @@ fn game_dirs_with_defaults(contents: &str) -> Vec<GameDir> {
     let mut directories = parse_game_dirs(contents);
     if directories.is_empty() {
         directories.extend(["SDMC", "UserNAND", "SysNAND"].map(|path| GameDir {
-            path: path.into(), deep_scan: false, expanded: true,
+            path: path.into(),
+            deep_scan: false,
+            expanded: true,
         }));
         let mut config = BaseConfig::new(ConfigType::GlobalConfig);
         config.load_ini(contents);
@@ -778,8 +856,11 @@ fn game_dirs_with_defaults(contents: &str) -> Vec<GameDir> {
         config.begin_group("Paths");
         let legacy = config.read_string_setting("gameListRootDir", Some("."));
         if legacy != "." {
-            directories.push(GameDir { path: legacy,
-                deep_scan: config.read_boolean_setting("gameListDeepScan", Some(false)), expanded: true });
+            directories.push(GameDir {
+                path: legacy,
+                deep_scan: config.read_boolean_setting("gameListDeepScan", Some(false)),
+                expanded: true,
+            });
         }
     }
     directories
@@ -823,7 +904,9 @@ pub fn parse_external_content_dirs(contents: &str) -> Vec<String> {
             in_ui = line == UI_SECTION;
             continue;
         }
-        if !in_ui { continue; }
+        if !in_ui {
+            continue;
+        }
         let Some((key, value)) = line.split_once('=') else {
             continue;
         };
@@ -1146,12 +1229,28 @@ pub(super) const DEFAULT_RINGCON_ANALOGS: [i32; 2] = [b'A' as i32, b'D' as i32];
 
 /// QtConfig::ReadHidbusValues, using the already parsed Controls section.
 fn read_hidbus_values(values: &std::collections::BTreeMap<String, String>) -> String {
-    values.get("ring_controller").filter(|value| !value.is_empty()
-         && values.get("ring_controller\\default").is_some_and(|flag|
-             matches!(flag.to_ascii_lowercase().as_str(), "false" | "no" | "off" | "0"))).cloned()
-        .unwrap_or_else(|| generate_analog_param_from_keys(
-            0, 0, DEFAULT_RINGCON_ANALOGS[0], DEFAULT_RINGCON_ANALOGS[1], 0, 0.05,
-        ))
+    values
+        .get("ring_controller")
+        .filter(|value| {
+            !value.is_empty()
+                && values.get("ring_controller\\default").is_some_and(|flag| {
+                    matches!(
+                        flag.to_ascii_lowercase().as_str(),
+                        "false" | "no" | "off" | "0"
+                    )
+                })
+        })
+        .cloned()
+        .unwrap_or_else(|| {
+            generate_analog_param_from_keys(
+                0,
+                0,
+                DEFAULT_RINGCON_ANALOGS[0],
+                DEFAULT_RINGCON_ANALOGS[1],
+                0,
+                0.05,
+            )
+        })
 }
 
 /// QtConfig::SaveHidbusValues. The Controls writer owns quoting/default flags.
@@ -1603,7 +1702,9 @@ pub fn parse_game_dirs(contents: &str) -> Vec<GameDir> {
             in_ui = line == UI_SECTION;
             continue;
         }
-        if !in_ui { continue; }
+        if !in_ui {
+            continue;
+        }
         let Some((key, value)) = line.split_once('=') else {
             continue;
         };
@@ -1697,7 +1798,10 @@ fn render_game_dirs(dirs: &[GameDir]) -> Vec<String> {
     for (position, dir) in dirs.iter().enumerate() {
         // 1-based on disk, matching what yuzu writes.
         let index = position + 1;
-        lines.push(format!("{GAMEDIRS_PREFIX}{index}\\path={}", adjust_output_string(&dir.path)));
+        lines.push(format!(
+            "{GAMEDIRS_PREFIX}{index}\\path={}",
+            adjust_output_string(&dir.path)
+        ));
         lines.push(format!(
             "{GAMEDIRS_PREFIX}{index}\\deep_scan\\default={}",
             !dir.deep_scan
@@ -1732,23 +1836,37 @@ mod tests {
         if let Some(root) = std::env::var_os(CHILD) {
             common::fs::path_util::set_ruzu_path(RuzuPath::ConfigDir, Path::new(&root));
             std::fs::write(config_path(), "[Other]\nkeep=true\n").unwrap();
-            let files = vec!["/homebrew/Free Demo.nro".to_owned(), "C:\\homebrew\\brick.nro".to_owned()];
+            let files = vec![
+                "/homebrew/Free Demo.nro".to_owned(),
+                "C:\\homebrew\\brick.nro".to_owned(),
+            ];
             uisettings::with_mut(|values| values.recent_files = files.clone());
             save_recent_files().unwrap();
             uisettings::with_mut(|values| values.recent_files.clear());
             load_recent_files();
-            assert_eq!(uisettings::with(|values| values.recent_files.clone()), files);
+            assert_eq!(
+                uisettings::with(|values| values.recent_files.clone()),
+                files
+            );
             uisettings::with_mut(|values| values.recent_files.clear());
             save_recent_files().unwrap();
             load_recent_files();
             assert!(uisettings::with(|values| values.recent_files.is_empty()));
-            assert!(std::fs::read_to_string(config_path()).unwrap().contains("keep=true"));
+            assert!(std::fs::read_to_string(config_path())
+                .unwrap()
+                .contains("keep=true"));
             return;
         }
         let root = tempfile::tempdir().unwrap();
         let status = std::process::Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", "configuration::qt_config::tests::recent_files_persist_and_reload_from_disk", "--test-threads=1"])
-            .env(CHILD, root.path()).status().unwrap();
+            .args([
+                "--exact",
+                "configuration::qt_config::tests::recent_files_persist_and_reload_from_disk",
+                "--test-threads=1",
+            ])
+            .env(CHILD, root.path())
+            .status()
+            .unwrap();
         assert!(status.success());
     }
 
@@ -1764,8 +1882,10 @@ mod tests {
         assert!(!updated.contains("recentFiles\\default"));
         let cleared = replace_ui_setting(&updated, "Paths\\recentFiles", "", None);
         assert!(read_recent_files(&cleared).is_empty());
-        assert_eq!(read_recent_files("[UI]\nPaths\\recentFiles=\"demo.nro, , next.nro\"\n"),
-            ["demo.nro", "next.nro"]);
+        assert_eq!(
+            read_recent_files("[UI]\nPaths\\recentFiles=\"demo.nro, , next.nro\"\n"),
+            ["demo.nro", "next.nro"]
+        );
         assert!(read_recent_files("").is_empty());
     }
     #[test]
@@ -1788,8 +1908,11 @@ mod tests {
         load_control_values();
         let hid = hid_core::hid_core::HIDCore::new();
         let controller = hid.get_emulated_controller_by_index(9);
-        let button = common::param_package::ParamPackage::from_serialized("engine:keyboard,code:71");
-        let stick = common::param_package::ParamPackage::from_serialized("engine:analog_from_button,left:engine$0keyboard$1code$065");
+        let button =
+            common::param_package::ParamPackage::from_serialized("engine:keyboard,code:71");
+        let stick = common::param_package::ParamPackage::from_serialized(
+            "engine:analog_from_button,left:engine$0keyboard$1code$065",
+        );
         {
             let mut controller = controller.lock();
             controller.set_button_param(0, button.clone());
@@ -1823,18 +1946,24 @@ mod tests {
         let params = common::param_package::ParamPackage::from_serialized(&default);
         assert_eq!(params.get_str("engine", ""), "analog_from_button");
         for (direction, key) in [("left", b'A'), ("right", b'D')] {
-            let button = common::param_package::ParamPackage::from_serialized(&params.get_str(direction, ""));
+            let button = common::param_package::ParamPackage::from_serialized(
+                &params.get_str(direction, ""),
+            );
             assert_eq!(button.get_int("code", 0), key as i32);
         }
-        for input in ["[Controls]\nring_controller=\"\"\n",
-             "[Controls]\nring_controller=\"engine:sdl,axis_x:3\"\n",
-            "[Controls]\nring_controller=\"engine:sdl,axis_x:3\"\nring_controller\\default=true\n"] {
+        for input in [
+            "[Controls]\nring_controller=\"\"\n",
+            "[Controls]\nring_controller=\"engine:sdl,axis_x:3\"\n",
+            "[Controls]\nring_controller=\"engine:sdl,axis_x:3\"\nring_controller\\default=true\n",
+        ] {
             let restored = read_hidbus_values(&parse_controls(input));
             let restored = common::param_package::ParamPackage::from_serialized(&restored);
             assert_eq!(restored.get_str("engine", ""), "analog_from_button");
             assert_eq!(restored.get_float("modifier_scale", 0.0), 0.05);
             for (direction, key) in [("left", b'A'), ("right", b'D')] {
-                let button = common::param_package::ParamPackage::from_serialized(&restored.get_str(direction, ""));
+                let button = common::param_package::ParamPackage::from_serialized(
+                    &restored.get_str(direction, ""),
+                );
                 assert_eq!(button.get_int("code", 0), key as i32);
             }
         }
@@ -1860,24 +1989,41 @@ mod tests {
             let path = config_path();
             std::fs::write(&path, [0xff, 0xfe]).unwrap();
             let writers: &[fn() -> io::Result<()>] = &[
-                save_global_values, save_shortcut_values, save_tas_values,
-                save_multiplayer_values, save_view_values, save_ui_language,
-                save_roms_path, save_recent_files, save_favorites_expanded, save_control_values,
-                || save_external_content_dirs(&[]), || save_game_dirs(&[]),
-                || save_favorited_ids(&[]), || save_per_game_control_values(&config_path()),
+                save_global_values,
+                save_shortcut_values,
+                save_tas_values,
+                save_multiplayer_values,
+                save_view_values,
+                save_ui_language,
+                save_roms_path,
+                save_recent_files,
+                save_favorites_expanded,
+                save_control_values,
+                || save_external_content_dirs(&[]),
+                || save_game_dirs(&[]),
+                || save_favorited_ids(&[]),
+                || save_per_game_control_values(&config_path()),
             ];
             for (index, writer) in writers.iter().enumerate() {
                 assert!(writer().is_err(), "writer {index} accepted invalid UTF-8");
                 assert_eq!(std::fs::read(&path).unwrap(), [0xff, 0xfe]);
             }
-            assert_eq!(read_configuration_for_update(&Path::new(&root).join("missing.ini")).unwrap(), "");
+            assert_eq!(
+                read_configuration_for_update(&Path::new(&root).join("missing.ini")).unwrap(),
+                ""
+            );
             return;
         }
         let root = tempfile::tempdir().unwrap();
         let status = std::process::Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", "configuration::qt_config::tests::specialized_writers_preserve_unreadable_ini", "--test-threads=1"])
+            .args([
+                "--exact",
+                "configuration::qt_config::tests::specialized_writers_preserve_unreadable_ini",
+                "--test-threads=1",
+            ])
             .env(CHILD, root.path())
-            .status().unwrap();
+            .status()
+            .unwrap();
         assert!(status.success());
     }
 
@@ -1891,7 +2037,9 @@ mod tests {
                 .env(CHILD, root.path()).status().unwrap().success());
             return;
         };
-        use common::settings_enums::{AntiAliasing, ConsoleMode, GpuAccuracy, RendererBackend, ScalingFilter};
+        use common::settings_enums::{
+            AntiAliasing, ConsoleMode, GpuAccuracy, RendererBackend, ScalingFilter,
+        };
         common::fs::path_util::set_ruzu_path(RuzuPath::ConfigDir, Path::new(&root));
         std::fs::write(config_path(), "[UI]\ncustom_marker=preserved\n").unwrap();
         {
@@ -1900,7 +2048,9 @@ mod tests {
             values.renderer_backend.set_value(RendererBackend::Vulkan);
             values.gpu_accuracy.set_value(GpuAccuracy::High);
             values.use_docked_mode.set_value(ConsoleMode::Handheld);
-            values.scaling_filter.set_value(ScalingFilter::NearestNeighbor);
+            values
+                .scaling_filter
+                .set_value(ScalingFilter::NearestNeighbor);
             values.anti_aliasing.set_value(AntiAliasing::Fxaa);
             values.volume.set_value(37);
             values.audio_muted.set_value(true);
@@ -1909,12 +2059,16 @@ mod tests {
             values.renderer_backend.set_value(RendererBackend::Null);
         }
         save_global_values().unwrap();
-        assert!(std::fs::read_to_string(config_path()).unwrap().contains("custom_marker=preserved"));
+        assert!(std::fs::read_to_string(config_path())
+            .unwrap()
+            .contains("custom_marker=preserved"));
         {
             let mut values = common::settings::values_mut();
             assert_eq!(*values.renderer_backend.get_value(), RendererBackend::Null);
             values.renderer_backend.set_global(true);
-            values.renderer_backend.set_value(RendererBackend::OpenGlGlsl);
+            values
+                .renderer_backend
+                .set_value(RendererBackend::OpenGlGlsl);
             values.gpu_accuracy.set_value(GpuAccuracy::Low);
             values.use_docked_mode.set_value(ConsoleMode::Docked);
             values.scaling_filter.set_value(ScalingFilter::Bilinear);
@@ -1924,10 +2078,16 @@ mod tests {
         }
         load_global_values();
         let values = common::settings::values();
-        assert_eq!(*values.renderer_backend.get_value(), RendererBackend::Vulkan);
+        assert_eq!(
+            *values.renderer_backend.get_value(),
+            RendererBackend::Vulkan
+        );
         assert_eq!(*values.gpu_accuracy.get_value(), GpuAccuracy::High);
         assert_eq!(*values.use_docked_mode.get_value(), ConsoleMode::Handheld);
-        assert_eq!(*values.scaling_filter.get_value(), ScalingFilter::NearestNeighbor);
+        assert_eq!(
+            *values.scaling_filter.get_value(),
+            ScalingFilter::NearestNeighbor
+        );
         assert_eq!(*values.anti_aliasing.get_value(), AntiAliasing::Fxaa);
         assert_eq!(*values.volume.get_value(), 37);
         assert!(*values.audio_muted.get_value());
@@ -1957,12 +2117,18 @@ mod tests {
                 assert!(*values.audio_muted.get_value());
                 assert_eq!(common::settings::volume(&values), 0.0);
             }
-            assert_eq!(common::settings::values().ringcon_analogs, "engine:sdl,axis_x:3");
+            assert_eq!(
+                common::settings::values().ringcon_analogs,
+                "engine:sdl,axis_x:3"
+            );
             common::settings::values_mut().ringcon_analogs = "engine:sdl,axis_x:4".into();
             save_control_values().unwrap();
             common::settings::values_mut().ringcon_analogs.clear();
             load_control_values();
-            assert_eq!(common::settings::values().ringcon_analogs, "engine:sdl,axis_x:4");
+            assert_eq!(
+                common::settings::values().ringcon_analogs,
+                "engine:sdl,axis_x:4"
+            );
             uisettings::with(|values| {
                 assert!(*values.mute_when_in_background.get_value());
                 assert!(!*values.hide_mouse.get_value());
@@ -1983,7 +2149,14 @@ mod tests {
             uisettings::with(|values| {
                 assert!(!*values.mute_when_in_background.get_value());
                 assert!(*values.hide_mouse.get_value());
-                assert_eq!(values.game_dirs.iter().map(|dir| dir.path.as_str()).collect::<Vec<_>>(), ["SDMC", "UserNAND", "SysNAND"]);
+                assert_eq!(
+                    values
+                        .game_dirs
+                        .iter()
+                        .map(|dir| dir.path.as_str())
+                        .collect::<Vec<_>>(),
+                    ["SDMC", "UserNAND", "SysNAND"]
+                );
             });
             return;
         }
@@ -2011,11 +2184,18 @@ mod tests {
                 _ => (default.parse::<u64>().unwrap() + 1).to_string(),
             };
             setting.load_string(&custom);
-            assert_ne!(setting.to_string_global(), default, "{} did not change", setting.label());
+            assert_ne!(
+                setting.to_string_global(),
+                default,
+                "{} did not change",
+                setting.label()
+            );
             expected.insert(ui_setting_location(setting), custom);
         });
         source.theme.set_value("Dark".into());
-        source.screenshot_path.set_value("/tmp/screenshots, test".into());
+        source
+            .screenshot_path
+            .set_value("/tmp/screenshots, test".into());
         let untouched = "[Renderer]\nbackend=1\n[UI]\nPaths\\gamedirs\\size=0\n";
         let document = save_ui_values(untouched, &mut source);
         assert!(document.contains("backend=1"));
@@ -2024,14 +2204,22 @@ mod tests {
         assert!(document.contains("UIGameList\\game_icon_size=65"));
         assert!(document.contains("Screenshots\\screenshot_height=1"));
         assert!(!document.contains("Screenshots\\screenshot_path\\default"));
-        assert_eq!(parse_section_values(&document, "Audio")["muteWhenInBackground"], "true");
+        assert_eq!(
+            parse_section_values(&document, "Audio")["muteWhenInBackground"],
+            "true"
+        );
         let temporary = tempfile::tempdir().unwrap();
         let path = temporary.path().join("qt-config.ini");
         std::fs::write(&path, document).unwrap();
         let mut loaded = uisettings::Values::default();
         read_ui_values(&std::fs::read_to_string(path).unwrap(), &mut loaded);
         loaded.for_each_ui_setting_mut(|setting| {
-            assert_eq!(setting.to_string_global(), expected[&ui_setting_location(setting)], "{}", setting.label());
+            assert_eq!(
+                setting.to_string_global(),
+                expected[&ui_setting_location(setting)],
+                "{}",
+                setting.label()
+            );
         });
         assert_eq!(loaded.theme.get_value(), "Dark");
         assert_eq!(loaded.screenshot_path.get_value(), "/tmp/screenshots, test");
@@ -2069,35 +2257,64 @@ mod tests {
         let document = save_ui_values("", &mut source);
         read_ui_values(&document, &mut source);
         assert!(!*source.font_scale_auto.get_value());
-        read_ui_values("[UI]\nfont_scale=150\nfont_scale\\default=false\n", &mut source);
-        assert!(!*source.font_scale_auto.get_value(), "preserve legacy manual customization");
-        read_ui_values("[UI]\nfont_scale=100\nfont_scale\\default=true\n", &mut source);
+        read_ui_values(
+            "[UI]\nfont_scale=150\nfont_scale\\default=false\n",
+            &mut source,
+        );
+        assert!(
+            !*source.font_scale_auto.get_value(),
+            "preserve legacy manual customization"
+        );
+        read_ui_values(
+            "[UI]\nfont_scale=100\nfont_scale\\default=true\n",
+            &mut source,
+        );
         assert!(*source.font_scale_auto.get_value());
     }
 
     #[test]
     fn empty_game_directory_array_uses_installed_roots_and_legacy_path() {
         let defaults = game_dirs_with_defaults("");
-        assert_eq!(defaults.iter().map(|dir| dir.path.as_str()).collect::<Vec<_>>(), ["SDMC", "UserNAND", "SysNAND"]);
+        assert_eq!(
+            defaults
+                .iter()
+                .map(|dir| dir.path.as_str())
+                .collect::<Vec<_>>(),
+            ["SDMC", "UserNAND", "SysNAND"]
+        );
         assert!(defaults.iter().all(|dir| dir.expanded && !dir.deep_scan));
         let legacy = game_dirs_with_defaults("[UI]\nPaths\\gameListRootDir=/homebrew\nPaths\\gameListRootDir\\default=false\nPaths\\gameListDeepScan=true\nPaths\\gameListDeepScan\\default=false\n");
         assert_eq!(legacy.len(), 4);
         assert_eq!(legacy[3].path, "/homebrew");
         assert!(legacy[3].deep_scan);
-        let existing = game_dirs_with_defaults("[UI]\nPaths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=/homebrew\n");
-        assert_eq!(existing.len(), 1, "do not replace an explicitly configured list");
-        assert!(parse_game_dirs("").is_empty(), "source import does not synthesize directories");
+        let existing = game_dirs_with_defaults(
+            "[UI]\nPaths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=/homebrew\n",
+        );
+        assert_eq!(
+            existing.len(),
+            1,
+            "do not replace an explicitly configured list"
+        );
+        assert!(
+            parse_game_dirs("").is_empty(),
+            "source import does not synthesize directories"
+        );
     }
 
     #[test]
     fn frontend_reader_honors_defaults_legacy_bools_and_upstream_plain_paths() {
         let mut values = uisettings::Values::default();
-        read_ui_values(concat!("[UI]\n",
-            "pauseWhenInBackground\\default=false\npauseWhenInBackground=1\n",
-            "hideInactiveMouse\\default=true\nhideInactiveMouse=false\n",
-            "UIGameList\\game_icon_size\\default=false\nUIGameList\\game_icon_size=broken\n",
-            "Screenshots\\screenshot_path=\"C:/Screenshots, test\"\n",
-            "theme\\default=false\ntheme=colorful_dark\n"), &mut values);
+        read_ui_values(
+            concat!(
+                "[UI]\n",
+                "pauseWhenInBackground\\default=false\npauseWhenInBackground=1\n",
+                "hideInactiveMouse\\default=true\nhideInactiveMouse=false\n",
+                "UIGameList\\game_icon_size\\default=false\nUIGameList\\game_icon_size=broken\n",
+                "Screenshots\\screenshot_path=\"C:/Screenshots, test\"\n",
+                "theme\\default=false\ntheme=colorful_dark\n"
+            ),
+            &mut values,
+        );
         assert!(*values.pause_when_in_background.get_value());
         assert!(*values.hide_mouse.get_value());
         assert_eq!(*values.game_icon_size.get_value(), 64);
@@ -2515,8 +2732,14 @@ mod tests {
             "Paths\\external_content_dirs\\1\\path=\"//server/share/Updates, packs\"\n",
             "Paths\\external_content_dirs\\2\\path=\"\"\n",
         );
-        assert_eq!(parse_game_dirs(contents)[0].path, "D:/Games/Homebrew, packs");
-        assert_eq!(parse_external_content_dirs(contents), vec!["//server/share/Updates, packs"]);
+        assert_eq!(
+            parse_game_dirs(contents)[0].path,
+            "D:/Games/Homebrew, packs"
+        );
+        assert_eq!(
+            parse_external_content_dirs(contents),
+            vec!["//server/share/Updates, packs"]
+        );
     }
 
     #[test]
@@ -2531,13 +2754,24 @@ mod tests {
         );
         assert!(parse_game_dirs(document).is_empty());
         assert!(parse_external_content_dirs(document).is_empty());
-        let dirs = vec![GameDir { path: "D:/Games/Homebrew".to_owned(), deep_scan: true, expanded: true }];
-        for original in [document, "[UI]\ntheme=default\n[WebService]\nenable_telemetry=false\n"] {
+        let dirs = vec![GameDir {
+            path: "D:/Games/Homebrew".to_owned(),
+            deep_scan: true,
+            expanded: true,
+        }];
+        for original in [
+            document,
+            "[UI]\ntheme=default\n[WebService]\nenable_telemetry=false\n",
+        ] {
             let written = replace_game_dirs(original, &dirs);
             let written = replace_external_content_dirs(&written, &["D:/Updates".to_owned()]);
             assert_eq!(parse_game_dirs(&written)[0].path, dirs[0].path);
             assert_eq!(parse_external_content_dirs(&written), vec!["D:/Updates"]);
-            assert!(!written.split("[WebService]").nth(1).unwrap().contains("Paths\\"));
+            assert!(!written
+                .split("[WebService]")
+                .nth(1)
+                .unwrap()
+                .contains("Paths\\"));
         }
     }
 
@@ -2556,8 +2790,11 @@ mod tests {
         assert_eq!(parse_game_dirs(&repaired)[0].path, "D:/Homebrew, games");
         assert_eq!(parse_external_content_dirs(&repaired), vec!["D:/Updates"]);
         assert!(repaired.contains("[WebService]\nenable_telemetry=false"));
-        let backups: Vec<_> = std::fs::read_dir(root.path()).unwrap()
-            .map(|entry| entry.unwrap().path()).filter(|file| file != &path).collect();
+        let backups: Vec<_> = std::fs::read_dir(root.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|file| file != &path)
+            .collect();
         assert_eq!(backups.len(), 1);
         assert_eq!(std::fs::read_to_string(&backups[0]).unwrap(), original);
         assert!(!repair_directory_array_sections(&path).unwrap());
@@ -2567,13 +2804,16 @@ mod tests {
 
     #[test]
     fn directory_section_repair_preserves_canonical_ui_and_handles_missing_ui() {
-        let document = concat!("[UI]\nPaths\\gamedirs\\size=0\n[WebService]\n",
-            "Paths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=D:/Stale\n");
+        let document = concat!(
+            "[UI]\nPaths\\gamedirs\\size=0\n[WebService]\n",
+            "Paths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=D:/Stale\n"
+        );
         let repaired = repaired_directory_array_sections(document).unwrap();
         assert!(parse_game_dirs(&repaired).is_empty());
         assert!(!repaired.contains("D:/Stale"));
         assert!(repaired_directory_array_sections(&repaired).is_none());
-        let document = "[WebService]\nPaths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=D:/Homebrew\n";
+        let document =
+            "[WebService]\nPaths\\gamedirs\\size=1\nPaths\\gamedirs\\1\\path=D:/Homebrew\n";
         let repaired = repaired_directory_array_sections(document).unwrap();
         assert_eq!(parse_game_dirs(&repaired)[0].path, "D:/Homebrew");
     }
@@ -2581,13 +2821,23 @@ mod tests {
     #[test]
     fn directory_arrays_write_paths_with_upstream_quoting_and_slashes() {
         let path = r"D:\Games\Homebrew, packs";
-        let dirs = vec![GameDir { path: path.to_owned(), deep_scan: true, expanded: true }];
+        let dirs = vec![GameDir {
+            path: path.to_owned(),
+            deep_scan: true,
+            expanded: true,
+        }];
         let document = replace_game_dirs("[UI]\n", &dirs);
         assert!(document.contains("path=\"D:/Games/Homebrew, packs\""));
-        assert_eq!(parse_game_dirs(&document)[0].path, "D:/Games/Homebrew, packs");
+        assert_eq!(
+            parse_game_dirs(&document)[0].path,
+            "D:/Games/Homebrew, packs"
+        );
         let document = replace_external_content_dirs("[UI]\n", &[path.to_owned()]);
         assert!(document.contains("path=\"D:/Games/Homebrew, packs\""));
-        assert_eq!(parse_external_content_dirs(&document), vec!["D:/Games/Homebrew, packs"]);
+        assert_eq!(
+            parse_external_content_dirs(&document),
+            vec!["D:/Games/Homebrew, packs"]
+        );
     }
 
     #[test]
@@ -2703,15 +2953,23 @@ mod tests {
     #[test]
     fn hosting_settings_and_ban_arrays_round_trip_and_shrink() {
         let mut source = uisettings::Values::default();
-        source.multiplayer_room_nickname.set_value("SyntheticHost".into());
-        source.multiplayer_room_name.set_value("Synthetic room".into());
+        source
+            .multiplayer_room_nickname
+            .set_value("SyntheticHost".into());
+        source
+            .multiplayer_room_name
+            .set_value("Synthetic room".into());
         source.multiplayer_max_player.set_value(4);
         source.multiplayer_room_port.set_value(25000);
         source.multiplayer_host_type.set_value(1);
         source.multiplayer_game_id.set_value(u64::MAX);
-        source.multiplayer_room_description.set_value("First line\n[Core]\nuse_multi_core=false\nbackslash \\n and \"quotes\" é".into());
-        source.multiplayer_ban_list = (vec!["UserOne".into(), "UserTwo".into()],
-            vec!["192.0.2.1".into(), "192.0.2.2".into()]);
+        source.multiplayer_room_description.set_value(
+            "First line\n[Core]\nuse_multi_core=false\nbackslash \\n and \"quotes\" é".into(),
+        );
+        source.multiplayer_ban_list = (
+            vec!["UserOne".into(), "UserTwo".into()],
+            vec!["192.0.2.1".into(), "192.0.2.2".into()],
+        );
         let untouched = "[Renderer]\nbackend=1\n[UI]\nUnrelated=value\n";
         let document = write_multiplayer_values(untouched, &mut source);
         assert!(document.contains("backend=1"));
@@ -2732,7 +2990,12 @@ mod tests {
             expected.insert(setting.label().to_owned(), setting.to_string_global());
         });
         restored.for_each_multiplayer_setting_mut(|setting| {
-            assert_eq!(setting.to_string_global(), expected[setting.label()], "{}", setting.label());
+            assert_eq!(
+                setting.to_string_global(),
+                expected[setting.label()],
+                "{}",
+                setting.label()
+            );
         });
         assert_eq!(restored.multiplayer_ban_list, source.multiplayer_ban_list);
         source.multiplayer_ban_list = (Vec::new(), vec!["192.0.2.3".into()]);
@@ -2746,10 +3009,13 @@ mod tests {
         assert_eq!(*restored.multiplayer_max_player.get_value(), 8);
         assert_eq!(*restored.multiplayer_room_port.get_value(), 24872);
         assert!(restored.multiplayer_ban_list.1.is_empty());
-        read_multiplayer_values(concat!("[UI]\n",
+        read_multiplayer_values(
+            concat!("[UI]\n",
             "Multiplayer\\filter_games_owned\\default=false\nMultiplayer\\filter_games_owned=1\n",
             "Multiplayer\\max_player\\default=false\nMultiplayer\\max_player=255\n",
-            "Multiplayer\\host_type\\default=false\nMultiplayer\\host_type=255\n"), &mut restored);
+            "Multiplayer\\host_type\\default=false\nMultiplayer\\host_type=255\n"),
+            &mut restored,
+        );
         assert!(*restored.multiplayer_filter_games_owned.get_value());
         assert_eq!(*restored.multiplayer_max_player.get_value(), 8);
         assert_eq!(*restored.multiplayer_host_type.get_value(), 1);

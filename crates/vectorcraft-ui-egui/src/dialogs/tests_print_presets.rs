@@ -29,19 +29,33 @@ fn kind(app: &VectorcraftApp) -> Option<&str> {
 }
 
 fn field(app: &VectorcraftApp, k: &str) -> Value {
-    app.ui.dialog.as_ref().and_then(|d| d.fields.get(k).cloned()).unwrap_or_default()
+    app.ui
+        .dialog
+        .as_ref()
+        .and_then(|d| d.fields.get(k).cloned())
+        .unwrap_or_default()
 }
 
 fn set(app: &mut VectorcraftApp, k: &str, v: Value) {
-    app.ui.dialog.as_mut().expect("a dialog is open").fields.insert(k.into(), v);
+    app.ui
+        .dialog
+        .as_mut()
+        .expect("a dialog is open")
+        .fields
+        .insert(k.into(), v);
 }
 
 #[test]
 fn the_print_dialog_saves_and_loads_presets() {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
-    app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+    app.run("file.new", json!({"width": 200, "height": 100}))
+        .unwrap();
     app.run("file.print", json!({})).unwrap();
-    assert_eq!(field(&app, "preset"), DEFAULT_PRESET, "never set up: [Default]");
+    assert_eq!(
+        field(&app, "preset"),
+        DEFAULT_PRESET,
+        "never set up: [Default]"
+    );
     // Save Preset… asks for a name; OK (and Enter) then saves the preset, not printing.
     set(&mut app, "copies", json!(4));
     set(&mut app, "media", json!("a4"));
@@ -57,12 +71,26 @@ fn the_print_dialog_saves_and_loads_presets() {
     // Setting `preset` (the list, or an agent) loads that preset's settings.
     set(&mut app, "preset", json!(DEFAULT_PRESET));
     frame(&mut app);
-    assert_eq!((field(&app, "copies"), field(&app, "media")), (json!(1), json!("letter")));
+    assert_eq!(
+        (field(&app, "copies"), field(&app, "media")),
+        (json!(1), json!("letter"))
+    );
     set(&mut app, "preset", json!("proofs"));
     set(&mut app, "discard", json!(true));
     super::confirm(&mut app).unwrap();
-    let setup = app.session.active().unwrap().doc.print_setup.clone().unwrap();
-    assert_eq!((setup["copies"].clone(), setup["media"].clone()), (json!(4), json!("a4")), "Done kept the preset's settings");
+    let setup = app
+        .session
+        .active()
+        .unwrap()
+        .doc
+        .print_setup
+        .clone()
+        .unwrap();
+    assert_eq!(
+        (setup["copies"].clone(), setup["media"].clone()),
+        (json!(4), json!("a4")),
+        "Done kept the preset's settings"
+    );
     // The next Print knows the preset its settings are.
     app.run("file.print", json!({})).unwrap();
     assert_eq!(field(&app, "preset"), "Proofs");
@@ -71,7 +99,10 @@ fn the_print_dialog_saves_and_loads_presets() {
     set(&mut app, "preset", json!("Nope"));
     set(&mut app, "discard", json!(true));
     assert!(super::confirm(&mut app).is_err());
-    assert!(field(&app, "discard").is_null(), "Done's press doesn't stick to the dialog");
+    assert!(
+        field(&app, "discard").is_null(),
+        "Done's press doesn't stick to the dialog"
+    );
     set(&mut app, "__savePresetAs", json!("[Default]"));
     assert!(super::confirm(&mut app).is_err());
     assert_eq!(app.session.prefs.print_presets.len(), 1);
@@ -81,14 +112,28 @@ fn the_print_dialog_saves_and_loads_presets() {
 fn the_manager_adds_edits_and_deletes_presets_through_the_editor() {
     // Edit → Print Presets works without a document too.
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
-    assert!(crate::menus::menu_entries(&app).iter().any(|e| e.command.as_deref() == Some("ui.printPresetsDialog") && e.enabled));
+    assert!(
+        crate::menus::menu_entries(&app)
+            .iter()
+            .any(|e| e.command.as_deref() == Some("ui.printPresetsDialog") && e.enabled)
+    );
     app.run("ui.printPresetsDialog", json!({})).unwrap();
     frame(&mut app);
-    assert_eq!((kind(&app), field(&app, "selected")), (Some(print_presets::KIND), json!(DEFAULT_PRESET)));
+    assert_eq!(
+        (kind(&app), field(&app, "selected")),
+        (Some(print_presets::KIND), json!(DEFAULT_PRESET))
+    );
     // [Default] can't be edited: New… starts a copy.
-    assert!(app.run("ui.printPresetDialog", json!({"name": DEFAULT_PRESET})).is_err());
-    app.run("ui.printPresetDialog", json!({"preset": DEFAULT_PRESET})).unwrap();
-    assert_eq!((kind(&app), field(&app, "name")), (Some(PRESET_KIND), json!("Print Preset 1")));
+    assert!(
+        app.run("ui.printPresetDialog", json!({"name": DEFAULT_PRESET}))
+            .is_err()
+    );
+    app.run("ui.printPresetDialog", json!({"preset": DEFAULT_PRESET}))
+        .unwrap();
+    assert_eq!(
+        (kind(&app), field(&app, "name")),
+        (Some(PRESET_KIND), json!("Print Preset 1"))
+    );
     for s in SECTIONS {
         set(&mut app, "__section", json!(s));
         frame(&mut app);
@@ -97,20 +142,33 @@ fn the_manager_adds_edits_and_deletes_presets_through_the_editor() {
     set(&mut app, "name", json!("Tiled"));
     set(&mut app, "scaling", json!("tileFull"));
     super::confirm(&mut app).unwrap();
-    assert_eq!((kind(&app), field(&app, "selected")), (Some(print_presets::KIND), json!("Tiled")), "back to the manager");
+    assert_eq!(
+        (kind(&app), field(&app, "selected")),
+        (Some(print_presets::KIND), json!("Tiled")),
+        "back to the manager"
+    );
     frame(&mut app);
     // A new preset can't take a name in use; Edit… renames.
-    app.run("ui.printPresetDialog", json!({"preset": "Tiled"})).unwrap();
-    assert_eq!(field(&app, "scaling"), "tileFull", "New… starts from the selected preset");
+    app.run("ui.printPresetDialog", json!({"preset": "Tiled"}))
+        .unwrap();
+    assert_eq!(
+        field(&app, "scaling"),
+        "tileFull",
+        "New… starts from the selected preset"
+    );
     set(&mut app, "name", json!("tiled"));
     assert!(super::confirm(&mut app).is_err());
     assert_eq!(kind(&app), Some(PRESET_KIND), "stays open on a taken name");
-    app.run("ui.printPresetDialog", json!({"name": "Tiled"})).unwrap();
+    app.run("ui.printPresetDialog", json!({"name": "Tiled"}))
+        .unwrap();
     set(&mut app, "name", json!("Posters"));
     set(&mut app, "overlap", json!(9));
     super::confirm(&mut app).unwrap();
     let p = &app.session.prefs.print_presets;
-    assert_eq!((p.len(), p[0].name.as_str(), p[0].settings.overlap), (1, "Posters", 9.0));
+    assert_eq!(
+        (p.len(), p[0].name.as_str(), p[0].settings.overlap),
+        (1, "Posters", 9.0)
+    );
     // Delete selects the one above ([Default]).
     press(&mut app, Action::Delete, "Posters");
     assert!(app.session.prefs.print_presets.is_empty());
@@ -123,21 +181,37 @@ fn the_manager_adds_edits_and_deletes_presets_through_the_editor() {
 fn presets_files_import_and_export() {
     let dir = std::env::temp_dir().join(format!("vc-printpresets-ui-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
-    let file = dir.join("mine.vcprintpresets").to_string_lossy().to_string();
+    let file = dir
+        .join("mine.vcprintpresets")
+        .to_string_lossy()
+        .to_string();
     let picked = file.clone();
     let services = crate::Services {
         pick_save: Some(Box::new(move |_: &crate::FilePick| Some(picked.clone()))),
-        write: Some(Box::new(|p: &str, b: &[u8]| std::fs::write(p, b).map_err(|e| e.to_string()))),
+        write: Some(Box::new(|p: &str, b: &[u8]| {
+            std::fs::write(p, b).map_err(|e| e.to_string())
+        })),
         ..Default::default()
     };
     let mut app = VectorcraftApp::new(Session::new(), services);
-    app.run("print.presets.save", json!({"name": "Mine", "settings": {"copies": 2}})).unwrap();
-    app.run("ui.printPresetsDialog", json!({"selected": "Mine"})).unwrap();
+    app.run(
+        "print.presets.save",
+        json!({"name": "Mine", "settings": {"copies": 2}}),
+    )
+    .unwrap();
+    app.run("ui.printPresetsDialog", json!({"selected": "Mine"}))
+        .unwrap();
     press(&mut app, Action::Export, "Mine");
     // Opening the file imports it (also how the web's picked file arrives).
     let bytes = std::fs::read(&file).unwrap();
     crate::io::open_bytes(&mut app, &file, &bytes, Some(file.clone())).unwrap();
-    let names: Vec<&str> = app.session.prefs.print_presets.iter().map(|p| p.name.as_str()).collect();
+    let names: Vec<&str> = app
+        .session
+        .prefs
+        .print_presets
+        .iter()
+        .map(|p| p.name.as_str())
+        .collect();
     assert_eq!(names, ["Mine", "Mine 2"]);
     assert_eq!(app.session.prefs.print_presets[1].settings.copies, 2);
     assert!(app.ui.status.contains("print presets"), "{}", app.ui.status);

@@ -8,9 +8,9 @@ use core::fmt::Debug;
 use std::collections::HashSet;
 
 use crate::{
+    Pickable,
     backend::{self, HitData},
     pointer::{PointerAction, PointerId, PointerInput, PointerInteraction, PointerPressState},
-    Pickable,
 };
 
 use bevy_derive::{Deref, DerefMut};
@@ -858,9 +858,10 @@ mod tests {
 
         assert!(app.world_mut().run_system_cached(generate_hovermap).is_ok());
 
-        assert!(!app
-            .world()
-            .resource::<PointerCaptureMap>()
-            .is_captured(&PointerId::Mouse));
+        assert!(
+            !app.world()
+                .resource::<PointerCaptureMap>()
+                .is_captured(&PointerId::Mouse)
+        );
     }
 }

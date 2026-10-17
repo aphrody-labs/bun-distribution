@@ -12,4 +12,9 @@ pub struct UserReferralCodeToken(pub String);
 
 impl_mysql_token_from_row!(UserReferralCodeToken);
 impl_string_token!(UserReferralCodeToken);
-impl_crockford_generator!(UserReferralCodeToken, 18usize, TokenPrefix::UserReferralCode, CrockfordLower);
+impl_crockford_generator!(
+    UserReferralCodeToken,
+    18usize,
+    TokenPrefix::UserReferralCode,
+    CrockfordLower
+);

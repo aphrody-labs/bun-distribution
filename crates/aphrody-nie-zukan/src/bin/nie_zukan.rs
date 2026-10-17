@@ -32,7 +32,10 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "aphrody-nie-zukan", about = "Ingesteur Zukan Inagle (zukan.inazuma.jp)")]
+#[command(
+    name = "aphrody-nie-zukan",
+    about = "Ingesteur Zukan Inagle (zukan.inazuma.jp)"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -82,12 +85,15 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     // Défaut relatif au répertoire courant : `var/` est le magasin d'artefacts
     // régénérables du dépôt, et il vit à côté du jeu sur toutes les plateformes.
-    let root = cli.root.clone().unwrap_or_else(|| PathBuf::from("var/zukan"));
+    let root = cli
+        .root
+        .clone()
+        .unwrap_or_else(|| PathBuf::from("var/zukan"));
 
     match cli.cmd {
         Cmd::ForgeTest => {
             run_forge_test()?;
-        },
+        }
         Cmd::Pull { lang, sample, all } => {
             let langs = parse_langs(lang);
             let limit = if all { 0 } else { sample };
@@ -106,13 +112,16 @@ fn main() -> Result<()> {
                 stats.items_fetched,
                 stats.errors,
             );
-        },
+        }
         Cmd::Cross { mirror, lang } => {
             let lang_enum = parse_lang(&lang);
             let ndjson_path = root.join(lang_enum.code()).join("chara_param.ndjson");
             let charas = load_zukan_charas_from_ndjson(&ndjson_path)?;
             if charas.is_empty() {
-                eprintln!("WARN: aucun chara dans {} — lancer pull d'abord", ndjson_path.display());
+                eprintln!(
+                    "WARN: aucun chara dans {} — lancer pull d'abord",
+                    ndjson_path.display()
+                );
                 return Ok(());
             }
             let result = cross_with_inagle(&charas, &mirror)?;
@@ -139,7 +148,7 @@ fn main() -> Result<()> {
             let out = root.join("cross_result.json");
             std::fs::write(&out, serde_json::to_string_pretty(&result)?)?;
             println!("cross_result={}", out.display());
-        },
+        }
         Cmd::Status => {
             for lang in Lang::all() {
                 let param_path = root.join(lang.code()).join("chara_param.ndjson");
@@ -156,7 +165,7 @@ fn main() -> Result<()> {
                     item_lines,
                 );
             }
-        },
+        }
     }
     Ok(())
 }
@@ -166,7 +175,10 @@ fn run_forge_test() -> Result<()> {
     let json = r#"{"character_id":["c01000010"]}"#;
     let q = forge::encode_q(json)?;
     let expected = "hN2cl56NnpyLmo2glpvdxaTdnM_Oz8_Pz87P3aKC";
-    assert_eq!(q, expected, "ancre Endou échouée: got {q} expected {expected}");
+    assert_eq!(
+        q, expected,
+        "ancre Endou échouée: got {q} expected {expected}"
+    );
     let decoded = forge::decode_q(&q)?;
     assert_eq!(decoded, json, "round-trip échoué");
 
@@ -175,7 +187,10 @@ fn run_forge_test() -> Result<()> {
 
     // Tests supplémentaires
     let test_cases = [
-        (r#"{"filter_chara_id_str":["c01000010"]}"#, "filter_chara_id_str"),
+        (
+            r#"{"filter_chara_id_str":["c01000010"]}"#,
+            "filter_chara_id_str",
+        ),
         (r#"{"category_filter":[30]}"#, "category_filter_30"),
         (r#"{"category_filter":[1]}"#, "category_filter_1"),
     ];
@@ -189,7 +204,10 @@ fn run_forge_test() -> Result<()> {
     // Vérifier que le q URL-encodé live fonctionne
     let q_live = "hN2ZlpOLmo2gnJeejZ6glpugjIuN3cWk3ZzPzs_Pz8_Oz92igg%3D%3D";
     let decoded = forge::decode_q(q_live)?;
-    assert_eq!(decoded, r#"{"filter_chara_id_str":["c01000010"]}"#, "décodage q live échoué");
+    assert_eq!(
+        decoded, r#"{"filter_chara_id_str":["c01000010"]}"#,
+        "décodage q live échoué"
+    );
     println!("decode_live_q=ok");
 
     Ok(())
@@ -210,7 +228,7 @@ fn parse_lang(s: &str) -> Lang {
         other => {
             eprintln!("WARN: langue inconnue '{other}', utilisation de 'ja'");
             Lang::Ja
-        },
+        }
     }
 }
 

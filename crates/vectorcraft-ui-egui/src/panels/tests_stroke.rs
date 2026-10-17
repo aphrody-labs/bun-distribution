@@ -18,7 +18,11 @@ fn turning_dashes_on_fits_them_to_corners_and_turning_back_on_restores_the_last_
     let d = toggle_dashes(&ctx, &mut app).expect("dashes on");
     assert_eq!((d.pattern, d.align_corners), (vec![12.0, 12.0], true));
     // Exact 4/2 dashes turned off and on again come back as they were.
-    run(&mut app, "stroke.set", json!({"dash": [4, 2], "alignDashes": false}));
+    run(
+        &mut app,
+        "stroke.set",
+        json!({"dash": [4, 2], "alignDashes": false}),
+    );
     assert!(toggle_dashes(&ctx, &mut app).is_none());
     let d = toggle_dashes(&ctx, &mut app).expect("dashes on");
     assert_eq!((d.pattern, d.align_corners), (vec![4.0, 2.0], false));

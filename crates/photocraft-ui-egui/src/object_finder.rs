@@ -71,23 +71,45 @@ fn active(app: &PhotocraftApp, pressed: bool) -> bool {
 
 /// Advances the hover preview with the pointer at `at` (document px; `None` = off the canvas)
 /// at time `now` (seconds).
-pub(crate) fn update(app: &mut PhotocraftApp, at: Option<[f64; 2]>, pressed: bool, now: f64) -> Update {
+pub(crate) fn update(
+    app: &mut PhotocraftApp,
+    at: Option<[f64; 2]>,
+    pressed: bool,
+    now: f64,
+) -> Update {
     let at = at.filter(|p| p[0].is_finite() && p[1].is_finite());
     let (Some(at), true) = (at, active(app, pressed)) else {
         app.object_finder = None;
         return Update::default();
     };
-    let Some(st) = app.session.active() else { return Update::default() };
+    let Some(st) = app.session.active() else {
+        return Update::default();
+    };
     let all_layers = app.ui.tool_options.sample_all_layers;
     let target = sampled_target(&st.doc, st.active_layer, all_layers);
     let (doc, revision, layer) = (st.doc.id, st.revision, st.active_layer);
     let px = [at[0].floor() as i32, at[1].floor() as i32];
-    let fresh = app.object_finder.as_ref().is_some_and(|f| f.doc == doc && f.revision == revision && f.target == target && f.all_layers == all_layers);
+    let fresh = app.object_finder.as_ref().is_some_and(|f| {
+        f.doc == doc && f.revision == revision && f.target == target && f.all_layers == all_layers
+    });
     if !fresh {
-        app.object_finder = Some(Finder { doc, revision, target, all_layers, at: px, since: now, job: None, misses: Vec::new(), shown: None, texture: None });
+        app.object_finder = Some(Finder {
+            doc,
+            revision,
+            target,
+            all_layers,
+            at: px,
+            since: now,
+            job: None,
+            misses: Vec::new(),
+            shown: None,
+            texture: None,
+        });
     }
     let doc_arc = Arc::clone(&st.doc);
-    let Some(f) = app.object_finder.as_mut() else { return Update::default() };
+    let Some(f) = app.object_finder.as_mut() else {
+        return Update::default();
+    };
     if f.at != px {
         f.at = px;
         f.since = now;
@@ -98,7 +120,9 @@ pub(crate) fn update(app: &mut PhotocraftApp, at: Option<[f64; 2]>, pressed: boo
             Ok(found) => {
                 if let Some(r) = found {
                     if photocraft_engine::layer_multi_cmds::same_pixels(&job.doc, &doc_arc) {
-                        app.session.object_finder.insert(&doc_arc, target, Arc::new(r));
+                        app.session
+                            .object_finder
+                            .insert(&doc_arc, target, Arc::new(r));
                     }
                 } else {
                     f.misses.push(job.at);
@@ -114,27 +138,55 @@ pub(crate) fn update(app: &mut PhotocraftApp, at: Option<[f64; 2]>, pressed: boo
     }
     let inside = |r: &Region| r.at(px[0], px[1]) >= 0.5;
     if !f.shown.as_deref().is_some_and(inside) {
-        f.shown = app.session.object_finder.lookup(&doc_arc, target, at[0] as f32, at[1] as f32);
+        f.shown = app
+            .session
+            .object_finder
+            .lookup(&doc_arc, target, at[0] as f32, at[1] as f32);
     }
-    let missed = f.misses.iter().any(|m| (m[0] - px[0]).abs() <= 2 && (m[1] - px[1]).abs() <= 2);
-    if f.shown.is_none() && f.job.is_none() && !missed && now - f.since >= DEBOUNCE && doc_arc.bounds().contains(px[0], px[1]) {
+    let missed = f
+        .misses
+        .iter()
+        .any(|m| (m[0] - px[0]).abs() <= 2 && (m[1] - px[1]).abs() <= 2);
+    if f.shown.is_none()
+        && f.job.is_none()
+        && !missed
+        && now - f.since >= DEBOUNCE
+        && doc_arc.bounds().contains(px[0], px[1])
+    {
         f.job = Some(spawn(Arc::clone(&doc_arc), layer, all_layers, px, at));
     }
     let busy = f.job.is_some() || (f.shown.is_none() && !missed && now - f.since < DEBOUNCE);
-    Update { shown: f.shown.clone(), busy }
+    Update {
+        shown: f.shown.clone(),
+        busy,
+    }
 }
 
-fn spawn(doc: Arc<Document>, layer: Option<LayerId>, all_layers: bool, px: [i32; 2], at: [f64; 2]) -> Job {
+fn spawn(
+    doc: Arc<Document>,
+    layer: Option<LayerId>,
+    all_layers: bool,
+    px: [i32; 2],
+    at: [f64; 2],
+) -> Job {
     let (tx, rx) = std::sync::mpsc::channel();
     let work = {
         let doc = Arc::clone(&doc);
         move || {
-            let _ = tx.send(find_object(&doc, layer, all_layers, at[0] as f32, at[1] as f32));
+            let _ = tx.send(find_object(
+                &doc,
+                layer,
+                all_layers,
+                at[0] as f32,
+                at[1] as f32,
+            ));
         }
     };
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let spawned = std::thread::Builder::new().name("object-finder".into()).spawn(work);
+        let spawned = std::thread::Builder::new()
+            .name("object-finder".into())
+            .spawn(work);
         if spawned.is_err() {
             // No thread: the receiver reports Disconnected and the next rest retries.
         }
@@ -151,17 +203,34 @@ pub(crate) fn clear(app: &mut PhotocraftApp) {
 
 /// The overlay colour: the theme accent, translucent (Photoshop tints the object it finds).
 fn overlay(accent: Color32, cov: f32, edge: bool) -> Color32 {
-    let a = if edge { 0.95 } else { 0.42 * cov.clamp(0.0, 1.0) };
-    Color32::from_rgba_unmultiplied(accent.r(), accent.g(), accent.b(), (a * 255.0).round() as u8)
+    let a = if edge {
+        0.95
+    } else {
+        0.42 * cov.clamp(0.0, 1.0)
+    };
+    Color32::from_rgba_unmultiplied(
+        accent.r(),
+        accent.g(),
+        accent.b(),
+        (a * 255.0).round() as u8,
+    )
 }
 
 /// The overlay image of `r`: translucent fill with an opaque one-texel outline, at most
 /// [`TEX_MAX`] texels on its longest side.
 pub(crate) fn overlay_image(r: &Region, accent: Color32) -> egui::ColorImage {
-    let (w, h) = (r.bbox.width().max(1) as usize, r.bbox.height().max(1) as usize);
+    let (w, h) = (
+        r.bbox.width().max(1) as usize,
+        r.bbox.height().max(1) as usize,
+    );
     let step = w.max(h).div_ceil(TEX_MAX).max(1);
     let (tw, th) = (w.div_ceil(step), h.div_ceil(step));
-    let cov = |tx: usize, ty: usize| r.at(r.bbox.x0 + (tx * step) as i32, r.bbox.y0 + (ty * step) as i32);
+    let cov = |tx: usize, ty: usize| {
+        r.at(
+            r.bbox.x0 + (tx * step) as i32,
+            r.bbox.y0 + (ty * step) as i32,
+        )
+    };
     let mut px = Vec::with_capacity(tw * th);
     for ty in 0..th {
         for tx in 0..tw {
@@ -176,14 +245,24 @@ pub(crate) fn overlay_image(r: &Region, accent: Color32) -> egui::ColorImage {
                     || cov(tx + 1, ty) < 0.5
                     || cov(tx, ty - 1) < 0.5
                     || cov(tx, ty + 1) < 0.5);
-            px.push(if c <= 0.0 { Color32::TRANSPARENT } else { overlay(accent, c, edge) });
+            px.push(if c <= 0.0 {
+                Color32::TRANSPARENT
+            } else {
+                overlay(accent, c, edge)
+            });
         }
     }
     egui::ColorImage::new([tw, th], px)
 }
 
 /// Updates the preview for this frame and draws the highlight on the active document's canvas.
-pub(crate) fn draw(app: &mut PhotocraftApp, painter: &egui::Painter, xf: &ViewXform, idx: usize, hover: Option<egui::Pos2>) {
+pub(crate) fn draw(
+    app: &mut PhotocraftApp,
+    painter: &egui::Painter,
+    xf: &ViewXform,
+    idx: usize,
+    hover: Option<egui::Pos2>,
+) {
     if app.session.active_index() != Some(idx) {
         return;
     }
@@ -194,19 +273,34 @@ pub(crate) fn draw(app: &mut PhotocraftApp, painter: &egui::Painter, xf: &ViewXf
         ctx.request_repaint_after(std::time::Duration::from_millis(40));
     }
     let Some(r) = up.shown else { return };
-    let Some(f) = app.object_finder.as_mut() else { return };
+    let Some(f) = app.object_finder.as_mut() else {
+        return;
+    };
     let key = Arc::as_ptr(&r) as usize;
     if f.texture.as_ref().is_none_or(|(k, _)| *k != key) {
         let accent = crate::theme::Tokens::get(&ctx).accent;
-        let tex = ctx.load_texture("object-finder", overlay_image(&r, accent), TextureOptions::LINEAR);
+        let tex = ctx.load_texture(
+            "object-finder",
+            overlay_image(&r, accent),
+            TextureOptions::LINEAR,
+        );
         f.texture = Some((key, tex));
     }
     let Some((_, tex)) = &f.texture else { return };
     let b = r.bbox;
     let mut mesh = egui::Mesh::with_texture(tex.id());
-    let corners = [(b.x0, b.y0, 0.0, 0.0), (b.x1, b.y0, 1.0, 0.0), (b.x1, b.y1, 1.0, 1.0), (b.x0, b.y1, 0.0, 1.0)];
+    let corners = [
+        (b.x0, b.y0, 0.0, 0.0),
+        (b.x1, b.y0, 1.0, 0.0),
+        (b.x1, b.y1, 1.0, 1.0),
+        (b.x0, b.y1, 0.0, 1.0),
+    ];
     for (x, y, u, v) in corners {
-        mesh.vertices.push(egui::epaint::Vertex { pos: xf.to_screen(x as f32, y as f32), uv: pos2(u, v), color: Color32::WHITE });
+        mesh.vertices.push(egui::epaint::Vertex {
+            pos: xf.to_screen(x as f32, y as f32),
+            uv: pos2(u, v),
+            color: Color32::WHITE,
+        });
     }
     mesh.indices.extend_from_slice(&[0, 1, 2, 0, 2, 3]);
     painter.add(egui::Shape::mesh(mesh));
@@ -220,17 +314,28 @@ mod tests {
 
     /// A 200 × 160 document: a red disc (centre 100, 80, radius 45) on blue.
     pub(crate) fn disc_app() -> PhotocraftApp {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.session.execute("file.new", json!({"width": 200, "height": 160})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.session
+            .execute("file.new", json!({"width": 200, "height": 160}))
+            .unwrap();
         app.session
             .edit("paint", |doc, a| {
                 let s = doc.layer_mut(a.unwrap()).unwrap().surface_mut().unwrap();
-                s.fill_rect(photocraft_geom::Rect::new(0, 0, 200, 160), &[0.2, 0.4, 0.8, 1.0]);
+                s.fill_rect(
+                    photocraft_geom::Rect::new(0, 0, 200, 160),
+                    &[0.2, 0.4, 0.8, 1.0],
+                );
                 for y in 0..160 {
                     for x in 0..200 {
                         let (dx, dy) = (x as f32 + 0.5 - 100.0, y as f32 + 0.5 - 80.0);
                         if dx * dx + dy * dy <= 45.0 * 45.0 {
-                            s.fill_rect(photocraft_geom::Rect::new(x, y, x + 1, y + 1), &[0.9, 0.2, 0.1, 1.0]);
+                            s.fill_rect(
+                                photocraft_geom::Rect::new(x, y, x + 1, y + 1),
+                                &[0.9, 0.2, 0.1, 1.0],
+                            );
                         }
                     }
                 }
@@ -278,16 +383,33 @@ mod tests {
         assert!(update(&mut app, None, false, 300.0).shown.is_none());
         assert!(app.object_finder.is_none());
         assert!(hover(&mut app, [100.0, 80.0]).shown.is_some());
-        assert!(update(&mut app, Some([100.0, 80.0]), true, 300.0).shown.is_none());
+        assert!(
+            update(&mut app, Some([100.0, 80.0]), true, 300.0)
+                .shown
+                .is_none()
+        );
         app.ui.tool = Tool::Lasso;
-        assert!(update(&mut app, Some([100.0, 80.0]), false, 300.0).shown.is_none());
+        assert!(
+            update(&mut app, Some([100.0, 80.0]), false, 300.0)
+                .shown
+                .is_none()
+        );
         app.ui.tool = Tool::ObjectSelection;
         app.ui.tool_options.object_finder = false;
-        assert!(update(&mut app, Some([100.0, 80.0]), false, 300.0).shown.is_none());
+        assert!(
+            update(&mut app, Some([100.0, 80.0]), false, 300.0)
+                .shown
+                .is_none()
+        );
         app.ui.tool_options.object_finder = true;
         assert!(hover(&mut app, [100.0, 80.0]).shown.is_some());
         // A pixel edit: the cached object is dropped and the preview starts over.
-        app.session.execute("paint.pencil", json!({"points": [[5, 5], [30, 5]], "size": 4, "color": "#000000"})).unwrap();
+        app.session
+            .execute(
+                "paint.pencil",
+                json!({"points": [[5, 5], [30, 5]], "size": 4, "color": "#000000"}),
+            )
+            .unwrap();
         let u = update(&mut app, Some([100.0, 80.0]), false, 400.0);
         assert!(u.shown.is_none() && u.busy);
     }
@@ -298,34 +420,69 @@ mod tests {
         let mut app = disc_app();
         assert!(hover(&mut app, [100.0, 80.0]).shown.is_some());
         let click = |app: &mut PhotocraftApp, m: egui::Modifiers| {
-            tool_event(app, ToolEvent::Down { x: 100.0, y: 80.0, pressure: 1.0 }, m);
+            tool_event(
+                app,
+                ToolEvent::Down {
+                    x: 100.0,
+                    y: 80.0,
+                    pressure: 1.0,
+                },
+                m,
+            );
             tool_event(app, ToolEvent::Up { x: 100.0, y: 80.0 }, m);
         };
-        let cov = |app: &PhotocraftApp, x: i32, y: i32| app.session.active().unwrap().doc.selection.as_ref().map_or(0.0, |s| s.sample_channel(x, y, 0));
+        let cov = |app: &PhotocraftApp, x: i32, y: i32| {
+            app.session
+                .active()
+                .unwrap()
+                .doc
+                .selection
+                .as_ref()
+                .map_or(0.0, |s| s.sample_channel(x, y, 0))
+        };
         click(&mut app, egui::Modifiers::NONE);
-        assert_eq!(app.session.journal.last().map(|(id, _)| id.as_str()), Some("select.object"));
+        assert_eq!(
+            app.session.journal.last().map(|(id, _)| id.as_str()),
+            Some("select.object")
+        );
         assert!(cov(&app, 100, 80) >= 0.5 && cov(&app, 60, 80) >= 0.5 && cov(&app, 5, 5) < 0.5);
         app.run("select.all", json!({})).unwrap();
         click(&mut app, egui::Modifiers::ALT);
         assert!(cov(&app, 100, 80) < 0.5 && cov(&app, 5, 5) >= 0.5);
         click(&mut app, egui::Modifiers::SHIFT);
         assert!(cov(&app, 100, 80) >= 0.5 && cov(&app, 5, 5) >= 0.5);
-        click(&mut app, egui::Modifiers { alt: true, shift: true, ..Default::default() });
+        click(
+            &mut app,
+            egui::Modifiers {
+                alt: true,
+                shift: true,
+                ..Default::default()
+            },
+        );
         assert!(cov(&app, 100, 80) >= 0.5 && cov(&app, 5, 5) < 0.5);
         // Off: a click keeps the Quick Selection fallback.
         app.ui.tool_options.object_finder = false;
         click(&mut app, egui::Modifiers::NONE);
-        assert_eq!(app.session.journal.last().map(|(id, _)| id.as_str()), Some("select.quick"));
+        assert_eq!(
+            app.session.journal.last().map(|(id, _)| id.as_str()),
+            Some("select.quick")
+        );
     }
 
     #[test]
     fn overlay_image_tints_the_object_and_outlines_it() {
-        let r = Region { bbox: photocraft_geom::Rect::new(0, 0, 4, 4), mask: vec![255; 16] };
+        let r = Region {
+            bbox: photocraft_geom::Rect::new(0, 0, 4, 4),
+            mask: vec![255; 16],
+        };
         let img = overlay_image(&r, Color32::from_rgb(0, 120, 255));
         assert_eq!(img.size, [4, 4]);
         assert!(img.pixels[0].a() > 200, "edge");
         assert!(img.pixels[5].a() > 0 && img.pixels[5].a() < 200, "fill");
-        let big = Region { bbox: photocraft_geom::Rect::new(0, 0, 3000, 10), mask: vec![255; 30_000] };
+        let big = Region {
+            bbox: photocraft_geom::Rect::new(0, 0, 3000, 10),
+            mask: vec![255; 30_000],
+        };
         assert!(overlay_image(&big, Color32::WHITE).size[0] <= TEX_MAX);
     }
 }

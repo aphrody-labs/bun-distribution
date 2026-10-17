@@ -31,7 +31,11 @@ fn perf_1080i_decode_fps() {
             "1080i25 MPEG-2 (4:2:0, 25 Mb/s, IBBP): {frames} frames in {:.1} ms = {:.1} fps ({})",
             best * 1e3,
             frames as f64 / best,
-            if threads { "slice rows on rayon" } else { "single thread" }
+            if threads {
+                "slice rows on rayon"
+            } else {
+                "single thread"
+            }
         );
     }
 }

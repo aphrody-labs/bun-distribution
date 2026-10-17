@@ -72,7 +72,10 @@ pub struct RagIndexer {
 impl RagIndexer {
     /// Create a new indexer writing to `store`.
     pub fn new(store: Arc<RagStore>) -> Self {
-        Self { store, embedder: None }
+        Self {
+            store,
+            embedder: None,
+        }
     }
 
     /// Attach an embedding model for automatic vector generation during indexing.
@@ -90,7 +93,9 @@ impl RagIndexer {
         let root = root_dir.as_ref();
         let start = Instant::now();
         if let Some(embedder) = &self.embedder {
-            self.store.ensure_embedding_model(embedder.model_id()).await?;
+            self.store
+                .ensure_embedding_model(embedder.model_id())
+                .await?;
         }
         let mut stats = IndexStats::default();
 
@@ -107,7 +112,7 @@ impl RagIndexer {
                 Err(err) => {
                     stats.errors.push(format!("Walk error: {err}"));
                     continue;
-                },
+                }
             };
 
             let path = entry.path();
@@ -135,13 +140,15 @@ impl RagIndexer {
                     stats.indexed_files += 1;
                     stats.total_chunks += chunks_count;
                     stats.total_vectors += vectors_count;
-                },
+                }
                 Ok(None) => {
                     stats.skipped_files += 1;
-                },
+                }
                 Err(err) => {
-                    stats.errors.push(format!("Failed to index {}: {err}", path.display()));
-                },
+                    stats
+                        .errors
+                        .push(format!("Failed to index {}: {err}", path.display()));
+                }
             }
         }
 
@@ -167,15 +174,18 @@ impl RagIndexer {
         let abs_path = file_path.as_ref();
         let base = base_dir.as_ref();
 
-        let rel_path_str =
-            abs_path.strip_prefix(base).unwrap_or(abs_path).to_string_lossy().replace('\\', "/");
+        let rel_path_str = abs_path
+            .strip_prefix(base)
+            .unwrap_or(abs_path)
+            .to_string_lossy()
+            .replace('\\', "/");
 
         let metadata = match tokio::fs::metadata(abs_path).await {
             Ok(m) => m,
             Err(err) => {
                 debug!("Cannot read metadata for {}: {err}", abs_path.display());
                 return Ok(None);
-            },
+            }
         };
 
         if metadata.len() > opts.max_file_size {
@@ -193,7 +203,7 @@ impl RagIndexer {
             Err(err) => {
                 warn!("Cannot read file {}: {err}", abs_path.display());
                 return Ok(None);
-            },
+            }
         };
 
         // Text verification: skip binary files
@@ -202,7 +212,7 @@ impl RagIndexer {
             Err(_) => {
                 debug!("Skipping non-UTF-8 binary file {}", abs_path.display());
                 return Ok(None);
-            },
+            }
         };
 
         let mtime_ms = metadata
@@ -212,7 +222,14 @@ impl RagIndexer {
             .map(|d| d.as_millis() as i64)
             .unwrap_or(0);
 
-        self.index_document(&rel_path_str, content_str, metadata.len() as i64, mtime_ms, opts).await
+        self.index_document(
+            &rel_path_str,
+            content_str,
+            metadata.len() as i64,
+            mtime_ms,
+            opts,
+        )
+        .await
     }
 
     /// Index one in-memory document under a logical key.
@@ -257,8 +274,14 @@ impl RagIndexer {
         let chunks: Vec<NewChunk> = chunks
             .iter()
             .map(|ch| NewChunk {
-                heading: ch.symbol.clone().filter(|_| matches!(ch.kind, ChunkKind::Heading)),
-                symbol: ch.symbol.clone().filter(|_| matches!(ch.kind, ChunkKind::Code)),
+                heading: ch
+                    .symbol
+                    .clone()
+                    .filter(|_| matches!(ch.kind, ChunkKind::Heading)),
+                symbol: ch
+                    .symbol
+                    .clone()
+                    .filter(|_| matches!(ch.kind, ChunkKind::Code)),
                 content: ch.text.clone(),
                 start_line: ch.start_line as usize,
                 end_line: ch.end_line as usize,
@@ -290,8 +313,9 @@ impl RagIndexer {
             let model_id = emb.model_id().to_string();
 
             // Process embeddings in batches
-            for (chunk_ids_batch, texts_batch) in
-                inserted_chunk_ids.chunks(opts.batch_size).zip(chunk_texts.chunks(opts.batch_size))
+            for (chunk_ids_batch, texts_batch) in inserted_chunk_ids
+                .chunks(opts.batch_size)
+                .zip(chunk_texts.chunks(opts.batch_size))
             {
                 if let Ok(embeddings) = emb.embed_batch(texts_batch).await {
                     let items: Vec<(i64, Vec<f32>)> =

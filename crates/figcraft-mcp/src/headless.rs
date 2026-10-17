@@ -28,7 +28,9 @@ fn b(p: &Value, k: &str) -> bool {
 
 /// Pen pressure `k` (0..1), if given.
 fn pressure(p: &Value, k: &str) -> Option<f32> {
-    f(p, k).filter(|v| v.is_finite()).map(|v| v.clamp(0.0, 1.0) as f32)
+    f(p, k)
+        .filter(|v| v.is_finite())
+        .map(|v| v.clamp(0.0, 1.0) as f32)
 }
 
 fn f(p: &Value, k: &str) -> Option<f64> {
@@ -36,7 +38,14 @@ fn f(p: &Value, k: &str) -> Option<f64> {
 }
 
 fn ids_of(p: &Value) -> Vec<NodeId> {
-    p.get("ids").and_then(Value::as_array).map(|a| a.iter().filter_map(figcraft_engine::params::id_of).collect()).unwrap_or_default()
+    p.get("ids")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(figcraft_engine::params::id_of)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 impl Headless {
@@ -49,7 +58,11 @@ impl Headless {
     /// its own cursor, `collab.cursor`).
     pub fn with_session(mut session: Session) -> Self {
         if !session.live.available() {
-            session.live.install(Box::new(figcraft_collab_net::NetLink::new(std::sync::Arc::new(|| {}))));
+            session
+                .live
+                .install(Box::new(figcraft_collab_net::NetLink::new(
+                    std::sync::Arc::new(|| {}),
+                )));
         }
         Self { session }
     }
@@ -65,7 +78,12 @@ impl Headless {
     }
 
     fn pointer(&mut self, p: &Value) -> Result<Value, String> {
-        let zoom = self.session.ds().map(|d| d.view.zoom).unwrap_or(1.0).max(1e-6);
+        let zoom = self
+            .session
+            .ds()
+            .map(|d| d.view.zoom)
+            .unwrap_or(1.0)
+            .max(1e-6);
         let (x, y) = match (f(p, "x"), f(p, "y")) {
             (Some(x), Some(y)) => (x, y),
             _ => match (f(p, "sx"), f(p, "sy"), self.session.ds()) {
@@ -87,7 +105,10 @@ impl Headless {
             pressure: pressure(p, "pressure"),
         };
         // A drag's pressure goes from `pressure` to `pressureTo`.
-        let (pr0, pr1) = (pressure(p, "pressure"), pressure(p, "pressureTo").or(pressure(p, "pressure")));
+        let (pr0, pr1) = (
+            pressure(p, "pressure"),
+            pressure(p, "pressureTo").or(pressure(p, "pressure")),
+        );
         let kind = p.get("kind").and_then(Value::as_str).unwrap_or("click");
         let mut events = Vec::new();
         match kind {
@@ -95,25 +116,50 @@ impl Headless {
             "move" => events.push(mk(PointerKind::Move, x, y)),
             "up" => events.push(mk(PointerKind::Up, x, y)),
             "hover" => events.push(mk(PointerKind::Hover, x, y)),
-            "double" | "doubleclick" | "dblclick" => events.push(mk(PointerKind::DoubleClick, x, y)),
+            "double" | "doubleclick" | "dblclick" => {
+                events.push(mk(PointerKind::DoubleClick, x, y))
+            }
             "click" => {
                 events.push(mk(PointerKind::Down, x, y));
                 events.push(mk(PointerKind::Up, x, y));
             }
             "drag" => {
-                let to = p.get("to").and_then(Value::as_array).ok_or("drag needs `to: [x, y]`")?;
-                let tx = to.first().and_then(figcraft_engine::params::f64_of).ok_or("bad `to`: expected [x, y]")?;
-                let ty = to.get(1).and_then(figcraft_engine::params::f64_of).ok_or("bad `to`: expected [x, y]")?;
-                let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(8).clamp(1, 200);
+                let to = p
+                    .get("to")
+                    .and_then(Value::as_array)
+                    .ok_or("drag needs `to: [x, y]`")?;
+                let tx = to
+                    .first()
+                    .and_then(figcraft_engine::params::f64_of)
+                    .ok_or("bad `to`: expected [x, y]")?;
+                let ty = to
+                    .get(1)
+                    .and_then(figcraft_engine::params::f64_of)
+                    .ok_or("bad `to`: expected [x, y]")?;
+                let steps = p
+                    .get("steps")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(8)
+                    .clamp(1, 200);
                 events.push(mk(PointerKind::Down, x, y));
                 for i in 1..=steps {
                     let t = i as f64 / steps as f64;
                     let pressure = pr0.zip(pr1).map(|(a, b)| a + (b - a) * t as f32);
-                    events.push(PointerEvent { pressure, ..mk(PointerKind::Move, x + (tx - x) * t, y + (ty - y) * t) });
+                    events.push(PointerEvent {
+                        pressure,
+                        ..mk(PointerKind::Move, x + (tx - x) * t, y + (ty - y) * t)
+                    });
                 }
-                events.push(PointerEvent { pressure: pr1, ..mk(PointerKind::Up, tx, ty) });
+                events.push(PointerEvent {
+                    pressure: pr1,
+                    ..mk(PointerKind::Up, tx, ty)
+                });
             }
-            other => return Err(format!("unknown pointer kind `{other}` (down|move|up|click|double|hover|drag)")),
+            other => {
+                return Err(format!(
+                    "unknown pointer kind `{other}` (down|move|up|click|double|hover|drag)"
+                ));
+            }
         }
         for ev in &events {
             let r = figcraft_engine::guard::run("ui.pointer", || self.session.pointer(ev));
@@ -127,25 +173,45 @@ impl Headless {
 
     fn key(&mut self, p: &Value) -> Result<Value, String> {
         use figcraft_engine::keymap::{Context, Mods, Platform, lookup, normalize};
-        let key = p.get("key").and_then(Value::as_str).ok_or("`key` required")?;
-        let m = Mods { shift: b(p, "shift"), alt: b(p, "alt"), cmd: b(p, "cmd"), ctrl: b(p, "ctrl") };
+        let key = p
+            .get("key")
+            .and_then(Value::as_str)
+            .ok_or("`key` required")?;
+        let m = Mods {
+            shift: b(p, "shift"),
+            alt: b(p, "alt"),
+            cmd: b(p, "cmd"),
+            ctrl: b(p, "ctrl"),
+        };
         let platform = Platform::current();
         // Text editing keys go to the editor, after the shortcuts live while editing; other
         // Cmd+letter shortcuts (undo…) still reach the canvas.
-        if self.session.ds().map(|d| d.text_edit.is_some()).unwrap_or(false) {
-            if let Some(bd) = lookup(platform, Context::Text, key, m).filter(|_| m.cmd || m.alt || m.ctrl) {
+        if self
+            .session
+            .ds()
+            .map(|d| d.text_edit.is_some())
+            .unwrap_or(false)
+        {
+            if let Some(bd) =
+                lookup(platform, Context::Text, key, m).filter(|_| m.cmd || m.alt || m.ctrl)
+            {
                 self.execute(bd.id, &json!({}))?;
                 return Ok(json!({"command": bd.id}));
             }
             if !(m.cmd && key.len() == 1) {
                 let (word, line) = figcraft_engine::keymap::text_motion(platform, key, m);
-                textedit::key(&mut self.session, key, m.shift, word, line).map_err(|e| e.to_string())?;
+                textedit::key(&mut self.session, key, m.shift, word, line)
+                    .map_err(|e| e.to_string())?;
                 return Ok(json!({"ok": true, "textEdit": true}));
             }
         }
         // Vector edit mode and shape builder keys (tools, nudging points, delete, join, Enter), as
         // on the canvas.
-        if self.session.tool_key(key, m.shift, m.alt, m.cmd).map_err(|e| e.to_string())? {
+        if self
+            .session
+            .tool_key(key, m.shift, m.alt, m.cmd)
+            .map_err(|e| e.to_string())?
+        {
             return Ok(json!({"ok": true}));
         }
         if let Some(bd) = lookup(platform, Context::Canvas, key, m) {
@@ -182,11 +248,19 @@ impl Headless {
                     _ => (0, 1),
                 };
                 // With nothing selected the arrows pan the view.
-                let cmd = if self.session.selection().is_empty() { "view.pan" } else { "transform.nudge" };
+                let cmd = if self.session.selection().is_empty() {
+                    "view.pan"
+                } else {
+                    "transform.nudge"
+                };
                 self.execute(cmd, &json!({"dx": dx, "dy": dy, "big": m.shift}))
             }
             // Number keys set the selection's opacity.
-            d if m.is_none() && d.len() == 1 && d.chars().all(|c| c.is_ascii_digit()) && self.session.prefs.number_keys_opacity => {
+            d if m.is_none()
+                && d.len() == 1
+                && d.chars().all(|c| c.is_ascii_digit())
+                && self.session.prefs.number_keys_opacity =>
+            {
                 self.execute("object.opacityKeys", &json!({"digits": d}))
             }
             _ => Err(format!("no shortcut for `{key}` with these modifiers")),
@@ -196,14 +270,22 @@ impl Headless {
     /// The selected layer when exactly one text layer is selected.
     /// The selected layers Enter edits as vectors (see `vectoredit::enter_targets`).
     fn vector_targets(&self) -> Option<Vec<NodeId>> {
-        figcraft_engine::vectoredit::enter_targets(self.session.doc().ok()?, &self.session.selection())
+        figcraft_engine::vectoredit::enter_targets(
+            self.session.doc().ok()?,
+            &self.session.selection(),
+        )
     }
 
     fn single_text(&self) -> Option<NodeId> {
         let sel = self.session.selection();
         let doc = self.session.doc().ok()?;
         match sel.as_slice() {
-            [id] if doc.node(*id).is_some_and(|n| matches!(n.kind, figcraft_doc::NodeKind::Text(_))) => Some(*id),
+            [id] if doc
+                .node(*id)
+                .is_some_and(|n| matches!(n.kind, figcraft_doc::NodeKind::Text(_))) =>
+            {
+                Some(*id)
+            }
             _ => None,
         }
     }
@@ -218,12 +300,18 @@ impl Headless {
                 std::fs::write(path, &bytes).map_err(|e| format!("{path}: {e}"))?;
                 Ok(json!({"path": path, "width": w, "height": h, "bytes": bytes.len()}))
             }
-            None => Ok(json!({"format": "png", "width": w, "height": h, "data": base64::engine::general_purpose::STANDARD.encode(&bytes)})),
+            None => Ok(
+                json!({"format": "png", "width": w, "height": h, "data": base64::engine::general_purpose::STANDARD.encode(&bytes)}),
+            ),
         }
     }
 
     fn inspect_ui(&self) -> Value {
-        let view = self.session.ds().ok().map(|d| serde_json::to_value(&d.view).unwrap_or(Value::Null));
+        let view = self
+            .session
+            .ds()
+            .ok()
+            .map(|d| serde_json::to_value(&d.view).unwrap_or(Value::Null));
         json!({
             "backend": "headless",
             "status": self.session.status(),
@@ -298,7 +386,11 @@ impl Backend for Headless {
     }
 
     fn render_png(&mut self, ids: &[u64], scale: f64) -> Result<Vec<u8>, String> {
-        let scale = if scale.is_finite() && scale > 0.0 { scale.min(64.0) } else { 1.0 };
+        let scale = if scale.is_finite() && scale > 0.0 {
+            scale.min(64.0)
+        } else {
+            1.0
+        };
         let page = self.session.page().map_err(|e| e.to_string())?;
         let doc = self.session.doc().map_err(|e| e.to_string())?;
         if !ids.is_empty() {
@@ -308,9 +400,12 @@ impl Backend for Headless {
                     return Err(format!("no such node {i}"));
                 }
             }
-            return figcraft_engine::cmd::file::export_bytes(doc, &ids, ExportFormat::Png, scale).map_err(|e| e.to_string());
+            return figcraft_engine::cmd::file::export_bytes(doc, &ids, ExportFormat::Png, scale)
+                .map_err(|e| e.to_string());
         }
-        let bounds = doc.page_content_bounds(page).ok_or("the current page is empty: nothing to render")?;
+        let bounds = doc
+            .page_content_bounds(page)
+            .ok_or("the current page is empty: nothing to render")?;
         let side = bounds.width().max(bounds.height()).max(1.0);
         let scale = scale.min(MAX_SIDE / side);
         let view = figcraft_render::View {
@@ -319,7 +414,8 @@ impl Backend for Headless {
             width: (bounds.width() * scale).ceil().max(1.0) as u32,
             height: (bounds.height() * scale).ceil().max(1.0) as u32,
         };
-        let pix = figcraft_render::render_view(doc, page, &view, &Default::default()).ok_or("render failed")?;
+        let pix = figcraft_render::render_view(doc, page, &view, &Default::default())
+            .ok_or("render failed")?;
         figcraft_render::encode_png(&pix)
     }
 
@@ -327,7 +423,9 @@ impl Backend for Headless {
         // No window: the page with a margin, zoomed to fit 1600 px.
         let page = self.session.page().map_err(|e| e.to_string())?;
         let doc = self.session.doc().map_err(|e| e.to_string())?;
-        let b = doc.page_content_bounds(page).unwrap_or(figcraft_geom::Rect::new(0.0, 0.0, 800.0, 600.0));
+        let b = doc
+            .page_content_bounds(page)
+            .unwrap_or(figcraft_geom::Rect::new(0.0, 0.0, 800.0, 600.0));
         let b = b.inflate(32.0, 32.0);
         let scale = (1600.0 / b.width().max(b.height()).max(1.0)).min(2.0);
         let view = figcraft_render::View {
@@ -336,7 +434,8 @@ impl Backend for Headless {
             width: (b.width() * scale).ceil().max(1.0) as u32,
             height: (b.height() * scale).ceil().max(1.0) as u32,
         };
-        let pix = figcraft_render::render_view(doc, page, &view, &Default::default()).ok_or("render failed")?;
+        let pix = figcraft_render::render_view(doc, page, &view, &Default::default())
+            .ok_or("render failed")?;
         figcraft_render::encode_png(&pix)
     }
 }

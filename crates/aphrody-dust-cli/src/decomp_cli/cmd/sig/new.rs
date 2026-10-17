@@ -58,7 +58,10 @@ impl NewSignature {
             &function_results[0]
         };
 
-        let &FunctionFindResult { ref symbol, module_kind } = function_result;
+        let &FunctionFindResult {
+            ref symbol,
+            module_kind,
+        } = function_result;
 
         let rom = config.load_rom(config_path)?;
         let module = config.load_module(config_path, &mut symbol_maps, module_kind, &rom)?;
@@ -86,8 +89,10 @@ impl NewSignature {
                     let SymbolKind::Function(_) = &symbol.kind else {
                         return None;
                     };
-                    (symbol.name == self.function)
-                        .then_some(FunctionFindResult { symbol: symbol.clone(), module_kind })
+                    (symbol.name == self.function).then_some(FunctionFindResult {
+                        symbol: symbol.clone(),
+                        module_kind,
+                    })
                 })
             })
             .collect::<Vec<_>>()

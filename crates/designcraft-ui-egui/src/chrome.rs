@@ -151,8 +151,15 @@ pub fn app_bar(app: &mut DesignApp, ui: &mut egui::Ui) {
             }
         });
     let r = resp.response.rect;
-    ui.painter().rect_filled(egui::Rect::from_min_max(egui::pos2(r.min.x, r.max.y - 7.0), r.max), 0.0, t.pasteboard);
-    ui.painter().line_segment([egui::pos2(r.min.x, r.max.y), egui::pos2(r.max.x, r.max.y)], Stroke::new(1.0, t.border));
+    ui.painter().rect_filled(
+        egui::Rect::from_min_max(egui::pos2(r.min.x, r.max.y - 7.0), r.max),
+        0.0,
+        t.pasteboard,
+    );
+    ui.painter().line_segment(
+        [egui::pos2(r.min.x, r.max.y), egui::pos2(r.max.x, r.max.y)],
+        Stroke::new(1.0, t.border),
+    );
 }
 
 impl DesignApp {
@@ -164,7 +171,13 @@ impl DesignApp {
 fn vsep(ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let (r, _) = ui.allocate_exact_size(vec2(9.0, 46.0), Sense::hover());
-    ui.painter().line_segment([r.center_top() + vec2(0.0, 4.0), r.center_bottom() - vec2(0.0, 4.0)], Stroke::new(1.0, t.divider));
+    ui.painter().line_segment(
+        [
+            r.center_top() + vec2(0.0, 4.0),
+            r.center_bottom() - vec2(0.0, 4.0),
+        ],
+        Stroke::new(1.0, t.divider),
+    );
 }
 
 /// Two-row context-sensitive Control panel.
@@ -173,22 +186,36 @@ pub fn control_bar(app: &mut DesignApp, ui: &mut egui::Ui) {
     egui::Panel::top("control_bar")
         .exact_size(59.0)
         .frame(
-            egui::Frame::NONE.fill(t.panel).inner_margin(egui::Margin { left: 8, right: 8, top: 5, bottom: 3 }).stroke(Stroke::new(1.0, t.divider)),
+            egui::Frame::NONE
+                .fill(t.panel)
+                .inner_margin(egui::Margin {
+                    left: 8,
+                    right: 8,
+                    top: 5,
+                    bottom: 3,
+                })
+                .stroke(Stroke::new(1.0, t.divider)),
         )
         .show(ui, |ui| {
             // Wider than the window: the bar scrolls sideways.
             crate::widgets::overflow_scrolling(ui);
-            egui::ScrollArea::horizontal().id_salt("control_bar_scroll").auto_shrink([false, true]).show(ui, |ui| {
-                ui.horizontal_top(|ui| {
-                    let text_mode =
-                        matches!(app.session.tool_id(), "type" | "verticalType") || app.session.active().is_some_and(|d| d.selection.text.is_some());
-                    if text_mode {
-                        control_text(app, ui);
-                    } else {
-                        control_object(app, ui);
-                    }
+            egui::ScrollArea::horizontal()
+                .id_salt("control_bar_scroll")
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    ui.horizontal_top(|ui| {
+                        let text_mode = matches!(app.session.tool_id(), "type" | "verticalType")
+                            || app
+                                .session
+                                .active()
+                                .is_some_and(|d| d.selection.text.is_some());
+                        if text_mode {
+                            control_text(app, ui);
+                        } else {
+                            control_object(app, ui);
+                        }
+                    });
                 });
-            });
         });
 }
 
@@ -202,66 +229,118 @@ fn icon_caption(ui: &mut egui::Ui, icon: &str, tip: &str) {
 }
 
 fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
-    let units = app.session.active().map(|d| d.doc.settings.horizontal_units).unwrap_or(Unit::Picas);
+    let units = app
+        .session
+        .active()
+        .map(|d| d.doc.settings.horizontal_units)
+        .unwrap_or(Unit::Picas);
     let info = panels::sel_info(app);
     // Reference point proxy.
     let (r, _) = ui.allocate_exact_size(vec2(30.0, 44.0), Sense::hover());
     let t = Tokens::get(ui.ctx());
-    icons::paint(ui.painter(), egui::Rect::from_center_size(r.center(), vec2(26.0, 26.0)), "ref-point", t.icon);
-    ui.painter().rect_filled(egui::Rect::from_center_size(r.center() + vec2(-7.8, -7.8), vec2(4.0, 4.0)), 0.0, t.text_strong);
+    icons::paint(
+        ui.painter(),
+        egui::Rect::from_center_size(r.center(), vec2(26.0, 26.0)),
+        "ref-point",
+        t.icon,
+    );
+    ui.painter().rect_filled(
+        egui::Rect::from_center_size(r.center() + vec2(-7.8, -7.8), vec2(4.0, 4.0)),
+        0.0,
+        t.text_strong,
+    );
     let (x, y, w, h) = match &info {
-        Some(SelInfo { page_rect, .. }) => (Some(page_rect.x0), Some(page_rect.y0), Some(page_rect.width()), Some(page_rect.height())),
+        Some(SelInfo { page_rect, .. }) => (
+            Some(page_rect.x0),
+            Some(page_rect.y0),
+            Some(page_rect.width()),
+            Some(page_rect.height()),
+        ),
         None => (None, None, None, None),
     };
-    egui::Grid::new("ctl_xywh").num_columns(4).spacing(vec2(4.0, 4.0)).show(ui, |ui| {
-        caption(ui, crate::i18n::tr(&app.ui.language, "X:"));
-        if let Some(v) = measure(ui, "cx", x, units, 64.0) {
-            let _ = app.run("transform.set", json!({"x": v}));
-        }
-        caption(ui, crate::i18n::tr(&app.ui.language, "W:"));
-        if let Some(v) = measure(ui, "cw", w, units, 64.0) {
-            let _ = app.run("transform.set", json!({"width": v}));
-        }
-        ui.end_row();
-        caption(ui, crate::i18n::tr(&app.ui.language, "Y:"));
-        if let Some(v) = measure(ui, "cy", y, units, 64.0) {
-            let _ = app.run("transform.set", json!({"y": v}));
-        }
-        caption(ui, crate::i18n::tr(&app.ui.language, "H:"));
-        if let Some(v) = measure(ui, "ch", h, units, 64.0) {
-            let _ = app.run("transform.set", json!({"height": v}));
-        }
-        ui.end_row();
-    });
+    egui::Grid::new("ctl_xywh")
+        .num_columns(4)
+        .spacing(vec2(4.0, 4.0))
+        .show(ui, |ui| {
+            caption(ui, crate::i18n::tr(&app.ui.language, "X:"));
+            if let Some(v) = measure(ui, "cx", x, units, 64.0) {
+                let _ = app.run("transform.set", json!({"x": v}));
+            }
+            caption(ui, crate::i18n::tr(&app.ui.language, "W:"));
+            if let Some(v) = measure(ui, "cw", w, units, 64.0) {
+                let _ = app.run("transform.set", json!({"width": v}));
+            }
+            ui.end_row();
+            caption(ui, crate::i18n::tr(&app.ui.language, "Y:"));
+            if let Some(v) = measure(ui, "cy", y, units, 64.0) {
+                let _ = app.run("transform.set", json!({"y": v}));
+            }
+            caption(ui, crate::i18n::tr(&app.ui.language, "H:"));
+            if let Some(v) = measure(ui, "ch", h, units, 64.0) {
+                let _ = app.run("transform.set", json!({"height": v}));
+            }
+            ui.end_row();
+        });
     vsep(ui);
     // Scale, rotation and shear (absolute; see Transformations are Totals).
-    let tv = if info.is_some() { app.session.execute("transform.info", &json!({})).ok() } else { None };
+    let tv = if info.is_some() {
+        app.session.execute("transform.info", &json!({})).ok()
+    } else {
+        None
+    };
     let tv_get = |k: &str| tv.as_ref().and_then(|v| v[k].as_f64());
-    egui::Grid::new("ctl_srs").num_columns(4).spacing(vec2(4.0, 4.0)).show(ui, |ui| {
-        icon_caption(ui, "tool-scale", crate::i18n::tr(&app.ui.language, "Scale X Percentage"));
-        if let Some(v) = number(ui, "csx", tv_get("scaleX"), "%", 56.0, 1) {
-            let _ = app.run("transform.set", json!({"scaleX": v}));
-        }
-        icon_caption(ui, "tool-rotate", crate::i18n::tr(&app.ui.language, "Rotation Angle"));
-        if let Some(v) = number(ui, "crot", tv_get("rotation"), "°", 50.0, 1) {
-            let _ = app.run("transform.set", json!({"rotation": v}));
-        }
-        ui.end_row();
-        icon_caption(ui, "tool-scale", crate::i18n::tr(&app.ui.language, "Scale Y Percentage"));
-        if let Some(v) = number(ui, "csy", tv_get("scaleY"), "%", 56.0, 1) {
-            let _ = app.run("transform.set", json!({"scaleY": v}));
-        }
-        icon_caption(ui, "tool-shear", crate::i18n::tr(&app.ui.language, "Shear X Angle"));
-        if let Some(v) = number(ui, "cshr", tv_get("shear"), "°", 50.0, 1) {
-            let _ = app.run("transform.set", json!({"shear": v}));
-        }
-        ui.end_row();
-    });
+    egui::Grid::new("ctl_srs")
+        .num_columns(4)
+        .spacing(vec2(4.0, 4.0))
+        .show(ui, |ui| {
+            icon_caption(
+                ui,
+                "tool-scale",
+                crate::i18n::tr(&app.ui.language, "Scale X Percentage"),
+            );
+            if let Some(v) = number(ui, "csx", tv_get("scaleX"), "%", 56.0, 1) {
+                let _ = app.run("transform.set", json!({"scaleX": v}));
+            }
+            icon_caption(
+                ui,
+                "tool-rotate",
+                crate::i18n::tr(&app.ui.language, "Rotation Angle"),
+            );
+            if let Some(v) = number(ui, "crot", tv_get("rotation"), "°", 50.0, 1) {
+                let _ = app.run("transform.set", json!({"rotation": v}));
+            }
+            ui.end_row();
+            icon_caption(
+                ui,
+                "tool-scale",
+                crate::i18n::tr(&app.ui.language, "Scale Y Percentage"),
+            );
+            if let Some(v) = number(ui, "csy", tv_get("scaleY"), "%", 56.0, 1) {
+                let _ = app.run("transform.set", json!({"scaleY": v}));
+            }
+            icon_caption(
+                ui,
+                "tool-shear",
+                crate::i18n::tr(&app.ui.language, "Shear X Angle"),
+            );
+            if let Some(v) = number(ui, "cshr", tv_get("shear"), "°", 50.0, 1) {
+                let _ = app.run("transform.set", json!({"shear": v}));
+            }
+            ui.end_row();
+        });
     vsep(ui);
     // Rotate / flip.
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
-            if icons::button(ui, "tool-rotate", 20.0, false, crate::i18n::tr(&app.ui.language, "Rotate 90° Counterclockwise")).clicked() {
+            if icons::button(
+                ui,
+                "tool-rotate",
+                20.0,
+                false,
+                crate::i18n::tr(&app.ui.language, "Rotate 90° Counterclockwise"),
+            )
+            .clicked()
+            {
                 let _ = app.run("transform.rotate", json!({"angle": 90}));
             }
             if ui
@@ -278,7 +357,10 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
             if ui
                 .small_button("↻")
                 .on_hover_ui(|ui| {
-                    crate::rtl::label(ui, crate::i18n::tr(&app.ui.language, "Rotate 90° Clockwise"));
+                    crate::rtl::label(
+                        ui,
+                        crate::i18n::tr(&app.ui.language, "Rotate 90° Clockwise"),
+                    );
                 })
                 .clicked()
             {
@@ -300,16 +382,35 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
             caption(ui, crate::i18n::tr(&app.ui.language, "Fill"));
-            panels::swatch_picker(app, ui, "ctlfill", info.as_ref().map(|i| i.fill.clone()), |app, name| {
-                let _ = app.run("object.fill", json!({"swatch": name}));
-            });
+            panels::swatch_picker(
+                app,
+                ui,
+                "ctlfill",
+                info.as_ref().map(|i| i.fill.clone()),
+                |app, name| {
+                    let _ = app.run("object.fill", json!({"swatch": name}));
+                },
+            );
         });
         ui.horizontal(|ui| {
             caption(ui, crate::i18n::tr(&app.ui.language, "Stroke"));
-            panels::swatch_picker(app, ui, "ctlstroke", info.as_ref().map(|i| i.stroke.clone()), |app, name| {
-                let _ = app.run("object.stroke", json!({"swatch": name}));
-            });
-            if let Some(v) = number(ui, "csw", info.as_ref().map(|i| i.stroke_weight), " pt", 46.0, 3) {
+            panels::swatch_picker(
+                app,
+                ui,
+                "ctlstroke",
+                info.as_ref().map(|i| i.stroke.clone()),
+                |app, name| {
+                    let _ = app.run("object.stroke", json!({"swatch": name}));
+                },
+            );
+            if let Some(v) = number(
+                ui,
+                "csw",
+                info.as_ref().map(|i| i.stroke_weight),
+                " pt",
+                46.0,
+                3,
+            ) {
                 let _ = app.run("object.stroke", json!({"weight": v}));
             }
         });
@@ -319,13 +420,26 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
             caption(ui, crate::i18n::tr(&app.ui.language, "Opacity"));
-            if let Some(v) = number(ui, "cop", info.as_ref().map(|i| i.opacity * 100.0), "%", 42.0, 0) {
+            if let Some(v) = number(
+                ui,
+                "cop",
+                info.as_ref().map(|i| i.opacity * 100.0),
+                "%",
+                42.0,
+                0,
+            ) {
                 let _ = app.run("object.opacity", json!({"opacity": v / 100.0}));
             }
         });
         ui.horizontal(|ui| {
-            if icons::button(ui, "panel-effects", 20.0, info.as_ref().is_some_and(|i| i.shadow), crate::i18n::tr(&app.ui.language, "Drop Shadow"))
-                .clicked()
+            if icons::button(
+                ui,
+                "panel-effects",
+                20.0,
+                info.as_ref().is_some_and(|i| i.shadow),
+                crate::i18n::tr(&app.ui.language, "Drop Shadow"),
+            )
+            .clicked()
             {
                 let _ = app.run("object.dropShadow", json!({}));
             }
@@ -336,8 +450,16 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
             for (icon, mode, tip) in [
-                ("fit-fill", "fillProportionally", "Fill Frame Proportionally"),
-                ("fit-prop", "fitProportionally", "Fit Content Proportionally"),
+                (
+                    "fit-fill",
+                    "fillProportionally",
+                    "Fill Frame Proportionally",
+                ),
+                (
+                    "fit-prop",
+                    "fitProportionally",
+                    "Fit Content Proportionally",
+                ),
                 ("fit-content", "fitContentToFrame", "Fit Content to Frame"),
             ] {
                 if icons::button(ui, icon, 20.0, false, tip).clicked() {
@@ -346,7 +468,10 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
             }
         });
         ui.horizontal(|ui| {
-            for (icon, mode, tip) in [("fit-frame", "fitFrameToContent", "Fit Frame to Content"), ("fit-center", "centerContent", "Center Content")] {
+            for (icon, mode, tip) in [
+                ("fit-frame", "fitFrameToContent", "Fit Frame to Content"),
+                ("fit-center", "centerContent", "Center Content"),
+            ] {
                 if icons::button(ui, icon, 20.0, false, tip).clicked() {
                     let _ = app.run("object.fit", json!({"mode": mode}));
                 }
@@ -369,7 +494,10 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
             }
         });
         ui.horizontal(|ui| {
-            for (icon, mode, tip) in [("wrap-jump", "jumpObject", "Jump Object"), ("wrap-next", "jumpToNextColumn", "Jump to Next Column")] {
+            for (icon, mode, tip) in [
+                ("wrap-jump", "jumpObject", "Jump Object"),
+                ("wrap-next", "jumpToNextColumn", "Jump to Next Column"),
+            ] {
                 let on = info.as_ref().is_some_and(|i| i.wrap == mode);
                 if icons::button(ui, icon, 20.0, on, tip).clicked() {
                     let _ = app.run("object.textWrap", json!({"mode": mode}));
@@ -384,7 +512,10 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
         ui.vertical(|ui| {
             caption(ui, crate::i18n::tr(&app.ui.language, "Columns"));
             if let Some(v) = number(ui, "ccols", Some(cols as f64), "", 36.0, 0) {
-                let _ = app.run("object.textFrameOptions", json!({"columns": v.max(1.0) as u64}));
+                let _ = app.run(
+                    "object.textFrameOptions",
+                    json!({"columns": v.max(1.0) as u64}),
+                );
             }
         });
     }
@@ -393,14 +524,28 @@ fn control_object(app: &mut DesignApp, ui: &mut egui::Ui) {
 fn control_text(app: &mut DesignApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let attrs = panels::text_attrs(app);
-    let chars = attrs.as_ref().map(|a| a["chars"].clone()).unwrap_or_default();
-    let para = attrs.as_ref().map(|a| a["para"].clone()).unwrap_or_default();
+    let chars = attrs
+        .as_ref()
+        .map(|a| a["chars"].clone())
+        .unwrap_or_default();
+    let para = attrs
+        .as_ref()
+        .map(|a| a["para"].clone())
+        .unwrap_or_default();
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new("A").font(semibold(15.0)).color(t.text_strong));
+            ui.label(
+                egui::RichText::new("A")
+                    .font(semibold(15.0))
+                    .color(t.text_strong),
+            );
         });
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new("¶").font(semibold(15.0)).color(t.text_dim));
+            ui.label(
+                egui::RichText::new("¶")
+                    .font(semibold(15.0))
+                    .color(t.text_dim),
+            );
         });
     });
     vsep(ui);
@@ -411,42 +556,64 @@ fn control_text(app: &mut DesignApp, ui: &mut egui::Ui) {
         panels::font_style_picker(app, ui, &fam, &sty, 170.0);
     });
     vsep(ui);
-    egui::Grid::new("ctl_char").num_columns(4).spacing(vec2(4.0, 3.0)).show(ui, |ui| {
-        caption(ui, "𝐓");
-        if let Some(v) = number(ui, "csize", chars["size"].as_f64(), " pt", 54.0, 2) {
-            let _ = app.run("type.char", json!({"attrs": {"size": v}}));
-        }
-        caption(ui, crate::i18n::tr(&app.ui.language, "VA"));
-        if let Some(v) = number(ui, "ctrack", chars["tracking"].as_f64(), "", 48.0, 0) {
-            let _ = app.run("type.char", json!({"attrs": {"tracking": v}}));
-        }
-        ui.end_row();
-        caption(ui, "Ā");
-        let lead = match chars["leading"]["kind"].as_str() {
-            Some("points") => chars["leading"]["value"].as_f64(),
-            _ => chars["size"].as_f64().map(|s| s * para["autoLeading"].as_f64().unwrap_or(1.2)),
-        };
-        if let Some(v) = number(ui, "clead", lead, " pt", 54.0, 2) {
-            let _ = app.run("type.char", json!({"attrs": {"leading": {"kind": "points", "value": v}}}));
-        }
-        caption(ui, crate::i18n::tr(&app.ui.language, "IT"));
-        if let Some(v) = number(ui, "chs", chars["hScale"].as_f64().map(|v| v * 100.0), "%", 48.0, 0) {
-            let _ = app.run("type.char", json!({"attrs": {"hScale": v / 100.0}}));
-        }
-        ui.end_row();
-    });
+    egui::Grid::new("ctl_char")
+        .num_columns(4)
+        .spacing(vec2(4.0, 3.0))
+        .show(ui, |ui| {
+            caption(ui, "𝐓");
+            if let Some(v) = number(ui, "csize", chars["size"].as_f64(), " pt", 54.0, 2) {
+                let _ = app.run("type.char", json!({"attrs": {"size": v}}));
+            }
+            caption(ui, crate::i18n::tr(&app.ui.language, "VA"));
+            if let Some(v) = number(ui, "ctrack", chars["tracking"].as_f64(), "", 48.0, 0) {
+                let _ = app.run("type.char", json!({"attrs": {"tracking": v}}));
+            }
+            ui.end_row();
+            caption(ui, "Ā");
+            let lead = match chars["leading"]["kind"].as_str() {
+                Some("points") => chars["leading"]["value"].as_f64(),
+                _ => chars["size"]
+                    .as_f64()
+                    .map(|s| s * para["autoLeading"].as_f64().unwrap_or(1.2)),
+            };
+            if let Some(v) = number(ui, "clead", lead, " pt", 54.0, 2) {
+                let _ = app.run(
+                    "type.char",
+                    json!({"attrs": {"leading": {"kind": "points", "value": v}}}),
+                );
+            }
+            caption(ui, crate::i18n::tr(&app.ui.language, "IT"));
+            if let Some(v) = number(
+                ui,
+                "chs",
+                chars["hScale"].as_f64().map(|v| v * 100.0),
+                "%",
+                48.0,
+                0,
+            ) {
+                let _ = app.run("type.char", json!({"attrs": {"hScale": v / 100.0}}));
+            }
+            ui.end_row();
+        });
     vsep(ui);
     ui.vertical(|ui| {
         let cur: Align = serde_json::from_value(para["align"].clone()).unwrap_or_default();
         ui.horizontal(|ui| {
-            for (a, icon) in [(Align::Left, "align-left"), (Align::Center, "align-center"), (Align::Right, "align-right")] {
+            for (a, icon) in [
+                (Align::Left, "align-left"),
+                (Align::Center, "align-center"),
+                (Align::Right, "align-right"),
+            ] {
                 if icons::button(ui, icon, 20.0, cur == a, a.label()).clicked() {
                     let _ = app.run("type.para", json!({"attrs": {"align": a}}));
                 }
             }
         });
         ui.horizontal(|ui| {
-            for (a, icon) in [(Align::LeftJustified, "align-justify"), (Align::FullyJustified, "align-justify-all")] {
+            for (a, icon) in [
+                (Align::LeftJustified, "align-justify"),
+                (Align::FullyJustified, "align-justify-all"),
+            ] {
                 if icons::button(ui, icon, 20.0, cur == a, a.label()).clicked() {
                     let _ = app.run("type.para", json!({"attrs": {"align": a}}));
                 }
@@ -454,36 +621,59 @@ fn control_text(app: &mut DesignApp, ui: &mut egui::Ui) {
         });
     });
     vsep(ui);
-    let units = app.session.active().map(|d| d.doc.settings.horizontal_units).unwrap_or(Unit::Picas);
-    egui::Grid::new("ctl_para").num_columns(4).spacing(vec2(4.0, 3.0)).show(ui, |ui| {
-        caption(ui, "→|");
-        if let Some(v) = measure(ui, "cli", para["leftIndent"].as_f64(), units, 54.0) {
-            let _ = app.run("type.para", json!({"attrs": {"leftIndent": v}}));
-        }
-        caption(ui, "↑¶");
-        if let Some(v) = measure(ui, "csb", para["spaceBefore"].as_f64(), units, 54.0) {
-            let _ = app.run("type.para", json!({"attrs": {"spaceBefore": v}}));
-        }
-        ui.end_row();
-        caption(ui, "→¶");
-        if let Some(v) = measure(ui, "cfi", para["firstLineIndent"].as_f64(), units, 54.0) {
-            let _ = app.run("type.para", json!({"attrs": {"firstLineIndent": v}}));
-        }
-        caption(ui, "↓¶");
-        if let Some(v) = measure(ui, "csa", para["spaceAfter"].as_f64(), units, 54.0) {
-            let _ = app.run("type.para", json!({"attrs": {"spaceAfter": v}}));
-        }
-        ui.end_row();
-    });
+    let units = app
+        .session
+        .active()
+        .map(|d| d.doc.settings.horizontal_units)
+        .unwrap_or(Unit::Picas);
+    egui::Grid::new("ctl_para")
+        .num_columns(4)
+        .spacing(vec2(4.0, 3.0))
+        .show(ui, |ui| {
+            caption(ui, "→|");
+            if let Some(v) = measure(ui, "cli", para["leftIndent"].as_f64(), units, 54.0) {
+                let _ = app.run("type.para", json!({"attrs": {"leftIndent": v}}));
+            }
+            caption(ui, "↑¶");
+            if let Some(v) = measure(ui, "csb", para["spaceBefore"].as_f64(), units, 54.0) {
+                let _ = app.run("type.para", json!({"attrs": {"spaceBefore": v}}));
+            }
+            ui.end_row();
+            caption(ui, "→¶");
+            if let Some(v) = measure(ui, "cfi", para["firstLineIndent"].as_f64(), units, 54.0) {
+                let _ = app.run("type.para", json!({"attrs": {"firstLineIndent": v}}));
+            }
+            caption(ui, "↓¶");
+            if let Some(v) = measure(ui, "csa", para["spaceAfter"].as_f64(), units, 54.0) {
+                let _ = app.run("type.para", json!({"attrs": {"spaceAfter": v}}));
+            }
+            ui.end_row();
+        });
     vsep(ui);
     ui.vertical(|ui| {
-        let ps = attrs.as_ref().and_then(|a| a["paragraphStyle"].as_str()).unwrap_or("").to_string();
-        let ov = attrs.as_ref().and_then(|a| a["paraOverrides"].as_u64()).unwrap_or(0)
-            + attrs.as_ref().and_then(|a| a["charOverrides"].as_u64()).unwrap_or(0);
+        let ps = attrs
+            .as_ref()
+            .and_then(|a| a["paragraphStyle"].as_str())
+            .unwrap_or("")
+            .to_string();
+        let ov = attrs
+            .as_ref()
+            .and_then(|a| a["paraOverrides"].as_u64())
+            .unwrap_or(0)
+            + attrs
+                .as_ref()
+                .and_then(|a| a["charOverrides"].as_u64())
+                .unwrap_or(0);
         panels::para_style_picker(app, ui, &ps, ov > 0, 170.0);
         let hy = para["hyphenate"].as_bool().unwrap_or(true);
         let mut h = hy;
-        if ui.checkbox(&mut h, crate::rtl::widget(ui, crate::i18n::tr(&app.ui.language, "Hyphenate"))).changed() {
+        if ui
+            .checkbox(
+                &mut h,
+                crate::rtl::widget(ui, crate::i18n::tr(&app.ui.language, "Hyphenate")),
+            )
+            .changed()
+        {
             let _ = app.run("type.para", json!({"attrs": {"hyphenate": h}}));
         }
     });
@@ -501,25 +691,48 @@ pub fn doc_tabs(app: &mut DesignApp, ui: &mut egui::Ui) {
     let max_w = DOC_TAB_MAX_W.min(bar.width());
     let close_label = crate::i18n::tr(&app.ui.language, "Close");
     ui.painter().rect_filled(bar, 0.0, t.tab_strip);
-    ui.painter().line_segment([bar.left_bottom(), bar.right_bottom()], Stroke::new(1.0, t.border));
+    ui.painter().line_segment(
+        [bar.left_bottom(), bar.right_bottom()],
+        Stroke::new(1.0, t.border),
+    );
     let mut x = bar.min.x;
     let active = app.session.active_index();
     let zoom = app.view().map(|v| v.zoom).unwrap_or(1.0);
     let mut activate = None;
     let mut close = None;
-    let titles: Vec<(String, bool)> = app.session.documents().iter().map(|d| (d.title(), d.is_dirty())).collect();
+    let titles: Vec<(String, bool)> = app
+        .session
+        .documents()
+        .iter()
+        .map(|d| (d.title(), d.is_dirty()))
+        .collect();
     for (i, (title, dirty)) in titles.iter().enumerate() {
         let is_active = Some(i) == active;
         // `*` = unsaved; the view-mode suffix only in Preview (InDesign shows its GPU mode there).
-        let suffix = if is_active && app.ui.screen_mode == crate::ScreenMode::Preview { " [Preview]" } else { "" };
+        let suffix = if is_active && app.ui.screen_mode == crate::ScreenMode::Preview {
+            " [Preview]"
+        } else {
+            ""
+        };
         let color = if is_active { t.text_strong } else { t.text_dim };
         // The name gives way first; the dirty marker and zoom stay readable.
-        let zoom_label = crate::rtl::plain(ui.ctx(), &format!(" @ {:.0}%{suffix}", zoom * 100.0), semibold(11.5), color);
-        let name = format!("{}{}", if *dirty { "*" } else { "" }, crate::rtl::isolate(title));
+        let zoom_label = crate::rtl::plain(
+            ui.ctx(),
+            &format!(" @ {:.0}%{suffix}", zoom * 100.0),
+            semibold(11.5),
+            color,
+        );
+        let name = format!(
+            "{}{}",
+            if *dirty { "*" } else { "" },
+            crate::rtl::isolate(title)
+        );
         let name_max = max_w - DOC_TAB_PAD - zoom_label.size().x;
         let galley = crate::rtl::truncated(ui.ctx(), &name, semibold(11.5), color, name_max);
         let elided = galley.elided;
-        let w = (galley.size().x + zoom_label.size().x + DOC_TAB_PAD).max(if is_active { 210.0 } else { 150.0 }).min(max_w);
+        let w = (galley.size().x + zoom_label.size().x + DOC_TAB_PAD)
+            .max(if is_active { 210.0 } else { 150.0 })
+            .min(max_w);
         let r = egui::Rect::from_min_size(egui::pos2(x, bar.min.y), vec2(w, 28.0));
         let resp = ui.interact(r, ui.id().with(("doctab", i)), Sense::click());
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, title));
@@ -530,23 +743,51 @@ pub fn doc_tabs(app: &mut DesignApp, ui: &mut egui::Ui) {
         } else {
             resp
         };
-        ui.painter().rect_filled(r, 0.0, if is_active { t.panel } else { t.tab_strip });
-        let cr = egui::Rect::from_center_size(egui::pos2(r.min.x + 18.0, r.center().y), vec2(14.0, 14.0));
+        ui.painter()
+            .rect_filled(r, 0.0, if is_active { t.panel } else { t.tab_strip });
+        let cr = egui::Rect::from_center_size(
+            egui::pos2(r.min.x + 18.0, r.center().y),
+            vec2(14.0, 14.0),
+        );
         let cresp = ui.interact(cr, ui.id().with(("docclose", i)), Sense::click());
-        cresp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, format!("{close_label} {title}")));
+        cresp.widget_info(|| {
+            egui::WidgetInfo::labeled(
+                egui::WidgetType::Button,
+                true,
+                format!("{close_label} {title}"),
+            )
+        });
         ui.painter().text(
             cr.center(),
             egui::Align2::CENTER_CENTER,
             "×",
             egui::FontId::proportional(14.0),
-            if cresp.hovered() { t.text_strong } else { t.text_dim },
+            if cresp.hovered() {
+                t.text_strong
+            } else {
+                t.text_dim
+            },
         );
         let name_w = galley.size().x;
         // Clipped too, for a window narrower than the zoom label.
         let text = ui.painter().with_clip_rect(r);
-        text.galley(egui::pos2(r.min.x + 32.0, r.center().y - galley.size().y / 2.0), galley, Color32::WHITE);
-        text.galley(egui::pos2(r.min.x + 32.0 + name_w, r.center().y - zoom_label.size().y / 2.0), zoom_label, Color32::WHITE);
-        ui.painter().line_segment([r.right_top(), r.right_bottom()], Stroke::new(1.0, t.border));
+        text.galley(
+            egui::pos2(r.min.x + 32.0, r.center().y - galley.size().y / 2.0),
+            galley,
+            Color32::WHITE,
+        );
+        text.galley(
+            egui::pos2(
+                r.min.x + 32.0 + name_w,
+                r.center().y - zoom_label.size().y / 2.0,
+            ),
+            zoom_label,
+            Color32::WHITE,
+        );
+        ui.painter().line_segment(
+            [r.right_top(), r.right_bottom()],
+            Stroke::new(1.0, t.border),
+        );
         if cresp.clicked() {
             close = Some(i);
         } else if resp.clicked() {
@@ -565,57 +806,129 @@ pub fn status_bar(app: &mut DesignApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let resp = egui::Panel::bottom("status_bar")
         .exact_size(17.0)
-        .frame(egui::Frame::NONE.fill(t.panel).inner_margin(egui::Margin::symmetric(8, 0)))
+        .frame(
+            egui::Frame::NONE
+                .fill(t.panel)
+                .inner_margin(egui::Margin::symmetric(8, 0)),
+        )
         .show(ui, |ui| {
             ui.spacing_mut().item_spacing.x = 4.0;
             ui.horizontal_centered(|ui| {
                 let small = egui::FontId::proportional(10.5);
                 if app.session.active().is_none() {
-                    ui.label(egui::RichText::new(&app.ui.status).font(small).color(t.text_dim));
+                    ui.label(
+                        egui::RichText::new(&app.ui.status)
+                            .font(small)
+                            .color(t.text_dim),
+                    );
                     return;
                 }
                 let z = app.view().map(|v| v.zoom).unwrap_or(1.0);
-                crate::menus::menu_button(ui, egui::RichText::new(format!("{:.2}% ▾", z * 100.0)).font(small.clone()), |ui| {
-                    for p in [0.05, 0.125, 0.25, 0.5, 0.75, 1.0, 2.0, 4.0, 8.0, 16.0] {
-                        if ui.button(format!("{}%", p * 100.0)).clicked() {
-                            let _ = app.run("view.zoom", json!({"zoom": p}));
-                            ui.close();
+                crate::menus::menu_button(
+                    ui,
+                    egui::RichText::new(format!("{:.2}% ▾", z * 100.0)).font(small.clone()),
+                    |ui| {
+                        for p in [0.05, 0.125, 0.25, 0.5, 0.75, 1.0, 2.0, 4.0, 8.0, 16.0] {
+                            if ui.button(format!("{}%", p * 100.0)).clicked() {
+                                let _ = app.run("view.zoom", json!({"zoom": p}));
+                                ui.close();
+                            }
                         }
-                    }
-                });
+                    },
+                );
                 ui.add_space(8.0);
-                let n = app.session.active().map(|d| d.doc.page_count()).unwrap_or(1);
+                let n = app
+                    .session
+                    .active()
+                    .map(|d| d.doc.page_count())
+                    .unwrap_or(1);
                 let cur = crate::canvas::current_page(app).unwrap_or(0);
-                if icons::button(ui, "first", 14.0, false, crate::i18n::tr(&app.ui.language, "First Spread")).clicked() {
+                if icons::button(
+                    ui,
+                    "first",
+                    14.0,
+                    false,
+                    crate::i18n::tr(&app.ui.language, "First Spread"),
+                )
+                .clicked()
+                {
                     crate::canvas::go_to_page(app, 0);
                 }
-                if icons::button(ui, "prev", 14.0, false, crate::i18n::tr(&app.ui.language, "Previous Spread")).clicked() {
+                if icons::button(
+                    ui,
+                    "prev",
+                    14.0,
+                    false,
+                    crate::i18n::tr(&app.ui.language, "Previous Spread"),
+                )
+                .clicked()
+                {
                     crate::canvas::go_to_page(app, cur.saturating_sub(1));
                 }
                 let name = app.session.page_label(cur);
                 let (fr, fresp) = ui.allocate_exact_size(vec2(80.0, 14.0), Sense::click());
-                ui.painter().rect(fr, 0.0, t.input, Stroke::new(1.0, t.field_border), egui::StrokeKind::Inside);
-                ui.painter().text(fr.left_center() + vec2(5.0, 0.0), egui::Align2::LEFT_CENTER, &name, small.clone(), t.text);
-                ui.painter().text(fr.right_center() - vec2(5.0, 0.0), egui::Align2::RIGHT_CENTER, "▾", small.clone(), t.text);
+                ui.painter().rect(
+                    fr,
+                    0.0,
+                    t.input,
+                    Stroke::new(1.0, t.field_border),
+                    egui::StrokeKind::Inside,
+                );
+                ui.painter().text(
+                    fr.left_center() + vec2(5.0, 0.0),
+                    egui::Align2::LEFT_CENTER,
+                    &name,
+                    small.clone(),
+                    t.text,
+                );
+                ui.painter().text(
+                    fr.right_center() - vec2(5.0, 0.0),
+                    egui::Align2::RIGHT_CENTER,
+                    "▾",
+                    small.clone(),
+                    t.text,
+                );
                 egui::Popup::menu(&fresp).show(|ui| {
                     let names: Vec<String> = (0..n).map(|i| app.session.page_label(i)).collect();
-                    egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
-                        for (i, nm) in names.iter().enumerate() {
-                            if ui.button(nm).clicked() {
-                                crate::canvas::go_to_page(app, i);
-                                ui.close();
+                    egui::ScrollArea::vertical()
+                        .max_height(300.0)
+                        .show(ui, |ui| {
+                            for (i, nm) in names.iter().enumerate() {
+                                if ui.button(nm).clicked() {
+                                    crate::canvas::go_to_page(app, i);
+                                    ui.close();
+                                }
                             }
-                        }
-                    });
+                        });
                 });
-                if icons::button(ui, "next", 14.0, false, crate::i18n::tr(&app.ui.language, "Next Spread")).clicked() {
+                if icons::button(
+                    ui,
+                    "next",
+                    14.0,
+                    false,
+                    crate::i18n::tr(&app.ui.language, "Next Spread"),
+                )
+                .clicked()
+                {
                     crate::canvas::go_to_page(app, (cur + 1).min(n - 1));
                 }
-                if icons::button(ui, "last", 14.0, false, crate::i18n::tr(&app.ui.language, "Last Spread")).clicked() {
+                if icons::button(
+                    ui,
+                    "last",
+                    14.0,
+                    false,
+                    crate::i18n::tr(&app.ui.language, "Last Spread"),
+                )
+                .clicked()
+                {
                     crate::canvas::go_to_page(app, n - 1);
                 }
                 ui.add_space(12.0);
-                crate::rtl::label(ui, egui::RichText::new(crate::i18n::tr(&app.ui.language, "[Basic] (working) ▾")).font(small.clone()));
+                crate::rtl::label(
+                    ui,
+                    egui::RichText::new(crate::i18n::tr(&app.ui.language, "[Basic] (working) ▾"))
+                        .font(small.clone()),
+                );
                 ui.add_space(8.0);
                 // Preflight: overset text is an error.
                 let errors = panels::preflight_errors(app);
@@ -623,7 +936,11 @@ pub fn status_bar(app: &mut DesignApp, ui: &mut egui::Ui) {
                 ui.painter().circle_filled(
                     r.center(),
                     4.0,
-                    if errors == 0 { Color32::from_rgb(60, 200, 90) } else { Color32::from_rgb(235, 50, 50) },
+                    if errors == 0 {
+                        Color32::from_rgb(60, 200, 90)
+                    } else {
+                        Color32::from_rgb(235, 50, 50)
+                    },
                 );
                 crate::rtl::label(
                     ui,
@@ -634,7 +951,11 @@ pub fn status_bar(app: &mut DesignApp, ui: &mut egui::Ui) {
                             "{} ▾",
                             crate::i18n::count_label(
                                 &app.ui.language,
-                                if errors == 1 && app.ui.language != "uk" { "error" } else { "errors" },
+                                if errors == 1 && app.ui.language != "uk" {
+                                    "error"
+                                } else {
+                                    "errors"
+                                },
                                 errors
                             )
                         )
@@ -642,11 +963,16 @@ pub fn status_bar(app: &mut DesignApp, ui: &mut egui::Ui) {
                     .font(small.clone()),
                 );
                 ui.add_space(12.0);
-                ui.label(egui::RichText::new(&app.ui.status).font(small).color(t.text_dim));
+                ui.label(
+                    egui::RichText::new(&app.ui.status)
+                        .font(small)
+                        .color(t.text_dim),
+                );
             });
         });
     let r = resp.response.rect;
-    ui.painter().line_segment([r.left_top(), r.right_top()], Stroke::new(1.0, t.border));
+    ui.painter()
+        .line_segment([r.left_top(), r.right_top()], Stroke::new(1.0, t.border));
 }
 
 pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
@@ -654,21 +980,30 @@ pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
     let r = ui.available_rect_before_wrap();
     ui.painter().rect_filled(r, 0.0, t.panel_darker);
     ui.scope_builder(
-        egui::UiBuilder::new().max_rect(r.shrink(48.0)).layout(egui::Layout::top_down(if crate::i18n::is_rtl(&app.ui.language) {
-            egui::Align::Max
-        } else {
-            egui::Align::Min
-        })),
+        egui::UiBuilder::new()
+            .max_rect(r.shrink(48.0))
+            .layout(egui::Layout::top_down(
+                if crate::i18n::is_rtl(&app.ui.language) {
+                    egui::Align::Max
+                } else {
+                    egui::Align::Min
+                },
+            )),
         |ui| {
             ui.label(crate::rtl::widget(
                 ui,
-                egui::RichText::new(crate::i18n::tr(&app.ui.language, "Welcome to DesignCraft")).font(semibold(28.0)).color(t.text_strong),
+                egui::RichText::new(crate::i18n::tr(&app.ui.language, "Welcome to DesignCraft"))
+                    .font(semibold(28.0))
+                    .color(t.text_strong),
             ));
             ui.label(crate::rtl::widget(
                 ui,
-                egui::RichText::new(crate::i18n::tr(&app.ui.language, "Page layout for print and screen — fast, open and scriptable."))
-                    .size(15.0)
-                    .color(t.text_dim),
+                egui::RichText::new(crate::i18n::tr(
+                    &app.ui.language,
+                    "Page layout for print and screen — fast, open and scriptable.",
+                ))
+                .size(15.0)
+                .color(t.text_dim),
             ));
             ui.add_space(24.0);
             ui.horizontal(|ui| {
@@ -676,7 +1011,9 @@ pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
                     .add(
                         egui::Button::new(crate::rtl::widget(
                             ui,
-                            egui::RichText::new(crate::i18n::tr(&app.ui.language, "  New file  ")).size(14.0).color(Color32::WHITE),
+                            egui::RichText::new(crate::i18n::tr(&app.ui.language, "  New file  "))
+                                .size(14.0)
+                                .color(Color32::WHITE),
                         ))
                         .fill(t.accent_strong)
                         .corner_radius(16.0)
@@ -688,9 +1025,13 @@ pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
                 }
                 if ui
                     .add(
-                        egui::Button::new(crate::rtl::widget(ui, egui::RichText::new(crate::i18n::tr(&app.ui.language, "  Open  ")).size(14.0)))
-                            .corner_radius(16.0)
-                            .min_size(vec2(0.0, 32.0)),
+                        egui::Button::new(crate::rtl::widget(
+                            ui,
+                            egui::RichText::new(crate::i18n::tr(&app.ui.language, "  Open  "))
+                                .size(14.0),
+                        ))
+                        .corner_radius(16.0)
+                        .min_size(vec2(0.0, 32.0)),
                     )
                     .clicked()
                 {
@@ -700,7 +1041,11 @@ pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
                     .add(
                         egui::Button::new(crate::rtl::widget(
                             ui,
-                            egui::RichText::new(crate::i18n::tr(&app.ui.language, "  Open sample magazine  ")).size(14.0),
+                            egui::RichText::new(crate::i18n::tr(
+                                &app.ui.language,
+                                "  Open sample magazine  ",
+                            ))
+                            .size(14.0),
                         ))
                         .corner_radius(16.0)
                         .min_size(vec2(0.0, 32.0)),
@@ -715,22 +1060,41 @@ pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
             ui.add_space(24.0);
             ui.label(crate::rtl::widget(
                 ui,
-                egui::RichText::new(crate::i18n::tr(&app.ui.language, "Start a new document")).font(semibold(15.0)).color(t.text_strong),
+                egui::RichText::new(crate::i18n::tr(&app.ui.language, "Start a new document"))
+                    .font(semibold(15.0))
+                    .color(t.text_strong),
             ));
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
-                for p in designcraft_doc::build::PRESETS.iter().filter(|p| p.intent == designcraft_doc::Intent::Print) {
+                for p in designcraft_doc::build::PRESETS
+                    .iter()
+                    .filter(|p| p.intent == designcraft_doc::Intent::Print)
+                {
                     let (cr, resp) = ui.allocate_exact_size(vec2(120.0, 150.0), Sense::click());
                     let hov = resp.hovered();
-                    ui.painter().rect_filled(cr, 6.0, if hov { t.hover } else { t.panel });
+                    ui.painter()
+                        .rect_filled(cr, 6.0, if hov { t.hover } else { t.panel });
                     let k = (80.0 / p.width.max(p.height)) as f32;
-                    let pr = egui::Rect::from_center_size(cr.center() - vec2(0.0, 14.0), vec2(p.width as f32 * k, p.height as f32 * k));
+                    let pr = egui::Rect::from_center_size(
+                        cr.center() - vec2(0.0, 14.0),
+                        vec2(p.width as f32 * k, p.height as f32 * k),
+                    );
                     ui.painter().rect_filled(pr, 0.0, Color32::from_gray(245));
-                    ui.painter().text(egui::pos2(cr.center().x, cr.max.y - 26.0), egui::Align2::CENTER_CENTER, p.name, semibold(12.0), t.text_strong);
+                    ui.painter().text(
+                        egui::pos2(cr.center().x, cr.max.y - 26.0),
+                        egui::Align2::CENTER_CENTER,
+                        p.name,
+                        semibold(12.0),
+                        t.text_strong,
+                    );
                     ui.painter().text(
                         egui::pos2(cr.center().x, cr.max.y - 11.0),
                         egui::Align2::CENTER_CENTER,
-                        format!("{} × {}", designcraft_geom::format_measure(p.width, p.units), designcraft_geom::format_measure(p.height, p.units)),
+                        format!(
+                            "{} × {}",
+                            designcraft_geom::format_measure(p.width, p.units),
+                            designcraft_geom::format_measure(p.height, p.units)
+                        ),
                         egui::FontId::proportional(10.0),
                         t.text_dim,
                     );
@@ -747,45 +1111,73 @@ pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
 /// Start screen: the ArtCraft community (Discord first) and project links.
 fn community_card(app: &mut DesignApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
-    egui::Frame::NONE.fill(t.panel).corner_radius(10.0).inner_margin(egui::Margin::same(14)).show(ui, |ui| {
-        ui.set_max_width(640.0);
-        ui.horizontal(|ui| {
-            let (r, _) = ui.allocate_exact_size(vec2(44.0, 44.0), Sense::hover());
-            crate::about::paint_mark(ui, r, crate::about::BRAND);
-            ui.add_space(8.0);
-            ui.vertical(|ui| {
-                ui.label(crate::rtl::widget(
-                    ui,
-                    egui::RichText::new(crate::i18n::tr(&app.ui.language, "Join the ArtCraft community")).font(semibold(14.0)).color(t.text_strong),
-                ));
-                ui.label(crate::rtl::widget(
-                    ui,
-                    egui::RichText::new(crate::i18n::tr(&app.ui.language, "Get help, share your layouts and shape what we build next."))
+    egui::Frame::NONE
+        .fill(t.panel)
+        .corner_radius(10.0)
+        .inner_margin(egui::Margin::same(14))
+        .show(ui, |ui| {
+            ui.set_max_width(640.0);
+            ui.horizontal(|ui| {
+                let (r, _) = ui.allocate_exact_size(vec2(44.0, 44.0), Sense::hover());
+                crate::about::paint_mark(ui, r, crate::about::BRAND);
+                ui.add_space(8.0);
+                ui.vertical(|ui| {
+                    ui.label(crate::rtl::widget(
+                        ui,
+                        egui::RichText::new(crate::i18n::tr(
+                            &app.ui.language,
+                            "Join the ArtCraft community",
+                        ))
+                        .font(semibold(14.0))
+                        .color(t.text_strong),
+                    ));
+                    ui.label(crate::rtl::widget(
+                        ui,
+                        egui::RichText::new(crate::i18n::tr(
+                            &app.ui.language,
+                            "Get help, share your layouts and shape what we build next.",
+                        ))
                         .size(12.0)
                         .color(t.text_dim),
-                ));
-                ui.add_space(4.0);
-                ui.horizontal(|ui| {
-                    for (text, id) in [("DesignCraft page", "help.appPage"), ("GitHub", "help.github"), ("getartcraft.com", "help.website")] {
-                        let url = designcraft_engine::links::get(&id[5..]).unwrap_or_default();
-                        let l = ui
-                            .add(egui::Label::new(egui::RichText::new(text).size(12.0).color(t.accent).underline()).sense(Sense::click()))
-                            .on_hover_text(url)
-                            .on_hover_cursor(egui::CursorIcon::PointingHand);
-                        if l.clicked() {
-                            let _ = app.run(id, json!({}));
+                    ));
+                    ui.add_space(4.0);
+                    ui.horizontal(|ui| {
+                        for (text, id) in [
+                            ("DesignCraft page", "help.appPage"),
+                            ("GitHub", "help.github"),
+                            ("getartcraft.com", "help.website"),
+                        ] {
+                            let url = designcraft_engine::links::get(&id[5..]).unwrap_or_default();
+                            let l = ui
+                                .add(
+                                    egui::Label::new(
+                                        egui::RichText::new(text)
+                                            .size(12.0)
+                                            .color(t.accent)
+                                            .underline(),
+                                    )
+                                    .sense(Sense::click()),
+                                )
+                                .on_hover_text(url)
+                                .on_hover_cursor(egui::CursorIcon::PointingHand);
+                            if l.clicked() {
+                                let _ = app.run(id, json!({}));
+                            }
+                            ui.add_space(8.0);
                         }
-                        ui.add_space(8.0);
+                    });
+                });
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if crate::about::discord_button(
+                        ui,
+                        crate::i18n::tr(&app.ui.language, "Join our Discord"),
+                        vec2(190.0, 38.0),
+                    ) {
+                        let _ = app.run("help.discord", json!({}));
                     }
                 });
             });
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if crate::about::discord_button(ui, crate::i18n::tr(&app.ui.language, "Join our Discord"), vec2(190.0, 38.0)) {
-                    let _ = app.run("help.discord", json!({}));
-                }
-            });
         });
-    });
 }
 
 #[cfg(test)]
@@ -800,7 +1192,10 @@ mod tests {
     const FIRST_CONTROL: &str = "Rotate 90° Counterclockwise";
 
     fn app() -> crate::DesignApp {
-        let mut app = crate::DesignApp::new(designcraft_engine::Session::new(), crate::Services::default());
+        let mut app = crate::DesignApp::new(
+            designcraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.ui.control_bar = true;
         app
     }
@@ -817,17 +1212,28 @@ mod tests {
         let hebrew = "דוח רבעוני עם שם קובץ ארוך מאוד ".repeat(6);
         let mut app = app();
         for title in [latin.as_str(), hebrew.as_str(), "Short"] {
-            app.run("file.new", serde_json::json!({ "title": title })).unwrap();
+            app.run("file.new", serde_json::json!({ "title": title }))
+                .unwrap();
         }
         let h = test_window::open(app, vec2(1200.0, 600.0));
         for title in [latin.as_str(), hebrew.as_str()] {
             let tab = rect(&h, title);
-            assert!(tab.width() <= super::DOC_TAB_MAX_W, "{title:?} tab is {} wide", tab.width());
+            assert!(
+                tab.width() <= super::DOC_TAB_MAX_W,
+                "{title:?} tab is {} wide",
+                tab.width()
+            );
             let close = rect(&h, &format!("Close {title}"));
-            assert!(tab.contains_rect(close), "close button {close:?} outside its tab {tab:?}");
+            assert!(
+                tab.contains_rect(close),
+                "close button {close:?} outside its tab {tab:?}"
+            );
         }
         let (first, short) = (rect(&h, &latin), rect(&h, "Short"));
-        assert!(short.min.x - first.min.x <= 2.0 * super::DOC_TAB_MAX_W, "the last tab {short:?} starts too far right");
+        assert!(
+            short.min.x - first.min.x <= 2.0 * super::DOC_TAB_MAX_W,
+            "the last tab {short:?} starts too far right"
+        );
     }
 
     #[test]
@@ -835,14 +1241,24 @@ mod tests {
         let w = 700.0;
         let mut h = test_window::open(app(), vec2(w, 600.0));
         let bar = test_window::panel_rect(&h, "control_bar");
-        assert!(rect(&h, LAST_CONTROL).max.x > w, "the controls are wider than the window");
+        assert!(
+            rect(&h, LAST_CONTROL).max.x > w,
+            "the controls are wider than the window"
+        );
         // A plain mouse wheel scrolls the bar sideways.
         let first = rect(&h, FIRST_CONTROL).center();
         wheel(&mut h, first, vec2(0.0, -3000.0));
         let last = rect(&h, LAST_CONTROL);
         let window = egui::Rect::from_min_size(pos2(0.0, 0.0), vec2(w, 600.0));
-        assert!(window.contains_rect(last) && bar.contains_rect(last), "{last:?} outside the bar {bar:?}");
-        assert_eq!(test_window::panel_rect(&h, "control_bar").height(), bar.height(), "the bar keeps its height");
+        assert!(
+            window.contains_rect(last) && bar.contains_rect(last),
+            "{last:?} outside the bar {bar:?}"
+        );
+        assert_eq!(
+            test_window::panel_rect(&h, "control_bar").height(),
+            bar.height(),
+            "the bar keeps its height"
+        );
         // A popup opened from a scrolled control opens at that control.
         let fill = h.get_by_label("Fill").rect();
         let chip = pos2(fill.max.x + 15.0, fill.center().y);
@@ -851,7 +1267,10 @@ mod tests {
         h.drop_at(chip);
         h.run_steps(4);
         let item = rect(&h, "[Black]");
-        assert!(item.min.y > fill.max.y && (item.min.x - chip.x).abs() < 120.0, "popup item at {item:?}, control at {chip:?}");
+        assert!(
+            item.min.y > fill.max.y && (item.min.x - chip.x).abs() < 120.0,
+            "popup item at {item:?}, control at {chip:?}"
+        );
     }
 
     #[test]
@@ -859,7 +1278,10 @@ mod tests {
         let w = 640.0;
         let mut h = test_window::open(app(), vec2(w, 600.0));
         let (help, share) = (rect(&h, "Help"), rect(&h, "Share"));
-        assert!(help.max.x <= share.min.x, "the menus ({help:?}) and the workspace controls ({share:?}) overlap");
+        assert!(
+            help.max.x <= share.min.x,
+            "the menus ({help:?}) and the workspace controls ({share:?}) overlap"
+        );
         wheel(&mut h, help.center(), vec2(0.0, -3000.0));
         let share = rect(&h, "Share");
         let window = egui::Rect::from_min_size(pos2(0.0, 0.0), vec2(w, 600.0));
@@ -869,11 +1291,21 @@ mod tests {
     #[test]
     fn a_wide_window_does_not_scroll_the_bars() {
         let mut h = test_window::open(app(), vec2(1400.0, 900.0));
-        let before = [rect(&h, FIRST_CONTROL), rect(&h, LAST_CONTROL), rect(&h, "Help"), rect(&h, "Share")];
+        let before = [
+            rect(&h, FIRST_CONTROL),
+            rect(&h, LAST_CONTROL),
+            rect(&h, "Help"),
+            rect(&h, "Share"),
+        ];
         assert!(before.iter().all(|r| r.max.x <= 1400.0), "{before:?}");
         wheel(&mut h, before[0].center(), vec2(0.0, -3000.0));
         wheel(&mut h, before[2].center(), vec2(0.0, -3000.0));
-        let after = [rect(&h, FIRST_CONTROL), rect(&h, LAST_CONTROL), rect(&h, "Help"), rect(&h, "Share")];
+        let after = [
+            rect(&h, FIRST_CONTROL),
+            rect(&h, LAST_CONTROL),
+            rect(&h, "Help"),
+            rect(&h, "Share"),
+        ];
         assert_eq!(after, before);
     }
 
@@ -881,13 +1313,22 @@ mod tests {
     fn a_scrolled_bar_keeps_its_captions_on_one_line() {
         let mut app = app();
         app.run("file.new", serde_json::json!({})).unwrap();
-        let f = app.run("frame.create", serde_json::json!({"rect": [72, 72, 300, 200], "content": "text", "text": "Hello"})).unwrap();
-        app.run("selection.set", serde_json::json!({"ids": [f["id"]]})).unwrap();
+        let f = app
+            .run(
+                "frame.create",
+                serde_json::json!({"rect": [72, 72, 300, 200], "content": "text", "text": "Hello"}),
+            )
+            .unwrap();
+        app.run("selection.set", serde_json::json!({"ids": [f["id"]]}))
+            .unwrap();
         let mut h = test_window::open(app, vec2(700.0, 600.0));
         let bar = test_window::panel_rect(&h, "control_bar").center();
         wheel(&mut h, bar, vec2(0.0, -3000.0));
         // The text frame's last group: its caption gets only what is left of the row.
         let columns = h.get_by_label("Columns").rect();
-        assert!(columns.height() < 20.0 && columns.width() > columns.height(), "Columns wraps: {columns:?}");
+        assert!(
+            columns.height() < 20.0 && columns.width() > columns.height(),
+            "Columns wraps: {columns:?}"
+        );
     }
 }

@@ -49,7 +49,11 @@ struct PatternCache {
 
 impl Default for PatternCache {
     fn default() -> Self {
-        Self { tiles: std::array::from_fn(|_| FrameCache::new(lru::PATTERN_BUDGET, usize::MAX)), renderer: None, depth: 0 }
+        Self {
+            tiles: std::array::from_fn(|_| FrameCache::new(lru::PATTERN_BUDGET, usize::MAX)),
+            renderer: None,
+            depth: 0,
+        }
     }
 }
 
@@ -65,8 +69,12 @@ fn same_art(a: &[Arc<Node>], b: &[Arc<Node>]) -> bool {
 /// addresses of its art, its tile, tile type and overlap.
 pub(crate) fn hash_tiling(def: &PatternDef, h: &mut impl Hasher) {
     def.name.hash(h);
-    def.art.iter().for_each(|a| (Arc::as_ptr(a) as usize).hash(h));
-    [def.tile.x0, def.tile.y0, def.tile.x1, def.tile.y1].map(f64::to_bits).hash(h);
+    def.art
+        .iter()
+        .for_each(|a| (Arc::as_ptr(a) as usize).hash(h));
+    [def.tile.x0, def.tile.y0, def.tile.x1, def.tile.y1]
+        .map(f64::to_bits)
+        .hash(h);
     std::mem::discriminant(&def.tile_type).hash(h);
     if let TileType::BrickByRow { offset } | TileType::BrickByColumn { offset } = def.tile_type {
         offset.to_bits().hash(h);
@@ -85,11 +93,21 @@ pub(crate) fn raster_scale(s: f64, period: (f64, f64)) -> f64 {
 
 /// Rasterize `region` (pattern space) of the infinite tiling into a `w`×`h` pixmap, colours as
 /// `ink` paints them.
-fn rasterize(r: &mut Renderer, doc: &Document, def: &PatternDef, region: Rect, w: u16, h: u16, ink: Ink) -> Pixmap {
+fn rasterize(
+    r: &mut Renderer,
+    doc: &Document,
+    def: &PatternDef,
+    region: Rect,
+    w: u16,
+    h: u16,
+    ink: Ink,
+) -> Pixmap {
     let (w, h) = (w.max(1), h.max(1));
     let mut ctx = crate::single_threaded_context(w, h);
-    let view = Affine::scale_non_uniform(w as f64 / region.width().max(1e-9), h as f64 / region.height().max(1e-9))
-        * Affine::translate(-region.origin().to_vec2());
+    let view = Affine::scale_non_uniform(
+        w as f64 / region.width().max(1e-9),
+        h as f64 / region.height().max(1e-9),
+    ) * Affine::translate(-region.origin().to_vec2());
     let opts = RenderOptions::default();
     r.stamp += 1;
     let px_rect = Rect::new(0.0, 0.0, w as f64, h as f64);
@@ -143,7 +161,12 @@ fn with_tile_renderer<T>(f: impl FnOnce(&mut Renderer) -> T) -> Option<T> {
 
 /// Set a pattern paint on `ctx` (its current transform maps the paint's user space to pixels), as
 /// frame `f` paints it.
-pub(crate) fn set_pattern_paint(ctx: &mut RenderContext, name: &str, xf: Affine, f: &Frame) -> bool {
+pub(crate) fn set_pattern_paint(
+    ctx: &mut RenderContext,
+    name: &str,
+    xf: Affine,
+    f: &Frame,
+) -> bool {
     let (doc, ink) = (f.doc, f.ink);
     let missing = || ink.fixed([128, 128, 128, 255]);
     let Some(def) = doc.pattern(name) else {
@@ -163,14 +186,19 @@ pub(crate) fn set_pattern_paint(ctx: &mut RenderContext, name: &str, xf: Affine,
         let mut c = c.borrow_mut();
         let tiles = &mut c.tiles[ink as usize];
         let t = tiles.tick();
-        tiles.get(&key, t).filter(|e| e.params == params && same_art(&e.art, &def.art)).map(|e| (e.pixmap.clone(), e.sx, e.sy))
+        tiles
+            .get(&key, t)
+            .filter(|e| e.params == params && same_art(&e.art, &def.art))
+            .map(|e| (e.pixmap.clone(), e.sx, e.sy))
     });
     let (pm, sx, sy) = match hit {
         Some(h) => h,
         None => {
             let w = (pw * scale).ceil().clamp(1.0, 4096.0) as u16;
             let h = (ph * scale).ceil().clamp(1.0, 4096.0) as u16;
-            let Some(pm) = with_tile_renderer(|r| rasterize(r, doc, def, Rect::new(0.0, 0.0, pw, ph), w, h, ink)) else {
+            let Some(pm) = with_tile_renderer(|r| {
+                rasterize(r, doc, def, Rect::new(0.0, 0.0, pw, ph), w, h, ink)
+            }) else {
                 ctx.set_paint(missing());
                 return true;
             };
@@ -179,14 +207,36 @@ pub(crate) fn set_pattern_paint(ctx: &mut RenderContext, name: &str, xf: Affine,
             CACHE.with(|c| {
                 let mut c = c.borrow_mut();
                 let tiles = &mut c.tiles[ink as usize];
-                let (t, bytes) = (tiles.tick(), size_of::<TileEntry>() + w as usize * h as usize * 4);
-                tiles.insert(key, TileEntry { art: def.art.clone(), params, sx, sy, pixmap: pm.clone() }, bytes, t);
+                let (t, bytes) = (
+                    tiles.tick(),
+                    size_of::<TileEntry>() + w as usize * h as usize * 4,
+                );
+                tiles.insert(
+                    key,
+                    TileEntry {
+                        art: def.art.clone(),
+                        params,
+                        sx,
+                        sy,
+                        pixmap: pm.clone(),
+                    },
+                    bytes,
+                    t,
+                );
             });
             (pm, sx, sy)
         }
     };
-    let sampler = ImageSampler { x_extend: Extend::Repeat, y_extend: Extend::Repeat, quality: ImageQuality::Medium, alpha: 1.0 };
-    ctx.set_paint(vello_cpu::Image { image: vello_cpu::ImageSource::Pixmap(pm), sampler });
+    let sampler = ImageSampler {
+        x_extend: Extend::Repeat,
+        y_extend: Extend::Repeat,
+        quality: ImageQuality::Medium,
+        alpha: 1.0,
+    };
+    ctx.set_paint(vello_cpu::Image {
+        image: vello_cpu::ImageSource::Pixmap(pm),
+        sampler,
+    });
     ctx.set_paint_transform(xf * Affine::scale_non_uniform(1.0 / sx, 1.0 / sy));
     true
 }
@@ -199,23 +249,40 @@ pub fn render_pattern_swatch(doc: &Document, name: &str, size: u32) -> Option<Re
     let region = Rect::from_center_size((w / 2.0, h / 2.0), (side, side));
     let px = size.clamp(1, 1024) as u16;
     let pm = with_tile_renderer(|r| rasterize(r, doc, def, region, px, px, Ink::Display))?;
-    Some(Rendered { width: px as u32, height: px as u32, pixels: pm.data_as_u8_slice().to_vec() })
+    Some(Rendered {
+        width: px as u32,
+        height: px as u32,
+        pixels: pm.data_as_u8_slice().to_vec(),
+    })
 }
 
 impl Renderer {
     /// Pattern editing mode: draw the tile layer, its dimmed copies and the tile edge instead of
     /// the document. Returns false when not in pattern editing mode.
     pub(crate) fn draw_pattern_edit(&mut self, ctx: &mut RenderContext, f: &Frame) -> bool {
-        let Some(pe) = &f.doc.pattern_edit else { return false };
-        let Some(layer) = f.doc.layers.iter().find(|l| l.id == pe.layer) else { return false };
-        let Some(def) = f.doc.pattern(&pe.pattern) else { return false };
+        let Some(pe) = &f.doc.pattern_edit else {
+            return false;
+        };
+        let Some(layer) = f.doc.layers.iter().find(|l| l.id == pe.layer) else {
+            return false;
+        };
+        let Some(def) = f.doc.pattern(&pe.pattern) else {
+            return false;
+        };
         let children: Vec<Arc<Node>> = layer.children().cloned().unwrap_or_default();
         if layer.visible && !children.is_empty() {
             let dim = (def.dim_copies / 100.0).clamp(0.0, 1.0);
-            let comp = crate::group::Composite { opacity: dim, ..Default::default() };
+            let comp = crate::group::Composite {
+                opacity: dim,
+                ..Default::default()
+            };
             self.group(ctx, f, comp, &mut |r, c, fr| {
                 for o in def.preview_offsets() {
-                    let frame = Frame { view: fr.view * Affine::translate(o), visible: fr.visible - o, ..*fr };
+                    let frame = Frame {
+                        view: fr.view * Affine::translate(o),
+                        visible: fr.visible - o,
+                        ..*fr
+                    };
                     for a in &children {
                         r.draw_arc(c, &frame, a);
                     }
@@ -260,7 +327,11 @@ mod tests {
         def.tile_type = tt;
         d.patterns.push(def);
         let id = d.alloc_id();
-        let n = Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 200.0)), Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0));
+        let n = Node::path(
+            id,
+            shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 200.0)),
+            Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0),
+        );
         let l = d.layers[0].id;
         d.insert(Some(l), 0, n).unwrap();
         d
@@ -268,7 +339,16 @@ mod tests {
 
     fn render(d: &Document, scale: f64) -> Rendered {
         let px = (200.0 * scale) as u32;
-        Renderer::new().render(d, px, px, Affine::scale(scale), &RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() })
+        Renderer::new().render(
+            d,
+            px,
+            px,
+            Affine::scale(scale),
+            &RenderOptions {
+                background: Some([255, 255, 255, 255]),
+                ..Default::default()
+            },
+        )
     }
 
     fn is_red(p: [u8; 4]) -> bool {
@@ -282,10 +362,17 @@ mod tests {
     /// pattern's paint transform must not resample the effect's raster).
     #[test]
     fn effects_after_a_pattern_fill_keep_their_place_and_size() {
-        let fx = |id: &str, params: serde_json::Value| vectorcraft_doc::Effect { id: id.into(), params, visible: true };
+        let fx = |id: &str, params: serde_json::Value| vectorcraft_doc::Effect {
+            id: id.into(),
+            params,
+            visible: true,
+        };
         for effect in [
             fx("blur.gaussian", serde_json::json!({"radius": 4.0})),
-            fx("stylize.dropShadow", serde_json::json!({"x": 6, "y": 6, "blur": 3, "opacity": 100})),
+            fx(
+                "stylize.dropShadow",
+                serde_json::json!({"x": 6, "y": 6, "blur": 3, "opacity": 100}),
+            ),
         ] {
             let make = |with_pattern: bool| {
                 let mut d = doc_with_pattern(TileType::Grid);
@@ -320,12 +407,21 @@ mod tests {
                     200,
                     200,
                     Affine::IDENTITY,
-                    &RenderOptions { background: Some([255, 255, 255, 255]), supersample: true, ..Default::default() },
+                    &RenderOptions {
+                        background: Some([255, 255, 255, 255]),
+                        supersample: true,
+                        ..Default::default()
+                    },
                 )
             };
             let (with, without) = (one(&make(true)), one(&make(false)));
             for (x, y) in [(150, 140), (125, 140), (176, 160), (150, 172), (184, 176)] {
-                assert_eq!(with.pixel(x, y), without.pixel(x, y), "{} at ({x}, {y})", effect.id);
+                assert_eq!(
+                    with.pixel(x, y),
+                    without.pixel(x, y),
+                    "{} at ({x}, {y})",
+                    effect.id
+                );
             }
         }
     }
@@ -355,7 +451,8 @@ mod tests {
     fn pattern_fill_is_clipped_to_shape() {
         let mut d = doc_with_pattern(TileType::Grid);
         let id = d.layers[0].children().unwrap()[0].id;
-        *d.node_mut(id).unwrap().path_data_mut().unwrap() = shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0));
+        *d.node_mut(id).unwrap().path_data_mut().unwrap() =
+            shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0));
         let r = render(&d, 1.0);
         assert!(is_red(r.pixel(45, 45)));
         assert!(is_white(r.pixel(65, 65)));
@@ -367,7 +464,12 @@ mod tests {
         let r = render(&d, 1.0);
         assert!(is_red(r.pixel(5, 5)));
         // Row 1 is shifted by half a tile.
-        assert!(is_white(r.pixel(5, 25)) && is_red(r.pixel(15, 25)), "{:?} {:?}", r.pixel(5, 25), r.pixel(15, 25));
+        assert!(
+            is_white(r.pixel(5, 25)) && is_red(r.pixel(15, 25)),
+            "{:?} {:?}",
+            r.pixel(5, 25),
+            r.pixel(15, 25)
+        );
         assert!(is_red(r.pixel(5, 45)));
     }
 
@@ -378,7 +480,10 @@ mod tests {
         assert!(is_red(r.pixel(10, 10)) && is_white(r.pixel(30, 10)) && is_red(r.pixel(50, 10)));
         let mut d2 = d.clone();
         let id = d2.layers[0].children().unwrap()[0].id;
-        vectorcraft_doc::pattern::transform_pattern_paints(d2.node_mut(id).unwrap(), Affine::translate((10.0, 0.0)));
+        vectorcraft_doc::pattern::transform_pattern_paints(
+            d2.node_mut(id).unwrap(),
+            Affine::translate((10.0, 0.0)),
+        );
         let r = render(&d2, 1.0);
         assert!(is_white(r.pixel(5, 5)) && is_red(r.pixel(15, 5)));
     }
@@ -388,7 +493,11 @@ mod tests {
     fn doc_with_two_scales(s: f64) -> Document {
         let mut d = doc_with_pattern(TileType::Grid);
         let square = shapes::rectangle(Rect::new(120.0, 120.0, 160.0, 160.0));
-        let mut n = Node::path(d.alloc_id(), square, Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0));
+        let mut n = Node::path(
+            d.alloc_id(),
+            square,
+            Appearance::basic(pattern_paint("Checks"), Paint::None, 0.0),
+        );
         vectorcraft_doc::pattern::transform_pattern_paints(&mut n, Affine::scale(s));
         let l = d.layers[0].id;
         d.insert(Some(l), 1, n).unwrap();
@@ -398,7 +507,16 @@ mod tests {
     /// `d` drawn by `r` at `scale`.
     fn frame(r: &mut Renderer, d: &Document, scale: f64) -> Rendered {
         let px = (200.0 * scale) as u32;
-        r.render(d, px, px, Affine::scale(scale), &RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() })
+        r.render(
+            d,
+            px,
+            px,
+            Affine::scale(scale),
+            &RenderOptions {
+                background: Some([255, 255, 255, 255]),
+                ..Default::default()
+            },
+        )
     }
 
     /// The tiles rasterized on this thread so far: the tile renderer counts a frame for each.
@@ -415,16 +533,34 @@ mod tests {
             let mut r = Renderer::new();
             let start = tiles_rasterized();
             let first = frame(&mut r, &d, 1.0).pixels;
-            assert_eq!(tiles_rasterized() - start, 2, "tiles scaled by {s}: a tile for each object");
+            assert_eq!(
+                tiles_rasterized() - start,
+                2,
+                "tiles scaled by {s}: a tile for each object"
+            );
             for _ in 0..3 {
-                assert!(frame(&mut r, &d, 1.0).pixels == first, "tiles scaled by {s}");
+                assert!(
+                    frame(&mut r, &d, 1.0).pixels == first,
+                    "tiles scaled by {s}"
+                );
             }
-            assert_eq!(tiles_rasterized() - start, 2, "tiles scaled by {s}: later frames draw both objects from their tiles");
+            assert_eq!(
+                tiles_rasterized() - start,
+                2,
+                "tiles scaled by {s}: later frames draw both objects from their tiles"
+            );
             // After a frame at 200%, the next frame at 100% draws from the tiles made at 100%.
             frame(&mut r, &d, 2.0);
             let zoomed = tiles_rasterized();
-            assert!(frame(&mut r, &d, 1.0).pixels == first, "tiles scaled by {s}");
-            assert_eq!(tiles_rasterized(), zoomed, "tiles scaled by {s}: back at 100%");
+            assert!(
+                frame(&mut r, &d, 1.0).pixels == first,
+                "tiles scaled by {s}"
+            );
+            assert_eq!(
+                tiles_rasterized(),
+                zoomed,
+                "tiles scaled by {s}: back at 100%"
+            );
         }
     }
 
@@ -433,27 +569,46 @@ mod tests {
         // A new renderer on a thread of its own starts with no tiles.
         let fresh = |d: &Document, zoom: f64| {
             let d = d.clone();
-            std::thread::spawn(move || frame(&mut Renderer::new(), &d, zoom).pixels).join().unwrap()
+            std::thread::spawn(move || frame(&mut Renderer::new(), &d, zoom).pixels)
+                .join()
+                .unwrap()
         };
         let mut d = doc_with_two_scales(0.25);
         let mut r = Renderer::new();
         // Pixel (130, 130) is red in the square's tiles and clear in the rectangle's, (133, 133) is
         // clear in both, and (103, 103), outside the square, is red in the rectangle's.
         let first = frame(&mut r, &d, 1.0);
-        assert!(is_red(first.pixel(130, 130)) && is_white(first.pixel(133, 133)) && is_red(first.pixel(103, 103)));
+        assert!(
+            is_red(first.pixel(130, 130))
+                && is_white(first.pixel(133, 133))
+                && is_red(first.pixel(103, 103))
+        );
         for zoom in [1.0, 2.0, 1.0, 0.5, 2.0, 1.0] {
-            assert!(frame(&mut r, &d, zoom).pixels == fresh(&d, zoom), "zoom {zoom}");
+            assert!(
+                frame(&mut r, &d, zoom).pixels == fresh(&d, zoom),
+                "zoom {zoom}"
+            );
         }
         // Change the tile type as Pattern Options does.
         d.patterns[0].tile_type = TileType::BrickByRow { offset: 0.5 };
         for zoom in [2.0, 1.0] {
-            assert!(frame(&mut r, &d, zoom).pixels == fresh(&d, zoom), "brick, zoom {zoom}");
+            assert!(
+                frame(&mut r, &d, zoom).pixels == fresh(&d, zoom),
+                "brick, zoom {zoom}"
+            );
         }
         // Replace the art as Done Editing Pattern does.
         let blue = Appearance::basic(Paint::solid(Color::rgb(0.0, 0.0, 1.0)), Paint::None, 0.0);
-        d.patterns[0].art = vec![Arc::new(Node::path(NodeId(901), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), blue))];
+        d.patterns[0].art = vec![Arc::new(Node::path(
+            NodeId(901),
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            blue,
+        ))];
         for zoom in [1.0, 2.0] {
-            assert!(frame(&mut r, &d, zoom).pixels == fresh(&d, zoom), "new art, zoom {zoom}");
+            assert!(
+                frame(&mut r, &d, zoom).pixels == fresh(&d, zoom),
+                "new art, zoom {zoom}"
+            );
         }
     }
 
@@ -465,7 +620,9 @@ mod tests {
         let d = doc_with_two_scales(0.25);
         let tile = |side: usize| size_of::<TileEntry>() + side * side * 4;
         let budget = tile(80) + tile(40) + tile(10);
-        CACHE.with(|c| c.borrow_mut().tiles[Ink::Display as usize] = FrameCache::new(budget, usize::MAX));
+        CACHE.with(|c| {
+            c.borrow_mut().tiles[Ink::Display as usize] = FrameCache::new(budget, usize::MAX)
+        });
         let kept = || {
             CACHE.with(|c| {
                 let c = c.borrow();
@@ -478,9 +635,16 @@ mod tests {
             frame(&mut r, &d, zoom);
             let drawn = tiles_rasterized();
             frame(&mut r, &d, zoom);
-            assert_eq!(tiles_rasterized(), drawn, "zoom {zoom}: the next frame draws from the tiles just made");
+            assert_eq!(
+                tiles_rasterized(),
+                drawn,
+                "zoom {zoom}: the next frame draws from the tiles just made"
+            );
             let (len, bytes) = kept();
-            assert!(len >= 2 && bytes <= budget, "zoom {zoom}: {len} tiles, {bytes} bytes");
+            assert!(
+                len >= 2 && bytes <= budget,
+                "zoom {zoom}: {len} tiles, {bytes} bytes"
+            );
         }
         // Tiles were rasterized at five scales (0.25, 0.5, 1, 2 and 4); the cache dropped the least
         // recently used tiles first.
@@ -514,7 +678,11 @@ mod tests {
         let l = d.add_layer(Some("Pattern Editing Mode"));
         let art = d.patterns[0].art[0].clone();
         d.insert(Some(l), 0, (*art).clone()).unwrap();
-        d.pattern_edit = Some(PatternEdit { pattern: "Checks".into(), layer: l, original: None });
+        d.pattern_edit = Some(PatternEdit {
+            pattern: "Checks".into(),
+            layer: l,
+            original: None,
+        });
         d.patterns[0].dim_copies = 50.0;
         d.patterns[0].show_tile_edge = false;
         let r = render(&d, 1.0);
@@ -536,7 +704,15 @@ mod tests {
         );
         let id = d.alloc_id();
         let l = d.layers[0].id;
-        d.insert(Some(l), 0, Node::new(id, NodeKind::Repeat(RepeatSpec::grid(vec![Arc::new(sq)], 10.0, 10.0)))).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::new(
+                id,
+                NodeKind::Repeat(RepeatSpec::grid(vec![Arc::new(sq)], 10.0, 10.0)),
+            ),
+        )
+        .unwrap();
         let r = render(&d, 1.0);
         for (x, y) in [(5, 5), (25, 5), (45, 45)] {
             assert_eq!(r.pixel(x, y), [0, 0, 0, 255], "({x},{y})");
@@ -550,7 +726,10 @@ mod tests {
         assert_eq!(raster_scale(1.5, (10.0, 10.0)), 2.0);
         assert_eq!(raster_scale(3.0, (10.0, 10.0)), 4.0);
         // A change within 2× keeps the raster.
-        assert_eq!(raster_scale(2.1, (10.0, 10.0)), raster_scale(3.9, (10.0, 10.0)));
+        assert_eq!(
+            raster_scale(2.1, (10.0, 10.0)),
+            raster_scale(3.9, (10.0, 10.0))
+        );
         assert!(raster_scale(64.0, (1000.0, 10.0)) * 1000.0 <= MAX_TILE_PX);
     }
 }

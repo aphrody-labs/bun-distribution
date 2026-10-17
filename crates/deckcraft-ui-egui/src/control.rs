@@ -31,9 +31,19 @@ pub struct ControlRequest {
 }
 
 impl ControlRequest {
-    pub fn new(method: impl Into<String>, params: Value) -> (Self, std::sync::mpsc::Receiver<ControlResponse>) {
+    pub fn new(
+        method: impl Into<String>,
+        params: Value,
+    ) -> (Self, std::sync::mpsc::Receiver<ControlResponse>) {
         let (tx, rx) = std::sync::mpsc::channel();
-        (Self { method: method.into(), params, reply: tx }, rx)
+        (
+            Self {
+                method: method.into(),
+                params,
+                reply: tx,
+            },
+            rx,
+        )
     }
 }
 
@@ -56,7 +66,12 @@ fn wrap(r: Result<Value, String>) -> Outcome {
 }
 
 pub fn all_commands(app: &SlideApp) -> Value {
-    let mut v: Vec<Value> = app.session.commands().into_iter().map(|c| serde_json::to_value(c).unwrap_or_default()).collect();
+    let mut v: Vec<Value> = app
+        .session
+        .commands()
+        .into_iter()
+        .map(|c| serde_json::to_value(c).unwrap_or_default())
+        .collect();
     for (id, label, sc, params) in crate::UI_COMMANDS {
         v.push(json!({"id": id, "label": label, "shortcut": sc, "params": params, "enabled": true, "ui": true}));
     }
@@ -107,45 +122,82 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
     let s = |k: &str| p.get(k).and_then(Value::as_str);
     match req.method.as_str() {
         "engine.execute" | "ui.menu.invoke" | "command" => {
-            let Some(id) = s("command").or(s("id")) else { return err("missing `command`") };
-            let params = p.get("params").cloned().filter(|v| !v.is_null()).unwrap_or(json!({}));
+            let Some(id) = s("command").or(s("id")) else {
+                return err("missing `command`");
+            };
+            let params = p
+                .get("params")
+                .cloned()
+                .filter(|v| !v.is_null())
+                .unwrap_or(json!({}));
             wrap(app.run(id, params))
         }
         "engine.commands" => ok(all_commands(app)),
         "document.inspect" => wrap(app.run("document.inspect", json!({}))),
         "ui.inspect" => ok(inspect(app, ctx)),
         "ui.pointer" => {
-            let Some(events) = p.get("events").and_then(Value::as_array) else { return err("missing `events`") };
+            let Some(events) = p.get("events").and_then(Value::as_array) else {
+                return err("missing `events`");
+            };
             let base = p.get("mods").map(mods_from).unwrap_or_default();
             let mut last = Value::Null;
             for e in events {
                 let kind = e.get("kind").and_then(Value::as_str).unwrap_or("");
-                let Some(kind) = deckcraft_mcp_kind(kind) else { return err(format!("unknown pointer kind `{kind}`")) };
-                let (Some(x), Some(y)) = (e.get("x").and_then(Value::as_f64), e.get("y").and_then(Value::as_f64)) else {
+                let Some(kind) = deckcraft_mcp_kind(kind) else {
+                    return err(format!("unknown pointer kind `{kind}`"));
+                };
+                let (Some(x), Some(y)) = (
+                    e.get("x").and_then(Value::as_f64),
+                    e.get("y").and_then(Value::as_f64),
+                ) else {
                     return err("pointer events need x and y");
                 };
                 let mods = e.get("mods").map(mods_from).unwrap_or(base);
-                match app.session.pointer(PointerEvent { kind, x, y, mods, tol: (4.0 / app.canvas_scale.max(0.05)) as f64 }) {
+                match app.session.pointer(PointerEvent {
+                    kind,
+                    x,
+                    y,
+                    mods,
+                    tol: (4.0 / app.canvas_scale.max(0.05)) as f64,
+                }) {
                     Ok(v) => last = v,
                     Err(e) => return err(e),
                 }
             }
-            ok(json!({"result": last, "selection": app.session.active().map(|d| serde_json::to_value(&d.selection).unwrap_or_default())}))
+            ok(
+                json!({"result": last, "selection": app.session.active().map(|d| serde_json::to_value(&d.selection).unwrap_or_default())}),
+            )
         }
         "ui.key" => {
-            let Some(k) = s("key") else { return err("missing `key`") };
+            let Some(k) = s("key") else {
+                return err("missing `key`");
+            };
             if let Some(show) = app.show.as_ref()
                 && !show.ended
                 && let Some(key) = key_from(k)
             {
-                app.synthetic.push(egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::NONE });
-                app.synthetic.push(egui::Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers: egui::Modifiers::NONE });
+                app.synthetic.push(egui::Event::Key {
+                    key,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: egui::Modifiers::NONE,
+                });
+                app.synthetic.push(egui::Event::Key {
+                    key,
+                    physical_key: None,
+                    pressed: false,
+                    repeat: false,
+                    modifiers: egui::Modifiers::NONE,
+                });
                 return ok(json!({"show": true}));
             }
             wrap(app.session.key(k, mods_from(p)).map_err(|e| e.to_string()))
         }
         "ui.text" => {
-            let Some(t) = s("text") else { return err("missing `text`") };
+            let Some(t) = s("text") else {
+                return err("missing `text`");
+            };
             wrap(app.session.type_text(t).map_err(|e| e.to_string()))
         }
         "ui.ime" => {
@@ -158,7 +210,10 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
                     let (x, y) = (a.first()?.as_u64()? as usize, a.get(1)?.as_u64()? as usize);
                     (x <= y).then_some(x..y)
                 });
-                egui::ImeEvent::Preedit { text: t.into(), active_range_chars: active }
+                egui::ImeEvent::Preedit {
+                    text: t.into(),
+                    active_range_chars: active,
+                }
             } else {
                 return err("missing `preedit` or `commit`");
             };
@@ -166,7 +221,9 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
             ok(json!({"queued": true}))
         }
         "ui.tool.select" => {
-            let Some(name) = s("tool") else { return err("missing `tool`") };
+            let Some(name) = s("tool") else {
+                return err("missing `tool`");
+            };
             match tool_kind(name, s("preset")) {
                 Some(k) => {
                     app.session.set_tool(k);
@@ -176,7 +233,9 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
             }
         }
         "ui.move" | "ui.click" | "ui.drag" => {
-            let (Some(x), Some(y)) = (f(p, "x"), f(p, "y")) else { return err("missing x/y") };
+            let (Some(x), Some(y)) = (f(p, "x"), f(p, "y")) else {
+                return err("missing x/y");
+            };
             let pos = egui::pos2(x, y);
             app.synthetic.push(egui::Event::PointerMoved(pos));
             if req.method == "ui.click" {
@@ -184,14 +243,34 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
                     Some("right" | "secondary") => egui::PointerButton::Secondary,
                     _ => egui::PointerButton::Primary,
                 };
-                let count = p.get("count").and_then(Value::as_u64).unwrap_or(1).clamp(1, 3);
+                let count = p
+                    .get("count")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(1)
+                    .clamp(1, 3);
                 for _ in 0..count {
-                    app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: true, modifiers: egui::Modifiers::NONE });
-                    app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: false, modifiers: egui::Modifiers::NONE });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos,
+                        button,
+                        pressed: true,
+                        modifiers: egui::Modifiers::NONE,
+                    });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos,
+                        button,
+                        pressed: false,
+                        modifiers: egui::Modifiers::NONE,
+                    });
                 }
             } else if req.method == "ui.drag" {
-                let (Some(tx), Some(ty)) = (f(p, "toX"), f(p, "toY")) else { return err("missing toX/toY") };
-                let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(8).clamp(1, 120);
+                let (Some(tx), Some(ty)) = (f(p, "toX"), f(p, "toY")) else {
+                    return err("missing toX/toY");
+                };
+                let steps = p
+                    .get("steps")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(8)
+                    .clamp(1, 120);
                 app.synthetic.push(egui::Event::PointerButton {
                     pos,
                     button: egui::PointerButton::Primary,
@@ -200,7 +279,10 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
                 });
                 for k in 1..=steps {
                     let a = k as f32 / steps as f32;
-                    app.synthetic.push(egui::Event::PointerMoved(egui::pos2(x + (tx - x) * a, y + (ty - y) * a)));
+                    app.synthetic.push(egui::Event::PointerMoved(egui::pos2(
+                        x + (tx - x) * a,
+                        y + (ty - y) * a,
+                    )));
                 }
                 app.synthetic.push(egui::Event::PointerButton {
                     pos: egui::pos2(tx, ty),
@@ -250,7 +332,9 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
             ok(Value::Null)
         }
         "ui.dialog.open" => {
-            let Some(id) = s("id") else { return err("missing `id`") };
+            let Some(id) = s("id") else {
+                return err("missing `id`");
+            };
             let mut d = crate::dialogs::Dialog::new(id);
             if let Some(fields) = p.get("fields").and_then(Value::as_object) {
                 for (k, v) in fields {
@@ -261,10 +345,18 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
             app.dialog = Some(d);
             ok(Value::Null)
         }
-        "ui.screenshot" => Outcome::Screenshot { path: s("path").map(String::from) },
+        "ui.screenshot" => Outcome::Screenshot {
+            path: s("path").map(String::from),
+        },
         "ui.render" => {
-            let Some(d) = app.session.active() else { return err("no presentation open") };
-            let i = p.get("slide").and_then(Value::as_u64).map(|v| v as usize).unwrap_or(d.selection.slide);
+            let Some(d) = app.session.active() else {
+                return err("no presentation open");
+            };
+            let i = p
+                .get("slide")
+                .and_then(Value::as_u64)
+                .map(|v| v as usize)
+                .unwrap_or(d.selection.slide);
             if i >= d.doc.slides.len() {
                 return err(format!("no slide {i}"));
             }
@@ -280,11 +372,15 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
                     Some(Err(e)) => err(e),
                     None => err("no writer"),
                 },
-                None => ok(json!({"png": deckcraft_engine::cmd::base64_encode(&png), "width": w, "height": h, "slide": i})),
+                None => ok(
+                    json!({"png": deckcraft_engine::cmd::base64_encode(&png), "width": w, "height": h, "slide": i}),
+                ),
             }
         }
         "ui.resize" => {
-            let (Some(w), Some(h)) = (f(p, "width"), f(p, "height")) else { return err("missing width/height") };
+            let (Some(w), Some(h)) = (f(p, "width"), f(p, "height")) else {
+                return err("missing width/height");
+            };
             ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, h)));
             ok(Value::Null)
         }
@@ -294,7 +390,10 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
         }
         "show.start" => {
             let from = p.get("from").and_then(Value::as_u64).unwrap_or(0) as usize;
-            app.start_show(from, p.get("reading").and_then(Value::as_bool).unwrap_or(false));
+            app.start_show(
+                from,
+                p.get("reading").and_then(Value::as_bool).unwrap_or(false),
+            );
             ok(Value::Null)
         }
         "show.end" => {
@@ -310,7 +409,9 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
             ok(Value::Null)
         }
         "app.open" => {
-            let Some(path) = s("path") else { return err("missing `path`") };
+            let Some(path) = s("path") else {
+                return err("missing `path`");
+            };
             wrap(app.open_path(path).map(|_| Value::Null))
         }
         "app.save" => wrap(app.run("file.save", p.clone())),
@@ -330,7 +431,11 @@ pub fn handle(app: &mut SlideApp, ctx: &egui::Context, req: &ControlRequest) -> 
 
 fn mods_from(p: &Value) -> Mods {
     let b = |n: &str| p.get(n).and_then(Value::as_bool).unwrap_or(false);
-    Mods { shift: b("shift"), alt: b("alt"), cmd: b("cmd") || b("ctrl") }
+    Mods {
+        shift: b("shift"),
+        alt: b("alt"),
+        cmd: b("cmd") || b("ctrl"),
+    }
 }
 
 fn deckcraft_mcp_kind(k: &str) -> Option<deckcraft_engine::PointerKind> {
@@ -351,12 +456,30 @@ pub fn tool_kind(name: &str, preset: Option<&str>) -> Option<deckcraft_engine::T
     Some(match name {
         "select" | "selection" => ToolKind::Select,
         "textBox" | "text" => ToolKind::TextBox,
-        "shape" => ToolKind::Shape { preset: preset.unwrap_or("rect").into() },
-        "pen" => ToolKind::Ink { mode: "pen".into(), color: deckcraft_color::Rgba::BLACK, width: 2.0 },
-        "highlighter" => ToolKind::Ink { mode: "highlighter".into(), color: deckcraft_color::Rgba::rgb(255, 230, 0), width: 10.0 },
-        "eraser" => ToolKind::Ink { mode: "eraser".into(), color: deckcraft_color::Rgba::BLACK, width: 2.0 },
-        other if deckcraft_geom::preset::info(other).is_some() => ToolKind::Shape { preset: other.into() },
-        other if deckcraft_engine::tools::is_freeform_tool(other) => ToolKind::Shape { preset: other.into() },
+        "shape" => ToolKind::Shape {
+            preset: preset.unwrap_or("rect").into(),
+        },
+        "pen" => ToolKind::Ink {
+            mode: "pen".into(),
+            color: deckcraft_color::Rgba::BLACK,
+            width: 2.0,
+        },
+        "highlighter" => ToolKind::Ink {
+            mode: "highlighter".into(),
+            color: deckcraft_color::Rgba::rgb(255, 230, 0),
+            width: 10.0,
+        },
+        "eraser" => ToolKind::Ink {
+            mode: "eraser".into(),
+            color: deckcraft_color::Rgba::BLACK,
+            width: 2.0,
+        },
+        other if deckcraft_geom::preset::info(other).is_some() => ToolKind::Shape {
+            preset: other.into(),
+        },
+        other if deckcraft_engine::tools::is_freeform_tool(other) => ToolKind::Shape {
+            preset: other.into(),
+        },
         _ => return None,
     })
 }
@@ -364,7 +487,11 @@ pub fn tool_kind(name: &str, preset: Option<&str>) -> Option<deckcraft_engine::T
 pub fn save_screenshot(app: &mut SlideApp, image: &egui::ColorImage, path: Option<&str>) -> Value {
     let [w, h] = image.size;
     let rgba: Vec<u8> = image.pixels.iter().flat_map(|c| c.to_array()).collect();
-    let img = deckcraft_render::Image { width: w as u32, height: h as u32, pixels: rgba };
+    let img = deckcraft_render::Image {
+        width: w as u32,
+        height: h as u32,
+        pixels: rgba,
+    };
     let png = img.to_png();
     let Some(path) = path else {
         return json!({"ok": true, "result": {"width": w, "height": h, "png": deckcraft_engine::cmd::base64_encode(&png)}});

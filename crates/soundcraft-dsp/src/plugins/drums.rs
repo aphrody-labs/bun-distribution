@@ -15,14 +15,42 @@ static DRUM_PARAMS: [ParamInfo; 11] = [
     lin("level", "Level", -48.0, 6.0, -6.0, Unit::Db),
     lin("kick_tune", "Kick Tune", -12.0, 12.0, 0.0, Unit::Semitones),
     log("kick_decay", "Kick Decay", 50.0, 2000.0, 450.0, Unit::Ms),
-    lin("snare_tune", "Snare Tune", -12.0, 12.0, 0.0, Unit::Semitones),
-    lin("snare_snappy", "Snare Snappy", 0.0, 100.0, 60.0, Unit::Percent),
+    lin(
+        "snare_tune",
+        "Snare Tune",
+        -12.0,
+        12.0,
+        0.0,
+        Unit::Semitones,
+    ),
+    lin(
+        "snare_snappy",
+        "Snare Snappy",
+        0.0,
+        100.0,
+        60.0,
+        Unit::Percent,
+    ),
     log("snare_decay", "Snare Decay", 50.0, 1000.0, 220.0, Unit::Ms),
     log("hat_decay", "Closed Hat Decay", 20.0, 500.0, 80.0, Unit::Ms),
-    log("open_hat_decay", "Open Hat Decay", 100.0, 3000.0, 600.0, Unit::Ms),
+    log(
+        "open_hat_decay",
+        "Open Hat Decay",
+        100.0,
+        3000.0,
+        600.0,
+        Unit::Ms,
+    ),
     lin("tom_tune", "Tom Tune", -12.0, 12.0, 0.0, Unit::Semitones),
     log("tom_decay", "Tom Decay", 50.0, 2000.0, 500.0, Unit::Ms),
-    log("cymbal_decay", "Cymbal Decay", 200.0, 6000.0, 2000.0, Unit::Ms),
+    log(
+        "cymbal_decay",
+        "Cymbal Decay",
+        200.0,
+        6000.0,
+        2000.0,
+        Unit::Ms,
+    ),
 ];
 
 pub static DRUM_INFO: PluginInfo = PluginInfo {
@@ -141,8 +169,15 @@ impl DrumSynth {
         for (i, v) in voices.iter_mut().enumerate() {
             *v = DrumVoice::new(0xBEEF + i as u32 * 977);
         }
-        let mut d =
-            Self { p: Params::new(&DRUM_PARAMS), sr: 48_000.0, ch: 0, voices, events: EventQueue::new(), counter: 0, level: Smoother::new(0.5) };
+        let mut d = Self {
+            p: Params::new(&DRUM_PARAMS),
+            sr: 48_000.0,
+            ch: 0,
+            voices,
+            events: EventQueue::new(),
+            counter: 0,
+            level: Smoother::new(0.5),
+        };
         d.update();
         d
     }
@@ -159,7 +194,11 @@ impl DrumSynth {
         let sr = self.sr;
         if kind == Kind::ClosedHat {
             let choke = decay60(15.0, sr);
-            for v in self.voices.iter_mut().filter(|v| v.kind == Some(Kind::OpenHat)) {
+            for v in self
+                .voices
+                .iter_mut()
+                .filter(|v| v.kind == Some(Kind::OpenHat))
+            {
                 v.amp_coef = v.amp_coef.min(choke);
                 v.noise_coef = v.noise_coef.min(choke);
             }
@@ -169,14 +208,23 @@ impl DrumSynth {
             .voices
             .iter()
             .position(|v| v.kind.is_none())
-            .or_else(|| self.voices.iter().enumerate().min_by_key(|(_, v)| v.age).map(|(i, _)| i))
+            .or_else(|| {
+                self.voices
+                    .iter()
+                    .enumerate()
+                    .min_by_key(|(_, v)| v.age)
+                    .map(|(i, _)| i)
+            })
             .unwrap_or(0);
         let v = |i| self.p.v(i);
         let semis = |st: f32| 2f32.powf(st / 12.0);
-        let (kick_tune, kick_decay, snare_tune, snappy, snare_decay) = (semis(v(1)), v(2), semis(v(3)), v(4) / 100.0, v(5));
+        let (kick_tune, kick_decay, snare_tune, snappy, snare_decay) =
+            (semis(v(1)), v(2), semis(v(3)), v(4) / 100.0, v(5));
         let (hat, open, tom_tune, tom_decay, cym) = (v(6), v(7), semis(v(8)), v(9), v(10));
         let counter = self.counter;
-        let Some(dv) = self.voices.get_mut(idx) else { return };
+        let Some(dv) = self.voices.get_mut(idx) else {
+            return;
+        };
         let seed = dv.rng.next_u32();
         *dv = DrumVoice::new(seed);
         dv.kind = Some(kind);
@@ -264,7 +312,11 @@ impl DrumSynth {
                     v.phase += f / sr;
                     v.phase -= v.phase.floor();
                     let tone = (v.phase * TAU).sin() * v.amp * 0.6;
-                    let n = v.filt2.process_sample(v.filt.process_sample(v.rng.bipolar())) * v.noise_amp * 0.7;
+                    let n = v
+                        .filt2
+                        .process_sample(v.filt.process_sample(v.rng.bipolar()))
+                        * v.noise_amp
+                        * 0.7;
                     v.amp *= v.amp_coef;
                     v.noise_amp *= v.noise_coef;
                     tone + n
@@ -279,7 +331,11 @@ impl DrumSynth {
                     } else {
                         0.0
                     };
-                    let env = burst.max(if v.t >= clap_gap * 2 { v.noise_amp * 0.6 } else { 0.0 });
+                    let env = burst.max(if v.t >= clap_gap * 2 {
+                        v.noise_amp * 0.6
+                    } else {
+                        0.0
+                    });
                     let y = v.filt.process_sample(v.rng.bipolar()) * env * 2.0;
                     v.amp *= v.amp_coef;
                     if v.t >= clap_gap * 2 {
@@ -288,14 +344,19 @@ impl DrumSynth {
                     y
                 }
                 Kind::ClosedHat | Kind::OpenHat | Kind::Crash | Kind::Ride => {
-                    let scale = if matches!(kind, Kind::Crash | Kind::Ride) { 1.0 } else { 1.9 };
+                    let scale = if matches!(kind, Kind::Crash | Kind::Ride) {
+                        1.0
+                    } else {
+                        1.9
+                    };
                     let mut metal = 0.0;
                     for (m, f) in v.metal.iter_mut().zip(METAL) {
                         *m += f * scale / sr;
                         *m -= m.floor();
                         metal += if *m < 0.5 { 1.0 } else { -1.0 };
                     }
-                    let raw = metal / 6.0 * (1.0 - v.noise_amp * 0.5) + v.rng.bipolar() * v.noise_amp;
+                    let raw =
+                        metal / 6.0 * (1.0 - v.noise_amp * 0.5) + v.rng.bipolar() * v.noise_amp;
                     let y = v.filt2.process_sample(v.filt.process_sample(raw)) * v.amp;
                     v.amp *= v.amp_coef;
                     y
@@ -349,7 +410,9 @@ impl Plugin for DrumSynth {
         let mut next = 0;
         for n in 0..frames {
             while next < count {
-                let Some(&(off, kind)) = evs.get(next) else { break };
+                let Some(&(off, kind)) = evs.get(next) else {
+                    break;
+                };
                 if off > n && n + 1 < frames {
                     break;
                 }

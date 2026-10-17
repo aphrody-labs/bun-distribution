@@ -136,7 +136,18 @@ fn make(ff: &Path, s: &Spec) -> Option<PathBuf> {
     let out = filmcraft_testkit::fixtures_dir("ac3").join(format!("{}.{}", s.name, s.codec));
     filmcraft_testkit::fixtures::generate(&out, |tmp| {
         let st = Command::new(ff)
-            .args(["-hide_banner", "-v", "error", "-y", "-f", "lavfi", "-i", s.input, "-t", "1"])
+            .args([
+                "-hide_banner",
+                "-v",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                s.input,
+                "-t",
+                "1",
+            ])
             .args(["-c:a", s.codec])
             .args(s.enc)
             .args(["-f", s.codec])
@@ -170,14 +181,30 @@ fn ffmpeg_encoded_streams_decode() {
         let mut ours: Vec<Vec<f32>> = vec![Vec::new(); s.channels as usize];
         for fr in frames(&data) {
             let d = dec.decode(fr).unwrap();
-            assert_eq!((d.header.sample_rate, d.channels.len() as u32), (s.rate, s.channels), "{}", s.name);
+            assert_eq!(
+                (d.header.sample_rate, d.channels.len() as u32),
+                (s.rate, s.channels),
+                "{}",
+                s.name
+            );
             assert_eq!(d.header.is_eac3(), s.codec == "eac3", "{}", s.name);
             for (o, c) in ours.iter_mut().zip(d.channels) {
                 o.extend(c);
             }
         }
-        let o = Command::new(&ff).args(["-v", "error", "-i"]).arg(&f).args(["-f", "f32le", "-"]).output().unwrap();
-        let want: Vec<f32> = o.stdout.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
+        let o = Command::new(&ff)
+            .args(["-v", "error", "-i"])
+            .arg(&f)
+            .args(["-f", "f32le", "-"])
+            .output()
+            .unwrap();
+        let want: Vec<f32> = o
+            .stdout
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            .collect();
         let ch = s.channels as usize;
         let n = want.len() / ch;
         assert_eq!(n, ours[0].len(), "{}: sample count", s.name);
@@ -196,7 +223,10 @@ fn ffmpeg_encoded_streams_decode() {
         // output (the difference to ffmpeg must be of that order)
         let mut dec2 = filmcraft_ac3::Decoder::new();
         dec2.set_dither_seed(0xDEAD_BEEF);
-        let other: Vec<f32> = frames(&data).iter().flat_map(|fr| dec2.decode(fr).unwrap().channels.swap_remove(0)).collect();
+        let other: Vec<f32> = frames(&data)
+            .iter()
+            .flat_map(|fr| dec2.decode(fr).unwrap().channels.swap_remove(0))
+            .collect();
         let (mut sig, mut err) = (0f64, 0f64);
         for i in 0..n {
             sig += (ours[0][i] as f64).powi(2);
@@ -210,7 +240,12 @@ fn ffmpeg_encoded_streams_decode() {
             ch,
             frames(&data).len()
         );
-        assert!(worst >= s.min_snr, "{}: SNR {worst:.1} dB < {}", s.name, s.min_snr);
+        assert!(
+            worst >= s.min_snr,
+            "{}: SNR {worst:.1} dB < {}",
+            s.name,
+            s.min_snr
+        );
     }
 }
 
@@ -257,9 +292,15 @@ fn damaged_eac3_frames_never_panic() {
 #[test]
 #[ignore]
 fn generate_fixtures() {
-    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("ac3 fixtures") else { return };
+    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("ac3 fixtures") else {
+        return;
+    };
     for s in SPECS {
         let out = filmcraft_testkit::fixtures_dir("ac3").join(format!("{}.{}", s.name, s.codec));
-        filmcraft_testkit::fixtures::generate_and_report(&format!("ac3/{}", s.name), &[out], || make(&ff, s));
+        filmcraft_testkit::fixtures::generate_and_report(
+            &format!("ac3/{}", s.name),
+            &[out],
+            || make(&ff, s),
+        );
     }
 }

@@ -28,7 +28,8 @@ pub(crate) const BLOCK_VERIFIER_HASH: [u8; 8] = [0xD7, 0xAA, 0x0F, 0x6D, 0x30, 0
 pub(crate) const BLOCK_KEY: [u8; 8] = [0x14, 0x6E, 0x0B, 0xE7, 0xAB, 0xAC, 0xD0, 0xD6];
 
 /// The password key encryptor's URI (the other kind is certificate-based).
-pub(crate) const PASSWORD_ENCRYPTOR: &str = "http://schemas.microsoft.com/office/2006/keyEncryptor/password";
+pub(crate) const PASSWORD_ENCRYPTOR: &str =
+    "http://schemas.microsoft.com/office/2006/keyEncryptor/password";
 
 /// Standard encryption header flags ([MS-OFFCRYPTO] 2.3.1).
 pub(crate) const F_CRYPTOAPI: u32 = 0x04;
@@ -73,13 +74,20 @@ pub fn check_encryption(bytes: &[u8]) -> Result<(), DecryptError> {
 fn streams(bytes: &[u8]) -> Result<(Vec<u8>, Vec<u8>), DecryptError> {
     let cf = Compound::open(bytes).map_err(malformed)?;
     let info = cf.root_stream("EncryptionInfo").map_err(malformed)?;
-    let package = cf.root_stream("EncryptedPackage").map_err(malformed)?.ok_or_else(|| malformed("no EncryptedPackage stream"))?;
+    let package = cf
+        .root_stream("EncryptedPackage")
+        .map_err(malformed)?
+        .ok_or_else(|| malformed("no EncryptedPackage stream"))?;
     let info = info.ok_or_else(|| DecryptError::Unsupported("rights-management".into()))?;
     Ok((info, package))
 }
 
 /// Decrypts from the two streams' contents.
-pub(crate) fn decrypt_streams(info: &[u8], package: &[u8], password: &str) -> Result<Vec<u8>, DecryptError> {
+pub(crate) fn decrypt_streams(
+    info: &[u8],
+    package: &[u8],
+    password: &str,
+) -> Result<Vec<u8>, DecryptError> {
     match scheme(info)? {
         Scheme::Agile(xml) => agile(xml, package, password),
         Scheme::Standard(info) => standard(info, package, password),
@@ -102,7 +110,9 @@ fn scheme(info: &[u8]) -> Result<Scheme<'_>, DecryptError> {
         (4, 4) => Ok(Scheme::Agile(info.get(8..).ok_or_else(short)?)),
         (2..=4, 2) => Ok(Scheme::Standard(info.get(4..).ok_or_else(short)?)),
         (3 | 4, 3) => Err(DecryptError::Unsupported("Extensible".into())),
-        _ => Err(DecryptError::Unsupported(format!("version {major}.{minor}"))),
+        _ => Err(DecryptError::Unsupported(format!(
+            "version {major}.{minor}"
+        ))),
     }
 }
 
@@ -113,13 +123,21 @@ fn u16_at(b: &[u8], at: usize) -> Option<u16> {
 
 fn u32_at(b: &[u8], at: usize) -> Option<u32> {
     let s = b.get(at..at.checked_add(4)?)?;
-    Some(u32::from_le_bytes([*s.first()?, *s.get(1)?, *s.get(2)?, *s.get(3)?]))
+    Some(u32::from_le_bytes([
+        *s.first()?,
+        *s.get(1)?,
+        *s.get(2)?,
+        *s.get(3)?,
+    ]))
 }
 
 /// The plaintext size an `EncryptedPackage` states, and the ciphertext after it. A size larger
 /// than the ciphertext is damage, so it never drives an allocation.
 fn package_parts(package: &[u8]) -> Result<(usize, &[u8]), DecryptError> {
-    let head: [u8; 8] = package.get(..8).and_then(|h| h.try_into().ok()).ok_or_else(|| malformed("truncated EncryptedPackage"))?;
+    let head: [u8; 8] = package
+        .get(..8)
+        .and_then(|h| h.try_into().ok())
+        .ok_or_else(|| malformed("truncated EncryptedPackage"))?;
     let data = package.get(8..).unwrap_or_default();
     let size = usize::try_from(u64::from_le_bytes(head)).unwrap_or(usize::MAX);
     if size > data.len() {
@@ -242,7 +260,9 @@ impl Aes {
 
     /// CBC: each block XORed with the previous ciphertext block (the IV for the first).
     fn decrypt_cbc(&self, iv: &[u8], data: &mut [u8]) -> Result<(), DecryptError> {
-        let mut prev: [u8; BLOCK] = iv.try_into().map_err(|_| malformed("an IV that isn't one AES block"))?;
+        let mut prev: [u8; BLOCK] = iv
+            .try_into()
+            .map_err(|_| malformed("an IV that isn't one AES block"))?;
         let (blocks, rest) = data.as_chunks_mut::<BLOCK>();
         if !rest.is_empty() {
             return Err(malformed("ciphertext isn't whole AES blocks"));
@@ -278,7 +298,9 @@ fn standard_header(info: &[u8]) -> Result<StandardHeader<'_>, DecryptError> {
         return Err(DecryptError::Unsupported("RC4".into()));
     }
     let header_size = usize::try_from(u32_at(info, 4).ok_or_else(short)?).map_err(|_| short())?;
-    let header = info.get(8..8usize.checked_add(header_size).ok_or_else(short)?).ok_or_else(short)?;
+    let header = info
+        .get(8..8usize.checked_add(header_size).ok_or_else(short)?)
+        .ok_or_else(short)?;
     let alg_id = u32_at(header, 8).ok_or_else(short)?;
     let alg_hash = u32_at(header, 12).ok_or_else(short)?;
     let key_bits = u32_at(header, 16).ok_or_else(short)?;
@@ -300,7 +322,12 @@ fn standard_header(info: &[u8]) -> Result<StandardHeader<'_>, DecryptError> {
     let salt = v.get(4..20).ok_or_else(short)?;
     let verifier = v.get(20..36).ok_or_else(short)?;
     let verifier_hash = v.get(40..72).ok_or_else(short)?;
-    Ok(StandardHeader { key_len, salt, verifier, verifier_hash })
+    Ok(StandardHeader {
+        key_len,
+        salt,
+        verifier,
+        verifier_hash,
+    })
 }
 
 fn standard(info: &[u8], package: &[u8], password: &str) -> Result<Vec<u8>, DecryptError> {
@@ -313,7 +340,10 @@ fn standard(info: &[u8], package: &[u8], password: &str) -> Result<Vec<u8>, Decr
         return Err(DecryptError::WrongPassword);
     }
     let (size, data) = package_parts(package)?;
-    let mut out = data.get(..size.div_ceil(BLOCK) * BLOCK).ok_or_else(|| malformed("the package isn't whole AES blocks"))?.to_vec();
+    let mut out = data
+        .get(..size.div_ceil(BLOCK) * BLOCK)
+        .ok_or_else(|| malformed("the package isn't whole AES blocks"))?
+        .to_vec();
     aes.decrypt_ecb(&mut out)?;
     out.truncate(size);
     Ok(out)
@@ -345,14 +375,26 @@ impl Params {
             Some(128) => 16,
             Some(192) => 24,
             Some(256) => 32,
-            other => return Err(malformed(format!("AES with keyBits {}", other.unwrap_or(0)))),
+            other => {
+                return Err(malformed(format!(
+                    "AES with keyBits {}",
+                    other.unwrap_or(0)
+                )));
+            }
         };
         let hash = Hash::from_name(e.attr("hashAlgorithm").unwrap_or("SHA1"))?;
-        let salt = base64(e.attr("saltValue").ok_or_else(|| malformed("no saltValue"))?)?;
+        let salt = base64(
+            e.attr("saltValue")
+                .ok_or_else(|| malformed("no saltValue"))?,
+        )?;
         if salt.is_empty() || salt.len() > 64 {
             return Err(malformed("a salt that isn't 1 to 64 bytes"));
         }
-        Ok(Params { hash, salt, key_len })
+        Ok(Params {
+            hash,
+            salt,
+            key_len,
+        })
     }
 
     /// An IV: H(salt ‖ block key) for a block key, else the salt, sized to one AES block.
@@ -382,19 +424,35 @@ struct AgileDescriptor {
 /// `xml` is the XML encryption descriptor after the 8-byte version and reserved field.
 fn agile_descriptor(xml: &[u8]) -> Result<AgileDescriptor, DecryptError> {
     let root = crate::xml::parse(xml).map_err(|e| malformed(e.to_string()))?;
-    let key_data = Params::read(root.child("keyData").ok_or_else(|| malformed("no keyData"))?)?;
+    let key_data = Params::read(
+        root.child("keyData")
+            .ok_or_else(|| malformed("no keyData"))?,
+    )?;
     let encryptor = root
         .child("keyEncryptors")
-        .and_then(|k| k.kids("keyEncryptor").find(|e| e.attr("uri") == Some(PASSWORD_ENCRYPTOR)))
+        .and_then(|k| {
+            k.kids("keyEncryptor")
+                .find(|e| e.attr("uri") == Some(PASSWORD_ENCRYPTOR))
+        })
         .ok_or_else(|| DecryptError::Unsupported("certificate".into()))?
         .child("encryptedKey")
         .ok_or_else(|| malformed("no encryptedKey"))?;
     let key = Params::read(encryptor)?;
-    let spin = encryptor.attr_u32("spinCount").ok_or_else(|| malformed("no spinCount"))?;
+    let spin = encryptor
+        .attr_u32("spinCount")
+        .ok_or_else(|| malformed("no spinCount"))?;
     if spin > MAX_SPIN_COUNT {
-        return Err(malformed(format!("a spin count of {spin}, more than the {MAX_SPIN_COUNT} allowed")));
+        return Err(malformed(format!(
+            "a spin count of {spin}, more than the {MAX_SPIN_COUNT} allowed"
+        )));
     }
-    let field = |name: &str| base64(encryptor.attr(name).ok_or_else(|| malformed(format!("no {name}")))?);
+    let field = |name: &str| {
+        base64(
+            encryptor
+                .attr(name)
+                .ok_or_else(|| malformed(format!("no {name}")))?,
+        )
+    };
     Ok(AgileDescriptor {
         key_data,
         key,
@@ -406,7 +464,14 @@ fn agile_descriptor(xml: &[u8]) -> Result<AgileDescriptor, DecryptError> {
 }
 
 fn agile(xml: &[u8], package: &[u8], password: &str) -> Result<Vec<u8>, DecryptError> {
-    let AgileDescriptor { key_data, key, spin, verifier_input, verifier_hash, key_value } = agile_descriptor(xml)?;
+    let AgileDescriptor {
+        key_data,
+        key,
+        spin,
+        verifier_input,
+        verifier_hash,
+        key_value,
+    } = agile_descriptor(xml)?;
     let h = iterated_hash(key.hash, password, &key.salt, spin);
     let iv = key.iv(None);
     let field = |data: &[u8], block_key: &[u8]| -> Result<Vec<u8>, DecryptError> {
@@ -422,7 +487,11 @@ fn agile(xml: &[u8], package: &[u8], password: &str) -> Result<Vec<u8>, DecryptE
         return Err(DecryptError::WrongPassword);
     }
     let secret = field(&key_value, &BLOCK_KEY)?;
-    let aes = Aes::new(secret.get(..key_data.key_len).ok_or_else(|| malformed("a short encryptedKeyValue"))?)?;
+    let aes = Aes::new(
+        secret
+            .get(..key_data.key_len)
+            .ok_or_else(|| malformed("a short encryptedKeyValue"))?,
+    )?;
     let (size, data) = package_parts(package)?;
     let mut out = Vec::with_capacity(size);
     for (i, segment) in data.chunks(SEGMENT).enumerate() {

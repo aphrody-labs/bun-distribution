@@ -205,7 +205,7 @@ pub(crate) async fn run(action: JobAction) -> miette::Result<()> {
                     .with_optional_idempotency_key(idempotency_key),
                 &output,
             )
-        },
+        }
         JobAction::Submit {
             kind,
             payload,
@@ -225,18 +225,41 @@ pub(crate) async fn run(action: JobAction) -> miette::Result<()> {
                     .with_optional_idempotency_key(idempotency_key),
                 &output,
             )
-        },
-        JobAction::List { state, kind, limit, output } => {
-            list(state.as_deref(), kind, limit, &output)
-        },
+        }
+        JobAction::List {
+            state,
+            kind,
+            limit,
+            output,
+        } => list(state.as_deref(), kind, limit, &output),
         JobAction::Status { id, output } => status(&id, &output),
         JobAction::Logs { id, tail } => logs(&id, tail),
         JobAction::Cancel { id, output } => cancel(&id, &output),
-        JobAction::Run { forever, max_jobs, idle_secs, worker, host, concurrency, output } => {
-            run_worker(forever, max_jobs, idle_secs, worker, host, concurrency, &output).await
-        },
+        JobAction::Run {
+            forever,
+            max_jobs,
+            idle_secs,
+            worker,
+            host,
+            concurrency,
+            output,
+        } => {
+            run_worker(
+                forever,
+                max_jobs,
+                idle_secs,
+                worker,
+                host,
+                concurrency,
+                &output,
+            )
+            .await
+        }
         JobAction::Stats { output } => stats(&output),
-        JobAction::Purge { older_than_days, output } => purge(older_than_days, &output),
+        JobAction::Purge {
+            older_than_days,
+            output,
+        } => purge(older_than_days, &output),
     }
 }
 
@@ -246,7 +269,10 @@ pub(crate) async fn run(action: JobAction) -> miette::Result<()> {
 /// runtimes so one directory holds everything the toolbox owns.
 fn paths() -> miette::Result<(PathBuf, PathBuf)> {
     let root = aphrody_root()?;
-    Ok((aphrody_jobs::default_db_path(&root), aphrody_jobs::default_log_dir(&root)))
+    Ok((
+        aphrody_jobs::default_db_path(&root),
+        aphrody_jobs::default_log_dir(&root),
+    ))
 }
 
 fn aphrody_root() -> miette::Result<PathBuf> {
@@ -319,14 +345,19 @@ impl JobHandler for TranscribeHandler {
         ));
 
         let backend = WhisperCppBackend::new(payload.model.clone());
-        let opts = SttOptions { language: payload.language.clone(), ..SttOptions::default() };
+        let opts = SttOptions {
+            language: payload.language.clone(),
+            ..SttOptions::default()
+        };
 
         let transcript = backend.transcribe(&audio, opts).await.map_err(classify)?;
 
         if let Some(target) = &payload.out_text {
-            tokio::fs::write(target, &transcript.text).await.map_err(|e| {
-                HandlerError::Permanent(format!("cannot write {}: {e}", target.display()))
-            })?;
+            tokio::fs::write(target, &transcript.text)
+                .await
+                .map_err(|e| {
+                    HandlerError::Permanent(format!("cannot write {}: {e}", target.display()))
+                })?;
             ctx.info(format!("wrote {}", target.display()));
         }
 
@@ -352,20 +383,28 @@ fn classify(err: aphrody_voice::stt::SttError) -> HandlerError {
         // the host, not of this run.
         SttError::NotImplemented { .. } | SttError::EmptyInput => {
             HandlerError::Permanent(err.to_string())
-        },
+        }
         SttError::Other(msg) => {
             let permanent = msg.contains("is not installed")
                 || msg.contains("unknown model spec")
                 || msg.contains("unrecognised audio")
                 || msg.contains("requires");
-            if permanent { HandlerError::Permanent(msg) } else { HandlerError::Retryable(msg) }
-        },
+            if permanent {
+                HandlerError::Permanent(msg)
+            } else {
+                HandlerError::Retryable(msg)
+            }
+        }
         other => HandlerError::Retryable(other.to_string()),
     }
 }
 
 fn affinity(hosts: Vec<String>) -> HostAffinity {
-    if hosts.is_empty() { HostAffinity::Any } else { HostAffinity::Hosts(hosts) }
+    if hosts.is_empty() {
+        HostAffinity::Any
+    } else {
+        HostAffinity::Hosts(hosts)
+    }
 }
 
 /// Construct the product worker against the protected local queue and logs.
@@ -439,7 +478,9 @@ where
 
 fn submit(spec: &JobSpec, output: &OutputOpts) -> miette::Result<()> {
     let store = store()?;
-    let job = store.submit(spec).map_err(|e| miette::miette!("cannot submit: {e}"))?;
+    let job = store
+        .submit(spec)
+        .map_err(|e| miette::miette!("cannot submit: {e}"))?;
 
     let mut report = Report::new("Submitted", &["ID", "KIND", "STATE", "ATTEMPTS"]);
     report.push(vec![
@@ -476,7 +517,9 @@ fn list(
     }
 
     let store = store()?;
-    let jobs = store.list(&filter).map_err(|e| miette::miette!("cannot list jobs: {e}"))?;
+    let jobs = store
+        .list(&filter)
+        .map_err(|e| miette::miette!("cannot list jobs: {e}"))?;
 
     let mut report = Report::new("Jobs", &["ID", "KIND", "STATE", "ATTEMPTS", "UPDATED"]);
     for job in &jobs {
@@ -485,7 +528,8 @@ fn list(
             job.kind.clone(),
             job.state.to_string(),
             format!("{}/{}", job.attempts, job.max_attempts),
-            job.updated_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            job.updated_at
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
         ]);
     }
     let report = report.with_footer(format!("{} job(s)", jobs.len()));
@@ -500,14 +544,19 @@ fn status(id: &str, output: &OutputOpts) -> miette::Result<()> {
     report.push(vec!["id".into(), job.id.clone()]);
     report.push(vec!["kind".into(), job.kind.clone()]);
     report.push(vec!["state".into(), job.state.to_string()]);
-    report.push(vec!["attempts".into(), format!("{}/{}", job.attempts, job.max_attempts)]);
+    report.push(vec![
+        "attempts".into(),
+        format!("{}/{}", job.attempts, job.max_attempts),
+    ]);
     report.push(vec![
         "created".into(),
-        job.created_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        job.created_at
+            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
     ]);
     report.push(vec![
         "updated".into(),
-        job.updated_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        job.updated_at
+            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
     ]);
     if let Some(w) = &job.worker {
         report.push(vec!["worker".into(), w.clone()]);
@@ -540,7 +589,9 @@ fn truncate(text: &str) -> String {
 
 fn logs(id: &str, tail: Option<usize>) -> miette::Result<()> {
     let logs = job_logs()?;
-    let lines = logs.read(id, tail).map_err(|e| miette::miette!("cannot read the log: {e}"))?;
+    let lines = logs
+        .read(id, tail)
+        .map_err(|e| miette::miette!("cannot read the log: {e}"))?;
     if lines.is_empty() {
         eprintln!("no log for job `{id}` (it may not have started yet)");
         return Ok(());
@@ -574,7 +625,9 @@ async fn run_worker(
     let name = name.unwrap_or_else(default_worker_name);
     let worker = create_job_worker(name.clone(), host)?;
 
-    let recovered = worker.recover().map_err(|e| miette::miette!("recovery failed: {e}"))?;
+    let recovered = worker
+        .recover()
+        .map_err(|e| miette::miette!("recovery failed: {e}"))?;
     if !recovered.is_clean() {
         eprintln!(
             "recovered {} requeued / {} exhausted job(s) from a previous run",
@@ -584,7 +637,10 @@ async fn run_worker(
     }
 
     if forever {
-        eprintln!("worker `{name}` consuming {:?}; ctrl-c to stop", worker.kinds());
+        eprintln!(
+            "worker `{name}` consuming {:?}; ctrl-c to stop",
+            worker.kinds()
+        );
         worker
             .run_forever_parallel(concurrency, std::time::Duration::from_secs(idle_secs))
             .await
@@ -628,7 +684,9 @@ fn default_worker_name() -> String {
 
 fn stats(output: &OutputOpts) -> miette::Result<()> {
     let store = store()?;
-    let stats = store.stats().map_err(|e| miette::miette!("cannot read the queue: {e}"))?;
+    let stats = store
+        .stats()
+        .map_err(|e| miette::miette!("cannot read the queue: {e}"))?;
     let (db, logs) = paths()?;
 
     let mut report = Report::new("Queue", &["STATE", "COUNT"]);
@@ -658,7 +716,9 @@ fn purge(older_than_days: i64, output: &OutputOpts) -> miette::Result<()> {
         .map(|j| j.id)
         .collect();
 
-    let removed = store.purge_before(cutoff).map_err(|e| miette::miette!("cannot purge: {e}"))?;
+    let removed = store
+        .purge_before(cutoff)
+        .map_err(|e| miette::miette!("cannot purge: {e}"))?;
     let mut logs_removed = 0u64;
     for id in &doomed {
         if logs.remove(id).unwrap_or(false) {
@@ -705,10 +765,12 @@ mod tests {
         let run =
             Request::try_parse_from(["job", "run", "--host", "vps", "--concurrency", "3"]).unwrap();
         match run.action {
-            JobAction::Run { host, concurrency, .. } => {
+            JobAction::Run {
+                host, concurrency, ..
+            } => {
                 assert_eq!(host.as_deref(), Some("vps"));
                 assert_eq!(concurrency.get(), 3);
-            },
+            }
             _ => panic!("expected run"),
         }
         assert!(Request::try_parse_from(["job", "run", "--concurrency", "0"]).is_err());
@@ -761,8 +823,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn web_handler_rejects_commands_outside_the_pipeline() {
-        let result =
-            run_owned_local(|| crate::run_web_pipeline(vec!["status".into()])).await.unwrap();
+        let result = run_owned_local(|| crate::run_web_pipeline(vec!["status".into()]))
+            .await
+            .unwrap();
         assert!(result.is_err());
         assert!(
             serde_json::from_value::<WebPipelinePayload>(serde_json::json!({
@@ -776,7 +839,10 @@ mod tests {
     fn a_payload_without_a_model_falls_back_to_the_default_catalog_entry() {
         let payload: TranscribePayload =
             serde_json::from_value(serde_json::json!({ "input": "a.wav" })).unwrap();
-        assert_eq!(payload.model, aphrody_models::LocalRole::Stt.default_model());
+        assert_eq!(
+            payload.model,
+            aphrody_models::LocalRole::Stt.default_model()
+        );
         assert!(payload.out_text.is_none());
     }
 
@@ -801,12 +867,16 @@ mod tests {
             .is_retryable()
         );
         assert!(
-            !classify(SttError::NotImplemented { reason: "whisper.cpp is not installed" })
-                .is_retryable()
+            !classify(SttError::NotImplemented {
+                reason: "whisper.cpp is not installed"
+            })
+            .is_retryable()
         );
         assert!(
-            classify(SttError::Other("cannot spawn whisper-cli.exe: Access is denied".into()))
-                .is_retryable()
+            classify(SttError::Other(
+                "cannot spawn whisper-cli.exe: Access is denied".into()
+            ))
+            .is_retryable()
         );
     }
 

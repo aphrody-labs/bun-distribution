@@ -227,14 +227,21 @@ pub fn map_adobe_app(root: &Path, opts: MapOptions) -> io::Result<AdobeAppMap> {
     // like Photoshop.exe (267 MB).
     let mut main_version: Option<String> = extract_amt_version(root);
 
-    for entry in WalkDir::new(root).follow_links(false).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(root)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if !entry.file_type().is_file() {
             continue;
         }
 
         let abs_path: PathBuf = entry.path().to_path_buf();
-        let rel_path =
-            abs_path.strip_prefix(root).unwrap_or(&abs_path).to_string_lossy().replace('\\', "/");
+        let rel_path = abs_path
+            .strip_prefix(root)
+            .unwrap_or(&abs_path)
+            .to_string_lossy()
+            .replace('\\', "/");
 
         let metadata = match entry.metadata() {
             Ok(m) => m,
@@ -264,12 +271,18 @@ pub fn map_adobe_app(root: &Path, opts: MapOptions) -> io::Result<AdobeAppMap> {
         }
 
         // ---- Hashing ----
-        let hash = if opts.hash && size <= HASH_SIZE_CAP { hash_file(&abs_path) } else { None };
+        let hash = if opts.hash && size <= HASH_SIZE_CAP {
+            hash_file(&abs_path)
+        } else {
+            None
+        };
 
         // ---- Collect AI runtime names ----
         if kind == AdobeFileKind::AiRuntime {
-            let name =
-                abs_path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = abs_path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
             if !name.is_empty() {
                 ai_runtimes.insert(name);
             }
@@ -277,8 +290,10 @@ pub fn map_adobe_app(root: &Path, opts: MapOptions) -> io::Result<AdobeAppMap> {
 
         // ---- Collect scripting host names ----
         if kind == AdobeFileKind::ScriptingHost {
-            let name =
-                abs_path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = abs_path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
             if !name.is_empty() {
                 scripting_hosts.insert(name);
             }
@@ -286,12 +301,23 @@ pub fn map_adobe_app(root: &Path, opts: MapOptions) -> io::Result<AdobeAppMap> {
 
         // ---- Plugin analysis ----
         if kind == AdobeFileKind::Plugin {
-            let plugin =
-                analyse_plugin(&abs_path, &rel_path, size, &mut uxp_plugin_ids, &mut cep_panel_ids);
+            let plugin = analyse_plugin(
+                &abs_path,
+                &rel_path,
+                size,
+                &mut uxp_plugin_ids,
+                &mut cep_panel_ids,
+            );
             plugins.push(plugin);
         }
 
-        entries.push(AdobeEntry { rel_path, kind, size, hash, version });
+        entries.push(AdobeEntry {
+            rel_path,
+            kind,
+            size,
+            hash,
+            version,
+        });
     }
 
     let total_files = entries.len();
@@ -356,8 +382,10 @@ pub fn map_adobe_app(root: &Path, opts: MapOptions) -> io::Result<AdobeAppMap> {
 #[must_use]
 pub fn classify(abs_path: &Path, rel_path: &str) -> AdobeFileKind {
     let rel_lower = rel_path.to_ascii_lowercase();
-    let fname =
-        abs_path.file_name().map(|n| n.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let fname = abs_path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
 
     // ---- 1. Subtree: sensei_models/ and Mona/ → AiRuntime ----
     if rel_lower.contains("sensei_models/") || rel_lower.starts_with("mona/") {
@@ -422,10 +450,13 @@ pub fn classify(abs_path: &Path, rel_path: &str) -> AdobeFileKind {
     }
 
     // ---- 5. Native plugin file extensions (.8bi etc.) ----
-    let ext =
-        abs_path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-    let native_plugin_exts: &[&str] =
-        &["8bi", "8ba", "8bf", "8be", "8bx", "8by", "8bz", "8ly", "8li"];
+    let ext = abs_path
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    let native_plugin_exts: &[&str] = &[
+        "8bi", "8ba", "8bf", "8be", "8bx", "8by", "8bz", "8ly", "8li",
+    ];
     if native_plugin_exts.contains(&ext.as_str()) {
         return AdobeFileKind::Plugin;
     }
@@ -515,7 +546,11 @@ fn extract_amt_version(root: &Path) -> Option<String> {
     let start = contents.find(needle)? + needle.len();
     let end = contents[start..].find('<')? + start;
     let version = contents[start..end].trim().to_owned();
-    if version.is_empty() { None } else { Some(version) }
+    if version.is_empty() {
+        None
+    } else {
+        Some(version)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -532,8 +567,10 @@ fn extract_amt_version(root: &Path) -> Option<String> {
 /// else immediately.
 fn extract_pe_version_if_small(path: &Path, kind: AdobeFileKind, size: u64) -> Option<String> {
     // Only attempt on binary types.
-    let ext =
-        path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let ext = path
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
     if ext != "dll" && ext != "exe" {
         return None;
     }
@@ -600,8 +637,10 @@ fn analyse_plugin(
     uxp_plugin_ids: &mut Vec<String>,
     cep_panel_ids: &mut Vec<String>,
 ) -> PluginInfo {
-    let fname =
-        abs_path.file_name().map(|n| n.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let fname = abs_path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
 
     if fname == "manifest.json" {
         let rel_lower = rel_path.to_ascii_lowercase();
@@ -618,7 +657,13 @@ fn analyse_plugin(
             }
         }
 
-        PluginInfo { rel_path: rel_path.to_owned(), plugin_type, plugin_id, version, size }
+        PluginInfo {
+            rel_path: rel_path.to_owned(),
+            plugin_type,
+            plugin_id,
+            version,
+            size,
+        }
     } else {
         // Native .8b? plugin
         PluginInfo {
@@ -647,7 +692,10 @@ fn parse_manifest_json(path: &Path) -> (Option<String>, Option<String>) {
         Err(_) => return (None, None),
     };
     let id = v.get("id").and_then(|x| x.as_str()).map(ToOwned::to_owned);
-    let version = v.get("version").and_then(|x| x.as_str()).map(ToOwned::to_owned);
+    let version = v
+        .get("version")
+        .and_then(|x| x.as_str())
+        .map(ToOwned::to_owned);
     (id, version)
 }
 
@@ -674,7 +722,9 @@ fn iso8601_now() -> String {
     // `chrono` as a direct dep of this module (though chrono is in the
     // workspace, we already have `sha2` / `sha2 workspace dep`).
     // Format manually from UNIX epoch: simple and zero-alloc.
-    let dur = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default();
+    let dur = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default();
     let secs = dur.as_secs();
     // Convert to Y-M-D H:M:S UTC using the proleptic Gregorian calendar.
     // (Good enough for a timestamp; we do not need sub-second precision.)
@@ -730,7 +780,10 @@ mod tests {
         assert_eq!(classify(&p("ACE.dll"), "ACE.dll"), AdobeFileKind::CoreDll);
         assert_eq!(classify(&p("AGM.dll"), "AGM.dll"), AdobeFileKind::CoreDll);
         assert_eq!(classify(&p("BIB.dll"), "BIB.dll"), AdobeFileKind::CoreDll);
-        assert_eq!(classify(&p("AdobePDFL.dll"), "AdobePDFL.dll"), AdobeFileKind::CoreDll);
+        assert_eq!(
+            classify(&p("AdobePDFL.dll"), "AdobePDFL.dll"),
+            AdobeFileKind::CoreDll
+        );
     }
 
     #[test]
@@ -785,7 +838,10 @@ mod tests {
             classify(&p("ExtendScript.dll"), "ExtendScript.dll"),
             AdobeFileKind::ScriptingHost
         );
-        assert_eq!(classify(&p("ScCore.dll"), "ScCore.dll"), AdobeFileKind::ScriptingHost);
+        assert_eq!(
+            classify(&p("ScCore.dll"), "ScCore.dll"),
+            AdobeFileKind::ScriptingHost
+        );
         assert_eq!(
             classify(&p("AdobeXMPScript.dll"), "AdobeXMPScript.dll"),
             AdobeFileKind::ScriptingHost
@@ -802,7 +858,11 @@ mod tests {
     fn classify_native_plugin_extensions() {
         for ext in ["8bi", "8ba", "8bf", "8be", "8bx", "8ly", "8li"] {
             let name = format!("Required/Plug-ins/TestPlugin.{ext}");
-            assert_eq!(classify(&p(&name), &name), AdobeFileKind::Plugin, ".{ext} must be Plugin");
+            assert_eq!(
+                classify(&p(&name), &name),
+                AdobeFileKind::Plugin,
+                ".{ext} must be Plugin"
+            );
         }
     }
 
@@ -832,7 +892,10 @@ mod tests {
 
     #[test]
     fn classify_executable() {
-        assert_eq!(classify(&p("Photoshop.exe"), "Photoshop.exe"), AdobeFileKind::Executable);
+        assert_eq!(
+            classify(&p("Photoshop.exe"), "Photoshop.exe"),
+            AdobeFileKind::Executable
+        );
         assert_eq!(
             classify(
                 &p("Required/CEP/CEPHtmlEngine/CEPHtmlEngine.exe"),
@@ -844,7 +907,10 @@ mod tests {
 
     #[test]
     fn classify_type_library() {
-        assert_eq!(classify(&p("TypeLibrary.tlb"), "TypeLibrary.tlb"), AdobeFileKind::TypeLibrary);
+        assert_eq!(
+            classify(&p("TypeLibrary.tlb"), "TypeLibrary.tlb"),
+            AdobeFileKind::TypeLibrary
+        );
     }
 
     #[test]
@@ -881,7 +947,11 @@ mod tests {
         ];
         for (kind, expected_json) in cases {
             let got = serde_json::to_string(kind).expect("serialize");
-            assert_eq!(&got, expected_json, "kind {:?} must serialize to {expected_json}", kind);
+            assert_eq!(
+                &got, expected_json,
+                "kind {:?} must serialize to {expected_json}",
+                kind
+            );
         }
     }
 
@@ -953,26 +1023,37 @@ mod tests {
         fs::write(uxpdir.join("manifest.json"), manifest_content.as_bytes()).unwrap();
 
         // AI model
-        let modeldir = root.join("Required").join("sensei_models").join("SomeModel");
+        let modeldir = root
+            .join("Required")
+            .join("sensei_models")
+            .join("SomeModel");
         fs::create_dir_all(&modeldir).unwrap();
         fs::write(modeldir.join("model.onnx"), b"\x00ONNX").unwrap();
 
         let map = map_adobe_app(root, MapOptions { hash: false }).expect("map");
 
         // Basic counts
-        assert!(map.total_files >= 7, "expected >= 7 files, got {}", map.total_files);
+        assert!(
+            map.total_files >= 7,
+            "expected >= 7 files, got {}",
+            map.total_files
+        );
         assert!(map.total_bytes > 0);
 
         // AI runtime detection
         assert!(
-            map.ai_runtimes.iter().any(|r| r.to_ascii_lowercase().contains("cloudailib")),
+            map.ai_runtimes
+                .iter()
+                .any(|r| r.to_ascii_lowercase().contains("cloudailib")),
             "CloudAILib.dll must be in ai_runtimes: {:?}",
             map.ai_runtimes
         );
 
         // Scripting host detection
         assert!(
-            map.scripting_hosts.iter().any(|s| s.to_ascii_lowercase().contains("extendscript")),
+            map.scripting_hosts
+                .iter()
+                .any(|s| s.to_ascii_lowercase().contains("extendscript")),
             "ExtendScript.dll must be in scripting_hosts: {:?}",
             map.scripting_hosts
         );
@@ -1046,9 +1127,19 @@ mod tests {
         assert!(root.exists(), "Photoshop root not found: {root_str}");
 
         let map = map_adobe_app(root, MapOptions { hash: true }).expect("walk");
-        assert!(map.total_files > 100, "expected many files, got {}", map.total_files);
-        assert!(!map.ai_runtimes.is_empty(), "expected AI runtimes, got none");
-        assert!(!map.scripting_hosts.is_empty(), "expected scripting hosts, got none");
+        assert!(
+            map.total_files > 100,
+            "expected many files, got {}",
+            map.total_files
+        );
+        assert!(
+            !map.ai_runtimes.is_empty(),
+            "expected AI runtimes, got none"
+        );
+        assert!(
+            !map.scripting_hosts.is_empty(),
+            "expected scripting hosts, got none"
+        );
         assert!(!map.plugins.is_empty(), "expected plugins, got none");
         eprintln!(
             "Photoshop 2026 map: {} files, {} bytes, {} plugins, AI runtimes: {:?}",
@@ -1097,7 +1188,11 @@ mod tests {
                     None => break,
                 }
             }
-            candidate.join("var").join("data").join("adobe-map").join("photoshop-2026.json")
+            candidate
+                .join("var")
+                .join("data")
+                .join("adobe-map")
+                .join("photoshop-2026.json")
         };
 
         std::fs::create_dir_all(out_path.parent().unwrap()).expect("create dirs");

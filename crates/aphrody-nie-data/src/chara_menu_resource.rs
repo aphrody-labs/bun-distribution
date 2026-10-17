@@ -134,7 +134,7 @@ impl CharaResourcePaths {
             12 => self.aura_soul_small = Some(value),
             13 => self.aura_soul_large = Some(value),
             14 => self.soul_effect = Some(value),
-            _ => {},
+            _ => {}
         }
     }
 
@@ -165,7 +165,9 @@ impl CharaResourcePaths {
     /// Nombre de champs renseignés (chaînes extraites pour cette entrée).
     #[must_use]
     pub fn filled_count(&self) -> usize {
-        (0..PATH_FIELD_COUNT).filter(|&j| self.by_index(j).is_some()).count()
+        (0..PATH_FIELD_COUNT)
+            .filter(|&j| self.by_index(j).is_some())
+            .count()
     }
 }
 
@@ -236,7 +238,9 @@ fn first_int_hash(node: Node<'_>) -> Option<HashId> {
 
 /// `true` si un chemin contient un placeholder `<charaID>` ou `<skillID>` (`isTemplate` inagle).
 fn paths_have_placeholder(paths: &[String]) -> bool {
-    paths.iter().any(|p| p.contains("<charaID>") || p.contains("<skillID>"))
+    paths
+        .iter()
+        .any(|p| p.contains("<charaID>") || p.contains("<skillID>"))
 }
 
 /// Parse un `chara_menu_resource_*.cfg.bin.json` (forme iecode `{ entries: [...] }`) — port 1:1

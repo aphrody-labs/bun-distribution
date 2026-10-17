@@ -59,16 +59,23 @@ pub enum Intent {
 }
 
 impl Intent {
-    pub const ALL: [Intent; 4] = [Intent::Perceptual, Intent::RelativeColorimetric, Intent::Saturation, Intent::AbsoluteColorimetric];
+    pub const ALL: [Intent; 4] = [
+        Intent::Perceptual,
+        Intent::RelativeColorimetric,
+        Intent::Saturation,
+        Intent::AbsoluteColorimetric,
+    ];
     /// Parse `perceptual`, `relative`/`relativeColorimetric`, `saturation`, `absolute`/`absoluteColorimetric`.
     pub fn parse(s: &str) -> Option<Self> {
-        Some(match s.to_ascii_lowercase().replace([' ', '_', '-'], "").as_str() {
-            "perceptual" => Intent::Perceptual,
-            "relative" | "relativecolorimetric" => Intent::RelativeColorimetric,
-            "saturation" => Intent::Saturation,
-            "absolute" | "absolutecolorimetric" => Intent::AbsoluteColorimetric,
-            _ => return None,
-        })
+        Some(
+            match s.to_ascii_lowercase().replace([' ', '_', '-'], "").as_str() {
+                "perceptual" => Intent::Perceptual,
+                "relative" | "relativecolorimetric" => Intent::RelativeColorimetric,
+                "saturation" => Intent::Saturation,
+                "absolute" | "absolutecolorimetric" => Intent::AbsoluteColorimetric,
+                _ => return None,
+            },
+        )
     }
     pub fn id(&self) -> &'static str {
         match self {
@@ -132,7 +139,12 @@ pub struct ColorSettings {
 
 impl Default for ColorSettings {
     fn default() -> Self {
-        Self { rgb: SRGB.into(), cmyk: GENERIC_CMYK.into(), intent: Intent::RelativeColorimetric, bpc: true }
+        Self {
+            rgb: SRGB.into(),
+            cmyk: GENERIC_CMYK.into(),
+            intent: Intent::RelativeColorimetric,
+            bpc: true,
+        }
     }
 }
 
@@ -161,7 +173,8 @@ enum RgbSpace {
 
 fn generic() -> Arc<GenericCmyk> {
     static G: OnceLock<Arc<GenericCmyk>> = OnceLock::new();
-    G.get_or_init(|| Arc::new(GenericCmyk::new(generic::swop_like()))).clone()
+    G.get_or_init(|| Arc::new(GenericCmyk::new(generic::swop_like())))
+        .clone()
 }
 
 static USER: RwLock<Vec<Arc<IccProfile>>> = RwLock::new(Vec::new());
@@ -178,7 +191,11 @@ fn builtin_rgb_cache(name: &str) -> Option<Arc<IccProfile>> {
 }
 
 fn user_profile(name: &str) -> Option<Arc<IccProfile>> {
-    USER.read().unwrap_or_else(|e| e.into_inner()).iter().find(|p| p.name == name).cloned()
+    USER.read()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .find(|p| p.name == name)
+        .cloned()
 }
 
 fn cmyk_space(name: &str) -> Result<CmykSpace, CmsError> {
@@ -187,7 +204,9 @@ fn cmyk_space(name: &str) -> Result<CmykSpace, CmsError> {
         DEVICE_CMYK => Ok(CmykSpace::Device),
         _ => match user_profile(name) {
             Some(p) if p.kind == ProfileKind::Cmyk => Ok(CmykSpace::Icc(p)),
-            Some(_) => Err(CmsError::Unsupported(format!("{name} is not a CMYK profile"))),
+            Some(_) => Err(CmsError::Unsupported(format!(
+                "{name} is not a CMYK profile"
+            ))),
             None => Err(CmsError::UnknownProfile(name.into())),
         },
     }
@@ -202,14 +221,19 @@ fn rgb_space(name: &str) -> Result<RgbSpace, CmsError> {
     }
     match user_profile(name) {
         Some(p) if p.kind == ProfileKind::Rgb => Ok(RgbSpace::Icc(p)),
-        Some(_) => Err(CmsError::Unsupported(format!("{name} is not an RGB profile"))),
+        Some(_) => Err(CmsError::Unsupported(format!(
+            "{name} is not an RGB profile"
+        ))),
         None => Err(CmsError::UnknownProfile(name.into())),
     }
 }
 
 /// The current name of a profile: names earlier versions used resolve to today's name.
 pub fn canonical_name(name: &str) -> &str {
-    LEGACY_NAMES.iter().find(|(old, _)| *old == name).map_or(name, |(_, new)| new)
+    LEGACY_NAMES
+        .iter()
+        .find(|(old, _)| *old == name)
+        .map_or(name, |(_, new)| new)
 }
 
 /// An available profile by its current or legacy name.
@@ -222,11 +246,23 @@ pub fn profile(name: &str) -> Option<ProfileInfo> {
 pub fn profiles() -> Vec<ProfileInfo> {
     let mut v: Vec<ProfileInfo> = BUILTIN_RGB
         .iter()
-        .map(|n| ProfileInfo { name: (*n).into(), kind: ProfileKind::Rgb, builtin: true })
-        .chain(BUILTIN_CMYK.iter().map(|n| ProfileInfo { name: (*n).into(), kind: ProfileKind::Cmyk, builtin: true }))
+        .map(|n| ProfileInfo {
+            name: (*n).into(),
+            kind: ProfileKind::Rgb,
+            builtin: true,
+        })
+        .chain(BUILTIN_CMYK.iter().map(|n| ProfileInfo {
+            name: (*n).into(),
+            kind: ProfileKind::Cmyk,
+            builtin: true,
+        }))
         .collect();
     for p in USER.read().unwrap_or_else(|e| e.into_inner()).iter() {
-        v.push(ProfileInfo { name: p.name.clone(), kind: p.kind, builtin: false });
+        v.push(ProfileInfo {
+            name: p.name.clone(),
+            kind: p.kind,
+            builtin: false,
+        });
     }
     v
 }
@@ -236,16 +272,28 @@ pub fn profiles() -> Vec<ProfileInfo> {
 pub fn register_icc(bytes: &[u8], name: Option<String>) -> Result<ProfileInfo, CmsError> {
     let p = IccProfile::from_bytes(name, bytes)?;
     if p.kind == ProfileKind::Gray {
-        return Err(CmsError::Unsupported("grayscale profiles can't be working spaces yet".into()));
+        return Err(CmsError::Unsupported(
+            "grayscale profiles can't be working spaces yet".into(),
+        ));
     }
     let builtin = canonical_name(&p.name);
     if BUILTIN_RGB.contains(&builtin) || BUILTIN_CMYK.contains(&builtin) {
-        return Err(CmsError::Unsupported(format!("{} clashes with a built-in profile name", p.name)));
+        return Err(CmsError::Unsupported(format!(
+            "{} clashes with a built-in profile name",
+            p.name
+        )));
     }
     if !p.usable() {
-        return Err(CmsError::Unsupported(format!("{}: no usable transform to/from sRGB", p.name)));
+        return Err(CmsError::Unsupported(format!(
+            "{}: no usable transform to/from sRGB",
+            p.name
+        )));
     }
-    let info = ProfileInfo { name: p.name.clone(), kind: p.kind, builtin: false };
+    let info = ProfileInfo {
+        name: p.name.clone(),
+        kind: p.kind,
+        builtin: false,
+    };
     let mut u = USER.write().unwrap_or_else(|e| e.into_inner());
     u.retain(|x| x.name != info.name);
     u.push(Arc::new(p));
@@ -265,26 +313,42 @@ pub fn icc_bytes(name: &str) -> Result<Arc<[u8]>, CmsError> {
     if let Some(p) = user_profile(name) {
         return p.bytes().map(Arc::from);
     }
-    if let Some((_, b)) = CACHE.lock().unwrap_or_else(|e| e.into_inner()).iter().find(|(n, _)| n == name) {
+    if let Some((_, b)) = CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .find(|(n, _)| n == name)
+    {
         return Ok(b.clone());
     }
     let bytes: Arc<[u8]> = if name == GRAY {
         icc::encode(&icc::gray_profile(name))?
     } else if BUILTIN_CMYK.contains(&name) {
-        let cms = Cms::new(&ColorSettings { cmyk: name.into(), ..ColorSettings::default() })?;
-        icc::encode(&icc::cmyk_profile(name, |c| cms.cmyk_to_lab(c), |l| cms.lab_to_cmyk(l, Intent::RelativeColorimetric)))?
+        let cms = Cms::new(&ColorSettings {
+            cmyk: name.into(),
+            ..ColorSettings::default()
+        })?;
+        icc::encode(&icc::cmyk_profile(
+            name,
+            |c| cms.cmyk_to_lab(c),
+            |l| cms.lab_to_cmyk(l, Intent::RelativeColorimetric),
+        ))?
     } else {
         icc::builtin_rgb_bytes(name)?
     }
     .into();
-    CACHE.lock().unwrap_or_else(|e| e.into_inner()).push((name.to_string(), bytes.clone()));
+    CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push((name.to_string(), bytes.clone()));
     Ok(bytes)
 }
 
 /// Load a `.icc`/`.icm` file from disk (native only).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn load_icc_file(path: &std::path::Path) -> Result<ProfileInfo, CmsError> {
-    let bytes = std::fs::read(path).map_err(|e| CmsError::Io(format!("{}: {e}", path.display())))?;
+    let bytes =
+        std::fs::read(path).map_err(|e| CmsError::Io(format!("{}: {e}", path.display())))?;
     register_icc(&bytes, None)
 }
 
@@ -298,21 +362,35 @@ pub struct Cms {
 
 impl std::fmt::Debug for Cms {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Cms").field("settings", &self.settings).finish()
+        f.debug_struct("Cms")
+            .field("settings", &self.settings)
+            .finish()
     }
 }
 
 impl Default for Cms {
     fn default() -> Self {
-        Self { settings: ColorSettings::default(), rgb: RgbSpace::Srgb, cmyk: CmykSpace::Generic(generic()) }
+        Self {
+            settings: ColorSettings::default(),
+            rgb: RgbSpace::Srgb,
+            cmyk: CmykSpace::Generic(generic()),
+        }
     }
 }
 
 impl Cms {
     /// Profiles named by a legacy name are stored under their current name.
     pub fn new(settings: &ColorSettings) -> Result<Self, CmsError> {
-        let settings = ColorSettings { rgb: canonical_name(&settings.rgb).into(), cmyk: canonical_name(&settings.cmyk).into(), ..settings.clone() };
-        Ok(Self { rgb: rgb_space(&settings.rgb)?, cmyk: cmyk_space(&settings.cmyk)?, settings })
+        let settings = ColorSettings {
+            rgb: canonical_name(&settings.rgb).into(),
+            cmyk: canonical_name(&settings.cmyk).into(),
+            ..settings.clone()
+        };
+        Ok(Self {
+            rgb: rgb_space(&settings.rgb)?,
+            cmyk: cmyk_space(&settings.cmyk)?,
+            settings,
+        })
     }
     pub fn settings(&self) -> &ColorSettings {
         &self.settings
@@ -332,7 +410,10 @@ impl Cms {
     pub fn srgb_to_rgb(&self, srgb: [f32; 3]) -> [f32; 3] {
         match &self.rgb {
             RgbSpace::Srgb => srgb,
-            RgbSpace::Icc(p) => p.from_srgb(srgb, Intent::RelativeColorimetric).map(|v| [v[0], v[1], v[2]]).unwrap_or(srgb),
+            RgbSpace::Icc(p) => p
+                .from_srgb(srgb, Intent::RelativeColorimetric)
+                .map(|v| [v[0], v[1], v[2]])
+                .unwrap_or(srgb),
         }
     }
 
@@ -342,8 +423,13 @@ impl Cms {
             CmykSpace::Generic(g) => g.to_srgb(cmyk, absolute),
             CmykSpace::Device => naive_cmyk_to_rgb(cmyk),
             CmykSpace::Icc(p) => {
-                let i = if absolute { Intent::AbsoluteColorimetric } else { Intent::RelativeColorimetric };
-                p.to_srgb(&cmyk, i).unwrap_or_else(|| naive_cmyk_to_rgb(cmyk))
+                let i = if absolute {
+                    Intent::AbsoluteColorimetric
+                } else {
+                    Intent::RelativeColorimetric
+                };
+                p.to_srgb(&cmyk, i)
+                    .unwrap_or_else(|| naive_cmyk_to_rgb(cmyk))
             }
         }
     }
@@ -352,7 +438,10 @@ impl Cms {
         match space {
             CmykSpace::Generic(g) => g.from_srgb(srgb, intent, bpc),
             CmykSpace::Device => naive_rgb_to_cmyk(srgb),
-            CmykSpace::Icc(p) => p.from_srgb(srgb, intent).map(|v| [v[0], v[1], v[2], v[3]]).unwrap_or_else(|| naive_rgb_to_cmyk(srgb)),
+            CmykSpace::Icc(p) => p
+                .from_srgb(srgb, intent)
+                .map(|v| [v[0], v[1], v[2], v[3]])
+                .unwrap_or_else(|| naive_rgb_to_cmyk(srgb)),
         }
     }
 
@@ -362,7 +451,12 @@ impl Cms {
     pub fn cmyk_to_srgb(&self, cmyk: [f32; 4], absolute: bool) -> [f32; 3] {
         if let (false, CmykSpace::Icc(p)) = (absolute, &self.cmyk)
             && let Some(srgb) = builtin_rgb_cache(SRGB)
-            && let Some(v) = p.to_rgb_of(&srgb, &cmyk.map(|v| v.clamp(0.0, 1.0)), Intent::RelativeColorimetric, self.settings.bpc)
+            && let Some(v) = p.to_rgb_of(
+                &srgb,
+                &cmyk.map(|v| v.clamp(0.0, 1.0)),
+                Intent::RelativeColorimetric,
+                self.settings.bpc,
+            )
         {
             return v;
         }
@@ -463,7 +557,9 @@ impl Cms {
                 // Neutral with the same L* (grey ink percentage is 1 − lightness on screen).
                 let l = self.lab(c).l;
                 let v = lab::xyz_to_srgb(lab::lab_to_xyz(Lab::new(l, 0.0, 0.0)))[1];
-                Color::Gray { k: (1.0 - v).clamp(0.0, 1.0) }
+                Color::Gray {
+                    k: (1.0 - v).clamp(0.0, 1.0),
+                }
             }
         }
     }
@@ -483,7 +579,8 @@ impl Cms {
                     CmykSpace::Generic(g) => g.gamut_error(src),
                     CmykSpace::Device => 0.0,
                     CmykSpace::Icc(_) => {
-                        let back = self.cmyk_to_srgb(self.to_cmyk(c, Intent::RelativeColorimetric), false);
+                        let back =
+                            self.cmyk_to_srgb(self.to_cmyk(c, Intent::RelativeColorimetric), false);
                         delta_e2000(src, lab::srgb_to_lab(back))
                     }
                 }
@@ -532,7 +629,10 @@ impl Cms {
 
     /// A cached 3-D lookup table implementing [`Cms::proof_srgb`] for 8-bit pixels.
     pub fn proof_lut(&self, proof: &ProofSetup) -> Arc<ProofLut> {
-        let key = format!("{:?}|{:?}|{:?}|{}", self.settings, proof.target, proof.intent, proof.simulate_paper);
+        let key = format!(
+            "{:?}|{:?}|{:?}|{}",
+            self.settings, proof.target, proof.intent, proof.simulate_paper
+        );
         let mut cache = PROOF_CACHE.lock().unwrap_or_else(|e| e.into_inner());
         if let Some((_, l)) = cache.iter().find(|(k, _)| *k == key) {
             return l.clone();
@@ -549,11 +649,18 @@ impl Cms {
 static PROOF_CACHE: Mutex<Vec<(String, Arc<ProofLut>)>> = Mutex::new(Vec::new());
 
 fn clear_proof_cache() {
-    PROOF_CACHE.lock().unwrap_or_else(|e| e.into_inner()).clear();
+    PROOF_CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clear();
 }
 
 pub(crate) fn naive_cmyk_to_rgb([c, m, y, k]: [f32; 4]) -> [f32; 3] {
-    [(1.0 - c) * (1.0 - k), (1.0 - m) * (1.0 - k), (1.0 - y) * (1.0 - k)]
+    [
+        (1.0 - c) * (1.0 - k),
+        (1.0 - m) * (1.0 - k),
+        (1.0 - y) * (1.0 - k),
+    ]
 }
 
 pub(crate) fn naive_rgb_to_cmyk([r, g, b]: [f32; 3]) -> [f32; 4] {
@@ -561,12 +668,25 @@ pub(crate) fn naive_rgb_to_cmyk([r, g, b]: [f32; 3]) -> [f32; 4] {
     if k >= 1.0 {
         return [0.0, 0.0, 0.0, 1.0];
     }
-    [(1.0 - r - k) / (1.0 - k), (1.0 - g - k) / (1.0 - k), (1.0 - b - k) / (1.0 - k), k]
+    [
+        (1.0 - r - k) / (1.0 - k),
+        (1.0 - g - k) / (1.0 - k),
+        (1.0 - b - k) / (1.0 - k),
+        k,
+    ]
 }
 
 // Machado, Oliveira & Fernandes (2009) dichromacy simulation matrices (severity 1.0, linear RGB).
-const PROTANOPIA: [[f32; 3]; 3] = [[0.152_286, 1.052_583, -0.204_868], [0.114_503, 0.786_281, 0.099_216], [-0.003_882, -0.048_116, 1.051_998]];
-const DEUTERANOPIA: [[f32; 3]; 3] = [[0.367_322, 0.860_646, -0.227_968], [0.280_085, 0.672_501, 0.047_413], [-0.011_820, 0.042_940, 0.968_881]];
+const PROTANOPIA: [[f32; 3]; 3] = [
+    [0.152_286, 1.052_583, -0.204_868],
+    [0.114_503, 0.786_281, 0.099_216],
+    [-0.003_882, -0.048_116, 1.051_998],
+];
+const DEUTERANOPIA: [[f32; 3]; 3] = [
+    [0.367_322, 0.860_646, -0.227_968],
+    [0.280_085, 0.672_501, 0.047_413],
+    [-0.011_820, 0.042_940, 0.968_881],
+];
 
 fn simulate_cvd(srgb: [f32; 3], m: &[[f32; 3]; 3]) -> [f32; 3] {
     lab::mat_mul(m, lab::srgb_linear(srgb)).map(|v| lab::linear_to_srgb(v.clamp(0.0, 1.0)))
@@ -689,7 +809,8 @@ impl ProofLut {
         out
     }
     pub fn apply8(&self, rgb: [u8; 3]) -> [u8; 3] {
-        self.apply(rgb.map(|v| v as f32 / 255.0)).map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)
+        self.apply(rgb.map(|v| v as f32 / 255.0))
+            .map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)
     }
 }
 
@@ -743,7 +864,8 @@ impl CmykLut {
 
     /// [`Self::apply`] to 8-bit ink amounts, for 8-bit values.
     pub fn apply8(&self, inks: [u8; 4]) -> [u8; 4] {
-        self.apply(inks.map(|v| v as f32 / 255.0)).map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)
+        self.apply(inks.map(|v| v as f32 / 255.0))
+            .map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)
     }
 }
 

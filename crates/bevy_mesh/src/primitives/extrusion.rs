@@ -221,7 +221,9 @@ where
                         }
                     },
                     _ => {
-                        panic!("Meshes used with Extrusions must have a primitive topology of `PrimitiveTopology::TriangleList`");
+                        panic!(
+                            "Meshes used with Extrusions must have a primitive topology of `PrimitiveTopology::TriangleList`"
+                        );
                     }
                 };
             }

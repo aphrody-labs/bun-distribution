@@ -71,7 +71,17 @@ pub fn fit_model(model: Model, a: &[Point], b: &[Point]) -> Option<Homography> {
                 dx += b[i].x - a[i].x;
                 dy += b[i].y - a[i].y;
             }
-            Some(Homography([1.0, 0.0, dx / n as f64, 0.0, 1.0, dy / n as f64, 0.0, 0.0, 1.0]))
+            Some(Homography([
+                1.0,
+                0.0,
+                dx / n as f64,
+                0.0,
+                1.0,
+                dy / n as f64,
+                0.0,
+                0.0,
+                1.0,
+            ]))
         }
         Model::Similarity => {
             // closed form (Umeyama without reflection): b ≈ s R a + t
@@ -99,14 +109,25 @@ pub fn fit_model(model: Model, a: &[Point], b: &[Point]) -> Option<Homography> {
 
 fn centroid(p: &[Point]) -> Point {
     let n = p.len().max(1) as f64;
-    Point::new(p.iter().map(|q| q.x).sum::<f64>() / n, p.iter().map(|q| q.y).sum::<f64>() / n)
+    Point::new(
+        p.iter().map(|q| q.x).sum::<f64>() / n,
+        p.iter().map(|q| q.y).sum::<f64>() / n,
+    )
 }
 
 /// Hartley normalisation: translate to the centroid, scale to mean distance √2.
 fn normaliser(p: &[Point]) -> [f64; 3] {
     let c = centroid(p);
-    let md = p.iter().map(|q| ((q.x - c.x).powi(2) + (q.y - c.y).powi(2)).sqrt()).sum::<f64>() / p.len().max(1) as f64;
-    let s = if md > 1e-12 { std::f64::consts::SQRT_2 / md } else { 1.0 };
+    let md = p
+        .iter()
+        .map(|q| ((q.x - c.x).powi(2) + (q.y - c.y).powi(2)).sqrt())
+        .sum::<f64>()
+        / p.len().max(1) as f64;
+    let s = if md > 1e-12 {
+        std::f64::consts::SQRT_2 / md
+    } else {
+        1.0
+    };
     [s, -s * c.x, -s * c.y]
 }
 
@@ -140,7 +161,17 @@ pub fn dlt(a: &[Point], b: &[Point]) -> Option<Homography> {
     let hn = Homography([h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]]);
     // denormalise: H = Tb⁻¹ · Hn · Ta
     let ta_m = Homography([ta[0], 0.0, ta[1], 0.0, ta[0], ta[2], 0.0, 0.0, 1.0]);
-    let tb_inv = Homography([1.0 / tb[0], 0.0, -tb[1] / tb[0], 0.0, 1.0 / tb[0], -tb[2] / tb[0], 0.0, 0.0, 1.0]);
+    let tb_inv = Homography([
+        1.0 / tb[0],
+        0.0,
+        -tb[1] / tb[0],
+        0.0,
+        1.0 / tb[0],
+        -tb[2] / tb[0],
+        0.0,
+        0.0,
+        1.0,
+    ]);
     let h = tb_inv.mul(&hn).mul(&ta_m);
     let s = h.0[8];
     if s.abs() < 1e-14 || h.0.iter().any(|v| !v.is_finite()) {
@@ -156,7 +187,14 @@ pub fn transfer_error2(h: &Homography, a: Point, b: Point) -> f64 {
 
 /// RANSAC fit of `model` mapping `a` → `b`, inlier threshold `thresh` pixels. Refits on the
 /// inliers (twice) and returns `None` when fewer than `min_inliers` agree.
-pub fn ransac(model: Model, a: &[Point], b: &[Point], thresh: f64, min_inliers: usize, seed: u64) -> Option<Fit> {
+pub fn ransac(
+    model: Model,
+    a: &[Point],
+    b: &[Point],
+    thresh: f64,
+    min_inliers: usize,
+    seed: u64,
+) -> Option<Fit> {
     let n = a.len().min(b.len());
     let k = model.min_samples();
     if n < k.max(min_inliers) {
@@ -212,7 +250,9 @@ pub fn ransac(model: Model, a: &[Point], b: &[Point], thresh: f64, min_inliers: 
                 None => continue,
             },
         };
-        let inl: Vec<usize> = (0..n).filter(|&i| transfer_error2(&h, a[i], b[i]) < t2).collect();
+        let inl: Vec<usize> = (0..n)
+            .filter(|&i| transfer_error2(&h, a[i], b[i]) < t2)
+            .collect();
         if inl.len() > best.len() {
             best = inl;
             let w = best.len() as f64 / n as f64;
@@ -232,8 +272,12 @@ pub fn ransac(model: Model, a: &[Point], b: &[Point], thresh: f64, min_inliers: 
     for _ in 0..3 {
         let ia: Vec<Point> = best.iter().map(|&i| a[i]).collect();
         let ib: Vec<Point> = best.iter().map(|&i| b[i]).collect();
-        let Some(hh) = fit_model(model, &ia, &ib) else { break };
-        let inl: Vec<usize> = (0..n).filter(|&i| transfer_error2(&hh, a[i], b[i]) < t2).collect();
+        let Some(hh) = fit_model(model, &ia, &ib) else {
+            break;
+        };
+        let inl: Vec<usize> = (0..n)
+            .filter(|&i| transfer_error2(&hh, a[i], b[i]) < t2)
+            .collect();
         h = Some(hh);
         if inl.len() < best.len() || inl == best {
             break;
@@ -244,14 +288,24 @@ pub fn ransac(model: Model, a: &[Point], b: &[Point], thresh: f64, min_inliers: 
     if best.len() < min_inliers.max(k) {
         return None;
     }
-    let rms = (best.iter().map(|&i| transfer_error2(&h, a[i], b[i])).sum::<f64>() / best.len() as f64).sqrt();
-    Some(Fit { h, inliers: best, rms })
+    let rms = (best
+        .iter()
+        .map(|&i| transfer_error2(&h, a[i], b[i]))
+        .sum::<f64>()
+        / best.len() as f64)
+        .sqrt();
+    Some(Fit {
+        h,
+        inliers: best,
+        rms,
+    })
 }
 
 /// Three (nearly) collinear points among the four.
 fn degenerate(p: &[Point; 4]) -> bool {
     for (i, j, k) in [(0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)] {
-        let area = ((p[j].x - p[i].x) * (p[k].y - p[i].y) - (p[j].y - p[i].y) * (p[k].x - p[i].x)).abs();
+        let area =
+            ((p[j].x - p[i].x) * (p[k].y - p[i].y) - (p[j].y - p[i].y) * (p[k].x - p[i].x)).abs();
         let scale = p[i].dist(p[j]).max(p[i].dist(p[k])).max(1e-9);
         if area < 1e-3 * scale * scale {
             return true;
@@ -272,20 +326,51 @@ mod tests {
         let mut b = Vec::new();
         for i in 0..200 {
             let p = Point::new(rng.unit() * 800.0, rng.unit() * 600.0);
-            let q = if i % 4 == 0 { Point::new(rng.unit() * 800.0, rng.unit() * 600.0) } else { truth.apply(p) };
-            let q = Point::new(q.x + (rng.unit() - 0.5) * 0.5, q.y + (rng.unit() - 0.5) * 0.5);
+            let q = if i % 4 == 0 {
+                Point::new(rng.unit() * 800.0, rng.unit() * 600.0)
+            } else {
+                truth.apply(p)
+            };
+            let q = Point::new(
+                q.x + (rng.unit() - 0.5) * 0.5,
+                q.y + (rng.unit() - 0.5) * 0.5,
+            );
             a.push(p);
             b.push(q);
         }
         let f = ransac(Model::Homography, &a, &b, 2.0, 20, 1).unwrap();
         assert!(f.inliers.len() >= 145, "{}", f.inliers.len());
         assert!(f.rms < 0.5);
-        for p in [Point::new(0.0, 0.0), Point::new(800.0, 600.0), Point::new(400.0, 100.0)] {
+        for p in [
+            Point::new(0.0, 0.0),
+            Point::new(800.0, 600.0),
+            Point::new(400.0, 100.0),
+        ] {
             assert!(f.h.apply(p).dist(truth.apply(p)) < 0.5);
         }
-        let t = ransac(Model::Translation, &a, &a.iter().map(|p| Point::new(p.x + 3.0, p.y - 1.0)).collect::<Vec<_>>(), 1.0, 10, 2).unwrap();
+        let t = ransac(
+            Model::Translation,
+            &a,
+            &a.iter()
+                .map(|p| Point::new(p.x + 3.0, p.y - 1.0))
+                .collect::<Vec<_>>(),
+            1.0,
+            10,
+            2,
+        )
+        .unwrap();
         assert!((t.h.0[2] - 3.0).abs() < 1e-9 && (t.h.0[5] + 1.0).abs() < 1e-9);
-        let s = fit_model(Model::Similarity, &a[..10], &a[..10].iter().map(|p| Point::new(-p.y * 2.0 + 5.0, p.x * 2.0)).collect::<Vec<_>>()).unwrap();
-        assert!((s.0[0]).abs() < 1e-9 && (s.0[1] + 2.0).abs() < 1e-9 && (s.0[3] - 2.0).abs() < 1e-9);
+        let s = fit_model(
+            Model::Similarity,
+            &a[..10],
+            &a[..10]
+                .iter()
+                .map(|p| Point::new(-p.y * 2.0 + 5.0, p.x * 2.0))
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+        assert!(
+            (s.0[0]).abs() < 1e-9 && (s.0[1] + 2.0).abs() < 1e-9 && (s.0[3] - 2.0).abs() < 1e-9
+        );
     }
 }

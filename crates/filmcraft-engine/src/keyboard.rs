@@ -40,14 +40,32 @@ use filmcraft_project::{ClipId, ItemKind, ParamValue, Sequence, TrackId, TrackKi
 use filmcraft_time::Tick;
 use serde_json::{Value, json};
 
-use crate::commands::{CommandSpec, always, bad, has_selection, has_seq, item_p, slip_together, time_p, with_links};
+use crate::commands::{
+    CommandSpec, always, bad, has_selection, has_seq, item_p, slip_together, time_p, with_links,
+};
 use crate::{EngineError, Result, Session};
 
 type Run = fn(&mut Session, &Value) -> Result<Value>;
 type Enabled = fn(&Session) -> std::result::Result<(), String>;
 
-fn spec(id: &'static str, label: &'static str, shortcut: Option<&'static str>, params: &'static str, enabled: Enabled, run: Run) -> CommandSpec {
-    CommandSpec { id, label, menu: &[], shortcut, params, enabled, run, journal: true }
+fn spec(
+    id: &'static str,
+    label: &'static str,
+    shortcut: Option<&'static str>,
+    params: &'static str,
+    enabled: Enabled,
+    run: Run,
+) -> CommandSpec {
+    CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut,
+        params,
+        enabled,
+        run,
+        journal: true,
+    }
 }
 
 /// Metadata key holding an item's poster frame (media ticks).
@@ -55,15 +73,21 @@ pub const POSTER_FRAME_KEY: &str = "Poster Frame";
 
 /// An item's poster frame (Set Poster Frame), if one is set.
 pub fn poster_frame(item: &filmcraft_project::ProjectItem) -> Option<Tick> {
-    item.metadata.get(POSTER_FRAME_KEY).and_then(|v| v.parse::<i64>().ok()).map(Tick)
+    item.metadata
+        .get(POSTER_FRAME_KEY)
+        .and_then(|v| v.parse::<i64>().ok())
+        .map(Tick)
 }
 
 // ------------------------------------------------------------------ navigation
 
 /// Edit points on the given tracks (all tracks when `tracks` is None), sorted and unique.
 fn edits_on(seq: &Sequence, tracks: Option<&[TrackId]>) -> Vec<Tick> {
-    let mut v: Vec<Tick> =
-        seq.all_tracks().filter(|t| tracks.is_none_or(|ts| ts.contains(&t.id))).flat_map(|t| t.items.iter().flat_map(|i| [i.start, i.end()])).collect();
+    let mut v: Vec<Tick> = seq
+        .all_tracks()
+        .filter(|t| tracks.is_none_or(|ts| ts.contains(&t.id)))
+        .flat_map(|t| t.items.iter().flat_map(|i| [i.start, i.end()]))
+        .collect();
     v.sort_unstable();
     v.dedup();
     v
@@ -77,7 +101,11 @@ pub fn go_to_edit(s: &mut Session, next: bool, any: bool) -> Result<Value> {
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     let only = (!any && !tg.is_empty()).then_some(tg.as_slice());
     let edits = edits_on(seq, only);
-    let e = if next { edits.into_iter().find(|e| *e > t) } else { edits.into_iter().rev().find(|e| *e < t) };
+    let e = if next {
+        edits.into_iter().find(|e| *e > t)
+    } else {
+        edits.into_iter().rev().find(|e| *e < t)
+    };
     if let Some(e) = e {
         s.set_playhead(e);
     }
@@ -86,7 +114,12 @@ pub fn go_to_edit(s: &mut Session, next: bool, any: bool) -> Result<Value> {
 
 fn selected_span(s: &Session) -> Option<(Tick, Tick)> {
     let seq = s.active_sequence()?;
-    let items: Vec<_> = s.state.selection.iter().filter_map(|c| seq.find_item(*c).map(|(_, i)| i)).collect();
+    let items: Vec<_> = s
+        .state
+        .selection
+        .iter()
+        .filter_map(|c| seq.find_item(*c).map(|(_, i)| i))
+        .collect();
     let a = items.iter().map(|i| i.start).min()?;
     let b = items.iter().map(|i| i.end()).max()?;
     Some((a, b))
@@ -95,7 +128,11 @@ fn selected_span(s: &Session) -> Option<(Tick, Tick)> {
 fn go_to_selected(s: &mut Session, end: bool) -> Result<Value> {
     let (a, b) = selected_span(s).ok_or_else(|| EngineError::Other("no clips selected".into()))?;
     // Premiere parks on the clip's last frame for End (the frame before the Out edge)
-    let t = if end { b - s.sequence_rate().frame_duration() } else { a };
+    let t = if end {
+        b - s.sequence_rate().frame_duration()
+    } else {
+        a
+    };
     s.set_playhead(t.max(a));
     Ok(json!({"time": s.playhead().0}))
 }
@@ -114,10 +151,19 @@ fn reveal_nested(s: &mut Session) -> Result<Value> {
         .filter_map(|c| seq.find_item(*c).map(|(_, i)| i))
         .find(|i| is_nest(i))
         .or_else(|| {
-            seq.video_tracks.iter().rev().chain(seq.audio_tracks.iter()).filter(|t| tg.contains(&t.id)).filter_map(|t| t.item_at(ph)).find(|i| is_nest(i))
+            seq.video_tracks
+                .iter()
+                .rev()
+                .chain(seq.audio_tracks.iter())
+                .filter(|t| tg.contains(&t.id))
+                .filter_map(|t| t.item_at(ph))
+                .find(|i| is_nest(i))
         })
         .ok_or_else(|| EngineError::Other("select a nested sequence clip".into()))?;
-    let (nested, t) = (pick.item, pick.source_time_at(ph.clamp(pick.start, pick.end() - Tick(1))));
+    let (nested, t) = (
+        pick.item,
+        pick.source_time_at(ph.clamp(pick.start, pick.end() - Tick(1))),
+    );
     s.execute("sequence.open", json!({"item": nested.0}))?;
     s.set_playhead(t);
     Ok(json!({"sequence": nested.0, "time": s.playhead().0}))
@@ -129,7 +175,11 @@ fn select_clip_at_playhead(s: &mut Session) -> Result<Value> {
     let t = s.playhead();
     let tg = s.targeting().targeted;
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let ids: Vec<ClipId> = seq.all_tracks().filter(|tr| tg.contains(&tr.id)).filter_map(|tr| tr.item_at(t).map(|i| i.id)).collect();
+    let ids: Vec<ClipId> = seq
+        .all_tracks()
+        .filter(|tr| tg.contains(&tr.id))
+        .filter_map(|tr| tr.item_at(t).map(|i| i.id))
+        .collect();
     s.state.selection = with_links(s, &ids);
     s.state.edit_points.clear();
     s.state.caption_selection.clear();
@@ -146,9 +196,21 @@ fn select_step(s: &mut Session, next: bool) -> Result<Value> {
     // one anchor per track: the last (first) selected item
     let mut picks: Vec<ClipId> = Vec::new();
     for tr in seq.all_tracks() {
-        let sel: Vec<usize> = tr.items.iter().enumerate().filter(|(_, i)| s.state.selection.contains(&i.id)).map(|(k, _)| k).collect();
-        let Some(&anchor) = (if next { sel.last() } else { sel.first() }) else { continue };
-        let k = if next { Some(anchor + 1) } else { anchor.checked_sub(1) };
+        let sel: Vec<usize> = tr
+            .items
+            .iter()
+            .enumerate()
+            .filter(|(_, i)| s.state.selection.contains(&i.id))
+            .map(|(k, _)| k)
+            .collect();
+        let Some(&anchor) = (if next { sel.last() } else { sel.first() }) else {
+            continue;
+        };
+        let k = if next {
+            Some(anchor + 1)
+        } else {
+            anchor.checked_sub(1)
+        };
         if let Some(it) = k.and_then(|k| tr.items.get(k)) {
             picks.push(it.id);
         }
@@ -173,16 +235,26 @@ fn extend_edit(s: &mut Session, next: bool) -> Result<Value> {
     let mut ops: Vec<(Option<ClipId>, Option<ClipId>, Tick)> = Vec::new();
     for tr in seq.all_tracks().filter(|t| tg.contains(&t.id) && !t.locked) {
         let edges = tr.items.iter().flat_map(|i| [i.start, i.end()]);
-        let e = if next { edges.filter(|e| *e > ph).min() } else { edges.filter(|e| *e < ph).max() };
+        let e = if next {
+            edges.filter(|e| *e > ph).min()
+        } else {
+            edges.filter(|e| *e < ph).max()
+        };
         let Some(e) = e else { continue };
         let left = tr.items.iter().find(|i| i.end() == e).map(|i| i.id);
         let right = tr.items.iter().find(|i| i.start == e).map(|i| i.id);
         ops.push((left, right, ph - e));
     }
     if ops.is_empty() {
-        return Err(EngineError::Other("no edit point on the targeted tracks".into()));
+        return Err(EngineError::Other(
+            "no edit point on the targeted tracks".into(),
+        ));
     }
-    let label = if next { "Extend Next Edit To Playhead" } else { "Extend Previous Edit To Playhead" };
+    let label = if next {
+        "Extend Next Edit To Playhead"
+    } else {
+        "Extend Previous Edit To Playhead"
+    };
     s.edit_sequence(label, |q, ctx, _| {
         for (l, r, d) in &ops {
             match (l, r) {
@@ -208,15 +280,21 @@ fn nudge_time(s: &mut Session, frames: i64) -> Result<Value> {
     let d = s.sequence_rate().tick_of(frames);
     let clips = with_links(s, &s.state.selection.clone());
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let items: Vec<(ClipId, TrackId, Tick)> = clips.iter().filter_map(|c| seq.find_item(*c).map(|(t, i)| (*c, t, i.start))).collect();
+    let items: Vec<(ClipId, TrackId, Tick)> = clips
+        .iter()
+        .filter_map(|c| seq.find_item(*c).map(|(t, i)| (*c, t, i.start)))
+        .collect();
     let min_start = items.iter().map(|m| m.2).min().unwrap_or_default();
     // never past the sequence start
     let d = d.max(-min_start);
     if d == Tick::ZERO {
         return Ok(json!({"delta": 0}));
     }
-    let moves: Vec<(ClipId, TrackId, Tick)> = items.into_iter().map(|(c, t, st)| (c, t, st + d)).collect();
-    s.edit_sequence("Nudge", |q, ctx, _| Ok(edit::move_items(q, &moves, false, ctx)?))?;
+    let moves: Vec<(ClipId, TrackId, Tick)> =
+        items.into_iter().map(|(c, t, st)| (c, t, st + d)).collect();
+    s.edit_sequence("Nudge", |q, ctx, _| {
+        Ok(edit::move_items(q, &moves, false, ctx)?)
+    })?;
     Ok(json!({"delta": d.0}))
 }
 
@@ -227,7 +305,9 @@ fn nudge_track(s: &mut Session, up: bool) -> Result<Value> {
     let mut moves = Vec::new();
     let mut blocked = 0usize;
     for c in &s.state.selection {
-        let Some((tid, it)) = seq.find_item(*c) else { continue };
+        let Some((tid, it)) = seq.find_item(*c) else {
+            continue;
+        };
         let Some(tr) = seq.track(tid) else { continue };
         let list = seq.tracks(tr.kind);
         let idx = list.iter().position(|t| t.id == tid).unwrap_or(0) as i64;
@@ -244,10 +324,16 @@ fn nudge_track(s: &mut Session, up: bool) -> Result<Value> {
         moves.push((*c, dest.id, it.start));
     }
     if moves.is_empty() {
-        let why = if blocked > 0 { "no track to move to" } else { "no clips selected" };
+        let why = if blocked > 0 {
+            "no track to move to"
+        } else {
+            "no clips selected"
+        };
         return Err(EngineError::Other(why.into()));
     }
-    s.edit_sequence("Nudge", |q, ctx, _| Ok(edit::move_items(q, &moves, false, ctx)?))?;
+    s.edit_sequence("Nudge", |q, ctx, _| {
+        Ok(edit::move_items(q, &moves, false, ctx)?)
+    })?;
     Ok(json!({"moved": moves.len()}))
 }
 
@@ -259,10 +345,15 @@ fn slip_selection(s: &mut Session, frames: i64) -> Result<Value> {
     // media delta per clip (source frames run at the clip's speed); linked partners slip as one group
     let mut groups: Vec<(Option<u64>, Vec<(ClipId, Tick)>)> = Vec::new();
     for c in &clips {
-        let Some((_, i)) = seq.find_item(*c) else { continue };
+        let Some((_, i)) = seq.find_item(*c) else {
+            continue;
+        };
         let d = Tick((rate.tick_of(frames).0 as f64 * i.speed.abs().max(1e-9)).round() as i64);
         let link = i.link.filter(|_| linked);
-        match groups.iter_mut().find(|(l, _)| link.is_some() && *l == link) {
+        match groups
+            .iter_mut()
+            .find(|(l, _)| link.is_some() && *l == link)
+        {
             Some((_, g)) => g.push((*c, d)),
             None => groups.push((link, vec![(*c, d)])),
         }
@@ -280,7 +371,9 @@ fn slide_selection(s: &mut Session, frames: i64) -> Result<Value> {
     let d = s.sequence_rate().tick_of(frames);
     let clips = with_links(s, &s.state.selection.clone());
     // one common delta, clamped by the most restrictive member, keeps linked partners in sync
-    s.edit_sequence("Slide", |q, ctx, _| Ok(edit::slide_items(q, &clips, d, ctx)?))?;
+    s.edit_sequence("Slide", |q, ctx, _| {
+        Ok(edit::slide_items(q, &clips, d, ctx)?)
+    })?;
     Ok(Value::Null)
 }
 
@@ -298,7 +391,9 @@ fn set_targeting(s: &mut Session, tg: crate::Targeting) -> Result<Value> {
 }
 
 fn track_ids(s: &Session, kind: TrackKind) -> Vec<TrackId> {
-    s.active_sequence().map(|q| q.tracks(kind).iter().map(|t| t.id).collect()).unwrap_or_default()
+    s.active_sequence()
+        .map(|q| q.tracks(kind).iter().map(|t| t.id).collect())
+        .unwrap_or_default()
 }
 
 fn toggle_all_targets(s: &mut Session, kind: TrackKind) -> Result<Value> {
@@ -319,15 +414,22 @@ fn toggle_all_targets(s: &mut Session, kind: TrackKind) -> Result<Value> {
 fn toggle_all_source(s: &mut Session, kind: TrackKind) -> Result<Value> {
     let first = track_ids(s, kind).first().copied();
     let mut tg = s.targeting();
-    let slot = if kind == TrackKind::Video { &mut tg.video_dest } else { &mut tg.audio_dest };
+    let slot = if kind == TrackKind::Video {
+        &mut tg.video_dest
+    } else {
+        &mut tg.audio_dest
+    };
     *slot = if slot.is_some() { None } else { first };
     set_targeting(s, tg)
 }
 
 fn toggle_target(s: &mut Session, kind: TrackKind, n: usize) -> Result<Value> {
-    let t = *track_ids(s, kind)
-        .get(n - 1)
-        .ok_or_else(|| EngineError::Other(format!("there is no track {}{n}", if kind == TrackKind::Video { "V" } else { "A" })))?;
+    let t = *track_ids(s, kind).get(n - 1).ok_or_else(|| {
+        EngineError::Other(format!(
+            "there is no track {}{n}",
+            if kind == TrackKind::Video { "V" } else { "A" }
+        ))
+    })?;
     let mut tg = s.targeting();
     if let Some(i) = tg.targeted.iter().position(|x| *x == t) {
         tg.targeted.remove(i);
@@ -341,20 +443,38 @@ fn toggle_target(s: &mut Session, kind: TrackKind, n: usize) -> Result<Value> {
 fn move_targets(s: &mut Session, kind: TrackKind, up: bool) -> Result<Value> {
     let ids = track_ids(s, kind);
     let mut tg = s.targeting();
-    let idx: Vec<usize> = ids.iter().enumerate().filter(|(_, t)| tg.targeted.contains(t)).map(|(i, _)| i).collect();
+    let idx: Vec<usize> = ids
+        .iter()
+        .enumerate()
+        .filter(|(_, t)| tg.targeted.contains(t))
+        .map(|(i, _)| i)
+        .collect();
     // visually up: video n+1, audio n-1
-    let step: i64 = if (kind == TrackKind::Video) == up { 1 } else { -1 };
-    if idx.iter().any(|i| *i as i64 + step < 0 || *i as i64 + step >= ids.len() as i64) {
-        return Err(EngineError::Other("the targets are already at the edge".into()));
+    let step: i64 = if (kind == TrackKind::Video) == up {
+        1
+    } else {
+        -1
+    };
+    if idx
+        .iter()
+        .any(|i| *i as i64 + step < 0 || *i as i64 + step >= ids.len() as i64)
+    {
+        return Err(EngineError::Other(
+            "the targets are already at the edge".into(),
+        ));
     }
     tg.targeted.retain(|t| !ids.contains(t));
-    tg.targeted.extend(idx.iter().map(|i| ids[(*i as i64 + step) as usize]));
+    tg.targeted
+        .extend(idx.iter().map(|i| ids[(*i as i64 + step) as usize]));
     set_targeting(s, tg)
 }
 
 fn toggle_targeted_tracks(s: &mut Session, kind: TrackKind, what: &'static str) -> Result<Value> {
     let tg = s.targeting().targeted;
-    let ids: Vec<TrackId> = track_ids(s, kind).into_iter().filter(|t| tg.contains(t)).collect();
+    let ids: Vec<TrackId> = track_ids(s, kind)
+        .into_iter()
+        .filter(|t| tg.contains(t))
+        .collect();
     if ids.is_empty() {
         return Err(EngineError::Other("no targeted tracks".into()));
     }
@@ -394,8 +514,14 @@ const VOLUME_MAX_DB: f64 = 15.0;
 pub fn adjust_clip_volume(s: &mut Session, db: f64) -> Result<Value> {
     let clips = with_links(s, &s.state.selection.clone());
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let audio: Vec<ClipId> =
-        clips.into_iter().filter(|c| seq.find_item(*c).and_then(|(t, _)| seq.track(t)).is_some_and(|t| t.kind == TrackKind::Audio)).collect();
+    let audio: Vec<ClipId> = clips
+        .into_iter()
+        .filter(|c| {
+            seq.find_item(*c)
+                .and_then(|(t, _)| seq.track(t))
+                .is_some_and(|t| t.kind == TrackKind::Audio)
+        })
+        .collect();
     if audio.is_empty() {
         return Err(EngineError::Other("select audio clips".into()));
     }
@@ -403,11 +529,19 @@ pub fn adjust_clip_volume(s: &mut Session, db: f64) -> Result<Value> {
         ParamValue::Float(x) => ParamValue::Float((x + db).clamp(VOLUME_MIN_DB, VOLUME_MAX_DB)),
         o => o.clone(),
     };
-    let label = if db > 0.0 { "Increase Clip Volume" } else { "Decrease Clip Volume" };
+    let label = if db > 0.0 {
+        "Increase Clip Volume"
+    } else {
+        "Decrease Clip Volume"
+    };
     s.edit_sequence(label, |q, _, _| {
         for c in &audio {
-            let Some((_, it)) = q.find_item_mut(*c) else { continue };
-            let Some(p) = it.effect_mut("volume").and_then(|e| e.param_mut("level")) else { continue };
+            let Some((_, it)) = q.find_item_mut(*c) else {
+                continue;
+            };
+            let Some(p) = it.effect_mut("volume").and_then(|e| e.param_mut("level")) else {
+                continue;
+            };
             p.value = shift(&p.value);
             for k in &mut p.keyframes {
                 k.value = shift(&k.value);
@@ -421,7 +555,11 @@ pub fn adjust_clip_volume(s: &mut Session, db: f64) -> Result<Value> {
             audio
                 .iter()
                 .filter_map(|c| q.find_item(*c))
-                .filter_map(|(_, it)| it.effect("volume").and_then(|e| e.params.get("level")).and_then(|p| p.value.as_f64()))
+                .filter_map(|(_, it)| {
+                    it.effect("volume")
+                        .and_then(|e| e.params.get("level"))
+                        .and_then(|p| p.value.as_f64())
+                })
                 .map(|v| json!(v))
                 .collect()
         })
@@ -432,9 +570,12 @@ pub fn adjust_clip_volume(s: &mut Session, db: f64) -> Result<Value> {
 // ------------------------------------------------------------------ graphics
 
 fn text_layer_targets(s: &Session) -> Result<(ClipId, Vec<usize>)> {
-    let clip = crate::graphics::target_clip(s, &Value::Null).ok_or_else(|| EngineError::Other("select a graphic clip".into()))?;
+    let clip = crate::graphics::target_clip(s, &Value::Null)
+        .ok_or_else(|| EngineError::Other("select a graphic clip".into()))?;
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let (_, it) = seq.find_item(clip).ok_or_else(|| EngineError::Other("no such clip".into()))?;
+    let (_, it) = seq
+        .find_item(clip)
+        .ok_or_else(|| EngineError::Other("no such clip".into()))?;
     let idx = filmcraft_project::graphic::layer_indices(&it.effects);
     if idx.is_empty() {
         return Err(EngineError::Other("the graphic has no layers".into()));
@@ -442,32 +583,52 @@ fn text_layer_targets(s: &Session) -> Result<(ClipId, Vec<usize>)> {
     let chosen: Vec<usize> = if s.state.graphic_layers.is_empty() {
         vec![*idx.last().unwrap_or(&0)]
     } else {
-        s.state.graphic_layers.iter().filter_map(|l| idx.get(*l).copied()).collect()
+        s.state
+            .graphic_layers
+            .iter()
+            .filter_map(|l| idx.get(*l).copied())
+            .collect()
     };
     Ok((clip, chosen))
 }
 
 /// Apply `f` to parameter `param` of the targeted graphic layers at the playhead (keyframe-aware).
-fn edit_layers(s: &mut Session, label: &str, param: &'static str, text_only: bool, f: impl Fn(&ParamValue) -> Option<ParamValue>) -> Result<Value> {
+fn edit_layers(
+    s: &mut Session,
+    label: &str,
+    param: &'static str,
+    text_only: bool,
+    f: impl Fn(&ParamValue) -> Option<ParamValue>,
+) -> Result<Value> {
     let (clip, layers) = text_layer_targets(s)?;
     let tl = s.playhead();
     let n = s.edit_sequence(label, |q, _, _| {
-        let (_, it) = q.find_item_mut(clip).ok_or(filmcraft_edit::EditError::NoItem(clip))?;
+        let (_, it) = q
+            .find_item_mut(clip)
+            .ok_or(filmcraft_edit::EditError::NoItem(clip))?;
         let mt = it.source_time_at(tl.clamp(it.start, it.end() - Tick(1)));
         let mut n = 0;
         for ei in &layers {
-            let Some(e) = it.effects.get_mut(*ei) else { continue };
+            let Some(e) = it.effects.get_mut(*ei) else {
+                continue;
+            };
             if text_only && !e.params.contains_key("text") {
                 continue;
             }
-            let Some(p) = e.params.get_mut(param) else { continue };
+            let Some(p) = e.params.get_mut(param) else {
+                continue;
+            };
             if let Some(v) = f(&p.value_at(mt)) {
                 p.set_at(mt, v);
                 n += 1;
             }
         }
         if n == 0 {
-            return Err(EngineError::Other(if text_only { "select a text layer".into() } else { "nothing to change".into() }));
+            return Err(EngineError::Other(if text_only {
+                "select a text layer".into()
+            } else {
+                "nothing to change".into()
+            }));
         }
         Ok(n)
     })?;
@@ -489,7 +650,9 @@ fn leading(s: &mut Session, d: f64) -> Result<Value> {
 }
 
 fn align_text(s: &mut Session, choice: u32) -> Result<Value> {
-    edit_layers(s, "Text Alignment", "align", true, move |_| Some(ParamValue::Choice(choice)))
+    edit_layers(s, "Text Alignment", "align", true, move |_| {
+        Some(ParamValue::Choice(choice))
+    })
 }
 
 /// Nudge Selected Object: graphic layers when a graphic is targeted, else the Motion position of
@@ -500,22 +663,40 @@ fn nudge_object(s: &mut Session, dx: f64, dy: f64) -> Result<Value> {
         _ => None,
     };
     if crate::graphics::target_clip(s, &Value::Null).is_some()
-        && s.state.selection.iter().all(|c| s.active_sequence().is_some_and(|q| crate::graphics::is_graphic(s, q, *c)))
+        && s.state.selection.iter().all(|c| {
+            s.active_sequence()
+                .is_some_and(|q| crate::graphics::is_graphic(s, q, *c))
+        })
     {
         return edit_layers(s, "Nudge", "position", false, shift);
     }
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let clips: Vec<ClipId> =
-        s.state.selection.iter().copied().filter(|c| seq.find_item(*c).and_then(|(t, _)| seq.track(t)).is_some_and(|t| t.kind == TrackKind::Video)).collect();
+    let clips: Vec<ClipId> = s
+        .state
+        .selection
+        .iter()
+        .copied()
+        .filter(|c| {
+            seq.find_item(*c)
+                .and_then(|(t, _)| seq.track(t))
+                .is_some_and(|t| t.kind == TrackKind::Video)
+        })
+        .collect();
     if clips.is_empty() {
-        return Err(EngineError::Other("select a video clip or a graphic".into()));
+        return Err(EngineError::Other(
+            "select a video clip or a graphic".into(),
+        ));
     }
     let tl = s.playhead();
     s.edit_sequence("Nudge", |q, _, _| {
         for c in &clips {
-            let Some((_, it)) = q.find_item_mut(*c) else { continue };
+            let Some((_, it)) = q.find_item_mut(*c) else {
+                continue;
+            };
             let mt = it.source_time_at(tl.clamp(it.start, it.end() - Tick(1)));
-            if let Some(p) = it.effect_mut("motion").and_then(|e| e.param_mut("position"))
+            if let Some(p) = it
+                .effect_mut("motion")
+                .and_then(|e| e.param_mut("position"))
                 && let Some(v) = shift(&p.value_at(mt))
             {
                 p.set_at(mt, v);
@@ -528,17 +709,31 @@ fn nudge_object(s: &mut Session, dx: f64, dy: f64) -> Result<Value> {
 
 fn has_graphic_or_selection(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
-    if crate::graphics::target_clip(s, &Value::Null).is_some() || !s.state.selection.is_empty() { Ok(()) } else { Err("select a clip or a graphic".into()) }
+    if crate::graphics::target_clip(s, &Value::Null).is_some() || !s.state.selection.is_empty() {
+        Ok(())
+    } else {
+        Err("select a clip or a graphic".into())
+    }
 }
 fn has_graphic(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
-    crate::graphics::target_clip(s, &Value::Null).map(|_| ()).ok_or_else(|| "select a graphic clip".into())
+    crate::graphics::target_clip(s, &Value::Null)
+        .map(|_| ())
+        .ok_or_else(|| "select a graphic clip".into())
 }
 
 // ------------------------------------------------------------------ export frame, poster frame
 
 fn sanitize(name: &str) -> String {
-    name.chars().map(|c| if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') { '_' } else { c }).collect()
+    name.chars()
+        .map(|c| {
+            if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect()
 }
 
 /// A monitor frame captured when Export Frame opens. Export uses original media, never proxies.
@@ -563,44 +758,87 @@ pub fn frame_export_target(s: &Session, p: &Value) -> Result<FrameExportTarget> 
     };
     let key = if source { "item" } else { "sequence" };
     let item = match p.get(key) {
-        Some(v) => filmcraft_project::ItemId(v.as_u64().ok_or_else(|| bad(CMD, format!("{key} must be an item id")))?),
-        None => if source { s.state.source_item } else { s.state.active_sequence }
-            .ok_or_else(|| bad(CMD, "open a video clip or sequence in the requested monitor"))?,
+        Some(v) => filmcraft_project::ItemId(
+            v.as_u64()
+                .ok_or_else(|| bad(CMD, format!("{key} must be an item id")))?,
+        ),
+        None => if source {
+            s.state.source_item
+        } else {
+            s.state.active_sequence
+        }
+        .ok_or_else(|| {
+            bad(
+                CMD,
+                "open a video clip or sequence in the requested monitor",
+            )
+        })?,
     };
-    let pi = s.project.item(item).ok_or_else(|| bad(CMD, "the requested item is unavailable"))?;
-    let (width, height) = s.project.source_size(item).ok_or_else(|| bad(CMD, "the requested Source clip has no video frame"))?;
+    let pi = s
+        .project
+        .item(item)
+        .ok_or_else(|| bad(CMD, "the requested item is unavailable"))?;
+    let (width, height) = s
+        .project
+        .source_size(item)
+        .ok_or_else(|| bad(CMD, "the requested Source clip has no video frame"))?;
     filmcraft_project::validate_frame_size(width, height).map_err(|e| bad(CMD, e.to_string()))?;
     let (rate, current, bounds) = if source {
-        let v = crate::clip_ops::source_view(s, item).ok_or_else(|| bad(CMD, "Source clip is unavailable"))?;
+        let v = crate::clip_ops::source_view(s, item)
+            .ok_or_else(|| bad(CMD, "Source clip is unavailable"))?;
         if v.start.0 < 0 || v.end <= v.start {
             return Err(bad(CMD, "Source clip has invalid bounds"));
         }
         (v.rate, s.state.source_playhead, Some((v.start, v.end)))
     } else {
         let q = s.project.sequence(item).ok_or(EngineError::NoSequence)?;
-        (q.settings.frame_rate, s.state.playheads.get(&item).copied().unwrap_or_default(), None)
+        (
+            q.settings.frame_rate,
+            s.state.playheads.get(&item).copied().unwrap_or_default(),
+            None,
+        )
     };
     let requested = match p.get("time") {
         None => current,
-        Some(v) => Tick(v.as_i64().ok_or_else(|| bad(CMD, "time must be integer ticks"))?),
+        Some(v) => Tick(
+            v.as_i64()
+                .ok_or_else(|| bad(CMD, "time must be integer ticks"))?,
+        ),
     };
     if rate.num <= 0 || rate.den <= 0 || requested.0 < 0 {
-        return Err(bad(CMD, "frame rate must be positive and time non-negative"));
+        return Err(bad(
+            CMD,
+            "frame rate must be positive and time non-negative",
+        ));
     }
     let invalid = || bad(CMD, "frame time exceeds the supported range");
-    let unit = i128::from(filmcraft_time::TICKS_PER_SECOND).checked_mul(i128::from(rate.den)).ok_or_else(invalid)?;
+    let unit = i128::from(filmcraft_time::TICKS_PER_SECOND)
+        .checked_mul(i128::from(rate.den))
+        .ok_or_else(invalid)?;
     let fd = unit / i128::from(rate.num);
     if fd <= 0 || fd > i128::from(i64::MAX) {
         return Err(invalid());
     }
-    let t = bounds.map(|(a, b)| requested.clamp(a, Tick(b.0.saturating_sub(1)).max(a))).unwrap_or(requested);
-    let frame = i128::from(t.0).checked_mul(i128::from(rate.num)).ok_or_else(invalid)? / unit;
+    let t = bounds
+        .map(|(a, b)| requested.clamp(a, Tick(b.0.saturating_sub(1)).max(a)))
+        .unwrap_or(requested);
+    let frame = i128::from(t.0)
+        .checked_mul(i128::from(rate.num))
+        .ok_or_else(invalid)?
+        / unit;
     let snapped = frame.checked_mul(unit).ok_or_else(invalid)? / i128::from(rate.num);
     let mut time = Tick(i64::try_from(snapped).map_err(|_| invalid())?);
     if let Some((a, _)) = bounds {
         time = time.max(a);
     }
-    Ok(FrameExportTarget { source, item, time, name: pi.name.clone(), width, height })
+    Ok(FrameExportTarget {
+        source,
+        item,
+        time,
+        name: pi.name.clone(),
+        width,
+        height,
+    })
 }
 
 /// Export the captured Source or Program frame as a full-resolution SDR still.
@@ -608,36 +846,67 @@ fn export_frame(s: &mut Session, p: &Value) -> Result<Value> {
     let target = frame_export_target(s, p)?;
     let fmt = match p.get("format") {
         None => "png".to_string(),
-        Some(v) => v.as_str().ok_or_else(|| bad("file.exportFrame", "format must be a string"))?.to_ascii_lowercase(),
+        Some(v) => v
+            .as_str()
+            .ok_or_else(|| bad("file.exportFrame", "format must be a string"))?
+            .to_ascii_lowercase(),
     };
-    let format = filmcraft_export::still::StillFormat::parse(&fmt).map_err(|e| bad("file.exportFrame", e.to_string()))?;
+    let format = filmcraft_export::still::StillFormat::parse(&fmt)
+        .map_err(|e| bad("file.exportFrame", e.to_string()))?;
     let depth = match p.get("depth") {
         None => 8,
-        Some(v) => u8::try_from(v.as_u64().ok_or_else(|| bad("file.exportFrame", "depth must be 8 or 16"))?)
-            .map_err(|_| bad("file.exportFrame", "depth must be 8 or 16"))?,
+        Some(v) => u8::try_from(
+            v.as_u64()
+                .ok_or_else(|| bad("file.exportFrame", "depth must be 8 or 16"))?,
+        )
+        .map_err(|_| bad("file.exportFrame", "depth must be 8 or 16"))?,
     };
     if !matches!(depth, 8 | 16) || (depth == 16 && !format.supports_16()) {
-        return Err(bad("file.exportFrame", "16-bit output requires PNG or TIFF; JPEG and BMP require 8-bit output"));
+        return Err(bad(
+            "file.exportFrame",
+            "16-bit output requires PNG or TIFF; JPEG and BMP require 8-bit output",
+        ));
     }
     let import = match p.get("import") {
         None => false,
-        Some(v) => v.as_bool().ok_or_else(|| bad("file.exportFrame", "import must be true or false"))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad("file.exportFrame", "import must be true or false"))?,
     };
     let ext = format.extension();
     let path = match p.get("path") {
         Some(v) => {
-            let path = v.as_str().filter(|v| !v.trim().is_empty()).ok_or_else(|| bad("file.exportFrame", "path must be a non-empty string"))?;
+            let path = v
+                .as_str()
+                .filter(|v| !v.trim().is_empty())
+                .ok_or_else(|| bad("file.exportFrame", "path must be a non-empty string"))?;
             crate::export_tools::expand_home(path)
         }
         None => {
-            let dir = s.path.as_deref().and_then(|p| std::path::Path::new(p).parent()).unwrap_or_else(|| std::path::Path::new(""));
+            let dir = s
+                .path
+                .as_deref()
+                .and_then(|p| std::path::Path::new(p).parent())
+                .unwrap_or_else(|| std::path::Path::new(""));
             let base = sanitize(&target.name);
-            let candidate =
-                (1..=9999).map(|n| dir.join(format!("{base}.Still{n:03}.{ext}")).to_string_lossy().into_owned()).find(|p| s.services.file_size(p).is_err());
-            candidate.ok_or_else(|| bad("file.exportFrame", "choose a path: all default still names already exist"))?
+            let candidate = (1..=9999)
+                .map(|n| {
+                    dir.join(format!("{base}.Still{n:03}.{ext}"))
+                        .to_string_lossy()
+                        .into_owned()
+                })
+                .find(|p| s.services.file_size(p).is_err());
+            candidate.ok_or_else(|| {
+                bad(
+                    "file.exportFrame",
+                    "choose a path: all default still names already exist",
+                )
+            })?
         }
     };
-    let provider = s.media.full_res_provider(s.project.clone(), s.services.clone());
+    let provider = s
+        .media
+        .full_res_provider(s.project.clone(), s.services.clone());
     // On the web a frame can still be decoding (WebCodecs) or its bytes loading (Blob reads): the
     // render then leaves that clip out, so saving it would pass a blank or partial picture off as
     // the requested frame (#228). Report it instead and write nothing; a later call succeeds.
@@ -645,21 +914,35 @@ fn export_frame(s: &mut Session, p: &Value) -> Result<Value> {
     let img = if target.source {
         filmcraft_render::render_item(&s.project, target.item, target.time, 1.0, &provider)
     } else {
-        let opts = filmcraft_render::RenderOptions { scale: 1.0, captions: true, ..Default::default() };
-        Some(filmcraft_render::render_sequence(&s.project, target.item, target.time, opts, &provider))
+        let opts = filmcraft_render::RenderOptions {
+            scale: 1.0,
+            captions: true,
+            ..Default::default()
+        };
+        Some(filmcraft_render::render_sequence(
+            &s.project,
+            target.item,
+            target.time,
+            opts,
+            &provider,
+        ))
     };
     if filmcraft_media::pending::take() {
-        return Err(EngineError::Other("the frame is still loading; export it again in a moment".into()));
+        return Err(EngineError::Other(
+            "the frame is still loading; export it again in a moment".into(),
+        ));
     }
     let img = img.ok_or_else(|| bad("file.exportFrame", "cannot decode the Source video frame"))?;
     let (w, h) = (
         u32::try_from(img.w).map_err(|_| bad("file.exportFrame", "image width exceeds limits"))?,
         u32::try_from(img.h).map_err(|_| bad("file.exportFrame", "image height exceeds limits"))?,
     );
-    let bytes = filmcraft_export::still::encode(&img, format, depth).map_err(|e| EngineError::Other(e.to_string()))?;
-    s.services.write_file(&path, &bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
-    let mut out =
-        json!({"path": path, "width": w, "height": h, "depth": depth, "target": if target.source { "source" } else { "program" }, "time": target.time.0});
+    let bytes = filmcraft_export::still::encode(&img, format, depth)
+        .map_err(|e| EngineError::Other(e.to_string()))?;
+    s.services
+        .write_file(&path, &bytes)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    let mut out = json!({"path": path, "width": w, "height": h, "depth": depth, "target": if target.source { "source" } else { "program" }, "time": target.time.0});
     if import {
         out["import"] = s.execute("file.import", json!({"paths": [path]}))?;
     }
@@ -683,21 +966,40 @@ fn poster_target(s: &Session, p: &Value) -> Option<(filmcraft_project::ItemId, T
 }
 
 fn set_poster(s: &mut Session, p: &Value, clear: bool) -> Result<Value> {
-    let (item, t) = poster_target(s, p).ok_or_else(|| EngineError::Other("open a clip in the Source monitor or select one in the Project panel".into()))?;
-    let it = s.project.item(item).ok_or_else(|| bad("clip.setPosterFrame", "no such item"))?;
+    let (item, t) = poster_target(s, p).ok_or_else(|| {
+        EngineError::Other(
+            "open a clip in the Source monitor or select one in the Project panel".into(),
+        )
+    })?;
+    let it = s
+        .project
+        .item(item)
+        .ok_or_else(|| bad("clip.setPosterFrame", "no such item"))?;
     if matches!(it.kind, ItemKind::AdjustmentLayer { .. }) {
-        return Err(EngineError::Other("adjustment layers have no poster frame".into()));
+        return Err(EngineError::Other(
+            "adjustment layers have no poster frame".into(),
+        ));
     }
     let snapped = it.frame_rate().snap(t);
-    s.edit(if clear { "Clear Poster Frame" } else { "Set Poster Frame" }, |pr, _| {
-        let it = pr.item_mut(item).ok_or_else(|| bad("clip.setPosterFrame", "no such item"))?;
+    s.edit(
         if clear {
-            it.metadata.remove(POSTER_FRAME_KEY);
+            "Clear Poster Frame"
         } else {
-            it.metadata.insert(POSTER_FRAME_KEY.into(), snapped.0.to_string());
-        }
-        Ok(())
-    })?;
+            "Set Poster Frame"
+        },
+        |pr, _| {
+            let it = pr
+                .item_mut(item)
+                .ok_or_else(|| bad("clip.setPosterFrame", "no such item"))?;
+            if clear {
+                it.metadata.remove(POSTER_FRAME_KEY);
+            } else {
+                it.metadata
+                    .insert(POSTER_FRAME_KEY.into(), snapped.0.to_string());
+            }
+            Ok(())
+        },
+    )?;
     Ok(json!({"item": item.0, "posterFrame": (!clear).then_some(snapped.0)}))
 }
 
@@ -715,91 +1017,530 @@ pub fn commands() -> Vec<CommandSpec> {
     use TrackKind::{Audio, Video};
     let mut v = vec![
         // ---- navigation
-        spec("playhead.nextEditAnyTrack", "Go to Next Edit Point on Any Track", Some("Shift+Down"), "{}", has_seq, |s, _| go_to_edit(s, true, true)),
-        spec("playhead.prevEditAnyTrack", "Go to Previous Edit Point on Any Track", Some("Shift+Up"), "{}", has_seq, |s, _| go_to_edit(s, false, true)),
-        spec("playhead.selectedClipStart", "Go to Selected Clip Start", Some("Shift+Home"), "{}", has_selection, |s, _| go_to_selected(s, false)),
-        spec("playhead.selectedClipEnd", "Go to Selected Clip End", Some("Shift+End"), "{}", has_selection, |s, _| go_to_selected(s, true)),
-        spec("sequence.revealNested", "Reveal Nested Sequence", Some("Cmd+Alt+F"), "{}", has_seq, |s, _| reveal_nested(s)),
+        spec(
+            "playhead.nextEditAnyTrack",
+            "Go to Next Edit Point on Any Track",
+            Some("Shift+Down"),
+            "{}",
+            has_seq,
+            |s, _| go_to_edit(s, true, true),
+        ),
+        spec(
+            "playhead.prevEditAnyTrack",
+            "Go to Previous Edit Point on Any Track",
+            Some("Shift+Up"),
+            "{}",
+            has_seq,
+            |s, _| go_to_edit(s, false, true),
+        ),
+        spec(
+            "playhead.selectedClipStart",
+            "Go to Selected Clip Start",
+            Some("Shift+Home"),
+            "{}",
+            has_selection,
+            |s, _| go_to_selected(s, false),
+        ),
+        spec(
+            "playhead.selectedClipEnd",
+            "Go to Selected Clip End",
+            Some("Shift+End"),
+            "{}",
+            has_selection,
+            |s, _| go_to_selected(s, true),
+        ),
+        spec(
+            "sequence.revealNested",
+            "Reveal Nested Sequence",
+            Some("Cmd+Alt+F"),
+            "{}",
+            has_seq,
+            |s, _| reveal_nested(s),
+        ),
         // ---- selection
-        spec("timeline.selectClipAtPlayhead", "Select Clip at Playhead", Some("D"), "{}", has_seq, |s, _| select_clip_at_playhead(s)),
-        spec("timeline.selectNextClip", "Select Next Clip", Some("Cmd+Down"), "{}", has_seq, |s, _| select_step(s, true)),
-        spec("timeline.selectPrevClip", "Select Previous Clip", Some("Cmd+Up"), "{}", has_seq, |s, _| select_step(s, false)),
+        spec(
+            "timeline.selectClipAtPlayhead",
+            "Select Clip at Playhead",
+            Some("D"),
+            "{}",
+            has_seq,
+            |s, _| select_clip_at_playhead(s),
+        ),
+        spec(
+            "timeline.selectNextClip",
+            "Select Next Clip",
+            Some("Cmd+Down"),
+            "{}",
+            has_seq,
+            |s, _| select_step(s, true),
+        ),
+        spec(
+            "timeline.selectPrevClip",
+            "Select Previous Clip",
+            Some("Cmd+Up"),
+            "{}",
+            has_seq,
+            |s, _| select_step(s, false),
+        ),
         // ---- trimming
-        spec("trim.extendPreviousEdit", "Extend Previous Edit To Playhead", Some("Shift+Q"), "{}", has_seq, |s, _| extend_edit(s, false)),
-        spec("trim.extendNextEdit", "Extend Next Edit To Playhead", Some("Shift+W"), "{}", has_seq, |s, _| extend_edit(s, true)),
-        spec("timeline.nudgeLeft", "Nudge Clip Selection Left One Frame", None, "{}", has_selection, |s, _| nudge_time(s, -1)),
-        spec("timeline.nudgeRight", "Nudge Clip Selection Right One Frame", None, "{}", has_selection, |s, _| nudge_time(s, 1)),
-        spec("timeline.nudgeLeft5", "Nudge Clip Selection Left Five Frames", None, "{}", has_selection, |s, _| nudge_time(s, -5)),
-        spec("timeline.nudgeRight5", "Nudge Clip Selection Right Five Frames", None, "{}", has_selection, |s, _| nudge_time(s, 5)),
-        spec("timeline.nudgeUp", "Nudge Clip Selection Up", None, "{}", has_selection, |s, _| nudge_track(s, true)),
-        spec("timeline.nudgeDown", "Nudge Clip Selection Down", None, "{}", has_selection, |s, _| nudge_track(s, false)),
-        spec("timeline.slipLeft", "Slip Clip Selection Left One Frame", None, "{}", has_selection, |s, _| slip_selection(s, 1)),
-        spec("timeline.slipRight", "Slip Clip Selection Right One Frame", None, "{}", has_selection, |s, _| slip_selection(s, -1)),
-        spec("timeline.slipLeft5", "Slip Clip Selection Left Five Frames", None, "{}", has_selection, |s, _| slip_selection(s, 5)),
-        spec("timeline.slipRight5", "Slip Clip Selection Right Five Frames", None, "{}", has_selection, |s, _| slip_selection(s, -5)),
-        spec("timeline.slideLeft", "Slide Clip Selection Left One Frame", None, "{}", has_selection, |s, _| slide_selection(s, -1)),
-        spec("timeline.slideRight", "Slide Clip Selection Right One Frame", None, "{}", has_selection, |s, _| slide_selection(s, 1)),
-        spec("timeline.slideLeft5", "Slide Clip Selection Left Five Frames", None, "{}", has_selection, |s, _| slide_selection(s, -5)),
-        spec("timeline.slideRight5", "Slide Clip Selection Right Five Frames", None, "{}", has_selection, |s, _| slide_selection(s, 5)),
+        spec(
+            "trim.extendPreviousEdit",
+            "Extend Previous Edit To Playhead",
+            Some("Shift+Q"),
+            "{}",
+            has_seq,
+            |s, _| extend_edit(s, false),
+        ),
+        spec(
+            "trim.extendNextEdit",
+            "Extend Next Edit To Playhead",
+            Some("Shift+W"),
+            "{}",
+            has_seq,
+            |s, _| extend_edit(s, true),
+        ),
+        spec(
+            "timeline.nudgeLeft",
+            "Nudge Clip Selection Left One Frame",
+            None,
+            "{}",
+            has_selection,
+            |s, _| nudge_time(s, -1),
+        ),
+        spec(
+            "timeline.nudgeRight",
+            "Nudge Clip Selection Right One Frame",
+            None,
+            "{}",
+            has_selection,
+            |s, _| nudge_time(s, 1),
+        ),
+        spec(
+            "timeline.nudgeLeft5",
+            "Nudge Clip Selection Left Five Frames",
+            None,
+            "{}",
+            has_selection,
+            |s, _| nudge_time(s, -5),
+        ),
+        spec(
+            "timeline.nudgeRight5",
+            "Nudge Clip Selection Right Five Frames",
+            None,
+            "{}",
+            has_selection,
+            |s, _| nudge_time(s, 5),
+        ),
+        spec(
+            "timeline.nudgeUp",
+            "Nudge Clip Selection Up",
+            None,
+            "{}",
+            has_selection,
+            |s, _| nudge_track(s, true),
+        ),
+        spec(
+            "timeline.nudgeDown",
+            "Nudge Clip Selection Down",
+            None,
+            "{}",
+            has_selection,
+            |s, _| nudge_track(s, false),
+        ),
+        spec(
+            "timeline.slipLeft",
+            "Slip Clip Selection Left One Frame",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slip_selection(s, 1),
+        ),
+        spec(
+            "timeline.slipRight",
+            "Slip Clip Selection Right One Frame",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slip_selection(s, -1),
+        ),
+        spec(
+            "timeline.slipLeft5",
+            "Slip Clip Selection Left Five Frames",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slip_selection(s, 5),
+        ),
+        spec(
+            "timeline.slipRight5",
+            "Slip Clip Selection Right Five Frames",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slip_selection(s, -5),
+        ),
+        spec(
+            "timeline.slideLeft",
+            "Slide Clip Selection Left One Frame",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slide_selection(s, -1),
+        ),
+        spec(
+            "timeline.slideRight",
+            "Slide Clip Selection Right One Frame",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slide_selection(s, 1),
+        ),
+        spec(
+            "timeline.slideLeft5",
+            "Slide Clip Selection Left Five Frames",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slide_selection(s, -5),
+        ),
+        spec(
+            "timeline.slideRight5",
+            "Slide Clip Selection Right Five Frames",
+            None,
+            "{}",
+            has_selection,
+            |s, _| slide_selection(s, 5),
+        ),
         // ---- targeting
-        spec("timeline.toggleAllVideoTargets", "Toggle All Video Targets", Some("Cmd+0"), "{}", has_seq, |s, _| toggle_all_targets(s, Video)),
-        spec("timeline.toggleAllAudioTargets", "Toggle All Audio Targets", Some("Cmd+9"), "{}", has_seq, |s, _| toggle_all_targets(s, Audio)),
-        spec("timeline.toggleAllSourceVideo", "Toggle All Source Video", Some("Cmd+Alt+0"), "{}", has_seq, |s, _| toggle_all_source(s, Video)),
-        spec("timeline.toggleAllSourceAudio", "Toggle All Source Audio", Some("Cmd+Alt+9"), "{}", has_seq, |s, _| toggle_all_source(s, Audio)),
-        spec("timeline.moveVideoTargetsUp", "Move All Video Targets Up", None, "{}", has_seq, |s, _| move_targets(s, Video, true)),
-        spec("timeline.moveVideoTargetsDown", "Move All Video Targets Down", None, "{}", has_seq, |s, _| move_targets(s, Video, false)),
-        spec("timeline.moveAudioTargetsUp", "Move All Audio Targets Up", None, "{}", has_seq, |s, _| move_targets(s, Audio, true)),
-        spec("timeline.moveAudioTargetsDown", "Move All Audio Targets Down", None, "{}", has_seq, |s, _| move_targets(s, Audio, false)),
-        spec("timeline.toggleMuteTargetedAudio", "Toggle Mute for All Targeted Audio Tracks", None, "{}", has_seq, |s, _| {
-            toggle_targeted_tracks(s, Audio, "mute")
-        }),
-        spec("timeline.toggleSoloTargetedAudio", "Toggle Solo for All Targeted Audio Tracks", None, "{}", has_seq, |s, _| {
-            toggle_targeted_tracks(s, Audio, "solo")
-        }),
-        spec("timeline.toggleOutputTargetedVideo", "Toggle Track Output for All Targeted Video Tracks", None, "{}", has_seq, |s, _| {
-            toggle_targeted_tracks(s, Video, "output")
-        }),
+        spec(
+            "timeline.toggleAllVideoTargets",
+            "Toggle All Video Targets",
+            Some("Cmd+0"),
+            "{}",
+            has_seq,
+            |s, _| toggle_all_targets(s, Video),
+        ),
+        spec(
+            "timeline.toggleAllAudioTargets",
+            "Toggle All Audio Targets",
+            Some("Cmd+9"),
+            "{}",
+            has_seq,
+            |s, _| toggle_all_targets(s, Audio),
+        ),
+        spec(
+            "timeline.toggleAllSourceVideo",
+            "Toggle All Source Video",
+            Some("Cmd+Alt+0"),
+            "{}",
+            has_seq,
+            |s, _| toggle_all_source(s, Video),
+        ),
+        spec(
+            "timeline.toggleAllSourceAudio",
+            "Toggle All Source Audio",
+            Some("Cmd+Alt+9"),
+            "{}",
+            has_seq,
+            |s, _| toggle_all_source(s, Audio),
+        ),
+        spec(
+            "timeline.moveVideoTargetsUp",
+            "Move All Video Targets Up",
+            None,
+            "{}",
+            has_seq,
+            |s, _| move_targets(s, Video, true),
+        ),
+        spec(
+            "timeline.moveVideoTargetsDown",
+            "Move All Video Targets Down",
+            None,
+            "{}",
+            has_seq,
+            |s, _| move_targets(s, Video, false),
+        ),
+        spec(
+            "timeline.moveAudioTargetsUp",
+            "Move All Audio Targets Up",
+            None,
+            "{}",
+            has_seq,
+            |s, _| move_targets(s, Audio, true),
+        ),
+        spec(
+            "timeline.moveAudioTargetsDown",
+            "Move All Audio Targets Down",
+            None,
+            "{}",
+            has_seq,
+            |s, _| move_targets(s, Audio, false),
+        ),
+        spec(
+            "timeline.toggleMuteTargetedAudio",
+            "Toggle Mute for All Targeted Audio Tracks",
+            None,
+            "{}",
+            has_seq,
+            |s, _| toggle_targeted_tracks(s, Audio, "mute"),
+        ),
+        spec(
+            "timeline.toggleSoloTargetedAudio",
+            "Toggle Solo for All Targeted Audio Tracks",
+            None,
+            "{}",
+            has_seq,
+            |s, _| toggle_targeted_tracks(s, Audio, "solo"),
+        ),
+        spec(
+            "timeline.toggleOutputTargetedVideo",
+            "Toggle Track Output for All Targeted Video Tracks",
+            None,
+            "{}",
+            has_seq,
+            |s, _| toggle_targeted_tracks(s, Video, "output"),
+        ),
         // ---- audio
-        spec("clip.volumeUp", "Increase Clip Volume", Some("]"), "{}", has_selection, |s, _| adjust_clip_volume(s, 1.0)),
-        spec("clip.volumeDown", "Decrease Clip Volume", Some("["), "{}", has_selection, |s, _| adjust_clip_volume(s, -1.0)),
-        spec("clip.volumeUpMany", "Increase Clip Volume Many", Some("Shift+]"), "{}", has_selection, |s, _| {
-            let d = s.prefs.audio.large_volume_adjustment;
-            adjust_clip_volume(s, d)
-        }),
-        spec("clip.volumeDownMany", "Decrease Clip Volume Many", Some("Shift+["), "{}", has_selection, |s, _| {
-            let d = s.prefs.audio.large_volume_adjustment;
-            adjust_clip_volume(s, -d)
-        }),
-        spec("clip.nudgeVolumeUp1", "Nudge Volume +1dB", None, "{}", has_selection, |s, _| adjust_clip_volume(s, 1.0)),
-        spec("clip.nudgeVolumeUp3", "Nudge Volume +3dB", None, "{}", has_selection, |s, _| adjust_clip_volume(s, 3.0)),
-        spec("clip.nudgeVolumeDown1", "Nudge Volume -1dB", None, "{}", has_selection, |s, _| adjust_clip_volume(s, -1.0)),
-        spec("clip.nudgeVolumeDown3", "Nudge Volume -3dB", None, "{}", has_selection, |s, _| adjust_clip_volume(s, -3.0)),
-        spec("audio.toggleScrubbing", "Toggle Audio During Scrubbing", Some("Shift+S"), "{}", always, |s, _| {
-            let on = !s.prefs.audio.scrub_audio;
-            s.execute("prefs.set", json!({"key": "audio.scrubAudio", "value": on}))?;
-            s.toast(if on { "Audio during scrubbing on" } else { "Audio during scrubbing off" });
-            Ok(json!({"scrubAudio": on}))
-        }),
+        spec(
+            "clip.volumeUp",
+            "Increase Clip Volume",
+            Some("]"),
+            "{}",
+            has_selection,
+            |s, _| adjust_clip_volume(s, 1.0),
+        ),
+        spec(
+            "clip.volumeDown",
+            "Decrease Clip Volume",
+            Some("["),
+            "{}",
+            has_selection,
+            |s, _| adjust_clip_volume(s, -1.0),
+        ),
+        spec(
+            "clip.volumeUpMany",
+            "Increase Clip Volume Many",
+            Some("Shift+]"),
+            "{}",
+            has_selection,
+            |s, _| {
+                let d = s.prefs.audio.large_volume_adjustment;
+                adjust_clip_volume(s, d)
+            },
+        ),
+        spec(
+            "clip.volumeDownMany",
+            "Decrease Clip Volume Many",
+            Some("Shift+["),
+            "{}",
+            has_selection,
+            |s, _| {
+                let d = s.prefs.audio.large_volume_adjustment;
+                adjust_clip_volume(s, -d)
+            },
+        ),
+        spec(
+            "clip.nudgeVolumeUp1",
+            "Nudge Volume +1dB",
+            None,
+            "{}",
+            has_selection,
+            |s, _| adjust_clip_volume(s, 1.0),
+        ),
+        spec(
+            "clip.nudgeVolumeUp3",
+            "Nudge Volume +3dB",
+            None,
+            "{}",
+            has_selection,
+            |s, _| adjust_clip_volume(s, 3.0),
+        ),
+        spec(
+            "clip.nudgeVolumeDown1",
+            "Nudge Volume -1dB",
+            None,
+            "{}",
+            has_selection,
+            |s, _| adjust_clip_volume(s, -1.0),
+        ),
+        spec(
+            "clip.nudgeVolumeDown3",
+            "Nudge Volume -3dB",
+            None,
+            "{}",
+            has_selection,
+            |s, _| adjust_clip_volume(s, -3.0),
+        ),
+        spec(
+            "audio.toggleScrubbing",
+            "Toggle Audio During Scrubbing",
+            Some("Shift+S"),
+            "{}",
+            always,
+            |s, _| {
+                let on = !s.prefs.audio.scrub_audio;
+                s.execute("prefs.set", json!({"key": "audio.scrubAudio", "value": on}))?;
+                s.toast(if on {
+                    "Audio during scrubbing on"
+                } else {
+                    "Audio during scrubbing off"
+                });
+                Ok(json!({"scrubAudio": on}))
+            },
+        ),
         // ---- graphics and titles
-        spec("graphics.fontSizeUp", "Increase Font Size by One Unit", Some("Cmd+Alt+Right"), "{}", has_graphic, |s, _| font_size(s, 1.0)),
-        spec("graphics.fontSizeDown", "Decrease Font Size by One Unit", Some("Cmd+Alt+Left"), "{}", has_graphic, |s, _| font_size(s, -1.0)),
-        spec("graphics.fontSizeUp5", "Increase Font Size by Five Units", Some("Cmd+Alt+Shift+Right"), "{}", has_graphic, |s, _| font_size(s, 5.0)),
-        spec("graphics.fontSizeDown5", "Decrease Font Size by Five Units", Some("Cmd+Alt+Shift+Left"), "{}", has_graphic, |s, _| font_size(s, -5.0)),
-        spec("graphics.leadingUp", "Increase Leading by One Unit", Some("Alt+Up"), "{}", has_graphic, |s, _| leading(s, 1.0)),
-        spec("graphics.leadingDown", "Decrease Leading by One Unit", Some("Alt+Down"), "{}", has_graphic, |s, _| leading(s, -1.0)),
-        spec("graphics.leadingUp5", "Increase Leading by Five Units", Some("Alt+Shift+Up"), "{}", has_graphic, |s, _| leading(s, 5.0)),
-        spec("graphics.leadingDown5", "Decrease Leading by Five Units", Some("Alt+Shift+Down"), "{}", has_graphic, |s, _| leading(s, -5.0)),
-        spec("graphics.alignTextLeft", "Left align text", Some("Cmd+Shift+L"), "{}", has_graphic, |s, _| align_text(s, 0)),
-        spec("graphics.alignTextCenter", "Center align text", Some("Cmd+Shift+C"), "{}", has_graphic, |s, _| align_text(s, 1)),
-        spec("graphics.alignTextRight", "Right align text", Some("Cmd+Shift+R"), "{}", has_graphic, |s, _| align_text(s, 2)),
-        spec("graphics.nudgeLeft", "Nudge Selected Object to left by one", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, -1.0, 0.0)),
-        spec("graphics.nudgeRight", "Nudge Selected Object to right by one", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, 1.0, 0.0)),
-        spec("graphics.nudgeUp", "Nudge Selected Object up by one", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, 0.0, -1.0)),
-        spec("graphics.nudgeDown", "Nudge Selected Object down by one", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, 0.0, 1.0)),
-        spec("graphics.nudgeLeft5", "Nudge Selected Object to left by five", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, -5.0, 0.0)),
-        spec("graphics.nudgeRight5", "Nudge Selected Object to right by five", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, 5.0, 0.0)),
-        spec("graphics.nudgeUp5", "Nudge Selected Object up by five", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, 0.0, -5.0)),
-        spec("graphics.nudgeDown5", "Nudge Selected Object down by five", None, "{}", has_graphic_or_selection, |s, _| nudge_object(s, 0.0, 5.0)),
+        spec(
+            "graphics.fontSizeUp",
+            "Increase Font Size by One Unit",
+            Some("Cmd+Alt+Right"),
+            "{}",
+            has_graphic,
+            |s, _| font_size(s, 1.0),
+        ),
+        spec(
+            "graphics.fontSizeDown",
+            "Decrease Font Size by One Unit",
+            Some("Cmd+Alt+Left"),
+            "{}",
+            has_graphic,
+            |s, _| font_size(s, -1.0),
+        ),
+        spec(
+            "graphics.fontSizeUp5",
+            "Increase Font Size by Five Units",
+            Some("Cmd+Alt+Shift+Right"),
+            "{}",
+            has_graphic,
+            |s, _| font_size(s, 5.0),
+        ),
+        spec(
+            "graphics.fontSizeDown5",
+            "Decrease Font Size by Five Units",
+            Some("Cmd+Alt+Shift+Left"),
+            "{}",
+            has_graphic,
+            |s, _| font_size(s, -5.0),
+        ),
+        spec(
+            "graphics.leadingUp",
+            "Increase Leading by One Unit",
+            Some("Alt+Up"),
+            "{}",
+            has_graphic,
+            |s, _| leading(s, 1.0),
+        ),
+        spec(
+            "graphics.leadingDown",
+            "Decrease Leading by One Unit",
+            Some("Alt+Down"),
+            "{}",
+            has_graphic,
+            |s, _| leading(s, -1.0),
+        ),
+        spec(
+            "graphics.leadingUp5",
+            "Increase Leading by Five Units",
+            Some("Alt+Shift+Up"),
+            "{}",
+            has_graphic,
+            |s, _| leading(s, 5.0),
+        ),
+        spec(
+            "graphics.leadingDown5",
+            "Decrease Leading by Five Units",
+            Some("Alt+Shift+Down"),
+            "{}",
+            has_graphic,
+            |s, _| leading(s, -5.0),
+        ),
+        spec(
+            "graphics.alignTextLeft",
+            "Left align text",
+            Some("Cmd+Shift+L"),
+            "{}",
+            has_graphic,
+            |s, _| align_text(s, 0),
+        ),
+        spec(
+            "graphics.alignTextCenter",
+            "Center align text",
+            Some("Cmd+Shift+C"),
+            "{}",
+            has_graphic,
+            |s, _| align_text(s, 1),
+        ),
+        spec(
+            "graphics.alignTextRight",
+            "Right align text",
+            Some("Cmd+Shift+R"),
+            "{}",
+            has_graphic,
+            |s, _| align_text(s, 2),
+        ),
+        spec(
+            "graphics.nudgeLeft",
+            "Nudge Selected Object to left by one",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, -1.0, 0.0),
+        ),
+        spec(
+            "graphics.nudgeRight",
+            "Nudge Selected Object to right by one",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, 1.0, 0.0),
+        ),
+        spec(
+            "graphics.nudgeUp",
+            "Nudge Selected Object up by one",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, 0.0, -1.0),
+        ),
+        spec(
+            "graphics.nudgeDown",
+            "Nudge Selected Object down by one",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, 0.0, 1.0),
+        ),
+        spec(
+            "graphics.nudgeLeft5",
+            "Nudge Selected Object to left by five",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, -5.0, 0.0),
+        ),
+        spec(
+            "graphics.nudgeRight5",
+            "Nudge Selected Object to right by five",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, 5.0, 0.0),
+        ),
+        spec(
+            "graphics.nudgeUp5",
+            "Nudge Selected Object up by five",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, 0.0, -5.0),
+        ),
+        spec(
+            "graphics.nudgeDown5",
+            "Nudge Selected Object down by five",
+            None,
+            "{}",
+            has_graphic_or_selection,
+            |s, _| nudge_object(s, 0.0, 5.0),
+        ),
         // ---- export frame, poster frame
         // Shift+E is Clip > Enable in FilmCraft Default; the Premiere preset moves it here
         spec(
@@ -810,8 +1551,22 @@ pub fn commands() -> Vec<CommandSpec> {
             always,
             export_frame,
         ),
-        spec("clip.setPosterFrame", "Set Poster Frame", Some("Cmd+P"), r#"{"item":id?,"time":ticks?}"#, has_poster_target, |s, p| set_poster(s, p, false)),
-        spec("clip.clearPosterFrame", "Clear Poster Frame", Some("Alt+P"), r#"{"item":id?}"#, has_poster_target, |s, p| set_poster(s, p, true)),
+        spec(
+            "clip.setPosterFrame",
+            "Set Poster Frame",
+            Some("Cmd+P"),
+            r#"{"item":id?,"time":ticks?}"#,
+            has_poster_target,
+            |s, p| set_poster(s, p, false),
+        ),
+        spec(
+            "clip.clearPosterFrame",
+            "Clear Poster Frame",
+            Some("Alt+P"),
+            r#"{"item":id?}"#,
+            has_poster_target,
+            |s, p| set_poster(s, p, true),
+        ),
     ];
     v.extend(target_toggles());
     v
@@ -821,7 +1576,9 @@ pub fn commands() -> Vec<CommandSpec> {
 fn target_toggles() -> Vec<CommandSpec> {
     macro_rules! tt {
         ($id:literal, $label:literal, $kind:expr, $n:literal) => {
-            spec($id, $label, None, "{}", has_seq, |s, _| toggle_target(s, $kind, $n))
+            spec($id, $label, None, "{}", has_seq, |s, _| {
+                toggle_target(s, $kind, $n)
+            })
         };
     }
     use TrackKind::{Audio, Video};

@@ -53,7 +53,9 @@ pub(crate) const IDS: &[&str] = &[
 /// Run effect `id` (one of [`IDS`]); `None` = this parameter combination runs on the CPU.
 pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     match id {
-        "ec.key.colorkey" | "ec.key.luma" | "ec.key.colorrange" | "ec.key.extract" => matte_key(e, id, ctx, b),
+        "ec.key.colorkey" | "ec.key.luma" | "ec.key.colorrange" | "ec.key.extract" => {
+            matte_key(e, id, ctx, b)
+        }
         "ec.key.differencematte" => difference_matte(e, ctx, b),
         "ec.key.screen" => screen_key(e, ctx, b),
         "ec.key.advancedspill" => advanced_spill(e, ctx, b),
@@ -70,7 +72,13 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 // ---------------------------------------------------------------- helpers
 
 /// One `fxk_point` pass over `src`'s size.
-fn run(e: &mut Enc, p: &Params, src: &GpuImage, aux: Option<&GpuImage>, data: Option<&wgpu::Buffer>) -> GpuImage {
+fn run(
+    e: &mut Enc,
+    p: &Params,
+    src: &GpuImage,
+    aux: Option<&GpuImage>,
+    data: Option<&wgpu::Buffer>,
+) -> GpuImage {
     let out = e.scratch(src.width, src.height);
     e.pixels("fxk_point", p, src, aux, &out, data);
     out
@@ -88,21 +96,42 @@ fn src_index(s: Src) -> u32 {
 
 /// Layer parameter `id` resampled into the buffer's pixel grid (`util::fit_layer`):
 /// `Some(None)` when no layer is chosen (the effect then uses its own layer).
-pub(crate) fn fitted(e: &mut Enc, ctx: &EffectCtx, b: &GBuf, id: &str, masks_and_effects: bool, stretch: bool) -> Option<Option<GpuImage>> {
-    let Some(o) = ctx.layer_param(id, masks_and_effects) else { return Some(None) };
+pub(crate) fn fitted(
+    e: &mut Enc,
+    ctx: &EffectCtx,
+    b: &GBuf,
+    id: &str,
+    masks_and_effects: bool,
+    stretch: bool,
+) -> Option<Option<GpuImage>> {
+    let Some(o) = ctx.layer_param(id, masks_and_effects) else {
+        return Some(None);
+    };
     let (w, h) = (b.img.width, b.img.height);
     if o.buf.img.is_empty() {
         return Some(Some(e.image(w, h)));
     }
     let ls = ctx.layer_size;
     let os = o.size;
-    let (sx, sy) = if stretch && ls[0] > 0.0 && ls[1] > 0.0 { (os[0] / ls[0], os[1] / ls[1]) } else { (1.0, 1.0) };
-    let (dx, dy) = if stretch { (0.0, 0.0) } else { ((os[0] - ls[0]) * 0.5, (os[1] - ls[1]) * 0.5) };
+    let (sx, sy) = if stretch && ls[0] > 0.0 && ls[1] > 0.0 {
+        (os[0] / ls[0], os[1] / ls[1])
+    } else {
+        (1.0, 1.0)
+    };
+    let (dx, dy) = if stretch {
+        (0.0, 0.0)
+    } else {
+        ((os[0] - ls[0]) * 0.5, (os[1] - ls[1]) * 0.5)
+    };
     let inv = 1.0 / b.scale.max(1e-9);
     // Per column / row: the other layer's buffer coordinate.
     let mut data = Vec::with_capacity((w + h) as usize);
-    data.extend((0..w).map(|x| (((x as f64 + 0.5 - b.offset[0]) * inv * sx + dx) * o.buf.scale + o.buf.offset[0]) as f32));
-    data.extend((0..h).map(|y| (((y as f64 + 0.5 - b.offset[1]) * inv * sy + dy) * o.buf.scale + o.buf.offset[1]) as f32));
+    data.extend((0..w).map(|x| {
+        (((x as f64 + 0.5 - b.offset[0]) * inv * sx + dx) * o.buf.scale + o.buf.offset[0]) as f32
+    }));
+    data.extend((0..h).map(|y| {
+        (((y as f64 + 0.5 - b.offset[1]) * inv * sy + dy) * o.buf.scale + o.buf.offset[1]) as f32
+    }));
     let src = e.g.upload_image(&o.buf.img)?;
     let buf = e.data(&data);
     let out = e.scratch(w, h);
@@ -111,7 +140,13 @@ pub(crate) fn fitted(e: &mut Enc, ctx: &EffectCtx, b: &GBuf, id: &str, masks_and
 }
 
 /// `util::layer_or_self`.
-fn layer_or_self(e: &mut Enc, ctx: &EffectCtx, b: &GBuf, id: &str, stretch: bool) -> Option<GpuImage> {
+fn layer_or_self(
+    e: &mut Enc,
+    ctx: &EffectCtx,
+    b: &GBuf,
+    id: &str,
+    stretch: bool,
+) -> Option<GpuImage> {
     Some(fitted(e, ctx, b, id, true, stretch)?.unwrap_or_else(|| b.img.clone()))
 }
 
@@ -124,7 +159,11 @@ fn thin_feather(e: &mut Enc, m: GpuImage, thin: f64, feather: f64) -> GpuImage {
     } else {
         m
     };
-    if feather > 0.0 { gaussian_blur(e, &m, feather * 0.5, feather * 0.5, true) } else { m }
+    if feather > 0.0 {
+        gaussian_blur(e, &m, feather * 0.5, feather * 0.5, true)
+    } else {
+        m
+    }
 }
 
 /// keying::apply_matte (view 0 final, 1 source, 2 matte).
@@ -188,7 +227,12 @@ fn matte_key(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         }
         _ => {
             p.u[0] = [4, pr.e("channel"), pr.b("invert") as u32, 0];
-            p.f[0] = [f("blackPoint"), f("whitePoint"), f("blackSoftness"), f("whiteSoftness")];
+            p.f[0] = [
+                f("blackPoint"),
+                f("whitePoint"),
+                f("blackSoftness"),
+                f("whiteSoftness"),
+            ];
         }
     }
     let m = run(e, &p, &b.img, None, None);
@@ -203,14 +247,28 @@ fn difference_matte(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         return Some(b);
     }
     let blur = pr.f("blurBeforeDifference") * b.scale;
-    let other = layer_or_self(e, ctx, &b, "differenceLayer", pr.e("ifLayerSizesDiffer") == 1)?;
+    let other = layer_or_self(
+        e,
+        ctx,
+        &b,
+        "differenceLayer",
+        pr.e("ifLayerSizesDiffer") == 1,
+    )?;
     let (src, other) = if blur > 0.05 {
-        (gaussian_blur(e, &b.img, blur * 0.5, blur * 0.5, true), gaussian_blur(e, &other, blur * 0.5, blur * 0.5, true))
+        (
+            gaussian_blur(e, &b.img, blur * 0.5, blur * 0.5, true),
+            gaussian_blur(e, &other, blur * 0.5, blur * 0.5, true),
+        )
     } else {
         (b.img.clone(), other)
     };
     let mut p = op(6);
-    p.f[0] = [(pr.f("matchingTolerance") / 100.0) as f32, (pr.f("matchingSoftness") / 100.0) as f32, 0.0, 0.0];
+    p.f[0] = [
+        (pr.f("matchingTolerance") / 100.0) as f32,
+        (pr.f("matchingSoftness") / 100.0) as f32,
+        0.0,
+        0.0,
+    ];
     let m = run(e, &p, &src, Some(&other), None);
     Some(apply_matte(e, b, &m, if view == 2 { 3 } else { 4 }))
 }
@@ -232,9 +290,17 @@ fn screen_key(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let preblur = pr.f("screenPreblur") * b.scale;
     let sg = pr.f("screenShrinkGrow") * b.scale;
     let soft = pr.f("screenSoftness") * b.scale;
-    let (hi, lo) = if sc[o1] > sc[o2] { (sc[o1], sc[o2]) } else { (sc[o2], sc[o1]) };
+    let (hi, lo) = if sc[o1] > sc[o2] {
+        (sc[o1], sc[o2])
+    } else {
+        (sc[o2], sc[o1])
+    };
     let sd = (sc[pi] - (bal * hi + (1.0 - bal) * lo)).max(1e-3);
-    let key_src = if preblur > 0.0 { gaussian_blur(e, &b.img, preblur * 0.5, preblur * 0.5, true) } else { b.img.clone() };
+    let key_src = if preblur > 0.0 {
+        gaussian_blur(e, &b.img, preblur * 0.5, preblur * 0.5, true)
+    } else {
+        b.img.clone()
+    };
     let mut p = op(22);
     p.u[1] = [ix[0], ix[1], ix[2], 0];
     p.f[0] = [sd, gain, bal, cb];
@@ -281,10 +347,29 @@ fn advanced_spill(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         }
         Some(cur)
     };
-    let tol = if ultra { pr.get("ultraSettings/tolerance").map(|v| v.as_f64()).unwrap_or(100.0) as f32 / 100.0 } else { 1.0 };
+    let tol = if ultra {
+        pr.get("ultraSettings/tolerance")
+            .map(|v| v.as_f64())
+            .unwrap_or(100.0) as f32
+            / 100.0
+    } else {
+        1.0
+    };
     let f = |k: &str| pr.f(k) as f32 / 100.0;
-    let (desat, neutral) = if ultra { (f("ultraSettings/desaturate"), f("ultraSettings/spillColorCorrection")) } else { (0.0, 0.0) };
-    p.f[0] = [f("suppression"), f("ultraSettings/spillRange"), f("ultraSettings/lumaCorrection"), tol];
+    let (desat, neutral) = if ultra {
+        (
+            f("ultraSettings/desaturate"),
+            f("ultraSettings/spillColorCorrection"),
+        )
+    } else {
+        (0.0, 0.0)
+    };
+    p.f[0] = [
+        f("suppression"),
+        f("ultraSettings/spillRange"),
+        f("ultraSettings/lumaCorrection"),
+        tol,
+    ];
     p.f[1] = [desat, neutral, rgb_to_hsl(key[0], key[1], key[2]).0, 0.0];
     let img = run(e, &p, &b.img, sums.as_ref(), None);
     Some(GBuf { img, ..b })
@@ -303,7 +388,12 @@ fn key_cleaner(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let rows = est.as_ref().map(|img| e.image_rows(img));
     let mut p = op(25);
     p.u[0][1] = chatter as u32;
-    p.u[3] = [rows.as_ref().map_or(0, |r| r.1), rows.is_some() as u32, 0, 0];
+    p.u[3] = [
+        rows.as_ref().map_or(0, |r| r.1),
+        rows.is_some() as u32,
+        0,
+        0,
+    ];
     p.f[0] = [pr.f("alphaContrast") as f32 / 100.0, strength, 0.0, 0.0];
     let img = run(e, &p, &b.img, Some(&a), rows.as_ref().map(|r| &r.0));
     Some(GBuf { img, ..b })
@@ -318,7 +408,11 @@ fn simple_choker(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
             b.pad(e, (-c).ceil() as u32 + 1)?;
         }
         let a = run(e, &op(24), &b.img, None, None);
-        let na = if c > 0.0 { morph_frac(e, &a, c, ERODE_X) } else { morph_frac(e, &a, -c, DILATE_X) };
+        let na = if c > 0.0 {
+            morph_frac(e, &a, c, ERODE_X)
+        } else {
+            morph_frac(e, &a, -c, DILATE_X)
+        };
         b.img = set_alpha(e, &b.img, &na);
     }
     if ctx.params.e("view") == 1 {
@@ -341,7 +435,11 @@ fn matte_choker(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     }
     let mut a = run(e, &op(24), &b.img, None, None);
     let stage = |e: &mut Enc, a: GpuImage, geo: f64, choke: f32, gray: f32| -> GpuImage {
-        let a = if geo > 0.0 { gaussian_blur(e, &a, geo * 0.5, geo * 0.5, true) } else { a };
+        let a = if geo > 0.0 {
+            gaussian_blur(e, &a, geo * 0.5, geo * 0.5, true)
+        } else {
+            a
+        };
         let t = 0.5 + choke / 255.0 * 0.5;
         let w = gray.max(1e-3);
         if (t - 0.5).abs() < 1e-6 && (w - 1.0).abs() < 1e-6 {
@@ -368,17 +466,30 @@ fn refine(e: &mut Enc, ctx: &EffectCtx, b: GBuf, hard: bool) -> Option<GBuf> {
     if pr.f("reduceChatter") > 0.0 || pr.b("useMotionBlur") || pr.b("invert") {
         return None;
     }
-    let dk = |id: &str| if hard { id.to_string() } else { format!("decontamination/{id}") };
+    let dk = |id: &str| {
+        if hard {
+            id.to_string()
+        } else {
+            format!("decontamination/{id}")
+        }
+    };
     let r = (pr.f("radius") * b.scale).round().max(1.0) as usize;
     let smooth = pr.f("smooth") as f32 / 100.0;
     let feather = pr.f("feather") / 100.0 * r as f64 * 0.5;
-    let choke = (pr.f("choke") - if hard { 0.0 } else { pr.f("shiftEdge") }).clamp(-100.0, 100.0) as f32 / 100.0 * 0.5;
+    let choke = (pr.f("choke") - if hard { 0.0 } else { pr.f("shiftEdge") }).clamp(-100.0, 100.0)
+        as f32
+        / 100.0
+        * 0.5;
     let decon = pr.b("decontaminate");
     let decon_amt = pr.f(&dk("decontaminationAmount")) as f32 / 100.0;
     let extend = pr.b(&dk("extendWhereSmoothed"));
     let decon_r = r as f64 + pr.f(&dk("increaseDecontaminationRadius")).max(0.0) * b.scale;
     let view_map = pr.b(&dk("viewDecontaminationMap"));
-    let contrast = if hard { pr.f("alphaContrast") as f32 / 100.0 } else { 1.0 + pr.f("contrast").max(0.0) as f32 / 100.0 * 3.0 };
+    let contrast = if hard {
+        pr.f("alphaContrast") as f32 / 100.0
+    } else {
+        1.0 + pr.f("contrast").max(0.0) as f32 / 100.0 * 3.0
+    };
     let edge_details = hard || pr.b("calculateEdgeDetails");
     let view_edges = !hard && pr.b("viewEdgeRegion");
     let (w, h) = (b.img.width, b.img.height);
@@ -419,11 +530,22 @@ fn refine(e: &mut Enc, ctx: &EffectCtx, b: GBuf, hard: bool) -> Option<GBuf> {
         let img = run(e, &op(34), &na, Some(&band), None);
         return Some(GBuf { img, ..b });
     }
-    let est = (decon && decon_amt > 0.0 && !view_map).then(|| gaussian_blur(e, &b.img, decon_r * 0.5, decon_r * 0.5, true));
+    let est = (decon && decon_amt > 0.0 && !view_map)
+        .then(|| gaussian_blur(e, &b.img, decon_r * 0.5, decon_r * 0.5, true));
     let rows = est.as_ref().map(|img| e.image_rows(img));
     let mut p = op(35);
-    p.u[0] = [35, view_map as u32, (decon && (view_map || decon_amt > 0.0)) as u32, extend as u32];
-    p.u[3] = [rows.as_ref().map_or(0, |r| r.1), rows.is_some() as u32, 0, 0];
+    p.u[0] = [
+        35,
+        view_map as u32,
+        (decon && (view_map || decon_amt > 0.0)) as u32,
+        extend as u32,
+    ];
+    p.u[3] = [
+        rows.as_ref().map_or(0, |r| r.1),
+        rows.is_some() as u32,
+        0,
+        0,
+    ];
     p.f[0][0] = decon_amt;
     let img = run(e, &p, &b.img, Some(&na), rows.as_ref().map(|r| &r.0));
     if view_map {
@@ -436,16 +558,44 @@ fn refine(e: &mut Enc, ctx: &EffectCtx, b: GBuf, hard: bool) -> Option<GBuf> {
 
 // ---------------------------------------------------------------- channel
 
-const SET_CHANNEL_LAYERS: [&str; 4] = ["sourceLayer1", "sourceLayer2", "sourceLayer3", "sourceLayer4"];
+const SET_CHANNEL_LAYERS: [&str; 4] = [
+    "sourceLayer1",
+    "sourceLayer2",
+    "sourceLayer3",
+    "sourceLayer4",
+];
 
-const SHIFT_ORDER: [Src; 11] =
-    [Src::Alpha, Src::Red, Src::Green, Src::Blue, Src::Luminance, Src::Hue, Src::Lightness, Src::Saturation, Src::Full, Src::Half, Src::Off];
+const SHIFT_ORDER: [Src; 11] = [
+    Src::Alpha,
+    Src::Red,
+    Src::Green,
+    Src::Blue,
+    Src::Luminance,
+    Src::Hue,
+    Src::Lightness,
+    Src::Saturation,
+    Src::Full,
+    Src::Half,
+    Src::Off,
+];
 
-const MATTE_ORDER: [Src; 10] = [Src::Red, Src::Green, Src::Blue, Src::Alpha, Src::Luminance, Src::Hue, Src::Lightness, Src::Saturation, Src::Full, Src::Off];
+const MATTE_ORDER: [Src; 10] = [
+    Src::Red,
+    Src::Green,
+    Src::Blue,
+    Src::Alpha,
+    Src::Luminance,
+    Src::Hue,
+    Src::Lightness,
+    Src::Saturation,
+    Src::Full,
+    Src::Off,
+];
 
 fn set_channels(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let pr = ctx.params;
-    let s = ["setRedTo", "setGreenTo", "setBlueTo", "setAlphaTo"].map(|id| src_index(effectcraft_effects::util::src_at(pr.e(id))));
+    let s = ["setRedTo", "setGreenTo", "setBlueTo", "setAlphaTo"]
+        .map(|id| src_index(effectcraft_effects::util::src_at(pr.e(id))));
     let stretch = pr.b("stretchLayersToFit");
     let mut layers = vec![];
     for id in SET_CHANNEL_LAYERS {
@@ -506,28 +656,64 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
                 return Some(b);
             }
             let accurate = pr.e("colorMatchingAccuracy") == 1;
-            let lin = |c: [f32; 3]| if accurate { c.map(|v| effectcraft_color::srgb_to_linear(v.clamp(0.0, 1.0))) } else { c };
+            let lin = |c: [f32; 3]| {
+                if accurate {
+                    c.map(|v| effectcraft_color::srgb_to_linear(v.clamp(0.0, 1.0)))
+                } else {
+                    c
+                }
+            };
             let k = pr.color("keyColor");
             let key = lin([k[0], k[1], k[2]]);
             let ix = primary([key[0], key[1], key[2], 1.0]);
             let (pi, o1, o2) = (ix[0] as usize, ix[1] as usize, ix[2] as usize);
-            let lv = |pre: &str| ["InBlack", "InWhite", "Gamma", "OutBlack", "OutWhite"].map(|s| f(&format!("{pre}{s}")));
+            let lv = |pre: &str| {
+                ["InBlack", "InWhite", "Gamma", "OutBlack", "OutWhite"]
+                    .map(|s| f(&format!("{pre}{s}")))
+            };
             let (pa, pb) = (lv("partialA"), lv("partialB"));
             p.u[0] = [9, view, accurate as u32, 0];
             p.u[1] = [ix[0], ix[1], ix[2], 0];
-            p.f[0] = [(key[pi] - key[o1]).max(1e-3), (key[pi] - key[o2]).max(1e-3), f("blackLevel"), f("whiteLevel")];
+            p.f[0] = [
+                (key[pi] - key[o1]).max(1e-3),
+                (key[pi] - key[o2]).max(1e-3),
+                f("blackLevel"),
+                f("whiteLevel"),
+            ];
             p.f[1] = [pa[0], pa[1], pa[2], pa[3]];
             p.f[2] = [pa[4], pb[4], f("gamma"), 0.0];
             p.f[3] = [pb[0], pb[1], pb[2], pb[3]];
         }
         "ec.key.unmult" => {
             let white = pr.e("backgroundColor") == 1;
-            let level = if white { pr.f("whiteLevel") } else { pr.f("blackLevel") }.clamp(0.0, 100.0) as f32 / 100.0;
-            p.u[0] = [10, white as u32, pr.b("removeColorMatting") as u32, pr.b("clipHdrResults") as u32];
-            p.f[0] = [level, pr.f("softness").clamp(0.0, 100.0) as f32 / 100.0, 0.0, 0.0];
+            let level = if white {
+                pr.f("whiteLevel")
+            } else {
+                pr.f("blackLevel")
+            }
+            .clamp(0.0, 100.0) as f32
+                / 100.0;
+            p.u[0] = [
+                10,
+                white as u32,
+                pr.b("removeColorMatting") as u32,
+                pr.b("clipHdrResults") as u32,
+            ];
+            p.f[0] = [
+                level,
+                pr.f("softness").clamp(0.0, 100.0) as f32 / 100.0,
+                0.0,
+                0.0,
+            ];
         }
         "ec.channel.shiftchannels" => {
-            let s = ["takeRedFrom", "takeGreenFrom", "takeBlueFrom", "takeAlphaFrom"].map(|id| src_index(SHIFT_ORDER[(pr.e(id) as usize).min(10)]));
+            let s = [
+                "takeRedFrom",
+                "takeGreenFrom",
+                "takeBlueFrom",
+                "takeAlphaFrom",
+            ]
+            .map(|id| src_index(SHIFT_ORDER[(pr.e(id) as usize).min(10)]));
             return route(e, b, s);
         }
         "ec.channel.removecolormatting" => {
@@ -536,22 +722,42 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         }
         "ec.channel.arithmetic" => {
             p.u[0] = [13, pr.e("operator"), pr.b("clip") as u32, 0];
-            p.f[0] = [f("redValue") / 255.0, f("greenValue") / 255.0, f("blueValue") / 255.0, 0.0];
+            p.f[0] = [
+                f("redValue") / 255.0,
+                f("greenValue") / 255.0,
+                f("blueValue") / 255.0,
+                0.0,
+            ];
         }
         "ec.channel.solidcomposite" => {
             const MODES: [effectcraft_color::BlendMode; 12] = {
                 use effectcraft_color::BlendMode::*;
-                [Normal, Add, Multiply, Screen, Overlay, SoftLight, HardLight, Darken, Lighten, Difference, Color, Luminosity]
+                [
+                    Normal, Add, Multiply, Screen, Overlay, SoftLight, HardLight, Darken, Lighten,
+                    Difference, Color, Luminosity,
+                ]
             };
             let c = pr.color("color");
             let opa = (f("opacity") / 100.0 * c[3]).clamp(0.0, 1.0);
-            p.u[0] = [14, crate::ops::mode_id(MODES[(pr.e("blendingMode") as usize).min(11)]), 0, 0];
+            p.u[0] = [
+                14,
+                crate::ops::mode_id(MODES[(pr.e("blendingMode") as usize).min(11)]),
+                0,
+                0,
+            ];
             p.f[0] = [c[0] * opa, c[1] * opa, c[2] * opa, opa];
             p.f[1][0] = f("sourceOpacity") / 100.0;
         }
         "ec.channel.setmatte" => {
             let src = MATTE_ORDER[(pr.e("takeMatteFrom") as usize).min(9)];
-            aux = fitted(e, ctx, &b, "takeMatteFromLayer", true, pr.b("stretchMatteToFit"))?;
+            aux = fitted(
+                e,
+                ctx,
+                &b,
+                "takeMatteFromLayer",
+                true,
+                pr.b("stretchMatteToFit"),
+            )?;
             let pre_ok = !matches!(src, Src::Alpha | Src::Full | Src::Off);
             let flags = pr.b("invertMatte") as u32
                 | (pr.b("compositeMatteWithOriginal") as u32) << 1
@@ -564,7 +770,9 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             if pr.b("useSecondLayer") {
                 aux = Some(layer_or_self(e, ctx, &b, "sourceLayer", true)?);
             }
-            let flags = pr.b("invert") as u32 | (pr.b("solidAlpha") as u32) << 1 | (aux.is_some() as u32) << 2;
+            let flags = pr.b("invert") as u32
+                | (pr.b("solidAlpha") as u32) << 1
+                | (aux.is_some() as u32) << 2;
             p.u[0] = [16, pr.e("from"), pr.e("to"), flags];
         }
         "ec.channel.blend" => {
@@ -572,7 +780,13 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             if orig >= 1.0 {
                 return Some(b);
             }
-            aux = Some(layer_or_self(e, ctx, &b, "blendWithLayer", pr.e("ifLayerSizesDiffer") == 1)?);
+            aux = Some(layer_or_self(
+                e,
+                ctx,
+                &b,
+                "blendWithLayer",
+                pr.e("ifLayerSizesDiffer") == 1,
+            )?);
             p.u[0] = [17, pr.e("mode"), 0, 0];
             p.f[0][0] = orig;
         }
@@ -605,12 +819,25 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
                 ]
             };
             if pr.get("secondLayer").and_then(|v| v.as_layer()).is_some() {
-                aux = Some(layer_or_self(e, ctx, &b, "secondLayer", pr.b("stretchSecondLayerToFit"))?);
+                aux = Some(layer_or_self(
+                    e,
+                    ctx,
+                    &b,
+                    "secondLayer",
+                    pr.b("stretchSecondLayerToFit"),
+                )?);
             }
-            let flags =
-                pr.b("invertInput") as u32 | (pr.b("invertSecondLayer") as u32) << 1 | (pr.b("preserveTransparency") as u32) << 2 | (aux.is_some() as u32) << 3;
+            let flags = pr.b("invertInput") as u32
+                | (pr.b("invertSecondLayer") as u32) << 1
+                | (pr.b("preserveTransparency") as u32) << 2
+                | (aux.is_some() as u32) << 3;
             let mode = MODES[(pr.e("blendingMode") as usize).min(MODES.len() - 1)];
-            p.u[0] = [18, pr.e("inputChannel"), pr.e("secondLayerChannel"), crate::ops::mode_id(mode)];
+            p.u[0] = [
+                18,
+                pr.e("inputChannel"),
+                pr.e("secondLayerChannel"),
+                crate::ops::mode_id(mode),
+            ];
             p.u[1][0] = flags;
             p.f[0][0] = (f("secondLayerOpacity") / 100.0).clamp(0.0, 1.0);
         }
@@ -619,8 +846,19 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             if orig >= 1.0 {
                 return Some(b);
             }
-            aux = Some(layer_or_self(e, ctx, &b, "secondSource", pr.b("stretchSecondSourceToFit"))?);
-            p.u[0] = [19, pr.e("operator"), pr.e("operateOnChannels"), pr.e("overflowBehavior")];
+            aux = Some(layer_or_self(
+                e,
+                ctx,
+                &b,
+                "secondSource",
+                pr.b("stretchSecondSourceToFit"),
+            )?);
+            p.u[0] = [
+                19,
+                pr.e("operator"),
+                pr.e("operateOnChannels"),
+                pr.e("overflowBehavior"),
+            ];
             p.f[0][0] = orig;
         }
         _ => return None,

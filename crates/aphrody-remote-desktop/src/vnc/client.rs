@@ -10,7 +10,8 @@ use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use vnc::{
-    ClientKeyEvent, ClientMouseEvent, PixelFormat, Rect, VncConnector, VncEncoding, VncEvent, X11Event,
+    ClientKeyEvent, ClientMouseEvent, PixelFormat, Rect, VncConnector, VncEncoding, VncEvent,
+    X11Event,
 };
 
 use super::buttons;
@@ -39,8 +40,12 @@ impl Screen {
 
     fn blit(&mut self, rect: Rect, data: &[u8]) {
         let (w, h) = (usize::from(self.width), usize::from(self.height));
-        let (rx, ry, rw, rh) =
-            (usize::from(rect.x), usize::from(rect.y), usize::from(rect.width), usize::from(rect.height));
+        let (rx, ry, rw, rh) = (
+            usize::from(rect.x),
+            usize::from(rect.y),
+            usize::from(rect.width),
+            usize::from(rect.height),
+        );
         if data.len() < rw * rh * 4 {
             return;
         }
@@ -58,8 +63,12 @@ impl Screen {
 
     fn copy(&mut self, dst: Rect, src: Rect) {
         let w = usize::from(self.width);
-        let (dx, dy, sx, sy) =
-            (usize::from(dst.x), usize::from(dst.y), usize::from(src.x), usize::from(src.y));
+        let (dx, dy, sx, sy) = (
+            usize::from(dst.x),
+            usize::from(dst.y),
+            usize::from(src.x),
+            usize::from(src.y),
+        );
         let (rw, rh) = (usize::from(dst.width), usize::from(dst.height));
         if dx.max(sx) + rw > w || dy.max(sy) + rh > usize::from(self.height) {
             return;
@@ -142,7 +151,12 @@ impl VncSession {
         })?;
         let screen = Arc::new(Mutex::new(Screen::default()));
         let pump = tokio::spawn(pump(client.clone(), Arc::clone(&screen)));
-        let session = Self { client, screen, pointer: Mutex::new((0, 0, 0)), pump };
+        let session = Self {
+            client,
+            screen,
+            pointer: Mutex::new((0, 0, 0)),
+            pump,
+        };
         // The server announces its geometry right after the handshake.
         let deadline = Instant::now() + Duration::from_secs(5);
         loop {
@@ -173,7 +187,11 @@ impl VncSession {
     async fn refresh(&self, full: bool) -> Result<()> {
         let before = self.screen.lock().await.updates;
         self.client
-            .input(if full { X11Event::FullRefresh } else { X11Event::Refresh })
+            .input(if full {
+                X11Event::FullRefresh
+            } else {
+                X11Event::Refresh
+            })
             .await
             .map_err(vnc_err)?;
         let started = Instant::now();
@@ -183,7 +201,9 @@ impl VncSession {
             if let Some(e) = &s.error {
                 bail!("{e}");
             }
-            let settled = s.last_update.is_some_and(|t| t.elapsed() >= Duration::from_millis(120));
+            let settled = s
+                .last_update
+                .is_some_and(|t| t.elapsed() >= Duration::from_millis(120));
             if (s.updates > before && settled) || started.elapsed() > Duration::from_secs(3) {
                 return Ok(());
             }
@@ -201,22 +221,33 @@ impl VncSession {
     pub async fn screenshot(&self, quality: u8, scale: u8) -> Result<Screenshot> {
         let (w, h, bgra) = self.frame().await?;
         let (width, height) = (u32::from(w), u32::from(h));
-        let jpeg = tokio::task::spawn_blocking(move || encode_jpeg(&bgra, width, height, quality, scale))
-            .await??;
-        Ok(Screenshot { width, height, jpeg })
+        let jpeg =
+            tokio::task::spawn_blocking(move || encode_jpeg(&bgra, width, height, quality, scale))
+                .await??;
+        Ok(Screenshot {
+            width,
+            height,
+            jpeg,
+        })
     }
 
     async fn pointer(&self, x: u16, y: u16, mask: u8) -> Result<()> {
         *self.pointer.lock().await = (x, y, mask);
         self.client
-            .input(X11Event::PointerEvent(ClientMouseEvent { position_x: x, position_y: y, bottons: mask }))
+            .input(X11Event::PointerEvent(ClientMouseEvent {
+                position_x: x,
+                position_y: y,
+                bottons: mask,
+            }))
             .await
             .map_err(vnc_err)
     }
 
     async fn clamp(&self, x: i32, y: i32) -> (u16, u16) {
         let (w, h) = self.size().await;
-        let c = |v: i32, max: u16| u16::try_from(v.clamp(0, i32::from(max.saturating_sub(1)))).unwrap_or(0);
+        let c = |v: i32, max: u16| {
+            u16::try_from(v.clamp(0, i32::from(max.saturating_sub(1)))).unwrap_or(0)
+        };
         (c(x, w), c(y, h))
     }
 
@@ -255,7 +286,8 @@ impl VncSession {
                 let v = i32::from(a) + (i32::from(b) - i32::from(a)) * i / STEPS;
                 u16::try_from(v).unwrap_or(b)
             };
-            self.pointer(lerp(sx, ex), lerp(sy, ey), buttons::LEFT).await?;
+            self.pointer(lerp(sx, ex), lerp(sy, ey), buttons::LEFT)
+                .await?;
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
         self.pointer(ex, ey, 0).await
@@ -265,9 +297,10 @@ impl VncSession {
     pub async fn scroll(&self, dx: i32, dy: i32) -> Result<()> {
         let (x, y, held) = *self.pointer.lock().await;
         let notches = |d: i32| (d.unsigned_abs().div_ceil(120)).clamp(1, 50);
-        for (delta, neg, pos) in
-            [(dy, buttons::WHEEL_UP, buttons::WHEEL_DOWN), (dx, buttons::WHEEL_LEFT, buttons::WHEEL_RIGHT)]
-        {
+        for (delta, neg, pos) in [
+            (dy, buttons::WHEEL_UP, buttons::WHEEL_DOWN),
+            (dx, buttons::WHEEL_LEFT, buttons::WHEEL_RIGHT),
+        ] {
             if delta == 0 {
                 continue;
             }
@@ -283,7 +316,10 @@ impl VncSession {
     /// Press or release one keysym.
     pub async fn key(&self, keysym: u32, down: bool) -> Result<()> {
         self.client
-            .input(X11Event::KeyEvent(ClientKeyEvent { keycode: keysym, down }))
+            .input(X11Event::KeyEvent(ClientKeyEvent {
+                keycode: keysym,
+                down,
+            }))
             .await
             .map_err(vnc_err)
     }
@@ -327,27 +363,27 @@ async fn pump(client: vnc::VncClient, screen: Arc<Mutex<Screen>>) {
                     VncEvent::SetResolution(r) => {
                         s.resize(r.width, r.height);
                         s.touched();
-                    },
+                    }
                     VncEvent::RawImage(rect, data) => {
                         s.blit(rect, &data);
                         s.touched();
-                    },
+                    }
                     VncEvent::Copy(dst, src) => {
                         s.copy(dst, src);
                         s.touched();
-                    },
+                    }
                     VncEvent::Error(e) => {
                         s.error = Some(e);
                         return;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
-            },
+            }
             Ok(None) => tokio::time::sleep(Duration::from_millis(5)).await,
             Err(e) => {
                 screen.lock().await.error = Some(format!("session closed: {e}"));
                 return;
-            },
+            }
         }
     }
 }
@@ -360,13 +396,55 @@ mod tests {
     fn blit_and_copy_stay_in_bounds() {
         let mut s = Screen::default();
         s.resize(4, 2);
-        s.blit(Rect { x: 1, y: 0, width: 2, height: 1 }, &[1, 1, 1, 1, 2, 2, 2, 2]);
+        s.blit(
+            Rect {
+                x: 1,
+                y: 0,
+                width: 2,
+                height: 1,
+            },
+            &[1, 1, 1, 1, 2, 2, 2, 2],
+        );
         assert_eq!(&s.bgra[4..12], &[1, 1, 1, 1, 2, 2, 2, 2]);
-        s.copy(Rect { x: 1, y: 1, width: 2, height: 1 }, Rect { x: 1, y: 0, width: 2, height: 1 });
+        s.copy(
+            Rect {
+                x: 1,
+                y: 1,
+                width: 2,
+                height: 1,
+            },
+            Rect {
+                x: 1,
+                y: 0,
+                width: 2,
+                height: 1,
+            },
+        );
         assert_eq!(&s.bgra[20..28], &[1, 1, 1, 1, 2, 2, 2, 2]);
         // Out-of-range rectangles are clipped or ignored.
-        s.blit(Rect { x: 3, y: 1, width: 4, height: 4 }, &[9; 64]);
-        s.copy(Rect { x: 3, y: 1, width: 4, height: 4 }, Rect { x: 0, y: 0, width: 4, height: 4 });
+        s.blit(
+            Rect {
+                x: 3,
+                y: 1,
+                width: 4,
+                height: 4,
+            },
+            &[9; 64],
+        );
+        s.copy(
+            Rect {
+                x: 3,
+                y: 1,
+                width: 4,
+                height: 4,
+            },
+            Rect {
+                x: 0,
+                y: 0,
+                width: 4,
+                height: 4,
+            },
+        );
         assert_eq!(s.bgra.len(), 32);
     }
 
@@ -405,13 +483,21 @@ mod tests {
         let mut saw_key = false;
         let deadline = Instant::now() + Duration::from_secs(5);
         while !(saw_pointer && saw_key) && Instant::now() < deadline {
-            if let Ok(Some(ev)) = tokio::time::timeout(Duration::from_millis(200), events.recv()).await {
+            if let Ok(Some(ev)) =
+                tokio::time::timeout(Duration::from_millis(200), events.recv()).await
+            {
                 match ev {
-                    rustvncserver::server::ServerEvent::PointerMove { x: 3, y: 2, .. } => saw_pointer = true,
-                    rustvncserver::server::ServerEvent::KeyPress { key: 0xFFE3, down: true, .. } => {
+                    rustvncserver::server::ServerEvent::PointerMove { x: 3, y: 2, .. } => {
+                        saw_pointer = true
+                    }
+                    rustvncserver::server::ServerEvent::KeyPress {
+                        key: 0xFFE3,
+                        down: true,
+                        ..
+                    } => {
                         saw_key = true;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
         }
@@ -443,7 +529,10 @@ mod tests {
                 let mut inner = stream;
                 let _ = tokio::io::copy_bidirectional(&mut outer, &mut inner).await;
             });
-            let err = VncSession::connect(&addr, Some("wrong".into())).await.err().unwrap();
+            let err = VncSession::connect(&addr, Some("wrong".into()))
+                .await
+                .err()
+                .unwrap();
             assert!(format!("{err:#}").contains("handshake"), "{err:#}");
         }
     }

@@ -16,7 +16,15 @@ pub struct IntraEdge {
 
 /// Predict a `4 << tx_size` square block at (`x`, `y`) of a plane buffer. `buf` is addressed as
 /// `buf[y * stride + x - x_off]` (the buffer may be a tile-column strip starting at column `x_off`).
-pub fn predict(buf: &mut [u16], stride: usize, x_off: usize, x: usize, y: usize, mode: u8, e: &IntraEdge) {
+pub fn predict(
+    buf: &mut [u16],
+    stride: usize,
+    x_off: usize,
+    x: usize,
+    y: usize,
+    mode: u8,
+    e: &IntraEdge,
+) {
     let log2 = e.tx_size as usize + 2;
     let size = 1usize << log2;
     let base = 1i32 << (e.bit_depth - 1);
@@ -102,7 +110,11 @@ pub fn predict(buf: &mut [u16], stride: usize, x_off: usize, x: usize, y: usize,
             for i in 0..size {
                 for j in 0..size {
                     let k = (i + j) as isize;
-                    let v = if i + j + 2 < 2 * size { r2(a(k) + 2 * a(k + 1) + a(k + 2)) } else { a(2 * size as isize - 1) };
+                    let v = if i + j + 2 < 2 * size {
+                        r2(a(k) + 2 * a(k + 1) + a(k + 2))
+                    } else {
+                        a(2 * size as isize - 1)
+                    };
                     put(i, j, v);
                 }
             }
@@ -111,7 +123,11 @@ pub fn predict(buf: &mut [u16], stride: usize, x_off: usize, x: usize, y: usize,
             for i in 0..size {
                 for j in 0..size {
                     let k = (i / 2 + j) as isize;
-                    let v = if i & 1 == 1 { r2(a(k) + 2 * a(k + 1) + a(k + 2)) } else { r1(a(k) + a(k + 1)) };
+                    let v = if i & 1 == 1 {
+                        r2(a(k) + 2 * a(k + 1) + a(k + 2))
+                    } else {
+                        r1(a(k) + a(k + 1))
+                    };
                     put(i, j, v);
                 }
             }
@@ -197,7 +213,8 @@ pub fn predict(buf: &mut [u16], stride: usize, x_off: usize, x: usize, y: usize,
             // DC_PRED
             let v = match (e.have_left, e.have_above) {
                 (true, true) => {
-                    let sum: i32 = left[..size].iter().sum::<i32>() + above[1..=size].iter().sum::<i32>();
+                    let sum: i32 =
+                        left[..size].iter().sum::<i32>() + above[1..=size].iter().sum::<i32>();
                     (sum + size as i32) >> (log2 + 1)
                 }
                 (true, false) => (left[..size].iter().sum::<i32>() + (1 << (log2 - 1))) >> log2,

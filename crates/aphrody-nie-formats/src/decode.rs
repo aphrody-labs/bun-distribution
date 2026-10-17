@@ -46,47 +46,72 @@ pub fn decode(data: &[u8]) -> Option<Decoded> {
     #[cfg(feature = "lua")]
     if data.len() >= 4 && data[..4] == *b"\x1bLua" {
         return done(
-            aphrody_nie_lua::bytecode::parse(data).ok().and_then(|c| serde_json::to_vec(&c).ok()),
+            aphrody_nie_lua::bytecode::parse(data)
+                .ok()
+                .and_then(|c| serde_json::to_vec(&c).ok()),
             "lua-bytecode",
         );
     }
 
     // `lip\0` n'a pas de variante dans `FileFormat` : le tester au magic.
     if data.len() >= 4 && data[..4] == *b"lip\0" {
-        return done(crate::lip::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "lip");
+        return done(
+            crate::lip::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "lip",
+        );
     }
 
     match crate::detect(data) {
-        FileFormat::G4tx => {
-            done(crate::g4tx::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "g4tx")
-        },
-        FileFormat::G4md => {
-            done(crate::g4md::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "g4md")
-        },
+        FileFormat::G4tx => done(
+            crate::g4tx::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "g4tx",
+        ),
+        FileFormat::G4md => done(
+            crate::g4md::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "g4md",
+        ),
         // Le layout 2D menu (G4SKM encapsulé) d'abord : `g4pk::parse` accepterait le fichier
         // mais rendrait une vue moins riche.
-        FileFormat::G4pk => {
-            done(crate::g4pkm::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "g4pkm")
-                .or_else(|| {
-                    done(
-                        crate::g4pk::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
-                        "g4pk",
-                    )
-                })
-        },
+        FileFormat::G4pk => done(
+            crate::g4pkm::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "g4pkm",
+        )
+        .or_else(|| {
+            done(
+                crate::g4pk::parse(data)
+                    .ok()
+                    .and_then(|v| serde_json::to_vec(&v).ok()),
+                "g4pk",
+            )
+        }),
         FileFormat::CfgBin => done(
-            crate::cfgbin::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::cfgbin::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "cfg.bin",
         )
         .or_else(|| {
             done(
-                crate::cfgbin::parse_t2b(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+                crate::cfgbin::parse_t2b(data)
+                    .ok()
+                    .and_then(|v| serde_json::to_vec(&v).ok()),
                 "cfg.bin (T2B)",
             )
         }),
-        FileFormat::Cpk => {
-            done(crate::cpk::parse_cpk(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "cpk")
-        },
+        FileFormat::Cpk => done(
+            crate::cpk::parse_cpk(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "cpk",
+        ),
         FileFormat::G4sk => done(
             crate::g4sk::parse_header(data)
                 .ok()
@@ -97,9 +122,12 @@ pub fn decode(data: &[u8]) -> Option<Decoded> {
                 .and_then(|v| serde_json::to_vec(&v).ok()),
             "g4sk",
         ),
-        FileFormat::G4nv => {
-            done(crate::navm::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "navm")
-        },
+        FileFormat::G4nv => done(
+            crate::navm::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "navm",
+        ),
         FileFormat::Awb => done(
             crate::cri_audio::Awb::parse(data).ok().and_then(|awb| {
                 // Un AWB est un conteneur : exporter sa table de matières est utile même
@@ -116,22 +144,34 @@ pub fn decode(data: &[u8]) -> Option<Decoded> {
             }),
             "awb",
         ),
-        FileFormat::Lip => {
-            done(crate::lip::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "lip")
-        },
-        FileFormat::Dxbc => {
-            done(crate::dxbc::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()), "dxbc")
-        },
+        FileFormat::Lip => done(
+            crate::lip::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "lip",
+        ),
+        FileFormat::Dxbc => done(
+            crate::dxbc::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
+            "dxbc",
+        ),
         FileFormat::Col => done(
-            crate::col::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::col::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "col (PXCL)",
         ),
         FileFormat::Objb => done(
-            crate::objbin::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::objbin::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "objbin",
         ),
         FileFormat::Mevs => done(
-            crate::mevbin::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::mevbin::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "mevbin",
         ),
         // Un `G4MG` ne se décode PAS seul : sa géométrie n'a de sens qu'avec le `G4MD` frère,
@@ -141,19 +181,25 @@ pub fn decode(data: &[u8]) -> Option<Decoded> {
         FileFormat::Unknown => decode_level5_annexe(data)
             .or_else(|| {
                 done(
-                    crate::objbin::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+                    crate::objbin::parse(data)
+                        .ok()
+                        .and_then(|v| serde_json::to_vec(&v).ok()),
                     "objbin",
                 )
             })
             .or_else(|| {
                 done(
-                    crate::cfgbin::parse_t2b(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+                    crate::cfgbin::parse_t2b(data)
+                        .ok()
+                        .and_then(|v| serde_json::to_vec(&v).ok()),
                     "cfg.bin (T2B)",
                 )
             })
             .or_else(|| {
                 done(
-                    crate::mevbin::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+                    crate::mevbin::parse(data)
+                        .ok()
+                        .and_then(|v| serde_json::to_vec(&v).ok()),
                     "mevbin",
                 )
             }),
@@ -179,43 +225,57 @@ fn decode_level5_annexe(data: &[u8]) -> Option<Decoded> {
     // les parse depuis toujours.
     if crate::dxbc::is_dxbc(data) {
         return done(
-            crate::dxbc::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::dxbc::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "dxbc",
         );
     }
     if crate::g4mt::is_g4mt(data) {
         return done(
-            crate::g4mt::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::g4mt::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "g4mt",
         );
     }
     if crate::g4cm::is_g4cm(data) {
         return done(
-            crate::g4cm::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::g4cm::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "g4cm",
         );
     }
     if crate::g4la::is_g4la(data) {
         return done(
-            crate::g4la::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::g4la::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "g4la",
         );
     }
     if crate::g4ma::is_g4ma(data) {
         return done(
-            crate::g4ma::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::g4ma::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "g4ma",
         );
     }
     if crate::g4vs::is_g4vs(data) {
         return done(
-            crate::g4vs::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::g4vs::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "g4vs",
         );
     }
     if crate::col::is_pxcl(data) {
         return done(
-            crate::col::parse(data).ok().and_then(|v| serde_json::to_vec(&v).ok()),
+            crate::col::parse(data)
+                .ok()
+                .and_then(|v| serde_json::to_vec(&v).ok()),
             "col (PXCL)",
         );
     }

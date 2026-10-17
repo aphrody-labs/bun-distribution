@@ -20,22 +20,102 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             new
         ),
-        cmd!("slide.duplicate", "Duplicate Slide", ["Insert"], None, "{index?}", has_slide, duplicate),
-        cmd!("slide.delete", "Delete Slide", ["Edit"], None, "{index?, ids?: [slide id]}", has_slide, delete),
-        cmd!("slide.move", "Move Slide", [], None, "{from?: index, to: index}", has_slide, move_slide),
+        cmd!(
+            "slide.duplicate",
+            "Duplicate Slide",
+            ["Insert"],
+            None,
+            "{index?}",
+            has_slide,
+            duplicate
+        ),
+        cmd!(
+            "slide.delete",
+            "Delete Slide",
+            ["Edit"],
+            None,
+            "{index?, ids?: [slide id]}",
+            has_slide,
+            delete
+        ),
+        cmd!(
+            "slide.move",
+            "Move Slide",
+            [],
+            None,
+            "{from?: index, to: index}",
+            has_slide,
+            move_slide
+        ),
         cmd!(noundo "slide.go", "Go to Slide", [], None, "{index} | {id}", has_slide, go),
         cmd!(noundo "slide.next", "Next Slide", [], Some("PageDown"), "{}", has_slide, next),
         cmd!(noundo "slide.previous", "Previous Slide", [], Some("PageUp"), "{}", has_slide, prev),
         cmd!(noundo "slide.first", "First Slide", [], Some("Home"), "{}", has_slide, first),
         cmd!(noundo "slide.last", "Last Slide", [], Some("End"), "{}", has_slide, last),
         cmd!(noundo "slide.selectSlides", "Select Slides", [], None, "{ids?: [slide id], indices?: [index], add?: bool}", has_slide, select_slides),
-        cmd!("slide.hide", "Hide Slide", ["Slide Show", "Set Up"], None, "{index?, hidden?: bool}", has_slide, hide),
-        cmd!("slide.layout", "Layout", ["Home", "Slides"], None, "{layout: name or kind, index?}", has_slide, set_layout),
-        cmd!("slide.reset", "Reset", ["Home", "Slides"], None, "{index?}", has_slide, reset),
-        cmd!("slide.notes", "Notes", ["View"], None, "{text, index?}", has_slide, notes),
-        cmd!("slide.rename", "Rename Slide", [], None, "{name, index?}", has_slide, rename),
-        cmd!("section.add", "Add Section", ["Home", "Slides", "Section"], None, "{name?, at?: slide index}", has_slide, section_add),
-        cmd!("section.rename", "Rename Section", ["Home", "Slides", "Section"], None, "{index, name}", has_slide, section_rename),
+        cmd!(
+            "slide.hide",
+            "Hide Slide",
+            ["Slide Show", "Set Up"],
+            None,
+            "{index?, hidden?: bool}",
+            has_slide,
+            hide
+        ),
+        cmd!(
+            "slide.layout",
+            "Layout",
+            ["Home", "Slides"],
+            None,
+            "{layout: name or kind, index?}",
+            has_slide,
+            set_layout
+        ),
+        cmd!(
+            "slide.reset",
+            "Reset",
+            ["Home", "Slides"],
+            None,
+            "{index?}",
+            has_slide,
+            reset
+        ),
+        cmd!(
+            "slide.notes",
+            "Notes",
+            ["View"],
+            None,
+            "{text, index?}",
+            has_slide,
+            notes
+        ),
+        cmd!(
+            "slide.rename",
+            "Rename Slide",
+            [],
+            None,
+            "{name, index?}",
+            has_slide,
+            rename
+        ),
+        cmd!(
+            "section.add",
+            "Add Section",
+            ["Home", "Slides", "Section"],
+            None,
+            "{name?, at?: slide index}",
+            has_slide,
+            section_add
+        ),
+        cmd!(
+            "section.rename",
+            "Rename Section",
+            ["Home", "Slides", "Section"],
+            None,
+            "{index, name}",
+            has_slide,
+            section_rename
+        ),
         cmd!(
             "section.remove",
             "Remove Section",
@@ -45,9 +125,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_slide,
             section_remove
         ),
-        cmd!("section.removeAll", "Remove All Sections", ["Home", "Slides", "Section"], None, "{}", has_slide, section_remove_all),
-        cmd!("section.move", "Move Section", [], None, "{index, to}", has_slide, section_move),
-        cmd!("slide.fromOutline", "Slides from Outline…", ["Insert", "Slides From"], None, "{text}", has_doc, from_outline),
+        cmd!(
+            "section.removeAll",
+            "Remove All Sections",
+            ["Home", "Slides", "Section"],
+            None,
+            "{}",
+            has_slide,
+            section_remove_all
+        ),
+        cmd!(
+            "section.move",
+            "Move Section",
+            [],
+            None,
+            "{index, to}",
+            has_slide,
+            section_move
+        ),
+        cmd!(
+            "slide.fromOutline",
+            "Slides from Outline…",
+            ["Insert", "Slides From"],
+            None,
+            "{text}",
+            has_doc,
+            from_outline
+        ),
     ]
 }
 
@@ -61,7 +165,12 @@ pub fn find_layout(doc: &Presentation, key: &Value, master: usize) -> Option<Lay
     }
     let s = key.as_str()?;
     let m = doc.masters.get(master).or(doc.masters.first())?;
-    let norm = |x: &str| x.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_ascii_lowercase();
+    let norm = |x: &str| {
+        x.chars()
+            .filter(|c| c.is_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase()
+    };
     let k = norm(s);
     let kind = match k.as_str() {
         "title" | "titleslide" => Some(LayoutType::Title),
@@ -77,43 +186,74 @@ pub fn find_layout(doc: &Presentation, key: &Value, master: usize) -> Option<Lay
         "verticaltitleandtext" => Some(LayoutType::VerticalTitleAndText),
         _ => None,
     };
-    m.layouts.iter().find(|l| norm(&l.name) == k).or_else(|| kind.and_then(|kd| m.layouts.iter().find(|l| l.kind == kd))).map(|l| l.id)
+    m.layouts
+        .iter()
+        .find(|l| norm(&l.name) == k)
+        .or_else(|| kind.and_then(|kd| m.layouts.iter().find(|l| l.kind == kd)))
+        .map(|l| l.id)
 }
 
 fn current_master(doc: &Presentation, sel: &crate::Selection) -> usize {
-    doc.slides.get(sel.slide).and_then(|s| doc.masters.iter().position(|m| m.layout(s.layout).is_some())).unwrap_or(0)
+    doc.slides
+        .get(sel.slide)
+        .and_then(|s| {
+            doc.masters
+                .iter()
+                .position(|m| m.layout(s.layout).is_some())
+        })
+        .unwrap_or(0)
 }
 
 fn new(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit(|doc, sel| {
         let master = current_master(doc, sel);
         let layout = match p.get("layout") {
-            Some(k) => find_layout(doc, k, master).ok_or_else(|| bad("slide.new", format!("no layout {k}")))?,
+            Some(k) => find_layout(doc, k, master)
+                .ok_or_else(|| bad("slide.new", format!("no layout {k}")))?,
             None => {
                 // PowerPoint picks Title and Content after a title slide, else the current layout.
                 let cur = doc.slides.get(sel.slide).map(|x| x.layout);
-                let is_title = cur.and_then(|l| doc.layout(l)).is_some_and(|(_, l)| l.kind == LayoutType::Title);
+                let is_title = cur
+                    .and_then(|l| doc.layout(l))
+                    .is_some_and(|(_, l)| l.kind == LayoutType::Title);
                 match cur {
                     Some(l) if !is_title => l,
-                    _ => defaults::layout_of_kind(doc, LayoutType::TitleAndContent).or(cur).unwrap_or_default(),
+                    _ => defaults::layout_of_kind(doc, LayoutType::TitleAndContent)
+                        .or(cur)
+                        .unwrap_or_default(),
                 }
             }
         };
         let mut slide = defaults::new_slide(doc, layout);
         if let Some(t) = str_param(p, "title")
-            && let Some(sh) = slide.shapes.iter_mut().find(|x| x.ph_type().is_some_and(|k| k.is_title()))
+            && let Some(sh) = slide
+                .shapes
+                .iter_mut()
+                .find(|x| x.ph_type().is_some_and(|k| k.is_title()))
         {
             sh.text = Some(TextBody::from_text(t));
         }
         if let Some(b) = str_param(p, "body")
-            && let Some(sh) = slide.shapes.iter_mut().find(|x| x.ph_type().is_some_and(|k| !k.is_title()))
+            && let Some(sh) = slide
+                .shapes
+                .iter_mut()
+                .find(|x| x.ph_type().is_some_and(|k| !k.is_title()))
         {
             sh.text = Some(TextBody::from_text(b));
         }
-        let at = usize_param(p, "at").unwrap_or(if doc.slides.is_empty() { 0 } else { sel.slide + 1 }).min(doc.slides.len());
+        let at = usize_param(p, "at")
+            .unwrap_or(if doc.slides.is_empty() {
+                0
+            } else {
+                sel.slide + 1
+            })
+            .min(doc.slides.len());
         let id = slide.id;
         // Inherit the section of the slide before.
-        let section = at.checked_sub(1).and_then(|i| doc.slides.get(i)).and_then(|prev| doc.section_of(prev.id));
+        let section = at
+            .checked_sub(1)
+            .and_then(|i| doc.slides.get(i))
+            .and_then(|prev| doc.section_of(prev.id));
         doc.slides.insert(at, Arc::new(slide));
         if let Some(si) = section
             && let Some(sec) = doc.sections.get_mut(si)
@@ -151,7 +291,12 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
         Some(i) => vec![i],
         None => {
             let st = s.doc()?;
-            let mut v: Vec<usize> = st.selection.slides.iter().filter_map(|id| st.doc.slide_index(*id)).collect();
+            let mut v: Vec<usize> = st
+                .selection
+                .slides
+                .iter()
+                .filter_map(|id| st.doc.slide_index(*id))
+                .collect();
             if v.is_empty() {
                 v.push(st.selection.slide);
             }
@@ -163,7 +308,9 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
         let last = *indices.last().unwrap_or(&0);
         let mut new_ids = vec![];
         for (k, i) in indices.iter().enumerate() {
-            let Some(src) = doc.slides.get(*i).map(|x| x.as_ref().clone()) else { continue };
+            let Some(src) = doc.slides.get(*i).map(|x| x.as_ref().clone()) else {
+                continue;
+            };
             let mut copy = src;
             copy.id = SlideId(doc.alloc_id());
             super::edit::reid(doc, &mut copy.shapes);
@@ -211,7 +358,11 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     let ids: Vec<SlideId> = {
         let st = s.doc()?;
         if let Some(a) = p.get("ids").and_then(Value::as_array) {
-            a.iter().filter_map(Value::as_u64).filter_map(|v| u32::try_from(v).ok()).map(SlideId).collect()
+            a.iter()
+                .filter_map(Value::as_u64)
+                .filter_map(|v| u32::try_from(v).ok())
+                .map(SlideId)
+                .collect()
         } else if let Some(i) = usize_param(p, "index") {
             st.doc.slides.get(i).map(|x| vec![x.id]).unwrap_or_default()
         } else if !st.selection.slides.is_empty() {
@@ -224,13 +375,21 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad("slide.delete", "no such slide"));
     }
     s.edit(|doc, sel| {
-        let first = ids.iter().filter_map(|id| doc.slide_index(*id)).min().unwrap_or(0);
+        let first = ids
+            .iter()
+            .filter_map(|id| doc.slide_index(*id))
+            .min()
+            .unwrap_or(0);
         doc.slides.retain(|x| !ids.contains(&x.id));
         for sec in &mut doc.sections {
             sec.slides.retain(|x| !ids.contains(x));
         }
         sel.slide = first.min(doc.slides.len().saturating_sub(1));
-        sel.slides = doc.slides.get(sel.slide).map(|x| vec![x.id]).unwrap_or_default();
+        sel.slides = doc
+            .slides
+            .get(sel.slide)
+            .map(|x| vec![x.id])
+            .unwrap_or_default();
         sel.shapes.clear();
         sel.text = None;
         Ok(json!({"deleted": ids.len(), "remaining": doc.slides.len()}))
@@ -253,12 +412,16 @@ fn move_slide(s: &mut Session, p: &Value) -> Result<Value> {
             for sec in &mut doc.sections {
                 sec.slides.retain(|x| *x != id);
             }
-            let neighbour = to.checked_sub(1).and_then(|i| doc.slides.get(i)).map(|x| x.id);
+            let neighbour = to
+                .checked_sub(1)
+                .and_then(|i| doc.slides.get(i))
+                .map(|x| x.id);
             let si = neighbour.and_then(|n| doc.section_of(n)).unwrap_or(0);
             let order: Vec<SlideId> = doc.slides.iter().map(|x| x.id).collect();
             if let Some(sec) = doc.sections.get_mut(si) {
                 sec.slides.push(id);
-                sec.slides.sort_by_key(|x| order.iter().position(|o| o == x).unwrap_or(usize::MAX));
+                sec.slides
+                    .sort_by_key(|x| order.iter().position(|o| o == x).unwrap_or(usize::MAX));
             }
         }
         sel.slide = to;
@@ -271,7 +434,11 @@ fn go_to(s: &mut Session, i: usize) -> Result<Value> {
     s.select(|doc, sel| {
         let n = doc.slides.len();
         sel.slide = i.min(n.saturating_sub(1));
-        sel.slides = doc.slides.get(sel.slide).map(|x| vec![x.id]).unwrap_or_default();
+        sel.slides = doc
+            .slides
+            .get(sel.slide)
+            .map(|x| vec![x.id])
+            .unwrap_or_default();
         sel.shapes.clear();
         sel.text = None;
         sel.cells = None;
@@ -283,7 +450,11 @@ fn go_to(s: &mut Session, i: usize) -> Result<Value> {
 fn go(s: &mut Session, p: &Value) -> Result<Value> {
     let i = match (usize_param(p, "index"), p.get("id").and_then(Value::as_u64)) {
         (Some(i), _) => i,
-        (None, Some(id)) => s.doc()?.doc.slide_index(SlideId(u32::try_from(id).unwrap_or(0))).ok_or_else(|| bad("slide.go", "no such slide"))?,
+        (None, Some(id)) => s
+            .doc()?
+            .doc
+            .slide_index(SlideId(u32::try_from(id).unwrap_or(0)))
+            .ok_or_else(|| bad("slide.go", "no such slide"))?,
         _ => return Err(bad("slide.go", "missing `index`")),
     };
     go_to(s, i)
@@ -311,10 +482,21 @@ fn select_slides(s: &mut Session, p: &Value) -> Result<Value> {
         let mut v: Vec<SlideId> = p
             .get("ids")
             .and_then(Value::as_array)
-            .map(|a| a.iter().filter_map(Value::as_u64).filter_map(|x| u32::try_from(x).ok()).map(SlideId).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(Value::as_u64)
+                    .filter_map(|x| u32::try_from(x).ok())
+                    .map(SlideId)
+                    .collect()
+            })
             .unwrap_or_default();
         if let Some(a) = p.get("indices").and_then(Value::as_array) {
-            v.extend(a.iter().filter_map(Value::as_u64).filter_map(|i| st.doc.slides.get(i as usize)).map(|x| x.id));
+            v.extend(
+                a.iter()
+                    .filter_map(Value::as_u64)
+                    .filter_map(|i| st.doc.slides.get(i as usize))
+                    .map(|x| x.id),
+            );
         }
         v
     };
@@ -342,12 +524,23 @@ fn hide(s: &mut Session, p: &Value) -> Result<Value> {
         Some(i) => vec![i],
         None => {
             let st = s.doc()?;
-            let v: Vec<usize> = st.selection.slides.iter().filter_map(|id| st.doc.slide_index(*id)).collect();
-            if v.is_empty() { vec![st.selection.slide] } else { v }
+            let v: Vec<usize> = st
+                .selection
+                .slides
+                .iter()
+                .filter_map(|id| st.doc.slide_index(*id))
+                .collect();
+            if v.is_empty() {
+                vec![st.selection.slide]
+            } else {
+                v
+            }
         }
     };
     s.edit(|doc, _| {
-        let all_hidden = targets.iter().all(|i| doc.slides.get(*i).is_some_and(|x| x.hidden));
+        let all_hidden = targets
+            .iter()
+            .all(|i| doc.slides.get(*i).is_some_and(|x| x.hidden));
         let value = bool_param(p, "hidden").unwrap_or(!all_hidden);
         for i in &targets {
             if let Some(sl) = doc.slides.get_mut(*i) {
@@ -360,14 +553,22 @@ fn hide(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Re-map a slide's placeholders onto a new layout (content kept, matched by type/index).
 pub fn apply_layout(doc: &mut Presentation, index: usize, layout: LayoutId) -> Result<()> {
-    let lay_shapes: Vec<deckcraft_model::Shape> =
-        doc.layout(layout).map(|(_, l)| l.shapes.clone()).ok_or_else(|| bad("slide.layout", "no such layout"))?;
+    let lay_shapes: Vec<deckcraft_model::Shape> = doc
+        .layout(layout)
+        .map(|(_, l)| l.shapes.clone())
+        .ok_or_else(|| bad("slide.layout", "no such layout"))?;
     let mut fresh = vec![];
-    for ls in lay_shapes.iter().filter(|x| x.ph.as_ref().is_some_and(|p| !p.kind.is_footer_kind())) {
+    for ls in lay_shapes
+        .iter()
+        .filter(|x| x.ph.as_ref().is_some_and(|p| !p.kind.is_footer_kind()))
+    {
         let id = deckcraft_model::ShapeId(doc.alloc_id());
         fresh.push((id, ls.clone()));
     }
-    let slide = doc.slides.get_mut(index).ok_or_else(|| bad("slide.layout", "no slide"))?;
+    let slide = doc
+        .slides
+        .get_mut(index)
+        .ok_or_else(|| bad("slide.layout", "no slide"))?;
     let slide = Arc::make_mut(slide);
     let mut old: Vec<deckcraft_model::Shape> = std::mem::take(&mut slide.shapes);
     let mut out = vec![];
@@ -376,8 +577,18 @@ pub fn apply_layout(doc: &mut Presentation, index: usize, layout: LayoutId) -> R
         // Find matching old placeholder: same idx, else same title-ness/compatible type.
         let k = old
             .iter()
-            .position(|o| o.ph.as_ref().is_some_and(|p| p.kind == lph.kind && (p.idx == lph.idx || lph.kind.is_title())))
-            .or_else(|| old.iter().position(|o| o.ph.as_ref().is_some_and(|p| p.kind.is_title() == lph.kind.is_title() && !p.kind.is_footer_kind())));
+            .position(|o| {
+                o.ph.as_ref().is_some_and(|p| {
+                    p.kind == lph.kind && (p.idx == lph.idx || lph.kind.is_title())
+                })
+            })
+            .or_else(|| {
+                old.iter().position(|o| {
+                    o.ph.as_ref().is_some_and(|p| {
+                        p.kind.is_title() == lph.kind.is_title() && !p.kind.is_footer_kind()
+                    })
+                })
+            });
         match k {
             Some(k) => {
                 let mut o = old.remove(k);
@@ -388,14 +599,20 @@ pub fn apply_layout(doc: &mut Presentation, index: usize, layout: LayoutId) -> R
                 o.xfrm = None;
                 out.push(o);
             }
-            None => {
-                out.push(deckcraft_model::Shape { id, name: ls.name.clone(), ph: Some(lph), text: Some(TextBody::default()), ..Default::default() })
-            }
+            None => out.push(deckcraft_model::Shape {
+                id,
+                name: ls.name.clone(),
+                ph: Some(lph),
+                text: Some(TextBody::default()),
+                ..Default::default()
+            }),
         }
     }
     // Leftover placeholders with content stay as they were (positioned); empty ones go.
     for o in old {
-        let empty_ph = o.ph.is_some() && o.text.as_ref().is_none_or(|t| t.is_empty()) && matches!(o.kind, deckcraft_model::ShapeKind::Shape);
+        let empty_ph = o.ph.is_some()
+            && o.text.as_ref().is_none_or(|t| t.is_empty())
+            && matches!(o.kind, deckcraft_model::ShapeKind::Shape);
         if !empty_ph {
             out.push(o);
         }
@@ -406,18 +623,31 @@ pub fn apply_layout(doc: &mut Presentation, index: usize, layout: LayoutId) -> R
 }
 
 fn set_layout(s: &mut Session, p: &Value) -> Result<Value> {
-    let key = p.get("layout").cloned().ok_or_else(|| bad("slide.layout", "missing `layout`"))?;
+    let key = p
+        .get("layout")
+        .cloned()
+        .ok_or_else(|| bad("slide.layout", "missing `layout`"))?;
     let targets: Vec<usize> = match usize_param(p, "index") {
         Some(i) => vec![i],
         None => {
             let st = s.doc()?;
-            let v: Vec<usize> = st.selection.slides.iter().filter_map(|id| st.doc.slide_index(*id)).collect();
-            if v.is_empty() { vec![st.selection.slide] } else { v }
+            let v: Vec<usize> = st
+                .selection
+                .slides
+                .iter()
+                .filter_map(|id| st.doc.slide_index(*id))
+                .collect();
+            if v.is_empty() {
+                vec![st.selection.slide]
+            } else {
+                v
+            }
         }
     };
     s.edit(|doc, sel| {
         let master = current_master(doc, sel);
-        let layout = find_layout(doc, &key, master).ok_or_else(|| bad("slide.layout", format!("no layout {key}")))?;
+        let layout = find_layout(doc, &key, master)
+            .ok_or_else(|| bad("slide.layout", format!("no layout {key}")))?;
         for i in &targets {
             apply_layout(doc, *i, layout)?;
         }
@@ -487,24 +717,42 @@ fn rename(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn section_add(s: &mut Session, p: &Value) -> Result<Value> {
     let at = usize_param(p, "at").unwrap_or(s.doc()?.selection.slide);
-    let name = str_param(p, "name").unwrap_or("Untitled Section").to_string();
+    let name = str_param(p, "name")
+        .unwrap_or("Untitled Section")
+        .to_string();
     s.edit(|doc, _| {
         let at = at.min(doc.slides.len().saturating_sub(1));
         let ids: Vec<SlideId> = doc.slides.iter().map(|x| x.id).collect();
         if doc.sections.is_empty() {
             // The slides before `at` go into a "Default Section".
             if at > 0 {
-                doc.sections.push(Section { name: "Default Section".into(), slides: ids.get(..at).map(|x| x.to_vec()).unwrap_or_default() });
+                doc.sections.push(Section {
+                    name: "Default Section".into(),
+                    slides: ids.get(..at).map(|x| x.to_vec()).unwrap_or_default(),
+                });
             }
-            doc.sections.push(Section { name, slides: ids.get(at..).map(|x| x.to_vec()).unwrap_or_default() });
+            doc.sections.push(Section {
+                name,
+                slides: ids.get(at..).map(|x| x.to_vec()).unwrap_or_default(),
+            });
         } else {
-            let Some(start) = ids.get(at).copied() else { return Err(bad("section.add", "no slide")) };
+            let Some(start) = ids.get(at).copied() else {
+                return Err(bad("section.add", "no slide"));
+            };
             let si = doc.section_of(start).unwrap_or(0);
-            let sec = doc.sections.get_mut(si).ok_or_else(|| bad("section.add", "no section"))?;
-            let k = sec.slides.iter().position(|x| *x == start).unwrap_or(sec.slides.len());
+            let sec = doc
+                .sections
+                .get_mut(si)
+                .ok_or_else(|| bad("section.add", "no section"))?;
+            let k = sec
+                .slides
+                .iter()
+                .position(|x| *x == start)
+                .unwrap_or(sec.slides.len());
             let tail = sec.slides.split_off(k);
             doc.sections.insert(si + 1, Section { name, slides: tail });
-            doc.sections.retain(|x| !x.slides.is_empty() || x.name != "Default Section");
+            doc.sections
+                .retain(|x| !x.slides.is_empty() || x.name != "Default Section");
         }
         Ok(json!({"sections": doc.sections.len()}))
     })
@@ -514,7 +762,10 @@ fn section_rename(s: &mut Session, p: &Value) -> Result<Value> {
     let i = usize_param(p, "index").ok_or_else(|| bad("section.rename", "missing `index`"))?;
     let name = str_param(p, "name").unwrap_or("").to_string();
     s.edit(|doc, _| {
-        let sec = doc.sections.get_mut(i).ok_or_else(|| bad("section.rename", "no such section"))?;
+        let sec = doc
+            .sections
+            .get_mut(i)
+            .ok_or_else(|| bad("section.rename", "no such section"))?;
         sec.name = name;
         Ok(())
     })?;
@@ -563,8 +814,13 @@ fn section_move(s: &mut Session, p: &Value) -> Result<Value> {
         let to = to.min(doc.sections.len());
         doc.sections.insert(to, sec);
         // Reorder slides to follow sections.
-        let order: Vec<SlideId> = doc.sections.iter().flat_map(|x| x.slides.iter().copied()).collect();
-        doc.slides.sort_by_key(|x| order.iter().position(|o| *o == x.id).unwrap_or(usize::MAX));
+        let order: Vec<SlideId> = doc
+            .sections
+            .iter()
+            .flat_map(|x| x.slides.iter().copied())
+            .collect();
+        doc.slides
+            .sort_by_key(|x| order.iter().position(|o| *o == x.id).unwrap_or(usize::MAX));
         Ok(())
     })?;
     ok()

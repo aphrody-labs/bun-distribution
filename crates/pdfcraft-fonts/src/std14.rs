@@ -38,7 +38,11 @@ impl Std14 {
     /// A subset prefix such as `ABCDEF+Helvetica` is ignored.
     pub fn from_base_font(base: &str) -> Option<Self> {
         let base = base.rsplit('+').next().unwrap_or(base);
-        let flat: String = base.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect();
+        let flat: String = base
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .map(|c| c.to_ascii_lowercase())
+            .collect();
         let has = |w: &str| flat.contains(w);
         let (bold, italic) = (has("bold"), has("italic") || has("oblique"));
         if has("symbol") {
@@ -91,12 +95,20 @@ impl Std14 {
     /// Symbol and ZapfDingbats have their own built-in encodings and are not WinAnsi, so this
     /// measures them as if they were; pass codes to [`Std14::width`] for those.
     pub fn text_width(self, text: &str, size: f64) -> f64 {
-        crate::win_ansi(text).iter().map(|&c| self.width(c)).sum::<f64>() * size / 1000.0
+        crate::win_ansi(text)
+            .iter()
+            .map(|&c| self.width(c))
+            .sum::<f64>()
+            * size
+            / 1000.0
     }
 
     /// Courier is the only fixed-pitch family of the fourteen.
     pub fn is_fixed_pitch(self) -> bool {
-        matches!(self, Self::Courier | Self::CourierBold | Self::CourierOblique | Self::CourierBoldOblique)
+        matches!(
+            self,
+            Self::Courier | Self::CourierBold | Self::CourierOblique | Self::CourierBoldOblique
+        )
     }
 
     /// The `/BaseFont` name for this font, as it is written into a PDF.
@@ -435,7 +447,12 @@ mod tests {
 
     #[test]
     fn courier_is_fixed_pitch_everywhere_it_is_defined() {
-        for font in [Std14::Courier, Std14::CourierBold, Std14::CourierOblique, Std14::CourierBoldOblique] {
+        for font in [
+            Std14::Courier,
+            Std14::CourierBold,
+            Std14::CourierOblique,
+            Std14::CourierBoldOblique,
+        ] {
             assert!(font.is_fixed_pitch());
             for code in 0..=255u8 {
                 let w = font.width(code);
@@ -447,12 +464,23 @@ mod tests {
 
     #[test]
     fn every_text_font_covers_printable_ascii_and_latin1() {
-        for font in [Std14::Helvetica, Std14::TimesRoman, Std14::Courier, Std14::TimesBoldItalic] {
+        for font in [
+            Std14::Helvetica,
+            Std14::TimesRoman,
+            Std14::Courier,
+            Std14::TimesBoldItalic,
+        ] {
             for code in 0x20..=0x7Eu8 {
-                assert!(font.width(code) > 0.0, "{font:?} has no width for ASCII {code}");
+                assert!(
+                    font.width(code) > 0.0,
+                    "{font:?} has no width for ASCII {code}"
+                );
             }
             for code in 0xA0..=0xFFu8 {
-                assert!(font.width(code) > 0.0, "{font:?} has no width for Latin-1 {code}");
+                assert!(
+                    font.width(code) > 0.0,
+                    "{font:?} has no width for Latin-1 {code}"
+                );
             }
         }
     }
@@ -485,18 +513,38 @@ mod tests {
                 Std14::Symbol,
                 Std14::ZapfDingbats,
             ][i];
-            assert_eq!(Std14::from_base_font(font.base_font()), Some(font), "{}", font.base_font());
+            assert_eq!(
+                Std14::from_base_font(font.base_font()),
+                Some(font),
+                "{}",
+                font.base_font()
+            );
         }
     }
 
     #[test]
     fn base_font_aliases_and_subset_prefixes_resolve() {
-        assert_eq!(Std14::from_base_font("ABCDEF+Helvetica-Bold"), Some(Std14::HelveticaBold));
+        assert_eq!(
+            Std14::from_base_font("ABCDEF+Helvetica-Bold"),
+            Some(Std14::HelveticaBold)
+        );
         assert_eq!(Std14::from_base_font("Arial"), Some(Std14::Helvetica));
-        assert_eq!(Std14::from_base_font("Arial,BoldItalic"), Some(Std14::HelveticaBoldOblique));
-        assert_eq!(Std14::from_base_font("TimesNewRoman,Bold"), Some(Std14::TimesBold));
-        assert_eq!(Std14::from_base_font("CourierNew-Oblique"), Some(Std14::CourierOblique));
-        assert_eq!(Std14::from_base_font("ZapfDingbats"), Some(Std14::ZapfDingbats));
+        assert_eq!(
+            Std14::from_base_font("Arial,BoldItalic"),
+            Some(Std14::HelveticaBoldOblique)
+        );
+        assert_eq!(
+            Std14::from_base_font("TimesNewRoman,Bold"),
+            Some(Std14::TimesBold)
+        );
+        assert_eq!(
+            Std14::from_base_font("CourierNew-Oblique"),
+            Some(Std14::CourierOblique)
+        );
+        assert_eq!(
+            Std14::from_base_font("ZapfDingbats"),
+            Some(Std14::ZapfDingbats)
+        );
         assert_eq!(Std14::from_base_font("Wingdings"), None);
         assert_eq!(Std14::from_base_font(""), None);
     }

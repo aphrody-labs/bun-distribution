@@ -18,7 +18,17 @@
 //!
 //! The crate does no decoding; `filmcraft-codecs` pairs the streams with decoders.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod es;
 pub use es::{FrameInfo, frame_bytes, frame_info};
@@ -54,8 +64,11 @@ impl ByteSource for [u8] {
         <[u8]>::len(self) as u64
     }
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> io::Result<()> {
-        let o = usize::try_from(offset).map_err(|_| io::Error::from(io::ErrorKind::UnexpectedEof))?;
-        let src = self.get(o..o + buf.len()).ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))?;
+        let o =
+            usize::try_from(offset).map_err(|_| io::Error::from(io::ErrorKind::UnexpectedEof))?;
+        let src = self
+            .get(o..o + buf.len())
+            .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))?;
         buf.copy_from_slice(src);
         Ok(())
     }
@@ -71,7 +84,11 @@ impl ByteSource for Vec<u8> {
 }
 
 /// Read as much as is available at `offset` (up to `buf.len()`); returns the count.
-pub(crate) fn read_some<S: ByteSource + ?Sized>(src: &S, offset: u64, buf: &mut [u8]) -> io::Result<usize> {
+pub(crate) fn read_some<S: ByteSource + ?Sized>(
+    src: &S,
+    offset: u64,
+    buf: &mut [u8],
+) -> io::Result<usize> {
     let len = src.len();
     if offset >= len {
         return Ok(0);
@@ -86,7 +103,10 @@ pub(crate) fn read_some<S: ByteSource + ?Sized>(src: &S, offset: u64, buf: &mut 
 pub enum Format {
     /// Transport stream with `packet_size`-byte packets whose 0x47 sync byte is at `sync_offset`
     /// (4 for 192-byte BDAV packets).
-    Ts { packet_size: usize, sync_offset: usize },
+    Ts {
+        packet_size: usize,
+        sync_offset: usize,
+    },
     /// Program stream (`mpeg1`: ISO/IEC 11172-1 packs).
     Ps { mpeg1: bool },
 }
@@ -94,7 +114,9 @@ pub enum Format {
 impl Format {
     pub fn name(&self) -> &'static str {
         match self {
-            Format::Ts { packet_size: 192, .. } => "MPEG-2 TS (BDAV/AVCHD)",
+            Format::Ts {
+                packet_size: 192, ..
+            } => "MPEG-2 TS (BDAV/AVCHD)",
             Format::Ts { .. } => "MPEG-2 TS",
             Format::Ps { mpeg1: true } => "MPEG-1 System",
             Format::Ps { mpeg1: false } => "MPEG-2 PS",
@@ -109,7 +131,10 @@ pub fn sniff(head: &[u8]) -> Option<Format> {
         for start in 0..size.min(head.len()) {
             let ok = (0..5).all(|k| head.get(start + off + k * size) == Some(&0x47));
             if ok {
-                return Some(Format::Ts { packet_size: size, sync_offset: off });
+                return Some(Format::Ts {
+                    packet_size: size,
+                    sync_offset: off,
+                });
             }
         }
     }
@@ -117,7 +142,9 @@ pub fn sniff(head: &[u8]) -> Option<Format> {
     let z = head.iter().take(64).take_while(|&&b| b == 0).count();
     let p = z.saturating_sub(2);
     if head.len() >= p + 5 && head[p..p + 4] == [0, 0, 1, 0xBA] {
-        return Some(Format::Ps { mpeg1: head[p + 4] >> 6 != 1 });
+        return Some(Format::Ps {
+            mpeg1: head[p + 4] >> 6 != 1,
+        });
     }
     None
 }
@@ -179,9 +206,15 @@ impl Codec {
     pub fn kind(&self) -> Kind {
         match self {
             Codec::Mpeg1Video | Codec::Mpeg2Video | Codec::H264 | Codec::Hevc => Kind::Video,
-            Codec::MpegAudio | Codec::AacAdts | Codec::AacLatm | Codec::Ac3 | Codec::Eac3 | Codec::Dts | Codec::TrueHd | Codec::LpcmBluray | Codec::LpcmDvd => {
-                Kind::Audio
-            }
+            Codec::MpegAudio
+            | Codec::AacAdts
+            | Codec::AacLatm
+            | Codec::Ac3
+            | Codec::Eac3
+            | Codec::Dts
+            | Codec::TrueHd
+            | Codec::LpcmBluray
+            | Codec::LpcmDvd => Kind::Audio,
             Codec::Subtitle(_) => Kind::Subtitle,
             Codec::Unknown(_) => Kind::Other,
         }
@@ -294,24 +327,47 @@ const UNIT_PREALLOC: usize = 1 << 20;
 impl File {
     /// The first stream of `kind` whose codec satisfies `f`.
     pub fn find(&self, kind: Kind, f: impl Fn(&Codec) -> bool) -> Option<usize> {
-        self.streams.iter().position(|s| s.kind() == kind && !s.units.is_empty() && f(&s.codec))
+        self.streams
+            .iter()
+            .position(|s| s.kind() == kind && !s.units.is_empty() && f(&s.codec))
     }
 
     /// Read access unit `i` of stream `s`.
-    pub fn read_unit<S: ByteSource + ?Sized>(&self, src: &S, s: usize, i: usize) -> Result<Vec<u8>> {
-        let st = self.streams.get(s).ok_or_else(|| Error::Invalid("no such stream".into()))?;
-        let u = st.units.get(i).ok_or_else(|| Error::Invalid("no such unit".into()))?;
+    pub fn read_unit<S: ByteSource + ?Sized>(
+        &self,
+        src: &S,
+        s: usize,
+        i: usize,
+    ) -> Result<Vec<u8>> {
+        let st = self
+            .streams
+            .get(s)
+            .ok_or_else(|| Error::Invalid("no such stream".into()))?;
+        let u = st
+            .units
+            .get(i)
+            .ok_or_else(|| Error::Invalid("no such unit".into()))?;
         if u.size > MAX_UNIT_BYTES {
-            return Err(Error::Invalid(format!("unit {i} is {} bytes (limit {MAX_UNIT_BYTES})", u.size)));
+            return Err(Error::Invalid(format!(
+                "unit {i} is {} bytes (limit {MAX_UNIT_BYTES})",
+                u.size
+            )));
         }
         // grow as bytes arrive: a damaged table must not reserve more than the file can supply
         let mut out = Vec::with_capacity((u.size as usize).min(UNIT_PREALLOC));
         match self.format {
-            Format::Ts { packet_size, sync_offset } => ts::read(src, packet_size, sync_offset, st, u, &mut out)?,
+            Format::Ts {
+                packet_size,
+                sync_offset,
+            } => ts::read(src, packet_size, sync_offset, st, u, &mut out)?,
             Format::Ps { .. } => ps::read(src, st, u, &mut out)?,
         }
         if out.len() < u.size as usize {
-            return Err(Error::Invalid(format!("unit {i} truncated ({} of {} bytes)", out.len(), u.size)));
+            return Err(Error::Invalid(format!(
+                "unit {i} truncated ({} of {} bytes)",
+                out.len(),
+                u.size
+            )));
         }
         Ok(out)
     }
@@ -323,7 +379,10 @@ pub fn open<S: ByteSource + ?Sized>(src: &S) -> Result<File> {
     let n = read_some(src, 0, &mut head)?;
     head.truncate(n);
     match sniff(&head).ok_or(Error::NotMpeg)? {
-        Format::Ts { packet_size, sync_offset } => ts::scan(src, packet_size, sync_offset),
+        Format::Ts {
+            packet_size,
+            sync_offset,
+        } => ts::scan(src, packet_size, sync_offset),
         Format::Ps { mpeg1 } => ps::scan(src, mpeg1),
     }
 }

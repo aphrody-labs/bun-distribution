@@ -38,7 +38,10 @@ pub(crate) struct AlphaLayer {
 
 impl AlphaLayer {
     /// `samples`: (pts, addition) of every sample of the track, in file order.
-    pub(crate) fn new(src: crate::Src, samples: impl Iterator<Item = (i64, Option<(u64, u32)>)>) -> Self {
+    pub(crate) fn new(
+        src: crate::Src,
+        samples: impl Iterator<Item = (i64, Option<(u64, u32)>)>,
+    ) -> Self {
         let (mut additions, mut all_pts) = (Vec::new(), Vec::new());
         let mut by_pts = HashMap::new();
         for (i, (pts, add)) in samples.enumerate() {
@@ -46,7 +49,12 @@ impl AlphaLayer {
             all_pts.push(pts);
             by_pts.entry(pts).or_insert(i);
         }
-        Self { src, additions, pts: all_pts, by_pts }
+        Self {
+            src,
+            additions,
+            pts: all_pts,
+            by_pts,
+        }
     }
 
     fn read(&self, i: usize) -> Option<Vec<u8>> {
@@ -82,8 +90,20 @@ pub(crate) struct AlphaDecoder {
 }
 
 impl AlphaDecoder {
-    pub(crate) fn new(color: Box<dyn VideoDecoder>, alpha: Box<dyn VideoDecoder>, layer: Arc<AlphaLayer>) -> Self {
-        Self { color, alpha, layer, next: None, pending: VecDeque::new(), alpha_max: None, held: VecDeque::new() }
+    pub(crate) fn new(
+        color: Box<dyn VideoDecoder>,
+        alpha: Box<dyn VideoDecoder>,
+        layer: Arc<AlphaLayer>,
+    ) -> Self {
+        Self {
+            color,
+            alpha,
+            layer,
+            next: None,
+            pending: VecDeque::new(),
+            alpha_max: None,
+            held: VecDeque::new(),
+        }
     }
 
     fn keep(&mut self, frames: Vec<DecodedFrame>) {
@@ -107,11 +127,19 @@ impl AlphaDecoder {
             self.alpha.reset();
             self.pending.clear();
             self.alpha_max = None;
-            let is_key = |k: usize| self.layer.read(k).is_some_and(|d| self.alpha.is_random_access(&d) == Some(true));
-            let start = (i.saturating_sub(MAX_RESYNC)..=i).rev().find(|&k| is_key(k));
+            let is_key = |k: usize| {
+                self.layer
+                    .read(k)
+                    .is_some_and(|d| self.alpha.is_random_access(&d) == Some(true))
+            };
+            let start = (i.saturating_sub(MAX_RESYNC)..=i)
+                .rev()
+                .find(|&k| is_key(k));
             if let Some(start) = start {
                 for k in start..i {
-                    let (Some(d), Some(&p)) = (self.layer.read(k), self.layer.pts.get(k)) else { continue };
+                    let (Some(d), Some(&p)) = (self.layer.read(k), self.layer.pts.get(k)) else {
+                        continue;
+                    };
                     match self.alpha.decode(&d, p) {
                         Ok(frames) => self.keep(frames),
                         Err(_) => break,
@@ -132,7 +160,11 @@ impl AlphaDecoder {
 
     /// Whether the alpha picture for `pts` can still come out of the alpha decoder.
     fn alpha_may_come(&self, pts: i64) -> bool {
-        let has_frame = self.layer.by_pts.get(&pts).is_some_and(|&i| self.layer.additions.get(i).is_some_and(|a| a.is_some()));
+        let has_frame = self
+            .layer
+            .by_pts
+            .get(&pts)
+            .is_some_and(|&i| self.layer.additions.get(i).is_some_and(|a| a.is_some()));
         has_frame && self.next.is_some() && self.alpha_max.is_none_or(|m| m < pts)
     }
 
@@ -143,10 +175,13 @@ impl AlphaDecoder {
         while let Some(f) = self.held.front() {
             let pts = f.pts;
             let found = self.pending.iter().position(|(p, _)| *p == pts);
-            if found.is_none() && !all && self.held.len() <= MAX_PENDING && self.alpha_may_come(pts) {
+            if found.is_none() && !all && self.held.len() <= MAX_PENDING && self.alpha_may_come(pts)
+            {
                 break;
             }
-            let Some(mut f) = self.held.pop_front() else { break };
+            let Some(mut f) = self.held.pop_front() else {
+                break;
+            };
             if let Some(k) = found
                 && let Some((_, a)) = self.pending.remove(k)
             {
@@ -222,10 +257,16 @@ pub(crate) fn set_alpha(frame: &mut VideoFrame, a: &VideoFrame) {
         (v as u32 * to_max + from_max / 2) / from_max
     };
     match &mut frame.data {
-        PixelData::Yuv8 { alpha, .. } => *alpha = Some(Arc::new(codes.iter().map(|&v| rescale(v, 8) as u8).collect())),
+        PixelData::Yuv8 { alpha, .. } => {
+            *alpha = Some(Arc::new(
+                codes.iter().map(|&v| rescale(v, 8) as u8).collect(),
+            ))
+        }
         PixelData::Yuv16 { alpha, bits, .. } => {
             let to = *bits;
-            *alpha = Some(Arc::new(codes.iter().map(|&v| rescale(v, to) as u16).collect()));
+            *alpha = Some(Arc::new(
+                codes.iter().map(|&v| rescale(v, to) as u16).collect(),
+            ));
         }
         PixelData::Rgba8(rgba) => {
             let px = Arc::make_mut(rgba);
@@ -245,15 +286,45 @@ mod tests {
     fn yuv8(w: u32, h: u32, luma: Vec<u8>) -> VideoFrame {
         let n = (w * h) as usize;
         let c = n / 4;
-        let data = PixelData::Yuv8 { planes: [Arc::new(luma), Arc::new(vec![128; c]), Arc::new(vec![128; c])], chroma: Chroma::C420, alpha: None };
-        VideoFrame { width: w, height: h, data, color: Default::default(), par: (1, 1), pts: filmcraft_time::Tick::ZERO }
+        let data = PixelData::Yuv8 {
+            planes: [
+                Arc::new(luma),
+                Arc::new(vec![128; c]),
+                Arc::new(vec![128; c]),
+            ],
+            chroma: Chroma::C420,
+            alpha: None,
+        };
+        VideoFrame {
+            width: w,
+            height: h,
+            data,
+            color: Default::default(),
+            par: (1, 1),
+            pts: filmcraft_time::Tick::ZERO,
+        }
     }
 
     fn yuv16(w: u32, h: u32, bits: u32) -> VideoFrame {
         let n = (w * h) as usize;
-        let data =
-            PixelData::Yuv16 { planes: [Arc::new(vec![0; n]), Arc::new(vec![0; n / 4]), Arc::new(vec![0; n / 4])], chroma: Chroma::C420, bits, alpha: None };
-        VideoFrame { width: w, height: h, data, color: Default::default(), par: (1, 1), pts: filmcraft_time::Tick::ZERO }
+        let data = PixelData::Yuv16 {
+            planes: [
+                Arc::new(vec![0; n]),
+                Arc::new(vec![0; n / 4]),
+                Arc::new(vec![0; n / 4]),
+            ],
+            chroma: Chroma::C420,
+            bits,
+            alpha: None,
+        };
+        VideoFrame {
+            width: w,
+            height: h,
+            data,
+            color: Default::default(),
+            par: (1, 1),
+            pts: filmcraft_time::Tick::ZERO,
+        }
     }
 
     #[test]
@@ -262,30 +333,43 @@ mod tests {
         // 8-bit picture: the luma as is
         let mut f = yuv8(2, 2, vec![9; 4]);
         set_alpha(&mut f, &a);
-        let PixelData::Yuv8 { alpha, .. } = &f.data else { panic!() };
+        let PixelData::Yuv8 { alpha, .. } = &f.data else {
+            panic!()
+        };
         assert_eq!(alpha.as_deref(), Some(&vec![0, 128, 255, 64]));
         // 10-bit picture: full range kept (255 → 1023)
         let mut f = yuv16(2, 2, 10);
         set_alpha(&mut f, &a);
-        let PixelData::Yuv16 { alpha, .. } = &f.data else { panic!() };
+        let PixelData::Yuv16 { alpha, .. } = &f.data else {
+            panic!()
+        };
         assert_eq!(alpha.as_deref(), Some(&vec![0, 514, 1023, 257]));
         // RGBA picture (VP9 RGB profiles): the A channel
         let mut f = VideoFrame::rgba8(2, 2, vec![7; 16]);
         set_alpha(&mut f, &a);
-        let PixelData::Rgba8(px) = &f.data else { panic!() };
-        assert_eq!(px.chunks(4).map(|p| p[3]).collect::<Vec<_>>(), [0, 128, 255, 64]);
+        let PixelData::Rgba8(px) = &f.data else {
+            panic!()
+        };
+        assert_eq!(
+            px.chunks(4).map(|p| p[3]).collect::<Vec<_>>(),
+            [0, 128, 255, 64]
+        );
     }
 
     #[test]
     fn an_alpha_picture_of_another_size_is_ignored() {
         let mut f = yuv8(4, 2, vec![9; 8]);
         set_alpha(&mut f, &yuv8(2, 2, vec![0; 4]));
-        let PixelData::Yuv8 { alpha, .. } = &f.data else { panic!() };
+        let PixelData::Yuv8 { alpha, .. } = &f.data else {
+            panic!()
+        };
         assert!(alpha.is_none());
         // a luma plane shorter than the picture (damaged) is ignored too
         let mut f = yuv8(2, 2, vec![9; 4]);
         set_alpha(&mut f, &yuv8(2, 2, vec![0; 3]));
-        let PixelData::Yuv8 { alpha, .. } = &f.data else { panic!() };
+        let PixelData::Yuv8 { alpha, .. } = &f.data else {
+            panic!()
+        };
         assert!(alpha.is_none());
     }
 }

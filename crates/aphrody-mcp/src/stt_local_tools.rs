@@ -53,22 +53,28 @@ const MAX_AUDIO_BYTES: usize = 64 * 1024 * 1024;
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub(crate) struct LocalTranscribeRequest {
     /// Inline audio bytes, standard base64 (padded). Max 64 MiB decoded.
-    #[schemars(description = "Base64-encoded audio (standard alphabet, padded). Max 64 MiB \
+    #[schemars(
+        description = "Base64-encoded audio (standard alphabet, padded). Max 64 MiB \
                               after decode. Must be 16 kHz mono PCM WAV, or raw little-endian \
-                              f32 samples at 16 kHz. Mutually exclusive with audio_path.")]
+                              f32 samples at 16 kHz. Mutually exclusive with audio_path."
+    )]
     #[serde(default)]
     pub audio_base64: Option<String>,
 
     /// Path to an audio file on the machine running the MCP server.
-    #[schemars(description = "Filesystem path to a 16 kHz mono WAV file. Mutually exclusive \
-                              with audio_base64; exactly one of the two is required.")]
+    #[schemars(
+        description = "Filesystem path to a 16 kHz mono WAV file. Mutually exclusive \
+                              with audio_base64; exactly one of the two is required."
+    )]
     #[serde(default)]
     pub audio_path: Option<String>,
 
     /// Catalog id (`whisper-base-en`) or a path to a GGML file.
-    #[schemars(description = "Catalog id (whisper-large-v3-turbo-q8, whisper-base-en) or a path \
+    #[schemars(
+        description = "Catalog id (whisper-large-v3-turbo-q8, whisper-base-en) or a path \
                               to a GGML file. Default whisper-large-v3-turbo-q8. Nothing is \
-                              downloaded: run `aphrody model pull <id>` first.")]
+                              downloaded: run `aphrody model pull <id>` first."
+    )]
     #[serde(default)]
     pub model: Option<String>,
 
@@ -111,10 +117,10 @@ fn load_audio(req: &LocalTranscribeRequest) -> Result<Vec<u8>, String> {
                 return Err(format!("audio is {len}B (> max {MAX_AUDIO_BYTES}B)"));
             }
             std::fs::read(path).map_err(|e| format!("audio_path {}: {e}", path.display()))?
-        },
+        }
         (Some(_), Some(_)) => {
             return Err("audio_base64 and audio_path are mutually exclusive".to_owned());
-        },
+        }
         (None, None) => return Err("one of audio_base64 or audio_path is required".to_owned()),
     };
 
@@ -122,7 +128,10 @@ fn load_audio(req: &LocalTranscribeRequest) -> Result<Vec<u8>, String> {
         return Err("audio payload is empty".to_owned());
     }
     if bytes.len() > MAX_AUDIO_BYTES {
-        return Err(format!("audio is {}B (> max {MAX_AUDIO_BYTES}B)", bytes.len()));
+        return Err(format!(
+            "audio is {}B (> max {MAX_AUDIO_BYTES}B)",
+            bytes.len()
+        ));
     }
     Ok(bytes)
 }
@@ -134,7 +143,10 @@ pub(crate) async fn transcribe(req: LocalTranscribeRequest) -> String {
         Err(reason) => return error_envelope("STT_BAD_REQUEST", reason),
     };
 
-    let model = req.model.clone().unwrap_or_else(|| DEFAULT_MODEL.to_owned());
+    let model = req
+        .model
+        .clone()
+        .unwrap_or_else(|| DEFAULT_MODEL.to_owned());
     if model.trim().is_empty() {
         return error_envelope("STT_BAD_REQUEST", "model must be non-empty when provided");
     }
@@ -158,7 +170,7 @@ pub(crate) async fn transcribe(req: LocalTranscribeRequest) -> String {
         Ok(pair) => pair,
         Err(err) => {
             return error_envelope("STT_BACKEND_UNAVAILABLE", err.to_string());
-        },
+        }
     };
 
     let opts = aphrody_voice::stt::SttOptions {
@@ -213,7 +225,10 @@ mod tests {
         let schema = rmcp::schemars::schema_for!(LocalTranscribeRequest);
         let json = serde_json::to_string(&schema).expect("schema serialise");
         for field in ["audio_base64", "audio_path", "model", "language", "threads"] {
-            assert!(json.contains(&format!("\"{field}\"")), "schema missing {field}: {json}");
+            assert!(
+                json.contains(&format!("\"{field}\"")),
+                "schema missing {field}: {json}"
+            );
         }
     }
 
@@ -282,6 +297,9 @@ mod tests {
         let out = transcribe(req).await;
         let value: serde_json::Value = serde_json::from_str(&out).expect("parse envelope");
         assert_eq!(value["error"], "STT_BACKEND_UNAVAILABLE", "{out}");
-        assert!(value.get("text").is_none(), "no transcript may be invented: {out}");
+        assert!(
+            value.get("text").is_none(),
+            "no transcript may be invented: {out}"
+        );
     }
 }

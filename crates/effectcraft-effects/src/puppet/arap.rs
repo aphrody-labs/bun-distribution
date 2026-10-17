@@ -43,7 +43,9 @@ struct Sparse {
 
 impl Sparse {
     fn new(n: usize) -> Sparse {
-        Sparse { rows: vec![BTreeMap::new(); n] }
+        Sparse {
+            rows: vec![BTreeMap::new(); n],
+        }
     }
     fn add(&mut self, i: usize, j: usize, v: f64) {
         *self.rows[i].entry(j).or_insert(0.0) += v;
@@ -104,7 +106,12 @@ fn solve(a: &Sparse, b: &[f64], x: &mut [f64], free: &[bool]) {
         rhs[k] = r;
         ptr.push(col.len());
     }
-    let csr = Csr { ptr, col, val, diag };
+    let csr = Csr {
+        ptr,
+        col,
+        val,
+        diag,
+    };
     let mut xf: Vec<f64> = idx.iter().map(|i| x[*i]).collect();
     let mut ax = vec![0.0; m];
     csr.mul(&xf, &mut ax);
@@ -148,7 +155,13 @@ const REG: f64 = 1e-9;
 /// Deform a mesh: `rest` vertices, CCW `tris` with per-triangle `weights` (1 = normal,
 /// larger = stiffer), constraints, and `refine` extra rigid-fit iterations. Returns the
 /// deformed vertex positions.
-pub fn deform(rest: &[[f64; 2]], tris: &[[usize; 3]], weights: &[f64], h: &Handles, refine: usize) -> Vec<[f64; 2]> {
+pub fn deform(
+    rest: &[[f64; 2]],
+    tris: &[[usize; 3]],
+    weights: &[f64],
+    h: &Handles,
+    refine: usize,
+) -> Vec<[f64; 2]> {
     let n = rest.len();
     if n == 0 {
         return vec![];
@@ -266,7 +279,10 @@ pub fn deform(rest: &[[f64; 2]], tris: &[[usize; 3]], weights: &[f64], h: &Handl
         let mut by = vec![0.0; n];
         for (k, t) in tris.iter().enumerate() {
             let wk = w(k);
-            let f = fit_rigid([rest[t[0]], rest[t[1]], rest[t[2]]], [cur[t[0]], cur[t[1]], cur[t[2]]]);
+            let f = fit_rigid(
+                [rest[t[0]], rest[t[1]], rest[t[2]]],
+                [cur[t[0]], cur[t[1]], cur[t[2]]],
+            );
             for (a2, b2) in [(0, 1), (1, 2), (2, 0)] {
                 let (i, j) = (t[a2], t[b2]);
                 let d = [f[b2][0] - f[a2][0], f[b2][1] - f[a2][1]];
@@ -313,8 +329,14 @@ fn mean_edge2(rest: &[[f64; 2]], tris: &[[usize; 3]]) -> f64 {
 
 /// Best rigid copy of triangle `rest` over triangle `cur` (rotation about the centroids).
 pub fn fit_rigid(rest: [[f64; 2]; 3], cur: [[f64; 2]; 3]) -> [[f64; 2]; 3] {
-    let cr = [(rest[0][0] + rest[1][0] + rest[2][0]) / 3.0, (rest[0][1] + rest[1][1] + rest[2][1]) / 3.0];
-    let cc = [(cur[0][0] + cur[1][0] + cur[2][0]) / 3.0, (cur[0][1] + cur[1][1] + cur[2][1]) / 3.0];
+    let cr = [
+        (rest[0][0] + rest[1][0] + rest[2][0]) / 3.0,
+        (rest[0][1] + rest[1][1] + rest[2][1]) / 3.0,
+    ];
+    let cc = [
+        (cur[0][0] + cur[1][0] + cur[2][0]) / 3.0,
+        (cur[0][1] + cur[1][1] + cur[2][1]) / 3.0,
+    ];
     let (mut sd, mut sc) = (0.0, 0.0);
     for k in 0..3 {
         let p = [rest[k][0] - cr[0], rest[k][1] - cr[1]];

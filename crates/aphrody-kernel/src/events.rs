@@ -334,10 +334,17 @@ impl EventBus {
     /// `0` means "use [`DEFAULT_CHANNEL_CAPACITY`]".
     #[must_use]
     pub fn new(channel_capacity: usize) -> Self {
-        let capacity =
-            if channel_capacity == 0 { DEFAULT_CHANNEL_CAPACITY } else { channel_capacity };
+        let capacity = if channel_capacity == 0 {
+            DEFAULT_CHANNEL_CAPACITY
+        } else {
+            channel_capacity
+        };
         let (channel, _) = broadcast::channel(capacity);
-        Self { subscribers: Arc::new(RwLock::new(Vec::new())), channel, capacity }
+        Self {
+            subscribers: Arc::new(RwLock::new(Vec::new())),
+            channel,
+            capacity,
+        }
     }
 
     /// Configured broadcast capacity.
@@ -368,7 +375,7 @@ impl EventBus {
             Some(index) => {
                 guard.remove(index);
                 Ok(())
-            },
+            }
             None => Err(EventsError::SubscriberNotFound(name.to_string())),
         }
     }
@@ -416,7 +423,7 @@ impl EventBus {
             Ok(count) => delivered += count,
             Err(_) => {
                 tracing::trace!("no broadcast receivers attached");
-            },
+            }
         }
 
         Ok(delivered)
@@ -425,7 +432,9 @@ impl EventBus {
 
 impl std::fmt::Debug for EventBus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EventBus").field("capacity", &self.capacity).finish_non_exhaustive()
+        f.debug_struct("EventBus")
+            .field("capacity", &self.capacity)
+            .finish_non_exhaustive()
     }
 }
 
@@ -450,7 +459,12 @@ pub struct NdjsonSinkSubscriber {
 impl NdjsonSinkSubscriber {
     /// Construct a new sink.
     pub fn new(name: impl Into<String>, path: impl Into<PathBuf>, topics: Vec<String>) -> Self {
-        Self { name: name.into(), topics, path: path.into(), lock: tokio::sync::Mutex::new(()) }
+        Self {
+            name: name.into(),
+            topics,
+            path: path.into(),
+            lock: tokio::sync::Mutex::new(()),
+        }
     }
 
     /// Path the sink writes to.
@@ -475,7 +489,11 @@ impl NdjsonSinkSubscriber {
         {
             afs::create_dir_all(parent).await?;
         }
-        let mut file = afs::OpenOptions::new().create(true).append(true).open(&self.path).await?;
+        let mut file = afs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)
+            .await?;
         file.write_all(&line).await?;
         file.flush().await?;
         Ok(())
@@ -588,7 +606,11 @@ impl CounterSubscriber {
     /// Construct a new per-topic counter.
     #[must_use]
     pub fn new(name: impl Into<String>, topics: Vec<String>) -> Self {
-        Self { name: name.into(), topics, counts: RwLock::new(HashMap::new()) }
+        Self {
+            name: name.into(),
+            topics,
+            counts: RwLock::new(HashMap::new()),
+        }
     }
 
     /// Snapshot of the current per-topic counts.

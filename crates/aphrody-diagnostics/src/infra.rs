@@ -3,7 +3,12 @@
 
 use serde_json::{Value, json};
 
-const TARGETS: [&str; 4] = ["windows-local", "linux-container-26.04", "vps-ubuntu-26.04", "dbfr-database"];
+const TARGETS: [&str; 4] = [
+    "windows-local",
+    "linux-container-26.04",
+    "vps-ubuntu-26.04",
+    "dbfr-database",
+];
 
 /// Configured infrastructure targets and services.
 #[must_use]

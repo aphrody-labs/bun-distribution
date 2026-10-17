@@ -37,7 +37,12 @@ impl FamilyInfo {
 
     /// Does `query` (lowercase) find this family? Either name matches.
     pub fn matches(&self, query: &str) -> bool {
-        query.is_empty() || self.family.to_lowercase().contains(query) || self.native.as_ref().is_some_and(|n| n.to_lowercase().contains(query))
+        query.is_empty()
+            || self.family.to_lowercase().contains(query)
+            || self
+                .native
+                .as_ref()
+                .is_some_and(|n| n.to_lowercase().contains(query))
     }
 }
 
@@ -84,7 +89,12 @@ pub(crate) fn sfnt(mut tables: Vec<([u8; 4], Vec<u8>)>) -> Option<Vec<u8>> {
     let n = u16::try_from(tables.len()).ok()?;
     let pow = 1u16 << (15 - n.max(1).leading_zeros().min(15));
     let mut out = 0x0001_0000_u32.to_be_bytes().to_vec();
-    for v in [n, pow.saturating_mul(16), pow.trailing_zeros() as u16, n.saturating_mul(16).saturating_sub(pow.saturating_mul(16))] {
+    for v in [
+        n,
+        pow.saturating_mul(16),
+        pow.trailing_zeros() as u16,
+        n.saturating_mul(16).saturating_sub(pow.saturating_mul(16)),
+    ] {
         out.extend_from_slice(&v.to_be_bytes());
     }
     let mut offset = 12 + 16 * tables.len();
@@ -119,8 +129,14 @@ fn meta_group(f: &skrifa::FontRef<'_>) -> Option<FontGroup> {
     let meta = f.meta().ok()?;
     let tags = |want| {
         let map = meta.data_maps().iter().find(|m| m.tag() == want)?;
-        let Ok(Metadata::ScriptLangTags(tags)) = map.data(meta.offset_data()) else { return None };
-        first(tags.iter().take(MAX_TAGS).filter_map(|t| group_of_tag(t.ok()?.as_str())))
+        let Ok(Metadata::ScriptLangTags(tags)) = map.data(meta.offset_data()) else {
+            return None;
+        };
+        first(
+            tags.iter()
+                .take(MAX_TAGS)
+                .filter_map(|t| group_of_tag(t.ok()?.as_str())),
+        )
     };
     tags(DLNG).or_else(|| tags(SLNG))
 }
@@ -146,7 +162,10 @@ const FAMILY_IDS: [u16; 2] = [16, 1];
 /// lists code pages but no CJK one, `None` when it lists none.
 fn code_page_group(f: &skrifa::FontRef<'_>) -> Option<Option<FontGroup>> {
     let os2 = f.os2().ok()?;
-    let (r1, r2) = (os2.ul_code_page_range_1()?, os2.ul_code_page_range_2().unwrap_or(0));
+    let (r1, r2) = (
+        os2.ul_code_page_range_1()?,
+        os2.ul_code_page_range_2().unwrap_or(0),
+    );
     if r1 == 0 && r2 == 0 {
         return None;
     }
@@ -157,7 +176,11 @@ fn code_page_group(f: &skrifa::FontRef<'_>) -> Option<Option<FontGroup>> {
         (20, FontGroup::ChineseTraditional),
         (21, FontGroup::Korean),
     ];
-    Some(first(bits.into_iter().filter(|(b, _)| r1 & (1 << b) != 0).map(|(_, g)| g)))
+    Some(first(
+        bits.into_iter()
+            .filter(|(b, _)| r1 & (1 << b) != 0)
+            .map(|(_, g)| g),
+    ))
 }
 
 /// The group the font declares: its `meta` languages, then its `name` table's languages, then its
@@ -203,10 +226,18 @@ fn native_family(f: &skrifa::FontRef<'_>, group: FontGroup) -> Option<String> {
     let records = name.name_record();
     FAMILY_IDS.into_iter().find_map(|id| {
         records.iter().take(MAX_RECORDS).find_map(|r| {
-            if r.name_id().to_u16() != id || !r.is_unicode() || group_of_language(r.platform_id(), r.language_id()) != Some(group) {
+            if r.name_id().to_u16() != id
+                || !r.is_unicode()
+                || group_of_language(r.platform_id(), r.language_id()) != Some(group)
+            {
                 return None;
             }
-            let s: String = r.string(name.string_data()).ok()?.chars().take(256).collect();
+            let s: String = r
+                .string(name.string_data())
+                .ok()?
+                .chars()
+                .take(256)
+                .collect();
             let s = s.trim().to_string();
             (!s.is_empty()).then_some(s)
         })
@@ -250,13 +281,26 @@ mod tests {
         }
         // Several: Japanese, Simplified Chinese, Traditional Chinese, Korean.
         assert_eq!(group_of(&latin(1 << 17 | 1 << 19)).0, FontGroup::Japanese);
-        assert_eq!(group_of(&latin(1 << 20 | 1 << 21)).0, FontGroup::ChineseTraditional);
+        assert_eq!(
+            group_of(&latin(1 << 20 | 1 << 21)).0,
+            FontGroup::ChineseTraditional
+        );
     }
 
     #[test]
     fn name_languages_give_the_group_and_the_native_name() {
-        let jp = named(&latin(1), &[(3, 1, 0x0411, 1, "テスト明朝"), (3, 1, 0x0411, 16, "テスト明朝 Pro")]);
-        assert_eq!(group_of(&jp), (FontGroup::Japanese, Some("テスト明朝 Pro".into())), "the typographic family first");
+        let jp = named(
+            &latin(1),
+            &[
+                (3, 1, 0x0411, 1, "テスト明朝"),
+                (3, 1, 0x0411, 16, "テスト明朝 Pro"),
+            ],
+        );
+        assert_eq!(
+            group_of(&jp),
+            (FontGroup::Japanese, Some("テスト明朝 Pro".into())),
+            "the typographic family first"
+        );
         for (lang, group) in [
             (0x0804, FontGroup::ChineseSimplified),
             (0x1004, FontGroup::ChineseSimplified),
@@ -265,28 +309,74 @@ mod tests {
             (0x1404, FontGroup::ChineseTraditional),
             (0x0412, FontGroup::Korean),
         ] {
-            assert_eq!(group_of(&named(&latin(1), &[(3, 1, lang, 1, "本地名")])), (group, Some("本地名".into())), "{lang:#x}");
+            assert_eq!(
+                group_of(&named(&latin(1), &[(3, 1, lang, 1, "本地名")])),
+                (group, Some("本地名".into())),
+                "{lang:#x}"
+            );
         }
         // Macintosh records in a CJK encoding: the language counts, the text doesn't decode.
-        assert_eq!(group_of(&named(&latin(1), &[(1, 1, 11, 1, "x")])), (FontGroup::Japanese, None));
-        assert_eq!(group_of(&named(&latin(1), &[(1, 3, 23, 1, "x")])).0, FontGroup::Korean);
+        assert_eq!(
+            group_of(&named(&latin(1), &[(1, 1, 11, 1, "x")])),
+            (FontGroup::Japanese, None)
+        );
+        assert_eq!(
+            group_of(&named(&latin(1), &[(1, 3, 23, 1, "x")])).0,
+            FontGroup::Korean
+        );
         // Records in two CJK languages: the menu order decides.
-        assert_eq!(group_of(&named(&latin(1), &[(3, 1, 0x0412, 1, "한"), (3, 1, 0x0404, 1, "繁")])).0, FontGroup::ChineseTraditional);
+        assert_eq!(
+            group_of(&named(
+                &latin(1),
+                &[(3, 1, 0x0412, 1, "한"), (3, 1, 0x0404, 1, "繁")]
+            ))
+            .0,
+            FontGroup::ChineseTraditional
+        );
         // Translated style names don't make a Western font CJK.
-        assert_eq!(group_of(&named(&latin(1), &[(3, 1, 0x0411, 2, "標準"), (1, 1, 11, 2, "x")])).0, FontGroup::Western);
+        assert_eq!(
+            group_of(&named(
+                &latin(1),
+                &[(3, 1, 0x0411, 2, "標準"), (1, 1, 11, 2, "x")]
+            ))
+            .0,
+            FontGroup::Western
+        );
         // A native name equal to the English one isn't shown twice.
-        assert_eq!(group_of(&named(&latin(1), &[(3, 1, 0x0411, 1, FAMILY)])), (FontGroup::Japanese, None));
+        assert_eq!(
+            group_of(&named(&latin(1), &[(3, 1, 0x0411, 1, FAMILY)])),
+            (FontGroup::Japanese, None)
+        );
     }
 
     #[test]
     fn meta_beats_names_which_beat_code_pages() {
         let all = named(&latin(1 << 17), &[(3, 1, 0x0412, 1, "한글")]);
-        assert_eq!(group_of(&all).0, FontGroup::Korean, "the name table over the code pages");
-        assert_eq!(group_of(&with_meta(&all, Some("zh-Hant"), None).unwrap()).0, FontGroup::ChineseTraditional, "dlng first");
-        assert_eq!(group_of(&with_meta(&all, None, Some("Hans")).unwrap()).0, FontGroup::ChineseSimplified, "slng without dlng");
-        assert_eq!(group_of(&with_meta(&all, Some("Kore, Jpan"), Some("Hans")).unwrap()).0, FontGroup::Japanese, "ties in menu order");
+        assert_eq!(
+            group_of(&all).0,
+            FontGroup::Korean,
+            "the name table over the code pages"
+        );
+        assert_eq!(
+            group_of(&with_meta(&all, Some("zh-Hant"), None).unwrap()).0,
+            FontGroup::ChineseTraditional,
+            "dlng first"
+        );
+        assert_eq!(
+            group_of(&with_meta(&all, None, Some("Hans")).unwrap()).0,
+            FontGroup::ChineseSimplified,
+            "slng without dlng"
+        );
+        assert_eq!(
+            group_of(&with_meta(&all, Some("Kore, Jpan"), Some("Hans")).unwrap()).0,
+            FontGroup::Japanese,
+            "ties in menu order"
+        );
         // A meta table naming no CJK language leaves it to the rest.
-        assert_eq!(group_of(&with_meta(&all, Some("Latn"), None).unwrap()).0, FontGroup::Korean);
+        assert_eq!(
+            group_of(&with_meta(&all, Some("Latn"), None).unwrap()).0,
+            FontGroup::Korean
+        );
         for (tag, group) in [
             ("ja", FontGroup::Japanese),
             ("ja-Jpan", FontGroup::Japanese),
@@ -314,12 +404,20 @@ mod tests {
             assert_eq!(group_of(&font).0, group, "{chars:?}");
         }
         // Code pages without a CJK one: Western, whatever the font covers.
-        assert_eq!(group_of(&with_code_pages(font_with(FAMILY, &['一']).unwrap(), 1, 0).unwrap()).0, FontGroup::Western);
+        assert_eq!(
+            group_of(&with_code_pages(font_with(FAMILY, &['一']).unwrap(), 1, 0).unwrap()).0,
+            FontGroup::Western
+        );
     }
 
     #[test]
     fn damaged_tables_classify_without_panicking() {
-        let base = with_meta(&named(&latin(1 << 18), &[(3, 1, 0x0411, 1, "名前")]), Some("Jpan"), None).unwrap();
+        let base = with_meta(
+            &named(&latin(1 << 18), &[(3, 1, 0x0411, 1, "名前")]),
+            Some("Jpan"),
+            None,
+        )
+        .unwrap();
         for tag in [b"name", b"OS/2", b"meta", b"cmap"] {
             for len in [0, 3, 7, 13, 21, 80] {
                 let font = with_table_len(base.clone(), tag, len).unwrap();
@@ -332,24 +430,60 @@ mod tests {
 
     #[test]
     fn menus_list_western_fonts_then_each_cjk_language() {
-        let info = |family: &str, group, native: Option<&str>| FamilyInfo { family: family.into(), group, native: native.map(Into::into) };
+        let info = |family: &str, group, native: Option<&str>| FamilyInfo {
+            family: family.into(),
+            group,
+            native: native.map(Into::into),
+        };
         let mut fams = vec![
             info("Yu Mincho", FontGroup::Japanese, Some("游明朝")),
-            info("Apple SD Gothic Neo", FontGroup::Korean, Some("애플 SD 산돌고딕 Neo")),
+            info(
+                "Apple SD Gothic Neo",
+                FontGroup::Korean,
+                Some("애플 SD 산돌고딕 Neo"),
+            ),
             info("Songti SC", FontGroup::ChineseSimplified, Some("宋体-简")),
             info("zapfino", FontGroup::Western, None),
-            info("Hiragino Mincho ProN", FontGroup::Japanese, Some("ヒラギノ明朝 ProN")),
+            info(
+                "Hiragino Mincho ProN",
+                FontGroup::Japanese,
+                Some("ヒラギノ明朝 ProN"),
+            ),
             info("PMingLiU", FontGroup::ChineseTraditional, Some("新細明體")),
             info("Arial", FontGroup::Western, None),
         ];
         sort_for_menu(&mut fams, true);
         let order: Vec<&str> = fams.iter().map(|f| f.label(true)).collect();
-        assert_eq!(order, ["Arial", "zapfino", "Hiragino Mincho ProN", "Yu Mincho", "Songti SC", "PMingLiU", "Apple SD Gothic Neo"]);
+        assert_eq!(
+            order,
+            [
+                "Arial",
+                "zapfino",
+                "Hiragino Mincho ProN",
+                "Yu Mincho",
+                "Songti SC",
+                "PMingLiU",
+                "Apple SD Gothic Neo"
+            ]
+        );
         sort_for_menu(&mut fams, false);
         let order: Vec<&str> = fams.iter().map(|f| f.label(false)).collect();
-        assert_eq!(order, ["Arial", "zapfino", "ヒラギノ明朝 ProN", "游明朝", "宋体-简", "新細明體", "애플 SD 산돌고딕 Neo"]);
+        assert_eq!(
+            order,
+            [
+                "Arial",
+                "zapfino",
+                "ヒラギノ明朝 ProN",
+                "游明朝",
+                "宋体-简",
+                "新細明體",
+                "애플 SD 산돌고딕 Neo"
+            ]
+        );
         // Search finds either name.
         let yu = fams.iter().find(|f| f.family == "Yu Mincho").unwrap();
-        assert!(yu.matches("yu min") && yu.matches("游") && yu.matches("") && !yu.matches("songti"));
+        assert!(
+            yu.matches("yu min") && yu.matches("游") && yu.matches("") && !yu.matches("songti")
+        );
     }
 }

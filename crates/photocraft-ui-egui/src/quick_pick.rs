@@ -25,7 +25,10 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
             if app.drag.is_some() || app.session.active().is_none() || !is_gesture(mods) {
                 return false;
             }
-            if let Err(e) = app.run("layer.pickAt", json!({"x": x, "y": y, "target": "layer", "mode": "replace"})) {
+            if let Err(e) = app.run(
+                "layer.pickAt",
+                json!({"x": x, "y": y, "target": "layer", "mode": "replace"}),
+            ) {
                 app.ui.status = e;
                 app.ui.status_error = true;
             }
@@ -47,19 +50,34 @@ mod tests {
     use crate::canvas::tool_event;
     use crate::state::Tool;
 
-    const PICK: Modifiers = Modifiers { alt: true, ctrl: true, shift: false, mac_cmd: true, command: true };
+    const PICK: Modifiers = Modifiers {
+        alt: true,
+        ctrl: true,
+        shift: false,
+        mac_cmd: true,
+        command: true,
+    };
 
     /// A 64×64 document with A painted at (8..24)² and B at (40..56)²; B is active.
     fn app() -> (PhotocraftApp, photocraft_doc::LayerId) {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.session.execute("file.new", json!({"width": 64, "height": 64})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.session
+            .execute("file.new", json!({"width": 64, "height": 64}))
+            .unwrap();
         app.sync_views();
         let mut first = None;
         for at in [8, 40] {
             app.session.execute("layer.new.layer", json!({})).unwrap();
             app.session
                 .edit("paint", |doc, a| {
-                    doc.layer_mut(a.unwrap()).unwrap().surface_mut().unwrap().fill_rect(Rect::new(at, at, at + 16, at + 16), &[1.0, 0.0, 0.0, 1.0]);
+                    doc.layer_mut(a.unwrap())
+                        .unwrap()
+                        .surface_mut()
+                        .unwrap()
+                        .fill_rect(Rect::new(at, at, at + 16, at + 16), &[1.0, 0.0, 0.0, 1.0]);
                     Ok(())
                 })
                 .unwrap();
@@ -73,21 +91,55 @@ mod tests {
         let (mut app, a) = app();
         app.ui.tool = Tool::Brush;
         let before = app.session.active().unwrap().history.past_len();
-        tool_event(&mut app, ToolEvent::Down { x: 12.0, y: 12.0, pressure: 1.0 }, PICK);
-        tool_event(&mut app, ToolEvent::Move { x: 20.0, y: 20.0, pressure: 1.0 }, PICK);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 12.0,
+                y: 12.0,
+                pressure: 1.0,
+            },
+            PICK,
+        );
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 20.0,
+                y: 20.0,
+                pressure: 1.0,
+            },
+            PICK,
+        );
         tool_event(&mut app, ToolEvent::Up { x: 20.0, y: 20.0 }, PICK);
         let st = app.session.active().unwrap();
         assert_eq!(st.active_layer, Some(a));
-        assert!(app.drag.is_none() && app.brush_resize.is_none(), "neither painted nor resized the brush");
-        assert_eq!(st.history.past_len(), before, "no paint stroke was recorded");
+        assert!(
+            app.drag.is_none() && app.brush_resize.is_none(),
+            "neither painted nor resized the brush"
+        );
+        assert_eq!(
+            st.history.past_len(),
+            before,
+            "no paint stroke was recorded"
+        );
     }
 
     #[test]
     fn needs_all_three_modifiers() {
         let (mut app, a) = app();
         app.ui.tool = Tool::RectMarquee;
-        let no_ctrl = Modifiers { ctrl: false, ..PICK };
-        assert!(!pointer(&mut app, ToolEvent::Down { x: 12.0, y: 12.0, pressure: 1.0 }, no_ctrl));
+        let no_ctrl = Modifiers {
+            ctrl: false,
+            ..PICK
+        };
+        assert!(!pointer(
+            &mut app,
+            ToolEvent::Down {
+                x: 12.0,
+                y: 12.0,
+                pressure: 1.0
+            },
+            no_ctrl
+        ));
         assert_ne!(app.session.active().unwrap().active_layer, Some(a));
     }
 
@@ -97,9 +149,23 @@ mod tests {
     fn is_a_no_op_without_the_mac_command_key() {
         let (mut app, a) = app();
         app.ui.tool = Tool::Brush;
-        let pc = Modifiers { alt: true, ctrl: true, shift: false, mac_cmd: false, command: true };
+        let pc = Modifiers {
+            alt: true,
+            ctrl: true,
+            shift: false,
+            mac_cmd: false,
+            command: true,
+        };
         for mods in [pc, Modifiers { shift: true, ..pc }] {
-            assert!(!pointer(&mut app, ToolEvent::Down { x: 12.0, y: 12.0, pressure: 1.0 }, mods));
+            assert!(!pointer(
+                &mut app,
+                ToolEvent::Down {
+                    x: 12.0,
+                    y: 12.0,
+                    pressure: 1.0
+                },
+                mods
+            ));
             assert!(!app.quick_pick);
             assert_ne!(app.session.active().unwrap().active_layer, Some(a));
         }
@@ -109,7 +175,15 @@ mod tests {
     fn a_failed_pick_is_a_status_error_and_swallows_the_click() {
         let (mut app, _) = app();
         // Far outside the canvas no layer has pixels: the pick fails gracefully.
-        assert!(pointer(&mut app, ToolEvent::Down { x: 1e9, y: -1e9, pressure: 1.0 }, PICK));
+        assert!(pointer(
+            &mut app,
+            ToolEvent::Down {
+                x: 1e9,
+                y: -1e9,
+                pressure: 1.0
+            },
+            PICK
+        ));
         assert!(pointer(&mut app, ToolEvent::Up { x: 1e9, y: -1e9 }, PICK));
         assert!(!app.quick_pick);
     }

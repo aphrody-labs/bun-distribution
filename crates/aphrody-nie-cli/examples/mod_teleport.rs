@@ -105,11 +105,20 @@ fn traiter(
     a_blanc: bool,
 ) -> Result<(), String> {
     let chemin_mod = format!("{dir}/{chemin_vfs}");
-    let vanilla = vfs.read(chemin_vfs).map_err(|e| format!("vanilla illisible : {e}"))?;
+    let vanilla = vfs
+        .read(chemin_vfs)
+        .map_err(|e| format!("vanilla illisible : {e}"))?;
     let mut data = std::fs::read(&chemin_mod).map_err(|e| format!("{chemin_mod} : {e}"))?;
 
-    println!("\n╔═ {}", chemin_vfs.trim_start_matches("data/common/gamedata/"));
-    println!("║ vanilla  {} o  sha256 {}", vanilla.len(), &sha256(&vanilla)[..16]);
+    println!(
+        "\n╔═ {}",
+        chemin_vfs.trim_start_matches("data/common/gamedata/")
+    );
+    println!(
+        "║ vanilla  {} o  sha256 {}",
+        vanilla.len(),
+        &sha256(&vanilla)[..16]
+    );
 
     let rdbn = cfgbin::parse(&data).map_err(|e| format!("RDBN illisible : {e}"))?;
     let mut attendus: Vec<usize> = Vec::new();
@@ -129,10 +138,18 @@ fn traiter(
         .collect();
     let hors_cible = diffs.iter().filter(|o| !attendus.contains(o)).count();
 
-    println!("║ patché   {} o  sha256 {}", data.len(), &sha256(&data)[..16]);
+    println!(
+        "║ patché   {} o  sha256 {}",
+        data.len(),
+        &sha256(&data)[..16]
+    );
     println!(
         "║ taille   {}  ({} → {})",
-        if verif.taille_preservee() { "PRÉSERVÉE" } else { "MODIFIÉE — anormal" },
+        if verif.taille_preservee() {
+            "PRÉSERVÉE"
+        } else {
+            "MODIFIÉE — anormal"
+        },
         verif.taille_avant,
         verif.taille_apres
     );
@@ -142,7 +159,9 @@ fn traiter(
         modifs.len()
     );
     if hors_cible > 0 {
-        return Err(format!("{hors_cible} octet(s) modifiés hors des champs visés"));
+        return Err(format!(
+            "{hors_cible} octet(s) modifiés hors des champs visés"
+        ));
     }
 
     if a_blanc {
@@ -168,7 +187,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
     let textes = charger_textes(&vfs, "fr");
     println!("textes   {} entrées localisées (fr)", textes.len());
@@ -185,18 +204,25 @@ fn main() {
     let data_warp = vfs.read(&f_warp).expect("lecture map_warp_config");
     let rdbn_warp = cfgbin::parse(&data_warp).expect("RDBN");
     let listes_warp = cfgbin::read_values(&rdbn_warp, &data_warp);
-    let liste_warp =
-        listes_warp.iter().find(|l| l.name == "m_MapWarpInfoList").expect("m_MapWarpInfoList");
+    let liste_warp = listes_warp
+        .iter()
+        .find(|l| l.name == "m_MapWarpInfoList")
+        .expect("m_MapWarpInfoList");
 
     let mut modifs_warp = Vec::new();
     let mut deja_libres = 0usize;
     for (i, row) in liste_warp.rows.iter().enumerate() {
-        let brut = match row.fields.iter().find(|(k, _)| k == "open_cond").map(|(_, v)| v) {
+        let brut = match row
+            .fields
+            .iter()
+            .find(|(k, _)| k == "open_cond")
+            .map(|(_, v)| v)
+        {
             Some(RdbnValue::Condition(s)) => s.clone(),
             _ => {
                 deja_libres += 1;
                 continue;
-            },
+            }
         };
         let c = decode_unlock_condition(&brut);
         if c.story_threshold.is_none() && c.required_events.is_empty() {
@@ -273,7 +299,10 @@ fn main() {
     }
 
     let mut echecs = 0;
-    for (chemin, modifs) in [(f_warp.as_str(), &modifs_warp), (f_fast.as_str(), &modifs_fast)] {
+    for (chemin, modifs) in [
+        (f_warp.as_str(), &modifs_warp),
+        (f_fast.as_str(), &modifs_fast),
+    ] {
         if let Err(e) = traiter(&vfs, &dir, chemin, modifs, a_blanc) {
             eprintln!("║ ÉCHEC {chemin} : {e}");
             echecs += 1;

@@ -7,8 +7,12 @@ use std::io::Write as _;
 use std::sync::Arc;
 
 use serde_json::{Value, json};
-use vectorcraft_doc::{ColorProfiles, Composer, Document, ImageBlob, ImageObject, Node, NodeKind, OpacityMask, Symbol};
-use vectorcraft_format::{FormatError, SaveOptions, VERSION, is_compressed, load, preview, save, save_with, sniff};
+use vectorcraft_doc::{
+    ColorProfiles, Composer, Document, ImageBlob, ImageObject, Node, NodeKind, OpacityMask, Symbol,
+};
+use vectorcraft_format::{
+    FormatError, SaveOptions, VERSION, is_compressed, load, preview, save, save_with, sniff,
+};
 use vectorcraft_geom::Affine;
 use vectorcraft_testkit::fixtures;
 use vectorcraft_testkit::invariants::{check_native_roundtrip, doc_json, json_approx_eq};
@@ -47,14 +51,21 @@ fn image_node(d: &mut Document, key: &str) -> Node {
 }
 
 fn opts(version: u32, compress: bool) -> SaveOptions {
-    SaveOptions { version, compress, ..SaveOptions::default() }
+    SaveOptions {
+        version,
+        compress,
+        ..SaveOptions::default()
+    }
 }
 
 #[test]
 fn area_type_vertical_alignment_round_trips() {
     let d = rich_doc();
     let text = String::from_utf8(save(&d, false)).unwrap();
-    assert!(text.contains("\"verticalAlign\":\"center\""), "the fixture's area type is centred");
+    assert!(
+        text.contains("\"verticalAlign\":\"center\""),
+        "the fixture's area type is centred"
+    );
     let back = load(text.as_bytes()).unwrap();
     assert_eq!(doc_json(&back), doc_json(&d));
     let area = |d: &Document| {
@@ -87,35 +98,68 @@ fn area_type_vertical_alignment_round_trips() {
     strip(&mut v);
     let old = serde_json::to_string(&v).unwrap();
     assert!(!old.contains("verticalAlign"));
-    assert_eq!(area(&load(old.as_bytes()).unwrap()), vectorcraft_doc::VerticalAlign::Top);
+    assert_eq!(
+        area(&load(old.as_bytes()).unwrap()),
+        vectorcraft_doc::VerticalAlign::Top
+    );
 }
 
 #[test]
 fn compressed_files_load() {
     let d = rich_doc();
-    let packed = save_with(&d, &SaveOptions { compress: true, pretty: true, ..SaveOptions::default() }).unwrap();
+    let packed = save_with(
+        &d,
+        &SaveOptions {
+            compress: true,
+            pretty: true,
+            ..SaveOptions::default()
+        },
+    )
+    .unwrap();
     assert!(is_compressed(&packed) && sniff(&packed));
     let plain = save(&d, false);
-    assert!(packed.len() * 3 < plain.len(), "compressed {} vs {} bytes", packed.len(), plain.len());
-    assert_eq!(doc_json(&load(&packed).unwrap()), doc_json(&load(&plain).unwrap()));
+    assert!(
+        packed.len() * 3 < plain.len(),
+        "compressed {} vs {} bytes",
+        packed.len(),
+        plain.len()
+    );
+    assert_eq!(
+        doc_json(&load(&packed).unwrap()),
+        doc_json(&load(&plain).unwrap())
+    );
     // Compressed files are compact even when pretty was asked for.
     assert!(!flate2_unpack(&packed).contains(&b'\n'));
     // A legacy (v2, pre-rename) file compressed by hand opens too.
     let text = String::from_utf8(plain.clone()).unwrap();
-    let legacy = text.replacen(&format!("\"format\":\"vectorcraft\",\"version\":{VERSION}"), "\"format\":\"drawcraft\",\"version\":2", 1);
+    let legacy = text.replacen(
+        &format!("\"format\":\"vectorcraft\",\"version\":{VERSION}"),
+        "\"format\":\"drawcraft\",\"version\":2",
+        1,
+    );
     assert_ne!(legacy, text);
     let legacy = gzip(legacy.as_bytes());
     assert!(sniff(&legacy));
-    assert_eq!(doc_json(&load(&legacy).unwrap()), doc_json(&load(&plain).unwrap()));
+    assert_eq!(
+        doc_json(&load(&legacy).unwrap()),
+        doc_json(&load(&plain).unwrap())
+    );
     // Other gzip data (an SVGZ) is not a native file.
-    assert!(!sniff(&gzip(b"<svg xmlns=\"http://www.w3.org/2000/svg\"/>")));
-    assert!(load(&packed[..packed.len() / 2]).is_err(), "a truncated file is an error");
+    assert!(!sniff(&gzip(
+        b"<svg xmlns=\"http://www.w3.org/2000/svg\"/>"
+    )));
+    assert!(
+        load(&packed[..packed.len() / 2]).is_err(),
+        "a truncated file is an error"
+    );
 }
 
 fn flate2_unpack(bytes: &[u8]) -> Vec<u8> {
     use std::io::Read as _;
     let mut out = vec![];
-    flate2::read::GzDecoder::new(bytes).read_to_end(&mut out).unwrap();
+    flate2::read::GzDecoder::new(bytes)
+        .read_to_end(&mut out)
+        .unwrap();
     out
 }
 
@@ -123,23 +167,43 @@ fn flate2_unpack(bytes: &[u8]) -> Vec<u8> {
 fn unused_images_are_pruned() {
     let mut d = Document::new(100.0, 100.0);
     let layer = d.layers[0].id;
-    for (k, b) in [("used", &[1u8, 2][..]), ("unused", &[3, 4]), ("in symbol", &[5]), ("in brush", &[6]), ("in mask", &[7])] {
+    for (k, b) in [
+        ("used", &[1u8, 2][..]),
+        ("unused", &[3, 4]),
+        ("in symbol", &[5]),
+        ("in brush", &[6]),
+        ("in mask", &[7]),
+    ] {
         d.images.insert(k.into(), blob(b));
     }
     let mut n = image_node(&mut d, "used");
-    n.extras_mut().mask = Some(Box::new(OpacityMask::new(image_node(&mut d, "in mask"), false)));
+    n.extras_mut().mask = Some(Box::new(OpacityMask::new(
+        image_node(&mut d, "in mask"),
+        false,
+    )));
     d.insert(Some(layer), 0, n).unwrap();
     let art = image_node(&mut d, "in symbol");
-    d.symbols.push(Symbol { name: "S".into(), art: Arc::new(art) });
+    d.symbols.push(Symbol {
+        name: "S".into(),
+        art: Arc::new(art),
+    });
     // Image objects inside foreign data (a brush library kept as JSON) keep theirs too.
-    d.unknown.insert("brushes".into(), json!([{"art": {"type": "image", "key": "in brush"}}]));
+    d.unknown.insert(
+        "brushes".into(),
+        json!([{"art": {"type": "image", "key": "in brush"}}]),
+    );
     let back = load(&save(&d, true)).unwrap();
     let mut keys: Vec<&str> = back.images.keys().map(String::as_str).collect();
     keys.sort_unstable();
     assert_eq!(keys, ["in brush", "in mask", "in symbol", "used"]);
     assert_eq!(back.images["used"].bytes.as_slice(), &[1, 2]);
     let v = json_of(&save(&d, false));
-    assert!(v["images"].get("unused").is_none() && v["document"]["images"].as_object().is_some_and(|m| m.is_empty()));
+    assert!(
+        v["images"].get("unused").is_none()
+            && v["document"]["images"]
+                .as_object()
+                .is_some_and(|m| m.is_empty())
+    );
 }
 
 #[test]
@@ -149,10 +213,16 @@ fn keys_from_newer_versions_round_trip() {
     v["document"]["futureFlag"] = json!(true);
     let d = load(&serde_json::to_vec(&v).unwrap()).unwrap();
     assert_eq!(d.extra["futureFeature"]["a"], json!([1, 2, 3]));
-    assert!(!d.unknown.contains_key("futureFeature"), "kept apart from `unknown`");
+    assert!(
+        !d.unknown.contains_key("futureFeature"),
+        "kept apart from `unknown`"
+    );
     for pretty in [false, true] {
         let again = json_of(&save(&d, pretty));
-        assert_eq!(again["document"]["futureFeature"], v["document"]["futureFeature"]);
+        assert_eq!(
+            again["document"]["futureFeature"],
+            v["document"]["futureFeature"]
+        );
         assert_eq!(again["document"]["futureFlag"], json!(true));
     }
     check_native_roundtrip(&d).unwrap();
@@ -172,7 +242,11 @@ fn text_composer_round_trips() {
         v
     };
     // The point type set to Single-line comes first; the fixture's other type keeps the default.
-    let single_then_default = |c: &[Composer]| c.len() > 1 && c[0] == Composer::SingleLine && c[1..].iter().all(|c| *c == Composer::EveryLine);
+    let single_then_default = |c: &[Composer]| {
+        c.len() > 1
+            && c[0] == Composer::SingleLine
+            && c[1..].iter().all(|c| *c == Composer::EveryLine)
+    };
     assert!(single_then_default(&composers(&d)), "{:?}", composers(&d));
     let bytes = save(&d, false);
     assert!(String::from_utf8_lossy(&bytes).contains("\"composer\":\"singleLine\""));
@@ -191,7 +265,11 @@ fn text_composer_round_trips() {
     let mut v = json_of(&bytes);
     strip(&mut v);
     let d2 = load(&serde_json::to_vec(&v).unwrap()).unwrap();
-    assert!(composers(&d2).iter().all(|c| *c == Composer::EveryLine), "{:?}", composers(&d2));
+    assert!(
+        composers(&d2).iter().all(|c| *c == Composer::EveryLine),
+        "{:?}",
+        composers(&d2)
+    );
     assert!(!String::from_utf8_lossy(&save(&d2, false)).contains("composer"));
 }
 
@@ -207,41 +285,74 @@ const V1_FILE: &str = r#"{"format":"drawcraft","version":1,"generator":"DrawCraf
 fn version_1_files_load() {
     let d = load(V1_FILE.as_bytes()).unwrap();
     assert_eq!(d.title, "Old");
-    let NodeKind::Path { path, .. } = &d.layers[0].children().unwrap()[0].kind else { panic!("not a path") };
+    let NodeKind::Path { path, .. } = &d.layers[0].children().unwrap()[0].kind else {
+        panic!("not a path")
+    };
     let a = &path.subpaths[0].anchors;
     assert_eq!((a[0].h_out.x, a[0].h_out.y, a[1].p.x), (30.0, 0.0, 50.0));
     // Profiles migrate out of `unknown`.
-    assert_eq!(d.color_profiles, ColorProfiles { rgb: Some("sRGB IEC61966-2.1".into()), cmyk: None });
+    assert_eq!(
+        d.color_profiles,
+        ColorProfiles {
+            rgb: Some("sRGB IEC61966-2.1".into()),
+            cmyk: None
+        }
+    );
     assert!(d.unknown.is_empty());
 }
 
 #[test]
 fn saves_down_to_older_versions() {
     let mut d = rich_doc();
-    d.color_profiles = ColorProfiles { rgb: None, cmyk: Some("Coated".into()) };
+    d.color_profiles = ColorProfiles {
+        rgb: None,
+        cmyk: Some("Coated".into()),
+    };
     let current = doc_json(&load(&save(&d, false)).unwrap());
     for version in [1, 2] {
         let bytes = save_with(&d, &opts(version, false)).unwrap();
         let v = json_of(&bytes);
-        assert_eq!((v["format"].as_str(), v["version"].as_u64()), (Some("drawcraft"), Some(version as u64)), "older apps know the old name");
+        assert_eq!(
+            (v["format"].as_str(), v["version"].as_u64()),
+            (Some("drawcraft"), Some(version as u64)),
+            "older apps know the old name"
+        );
         // Profiles where those versions keep them.
-        assert_eq!(v["document"]["unknown"]["colorProfiles"], json!({"rgb": null, "cmyk": "Coated"}));
+        assert_eq!(
+            v["document"]["unknown"]["colorProfiles"],
+            json!({"rgb": null, "cmyk": "Coated"})
+        );
         assert!(v["document"].get("color_profiles").is_none());
         let back = load(&bytes).unwrap();
-        assert!(json_approx_eq(&doc_json(&back), &current, 1e-12), "v{version} loses nothing it can hold");
+        assert!(
+            json_approx_eq(&doc_json(&back), &current, 1e-12),
+            "v{version} loses nothing it can hold"
+        );
         let text = String::from_utf8(bytes).unwrap();
         // v1 anchors are maps with every member; v2 anchors are compact.
         assert_eq!(text.contains("\"p\":{\"x\""), version == 1);
         assert_eq!(text.contains("\"p\":["), version == 2);
     }
     let v3 = json_of(&save(&d, false));
-    assert_eq!((v3["format"].as_str(), v3["version"].as_u64()), (Some("vectorcraft"), Some(VERSION as u64)));
+    assert_eq!(
+        (v3["format"].as_str(), v3["version"].as_u64()),
+        (Some("vectorcraft"), Some(VERSION as u64))
+    );
     assert_eq!(v3["document"]["color_profiles"], json!({"cmyk": "Coated"}));
     assert!(v3["document"]["unknown"].get("colorProfiles").is_none());
     // Out of range, and compression older apps can't read.
-    assert!(matches!(save_with(&d, &opts(0, false)), Err(FormatError::BadVersion(0))));
-    assert!(matches!(save_with(&d, &opts(VERSION + 1, false)), Err(FormatError::BadVersion(_))));
-    assert!(matches!(save_with(&d, &opts(2, true)), Err(FormatError::CompressedTooOld(2))));
+    assert!(matches!(
+        save_with(&d, &opts(0, false)),
+        Err(FormatError::BadVersion(0))
+    ));
+    assert!(matches!(
+        save_with(&d, &opts(VERSION + 1, false)),
+        Err(FormatError::BadVersion(_))
+    ));
+    assert!(matches!(
+        save_with(&d, &opts(2, true)),
+        Err(FormatError::CompressedTooOld(2))
+    ));
 }
 
 #[test]
@@ -250,7 +361,15 @@ fn preview_is_embedded_and_read_back() {
     assert_eq!(preview(&save(&d, false)), None);
     let png = vec![0x89, b'P', b'N', b'G', 1, 2, 3];
     for compress in [false, true] {
-        let bytes = save_with(&d, &SaveOptions { compress, preview: Some(png.clone()), ..SaveOptions::default() }).unwrap();
+        let bytes = save_with(
+            &d,
+            &SaveOptions {
+                compress,
+                preview: Some(png.clone()),
+                ..SaveOptions::default()
+            },
+        )
+        .unwrap();
         assert_eq!(preview(&bytes), Some(png.clone()));
         assert!(load(&bytes).is_ok());
     }
@@ -276,9 +395,18 @@ fn artboard_guides_round_trip_and_canvas_guides_save_as_before() {
     use vectorcraft_doc::Guide;
     let mut d = Document::new(100.0, 100.0);
     let id = d.artboards[0].id;
-    d.guides = vec![Guide::new(true, 10.0), Guide { artboard: Some(id), ..Guide::new(false, 20.0) }];
+    d.guides = vec![
+        Guide::new(true, 10.0),
+        Guide {
+            artboard: Some(id),
+            ..Guide::new(false, 20.0)
+        },
+    ];
     let mut v = json_of(&save(&d, false));
-    assert_eq!(v["document"]["guides"], json!([{"vertical": true, "pos": 10.0}, {"vertical": false, "pos": 20.0, "artboard": id}]));
+    assert_eq!(
+        v["document"]["guides"],
+        json!([{"vertical": true, "pos": 10.0}, {"vertical": false, "pos": 20.0, "artboard": id}])
+    );
     assert_eq!(load(&save(&d, false)).unwrap().guides, d.guides);
     v["document"]["guides"] = json!([{"vertical": false, "pos": 20.0}]);
     let old = load(&serde_json::to_vec(&v).unwrap()).unwrap();
@@ -292,16 +420,26 @@ fn inline_graphics_in_text_round_trip() {
         let mut found = vec![];
         d.walk(|n| {
             if let NodeKind::Text(t) = &n.kind {
-                found.extend(t.runs.iter().filter_map(|r| r.inline.clone().map(|a| (r.text.clone(), a.symbol, a.scale, a.baseline_shift))));
+                found.extend(t.runs.iter().filter_map(|r| {
+                    r.inline
+                        .clone()
+                        .map(|a| (r.text.clone(), a.symbol, a.scale, a.baseline_shift))
+                }));
             }
         });
         found
     };
     let want = inline(&d);
-    assert_eq!(want, vec![("\u{FFFC}".to_string(), "Dot".to_string(), 1.0, 0.0)]);
+    assert_eq!(
+        want,
+        vec![("\u{FFFC}".to_string(), "Dot".to_string(), 1.0, 0.0)]
+    );
     let bytes = save(&d, false);
     let saved = json_of(&bytes).to_string();
-    assert!(saved.contains("\"inline\":{") && saved.contains("\"symbol\":\"Dot\""), "{saved}");
+    assert!(
+        saved.contains("\"inline\":{") && saved.contains("\"symbol\":\"Dot\""),
+        "{saved}"
+    );
     let back = load(&bytes).unwrap();
     assert_eq!(inline(&back), want);
     assert_eq!(doc_json(&back), doc_json(&d));

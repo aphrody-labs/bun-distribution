@@ -1,151 +1,580 @@
 //! Icons embedded and tinted at runtime; sources and licences are listed in `ATTRIBUTION.md`.
 
 pub static ICONS: &[(&str, &[u8])] = &[
-    ("adjustment-layer", include_bytes!("../../../assets/photocraft/icons/adjustment-layer.svg")),
-    ("align-center", include_bytes!("../../../assets/photocraft/icons/align-center.svg")),
-    ("align-justify", include_bytes!("../../../assets/photocraft/icons/align-justify.svg")),
-    ("align-left", include_bytes!("../../../assets/photocraft/icons/align-left.svg")),
-    ("align-right", include_bytes!("../../../assets/photocraft/icons/align-right.svg")),
-    ("app-window", include_bytes!("../../../assets/photocraft/icons/app-window.svg")),
-    ("artboard", include_bytes!("../../../assets/photocraft/icons/artboard.svg")),
-    ("arrow-left-right", include_bytes!("../../../assets/photocraft/icons/arrow-left-right.svg")),
-    ("ban", include_bytes!("../../../assets/photocraft/icons/ban.svg")),
-    ("bandage", include_bytes!("../../../assets/photocraft/icons/bandage.svg")),
-    ("bandage-sparkle", include_bytes!("../../../assets/photocraft/icons/bandage-sparkle.svg")),
-    ("blend", include_bytes!("../../../assets/photocraft/icons/blend.svg")),
-    ("brush", include_bytes!("../../../assets/photocraft/icons/brush.svg")),
-    ("brush-replace", include_bytes!("../../../assets/photocraft/icons/brush-replace.svg")),
-    ("brush-cleaning", include_bytes!("../../../assets/photocraft/icons/brush-cleaning.svg")),
-    ("check", include_bytes!("../../../assets/photocraft/icons/check.svg")),
-    ("chevron-down", include_bytes!("../../../assets/photocraft/icons/chevron-down.svg")),
-    ("chevron-left", include_bytes!("../../../assets/photocraft/icons/chevron-left.svg")),
-    ("chevron-right", include_bytes!("../../../assets/photocraft/icons/chevron-right.svg")),
-    ("chevron-up", include_bytes!("../../../assets/photocraft/icons/chevron-up.svg")),
-    ("chevrons-left", include_bytes!("../../../assets/photocraft/icons/chevrons-left.svg")),
-    ("chevrons-right", include_bytes!("../../../assets/photocraft/icons/chevrons-right.svg")),
-    ("circle", include_bytes!("../../../assets/photocraft/icons/circle.svg")),
-    ("circle-dashed", include_bytes!("../../../assets/photocraft/icons/circle-dashed.svg")),
-    ("circle-dot", include_bytes!("../../../assets/photocraft/icons/circle-dot.svg")),
-    ("clip-below", include_bytes!("../../../assets/photocraft/icons/clip-below.svg")),
-    ("clip-release", include_bytes!("../../../assets/photocraft/icons/clip-release.svg")),
-    ("clock", include_bytes!("../../../assets/photocraft/icons/clock.svg")),
-    ("cloud", include_bytes!("../../../assets/photocraft/icons/cloud.svg")),
-    ("compass", include_bytes!("../../../assets/photocraft/icons/compass.svg")),
-    ("contrast", include_bytes!("../../../assets/photocraft/icons/contrast.svg")),
+    (
+        "adjustment-layer",
+        include_bytes!("../../../assets/photocraft/icons/adjustment-layer.svg"),
+    ),
+    (
+        "align-center",
+        include_bytes!("../../../assets/photocraft/icons/align-center.svg"),
+    ),
+    (
+        "align-justify",
+        include_bytes!("../../../assets/photocraft/icons/align-justify.svg"),
+    ),
+    (
+        "align-left",
+        include_bytes!("../../../assets/photocraft/icons/align-left.svg"),
+    ),
+    (
+        "align-right",
+        include_bytes!("../../../assets/photocraft/icons/align-right.svg"),
+    ),
+    (
+        "app-window",
+        include_bytes!("../../../assets/photocraft/icons/app-window.svg"),
+    ),
+    (
+        "artboard",
+        include_bytes!("../../../assets/photocraft/icons/artboard.svg"),
+    ),
+    (
+        "arrow-left-right",
+        include_bytes!("../../../assets/photocraft/icons/arrow-left-right.svg"),
+    ),
+    (
+        "ban",
+        include_bytes!("../../../assets/photocraft/icons/ban.svg"),
+    ),
+    (
+        "bandage",
+        include_bytes!("../../../assets/photocraft/icons/bandage.svg"),
+    ),
+    (
+        "bandage-sparkle",
+        include_bytes!("../../../assets/photocraft/icons/bandage-sparkle.svg"),
+    ),
+    (
+        "blend",
+        include_bytes!("../../../assets/photocraft/icons/blend.svg"),
+    ),
+    (
+        "brush",
+        include_bytes!("../../../assets/photocraft/icons/brush.svg"),
+    ),
+    (
+        "brush-replace",
+        include_bytes!("../../../assets/photocraft/icons/brush-replace.svg"),
+    ),
+    (
+        "brush-cleaning",
+        include_bytes!("../../../assets/photocraft/icons/brush-cleaning.svg"),
+    ),
+    (
+        "check",
+        include_bytes!("../../../assets/photocraft/icons/check.svg"),
+    ),
+    (
+        "chevron-down",
+        include_bytes!("../../../assets/photocraft/icons/chevron-down.svg"),
+    ),
+    (
+        "chevron-left",
+        include_bytes!("../../../assets/photocraft/icons/chevron-left.svg"),
+    ),
+    (
+        "chevron-right",
+        include_bytes!("../../../assets/photocraft/icons/chevron-right.svg"),
+    ),
+    (
+        "chevron-up",
+        include_bytes!("../../../assets/photocraft/icons/chevron-up.svg"),
+    ),
+    (
+        "chevrons-left",
+        include_bytes!("../../../assets/photocraft/icons/chevrons-left.svg"),
+    ),
+    (
+        "chevrons-right",
+        include_bytes!("../../../assets/photocraft/icons/chevrons-right.svg"),
+    ),
+    (
+        "circle",
+        include_bytes!("../../../assets/photocraft/icons/circle.svg"),
+    ),
+    (
+        "circle-dashed",
+        include_bytes!("../../../assets/photocraft/icons/circle-dashed.svg"),
+    ),
+    (
+        "circle-dot",
+        include_bytes!("../../../assets/photocraft/icons/circle-dot.svg"),
+    ),
+    (
+        "clip-below",
+        include_bytes!("../../../assets/photocraft/icons/clip-below.svg"),
+    ),
+    (
+        "clip-release",
+        include_bytes!("../../../assets/photocraft/icons/clip-release.svg"),
+    ),
+    (
+        "clock",
+        include_bytes!("../../../assets/photocraft/icons/clock.svg"),
+    ),
+    (
+        "cloud",
+        include_bytes!("../../../assets/photocraft/icons/cloud.svg"),
+    ),
+    (
+        "compass",
+        include_bytes!("../../../assets/photocraft/icons/compass.svg"),
+    ),
+    (
+        "contrast",
+        include_bytes!("../../../assets/photocraft/icons/contrast.svg"),
+    ),
     // PhotoCraft original: the Convert Point tool glyph.
-    ("convert-point", include_bytes!("../../../assets/photocraft/icons/convert-point.svg")),
-    ("copy", include_bytes!("../../../assets/photocraft/icons/copy.svg")),
-    ("crop", include_bytes!("../../../assets/photocraft/icons/crop.svg")),
-    ("diamond", include_bytes!("../../../assets/photocraft/icons/diamond.svg")),
-    ("direct-select", include_bytes!("../../../assets/photocraft/icons/direct-select.svg")),
-    ("droplet", include_bytes!("../../../assets/photocraft/icons/droplet.svg")),
-    ("ellipsis", include_bytes!("../../../assets/photocraft/icons/ellipsis.svg")),
-    ("eraser", include_bytes!("../../../assets/photocraft/icons/eraser.svg")),
+    (
+        "convert-point",
+        include_bytes!("../../../assets/photocraft/icons/convert-point.svg"),
+    ),
+    (
+        "copy",
+        include_bytes!("../../../assets/photocraft/icons/copy.svg"),
+    ),
+    (
+        "crop",
+        include_bytes!("../../../assets/photocraft/icons/crop.svg"),
+    ),
+    (
+        "diamond",
+        include_bytes!("../../../assets/photocraft/icons/diamond.svg"),
+    ),
+    (
+        "direct-select",
+        include_bytes!("../../../assets/photocraft/icons/direct-select.svg"),
+    ),
+    (
+        "droplet",
+        include_bytes!("../../../assets/photocraft/icons/droplet.svg"),
+    ),
+    (
+        "ellipsis",
+        include_bytes!("../../../assets/photocraft/icons/ellipsis.svg"),
+    ),
+    (
+        "eraser",
+        include_bytes!("../../../assets/photocraft/icons/eraser.svg"),
+    ),
     // Derived from Lucide's eraser (ISC): with a sparkle (Magic Eraser) / a transparency grid (Background Eraser).
-    ("eraser-background", include_bytes!("../../../assets/photocraft/icons/eraser-background.svg")),
-    ("eraser-magic", include_bytes!("../../../assets/photocraft/icons/eraser-magic.svg")),
-    ("eye", include_bytes!("../../../assets/photocraft/icons/eye.svg")),
-    ("eye-off", include_bytes!("../../../assets/photocraft/icons/eye-off.svg")),
-    ("file", include_bytes!("../../../assets/photocraft/icons/file.svg")),
-    ("file-plus", include_bytes!("../../../assets/photocraft/icons/file-plus.svg")),
-    ("flame", include_bytes!("../../../assets/photocraft/icons/flame.svg")),
-    ("folder", include_bytes!("../../../assets/photocraft/icons/folder.svg")),
-    ("folder-open", include_bytes!("../../../assets/photocraft/icons/folder-open.svg")),
-    ("folder-plus", include_bytes!("../../../assets/photocraft/icons/folder-plus.svg")),
-    ("frame-placeholder", include_bytes!("../../../assets/photocraft/icons/frame-placeholder.svg")),
-    ("gauge", include_bytes!("../../../assets/photocraft/icons/gauge.svg")),
+    (
+        "eraser-background",
+        include_bytes!("../../../assets/photocraft/icons/eraser-background.svg"),
+    ),
+    (
+        "eraser-magic",
+        include_bytes!("../../../assets/photocraft/icons/eraser-magic.svg"),
+    ),
+    (
+        "eye",
+        include_bytes!("../../../assets/photocraft/icons/eye.svg"),
+    ),
+    (
+        "eye-off",
+        include_bytes!("../../../assets/photocraft/icons/eye-off.svg"),
+    ),
+    (
+        "file",
+        include_bytes!("../../../assets/photocraft/icons/file.svg"),
+    ),
+    (
+        "file-plus",
+        include_bytes!("../../../assets/photocraft/icons/file-plus.svg"),
+    ),
+    (
+        "flame",
+        include_bytes!("../../../assets/photocraft/icons/flame.svg"),
+    ),
+    (
+        "folder",
+        include_bytes!("../../../assets/photocraft/icons/folder.svg"),
+    ),
+    (
+        "folder-open",
+        include_bytes!("../../../assets/photocraft/icons/folder-open.svg"),
+    ),
+    (
+        "folder-plus",
+        include_bytes!("../../../assets/photocraft/icons/folder-plus.svg"),
+    ),
+    (
+        "frame-placeholder",
+        include_bytes!("../../../assets/photocraft/icons/frame-placeholder.svg"),
+    ),
+    (
+        "gauge",
+        include_bytes!("../../../assets/photocraft/icons/gauge.svg"),
+    ),
     // PhotoCraft original: the Gradient tool glyph (a rectangle filled with a linear ramp).
-    ("gradient", include_bytes!("../../../assets/photocraft/icons/gradient.svg")),
-    ("grid-2x2", include_bytes!("../../../assets/photocraft/icons/grid-2x2.svg")),
-    ("grid-3x3", include_bytes!("../../../assets/photocraft/icons/grid-3x3.svg")),
-    ("hand", include_bytes!("../../../assets/photocraft/icons/hand.svg")),
-    ("house", include_bytes!("../../../assets/photocraft/icons/house.svg")),
-    ("image", include_bytes!("../../../assets/photocraft/icons/image.svg")),
-    ("info", include_bytes!("../../../assets/photocraft/icons/info.svg")),
-    ("lasso", include_bytes!("../../../assets/photocraft/icons/lasso.svg")),
-    ("lasso-magnetic", include_bytes!("../../../assets/photocraft/icons/lasso-magnetic.svg")),
-    ("lasso-select", include_bytes!("../../../assets/photocraft/icons/lasso-select.svg")),
-    ("layer-mask", include_bytes!("../../../assets/photocraft/icons/layer-mask.svg")),
-    ("layers", include_bytes!("../../../assets/photocraft/icons/layers.svg")),
-    ("link", include_bytes!("../../../assets/photocraft/icons/link.svg")),
-    ("link-2", include_bytes!("../../../assets/photocraft/icons/link-2.svg")),
-    ("lock", include_bytes!("../../../assets/photocraft/icons/lock.svg")),
-    ("lock-open", include_bytes!("../../../assets/photocraft/icons/lock-open.svg")),
-    ("lollipop", include_bytes!("../../../assets/photocraft/icons/lollipop.svg")),
+    (
+        "gradient",
+        include_bytes!("../../../assets/photocraft/icons/gradient.svg"),
+    ),
+    (
+        "grid-2x2",
+        include_bytes!("../../../assets/photocraft/icons/grid-2x2.svg"),
+    ),
+    (
+        "grid-3x3",
+        include_bytes!("../../../assets/photocraft/icons/grid-3x3.svg"),
+    ),
+    (
+        "hand",
+        include_bytes!("../../../assets/photocraft/icons/hand.svg"),
+    ),
+    (
+        "house",
+        include_bytes!("../../../assets/photocraft/icons/house.svg"),
+    ),
+    (
+        "image",
+        include_bytes!("../../../assets/photocraft/icons/image.svg"),
+    ),
+    (
+        "info",
+        include_bytes!("../../../assets/photocraft/icons/info.svg"),
+    ),
+    (
+        "lasso",
+        include_bytes!("../../../assets/photocraft/icons/lasso.svg"),
+    ),
+    (
+        "lasso-magnetic",
+        include_bytes!("../../../assets/photocraft/icons/lasso-magnetic.svg"),
+    ),
+    (
+        "lasso-select",
+        include_bytes!("../../../assets/photocraft/icons/lasso-select.svg"),
+    ),
+    (
+        "layer-mask",
+        include_bytes!("../../../assets/photocraft/icons/layer-mask.svg"),
+    ),
+    (
+        "layers",
+        include_bytes!("../../../assets/photocraft/icons/layers.svg"),
+    ),
+    (
+        "link",
+        include_bytes!("../../../assets/photocraft/icons/link.svg"),
+    ),
+    (
+        "link-2",
+        include_bytes!("../../../assets/photocraft/icons/link-2.svg"),
+    ),
+    (
+        "lock",
+        include_bytes!("../../../assets/photocraft/icons/lock.svg"),
+    ),
+    (
+        "lock-open",
+        include_bytes!("../../../assets/photocraft/icons/lock-open.svg"),
+    ),
+    (
+        "lollipop",
+        include_bytes!("../../../assets/photocraft/icons/lollipop.svg"),
+    ),
     // PhotoCraft originals: the Single Row / Single Column Marquee glyphs.
-    ("marquee-column", include_bytes!("../../../assets/photocraft/icons/marquee-column.svg")),
-    ("marquee-row", include_bytes!("../../../assets/photocraft/icons/marquee-row.svg")),
-    ("maximize-2", include_bytes!("../../../assets/photocraft/icons/maximize-2.svg")),
-    ("message-square", include_bytes!("../../../assets/photocraft/icons/message-square.svg")),
-    ("minus", include_bytes!("../../../assets/photocraft/icons/minus.svg")),
-    ("moon", include_bytes!("../../../assets/photocraft/icons/moon.svg")),
-    ("monitor", include_bytes!("../../../assets/photocraft/icons/monitor.svg")),
-    ("mouse-pointer-2", include_bytes!("../../../assets/photocraft/icons/mouse-pointer-2.svg")),
-    ("move", include_bytes!("../../../assets/photocraft/icons/move.svg")),
-    ("navigation", include_bytes!("../../../assets/photocraft/icons/navigation.svg")),
-    ("paint-bucket", include_bytes!("../../../assets/photocraft/icons/paint-bucket.svg")),
-    ("painting-symmetry", include_bytes!("../../../assets/photocraft/icons/painting-symmetry.svg")),
-    ("palette", include_bytes!("../../../assets/photocraft/icons/palette.svg")),
-    ("panel-right", include_bytes!("../../../assets/photocraft/icons/panel-right.svg")),
-    ("panels-top-left", include_bytes!("../../../assets/photocraft/icons/panels-top-left.svg")),
-    ("pen-curvature", include_bytes!("../../../assets/photocraft/icons/pen-curvature.svg")),
-    ("pen-freeform", include_bytes!("../../../assets/photocraft/icons/pen-freeform.svg")),
-    ("pen-add-anchor", include_bytes!("../../../assets/photocraft/icons/pen-add-anchor.svg")),
-    ("pen-delete-anchor", include_bytes!("../../../assets/photocraft/icons/pen-delete-anchor.svg")),
-    ("pen-tool", include_bytes!("../../../assets/photocraft/icons/pen-tool.svg")),
-    ("pencil", include_bytes!("../../../assets/photocraft/icons/pencil.svg")),
-    ("pentagon", include_bytes!("../../../assets/photocraft/icons/pentagon.svg")),
-    ("perspective-crop", include_bytes!("../../../assets/photocraft/icons/perspective-crop.svg")),
-    ("pipette", include_bytes!("../../../assets/photocraft/icons/pipette.svg")),
-    ("play", include_bytes!("../../../assets/photocraft/icons/play.svg")),
-    ("pause", include_bytes!("../../../assets/photocraft/icons/pause.svg")),
-    ("plus", include_bytes!("../../../assets/photocraft/icons/plus.svg")),
-    ("pointer", include_bytes!("../../../assets/photocraft/icons/pointer.svg")),
-    ("rectangle-horizontal", include_bytes!("../../../assets/photocraft/icons/rectangle-horizontal.svg")),
-    ("rectangle-vertical", include_bytes!("../../../assets/photocraft/icons/rectangle-vertical.svg")),
-    ("redo-2", include_bytes!("../../../assets/photocraft/icons/redo-2.svg")),
-    ("rotate-cw", include_bytes!("../../../assets/photocraft/icons/rotate-cw.svg")),
-    ("ruler", include_bytes!("../../../assets/photocraft/icons/ruler.svg")),
-    ("sampler", include_bytes!("../../../assets/photocraft/icons/sampler.svg")),
-    ("scaling", include_bytes!("../../../assets/photocraft/icons/scaling.svg")),
-    ("scan", include_bytes!("../../../assets/photocraft/icons/scan.svg")),
-    ("scan-line", include_bytes!("../../../assets/photocraft/icons/scan-line.svg")),
-    ("scissors", include_bytes!("../../../assets/photocraft/icons/scissors.svg")),
-    ("search", include_bytes!("../../../assets/photocraft/icons/search.svg")),
-    ("settings", include_bytes!("../../../assets/photocraft/icons/settings.svg")),
-    ("slash", include_bytes!("../../../assets/photocraft/icons/slash.svg")),
-    ("slice-knife", include_bytes!("../../../assets/photocraft/icons/slice-knife.svg")),
-    ("sliders-horizontal", include_bytes!("../../../assets/photocraft/icons/sliders-horizontal.svg")),
-    ("sparkles", include_bytes!("../../../assets/photocraft/icons/sparkles.svg")),
-    ("spline", include_bytes!("../../../assets/photocraft/icons/spline.svg")),
-    ("square", include_bytes!("../../../assets/photocraft/icons/square.svg")),
-    ("square-dashed", include_bytes!("../../../assets/photocraft/icons/square-dashed.svg")),
-    ("square-dashed-mouse-pointer", include_bytes!("../../../assets/photocraft/icons/square-dashed-mouse-pointer.svg")),
-    ("square-plus", include_bytes!("../../../assets/photocraft/icons/square-plus.svg")),
-    ("squares-subtract", include_bytes!("../../../assets/photocraft/icons/squares-subtract.svg")),
-    ("stamp", include_bytes!("../../../assets/photocraft/icons/stamp.svg")),
-    ("star", include_bytes!("../../../assets/photocraft/icons/star.svg")),
-    ("star-filled", include_bytes!("../../../assets/photocraft/icons/star-filled.svg")),
-    ("sun", include_bytes!("../../../assets/photocraft/icons/sun.svg")),
-    ("symmetry-diagonal", include_bytes!("../../../assets/photocraft/icons/symmetry-diagonal.svg")),
-    ("symmetry-dual", include_bytes!("../../../assets/photocraft/icons/symmetry-dual.svg")),
-    ("symmetry-horizontal", include_bytes!("../../../assets/photocraft/icons/symmetry-horizontal.svg")),
-    ("symmetry-vertical", include_bytes!("../../../assets/photocraft/icons/symmetry-vertical.svg")),
-    ("swatch-book", include_bytes!("../../../assets/photocraft/icons/swatch-book.svg")),
-    ("text-cursor", include_bytes!("../../../assets/photocraft/icons/text-cursor.svg")),
-    ("toggle-left", include_bytes!("../../../assets/photocraft/icons/toggle-left.svg")),
-    ("toggle-right", include_bytes!("../../../assets/photocraft/icons/toggle-right.svg")),
-    ("trash", include_bytes!("../../../assets/photocraft/icons/trash.svg")),
-    ("triangle", include_bytes!("../../../assets/photocraft/icons/triangle.svg")),
-    ("triangle-alert", include_bytes!("../../../assets/photocraft/icons/triangle-alert.svg")),
-    ("triangle-right", include_bytes!("../../../assets/photocraft/icons/triangle-right.svg")),
-    ("type", include_bytes!("../../../assets/photocraft/icons/type.svg")),
-    ("type-mask", include_bytes!("../../../assets/photocraft/icons/type-mask.svg")),
-    ("type-mask-vertical", include_bytes!("../../../assets/photocraft/icons/type-mask-vertical.svg")),
-    ("undo-2", include_bytes!("../../../assets/photocraft/icons/undo-2.svg")),
-    ("unlink", include_bytes!("../../../assets/photocraft/icons/unlink.svg")),
-    ("wand", include_bytes!("../../../assets/photocraft/icons/wand.svg")),
-    ("wand-sparkles", include_bytes!("../../../assets/photocraft/icons/wand-sparkles.svg")),
-    ("x", include_bytes!("../../../assets/photocraft/icons/x.svg")),
-    ("zoom-in", include_bytes!("../../../assets/photocraft/icons/zoom-in.svg")),
+    (
+        "marquee-column",
+        include_bytes!("../../../assets/photocraft/icons/marquee-column.svg"),
+    ),
+    (
+        "marquee-row",
+        include_bytes!("../../../assets/photocraft/icons/marquee-row.svg"),
+    ),
+    (
+        "maximize-2",
+        include_bytes!("../../../assets/photocraft/icons/maximize-2.svg"),
+    ),
+    (
+        "message-square",
+        include_bytes!("../../../assets/photocraft/icons/message-square.svg"),
+    ),
+    (
+        "minus",
+        include_bytes!("../../../assets/photocraft/icons/minus.svg"),
+    ),
+    (
+        "moon",
+        include_bytes!("../../../assets/photocraft/icons/moon.svg"),
+    ),
+    (
+        "monitor",
+        include_bytes!("../../../assets/photocraft/icons/monitor.svg"),
+    ),
+    (
+        "mouse-pointer-2",
+        include_bytes!("../../../assets/photocraft/icons/mouse-pointer-2.svg"),
+    ),
+    (
+        "move",
+        include_bytes!("../../../assets/photocraft/icons/move.svg"),
+    ),
+    (
+        "navigation",
+        include_bytes!("../../../assets/photocraft/icons/navigation.svg"),
+    ),
+    (
+        "paint-bucket",
+        include_bytes!("../../../assets/photocraft/icons/paint-bucket.svg"),
+    ),
+    (
+        "painting-symmetry",
+        include_bytes!("../../../assets/photocraft/icons/painting-symmetry.svg"),
+    ),
+    (
+        "palette",
+        include_bytes!("../../../assets/photocraft/icons/palette.svg"),
+    ),
+    (
+        "panel-right",
+        include_bytes!("../../../assets/photocraft/icons/panel-right.svg"),
+    ),
+    (
+        "panels-top-left",
+        include_bytes!("../../../assets/photocraft/icons/panels-top-left.svg"),
+    ),
+    (
+        "pen-curvature",
+        include_bytes!("../../../assets/photocraft/icons/pen-curvature.svg"),
+    ),
+    (
+        "pen-freeform",
+        include_bytes!("../../../assets/photocraft/icons/pen-freeform.svg"),
+    ),
+    (
+        "pen-add-anchor",
+        include_bytes!("../../../assets/photocraft/icons/pen-add-anchor.svg"),
+    ),
+    (
+        "pen-delete-anchor",
+        include_bytes!("../../../assets/photocraft/icons/pen-delete-anchor.svg"),
+    ),
+    (
+        "pen-tool",
+        include_bytes!("../../../assets/photocraft/icons/pen-tool.svg"),
+    ),
+    (
+        "pencil",
+        include_bytes!("../../../assets/photocraft/icons/pencil.svg"),
+    ),
+    (
+        "pentagon",
+        include_bytes!("../../../assets/photocraft/icons/pentagon.svg"),
+    ),
+    (
+        "perspective-crop",
+        include_bytes!("../../../assets/photocraft/icons/perspective-crop.svg"),
+    ),
+    (
+        "pipette",
+        include_bytes!("../../../assets/photocraft/icons/pipette.svg"),
+    ),
+    (
+        "play",
+        include_bytes!("../../../assets/photocraft/icons/play.svg"),
+    ),
+    (
+        "pause",
+        include_bytes!("../../../assets/photocraft/icons/pause.svg"),
+    ),
+    (
+        "plus",
+        include_bytes!("../../../assets/photocraft/icons/plus.svg"),
+    ),
+    (
+        "pointer",
+        include_bytes!("../../../assets/photocraft/icons/pointer.svg"),
+    ),
+    (
+        "rectangle-horizontal",
+        include_bytes!("../../../assets/photocraft/icons/rectangle-horizontal.svg"),
+    ),
+    (
+        "rectangle-vertical",
+        include_bytes!("../../../assets/photocraft/icons/rectangle-vertical.svg"),
+    ),
+    (
+        "redo-2",
+        include_bytes!("../../../assets/photocraft/icons/redo-2.svg"),
+    ),
+    (
+        "rotate-cw",
+        include_bytes!("../../../assets/photocraft/icons/rotate-cw.svg"),
+    ),
+    (
+        "ruler",
+        include_bytes!("../../../assets/photocraft/icons/ruler.svg"),
+    ),
+    (
+        "sampler",
+        include_bytes!("../../../assets/photocraft/icons/sampler.svg"),
+    ),
+    (
+        "scaling",
+        include_bytes!("../../../assets/photocraft/icons/scaling.svg"),
+    ),
+    (
+        "scan",
+        include_bytes!("../../../assets/photocraft/icons/scan.svg"),
+    ),
+    (
+        "scan-line",
+        include_bytes!("../../../assets/photocraft/icons/scan-line.svg"),
+    ),
+    (
+        "scissors",
+        include_bytes!("../../../assets/photocraft/icons/scissors.svg"),
+    ),
+    (
+        "search",
+        include_bytes!("../../../assets/photocraft/icons/search.svg"),
+    ),
+    (
+        "settings",
+        include_bytes!("../../../assets/photocraft/icons/settings.svg"),
+    ),
+    (
+        "slash",
+        include_bytes!("../../../assets/photocraft/icons/slash.svg"),
+    ),
+    (
+        "slice-knife",
+        include_bytes!("../../../assets/photocraft/icons/slice-knife.svg"),
+    ),
+    (
+        "sliders-horizontal",
+        include_bytes!("../../../assets/photocraft/icons/sliders-horizontal.svg"),
+    ),
+    (
+        "sparkles",
+        include_bytes!("../../../assets/photocraft/icons/sparkles.svg"),
+    ),
+    (
+        "spline",
+        include_bytes!("../../../assets/photocraft/icons/spline.svg"),
+    ),
+    (
+        "square",
+        include_bytes!("../../../assets/photocraft/icons/square.svg"),
+    ),
+    (
+        "square-dashed",
+        include_bytes!("../../../assets/photocraft/icons/square-dashed.svg"),
+    ),
+    (
+        "square-dashed-mouse-pointer",
+        include_bytes!("../../../assets/photocraft/icons/square-dashed-mouse-pointer.svg"),
+    ),
+    (
+        "square-plus",
+        include_bytes!("../../../assets/photocraft/icons/square-plus.svg"),
+    ),
+    (
+        "squares-subtract",
+        include_bytes!("../../../assets/photocraft/icons/squares-subtract.svg"),
+    ),
+    (
+        "stamp",
+        include_bytes!("../../../assets/photocraft/icons/stamp.svg"),
+    ),
+    (
+        "star",
+        include_bytes!("../../../assets/photocraft/icons/star.svg"),
+    ),
+    (
+        "star-filled",
+        include_bytes!("../../../assets/photocraft/icons/star-filled.svg"),
+    ),
+    (
+        "sun",
+        include_bytes!("../../../assets/photocraft/icons/sun.svg"),
+    ),
+    (
+        "symmetry-diagonal",
+        include_bytes!("../../../assets/photocraft/icons/symmetry-diagonal.svg"),
+    ),
+    (
+        "symmetry-dual",
+        include_bytes!("../../../assets/photocraft/icons/symmetry-dual.svg"),
+    ),
+    (
+        "symmetry-horizontal",
+        include_bytes!("../../../assets/photocraft/icons/symmetry-horizontal.svg"),
+    ),
+    (
+        "symmetry-vertical",
+        include_bytes!("../../../assets/photocraft/icons/symmetry-vertical.svg"),
+    ),
+    (
+        "swatch-book",
+        include_bytes!("../../../assets/photocraft/icons/swatch-book.svg"),
+    ),
+    (
+        "text-cursor",
+        include_bytes!("../../../assets/photocraft/icons/text-cursor.svg"),
+    ),
+    (
+        "toggle-left",
+        include_bytes!("../../../assets/photocraft/icons/toggle-left.svg"),
+    ),
+    (
+        "toggle-right",
+        include_bytes!("../../../assets/photocraft/icons/toggle-right.svg"),
+    ),
+    (
+        "trash",
+        include_bytes!("../../../assets/photocraft/icons/trash.svg"),
+    ),
+    (
+        "triangle",
+        include_bytes!("../../../assets/photocraft/icons/triangle.svg"),
+    ),
+    (
+        "triangle-alert",
+        include_bytes!("../../../assets/photocraft/icons/triangle-alert.svg"),
+    ),
+    (
+        "triangle-right",
+        include_bytes!("../../../assets/photocraft/icons/triangle-right.svg"),
+    ),
+    (
+        "type",
+        include_bytes!("../../../assets/photocraft/icons/type.svg"),
+    ),
+    (
+        "type-mask",
+        include_bytes!("../../../assets/photocraft/icons/type-mask.svg"),
+    ),
+    (
+        "type-mask-vertical",
+        include_bytes!("../../../assets/photocraft/icons/type-mask-vertical.svg"),
+    ),
+    (
+        "undo-2",
+        include_bytes!("../../../assets/photocraft/icons/undo-2.svg"),
+    ),
+    (
+        "unlink",
+        include_bytes!("../../../assets/photocraft/icons/unlink.svg"),
+    ),
+    (
+        "wand",
+        include_bytes!("../../../assets/photocraft/icons/wand.svg"),
+    ),
+    (
+        "wand-sparkles",
+        include_bytes!("../../../assets/photocraft/icons/wand-sparkles.svg"),
+    ),
+    (
+        "x",
+        include_bytes!("../../../assets/photocraft/icons/x.svg"),
+    ),
+    (
+        "zoom-in",
+        include_bytes!("../../../assets/photocraft/icons/zoom-in.svg"),
+    ),
 ];

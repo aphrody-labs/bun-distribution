@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct TwitchOauthInternalToken(pub String);
 
 impl_string_token!(TwitchOauthInternalToken);
-impl_crockford_generator!(TwitchOauthInternalToken, 32usize, LegacyTokenPrefix::TwitchOauthInternal, CrockfordLower);
+impl_crockford_generator!(
+    TwitchOauthInternalToken,
+    32usize,
+    LegacyTokenPrefix::TwitchOauthInternal,
+    CrockfordLower
+);

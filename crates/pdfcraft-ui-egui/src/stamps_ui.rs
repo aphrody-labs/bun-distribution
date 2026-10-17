@@ -37,7 +37,10 @@ mod b64 {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Arc<Vec<u8>>, D::Error> {
         let s = String::deserialize(d)?;
-        base64::engine::general_purpose::STANDARD.decode(s).map(Arc::new).map_err(serde::de::Error::custom)
+        base64::engine::general_purpose::STANDARD
+            .decode(s)
+            .map(Arc::new)
+            .map_err(serde::de::Error::custom)
     }
 }
 
@@ -52,7 +55,11 @@ pub struct StampDraft {
 
 pub(crate) fn create_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> (bool, bool) {
     let categories: Vec<String> = {
-        let mut c: Vec<String> = app.custom_stamps.iter().map(|s| s.category.clone()).collect();
+        let mut c: Vec<String> = app
+            .custom_stamps
+            .iter()
+            .map(|s| s.category.clone())
+            .collect();
         c.sort();
         c.dedup();
         c
@@ -60,32 +67,51 @@ pub(crate) fn create_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) 
     let d = &mut app.stamp_draft;
     ui.label(egui::RichText::new(tl!("Create Custom Stamp")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
-    ui.label(egui::RichText::new(crate::i18n::fmt(tl!("From {file}"), &[("file", &d.file)])).color(t.text_muted));
+    ui.label(
+        egui::RichText::new(crate::i18n::fmt(tl!("From {file}"), &[("file", &d.file)]))
+            .color(t.text_muted),
+    );
     ui.add_space(8.0);
-    egui::Grid::new("stamp-create").num_columns(2).spacing([10.0, 8.0]).show(ui, |ui| {
-        let l = ui.label(tl!("Category:"));
-        ui.horizontal(|ui| {
-            ui.add(crate::widgets::line(&mut d.category).desired_width(200.0).hint_text(tl!("e.g. My stamps"))).labelled_by(l.id);
-            if !categories.is_empty() {
-                egui::ComboBox::from_id_salt("stamp-categories").selected_text("").width(24.0).show_ui(ui, |ui| {
-                    for c in &categories {
-                        if ui.selectable_label(d.category == *c, c).clicked() {
-                            d.category = c.clone();
-                        }
-                    }
-                });
-            }
+    egui::Grid::new("stamp-create")
+        .num_columns(2)
+        .spacing([10.0, 8.0])
+        .show(ui, |ui| {
+            let l = ui.label(tl!("Category:"));
+            ui.horizontal(|ui| {
+                ui.add(
+                    crate::widgets::line(&mut d.category)
+                        .desired_width(200.0)
+                        .hint_text(tl!("e.g. My stamps")),
+                )
+                .labelled_by(l.id);
+                if !categories.is_empty() {
+                    egui::ComboBox::from_id_salt("stamp-categories")
+                        .selected_text("")
+                        .width(24.0)
+                        .show_ui(ui, |ui| {
+                            for c in &categories {
+                                if ui.selectable_label(d.category == *c, c).clicked() {
+                                    d.category = c.clone();
+                                }
+                            }
+                        });
+                }
+            });
+            ui.end_row();
+            let l = ui.label(tl!("Name:"));
+            ui.add(crate::widgets::line(&mut d.name).desired_width(200.0))
+                .labelled_by(l.id);
+            ui.end_row();
         });
-        ui.end_row();
-        let l = ui.label(tl!("Name:"));
-        ui.add(crate::widgets::line(&mut d.name).desired_width(200.0)).labelled_by(l.id);
-        ui.end_row();
-    });
     ui.add_space(12.0);
     let ok = !d.category.trim().is_empty() && !d.name.trim().is_empty();
     let (mut save, mut cancel) = (false, false);
     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-        if ui.add_enabled_ui(ok, |ui| widgets::pill_button(ui, tl!("OK"), true)).inner.clicked() {
+        if ui
+            .add_enabled_ui(ok, |ui| widgets::pill_button(ui, tl!("OK"), true))
+            .inner
+            .clicked()
+        {
             save = true;
         }
         if widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
@@ -99,14 +125,26 @@ pub(crate) fn create_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) 
 pub(crate) fn palette_section(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
     widgets::section_title(ui, tl!("Custom"));
     let mut remove = None;
-    let mut categories: Vec<String> = app.custom_stamps.iter().map(|s| s.category.clone()).collect();
+    let mut categories: Vec<String> = app
+        .custom_stamps
+        .iter()
+        .map(|s| s.category.clone())
+        .collect();
     categories.sort();
     categories.dedup();
     for c in categories {
         ui.label(egui::RichText::new(&c).small().color(t.text_muted));
-        for (i, s) in app.custom_stamps.iter().enumerate().filter(|(_, s)| s.category == c) {
+        for (i, s) in app
+            .custom_stamps
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.category == c)
+        {
             let active = app.quick_tool == QuickTool::CustomStamp(i);
-            let resp = ui.add(egui::Button::selectable(active, s.name.as_str()).min_size(egui::vec2(ui.available_width(), 28.0)));
+            let resp = ui.add(
+                egui::Button::selectable(active, s.name.as_str())
+                    .min_size(egui::vec2(ui.available_width(), 28.0)),
+            );
             if resp.clicked() {
                 app.quick_tool = QuickTool::CustomStamp(i);
             }
@@ -123,7 +161,10 @@ pub(crate) fn palette_section(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Toke
         app.quick_tool = QuickTool::Select;
     }
     ui.add_space(4.0);
-    if widgets::pill_button(ui, tl!("Create custom stamp…"), false).on_hover_text(tl!("From a PDF page or an image")).clicked() {
+    if widgets::pill_button(ui, tl!("Create custom stamp…"), false)
+        .on_hover_text(tl!("From a PDF page or an image"))
+        .clicked()
+    {
         app.pick_stamp_file();
     }
 }
@@ -135,17 +176,31 @@ impl PdfCraftApp {
         {
             let read = |app: &mut Self, path: std::path::PathBuf| match std::fs::read(&path) {
                 Ok(bytes) => {
-                    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                    let name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     app.start_custom_stamp(name, bytes);
                 }
-                Err(e) => app.notify_fmt("Couldn't read {name}: {e}", &[("name", &path.display().to_string()), ("e", &e.to_string())]),
+                Err(e) => app.notify_fmt(
+                    "Couldn't read {name}: {e}",
+                    &[("name", &path.display().to_string()), ("e", &e.to_string())],
+                ),
             };
             match self.save_override.clone() {
-                Some(p) if [".png", ".jpg", ".pdf"].iter().any(|e| p.ends_with(e)) => read(self, p.into()),
+                Some(p) if [".png", ".jpg", ".pdf"].iter().any(|e| p.ends_with(e)) => {
+                    read(self, p.into())
+                }
                 Some(_) => {}
                 None => {
                     let dialog = rfd::AsyncFileDialog::new()
-                        .add_filter(tl!("PDF or image"), &["pdf", "png", "jpg", "jpeg", "tif", "tiff", "gif", "bmp", "jp2", "j2k", "jpx"])
+                        .add_filter(
+                            tl!("PDF or image"),
+                            &[
+                                "pdf", "png", "jpg", "jpeg", "tif", "tiff", "gif", "bmp", "jp2",
+                                "j2k", "jpx",
+                            ],
+                        )
                         .set_title(tl!("Select a file for the stamp"));
                     self.ask_one(crate::pickers::Ask::File(dialog), None, read);
                 }
@@ -158,19 +213,40 @@ impl PdfCraftApp {
     /// Open the Create Custom Stamp dialog for a file.
     pub fn start_custom_stamp(&mut self, file: String, bytes: Vec<u8>) {
         if bytes.len() > MAX_STAMP_BYTES {
-            self.notify_fmt("{file} is too large for a stamp (at most {n} MB)", &[("file", &file), ("n", &(MAX_STAMP_BYTES >> 20).to_string())]);
+            self.notify_fmt(
+                "{file} is too large for a stamp (at most {n} MB)",
+                &[("file", &file), ("n", &(MAX_STAMP_BYTES >> 20).to_string())],
+            );
             return;
         }
-        let name = file.rsplit_once('.').map_or(file.as_str(), |(s, _)| s).to_string();
-        let category = self.custom_stamps.last().map(|s| s.category.clone()).unwrap_or_else(|| "My stamps".into());
-        self.stamp_draft = crate::stamps_ui::StampDraft { file, data: Arc::new(bytes), category, name };
+        let name = file
+            .rsplit_once('.')
+            .map_or(file.as_str(), |(s, _)| s)
+            .to_string();
+        let category = self
+            .custom_stamps
+            .last()
+            .map(|s| s.category.clone())
+            .unwrap_or_else(|| "My stamps".into());
+        self.stamp_draft = crate::stamps_ui::StampDraft {
+            file,
+            data: Arc::new(bytes),
+            category,
+            name,
+        };
         self.dialog = Some(Dialog::CreateStamp);
     }
 
     /// Save the dialog's stamp in the library and choose it.
     pub(crate) fn save_custom_stamp(&mut self) {
         let d = std::mem::take(&mut self.stamp_draft);
-        self.custom_stamps.push(CustomStamp { category: d.category.trim().into(), name: d.name.trim().into(), file: d.file, page: 0, data: d.data });
+        self.custom_stamps.push(CustomStamp {
+            category: d.category.trim().into(),
+            name: d.name.trim().into(),
+            file: d.file,
+            page: 0,
+            data: d.data,
+        });
         self.quick_tool = QuickTool::CustomStamp(self.custom_stamps.len() - 1);
     }
 }
@@ -183,6 +259,11 @@ pub(crate) fn encode(stamps: &[CustomStamp]) -> serde_json::Value {
 /// Read stamps back; malformed entries are dropped.
 pub(crate) fn decode(v: &serde_json::Value) -> Vec<CustomStamp> {
     v.as_array()
-        .map(|a| a.iter().filter_map(|x| serde_json::from_value::<CustomStamp>(x.clone()).ok()).filter(|s| s.data.len() <= MAX_STAMP_BYTES).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| serde_json::from_value::<CustomStamp>(x.clone()).ok())
+                .filter(|s| s.data.len() <= MAX_STAMP_BYTES)
+                .collect()
+        })
         .unwrap_or_default()
 }

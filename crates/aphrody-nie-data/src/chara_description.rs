@@ -52,7 +52,10 @@ pub fn parse_description_node(node: &Node<'_>) -> Option<ParsedDescription> {
     if description.is_empty() {
         return None;
     }
-    Some(ParsedDescription { hash_id: hash_var.as_hash(), description })
+    Some(ParsedDescription {
+        hash_id: hash_var.as_hash(),
+        description,
+    })
 }
 
 /// Parse toutes les descriptions d'un `chara_description_text.cfg.bin.json` désérialisé
@@ -74,5 +77,8 @@ pub fn parse_chara_descriptions(root: &Value) -> Vec<ParsedDescription> {
 /// Recherche une description par hash (port de l'accès `Map.get`).
 #[must_use]
 pub fn find_by_hash(descriptions: &[ParsedDescription], hash_id: HashId) -> Option<&str> {
-    descriptions.iter().find(|d| d.hash_id == hash_id).map(|d| d.description.as_str())
+    descriptions
+        .iter()
+        .find(|d| d.hash_id == hash_id)
+        .map(|d| d.description.as_str())
 }

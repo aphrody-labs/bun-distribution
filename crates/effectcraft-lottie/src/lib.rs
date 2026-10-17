@@ -18,7 +18,14 @@
 //! Keyframe times in Lottie are frames of the layer's local time, which is EffectCraft's layer
 //! time; layer `ip`/`op`/`st` are composition frames and `sr` is the stretch factor.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod anim;
 mod base64;
@@ -51,12 +58,20 @@ pub(crate) struct Timebase {
 impl Timebase {
     /// Frame number (fractional) of a time.
     pub fn frame(&self, t: Tick) -> f64 {
-        let f = t.0 as f64 * self.rate.num as f64 / (self.rate.den as f64 * TICKS_PER_SECOND as f64);
+        let f =
+            t.0 as f64 * self.rate.num as f64 / (self.rate.den as f64 * TICKS_PER_SECOND as f64);
         // Keep exact frame numbers clean (no 23.999999).
-        if (f - f.round()).abs() < 1e-6 { f.round() } else { f }
+        if (f - f.round()).abs() < 1e-6 {
+            f.round()
+        } else {
+            f
+        }
     }
     pub fn tick(&self, f: f64) -> Tick {
-        Tick((f * TICKS_PER_SECOND as f64 * self.rate.den as f64 / self.rate.num as f64).round() as i64)
+        Tick(
+            (f * TICKS_PER_SECOND as f64 * self.rate.den as f64 / self.rate.num as f64).round()
+                as i64,
+        )
     }
 }
 
@@ -84,13 +99,17 @@ const LOTTIE_BLEND: [BlendMode; 18] = [
 
 /// Lottie `bm` of a blend mode (`None` = Lottie has no equivalent).
 pub(crate) fn blend_to_lottie(m: BlendMode) -> Option<u32> {
-    LOTTIE_BLEND.iter().position(|b| *b == m).map(|i| i as u32).or(match m {
-        BlendMode::LinearDodge => Some(16),
-        BlendMode::ClassicColorDodge => Some(6),
-        BlendMode::ClassicColorBurn => Some(7),
-        BlendMode::ClassicDifference => Some(10),
-        _ => None,
-    })
+    LOTTIE_BLEND
+        .iter()
+        .position(|b| *b == m)
+        .map(|i| i as u32)
+        .or(match m {
+            BlendMode::LinearDodge => Some(16),
+            BlendMode::ClassicColorDodge => Some(6),
+            BlendMode::ClassicColorBurn => Some(7),
+            BlendMode::ClassicDifference => Some(10),
+            _ => None,
+        })
 }
 
 pub(crate) fn blend_from_lottie(bm: u64) -> BlendMode {

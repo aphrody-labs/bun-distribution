@@ -7,9 +7,10 @@ use gridcraft_core::date::{serial_from_ymd, time_fraction};
 use gridcraft_core::{CellError, CellRef, DateSystem, MAX_COLS, MAX_ROWS, RangeRef, Value};
 use gridcraft_formula::Expr;
 use gridcraft_model::{
-    AutoFilter, Cell, CfOperator, CfRule, CfValueKind, Comment, CondFormat, EditRange, ErrorStyle, FilterCriterion, Formula, Hyperlink, LineInfo,
-    Orientation, PasswordHash, Sheet, SheetProtection, Sparkline, SparklineKind, Table, TableColumn, TotalsFn, Validation, ValidationKind,
-    XmlColumnPr,
+    AutoFilter, Cell, CfOperator, CfRule, CfValueKind, Comment, CondFormat, EditRange, ErrorStyle,
+    FilterCriterion, Formula, Hyperlink, LineInfo, Orientation, PasswordHash, Sheet,
+    SheetProtection, Sparkline, SparklineKind, Table, TableColumn, TotalsFn, Validation,
+    ValidationKind, XmlColumnPr,
 };
 
 use crate::IoError;
@@ -40,7 +41,10 @@ struct RowState {
 const MAX_HYPERLINK_CELLS: u64 = 10_000;
 
 pub fn read_sheet(cx: &mut Ctx<'_>, part: &str, name: &str) -> Result<Sheet, IoError> {
-    let bytes = cx.pkg.read(part)?.ok_or_else(|| IoError::Format(format!("missing part {part}")))?;
+    let bytes = cx
+        .pkg
+        .read(part)?
+        .ok_or_else(|| IoError::Format(format!("missing part {part}")))?;
     let rels = cx.pkg.rels(part)?;
     let mut sheet = Sheet::new(name);
     let mut st = RowState::default();
@@ -51,12 +55,18 @@ pub fn read_sheet(cx: &mut Ctx<'_>, part: &str, name: &str) -> Result<Sheet, IoE
     let root = match res {
         Ok(r) => r,
         Err(e) => {
-            cx.warn(format!("sheet \"{name}\" is damaged ({e}); kept {} rows", st.rows));
+            cx.warn(format!(
+                "sheet \"{name}\" is damaged ({e}); kept {} rows",
+                st.rows
+            ));
             El::default()
         }
     };
     if st.dropped > 0 {
-        cx.warn(format!("sheet \"{name}\": {} cells or rows outside the 1,048,576 × 16,384 grid were dropped", st.dropped));
+        cx.warn(format!(
+            "sheet \"{name}\": {} cells or rows outside the 1,048,576 × 16,384 grid were dropped",
+            st.dropped
+        ));
     }
     drop(bytes);
 
@@ -68,7 +78,9 @@ pub fn read_sheet(cx: &mut Ctx<'_>, part: &str, name: &str) -> Result<Sheet, IoE
                 if let Some(t) = e.child("tabColor") {
                     sheet.tab_color = Some(read_color(t, &cx.palette));
                 }
-                fit_to_page = e.child("pageSetUpPr").is_some_and(|p| p.flag("fitToPage", false));
+                fit_to_page = e
+                    .child("pageSetUpPr")
+                    .is_some_and(|p| p.flag("fitToPage", false));
             }
             "sheetViews" => read_views(e, &mut sheet),
             "sheetFormatPr" => {
@@ -116,7 +128,10 @@ pub fn read_sheet(cx: &mut Ctx<'_>, part: &str, name: &str) -> Result<Sheet, IoE
             }
             "pageMargins" => {
                 let m = &mut sheet.print.margins;
-                for (i, k) in ["left", "right", "top", "bottom", "header", "footer"].iter().enumerate() {
+                for (i, k) in ["left", "right", "top", "bottom", "header", "footer"]
+                    .iter()
+                    .enumerate()
+                {
                     if let (Some(v), Some(slot)) = (e.attr_f64(k), m.get_mut(i)) {
                         *slot = v.clamp(0.0, 50.0) as f32;
                     }
@@ -132,7 +147,12 @@ pub fn read_sheet(cx: &mut Ctx<'_>, part: &str, name: &str) -> Result<Sheet, IoE
                 if let Some(s) = e.attr_u32("scale") {
                     sheet.print.scale = s.clamp(10, 400) as u16;
                 }
-                if fit_to_page || root.child("sheetPr").and_then(|p| p.child("pageSetUpPr")).is_some_and(|p| p.flag("fitToPage", false)) {
+                if fit_to_page
+                    || root
+                        .child("sheetPr")
+                        .and_then(|p| p.child("pageSetUpPr"))
+                        .is_some_and(|p| p.flag("fitToPage", false))
+                {
                     let w = e.attr_u32("fitToWidth").unwrap_or(1).min(32767) as u16;
                     let h = e.attr_u32("fitToHeight").unwrap_or(1).min(32767) as u16;
                     sheet.print.fit_to = Some((w, h));
@@ -149,15 +169,30 @@ pub fn read_sheet(cx: &mut Ctx<'_>, part: &str, name: &str) -> Result<Sheet, IoE
                     ("firstFooter", &mut pr.first_footer),
                 ] {
                     // Excel caps each at 255 characters; a hostile file can't make them huge.
-                    *slot = e.child(tag).map(|h| h.text.chars().take(255).collect()).unwrap_or_default();
+                    *slot = e
+                        .child(tag)
+                        .map(|h| h.text.chars().take(255).collect())
+                        .unwrap_or_default();
                 }
                 pr.different_first = e.flag("differentFirst", false);
                 pr.different_odd_even = e.flag("differentOddEven", false);
                 pr.hf_scale_with_doc = e.flag("scaleWithDoc", true);
                 pr.hf_align_with_margins = e.flag("alignWithMargins", true);
             }
-            "rowBreaks" => sheet.print.row_breaks = e.kids("brk").filter_map(|b| b.attr_u32("id")).filter(|&r| r > 0 && r < MAX_ROWS).collect(),
-            "colBreaks" => sheet.print.col_breaks = e.kids("brk").filter_map(|b| b.attr_u32("id")).filter(|&c| c > 0 && c < MAX_COLS).collect(),
+            "rowBreaks" => {
+                sheet.print.row_breaks = e
+                    .kids("brk")
+                    .filter_map(|b| b.attr_u32("id"))
+                    .filter(|&r| r > 0 && r < MAX_ROWS)
+                    .collect()
+            }
+            "colBreaks" => {
+                sheet.print.col_breaks = e
+                    .kids("brk")
+                    .filter_map(|b| b.attr_u32("id"))
+                    .filter(|&c| c > 0 && c < MAX_COLS)
+                    .collect()
+            }
             "sheetProtection" if e.flag("sheet", false) => {
                 sheet.protection = Some(SheetProtection {
                     password: read_password(e, ""),
@@ -183,7 +218,10 @@ pub fn read_sheet(cx: &mut Ctx<'_>, part: &str, name: &str) -> Result<Sheet, IoE
             }
             "tableParts" => {
                 for tp in e.kids("tablePart") {
-                    if let Some(rel) = tp.attr("id").and_then(|id| rels.iter().find(|r| r.id == id)) {
+                    if let Some(rel) = tp
+                        .attr("id")
+                        .and_then(|id| rels.iter().find(|r| r.id == id))
+                    {
                         let target = rel.target.clone();
                         if let Some(x) = cx.optional_xml(&target)?
                             && let Some(mut t) = read_table(cx, &x)
@@ -238,7 +276,12 @@ pub(crate) fn read_password(e: &El, prefix: &str) -> Option<PasswordHash> {
     }
     attr("password").map(|h| match u16::from_str_radix(h.trim(), 16) {
         Ok(h) => PasswordHash::Legacy(h),
-        Err(_) => PasswordHash::Iterated { algorithm: String::new(), hash: String::new(), salt: String::new(), spin_count: 0 },
+        Err(_) => PasswordHash::Iterated {
+            algorithm: String::new(),
+            hash: String::new(),
+            salt: String::new(),
+            spin_count: 0,
+        },
     })
 }
 
@@ -246,7 +289,9 @@ pub(crate) fn read_password(e: &El, prefix: &str) -> Option<PasswordHash> {
 pub(crate) fn password_attr(prefix: &str, base: &str) -> String {
     let mut chars = base.chars();
     match chars.next() {
-        Some(c) if !prefix.is_empty() => format!("{prefix}{}{}", c.to_ascii_uppercase(), chars.as_str()),
+        Some(c) if !prefix.is_empty() => {
+            format!("{prefix}{}{}", c.to_ascii_uppercase(), chars.as_str())
+        }
         _ => base.to_string(),
     }
 }
@@ -255,24 +300,39 @@ pub(crate) fn password_attr(prefix: &str, base: &str) -> String {
 /// (or an unsupported algorithm), so it stays locked rather than open.
 fn read_protected_ranges(e: &El, sheet: &mut Sheet) {
     for p in e.kids("protectedRange") {
-        let ranges: Vec<RangeRef> = p.attr("sqref").unwrap_or("").split_whitespace().filter_map(RangeRef::parse).collect();
+        let ranges: Vec<RangeRef> = p
+            .attr("sqref")
+            .unwrap_or("")
+            .split_whitespace()
+            .filter_map(RangeRef::parse)
+            .collect();
         if ranges.is_empty() {
             continue;
         }
         let password = read_password(p, "");
         let title = p.attr("name").unwrap_or("").to_string();
-        sheet.edit_ranges.push(EditRange { title, ranges, password, security_descriptor: p.attr("securityDescriptor").map(str::to_string) });
+        sheet.edit_ranges.push(EditRange {
+            title,
+            ranges,
+            password,
+            security_descriptor: p.attr("securityDescriptor").map(str::to_string),
+        });
     }
 }
 
 fn read_views(e: &El, sheet: &mut Sheet) {
-    let Some(v) = e.child("sheetView") else { return };
+    let Some(v) = e.child("sheetView") else {
+        return;
+    };
     sheet.show_gridlines = v.flag("showGridLines", true);
     sheet.show_headings = v.flag("showRowColHeaders", true);
     sheet.show_formulas = v.flag("showFormulas", false);
     sheet.show_zeros = v.flag("showZeros", true);
     sheet.right_to_left = v.flag("rightToLeft", false);
-    sheet.view = v.attr("view").and_then(gridcraft_model::SheetViewMode::parse).unwrap_or_default();
+    sheet.view = v
+        .attr("view")
+        .and_then(gridcraft_model::SheetViewMode::parse)
+        .unwrap_or_default();
     if let Some(z) = v.attr_u32("zoomScale") {
         sheet.zoom = z.clamp(10, 400) as u16;
     }
@@ -282,8 +342,14 @@ fn read_views(e: &El, sheet: &mut Sheet) {
     let mut active_pane = None;
     if let Some(p) = v.child("pane") {
         if matches!(p.attr("state"), Some("frozen") | Some("frozenSplit")) {
-            let cols = p.attr_f64("xSplit").unwrap_or(0.0).clamp(0.0, (MAX_COLS - 1) as f64) as u32;
-            let rows = p.attr_f64("ySplit").unwrap_or(0.0).clamp(0.0, (MAX_ROWS - 1) as f64) as u32;
+            let cols = p
+                .attr_f64("xSplit")
+                .unwrap_or(0.0)
+                .clamp(0.0, (MAX_COLS - 1) as f64) as u32;
+            let rows = p
+                .attr_f64("ySplit")
+                .unwrap_or(0.0)
+                .clamp(0.0, (MAX_ROWS - 1) as f64) as u32;
             if rows > 0 || cols > 0 {
                 sheet.freeze = Some((rows, cols));
                 // With frozen panes the scroll position is the scrolling pane's first cell.
@@ -294,15 +360,23 @@ fn read_views(e: &El, sheet: &mut Sheet) {
         }
         active_pane = p.attr("activePane");
     }
-    let sel = v.kids("selection").find(|s| s.attr("pane") == active_pane).or_else(|| v.kids("selection").last());
-    if let Some(c) = sel.and_then(|s| s.attr("activeCell")).and_then(CellRef::parse) {
+    let sel = v
+        .kids("selection")
+        .find(|s| s.attr("pane") == active_pane)
+        .or_else(|| v.kids("selection").last());
+    if let Some(c) = sel
+        .and_then(|s| s.attr("activeCell"))
+        .and_then(CellRef::parse)
+    {
         sheet.view_active = c;
     }
 }
 
 fn read_cols(cx: &Ctx<'_>, e: &El, sheet: &mut Sheet) {
     for c in e.kids("col") {
-        let (Some(min), Some(max)) = (c.attr_u32("min"), c.attr_u32("max")) else { continue };
+        let (Some(min), Some(max)) = (c.attr_u32("min"), c.attr_u32("max")) else {
+            continue;
+        };
         if min == 0 || min > MAX_COLS || max < min {
             continue;
         }
@@ -325,7 +399,10 @@ fn read_cols(cx: &Ctx<'_>, e: &El, sheet: &mut Sheet) {
             }
         }
         // A width equal to the default with nothing else set is noise.
-        if info == LineInfo::default() || (info.size == Some(sheet.default_col_width) && LineInfo { size: None, ..info } == LineInfo::default()) {
+        if info == LineInfo::default()
+            || (info.size == Some(sheet.default_col_width)
+                && LineInfo { size: None, ..info } == LineInfo::default())
+        {
             continue;
         }
         for col in (min - 1)..max {
@@ -403,12 +480,20 @@ fn read_cell(cx: &mut Ctx<'_>, sheet: &mut Sheet, st: &mut RowState, c: &El, pos
             },
             None => Value::Empty,
         },
-        "str" => v.map(|v| Value::text(xml::decode_xstring(v))).unwrap_or(Value::Empty),
-        "inlineStr" => {
-            c.child("is").map(|is| Value::text(xml::rich_text(is))).or_else(|| v.map(|v| Value::text(xml::decode_xstring(v)))).unwrap_or(Value::Empty)
-        }
-        "b" => v.map(|v| Value::Bool(matches!(v.trim(), "1" | "true" | "TRUE"))).unwrap_or(Value::Empty),
-        "e" => v.map(|v| Value::Error(CellError::parse(v.trim()).unwrap_or(CellError::Value))).unwrap_or(Value::Empty),
+        "str" => v
+            .map(|v| Value::text(xml::decode_xstring(v)))
+            .unwrap_or(Value::Empty),
+        "inlineStr" => c
+            .child("is")
+            .map(|is| Value::text(xml::rich_text(is)))
+            .or_else(|| v.map(|v| Value::text(xml::decode_xstring(v))))
+            .unwrap_or(Value::Empty),
+        "b" => v
+            .map(|v| Value::Bool(matches!(v.trim(), "1" | "true" | "TRUE")))
+            .unwrap_or(Value::Empty),
+        "e" => v
+            .map(|v| Value::Error(CellError::parse(v.trim()).unwrap_or(CellError::Value)))
+            .unwrap_or(Value::Empty),
         "d" => match v.and_then(|v| parse_iso_datetime(v.trim(), cx.date_system)) {
             Some(n) => Value::number(n),
             None => {
@@ -450,12 +535,32 @@ fn read_cell(cx: &mut Ctx<'_>, sheet: &mut Sheet, st: &mut RowState, c: &El, pos
         return;
     }
     let dynamic = c.attr("cm").is_some();
-    let formula = c.child("f").and_then(|f| read_formula(cx, st, f, pos, dynamic));
-    let value = if formula.is_none() && st.dynamic.iter().any(|r| r.contains(pos) && r.start != pos) { Value::Empty } else { value };
-    sheet.cells.set(pos, Cell { value, formula: formula.map(Arc::new), style });
+    let formula = c
+        .child("f")
+        .and_then(|f| read_formula(cx, st, f, pos, dynamic));
+    let value = if formula.is_none() && st.dynamic.iter().any(|r| r.contains(pos) && r.start != pos)
+    {
+        Value::Empty
+    } else {
+        value
+    };
+    sheet.cells.set(
+        pos,
+        Cell {
+            value,
+            formula: formula.map(Arc::new),
+            style,
+        },
+    );
 }
 
-fn read_formula(cx: &mut Ctx<'_>, st: &mut RowState, f: &El, pos: CellRef, dynamic: bool) -> Option<Formula> {
+fn read_formula(
+    cx: &mut Ctx<'_>,
+    st: &mut RowState,
+    f: &El,
+    pos: CellRef,
+    dynamic: bool,
+) -> Option<Formula> {
     let model = from_file(f.text.trim());
     let text = model.as_str();
     match f.attr("t").unwrap_or("normal") {
@@ -463,18 +568,31 @@ fn read_formula(cx: &mut Ctx<'_>, st: &mut RowState, f: &El, pos: CellRef, dynam
             let si = f.attr_u32("si")?;
             if !text.is_empty() {
                 let expr = gridcraft_formula::parse(text).ok();
-                st.shared.insert(si, Shared { anchor: pos, expr, text: text.to_string() });
+                st.shared.insert(
+                    si,
+                    Shared {
+                        anchor: pos,
+                        expr,
+                        text: text.to_string(),
+                    },
+                );
                 Some(Formula::new(text))
             } else {
                 let Some(sh) = st.shared.get(&si) else {
-                    cx.warn("a shared formula refers to a missing master cell; kept the cached value");
+                    cx.warn(
+                        "a shared formula refers to a missing master cell; kept the cached value",
+                    );
                     return None;
                 };
                 Some(match &sh.expr {
                     Some(e) => {
                         let dr = pos.row as i64 - sh.anchor.row as i64;
                         let dc = pos.col as i64 - sh.anchor.col as i64;
-                        Formula::from_expr(gridcraft_formula::adjust::shift_relative(e.clone(), dr, dc))
+                        Formula::from_expr(gridcraft_formula::adjust::shift_relative(
+                            e.clone(),
+                            dr,
+                            dc,
+                        ))
                     }
                     None => Formula::new(&sh.text),
                 })
@@ -485,7 +603,10 @@ fn read_formula(cx: &mut Ctx<'_>, st: &mut RowState, f: &El, pos: CellRef, dynam
                 return None;
             }
             let mut fm = Formula::new(text);
-            let range = f.attr("ref").and_then(RangeRef::parse).unwrap_or(RangeRef::cell(pos));
+            let range = f
+                .attr("ref")
+                .and_then(RangeRef::parse)
+                .unwrap_or(RangeRef::cell(pos));
             if !range.is_single() {
                 st.dynamic.push(range);
             }
@@ -543,7 +664,10 @@ pub fn parse_iso_datetime(s: &str, sys: DateSystem) -> Option<f64> {
 }
 
 pub fn parse_sqref(s: Option<&str>) -> Vec<RangeRef> {
-    s.unwrap_or("").split_whitespace().filter_map(RangeRef::parse).collect()
+    s.unwrap_or("")
+        .split_whitespace()
+        .filter_map(RangeRef::parse)
+        .collect()
 }
 
 fn cf_op(s: Option<&str>) -> CfOperator {
@@ -565,10 +689,16 @@ fn cfvo(e: &El) -> CfValueKind {
     match e.attr("type").unwrap_or("num") {
         "min" | "autoMin" => CfValueKind::Min,
         "max" | "autoMax" => CfValueKind::Max,
-        "percent" => n.map(CfValueKind::Percent).unwrap_or_else(|| CfValueKind::Formula(from_file(val))),
-        "percentile" => n.map(CfValueKind::Percentile).unwrap_or_else(|| CfValueKind::Formula(from_file(val))),
+        "percent" => n
+            .map(CfValueKind::Percent)
+            .unwrap_or_else(|| CfValueKind::Formula(from_file(val))),
+        "percentile" => n
+            .map(CfValueKind::Percentile)
+            .unwrap_or_else(|| CfValueKind::Formula(from_file(val))),
         "formula" => CfValueKind::Formula(from_file(val)),
-        _ => n.map(CfValueKind::Number).unwrap_or_else(|| CfValueKind::Formula(from_file(val))),
+        _ => n
+            .map(CfValueKind::Number)
+            .unwrap_or_else(|| CfValueKind::Formula(from_file(val))),
     }
 }
 
@@ -594,15 +724,31 @@ fn read_cf(cx: &mut Ctx<'_>, e: &El, sheet: &mut Sheet) {
         return;
     }
     for r in e.kids("cfRule") {
-        let style = Box::new(r.attr_u32("dxfId").and_then(|i| cx.dxfs.get(i as usize)).cloned().unwrap_or_default());
-        let formulas: Vec<String> = r.kids("formula").map(|f| from_file(f.text.trim())).collect();
+        let style = Box::new(
+            r.attr_u32("dxfId")
+                .and_then(|i| cx.dxfs.get(i as usize))
+                .cloned()
+                .unwrap_or_default(),
+        );
+        let formulas: Vec<String> = r
+            .kids("formula")
+            .map(|f| from_file(f.text.trim()))
+            .collect();
         let f0 = formulas.first().cloned().unwrap_or_default();
         let text = r.attr("text").unwrap_or("").to_string();
         // The x14 id that links a data bar to its Excel 2010 extension (solid fill lives there).
-        let ext_id =
-            r.child("extLst").and_then(|l| l.kids("ext").find_map(|x| x.child("id"))).map(|i| i.text.trim().to_string()).filter(|i| !i.is_empty());
+        let ext_id = r
+            .child("extLst")
+            .and_then(|l| l.kids("ext").find_map(|x| x.child("id")))
+            .map(|i| i.text.trim().to_string())
+            .filter(|i| !i.is_empty());
         let rule = match r.attr("type").unwrap_or("") {
-            "cellIs" => CfRule::CellIs { op: cf_op(r.attr("operator")), a: f0, b: formulas.get(1).cloned(), style },
+            "cellIs" => CfRule::CellIs {
+                op: cf_op(r.attr("operator")),
+                a: f0,
+                b: formulas.get(1).cloned(),
+                style,
+            },
             "expression" => CfRule::Expression { formula: f0, style },
             "containsText" => CfRule::ContainsText { text, style },
             "notContainsText" => CfRule::NotContainsText { text, style },
@@ -614,34 +760,51 @@ fn read_cf(cx: &mut Ctx<'_>, e: &El, sheet: &mut Sheet) {
             "notContainsErrors" => CfRule::NoErrors { style },
             "duplicateValues" => CfRule::Duplicate { style },
             "uniqueValues" => CfRule::Unique { style },
-            "top10" => {
-                CfRule::Top10 { bottom: r.flag("bottom", false), percent: r.flag("percent", false), rank: r.attr_u32("rank").unwrap_or(10), style }
-            }
+            "top10" => CfRule::Top10 {
+                bottom: r.flag("bottom", false),
+                percent: r.flag("percent", false),
+                rank: r.attr_u32("rank").unwrap_or(10),
+                style,
+            },
             "aboveAverage" => CfRule::AboveAverage {
                 below: !r.flag("aboveAverage", true),
                 equal: r.flag("equalAverage", false),
                 std_dev: r.attr_u32("stdDev").unwrap_or(0).min(3) as u8,
                 style,
             },
-            "timePeriod" => CfRule::TimePeriod { period: r.attr("timePeriod").unwrap_or("today").to_string(), style },
+            "timePeriod" => CfRule::TimePeriod {
+                period: r.attr("timePeriod").unwrap_or("today").to_string(),
+                style,
+            },
             "colorScale" => {
-                let Some(cs) = r.child("colorScale") else { continue };
+                let Some(cs) = r.child("colorScale") else {
+                    continue;
+                };
                 let colors = cs.kids("color").map(|c| read_color(c, &cx.palette));
-                CfRule::ColorScale { stops: cfvos(cs).into_iter().zip(colors).collect() }
+                CfRule::ColorScale {
+                    stops: cfvos(cs).into_iter().zip(colors).collect(),
+                }
             }
             "dataBar" => {
-                let Some(db) = r.child("dataBar") else { continue };
+                let Some(db) = r.child("dataBar") else {
+                    continue;
+                };
                 let v = cfvos(db);
                 CfRule::DataBar {
                     min: v.first().cloned().unwrap_or(CfValueKind::Min),
                     max: v.get(1).cloned().unwrap_or(CfValueKind::Max),
-                    color: db.child("color").map(|c| read_color(c, &cx.palette)).unwrap_or_default(),
+                    color: db
+                        .child("color")
+                        .map(|c| read_color(c, &cx.palette))
+                        .unwrap_or_default(),
                     gradient: true,
                     show_value: db.flag("showValue", true),
                 }
             }
             "iconSet" => {
-                let Some(is) = r.child("iconSet") else { continue };
+                let Some(is) = r.child("iconSet") else {
+                    continue;
+                };
                 CfRule::IconSet {
                     set: is.attr("iconSet").unwrap_or("3TrafficLights1").to_string(),
                     thresholds: cfvos(is),
@@ -650,7 +813,9 @@ fn read_cf(cx: &mut Ctx<'_>, e: &El, sheet: &mut Sheet) {
                 }
             }
             other => {
-                cx.warn(format!("conditional format type \"{other}\" is not supported"));
+                cx.warn(format!(
+                    "conditional format type \"{other}\" is not supported"
+                ));
                 continue;
             }
         };
@@ -668,15 +833,26 @@ fn read_cf(cx: &mut Ctx<'_>, e: &El, sheet: &mut Sheet) {
 
 /// A `dataValidation` (main namespace, or x14 with `xm:f` formulas and an `xm:sqref` child).
 fn read_validation(v: &El) -> Option<Validation> {
-    let sq = v.attr("sqref").map(str::to_string).or_else(|| v.child("sqref").map(|s| s.text.clone()));
+    let sq = v
+        .attr("sqref")
+        .map(str::to_string)
+        .or_else(|| v.child("sqref").map(|s| s.text.clone()));
     let ranges = parse_sqref(sq.as_deref());
     if ranges.is_empty() {
         return None;
     }
     let formula = |n: &str| -> Option<String> {
         let f = v.child(n)?;
-        let t = f.child("f").map(|x| x.text.as_str()).unwrap_or(f.text.as_str()).trim();
-        if t.is_empty() { None } else { Some(t.to_string()) }
+        let t = f
+            .child("f")
+            .map(|x| x.text.as_str())
+            .unwrap_or(f.text.as_str())
+            .trim();
+        if t.is_empty() {
+            None
+        } else {
+            Some(t.to_string())
+        }
     };
     let kind = match v.attr("type").unwrap_or("none") {
         "whole" => ValidationKind::Whole,
@@ -720,8 +896,14 @@ fn read_validation(v: &El) -> Option<Validation> {
 fn read_hyperlinks(cx: &mut Ctx<'_>, name: &str, e: &El, rels: &[Rel], sheet: &mut Sheet) {
     let mut cells = 0u64;
     for h in e.kids("hyperlink") {
-        let Some(range) = h.attr("ref").and_then(RangeRef::parse) else { continue };
-        let mut target = h.attr("id").and_then(|id| rels.iter().find(|r| r.id == id)).map(|r| r.target.clone()).unwrap_or_default();
+        let Some(range) = h.attr("ref").and_then(RangeRef::parse) else {
+            continue;
+        };
+        let mut target = h
+            .attr("id")
+            .and_then(|id| rels.iter().find(|r| r.id == id))
+            .map(|r| r.target.clone())
+            .unwrap_or_default();
         // A relationship is a file or web page; a bare `location` is a place in this workbook.
         let external = !target.is_empty();
         if let Some(loc) = h.attr("location").filter(|l| !l.is_empty()) {
@@ -734,7 +916,11 @@ fn read_hyperlinks(cx: &mut Ctx<'_>, name: &str, e: &El, rels: &[Rel], sheet: &m
         if target.is_empty() {
             continue;
         }
-        let link = Hyperlink { target, tooltip: h.attr("tooltip").map(str::to_string), external };
+        let link = Hyperlink {
+            target,
+            tooltip: h.attr("tooltip").map(str::to_string),
+            external,
+        };
         for c in range.iter() {
             if cells >= MAX_HYPERLINK_CELLS {
                 cx.warn(format!("sheet \"{name}\": hyperlinks past the first {MAX_HYPERLINK_CELLS} cells were dropped"));
@@ -761,16 +947,31 @@ pub fn read_autofilter(cx: &mut Ctx<'_>, e: &El) -> Option<AutoFilter> {
     let range = e.attr("ref").and_then(RangeRef::parse)?;
     let mut criteria = vec![];
     for fc in e.kids("filterColumn") {
-        let Some(col) = fc.attr_u32("colId") else { continue };
+        let Some(col) = fc.attr_u32("colId") else {
+            continue;
+        };
         let crit = if let Some(f) = fc.child("filters") {
             FilterCriterion::Values {
-                values: f.kids("filter").filter_map(|x| x.attr("val")).map(str::to_string).collect(),
+                values: f
+                    .kids("filter")
+                    .filter_map(|x| x.attr("val"))
+                    .map(str::to_string)
+                    .collect(),
                 blanks: f.flag("blank", false),
             }
         } else if let Some(cf) = fc.child("customFilters") {
-            let mut it = cf.kids("customFilter").map(|c| (filter_op(c.attr("operator")).to_string(), c.attr("val").unwrap_or("").to_string()));
+            let mut it = cf.kids("customFilter").map(|c| {
+                (
+                    filter_op(c.attr("operator")).to_string(),
+                    c.attr("val").unwrap_or("").to_string(),
+                )
+            });
             let Some(a) = it.next() else { continue };
-            FilterCriterion::Custom { a, b: it.next(), and: cf.flag("and", false) }
+            FilterCriterion::Custom {
+                a,
+                b: it.next(),
+                and: cf.flag("and", false),
+            }
         } else if let Some(t) = fc.child("top10") {
             FilterCriterion::Top10 {
                 bottom: !t.flag("top", true),
@@ -787,11 +988,22 @@ pub fn read_autofilter(cx: &mut Ctx<'_>, e: &El) -> Option<AutoFilter> {
                 }
             }
         } else if let Some(c) = fc.child("colorFilter") {
-            let Some(dxf) = c.attr_u32("dxfId").and_then(|i| cx.dxfs.get(i as usize)) else { continue };
-            if c.flag("cellColor", true) { FilterCriterion::FillColor(dxf.fill.fg) } else { FilterCriterion::FontColor(dxf.font.color) }
+            let Some(dxf) = c.attr_u32("dxfId").and_then(|i| cx.dxfs.get(i as usize)) else {
+                continue;
+            };
+            if c.flag("cellColor", true) {
+                FilterCriterion::FillColor(dxf.fill.fg)
+            } else {
+                FilterCriterion::FontColor(dxf.font.color)
+            }
         } else if let Some(i) = fc.child("iconFilter") {
-            let Some(set) = i.attr("iconSet") else { continue };
-            FilterCriterion::Icon { set: set.to_string(), id: i.attr_u32("iconId") }
+            let Some(set) = i.attr("iconSet") else {
+                continue;
+            };
+            FilterCriterion::Icon {
+                set: set.to_string(),
+                id: i.attr_u32("iconId"),
+            }
         } else {
             continue;
         };
@@ -802,7 +1014,11 @@ pub fn read_autofilter(cx: &mut Ctx<'_>, e: &El) -> Option<AutoFilter> {
 
 pub fn read_table(cx: &mut Ctx<'_>, x: &El) -> Option<Table> {
     let range = x.attr("ref").and_then(RangeRef::parse)?;
-    let name = x.attr("displayName").or_else(|| x.attr("name")).unwrap_or("Table").to_string();
+    let name = x
+        .attr("displayName")
+        .or_else(|| x.attr("name"))
+        .unwrap_or("Table")
+        .to_string();
     let header_row = x.attr_u32("headerRowCount").unwrap_or(1) > 0;
     let totals_row = x.attr_u32("totalsRowCount").unwrap_or(0) > 0;
     let columns = x
@@ -823,7 +1039,8 @@ pub fn read_table(cx: &mut Ctx<'_>, x: &El) -> Option<Table> {
                         _ => TotalsFn::None,
                     };
                     let totals_label = if totals == TotalsFn::Custom {
-                        c.child("totalsRowFormula").map(|f| from_file(f.text.trim()))
+                        c.child("totalsRowFormula")
+                            .map(|f| from_file(f.text.trim()))
                     } else {
                         c.attr("totalsRowLabel").map(str::to_string)
                     };
@@ -831,7 +1048,9 @@ pub fn read_table(cx: &mut Ctx<'_>, x: &El) -> Option<Table> {
                         name: xml::decode_xstring(c.attr("name").unwrap_or("")),
                         totals,
                         totals_label,
-                        formula: c.child("calculatedColumnFormula").map(|f| from_file(f.text.trim())),
+                        formula: c
+                            .child("calculatedColumnFormula")
+                            .map(|f| from_file(f.text.trim())),
                         unique_name: c.attr("uniqueName").map(str::to_string),
                         xml: c.child("xmlColumnPr").and_then(|x| {
                             Some(XmlColumnPr {
@@ -863,18 +1082,33 @@ pub fn read_table(cx: &mut Ctx<'_>, x: &El) -> Option<Table> {
         first_col: si.is_some_and(|s| s.flag("showFirstColumn", false)),
         last_col: si.is_some_and(|s| s.flag("showLastColumn", false)),
         filter_button: x.child("autoFilter").is_some(),
-        filter: x.child("autoFilter").and_then(|e| read_autofilter(cx, e)).map(|af| af.criteria).unwrap_or_default(),
+        filter: x
+            .child("autoFilter")
+            .and_then(|e| read_autofilter(cx, e))
+            .map(|af| af.criteria)
+            .unwrap_or_default(),
         table_type: xml_table.then(|| "xml".to_string()),
         connection_id: x.attr_u32("connectionId").filter(|_| xml_table),
     })
 }
 
 fn read_comments(x: &El, sheet: &mut Sheet) {
-    let authors: Vec<String> = x.child("authors").map(|a| a.kids("author").map(|a| a.text.clone()).collect()).unwrap_or_default();
-    let Some(list) = x.child("commentList") else { return };
+    let authors: Vec<String> = x
+        .child("authors")
+        .map(|a| a.kids("author").map(|a| a.text.clone()).collect())
+        .unwrap_or_default();
+    let Some(list) = x.child("commentList") else {
+        return;
+    };
     for c in list.kids("comment") {
-        let Some(cell) = c.attr("ref").and_then(CellRef::parse) else { continue };
-        let author = c.attr_u32("authorId").and_then(|i| authors.get(i as usize)).cloned().unwrap_or_default();
+        let Some(cell) = c.attr("ref").and_then(CellRef::parse) else {
+            continue;
+        };
+        let author = c
+            .attr_u32("authorId")
+            .and_then(|i| authors.get(i as usize))
+            .cloned()
+            .unwrap_or_default();
         let mut text = c.child("text").map(xml::rich_text).unwrap_or_default();
         // Excel starts a note with a bold "Author:" line.
         if !author.is_empty()
@@ -882,7 +1116,18 @@ fn read_comments(x: &El, sheet: &mut Sheet) {
         {
             text = rest.strip_prefix('\n').unwrap_or(rest).to_string();
         }
-        sheet.comments.insert(cell, Comment { author, text, replies: vec![], threaded: false, resolved: false, visible: false, dates: vec![] });
+        sheet.comments.insert(
+            cell,
+            Comment {
+                author,
+                text,
+                replies: vec![],
+                threaded: false,
+                resolved: false,
+                visible: false,
+                dates: vec![],
+            },
+        );
     }
 }
 
@@ -896,7 +1141,12 @@ fn read_note_visibility(x: &El, sheet: &mut Sheet, depth: usize) {
             read_note_visibility(e, sheet, depth + 1);
             continue;
         }
-        let Some(cd) = e.child("ClientData").filter(|cd| cd.attr("ObjectType") == Some("Note")) else { continue };
+        let Some(cd) = e
+            .child("ClientData")
+            .filter(|cd| cd.attr("ObjectType") == Some("Note"))
+        else {
+            continue;
+        };
         if cd.child("Visible").is_none() {
             continue;
         }
@@ -914,8 +1164,14 @@ fn read_threaded(cx: &Ctx<'_>, x: &El, sheet: &mut Sheet) {
     let mut by_id: HashMap<String, CellRef> = HashMap::new();
     let mut replies: Vec<(String, String, String, String)> = vec![];
     for t in x.kids("threadedComment") {
-        let Some(cell) = t.attr("ref").and_then(CellRef::parse) else { continue };
-        let author = t.attr("personId").and_then(|p| cx.persons.get(p)).cloned().unwrap_or_default();
+        let Some(cell) = t.attr("ref").and_then(CellRef::parse) else {
+            continue;
+        };
+        let author = t
+            .attr("personId")
+            .and_then(|p| cx.persons.get(p))
+            .cloned()
+            .unwrap_or_default();
         let text = t.child("text").map(|e| e.text.clone()).unwrap_or_default();
         let date = t.attr("dT").unwrap_or("").to_string();
         match t.attr("parentId") {
@@ -925,9 +1181,18 @@ fn read_threaded(cx: &Ctx<'_>, x: &El, sheet: &mut Sheet) {
                     by_id.insert(id.to_string(), cell);
                 }
                 let dates = if date.is_empty() { vec![] } else { vec![date] };
-                sheet
-                    .comments
-                    .insert(cell, Comment { author, text, replies: vec![], threaded: true, resolved: t.flag("done", false), visible: false, dates });
+                sheet.comments.insert(
+                    cell,
+                    Comment {
+                        author,
+                        text,
+                        replies: vec![],
+                        threaded: true,
+                        resolved: t.flag("done", false),
+                        visible: false,
+                        dates,
+                    },
+                );
             }
         }
     }
@@ -968,25 +1233,59 @@ fn read_ext(cx: &mut Ctx<'_>, e: &El, sheet: &mut Sheet) {
                             Some("stacked") => SparklineKind::WinLoss,
                             _ => SparklineKind::Line,
                         };
-                        let color = g.child("colorSeries").map(|c| read_color(c, &cx.palette)).unwrap_or_default();
+                        let color = g
+                            .child("colorSeries")
+                            .map(|c| read_color(c, &cx.palette))
+                            .unwrap_or_default();
                         let markers = g.flag("markers", false);
-                        for s in g.child("sparklines").map(|s| s.kids("sparkline").collect::<Vec<_>>()).unwrap_or_default() {
-                            let source = s.child("f").map(|f| f.text.trim().to_string()).unwrap_or_default();
-                            if let Some(cell) = s.child("sqref").and_then(|q| CellRef::parse(q.text.trim())) {
-                                sheet.sparklines.push(Sparkline { cell, source, kind, color, markers });
+                        for s in g
+                            .child("sparklines")
+                            .map(|s| s.kids("sparkline").collect::<Vec<_>>())
+                            .unwrap_or_default()
+                        {
+                            let source = s
+                                .child("f")
+                                .map(|f| f.text.trim().to_string())
+                                .unwrap_or_default();
+                            if let Some(cell) =
+                                s.child("sqref").and_then(|q| CellRef::parse(q.text.trim()))
+                            {
+                                sheet.sparklines.push(Sparkline {
+                                    cell,
+                                    source,
+                                    kind,
+                                    color,
+                                    markers,
+                                });
                             }
                         }
                     }
                 }
                 "conditionalFormattings" => {
                     let mut skipped = false;
-                    for r in c.kids("conditionalFormatting").flat_map(|f| f.kids("cfRule")) {
-                        let idx = r.attr("id").and_then(|id| cx.cf_ext_ids.iter().find(|(i, _)| i == id)).map(|(_, n)| *n);
-                        match (idx.and_then(|n| sheet.cond_formats.get_mut(n)), r.child("dataBar")) {
-                            (Some(CondFormat { rule: CfRule::DataBar { gradient, .. }, .. }), Some(db)) => {
+                    for r in c
+                        .kids("conditionalFormatting")
+                        .flat_map(|f| f.kids("cfRule"))
+                    {
+                        let idx = r
+                            .attr("id")
+                            .and_then(|id| cx.cf_ext_ids.iter().find(|(i, _)| i == id))
+                            .map(|(_, n)| *n);
+                        match (
+                            idx.and_then(|n| sheet.cond_formats.get_mut(n)),
+                            r.child("dataBar"),
+                        ) {
+                            (
+                                Some(CondFormat {
+                                    rule: CfRule::DataBar { gradient, .. },
+                                    ..
+                                }),
+                                Some(db),
+                            ) => {
                                 *gradient = db.flag("gradient", true);
                                 // Only the fill style is modelled; borders, lengths, axis or negative colours are lost.
-                                skipped |= db.attrs.iter().any(|(k, _)| k != "gradient") || db.children.iter().any(|k| k.name != "cfvo");
+                                skipped |= db.attrs.iter().any(|(k, _)| k != "gradient")
+                                    || db.children.iter().any(|k| k.name != "cfvo");
                             }
                             _ => skipped = true,
                         }
@@ -1007,17 +1306,32 @@ mod tests {
 
     #[test]
     fn iso_dates() {
-        assert_eq!(parse_iso_datetime("1900-01-01", DateSystem::D1900), Some(1.0));
-        assert_eq!(parse_iso_datetime("2024-01-01T12:00:00Z", DateSystem::D1900), Some(45292.5));
-        assert_eq!(parse_iso_datetime("1904-01-02", DateSystem::D1904), Some(1.0));
-        assert_eq!(parse_iso_datetime("06:00:00", DateSystem::D1900), Some(0.25));
+        assert_eq!(
+            parse_iso_datetime("1900-01-01", DateSystem::D1900),
+            Some(1.0)
+        );
+        assert_eq!(
+            parse_iso_datetime("2024-01-01T12:00:00Z", DateSystem::D1900),
+            Some(45292.5)
+        );
+        assert_eq!(
+            parse_iso_datetime("1904-01-02", DateSystem::D1904),
+            Some(1.0)
+        );
+        assert_eq!(
+            parse_iso_datetime("06:00:00", DateSystem::D1900),
+            Some(0.25)
+        );
         assert_eq!(parse_iso_datetime("garbage", DateSystem::D1900), None);
         assert_eq!(parse_iso_datetime("2024-13-01", DateSystem::D1900), None);
     }
 
     #[test]
     fn sqref_keeps_more_than_ten_thousand_ranges() {
-        let sq = (1..=12_000).map(|r| format!("A{r}")).collect::<Vec<_>>().join(" ");
+        let sq = (1..=12_000)
+            .map(|r| format!("A{r}"))
+            .collect::<Vec<_>>()
+            .join(" ");
         let ranges = parse_sqref(Some(&sq));
         assert_eq!(ranges.len(), 12_000);
         assert_eq!(ranges.last().copied(), RangeRef::parse("A12000"));

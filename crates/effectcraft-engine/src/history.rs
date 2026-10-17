@@ -88,7 +88,14 @@ struct Arena {
 
 impl Arena {
     fn build(h: &History, current: &Arc<Project>) -> Arena {
-        let mut a = Arena { label: vec![], state: vec![], parent: vec![], children: vec![], line: vec![], current: 0 };
+        let mut a = Arena {
+            label: vec![],
+            state: vec![],
+            parent: vec![],
+            children: vec![],
+            line: vec![],
+            current: 0,
+        };
         let add = |a: &mut Arena, label: String, st: Arc<Project>, parent: Option<usize>| {
             let i = a.state.len();
             a.label.push(label);
@@ -120,12 +127,19 @@ impl Arena {
         }
         // Branches, attached to whichever state they grow from (branches of branches need the
         // parent branch first, hence the passes). Orphans (their state was dropped) are skipped.
-        let mut index: HashMap<usize, usize> = a.state.iter().enumerate().map(|(i, s)| (key(s), i)).collect();
+        let mut index: HashMap<usize, usize> = a
+            .state
+            .iter()
+            .enumerate()
+            .map(|(i, s)| (key(s), i))
+            .collect();
         let mut pending: Vec<&Branch> = h.branches.iter().collect();
         loop {
             let before = pending.len();
             pending.retain(|b| {
-                let Some(&p) = index.get(&key(&b.parent)) else { return true };
+                let Some(&p) = index.get(&key(&b.parent)) else {
+                    return true;
+                };
                 let mut prev = p;
                 for (label, st) in &b.steps {
                     if index.contains_key(&key(st)) {
@@ -157,7 +171,8 @@ impl Arena {
     /// Depth-first listing: the working line's child first, then branches in creation order.
     fn listing(&self) -> Vec<HistoryNode> {
         let on_line = self.on_line();
-        let pos_in_line: HashMap<usize, usize> = self.line.iter().enumerate().map(|(k, &i)| (i, k)).collect();
+        let pos_in_line: HashMap<usize, usize> =
+            self.line.iter().enumerate().map(|(k, &i)| (i, k)).collect();
         let cur_pos = pos_in_line[&self.current];
         let mut out: Vec<HistoryNode> = vec![];
         let mut order: HashMap<usize, usize> = HashMap::new();
@@ -203,7 +218,10 @@ impl History {
             return;
         }
         let steps: Vec<(String, Arc<Project>)> = self.redo.drain(..).rev().collect();
-        self.branches.push(Branch { parent: from.clone(), steps });
+        self.branches.push(Branch {
+            parent: from.clone(),
+            steps,
+        });
     }
 
     /// Apply the undo-levels limit: keep the nearest past and future states on the working
@@ -234,7 +252,12 @@ impl History {
         if self.branches.is_empty() {
             return;
         }
-        let mut live: std::collections::HashSet<usize> = self.undo.iter().chain(self.redo.iter()).map(|(_, p)| key(p)).collect();
+        let mut live: std::collections::HashSet<usize> = self
+            .undo
+            .iter()
+            .chain(self.redo.iter())
+            .map(|(_, p)| key(p))
+            .collect();
         live.insert(key(current));
         let mut keep = vec![false; self.branches.len()];
         loop {
@@ -282,7 +305,9 @@ impl Session {
     /// id.
     pub fn goto_history(&mut self, id: &str) -> bool {
         let a = Arena::build(&self.history, &self.project);
-        let Some(target) = a.state.iter().position(|s| state_id(s) == id) else { return false };
+        let Some(target) = a.state.iter().position(|s| state_id(s) == id) else {
+            return false;
+        };
         if target == a.current {
             return true;
         }
@@ -299,7 +324,11 @@ impl Session {
         let mut n = target;
         loop {
             let kids = &a.children[n];
-            let next = if on_line[n] { kids.iter().copied().find(|&c| on_line[c]) } else { kids.first().copied() };
+            let next = if on_line[n] {
+                kids.iter().copied().find(|&c| on_line[c])
+            } else {
+                kids.first().copied()
+            };
             match next {
                 Some(c) => {
                     new_line.push(c);
@@ -320,12 +349,21 @@ impl Session {
             let mut extra: Vec<(usize, usize)> = vec![];
             loop {
                 steps.push((a.label[n].clone(), a.state[n].clone()));
-                let kids: Vec<usize> = a.children[n].iter().copied().filter(|&c| !in_new[c]).collect();
-                let Some((&first, rest)) = kids.split_first() else { break };
+                let kids: Vec<usize> = a.children[n]
+                    .iter()
+                    .copied()
+                    .filter(|&c| !in_new[c])
+                    .collect();
+                let Some((&first, rest)) = kids.split_first() else {
+                    break;
+                };
                 extra.extend(rest.iter().map(|&c| (c, n)));
                 n = first;
             }
-            out.push(Branch { parent: a.state[parent].clone(), steps });
+            out.push(Branch {
+                parent: a.state[parent].clone(),
+                steps,
+            });
             for (c, p) in extra {
                 chain(a, c, p, in_new, out);
             }
@@ -339,8 +377,19 @@ impl Session {
             }
         }
         let k = new_line.iter().position(|&i| i == target).unwrap_or(0);
-        let undo: Vec<(String, Arc<Project>)> = (0..k).map(|i| (a.label[new_line[i + 1]].clone(), a.state[new_line[i]].clone())).collect();
-        let redo: Vec<(String, Arc<Project>)> = new_line[k + 1..].iter().rev().map(|&i| (a.label[i].clone(), a.state[i].clone())).collect();
+        let undo: Vec<(String, Arc<Project>)> = (0..k)
+            .map(|i| {
+                (
+                    a.label[new_line[i + 1]].clone(),
+                    a.state[new_line[i]].clone(),
+                )
+            })
+            .collect();
+        let redo: Vec<(String, Arc<Project>)> = new_line[k + 1..]
+            .iter()
+            .rev()
+            .map(|&i| (a.label[i].clone(), a.state[i].clone()))
+            .collect();
         let cur = std::mem::replace(&mut self.project, a.state[target].clone());
         self.keep_view_settings(&cur);
         self.history.undo = undo;

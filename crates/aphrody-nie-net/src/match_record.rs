@@ -201,8 +201,11 @@ mod tests {
 
     #[test]
     fn test_soccer_match_record_and_aggregate() {
-        let mut agg =
-            MatchRecordAggregate { current_rating: 1000, peak_rating: 1000, ..Default::default() };
+        let mut agg = MatchRecordAggregate {
+            current_rating: 1000,
+            peak_rating: 1000,
+            ..Default::default()
+        };
 
         let rec = SoccerMatchRecord {
             match_id: "m_101".into(),

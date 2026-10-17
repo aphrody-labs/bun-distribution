@@ -23,20 +23,34 @@ impl FunctionBranchState {
         match self {
             Self::Start => match ins {
                 // eors *, *, *
-                Ins::Eor { s: true, cond: Cond::Al, .. } => Self::Eors,
+                Ins::Eor {
+                    s: true,
+                    cond: Cond::Al,
+                    ..
+                } => Self::Eors,
                 // movge pc, lr
                 Ins::Mov {
                     s: false,
                     cond: Cond::Ge,
                     rd: Reg::Pc,
-                    op2: Op2::ShiftImm(ShiftImm { rm: Reg::Lr, imm: 0, .. }),
+                    op2:
+                        Op2::ShiftImm(ShiftImm {
+                            rm: Reg::Lr,
+                            imm: 0,
+                            ..
+                        }),
                     ..
                 } => Self::MovgePcLr,
                 // mov *, sp
                 Ins::Mov {
                     s: false,
                     cond: Cond::Al,
-                    op2: Op2::ShiftImm(ShiftImm { rm: Reg::Sp, imm: 0, .. }),
+                    op2:
+                        Op2::ShiftImm(ShiftImm {
+                            rm: Reg::Sp,
+                            imm: 0,
+                            ..
+                        }),
                     ..
                 } => Self::MovFromSp,
                 // ldr ip, [pc, *]
@@ -49,13 +63,19 @@ impl FunctionBranchState {
             },
             Self::Eors => match ins {
                 // bmi *
-                Ins::B { cond: Cond::Mi, target: _ } => Self::FunctionBranch,
+                Ins::B {
+                    cond: Cond::Mi,
+                    target: _,
+                } => Self::FunctionBranch,
                 _ if ins.updates_condition_flags() => Self::default(),
                 _ => self,
             },
             Self::MovgePcLr | Self::MovFromSp | Self::AddR0Ip => match ins {
                 // b *
-                Ins::B { cond: Cond::Al, target: _ } => Self::FunctionBranch,
+                Ins::B {
+                    cond: Cond::Al,
+                    target: _,
+                } => Self::FunctionBranch,
                 _ => Self::default(),
             },
             Self::LdrIpPc => match ins {
@@ -65,7 +85,12 @@ impl FunctionBranchState {
                     cond: Cond::Al,
                     rd: Reg::R0,
                     rn: Reg::R0,
-                    op2: Op2::ShiftImm(ShiftImm { rm: Reg::R12, imm: 0, .. }),
+                    op2:
+                        Op2::ShiftImm(ShiftImm {
+                            rm: Reg::R12,
+                            imm: 0,
+                            ..
+                        }),
                     ..
                 } => Self::AddR0Ip,
                 _ => Self::default(),

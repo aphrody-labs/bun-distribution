@@ -30,7 +30,11 @@ pub(crate) fn client() -> &'static reqwest::Client {
 /// Build a chat-upstream request. Gateway/provider credentials are never used
 /// here: the configured chat backend has its own protected bearer credential.
 pub(crate) fn chat_request(method: reqwest::Method, url: reqwest::Url) -> reqwest::RequestBuilder {
-    request_with_token(method, url, aphrody_config::ai_env::CHAT_API_KEY.resolve().as_deref())
+    request_with_token(
+        method,
+        url,
+        aphrody_config::ai_env::CHAT_API_KEY.resolve().as_deref(),
+    )
 }
 
 pub(crate) fn request_with_token(
@@ -79,16 +83,22 @@ impl Failure {
     /// Gateway status and message for this failure; `label` is e.g. `"LLM"` or `"Vision"`.
     pub(crate) fn describe(self, label: &str) -> (StatusCode, String) {
         match self {
-            Self::Timeout => (StatusCode::GATEWAY_TIMEOUT, format!("{label} backend timed out")),
-            Self::Status(_) => {
-                (StatusCode::BAD_GATEWAY, format!("{label} backend rejected request"))
-            },
-            Self::InvalidJson => {
-                (StatusCode::BAD_GATEWAY, format!("{label} backend returned invalid JSON"))
-            },
-            Self::Connect | Self::Other => {
-                (StatusCode::BAD_GATEWAY, format!("{label} backend unavailable"))
-            },
+            Self::Timeout => (
+                StatusCode::GATEWAY_TIMEOUT,
+                format!("{label} backend timed out"),
+            ),
+            Self::Status(_) => (
+                StatusCode::BAD_GATEWAY,
+                format!("{label} backend rejected request"),
+            ),
+            Self::InvalidJson => (
+                StatusCode::BAD_GATEWAY,
+                format!("{label} backend returned invalid JSON"),
+            ),
+            Self::Connect | Self::Other => (
+                StatusCode::BAD_GATEWAY,
+                format!("{label} backend unavailable"),
+            ),
         }
     }
 }
@@ -129,9 +139,13 @@ async fn post_json_with_retry_token(
         {
             Ok(upstream) if upstream.status().is_success() => {
                 return upstream.json::<Value>().await.map_err(|error| {
-                    if error.is_timeout() { Failure::Timeout } else { Failure::InvalidJson }
+                    if error.is_timeout() {
+                        Failure::Timeout
+                    } else {
+                        Failure::InvalidJson
+                    }
                 });
-            },
+            }
             Ok(upstream) => Failure::Status(upstream.status().as_u16()),
             Err(error) => Failure::from_error(&error),
         };
@@ -239,7 +253,11 @@ mod managed {
     fn resolve_binary() -> Result<PathBuf, String> {
         if let Some(binary) = std::env::var_os("APHRODY_LLAMA_BIN").filter(|v| !v.is_empty()) {
             let binary = PathBuf::from(binary);
-            if binary.file_stem().is_some_and(|name| name == "llama-server") && binary.is_file() {
+            if binary
+                .file_stem()
+                .is_some_and(|name| name == "llama-server")
+                && binary.is_file()
+            {
                 return Ok(binary);
             }
             return binary
@@ -283,7 +301,10 @@ mod managed {
         let current = std::env::current_exe().map_err(|error| error.to_string())?;
         let cli = current.with_file_name(format!("aphrody{}", std::env::consts::EXE_SUFFIX));
         if cli.is_file() {
-            return Ok(DaemonCommand { program: cli, args: vec!["__llama-daemon".to_owned()] });
+            return Ok(DaemonCommand {
+                program: cli,
+                args: vec!["__llama-daemon".to_owned()],
+            });
         }
         Err("no llama daemon launcher found next to the gateway executable".to_owned())
     }
@@ -298,7 +319,13 @@ mod managed {
         })
         .await
         .map_err(|error| error.to_string())?;
-        let OssReadyOutcome::LlamaReady { model_id, primary_path, all_paths, .. } = ready else {
+        let OssReadyOutcome::LlamaReady {
+            model_id,
+            primary_path,
+            all_paths,
+            ..
+        } = ready
+        else {
             return Err("managed llama provider returned an unexpected outcome".to_owned());
         };
         let probe_binary = binary.clone();
@@ -313,19 +340,27 @@ mod managed {
         .map_err(|error| error.to_string())??;
         let mut request = PlanRequest::new(Role::Chat, &model_id);
         request.mmproj = all_paths.into_iter().skip(1).find(|path| {
-            path.file_name().is_some_and(|name| name.to_string_lossy().contains("mmproj"))
+            path.file_name()
+                .is_some_and(|name| name.to_string_lossy().contains("mmproj"))
         });
         // Shenron fine-tuned adapter (`aphrody train run --kind lora` output).
         if let Some(path) = std::env::var_os("APHRODY_SHENRON_CHAT_LORA")
             .map(std::path::PathBuf::from)
             .filter(|path| path.is_file())
         {
-            request.lora.push(aphrody_llama_server::LoraAdapter { path, scale: 1.0 });
+            request
+                .lora
+                .push(aphrody_llama_server::LoraAdapter { path, scale: 1.0 });
         }
         let plan = aphrody_llama_server::plan(&facts, &caps, budget, &request);
         let state = aphrody_models::paths::state_dir().map_err(|error| error.to_string())?;
         let supervisor = Supervisor::new(StateDirs::new(state), daemon_command()?);
-        Ok(Arc::new(Prepared { supervisor, binary, plan, model_id }))
+        Ok(Arc::new(Prepared {
+            supervisor,
+            binary,
+            plan,
+            model_id,
+        }))
     }
 
     /// Base URL (`.../v1`) and served model id of the managed chat daemon.
@@ -344,7 +379,10 @@ mod managed {
                 .map_err(|error| error.to_string())?
                 .base_url()
         };
-        prepared.supervisor.touch(Role::Chat).map_err(|error| error.to_string())?;
+        prepared
+            .supervisor
+            .touch(Role::Chat)
+            .map_err(|error| error.to_string())?;
         let url = reqwest::Url::parse(&base).map_err(|error| error.to_string())?;
         Ok((url, prepared.model_id.clone()))
     }
@@ -383,7 +421,9 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(chat["authorization"], "Bearer chat-only-fixture");
-        let vision = post_json_with_retry(&url, &json!({}), Duration::from_secs(2)).await.unwrap();
+        let vision = post_json_with_retry(&url, &json!({}), Duration::from_secs(2))
+            .await
+            .unwrap();
         assert!(vision["authorization"].is_null());
         server.abort();
     }
@@ -412,9 +452,15 @@ mod tests {
 
     #[test]
     fn failure_statuses() {
-        assert_eq!(Failure::Timeout.describe("LLM").0, StatusCode::GATEWAY_TIMEOUT);
+        assert_eq!(
+            Failure::Timeout.describe("LLM").0,
+            StatusCode::GATEWAY_TIMEOUT
+        );
         assert_eq!(Failure::Connect.describe("LLM").0, StatusCode::BAD_GATEWAY);
-        assert_eq!(Failure::Status(503).describe("Vision").1, "Vision backend rejected request");
+        assert_eq!(
+            Failure::Status(503).describe("Vision").1,
+            "Vision backend rejected request"
+        );
     }
 
     #[test]

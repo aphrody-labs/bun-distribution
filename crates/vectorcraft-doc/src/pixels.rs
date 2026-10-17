@@ -36,7 +36,8 @@ impl ImageBlob {
             return None;
         }
         let mut png = Vec::new();
-        img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+        img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+            .ok()?;
         Some(Self::png(png))
     }
 }
@@ -55,7 +56,12 @@ impl ImageBlob {
     pub fn sample_object(&self, x: f64, y: f64, object: (u32, u32), size: u32) -> Option<[u8; 4]> {
         let img = self.decoded()?;
         let k = |n: u32, of: u32| n as f64 / of.max(1) as f64;
-        sample_pixels(&img, x * k(img.width(), object.0), y * k(img.height(), object.1), size)
+        sample_pixels(
+            &img,
+            x * k(img.width(), object.0),
+            y * k(img.height(), object.1),
+            size,
+        )
     }
 
     /// The decoded pixels (the last image decoded is kept for the next sample).
@@ -88,7 +94,11 @@ fn sample_pixels(img: &image::RgbaImage, x: f64, y: f64, size: u32) -> Option<[u
         for px in (cx - r).max(0)..=(cx + r).min(w - 1) {
             let [pr, pg, pb, pa] = img.get_pixel(px as u32, py as u32).0;
             let a = pa as u64;
-            sum = [sum[0] + pr as u64 * a, sum[1] + pg as u64 * a, sum[2] + pb as u64 * a];
+            sum = [
+                sum[0] + pr as u64 * a,
+                sum[1] + pg as u64 * a,
+                sum[2] + pb as u64 * a,
+            ];
             alpha += a;
             n += 1;
         }
@@ -107,36 +117,85 @@ mod tests {
     fn blob(px: &[[u8; 4]], w: u32, h: u32) -> ImageBlob {
         let img = image::RgbaImage::from_raw(w, h, px.concat()).unwrap();
         let mut png = Vec::new();
-        img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
         ImageBlob::png(png)
     }
 
     fn pixels(b: &ImageBlob) -> Vec<[u8; 4]> {
-        image::load_from_memory(&b.bytes).unwrap().to_rgba8().pixels().map(|p| p.0).collect()
+        image::load_from_memory(&b.bytes)
+            .unwrap()
+            .to_rgba8()
+            .pixels()
+            .map(|p| p.0)
+            .collect()
     }
 
     #[test]
     fn samples_a_pixel_or_the_average_around_it() {
-        let b = blob(&[[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255], [9, 9, 9, 0]], 4, 1);
+        let b = blob(
+            &[
+                [255, 0, 0, 255],
+                [0, 255, 0, 255],
+                [0, 0, 255, 255],
+                [9, 9, 9, 0],
+            ],
+            4,
+            1,
+        );
         assert_eq!(b.sample(1.5, 0.5, 1), Some([0, 255, 0, 255]));
-        assert_eq!(b.sample(1.5, 0.5, 3), Some([85, 85, 85, 255]), "red, green and blue averaged");
-        assert_eq!(b.sample(3.2, 0.5, 3), Some([0, 0, 255, 128]), "transparent pixels don't count towards the colour");
+        assert_eq!(
+            b.sample(1.5, 0.5, 3),
+            Some([85, 85, 85, 255]),
+            "red, green and blue averaged"
+        );
+        assert_eq!(
+            b.sample(3.2, 0.5, 3),
+            Some([0, 0, 255, 128]),
+            "transparent pixels don't count towards the colour"
+        );
         assert_eq!(b.sample(3.2, 0.5, 1), None, "all transparent");
         assert_eq!(b.sample(-0.5, 0.5, 5), None, "outside");
-        assert_eq!(b.sample(0.0, 0.0, 5), Some([85, 85, 85, 255]), "clipped to the image");
+        assert_eq!(
+            b.sample(0.0, 0.0, 5),
+            Some([85, 85, 85, 255]),
+            "clipped to the image"
+        );
     }
 
     #[test]
     fn samples_in_the_pixel_space_of_an_object_with_more_pixels() {
         // An object of 8 × 2 pixels showing these 4 × 1 (a linked image's preview).
-        let b = blob(&[[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255], [9, 9, 9, 255]], 4, 1);
+        let b = blob(
+            &[
+                [255, 0, 0, 255],
+                [0, 255, 0, 255],
+                [0, 0, 255, 255],
+                [9, 9, 9, 255],
+            ],
+            4,
+            1,
+        );
         assert_eq!(b.sample_object(5.0, 1.5, (8, 2), 1), Some([0, 0, 255, 255]));
-        assert_eq!(b.sample_object(1.0, 0.0, (4, 1), 1), b.sample(1.0, 0.0, 1), "the same size: the same pixels");
+        assert_eq!(
+            b.sample_object(1.0, 0.0, (4, 1), 1),
+            b.sample(1.0, 0.0, 1),
+            "the same size: the same pixels"
+        );
     }
 
     #[test]
     fn maps_each_colour_once_and_keeps_alpha() {
-        let b = blob(&[[255, 0, 0, 255], [255, 0, 0, 128], [0, 0, 255, 255], [10, 20, 30, 0]], 2, 2);
+        let b = blob(
+            &[
+                [255, 0, 0, 255],
+                [255, 0, 0, 128],
+                [0, 0, 255, 255],
+                [10, 20, 30, 0],
+            ],
+            2,
+            2,
+        );
         let mut calls = 0;
         let out = b
             .map_rgb(|[r, g, bl]| {
@@ -144,11 +203,38 @@ mod tests {
                 [255 - r, 255 - g, 255 - bl]
             })
             .unwrap();
-        assert_eq!(calls, 2, "red and blue, once each; the transparent pixel is skipped");
-        assert_eq!(pixels(&out), [[0, 255, 255, 255], [0, 255, 255, 128], [255, 255, 0, 255], [10, 20, 30, 0]]);
+        assert_eq!(
+            calls, 2,
+            "red and blue, once each; the transparent pixel is skipped"
+        );
+        assert_eq!(
+            pixels(&out),
+            [
+                [0, 255, 255, 255],
+                [0, 255, 255, 128],
+                [255, 255, 0, 255],
+                [10, 20, 30, 0]
+            ]
+        );
         assert_ne!(out.content_key(), b.content_key());
-        assert_eq!(b.content_key(), blob(&[[255, 0, 0, 255], [255, 0, 0, 128], [0, 0, 255, 255], [10, 20, 30, 0]], 2, 2).content_key());
+        assert_eq!(
+            b.content_key(),
+            blob(
+                &[
+                    [255, 0, 0, 255],
+                    [255, 0, 0, 128],
+                    [0, 0, 255, 255],
+                    [10, 20, 30, 0]
+                ],
+                2,
+                2
+            )
+            .content_key()
+        );
         assert!(b.map_rgb(|c| c).is_none(), "nothing changed");
-        assert!(ImageBlob::png(vec![1, 2, 3]).map_rgb(|c| c).is_none(), "undecodable");
+        assert!(
+            ImageBlob::png(vec![1, 2, 3]).map_rgb(|c| c).is_none(),
+            "undecodable"
+        );
     }
 }

@@ -45,7 +45,11 @@ impl Native {
 
     pub fn paint(self) -> Paint {
         match self.link {
-            Some((name, tint)) => Paint::Solid { color: self.color, swatch: Some(name), tint },
+            Some((name, tint)) => Paint::Solid {
+                color: self.color,
+                swatch: Some(name),
+                tint,
+            },
             None => Paint::solid(self.color),
         }
     }
@@ -152,13 +156,32 @@ pub(crate) fn split_color(t: &str) -> Option<(&str, Vec<f32>)> {
     let space = t.get(start..at)?;
     let rest = t.get(at + ", components: [".len()..)?;
     let list = rest.get(..rest.find(']')?)?;
-    let comps = list.split(',').map(str::trim).filter(|s| !s.is_empty()).map(str::parse::<f32>).collect::<Result<Vec<_>, _>>().ok()?;
-    comps.iter().all(|c| c.is_finite()).then_some((space, comps))
+    let comps = list
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::parse::<f32>)
+        .collect::<Result<Vec<_>, _>>()
+        .ok()?;
+    comps
+        .iter()
+        .all(|c| c.is_finite())
+        .then_some((space, comps))
 }
 
 impl<'p> Colors<'p> {
     pub fn new(pdf: &'p Pdf, taken: Vec<String>) -> Self {
-        Self { pdf, taken, scanned: false, spaces: vec![], inks: vec![], cmyk: 0, rgb: 0, mixed: false, uncalibrated_rgb: false }
+        Self {
+            pdf,
+            taken,
+            scanned: false,
+            spaces: vec![],
+            inks: vec![],
+            cmyk: 0,
+            rgb: 0,
+            mixed: false,
+            uncalibrated_rgb: false,
+        }
     }
 
     /// A solid colour in its own model; `None`: use its RGB.
@@ -196,13 +219,21 @@ impl<'p> Colors<'p> {
 
     /// Spot swatches for the inks used.
     pub fn swatches(&self) -> impl Iterator<Item = Swatch> + '_ {
-        self.inks.iter().filter(|i| i.used).map(|i| Swatch { name: i.name.clone(), paint: Paint::solid(i.color), global: true, spot: true })
+        self.inks.iter().filter(|i| i.used).map(|i| Swatch {
+            name: i.name.clone(),
+            paint: Paint::solid(i.color),
+            global: true,
+            spot: true,
+        })
     }
 
     /// The space a `ColorSpace(…)` `Debug` text names, with `n` components.
     pub(crate) fn space_of(&mut self, text: &str, n: usize) -> Space {
         let inner = text.strip_prefix("ColorSpace(").unwrap_or(text);
-        let kind = inner.split(|c: char| !c.is_ascii_alphanumeric()).next().unwrap_or_default();
+        let kind = inner
+            .split(|c: char| !c.is_ascii_alphanumeric())
+            .next()
+            .unwrap_or_default();
         match (kind, n) {
             ("DeviceGray" | "ICCBased", 1) => Space::Gray,
             ("DeviceRgb", 3) => Space::Rgb,
@@ -211,12 +242,15 @@ impl<'p> Colors<'p> {
             ("Separation", 1) | ("DeviceN", _) => {
                 self.scan();
                 let device_n = kind == "DeviceN";
-                let mut found =
-                    self.spaces.iter().enumerate().filter(|(_, s)| s.device_n == device_n && s.colorants.len() == n && inner.contains(&s.key));
+                let mut found = self.spaces.iter().enumerate().filter(|(_, s)| {
+                    s.device_n == device_n && s.colorants.len() == n && inner.contains(&s.key)
+                });
                 match found.next() {
                     // Spaces of other inks with the same alternate and tint transform look the
                     // same here: which inks this colour uses can't be told.
-                    Some((i, first)) if found.all(|(_, s)| s.names == first.names) => Space::Inks(i),
+                    Some((i, first)) if found.all(|(_, s)| s.names == first.names) => {
+                        Space::Inks(i)
+                    }
                     _ => Space::Other,
                 }
             }
@@ -273,15 +307,25 @@ impl<'p> Colors<'p> {
             // No ink is painting: 0 % of the first one (a tint of paper), unless the plates are
             // all process ones.
             (None, Some(c)) if !process => (c, 0.0),
-            _ => return Some(Native::plain(Color::cmyk(cmyk[0], cmyk[1], cmyk[2], cmyk[3]))),
+            _ => {
+                return Some(Native::plain(Color::cmyk(
+                    cmyk[0], cmyk[1], cmyk[2], cmyk[3],
+                )));
+            }
         };
         match c {
             Colorant::Ink(k) => {
                 let ink = self.inks.get_mut(k)?;
                 ink.used = true;
-                Some(Native { color: ink.color.tinted(t), link: Some((ink.name.clone(), t)) })
+                Some(Native {
+                    color: ink.color.tinted(t),
+                    link: Some((ink.name.clone(), t)),
+                })
             }
-            _ => Some(Native { color: Color::cmyk(1.0, 1.0, 1.0, 1.0).tinted(t), link: Some((REGISTRATION.to_string(), t)) }),
+            _ => Some(Native {
+                color: Color::cmyk(1.0, 1.0, 1.0, 1.0).tinted(t),
+                link: Some((REGISTRATION.to_string(), t)),
+            }),
         }
     }
 
@@ -329,14 +373,22 @@ impl<'p> Colors<'p> {
             _ => return None,
         };
         let names: Vec<String> = if device_n {
-            it.next::<Array<'_>>()?.iter::<Name<'_>>().map(|n| n.as_str().to_string()).collect()
+            it.next::<Array<'_>>()?
+                .iter::<Name<'_>>()
+                .map(|n| n.as_str().to_string())
+                .collect()
         } else {
             vec![it.next::<Name<'_>>()?.as_str().to_string()]
         };
         let alt = alt_model(&it.next::<Object<'_>>()?);
         let tint = Function::new(&it.next::<Object<'_>>()?)?;
         let key = debug_text(&tint)?;
-        if names.is_empty() || self.spaces.iter().any(|s| s.key == key && s.device_n == device_n && s.names == names) {
+        if names.is_empty()
+            || self
+                .spaces
+                .iter()
+                .any(|s| s.key == key && s.device_n == device_n && s.names == names)
+        {
             return None;
         }
         let colorants = names
@@ -349,8 +401,13 @@ impl<'p> Colors<'p> {
                     Some(ch) => Colorant::Process(ch),
                     None => {
                         // The ink alone at 100 %, through the tint transform.
-                        let input: SmallVec<[f32; 4]> = (0..names.len()).map(|j| if i == j { 1.0 } else { 0.0 }).collect();
-                        match alt.zip(tint.eval(input)).and_then(|(alt, v)| alt_color(alt, &v)) {
+                        let input: SmallVec<[f32; 4]> = (0..names.len())
+                            .map(|j| if i == j { 1.0 } else { 0.0 })
+                            .collect();
+                        match alt
+                            .zip(tint.eval(input))
+                            .and_then(|(alt, v)| alt_color(alt, &v))
+                        {
                             Some(color) => Colorant::Ink(self.ink(n, color)),
                             None => Colorant::Unknown,
                         }
@@ -358,7 +415,12 @@ impl<'p> Colors<'p> {
                 },
             })
             .collect();
-        self.spaces.push(InkSpace { key, device_n, names, colorants });
+        self.spaces.push(InkSpace {
+            key,
+            device_n,
+            names,
+            colorants,
+        });
         Some(())
     }
 
@@ -373,7 +435,12 @@ impl<'p> Colors<'p> {
             name = format!("{source} {n}");
             n += 1;
         }
-        self.inks.push(Ink { source: source.to_string(), name, color, used: false });
+        self.inks.push(Ink {
+            source: source.to_string(),
+            name,
+            color,
+            used: false,
+        });
         self.inks.len() - 1
     }
 }
@@ -424,7 +491,10 @@ fn alt_model(o: &Object<'_>) -> Option<Alt> {
 fn lab_profile(profile: &Stream<'_>) -> bool {
     use std::io::Read;
     if let Some(Object::Array(a)) = profile.dict().get::<Object<'_>>(b"Alternate") {
-        return a.flex_iter().next::<Name<'_>>().is_some_and(|n| n.as_str() == "Lab");
+        return a
+            .flex_iter()
+            .next::<Name<'_>>()
+            .is_some_and(|n| n.as_str() == "Lab");
     }
     // The header's first 20 bytes, without decoding the rest of the profile.
     let raw = profile.raw_data();
@@ -432,7 +502,9 @@ fn lab_profile(profile: &Stream<'_>) -> bool {
     match profile.filters().as_slice() {
         [] => head.extend(raw.iter().take(20)),
         [hayro_syntax::Filter::FlateDecode] => {
-            let _ = flate2::read::ZlibDecoder::new(&*raw).take(20).read_to_end(&mut head); // a damaged profile reads as not Lab
+            let _ = flate2::read::ZlibDecoder::new(&*raw)
+                .take(20)
+                .read_to_end(&mut head); // a damaged profile reads as not Lab
         }
         _ => return false,
     }
@@ -447,6 +519,10 @@ fn alt_color(alt: Alt, v: &[f32]) -> Option<Color> {
         Alt::Gray => Color::gray(round3(1.0 - u(0)?)),
         Alt::Rgb => Color::rgb(u(0)?, u(1)?, u(2)?),
         Alt::Cmyk => Color::cmyk(u(0)?, u(1)?, u(2)?, u(3)?),
-        Alt::Lab => Color::lab(round3(c(0)?.clamp(0.0, 100.0)), round3(c(1)?.clamp(-128.0, 127.0)), round3(c(2)?.clamp(-128.0, 127.0))),
+        Alt::Lab => Color::lab(
+            round3(c(0)?.clamp(0.0, 100.0)),
+            round3(c(1)?.clamp(-128.0, 127.0)),
+            round3(c(2)?.clamp(-128.0, 127.0)),
+        ),
     })
 }

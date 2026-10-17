@@ -24,11 +24,17 @@ fn trans_dict(t: &PageTransition) -> String {
         K::ZoomIn => "/S/Fly/M/I/SS 0.01".into(),
         K::ZoomOut => "/S/Fly/M/O/SS 0.01".into(),
     };
-    format!("/Trans<</Type/Trans{body}/D {:.2}>>", t.duration.clamp(0.0, 60.0))
+    format!(
+        "/Trans<</Type/Trans{body}/D {:.2}>>",
+        t.duration.clamp(0.0, 60.0)
+    )
 }
 
 pub(crate) fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
-    hay.get(from..)?.windows(needle.len()).position(|w| w == needle).map(|i| i + from)
+    hay.get(from..)?
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .map(|i| i + from)
 }
 
 pub(crate) fn rfind(hay: &[u8], needle: &[u8]) -> Option<usize> {
@@ -39,7 +45,9 @@ pub(crate) fn rfind(hay: &[u8], needle: &[u8]) -> Option<usize> {
 pub(crate) fn int_after(s: &str, key: &str) -> Option<usize> {
     let i = s.find(key)? + key.len();
     let rest = s[i..].trim_start();
-    let end = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
+    let end = rest
+        .find(|c: char| !c.is_ascii_digit())
+        .unwrap_or(rest.len());
     rest[..end].parse().ok()
 }
 
@@ -59,7 +67,10 @@ const MAX_INDEXED_PAGE_OBJECTS: usize = 4096;
 /// Match `object` exactly, including embedded headers and the lack of a boundary after `obj`.
 /// Only requested IDs are retained; neither PDF size nor the largest ID sizes this map.
 /// If the metadata limit or an allocation failure prevents indexing, use `object` instead.
-fn object_starts(pdf: &[u8], ids: impl Iterator<Item = usize>) -> Option<HashMap<usize, Option<usize>>> {
+fn object_starts(
+    pdf: &[u8],
+    ids: impl Iterator<Item = usize>,
+) -> Option<HashMap<usize, Option<usize>>> {
     let mut starts = HashMap::new();
     for id in ids {
         if starts.contains_key(&id) {
@@ -75,24 +86,47 @@ fn object_starts(pdf: &[u8], ids: impl Iterator<Item = usize>) -> Option<HashMap
         return Some(starts);
     }
     let mut end = pdf.len();
-    while let Some(at) = pdf.get(..end).and_then(|bytes| bytes.iter().rposition(|b| *b == b'\n')) {
-        let Some(start) = at.checked_add(1) else { break };
-        let Some(line) = pdf.get(start..end) else { break };
+    while let Some(at) = pdf
+        .get(..end)
+        .and_then(|bytes| bytes.iter().rposition(|b| *b == b'\n'))
+    {
+        let Some(start) = at.checked_add(1) else {
+            break;
+        };
+        let Some(line) = pdf.get(start..end) else {
+            break;
+        };
         end = at;
-        let digits = line.iter().position(|b| !b.is_ascii_digit()).unwrap_or(line.len());
-        let Some(number) = line.get(..digits) else { continue };
+        let digits = line
+            .iter()
+            .position(|b| !b.is_ascii_digit())
+            .unwrap_or(line.len());
+        let Some(number) = line.get(..digits) else {
+            continue;
+        };
         if number.is_empty() || (number.len() > 1 && number.first() == Some(&b'0')) {
             continue;
         }
-        if !line.get(digits..).is_some_and(|tail| tail.starts_with(b" 0 obj")) {
+        if !line
+            .get(digits..)
+            .is_some_and(|tail| tail.starts_with(b" 0 obj"))
+        {
             continue;
         }
-        let Some(id) = number.iter().try_fold(0usize, |n, b| n.checked_mul(10)?.checked_add(usize::from(*b - b'0'))) else { continue };
-        let Some(slot) = starts.get_mut(&id) else { continue };
+        let Some(id) = number.iter().try_fold(0usize, |n, b| {
+            n.checked_mul(10)?.checked_add(usize::from(*b - b'0'))
+        }) else {
+            continue;
+        };
+        let Some(slot) = starts.get_mut(&id) else {
+            continue;
+        };
         if slot.is_some() {
             continue;
         }
-        let Some(body) = start.checked_add(digits).and_then(|n| n.checked_add(6)) else { continue };
+        let Some(body) = start.checked_add(digits).and_then(|n| n.checked_add(6)) else {
+            continue;
+        };
         *slot = Some(body);
         missing -= 1;
         if missing == 0 {
@@ -105,14 +139,26 @@ fn object_starts(pdf: &[u8], ids: impl Iterator<Item = usize>) -> Option<HashMap
 /// Add transitions to the pages of `pdf` (index = PDF page). `None` when the file's structure
 /// isn't the simple kind this understands (classic xref table, a flat page tree).
 pub fn add_transitions(pdf: &[u8], trans: &[Option<PageTransition>]) -> Option<Vec<u8>> {
-    add_page_entries(pdf, &trans.iter().map(|t| t.as_ref().map(trans_dict)).collect::<Vec<_>>())
+    add_page_entries(
+        pdf,
+        &trans
+            .iter()
+            .map(|t| t.as_ref().map(trans_dict))
+            .collect::<Vec<_>>(),
+    )
 }
 
 /// Transparency blend space: pages with transparency get a page group in DeviceCMYK or DeviceRGB
 /// (`pages[i]` true = PDF page i).
 pub fn add_blend_space(pdf: &[u8], pages: &[bool], cmyk: bool) -> Option<Vec<u8>> {
     let cs = if cmyk { "DeviceCMYK" } else { "DeviceRGB" };
-    add_page_entries(pdf, &pages.iter().map(|on| on.then(|| format!("/Group<</Type/Group/S/Transparency/CS/{cs}>>"))).collect::<Vec<_>>())
+    add_page_entries(
+        pdf,
+        &pages
+            .iter()
+            .map(|on| on.then(|| format!("/Group<</Type/Group/S/Transparency/CS/{cs}>>")))
+            .collect::<Vec<_>>(),
+    )
 }
 
 /// Append dictionary entries to pages (index = PDF page) as an incremental update.
@@ -126,23 +172,38 @@ pub fn add_page_entries(pdf: &[u8], extra: &[Option<String>]) -> Option<Vec<u8>>
     let root = int_after(&trailer, "/Root")?;
     let prev = int_after(&trailer, "startxref")?;
     let info = int_after(&trailer, "/Info");
-    let id = trailer.find("/ID").and_then(|i| trailer[i..].find(']').map(|j| trailer[i..i + j + 1].to_string()));
+    let id = trailer.find("/ID").and_then(|i| {
+        trailer[i..]
+            .find(']')
+            .map(|j| trailer[i..i + j + 1].to_string())
+    });
     let cat = String::from_utf8_lossy(&pdf[object(pdf, root)?]).to_string();
     let pages_id = int_after(&cat, "/Pages")?;
     let pages = String::from_utf8_lossy(&pdf[object(pdf, pages_id)?]).to_string();
     let kids_at = pages.find("/Kids")?;
     let kids_str = &pages[kids_at + 5..];
     let kids_str = &kids_str[kids_str.find('[')? + 1..kids_str.find(']')?];
-    let nums: Vec<usize> = kids_str.split_whitespace().filter_map(|t| t.parse().ok()).collect();
+    let nums: Vec<usize> = kids_str
+        .split_whitespace()
+        .filter_map(|t| t.parse().ok())
+        .collect();
     let kids: Vec<usize> = nums.chunks(2).map(|c| c[0]).collect();
-    let starts = object_starts(pdf, extra.iter().zip(&kids).filter_map(|(t, &kid)| t.as_ref().map(|_| kid)));
+    let starts = object_starts(
+        pdf,
+        extra
+            .iter()
+            .zip(&kids)
+            .filter_map(|(t, &kid)| t.as_ref().map(|_| kid)),
+    );
     let mut out = pdf.to_vec();
     if !out.ends_with(b"\n") {
         out.push(b'\n');
     }
     let mut entries: Vec<(usize, usize)> = Vec::new();
     for (i, t) in extra.iter().enumerate() {
-        let (Some(t), Some(&kid)) = (t, kids.get(i)) else { continue };
+        let (Some(t), Some(&kid)) = (t, kids.get(i)) else {
+            continue;
+        };
         let range = if let Some(starts) = &starts {
             let start = starts.get(&kid).copied().flatten()?;
             start..find(pdf, b"endobj", start)?
@@ -181,8 +242,17 @@ pub fn add_catalog_entries(pdf: &[u8], entries: &str) -> Option<Vec<u8>> {
     let size = int_after(&trailer, "/Size")?;
     let root = int_after(&trailer, "/Root")?;
     let prev = int_after(&trailer, "startxref")?;
-    let info = int_after(&trailer, "/Info").map(|i| format!("/Info {i} 0 R")).unwrap_or_default();
-    let id = trailer.find("/ID").and_then(|i| trailer[i..].find(']').map(|j| trailer[i..i + j + 1].to_string())).unwrap_or_default();
+    let info = int_after(&trailer, "/Info")
+        .map(|i| format!("/Info {i} 0 R"))
+        .unwrap_or_default();
+    let id = trailer
+        .find("/ID")
+        .and_then(|i| {
+            trailer[i..]
+                .find(']')
+                .map(|j| trailer[i..i + j + 1].to_string())
+        })
+        .unwrap_or_default();
     let cat = String::from_utf8_lossy(&pdf[object(pdf, root)?]).to_string();
     let close = cat.rfind(">>")?;
     let mut out = pdf.to_vec();
@@ -190,7 +260,14 @@ pub fn add_catalog_entries(pdf: &[u8], entries: &str) -> Option<Vec<u8>> {
         out.push(b'\n');
     }
     let at = out.len();
-    out.extend_from_slice(format!("{root} 0 obj\n{}{entries}{}\nendobj\n", cat[..close].trim(), cat[close..].trim()).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "{root} 0 obj\n{}{entries}{}\nendobj\n",
+            cat[..close].trim(),
+            cat[close..].trim()
+        )
+        .as_bytes(),
+    );
     let xref_at = out.len();
     out.extend_from_slice(
         format!("xref\n{root} 1\n{at:010} 00000 n\r\ntrailer\n<</Size {size}/Root {root} 0 R{info}{id}/Prev {prev}>>\nstartxref\n{xref_at}\n%%EOF\n")
@@ -209,7 +286,11 @@ mod object_index_tests {
         assert_eq!(at_limit.len(), MAX_INDEXED_PAGE_OBJECTS);
         assert!(object_starts(b"", 0..=MAX_INDEXED_PAGE_OBJECTS).is_none());
         // Duplicate requests do not consume the unique-ID budget.
-        let starts = object_starts(b"\n0 0 objendobj", std::iter::repeat_n(0, MAX_INDEXED_PAGE_OBJECTS + 1)).unwrap();
+        let starts = object_starts(
+            b"\n0 0 objendobj",
+            std::iter::repeat_n(0, MAX_INDEXED_PAGE_OBJECTS + 1),
+        )
+        .unwrap();
         assert_eq!(starts.len(), 1);
         assert_eq!(starts.get(&0), Some(&Some(8)));
     }

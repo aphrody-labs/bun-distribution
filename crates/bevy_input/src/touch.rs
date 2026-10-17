@@ -469,7 +469,7 @@ mod test {
 
     #[test]
     fn touch_update() {
-        use crate::{touch::Touch, Touches};
+        use crate::{Touches, touch::Touch};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -500,7 +500,7 @@ mod test {
 
     #[test]
     fn touch_process() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -584,7 +584,7 @@ mod test {
     // See https://github.com/bevyengine/bevy/issues/12442
     #[test]
     fn touch_process_multi_event() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -645,7 +645,7 @@ mod test {
 
     #[test]
     fn touch_pressed() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -671,7 +671,7 @@ mod test {
 
     #[test]
     fn touch_released() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -697,7 +697,7 @@ mod test {
 
     #[test]
     fn touch_canceled() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -722,7 +722,7 @@ mod test {
 
     #[test]
     fn release_touch() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -747,7 +747,7 @@ mod test {
 
     #[test]
     fn release_all_touches() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -784,7 +784,7 @@ mod test {
 
     #[test]
     fn clear_touches() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();
@@ -833,7 +833,7 @@ mod test {
 
     #[test]
     fn reset_all_touches() {
-        use crate::{touch::TouchPhase, TouchInput, Touches};
+        use crate::{TouchInput, Touches, touch::TouchPhase};
         use bevy_math::Vec2;
 
         let mut touches = Touches::default();

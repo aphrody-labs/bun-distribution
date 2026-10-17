@@ -180,31 +180,46 @@ fn bit_unpack<E: Engine>(
 fn huff_uncomp_read_callback<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm7.logger, "Unimplemented HuffUnCompReadByCallback SWI");
+    slog::error!(
+        _emu.arm7.logger,
+        "Unimplemented HuffUnCompReadByCallback SWI"
+    );
 }
 
 fn lz77_uncomp_read_normal_write_8<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm7.logger, "Unimplemented LZ77UnCompReadNormalWrite8bit SWI");
+    slog::error!(
+        _emu.arm7.logger,
+        "Unimplemented LZ77UnCompReadNormalWrite8bit SWI"
+    );
 }
 
 fn lz77_uncomp_read_callback_write_16<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm7.logger, "Unimplemented LZ77UnCompReadByCallbackWrite16bit SWI");
+    slog::error!(
+        _emu.arm7.logger,
+        "Unimplemented LZ77UnCompReadByCallbackWrite16bit SWI"
+    );
 }
 
 fn rl_uncomp_read_normal_write_8<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm7.logger, "Unimplemented RLUnCompReadNormalWrite8bit SWI");
+    slog::error!(
+        _emu.arm7.logger,
+        "Unimplemented RLUnCompReadNormalWrite8bit SWI"
+    );
 }
 
 fn rl_uncomp_read_callback_write_16<E: Engine>(_emu: &mut Emu<E>) {
     // TODO
     #[cfg(feature = "log")]
-    slog::error!(_emu.arm7.logger, "Unimplemented RLUnCompReadByCallbackWrite16bit SWI");
+    slog::error!(
+        _emu.arm7.logger,
+        "Unimplemented RLUnCompReadByCallbackWrite16bit SWI"
+    );
 }
 
 fn cpu_set<E: Engine>(emu: &mut Emu<E>, r0_3: [u32; 4]) -> [u32; 2] {
@@ -298,7 +313,9 @@ fn process_intr_wait_irqs<E: Engine>(emu: &mut Emu<E>) -> bool {
     requested ^= masked;
     emu.arm7.wram.write_le(0xFFF8, requested);
 
-    emu.arm7.irqs.write_master_enable(true, &mut emu.arm7.schedule);
+    emu.arm7
+        .irqs
+        .write_master_enable(true, &mut emu.arm7.schedule);
 
     emu.arm7.hle_bios.swi_r0_3[0] = 1;
 
@@ -328,7 +345,11 @@ fn wait_by_loop<E: Engine>(emu: &mut Emu<E>, iterations: i32) -> u32 {
 }
 
 fn apply_table_bounds(addr: u32) -> (bool, u32) {
-    if addr < 0x341C { (false, 0x341C) } else { (addr < 0x3CF0, 0x3CF0) }
+    if addr < 0x341C {
+        (false, 0x341C)
+    } else {
+        (addr < 0x3CF0, 0x3CF0)
+    }
 }
 
 fn get_sine_table(index: u32) -> (u32, u32) {
@@ -368,7 +389,11 @@ fn get_volume_table(index: u32) -> (u32, u32) {
 }
 
 fn sound_bias<E: Engine>(emu: &mut Emu<E>, value: u32, delay: i32) {
-    let (value, increment) = if value == 0 { (0, -1_i16 as u16) } else { (0x200, 1) };
+    let (value, increment) = if value == 0 {
+        (0, -1_i16 as u16)
+    } else {
+        (0x200, 1)
+    };
     loop {
         let bias = emu.audio.bias();
         if bias == value {
@@ -393,7 +418,10 @@ pub struct State {
 
 impl State {
     pub fn new(enabled: bool) -> Self {
-        State { enabled, swi_r0_3: [0; 4] }
+        State {
+            enabled,
+            swi_r0_3: [0; 4],
+        }
     }
 }
 
@@ -435,7 +463,12 @@ static SWI_NAMES: [&str; 0x20] = [
 
 pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
     #[cfg(feature = "log")]
-    slog::debug!(emu.arm7.logger, "SWI {:#04X} ({})", number, SWI_NAMES[number as usize]);
+    slog::debug!(
+        emu.arm7.logger,
+        "SWI {:#04X} ({})",
+        number,
+        SWI_NAMES[number as usize]
+    );
 
     match number {
         0x00 => soft_reset(emu),
@@ -445,12 +478,12 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
         0x04 => {
             intr_wait(emu, r0_3[0] != 0, r0_3[1]);
             return;
-        },
+        }
 
         0x05 => {
             intr_wait(emu, true, 1);
             return;
-        },
+        }
 
         0x06 => halt(emu),
 
@@ -459,7 +492,7 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
         0x08 => {
             sound_bias(emu, r0_3[0], r0_3[1] as i32);
             r0_3[3] = 0x0400_0504;
-        },
+        }
 
         0x09 => (r0_3[0], r0_3[1], r0_3[3]) = common::div(r0_3[0], r0_3[1]),
 
@@ -477,7 +510,7 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
                 r0_3[1] = r0_3[1].wrapping_add(2);
                 half
             });
-        },
+        }
 
         0x0F => (r0_3[0], r0_3[1], r0_3[3]) = common::is_debugger::<_, 0x7F_FFFA>(emu),
 
@@ -508,7 +541,7 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
 
         _ => {
             unimplemented!("Invalid ARM7 SWI {:#X}", number);
-        },
+        }
     }
 
     E::Arm7Data::return_from_hle_swi(emu, r0_3);

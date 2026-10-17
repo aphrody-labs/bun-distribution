@@ -41,10 +41,14 @@ pub struct WavSource {
 }
 
 fn le16(b: &[u8], o: usize) -> u16 {
-    b.get(o..o.saturating_add(2)).and_then(|s| s.try_into().ok()).map_or(0, u16::from_le_bytes)
+    b.get(o..o.saturating_add(2))
+        .and_then(|s| s.try_into().ok())
+        .map_or(0, u16::from_le_bytes)
 }
 fn le32(b: &[u8], o: usize) -> u32 {
-    b.get(o..o.saturating_add(4)).and_then(|s| s.try_into().ok()).map_or(0, u32::from_le_bytes)
+    b.get(o..o.saturating_add(4))
+        .and_then(|s| s.try_into().ok())
+        .map_or(0, u32::from_le_bytes)
 }
 
 impl WavSource {
@@ -64,7 +68,9 @@ impl WavSource {
         let mut ixml_tr = None;
         let mut ds64_data = None;
         for _ in 0..MAX_CHUNKS {
-            let Some(body) = pos.checked_add(8).filter(|&b| b <= len) else { break };
+            let Some(body) = pos.checked_add(8).filter(|&b| b <= len) else {
+                break;
+            };
             let mut hdr = [0u8; 8];
             reader.read_at(pos, &mut hdr).map_err(io)?;
             let id = &hdr[0..4];
@@ -112,11 +118,15 @@ impl WavSource {
             }
             pos = body + clen + (clen & 1);
         }
-        let (tag, ch, rate, bits) = fmt.ok_or_else(|| MediaError::Decode(format!("{name}: missing fmt chunk")))?;
-        let (off, dlen) = data.ok_or_else(|| MediaError::Decode(format!("{name}: missing data chunk")))?;
+        let (tag, ch, rate, bits) =
+            fmt.ok_or_else(|| MediaError::Decode(format!("{name}: missing fmt chunk")))?;
+        let (off, dlen) =
+            data.ok_or_else(|| MediaError::Decode(format!("{name}: missing data chunk")))?;
         let float = tag == 3;
         if !(tag == 1 || float) || ch == 0 || !matches!(bits, 8 | 16 | 24 | 32 | 64) {
-            return Err(MediaError::Unsupported(format!("{name}: WAV format tag {tag}, {bits} bits")));
+            return Err(MediaError::Unsupported(format!(
+                "{name}: WAV format tag {tag}, {bits} bits"
+            )));
         }
         let frame_bytes = u64::from(ch) * u64::from(bits / 8);
         let frames = dlen / frame_bytes;
@@ -129,10 +139,18 @@ impl WavSource {
             audio_streams: vec![AudioStreamInfo {
                 sample_rate: rate,
                 channels: ch as u32,
-                codec: if float { "PCM float".into() } else { "PCM".into() },
+                codec: if float {
+                    "PCM float".into()
+                } else {
+                    "PCM".into()
+                },
                 bits_per_sample: Some(bits as u32),
             }],
-            container: if time_reference.is_some() { "Broadcast WAV".into() } else { "WAV".into() },
+            container: if time_reference.is_some() {
+                "Broadcast WAV".into()
+            } else {
+                "WAV".into()
+            },
             start_timecode: None,
             file_size: Some(len),
         };
@@ -141,9 +159,21 @@ impl WavSource {
             let r = info.frame_rate();
             let n = tr as i128 * r.num as i128;
             let d = rate as i128 * r.den as i128;
-            info.start_timecode = (n + d / 2).checked_div(d).and_then(|t| i64::try_from(t).ok());
+            info.start_timecode = (n + d / 2)
+                .checked_div(d)
+                .and_then(|t| i64::try_from(t).ok());
         }
-        Ok(Self { info, reader, data_off: off, frames, channels: ch as usize, bits, float, rate, time_reference })
+        Ok(Self {
+            info,
+            reader,
+            data_off: off,
+            frames,
+            channels: ch as usize,
+            bits,
+            float,
+            rate,
+            time_reference,
+        })
     }
 
     /// Broadcast Wave start time: samples since midnight.
@@ -158,10 +188,21 @@ impl WavSource {
     /// Read whole frames `first..=last` of the data chunk.
     fn read_frames(&self, first: u64, last: u64) -> Result<Vec<u8>> {
         let fb = self.frame_bytes() as u64;
-        let n = last.saturating_sub(first).saturating_add(1).saturating_mul(fb);
+        let n = last
+            .saturating_sub(first)
+            .saturating_add(1)
+            .saturating_mul(fb);
         let off = self.data_off.saturating_add(first.saturating_mul(fb));
-        let mut buf = vec![0u8; usize::try_from(n).map_err(|_| MediaError::Decode(format!("{}: audio read too large", self.info.name)))?];
-        self.reader.read_at(off, &mut buf).map_err(|e| MediaError::Io(format!("{}: {e}", self.info.name)))?;
+        let mut buf = vec![
+            0u8;
+            usize::try_from(n).map_err(|_| MediaError::Decode(format!(
+                "{}: audio read too large",
+                self.info.name
+            )))?
+        ];
+        self.reader
+            .read_at(off, &mut buf)
+            .map_err(|e| MediaError::Io(format!("{}: {e}", self.info.name)))?;
         Ok(buf)
     }
 
@@ -169,7 +210,9 @@ impl WavSource {
     fn sample(&self, block: &[u8], frame: usize, ch: usize) -> f32 {
         let bps = self.bits as usize / 8;
         let o = (frame * self.channels + ch) * bps;
-        let Some(b) = block.get(o..o.saturating_add(bps)) else { return 0.0 };
+        let Some(b) = block.get(o..o.saturating_add(bps)) else {
+            return 0.0;
+        };
         match (self.bits, self.float, b) {
             (8, _, &[a]) => (a as f32 - 128.0) / 128.0,
             (16, _, &[a, b]) => i16::from_le_bytes([a, b]) as f32 / 32768.0,
@@ -211,8 +254,15 @@ impl MediaSource for WavSource {
                 break;
             }
             let last = (hi.floor() as u64).saturating_add(1).min(total - 1);
-            let span = last.saturating_sub(first).saturating_add(1).saturating_mul(self.frame_bytes() as u64);
-            let block = if span <= MAX_SPAN_BYTES { Some(self.read_frames(first, last)?) } else { None };
+            let span = last
+                .saturating_sub(first)
+                .saturating_add(1)
+                .saturating_mul(self.frame_bytes() as u64);
+            let block = if span <= MAX_SPAN_BYTES {
+                Some(self.read_frames(first, last)?)
+            } else {
+                None
+            };
             for slot in i..end {
                 let src = src_of(slot);
                 if src < 0.0 {
@@ -321,7 +371,10 @@ mod tests {
         bext[342..346].copy_from_slice(&((tr >> 32) as u32).to_le_bytes());
         let src = WavSource::parse("bwf.wav", with_chunk(&wav, b"bext", &bext).into()).unwrap();
         assert_eq!(src.time_reference(), Some(tr));
-        assert_eq!(src.info().frame_rate(), filmcraft_time::FrameRate::FPS_23_976);
+        assert_eq!(
+            src.info().frame_rate(),
+            filmcraft_time::FrameRate::FPS_23_976
+        );
         assert_eq!(src.info().start_timecode, Some(86_400));
         assert_eq!(src.info().container, "Broadcast WAV");
         // the audio is unaffected
@@ -337,10 +390,12 @@ mod tests {
             tr & 0xFFFF_FFFF,
             tr >> 32
         );
-        let src = WavSource::parse("ixml.wav", with_chunk(&wav, b"iXML", xml.as_bytes()).into()).unwrap();
+        let src =
+            WavSource::parse("ixml.wav", with_chunk(&wav, b"iXML", xml.as_bytes()).into()).unwrap();
         assert_eq!(src.time_reference(), Some(tr));
         // a short bext (no TimeReference) is ignored
-        let src = WavSource::parse("short.wav", with_chunk(&wav, b"bext", &[0u8; 100]).into()).unwrap();
+        let src =
+            WavSource::parse("short.wav", with_chunk(&wav, b"bext", &[0u8; 100]).into()).unwrap();
         assert_eq!(src.time_reference(), None);
     }
 }

@@ -335,9 +335,17 @@ pub struct Engine2d<R: Role> {
 
 impl<R: Role> Engine2d<R> {
     pub(super) fn new(#[cfg(feature = "log")] logger: slog::Logger) -> Self {
-        const BG: Bg = Bg { control: BgControl(0), scroll: [0; 2], priority: 4 };
-        const AFFINE_BG_DATA: AffineBgData =
-            AffineBgData { ref_point: [0; 2], x_incr: [0; 2], y_incr: [0; 2], pos: [0; 2] };
+        const BG: Bg = Bg {
+            control: BgControl(0),
+            scroll: [0; 2],
+            priority: 4,
+        };
+        const AFFINE_BG_DATA: AffineBgData = AffineBgData {
+            ref_point: [0; 2],
+            x_incr: [0; 2],
+            y_incr: [0; 2],
+            pos: [0; 2],
+        };
 
         Engine2d {
             #[cfg(feature = "log")]
@@ -401,8 +409,11 @@ impl<R: Role> Engine2d<R> {
         }
         for i in 0..4 {
             let bg = &mut self.bgs[i];
-            bg.priority =
-                if value.bg_enabled(BgIndex::new(i as u8)) { bg.control.priority() } else { 4 };
+            bg.priority = if value.bg_enabled(BgIndex::new(i as u8)) {
+                bg.control.priority()
+            } else {
+                4
+            };
         }
     }
 
@@ -465,8 +476,10 @@ impl<R: Role> Engine2d<R> {
     #[inline]
     pub fn write_blend_coeffs_raw(&mut self, value: BlendCoeffsRaw) {
         self.blend_coeffs_raw.0 = value.0 & 0x1F1F;
-        self.blend_coeffs =
-            (self.blend_coeffs_raw.a_coeff().min(16), self.blend_coeffs_raw.b_coeff().min(16));
+        self.blend_coeffs = (
+            self.blend_coeffs_raw.a_coeff().min(16),
+            self.blend_coeffs_raw.b_coeff().min(16),
+        );
     }
 
     #[inline]

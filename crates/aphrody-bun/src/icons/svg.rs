@@ -82,13 +82,23 @@ pub struct Axes {
 
 impl Default for Axes {
     fn default() -> Self {
-        Self { fill: 0.0, weight: 400.0, grade: 0.0, optical_size: 24.0 }
+        Self {
+            fill: 0.0,
+            weight: 400.0,
+            grade: 0.0,
+            optical_size: 24.0,
+        }
     }
 }
 
 impl From<Axes> for SymbolAxes {
     fn from(a: Axes) -> Self {
-        Self { fill: a.fill, weight: a.weight, grade: a.grade, optical_size: a.optical_size }
+        Self {
+            fill: a.fill,
+            weight: a.weight,
+            grade: a.grade,
+            optical_size: a.optical_size,
+        }
     }
 }
 

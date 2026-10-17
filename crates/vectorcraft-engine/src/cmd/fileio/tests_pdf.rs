@@ -7,8 +7,16 @@ use super::*;
 
 fn session(artboards: usize) -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 100, "height": 80, "artboards": artboards})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 40, "height": 30})).unwrap();
+    s.execute(
+        "file.new",
+        &json!({"width": 100, "height": 80, "artboards": artboards}),
+    )
+    .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 10, "y": 10, "width": 40, "height": 30}),
+    )
+    .unwrap();
     s
 }
 
@@ -17,11 +25,17 @@ fn b64(v: &Value) -> Vec<u8> {
 }
 
 fn export(s: &mut Session, p: Value) -> Value {
-    s.execute("document.exportPdf", &p).unwrap_or_else(|e| panic!("{p}: {e}"))
+    s.execute("document.exportPdf", &p)
+        .unwrap_or_else(|e| panic!("{p}: {e}"))
 }
 
 fn warnings(v: &Value) -> Vec<String> {
-    v["warnings"].as_array().expect("warnings").iter().map(|w| w.as_str().unwrap().to_string()).collect()
+    v["warnings"]
+        .as_array()
+        .expect("warnings")
+        .iter()
+        .map(|w| w.as_str().unwrap().to_string())
+        .collect()
 }
 
 fn pages(bytes: &[u8]) -> usize {
@@ -49,10 +63,20 @@ fn export_pdf_writes_the_compatibility_header_and_the_range() {
     assert_eq!(pages(&b64(&export(&mut s, json!({"range": "1,3"})))), 2);
     assert_eq!(pages(&b64(&export(&mut s, json!({"artboards": [1]})))), 1);
     // The same options through document.export and document.serialize.
-    let v = s.execute("document.export", &as_export(&json!({"compatibility": "1.4", "range": "2"}))).unwrap();
+    let v = s
+        .execute(
+            "document.export",
+            &as_export(&json!({"compatibility": "1.4", "range": "2"})),
+        )
+        .unwrap();
     assert!(b64(&v).starts_with(b"%PDF-1.4") && pages(&b64(&v)) == 1);
     assert!(v["warnings"].is_array());
-    let v = s.execute("document.serialize", &as_export(&json!({"compatibility": "1.6"}))).unwrap();
+    let v = s
+        .execute(
+            "document.serialize",
+            &as_export(&json!({"compatibility": "1.6"})),
+        )
+        .unwrap();
     assert!(b64(&v).starts_with(b"%PDF-1.6"));
 }
 
@@ -76,18 +100,29 @@ fn bad_options_are_refused() {
         json!({"security": {"openPassword": "x", "permissionsPassword": "x"}}),
     ] {
         let e = s.execute("document.exportPdf", &p).unwrap_err();
-        assert!(matches!(e, crate::EngineError::BadParams { .. }), "{p}: {e}");
-        assert!(s.execute("document.export", &as_export(&p)).is_err(), "document.export {p}");
+        assert!(
+            matches!(e, crate::EngineError::BadParams { .. }),
+            "{p}: {e}"
+        );
+        assert!(
+            s.execute("document.export", &as_export(&p)).is_err(),
+            "document.export {p}"
+        );
     }
 }
 
 #[test]
 fn options_apply_over_the_preset() {
     let mut s = session(1);
-    let a = b64(&export(&mut s, json!({"preset": DEFAULT_PRESET, "compression": {"compressText": false}})));
+    let a = b64(&export(
+        &mut s,
+        json!({"preset": DEFAULT_PRESET, "compression": {"compressText": false}}),
+    ));
     let b = b64(&export(&mut s, json!({"preset": "default"})));
     assert!(a.len() > b.len(), "content streams left uncompressed");
-    assert!(String::from_utf8_lossy(&a).contains(" re") || String::from_utf8_lossy(&a).contains(" l"));
+    assert!(
+        String::from_utf8_lossy(&a).contains(" re") || String::from_utf8_lossy(&a).contains(" l")
+    );
     // `null` (the default document.formats lists) keeps the preset's value, at any depth.
     let p = json!({"compatibility": null, "compression": null, "security": {"openPassword": null}, "marks": {"weight": null}});
     let v = s.execute("document.pdfSettings", &p).unwrap();
@@ -98,9 +133,17 @@ fn options_apply_over_the_preset() {
 #[test]
 fn pdf_a_refuses_pdf_2() {
     let mut s = session(1);
-    let e = s.execute("document.pdfSettings", &json!({"standard": "pdfA2b", "compatibility": "2.0"})).unwrap_err();
+    let e = s
+        .execute(
+            "document.pdfSettings",
+            &json!({"standard": "pdfA2b", "compatibility": "2.0"}),
+        )
+        .unwrap_err();
     assert!(matches!(e, crate::EngineError::BadParams { .. }), "{e}");
-    let pdf = b64(&export(&mut s, json!({"standard": "pdfA2b", "compatibility": "1.6"})));
+    let pdf = b64(&export(
+        &mut s,
+        json!({"standard": "pdfA2b", "compatibility": "1.6"}),
+    ));
     assert!(pdf.starts_with(b"%PDF-1.6") && String::from_utf8_lossy(&pdf).contains("pdfaid"));
 }
 
@@ -108,27 +151,62 @@ fn pdf_a_refuses_pdf_2() {
 fn options_not_applied_yet_and_document_features_warn() {
     let mut s = session(1);
     // Printer's marks are drawn, thumbnails embedded and the file linearised: nothing to report.
-    let v = export(&mut s, json!({"thumbnails": true, "fastWebView": true, "marks": {"trim": true}}));
+    let v = export(
+        &mut s,
+        json!({"thumbnails": true, "fastWebView": true, "marks": {"trim": true}}),
+    );
     assert_eq!(warnings(&v), Vec::<String>::new());
     let text = String::from_utf8_lossy(&b64(&v)).into_owned();
     assert!(text.contains("/Thumb ") && text.contains("/Linearized 1"));
     // A pattern stroke is written as its tiles clipped to the stroke: nothing to report.
-    let tile = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap()["id"].as_u64().unwrap();
+    let tile = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap();
     s.execute("select.set", &json!({"ids": [tile]})).unwrap();
-    s.execute("object.pattern.make", &json!({"name": "Dots", "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "object.pattern.make",
+        &json!({"name": "Dots", "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("object.pattern.done", &json!({})).unwrap();
-    let frame = s.execute("shape.rectangle", &json!({"x": 20, "y": 20, "width": 50, "height": 40})).unwrap()["id"].as_u64().unwrap();
-    s.execute("paint.setStroke", &json!({"ids": [frame], "swatch": "Dots"})).unwrap();
+    let frame = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 20, "y": 20, "width": 50, "height": 40}),
+        )
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "paint.setStroke",
+        &json!({"ids": [frame], "swatch": "Dots"}),
+    )
+    .unwrap();
     assert_eq!(warnings(&export(&mut s, json!({}))).len(), 0);
     // A knockout group is approximated: its warning comes back from every PDF path.
     s.execute("select.set", &json!({"ids": [frame]})).unwrap();
     s.execute("object.group", &json!({})).unwrap();
-    s.execute("transparency.set", &json!({"knockout": "on"})).unwrap();
+    s.execute("transparency.set", &json!({"knockout": "on"}))
+        .unwrap();
     let knockout = |w: Vec<String>| w.iter().any(|w| w.contains("knockout groups"));
     assert!(knockout(warnings(&export(&mut s, json!({})))));
-    assert!(knockout(warnings(&s.execute("document.export", &as_export(&json!({}))).unwrap())));
+    assert!(knockout(warnings(
+        &s.execute("document.export", &as_export(&json!({})))
+            .unwrap()
+    )));
     // Other formats have none.
-    assert!(warnings(&s.execute("document.export", &json!({"format": "png"})).unwrap()).is_empty());
+    assert!(
+        warnings(
+            &s.execute("document.export", &json!({"format": "png"}))
+                .unwrap()
+        )
+        .is_empty()
+    );
 }
 
 #[test]
@@ -143,7 +221,11 @@ fn export_pdf_writes_a_path() {
     let bytes = std::fs::read(&path).unwrap();
     assert_eq!(v["bytes"], bytes.len());
     assert_eq!(pages(&bytes), 1);
-    assert_eq!(s.doc().unwrap().path, None, "exporting never retargets the document");
+    assert_eq!(
+        s.doc().unwrap().path,
+        None,
+        "exporting never retargets the document"
+    );
     let _ = std::fs::remove_dir_all(dir);
 }
 
@@ -157,32 +239,90 @@ fn pdf_settings_summarise_changes_and_warnings() {
     assert_eq!(v["warnings"], json!([]));
     let p = json!({"compatibility": "1.5", "compression": {"compressText": false}, "createLayers": true, "security": {"copy": false, "openPassword": ""}});
     let v = s.execute("document.pdfSettings", &p).unwrap();
-    let changed: Vec<&str> = v["changed"].as_array().unwrap().iter().map(|c| c["option"].as_str().unwrap()).collect();
-    assert_eq!(changed, ["compatibility", "compression.compressText", "createLayers", "security.copy"], "key order");
+    let changed: Vec<&str> = v["changed"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["option"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        changed,
+        [
+            "compatibility",
+            "compression.compressText",
+            "createLayers",
+            "security.copy"
+        ],
+        "key order"
+    );
     assert_eq!(v["changed"][0]["value"], "1.5");
-    assert_eq!(v["warnings"].as_array().unwrap().len(), 1, "permissions (PDF layers are written at 1.5): {}", v["warnings"]);
-    assert!(!v.to_string().contains("Password"), "passwords never come back");
-    assert!(s.execute("document.pdfSettings", &json!({"compatibility": "9"})).is_err());
+    assert_eq!(
+        v["warnings"].as_array().unwrap().len(),
+        1,
+        "permissions (PDF layers are written at 1.5): {}",
+        v["warnings"]
+    );
+    assert!(
+        !v.to_string().contains("Password"),
+        "passwords never come back"
+    );
+    assert!(
+        s.execute("document.pdfSettings", &json!({"compatibility": "9"}))
+            .is_err()
+    );
     // With the document: the in-memory export adds the document's own warnings.
     let mut s = session(1);
     s.execute("select.all", &json!({})).unwrap();
     s.execute("object.group", &json!({})).unwrap();
     let g = s.doc().unwrap().selection.objects[0].0;
     // Raster effects are written as images: nothing to report.
-    s.execute("effect.apply", &json!({"effect": "stylize.dropShadow", "ids": [g]})).unwrap();
-    assert_eq!(s.execute("document.pdfSettings", &json!({"includeDocument": true})).unwrap()["warnings"], json!([]));
-    s.execute("transparency.set", &json!({"knockout": "on"})).unwrap();
-    assert_eq!(s.execute("document.pdfSettings", &json!({})).unwrap()["warnings"], json!([]));
-    let full = s.execute("document.pdfSettings", &json!({"includeDocument": true})).unwrap();
-    assert!(warnings(&full).iter().any(|w| w.contains("knockout groups")), "{}", full["warnings"]);
+    s.execute(
+        "effect.apply",
+        &json!({"effect": "stylize.dropShadow", "ids": [g]}),
+    )
+    .unwrap();
+    assert_eq!(
+        s.execute("document.pdfSettings", &json!({"includeDocument": true}))
+            .unwrap()["warnings"],
+        json!([])
+    );
+    s.execute("transparency.set", &json!({"knockout": "on"}))
+        .unwrap();
+    assert_eq!(
+        s.execute("document.pdfSettings", &json!({})).unwrap()["warnings"],
+        json!([])
+    );
+    let full = s
+        .execute("document.pdfSettings", &json!({"includeDocument": true}))
+        .unwrap();
+    assert!(
+        warnings(&full)
+            .iter()
+            .any(|w| w.contains("knockout groups")),
+        "{}",
+        full["warnings"]
+    );
 }
 
 #[test]
 fn formats_list_the_pdf_options() {
     let mut s = Session::new();
     let v = s.execute("document.formats", &json!({})).unwrap();
-    let pdf = v["formats"].as_array().unwrap().iter().find(|f| f["id"] == "pdf").unwrap();
-    for k in ["artboard", "range", "preset", "standard", "compatibility", "compression", "security"] {
+    let pdf = v["formats"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["id"] == "pdf")
+        .unwrap();
+    for k in [
+        "artboard",
+        "range",
+        "preset",
+        "standard",
+        "compatibility",
+        "compression",
+        "security",
+    ] {
         assert!(pdf["options"].get(k).is_some(), "{k}");
     }
     assert_eq!(pdf["options"]["compatibility"]["default"], "1.7");

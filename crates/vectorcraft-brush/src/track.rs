@@ -26,7 +26,11 @@ pub struct Track {
 
 fn unit(v: Vec2) -> Vec2 {
     let l = v.hypot();
-    if l < 1e-12 { Vec2::new(1.0, 0.0) } else { v / l }
+    if l < 1e-12 {
+        Vec2::new(1.0, 0.0)
+    } else {
+        v / l
+    }
 }
 
 /// Left-hand normal in y-down document space (for a path running +x it points +y).
@@ -83,7 +87,14 @@ impl Track {
                 }
             }
         }
-        Some(Track { verts: pts, cum, closed, dirs, tangents, corner })
+        Some(Track {
+            verts: pts,
+            cum,
+            closed,
+            dirs,
+            tangents,
+            corner,
+        })
     }
 
     pub fn len(&self) -> f64 {
@@ -118,8 +129,15 @@ impl Track {
 
     /// Arc-length positions of the corner vertices (closed tracks list vertex 0 once).
     pub fn corner_positions(&self) -> Vec<(usize, f64)> {
-        let last = if self.closed { self.segments() } else { self.segments() + 1 };
-        (0..last).filter(|i| self.corner[*i]).map(|i| (i, self.cum[i])).collect()
+        let last = if self.closed {
+            self.segments()
+        } else {
+            self.segments() + 1
+        };
+        (0..last)
+            .filter(|i| self.corner[*i])
+            .map(|i| (i, self.cum[i]))
+            .collect()
     }
 
     /// Point and unit tangent at arc length `s`. Open tracks extrapolate beyond their ends along
@@ -127,7 +145,11 @@ impl Track {
     pub fn frame(&self, s: f64) -> (Point, Vec2) {
         let l = self.len();
         let n = self.segments();
-        let s = if self.closed && l > 0.0 { s.rem_euclid(l) } else { s };
+        let s = if self.closed && l > 0.0 {
+            s.rem_euclid(l)
+        } else {
+            s
+        };
         if s <= 0.0 && !self.closed {
             let t = self.dirs[0];
             return (self.verts[0] + t * s, t);
@@ -137,15 +159,30 @@ impl Track {
             return (self.verts[n] + t * (s - l), t);
         }
         // Binary search the segment.
-        let i = match self.cum.binary_search_by(|c| c.partial_cmp(&s).unwrap_or(std::cmp::Ordering::Less)) {
+        let i = match self
+            .cum
+            .binary_search_by(|c| c.partial_cmp(&s).unwrap_or(std::cmp::Ordering::Less))
+        {
             Ok(i) => i.min(n - 1),
             Err(i) => i.saturating_sub(1).min(n - 1),
         };
         let seg = self.cum[i + 1] - self.cum[i];
-        let u = if seg > 1e-12 { ((s - self.cum[i]) / seg).clamp(0.0, 1.0) } else { 0.0 };
+        let u = if seg > 1e-12 {
+            ((s - self.cum[i]) / seg).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let p = self.verts[i].lerp(self.verts[i + 1], u);
-        let t0 = if self.corner[i] { self.dirs[i] } else { self.tangents[i] };
-        let t1 = if self.corner[i + 1] { self.dirs[i] } else { self.tangents[i + 1] };
+        let t0 = if self.corner[i] {
+            self.dirs[i]
+        } else {
+            self.tangents[i]
+        };
+        let t1 = if self.corner[i + 1] {
+            self.dirs[i]
+        } else {
+            self.tangents[i + 1]
+        };
         (p, unit(t0 + (t1 - t0) * u))
     }
 
@@ -205,7 +242,11 @@ impl Rng {
     /// Uniform in [a, b] (a == b returns a without consuming randomness differently).
     pub fn range(&mut self, a: f64, b: f64) -> f64 {
         let u = self.unit();
-        if (b - a).abs() < 1e-12 { a } else { a + (b - a) * u }
+        if (b - a).abs() < 1e-12 {
+            a
+        } else {
+            a + (b - a) * u
+        }
     }
 }
 

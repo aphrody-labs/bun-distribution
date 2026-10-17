@@ -9,12 +9,14 @@
 use std::collections::BTreeMap;
 
 use crate::file_sys::nca_metadata::ContentRecordType;
-use crate::file_sys::registered_cache::{get_update_title_id, ContentProvider, ContentProviderUnion};
+use crate::file_sys::registered_cache::{
+    get_update_title_id, ContentProvider, ContentProviderUnion,
+};
 
-use crate::hle::result::{ResultCode, RESULT_SUCCESS};
 use super::ns_types::ContentPath;
-use crate::hle::service::ipc_helpers::{RequestParser, ResponseBuilder};
+use crate::hle::result::{ResultCode, RESULT_SUCCESS};
 use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
+use crate::hle::service::ipc_helpers::{RequestParser, ResponseBuilder};
 use crate::hle::service::service::{build_handler_map, FunctionInfo, ServiceFramework};
 
 /// IPC command table for IDocumentInterface.
@@ -65,9 +67,11 @@ impl IDocumentInterface {
     /// a ContentType (not NCAContentType), application ID and a 0x300-byte path.
     /// Selection belongs to NS; the provider translates only catalogued content
     /// into guest mount paths, consumed by FSP commands 8/10.
-    fn application_content_path(provider: &ContentProviderUnion, content_type: u8, application_id: u64)
-        -> Result<String, ResultCode>
-    {
+    fn application_content_path(
+        provider: &ContentProviderUnion,
+        content_type: u8,
+        application_id: u64,
+    ) -> Result<String, ResultCode> {
         let invalid = ResultCode::new(crate::file_sys::errors::RESULT_INVALID_ARGUMENT.raw());
         let missing = ResultCode::new(crate::file_sys::errors::RESULT_TARGET_NOT_FOUND.raw());
         let record_type = match content_type {
@@ -80,35 +84,66 @@ impl IDocumentInterface {
             6 => ContentRecordType::DeltaFragment,
             _ => return Err(invalid),
         };
-        if application_id == 0 { return Err(invalid); }
+        if application_id == 0 {
+            return Err(invalid);
+        }
         let update_id = get_update_title_id(application_id);
         // NS uses patch content when a patch is installed, not a mixture of
         // old base documents and a different installed application version.
-        let title_id = if !provider.list_entries_filter(None, None, Some(update_id)).is_empty() {
+        let title_id = if !provider
+            .list_entries_filter(None, None, Some(update_id))
+            .is_empty()
+        {
             update_id
-        } else { application_id };
-        let slot = provider.get_slot_for_entry(title_id, record_type).ok_or(missing)?;
-        provider.get_entry_content_path(slot, title_id, record_type).ok_or(missing)
+        } else {
+            application_id
+        };
+        let slot = provider
+            .get_slot_for_entry(title_id, record_type)
+            .ok_or(missing)?;
+        provider
+            .get_entry_content_path(slot, title_id, record_type)
+            .ok_or(missing)
     }
 
-    fn get_application_content_path_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_content_path_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         // Same explicit 7-byte padding and u64 offset as Resolve's ContentPath.
         let input = RequestParser::new(ctx).pop_raw::<ContentPath>();
         let missing = ResultCode::new(crate::file_sys::errors::RESULT_TARGET_NOT_FOUND.raw());
-        let result = if service.system.is_null() { Err(missing) } else {
-            service.system.get().get_content_provider().ok_or(missing).and_then(|provider| {
-                Self::application_content_path(&provider.lock().unwrap(), input.file_system_proxy_type, input.program_id)
-            })
+        let result = if service.system.is_null() {
+            Err(missing)
+        } else {
+            service
+                .system
+                .get()
+                .get_content_provider()
+                .ok_or(missing)
+                .and_then(|provider| {
+                    Self::application_content_path(
+                        &provider.lock().unwrap(),
+                        input.file_system_proxy_type,
+                        input.program_id,
+                    )
+                })
         };
         let result = result.and_then(|path| {
             if path.len() >= 0x300 || ctx.get_write_buffer_size(0) < path.len() + 1 {
-                return Err(ResultCode::new(crate::file_sys::errors::RESULT_INVALID_ARGUMENT.raw()));
+                return Err(ResultCode::new(
+                    crate::file_sys::errors::RESULT_INVALID_ARGUMENT.raw(),
+                ));
             }
             let mut output = [0u8; 0x300];
             output[..path.len()].copy_from_slice(path.as_bytes());
             ctx.write_buffer(&output, 0);
-            log::info!("GetApplicationContentPath: type={}, application_id={:016x}, path={path}", input.file_system_proxy_type, input.program_id);
+            log::info!(
+                "GetApplicationContentPath: type={}, application_id={:016x}, path={path}",
+                input.file_system_proxy_type,
+                input.program_id
+            );
             Ok(())
         });
         if let Err(error) = result {
@@ -151,15 +186,22 @@ impl IDocumentInterface {
         Ok(self.system.get().get_application_process_program_id())
     }
 
-    fn resolve_application_content_path_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn resolve_application_content_path_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         let path = RequestParser::new(ctx).pop_raw::<ContentPath>();
-        let result = service.resolve_application_content_path(path.file_system_proxy_type, path.program_id);
+        let result =
+            service.resolve_application_content_path(path.file_system_proxy_type, path.program_id);
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
         rb.push_result(result.map_or_else(|error| error, |_| RESULT_SUCCESS));
     }
 
-    fn get_running_application_program_id_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_running_application_program_id_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         let caller = RequestParser::new(ctx).pop_u64();
         match service.get_running_application_program_id(caller) {
@@ -177,7 +219,9 @@ impl IDocumentInterface {
 }
 
 impl SessionRequestHandler for IDocumentInterface {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, ctx)
     }
@@ -213,9 +257,9 @@ mod tests {
     fn document_path_reply_overwrites_stale_tls_content_attributes() {
         use crate::core::{System, SystemRef};
         use crate::device_memory::DeviceMemory;
+        use crate::hle::ipc;
         use crate::hle::kernel::k_process::{KProcess, ProcessLock};
         use crate::hle::kernel::k_thread::{KThread, KThreadLock};
-        use crate::hle::ipc;
         use crate::memory::memory::Memory;
         use common::page_table::{PageTable, PageType};
         use std::sync::Mutex;
@@ -227,20 +271,42 @@ mod tests {
         let mut page_table = Box::new(PageTable::new());
         page_table.resize(32, 12);
         page_table.entries.get_and_fault(3).store(
-            false, PageType::Memory, 1, device.buffer.backing_base_pointer() as usize);
-        memory.lock().unwrap().set_current_page_table(page_table.as_mut(), true);
+            false,
+            PageType::Memory,
+            1,
+            device.buffer.backing_base_pointer() as usize,
+        );
+        memory
+            .lock()
+            .unwrap()
+            .set_current_page_table(page_table.as_mut(), true);
         let process = Arc::new(ProcessLock::from_value(KProcess::new()));
-        process.lock().unwrap().page_table.set_memory(memory.clone());
+        process
+            .lock()
+            .unwrap()
+            .page_table
+            .set_memory(memory.clone());
         let thread = Arc::new(KThreadLock::new(KThread::new()));
         thread.lock().unwrap().parent = Some(Arc::downgrade(&process));
 
         let application_id = 0x0100123400000000u64;
         let mut manual = ManualContentProvider::new();
-        manual.add_entry(TitleType::Application, ContentRecordType::LegalInformation, application_id,
-            Arc::new(VectorVfsFile::new(Vec::new(), "11111111111111111111111111111111.nca".into(), None)));
+        manual.add_entry(
+            TitleType::Application,
+            ContentRecordType::LegalInformation,
+            application_id,
+            Arc::new(VectorVfsFile::new(
+                Vec::new(),
+                "11111111111111111111111111111111.nca".into(),
+                None,
+            )),
+        );
         let mut provider = ContentProviderUnion::new();
-        unsafe { provider.set_slot(ContentProviderUnionSlot::UserNAND, &mut manual); }
-        let expected_path = IDocumentInterface::application_content_path(&provider, 5, application_id).unwrap();
+        unsafe {
+            provider.set_slot(ContentProviderUnionSlot::UserNAND, &mut manual);
+        }
+        let expected_path =
+            IDocumentInterface::application_content_path(&provider, 5, application_id).unwrap();
         let mut system = Box::new(System::new());
         system.set_content_provider(Arc::new(Mutex::new(provider)));
         let service = IDocumentInterface::new(SystemRef::from_ref(&system));
@@ -252,7 +318,9 @@ mod tests {
             ctx.command_buffer_mut()[4] = application_id as u32;
             ctx.command_buffer_mut()[5] = (application_id >> 32) as u32;
             ctx.set_buffer_b_descriptors_for_test(vec![ipc::BufferDescriptorABW {
-                size_bits_0_31: 0x300, address_bits_0_31: 0x3100, raw_word2: 0,
+                size_bits_0_31: 0x300,
+                address_bits_0_31: 0x3100,
+                raw_word2: 0,
             }]);
             memory.lock().unwrap().write_32(0x3020, 0x53535353);
             service.handlers()[&21].handler_callback.unwrap()(&service, &mut ctx);
@@ -275,20 +343,48 @@ mod tests {
     fn document_path_selects_installed_patch_and_preserves_content_type() {
         let application_id = 0x0100123400000000;
         let mut manual = ManualContentProvider::new();
-        manual.add_entry(TitleType::Application, ContentRecordType::LegalInformation, application_id,
-            Arc::new(VectorVfsFile::new(Vec::new(), "11111111111111111111111111111111.nca".into(), None)));
+        manual.add_entry(
+            TitleType::Application,
+            ContentRecordType::LegalInformation,
+            application_id,
+            Arc::new(VectorVfsFile::new(
+                Vec::new(),
+                "11111111111111111111111111111111.nca".into(),
+                None,
+            )),
+        );
         let mut provider = ContentProviderUnion::new();
-        unsafe { provider.set_slot(ContentProviderUnionSlot::UserNAND, &mut manual); }
-        let path = IDocumentInterface::application_content_path(&provider, 5, application_id).unwrap();
+        unsafe {
+            provider.set_slot(ContentProviderUnionSlot::UserNAND, &mut manual);
+        }
+        let path =
+            IDocumentInterface::application_content_path(&provider, 5, application_id).unwrap();
         assert!(path.ends_with("11111111111111111111111111111111.nca"));
-        assert!(IDocumentInterface::application_content_path(&provider, 4, application_id).is_err());
-        assert!(IDocumentInterface::application_content_path(&provider, 255, application_id).is_err());
+        assert!(
+            IDocumentInterface::application_content_path(&provider, 4, application_id).is_err()
+        );
+        assert!(
+            IDocumentInterface::application_content_path(&provider, 255, application_id).is_err()
+        );
         assert!(IDocumentInterface::application_content_path(&provider, 5, 0).is_err());
-        assert!(IDocumentInterface::application_content_path(&provider, 5, application_id + 1).is_err());
-        manual.add_entry(TitleType::Update, ContentRecordType::LegalInformation, get_update_title_id(application_id),
-            Arc::new(VectorVfsFile::new(Vec::new(), "22222222222222222222222222222222.nca".into(), None)));
-        let path = IDocumentInterface::application_content_path(&provider, 5, application_id).unwrap();
+        assert!(
+            IDocumentInterface::application_content_path(&provider, 5, application_id + 1).is_err()
+        );
+        manual.add_entry(
+            TitleType::Update,
+            ContentRecordType::LegalInformation,
+            get_update_title_id(application_id),
+            Arc::new(VectorVfsFile::new(
+                Vec::new(),
+                "22222222222222222222222222222222.nca".into(),
+                None,
+            )),
+        );
+        let path =
+            IDocumentInterface::application_content_path(&provider, 5, application_id).unwrap();
         assert!(path.ends_with("22222222222222222222222222222222.nca"));
-        assert!(IDocumentInterface::application_content_path(&provider, 4, application_id).is_err());
+        assert!(
+            IDocumentInterface::application_content_path(&provider, 4, application_id).is_err()
+        );
     }
 }

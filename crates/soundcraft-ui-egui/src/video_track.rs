@@ -37,8 +37,18 @@ impl MovieKey {
 type ThumbKey = (MovieKey, i64, u32);
 
 enum Job {
-    Frame { key: MovieKey, path: String, secs: f64 },
-    Thumb { key: MovieKey, path: String, secs: f64, h: u32, tk: ThumbKey },
+    Frame {
+        key: MovieKey,
+        path: String,
+        secs: f64,
+    },
+    Thumb {
+        key: MovieKey,
+        path: String,
+        secs: f64,
+        h: u32,
+        tk: ThumbKey,
+    },
 }
 
 enum Done {
@@ -57,7 +67,10 @@ impl Worker {
     fn open(&mut self, key: MovieKey, path: &str, out: &mut Vec<Done>) -> Option<&mut Movie> {
         if !self.movies.contains_key(&key) {
             let m = open_movie(path);
-            out.push(Done::Info(key, m.as_ref().map(|m| m.info().clone()).map_err(Clone::clone)));
+            out.push(Done::Info(
+                key,
+                m.as_ref().map(|m| m.info().clone()).map_err(Clone::clone),
+            ));
             // Keep a handful of movies open.
             if self.movies.len() >= 8 {
                 self.movies.clear();
@@ -77,7 +90,13 @@ impl Worker {
                 };
                 out.push(Done::Frame(key, secs, r));
             }
-            Job::Thumb { key, path, secs, h, tk } => {
+            Job::Thumb {
+                key,
+                path,
+                secs,
+                h,
+                tk,
+            } => {
                 let r = match self.open(key, &path, &mut out) {
                     Some(m) => m.thumbnail_at(secs, h).map_err(|e| e.to_string()),
                     None => Err("movie offline".to_string()),
@@ -127,7 +146,10 @@ mod backend {
             let shared = Arc::new((Mutex::new(Queue::default()), Condvar::new()));
             let (tx, rx) = channel();
             let s2 = Arc::clone(&shared);
-            std::thread::Builder::new().name("video-decode".into()).spawn(move || run(&s2, &tx, &ctx)).ok()?;
+            std::thread::Builder::new()
+                .name("video-decode".into())
+                .spawn(move || run(&s2, &tx, &ctx))
+                .ok()?;
             Some(Backend { shared, rx })
         }
 
@@ -158,7 +180,18 @@ mod backend {
         pub fn queued_thumbs(&self) -> Vec<super::ThumbKey> {
             let (lock, _) = &*self.shared;
             lock.lock()
-                .map(|q| q.thumbs.iter().filter_map(|j| if let Job::Thumb { tk, .. } = j { Some(*tk) } else { None }).collect())
+                .map(|q| {
+                    q.thumbs
+                        .iter()
+                        .filter_map(|j| {
+                            if let Job::Thumb { tk, .. } = j {
+                                Some(*tk)
+                            } else {
+                                None
+                            }
+                        })
+                        .collect()
+                })
                 .unwrap_or_default()
         }
     }
@@ -229,7 +262,12 @@ mod backend {
 
     impl Backend {
         pub fn new(ctx: egui::Context) -> Option<Backend> {
-            Some(Backend { worker: Worker::default(), frame: None, thumbs: VecDeque::new(), ctx })
+            Some(Backend {
+                worker: Worker::default(),
+                frame: None,
+                thumbs: VecDeque::new(),
+                ctx,
+            })
         }
         pub fn submit(&mut self, job: Job) {
             match job {
@@ -249,7 +287,9 @@ mod backend {
                 out.extend(self.worker.run(j));
             }
             for _ in 0..2 {
-                let Some(j) = self.thumbs.pop_back() else { break };
+                let Some(j) = self.thumbs.pop_back() else {
+                    break;
+                };
                 out.extend(self.worker.run(j));
             }
             if !self.thumbs.is_empty() {
@@ -258,7 +298,16 @@ mod backend {
             out
         }
         pub fn queued_thumbs(&self) -> Vec<super::ThumbKey> {
-            self.thumbs.iter().filter_map(|j| if let Job::Thumb { tk, .. } = j { Some(*tk) } else { None }).collect()
+            self.thumbs
+                .iter()
+                .filter_map(|j| {
+                    if let Job::Thumb { tk, .. } = j {
+                        Some(*tk)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         }
     }
 }
@@ -297,7 +346,9 @@ impl VideoPool {
 
     /// Collect finished work (call once per frame before drawing).
     pub fn poll(&mut self, ctx: &egui::Context) {
-        let Some(b) = self.backend.as_mut() else { return };
+        let Some(b) = self.backend.as_mut() else {
+            return;
+        };
         let done = b.poll();
         let queued: std::collections::HashSet<ThumbKey> = b.queued_thumbs().into_iter().collect();
         for d in done {
@@ -314,7 +365,17 @@ impl VideoPool {
                                 *ck = k;
                                 *ci = f.index;
                             }
-                            None => self.current = Some((k, f.index, ctx.load_texture("video-frame", img, egui::TextureOptions::LINEAR))),
+                            None => {
+                                self.current = Some((
+                                    k,
+                                    f.index,
+                                    ctx.load_texture(
+                                        "video-frame",
+                                        img,
+                                        egui::TextureOptions::LINEAR,
+                                    ),
+                                ))
+                            }
                         }
                         self.current_err = None;
                         self.frames_shown += 1;
@@ -323,7 +384,11 @@ impl VideoPool {
                 },
                 Done::Thumb(tk, r) => {
                     let slot = match r {
-                        Ok(f) => Slot::Ready(ctx.load_texture(format!("video-thumb-{tk:?}"), color_image(&f), egui::TextureOptions::LINEAR)),
+                        Ok(f) => Slot::Ready(ctx.load_texture(
+                            format!("video-thumb-{tk:?}"),
+                            color_image(&f),
+                            egui::TextureOptions::LINEAR,
+                        )),
                         Err(_) => Slot::Failed,
                     };
                     self.thumbs.insert(tk, slot);
@@ -333,7 +398,8 @@ impl VideoPool {
         // Pending slots whose job fell off the queue (scrolled away) may be asked for again; the
         // one being decoded right now is not queued either, so give it a moment.
         let now = ctx.input(|i| i.time);
-        self.thumbs.retain(|k, s| !matches!(s, Slot::Pending(t) if now - *t > 2.0 && !queued.contains(k)));
+        self.thumbs
+            .retain(|k, s| !matches!(s, Slot::Pending(t) if now - *t > 2.0 && !queued.contains(k)));
     }
 
     pub fn info(&self, key: MovieKey) -> Option<&Result<MovieInfo, String>> {
@@ -341,7 +407,14 @@ impl VideoPool {
     }
 
     /// Ask for the picture at `secs` of the movie (the Video window).
-    pub fn request_frame(&mut self, ctx: &egui::Context, key: MovieKey, path: &str, secs: f64, fps: f64) {
+    pub fn request_frame(
+        &mut self,
+        ctx: &egui::Context,
+        key: MovieKey,
+        path: &str,
+        secs: f64,
+        fps: f64,
+    ) {
         let q = (secs * fps.max(1.0) * 4.0).floor() as i64;
         if self.last_req == Some((key, q)) {
             return;
@@ -359,11 +432,21 @@ impl VideoPool {
     }
 
     pub fn current_error(&self, key: MovieKey) -> Option<&str> {
-        self.current_err.as_ref().filter(|c| c.0 == key).map(|c| c.1.as_str())
+        self.current_err
+            .as_ref()
+            .filter(|c| c.0 == key)
+            .map(|c| c.1.as_str())
     }
 
     /// A thumbnail at `secs`, `h` pixels high; requested in the background when missing.
-    pub fn thumb(&mut self, ctx: &egui::Context, key: MovieKey, path: &str, secs: f64, h: u32) -> Option<egui::TextureHandle> {
+    pub fn thumb(
+        &mut self,
+        ctx: &egui::Context,
+        key: MovieKey,
+        path: &str,
+        secs: f64,
+        h: u32,
+    ) -> Option<egui::TextureHandle> {
         let tk = (key, (secs * 1000.0).round() as i64, h);
         match self.thumbs.get(&tk) {
             Some(Slot::Ready(t)) => return Some(t.clone()),
@@ -376,7 +459,13 @@ impl VideoPool {
         self.thumbs.insert(tk, Slot::Pending(ctx.input(|i| i.time)));
         let path = path.to_string();
         if let Some(b) = self.backend(ctx) {
-            b.submit(Job::Thumb { key, path, secs, h, tk });
+            b.submit(Job::Thumb {
+                key,
+                path,
+                secs,
+                h,
+                tk,
+            });
         }
         None
     }
@@ -401,12 +490,17 @@ pub fn online(s: &Session) -> bool {
 pub fn movie_secs(s: &Session, clip_start: Samples, offset: Samples, at: Samples) -> f64 {
     let sync = s.edit.value("video.sync_offset", 0.0);
     let sync = if sync.is_finite() { sync } else { 0.0 };
-    (at.saturating_sub(clip_start).saturating_add(offset) as f64 - sync) / s.sample_rate.as_f64().max(1.0)
+    (at.saturating_sub(clip_start).saturating_add(offset) as f64 - sync)
+        / s.sample_rate.as_f64().max(1.0)
 }
 
 /// The picture at `at`: the topmost active Video track with an unmuted clip there.
 pub fn picture_at(s: &Session, at: Samples) -> Option<(MovieKey, String, f64, f64)> {
-    for t in s.tracks.iter().filter(|t| t.kind == soundcraft_model::TrackKind::Video && !t.inactive) {
+    for t in s
+        .tracks
+        .iter()
+        .filter(|t| t.kind == soundcraft_model::TrackKind::Video && !t.inactive)
+    {
         for c in t.clips() {
             if c.muted || !c.range().contains(at) {
                 continue;
@@ -414,7 +508,12 @@ pub fn picture_at(s: &Session, at: Samples) -> Option<(MovieKey, String, f64, f6
             if let ClipContent::Video { source, offset } = c.content
                 && let Some(v) = s.video(source)
             {
-                return Some((MovieKey::new(source, &v.path), v.path.clone(), movie_secs(s, c.start, offset, at), v.frame_rate));
+                return Some((
+                    MovieKey::new(source, &v.path),
+                    v.path.clone(),
+                    movie_secs(s, c.start, offset, at),
+                    v.frame_rate,
+                ));
             }
         }
     }
@@ -423,39 +522,77 @@ pub fn picture_at(s: &Session, at: Samples) -> Option<(MovieKey, String, f64, f6
 
 /// Draw thumbnails inside the video clips of `track` (called from the Edit window's track row,
 /// after the clip blocks are painted).
-pub fn draw_lane(app: &mut SoundApp, painter: &Painter, s: &Session, track: &Track, tl: Rect, lane: Rect) {
+pub fn draw_lane(
+    app: &mut SoundApp,
+    painter: &Painter,
+    s: &Session,
+    track: &Track,
+    tl: Rect,
+    lane: Rect,
+) {
     if !track.clips().iter().any(|c| c.is_video()) {
         return;
     }
     let ctx = painter.ctx().clone();
     app.video.poll(&ctx);
     let on = online(s);
-    let name_h = if lane.height() >= 40.0 && s.edit.flag("view.clip.name") { 13.0 } else { 0.0 };
+    let name_h = if lane.height() >= 40.0 && s.edit.flag("view.clip.name") {
+        13.0
+    } else {
+        0.0
+    };
     let ppp = ctx.pixels_per_point();
     for clip in track.clips() {
-        let ClipContent::Video { source, offset } = clip.content else { continue };
+        let ClipContent::Video { source, offset } = clip.content else {
+            continue;
+        };
         let x0 = x_of(s, tl, clip.start);
         let x1 = x_of(s, tl, clip.end()).max(x0 + 1.0);
-        let body = Rect::from_min_max(pos2(x0 + 1.0, lane.min.y + 2.0 + name_h), pos2(x1 - 1.0, lane.max.y - 2.0));
+        let body = Rect::from_min_max(
+            pos2(x0 + 1.0, lane.min.y + 2.0 + name_h),
+            pos2(x1 - 1.0, lane.max.y - 2.0),
+        );
         let vis = body.intersect(lane);
         if vis.width() < 2.0 || vis.height() < 6.0 {
             continue;
         }
         let p = painter.with_clip_rect(vis);
         let Some(v) = s.video(source) else {
-            p.text(vis.center(), egui::Align2::CENTER_CENTER, "movie missing from session", regular(10.0), Color32::from_rgb(220, 120, 120));
+            p.text(
+                vis.center(),
+                egui::Align2::CENTER_CENTER,
+                "movie missing from session",
+                regular(10.0),
+                Color32::from_rgb(220, 120, 120),
+            );
             continue;
         };
         if !on {
-            p.text(vis.center(), egui::Align2::CENTER_CENTER, "Video Track Offline", regular(10.0), Color32::from_gray(170));
+            p.text(
+                vis.center(),
+                egui::Align2::CENTER_CENTER,
+                "Video Track Offline",
+                regular(10.0),
+                Color32::from_gray(170),
+            );
             continue;
         }
         let key = MovieKey::new(source, &v.path);
         if let Some(Err(e)) = app.video.info(key) {
-            p.text(vis.center(), egui::Align2::CENTER_CENTER, format!("media offline: {e}"), regular(10.0), Color32::from_rgb(220, 120, 120));
+            p.text(
+                vis.center(),
+                egui::Align2::CENTER_CENTER,
+                format!("media offline: {e}"),
+                regular(10.0),
+                Color32::from_rgb(220, 120, 120),
+            );
             continue;
         }
-        let aspect = app.video.info(key).and_then(|i| i.as_ref().ok()).map_or(v.aspect(), MovieInfo::display_aspect) as f32;
+        let aspect = app
+            .video
+            .info(key)
+            .and_then(|i| i.as_ref().ok())
+            .map_or(v.aspect(), MovieInfo::display_aspect) as f32;
         let th = body.height();
         let tw = (th * aspect).clamp(8.0, 600.0);
         // Pixel height bucket (multiples of 16) so zooming the track does not re-decode constantly.
@@ -469,18 +606,32 @@ pub fn draw_lane(app: &mut SoundApp, painter: &Painter, s: &Session, track: &Tra
             }
             let at = sample_at(s, tl, tx);
             let secs = movie_secs(s, clip.start, offset, at.max(clip.start));
-            let r = Rect::from_min_max(pos2(tx, body.min.y), pos2((tx + tw).min(body.max.x), body.max.y));
+            let r = Rect::from_min_max(
+                pos2(tx, body.min.y),
+                pos2((tx + tw).min(body.max.x), body.max.y),
+            );
             match app.video.thumb(&ctx, key, &v.path, secs.max(0.0), hpx) {
                 Some(tex) => {
                     let full = Rect::from_min_size(r.min, egui::vec2(tw, th));
-                    let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2((r.width() / tw).clamp(0.0, 1.0), 1.0));
-                    p.image(tex.id(), Rect::from_min_max(full.min, pos2(r.max.x, full.max.y)), uv, Color32::WHITE);
+                    let uv = Rect::from_min_max(
+                        pos2(0.0, 0.0),
+                        pos2((r.width() / tw).clamp(0.0, 1.0), 1.0),
+                    );
+                    p.image(
+                        tex.id(),
+                        Rect::from_min_max(full.min, pos2(r.max.x, full.max.y)),
+                        uv,
+                        Color32::WHITE,
+                    );
                 }
                 None => {
                     p.rect_filled(r.shrink(1.0), 0.0, Color32::from_rgb(24, 24, 26));
                 }
             }
-            p.line_segment([pos2(tx, body.min.y), pos2(tx, body.max.y)], egui::Stroke::new(1.0, Color32::from_black_alpha(160)));
+            p.line_segment(
+                [pos2(tx, body.min.y), pos2(tx, body.max.y)],
+                egui::Stroke::new(1.0, Color32::from_black_alpha(160)),
+            );
             k += 1;
         }
     }

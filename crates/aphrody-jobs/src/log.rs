@@ -68,7 +68,13 @@ impl JobLogs {
         // escape the log directory.
         let safe: String = job_id
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         self.root.join(format!("{safe}.ndjson"))
     }
@@ -81,8 +87,10 @@ impl JobLogs {
     /// [`crate::JobError::Json`] when the line cannot be serialised.
     pub fn append(&self, job_id: &str, line: &LogLine) -> Result<()> {
         std::fs::create_dir_all(&self.root)?;
-        let mut file =
-            std::fs::OpenOptions::new().create(true).append(true).open(self.path_for(job_id))?;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(self.path_for(job_id))?;
         let mut encoded = serde_json::to_string(line)?;
         encoded.push('\n');
         file.write_all(encoded.as_bytes())?;
@@ -97,7 +105,12 @@ impl JobLogs {
     pub fn info(&self, job_id: &str, message: impl Into<String>) -> Result<()> {
         self.append(
             job_id,
-            &LogLine { at: Utc::now(), level: LogLevel::Info, message: message.into(), data: None },
+            &LogLine {
+                at: Utc::now(),
+                level: LogLevel::Info,
+                message: message.into(),
+                data: None,
+            },
         )
     }
 
@@ -134,8 +147,10 @@ impl JobLogs {
             return Ok(Vec::new());
         }
         let raw = std::fs::read_to_string(&path)?;
-        let mut lines: Vec<LogLine> =
-            raw.lines().filter_map(|l| serde_json::from_str(l).ok()).collect();
+        let mut lines: Vec<LogLine> = raw
+            .lines()
+            .filter_map(|l| serde_json::from_str(l).ok())
+            .collect();
         if let Some(n) = tail
             && lines.len() > n
         {
@@ -179,7 +194,12 @@ mod tests {
     #[test]
     fn a_job_with_no_log_reads_as_empty_not_as_an_error() {
         let dir = tempfile::tempdir().unwrap();
-        assert!(JobLogs::new(dir.path()).read("never-ran", None).unwrap().is_empty());
+        assert!(
+            JobLogs::new(dir.path())
+                .read("never-ran", None)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]

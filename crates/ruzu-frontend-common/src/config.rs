@@ -2252,7 +2252,10 @@ mod tests {
     fn per_game_loading_preserves_the_boot_selected_user() {
         // Config::ReadSettingGeneric excludes non-switchable settings from
         // per-title configuration, including the accepted boot-time profile.
-        for ini in ["", "[System]\ncurrent_user\\default=false\ncurrent_user=0\n"] {
+        for ini in [
+            "",
+            "[System]\ncurrent_user\\default=false\ncurrent_user=0\n",
+        ] {
             let mut config = BaseConfig::new(ConfigType::PerGameConfig);
             config.load_ini(ini);
             config.begin_group("System");
@@ -2271,7 +2274,9 @@ mod tests {
                 let mut config = BaseConfig::new(ConfigType::GlobalConfig);
                 config.begin_group("Debugging");
                 let mut source = common::settings::Values::default();
-                source.gpu_log_level.set_value(GpuLogLevel::from_u32(index).unwrap());
+                source
+                    .gpu_log_level
+                    .set_value(GpuLogLevel::from_u32(index).unwrap());
                 source.gpu_log_shader_dumps.set_value(dumps);
                 config.write_setting_generic(&mut source.gpu_log_level);
                 config.write_setting_generic(&mut source.gpu_log_shader_dumps);
@@ -2301,13 +2306,22 @@ mod tests {
             assert_eq!(*loaded.use_auto_stub.get_value(), enabled);
             source.enable_fs_access_log.set_value(enabled);
             config.write_setting_generic(&mut source.enable_fs_access_log);
-            assert_eq!(config.ini["Debugging"]["enable_fs_access_log"], enabled.to_string());
+            assert_eq!(
+                config.ini["Debugging"]["enable_fs_access_log"],
+                enabled.to_string()
+            );
             config.read_setting_generic(&mut loaded.enable_fs_access_log);
             assert_eq!(*loaded.enable_fs_access_log.get_value(), enabled);
             for (source, loaded) in [
                 (&mut source.quest_flag, &mut loaded.quest_flag),
-                (&mut source.disable_web_applet, &mut loaded.disable_web_applet),
-                (&mut source.enable_all_controllers, &mut loaded.enable_all_controllers),
+                (
+                    &mut source.disable_web_applet,
+                    &mut loaded.disable_web_applet,
+                ),
+                (
+                    &mut source.enable_all_controllers,
+                    &mut loaded.enable_all_controllers,
+                ),
             ] {
                 source.set_value(enabled);
                 config.write_setting_generic(source);
@@ -2327,10 +2341,17 @@ mod tests {
                 config.write_setting_generic(setting);
                 assert!(!config.ini["Debugging"].contains_key(setting.label()));
                 config.write_raw(setting.label(), "true".to_string());
-                config.write_raw(&format!("{}\\default", setting.label()), "false".to_string());
+                config.write_raw(
+                    &format!("{}\\default", setting.label()),
+                    "false".to_string(),
+                );
                 setting.set_value(false);
                 config.read_setting_generic(setting);
-                assert!(!*setting.get_value(), "{} must ignore stale INI entries", setting.label());
+                assert!(
+                    !*setting.get_value(),
+                    "{} must ignore stale INI entries",
+                    setting.label()
+                );
             }
         }
         let mut custom = BaseConfig::new(ConfigType::PerGameConfig);
@@ -2343,7 +2364,11 @@ mod tests {
         custom.write_raw("enable_fs_access_log\\default", "false".into());
         custom.read_setting_generic(&mut values.enable_fs_access_log);
         assert!(!*values.enable_fs_access_log.get_value());
-        for setting in [&mut values.quest_flag, &mut values.disable_web_applet, &mut values.enable_all_controllers] {
+        for setting in [
+            &mut values.quest_flag,
+            &mut values.disable_web_applet,
+            &mut values.enable_all_controllers,
+        ] {
             let original = *setting.get_value();
             custom.write_raw(setting.label(), (!original).to_string());
             custom.write_raw(&format!("{}\\default", setting.label()), "false".into());
@@ -2487,7 +2512,10 @@ mod tests {
             for setting in [&mut values.disable_macro_jit, &mut values.disable_macro_hle] {
                 setting.set_value(enabled);
                 config.write_setting_generic(setting);
-                assert_eq!(config.ini["DebuggingGraphics"][setting.label()], enabled.to_string());
+                assert_eq!(
+                    config.ini["DebuggingGraphics"][setting.label()],
+                    enabled.to_string()
+                );
                 setting.set_value(!enabled);
                 config.read_setting_generic(setting);
                 assert_eq!(*setting.get_value(), enabled);
@@ -2503,8 +2531,14 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_FRAME_TIME_CONFIG";
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "config::tests::frame_time_recording_round_trips_through_debug_configuration"])
-                .env(CHILD, "1").status().unwrap().success());
+                .args([
+                    "--exact",
+                    "config::tests::frame_time_recording_round_trips_through_debug_configuration"
+                ])
+                .env(CHILD, "1")
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         for enabled in [false, true] {
@@ -2525,27 +2559,52 @@ mod tests {
         values.eden_token.set_value("a".repeat(48));
         values.eden_username.set_value("LocalUser".to_string());
         values.yuzu_username.set_value("LegacyUser".to_string());
-        values.yuzu_token.set_value("existing-credential".to_string());
+        values
+            .yuzu_token
+            .set_value("existing-credential".to_string());
         let mut config = BaseConfig::new(ConfigType::GlobalConfig);
         let mut loaded = common::settings::Values::default();
         for category in [Category::Debugging, Category::WebService] {
             config.begin_group(category.translate());
-            values.for_each_setting_in_category_mut(category, |setting| config.write_setting_generic(setting));
-            loaded.for_each_setting_in_category_mut(category, |setting| config.read_setting_generic(setting));
+            values.for_each_setting_in_category_mut(category, |setting| {
+                config.write_setting_generic(setting)
+            });
+            loaded.for_each_setting_in_category_mut(category, |setting| {
+                config.read_setting_generic(setting)
+            });
             config.end_group();
         }
-        assert_eq!(loaded.serial_unit.get_value(), values.serial_unit.get_value());
-        assert_eq!(loaded.serial_battery.get_value(), values.serial_battery.get_value());
+        assert_eq!(
+            loaded.serial_unit.get_value(),
+            values.serial_unit.get_value()
+        );
+        assert_eq!(
+            loaded.serial_battery.get_value(),
+            values.serial_battery.get_value()
+        );
         assert_eq!(loaded.eden_token.get_value(), values.eden_token.get_value());
-        assert_eq!(loaded.eden_username.get_value(), values.eden_username.get_value());
-        assert_eq!(loaded.yuzu_username.get_value(), values.yuzu_username.get_value());
+        assert_eq!(
+            loaded.eden_username.get_value(),
+            values.eden_username.get_value()
+        );
+        assert_eq!(
+            loaded.yuzu_username.get_value(),
+            values.yuzu_username.get_value()
+        );
         assert_eq!(loaded.yuzu_token.get_value(), values.yuzu_token.get_value());
         // Per-title loading must not replace these global identity values.
         config.global = false;
         for category in [Category::Debugging, Category::WebService] {
             config.begin_group(category.translate());
             loaded.for_each_setting_in_category_mut(category, |setting| {
-                if ["serial_unit", "serial_battery", "eden_username", "eden_token"].contains(&setting.label()) {
+                if [
+                    "serial_unit",
+                    "serial_battery",
+                    "eden_username",
+                    "eden_token",
+                ]
+                .contains(&setting.label())
+                {
                     config.write_raw(setting.label(), "0".to_owned());
                     config.write_raw(&format!("{}\\default", setting.label()), "false".to_owned());
                     config.read_setting_generic(setting);
@@ -2553,8 +2612,14 @@ mod tests {
             });
             config.end_group();
         }
-        assert_eq!(loaded.serial_unit.get_value(), values.serial_unit.get_value());
-        assert_eq!(loaded.serial_battery.get_value(), values.serial_battery.get_value());
+        assert_eq!(
+            loaded.serial_unit.get_value(),
+            values.serial_unit.get_value()
+        );
+        assert_eq!(
+            loaded.serial_battery.get_value(),
+            values.serial_battery.get_value()
+        );
         assert_eq!(loaded.eden_token.get_value(), values.eden_token.get_value());
     }
 
@@ -2601,7 +2666,12 @@ mod tests {
     fn device_name_survives_ini_serialization_and_system_readback() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("settings.ini");
-        for name in ["", "Homebrew console", "Console été 界", "name=custom;value"] {
+        for name in [
+            "",
+            "Homebrew console",
+            "Console été 界",
+            "name=custom;value",
+        ] {
             let mut config = BaseConfig::new(ConfigType::GlobalConfig);
             config.set_up_ini(&path);
             config.begin_group("System");
@@ -2627,8 +2697,10 @@ mod tests {
         let mut values = common::settings::Values::default();
         values.dump_audio_commands.set_value(true);
         config.write_setting_generic(&mut values.dump_audio_commands);
-        assert!(config.ini.get("Audio").is_none_or(|section|
-            !section.contains_key("dump_audio_commands")));
+        assert!(config
+            .ini
+            .get("Audio")
+            .is_none_or(|section| !section.contains_key("dump_audio_commands")));
         config.write_raw("dump_audio_commands", "true".into());
         config.write_raw("dump_audio_commands\\default", "false".into());
         let mut fresh = common::settings::Values::default();
@@ -2724,8 +2796,14 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_PLAYER_COLORS_DISK";
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "config::tests::player_colors_round_trip_through_disk"])
-                .env(CHILD, "1").status().unwrap().success());
+                .args([
+                    "--exact",
+                    "config::tests::player_colors_round_trip_through_disk"
+                ])
+                .env(CHILD, "1")
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         let expected: Vec<[u32; 4]> = (0..8)
@@ -2757,15 +2835,33 @@ mod tests {
         let mut reader = BaseConfig::new(ConfigType::GlobalConfig);
         reader.set_up_ini(&path);
         for (index, colors) in expected.iter().enumerate() {
-            for (field, color) in ["body_color_left", "button_color_left", "body_color_right", "button_color_right"].iter().zip(colors) {
-                assert_eq!(reader.ini["Controls"][&format!("player_{index}_{field}")], color.to_string());
+            for (field, color) in [
+                "body_color_left",
+                "button_color_left",
+                "body_color_right",
+                "button_color_right",
+            ]
+            .iter()
+            .zip(colors)
+            {
+                assert_eq!(
+                    reader.ini["Controls"][&format!("player_{index}_{field}")],
+                    color.to_string()
+                );
             }
         }
         reader.read_control_values();
         let values = common::settings::values();
         for (player, colors) in values.players.get_value().iter().zip(expected) {
-            assert_eq!([player.body_color_left, player.button_color_left,
-                player.body_color_right, player.button_color_right], colors);
+            assert_eq!(
+                [
+                    player.body_color_left,
+                    player.button_color_left,
+                    player.body_color_right,
+                    player.button_color_right
+                ],
+                colors
+            );
         }
     }
 
@@ -2774,9 +2870,13 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_INPUT_FLAGS_DISK";
         if std::env::var_os(CHILD).is_none() {
             let status = std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "config::tests::input_enable_settings_round_trip_through_disk"])
+                .args([
+                    "--exact",
+                    "config::tests::input_enable_settings_round_trip_through_disk",
+                ])
                 .env(CHILD, "1")
-                .status().unwrap();
+                .status()
+                .unwrap();
             assert!(status.success());
             return;
         }
@@ -2818,27 +2918,44 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_ADVANCED_CONTROLS_DISK";
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "config::tests::advanced_controls_registry_round_trips_through_disk"])
-                .env(CHILD, "1").status().unwrap().success());
+                .args([
+                    "--exact",
+                    "config::tests::advanced_controls_registry_round_trips_through_disk"
+                ])
+                .env(CHILD, "1")
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         let entries = [
-            ("controller_navigation", "false"), ("enable_joycon_driver", "false"),
-            ("enable_procon_driver", "true"), ("udp_input_servers", "127.0.0.1:28000"),
-            ("enable_udp_controller", "true"), ("mouse_panning_sensitivity", "61"),
-            ("mouse_panning_x_sensitivity", "62"), ("mouse_panning_y_sensitivity", "63"),
-            ("mouse_panning_deadzone_counterweight", "24"), ("mouse_panning_decay_strength", "25"),
-            ("mouse_panning_min_decay", "26"), ("emulate_analog_keyboard", "true"),
+            ("controller_navigation", "false"),
+            ("enable_joycon_driver", "false"),
+            ("enable_procon_driver", "true"),
+            ("udp_input_servers", "127.0.0.1:28000"),
+            ("enable_udp_controller", "true"),
+            ("mouse_panning_sensitivity", "61"),
+            ("mouse_panning_x_sensitivity", "62"),
+            ("mouse_panning_y_sensitivity", "63"),
+            ("mouse_panning_deadzone_counterweight", "24"),
+            ("mouse_panning_decay_strength", "25"),
+            ("mouse_panning_min_decay", "26"),
+            ("emulate_analog_keyboard", "true"),
             ("touch_device", "min_x:20,min_y:30,max_x:900,max_y:800"),
-            ("touch_from_button_map", "2"), ("enable_ring_controller", "false"),
-            ("enable_ir_sensor", "true"), ("ir_sensor_device", "sdl-name:Synthetic camera = 1"),
+            ("touch_from_button_map", "2"),
+            ("enable_ring_controller", "false"),
+            ("enable_ir_sensor", "true"),
+            ("ir_sensor_device", "sdl-name:Synthetic camera = 1"),
             ("random_amiibo_id", "true"),
         ];
-        common::settings::values_mut().for_each_setting_in_category_mut(Category::Controls, |setting| {
-            if let Some((_, value)) = entries.iter().find(|(key, _)| *key == setting.label()) {
-                setting.load_string(value);
-            }
-        });
+        common::settings::values_mut().for_each_setting_in_category_mut(
+            Category::Controls,
+            |setting| {
+                if let Some((_, value)) = entries.iter().find(|(key, _)| *key == setting.label()) {
+                    setting.load_string(value);
+                }
+            },
+        );
         common::settings::values_mut().mouse_panning.set_value(true);
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("qt-config.ini");
@@ -2847,22 +2964,32 @@ mod tests {
         writer.write_category(Category::Controls);
         writer.write_to_ini().unwrap();
         drop(writer);
-        common::settings::values_mut().for_each_setting_in_category_mut(Category::Controls, |setting| {
-            setting.load_string(&setting.default_to_string());
-        });
+        common::settings::values_mut().for_each_setting_in_category_mut(
+            Category::Controls,
+            |setting| {
+                setting.load_string(&setting.default_to_string());
+            },
+        );
         let mut reader = BaseConfig::new(ConfigType::GlobalConfig);
         reader.set_up_ini(&path);
         for (key, value) in entries {
-            let stored = if matches!(key, "touch_device" | "ir_sensor_device") { format!("\"{value}\"") } else { value.to_owned() };
+            let stored = if matches!(key, "touch_device" | "ir_sensor_device") {
+                format!("\"{value}\"")
+            } else {
+                value.to_owned()
+            };
             assert_eq!(reader.ini["Controls"].get(key), Some(&stored), "{key}");
         }
         assert!(!reader.ini["Controls"].contains_key("mouse_panning"));
         reader.read_category(Category::Controls);
-        common::settings::values_mut().for_each_setting_in_category_mut(Category::Controls, |setting| {
-            if let Some((_, value)) = entries.iter().find(|(key, _)| *key == setting.label()) {
-                assert_eq!(setting.to_string_repr(), *value, "{}", setting.label());
-            }
-        });
+        common::settings::values_mut().for_each_setting_in_category_mut(
+            Category::Controls,
+            |setting| {
+                if let Some((_, value)) = entries.iter().find(|(key, _)| *key == setting.label()) {
+                    assert_eq!(setting.to_string_repr(), *value, "{}", setting.label());
+                }
+            },
+        );
     }
 
     #[test]

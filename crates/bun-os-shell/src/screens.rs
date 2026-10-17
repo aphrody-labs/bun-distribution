@@ -269,8 +269,20 @@ fn top_bar(p: &mut ChildSpawnerCommands, kit: &Kit, shell: &Shell, current: Scre
         ..default()
     })
     .with_children(|bar| {
-        chip(bar, kit, &t("nav.games"), current == Screen::Home, Action::Go(Screen::Home));
-        chip(bar, kit, &t("nav.library"), current == Screen::Library, Action::Filter(shell.filter));
+        chip(
+            bar,
+            kit,
+            &t("nav.games"),
+            current == Screen::Home,
+            Action::Go(Screen::Home),
+        );
+        chip(
+            bar,
+            kit,
+            &t("nav.library"),
+            current == Screen::Library,
+            Action::Filter(shell.filter),
+        );
         chip(
             bar,
             kit,
@@ -290,9 +302,21 @@ fn top_bar(p: &mut ChildSpawnerCommands, kit: &Kit, shell: &Shell, current: Scre
             ..default()
         });
         bar.spawn((kit.text("", ts::LABEL, R::OnSurfaceVariant), Bind::Gpu));
-        bar.spawn((kit.icon("sports_esports", icon::MD, R::OnSurfaceVariant), PadIndicator));
-        bar.spawn((kit.text(crate::app::clock(), ts::TITLE, R::OnSurface), Bind::Clock));
-        icon_button(bar, kit, "power_settings_new", &t("nav.power"), Action::Quick(QuickAction::Power));
+        bar.spawn((
+            kit.icon("sports_esports", icon::MD, R::OnSurfaceVariant),
+            PadIndicator,
+        ));
+        bar.spawn((
+            kit.text(crate::app::clock(), ts::TITLE, R::OnSurface),
+            Bind::Clock,
+        ));
+        icon_button(
+            bar,
+            kit,
+            "power_settings_new",
+            &t("nav.power"),
+            Action::Quick(QuickAction::Power),
+        );
     });
 }
 
@@ -321,7 +345,9 @@ fn hero_backdrop(r: &mut ChildSpawnerCommands, scrim: Scrim) {
 }
 
 pub fn spawn_home(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, running: Res<Running>) {
-    let shown: Vec<usize> = (0..shell.library.games.len()).take(size::RAIL_SHOWN).collect();
+    let shown: Vec<usize> = (0..shell.library.games.len())
+        .take(size::RAIL_SHOWN)
+        .collect();
     let focus_slot = shown.iter().position(|&i| i == shell.selected).unwrap_or(0);
     commands.spawn(root(Screen::Home)).with_children(|r| {
         hero_backdrop(r, Scrim::Hero);
@@ -346,8 +372,14 @@ pub fn spawn_home(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, runn
                 ..default()
             })
             .with_children(|hero| {
-                hero.spawn((kit.text("", ts::TITLE_MEDIUM, R::Primary), Bind::HeroPlatform));
-                hero.spawn((kit.text("", ts::DISPLAY_LARGE, R::OnSurface), Bind::HeroTitle));
+                hero.spawn((
+                    kit.text("", ts::TITLE_MEDIUM, R::Primary),
+                    Bind::HeroPlatform,
+                ));
+                hero.spawn((
+                    kit.text("", ts::DISPLAY_LARGE, R::OnSurface),
+                    Bind::HeroTitle,
+                ));
                 hero.spawn((kit.text("", ts::BODY, R::OnSurfaceVariant), Bind::HeroMeta));
                 hero.spawn(Node {
                     column_gap: px(space::MD),
@@ -356,9 +388,25 @@ pub fn spawn_home(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, runn
                 })
                 .with_children(|row| {
                     let play = t("action.play");
-                    button(row, &kit, "play_arrow", &play, true, Action::Play(shell.selected), PlayButton);
+                    button(
+                        row,
+                        &kit,
+                        "play_arrow",
+                        &play,
+                        true,
+                        Action::Play(shell.selected),
+                        PlayButton,
+                    );
                     let hub = t("action.game-hub");
-                    button(row, &kit, "tune", &hub, false, Action::Hub(shell.selected), HubButton);
+                    button(
+                        row,
+                        &kit,
+                        "tune",
+                        &hub,
+                        false,
+                        Action::Hub(shell.selected),
+                        HubButton,
+                    );
                 });
             });
             activity(col, &kit, &shell, &running);
@@ -380,7 +428,15 @@ pub fn spawn_home(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, runn
                 ))
                 .with_children(|track| {
                     for (slot, &index) in shown.iter().enumerate() {
-                        capsule(track, &kit, &shell, index, slot, size::CAPSULE, slot == focus_slot);
+                        capsule(
+                            track,
+                            &kit,
+                            &shell,
+                            index,
+                            slot,
+                            size::CAPSULE,
+                            slot == focus_slot,
+                        );
                     }
                     let count = tf("library.count", &[("count", &shell.library.games.len())]);
                     track
@@ -418,18 +474,33 @@ pub fn spawn_home(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, runn
 fn activity(col: &mut ChildSpawnerCommands, kit: &Kit, shell: &Shell, running: &Running) {
     let mut items: Vec<(String, String, &str, Action)> = Vec::new();
     if let Some(ext) = &running.external {
-        items.push((t("activity.running"), ext.title.clone(), "sports_esports", Action::ReturnToGame));
+        items.push((
+            t("activity.running"),
+            ext.title.clone(),
+            "sports_esports",
+            Action::ReturnToGame,
+        ));
     }
     if let Some((i, game)) = shell.library.games.iter().enumerate().find(|(i, g)| {
-        *i != shell.selected && g.is_native() && Suspended::of(&shell.paths.states(), &g.key).exists()
+        *i != shell.selected
+            && g.is_native()
+            && Suspended::of(&shell.paths.states(), &g.key).exists()
     }) {
-        items.push((t("activity.resume"), game.title.clone(), "history", Action::Play(i)));
+        items.push((
+            t("activity.resume"),
+            game.title.clone(),
+            "history",
+            Action::Play(i),
+        ));
     }
     let transfers = shell.library.downloads.len();
     items.push((
         t("activity.downloads"),
         if transfers == 0 {
-            tf("activity.packages", &[("count", &shell.library.packages.len())])
+            tf(
+                "activity.packages",
+                &[("count", &shell.library.packages.len())],
+            )
         } else {
             tf("activity.transfers", &[("count", &transfers)])
         },
@@ -438,9 +509,19 @@ fn activity(col: &mut ChildSpawnerCommands, kit: &Kit, shell: &Shell, running: &
     ));
     let recent = shell.store.lock().unwrap().recent(1);
     if let Some((key, _, _, _)) = recent.first()
-        && let Some((i, game)) = shell.library.games.iter().enumerate().find(|(_, g)| &g.key == key)
+        && let Some((i, game)) = shell
+            .library
+            .games
+            .iter()
+            .enumerate()
+            .find(|(_, g)| &g.key == key)
     {
-        items.push((t("activity.last"), game.title.clone(), "videogame_asset", Action::Hub(i)));
+        items.push((
+            t("activity.last"),
+            game.title.clone(),
+            "videogame_asset",
+            Action::Hub(i),
+        ));
     }
     col.spawn(Node {
         column_gap: px(space::SM + space::XS),
@@ -505,7 +586,13 @@ pub fn spawn_library(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
                     ("library.emulators", Some(Source::Emulators)),
                     ("library.web", Some(Source::Web)),
                 ] {
-                    chip(row, &kit, &t(key), shell.filter == filter, Action::Filter(filter));
+                    chip(
+                        row,
+                        &kit,
+                        &t(key),
+                        shell.filter == filter,
+                        Action::Filter(filter),
+                    );
                 }
             });
             if games.is_empty() && shell.filter == Some(Source::Emulators) {
@@ -534,7 +621,15 @@ pub fn spawn_library(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
                     ))
                     .with_children(|grid| {
                         for (slot, &index) in games.iter().enumerate() {
-                            capsule(grid, &kit, &shell, index, slot, size::GRID_CAPSULE, slot == focus);
+                            capsule(
+                                grid,
+                                &kit,
+                                &shell,
+                                index,
+                                slot,
+                                size::GRID_CAPSULE,
+                                slot == focus,
+                            );
                         }
                     });
             });
@@ -581,23 +676,54 @@ pub fn spawn_hub(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, runni
                     } else {
                         play_verb(game)
                     };
-                    button(actions, &kit, "play_arrow", &label, true, Action::Play(index), DefaultFocus);
+                    button(
+                        actions,
+                        &kit,
+                        "play_arrow",
+                        &label,
+                        true,
+                        Action::Play(index),
+                        DefaultFocus,
+                    );
                     if game.is_native() && (suspended.exists() || active) {
                         let restart = t("action.restart");
-                        button(actions, &kit, "replay", &restart, false, Action::Fresh(index), ());
+                        button(
+                            actions,
+                            &kit,
+                            "replay",
+                            &restart,
+                            false,
+                            Action::Fresh(index),
+                            (),
+                        );
                     }
                     let home = t("action.home");
-                    button(actions, &kit, "home", &home, false, Action::Go(Screen::Home), ());
+                    button(
+                        actions,
+                        &kit,
+                        "home",
+                        &home,
+                        false,
+                        Action::Go(Screen::Home),
+                        (),
+                    );
                 });
                 col.spawn(kit.text(t("hub.profile"), ts::TITLE, R::OnSurface));
                 let mut rows = vec![
                     ("speed", "profile.frame-limit", ProfileField::FrameLimit),
                     ("aspect_ratio", "profile.scaling", ProfileField::Scaler),
-                    ("history", "profile.instant-resume", ProfileField::InstantResume),
+                    (
+                        "history",
+                        "profile.instant-resume",
+                        ProfileField::InstantResume,
+                    ),
                     ("monitoring", "profile.performance", ProfileField::Hud),
                 ];
                 if !game.is_native() {
-                    rows.insert(0, ("fullscreen", "profile.borderless", ProfileField::Borderless));
+                    rows.insert(
+                        0,
+                        ("fullscreen", "profile.borderless", ProfileField::Borderless),
+                    );
                 }
                 for (glyph, key, field) in rows {
                     let action = Action::Profile(index, field);
@@ -662,7 +788,10 @@ fn details(game: &Game) -> Vec<String> {
         lines.push(y.clone());
     }
     if let Some(last) = &game.last_played {
-        lines.push(tf("meta.last-played", &[("date", &last.get(..10).unwrap_or(last))]));
+        lines.push(tf(
+            "meta.last-played",
+            &[("date", &last.get(..10).unwrap_or(last))],
+        ));
     }
     lines
 }
@@ -791,7 +920,9 @@ pub fn spawn_downloads(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>)
                         bg(R::Container),
                         focusable(Action::Noop, 0.03, &label),
                     ))
-                    .insert_if(DefaultFocus, || i == 0 && shell.library.downloads.is_empty())
+                    .insert_if(DefaultFocus, || {
+                        i == 0 && shell.library.downloads.is_empty()
+                    })
                     .with_children(|c| {
                         c.spawn(kit.text(&package.id, ts::LABEL, R::OnSurface));
                         c.spawn(kit.text(&package.version, ts::LABEL, R::OnSurfaceVariant));
@@ -1062,7 +1193,10 @@ pub fn hero_and_tint(
         } else if gone {
             hero.shown = id.clone();
             image.color = Color::WHITE.with_alpha(0.0);
-            theme.retint(tile_seed.unwrap_or(crate::theme::BASELINE_SEED), motion.reduced);
+            theme.retint(
+                tile_seed.unwrap_or(crate::theme::BASELINE_SEED),
+                motion.reduced,
+            );
         }
     }
     let running = theme.step(time.delta_secs());
@@ -1180,14 +1314,19 @@ fn hero_meta(shell: &Shell, game: &Game) -> String {
         parts.push(d.clone());
     }
     if game.is_native() {
-        parts.push(if Suspended::of(&shell.paths.states(), &game.key).exists() {
-            t("meta.instant-resume")
-        } else {
-            t("meta.bun-engine")
-        });
+        parts.push(
+            if Suspended::of(&shell.paths.states(), &game.key).exists() {
+                t("meta.instant-resume")
+            } else {
+                t("meta.bun-engine")
+            },
+        );
     }
     if let Some(last) = &game.last_played {
-        parts.push(tf("meta.last-played", &[("date", &last.get(..10).unwrap_or(last))]));
+        parts.push(tf(
+            "meta.last-played",
+            &[("date", &last.get(..10).unwrap_or(last))],
+        ));
     }
     parts.join("  ·  ")
 }
@@ -1216,14 +1355,20 @@ fn nvidia_panel(gpu: &crate::nvidia::GpuState) -> String {
     if !gpu.available {
         return gpu.summary();
     }
-    let vrr = gpu.vrr.map_or("unknown".to_string(), |(on, possible, active)| {
-        format!(
-            "{}{}{}",
-            if on { "on" } else { "off" },
-            if possible { "" } else { ", display not capable" },
-            if active { ", active" } else { "" }
-        )
-    });
+    let vrr = gpu
+        .vrr
+        .map_or("unknown".to_string(), |(on, possible, active)| {
+            format!(
+                "{}{}{}",
+                if on { "on" } else { "off" },
+                if possible {
+                    ""
+                } else {
+                    ", display not capable"
+                },
+                if active { ", active" } else { "" }
+            )
+        });
     format!(
         "{}\nDriver {}\n{}°C · core {} MHz · memory {} MHz · load {}%\n{:.0} W of {:.0} W · VRAM {} of {} MB\nG-SYNC/VRR {vrr}\nReflex {}",
         gpu.name,

@@ -70,13 +70,25 @@ fn used_colors(d: &Document, ids: &[NodeId]) -> Vec<Used> {
     let mut count = |c: &Color, link: Option<&str>| {
         let k = ColorKey::of(c);
         let i = *index.entry(k).or_insert_with(|| {
-            used.push((k, Used { color: *c, count: 0, swatch: None }));
+            used.push((
+                k,
+                Used {
+                    color: *c,
+                    count: 0,
+                    swatch: None,
+                },
+            ));
             used.len() - 1
         });
         let u = &mut used[i].1;
         u.count += 1;
         if u.swatch.is_none() {
-            u.swatch = link.filter(|l| d.swatch(l).is_some_and(|w| w.global && w.paint.color().is_some())).map(str::to_string);
+            u.swatch = link
+                .filter(|l| {
+                    d.swatch(l)
+                        .is_some_and(|w| w.global && w.paint.color().is_some())
+                })
+                .map(str::to_string);
         }
     };
     // The patterns used as fills or strokes: their tiles count once each.
@@ -113,7 +125,8 @@ fn colors(s: &mut Session, _: &Value) -> Result<Value> {
     let v: Vec<Value> = used_colors(&st.doc, &st.selection.objects)
         .iter()
         .map(|u| {
-            let mut v = json!({"key": key_str(&u.color), "hex": u.color.to_hex(), "count": u.count});
+            let mut v =
+                json!({"key": key_str(&u.color), "hex": u.color.to_hex(), "count": u.count});
             if let Some(w) = &u.swatch {
                 v["swatch"] = json!(w);
             }
@@ -144,13 +157,22 @@ fn reduce(s: &mut Session, p: &Value) -> Result<Value> {
     let palette = super::swatchlib::limit_param(s, p, C)?;
     let def = Preserve::default();
     let flag = |k: &str, d: bool| p.get("preserve").map_or(d, |v| bool_or(v, k, d));
-    let preserve = Preserve { white: flag("white", def.white), black: flag("black", def.black), grays: flag("grays", def.grays) };
+    let preserve = Preserve {
+        white: flag("white", def.white),
+        black: flag("black", def.black),
+        grays: flag("grays", def.grays),
+    };
     let st = s.doc()?;
-    let (kept, used): (Vec<Used>, Vec<Used>) = used_colors(&st.doc, &st.selection.objects).into_iter().partition(|u| preserve.keeps(&u.color));
+    let (kept, used): (Vec<Used>, Vec<Used>) = used_colors(&st.doc, &st.selection.objects)
+        .into_iter()
+        .partition(|u| preserve.keeps(&u.color));
     // Units that stay together: the tints of a global swatch, else one colour each.
     let mut units: Vec<Vec<&Used>> = vec![];
     for u in &used {
-        match units.iter_mut().find(|g| u.swatch.is_some() && g[0].swatch == u.swatch) {
+        match units
+            .iter_mut()
+            .find(|g| u.swatch.is_some() && g[0].swatch == u.swatch)
+        {
             Some(g) => g.push(u),
             None => units.push(vec![u]),
         }
@@ -158,9 +180,22 @@ fn reduce(s: &mut Session, p: &Value) -> Result<Value> {
     let unit_colors = |g: &[&Used]| g.iter().map(|u| u.color).collect::<Vec<_>>();
     let rows: Vec<Vec<&Used>> = match p.get("colors").and_then(Value::as_u64) {
         Some(n) if (n as usize) < units.len() => {
-            let keys: Vec<Color> = units.iter().map(|g| method.key_color(&unit_colors(g)).unwrap_or_default()).collect();
-            let weights: Vec<f32> = units.iter().map(|g| g.iter().map(|u| u.count as f32).sum()).collect();
-            cluster(&keys, &weights, n as usize).into_iter().map(|ix| ix.into_iter().flat_map(|i| units[i].iter().copied()).collect()).collect()
+            let keys: Vec<Color> = units
+                .iter()
+                .map(|g| method.key_color(&unit_colors(g)).unwrap_or_default())
+                .collect();
+            let weights: Vec<f32> = units
+                .iter()
+                .map(|g| g.iter().map(|u| u.count as f32).sum())
+                .collect();
+            cluster(&keys, &weights, n as usize)
+                .into_iter()
+                .map(|ix| {
+                    ix.into_iter()
+                        .flat_map(|i| units[i].iter().copied())
+                        .collect()
+                })
+                .collect()
         }
         _ => units,
     };
@@ -177,7 +212,9 @@ fn reduce(s: &mut Session, p: &Value) -> Result<Value> {
             json!({"from": from.iter().map(key_str).collect::<Vec<_>>(), "to": key_str(&to)})
         })
         .collect();
-    Ok(json!({"map": map, "preserved": kept.iter().map(|u| key_str(&u.color)).collect::<Vec<_>>(), "method": method.id()}))
+    Ok(
+        json!({"map": map, "preserved": kept.iter().map(|u| key_str(&u.color)).collect::<Vec<_>>(), "method": method.id()}),
+    )
 }
 
 /// A current colour of a row: an exact colour, or every colour shown as a hex.
@@ -231,12 +268,23 @@ fn parse_rows(p: &Value, cmd: &str) -> Result<Vec<Row>> {
     let new = |v: Option<&Value>| -> Result<Option<Color>> {
         match v {
             None | Some(Value::Null) => Ok(None),
-            Some(v) => color_value(v).map(Some).ok_or_else(|| bad(cmd, format!("bad new colour {v}"))),
+            Some(v) => color_value(v)
+                .map(Some)
+                .ok_or_else(|| bad(cmd, format!("bad new colour {v}"))),
         }
     };
     let cur = |v: &Value| Match::of(v).ok_or_else(|| bad(cmd, format!("bad current colour {v}")));
     match p.get("map") {
-        Some(Value::Object(m)) => m.iter().map(|(k, v)| Ok(Row { from: vec![cur(&json!(k))?], to: new(Some(v))?, exclude: false })).collect(),
+        Some(Value::Object(m)) => m
+            .iter()
+            .map(|(k, v)| {
+                Ok(Row {
+                    from: vec![cur(&json!(k))?],
+                    to: new(Some(v))?,
+                    exclude: false,
+                })
+            })
+            .collect(),
         Some(Value::Array(rows)) => rows
             .iter()
             .map(|r| {
@@ -245,10 +293,17 @@ fn parse_rows(p: &Value, cmd: &str) -> Result<Vec<Row>> {
                     Some(v) => vec![cur(v)?],
                     None => return Err(bad(cmd, "each row needs `from`")),
                 };
-                Ok(Row { from, to: new(r.get("to"))?, exclude: bool_or(r, "exclude", false) })
+                Ok(Row {
+                    from,
+                    to: new(r.get("to"))?,
+                    exclude: bool_or(r, "exclude", false),
+                })
             })
             .collect(),
-        _ => Err(bad(cmd, "missing `map` (rows [{from, to}] or {current: new})")),
+        _ => Err(bad(
+            cmd,
+            "missing `map` (rows [{from, to}] or {current: new})",
+        )),
     }
 }
 
@@ -261,7 +316,11 @@ struct ColorMap {
 
 impl ColorMap {
     fn new(rows: &[Row], method: Method) -> Self {
-        let mut out = Self { rows: vec![], keys: HashMap::new(), hexes: HashMap::new() };
+        let mut out = Self {
+            rows: vec![],
+            keys: HashMap::new(),
+            hexes: HashMap::new(),
+        };
         for r in rows.iter().filter(|r| !r.from.is_empty()) {
             let Some(to) = r.new_color() else { continue };
             let i = out.rows.len();
@@ -278,7 +337,13 @@ impl ColorMap {
     }
 
     fn map(&self, c: Color) -> Color {
-        let row = self.keys.get(&ColorKey::of(&c)).or_else(|| if self.hexes.is_empty() { None } else { self.hexes.get(&c.to_hex()) });
+        let row = self.keys.get(&ColorKey::of(&c)).or_else(|| {
+            if self.hexes.is_empty() {
+                None
+            } else {
+                self.hexes.get(&c.to_hex())
+            }
+        });
         row.map_or(c, |i| self.rows[*i].map(c))
     }
 }
@@ -296,17 +361,30 @@ fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = s.doc()?.selection.objects.clone();
     let group = str_param(p, "group");
     if ids.is_empty() && group.is_none() {
-        return Err(bad(C, "select artwork to recolour, or give a colour `group`"));
+        return Err(bad(
+            C,
+            "select artwork to recolour, or give a colour `group`",
+        ));
     }
     let map = ColorMap::new(&rows, method);
     let f = |c: Color| map.map(c);
-    let scope = Scope { fill: true, stroke: true, ..Scope::of(p) };
-    let label = if ids.is_empty() { "Edit Color Group" } else { "Recolor Artwork" };
+    let scope = Scope {
+        fill: true,
+        stroke: true,
+        ..Scope::of(p)
+    };
+    let label = if ids.is_empty() {
+        "Edit Color Group"
+    } else {
+        "Recolor Artwork"
+    };
     let new: Vec<Color> = match p.get("groupColors").and_then(Value::as_array) {
         Some(cs) => cs
             .iter()
             .map(|v| {
-                color_value(v).map(|c| palette.as_ref().map_or(c, |pl| pl.nearest(c))).ok_or_else(|| bad(C, format!("bad colour {v} in groupColors")))
+                color_value(v)
+                    .map(|c| palette.as_ref().map_or(c, |pl| pl.nearest(c)))
+                    .ok_or_else(|| bad(C, format!("bad colour {v} in groupColors")))
             })
             .collect::<Result<_>>()?,
         None => rows.iter().filter_map(Row::new_color).collect(),
@@ -314,7 +392,9 @@ fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     let rename = str_param(p, "rename");
     let (changed, edit) = s.edit(label, |d, _| {
         let changed = Recolor::new(scope, &f).run(d, &ids);
-        let edit = group.map(|g| super::swatch::rewrite_group(d, g, &new, rename, C)).transpose()?;
+        let edit = group
+            .map(|g| super::swatch::rewrite_group(d, g, &new, rename, C))
+            .transpose()?;
         Ok((changed, edit))
     })?;
     if let Some(e) = edit {
@@ -332,7 +412,10 @@ fn randomize(_: &mut Session, p: &Value) -> Result<Value> {
         rng.shuffle(&mut news);
     }
     if bool_or(p, "saturationBrightness", false) {
-        news = news.into_iter().map(|c| rng.saturation_brightness(c)).collect();
+        news = news
+            .into_iter()
+            .map(|c| rng.saturation_brightness(c))
+            .collect();
     }
     let mut news = news.into_iter();
     let map: Vec<Value> = rows

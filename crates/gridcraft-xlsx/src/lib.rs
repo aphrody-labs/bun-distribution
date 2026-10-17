@@ -8,7 +8,14 @@
 //! [`ReadReport::warnings`]; only a missing/invalid package or workbook part is an error. Hostile
 //! input is bounded: decompressed parts are capped at 512 MB (1 GB per package), cells outside
 //! Excel's grid are dropped and XML nesting is limited.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod array_formula;
@@ -103,7 +110,11 @@ pub enum XlsxKind {
 impl XlsxKind {
     /// The kind a file name's extension asks for; anything else is a plain workbook.
     pub fn from_path(path: &str) -> XlsxKind {
-        let ext = std::path::Path::new(path).extension().and_then(|e| e.to_str()).unwrap_or_default().to_ascii_lowercase();
+        let ext = std::path::Path::new(path)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
         match ext.as_str() {
             "xlsm" => XlsxKind::MacroWorkbook,
             "xltx" => XlsxKind::Template,
@@ -115,9 +126,13 @@ impl XlsxKind {
     /// Content type of `/xl/workbook.xml`.
     pub fn main_content_type(self) -> &'static str {
         match self {
-            XlsxKind::Workbook => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+            XlsxKind::Workbook => {
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
+            }
             XlsxKind::MacroWorkbook => "application/vnd.ms-excel.sheet.macroEnabled.main+xml",
-            XlsxKind::Template => "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml",
+            XlsxKind::Template => {
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml"
+            }
             XlsxKind::MacroTemplate => "application/vnd.ms-excel.template.macroEnabled.main+xml",
         }
     }
@@ -130,7 +145,14 @@ impl XlsxKind {
 
 /// Writes a workbook as an `.xlsx` package, or as an `.xlsm` one when it holds a VBA project.
 pub fn write_xlsx(wb: &Workbook) -> Result<Vec<u8>, IoError> {
-    write::write_xlsx(wb, if wb.vba_project.is_some() { XlsxKind::MacroWorkbook } else { XlsxKind::Workbook })
+    write::write_xlsx(
+        wb,
+        if wb.vba_project.is_some() {
+            XlsxKind::MacroWorkbook
+        } else {
+            XlsxKind::Workbook
+        },
+    )
 }
 
 /// Writes a workbook as the given member of the `.xlsx` family.
@@ -151,7 +173,12 @@ pub struct CsvOptions {
 
 impl Default for CsvOptions {
     fn default() -> Self {
-        CsvOptions { delimiter: b',', quote: b'"', date_system: DateSystem::D1900, parse_values: true }
+        CsvOptions {
+            delimiter: b',',
+            quote: b'"',
+            date_system: DateSystem::D1900,
+            parse_values: true,
+        }
     }
 }
 
@@ -173,7 +200,10 @@ pub enum Format {
 
 /// Guesses the format from content: ODS mimetype, XLSB package content types, other ZIP packages as XLSX, text as CSV.
 pub fn sniff(bytes: &[u8]) -> Format {
-    if bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06") || bytes.starts_with(b"PK\x07\x08") {
+    if bytes.starts_with(b"PK\x03\x04")
+        || bytes.starts_with(b"PK\x05\x06")
+        || bytes.starts_with(b"PK\x07\x08")
+    {
         return if ods::has_mimetype(bytes) {
             Format::Ods
         } else if xlsb::is_xlsb(bytes) {
@@ -194,7 +224,10 @@ pub fn sniff(bytes: &[u8]) -> Format {
             Format::LegacyBinary
         };
     }
-    if bytes.starts_with(&[0xFF, 0xFE]) || bytes.starts_with(&[0xFE, 0xFF]) || bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+    if bytes.starts_with(&[0xFF, 0xFE])
+        || bytes.starts_with(&[0xFE, 0xFF])
+        || bytes.starts_with(&[0xEF, 0xBB, 0xBF])
+    {
         return Format::Csv;
     }
     if bytes.is_empty() {
@@ -202,7 +235,10 @@ pub fn sniff(bytes: &[u8]) -> Format {
     }
     let head = bytes.get(..bytes.len().min(4096)).unwrap_or(bytes);
     // Binary files (old .xls, images…) contain NULs and many control characters.
-    let control = head.iter().filter(|&&b| b < 0x09 || (0x0E..0x20).contains(&b) || b == 0x7F).count();
+    let control = head
+        .iter()
+        .filter(|&&b| b < 0x09 || (0x0E..0x20).contains(&b) || b == 0x7F)
+        .count();
     if head.contains(&0) || control * 20 > head.len() {
         return Format::Unknown;
     }

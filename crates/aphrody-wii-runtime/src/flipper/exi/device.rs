@@ -69,7 +69,7 @@ pub fn load_backing(path: &std::path::Path, dst: &mut [u8], label: &str) {
         Ok(bytes) if bytes.len() == dst.len() => {
             dst.copy_from_slice(&bytes);
             tracing::info!(path = %path.display(), label, "loaded backing file");
-        },
+        }
         Ok(bytes) => tracing::warn!(
             path = %path.display(),
             label,
@@ -79,7 +79,7 @@ pub fn load_backing(path: &std::path::Path, dst: &mut [u8], label: &str) {
         ),
         Err(_) => {
             tracing::info!(path = %path.display(), label, "backing file not found, using default")
-        },
+        }
     }
 }
 

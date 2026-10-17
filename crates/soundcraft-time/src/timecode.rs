@@ -3,7 +3,9 @@
 use crate::{SampleRate, Samples, TimeError};
 
 /// Session timecode rates.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum FrameRate {
     Fps23_976,
     #[default]
@@ -108,7 +110,8 @@ impl FrameRate {
         if n == 0 {
             return 0;
         }
-        let v = (i128::from(f) * i128::from(sr.hz()) * i128::from(d) + i128::from(n) / 2) / i128::from(n);
+        let v = (i128::from(f) * i128::from(sr.hz()) * i128::from(d) + i128::from(n) / 2)
+            / i128::from(n);
         i64::try_from(v).unwrap_or(0)
     }
 
@@ -142,12 +145,22 @@ impl Timecode {
             let per_min = base * 60 - drop;
             let tens = f / per_10min;
             let rem = f % per_10min;
-            let extra = if rem > drop { drop * 9 * tens + drop * ((rem - drop) / per_min) } else { drop * 9 * tens };
+            let extra = if rem > drop {
+                drop * 9 * tens + drop * ((rem - drop) / per_min)
+            } else {
+                drop * 9 * tens
+            };
             f += extra;
         }
         let frames_l = f % base;
         let total_secs = f / base;
-        Timecode { negative, hours: total_secs / 3600, minutes: (total_secs / 60) % 60, seconds: total_secs % 60, frames: frames_l }
+        Timecode {
+            negative,
+            hours: total_secs / 3600,
+            minutes: (total_secs / 60) % 60,
+            seconds: total_secs % 60,
+            frames: frames_l,
+        }
     }
 
     /// Absolute frame count of this label.
@@ -173,7 +186,10 @@ impl Timecode {
     pub fn format(&self, rate: FrameRate) -> String {
         let sep = if rate.is_drop() { ';' } else { ':' };
         let sign = if self.negative { "-" } else { "" };
-        format!("{sign}{:02}:{:02}:{:02}{sep}{:02}", self.hours, self.minutes, self.seconds, self.frames)
+        format!(
+            "{sign}{:02}:{:02}:{:02}{sep}{:02}",
+            self.hours, self.minutes, self.seconds, self.frames
+        )
     }
 
     /// Parse `HH:MM:SS:FF` (also `;` / `.` separators and fewer fields, right-aligned).
@@ -190,7 +206,10 @@ impl Timecode {
         let mut nums = [0i64; 4];
         let offset = 4 - parts.len();
         for (i, p) in parts.iter().enumerate() {
-            let v: i64 = p.trim().parse().map_err(|_| TimeError::Parse(text.to_string(), "timecode"))?;
+            let v: i64 = p
+                .trim()
+                .parse()
+                .map_err(|_| TimeError::Parse(text.to_string(), "timecode"))?;
             if v < 0 {
                 return Err(TimeError::Parse(text.to_string(), "timecode"));
             }
@@ -198,7 +217,13 @@ impl Timecode {
                 *slot = v;
             }
         }
-        Ok(Timecode { negative, hours: nums[0], minutes: nums[1], seconds: nums[2], frames: nums[3] })
+        Ok(Timecode {
+            negative,
+            hours: nums[0],
+            minutes: nums[1],
+            seconds: nums[2],
+            frames: nums[3],
+        })
     }
 }
 

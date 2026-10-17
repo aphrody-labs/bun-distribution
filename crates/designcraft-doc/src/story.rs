@@ -44,7 +44,10 @@ pub const EVEN_PAGE_BREAK: char = '\u{E012}';
 /// the next paragraph starts in the next column, frame or page. A break inside a paragraph (from
 /// an older document or a raw edit) still moves the rest of that paragraph on.
 pub fn is_break_char(c: char) -> bool {
-    matches!(c, COLUMN_BREAK | FRAME_BREAK | PAGE_BREAK | ODD_PAGE_BREAK | EVEN_PAGE_BREAK)
+    matches!(
+        c,
+        COLUMN_BREAK | FRAME_BREAK | PAGE_BREAK | ODD_PAGE_BREAK | EVEN_PAGE_BREAK
+    )
 }
 
 /// `text` with a `\n` after every break character that isn't followed by one. `next` is the
@@ -80,7 +83,12 @@ pub struct ParaFormat {
 
 impl Default for ParaFormat {
     fn default() -> Self {
-        ParaFormat { style: BASIC_PARAGRAPH.into(), para: ParaAttrs::default(), chars: CharAttrs::default(), table: None }
+        ParaFormat {
+            style: BASIC_PARAGRAPH.into(),
+            para: ParaAttrs::default(),
+            chars: CharAttrs::default(),
+            table: None,
+        }
     }
 }
 
@@ -97,7 +105,10 @@ pub struct CharFormat {
 
 impl Default for CharFormat {
     fn default() -> Self {
-        CharFormat { style: NO_CHAR_STYLE.into(), over: CharAttrs::default() }
+        CharFormat {
+            style: NO_CHAR_STYLE.into(),
+            over: CharAttrs::default(),
+        }
     }
 }
 
@@ -163,7 +174,10 @@ impl Story {
             id,
             text: String::new(),
             paras: vec![ParaFormat::default()],
-            chars: vec![CharRun { len: 0, format: CharFormat::default() }],
+            chars: vec![CharRun {
+                len: 0,
+                format: CharFormat::default(),
+            }],
             frames: vec![],
             direction: crate::TextDirection::LeftToRight,
             vertical: false,
@@ -210,7 +224,10 @@ impl Story {
 
     /// Index of the paragraph containing byte `pos`.
     pub fn para_at(&self, pos: usize) -> usize {
-        self.text[..floor_char_boundary(&self.text, pos)].bytes().filter(|b| *b == b'\n').count()
+        self.text[..floor_char_boundary(&self.text, pos)]
+            .bytes()
+            .filter(|b| *b == b'\n')
+            .count()
     }
 
     /// Character format at byte `pos` (the run containing it; at a boundary, the preceding run —
@@ -324,7 +341,9 @@ impl Story {
             let k = self.notes_before(a);
             self.notes.drain(k..(k + refs).min(self.notes.len()));
         }
-        let erefs = self.text[a..b].matches(crate::endnotes::ENDNOTE_REF).count();
+        let erefs = self.text[a..b]
+            .matches(crate::endnotes::ENDNOTE_REF)
+            .count();
         if erefs > 0 {
             let k = self.endnotes_before(a);
             self.endnotes.drain(k..(k + erefs).min(self.endnotes.len()));
@@ -335,10 +354,13 @@ impl Story {
         // Merged paragraphs keep a table whose anchor survives the deletion.
         if removed > 0 && !self.tables.is_empty() {
             let ranges = self.para_ranges();
-            let first = self.paras[pi].table.filter(|_| self.text[ranges[pi].start..a].contains(TABLE_ANCHOR));
-            let last = self.paras[pi + removed]
+            let first = self.paras[pi]
                 .table
-                .filter(|_| self.text[b.min(ranges[pi + removed].end)..ranges[pi + removed].end].contains(TABLE_ANCHOR));
+                .filter(|_| self.text[ranges[pi].start..a].contains(TABLE_ANCHOR));
+            let last = self.paras[pi + removed].table.filter(|_| {
+                self.text[b.min(ranges[pi + removed].end)..ranges[pi + removed].end]
+                    .contains(TABLE_ANCHOR)
+            });
             self.paras[pi].table = first.or(last);
         }
         self.paras.drain(pi + 1..pi + 1 + removed);
@@ -351,7 +373,11 @@ impl Story {
 
     /// Replace a range with text (delete + insert using the format at the start of the range).
     pub fn replace(&mut self, range: std::ops::Range<usize>, text: &str) {
-        let fmt = if range.start < range.end { self.format_after(range.start).clone() } else { self.char_format_at(range.start).clone() };
+        let fmt = if range.start < range.end {
+            self.format_after(range.start).clone()
+        } else {
+            self.char_format_at(range.start).clone()
+        };
         self.delete(range.clone());
         self.insert_with(range.start, text, fmt);
     }
@@ -370,7 +396,11 @@ impl Story {
 
     /// Apply `f` to the character format of every run intersecting `range` (splitting runs at the
     /// range boundaries). With an empty range nothing changes (callers set typing formats instead).
-    pub fn format_chars(&mut self, range: std::ops::Range<usize>, mut f: impl FnMut(&mut CharFormat)) {
+    pub fn format_chars(
+        &mut self,
+        range: std::ops::Range<usize>,
+        mut f: impl FnMut(&mut CharFormat),
+    ) {
         let a = floor_char_boundary(&self.text, range.start);
         let b = floor_char_boundary(&self.text, range.end);
         if a >= b {
@@ -391,7 +421,11 @@ impl Story {
     }
 
     /// Apply `f` to every paragraph intersecting `range` (an empty range = the paragraph at it).
-    pub fn format_paras(&mut self, range: std::ops::Range<usize>, mut f: impl FnMut(&mut ParaFormat)) {
+    pub fn format_paras(
+        &mut self,
+        range: std::ops::Range<usize>,
+        mut f: impl FnMut(&mut ParaFormat),
+    ) {
         let a = self.para_at(range.start);
         let b = self.para_at(range.end.max(range.start));
         for p in &mut self.paras[a..=b] {
@@ -413,11 +447,20 @@ impl Story {
     pub fn check(&self) -> Result<(), String> {
         let n = self.text.matches('\n').count() + 1;
         if self.paras.len() != n {
-            return Err(format!("story {}: {} paragraph formats for {} paragraphs", self.id.0, self.paras.len(), n));
+            return Err(format!(
+                "story {}: {} paragraph formats for {} paragraphs",
+                self.id.0,
+                self.paras.len(),
+                n
+            ));
         }
         let total: usize = self.chars.iter().map(|r| r.len).sum();
         if total != self.text.len() {
-            return Err(format!("story {}: runs cover {total} bytes, text has {}", self.id.0, self.text.len()));
+            return Err(format!(
+                "story {}: runs cover {total} bytes, text has {}",
+                self.id.0,
+                self.text.len()
+            ));
         }
         if self.chars.is_empty() {
             return Err("no char runs".into());
@@ -445,7 +488,10 @@ impl Story {
         for i in 0..self.chars.len() {
             let end = start + self.chars[i].len;
             if pos > start && pos < end {
-                let tail = CharRun { len: end - pos, format: self.chars[i].format.clone() };
+                let tail = CharRun {
+                    len: end - pos,
+                    format: self.chars[i].format.clone(),
+                };
                 self.chars[i].len = pos - start;
                 self.chars.insert(i + 1, tail);
                 return;
@@ -456,7 +502,10 @@ impl Story {
 
     fn splice_runs(&mut self, pos: usize, _del: usize, ins: usize, fmt: CharFormat) {
         if self.chars.len() == 1 && self.chars[0].len == 0 {
-            self.chars[0] = CharRun { len: ins, format: fmt };
+            self.chars[0] = CharRun {
+                len: ins,
+                format: fmt,
+            };
             return;
         }
         self.split_at(pos);
@@ -476,7 +525,13 @@ impl Story {
         } else if idx < self.chars.len() && self.chars[idx].format == fmt {
             self.chars[idx].len += ins;
         } else {
-            self.chars.insert(idx, CharRun { len: ins, format: fmt });
+            self.chars.insert(
+                idx,
+                CharRun {
+                    len: ins,
+                    format: fmt,
+                },
+            );
         }
     }
 
@@ -492,7 +547,10 @@ impl Story {
         }
         self.chars.retain(|r| r.len > 0);
         if self.chars.is_empty() {
-            self.chars.push(CharRun { len: 0, format: typing });
+            self.chars.push(CharRun {
+                len: 0,
+                format: typing,
+            });
         }
     }
 
@@ -509,7 +567,10 @@ impl Story {
             }
         }
         if out.is_empty() {
-            out.push(CharRun { len: 0, format: CharFormat::default() });
+            out.push(CharRun {
+                len: 0,
+                format: CharFormat::default(),
+            });
         }
         self.chars = out;
     }

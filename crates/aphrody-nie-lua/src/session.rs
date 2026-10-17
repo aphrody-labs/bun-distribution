@@ -52,8 +52,14 @@ use crate::{
 /// Les noms sont ceux d'Overload (`OnAwake`, `OnStart`, …) : c'est une convention d'outillage pour
 /// nos propres scripts, **pas** une prétention sur l'API de Level-5, dont les points d'entrée
 /// réels sont ceux du reverse (cf. [`crate::menu_host`]).
-pub const LIFECYCLE_CALLBACKS: [&str; 6] =
-    ["OnAwake", "OnStart", "OnEnable", "OnUpdate", "OnDisable", "OnDestroy"];
+pub const LIFECYCLE_CALLBACKS: [&str; 6] = [
+    "OnAwake",
+    "OnStart",
+    "OnEnable",
+    "OnUpdate",
+    "OnDisable",
+    "OnDestroy",
+];
 
 /// Limite par défaut du chemin d'exécution d'un chunk lu depuis le VFS.
 pub const DEFAULT_VFS_INSTRUCTION_LIMIT: u32 = 20_000_000;
@@ -217,7 +223,11 @@ impl MenuEvent {
     /// Builds an event without arguments or a context replacement.
     #[must_use]
     pub const fn new(callback: MenuCallback) -> Self {
-        Self { callback, args: Vec::new(), context: None }
+        Self {
+            callback,
+            args: Vec::new(),
+            context: None,
+        }
     }
 
     /// Adds the Lua arguments carried by the event.
@@ -251,8 +261,10 @@ pub fn build_menu_runtime_events(
     for &layer_id in layer_ids {
         let count = item_counts.get(&layer_id).copied().unwrap_or(0).max(1);
         for item_index in 0..count {
-            let args =
-                [CallbackArg::Number(layer_id as f64), CallbackArg::Number(f64::from(item_index))];
+            let args = [
+                CallbackArg::Number(layer_id as f64),
+                CallbackArg::Number(f64::from(item_index)),
+            ];
             events.push(MenuEvent::new(MenuCallback::OnSetupLayer).with_args(args.iter().cloned()));
             events.push(MenuEvent::new(MenuCallback::OnOpenLayer).with_args(args.iter().cloned()));
             events.push(MenuEvent::new(MenuCallback::OnEnter).with_args(args));
@@ -516,7 +528,11 @@ impl LuaSession {
         let lua = crate::new_vm();
         install_print_capture(&lua, Rc::clone(stdout))?;
         registry.bind_all(&lua)?;
-        let menu_state = if with_menu_host { Some(crate::install_menu_host(&lua)?) } else { None };
+        let menu_state = if with_menu_host {
+            Some(crate::install_menu_host(&lua)?)
+        } else {
+            None
+        };
         if let Some(resolver) = include_resolver {
             let resolver = Rc::clone(resolver);
             let missing = Rc::clone(&journals.missing);
@@ -528,11 +544,11 @@ impl LuaSession {
                     Some(bytes) => {
                         loaded.borrow_mut().push(name.to_string());
                         Some(bytes)
-                    },
+                    }
                     None => {
                         missing.borrow_mut().push(name.to_string());
                         None
-                    },
+                    }
                 },
                 Some(decoded),
             )?;
@@ -676,9 +692,12 @@ impl LuaSession {
             )?;
         }
         let already_initialized =
-            self.active_menu.borrow().as_ref().is_some_and(|(loaded_name, loaded_bytes)| {
-                loaded_name == name && loaded_bytes.as_slice() == script_bytes
-            });
+            self.active_menu
+                .borrow()
+                .as_ref()
+                .is_some_and(|(loaded_name, loaded_bytes)| {
+                    loaded_name == name && loaded_bytes.as_slice() == script_bytes
+                });
         let decoded_includes_before = self.decoded_include_instructions.borrow().clone();
         let result = if already_initialized {
             crate::menu_host::drive_menu_for_frames_existing(
@@ -703,7 +722,10 @@ impl LuaSession {
         let decoded_include_instructions = decoded_includes_after
             .into_iter()
             .filter_map(|(include_name, total)| {
-                let previous = decoded_includes_before.get(&include_name).copied().unwrap_or(0);
+                let previous = decoded_includes_before
+                    .get(&include_name)
+                    .copied()
+                    .unwrap_or(0);
                 (total > previous).then_some((include_name, total - previous))
             })
             .collect();
@@ -735,7 +757,11 @@ impl LuaSession {
         args: &[f64],
         context: Option<RuntimeContext>,
     ) -> Result<bool, LuaError> {
-        let args = args.iter().copied().map(CallbackArg::Number).collect::<Vec<_>>();
+        let args = args
+            .iter()
+            .copied()
+            .map(CallbackArg::Number)
+            .collect::<Vec<_>>();
         self.call_menu_callback_typed(callback, &args, context)
     }
 
@@ -777,9 +803,11 @@ impl LuaSession {
             .map(|arg| match arg {
                 CallbackArg::Number(value) => Ok(Value::Number(*value)),
                 CallbackArg::Boolean(value) => Ok(Value::Boolean(*value)),
-                CallbackArg::String(value) => {
-                    self.lua.create_string(value).map(Value::String).map_err(LuaError::from)
-                },
+                CallbackArg::String(value) => self
+                    .lua
+                    .create_string(value)
+                    .map(Value::String)
+                    .map_err(LuaError::from),
                 CallbackArg::Nil => Ok(Value::Nil),
             })
             .collect::<Result<MultiValue, LuaError>>()?;
@@ -833,22 +861,31 @@ impl LuaSession {
             )?;
         }
 
-        let mut report =
-            MenuEventReport { events_requested: events.len(), ..MenuEventReport::default() };
+        let mut report = MenuEventReport {
+            events_requested: events.len(),
+            ..MenuEventReport::default()
+        };
         for event in events {
             let callback_name = event.callback.as_str();
-            if !matches!(self.lua.globals().raw_get::<Value>(callback_name), Ok(Value::Function(_)))
-            {
+            if !matches!(
+                self.lua.globals().raw_get::<Value>(callback_name),
+                Ok(Value::Function(_))
+            ) {
                 report.missing_callbacks.push(event.callback);
                 continue;
             }
 
             report.events_dispatched += 1;
-            *report.callback_invocations.entry(event.callback).or_default() += 1;
+            *report
+                .callback_invocations
+                .entry(event.callback)
+                .or_default() += 1;
             match self.call_menu_callback_typed(callback_name, &event.args, event.context.clone()) {
                 Ok(true) => report.events_succeeded += 1,
                 Ok(false) => report.missing_callbacks.push(event.callback),
-                Err(error) => report.callback_errors.push(format!("{callback_name}: {error}")),
+                Err(error) => report
+                    .callback_errors
+                    .push(format!("{callback_name}: {error}")),
             }
         }
 
@@ -906,7 +943,11 @@ impl LuaSession {
         instruction_limit: Option<u32>,
     ) -> Result<Vec<String>, LuaError> {
         validate_bytecode(data)?;
-        let mode = if is_lua52_bytecode(data) { ChunkMode::Binary } else { ChunkMode::Text };
+        let mode = if is_lua52_bytecode(data) {
+            ChunkMode::Binary
+        } else {
+            ChunkMode::Text
+        };
         if let Some(limit) = instruction_limit {
             let executed = std::cell::Cell::new(0_u32);
             self.lua.set_hook(
@@ -922,8 +963,12 @@ impl LuaSession {
                 },
             )?;
         }
-        let result: mlua::Result<MultiValue> =
-            self.lua.load(data).set_name(name.to_string()).set_mode(mode).call(());
+        let result: mlua::Result<MultiValue> = self
+            .lua
+            .load(data)
+            .set_name(name.to_string())
+            .set_mode(mode)
+            .call(());
         if instruction_limit.is_some() {
             self.lua.remove_hook();
         }
@@ -968,8 +1013,17 @@ impl LuaSession {
     /// [`LuaError`] si le chunk échoue ou ne renvoie pas de table.
     pub fn attach(&mut self, name: &str, data: &[u8]) -> Result<&Behaviour, LuaError> {
         validate_bytecode(data)?;
-        let mode = if is_lua52_bytecode(data) { ChunkMode::Binary } else { ChunkMode::Text };
-        let value: Value = self.lua.load(data).set_name(name.to_string()).set_mode(mode).call(())?;
+        let mode = if is_lua52_bytecode(data) {
+            ChunkMode::Binary
+        } else {
+            ChunkMode::Text
+        };
+        let value: Value = self
+            .lua
+            .load(data)
+            .set_name(name.to_string())
+            .set_mode(mode)
+            .call(())?;
 
         let Value::Table(table) = value else {
             return Err(LuaError::Vm(mlua::Error::RuntimeError(format!(
@@ -978,8 +1032,12 @@ impl LuaSession {
             ))));
         };
 
-        self.behaviours.push(Behaviour { name: name.to_string(), table });
-        self.attached_sources.push((name.to_string(), data.to_vec()));
+        self.behaviours.push(Behaviour {
+            name: name.to_string(),
+            table,
+        });
+        self.attached_sources
+            .push((name.to_string(), data.to_vec()));
         Ok(self.behaviours.last().expect("vient d'être poussé"))
     }
 
@@ -1064,7 +1122,10 @@ impl LuaSession {
     /// # Errors
     /// [`LuaError`] si l'expression est invalide.
     pub fn set_global(&self, name: &str, expression: &str) -> Result<(), LuaError> {
-        self.lua.load(format!("{name} = {expression}")).set_name("=set_global").exec()?;
+        self.lua
+            .load(format!("{name} = {expression}"))
+            .set_name("=set_global")
+            .exec()?;
         Ok(())
     }
 
@@ -1093,12 +1154,20 @@ impl LuaSession {
             .lua
             .globals()
             .get::<Table>("_HOST_MISSING")
-            .map(|t| t.pairs::<String, Value>().filter_map(Result::ok).map(|(k, _)| k).collect())
+            .map(|t| {
+                t.pairs::<String, Value>()
+                    .filter_map(Result::ok)
+                    .map(|(k, _)| k)
+                    .collect()
+            })
             .unwrap_or_default();
         missing.sort_unstable();
         missing.dedup();
 
-        ApiReport { missing, provided: self.registry.installed_names() }
+        ApiReport {
+            missing,
+            provided: self.registry.installed_names(),
+        }
     }
 }
 
@@ -1134,9 +1203,13 @@ mod tests {
             br#"assert(pieceIdx == 3); assert(isGrayout == true); assert(MENU_LINIT_NONE == "native-sentinel")"#,
         )
         .expect("globals de contexte");
-        s.set_context(context.clone()).expect("remplacement contexte");
-        s.exec("context-replacement", br#"assert(rawget(_G, "oldSceneSlot") == nil)"#)
-            .expect("ancien slot supprimé");
+        s.set_context(context.clone())
+            .expect("remplacement contexte");
+        s.exec(
+            "context-replacement",
+            br#"assert(rawget(_G, "oldSceneSlot") == nil)"#,
+        )
+        .expect("ancien slot supprimé");
         assert!(s.api_report().missing.is_empty());
         assert_eq!(s.context(), context);
 
@@ -1175,7 +1248,8 @@ mod tests {
                 .expect("OnCloseEndLayer")
         );
         assert!(
-            !s.call_menu_callback("OnChangeFocus", &[0.0, 0.0], None).expect("callback absent")
+            !s.call_menu_callback("OnChangeFocus", &[0.0, 0.0], None)
+                .expect("callback absent")
         );
         assert_eq!(s.eval("calls[1] .. ',' .. calls[2]").unwrap(), "16,25");
     }
@@ -1269,7 +1343,10 @@ mod tests {
             ]
         );
         assert_eq!(
-            names.into_iter().collect::<std::collections::BTreeSet<_>>().len(),
+            names
+                .into_iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len(),
             MenuCallback::ALL.len()
         );
     }
@@ -1281,7 +1358,10 @@ mod tests {
 
         assert_eq!(events.len(), 15);
         assert_eq!(
-            events.iter().map(|event| event.callback).collect::<Vec<_>>(),
+            events
+                .iter()
+                .map(|event| event.callback)
+                .collect::<Vec<_>>(),
             [
                 MenuCallback::OnSetupLayer,
                 MenuCallback::OnOpenLayer,
@@ -1300,9 +1380,18 @@ mod tests {
                 MenuCallback::PostStep,
             ]
         );
-        assert_eq!(events[0].args, [CallbackArg::Number(0x10 as f64), CallbackArg::Number(0.0)]);
-        assert_eq!(events[3].args, [CallbackArg::Number(0x10 as f64), CallbackArg::Number(1.0)]);
-        assert_eq!(events[6].args, [CallbackArg::Number(0x20 as f64), CallbackArg::Number(0.0)]);
+        assert_eq!(
+            events[0].args,
+            [CallbackArg::Number(0x10 as f64), CallbackArg::Number(0.0)]
+        );
+        assert_eq!(
+            events[3].args,
+            [CallbackArg::Number(0x10 as f64), CallbackArg::Number(1.0)]
+        );
+        assert_eq!(
+            events[6].args,
+            [CallbackArg::Number(0x20 as f64), CallbackArg::Number(0.0)]
+        );
         assert!(events[9..].iter().all(|event| event.args.is_empty()));
     }
 
@@ -1341,7 +1430,9 @@ mod tests {
             MenuEvent::new(MenuCallback::OnBack),
         ];
 
-        let report = s.dispatch_menu_events_with_limit(&events, None).expect("scenario driver");
+        let report = s
+            .dispatch_menu_events_with_limit(&events, None)
+            .expect("scenario driver");
         assert_eq!(report.events_requested, 4);
         assert_eq!(report.events_dispatched, 3);
         assert_eq!(report.events_succeeded, 2);
@@ -1368,8 +1459,11 @@ mod tests {
     #[test]
     fn menu_scenario_bounds_a_callback_and_removes_the_hook() {
         let mut s = LuaSession::standard(true).expect("menu session");
-        s.exec("bounded-events", br#"function Step() while true do end end"#)
-            .expect("blocking callback");
+        s.exec(
+            "bounded-events",
+            br#"function Step() while true do end end"#,
+        )
+        .expect("blocking callback");
         let report = s
             .dispatch_menu_events_with_limit(&[MenuEvent::new(MenuCallback::Step)], Some(10_000))
             .expect("driver captures the limit");
@@ -1394,13 +1488,19 @@ mod tests {
         })
         .expect("session avec include");
 
-        s.exec("main", br#"INCLUDE("LUA_TEST_MODULE"); main_value = module_value"#)
-            .expect("premier include");
+        s.exec(
+            "main",
+            br#"INCLUDE("LUA_TEST_MODULE"); main_value = module_value"#,
+        )
+        .expect("premier include");
         assert_eq!(s.eval("main_value").unwrap(), "1");
         assert_eq!(s.take_loaded_includes(), vec!["LUA_TEST_MODULE"]);
         s.reload().expect("rechargement");
-        s.exec("main", br#"INCLUDE("LUA_TEST_MODULE"); main_value = module_value"#)
-            .expect("include après rechargement");
+        s.exec(
+            "main",
+            br#"INCLUDE("LUA_TEST_MODULE"); main_value = module_value"#,
+        )
+        .expect("include après rechargement");
         assert_eq!(s.eval("main_value").unwrap(), "1");
         assert_eq!(s.take_loaded_includes(), vec!["LUA_TEST_MODULE"]);
         s.exec("missing", br#"INCLUDE("LUA_MISSING"); missing_value = 1"#)
@@ -1441,8 +1541,11 @@ mod tests {
             .into_function()
             .expect("chunk menu principal")
             .dump(false);
-        let include =
-            vm.load("included = true").into_function().expect("chunk include").dump(false);
+        let include = vm
+            .load("included = true")
+            .into_function()
+            .expect("chunk include")
+            .dump(false);
         let main_for_reader = main.clone();
         let include_for_reader = include.clone();
         let paths = vec![
@@ -1464,7 +1567,14 @@ mod tests {
             .expect("pilotage VFS");
         assert!(report.top_level_ok);
         assert!(report.decoded_instructions.unwrap_or(0) > 0);
-        assert!(report.decoded_include_instructions.get("LUA_INC").copied().unwrap_or(0) > 0);
+        assert!(
+            report
+                .decoded_include_instructions
+                .get("LUA_INC")
+                .copied()
+                .unwrap_or(0)
+                > 0
+        );
         assert_eq!(
             report.decoded_instructions_total,
             Some(
@@ -1512,14 +1622,26 @@ mod tests {
             .dump(false);
 
         let report = s
-            .drive_menu_for_frames(&bytes, "live-menu", &[], &std::collections::BTreeMap::new(), 0)
+            .drive_menu_for_frames(
+                &bytes,
+                "live-menu",
+                &[],
+                &std::collections::BTreeMap::new(),
+                0,
+            )
             .expect("drive menu");
         assert_eq!(report.on_init, Some(true));
         let state = s.menu_state().expect("MenuState conservé");
         assert!(!state.borrow().layers[&0].objects[&0x1234].visible);
 
         s.reload().expect("reload");
-        assert!(s.menu_state().expect("MenuState après reload").borrow().layers.is_empty());
+        assert!(
+            s.menu_state()
+                .expect("MenuState après reload")
+                .borrow()
+                .layers
+                .is_empty()
+        );
     }
 
     #[test]
@@ -1536,7 +1658,8 @@ mod tests {
             .expect("compilation menu")
             .dump(false);
         let counts = std::collections::BTreeMap::from([(0x1234_u32, 7_i32)]);
-        s.drive_menu_for_frames(&bytes, "scene-count", &[], &counts, 0).expect("driver");
+        s.drive_menu_for_frames(&bytes, "scene-count", &[], &counts, 0)
+            .expect("driver");
         assert_eq!(s.eval("observed_count").unwrap(), "7");
     }
 
@@ -1564,7 +1687,12 @@ mod tests {
             )
             .expect("le driver capture l'erreur de limite");
         assert_eq!(report.on_init, Some(false));
-        assert!(report.callback_errors.iter().any(|error| error.contains("limite d'exécution")));
+        assert!(
+            report
+                .callback_errors
+                .iter()
+                .any(|error| error.contains("limite d'exécution"))
+        );
         s.exec("after-menu-limit", b"menu_survived = true")
             .expect("la VM reste utilisable après le driver");
         assert_eq!(s.eval("menu_survived").unwrap(), "true");
@@ -1615,7 +1743,10 @@ mod tests {
         let defined = b.defined_callbacks();
         assert!(defined.contains(&"OnStart"), "callbacks : {defined:?}");
         assert!(defined.contains(&"OnUpdate"), "callbacks : {defined:?}");
-        assert!(!defined.contains(&"OnDestroy"), "OnDestroy n'est pas défini : {defined:?}");
+        assert!(
+            !defined.contains(&"OnDestroy"),
+            "OnDestroy n'est pas défini : {defined:?}"
+        );
 
         assert_eq!(s.broadcast("OnStart").unwrap(), 1);
         assert_eq!(s.broadcast("OnUpdate").unwrap(), 1);
@@ -1632,7 +1763,10 @@ mod tests {
             Err(e) => e,
             Ok(_) => panic!("un script sans table ne doit pas être attaché"),
         };
-        assert!(err.to_string().contains("doit renvoyer une table"), "message peu clair : {err}");
+        assert!(
+            err.to_string().contains("doit renvoyer une table"),
+            "message peu clair : {err}"
+        );
     }
 
     /// Le rechargement doit VRAIMENT repartir de zéro : une définition retirée du script ne doit
@@ -1651,11 +1785,16 @@ mod tests {
     #[test]
     fn le_rechargement_reattache_les_comportements() {
         let mut s = session();
-        s.attach("c", b"local M = {} function M.OnStart() end return M").expect("attachement");
+        s.attach("c", b"local M = {} function M.OnStart() end return M")
+            .expect("attachement");
         assert_eq!(s.behaviours().len(), 1);
 
         s.reload().expect("rechargement");
-        assert_eq!(s.behaviours().len(), 1, "le comportement doit être ré-attaché");
+        assert_eq!(
+            s.behaviours().len(),
+            1,
+            "le comportement doit être ré-attaché"
+        );
         assert_eq!(s.broadcast("OnStart").unwrap(), 1);
     }
 
@@ -1663,12 +1802,19 @@ mod tests {
     fn rapport_dapi_confronte_reclame_et_fourni() {
         let s = session();
         // `Debug` et `Math` sont fournis par les binders ; les deux autres non.
-        s.eval("Debug.Log('ok') MOTEUR_INCONNU() AUTRE_APPEL()").expect("eval");
+        s.eval("Debug.Log('ok') MOTEUR_INCONNU() AUTRE_APPEL()")
+            .expect("eval");
 
         let report = s.api_report();
         assert!(report.provided.contains(&"Debug".to_string()));
-        assert!(report.missing.contains(&"MOTEUR_INCONNU".to_string()), "{report:?}");
-        assert!(report.missing.contains(&"AUTRE_APPEL".to_string()), "{report:?}");
+        assert!(
+            report.missing.contains(&"MOTEUR_INCONNU".to_string()),
+            "{report:?}"
+        );
+        assert!(
+            report.missing.contains(&"AUTRE_APPEL".to_string()),
+            "{report:?}"
+        );
         assert!(
             !report.missing.contains(&"Debug".to_string()),
             "un global fourni par un binder ne doit jamais être compté manquant : {report:?}"
@@ -1682,14 +1828,16 @@ mod tests {
         s.set_global("pv", "250").expect("écriture");
         assert_eq!(s.eval("pv").unwrap(), "250");
 
-        s.set_global("table_test", "{a = 1, b = 2}").expect("écriture");
+        s.set_global("table_test", "{a = 1, b = 2}")
+            .expect("écriture");
         assert_eq!(s.eval("table_test.b").unwrap(), "2");
     }
 
     #[test]
     fn capture_la_sortie_et_les_journaux() {
         let s = session();
-        s.exec("t", b"print('sortie') Debug.LogWarning('attention')").expect("exec");
+        s.exec("t", b"print('sortie') Debug.LogWarning('attention')")
+            .expect("exec");
         assert_eq!(s.take_output(), vec!["sortie".to_string()]);
         let logs = s.take_logs();
         assert_eq!(logs.len(), 1);

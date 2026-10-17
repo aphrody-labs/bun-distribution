@@ -9,7 +9,10 @@ use std::sync::Arc;
 fn document() -> Arc<Vec<u8>> {
     let mut d = Document::new_empty();
     let pages = d.add(Object::Dict(Dict::new()));
-    let contents = d.add(Object::Stream(Stream::flate(Dict::new(), b"BT /F1 18 Tf 30 160 Td (Source) Tj ET")));
+    let contents = d.add(Object::Stream(Stream::flate(
+        Dict::new(),
+        b"BT /F1 18 Tf 30 160 Td (Source) Tj ET",
+    )));
     let mut font = Dict::new();
     font.set(b"Type".to_vec(), Object::name("Font"));
     font.set(b"Subtype".to_vec(), Object::name("Type1"));
@@ -23,7 +26,10 @@ fn document() -> Arc<Vec<u8>> {
     p.set(b"Parent".to_vec(), Object::Ref(pages));
     p.set(b"Contents".to_vec(), Object::Ref(contents));
     p.set(b"Resources".to_vec(), Object::Dict(res));
-    p.set(b"MediaBox".to_vec(), Object::Array([0, 0, 300, 240].map(Object::Int).to_vec()));
+    p.set(
+        b"MediaBox".to_vec(),
+        Object::Array([0, 0, 300, 240].map(Object::Int).to_vec()),
+    );
     let page = d.add(Object::Dict(p));
     d.update_dict(pages, |p| {
         p.set(b"Type".to_vec(), Object::name("Pages"));
@@ -40,7 +46,11 @@ fn document() -> Arc<Vec<u8>> {
 }
 fn pixels(bytes: Arc<Vec<u8>>) -> Vec<u8> {
     let mut renderer = PageRenderer::new(bytes, Default::default());
-    let p = renderer.render(RenderRequest { page: 0, scale: 2.0, ..Default::default() });
+    let p = renderer.render(RenderRequest {
+        page: 0,
+        scale: 2.0,
+        ..Default::default()
+    });
     assert!(p.error.is_none(), "{:?}", p.error);
     assert!(p.warnings.is_empty(), "{:?}", p.warnings);
     p.rgba.to_vec()
@@ -49,13 +59,43 @@ fn exercise(font: Vec<u8>, text: &str, expected_family: &str) {
     let mut s = Session::new();
     let id = s.open("source.pdf", None, document(), None).unwrap();
     let original = pixels(s.get(id).unwrap().display.clone());
-    s.apply(id, Edit::RegisterTextFont { page: 0, bytes: Arc::new(font.clone()) }).unwrap();
-    let resource = s.get(id).unwrap().text_editor_fonts(0).into_iter().find(|f| f.bytes == font).unwrap().resource;
-    let style = BlockStyle { resource: Some(resource), width: Some(240.0), ..Default::default() };
-    s.apply(id, Edit::EditTextBlock { page: 0, block: 0, text: text.into(), style: style.clone() }).unwrap();
+    s.apply(
+        id,
+        Edit::RegisterTextFont {
+            page: 0,
+            bytes: Arc::new(font.clone()),
+        },
+    )
+    .unwrap();
+    let resource = s
+        .get(id)
+        .unwrap()
+        .text_editor_fonts(0)
+        .into_iter()
+        .find(|f| f.bytes == font)
+        .unwrap()
+        .resource;
+    let style = BlockStyle {
+        resource: Some(resource),
+        width: Some(240.0),
+        ..Default::default()
+    };
+    s.apply(
+        id,
+        Edit::EditTextBlock {
+            page: 0,
+            block: 0,
+            text: text.into(),
+            style: style.clone(),
+        },
+    )
+    .unwrap();
     let edited = s.get(id).unwrap();
     let lines = edited.text_lines(0);
-    assert_eq!(lines.iter().map(|l| l.text.as_str()).collect::<String>(), text);
+    assert_eq!(
+        lines.iter().map(|l| l.text.as_str()).collect::<String>(),
+        text
+    );
     assert!(lines.iter().all(|l| l.base_font == expected_family));
     assert!((lines[0].baseline()[1] - 160.0).abs() < 0.01);
     let current = pixels(edited.display.clone());
@@ -65,14 +105,38 @@ fn exercise(font: Vec<u8>, text: &str, expected_family: &str) {
     assert_eq!(pixels(s.get(re).unwrap().display.clone()), current);
     assert_eq!(s.get(re).unwrap().text_blocks(0)[0].editor_text, text);
     let twice = format!("{text} {text}");
-    s.apply(re, Edit::EditTextBlock { page: 0, block: 0, text: twice.clone(), style: style.clone() }).unwrap();
+    s.apply(
+        re,
+        Edit::EditTextBlock {
+            page: 0,
+            block: 0,
+            text: twice.clone(),
+            style: style.clone(),
+        },
+    )
+    .unwrap();
     assert_eq!(s.get(re).unwrap().text_blocks(0)[0].editor_text, twice);
     let again = s.save_bytes(re).unwrap();
     let next = s.open("twice.pdf", None, again, None).unwrap();
     assert_eq!(s.get(next).unwrap().text_blocks(0)[0].editor_text, twice);
-    assert_eq!(pixels(s.get(next).unwrap().display.clone()), pixels(s.get(re).unwrap().display.clone()));
-    s.apply(re, Edit::EditTextBlock { page: 0, block: 0, text: String::new(), style }).unwrap();
-    assert!(s.get(re).unwrap().text_lines(0).is_empty(), "every contextual glyph is deleted");
+    assert_eq!(
+        pixels(s.get(next).unwrap().display.clone()),
+        pixels(s.get(re).unwrap().display.clone())
+    );
+    s.apply(
+        re,
+        Edit::EditTextBlock {
+            page: 0,
+            block: 0,
+            text: String::new(),
+            style,
+        },
+    )
+    .unwrap();
+    assert!(
+        s.get(re).unwrap().text_lines(0).is_empty(),
+        "every contextual glyph is deleted"
+    );
     let empty = pixels(s.get(re).unwrap().display.clone());
     assert!(empty.as_chunks::<4>().0.iter().all(|p| p[..3] == [255; 3]));
     s.undo(id).unwrap();
@@ -85,7 +149,11 @@ fn opentype_cff_document_font_preserves_program_codes_and_rendering_after_reopen
 #[test]
 fn contextual_arabic_marks_ligatures_and_mixed_bidi_keep_logical_text_after_reopen() {
     if let Some(path) = std::env::var_os("PDFCRAFT_TEST_ARABIC_FONT") {
-        exercise(std::fs::read(path).unwrap(), "سَلَام 123", "NotoSansArabic-Regular");
+        exercise(
+            std::fs::read(path).unwrap(),
+            "سَلَام 123",
+            "NotoSansArabic-Regular",
+        );
         return;
     }
     let Some(font) = pdfcraft_fonts::document_arabic_font() else {
@@ -93,7 +161,9 @@ fn contextual_arabic_marks_ligatures_and_mixed_bidi_keep_logical_text_after_reop
         return;
     };
     if pdfcraft_fonts::embedding::validate(font.bytes).is_err() {
-        eprintln!("set PDFCRAFT_TEST_ARABIC_FONT to an openly licensed static Noto Sans Arabic face");
+        eprintln!(
+            "set PDFCRAFT_TEST_ARABIC_FONT to an openly licensed static Noto Sans Arabic face"
+        );
         return;
     }
     exercise(font.bytes.to_vec(), "سَلَام 123", "NotoSansArabic-Regular");

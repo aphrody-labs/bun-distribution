@@ -14,10 +14,25 @@ fn id(v: serde_json::Value) -> NodeId {
 }
 
 fn key(u: &mut Ui, k: Key, shift: bool) {
-    let modifiers = Modifiers { shift, ..Default::default() };
+    let modifiers = Modifiers {
+        shift,
+        ..Default::default()
+    };
     u.frame(vec![
-        Event::Key { key: k, physical_key: None, pressed: true, repeat: false, modifiers },
-        Event::Key { key: k, physical_key: None, pressed: false, repeat: false, modifiers },
+        Event::Key {
+            key: k,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        },
+        Event::Key {
+            key: k,
+            physical_key: None,
+            pressed: false,
+            repeat: false,
+            modifiers,
+        },
     ]);
 }
 
@@ -28,10 +43,25 @@ fn sel(u: &Ui) -> Vec<NodeId> {
 /// Rows top to bottom: `c` (rectangle), `frame` (collapsed, holding `child`), `a` (rectangle).
 fn setup() -> (Ui, NodeId, NodeId, NodeId, NodeId) {
     let mut s = Session::new();
-    let a = id(s.execute("node.create", &json!({"type": "rectangle", "x": 0, "y": 0, "width": 10, "height": 10})).unwrap());
-    let frame = id(s.execute("node.create", &json!({"type": "frame", "x": 50, "y": 0, "width": 100, "height": 100})).unwrap());
+    let a = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "rectangle", "x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap());
+    let frame = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "frame", "x": 50, "y": 0, "width": 100, "height": 100}),
+        )
+        .unwrap());
     let child = id(s.execute("node.create", &json!({"type": "ellipse", "parent": frame, "x": 10, "y": 10, "width": 10, "height": 10})).unwrap());
-    let c = id(s.execute("node.create", &json!({"type": "rectangle", "x": 200, "y": 0, "width": 10, "height": 10})).unwrap());
+    let c = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "rectangle", "x": 200, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap());
     s.execute("select.none", &json!({})).unwrap();
     let mut u = Ui::new(s);
     u.app.ui.expanded.clear();
@@ -63,7 +93,10 @@ fn up_and_down_walk_the_rows_and_shift_extends() {
     got.sort();
     let mut want = vec![a, frame, c];
     want.sort();
-    assert_eq!(got, want, "Shift+Up from the bottom row selects up to the top");
+    assert_eq!(
+        got, want,
+        "Shift+Up from the bottom row selects up to the top"
+    );
     // Back down with Shift shrinks the range towards the anchor.
     key(&mut u, Key::ArrowDown, true);
     let mut got = sel(&u);
@@ -81,14 +114,24 @@ fn left_and_right_open_close_and_move_between_levels() {
     let (mut u, _, frame, child, _) = setup();
     click_row(&mut u, frame);
     key(&mut u, Key::ArrowRight, false);
-    assert!(u.app.ui.expanded.contains(&frame), "Right opens a closed row");
+    assert!(
+        u.app.ui.expanded.contains(&frame),
+        "Right opens a closed row"
+    );
     assert_eq!(sel(&u), vec![frame]);
     key(&mut u, Key::ArrowRight, false);
-    assert_eq!(sel(&u), vec![child], "Right on an open row goes to its first child");
+    assert_eq!(
+        sel(&u),
+        vec![child],
+        "Right on an open row goes to its first child"
+    );
     key(&mut u, Key::ArrowLeft, false);
     assert_eq!(sel(&u), vec![frame], "Left on a leaf goes to its parent");
     key(&mut u, Key::ArrowLeft, false);
-    assert!(!u.app.ui.expanded.contains(&frame), "Left closes an open row");
+    assert!(
+        !u.app.ui.expanded.contains(&frame),
+        "Left closes an open row"
+    );
     assert_eq!(sel(&u), vec![frame]);
 }
 

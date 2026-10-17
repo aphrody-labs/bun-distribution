@@ -1,6 +1,16 @@
 //! 2D geometry for FilmCraft: vectors, rectangles and affine transforms (Motion effect math).
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, Mul, Sub};
@@ -73,13 +83,23 @@ impl Rect {
     pub fn union(&self, o: &Rect) -> Rect {
         let x0 = self.x.min(o.x);
         let y0 = self.y.min(o.y);
-        Rect::new(x0, y0, self.right().max(o.right()) - x0, self.bottom().max(o.bottom()) - y0)
+        Rect::new(
+            x0,
+            y0,
+            self.right().max(o.right()) - x0,
+            self.bottom().max(o.bottom()) - y0,
+        )
     }
     /// Fit `inner` (w,h) inside this rect preserving aspect, centered.
     pub fn fit(&self, w: f64, h: f64) -> Rect {
         let s = (self.w / w).min(self.h / h);
         let (fw, fh) = (w * s, h * s);
-        Rect::new(self.x + (self.w - fw) / 2.0, self.y + (self.h - fh) / 2.0, fw, fh)
+        Rect::new(
+            self.x + (self.w - fw) / 2.0,
+            self.y + (self.h - fh) / 2.0,
+            fw,
+            fh,
+        )
     }
 }
 
@@ -101,17 +121,39 @@ impl Default for Affine {
 }
 
 impl Affine {
-    pub const IDENTITY: Affine = Affine { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0 };
+    pub const IDENTITY: Affine = Affine {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 0.0,
+        f: 0.0,
+    };
     pub fn translate(x: f64, y: f64) -> Self {
-        Affine { e: x, f: y, ..Self::IDENTITY }
+        Affine {
+            e: x,
+            f: y,
+            ..Self::IDENTITY
+        }
     }
     pub fn scale(sx: f64, sy: f64) -> Self {
-        Affine { a: sx, d: sy, ..Self::IDENTITY }
+        Affine {
+            a: sx,
+            d: sy,
+            ..Self::IDENTITY
+        }
     }
     /// Rotation by `deg` degrees, clockwise on screen (y down), matching Premiere's Rotation.
     pub fn rotate_deg(deg: f64) -> Self {
         let (s, c) = deg.to_radians().sin_cos();
-        Affine { a: c, b: s, c: -s, d: c, e: 0.0, f: 0.0 }
+        Affine {
+            a: c,
+            b: s,
+            c: -s,
+            d: c,
+            e: 0.0,
+            f: 0.0,
+        }
     }
     /// `self * o`: apply `o` first, then `self`.
     pub fn then_apply(&self, o: &Affine) -> Affine {
@@ -126,7 +168,10 @@ impl Affine {
         }
     }
     pub fn apply(&self, p: Vec2) -> Vec2 {
-        Vec2::new(self.a * p.x + self.c * p.y + self.e, self.b * p.x + self.d * p.y + self.f)
+        Vec2::new(
+            self.a * p.x + self.c * p.y + self.e,
+            self.b * p.x + self.d * p.y + self.f,
+        )
     }
     pub fn determinant(&self) -> f64 {
         self.a * self.d - self.b * self.c
@@ -141,14 +186,27 @@ impl Affine {
         let b = -self.b * inv;
         let c = -self.c * inv;
         let d = self.a * inv;
-        Some(Affine { a, b, c, d, e: -(a * self.e + c * self.f), f: -(b * self.e + d * self.f) })
+        Some(Affine {
+            a,
+            b,
+            c,
+            d,
+            e: -(a * self.e + c * self.f),
+            f: -(b * self.e + d * self.f),
+        })
     }
     pub fn is_identity(&self) -> bool {
         *self == Self::IDENTITY
     }
     /// Bounding box of a transformed rect.
     pub fn bounds(&self, r: &Rect) -> Rect {
-        let pts = [Vec2::new(r.x, r.y), Vec2::new(r.right(), r.y), Vec2::new(r.x, r.bottom()), Vec2::new(r.right(), r.bottom())].map(|p| self.apply(p));
+        let pts = [
+            Vec2::new(r.x, r.y),
+            Vec2::new(r.right(), r.y),
+            Vec2::new(r.x, r.bottom()),
+            Vec2::new(r.right(), r.bottom()),
+        ]
+        .map(|p| self.apply(p));
         let x0 = pts.iter().map(|p| p.x).fold(f64::INFINITY, f64::min);
         let y0 = pts.iter().map(|p| p.y).fold(f64::INFINITY, f64::min);
         let x1 = pts.iter().map(|p| p.x).fold(f64::NEG_INFINITY, f64::max);
@@ -172,7 +230,12 @@ mod tests {
 
     #[test]
     fn inverse_roundtrip() {
-        let m = Affine::motion(Vec2::new(960.0, 540.0), Vec2::new(1.5, 0.75), 33.0, Vec2::new(100.0, 50.0));
+        let m = Affine::motion(
+            Vec2::new(960.0, 540.0),
+            Vec2::new(1.5, 0.75),
+            33.0,
+            Vec2::new(100.0, 50.0),
+        );
         let inv = m.inverse().unwrap();
         let p = Vec2::new(12.0, -7.0);
         let q = inv.apply(m.apply(p));
@@ -181,7 +244,12 @@ mod tests {
 
     #[test]
     fn motion_anchor_lands_on_position() {
-        let m = Affine::motion(Vec2::new(960.0, 540.0), Vec2::new(2.0, 2.0), 90.0, Vec2::new(10.0, 20.0));
+        let m = Affine::motion(
+            Vec2::new(960.0, 540.0),
+            Vec2::new(2.0, 2.0),
+            90.0,
+            Vec2::new(10.0, 20.0),
+        );
         let p = m.apply(Vec2::new(10.0, 20.0));
         assert!((p - Vec2::new(960.0, 540.0)).length() < 1e-9);
     }

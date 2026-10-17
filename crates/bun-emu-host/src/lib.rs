@@ -65,9 +65,15 @@ pub enum Error {
     /// The plugin library could not be loaded or lacks a symbol.
     Load(String),
     /// ABI version mismatch between plugin and bindings.
-    Abi { plugin: u32, expected: u32 },
+    Abi {
+        plugin: u32,
+        expected: u32,
+    },
     /// A call returned a negative status; `message` is `bun_emu_last_error`.
-    Status { status: i32, message: String },
+    Status {
+        status: i32,
+        message: String,
+    },
     Invalid(&'static str),
 }
 
@@ -75,7 +81,9 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Load(m) => write!(f, "cannot load emulator plugin: {m}"),
-            Error::Abi { plugin, expected } => write!(f, "plugin ABI {plugin}, bindings expect {expected}"),
+            Error::Abi { plugin, expected } => {
+                write!(f, "plugin ABI {plugin}, bindings expect {expected}")
+            }
             Error::Status { status, message } => write!(f, "{message} (status {status})"),
             Error::Invalid(m) => f.write_str(m),
         }
@@ -106,8 +114,9 @@ impl CoreInfo {
 }
 
 pub use sys::{
-    BUN_EMU_CAP_ANALOG as CAP_ANALOG, BUN_EMU_CAP_AUDIO as CAP_AUDIO, BUN_EMU_CAP_MEMORY as CAP_MEMORY,
-    BUN_EMU_CAP_NEEDS_QT_GUI as CAP_NEEDS_QT_GUI, BUN_EMU_CAP_SAVESTATE as CAP_SAVESTATE, BUN_EMU_CAP_TOUCH as CAP_TOUCH,
+    BUN_EMU_CAP_ANALOG as CAP_ANALOG, BUN_EMU_CAP_AUDIO as CAP_AUDIO,
+    BUN_EMU_CAP_MEMORY as CAP_MEMORY, BUN_EMU_CAP_NEEDS_QT_GUI as CAP_NEEDS_QT_GUI,
+    BUN_EMU_CAP_SAVESTATE as CAP_SAVESTATE, BUN_EMU_CAP_TOUCH as CAP_TOUCH,
 };
 
 /// One loaded core plugin. Cheap to clone; instances keep the library alive.
@@ -119,11 +128,19 @@ pub struct Core {
 }
 
 fn cstr_list(p: *const c_char) -> Vec<String> {
-    cstr(p).split(',').filter(|s| !s.is_empty()).map(str::to_owned).collect()
+    cstr(p)
+        .split(',')
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 fn cstr(p: *const c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
+    }
 }
 
 /// Directories searched by [`Core::open_named`]: `BUN_EMU_HOST_DIR`, the executable's
@@ -146,7 +163,8 @@ pub fn plugin_dirs() -> Vec<PathBuf> {
 fn load_library(path: &Path) -> Result<libloading::Library> {
     use libloading::os::windows::{LOAD_WITH_ALTERED_SEARCH_PATH, Library};
     // Resolve the plugin's own dependencies (Qt6Core.dll, ...) from its directory.
-    let path = std::path::absolute(path).map_err(|e| Error::Load(format!("{}: {e}", path.display())))?;
+    let path =
+        std::path::absolute(path).map_err(|e| Error::Load(format!("{}: {e}", path.display())))?;
     unsafe { Library::load_with_flags(&path, LOAD_WITH_ALTERED_SEARCH_PATH) }
         .map(Into::into)
         .map_err(|e| Error::Load(format!("{}: {e}", path.display())))
@@ -154,7 +172,8 @@ fn load_library(path: &Path) -> Result<libloading::Library> {
 
 #[cfg(not(windows))]
 fn load_library(path: &Path) -> Result<libloading::Library> {
-    unsafe { libloading::Library::new(path) }.map_err(|e| Error::Load(format!("{}: {e}", path.display())))
+    unsafe { libloading::Library::new(path) }
+        .map_err(|e| Error::Load(format!("{}: {e}", path.display())))
 }
 
 impl Core {
@@ -166,7 +185,10 @@ impl Core {
             .map_err(|e| Error::Load(format!("{}: {e}", path.display())))?;
         let raw = unsafe { lib.bun_emu_core() };
         if raw.is_null() {
-            return Err(Error::Load(format!("{}: bun_emu_core returned NULL", path.display())));
+            return Err(Error::Load(format!(
+                "{}: bun_emu_core returned NULL",
+                path.display()
+            )));
         }
         let raw = unsafe { &*raw };
         let info = CoreInfo {
@@ -180,9 +202,16 @@ impl Core {
             max_screens: raw.max_screens,
         };
         if info.abi_version != sys::BUN_EMU_ABI_VERSION {
-            return Err(Error::Abi { plugin: info.abi_version, expected: sys::BUN_EMU_ABI_VERSION });
+            return Err(Error::Abi {
+                plugin: info.abi_version,
+                expected: sys::BUN_EMU_ABI_VERSION,
+            });
         }
-        Ok(Self { lib: Arc::new(lib), info, path })
+        Ok(Self {
+            lib: Arc::new(lib),
+            info,
+            path,
+        })
     }
 
     /// Load `bun_emu_<name>` from the first of [`plugin_dirs`] that has it.
@@ -197,7 +226,10 @@ impl Core {
         }
         Err(Error::Load(format!(
             "{file} not found in {} (build it with `bun packages/bun-emu-host/scripts/build.ts {name}`)",
-            dirs.iter().map(|d| d.display().to_string()).collect::<Vec<_>>().join(", ")
+            dirs.iter()
+                .map(|d| d.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
         )))
     }
 
@@ -211,8 +243,13 @@ impl Core {
 
     pub fn create(&self) -> Result<Emulator> {
         let raw = unsafe { self.lib.bun_emu_create() };
-        let raw = NonNull::new(raw).ok_or_else(|| Error::Load(format!("{}: bun_emu_create failed", self.info.name)))?;
-        Ok(Emulator { lib: self.lib.clone(), raw, log: None })
+        let raw = NonNull::new(raw)
+            .ok_or_else(|| Error::Load(format!("{}: bun_emu_create failed", self.info.name)))?;
+        Ok(Emulator {
+            lib: self.lib.clone(),
+            raw,
+            log: None,
+        })
     }
 }
 
@@ -243,18 +280,28 @@ pub struct Frame<'a> {
 impl Frame<'_> {
     /// Packed 24-bit RGB, row-major.
     pub fn to_rgb(&self) -> Vec<u8> {
-        let (w, h, stride) = (self.width as usize, self.height as usize, self.stride as usize);
+        let (w, h, stride) = (
+            self.width as usize,
+            self.height as usize,
+            self.stride as usize,
+        );
         let mut out = Vec::with_capacity(w * h * 3);
         for y in 0..h {
             let row = &self.pixels[y * stride..];
             for x in 0..w {
                 match self.format {
-                    PixelFormat::Bgrx8888 => out.extend_from_slice(&[row[x * 4 + 2], row[x * 4 + 1], row[x * 4]]),
+                    PixelFormat::Bgrx8888 => {
+                        out.extend_from_slice(&[row[x * 4 + 2], row[x * 4 + 1], row[x * 4]])
+                    }
                     PixelFormat::Rgbx8888 => out.extend_from_slice(&row[x * 4..x * 4 + 3]),
                     PixelFormat::Rgb565 => {
                         let v = u16::from_le_bytes([row[x * 2], row[x * 2 + 1]]);
                         let (r, g, b) = ((v >> 11) & 31, (v >> 5) & 63, v & 31);
-                        out.extend_from_slice(&[(r * 255 / 31) as u8, (g * 255 / 63) as u8, (b * 255 / 31) as u8]);
+                        out.extend_from_slice(&[
+                            (r * 255 / 31) as u8,
+                            (g * 255 / 63) as u8,
+                            (b * 255 / 31) as u8,
+                        ]);
                     }
                 }
             }
@@ -296,7 +343,12 @@ pub struct Emulator {
 
 unsafe impl Send for Emulator {}
 
-unsafe extern "C" fn log_trampoline(user: *mut c_void, level: i32, message: *const c_char, len: usize) {
+unsafe extern "C" fn log_trampoline(
+    user: *mut c_void,
+    level: i32,
+    message: *const c_char,
+    len: usize,
+) {
     let f = unsafe { &*(user as *const LogFn) };
     let bytes = unsafe { std::slice::from_raw_parts(message as *const u8, len) };
     let level = match level as u32 {
@@ -329,49 +381,76 @@ impl Emulator {
     pub fn set_log(&mut self, f: impl Fn(LogLevel, &str) + Send + Sync + 'static) {
         let boxed: Box<LogFn> = Box::new(Box::new(f));
         let user = &*boxed as *const LogFn as *mut c_void;
-        unsafe { self.lib.bun_emu_set_log(self.h(), Some(log_trampoline), user) };
+        unsafe {
+            self.lib
+                .bun_emu_set_log(self.h(), Some(log_trampoline), user)
+        };
         self.log = Some(boxed);
     }
 
     pub fn set_config(&mut self, key: &str, value: &str) -> Result<()> {
         let (k, v) = (c(key)?, c(value)?);
-        self.check(unsafe { self.lib.bun_emu_set_config(self.h(), k.as_ptr(), v.as_ptr()) }).map(drop)
+        self.check(unsafe {
+            self.lib
+                .bun_emu_set_config(self.h(), k.as_ptr(), v.as_ptr())
+        })
+        .map(drop)
     }
 
     pub fn config(&self, key: &str) -> Option<String> {
         let k = c(key).ok()?;
-        let len = unsafe { self.lib.bun_emu_get_config(self.h(), k.as_ptr(), std::ptr::null_mut(), 0) };
+        let len = unsafe {
+            self.lib
+                .bun_emu_get_config(self.h(), k.as_ptr(), std::ptr::null_mut(), 0)
+        };
         if len < 0 {
             return None;
         }
         let mut buf = vec![0u8; len as usize + 1];
-        unsafe { self.lib.bun_emu_get_config(self.h(), k.as_ptr(), buf.as_mut_ptr().cast(), buf.len()) };
+        unsafe {
+            self.lib
+                .bun_emu_get_config(self.h(), k.as_ptr(), buf.as_mut_ptr().cast(), buf.len())
+        };
         buf.truncate(len as usize);
         String::from_utf8(buf).ok()
     }
 
     pub fn load_firmware(&mut self, kind: &str, data: &[u8]) -> Result<()> {
         let k = c(kind)?;
-        self.check(unsafe { self.lib.bun_emu_load_firmware(self.h(), k.as_ptr(), data.as_ptr(), data.len()) }).map(drop)
+        self.check(unsafe {
+            self.lib
+                .bun_emu_load_firmware(self.h(), k.as_ptr(), data.as_ptr(), data.len())
+        })
+        .map(drop)
     }
 
     pub fn load_content_path(&mut self, path: impl AsRef<Path>) -> Result<()> {
         let p = c(&path.as_ref().to_string_lossy())?;
-        self.check(unsafe { self.lib.bun_emu_load_content_path(self.h(), p.as_ptr()) }).map(drop)
+        self.check(unsafe { self.lib.bun_emu_load_content_path(self.h(), p.as_ptr()) })
+            .map(drop)
     }
 
     pub fn load_content(&mut self, name_hint: &str, data: &[u8]) -> Result<()> {
         let n = c(name_hint)?;
-        self.check(unsafe { self.lib.bun_emu_load_content(self.h(), n.as_ptr(), data.as_ptr(), data.len()) }).map(drop)
+        self.check(unsafe {
+            self.lib
+                .bun_emu_load_content(self.h(), n.as_ptr(), data.as_ptr(), data.len())
+        })
+        .map(drop)
     }
 
     pub fn reset(&mut self) -> Result<()> {
-        self.check(unsafe { self.lib.bun_emu_reset(self.h()) }).map(drop)
+        self.check(unsafe { self.lib.bun_emu_reset(self.h()) })
+            .map(drop)
     }
 
     pub fn run_frame(&mut self) -> Result<Step> {
         let r = self.check(unsafe { self.lib.bun_emu_run_frame(self.h()) })?;
-        Ok(if r == sys::BUN_EMU_STOPPED as i32 { Step::Stopped } else { Step::Frame })
+        Ok(if r == sys::BUN_EMU_STOPPED as i32 {
+            Step::Stopped
+        } else {
+            Step::Frame
+        })
     }
 
     pub fn frame_count(&self) -> u64 {
@@ -384,7 +463,9 @@ impl Emulator {
 
     pub fn frame(&self, index: u32) -> Option<Frame<'_>> {
         let mut s = sys::bun_emu_screen::default();
-        if unsafe { self.lib.bun_emu_get_screen(self.h(), index, &mut s) } != 0 || s.pixels.is_null() {
+        if unsafe { self.lib.bun_emu_get_screen(self.h(), index, &mut s) } != 0
+            || s.pixels.is_null()
+        {
             return None;
         }
         let format = match s.format {
@@ -393,12 +474,21 @@ impl Emulator {
             sys::BUN_EMU_PIXEL_RGB565 => PixelFormat::Rgb565,
             _ => return None,
         };
-        let pixels = unsafe { std::slice::from_raw_parts(s.pixels, s.stride as usize * s.height as usize) };
-        Some(Frame { width: s.width, height: s.height, stride: s.stride, format, pixels })
+        let pixels =
+            unsafe { std::slice::from_raw_parts(s.pixels, s.stride as usize * s.height as usize) };
+        Some(Frame {
+            width: s.width,
+            height: s.height,
+            stride: s.stride,
+            format,
+            pixels,
+        })
     }
 
     pub fn frames(&self) -> Vec<Frame<'_>> {
-        (0..self.screen_count()).filter_map(|i| self.frame(i)).collect()
+        (0..self.screen_count())
+            .filter_map(|i| self.frame(i))
+            .collect()
     }
 
     pub fn audio_rate(&self) -> u32 {
@@ -422,9 +512,11 @@ impl Emulator {
         unsafe {
             self.lib.bun_emu_set_buttons(self.h(), 0, input.buttons);
             let (x, y) = input.touch.unwrap_or((0, 0));
-            self.lib.bun_emu_set_touch(self.h(), i32::from(input.touch.is_some()), x, y);
+            self.lib
+                .bun_emu_set_touch(self.h(), i32::from(input.touch.is_some()), x, y);
             for (axis, value) in input.analog.iter().enumerate() {
-                self.lib.bun_emu_set_analog(self.h(), 0, axis as u32, *value);
+                self.lib
+                    .bun_emu_set_analog(self.h(), 0, axis as u32, *value);
             }
         }
     }
@@ -437,15 +529,25 @@ impl Emulator {
         let mut data = std::ptr::null();
         let mut len = 0usize;
         self.check(unsafe { self.lib.bun_emu_save_state(self.h(), &mut data, &mut len) })?;
-        Ok(SaveState(unsafe { std::slice::from_raw_parts(data, len) }.to_vec()))
+        Ok(SaveState(
+            unsafe { std::slice::from_raw_parts(data, len) }.to_vec(),
+        ))
     }
 
     pub fn load_state(&mut self, state: &SaveState) -> Result<()> {
-        self.check(unsafe { self.lib.bun_emu_load_state(self.h(), state.0.as_ptr(), state.0.len()) }).map(drop)
+        self.check(unsafe {
+            self.lib
+                .bun_emu_load_state(self.h(), state.0.as_ptr(), state.0.len())
+        })
+        .map(drop)
     }
 
     pub fn read_memory(&mut self, address: u64, out: &mut [u8]) -> Result<()> {
-        self.check(unsafe { self.lib.bun_emu_read_memory(self.h(), address, out.as_mut_ptr(), out.len()) }).map(drop)
+        self.check(unsafe {
+            self.lib
+                .bun_emu_read_memory(self.h(), address, out.as_mut_ptr(), out.len())
+        })
+        .map(drop)
     }
 
     /// Drain guest console output.
@@ -453,7 +555,10 @@ impl Emulator {
         let mut out = Vec::new();
         let mut buf = vec![0u8; 16 * 1024];
         loop {
-            let n = unsafe { self.lib.bun_emu_console(self.h(), buf.as_mut_ptr().cast(), buf.len()) };
+            let n = unsafe {
+                self.lib
+                    .bun_emu_console(self.h(), buf.as_mut_ptr().cast(), buf.len())
+            };
             if n == 0 {
                 return out;
             }

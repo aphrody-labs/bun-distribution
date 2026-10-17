@@ -7,7 +7,11 @@ pub(crate) const FALLBACK_SR: f32 = 48_000.0;
 
 /// Sanitizes a host sample rate into 1 kHz ..= 1.536 MHz.
 pub(crate) fn sane_sr(sr: f32) -> f32 {
-    if sr.is_finite() && sr >= 1000.0 { sr.min(1_536_000.0) } else { FALLBACK_SR }
+    if sr.is_finite() && sr >= 1000.0 {
+        sr.min(1_536_000.0)
+    } else {
+        FALLBACK_SR
+    }
 }
 
 /// Upper bound on channels any plugin will allocate state for.
@@ -34,12 +38,19 @@ pub(crate) fn time_coef(ms: f32, sr: f32) -> f32 {
 /// Flushes denormals and non-finite values in feedback paths to zero.
 #[inline]
 pub(crate) fn flush(x: f32) -> f32 {
-    if x.is_finite() && x.abs() > 1.0e-25 { x } else { 0.0 }
+    if x.is_finite() && x.abs() > 1.0e-25 {
+        x
+    } else {
+        0.0
+    }
 }
 
 /// Number of frames a plugin may safely touch.
 pub(crate) fn frames_in(io: &[Vec<f32>], frames: usize, channels: usize) -> usize {
-    io.iter().take(channels).map(Vec::len).fold(frames, usize::min)
+    io.iter()
+        .take(channels)
+        .map(Vec::len)
+        .fold(frames, usize::min)
 }
 
 /// One-pole exponential parameter smoother (no zipper noise).
@@ -52,7 +63,11 @@ pub(crate) struct Smoother {
 
 impl Smoother {
     pub(crate) fn new(v: f32) -> Self {
-        Self { cur: v, target: v, coef: 0.0 }
+        Self {
+            cur: v,
+            target: v,
+            coef: 0.0,
+        }
     }
 
     /// Sets the time constant (default ~20 ms is typical).
@@ -113,7 +128,10 @@ pub(crate) struct DelayLine {
 impl DelayLine {
     /// Allocates room for at least `max_delay` samples of delay.
     pub(crate) fn allocate(&mut self, max_delay: usize) {
-        let len = max_delay.saturating_add(4).clamp(4, 1 << 26).next_power_of_two();
+        let len = max_delay
+            .saturating_add(4)
+            .clamp(4, 1 << 26)
+            .next_power_of_two();
         self.buf = vec![0.0; len];
         self.mask = len - 1;
         self.pos = 0;
@@ -146,7 +164,11 @@ impl DelayLine {
     /// Linear-interpolated read `d` samples back (clamped to 1..=max_delay).
     #[inline]
     pub(crate) fn read(&self, d: f32) -> f32 {
-        let d = if d.is_finite() { d.clamp(1.0, self.max_delay().max(1.0)) } else { 1.0 };
+        let d = if d.is_finite() {
+            d.clamp(1.0, self.max_delay().max(1.0))
+        } else {
+            1.0
+        };
         let i = d as usize;
         let f = d - i as f32;
         let a = self.tap(i);
@@ -157,7 +179,11 @@ impl DelayLine {
     /// Cubic (Hermite) interpolated read, for modulated delays.
     #[inline]
     pub(crate) fn read_cubic(&self, d: f32) -> f32 {
-        let d = if d.is_finite() { d.clamp(2.0, (self.max_delay() - 1.0).max(2.0)) } else { 2.0 };
+        let d = if d.is_finite() {
+            d.clamp(2.0, (self.max_delay() - 1.0).max(2.0))
+        } else {
+            2.0
+        };
         let i = d as usize;
         let f = d - i as f32;
         let xm1 = self.tap(i - 1);
@@ -241,7 +267,11 @@ impl Lfo {
     /// Advances by `inc` cycles and returns sin at `offset` cycles ahead (for stereo spread).
     #[inline]
     pub(crate) fn tick(&mut self, inc: f32) -> f32 {
-        let inc = if inc.is_finite() { inc.clamp(0.0, 0.5) } else { 0.0 };
+        let inc = if inc.is_finite() {
+            inc.clamp(0.0, 0.5)
+        } else {
+            0.0
+        };
         self.phase += inc;
         if self.phase >= 1.0 {
             self.phase -= 1.0;
@@ -265,13 +295,21 @@ pub(crate) struct DcBlocker {
 
 impl DcBlocker {
     pub(crate) fn new(cutoff_hz: f32, sr: f32) -> Self {
-        let mut d = Self { r: 0.995, x1: 0.0, y1: 0.0 };
+        let mut d = Self {
+            r: 0.995,
+            x1: 0.0,
+            y1: 0.0,
+        };
         d.set_cutoff(cutoff_hz, sr);
         d
     }
 
     pub(crate) fn set_cutoff(&mut self, cutoff_hz: f32, sr: f32) {
-        let fc = if cutoff_hz.is_finite() { cutoff_hz.clamp(0.1, 1000.0) } else { 5.0 };
+        let fc = if cutoff_hz.is_finite() {
+            cutoff_hz.clamp(0.1, 1000.0)
+        } else {
+            5.0
+        };
         self.r = (-TAU * fc / sane_sr(sr)).exp();
     }
 
@@ -294,7 +332,9 @@ pub(crate) fn sort_events<T: Copy>(ev: &mut [T], key: impl Fn(&T) -> usize) {
     for i in 1..ev.len() {
         let mut j = i;
         while j > 0 {
-            let (Some(a), Some(b)) = (ev.get(j - 1), ev.get(j)) else { break };
+            let (Some(a), Some(b)) = (ev.get(j - 1), ev.get(j)) else {
+                break;
+            };
             if key(a) <= key(b) {
                 break;
             }

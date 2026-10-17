@@ -28,21 +28,81 @@ macro_rules! uic {
 /// UI-only commands (not in the AE menus; shortcuts and the command palette).
 pub const UI_COMMANDS: &[UiCommand] = &[
     uic!("window.dockAction", "Docking Action", [], None),
-    uic!("playback.ramPreview", "Preview (Numpad 0)", [], Some("Num0")),
-    uic!("playback.preview.shiftSpacebar", "Preview (Shift+Spacebar)", [], Some("Shift+Space")),
-    uic!("playback.preview.shiftNumpad0", "Preview (Shift+Numpad 0)", [], Some("Shift+Num0")),
-    uic!("playback.preview.altNumpad0", "Preview (Alt+Numpad 0)", [], Some("Alt+Num0")),
+    uic!(
+        "playback.ramPreview",
+        "Preview (Numpad 0)",
+        [],
+        Some("Num0")
+    ),
+    uic!(
+        "playback.preview.shiftSpacebar",
+        "Preview (Shift+Spacebar)",
+        [],
+        Some("Shift+Space")
+    ),
+    uic!(
+        "playback.preview.shiftNumpad0",
+        "Preview (Shift+Numpad 0)",
+        [],
+        Some("Shift+Num0")
+    ),
+    uic!(
+        "playback.preview.altNumpad0",
+        "Preview (Alt+Numpad 0)",
+        [],
+        Some("Alt+Num0")
+    ),
     uic!("playback.stop", "Stop", [], None),
     uic!("view.fit", "Fit", [], Some("Shift+/")),
     uic!("view.actualSize", "100%", [], Some("/")),
-    uic!("viewer.nudge.up", "Move Selected Layers Up 1 Pixel at Current Magnification", [], Some("ArrowUp")),
-    uic!("viewer.nudge.down", "Move Selected Layers Down 1 Pixel at Current Magnification", [], Some("ArrowDown")),
-    uic!("viewer.nudge.left", "Move Selected Layers Left 1 Pixel at Current Magnification", [], Some("ArrowLeft")),
-    uic!("viewer.nudge.right", "Move Selected Layers Right 1 Pixel at Current Magnification", [], Some("ArrowRight")),
-    uic!("viewer.nudge.up10", "Move Selected Layers Up 10 Pixels at Current Magnification", [], Some("Shift+ArrowUp")),
-    uic!("viewer.nudge.down10", "Move Selected Layers Down 10 Pixels at Current Magnification", [], Some("Shift+ArrowDown")),
-    uic!("viewer.nudge.left10", "Move Selected Layers Left 10 Pixels at Current Magnification", [], Some("Shift+ArrowLeft")),
-    uic!("viewer.nudge.right10", "Move Selected Layers Right 10 Pixels at Current Magnification", [], Some("Shift+ArrowRight")),
+    uic!(
+        "viewer.nudge.up",
+        "Move Selected Layers Up 1 Pixel at Current Magnification",
+        [],
+        Some("ArrowUp")
+    ),
+    uic!(
+        "viewer.nudge.down",
+        "Move Selected Layers Down 1 Pixel at Current Magnification",
+        [],
+        Some("ArrowDown")
+    ),
+    uic!(
+        "viewer.nudge.left",
+        "Move Selected Layers Left 1 Pixel at Current Magnification",
+        [],
+        Some("ArrowLeft")
+    ),
+    uic!(
+        "viewer.nudge.right",
+        "Move Selected Layers Right 1 Pixel at Current Magnification",
+        [],
+        Some("ArrowRight")
+    ),
+    uic!(
+        "viewer.nudge.up10",
+        "Move Selected Layers Up 10 Pixels at Current Magnification",
+        [],
+        Some("Shift+ArrowUp")
+    ),
+    uic!(
+        "viewer.nudge.down10",
+        "Move Selected Layers Down 10 Pixels at Current Magnification",
+        [],
+        Some("Shift+ArrowDown")
+    ),
+    uic!(
+        "viewer.nudge.left10",
+        "Move Selected Layers Left 10 Pixels at Current Magnification",
+        [],
+        Some("Shift+ArrowLeft")
+    ),
+    uic!(
+        "viewer.nudge.right10",
+        "Move Selected Layers Right 10 Pixels at Current Magnification",
+        [],
+        Some("Shift+ArrowRight")
+    ),
     uic!("view.safeMargins", "Title/Action Safe", [], None),
     uic!("view.transparencyGrid", "Transparency Grid", [], None),
     uic!("view.fastPreviews", "Fast Previews", [], None),
@@ -53,55 +113,220 @@ pub const UI_COMMANDS: &[UiCommand] = &[
     uic!("timeline.zoomIn", "Zoom In Time", [], Some("=")),
     uic!("timeline.zoomOut", "Zoom Out Time", [], Some("-")),
     uic!("timeline.zoomFit", "Zoom to Fit Comp", [], None),
-    uic!("timeline.zoomFrameToggle", "Zoom In to Frame Level / Out to the Whole Comp", [], Some(";")),
+    uic!(
+        "timeline.zoomFrameToggle",
+        "Zoom In to Frame Level / Out to the Whole Comp",
+        [],
+        Some(";")
+    ),
     uic!("timeline.graphEditor", "Graph Editor", [], Some("Shift+F3")),
-    uic!("timeline.switchesModes", "Toggle Switches / Modes", [], Some("F4")),
-    uic!("timeline.workAreaBegin", "Set Work Area Begin", [], Some("B")),
+    uic!(
+        "timeline.switchesModes",
+        "Toggle Switches / Modes",
+        [],
+        Some("F4")
+    ),
+    uic!(
+        "timeline.workAreaBegin",
+        "Set Work Area Begin",
+        [],
+        Some("B")
+    ),
     uic!("timeline.workAreaEnd", "Set Work Area End", [], Some("N")),
-    uic!("timeline.moveInToTime", "Move Layer In Point to Current Time", [], Some("[")),
-    uic!("timeline.moveOutToTime", "Move Layer Out Point to Current Time", [], Some("]")),
-    uic!("timeline.trimInToTime", "Trim Layer In Point to Current Time", [], Some("Alt+[")),
-    uic!("timeline.trimOutToTime", "Trim Layer Out Point to Current Time", [], Some("Alt+]")),
+    uic!(
+        "timeline.moveInToTime",
+        "Move Layer In Point to Current Time",
+        [],
+        Some("[")
+    ),
+    uic!(
+        "timeline.moveOutToTime",
+        "Move Layer Out Point to Current Time",
+        [],
+        Some("]")
+    ),
+    uic!(
+        "timeline.trimInToTime",
+        "Trim Layer In Point to Current Time",
+        [],
+        Some("Alt+[")
+    ),
+    uic!(
+        "timeline.trimOutToTime",
+        "Trim Layer Out Point to Current Time",
+        [],
+        Some("Alt+]")
+    ),
     uic!("timeline.reveal.position", "Reveal Position", [], Some("P")),
     uic!("timeline.reveal.scale", "Reveal Scale", [], Some("S")),
     uic!("timeline.reveal.rotation", "Reveal Rotation", [], Some("R")),
     uic!("timeline.reveal.opacity", "Reveal Opacity", [], Some("T")),
-    uic!("timeline.reveal.anchor", "Reveal Anchor Point", [], Some("A")),
+    uic!(
+        "timeline.reveal.anchor",
+        "Reveal Anchor Point",
+        [],
+        Some("A")
+    ),
     uic!("timeline.reveal.effects", "Reveal Effects", [], Some("E")),
     uic!("timeline.reveal.masks", "Reveal Masks", [], Some("M")),
-    uic!("timeline.reveal.feather", "Reveal Mask Feather", [], Some("F")),
-    uic!("timeline.reveal.levels", "Reveal Audio Levels (press twice: Waveform)", [], Some("L")),
+    uic!(
+        "timeline.reveal.feather",
+        "Reveal Mask Feather",
+        [],
+        Some("F")
+    ),
+    uic!(
+        "timeline.reveal.levels",
+        "Reveal Audio Levels (press twice: Waveform)",
+        [],
+        Some("L")
+    ),
     uic!("timeline.reveal.timeRemap", "Reveal Time Remap", [], None),
-    uic!("timeline.reveal.expressions", "Reveal Expressions", [], None),
-    uic!("timeline.reveal.maskOpacity", "Reveal Mask Opacity", [], None),
+    uic!(
+        "timeline.reveal.expressions",
+        "Reveal Expressions",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.reveal.maskOpacity",
+        "Reveal Mask Opacity",
+        [],
+        None
+    ),
     uic!("timeline.reveal.maskPath", "Reveal Mask Path", [], None),
-    uic!("timeline.reveal.material", "Reveal Material Options", [], None),
-    uic!("timeline.reveal.paint", "Reveal Paint, Roto Brush and Puppet", [], None),
-    uic!("timeline.reveal.selected", "Reveal Selected Properties", [], None),
-    uic!("timeline.reveal.missingEffects", "Reveal Missing Effects", [], None),
-    uic!("timeline.reveal.waveform", "Reveal Audio Waveform", [], None),
-    uic!("timeline.revealAdd.position", "Add Position to Revealed Properties", [], Some("Shift+P")),
-    uic!("timeline.revealAdd.scale", "Add Scale to Revealed Properties", [], Some("Shift+S")),
-    uic!("timeline.revealAdd.rotation", "Add Rotation to Revealed Properties", [], Some("Shift+R")),
-    uic!("timeline.revealAdd.opacity", "Add Opacity to Revealed Properties", [], Some("Shift+T")),
-    uic!("timeline.revealAdd.anchor", "Add Anchor Point to Revealed Properties", [], Some("Shift+A")),
-    uic!("timeline.revealAdd.effects", "Add Effects to Revealed Properties", [], Some("Shift+E")),
-    uic!("timeline.revealAdd.masks", "Add Masks to Revealed Properties", [], Some("Shift+M")),
-    uic!("timeline.revealAdd.feather", "Add Mask Feather to Revealed Properties", [], Some("Shift+F")),
-    uic!("timeline.revealAdd.levels", "Add Audio Levels to Revealed Properties", [], Some("Shift+L")),
-    uic!("timeline.revealAdd.animated", "Add Animated Properties to Revealed Properties", [], Some("Shift+U")),
+    uic!(
+        "timeline.reveal.material",
+        "Reveal Material Options",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.reveal.paint",
+        "Reveal Paint, Roto Brush and Puppet",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.reveal.selected",
+        "Reveal Selected Properties",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.reveal.missingEffects",
+        "Reveal Missing Effects",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.reveal.waveform",
+        "Reveal Audio Waveform",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.revealAdd.position",
+        "Add Position to Revealed Properties",
+        [],
+        Some("Shift+P")
+    ),
+    uic!(
+        "timeline.revealAdd.scale",
+        "Add Scale to Revealed Properties",
+        [],
+        Some("Shift+S")
+    ),
+    uic!(
+        "timeline.revealAdd.rotation",
+        "Add Rotation to Revealed Properties",
+        [],
+        Some("Shift+R")
+    ),
+    uic!(
+        "timeline.revealAdd.opacity",
+        "Add Opacity to Revealed Properties",
+        [],
+        Some("Shift+T")
+    ),
+    uic!(
+        "timeline.revealAdd.anchor",
+        "Add Anchor Point to Revealed Properties",
+        [],
+        Some("Shift+A")
+    ),
+    uic!(
+        "timeline.revealAdd.effects",
+        "Add Effects to Revealed Properties",
+        [],
+        Some("Shift+E")
+    ),
+    uic!(
+        "timeline.revealAdd.masks",
+        "Add Masks to Revealed Properties",
+        [],
+        Some("Shift+M")
+    ),
+    uic!(
+        "timeline.revealAdd.feather",
+        "Add Mask Feather to Revealed Properties",
+        [],
+        Some("Shift+F")
+    ),
+    uic!(
+        "timeline.revealAdd.levels",
+        "Add Audio Levels to Revealed Properties",
+        [],
+        Some("Shift+L")
+    ),
+    uic!(
+        "timeline.revealAdd.animated",
+        "Add Animated Properties to Revealed Properties",
+        [],
+        Some("Shift+U")
+    ),
     uic!("timeline.column", "Show/Hide Timeline Column", [], None),
     uic!("timeline.sourceName", "Source Name / Layer Name", [], None),
     uic!("timeline.search", "Search Timeline", [], None),
     uic!("flowchart.options", "Flowchart Options", [], None),
     uic!("flowchart.graph", "Flowchart Graph", [], None),
     uic!("timeline.collapseAll", "Collapse All", [], None),
-    uic!("timeline.twirlSelected", "Twirl Selected Layers Open / Closed", [], Some("Cmd+`")),
-    uic!("timeline.keyAt.anchor", "Add or Remove Anchor Point Keyframe", [], Some("Alt+Shift+A")),
-    uic!("timeline.keyAt.position", "Add or Remove Position Keyframe", [], Some("Alt+Shift+P")),
-    uic!("timeline.keyAt.scale", "Add or Remove Scale Keyframe", [], Some("Alt+Shift+S")),
-    uic!("timeline.keyAt.rotation", "Add or Remove Rotation Keyframe", [], Some("Alt+Shift+R")),
-    uic!("timeline.keyAt.opacity", "Add or Remove Opacity Keyframe", [], Some("Alt+Shift+T")),
+    uic!(
+        "timeline.twirlSelected",
+        "Twirl Selected Layers Open / Closed",
+        [],
+        Some("Cmd+`")
+    ),
+    uic!(
+        "timeline.keyAt.anchor",
+        "Add or Remove Anchor Point Keyframe",
+        [],
+        Some("Alt+Shift+A")
+    ),
+    uic!(
+        "timeline.keyAt.position",
+        "Add or Remove Position Keyframe",
+        [],
+        Some("Alt+Shift+P")
+    ),
+    uic!(
+        "timeline.keyAt.scale",
+        "Add or Remove Scale Keyframe",
+        [],
+        Some("Alt+Shift+S")
+    ),
+    uic!(
+        "timeline.keyAt.rotation",
+        "Add or Remove Rotation Keyframe",
+        [],
+        Some("Alt+Shift+R")
+    ),
+    uic!(
+        "timeline.keyAt.opacity",
+        "Add or Remove Opacity Keyframe",
+        [],
+        Some("Alt+Shift+T")
+    ),
     uic!("tool.selection", "Selection Tool", [], Some("V")),
     uic!("tool.hand", "Hand Tool", [], Some("H")),
     uic!("tool.zoom", "Zoom Tool", [], Some("Z")),
@@ -114,15 +339,30 @@ pub const UI_COMMANDS: &[UiCommand] = &[
     uic!("tool.pen", "Pen Tool", [], Some("G")),
     uic!("tool.type", "Type Tools", [], Some("Cmd+T")),
     uic!("tool.brush", "Brush Tools", [], Some("Cmd+B")),
-    uic!("tool.rotoBrush", "Roto Brush & Refine Edge Tools", [], Some("Alt+W")),
+    uic!(
+        "tool.rotoBrush",
+        "Roto Brush & Refine Edge Tools",
+        [],
+        Some("Alt+W")
+    ),
     uic!("tool.puppet", "Puppet Tools", [], Some("Cmd+P")),
     uic!("app.newComp", "New Composition...", [], None),
     uic!("app.compSettings", "Composition Settings...", [], None),
     uic!("app.solidSettings", "New Solid...", [], None),
     uic!("app.home", "Home", [], None),
     uic!("markers.dialog", "Marker Settings...", [], None),
-    uic!("window.maximizePanel", "Maximize Panel Under Pointer", [], Some("`")),
-    uic!("window.maximizeApp", "Maximize or Restore Application Window", [], Some("Cmd+\\")),
+    uic!(
+        "window.maximizePanel",
+        "Maximize Panel Under Pointer",
+        [],
+        Some("`")
+    ),
+    uic!(
+        "window.maximizeApp",
+        "Maximize or Restore Application Window",
+        [],
+        Some("Cmd+\\")
+    ),
     uic!("window.dockPanel", "Dock Panel", [], None),
     uic!("window.floatPanel", "Undock Panel", [], None),
     uic!("window.closePanel", "Close Panel", [], None),
@@ -156,12 +396,24 @@ pub fn reveal(app: &mut EffectcraftApp, kind: &str, now: f64, add: bool) {
     };
     let pressed = kind;
     // (With Shift a second press removes the property again instead.)
-    let again = !add && matches!(app.last_reveal.take(), Some((k, t)) if k == pressed && now - t < 0.6);
-    app.last_reveal = Some((if again { String::new() } else { pressed.to_string() }, now));
+    let again =
+        !add && matches!(app.last_reveal.take(), Some((k, t)) if k == pressed && now - t < 0.6);
+    app.last_reveal = Some((
+        if again {
+            String::new()
+        } else {
+            pressed.to_string()
+        },
+        now,
+    ));
     let kind = match (again, double(pressed)) {
         (true, Some(d)) => {
             // The second press replaces what the first one revealed.
-            let first = if pressed == "masks" { "maskPath" } else { pressed };
+            let first = if pressed == "masks" {
+                "maskPath"
+            } else {
+                pressed
+            };
             app.ui.timeline.reveal.retain(|k| k != first);
             d
         }
@@ -193,12 +445,27 @@ pub fn reveal(app: &mut EffectcraftApp, kind: &str, now: f64, add: bool) {
 fn reveal_time_remap(app: &mut EffectcraftApp, params: &Value) {
     let asked: Vec<u64> = match params.get("layers").and_then(Value::as_array) {
         Some(a) => a.iter().filter_map(Value::as_u64).collect(),
-        None => app.session.state.selected_layers.iter().map(|l| l.0).collect(),
+        None => app
+            .session
+            .state
+            .selected_layers
+            .iter()
+            .map(|l| l.0)
+            .collect(),
     };
-    let Some(comp) = app.session.active_comp() else { return };
-    let layers: Vec<u64> = comp.layers.iter().filter(|l| asked.contains(&l.id.0) && l.props.get("timeRemap").is_some()).map(|l| l.id.0).collect();
+    let Some(comp) = app.session.active_comp() else {
+        return;
+    };
+    let layers: Vec<u64> = comp
+        .layers
+        .iter()
+        .filter(|l| asked.contains(&l.id.0) && l.props.get("timeRemap").is_some())
+        .map(|l| l.id.0)
+        .collect();
     if !layers.is_empty() {
-        app.ui.timeline.apply_reveal(&layers, vec!["timeRemap".into()]);
+        app.ui
+            .timeline
+            .apply_reveal(&layers, vec!["timeRemap".into()]);
     }
 }
 
@@ -206,8 +473,15 @@ fn reveal_time_remap(app: &mut EffectcraftApp, params: &Value) {
 /// After Effects: added to what a reveal shortcut shows, else with the layer's Transform twirled
 /// open, else alone like P.
 fn reveal_keyed(app: &mut EffectcraftApp, keyed: &Value, kind: &str) {
-    let layers: std::collections::BTreeSet<u64> = keyed.as_array().into_iter().flatten().filter_map(|k| k.get("layer").and_then(Value::as_u64)).collect();
-    let Some(comp) = app.session.active_comp() else { return };
+    let layers: std::collections::BTreeSet<u64> = keyed
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|k| k.get("layer").and_then(Value::as_u64))
+        .collect();
+    let Some(comp) = app.session.active_comp() else {
+        return;
+    };
     let tl = &mut app.ui.timeline;
     for id in layers {
         let shown = tl.layer_reveal.get(&id).filter(|k| !k.is_empty()).cloned();
@@ -219,7 +493,10 @@ fn reveal_keyed(app: &mut EffectcraftApp, keyed: &Value, kind: &str) {
                 }
             }
             None if tl.open_layers.contains(&id) => {
-                if let Some(tr) = comp.layer(effectcraft_engine::project::LayerId(id)).and_then(|l| l.transform()) {
+                if let Some(tr) = comp
+                    .layer(effectcraft_engine::project::LayerId(id))
+                    .and_then(|l| l.transform())
+                {
                     tl.open_groups.insert(tr.uid);
                 }
             }
@@ -234,9 +511,17 @@ fn reveal_keyed(app: &mut EffectcraftApp, keyed: &Value, kind: &str) {
 /// The layers a reveal shortcut acts on: the selected ones, else every layer of the active comp.
 fn reveal_targets(app: &EffectcraftApp) -> Vec<u64> {
     if app.session.state.selected_layers.is_empty() {
-        app.session.active_comp().map(|c| c.layers.iter().map(|l| l.id.0).collect()).unwrap_or_default()
+        app.session
+            .active_comp()
+            .map(|c| c.layers.iter().map(|l| l.id.0).collect())
+            .unwrap_or_default()
     } else {
-        app.session.state.selected_layers.iter().map(|l| l.0).collect()
+        app.session
+            .state
+            .selected_layers
+            .iter()
+            .map(|l| l.0)
+            .collect()
     }
 }
 
@@ -257,13 +542,29 @@ fn nudge(app: &mut EffectcraftApp, ctx: &egui::Context, dir: &str) -> Result<Val
         _ => return Err(format!("unknown nudge `{dir}`")),
     };
     let st = &app.session.state;
-    let over = matches!(app.ui.focused, PanelKind::Composition | PanelKind::Viewer(_) | PanelKind::Timeline);
-    if !over || st.selected_layers.is_empty() || st.text_edit.is_some() || !st.selected_vertices.is_empty() {
+    let over = matches!(
+        app.ui.focused,
+        PanelKind::Composition | PanelKind::Viewer(_) | PanelKind::Timeline
+    );
+    if !over
+        || st.selected_layers.is_empty()
+        || st.text_edit.is_some()
+        || !st.selected_vertices.is_empty()
+    {
         return Ok(Value::Null);
     }
     // Screen pixels per comp pixel.
-    let zoom = (app.ui.viewer.zoom.unwrap_or_else(|| crate::panels::viewer::last_fit(ctx)) * ctx.pixels_per_point()) as f64;
-    let k = if zoom.is_finite() && zoom > 1e-6 { 1.0 / zoom } else { 1.0 };
+    let zoom = (app
+        .ui
+        .viewer
+        .zoom
+        .unwrap_or_else(|| crate::panels::viewer::last_fit(ctx))
+        * ctx.pixels_per_point()) as f64;
+    let k = if zoom.is_finite() && zoom > 1e-6 {
+        1.0 / zoom
+    } else {
+        1.0
+    };
     run_engine(app, ctx, "layer.nudge", json!({"x": x * k, "y": y * k}))
 }
 
@@ -272,7 +573,12 @@ fn no_params(p: &Value) -> bool {
 }
 
 /// Execute a UI or engine command by id.
-pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: Value) -> Result<Value, String> {
+pub fn invoke(
+    app: &mut EffectcraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: Value,
+) -> Result<Value, String> {
     // Layer ▸ New ▸ Text (menu, shortcut, context menus) puts an insertion point in the centre of
     // the comp, as After Effects does, so typing goes into Source Text rather than running
     // shortcuts (#866). `engine.execute` keeps the headless default.
@@ -285,13 +591,27 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
             "edit.selectAll" => {
                 let items: Vec<u64> = crate::panels::project::visible_rows(app)
                     .into_iter()
-                    .filter(|(id, _)| app.ui.project_search.is_empty() || app.session.project.item(*id).is_some_and(|it| !it.is_folder()))
+                    .filter(|(id, _)| {
+                        app.ui.project_search.is_empty()
+                            || app
+                                .session
+                                .project
+                                .item(*id)
+                                .is_some_and(|it| !it.is_folder())
+                    })
                     .map(|(id, _)| id.0)
                     .collect();
                 return run_engine(app, ctx, "project.select", json!({"items":items}));
             }
-            "edit.deselectAll" => return run_engine(app, ctx, "project.select", json!({"items":[]})),
-            "edit.cut" | "edit.copy" | "edit.paste" | "edit.copyWithPropertyLinks" | "edit.copyWithRelativePropertyLinks" | "edit.copyExpressionOnly" => {
+            "edit.deselectAll" => {
+                return run_engine(app, ctx, "project.select", json!({"items":[]}));
+            }
+            "edit.cut"
+            | "edit.copy"
+            | "edit.paste"
+            | "edit.copyWithPropertyLinks"
+            | "edit.copyWithRelativePropertyLinks"
+            | "edit.copyExpressionOnly" => {
                 return Err("Project clipboard actions are not supported yet".into());
             }
             _ => {}
@@ -301,18 +621,28 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
     // Effects 26.3). Copying in the app replaces the system clipboard with a note naming what
     // was copied, so SVG there was copied after anything copied in the app.
     if id == "edit.paste" && no_params(&params) && app.session.state.text_edit.is_none() {
-        let text = ctx.data_mut(|d| d.remove_temp::<String>(system_paste_id())).or_else(|| app.hooks.clipboard_text.as_ref().and_then(|f| f()));
+        let text = ctx
+            .data_mut(|d| d.remove_temp::<String>(system_paste_id()))
+            .or_else(|| app.hooks.clipboard_text.as_ref().and_then(|f| f()));
         if let Some(svg) = text.filter(|t| effectcraft_engine::vector::is_svg_text(t)) {
             return run_engine(app, ctx, "edit.pasteSvg", json!({"svg": svg}));
         }
     }
     // Clear follows panel focus, including the Edit menu and keyboard shortcut.
-    if id == "edit.clear" && params.as_object().is_some_and(|p| p.is_empty()) && app.ui.focused == PanelKind::Project {
+    if id == "edit.clear"
+        && params.as_object().is_some_and(|p| p.is_empty())
+        && app.ui.focused == PanelKind::Project
+    {
         // Through `invoke`, so deleting items that compositions use still asks first (M3.16).
         return invoke(app, ctx, "project.delete", json!({}));
     }
-    if id == "edit.clear" && params.as_object().is_some_and(|p| p.is_empty()) && app.ui.focused == PanelKind::RenderQueue {
-        let selected = ctx.data(|d| d.get_temp::<(Vec<u64>, Option<u64>)>(egui::Id::new("rq-ui"))).and_then(|(_, id)| id);
+    if id == "edit.clear"
+        && params.as_object().is_some_and(|p| p.is_empty())
+        && app.ui.focused == PanelKind::RenderQueue
+    {
+        let selected = ctx
+            .data(|d| d.get_temp::<(Vec<u64>, Option<u64>)>(egui::Id::new("rq-ui")))
+            .and_then(|(_, id)| id);
         return match selected {
             Some(item) => run_engine(app, ctx, "renderQueue.remove", json!({"item": item})),
             None => Err("select a Render Queue item first".into()),
@@ -337,10 +667,16 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
     }
     // J / K and Select All Keyframes act on what the Timeline shows (its revealed properties).
     if matches!(id, "time.nextKey" | "time.previousKey" | "keys.selectAll")
-        && ["visible", "layers", "layer", "prop"].iter().all(|k| params.get(*k).is_none())
+        && ["visible", "layers", "layer", "prop"]
+            .iter()
+            .all(|k| params.get(*k).is_none())
         && let Some(c) = app.session.active_comp_arc()
     {
-        let mut p = if params.is_object() { params.clone() } else { json!({}) };
+        let mut p = if params.is_object() {
+            params.clone()
+        } else {
+            json!({})
+        };
         p["visible"] = json!(crate::panels::timeline::visible_props(app, &c));
         return run_engine(app, ctx, id, p);
     }
@@ -385,7 +721,13 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
             let cur = tools.iter().position(|x| *x == app.ui.tool);
             let next = match cur {
                 Some(i) => tools[(i + 1) % tools.len()],
-                None => app.ui.slot_tools.get(si).copied().filter(|x| tools.contains(x)).unwrap_or(tools[0]),
+                None => app
+                    .ui
+                    .slot_tools
+                    .get(si)
+                    .copied()
+                    .filter(|x| tools.contains(x))
+                    .unwrap_or(tools[0]),
             };
             app.ui.tool = next;
             if si < app.ui.slot_tools.len() && si != 11 {
@@ -434,14 +776,26 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
         }
     }
     if id == "window.dockAction" {
-        let value = params.get("action").cloned().ok_or("missing docking action")?;
-        let action: craft_ui::docking::Action<PanelKind> = serde_json::from_value(value).map_err(|error| format!("invalid docking action: {error}"))?;
-        if matches!(&action, craft_ui::docking::Action::Open { .. } | craft_ui::docking::Action::OpenAt { .. }) {
-            return Err("use the panel open commands to preserve viewer and ScriptUI lifecycle callbacks".into());
+        let value = params
+            .get("action")
+            .cloned()
+            .ok_or("missing docking action")?;
+        let action: craft_ui::docking::Action<PanelKind> = serde_json::from_value(value)
+            .map_err(|error| format!("invalid docking action: {error}"))?;
+        if matches!(
+            &action,
+            craft_ui::docking::Action::Open { .. } | craft_ui::docking::Action::OpenAt { .. }
+        ) {
+            return Err(
+                "use the panel open commands to preserve viewer and ScriptUI lifecycle callbacks"
+                    .into(),
+            );
         }
         if let craft_ui::docking::Action::Close { panel } = &action {
             let mut layout = crate::dock_shared::encode(&app.ui.dock, &app.ui.floating)?;
-            layout.apply(action.clone()).map_err(|error| error.to_string())?;
+            layout
+                .apply(action.clone())
+                .map_err(|error| error.to_string())?;
             app.close_panel(*panel);
             return Ok(Value::Null);
         }
@@ -464,11 +818,16 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
         let value = params.get("panel").ok_or("panelWindow: need `panel`")?;
         let panel = match value.as_str() {
             Some(name) => PanelKind::from_name(name).ok_or(format!("unknown panel `{name}`"))?,
-            None => serde_json::from_value::<PanelKind>(value.clone()).map_err(|_| "panelWindow: unknown `panel`".to_string())?,
+            None => serde_json::from_value::<PanelKind>(value.clone())
+                .map_err(|_| "panelWindow: unknown `panel`".to_string())?,
         };
         let window = match params.get("window") {
             None | Some(Value::Null) => None,
-            Some(value) => Some(value.as_bool().ok_or("panelWindow: `window` must be true or false")?),
+            Some(value) => Some(
+                value
+                    .as_bool()
+                    .ok_or("panelWindow: `window` must be true or false")?,
+            ),
         };
         let window = app.set_panel_window(ctx, panel, window)?;
         return Ok(json!({"window": window}));
@@ -478,8 +837,18 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
         return frontend(app, ctx, id, params);
     }
     // Docking: {panel, anchor, zone: center|left|right|top|bottom}, {panel, rect?}, {panel?}.
-    if let Some(op) = id.strip_prefix("window.").filter(|o| matches!(*o, "maximizePanel" | "dockPanel" | "floatPanel" | "closePanel")) {
-        let panel_of = |k: &str| params.get(k).and_then(Value::as_str).map(|s| PanelKind::from_name(s).ok_or(format!("unknown panel `{s}`")));
+    if let Some(op) = id.strip_prefix("window.").filter(|o| {
+        matches!(
+            *o,
+            "maximizePanel" | "dockPanel" | "floatPanel" | "closePanel"
+        )
+    }) {
+        let panel_of = |k: &str| {
+            params
+                .get(k)
+                .and_then(Value::as_str)
+                .map(|s| PanelKind::from_name(s).ok_or(format!("unknown panel `{s}`")))
+        };
         match op {
             "maximizePanel" => {
                 let p = match panel_of("panel") {
@@ -497,7 +866,8 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
             "floatPanel" => {
                 let p = panel_of("panel").ok_or("floatPanel: need `panel`")??;
                 let r = match params.get("rect") {
-                    Some(value) => serde_json::from_value::<[f32; 4]>(value.clone()).map_err(|_| "rect must contain four finite numbers")?,
+                    Some(value) => serde_json::from_value::<[f32; 4]>(value.clone())
+                        .map_err(|_| "rect must contain four finite numbers")?,
                     None => crate::dock_ui::default_float_rect(ctx.content_rect()),
                 };
                 if !app.edit_layout(|l| l.float(p, r)) {
@@ -507,14 +877,22 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
             }
             _ => {
                 let p = panel_of("panel").ok_or("dockPanel: need `panel`")??;
-                let anchor = panel_of("anchor").ok_or("dockPanel: need `anchor` (a docked panel)")??;
+                let anchor =
+                    panel_of("anchor").ok_or("dockPanel: need `anchor` (a docked panel)")??;
                 let zone = params
                     .get("zone")
                     .and_then(Value::as_str)
-                    .map_or(Some(crate::dock::Zone::Center), crate::dock::Zone::from_name)
+                    .map_or(
+                        Some(crate::dock::Zone::Center),
+                        crate::dock::Zone::from_name,
+                    )
                     .ok_or("zone: center|left|right|top|bottom")?;
                 if !app.edit_layout(|l| l.dock(p, anchor, zone)) {
-                    return Err(format!("can't dock {} at {} ({zone:?})", p.title(), anchor.title()));
+                    return Err(format!(
+                        "can't dock {} at {} ({zone:?})",
+                        p.title(),
+                        anchor.title()
+                    ));
                 }
                 app.show_panel(p);
                 return Ok(Value::Null);
@@ -523,9 +901,15 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
     }
     if id == "markers.dialog" {
         // The Composition/Layer Marker dialog (double-click a marker): {layer?, index}.
-        let index = params.get("index").and_then(Value::as_u64).ok_or("markers.dialog: need `index`")? as usize;
+        let index = params
+            .get("index")
+            .and_then(Value::as_u64)
+            .ok_or("markers.dialog: need `index`")? as usize;
         let layer = params.get("layer").and_then(Value::as_u64);
-        crate::panels::markers_ui::open_dialog(app, crate::panels::markers_ui::MarkerRef { layer, index })?;
+        crate::panels::markers_ui::open_dialog(
+            app,
+            crate::panels::markers_ui::MarkerRef { layer, index },
+        )?;
         return Ok(json!({"dialog": id}));
     }
 
@@ -538,14 +922,23 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
         app.set_theme(ctx, k);
         return Ok(Value::Null);
     }
-    let timing = |app: &mut EffectcraftApp, op: &str| app.session.execute("layer.timing", json!({"op": op})).map_err(|e| e.to_string());
+    let timing = |app: &mut EffectcraftApp, op: &str| {
+        app.session
+            .execute("layer.timing", json!({"op": op}))
+            .map_err(|e| e.to_string())
+    };
     match id {
         "playback.ramPreview" => {
             app.toggle_play_with(now, effectcraft_engine::preview::PreviewShortcut::Numpad0);
             return Ok(json!({"playing": app.playback.playing}));
         }
-        "playback.preview.shiftSpacebar" | "playback.preview.shiftNumpad0" | "playback.preview.altNumpad0" => {
-            let sc = effectcraft_engine::preview::PreviewShortcut::parse(id.trim_start_matches("playback.preview.")).ok_or("unknown preview shortcut")?;
+        "playback.preview.shiftSpacebar"
+        | "playback.preview.shiftNumpad0"
+        | "playback.preview.altNumpad0" => {
+            let sc = effectcraft_engine::preview::PreviewShortcut::parse(
+                id.trim_start_matches("playback.preview."),
+            )
+            .ok_or("unknown preview shortcut")?;
             app.toggle_play_with(now, sc);
             return Ok(json!({"playing": app.playback.playing}));
         }
@@ -576,7 +969,9 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
             return Ok(Value::Null);
         }
         "view.safeMargins" => app.ui.viewer.safe_margins = !app.ui.viewer.safe_margins,
-        "view.transparencyGrid" => app.ui.viewer.transparency_grid = !app.ui.viewer.transparency_grid,
+        "view.transparencyGrid" => {
+            app.ui.viewer.transparency_grid = !app.ui.viewer.transparency_grid
+        }
         "view.fastPreviews" => {
             // With a mode: Fast Previews ▸ Off / Adaptive Resolution / Draft / Fast Draft /
             // Wireframe; without: toggle Draft quality (Settings ▸ Previews).
@@ -588,28 +983,49 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
             app.ui.viewer.fast_preview = on;
         }
         "timeline.zoomIn" | "timeline.zoomOut" => {
-            let k = if id == "timeline.zoomIn" { 1.5 } else { 1.0 / 1.5 };
+            let k = if id == "timeline.zoomIn" {
+                1.5
+            } else {
+                1.0 / 1.5
+            };
             crate::panels::timeline::zoom(app, ctx, k);
             return Ok(Value::Null);
         }
         "timeline.zoomFit" => app.ui.timeline.pps = None,
         "timeline.zoomFrameToggle" => crate::panels::timeline::toggle_frame_zoom(app, ctx),
         "timeline.column" => {
-            let col = params.get("column").and_then(Value::as_str).ok_or("timeline.column: need `column`")?;
-            let on = params.get("visible").and_then(Value::as_bool).unwrap_or(!crate::panels::timeline::column_visible(&app.ui.timeline, col));
+            let col = params
+                .get("column")
+                .and_then(Value::as_str)
+                .ok_or("timeline.column: need `column`")?;
+            let on = params.get("visible").and_then(Value::as_bool).unwrap_or(
+                !crate::panels::timeline::column_visible(&app.ui.timeline, col),
+            );
             crate::panels::timeline::set_column(&mut app.ui.timeline, col, on)?;
-            let shown: Vec<&str> =
-                crate::panels::timeline::COLUMNS.iter().map(|c| c.0).filter(|c| crate::panels::timeline::column_visible(&app.ui.timeline, c)).collect();
+            let shown: Vec<&str> = crate::panels::timeline::COLUMNS
+                .iter()
+                .map(|c| c.0)
+                .filter(|c| crate::panels::timeline::column_visible(&app.ui.timeline, c))
+                .collect();
             return Ok(json!({"columns": shown}));
         }
         "timeline.sourceName" => {
             let tl = &mut app.ui.timeline;
-            tl.source_name = params.get("value").and_then(Value::as_bool).unwrap_or(!tl.source_name);
+            tl.source_name = params
+                .get("value")
+                .and_then(Value::as_bool)
+                .unwrap_or(!tl.source_name);
             return Ok(json!({"sourceName": tl.source_name}));
         }
-        "flowchart.options" | "flowchart.graph" => return crate::panels::flowchart::command(app, id, &params),
+        "flowchart.options" | "flowchart.graph" => {
+            return crate::panels::flowchart::command(app, id, &params);
+        }
         "timeline.search" => {
-            app.ui.timeline.search = params.get("query").and_then(Value::as_str).unwrap_or_default().to_string();
+            app.ui.timeline.search = params
+                .get("query")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
             app.show_panel(PanelKind::Timeline);
         }
         "timeline.graphEditor" => app.ui.timeline.graph_editor = !app.ui.timeline.graph_editor,
@@ -623,7 +1039,13 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
         // Ctrl+`: twirl the selected layers open (all closed ones) or closed (all open). From a
         // reveal shortcut's view it opens their full property trees.
         "timeline.twirlSelected" => {
-            let sel: Vec<u64> = app.session.state.selected_layers.iter().map(|l| l.0).collect();
+            let sel: Vec<u64> = app
+                .session
+                .state
+                .selected_layers
+                .iter()
+                .map(|l| l.0)
+                .collect();
             let tl = &mut app.ui.timeline;
             let revealing = sel.iter().any(|l| tl.layer_reveal.contains_key(l));
             tl.reveal.clear();
@@ -638,19 +1060,39 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
                 tl.open_layers.extend(sel);
             }
         }
-        "timeline.workAreaBegin" => return app.session.execute("comp.workArea", json!({"set": "begin"})).map_err(|e| e.to_string()),
-        "timeline.workAreaEnd" => return app.session.execute("comp.workArea", json!({"set": "end"})).map_err(|e| e.to_string()),
+        "timeline.workAreaBegin" => {
+            return app
+                .session
+                .execute("comp.workArea", json!({"set": "begin"}))
+                .map_err(|e| e.to_string());
+        }
+        "timeline.workAreaEnd" => {
+            return app
+                .session
+                .execute("comp.workArea", json!({"set": "end"}))
+                .map_err(|e| e.to_string());
+        }
         "timeline.moveInToTime" => return timing(app, "moveInToTime"),
         "timeline.moveOutToTime" => return timing(app, "moveOutToTime"),
         "timeline.trimInToTime" => return timing(app, "trimInToTime"),
         "timeline.trimOutToTime" => return timing(app, "trimOutToTime"),
         "app.home" => app.ui.start_screen = !app.ui.start_screen,
-        "app.newComp" | "comp.new" if no_params(&params) => crate::panels::dialogs::open_new_comp(app),
-        "app.compSettings" | "comp.settings" if no_params(&params) => crate::panels::dialogs::open_comp_settings(app)?,
-        "app.solidSettings" | "layer.newSolid" if no_params(&params) => crate::panels::dialogs::open_new_solid(app)?,
+        "app.newComp" | "comp.new" if no_params(&params) => {
+            crate::panels::dialogs::open_new_comp(app)
+        }
+        "app.compSettings" | "comp.settings" if no_params(&params) => {
+            crate::panels::dialogs::open_comp_settings(app)?
+        }
+        "app.solidSettings" | "layer.newSolid" if no_params(&params) => {
+            crate::panels::dialogs::open_new_solid(app)?
+        }
         "keys.velocity" if no_params(&params) => crate::panels::key_dialogs::open_velocity(app)?,
-        "keys.interpolation" if no_params(&params) => crate::panels::key_dialogs::open_interpolation(app)?,
-        "layer.timeStretch" if no_params(&params) => crate::panels::key_dialogs::open_time_stretch(app)?,
+        "keys.interpolation" if no_params(&params) => {
+            crate::panels::key_dialogs::open_interpolation(app)?
+        }
+        "layer.timeStretch" if no_params(&params) => {
+            crate::panels::key_dialogs::open_time_stretch(app)?
+        }
         _ => {
             if id == "renderQueue.render" && params.get("wait").is_none() {
                 // The UI renders in the background; the panel shows progress.
@@ -730,16 +1172,29 @@ pub fn invoke(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: V
 
 /// Run an engine command and perform the frontend events it emitted right away.
 /// Commands that fill the internal clipboard.
-const COPY_COMMANDS: &[&str] =
-    &["edit.copy", "edit.cut", "edit.copyWithPropertyLinks", "edit.copyWithRelativePropertyLinks", "edit.copyExpressionOnly", "keys.copy", "effect.copy"];
+const COPY_COMMANDS: &[&str] = &[
+    "edit.copy",
+    "edit.cut",
+    "edit.copyWithPropertyLinks",
+    "edit.copyWithRelativePropertyLinks",
+    "edit.copyExpressionOnly",
+    "keys.copy",
+    "effect.copy",
+];
 
 /// A line for the system clipboard naming what EffectCraft copied. The system clipboard must
 /// hold something: with nothing on it, the windowing layer sends no paste event for Ctrl+V.
 fn clipboard_note(s: &effectcraft_engine::Session) -> String {
     let st = &s.state;
-    let n = |n: usize, one: &str, many: &str| format!("EffectCraft: {n} {}", if n == 1 { one } else { many });
+    let n = |n: usize, one: &str, many: &str| {
+        format!("EffectCraft: {n} {}", if n == 1 { one } else { many })
+    };
     if st.clip_is_keys && !st.key_clipboard.is_empty() {
-        n(st.key_clipboard.iter().map(|c| c.keys.len()).sum(), "keyframe", "keyframes")
+        n(
+            st.key_clipboard.iter().map(|c| c.keys.len()).sum(),
+            "keyframe",
+            "keyframes",
+        )
     } else if !st.effect_clipboard.is_empty() {
         n(st.effect_clipboard.len(), "effect", "effects")
     } else if !st.contents_clipboard.is_empty() {
@@ -751,7 +1206,12 @@ fn clipboard_note(s: &effectcraft_engine::Session) -> String {
     }
 }
 
-pub(crate) fn run_engine(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, params: Value) -> Result<Value, String> {
+pub(crate) fn run_engine(
+    app: &mut EffectcraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: Value,
+) -> Result<Value, String> {
     let r = app.session.execute(id, params).map_err(|e| e.to_string());
     if let Err(e) = &r {
         app.ui.status = e.clone();
@@ -778,7 +1238,12 @@ fn toggle(slot: &mut bool, p: &Value) -> Value {
 }
 
 /// Perform a frontend command (from `Event::Frontend`).
-pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Value) -> Result<Value, String> {
+pub fn frontend(
+    app: &mut EffectcraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    p: Value,
+) -> Result<Value, String> {
     let now = ctx.input(|i| i.time);
     let v = &mut app.ui.viewer;
     Ok(match id {
@@ -790,18 +1255,26 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
         // Audio scrubbing: one frame of audio at `time` (default the current time).
         "playback.scrubAudio" => {
             let cid = app.session.active_comp_id().ok_or("no composition")?;
-            let t = p.get("time").and_then(Value::as_f64).map_or(app.session.time(), effectcraft_engine::time::Tick::from_seconds_f64);
+            let t = p.get("time").and_then(Value::as_f64).map_or(
+                app.session.time(),
+                effectcraft_engine::time::Tick::from_seconds_f64,
+            );
             app.scrub_audio(cid, t, now);
             json!({"playing": app.scrub.is_some()})
         }
         // View ▸ New Viewer.
         "view.newViewer" => json!({"viewer": crate::panels::viewers::new_viewer(app)}),
         // Run by id (control channel, MCP): the Project panel's selection, whatever has focus.
-        "project.deleteWithoutConfirmation" => crate::panels::delete_items::delete_confirmed(app, ctx, json!({}))?,
+        "project.deleteWithoutConfirmation" => {
+            crate::panels::delete_items::delete_confirmed(app, ctx, json!({}))?
+        }
         // A gradient property's "Edit Gradient…" (the Timeline's value): the Gradient Editor.
         "prop.editGradient" => crate::panels::gradient_editor::open(app, &p)?,
         "window.scriptPanel" => {
-            let id = p.get("window").and_then(Value::as_u64).ok_or("no ScriptUI panel window")? as u32;
+            let id = p
+                .get("window")
+                .and_then(Value::as_u64)
+                .ok_or("no ScriptUI panel window")? as u32;
             app.show_panel(PanelKind::ScriptPanel(id));
             json!({"window": id})
         }
@@ -811,7 +1284,10 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
         }
         "app.settings" => {
             let page = p.get("page").and_then(Value::as_str).unwrap_or("general");
-            crate::panels::settings::open(app, effectcraft_engine::prefs::page_id(page).unwrap_or("general"));
+            crate::panels::settings::open(
+                app,
+                effectcraft_engine::prefs::page_id(page).unwrap_or("general"),
+            );
             Value::Null
         }
         "app.gpuInfo" => {
@@ -844,7 +1320,11 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             Value::Null
         }
         "app.commandPalette" => {
-            app.dialog_state.palette_query = p.get("query").and_then(Value::as_str).unwrap_or_default().to_string();
+            app.dialog_state.palette_query = p
+                .get("query")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
             app.dialog_state.palette_sel = 0;
             app.dialog = Some(crate::Dialog::CommandPalette);
             Value::Null
@@ -854,16 +1334,25 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             Value::Null
         }
         "app.templates" => {
-            let kind = p.get("kind").and_then(Value::as_str).unwrap_or("renderSettings");
+            let kind = p
+                .get("kind")
+                .and_then(Value::as_str)
+                .unwrap_or("renderSettings");
             crate::panels::rq_templates::open(app, ctx, kind);
             Value::Null
         }
         "renderQueue.notify" => {
             // Render finished with Notify on: a toast, the dock/taskbar attention request, and the
             // host's system sound (the desktop app handles `renderQueue.notify`).
-            let msg = p.get("message").and_then(Value::as_str).unwrap_or("Render finished").to_string();
+            let msg = p
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or("Render finished")
+                .to_string();
             app.toast = Some((msg, now));
-            ctx.send_viewport_cmd(egui::ViewportCommand::RequestUserAttention(egui::UserAttentionType::Informational));
+            ctx.send_viewport_cmd(egui::ViewportCommand::RequestUserAttention(
+                egui::UserAttentionType::Informational,
+            ));
             if let Some(f) = app.hooks.app_action.as_ref() {
                 f("renderQueue.notify");
             }
@@ -880,7 +1369,8 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             // The play button and Spacebar: `{shortcut?}` picks which Preview panel shortcut's
             // options to play with (default Spacebar).
             let sc = match p.get("shortcut").and_then(Value::as_str) {
-                Some(k) => effectcraft_engine::preview::PreviewShortcut::parse(k).ok_or_else(|| format!("unknown preview shortcut `{k}`"))?,
+                Some(k) => effectcraft_engine::preview::PreviewShortcut::parse(k)
+                    .ok_or_else(|| format!("unknown preview shortcut `{k}`"))?,
                 None => effectcraft_engine::preview::PreviewShortcut::Spacebar,
             };
             app.toggle_play_with(now, sc);
@@ -895,7 +1385,9 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             // Include Audio of the shortcut shown in the Preview panel.
             let mut on = app.session.prefs.preview.active().include_audio;
             let r = toggle(&mut on, &p);
-            app.session.execute("playback.settings.set", json!({"includeAudio": on})).map_err(|e| e.to_string())?;
+            app.session
+                .execute("playback.settings.set", json!({"includeAudio": on}))
+                .map_err(|e| e.to_string())?;
             if !on {
                 app.audio = None;
             }
@@ -904,7 +1396,10 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
         // Zoom In / Zoom Out act on the focused viewer: the Layer panel when it has focus, else
         // the Composition viewer.
         "view.zoomIn" | "view.zoomOut" if app.ui.focused == PanelKind::Layer => {
-            let cur = app.ui.layer_zoom.unwrap_or_else(|| crate::panels::layer_panel::last_fit(ctx));
+            let cur = app
+                .ui
+                .layer_zoom
+                .unwrap_or_else(|| crate::panels::layer_panel::last_fit(ctx));
             // The Layer panel zooms in points (pixels-per-point 1).
             let next = zoom_step(cur, 1.0, id == "view.zoomIn");
             app.ui.layer_zoom = Some(next);
@@ -912,7 +1407,9 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
         }
         "view.zoomIn" | "view.zoomOut" => {
             let ppp = ctx.pixels_per_point();
-            let cur = v.zoom.unwrap_or_else(|| crate::panels::viewer::last_fit(ctx));
+            let cur = v
+                .zoom
+                .unwrap_or_else(|| crate::panels::viewer::last_fit(ctx));
             let next = zoom_step(cur, ppp, id == "view.zoomIn");
             v.zoom = Some(next);
             json!({"zoom": next})
@@ -928,7 +1425,11 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
                 "Custom Resolution",
                 "view.res.custom",
                 json!({}),
-                vec![crate::panels::dialogs::Field::num("factor", "Render every n-th pixel", cur)],
+                vec![crate::panels::dialogs::Field::num(
+                    "factor",
+                    "Render every n-th pixel",
+                    cur,
+                )],
             );
             Value::Null
         }
@@ -951,11 +1452,18 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
                     "Panel Background Color",
                     "view.panelBackground",
                     json!({}),
-                    vec![crate::panels::dialogs::Field::text("color", "Color (#rrggbb)", &format!("#{r:02x}{g:02x}{b:02x}"))],
+                    vec![crate::panels::dialogs::Field::text(
+                        "color",
+                        "Color (#rrggbb)",
+                        &format!("#{r:02x}{g:02x}{b:02x}"),
+                    )],
                 );
                 return Ok(Value::Null);
             }
-            let c = p.get("color").and_then(Value::as_str).unwrap_or("mediumGray");
+            let c = p
+                .get("color")
+                .and_then(Value::as_str)
+                .unwrap_or("mediumGray");
             v.pasteboard = match c {
                 "black" => Some([0, 0, 0]),
                 "darkGray" => Some([0x2a, 0x2a, 0x2a]),
@@ -964,8 +1472,13 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
                 "white" => Some([0xff, 0xff, 0xff]),
                 "custom" => Some(v.custom_pasteboard),
                 hex => {
-                    let c = effectcraft_engine::color::Rgba::from_hex(hex).ok_or_else(|| format!("unknown colour `{hex}`"))?;
-                    let rgb = [(c.r * 255.0).round() as u8, (c.g * 255.0).round() as u8, (c.b * 255.0).round() as u8];
+                    let c = effectcraft_engine::color::Rgba::from_hex(hex)
+                        .ok_or_else(|| format!("unknown colour `{hex}`"))?;
+                    let rgb = [
+                        (c.r * 255.0).round() as u8,
+                        (c.g * 255.0).round() as u8,
+                        (c.b * 255.0).round() as u8,
+                    ];
                     v.custom_pasteboard = rgb;
                     Some(rgb)
                 }
@@ -989,12 +1502,18 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
                 app.ui.status = "The Tools panel is the toolbar in the header".into();
                 return Ok(Value::Null);
             }
-            let panel = PanelKind::from_name(name).ok_or_else(|| format!("unknown panel `{name}`"))?;
+            let panel =
+                PanelKind::from_name(name).ok_or_else(|| format!("unknown panel `{name}`"))?;
             app.show_panel(panel);
             Value::Null
         }
         "window.workspace" => {
-            let want = p.get("name").and_then(Value::as_str).unwrap_or("Default").to_ascii_lowercase().replace(' ', "");
+            let want = p
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("Default")
+                .to_ascii_lowercase()
+                .replace(' ', "");
             let name = app
                 .workspace_names()
                 .into_iter()
@@ -1010,24 +1529,42 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
         }
         "window.saveWorkspace" => {
             let name = app.ui.workspace.clone();
-            app.ui.saved_workspaces.insert(name.clone(), app.ui.dock.clone());
-            app.ui.saved_floating.insert(name.clone(), app.ui.floating.clone());
+            app.ui
+                .saved_workspaces
+                .insert(name.clone(), app.ui.dock.clone());
+            app.ui
+                .saved_floating
+                .insert(name.clone(), app.ui.floating.clone());
             app.store_saved_workspaces();
             json!({"workspace": name})
         }
         "window.saveWorkspaceAs" => {
-            let Some(name) = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string) else {
+            let Some(name) = p
+                .get("name")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|n| !n.is_empty())
+                .map(str::to_string)
+            else {
                 crate::panels::dialogs::form(
                     app,
                     "New Workspace",
                     "window.saveWorkspaceAs",
                     json!({}),
-                    vec![crate::panels::dialogs::Field::text("name", "Name", "Untitled Workspace")],
+                    vec![crate::panels::dialogs::Field::text(
+                        "name",
+                        "Name",
+                        "Untitled Workspace",
+                    )],
                 );
                 return Ok(Value::Null);
             };
-            app.ui.saved_workspaces.insert(name.clone(), app.ui.dock.clone());
-            app.ui.saved_floating.insert(name.clone(), app.ui.floating.clone());
+            app.ui
+                .saved_workspaces
+                .insert(name.clone(), app.ui.dock.clone());
+            app.ui
+                .saved_floating
+                .insert(name.clone(), app.ui.floating.clone());
             app.ui.workspace = name.clone();
             app.store_saved_workspaces();
             json!({"workspace": name})
@@ -1060,11 +1597,22 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
                 }
                 return Ok(json!({"deleted": name}));
             }
-            if let Some(new) = p.get("rename").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty() && *n != name) {
+            if let Some(new) = p
+                .get("rename")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|n| !n.is_empty() && *n != name)
+            {
                 if builtin {
-                    return Err(format!("`{name}` is a built-in workspace: save it as a new workspace instead"));
+                    return Err(format!(
+                        "`{name}` is a built-in workspace: save it as a new workspace instead"
+                    ));
                 }
-                let dock = app.ui.saved_workspaces.remove(&name).ok_or_else(|| format!("no workspace `{name}`"))?;
+                let dock = app
+                    .ui
+                    .saved_workspaces
+                    .remove(&name)
+                    .ok_or_else(|| format!("no workspace `{name}`"))?;
                 app.ui.saved_workspaces.insert(new.to_string(), dock);
                 if let Some(f) = app.ui.saved_floating.remove(&name) {
                     app.ui.saved_floating.insert(new.to_string(), f);
@@ -1078,16 +1626,29 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             json!({"workspaces": app.workspace_names()})
         }
         "view.lookAt" => {
-            let r: Vec<f64> = p.get("rect").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
+            let r: Vec<f64> = p
+                .get("rect")
+                .and_then(Value::as_array)
+                .map(|a| a.iter().filter_map(Value::as_f64).collect())
+                .unwrap_or_default();
             if r.len() == 4 {
-                let map: Option<crate::panels::viewer::ViewerMap> = ctx.data(|d| d.get_temp(egui::Id::new("viewer-map")));
+                let map: Option<crate::panels::viewer::ViewerMap> =
+                    ctx.data(|d| d.get_temp(egui::Id::new("viewer-map")));
                 if let Some(m) = map {
-                    let (rw, rh) = (((r[2] - r[0]) as f32).max(1.0), ((r[3] - r[1]) as f32).max(1.0));
-                    let zoom = ((m.area.width() - 40.0) / rw).min((m.area.height() - 40.0) / rh).clamp(0.015, 32.0);
+                    let (rw, rh) = (
+                        ((r[2] - r[0]) as f32).max(1.0),
+                        ((r[3] - r[1]) as f32).max(1.0),
+                    );
+                    let zoom = ((m.area.width() - 40.0) / rw)
+                        .min((m.area.height() - 40.0) / rh)
+                        .clamp(0.015, 32.0);
                     let rc = [(r[0] + r[2]) as f32 / 2.0, (r[1] + r[3]) as f32 / 2.0];
                     let v = &mut app.ui.viewer;
                     v.zoom = Some(zoom);
-                    v.pan = [m.comp[0] * zoom / 2.0 - rc[0] * zoom, m.comp[1] * zoom / 2.0 - rc[1] * zoom];
+                    v.pan = [
+                        m.comp[0] * zoom / 2.0 - rc[0] * zoom,
+                        m.comp[1] * zoom / 2.0 - rc[1] * zoom,
+                    ];
                 }
             }
             Value::Null
@@ -1096,7 +1657,10 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             // Chart the active comp; Layer ▸ Reveal ▸ Reveal Layer in Project Flowchart shows
             // layers and selects the layer's node.
             app.ui.flowchart.root = app.session.active_comp_id().map(|c| c.0);
-            if let (Some(c), Some(l)) = (app.session.active_comp_id(), app.session.state.selected_layers.first()) {
+            if let (Some(c), Some(l)) = (
+                app.session.active_comp_id(),
+                app.session.state.selected_layers.first(),
+            ) {
                 app.ui.flowchart.layers = true;
                 app.ui.flowchart.selected = Some(format!("layer:{}:{}", c.0, l.0));
             }
@@ -1104,7 +1668,9 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             Value::Null
         }
         "comp.miniFlowchart" => {
-            let at = ctx.input(|i| i.pointer.hover_pos()).unwrap_or_else(|| ctx.content_rect().center());
+            let at = ctx
+                .input(|i| i.pointer.hover_pos())
+                .unwrap_or_else(|| ctx.content_rect().center());
             app.ui.mini_flowchart = Some([at.x, at.y]);
             Value::Null
         }
@@ -1117,7 +1683,10 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             Value::Null
         }
         "layer.openLayer" => {
-            let id = p.get("layer").and_then(Value::as_u64).or_else(|| app.session.state.selected_layers.first().map(|l| l.0));
+            let id = p
+                .get("layer")
+                .and_then(Value::as_u64)
+                .or_else(|| app.session.state.selected_layers.first().map(|l| l.0));
             // Another layer opens at Fit.
             if id != app.ui.layer_panel {
                 app.ui.layer_zoom = None;
@@ -1130,7 +1699,11 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
         }
         "app.confirmExecute" => {
             // Settings ▸ Scripting ▸ Warn User When Executing Files.
-            let path = p.get("path").and_then(Value::as_str).unwrap_or_default().to_string();
+            let path = p
+                .get("path")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
             crate::panels::forms::form(
                 app,
                 "A script wants to open a file",
@@ -1141,8 +1714,16 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             Value::Null
         }
         "app.showReport" => {
-            let title = p.get("title").and_then(Value::as_str).unwrap_or("Report").to_string();
-            let text = p.get("text").and_then(Value::as_str).unwrap_or_default().to_string();
+            let title = p
+                .get("title")
+                .and_then(Value::as_str)
+                .unwrap_or("Report")
+                .to_string();
+            let text = p
+                .get("text")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
             crate::panels::dialogs::info(app, &title, &text);
             Value::Null
         }
@@ -1178,8 +1759,17 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             Value::Null
         }
         "timeline.revealProps" => {
-            let props = p.get("props").and_then(Value::as_array).cloned().unwrap_or_default();
-            let uids = |k: &str| -> Vec<u64> { props.iter().filter_map(|x| x.get(k).and_then(Value::as_u64)).collect() };
+            let props = p
+                .get("props")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let uids = |k: &str| -> Vec<u64> {
+                props
+                    .iter()
+                    .filter_map(|x| x.get(k).and_then(Value::as_u64))
+                    .collect()
+            };
             let (found, with_props) = (uids("prop"), uids("layer"));
             // The layers it looked at (`layers`), else those it found something on. Layers that
             // have nothing to show close; the others' reveals stay.
@@ -1200,13 +1790,17 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             let tl = &mut app.ui.timeline;
             tl.reveal_props.retain(|u| !theirs(*u));
             tl.reveal_props.extend(found.iter().copied());
-            let (shown, hidden): (Vec<u64>, Vec<u64>) = targets.into_iter().partition(|l| with_props.contains(l));
+            let (shown, hidden): (Vec<u64>, Vec<u64>) =
+                targets.into_iter().partition(|l| with_props.contains(l));
             tl.apply_reveal(&hidden, vec![]);
             if !shown.is_empty() {
                 tl.apply_reveal(&shown, vec!["props".into()]);
             }
             // Properties inside effects (puppet pins…) show under their effect, twirled open.
-            for (layer, prop) in props.iter().filter_map(|x| Some((x.get("layer")?.as_u64()?, x.get("prop")?.as_u64()?))) {
+            for (layer, prop) in props
+                .iter()
+                .filter_map(|x| Some((x.get("layer")?.as_u64()?, x.get("prop")?.as_u64()?)))
+            {
                 crate::panels::timeline::open_effect_paths(app, layer, &[prop]);
             }
             json!({"revealed": found.len()})
@@ -1216,7 +1810,11 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
 }
 
 /// Commands that need a file or folder path: ask the host's file dialog when `params` lacks one.
-fn file_dialog(app: &mut EffectcraftApp, id: &str, params: &Value) -> Option<Result<Value, String>> {
+fn file_dialog(
+    app: &mut EffectcraftApp,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     enum Ask {
         Folder,
         Import,
@@ -1239,11 +1837,18 @@ fn file_dialog(app: &mut EffectcraftApp, id: &str, params: &Value) -> Option<Res
         "view.importGuides" => ("path", Ask::Open(&["json"])),
         "file.exportLottie" => ("path", Ask::Save("Animation.json")),
         "file.importLottie" => ("path", Ask::Open(&["json", "lottie"])),
-        "file.importTimeline" => ("path", Ask::Open(&["xml", "fcpxml", "otio", "edl", "aaf", "omf"])),
+        "file.importTimeline" => (
+            "path",
+            Ask::Open(&["xml", "fcpxml", "otio", "edl", "aaf", "omf"]),
+        ),
         "render.saveCurrentPreview" => ("path", Ask::Save("Preview.mp4")),
-        "file.runScript" if params.get("name").is_none() => ("path", Ask::Open(&["jsx", "js", "jsonl", "json", "txt"])),
+        "file.runScript" if params.get("name").is_none() => {
+            ("path", Ask::Open(&["jsx", "js", "jsonl", "json", "txt"]))
+        }
         "file.installScript" | "file.installScriptUIPanel" => ("path", Ask::Open(&["jsx", "js"])),
-        "effect.plugins.load" if params.get("folder").is_none() => ("path", Ask::Open(&["wasm", "wat"])),
+        "effect.plugins.load" if params.get("folder").is_none() => {
+            ("path", Ask::Open(&["wasm", "wat"]))
+        }
         "file.replaceFootage" => ("path", Ask::Import),
         "file.relinkFootage" => ("folder", Ask::Folder),
         "file.collectFiles" => ("folder", Ask::Save("Collected Files")),
@@ -1251,7 +1856,13 @@ fn file_dialog(app: &mut EffectcraftApp, id: &str, params: &Value) -> Option<Res
         "keys.rpfCameraImport" => ("path", Ask::Open(&["json", "csv", "txt"])),
         "essential.exportTemplate" => ("path", Ask::Save("Template.ectemplate")),
         "essential.importTemplate" => ("path", Ask::Open(&["ectemplate"])),
-        "file.setProxy" => ("path", Ask::Open(&["mp4", "mov", "m4v", "mkv", "webm", "mxf", "png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "exr"])),
+        "file.setProxy" => (
+            "path",
+            Ask::Open(&[
+                "mp4", "mov", "m4v", "mkv", "webm", "mxf", "png", "jpg", "jpeg", "gif", "webp",
+                "tif", "tiff", "bmp", "exr",
+            ]),
+        ),
         _ => return None,
     };
     if params.get(key).is_some()
@@ -1263,8 +1874,10 @@ fn file_dialog(app: &mut EffectcraftApp, id: &str, params: &Value) -> Option<Res
         return None;
     }
     const MEDIA: &[&str] = &[
-        "mp4", "mov", "m4v", "mkv", "webm", "mxf", "png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "exr", "dpx", "cin", "wav", "aif", "aiff", "mp3",
-        "flac", "ogg", "opus", "svg", "pdf", "ai", "eps", "psd", "psb", "tga", "hdr", "gltf", "glb", "obj", "stl", "fbx", "json", "csv", "tsv",
+        "mp4", "mov", "m4v", "mkv", "webm", "mxf", "png", "jpg", "jpeg", "gif", "webp", "tif",
+        "tiff", "bmp", "exr", "dpx", "cin", "wav", "aif", "aiff", "mp3", "flac", "ogg", "opus",
+        "svg", "pdf", "ai", "eps", "psd", "psb", "tga", "hdr", "gltf", "glb", "obj", "stl", "fbx",
+        "json", "csv", "tsv",
     ];
     // A host whose modal dialogs would run a nested event loop inside this frame (macOS: a
     // drag over the window then re-entered winit's event handler and aborted, #511) shows the
@@ -1272,13 +1885,24 @@ fn file_dialog(app: &mut EffectcraftApp, id: &str, params: &Value) -> Option<Res
     if let Some(spawn) = app.hooks.file_dialog_async.as_ref() {
         let request = match ask {
             Ask::Folder => crate::FileDialog::Folder,
-            Ask::Import => crate::FileDialog::Open { exts: MEDIA.iter().map(|e| e.to_string()).collect(), many: key == "paths" },
+            Ask::Import => crate::FileDialog::Open {
+                exts: MEDIA.iter().map(|e| e.to_string()).collect(),
+                many: key == "paths",
+            },
             Ask::OpenProject => crate::FileDialog::OpenProject,
-            Ask::Open(exts) => crate::FileDialog::Open { exts: exts.iter().map(|e| e.to_string()).collect(), many: false },
+            Ask::Open(exts) => crate::FileDialog::Open {
+                exts: exts.iter().map(|e| e.to_string()).collect(),
+                many: false,
+            },
             Ask::Save(default) => crate::FileDialog::save(default),
         };
         let tx = app.dialog_answers.0.clone();
-        let answer = crate::DialogAnswer { command: id.to_string(), key, params: params.clone(), paths: Vec::new() };
+        let answer = crate::DialogAnswer {
+            command: id.to_string(),
+            key,
+            params: params.clone(),
+            paths: Vec::new(),
+        };
         spawn(
             request,
             Box::new(move |paths| {
@@ -1289,27 +1913,39 @@ fn file_dialog(app: &mut EffectcraftApp, id: &str, params: &Value) -> Option<Res
     }
     let picked: Option<Value> = match ask {
         Ask::Folder => {
-            let Some(f) = app.hooks.pick_folder.as_ref() else { return Some(Err("no folder dialog available (pass `folder`)".into())) };
+            let Some(f) = app.hooks.pick_folder.as_ref() else {
+                return Some(Err("no folder dialog available (pass `folder`)".into()));
+            };
             f().map(Value::from)
         }
         Ask::Import => {
-            let Some(f) = app.hooks.pick_files.as_ref() else { return Some(Err("no file dialog available (pass `paths`)".into())) };
+            let Some(f) = app.hooks.pick_files.as_ref() else {
+                return Some(Err("no file dialog available (pass `paths`)".into()));
+            };
             picked_value(key, f(MEDIA))
         }
         Ask::OpenProject => {
-            let Some(f) = app.hooks.pick_open_project.as_ref() else { return Some(Err("no file dialog available (pass `path`)".into())) };
+            let Some(f) = app.hooks.pick_open_project.as_ref() else {
+                return Some(Err("no file dialog available (pass `path`)".into()));
+            };
             f().map(|s| json!(s))
         }
         Ask::Open(exts) => {
-            let Some(f) = app.hooks.pick_files.as_ref() else { return Some(Err("no file dialog available (pass `path`)".into())) };
+            let Some(f) = app.hooks.pick_files.as_ref() else {
+                return Some(Err("no file dialog available (pass `path`)".into()));
+            };
             f(exts).first().map(|s| json!(s))
         }
         Ask::Save(default) => {
-            let Some(picked) = app.hooks.save_dialog(default) else { return Some(Err("no file dialog available (pass `path`)".into())) };
+            let Some(picked) = app.hooks.save_dialog(default) else {
+                return Some(Err("no file dialog available (pass `path`)".into()));
+            };
             picked.map(|s| json!(s))
         }
     };
-    let Some(v) = picked else { return Some(Ok(Value::Null)) };
+    let Some(v) = picked else {
+        return Some(Ok(Value::Null));
+    };
     Some(run_with_picked(app, id, key, params, v))
 }
 
@@ -1325,14 +1961,22 @@ fn picked_value(key: &str, paths: Vec<String>) -> Option<Value> {
 /// A file dialog shown without blocking ([`crate::Hooks::file_dialog_async`]) answered: run its
 /// command with the picked path (nothing when it was cancelled).
 pub(crate) fn dialog_answered(app: &mut EffectcraftApp, answer: crate::DialogAnswer) {
-    let Some(v) = picked_value(answer.key, answer.paths) else { return };
+    let Some(v) = picked_value(answer.key, answer.paths) else {
+        return;
+    };
     if let Err(e) = run_with_picked(app, &answer.command, answer.key, &answer.params, v) {
         app.ui.status = e;
     }
 }
 
 /// Run command `id` with the path picked for it in parameter `key`.
-fn run_with_picked(app: &mut EffectcraftApp, id: &str, key: &str, params: &Value, v: Value) -> Result<Value, String> {
+fn run_with_picked(
+    app: &mut EffectcraftApp,
+    id: &str,
+    key: &str,
+    params: &Value,
+    v: Value,
+) -> Result<Value, String> {
     let mut p = params.as_object().cloned().unwrap_or_default();
     p.insert(key.to_string(), v);
     // Picked files import in the background, with the Importing card showing progress (#270).
@@ -1343,13 +1987,17 @@ fn run_with_picked(app: &mut EffectcraftApp, id: &str, key: &str, params: &Value
     // image sequence.
     let picked = Value::Object(p.clone());
     if id == "file.import" && crate::panels::dialogs::open_form(app, id, &picked)
-        || matches!(id, "file.import" | "file.importMultiple") && crate::panels::forms::open_import_sequence(app, &picked)
+        || matches!(id, "file.import" | "file.importMultiple")
+            && crate::panels::forms::open_import_sequence(app, &picked)
     {
         return Ok(json!({"dialog": id}));
     }
     // Save (untitled) becomes Save As.
     let id = if id == "file.save" { "file.saveAs" } else { id };
-    let r = app.session.execute(id, Value::Object(p)).map_err(|e| e.to_string());
+    let r = app
+        .session
+        .execute(id, Value::Object(p))
+        .map_err(|e| e.to_string());
     if let Err(e) = &r {
         app.ui.status = e.clone();
     }
@@ -1378,14 +2026,30 @@ pub fn menus() -> Vec<&'static str> {
 
 pub(crate) fn entry_label(app: &EffectcraftApp, e: &MenuEntry) -> String {
     let shown = match e.command.as_str() {
-        "edit.undo" => app.session.history.undo.last().map(|u| format!("Undo {}", u.0)).unwrap_or_else(|| "Can't Undo".into()),
-        "edit.redo" => app.session.history.redo.last().map(|u| format!("Redo {}", u.0)).unwrap_or_else(|| "Can't Redo".into()),
+        "edit.undo" => app
+            .session
+            .history
+            .undo
+            .last()
+            .map(|u| format!("Undo {}", u.0))
+            .unwrap_or_else(|| "Can't Undo".into()),
+        "edit.redo" => app
+            .session
+            .history
+            .redo
+            .last()
+            .map(|u| format!("Redo {}", u.0))
+            .unwrap_or_else(|| "Can't Redo".into()),
         // Window ▸ Layer: the layer open in the Layer panel.
         "window.panel" if e.params.get("panel").and_then(Value::as_str) == Some("layer") => {
             let name = app
                 .ui
                 .layer_panel
-                .and_then(|id| app.session.active_comp().and_then(|c| c.layer(effectcraft_engine::project::LayerId(id))))
+                .and_then(|id| {
+                    app.session
+                        .active_comp()
+                        .and_then(|c| c.layer(effectcraft_engine::project::LayerId(id)))
+                })
                 .map(|l| l.name.clone());
             format!("Layer: {}", name.unwrap_or_else(|| "(none)".into()))
         }
@@ -1396,13 +2060,21 @@ pub(crate) fn entry_label(app: &EffectcraftApp, e: &MenuEntry) -> String {
 
 /// The entry's shortcut in the active keyboard shortcut preset.
 pub(crate) fn entry_shortcut(app: &EffectcraftApp, e: &MenuEntry) -> Option<String> {
-    app.session.shortcuts().shortcut_of(&e.command, &e.params).map(str::to_string)
+    app.session
+        .shortcuts()
+        .shortcut_of(&e.command, &e.params)
+        .map(str::to_string)
 }
 
 /// Whether panel `p` is on screen: the front tab of a floating window, or of a docked group
 /// (an open frame in a stack) that a maximized panel does not cover.
 pub(crate) fn panel_shown(app: &EffectcraftApp, p: PanelKind) -> bool {
-    if app.ui.floating.iter().any(|f| f.panels.get(f.active) == Some(&p)) {
+    if app
+        .ui
+        .floating
+        .iter()
+        .any(|f| f.panels.get(f.active) == Some(&p))
+    {
         return true;
     }
     match app.ui.maximized.filter(|m| app.ui.dock.contains(*m)) {
@@ -1427,7 +2099,10 @@ pub(crate) fn entry_checked(app: &EffectcraftApp, e: &MenuEntry) -> Option<bool>
         "playback.audio" => Some(app.session.prefs.preview.active().include_audio),
         "window.workspace" => Some(pstr("name").is_some_and(|n| n == app.ui.workspace)),
         // The Tools panel is the header toolbar: always on screen.
-        "window.panel" => Some(pstr("panel").is_some_and(|n| n.eq_ignore_ascii_case("tools") || PanelKind::from_name(n).is_some_and(|p| panel_shown(app, p)))),
+        "window.panel" => Some(pstr("panel").is_some_and(|n| {
+            n.eq_ignore_ascii_case("tools")
+                || PanelKind::from_name(n).is_some_and(|p| panel_shown(app, p))
+        })),
         "view.panelBackground" if e.params.get("pick").is_none() => {
             let cur = match v.pasteboard {
                 None => "mediumGray",
@@ -1448,11 +2123,21 @@ pub(crate) fn entry_enabled(app: &EffectcraftApp, e: &MenuEntry) -> bool {
         match e.command.as_str() {
             "edit.duplicate" => {
                 return !app.session.state.project_selection.is_empty()
-                    && app.session.state.project_selection.iter().all(|id| app.session.project.item(*id).is_some_and(|i| !i.is_folder()));
+                    && app.session.state.project_selection.iter().all(|id| {
+                        app.session
+                            .project
+                            .item(*id)
+                            .is_some_and(|i| !i.is_folder())
+                    });
             }
             "edit.selectAll" => return !app.session.project.items.is_empty(),
             "edit.deselectAll" => return !app.session.state.project_selection.is_empty(),
-            "edit.cut" | "edit.copy" | "edit.paste" | "edit.copyWithPropertyLinks" | "edit.copyWithRelativePropertyLinks" | "edit.copyExpressionOnly" => {
+            "edit.cut"
+            | "edit.copy"
+            | "edit.paste"
+            | "edit.copyWithPropertyLinks"
+            | "edit.copyWithRelativePropertyLinks"
+            | "edit.copyExpressionOnly" => {
                 return false;
             }
             _ => {}
@@ -1526,7 +2211,11 @@ pub fn parse_shortcut(s: &str) -> Option<(egui::Modifiers, egui::Key)> {
         None if s == "+" => ("", true),
         None => (s, false),
     };
-    let mut parts: Vec<&str> = if head.is_empty() { vec![] } else { head.split('+').collect() };
+    let mut parts: Vec<&str> = if head.is_empty() {
+        vec![]
+    } else {
+        head.split('+').collect()
+    };
     if plus {
         parts.push("+");
     }
@@ -1588,7 +2277,10 @@ pub fn bindings(session: &effectcraft_engine::Session) -> Vec<Binding> {
     for (sc, b) in session.shortcuts().bindings() {
         // Off macOS `Cmd` is Ctrl, so a custom Ctrl+Cmd shortcut would
         // steal the plain Cmd one: such macOS-only shortcuts aren't bound there.
-        if !cfg!(target_os = "macos") && sc.split('+').any(|p| p == "Ctrl") && sc.split('+').any(|p| p == "Cmd") {
+        if !cfg!(target_os = "macos")
+            && sc.split('+').any(|p| p == "Ctrl")
+            && sc.split('+').any(|p| p == "Cmd")
+        {
             continue;
         }
         if let Some((m, k)) = parse_shortcut(sc) {
@@ -1600,12 +2292,17 @@ pub fn bindings(session: &effectcraft_engine::Session) -> Vec<Binding> {
             v.push((m, k, b.command.clone(), b.params.clone()));
         }
     }
-    v.sort_by_key(|(m, ..)| std::cmp::Reverse(m.command as u8 + m.shift as u8 + m.alt as u8 + m.ctrl as u8));
+    v.sort_by_key(|(m, ..)| {
+        std::cmp::Reverse(m.command as u8 + m.shift as u8 + m.alt as u8 + m.ctrl as u8)
+    });
     v
 }
 
 fn mods_match(want: egui::Modifiers, got: egui::Modifiers) -> bool {
-    want.command == got.command && want.shift == got.shift && want.alt == got.alt && (want.ctrl == got.ctrl || got.command && cfg!(not(target_os = "macos")))
+    want.command == got.command
+        && want.shift == got.shift
+        && want.alt == got.alt
+        && (want.ctrl == got.ctrl || got.command && cfg!(not(target_os = "macos")))
 }
 
 /// Set (egui temp data) from a plain Spacebar press until its release while a tap would still
@@ -1661,7 +2358,10 @@ fn handle_shortcuts_impl(app: &mut EffectcraftApp, ctx: &egui::Context, tab_only
     // Dialog cancellation owns Escape even when a text field has keyboard focus.
     if !tab_only && app.dialog.is_some() && ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
         // A popup or colour picker takes Escape first (the picker goes back to its original colour).
-        if crate::panels::shortcut_editor::recording(app) || egui::Popup::is_any_open(ctx) || crate::color_picker::open_recently(ctx) {
+        if crate::panels::shortcut_editor::recording(app)
+            || egui::Popup::is_any_open(ctx)
+            || crate::color_picker::open_recently(ctx)
+        {
             return;
         }
         ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape));
@@ -1697,8 +2397,19 @@ fn handle_shortcuts_impl(app: &mut EffectcraftApp, ctx: &egui::Context, tab_only
     let clipboard = app.session.state.text_edit.is_none();
     let project = app.ui.focused == PanelKind::Project;
     // The paste event's text: Edit ▸ Paste pastes SVG markup as a shape layer.
-    let pasted =
-        if clipboard { ctx.input(|i| i.events.iter().rev().find_map(|e| if let egui::Event::Paste(t) = e { Some(t.clone()) } else { None })) } else { None };
+    let pasted = if clipboard {
+        ctx.input(|i| {
+            i.events.iter().rev().find_map(|e| {
+                if let egui::Event::Paste(t) = e {
+                    Some(t.clone())
+                } else {
+                    None
+                }
+            })
+        })
+    } else {
+        None
+    };
     let mut events: Vec<(egui::Key, egui::Modifiers, bool)> = ctx.input(|i| {
         // The windowing layer turns Ctrl+C / Ctrl+X / Ctrl+V into clipboard events instead of
         // key presses: map them back to the keys (with the modifiers held) so Edit ▸ Copy, Cut,
@@ -1706,25 +2417,46 @@ fn handle_shortcuts_impl(app: &mut EffectcraftApp, ctx: &egui::Context, tab_only
         // `i.modifiers` is the state after all of the frame's events, so each is read with the
         // modifiers where it is in the stream: walk the events from the frame's starting state.
         // `None` when that isn't known.
-        let changed = i.events.iter().any(|e| matches!(e, egui::Event::ModifiersChanged(_) | egui::Event::WindowFocused(false)));
+        let changed = i.events.iter().any(|e| {
+            matches!(
+                e,
+                egui::Event::ModifiersChanged(_) | egui::Event::WindowFocused(false)
+            )
+        });
         let mut at = if changed { start } else { Some(i.modifiers) };
-        let held = |at: Option<egui::Modifiers>| at.filter(|m| m.command).unwrap_or(egui::Modifiers::COMMAND);
+        let held = |at: Option<egui::Modifiers>| {
+            at.filter(|m| m.command).unwrap_or(egui::Modifiers::COMMAND)
+        };
         let mut out = Vec::new();
         for e in &i.events {
             match e {
                 egui::Event::ModifiersChanged(m) => at = Some(*m),
                 // egui forgets the modifiers held when the window loses focus.
                 egui::Event::WindowFocused(false) => at = Some(egui::Modifiers::NONE),
-                egui::Event::Key { key, pressed: true, modifiers, repeat, .. }
-                    if !*repeat
-                        || matches!(
-                            key,
-                            egui::Key::PageUp | egui::Key::PageDown | egui::Key::ArrowLeft | egui::Key::ArrowRight | egui::Key::ArrowUp | egui::Key::ArrowDown
-                        ) =>
+                egui::Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers,
+                    repeat,
+                    ..
+                } if !*repeat
+                    || matches!(
+                        key,
+                        egui::Key::PageUp
+                            | egui::Key::PageDown
+                            | egui::Key::ArrowLeft
+                            | egui::Key::ArrowRight
+                            | egui::Key::ArrowUp
+                            | egui::Key::ArrowDown
+                    ) =>
                 {
                     out.push((*key, *modifiers, true));
                 }
-                egui::Event::Key { key: egui::Key::Space, pressed: false, .. } => out.push((egui::Key::Space, egui::Modifiers::NONE, false)),
+                egui::Event::Key {
+                    key: egui::Key::Space,
+                    pressed: false,
+                    ..
+                } => out.push((egui::Key::Space, egui::Modifiers::NONE, false)),
                 egui::Event::Copy if clipboard => out.push((egui::Key::C, held(at), true)),
                 // On Windows, Shift+Delete is the old Cut key and arrives as Cut too. The Project
                 // panel has no clipboard: there a Cut with only Shift held is Shift+Delete (Delete
@@ -1742,10 +2474,29 @@ fn handle_shortcuts_impl(app: &mut EffectcraftApp, ctx: &egui::Context, tab_only
     events.retain(|(key, _, _)| (*key == egui::Key::Tab) == tab_only);
     // Numpad * (or `*` typed with Shift+8): Add Marker (#275). egui has no key for it, so it
     // comes as text.
-    if !tab_only && clipboard && app.dialog.is_none() && ctx.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Text(t) if t == "*"))) {
-        let bound = app.session.shortcuts().bindings().into_iter().find(|(k, _)| *k == "Num*").map(|(_, b)| (b.command.clone(), b.params.clone()));
+    if !tab_only
+        && clipboard
+        && app.dialog.is_none()
+        && ctx.input(|i| {
+            i.events
+                .iter()
+                .any(|e| matches!(e, egui::Event::Text(t) if t == "*"))
+        })
+    {
+        let bound = app
+            .session
+            .shortcuts()
+            .bindings()
+            .into_iter()
+            .find(|(k, _)| *k == "Num*")
+            .map(|(_, b)| (b.command.clone(), b.params.clone()));
         if let Some((id, params)) = bound
-            && let Err(e) = invoke(app, ctx, &id, if params.is_null() { json!({}) } else { params })
+            && let Err(e) = invoke(
+                app,
+                ctx,
+                &id,
+                if params.is_null() { json!({}) } else { params },
+            )
         {
             app.ui.status = e;
         }
@@ -1764,7 +2515,10 @@ fn handle_shortcuts_impl(app: &mut EffectcraftApp, ctx: &egui::Context, tab_only
                 }
                 continue;
             }
-            if !ctx.data_mut(|d| d.remove_temp::<bool>(space_tap_id())).unwrap_or(false) {
+            if !ctx
+                .data_mut(|d| d.remove_temp::<bool>(space_tap_id()))
+                .unwrap_or(false)
+            {
                 continue;
             }
         }
@@ -1798,7 +2552,11 @@ fn handle_shortcuts_impl(app: &mut EffectcraftApp, ctx: &egui::Context, tab_only
         // The Project panel has its own selection; a previously selected Timeline layer
         // must not be deleted while the Project panel has focus.
         if matches!(key, egui::Key::Delete | egui::Key::Backspace) && !mods.any() {
-            if matches!(app.ui.focused, PanelKind::Composition | PanelKind::Viewer(_)) && !app.session.state.camera_points.is_empty() {
+            if matches!(
+                app.ui.focused,
+                PanelKind::Composition | PanelKind::Viewer(_)
+            ) && !app.session.state.camera_points.is_empty()
+            {
                 if let Err(e) = run_engine(app, ctx, "camera.deletePoints", json!({})) {
                     app.ui.status = e;
                 }
@@ -1812,8 +2570,18 @@ fn handle_shortcuts_impl(app: &mut EffectcraftApp, ctx: &egui::Context, tab_only
             let _ = invoke(app, ctx, "edit.clear", json!({}));
             continue;
         }
-        if let Some((_, _, id, params)) = binds.iter().find(|(m, k, ..)| *k == key && mods_match(*m, mods)) {
-            let (id, params) = (id.clone(), if params.is_null() { json!({}) } else { params.clone() });
+        if let Some((_, _, id, params)) = binds
+            .iter()
+            .find(|(m, k, ..)| *k == key && mods_match(*m, mods))
+        {
+            let (id, params) = (
+                id.clone(),
+                if params.is_null() {
+                    json!({})
+                } else {
+                    params.clone()
+                },
+            );
             if id == "edit.paste"
                 && let Some(t) = &pasted
             {
@@ -1834,22 +2602,32 @@ pub fn menu_bar(app: &mut EffectcraftApp, ui: &mut egui::Ui) {
     let mut nav = crate::menu_keys::Nav::default();
     ui.horizontal_centered(|ui| {
         ui.add_space(6.0);
-        egui::MenuBar::new().config(egui::containers::menu::MenuConfig::new().style(crate::widgets::menu_style)).ui(ui, |ui| {
-            for node in effectcraft_engine::menus::menu_bar() {
-                if let MenuNode::Submenu { label, children } = node {
-                    let r = ui.menu_button(crate::i18n::label(app, "", label), |ui| {
-                        ui.set_min_width(if label == "Effect" { 200.0 } else { 280.0 });
-                        crate::widgets::menu_scroll(ui, |ui| menu_nodes(app, ui, children, &mut clicked, &mut nav, 0));
-                    });
-                    nav.top(&r.response);
-                    app.auto.add(&format!("menu.{label}"), r.response.rect, label);
+        egui::MenuBar::new()
+            .config(egui::containers::menu::MenuConfig::new().style(crate::widgets::menu_style))
+            .ui(ui, |ui| {
+                for node in effectcraft_engine::menus::menu_bar() {
+                    if let MenuNode::Submenu { label, children } = node {
+                        let r = ui.menu_button(crate::i18n::label(app, "", label), |ui| {
+                            ui.set_min_width(if label == "Effect" { 200.0 } else { 280.0 });
+                            crate::widgets::menu_scroll(ui, |ui| {
+                                menu_nodes(app, ui, children, &mut clicked, &mut nav, 0)
+                            });
+                        });
+                        nav.top(&r.response);
+                        app.auto
+                            .add(&format!("menu.{label}"), r.response.rect, label);
+                    }
                 }
-            }
-        });
+            });
     });
     crate::menu_keys::handle(&ctx, &nav);
     if let Some((id, params)) = clicked
-        && let Err(e) = invoke(app, &ctx, &id, if params.is_null() { json!({}) } else { params })
+        && let Err(e) = invoke(
+            app,
+            &ctx,
+            &id,
+            if params.is_null() { json!({}) } else { params },
+        )
     {
         app.ui.status = e;
     }
@@ -1857,12 +2635,24 @@ pub fn menu_bar(app: &mut EffectcraftApp, ui: &mut egui::Ui) {
 
 /// The entries of top-level menu `name` (the Effect menu is the Effect Controls panel's context
 /// menu); returns the chosen command and its params.
-pub(crate) fn menu_contents(app: &mut EffectcraftApp, ui: &mut egui::Ui, name: &str) -> Option<(String, Value)> {
+pub(crate) fn menu_contents(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    name: &str,
+) -> Option<(String, Value)> {
     let mut clicked = None;
-    if let Some(MenuNode::Submenu { children, .. }) =
-        effectcraft_engine::menus::menu_bar().iter().find(|n| matches!(n, MenuNode::Submenu { label, .. } if label == name))
+    if let Some(MenuNode::Submenu { children, .. }) = effectcraft_engine::menus::menu_bar()
+        .iter()
+        .find(|n| matches!(n, MenuNode::Submenu { label, .. } if label == name))
     {
-        menu_nodes(app, ui, children, &mut clicked, &mut crate::menu_keys::Nav::default(), 0);
+        menu_nodes(
+            app,
+            ui,
+            children,
+            &mut clicked,
+            &mut crate::menu_keys::Nav::default(),
+            0,
+        );
     }
     clicked.map(|(id, params)| (id, if params.is_null() { json!({}) } else { params }))
 }
@@ -1886,7 +2676,8 @@ fn menu_nodes(
                 // saved workspaces.
                 let ws = app.ui.workspace.clone();
                 let saved = app.saved_workspace_names();
-                let (entries, empty) = effectcraft_engine::menus::dynamic(&app.session, name, &dyn_ctx(&ws, &saved));
+                let (entries, empty) =
+                    effectcraft_engine::menus::dynamic(&app.session, name, &dyn_ctx(&ws, &saved));
                 if entries.is_empty()
                     && let Some(e) = empty
                 {
@@ -1899,7 +2690,13 @@ fn menu_nodes(
                         "recentPresets" => app.session.prefs.recent_presets.get(i).cloned(),
                         _ => None,
                     };
-                    let r = ui.add_enabled(entry_enabled(app, e), egui::Button::new((gutter(entry_checked(app, e) == Some(true)), e.label.as_str())));
+                    let r = ui.add_enabled(
+                        entry_enabled(app, e),
+                        egui::Button::new((
+                            gutter(entry_checked(app, e) == Some(true)),
+                            e.label.as_str(),
+                        )),
+                    );
                     let r = match &tip {
                         Some(t) => r.on_hover_text(t),
                         None => r,
@@ -1914,10 +2711,20 @@ fn menu_nodes(
             }
             MenuNode::Submenu { label, children } => {
                 let ws = app.ui.workspace.clone();
-                let shown = crate::i18n::submenu(app, label, effectcraft_engine::menus::submenu_label(&app.session, label, &dyn_ctx(&ws, &[])));
+                let shown = crate::i18n::submenu(
+                    app,
+                    label,
+                    effectcraft_engine::menus::submenu_label(
+                        &app.session,
+                        label,
+                        &dyn_ctx(&ws, &[]),
+                    ),
+                );
                 let r = ui.menu_button((gutter(false), shown.as_str()), |ui| {
                     ui.set_min_width(if children.len() > 30 { 200.0 } else { 240.0 });
-                    crate::widgets::menu_scroll(ui, |ui| menu_nodes(app, ui, children, clicked, nav, depth + 1));
+                    crate::widgets::menu_scroll(ui, |ui| {
+                        menu_nodes(app, ui, children, clicked, nav, depth + 1)
+                    });
                 });
                 nav.entry(ui, depth, &r.response, true);
                 if r.inner.is_some() {
@@ -1938,18 +2745,35 @@ fn menu_nodes(
 
 /// The menu bar's submenu at `path` (`["File", "Interpret Footage"]`) in a panel's context menu,
 /// with the menu bar's labels, shortcuts and enabled state; a chosen entry goes to `clicked`.
-pub(crate) fn submenu_at(app: &mut EffectcraftApp, ui: &mut egui::Ui, path: &[&str], clicked: &mut Option<(String, Value)>) {
+pub(crate) fn submenu_at(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    path: &[&str],
+    clicked: &mut Option<(String, Value)>,
+) {
     let mut nodes = effectcraft_engine::menus::menu_bar();
     let mut found = None;
     for label in path {
-        let Some(n) = nodes.iter().find(|n| matches!(n, MenuNode::Submenu { label: l, .. } if l == label)) else { return };
+        let Some(n) = nodes
+            .iter()
+            .find(|n| matches!(n, MenuNode::Submenu { label: l, .. } if l == label))
+        else {
+            return;
+        };
         if let MenuNode::Submenu { children, .. } = n {
             nodes = children;
         }
         found = Some(n);
     }
     if let Some(n) = found {
-        menu_nodes(app, ui, std::slice::from_ref(n), clicked, &mut crate::menu_keys::Nav::default(), 0);
+        menu_nodes(
+            app,
+            ui,
+            std::slice::from_ref(n),
+            clicked,
+            &mut crate::menu_keys::Nav::default(),
+            0,
+        );
     }
     if let Some((_, p)) = clicked.as_mut()
         && p.is_null()
@@ -1959,8 +2783,15 @@ pub(crate) fn submenu_at(app: &mut EffectcraftApp, ui: &mut egui::Ui, path: &[&s
 }
 
 /// The menu bar's entry for `command` in a panel's context menu (see [`submenu_at`]).
-pub(crate) fn entry_for(app: &EffectcraftApp, ui: &mut egui::Ui, command: &str, clicked: &mut Option<(String, Value)>) {
-    if let Some((_, e)) = effectcraft_engine::menus::entries().into_iter().find(|(_, e)| e.command == command)
+pub(crate) fn entry_for(
+    app: &EffectcraftApp,
+    ui: &mut egui::Ui,
+    command: &str,
+    clicked: &mut Option<(String, Value)>,
+) {
+    if let Some((_, e)) = effectcraft_engine::menus::entries()
+        .into_iter()
+        .find(|(_, e)| e.command == command)
         && menu_entry(app, ui, e).clicked()
     {
         *clicked = Some((e.command.clone(), e.params_or_empty()));
@@ -1969,8 +2800,14 @@ pub(crate) fn entry_for(app: &EffectcraftApp, ui: &mut egui::Ui, command: &str, 
 }
 
 /// Frontend state for dynamic menus (the current workspace and the saved ones).
-pub(crate) fn dyn_ctx<'a>(workspace: &'a str, saved_workspaces: &'a [String]) -> effectcraft_engine::menus::DynCtx<'a> {
-    effectcraft_engine::menus::DynCtx { workspace: Some(workspace), saved_workspaces }
+pub(crate) fn dyn_ctx<'a>(
+    workspace: &'a str,
+    saved_workspaces: &'a [String],
+) -> effectcraft_engine::menus::DynCtx<'a> {
+    effectcraft_engine::menus::DynCtx {
+        workspace: Some(workspace),
+        saved_workspaces,
+    }
 }
 
 /// The check-mark column every menu row reserves (like macOS / After Effects menus).
@@ -1980,12 +2817,24 @@ fn gutter(checked: bool) -> egui::Atom<'static> {
 }
 
 fn menu_entry(app: &EffectcraftApp, ui: &mut egui::Ui, e: &MenuEntry) -> egui::Response {
-    let (label, check, enabled) = (entry_label(app, e), gutter(entry_checked(app, e) == Some(true)), entry_enabled(app, e));
+    let (label, check, enabled) = (
+        entry_label(app, e),
+        gutter(entry_checked(app, e) == Some(true)),
+        entry_enabled(app, e),
+    );
     // Edit ▸ Label's entries show the label's colour before its name.
     if e.command == "edit.label"
-        && let Some(l) = e.params.get("label").and_then(Value::as_str).and_then(effectcraft_engine::color::Label::from_name)
+        && let Some(l) = e
+            .params
+            .get("label")
+            .and_then(Value::as_str)
+            .and_then(effectcraft_engine::color::Label::from_name)
     {
-        let out = ui.add_enabled_ui(enabled, |ui| egui::Button::new((check, crate::widgets::label_swatch(), label)).atom_ui(ui)).inner;
+        let out = ui
+            .add_enabled_ui(enabled, |ui| {
+                egui::Button::new((check, crate::widgets::label_swatch(), label)).atom_ui(ui)
+            })
+            .inner;
         crate::widgets::paint_label_swatch(ui, &out, l, &app.tokens);
         return out.response;
     }
@@ -2000,13 +2849,29 @@ fn menu_entry(app: &EffectcraftApp, ui: &mut egui::Ui, e: &MenuEntry) -> egui::R
 /// 100 % is one comp pixel per screen pixel at any display scaling) above or below `cur`, which is
 /// in points per comp pixel like the result (#882).
 fn zoom_step(cur: f32, ppp: f32, zoom_in: bool) -> f32 {
-    const STEPS: [f32; 16] = [0.015, 0.03, 0.0625, 0.125, 0.25, 0.333, 0.5, 0.66, 1.0, 1.5, 2.0, 3.0, 4.0, 8.0, 16.0, 32.0];
-    let ppp = if ppp.is_finite() && ppp > 0.0 { ppp } else { 1.0 };
+    const STEPS: [f32; 16] = [
+        0.015, 0.03, 0.0625, 0.125, 0.25, 0.333, 0.5, 0.66, 1.0, 1.5, 2.0, 3.0, 4.0, 8.0, 16.0,
+        32.0,
+    ];
+    let ppp = if ppp.is_finite() && ppp > 0.0 {
+        ppp
+    } else {
+        1.0
+    };
     let shown = cur * ppp;
     let next = if zoom_in {
-        STEPS.iter().copied().find(|s| *s > shown + 1e-3).unwrap_or(32.0)
+        STEPS
+            .iter()
+            .copied()
+            .find(|s| *s > shown + 1e-3)
+            .unwrap_or(32.0)
     } else {
-        STEPS.iter().rev().copied().find(|s| *s < shown - 1e-3).unwrap_or(0.015)
+        STEPS
+            .iter()
+            .rev()
+            .copied()
+            .find(|s| *s < shown - 1e-3)
+            .unwrap_or(0.015)
     };
     next / ppp
 }
@@ -2021,7 +2886,11 @@ mod tests {
     fn zoom_steps_land_on_whole_screen_magnifications() {
         for ppp in [1.0f32, 1.25, 1.5, 2.0] {
             let at_100 = zoom_step(0.7 / ppp, ppp, true);
-            assert!((at_100 * ppp - 1.0).abs() < 1e-6, "ppp {ppp}: {}", at_100 * ppp);
+            assert!(
+                (at_100 * ppp - 1.0).abs() < 1e-6,
+                "ppp {ppp}: {}",
+                at_100 * ppp
+            );
             assert!((zoom_step(at_100, ppp, true) * ppp - 1.5).abs() < 1e-6);
             assert!((zoom_step(at_100, ppp, false) * ppp - 0.66).abs() < 1e-6);
         }
@@ -2032,21 +2901,36 @@ mod tests {
     fn shortcut_passes_share_frame_start_modifiers() {
         let ctx = egui::Context::default();
         let mut starts = Vec::new();
-        let mut output = ctx.run_ui(egui::RawInput { events: vec![egui::Event::ModifiersChanged(egui::Modifiers::SHIFT)], ..Default::default() }, |ui| {
-            let ctx = ui.ctx();
-            starts.push(modifiers_at_start(ctx));
-            starts.push(modifiers_at_start(ctx));
-        });
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                events: vec![egui::Event::ModifiersChanged(egui::Modifiers::SHIFT)],
+                ..Default::default()
+            },
+            |ui| {
+                let ctx = ui.ctx();
+                starts.push(modifiers_at_start(ctx));
+                starts.push(modifiers_at_start(ctx));
+            },
+        );
         output.textures_delta.clear();
         assert_eq!(starts, vec![None, None]);
         starts.clear();
-        let mut output = ctx.run_ui(egui::RawInput { events: vec![egui::Event::ModifiersChanged(egui::Modifiers::NONE)], ..Default::default() }, |ui| {
-            let ctx = ui.ctx();
-            starts.push(modifiers_at_start(ctx));
-            starts.push(modifiers_at_start(ctx));
-        });
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                events: vec![egui::Event::ModifiersChanged(egui::Modifiers::NONE)],
+                ..Default::default()
+            },
+            |ui| {
+                let ctx = ui.ctx();
+                starts.push(modifiers_at_start(ctx));
+                starts.push(modifiers_at_start(ctx));
+            },
+        );
         output.textures_delta.clear();
-        assert_eq!(starts, vec![Some(egui::Modifiers::SHIFT), Some(egui::Modifiers::SHIFT)]);
+        assert_eq!(
+            starts,
+            vec![Some(egui::Modifiers::SHIFT), Some(egui::Modifiers::SHIFT)]
+        );
     }
 
     #[test]
@@ -2058,7 +2942,11 @@ mod tests {
         }
         for (_, e) in effectcraft_engine::menus::entries() {
             if let Some(sc) = &e.shortcut {
-                assert!(parse_shortcut(sc).is_some() || sc == "Num*", "{} ({sc})", e.label);
+                assert!(
+                    parse_shortcut(sc).is_some() || sc == "Num*",
+                    "{} ({sc})",
+                    e.label
+                );
             }
         }
     }
@@ -2066,19 +2954,28 @@ mod tests {
     #[test]
     fn full_screen_default_is_platform_specific() {
         let app = EffectcraftApp::new(effectcraft_engine::Session::default());
-        let full_screen = app.session.shortcuts().shortcut_of("view.fullScreen", &Value::Null);
+        let full_screen = app
+            .session
+            .shortcuts()
+            .shortcut_of("view.fullScreen", &Value::Null);
         if cfg!(target_os = "macos") {
             assert_eq!(full_screen, Some("Ctrl+Cmd+F"));
         } else {
             assert_eq!(full_screen, None);
-            assert_eq!(app.session.shortcuts().shortcut_of("window.maximizeApp", &Value::Null), Some("Cmd+\\"));
+            assert_eq!(
+                app.session
+                    .shortcuts()
+                    .shortcut_of("window.maximizeApp", &Value::Null),
+                Some("Cmd+\\")
+            );
         }
     }
 
     #[test]
     fn ui_and_menu_shortcuts_do_not_collide() {
         let app = EffectcraftApp::new(effectcraft_engine::Session::default());
-        let mut seen: std::collections::BTreeMap<(String, String), (String, String)> = Default::default();
+        let mut seen: std::collections::BTreeMap<(String, String), (String, String)> =
+            Default::default();
         for (m, k, id, params) in bindings(&app.session) {
             let key = (format!("{m:?}"), format!("{k:?}"));
             let target = (id.clone(), params.to_string());
@@ -2097,45 +2994,95 @@ mod tests {
         let mut app = EffectcraftApp::new(effectcraft_engine::Session::default());
         let (m, k) = parse_shortcut("Cmd+\\").unwrap();
         assert!(m.command && k == egui::Key::Backslash, "{m:?} {k:?}");
-        assert!(bindings(&app.session).iter().any(|b| (b.0, b.1) == (m, k) && b.2 == "window.maximizeApp"));
+        assert!(
+            bindings(&app.session)
+                .iter()
+                .any(|b| (b.0, b.1) == (m, k) && b.2 == "window.maximizeApp")
+        );
         let ctx = egui::Context::default();
         let run = |app: &mut EffectcraftApp, maximized: bool| {
             let input = egui::RawInput {
-                viewports: std::iter::once((egui::ViewportId::ROOT, egui::ViewportInfo { maximized: Some(maximized), ..Default::default() })).collect(),
+                viewports: std::iter::once((
+                    egui::ViewportId::ROOT,
+                    egui::ViewportInfo {
+                        maximized: Some(maximized),
+                        ..Default::default()
+                    },
+                ))
+                .collect(),
                 ..Default::default()
             };
             let mut r = Value::Null;
-            let mut out = ctx.run_ui(input, |ui| r = invoke(app, ui.ctx(), "window.maximizeApp", json!({})).unwrap());
+            let mut out = ctx.run_ui(input, |ui| {
+                r = invoke(app, ui.ctx(), "window.maximizeApp", json!({})).unwrap()
+            });
             out.textures_delta.clear();
-            let cmds = out.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.commands.clone()).unwrap_or_default();
+            let cmds = out
+                .viewport_output
+                .get(&egui::ViewportId::ROOT)
+                .map(|v| v.commands.clone())
+                .unwrap_or_default();
             (r, cmds)
         };
         let (r, cmds) = run(&mut app, false);
         assert_eq!(r, json!({"maximized": true}));
-        assert!(cmds.contains(&egui::ViewportCommand::Maximized(true)), "{cmds:?}");
+        assert!(
+            cmds.contains(&egui::ViewportCommand::Maximized(true)),
+            "{cmds:?}"
+        );
         let (r, cmds) = run(&mut app, true);
         assert_eq!(r, json!({"maximized": false}));
-        assert!(cmds.contains(&egui::ViewportCommand::Maximized(false)), "{cmds:?}");
+        assert!(
+            cmds.contains(&egui::ViewportCommand::Maximized(false)),
+            "{cmds:?}"
+        );
     }
 
     #[test]
     fn dispatch_uses_the_active_custom_preset() {
         let mut app = EffectcraftApp::new(effectcraft_engine::Session::default());
-        let find = |app: &EffectcraftApp, id: &str| bindings(&app.session).into_iter().filter(|b| b.2 == id).map(|b| (b.0, b.1)).collect::<Vec<_>>();
+        let find = |app: &EffectcraftApp, id: &str| {
+            bindings(&app.session)
+                .into_iter()
+                .filter(|b| b.2 == id)
+                .map(|b| (b.0, b.1))
+                .collect::<Vec<_>>()
+        };
         let (m, k) = parse_shortcut("Cmd+Alt+Shift+Y").unwrap();
         assert!(find(&app, "layer.newNull").contains(&(m, k)));
         // A UI command rebound in a custom preset.
-        app.session.execute("shortcuts.set", json!({"command": "tool.hand", "keys": "Ctrl+Alt+H"})).unwrap();
+        app.session
+            .execute(
+                "shortcuts.set",
+                json!({"command": "tool.hand", "keys": "Ctrl+Alt+H"}),
+            )
+            .unwrap();
         assert_eq!(app.session.keymaps.active, "Custom");
         let (m2, k2) = parse_shortcut("Ctrl+Alt+H").unwrap();
         assert_eq!(find(&app, "tool.hand"), vec![(m2, k2)]);
-        app.session.execute("shortcuts.set", json!({"command": "layer.newNull", "keys": "F6"})).unwrap();
-        assert_eq!(find(&app, "layer.newNull"), vec![(egui::Modifiers::NONE, egui::Key::F6)]);
+        app.session
+            .execute(
+                "shortcuts.set",
+                json!({"command": "layer.newNull", "keys": "F6"}),
+            )
+            .unwrap();
+        assert_eq!(
+            find(&app, "layer.newNull"),
+            vec![(egui::Modifiers::NONE, egui::Key::F6)]
+        );
         // The menus show the preset's shortcut.
-        let item = menu_items(&app).into_iter().find(|i| i.id == "layer.newNull").unwrap();
+        let item = menu_items(&app)
+            .into_iter()
+            .find(|i| i.id == "layer.newNull")
+            .unwrap();
         assert_eq!(item.shortcut.as_deref(), Some("F6"));
         // Back to the default preset.
-        app.session.execute("shortcuts.preset", json!({"op": "select", "name": effectcraft_engine::shortcuts::DEFAULT_PRESET})).unwrap();
+        app.session
+            .execute(
+                "shortcuts.preset",
+                json!({"op": "select", "name": effectcraft_engine::shortcuts::DEFAULT_PRESET}),
+            )
+            .unwrap();
         assert!(find(&app, "layer.newNull").contains(&(m, k)));
     }
 
@@ -2143,7 +3090,11 @@ mod tests {
     fn renamed_label_shows_in_the_label_menu() {
         let mut app = EffectcraftApp::new(effectcraft_engine::Session::default());
         app.set_pref("labels.1.name", json!("Sunflower")).unwrap();
-        let labels: Vec<String> = menu_items(&app).into_iter().filter(|i| i.id == "edit.label").map(|i| i.label).collect();
+        let labels: Vec<String> = menu_items(&app)
+            .into_iter()
+            .filter(|i| i.id == "edit.label")
+            .map(|i| i.label)
+            .collect();
         assert!(labels.contains(&"Sunflower".to_string()), "{labels:?}");
         assert!(!labels.contains(&"Yellow".to_string()));
     }
@@ -2156,7 +3107,12 @@ mod tests {
         use std::cell::RefCell;
         use std::rc::Rc;
         let mut app = EffectcraftApp::new(effectcraft_engine::Session::default());
-        app.session.execute("comp.new", json!({"name": "A", "width": 64, "height": 36, "frameRate": 30, "duration": 1})).unwrap();
+        app.session
+            .execute(
+                "comp.new",
+                json!({"name": "A", "width": 64, "height": 36, "frameRate": 30, "duration": 1}),
+            )
+            .unwrap();
         let ctx = egui::Context::default();
         let asked: Rc<RefCell<Vec<String>>> = Rc::default();
         let (a, b) = (asked.clone(), asked.clone());
@@ -2168,7 +3124,14 @@ mod tests {
             b.borrow_mut().push(format!("file {name} [{ext}]"));
             None
         }));
-        for id in ["comp.saveFrameAs", "render.saveCurrentPreview", "file.exportLottie", "file.saveCopyAsXml", "file.collectFiles", "file.saveAs"] {
+        for id in [
+            "comp.saveFrameAs",
+            "render.saveCurrentPreview",
+            "file.exportLottie",
+            "file.saveCopyAsXml",
+            "file.collectFiles",
+            "file.saveAs",
+        ] {
             invoke(&mut app, &ctx, id, json!({})).unwrap();
         }
         assert_eq!(
@@ -2196,28 +3159,62 @@ mod tests {
     fn file_dialogs_can_answer_on_a_later_frame() {
         use std::sync::{Arc, Mutex};
         let mut app = EffectcraftApp::new(effectcraft_engine::Session::default());
-        app.session.execute("comp.new", json!({"name": "A", "width": 64, "height": 36, "frameRate": 30, "duration": 1})).unwrap();
+        app.session
+            .execute(
+                "comp.new",
+                json!({"name": "A", "width": 64, "height": 36, "frameRate": 30, "duration": 1}),
+            )
+            .unwrap();
         let ctx = egui::Context::default();
-        app.hooks.pick_save = Some(Box::new(|_: &str| panic!("the blocking dialog is not used")));
+        app.hooks.pick_save = Some(Box::new(|_: &str| {
+            panic!("the blocking dialog is not used")
+        }));
         let pending: Arc<Mutex<Vec<(crate::FileDialog, crate::DialogDone)>>> = Arc::default();
         let queue = pending.clone();
-        app.hooks.file_dialog_async = Some(Box::new(move |dialog, done| queue.lock().unwrap().push((dialog, done))));
-        assert_eq!(invoke(&mut app, &ctx, "file.saveAs", json!({})).unwrap(), json!({"dialog": "file.saveAs"}));
+        app.hooks.file_dialog_async = Some(Box::new(move |dialog, done| {
+            queue.lock().unwrap().push((dialog, done))
+        }));
+        assert_eq!(
+            invoke(&mut app, &ctx, "file.saveAs", json!({})).unwrap(),
+            json!({"dialog": "file.saveAs"})
+        );
         let (dialog, done) = pending.lock().unwrap().pop().expect("a dialog was shown");
-        assert_eq!(dialog, crate::FileDialog::Save { default: "Untitled Project.ecproj".into(), ext: "ecproj".into(), project: true });
-        assert!(app.session.path.is_none(), "nothing saved until the dialog answers");
+        assert_eq!(
+            dialog,
+            crate::FileDialog::Save {
+                default: "Untitled Project.ecproj".into(),
+                ext: "ecproj".into(),
+                project: true
+            }
+        );
+        assert!(
+            app.session.path.is_none(),
+            "nothing saved until the dialog answers"
+        );
         let dir = std::env::temp_dir().join(format!("ec-dialog-answer-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("Answered.ecproj");
         // Answered from another thread, as the host's dialog does.
-        std::thread::spawn(move || done(vec![path.to_string_lossy().to_string()])).join().unwrap();
+        std::thread::spawn(move || done(vec![path.to_string_lossy().to_string()]))
+            .join()
+            .unwrap();
         app.run_dialog_answers();
-        assert_eq!(app.session.path.as_deref(), Some(dir.join("Answered.ecproj").to_string_lossy().as_ref()));
+        assert_eq!(
+            app.session.path.as_deref(),
+            Some(dir.join("Answered.ecproj").to_string_lossy().as_ref())
+        );
         assert!(dir.join("Answered.ecproj").is_file());
         // Cancelled: nothing runs.
         invoke(&mut app, &ctx, "comp.saveFrameAs", json!({})).unwrap();
         let (dialog, done) = pending.lock().unwrap().pop().expect("a dialog was shown");
-        assert_eq!(dialog, crate::FileDialog::Save { default: "Frame.png".into(), ext: "png".into(), project: false });
+        assert_eq!(
+            dialog,
+            crate::FileDialog::Save {
+                default: "Frame.png".into(),
+                ext: "png".into(),
+                project: false
+            }
+        );
         done(Vec::new());
         app.run_dialog_answers();
         assert!(!dir.join("Frame.png").exists());

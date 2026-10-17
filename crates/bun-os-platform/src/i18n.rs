@@ -25,15 +25,26 @@ use crate::paths::Paths;
 
 /// English catalogs compiled in: the last fallback when the package directory is absent.
 const EMBEDDED_EN: &[(&str, &str)] = &[
-    ("common", include_str!("../../../packages/bun-os-platform/locales/en/common.ftl")),
-    ("shell", include_str!("../../../packages/bun-os-platform/locales/en/shell.ftl")),
-    ("engine", include_str!("../../../packages/bun-os-platform/locales/en/engine.ftl")),
+    (
+        "common",
+        include_str!("../../../packages/bun-os-platform/locales/en/common.ftl"),
+    ),
+    (
+        "shell",
+        include_str!("../../../packages/bun-os-platform/locales/en/shell.ftl"),
+    ),
+    (
+        "engine",
+        include_str!("../../../packages/bun-os-platform/locales/en/engine.ftl"),
+    ),
 ];
 
 struct IcuNumber(DecimalFormatter);
 
 fn icu_locale(lang: &LanguageIdentifier) -> icu_locale_core::Locale {
-    lang.to_string().parse().unwrap_or(icu_locale_core::Locale::UNKNOWN)
+    lang.to_string()
+        .parse()
+        .unwrap_or(icu_locale_core::Locale::UNKNOWN)
 }
 
 impl Memoizable for IcuNumber {
@@ -48,7 +59,11 @@ impl Memoizable for IcuNumber {
 
 fn number_text(n: &FluentNumber) -> String {
     let min = n.options.minimum_fraction_digits.unwrap_or(0);
-    let max = n.options.maximum_fraction_digits.unwrap_or(min.max(3)).max(min);
+    let max = n
+        .options
+        .maximum_fraction_digits
+        .unwrap_or(min.max(3))
+        .max(min);
     let mut text = format!("{:.*}", max, n.value);
     if text.contains('.') {
         while text.ends_with('0') && text.len() - text.find('.').unwrap_or(0) - 1 > min {
@@ -67,7 +82,9 @@ fn format_value<M: MemoizerKind>(value: &FluentValue, intls: &M) -> Option<Strin
         FluentValue::Number(n) => {
             let decimal: Decimal = number_text(n).parse().ok()?;
             intls
-                .with_try_get_threadsafe::<IcuNumber, _, _>((), |f| f.0.format(&decimal).to_string())
+                .with_try_get_threadsafe::<IcuNumber, _, _>((), |f| {
+                    f.0.format(&decimal).to_string()
+                })
                 .ok()
         }
         _ => None,
@@ -75,7 +92,11 @@ fn format_value<M: MemoizerKind>(value: &FluentValue, intls: &M) -> Option<Strin
 }
 
 /// `DATETIME($date, dateStyle: "long", timeStyle: "short")` over ISO 8601 strings, by ICU4X.
-fn datetime<'a>(lang: &LanguageIdentifier, positional: &[FluentValue<'a>], named: &FluentArgs) -> FluentValue<'a> {
+fn datetime<'a>(
+    lang: &LanguageIdentifier,
+    positional: &[FluentValue<'a>],
+    named: &FluentArgs,
+) -> FluentValue<'a> {
     use icu_datetime::DateTimeFormatter;
     use icu_datetime::fieldsets::YMD;
     use icu_datetime::input::{Date, DateTime, Time};
@@ -102,8 +123,11 @@ fn datetime<'a>(lang: &LanguageIdentifier, positional: &[FluentValue<'a>], named
     let locale = icu_locale(lang);
     let with_time = named.get("timeStyle").is_some() && !time.is_empty();
     let text = if with_time {
-        let mut t = time.split([':', 'Z', '+', '.']).filter_map(|p| p.parse::<u8>().ok());
-        let time = Time::try_new(t.next().unwrap_or(0), t.next().unwrap_or(0), 0, 0).unwrap_or(Time::start_of_day());
+        let mut t = time
+            .split([':', 'Z', '+', '.'])
+            .filter_map(|p| p.parse::<u8>().ok());
+        let time = Time::try_new(t.next().unwrap_or(0), t.next().unwrap_or(0), 0, 0)
+            .unwrap_or(Time::start_of_day());
         DateTimeFormatter::try_new(locale.into(), fset.with_time_hm())
             .map(|f| f.format(&DateTime { date, time }).to_string())
     } else {
@@ -125,13 +149,17 @@ fn read_sources(paths: &Paths, tag: &str, domains: &[String]) -> Vec<String> {
     let mut out = Vec::new();
     for dir in paths.locale_dirs() {
         let dir = dir.join(tag);
-        let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
         let mut files: Vec<_> = entries
             .flatten()
             .map(|e| e.path())
             .filter(|p| {
                 p.extension().is_some_and(|e| e == "ftl")
-                    && p.file_stem().and_then(|s| s.to_str()).is_some_and(|s| domains.iter().any(|d| d == s))
+                    && p.file_stem()
+                        .and_then(|s| s.to_str())
+                        .is_some_and(|s| domains.iter().any(|d| d == s))
             })
             .collect();
         files.sort();
@@ -196,14 +224,18 @@ impl Localizer {
             None => (key.replace('.', "-"), None),
         };
         for bundle in &self.bundles {
-            let Some(message) = bundle.get_message(&id) else { continue };
+            let Some(message) = bundle.get_message(&id) else {
+                continue;
+            };
             let pattern = match attr {
                 Some(a) => message.get_attribute(a).map(|a| a.value()),
                 None => message.value(),
             };
             if let Some(pattern) = pattern {
                 let mut errors = Vec::new();
-                return bundle.format_pattern(pattern, args, &mut errors).into_owned();
+                return bundle
+                    .format_pattern(pattern, args, &mut errors)
+                    .into_owned();
             }
         }
         key.to_string()
@@ -235,7 +267,11 @@ impl Localizer {
     /// An ISO 8601 date (`2026-10-17` or `2026-10-17T18:30`) in the locale's medium style.
     pub fn date(&self, iso: &str) -> String {
         let lang: LanguageIdentifier = self.locale().parse().unwrap_or_default();
-        match datetime(&lang, &[FluentValue::String(Cow::Borrowed(iso))], &FluentArgs::new()) {
+        match datetime(
+            &lang,
+            &[FluentValue::String(Cow::Borrowed(iso))],
+            &FluentArgs::new(),
+        ) {
             FluentValue::String(s) => s.into_owned(),
             _ => iso.to_string(),
         }
@@ -255,7 +291,8 @@ fn install(explicit: Option<&str>, domains: &[&str]) -> Arc<Localizer> {
     let paths = Paths::discover();
     let (chain, source) = locale::negotiate(&paths, explicit);
     let localizer = Arc::new(Localizer::load(&paths, chain, source, domains));
-    *DOMAINS.write().unwrap_or_else(|e| e.into_inner()) = domains.iter().map(|d| (*d).to_string()).collect();
+    *DOMAINS.write().unwrap_or_else(|e| e.into_inner()) =
+        domains.iter().map(|d| (*d).to_string()).collect();
     *GLOBAL.write().unwrap_or_else(|e| e.into_inner()) = Some(localizer.clone());
     VERSION.fetch_add(1, Ordering::SeqCst);
     localizer
@@ -269,7 +306,11 @@ pub fn set_locale(tag: Option<&str>) -> Arc<Localizer> {
     settings.locale = tag.map(str::to_string);
     let _ = settings.write(&paths);
     let domains = DOMAINS.read().unwrap_or_else(|e| e.into_inner()).clone();
-    let domains: Vec<&str> = if domains.is_empty() { vec!["common"] } else { domains.iter().map(String::as_str).collect() };
+    let domains: Vec<&str> = if domains.is_empty() {
+        vec!["common"]
+    } else {
+        domains.iter().map(String::as_str).collect()
+    };
     install(tag, &domains)
 }
 

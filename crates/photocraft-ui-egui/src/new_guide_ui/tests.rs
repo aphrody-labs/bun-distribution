@@ -5,15 +5,28 @@ use crate::menus::invoke as menu;
 
 /// One 4 × 2 inch document at 100 ppi, with the rulers in `unit`.
 fn app(unit: &str) -> (PhotocraftApp, egui::Context) {
-    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-    app.run("file.new", json!({"width": 400, "height": 200, "resolution": 100})).unwrap();
-    app.run("prefs.set", json!({"path": "unitsAndRulers.rulers", "value": unit})).unwrap();
+    let mut app = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
+    );
+    app.run(
+        "file.new",
+        json!({"width": 400, "height": 200, "resolution": 100}),
+    )
+    .unwrap();
+    app.run(
+        "prefs.set",
+        json!({"path": "unitsAndRulers.rulers", "value": unit}),
+    )
+    .unwrap();
     app.sync_views();
     (app, egui::Context::default())
 }
 
 fn open(app: &mut PhotocraftApp, ctx: &egui::Context) -> u64 {
-    menu(app, ctx, "view.newGuide", json!({})).unwrap()["dialog"].as_u64().unwrap()
+    menu(app, ctx, "view.newGuide", json!({})).unwrap()["dialog"]
+        .as_u64()
+        .unwrap()
 }
 
 fn set(app: &mut PhotocraftApp, d: u64, orientation: &str, position: &str) {
@@ -33,7 +46,10 @@ fn opens_in_the_ruler_unit_and_takes_photoshop_units() {
     let d = open(&mut app, &ctx);
     let f = &app.ui.dialog_mut(d).unwrap().fields;
     assert!(owns(f), "New Guide has its own dialog, not the generic one");
-    assert_eq!((f["orientation"].as_str(), f["position"].as_str()), (Some("horizontal"), Some("0 cm")));
+    assert_eq!(
+        (f["orientation"].as_str(), f["position"].as_str()),
+        (Some("horizontal"), Some("0 cm"))
+    );
     // Percent is of the width for a vertical guide.
     set(&mut app, d, "vertical", "50%");
     crate::dialogs::confirm(&mut app, d).unwrap();
@@ -42,7 +58,10 @@ fn opens_in_the_ruler_unit_and_takes_photoshop_units() {
     // number is in the ruler unit, as in Photoshop.
     let d = open(&mut app, &ctx);
     let f = &app.ui.dialog_mut(d).unwrap().fields;
-    assert_eq!((f["orientation"].as_str(), f["position"].as_str()), (Some("vertical"), Some("5.08 cm")));
+    assert_eq!(
+        (f["orientation"].as_str(), f["position"].as_str()),
+        (Some("vertical"), Some("5.08 cm"))
+    );
     set(&mut app, d, "horizontal", "2.54");
     crate::dialogs::confirm(&mut app, d).unwrap();
     assert_eq!(guides(&app), (vec![100.0], vec![200.0]));
@@ -71,8 +90,16 @@ fn a_refused_position_reopens_the_dialog_without_a_guide() {
     let err = crate::dialogs::confirm(&mut app, d).unwrap_err();
     assert!(err.contains("not a length"), "{err}");
     assert_eq!(guides(&app), (vec![], vec![]));
-    let again = app.ui.dialogs.iter().find(|d| owns(&d.fields)).expect("the dialog is open again");
-    assert_eq!(again.fields["position"], "12 furlongs", "what was typed is kept");
+    let again = app
+        .ui
+        .dialogs
+        .iter()
+        .find(|d| owns(&d.fields))
+        .expect("the dialog is open again");
+    assert_eq!(
+        again.fields["position"], "12 furlongs",
+        "what was typed is kept"
+    );
     assert_eq!(again.fields["orientation"], "vertical");
     assert_eq!(again.fields["__error"].as_str(), Some(err.as_str()));
     // A refused position is not remembered.
@@ -82,14 +109,27 @@ fn a_refused_position_reopens_the_dialog_without_a_guide() {
 #[test]
 fn remembered_values_that_no_longer_parse_are_ignored() {
     let (mut app, ctx) = app("mm");
-    app.session.prefs.edit(|p| p.dialogs.insert("view.newGuide".into(), json!({"orientation": "diagonal", "positionPx": "far away"})));
+    app.session.prefs.edit(|p| {
+        p.dialogs.insert(
+            "view.newGuide".into(),
+            json!({"orientation": "diagonal", "positionPx": "far away"}),
+        )
+    });
     let d = open(&mut app, &ctx);
     let f = &app.ui.dialog_mut(d).unwrap().fields;
-    assert_eq!((f["orientation"].as_str(), f["position"].as_str()), (Some("horizontal"), Some("0 mm")));
+    assert_eq!(
+        (f["orientation"].as_str(), f["position"].as_str()),
+        (Some("horizontal"), Some("0 mm"))
+    );
 }
 
 fn color_of(app: &PhotocraftApp, vertical: bool, position: f64) -> Option<[u8; 3]> {
-    app.session.active().unwrap().doc.guides.color(vertical, position)
+    app.session
+        .active()
+        .unwrap()
+        .doc
+        .guides
+        .color(vertical, position)
 }
 
 #[test]
@@ -103,7 +143,11 @@ fn guides_store_the_chosen_colour_cyan_by_default() {
     assert_eq!(color_of(&app, true, 10.0), Some([0x4a, 0xff, 0xff]));
     let d = open(&mut app, &ctx);
     set(&mut app, d, "vertical", "20");
-    app.ui.dialog_mut(d).unwrap().fields.insert("color".into(), json!("magenta"));
+    app.ui
+        .dialog_mut(d)
+        .unwrap()
+        .fields
+        .insert("color".into(), json!("magenta"));
     crate::dialogs::confirm(&mut app, d).unwrap();
     assert_eq!(color_of(&app, true, 20.0), Some([0xff, 0x00, 0xff]));
     // Custom… sends the picked colour; the list's choice and the custom colour open next time.
@@ -117,16 +161,27 @@ fn guides_store_the_chosen_colour_cyan_by_default() {
     assert_eq!(color_of(&app, false, 30.0), Some([0xab, 0xcd, 0xef]));
     let d = open(&mut app, &ctx);
     let f = &app.ui.dialog_mut(d).unwrap().fields;
-    assert_eq!((f["color"].as_str(), f["customColor"].as_str()), (Some("custom"), Some("#abcdef")));
+    assert_eq!(
+        (f["color"].as_str(), f["customColor"].as_str()),
+        (Some("custom"), Some("#abcdef"))
+    );
 }
 
 #[test]
 fn remembered_colours_that_are_not_on_the_list_are_ignored() {
     let (mut app, ctx) = app("pixels");
-    app.session.prefs.edit(|p| p.dialogs.insert("view.newGuide".into(), json!({"color": "puce", "customColor": "#zzzzzz"})));
+    app.session.prefs.edit(|p| {
+        p.dialogs.insert(
+            "view.newGuide".into(),
+            json!({"color": "puce", "customColor": "#zzzzzz"}),
+        )
+    });
     let d = open(&mut app, &ctx);
     let f = &app.ui.dialog_mut(d).unwrap().fields;
-    assert_eq!((f["color"].as_str(), f["customColor"].as_str()), (Some("cyan"), Some("#4affff")));
+    assert_eq!(
+        (f["color"].as_str(), f["customColor"].as_str()),
+        (Some("cyan"), Some("#4affff"))
+    );
 }
 
 #[test]
@@ -135,10 +190,25 @@ fn the_last_position_reopens_in_whatever_the_ruler_unit_is_now() {
     let d = open(&mut app, &ctx);
     set(&mut app, d, "horizontal", "1in");
     crate::dialogs::confirm(&mut app, d).unwrap();
-    for (unit, shown) in [("pixels", "100 px"), ("inches", "1 in"), ("mm", "25.4 mm"), ("points", "72 pt"), ("picas", "6 pica"), ("percent", "50 %")] {
-        app.run("prefs.set", json!({"path": "unitsAndRulers.rulers", "value": unit})).unwrap();
+    for (unit, shown) in [
+        ("pixels", "100 px"),
+        ("inches", "1 in"),
+        ("mm", "25.4 mm"),
+        ("points", "72 pt"),
+        ("picas", "6 pica"),
+        ("percent", "50 %"),
+    ] {
+        app.run(
+            "prefs.set",
+            json!({"path": "unitsAndRulers.rulers", "value": unit}),
+        )
+        .unwrap();
         let d = open(&mut app, &ctx);
-        assert_eq!(app.ui.dialog_mut(d).unwrap().fields["position"], shown, "{unit}");
+        assert_eq!(
+            app.ui.dialog_mut(d).unwrap().fields["position"],
+            shown,
+            "{unit}"
+        );
         crate::dialogs::cancel(&mut app, d).unwrap();
     }
 }

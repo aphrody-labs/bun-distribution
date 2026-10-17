@@ -221,7 +221,11 @@ fn key_to_intra_only(frame: &[u8], refresh: u8, reset: u32) -> Vec<u8> {
 fn reference(ivf: &Path, pix_fmt: &str) -> Vec<u8> {
     let yuv = ivf.with_extension("yuv");
     let _ = std::fs::remove_file(&yuv);
-    assert!(common::reference_decode(ivf, &yuv, pix_fmt), "ffmpeg failed on {}", ivf.display());
+    assert!(
+        common::reference_decode(ivf, &yuv, pix_fmt),
+        "ffmpeg failed on {}",
+        ivf.display()
+    );
     let r = std::fs::read(&yuv).unwrap();
     let _ = std::fs::remove_file(&yuv);
     r
@@ -232,9 +236,28 @@ fn encode(name: &str, w: u32, h: u32, frames: u32, extra: &[&str]) -> Option<Vec
     let path = common::fixtures_dir().join(format!("{name}.ivf"));
     if !path.exists() {
         let mut c = std::process::Command::new(ff);
-        c.args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i"]);
-        c.arg(format!("testsrc2=size={w}x{h}:rate=25,noise=alls=8:allf=t+u"));
-        c.args(["-frames:v", &frames.to_string(), "-c:v", "libvpx-vp9", "-b:v", "500k", "-frame-parallel", "0"]);
+        c.args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+        ]);
+        c.arg(format!(
+            "testsrc2=size={w}x{h}:rate=25,noise=alls=8:allf=t+u"
+        ));
+        c.args([
+            "-frames:v",
+            &frames.to_string(),
+            "-c:v",
+            "libvpx-vp9",
+            "-b:v",
+            "500k",
+            "-frame-parallel",
+            "0",
+        ]);
         c.args(extra);
         c.args(["-f", "ivf"]).arg(&path);
         if !common::run(&mut c) {
@@ -242,7 +265,12 @@ fn encode(name: &str, w: u32, h: u32, frames: u32, extra: &[&str]) -> Option<Vec
         }
     }
     let d = std::fs::read(&path).unwrap();
-    Some(common::ivf_frames(&d).into_iter().map(|f| f.to_vec()).collect())
+    Some(
+        common::ivf_frames(&d)
+            .into_iter()
+            .map(|f| f.to_vec())
+            .collect(),
+    )
 }
 
 fn check(name: &str, frames: &[Vec<u8>]) {
@@ -258,7 +286,13 @@ fn scaled_splice(name: &str, w2: u32, h2: u32, interp: &[&str]) -> Option<Vec<Ve
     let a = encode("syn_base_352", 352, 288, 6, &[])?;
     let mut args = vec!["-error-resilient", "1"];
     args.extend_from_slice(interp);
-    let b = encode(&format!("syn_er_{w2}x{h2}{}", interp.join("")), w2, h2, 10, &args)?;
+    let b = encode(
+        &format!("syn_er_{w2}x{h2}{}", interp.join("")),
+        w2,
+        h2,
+        10,
+        &args,
+    )?;
     let mut frames: Vec<Vec<u8>> = a[..4].to_vec();
     for f in &b[1..] {
         frames.push(explicit_size(f, w2, h2));
@@ -269,7 +303,9 @@ fn scaled_splice(name: &str, w2: u32, h2: u32, interp: &[&str]) -> Option<Vec<Ve
 
 #[test]
 fn scaled_reference_downscale() {
-    let Some(f) = scaled_splice("down", 256, 208, &[]) else { return };
+    let Some(f) = scaled_splice("down", 256, 208, &[]) else {
+        return;
+    };
     let mut dec = filmcraft_vp9::Decoder::with_threads(1);
     for c in &f {
         let _ = dec.decode(c, 0);
@@ -280,19 +316,25 @@ fn scaled_reference_downscale() {
 
 #[test]
 fn splice_same_size_control() {
-    let Some(f) = scaled_splice("same", 352, 288, &[]) else { return };
+    let Some(f) = scaled_splice("same", 352, 288, &[]) else {
+        return;
+    };
     check("syn_same", &f);
 }
 
 #[test]
 fn scaled_reference_upscale() {
-    let Some(f) = scaled_splice("up", 480, 400, &[]) else { return };
+    let Some(f) = scaled_splice("up", 480, 400, &[]) else {
+        return;
+    };
     check("syn_scaled_up", &f);
 }
 
 #[test]
 fn scaled_reference_odd_sizes() {
-    let Some(f) = scaled_splice("odd", 301, 199, &[]) else { return };
+    let Some(f) = scaled_splice("odd", 301, 199, &[]) else {
+        return;
+    };
     check("syn_scaled_odd", &f);
 }
 
@@ -317,8 +359,21 @@ fn build_superframe(frames: &[Vec<u8>]) -> Vec<u8> {
 fn intra_only_frames() {
     // Error resilient source: the frame after the intra-only frame does not use the previous
     // frame's motion vectors either way, so its symbols parse as the encoder intended.
-    let Some(src) = encode("syn_er_g8", 352, 288, 20, &["-g", "8", "-error-resilient", "1"]) else { return };
-    let keys: Vec<usize> = src.iter().enumerate().filter(|(_, f)| f[0] & 0x04 == 0 && f[0] & 0x08 == 0).map(|(i, _)| i).collect();
+    let Some(src) = encode(
+        "syn_er_g8",
+        352,
+        288,
+        20,
+        &["-g", "8", "-error-resilient", "1"],
+    ) else {
+        return;
+    };
+    let keys: Vec<usize> = src
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| f[0] & 0x04 == 0 && f[0] & 0x08 == 0)
+        .map(|(i, _)| i)
+        .collect();
     assert!(keys.len() >= 2, "need a second key frame: {keys:?}");
     for (reset, refresh, show_slot) in [(3u32, 0xffu8, 0u8), (2, 0x05, 2), (0, 0x10, 4)] {
         let mut frames = Vec::new();
@@ -342,7 +397,9 @@ fn intra_only_frames() {
 
 #[test]
 fn show_existing_frames() {
-    let Some(src) = encode("syn_er_352", 352, 288, 6, &["-error-resilient", "1"]) else { return };
+    let Some(src) = encode("syn_er_352", 352, 288, 6, &["-error-resilient", "1"]) else {
+        return;
+    };
     let mut frames = Vec::new();
     for (i, f) in src.iter().enumerate() {
         frames.push(f.clone());

@@ -12,10 +12,10 @@ pub use type_data::*;
 mod tests {
     use super::*;
     use crate::{
+        FromReflect, PartialReflect, Reflect,
         structs::{DynamicStruct, Struct},
         tuple_struct::DynamicTupleStruct,
         type_registry::TypeRegistry,
-        FromReflect, PartialReflect, Reflect,
     };
     use serde::de::DeserializeSeed;
 
@@ -182,9 +182,11 @@ mod tests {
         let expected = value.to_dynamic().unwrap();
         let result = reflect_deserializer.deserialize(&mut deserializer).unwrap();
 
-        assert!(expected
-            .reflect_partial_eq(result.as_partial_reflect())
-            .unwrap());
+        assert!(
+            expected
+                .reflect_partial_eq(result.as_partial_reflect())
+                .unwrap()
+        );
     }
 
     mod type_data {

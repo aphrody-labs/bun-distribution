@@ -38,14 +38,20 @@ impl LastSession {
                     .filter_map(|f| {
                         let path = f["path"].as_str().filter(|p| !p.is_empty())?.to_string();
                         // `go_to_page` clamps a page past the end.
-                        let page = f["page"].as_u64().and_then(|p| usize::try_from(p).ok()).unwrap_or(0);
+                        let page = f["page"]
+                            .as_u64()
+                            .and_then(|p| usize::try_from(p).ok())
+                            .unwrap_or(0);
                         Some(SessionFile { path, page })
                     })
                     .take(MAX_FILES)
                     .collect()
             })
             .unwrap_or_default();
-        Self { files, active: v["active"].as_str().map(str::to_string) }
+        Self {
+            files,
+            active: v["active"].as_str().map(str::to_string),
+        }
     }
 }
 
@@ -53,7 +59,8 @@ impl LastSession {
 /// Windows' `\\?\` prefix, which `canonicalize` adds).
 #[cfg(not(target_arch = "wasm32"))]
 fn absolute(path: &str) -> String {
-    std::path::absolute(path).map_or_else(|_| path.to_string(), |p| p.to_string_lossy().into_owned())
+    std::path::absolute(path)
+        .map_or_else(|_| path.to_string(), |p| p.to_string_lossy().into_owned())
 }
 
 impl PdfCraftApp {
@@ -62,8 +69,23 @@ impl PdfCraftApp {
     pub(crate) fn open_session(&self) -> LastSession {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let path = |v: &crate::DocView| self.session.get(v.id).and_then(|d| d.path.as_deref()).map(absolute);
-            let files = self.views.iter().filter_map(|v| Some(SessionFile { path: path(v)?, page: v.current })).take(MAX_FILES).collect();
+            let path = |v: &crate::DocView| {
+                self.session
+                    .get(v.id)
+                    .and_then(|d| d.path.as_deref())
+                    .map(absolute)
+            };
+            let files = self
+                .views
+                .iter()
+                .filter_map(|v| {
+                    Some(SessionFile {
+                        path: path(v)?,
+                        page: v.current,
+                    })
+                })
+                .take(MAX_FILES)
+                .collect();
             let active = self.active.and_then(|i| self.views.get(i)).and_then(path);
             LastSession { files, active }
         }
@@ -103,15 +125,30 @@ impl PdfCraftApp {
         let last = std::mem::take(&mut self.last_session);
         #[cfg(not(target_arch = "wasm32"))]
         if self.reopen_last_session {
-            let skip: Vec<String> =
-                skip.iter().map(|p| absolute(p)).chain(self.recoverable.iter().filter_map(|m| m.path.as_deref().map(absolute))).collect();
+            let skip: Vec<String> = skip
+                .iter()
+                .map(|p| absolute(p))
+                .chain(
+                    self.recoverable
+                        .iter()
+                        .filter_map(|m| m.path.as_deref().map(absolute)),
+                )
+                .collect();
             let mut active = None;
             let mut prompt = self.password_prompt.take();
             for f in &last.files {
                 let open = |app: &Self| {
-                    app.views.iter().any(|v| app.session.get(v.id).and_then(|d| d.path.as_deref()).map(absolute).as_deref() == Some(f.path.as_str()))
+                    app.views.iter().any(|v| {
+                        app.session
+                            .get(v.id)
+                            .and_then(|d| d.path.as_deref())
+                            .map(absolute)
+                            .as_deref()
+                            == Some(f.path.as_str())
+                    })
                 };
-                if skip.contains(&f.path) || !std::path::Path::new(&f.path).is_file() || open(self) {
+                if skip.contains(&f.path) || !std::path::Path::new(&f.path).is_file() || open(self)
+                {
                     continue;
                 }
                 let before = self.views.len();
@@ -152,8 +189,18 @@ mod tests {
         let pages: Vec<(&str, usize)> = s.files.iter().map(|f| (f.path.as_str(), f.page)).collect();
         assert_eq!(pages, [("/a.pdf", 0), ("/b.pdf", 0), ("/c.pdf", 7)]);
         assert_eq!(s.active, None);
-        let many: Vec<serde_json::Value> = (0..1000).map(|i| serde_json::json!({"path": format!("/{i}.pdf")})).collect();
-        assert_eq!(LastSession::from_json(&serde_json::json!({"files": many})).files.len(), MAX_FILES);
-        assert_eq!(LastSession::from_json(&serde_json::json!("garbage")), LastSession::default());
+        let many: Vec<serde_json::Value> = (0..1000)
+            .map(|i| serde_json::json!({"path": format!("/{i}.pdf")}))
+            .collect();
+        assert_eq!(
+            LastSession::from_json(&serde_json::json!({"files": many}))
+                .files
+                .len(),
+            MAX_FILES
+        );
+        assert_eq!(
+            LastSession::from_json(&serde_json::json!("garbage")),
+            LastSession::default()
+        );
     }
 }

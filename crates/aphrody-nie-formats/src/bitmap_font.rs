@@ -57,7 +57,10 @@ impl BitmapFont {
                 return Err("font glyph exceeds atlas bounds".into());
             }
         }
-        Ok(Self { atlas_rgba: pixels, metrics })
+        Ok(Self {
+            atlas_rgba: pixels,
+            metrics,
+        })
     }
 
     /// Render bounded lines with native cell spacing. Unknown glyphs fail explicitly.
@@ -106,7 +109,11 @@ impl BitmapFont {
                 color,
             );
         }
-        Ok(TextRaster { width, height, rgba })
+        Ok(TextRaster {
+            width,
+            height,
+            rgba,
+        })
     }
 }
 
@@ -133,7 +140,11 @@ mod tests {
             metrics: FontMetrics {
                 atlas_width: 1,
                 atlas_height: 1,
-                dims: FontDimensions { cell_height: 1, ascent: 1, descent: 0 },
+                dims: FontDimensions {
+                    cell_height: 1,
+                    ascent: 1,
+                    descent: 0,
+                },
                 glyphs: [(glyph.codepoint, glyph)].into(),
                 ..Default::default()
             },
@@ -170,15 +181,27 @@ mod tests {
         assert!(blank_lines.rgba[..12].iter().all(|v| *v == 0));
         assert_eq!(&blank_lines.rgba[12..16], &[4, 8, 12, 211]);
         assert!(blank_lines.rgba[24..].iter().all(|v| *v == 0));
-        assert!(font.render("é\nx", [255; 4]).unwrap_err().contains("U+0078"));
+        assert!(
+            font.render("é\nx", [255; 4])
+                .unwrap_err()
+                .contains("U+0078")
+        );
     }
 
     #[test]
     fn multiline_raster_dimensions_are_bounded_before_allocation() {
         let mut font = synthetic_font();
         font.metrics.dims.cell_height = 512;
-        assert!(font.render(&"\n".repeat(32), [255; 4]).unwrap_err().contains("dimensions limit"));
-        assert!(font.render(&"\n".repeat(513), [255; 4]).unwrap_err().contains("glyph limit"));
+        assert!(
+            font.render(&"\n".repeat(32), [255; 4])
+                .unwrap_err()
+                .contains("dimensions limit")
+        );
+        assert!(
+            font.render(&"\n".repeat(513), [255; 4])
+                .unwrap_err()
+                .contains("glyph limit")
+        );
     }
 
     #[test]
@@ -192,7 +215,15 @@ mod tests {
         let font = BitmapFont::from_bytes(&config, &texture).unwrap();
         let a = font.render("A", [255; 4]).unwrap();
         assert_eq!((a.width, a.height), (39, 71));
-        assert_eq!(a.rgba.as_chunks::<4>().0.iter().filter(|p| p[3] > 0).count(), 544);
+        assert_eq!(
+            a.rgba
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|p| p[3] > 0)
+                .count(),
+            544
+        );
         for text in ["Créer avatar", "Équipe", "éèêëàâçîïôùûüœŒ’…", "木語金"]
         {
             let raster = font.render(text, [255; 4]).unwrap();

@@ -40,18 +40,35 @@ pub fn has_rtl(s: &str) -> bool {
 
 /// `s` (one line; line breaks show as spaces) in display order.
 pub fn visual_line(s: &str) -> VisualLine {
-    let chars: Vec<char> = s.chars().map(|c| if c.is_control() { ' ' } else { c }).collect();
+    let chars: Vec<char> = s
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect();
     let len = chars.len();
     if !chars.iter().copied().any(is_rtl_char) {
-        let clusters = (0..len).map(|i| Cluster { logical: i..i + 1, shown: i..i + 1, rtl: false }).collect();
-        return VisualLine { text: chars.into_iter().collect(), clusters, rtl_para: false, len };
+        let clusters = (0..len)
+            .map(|i| Cluster {
+                logical: i..i + 1,
+                shown: i..i + 1,
+                rtl: false,
+            })
+            .collect();
+        return VisualLine {
+            text: chars.into_iter().collect(),
+            clusters,
+            rtl_para: false,
+            len,
+        };
     }
     let flat: String = chars.iter().collect();
     let info = unicode_bidi::BidiInfo::new(&flat, None);
     let (levels, rtl_para) = match info.paragraphs.first() {
         Some(p) => {
             let lv = info.reordered_levels_per_char(p, p.range.clone());
-            (lv.iter().map(|l| l.number()).collect::<Vec<u8>>(), p.level.is_rtl())
+            (
+                lv.iter().map(|l| l.number()).collect::<Vec<u8>>(),
+                p.level.is_rtl(),
+            )
         }
         None => (vec![0; len], false),
     };
@@ -78,7 +95,11 @@ pub fn visual_line(s: &str) -> VisualLine {
                 i += 1;
             }
         }
-        while let Some(c) = chars.get(i).copied().filter(|c| joining(*c) == Join::Transparent) {
+        while let Some(c) = chars
+            .get(i)
+            .copied()
+            .filter(|c| joining(*c) == Join::Transparent)
+        {
             shown.push(c);
             i += 1;
         }
@@ -93,13 +114,24 @@ pub fn visual_line(s: &str) -> VisualLine {
     let mut clusters = Vec::with_capacity(order.len());
     let mut at = 0;
     for k in order {
-        let Some((range, shown, level)) = logical.get(k) else { continue };
+        let Some((range, shown, level)) = logical.get(k) else {
+            continue;
+        };
         let n = shown.chars().count();
         text.push_str(shown);
-        clusters.push(Cluster { logical: range.clone(), shown: at..at + n, rtl: level % 2 == 1 });
+        clusters.push(Cluster {
+            logical: range.clone(),
+            shown: at..at + n,
+            rtl: level % 2 == 1,
+        });
         at += n;
     }
-    VisualLine { text, clusters, rtl_para, len }
+    VisualLine {
+        text,
+        clusters,
+        rtl_para,
+        len,
+    }
 }
 
 /// The longest start of `s` that, with an ellipsis after it, `fits` (given how it shows); `s`
@@ -111,9 +143,20 @@ pub fn elide(s: &str, fits: impl Fn(&VisualLine) -> bool) -> VisualLine {
     }
     // Cut only between clusters (never between a letter and its marks).
     let chars: Vec<char> = s.chars().collect();
-    let cuts: Vec<usize> = (1..chars.len()).filter(|i| chars.get(*i).is_some_and(|c| joining(*c) != Join::Transparent)).collect();
+    let cuts: Vec<usize> = (1..chars.len())
+        .filter(|i| {
+            chars
+                .get(*i)
+                .is_some_and(|c| joining(*c) != Join::Transparent)
+        })
+        .collect();
     let with = |n: usize| -> VisualLine {
-        let mut t: String = chars.iter().take(n).collect::<String>().trim_end().to_string();
+        let mut t: String = chars
+            .iter()
+            .take(n)
+            .collect::<String>()
+            .trim_end()
+            .to_string();
         t.push('…');
         visual_line(&t)
     };
@@ -142,7 +185,13 @@ impl VisualLine {
             .iter()
             .map(|c| {
                 let l = char_edges.get(c.shown.start).map_or(x, |e| e.0);
-                let r = c.shown.end.checked_sub(1).filter(|_| !c.shown.is_empty()).and_then(|k| char_edges.get(k)).map_or(l, |e| e.1);
+                let r = c
+                    .shown
+                    .end
+                    .checked_sub(1)
+                    .filter(|_| !c.shown.is_empty())
+                    .and_then(|k| char_edges.get(k))
+                    .map_or(l, |e| e.1);
                 x = r;
                 (l, r)
             })
@@ -157,9 +206,18 @@ impl VisualLine {
         let at = |k: usize, frac: f64| -> Option<f64> {
             let c = self.clusters.get(k)?;
             let (l, r) = edges.get(k).copied()?;
-            Some(if c.rtl { r - (r - l) * frac } else { l + (r - l) * frac })
+            Some(if c.rtl {
+                r - (r - l) * frac
+            } else {
+                l + (r - l) * frac
+            })
         };
-        if let Some((k, c)) = self.clusters.iter().enumerate().find(|(_, c)| c.logical.contains(&i)) {
+        if let Some((k, c)) = self
+            .clusters
+            .iter()
+            .enumerate()
+            .find(|(_, c)| c.logical.contains(&i))
+        {
             let frac = (i - c.logical.start) as f64 / c.logical.len().max(1) as f64;
             return at(k, frac).unwrap_or(0.0);
         }
@@ -174,10 +232,18 @@ impl VisualLine {
     pub fn hit(&self, x: f64, edges: &[(f64, f64)]) -> usize {
         for (c, (l, r)) in self.clusters.iter().zip(edges) {
             if x < (l + r) / 2.0 {
-                return if c.rtl { c.logical.end } else { c.logical.start };
+                return if c.rtl {
+                    c.logical.end
+                } else {
+                    c.logical.start
+                };
             }
             if x < *r {
-                return if c.rtl { c.logical.start } else { c.logical.end };
+                return if c.rtl {
+                    c.logical.start
+                } else {
+                    c.logical.end
+                };
             }
         }
         // Past the right end: the end of a left-to-right line, the start of a right-to-left one.
@@ -195,8 +261,19 @@ impl VisualLine {
         (0..=self.len)
             .filter(|k| *k != i)
             .map(|k| (k, self.caret_x(k, edges)))
-            .filter(|(_, cx)| if right { *cx > x + 0.01 } else { *cx < x - 0.01 })
-            .min_by(|a, b| (a.1 - x).abs().total_cmp(&(b.1 - x).abs()).then(a.0.abs_diff(i).cmp(&b.0.abs_diff(i))))
+            .filter(|(_, cx)| {
+                if right {
+                    *cx > x + 0.01
+                } else {
+                    *cx < x - 0.01
+                }
+            })
+            .min_by(|a, b| {
+                (a.1 - x)
+                    .abs()
+                    .total_cmp(&(b.1 - x).abs())
+                    .then(a.0.abs_diff(i).cmp(&b.0.abs_diff(i)))
+            })
             .map_or(i, |(k, _)| k)
     }
 
@@ -212,8 +289,15 @@ impl VisualLine {
             }
             // Part of a cluster (a lam-alef ligature): its share, from the leading edge.
             let n = c.logical.len().max(1) as f64;
-            let (f0, f1) = ((s - c.logical.start) as f64 / n, (e - c.logical.start) as f64 / n);
-            let (x0, x1) = if c.rtl { (r - (r - l) * f1, r - (r - l) * f0) } else { (l + (r - l) * f0, l + (r - l) * f1) };
+            let (f0, f1) = (
+                (s - c.logical.start) as f64 / n,
+                (e - c.logical.start) as f64 / n,
+            );
+            let (x0, x1) = if c.rtl {
+                (r - (r - l) * f1, r - (r - l) * f0)
+            } else {
+                (l + (r - l) * f0, l + (r - l) * f1)
+            };
             match out.last_mut() {
                 Some(last) if (last.1 - x0).abs() < 0.5 => last.1 = x1,
                 _ => out.push((x0, x1)),
@@ -320,7 +404,12 @@ const FORMS: [(char, char, u8); 51] = [
 ];
 
 /// Lam-alef ligatures: (alef, isolated form; the final form follows it).
-const LAM_ALEF: [(char, char); 4] = [('\u{0622}', '\u{FEF5}'), ('\u{0623}', '\u{FEF7}'), ('\u{0625}', '\u{FEF9}'), ('\u{0627}', '\u{FEFB}')];
+const LAM_ALEF: [(char, char); 4] = [
+    ('\u{0622}', '\u{FEF5}'),
+    ('\u{0623}', '\u{FEF7}'),
+    ('\u{0625}', '\u{FEF9}'),
+    ('\u{0627}', '\u{FEFB}'),
+];
 
 fn forms(c: char) -> Option<(char, u8)> {
     FORMS.iter().find(|f| f.0 == c).map(|f| (f.1, f.2))
@@ -359,17 +448,36 @@ fn shape_arabic(chars: &[char]) -> Vec<Option<Shaped>> {
     let mut out = vec![None; chars.len()];
     let kinds: Vec<Join> = chars.iter().map(|c| joining(*c)).collect();
     // The nearest non-transparent neighbour's joining type.
-    let prev = |i: usize| (0..i).rev().map(|k| kinds.get(k).copied().unwrap_or(Join::None)).find(|j| *j != Join::Transparent).unwrap_or(Join::None);
-    let next =
-        |i: usize| (i + 1..chars.len()).map(|k| kinds.get(k).copied().unwrap_or(Join::None)).find(|j| *j != Join::Transparent).unwrap_or(Join::None);
+    let prev = |i: usize| {
+        (0..i)
+            .rev()
+            .map(|k| kinds.get(k).copied().unwrap_or(Join::None))
+            .find(|j| *j != Join::Transparent)
+            .unwrap_or(Join::None)
+    };
+    let next = |i: usize| {
+        (i + 1..chars.len())
+            .map(|k| kinds.get(k).copied().unwrap_or(Join::None))
+            .find(|j| *j != Join::Transparent)
+            .unwrap_or(Join::None)
+    };
     let mut i = 0;
     while i < chars.len() {
-        let (Some(c), Some(kind)) = (chars.get(i).copied(), kinds.get(i).copied()) else { break };
+        let (Some(c), Some(kind)) = (chars.get(i).copied(), kinds.get(i).copied()) else {
+            break;
+        };
         let joins_before = matches!(prev(i), Join::Dual | Join::Causing);
         if c == '\u{0644}'
-            && let Some(lig) = chars.get(i + 1).and_then(|a| LAM_ALEF.iter().find(|l| l.0 == *a)).map(|l| l.1)
+            && let Some(lig) = chars
+                .get(i + 1)
+                .and_then(|a| LAM_ALEF.iter().find(|l| l.0 == *a))
+                .map(|l| l.1)
         {
-            let form = if joins_before { char::from_u32(lig as u32 + 1).unwrap_or(lig) } else { lig };
+            let form = if joins_before {
+                char::from_u32(lig as u32 + 1).unwrap_or(lig)
+            } else {
+                lig
+            };
             if let Some(slot) = out.get_mut(i) {
                 *slot = Some(Shaped::Ligature(form));
             }
@@ -377,7 +485,8 @@ fn shape_arabic(chars: &[char]) -> Vec<Option<Shaped>> {
             continue;
         }
         if let Some((iso, n)) = forms(c) {
-            let joins_after = kind == Join::Dual && matches!(next(i), Join::Right | Join::Dual | Join::Causing);
+            let joins_after =
+                kind == Join::Dual && matches!(next(i), Join::Right | Join::Dual | Join::Causing);
             let offset = match (n, joins_before, joins_after) {
                 (1, _, _) => 0,
                 (_, false, false) => 0,

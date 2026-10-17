@@ -14,7 +14,12 @@ pub enum Unit {
 }
 
 impl Unit {
-    pub const ALL: [Unit; 4] = [Unit::Millimetres, Unit::Centimetres, Unit::Inches, Unit::Points];
+    pub const ALL: [Unit; 4] = [
+        Unit::Millimetres,
+        Unit::Centimetres,
+        Unit::Inches,
+        Unit::Points,
+    ];
 
     /// Units per PDF point.
     pub fn per_point(self) -> f64 {
@@ -62,7 +67,12 @@ impl Unit {
     /// A page size given in points, e.g. "210.0 × 297.0 mm".
     pub fn size(self, width_pt: f64, height_pt: f64) -> String {
         let (k, d) = (self.per_point(), self.decimals());
-        format!("{:.d$} × {:.d$} {}", width_pt * k, height_pt * k, self.label())
+        format!(
+            "{:.d$} × {:.d$} {}",
+            width_pt * k,
+            height_pt * k,
+            self.label()
+        )
     }
 }
 
@@ -70,7 +80,11 @@ impl Unit {
 /// `None` without a region (`C`, `POSIX`, `en`).
 pub(crate) fn unit_for_tag(tag: &str) -> Option<Unit> {
     let tag = tag.split(['.', '@']).next().unwrap_or_default();
-    let region = tag.split(['-', '_']).skip(1).filter(|p| p.len() == 2 && p.chars().all(|c| c.is_ascii_alphabetic())).last()?;
+    let region = tag
+        .split(['-', '_'])
+        .skip(1)
+        .filter(|p| p.len() == 2 && p.chars().all(|c| c.is_ascii_alphabetic()))
+        .last()?;
     Some(match region.to_ascii_uppercase().as_str() {
         "US" | "LR" | "MM" => Unit::Inches,
         _ => Unit::Millimetres,
@@ -81,7 +95,9 @@ pub(crate) fn unit_for_tag(tag: &str) -> Option<Unit> {
 fn detect() -> Option<Unit> {
     // The system's own measurement setting first: a terminal's LANG is often en_US whatever the region.
     #[cfg(target_os = "macos")]
-    if let Ok(out) = std::process::Command::new("/usr/bin/defaults").args(["read", "-g", "AppleMeasurementUnits"]).output()
+    if let Ok(out) = std::process::Command::new("/usr/bin/defaults")
+        .args(["read", "-g", "AppleMeasurementUnits"])
+        .output()
         && out.status.success()
     {
         match String::from_utf8_lossy(&out.stdout).trim() {
@@ -93,7 +109,9 @@ fn detect() -> Option<Unit> {
     // AppleMeasurementUnits only exists once someone changed Measurement system by hand, and apps
     // started from the Finder get no LANG, so the region of the system locale decides next.
     #[cfg(target_os = "macos")]
-    if let Ok(out) = std::process::Command::new("/usr/bin/defaults").args(["read", "-g", "AppleLocale"]).output()
+    if let Ok(out) = std::process::Command::new("/usr/bin/defaults")
+        .args(["read", "-g", "AppleLocale"])
+        .output()
         && out.status.success()
         && let Some(unit) = unit_for_tag(String::from_utf8_lossy(&out.stdout).trim())
     {
@@ -105,7 +123,12 @@ fn detect() -> Option<Unit> {
     if let Some(unit) = windows_measure().and_then(|v| unit_for_imeasure(&v)) {
         return Some(unit);
     }
-    ["LC_ALL", "LC_MEASUREMENT", "LANG"].iter().find_map(|var| std::env::var(var).ok().filter(|v| !v.is_empty()).and_then(|v| unit_for_tag(&v)))
+    ["LC_ALL", "LC_MEASUREMENT", "LANG"].iter().find_map(|var| {
+        std::env::var(var)
+            .ok()
+            .filter(|v| !v.is_empty())
+            .and_then(|v| unit_for_tag(&v))
+    })
 }
 
 /// The unit for the Windows `iMeasure` value (Region ▸ Measurement system): "0" metric, "1" U.S.
@@ -124,7 +147,14 @@ pub(crate) fn unit_for_imeasure(value: &str) -> Option<Unit> {
 #[cfg(target_os = "windows")]
 fn windows_measure() -> Option<String> {
     use winsafe::{HKEY, RegistryValue, co::RRF};
-    match HKEY::CURRENT_USER.RegGetValue(Some("Control Panel\\International"), Some("iMeasure"), RRF::RT_REG_SZ).ok()? {
+    match HKEY::CURRENT_USER
+        .RegGetValue(
+            Some("Control Panel\\International"),
+            Some("iMeasure"),
+            RRF::RT_REG_SZ,
+        )
+        .ok()?
+    {
         RegistryValue::Sz(v) => Some(v),
         _ => None,
     }
@@ -190,6 +220,9 @@ mod tests {
             let v = serde_json::to_value(u).unwrap();
             assert_eq!(serde_json::from_value::<Unit>(v).unwrap(), u);
         }
-        assert_eq!(serde_json::to_value(Unit::Millimetres).unwrap(), "millimetres");
+        assert_eq!(
+            serde_json::to_value(Unit::Millimetres).unwrap(),
+            "millimetres"
+        );
     }
 }

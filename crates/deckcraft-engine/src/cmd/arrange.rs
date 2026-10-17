@@ -9,10 +9,42 @@ use crate::{Result, Session};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("arrange.bringToFront", "Bring to Front", ["Arrange"], Some("Cmd+Shift+]"), "{ids?}", has_selection, |s, p| order(s, p, 2)),
-        cmd!("arrange.bringForward", "Bring Forward", ["Arrange"], Some("Cmd+]"), "{ids?}", has_selection, |s, p| order(s, p, 1)),
-        cmd!("arrange.sendBackward", "Send Backward", ["Arrange"], Some("Cmd+["), "{ids?}", has_selection, |s, p| order(s, p, -1)),
-        cmd!("arrange.sendToBack", "Send to Back", ["Arrange"], Some("Cmd+Shift+["), "{ids?}", has_selection, |s, p| order(s, p, -2)),
+        cmd!(
+            "arrange.bringToFront",
+            "Bring to Front",
+            ["Arrange"],
+            Some("Cmd+Shift+]"),
+            "{ids?}",
+            has_selection,
+            |s, p| order(s, p, 2)
+        ),
+        cmd!(
+            "arrange.bringForward",
+            "Bring Forward",
+            ["Arrange"],
+            Some("Cmd+]"),
+            "{ids?}",
+            has_selection,
+            |s, p| order(s, p, 1)
+        ),
+        cmd!(
+            "arrange.sendBackward",
+            "Send Backward",
+            ["Arrange"],
+            Some("Cmd+["),
+            "{ids?}",
+            has_selection,
+            |s, p| order(s, p, -1)
+        ),
+        cmd!(
+            "arrange.sendToBack",
+            "Send to Back",
+            ["Arrange"],
+            Some("Cmd+Shift+["),
+            "{ids?}",
+            has_selection,
+            |s, p| order(s, p, -2)
+        ),
         cmd!(
             "arrange.reorder",
             "Reorder Objects",
@@ -22,9 +54,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_slide,
             reorder
         ),
-        cmd!("arrange.group", "Group", ["Arrange"], Some("Cmd+Alt+G"), "{ids?}", has_two, group),
-        cmd!("arrange.ungroup", "Ungroup", ["Arrange"], Some("Cmd+Alt+Shift+G"), "{ids?}", has_selection, ungroup),
-        cmd!("arrange.regroup", "Regroup", ["Arrange"], Some("Cmd+Alt+J"), "{}", has_doc, regroup),
+        cmd!(
+            "arrange.group",
+            "Group",
+            ["Arrange"],
+            Some("Cmd+Alt+G"),
+            "{ids?}",
+            has_two,
+            group
+        ),
+        cmd!(
+            "arrange.ungroup",
+            "Ungroup",
+            ["Arrange"],
+            Some("Cmd+Alt+Shift+G"),
+            "{ids?}",
+            has_selection,
+            ungroup
+        ),
+        cmd!(
+            "arrange.regroup",
+            "Regroup",
+            ["Arrange"],
+            Some("Cmd+Alt+J"),
+            "{}",
+            has_doc,
+            regroup
+        ),
         cmd!(
             "arrange.align",
             "Align",
@@ -43,16 +99,51 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             distribute
         ),
-        cmd!("arrange.rotateLeft", "Rotate Left 90°", ["Arrange", "Rotate or Flip"], None, "{ids?}", has_selection, |s, p| s
-            .execute("shape.rotate", &with_param(p, "by", json!(-90.0)))),
-        cmd!("arrange.rotateRight", "Rotate Right 90°", ["Arrange", "Rotate or Flip"], None, "{ids?}", has_selection, |s, p| s
-            .execute("shape.rotate", &with_param(p, "by", json!(90.0)))),
-        cmd!("arrange.flipHorizontal", "Flip Horizontal", ["Arrange", "Rotate or Flip"], None, "{ids?}", has_selection, |s, p| s
-            .execute("shape.flip", &with_param(p, "axis", json!("horizontal")))),
-        cmd!("arrange.flipVertical", "Flip Vertical", ["Arrange", "Rotate or Flip"], None, "{ids?}", has_selection, |s, p| s
-            .execute("shape.flip", &with_param(p, "axis", json!("vertical")))),
-        cmd!("arrange.nudge", "Nudge", [], None, "{dx, dy, ids?} (arrow keys: 6 pt, with Alt 1 pt)", has_selection, |s, p| s
-            .execute("shape.move", p)),
+        cmd!(
+            "arrange.rotateLeft",
+            "Rotate Left 90°",
+            ["Arrange", "Rotate or Flip"],
+            None,
+            "{ids?}",
+            has_selection,
+            |s, p| s.execute("shape.rotate", &with_param(p, "by", json!(-90.0)))
+        ),
+        cmd!(
+            "arrange.rotateRight",
+            "Rotate Right 90°",
+            ["Arrange", "Rotate or Flip"],
+            None,
+            "{ids?}",
+            has_selection,
+            |s, p| s.execute("shape.rotate", &with_param(p, "by", json!(90.0)))
+        ),
+        cmd!(
+            "arrange.flipHorizontal",
+            "Flip Horizontal",
+            ["Arrange", "Rotate or Flip"],
+            None,
+            "{ids?}",
+            has_selection,
+            |s, p| s.execute("shape.flip", &with_param(p, "axis", json!("horizontal")))
+        ),
+        cmd!(
+            "arrange.flipVertical",
+            "Flip Vertical",
+            ["Arrange", "Rotate or Flip"],
+            None,
+            "{ids?}",
+            has_selection,
+            |s, p| s.execute("shape.flip", &with_param(p, "axis", json!("vertical")))
+        ),
+        cmd!(
+            "arrange.nudge",
+            "Nudge",
+            [],
+            None,
+            "{dx, dy, ids?} (arrow keys: 6 pt, with Alt 1 pt)",
+            has_selection,
+            |s, p| s.execute("shape.move", p)
+        ),
     ]
 }
 
@@ -98,18 +189,23 @@ fn order_tree(list: &mut Vec<Shape>, ids: &[ShapeId], how: i32, depth: usize) {
 fn order_list(list: &mut Vec<Shape>, ids: &[ShapeId], how: i32) {
     match how {
         2 => {
-            let (mut moved, rest): (Vec<Shape>, Vec<Shape>) = list.drain(..).partition(|x| ids.contains(&x.id));
+            let (mut moved, rest): (Vec<Shape>, Vec<Shape>) =
+                list.drain(..).partition(|x| ids.contains(&x.id));
             list.extend(rest);
             list.append(&mut moved);
         }
         -2 => {
-            let (mut moved, rest): (Vec<Shape>, Vec<Shape>) = list.drain(..).partition(|x| ids.contains(&x.id));
+            let (mut moved, rest): (Vec<Shape>, Vec<Shape>) =
+                list.drain(..).partition(|x| ids.contains(&x.id));
             moved.extend(rest);
             *list = moved;
         }
         1 => {
             for i in (0..list.len().saturating_sub(1)).rev() {
-                let (a, b) = (list.get(i).map(|x| ids.contains(&x.id)), list.get(i + 1).map(|x| ids.contains(&x.id)));
+                let (a, b) = (
+                    list.get(i).map(|x| ids.contains(&x.id)),
+                    list.get(i + 1).map(|x| ids.contains(&x.id)),
+                );
                 if a == Some(true) && b == Some(false) {
                     list.swap(i, i + 1);
                 }
@@ -117,7 +213,10 @@ fn order_list(list: &mut Vec<Shape>, ids: &[ShapeId], how: i32) {
         }
         _ => {
             for i in 1..list.len() {
-                let (a, b) = (list.get(i - 1).map(|x| ids.contains(&x.id)), list.get(i).map(|x| ids.contains(&x.id)));
+                let (a, b) = (
+                    list.get(i - 1).map(|x| ids.contains(&x.id)),
+                    list.get(i).map(|x| ids.contains(&x.id)),
+                );
                 if a == Some(false) && b == Some(true) {
                     list.swap(i - 1, i);
                 }
@@ -137,14 +236,21 @@ fn reorder(s: &mut Session, p: &Value) -> Result<Value> {
         Some(None) => st.shapes(),
         Some(Some(g)) => st.shape(g).map(Shape::children).unwrap_or(&[]),
     };
-    let from = siblings.iter().position(|x| x.id == id).ok_or_else(|| bad("arrange.reorder", "no such shape"))?;
+    let from = siblings
+        .iter()
+        .position(|x| x.id == id)
+        .ok_or_else(|| bad("arrange.reorder", "no such shape"))?;
     if from == to.min(siblings.len().saturating_sub(1)) {
         return Ok(json!({"index": from}));
     }
     s.edit(|doc, sel| {
         let tree = crate::shapes_mut(doc, sel).ok_or_else(|| bad("arrange.reorder", "no slide"))?;
-        let list = deckcraft_model::sibling_list_mut(tree, id).ok_or_else(|| bad("arrange.reorder", "no such shape"))?;
-        let i = list.iter().position(|x| x.id == id).ok_or_else(|| bad("arrange.reorder", "no such shape"))?;
+        let list = deckcraft_model::sibling_list_mut(tree, id)
+            .ok_or_else(|| bad("arrange.reorder", "no such shape"))?;
+        let i = list
+            .iter()
+            .position(|x| x.id == id)
+            .ok_or_else(|| bad("arrange.reorder", "no such shape"))?;
         let sh = list.remove(i);
         let at = to.min(list.len());
         list.insert(at, sh);
@@ -163,9 +269,16 @@ fn group(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     s.edit(|doc, sel| {
         let current = super::current_shapes(doc, sel).cloned().unwrap_or_default();
-        let mut members: Vec<Shape> = current.iter().filter(|x| ids.contains(&x.id)).cloned().collect();
+        let mut members: Vec<Shape> = current
+            .iter()
+            .filter(|x| ids.contains(&x.id))
+            .cloned()
+            .collect();
         if members.len() < 2 {
-            return Err(bad("arrange.group", "select two or more objects on the slide"));
+            return Err(bad(
+                "arrange.group",
+                "select two or more objects on the slide",
+            ));
         }
         for m in &mut members {
             if m.xfrm.is_none() {
@@ -178,16 +291,24 @@ fn group(s: &mut Session, p: &Value) -> Result<Value> {
         let b = union_bounds(&xs).ok_or_else(|| bad("arrange.group", "nothing to group"))?;
         let gx = Xfrm::new(b.x0, b.y0, b.width(), b.height());
         let id = ShapeId(doc.alloc_id());
-        let n = super::current_shapes(doc, sel).map(|v| v.len()).unwrap_or(0);
+        let n = super::current_shapes(doc, sel)
+            .map(|v| v.len())
+            .unwrap_or(0);
         let g = Shape {
             id,
             name: format!("Group {}", n + 1),
             xfrm: Some(gx),
-            kind: ShapeKind::Group { children: members, child: gx },
+            kind: ShapeKind::Group {
+                children: members,
+                child: gx,
+            },
             ..Default::default()
         };
         let list = crate::shapes_mut(doc, sel).ok_or_else(|| bad("arrange.group", "no slide"))?;
-        let at = list.iter().rposition(|x| ids.contains(&x.id)).unwrap_or(list.len());
+        let at = list
+            .iter()
+            .rposition(|x| ids.contains(&x.id))
+            .unwrap_or(list.len());
         list.insert(at + 1, g);
         list.retain(|x| !ids.contains(&x.id));
         sel.shapes = vec![id];
@@ -197,9 +318,18 @@ fn group(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// A child's xfrm in slide space, given its group.
 pub(crate) fn child_to_parent(group: &Xfrm, ch: &Xfrm, c: &Xfrm) -> Xfrm {
-    let sx = if ch.w.abs() > 1e-9 { group.w / ch.w } else { 1.0 };
-    let sy = if ch.h.abs() > 1e-9 { group.h / ch.h } else { 1.0 };
-    let a = deckcraft_geom::group_child_affine(group, Rect::new(ch.x, ch.y, ch.x + ch.w, ch.y + ch.h));
+    let sx = if ch.w.abs() > 1e-9 {
+        group.w / ch.w
+    } else {
+        1.0
+    };
+    let sy = if ch.h.abs() > 1e-9 {
+        group.h / ch.h
+    } else {
+        1.0
+    };
+    let a =
+        deckcraft_geom::group_child_affine(group, Rect::new(ch.x, ch.y, ch.x + ch.w, ch.y + ch.h));
     let center = a * Point::new(c.x + c.w / 2.0, c.y + c.h / 2.0);
     let (w, h) = (c.w * sx.abs(), c.h * sy.abs());
     let mut rot = c.rot + group.rot;
@@ -212,7 +342,15 @@ pub(crate) fn child_to_parent(group: &Xfrm, ch: &Xfrm, c: &Xfrm) -> Xfrm {
         fv = !fv;
         rot = -rot + 2.0 * group.rot;
     }
-    Xfrm { x: center.x - w / 2.0, y: center.y - h / 2.0, w, h, rot: ((rot % 360.0) + 360.0) % 360.0, flip_h: fh, flip_v: fv }
+    Xfrm {
+        x: center.x - w / 2.0,
+        y: center.y - h / 2.0,
+        w,
+        h,
+        rot: ((rot % 360.0) + 360.0) % 360.0,
+        flip_h: fh,
+        flip_v: fv,
+    }
 }
 
 fn ungroup(s: &mut Session, p: &Value) -> Result<Value> {
@@ -247,13 +385,23 @@ fn ungroup(s: &mut Session, p: &Value) -> Result<Value> {
 fn regroup(s: &mut Session, _p: &Value) -> Result<Value> {
     // Regroup the most recently ungrouped objects (from the undo history).
     let st = s.doc()?;
-    let last = st.history.undo.iter().rev().find(|e| e.label == "Ungroup").map(|e| e.selection.shapes.clone());
+    let last = st
+        .history
+        .undo
+        .iter()
+        .rev()
+        .find(|e| e.label == "Ungroup")
+        .map(|e| e.selection.shapes.clone());
     match last {
         Some(prev_group) => {
             // The ungroup's selection held the group id; its children are the current selection when nothing else changed.
             let _ = prev_group;
             let ids = s.doc()?.selection.shapes.clone();
-            if ids.len() >= 2 { s.execute("arrange.group", &json!({"ids": ids})) } else { Err(bad("arrange.regroup", "nothing to regroup")) }
+            if ids.len() >= 2 {
+                s.execute("arrange.group", &json!({"ids": ids}))
+            } else {
+                Err(bad("arrange.regroup", "nothing to regroup"))
+            }
         }
         None => Err(bad("arrange.regroup", "nothing to regroup")),
     }
@@ -264,7 +412,13 @@ fn align(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     let st = s.doc()?;
     let size = st.doc.slide_size;
-    let boxes: Vec<(ShapeId, Xfrm)> = ids.iter().filter_map(|id| st.shape(*id).map(|x| (*id, xfrm_of(&st.doc, &st.selection, x)))).collect();
+    let boxes: Vec<(ShapeId, Xfrm)> = ids
+        .iter()
+        .filter_map(|id| {
+            st.shape(*id)
+                .map(|x| (*id, xfrm_of(&st.doc, &st.selection, x)))
+        })
+        .collect();
     let to_slide = match str_param(p, "to") {
         Some("slide") => true,
         Some(_) => false,
@@ -299,23 +453,45 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     let st = s.doc()?;
     let size = st.doc.slide_size;
-    let mut boxes: Vec<(ShapeId, Rect)> =
-        ids.iter().filter_map(|id| st.shape(*id).map(|x| (*id, xfrm_of(&st.doc, &st.selection, x).bounds()))).collect();
+    let mut boxes: Vec<(ShapeId, Rect)> = ids
+        .iter()
+        .filter_map(|id| {
+            st.shape(*id)
+                .map(|x| (*id, xfrm_of(&st.doc, &st.selection, x).bounds()))
+        })
+        .collect();
     let to_slide = str_param(p, "to") == Some("slide") || boxes.len() < 3;
     if boxes.is_empty() {
         return ok();
     }
-    boxes.sort_by(|a, b| if horiz { a.1.x0.total_cmp(&b.1.x0) } else { a.1.y0.total_cmp(&b.1.y0) });
-    let total: f64 = boxes.iter().map(|b| if horiz { b.1.width() } else { b.1.height() }).sum();
+    boxes.sort_by(|a, b| {
+        if horiz {
+            a.1.x0.total_cmp(&b.1.x0)
+        } else {
+            a.1.y0.total_cmp(&b.1.y0)
+        }
+    });
+    let total: f64 = boxes
+        .iter()
+        .map(|b| if horiz { b.1.width() } else { b.1.height() })
+        .sum();
     let (start, end) = if to_slide {
-        if horiz { (0.0, size.width) } else { (0.0, size.height) }
+        if horiz {
+            (0.0, size.width)
+        } else {
+            (0.0, size.height)
+        }
     } else {
         let f = boxes.first().map(|b| b.1).unwrap_or_default();
         let l = boxes.last().map(|b| b.1).unwrap_or_default();
         if horiz { (f.x0, l.x1) } else { (f.y0, l.y1) }
     };
     let n = boxes.len();
-    let gap = if n > 1 { ((end - start) - total) / (n - 1) as f64 } else { 0.0 };
+    let gap = if n > 1 {
+        ((end - start) - total) / (n - 1) as f64
+    } else {
+        0.0
+    };
     let mut targets_pos: Vec<(ShapeId, f64)> = vec![];
     let mut cur = start;
     if n == 1 {
@@ -328,7 +504,10 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
         cur += (if horiz { b.width() } else { b.height() }) + gap;
     }
     edit_geometry(s, p, "arrange.distribute", |sh| {
-        if let (Some(x), Some((_, d))) = (sh.xfrm.as_mut(), targets_pos.iter().find(|(i, _)| *i == sh.id)) {
+        if let (Some(x), Some((_, d))) = (
+            sh.xfrm.as_mut(),
+            targets_pos.iter().find(|(i, _)| *i == sh.id),
+        ) {
             if horiz {
                 x.x += d;
             } else {

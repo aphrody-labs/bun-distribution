@@ -29,18 +29,35 @@ pub fn presets_dir() -> Option<std::path::PathBuf> {
     if let Ok(d) = std::env::var("EC_PRESETS_DIR") {
         return Some(d.into());
     }
-    let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).ok()?;
-    Some(std::path::Path::new(&home).join("Documents").join("EffectCraft").join("Presets"))
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()?;
+    Some(
+        std::path::Path::new(&home)
+            .join("Documents")
+            .join("EffectCraft")
+            .join("Presets"),
+    )
 }
 
 /// The `.ecpreset` files in `dir`, sorted by name.
 pub fn scan_presets(dir: &std::path::Path) -> Vec<PresetFile> {
-    let Ok(rd) = std::fs::read_dir(dir) else { return vec![] };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return vec![];
+    };
     let mut v: Vec<PresetFile> = rd
         .filter_map(Result::ok)
         .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("ecpreset")))
-        .filter_map(|p| Some(PresetFile { name: p.file_stem()?.to_string_lossy().to_string(), path: p.to_string_lossy().to_string() }))
+        .filter(|p| {
+            p.extension()
+                .is_some_and(|x| x.eq_ignore_ascii_case("ecpreset"))
+        })
+        .filter_map(|p| {
+            Some(PresetFile {
+                name: p.file_stem()?.to_string_lossy().to_string(),
+                path: p.to_string_lossy().to_string(),
+            })
+        })
         .collect();
     v.sort_by_key(|p| p.name.to_lowercase());
     v
@@ -55,7 +72,8 @@ pub fn match_range(name: &str, query: &str) -> Option<std::ops::Range<usize>> {
     let i = lower.find(&query.to_lowercase())?;
     let end = i + query.len();
     // Lower-casing can change byte lengths outside ASCII; only highlight clean boundaries.
-    (lower.len() == name.len() && name.is_char_boundary(i) && name.is_char_boundary(end)).then_some(i..end)
+    (lower.len() == name.len() && name.is_char_boundary(i) && name.is_char_boundary(end))
+        .then_some(i..end)
 }
 
 /// Remember `id` as the most recently used effect.
@@ -97,8 +115,14 @@ fn filled_star(p: &egui::Painter, c: egui::Pos2, r: f32, fill: Option<Color32>, 
 /// Text with the search match highlighted.
 fn highlighted(p: &egui::Painter, pos: egui::Pos2, name: &str, query: &str, t: &Tokens) {
     if let Some(m) = match_range(name, query) {
-        let pre = p.layout_no_wrap(name[..m.start].to_string(), Tokens::ui(12.0), t.text).size().x;
-        let hit = p.layout_no_wrap(name[m.clone()].to_string(), Tokens::ui(12.0), t.text).size().x;
+        let pre = p
+            .layout_no_wrap(name[..m.start].to_string(), Tokens::ui(12.0), t.text)
+            .size()
+            .x;
+        let hit = p
+            .layout_no_wrap(name[m.clone()].to_string(), Tokens::ui(12.0), t.text)
+            .size()
+            .x;
         let r = Rect::from_min_size(pos2(pos.x + pre - 1.0, pos.y - 8.0), vec2(hit + 2.0, 16.0));
         p.rect_filled(r, 2.0, t.accent.gamma_multiply(0.45));
     }
@@ -134,19 +158,50 @@ fn folder_row(
     if r.max.y < list.min.y || r.min.y > list.max.y {
         return open;
     }
-    let resp = ui.interact(r.intersect(list), egui::Id::new(("fxcat", key)), Sense::click());
+    let resp = ui.interact(
+        r.intersect(list),
+        egui::Id::new(("fxcat", key)),
+        Sense::click(),
+    );
     if resp.hovered() {
         lp.rect_filled(r, 0.0, t.hover);
     }
-    let tw = Rect::from_center_size(pos2(r.min.x + 12.0 + indent, r.center().y), vec2(12.0, 12.0));
-    icons::paint(lp, tw, if open { Icon::ChevronDown } else { Icon::ChevronRight }, t.text_dim);
-    let ic = Rect::from_center_size(pos2(r.min.x + 28.0 + indent, r.center().y), vec2(13.0, 13.0));
+    let tw = Rect::from_center_size(
+        pos2(r.min.x + 12.0 + indent, r.center().y),
+        vec2(12.0, 12.0),
+    );
+    icons::paint(
+        lp,
+        tw,
+        if open {
+            Icon::ChevronDown
+        } else {
+            Icon::ChevronRight
+        },
+        t.text_dim,
+    );
+    let ic = Rect::from_center_size(
+        pos2(r.min.x + 28.0 + indent, r.center().y),
+        vec2(13.0, 13.0),
+    );
     match icon {
-        Some(Icon::Star) => filled_star(lp, ic.center(), 6.0, Some(Color32::from_rgb(0xe8, 0xc0, 0x40)), Color32::from_rgb(0xe8, 0xc0, 0x40)),
+        Some(Icon::Star) => filled_star(
+            lp,
+            ic.center(),
+            6.0,
+            Some(Color32::from_rgb(0xe8, 0xc0, 0x40)),
+            Color32::from_rgb(0xe8, 0xc0, 0x40),
+        ),
         Some(i) => icons::paint(lp, ic, i, t.text_dim),
         None => icons::paint(lp, ic, Icon::Folder, Color32::from_rgb(0xc8, 0xb0, 0x58)),
     }
-    lp.text(pos2(r.min.x + 40.0 + indent, r.center().y), Align2::LEFT_CENTER, label, Tokens::ui(12.0), t.text);
+    lp.text(
+        pos2(r.min.x + 40.0 + indent, r.center().y),
+        Align2::LEFT_CENTER,
+        label,
+        Tokens::ui(12.0),
+        t.text,
+    );
     app.auto.add(&format!("effects.category.{key}"), r, label);
     if resp.clicked() && !forced_open {
         if open {
@@ -180,24 +235,70 @@ fn effect_row(
         return;
     }
     let star = Rect::from_center_size(pos2(r.max.x - 38.0, r.center().y), vec2(16.0, 16.0));
-    let resp = ui.interact(r.intersect(list), egui::Id::new((auto_prefix, e.id)), Sense::click_and_drag());
+    let resp = ui.interact(
+        r.intersect(list),
+        egui::Id::new((auto_prefix, e.id)),
+        Sense::click_and_drag(),
+    );
     if resp.hovered() {
         lp.rect_filled(r, 0.0, t.hover);
     }
-    icons::paint(lp, Rect::from_center_size(pos2(r.min.x + 44.0 + indent, r.center().y), vec2(12.0, 12.0)), Icon::Fx, t.text_dim);
-    highlighted(lp, pos2(r.min.x + 56.0 + indent, r.center().y), e.name, query, &t);
+    icons::paint(
+        lp,
+        Rect::from_center_size(
+            pos2(r.min.x + 44.0 + indent, r.center().y),
+            vec2(12.0, 12.0),
+        ),
+        Icon::Fx,
+        t.text_dim,
+    );
+    highlighted(
+        lp,
+        pos2(r.min.x + 56.0 + indent, r.center().y),
+        e.name,
+        query,
+        &t,
+    );
     if e.float {
-        lp.text(pos2(r.max.x - 10.0, r.center().y), Align2::RIGHT_CENTER, "32", Tokens::ui(9.5), t.text_faint);
+        lp.text(
+            pos2(r.max.x - 10.0, r.center().y),
+            Align2::RIGHT_CENTER,
+            "32",
+            Tokens::ui(9.5),
+            t.text_faint,
+        );
     }
     app.auto.add(&format!("{auto_prefix}.{}", e.id), r, e.name);
     // Favourite star (always shown when starred, else on hover).
     let fav = app.ui.effects_favorites.contains(e.id);
-    let sresp = ui.interact(star.intersect(list), egui::Id::new((auto_prefix, e.id, "star")), Sense::click());
+    let sresp = ui.interact(
+        star.intersect(list),
+        egui::Id::new((auto_prefix, e.id, "star")),
+        Sense::click(),
+    );
     if fav || resp.hovered() || sresp.hovered() {
         let gold = Color32::from_rgb(0xe8, 0xc0, 0x40);
-        filled_star(lp, star.center(), 6.0, fav.then_some(gold), if fav || sresp.hovered() { gold } else { t.text_faint });
+        filled_star(
+            lp,
+            star.center(),
+            6.0,
+            fav.then_some(gold),
+            if fav || sresp.hovered() {
+                gold
+            } else {
+                t.text_faint
+            },
+        );
     }
-    app.auto.add(&format!("{auto_prefix}.{}.star", e.id), star, if fav { "Remove from Favorites" } else { "Add to Favorites" });
+    app.auto.add(
+        &format!("{auto_prefix}.{}.star", e.id),
+        star,
+        if fav {
+            "Remove from Favorites"
+        } else {
+            "Add to Favorites"
+        },
+    );
     if sresp.clicked() {
         if fav {
             app.ui.effects_favorites.remove(e.id);
@@ -234,11 +335,20 @@ fn preset_row(
     if r.max.y < list.min.y || r.min.y > list.max.y {
         return;
     }
-    let resp = ui.interact(r.intersect(list), egui::Id::new(("fxpreset", auto_id)), Sense::click());
+    let resp = ui.interact(
+        r.intersect(list),
+        egui::Id::new(("fxpreset", auto_id)),
+        Sense::click(),
+    );
     if resp.hovered() {
         lp.rect_filled(r, 0.0, t.hover);
     }
-    icons::paint(lp, Rect::from_center_size(pos2(r.min.x + 58.0, r.center().y), vec2(12.0, 12.0)), Icon::Keyframe, t.text_dim);
+    icons::paint(
+        lp,
+        Rect::from_center_size(pos2(r.min.x + 58.0, r.center().y), vec2(12.0, 12.0)),
+        Icon::Keyframe,
+        t.text_dim,
+    );
     highlighted(lp, pos2(r.min.x + 70.0, r.center().y), name, query, &t);
     app.auto.add(auto_id, r, name);
     if resp.double_clicked() {
@@ -251,7 +361,8 @@ fn user_presets(ctx: &egui::Context, force: bool) -> Vec<PresetFile> {
     let id = egui::Id::new("fx-user-presets");
     let now = ctx.input(|i| i.time);
     if !force
-        && let Some((at, v)) = ctx.data(|d| d.get_temp::<(f64, std::sync::Arc<Vec<PresetFile>>)>(id))
+        && let Some((at, v)) =
+            ctx.data(|d| d.get_temp::<(f64, std::sync::Arc<Vec<PresetFile>>)>(id))
         && now - at < 5.0
     {
         return (*v).clone();
@@ -279,12 +390,22 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     // Contents menu.
     let mr = Rect::from_center_size(pos2(rect.max.x - 18.0, sr.center().y), vec2(22.0, 22.0));
     let mpop = egui::Id::new("fx-contents-menu");
-    if widgets::icon_button(ui, mr, Icon::Hamburger, false, &t, egui::Id::new("fx-menu")).on_hover_text(tr("Effects & Presets options")).clicked() {
+    if widgets::icon_button(ui, mr, Icon::Hamburger, false, &t, egui::Id::new("fx-menu"))
+        .on_hover_text(tr("Effects & Presets options"))
+        .clicked()
+    {
         widgets::open_popup(ui, mpop);
     }
-    app.auto.add("effects.menu", mr, "Effects & Presets options");
+    app.auto
+        .add("effects.menu", mr, "Effects & Presets options");
     let view = app.ui.effects_view.clone();
-    let mark = |on: bool, l: &str| if on { format!("✓ {l}") } else { format!("    {l}") };
+    let mark = |on: bool, l: &str| {
+        if on {
+            format!("✓ {l}")
+        } else {
+            format!("    {l}")
+        }
+    };
     let menu = vec![
         mark(view.depth == "all", "Show Effects for All Color Depths"),
         mark(view.depth == "32", "Show 32 bpc Effects Only"),
@@ -299,7 +420,8 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         "    Clear Recently Used".into(),
     ];
     let mut force_scan = false;
-    if let Some(i) = widgets::popup_menu(ui, mpop, mr.left_bottom() - vec2(220.0, 0.0), &menu, None) {
+    if let Some(i) = widgets::popup_menu(ui, mpop, mr.left_bottom() - vec2(220.0, 0.0), &menu, None)
+    {
         let v = &mut app.ui.effects_view;
         match i {
             0 => v.depth = "all".into(),
@@ -322,56 +444,197 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let mut y = list.min.y - scroll.offset;
     let mut apply: Option<Apply> = None;
     let reg = effectcraft_engine::effects::all();
-    let keep =
-        |e: &effectcraft_engine::effects::EffectSpec| depth_keeps(&view.depth, e) && (query.is_empty() || effectcraft_engine::effects::name_matches(e, &query));
+    let keep = |e: &effectcraft_engine::effects::EffectSpec| {
+        depth_keeps(&view.depth, e)
+            && (query.is_empty() || effectcraft_engine::effects::name_matches(e, &query))
+    };
     let lookup = |id: &str| reg.iter().find(|e| e.id == id);
 
     // Favorites and Recently Used.
-    let favs: Vec<_> = app.ui.effects_favorites.iter().filter_map(|id| lookup(id)).filter(|e| keep(e)).collect();
-    if !favs.is_empty() && folder_row(app, ui, &lp, list, &mut y, "favorites", "Favorites", 0.0, searching, Some(Icon::Star)) {
+    let favs: Vec<_> = app
+        .ui
+        .effects_favorites
+        .iter()
+        .filter_map(|id| lookup(id))
+        .filter(|e| keep(e))
+        .collect();
+    if !favs.is_empty()
+        && folder_row(
+            app,
+            ui,
+            &lp,
+            list,
+            &mut y,
+            "favorites",
+            "Favorites",
+            0.0,
+            searching,
+            Some(Icon::Star),
+        )
+    {
         let mut favs = favs;
         favs.sort_by_key(|e| e.name);
         for e in favs {
-            effect_row(app, ui, &lp, list, &mut y, e, 0.0, &query, "effects.favorites", &mut apply);
+            effect_row(
+                app,
+                ui,
+                &lp,
+                list,
+                &mut y,
+                e,
+                0.0,
+                &query,
+                "effects.favorites",
+                &mut apply,
+            );
         }
     }
-    let recent: Vec<_> = app.ui.effects_recent.iter().filter_map(|id| lookup(id)).filter(|e| keep(e)).collect();
-    if !recent.is_empty() && !searching && folder_row(app, ui, &lp, list, &mut y, "recent", "Recently Used", 0.0, false, None) {
+    let recent: Vec<_> = app
+        .ui
+        .effects_recent
+        .iter()
+        .filter_map(|id| lookup(id))
+        .filter(|e| keep(e))
+        .collect();
+    if !recent.is_empty()
+        && !searching
+        && folder_row(
+            app,
+            ui,
+            &lp,
+            list,
+            &mut y,
+            "recent",
+            "Recently Used",
+            0.0,
+            false,
+            None,
+        )
+    {
         for e in recent {
-            effect_row(app, ui, &lp, list, &mut y, e, 0.0, &query, "effects.recent", &mut apply);
+            effect_row(
+                app,
+                ui,
+                &lp,
+                list,
+                &mut y,
+                e,
+                0.0,
+                &query,
+                "effects.recent",
+                &mut apply,
+            );
         }
     }
 
     // * Animation Presets: our own presets (Text, Transitions…) and the user's .ecpreset files.
     if view.presets {
-        let text: Vec<(String, String)> =
-            effectcraft_engine::text_presets().into_iter().filter(|(_, n)| query.is_empty() || n.to_lowercase().contains(&query)).collect();
-        let builtin: Vec<(String, String, String)> =
-            effectcraft_engine::animation_presets().into_iter().filter(|(_, n, _)| query.is_empty() || n.to_lowercase().contains(&query)).collect();
+        let text: Vec<(String, String)> = effectcraft_engine::text_presets()
+            .into_iter()
+            .filter(|(_, n)| query.is_empty() || n.to_lowercase().contains(&query))
+            .collect();
+        let builtin: Vec<(String, String, String)> = effectcraft_engine::animation_presets()
+            .into_iter()
+            .filter(|(_, n, _)| query.is_empty() || n.to_lowercase().contains(&query))
+            .collect();
         let mut categories: Vec<&str> = Vec::new();
         for (_, _, c) in &builtin {
             if !categories.contains(&c.as_str()) {
                 categories.push(c);
             }
         }
-        let files: Vec<PresetFile> =
-            user_presets(&ctx, force_scan).into_iter().filter(|f| query.is_empty() || f.name.to_lowercase().contains(&query)).collect();
+        let files: Vec<PresetFile> = user_presets(&ctx, force_scan)
+            .into_iter()
+            .filter(|f| query.is_empty() || f.name.to_lowercase().contains(&query))
+            .collect();
         let any = !text.is_empty() || !builtin.is_empty() || !files.is_empty();
-        if any && folder_row(app, ui, &lp, list, &mut y, "presets", "* Animation Presets", 0.0, searching, None) {
-            if !text.is_empty() && folder_row(app, ui, &lp, list, &mut y, "presets/Text", "Text", 14.0, searching, None) {
+        if any
+            && folder_row(
+                app,
+                ui,
+                &lp,
+                list,
+                &mut y,
+                "presets",
+                "* Animation Presets",
+                0.0,
+                searching,
+                None,
+            )
+        {
+            if !text.is_empty()
+                && folder_row(
+                    app,
+                    ui,
+                    &lp,
+                    list,
+                    &mut y,
+                    "presets/Text",
+                    "Text",
+                    14.0,
+                    searching,
+                    None,
+                )
+            {
                 for (id, name) in text {
-                    preset_row(app, ui, &lp, list, &mut y, &name, &format!("effects.preset.text.{id}"), &query, Apply::TextPreset(id.clone()), &mut apply);
+                    preset_row(
+                        app,
+                        ui,
+                        &lp,
+                        list,
+                        &mut y,
+                        &name,
+                        &format!("effects.preset.text.{id}"),
+                        &query,
+                        Apply::TextPreset(id.clone()),
+                        &mut apply,
+                    );
                 }
             }
             for cat in &categories {
-                if !folder_row(app, ui, &lp, list, &mut y, &format!("presets/{cat}"), cat, 14.0, searching, None) {
+                if !folder_row(
+                    app,
+                    ui,
+                    &lp,
+                    list,
+                    &mut y,
+                    &format!("presets/{cat}"),
+                    cat,
+                    14.0,
+                    searching,
+                    None,
+                ) {
                     continue;
                 }
                 for (id, name, _) in builtin.iter().filter(|(_, _, c)| c == cat) {
-                    preset_row(app, ui, &lp, list, &mut y, name, &format!("effects.preset.builtin.{id}"), &query, Apply::Builtin(id.clone()), &mut apply);
+                    preset_row(
+                        app,
+                        ui,
+                        &lp,
+                        list,
+                        &mut y,
+                        name,
+                        &format!("effects.preset.builtin.{id}"),
+                        &query,
+                        Apply::Builtin(id.clone()),
+                        &mut apply,
+                    );
                 }
             }
-            if !files.is_empty() && folder_row(app, ui, &lp, list, &mut y, "presets/User", "User Presets", 14.0, searching, None) {
+            if !files.is_empty()
+                && folder_row(
+                    app,
+                    ui,
+                    &lp,
+                    list,
+                    &mut y,
+                    "presets/User",
+                    "User Presets",
+                    14.0,
+                    searching,
+                    None,
+                )
+            {
                 for f in files {
                     preset_row(
                         app,
@@ -395,13 +658,27 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         let mut all: Vec<_> = reg.iter().filter(|e| keep(e)).collect();
         all.sort_by_key(|e| e.name.to_lowercase());
         for e in all {
-            effect_row(app, ui, &lp, list, &mut y, e, -16.0, &query, "effects.item", &mut apply);
+            effect_row(
+                app,
+                ui,
+                &lp,
+                list,
+                &mut y,
+                e,
+                -16.0,
+                &query,
+                "effects.item",
+                &mut apply,
+            );
         }
     } else {
         let mut cats: Vec<&str> = effectcraft_engine::effects::categories();
         cats.retain(|c| reg.iter().any(|e| e.category == *c));
         for cat in cats {
-            let items: Vec<_> = reg.iter().filter(|e| e.category == cat && keep(e)).collect();
+            let items: Vec<_> = reg
+                .iter()
+                .filter(|e| e.category == cat && keep(e))
+                .collect();
             if items.is_empty() {
                 continue;
             }
@@ -409,20 +686,43 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
                 continue;
             }
             for e in items {
-                effect_row(app, ui, &lp, list, &mut y, e, 0.0, &query, "effects.item", &mut apply);
+                effect_row(
+                    app,
+                    ui,
+                    &lp,
+                    list,
+                    &mut y,
+                    e,
+                    0.0,
+                    &query,
+                    "effects.item",
+                    &mut apply,
+                );
             }
         }
     }
     if y == list.min.y - scroll.offset && searching {
-        lp.text(pos2(list.center().x, list.min.y + 24.0), Align2::CENTER_CENTER, tr("No matching effects or presets"), Tokens::ui(12.0), t.text_faint);
+        lp.text(
+            pos2(list.center().x, list.min.y + 24.0),
+            Align2::CENTER_CENTER,
+            tr("No matching effects or presets"),
+            Tokens::ui(12.0),
+            t.text_faint,
+        );
     }
     let content = y + scroll.offset - list.min.y;
     scroll.end(ui, &mut app.auto, "effects.scroll", content, &t);
-    if let Some(DragPayload::Effect(id)) = egui::DragAndDrop::payload::<DragPayload>(&ctx).as_deref()
+    if let Some(DragPayload::Effect(id)) =
+        egui::DragAndDrop::payload::<DragPayload>(&ctx).as_deref()
         && let Some(pos) = ctx.pointer_hover_pos()
     {
-        let name = effectcraft_engine::effects::find(id).map(|e| e.name).unwrap_or("");
-        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("dnd-fx")));
+        let name = effectcraft_engine::effects::find(id)
+            .map(|e| e.name)
+            .unwrap_or("");
+        let painter = ctx.layer_painter(egui::LayerId::new(
+            egui::Order::Tooltip,
+            egui::Id::new("dnd-fx"),
+        ));
         let g = painter.layout_no_wrap(name.to_string(), Tokens::ui(12.0), t.text);
         let r = Rect::from_min_size(pos + vec2(12.0, 8.0), g.size() + vec2(16.0, 8.0));
         painter.rect_filled(r, 4.0, Color32::from_rgba_premultiplied(40, 40, 40, 230));
@@ -497,7 +797,10 @@ mod tests {
         std::fs::write(d.join("bounce.ECPRESET"), "{}").unwrap();
         std::fs::write(d.join("notes.txt"), "").unwrap();
         let v = scan_presets(&d);
-        assert_eq!(v.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(), vec!["bounce", "Zoom In"]);
+        assert_eq!(
+            v.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(),
+            vec!["bounce", "Zoom In"]
+        );
         assert!(scan_presets(&d.join("missing")).is_empty());
         let _ = std::fs::remove_dir_all(&d);
     }

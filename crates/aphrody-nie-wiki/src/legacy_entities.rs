@@ -20,12 +20,19 @@ pub(crate) fn rows(
     parameters: &[SqlValue],
 ) -> anyhow::Result<Vec<Value>> {
     let mut statement = connection.prepare(sql)?;
-    let columns = statement.column_names().into_iter().map(str::to_owned).collect::<Vec<_>>();
+    let columns = statement
+        .column_names()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
     Ok(statement
         .query_map(rusqlite::params_from_iter(parameters), |row| {
             let mut record = crate::entities::ligne_en_json(row, &columns)?;
             for value in record.values_mut() {
-                if value.as_str().is_some_and(|value| matches!(value, "\\N" | "\\\\N")) {
+                if value
+                    .as_str()
+                    .is_some_and(|value| matches!(value, "\\N" | "\\\\N"))
+                {
                     *value = Value::Null;
                 }
             }
@@ -35,7 +42,10 @@ pub(crate) fn rows(
 }
 
 fn clean(value: &Value) -> Option<&str> {
-    value.as_str().map(str::trim).filter(|value| !value.is_empty() && !value.starts_with("#N/A"))
+    value
+        .as_str()
+        .map(str::trim)
+        .filter(|value| !value.is_empty() && !value.starts_with("#N/A"))
 }
 
 fn scaling(connection: &Connection) -> anyhow::Result<HashMap<String, Value>> {
@@ -68,8 +78,12 @@ fn project_coach(row: &Value, passive: Option<&Value>, code: Option<&str>) -> Va
         "Tension" => "Tension",
         other => other,
     });
-    let fallback =
-        format!("#{}", row["id"].as_str().map_or_else(|| row["id"].to_string(), str::to_owned));
+    let fallback = format!(
+        "#{}",
+        row["id"]
+            .as_str()
+            .map_or_else(|| row["id"].to_string(), str::to_owned)
+    );
     let name = clean(&row["name_localised"])
         .or_else(|| clean(&row["name_romaji"]))
         .or_else(|| clean(&row["name_kanji"]))
@@ -83,12 +97,21 @@ const COACH_COLUMNS: &str = "id,image,name_kanji,name_romaji,name_localised,gend
 pub fn coaches(connection: &Connection, input: &CoachRequest) -> anyhow::Result<Value> {
     let passives = scaling(connection)?;
     let mut codes = HashMap::new();
-    for row in rows(connection, "SELECT name_en,internal_code FROM inagle_characters", &[])? {
+    for row in rows(
+        connection,
+        "SELECT name_en,internal_code FROM inagle_characters",
+        &[],
+    )? {
         if let (Some(name), Some(code)) = (
-            row["name_en"].as_str().map(str::trim).filter(|v| !v.is_empty()),
+            row["name_en"]
+                .as_str()
+                .map(str::trim)
+                .filter(|v| !v.is_empty()),
             row["internal_code"].as_str().filter(|v| !v.is_empty()),
         ) {
-            codes.entry(name.to_owned()).or_insert_with(|| code.to_owned());
+            codes
+                .entry(name.to_owned())
+                .or_insert_with(|| code.to_owned());
         }
     }
     let query = input.q.as_deref().unwrap_or("").trim().to_lowercase();
@@ -140,8 +163,10 @@ pub fn coach(connection: &Connection, key: &str) -> anyhow::Result<Option<Value>
         return Ok(None);
     };
     let passives = scaling(connection)?;
-    let code = if let Some(name) =
-        row["name_localised"].as_str().map(str::trim).filter(|v| !v.is_empty())
+    let code = if let Some(name) = row["name_localised"]
+        .as_str()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
     {
         rows(
             connection,
@@ -154,7 +179,11 @@ pub fn coach(connection: &Connection, key: &str) -> anyhow::Result<Option<Value>
     } else {
         None
     };
-    Ok(Some(project_coach(&row, passives.get(&row["passive_no"].to_string()), code.as_deref())))
+    Ok(Some(project_coach(
+        &row,
+        passives.get(&row["passive_no"].to_string()),
+        code.as_deref(),
+    )))
 }
 
 #[cfg(test)]
@@ -206,20 +235,30 @@ mod tests {
         assert_eq!(detail["id"], "1");
         for query in ["aLeX", " sHot "] {
             assert_eq!(
-                coaches(&connection, &CoachRequest { q: Some(query.into()) })
-                    .unwrap()
-                    .as_array()
-                    .unwrap()
-                    .len(),
+                coaches(
+                    &connection,
+                    &CoachRequest {
+                        q: Some(query.into())
+                    }
+                )
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .len(),
                 1
             );
         }
         assert!(
-            coaches(&connection, &CoachRequest { q: Some("Coach".into()) })
-                .unwrap()
-                .as_array()
-                .unwrap()
-                .is_empty()
+            coaches(
+                &connection,
+                &CoachRequest {
+                    q: Some("Coach".into())
+                }
+            )
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .is_empty()
         );
         for id in ["missing", "0x10", "999", "-1", "+"] {
             assert!(coach(&connection, id).unwrap().is_none());
@@ -241,10 +280,11 @@ mod tests {
                 "coach" => coach(&connection, case["request"]["id"].as_str().unwrap())
                     .unwrap()
                     .unwrap_or(Value::Null),
-                "coaches" => {
-                    coaches(&connection, &serde_json::from_value(case["request"].clone()).unwrap())
-                        .unwrap()
-                },
+                "coaches" => coaches(
+                    &connection,
+                    &serde_json::from_value(case["request"].clone()).unwrap(),
+                )
+                .unwrap(),
                 _ => continue,
             };
             assert!(

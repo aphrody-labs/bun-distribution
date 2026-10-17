@@ -44,12 +44,18 @@ fn dct_jpeg_size(b: &[u8]) -> Option<(u32, u32)> {
 pub(crate) fn candidate(data: &[u8], offset: usize, len: usize) -> Option<Preview<'_>> {
     let jpeg = data.get(offset..offset.checked_add(len)?)?;
     let (width, height) = dct_jpeg_size(jpeg)?;
-    Some(Preview { jpeg, width, height })
+    Some(Preview {
+        jpeg,
+        width,
+        height,
+    })
 }
 
 /// The largest embedded JPEG preview of a raw file (TIFF-based raws, RAF and CR3).
 pub fn embedded_preview(bytes: &[u8]) -> Option<Preview<'_>> {
-    embedded_previews(bytes).into_iter().max_by_key(|p| u64::from(p.width) * u64::from(p.height))
+    embedded_previews(bytes)
+        .into_iter()
+        .max_by_key(|p| u64::from(p.width) * u64::from(p.height))
 }
 
 /// Every embedded DCT-JPEG preview of a raw file, each stream once (cameras often store a
@@ -71,7 +77,10 @@ pub fn embedded_previews(bytes: &[u8]) -> Vec<Preview<'_>> {
             found.extend(candidate(bytes, off, len));
         }
         for ifd in t.all_ifds() {
-            if let (Some(off), Some(len)) = (t.tag_uint(&ifd, tag::JPEG_INTERCHANGE_FORMAT), t.tag_uint(&ifd, tag::JPEG_INTERCHANGE_FORMAT_LENGTH)) {
+            if let (Some(off), Some(len)) = (
+                t.tag_uint(&ifd, tag::JPEG_INTERCHANGE_FORMAT),
+                t.tag_uint(&ifd, tag::JPEG_INTERCHANGE_FORMAT_LENGTH),
+            ) {
                 found.extend(candidate(bytes, off as usize, len as usize));
             }
             if matches!(t.tag_uint(&ifd, tag::COMPRESSION), Some(6 | 7)) {
@@ -86,7 +95,11 @@ pub fn embedded_previews(bytes: &[u8]) -> Vec<Preview<'_>> {
                 && let Some(raw) = t.raw(e)
                 && let Some((width, height)) = dct_jpeg_size(raw)
             {
-                found.push(Preview { jpeg: raw, width, height });
+                found.push(Preview {
+                    jpeg: raw,
+                    width,
+                    height,
+                });
             }
         }
     }
@@ -123,7 +136,9 @@ pub fn embedded_preview_color_space(bytes: &[u8]) -> Option<PreviewColorSpace> {
         1 => Some(PreviewColorSpace::Srgb),
         0xFFFF => {
             let interop = t.ifd_at(t.tag_uint(&exif, tag::INTEROP_IFD)? as usize, 0)?;
-            t.raw(interop.get(tag::INTEROP_INDEX)?)?.starts_with(b"R03").then_some(PreviewColorSpace::AdobeRgb)
+            t.raw(interop.get(tag::INTEROP_INDEX)?)?
+                .starts_with(b"R03")
+                .then_some(PreviewColorSpace::AdobeRgb)
         }
         _ => None,
     }
@@ -146,7 +161,10 @@ mod tests {
             exif.push((tag::INTEROP_IFD, Val::Ifds(vec![interop])));
         }
         let exif = t.ifd(exif);
-        let mut ifd0 = vec![(tag::MAKE, Val::Ascii("SONY".into())), (tag::EXIF_IFD, Val::Ifds(vec![exif]))];
+        let mut ifd0 = vec![
+            (tag::MAKE, Val::Ascii("SONY".into())),
+            (tag::EXIF_IFD, Val::Ifds(vec![exif])),
+        ];
         if dng {
             ifd0.push((tag::DNG_VERSION, Val::Byte(vec![1, 6, 0, 0])));
         }
@@ -156,14 +174,37 @@ mod tests {
 
     #[test]
     fn exif_colour_space_of_the_previews() {
-        assert_eq!(embedded_preview_color_space(&raw_with(Some(1), Some("R98"), false)), Some(PreviewColorSpace::Srgb));
-        assert_eq!(embedded_preview_color_space(&raw_with(Some(0xFFFF), Some("R03"), false)), Some(PreviewColorSpace::AdobeRgb));
-        for (cs, index) in [(Some(0xFFFF), Some("R98")), (Some(0xFFFF), None), (Some(2), Some("R03")), (None, Some("R03"))] {
-            assert_eq!(embedded_preview_color_space(&raw_with(cs, index, false)), None, "{cs:?} {index:?}");
+        assert_eq!(
+            embedded_preview_color_space(&raw_with(Some(1), Some("R98"), false)),
+            Some(PreviewColorSpace::Srgb)
+        );
+        assert_eq!(
+            embedded_preview_color_space(&raw_with(Some(0xFFFF), Some("R03"), false)),
+            Some(PreviewColorSpace::AdobeRgb)
+        );
+        for (cs, index) in [
+            (Some(0xFFFF), Some("R98")),
+            (Some(0xFFFF), None),
+            (Some(2), Some("R03")),
+            (None, Some("R03")),
+        ] {
+            assert_eq!(
+                embedded_preview_color_space(&raw_with(cs, index, false)),
+                None,
+                "{cs:?} {index:?}"
+            );
         }
         // a DNG's previews are the converter's, whatever the capture was
-        assert_eq!(embedded_preview_color_space(&raw_with(Some(0xFFFF), Some("R03"), true)), None);
-        for junk in [&b""[..], b"II*\0", b"II*\0\x08\0\0\0\xff\xff", b"not a tiff at all"] {
+        assert_eq!(
+            embedded_preview_color_space(&raw_with(Some(0xFFFF), Some("R03"), true)),
+            None
+        );
+        for junk in [
+            &b""[..],
+            b"II*\0",
+            b"II*\0\x08\0\0\0\xff\xff",
+            b"not a tiff at all",
+        ] {
             assert_eq!(embedded_preview_color_space(junk), None);
         }
     }

@@ -69,7 +69,10 @@ fn le_dump_expose_les_chemins_logiques_du_jeu() {
         taux * 100.0,
         &absents[..absents.len().min(5)],
     );
-    eprintln!("chemins logiques communs : {communs} ({:.1} %)", taux * 100.0);
+    eprintln!(
+        "chemins logiques communs : {communs} ({:.1} %)",
+        taux * 100.0
+    );
 }
 
 /// Même chemin, mêmes octets. Un dump qui rend un contenu différent sous un nom juste est pire
@@ -89,7 +92,10 @@ fn le_dump_rend_les_memes_octets_que_les_packs() {
         .collect();
     candidats.sort_by_key(|(p, taille)| (*taille, *p));
     candidats.truncate(12);
-    assert!(!candidats.is_empty(), "aucun gamedata dans l'index des packs");
+    assert!(
+        !candidats.is_empty(),
+        "aucun gamedata dans l'index des packs"
+    );
 
     let mut compares = 0usize;
     for (chemin, _) in &candidats {
@@ -109,6 +115,9 @@ fn le_dump_rend_les_memes_octets_que_les_packs() {
         );
         compares += 1;
     }
-    assert!(compares >= 5, "seulement {compares} fichiers comparés — preuve trop faible");
+    assert!(
+        compares >= 5,
+        "seulement {compares} fichiers comparés — preuve trop faible"
+    );
     eprintln!("{compares} fichiers identiques octet pour octet entre packs et dump");
 }

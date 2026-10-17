@@ -8,7 +8,8 @@ use super::*;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     s
 }
 
@@ -35,37 +36,70 @@ fn fitted(s: &mut Session) -> vectorcraft_geom::Rect {
 #[test]
 fn a_300_percent_arrowhead_grows_the_visual_bounds() {
     let mut s = session();
-    s.execute("shape.line", &json!({"x1": 100, "y1": 200, "x2": 300, "y2": 200})).unwrap();
-    s.execute("stroke.set", &json!({"weight": 2, "join": "round", "endArrow": "Triangle"})).unwrap();
+    s.execute(
+        "shape.line",
+        &json!({"x1": 100, "y1": 200, "x2": 300, "y2": 200}),
+    )
+    .unwrap();
+    s.execute(
+        "stroke.set",
+        &json!({"weight": 2, "join": "round", "endArrow": "Triangle"}),
+    )
+    .unwrap();
     let plain = fitted(&mut s);
-    s.execute("stroke.setAdvanced", &json!({"arrowScale": [100, 300]})).unwrap();
+    s.execute("stroke.setAdvanced", &json!({"arrowScale": [100, 300]}))
+        .unwrap();
     let big = fitted(&mut s);
     // The 24 pt head reaches past the end and 12 pt to each side of the line.
-    assert!(big.x1 > plain.x1 + 15.0 && big.y1 >= 212.0 && big.y0 <= 188.0, "{plain:?} → {big:?}");
+    assert!(
+        big.x1 > plain.x1 + 15.0 && big.y1 >= 212.0 && big.y0 <= 188.0,
+        "{plain:?} → {big:?}"
+    );
     assert_eq!(big.x0, plain.x0, "the start has no head");
 }
 
 #[test]
 fn a_click_outside_an_outside_stroke_selects_it() {
     let mut s = session();
-    let r = id_of(&s.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 200, "height": 200})).unwrap());
+    let r = id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": 100, "y": 100, "width": 200, "height": 200}),
+        )
+        .unwrap(),
+    );
     s.execute("paint.setFill", &json!({"none": true})).unwrap();
-    s.execute("stroke.set", &json!({"weight": 20, "align": "outside"})).unwrap();
+    s.execute("stroke.set", &json!({"weight": 20, "align": "outside"}))
+        .unwrap();
     s.execute("select.none", &json!({})).unwrap();
     // 0.8 × the weight outside the path: past where a centred stroke (plus the tolerance) reaches.
     assert_eq!(click(&mut s, 84.0, 200.0), [r]);
     s.execute("select.none", &json!({})).unwrap();
-    assert!(click(&mut s, 116.0, 200.0).is_empty(), "nothing paints inside");
-    s.execute("stroke.set", &json!({"ids": [r.0], "align": "center"})).unwrap();
+    assert!(
+        click(&mut s, 116.0, 200.0).is_empty(),
+        "nothing paints inside"
+    );
+    s.execute("stroke.set", &json!({"ids": [r.0], "align": "center"}))
+        .unwrap();
     s.execute("select.none", &json!({})).unwrap();
-    assert!(click(&mut s, 84.0, 200.0).is_empty(), "a centred stroke doesn't reach");
+    assert!(
+        click(&mut s, 84.0, 200.0).is_empty(),
+        "a centred stroke doesn't reach"
+    );
 }
 
 #[test]
 fn a_click_at_the_lens_maximum_selects_its_stroke() {
     let mut s = session();
-    let l = id_of(&s.execute("shape.line", &json!({"x1": 100, "y1": 200, "x2": 300, "y2": 200})).unwrap());
-    s.execute("stroke.set", &json!({"weight": 20, "profile": "lens"})).unwrap();
+    let l = id_of(
+        &s.execute(
+            "shape.line",
+            &json!({"x1": 100, "y1": 200, "x2": 300, "y2": 200}),
+        )
+        .unwrap(),
+    );
+    s.execute("stroke.set", &json!({"weight": 20, "profile": "lens"}))
+        .unwrap();
     s.execute("select.none", &json!({})).unwrap();
     assert_eq!(click(&mut s, 200.0, 209.0), [l], "the widest point");
     s.execute("select.none", &json!({})).unwrap();

@@ -112,7 +112,11 @@ pub(crate) fn combine_echoes(layers: &[(Image, f32)], op: u32) -> Image {
 // ------------------------------------------------------------------ analysis helpers
 
 fn gray_of(img: &Image) -> Gray {
-    let px = img.px.par_chunks(4).map(|p| filmcraft_color::linear_to_srgb(luma([p[0], p[1], p[2]]).clamp(0.0, 1.0))).collect();
+    let px = img
+        .px
+        .par_chunks(4)
+        .map(|p| filmcraft_color::linear_to_srgb(luma([p[0], p[1], p[2]]).clamp(0.0, 1.0)))
+        .collect();
     Gray::new(img.w, img.h, px)
 }
 
@@ -137,7 +141,10 @@ pub(crate) fn saliency_centroid(img: &Image) -> (f32, f32) {
     if sw <= 1e-12 {
         return (0.5, 0.5);
     }
-    (((sx / sw + 0.5) / w as f64) as f32, ((sy / sw + 0.5) / h as f64) as f32)
+    (
+        ((sx / sw + 0.5) / w as f64) as f32,
+        ((sy / sw + 0.5) / h as f64) as f32,
+    )
 }
 
 type CentroidCache = Mutex<HashMap<(u64, i64), (f32, f32)>>;
@@ -162,7 +169,11 @@ pub fn auto_reframe(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         (0, None) => return,
         (a, _) => {
             let r = [16.0 / 9.0, 9.0 / 16.0, 1.0, 4.0 / 5.0, 16.0 / 9.0][a.min(4) as usize];
-            if lw / lh > r { (lh * r, lh) } else { (lw, lw / r) }
+            if lw / lh > r {
+                (lh * r, lh)
+            } else {
+                (lw, lw / r)
+            }
         }
     };
     let zoom_user = (fv(e, "zoom", cx) as f64 / 100.0).max(1.0);
@@ -180,9 +191,15 @@ pub fn auto_reframe(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 let t = cx.seconds + k;
                 if t >= -1e-9 && t <= env.clip_seconds() + 1e-9 {
                     let id = (t * fps).round() as i64;
-                    let cached = centroid_cache().lock().ok().and_then(|c| c.get(&(key, id)).copied());
+                    let cached = centroid_cache()
+                        .lock()
+                        .ok()
+                        .and_then(|c| c.get(&(key, id)).copied());
                     let c = cached.or_else(|| {
-                        let f = env.source_frame(id as f64 / fps - cx.seconds, (160.0 / env.source_size().0.max(1) as f32).min(1.0))?;
+                        let f = env.source_frame(
+                            id as f64 / fps - cx.seconds,
+                            (160.0 / env.source_size().0.max(1) as f32).min(1.0),
+                        )?;
                         let c = saliency_centroid(&f);
                         if let Ok(mut m) = centroid_cache().lock() {
                             if m.len() > 100_000 {
@@ -199,7 +216,11 @@ pub fn auto_reframe(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 }
                 k += step;
             }
-            if acc.2 > 0.0 { (acc.0 / acc.2, acc.1 / acc.2) } else { (0.5, 0.5) }
+            if acc.2 > 0.0 {
+                (acc.0 / acc.2, acc.1 / acc.2)
+            } else {
+                (0.5, 0.5)
+            }
         }
         None => {
             let (u, v) = saliency_centroid(&img.downsample2());
@@ -210,7 +231,9 @@ pub fn auto_reframe(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let sx = (subject.0 * lw + off.x).clamp(vw / 2.0, lw - vw / 2.0);
     let sy = (subject.1 * lh + off.y).clamp(vh / 2.0, lh - vh / 2.0);
     // output(p) = input(subject + (p − centre) / z)
-    let m = Affine::translate(lw / 2.0, lh / 2.0).then_apply(&Affine::scale(z, z)).then_apply(&Affine::translate(-sx, -sy));
+    let m = Affine::translate(lw / 2.0, lh / 2.0)
+        .then_apply(&Affine::scale(z, z))
+        .then_apply(&Affine::translate(-sx, -sy));
     if (z - 1.0).abs() < 1e-9 && (sx - lw / 2.0).abs() < 1e-6 && (sy - lh / 2.0).abs() < 1e-6 {
         return;
     }
@@ -242,8 +265,15 @@ pub fn clear_stabilizer_cache() {
 }
 
 /// Analyse (or fetch the cached analysis of) the clip `env` describes.
-pub fn stabilizer_path(env: &dyn FxEnv, now: f64, method: TrackMethod, detailed: bool) -> Option<Arc<StabilizerPath>> {
-    let key = env.clip_key() ^ (method as u64).wrapping_mul(0x9E37) ^ (detailed as u64).wrapping_mul(0x51_7CC1);
+pub fn stabilizer_path(
+    env: &dyn FxEnv,
+    now: f64,
+    method: TrackMethod,
+    detailed: bool,
+) -> Option<Arc<StabilizerPath>> {
+    let key = env.clip_key()
+        ^ (method as u64).wrapping_mul(0x9E37)
+        ^ (detailed as u64).wrapping_mul(0x51_7CC1);
     if let Some(p) = path_cache().lock().ok().and_then(|c| c.get(&key).cloned()) {
         return Some(p);
     }
@@ -258,19 +288,31 @@ pub fn stabilizer_path(env: &dyn FxEnv, now: f64, method: TrackMethod, detailed:
             if filmcraft_media::cancel::cancelled() {
                 return None;
             }
-            env.source_frame(k as f64 / fps - now, scale).map(|f| Prepared::new(gray_of(&f)))
+            env.source_frame(k as f64 / fps - now, scale)
+                .map(|f| Prepared::new(gray_of(&f)))
         })
         .collect();
     if filmcraft_media::cancel::cancelled() {
         return None;
     }
-    let (w, h) = frames.iter().flatten().next().map(|p| (p.base().w, p.base().h))?;
+    let (w, h) = frames
+        .iter()
+        .flatten()
+        .next()
+        .map(|p| (p.base().w, p.base().h))?;
     let m = 8.0;
-    let region = [Vec2::new(m, m), Vec2::new(w as f64 - m, m), Vec2::new(w as f64 - m, h as f64 - m), Vec2::new(m, h as f64 - m)];
+    let region = [
+        Vec2::new(m, m),
+        Vec2::new(w as f64 - m, m),
+        Vec2::new(w as f64 - m, h as f64 - m),
+        Vec2::new(m, h as f64 - m),
+    ];
     let steps: Vec<Affine> = (0..n.saturating_sub(1))
         .into_par_iter()
         .map(|k| match (&frames[k], &frames[k + 1]) {
-            (Some(a), Some(b)) if a.base().w == b.base().w => track_step(a, b, &region, method).map(|s| s.transform).unwrap_or(Affine::IDENTITY),
+            (Some(a), Some(b)) if a.base().w == b.base().w => track_step(a, b, &region, method)
+                .map(|s| s.transform)
+                .unwrap_or(Affine::IDENTITY),
             _ => Affine::IDENTITY,
         })
         .collect();
@@ -292,11 +334,23 @@ fn decompose(m: &Affine) -> [f64; 4] {
 fn compose(p: [f64; 4]) -> Affine {
     let s = p[3].exp();
     let (sn, cs) = p[2].sin_cos();
-    Affine { a: s * cs, b: s * sn, c: -s * sn, d: s * cs, e: p[0], f: p[1] }
+    Affine {
+        a: s * cs,
+        b: s * sn,
+        c: -s * sn,
+        d: s * cs,
+        e: p[0],
+        f: p[1],
+    }
 }
 
 /// Per-frame correction transforms (current frame px → stabilised px, analysis pixels).
-pub(crate) fn corrections(path: &StabilizerPath, smooth_frames: f64, no_motion: bool, preserve_scale: bool) -> Vec<Affine> {
+pub(crate) fn corrections(
+    path: &StabilizerPath,
+    smooth_frames: f64,
+    no_motion: bool,
+    preserve_scale: bool,
+) -> Vec<Affine> {
     let n = path.steps.len() + 1;
     // cumulative: frame 0 → frame k, about the frame centre for stable angle/scale decomposition
     let (cxp, cyp) = (path.w as f64 / 2.0, path.h as f64 / 2.0);
@@ -306,7 +360,10 @@ pub(crate) fn corrections(path: &StabilizerPath, smooth_frames: f64, no_motion: 
     for k in 1..n {
         cum[k] = path.steps[k - 1].then_apply(&cum[k - 1]);
     }
-    let params: Vec<[f64; 4]> = cum.iter().map(|c| decompose(&to_c.then_apply(c).then_apply(&from_c))).collect();
+    let params: Vec<[f64; 4]> = cum
+        .iter()
+        .map(|c| decompose(&to_c.then_apply(c).then_apply(&from_c)))
+        .collect();
     // unwrap angles
     let mut params = params;
     for k in 1..n {
@@ -315,7 +372,12 @@ pub(crate) fn corrections(path: &StabilizerPath, smooth_frames: f64, no_motion: 
         params[k][2] -= wrap;
     }
     let smoothed: Vec<[f64; 4]> = if no_motion {
-        let mean = params.iter().fold([0.0; 4], |a, p| [a[0] + p[0], a[1] + p[1], a[2] + p[2], a[3] + p[3]]).map(|v| v / n as f64);
+        let mean = params
+            .iter()
+            .fold([0.0; 4], |a, p| {
+                [a[0] + p[0], a[1] + p[1], a[2] + p[2], a[3] + p[3]]
+            })
+            .map(|v| v / n as f64);
         vec![mean; n]
     } else {
         let sigma = smooth_frames.max(0.01);
@@ -345,7 +407,10 @@ pub(crate) fn corrections(path: &StabilizerPath, smooth_frames: f64, no_motion: 
             // in centred coordinates: smoothed ∘ raw⁻¹
             let raw = compose(params[k]);
             let sm = compose(sp);
-            let corr = raw.inverse().map(|ri| sm.then_apply(&ri)).unwrap_or(Affine::IDENTITY);
+            let corr = raw
+                .inverse()
+                .map(|ri| sm.then_apply(&ri))
+                .unwrap_or(Affine::IDENTITY);
             from_c.then_apply(&corr).then_apply(&to_c)
         })
         .collect()
@@ -353,13 +418,17 @@ pub(crate) fn corrections(path: &StabilizerPath, smooth_frames: f64, no_motion: 
 
 /// Smallest zoom about the centre (≥ 1) that hides the borders a correction exposes.
 pub(crate) fn cover_scale(corr: &Affine, w: f64, h: f64, max: f64) -> f64 {
-    let Some(inv) = corr.inverse() else { return 1.0 };
+    let Some(inv) = corr.inverse() else {
+        return 1.0;
+    };
     let (cx, cy) = (w / 2.0, h / 2.0);
     let covered = |z: f64| {
-        [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().all(|&(x, y)| {
-            let q = inv.apply(Vec2::new(cx + (x - cx) / z, cy + (y - cy) / z));
-            q.x >= -0.5 && q.y >= -0.5 && q.x <= w + 0.5 && q.y <= h + 0.5
-        })
+        [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]
+            .iter()
+            .all(|&(x, y)| {
+                let q = inv.apply(Vec2::new(cx + (x - cx) / z, cy + (y - cy) / z));
+                q.x >= -0.5 && q.y >= -0.5 && q.x <= w + 0.5 && q.y <= h + 0.5
+            })
     };
     if covered(1.0) {
         return 1.0;
@@ -382,20 +451,36 @@ pub(crate) fn cover_scale(corr: &Affine, w: f64, h: f64, max: f64) -> f64 {
 /// Warp Stabilizer: see the module docs.
 pub fn warp_stabilizer(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let Some(env) = cx.env else { return };
-    let method = if chv(e, "method") == 0 { TrackMethod::Position } else { TrackMethod::PositionScaleRotation };
-    let Some(path) = stabilizer_path(env, cx.seconds, method, bv(e, "detailed")) else { return };
+    let method = if chv(e, "method") == 0 {
+        TrackMethod::Position
+    } else {
+        TrackMethod::PositionScaleRotation
+    };
+    let Some(path) = stabilizer_path(env, cx.seconds, method, bv(e, "detailed")) else {
+        return;
+    };
     let n = path.steps.len() + 1;
     let k = ((cx.seconds * path.fps).round().max(0.0) as usize).min(n - 1);
     let smooth = fv(e, "smoothness", cx) as f64 / 100.0 * path.fps;
     let crop_less = fv(e, "crop_less", cx) as f64 / 100.0;
-    let corr = corrections(&path, smooth * (0.5 + crop_less), chv(e, "result") == 1, bv(e, "preserve_scale"));
+    let corr = corrections(
+        &path,
+        smooth * (0.5 + crop_less),
+        chv(e, "result") == 1,
+        bv(e, "preserve_scale"),
+    );
     let framing = chv(e, "framing");
     let (aw, ah) = (path.w as f64, path.h as f64);
     let max_scale = (fv(e, "max_scale", cx) as f64 / 100.0).max(1.0);
     let safe = 1.0 + fv(e, "action_safe", cx) as f64 / 100.0;
     let extra = fv(e, "additional_scale", cx) as f64 / 100.0;
     let zoom = match framing {
-        2 => corr.iter().map(|c| cover_scale(c, aw, ah, max_scale)).fold(1.0, f64::max) * safe,
+        2 => {
+            corr.iter()
+                .map(|c| cover_scale(c, aw, ah, max_scale))
+                .fold(1.0, f64::max)
+                * safe
+        }
         _ => 1.0,
     } * extra;
     // analysis px → layer px
@@ -403,33 +488,54 @@ pub fn warp_stabilizer(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let to_layer = Affine::scale(s, s);
     let from_layer = Affine::scale(1.0 / s, 1.0 / s);
     let (lw, lh) = (img.w as f64, img.h as f64);
-    let z = Affine::translate(lw / 2.0, lh / 2.0).then_apply(&Affine::scale(zoom, zoom)).then_apply(&Affine::translate(-lw / 2.0, -lh / 2.0));
-    let m = z.then_apply(&to_layer).then_apply(&corr[k]).then_apply(&from_layer);
+    let z = Affine::translate(lw / 2.0, lh / 2.0)
+        .then_apply(&Affine::scale(zoom, zoom))
+        .then_apply(&Affine::translate(-lw / 2.0, -lh / 2.0));
+    let m = z
+        .then_apply(&to_layer)
+        .then_apply(&corr[k])
+        .then_apply(&from_layer);
     let src = img.clone();
     affine_warp(img, &m);
     match framing {
         1 => {
             // crop to the area every frame covers
-            let worst = corr.iter().map(|c| cover_scale(c, aw, ah, 4.0)).fold(1.0, f64::max);
-            let (mx, my) = (lw * (1.0 - 1.0 / worst) / 2.0, lh * (1.0 - 1.0 / worst) / 2.0);
-            crate::effects::crop(img, (mx / lw) as f32, (my / lh) as f32, (mx / lw) as f32, (my / lh) as f32, 0.0);
+            let worst = corr
+                .iter()
+                .map(|c| cover_scale(c, aw, ah, 4.0))
+                .fold(1.0, f64::max);
+            let (mx, my) = (
+                lw * (1.0 - 1.0 / worst) / 2.0,
+                lh * (1.0 - 1.0 / worst) / 2.0,
+            );
+            crate::effects::crop(
+                img,
+                (mx / lw) as f32,
+                (my / lh) as f32,
+                (mx / lw) as f32,
+                (my / lh) as f32,
+                0.0,
+            );
         }
         3 => {
             // synthesise edges: fill uncovered pixels from the clamped source
             if let Some(inv) = m.inverse() {
                 let w = img.w;
-                img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                    for x in 0..w {
-                        let p = &mut row[x * 4..x * 4 + 4];
-                        if p[3] < 0.999 {
-                            let q = inv.apply(Vec2::new(x as f64 + 0.5, y as f64 + 0.5));
-                            let fill = src.sample_bilinear_clamped(q.x as f32, q.y as f32);
-                            let mut b = fill;
-                            over(&mut b, [p[0], p[1], p[2], p[3]]);
-                            p.copy_from_slice(&b);
+                img.px
+                    .par_chunks_mut(w * 4)
+                    .enumerate()
+                    .for_each(|(y, row)| {
+                        for x in 0..w {
+                            let p = &mut row[x * 4..x * 4 + 4];
+                            if p[3] < 0.999 {
+                                let q = inv.apply(Vec2::new(x as f64 + 0.5, y as f64 + 0.5));
+                                let fill = src.sample_bilinear_clamped(q.x as f32, q.y as f32);
+                                let mut b = fill;
+                                over(&mut b, [p[0], p[1], p[2], p[3]]);
+                                p.copy_from_slice(&b);
+                            }
                         }
-                    }
-                });
+                    });
             }
         }
         _ => {}

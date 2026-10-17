@@ -20,8 +20,12 @@ pub(super) fn distortion(model: &str, ifd: &Ifd, active: Rect, crop: Rect) -> Op
     if model != "ILCE-7RM4A" {
         return None;
     }
-    let Value::SShort(values) = &ifd.get(DISTORTION)?.value else { return None };
-    let [16, table @ ..] = values.as_slice() else { return None };
+    let Value::SShort(values) = &ifd.get(DISTORTION)?.value else {
+        return None;
+    };
+    let [16, table @ ..] = values.as_slice() else {
+        return None;
+    };
     let table: &[i16; 16] = table.try_into().ok()?;
     if table.iter().all(|v| *v == 0) || table.iter().any(|v| !(-4096..=4096).contains(v)) {
         return None;
@@ -48,7 +52,11 @@ pub(super) fn distortion(model: &str, ifd: &Ifd, active: Rect, crop: Rect) -> Op
     // Zoom until the entire rectangular output boundary is inside the source. For a piecewise-linear
     // scale its maximum on that boundary occurs at its nearest radius or at one of the remaining knots.
     let nearest = cw.min(ch) / diagonal;
-    let max_scale = (0..16).map(|i| i as f64 / 15.0).filter(|&r| r >= nearest).map(scale).fold(scale(nearest), f64::max);
+    let max_scale = (0..16)
+        .map(|i| i as f64 / 15.0)
+        .filter(|&r| r >= nearest)
+        .map(scale)
+        .fold(scale(nearest), f64::max);
     let zoom = 1.0 / max_scale;
     let basis = |r: f64| {
         let r2 = r * r;
@@ -92,7 +100,10 @@ pub(super) fn distortion(model: &str, ifd: &Ifd, active: Rect, crop: Rect) -> Op
     for (i, coefficient) in k.iter_mut().enumerate() {
         *coefficient *= ratio2.powi(i as i32);
     }
-    Some(Opcode::WarpRectilinear { planes: vec![[k[0], k[1], k[2], k[3], 0.0, 0.0]], center: [cx / ax, cy / ay] })
+    Some(Opcode::WarpRectilinear {
+        planes: vec![[k[0], k[1], k[2], k[3], 0.0, 0.0]],
+        center: [cx / ax, cy / ay],
+    })
 }
 
 /// Small fixed-size least-squares system; partial pivoting, no input-sized allocations.
@@ -125,19 +136,41 @@ mod tests {
     use lightcraft_tiff::Entry;
 
     fn ifd(value: Value) -> Ifd {
-        Ifd { entries: vec![Entry { tag: DISTORTION, value, offset: 0 }], ..Default::default() }
+        Ifd {
+            entries: vec![Entry {
+                tag: DISTORTION,
+                value,
+                offset: 0,
+            }],
+            ..Default::default()
+        }
     }
     fn table(values: &[i16]) -> Ifd {
-        ifd(Value::SShort(std::iter::once(16).chain(values.iter().copied()).collect()))
+        ifd(Value::SShort(
+            std::iter::once(16).chain(values.iter().copied()).collect(),
+        ))
     }
-    const TELE: [i16; 16] = [-2, 1, 7, 17, 31, 48, 68, 93, 120, 152, 187, 225, 265, 309, 356, 403];
-    const WIDE: [i16; 16] = [14, 0, -27, -59, -106, -158, -223, -291, -367, -440, -519, -593, -667, -731, -792, -839];
-    const AREA: Rect = Rect { x: 0, y: 0, width: 9504, height: 6336 };
+    const TELE: [i16; 16] = [
+        -2, 1, 7, 17, 31, 48, 68, 93, 120, 152, 187, 225, 265, 309, 356, 403,
+    ];
+    const WIDE: [i16; 16] = [
+        14, 0, -27, -59, -106, -158, -223, -291, -367, -440, -519, -593, -667, -731, -792, -839,
+    ];
+    const AREA: Rect = Rect {
+        x: 0,
+        y: 0,
+        width: 9504,
+        height: 6336,
+    };
 
     #[test]
     fn matches_independent_sony_reference_geometry() {
         // On/off feature correspondences from Imaging Edge 4.1 at 600 mm, independently fitted.
-        let Opcode::WarpRectilinear { planes, center } = distortion("ILCE-7RM4A", &table(&TELE), AREA, AREA).unwrap() else { panic!("warp") };
+        let Opcode::WarpRectilinear { planes, center } =
+            distortion("ILCE-7RM4A", &table(&TELE), AREA, AREA).unwrap()
+        else {
+            panic!("warp")
+        };
         assert_eq!(center, [0.5, 0.5]);
         let reference = [0.9760159044, 0.0254891644, -0.0005984764, -0.0010120638];
         for i in 0..=100 {
@@ -151,9 +184,20 @@ mod tests {
     fn barrel_framing_and_offset_crop_keep_the_same_geometry() {
         let crop = Rect::new(32, 20, 9504, 6336);
         let active = Rect::new(0, 0, 9600, 6376);
-        let Opcode::WarpRectilinear { planes: a, .. } = distortion("ILCE-7RM4A", &table(&WIDE), AREA, AREA).unwrap() else { panic!("warp") };
-        let Opcode::WarpRectilinear { planes: b, center } = distortion("ILCE-7RM4A", &table(&WIDE), active, crop).unwrap() else { panic!("warp") };
-        assert!(a[0][0] > 1.02 && a[0][0] < 1.03, "barrel correction expands the middle");
+        let Opcode::WarpRectilinear { planes: a, .. } =
+            distortion("ILCE-7RM4A", &table(&WIDE), AREA, AREA).unwrap()
+        else {
+            panic!("warp")
+        };
+        let Opcode::WarpRectilinear { planes: b, center } =
+            distortion("ILCE-7RM4A", &table(&WIDE), active, crop).unwrap()
+        else {
+            panic!("warp")
+        };
+        assert!(
+            a[0][0] > 1.02 && a[0][0] < 1.03,
+            "barrel correction expands the middle"
+        );
         assert!((center[0] * 9599.0 - 4783.5).abs() < 1e-10);
         assert!((center[1] * 6375.0 - 3187.5).abs() < 1e-10);
         let ratio = (4815.5f64.hypot(3187.5)) / (4751.5f64.hypot(3167.5));
@@ -178,14 +222,39 @@ mod tests {
             assert!(distortion("ILCE-7RM4A", &bad, AREA, AREA).is_none());
         }
         assert!(distortion("ILCE-7RM4A", &table(&TELE), Rect::new(0, 0, 1, 1), AREA).is_none());
-        assert!(distortion("ILCE-7RM4A", &table(&TELE), AREA, Rect::new(0, 0, 9504, 5346)).is_none());
-        assert!(distortion("ILCE-7RM4A", &table(&TELE), AREA, Rect::new(99999, 0, 10, 10)).is_none());
+        assert!(
+            distortion(
+                "ILCE-7RM4A",
+                &table(&TELE),
+                AREA,
+                Rect::new(0, 0, 9504, 5346)
+            )
+            .is_none()
+        );
+        assert!(
+            distortion(
+                "ILCE-7RM4A",
+                &table(&TELE),
+                AREA,
+                Rect::new(99999, 0, 10, 10)
+            )
+            .is_none()
+        );
     }
     #[test]
     fn refuses_unvalidated_models_even_with_a_valid_table() {
         let valid = table(&TELE);
         assert!(distortion("ILCE-7RM4A", &valid, AREA, AREA).is_some());
-        for model in ["", "ILCE-7M3", "ILCE-7M4", "ILCE-7RM4", "ILCE-7RM5", "ILCE-9M2", "DSC-RX100M3", "ILCE-7RM4A unknown"] {
+        for model in [
+            "",
+            "ILCE-7M3",
+            "ILCE-7M4",
+            "ILCE-7RM4",
+            "ILCE-7RM5",
+            "ILCE-9M2",
+            "DSC-RX100M3",
+            "ILCE-7RM4A unknown",
+        ] {
             assert!(distortion(model, &valid, AREA, AREA).is_none(), "{model}");
         }
     }
@@ -193,7 +262,12 @@ mod tests {
     #[test]
     fn header_and_full_decode_preserve_correction_through_dng() {
         use lightcraft_tiff::{ByteOrder, IfdBuilder, ImageData, TiffWriter, tags as t};
-        for (model, expected) in [("ILCE-7RM4A", 1), ("ILCE-7RM4", 0), ("ILCE-7M3", 0), ("", 0)] {
+        for (model, expected) in [
+            ("ILCE-7RM4A", 1),
+            ("ILCE-7RM4", 0),
+            ("ILCE-7M3", 0),
+            ("", 0),
+        ] {
             for (height, expected) in [(20, expected), (16, 0)] {
                 for order in [ByteOrder::Little, ByteOrder::Big] {
                     let mut raw = IfdBuilder::new();
@@ -211,21 +285,44 @@ mod tests {
                     raw.set(t::DEFAULT_CROP_SIZE, Value::Long(vec![30, 20]));
                     // An aspect crop must stay excluded even when DefaultCrop still describes 3:2.
                     raw.set(0x74c8, Value::Long(vec![30, height]));
-                    raw.set(DISTORTION, Value::SShort(std::iter::once(16).chain(TELE).collect()));
+                    raw.set(
+                        DISTORTION,
+                        Value::SShort(std::iter::once(16).chain(TELE).collect()),
+                    );
                     // Zero pixels have the same byte representation in both orders.
-                    raw.set_image(ImageData::Strips { rows_per_strip: 24, strips: vec![vec![0; 32 * 24 * 2]] });
-                    let file = TiffWriter { order, ..Default::default() }.write(&[raw]).unwrap();
+                    raw.set_image(ImageData::Strips {
+                        rows_per_strip: 24,
+                        strips: vec![vec![0; 32 * 24 * 2]],
+                    });
+                    let file = TiffWriter {
+                        order,
+                        ..Default::default()
+                    }
+                    .write(&[raw])
+                    .unwrap();
                     let header = super::super::arw::decode(&file, crate::Mode::Header).unwrap();
                     let full = super::super::arw::decode(&file, crate::Mode::Full).unwrap();
                     assert_eq!(header.info(), full.info());
-                    assert_eq!(full.opcodes.list3.len(), expected, "{model} {order:?} height={height}");
+                    assert_eq!(
+                        full.opcodes.list3.len(),
+                        expected,
+                        "{model} {order:?} height={height}"
+                    );
                     // the image keeps Sony's crop tags; the warp is centred on the DNG default crop (x 2..32 of 32)
                     assert_eq!(full.crop, Rect::new(0, 2, 30, height as usize));
-                    if let Some(Opcode::WarpRectilinear { center, .. }) = full.opcodes.list3.first() {
-                        assert!((center[0] - 16.5 / 31.0).abs() < 1e-12 && (center[1] - 11.5 / 23.0).abs() < 1e-12, "{center:?}");
+                    if let Some(Opcode::WarpRectilinear { center, .. }) = full.opcodes.list3.first()
+                    {
+                        assert!(
+                            (center[0] - 16.5 / 31.0).abs() < 1e-12
+                                && (center[1] - 11.5 / 23.0).abs() < 1e-12,
+                            "{center:?}"
+                        );
                     }
                     let dng = crate::write_dng(&full, &Default::default()).unwrap();
-                    assert_eq!(crate::decode(&dng).unwrap().opcodes.list3, full.opcodes.list3);
+                    assert_eq!(
+                        crate::decode(&dng).unwrap().opcodes.list3,
+                        full.opcodes.list3
+                    );
                 }
             }
         }

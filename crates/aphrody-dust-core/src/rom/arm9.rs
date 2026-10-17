@@ -256,8 +256,11 @@ impl<'a> Arm9<'a> {
         data.extend(bytemuck::bytes_of(&autoload_infos));
         let autoload_infos_end = data.len() as u32 + offsets.base_address;
 
-        let Arm9WithTcmsOptions { originally_compressed, originally_encrypted, dsprot_state } =
-            options;
+        let Arm9WithTcmsOptions {
+            originally_compressed,
+            originally_encrypted,
+            dsprot_state,
+        } = options;
         let mut arm9 = Self {
             data: data.into(),
             offsets,
@@ -297,8 +300,11 @@ impl<'a> Arm9<'a> {
         }
         let autoload_infos_end = data.len() as u32 + offsets.base_address;
 
-        let Arm9WithTcmsOptions { originally_compressed, originally_encrypted, dsprot_state } =
-            options;
+        let Arm9WithTcmsOptions {
+            originally_compressed,
+            originally_encrypted,
+            dsprot_state,
+        } = options;
         let mut arm9 = Self {
             data: data.into(),
             offsets,
@@ -340,7 +346,11 @@ impl<'a> Arm9<'a> {
         }
 
         if self.data.len() < 0x4000 {
-            DataTooSmallSnafu { expected: 0x4000usize, actual: self.data.len() }.fail()?;
+            DataTooSmallSnafu {
+                expected: 0x4000usize,
+                actual: self.data.len(),
+            }
+            .fail()?;
         }
 
         let mut secure_area = [0u8; 0x4000];
@@ -373,7 +383,11 @@ impl<'a> Arm9<'a> {
         }
 
         if self.data.len() < 0x4000 {
-            DataTooSmallSnafu { expected: 0x4000usize, actual: self.data.len() }.fail()?;
+            DataTooSmallSnafu {
+                expected: 0x4000usize,
+                actual: self.data.len(),
+            }
+            .fail()?;
         }
 
         let secure_area = self.encrypted_secure_area(key, gamecode);
@@ -453,7 +467,7 @@ impl<'a> Arm9<'a> {
                     b'\0' => {
                         address += 1;
                         data = &data[1..];
-                    },
+                    }
                     b'[' => break,
                     _ => break 'outer,
                 }
@@ -490,7 +504,7 @@ impl<'a> Arm9<'a> {
             Err(e) => {
                 self.data = old_data;
                 return Err(e.into());
-            },
+            }
         };
         build_info.compressed_code_end = 0;
         Ok(())
@@ -506,7 +520,10 @@ impl<'a> Arm9<'a> {
             return Ok(());
         }
 
-        let data: Cow<[u8]> = LZ77.compress(&self.data, COMPRESSION_START)?.into_vec().into();
+        let data: Cow<[u8]> = LZ77
+            .compress(&self.data, COMPRESSION_START)?
+            .into_vec()
+            .into();
         let length = data.len();
         let old_data = replace(&mut self.data, data);
         let base_address = self.base_address();
@@ -515,7 +532,7 @@ impl<'a> Arm9<'a> {
             Err(e) => {
                 self.data = old_data;
                 return Err(e.into());
-            },
+            }
         };
         build_info.compressed_code_end = base_address + length as u32;
         Ok(())
@@ -596,8 +613,12 @@ impl<'a> Arm9<'a> {
         }
 
         // Credits to pleonex: https://scenegate.github.io/Ekona/docs/specs/cartridge/security.html#overlays
-        let Some((i, _)) =
-            self.data.chunks(4).enumerate().filter(|(_, chunk)| *chunk == NITROCODE_BYTES).nth(1)
+        let Some((i, _)) = self
+            .data
+            .chunks(4)
+            .enumerate()
+            .filter(|(_, chunk)| *chunk == NITROCODE_BYTES)
+            .nth(1)
         else {
             return Ok(None);
         };
@@ -846,7 +867,9 @@ impl<'a> Arm9<'a> {
             let base_address = self.base_address();
             let result = dsprot_info.decrypt(self.data.to_mut(), base_address, options)?;
             self.dsprot_state = DsProtState::Unencrypted(result);
-            let DsProtState::Unencrypted(result) = &self.dsprot_state else { unreachable!() };
+            let DsProtState::Unencrypted(result) = &self.dsprot_state else {
+                unreachable!()
+            };
             Ok(Some(result))
         }
     }

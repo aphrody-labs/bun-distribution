@@ -41,11 +41,18 @@ static ROUTES_TOOL: LazyLock<Tool> = LazyLock::new(|| {
 });
 
 pub(crate) fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
-    [&*TOOL, &*ROUTES_TOOL].into_iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
+    [&*TOOL, &*ROUTES_TOOL]
+        .into_iter()
+        .filter(|tool| !taken(tool.name.as_ref()))
+        .cloned()
+        .collect()
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
-    [&*TOOL, &*ROUTES_TOOL].into_iter().find(|tool| tool.name == name).cloned()
+    [&*TOOL, &*ROUTES_TOOL]
+        .into_iter()
+        .find(|tool| tool.name == name)
+        .cloned()
 }
 
 pub(crate) fn owns(name: &str) -> bool {
@@ -53,8 +60,10 @@ pub(crate) fn owns(name: &str) -> bool {
 }
 
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
-    let args =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let args = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     let result = if request.name == ROUTES_TOOL.name {
         if args.as_object().is_some_and(serde_json::Map::is_empty) {
             serde_json::to_value(aphrody_google::routes::catalog())
@@ -69,9 +78,10 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
         Ok(value) => CallToolResult::success(vec![ContentBlock::text(
             serde_json::to_string_pretty(&value).unwrap_or_else(|_| "{}".to_owned()),
         )]),
-        Err(error) => {
-            CallToolResult::error(vec![ContentBlock::text(format!("{}: {error}", request.name))])
-        },
+        Err(error) => CallToolResult::error(vec![ContentBlock::text(format!(
+            "{}: {error}",
+            request.name
+        ))]),
     }
 }
 
@@ -89,10 +99,17 @@ mod tests {
         assert_eq!(list(|_| false).len(), 2);
         let schema = serde_json::to_value(get("aphrody_search").unwrap()).unwrap();
         assert_eq!(schema["inputSchema"]["properties"]["num"]["maximum"], 20);
-        assert_eq!(schema["inputSchema"]["properties"]["vertical"]["default"], "web");
-        for (vertical, udm) in
-            [("web", 14), ("images", 2), ("news", 12), ("videos", 7), ("books", 36)]
-        {
+        assert_eq!(
+            schema["inputSchema"]["properties"]["vertical"]["default"],
+            "web"
+        );
+        for (vertical, udm) in [
+            ("web", 14),
+            ("images", 2),
+            ("news", 12),
+            ("videos", 7),
+            ("books", 36),
+        ] {
             let (_, options, rich) =
                 parse_request(&json!({"query":"rust", "vertical":vertical})).unwrap();
             assert_eq!(options.udm, Some(udm));
@@ -124,7 +141,11 @@ mod tests {
     async fn malformed_input_fails_before_network() {
         assert!(run(&json!({})).await.is_err());
         assert!(run(&json!({"query":"x", "num":21})).await.is_err());
-        assert!(run(&json!({"query":"x", "vertical":"other"})).await.is_err());
+        assert!(
+            run(&json!({"query":"x", "vertical":"other"}))
+                .await
+                .is_err()
+        );
         assert!(run(&json!({"query":"x", "rich":"yes"})).await.is_err());
         for args in [
             json!({"query":"  "}),
@@ -155,7 +176,10 @@ mod tests {
             assert_eq!(pairs["q"], "rust & bun");
             assert_eq!(pairs["safe"], "active");
             assert_eq!(pairs["start"], "20");
-            assert_eq!(pairs.get("udm"), udm.map(|value| value.to_string()).as_ref());
+            assert_eq!(
+                pairs.get("udm"),
+                udm.map(|value| value.to_string()).as_ref()
+            );
         }
     }
 
@@ -177,7 +201,10 @@ mod tests {
     #[tokio::test]
     async fn route_tool_is_local_read_only_and_rejects_arguments() {
         let tool = get("aphrody_google_routes").unwrap();
-        assert_eq!(serde_json::to_value(tool).unwrap()["annotations"]["readOnlyHint"], true);
+        assert_eq!(
+            serde_json::to_value(tool).unwrap()["annotations"]["readOnlyHint"],
+            true
+        );
         let request =
             serde_json::from_value(json!({"name":"aphrody_google_routes","arguments":{}})).unwrap();
         assert_ne!(call(&request).await.is_error, Some(true));

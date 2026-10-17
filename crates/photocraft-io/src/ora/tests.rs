@@ -1,7 +1,10 @@
 use super::*;
 use photocraft_doc::{Adjustment, Color, Fill, LayerMask};
 
-const CANVAS: Size = Size { width: 70, height: 50 };
+const CANVAS: Size = Size {
+    width: 70,
+    height: 50,
+};
 
 fn px(fmt: PixelFormat, rgba: [f32; 4]) -> Vec<u8> {
     let mut out = vec![0; fmt.bytes_per_pixel()];
@@ -35,7 +38,10 @@ fn doc(depth: SampleType) -> Document {
     hidden.visible = false;
     let mut inner = block("Inner screen", fmt, 20, 5, 30, 20, 4);
     inner.blend = BlendMode::Screen;
-    let mut group = Layer::group("Isolated", vec![inner, block("Inner plain", fmt, 5, 5, 8, 8, 5)]);
+    let mut group = Layer::group(
+        "Isolated",
+        vec![inner, block("Inner plain", fmt, 5, 5, 8, 8, 5)],
+    );
     group.blend = BlendMode::Overlay;
     group.opacity = 0.75;
     let mut through_child = block("Through child", fmt, 40, 20, 25, 25, 6);
@@ -68,7 +74,9 @@ fn assert_same(a: &[Layer], b: &[Layer]) {
                 assert_eq!(r, y.content_bounds(), "{}", a.name);
                 assert_eq!(x.to_interleaved(r), y.to_interleaved(r), "{}", a.name);
             }
-            (LayerContent::Group(x), LayerContent::Group(y)) => assert_same(&x.children, &y.children),
+            (LayerContent::Group(x), LayerContent::Group(y)) => {
+                assert_same(&x.children, &y.children)
+            }
             _ => panic!("layer kinds differ for {}", a.name),
         }
     }
@@ -84,7 +92,10 @@ fn layers_groups_and_properties_round_trip_at_8_and_16_bit() {
         assert_eq!(back.size, d.size);
         assert_eq!(back.depth, depth);
         assert_same(&d.layers, &back.layers);
-        assert_eq!(photocraft_compose::flatten(&d).px, photocraft_compose::flatten(&back).px);
+        assert_eq!(
+            photocraft_compose::flatten(&d).px,
+            photocraft_compose::flatten(&back).px
+        );
     }
 }
 
@@ -95,10 +106,20 @@ fn float_documents_save_as_16_bit() {
     let fmt = PixelFormat::RGBA32F;
     d.layers = vec![block("Float", fmt, 0, 0, 10, 10, 9)];
     let (back, warnings, _) = round_trip(&d);
-    assert!(warnings.iter().any(|w| w.contains("16-bit")), "{warnings:?}");
+    assert!(
+        warnings.iter().any(|w| w.contains("16-bit")),
+        "{warnings:?}"
+    );
     assert_eq!(back.depth, SampleType::U16);
-    let (a, b) = (photocraft_compose::flatten(&d), photocraft_compose::flatten(&back));
-    let err = a.px.iter().zip(&b.px).flat_map(|(p, q)| (0..4).map(move |c| (p[c] - q[c]).abs())).fold(0.0f32, f32::max);
+    let (a, b) = (
+        photocraft_compose::flatten(&d),
+        photocraft_compose::flatten(&back),
+    );
+    let err =
+        a.px.iter()
+            .zip(&b.px)
+            .flat_map(|(p, q)| (0..4).map(move |c| (p[c] - q[c]).abs()))
+            .fold(0.0f32, f32::max);
     assert!(err < 1.0 / 65535.0 + 1e-6, "{err}");
 }
 
@@ -116,7 +137,12 @@ fn every_blend_mode_is_written_or_reported() {
             assert!(warnings.is_empty(), "{mode:?}: {warnings:?}");
         } else {
             assert_eq!(got, Some(BlendMode::Normal), "{mode:?}");
-            assert!(warnings.iter().any(|w| w.contains("no OpenRaster equivalent")), "{mode:?}");
+            assert!(
+                warnings
+                    .iter()
+                    .any(|w| w.contains("no OpenRaster equivalent")),
+                "{mode:?}"
+            );
         }
         // Xor round-trips through nothing; the approximations only warn on import.
         let _ = import_warnings;
@@ -128,26 +154,52 @@ fn masks_are_applied_to_pixels_and_reported() {
     let mut d = Document::new("m.ora", CANVAS, ColorMode::Rgb, SampleType::U8);
     let mut l = block("Masked", PixelFormat::RGBA8, 0, 0, 20, 20, 0);
     let mut mask = LayerMask::hide_all();
-    mask.surface.fill_rect(Rect::from_xywh(0, 0, 10, 20), &[1.0]);
+    mask.surface
+        .fill_rect(Rect::from_xywh(0, 0, 10, 20), &[1.0]);
     l.mask = Some(mask);
     d.layers.push(l);
     let (back, warnings, _) = round_trip(&d);
-    assert!(warnings.iter().any(|w| w.contains("layer masks were applied")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("layer masks were applied")),
+        "{warnings:?}"
+    );
     let s = back.layers.first().and_then(Layer::surface).unwrap();
     assert_eq!(s.content_bounds(), Rect::from_xywh(0, 0, 10, 20));
-    assert_eq!(photocraft_compose::flatten(&d).px, photocraft_compose::flatten(&back).px);
+    assert_eq!(
+        photocraft_compose::flatten(&d).px,
+        photocraft_compose::flatten(&back).px
+    );
 }
 
 #[test]
 fn other_layer_kinds_are_rendered_or_left_out() {
     let mut d = Document::new("k.ora", CANVAS, ColorMode::Rgb, SampleType::U8);
-    d.layers.push(block("Base", PixelFormat::RGBA8, 0, 0, 70, 50, 0));
-    d.layers.push(Layer::new("Solid", LayerContent::Fill(Fill::Solid(Color::rgb(0.2, 0.4, 0.6)))));
-    d.layers.push(Layer::new("Invert", LayerContent::Adjustment(Adjustment::Invert)));
+    d.layers
+        .push(block("Base", PixelFormat::RGBA8, 0, 0, 70, 50, 0));
+    d.layers.push(Layer::new(
+        "Solid",
+        LayerContent::Fill(Fill::Solid(Color::rgb(0.2, 0.4, 0.6))),
+    ));
+    d.layers.push(Layer::new(
+        "Invert",
+        LayerContent::Adjustment(Adjustment::Invert),
+    ));
     let (back, warnings, _) = round_trip(&d);
     assert_eq!(back.layers.len(), 2);
-    assert!(warnings.iter().any(|w| w.contains("fill layers are saved to OpenRaster as pixels")), "{warnings:?}");
-    assert!(warnings.iter().any(|w| w.contains("adjustment layers cannot be saved")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("fill layers are saved to OpenRaster as pixels")),
+        "{warnings:?}"
+    );
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("adjustment layers cannot be saved")),
+        "{warnings:?}"
+    );
     let solid = back.layers.get(1).and_then(Layer::surface).unwrap();
     assert_eq!(solid.content_bounds(), back.bounds());
 }
@@ -155,9 +207,13 @@ fn other_layer_kinds_are_rendered_or_left_out() {
 #[test]
 fn grayscale_saves_as_rgb_and_cmyk_is_refused() {
     let mut g = Document::new("g.ora", CANVAS, ColorMode::Grayscale, SampleType::U8);
-    g.layers.push(block("Gray", PixelFormat::GRAYA8, 0, 0, 10, 10, 0));
+    g.layers
+        .push(block("Gray", PixelFormat::GRAYA8, 0, 0, 10, 10, 0));
     let (back, warnings, _) = round_trip(&g);
-    assert!(warnings.iter().any(|w| w.contains("grayscale")), "{warnings:?}");
+    assert!(
+        warnings.iter().any(|w| w.contains("grayscale")),
+        "{warnings:?}"
+    );
     assert_eq!(back.mode, ColorMode::Rgb);
     let c = Document::new("c.ora", CANVAS, ColorMode::Cmyk, SampleType::U8);
     assert!(matches!(export(&c), Err(IoError::Unsupported(_))));
@@ -174,12 +230,19 @@ fn archive_layout_follows_the_specification() {
     for entry in ["stack.xml", "mergedimage.png", "Thumbnails/thumbnail.png"] {
         assert!(zip.find(entry).is_some(), "{entry}");
     }
-    let thumb = codecs::decode(&zip.read_by_name("Thumbnails/thumbnail.png", 1 << 20).unwrap()).unwrap();
+    let thumb = codecs::decode(
+        &zip.read_by_name("Thumbnails/thumbnail.png", 1 << 20)
+            .unwrap(),
+    )
+    .unwrap();
     assert!(thumb.dimensions().0 <= 256 && thumb.dimensions().1 <= 256);
     let merged = codecs::decode(&zip.read_by_name("mergedimage.png", 1 << 20).unwrap()).unwrap();
     assert_eq!(merged.dimensions(), (70, 50));
     let xml = String::from_utf8(zip.read_by_name("stack.xml", 1 << 20).unwrap()).unwrap();
-    assert!(xml.contains("name=\"Pass &lt;&amp;&gt; &quot;through&quot;\""), "{xml}");
+    assert!(
+        xml.contains("name=\"Pass &lt;&amp;&gt; &quot;through&quot;\""),
+        "{xml}"
+    );
     assert!(xml.contains("isolation=\"auto\""), "{xml}");
     assert!(xml.contains("composite-op=\"krita:linear light\""), "{xml}");
 }
@@ -196,13 +259,30 @@ fn archive(stack: &str, images: &[(&str, Vec<u8>)]) -> Vec<u8> {
 }
 
 fn solid_png(w: u32, h: u32, rgba: [u8; 4]) -> Vec<u8> {
-    let data = rgba.iter().copied().cycle().take((w * h * 4) as usize).collect();
-    codecs::encode(&Image::from_raw(w, h, ChannelLayout::Rgba, CSample::U8, data).unwrap(), Format::Png, &Default::default()).unwrap()
+    let data = rgba
+        .iter()
+        .copied()
+        .cycle()
+        .take((w * h * 4) as usize)
+        .collect();
+    codecs::encode(
+        &Image::from_raw(w, h, ChannelLayout::Rgba, CSample::U8, data).unwrap(),
+        Format::Png,
+        &Default::default(),
+    )
+    .unwrap()
 }
 
 fn gray16_png(w: u32, h: u32) -> Vec<u8> {
-    let data = (0..w * h).flat_map(|i| ((i * 1000) as u16).to_ne_bytes()).collect();
-    codecs::encode(&Image::from_raw(w, h, ChannelLayout::Gray, CSample::U16, data).unwrap(), Format::Png, &Default::default()).unwrap()
+    let data = (0..w * h)
+        .flat_map(|i| ((i * 1000) as u16).to_ne_bytes())
+        .collect();
+    codecs::encode(
+        &Image::from_raw(w, h, ChannelLayout::Gray, CSample::U16, data).unwrap(),
+        Format::Png,
+        &Default::default(),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -223,21 +303,40 @@ fn reads_other_applications_stacks() {
   <layer name="Lost" src="data/missing.png"/>
  </stack>
 </image>"#;
-    let bytes =
-        archive(xml, &[("data/a.png", solid_png(3, 2, [255, 0, 0, 255])), ("data/b.png", solid_png(8, 6, [0, 0, 255, 128])), ("data/g.png", gray16_png(4, 4))]);
+    let bytes = archive(
+        xml,
+        &[
+            ("data/a.png", solid_png(3, 2, [255, 0, 0, 255])),
+            ("data/b.png", solid_png(8, 6, [0, 0, 255, 128])),
+            ("data/g.png", gray16_png(4, 4)),
+        ],
+    );
     // Detected by content, whatever the name says.
     let r = crate::import("no extension", &bytes).unwrap();
     let d = &r.document;
-    assert_eq!((d.size.width, d.size.height, d.depth), (8, 6, SampleType::U16));
+    assert_eq!(
+        (d.size.width, d.size.height, d.depth),
+        (8, 6, SampleType::U16)
+    );
     assert_eq!(d.resolution_dpi, 150.0);
     let names: Vec<&str> = d.layers.iter().map(|l| l.name.as_str()).collect();
-    assert_eq!(names, ["Lost", "Strange", "Gray16", "Through", "Folder", "Plus"]);
+    assert_eq!(
+        names,
+        ["Lost", "Strange", "Gray16", "Through", "Folder", "Plus"]
+    );
     let get = |n: &str| d.layers.iter().find(|l| l.name == n).unwrap();
     let plus = get("Plus");
     assert_eq!((plus.blend, plus.opacity), (BlendMode::LinearDodge, 0.5));
-    assert_eq!(plus.surface().unwrap().content_bounds(), Rect::from_xywh(2, 1, 3, 2));
+    assert_eq!(
+        plus.surface().unwrap().content_bounds(),
+        Rect::from_xywh(2, 1, 3, 2)
+    );
     let folder = get("Folder");
-    assert_eq!(folder.blend, BlendMode::DarkerColor, "a blend mode isolates an auto group");
+    assert_eq!(
+        folder.blend,
+        BlendMode::DarkerColor,
+        "a blend mode isolates an auto group"
+    );
     let inside = folder.children().unwrap().first().unwrap();
     assert!(!inside.visible && inside.locks.transparency);
     assert_eq!(inside.blend, BlendMode::HardMix);
@@ -249,7 +348,13 @@ fn reads_other_applications_stacks() {
     assert_eq!(get("Strange").blend, BlendMode::Normal);
     assert!(get("Lost").surface().unwrap().content_bounds().is_empty());
     let all = r.warnings.join("\n");
-    for needle in ["svg:dst-in", "<text>", "missing from the archive", "krita:hard mix", "svg:soft-light"] {
+    for needle in [
+        "svg:dst-in",
+        "<text>",
+        "missing from the archive",
+        "krita:hard mix",
+        "svg:soft-light",
+    ] {
         assert!(all.contains(needle), "{needle} not in {all}");
     }
 }
@@ -264,9 +369,15 @@ fn preserves_surrounding_whitespace_in_layer_and_group_names() {
     let result = crate::import("names.ora", &bytes).unwrap();
     let layers = &result.document.layers;
 
-    let folder = layers.iter().find(|layer| layer.name == " Folder ").expect("group name is preserved");
+    let folder = layers
+        .iter()
+        .find(|layer| layer.name == " Folder ")
+        .expect("group name is preserved");
     assert_eq!(folder.children().unwrap()[0].name, " Pixel ");
-    assert!(layers.iter().any(|layer| layer.name == "Layer 3"), "blank names keep the fallback");
+    assert!(
+        layers.iter().any(|layer| layer.name == "Layer 3"),
+        "blank names keep the fallback"
+    );
 }
 
 #[test]
@@ -283,31 +394,66 @@ fn malformed_archives_fail_cleanly() {
         ("wrong mimetype", {
             let mut z = ZipWriter::new();
             z.add("mimetype", b"image/png").unwrap();
-            z.add("stack.xml", b"<image w='1' h='1'><stack/></image>").unwrap();
+            z.add("stack.xml", b"<image w='1' h='1'><stack/></image>")
+                .unwrap();
             z.finish().unwrap()
         }),
         ("bad xml", ok("<image w='2' h='2'><stack>")),
         ("wrong root", ok("<picture w='2' h='2'><stack/></picture>")),
         ("no root stack", ok("<image w='2' h='2'/>")),
         ("zero width", ok("<image w='0' h='2'><stack/></image>")),
-        ("fractional width", ok("<image w='2.5' h='2'><stack/></image>")),
-        ("huge canvas", ok("<image w='300000' h='300000'><stack/></image>")),
-        ("bad opacity", ok("<image w='2' h='2'><stack><layer src='a.png' opacity='lots'/></stack></image>")),
-        ("nan opacity", ok("<image w='2' h='2'><stack><layer src='a.png' opacity='NaN'/></stack></image>")),
-        ("far offset", ok("<image w='2' h='2'><stack><layer src='a.png' x='99999999999'/></stack></image>")),
-        ("not an image", archive("<image w='2' h='2'><stack><layer src='a.png'/></stack></image>", &[("a.png", b"garbage".to_vec())])),
-        ("not utf-8", archive("", &[]).into_iter().chain([]).collect()),
+        (
+            "fractional width",
+            ok("<image w='2.5' h='2'><stack/></image>"),
+        ),
+        (
+            "huge canvas",
+            ok("<image w='300000' h='300000'><stack/></image>"),
+        ),
+        (
+            "bad opacity",
+            ok("<image w='2' h='2'><stack><layer src='a.png' opacity='lots'/></stack></image>"),
+        ),
+        (
+            "nan opacity",
+            ok("<image w='2' h='2'><stack><layer src='a.png' opacity='NaN'/></stack></image>"),
+        ),
+        (
+            "far offset",
+            ok("<image w='2' h='2'><stack><layer src='a.png' x='99999999999'/></stack></image>"),
+        ),
+        (
+            "not an image",
+            archive(
+                "<image w='2' h='2'><stack><layer src='a.png'/></stack></image>",
+                &[("a.png", b"garbage".to_vec())],
+            ),
+        ),
+        (
+            "not utf-8",
+            archive("", &[]).into_iter().chain([]).collect(),
+        ),
     ];
     for (what, bytes) in cases {
         assert!(crate::import("x.ora", &bytes).is_err(), "{what}");
     }
-    let deep = format!("<image w='2' h='2'><stack>{}{}</stack></image>", "<stack>".repeat(200), "</stack>".repeat(200));
-    assert!(matches!(crate::import("x.ora", &ok(&deep)), Err(IoError::Unsupported(_))));
+    let deep = format!(
+        "<image w='2' h='2'><stack>{}{}</stack></image>",
+        "<stack>".repeat(200),
+        "</stack>".repeat(200)
+    );
+    assert!(matches!(
+        crate::import("x.ora", &ok(&deep)),
+        Err(IoError::Unsupported(_))
+    ));
 }
 
 #[test]
 fn layer_and_pixel_budgets_are_enforced() {
-    let many = format!("<image w='2' h='2'><stack>{}</stack></image>", "<stack/>".repeat(MAX_NODES + 1));
+    let many = format!(
+        "<image w='2' h='2'><stack>{}</stack></image>",
+        "<stack/>".repeat(MAX_NODES + 1)
+    );
     assert!(crate::import("x.ora", &archive(&many, &[])).is_err());
     // A tiny PNG claiming a vast size is refused by the decoder limits, not allocated.
     let big = solid_png(1, 1, [0; 4]);
@@ -364,31 +510,61 @@ fn export_names_route_through_the_crate_entry_point() {
 
 #[test]
 fn normal_group_fill_opacity_survives_openraster_export() {
-    let mut d = Document::new("group.ora", Size { width: 8, height: 8 }, ColorMode::Rgb, SampleType::U8);
+    let mut d = Document::new(
+        "group.ora",
+        Size {
+            width: 8,
+            height: 8,
+        },
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
     let mut surface = Surface::new(PixelFormat::RGBA8);
     surface.write_interleaved(Rect::from_xywh(0, 0, 8, 8), &[255, 0, 0, 255].repeat(64));
-    let mut group = Layer::group("Folder", vec![Layer::new("Red", LayerContent::Raster(surface))]);
+    let mut group = Layer::group(
+        "Folder",
+        vec![Layer::new("Red", LayerContent::Raster(surface))],
+    );
     group.blend = BlendMode::Normal;
     group.opacity = 1.0;
     group.fill_opacity = 0.5;
     d.layers.push(group);
 
     let (back, warnings, _) = round_trip(&d);
-    assert!(warnings.iter().any(|w| w.contains("fill opacity was combined")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("fill opacity was combined")),
+        "{warnings:?}"
+    );
     let imported_group = back.layers.first().unwrap();
     assert!((imported_group.opacity - 0.5).abs() < 1e-6);
     assert_eq!(imported_group.fill_opacity, 1.0);
     let before = photocraft_compose::flatten(&d);
     let after = photocraft_compose::flatten(&back);
     for (a, b) in before.px.iter().zip(&after.px) {
-        assert!((a[3] - b[3]).abs() < 1.0 / 255.0 + 1e-6, "alpha: {a:?} vs {b:?}");
+        assert!(
+            (a[3] - b[3]).abs() < 1.0 / 255.0 + 1e-6,
+            "alpha: {a:?} vs {b:?}"
+        );
     }
 }
 
 #[test]
 fn group_opacity_and_fill_are_combined_without_affecting_raster_opacity() {
-    let mut d = Document::new("opacity.ora", Size { width: 8, height: 8 }, ColorMode::Rgb, SampleType::U8);
-    let mut group = Layer::group("Folder", vec![block("Child", PixelFormat::RGBA8, 0, 0, 8, 8, 0)]);
+    let mut d = Document::new(
+        "opacity.ora",
+        Size {
+            width: 8,
+            height: 8,
+        },
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
+    let mut group = Layer::group(
+        "Folder",
+        vec![block("Child", PixelFormat::RGBA8, 0, 0, 8, 8, 0)],
+    );
     group.blend = BlendMode::Normal;
     group.opacity = 0.5;
     group.fill_opacity = 0.5;
@@ -407,8 +583,24 @@ fn lossy_documents() -> Vec<(&'static str, Document)> {
         d
     };
     vec![
-        ("adjustment", with(&|d| d.layers.push(Layer::new("Curves", LayerContent::Adjustment(Adjustment::Invert))))),
-        ("fill", with(&|d| d.layers.push(Layer::new("Fill", LayerContent::Fill(Fill::Solid(Color::rgba(1.0, 0.0, 0.0, 1.0))))))),
+        (
+            "adjustment",
+            with(&|d| {
+                d.layers.push(Layer::new(
+                    "Curves",
+                    LayerContent::Adjustment(Adjustment::Invert),
+                ))
+            }),
+        ),
+        (
+            "fill",
+            with(&|d| {
+                d.layers.push(Layer::new(
+                    "Fill",
+                    LayerContent::Fill(Fill::Solid(Color::rgba(1.0, 0.0, 0.0, 1.0))),
+                ))
+            }),
+        ),
         ("mask", {
             let mut l = block("Masked", fmt, 0, 0, 20, 20, 9);
             l.mask = Some(LayerMask::reveal_all());
@@ -417,7 +609,12 @@ fn lossy_documents() -> Vec<(&'static str, Document)> {
         ("clipped", with(&|d| d.layers[1].clipped = true)),
         ("fill opacity", with(&|d| d.layers[0].fill_opacity = 0.5)),
         ("float", doc(SampleType::F32)),
-        ("profile", with(&|d| d.icc_profile = Some(photocraft_cms::Builtin::DisplayP3.profile().to_bytes()))),
+        (
+            "profile",
+            with(&|d| {
+                d.icc_profile = Some(photocraft_cms::Builtin::DisplayP3.profile().to_bytes())
+            }),
+        ),
         ("metadata", with(&|d| d.metadata.xmp = Some("<x/>".into()))),
     ]
 }
@@ -445,5 +642,9 @@ fn plain_documents_lose_nothing() {
     }
     let mut cmyk = doc(SampleType::U8);
     cmyk.mode = ColorMode::Cmyk;
-    assert_eq!(losses(&cmyk).len(), 1, "a document OpenRaster can't hold at all");
+    assert_eq!(
+        losses(&cmyk).len(),
+        1,
+        "a document OpenRaster can't hold at all"
+    );
 }

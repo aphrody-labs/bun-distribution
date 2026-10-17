@@ -233,7 +233,11 @@ pub fn command_specs() -> &'static [CommandSpec] {
 }
 
 /// Set `footage` as the proxy of `item` (File ▸ Create Proxy's post-render action).
-pub(crate) fn proxy_set(s: &mut Session, item: ItemId, footage: effectcraft_project::Footage) -> Result<()> {
+pub(crate) fn proxy_set(
+    s: &mut Session,
+    item: ItemId,
+    footage: effectcraft_project::Footage,
+) -> Result<()> {
     proxy::set_proxy_footage(s, &[item], footage)
 }
 
@@ -269,7 +273,11 @@ pub fn accepted_params(doc: &str) -> Option<Vec<String>> {
     // Top-level pieces up to the matching close brace, split at `,` and `|`; `:` starts a value.
     let (mut keys, mut cur, mut depth, mut in_value) = (Vec::new(), String::new(), 0i32, false);
     let push = |cur: &mut String, keys: &mut Vec<String>| {
-        let k: String = cur.trim().chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_').collect();
+        let k: String = cur
+            .trim()
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+            .collect();
         if !k.is_empty() && !keys.contains(&k) {
             keys.push(k);
         }
@@ -359,20 +367,45 @@ pub fn params_schema(spec: &CommandSpec) -> Value {
 
 /// Keys every command understands (comp targeting, gesture merging) and accepted aliases.
 const ALWAYS_OK: &[&str] = &["comp", "merge"];
-const ALIASES: &[(&str, &str)] = &[("layers", "layer"), ("layer", "layers"), ("time", "frame"), ("frameRate", "fps"), ("properties", "property")];
+const ALIASES: &[(&str, &str)] = &[
+    ("layers", "layer"),
+    ("layer", "layers"),
+    ("time", "frame"),
+    ("frameRate", "fps"),
+    ("properties", "property"),
+];
 
 /// Reject unknown top-level parameters (typos, guessed names) with the list of accepted keys.
 pub fn check_params(spec: &CommandSpec, params: &Value) -> Result<()> {
-    let (Some(obj), Some(accepted)) = (params.as_object(), accepted_params(spec.params)) else { return Ok(()) };
-    let ok = |k: &str| ALWAYS_OK.contains(&k) || accepted.iter().any(|a| a == k || ALIASES.iter().any(|(doc, alias)| doc == a && *alias == k));
+    let (Some(obj), Some(accepted)) = (params.as_object(), accepted_params(spec.params)) else {
+        return Ok(());
+    };
+    let ok = |k: &str| {
+        ALWAYS_OK.contains(&k)
+            || accepted
+                .iter()
+                .any(|a| a == k || ALIASES.iter().any(|(doc, alias)| doc == a && *alias == k))
+    };
     let unknown: Vec<&str> = obj.keys().map(String::as_str).filter(|k| !ok(k)).collect();
     if unknown.is_empty() {
         return Ok(());
     }
-    let list = if accepted.is_empty() { "none".to_string() } else { accepted.join(", ") };
+    let list = if accepted.is_empty() {
+        "none".to_string()
+    } else {
+        accepted.join(", ")
+    };
     Err(bad(
         spec.id,
-        format!("unknown parameter(s) {}; accepted: {list} (doc: {})", unknown.iter().map(|k| format!("`{k}`")).collect::<Vec<_>>().join(", "), spec.params),
+        format!(
+            "unknown parameter(s) {}; accepted: {list} (doc: {})",
+            unknown
+                .iter()
+                .map(|k| format!("`{k}`"))
+                .collect::<Vec<_>>()
+                .join(", "),
+            spec.params
+        ),
     ))
 }
 
@@ -382,19 +415,33 @@ pub fn always(_: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 pub(crate) fn has_comp(s: &Session) -> std::result::Result<(), String> {
-    s.active_comp().map(|_| ()).ok_or_else(|| "no composition is open".into())
+    s.active_comp()
+        .map(|_| ())
+        .ok_or_else(|| "no composition is open".into())
 }
 pub(crate) fn has_layers(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if s.state.selected_layers.is_empty() { Err("select a layer first".into()) } else { Ok(()) }
+    if s.state.selected_layers.is_empty() {
+        Err("select a layer first".into())
+    } else {
+        Ok(())
+    }
 }
 pub(crate) fn has_keys(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if s.state.selected_keys.is_empty() { Err("select keyframes first".into()) } else { Ok(()) }
+    if s.state.selected_keys.is_empty() {
+        Err("select keyframes first".into())
+    } else {
+        Ok(())
+    }
 }
 
 pub(crate) fn has_project_selection(s: &Session) -> std::result::Result<(), String> {
-    if s.state.project_selection.is_empty() { Err("select an item in the Project panel first".into()) } else { Ok(()) }
+    if s.state.project_selection.is_empty() {
+        Err("select an item in the Project panel first".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// Disabled-command enablement (menu entries whose implementation lands with another milestone;
@@ -407,21 +454,39 @@ pub(crate) fn not_yet(_: &Session) -> std::result::Result<(), String> {
 /// `run` of a not-yet-available command.
 #[allow(dead_code)]
 pub(crate) fn not_yet_run(_: &mut Session, _: &Value) -> Result<Value> {
-    Err(EngineError::Other("not available yet in EffectCraft".into()))
+    Err(EngineError::Other(
+        "not available yet in EffectCraft".into(),
+    ))
 }
 
 /// Hand a frontend-only command to the UI ([`crate::Event::Frontend`]).
 pub(crate) fn frontend(s: &mut Session, id: &str, p: &Value) -> Result<Value> {
-    s.events.push(crate::Event::Frontend { command: id.to_string(), params: p.clone() });
+    s.events.push(crate::Event::Frontend {
+        command: id.to_string(),
+        params: p.clone(),
+    });
     Ok(serde_json::json!({"frontend": id}))
 }
 
 /// Match path of a node (`transform/position`, `effects/#2/blurriness` style with `match#n`
 /// occurrences) so it can be found again on another layer.
-pub fn match_path_of(g: &effectcraft_project::PropGroup, uid: effectcraft_project::Uid) -> Option<String> {
+pub fn match_path_of(
+    g: &effectcraft_project::PropGroup,
+    uid: effectcraft_project::Uid,
+) -> Option<String> {
     for c in &g.children {
-        let nth = g.children.iter().take_while(|x| !std::ptr::eq(*x, c)).filter(|x| x.match_id() == c.match_id()).count() + 1;
-        let seg = if nth == 1 { c.match_id().to_string() } else { format!("{}#{nth}", c.match_id()) };
+        let nth = g
+            .children
+            .iter()
+            .take_while(|x| !std::ptr::eq(*x, c))
+            .filter(|x| x.match_id() == c.match_id())
+            .count()
+            + 1;
+        let seg = if nth == 1 {
+            c.match_id().to_string()
+        } else {
+            format!("{}#{nth}", c.match_id())
+        };
         if c.uid() == uid {
             return Some(seg);
         }
@@ -437,7 +502,9 @@ pub fn match_path_of(g: &effectcraft_project::PropGroup, uid: effectcraft_projec
 /// Selected properties (leaves) of the active comp as (layer, uid); selected groups expand to
 /// their properties.
 pub(crate) fn selected_leaf_props(s: &Session) -> Vec<(LayerId, effectcraft_project::Uid)> {
-    let Some(comp) = s.active_comp() else { return vec![] };
+    let Some(comp) = s.active_comp() else {
+        return vec![];
+    };
     let mut out = vec![];
     for (lid, uid) in &s.state.selected_props {
         let Some(l) = comp.layer(*lid) else { continue };
@@ -453,7 +520,10 @@ pub(crate) fn selected_leaf_props(s: &Session) -> Vec<(LayerId, effectcraft_proj
 // ---------- params ----------
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 pub(crate) fn str_p<'a>(p: &'a Value, k: &str) -> Option<&'a str> {
     p.get(k).and_then(Value::as_str)
@@ -473,14 +543,22 @@ pub(crate) fn merge_p(p: &Value) -> Option<&str> {
 pub(crate) fn comp_id(s: &Session, p: &Value) -> Result<ItemId> {
     let missing = |v: &Value| EngineError::NoSuchComp(v.to_string());
     match p.get("comp") {
-        Some(v @ Value::Number(n)) => n.as_u64().map(ItemId).filter(|id| s.project.comp(*id).is_some()).ok_or_else(|| missing(v)),
+        Some(v @ Value::Number(n)) => n
+            .as_u64()
+            .map(ItemId)
+            .filter(|id| s.project.comp(*id).is_some())
+            .ok_or_else(|| missing(v)),
         Some(v @ Value::String(name)) => s
             .project
             .items
             .values()
             .find(|i| &i.name == name && i.as_comp().is_some())
             .map(|i| i.id)
-            .or_else(|| digits_id(name).map(ItemId).filter(|id| s.project.comp(*id).is_some()))
+            .or_else(|| {
+                digits_id(name)
+                    .map(ItemId)
+                    .filter(|id| s.project.comp(*id).is_some())
+            })
             .ok_or_else(|| missing(v)),
         _ => s.active_comp_id().ok_or(EngineError::NoComp),
     }
@@ -500,13 +578,21 @@ pub(crate) fn resolve_layer(comp: &Comp, v: &Value) -> Option<LayerId> {
     match v {
         Value::Number(n) => {
             let id = n.as_u64()?;
-            if comp.layer(LayerId(id)).is_some() { Some(LayerId(id)) } else { comp.layers.get((id as usize).checked_sub(1)?).map(|l| l.id) }
+            if comp.layer(LayerId(id)).is_some() {
+                Some(LayerId(id))
+            } else {
+                comp.layers.get((id as usize).checked_sub(1)?).map(|l| l.id)
+            }
         }
         Value::String(s) => {
             if let Some(i) = s.strip_prefix('#').and_then(|i| i.parse::<usize>().ok()) {
                 return comp.layers.get(i.checked_sub(1)?).map(|l| l.id);
             }
-            comp.layers.iter().find(|l| &l.name == s).map(|l| l.id).or_else(|| digits_id(s).and_then(|id| resolve_layer(comp, &Value::from(id))))
+            comp.layers
+                .iter()
+                .find(|l| &l.name == s)
+                .map(|l| l.id)
+                .or_else(|| digits_id(s).and_then(|id| resolve_layer(comp, &Value::from(id))))
         }
         _ => None,
     }
@@ -517,7 +603,9 @@ pub(crate) fn layer_p(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, Laye
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     if let Some(v) = p.get("layer") {
-        return resolve_layer(comp, v).map(|l| (cid, l)).ok_or_else(|| bad(cmd, format!("no layer {v}")));
+        return resolve_layer(comp, v)
+            .map(|l| (cid, l))
+            .ok_or_else(|| bad(cmd, format!("no layer {v}")));
     }
     s.state
         .selected_layers
@@ -533,15 +621,28 @@ pub(crate) fn layers_p(s: &Session, p: &Value) -> Result<(ItemId, Vec<LayerId>)>
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     // Explicit references that match no layer are an error (agents otherwise get a silent no-op).
-    let resolve =
-        |v: &Value| resolve_layer(comp, v).ok_or_else(|| EngineError::Other(format!("no layer {v} (use a layer id, \"#n\" or a name from comp.info)")));
+    let resolve = |v: &Value| {
+        resolve_layer(comp, v).ok_or_else(|| {
+            EngineError::Other(format!(
+                "no layer {v} (use a layer id, \"#n\" or a name from comp.info)"
+            ))
+        })
+    };
     if let Some(Value::Array(a)) = p.get("layers") {
         return Ok((cid, a.iter().map(resolve).collect::<Result<_>>()?));
     }
     if let Some(v) = p.get("layer").filter(|v| !v.is_null()) {
         return Ok((cid, vec![resolve(v)?]));
     }
-    Ok((cid, s.state.selected_layers.iter().copied().filter(|l| comp.layer(*l).is_some()).collect()))
+    Ok((
+        cid,
+        s.state
+            .selected_layers
+            .iter()
+            .copied()
+            .filter(|l| comp.layer(*l).is_some())
+            .collect(),
+    ))
 }
 
 /// Whether a layer can be picked by the user (Select All, Ctrl+Up/Down, a Timeline click): not
@@ -552,13 +653,24 @@ pub(crate) fn selectable(comp: &Comp, l: &Layer) -> bool {
 
 /// The layers of `ids` a command may edit: locked layers are left alone, as in After Effects.
 /// An error when every one of them is locked.
-pub(crate) fn unlocked(s: &Session, cid: ItemId, ids: Vec<LayerId>, cmd: &str) -> Result<Vec<LayerId>> {
+pub(crate) fn unlocked(
+    s: &Session,
+    cid: ItemId,
+    ids: Vec<LayerId>,
+    cmd: &str,
+) -> Result<Vec<LayerId>> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let locked = |id: &LayerId| comp.layer(*id).is_some_and(|l| l.switches.locked);
     match ids.iter().find(|id| locked(id)) {
         Some(first) if ids.iter().all(locked) => {
-            let name = comp.layer(*first).map(|l| l.name.clone()).unwrap_or_default();
-            Err(bad(cmd, format!("“{name}” is locked (Layer ▸ Switches ▸ Unlock All Layers)")))
+            let name = comp
+                .layer(*first)
+                .map(|l| l.name.clone())
+                .unwrap_or_default();
+            Err(bad(
+                cmd,
+                format!("“{name}” is locked (Layer ▸ Switches ▸ Unlock All Layers)"),
+            ))
         }
         _ => Ok(ids.into_iter().filter(|id| !locked(id)).collect()),
     }
@@ -568,7 +680,11 @@ pub(crate) fn unlocked(s: &Session, cid: ItemId, ids: Vec<LayerId>, cmd: &str) -
 /// Keyframes use only those, as in After Effects). `None` when not given.
 pub(crate) fn visible_p(p: &Value) -> Option<Vec<(LayerId, effectcraft_project::Uid)>> {
     let a = p.get("visible")?.as_array()?;
-    Some(a.iter().filter_map(|v| Some((LayerId(v.get("layer")?.as_u64()?), v.get("prop")?.as_u64()?))).collect())
+    Some(
+        a.iter()
+            .filter_map(|v| Some((LayerId(v.get("layer")?.as_u64()?), v.get("prop")?.as_u64()?)))
+            .collect(),
+    )
 }
 
 /// `time` (seconds) or `frame` param, else the CTI.
@@ -582,6 +698,15 @@ pub(crate) fn time_p(s: &Session, p: &Value, comp: Option<&Comp>) -> Tick {
     s.time()
 }
 
-pub(crate) fn layer_mut(p: &mut effectcraft_project::Project, cid: ItemId, lid: LayerId) -> Result<&mut Layer> {
-    p.comp_mut(cid).ok_or(EngineError::NoComp)?.layer_mut(lid).ok_or(EngineError::Project(effectcraft_project::ProjectError::NoLayer(lid)))
+pub(crate) fn layer_mut(
+    p: &mut effectcraft_project::Project,
+    cid: ItemId,
+    lid: LayerId,
+) -> Result<&mut Layer> {
+    p.comp_mut(cid)
+        .ok_or(EngineError::NoComp)?
+        .layer_mut(lid)
+        .ok_or(EngineError::Project(
+            effectcraft_project::ProjectError::NoLayer(lid),
+        ))
 }

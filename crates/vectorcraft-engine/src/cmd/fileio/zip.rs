@@ -16,13 +16,24 @@ const VERSION: u16 = 20;
 pub fn store<N: AsRef<str>, B: AsRef<[u8]>>(files: &[(N, B)]) -> Result<Vec<u8>, String> {
     let too_big = || "too much to zip: at most 65535 files and 4 GB".to_string();
     let count = u16::try_from(files.len()).map_err(|_| too_big())?;
-    let mut out = Vec::with_capacity(files.iter().map(|(n, b)| 76 + 2 * n.as_ref().len() + b.as_ref().len()).sum::<usize>() + 22);
+    let mut out = Vec::with_capacity(
+        files
+            .iter()
+            .map(|(n, b)| 76 + 2 * n.as_ref().len() + b.as_ref().len())
+            .sum::<usize>()
+            + 22,
+    );
     let mut central = Vec::new();
     for (name, bytes) in files {
         let (name, bytes) = (name.as_ref().as_bytes(), bytes.as_ref());
         let offset = u32::try_from(out.len()).map_err(|_| too_big())?;
         let size = u32::try_from(bytes.len()).map_err(|_| too_big())?;
-        let name_len = u16::try_from(name.len()).map_err(|_| format!("file name too long to zip: {}", String::from_utf8_lossy(name)))?;
+        let name_len = u16::try_from(name.len()).map_err(|_| {
+            format!(
+                "file name too long to zip: {}",
+                String::from_utf8_lossy(name)
+            )
+        })?;
         let mut crc = Crc::new();
         crc.update(bytes);
         // The fields both headers share: flags, method (0: stored), time, date, CRC, sizes, name length.
@@ -69,8 +80,16 @@ pub fn store<N: AsRef<str>, B: AsRef<[u8]>>(files: &[(N, B)]) -> Result<Vec<u8>,
 /// checking every CRC) → `(name, bytes)`.
 #[cfg(test)]
 pub fn entries(zip: &[u8]) -> Result<Vec<(String, Vec<u8>)>, String> {
-    let u16_at = |at: usize| zip.get(at..at + 2).map(|b| u16::from_le_bytes([b[0], b[1]])).ok_or("truncated");
-    let u32_at = |at: usize| zip.get(at..at + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]])).ok_or("truncated");
+    let u16_at = |at: usize| {
+        zip.get(at..at + 2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+            .ok_or("truncated")
+    };
+    let u32_at = |at: usize| {
+        zip.get(at..at + 4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            .ok_or("truncated")
+    };
     let end = zip.len().checked_sub(22).ok_or("no end record")?;
     if u32_at(end)? != 0x0605_4b50 {
         return Err("no end record".into());
@@ -82,10 +101,19 @@ pub fn entries(zip: &[u8]) -> Result<Vec<(String, Vec<u8>)>, String> {
         if u32_at(at)? != 0x0201_4b50 || u16_at(at + 10)? != 0 {
             return Err("not a stored central record".into());
         }
-        let (crc, size, name_len) = (u32_at(at + 16)?, u32_at(at + 20)? as usize, u16_at(at + 28)? as usize);
+        let (crc, size, name_len) = (
+            u32_at(at + 16)?,
+            u32_at(at + 20)? as usize,
+            u16_at(at + 28)? as usize,
+        );
         let extra = u16_at(at + 30)? as usize + u16_at(at + 32)? as usize;
         let local = u32_at(at + 42)? as usize;
-        let name = String::from_utf8(zip.get(at + 46..at + 46 + name_len).ok_or("truncated")?.to_vec()).map_err(|e| e.to_string())?;
+        let name = String::from_utf8(
+            zip.get(at + 46..at + 46 + name_len)
+                .ok_or("truncated")?
+                .to_vec(),
+        )
+        .map_err(|e| e.to_string())?;
         if u32_at(local)? != 0x0403_4b50 {
             return Err(format!("{name}: no local header"));
         }

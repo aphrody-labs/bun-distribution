@@ -38,13 +38,23 @@ impl Cells {
         let inv = xf.inverse();
         let c = inv.as_coeffs();
         let (gx, gy) = grain;
-        let m = [c[0] / gx, c[1] / gy, c[2] / gx, c[3] / gy, c[4] / gx, c[5] / gy];
+        let m = [
+            c[0] / gx,
+            c[1] / gy,
+            c[2] / gx,
+            c[3] / gy,
+            c[4] / gx,
+            c[5] / gy,
+        ];
         m.iter().all(|v| v.is_finite()).then_some(Cells { m })
     }
     fn at(&self, x: u32, y: u32) -> (i64, i64) {
         let (px, py) = (f64::from(x) + 0.5, f64::from(y) + 0.5);
         let [a, b, c, d, e, f] = self.m;
-        ((a * px + c * py + e).floor() as i64, (b * px + d * py + f).floor() as i64)
+        (
+            (a * px + c * py + e).floor() as i64,
+            (b * px + d * py + f).floor() as i64,
+        )
     }
 }
 
@@ -62,14 +72,22 @@ pub fn noise(layer: &mut Pixmap, nz: &Noise, xf: Affine, seed: u32) {
 pub fn grains(layer: &Pixmap, nz: &Noise, xf: Affine, seed: u32) -> Option<Pixmap> {
     let (sx, sy) = nz.grain();
     let cells = Cells::new(xf, (sx * 2.0, sy * 2.0))?;
-    let density = if nz.density.is_finite() { nz.density.clamp(0.0, 1.0) as f32 } else { 0.0 };
+    let density = if nz.density.is_finite() {
+        nz.density.clamp(0.0, 1.0) as f32
+    } else {
+        0.0
+    };
     if density <= 0.0 {
         return None;
     }
     let (w, h) = (layer.width(), layer.height());
     let mut grains = Pixmap::new(w, h)?;
     let (c1, c2) = (nz.color.sanitized(), nz.secondary.sanitized());
-    let multi_alpha = if nz.opacity.is_finite() { nz.opacity.clamp(0.0, 1.0) } else { 0.0 };
+    let multi_alpha = if nz.opacity.is_finite() {
+        nz.opacity.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let src = layer.data();
     let dst = grains.data_mut();
     for y in 0..h {
@@ -93,7 +111,12 @@ pub fn grains(layer: &Pixmap, nz: &Noise, xf: Affine, seed: u32) -> Option<Pixma
             let al = ca * a;
             let q = |v: f32| (v * al * 255.0).round().clamp(0.0, 255.0) as u8;
             if let Some(px) = dst.get_mut(i..i + 4) {
-                px.copy_from_slice(&[q(r), q(g), q(b), (al * 255.0).round().clamp(0.0, 255.0) as u8]);
+                px.copy_from_slice(&[
+                    q(r),
+                    q(g),
+                    q(b),
+                    (al * 255.0).round().clamp(0.0, 255.0) as u8,
+                ]);
             }
         }
     }
@@ -110,7 +133,9 @@ pub fn texture(layer: &mut Pixmap, t: &Texture, xf: Affine, scale: f64, seed: u3
     }
     let r = r.min(2048.0) as f32;
     let (sx, sy) = t.grain();
-    let Some(cells) = Cells::new(xf, (sx * 2.0, sy * 2.0)) else { return };
+    let Some(cells) = Cells::new(xf, (sx * 2.0, sy * 2.0)) else {
+        return;
+    };
     let (w, h) = (layer.width(), layer.height());
     let src = layer.data().to_vec();
     let dst = layer.data_mut();
@@ -120,7 +145,10 @@ pub fn texture(layer: &mut Pixmap, t: &Texture, xf: Affine, scale: f64, seed: u3
             let hv = hash(ix, iy, seed ^ 0x7E57_u32);
             // A uniform point in the disc of radius r.
             let (ang, dist) = (unit(hv, 0) * std::f32::consts::TAU, unit(hv, 16).sqrt() * r);
-            let (fx, fy) = (x as f32 + 0.5 + ang.cos() * dist, y as f32 + 0.5 + ang.sin() * dist);
+            let (fx, fy) = (
+                x as f32 + 0.5 + ang.cos() * dist,
+                y as f32 + 0.5 + ang.sin() * dist,
+            );
             let i = ((y * w + x) * 4) as usize;
             let mut px = [0u8; 4];
             if fx >= 0.0 && fy >= 0.0 && (fx as u32) < w && (fy as u32) < h {

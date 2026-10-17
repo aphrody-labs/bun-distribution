@@ -25,7 +25,9 @@ pub struct ReadFileTool {
 impl ReadFileTool {
     #[must_use]
     pub fn new() -> Self {
-        Self { definition: definition() }
+        Self {
+            definition: definition(),
+        }
     }
 }
 
@@ -42,17 +44,21 @@ impl ToolExecutor for ReadFileTool {
     }
 
     async fn handle(&self, arguments: serde_json::Value) -> Result<ToolOutput, ToolError> {
-        let args: ReadArgs = serde_json::from_value(arguments).map_err(|error| {
-            ToolError::InvalidArguments { tool: "read_file".into(), message: error.to_string() }
-        })?;
+        let args: ReadArgs =
+            serde_json::from_value(arguments).map_err(|error| ToolError::InvalidArguments {
+                tool: "read_file".into(),
+                message: error.to_string(),
+            })?;
         let path = args
             .cwd
             .as_deref()
             .map_or_else(|| args.file_path.clone(), |cwd| cwd.join(&args.file_path));
-        let bytes = tokio::fs::read(&path).await.map_err(|error| ToolError::Execution {
-            tool: "read_file".into(),
-            message: format!("{}: {error}", args.file_path.display()),
-        })?;
+        let bytes = tokio::fs::read(&path)
+            .await
+            .map_err(|error| ToolError::Execution {
+                tool: "read_file".into(),
+                message: format!("{}: {error}", args.file_path.display()),
+            })?;
         if bytes.len() > MAX_READ_BYTES {
             return Ok(ToolOutput::error(format!(
                 "read_file: {} is {} bytes; limit is {MAX_READ_BYTES}",
@@ -102,7 +108,9 @@ mod tests {
     #[tokio::test]
     async fn reads_relative_path_from_cwd() {
         let dir = tempfile::tempdir().unwrap();
-        tokio::fs::write(dir.path().join("sample.txt"), "local evidence").await.unwrap();
+        tokio::fs::write(dir.path().join("sample.txt"), "local evidence")
+            .await
+            .unwrap();
         let output = ReadFileTool::new()
             .handle(json!({ "file_path": "sample.txt", "cwd": dir.path() }))
             .await

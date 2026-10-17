@@ -7,7 +7,9 @@ use crate::Session;
 
 /// A node and (to `depth`) its children, with the properties a designer would check.
 pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
-    let Some(n) = doc.node(id) else { return Value::Null };
+    let Some(n) = doc.node(id) else {
+        return Value::Null;
+    };
     let c = doc.frame_relative(id).as_coeffs();
     let mut v = json!({
         "id": n.id,
@@ -36,7 +38,10 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
         if n.opacity < 1.0 {
             o.insert("opacity".into(), json!(n.opacity));
         }
-        if !matches!(n.blend, figcraft_color::BlendMode::Normal | figcraft_color::BlendMode::PassThrough) {
+        if !matches!(
+            n.blend,
+            figcraft_color::BlendMode::Normal | figcraft_color::BlendMode::PassThrough
+        ) {
             o.insert("blend".into(), json!(n.blend));
         }
         if !n.fills.is_empty() {
@@ -55,18 +60,30 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
             if n.stroke.join != StrokeJoin::Miter {
                 o.insert("strokeJoin".into(), json!(n.stroke.join));
             } else if n.stroke.miter_limit != 4.0 {
-                o.insert("miterAngle".into(), json!((n.stroke.miter_angle() * 100.0).round() / 100.0));
+                o.insert(
+                    "miterAngle".into(),
+                    json!((n.stroke.miter_angle() * 100.0).round() / 100.0),
+                );
             }
             if let Some(p) = n.stroke.profile() {
                 let points = crate::cmd::props::width_points_json(Some(p));
-                o.insert("widthProfile".into(), json!({"preset": p.preset().map(|x| x.id()), "points": points}));
+                o.insert(
+                    "widthProfile".into(),
+                    json!({"preset": p.preset().map(|x| x.id()), "points": points}),
+                );
             }
             if let Some(b) = &n.stroke.brush {
-                o.insert("brush".into(), camel(serde_json::to_value(b).unwrap_or(Value::Null)));
+                o.insert(
+                    "brush".into(),
+                    camel(serde_json::to_value(b).unwrap_or(Value::Null)),
+                );
             }
         }
         if !n.effects.is_empty() {
-            o.insert("effects".into(), camel(serde_json::to_value(&n.effects).unwrap_or(Value::Null)));
+            o.insert(
+                "effects".into(),
+                camel(serde_json::to_value(&n.effects).unwrap_or(Value::Null)),
+            );
         }
         if n.corners.radii.iter().any(|r| *r > 0.0) {
             o.insert(
@@ -81,23 +98,40 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
             }
         }
         if let Some(l) = &n.layout {
-            o.insert("layout".into(), camel(serde_json::to_value(l).unwrap_or(Value::Null)));
+            o.insert(
+                "layout".into(),
+                camel(serde_json::to_value(l).unwrap_or(Value::Null)),
+            );
         }
-        let parent_al = n.parent.and_then(|p| doc.node(p)).is_some_and(|p| p.layout.is_some());
+        let parent_al = n
+            .parent
+            .and_then(|p| doc.node(p))
+            .is_some_and(|p| p.layout.is_some());
         if n.layout.is_some() || parent_al || matches!(n.kind, NodeKind::Text(_)) {
-            o.insert("sizing".into(), json!({"horizontal": n.child_layout.sizing_h, "vertical": n.child_layout.sizing_v}));
+            o.insert(
+                "sizing".into(),
+                json!({"horizontal": n.child_layout.sizing_h, "vertical": n.child_layout.sizing_v}),
+            );
         }
         let cl = &n.child_layout;
         if cl.absolute {
             o.insert("absolute".into(), json!(true));
         }
-        for (k, v) in [("minWidth", cl.min_w), ("maxWidth", cl.max_w), ("minHeight", cl.min_h), ("maxHeight", cl.max_h)] {
+        for (k, v) in [
+            ("minWidth", cl.min_w),
+            ("maxWidth", cl.max_w),
+            ("minHeight", cl.min_h),
+            ("maxHeight", cl.max_h),
+        ] {
             if let Some(v) = v {
                 o.insert(k.into(), json!(v));
             }
         }
         if let Some(cell) = parent_al
-            .then(|| n.parent.and_then(|p| figcraft_layout::grid_geometry(doc, p)))
+            .then(|| {
+                n.parent
+                    .and_then(|p| figcraft_layout::grid_geometry(doc, p))
+            })
             .flatten()
             .and_then(|g| g.cells.into_iter().find(|c| c.id == n.id))
         {
@@ -107,8 +141,15 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
                        "anchored": cl.grid_column.is_some() || cl.grid_row.is_some(), "alignH": cl.grid_align_h, "alignV": cl.grid_align_v}),
             );
         }
-        if (!parent_al || cl.absolute) && n.parent.and_then(|p| doc.node(p)).is_some_and(|p| p.kind.is_frame_like()) {
-            o.insert("constraints".into(), serde_json::to_value(n.constraints).unwrap_or(Value::Null));
+        if (!parent_al || cl.absolute)
+            && n.parent
+                .and_then(|p| doc.node(p))
+                .is_some_and(|p| p.kind.is_frame_like())
+        {
+            o.insert(
+                "constraints".into(),
+                serde_json::to_value(n.constraints).unwrap_or(Value::Null),
+            );
         }
         if n.kind.is_frame_like() {
             o.insert("clip".into(), json!(n.clip));
@@ -130,26 +171,44 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
             o.insert("maskType".into(), json!(n.mask_type.id()));
         }
         if !n.grids.is_empty() {
-            o.insert("grids".into(), camel(serde_json::to_value(&n.grids).unwrap_or(Value::Null)));
+            o.insert(
+                "grids".into(),
+                camel(serde_json::to_value(&n.grids).unwrap_or(Value::Null)),
+            );
         }
         if !n.exports.is_empty() {
-            o.insert("exports".into(), serde_json::to_value(&n.exports).unwrap_or(Value::Null));
+            o.insert(
+                "exports".into(),
+                serde_json::to_value(&n.exports).unwrap_or(Value::Null),
+            );
         }
         if !n.annotations.is_empty() {
-            o.insert("annotations".into(), serde_json::to_value(&n.annotations).unwrap_or(Value::Null));
+            o.insert(
+                "annotations".into(),
+                serde_json::to_value(&n.annotations).unwrap_or(Value::Null),
+            );
         }
         if !n.code_links.is_empty() {
-            o.insert("codeLinks".into(), camel(serde_json::to_value(&n.code_links).unwrap_or(Value::Null)));
+            o.insert(
+                "codeLinks".into(),
+                camel(serde_json::to_value(&n.code_links).unwrap_or(Value::Null)),
+            );
         }
         let dev = crate::dev_resources::list_json(doc, n.id);
         if dev.as_array().is_some_and(|a| !a.is_empty()) {
             o.insert("devResources".into(), dev);
         }
         if !n.interactions.is_empty() {
-            o.insert("interactions".into(), serde_json::to_value(&n.interactions).unwrap_or(Value::Null));
+            o.insert(
+                "interactions".into(),
+                serde_json::to_value(&n.interactions).unwrap_or(Value::Null),
+            );
         }
         if !n.styles.is_empty() {
-            o.insert("styles".into(), serde_json::to_value(&n.styles).unwrap_or(Value::Null));
+            o.insert(
+                "styles".into(),
+                serde_json::to_value(&n.styles).unwrap_or(Value::Null),
+            );
         }
         if !n.bound.is_empty() {
             o.insert("boundVariables".into(), json!(n.bound));
@@ -161,7 +220,10 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
             o.insert("slot".into(), json!(slot));
         }
         // An operand combining by an operation of its own.
-        if let Some(op) = n.bool_op.filter(|_| crate::booleans::group_of(doc, n.id).is_some()) {
+        if let Some(op) = n
+            .bool_op
+            .filter(|_| crate::booleans::group_of(doc, n.id).is_some())
+        {
             o.insert("operandOperation".into(), json!(op));
         }
     }
@@ -175,7 +237,10 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
                 o.insert("fontVariations".into(), json!(t.style.variations));
             }
             o.insert("lineHeight".into(), json!(t.style.line_height.label()));
-            o.insert("letterSpacing".into(), json!(t.style.letter_spacing.label()));
+            o.insert(
+                "letterSpacing".into(),
+                json!(t.style.letter_spacing.label()),
+            );
             o.insert("textAlign".into(), json!(t.align_h));
             o.insert("textAutoResize".into(), json!(t.auto_resize));
             if let Some(tp) = &t.path {
@@ -189,7 +254,11 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
                 o.insert("textDecorationThickness".into(), json!(l.thickness.label()));
                 o.insert("textDecorationOffset".into(), json!(l.offset.label()));
                 o.insert("textDecorationSkipInk".into(), json!(l.skip_ink));
-                o.insert("textDecorationColor".into(), l.color.map_or(json!("auto"), |c| json!(format!("#{}", c.to_hex()))));
+                o.insert(
+                    "textDecorationColor".into(),
+                    l.color
+                        .map_or(json!("auto"), |c| json!(format!("#{}", c.to_hex()))),
+                );
             }
             // Lists: one style for the layer, or each paragraph's type and nesting level.
             if t.paragraphs.is_empty() {
@@ -197,13 +266,22 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
                     o.insert("listStyle".into(), json!(t.list));
                 }
             } else {
-                o.insert("lineTypes".into(), t.paragraphs.iter().map(|p| json!(p.list)).collect());
-                o.insert("lineIndentations".into(), t.paragraphs.iter().map(|p| json!(p.indent)).collect());
+                o.insert(
+                    "lineTypes".into(),
+                    t.paragraphs.iter().map(|p| json!(p.list)).collect(),
+                );
+                o.insert(
+                    "lineIndentations".into(),
+                    t.paragraphs.iter().map(|p| json!(p.indent)).collect(),
+                );
             }
             if t.list_spacing != 0.0 {
                 o.insert("listSpacing".into(), json!(t.list_spacing));
             }
-            for (k, on) in [("hangingPunctuation", t.hanging_punctuation), ("hangingList", t.hanging_list)] {
+            for (k, on) in [
+                ("hangingPunctuation", t.hanging_punctuation),
+                ("hangingList", t.hanging_list),
+            ] {
                 if on {
                     o.insert(k.into(), json!(true));
                 }
@@ -212,16 +290,30 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
                 o.insert("leadingTrim".into(), json!(t.leading_trim));
             }
             if !t.runs.is_empty() {
-                o.insert("styledRuns".into(), serde_json::to_value(&t.runs).unwrap_or(Value::Null));
+                o.insert(
+                    "styledRuns".into(),
+                    serde_json::to_value(&t.runs).unwrap_or(Value::Null),
+                );
             }
             // Chars linked to text styles: [start, end, style id] (the layer as a whole: `styles.text`).
-            let linked: Vec<Value> = t.spans().into_iter().filter_map(|(a, b, s)| s.style_id.as_ref().map(|id| json!([a, b, id]))).collect();
+            let linked: Vec<Value> = t
+                .spans()
+                .into_iter()
+                .filter_map(|(a, b, s)| s.style_id.as_ref().map(|id| json!([a, b, id])))
+                .collect();
             if !linked.is_empty() {
                 o.insert("textStyleRanges".into(), Value::Array(linked));
             }
         }
-        NodeKind::Ellipse { start, sweep, inner } if (*sweep).abs() < std::f64::consts::TAU - 1e-9 || *inner > 0.0 => {
-            o.insert("arc".into(), json!({"start": start.to_degrees(), "sweep": sweep.to_degrees(), "inner": inner}));
+        NodeKind::Ellipse {
+            start,
+            sweep,
+            inner,
+        } if (*sweep).abs() < std::f64::consts::TAU - 1e-9 || *inner > 0.0 => {
+            o.insert(
+                "arc".into(),
+                json!({"start": start.to_degrees(), "sweep": sweep.to_degrees(), "inner": inner}),
+            );
         }
         NodeKind::Polygon { count } => {
             o.insert("pointCount".into(), json!(count));
@@ -235,7 +327,10 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
         }
         NodeKind::Instance { component, props } => {
             o.insert("mainComponent".into(), json!(component));
-            o.insert("mainComponentName".into(), json!(doc.node(*component).map(|c| c.name.clone())));
+            o.insert(
+                "mainComponentName".into(),
+                json!(doc.node(*component).map(|c| c.name.clone())),
+            );
             if !props.is_empty() {
                 o.insert("componentProperties".into(), json!(props));
             }
@@ -245,24 +340,40 @@ pub fn node_json(doc: &Document, id: NodeId, depth: usize) -> Value {
                 o.insert("description".into(), json!(description));
             }
             if !props.is_empty() {
-                o.insert("componentPropertyDefinitions".into(), serde_json::to_value(props).unwrap_or(Value::Null));
+                o.insert(
+                    "componentPropertyDefinitions".into(),
+                    serde_json::to_value(props).unwrap_or(Value::Null),
+                );
             }
         }
         NodeKind::Vector { network } => {
             o.insert("vertices".into(), json!(network.vertices.len()));
             o.insert("segments".into(), json!(network.segments.len()));
         }
-        NodeKind::Page { background, flows, .. } => {
+        NodeKind::Page {
+            background, flows, ..
+        } => {
             o.insert("background".into(), json!(background.to_css_hex()));
             if !flows.is_empty() {
-                o.insert("flows".into(), serde_json::to_value(flows).unwrap_or(Value::Null));
+                o.insert(
+                    "flows".into(),
+                    serde_json::to_value(flows).unwrap_or(Value::Null),
+                );
             }
         }
         _ => {}
     }
     if !n.children.is_empty() {
         if depth > 0 {
-            o.insert("children".into(), Value::Array(n.children.iter().map(|c| node_json(doc, *c, depth - 1)).collect()));
+            o.insert(
+                "children".into(),
+                Value::Array(
+                    n.children
+                        .iter()
+                        .map(|c| node_json(doc, *c, depth - 1))
+                        .collect(),
+                ),
+            );
         } else {
             o.insert("childCount".into(), json!(n.children.len()));
         }
@@ -299,10 +410,21 @@ fn paints(p: &[figcraft_color::Paint]) -> Value {
 
 /// The whole document (current page in depth, other pages summarised).
 pub fn document(s: &Session, depth: usize, all_pages: bool) -> Value {
-    let Ok(ds) = s.ds() else { return json!({"documents": 0}) };
+    let Ok(ds) = s.ds() else {
+        return json!({"documents": 0});
+    };
     let doc = &ds.doc;
-    let pages: Vec<Value> =
-        doc.pages.iter().map(|p| if all_pages || *p == ds.page { node_json(doc, *p, depth) } else { node_json(doc, *p, 0) }).collect();
+    let pages: Vec<Value> = doc
+        .pages
+        .iter()
+        .map(|p| {
+            if all_pages || *p == ds.page {
+                node_json(doc, *p, depth)
+            } else {
+                node_json(doc, *p, 0)
+            }
+        })
+        .collect();
     json!({
         "name": doc.name,
         "path": ds.path,

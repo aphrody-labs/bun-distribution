@@ -64,8 +64,15 @@ fn same<T: PartialEq>(mut it: impl Iterator<Item = T>) -> Option<T> {
 /// compound path's members, which fill with its rule).
 fn ruled<'a>(n: &'a Node, out: &mut Vec<(&'a Node, FillRule)>) {
     match &n.kind {
-        NodeKind::Path { rule, guide: false, .. } | NodeKind::Compound { rule, .. } => out.push((n, *rule)),
-        _ => n.children().into_iter().flatten().for_each(|c| ruled(c, out)),
+        NodeKind::Path {
+            rule, guide: false, ..
+        }
+        | NodeKind::Compound { rule, .. } => out.push((n, *rule)),
+        _ => n
+            .children()
+            .into_iter()
+            .flatten()
+            .for_each(|c| ruled(c, out)),
     }
 }
 
@@ -82,16 +89,26 @@ fn fill_rule_owner(d: &Document, id: NodeId) -> Option<&Node> {
 /// The Attributes panel's values of `info.ids` beyond overprinting.
 pub(super) fn fill_info(d: &Document, info: &mut AttributesInfo) {
     let nodes: Vec<&Node> = info.ids.iter().filter_map(|id| d.node(*id)).collect();
-    let attrs = || nodes.iter().map(|n| n.extras().attrs.as_deref().cloned().unwrap_or_default());
+    let attrs = || {
+        nodes
+            .iter()
+            .map(|n| n.extras().attrs.as_deref().cloned().unwrap_or_default())
+    };
     info.show_center = same(nodes.iter().map(|n| n.shows_center()));
     info.image_map = same(attrs().map(|a| a.image_map));
     info.url = same(attrs().map(|a| a.url));
     info.note = same(attrs().map(|a| a.note));
     let mut all = vec![];
-    nodes.iter().filter_map(|n| fill_rule_owner(d, n.id)).for_each(|n| ruled(n, &mut all));
+    nodes
+        .iter()
+        .filter_map(|n| fill_rule_owner(d, n.id))
+        .for_each(|n| ruled(n, &mut all));
     info.fill_rule = same(all.into_iter().map(|(_, r)| r));
     let paths = paths_in(d, &info.ids);
-    let subpaths = paths.iter().filter_map(|id| d.node(*id)?.path_data()).flat_map(|p| &p.subpaths);
+    let subpaths = paths
+        .iter()
+        .filter_map(|id| d.node(*id)?.path_data())
+        .flat_map(|p| &p.subpaths);
     info.reversed = same(subpaths.map(|sp| sp.signed_area() < 0.0));
 }
 
@@ -108,12 +125,27 @@ impl Edits {
     fn parse(p: &Value) -> Result<Self> {
         const C: &str = "attributes.set";
         let text = |k: &str| -> Result<Option<String>> {
-            p.get(k).map(|v| v.as_str().map(|s| s.trim().to_string()).ok_or_else(|| bad(C, format!("`{k}` must be a string")))).transpose()
+            p.get(k)
+                .map(|v| {
+                    v.as_str()
+                        .map(|s| s.trim().to_string())
+                        .ok_or_else(|| bad(C, format!("`{k}` must be a string")))
+                })
+                .transpose()
         };
         Ok(Self {
-            show_center: p.get("showCenter").map(|v| v.as_bool().ok_or_else(|| bad(C, "`showCenter` must be true or false"))).transpose()?,
+            show_center: p
+                .get("showCenter")
+                .map(|v| {
+                    v.as_bool()
+                        .ok_or_else(|| bad(C, "`showCenter` must be true or false"))
+                })
+                .transpose()?,
             image_map: text("imageMap")?
-                .map(|s| ImageMap::parse(&s).ok_or_else(|| bad(C, "`imageMap` must be none, rectangle or polygon")))
+                .map(|s| {
+                    ImageMap::parse(&s)
+                        .ok_or_else(|| bad(C, "`imageMap` must be none, rectangle or polygon"))
+                })
                 .transpose()?,
             url: text("url")?,
             note: text("note")?,
@@ -121,7 +153,10 @@ impl Edits {
     }
 
     fn is_empty(&self) -> bool {
-        self.show_center.is_none() && self.image_map.is_none() && self.url.is_none() && self.note.is_none()
+        self.show_center.is_none()
+            && self.image_map.is_none()
+            && self.url.is_none()
+            && self.note.is_none()
     }
 
     /// `n`'s attributes with the edits applied (Show Center kept only where it isn't the default).
@@ -148,7 +183,10 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     let jobs = overprint_jobs(s, p, C, ["overprintFill", "overprintStroke"])?;
     let edits = Edits::parse(p)?;
     if jobs.is_empty() && edits.is_empty() {
-        return Err(bad(C, "give overprintFill, overprintStroke, showCenter, imageMap, url or note"));
+        return Err(bad(
+            C,
+            "give overprintFill, overprintStroke, showCenter, imageMap, url or note",
+        ));
     }
     let ids = targets(s, p)?;
     let changed = edit_counted(s, "Attributes", |d| {
@@ -178,14 +216,24 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn set_fill_rule(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "path.setFillRule";
-    let rule = str_param(p, "rule").and_then(parse_rule).ok_or_else(|| bad(C, "`rule` must be nonZero or evenOdd"))?;
+    let rule = str_param(p, "rule")
+        .and_then(parse_rule)
+        .ok_or_else(|| bad(C, "`rule` must be nonZero or evenOdd"))?;
     let ids = targets(s, p)?;
     let changed = edit_counted(s, "Fill Rule", |d| {
         let mut all = vec![];
-        ids.iter().filter_map(|id| fill_rule_owner(d, *id)).for_each(|n| ruled(n, &mut all));
-        let todo: BTreeSet<_> = all.into_iter().filter(|(_, r)| *r != rule).map(|(n, _)| n.id).collect();
+        ids.iter()
+            .filter_map(|id| fill_rule_owner(d, *id))
+            .for_each(|n| ruled(n, &mut all));
+        let todo: BTreeSet<_> = all
+            .into_iter()
+            .filter(|(_, r)| *r != rule)
+            .map(|(n, _)| n.id)
+            .collect();
         for id in &todo {
-            if let Some(NodeKind::Path { rule: r, .. } | NodeKind::Compound { rule: r, .. }) = d.node_mut(*id).map(|n| &mut n.kind) {
+            if let Some(NodeKind::Path { rule: r, .. } | NodeKind::Compound { rule: r, .. }) =
+                d.node_mut(*id).map(|n| &mut n.kind)
+            {
                 *r = rule;
             }
         }

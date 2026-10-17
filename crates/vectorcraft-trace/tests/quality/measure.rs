@@ -4,7 +4,9 @@ use std::collections::HashMap;
 
 use kurbo::{BezPath, ParamCurveArclen, Point, Shape, Stroke, StrokeOpts};
 use vectorcraft_geom::SubPath;
-use vectorcraft_trace::{Method, Mode, Raster, TraceParams, TraceResult, TracedGradient, TracedPath};
+use vectorcraft_trace::{
+    Method, Mode, Raster, TraceParams, TraceResult, TracedGradient, TracedPath,
+};
 
 use crate::inputs::{Class, Input, Variant};
 use crate::raster::{coverage_into, polylines, render_painted};
@@ -13,7 +15,11 @@ use crate::raster::{coverage_into, polylines, render_painted};
 pub fn oklab(c: [u8; 3]) -> [f64; 3] {
     let lin = c.map(|v| {
         let v = f64::from(v) / 255.0;
-        if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+        if v <= 0.04045 {
+            v / 12.92
+        } else {
+            ((v + 0.055) / 1.055).powf(2.4)
+        }
     });
     let l = (0.412_221_470_8 * lin[0] + 0.536_332_536_3 * lin[1] + 0.051_445_992_9 * lin[2]).cbrt();
     let m = (0.211_903_498_2 * lin[0] + 0.680_699_545_1 * lin[1] + 0.107_396_956_6 * lin[2]).cbrt();
@@ -40,19 +46,29 @@ fn rgb(img: &Raster, x: usize, y: usize) -> [u8; 3] {
 /// strong an edge `src` has at the pixel (its lightness gradient).
 pub fn fidelity(src: &Raster, out: &Raster) -> (f64, f64) {
     let (w, h) = (src.width as usize, src.height as usize);
-    let light: Vec<f64> = (0..w * h).map(|i| oklab(rgb(src, i % w, i / w))[0]).collect();
+    let light: Vec<f64> = (0..w * h)
+        .map(|i| oklab(rgb(src, i % w, i / w))[0])
+        .collect();
     let (mut sum, mut edge_sum, mut edge_weight) = (0.0, 0.0, 0.0);
     for y in 0..h {
         for x in 0..w {
             let d = delta(rgb(src, x, y), rgb(out, x, y));
             let at = |x: usize, y: usize| light[y.min(h - 1) * w + x.min(w - 1)];
-            let g = (at(x + 1, y) - at(x.saturating_sub(1), y)).hypot(at(x, y + 1) - at(x, y.saturating_sub(1)));
+            let g = (at(x + 1, y) - at(x.saturating_sub(1), y))
+                .hypot(at(x, y + 1) - at(x, y.saturating_sub(1)));
             sum += d;
             edge_sum += d * g;
             edge_weight += g;
         }
     }
-    (sum / (w * h) as f64, if edge_weight > 0.0 { edge_sum / edge_weight } else { 0.0 })
+    (
+        sum / (w * h) as f64,
+        if edge_weight > 0.0 {
+            edge_sum / edge_weight
+        } else {
+            0.0
+        },
+    )
 }
 
 /// A traced path as the shape it paints: stroked paths become their stroke's outline.
@@ -75,7 +91,11 @@ const CELL: f64 = 4.0;
 fn seg_dist(p: Point, a: Point, b: Point) -> f64 {
     let ab = b - a;
     let l2 = ab.hypot2();
-    let t = if l2 > 0.0 { ((p - a).dot(ab) / l2).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if l2 > 0.0 {
+        ((p - a).dot(ab) / l2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     p.distance(a + ab * t)
 }
 
@@ -83,19 +103,31 @@ impl Outline {
     /// The outlines of `paths`, cut into pieces at most half a pixel long. With `inside`, pieces
     /// within a pixel of the edge of an image that size are left out (the background's frame).
     pub fn new<'a>(paths: impl IntoIterator<Item = &'a BezPath>, inside: Option<f64>) -> Self {
-        let mut out = Self { segs: vec![], grid: HashMap::new() };
+        let mut out = Self {
+            segs: vec![],
+            grid: HashMap::new(),
+        };
         for path in paths {
             for line in polylines(path, 0.02) {
                 for i in 0..line.len() {
                     let (a, b) = (line[i], line[(i + 1) % line.len()]);
                     let n = (a.distance(b) / 0.5).ceil().max(1.0) as usize;
                     for k in 0..n {
-                        let (p, q) = (a.lerp(b, k as f64 / n as f64), a.lerp(b, (k + 1) as f64 / n as f64));
+                        let (p, q) = (
+                            a.lerp(b, k as f64 / n as f64),
+                            a.lerp(b, (k + 1) as f64 / n as f64),
+                        );
                         let m = p.midpoint(q);
-                        if inside.is_some_and(|s| m.x < 1.0 || m.y < 1.0 || m.x > s - 1.0 || m.y > s - 1.0) || p == q {
+                        if inside.is_some_and(|s| {
+                            m.x < 1.0 || m.y < 1.0 || m.x > s - 1.0 || m.y > s - 1.0
+                        }) || p == q
+                        {
                             continue;
                         }
-                        out.grid.entry(cell(m)).or_default().push(out.segs.len() as u32);
+                        out.grid
+                            .entry(cell(m))
+                            .or_default()
+                            .push(out.segs.len() as u32);
                         out.segs.push((p, q));
                     }
                 }
@@ -120,7 +152,11 @@ impl Outline {
         }
         // Anything nearer than a found piece under 3.5 px away is in the cells looked at.
         if best > 3.5 {
-            best = self.segs.iter().map(|&(a, b)| seg_dist(p, a, b)).fold(f64::INFINITY, f64::min);
+            best = self
+                .segs
+                .iter()
+                .map(|&(a, b)| seg_dist(p, a, b))
+                .fold(f64::INFINITY, f64::min);
         }
         best
     }
@@ -151,8 +187,16 @@ fn turn(sp: &SubPath, i: usize) -> Option<f64> {
     }
     let (before, after) = (sp.segment((i + n - 1) % n), sp.segment(i));
     let first = |v: [kurbo::Vec2; 3]| v.into_iter().find(|v| v.hypot() > 1e-9);
-    let a = first([before.p3 - before.p2, before.p3 - before.p1, before.p3 - before.p0])?;
-    let b = first([after.p1 - after.p0, after.p2 - after.p0, after.p3 - after.p0])?;
+    let a = first([
+        before.p3 - before.p2,
+        before.p3 - before.p1,
+        before.p3 - before.p0,
+    ])?;
+    let b = first([
+        after.p1 - after.p0,
+        after.p2 - after.p0,
+        after.p3 - after.p0,
+    ])?;
     Some(a.cross(b).atan2(a.dot(b)).abs().to_degrees())
 }
 
@@ -228,12 +272,28 @@ fn draw_order(res: &TraceResult) -> Vec<usize> {
 }
 
 /// Measure `res`, the trace of `src` (`input` drawn `size` px square as `variant`) with `params`.
-pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params: &TraceParams, res: &TraceResult) -> Metrics {
+pub fn measure(
+    input: &Input,
+    variant: Variant,
+    size: u32,
+    src: &Raster,
+    params: &TraceParams,
+    res: &TraceResult,
+) -> Metrics {
     let n = size as usize;
-    let shapes: Vec<(BezPath, [u8; 3])> = res.paths.iter().map(|tp| (painted(tp), tp.color)).collect();
+    let shapes: Vec<(BezPath, [u8; 3])> =
+        res.paths.iter().map(|tp| (painted(tp), tp.color)).collect();
     // Painted as the result is grouped: each path, then those inside it.
-    let drawn: Vec<(BezPath, [u8; 3], Option<&TracedGradient>)> =
-        draw_order(res).into_iter().map(|i| (shapes[i].0.clone(), shapes[i].1, res.paths[i].gradient.as_ref())).collect();
+    let drawn: Vec<(BezPath, [u8; 3], Option<&TracedGradient>)> = draw_order(res)
+        .into_iter()
+        .map(|i| {
+            (
+                shapes[i].0.clone(),
+                shapes[i].1,
+                res.paths[i].gradient.as_ref(),
+            )
+        })
+        .collect();
     let (delta_mean, edge_delta) = fidelity(src, &render_painted(&drawn, [255; 3], n, n));
     // Gradients: how many paths have one; and the largest of them against the gradient the input
     // is: the angle between their lines, and the largest difference of a channel between their
@@ -242,7 +302,12 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
     let (mut ramp_found, mut ramp_angle, mut ramp_off) = (f64::NAN, f64::NAN, f64::NAN);
     if let Some(ramp) = &input.ramp {
         let k = f64::from(size) / 256.0;
-        let found = res.paths.iter().filter(|tp| tp.gradient.is_some()).max_by_key(|tp| tp.pixels).and_then(|tp| tp.gradient.as_ref());
+        let found = res
+            .paths
+            .iter()
+            .filter(|tp| tp.gradient.is_some())
+            .max_by_key(|tp| tp.pixels)
+            .and_then(|tp| tp.gradient.as_ref());
         ramp_found = if found.is_some() { 100.0 } else { 0.0 };
         if let Some(g) = found {
             let (truth, own) = (ramp.end - ramp.start, g.end - g.start);
@@ -252,25 +317,45 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
                 .map(|j| {
                     let p = ramp.start + truth * (f64::from(j) / 16.0);
                     // (The true colour as this variant shows it: a scan's are its own.)
-                    let a = variant.color(ramp.color_at(p).map(|v| v.round() as u8)).map(f64::from);
+                    let a = variant
+                        .color(ramp.color_at(p).map(|v| v.round() as u8))
+                        .map(f64::from);
                     let b = g.color_at((p.to_vec2() * k).to_point());
                     (0..3).map(|c| (a[c] - b[c]).abs()).fold(0.0, f64::max)
                 })
                 .fold(0.0, f64::max);
         }
     }
-    let grouped = if res.parents.is_empty() { f64::NAN } else { 100.0 * res.parents.iter().flatten().count() as f64 / res.paths.len().max(1) as f64 };
+    let grouped = if res.parents.is_empty() {
+        f64::NAN
+    } else {
+        100.0 * res.parents.iter().flatten().count() as f64 / res.paths.len().max(1) as f64
+    };
 
     // The background's frame: a path as large as the image.
     let is_frame = |p: &BezPath| {
         let b = p.bounding_box();
         b.width() >= 0.98 * f64::from(size) && b.height() >= 0.98 * f64::from(size)
     };
-    let art: Vec<(&TracedPath, &BezPath)> = res.paths.iter().zip(&shapes).filter(|(_, (p, _))| !is_frame(p)).map(|(tp, (p, _))| (tp, p)).collect();
+    let art: Vec<(&TracedPath, &BezPath)> = res
+        .paths
+        .iter()
+        .zip(&shapes)
+        .filter(|(_, (p, _))| !is_frame(p))
+        .map(|(tp, (p, _))| (tp, p))
+        .collect();
     let anchors: usize = art.iter().map(|(tp, _)| tp.path.anchor_count()).sum();
 
     let nan = f64::NAN;
-    let (mut geo_mean, mut geo_max, mut miss_max, mut corners, mut kinks, mut slivers, mut sliver_area) = (nan, nan, nan, nan, nan, nan, nan);
+    let (
+        mut geo_mean,
+        mut geo_max,
+        mut miss_max,
+        mut corners,
+        mut kinks,
+        mut slivers,
+        mut sliver_area,
+    ) = (nan, nan, nan, nan, nan, nan, nan);
     if !matches!(input.class, Class::Tone | Class::Ramp) {
         let truth_shapes = input.scaled(size);
         let truth = Outline::new(truth_shapes.iter().map(|(p, _)| p), None);
@@ -282,18 +367,39 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
         let turns: Vec<(Point, f64)> = art
             .iter()
             .flat_map(|(tp, _)| &tp.path.subpaths)
-            .flat_map(|sp| (0..sp.anchors.len()).filter_map(move |i| Some((sp.anchors[i].p, turn(sp, i)?))))
+            .flat_map(|sp| {
+                (0..sp.anchors.len()).filter_map(move |i| Some((sp.anchors[i].p, turn(sp, i)?)))
+            })
             .collect();
         if !true_corners.is_empty() {
-            let kept = true_corners.iter().filter(|c| turns.iter().any(|(p, t)| *t >= 20.0 && p.distance(**c) <= 1.5)).count();
+            let kept = true_corners
+                .iter()
+                .filter(|c| {
+                    turns
+                        .iter()
+                        .any(|(p, t)| *t >= 20.0 && p.distance(**c) <= 1.5)
+                })
+                .count();
             corners = 100.0 * kept as f64 / true_corners.len() as f64;
         }
         if !matches!(input.class, Class::Lines | Class::Askew | Class::Plain) {
-            kinks = turns.iter().filter(|(p, t)| *t >= 10.0 && true_corners.iter().all(|c| p.distance(*c) > 2.0)).count() as f64;
+            kinks = turns
+                .iter()
+                .filter(|(p, t)| *t >= 10.0 && true_corners.iter().all(|c| p.distance(*c) > 2.0))
+                .count() as f64;
         }
         if params.mode != Mode::BlackAndWhite {
-            let colors: Vec<[u8; 3]> = truth_shapes.iter().map(|(_, c)| *c).chain([input.bg]).map(|c| variant.color(c)).collect();
-            let odd: Vec<f64> = shapes.iter().filter(|(_, c)| colors.iter().all(|t| delta(*t, *c) > 10.0)).map(|(p, _)| p.area().abs()).collect();
+            let colors: Vec<[u8; 3]> = truth_shapes
+                .iter()
+                .map(|(_, c)| *c)
+                .chain([input.bg])
+                .map(|c| variant.color(c))
+                .collect();
+            let odd: Vec<f64> = shapes
+                .iter()
+                .filter(|(_, c)| colors.iter().all(|t| delta(*t, *c) > 10.0))
+                .map(|(p, _)| p.area().abs())
+                .collect();
             (slivers, sliver_area) = (odd.len() as f64, odd.iter().sum());
         }
     }
@@ -340,8 +446,18 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
         let (mut off, mut samples, mut width) = (0.0, 0.0, 0.0);
         for tp in &stroked {
             let line = Outline::new([&tp.path.to_bezpath()], None);
-            let Some(middle) = line.segs.get(line.segs.len() / 2).map(|s| s.0.midpoint(s.1)) else { continue };
-            let Some((a, b, w)) = truth.iter().copied().min_by(|p, q| seg_dist(middle, p.0, p.1).total_cmp(&seg_dist(middle, q.0, q.1))) else {
+            let Some(middle) = line
+                .segs
+                .get(line.segs.len() / 2)
+                .map(|s| s.0.midpoint(s.1))
+            else {
+                continue;
+            };
+            let Some((a, b, w)) = truth
+                .iter()
+                .copied()
+                .min_by(|p, q| seg_dist(middle, p.0, p.1).total_cmp(&seg_dist(middle, q.0, q.1)))
+            else {
                 continue;
             };
             for s in &line.segs {
@@ -355,7 +471,11 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
         }
         if samples > 0.0 {
             (centre_off, width_off) = (off / samples, width / stroked.len() as f64);
-            stroke_anchors = stroked.iter().map(|tp| tp.path.anchor_count()).sum::<usize>() as f64 / stroked.len() as f64;
+            stroke_anchors = stroked
+                .iter()
+                .map(|tp| tp.path.anchor_count())
+                .sum::<usize>() as f64
+                / stroked.len() as f64;
         }
     }
 
@@ -363,10 +483,16 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
     let plain = input.scaled_plain(size);
     let mut shapes_found = nan;
     if !plain.is_empty() {
-        let made: Vec<Outline> = res.paths.iter().filter(|tp| tp.shape.is_some()).map(|tp| Outline::new([&tp.path.to_bezpath()], None)).collect();
+        let made: Vec<Outline> = res
+            .paths
+            .iter()
+            .filter(|tp| tp.shape.is_some())
+            .map(|tp| Outline::new([&tp.path.to_bezpath()], None))
+            .collect();
         let found = plain.iter().filter(|p| {
             let truth = Outline::new([*p], None);
-            made.iter().any(|m| m.distance_to(&truth).1 <= 0.6 && truth.distance_to(m).1 <= 0.6)
+            made.iter()
+                .any(|m| m.distance_to(&truth).1 <= 0.6 && truth.distance_to(m).1 <= 0.6)
         });
         shapes_found = 100.0 * found.count() as f64 / plain.len() as f64;
     }
@@ -388,9 +514,21 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
         miss_max,
         paths: art.len() as f64,
         anchors: anchors as f64,
-        anchor_ratio: if input.anchors > 0 { anchors as f64 / input.anchors as f64 } else { nan },
-        lines: if length > 0.0 { 100.0 * straight / length } else { nan },
-        upright: if length > 0.0 { 100.0 * upright / length } else { nan },
+        anchor_ratio: if input.anchors > 0 {
+            anchors as f64 / input.anchors as f64
+        } else {
+            nan
+        },
+        lines: if length > 0.0 {
+            100.0 * straight / length
+        } else {
+            nan
+        },
+        upright: if length > 0.0 {
+            100.0 * upright / length
+        } else {
+            nan
+        },
         corners,
         kinks,
         slivers,
@@ -402,7 +540,13 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
             .iter()
             .map(|(p, _)| p.bounding_box())
             .filter(|b| b.width() > 0.0 || b.height() > 0.0)
-            .map(|b| (-b.x0).max(-b.y0).max(b.x1 - f64::from(size)).max(b.y1 - f64::from(size)).max(0.0))
+            .map(|b| {
+                (-b.x0)
+                    .max(-b.y0)
+                    .max(b.x1 - f64::from(size))
+                    .max(b.y1 - f64::from(size))
+                    .max(0.0)
+            })
             .fold(0.0, f64::max),
     }
 }

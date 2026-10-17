@@ -8,7 +8,11 @@ use crate::profile::{Mat3, apply, inverse, mul, xy_to_xyz};
 const PCS_D50: [f64; 3] = [0.9642, 1.0, 0.8249];
 
 /// The Bradford cone response matrix (for chromatic adaptation).
-const BRADFORD: Mat3 = [[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [0.0389, -0.0685, 1.0296]];
+const BRADFORD: Mat3 = [
+    [0.8951, 0.2664, -0.1614],
+    [-0.7502, 1.7135, 0.0367],
+    [0.0389, -0.0685, 1.0296],
+];
 
 /// sRGB transfer curve as ICC parametric curve type 3: g, a, b, c, d.
 const SRGB_CURVE: [f64; 5] = [2.4, 1.0 / 1.055, 0.055 / 1.055, 1.0 / 12.92, 0.04045];
@@ -32,7 +36,13 @@ impl Be {
     }
     /// An `s15Fixed16Number`.
     fn fixed(&mut self, v: f64) -> &mut Self {
-        let v = if v.is_finite() { (v * 65536.0).round().clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32 } else { 0 };
+        let v = if v.is_finite() {
+            (v * 65536.0)
+                .round()
+                .clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32
+        } else {
+            0
+        };
         self.0.extend_from_slice(&v.to_be_bytes());
         self
     }
@@ -46,7 +56,13 @@ impl Be {
 fn mluc(text: &str) -> Vec<u8> {
     let utf16: Vec<u8> = text.encode_utf16().flat_map(u16::to_be_bytes).collect();
     let mut b = Be::default();
-    b.sig(b"mluc").zeros(4).u32(1).u32(12).sig(b"enUS").u32(utf16.len() as u32).u32(28);
+    b.sig(b"mluc")
+        .zeros(4)
+        .u32(1)
+        .u32(12)
+        .sig(b"enUS")
+        .u32(utf16.len() as u32)
+        .u32(28);
     b.0.extend_from_slice(&utf16);
     b.0
 }
@@ -61,7 +77,11 @@ fn xyz(v: [f64; 3]) -> Vec<u8> {
 pub(crate) fn bradford(src: [f64; 3], dst: [f64; 3]) -> Mat3 {
     let (s, d) = (apply(&BRADFORD, src), apply(&BRADFORD, dst));
     let ratio = |i: usize| if s[i].abs() < 1e-12 { 1.0 } else { d[i] / s[i] };
-    let scale = [[ratio(0), 0.0, 0.0], [0.0, ratio(1), 0.0], [0.0, 0.0, ratio(2)]];
+    let scale = [
+        [ratio(0), 0.0, 0.0],
+        [0.0, ratio(1), 0.0],
+        [0.0, 0.0, ratio(2)],
+    ];
     let inv = inverse(&BRADFORD).unwrap_or(scale);
     mul(&inv, &mul(&scale, &BRADFORD))
 }

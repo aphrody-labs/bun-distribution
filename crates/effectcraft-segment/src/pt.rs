@@ -19,13 +19,20 @@ pub type Weights = HashMap<String, Tensor>;
 type Result<T> = std::result::Result<T, String>;
 
 fn u16_at(b: &[u8], o: usize) -> Result<usize> {
-    b.get(o..o + 2).map(|s| u16::from_le_bytes([s[0], s[1]]) as usize).ok_or_else(|| "truncated zip".to_string())
+    b.get(o..o + 2)
+        .map(|s| u16::from_le_bytes([s[0], s[1]]) as usize)
+        .ok_or_else(|| "truncated zip".to_string())
 }
 fn u32_at(b: &[u8], o: usize) -> Result<u64> {
-    b.get(o..o + 4).map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64).ok_or_else(|| "truncated zip".to_string())
+    b.get(o..o + 4)
+        .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64)
+        .ok_or_else(|| "truncated zip".to_string())
 }
 fn u64_at(b: &[u8], o: usize) -> Result<u64> {
-    b.get(o..o + 8).and_then(|s| s.try_into().ok()).map(u64::from_le_bytes).ok_or_else(|| "truncated zip".to_string())
+    b.get(o..o + 8)
+        .and_then(|s| s.try_into().ok())
+        .map(u64::from_le_bytes)
+        .ok_or_else(|| "truncated zip".to_string())
 }
 
 /// One archive entry: where its data starts, its sizes and compression.
@@ -39,12 +46,17 @@ struct Entry {
 /// The entries of a zip archive by name.
 fn zip_entries(b: &[u8]) -> Result<HashMap<String, Entry>> {
     // End of central directory: the last `PK\x05\x06` (a comment may follow it).
-    let eocd =
-        (0..b.len().saturating_sub(21)).rev().find(|&i| b.get(i..i + 4) == Some(b"PK\x05\x06")).ok_or("not a zip archive (no end of central directory)")?;
+    let eocd = (0..b.len().saturating_sub(21))
+        .rev()
+        .find(|&i| b.get(i..i + 4) == Some(b"PK\x05\x06"))
+        .ok_or("not a zip archive (no end of central directory)")?;
     let mut count = u16_at(b, eocd + 10)? as u64;
     let mut cd = u32_at(b, eocd + 16)?;
     // Zip64: the locator precedes the record.
-    if (count == 0xffff || cd == 0xffff_ffff) && eocd >= 20 && b.get(eocd - 20..eocd - 16) == Some(b"PK\x06\x07") {
+    if (count == 0xffff || cd == 0xffff_ffff)
+        && eocd >= 20
+        && b.get(eocd - 20..eocd - 16) == Some(b"PK\x06\x07")
+    {
         let rec = u64_at(b, eocd - 12)? as usize;
         if b.get(rec..rec + 4) == Some(b"PK\x06\x06") {
             count = u64_at(b, rec + 32)?;
@@ -62,7 +74,8 @@ fn zip_entries(b: &[u8]) -> Result<HashMap<String, Entry>> {
         let mut size = u32_at(b, p + 24)?;
         let (nl, xl, cl) = (u16_at(b, p + 28)?, u16_at(b, p + 30)?, u16_at(b, p + 32)?);
         let mut local = u32_at(b, p + 42)?;
-        let name = String::from_utf8_lossy(b.get(p + 46..p + 46 + nl).ok_or("truncated zip")?).to_string();
+        let name =
+            String::from_utf8_lossy(b.get(p + 46..p + 46 + nl).ok_or("truncated zip")?).to_string();
         // Zip64 extended information: the 0xffffffff fields, in order.
         let mut x = p + 46 + nl;
         let xend = x + xl;
@@ -84,7 +97,15 @@ fn zip_entries(b: &[u8]) -> Result<HashMap<String, Entry>> {
             return Err(format!("damaged zip entry {name}"));
         }
         let data = l + 30 + u16_at(b, l + 26)? + u16_at(b, l + 28)?;
-        out.insert(name, Entry { data, size: size as usize, stored: stored as usize, method });
+        out.insert(
+            name,
+            Entry {
+                data,
+                size: size as usize,
+                stored: stored as usize,
+                method,
+            },
+        );
         p += 46 + nl + xl + cl;
     }
     Ok(out)
@@ -92,12 +113,14 @@ fn zip_entries(b: &[u8]) -> Result<HashMap<String, Entry>> {
 
 /// An entry's bytes (stored, or raw-deflated).
 fn read_entry<'a>(b: &'a [u8], e: &Entry) -> Result<std::borrow::Cow<'a, [u8]>> {
-    let raw = b.get(e.data..e.data + e.stored).ok_or("truncated zip entry")?;
+    let raw = b
+        .get(e.data..e.data + e.stored)
+        .ok_or("truncated zip entry")?;
     match e.method {
         0 => Ok(std::borrow::Cow::Borrowed(raw)),
-        8 => {
-            miniz_oxide::inflate::decompress_to_vec_with_limit(raw, e.size.max(1)).map(std::borrow::Cow::Owned).map_err(|e| format!("bad deflate data: {e:?}"))
-        }
+        8 => miniz_oxide::inflate::decompress_to_vec_with_limit(raw, e.size.max(1))
+            .map(std::borrow::Cow::Owned)
+            .map_err(|e| format!("bad deflate data: {e:?}")),
         m => Err(format!("unsupported zip compression {m}")),
     }
 }
@@ -105,7 +128,12 @@ fn read_entry<'a>(b: &'a [u8], e: &Entry) -> Result<std::borrow::Cow<'a, [u8]>> 
 /// The bytes of the archive entry `name` (model bundles are zip archives too).
 pub(crate) fn zip_file<'a>(b: &'a [u8], name: &str) -> Result<std::borrow::Cow<'a, [u8]>> {
     let entries = zip_entries(b)?;
-    read_entry(b, entries.get(name).ok_or_else(|| format!("{name} is missing from the archive"))?)
+    read_entry(
+        b,
+        entries
+            .get(name)
+            .ok_or_else(|| format!("{name} is missing from the archive"))?,
+    )
 }
 
 /// Pickle values (what state dicts use).
@@ -137,7 +165,16 @@ enum Obj {
 
 fn int_list(o: &Obj) -> Option<Vec<usize>> {
     match o {
-        Obj::Tuple(v) | Obj::List(v) => v.iter().map(|x| if let Obj::Int(i) = x { usize::try_from(*i).ok() } else { None }).collect(),
+        Obj::Tuple(v) | Obj::List(v) => v
+            .iter()
+            .map(|x| {
+                if let Obj::Int(i) = x {
+                    usize::try_from(*i).ok()
+                } else {
+                    None
+                }
+            })
+            .collect(),
         _ => None,
     }
 }
@@ -152,16 +189,26 @@ fn unpickle(p: &[u8]) -> Result<Obj> {
         *i += n;
         Ok(s)
     };
-    let pop = |stack: &mut Vec<Obj>| stack.pop().ok_or_else(|| "pickle stack underflow".to_string());
+    let pop = |stack: &mut Vec<Obj>| {
+        stack
+            .pop()
+            .ok_or_else(|| "pickle stack underflow".to_string())
+    };
     let pop_mark = |stack: &mut Vec<Obj>| -> Result<Vec<Obj>> {
-        let m = stack.iter().rposition(|o| matches!(o, Obj::Mark)).ok_or("pickle: no mark")?;
+        let m = stack
+            .iter()
+            .rposition(|o| matches!(o, Obj::Mark))
+            .ok_or("pickle: no mark")?;
         let items = stack.split_off(m + 1);
         stack.pop();
         Ok(items)
     };
     let line = |i: &mut usize| -> Result<String> {
         let rest = p.get(*i..).ok_or("truncated pickle")?;
-        let n = rest.iter().position(|c| *c == b'\n').ok_or("truncated pickle")?;
+        let n = rest
+            .iter()
+            .position(|c| *c == b'\n')
+            .ok_or("truncated pickle")?;
         let s = String::from_utf8_lossy(&rest[..n]).to_string();
         *i += n + 1;
         Ok(s)
@@ -210,11 +257,15 @@ fn unpickle(p: &[u8]) -> Result<Obj> {
             b'X' => {
                 let s = take(&mut i, 4)?;
                 let n = u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as usize;
-                stack.push(Obj::Str(String::from_utf8_lossy(take(&mut i, n)?).to_string()));
+                stack.push(Obj::Str(
+                    String::from_utf8_lossy(take(&mut i, n)?).to_string(),
+                ));
             }
             0x8c => {
                 let n = take(&mut i, 1)?[0] as usize;
-                stack.push(Obj::Str(String::from_utf8_lossy(take(&mut i, n)?).to_string()));
+                stack.push(Obj::Str(
+                    String::from_utf8_lossy(take(&mut i, n)?).to_string(),
+                ));
             }
             b'C' => {
                 let n = take(&mut i, 1)?[0] as usize;
@@ -245,7 +296,10 @@ fn unpickle(p: &[u8]) -> Result<Obj> {
             }
             b'r' => {
                 let s = take(&mut i, 4)?;
-                memo.insert(u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64, stack.last().cloned().ok_or("pickle stack underflow")?);
+                memo.insert(
+                    u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64,
+                    stack.last().cloned().ok_or("pickle stack underflow")?,
+                );
             }
             0x94 => {
                 let k = memo.len() as u64;
@@ -257,7 +311,11 @@ fn unpickle(p: &[u8]) -> Result<Obj> {
             }
             b'j' => {
                 let s = take(&mut i, 4)?;
-                stack.push(memo.get(&(u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64)).cloned().ok_or("pickle: bad memo")?);
+                stack.push(
+                    memo.get(&(u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64))
+                        .cloned()
+                        .ok_or("pickle: bad memo")?,
+                );
             }
             b't' => {
                 let items = pop_mark(&mut stack)?;
@@ -274,9 +332,13 @@ fn unpickle(p: &[u8]) -> Result<Obj> {
             b'Q' => {
                 // Persistent id: ('storage', dtype class, key, location, numel).
                 let pid = pop(&mut stack)?;
-                let Obj::Tuple(t) = pid else { return Err("pickle: bad persistent id".into()) };
+                let Obj::Tuple(t) = pid else {
+                    return Err("pickle: bad persistent id".into());
+                };
                 match (t.get(1), t.get(2)) {
-                    (Some(Obj::Global(_, dtype)), Some(Obj::Str(key))) => stack.push(Obj::Storage(dtype.clone(), key.clone())),
+                    (Some(Obj::Global(_, dtype)), Some(Obj::Str(key))) => {
+                        stack.push(Obj::Storage(dtype.clone(), key.clone()))
+                    }
                     _ => stack.push(Obj::Other),
                 }
             }
@@ -289,14 +351,30 @@ fn unpickle(p: &[u8]) -> Result<Obj> {
                 };
                 stack.push(match f {
                     Obj::Global(m, n) if m == "torch._utils" && n == "_rebuild_tensor_v2" => {
-                        match (args.first(), args.get(1), args.get(2).and_then(int_list), args.get(3).and_then(int_list)) {
-                            (Some(Obj::Storage(dtype, key)), Some(Obj::Int(off)), Some(size), Some(stride)) => {
-                                Obj::Tensor { dtype: dtype.clone(), key: key.clone(), offset: usize::try_from(*off).unwrap_or(0), size, stride }
-                            }
+                        match (
+                            args.first(),
+                            args.get(1),
+                            args.get(2).and_then(int_list),
+                            args.get(3).and_then(int_list),
+                        ) {
+                            (
+                                Some(Obj::Storage(dtype, key)),
+                                Some(Obj::Int(off)),
+                                Some(size),
+                                Some(stride),
+                            ) => Obj::Tensor {
+                                dtype: dtype.clone(),
+                                key: key.clone(),
+                                offset: usize::try_from(*off).unwrap_or(0),
+                                size,
+                                stride,
+                            },
                             _ => Obj::Other,
                         }
                     }
-                    Obj::Global(m, n) if m == "collections" && n == "OrderedDict" => Obj::Dict(vec![]),
+                    Obj::Global(m, n) if m == "collections" && n == "OrderedDict" => {
+                        Obj::Dict(vec![])
+                    }
                     _ => Obj::Other,
                 });
             }
@@ -340,15 +418,40 @@ fn unpickle(p: &[u8]) -> Result<Obj> {
 /// Element bytes and conversion of a storage dtype.
 fn to_f32(dtype: &str, bytes: &[u8]) -> Option<Vec<f32>> {
     match dtype {
-        "FloatStorage" => Some(bytes.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect()),
-        "HalfStorage" => Some(bytes.as_chunks::<2>().0.iter().map(|c| half_to_f32(u16::from_le_bytes([c[0], c[1]]))).collect()),
-        "BFloat16Storage" => Some(bytes.as_chunks::<2>().0.iter().map(|c| f32::from_bits((u16::from_le_bytes([c[0], c[1]]) as u32) << 16)).collect()),
+        "FloatStorage" => Some(
+            bytes
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                .collect(),
+        ),
+        "HalfStorage" => Some(
+            bytes
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| half_to_f32(u16::from_le_bytes([c[0], c[1]])))
+                .collect(),
+        ),
+        "BFloat16Storage" => Some(
+            bytes
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| f32::from_bits((u16::from_le_bytes([c[0], c[1]]) as u32) << 16))
+                .collect(),
+        ),
         _ => None,
     }
 }
 
 pub(crate) fn half_to_f32(h: u16) -> f32 {
-    let (s, e, m) = ((h >> 15) as u32, ((h >> 10) & 0x1f) as u32, (h & 0x3ff) as u32);
+    let (s, e, m) = (
+        (h >> 15) as u32,
+        ((h >> 10) & 0x1f) as u32,
+        (h & 0x3ff) as u32,
+    );
     let bits = match (e, m) {
         (0, 0) => s << 31,
         (0, m) => {
@@ -371,33 +474,59 @@ pub(crate) fn half_to_f32(h: u16) -> f32 {
 /// `state_dict` is unwrapped.
 pub fn read(bytes: &[u8]) -> Result<Weights> {
     let entries = zip_entries(bytes)?;
-    let (pkl_name, pkl) = entries.iter().find(|(n, _)| n.ends_with("data.pkl")).ok_or("not a PyTorch checkpoint (no data.pkl)")?;
+    let (pkl_name, pkl) = entries
+        .iter()
+        .find(|(n, _)| n.ends_with("data.pkl"))
+        .ok_or("not a PyTorch checkpoint (no data.pkl)")?;
     let prefix = pkl_name.trim_end_matches("data.pkl").to_string();
     let root = unpickle(&read_entry(bytes, pkl)?)?;
     let dict = match root {
         Obj::Dict(d) => d,
         _ => return Err("the checkpoint is not a state dict".into()),
     };
-    let dict = match dict.iter().find(|(k, _)| matches!(k, Obj::Str(s) if s == "model" || s == "state_dict")) {
+    let dict = match dict
+        .iter()
+        .find(|(k, _)| matches!(k, Obj::Str(s) if s == "model" || s == "state_dict"))
+    {
         Some((_, Obj::Dict(inner))) => inner.clone(),
         _ => dict,
     };
     let mut storages: HashMap<String, std::borrow::Cow<[u8]>> = HashMap::new();
     let mut out = Weights::new();
     for (k, v) in dict {
-        let (Obj::Str(name), Obj::Tensor { dtype, key, offset, size, stride }) = (k, v) else { continue };
+        let (
+            Obj::Str(name),
+            Obj::Tensor {
+                dtype,
+                key,
+                offset,
+                size,
+                stride,
+            },
+        ) = (k, v)
+        else {
+            continue;
+        };
         if !storages.contains_key(&key) {
-            let e = entries.get(&format!("{prefix}data/{key}")).ok_or_else(|| format!("missing storage {key}"))?;
+            let e = entries
+                .get(&format!("{prefix}data/{key}"))
+                .ok_or_else(|| format!("missing storage {key}"))?;
             storages.insert(key.clone(), read_entry(bytes, e)?);
         }
-        let Some(values) = storages.get(&key).and_then(|b| to_f32(&dtype, b)) else { continue };
+        let Some(values) = storages.get(&key).and_then(|b| to_f32(&dtype, b)) else {
+            continue;
+        };
         let n: usize = size.iter().product();
         // Gather (any strides) into a contiguous row-major tensor.
         let mut data = Vec::with_capacity(n);
         let mut idx = vec![0usize; size.len()];
         for _ in 0..n {
             let at = offset + idx.iter().zip(&stride).map(|(i, s)| i * s).sum::<usize>();
-            data.push(*values.get(at).ok_or_else(|| format!("{name}: data out of range"))?);
+            data.push(
+                *values
+                    .get(at)
+                    .ok_or_else(|| format!("{name}: data out of range"))?,
+            );
             for d in (0..idx.len()).rev() {
                 idx[d] += 1;
                 if idx[d] < size[d] {
@@ -461,7 +590,10 @@ mod tests {
             p.extend_from_slice(&(t.len() as u32).to_le_bytes());
             p.extend_from_slice(t.as_bytes());
         };
-        for (name, dtype, key, size, stride) in [("w", "FloatStorage", "0", [2u8, 3], [1u8, 2]), ("n", "LongStorage", "1", [1, 1], [1, 1])] {
+        for (name, dtype, key, size, stride) in [
+            ("w", "FloatStorage", "0", [2u8, 3], [1u8, 2]),
+            ("n", "LongStorage", "1", [1, 1], [1, 1]),
+        ] {
             s(&mut p, name);
             // The call's argument mark, then the persistent id tuple's.
             p.extend_from_slice(b"ctorch._utils\n_rebuild_tensor_v2\n((");
@@ -470,7 +602,9 @@ mod tests {
             s(&mut p, key);
             s(&mut p, "cpu");
             p.extend_from_slice(&[b'K', 6, b't', b'Q', b'K', 0]);
-            p.extend_from_slice(&[b'K', size[0], b'K', size[1], 0x86, b'K', stride[0], b'K', stride[1], 0x86]);
+            p.extend_from_slice(&[
+                b'K', size[0], b'K', size[1], 0x86, b'K', stride[0], b'K', stride[1], 0x86,
+            ]);
             p.extend_from_slice(&[0x89, b'c']);
             p.extend_from_slice(b"collections\nOrderedDict\n");
             p.extend_from_slice(b")RtR");
@@ -481,12 +615,25 @@ mod tests {
 
     #[test]
     fn reads_a_state_dict_with_strides() {
-        let storage: Vec<u8> = [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0].iter().flat_map(|v| v.to_le_bytes()).collect();
+        let storage: Vec<u8> = [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
         let pkl = pickle();
-        let file = zip(&[("ckpt/data.pkl", &pkl), ("ckpt/data/0", &storage), ("ckpt/data/1", &7i64.to_le_bytes())]);
+        let file = zip(&[
+            ("ckpt/data.pkl", &pkl),
+            ("ckpt/data/0", &storage),
+            ("ckpt/data/1", &7i64.to_le_bytes()),
+        ]);
         let w = read(&file).unwrap();
         // Strides (1, 2) over [1..6]: rows are [1, 3, 5] and [2, 4, 6].
-        assert_eq!(w.get("w"), Some(&Tensor { shape: vec![2, 3], data: vec![1.0, 3.0, 5.0, 2.0, 4.0, 6.0] }));
+        assert_eq!(
+            w.get("w"),
+            Some(&Tensor {
+                shape: vec![2, 3],
+                data: vec![1.0, 3.0, 5.0, 2.0, 4.0, 6.0]
+            })
+        );
         assert!(!w.contains_key("n"), "integer tensors are skipped");
     }
 
@@ -497,7 +644,11 @@ mod tests {
         let file = zip(&[("ckpt/data.pkl", &pkl[..pkl.len() - 5])]);
         assert!(read(&file).is_err());
         // Truncate the storage: the tensor reads out of range.
-        let file = zip(&[("ckpt/data.pkl", &pkl), ("ckpt/data/0", &[0u8; 8]), ("ckpt/data/1", &[0u8; 8])]);
+        let file = zip(&[
+            ("ckpt/data.pkl", &pkl),
+            ("ckpt/data/0", &[0u8; 8]),
+            ("ckpt/data/1", &[0u8; 8]),
+        ]);
         assert!(read(&file).is_err());
         assert_eq!(half_to_f32(0x3c00), 1.0);
         assert_eq!(half_to_f32(0xc000), -2.0);

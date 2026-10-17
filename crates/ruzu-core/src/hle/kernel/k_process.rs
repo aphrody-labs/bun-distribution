@@ -735,7 +735,9 @@ impl KProcess {
         memory.set_gpu_dirty_managers(system.gpu_dirty_memory_managers());
         let memory_arc = Arc::new(Mutex::new(memory));
         // Wire into page table so page-table-level operations can use it
-        self.page_table.get_base_mut().set_memory(memory_arc.clone());
+        self.page_table
+            .get_base_mut()
+            .set_memory(memory_arc.clone());
         self.memory = Some(memory_arc);
         self.debugger_enabled = system.debugger_enabled();
     }
@@ -2884,7 +2886,11 @@ impl KProcess {
         // Bind Eden's KSession::m_process at first registration. HLE wait
         // registries may subsequently mirror this Arc into another process;
         // those aliases must never become the session's resource/port owner.
-        session.lock().unwrap().process_id.get_or_insert(self.process_id);
+        session
+            .lock()
+            .unwrap()
+            .process_id
+            .get_or_insert(self.process_id);
         self.session_objects.insert(object_id, session);
     }
 
@@ -3603,7 +3609,11 @@ mod tests {
         assert_eq!(stack_top - stack_base, 0x100000);
         let process_guard = process.lock().unwrap();
         assert_eq!(
-            process_guard.process_memory.read().unwrap().read_32(tls_address + 0x110),
+            process_guard
+                .process_memory
+                .read()
+                .unwrap()
+                .read_32(tls_address + 0x110),
             main_thread_handle,
         );
         let thread_local_start = process_guard
@@ -4190,7 +4200,10 @@ mod tests {
         assert!(process.client_session_parent_ids.is_empty());
         assert!(process.session_objects.contains_key(&0x1000));
         assert!(server_session.lock().unwrap().client_closed);
-        server_session.lock().unwrap().destroy_with_process(&mut process);
+        server_session
+            .lock()
+            .unwrap()
+            .destroy_with_process(&mut process);
         assert!(process.session_objects.is_empty());
     }
 
@@ -4204,8 +4217,12 @@ mod tests {
             let mut process = KProcess::new();
             process.initialize_handle_table();
             process.register_client_port_object(0x1234, port.clone());
-            let (session_id, client_id) = port.lock().unwrap().client
-                .create_session(&mut process, &kernel, Some(0x1234), 0).unwrap();
+            let (session_id, client_id) = port
+                .lock()
+                .unwrap()
+                .client
+                .create_session(&mut process, &kernel, Some(0x1234), 0)
+                .unwrap();
             process.handle_table.add(client_id).unwrap();
             let server = process.get_server_session_by_object_id(session_id).unwrap();
             process.finalize_handle_table();

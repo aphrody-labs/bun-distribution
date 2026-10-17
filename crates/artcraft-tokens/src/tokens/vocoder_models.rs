@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct VocoderModelToken(pub String);
 
 impl_string_token!(VocoderModelToken);
-impl_crockford_generator!(VocoderModelToken, 15usize, LegacyTokenPrefix::VocoderModel, CrockfordLower);
+impl_crockford_generator!(
+    VocoderModelToken,
+    15usize,
+    LegacyTokenPrefix::VocoderModel,
+    CrockfordLower
+);

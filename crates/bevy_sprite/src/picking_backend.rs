@@ -14,14 +14,14 @@ use crate::{Anchor, Sprite};
 use bevy_app::prelude::*;
 use bevy_asset::prelude::*;
 use bevy_camera::{
-    visibility::{RenderLayers, ViewVisibility},
     Camera, Projection, RenderTarget,
+    visibility::{RenderLayers, ViewVisibility},
 };
 use bevy_color::Alpha;
 use bevy_ecs::prelude::*;
-use bevy_image::{prelude::*, TextureAccessError};
+use bevy_image::{TextureAccessError, prelude::*};
 use bevy_log::warn;
-use bevy_math::{prelude::*, FloatExt};
+use bevy_math::{FloatExt, prelude::*};
 use bevy_picking::backend::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_transform::prelude::*;

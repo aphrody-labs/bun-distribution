@@ -60,7 +60,10 @@ pub struct Windows {
 impl Windows {
     /// The window holding open file `uid` (0: the main window).
     pub fn of(&self, uid: u64) -> u64 {
-        self.list.iter().find(|w| w.docs.contains(&uid)).map_or(0, |w| w.id)
+        self.list
+            .iter()
+            .find(|w| w.docs.contains(&uid))
+            .map_or(0, |w| w.id)
     }
 
     pub fn exists(&self, id: u64) -> bool {
@@ -70,7 +73,11 @@ impl Windows {
 
 /// Window `id`'s egui viewport.
 pub fn viewport(id: u64) -> ViewportId {
-    if id == 0 { ViewportId::ROOT } else { ViewportId::from_hash_of(("figcraft_window", id)) }
+    if id == 0 {
+        ViewportId::ROOT
+    } else {
+        ViewportId::from_hash_of(("figcraft_window", id))
+    }
 }
 
 thread_local! {
@@ -93,7 +100,11 @@ pub fn with_app<R>(f: impl FnOnce(&mut FigApp) -> R) -> Option<R> {
 pub fn guard(app: &mut FigApp, ctx: &Context, f: impl FnOnce(&mut FigApp)) {
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(&mut *app)));
     if let Err(e) = res {
-        let msg = e.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| e.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into());
+        let msg = e
+            .downcast_ref::<&str>()
+            .map(|s| s.to_string())
+            .or_else(|| e.downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "panic".into());
         log::error!("UI panic: {msg}");
         app.toast(format!("Internal error (please report): {msg}"));
         ctx.request_repaint();
@@ -103,7 +114,12 @@ pub fn guard(app: &mut FigApp, ctx: &Context, f: impl FnOnce(&mut FigApp)) {
 
 /// Control-channel input events (`ui.input`) for the window `viewport` draws next.
 pub fn take_input(app: &mut FigApp, viewport_id: ViewportId) -> Vec<egui::Event> {
-    match app.windows.list.iter_mut().find(|w| viewport(w.id) == viewport_id) {
+    match app
+        .windows
+        .list
+        .iter_mut()
+        .find(|w| viewport(w.id) == viewport_id)
+    {
         Some(w) => std::mem::take(&mut w.pane.control_input),
         None if viewport_id == ViewportId::ROOT => std::mem::take(&mut app.control_input),
         None => Vec::new(),
@@ -112,7 +128,11 @@ pub fn take_input(app: &mut FigApp, viewport_id: ViewportId) -> Vec<egui::Event>
 
 fn title_of(ds: Option<&DocState>) -> String {
     match ds {
-        Some(ds) => format!("{}{} – FigCraft", ds.doc.name, if ds.is_dirty() { " •" } else { "" }),
+        Some(ds) => format!(
+            "{}{} – FigCraft",
+            ds.doc.name,
+            if ds.is_dirty() { " •" } else { "" }
+        ),
         None => "FigCraft".into(),
     }
 }
@@ -135,7 +155,12 @@ impl FigApp {
 
     /// Files in this window with unsaved changes (a branch tab's edits live on in its file).
     fn unsaved(&self) -> Vec<String> {
-        self.session.docs.iter().filter(|d| self.shows(d.uid) && d.is_dirty() && d.branch_of.is_none()).map(|d| d.doc.name.clone()).collect()
+        self.session
+            .docs
+            .iter()
+            .filter(|d| self.shows(d.uid) && d.is_dirty() && d.branch_of.is_none())
+            .map(|d| d.doc.name.clone())
+            .collect()
     }
 }
 
@@ -145,7 +170,13 @@ fn show_own(app: &mut FigApp, want: Option<u64>) {
     let mine = |d: &DocState| app.shows(d.uid);
     let pick = want
         .and_then(|u| app.session.docs.iter().position(|d| d.uid == u && mine(d)))
-        .or_else(|| app.session.ds().ok().filter(|d| mine(d)).map(|_| app.session.active))
+        .or_else(|| {
+            app.session
+                .ds()
+                .ok()
+                .filter(|d| mine(d))
+                .map(|_| app.session.active)
+        })
         .or_else(|| app.session.docs.iter().position(mine));
     if let Some(i) = pick {
         app.session.active = i;
@@ -167,7 +198,13 @@ fn exchange(app: &mut FigApp, p: &mut Pane) {
 /// Open a window (`window.new`) with open file `index` moved into it, the file at `path`, or a new
 /// file, at screen point `at` (else beside this window). Returns its id. With one window (the
 /// browser) or a screen reader running, a file opens as a tab here instead (and the error says so).
-pub fn open(app: &mut FigApp, ctx: &Context, index: Option<usize>, path: Option<&str>, at: Option<Pos2>) -> Result<u64, String> {
+pub fn open(
+    app: &mut FigApp,
+    ctx: &Context,
+    index: Option<usize>,
+    path: Option<&str>,
+    at: Option<Pos2>,
+) -> Result<u64, String> {
     // shortcut: eframe 0.36 gives only the main window an AccessKit adapter, so other windows have
     // no screen-reader tree; while a screen reader runs files stay tabs here. Upgrade when eframe
     // adapts every viewport.
@@ -191,7 +228,12 @@ pub fn open(app: &mut FigApp, ctx: &Context, index: Option<usize>, path: Option<
             };
             let uid = opened.and_then(|_| app.session.ds().ok().map(|d| d.uid));
             app.ui.home = false;
-            uid.ok_or_else(|| app.ui.last_error.clone().unwrap_or_else(|| "no file opened".into()))?
+            uid.ok_or_else(|| {
+                app.ui
+                    .last_error
+                    .clone()
+                    .unwrap_or_else(|| "no file opened".into())
+            })?
         }
     };
     if let Some(why) = one {
@@ -243,7 +285,14 @@ pub(crate) fn requests(app: &mut FigApp, ctx: &Context) {
     for r in std::mem::take(&mut app.window_requests) {
         let n = |k: &str| r.data.get(k).and_then(Value::as_u64);
         let res = if r.kind == "window.new" {
-            open(app, ctx, n("index").map(|i| i as usize), r.data.get("path").and_then(Value::as_str), None).map(|_| ())
+            open(
+                app,
+                ctx,
+                n("index").map(|i| i as usize),
+                r.data.get("path").and_then(Value::as_str),
+                None,
+            )
+            .map(|_| ())
         } else {
             focus(app, ctx, n("id").unwrap_or(u64::MAX)).map(|_| ())
         };
@@ -261,7 +310,11 @@ pub fn list(app: &FigApp) -> Value {
         } else if id == 0 {
             app.windows.main_active
         } else {
-            app.windows.list.iter().find(|w| w.id == id).and_then(|w| w.active)
+            app.windows
+                .list
+                .iter()
+                .find(|w| w.id == id)
+                .and_then(|w| w.active)
         }
     };
     let ids = std::iter::once(0).chain(app.windows.list.iter().map(|w| w.id));
@@ -319,15 +372,25 @@ pub(crate) fn confirm_close(app: &mut FigApp, ctx: &Context) {
     }
     let t = crate::theme::Tokens::get(ctx);
     let (mut open, mut discard, mut cancel) = (true, false, false);
-    crate::dialogs::window(tr("Unsaved changes"), ctx).open(&mut open).show(ctx, |ui| {
-        ui.set_width(340.0);
-        crate::widgets::label(ui, &trf("Unsaved changes in {names}. Close the window and lose them?", &[("names", &names.join(", "))]), t.text);
-        ui.add_space(12.0);
-        ui.horizontal(|ui| {
-            discard = crate::widgets::button(ui, tr("Close without saving"), true, true).clicked();
-            cancel = crate::widgets::button(ui, tr("Cancel"), false, true).clicked();
+    crate::dialogs::window(tr("Unsaved changes"), ctx)
+        .open(&mut open)
+        .show(ctx, |ui| {
+            ui.set_width(340.0);
+            crate::widgets::label(
+                ui,
+                &trf(
+                    "Unsaved changes in {names}. Close the window and lose them?",
+                    &[("names", &names.join(", "))],
+                ),
+                t.text,
+            );
+            ui.add_space(12.0);
+            ui.horizontal(|ui| {
+                discard =
+                    crate::widgets::button(ui, tr("Close without saving"), true, true).clicked();
+                cancel = crate::widgets::button(ui, tr("Cancel"), false, true).clicked();
+            });
         });
-    });
     app.ui.confirm_close = open && !discard && !cancel;
     if discard {
         close_current(app, ctx);
@@ -344,10 +407,18 @@ pub(crate) fn begin(app: &mut FigApp, ctx: &Context) {
             ctx.send_viewport_cmd_to(ViewportId::ROOT, ViewportCommand::Close);
             continue;
         }
-        let files: Vec<u64> = app.session.docs.iter().filter(|d| app.windows.of(d.uid) == id).map(|d| d.uid).collect();
+        let files: Vec<u64> = app
+            .session
+            .docs
+            .iter()
+            .filter(|d| app.windows.of(d.uid) == id)
+            .map(|d| d.uid)
+            .collect();
         for uid in files {
             if let Some(i) = app.session.docs.iter().position(|d| d.uid == uid) {
-                let _ = app.session.execute("file.close", &json!({"index": i, "force": true}));
+                let _ = app
+                    .session
+                    .execute("file.close", &json!({"index": i, "force": true}));
             }
         }
         if id != 0 {
@@ -382,7 +453,9 @@ pub(crate) fn begin(app: &mut FigApp, ctx: &Context) {
 /// open there), that window comes to the front with it. Not when files closed: the session's
 /// fallback file isn't a choice.
 pub(crate) fn settle(app: &mut FigApp, ctx: &Context, files_before: usize) {
-    let Some(uid) = app.session.ds().ok().map(|d| d.uid) else { return };
+    let Some(uid) = app.session.ds().ok().map(|d| d.uid) else {
+        return;
+    };
     let owner = app.windows.of(uid);
     if owner == app.windows.current || app.session.docs.len() < files_before {
         return;
@@ -399,7 +472,10 @@ pub(crate) fn settle(app: &mut FigApp, ctx: &Context, files_before: usize) {
 
 /// Something every window shows changed (the preferences, the theme): the others draw again.
 pub(crate) fn repaint_others(app: &FigApp, ctx: &Context) {
-    for id in std::iter::once(0).chain(app.windows.list.iter().map(|w| w.id)).filter(|id| *id != app.windows.current) {
+    for id in std::iter::once(0)
+        .chain(app.windows.list.iter().map(|w| w.id))
+        .filter(|id| *id != app.windows.current)
+    {
         ctx.request_repaint_of(viewport(id));
     }
 }
@@ -408,13 +484,20 @@ pub(crate) fn repaint_others(app: &FigApp, ctx: &Context) {
 pub(crate) fn show(app: &FigApp, ctx: &Context) {
     for w in &app.windows.list {
         let title = title_of(app.session.docs.iter().find(|d| Some(d.uid) == w.active));
-        let mut b = ViewportBuilder::default().with_title(title).with_inner_size(w.size).with_min_inner_size([800.0, 500.0]).with_drag_and_drop(true);
+        let mut b = ViewportBuilder::default()
+            .with_title(title)
+            .with_inner_size(w.size)
+            .with_min_inner_size([800.0, 500.0])
+            .with_drag_and_drop(true);
         if let Some(p) = w.pos {
             b = b.with_position(p);
         }
         b = match w.pane.ui.title_bar {
             TitleBar::Custom => b.with_decorations(false),
-            TitleBar::Inset => b.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false),
+            TitleBar::Inset => b
+                .with_fullsize_content_view(true)
+                .with_titlebar_shown(false)
+                .with_title_shown(false),
             TitleBar::Native => b,
         };
         let id = w.id;
@@ -429,13 +512,17 @@ pub(crate) fn show(app: &FigApp, ctx: &Context) {
 
 /// One frame of window `id`, with its state swapped in.
 fn draw(app: &mut FigApp, id: u64, ui: &mut egui::Ui) {
-    let Some(k) = app.windows.list.iter().position(|w| w.id == id) else { return };
+    let Some(k) = app.windows.list.iter().position(|w| w.id == id) else {
+        return;
+    };
     let ctx = ui.ctx().clone();
     let main_active = app.session.ds().ok().map(|d| d.uid);
     let newest = app.session.docs.iter().map(|d| d.uid).max().unwrap_or(0);
     let files_before = app.session.docs.len();
     let prefs = app.session.prefs.clone();
-    let Some(w) = app.windows.list.get_mut(k) else { return };
+    let Some(w) = app.windows.list.get_mut(k) else {
+        return;
+    };
     let want = w.active;
     let mut pane = std::mem::take(&mut w.pane);
     exchange(app, &mut pane);
@@ -450,7 +537,13 @@ fn draw(app: &mut FigApp, id: u64, ui: &mut egui::Ui) {
     // Within the swap, so a panic leaves every window its own state.
     guard(app, &ctx, |app| app.frame(ui));
     // Files it opened are its own.
-    let new: Vec<u64> = app.session.docs.iter().map(|d| d.uid).filter(|u| *u > newest && app.windows.of(*u) == 0).collect();
+    let new: Vec<u64> = app
+        .session
+        .docs
+        .iter()
+        .map(|d| d.uid)
+        .filter(|u| *u > newest && app.windows.of(*u) == 0)
+        .collect();
     if let Some(w) = app.windows.list.iter_mut().find(|w| w.id == id) {
         w.docs.extend(new);
     }
@@ -458,7 +551,12 @@ fn draw(app: &mut FigApp, id: u64, ui: &mut egui::Ui) {
     if app.session.prefs != prefs {
         repaint_others(app, &ctx);
     }
-    let shown = app.session.ds().ok().map(|d| d.uid).filter(|u| app.windows.of(*u) == id);
+    let shown = app
+        .session
+        .ds()
+        .ok()
+        .map(|d| d.uid)
+        .filter(|u| app.windows.of(*u) == id);
     let (outer, inner) = ctx.input(|i| (i.viewport().outer_rect, i.viewport().inner_rect));
     exchange(app, &mut pane);
     if let Some(w) = app.windows.list.iter_mut().find(|w| w.id == id) {

@@ -64,7 +64,10 @@ impl DaemonCommand {
                 format!("{} not found", program.display()),
             ));
         }
-        Ok(Self { program, args: Vec::new() })
+        Ok(Self {
+            program,
+            args: Vec::new(),
+        })
     }
 }
 
@@ -217,10 +220,14 @@ impl Supervisor {
                 // Ready or still loading: either way it is the instance we want.
                 let client = ServerClient::new(state.server_url());
                 if !matches!(client.health().await, Health::Down(_)) {
-                    let state =
-                        self.wait_ready(role, state.daemon_pid, options.ready_timeout).await?;
+                    let state = self
+                        .wait_ready(role, state.daemon_pid, options.ready_timeout)
+                        .await?;
                     self.touch(role)?;
-                    return Ok(Endpoint { state, attached: true });
+                    return Ok(Endpoint {
+                        state,
+                        attached: true,
+                    });
                 }
             }
             // Wrong model, or a daemon whose server no longer answers.
@@ -232,7 +239,9 @@ impl Supervisor {
             binary: binary.to_path_buf(),
             spec: plan.spec.clone(),
             estimated_vram_bytes: plan.estimated_vram_bytes,
-            keep_alive_secs: options.keep_alive.map(|keep_alive| keep_alive.as_secs().max(1)),
+            keep_alive_secs: options
+                .keep_alive
+                .map(|keep_alive| keep_alive.as_secs().max(1)),
             ready_timeout_secs: options.ready_timeout.as_secs().max(1),
             lease_timeout_secs: options.lease_timeout.as_secs(),
         };
@@ -247,7 +256,10 @@ impl Supervisor {
         let daemon_pid = self.spawn_daemon(role)?;
         let patience = options.ready_timeout + options.lease_timeout;
         let state = self.wait_ready(role, daemon_pid, patience).await?;
-        Ok(Endpoint { state, attached: false })
+        Ok(Endpoint {
+            state,
+            attached: false,
+        })
     }
 
     /// Start the daemon process for `role`, detached from this process.
@@ -256,7 +268,10 @@ impl Supervisor {
         if let Some(parent) = log_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let log = OpenOptions::new().create(true).append(true).open(&log_path)?;
+        let log = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)?;
 
         let mut command = Command::new(&self.daemon.program).no_window();
         command
@@ -352,7 +367,10 @@ impl Supervisor {
         let was_running = process_alive(state.daemon_pid) || process_alive(state.server_pid);
 
         if process_alive(state.daemon_pid) {
-            write_atomic(&self.dirs.stop_file(role), unix_now().to_string().as_bytes())?;
+            write_atomic(
+                &self.dirs.stop_file(role),
+                unix_now().to_string().as_bytes(),
+            )?;
             let started = Instant::now();
             while process_alive(state.daemon_pid) && started.elapsed() < STOP_GRACE {
                 tokio::time::sleep(POLL_INTERVAL).await;
@@ -371,9 +389,11 @@ impl Supervisor {
 
     /// Remove the files of an instance that is no longer running.
     fn clear_stale_files(&self, role: Role) -> std::io::Result<()> {
-        for path in
-            [self.dirs.state_file(role), self.dirs.stop_file(role), self.dirs.error_file(role)]
-        {
+        for path in [
+            self.dirs.state_file(role),
+            self.dirs.stop_file(role),
+            self.dirs.error_file(role),
+        ] {
             remove_if_present(&path)?;
         }
         Ok(())

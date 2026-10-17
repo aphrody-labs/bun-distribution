@@ -93,7 +93,11 @@ pub fn with_cancel<R>(flag: &Arc<AtomicBool>, f: impl FnOnce() -> R) -> R {
 
 /// Whether the work running on this thread has been cancelled.
 pub fn cancelled() -> bool {
-    CURRENT.with(|c| c.borrow().as_ref().is_some_and(|f| f.load(Ordering::Relaxed)))
+    CURRENT.with(|c| {
+        c.borrow()
+            .as_ref()
+            .is_some_and(|f| f.load(Ordering::Relaxed))
+    })
 }
 
 /// The hints of the work running on this thread ([`with_cancel`], [`with_catch_up`],
@@ -109,7 +113,12 @@ pub struct Context {
 impl Context {
     /// This thread's hints.
     pub fn current() -> Self {
-        Context { cancel: CURRENT.with(|c| c.borrow().clone()), catch_up: catch_up(), draft: draft(), background: background() }
+        Context {
+            cancel: CURRENT.with(|c| c.borrow().clone()),
+            catch_up: catch_up(),
+            draft: draft(),
+            background: background(),
+        }
     }
 
     /// Run `f` with these hints, restoring this thread's however `f` ends (a pool thread must
@@ -141,15 +150,27 @@ mod tests {
     #[test]
     fn context_carries_the_hints_to_another_thread_and_restores_its_own() {
         let flag = Arc::new(AtomicBool::new(true));
-        let ctx = with_cancel(&flag, || with_draft(true, || with_background(true, || with_catch_up(Some(Tick(5)), Context::current))));
+        let ctx = with_cancel(&flag, || {
+            with_draft(true, || {
+                with_background(true, || with_catch_up(Some(Tick(5)), Context::current))
+            })
+        });
         std::thread::scope(|s| {
             s.spawn(|| {
-                let seen = with_draft(false, || ctx.clone().run(|| (cancelled(), draft(), background(), catch_up())));
+                let seen = with_draft(false, || {
+                    ctx.clone()
+                        .run(|| (cancelled(), draft(), background(), catch_up()))
+                });
                 assert_eq!(seen, (true, true, true, Some(Tick(5))));
                 // a panic inside leaves this thread's own hints in place
-                let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| ctx.clone().run(|| panic!("job"))));
+                let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    ctx.clone().run(|| panic!("job"))
+                }));
                 assert!(r.is_err());
-                assert_eq!((cancelled(), draft(), background(), catch_up()), (false, false, false, None));
+                assert_eq!(
+                    (cancelled(), draft(), background(), catch_up()),
+                    (false, false, false, None)
+                );
             });
         });
     }

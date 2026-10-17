@@ -13,23 +13,37 @@ const MAX_PROPS: usize = 10_000;
 
 /// Simple variant types kept as text.
 const SIMPLE: &[&str] = &[
-    "lpwstr", "lpstr", "bstr", "i1", "i2", "i4", "i8", "int", "ui1", "ui2", "ui4", "ui8", "uint", "r4", "r8", "decimal", "bool", "date", "filetime",
-    "cy", "error", "clsid",
+    "lpwstr", "lpstr", "bstr", "i1", "i2", "i4", "i8", "int", "ui1", "ui2", "ui4", "ui8", "uint",
+    "r4", "r8", "decimal", "bool", "date", "filetime", "cy", "error", "clsid",
 ];
 
 /// Properties of a parsed `docProps/custom.xml` root.
 pub fn read(root: &El) -> Vec<CustomProp> {
     let mut out = Vec::new();
-    for p in root.els().filter(|e| e.local() == "property").take(MAX_PROPS) {
-        let Some(name) = p.attr("name").filter(|n| !n.is_empty()) else { continue };
+    for p in root
+        .els()
+        .filter(|e| e.local() == "property")
+        .take(MAX_PROPS)
+    {
+        let Some(name) = p.attr("name").filter(|n| !n.is_empty()) else {
+            continue;
+        };
         let Some(v) = p.els().next() else { continue };
         let kind = v.local();
         let prop = if SIMPLE.contains(&kind) {
-            CustomProp { name: name.to_string(), kind: kind.to_string(), value: v.text() }
+            CustomProp {
+                name: name.to_string(),
+                kind: kind.to_string(),
+                value: v.text(),
+            }
         } else {
             let mut xml = String::new();
             el_xml(v, &mut xml, 0);
-            CustomProp { name: name.to_string(), kind: "raw".into(), value: xml }
+            CustomProp {
+                name: name.to_string(),
+                kind: "raw".into(),
+                value: xml,
+            }
         };
         out.push(prop);
     }
@@ -42,8 +56,14 @@ pub fn write(props: &[CustomProp]) -> Vec<u8> {
     w.open(
         "Properties",
         &[
-            ("xmlns", "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"),
-            ("xmlns:vt", "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"),
+            (
+                "xmlns",
+                "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
+            ),
+            (
+                "xmlns:vt",
+                "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+            ),
         ],
     );
     // Property ids start at 2 (§22.3.2.2).
@@ -51,11 +71,22 @@ pub fn write(props: &[CustomProp]) -> Vec<u8> {
         if p.kind == "raw" && !raw_is_wellformed(&p.value) {
             continue;
         }
-        w.open("property", &[("fmtid", FMTID), ("pid", &pid.to_string()), ("name", &p.name)]);
+        w.open(
+            "property",
+            &[
+                ("fmtid", FMTID),
+                ("pid", &pid.to_string()),
+                ("name", &p.name),
+            ],
+        );
         if p.kind == "raw" {
             w.raw(&p.value);
         } else {
-            let kind = if SIMPLE.contains(&p.kind.as_str()) { p.kind.as_str() } else { "lpwstr" };
+            let kind = if SIMPLE.contains(&p.kind.as_str()) {
+                p.kind.as_str()
+            } else {
+                "lpwstr"
+            };
             w.leaf(&format!("vt:{kind}"), &[], &p.value);
         }
         w.close("property");
@@ -66,7 +97,9 @@ pub fn write(props: &[CustomProp]) -> Vec<u8> {
 
 /// A raw value is written only if it parses inside a `vt`-namespaced wrapper.
 fn raw_is_wellformed(xml: &str) -> bool {
-    let doc = format!(r#"<x xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">{xml}</x>"#);
+    let doc = format!(
+        r#"<x xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">{xml}</x>"#
+    );
     crate::xml::parse(doc.as_bytes()).is_ok()
 }
 

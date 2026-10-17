@@ -1,7 +1,7 @@
 //! Module containing logic for the frame time graph
 
 use bevy_app::{Plugin, Update};
-use bevy_asset::{load_internal_asset, uuid_handle, Asset, Assets, Handle};
+use bevy_asset::{Asset, Assets, Handle, load_internal_asset, uuid_handle};
 use bevy_diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy_ecs::{
     schedule::IntoScheduleConfigs,

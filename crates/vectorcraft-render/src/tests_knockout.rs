@@ -11,7 +11,11 @@ fn half(d: &mut Document, x: f64, rgb: (f32, f32, f32)) -> Node {
     let mut n = Node::path(
         id,
         shapes::rectangle(Rect::new(x, 10.0, x + 50.0, 90.0)),
-        Appearance::basic(Paint::solid(Color::rgb(rgb.0, rgb.1, rgb.2)), Paint::None, 0.0),
+        Appearance::basic(
+            Paint::solid(Color::rgb(rgb.0, rgb.1, rgb.2)),
+            Paint::None,
+            0.0,
+        ),
     );
     n.opacity = 0.5;
     n
@@ -32,11 +36,22 @@ fn doc(knockout: Knockout, tweak: impl FnOnce(&mut Document, &mut Node)) -> Docu
 }
 
 fn render(d: &Document) -> Rendered {
-    Renderer::new().render(d, 100, 100, Affine::IDENTITY, &RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() })
+    Renderer::new().render(
+        d,
+        100,
+        100,
+        Affine::IDENTITY,
+        &RenderOptions {
+            background: Some([255, 255, 255, 255]),
+            ..Default::default()
+        },
+    )
 }
 
 fn close(a: [u8; 4], b: [u8; 4]) -> bool {
-    a.iter().zip(b).all(|(x, y)| (*x as i32 - y as i32).abs() <= 3)
+    a.iter()
+        .zip(b)
+        .all(|(x, y)| (*x as i32 - y as i32).abs() <= 3)
 }
 
 const BLUE_OVER_WHITE: [u8; 4] = [128, 128, 255, 255];
@@ -49,11 +64,23 @@ const HALF_KNOCKED: [u8; 4] = [128, 64, 191, 255];
 #[test]
 fn knockout_group_shows_the_top_object_over_the_backdrop() {
     let on = render(&doc(Knockout::On, |_, _| {}));
-    assert!(close(on.pixel(50, 50), BLUE_OVER_WHITE), "overlap: {:?}", on.pixel(50, 50));
-    assert!(close(on.pixel(20, 50), [255, 128, 128, 255]), "red alone: {:?}", on.pixel(20, 50));
+    assert!(
+        close(on.pixel(50, 50), BLUE_OVER_WHITE),
+        "overlap: {:?}",
+        on.pixel(50, 50)
+    );
+    assert!(
+        close(on.pixel(20, 50), [255, 128, 128, 255]),
+        "red alone: {:?}",
+        on.pixel(20, 50)
+    );
     for k in [Knockout::Off, Knockout::Neutral] {
         let r = render(&doc(k, |_, _| {}));
-        assert!(close(r.pixel(50, 50), BLUE_OVER_RED), "{k:?}: {:?}", r.pixel(50, 50));
+        assert!(
+            close(r.pixel(50, 50), BLUE_OVER_RED),
+            "{k:?}: {:?}",
+            r.pixel(50, 50)
+        );
     }
 }
 
@@ -64,7 +91,11 @@ fn opacity_defines_the_knockout_shape() {
         let blue = Arc::make_mut(&mut g.children_mut().unwrap()[1]);
         blue.knockout_shape = true;
     }));
-    assert!(close(r.pixel(50, 50), HALF_KNOCKED), "{:?}", r.pixel(50, 50));
+    assert!(
+        close(r.pixel(50, 50), HALF_KNOCKED),
+        "{:?}",
+        r.pixel(50, 50)
+    );
     // Its opacity mask counts too when it defines the shape, and is ignored otherwise.
     for shape in [false, true] {
         let r = render(&doc(Knockout::On, |d, g| {
@@ -82,7 +113,12 @@ fn opacity_defines_the_knockout_shape() {
         let want = if shape { HALF_KNOCKED } else { BLUE_OVER_WHITE };
         // A mid-grey mask is ~50% (luminance 0.5, not gamma-corrected): allow a little more slack.
         let px = r.pixel(50, 50);
-        assert!(px.iter().zip(want).all(|(a, b)| (*a as i32 - b as i32).abs() <= 6), "shape {shape}: {px:?}");
+        assert!(
+            px.iter()
+                .zip(want)
+                .all(|(a, b)| (*a as i32 - b as i32).abs() <= 6),
+            "shape {shape}: {px:?}"
+        );
     }
 }
 
@@ -97,12 +133,19 @@ fn neutral_groups_pass_knockout_through() {
             *g.children_mut().unwrap() = vec![Arc::new(inner_group)];
         })
     };
-    assert!(close(render(&nested(Knockout::Neutral)).pixel(50, 50), BLUE_OVER_WHITE));
+    assert!(close(
+        render(&nested(Knockout::Neutral)).pixel(50, 50),
+        BLUE_OVER_WHITE
+    ));
     // …an Off group's do not…
-    assert!(close(render(&nested(Knockout::Off)).pixel(50, 50), BLUE_OVER_RED));
+    assert!(close(
+        render(&nested(Knockout::Off)).pixel(50, 50),
+        BLUE_OVER_RED
+    ));
     // …and with no knockout group around it, a neutral group knocks out nothing.
     let mut plain = nested(Knockout::Neutral);
-    Arc::make_mut(&mut Arc::make_mut(&mut plain.layers[0]).children_mut().unwrap()[0]).knockout = Knockout::Neutral;
+    Arc::make_mut(&mut Arc::make_mut(&mut plain.layers[0]).children_mut().unwrap()[0]).knockout =
+        Knockout::Neutral;
     assert!(close(render(&plain).pixel(50, 50), BLUE_OVER_RED));
 }
 
@@ -111,7 +154,11 @@ fn page_knockout_and_isolated_blending() {
     // Page Knockout Group: the neutral layer passes its objects through to the page.
     let mut d = doc(Knockout::Neutral, |_, _| {});
     d.page_knockout = true;
-    assert!(close(render(&d).pixel(50, 50), BLUE_OVER_WHITE), "{:?}", render(&d).pixel(50, 50));
+    assert!(
+        close(render(&d).pixel(50, 50), BLUE_OVER_WHITE),
+        "{:?}",
+        render(&d).pixel(50, 50)
+    );
     // A layer set to Off keeps its objects from knocking each other out.
     Arc::make_mut(&mut d.layers[0]).knockout = Knockout::Off;
     assert!(close(render(&d).pixel(50, 50), BLUE_OVER_RED));
@@ -122,7 +169,15 @@ fn page_knockout_and_isolated_blending() {
     red.opacity = 1.0;
     red.blend = Blend::Difference;
     d.insert(Some(d.layers[0].id), 0, red).unwrap();
-    assert!(close(render(&d).pixel(30, 50), [0, 255, 255, 255]), "inverts the white: {:?}", render(&d).pixel(30, 50));
+    assert!(
+        close(render(&d).pixel(30, 50), [0, 255, 255, 255]),
+        "inverts the white: {:?}",
+        render(&d).pixel(30, 50)
+    );
     d.page_isolate = true;
-    assert!(close(render(&d).pixel(30, 50), [255, 0, 0, 255]), "isolated: {:?}", render(&d).pixel(30, 50));
+    assert!(
+        close(render(&d).pixel(30, 50), [255, 0, 0, 255]),
+        "isolated: {:?}",
+        render(&d).pixel(30, 50)
+    );
 }

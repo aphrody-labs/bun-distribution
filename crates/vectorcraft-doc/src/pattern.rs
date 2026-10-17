@@ -87,16 +87,26 @@ impl TileType {
     /// Parse an id (`grid`, `brickByRow`, `brick-row`, …) with an optional brick offset.
     pub fn parse(s: &str, offset: Option<f64>) -> Option<Self> {
         let o = offset.unwrap_or(0.5);
-        Some(match s.to_ascii_lowercase().replace(['-', '_', ' '], "").as_str() {
-            "grid" => TileType::Grid,
-            "brickbyrow" | "brickrow" | "brick" => TileType::BrickByRow { offset: o },
-            "brickbycolumn" | "brickcolumn" | "brickcol" => TileType::BrickByColumn { offset: o },
-            "hexbycolumn" | "hexcolumn" | "hexcol" | "hex" => TileType::HexByColumn,
-            "hexbyrow" | "hexrow" => TileType::HexByRow,
-            _ => return None,
-        })
+        Some(
+            match s.to_ascii_lowercase().replace(['-', '_', ' '], "").as_str() {
+                "grid" => TileType::Grid,
+                "brickbyrow" | "brickrow" | "brick" => TileType::BrickByRow { offset: o },
+                "brickbycolumn" | "brickcolumn" | "brickcol" => {
+                    TileType::BrickByColumn { offset: o }
+                }
+                "hexbycolumn" | "hexcolumn" | "hexcol" | "hex" => TileType::HexByColumn,
+                "hexbyrow" | "hexrow" => TileType::HexByRow,
+                _ => return None,
+            },
+        )
     }
-    pub const IDS: [&'static str; 5] = ["grid", "brickByRow", "brickByColumn", "hexByColumn", "hexByRow"];
+    pub const IDS: [&'static str; 5] = [
+        "grid",
+        "brickByRow",
+        "brickByColumn",
+        "hexByColumn",
+        "hexByRow",
+    ];
 
     /// Column / row steps for a `w`×`h` tile (the hex types pack columns/rows at ¾).
     pub fn steps(&self, w: f64, h: f64) -> (f64, f64) {
@@ -116,8 +126,14 @@ pub fn tile_offset(tt: TileType, w: f64, h: f64, i: i64, j: i64) -> Vec2 {
         TileType::Grid => Vec2::new(i_f * w, j_f * h),
         TileType::BrickByRow { offset } => Vec2::new(i_f * w + frac(j_f * offset) * w, j_f * h),
         TileType::BrickByColumn { offset } => Vec2::new(i_f * w, j_f * h + frac(i_f * offset) * h),
-        TileType::HexByColumn => Vec2::new(i_f * w * 0.75, j_f * h + if i.rem_euclid(2) == 1 { h / 2.0 } else { 0.0 }),
-        TileType::HexByRow => Vec2::new(i_f * w + if j.rem_euclid(2) == 1 { w / 2.0 } else { 0.0 }, j_f * h * 0.75),
+        TileType::HexByColumn => Vec2::new(
+            i_f * w * 0.75,
+            j_f * h + if i.rem_euclid(2) == 1 { h / 2.0 } else { 0.0 },
+        ),
+        TileType::HexByRow => Vec2::new(
+            i_f * w + if j.rem_euclid(2) == 1 { w / 2.0 } else { 0.0 },
+            j_f * h * 0.75,
+        ),
     }
 }
 
@@ -215,12 +231,19 @@ impl PatternDef {
     }
     /// Visual bounds of the art (stroke included).
     pub fn art_bounds(&self) -> Option<Rect> {
-        self.art.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds()))
+        self.art.iter().fold(None, |acc, n| {
+            vectorcraft_geom::union_opt(acc, n.visual_bounds())
+        })
     }
     /// Re-derive the tile from the art (Size Tile to Art).
     pub fn fit_tile_to_art(&mut self) {
         if let Some(b) = crate::live::nodes_bounds(&self.art) {
-            self.tile = Rect::new(b.x0 - self.h_spacing / 2.0, b.y0 - self.v_spacing / 2.0, b.x1 + self.h_spacing / 2.0, b.y1 + self.v_spacing / 2.0);
+            self.tile = Rect::new(
+                b.x0 - self.h_spacing / 2.0,
+                b.y0 - self.v_spacing / 2.0,
+                b.x1 + self.h_spacing / 2.0,
+                b.y1 + self.v_spacing / 2.0,
+            );
         }
     }
     /// Offset of instance (column `i`, row `j`) in pattern space.
@@ -245,18 +268,33 @@ impl PatternDef {
     pub fn offsets_covering(&self, region: Rect) -> Vec<Vec2> {
         let (w, h) = (self.width(), self.height());
         // Art extent relative to the tile's origin (at least the tile itself).
-        let ab = self.art_bounds().unwrap_or(self.tile).union(self.tile) - self.tile.origin().to_vec2();
+        let ab =
+            self.art_bounds().unwrap_or(self.tile).union(self.tile) - self.tile.origin().to_vec2();
         let (sx, sy) = self.tile_type.steps(w, h);
         // Shifts of brick/hex rows or columns are < one tile.
-        let (i0, i1) = (((region.x0 - ab.x1 - w) / sx).floor() as i64 - 1, ((region.x1 - ab.x0 + w) / sx).ceil() as i64 + 1);
-        let (j0, j1) = (((region.y0 - ab.y1 - h) / sy).floor() as i64 - 1, ((region.y1 - ab.y0 + h) / sy).ceil() as i64 + 1);
+        let (i0, i1) = (
+            ((region.x0 - ab.x1 - w) / sx).floor() as i64 - 1,
+            ((region.x1 - ab.x0 + w) / sx).ceil() as i64 + 1,
+        );
+        let (j0, j1) = (
+            ((region.y0 - ab.y1 - h) / sy).floor() as i64 - 1,
+            ((region.y1 - ab.y0 + h) / sy).ceil() as i64 + 1,
+        );
         if (i1 - i0).saturating_mul(j1 - j0) > 250_000 {
             return vec![];
         }
         let mut out = vec![];
-        let rows: Vec<i64> = if self.overlap.bottom_in_front { (j0..=j1).collect() } else { (j0..=j1).rev().collect() };
+        let rows: Vec<i64> = if self.overlap.bottom_in_front {
+            (j0..=j1).collect()
+        } else {
+            (j0..=j1).rev().collect()
+        };
         for &j in &rows {
-            let cols: Vec<i64> = if self.overlap.right_in_front { (i0..=i1).collect() } else { (i0..=i1).rev().collect() };
+            let cols: Vec<i64> = if self.overlap.right_in_front {
+                (i0..=i1).collect()
+            } else {
+                (i0..=i1).rev().collect()
+            };
             for i in cols {
                 let o = self.offset(i, j);
                 let r = ab + o;
@@ -327,7 +365,10 @@ pub const PATTERN_EDIT_LAYER: &str = "Pattern Editing Mode";
 
 /// A pattern paint (identity placement).
 pub fn pattern_paint(name: &str) -> Paint {
-    Paint::Pattern { pattern: name.to_string(), xf: Affine::IDENTITY }
+    Paint::Pattern {
+        pattern: name.to_string(),
+        xf: Affine::IDENTITY,
+    }
 }
 
 /// Does `n` (not its children) paint any fill/stroke with pattern `name` (any pattern for `None`)?
@@ -436,14 +477,23 @@ pub struct RepeatSpec {
 pub fn reflect_about(c: Point, deg: f64) -> Affine {
     let t = (2.0 * deg).to_radians();
     let (s2, c2) = t.sin_cos();
-    Affine::translate(c.to_vec2()) * Affine::new([c2, s2, s2, -c2, 0.0, 0.0]) * Affine::translate(-c.to_vec2())
+    Affine::translate(c.to_vec2())
+        * Affine::new([c2, s2, s2, -c2, 0.0, 0.0])
+        * Affine::translate(-c.to_vec2())
 }
 
 /// Instance transforms of a repeat (source space → document), in paint order.
 pub fn repeat_transforms(kind: &RepeatKind, source_bounds: Option<Rect>) -> Vec<Affine> {
     let b = source_bounds.unwrap_or(Rect::new(0.0, 0.0, 1.0, 1.0));
     match kind {
-        RepeatKind::Radial { instances, radius, center, reverse_overlap, start_angle, end_angle } => {
+        RepeatKind::Radial {
+            instances,
+            radius,
+            center,
+            reverse_overlap,
+            start_angle,
+            end_angle,
+        } => {
             let n = (*instances).clamp(1, 1000);
             let c0 = b.center();
             let mut d = c0 - *center;
@@ -453,11 +503,18 @@ pub fn repeat_transforms(kind: &RepeatKind, source_bounds: Option<Rect>) -> Vec<
             let pre = Affine::translate(*center + d.normalize() * radius.max(0.0) - c0);
             let sweep = end_angle - start_angle;
             let full = (sweep.abs() - 360.0).abs() < 1e-9;
-            let step = if full || n == 1 { sweep / n as f64 } else { sweep / (n - 1) as f64 };
+            let step = if full || n == 1 {
+                sweep / n as f64
+            } else {
+                sweep / (n - 1) as f64
+            };
             let mut v: Vec<Affine> = (0..n)
                 .map(|k| {
                     let a = (start_angle + step * k as f64).to_radians();
-                    Affine::translate(center.to_vec2()) * Affine::rotate(a) * Affine::translate(-center.to_vec2()) * pre
+                    Affine::translate(center.to_vec2())
+                        * Affine::rotate(a)
+                        * Affine::translate(-center.to_vec2())
+                        * pre
                 })
                 .collect();
             if *reverse_overlap {
@@ -465,8 +522,19 @@ pub fn repeat_transforms(kind: &RepeatKind, source_bounds: Option<Rect>) -> Vec<
             }
             v
         }
-        RepeatKind::Grid { h_spacing, v_spacing, rows, cols, grid_type, flip_rows, flip_cols } => {
-            let (w, h) = ((b.width() + h_spacing).max(1e-3), (b.height() + v_spacing).max(1e-3));
+        RepeatKind::Grid {
+            h_spacing,
+            v_spacing,
+            rows,
+            cols,
+            grid_type,
+            flip_rows,
+            flip_cols,
+        } => {
+            let (w, h) = (
+                (b.width() + h_spacing).max(1e-3),
+                (b.height() + v_spacing).max(1e-3),
+            );
             let mut v = vec![];
             for j in 0..(*rows).clamp(1, 500) as i64 {
                 for i in 0..(*cols).clamp(1, 500) as i64 {
@@ -484,7 +552,9 @@ pub fn repeat_transforms(kind: &RepeatKind, source_bounds: Option<Rect>) -> Vec<
             }
             v
         }
-        RepeatKind::Mirror { angle, center } => vec![Affine::IDENTITY, reflect_about(*center, *angle)],
+        RepeatKind::Mirror { angle, center } => {
+            vec![Affine::IDENTITY, reflect_about(*center, *angle)]
+        }
     }
 }
 
@@ -517,7 +587,9 @@ impl RepeatSpec {
     /// Geometric bounds of all instances.
     pub fn bounds(&self) -> Option<Rect> {
         let b = self.source_bounds()?;
-        self.transforms().into_iter().fold(None, |acc, m| vectorcraft_geom::union_opt(acc, Some(m.transform_rect_bbox(b))))
+        self.transforms().into_iter().fold(None, |acc, m| {
+            vectorcraft_geom::union_opt(acc, Some(m.transform_rect_bbox(b)))
+        })
     }
     /// Apply a document transform (source + arrangement parameters).
     pub fn transform(&mut self, a: Affine, scaling: impl Into<crate::node::Scaling>) {
@@ -531,13 +603,18 @@ impl RepeatSpec {
                 *center = a * *center;
                 *radius *= s;
             }
-            RepeatKind::Grid { h_spacing, v_spacing, .. } => {
+            RepeatKind::Grid {
+                h_spacing,
+                v_spacing,
+                ..
+            } => {
                 *h_spacing *= s;
                 *v_spacing *= s;
             }
             RepeatKind::Mirror { angle, center } => {
                 *center = a * *center;
-                let d = a * Point::new(angle.to_radians().cos(), angle.to_radians().sin()) - a * Point::ZERO;
+                let d = a * Point::new(angle.to_radians().cos(), angle.to_radians().sin())
+                    - a * Point::ZERO;
                 *angle = d.y.atan2(d.x).to_degrees();
             }
         }
@@ -547,11 +624,29 @@ impl RepeatSpec {
         let b = crate::live::nodes_bounds(&source).unwrap_or(Rect::new(0.0, 0.0, 10.0, 10.0));
         let r = radius.unwrap_or((b.height().max(b.width()) * 1.2).max(10.0));
         let center = b.center() + Vec2::new(0.0, r);
-        Self { kind: RepeatKind::Radial { instances, radius: r, center, reverse_overlap: false, start_angle: 0.0, end_angle: 360.0 }, source }
+        Self {
+            kind: RepeatKind::Radial {
+                instances,
+                radius: r,
+                center,
+                reverse_overlap: false,
+                start_angle: 0.0,
+                end_angle: 360.0,
+            },
+            source,
+        }
     }
     pub fn grid(source: Vec<Arc<Node>>, h_spacing: f64, v_spacing: f64) -> Self {
         Self {
-            kind: RepeatKind::Grid { h_spacing, v_spacing, rows: 3, cols: 3, grid_type: TileType::Grid, flip_rows: false, flip_cols: false },
+            kind: RepeatKind::Grid {
+                h_spacing,
+                v_spacing,
+                rows: 3,
+                cols: 3,
+                grid_type: TileType::Grid,
+                flip_rows: false,
+                flip_cols: false,
+            },
             source,
         }
     }
@@ -560,7 +655,10 @@ impl RepeatSpec {
     pub fn mirror(source: Vec<Arc<Node>>, angle: f64, offset: f64) -> Self {
         let b = crate::live::nodes_bounds(&source).unwrap_or(Rect::new(0.0, 0.0, 10.0, 10.0));
         let center = Point::new(b.x1 + offset, b.center().y);
-        Self { kind: RepeatKind::Mirror { angle, center }, source }
+        Self {
+            kind: RepeatKind::Mirror { angle, center },
+            source,
+        }
     }
 }
 
@@ -576,7 +674,11 @@ mod tests {
     use vectorcraft_geom::shapes;
 
     fn sq(x: f64, y: f64, s: f64) -> Arc<Node> {
-        Arc::new(Node::path(NodeId(1), shapes::rectangle(Rect::new(x, y, x + s, y + s)), Appearance::default()))
+        Arc::new(Node::path(
+            NodeId(1),
+            shapes::rectangle(Rect::new(x, y, x + s, y + s)),
+            Appearance::default(),
+        ))
     }
 
     fn close(a: Vec2, b: Vec2) -> bool {
@@ -585,17 +687,32 @@ mod tests {
 
     #[test]
     fn grid_offsets() {
-        assert!(close(tile_offset(TileType::Grid, 10.0, 20.0, 2, 3), Vec2::new(20.0, 60.0)));
-        assert!(close(tile_offset(TileType::Grid, 10.0, 20.0, -1, -1), Vec2::new(-10.0, -20.0)));
+        assert!(close(
+            tile_offset(TileType::Grid, 10.0, 20.0, 2, 3),
+            Vec2::new(20.0, 60.0)
+        ));
+        assert!(close(
+            tile_offset(TileType::Grid, 10.0, 20.0, -1, -1),
+            Vec2::new(-10.0, -20.0)
+        ));
         assert_eq!(tile_period(TileType::Grid, 10.0, 20.0), (10.0, 20.0));
     }
 
     #[test]
     fn brick_by_row_offsets() {
         let t = TileType::BrickByRow { offset: 0.5 };
-        assert!(close(tile_offset(t, 10.0, 20.0, 0, 1), Vec2::new(5.0, 20.0)));
-        assert!(close(tile_offset(t, 10.0, 20.0, 0, 2), Vec2::new(0.0, 40.0)));
-        assert!(close(tile_offset(t, 10.0, 20.0, 1, -1), Vec2::new(15.0, -20.0)));
+        assert!(close(
+            tile_offset(t, 10.0, 20.0, 0, 1),
+            Vec2::new(5.0, 20.0)
+        ));
+        assert!(close(
+            tile_offset(t, 10.0, 20.0, 0, 2),
+            Vec2::new(0.0, 40.0)
+        ));
+        assert!(close(
+            tile_offset(t, 10.0, 20.0, 1, -1),
+            Vec2::new(15.0, -20.0)
+        ));
         assert_eq!(tile_period(t, 10.0, 20.0), (10.0, 40.0));
         let t3 = TileType::BrickByRow { offset: 1.0 / 3.0 };
         assert_eq!(tile_period(t3, 10.0, 20.0), (10.0, 60.0));
@@ -604,21 +721,42 @@ mod tests {
     #[test]
     fn brick_by_column_offsets() {
         let t = TileType::BrickByColumn { offset: 0.25 };
-        assert!(close(tile_offset(t, 10.0, 20.0, 1, 0), Vec2::new(10.0, 5.0)));
-        assert!(close(tile_offset(t, 10.0, 20.0, 3, 1), Vec2::new(30.0, 35.0)));
+        assert!(close(
+            tile_offset(t, 10.0, 20.0, 1, 0),
+            Vec2::new(10.0, 5.0)
+        ));
+        assert!(close(
+            tile_offset(t, 10.0, 20.0, 3, 1),
+            Vec2::new(30.0, 35.0)
+        ));
         assert_eq!(tile_period(t, 10.0, 20.0), (40.0, 20.0));
     }
 
     #[test]
     fn hex_offsets() {
         let c = TileType::HexByColumn;
-        assert!(close(tile_offset(c, 10.0, 20.0, 1, 0), Vec2::new(7.5, 10.0)));
-        assert!(close(tile_offset(c, 10.0, 20.0, 2, 1), Vec2::new(15.0, 20.0)));
-        assert!(close(tile_offset(c, 10.0, 20.0, -1, 0), Vec2::new(-7.5, 10.0)));
+        assert!(close(
+            tile_offset(c, 10.0, 20.0, 1, 0),
+            Vec2::new(7.5, 10.0)
+        ));
+        assert!(close(
+            tile_offset(c, 10.0, 20.0, 2, 1),
+            Vec2::new(15.0, 20.0)
+        ));
+        assert!(close(
+            tile_offset(c, 10.0, 20.0, -1, 0),
+            Vec2::new(-7.5, 10.0)
+        ));
         assert_eq!(tile_period(c, 10.0, 20.0), (15.0, 20.0));
         let r = TileType::HexByRow;
-        assert!(close(tile_offset(r, 10.0, 20.0, 0, 1), Vec2::new(5.0, 15.0)));
-        assert!(close(tile_offset(r, 10.0, 20.0, 1, 2), Vec2::new(10.0, 30.0)));
+        assert!(close(
+            tile_offset(r, 10.0, 20.0, 0, 1),
+            Vec2::new(5.0, 15.0)
+        ));
+        assert!(close(
+            tile_offset(r, 10.0, 20.0, 1, 2),
+            Vec2::new(10.0, 30.0)
+        ));
         assert_eq!(tile_period(r, 10.0, 20.0), (10.0, 30.0));
     }
 
@@ -634,7 +772,9 @@ mod tests {
         ] {
             let (w, h) = (10.0, 20.0);
             let (pw, ph) = tile_period(tt, w, h);
-            let all: Vec<Vec2> = (-8..8).flat_map(|j| (-8..8).map(move |i| tile_offset(tt, w, h, i, j))).collect();
+            let all: Vec<Vec2> = (-8..8)
+                .flat_map(|j| (-8..8).map(move |i| tile_offset(tt, w, h, i, j)))
+                .collect();
             for o in all.iter().filter(|o| o.x.abs() < 30.0 && o.y.abs() < 30.0) {
                 for d in [Vec2::new(pw, 0.0), Vec2::new(0.0, ph)] {
                     assert!(all.iter().any(|p| close(*p, *o + d)), "{tt:?} {o:?}+{d:?}");
@@ -645,8 +785,14 @@ mod tests {
 
     #[test]
     fn tile_type_parse() {
-        assert_eq!(TileType::parse("brickByRow", Some(0.25)), Some(TileType::BrickByRow { offset: 0.25 }));
-        assert_eq!(TileType::parse("hex-by-row", None), Some(TileType::HexByRow));
+        assert_eq!(
+            TileType::parse("brickByRow", Some(0.25)),
+            Some(TileType::BrickByRow { offset: 0.25 })
+        );
+        assert_eq!(
+            TileType::parse("hex-by-row", None),
+            Some(TileType::HexByRow)
+        );
         assert_eq!(TileType::parse("nope", None), None);
         for id in TileType::IDS {
             assert_eq!(TileType::parse(id, None).unwrap().id(), id);
@@ -662,16 +808,34 @@ mod tests {
         // Left/top in front: the top-left tile is drawn last.
         assert!(close(*offs.last().unwrap(), Vec2::ZERO));
         let mut d2 = def.clone();
-        d2.overlap = Overlap { right_in_front: true, bottom_in_front: true };
-        assert!(close(*d2.offsets_covering(Rect::new(0.0, 0.0, 30.0, 20.0)).last().unwrap(), Vec2::new(20.0, 10.0)));
+        d2.overlap = Overlap {
+            right_in_front: true,
+            bottom_in_front: true,
+        };
+        assert!(close(
+            *d2.offsets_covering(Rect::new(0.0, 0.0, 30.0, 20.0))
+                .last()
+                .unwrap(),
+            Vec2::new(20.0, 10.0)
+        ));
     }
 
     #[test]
     fn instances_follow_paint_xf() {
         let def = PatternDef::new("p", vec![sq(100.0, 100.0, 10.0)]);
-        let n = def.instances_in(Affine::translate((3.0, 0.0)), Rect::new(0.0, 0.0, 20.0, 10.0));
-        let xs: Vec<f64> = n.iter().filter_map(|n| n.geometric_bounds()).map(|b| b.x0).collect();
-        assert!(xs.contains(&3.0) && xs.contains(&-7.0) && xs.contains(&13.0), "{xs:?}");
+        let n = def.instances_in(
+            Affine::translate((3.0, 0.0)),
+            Rect::new(0.0, 0.0, 20.0, 10.0),
+        );
+        let xs: Vec<f64> = n
+            .iter()
+            .filter_map(|n| n.geometric_bounds())
+            .map(|b| b.x0)
+            .collect();
+        assert!(
+            xs.contains(&3.0) && xs.contains(&-7.0) && xs.contains(&13.0),
+            "{xs:?}"
+        );
         assert!(n.iter().all(|n| n.id == NodeId(0)));
     }
 
@@ -686,9 +850,18 @@ mod tests {
     #[test]
     fn radial_transforms() {
         let r = RepeatSpec::radial(vec![sq(-5.0, -105.0, 10.0)], 4, Some(100.0));
-        let RepeatKind::Radial { center, .. } = r.kind else { panic!() };
-        assert!((center - Point::new(0.0, -0.0)).hypot() < 1e-9, "{center:?}");
-        let cs: Vec<Point> = r.transforms().iter().map(|m| *m * Point::new(0.0, -100.0)).collect();
+        let RepeatKind::Radial { center, .. } = r.kind else {
+            panic!()
+        };
+        assert!(
+            (center - Point::new(0.0, -0.0)).hypot() < 1e-9,
+            "{center:?}"
+        );
+        let cs: Vec<Point> = r
+            .transforms()
+            .iter()
+            .map(|m| *m * Point::new(0.0, -100.0))
+            .collect();
         assert!((cs[0] - Point::new(0.0, -100.0)).hypot() < 1e-9);
         assert!((cs[1] - Point::new(100.0, 0.0)).hypot() < 1e-9, "{cs:?}");
         assert!((cs[2] - Point::new(0.0, 100.0)).hypot() < 1e-9);
@@ -733,7 +906,10 @@ mod tests {
         assert_eq!(t.len(), 2);
         assert!((t[1] * Point::new(0.0, 3.0) - Point::new(30.0, 3.0)).hypot() < 1e-9);
         let b = m.bounds().unwrap();
-        assert!((b.x1 - 30.0).abs() < 1e-9 && b.x0.abs() < 1e-9 && (b.y1 - 10.0).abs() < 1e-9, "{b:?}");
+        assert!(
+            (b.x1 - 30.0).abs() < 1e-9 && b.x0.abs() < 1e-9 && (b.y1 - 10.0).abs() < 1e-9,
+            "{b:?}"
+        );
         // Horizontal axis.
         let h = reflect_about(Point::new(0.0, 10.0), 0.0);
         assert!((h * Point::new(4.0, 0.0) - Point::new(4.0, 20.0)).hypot() < 1e-9);
@@ -748,8 +924,14 @@ mod tests {
         assert!((after.x0 - before.x0 - 50.0).abs() < 1e-9);
         let mut m = RepeatSpec::mirror(vec![sq(0.0, 0.0, 10.0)], 90.0, 5.0);
         m.transform(Affine::rotate(std::f64::consts::FRAC_PI_2), false);
-        let RepeatKind::Mirror { angle, .. } = m.kind else { panic!() };
-        assert!((angle.rem_euclid(180.0) - 0.0).abs() < 1e-9 || (angle.rem_euclid(180.0) - 180.0).abs() < 1e-9, "{angle}");
+        let RepeatKind::Mirror { angle, .. } = m.kind else {
+            panic!()
+        };
+        assert!(
+            (angle.rem_euclid(180.0) - 0.0).abs() < 1e-9
+                || (angle.rem_euclid(180.0) - 180.0).abs() < 1e-9,
+            "{angle}"
+        );
     }
 
     #[test]
@@ -758,7 +940,10 @@ mod tests {
         def.tile_type = TileType::HexByRow;
         let s = serde_json::to_string(&def).unwrap();
         assert_eq!(serde_json::from_str::<PatternDef>(&s).unwrap(), def);
-        let n = Node::new(NodeId(5), NodeKind::Repeat(RepeatSpec::grid(vec![sq(0.0, 0.0, 10.0)], 1.0, 2.0)));
+        let n = Node::new(
+            NodeId(5),
+            NodeKind::Repeat(RepeatSpec::grid(vec![sq(0.0, 0.0, 10.0)], 1.0, 2.0)),
+        );
         let s = serde_json::to_string(&n).unwrap();
         assert_eq!(serde_json::from_str::<Node>(&s).unwrap(), n);
         // Old pattern paints (no xf) still load.

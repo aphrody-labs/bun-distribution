@@ -35,7 +35,11 @@ impl Acc {
         self.n += count;
     }
     fn level(&self) -> Option<Level> {
-        (self.n > 0).then(|| Level { min: round2(self.min), max: round2(self.max), mean: round2(self.sum / self.n as f64) })
+        (self.n > 0).then(|| Level {
+            min: round2(self.min),
+            max: round2(self.max),
+            mean: round2(self.sum / self.n as f64),
+        })
     }
 }
 
@@ -91,7 +95,12 @@ pub fn trace_columns(w: &Waveform, g: &Grid, buckets: usize) -> Vec<Option<Level
     let buckets = buckets.clamp(1, g.cols.max(1));
     (0..buckets)
         .map(|b| {
-            let (c0, c1) = (b * g.cols / buckets, ((b + 1) * g.cols / buckets).max(b * g.cols / buckets + 1).min(g.cols));
+            let (c0, c1) = (
+                b * g.cols / buckets,
+                ((b + 1) * g.cols / buckets)
+                    .max(b * g.cols / buckets + 1)
+                    .min(g.cols),
+            );
             let mut a = Acc::default();
             for col in c0..c1 {
                 for row in 0..g.rows {
@@ -126,7 +135,13 @@ pub struct Peak {
 /// The `n` densest cells holding at least `min_share` of the samples, densest first.
 pub fn peaks(v: &Vectorscope, n: usize, min_share: f32) -> Vec<Peak> {
     let total = v.samples.max(1) as f32;
-    let mut cells: Vec<(u32, usize)> = v.data.iter().enumerate().filter(|(_, c)| **c > 0).map(|(i, c)| (*c, i)).collect();
+    let mut cells: Vec<(u32, usize)> = v
+        .data
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| **c > 0)
+        .map(|(i, c)| (*c, i))
+        .collect();
     cells.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
     cells
         .into_iter()
@@ -160,5 +175,9 @@ pub fn coarse(v: &Vectorscope, size: usize) -> Vec<[u32; 3]> {
             }
         }
     }
-    out.iter().enumerate().filter(|(_, c)| **c > 0).map(|(i, c)| [(i % size) as u32, (i / size) as u32, *c]).collect()
+    out.iter()
+        .enumerate()
+        .filter(|(_, c)| **c > 0)
+        .map(|(i, c)| [(i % size) as u32, (i / size) as u32, *c])
+        .collect()
 }

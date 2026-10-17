@@ -16,7 +16,7 @@ use core::{
     ptr,
 };
 
-use indexmap::{self, set, IndexSet};
+use indexmap::{self, IndexSet, set};
 
 use super::{Entity, EntityEquivalent, EntityHash, EntitySetIterator};
 

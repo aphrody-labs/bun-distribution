@@ -28,9 +28,15 @@ fn app() -> (VectorcraftApp, Log) {
         ..Services::default()
     };
     let mut app = VectorcraftApp::new(Session::new(), services);
-    app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap();
-    app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
+    app.run("file.new", json!({"width": 200, "height": 100}))
+        .unwrap();
+    app.run(
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 30, "height": 20}),
+    )
+    .unwrap();
+    app.run("paint.setFill", json!({"color": "#ff0000"}))
+        .unwrap();
     (app, log)
 }
 
@@ -39,26 +45,54 @@ fn the_code_view_shows_the_selections_css_with_the_options() {
     let (mut app, _) = app();
     assert!(crate::state::ICON_PANELS.iter().any(|(id, ..)| *id == ID));
     let text = painted_text(&mut app, show);
-    assert!(text.contains(".rectangle {") && text.contains("background-color: #ff0000;") && text.contains("width: 30px;"), "{text}");
+    assert!(
+        text.contains(".rectangle {")
+            && text.contains("background-color: #ff0000;")
+            && text.contains("width: 30px;"),
+        "{text}"
+    );
     let text = painted_text(&mut app, |app, ui| {
-        set_pstate(ui.ctx(), OPTIONS, CssOptions { units: CssUnits::Pt, position: true, ..CssOptions::default() });
+        set_pstate(
+            ui.ctx(),
+            OPTIONS,
+            CssOptions {
+                units: CssUnits::Pt,
+                position: true,
+                ..CssOptions::default()
+            },
+        );
         show(app, ui);
     });
-    assert!(text.contains("width: 30pt;") && text.contains("left: 10pt;"), "{text}");
+    assert!(
+        text.contains("width: 30pt;") && text.contains("left: 10pt;"),
+        "{text}"
+    );
 }
 
 #[test]
 fn generate_css_shows_the_document_while_nothing_is_selected() {
     let (mut app, _) = app();
-    app.run("shape.ellipse", json!({"x": 100, "y": 10, "width": 20, "height": 20})).unwrap();
+    app.run(
+        "shape.ellipse",
+        json!({"x": 100, "y": 10, "width": 20, "height": 20}),
+    )
+    .unwrap();
     app.run("select.none", json!({})).unwrap();
     let text = painted_text(&mut app, show);
-    assert!(text.contains("No selection") && !text.contains(".rectangle"), "{text}");
+    assert!(
+        text.contains("No selection") && !text.contains(".rectangle"),
+        "{text}"
+    );
     let text = painted_text(&mut app, |app, ui| {
         set_pstate(ui.ctx(), ALL, true);
         show(app, ui);
     });
-    assert!(text.contains(".rectangle {") && text.contains(".ellipse {") && text.contains("border-radius: 50%;"), "{text}");
+    assert!(
+        text.contains(".rectangle {")
+            && text.contains(".ellipse {")
+            && text.contains("border-radius: 50%;"),
+        "{text}"
+    );
 }
 
 #[test]
@@ -85,19 +119,41 @@ fn copy_and_export_go_through_the_ui_commands() {
     let (mut app, log) = app();
     let r = app.run("css.copy", json!({})).unwrap();
     assert_eq!(r["rules"], json!(1));
-    assert!(app.clipboard_out.as_deref().is_some_and(|c| c.starts_with(".rectangle {") && c.contains("#ff0000")));
+    assert!(
+        app.clipboard_out
+            .as_deref()
+            .is_some_and(|c| c.starts_with(".rectangle {") && c.contains("#ff0000"))
+    );
     app.run("select.none", json!({})).unwrap();
-    assert!(app.run("css.copy", json!({})).is_err(), "nothing selected: nothing to copy");
+    assert!(
+        app.run("css.copy", json!({})).is_err(),
+        "nothing selected: nothing to copy"
+    );
     // Export All with a star rasterized: the sheet and the star's picture beside it.
-    app.run("shape.star", json!({"cx": 100, "cy": 50, "radius1": 30, "radius2": 15})).unwrap();
-    let r = app.run("css.exportFile", json!({"path": "/tmp/site/site.css", "scope": "all", "rasterize": true})).unwrap();
+    app.run(
+        "shape.star",
+        json!({"cx": 100, "cy": 50, "radius1": 30, "radius2": 15}),
+    )
+    .unwrap();
+    let r = app
+        .run(
+            "css.exportFile",
+            json!({"path": "/tmp/site/site.css", "scope": "all", "rasterize": true}),
+        )
+        .unwrap();
     assert_eq!(r["rules"], json!(2));
-    let png = std::path::Path::new("/tmp/site").join("path.png").to_string_lossy().into_owned();
+    let png = std::path::Path::new("/tmp/site")
+        .join("path.png")
+        .to_string_lossy()
+        .into_owned();
     assert_eq!(r["images"], json!([png]));
     let log = log.borrow();
     let names: Vec<&str> = log.iter().map(|(p, _)| p.as_str()).collect();
     assert_eq!(names, ["/tmp/site/site.css", png.as_str()]);
     let css = String::from_utf8(log[0].1.clone()).unwrap();
-    assert!(css.contains(".rectangle {") && css.contains("background-image: url(path.png);"), "{css}");
+    assert!(
+        css.contains(".rectangle {") && css.contains("background-image: url(path.png);"),
+        "{css}"
+    );
     assert!(log[1].1.starts_with(b"\x89PNG"));
 }

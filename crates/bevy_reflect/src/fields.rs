@@ -1,7 +1,7 @@
 use crate::{
-    attributes::{impl_custom_attribute_methods, CustomAttributes},
-    ty::impl_type_methods,
     MaybeTyped, PartialReflect, Type, TypeInfo, TypePath,
+    attributes::{CustomAttributes, impl_custom_attribute_methods},
+    ty::impl_type_methods,
 };
 use alloc::borrow::Cow;
 use core::fmt::{Display, Formatter};

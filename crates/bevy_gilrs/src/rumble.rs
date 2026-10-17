@@ -7,8 +7,8 @@ use bevy_platform::collections::HashMap;
 use bevy_time::{Real, Time};
 use core::time::Duration;
 use gilrs::{
-    ff::{self, BaseEffect, BaseEffectType, Repeat, Replay},
     GamepadId,
+    ff::{self, BaseEffect, BaseEffectType, Repeat, Replay},
 };
 use thiserror::Error;
 use tracing::{debug, warn};
@@ -203,11 +203,13 @@ mod tests {
         assert!(matches!(weak[0].kind, BaseEffectType::Weak { .. }));
 
         let both = get_base_effects(GamepadRumbleIntensity::MAX, duration);
-        assert!(both
-            .iter()
-            .any(|e| matches!(e.kind, BaseEffectType::Strong { .. })));
-        assert!(both
-            .iter()
-            .any(|e| matches!(e.kind, BaseEffectType::Weak { .. })));
+        assert!(
+            both.iter()
+                .any(|e| matches!(e.kind, BaseEffectType::Strong { .. }))
+        );
+        assert!(
+            both.iter()
+                .any(|e| matches!(e.kind, BaseEffectType::Weak { .. }))
+        );
     }
 }

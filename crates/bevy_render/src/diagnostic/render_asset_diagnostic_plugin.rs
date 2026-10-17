@@ -6,8 +6,8 @@ use bevy_ecs::{resource::Resource, system::Res};
 use bevy_platform::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{
-    render_asset::{RenderAsset, RenderAssets},
     Extract, ExtractSchedule, RenderApp,
+    render_asset::{RenderAsset, RenderAssets},
 };
 
 pub struct RenderAssetDiagnosticPlugin<A: RenderAsset> {

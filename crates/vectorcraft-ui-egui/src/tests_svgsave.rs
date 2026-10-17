@@ -9,8 +9,13 @@ use crate::tests_svg::app;
 fn save_as_svg_keeps_hidden_layers_and_export_as_leaves_them_out() {
     let (mut app, written) = app("/tmp/layers.svg");
     let notes = app.run("layer.new", json!({"name": "Notes"})).unwrap()["id"].clone();
-    app.run("shape.ellipse", json!({"x": 50, "y": 40, "width": 20, "height": 20})).unwrap();
-    app.run("layer.setProps", json!({"id": notes, "visible": false})).unwrap();
+    app.run(
+        "shape.ellipse",
+        json!({"x": 50, "y": 40, "width": 20, "height": 20}),
+    )
+    .unwrap();
+    app.run("layer.setProps", json!({"id": notes, "visible": false}))
+        .unwrap();
     app.run("file.export.svg", Value::Null).unwrap();
     crate::dialogs::confirm(&mut app).unwrap();
     app.run("file.saveAs", Value::Null).unwrap();
@@ -19,7 +24,11 @@ fn save_as_svg_keeps_hidden_layers_and_export_as_leaves_them_out() {
     crate::dialogs::confirm(&mut app).unwrap();
     let text = |i: usize| String::from_utf8(written.borrow()[i].1.clone()).unwrap();
     assert!(!text(0).contains("Notes"), "exported: {}", text(0));
-    assert!(text(1).contains("id=\"Notes\"") && text(1).contains("display:none"), "saved: {}", text(1));
+    assert!(
+        text(1).contains("id=\"Notes\"") && text(1).contains("display:none"),
+        "saved: {}",
+        text(1)
+    );
     // Reopened, the saved SVG is the document again.
     let before = app.session.doc().unwrap().doc.layers.clone();
     let saved = text(1);

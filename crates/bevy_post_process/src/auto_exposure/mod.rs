@@ -1,7 +1,8 @@
 use bevy_app::prelude::*;
-use bevy_asset::{embedded_asset, AssetApp, Assets, Handle};
+use bevy_asset::{AssetApp, Assets, Handle, embedded_asset};
 use bevy_ecs::prelude::*;
 use bevy_render::{
+    ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     diagnostic::RecordDiagnostics,
     extract_component::ExtractComponentPlugin,
     globals::GlobalsBuffer,
@@ -13,7 +14,6 @@ use bevy_render::{
     renderer::{RenderContext, RenderDevice, ViewQuery},
     texture::{FallbackImage, GpuImage},
     view::{ExtractedView, ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms},
-    ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 
 mod buffers;
@@ -21,7 +21,7 @@ mod compensation_curve;
 mod pipeline;
 mod settings;
 
-use buffers::{extract_buffers, prepare_buffers, AutoExposureBuffers};
+use buffers::{AutoExposureBuffers, extract_buffers, prepare_buffers};
 pub use compensation_curve::{AutoExposureCompensationCurve, AutoExposureCompensationCurveError};
 use pipeline::{AutoExposurePass, AutoExposurePipeline, ViewAutoExposurePipeline};
 pub use settings::AutoExposure;

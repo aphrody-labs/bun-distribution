@@ -32,7 +32,10 @@ pub(crate) struct LiveCache {
 
 impl Default for LiveCache {
     fn default() -> Self {
-        Self { expanded: FrameCache::new(lru::LIVE_BUDGET, 256), meshes: FrameCache::new(lru::MESH_BUDGET, 256) }
+        Self {
+            expanded: FrameCache::new(lru::LIVE_BUDGET, 256),
+            meshes: FrameCache::new(lru::MESH_BUDGET, 256),
+        }
     }
 }
 
@@ -66,8 +69,12 @@ fn resources_key(doc: &Document, n: &Node) -> u64 {
             if let vectorcraft_color::Paint::Pattern { pattern, .. } = i.paint()
                 && let Some(def) = doc.pattern(pattern)
             {
-                def.art.iter().for_each(|a| (Arc::as_ptr(a) as usize).hash(&mut h));
-                [def.tile.x0, def.tile.y0, def.tile.x1, def.tile.y1].iter().for_each(|v| v.to_bits().hash(&mut h));
+                def.art
+                    .iter()
+                    .for_each(|a| (Arc::as_ptr(a) as usize).hash(&mut h));
+                [def.tile.x0, def.tile.y0, def.tile.x1, def.tile.y1]
+                    .iter()
+                    .for_each(|v| v.to_bits().hash(&mut h));
             }
         }
     });
@@ -91,18 +98,32 @@ impl Renderer {
         {
             return e.1.clone();
         }
-        let v: Expanded = match crate::effects::pathfinder_children(a, crate::effects::text_outliner()) {
-            Some(children) => Arc::new(children),
-            None => Arc::new(crate::effects::expand_live(Some(doc), a).into_iter().map(Arc::new).collect()),
-        };
+        let v: Expanded =
+            match crate::effects::pathfinder_children(a, crate::effects::text_outliner()) {
+                Some(children) => Arc::new(children),
+                None => Arc::new(
+                    crate::effects::expand_live(Some(doc), a)
+                        .into_iter()
+                        .map(Arc::new)
+                        .collect(),
+                ),
+            };
         if cache {
             let bytes = size_of::<Expanded>() + v.iter().map(|n| lru::node_bytes(n)).sum::<usize>();
-            self.live.expanded.insert(key, (a.clone(), v.clone(), resources), bytes, self.stamp);
+            self.live
+                .expanded
+                .insert(key, (a.clone(), v.clone(), resources), bytes, self.stamp);
         }
         v
     }
 
-    fn mesh_quads(&mut self, a: &Arc<Node>, m: &GradientMesh, level: usize, cache: bool) -> Arc<Vec<MeshQuad>> {
+    fn mesh_quads(
+        &mut self,
+        a: &Arc<Node>,
+        m: &GradientMesh,
+        level: usize,
+        cache: bool,
+    ) -> Arc<Vec<MeshQuad>> {
         let key = (Arc::as_ptr(a) as usize, level);
         if cache
             && let Some(e) = self.live.meshes.get(&key, self.stamp)
@@ -113,7 +134,9 @@ impl Renderer {
         let q = Arc::new(m.quads(level));
         if cache {
             let bytes = q.len() * size_of::<MeshQuad>();
-            self.live.meshes.insert(key, (a.clone(), q.clone()), bytes, self.stamp);
+            self.live
+                .meshes
+                .insert(key, (a.clone(), q.clone()), bytes, self.stamp);
         }
         q
     }
@@ -127,11 +150,25 @@ impl Renderer {
             && a.knockout.resolve(self.knockout)
             && vectorcraft_doc::live::steps_knockout_shows(&self.live_expanded(f.doc, a, true));
         let enclosing = std::mem::replace(&mut self.knockout, knockout);
-        if !f.opts.outline && (opacity < 1.0 || a.blend != vectorcraft_color::BlendMode::Normal || a.isolate || knockout) {
+        if !f.opts.outline
+            && (opacity < 1.0
+                || a.blend != vectorcraft_color::BlendMode::Normal
+                || a.isolate
+                || knockout)
+        {
             let blends = self.blends_through(a);
             let bounds = if blends { self.bounds_of(a) } else { None };
-            let comp = crate::group::Composite { blend: a.blend, opacity, isolated: a.isolate, blends, bounds, ..Default::default() };
-            self.group(ctx, f, comp, &mut |r, c, fr| r.draw_live_body(c, fr, a, true));
+            let comp = crate::group::Composite {
+                blend: a.blend,
+                opacity,
+                isolated: a.isolate,
+                blends,
+                bounds,
+                ..Default::default()
+            };
+            self.group(ctx, f, comp, &mut |r, c, fr| {
+                r.draw_live_body(c, fr, a, true)
+            });
         } else {
             self.draw_live_body(ctx, f, a, true);
         }
@@ -140,11 +177,21 @@ impl Renderer {
     }
 
     /// Draw the evaluated content of a live node (no transparency group).
-    pub(crate) fn draw_live_body(&mut self, ctx: &mut RenderContext, f: &Frame, a: &Arc<Node>, cache: bool) {
+    pub(crate) fn draw_live_body(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        a: &Arc<Node>,
+        cache: bool,
+    ) {
         match &a.kind {
             NodeKind::PlacedDocument(p) => self.draw_placed(ctx, f, p),
             NodeKind::Mesh(m) => self.draw_mesh(ctx, f, a, m, cache),
-            NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Repeat(_) | NodeKind::Group { .. } | NodeKind::Layer { .. } => {
+            NodeKind::Blend { .. }
+            | NodeKind::Envelope { .. }
+            | NodeKind::Repeat(_)
+            | NodeKind::Group { .. }
+            | NodeKind::Layer { .. } => {
                 let items = self.live_expanded(f.doc, a, cache);
                 // The flag holds while this blend is drawn (see `draw_live`).
                 if self.knockout && matches!(a.kind, NodeKind::Blend { .. }) {
@@ -159,7 +206,14 @@ impl Renderer {
         }
     }
 
-    fn draw_mesh(&mut self, ctx: &mut RenderContext, f: &Frame, a: &Arc<Node>, m: &GradientMesh, cache: bool) {
+    fn draw_mesh(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        a: &Arc<Node>,
+        m: &GradientMesh,
+        cache: bool,
+    ) {
         if !m.is_valid() {
             return;
         }

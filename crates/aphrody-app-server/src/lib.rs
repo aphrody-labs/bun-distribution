@@ -160,21 +160,42 @@ fn parse_client_request(
 /// listed and stay strictly validated.
 fn lenient_client_request(id: RequestId, method: &str) -> Option<ClientRequest> {
     Some(match method {
-        "initialize" => ClientRequest::Initialize { id, params: InitializeParams::default() },
-        "thread/start" => ClientRequest::ThreadStart { id, params: ThreadStartParams::default() },
-        "thread/resume" => {
-            ClientRequest::ThreadResume { id, params: ThreadResumeParams::default() }
+        "initialize" => ClientRequest::Initialize {
+            id,
+            params: InitializeParams::default(),
         },
-        "thread/fork" => ClientRequest::ThreadFork { id, params: ThreadForkParams::default() },
-        "thread/list" => ClientRequest::ThreadList { id, params: ThreadListParams::default() },
-        "thread/read" => ClientRequest::ThreadRead { id, params: ThreadReadParams::default() },
-        "thread/archive" => {
-            ClientRequest::ThreadArchive { id, params: ThreadArchiveParams::default() }
+        "thread/start" => ClientRequest::ThreadStart {
+            id,
+            params: ThreadStartParams::default(),
         },
-        "thread/compact/start" => {
-            ClientRequest::ThreadCompactStart { id, params: ThreadCompactStartParams::default() }
+        "thread/resume" => ClientRequest::ThreadResume {
+            id,
+            params: ThreadResumeParams::default(),
         },
-        "turn/start" => ClientRequest::TurnStart { id, params: TurnStartParams::default() },
+        "thread/fork" => ClientRequest::ThreadFork {
+            id,
+            params: ThreadForkParams::default(),
+        },
+        "thread/list" => ClientRequest::ThreadList {
+            id,
+            params: ThreadListParams::default(),
+        },
+        "thread/read" => ClientRequest::ThreadRead {
+            id,
+            params: ThreadReadParams::default(),
+        },
+        "thread/archive" => ClientRequest::ThreadArchive {
+            id,
+            params: ThreadArchiveParams::default(),
+        },
+        "thread/compact/start" => ClientRequest::ThreadCompactStart {
+            id,
+            params: ThreadCompactStartParams::default(),
+        },
+        "turn/start" => ClientRequest::TurnStart {
+            id,
+            params: TurnStartParams::default(),
+        },
         "turn/steer" => ClientRequest::TurnSteer {
             id,
             params: TurnSteerParams {
@@ -185,17 +206,31 @@ fn lenient_client_request(id: RequestId, method: &str) -> Option<ClientRequest> 
         },
         "turn/interrupt" => ClientRequest::TurnInterrupt {
             id,
-            params: TurnInterruptParams { thread_id: String::new(), turn_id: String::new() },
+            params: TurnInterruptParams {
+                thread_id: String::new(),
+                turn_id: String::new(),
+            },
         },
-        "model/list" => ClientRequest::ModelList { id, params: ModelListParams::default() },
-        "config/read" => ClientRequest::ConfigRead { id, params: ConfigReadParams::default() },
-        "account/login/start" => {
-            ClientRequest::AccountLoginStart { id, params: LoginAccountParams::default() }
+        "model/list" => ClientRequest::ModelList {
+            id,
+            params: ModelListParams::default(),
         },
-        "mcpServerStatus/list" => {
-            ClientRequest::McpServerStatusList { id, params: ListMcpServerStatusParams::default() }
+        "config/read" => ClientRequest::ConfigRead {
+            id,
+            params: ConfigReadParams::default(),
         },
-        "tools/list" => ClientRequest::ToolsList { id, params: ToolsListParams::default() },
+        "account/login/start" => ClientRequest::AccountLoginStart {
+            id,
+            params: LoginAccountParams::default(),
+        },
+        "mcpServerStatus/list" => ClientRequest::McpServerStatusList {
+            id,
+            params: ListMcpServerStatusParams::default(),
+        },
+        "tools/list" => ClientRequest::ToolsList {
+            id,
+            params: ToolsListParams::default(),
+        },
         _ => return None,
     })
 }
@@ -231,7 +266,10 @@ fn llama_status() -> LlamaStatusResponse {
 fn train_status() -> TrainStatusResponse {
     let active = aphrody_models::paths::state_dir()
         .is_ok_and(|state_dir| state_dir.join("locks").join("gpu.lock").exists());
-    TrainStatusResponse { active, ..TrainStatusResponse::default() }
+    TrainStatusResponse {
+        active,
+        ..TrainStatusResponse::default()
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -310,12 +348,15 @@ impl AppServer {
         match method {
             "tool/respond" | "permission/respond" => {
                 let request_id =
-                    params.get("requestId").and_then(Value::as_str).ok_or_else(|| {
-                        AppServerError::InvalidRequest("requestId is required".into())
-                    })?;
+                    params
+                        .get("requestId")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            AppServerError::InvalidRequest("requestId is required".into())
+                        })?;
                 thread.host_tools.respond(request_id, params)?;
                 Ok(json!({"accepted":true}))
-            },
+            }
             "thread/tools/get" => thread.host_tools.view(),
             "thread/tools/set" => {
                 if thread.active_turn.is_some() {
@@ -355,7 +396,7 @@ impl AppServer {
                 thread.host_tools = next;
                 thread.tools = registry;
                 thread.host_tools.view()
-            },
+            }
             _ => Err(AppServerError::MethodNotFound(method.into())),
         }
     }
@@ -399,7 +440,7 @@ impl AppServer {
                     ));
                 }
                 Ok(json!({"completed": true, "loginUrl": null}))
-            },
+            }
             Some(aphrody_app_protocol::AuthMode::ApiKey) => Err(AppServerError::InvalidRequest(
                 "API key login requires a credential store and is unavailable".into(),
             )),
@@ -428,16 +469,27 @@ impl AppServer {
         config.insert("model_provider".into(), json!(resolved.provider.id));
         config.insert("approval_policy".into(), json!(resolved.approval_policy));
         config.insert("sandbox_mode".into(), json!(resolved.sandbox_mode));
-        config.insert("model_context_window".into(), json!(resolved.model_context_window));
+        config.insert(
+            "model_context_window".into(),
+            json!(resolved.model_context_window),
+        );
         config.insert(
             "model_auto_compact_token_limit".into(),
             json!(resolved.model_auto_compact_token_limit),
         );
-        config.insert("model_reasoning_effort".into(), json!(resolved.model_reasoning_effort));
-        config.insert("model_reasoning_summary".into(), json!(resolved.model_reasoning_summary));
+        config.insert(
+            "model_reasoning_effort".into(),
+            json!(resolved.model_reasoning_effort),
+        );
+        config.insert(
+            "model_reasoning_summary".into(),
+            json!(resolved.model_reasoning_summary),
+        );
         config.insert("model_verbosity".into(), json!(resolved.model_verbosity));
         let source = self.base_home.join("config.toml");
-        let config_path = source.is_file().then(|| source.to_string_lossy().into_owned());
+        let config_path = source
+            .is_file()
+            .then(|| source.to_string_lossy().into_owned());
         Ok(json!({"config": config, "configPath": config_path}))
     }
 
@@ -527,13 +579,18 @@ impl AppServer {
     }
 
     fn archive_marker(&self, thread_id: &str) -> std::path::PathBuf {
-        let encoded =
-            thread_id.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+        let encoded = thread_id
+            .as_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
         self.home.join("archived-threads").join(encoded)
     }
 
     async fn is_archived(&self, thread_id: &str) -> bool {
-        tokio::fs::try_exists(self.archive_marker(thread_id)).await.unwrap_or(false)
+        tokio::fs::try_exists(self.archive_marker(thread_id))
+            .await
+            .unwrap_or(false)
     }
 
     async fn start_thread(
@@ -566,7 +623,9 @@ impl AppServer {
             .canonicalize()
             .map_err(|error| AppServerError::InvalidRequest(format!("invalid cwd: {error}")))?;
         if !cwd.is_dir() {
-            return Err(AppServerError::InvalidRequest("cwd must be a directory".into()));
+            return Err(AppServerError::InvalidRequest(
+                "cwd must be a directory".into(),
+            ));
         }
         let ephemeral = params
             .get("ephemeral")
@@ -657,15 +716,22 @@ impl AppServer {
                 builder = builder.resume_path(session.path);
             }
         }
-        let runtime = if profiled_tools { builder.build_profiled().await } else { builder.build() }
-            .map_err(|error| AppServerError::Runtime(error.to_string()))?;
+        let runtime = if profiled_tools {
+            builder.build_profiled().await
+        } else {
+            builder.build()
+        }
+        .map_err(|error| AppServerError::Runtime(error.to_string()))?;
         let tools = runtime.tools().clone();
-        let mut handle =
-            runtime.spawn().await.map_err(|error| AppServerError::Runtime(error.to_string()))?;
+        let mut handle = runtime
+            .spawn()
+            .await
+            .map_err(|error| AppServerError::Runtime(error.to_string()))?;
         let events = handle
             .events()
             .ok_or_else(|| AppServerError::Runtime("session event stream unavailable".into()))?;
-        self.notifications.push(notification("thread/started", json!({"thread": info})));
+        self.notifications
+            .push(notification("thread/started", json!({"thread": info})));
         self.threads.insert(
             id,
             ThreadState {
@@ -686,7 +752,10 @@ impl AppServer {
     }
 
     async fn list_threads(&self, params: &Value) -> Result<Value, AppServerError> {
-        let archived = params.get("archived").and_then(Value::as_bool).unwrap_or(false);
+        let archived = params
+            .get("archived")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let listing = aphrody_rollout::list_sessions(self.home.join("sessions"))
             .await
             .map_err(|error| AppServerError::Runtime(error.to_string()))?;
@@ -709,7 +778,10 @@ impl AppServer {
         }
         let mut summaries = filtered;
         summaries.sort_by(|left, right| {
-            right.updated_at.cmp(&left.updated_at).then(right.id.cmp(&left.id))
+            right
+                .updated_at
+                .cmp(&left.updated_at)
+                .then(right.id.cmp(&left.id))
         });
         let start = match params.get("cursor").filter(|value| !value.is_null()) {
             Some(cursor) => summaries
@@ -773,17 +845,23 @@ impl AppServer {
                     }
                 }
             }
-            return Err(AppServerError::InvalidRequest("unknown host callback response".into()));
+            return Err(AppServerError::InvalidRequest(
+                "unknown host callback response".into(),
+            ));
         }
         let mut request: RpcRequest = match serde_json::from_str(line) {
             Ok(request) => request,
             Err(error) => {
-                let code = if error.is_syntax() || error.is_eof() { -32700 } else { -32600 };
+                let code = if error.is_syntax() || error.is_eof() {
+                    -32700
+                } else {
+                    -32600
+                };
                 return Ok(Some(
                     json!({"id": null, "error": {"code": code, "message": error.to_string()}})
                         .to_string(),
                 ));
-            },
+            }
         };
         request.method = canonical_method(&request.method).to_owned();
         if request.method != "initialize" && request.method != "initialized" && !self.initialized {
@@ -820,7 +898,7 @@ impl AppServer {
             Ok(value) => serde_json::to_string(&JSONRPCResponse::new(id, value))?,
             Err(AppServerError::MethodNotFound(method)) => {
                 serde_json::to_string(&JSONRPCError::method_not_found(id, &method))?
-            },
+            }
             Err(error) => {
                 let code = if matches!(error, AppServerError::InvalidRequest(_)) {
                     -32602
@@ -828,7 +906,7 @@ impl AppServer {
                     -32603
                 };
                 serde_json::to_string(&JSONRPCError::new(id, code, error.to_string(), None))?
-            },
+            }
         }))
     }
 
@@ -840,7 +918,7 @@ impl AppServer {
         match request {
             ClientRequest::Initialize { .. } if self.initialize_received => {
                 Err(AppServerError::InvalidRequest("Already initialized".into()))
-            },
+            }
             ClientRequest::Initialize { .. } => {
                 self.profile = config::select_profile(&self.base_home, &params)?;
                 self.home = config::profile_home(&self.base_home, self.profile.as_deref());
@@ -859,7 +937,7 @@ impl AppServer {
                     "capabilities": {"threads": true, "turns": true, "localModels": true, "interrupt": true, "hostTools":true, "aphrody": true, "googleSearch": true, "rag": cfg!(feature = "rag")},
                     "authentication": {"required": false}
                 }))
-            },
+            }
             ClientRequest::ThreadList { .. } => self.list_threads(&params).await,
             ClientRequest::ConfigRead { .. } => self.read_config(&params),
             ClientRequest::AccountRead { .. } => self.read_account(&params),
@@ -867,11 +945,16 @@ impl AppServer {
             ClientRequest::McpServerStatusList { .. } => self.list_mcp_server_status(&params),
             ClientRequest::ThreadRead { .. } => {
                 let thread_id =
-                    params.get("threadId").and_then(Value::as_str).ok_or_else(|| {
-                        AppServerError::InvalidRequest("thread/read requires threadId".into())
-                    })?;
-                let include_turns =
-                    params.get("includeTurns").and_then(Value::as_bool).unwrap_or(false);
+                    params
+                        .get("threadId")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            AppServerError::InvalidRequest("thread/read requires threadId".into())
+                        })?;
+                let include_turns = params
+                    .get("includeTurns")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
                 if let Some(thread) = self.threads.get(thread_id) {
                     let mut info = thread.info.clone();
                     if !include_turns {
@@ -896,13 +979,16 @@ impl AppServer {
                     info.preview = thread_preview(&info.turns);
                 }
                 Ok(json!({ "thread": info }))
-            },
+            }
             ClientRequest::ThreadResume { .. } => {
                 validate_policy(&params)?;
                 let thread_id =
-                    params.get("threadId").and_then(Value::as_str).ok_or_else(|| {
-                        AppServerError::InvalidRequest("thread/resume requires threadId".into())
-                    })?;
+                    params
+                        .get("threadId")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            AppServerError::InvalidRequest("thread/resume requires threadId".into())
+                        })?;
                 if self.is_archived(thread_id).await {
                     return Err(AppServerError::InvalidRequest("thread is archived".into()));
                 }
@@ -917,7 +1003,7 @@ impl AppServer {
                         AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                     })?;
                 self.start_thread(params, Some(session), None).await
-            },
+            }
             ClientRequest::ThreadArchive { .. } => {
                 let thread_id = params
                     .get("threadId")
@@ -926,7 +1012,11 @@ impl AppServer {
                         AppServerError::InvalidRequest("thread/archive requires threadId".into())
                     })?
                     .to_string();
-                if self.threads.get(&thread_id).is_some_and(|thread| thread.active_turn.is_some()) {
+                if self
+                    .threads
+                    .get(&thread_id)
+                    .is_some_and(|thread| thread.active_turn.is_some())
+                {
                     return Err(AppServerError::InvalidRequest(
                         "cannot archive an active turn".into(),
                     ));
@@ -953,19 +1043,24 @@ impl AppServer {
                 tokio::fs::create_dir_all(marker.parent().expect("archive marker has parent"))
                     .await?;
                 tokio::fs::write(&marker, b"").await?;
-                self.notifications
-                    .push(notification("thread/archived", json!({"threadId": thread_id})));
+                self.notifications.push(notification(
+                    "thread/archived",
+                    json!({"threadId": thread_id}),
+                ));
                 Ok(json!({"archived": true}))
-            },
+            }
             ClientRequest::ThreadUnarchive {
-                params: ThreadUnarchiveParams { thread_id }, ..
+                params: ThreadUnarchiveParams { thread_id },
+                ..
             } => {
                 let marker = self.archive_marker(&thread_id);
                 tokio::fs::remove_file(&marker).await.map_err(|error| {
                     AppServerError::InvalidRequest(format!("thread is not archived: {error}"))
                 })?;
-                Ok(serde_json::to_value(ThreadUnarchiveResponse { archived: false })?)
-            },
+                Ok(serde_json::to_value(ThreadUnarchiveResponse {
+                    archived: false,
+                })?)
+            }
             ClientRequest::ThreadFork { .. } => {
                 validate_policy(&params)?;
                 let thread_id = params
@@ -975,7 +1070,11 @@ impl AppServer {
                         AppServerError::InvalidRequest("thread/fork requires threadId".into())
                     })?
                     .to_string();
-                if self.threads.get(&thread_id).is_some_and(|thread| thread.active_turn.is_some()) {
+                if self
+                    .threads
+                    .get(&thread_id)
+                    .is_some_and(|thread| thread.active_turn.is_some())
+                {
                     return Err(AppServerError::InvalidRequest(
                         "cannot fork an active turn".into(),
                     ));
@@ -989,15 +1088,19 @@ impl AppServer {
                             "thread has no persisted history: {thread_id}"
                         ))
                     })?;
-                self.start_thread(params, Some(session), Some(thread_id)).await
-            },
+                self.start_thread(params, Some(session), Some(thread_id))
+                    .await
+            }
             ClientRequest::ThreadCompactStart { .. } => {
                 let thread_id =
-                    params.get("threadId").and_then(Value::as_str).ok_or_else(|| {
-                        AppServerError::InvalidRequest(
-                            "thread/compact/start requires threadId".into(),
-                        )
-                    })?;
+                    params
+                        .get("threadId")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            AppServerError::InvalidRequest(
+                                "thread/compact/start requires threadId".into(),
+                            )
+                        })?;
                 let thread = self.threads.get_mut(thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
@@ -1024,8 +1127,11 @@ impl AppServer {
                 thread.message_started = false;
                 thread.info.status = json!({"type": "active", "activeFlags": []});
                 Ok(serde_json::to_value(ThreadCompactStartResponse {})?)
-            },
-            ClientRequest::TurnEvents { params: TurnEventsParams { thread_id }, .. } => {
+            }
+            ClientRequest::TurnEvents {
+                params: TurnEventsParams { thread_id },
+                ..
+            } => {
                 let thread = self.threads.get_mut(&thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
@@ -1047,7 +1153,7 @@ impl AppServer {
                     completed,
                     notifications: Value::Array(notifications),
                 })?)
-            },
+            }
             // `ToolsListParams` only carries `thread_id`; the handler also
             // honours `cwd`, `model` and policy overrides from the raw params
             // (same resolution path as `thread/start`), so the raw value is
@@ -1072,7 +1178,9 @@ impl AppServer {
                     AppServerError::InvalidRequest(format!("invalid cwd: {error}"))
                 })?;
                 if !cwd.is_dir() {
-                    return Err(AppServerError::InvalidRequest("cwd must be a directory".into()));
+                    return Err(AppServerError::InvalidRequest(
+                        "cwd must be a directory".into(),
+                    ));
                 }
                 let runtime_config = config::runtime(&resolved, &self.home, &cwd, &params)?;
                 let tools = if runtime_config.tool_profile.is_some() {
@@ -1084,7 +1192,7 @@ impl AppServer {
                     AppServerError::Runtime(error.to_string())
                 })?;
                 Ok(json!({ "data": tools.openai_functions() }))
-            },
+            }
             ClientRequest::ModelList { .. } => {
                 let resolved = config::resolve_with_profile(
                     &self.base_home,
@@ -1119,11 +1227,11 @@ impl AppServer {
                     }
                 }
                 Ok(json!({ "data": models }))
-            },
+            }
             ClientRequest::NotificationsDrain { .. } => {
                 let notifs = self.drain_notifications();
                 Ok(json!({ "notifications": notifs }))
-            },
+            }
             ClientRequest::AphrodyStatus { .. } => Ok(json!({
                 "service": "aphrody-app-server",
                 "version": env!("CARGO_PKG_VERSION"),
@@ -1150,14 +1258,19 @@ impl AppServer {
             #[cfg(not(feature = "rag"))]
             ClientRequest::RagSearch { .. }
             | ClientRequest::RagContext { .. }
-            | ClientRequest::RagStatus { .. } => {
-                Err(AppServerError::MethodNotFound(request.method_name().to_owned()))
-            },
+            | ClientRequest::RagStatus { .. } => Err(AppServerError::MethodNotFound(
+                request.method_name().to_owned(),
+            )),
             ClientRequest::TurnInterrupt { .. } => {
                 let thread_id =
-                    params.get("threadId").and_then(Value::as_str).ok_or_else(|| {
-                        AppServerError::InvalidRequest("turn/interrupt requires threadId".into())
-                    })?;
+                    params
+                        .get("threadId")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            AppServerError::InvalidRequest(
+                                "turn/interrupt requires threadId".into(),
+                            )
+                        })?;
                 let thread = self.threads.get_mut(thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
@@ -1182,7 +1295,7 @@ impl AppServer {
                 thread.interrupt_requested = true;
                 thread.host_tools.cancel_all();
                 Ok(json!({ "threadId": thread_id, "status": "interrupt_requested" }))
-            },
+            }
             ClientRequest::TurnSteer { .. } => {
                 let thread_id = params
                     .get("threadId")
@@ -1195,7 +1308,9 @@ impl AppServer {
                     .active_turn
                     .as_ref()
                     .ok_or_else(|| AppServerError::InvalidRequest("no active turn".into()))?;
-                if params.get("expectedTurnId").or_else(|| params.get("turnId"))
+                if params
+                    .get("expectedTurnId")
+                    .or_else(|| params.get("turnId"))
                     != Some(&turn["id"])
                 {
                     return Err(AppServerError::InvalidRequest(
@@ -1208,8 +1323,11 @@ impl AppServer {
                     .submit(Op::Steer { items })
                     .map_err(|_| AppServerError::Runtime("session actor stopped".into()))?;
                 Ok(json!({"turnId": turn["id"]}))
-            },
-            ClientRequest::ThreadClose { params: ThreadCloseParams { thread_id }, .. } => {
+            }
+            ClientRequest::ThreadClose {
+                params: ThreadCloseParams { thread_id },
+                ..
+            } => {
                 let thread = self.threads.remove(&thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
@@ -1220,14 +1338,17 @@ impl AppServer {
                     thread_id,
                     status: "closed".to_owned(),
                 })?)
-            },
+            }
             ClientRequest::ThreadStart { .. } => self.start_thread(params, None, None).await,
             ClientRequest::TurnStart { .. } => {
                 validate_policy(&params)?;
                 let thread_id =
-                    params.get("threadId").and_then(Value::as_str).ok_or_else(|| {
-                        AppServerError::InvalidRequest("turn/start requires threadId".into())
-                    })?;
+                    params
+                        .get("threadId")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            AppServerError::InvalidRequest("turn/start requires threadId".into())
+                        })?;
                 let thread = self.threads.get_mut(thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
@@ -1295,11 +1416,11 @@ impl AppServer {
                     let completed = match &event.msg {
                         EventMsg::TurnComplete { last_agent_message } => {
                             Some(last_agent_message.clone())
-                        },
+                        }
                         EventMsg::Error { message } => {
                             self.notifications.extend(thread.observe(&event));
                             return Err(AppServerError::Runtime(message.clone()));
-                        },
+                        }
                         _ => None,
                     };
                     self.notifications.extend(thread.observe(&event));
@@ -1316,11 +1437,11 @@ impl AppServer {
                     "output": output,
                     "events": events
                 }))
-            },
+            }
             ClientRequest::Shutdown { .. } => {
                 self.shutdown().await?;
                 Ok(serde_json::to_value(ShutdownResponse { ok: true })?)
-            },
+            }
             // Login is stateless: `account/login/start` only validates that a
             // locally managed provider exists and stores nothing, and
             // `account/read` derives the account from configuration. There is
@@ -1414,14 +1535,19 @@ impl AppServer {
                 }
                 paths
             });
-        Ok(serde_json::to_value(RagContextResponse { prompt_context: output.content, sources })?)
+        Ok(serde_json::to_value(RagContextResponse {
+            prompt_context: output.content,
+            sources,
+        })?)
     }
 
     #[cfg(feature = "rag")]
     async fn rag_status(&self) -> Result<Value, AppServerError> {
         let (store, path) = self.rag_store()?;
-        let stats =
-            store.stats().await.map_err(|error| AppServerError::Runtime(error.to_string()))?;
+        let stats = store
+            .stats()
+            .await
+            .map_err(|error| AppServerError::Runtime(error.to_string()))?;
         Ok(serde_json::to_value(RagStatusResponse {
             indexed_documents: stats.doc_count,
             total_chunks: stats.chunk_count,
@@ -1436,7 +1562,11 @@ impl AppServer {
 /// `server_name` separates the BXC web surface from aphrody's own local
 /// tools, so a client can tell a page action from a shell command.
 fn tool_call_item(item_id: &str, name: &str, ok: Option<bool>) -> Value {
-    let server_name = if BXC_TOOL_NAMES.contains(&name) { "bxc" } else { "aphrody" };
+    let server_name = if BXC_TOOL_NAMES.contains(&name) {
+        "bxc"
+    } else {
+        "aphrody"
+    };
     let mut item = json!({
         "type": "mcpToolCall",
         "id": item_id,
@@ -1451,7 +1581,13 @@ fn tool_call_item(item_id: &str, name: &str, ok: Option<bool>) -> Value {
 }
 
 /// Tool names served by the BXC subsystem (web, scraping, JS VM, browser).
-const BXC_TOOL_NAMES: [&str; 5] = ["web_search", "web_scrape", "js_eval", "google_ai", "browser"];
+const BXC_TOOL_NAMES: [&str; 5] = [
+    "web_search",
+    "web_scrape",
+    "js_eval",
+    "google_ai",
+    "browser",
+];
 
 impl ThreadState {
     fn observe(&mut self, event: &Event) -> Vec<Value> {
@@ -1464,9 +1600,14 @@ impl ThreadState {
                 })
             });
             let item = json!({"type": "contextCompaction", "id": item_id});
-            let started =
-                notification("turn/started", json!({"threadId": self.info.id, "turn": turn}));
-            turn["items"].as_array_mut().expect("turn items").push(item.clone());
+            let started = notification(
+                "turn/started",
+                json!({"threadId": self.info.id, "turn": turn}),
+            );
+            turn["items"]
+                .as_array_mut()
+                .expect("turn items")
+                .push(item.clone());
             self.info.status = json!({"type": "active", "activeFlags": []});
             self.info.updated_at = now();
             return vec![
@@ -1477,10 +1618,15 @@ impl ThreadState {
                 ),
             ];
         }
-        let Some(turn) = self.active_turn.as_mut() else { return Vec::new() };
+        let Some(turn) = self.active_turn.as_mut() else {
+            return Vec::new();
+        };
         let mut messages = Vec::new();
         let turn_id = turn["id"].as_str().unwrap_or_default().to_string();
-        let item_id = format!("{turn_id}-message-{}", turn["items"].as_array().map_or(0, Vec::len));
+        let item_id = format!(
+            "{turn_id}-message-{}",
+            turn["items"].as_array().map_or(0, Vec::len)
+        );
         match &event.msg {
             EventMsg::AgentMessageDelta { delta } => {
                 if !self.message_started {
@@ -1490,7 +1636,7 @@ impl ThreadState {
                 messages.push(notification("item/agentMessage/delta", json!({
                     "threadId": self.info.id, "turnId": turn_id, "itemId": item_id, "delta": delta,
                 })));
-            },
+            }
             EventMsg::AgentMessage { text } => {
                 let item = json!({"type": "agentMessage", "id": item_id, "text": text});
                 if !self.message_started {
@@ -1507,13 +1653,14 @@ impl ThreadState {
                     json!({"threadId": self.info.id, "turnId": turn_id, "item": item}),
                 ));
                 self.message_started = false;
-            },
+            }
             // Tool activity — including every browser / web computer-use
             // action driven through BXC — is relayed so a client watching a
             // thread sees what the agent is doing, not only what it says.
             EventMsg::ToolCallBegin { call_id, name } => {
                 let item_id = format!("{turn_id}-tool-{call_id}");
-                self.open_tool_calls.insert(call_id.clone(), (item_id.clone(), name.clone()));
+                self.open_tool_calls
+                    .insert(call_id.clone(), (item_id.clone(), name.clone()));
                 messages.push(notification(
                     "item/started",
                     json!({
@@ -1522,7 +1669,7 @@ impl ThreadState {
                         "item": tool_call_item(&item_id, name, None),
                     }),
                 ));
-            },
+            }
             EventMsg::ToolCallEnd { call_id, ok } => {
                 let Some((item_id, name)) = self.open_tool_calls.remove(call_id) else {
                     return messages;
@@ -1535,7 +1682,7 @@ impl ThreadState {
                     "item/completed",
                     json!({"threadId": self.info.id, "turnId": turn_id, "item": item}),
                 ));
-            },
+            }
             EventMsg::ContextCompactionCompleted { item_id } => {
                 let item = turn["items"].as_array().and_then(|items| {
                     items.iter().find(|item| {
@@ -1559,7 +1706,7 @@ impl ThreadState {
                 self.is_compaction = false;
                 self.info.status = json!({"type": "idle"});
                 self.info.updated_at = now();
-            },
+            }
             EventMsg::TurnComplete { .. } | EventMsg::Error { .. } => {
                 turn["status"] = json!(if matches!(event.msg, EventMsg::Error { .. }) {
                     "failed"
@@ -1581,8 +1728,8 @@ impl ThreadState {
                 self.is_compaction = false;
                 self.info.status = json!({"type": "idle"});
                 self.info.updated_at = now();
-            },
-            _ => {},
+            }
+            _ => {}
         }
         messages
     }
@@ -1659,11 +1806,14 @@ fn restore_ui_turns(
                 message.role == Role::User
                     && (turn["status"] != "inProgress"
                         || (!started
-                            && turn["items"].as_array().is_some_and(|items| !items.is_empty())))
+                            && turn["items"]
+                                .as_array()
+                                .is_some_and(|items| !items.is_empty())))
             });
             if needs_turn {
-                if let Some(previous) =
-                    turns.last_mut().filter(|turn| turn["status"] == "inProgress")
+                if let Some(previous) = turns
+                    .last_mut()
+                    .filter(|turn| turn["status"] == "inProgress")
                 {
                     previous["status"] = json!("completed");
                 }
@@ -1678,24 +1828,26 @@ fn restore_ui_turns(
                 match part {
                     Part::Text(text) if message.role == Role::User => {
                         user_content.push(json!({"type": "text", "text": text}));
-                    },
+                    }
                     Part::Image(source) if message.role == Role::User => {
                         let url = match source {
                             ImageSource::Url(url) => url,
                             ImageSource::Base64 { mime, data } => {
                                 format!("data:{mime};base64,{data}")
-                            },
+                            }
                         };
                         user_content.push(json!({"type": "image", "url": url}));
-                    },
+                    }
                     Part::Text(text) if message.role == Role::Model => {
                         items.push(json!({"type": "agentMessage", "id": format!("{turn_id}-message-{}", items.len()), "text": text}));
-                    },
+                    }
                     Part::FunctionCall { id, name, args } => {
                         items.push(json!({"type": "dynamicToolCall", "id": id, "namespace": null, "tool": name,
                             "arguments": args, "status": "inProgress", "contentItems": null, "success": null, "durationMs": null}));
-                    },
-                    Part::FunctionResponse { id, name, response, .. } => {
+                    }
+                    Part::FunctionResponse {
+                        id, name, response, ..
+                    } => {
                         let content = json!([{"type": "inputText", "text": response.to_string()}]);
                         if let Some(call) = items.iter_mut().find(|item| item["id"] == id) {
                             call["contentItems"] = content;
@@ -1704,8 +1856,8 @@ fn restore_ui_turns(
                             items.push(json!({"type": "dynamicToolCall", "id": id, "namespace": null, "tool": name,
                                 "arguments": null, "status": "completed", "contentItems": content, "success": null, "durationMs": null}));
                         }
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
             if !user_content.is_empty() {
@@ -1726,17 +1878,20 @@ fn restore_ui_turns(
                 Some("turn_complete" | "context_compaction_completed") => {
                     turn["status"] = json!("completed");
                     started = false;
-                },
+                }
                 Some("error") => {
                     turn["status"] = json!("failed");
                     turn["error"] = json!({"message": line.item["msg"]["message"], "codexErrorInfo": null, "additionalDetails": null});
                     started = false;
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
     }
-    if let Some(turn) = turns.last_mut().filter(|turn| turn["status"] == "inProgress") {
+    if let Some(turn) = turns
+        .last_mut()
+        .filter(|turn| turn["status"] == "inProgress")
+    {
         turn["status"] = json!("interrupted");
     }
     Ok(turns)
@@ -1757,7 +1912,10 @@ fn thread_response(info: &ThreadInfo) -> Value {
 }
 
 fn validate_policy(params: &Value) -> Result<(), AppServerError> {
-    if params.get("approvalPolicy").is_some_and(|value| !value.is_null() && value != "never") {
+    if params
+        .get("approvalPolicy")
+        .is_some_and(|value| !value.is_null() && value != "never")
+    {
         return Err(AppServerError::InvalidRequest(
             "this local server supports only approvalPolicy=never".into(),
         ));
@@ -1791,13 +1949,18 @@ fn parse_input(params: &Value) -> Result<(Vec<InputItem>, Vec<UserInput>), AppSe
             .map_err(|error| AppServerError::InvalidRequest(error.to_string()))?
     };
     if content.is_empty() {
-        return Err(AppServerError::InvalidRequest("input must not be empty".into()));
+        return Err(AppServerError::InvalidRequest(
+            "input must not be empty".into(),
+        ));
     }
     let items = content
         .iter()
         .map(|item| match item {
             UserInput::Text { text } => InputItem::Text { text: text.clone() },
-            UserInput::Image { url } => InputItem::Image { path: None, url: Some(url.clone()) },
+            UserInput::Image { url } => InputItem::Image {
+                path: None,
+                url: Some(url.clone()),
+            },
         })
         .collect();
     Ok((items, content))
@@ -1857,7 +2020,9 @@ where
                 _ = poll.tick() => {},
             }
             for notification in server.drain_notifications() {
-                writer.write_all(serde_json::to_string(&notification)?.as_bytes()).await?;
+                writer
+                    .write_all(serde_json::to_string(&notification)?.as_bytes())
+                    .await?;
                 writer.write_all(b"\n").await?;
             }
             writer.flush().await?;
@@ -1895,7 +2060,10 @@ fn http_routes() -> Router {
         .route("/healthz", get(http_health).options(http_cors_preflight))
         .route("/rpc", post(http_rpc).options(http_cors_preflight))
         .route("/events", get(http_events).options(http_cors_preflight))
-        .route("/notifications", get(http_notifications).options(http_cors_preflight))
+        .route(
+            "/notifications",
+            get(http_notifications).options(http_cors_preflight),
+        )
         .with_state(state)
 }
 
@@ -1939,7 +2107,10 @@ async fn serve_http_router(addr: SocketAddr, app: Router) -> Result<(), AppServe
 async fn http_health() -> impl IntoResponse {
     let mut headers = HeaderMap::new();
     add_cors_headers(&mut headers);
-    headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
     (
         headers,
         Json(
@@ -1974,7 +2145,7 @@ async fn http_rpc(
                     json!({"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":error.to_string()}}),
                 ),
             ));
-        },
+        }
     };
     let json_resp = match server.handle(&line).await {
         Ok(Some(response)) => serde_json::from_str(&response)
@@ -2011,7 +2182,10 @@ async fn http_events(
     use futures::StreamExt as _;
 
     let stream = futures::stream::unfold(
-        (state, tokio::time::interval(std::time::Duration::from_millis(50))),
+        (
+            state,
+            tokio::time::interval(std::time::Duration::from_millis(50)),
+        ),
         |(state, mut interval)| async move {
             interval.tick().await;
             let notifs = {
@@ -2033,7 +2207,10 @@ async fn http_events(
 }
 
 fn add_cors_headers(headers: &mut HeaderMap) {
-    headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        HeaderValue::from_static("*"),
+    );
     headers.insert(
         header::ACCESS_CONTROL_ALLOW_METHODS,
         HeaderValue::from_static("GET, POST, OPTIONS, PUT, DELETE"),
@@ -2048,28 +2225,46 @@ fn trusted_headers(headers: &HeaderMap) -> bool {
     let Some(host) = headers.get("host").and_then(|value| value.to_str().ok()) else {
         return false;
     };
-    let Ok(authority) = host.parse::<axum::http::uri::Authority>() else { return false };
-    let hostname = authority.host().trim_start_matches('[').trim_end_matches(']');
+    let Ok(authority) = host.parse::<axum::http::uri::Authority>() else {
+        return false;
+    };
+    let hostname = authority
+        .host()
+        .trim_start_matches('[')
+        .trim_end_matches(']');
     let local = hostname.eq_ignore_ascii_case("localhost")
-        || hostname.parse::<std::net::IpAddr>().is_ok_and(|address| address.is_loopback());
+        || hostname
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|address| address.is_loopback());
     if !local {
         return false;
     }
-    if headers.get("sec-fetch-site").is_some_and(|value| value == "cross-site") {
+    if headers
+        .get("sec-fetch-site")
+        .is_some_and(|value| value == "cross-site")
+    {
         return false;
     }
     if let Some(origin) = headers.get("origin") {
-        let Ok(origin) = origin.to_str().unwrap_or_default().parse::<axum::http::Uri>() else {
+        let Ok(origin) = origin
+            .to_str()
+            .unwrap_or_default()
+            .parse::<axum::http::Uri>()
+        else {
             return false;
         };
         let is_tauri = origin.scheme_str() == Some("tauri");
         let is_same_host = (origin.scheme_str() == Some("http")
             || origin.scheme_str() == Some("https"))
-            && origin.authority().is_some_and(|value| value.as_str().eq_ignore_ascii_case(host));
+            && origin
+                .authority()
+                .is_some_and(|value| value.as_str().eq_ignore_ascii_case(host));
         if !is_tauri && !is_same_host {
             return false;
         }
-        return origin.path_and_query().is_none_or(|value| value.as_str() == "/");
+        return origin
+            .path_and_query()
+            .is_none_or(|value| value.as_str() == "/");
     }
     true
 }
@@ -2088,9 +2283,17 @@ fn system_prompt() -> String {
                   then return concise, direct results with essential evidence and next action.";
     let home = AgentHome::open(HomeOptions::default())
         .ok()
-        .map(|agent_home| agent_home.system_prompt(&BootstrapBudget::default()).render())
+        .map(|agent_home| {
+            agent_home
+                .system_prompt(&BootstrapBudget::default())
+                .render()
+        })
         .unwrap_or_default();
-    if home.trim().is_empty() { policy.to_string() } else { format!("{policy}\n\n{home}") }
+    if home.trim().is_empty() {
+        policy.to_string()
+    } else {
+        format!("{policy}\n\n{home}")
+    }
 }
 
 #[cfg(test)]
@@ -2121,7 +2324,10 @@ wire_api = "chat"
 
     async fn initialized_server() -> AppServer {
         let mut server = test_server();
-        server.handle(r#"{"id":0,"method":"initialize"}"#).await.unwrap();
+        server
+            .handle(r#"{"id":0,"method":"initialize"}"#)
+            .await
+            .unwrap();
         server.handle(r#"{"method":"initialized"}"#).await.unwrap();
         server
     }
@@ -2132,7 +2338,10 @@ wire_api = "chat"
         let params = json!({"ephemeral":true,"systemPrompt":" exact host prompt \n","builtins":false,"subagents":false});
         let resolved = config::resolve(home.path(), &json!({})).unwrap();
         let runtime = config::runtime(&resolved, home.path(), home.path(), &params).unwrap();
-        assert_eq!(runtime.system_prompt.as_deref(), Some(" exact host prompt \n"));
+        assert_eq!(
+            runtime.system_prompt.as_deref(),
+            Some(" exact host prompt \n")
+        );
         assert!(runtime.live_agent_home_workspace.is_none());
         assert!(runtime.rag_db.is_none());
         let registry = build_tool_registry(&runtime).unwrap();
@@ -2166,7 +2375,10 @@ wire_api = "chat"
             server_writer,
             test_server(),
         ));
-        client_writer.write_all(b"{\"id\":1,\"method\":\"initialize\"}\n").await.unwrap();
+        client_writer
+            .write_all(b"{\"id\":1,\"method\":\"initialize\"}\n")
+            .await
+            .unwrap();
         let mut lines = tokio::io::BufReader::new(client_reader).lines();
         let reply = tokio::time::timeout(std::time::Duration::from_secs(5), lines.next_line())
             .await
@@ -2195,7 +2407,12 @@ wire_api = "chat"
         assert_eq!(initial_models[0]["source"], "configured");
         assert_eq!(initial_models[0]["availability"], "unknown");
 
-        let started = request(&mut server, "thread/start", json!({"model": "session-model"})).await;
+        let started = request(
+            &mut server,
+            "thread/start",
+            json!({"model": "session-model"}),
+        )
+        .await;
         let thread_id = started["result"]["thread"]["id"].as_str().unwrap();
         let listed = request(&mut server, "models/list", json!({})).await;
         let models = listed["result"]["data"].as_array().unwrap();
@@ -2257,7 +2474,12 @@ wire_api = "chat"
         assert_eq!(decoded.config["model_provider"], "fixture");
         assert_eq!(
             decoded.config_path,
-            Some(home.path().join("config.toml").to_string_lossy().into_owned())
+            Some(
+                home.path()
+                    .join("config.toml")
+                    .to_string_lossy()
+                    .into_owned()
+            )
         );
         assert!(!response.to_string().contains("private-value"));
         let scoped = request(&mut server, "config/read", json!({"threadId": "missing"})).await;
@@ -2305,7 +2527,10 @@ wire_api = "chat"
 
         let mut external = test_server();
         request(&mut external, "initialize", json!({})).await;
-        external.handle(r#"{"method":"initialized"}"#).await.unwrap();
+        external
+            .handle(r#"{"method":"initialized"}"#)
+            .await
+            .unwrap();
         let response = request(&mut external, "account/read", json!({})).await;
         let account: aphrody_app_protocol::GetAccountResponse =
             serde_json::from_value(response["result"].clone()).unwrap();
@@ -2327,15 +2552,22 @@ wire_api = "chat"
         );
 
         let mut server = test_server();
-        let initialized =
-            request(&mut server, "initialize", json!({"capabilities": {"aphrody": true}})).await;
+        let initialized = request(
+            &mut server,
+            "initialize",
+            json!({"capabilities": {"aphrody": true}}),
+        )
+        .await;
         assert_eq!(initialized["result"]["capabilities"]["aphrody"], true);
         server.handle(r#"{"method":"initialized"}"#).await.unwrap();
 
         let db = server.home.join("rag/index.db");
         std::fs::create_dir_all(db.parent().unwrap()).unwrap();
         let store = RagStore::open(&db).unwrap();
-        let doc = store.upsert_doc("notes.md", "hash", None, Some("en"), 1, 64).await.unwrap();
+        let doc = store
+            .upsert_doc("notes.md", "hash", None, Some("en"), 1, 64)
+            .await
+            .unwrap();
         store
             .insert_chunk(
                 doc,
@@ -2365,20 +2597,32 @@ wire_api = "chat"
             json!({"query": "Shenron retrieval", "maxTokens": 100}),
         )
         .await;
-        assert!(context["result"]["promptContext"].as_str().unwrap().contains("Shenron retrieval"));
+        assert!(
+            context["result"]["promptContext"]
+                .as_str()
+                .unwrap()
+                .contains("Shenron retrieval")
+        );
         assert_eq!(context["result"]["sources"], json!(["notes.md"]));
 
         let status = request(&mut server, "aphrody/rag/status", json!({})).await;
         assert_eq!(status["result"]["indexedDocuments"], 1);
         assert_eq!(status["result"]["totalChunks"], 1);
         assert_eq!(status["result"]["embedModel"], "ort:test");
-        assert_eq!(status["result"]["databasePath"], db.to_string_lossy().as_ref());
+        assert_eq!(
+            status["result"]["databasePath"],
+            db.to_string_lossy().as_ref()
+        );
     }
 
     #[test]
     fn profile_selection_uses_initialize_then_environment_then_config() {
         let base = tempfile::tempdir().unwrap();
-        std::fs::write(base.path().join("config.toml"), "profile = \"configured\"\n").unwrap();
+        std::fs::write(
+            base.path().join("config.toml"),
+            "profile = \"configured\"\n",
+        )
+        .unwrap();
         assert_eq!(
             config::select_profile_with_environment(
                 base.path(),
@@ -2426,7 +2670,10 @@ wire_api = "chat"
         let expected = std::path::absolute(server.base_home.join("workspace-team")).unwrap();
         let initialized =
             request(&mut server, "initialize", json!({"profile": "../../Team"})).await;
-        assert_eq!(initialized["result"]["codexHome"], expected.to_string_lossy().as_ref());
+        assert_eq!(
+            initialized["result"]["codexHome"],
+            expected.to_string_lossy().as_ref()
+        );
         assert_eq!(server.home, expected);
     }
 
@@ -2479,7 +2726,10 @@ model_provider = "fixture"
     async fn fork_creates_an_independent_persisted_thread() {
         let mut server = initialized_server().await;
         let parent = request(&mut server, "thread/start", json!({})).await;
-        let parent_id = parent["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let parent_id = parent["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         request(&mut server, "thread/close", json!({"threadId": parent_id})).await;
         let parent_reopened =
             request(&mut server, "thread/resume", json!({"threadId": parent_id})).await;
@@ -2487,28 +2737,57 @@ model_provider = "fixture"
         let fork = request(&mut server, "thread/fork", json!({"threadId": parent_id})).await;
         let fork_id = fork["result"]["thread"]["id"].as_str().unwrap().to_string();
         assert_ne!(fork_id, parent_id);
-        assert_eq!(fork["result"]["thread"]["model"], parent["result"]["thread"]["model"]);
+        assert_eq!(
+            fork["result"]["thread"]["model"],
+            parent["result"]["thread"]["model"]
+        );
         // Closing is the native recorder's persistence barrier. Verify the
         // independent fork survives a real reopen before inspecting disk.
         request(&mut server, "thread/close", json!({"threadId": fork_id})).await;
         let reopened = request(&mut server, "thread/resume", json!({"threadId": fork_id})).await;
         assert_eq!(reopened["result"]["thread"]["id"], fork_id);
-        let sessions = aphrody_rollout::list_sessions(server.home.join("sessions")).await.unwrap();
-        let fork_session =
-            sessions.sessions.iter().find(|session| session.meta.id == fork_id).unwrap();
-        assert_eq!(fork_session.meta.forked_from.as_deref(), Some(parent_id.as_str()));
-        assert!(sessions.sessions.iter().any(|session| session.meta.id == parent_id));
-        let compact =
-            request(&mut server, "thread/compact/start", json!({"threadId": fork_id})).await;
+        let sessions = aphrody_rollout::list_sessions(server.home.join("sessions"))
+            .await
+            .unwrap();
+        let fork_session = sessions
+            .sessions
+            .iter()
+            .find(|session| session.meta.id == fork_id)
+            .unwrap();
+        assert_eq!(
+            fork_session.meta.forked_from.as_deref(),
+            Some(parent_id.as_str())
+        );
+        assert!(
+            sessions
+                .sessions
+                .iter()
+                .any(|session| session.meta.id == parent_id)
+        );
+        let compact = request(
+            &mut server,
+            "thread/compact/start",
+            json!({"threadId": fork_id}),
+        )
+        .await;
         assert_eq!(compact["result"], json!({}));
         let bad = request(&mut server, "thread/fork", json!({"threadId": "missing"})).await;
         assert_eq!(bad["error"]["code"], -32602);
-        let missing_compact =
-            request(&mut server, "thread/compact/start", json!({"threadId": "missing"})).await;
+        let missing_compact = request(
+            &mut server,
+            "thread/compact/start",
+            json!({"threadId": "missing"}),
+        )
+        .await;
         assert_eq!(missing_compact["error"]["code"], -32602);
         request(&mut server, "thread/close", json!({"threadId": fork_id})).await;
         request(&mut server, "thread/close", json!({"threadId": parent_id})).await;
-        let archived = request(&mut server, "thread/archive", json!({"threadId": parent_id})).await;
+        let archived = request(
+            &mut server,
+            "thread/archive",
+            json!({"threadId": parent_id}),
+        )
+        .await;
         assert_eq!(archived["result"]["archived"], true);
         let archived_list = request(&mut server, "thread/list", json!({"archived": true})).await;
         assert_eq!(archived_list["result"]["data"][0]["id"], parent_id);
@@ -2523,8 +2802,12 @@ model_provider = "fixture"
         );
         let blocked = request(&mut server, "thread/resume", json!({"threadId": parent_id})).await;
         assert_eq!(blocked["error"]["code"], -32602);
-        let unarchived =
-            request(&mut server, "thread/unarchive", json!({"threadId": parent_id})).await;
+        let unarchived = request(
+            &mut server,
+            "thread/unarchive",
+            json!({"threadId": parent_id}),
+        )
+        .await;
         assert_eq!(unarchived["result"]["archived"], false);
     }
 
@@ -2532,24 +2815,38 @@ model_provider = "fixture"
     async fn compact_returns_empty_ack_then_native_items_and_terminal_turn() {
         let mut server = initialized_server().await;
         let start = request(&mut server, "thread/start", json!({})).await;
-        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let id = start["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         server.drain_notifications();
         let response = request(&mut server, "thread/compact/start", json!({"threadId": id})).await;
         assert_eq!(response["result"], json!({}));
         let interrupt = request(&mut server, "turn/interrupt", json!({"threadId":id})).await;
         assert_eq!(interrupt["error"]["code"], -32602);
-        assert!(interrupt["error"]["message"].as_str().unwrap().contains("structural compaction"));
+        assert!(
+            interrupt["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("structural compaction")
+        );
         let duplicate = request(&mut server, "thread/compact/start", json!({"threadId": id})).await;
         assert_eq!(duplicate["error"]["code"], -32602);
-        let new_turn =
-            request(&mut server, "turn/start", json!({"threadId": id, "input": "racing turn"}))
-                .await;
+        let new_turn = request(
+            &mut server,
+            "turn/start",
+            json!({"threadId": id, "input": "racing turn"}),
+        )
+        .await;
         assert_eq!(new_turn["error"]["code"], -32602);
         let notifications = tokio::time::timeout(std::time::Duration::from_secs(2), async {
             let mut notifications = Vec::new();
             loop {
                 notifications.extend(server.drain_notifications());
-                if notifications.iter().any(|event| event["method"] == "turn/completed") {
+                if notifications
+                    .iter()
+                    .any(|event| event["method"] == "turn/completed")
+                {
                     break notifications;
                 }
                 tokio::task::yield_now().await;
@@ -2557,9 +2854,19 @@ model_provider = "fixture"
         })
         .await
         .unwrap();
-        let methods =
-            notifications.iter().map(|event| event["method"].as_str().unwrap()).collect::<Vec<_>>();
-        assert_eq!(methods, ["turn/started", "item/started", "item/completed", "turn/completed"]);
+        let methods = notifications
+            .iter()
+            .map(|event| event["method"].as_str().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            methods,
+            [
+                "turn/started",
+                "item/started",
+                "item/completed",
+                "turn/completed"
+            ]
+        );
         let item = &notifications[1]["params"]["item"];
         assert_eq!(item["type"], "contextCompaction");
         let typed_item: aphrody_app_protocol::ThreadItem =
@@ -2568,13 +2875,20 @@ model_provider = "fixture"
         assert_eq!(&notifications[2]["params"]["item"], item);
         assert_eq!(notifications[3]["params"]["turn"]["status"], "completed");
         assert!(server.threads[&id].active_turn.is_none());
-        let read =
-            request(&mut server, "thread/read", json!({"threadId": id,"includeTurns":true})).await;
+        let read = request(
+            &mut server,
+            "thread/read",
+            json!({"threadId": id,"includeTurns":true}),
+        )
+        .await;
         assert_eq!(read["result"]["thread"]["turns"][0]["items"][0], *item);
         request(&mut server, "thread/close", json!({"threadId":id})).await;
         let resumed = request(&mut server, "thread/resume", json!({"threadId":id})).await;
         assert_eq!(resumed["result"]["thread"]["turns"][0]["items"][0], *item);
-        assert_eq!(resumed["result"]["thread"]["turns"][0]["status"], "completed");
+        assert_eq!(
+            resumed["result"]["thread"]["turns"][0]["status"],
+            "completed"
+        );
         request(&mut server, "thread/close", json!({"threadId":id})).await;
     }
 
@@ -2582,13 +2896,17 @@ model_provider = "fixture"
     async fn compaction_failure_releases_the_reserved_turn() {
         let mut server = initialized_server().await;
         let start = request(&mut server, "thread/start", json!({})).await;
-        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let id = start["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         let thread = server.threads.get_mut(&id).unwrap();
         thread.observe(&Event::new(EventMsg::ContextCompactionStarted {
             item_id: "compact-failed".into(),
         }));
-        let notifications = thread
-            .observe(&Event::new(EventMsg::Error { message: "checkpoint flush failed".into() }));
+        let notifications = thread.observe(&Event::new(EventMsg::Error {
+            message: "checkpoint flush failed".into(),
+        }));
         assert_eq!(notifications[0]["method"], "turn/completed");
         assert_eq!(notifications[0]["params"]["turn"]["status"], "failed");
         assert!(thread.active_turn.is_none());
@@ -2600,7 +2918,10 @@ model_provider = "fixture"
     async fn a_normal_turn_can_be_interrupted_before_its_first_engine_item() {
         let mut server = initialized_server().await;
         let start = request(&mut server, "thread/start", json!({})).await;
-        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let id = start["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         let turn = request(
             &mut server,
             "turn/start",
@@ -2610,7 +2931,13 @@ model_provider = "fixture"
         assert_eq!(turn["result"]["turn"]["status"], "inProgress");
         // No provider event has been drained; the actor has not supplied an
         // assistant item. Turn kind must not be inferred from visible items.
-        server.threads.get_mut(&id).unwrap().active_turn.as_mut().unwrap()["items"] = json!([]);
+        server
+            .threads
+            .get_mut(&id)
+            .unwrap()
+            .active_turn
+            .as_mut()
+            .unwrap()["items"] = json!([]);
         let interrupted = request(
             &mut server,
             "turn/interrupt",
@@ -2626,11 +2953,16 @@ model_provider = "fixture"
     fn ui_replay_compaction_failure_and_missing_completion_are_terminal() {
         let started =
             json!({"msg":{"type":"context_compaction_started","item_id":"compact-failure"}});
-        let lines =
-            [started.clone(), json!({"msg":{"type":"error","message":"checkpoint flush failed"}})]
-                .into_iter()
-                .map(|item| aphrody_rollout::RolloutLine { ts: String::new(), item })
-                .collect::<Vec<_>>();
+        let lines = [
+            started.clone(),
+            json!({"msg":{"type":"error","message":"checkpoint flush failed"}}),
+        ]
+        .into_iter()
+        .map(|item| aphrody_rollout::RolloutLine {
+            ts: String::new(),
+            item,
+        })
+        .collect::<Vec<_>>();
         let failed = restore_ui_turns("thread", &lines).unwrap();
         assert_eq!(failed[0]["status"], "failed");
         assert_eq!(failed[0]["error"]["message"], "checkpoint flush failed");
@@ -2638,7 +2970,10 @@ model_provider = "fixture"
         // unfinished durable start is interrupted after restart, never success.
         let unfinished = restore_ui_turns(
             "thread",
-            &[aphrody_rollout::RolloutLine { ts: String::new(), item: started }],
+            &[aphrody_rollout::RolloutLine {
+                ts: String::new(),
+                item: started,
+            }],
         )
         .unwrap();
         assert_eq!(unfinished[0]["status"], "interrupted");
@@ -2661,12 +2996,18 @@ model_provider = "fixture"
         ];
         let lines = items
             .into_iter()
-            .map(|item| aphrody_rollout::RolloutLine { ts: String::new(), item })
+            .map(|item| aphrody_rollout::RolloutLine {
+                ts: String::new(),
+                item,
+            })
             .collect::<Vec<_>>();
         let turns = restore_ui_turns("thread", &lines).unwrap();
         assert_eq!(turns.len(), 2);
         assert_eq!(turns[0]["items"].as_array().unwrap().len(), 2);
-        assert_eq!(turns[1]["items"], json!([{"type":"contextCompaction","id":"compact-1"}]));
+        assert_eq!(
+            turns[1]["items"],
+            json!([{"type":"contextCompaction","id":"compact-1"}])
+        );
         assert_eq!(turns[1]["status"], "completed");
     }
 
@@ -2731,7 +3072,10 @@ model_provider = "fixture"
     #[tokio::test]
     async fn malformed_frames_do_not_close_the_connection() {
         let mut server = initialized_server().await;
-        for (frame, code) in [("{", -32700), (r#"{"id":{},"method":"thread/list"}"#, -32600)] {
+        for (frame, code) in [
+            ("{", -32700),
+            (r#"{"id":{},"method":"thread/list"}"#, -32600),
+        ] {
             let response: Value =
                 serde_json::from_str(&server.handle(frame).await.unwrap().unwrap()).unwrap();
             assert_eq!(response["error"]["code"], code);
@@ -2749,14 +3093,25 @@ model_provider = "fixture"
     async fn initialized_notification_cannot_bypass_initialize() {
         let mut server = test_server();
         server.handle(r#"{"method":"initialized"}"#).await.unwrap();
-        assert_eq!(request(&mut server, "thread/list", json!({})).await["error"]["code"], -32002);
+        assert_eq!(
+            request(&mut server, "thread/list", json!({})).await["error"]["code"],
+            -32002
+        );
         let initialized = request(&mut server, "initialize", json!({})).await;
-        assert!(initialized["result"]["userAgent"].as_str().unwrap().starts_with("aphrody/"));
+        assert!(
+            initialized["result"]["userAgent"]
+                .as_str()
+                .unwrap()
+                .starts_with("aphrody/")
+        );
         assert!(
             std::path::Path::new(initialized["result"]["codexHome"].as_str().unwrap())
                 .is_absolute()
         );
-        assert_eq!(request(&mut server, "initialize", json!({})).await["error"]["code"], -32602);
+        assert_eq!(
+            request(&mut server, "initialize", json!({})).await["error"]["code"],
+            -32602
+        );
     }
 
     #[test]
@@ -2767,7 +3122,13 @@ model_provider = "fixture"
         ]}))
         .unwrap();
         assert!(matches!(&items[0], InputItem::Text { text } if text == "inspect"));
-        assert!(matches!(&items[1], InputItem::Image { path: None, url: Some(_) }));
+        assert!(matches!(
+            &items[1],
+            InputItem::Image {
+                path: None,
+                url: Some(_)
+            }
+        ));
         assert!(parse_input(&json!({"input": "legacy"})).is_ok());
         for input in [json!([]), json!([{"type": "unknown"}]), json!(null)] {
             assert!(parse_input(&json!({"input": input})).is_err());
@@ -2782,7 +3143,10 @@ model_provider = "fixture"
             json!({"approvalPolicy": "on-request"}),
             json!({"sandboxPolicy": {"type": "readOnly"}}),
         ] {
-            assert_eq!(request(&mut server, "thread/start", params).await["error"]["code"], -32602);
+            assert_eq!(
+                request(&mut server, "thread/start", params).await["error"]["code"],
+                -32602
+            );
         }
         assert!(server.threads.is_empty());
     }
@@ -2796,7 +3160,11 @@ model_provider = "fixture"
         }}}});
 
         let tools = request(&mut server, "tools/list", params.clone()).await;
-        assert!(tools["result"]["data"].as_array().is_some_and(|tools| !tools.is_empty()));
+        assert!(
+            tools["result"]["data"]
+                .as_array()
+                .is_some_and(|tools| !tools.is_empty())
+        );
 
         let started = request(&mut server, "thread/start", params).await;
         let thread_id = started["result"]["thread"]["id"].clone();
@@ -2812,9 +3180,12 @@ model_provider = "fixture"
         std::fs::write(manifest_dir.join("plugin.json"), "{").unwrap();
         let mut server = initialized_server().await;
 
-        let response =
-            request(&mut server, "thread/start", json!({"config": {"plugins": [plugin.path()]}}))
-                .await;
+        let response = request(
+            &mut server,
+            "thread/start",
+            json!({"config": {"plugins": [plugin.path()]}}),
+        )
+        .await;
 
         assert_eq!(response["error"]["code"], -32602);
         let message = response["error"]["message"].as_str().unwrap();
@@ -2828,18 +3199,26 @@ model_provider = "fixture"
     async fn turn_notifications_keep_ids_and_record_terminal_state() {
         let mut server = initialized_server().await;
         let start = request(&mut server, "thread/start", json!({"model": "test-local"})).await;
-        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let id = start["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         assert_eq!(start["result"]["thread"]["status"]["type"], "idle");
         assert!(start["result"]["thread"]["createdAt"].is_number());
         assert_eq!(server.drain_notifications()[0]["method"], "thread/started");
         let thread = server.threads.get_mut(&id).unwrap();
         thread.active_turn =
             Some(json!({"id": "turn-fixture", "items": [], "status": "inProgress", "error": null}));
-        let delta =
-            thread.observe(&Event::new(EventMsg::AgentMessageDelta { delta: "hello".into() }));
-        let completed =
-            thread.observe(&Event::new(EventMsg::AgentMessage { text: "hello".into() }));
-        assert_eq!(delta.last().unwrap()["params"]["itemId"], completed[0]["params"]["item"]["id"]);
+        let delta = thread.observe(&Event::new(EventMsg::AgentMessageDelta {
+            delta: "hello".into(),
+        }));
+        let completed = thread.observe(&Event::new(EventMsg::AgentMessage {
+            text: "hello".into(),
+        }));
+        assert_eq!(
+            delta.last().unwrap()["params"]["itemId"],
+            completed[0]["params"]["item"]["id"]
+        );
         thread.interrupt_requested = true;
         let terminal = thread.observe(&Event::new(EventMsg::TurnComplete {
             last_agent_message: Some("hello".into()),
@@ -2857,7 +3236,10 @@ model_provider = "fixture"
     async fn browser_tool_activity_is_relayed_as_a_bxc_tool_call_item() {
         let mut server = initialized_server().await;
         let start = request(&mut server, "thread/start", json!({"model": "test-local"})).await;
-        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let id = start["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         let thread = server.threads.get_mut(&id).unwrap();
         thread.active_turn =
             Some(json!({"id": "turn-fixture", "items": [], "status": "inProgress", "error": null}));
@@ -2871,15 +3253,20 @@ model_provider = "fixture"
         assert_eq!(began[0]["params"]["item"]["serverName"], "bxc");
         assert_eq!(began[0]["params"]["item"]["toolName"], "browser");
 
-        let ended = thread
-            .observe(&Event::new(EventMsg::ToolCallEnd { call_id: "call-1".into(), ok: true }));
+        let ended = thread.observe(&Event::new(EventMsg::ToolCallEnd {
+            call_id: "call-1".into(),
+            ok: true,
+        }));
         assert_eq!(ended[0]["method"], "item/completed");
         assert_eq!(
             ended[0]["params"]["item"]["id"], began[0]["params"]["item"]["id"],
             "begin and end must correlate through the same item id"
         );
         assert_eq!(ended[0]["params"]["item"]["result"]["ok"], true);
-        assert_eq!(thread.active_turn.as_ref().unwrap()["items"][0]["toolName"], "browser");
+        assert_eq!(
+            thread.active_turn.as_ref().unwrap()["items"][0]["toolName"],
+            "browser"
+        );
 
         // A local tool is not attributed to BXC.
         let shell = thread.observe(&Event::new(EventMsg::ToolCallBegin {
@@ -2904,7 +3291,10 @@ model_provider = "fixture"
 
         let mut server = initialized_server().await;
         let start = request(&mut server, "thread/start", json!({"model": "fixture"})).await;
-        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let id = start["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         let mut thread = server.threads.remove(&id).unwrap();
         thread.handle.submit(Op::Shutdown).unwrap();
         thread.handle.join().await.unwrap();
@@ -2935,15 +3325,21 @@ model_provider = "fixture"
         )
         .await;
         assert_eq!(duplicate["error"]["code"], -32602);
-        let wrong_turn =
-            request(&mut server, "turn/interrupt", json!({"threadId": id, "turnId": "other"}))
-                .await;
+        let wrong_turn = request(
+            &mut server,
+            "turn/interrupt",
+            json!({"threadId": id, "turnId": "other"}),
+        )
+        .await;
         assert_eq!(wrong_turn["error"]["code"], -32602);
         let notifications = tokio::time::timeout(std::time::Duration::from_secs(2), async {
             let mut notifications = Vec::new();
             loop {
                 notifications.extend(server.drain_notifications());
-                if notifications.iter().any(|event| event["method"] == "turn/completed") {
+                if notifications
+                    .iter()
+                    .any(|event| event["method"] == "turn/completed")
+                {
                     break notifications;
                 }
                 tokio::task::yield_now().await;
@@ -2951,14 +3347,22 @@ model_provider = "fixture"
         })
         .await
         .unwrap();
-        let completed =
-            notifications.iter().find(|event| event["method"] == "turn/completed").unwrap();
+        let completed = notifications
+            .iter()
+            .find(|event| event["method"] == "turn/completed")
+            .unwrap();
         assert_eq!(completed["params"]["turn"]["id"], turn_id);
         assert_eq!(completed["params"]["turn"]["status"], "completed");
-        assert_eq!(completed["params"]["turn"]["items"][1]["text"], "fixture result");
-        let read =
-            request(&mut server, "thread/read", json!({"threadId": id, "includeTurns": true}))
-                .await;
+        assert_eq!(
+            completed["params"]["turn"]["items"][1]["text"],
+            "fixture result"
+        );
+        let read = request(
+            &mut server,
+            "thread/read",
+            json!({"threadId": id, "includeTurns": true}),
+        )
+        .await;
         assert_eq!(read["result"]["thread"]["turns"][0]["id"], turn_id);
         request(&mut server, "thread/close", json!({"threadId": id})).await;
     }
@@ -3026,13 +3430,20 @@ model_provider = "fixture"
                 .unwrap();
             assert_eq!(response.status(), StatusCode::OK, "{path}");
             if matches!(path, "/" | "/app" | "/app/" | "/docs" | "/templates") {
-                let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024).await.unwrap();
+                let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024)
+                    .await
+                    .unwrap();
                 assert_eq!(bytes.as_ref(), shell.as_bytes());
             }
         }
         let response = app
             .clone()
-            .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -3042,7 +3453,13 @@ model_provider = "fixture"
         assert_eq!(health["service"], "aphrody-app-server");
         let response = app
             .clone()
-            .oneshot(Request::builder().method("OPTIONS").uri("/rpc").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .method("OPTIONS")
+                    .uri("/rpc")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::NO_CONTENT);
@@ -3061,7 +3478,12 @@ model_provider = "fixture"
             .unwrap();
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
         let response = app
-            .oneshot(Request::builder().uri("/webos").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/webos")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::TEMPORARY_REDIRECT);
@@ -3095,7 +3517,10 @@ model_provider = "fixture"
         assert_eq!(runtime.model, "open-weights");
         assert_eq!(runtime.max_tool_iterations, 0);
         assert_eq!(runtime.auto_compact_token_limit, Some(16_384));
-        assert_eq!(runtime.autonomy, aphrody_agent_runtime::AutonomyMode::FullAuto);
+        assert_eq!(
+            runtime.autonomy,
+            aphrody_agent_runtime::AutonomyMode::FullAuto
+        );
         assert_eq!(runtime.rag_db, Some(home.path().join("index.db")));
         assert_eq!(
             runtime
@@ -3116,8 +3541,11 @@ model_provider = "fixture"
         assert_eq!(dotted.rag.enabled, Some(true));
         assert_eq!(dotted.rag.db_path.as_deref(), Some("dotted.db"));
         assert!(
-            config::resolve(home.path(), &json!({"config": {"sandbox_mode": "read-only"}}))
-                .is_err()
+            config::resolve(
+                home.path(),
+                &json!({"config": {"sandbox_mode": "read-only"}})
+            )
+            .is_err()
         );
         let invalid_limit = config::resolve(
             home.path(),
@@ -3141,9 +3569,11 @@ model_provider = "fixture"
         );
         assert!(managed.provider.info.base_url.is_none());
 
-        let external =
-            config::resolve(home.path(), &json!({"oss": true, "localProvider": "lmstudio"}))
-                .unwrap();
+        let external = config::resolve(
+            home.path(),
+            &json!({"oss": true, "localProvider": "lmstudio"}),
+        )
+        .unwrap();
         assert_eq!(external.provider.id, "lmstudio");
         assert_eq!(external.model.as_deref(), Some("openai/gpt-oss-20b"));
         assert!(config::resolve(home.path(), &json!({"oss": "yes"})).is_err());
@@ -3152,7 +3582,12 @@ model_provider = "fixture"
     #[tokio::test]
     async fn managed_oss_fails_before_model_download_when_runtime_is_missing() {
         let mut server = initialized_server().await;
-        let runtime_dir = server.test_home.as_ref().unwrap().path().join("empty-runtime");
+        let runtime_dir = server
+            .test_home
+            .as_ref()
+            .unwrap()
+            .path()
+            .join("empty-runtime");
         std::fs::create_dir(&runtime_dir).unwrap();
         let response = request(
             &mut server,
@@ -3207,11 +3642,16 @@ model_provider = "fixture"
             json!({"model": "fixture", "modelProvider": "fixture", "config": provider}),
         )
         .await;
-        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let id = start["result"]["thread"]["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         assert_eq!(start["result"]["thread"]["ephemeral"], false);
         let home = server.test_home.take().unwrap();
         let mut first_turn_id = Value::Null;
-        for (iteration, prompt) in ["first question", "follow-up question"].into_iter().enumerate()
+        for (iteration, prompt) in ["first question", "follow-up question"]
+            .into_iter()
+            .enumerate()
         {
             if iteration > 0 {
                 server = AppServer::with_home(home.path());
@@ -3251,8 +3691,9 @@ model_provider = "fixture"
             tokio::time::timeout(std::time::Duration::from_secs(5), async {
                 loop {
                     let notifications = server.drain_notifications();
-                    if let Some(done) =
-                        notifications.iter().find(|event| event["method"] == "turn/completed")
+                    if let Some(done) = notifications
+                        .iter()
+                        .find(|event| event["method"] == "turn/completed")
                     {
                         assert_eq!(done["params"]["turn"]["status"], "completed", "{done}");
                         break;
@@ -3298,7 +3739,10 @@ model_provider = "fixture"
         ];
         let lines = items
             .into_iter()
-            .map(|item| aphrody_rollout::RolloutLine { ts: String::new(), item })
+            .map(|item| aphrody_rollout::RolloutLine {
+                ts: String::new(),
+                item,
+            })
             .collect::<Vec<_>>();
         let turns = restore_ui_turns("thread", &lines).unwrap();
         assert_eq!(turns.len(), 2);
@@ -3333,7 +3777,10 @@ model_provider = "fixture"
         )
         .await;
         assert_eq!(next["result"]["data"].as_array().unwrap().len(), 1);
-        assert_ne!(page["result"]["data"][0]["id"], next["result"]["data"][0]["id"]);
+        assert_ne!(
+            page["result"]["data"][0]["id"],
+            next["result"]["data"][0]["id"]
+        );
         assert!(next["result"]["nextCursor"].is_null());
         assert_eq!(
             request(&mut server, "thread/list", json!({"limit":0})).await["error"]["code"],
@@ -3365,7 +3812,10 @@ model_provider = "fixture"
             .handle(r#"{"jsonrpc":"2.0","id":2,"method":"initialize","params":{}}"#)
             .await
             .unwrap();
-        server.handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#).await.unwrap();
+        server
+            .handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#)
+            .await
+            .unwrap();
         let response = server
             .handle(r#"{"jsonrpc":"2.0","id":3,"method":"thread/list","params":{}}"#)
             .await
@@ -3381,7 +3831,10 @@ model_provider = "fixture"
             .handle(r#"{"jsonrpc":"2.0","id":0,"method":"initialize","params":{}}"#)
             .await
             .unwrap();
-        server.handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#).await.unwrap();
+        server
+            .handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#)
+            .await
+            .unwrap();
         let start = server
             .handle(
                 r#"{"jsonrpc":"2.0","id":1,"method":"thread/start","params":{"model":"local"}}"#,
@@ -3405,7 +3858,10 @@ model_provider = "fixture"
             .handle(r#"{"jsonrpc":"2.0","id":0,"method":"initialize","params":{}}"#)
             .await
             .unwrap();
-        server.handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#).await.unwrap();
+        server
+            .handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#)
+            .await
+            .unwrap();
         let response = server
             .handle(r#"{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}"#)
             .await
@@ -3423,7 +3879,10 @@ model_provider = "fixture"
             .handle(r#"{"jsonrpc":"2.0","id":0,"method":"initialize","params":{}}"#)
             .await
             .unwrap();
-        server.handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#).await.unwrap();
+        server
+            .handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#)
+            .await
+            .unwrap();
         let start = server
             .handle(
                 r#"{"jsonrpc":"2.0","id":1,"method":"thread/start","params":{"model":"local"}}"#,
@@ -3431,8 +3890,11 @@ model_provider = "fixture"
             .await
             .unwrap()
             .unwrap();
-        let thread_id =
-            start.split("\"id\":\"").nth(1).and_then(|value| value.split('"').next()).unwrap();
+        let thread_id = start
+            .split("\"id\":\"")
+            .nth(1)
+            .and_then(|value| value.split('"').next())
+            .unwrap();
         let request = format!(
             r#"{{"jsonrpc":"2.0","id":2,"method":"thread/close","params":{{"threadId":"{thread_id}"}}}}"#
         );
@@ -3447,7 +3909,10 @@ model_provider = "fixture"
             .handle(r#"{"jsonrpc":"2.0","id":0,"method":"initialize","params":{}}"#)
             .await
             .unwrap();
-        server.handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#).await.unwrap();
+        server
+            .handle(r#"{"jsonrpc":"2.0","method":"initialized","params":{}}"#)
+            .await
+            .unwrap();
         let start = server
             .handle(
                 r#"{"jsonrpc":"2.0","id":1,"method":"thread/start","params":{"model":"local"}}"#,
@@ -3455,8 +3920,11 @@ model_provider = "fixture"
             .await
             .unwrap()
             .unwrap();
-        let thread_id =
-            start.split("\"id\":\"").nth(1).and_then(|value| value.split('\"').next()).unwrap();
+        let thread_id = start
+            .split("\"id\":\"")
+            .nth(1)
+            .and_then(|value| value.split('\"').next())
+            .unwrap();
         let read = server.handle(&format!(r#"{{"jsonrpc":"2.0","id":2,"method":"thread/read","params":{{"threadId":"{thread_id}"}}}}"#)).await.unwrap().unwrap();
         assert!(read.contains(thread_id));
         let resumed = server.handle(&format!(r#"{{"jsonrpc":"2.0","id":3,"method":"thread/resume","params":{{"threadId":"{thread_id}"}}}}"#)).await.unwrap().unwrap();
@@ -3471,7 +3939,10 @@ model_provider = "fixture"
         let drained = request(&mut server, "aphrody/notifications", json!({})).await;
         assert!(drained["result"]["notifications"].is_array(), "{drained}");
         let status = request(&mut server, "system/status", json!({})).await;
-        assert_eq!(status["result"]["service"], "aphrody-app-server", "{status}");
+        assert_eq!(
+            status["result"]["service"], "aphrody-app-server",
+            "{status}"
+        );
         let unknown = request(&mut server, "no/such/method", json!({})).await;
         assert_eq!(unknown["error"]["code"], -32601, "{unknown}");
         let malformed = request(&mut server, "thread/close", json!({})).await;

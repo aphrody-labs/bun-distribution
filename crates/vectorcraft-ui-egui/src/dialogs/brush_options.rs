@@ -25,10 +25,20 @@ use crate::{VectorcraftApp, widgets};
 /// The dialog kind of Brush Options.
 pub const KIND: &str = "brushOptions";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading, body, confirm, min_width: 440.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading,
+    body,
+    confirm,
+    min_width: 440.0,
+    ..DialogSpec::FORM
+};
 
 /// Calligraphic values: (field, label, suffix, decimals), in [`Calligraphic::RANGES`] order.
-const CALLI: [(&str, &str, &str, usize); 3] = [("angle", "Angle:", "°", 0), ("roundness", "Roundness:", "%", 0), ("size", "Size:", " pt", 1)];
+const CALLI: [(&str, &str, &str, usize); 3] = [
+    ("angle", "Angle:", "°", 0),
+    ("roundness", "Roundness:", "%", 0),
+    ("size", "Size:", " pt", 1),
+];
 
 /// Bristle sliders: (field, label, range), in percent.
 const BRISTLE: [(&str, &str, (f64, f64)); 5] = [
@@ -92,7 +102,11 @@ pub fn open(app: &mut VectorcraftApp, name: Option<&str>) -> Result<Value, Strin
         BrushKind::Calligraphic(c) => {
             let values = [c.angle, c.roundness, c.size];
             for (i, (key, ..)) in CALLI.iter().enumerate() {
-                let (Some(v), Some(var), Some(mode)) = (values.get(i), c.variation.get(i), c.modes().get(i).copied()) else { continue };
+                let (Some(v), Some(var), Some(mode)) =
+                    (values.get(i), c.variation.get(i), c.modes().get(i).copied())
+                else {
+                    continue;
+                };
                 f.insert((*key).into(), json!(v));
                 f.insert(variation_key(key), json!(var));
                 f.insert(mode_key(key), json!(mode.id()));
@@ -105,22 +119,34 @@ pub fn open(app: &mut VectorcraftApp, name: Option<&str>) -> Result<Value, Strin
             }
         }
         // The definition goes along, for the preview (and the art it carries).
-        BrushKind::Scatter(_) | BrushKind::Art(_) | BrushKind::Pattern(_) => brush_art_options::fields(&b, def, &mut f),
+        BrushKind::Scatter(_) | BrushKind::Art(_) | BrushKind::Pattern(_) => {
+            brush_art_options::fields(&b, def, &mut f)
+        }
     }
-    app.ui.dialog = Some(Dialog { kind: KIND.into(), fields: f });
+    app.ui.dialog = Some(Dialog {
+        kind: KIND.into(),
+        fields: f,
+    });
     Ok(Value::Null)
 }
 
 /// Can Brush Options open without a name (the selected path's brush, else the current one, exists)?
 pub fn available(app: &VectorcraftApp) -> bool {
-    let Some(st) = app.session.active() else { return false };
+    let Some(st) = app.session.active() else {
+        return false;
+    };
     target(app).is_some_and(|n| vectorcraft_brush::find(&st.doc, &n).is_some())
 }
 
 /// The brush Brush Options opens on without a name: the selected path's brush, else the current one.
 fn target(app: &VectorcraftApp) -> Option<String> {
     let st = app.session.active()?;
-    let selected = st.selection.subjects().first().and_then(|id| st.doc.node(*id)).and_then(|n| n.appearance.stroke()?.brush.clone());
+    let selected = st
+        .selection
+        .subjects()
+        .first()
+        .and_then(|id| st.doc.node(*id))
+        .and_then(|n| n.appearance.stroke()?.brush.clone());
     selected.or_else(|| vectorcraft_brush::current(&st.doc))
 }
 
@@ -131,18 +157,41 @@ pub(super) fn clamped(d: &Dialog, key: &str, (lo, hi): (f64, f64)) -> f64 {
 
 /// The Calligraphic brush the fields describe.
 fn calligraphic(d: &Dialog) -> Calligraphic {
-    let value = |i: usize| CALLI.get(i).zip(Calligraphic::RANGES.get(i)).map_or(0.0, |((key, ..), r)| clamped(d, key, *r));
-    let variation =
-        |i: usize| CALLI.get(i).zip(Calligraphic::MAX_VARIATION.get(i)).map_or(0.0, |((key, ..), max)| clamped(d, &variation_key(key), (0.0, *max)));
-    let mode = |i: usize| CALLI.get(i).and_then(|(key, ..)| Variation::parse(&d.str(&mode_key(key)))).unwrap_or_default();
-    Calligraphic { angle: value(0), roundness: value(1), size: value(2), variation: [0, 1, 2].map(variation), modes: Some([0, 1, 2].map(mode)) }
+    let value = |i: usize| {
+        CALLI
+            .get(i)
+            .zip(Calligraphic::RANGES.get(i))
+            .map_or(0.0, |((key, ..), r)| clamped(d, key, *r))
+    };
+    let variation = |i: usize| {
+        CALLI
+            .get(i)
+            .zip(Calligraphic::MAX_VARIATION.get(i))
+            .map_or(0.0, |((key, ..), max)| {
+                clamped(d, &variation_key(key), (0.0, *max))
+            })
+    };
+    let mode = |i: usize| {
+        CALLI
+            .get(i)
+            .and_then(|(key, ..)| Variation::parse(&d.str(&mode_key(key))))
+            .unwrap_or_default()
+    };
+    Calligraphic {
+        angle: value(0),
+        roundness: value(1),
+        size: value(2),
+        variation: [0, 1, 2].map(variation),
+        modes: Some([0, 1, 2].map(mode)),
+    }
 }
 
 /// `brush.options` params from the fields.
 fn params(d: &Dialog) -> Value {
     match d.str("__type").as_str() {
         "bristle" => {
-            let mut p = json!({ "shape": d.str("shape"), "size": clamped(d, "size", Bristle::SIZE_RANGE) });
+            let mut p =
+                json!({ "shape": d.str("shape"), "size": clamped(d, "size", Bristle::SIZE_RANGE) });
             for (key, _, range) in BRISTLE {
                 p[key] = json!(clamped(d, key, range));
             }
@@ -173,31 +222,63 @@ fn calligraphic_body(ui: &mut egui::Ui, d: &mut Dialog) {
     ui.horizontal(|ui| {
         nib_preview(ui, &c, vec2(NIB_W, 84.0));
         ui.add_space(8.0);
-        stroke_preview(ui, "calligraphic", serde_json::to_value(&c).unwrap_or_default(), vec2(STROKE_W - NIB_W - 8.0, 84.0));
+        stroke_preview(
+            ui,
+            "calligraphic",
+            serde_json::to_value(&c).unwrap_or_default(),
+            vec2(STROKE_W - NIB_W - 8.0, 84.0),
+        );
     });
     ui.add_space(12.0);
-    egui::Grid::new("brush-options-calli").num_columns(5).spacing([8.0, 8.0]).show(ui, |ui| {
-        for (i, (key, text, suffix, decimals)) in CALLI.into_iter().enumerate() {
-            let (Some(&range), Some(&max)) = (Calligraphic::RANGES.get(i), Calligraphic::MAX_VARIATION.get(i)) else { continue };
-            label(ui, tl!(text));
-            if let Some(v) = widgets::range_field(ui, ("brush-value", key), clamped(d, key, range), range.0..=range.1, suffix, decimals, 64.0) {
-                d.fields.insert(key.into(), json!(v));
-            }
-            let mode = Variation::parse(&d.str(&mode_key(key))).unwrap_or_default();
-            let labels = Variation::ALL.map(Variation::label);
-            if let Some(m) = widgets::dropdown(ui, ("brush-mode", key), mode.label(), &labels, 104.0).and_then(|i| Variation::ALL.get(i)) {
-                d.fields.insert(mode_key(key), json!(m.id()));
-            }
-            label(ui, tl!("Variation:"));
-            let vkey = variation_key(key);
-            ui.add_enabled_ui(mode != Variation::Fixed, |ui| {
-                if let Some(v) = widgets::range_field(ui, ("brush-var", key), clamped(d, &vkey, (0.0, max)), 0.0..=max, suffix, decimals, 64.0) {
-                    d.fields.insert(vkey.clone(), json!(v));
+    egui::Grid::new("brush-options-calli")
+        .num_columns(5)
+        .spacing([8.0, 8.0])
+        .show(ui, |ui| {
+            for (i, (key, text, suffix, decimals)) in CALLI.into_iter().enumerate() {
+                let (Some(&range), Some(&max)) = (
+                    Calligraphic::RANGES.get(i),
+                    Calligraphic::MAX_VARIATION.get(i),
+                ) else {
+                    continue;
+                };
+                label(ui, tl!(text));
+                if let Some(v) = widgets::range_field(
+                    ui,
+                    ("brush-value", key),
+                    clamped(d, key, range),
+                    range.0..=range.1,
+                    suffix,
+                    decimals,
+                    64.0,
+                ) {
+                    d.fields.insert(key.into(), json!(v));
                 }
-            });
-            ui.end_row();
-        }
-    });
+                let mode = Variation::parse(&d.str(&mode_key(key))).unwrap_or_default();
+                let labels = Variation::ALL.map(Variation::label);
+                if let Some(m) =
+                    widgets::dropdown(ui, ("brush-mode", key), mode.label(), &labels, 104.0)
+                        .and_then(|i| Variation::ALL.get(i))
+                {
+                    d.fields.insert(mode_key(key), json!(m.id()));
+                }
+                label(ui, tl!("Variation:"));
+                let vkey = variation_key(key);
+                ui.add_enabled_ui(mode != Variation::Fixed, |ui| {
+                    if let Some(v) = widgets::range_field(
+                        ui,
+                        ("brush-var", key),
+                        clamped(d, &vkey, (0.0, max)),
+                        0.0..=max,
+                        suffix,
+                        decimals,
+                        64.0,
+                    ) {
+                        d.fields.insert(vkey.clone(), json!(v));
+                    }
+                });
+                ui.end_row();
+            }
+        });
 }
 
 fn bristle_body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
@@ -207,7 +288,9 @@ fn bristle_body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     });
     let rail = Tokens::get(ui.ctx()).input_border;
     for (key, text, (lo, hi)) in BRISTLE {
-        widgets::label_row(ui, tl!(text), LABEL_W, |ui| form::slider_field(ui, d, key, lo..=hi, "%", &|_| rail));
+        widgets::label_row(ui, tl!(text), LABEL_W, |ui| {
+            form::slider_field(ui, d, key, lo..=hi, "%", &|_| rail)
+        });
     }
     ui.add_space(8.0);
     let p = params(d);
@@ -220,7 +303,12 @@ pub(super) fn stroke_preview(ui: &mut egui::Ui, ty: &str, mut def: Value, size: 
     def["type"] = json!(ty);
     let (r, _) = ui.allocate_exact_size(size, Sense::hover());
     crate::panels::brushes::chip(ui, r, &def);
-    ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0, Tokens::get(ui.ctx()).input_border), egui::StrokeKind::Inside);
+    ui.painter().rect_stroke(
+        r,
+        0.0,
+        Stroke::new(1.0, Tokens::get(ui.ctx()).input_border),
+        egui::StrokeKind::Inside,
+    );
 }
 
 /// The nib of `c` at its values (black), and — for values that vary — at their lightest and
@@ -231,13 +319,22 @@ fn nib_preview(ui: &mut egui::Ui, c: &Calligraphic, size: egui::Vec2) {
     let p = ui.painter_at(r);
     p.rect_filled(r, 0.0, Color32::WHITE);
     let guide = Stroke::new(1.0, Color32::from_gray(220));
-    p.line_segment([pos2(r.left(), r.center().y), pos2(r.right(), r.center().y)], guide);
-    p.line_segment([pos2(r.center().x, r.top()), pos2(r.center().x, r.bottom())], guide);
+    p.line_segment(
+        [pos2(r.left(), r.center().y), pos2(r.right(), r.center().y)],
+        guide,
+    );
+    p.line_segment(
+        [pos2(r.center().x, r.top()), pos2(r.center().x, r.bottom())],
+        guide,
+    );
     let values = [c.angle, c.roundness, c.size];
     let at = |sign: f64| -> [f64; 3] {
         let mut v = values;
         for (i, (x, mode)) in v.iter_mut().zip(c.modes()).enumerate() {
-            let (Some(&var), Some(&(lo, hi))) = (c.variation.get(i), Calligraphic::RANGES.get(i)) else { continue };
+            let (Some(&var), Some(&(lo, hi))) = (c.variation.get(i), Calligraphic::RANGES.get(i))
+            else {
+                continue;
+            };
             if mode != Variation::Fixed {
                 *x = (*x + sign * var).clamp(lo, hi);
             }
@@ -248,8 +345,15 @@ fn nib_preview(ui: &mut egui::Ui, c: &Calligraphic, size: egui::Vec2) {
     let largest = nibs.iter().map(|n| n[2]).fold(0.0, f64::max).max(1e-6);
     let scale = (r.height().min(r.width()) - 12.0) / largest as f32;
     for (k, [angle, round, size]) in nibs.into_iter().enumerate() {
-        let fill = if k < 2 { Color32::from_gray(200) } else { Color32::BLACK };
-        let (a, b) = ((size as f32 * scale / 2.0).max(0.5), (size * round.clamp(1.0, 100.0) / 100.0) as f32 * scale / 2.0);
+        let fill = if k < 2 {
+            Color32::from_gray(200)
+        } else {
+            Color32::BLACK
+        };
+        let (a, b) = (
+            (size as f32 * scale / 2.0).max(0.5),
+            (size * round.clamp(1.0, 100.0) / 100.0) as f32 * scale / 2.0,
+        );
         let th = (angle as f32).to_radians();
         let (u, v) = (vec2(th.cos(), -th.sin()), vec2(th.sin(), th.cos()));
         let pts: Vec<egui::Pos2> = (0..48)
@@ -260,13 +364,21 @@ fn nib_preview(ui: &mut egui::Ui, c: &Calligraphic, size: egui::Vec2) {
             .collect();
         p.add(egui::Shape::convex_polygon(pts, fill, Stroke::NONE));
     }
-    p.rect_stroke(r, 0.0, Stroke::new(1.0, t.input_border), egui::StrokeKind::Inside);
+    p.rect_stroke(
+        r,
+        0.0,
+        Stroke::new(1.0, t.input_border),
+        egui::StrokeKind::Inside,
+    );
 }
 
 /// OK: edit the brush (and rename it). A name another brush has keeps the dialog open.
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let name = d.str("name").trim().to_string();
-    let r = app.run("brush.options", json!({ "name": d.str("__brush"), "newName": name, "params": params(d) }));
+    let r = app.run(
+        "brush.options",
+        json!({ "name": d.str("__brush"), "newName": name, "params": params(d) }),
+    );
     if r.is_ok() {
         app.ui.dialog = None;
     }
@@ -280,7 +392,8 @@ mod tests {
 
     fn app() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 300, "height": 200}))
+            .unwrap();
         app
     }
 
@@ -298,30 +411,59 @@ mod tests {
     #[test]
     fn calligraphic_options_show_each_value_with_its_variation_and_ok_applies_them() {
         let mut app = app();
-        app.run("ui.brushOptions", json!({"name": "6 pt. Flat"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "6 pt. Flat"}))
+            .unwrap();
         let text = shown(&mut app);
-        for label in ["Calligraphic Brush Options", "Name:", "Angle:", "Roundness:", "Size:", "Variation:", "Fixed", "OK", "Cancel"] {
+        for label in [
+            "Calligraphic Brush Options",
+            "Name:",
+            "Angle:",
+            "Roundness:",
+            "Size:",
+            "Variation:",
+            "Fixed",
+            "OK",
+            "Cancel",
+        ] {
             assert!(text.contains(label), "{label} in {text}");
         }
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.f64("angle", 0.0), d.f64("roundness", 0.0), d.f64("size", 0.0)), (45.0, 15.0, 6.0));
+        assert_eq!(
+            (
+                d.f64("angle", 0.0),
+                d.f64("roundness", 0.0),
+                d.f64("size", 0.0)
+            ),
+            (45.0, 15.0, 6.0)
+        );
         // Out-of-range values are kept within their ranges.
-        set(&mut app, json!({"angleMode": "random", "angleVariation": 500, "roundness": 140, "sizeMode": "pressure", "sizeVariation": 4}));
+        set(
+            &mut app,
+            json!({"angleMode": "random", "angleVariation": 500, "roundness": 140, "sizeMode": "pressure", "sizeVariation": 4}),
+        );
         assert!(shown(&mut app).contains("Pressure"));
         super::super::confirm(&mut app).unwrap();
         let def = app.run("brush.get", json!({"name": "6 pt. Flat"})).unwrap();
         assert_eq!(def["modes"], json!(["random", "fixed", "pressure"]));
-        assert_eq!((def["variation"].clone(), def["roundness"].clone()), (json!([180.0, 0.0, 4.0]), json!(100.0)));
+        assert_eq!(
+            (def["variation"].clone(), def["roundness"].clone()),
+            (json!([180.0, 0.0, 4.0]), json!(100.0))
+        );
         // Opened again, it shows what was set.
-        app.run("ui.brushOptions", json!({"name": "6 pt. Flat"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "6 pt. Flat"}))
+            .unwrap();
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.str("angleMode"), d.f64("sizeVariation", 0.0)), ("random".into(), 4.0));
+        assert_eq!(
+            (d.str("angleMode"), d.f64("sizeVariation", 0.0)),
+            ("random".into(), 4.0)
+        );
     }
 
     #[test]
     fn a_taken_name_keeps_the_dialog_open() {
         let mut app = app();
-        app.run("ui.brushOptions", json!({"name": "6 pt. Flat"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "6 pt. Flat"}))
+            .unwrap();
         set(&mut app, json!({"name": "3 pt. Round"}));
         assert!(super::super::confirm(&mut app).is_err());
         assert!(app.ui.dialog.is_some());
@@ -330,15 +472,34 @@ mod tests {
     #[test]
     fn bristle_options_and_an_unknown_brush() {
         let mut app = app();
-        app.run("ui.brushOptions", json!({"name": "Bristle Round"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "Bristle Round"}))
+            .unwrap();
         let text = shown(&mut app);
-        for label in ["Bristle Brush Options", "Shape:", "Bristle Length:", "Stiffness:", "Paint Opacity:"] {
+        for label in [
+            "Bristle Brush Options",
+            "Shape:",
+            "Bristle Length:",
+            "Stiffness:",
+            "Paint Opacity:",
+        ] {
             assert!(text.contains(label), "{label} in {text}");
         }
-        set(&mut app, json!({"shape": "flatFan", "density": 0, "length": 120}));
+        set(
+            &mut app,
+            json!({"shape": "flatFan", "density": 0, "length": 120}),
+        );
         super::super::confirm(&mut app).unwrap();
-        let def = app.run("brush.get", json!({"name": "Bristle Round"})).unwrap();
-        assert_eq!((def["shape"].clone(), def["density"].clone(), def["length"].clone()), (json!("flatFan"), json!(1.0), json!(120.0)));
+        let def = app
+            .run("brush.get", json!({"name": "Bristle Round"}))
+            .unwrap();
+        assert_eq!(
+            (
+                def["shape"].clone(),
+                def["density"].clone(),
+                def["length"].clone()
+            ),
+            (json!("flatFan"), json!(1.0), json!(120.0))
+        );
         // No such brush: an error, nothing opens.
         app.ui.dialog = None;
         assert!(app.run("ui.brushOptions", json!({"name": "Nope"})).is_err());
@@ -347,9 +508,17 @@ mod tests {
 
     /// A path painted with brush `name`, and the height of the art its stroke draws.
     fn brushed(app: &mut VectorcraftApp, name: &str) -> (vectorcraft_doc::NodeId, f64) {
-        let id = app.run("shape.line", json!({"x1": 20, "y1": 100, "x2": 280, "y2": 100})).unwrap()["id"].as_u64().unwrap();
+        let id = app
+            .run(
+                "shape.line",
+                json!({"x1": 20, "y1": 100, "x2": 280, "y2": 100}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         let id = vectorcraft_doc::NodeId(id);
-        app.run("brush.apply", json!({ "name": name, "ids": [id.0] })).unwrap();
+        app.run("brush.apply", json!({ "name": name, "ids": [id.0] }))
+            .unwrap();
         (id, drawn_height(app, id))
     }
 
@@ -363,7 +532,8 @@ mod tests {
     fn scatter_options_show_each_value_with_its_mode_and_ok_applies_them() {
         let mut app = app();
         let (id, before) = brushed(&mut app, "Confetti");
-        app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "Confetti"}))
+            .unwrap();
         let text = shown(&mut app);
         for label in [
             "Scatter Brush Options",
@@ -383,8 +553,18 @@ mod tests {
             assert!(text.contains(label), "{label} in {text}");
         }
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.f64("sizeMin", 0.0), d.f64("sizeMax", 0.0), d.str("sizeMode")), (60.0, 140.0, "random".into()));
-        assert_eq!((d.str("rotationRelativeTo"), d.str("colorization")), ("page".into(), "tints".into()));
+        assert_eq!(
+            (
+                d.f64("sizeMin", 0.0),
+                d.f64("sizeMax", 0.0),
+                d.str("sizeMode")
+            ),
+            (60.0, 140.0, "random".into())
+        );
+        assert_eq!(
+            (d.str("rotationRelativeTo"), d.str("colorization")),
+            ("page".into(), "tints".into())
+        );
         // Values are kept within their ranges (rotation here); Fixed takes the first value.
         set(
             &mut app,
@@ -396,22 +576,47 @@ mod tests {
         let def = app.run("brush.get", json!({"name": "Confetti"})).unwrap();
         assert_eq!(
             (&def["size"], &def["rotation"][0], &def["modes"]),
-            (&json!([5000.0, 140.0]), &json!(-180.0), &json!(["fixed", "pressure", "random", "random"]))
+            (
+                &json!([5000.0, 140.0]),
+                &json!(-180.0),
+                &json!(["fixed", "pressure", "random", "random"])
+            )
         );
-        assert_eq!((&def["rotation_relative_to_path"], &def["colorization"]["method"]), (&json!(true), &json!("hueShift")));
-        assert!(def["colorization"]["key"].is_object(), "the art's colour as the key: {def}");
-        assert!(drawn_height(&app, id) > before, "the stroke redraws with the bigger confetti");
+        assert_eq!(
+            (
+                &def["rotation_relative_to_path"],
+                &def["colorization"]["method"]
+            ),
+            (&json!(true), &json!("hueShift"))
+        );
+        assert!(
+            def["colorization"]["key"].is_object(),
+            "the art's colour as the key: {def}"
+        );
+        assert!(
+            drawn_height(&app, id) > before,
+            "the stroke redraws with the bigger confetti"
+        );
         // Opened again, it shows what was set.
-        app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "Confetti"}))
+            .unwrap();
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.str("sizeMode"), d.str("spacingMode"), d.str("colorization")), ("fixed".into(), "pressure".into(), "hueShift".into()));
+        assert_eq!(
+            (
+                d.str("sizeMode"),
+                d.str("spacingMode"),
+                d.str("colorization")
+            ),
+            ("fixed".into(), "pressure".into(), "hueShift".into())
+        );
     }
 
     #[test]
     fn art_options_set_width_scale_direction_flips_and_colorization() {
         let mut app = app();
         let (id, before) = brushed(&mut app, "Arrow");
-        app.run("ui.brushOptions", json!({"name": "Arrow"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "Arrow"}))
+            .unwrap();
         let text = shown(&mut app);
         for label in [
             "Art Brush Options",
@@ -431,7 +636,12 @@ mod tests {
         }
         let d = app.ui.dialog.as_ref().unwrap();
         assert_eq!(
-            (d.f64("width", 0.0), d.str("scaleMode"), d.f64("guideEnd", 0.0), d.str("direction")),
+            (
+                d.f64("width", 0.0),
+                d.str("scaleMode"),
+                d.f64("guideEnd", 0.0),
+                d.str("direction")
+            ),
             (100.0, "betweenGuides".into(), 78.0, "leftToRight".into())
         );
         set(
@@ -442,21 +652,37 @@ mod tests {
         let def = app.run("brush.get", json!({"name": "Arrow"})).unwrap();
         assert_eq!(
             (&def["width"], &def["scale"], &def["direction"]),
-            (&json!(250.0), &json!({"mode": "betweenGuides", "start": 0.1, "end": 1.0}), &json!("bottomToTop"))
+            (
+                &json!(250.0),
+                &json!({"mode": "betweenGuides", "start": 0.1, "end": 1.0}),
+                &json!("bottomToTop")
+            )
         );
-        assert_eq!((&def["flip_across"], &def["flip_along"], &def["colorization"]), (&json!(true), &json!(false), &json!({"method": "none"})));
+        assert_eq!(
+            (
+                &def["flip_across"],
+                &def["flip_along"],
+                &def["colorization"]
+            ),
+            (&json!(true), &json!(false), &json!({"method": "none"}))
+        );
         assert!(drawn_height(&app, id) != before, "the stroke redraws");
         // Stretch to Fit drops the guides.
-        app.run("ui.brushOptions", json!({"name": "Arrow"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "Arrow"}))
+            .unwrap();
         set(&mut app, json!({"scaleMode": "stretch"}));
         super::super::confirm(&mut app).unwrap();
-        assert_eq!(app.run("brush.get", json!({"name": "Arrow"})).unwrap()["scale"], json!({"mode": "stretch"}));
+        assert_eq!(
+            app.run("brush.get", json!({"name": "Arrow"})).unwrap()["scale"],
+            json!({"mode": "stretch"})
+        );
     }
 
     #[test]
     fn pattern_options_show_the_tiles_and_set_scale_spacing_fit() {
         let mut app = app();
-        app.run("ui.brushOptions", json!({"name": "Chain"})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "Chain"}))
+            .unwrap();
         let text = shown(&mut app);
         for label in [
             "Pattern Brush Options",
@@ -479,18 +705,45 @@ mod tests {
         let d = app.ui.dialog.as_ref().unwrap();
         let mut tiles: Vec<&String> = d.fields["__tiles"].as_object().unwrap().keys().collect();
         tiles.sort();
-        assert_eq!(tiles, ["innerCorner", "outerCorner", "side"], "Chain has side and corner tiles, no start or end");
+        assert_eq!(
+            tiles,
+            ["innerCorner", "outerCorner", "side"],
+            "Chain has side and corner tiles, no start or end"
+        );
         // Diamonds (straight-edged tiles, so sizes compare exactly).
         let (id, before) = brushed(&mut app, "Diamonds");
-        app.run("ui.brushOptions", json!({"name": "Diamonds"})).unwrap();
-        assert_eq!((app.ui.dialog.as_ref().unwrap().f64("spacing", 0.0), app.ui.dialog.as_ref().unwrap().str("fit")), (25.0, "addSpace".into()));
-        set(&mut app, json!({"scale": 200, "spacing": 30, "fit": "approximate", "flipAlong": true}));
+        app.run("ui.brushOptions", json!({"name": "Diamonds"}))
+            .unwrap();
+        assert_eq!(
+            (
+                app.ui.dialog.as_ref().unwrap().f64("spacing", 0.0),
+                app.ui.dialog.as_ref().unwrap().str("fit")
+            ),
+            (25.0, "addSpace".into())
+        );
+        set(
+            &mut app,
+            json!({"scale": 200, "spacing": 30, "fit": "approximate", "flipAlong": true}),
+        );
         super::super::confirm(&mut app).unwrap();
         let def = app.run("brush.get", json!({"name": "Diamonds"})).unwrap();
         assert_eq!(
-            (&def["scale"], &def["spacing"], &def["fit"], &def["flip_along"]),
-            (&json!(200.0), &json!(30.0), &json!("approximate"), &json!(true))
+            (
+                &def["scale"],
+                &def["spacing"],
+                &def["fit"],
+                &def["flip_along"]
+            ),
+            (
+                &json!(200.0),
+                &json!(30.0),
+                &json!("approximate"),
+                &json!(true)
+            )
         );
-        assert!((drawn_height(&app, id) / before - 2.0).abs() < 1e-6, "tiles twice the size");
+        assert!(
+            (drawn_height(&app, id) / before - 2.0).abs() < 1e-6,
+            "tiles twice the size"
+        );
     }
 }

@@ -32,11 +32,17 @@ pub struct ZField {
 impl ZField {
     /// Where the result begins (just after the start marker).
     pub fn content_start(&self) -> Pos {
-        Pos { off: self.start.off + OBJ.len_utf8(), ..self.start.clone() }
+        Pos {
+            off: self.start.off + OBJ.len_utf8(),
+            ..self.start.clone()
+        }
     }
     /// Just after the end marker.
     pub fn after(&self) -> Pos {
-        Pos { off: self.end.off + OBJ.len_utf8(), ..self.end.clone() }
+        Pos {
+            off: self.end.off + OBJ.len_utf8(),
+            ..self.end.clone()
+        }
     }
     /// Whether `p` is inside the field (after its start marker, up to its end marker).
     pub fn contains(&self, p: &Pos) -> bool {
@@ -48,7 +54,8 @@ impl ZField {
 pub fn zotero_code(instr: &str) -> Option<&str> {
     let t = instr.trim_start();
     let head = t.get(..PREFIX.len())?;
-    head.eq_ignore_ascii_case(PREFIX).then(|| t.get(PREFIX.len()..).unwrap_or("").trim())
+    head.eq_ignore_ascii_case(PREFIX)
+        .then(|| t.get(PREFIX.len()..).unwrap_or("").trim())
 }
 
 /// The stored field code for Zotero's code.
@@ -59,7 +66,14 @@ pub fn stored_code(code: &str) -> String {
 fn story_fields(doc: &Document, story: StoryRef, note_index: u32) -> Vec<ZField> {
     doc.field_ranges(story)
         .into_iter()
-        .filter_map(|r| zotero_code(&r.instr).map(|c| ZField { start: r.start, end: r.end, code: c.to_string(), note_index }))
+        .filter_map(|r| {
+            zotero_code(&r.instr).map(|c| ZField {
+                start: r.start,
+                end: r.end,
+                code: c.to_string(),
+                note_index,
+            })
+        })
         .collect()
 }
 
@@ -69,10 +83,15 @@ pub fn list(doc: &Document) -> Vec<ZField> {
         Field(ZField),
         Note(u32, u32),
     }
-    let mut evs: Vec<(Pos, Ev)> = story_fields(doc, StoryRef::Body, 0).into_iter().map(|f| (f.start.clone(), Ev::Field(f))).collect();
+    let mut evs: Vec<(Pos, Ev)> = story_fields(doc, StoryRef::Body, 0)
+        .into_iter()
+        .map(|f| (f.start.clone(), Ev::Field(f)))
+        .collect();
     let (mut foot, mut end) = (0u32, 0u32);
     for path in doc.para_paths(StoryRef::Body) {
-        let Some(p) = doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         for off in p.object_offsets() {
             if let Some(InlineObject::NoteRef { kind, id, custom }) = p.object_at(off) {
                 let n = match kind {
@@ -82,7 +101,10 @@ pub fn list(doc: &Document) -> Vec<ZField> {
                 if custom.is_empty() {
                     *n = n.saturating_add(1);
                 }
-                evs.push((Pos::new(StoryRef::Body, path.clone(), off), Ev::Note(*id, (*n).max(1))));
+                evs.push((
+                    Pos::new(StoryRef::Body, path.clone(), off),
+                    Ev::Note(*id, (*n).max(1)),
+                ));
             }
         }
     }
@@ -101,7 +123,10 @@ pub fn list(doc: &Document) -> Vec<ZField> {
 pub fn can_insert_at(doc: &Document, p: &Pos) -> bool {
     match p.story {
         StoryRef::Body => true,
-        StoryRef::Part(id) => doc.parts.get(&id).is_some_and(|part| matches!(part.kind, PartKind::Footnote | PartKind::Endnote)),
+        StoryRef::Part(id) => doc
+            .parts
+            .get(&id)
+            .is_some_and(|part| matches!(part.kind, PartKind::Footnote | PartKind::Endnote)),
     }
 }
 
@@ -123,15 +148,24 @@ pub fn get_prefs(doc: &Document) -> String {
         }
     }
     // Zotero sees the field type it knows this protocol by; the file keeps Word's.
-    out.replace(r#"name="fieldType" value="Field""#, r#"name="fieldType" value="ReferenceMark""#)
+    out.replace(
+        r#"name="fieldType" value="Field""#,
+        r#"name="fieldType" value="ReferenceMark""#,
+    )
 }
 
 /// Store Zotero's document preferences in `ZOTERO_PREF_1…n`.
 pub fn set_prefs(doc: &mut Document, data: &str) {
-    let data = data.replace(r#"name="fieldType" value="ReferenceMark""#, r#"name="fieldType" value="Field""#);
+    let data = data.replace(
+        r#"name="fieldType" value="ReferenceMark""#,
+        r#"name="fieldType" value="Field""#,
+    );
     doc.custom_props.retain(|p| pref_index(&p.name).is_none());
     let chars: Vec<char> = data.chars().collect();
     for (i, chunk) in chars.chunks(PREF_CHUNK).take(MAX_PREF_CHUNKS).enumerate() {
-        doc.set_custom_prop(&format!("{PREF_NAME}{}", i + 1), &chunk.iter().collect::<String>());
+        doc.set_custom_prop(
+            &format!("{PREF_NAME}{}", i + 1),
+            &chunk.iter().collect::<String>(),
+        );
     }
 }

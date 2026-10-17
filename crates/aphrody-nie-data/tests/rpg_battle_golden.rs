@@ -402,10 +402,16 @@ fn rule_config_start_rule_compte() {
 fn rule_config_start_rule_type_0() {
     let cfg = parse_rule_config(&fixture_rule_config());
     // m_StartRuleList[0] (ligne 9) : type=1, param=0, trg=0
-    assert_eq!(cfg.start_rules[0].rule_type, 1, "start_rule[0].rule_type = 1");
+    assert_eq!(
+        cfg.start_rules[0].rule_type, 1,
+        "start_rule[0].rule_type = 1"
+    );
     assert_eq!(cfg.start_rules[0].param, 0, "start_rule[0].param = 0");
     assert_eq!(cfg.start_rules[0].trg, 0, "start_rule[0].trg = 0");
-    assert!(cfg.start_rules[0].param_id.is_zero(), "start_rule[0].param_id = 0");
+    assert!(
+        cfg.start_rules[0].param_id.is_zero(),
+        "start_rule[0].param_id = 0"
+    );
 }
 
 #[test]
@@ -418,20 +424,30 @@ fn rule_config_battle_rule_compte() {
 fn rule_config_battle_rule_id_0() {
     let cfg = parse_rule_config(&fixture_rule_config());
     // m_BattleRuleList[0] (ligne 28) : ruleId="0x42D90CBC"
-    assert_eq!(cfg.battle_rules[0].rule_id, RULE_ID_0, "rule_id[0] = 0x42D90CBC");
+    assert_eq!(
+        cfg.battle_rules[0].rule_id, RULE_ID_0,
+        "rule_id[0] = 0x42D90CBC"
+    );
 }
 
 #[test]
 fn rule_config_battle_rule_start_1() {
     let cfg = parse_rule_config(&fixture_rule_config());
     // m_BattleRuleList[1] : start=[0, 1]
-    assert_eq!(cfg.battle_rules[1].start, [0_i64, 1_i64], "start[1] = [0, 1]");
+    assert_eq!(
+        cfg.battle_rules[1].start,
+        [0_i64, 1_i64],
+        "start[1] = [0, 1]"
+    );
 }
 
 #[test]
 fn rule_config_find_battle_rule() {
     let cfg = parse_rule_config(&fixture_rule_config());
-    assert!(cfg.find_battle_rule(RULE_ID_0).is_some(), "find_battle_rule(0x42D90CBC)");
+    assert!(
+        cfg.find_battle_rule(RULE_ID_0).is_some(),
+        "find_battle_rule(0x42D90CBC)"
+    );
     assert!(cfg.find_battle_rule(HashId(0xDEADBEEF)).is_none());
 }
 
@@ -454,7 +470,10 @@ fn status_pattern_id_0() {
 fn status_pattern_hp_add_rate_0() {
     let data = parse_status_pattern_config(&fixture_status_pattern());
     // entrée 0 (ligne 10) : hpAddRate=0.2
-    assert!((data[0].hp_add_rate - 0.2_f32).abs() < 1e-6, "hp_add_rate[0] ≈ 0.2");
+    assert!(
+        (data[0].hp_add_rate - 0.2_f32).abs() < 1e-6,
+        "hp_add_rate[0] ≈ 0.2"
+    );
 }
 
 #[test]
@@ -469,7 +488,10 @@ fn status_pattern_attack_add_0() {
 fn status_pattern_entree_1_hp() {
     let data = parse_status_pattern_config(&fixture_status_pattern());
     // entrée 1 : hpAddRate=1.5, attackAdd=2
-    assert!((data[1].hp_add_rate - 1.5_f32).abs() < 1e-6, "hp_add_rate[1] ≈ 1.5");
+    assert!(
+        (data[1].hp_add_rate - 1.5_f32).abs() < 1e-6,
+        "hp_add_rate[1] ≈ 1.5"
+    );
     assert_eq!(data[1].attack_add, 2, "attack_add[1] = 2");
 }
 
@@ -479,7 +501,11 @@ fn status_pattern_entree_1_hp() {
 fn chara_swap_comptes() {
     let cfg = parse_chara_swap_motion_config(&fixture_chara_swap_motion());
     assert_eq!(cfg.swap_motions.len(), 2, "fixture: 2 SwapMotionData");
-    assert_eq!(cfg.chara_swap_motions.len(), 1, "fixture: 1 RpgBattleCharaSwapMotionData");
+    assert_eq!(
+        cfg.chara_swap_motions.len(),
+        1,
+        "fixture: 1 RpgBattleCharaSwapMotionData"
+    );
 }
 
 #[test]
@@ -487,15 +513,25 @@ fn chara_swap_motion_data_0() {
     let cfg = parse_chara_swap_motion_config(&fixture_chara_swap_motion());
     // m_SwapMotionDataList[0] (ligne 10-11) : bodyType=1, motionId=0x2C0F2E35
     assert_eq!(cfg.swap_motions[0].body_type, 1, "body_type[0] = 1");
-    assert_eq!(cfg.swap_motions[0].motion_id, MOTION_ID_0, "motion_id[0] = 0x2C0F2E35");
+    assert_eq!(
+        cfg.swap_motions[0].motion_id, MOTION_ID_0,
+        "motion_id[0] = 0x2C0F2E35"
+    );
 }
 
 #[test]
 fn chara_swap_rpg_data_0() {
     let cfg = parse_chara_swap_motion_config(&fixture_chara_swap_motion());
     // m_RpgBattleCharaSwapMotionDataList[0] (ligne 55) : modelAttribute=3, swapMotion=[0,1]
-    assert_eq!(cfg.chara_swap_motions[0].model_attribute, 3, "model_attribute[0] = 3");
-    assert_eq!(cfg.chara_swap_motions[0].swap_motion, [0_i64, 1_i64], "swap_motion[0] = [0,1]");
+    assert_eq!(
+        cfg.chara_swap_motions[0].model_attribute, 3,
+        "model_attribute[0] = 3"
+    );
+    assert_eq!(
+        cfg.chara_swap_motions[0].swap_motion,
+        [0_i64, 1_i64],
+        "swap_motion[0] = [0,1]"
+    );
 }
 
 #[test]
@@ -525,14 +561,20 @@ fn party_disable_action_id_0() {
         cfg.disable_actions[0].action_id, DISABLE_ACTION_ID_0,
         "disable_actions[0].action_id = 0xC19FE60C"
     );
-    assert_eq!(cfg.disable_actions[0].var1, 0, "disable_actions[0].var1 = 0");
+    assert_eq!(
+        cfg.disable_actions[0].var1, 0,
+        "disable_actions[0].var1 = 0"
+    );
 }
 
 #[test]
 fn party_info_id_0() {
     let cfg = parse_party_config(&fixture_party_config());
     // PARTY_INFO_0 (ligne 84) : var[0]=-1758152796 → 0x9734B7A4
-    assert_eq!(cfg.parties[0].party_id, PARTY_ID_0, "party_id[0] = 0x9734B7A4");
+    assert_eq!(
+        cfg.parties[0].party_id, PARTY_ID_0,
+        "party_id[0] = 0x9734B7A4"
+    );
 }
 
 #[test]
@@ -563,7 +605,10 @@ fn party_disable_actions_of() {
 #[test]
 fn party_find_party() {
     let cfg = parse_party_config(&fixture_party_config());
-    assert!(cfg.find_party(PARTY_ID_0).is_some(), "find_party(0x9734B7A4)");
+    assert!(
+        cfg.find_party(PARTY_ID_0).is_some(),
+        "find_party(0x9734B7A4)"
+    );
     assert!(cfg.find_party(HashId(0xDEADBEEF)).is_none());
 }
 
@@ -617,7 +662,10 @@ fn cmd_set_cmd_data_0() {
 fn cmd_set_info_0() {
     let cfg = parse_cmd_set_config(&fixture_cmd_set());
     // CMD_SET_INFO_0 (ligne 11313) : 1268152025 → 0x4B9676D9
-    assert_eq!(cfg.cmd_sets[0].set_id, CMD_SET_ID_0, "cmd_set[0].set_id = 0x4B9676D9");
+    assert_eq!(
+        cfg.cmd_sets[0].set_id, CMD_SET_ID_0,
+        "cmd_set[0].set_id = 0x4B9676D9"
+    );
 }
 
 #[test]
@@ -673,13 +721,20 @@ fn add_status_type_info_1() {
 fn add_status_info_0_status_id() {
     let cfg = parse_add_status_config(&fixture_add_status());
     // ADD_STATUS_INFO_0 (ligne 354) : -408109186 → 0xE7ACBF7E
-    assert_eq!(cfg.status_infos[0].status_id, ADD_STATUS_ID_0, "status_id[0] = 0xE7ACBF7E");
+    assert_eq!(
+        cfg.status_infos[0].status_id, ADD_STATUS_ID_0,
+        "status_id[0] = 0xE7ACBF7E"
+    );
 }
 
 #[test]
 fn add_status_info_0_params_count() {
     let cfg = parse_add_status_config(&fixture_add_status());
-    assert_eq!(cfg.status_infos[0].params.len(), 1, "status_info[0]: 1 param dans la fixture");
+    assert_eq!(
+        cfg.status_infos[0].params.len(),
+        1,
+        "status_info[0]: 1 param dans la fixture"
+    );
 }
 
 #[test]
@@ -707,7 +762,10 @@ fn add_status_attr_paire_0() {
     let attr = cfg.attr.as_ref().unwrap();
     // paire 0 (lignes 598-604) : var[0]=1 (enabled=true), var[1]=-1356316547 → 0xAF28407D
     assert!(attr.entries[0].enabled, "attr.entries[0].enabled = true");
-    assert_eq!(attr.entries[0].id, ATTR_ID_0, "attr.entries[0].id = 0xAF28407D");
+    assert_eq!(
+        attr.entries[0].id, ATTR_ID_0,
+        "attr.entries[0].id = 0xAF28407D"
+    );
 }
 
 #[test]
@@ -716,7 +774,11 @@ fn add_status_attr_paire_1() {
     let attr = cfg.attr.as_ref().unwrap();
     // paire 1 : var[2]=0 (enabled=false), var[3]=-1957340403 → 0x8B555B0D
     assert!(!attr.entries[1].enabled, "attr.entries[1].enabled = false");
-    assert_eq!(attr.entries[1].id, HashId(0x8B55_5B0D), "attr.entries[1].id = 0x8B555B0D");
+    assert_eq!(
+        attr.entries[1].id,
+        HashId(0x8B55_5B0D),
+        "attr.entries[1].id = 0x8B555B0D"
+    );
 }
 
 // ─── Utilitaire pour tests réels ──────────────────────────────────────────────
@@ -754,9 +816,17 @@ fn real_file_rule_config_comptes() {
     };
     let cfg = parse_rule_config(&root);
     // m_StartRuleList (ligne 6) : 2 entrées
-    assert_eq!(cfg.start_rules.len(), 2, "rpg_battle_rule_config: 2 start_rules");
+    assert_eq!(
+        cfg.start_rules.len(),
+        2,
+        "rpg_battle_rule_config: 2 start_rules"
+    );
     // m_BattleRuleList (ligne 25) : 13 entrées
-    assert_eq!(cfg.battle_rules.len(), 13, "rpg_battle_rule_config: 13 battle_rules");
+    assert_eq!(
+        cfg.battle_rules.len(),
+        13,
+        "rpg_battle_rule_config: 13 battle_rules"
+    );
 }
 
 #[test]
@@ -766,8 +836,14 @@ fn real_file_rule_config_start_rule_0() {
     };
     let cfg = parse_rule_config(&root);
     // m_StartRuleList[0] (ligne 9) : type=1
-    assert_eq!(cfg.start_rules[0].rule_type, 1, "start_rules[0].rule_type = 1");
-    assert!(cfg.start_rules[0].param_id.is_zero(), "start_rules[0].param_id = 0x00000000");
+    assert_eq!(
+        cfg.start_rules[0].rule_type, 1,
+        "start_rules[0].rule_type = 1"
+    );
+    assert!(
+        cfg.start_rules[0].param_id.is_zero(),
+        "start_rules[0].param_id = 0x00000000"
+    );
 }
 
 #[test]
@@ -777,8 +853,15 @@ fn real_file_rule_config_battle_rule_0() {
     };
     let cfg = parse_rule_config(&root);
     // m_BattleRuleList[0] (ligne 28) : ruleId="0x42D90CBC"
-    assert_eq!(cfg.battle_rules[0].rule_id, RULE_ID_0, "battle_rules[0].rule_id = 0x42D90CBC");
-    assert_eq!(cfg.battle_rules[0].start, [0_i64, 0_i64], "battle_rules[0].start = [0,0]");
+    assert_eq!(
+        cfg.battle_rules[0].rule_id, RULE_ID_0,
+        "battle_rules[0].rule_id = 0x42D90CBC"
+    );
+    assert_eq!(
+        cfg.battle_rules[0].start,
+        [0_i64, 0_i64],
+        "battle_rules[0].start = [0,0]"
+    );
 }
 
 #[test]
@@ -787,7 +870,11 @@ fn real_file_rule_config_tous_rule_id_non_nuls() {
         return;
     };
     let cfg = parse_rule_config(&root);
-    let nuls = cfg.battle_rules.iter().filter(|r| r.rule_id.is_zero()).count();
+    let nuls = cfg
+        .battle_rules
+        .iter()
+        .filter(|r| r.rule_id.is_zero())
+        .count();
     assert_eq!(nuls, 0, "aucun rule_id nul");
 }
 
@@ -800,7 +887,11 @@ fn real_file_status_pattern_compte() {
     };
     let data = parse_status_pattern_config(&root);
     // m_statusPatternInfoList : 28 entrées (vérifié par grep -c '"id":')
-    assert_eq!(data.len(), 28, "rpg_battle_status_pattern_config: 28 entrées");
+    assert_eq!(
+        data.len(),
+        28,
+        "rpg_battle_status_pattern_config: 28 entrées"
+    );
 }
 
 #[test]
@@ -810,7 +901,10 @@ fn real_file_status_pattern_id_0() {
     };
     let data = parse_status_pattern_config(&root);
     // entrée 0 (ligne 9) : id="0xD1002353"
-    assert_eq!(data[0].id, STATUS_PAT_ID_0, "status_pattern[0].id = 0xD1002353");
+    assert_eq!(
+        data[0].id, STATUS_PAT_ID_0,
+        "status_pattern[0].id = 0xD1002353"
+    );
 }
 
 #[test]
@@ -820,7 +914,10 @@ fn real_file_status_pattern_hp_rate_0() {
     };
     let data = parse_status_pattern_config(&root);
     // entrée 0 (ligne 10) : hpAddRate=0.2
-    assert!((data[0].hp_add_rate - 0.2_f32).abs() < 1e-6, "hp_add_rate[0] ≈ 0.2");
+    assert!(
+        (data[0].hp_add_rate - 0.2_f32).abs() < 1e-6,
+        "hp_add_rate[0] ≈ 0.2"
+    );
     assert_eq!(data[0].attack_add, -2, "attack_add[0] = -2");
 }
 
@@ -831,8 +928,15 @@ fn real_file_status_pattern_entry_10_hp() {
     };
     let data = parse_status_pattern_config(&root);
     // entrée 10 : id="0x6C8F6D1C", hpAddRate=1.5, attackAdd=2
-    assert_eq!(data[10].id, HashId(0x6C8F_6D1C), "status_pattern[10].id = 0x6C8F6D1C");
-    assert!((data[10].hp_add_rate - 1.5_f32).abs() < 1e-6, "hp_add_rate[10] ≈ 1.5");
+    assert_eq!(
+        data[10].id,
+        HashId(0x6C8F_6D1C),
+        "status_pattern[10].id = 0x6C8F6D1C"
+    );
+    assert!(
+        (data[10].hp_add_rate - 1.5_f32).abs() < 1e-6,
+        "hp_add_rate[10] ≈ 1.5"
+    );
     assert_eq!(data[10].attack_add, 2, "attack_add[10] = 2");
 }
 
@@ -857,7 +961,11 @@ fn real_file_swap_motion_comptes() {
     // m_SwapMotionDataList : 10 entrées (lignes 9-44)
     assert_eq!(cfg.swap_motions.len(), 10, "swap_motions: 10 entrées");
     // m_RpgBattleCharaSwapMotionDataList : 2 entrées (lignes 52-70)
-    assert_eq!(cfg.chara_swap_motions.len(), 2, "chara_swap_motions: 2 entrées");
+    assert_eq!(
+        cfg.chara_swap_motions.len(),
+        2,
+        "chara_swap_motions: 2 entrées"
+    );
 }
 
 #[test]
@@ -867,7 +975,10 @@ fn real_file_swap_motion_data_0() {
     };
     let cfg = parse_chara_swap_motion_config(&root);
     // m_SwapMotionDataList[0] (ligne 10) : bodyType=1, motionId="0x2C0F2E35"
-    assert_eq!(cfg.swap_motions[0].body_type, 1, "swap_motions[0].body_type = 1");
+    assert_eq!(
+        cfg.swap_motions[0].body_type, 1,
+        "swap_motions[0].body_type = 1"
+    );
     assert_eq!(
         cfg.swap_motions[0].motion_id, MOTION_ID_0,
         "swap_motions[0].motion_id = 0x2C0F2E35"
@@ -881,7 +992,10 @@ fn real_file_swap_motion_chara_0() {
     };
     let cfg = parse_chara_swap_motion_config(&root);
     // m_RpgBattleCharaSwapMotionDataList[0] (ligne 55) : modelAttribute=3, swapMotion=[0,1]
-    assert_eq!(cfg.chara_swap_motions[0].model_attribute, 3, "chara_swap[0].model_attribute = 3");
+    assert_eq!(
+        cfg.chara_swap_motions[0].model_attribute, 3,
+        "chara_swap[0].model_attribute = 3"
+    );
     assert_eq!(
         cfg.chara_swap_motions[0].swap_motion,
         [0_i64, 1_i64],
@@ -896,7 +1010,10 @@ fn real_file_swap_motion_chara_1() {
     };
     let cfg = parse_chara_swap_motion_config(&root);
     // m_RpgBattleCharaSwapMotionDataList[1] (ligne 64) : modelAttribute=2, swapMotion=[1,9]
-    assert_eq!(cfg.chara_swap_motions[1].model_attribute, 2, "chara_swap[1].model_attribute = 2");
+    assert_eq!(
+        cfg.chara_swap_motions[1].model_attribute, 2,
+        "chara_swap[1].model_attribute = 2"
+    );
     assert_eq!(
         cfg.chara_swap_motions[1].swap_motion,
         [1_i64, 9_i64],
@@ -913,7 +1030,11 @@ fn real_file_party_comptes() {
     };
     let cfg = parse_party_config(&root);
     // RPG_BTL_PARTY_DISABLE_ACTION_UNIQUE_INFO_LIST_BEG_0.var[0] = 4
-    assert_eq!(cfg.disable_actions.len(), 4, "party_config: 4 disable_actions");
+    assert_eq!(
+        cfg.disable_actions.len(),
+        4,
+        "party_config: 4 disable_actions"
+    );
     // RPG_BTL_PARTY_INFO_LIST_BEG_0 : 10 parties
     assert_eq!(cfg.parties.len(), 10, "party_config: 10 parties");
 }
@@ -938,10 +1059,19 @@ fn real_file_party_info_0() {
     };
     let cfg = parse_party_config(&root);
     // PARTY_INFO_0 (ligne 84) : -1758152796 → 0x9734B7A4
-    assert_eq!(cfg.parties[0].party_id, PARTY_ID_0, "parties[0].party_id = 0x9734B7A4");
+    assert_eq!(
+        cfg.parties[0].party_id, PARTY_ID_0,
+        "parties[0].party_id = 0x9734B7A4"
+    );
     // REF_DISABLE_ACTION_UNIQUE_INFO_0 (lignes 97-101) : offset=0, count=1
-    assert_eq!(cfg.parties[0].disable_offset, 0, "parties[0].disable_offset = 0");
-    assert_eq!(cfg.parties[0].disable_count, 1, "parties[0].disable_count = 1");
+    assert_eq!(
+        cfg.parties[0].disable_offset, 0,
+        "parties[0].disable_offset = 0"
+    );
+    assert_eq!(
+        cfg.parties[0].disable_count, 1,
+        "parties[0].disable_count = 1"
+    );
 }
 
 #[test]
@@ -1029,7 +1159,10 @@ fn real_file_cmd_set_info_0() {
     };
     let cfg = parse_cmd_set_config(&root);
     // CMD_SET_INFO_0.var[0] = 1268152025 → 0x4B9676D9 (ligne 11313)
-    assert_eq!(cfg.cmd_sets[0].set_id, CMD_SET_ID_0, "cmd_sets[0].set_id = 0x4B9676D9");
+    assert_eq!(
+        cfg.cmd_sets[0].set_id, CMD_SET_ID_0,
+        "cmd_sets[0].set_id = 0x4B9676D9"
+    );
     // REF_CMD_DATA_0 (lignes 11320-11328) : offset=0, count=4
     assert_eq!(cfg.cmd_sets[0].cmd_offset, 0, "cmd_sets[0].cmd_offset = 0");
     assert_eq!(cfg.cmd_sets[0].cmd_count, 4, "cmd_sets[0].cmd_count = 4");
@@ -1070,7 +1203,11 @@ fn real_file_add_status_comptes() {
     // RPG_BTL_ADD_STATUS_TYPE_INFO_LIST_BEG_0.var[0] = 11
     assert_eq!(cfg.type_infos.len(), 11, "add_status_config: 11 type_infos");
     // RPG_BTL_ADD_STATUS_INFO_LIST_BEG_0 : 6 ADD_STATUS_INFO
-    assert_eq!(cfg.status_infos.len(), 6, "add_status_config: 6 status_infos");
+    assert_eq!(
+        cfg.status_infos.len(),
+        6,
+        "add_status_config: 6 status_infos"
+    );
     // 1 noeud ATTR
     assert!(cfg.attr.is_some(), "add_status_config: 1 attr");
 }
@@ -1097,7 +1234,11 @@ fn real_file_add_status_info_0() {
         "status_infos[0].status_id = 0xE7ACBF7E"
     );
     // 2 paramètres (PARAM_0 + PARAM_1)
-    assert_eq!(cfg.status_infos[0].params.len(), 2, "status_infos[0]: 2 params");
+    assert_eq!(
+        cfg.status_infos[0].params.len(),
+        2,
+        "status_infos[0]: 2 params"
+    );
 }
 
 #[test]
@@ -1122,7 +1263,11 @@ fn real_file_add_status_attr_count() {
     let cfg = parse_add_status_config(&root);
     let attr = cfg.attr.as_ref().unwrap();
     // ATTR_0 : 36 vars → 18 paires
-    assert_eq!(attr.entries.len(), 18, "attr.entries: 18 paires (36 vars / 2)");
+    assert_eq!(
+        attr.entries.len(),
+        18,
+        "attr.entries: 18 paires (36 vars / 2)"
+    );
 }
 
 #[test]
@@ -1134,7 +1279,10 @@ fn real_file_add_status_attr_paire_0() {
     let attr = cfg.attr.as_ref().unwrap();
     // paire 0 (lignes 598-604) : enabled=true, id=-1356316547 → 0xAF28407D
     assert!(attr.entries[0].enabled, "attr.entries[0].enabled = true");
-    assert_eq!(attr.entries[0].id, ATTR_ID_0, "attr.entries[0].id = 0xAF28407D");
+    assert_eq!(
+        attr.entries[0].id, ATTR_ID_0,
+        "attr.entries[0].id = 0xAF28407D"
+    );
 }
 
 #[test]
@@ -1143,6 +1291,10 @@ fn real_file_add_status_tous_status_id_non_nuls() {
         return;
     };
     let cfg = parse_add_status_config(&root);
-    let nuls = cfg.status_infos.iter().filter(|s| s.status_id.is_zero()).count();
+    let nuls = cfg
+        .status_infos
+        .iter()
+        .filter(|s| s.status_id.is_zero())
+        .count();
     assert_eq!(nuls, 0, "aucun status_id nul");
 }

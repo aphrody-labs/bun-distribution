@@ -142,11 +142,21 @@ impl TcmMode {
     }
 
     fn rw_load_mode_mask(self) -> MapMask {
-        map_mask::W | if self == TcmMode::Normal { map_mask::R_DATA } else { 0 }
+        map_mask::W
+            | if self == TcmMode::Normal {
+                map_mask::R_DATA
+            } else {
+                0
+            }
     }
 
     fn rwx_load_mode_mask(self) -> MapMask {
-        map_mask::W | if self == TcmMode::Normal { map_mask::R_ALL } else { 0 }
+        map_mask::W
+            | if self == TcmMode::Normal {
+                map_mask::R_ALL
+            } else {
+                0
+            }
     }
 }
 
@@ -357,8 +367,14 @@ impl Cp15 {
 
         if self.itcm_mode != TcmMode::Disabled {
             overlay_itcm = [
-                (overlay_dtcm.0 & (self.itcm_mode.rw_load_mode_mask()), self.dtcm_bounds),
-                (self.itcm_mode.rwx_load_mode_mask(), (0, self.itcm_upper_bound)),
+                (
+                    overlay_dtcm.0 & (self.itcm_mode.rw_load_mode_mask()),
+                    self.dtcm_bounds,
+                ),
+                (
+                    self.itcm_mode.rwx_load_mode_mask(),
+                    (0, self.itcm_upper_bound),
+                ),
             ];
         }
 
@@ -449,19 +465,24 @@ impl Cp15 {
             emu.arm9.cp15.check_dtcm_size();
             match (prev_dtcm_mode, emu.arm9.cp15.dtcm_mode) {
                 (TcmMode::Disabled, _) => {
-                    overlay_dtcm[0] =
-                        (emu.arm9.cp15.dtcm_mode.rw_load_mode_mask(), emu.arm9.cp15.dtcm_bounds);
-                },
+                    overlay_dtcm[0] = (
+                        emu.arm9.cp15.dtcm_mode.rw_load_mode_mask(),
+                        emu.arm9.cp15.dtcm_bounds,
+                    );
+                }
                 (TcmMode::Load, TcmMode::Normal) => {
                     overlay_dtcm[0] = (map_mask::R_DATA, emu.arm9.cp15.dtcm_bounds);
-                },
+                }
                 (TcmMode::Normal, TcmMode::Load) => {
                     unmap[0] = (map_mask::R_DATA, emu.arm9.cp15.dtcm_bounds);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         } else if prev_dtcm_mode != TcmMode::Disabled {
-            unmap[0] = (prev_dtcm_mode.rw_load_mode_mask(), emu.arm9.cp15.dtcm_bounds);
+            unmap[0] = (
+                prev_dtcm_mode.rw_load_mode_mask(),
+                emu.arm9.cp15.dtcm_bounds,
+            );
         }
 
         if emu.arm9.cp15.itcm_mode != TcmMode::Disabled {
@@ -476,17 +497,20 @@ impl Cp15 {
                         emu.arm9.cp15.itcm_mode.rwx_load_mode_mask(),
                         (0, emu.arm9.cp15.itcm_upper_bound),
                     );
-                },
+                }
                 (TcmMode::Load, TcmMode::Normal) => {
                     overlay_itcm[1] = (map_mask::R_ALL, (0, emu.arm9.cp15.itcm_upper_bound));
-                },
+                }
                 (TcmMode::Normal, TcmMode::Load) => {
                     unmap[1] = (map_mask::R_ALL, (0, emu.arm9.cp15.itcm_upper_bound));
-                },
-                _ => {},
+                }
+                _ => {}
             }
         } else if prev_itcm_mode != TcmMode::Disabled {
-            unmap[1] = (prev_itcm_mode.rwx_load_mode_mask(), (0, emu.arm9.cp15.itcm_upper_bound));
+            unmap[1] = (
+                prev_itcm_mode.rwx_load_mode_mask(),
+                (0, emu.arm9.cp15.itcm_upper_bound),
+            );
         }
 
         if unmap[1].0 != 0 && emu.arm9.cp15.dtcm_mode != TcmMode::Disabled {
@@ -504,8 +528,14 @@ impl Cp15 {
             if map_mask == 0 {
                 continue;
             }
-            emu.arm9.cp15.ptrs.unmap_cpu_local_range(map_mask, bounds, &emu.arm9.bus_ptrs);
-            emu.arm9.cp15.timings.unset_cpu_local_range(map_mask, bounds, &emu.arm9.bus_timings);
+            emu.arm9
+                .cp15
+                .ptrs
+                .unmap_cpu_local_range(map_mask, bounds, &emu.arm9.bus_ptrs);
+            emu.arm9
+                .cp15
+                .timings
+                .unset_cpu_local_range(map_mask, bounds, &emu.arm9.bus_timings);
         }
 
         for (map_mask, bounds) in overlay_dtcm {
@@ -559,10 +589,14 @@ impl Cp15 {
 
         let changed = Control(value.0 ^ prev_value.0);
         if changed.high_exc_vectors() {
-            emu.arm9.engine_data.set_high_exc_vectors(value.high_exc_vectors());
+            emu.arm9
+                .engine_data
+                .set_high_exc_vectors(value.high_exc_vectors());
         }
         if changed.t_bit_load_disabled() {
-            emu.arm9.engine_data.set_t_bit_load_disabled(value.t_bit_load_disabled());
+            emu.arm9
+                .engine_data
+                .set_t_bit_load_disabled(value.t_bit_load_disabled());
         }
 
         let prev_dtcm_mode = emu.arm9.cp15.dtcm_mode;
@@ -599,7 +633,7 @@ impl Cp15 {
                         cache_map_mask |= map_mask::R_DATA | map_mask::W;
                     }
                     Self::remap_all_pu_region_cache_attrs(emu, cache_map_mask);
-                },
+                }
 
                 (false, true) => {
                     // PU was switched on, remap everything
@@ -607,7 +641,7 @@ impl Cp15 {
                         region.active = region.control.enabled();
                     }
                     Self::remap_all_pu_regions(emu);
-                },
+                }
 
                 (true, false) => {
                     // PU was switched off, set all permissions to RWX and unmap everything
@@ -637,7 +671,7 @@ impl Cp15 {
                             (0, emu.arm9.cp15.itcm_upper_bound),
                         );
                     }
-                },
+                }
 
                 _ => unreachable!(),
             }
@@ -650,7 +684,10 @@ impl Cp15 {
             emu.arm9.cp15.perm_map.set_all(0);
             for region in &emu.arm9.cp15.pu_regions {
                 if region.active {
-                    emu.arm9.cp15.perm_map.set_range(region.perms, region.bounds);
+                    emu.arm9
+                        .cp15
+                        .perm_map
+                        .set_range(region.perms, region.bounds);
                 }
             }
         }
@@ -987,37 +1024,59 @@ impl Cp15 {
             (1, 0, 0) => emu.arm9.cp15.control.0, // Control
 
             // Data cache configuration
-            (2, 0, 0) => {
-                emu.arm9.cp15.pu_regions.iter().enumerate().fold(0, |acc, (i, region)| {
+            (2, 0, 0) => emu
+                .arm9
+                .cp15
+                .pu_regions
+                .iter()
+                .enumerate()
+                .fold(0, |acc, (i, region)| {
                     acc | (region.cache_attrs.data_cachable() as u32) << i
-                })
-            },
+                }),
 
             // Instruction cache configuration
-            (2, 0, 1) => {
-                emu.arm9.cp15.pu_regions.iter().enumerate().fold(0, |acc, (i, region)| {
+            (2, 0, 1) => emu
+                .arm9
+                .cp15
+                .pu_regions
+                .iter()
+                .enumerate()
+                .fold(0, |acc, (i, region)| {
                     acc | (region.cache_attrs.code_cachable() as u32) << i
-                })
-            },
+                }),
 
             // Write buffer control
-            (3, 0, 0) => emu.arm9.cp15.pu_regions.iter().enumerate().fold(0, |acc, (i, region)| {
-                acc | (region.cache_attrs.write_bufferable() as u32) << i
-            }),
+            (3, 0, 0) => emu
+                .arm9
+                .cp15
+                .pu_regions
+                .iter()
+                .enumerate()
+                .fold(0, |acc, (i, region)| {
+                    acc | (region.cache_attrs.write_bufferable() as u32) << i
+                }),
 
             // Data access permission bits (for backwards compatibility)
-            (5, 0, 0) => {
-                emu.arm9.cp15.pu_regions.iter().enumerate().fold(0, |acc, (i, region)| {
+            (5, 0, 0) => emu
+                .arm9
+                .cp15
+                .pu_regions
+                .iter()
+                .enumerate()
+                .fold(0, |acc, (i, region)| {
                     acc | (region.raw_perms.data_2() as u32) << (i << 1)
-                })
-            },
+                }),
 
             // Instruction access permission bits (for backwards compatibility)
-            (5, 0, 1) => {
-                emu.arm9.cp15.pu_regions.iter().enumerate().fold(0, |acc, (i, region)| {
+            (5, 0, 1) => emu
+                .arm9
+                .cp15
+                .pu_regions
+                .iter()
+                .enumerate()
+                .fold(0, |acc, (i, region)| {
                     acc | (region.raw_perms.code_2() as u32) << (i << 1)
-                })
-            },
+                }),
 
             // Data access permission bits
             (5, 0, 2) => emu
@@ -1026,7 +1085,9 @@ impl Cp15 {
                 .pu_regions
                 .iter()
                 .enumerate()
-                .fold(0, |acc, (i, region)| acc | (region.raw_perms.data() as u32) << (i << 2)),
+                .fold(0, |acc, (i, region)| {
+                    acc | (region.raw_perms.data() as u32) << (i << 2)
+                }),
 
             // Instruction access permission bits
             (5, 0, 3) => emu
@@ -1035,7 +1096,9 @@ impl Cp15 {
                 .pu_regions
                 .iter()
                 .enumerate()
-                .fold(0, |acc, (i, region)| acc | (region.raw_perms.code() as u32) << (i << 2)),
+                .fold(0, |acc, (i, region)| {
+                    acc | (region.raw_perms.code() as u32) << (i << 2)
+                }),
 
             // Protection region base and size
             (6, region @ 0..=7, 0..=1) => emu.arm9.cp15.pu_regions[region as usize].control.0,
@@ -1059,7 +1122,7 @@ impl Cp15 {
                     opcode_2
                 );
                 0
-            },
+            }
         }
     }
 
@@ -1085,7 +1148,14 @@ impl Cp15 {
             return;
         }
         #[cfg(feature = "log")]
-        slog::trace!(emu.arm9.logger, "Write CP15 C{},C{},{}: {:#010X}", cn, cm, opcode_2, value,);
+        slog::trace!(
+            emu.arm9.logger,
+            "Write CP15 C{},C{},{}: {:#010X}",
+            cn,
+            cm,
+            opcode_2,
+            value,
+        );
         match (cn, cm, opcode_2) {
             (1, 0, 0) => Self::write_control(emu, Control(value)), // Control
 
@@ -1138,7 +1208,7 @@ impl Cp15 {
                         }
                     }
                 }
-            },
+            }
 
             // Instruction cache configuration
             (2, 0, 1) => {
@@ -1181,7 +1251,7 @@ impl Cp15 {
                         }
                     }
                 }
-            },
+            }
 
             // Write buffer control
             (3, 0, 0) => {
@@ -1189,7 +1259,7 @@ impl Cp15 {
                     let region = &mut emu.arm9.cp15.pu_regions[i];
                     region.cache_attrs.set_write_bufferable(value & 1 << i != 0);
                 }
-            },
+            }
 
             // Data access permission bits (for backwards compatibility)
             (5, 0, 0) => {
@@ -1211,10 +1281,13 @@ impl Cp15 {
                 #[cfg(feature = "pu-checks")]
                 for region in &emu.arm9.cp15.pu_regions[changed_start_i..] {
                     if region.active {
-                        emu.arm9.cp15.perm_map.set_range(region.perms, region.bounds);
+                        emu.arm9
+                            .cp15
+                            .perm_map
+                            .set_range(region.perms, region.bounds);
                     }
                 }
-            },
+            }
 
             // Code access permission bits (for backwards compatibility)
             (5, 0, 1) => {
@@ -1236,10 +1309,13 @@ impl Cp15 {
                 #[cfg(feature = "pu-checks")]
                 for region in &emu.arm9.cp15.pu_regions[changed_start_i..] {
                     if region.active {
-                        emu.arm9.cp15.perm_map.set_range(region.perms, region.bounds);
+                        emu.arm9
+                            .cp15
+                            .perm_map
+                            .set_range(region.perms, region.bounds);
                     }
                 }
-            },
+            }
 
             // Data access permission bits
             (5, 0, 2) => {
@@ -1261,10 +1337,13 @@ impl Cp15 {
                 #[cfg(feature = "pu-checks")]
                 for region in &emu.arm9.cp15.pu_regions[changed_start_i..] {
                     if region.active {
-                        emu.arm9.cp15.perm_map.set_range(region.perms, region.bounds);
+                        emu.arm9
+                            .cp15
+                            .perm_map
+                            .set_range(region.perms, region.bounds);
                     }
                 }
-            },
+            }
 
             // Code access permission bits
             (5, 0, 3) => {
@@ -1286,10 +1365,13 @@ impl Cp15 {
                 #[cfg(feature = "pu-checks")]
                 for region in &emu.arm9.cp15.pu_regions[changed_start_i..] {
                     if region.active {
-                        emu.arm9.cp15.perm_map.set_range(region.perms, region.bounds);
+                        emu.arm9
+                            .cp15
+                            .perm_map
+                            .set_range(region.perms, region.bounds);
                     }
                 }
-            },
+            }
 
             // Protection region base and size
             (6, region_i @ 0..=7, 0..=1) => {
@@ -1340,7 +1422,10 @@ impl Cp15 {
                         {
                             for region in &emu.arm9.cp15.pu_regions[region_i as usize..] {
                                 if region.active {
-                                    emu.arm9.cp15.perm_map.set_range(region.perms, region.bounds);
+                                    emu.arm9
+                                        .cp15
+                                        .perm_map
+                                        .set_range(region.perms, region.bounds);
                                 }
                             }
                         }
@@ -1401,7 +1486,7 @@ impl Cp15 {
                         }
                     }
                 }
-            },
+            }
 
             // Wait for interrupt
             (7, 0, 4) | (7, 8, 2) => emu.arm9.irqs.halt(&mut emu.arm9.schedule),
@@ -1416,17 +1501,17 @@ impl Cp15 {
                     opcode_2,
                     value
                 );
-            },
+            }
 
             // Data cache lockdown
             (9, 0, 0) => {
                 emu.arm9.cp15.data_cache_lockdown_control.0 = value & 0x8000_0003;
-            },
+            }
 
             // Instruction cache lockdown
             (9, 0, 1) => {
                 emu.arm9.cp15.code_cache_lockdown_control.0 = value & 0x8000_0003;
-            },
+            }
 
             (9, 1, 0) => Self::write_dtcm_control(emu, TcmControl(value)), // DTCM base and size
             (9, 1, 1) => Self::write_itcm_control(emu, TcmControl(value)), // ITCM base and size
@@ -1444,7 +1529,7 @@ impl Cp15 {
                     opcode_2,
                     value
                 );
-            },
+            }
         }
     }
 }

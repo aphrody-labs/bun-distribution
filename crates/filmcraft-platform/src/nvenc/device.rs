@@ -11,7 +11,9 @@ mod directx {
     use super::c_void;
     use windows::Win32::Foundation::HMODULE;
     use windows::Win32::Graphics::Direct3D::D3D_DRIVER_TYPE_UNKNOWN;
-    use windows::Win32::Graphics::Direct3D11::{D3D11_CREATE_DEVICE_FLAG, D3D11_SDK_VERSION, D3D11CreateDevice, ID3D11Device};
+    use windows::Win32::Graphics::Direct3D11::{
+        D3D11_CREATE_DEVICE_FLAG, D3D11_SDK_VERSION, D3D11CreateDevice, ID3D11Device,
+    };
     use windows::Win32::Graphics::Dxgi::{CreateDXGIFactory1, IDXGIAdapter, IDXGIFactory1};
     use windows::core::Interface;
 
@@ -32,11 +34,14 @@ mod directx {
     fn nvidia_device() -> Result<ID3D11Device, String> {
         // SAFETY: plain COM / D3D calls with valid out-pointers; the adapter outlives the call.
         unsafe {
-            let factory: IDXGIFactory1 = CreateDXGIFactory1().map_err(|e| format!("no DXGI: {e}"))?;
+            let factory: IDXGIFactory1 =
+                CreateDXGIFactory1().map_err(|e| format!("no DXGI: {e}"))?;
             let mut i = 0;
             while let Ok(adapter) = factory.EnumAdapters1(i) {
                 i += 1;
-                let Ok(desc) = adapter.GetDesc1() else { continue };
+                let Ok(desc) = adapter.GetDesc1() else {
+                    continue;
+                };
                 if desc.VendorId != NVIDIA {
                     continue;
                 }
@@ -99,11 +104,18 @@ mod cuda {
             // SAFETY: CUDA driver API signatures from NVIDIA's public Driver API reference.
             // Resolve all symbols before retaining; keep the library alive until after release.
             unsafe {
-                let library = libloading::Library::new("libcuda.so.1").map_err(|e| format!("no NVIDIA CUDA driver: {e}"))?;
-                let init: libloading::Symbol<Init> = library.get(b"cuInit\0").map_err(|e| e.to_string())?;
-                let get: libloading::Symbol<GetDevice> = library.get(b"cuDeviceGet\0").map_err(|e| e.to_string())?;
-                let retain: libloading::Symbol<Retain> = library.get(b"cuDevicePrimaryCtxRetain\0").map_err(|e| e.to_string())?;
-                let release: Release = *library.get(b"cuDevicePrimaryCtxRelease_v2\0").map_err(|e| e.to_string())?;
+                let library = libloading::Library::new("libcuda.so.1")
+                    .map_err(|e| format!("no NVIDIA CUDA driver: {e}"))?;
+                let init: libloading::Symbol<Init> =
+                    library.get(b"cuInit\0").map_err(|e| e.to_string())?;
+                let get: libloading::Symbol<GetDevice> =
+                    library.get(b"cuDeviceGet\0").map_err(|e| e.to_string())?;
+                let retain: libloading::Symbol<Retain> = library
+                    .get(b"cuDevicePrimaryCtxRetain\0")
+                    .map_err(|e| e.to_string())?;
+                let release: Release = *library
+                    .get(b"cuDevicePrimaryCtxRelease_v2\0")
+                    .map_err(|e| e.to_string())?;
                 let st = init(0);
                 if st != 0 {
                     return Err(format!("cuInit failed ({st})"));
@@ -122,7 +134,12 @@ mod cuda {
                     let _ = release(ordinal);
                     return Err("CUDA returned a null primary context".into());
                 }
-                Ok(Self { context, ordinal, release, _library: library })
+                Ok(Self {
+                    context,
+                    ordinal,
+                    release,
+                    _library: library,
+                })
             }
         }
         pub fn as_raw(&self) -> *mut c_void {
@@ -133,13 +150,23 @@ mod cuda {
             // SAFETY: signatures match the CUDA driver headers; the retained context and
             // library outlive the guard, whose Drop balances the push on this same thread.
             unsafe {
-                let push: Push = *self._library.get(b"cuCtxPushCurrent_v2\0").map_err(|e| e.to_string())?;
-                let pop: Pop = *self._library.get(b"cuCtxPopCurrent_v2\0").map_err(|e| e.to_string())?;
+                let push: Push = *self
+                    ._library
+                    .get(b"cuCtxPushCurrent_v2\0")
+                    .map_err(|e| e.to_string())?;
+                let pop: Pop = *self
+                    ._library
+                    .get(b"cuCtxPopCurrent_v2\0")
+                    .map_err(|e| e.to_string())?;
                 let st = push(self.context);
                 if st != 0 {
                     return Err(format!("cuCtxPushCurrent failed ({st})"));
                 }
-                Ok(Current { _device: self, pop, _thread: PhantomData })
+                Ok(Current {
+                    _device: self,
+                    pop,
+                    _thread: PhantomData,
+                })
             }
         }
 
@@ -147,11 +174,18 @@ mod cuda {
         /// the source device range; the destination is always a live writable Rust slice.
         pub fn copy_to_host(&self, source: u64, destination: &mut [u8]) -> Result<(), String> {
             let _current = self.push_current()?;
-            source.checked_add(u64::try_from(destination.len()).map_err(|_| "CUDA copy length overflows")?).ok_or("CUDA copy address overflows")?;
+            source
+                .checked_add(
+                    u64::try_from(destination.len()).map_err(|_| "CUDA copy length overflows")?,
+                )
+                .ok_or("CUDA copy address overflows")?;
             // SAFETY: the synchronous copy writes at most destination.len() bytes to its
             // live buffer. The CUDA context and library remain live through the call.
             let st = unsafe {
-                let copy: CopyToHost = *self._library.get(b"cuMemcpyDtoH_v2\0").map_err(|e| e.to_string())?;
+                let copy: CopyToHost = *self
+                    ._library
+                    .get(b"cuMemcpyDtoH_v2\0")
+                    .map_err(|e| e.to_string())?;
                 copy(destination.as_mut_ptr().cast(), source, destination.len())
             };
             if st != 0 {

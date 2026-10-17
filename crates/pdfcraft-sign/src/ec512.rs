@@ -26,7 +26,10 @@ fn big(bytes: &[u8]) -> Option<BoxedUint> {
 }
 
 fn hex(s: &str) -> Option<BoxedUint> {
-    let bytes: Option<Vec<u8>> = (0..s.len()).step_by(2).map(|i| u8::from_str_radix(s.get(i..i + 2)?, 16).ok()).collect();
+    let bytes: Option<Vec<u8>> = (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(s.get(i..i + 2)?, 16).ok())
+        .collect();
     big(&bytes?)
 }
 
@@ -69,7 +72,13 @@ struct Curve {
 
 impl Curve {
     fn brainpool_p512r1() -> Option<Curve> {
-        Some(Curve { f: Field::new(hex(P)?)?, a: hex(A)?, b: hex(B)?, g: (hex(GX)?, hex(GY)?), n: hex(N)? })
+        Some(Curve {
+            f: Field::new(hex(P)?)?,
+            a: hex(A)?,
+            b: hex(B)?,
+            g: (hex(GX)?, hex(GY)?),
+            n: hex(N)?,
+        })
     }
 
     fn on_curve(&self, x: &BoxedUint, y: &BoxedUint) -> bool {
@@ -95,7 +104,9 @@ impl Curve {
     }
 
     fn add(&self, p: &Point, q: &Point) -> Point {
-        let (Some((x1, y1)), Some((x2, y2))) = (p, q) else { return p.clone().or_else(|| q.clone()) };
+        let (Some((x1, y1)), Some((x2, y2))) = (p, q) else {
+            return p.clone().or_else(|| q.clone());
+        };
         let f = &self.f;
         if x1 == x2 {
             return if y1 == y2 { self.double(p) } else { None };
@@ -144,9 +155,14 @@ pub fn verify(public: &[u8], digest: &[u8], rs: &[u8]) -> Option<bool> {
     let w: BoxedUint = Option::from(s.invert_mod(&n))?;
     let u1 = e.mul_mod(&w, &n);
     let u2 = r.mul_mod(&w, &n);
-    let point = c.add(&c.mul(&u1, &Some(c.g.clone())), &c.mul(&u2, &Some((qx, qy))));
+    let point = c.add(
+        &c.mul(&u1, &Some(c.g.clone())),
+        &c.mul(&u2, &Some((qx, qy))),
+    );
     // The point at infinity is no valid result (X9.62 §7.4.1 step 5): the signature is wrong.
-    let Some((x, _)) = point else { return Some(false) };
+    let Some((x, _)) = point else {
+        return Some(false);
+    };
     Some(x.rem_vartime(&n) == r)
 }
 
@@ -155,7 +171,10 @@ mod tests {
     use super::*;
 
     fn unhex(s: &str) -> [u8; 64] {
-        let v: Vec<u8> = (0..s.len()).step_by(2).map(|i| u8::from_str_radix(s.get(i..i + 2).unwrap_or("00"), 16).unwrap_or(0)).collect();
+        let v: Vec<u8> = (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(s.get(i..i + 2).unwrap_or("00"), 16).unwrap_or(0))
+            .collect();
         let mut out = [0u8; 64];
         out[64 - v.len()..].copy_from_slice(&v);
         out
@@ -168,13 +187,33 @@ mod tests {
         let key = |x: &[u8; 64], y: &[u8; 64]| [&[4u8][..], x, y].concat();
         let (p, n, gx, gy) = (unhex(P), unhex(N), unhex(GX), unhex(GY));
         // Coordinates that are not field elements, or not on the curve.
-        for (x, y) in [([0xFF; 64], [0xFF; 64]), (p, [0; 64]), ([0; 64], p), ([0; 64], [0; 64]), (p, p)] {
+        for (x, y) in [
+            ([0xFF; 64], [0xFF; 64]),
+            (p, [0; 64]),
+            ([0; 64], p),
+            ([0; 64], [0; 64]),
+            (p, p),
+        ] {
             assert_eq!(verify(&key(&x, &y), &digest, &[1u8; 128]), None);
         }
         // The generator, a real point, with an r or s that is zero, n, or all ones.
         for bad in [[0u8; 64], n, [0xFF; 64]] {
-            assert_eq!(verify(&key(&gx, &gy), &digest, &[bad.to_vec(), vec![1; 64]].concat()), Some(false));
-            assert_eq!(verify(&key(&gx, &gy), &digest, &[vec![1; 64], bad.to_vec()].concat()), Some(false));
+            assert_eq!(
+                verify(
+                    &key(&gx, &gy),
+                    &digest,
+                    &[bad.to_vec(), vec![1; 64]].concat()
+                ),
+                Some(false)
+            );
+            assert_eq!(
+                verify(
+                    &key(&gx, &gy),
+                    &digest,
+                    &[vec![1; 64], bad.to_vec()].concat()
+                ),
+                Some(false)
+            );
         }
     }
 }

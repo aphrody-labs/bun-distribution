@@ -22,14 +22,25 @@ impl Default for Selection {
 
 impl Selection {
     pub fn at(c: CellRef) -> Selection {
-        Selection { active: c, anchor: c, ranges: vec![RangeRef::cell(c)] }
+        Selection {
+            active: c,
+            anchor: c,
+            ranges: vec![RangeRef::cell(c)],
+        }
     }
     pub fn range(r: RangeRef) -> Selection {
-        Selection { active: r.start, anchor: r.start, ranges: vec![r] }
+        Selection {
+            active: r.start,
+            anchor: r.start,
+            ranges: vec![r],
+        }
     }
     /// The current (last) area.
     pub fn current(&self) -> RangeRef {
-        self.ranges.last().copied().unwrap_or(RangeRef::cell(self.active))
+        self.ranges
+            .last()
+            .copied()
+            .unwrap_or(RangeRef::cell(self.active))
     }
     /// Bounding range of all areas.
     pub fn bounds(&self) -> RangeRef {
@@ -46,8 +57,16 @@ impl Selection {
     /// The corner of the current area opposite the anchor: the end that Shift+arrows move.
     pub fn moving_end(&self) -> CellRef {
         let r = self.current();
-        let row = if self.anchor.row == r.start.row { r.end.row } else { r.start.row };
-        let col = if self.anchor.col == r.start.col { r.end.col } else { r.start.col };
+        let row = if self.anchor.row == r.start.row {
+            r.end.row
+        } else {
+            r.start.row
+        };
+        let col = if self.anchor.col == r.start.col {
+            r.end.col
+        } else {
+            r.start.col
+        };
         CellRef::new(row, col)
     }
     /// Extends the current area from the anchor to `to` (Shift+click / Shift+arrows).
@@ -61,7 +80,11 @@ impl Selection {
     }
     /// The A1 text of all areas (`A1:B2,D4`).
     pub fn a1(&self) -> String {
-        self.ranges.iter().map(|r| r.a1()).collect::<Vec<_>>().join(",")
+        self.ranges
+            .iter()
+            .map(|r| r.a1())
+            .collect::<Vec<_>>()
+            .join(",")
     }
     /// Expands areas so merged cells are included whole.
     pub fn expand_merges(&mut self, sheet: &Sheet) {
@@ -120,7 +143,10 @@ impl Selection {
                 col = r.end.col as i64;
             }
         }
-        self.active = CellRef::new(row.clamp(0, MAX_ROWS as i64 - 1) as u32, col.clamp(0, MAX_COLS as i64 - 1) as u32);
+        self.active = CellRef::new(
+            row.clamp(0, MAX_ROWS as i64 - 1) as u32,
+            col.clamp(0, MAX_COLS as i64 - 1) as u32,
+        );
     }
 }
 
@@ -131,7 +157,9 @@ pub fn jump(sheet: &Sheet, from: CellRef, dr: i64, dc: i64) -> CellRef {
         return from;
     }
     let filled = |c: CellRef| sheet.value_ref(c).is_some_and(|v| !v.is_empty());
-    let Some(mut cur) = from.offset(dr, dc) else { return from };
+    let Some(mut cur) = from.offset(dr, dc) else {
+        return from;
+    };
     let here = filled(from);
     let next = filled(cur);
     if here && next {
@@ -186,7 +214,12 @@ pub fn jump(sheet: &Sheet, from: CellRef, dr: i64, dc: i64) -> CellRef {
 
 /// The contiguous data region around `c` (Ctrl+A / Ctrl+Shift+8, AutoSum, sort, tables).
 pub fn current_region(sheet: &Sheet, c: CellRef) -> RangeRef {
-    let filled = |c: CellRef| sheet.cell(c).is_some_and(|x| !x.value.is_empty() || x.formula.is_some()) || sheet.spill.contains_key(&c);
+    let filled = |c: CellRef| {
+        sheet
+            .cell(c)
+            .is_some_and(|x| !x.value.is_empty() || x.formula.is_some())
+            || sheet.spill.contains_key(&c)
+    };
     // Whether a row (or column) has a filled cell between two columns (rows), inclusive.
     let row_has = |row: u32, a: u32, b: u32| (a..=b).any(|col| filled(CellRef::new(row, col)));
     let col_has = |col: u32, a: u32, b: u32| (a..=b).any(|row| filled(CellRef::new(row, col)));
@@ -232,8 +265,14 @@ mod tests {
         // Without a direction it stays put (it used to loop forever from a blank cell).
         assert_eq!(jump(&s, CellRef::new(7, 0), 0, 0), CellRef::new(7, 0));
         assert_eq!(jump(&s, CellRef::new(4, 0), 1, 0), CellRef::new(10, 0));
-        assert_eq!(jump(&s, CellRef::new(10, 0), 1, 0), CellRef::new(MAX_ROWS - 1, 0));
-        assert_eq!(jump(&s, CellRef::new(0, 0), 0, 1), CellRef::new(0, MAX_COLS - 1));
+        assert_eq!(
+            jump(&s, CellRef::new(10, 0), 1, 0),
+            CellRef::new(MAX_ROWS - 1, 0)
+        );
+        assert_eq!(
+            jump(&s, CellRef::new(0, 0), 0, 1),
+            CellRef::new(0, MAX_COLS - 1)
+        );
         assert_eq!(jump(&s, CellRef::new(0, 0), -1, 0), CellRef::new(0, 0));
     }
 

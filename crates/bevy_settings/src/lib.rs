@@ -31,11 +31,11 @@ use bevy_ecs::{
 pub use bevy_ecs_macros::SettingsGroup;
 use bevy_log::warn;
 use bevy_reflect::{
+    CreateTypeData, FromReflect, PartialReflect, Reflect, ReflectMut, TypeInfo, TypePath,
+    TypeRegistration, TypeRegistry,
     enums::DynamicEnum,
     prelude::ReflectDefault,
     serde::{ReflectSerializerProcessor, TypedReflectDeserializer, TypedReflectSerializer},
-    CreateTypeData, FromReflect, PartialReflect, Reflect, ReflectMut, TypeInfo, TypePath,
-    TypeRegistration, TypeRegistry,
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -1074,14 +1074,14 @@ mod tests {
         let new_type_single_tuple_struct = new_world
             .get_resource::<NewTypeSingleTupleStruct>()
             .unwrap();
-        assert_eq!(new_type_single_tuple_struct.0 .0, 1);
+        assert_eq!(new_type_single_tuple_struct.0.0, 1);
 
         let new_type_multi_tuple_struct =
             new_world.get_resource::<NewTypeMultiTupleStruct>().unwrap();
-        assert_eq!(new_type_multi_tuple_struct.0 .0, 1);
-        assert_eq!(new_type_multi_tuple_struct.1 .0, 2);
-        assert_eq!(new_type_multi_tuple_struct.1 .1.a, 1);
-        assert_eq!(new_type_multi_tuple_struct.1 .1.b, 2);
+        assert_eq!(new_type_multi_tuple_struct.0.0, 1);
+        assert_eq!(new_type_multi_tuple_struct.1.0, 2);
+        assert_eq!(new_type_multi_tuple_struct.1.1.a, 1);
+        assert_eq!(new_type_multi_tuple_struct.1.1.b, 2);
 
         let enum_unit_variant = new_world.get_resource::<EnumUnitVariant>().unwrap();
         assert_eq!(*enum_unit_variant, EnumUnitVariant::A);

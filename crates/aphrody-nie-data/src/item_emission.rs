@@ -100,7 +100,10 @@ impl ItemEmissionRarityTable {
         let arr = v.get("tableInfo").and_then(Value::as_array)?;
         let offset = arr.first().and_then(Value::as_i64).unwrap_or(0);
         let count = arr.get(1).and_then(Value::as_i64).unwrap_or(0);
-        Some(Self { item_id: field_hash(v, "itemId"), table_info: [offset, count] })
+        Some(Self {
+            item_id: field_hash(v, "itemId"),
+            table_info: [offset, count],
+        })
     }
 }
 

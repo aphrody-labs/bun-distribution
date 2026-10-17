@@ -5,7 +5,14 @@
 //! markup is skipped, bad numbers fall back to defaults) and bounded (zip entry sizes, total
 //! decompressed size, XML depth and element counts are capped), so hostile input yields an
 //! error or a best-effort document, never a panic.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod chart_spec;
 mod crypt;
@@ -21,8 +28,9 @@ mod xml;
 
 pub use chart_spec::{chart_items, chart_xml};
 pub use crypt::{
-    DEFAULT_SPIN_COUNT, MAX_PASSWORD_CHARS, PasswordCheck, check_password, check_protection_password, decrypt, encrypt, encrypt_with_spin_count,
-    is_encrypted, protection_hash,
+    DEFAULT_SPIN_COUNT, MAX_PASSWORD_CHARS, PasswordCheck, check_password,
+    check_protection_password, decrypt, encrypt, encrypt_with_spin_count, is_encrypted,
+    protection_hash,
 };
 pub use flat::{XmlKind, sniff_xml, write as write_flat};
 pub use read::read;
@@ -37,7 +45,10 @@ pub const MAX_XML_FILE: usize = 1 << 30;
 /// Any other XML gives [`DocxError::NotWordXml`].
 pub fn read_xml(bytes: &[u8]) -> Result<wordcraft_doc::Document, DocxError> {
     if bytes.len() > MAX_XML_FILE {
-        return Err(DocxError::Limit(format!("XML file of {} bytes", bytes.len())));
+        return Err(DocxError::Limit(format!(
+            "XML file of {} bytes",
+            bytes.len()
+        )));
     }
     match sniff_xml(bytes) {
         XmlKind::FlatOpc => flat::read(bytes),
@@ -59,7 +70,10 @@ pub(crate) const CANVAS_SPIN_EXT: &str = "urn:wordcraft:canvas-xfrm";
 /// Read a package that may be password-protected ([`is_encrypted`]): it is decrypted with
 /// `password` first. An encrypted package without a password gives
 /// [`DocxError::PasswordRequired`]; a wrong one, [`DocxError::WrongPassword`].
-pub fn read_with_password(bytes: &[u8], password: Option<&str>) -> Result<wordcraft_doc::Document, DocxError> {
+pub fn read_with_password(
+    bytes: &[u8],
+    password: Option<&str>,
+) -> Result<wordcraft_doc::Document, DocxError> {
     if is_encrypted(bytes) {
         let package = zeroize::Zeroizing::new(decrypt(bytes, password)?);
         return read::read_package(&package);
@@ -97,10 +111,16 @@ impl Flavor {
     /// Content type of the main document part.
     pub fn main_content_type(self) -> &'static str {
         match self {
-            Flavor::Document => "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+            Flavor::Document => {
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
+            }
             Flavor::MacroDocument => "application/vnd.ms-word.document.macroEnabled.main+xml",
-            Flavor::Template => "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml",
-            Flavor::MacroTemplate => "application/vnd.ms-word.template.macroEnabledTemplate.main+xml",
+            Flavor::Template => {
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml"
+            }
+            Flavor::MacroTemplate => {
+                "application/vnd.ms-word.template.macroEnabledTemplate.main+xml"
+            }
         }
     }
 

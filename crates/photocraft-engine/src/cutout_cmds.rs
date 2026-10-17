@@ -16,16 +16,30 @@ const CMD: &str = "layer.removeBackground";
 
 /// Edge refinement after Select Subject: a narrow smart radius and a little smoothing, so soft
 /// edges and hair get partial coverage instead of a hard cut.
-const REFINE: RefineParams = RefineParams { radius: 2.0, smart_radius: true, smooth: 10.0, feather: 0.5, contrast: 10.0, shift_edge: 0.0 };
+const REFINE: RefineParams = RefineParams {
+    radius: 2.0,
+    smart_radius: true,
+    smooth: 10.0,
+    feather: 0.5,
+    contrast: 10.0,
+    shift_edge: 0.0,
+};
 
 /// Remove Background needs an unlocked pixel layer.
 fn check(doc: &Document, l: &Layer) -> std::result::Result<(), String> {
     if !matches!(l.content, LayerContent::Raster(_)) {
-        return Err(format!("the layer is {} {} layer, not a pixel layer", l.content.article(), l.content.kind_name()));
+        return Err(format!(
+            "the layer is {} {} layer, not a pixel layer",
+            l.content.article(),
+            l.content.kind_name()
+        ));
     }
     let locks = doc.effective_locks(l.id);
     if locks.pixels || locks.all {
-        return Err(format!("Could not complete your request because the layer \"{}\" is locked", l.name));
+        return Err(format!(
+            "Could not complete your request because the layer \"{}\" is locked",
+            l.name
+        ));
     }
     Ok(())
 }
@@ -39,14 +53,19 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let id = layer_param(s, p)?;
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
     check(doc, doc.layer(id).ok_or(EngineError::NoLayer(id))?).map_err(EngineError::Other)?;
-    let sample_all = p.get("sampleAllLayers").and_then(Value::as_bool).unwrap_or(false);
+    let sample_all = p
+        .get("sampleAllLayers")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let refine = p.get("refine").and_then(Value::as_bool).unwrap_or(true);
     crate::jobs::edit_job(
         s,
         "Remove Background",
         move |doc, _, ctx| {
             ctx.progress(0.1, "Finding subject");
-            let found = with_doc_sampler(doc, Some(id), sample_all, |smp, d| subject::select_subject(smp, d.bounds()));
+            let found = with_doc_sampler(doc, Some(id), sample_all, |smp, d| {
+                subject::select_subject(smp, d.bounds())
+            });
             let mut region = found.ok_or_else(|| EngineError::Other("no subject found".into()))?;
             if ctx.cancelled() {
                 return Err(EngineError::Cancelled);
@@ -54,7 +73,13 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
             if refine {
                 ctx.progress(0.6, "Refining edge");
                 let refined = with_doc_sampler(doc, Some(id), sample_all, |smp, d| {
-                    matting::refine_mask(smp, &matting::region_reader(&region), region.bbox, d.bounds(), &REFINE)
+                    matting::refine_mask(
+                        smp,
+                        &matting::region_reader(&region),
+                        region.bbox,
+                        d.bounds(),
+                        &REFINE,
+                    )
                 });
                 region = refined.unwrap_or(region);
                 if ctx.cancelled() {
@@ -62,7 +87,10 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
             crate::extra_cmds::background_to_layer_for_mask(doc, id);
-            doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?.mask = Some(LayerMask { surface: matting::region_surface(&region), ..LayerMask::reveal_all() });
+            doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?.mask = Some(LayerMask {
+                surface: matting::region_surface(&region),
+                ..LayerMask::reveal_all()
+            });
             doc.selection = None;
             let b = region.bbox;
             Ok([b.x0, b.y0, b.width() as i32, b.height() as i32])
@@ -94,7 +122,8 @@ mod tests {
 
     fn session_with(w: u32, h: u32, depth: u32, px: impl Fn(u32, u32) -> [f32; 3]) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": w, "height": h, "depth": depth})).unwrap();
+        s.execute("file.new", json!({"width": w, "height": h, "depth": depth}))
+            .unwrap();
         s.edit("paint", |doc, _| {
             let bg = doc.layers[0].surface_mut().unwrap();
             let n = bg.channels();
@@ -145,7 +174,10 @@ mod tests {
     }
 
     fn mask_cov(s: &Session, x: i32, y: i32) -> f32 {
-        layer(s, active_id(s)).mask.as_ref().map_or(0.0, |m| m.value(x, y))
+        layer(s, active_id(s))
+            .mask
+            .as_ref()
+            .map_or(0.0, |m| m.value(x, y))
     }
 
     fn mask_iou(s: &Session, w: i32, h: i32, truth: impl Fn(i32, i32) -> bool) -> f32 {
@@ -166,25 +198,59 @@ mod tests {
             let (mut s, inside) = disc(depth);
             assert!(s.is_enabled(CMD));
             let id = active_id(&s);
-            let pixels = layer(&s, id).surface().unwrap().read_region(Rect::new(0, 0, 200, 160));
+            let pixels = layer(&s, id)
+                .surface()
+                .unwrap()
+                .read_region(Rect::new(0, 0, 200, 160));
             let steps = s.active().unwrap().history.past_len();
             let r = s.execute(CMD, json!({})).unwrap();
             assert_eq!(r["layer"], id.0);
-            assert_eq!(s.active().unwrap().history.past_len(), steps + 1, "depth {depth}: one history step");
-            assert!(layer(&s, id).mask.is_some(), "depth {depth}: expected a layer mask");
+            assert_eq!(
+                s.active().unwrap().history.past_len(),
+                steps + 1,
+                "depth {depth}: one history step"
+            );
+            assert!(
+                layer(&s, id).mask.is_some(),
+                "depth {depth}: expected a layer mask"
+            );
             let v = mask_iou(&s, 200, 160, &inside);
             assert!(v >= 0.75, "depth {depth}: IoU {v}");
-            assert!(mask_cov(&s, 0, 0) < 0.2, "depth {depth}: background corner still revealed");
-            assert!(mask_cov(&s, 100, 80) >= 0.8, "depth {depth}: disc centre hidden");
+            assert!(
+                mask_cov(&s, 0, 0) < 0.2,
+                "depth {depth}: background corner still revealed"
+            );
+            assert!(
+                mask_cov(&s, 100, 80) >= 0.8,
+                "depth {depth}: disc centre hidden"
+            );
             // Non-destructive: the pixels are untouched, only masked.
-            assert_eq!(layer(&s, id).surface().unwrap().read_region(Rect::new(0, 0, 200, 160)), pixels, "depth {depth}");
-            let corner = photocraft_compose::render(&s.active().unwrap().doc, Rect::new(0, 0, 1, 1)).px[0][3];
-            assert!(corner < 0.2, "depth {depth}: composite corner alpha {corner}");
+            assert_eq!(
+                layer(&s, id)
+                    .surface()
+                    .unwrap()
+                    .read_region(Rect::new(0, 0, 200, 160)),
+                pixels,
+                "depth {depth}"
+            );
+            let corner =
+                photocraft_compose::render(&s.active().unwrap().doc, Rect::new(0, 0, 1, 1)).px[0]
+                    [3];
+            assert!(
+                corner < 0.2,
+                "depth {depth}: composite corner alpha {corner}"
+            );
             assert!(s.active().unwrap().doc.selection.is_none());
             s.execute("edit.undo", json!({})).unwrap();
-            assert!(layer(&s, id).mask.is_none(), "depth {depth}: mask remained after undo");
+            assert!(
+                layer(&s, id).mask.is_none(),
+                "depth {depth}: mask remained after undo"
+            );
             s.execute("edit.redo", json!({})).unwrap();
-            assert!(layer(&s, id).mask.is_some(), "depth {depth}: mask missing after redo");
+            assert!(
+                layer(&s, id).mask.is_some(),
+                "depth {depth}: mask missing after redo"
+            );
         }
     }
 
@@ -216,17 +282,26 @@ mod tests {
         assert!(Session::new().execute(CMD, json!({})).is_err());
 
         let (mut s, _) = disc(8);
-        s.execute("type.create", json!({"text": "Hi", "size": 24, "x": 10, "y": 20})).unwrap();
+        s.execute(
+            "type.create",
+            json!({"text": "Hi", "size": 24, "x": 10, "y": 20}),
+        )
+        .unwrap();
         assert!(!s.is_enabled(CMD));
         assert!(s.execute(CMD, json!({})).is_err());
 
         let (mut s, _) = disc(8);
-        s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"})).unwrap();
+        s.execute(
+            "shape.create",
+            json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"}),
+        )
+        .unwrap();
         assert!(!s.is_enabled(CMD));
         assert!(s.execute(CMD, json!({})).is_err());
 
         let (mut s, _) = disc(8);
-        s.execute("layer.setProps", json!({"locks": {"pixels": true}})).unwrap();
+        s.execute("layer.setProps", json!({"locks": {"pixels": true}}))
+            .unwrap();
         assert!(!s.is_enabled(CMD));
         assert!(s.execute(CMD, json!({})).is_err());
 
@@ -237,7 +312,10 @@ mod tests {
         assert!(s.execute(CMD, json!({"layer": "x"})).is_err());
         assert_eq!(s.active().unwrap().revision, before);
         // Wrong types for the options fall back to the defaults (layer-only sampling, refined).
-        assert!(s.execute(CMD, json!({"sampleAllLayers": 3, "refine": "no"})).is_ok());
+        assert!(
+            s.execute(CMD, json!({"sampleAllLayers": 3, "refine": "no"}))
+                .is_ok()
+        );
         assert!(s.active().unwrap().revision > before);
     }
 
@@ -245,7 +323,8 @@ mod tests {
     fn remove_background_looks_at_the_layer_alone_by_default() {
         let (mut s, _) = disc(8);
         let bottom = active_id(&s);
-        s.execute("layer.new.layer", json!({"name": "Empty"})).unwrap();
+        s.execute("layer.new.layer", json!({"name": "Empty"}))
+            .unwrap();
         let top = active_id(&s);
         let before = s.active().unwrap().revision;
         // The empty layer has no subject of its own, though the photo shows through it.
@@ -262,7 +341,14 @@ mod tests {
         let (mut s, _) = disc(8);
         s.execute(CMD, json!({})).unwrap();
         s.execute(CMD, json!({"refine": false})).unwrap();
-        let masks = s.active().unwrap().doc.walk().into_iter().filter(|(_, _, l)| l.mask.is_some()).count();
+        let masks = s
+            .active()
+            .unwrap()
+            .doc
+            .walk()
+            .into_iter()
+            .filter(|(_, _, l)| l.mask.is_some())
+            .count();
         assert_eq!(masks, 1);
     }
 }

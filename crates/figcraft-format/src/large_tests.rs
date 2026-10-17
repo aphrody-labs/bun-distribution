@@ -5,7 +5,8 @@
 use figcraft_doc::color::{BlendMode, Color, Paint};
 use figcraft_doc::geom::Affine;
 use figcraft_doc::{
-    AutoLayout, ChildLayout, Document, Effect, EffectKind, ExportSetting, Node, NodeKind, Shadow, Sizing, StrokeAlign, TextAlignH, TextData,
+    AutoLayout, ChildLayout, Document, Effect, EffectKind, ExportSetting, Node, NodeKind, Shadow,
+    Sizing, StrokeAlign, TextAlignH, TextData,
 };
 
 use super::*;
@@ -15,21 +16,64 @@ use super::*;
 fn large(screens: usize) -> Document {
     let mut d = Document::new("Large");
     let page = d.first_page().unwrap();
-    let button =
-        d.create(page, NodeKind::Component { description: "A button".into(), props: Default::default() }, "Button", 0.0, -80.0, 96.0, 32.0).unwrap();
-    let label = d.create(button, NodeKind::Text(TextData::new("OK")), "Label", 8.0, 8.0, 40.0, 16.0).unwrap();
-    d.get_mut(label).unwrap().plugin_data.insert("agent".into(), "note".into());
+    let button = d
+        .create(
+            page,
+            NodeKind::Component {
+                description: "A button".into(),
+                props: Default::default(),
+            },
+            "Button",
+            0.0,
+            -80.0,
+            96.0,
+            32.0,
+        )
+        .unwrap();
+    let label = d
+        .create(
+            button,
+            NodeKind::Text(TextData::new("OK")),
+            "Label",
+            8.0,
+            8.0,
+            40.0,
+            16.0,
+        )
+        .unwrap();
+    d.get_mut(label)
+        .unwrap()
+        .plugin_data
+        .insert("agent".into(), "note".into());
     for s in 0..screens {
-        let screen = d.create(page, NodeKind::Frame, &format!("Screen {s}"), (s % 20) as f64 * 400.0, (s / 20) as f64 * 300.0, 360.0, 240.0).unwrap();
+        let screen = d
+            .create(
+                page,
+                NodeKind::Frame,
+                &format!("Screen {s}"),
+                (s % 20) as f64 * 400.0,
+                (s / 20) as f64 * 300.0,
+                360.0,
+                240.0,
+            )
+            .unwrap();
         let n = d.get_mut(screen).unwrap();
         n.clip = true;
-        n.layout = Some(AutoLayout { gap: 6.0, padding: [4.0; 4], ..AutoLayout::default() });
+        n.layout = Some(AutoLayout {
+            gap: 6.0,
+            padding: [4.0; 4],
+            ..AutoLayout::default()
+        });
         n.exports.push(ExportSetting::default());
         n.corners.radii = [4.0, 0.0, 4.0, 0.0];
         for k in 0..20 {
             let kind = match k % 4 {
                 0 => NodeKind::Rectangle,
-                1 => NodeKind::Ellipse { start: 0.5, sweep: 3.0, inner: 0.25 },
+                1 => NodeKind::Ellipse {
+                    start: 0.5,
+                    sweep: 3.0,
+                    inner: 0.25,
+                },
                 2 => {
                     let mut t = TextData::new(format!("Item {k}\nsecond line"));
                     t.align_h = TextAlignH::Center;
@@ -39,7 +83,17 @@ fn large(screens: usize) -> Document {
                 }
                 _ => NodeKind::Line,
             };
-            let id = d.create(screen, kind, &format!("Layer {k}"), 10.0 + k as f64 * 16.0, 50.0, 14.0, 14.0).unwrap();
+            let id = d
+                .create(
+                    screen,
+                    kind,
+                    &format!("Layer {k}"),
+                    10.0 + k as f64 * 16.0,
+                    50.0,
+                    14.0,
+                    14.0,
+                )
+                .unwrap();
             let n = d.get_mut(id).unwrap();
             match k % 5 {
                 0 => {
@@ -59,10 +113,18 @@ fn large(screens: usize) -> Document {
                 }
                 3 => {
                     n.effects.push(Effect {
-                        kind: EffectKind::DropShadow(Shadow { offset: (1.0, 2.0), radius: 3.0, ..Shadow::default() }),
+                        kind: EffectKind::DropShadow(Shadow {
+                            offset: (1.0, 2.0),
+                            radius: 3.0,
+                            ..Shadow::default()
+                        }),
                         visible: true,
                     });
-                    n.child_layout = ChildLayout { sizing_h: Sizing::Fill, min_w: Some(4.0), ..ChildLayout::default() };
+                    n.child_layout = ChildLayout {
+                        sizing_h: Sizing::Fill,
+                        min_w: Some(4.0),
+                        ..ChildLayout::default()
+                    };
                     n.constrain_proportions = true;
                 }
                 _ => {
@@ -72,12 +134,35 @@ fn large(screens: usize) -> Document {
             }
         }
         let props = [("Label".to_string(), json!("Go"))].into_iter().collect();
-        let inst = d.create(screen, NodeKind::Instance { component: button, props }, "Button", 10.0, 200.0, 96.0, 32.0).unwrap();
+        let inst = d
+            .create(
+                screen,
+                NodeKind::Instance {
+                    component: button,
+                    props,
+                },
+                "Button",
+                10.0,
+                200.0,
+                96.0,
+                32.0,
+            )
+            .unwrap();
         let n = d.get_mut(inst).unwrap();
         n.source = Some(button);
         n.overrides.insert("fills".into());
         n.prop_refs.insert("visible".into(), "Show".into());
-        let l = d.create(inst, NodeKind::Text(TextData::new("Go")), "Label", 8.0, 8.0, 40.0, 16.0).unwrap();
+        let l = d
+            .create(
+                inst,
+                NodeKind::Text(TextData::new("Go")),
+                "Label",
+                8.0,
+                8.0,
+                40.0,
+                16.0,
+            )
+            .unwrap();
         d.get_mut(l).unwrap().source = Some(label);
     }
     d
@@ -89,7 +174,10 @@ fn assert_same_doc(a: &Document, b: &Document) {
     for n in a.nodes() {
         assert_eq!(Some(n), b.node(n.id), "layer {} `{}`", n.id.0, n.name);
     }
-    assert_eq!((&a.name, &a.pages, &a.styles, &a.variables, &a.current_page), (&b.name, &b.pages, &b.styles, &b.variables, &b.current_page));
+    assert_eq!(
+        (&a.name, &a.pages, &a.styles, &a.variables, &a.current_page),
+        (&b.name, &b.pages, &b.styles, &b.variables, &b.current_page)
+    );
 }
 
 #[test]
@@ -121,8 +209,20 @@ fn large_document_roundtrips() {
 fn defaults_are_left_out_and_come_back() {
     let mut d = Document::new("Defaults");
     let p = d.first_page().unwrap();
-    let r = d.create(p, NodeKind::Rectangle, "Plain", 5.0, 0.0, 10.0, 10.0).unwrap();
-    let t = d.create(p, NodeKind::Text(TextData::new("Hi")), "Text", 0.0, 20.0, 10.0, 10.0).unwrap();
+    let r = d
+        .create(p, NodeKind::Rectangle, "Plain", 5.0, 0.0, 10.0, 10.0)
+        .unwrap();
+    let t = d
+        .create(
+            p,
+            NodeKind::Text(TextData::new("Hi")),
+            "Text",
+            0.0,
+            20.0,
+            10.0,
+            10.0,
+        )
+        .unwrap();
     let v = to_json(&d).unwrap();
     let node = |id: figcraft_doc::NodeId| v["nodes"][id.0.to_string()].as_object().unwrap().clone();
     let plain = node(r);
@@ -154,14 +254,37 @@ fn defaults_are_left_out_and_come_back() {
         "prop_refs",
         "plugin_data",
     ] {
-        assert!(!plain.contains_key(field), "`{field}` is at its default and left out");
+        assert!(
+            !plain.contains_key(field),
+            "`{field}` is at its default and left out"
+        );
     }
-    for field in ["id", "name", "type", "parent", "transform", "width", "height", "fills", "blend"] {
+    for field in [
+        "id",
+        "name",
+        "type",
+        "parent",
+        "transform",
+        "width",
+        "height",
+        "fills",
+        "blend",
+    ] {
         assert!(plain.contains_key(field), "`{field}` is written");
     }
     let text = node(t);
-    for field in ["runs", "paragraph_spacing", "paragraph_indent", "list", "max_lines", "features"] {
-        assert!(!text.contains_key(field), "text `{field}` is at its default and left out");
+    for field in [
+        "runs",
+        "paragraph_spacing",
+        "paragraph_indent",
+        "list",
+        "max_lines",
+        "features",
+    ] {
+        assert!(
+            !text.contains_key(field),
+            "text `{field}` is at its default and left out"
+        );
     }
     assert!(text.contains_key("characters") && text.contains_key("style"));
     let (back, _) = from_json(&serde_json::to_string(&v).unwrap()).unwrap();
@@ -179,7 +302,10 @@ fn files_with_every_field_spelled_out_still_open() {
     let (d, issues) = load_bytes(old.as_bytes()).unwrap();
     assert!(issues.is_empty(), "{issues:?}");
     let n: &Node = d.node(figcraft_doc::NodeId(2)).unwrap();
-    assert_eq!((n.name.as_str(), n.width, n.height, n.visible, n.opacity), ("Card background", 160.0, 64.0, true, 1.0));
+    assert_eq!(
+        (n.name.as_str(), n.width, n.height, n.visible, n.opacity),
+        ("Card background", 160.0, 64.0, true, 1.0)
+    );
     assert_eq!(n.fills.len(), 1);
     // Written again, it's the short form, and reads back the same.
     let (again, _) = from_json(&serde_json::to_string(&to_json(&d).unwrap()).unwrap()).unwrap();
@@ -189,16 +315,30 @@ fn files_with_every_field_spelled_out_still_open() {
 #[test]
 fn the_header_is_read_on_its_own() {
     // A newer file is refused before its document is looked at, whatever the version's size.
-    assert!(matches!(from_json(r#"{"nodes": "not a map", "version": 2}"#), Err(FormatError::Newer(2))));
-    assert!(matches!(from_json(r#"{"version": 99999999999}"#), Err(FormatError::Newer(u32::MAX))));
+    assert!(matches!(
+        from_json(r#"{"nodes": "not a map", "version": 2}"#),
+        Err(FormatError::Newer(2))
+    ));
+    assert!(matches!(
+        from_json(r#"{"version": 99999999999}"#),
+        Err(FormatError::Newer(u32::MAX))
+    ));
     // A version that isn't a number is no version; anything but an object is no document.
     let d = serde_json::to_string(&to_json(&Document::new("x")).unwrap()).unwrap();
     let odd = d.replacen("\"version\":1", "\"version\":\"one\"", 1);
     assert!(from_json(&odd).is_ok());
     for junk in ["[]", "[2]", "3", "null", "\"doc\"", "{", ""] {
-        assert!(matches!(from_json(junk), Err(FormatError::Corrupt(_))), "{junk}");
+        assert!(
+            matches!(from_json(junk), Err(FormatError::Corrupt(_))),
+            "{junk}"
+        );
     }
     // The image index is read from the header too.
-    let (_, _, index) = parse_json(&d.replacen("\"imageIndex\":[]", "\"imageIndex\":[{\"hash\":\"ab\"},{\"nope\":1}]", 1)).unwrap();
+    let (_, _, index) = parse_json(&d.replacen(
+        "\"imageIndex\":[]",
+        "\"imageIndex\":[{\"hash\":\"ab\"},{\"nope\":1}]",
+        1,
+    ))
+    .unwrap();
     assert_eq!(index, Some(["ab".to_string()].into_iter().collect()));
 }

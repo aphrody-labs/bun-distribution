@@ -83,7 +83,11 @@ pub struct Swatch {
 
 impl Swatch {
     pub fn new(name: &str, color: SwatchColor) -> Self {
-        Swatch { name: name.into(), color, kind: SwatchKind::Process }
+        Swatch {
+            name: name.into(),
+            color,
+            kind: SwatchKind::Process,
+        }
     }
 }
 
@@ -145,7 +149,9 @@ impl SwatchColor {
             SwatchColor::Cmyk(c) => c.iter().map(|v| r(*v, 100.0)).collect(),
             SwatchColor::Lab(c) => c.iter().map(|v| r(*v, 1.0)).collect(),
             SwatchColor::Gray(k) => vec![r(k, 100.0)],
-            SwatchColor::Book { space, values } => std::iter::once(f64::from(space)).chain(values.iter().map(|v| f64::from(*v))).collect(),
+            SwatchColor::Book { space, values } => std::iter::once(f64::from(space))
+                .chain(values.iter().map(|v| f64::from(*v)))
+                .collect(),
         }
     }
 
@@ -155,12 +161,21 @@ impl SwatchColor {
         if let Some(s) = v.as_str() {
             let h = s.trim().trim_start_matches('#');
             if h.len() != 6 || !h.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Err(format!("bad colour `{s}` (\"#rrggbb\" or {{\"model\",\"values\"}})"));
+                return Err(format!(
+                    "bad colour `{s}` (\"#rrggbb\" or {{\"model\",\"values\"}})"
+                ));
             }
-            let b = |i: usize| h.get(i..i + 2).and_then(|x| u8::from_str_radix(x, 16).ok()).map_or(0.0, |x| f32::from(x) / 255.0);
+            let b = |i: usize| {
+                h.get(i..i + 2)
+                    .and_then(|x| u8::from_str_radix(x, 16).ok())
+                    .map_or(0.0, |x| f32::from(x) / 255.0)
+            };
             return Ok(SwatchColor::Rgb([b(0), b(2), b(4)]));
         }
-        let model = v.get("model").and_then(Value::as_str).ok_or("a colour needs `model` (rgb|hsb|cmyk|lab|gray) and `values`")?;
+        let model = v
+            .get("model")
+            .and_then(Value::as_str)
+            .ok_or("a colour needs `model` (rgb|hsb|cmyk|lab|gray) and `values`")?;
         let vals: Vec<f32> = v
             .get("values")
             .and_then(Value::as_array)
@@ -175,7 +190,16 @@ impl SwatchColor {
                     .ok_or("colour values must be finite numbers within f32 range")
             })
             .collect::<Result<_, _>>()?;
-        let need = |n: usize| if vals.len() == n { Ok(()) } else { Err(format!("a {model} colour has {n} values, got {}", vals.len())) };
+        let need = |n: usize| {
+            if vals.len() == n {
+                Ok(())
+            } else {
+                Err(format!(
+                    "a {model} colour has {n} values, got {}",
+                    vals.len()
+                ))
+            }
+        };
         let pct = |v: f32| (v / 100.0).clamp(0.0, 1.0);
         Ok(match model {
             "rgb" => {
@@ -192,13 +216,21 @@ impl SwatchColor {
             }
             "lab" => {
                 need(3)?;
-                SwatchColor::Lab([vals[0].clamp(0.0, 100.0), vals[1].clamp(-128.0, 127.0), vals[2].clamp(-128.0, 127.0)])
+                SwatchColor::Lab([
+                    vals[0].clamp(0.0, 100.0),
+                    vals[1].clamp(-128.0, 127.0),
+                    vals[2].clamp(-128.0, 127.0),
+                ])
             }
             "gray" => {
                 need(1)?;
                 SwatchColor::Gray(pct(vals[0]))
             }
-            m => return Err(format!("unknown colour model `{m}` (rgb|hsb|cmyk|lab|gray)")),
+            m => {
+                return Err(format!(
+                    "unknown colour model `{m}` (rgb|hsb|cmyk|lab|gray)"
+                ));
+            }
         })
     }
 
@@ -245,9 +277,17 @@ impl SwatchConv {
 
     fn with(s: Option<&Session>) -> Self {
         let rgb = working(s, ColorMode::Rgb);
-        let opts = TransformOptions { intent: photocraft_cms::Intent::RelativeColorimetric, bpc: true, ..Default::default() };
+        let opts = TransformOptions {
+            intent: photocraft_cms::Intent::RelativeColorimetric,
+            bpc: true,
+            ..Default::default()
+        };
         let link = |src: &Profile| photocraft_cms::cached(src, &rgb, opts).ok();
-        SwatchConv { cmyk: link(&working(s, ColorMode::Cmyk)), lab: link(Builtin::LabD50.profile()), gray: link(&working(s, ColorMode::Grayscale)) }
+        SwatchConv {
+            cmyk: link(&working(s, ColorMode::Cmyk)),
+            lab: link(Builtin::LabD50.profile()),
+            gray: link(&working(s, ColorMode::Grayscale)),
+        }
     }
 
     /// The colour in the RGB working space (what the foreground colour holds), 0..1.
@@ -268,8 +308,14 @@ impl SwatchConv {
             }
             SwatchColor::Lab([l, a, b]) => {
                 // ICC v4 Lab encoding (the Lab D50 profile's device values).
-                let enc = [unit(finite(l) / 100.0), unit((finite(a) + 128.0) / 255.0), unit((finite(b) + 128.0) / 255.0)];
-                eval(&self.lab, &enc).unwrap_or_else(|| photocraft_color::convert::lab_to_srgb([finite(l), finite(a), finite(b)]))
+                let enc = [
+                    unit(finite(l) / 100.0),
+                    unit((finite(a) + 128.0) / 255.0),
+                    unit((finite(b) + 128.0) / 255.0),
+                ];
+                eval(&self.lab, &enc).unwrap_or_else(|| {
+                    photocraft_color::convert::lab_to_srgb([finite(l), finite(a), finite(b)])
+                })
             }
             SwatchColor::Gray(k) => {
                 let level = 1.0 - unit(k);
@@ -292,7 +338,8 @@ pub fn hex(c: [f32; 3]) -> String {
 /// secondaries (#FF0000, #00FF00, ...) as Photoshop's RGB group does; the other four are our own
 /// palette, whose "Pure" hues are vivid but not the pure channel values (#4302).
 pub fn builtin() -> Vec<Group<Swatch>> {
-    let rgb = |n: &str, c: [u8; 3]| Swatch::new(n, SwatchColor::Rgb(c.map(|v| f32::from(v) / 255.0)));
+    let rgb =
+        |n: &str, c: [u8; 3]| Swatch::new(n, SwatchColor::Rgb(c.map(|v| f32::from(v) / 255.0)));
     let grays = [
         ("Black", 0),
         ("90% Gray", 26),
@@ -305,7 +352,18 @@ pub fn builtin() -> Vec<Group<Swatch>> {
         ("20% Gray", 204),
         ("White", 255),
     ];
-    let hues = ["Red", "Orange", "Yellow", "Yellow Green", "Green", "Cyan Green", "Cyan", "Blue", "Violet", "Magenta"];
+    let hues = [
+        "Red",
+        "Orange",
+        "Yellow",
+        "Yellow Green",
+        "Green",
+        "Cyan Green",
+        "Cyan",
+        "Blue",
+        "Violet",
+        "Magenta",
+    ];
     let pastel: [[u8; 3]; 10] = [
         [236, 128, 128],
         [244, 176, 132],
@@ -330,10 +388,32 @@ pub fn builtin() -> Vec<Group<Swatch>> {
         [120, 70, 220],
         [210, 50, 180],
     ];
-    let dark: [[u8; 3]; 10] =
-        [[120, 20, 20], [130, 60, 10], [130, 110, 10], [80, 120, 20], [20, 100, 40], [10, 100, 90], [10, 80, 120], [20, 50, 120], [60, 30, 110], [110, 20, 90]];
+    let dark: [[u8; 3]; 10] = [
+        [120, 20, 20],
+        [130, 60, 10],
+        [130, 110, 10],
+        [80, 120, 20],
+        [20, 100, 40],
+        [10, 100, 90],
+        [10, 80, 120],
+        [20, 50, 120],
+        [60, 30, 110],
+        [110, 20, 90],
+    ];
     let row = |prefix: &str, cs: [[u8; 3]; 10]| -> Vec<Swatch> {
-        hues.iter().zip(cs).map(|(h, c)| rgb(&if prefix.is_empty() { (*h).to_string() } else { format!("{prefix} {h}") }, c)).collect()
+        hues.iter()
+            .zip(cs)
+            .map(|(h, c)| {
+                rgb(
+                    &if prefix.is_empty() {
+                        (*h).to_string()
+                    } else {
+                        format!("{prefix} {h}")
+                    },
+                    c,
+                )
+            })
+            .collect()
     };
     // Right after Grays, near the top of the panel (Grays stays first: new swatches land there).
     // Photoshop's order: red, yellow, green, cyan, blue, magenta.
@@ -346,7 +426,10 @@ pub fn builtin() -> Vec<Group<Swatch>> {
         ("RGB Magenta", [255, 0, 255]),
     ];
     vec![
-        Group::new("Grays", grays.iter().map(|(n, v)| rgb(n, [*v; 3])).collect()),
+        Group::new(
+            "Grays",
+            grays.iter().map(|(n, v)| rgb(n, [*v; 3])).collect(),
+        ),
         Group::new("RGB", exact.iter().map(|(n, c)| rgb(n, *c)).collect()),
         Group::new("Pastel", row("Pastel", pastel)),
         Group::new("Pure", row("", pure)),
@@ -362,13 +445,19 @@ mod tests {
     fn default_library_has_the_forty_six_colours() {
         let b = builtin();
         assert_eq!(b.iter().map(|g| g.items.len()).sum::<usize>(), 46);
-        let names: Vec<&str> = b.iter().flat_map(|g| g.items.iter().map(|s| s.name.as_str())).collect();
+        let names: Vec<&str> = b
+            .iter()
+            .flat_map(|g| g.items.iter().map(|s| s.name.as_str()))
+            .collect();
         let mut uniq = names.clone();
         uniq.sort_unstable();
         uniq.dedup();
         assert_eq!(uniq.len(), 46, "names are unique: {names:?}");
         assert_eq!(b[3].name, "Pure");
-        assert_eq!(b[3].items[0].color, SwatchColor::Rgb([230.0 / 255.0, 40.0 / 255.0, 40.0 / 255.0]));
+        assert_eq!(
+            b[3].items[0].color,
+            SwatchColor::Rgb([230.0 / 255.0, 40.0 / 255.0, 40.0 / 255.0])
+        );
     }
 
     #[test]
@@ -379,18 +468,36 @@ mod tests {
         assert_eq!(g.name, "RGB");
         let conv = SwatchConv::builtin();
         let hexes: Vec<String> = g.items.iter().map(|s| hex(conv.rgb(&s.color))).collect();
-        assert_eq!(hexes, ["#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff"]);
+        assert_eq!(
+            hexes,
+            [
+                "#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff"
+            ]
+        );
     }
 
     #[test]
     fn conversions_go_through_the_cms() {
         let c = SwatchConv::builtin();
-        let near = |a: [f32; 3], b: [f32; 3], tol: f32| a.iter().zip(b).all(|(x, y)| (x - y).abs() <= tol);
+        let near =
+            |a: [f32; 3], b: [f32; 3], tol: f32| a.iter().zip(b).all(|(x, y)| (x - y).abs() <= tol);
         assert_eq!(c.rgb(&SwatchColor::Rgb([0.1, 0.2, 0.3])), [0.1, 0.2, 0.3]);
-        assert!(near(c.rgb(&SwatchColor::Hsb([120.0, 1.0, 1.0])), [0.0, 1.0, 0.0], 1e-6));
+        assert!(near(
+            c.rgb(&SwatchColor::Hsb([120.0, 1.0, 1.0])),
+            [0.0, 1.0, 0.0],
+            1e-6
+        ));
         // Lab white and black, gray (no ink = white), paper-white CMYK.
-        assert!(near(c.rgb(&SwatchColor::Lab([100.0, 0.0, 0.0])), [1.0; 3], 0.01));
-        assert!(near(c.rgb(&SwatchColor::Lab([0.0, 0.0, 0.0])), [0.0; 3], 0.01));
+        assert!(near(
+            c.rgb(&SwatchColor::Lab([100.0, 0.0, 0.0])),
+            [1.0; 3],
+            0.01
+        ));
+        assert!(near(
+            c.rgb(&SwatchColor::Lab([0.0, 0.0, 0.0])),
+            [0.0; 3],
+            0.01
+        ));
         assert!(near(c.rgb(&SwatchColor::Gray(0.0)), [1.0; 3], 0.01));
         assert!(near(c.rgb(&SwatchColor::Gray(1.0)), [0.0; 3], 0.01));
         assert!(near(c.rgb(&SwatchColor::Cmyk([0.0; 4])), [1.0; 3], 0.02));
@@ -401,10 +508,23 @@ mod tests {
         let red = c.rgb(&SwatchColor::Lab([54.0, 80.0, 67.0]));
         assert!(red[0] > 0.9 && red[1] < 0.2, "{red:?}");
         // Out-of-range and non-finite stored values never escape 0..1.
-        for col in [SwatchColor::Rgb([f32::NAN, 9.0, -3.0]), SwatchColor::Hsb([f32::INFINITY, 2.0, -1.0]), SwatchColor::Lab([500.0, f32::NAN, -999.0])] {
-            assert!(c.rgb(&col).iter().all(|v| (0.0..=1.0).contains(v)), "{col:?}");
+        for col in [
+            SwatchColor::Rgb([f32::NAN, 9.0, -3.0]),
+            SwatchColor::Hsb([f32::INFINITY, 2.0, -1.0]),
+            SwatchColor::Lab([500.0, f32::NAN, -999.0]),
+        ] {
+            assert!(
+                c.rgb(&col).iter().all(|v| (0.0..=1.0).contains(v)),
+                "{col:?}"
+            );
         }
-        assert_eq!(c.rgb(&SwatchColor::Book { space: 3, values: [0; 4] }), [0.5; 3]);
+        assert_eq!(
+            c.rgb(&SwatchColor::Book {
+                space: 3,
+                values: [0; 4]
+            }),
+            [0.5; 3]
+        );
     }
 
     #[test]
@@ -420,10 +540,20 @@ mod tests {
 
     #[test]
     fn colour_params() {
-        assert_eq!(SwatchColor::from_param(&json!("#ff0000")).unwrap(), SwatchColor::Rgb([1.0, 0.0, 0.0]));
-        assert_eq!(SwatchColor::from_param(&json!({"model": "cmyk", "values": [100, 0, 50, 0]})).unwrap(), SwatchColor::Cmyk([1.0, 0.0, 0.5, 0.0]));
-        assert_eq!(SwatchColor::from_param(&json!({"model": "gray", "values": [25]})).unwrap(), SwatchColor::Gray(0.25));
-        let lab = SwatchColor::from_param(&json!({"model": "lab", "values": [50, -20, 30]})).unwrap();
+        assert_eq!(
+            SwatchColor::from_param(&json!("#ff0000")).unwrap(),
+            SwatchColor::Rgb([1.0, 0.0, 0.0])
+        );
+        assert_eq!(
+            SwatchColor::from_param(&json!({"model": "cmyk", "values": [100, 0, 50, 0]})).unwrap(),
+            SwatchColor::Cmyk([1.0, 0.0, 0.5, 0.0])
+        );
+        assert_eq!(
+            SwatchColor::from_param(&json!({"model": "gray", "values": [25]})).unwrap(),
+            SwatchColor::Gray(0.25)
+        );
+        let lab =
+            SwatchColor::from_param(&json!({"model": "lab", "values": [50, -20, 30]})).unwrap();
         assert_eq!(lab.display_values(), vec![50.0, -20.0, 30.0]);
         for bad in [
             json!("#ff00"),
@@ -445,12 +575,25 @@ mod tests {
     #[test]
     fn serde_round_trip() {
         let sw = vec![
-            Swatch { name: "a".into(), color: SwatchColor::Lab([50.0, -1.5, 2.25]), kind: SwatchKind::Spot },
-            Swatch::new("b", SwatchColor::Book { space: 3, values: [1, 2, 3, 4] }),
+            Swatch {
+                name: "a".into(),
+                color: SwatchColor::Lab([50.0, -1.5, 2.25]),
+                kind: SwatchKind::Spot,
+            },
+            Swatch::new(
+                "b",
+                SwatchColor::Book {
+                    space: 3,
+                    values: [1, 2, 3, 4],
+                },
+            ),
             Swatch::new("c", SwatchColor::Gray(0.5)),
         ];
         let v = serde_json::to_value(&sw).unwrap();
-        assert_eq!(v[2], json!({"name": "c", "color": {"model": "gray", "values": 0.5}}));
+        assert_eq!(
+            v[2],
+            json!({"name": "c", "color": {"model": "gray", "values": 0.5}})
+        );
         let back: Vec<Swatch> = serde_json::from_value(v).unwrap();
         assert_eq!(back, sw);
     }

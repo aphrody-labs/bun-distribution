@@ -3,7 +3,14 @@
 //! Every user-visible action is a registered command ([`cmd::CommandSpec`]): menus, shortcuts, the
 //! CLI, the JSON control channel and MCP all dispatch the same commands by id with JSON params.
 //! The engine owns the [`Session`] behind an `Arc` (copy-on-write), so undo snapshots are cheap.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod catalog;
 pub mod catalog_more;
@@ -174,7 +181,10 @@ impl Engine {
 
     /// Replace the whole document (open / new); clears history.
     pub fn replace_session(&mut self, s: Session) {
-        self.transport = TransportStatus { position: s.edit.selection.start.max(0), ..TransportStatus::default() };
+        self.transport = TransportStatus {
+            position: s.edit.selection.start.max(0),
+            ..TransportStatus::default()
+        };
         self.transport_requests.clear();
         self.transport_requests.push(TransportRequest::ResetSession);
         self.doc = Arc::new(s);
@@ -221,18 +231,28 @@ impl Engine {
     }
 
     pub fn undo(&mut self) -> bool {
-        let Some(h) = self.undo.pop() else { return false };
+        let Some(h) = self.undo.pop() else {
+            return false;
+        };
         let cur = std::mem::replace(&mut self.doc, h.doc);
-        self.redo.push(HistoryEntry { label: h.label, doc: cur });
+        self.redo.push(HistoryEntry {
+            label: h.label,
+            doc: cur,
+        });
         self.revision = self.revision.wrapping_add(1);
         self.dirty = true;
         true
     }
 
     pub fn redo(&mut self) -> bool {
-        let Some(h) = self.redo.pop() else { return false };
+        let Some(h) = self.redo.pop() else {
+            return false;
+        };
         let cur = std::mem::replace(&mut self.doc, h.doc);
-        self.undo.push(HistoryEntry { label: h.label, doc: cur });
+        self.undo.push(HistoryEntry {
+            label: h.label,
+            doc: cur,
+        });
         self.revision = self.revision.wrapping_add(1);
         self.dirty = true;
         true
@@ -243,7 +263,10 @@ impl Engine {
         if Arc::ptr_eq(&before, &self.doc) {
             return;
         }
-        self.undo.push(HistoryEntry { label: label.to_string(), doc: before });
+        self.undo.push(HistoryEntry {
+            label: label.to_string(),
+            doc: before,
+        });
         self.redo.clear();
         if self.undo.len() > self.history_limit {
             let excess = self.undo.len() - self.history_limit;
@@ -258,7 +281,11 @@ impl Engine {
         if let Err(reason) = (spec.enabled)(self) {
             // A call that names its targets (tracks, clips, a range) does not need a selection;
             // the command itself validates them.
-            let names_targets = ["track", "tracks", "clip", "clips", "sources", "start", "end", "at"].iter().any(|k| params.get(k).is_some());
+            let names_targets = [
+                "track", "tracks", "clip", "clips", "sources", "start", "end", "at",
+            ]
+            .iter()
+            .any(|k| params.get(k).is_some());
             if !names_targets {
                 return Err(EngineError::Disabled(id.to_string(), reason));
             }
@@ -270,7 +297,8 @@ impl Engine {
         let before = Arc::clone(&self.doc);
         let rev = self.revision;
         let dirty = self.dirty;
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, params)));
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, params)));
         let result = match result {
             Ok(r) => r,
             Err(p) => {
@@ -304,8 +332,14 @@ impl Engine {
 
     fn execute_view(&mut self, spec: &CommandSpec, params: &Value) -> Result<Value> {
         let zoom = self.doc.edit.zoom;
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, params)))
-            .unwrap_or_else(|p| Err(EngineError::Internal(spec.id.to_string(), panic_message(&*p))));
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, params)))
+                .unwrap_or_else(|p| {
+                    Err(EngineError::Internal(
+                        spec.id.to_string(),
+                        panic_message(&*p),
+                    ))
+                });
         if result.is_err() && self.doc.edit.zoom != zoom {
             Arc::make_mut(&mut self.doc).edit.zoom = zoom;
         }
@@ -351,7 +385,11 @@ impl Engine {
         if s.edit.selected_tracks.is_empty() {
             Vec::new()
         } else {
-            s.tracks.iter().filter(|t| s.edit.selected_tracks.contains(&t.id)).map(|t| t.id).collect()
+            s.tracks
+                .iter()
+                .filter(|t| s.edit.selected_tracks.contains(&t.id))
+                .map(|t| t.id)
+                .collect()
         }
     }
 }
@@ -381,7 +419,10 @@ fn install_panic_hook() {
 }
 
 fn panic_message(p: &(dyn std::any::Any + Send)) -> String {
-    p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into())
+    p.downcast_ref::<&str>()
+        .map(|s| s.to_string())
+        .or_else(|| p.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "panic".into())
 }
 
 #[cfg(test)]
@@ -391,9 +432,14 @@ mod merge_tests {
     #[test]
     fn merged_gesture_is_one_undo_step() {
         let mut e = Engine::default();
-        let t = e.session_mut().add_track(soundcraft_model::TrackKind::Audio, soundcraft_model::ChannelFormat::Mono, None);
+        let t = e.session_mut().add_track(
+            soundcraft_model::TrackKind::Audio,
+            soundcraft_model::ChannelFormat::Mono,
+            None,
+        );
         for db in [-1.0, -2.0, -3.0, -4.0] {
-            e.execute_merged("mix.volume", &json!({"track": t.0, "db": db}), "fader").unwrap();
+            e.execute_merged("mix.volume", &json!({"track": t.0, "db": db}), "fader")
+                .unwrap();
         }
         e.end_merge();
         assert_eq!(e.undo_history().len(), 1);
@@ -410,7 +456,10 @@ mod dirty_tests {
     fn selecting_locating_and_zooming_leave_the_session_clean() {
         let mut e = crate::demo::demo_engine();
         for (id, p) in [
-            ("edit.select", json!({"tracks": ["Kick"], "start": 0, "end": 48_000})),
+            (
+                "edit.select",
+                json!({"tracks": ["Kick"], "start": 0, "end": 48_000}),
+            ),
             ("edit.select_none", json!({})),
             ("transport.locate", json!({"at": 96_000})),
             ("view.zoom_in", json!({})),

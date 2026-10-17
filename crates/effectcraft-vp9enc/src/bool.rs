@@ -17,7 +17,12 @@ impl Default for BoolEncoder {
 
 impl BoolEncoder {
     pub fn new() -> Self {
-        BoolEncoder { out: Vec::new(), range: 255, bottom: 0, bit_count: 24 }
+        BoolEncoder {
+            out: Vec::new(),
+            range: 255,
+            bottom: 0,
+            bit_count: 24,
+        }
     }
 
     fn add_one(&mut self) {
@@ -101,13 +106,23 @@ mod tests {
     }
     impl<'a> Dec<'a> {
         fn new(d: &'a [u8]) -> Self {
-            let mut x = Dec { d, pos: 0, value: 0, bits: 0, range: 255 };
+            let mut x = Dec {
+                d,
+                pos: 0,
+                value: 0,
+                bits: 0,
+                range: 255,
+            };
             x.fill();
             x
         }
         fn fill(&mut self) {
             while self.bits <= 48 {
-                let b = if self.pos < self.d.len() { self.d[self.pos] } else { 0 };
+                let b = if self.pos < self.d.len() {
+                    self.d[self.pos]
+                } else {
+                    0
+                };
                 self.pos += 1;
                 self.value |= (b as u64) << (56 - self.bits);
                 self.bits += 8;

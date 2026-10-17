@@ -11,7 +11,10 @@ fn lay(doc: &Document) -> DocLayout {
 
 /// A text box `w` × `h` showing `text`, inline at the end of body paragraph `para`; its story id.
 fn text_box(d: &mut Document, para: usize, text: &str, w: f32, h: f32, body: TextBody) -> u32 {
-    let id = d.add_part(PartKind::TextBox, vec![para_block(Paragraph::with_text(text, Default::default()))]);
+    let id = d.add_part(
+        PartKind::TextBox,
+        vec![para_block(Paragraph::with_text(text, Default::default()))],
+    );
     if let Some(p) = d.parts.get_mut(&id) {
         p.body = body;
     }
@@ -28,8 +31,11 @@ fn text_box(d: &mut Document, para: usize, text: &str, w: f32, h: f32, body: Tex
         freeform: None,
         extra: Default::default(),
     };
-    let off = d.para(StoryRef::Body, &Path::top(para)).map_or(0, |p| p.len());
-    d.insert_object(&Pos::body(para, off), shape, &Default::default()).unwrap();
+    let off = d
+        .para(StoryRef::Body, &Path::top(para))
+        .map_or(0, |p| p.len());
+    d.insert_object(&Pos::body(para, off), shape, &Default::default())
+        .unwrap();
     id
 }
 
@@ -39,7 +45,15 @@ fn lines(l: &DocLayout, id: u32) -> Vec<(f32, f32, TextDirection, usize, usize)>
         .items
         .iter()
         .filter_map(|it| match it {
-            Placed::Lines { story: StoryRef::Part(s), x, y, turn, l0, l1, .. } if *s == id => Some((*x, *y, *turn, *l0, *l1)),
+            Placed::Lines {
+                story: StoryRef::Part(s),
+                x,
+                y,
+                turn,
+                l0,
+                l1,
+                ..
+            } if *s == id => Some((*x, *y, *turn, *l0, *l1)),
             _ => None,
         })
         .collect()
@@ -59,21 +73,59 @@ fn align_text_and_text_direction_place_the_text_in_the_box() {
     };
     let ((_, top, turn, ..), r) = at(TextBody::default());
     assert_eq!(turn, TextDirection::Horizontal);
-    assert!((top - (r.y + BOX_INSET_Y)).abs() < 1.0, "top-aligned text starts under the top inset: {top} in {r:?}");
-    let ((_, mid, ..), _) = at(TextBody { anchor: VAlign::Center, ..Default::default() });
-    let ((_, bottom, ..), _) = at(TextBody { anchor: VAlign::Bottom, ..Default::default() });
-    assert!(mid > top + 40.0 && bottom > mid + 40.0, "{top} {mid} {bottom}");
-    assert!(bottom < r.bottom() - BOX_INSET_Y, "the line stays inside the box");
+    assert!(
+        (top - (r.y + BOX_INSET_Y)).abs() < 1.0,
+        "top-aligned text starts under the top inset: {top} in {r:?}"
+    );
+    let ((_, mid, ..), _) = at(TextBody {
+        anchor: VAlign::Center,
+        ..Default::default()
+    });
+    let ((_, bottom, ..), _) = at(TextBody {
+        anchor: VAlign::Bottom,
+        ..Default::default()
+    });
+    assert!(
+        mid > top + 40.0 && bottom > mid + 40.0,
+        "{top} {mid} {bottom}"
+    );
+    assert!(
+        bottom < r.bottom() - BOX_INSET_Y,
+        "the line stays inside the box"
+    );
     // Rotated 90°: lines run down from the top right corner; 270°: up from the bottom left.
-    let ((x, y, turn, ..), r) = at(TextBody { vert: TextVert::Vert, ..Default::default() });
+    let ((x, y, turn, ..), r) = at(TextBody {
+        vert: TextVert::Vert,
+        ..Default::default()
+    });
     assert_eq!(turn, TextDirection::Down);
-    assert!((x - (r.right() - BOX_INSET_X)).abs() < 1.0 && (y - (r.y + BOX_INSET_Y)).abs() < 1.0, "{x},{y} in {r:?}");
-    let ((x, y, turn, ..), r) = at(TextBody { vert: TextVert::Vert270, anchor: VAlign::Bottom, ..Default::default() });
+    assert!(
+        (x - (r.right() - BOX_INSET_X)).abs() < 1.0 && (y - (r.y + BOX_INSET_Y)).abs() < 1.0,
+        "{x},{y} in {r:?}"
+    );
+    let ((x, y, turn, ..), r) = at(TextBody {
+        vert: TextVert::Vert270,
+        anchor: VAlign::Bottom,
+        ..Default::default()
+    });
     assert_eq!(turn, TextDirection::Up);
-    assert!(x > r.x + 100.0 && (y - (r.bottom() - BOX_INSET_Y)).abs() < 1.0, "bottom-aligned turned text sits at the far side: {x},{y} in {r:?}");
+    assert!(
+        x > r.x + 100.0 && (y - (r.bottom() - BOX_INSET_Y)).abs() < 1.0,
+        "bottom-aligned turned text sits at the far side: {x},{y} in {r:?}"
+    );
     // Stacked: one letter to a line, upright.
     let mut d = Document::from_text("x");
-    let id = text_box(&mut d, 0, "Hi", 144.0, 144.0, TextBody { vert: TextVert::Stacked, ..Default::default() });
+    let id = text_box(
+        &mut d,
+        0,
+        "Hi",
+        144.0,
+        144.0,
+        TextBody {
+            vert: TextVert::Stacked,
+            ..Default::default()
+        },
+    );
     let l = lay(&d);
     let (.., l0, l1) = lines(&l, id)[0];
     assert_eq!(l1 - l0, 2, "two letters, two lines");
@@ -86,7 +138,12 @@ fn linked_boxes_continue_the_text() {
     let a = text_box(&mut d, 0, &text, 144.0, 48.0, TextBody::default());
     let b = text_box(&mut d, 1, "", 144.0, 400.0, TextBody::default());
     let unlinked = lay(&d);
-    let shown = |l: &DocLayout| lines(l, a).iter().map(|(.., l0, l1)| l1 - l0).sum::<usize>();
+    let shown = |l: &DocLayout| {
+        lines(l, a)
+            .iter()
+            .map(|(.., l0, l1)| l1 - l0)
+            .sum::<usize>()
+    };
     let in_a = shown(&unlinked);
     d.parts.get_mut(&a).unwrap().body.next = Some(b);
     let l = lay(&d);
@@ -95,7 +152,11 @@ fn linked_boxes_continue_the_text() {
         .items
         .iter()
         .filter_map(|it| match it {
-            Placed::Object { rect, text_box: Some(s), .. } if *s == a => Some(*rect),
+            Placed::Object {
+                rect,
+                text_box: Some(s),
+                ..
+            } if *s == a => Some(*rect),
             _ => None,
         })
         .collect();
@@ -103,15 +164,26 @@ fn linked_boxes_continue_the_text() {
     let rb = frames[1];
     let ls = lines(&l, a);
     // The first box shows what fits; the second picks up at the next line, at its top.
-    let (first, rest): (Vec<(f32, f32, TextDirection, usize, usize)>, Vec<_>) = ls.iter().partition(|(_, y, ..)| *y < rb.y);
-    assert_eq!(first.iter().map(|(.., l0, l1)| l1 - l0).sum::<usize>(), in_a);
+    let (first, rest): (Vec<(f32, f32, TextDirection, usize, usize)>, Vec<_>) =
+        ls.iter().partition(|(_, y, ..)| *y < rb.y);
+    assert_eq!(
+        first.iter().map(|(.., l0, l1)| l1 - l0).sum::<usize>(),
+        in_a
+    );
     let (_, y, _, l0, _) = rest[0];
-    assert_eq!(l0, in_a, "continues with the first line the first box couldn't show");
+    assert_eq!(
+        l0, in_a,
+        "continues with the first line the first box couldn't show"
+    );
     assert!((y - (rb.y + BOX_INSET_Y)).abs() < 1.0);
     // Every line shows once.
     let total = ls.iter().map(|(.., l0, l1)| l1 - l0).sum::<usize>();
     let all = l.pages[0].items.iter().find_map(|it| match it {
-        Placed::Lines { story: StoryRef::Part(s), para, .. } if *s == a => Some(para.lines.len()),
+        Placed::Lines {
+            story: StoryRef::Part(s),
+            para,
+            ..
+        } if *s == a => Some(para.lines.len()),
         _ => None,
     });
     assert_eq!(Some(total), all);
@@ -141,25 +213,43 @@ fn own_margins_and_resize_to_fit_keep_the_text_in_view() {
     let two = |h: f32, body: TextBody| {
         let mut d = Document::from_text("x");
         let id = text_box(&mut d, 0, "One", 144.0, h, body);
-        d.parts.get_mut(&id).unwrap().blocks =
-            vec![para_block(Paragraph::with_text("One", Default::default())), para_block(Paragraph::with_text("Two", Default::default()))];
+        d.parts.get_mut(&id).unwrap().blocks = vec![
+            para_block(Paragraph::with_text("One", Default::default())),
+            para_block(Paragraph::with_text("Two", Default::default())),
+        ];
         let l = lay(&d);
         let shown: usize = lines(&l, id).iter().map(|(.., l0, l1)| l1 - l0).sum();
-        (shown, lines(&l, id).first().map(|(x, y, ..)| (*x, *y)), frame_of(&l, id))
+        (
+            shown,
+            lines(&l, id).first().map(|(x, y, ..)| (*x, *y)),
+            frame_of(&l, id),
+        )
     };
     // How deep the two lines reach without margins, from a box with room to spare.
-    let zero = TextBody { inset: Some([0; 4]), ..Default::default() };
+    let zero = TextBody {
+        inset: Some([0; 4]),
+        ..Default::default()
+    };
     let mut d = Document::from_text("x");
     let id = text_box(&mut d, 0, "One", 144.0, 400.0, zero);
-    d.parts.get_mut(&id).unwrap().blocks =
-        vec![para_block(Paragraph::with_text("One", Default::default())), para_block(Paragraph::with_text("Two", Default::default()))];
+    d.parts.get_mut(&id).unwrap().blocks = vec![
+        para_block(Paragraph::with_text("One", Default::default())),
+        para_block(Paragraph::with_text("Two", Default::default())),
+    ];
     let l = lay(&d);
     let r = frame_of(&l, id);
     let need = l.pages[0]
         .items
         .iter()
         .filter_map(|it| match it {
-            Placed::Lines { story: StoryRef::Part(s), para, l0, l1, y, .. } if *s == id => {
+            Placed::Lines {
+                story: StoryRef::Part(s),
+                para,
+                l0,
+                l1,
+                y,
+                ..
+            } if *s == id => {
                 let (first, last) = (para.lines.get(*l0)?, para.lines.get(l1.checked_sub(1)?)?);
                 Some(y + last.top + last.height - first.top - r.y)
             }
@@ -170,11 +260,30 @@ fn own_margins_and_resize_to_fit_keep_the_text_in_view() {
     let (shown, at, r) = two(need + 1.0, zero);
     assert_eq!(shown, 2, "both lines fit without margins");
     let (x, y) = at.unwrap();
-    assert!((x - r.x).abs() < 0.5 && (y - r.y).abs() < 0.5, "text starts at the box's corner: {x},{y} in {r:?}");
-    assert_eq!(two(need + 1.0, TextBody::default()).0, 1, "Word's default margins cut the second line");
-    let (shown, ..) = two(need / 2.0, TextBody { auto_fit: true, ..Default::default() });
+    assert!(
+        (x - r.x).abs() < 0.5 && (y - r.y).abs() < 0.5,
+        "text starts at the box's corner: {x},{y} in {r:?}"
+    );
+    assert_eq!(
+        two(need + 1.0, TextBody::default()).0,
+        1,
+        "Word's default margins cut the second line"
+    );
+    let (shown, ..) = two(
+        need / 2.0,
+        TextBody {
+            auto_fit: true,
+            ..Default::default()
+        },
+    );
     assert_eq!(shown, 2, "a box that resizes to fit its text shows it all");
     // Hostile margins wider than the box still lay out.
-    let (shown, ..) = two(20.0, TextBody { inset: Some([u32::MAX; 4]), ..Default::default() });
+    let (shown, ..) = two(
+        20.0,
+        TextBody {
+            inset: Some([u32::MAX; 4]),
+            ..Default::default()
+        },
+    );
     assert!(shown >= 1);
 }

@@ -237,12 +237,12 @@ fn balanced_object_end(bytes: &[u8], open: usize) -> Option<usize> {
                 if depth == 0 {
                     return Some(i + 1);
                 }
-            },
+            }
             // A control byte (other than JSON whitespace) outside a string means
             // this is almost certainly protobuf noise, not JSON. Bail early to
             // avoid swallowing the rest of the buffer.
             0x00..=0x08 | 0x0B | 0x0C | 0x0E..=0x1F => return None,
-            _ => {},
+            _ => {}
         }
     }
     None
@@ -304,7 +304,13 @@ fn longest_base32_run(text: &str) -> Option<&str> {
         }
     }
 
-    best.and_then(|(start, len)| if len >= 8 { text.get(start..start + len) } else { None })
+    best.and_then(|(start, len)| {
+        if len >= 8 {
+            text.get(start..start + len)
+        } else {
+            None
+        }
+    })
 }
 
 /// Decode a base32 candidate, tolerating missing padding by re-padding to the
@@ -324,7 +330,10 @@ fn decode_base32_tolerant(candidate: &str) -> Option<Vec<u8>> {
 /// Coarse, non-sensitive classification of decoded bytes: `"text"` if all bytes
 /// are printable/whitespace ASCII, otherwise `"binary"`.
 fn classify_bytes(bytes: &[u8]) -> &'static str {
-    if bytes.iter().all(|&b| b == b'\t' || b == b'\n' || b == b'\r' || (0x20..=0x7E).contains(&b)) {
+    if bytes
+        .iter()
+        .all(|&b| b == b'\t' || b == b'\n' || b == b'\r' || (0x20..=0x7E).contains(&b))
+    {
         "text"
     } else {
         "binary"
@@ -335,7 +344,13 @@ fn classify_bytes(bytes: &[u8]) -> &'static str {
 fn value_looks_like_signin(value: &str) -> bool {
     // Cheap substring probes that work whether the value is plain JSON or a
     // base64 wrapper whose decoded form embeds these tokens.
-    const NEEDLES: [&str; 5] = ["signedIn", "signedOut", "\"state\"", "oauthToken", "authState"];
+    const NEEDLES: [&str; 5] = [
+        "signedIn",
+        "signedOut",
+        "\"state\"",
+        "oauthToken",
+        "authState",
+    ];
     NEEDLES.iter().any(|n| value.contains(n))
 }
 
@@ -508,7 +523,10 @@ mod tests {
 
     #[test]
     fn decode_empty_is_error() {
-        assert!(matches!(decode_unified_state("   "), Err(StateSyncError::Empty)));
+        assert!(matches!(
+            decode_unified_state("   "),
+            Err(StateSyncError::Empty)
+        ));
     }
 
     #[test]
@@ -536,7 +554,10 @@ mod tests {
         let entries = parse_item_table(&dump);
         assert_eq!(entries.len(), 3);
 
-        let oauth = entries.iter().find(|e| e.key.ends_with("oauthToken")).unwrap();
+        let oauth = entries
+            .iter()
+            .find(|e| e.key.ends_with("oauthToken"))
+            .unwrap();
         assert!(oauth.is_unified_state_sync);
         assert!(oauth.looks_like_signin_state); // key contains "oauth"
 
@@ -545,7 +566,10 @@ mod tests {
         assert!(profile.looks_like_signin_state); // value contains "signedIn"
         assert_eq!(profile.value_len, "{\"state\":\"signedIn\"}".len());
 
-        let theme = entries.iter().find(|e| e.key.ends_with("colorTheme")).unwrap();
+        let theme = entries
+            .iter()
+            .find(|e| e.key.ends_with("colorTheme"))
+            .unwrap();
         assert!(!theme.is_unified_state_sync);
         assert!(!theme.looks_like_signin_state);
     }

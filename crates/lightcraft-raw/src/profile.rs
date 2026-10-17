@@ -48,7 +48,11 @@ impl HsvTable {
     /// not finite.
     pub fn from_tags(dims: &[u64], data: &[f64], encoding: u64) -> Option<HsvTable> {
         let [h, s, v] = <[u64; 3]>::try_from(dims).ok()?;
-        let (h, s, v) = (usize::try_from(h).ok()?, usize::try_from(s).ok()?, usize::try_from(v).ok()?);
+        let (h, s, v) = (
+            usize::try_from(h).ok()?,
+            usize::try_from(s).ok()?,
+            usize::try_from(v).ok()?,
+        );
         if h < 1 || s < 2 || v < 1 || h > 4096 || s > 4096 || v > 4096 {
             return None;
         }
@@ -56,27 +60,49 @@ impl HsvTable {
         if n > MAX_ENTRIES || data.len() != n * 3 || data.iter().any(|x| !x.is_finite()) {
             return None;
         }
-        let data = data.as_chunks::<3>().0.iter().map(|c| [c[0] as f32, (c[1] as f32).max(0.0), (c[2] as f32).max(0.0)]).collect();
-        Some(HsvTable { hue_divisions: h, sat_divisions: s, val_divisions: v, data, srgb_value: encoding == 1 && v > 1 })
+        let data = data
+            .as_chunks::<3>()
+            .0
+            .iter()
+            .map(|c| [c[0] as f32, (c[1] as f32).max(0.0), (c[2] as f32).max(0.0)])
+            .collect();
+        Some(HsvTable {
+            hue_divisions: h,
+            sat_divisions: s,
+            val_divisions: v,
+            data,
+            srgb_value: encoding == 1 && v > 1,
+        })
     }
 
     /// The entry-wise blend `g · a + (1 − g) · b` of two tables of the same shape (`None` otherwise).
     pub fn blend(a: &HsvTable, b: &HsvTable, g: f64) -> Option<HsvTable> {
-        if (a.hue_divisions, a.sat_divisions, a.val_divisions) != (b.hue_divisions, b.sat_divisions, b.val_divisions) {
+        if (a.hue_divisions, a.sat_divisions, a.val_divisions)
+            != (b.hue_divisions, b.sat_divisions, b.val_divisions)
+        {
             return None;
         }
         let g = g.clamp(0.0, 1.0) as f32;
-        let data = a.data.iter().zip(&b.data).map(|(x, y)| std::array::from_fn(|i| g * x[i] + (1.0 - g) * y[i])).collect();
+        let data = a
+            .data
+            .iter()
+            .zip(&b.data)
+            .map(|(x, y)| std::array::from_fn(|i| g * x[i] + (1.0 - g) * y[i]))
+            .collect();
         Some(HsvTable { data, ..a.clone() })
     }
 
     fn entry(&self, v: usize, h: usize, s: usize) -> [f32; 3] {
-        self.data.get((v * self.hue_divisions + h) * self.sat_divisions + s).copied().unwrap_or([0.0, 1.0, 1.0])
+        self.data
+            .get((v * self.hue_divisions + h) * self.sat_divisions + s)
+            .copied()
+            .unwrap_or([0.0, 1.0, 1.0])
     }
 
     /// Tri-linear lookup at hue `h` (degrees), saturation `s` and value `v` (table coordinates).
     pub fn lookup(&self, h: f32, s: f32, v: f32) -> [f32; 3] {
-        let hf = (wrap(h, 360.0) / 360.0 * self.hue_divisions as f32).clamp(0.0, self.hue_divisions as f32);
+        let hf = (wrap(h, 360.0) / 360.0 * self.hue_divisions as f32)
+            .clamp(0.0, self.hue_divisions as f32);
         let h0 = (hf as usize).min(self.hue_divisions - 1);
         let h1 = (h0 + 1) % self.hue_divisions;
         let th = (hf - h0 as f32).clamp(0.0, 1.0);
@@ -87,14 +113,24 @@ impl HsvTable {
             (i0, i1, (f - i0 as f32).clamp(0.0, 1.0))
         };
         let (s0, s1, ts) = axis(s, self.sat_divisions);
-        let (v0, v1, tv) = if self.val_divisions > 1 { axis(v, self.val_divisions) } else { (0, 0, 0.0) };
-        let lerp = |a: [f32; 3], b: [f32; 3], t: f32| -> [f32; 3] { std::array::from_fn(|i| a[i] + (b[i] - a[i]) * t) };
+        let (v0, v1, tv) = if self.val_divisions > 1 {
+            axis(v, self.val_divisions)
+        } else {
+            (0, 0, 0.0)
+        };
+        let lerp = |a: [f32; 3], b: [f32; 3], t: f32| -> [f32; 3] {
+            std::array::from_fn(|i| a[i] + (b[i] - a[i]) * t)
+        };
         let plane = |vi: usize| {
             let lo = lerp(self.entry(vi, h0, s0), self.entry(vi, h0, s1), ts);
             let hi = lerp(self.entry(vi, h1, s0), self.entry(vi, h1, s1), ts);
             lerp(lo, hi, th)
         };
-        if v0 == v1 { plane(v0) } else { lerp(plane(v0), plane(v1), tv) }
+        if v0 == v1 {
+            plane(v0)
+        } else {
+            lerp(plane(v0), plane(v1), tv)
+        }
     }
 
     /// Apply the table to one linear ProPhoto RGB colour.
@@ -107,7 +143,11 @@ impl HsvTable {
         let d = max - min;
         let hue = hue_of(rgb, max, d);
         let sat = d / max;
-        let v_index = if self.srgb_value { linear_to_srgb(max.min(1.0)) } else { max };
+        let v_index = if self.srgb_value {
+            linear_to_srgb(max.min(1.0))
+        } else {
+            max
+        };
         let [shift, ss, vs] = self.lookup(hue, sat, v_index);
         // saturation and value: scaled and clipped to 1.0 (DNG chapter 6), except that inputs
         // already above 1 (out-of-ProPhoto colours, highlight headroom) are only ever lowered.
@@ -115,7 +155,11 @@ impl HsvTable {
         let v2 = if self.srgb_value && max <= 1.0 {
             // (a value scale of 1 — every hue/saturation-only table — leaves the value as it is:
             // no round trip through the sRGB curve, two `powf` per pixel)
-            if vs == 1.0 { max } else { srgb_to_linear((v_index * vs).min(1.0)) }
+            if vs == 1.0 {
+                max
+            } else {
+                srgb_to_linear((v_index * vs).min(1.0))
+            }
         } else if self.srgb_value {
             max * srgb_to_linear(vs.min(1.0)).min(1.0)
         } else {
@@ -127,7 +171,11 @@ impl HsvTable {
 
 /// `x · k` clipped to 1, for `x ≤ 1`; above 1, only scale factors below 1 apply (continuous at 1).
 fn limited(x: f32, k: f32) -> f32 {
-    if x <= 1.0 { (x * k).min(1.0) } else { x * k.min(1.0) }
+    if x <= 1.0 {
+        (x * k).min(1.0)
+    } else {
+        x * k.min(1.0)
+    }
 }
 
 /// `x.rem_euclid(p)` (`p > 0`), bit for bit, without the `fmodf` call for the values it nearly always
@@ -189,8 +237,16 @@ impl ToneCurve {
         if !v.len().is_multiple_of(2) || v.len() < 4 || v.len() > 131_072 {
             return None;
         }
-        let points: Vec<[f32; 2]> = v.as_chunks::<2>().0.iter().map(|p| [p[0] as f32, p[1] as f32]).collect();
-        let ok = points.iter().all(|p| p.iter().all(|x| x.is_finite() && (0.0..=1.0).contains(x))) && points.windows(2).all(|w| w[1][0] > w[0][0]);
+        let points: Vec<[f32; 2]> = v
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|p| [p[0] as f32, p[1] as f32])
+            .collect();
+        let ok = points
+            .iter()
+            .all(|p| p.iter().all(|x| x.is_finite() && (0.0..=1.0).contains(x)))
+            && points.windows(2).all(|w| w[1][0] > w[0][0]);
         ok.then_some(ToneCurve { points })
     }
 
@@ -209,7 +265,11 @@ impl ToneCurve {
                 return slope(n - 2);
             }
             let (a, b) = (slope(k - 1), slope(k));
-            if a * b <= 0.0 { 0.0 } else { 2.0 / (1.0 / a + 1.0 / b) }
+            if a * b <= 0.0 {
+                0.0
+            } else {
+                2.0 / (1.0 / a + 1.0 / b)
+            }
         };
         let (x0, x1) = (p[i][0], p[i + 1][0]);
         let h = x1 - x0;
@@ -239,7 +299,10 @@ pub struct ProfileLook {
 
 impl ProfileLook {
     pub fn is_empty(&self) -> bool {
-        self.hue_sat_map.iter().all(Option::is_none) && self.look_table.is_none() && self.tone_curve.is_none() && self.gain_table_map.is_none()
+        self.hue_sat_map.iter().all(Option::is_none)
+            && self.look_table.is_none()
+            && self.tone_curve.is_none()
+            && self.gain_table_map.is_none()
     }
 
     /// The hue/saturation map for calibration-1 weight `g` (one table: used for any white).
@@ -268,9 +331,17 @@ impl ProfileTables {
         if hue_sat.is_none() && look.look_table.is_none() {
             return None;
         }
-        let to: Mat3 = PROPHOTO.from_xyz().mul(&bradford(D65, D50)).mul(&REC2020.to_xyz());
+        let to: Mat3 = PROPHOTO
+            .from_xyz()
+            .mul(&bradford(D65, D50))
+            .mul(&REC2020.to_xyz());
         let from = to.inverse()?;
-        Some(ProfileTables { hue_sat, look: look.look_table.clone(), to_prophoto: to.to_f32(), from_prophoto: from.to_f32() })
+        Some(ProfileTables {
+            hue_sat,
+            look: look.look_table.clone(),
+            to_prophoto: to.to_f32(),
+            from_prophoto: from.to_f32(),
+        })
     }
 
     /// Hue/saturation map, then `gain` (exposure compensation), then the look table:
@@ -278,7 +349,8 @@ impl ProfileTables {
     #[inline]
     pub fn apply(&self, rgb: [f32; 3], gain: f32) -> [f32; 3] {
         let m = &self.to_prophoto;
-        let mut p: [f32; 3] = std::array::from_fn(|i| m[i][0] * rgb[0] + m[i][1] * rgb[1] + m[i][2] * rgb[2]);
+        let mut p: [f32; 3] =
+            std::array::from_fn(|i| m[i][0] * rgb[0] + m[i][1] * rgb[1] + m[i][2] * rgb[2]);
         if let Some(t) = &self.hue_sat {
             p = t.apply(p);
         }
@@ -296,7 +368,13 @@ mod tests {
     use super::*;
 
     fn identity(h: usize, s: usize, v: usize) -> HsvTable {
-        HsvTable { hue_divisions: h, sat_divisions: s, val_divisions: v, data: vec![[0.0, 1.0, 1.0]; h * s * v], srgb_value: false }
+        HsvTable {
+            hue_divisions: h,
+            sat_divisions: s,
+            val_divisions: v,
+            data: vec![[0.0, 1.0, 1.0]; h * s * v],
+            srgb_value: false,
+        }
     }
 
     #[test]
@@ -304,8 +382,23 @@ mod tests {
         for p in [6.0f32, 360.0] {
             let mut x = -3.0 * p;
             while x < 3.0 * p {
-                for v in [x, x.next_up(), x.next_down(), -0.0, 0.0, p, -p, 2.0 * p, p.next_down(), (-p).next_up()] {
-                    assert_eq!(wrap(v, p).to_bits(), v.rem_euclid(p).to_bits(), "{v} mod {p}");
+                for v in [
+                    x,
+                    x.next_up(),
+                    x.next_down(),
+                    -0.0,
+                    0.0,
+                    p,
+                    -p,
+                    2.0 * p,
+                    p.next_down(),
+                    (-p).next_up(),
+                ] {
+                    assert_eq!(
+                        wrap(v, p).to_bits(),
+                        v.rem_euclid(p).to_bits(),
+                        "{v} mod {p}"
+                    );
                 }
                 x += p / 97.0;
             }
@@ -322,7 +415,12 @@ mod tests {
         for (i, e) in t.data.iter_mut().enumerate() {
             *e = [(i % 7) as f32 - 3.0, 1.1, 1.0];
         }
-        for c in [[0.2f32, 0.1, 0.05], [0.9, 0.5, 0.7], [0.01, 0.02, 0.015], [1.5, 0.4, 0.2]] {
+        for c in [
+            [0.2f32, 0.1, 0.05],
+            [0.9, 0.5, 0.7],
+            [0.01, 0.02, 0.015],
+            [1.5, 0.4, 0.2],
+        ] {
             let max = c[0].max(c[1]).max(c[2]);
             let out = t.apply(c);
             let got = out[0].max(out[1]).max(out[2]);
@@ -337,7 +435,13 @@ mod tests {
     #[test]
     fn identity_table_is_identity() {
         let t = identity(6, 3, 1);
-        for c in [[0.2, 0.5, 0.1], [0.9, 0.9, 0.9], [0.0, 0.0, 0.4], [3.0, 1.0, 0.5], [0.3, -0.05, 0.2]] {
+        for c in [
+            [0.2, 0.5, 0.1],
+            [0.9, 0.9, 0.9],
+            [0.0, 0.0, 0.4],
+            [3.0, 1.0, 0.5],
+            [0.3, -0.05, 0.2],
+        ] {
             assert!(close(t.apply(c), c, 1e-5), "{c:?} → {:?}", t.apply(c));
         }
         assert_eq!(t.apply([0.0; 3]), [0.0; 3]);
@@ -349,14 +453,24 @@ mod tests {
         let data: Vec<f64> = (0..4).flat_map(|_| [0.0, 1.0, 1.0]).collect();
         assert!(HsvTable::from_tags(&[2, 2, 1], &data, 0).is_some());
         assert!(HsvTable::from_tags(&[2, 2], &data, 0).is_none());
-        assert!(HsvTable::from_tags(&[2, 1, 2], &data, 0).is_none(), "saturation needs ≥ 2 divisions");
-        assert!(HsvTable::from_tags(&[2, 2, 2], &data, 0).is_none(), "length mismatch");
+        assert!(
+            HsvTable::from_tags(&[2, 1, 2], &data, 0).is_none(),
+            "saturation needs ≥ 2 divisions"
+        );
+        assert!(
+            HsvTable::from_tags(&[2, 2, 2], &data, 0).is_none(),
+            "length mismatch"
+        );
         assert!(HsvTable::from_tags(&[u64::MAX, 2, 2], &data, 0).is_none());
         let mut nan = data.clone();
         nan[1] = f64::NAN;
         assert!(HsvTable::from_tags(&[2, 2, 1], &nan, 0).is_none());
         // the sRGB encoding only applies to 3D tables
-        assert!(!HsvTable::from_tags(&[2, 2, 1], &data, 1).unwrap().srgb_value);
+        assert!(
+            !HsvTable::from_tags(&[2, 2, 1], &data, 1)
+                .unwrap()
+                .srgb_value
+        );
     }
 
     #[test]
@@ -381,7 +495,12 @@ mod tests {
     fn hue_wraps_and_value_scales() {
         // 2 hues: entries at 0° and 180°, hue shift +20° at 0°, value ×0.5 at 180°.
         let mut t = identity(2, 2, 1);
-        t.data = vec![[20.0, 1.0, 1.0], [20.0, 1.0, 1.0], [0.0, 1.0, 0.5], [0.0, 1.0, 0.5]];
+        t.data = vec![
+            [20.0, 1.0, 1.0],
+            [20.0, 1.0, 1.0],
+            [0.0, 1.0, 0.5],
+            [0.0, 1.0, 0.5],
+        ];
         // 350° sits between the last sample (180°) and the first (0° = 360°), 10/180 from 360
         assert!((t.lookup(350.0, 0.5, 0.5)[0] - 20.0 * (170.0 / 180.0)).abs() < 1e-3);
         assert!((t.lookup(180.0, 0.5, 0.5)[2] - 0.5).abs() < 1e-6);
@@ -392,8 +511,14 @@ mod tests {
         let mut up = identity(1, 2, 1);
         up.data = vec![[0.0, 1.0, 2.0]; 2];
         assert!((up.apply([0.4, 0.4, 0.4])[0] - 0.8).abs() < 1e-6);
-        assert!((up.apply([0.8, 0.8, 0.8])[0] - 1.0).abs() < 1e-6, "clipped to 1");
-        assert!((up.apply([3.0, 3.0, 3.0])[0] - 3.0).abs() < 1e-6, "headroom kept");
+        assert!(
+            (up.apply([0.8, 0.8, 0.8])[0] - 1.0).abs() < 1e-6,
+            "clipped to 1"
+        );
+        assert!(
+            (up.apply([3.0, 3.0, 3.0])[0] - 3.0).abs() < 1e-6,
+            "headroom kept"
+        );
     }
 
     #[test]
@@ -419,17 +544,29 @@ mod tests {
         let m = HsvTable::blend(&a, &b, 0.25).unwrap();
         assert_eq!(m.data[1], [7.5, 1.75, 1.0]);
         assert!(HsvTable::blend(&a, &identity(3, 2, 1), 0.5).is_none());
-        let look = ProfileLook { hue_sat_map: [Some(a.clone()), None], look_table: Some(a), tone_curve: None, gain_table_map: None };
+        let look = ProfileLook {
+            hue_sat_map: [Some(a.clone()), None],
+            look_table: Some(a),
+            tone_curve: None,
+            gain_table_map: None,
+        };
         let t = ProfileTables::new(&look, 0.5).unwrap();
         let c = [0.3, 0.2, 0.1];
-        assert!(close(t.apply(c, 2.0), [0.6, 0.4, 0.2], 1e-4), "{:?}", t.apply(c, 2.0));
+        assert!(
+            close(t.apply(c, 2.0), [0.6, 0.4, 0.2], 1e-4),
+            "{:?}",
+            t.apply(c, 2.0)
+        );
         assert!(ProfileTables::new(&ProfileLook::default(), 0.5).is_none());
     }
 
     #[test]
     fn tone_curve_interpolates_monotonically() {
         assert!(ToneCurve::from_tag(&[0.0, 0.0]).is_none());
-        assert!(ToneCurve::from_tag(&[0.0, 0.0, 0.5, 0.6, 0.4, 0.7, 1.0, 1.0]).is_none(), "inputs must increase");
+        assert!(
+            ToneCurve::from_tag(&[0.0, 0.0, 0.5, 0.6, 0.4, 0.7, 1.0, 1.0]).is_none(),
+            "inputs must increase"
+        );
         assert!(ToneCurve::from_tag(&[0.0, 0.0, 1.0, 1.5]).is_none());
         let c = ToneCurve::from_tag(&[0.0, 0.0, 0.25, 0.4, 0.5, 0.7, 1.0, 1.0]).unwrap();
         assert_eq!(c.eval(0.0), 0.0);

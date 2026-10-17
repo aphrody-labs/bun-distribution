@@ -60,8 +60,11 @@ impl Default for Transform {
 
 impl Transform {
     /// The identity transform.
-    pub const IDENTITY: Self =
-        Self { translation: [0.0; 3], rotation_deg: [0.0; 3], scale: [1.0; 3] };
+    pub const IDENTITY: Self = Self {
+        translation: [0.0; 3],
+        rotation_deg: [0.0; 3],
+        scale: [1.0; 3],
+    };
 
     /// The local matrix.
     #[must_use]
@@ -119,7 +122,11 @@ const fn default_ortho_height() -> f32 {
 
 impl Default for Projection {
     fn default() -> Self {
-        Self::Perspective { fov_y_deg: default_fov(), near: default_near(), far: default_far() }
+        Self::Perspective {
+            fov_y_deg: default_fov(),
+            near: default_near(),
+            far: default_far(),
+        }
     }
 }
 
@@ -168,12 +175,14 @@ impl Camera {
             Vec3::from_array(self.up),
         );
         let proj = match self.projection {
-            Projection::Perspective { fov_y_deg, near, far } => {
-                Mat4::perspective(fov_y_deg.to_radians(), aspect, near, far)
-            },
+            Projection::Perspective {
+                fov_y_deg,
+                near,
+                far,
+            } => Mat4::perspective(fov_y_deg.to_radians(), aspect, near, far),
             Projection::Orthographic { height, near, far } => {
                 Mat4::orthographic(height, aspect, near, far)
-            },
+            }
         };
         proj.mul(&view)
     }
@@ -257,7 +266,10 @@ const fn default_shadow_resolution() -> u32 {
 
 impl Default for ShadowSettings {
     fn default() -> Self {
-        Self { enabled: true, resolution: default_shadow_resolution() }
+        Self {
+            enabled: true,
+            resolution: default_shadow_resolution(),
+        }
     }
 }
 
@@ -399,7 +411,7 @@ impl std::fmt::Display for Scene3dError {
         match self {
             Self::InvalidDimensions { width, height } => {
                 write!(f, "invalid 3D canvas dimensions {width}x{height}")
-            },
+            }
             Self::InvalidSamples(n) => write!(f, "unsupported sample count {n} (use 1 or 4)"),
             Self::InvalidCamera => write!(f, "degenerate or non-finite camera"),
             Self::NonFinite(what) => write!(f, "non-finite value in {what}"),
@@ -548,7 +560,11 @@ fn linear(rgba: Rgba8) -> [f32; 3] {
 }
 
 fn finite3(v: [f32; 3], what: &'static str) -> Result<(), Scene3dError> {
-    if v.iter().all(|c| c.is_finite()) { Ok(()) } else { Err(Scene3dError::NonFinite(what)) }
+    if v.iter().all(|c| c.is_finite()) {
+        Ok(())
+    } else {
+        Err(Scene3dError::NonFinite(what))
+    }
 }
 
 struct Pending {
@@ -566,7 +582,12 @@ impl Scene3d {
     /// Build the [`DynamicScheme`] this scene resolves colours against.
     #[must_use]
     pub fn scheme(&self) -> DynamicScheme {
-        DynamicScheme::from_argb(self.seed_argb, self.variant, self.is_dark, self.contrast_level)
+        DynamicScheme::from_argb(
+            self.seed_argb,
+            self.variant,
+            self.is_dark,
+            self.contrast_level,
+        )
     }
 
     /// Prepare with a throwaway mesh cache.
@@ -602,22 +623,29 @@ impl Scene3d {
         finite3(camera.target, "camera.target")?;
         finite3(camera.up, "camera.up")?;
         let (near, far) = match camera.projection {
-            Projection::Perspective { fov_y_deg, near, far } => {
+            Projection::Perspective {
+                fov_y_deg,
+                near,
+                far,
+            } => {
                 if !(fov_y_deg.is_finite() && fov_y_deg > 0.0 && fov_y_deg < 180.0) {
                     return Err(Scene3dError::InvalidCamera);
                 }
                 (near, far)
-            },
+            }
             Projection::Orthographic { height, near, far } => {
                 if !(height.is_finite() && height > 0.0) {
                     return Err(Scene3dError::InvalidCamera);
                 }
                 (near, far)
-            },
+            }
         };
         let perspective = matches!(camera.projection, Projection::Perspective { .. });
         if !(near.is_finite() && far.is_finite() && far > near && (!perspective || near > 0.0))
-            || Vec3::from_array(camera.eye).sub(Vec3::from_array(camera.target)).length() < 1e-9
+            || Vec3::from_array(camera.eye)
+                .sub(Vec3::from_array(camera.target))
+                .length()
+                < 1e-9
         {
             return Err(Scene3dError::InvalidCamera);
         }
@@ -642,24 +670,38 @@ impl Scene3d {
                         sky[i] += c[i] * intensity;
                         ground[i] += c[i] * intensity;
                     }
-                },
-                Light::Hemisphere { sky: top, ground: bottom, intensity } => {
+                }
+                Light::Hemisphere {
+                    sky: top,
+                    ground: bottom,
+                    intensity,
+                } => {
                     if !intensity.is_finite() {
                         return Err(Scene3dError::NonFinite("light.intensity"));
                     }
-                    let (t, b) = (linear(top.resolve(&scheme)), linear(bottom.resolve(&scheme)));
+                    let (t, b) = (
+                        linear(top.resolve(&scheme)),
+                        linear(bottom.resolve(&scheme)),
+                    );
                     for i in 0..3 {
                         sky[i] += t[i] * intensity;
                         ground[i] += b[i] * intensity;
                     }
-                },
-                Light::Directional { direction, color, intensity, cast_shadow } => {
+                }
+                Light::Directional {
+                    direction,
+                    color,
+                    intensity,
+                    cast_shadow,
+                } => {
                     finite3(direction, "light.direction")?;
                     if !intensity.is_finite() {
                         return Err(Scene3dError::NonFinite("light.intensity"));
                     }
                     let c = linear(color.resolve(&scheme));
-                    let to_light = Vec3::from_array(direction).scale(-1.0).normalize_or(Vec3::Y);
+                    let to_light = Vec3::from_array(direction)
+                        .scale(-1.0)
+                        .normalize_or(Vec3::Y);
                     if cast_shadow && shadow_light.is_none() {
                         shadow_light = Some((lights.len(), to_light));
                     }
@@ -667,8 +709,13 @@ impl Scene3d {
                         to_light,
                         radiance: c.map(|v| v * intensity),
                     });
-                },
-                Light::Point { position, color, intensity, range } => {
+                }
+                Light::Point {
+                    position,
+                    color,
+                    intensity,
+                    range,
+                } => {
                     finite3(position, "light.position")?;
                     if !(intensity.is_finite() && range.is_finite()) {
                         return Err(Scene3dError::NonFinite("light.intensity"));
@@ -679,7 +726,7 @@ impl Scene3d {
                         radiance: c.map(|v| v * intensity),
                         range: range.max(0.0),
                     });
-                },
+                }
             }
         }
         if lights.len() > MAX_LIGHTS {
@@ -712,48 +759,54 @@ impl Scene3d {
 
         // Fit an off-centre orthographic light frustum tightly around the
         // opaque casters, in light space.
-        let shadow = shadow_light.filter(|_| shadows_on).and_then(|(light, to_light)| {
-            let casters: Vec<&Pending> = pending
-                .iter()
-                .chain(&casters_only)
-                .filter(|p| !p.transparent && p.cast_shadow)
-                .collect();
-            if casters.is_empty() {
-                return None;
-            }
-            let (mut lo, mut hi) =
-                (Vec3::new(f32::MAX, f32::MAX, f32::MAX), Vec3::new(f32::MIN, f32::MIN, f32::MIN));
-            for p in &casters {
-                let (c, r) = (p.world_center, p.world_radius);
-                lo = Vec3::new(lo.x.min(c.x - r), lo.y.min(c.y - r), lo.z.min(c.z - r));
-                hi = Vec3::new(hi.x.max(c.x + r), hi.y.max(c.y + r), hi.z.max(c.z + r));
-            }
-            let center = lo.lerp(hi, 0.5);
-            let reach = hi.sub(lo).length().max(2e-3);
-            let view = Mat4::look_at(center.add(to_light.scale(reach)), center, Vec3::Y);
-            let (mut min, mut max) =
-                (Vec3::new(f32::MAX, f32::MAX, f32::MAX), Vec3::new(f32::MIN, f32::MIN, f32::MIN));
-            for p in &casters {
-                let c = view.transform_point(p.world_center);
-                let r = p.world_radius;
-                min = Vec3::new(min.x.min(c.x - r), min.y.min(c.y - r), min.z.min(c.z - r));
-                max = Vec3::new(max.x.max(c.x + r), max.y.max(c.y + r), max.z.max(c.z + r));
-            }
-            // View space looks down -Z: depth = -z.
-            let (near, far) = ((-max.z).max(1e-4), (-min.z).max(2e-4));
-            let extent = (max.x - min.x).max(max.y - min.y).max(1e-3);
-            let resolution = self.shadows.resolution.clamp(256, 4096);
-            let view_proj =
-                Mat4::orthographic_off_center(min.x, max.x, min.y, max.y, near, far).mul(&view);
-            let texel = extent / resolution as f32;
-            Some(ShadowSetup {
-                light,
-                view_proj,
-                resolution,
-                normal_offset: texel * 1.5,
-                depth_bias: texel / (far - near),
-            })
-        });
+        let shadow = shadow_light
+            .filter(|_| shadows_on)
+            .and_then(|(light, to_light)| {
+                let casters: Vec<&Pending> = pending
+                    .iter()
+                    .chain(&casters_only)
+                    .filter(|p| !p.transparent && p.cast_shadow)
+                    .collect();
+                if casters.is_empty() {
+                    return None;
+                }
+                let (mut lo, mut hi) = (
+                    Vec3::new(f32::MAX, f32::MAX, f32::MAX),
+                    Vec3::new(f32::MIN, f32::MIN, f32::MIN),
+                );
+                for p in &casters {
+                    let (c, r) = (p.world_center, p.world_radius);
+                    lo = Vec3::new(lo.x.min(c.x - r), lo.y.min(c.y - r), lo.z.min(c.z - r));
+                    hi = Vec3::new(hi.x.max(c.x + r), hi.y.max(c.y + r), hi.z.max(c.z + r));
+                }
+                let center = lo.lerp(hi, 0.5);
+                let reach = hi.sub(lo).length().max(2e-3);
+                let view = Mat4::look_at(center.add(to_light.scale(reach)), center, Vec3::Y);
+                let (mut min, mut max) = (
+                    Vec3::new(f32::MAX, f32::MAX, f32::MAX),
+                    Vec3::new(f32::MIN, f32::MIN, f32::MIN),
+                );
+                for p in &casters {
+                    let c = view.transform_point(p.world_center);
+                    let r = p.world_radius;
+                    min = Vec3::new(min.x.min(c.x - r), min.y.min(c.y - r), min.z.min(c.z - r));
+                    max = Vec3::new(max.x.max(c.x + r), max.y.max(c.y + r), max.z.max(c.z + r));
+                }
+                // View space looks down -Z: depth = -z.
+                let (near, far) = ((-max.z).max(1e-4), (-min.z).max(2e-4));
+                let extent = (max.x - min.x).max(max.y - min.y).max(1e-3);
+                let resolution = self.shadows.resolution.clamp(256, 4096);
+                let view_proj =
+                    Mat4::orthographic_off_center(min.x, max.x, min.y, max.y, near, far).mul(&view);
+                let texel = extent / resolution as f32;
+                Some(ShadowSetup {
+                    light,
+                    view_proj,
+                    resolution,
+                    normal_offset: texel * 1.5,
+                    depth_bias: texel / (far - near),
+                })
+            });
 
         // Opaque first, grouped by pipeline state then mesh (stable, so the
         // scene order breaks ties identically on every backend); then
@@ -781,7 +834,7 @@ impl Scene3d {
                         && b.cast_shadow == p.cast_shadow =>
                 {
                     b.instance_count += 1;
-                },
+                }
                 _ => batches.push(DrawBatch {
                     mesh: p.mesh,
                     first_instance: index,
@@ -797,8 +850,12 @@ impl Scene3d {
         // opaque instances (appended after the visible ones, grouped by mesh).
         let mut shadow_batches = Vec::new();
         if shadow.is_some() {
-            shadow_batches
-                .extend(batches.iter().copied().filter(|b| !b.transparent && b.cast_shadow));
+            shadow_batches.extend(
+                batches
+                    .iter()
+                    .copied()
+                    .filter(|b| !b.transparent && b.cast_shadow),
+            );
             casters_only.sort_by_key(|p| p.mesh);
             for p in casters_only {
                 let index = instances.len() as u32;
@@ -806,7 +863,7 @@ impl Scene3d {
                 match shadow_batches.last_mut() {
                     Some(b) if b.mesh == p.mesh && b.first_instance + b.instance_count == index => {
                         b.instance_count += 1;
-                    },
+                    }
                     _ => shadow_batches.push(DrawBatch {
                         mesh: p.mesh,
                         first_instance: index,
@@ -861,7 +918,10 @@ impl Flatten<'_> {
             return Err(Scene3dError::TooDeep);
         }
         match node {
-            Node3d::Group { transform, children } => {
+            Node3d::Group {
+                transform,
+                children,
+            } => {
                 let world = parent.mul(&transform.matrix());
                 if !world.is_finite() {
                     return Err(Scene3dError::NonFinite("group.transform"));
@@ -869,8 +929,12 @@ impl Flatten<'_> {
                 for child in children {
                     self.visit(child, &world, depth + 1)?;
                 }
-            },
-            Node3d::Mesh { transform, geometry, material } => {
+            }
+            Node3d::Mesh {
+                transform,
+                geometry,
+                material,
+            } => {
                 let model = parent.mul(&transform.matrix());
                 if !model.is_finite() {
                     return Err(Scene3dError::NonFinite("mesh.transform"));
@@ -946,7 +1010,7 @@ impl Flatten<'_> {
                     (true, Some(casters)) => casters.push(entry),
                     _ => self.pending.push(entry),
                 }
-            },
+            }
         }
         Ok(())
     }
@@ -958,12 +1022,24 @@ impl Flatten<'_> {
 #[must_use]
 pub fn frustum_planes(view_proj: &Mat4) -> [[f32; 4]; 6] {
     let row = |r: usize| -> [f32; 4] {
-        [view_proj.cols[0][r], view_proj.cols[1][r], view_proj.cols[2][r], view_proj.cols[3][r]]
+        [
+            view_proj.cols[0][r],
+            view_proj.cols[1][r],
+            view_proj.cols[2][r],
+            view_proj.cols[3][r],
+        ]
     };
     let (r0, r1, r2, r3) = (row(0), row(1), row(2), row(3));
     let add = |a: [f32; 4], b: [f32; 4]| [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]];
     let sub = |a: [f32; 4], b: [f32; 4]| [a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]];
-    let planes = [add(r3, r0), sub(r3, r0), add(r3, r1), sub(r3, r1), r2, sub(r3, r2)];
+    let planes = [
+        add(r3, r0),
+        sub(r3, r0),
+        add(r3, r1),
+        sub(r3, r1),
+        r2,
+        sub(r3, r2),
+    ];
     planes.map(|p| {
         let len = (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).sqrt();
         if len > 0.0 { p.map(|v| v / len) } else { p }
@@ -978,7 +1054,10 @@ mod tests {
 
     fn mesh(translation: [f32; 3], opacity: f32, geometry: Geometry) -> Node3d {
         Node3d::Mesh {
-            transform: Transform { translation, ..Transform::IDENTITY },
+            transform: Transform {
+                translation,
+                ..Transform::IDENTITY
+            },
             geometry,
             material: Material {
                 base: Paint::Role(Role::Primary),
@@ -1013,7 +1092,11 @@ mod tests {
 
     #[test]
     fn instances_of_one_mesh_are_batched_together() {
-        let sphere = Geometry::Sphere { radius: 0.2, width_segments: 8, height_segments: 6 };
+        let sphere = Geometry::Sphere {
+            radius: 0.2,
+            width_segments: 8,
+            height_segments: 6,
+        };
         let cube = Geometry::Box { size: [0.3; 3] };
         let prepared = scene(vec![
             mesh([-1.0, 0.0, 0.0], 1.0, sphere.clone()),
@@ -1032,7 +1115,10 @@ mod tests {
     fn groups_compose_transforms() {
         let child = mesh([1.0, 0.0, 0.0], 1.0, Geometry::Box { size: [0.1; 3] });
         let prepared = scene(vec![Node3d::Group {
-            transform: Transform { translation: [0.0, 1.0, 0.0], ..Transform::IDENTITY },
+            transform: Transform {
+                translation: [0.0, 1.0, 0.0],
+                ..Transform::IDENTITY
+            },
             children: vec![child],
         }])
         .prepare()
@@ -1052,14 +1138,20 @@ mod tests {
         .prepare()
         .expect("valid");
         assert!(!prepared.batches[0].transparent);
-        let t: Vec<f32> =
-            prepared.instances[1..].iter().map(|i| i.model.transform_point(Vec3::ZERO).z).collect();
+        let t: Vec<f32> = prepared.instances[1..]
+            .iter()
+            .map(|i| i.model.transform_point(Vec3::ZERO).z)
+            .collect();
         assert_eq!(t, vec![-1.0, 1.0]);
     }
 
     #[test]
     fn frustum_culling_drops_offscreen_instances() {
-        let g = Geometry::Sphere { radius: 0.5, width_segments: 8, height_segments: 6 };
+        let g = Geometry::Sphere {
+            radius: 0.5,
+            width_segments: 8,
+            height_segments: 6,
+        };
         let prepared = scene(vec![
             mesh([0.0, 0.0, 0.0], 1.0, g.clone()),
             mesh([100.0, 0.0, 0.0], 1.0, g.clone()),
@@ -1075,7 +1167,10 @@ mod tests {
     fn invalid_scenes_are_rejected_before_rendering() {
         let mut s = scene(vec![]);
         s.width = 0;
-        assert!(matches!(s.prepare(), Err(Scene3dError::InvalidDimensions { .. })));
+        assert!(matches!(
+            s.prepare(),
+            Err(Scene3dError::InvalidDimensions { .. })
+        ));
         let mut s = scene(vec![]);
         s.samples = 3;
         assert_eq!(s.prepare().err(), Some(Scene3dError::InvalidSamples(3)));
@@ -1092,12 +1187,21 @@ mod tests {
             };
             MAX_LIGHTS + 1
         ];
-        assert_eq!(s.prepare().err(), Some(Scene3dError::TooManyLights(MAX_LIGHTS + 1)));
+        assert_eq!(
+            s.prepare().err(),
+            Some(Scene3dError::TooManyLights(MAX_LIGHTS + 1))
+        );
         let mut deep = mesh([0.0; 3], 1.0, Geometry::Box { size: [1.0; 3] });
         for _ in 0..MAX_DEPTH {
-            deep = Node3d::Group { transform: Transform::IDENTITY, children: vec![deep] };
+            deep = Node3d::Group {
+                transform: Transform::IDENTITY,
+                children: vec![deep],
+            };
         }
-        assert_eq!(scene(vec![deep]).prepare().err(), Some(Scene3dError::TooDeep));
+        assert_eq!(
+            scene(vec![deep]).prepare().err(),
+            Some(Scene3dError::TooDeep)
+        );
     }
 
     #[test]

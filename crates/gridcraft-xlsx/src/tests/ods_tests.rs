@@ -14,10 +14,16 @@ fn content(tables: &str) -> String {
     )
 }
 fn ods(tables: &str) -> Vec<u8> {
-    make_zip(&[("mimetype", MIME), ("META-INF/manifest.xml", MANIFEST), ("content.xml", content(tables).as_bytes())])
+    make_zip(&[
+        ("mimetype", MIME),
+        ("META-INF/manifest.xml", MANIFEST),
+        ("content.xml", content(tables).as_bytes()),
+    ])
 }
 fn row(cells: &str) -> Vec<u8> {
-    ods(&format!(r#"<table:table table:name="Data"><table:table-row>{cells}</table:table-row></table:table>"#))
+    ods(&format!(
+        r#"<table:table table:name="Data"><table:table-row>{cells}</table:table-row></table:table>"#
+    ))
 }
 fn text(s: &str) -> Value {
     Value::Text(s.into())
@@ -27,16 +33,33 @@ fn text(s: &str) -> Value {
 /// (RUSTSEC-2026-0195: the resolver kept a binding per declaration, with no cap).
 #[test]
 fn ods_namespace_declaration_bomb_is_rejected() {
-    let bomb = |n: usize| -> String { (0..n).map(|i| format!(" xmlns:p{i}=\"urn:p{i}\"")).collect() };
+    let bomb = |n: usize| -> String {
+        (0..n)
+            .map(|i| format!(" xmlns:p{i}=\"urn:p{i}\""))
+            .collect()
+    };
     let doc = |decls: &str| {
         format!(
             r#"<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"{decls}><office:body><office:spreadsheet><table:table table:name="Data"><table:table-row><table:table-cell office:value-type="float" office:value="1"><text:p>1</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>"#
         )
     };
-    let build = |decls: &str| make_zip(&[("mimetype", MIME), ("META-INF/manifest.xml", MANIFEST), ("content.xml", doc(decls).as_bytes())]);
+    let build = |decls: &str| {
+        make_zip(&[
+            ("mimetype", MIME),
+            ("META-INF/manifest.xml", MANIFEST),
+            ("content.xml", doc(decls).as_bytes()),
+        ])
+    };
     let ok = read_ods(&build(&bomb(8)));
-    assert!(ok.is_ok(), "a handful of namespaces still reads: {:?}", ok.err());
-    assert!(read_ods(&build(&bomb(10_000))).is_err(), "a tag with thousands of declarations is refused");
+    assert!(
+        ok.is_ok(),
+        "a handful of namespaces still reads: {:?}",
+        ok.err()
+    );
+    assert!(
+        read_ods(&build(&bomb(10_000))).is_err(),
+        "a tag with thousands of declarations is refused"
+    );
 }
 
 #[test]
@@ -54,8 +77,18 @@ fn ods_typed_values_and_formula_caches_are_constants_and_survive_xlsx() {
         <table:table-cell office:value-type="boolean" office:boolean-value="0"/>
     "#);
     let (wb, report) = read_ods(&bytes).unwrap();
-    assert!(report.warnings.iter().any(|w| w.contains("data-only") && w.contains("will not recalculate")));
-    assert!(report.warnings.iter().any(|w| w.contains("unsupported or missing")));
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("data-only") && w.contains("will not recalculate"))
+    );
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("unsupported or missing"))
+    );
     let expected = [
         Value::Number(42.5),
         Value::Bool(true),
@@ -70,7 +103,13 @@ fn ods_typed_values_and_formula_caches_are_constants_and_survive_xlsx() {
     ];
     for (c, value) in expected.iter().enumerate() {
         assert_eq!(&wb.sheets[0].value(CellRef::new(0, c as u32)), value);
-        assert!(wb.sheets[0].cell(CellRef::new(0, c as u32)).unwrap().formula.is_none());
+        assert!(
+            wb.sheets[0]
+                .cell(CellRef::new(0, c as u32))
+                .unwrap()
+                .formula
+                .is_none()
+        );
     }
     let (reopened, _) = read_xlsx(&write_xlsx(&wb).unwrap()).unwrap();
     for (c, value) in expected.iter().enumerate() {
@@ -84,10 +123,18 @@ fn ods_ordered_text_preserves_paragraphs_runs_entities_spaces_tabs_and_breaks() 
         r#"<table:table-cell office:value-type="string"><text:p>one <text:span>two &amp; three</text:span> four<text:s text:c="3"/><text:a>five</text:a><text:tab/>six<text:line-break/>seven&#33;<![CDATA[<eight>]]></text:p><text:p>nine</text:p><office:annotation><text:p>not cell text</text:p></office:annotation></table:table-cell>"#,
     );
     let (wb, _) = read_ods(&bytes).unwrap();
-    assert_eq!(wb.sheets[0].value(CellRef::new(0, 0)), text("one two & three four   five\tsix\nseven!<eight>\nnine"));
-    let bytes = row(r#"<table:table-cell office:value-type="string"><text:p>  one
-        <text:span> two  </text:span>  three <text:s text:c="0"/>four<text:s text:c="2"/>  </text:p><text:p><text:s/>  five  </text:p></table:table-cell>"#);
-    assert_eq!(read_ods(&bytes).unwrap().0.sheets[0].value(CellRef::new(0, 0)), text("one two three four  \n  five"));
+    assert_eq!(
+        wb.sheets[0].value(CellRef::new(0, 0)),
+        text("one two & three four   five\tsix\nseven!<eight>\nnine")
+    );
+    let bytes = row(
+        r#"<table:table-cell office:value-type="string"><text:p>  one
+        <text:span> two  </text:span>  three <text:s text:c="0"/>four<text:s text:c="2"/>  </text:p><text:p><text:s/>  five  </text:p></table:table-cell>"#,
+    );
+    assert_eq!(
+        read_ods(&bytes).unwrap().0.sheets[0].value(CellRef::new(0, 0)),
+        text("one two three four  \n  five")
+    );
 }
 
 #[test]
@@ -106,7 +153,10 @@ fn ods_repeats_merges_sheet_names_and_empty_tail_remain_sparse() {
     assert_eq!(wb.sheets[0].name, "First & Second");
     assert_eq!(wb.sheets[0].cells.len(), 8);
     assert_eq!(wb.sheets[0].value(CellRef::new(0, 1)), Value::Number(99.0));
-    assert_eq!(wb.sheets[0].merges, vec![RangeRef::new(CellRef::new(0, 0), CellRef::new(1, 1))]);
+    assert_eq!(
+        wb.sheets[0].merges,
+        vec![RangeRef::new(CellRef::new(0, 0), CellRef::new(1, 1))]
+    );
     assert_eq!(wb.sheets[0].value(CellRef::new(3, 2)), Value::Number(7.0));
     assert_eq!(wb.sheets[1].value(CellRef::new(0, 0)), text("second sheet"));
 }
@@ -126,14 +176,39 @@ fn ods_dates_and_durations_use_formats_and_unsupported_values_stay_text() {
     let (wb, report) = read_ods(&bytes).unwrap();
     let s = &wb.sheets[0];
     assert_eq!(s.value(CellRef::new(0, 0)), Value::Number(59.0));
-    assert_eq!(s.value(CellRef::new(0, 1)), Value::Number(46302.0 + 66600.125 / 86400.0));
-    assert_eq!(s.value(CellRef::new(0, 2)), Value::Number(1.0 + 7384.5 / 86400.0));
+    assert_eq!(
+        s.value(CellRef::new(0, 1)),
+        Value::Number(46302.0 + 66600.125 / 86400.0)
+    );
+    assert_eq!(
+        s.value(CellRef::new(0, 2)),
+        Value::Number(1.0 + 7384.5 / 86400.0)
+    );
     assert_eq!(s.value(CellRef::new(0, 3)), Value::Number(-2.0 / 24.0));
-    for (c, value) in [(4, "1900-02-29"), (5, "2026-10-07T18:00:00Z"), (6, "P1M"), (7, "PT2M1H")] {
+    for (c, value) in [
+        (4, "1900-02-29"),
+        (5, "2026-10-07T18:00:00Z"),
+        (6, "P1M"),
+        (7, "PT2M1H"),
+    ] {
         assert_eq!(s.value(CellRef::new(0, c)), text(value));
     }
-    assert_eq!(wb.styles.get(s.cell(CellRef::new(0, 0)).unwrap().style).num_fmt.0.as_ref(), "yyyy-mm-dd");
-    assert_eq!(wb.styles.get(s.cell(CellRef::new(0, 2)).unwrap().style).num_fmt.0.as_ref(), "[h]:mm:ss.000");
+    assert_eq!(
+        wb.styles
+            .get(s.cell(CellRef::new(0, 0)).unwrap().style)
+            .num_fmt
+            .0
+            .as_ref(),
+        "yyyy-mm-dd"
+    );
+    assert_eq!(
+        wb.styles
+            .get(s.cell(CellRef::new(0, 2)).unwrap().style)
+            .num_fmt
+            .0
+            .as_ref(),
+        "[h]:mm:ss.000"
+    );
     assert_eq!(report.warnings.len(), 2);
 }
 
@@ -143,39 +218,82 @@ fn ods_namespaces_are_resolved_not_inferred_from_prefix_or_local_name() {
         .replace("<office:", "<o:").replace("</office:", "</o:").replace(" office:", " o:").replace("xmlns:office=", "xmlns:o=")
         .replace("<table:", "<t:").replace("</table:", "</t:").replace(" table:", " t:").replace("xmlns:table=", "xmlns:t=");
     let bytes = make_zip(&[("mimetype", MIME), ("content.xml", xml.as_bytes())]);
-    assert_eq!(read_ods(&bytes).unwrap().0.sheets[0].value(CellRef::new(0, 0)), Value::Number(9.0));
-    let spoofed = xml.replace("urn:oasis:names:tc:opendocument:xmlns:table:1.0", "wrong-namespace");
-    assert!(read_ods(&make_zip(&[("mimetype", MIME), ("content.xml", spoofed.as_bytes())])).is_err());
-    let bytes =
-        row(r#"<table:table-cell xmlns:fake="wrong-namespace" fake:value-type="float" fake:value="123"><text:p>kept</text:p></table:table-cell>"#);
-    assert_eq!(read_ods(&bytes).unwrap().0.sheets[0].value(CellRef::new(0, 0)), text("kept"));
+    assert_eq!(
+        read_ods(&bytes).unwrap().0.sheets[0].value(CellRef::new(0, 0)),
+        Value::Number(9.0)
+    );
+    let spoofed = xml.replace(
+        "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
+        "wrong-namespace",
+    );
+    assert!(
+        read_ods(&make_zip(&[
+            ("mimetype", MIME),
+            ("content.xml", spoofed.as_bytes())
+        ]))
+        .is_err()
+    );
+    let bytes = row(
+        r#"<table:table-cell xmlns:fake="wrong-namespace" fake:value-type="float" fake:value="123"><text:p>kept</text:p></table:table-cell>"#,
+    );
+    assert_eq!(
+        read_ods(&bytes).unwrap().0.sheets[0].value(CellRef::new(0, 0)),
+        text("kept")
+    );
 }
 
 #[test]
 fn ods_rejects_bad_packages_encryption_and_truncated_xml() {
     assert!(read_ods(b"not zip").is_err());
     let xml = content(r#"<table:table table:name="Data"/>"#);
-    for mime in [b"application/zip".as_slice(), b"application/vnd.oasis.opendocument.spreadsheet "] {
-        assert!(read_ods(&make_zip(&[("mimetype", mime), ("content.xml", xml.as_bytes())])).is_err());
+    for mime in [
+        b"application/zip".as_slice(),
+        b"application/vnd.oasis.opendocument.spreadsheet ",
+    ] {
+        assert!(
+            read_ods(&make_zip(&[
+                ("mimetype", mime),
+                ("content.xml", xml.as_bytes())
+            ]))
+            .is_err()
+        );
     }
     let encrypted =
         br#"<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:encryption-data/></manifest:manifest>"#;
     assert!(
-        read_ods(&make_zip(&[("mimetype", MIME), ("META-INF/manifest.xml", encrypted), ("content.xml", xml.as_bytes())]))
-            .unwrap_err()
-            .to_string()
-            .contains("encrypted")
+        read_ods(&make_zip(&[
+            ("mimetype", MIME),
+            ("META-INF/manifest.xml", encrypted),
+            ("content.xml", xml.as_bytes())
+        ]))
+        .unwrap_err()
+        .to_string()
+        .contains("encrypted")
     );
     for bad in [
-        xml.trim_end_matches("</office:document-content>").to_owned(),
+        xml.trim_end_matches("</office:document-content>")
+            .to_owned(),
         xml.replace("</office:spreadsheet>", "</office:wrong>"),
         "<root/>".to_owned(),
         format!("{xml}{xml}"),
     ] {
-        assert!(read_ods(&make_zip(&[("mimetype", MIME), ("content.xml", bad.as_bytes())])).is_err(), "{bad}");
+        assert!(
+            read_ods(&make_zip(&[
+                ("mimetype", MIME),
+                ("content.xml", bad.as_bytes())
+            ]))
+            .is_err(),
+            "{bad}"
+        );
     }
     let deep = content(&format!("{}{}", "<x>".repeat(300), "</x>".repeat(300)));
-    assert!(read_ods(&make_zip(&[("mimetype", MIME), ("content.xml", deep.as_bytes())])).is_err());
+    assert!(
+        read_ods(&make_zip(&[
+            ("mimetype", MIME),
+            ("content.xml", deep.as_bytes())
+        ]))
+        .is_err()
+    );
 }
 
 #[test]
@@ -205,9 +323,15 @@ fn ods_expansion_bounds_stop_small_repeat_bombs() {
 #[test]
 fn ods_sniff_requires_exact_bounded_mimetype() {
     assert_eq!(sniff(&row("")), Format::Ods);
-    assert_eq!(sniff(&make_zip(&[("mimetype", b"application/zip")])), Format::Xlsx);
+    assert_eq!(
+        sniff(&make_zip(&[("mimetype", b"application/zip")])),
+        Format::Xlsx
+    );
     assert_eq!(sniff(&make_zip(&[("elsewhere", MIME)])), Format::Xlsx);
-    assert_eq!(sniff(&make_zip(&[("mimetype", &vec![b'x'; 1_000_000])])), Format::Xlsx);
+    assert_eq!(
+        sniff(&make_zip(&[("mimetype", &vec![b'x'; 1_000_000])])),
+        Format::Xlsx
+    );
     assert_eq!(sniff(b"a,b\n1,2"), Format::Csv);
 }
 
@@ -222,7 +346,10 @@ fn ods_invalid_sheet_names_are_made_safe_for_xlsx() {
         assert!(wb.check_sheet_name(&sheet.name, Some(i)).is_ok());
     }
     assert!(report.warnings.iter().any(|w| w.contains("sheet names")));
-    assert_eq!(read_xlsx(&write_xlsx(&wb).unwrap()).unwrap().0.sheets.len(), 4);
+    assert_eq!(
+        read_xlsx(&write_xlsx(&wb).unwrap()).unwrap().0.sheets.len(),
+        4
+    );
 }
 
 #[test]
@@ -232,7 +359,12 @@ fn ods_extension_error_cache_never_imports_its_placeholder_zero() {
     );
     let (wb, report) = read_ods(&bytes).unwrap();
     assert_eq!(wb.sheets[0].value(CellRef::new(0, 0)), text("#DIV/0!"));
-    assert!(report.warnings.iter().any(|w| w.contains("unsupported or missing")));
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("unsupported or missing"))
+    );
 }
 
 #[test]

@@ -108,12 +108,24 @@ pub struct MissingFont {
 /// ([`GENERIC_FAMILIES`]) and names longer than 256 bytes are left out.
 pub fn missing_fonts(d: &Document) -> Vec<MissingFont> {
     let db = FontDb::global();
-    let generic = |family: &str| GENERIC_FAMILIES.iter().any(|g| g.eq_ignore_ascii_case(family.trim()));
-    let mut used: Vec<(String, String)> = super::fonts::used_fonts(d).into_iter().map(|(family, style, _)| (family, style)).collect();
+    let generic = |family: &str| {
+        GENERIC_FAMILIES
+            .iter()
+            .any(|g| g.eq_ignore_ascii_case(family.trim()))
+    };
+    let mut used: Vec<(String, String)> = super::fonts::used_fonts(d)
+        .into_iter()
+        .map(|(family, style, _)| (family, style))
+        .collect();
     // Sorted by family and style: the versions type names of one face are neighbors.
     used.dedup();
     used.into_iter()
-        .filter(|(family, style)| !family.trim().is_empty() && !generic(family) && family.len() <= MAX_NAME && style.len() <= MAX_NAME)
+        .filter(|(family, style)| {
+            !family.trim().is_empty()
+                && !generic(family)
+                && family.len() <= MAX_NAME
+                && style.len() <= MAX_NAME
+        })
         .filter_map(|(family, style)| {
             let resolved = db.resolve(&family, &style);
             let status = resolved.as_ref().map_or(FontMatch::Missing, |(_, m)| *m);
@@ -144,7 +156,13 @@ pub fn missing_fonts_of(st: &DocState, rules: Option<&findfiles::Rules>) -> Valu
     // File › Package puts the fonts in a `Fonts` folder next to the packaged document. The folder
     // is made absolute against the working folder when the document's path is relative. It is
     // offered when a search may start there, as far as the rules tell without listing a folder.
-    if let Some(dir) = st.path.as_deref().and_then(|p| Path::new(p).parent()).map(|d| d.join("Fonts")).filter(|d| d.is_dir()) {
+    if let Some(dir) = st
+        .path
+        .as_deref()
+        .and_then(|p| Path::new(p).parent())
+        .map(|d| d.join("Fonts"))
+        .filter(|d| d.is_dir())
+    {
         let dir = super::fileio::absolute_path(&dir.to_string_lossy());
         let system;
         let rules = match rules {
@@ -190,7 +208,11 @@ impl Visitor for FontFiles {
     fn wants(&self, name: &str) -> bool {
         let path = Path::new(name);
         // A suitcase font (macOS) has no extension, or `.suit`.
-        vectorcraft_text::is_font_file(path) || cfg!(target_os = "macos") && path.extension().is_none_or(|e| e.eq_ignore_ascii_case("suit"))
+        vectorcraft_text::is_font_file(path)
+            || cfg!(target_os = "macos")
+                && path
+                    .extension()
+                    .is_none_or(|e| e.eq_ignore_ascii_case("suit"))
     }
     fn worth_reading(&self, path: &Path) -> bool {
         // A search reads font files and suitcase fonts of at most [`MAX_FONT_FILE`] bytes, the files
@@ -206,10 +228,15 @@ impl Visitor for FontFiles {
 /// `[{family, style?}]`: 1 to 1000 fonts with a family of 1 to 256 bytes and a style of at most 256
 /// (Regular when left out).
 fn font_list(v: &Value) -> Option<Vec<(String, String)>> {
-    let list = v.as_array().filter(|a| (1..=MAX_FONTS).contains(&a.len()))?;
+    let list = v
+        .as_array()
+        .filter(|a| (1..=MAX_FONTS).contains(&a.len()))?;
     list.iter()
         .map(|f| {
-            let family = f.get("family")?.as_str().filter(|s| !s.trim().is_empty() && s.len() <= MAX_NAME)?;
+            let family = f
+                .get("family")?
+                .as_str()
+                .filter(|s| !s.trim().is_empty() && s.len() <= MAX_NAME)?;
             let style = match f.get("style") {
                 None | Some(Value::Null) => "Regular",
                 Some(s) => s.as_str().filter(|s| s.len() <= MAX_NAME)?,
@@ -228,24 +255,43 @@ fn find(s: &mut Session, p: &Value) -> Result<Value> {
         }
         return Ok(state(s));
     }
-    let Some(folder) = p.get("folder").filter(|f| !f.is_null()) else { return Ok(state(s)) };
+    let Some(folder) = p.get("folder").filter(|f| !f.is_null()) else {
+        return Ok(state(s));
+    };
     let given = match p.get("fonts") {
         None | Some(Value::Null) => None,
-        Some(v) => Some(font_list(v).ok_or_else(|| bad(C, "each of `fonts` is {family, style?}; 1 to 1000 of them"))?),
+        Some(v) => Some(
+            font_list(v)
+                .ok_or_else(|| bad(C, "each of `fonts` is {family, style?}; 1 to 1000 of them"))?,
+        ),
     };
-    let seconds = p.get("maxSeconds").and_then(Value::as_f64).filter(|x| x.is_finite()).unwrap_or(60.0).clamp(1.0, 600.0);
+    let seconds = p
+        .get("maxSeconds")
+        .and_then(Value::as_f64)
+        .filter(|x| x.is_finite())
+        .unwrap_or(60.0)
+        .clamp(1.0, 600.0);
     // Only checked here: the folder is read on a walker thread.
     let folder = folder
         .as_str()
-        .filter(|f| !f.is_empty() && f.len() <= MAX_PATH && !f.contains(['\0', '\u{FFFD}']) && Path::new(f).is_absolute())
+        .filter(|f| {
+            !f.is_empty()
+                && f.len() <= MAX_PATH
+                && !f.contains(['\0', '\u{FFFD}'])
+                && Path::new(f).is_absolute()
+        })
         .ok_or_else(|| bad(C, "`folder` must be an absolute folder path"))?
         .to_string();
     let fonts = match given {
         Some(fonts) => fonts,
-        None => missing_fonts(&s.active().ok_or_else(|| bad(C, "give `fonts`, or open a document"))?.doc)
-            .into_iter()
-            .map(|m| (m.family, m.style))
-            .collect(),
+        None => missing_fonts(
+            &s.active()
+                .ok_or_else(|| bad(C, "give `fonts`, or open a document"))?
+                .doc,
+        )
+        .into_iter()
+        .map(|m| (m.family, m.style))
+        .collect(),
     };
     let db = FontDb::global();
     let (mut sought, mut wanted) = (vec![], vec![]);
@@ -255,8 +301,16 @@ fn find(s: &mut Session, p: &Value) -> Result<Value> {
             Some((f, FontMatch::Style)) => (FontMatch::Style, Some(f.family.clone())),
             _ => (FontMatch::Missing, None),
         };
-        wanted.push(WantedFont { family: family.clone(), style: style.clone(), installed });
-        sought.push(Sought { family, style, status });
+        wanted.push(WantedFont {
+            family: family.clone(),
+            style: style.clone(),
+            installed,
+        });
+        sought.push(Sought {
+            family,
+            style,
+            status,
+        });
     }
     if sought.is_empty() {
         return Err(bad(C, "no fonts to look for: they are all available"));
@@ -264,17 +318,34 @@ fn find(s: &mut Session, p: &Value) -> Result<Value> {
     // A new search stops the last one.
     s.font_search = None;
     let threads = s.search_threads.unwrap_or_else(findfiles::threads);
-    let limits = Limits { seconds, ..Limits::default() };
+    let limits = Limits {
+        seconds,
+        ..Limits::default()
+    };
     let visitor = Arc::new(FontFiles(WantedFonts::new(&wanted)));
-    let search =
-        findfiles::start(PathBuf::from(&folder), s.search_rules.clone(), limits, threads, sought.len(), visitor).map_err(EngineError::Other)?;
-    s.font_search = Some(FontSearch { id: NEXT.fetch_add(1, Ordering::Relaxed), folder, fonts: sought, search });
+    let search = findfiles::start(
+        PathBuf::from(&folder),
+        s.search_rules.clone(),
+        limits,
+        threads,
+        sought.len(),
+        visitor,
+    )
+    .map_err(EngineError::Other)?;
+    s.font_search = Some(FontSearch {
+        id: NEXT.fetch_add(1, Ordering::Relaxed),
+        folder,
+        fonts: sought,
+        search,
+    });
     Ok(state(s))
 }
 
 /// Where the session's last search stands (`text.findFontFiles` without `folder`).
 fn state(s: &Session) -> Value {
-    let Some(f) = &s.font_search else { return json!({ "state": "idle", "fonts": [] }) };
+    let Some(f) = &s.font_search else {
+        return json!({ "state": "idle", "fonts": [] });
+    };
     let p = f.search.progress();
     let mut files: Vec<Vec<String>> = vec![vec![]; f.fonts.len()];
     for (path, items) in &p.hits {
@@ -293,7 +364,11 @@ fn state(s: &Session) -> Value {
             json!({ "family": font.family, "style": font.style, "status": font.status.as_str(), "files": files })
         })
         .collect();
-    let folder = if p.folder.as_os_str().is_empty() { f.folder.clone() } else { p.folder.to_string_lossy().into_owned() };
+    let folder = if p.folder.as_os_str().is_empty() {
+        f.folder.clone()
+    } else {
+        p.folder.to_string_lossy().into_owned()
+    };
     let mut out = json!({
         "id": f.id, "state": p.state(), "folder": folder, "fonts": fonts,
         "searched": { "folders": p.folders, "files": p.files, "fontFiles": p.read },
@@ -335,12 +410,32 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
         .ok_or_else(|| bad(C, "`files` must be 1 to 1000 paths of font files the last text.findFontFiles search found"))?;
     files.sort();
     files.dedup();
-    let dir = vectorcraft_text::app_font_dir()
-        .ok_or_else(|| EngineError::Other("VectorCraft's Fonts folder isn't set here: the desktop app and vectorcraft-cli set it".into()))?;
-    let found: Vec<PathBuf> =
-        s.font_search.as_ref().map(|f| f.search.progress().hits.into_iter().map(|(path, _)| path).collect()).unwrap_or_default();
+    let dir = vectorcraft_text::app_font_dir().ok_or_else(|| {
+        EngineError::Other(
+            "VectorCraft's Fonts folder isn't set here: the desktop app and vectorcraft-cli set it"
+                .into(),
+        )
+    })?;
+    let found: Vec<PathBuf> = s
+        .font_search
+        .as_ref()
+        .map(|f| {
+            f.search
+                .progress()
+                .hits
+                .into_iter()
+                .map(|(path, _)| path)
+                .collect()
+        })
+        .unwrap_or_default();
     if let Some(f) = files.iter().find(|f| !found.contains(f)) {
-        return Err(bad(C, format!("`{}` is not a font file the last text.findFontFiles search found", f.display())));
+        return Err(bad(
+            C,
+            format!(
+                "`{}` is not a font file the last text.findFontFiles search found",
+                f.display()
+            ),
+        ));
     }
     for f in &files {
         crate::file_access::check_read(&f.to_string_lossy()).map_err(EngineError::Other)?;
@@ -349,7 +444,9 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
     crate::file_access::unconfined(|| super::fileio::create_dir(&dir.to_string_lossy()))?;
     let report = copy_into(&files, dir);
     let pairs = |v: &[(PathBuf, PathBuf)]| {
-        v.iter().map(|(from, to)| json!({ "from": from.to_string_lossy(), "to": to.to_string_lossy() })).collect::<Vec<_>>()
+        v.iter()
+            .map(|(from, to)| json!({ "from": from.to_string_lossy(), "to": to.to_string_lossy() }))
+            .collect::<Vec<_>>()
     };
     let mut out = json!({
         "folder": dir.to_string_lossy(), "copied": pairs(&report.copied), "kept": pairs(&report.kept),
@@ -386,17 +483,30 @@ pub(crate) fn copy_into(files: &[PathBuf], dir: &Path) -> CopyReport {
 /// The web has no file system: nothing is copied.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn copy_into(files: &[PathBuf], _: &Path) -> CopyReport {
-    CopyReport { skipped: files.iter().map(|f| (f.clone(), NOT_A_FILE.to_string())).collect(), ..CopyReport::default() }
+    CopyReport {
+        skipped: files
+            .iter()
+            .map(|f| (f.clone(), NOT_A_FILE.to_string()))
+            .collect(),
+        ..CopyReport::default()
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn copy_one(from: &Path, dir: &Path, total: &mut u64) -> std::result::Result<super::fileio::Placed, String> {
+fn copy_one(
+    from: &Path,
+    dir: &Path,
+    total: &mut u64,
+) -> std::result::Result<super::fileio::Placed, String> {
     use super::fileio::Placed;
     let meta = std::fs::symlink_metadata(from).map_err(|e| e.to_string())?;
     if !meta.is_file() || from.file_name().is_none() {
         return Err(NOT_A_FILE.into());
     }
-    let font = from.extension().and_then(|e| e.to_str()).is_some_and(|e| FONT_EXTENSIONS.iter().any(|x| e.eq_ignore_ascii_case(x)));
+    let font = from
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| FONT_EXTENSIONS.iter().any(|x| e.eq_ignore_ascii_case(x)));
     // A suitcase font's fonts are in its resource fork, which is copied with it, whatever its name.
     let fork = match (vectorcraft_text::is_suitcase(from), font) {
         (true, _) => Some(read_fork(from)?),
@@ -411,7 +521,9 @@ fn copy_one(from: &Path, dir: &Path, total: &mut u64) -> std::result::Result<sup
         return Err(TOO_MUCH.into());
     }
     let create = |to: &Path| create_copy(from, to, fork.as_deref());
-    match super::fileio::copy_new(from, dir, create, |to, m| same_file(from, to, m.len(), len, fork.as_deref())) {
+    match super::fileio::copy_new(from, dir, create, |to, m| {
+        same_file(from, to, m.len(), len, fork.as_deref())
+    }) {
         Ok(Some(Placed::Copied(to))) => {
             *total += len;
             Ok(Placed::Copied(to))
@@ -426,7 +538,9 @@ fn copy_one(from: &Path, dir: &Path, total: &mut u64) -> std::result::Result<sup
 /// resource fork is `fork`; never in place of a file.
 #[cfg(not(target_arch = "wasm32"))]
 fn create_copy(from: &Path, to: &Path, fork: Option<&[u8]>) -> std::io::Result<()> {
-    let Some(fork) = fork else { return vectorcraft_format::write_new_with(to, |f| copy_capped(from, f)) };
+    let Some(fork) = fork else {
+        return vectorcraft_format::write_new_with(to, |f| copy_capped(from, f));
+    };
     vectorcraft_format::write_new_with(to, |_| Ok(()))?;
     std::fs::write(fork_path(to), fork).inspect_err(|_| {
         // Best effort: the empty file just made is all there is to clean up.
@@ -450,7 +564,9 @@ fn same_file(from: &Path, to: &Path, to_len: u64, len: u64, fork: Option<&[u8]>)
 fn read_fork(path: &Path) -> std::result::Result<Vec<u8>, String> {
     use std::io::Read;
     let mut fork = vec![];
-    std::fs::File::open(fork_path(path)).and_then(|f| f.take(MAX_FONT_FILE + 1).read_to_end(&mut fork)).map_err(|e| e.to_string())?;
+    std::fs::File::open(fork_path(path))
+        .and_then(|f| f.take(MAX_FONT_FILE + 1).read_to_end(&mut fork))
+        .map_err(|e| e.to_string())?;
     if fork.len() as u64 > MAX_FONT_FILE {
         return Err(TOO_LARGE.into());
     }
@@ -470,7 +586,10 @@ fn copy_capped(from: &Path, to: &mut std::fs::File) -> std::io::Result<()> {
     use std::io::Read;
     let copied = std::io::copy(&mut std::fs::File::open(from)?.take(MAX_FONT_FILE + 1), to)?;
     if copied > MAX_FONT_FILE {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, TOO_LARGE));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            TOO_LARGE,
+        ));
     }
     Ok(())
 }
@@ -478,7 +597,9 @@ fn copy_capped(from: &Path, to: &mut std::fs::File) -> std::io::Result<()> {
 /// Whether the files `a` and `b` hold the same bytes (read 64 KB at a time).
 #[cfg(not(target_arch = "wasm32"))]
 fn same_contents(a: &Path, b: &Path) -> bool {
-    let (Ok(mut a), Ok(mut b)) = (std::fs::File::open(a), std::fs::File::open(b)) else { return false };
+    let (Ok(mut a), Ok(mut b)) = (std::fs::File::open(a), std::fs::File::open(b)) else {
+        return false;
+    };
     let (mut x, mut y) = (vec![0; 1 << 16], vec![0; 1 << 16]);
     loop {
         match (fill(&mut a, &mut x), fill(&mut b, &mut y)) {

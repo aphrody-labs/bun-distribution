@@ -81,12 +81,25 @@ enum Kind {
     Other,
     Rdf,
     Desc(usize),
-    Prop { desc: usize, start: usize, name: String },
+    Prop {
+        desc: usize,
+        start: usize,
+        name: String,
+    },
 }
 
 fn is_meta_attr(name: &str) -> bool {
     name.starts_with("xmlns")
-        || matches!(name, "rdf:about" | "rdf:ID" | "rdf:nodeID" | "xml:lang" | "rdf:parseType" | "rdf:resource" | "rdf:datatype")
+        || matches!(
+            name,
+            "rdf:about"
+                | "rdf:ID"
+                | "rdf:nodeID"
+                | "xml:lang"
+                | "rdf:parseType"
+                | "rdf:resource"
+                | "rdf:datatype"
+        )
 }
 
 fn pos(r: &quick_xml::Reader<&[u8]>) -> usize {
@@ -99,11 +112,16 @@ fn scan(s: &str) -> Result<Scan, XmpError> {
     reader.config_mut().check_end_names = true;
     let mut out = Scan::default();
     let mut stack: Vec<Kind> = Vec::new();
-    let mut scopes: Vec<Vec<(String, String)>> = vec![vec![("xml".into(), "http://www.w3.org/XML/1998/namespace".into())]];
+    let mut scopes: Vec<Vec<(String, String)>> = vec![vec![(
+        "xml".into(),
+        "http://www.w3.org/XML/1998/namespace".into(),
+    )]];
     let mut count = 0usize;
     loop {
         let before = pos(&reader);
-        let ev = reader.read_event().map_err(|e| XmpError::Xml(e.to_string()))?;
+        let ev = reader
+            .read_event()
+            .map_err(|e| XmpError::Xml(e.to_string()))?;
         let after = pos(&reader);
         match ev {
             Event::Start(ref e) | Event::Empty(ref e) => {
@@ -135,11 +153,30 @@ fn scan(s: &str) -> Result<Scan, XmpError> {
                 let name = canonical_name(&raw_name, &scopes);
                 let kind = match stack.last() {
                     Some(Kind::Rdf) if name == "rdf:Description" => {
-                        let attrs = raw_attrs.into_iter().map(|(raw, value)| Attr { name: canonical_name(&raw, &scopes), raw, value }).collect();
-                        out.descs.push(Desc { tag_start: before, tag_end: after, raw_name, empty, attrs, props: Vec::new(), end: after });
+                        let attrs = raw_attrs
+                            .into_iter()
+                            .map(|(raw, value)| Attr {
+                                name: canonical_name(&raw, &scopes),
+                                raw,
+                                value,
+                            })
+                            .collect();
+                        out.descs.push(Desc {
+                            tag_start: before,
+                            tag_end: after,
+                            raw_name,
+                            empty,
+                            attrs,
+                            props: Vec::new(),
+                            end: after,
+                        });
                         Kind::Desc(out.descs.len() - 1)
                     }
-                    Some(Kind::Desc(i)) => Kind::Prop { desc: *i, start: before, name },
+                    Some(Kind::Desc(i)) => Kind::Prop {
+                        desc: *i,
+                        start: before,
+                        name,
+                    },
                     _ if name == "rdf:RDF" && out.rdf_close.is_none() => Kind::Rdf,
                     _ => Kind::Other,
                 };
@@ -148,7 +185,11 @@ fn scan(s: &str) -> Result<Scan, XmpError> {
                     if let Kind::Prop { desc, start, name } = kind
                         && let Some(d) = out.descs.get_mut(desc)
                     {
-                        d.props.push(Prop { name, start, end: after });
+                        d.props.push(Prop {
+                            name,
+                            start,
+                            end: after,
+                        });
                     }
                 } else {
                     stack.push(kind);
@@ -159,7 +200,11 @@ fn scan(s: &str) -> Result<Scan, XmpError> {
                 match stack.pop() {
                     Some(Kind::Prop { desc, start, name }) => {
                         if let Some(d) = out.descs.get_mut(desc) {
-                            d.props.push(Prop { name, start, end: after });
+                            d.props.push(Prop {
+                                name,
+                                start,
+                                end: after,
+                            });
                         }
                     }
                     Some(Kind::Desc(i)) => {
@@ -209,22 +254,37 @@ pub fn merge_xmp(existing: &str, fresh: &str, rules: MergeRules) -> Result<Strin
     };
     parse_xmp(old)?;
     let ex = scan(old)?;
-    let rdf_close = ex.rdf_close.ok_or_else(|| XmpError::Xml("no rdf:RDF element".into()))?;
+    let rdf_close = ex
+        .rdf_close
+        .ok_or_else(|| XmpError::Xml("no rdf:RDF element".into()))?;
     let new = scan(fresh)?;
-    let fresh_desc = new.descs.first().ok_or_else(|| XmpError::Xml("the new packet has no rdf:Description".into()))?;
+    let fresh_desc = new
+        .descs
+        .first()
+        .ok_or_else(|| XmpError::Xml("the new packet has no rdf:Description".into()))?;
     let fresh_names: BTreeSet<&str> = fresh_desc.props.iter().map(|p| p.name.as_str()).collect();
-    let remove = |name: &str| listed(rules.owned, name) || (listed(rules.owned_if_present, name) && fresh_names.contains(name));
+    let remove = |name: &str| {
+        listed(rules.owned, name)
+            || (listed(rules.owned_if_present, name) && fresh_names.contains(name))
+    };
     let write = |name: &str| listed(rules.owned, name) || listed(rules.owned_if_present, name);
 
     // edits on `old`: (start, end, replacement), applied back to front
     let mut edits: Vec<(usize, usize, String)> = Vec::new();
     for d in &ex.descs {
-        let gone_attrs: Vec<&Attr> = d.attrs.iter().filter(|a| !is_meta_attr(&a.name) && remove(&a.name)).collect();
+        let gone_attrs: Vec<&Attr> = d
+            .attrs
+            .iter()
+            .filter(|a| !is_meta_attr(&a.name) && remove(&a.name))
+            .collect();
         let gone_props: Vec<&Prop> = d.props.iter().filter(|p| remove(&p.name)).collect();
         if gone_attrs.is_empty() && gone_props.is_empty() {
             continue;
         }
-        let attrs_left = d.attrs.iter().any(|a| !is_meta_attr(&a.name) && !remove(&a.name));
+        let attrs_left = d
+            .attrs
+            .iter()
+            .any(|a| !is_meta_attr(&a.name) && !remove(&a.name));
         if !attrs_left && gone_props.len() == d.props.len() {
             // nothing of its own left: drop the whole description
             edits.push((line_start(old, d.tag_start), d.end, String::new()));
@@ -232,8 +292,16 @@ pub fn merge_xmp(existing: &str, fresh: &str, rules: MergeRules) -> Result<Strin
         }
         if !gone_attrs.is_empty() {
             let mut tag = format!("<{}", d.raw_name);
-            for a in d.attrs.iter().filter(|a| is_meta_attr(&a.name) || !remove(&a.name)) {
-                tag.push_str(&format!("\n    {}=\"{}\"", a.raw, a.value.replace('"', "&quot;")));
+            for a in d
+                .attrs
+                .iter()
+                .filter(|a| is_meta_attr(&a.name) || !remove(&a.name))
+            {
+                tag.push_str(&format!(
+                    "\n    {}=\"{}\"",
+                    a.raw,
+                    a.value.replace('"', "&quot;")
+                ));
             }
             tag.push_str(if d.empty { "/>" } else { ">" });
             edits.push((d.tag_start, d.tag_end, tag));
@@ -243,21 +311,31 @@ pub fn merge_xmp(existing: &str, fresh: &str, rules: MergeRules) -> Result<Strin
         }
     }
     // the new description: its own namespace declarations, the properties to write
-    let mut block = String::from("\n  <rdf:Description rdf:about=\"\"\n    xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"");
-    for a in fresh_desc.attrs.iter().filter(|a| a.raw.starts_with("xmlns:") && a.raw != "xmlns:rdf") {
+    let mut block = String::from(
+        "\n  <rdf:Description rdf:about=\"\"\n    xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"",
+    );
+    for a in fresh_desc
+        .attrs
+        .iter()
+        .filter(|a| a.raw.starts_with("xmlns:") && a.raw != "xmlns:rdf")
+    {
         block.push_str(&format!("\n    {}=\"{}\"", a.raw, a.value));
     }
     block.push('>');
     let mut written = 0;
     for p in fresh_desc.props.iter().filter(|p| write(&p.name)) {
-        let text = fresh.get(p.start..p.end).ok_or_else(|| XmpError::Xml("bad property span".into()))?;
+        let text = fresh
+            .get(p.start..p.end)
+            .ok_or_else(|| XmpError::Xml("bad property span".into()))?;
         block.push_str("\n   ");
         block.push_str(text);
         written += 1;
     }
     block.push_str("\n  </rdf:Description>");
     if written > 0 {
-        let at = old.get(..rdf_close).map_or(rdf_close, |h| h.trim_end().len());
+        let at = old
+            .get(..rdf_close)
+            .map_or(rdf_close, |h| h.trim_end().len());
         edits.push((at, at, block));
     }
     edits.sort_by_key(|e| (e.0, e.1));
@@ -270,11 +348,17 @@ pub fn merge_xmp(existing: &str, fresh: &str, rules: MergeRules) -> Result<Strin
         if *s < at {
             return Err(XmpError::Xml("overlapping edits".into()));
         }
-        out.push_str(old.get(at..*s).ok_or_else(|| XmpError::Xml("bad span".into()))?);
+        out.push_str(
+            old.get(at..*s)
+                .ok_or_else(|| XmpError::Xml("bad span".into()))?,
+        );
         out.push_str(r);
         at = *e;
     }
-    out.push_str(old.get(at..).ok_or_else(|| XmpError::Xml("bad span".into()))?);
+    out.push_str(
+        old.get(at..)
+            .ok_or_else(|| XmpError::Xml("bad span".into()))?,
+    );
 
     // read back: everything written must come out as written
     let merged = parse_xmp(&out)?;
@@ -292,8 +376,10 @@ pub fn merge_xmp(existing: &str, fresh: &str, rules: MergeRules) -> Result<Strin
 mod tests {
     use super::*;
 
-    const RULES: MergeRules =
-        MergeRules { owned: &["xmp:Rating", "xmp:Label", "dc:subject", "dc:title", "lc:*"], owned_if_present: &["exif:DateTimeOriginal"] };
+    const RULES: MergeRules = MergeRules {
+        owned: &["xmp:Rating", "xmp:Label", "dc:subject", "dc:title", "lc:*"],
+        owned_if_present: &["exif:DateTimeOriginal"],
+    };
 
     /// A sidecar as another raw developer writes it: attribute-form simple properties, develop
     /// settings, a structured history, an unknown namespace.
@@ -377,9 +463,16 @@ mod tests {
         let again = merge_xmp(&out, &fresh(1, &[]), RULES).unwrap();
         let d = parse_xmp(&again).unwrap();
         assert_eq!(d.properties.get("xmp:Rating"), Some(&vec!["1".to_string()]));
-        assert!(!d.properties.contains_key("dc:subject"), "a cleared field is cleared");
+        assert!(
+            !d.properties.contains_key("dc:subject"),
+            "a cleared field is cleared"
+        );
         assert_eq!(again.matches("<rdf:Description").count(), 2, "{again}");
-        assert_eq!(merge_xmp(&again, &fresh(1, &[]), RULES).unwrap(), again, "idempotent");
+        assert_eq!(
+            merge_xmp(&again, &fresh(1, &[]), RULES).unwrap(),
+            again,
+            "idempotent"
+        );
     }
 
     #[test]
@@ -391,12 +484,22 @@ mod tests {
         let out = merge_xmp(ex, &fresh(3, &[]), RULES).unwrap();
         let d = parse_xmp(&out).unwrap();
         assert_eq!(d.properties.get("xmp:Rating"), Some(&vec!["3".to_string()]));
-        assert_eq!(d.properties.get("exif:DateTimeOriginal"), Some(&vec!["2020-01-01T00:00:00".to_string()]), "fresh has none: kept");
-        let mut m = crate::Metadata { rating: Some(3), ..Default::default() };
+        assert_eq!(
+            d.properties.get("exif:DateTimeOriginal"),
+            Some(&vec!["2020-01-01T00:00:00".to_string()]),
+            "fresh has none: kept"
+        );
+        let mut m = crate::Metadata {
+            rating: Some(3),
+            ..Default::default()
+        };
         m.capture_time = crate::DateTime::parse_iso("2024-05-06T07:08:09");
         let out = merge_xmp(ex, &crate::write_xmp_lc(&m, &[]), RULES).unwrap();
         let d = parse_xmp(&out).unwrap();
-        assert_eq!(d.properties.get("exif:DateTimeOriginal"), Some(&vec!["2024-05-06T07:08:09".to_string()]));
+        assert_eq!(
+            d.properties.get("exif:DateTimeOriginal"),
+            Some(&vec!["2024-05-06T07:08:09".to_string()])
+        );
     }
 
     #[test]
@@ -416,12 +519,21 @@ mod tests {
         let found = scan(&s).unwrap();
         let took = t.elapsed();
         assert_eq!(found.descs[0].attrs.len(), n + 2, "every attribute is read");
-        assert!(took < std::time::Duration::from_secs(5), "{n} attributes took {took:?}");
+        assert!(
+            took < std::time::Duration::from_secs(5),
+            "{n} attributes took {took:?}"
+        );
     }
 
     #[test]
     fn refuses_what_it_cannot_read() {
-        for bad in ["", "not xml at all", "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF", "<a><b></a>", "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"/>"] {
+        for bad in [
+            "",
+            "not xml at all",
+            "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF",
+            "<a><b></a>",
+            "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"/>",
+        ] {
             assert!(merge_xmp(bad, &fresh(1, &[]), RULES).is_err(), "{bad:?}");
         }
     }
@@ -432,8 +544,14 @@ mod tests {
         // An owned name, a foreign one and one on a nested element (a merge would keep both copies of the last two).
         for (once, twice) in [
             ("xmp:Rating=\"2\"", "xmp:Rating=\"2\" xmp:Rating=\"3\""),
-            ("foo:Thing=\"a &amp; b\"", "foo:Thing=\"a &amp; b\" foo:Thing=\"c\""),
-            ("stEvt:action=\"saved\"", "stEvt:action=\"saved\" stEvt:action=\"saved\""),
+            (
+                "foo:Thing=\"a &amp; b\"",
+                "foo:Thing=\"a &amp; b\" foo:Thing=\"c\"",
+            ),
+            (
+                "stEvt:action=\"saved\"",
+                "stEvt:action=\"saved\" stEvt:action=\"saved\"",
+            ),
         ] {
             let ex = foreign().replace(once, twice);
             assert!(merge_xmp(&ex, &fresh(1, &[]), RULES).is_err(), "{twice}");

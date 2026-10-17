@@ -141,7 +141,13 @@ pub struct ChatRequest {
 impl ChatRequest {
     /// Constructs a minimal non-streaming request.
     pub fn new(model: impl Into<String>, messages: Vec<Message>) -> Self {
-        Self { model: model.into(), messages, temperature: None, max_tokens: None, stream: false }
+        Self {
+            model: model.into(),
+            messages,
+            temperature: None,
+            max_tokens: None,
+            stream: false,
+        }
     }
 }
 
@@ -240,7 +246,9 @@ pub(crate) fn build_openai_body(req: &ChatRequest) -> serde_json::Value {
 /// Extracts the assistant content string from a complete OpenAI-compatible
 /// JSON response.
 pub(crate) fn extract_content(body: &serde_json::Value) -> Option<String> {
-    body["choices"][0]["message"]["content"].as_str().map(str::to_owned)
+    body["choices"][0]["message"]["content"]
+        .as_str()
+        .map(str::to_owned)
 }
 
 /// Extracts the model string echoed by the upstream response.
@@ -263,7 +271,10 @@ pub(crate) fn parse_sse_line(line: &str) -> Result<Option<ChatChunk>, GatewayErr
     };
 
     if data == "[DONE]" {
-        return Ok(Some(ChatChunk { delta: String::new(), finish: true }));
+        return Ok(Some(ChatChunk {
+            delta: String::new(),
+            finish: true,
+        }));
     }
 
     if data.is_empty() {
@@ -271,8 +282,14 @@ pub(crate) fn parse_sse_line(line: &str) -> Result<Option<ChatChunk>, GatewayErr
     }
 
     let v: serde_json::Value = serde_json::from_str(data)?;
-    let delta = v["choices"][0]["delta"]["content"].as_str().unwrap_or("").to_owned();
-    let finish = v["choices"][0]["finish_reason"].as_str().map(|r| r == "stop").unwrap_or(false);
+    let delta = v["choices"][0]["delta"]["content"]
+        .as_str()
+        .unwrap_or("")
+        .to_owned();
+    let finish = v["choices"][0]["finish_reason"]
+        .as_str()
+        .map(|r| r == "stop")
+        .unwrap_or(false);
 
     Ok(Some(ChatChunk { delta, finish }))
 }
@@ -326,7 +343,10 @@ mod tests {
         assert_eq!(Message::System(String::new()).role(), "system");
         assert_eq!(Message::User(String::new()).role(), "user");
         assert_eq!(Message::Assistant(String::new()).role(), "assistant");
-        assert_eq!(Message::Tool("fn".to_owned(), "out".to_owned()).role(), "tool");
+        assert_eq!(
+            Message::Tool("fn".to_owned(), "out".to_owned()).role(),
+            "tool"
+        );
     }
 
     // --- build_openai_body --------------------------------------------------
@@ -352,7 +372,9 @@ mod tests {
 
     #[test]
     fn parse_sse_done_returns_finish_chunk() {
-        let chunk = parse_sse_line("data: [DONE]").expect("parse").expect("some chunk");
+        let chunk = parse_sse_line("data: [DONE]")
+            .expect("parse")
+            .expect("some chunk");
         assert!(chunk.finish);
         assert!(chunk.delta.is_empty());
     }
@@ -396,7 +418,10 @@ mod tests {
 
     #[test]
     fn chunk_round_trip() {
-        let chunk = ChatChunk { delta: "tok".to_owned(), finish: false };
+        let chunk = ChatChunk {
+            delta: "tok".to_owned(),
+            finish: false,
+        };
         let json = serde_json::to_string(&chunk).expect("ser");
         let back: ChatChunk = serde_json::from_str(&json).expect("de");
         assert_eq!(back.delta, "tok");

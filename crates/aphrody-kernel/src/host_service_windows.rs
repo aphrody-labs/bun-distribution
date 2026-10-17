@@ -60,7 +60,7 @@ unsafe extern "system" fn control(
             status(SERVICE_STOP_PENDING, 0);
             STOP.notify_one();
             0
-        },
+        }
         SERVICE_CONTROL_INTERROGATE => 0,
         _ => 120,
     }
@@ -78,7 +78,9 @@ unsafe extern "system" fn service_main(_count: u32, _args: *mut *mut u16) {
     status(SERVICE_START_PENDING, 0);
     let outcome = std::panic::catch_unwind(|| {
         let config = CONFIG.get().expect("SCM config initialized").clone();
-        let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()?;
         let result = runtime.block_on(async {
             tokio::select! {
                 result = super::run(config.clone()) => result,
@@ -97,14 +99,19 @@ unsafe extern "system" fn service_main(_count: u32, _args: *mut *mut u16) {
 }
 
 pub(super) fn dispatch(config: Config) -> io::Result<()> {
-    CONFIG.set(config).map_err(|_| io::Error::other("SCM dispatcher already initialized"))?;
+    CONFIG
+        .set(config)
+        .map_err(|_| io::Error::other("SCM dispatcher already initialized"))?;
     let mut name: Vec<_> = "AphrodyHost".encode_utf16().chain(Some(0)).collect();
     let entries = [
         SERVICE_TABLE_ENTRYW {
             lpServiceName: name.as_mut_ptr(),
             lpServiceProc: Some(service_main),
         },
-        SERVICE_TABLE_ENTRYW { lpServiceName: std::ptr::null_mut(), lpServiceProc: None },
+        SERVICE_TABLE_ENTRYW {
+            lpServiceName: std::ptr::null_mut(),
+            lpServiceProc: None,
+        },
     ];
     // SAFETY: the terminated table and name buffers live until dispatch returns.
     if unsafe { StartServiceCtrlDispatcherW(entries.as_ptr()) } == 0 {

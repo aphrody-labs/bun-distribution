@@ -42,7 +42,14 @@ fn synthetic() -> Vec<u8> {
     el(&mut v, CODEC_PRIVATE, &[1, 0x64, 0, 0x1F]);
     el_uint(&mut v, DEFAULT_DURATION, 40_000_000);
     let mut mm = Vec::new();
-    for (id, val) in [(PRIMARY_R_X, 0.708), (PRIMARY_R_Y, 0.292), (PRIMARY_G_X, 0.17), (PRIMARY_G_Y, 0.797), (PRIMARY_B_X, 0.131), (PRIMARY_B_Y, 0.046)] {
+    for (id, val) in [
+        (PRIMARY_R_X, 0.708),
+        (PRIMARY_R_Y, 0.292),
+        (PRIMARY_G_X, 0.17),
+        (PRIMARY_G_Y, 0.797),
+        (PRIMARY_B_X, 0.131),
+        (PRIMARY_B_Y, 0.046),
+    ] {
         el_float(&mut mm, id, val);
     }
     el_float(&mut mm, WHITE_POINT_X, 0.3127);
@@ -148,7 +155,14 @@ fn synthetic() -> Vec<u8> {
 #[test]
 fn synthetic_file() {
     let bytes = synthetic();
-    let f = open_with(&bytes[..], &OpenOptions { index: true, verify_crc: true }).unwrap();
+    let f = open_with(
+        &bytes[..],
+        &OpenOptions {
+            index: true,
+            verify_crc: true,
+        },
+    )
+    .unwrap();
     assert!(f.live);
     assert!(f.warnings.is_empty(), "{:?}", f.warnings);
     assert_eq!((f.crc_checked, f.crc_errors.len()), (1, 0));
@@ -161,20 +175,43 @@ fn synthetic_file() {
     assert_eq!(vi.display_rotation(), Some(1));
     let c = vi.colour.as_ref().unwrap();
     assert!(c.full_range());
-    assert_eq!((c.matrix_coefficients, c.transfer_characteristics, c.primaries, c.max_cll, c.max_fall), (Some(9), Some(16), Some(9), Some(1000), Some(400)));
+    assert_eq!(
+        (
+            c.matrix_coefficients,
+            c.transfer_characteristics,
+            c.primaries,
+            c.max_cll,
+            c.max_fall
+        ),
+        (Some(9), Some(16), Some(9), Some(1000), Some(400))
+    );
     let m = c.mastering.as_ref().unwrap();
     assert_eq!(m.primaries[1], (0.17, 0.797));
     assert_eq!(m.white_point, (0.3127, 0.329));
     assert_eq!((m.luminance_max, m.luminance_min), (1000.0, 0.0001));
-    assert_eq!(v.encodings, vec![ContentEncoding::HeaderStripping { bytes: vec![0, 0, 0, 1], scope: 1 }]);
+    assert_eq!(
+        v.encodings,
+        vec![ContentEncoding::HeaderStripping {
+            bytes: vec![0, 0, 0, 1],
+            scope: 1
+        }]
+    );
     // legacy AAC ID: ASC synthesised with explicit SBR signalling (LC, 24 kHz, stereo → 48 kHz)
-    assert_eq!(f.tracks[1].codec, Codec::Aac { asc: vec![0x13, 0x10, 0x56, 0xE5, 0x98] });
+    assert_eq!(
+        f.tracks[1].codec,
+        Codec::Aac {
+            asc: vec![0x13, 0x10, 0x56, 0xE5, 0x98]
+        }
+    );
     assert_eq!(f.tracks[1].language, "ger");
     assert_eq!(f.chapters[0].chapters[0].title(), Some("Intro"));
     assert_eq!(f.chapters[0].chapters[0].end_ns, Some(40_000_000));
     assert_eq!(f.attachments.len(), 1);
     let at = &f.attachments[0];
-    assert_eq!((at.name.as_str(), at.media_type.as_str(), at.uid), ("font.ttf", "font/ttf", 77));
+    assert_eq!(
+        (at.name.as_str(), at.media_type.as_str(), at.uid),
+        ("font.ttf", "font/ttf", 77)
+    );
     assert_eq!(&bytes[at.data_offset as usize..][..100], &[9; 100]);
     assert_eq!(f.tags[0].targets.track_uids, vec![11]);
     assert_eq!(f.tags[0].simple[0].string.as_deref(), Some("Nobody"));
@@ -185,7 +222,10 @@ fn synthetic_file() {
     let d = Demuxer::from_slice(&bytes).unwrap();
     let p: Vec<Packet> = d.map(|p| p.unwrap()).collect();
     assert_eq!(p.len(), 4);
-    assert_eq!((p[0].track, p[0].pts, p[0].keyframe, p[0].duration), (0, 1000, true, 40));
+    assert_eq!(
+        (p[0].track, p[0].pts, p[0].keyframe, p[0].duration),
+        (0, 1000, true, 40)
+    );
     assert_eq!(p[0].data, [0, 0, 0, 1, 0x65, 1, 2]);
     assert_eq!((p[1].track, p[1].pts, p[1].data.len()), (1, 1005, 10));
     assert_eq!((p[2].pts, p[2].keyframe, p[2].duration), (1040, false, 80));
@@ -197,11 +237,25 @@ fn synthetic_file() {
     let mut bad = bytes.clone();
     let title = bad.windows(9).position(|w| w == b"Synthetic").unwrap();
     bad[title] = b's';
-    let f = open_with(&bad[..], &OpenOptions { index: true, verify_crc: true }).unwrap();
+    let f = open_with(
+        &bad[..],
+        &OpenOptions {
+            index: true,
+            verify_crc: true,
+        },
+    )
+    .unwrap();
     assert_eq!(f.crc_errors.len(), 1);
 
     // seeking without index or cues builds the index
-    let mut d = Demuxer::with_options(&bytes[..], OpenOptions { index: false, verify_crc: false }).unwrap();
+    let mut d = Demuxer::with_options(
+        &bytes[..],
+        OpenOptions {
+            index: false,
+            verify_crc: false,
+        },
+    )
+    .unwrap();
     assert_eq!(d.file().tracks.len(), 2);
     assert_eq!(d.seek(0, 1_100_000_000).unwrap().pts, 1000);
     assert_eq!(d.seek(0, 1_130_000_000).unwrap().pts, 1120);

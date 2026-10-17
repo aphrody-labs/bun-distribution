@@ -11,10 +11,10 @@ use bevy_ecs::{
     template::EntityTemplate,
 };
 use bevy_math::Vec2;
-use bevy_picking::{cursor::EntityCursor, hover::Hovered, PickingSystems};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_picking::{PickingSystems, cursor::EntityCursor, hover::Hovered};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_scene::prelude::*;
-use bevy_ui::{px, BorderRadius, ComputedNode, Node, UiSystems, Val};
+use bevy_ui::{BorderRadius, ComputedNode, Node, UiSystems, Val, px};
 use bevy_ui_widgets::{ControlOrientation, Scrollbar, ScrollbarDragState, ScrollbarThumb};
 
 use crate::{theme::ThemeBackgroundColor, tokens};

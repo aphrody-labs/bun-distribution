@@ -7,7 +7,14 @@
 //! children are the document's **layers**: one group per top-level optional-content group
 //! (Illustrator layers), with content outside them gathered into groups of its own.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod build;
 mod ccitt;
@@ -106,7 +113,14 @@ pub fn page_count(bytes: &[u8]) -> usize {
 }
 
 /// Build the document: `root` children become layer groups (see the crate docs).
-fn finish(nodes: Vec<Node>, flags: Vec<bool>, skipped: Vec<String>, width: f64, height: f64, to_doc: Affine) -> Doc {
+fn finish(
+    nodes: Vec<Node>,
+    flags: Vec<bool>,
+    skipped: Vec<String>,
+    width: f64,
+    height: f64,
+    to_doc: Affine,
+) -> Doc {
     let mut layers: Vec<Node> = vec![];
     let mut loose: Vec<Node> = vec![];
     let flush = |loose: &mut Vec<Node>, layers: &mut Vec<Node>| {
@@ -116,7 +130,10 @@ fn finish(nodes: Vec<Node>, flags: Vec<bool>, skipped: Vec<String>, width: f64, 
             layers.push(Node::Group(g));
         }
     };
-    for (n, is_layer) in nodes.into_iter().zip(flags.into_iter().chain(std::iter::repeat(false))) {
+    for (n, is_layer) in nodes
+        .into_iter()
+        .zip(flags.into_iter().chain(std::iter::repeat(false)))
+    {
         if is_layer {
             flush(&mut loose, &mut layers);
             layers.push(n);
@@ -136,7 +153,12 @@ fn finish(nodes: Vec<Node>, flags: Vec<bool>, skipped: Vec<String>, width: f64, 
     let mut root = Group::new("page");
     root.transform = to_doc;
     root.children = layers;
-    Doc { width, height, root, skipped }
+    Doc {
+        width,
+        height,
+        root,
+        skipped,
+    }
 }
 
 fn parse_pdf(bytes: &[u8], index: usize) -> Result<Doc, Error> {
@@ -162,7 +184,14 @@ fn parse_pdf(bytes: &[u8], index: usize) -> Result<Doc, Error> {
     let mut it = page::Interp::new(&file, pg.bbox);
     it.run(&content, &pg.resources, Affine::IDENTITY, 0);
     let (nodes, flags, skipped) = it.b.finish();
-    Ok(finish(nodes, flags, skipped, dw.max(1.0), dh.max(1.0), to_doc))
+    Ok(finish(
+        nodes,
+        flags,
+        skipped,
+        dw.max(1.0),
+        dh.max(1.0),
+        to_doc,
+    ))
 }
 
 fn parse_eps(bytes: &[u8]) -> Result<Doc, Error> {
@@ -171,7 +200,14 @@ fn parse_eps(bytes: &[u8]) -> Result<Doc, Error> {
     it.run(ps);
     let (nodes, flags, skipped) = it.b.finish();
     let to_doc = Affine::new([1.0, 0.0, 0.0, -1.0, -bb[0], bb[3]]);
-    Ok(finish(nodes, flags, skipped, (bb[2] - bb[0]).max(1.0), (bb[3] - bb[1]).max(1.0), to_doc))
+    Ok(finish(
+        nodes,
+        flags,
+        skipped,
+        (bb[2] - bb[0]).max(1.0),
+        (bb[3] - bb[1]).max(1.0),
+        to_doc,
+    ))
 }
 
 /// The document's layer names (the root's children), bottom first.

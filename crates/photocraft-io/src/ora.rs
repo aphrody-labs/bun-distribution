@@ -42,8 +42,18 @@ fn invalid(message: impl Into<String>) -> IoError {
 /// The payload of a ZIP's first entry when it is a stored file named `mimetype`, which is how
 /// OpenRaster and Krita mark their archives (so the type is readable without unzipping).
 pub(crate) fn zip_mimetype(bytes: &[u8]) -> Option<&[u8]> {
-    let u16_at = |o: usize| bytes.get(o..o + 2).and_then(|s| <[u8; 2]>::try_from(s).ok()).map(u16::from_le_bytes);
-    let u32_at = |o: usize| bytes.get(o..o + 4).and_then(|s| <[u8; 4]>::try_from(s).ok()).map(u32::from_le_bytes);
+    let u16_at = |o: usize| {
+        bytes
+            .get(o..o + 2)
+            .and_then(|s| <[u8; 2]>::try_from(s).ok())
+            .map(u16::from_le_bytes)
+    };
+    let u32_at = |o: usize| {
+        bytes
+            .get(o..o + 4)
+            .and_then(|s| <[u8; 4]>::try_from(s).ok())
+            .map(u32::from_le_bytes)
+    };
     if u32_at(0)? != 0x0403_4b50 || u16_at(8)? != 0 {
         return None;
     }
@@ -180,11 +190,17 @@ fn composite_op(op: &str, layer: &str, warnings: &mut Warnings) -> BlendMode {
     }
     if let Some((mode, approx)) = op.strip_prefix("krita:").and_then(krita_blend) {
         if approx {
-            warnings.note(&format!("Krita's {op} blend mode is approximated by {}", mode.label()));
+            warnings.note(&format!(
+                "Krita's {op} blend mode is approximated by {}",
+                mode.label()
+            ));
         }
         return mode;
     }
-    warnings.layer(layer, &format!("composite operation {op} is not supported; it opens as Normal"));
+    warnings.layer(
+        layer,
+        &format!("composite operation {op} is not supported; it opens as Normal"),
+    );
     BlendMode::Normal
 }
 
@@ -208,7 +224,9 @@ impl Warnings {
                     layers.push(layer.to_string());
                 }
             }
-            None => self.per_layer.push((message.to_string(), vec![layer.to_string()])),
+            None => self
+                .per_layer
+                .push((message.to_string(), vec![layer.to_string()])),
         }
     }
     pub(crate) fn finish(self) -> Vec<String> {
@@ -216,7 +234,11 @@ impl Warnings {
         for (message, layers) in self.per_layer {
             let shown: Vec<String> = layers.iter().take(5).map(|l| format!("\"{l}\"")).collect();
             let more = layers.len().saturating_sub(5);
-            let tail = if more > 0 { format!(" and {more} more") } else { String::new() };
+            let tail = if more > 0 {
+                format!(" and {more} more")
+            } else {
+                String::new()
+            };
             out.push(format!("{} ({}{tail})", message, shown.join(", ")));
         }
         out
@@ -227,7 +249,12 @@ impl Warnings {
 fn num(node: roxmltree::Node<'_, '_>, name: &str, default: f64) -> Result<f64> {
     match node.attribute(name) {
         None => Ok(default),
-        Some(v) => v.trim().parse::<f64>().ok().filter(|v| v.is_finite()).ok_or_else(|| invalid(format!("invalid {name} attribute `{v}`"))),
+        Some(v) => v
+            .trim()
+            .parse::<f64>()
+            .ok()
+            .filter(|v| v.is_finite())
+            .ok_or_else(|| invalid(format!("invalid {name} attribute `{v}`"))),
     }
 }
 
@@ -240,15 +267,31 @@ fn int(node: roxmltree::Node<'_, '_>, name: &str) -> Result<i32> {
 }
 
 fn flag(node: roxmltree::Node<'_, '_>, name: &str) -> bool {
-    node.attribute(name).is_some_and(|v| matches!(v.trim(), "true" | "1"))
+    node.attribute(name)
+        .is_some_and(|v| matches!(v.trim(), "true" | "1"))
 }
 
 /// Shared node properties: name, visibility, opacity and composite operation.
-fn props(node: roxmltree::Node<'_, '_>, layer: &mut Layer, index: usize, warnings: &mut Warnings) -> Result<()> {
-    layer.name = node.attribute("name").filter(|name| !name.trim().is_empty()).map_or_else(|| format!("Layer {index}"), str::to_string);
-    layer.visible = node.attribute("visibility").is_none_or(|v| v.trim() != "hidden");
+fn props(
+    node: roxmltree::Node<'_, '_>,
+    layer: &mut Layer,
+    index: usize,
+    warnings: &mut Warnings,
+) -> Result<()> {
+    layer.name = node
+        .attribute("name")
+        .filter(|name| !name.trim().is_empty())
+        .map_or_else(|| format!("Layer {index}"), str::to_string);
+    layer.visible = node
+        .attribute("visibility")
+        .is_none_or(|v| v.trim() != "hidden");
     layer.opacity = num(node, "opacity", 1.0)?.clamp(0.0, 1.0) as f32;
-    layer.blend = composite_op(node.attribute("composite-op").map_or("svg:src-over", str::trim), &layer.name, warnings);
+    layer.blend = composite_op(
+        node.attribute("composite-op")
+            .map_or("svg:src-over", str::trim),
+        &layer.name,
+        warnings,
+    );
     if flag(node, "edit-locked") {
         layer.locks.all = true;
     }
@@ -270,27 +313,50 @@ struct Reader<'a, 'c> {
 
 /// A layer as read, before its pixels are converted to the document's format.
 enum Node {
-    Raster { layer: Layer, image: Option<usize>, x: i32, y: i32 },
-    Group { layer: Layer, children: Vec<Node> },
+    Raster {
+        layer: Layer,
+        image: Option<usize>,
+        x: i32,
+        y: i32,
+    },
+    Group {
+        layer: Layer,
+        children: Vec<Node>,
+    },
 }
 
 impl Reader<'_, '_> {
     fn png(&mut self, src: &str, layer: &str) -> Result<Option<usize>> {
         let Some(entry) = self.zip.find(src).cloned() else {
-            self.warnings.layer(layer, "the layer's image is missing from the archive; the layer opens empty");
+            self.warnings.layer(
+                layer,
+                "the layer's image is missing from the archive; the layer opens empty",
+            );
             return Ok(None);
         };
-        let data = self.zip.read(&entry, MAX_ENTRY).map_err(|e| invalid(format!("{src}: {e}")))?;
+        let data = self
+            .zip
+            .read(&entry, MAX_ENTRY)
+            .map_err(|e| invalid(format!("{src}: {e}")))?;
         let mut opts = codecs::DecodeOptions::default();
         opts.limits.max_width = MAX_SIDE;
         opts.limits.max_height = MAX_SIDE;
         opts.limits.max_alloc = self.budget as u64;
-        let image = codecs::decode_with(&data, &opts).map_err(|e| invalid(format!("{src}: {e}")))?;
+        let image =
+            codecs::decode_with(&data, &opts).map_err(|e| invalid(format!("{src}: {e}")))?;
         let (w, h) = image.dimensions();
-        let rgba16 = (w as usize).checked_mul(h as usize).and_then(|n| n.checked_mul(8)).ok_or_else(|| invalid("layer image size overflow"))?;
-        self.budget = self.budget.checked_sub(rgba16).ok_or_else(|| invalid("decoded layers exceed the 1 GiB limit"))?;
+        let rgba16 = (w as usize)
+            .checked_mul(h as usize)
+            .and_then(|n| n.checked_mul(8))
+            .ok_or_else(|| invalid("layer image size overflow"))?;
+        self.budget = self
+            .budget
+            .checked_sub(rgba16)
+            .ok_or_else(|| invalid("decoded layers exceed the 1 GiB limit"))?;
         if !matches!(codecs::detect(&data), Some(Format::Png)) {
-            self.warnings.note("some layer images are not PNG, as OpenRaster expects; they were read anyway");
+            self.warnings.note(
+                "some layer images are not PNG, as OpenRaster expects; they were read anyway",
+            );
         }
         self.images.push(image);
         Ok(Some(self.images.len() - 1))
@@ -298,7 +364,10 @@ impl Reader<'_, '_> {
 
     fn stack(&mut self, stack: roxmltree::Node<'_, '_>, depth: usize) -> Result<Vec<Node>> {
         if depth > photocraft_doc::MAX_GROUP_DEPTH {
-            return Err(IoError::Unsupported(format!("layer groups nested deeper than {}", photocraft_doc::MAX_GROUP_DEPTH)));
+            return Err(IoError::Unsupported(format!(
+                "layer groups nested deeper than {}",
+                photocraft_doc::MAX_GROUP_DEPTH
+            )));
         }
         let mut out = Vec::new();
         for child in stack.children().filter(roxmltree::Node::is_element) {
@@ -316,7 +385,8 @@ impl Reader<'_, '_> {
                     let image = match child.attribute("src") {
                         Some(src) => self.png(src.trim(), &layer.name.clone())?,
                         None => {
-                            self.warnings.layer(&layer.name, "the layer has no image; it opens empty");
+                            self.warnings
+                                .layer(&layer.name, "the layer has no image; it opens empty");
                             None
                         }
                     };
@@ -336,7 +406,12 @@ impl Reader<'_, '_> {
                 }
                 other => {
                     let name = child.attribute("name").unwrap_or(other).to_string();
-                    self.warnings.layer(&name, &format!("OpenRaster <{other}> elements are not supported and were skipped"));
+                    self.warnings.layer(
+                        &name,
+                        &format!(
+                            "OpenRaster <{other}> elements are not supported and were skipped"
+                        ),
+                    );
                 }
             }
         }
@@ -346,11 +421,13 @@ impl Reader<'_, '_> {
 
 /// Sample depth of the document: the deepest layer image (8 or 16 bit; float stays float).
 fn document_depth(images: &[Image]) -> SampleType {
-    images.iter().fold(SampleType::U8, |d, i| match (d, i.sample_type()) {
-        (SampleType::F32, _) | (_, CSample::F32 | CSample::F16) => SampleType::F32,
-        (SampleType::U16, _) | (_, CSample::U16) => SampleType::U16,
-        _ => SampleType::U8,
-    })
+    images
+        .iter()
+        .fold(SampleType::U8, |d, i| match (d, i.sample_type()) {
+            (SampleType::F32, _) | (_, CSample::F32 | CSample::F16) => SampleType::F32,
+            (SampleType::U16, _) | (_, CSample::U16) => SampleType::U16,
+            _ => SampleType::U8,
+        })
 }
 
 pub(crate) fn csample(depth: SampleType) -> CSample {
@@ -358,18 +435,32 @@ pub(crate) fn csample(depth: SampleType) -> CSample {
 }
 
 /// Builds the document tree bottom-to-top (stack.xml lists the topmost node first).
-fn build(nodes: Vec<Node>, images: &[Image], fmt: PixelFormat, ctl: &Interrupt<'_>) -> Result<Vec<Layer>> {
+fn build(
+    nodes: Vec<Node>,
+    images: &[Image],
+    fmt: PixelFormat,
+    ctl: &Interrupt<'_>,
+) -> Result<Vec<Layer>> {
     let mut out = Vec::with_capacity(nodes.len());
     for node in nodes.into_iter().rev() {
         ctl.check().map_err(|_| IoError::Cancelled)?;
         match node {
-            Node::Raster { mut layer, image, x, y } => {
+            Node::Raster {
+                mut layer,
+                image,
+                x,
+                y,
+            } => {
                 let mut surface = Surface::new(fmt);
                 if let Some(image) = image.and_then(|i| images.get(i)) {
                     let (w, h) = image.dimensions();
                     let px = image.convert(ChannelLayout::Rgba, csample(fmt.sample));
-                    let rect = Rect::new(x, y, x.saturating_add(w as i32), y.saturating_add(h as i32));
-                    if rect.width() != w || rect.height() != h || px.data().len() != (w as usize) * (h as usize) * fmt.bytes_per_pixel() {
+                    let rect =
+                        Rect::new(x, y, x.saturating_add(w as i32), y.saturating_add(h as i32));
+                    if rect.width() != w
+                        || rect.height() != h
+                        || px.data().len() != (w as usize) * (h as usize) * fmt.bytes_per_pixel()
+                    {
                         return Err(invalid("layer image does not fit its position"));
                     }
                     surface.write_interleaved(rect, px.data());
@@ -378,7 +469,10 @@ fn build(nodes: Vec<Node>, images: &[Image], fmt: PixelFormat, ctl: &Interrupt<'
                 layer.content = LayerContent::Raster(surface);
                 out.push(layer);
             }
-            Node::Group { mut layer, children } => {
+            Node::Group {
+                mut layer,
+                children,
+            } => {
                 let children = build(children, images, fmt, ctl)?;
                 if let Some(c) = layer.children_mut() {
                     *c = children;
@@ -392,11 +486,15 @@ fn build(nodes: Vec<Node>, images: &[Image], fmt: PixelFormat, ctl: &Interrupt<'
 
 pub(crate) fn import(name: &str, bytes: &[u8], ctl: &Interrupt<'_>) -> Result<ImportResult> {
     let zip = ZipReader::new(bytes).map_err(|e| invalid(e.to_string()))?;
-    let mime = zip.read_by_name("mimetype", 256).map_err(|e| invalid(e.to_string()))?;
+    let mime = zip
+        .read_by_name("mimetype", 256)
+        .map_err(|e| invalid(e.to_string()))?;
     if mime.trim_ascii() != MIMETYPE {
         return Err(invalid("the archive's mimetype is not image/openraster"));
     }
-    let xml = zip.read_by_name("stack.xml", MAX_STACK_XML).map_err(|e| invalid(e.to_string()))?;
+    let xml = zip
+        .read_by_name("stack.xml", MAX_STACK_XML)
+        .map_err(|e| invalid(e.to_string()))?;
     let xml = std::str::from_utf8(&xml).map_err(|_| invalid("stack.xml is not UTF-8"))?;
     let tree = roxmltree::Document::parse(xml).map_err(|e| invalid(format!("stack.xml: {e}")))?;
     let image = tree.root_element();
@@ -406,7 +504,9 @@ pub(crate) fn import(name: &str, bytes: &[u8], ctl: &Interrupt<'_>) -> Result<Im
     let side = |attr: &str| -> Result<u32> {
         let v = num(image, attr, 0.0)?;
         if !(1.0..=f64::from(MAX_SIDE)).contains(&v) || v.fract() != 0.0 {
-            return Err(invalid(format!("image {attr} {v} must be a whole number of pixels from 1 to {MAX_SIDE}")));
+            return Err(invalid(format!(
+                "image {attr} {v} must be a whole number of pixels from 1 to {MAX_SIDE}"
+            )));
         }
         Ok(v as u32)
     };
@@ -414,13 +514,25 @@ pub(crate) fn import(name: &str, bytes: &[u8], ctl: &Interrupt<'_>) -> Result<Im
     if (w as usize).saturating_mul(h as usize).saturating_mul(8) > MAX_PIXEL_BYTES {
         return Err(invalid("the canvas exceeds the 1 GiB pixel limit"));
     }
-    let root = image.children().find(|n| n.has_tag_name("stack")).ok_or_else(|| invalid("stack.xml has no root <stack>"))?;
-    let mut reader = Reader { zip, ctl, nodes: 0, budget: MAX_PIXEL_BYTES, warnings: Warnings::default(), images: Vec::new() };
+    let root = image
+        .children()
+        .find(|n| n.has_tag_name("stack"))
+        .ok_or_else(|| invalid("stack.xml has no root <stack>"))?;
+    let mut reader = Reader {
+        zip,
+        ctl,
+        nodes: 0,
+        budget: MAX_PIXEL_BYTES,
+        warnings: Warnings::default(),
+        images: Vec::new(),
+    };
     let nodes = reader.stack(root, 1)?;
     ctl.progress(0.8);
     let depth = document_depth(&reader.images);
     if depth == SampleType::F32 {
-        reader.warnings.note("float layer images open as a 32-bit float document");
+        reader
+            .warnings
+            .note("float layer images open as a 32-bit float document");
     }
     let fmt = PixelFormat::new(ColorMode::Rgb, depth, true);
     let mut document = Document::new(name, Size::new(w, h), ColorMode::Rgb, depth);
@@ -429,12 +541,20 @@ pub(crate) fn import(name: &str, bytes: &[u8], ctl: &Interrupt<'_>) -> Result<Im
     let yres = num(image, "yres", xres)?;
     if xres > 0.0 && xres < 1.0e6 {
         document.resolution_dpi = xres as f32;
-        reader.warnings.general.extend(crate::unequal_resolution_warning(xres, yres));
+        reader
+            .warnings
+            .general
+            .extend(crate::unequal_resolution_warning(xres, yres));
     }
     if document.layers.is_empty() {
         reader.warnings.note("the OpenRaster file has no layers");
     }
-    Ok(ImportResult { document, warnings: reader.warnings.finish(), source_read_only: false, preview_only: false })
+    Ok(ImportResult {
+        document,
+        warnings: reader.warnings.finish(),
+        source_read_only: false,
+        preview_only: false,
+    })
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -465,7 +585,11 @@ fn op_name(mode: BlendMode) -> Option<String> {
     match mode {
         BlendMode::PassThrough => Some("svg:src-over".into()),
         BlendMode::LinearDodge => Some("svg:plus".into()),
-        m => SVG_OPS.iter().find(|(_, s)| *s == m).map(|(n, _)| (*n).to_string()).or_else(|| krita_id(m).map(|id| format!("krita:{id}"))),
+        m => SVG_OPS
+            .iter()
+            .find(|(_, s)| *s == m)
+            .map(|(n, _)| (*n).to_string())
+            .or_else(|| krita_id(m).map(|id| format!("krita:{id}"))),
     }
 }
 
@@ -483,14 +607,24 @@ struct Writer<'a> {
 /// Straight RGBA floats as interleaved PNG samples at `sample` depth.
 fn encode_rgba(px: &[[f32; 4]], sample: CSample) -> Vec<u8> {
     match sample {
-        CSample::U16 => px.iter().flat_map(|p| p.map(|v| ((v.clamp(0.0, 1.0) * 65535.0 + 0.5) as u16).to_ne_bytes())).flatten().collect(),
-        _ => px.iter().flat_map(|p| p.map(|v| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8)).collect(),
+        CSample::U16 => px
+            .iter()
+            .flat_map(|p| p.map(|v| ((v.clamp(0.0, 1.0) * 65535.0 + 0.5) as u16).to_ne_bytes()))
+            .flatten()
+            .collect(),
+        _ => px
+            .iter()
+            .flat_map(|p| p.map(|v| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8))
+            .collect(),
     }
 }
 
 fn png(w: u32, h: u32, px: &[[f32; 4]], sample: CSample) -> Result<Vec<u8>> {
     let image = Image::from_raw(w, h, ChannelLayout::Rgba, sample, encode_rgba(px, sample))?;
-    let opts = codecs::EncodeOptions { embed_icc: false, ..Default::default() };
+    let opts = codecs::EncodeOptions {
+        embed_icc: false,
+        ..Default::default()
+    };
     Ok(codecs::encode(&image, Format::Png, &opts)?)
 }
 
@@ -516,8 +650,23 @@ fn crop(rect: Rect, mut px: Vec<[f32; 4]>) -> (Rect, Vec<[f32; 4]>) {
     if (x0, y0, x1) == (0, 0, w) && y1 == px.len() / w {
         return (rect, px);
     }
-    let out = (y0..y1).flat_map(|y| px.get(y * w + x0..y * w + x1).unwrap_or_default().iter().copied()).collect();
-    (Rect::new(rect.x0 + x0 as i32, rect.y0 + y0 as i32, rect.x0 + x1 as i32, rect.y0 + y1 as i32), out)
+    let out = (y0..y1)
+        .flat_map(|y| {
+            px.get(y * w + x0..y * w + x1)
+                .unwrap_or_default()
+                .iter()
+                .copied()
+        })
+        .collect();
+    (
+        Rect::new(
+            rect.x0 + x0 as i32,
+            rect.y0 + y0 as i32,
+            rect.x0 + x1 as i32,
+            rect.y0 + y1 as i32,
+        ),
+        out,
+    )
 }
 
 impl Writer<'_> {
@@ -529,10 +678,20 @@ impl Writer<'_> {
             // OpenRaster has only one opacity for groups. For ordinary isolated groups,
             // fold fill opacity into that attribute; groups have no pixel payload in which
             // to bake it as raster layers do (#3048).
-            if matches!(&layer.content, LayerContent::Group(_)) { (layer.opacity * layer.fill_opacity).clamp(0.0, 1.0) } else { layer.opacity.clamp(0.0, 1.0) }
+            if matches!(&layer.content, LayerContent::Group(_)) {
+                (layer.opacity * layer.fill_opacity).clamp(0.0, 1.0)
+            } else {
+                layer.opacity.clamp(0.0, 1.0)
+            }
         );
         let op = op_name(layer.blend).unwrap_or_else(|| {
-            self.warnings.layer(&layer.name, &format!("the {} blend mode has no OpenRaster equivalent; it was saved as Normal", layer.blend.label()));
+            self.warnings.layer(
+                &layer.name,
+                &format!(
+                    "the {} blend mode has no OpenRaster equivalent; it was saved as Normal",
+                    layer.blend.label()
+                ),
+            );
             "svg:src-over".into()
         });
         attrs.push_str(&format!(" composite-op=\"{op}\""));
@@ -543,19 +702,30 @@ impl Writer<'_> {
             attrs.push_str(" alpha-preserve=\"true\"");
         }
         if layer.clipped {
-            self.warnings.layer(&layer.name, "OpenRaster has no clipping masks; these layers were saved unclipped");
+            self.warnings.layer(
+                &layer.name,
+                "OpenRaster has no clipping masks; these layers were saved unclipped",
+            );
         }
         if !layer.effects.items.is_empty() || layer.effects.psd_raw.is_some() {
-            self.warnings.layer(&layer.name, "layer styles are not saved to OpenRaster");
+            self.warnings
+                .layer(&layer.name, "layer styles are not saved to OpenRaster");
         }
         if layer.vector_mask.as_ref().is_some_and(|m| m.enabled) {
-            self.warnings.layer(&layer.name, "vector masks are not saved to OpenRaster");
+            self.warnings
+                .layer(&layer.name, "vector masks are not saved to OpenRaster");
         }
         if layer.fill_opacity < 1.0 {
             if matches!(&layer.content, LayerContent::Group(_)) {
-                self.warnings.layer(&layer.name, "fill opacity was combined into the layer opacity");
+                self.warnings.layer(
+                    &layer.name,
+                    "fill opacity was combined into the layer opacity",
+                );
             } else {
-                self.warnings.layer(&layer.name, "fill opacity was applied to the saved layer pixels");
+                self.warnings.layer(
+                    &layer.name,
+                    "fill opacity was applied to the saved layer pixels",
+                );
             }
         }
         attrs
@@ -565,13 +735,23 @@ impl Writer<'_> {
     /// becomes pixels, and its pixel mask is applied to them.
     fn content_warnings(&mut self, layer: &Layer) {
         if !matches!(layer.content, LayerContent::Raster(_)) {
-            self.warnings.layer(&layer.name, &format!("{} layers are saved to OpenRaster as pixels", layer.content.kind_name().to_lowercase()));
+            self.warnings.layer(
+                &layer.name,
+                &format!(
+                    "{} layers are saved to OpenRaster as pixels",
+                    layer.content.kind_name().to_lowercase()
+                ),
+            );
         }
         if let Some(mask) = layer.mask.as_ref().filter(|m| m.enabled) {
             if mask.feather > 0.0 {
-                self.warnings.layer(&layer.name, "layer mask feathering is not applied in OpenRaster");
+                self.warnings.layer(
+                    &layer.name,
+                    "layer mask feathering is not applied in OpenRaster",
+                );
             }
-            self.warnings.layer(&layer.name, "layer masks were applied to the layer pixels");
+            self.warnings
+                .layer(&layer.name, "layer masks were applied to the layer pixels");
         }
     }
 
@@ -593,7 +773,9 @@ impl Writer<'_> {
                 solo.clipped = false;
                 solo.mask = None;
                 solo.effects = Default::default();
-                let r = photocraft_compose::composite_bounds(&solo, canvas).unwrap_or(canvas).intersect(&canvas);
+                let r = photocraft_compose::composite_bounds(&solo, canvas)
+                    .unwrap_or(canvas)
+                    .intersect(&canvas);
                 (r, photocraft_compose::render_layer(&solo, r).px)
             }
         };
@@ -614,18 +796,27 @@ impl Writer<'_> {
 
     fn layers(&mut self, layers: &[Layer], depth: usize) -> Result<()> {
         if depth > photocraft_doc::MAX_GROUP_DEPTH {
-            return Err(IoError::Unsupported(format!("layer groups nested deeper than {}", photocraft_doc::MAX_GROUP_DEPTH)));
+            return Err(IoError::Unsupported(format!(
+                "layer groups nested deeper than {}",
+                photocraft_doc::MAX_GROUP_DEPTH
+            )));
         }
         // stack.xml lists the topmost layer first.
         for layer in layers.iter().rev() {
             match &layer.content {
                 LayerContent::Group(g) => {
                     let attrs = self.common(layer);
-                    let isolation = if layer.blend == BlendMode::PassThrough { "auto" } else { "isolate" };
+                    let isolation = if layer.blend == BlendMode::PassThrough {
+                        "auto"
+                    } else {
+                        "isolate"
+                    };
                     if layer.mask.as_ref().is_some_and(|m| m.enabled) {
-                        self.warnings.layer(&layer.name, "group masks are not saved to OpenRaster");
+                        self.warnings
+                            .layer(&layer.name, "group masks are not saved to OpenRaster");
                     }
-                    self.xml.push_str(&format!("<stack {attrs} isolation=\"{isolation}\">"));
+                    self.xml
+                        .push_str(&format!("<stack {attrs} isolation=\"{isolation}\">"));
                     self.layers(&g.children, depth + 1)?;
                     self.xml.push_str("</stack>");
                 }
@@ -639,12 +830,19 @@ impl Writer<'_> {
                         continue;
                     }
                     let (rect, px) = self.pixels(layer);
-                    let (rect, px) = if rect.is_empty() { (Rect::from_xywh(0, 0, 1, 1), vec![[0.0; 4]]) } else { (rect, px) };
+                    let (rect, px) = if rect.is_empty() {
+                        (Rect::from_xywh(0, 0, 1, 1), vec![[0.0; 4]])
+                    } else {
+                        (rect, px)
+                    };
                     let src = format!("data/layer{}.png", self.next);
                     self.next += 1;
                     let data = png(rect.width(), rect.height(), &px, self.sample)?;
                     self.zip.add(&src, &data)?;
-                    self.xml.push_str(&format!("<layer {attrs} src=\"{src}\" x=\"{}\" y=\"{}\"/>", rect.x0, rect.y0));
+                    self.xml.push_str(&format!(
+                        "<layer {attrs} src=\"{src}\" x=\"{}\" y=\"{}\"/>",
+                        rect.x0, rect.y0
+                    ));
                 }
             }
         }
@@ -654,7 +852,9 @@ impl Writer<'_> {
 
 pub(crate) fn export(doc: &Document) -> Result<ExportResult> {
     if !matches!(doc.mode, ColorMode::Rgb | ColorMode::Grayscale) {
-        return Err(IoError::Unsupported("OpenRaster holds RGB layers; convert the document to RGB or Grayscale first".into()));
+        return Err(IoError::Unsupported(
+            "OpenRaster holds RGB layers; convert the document to RGB or Grayscale first".into(),
+        ));
     }
     let sample = match doc.depth {
         SampleType::U8 => CSample::U8,
@@ -663,7 +863,15 @@ pub(crate) fn export(doc: &Document) -> Result<ExportResult> {
     let mut zip = ZipWriter::new();
     // The mimetype must be the first entry, stored, so the type is readable at a fixed offset.
     zip.add("mimetype", MIMETYPE)?;
-    let mut w = Writer { doc, zip, xml: String::new(), next: 0, sample, warnings: Warnings::default(), dry: false };
+    let mut w = Writer {
+        doc,
+        zip,
+        xml: String::new(),
+        next: 0,
+        sample,
+        warnings: Warnings::default(),
+        dry: false,
+    };
     document_warnings(doc, &mut w.warnings);
     w.xml.push_str(&format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<image version=\"0.0.6\" w=\"{}\" h=\"{}\" xres=\"{}\" yres=\"{}\"><stack>",
@@ -674,14 +882,34 @@ pub(crate) fn export(doc: &Document) -> Result<ExportResult> {
     ));
     w.layers(&doc.layers, 1)?;
     w.xml.push_str("</stack></image>\n");
-    let Writer { mut zip, xml, warnings, .. } = w;
+    let Writer {
+        mut zip,
+        xml,
+        warnings,
+        ..
+    } = w;
     zip.add("stack.xml", xml.as_bytes())?;
     let merged = photocraft_compose::flatten(doc);
-    zip.add("mergedimage.png", &png(doc.size.width, doc.size.height, &merged.px, sample)?)?;
+    zip.add(
+        "mergedimage.png",
+        &png(doc.size.width, doc.size.height, &merged.px, sample)?,
+    )?;
     let thumb = photocraft_compose::thumbnail(doc, THUMBNAIL_SIDE);
-    let thumb = Image::from_raw(thumb.width, thumb.height, ChannelLayout::Rgba, CSample::U8, thumb.pixels)?;
-    zip.add("Thumbnails/thumbnail.png", &codecs::encode(&thumb, Format::Png, &codecs::EncodeOptions::default())?)?;
-    Ok(ExportResult { bytes: zip.finish()?, warnings: warnings.finish() })
+    let thumb = Image::from_raw(
+        thumb.width,
+        thumb.height,
+        ChannelLayout::Rgba,
+        CSample::U8,
+        thumb.pixels,
+    )?;
+    zip.add(
+        "Thumbnails/thumbnail.png",
+        &codecs::encode(&thumb, Format::Png, &codecs::EncodeOptions::default())?,
+    )?;
+    Ok(ExportResult {
+        bytes: zip.finish()?,
+        warnings: warnings.finish(),
+    })
 }
 
 /// What saving `doc` to OpenRaster loses that isn't in a layer.
@@ -696,7 +924,10 @@ fn document_warnings(doc: &Document, warnings: &mut Warnings) {
         warnings.note("metadata (XMP, EXIF, text) is not saved to OpenRaster");
     }
     // Readers assume sRGB, so an sRGB document loses nothing by the missing tag.
-    let srgb = |bytes: &[u8]| photocraft_cms::Profile::parse(bytes).is_ok_and(|p| p.same_colors(photocraft_cms::Builtin::Srgb.profile()));
+    let srgb = |bytes: &[u8]| {
+        photocraft_cms::Profile::parse(bytes)
+            .is_ok_and(|p| p.same_colors(photocraft_cms::Builtin::Srgb.profile()))
+    };
     if doc.icc_profile.as_deref().is_some_and(|b| !srgb(b)) {
         warnings.note("the colour profile is not saved to OpenRaster; readers assume sRGB");
     }
@@ -710,9 +941,19 @@ fn document_warnings(doc: &Document, warnings: &mut Warnings) {
 /// can be the document's own file; otherwise a save to OpenRaster is a copy (#3806).
 pub fn losses(doc: &Document) -> Vec<String> {
     if !matches!(doc.mode, ColorMode::Rgb | ColorMode::Grayscale) {
-        return vec!["OpenRaster holds RGB layers; convert the document to RGB or Grayscale first".into()];
+        return vec![
+            "OpenRaster holds RGB layers; convert the document to RGB or Grayscale first".into(),
+        ];
     }
-    let mut w = Writer { doc, zip: ZipWriter::new(), xml: String::new(), next: 0, sample: CSample::U8, warnings: Warnings::default(), dry: true };
+    let mut w = Writer {
+        doc,
+        zip: ZipWriter::new(),
+        xml: String::new(),
+        next: 0,
+        sample: CSample::U8,
+        warnings: Warnings::default(),
+        dry: true,
+    };
     document_warnings(doc, &mut w.warnings);
     if let Err(e) = w.layers(&doc.layers, 1) {
         w.warnings.note(&e.to_string());

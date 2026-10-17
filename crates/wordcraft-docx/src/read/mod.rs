@@ -22,10 +22,16 @@ use wordcraft_doc::para::OBJ;
 use wordcraft_doc::props::Rgb;
 use wordcraft_doc::section::NumFormat;
 use wordcraft_doc::styles::{Style, StyleKind, StyleSheet, TableStyleParts};
-use wordcraft_doc::{Block, Blocks, Comment, Document, InlineObject, Paragraph, PartKind, Revision, RevisionKind, para_block};
+use wordcraft_doc::{
+    Block, Blocks, Comment, Document, InlineObject, Paragraph, PartKind, Revision, RevisionKind,
+    para_block,
+};
 
 use crate::DocxError;
-use crate::package::{ContentTypes, EMBEDDED_PARTS, EmbeddedManifest, MAX_VBA_RELATED, Package, Rels, VBA_PROJECT_PART, VBA_RELATED, rel_is, rt};
+use crate::package::{
+    ContentTypes, EMBEDDED_PARTS, EmbeddedManifest, MAX_VBA_RELATED, Package, Rels,
+    VBA_PROJECT_PART, VBA_RELATED, rel_is, rt,
+};
 use crate::units::{flag, int, on_off, tw, u32_of};
 use crate::xml::El;
 pub(crate) use props::PropCtx;
@@ -99,7 +105,9 @@ pub(crate) struct Reader<'p> {
 /// The package path that internal relationship `id` points at, if it has type `kind` (an `rt`
 /// constant): a crafted id can't make a chart of some other, possibly huge, part.
 fn part_of(rels: &Rels, id: &str, kind: &str) -> Option<String> {
-    rels.by_id(id).filter(|r| !r.external && rel_is(&r.kind, kind)).map(|r| r.target.clone())
+    rels.by_id(id)
+        .filter(|r| !r.external && rel_is(&r.kind, kind))
+        .map(|r| r.target.clone())
 }
 
 /// Read a `.docx` package.
@@ -121,7 +129,11 @@ pub(crate) fn read_package(bytes: &[u8]) -> Result<Document, DocxError> {
 /// Word 2003 XML document).
 pub(crate) fn read_opened(pkg: &Package) -> Result<Document, DocxError> {
     let root_rels = pkg.rels("");
-    let main = root_rels.by_type(rt::OFFICE_DOC).filter(|r| !r.external).map(|r| r.target.clone()).unwrap_or_else(|| "word/document.xml".to_string());
+    let main = root_rels
+        .by_type(rt::OFFICE_DOC)
+        .filter(|r| !r.external)
+        .map(|r| r.target.clone())
+        .unwrap_or_else(|| "word/document.xml".to_string());
     let Some(root) = pkg.xml(&main)? else {
         return Err(DocxError::MissingPart(main));
     };
@@ -159,7 +171,11 @@ pub(crate) fn read_opened(pkg: &Package) -> Result<Document, DocxError> {
     };
     r.pc.major_font = r.doc.settings.major_font.clone();
     r.pc.minor_font = r.doc.settings.minor_font.clone();
-    let part = |t: &str| rels.by_type(t).filter(|x| !x.external).map(|x| x.target.clone());
+    let part = |t: &str| {
+        rels.by_type(t)
+            .filter(|x| !x.external)
+            .map(|x| x.target.clone())
+    };
 
     // The font table and the fonts embedded through it ride along as opaque parts.
     if let Some(p) = part(rt::FONT_TABLE) {
@@ -213,7 +229,10 @@ pub(crate) fn read_opened(pkg: &Package) -> Result<Document, DocxError> {
     }
     for i in 1..=16 {
         let path = format!("customXml/item{i}.xml");
-        if bib_parts.len() < MAX_BIBLIOGRAPHY_PARTS && pkg.get(&path).is_some() && !bib_parts.contains(&path) {
+        if bib_parts.len() < MAX_BIBLIOGRAPHY_PARTS
+            && pkg.get(&path).is_some()
+            && !bib_parts.contains(&path)
+        {
             bib_parts.push(path);
         }
     }
@@ -222,10 +241,17 @@ pub(crate) fn read_opened(pkg: &Package) -> Result<Document, DocxError> {
         if r.doc.sources.len() >= MAX_SOURCES {
             break;
         }
-        lenient("customXml bibliography", r.read_bibliography(path, &mut seen_sources));
+        lenient(
+            "customXml bibliography",
+            r.read_bibliography(path, &mut seen_sources),
+        );
     }
 
-    if let Some(bg) = root.child("w:background").and_then(|b| b.attr("w:color")).and_then(Rgb::parse) {
+    if let Some(bg) = root
+        .child("w:background")
+        .and_then(|b| b.attr("w:color"))
+        .and_then(Rgb::parse)
+    {
         r.doc.settings.page_color = Some(bg);
     }
     if let Some(body) = root.child("w:body") {
@@ -241,7 +267,10 @@ pub(crate) fn read_opened(pkg: &Package) -> Result<Document, DocxError> {
         }
     }
 
-    let core = root_rels.by_type(rt::CORE).map(|x| x.target.clone()).unwrap_or_else(|| "docProps/core.xml".into());
+    let core = root_rels
+        .by_type(rt::CORE)
+        .map(|x| x.target.clone())
+        .unwrap_or_else(|| "docProps/core.xml".into());
     r.read_core(&core);
     if let Some(c) = root_rels.by_type(rt::CUSTOM)
         && let Ok(Some(x)) = r.xml(&c.target)
@@ -254,13 +283,17 @@ pub(crate) fn read_opened(pkg: &Package) -> Result<Document, DocxError> {
     if let Some(v) = part(rt::VBA_PROJECT)
         && let Some(b) = pkg.get(&v).filter(|b| !b.is_empty())
     {
-        r.doc.passthrough.insert(VBA_PROJECT_PART.into(), Arc::new(b.to_vec()));
+        r.doc
+            .passthrough
+            .insert(VBA_PROJECT_PART.into(), Arc::new(b.to_vec()));
         r.read_vba_related(&v);
     }
     r.keep_custom_xml(&root_rels, &rels);
     if !r.embedded.parts.is_empty() {
         let manifest = r.embedded.to_bytes();
-        r.doc.passthrough.insert(EMBEDDED_PARTS.into(), Arc::new(manifest));
+        r.doc
+            .passthrough
+            .insert(EMBEDDED_PARTS.into(), Arc::new(manifest));
     }
     r.finish_moves();
     let links = std::mem::take(&mut r.txbx_links);
@@ -299,12 +332,27 @@ impl Reader<'_> {
             "w:moveToRangeEnd" => (1, false),
             _ => return,
         };
-        let id = e.attr("w:id").unwrap_or("").chars().take(64).collect::<String>();
+        let id = e
+            .attr("w:id")
+            .unwrap_or("")
+            .chars()
+            .take(64)
+            .collect::<String>();
         let m = &mut self.moves;
-        let Some(open) = m.open.get_mut(side) else { return };
+        let Some(open) = m.open.get_mut(side) else {
+            return;
+        };
         if start {
-            let name = e.attr("w:name").unwrap_or("").chars().take(256).collect::<String>();
-            if name.is_empty() || open.len() >= MAX_OPEN_MOVES || (m.seen.len() >= MAX_MOVES && !m.seen.contains_key(&name)) {
+            let name = e
+                .attr("w:name")
+                .unwrap_or("")
+                .chars()
+                .take(256)
+                .collect::<String>();
+            if name.is_empty()
+                || open.len() >= MAX_OPEN_MOVES
+                || (m.seen.len() >= MAX_MOVES && !m.seen.contains_key(&name))
+            {
                 return;
             }
             *m.seen.entry(name.clone()).or_default() |= 1 << (side * 2);
@@ -322,10 +370,23 @@ impl Reader<'_> {
     /// range of its kind, else (no range) a plain deletion or insertion.
     pub fn move_revision(&mut self, to: bool, e: &El, mark: bool) -> u32 {
         let side = usize::from(to);
-        let open = self.moves.open.get(side).and_then(|o| o.last()).map(|(_, n)| n.clone());
+        let open = self
+            .moves
+            .open
+            .get(side)
+            .and_then(|o| o.last())
+            .map(|(_, n)| n.clone());
         // A paragraph mark comes after its paragraph's text: a range that ended in it counts.
-        let name = if mark { open.or_else(|| self.moves.closed_here.get(side).cloned().flatten()) } else { open };
-        let kind = if to { RevisionKind::Insert } else { RevisionKind::Delete };
+        let name = if mark {
+            open.or_else(|| self.moves.closed_here.get(side).cloned().flatten())
+        } else {
+            open
+        };
+        let kind = if to {
+            RevisionKind::Insert
+        } else {
+            RevisionKind::Delete
+        };
         self.revision_named(kind, e, name)
     }
 
@@ -338,8 +399,11 @@ impl Reader<'_> {
                 *ends.entry(n).or_default() |= if r.kind == RevisionKind::Delete { 1 } else { 2 };
             }
         }
-        let ok: HashSet<String> =
-            ends.into_iter().filter(|(n, e)| *e == 3 && self.moves.seen.get(*n) == Some(&0b1111)).map(|(n, _)| n.to_string()).collect();
+        let ok: HashSet<String> = ends
+            .into_iter()
+            .filter(|(n, e)| *e == 3 && self.moves.seen.get(*n) == Some(&0b1111))
+            .map(|(n, _)| n.to_string())
+            .collect();
         for r in &mut self.doc.revisions {
             if r.move_name.as_ref().is_some_and(|n| !ok.contains(n)) {
                 r.move_name = None;
@@ -358,7 +422,11 @@ fn link_text_boxes(doc: &mut Document, mut links: Vec<(u32, u32, u32)>) {
         if group.first().is_none_or(|l| l.1 != 0) {
             continue;
         }
-        let chain: Vec<u32> = group.iter().take(wordcraft_doc::MAX_LINKED_BOXES).map(|l| l.2).collect();
+        let chain: Vec<u32> = group
+            .iter()
+            .take(wordcraft_doc::MAX_LINKED_BOXES)
+            .map(|l| l.2)
+            .collect();
         for pair in chain.windows(2) {
             if let [a, b] = pair
                 && let Some(p) = doc.parts.get_mut(a)
@@ -374,7 +442,9 @@ fn link_text_boxes(doc: &mut Document, mut links: Vec<(u32, u32, u32)>) {
 fn keep_glued_ids(doc: &mut Document, glued: &HashSet<u32>) {
     let has_id = |o: &InlineObject| match o {
         InlineObject::Shape { extra, .. } => extra.id != 0,
-        InlineObject::Group { children, .. } => children.iter().any(|c| matches!(&c.obj, InlineObject::Shape { extra, .. } if extra.id != 0)),
+        InlineObject::Group { children, .. } => children
+            .iter()
+            .any(|c| matches!(&c.obj, InlineObject::Shape { extra, .. } if extra.id != 0)),
         _ => false,
     };
     let clear = |o: &mut InlineObject| {
@@ -411,17 +481,28 @@ fn unstyle_toc_links(doc: &mut Document) {
 /// reproduce exactly. Other imported TOCs keep their explicit boundaries, independent of styles.
 fn toc_field_to_heading(body: &mut Blocks) {
     for i in 1..body.len() {
-        let heading = body[i - 1].as_para().filter(|p| p.props.style.as_deref() == Some("TOCHeading"));
-        let has_toc = |o: &InlineObject| matches!(o, InlineObject::Field { instr, .. } if is_toc(instr));
+        let heading = body[i - 1]
+            .as_para()
+            .filter(|p| p.props.style.as_deref() == Some("TOCHeading"));
+        let has_toc =
+            |o: &InlineObject| matches!(o, InlineObject::Field { instr, .. } if is_toc(instr));
         if heading.is_none_or(|h| h.objects.iter().any(has_toc)) {
             continue;
         }
         let Some((field, props, end)) = body[i].as_para().and_then(|p| {
             let (field, end) = match p.object_at(0) {
-                Some(InlineObject::FieldStart { instr, locked }) if is_toc(instr) => {
-                    (InlineObject::Field { instr: instr.clone(), result: String::new(), locked: *locked, code: false }, Some(toc_range_end(body, i)?))
+                Some(InlineObject::FieldStart { instr, locked }) if is_toc(instr) => (
+                    InlineObject::Field {
+                        instr: instr.clone(),
+                        result: String::new(),
+                        locked: *locked,
+                        code: false,
+                    },
+                    Some(toc_range_end(body, i)?),
+                ),
+                Some(f @ InlineObject::Field { result, .. }) if result.is_empty() && has_toc(f) => {
+                    (f.clone(), None)
                 }
-                Some(f @ InlineObject::Field { result, .. }) if result.is_empty() && has_toc(f) => (f.clone(), None),
                 _ => return None,
             };
             Some((field, p.props_of_char(0).clone(), end))
@@ -444,14 +525,22 @@ fn toc_field_to_heading(body: &mut Blocks) {
 }
 
 fn is_toc(instr: &str) -> bool {
-    instr.split_whitespace().next().is_some_and(|k| k.eq_ignore_ascii_case("TOC"))
+    instr
+        .split_whitespace()
+        .next()
+        .is_some_and(|k| k.eq_ignore_ascii_case("TOC"))
 }
 
 /// The actual matching end must also be the end the styled writer would choose: at the end
 /// of the last contiguous TOC entry, with no section break or trailing content outside it.
 fn toc_range_end(body: &Blocks, start: usize) -> Option<usize> {
-    let entry =
-        |p: &wordcraft_doc::Paragraph| p.section.is_none() && p.props.style.as_deref().is_some_and(|s| s.starts_with("TOC") && s != "TOCHeading");
+    let entry = |p: &wordcraft_doc::Paragraph| {
+        p.section.is_none()
+            && p.props
+                .style
+                .as_deref()
+                .is_some_and(|s| s.starts_with("TOC") && s != "TOCHeading")
+    };
     let mut depth = 0_usize;
     for (i, b) in body.iter().enumerate().skip(start) {
         let p = b.as_para().filter(|p| entry(p))?;
@@ -461,8 +550,11 @@ fn toc_range_end(body: &Blocks, start: usize) -> Option<usize> {
                 InlineObject::FieldEnd => {
                     depth = depth.checked_sub(1)?;
                     if depth == 0 {
-                        let following_entry = body.get(i + 1).and_then(|b| b.as_para()).is_some_and(entry);
-                        return (off.checked_add(OBJ.len_utf8()) == Some(p.len()) && !following_entry).then_some(i);
+                        let following_entry =
+                            body.get(i + 1).and_then(|b| b.as_para()).is_some_and(entry);
+                        return (off.checked_add(OBJ.len_utf8()) == Some(p.len())
+                            && !following_entry)
+                            .then_some(i);
                     }
                 }
                 _ => {}
@@ -500,7 +592,11 @@ pub(crate) fn ui_style_name(n: &str) -> String {
     if let Some((_, ui)) = LOWER_NAMES.iter().find(|(f, _)| *f == n) {
         return (*ui).to_string();
     }
-    for (pre, ui) in [("heading ", "Heading "), ("toc ", "TOC "), ("index ", "Index ")] {
+    for (pre, ui) in [
+        ("heading ", "Heading "),
+        ("toc ", "TOC "),
+        ("index ", "Index "),
+    ] {
         if let Some(d) = n.strip_prefix(pre)
             && d.len() == 1
             && d.chars().all(|c| c.is_ascii_digit())
@@ -517,7 +613,9 @@ impl Reader<'_> {
     /// itself and missing targets are skipped (logged); at most [`MAX_VBA_RELATED`] are kept.
     fn read_vba_related(&mut self, project: &str) {
         let pkg = self.pkg;
-        let types = self.content_types.get_or_insert_with(|| ContentTypes::read(pkg));
+        let types = self
+            .content_types
+            .get_or_insert_with(|| ContentTypes::read(pkg));
         let mut manifest = String::new();
         let mut kept = 0usize;
         for rel in self.pkg.rels(project).list.iter().filter(|r| !r.external) {
@@ -525,7 +623,9 @@ impl Reader<'_> {
             // stores as `word/x`.
             let target = rel.target.as_str();
             let path = match (target.get(..5), target.get(5..)) {
-                (Some(dir), Some(rest)) if dir.eq_ignore_ascii_case("word/") => format!("word/{rest}"),
+                (Some(dir), Some(rest)) if dir.eq_ignore_ascii_case("word/") => {
+                    format!("word/{rest}")
+                }
                 _ => target.to_string(),
             };
             let path = path.as_str();
@@ -534,25 +634,36 @@ impl Reader<'_> {
                 && !path.to_ascii_lowercase().ends_with(".rels")
                 && !path.eq_ignore_ascii_case(project)
                 && !path.eq_ignore_ascii_case(VBA_PROJECT_PART)
-                && ![rel.kind.as_str(), path, ct].iter().any(|f| f.is_empty() || f.contains(['\t', '\r', '\n']));
+                && ![rel.kind.as_str(), path, ct]
+                    .iter()
+                    .any(|f| f.is_empty() || f.contains(['\t', '\r', '\n']));
             if !usable {
                 log::warn!("docx: not carrying VBA-related part {path:?}");
                 continue;
             }
             let Some(bytes) = self.pkg.get(path) else {
-                log::warn!("docx: VBA-related part {path} is missing; keeping the project without it");
+                log::warn!(
+                    "docx: VBA-related part {path} is missing; keeping the project without it"
+                );
                 continue;
             };
             if kept >= MAX_VBA_RELATED {
-                log::warn!("docx: more than {MAX_VBA_RELATED} VBA-related parts; the rest are dropped");
+                log::warn!(
+                    "docx: more than {MAX_VBA_RELATED} VBA-related parts; the rest are dropped"
+                );
                 break;
             }
             kept += 1;
             manifest.push_str(&format!("{}\t{path}\t{ct}\n", rel.kind));
-            self.doc.passthrough.entry(path.to_string()).or_insert_with(|| Arc::new(bytes.to_vec()));
+            self.doc
+                .passthrough
+                .entry(path.to_string())
+                .or_insert_with(|| Arc::new(bytes.to_vec()));
         }
         if !manifest.is_empty() {
-            self.doc.passthrough.insert(VBA_RELATED.into(), Arc::new(manifest.into_bytes()));
+            self.doc
+                .passthrough
+                .insert(VBA_RELATED.into(), Arc::new(manifest.into_bytes()));
         }
     }
 
@@ -565,8 +676,18 @@ impl Reader<'_> {
     }
 
     fn revision_named(&mut self, kind: RevisionKind, e: &El, move_name: Option<String>) -> u32 {
-        let author = e.attr("w:author").unwrap_or("").chars().take(256).collect::<String>();
-        let date = e.attr("w:date").unwrap_or("").chars().take(64).collect::<String>();
+        let author = e
+            .attr("w:author")
+            .unwrap_or("")
+            .chars()
+            .take(256)
+            .collect::<String>();
+        let date = e
+            .attr("w:date")
+            .unwrap_or("")
+            .chars()
+            .take(64)
+            .collect::<String>();
         let k = match kind {
             RevisionKind::Insert => 0,
             RevisionKind::Delete => 1,
@@ -577,7 +698,12 @@ impl Reader<'_> {
             return *i;
         }
         let i = self.doc.revisions.len() as u32;
-        self.doc.revisions.push(Revision { kind, author, date, move_name });
+        self.doc.revisions.push(Revision {
+            kind,
+            author,
+            date,
+            move_name,
+        });
         self.revs.insert(key, i);
         i
     }
@@ -592,9 +718,19 @@ impl Reader<'_> {
             return Some(k.clone());
         }
         let bytes = self.pkg.get(&rel.target)?;
-        let base: String =
-            rel.target.rsplit('/').next().unwrap_or("image").chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-')).collect();
-        let base = if base.is_empty() || base.starts_with('.') { format!("image{base}") } else { base };
+        let base: String = rel
+            .target
+            .rsplit('/')
+            .next()
+            .unwrap_or("image")
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+            .collect();
+        let base = if base.is_empty() || base.starts_with('.') {
+            format!("image{base}")
+        } else {
+            base
+        };
         let mut key = base.clone();
         let mut n = 1;
         while self.doc.media.contains_key(&key) {
@@ -627,7 +763,11 @@ impl Reader<'_> {
             return None;
         }
         // Reserve the id first so a (malformed) self-reference can't recurse.
-        let kind = if footer { PartKind::Footer } else { PartKind::Header };
+        let kind = if footer {
+            PartKind::Footer
+        } else {
+            PartKind::Header
+        };
         let id = self.doc.add_part(kind, Blocks::new());
         self.hf_by_path.insert(path.to_string(), id);
         let root = match self.xml(path) {
@@ -652,18 +792,29 @@ impl Reader<'_> {
         if let Some(n) = t.attr("name").filter(|n| !n.is_empty()) {
             self.doc.settings.theme_name = n.to_string();
         }
-        let Some(el) = t.child("a:themeElements") else { return };
+        let Some(el) = t.child("a:themeElements") else {
+            return;
+        };
         if let Some(cs) = el.child("a:clrScheme") {
-            let names = ["dk1", "lt1", "dk2", "lt2", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"];
+            let names = [
+                "dk1", "lt1", "dk2", "lt2", "accent1", "accent2", "accent3", "accent4", "accent5",
+                "accent6", "hlink", "folHlink",
+            ];
             let mut colors = self.doc.settings.theme_colors.clone();
             colors.resize(12, Rgb::BLACK);
             for (i, n) in names.iter().enumerate() {
-                let Some(c) = cs.child(&format!("a:{n}")) else { continue };
+                let Some(c) = cs.child(&format!("a:{n}")) else {
+                    continue;
+                };
                 let rgb = c
                     .child("a:srgbClr")
                     .and_then(|x| x.attr("val"))
                     .and_then(Rgb::parse)
-                    .or_else(|| c.child("a:sysClr").and_then(|x| x.attr("lastClr")).and_then(Rgb::parse));
+                    .or_else(|| {
+                        c.child("a:sysClr")
+                            .and_then(|x| x.attr("lastClr"))
+                            .and_then(Rgb::parse)
+                    });
                 if let (Some(rgb), Some(slot)) = (rgb, colors.get_mut(i)) {
                     *slot = rgb;
                 }
@@ -672,8 +823,13 @@ impl Reader<'_> {
             self.doc.settings.theme_colors = colors;
         }
         if let Some(fs) = el.child("a:fontScheme") {
-            let face =
-                |n: &str| fs.child(n).and_then(|f| f.child("a:latin")).and_then(|l| l.attr("typeface")).filter(|t| !t.is_empty()).map(str::to_string);
+            let face = |n: &str| {
+                fs.child(n)
+                    .and_then(|f| f.child("a:latin"))
+                    .and_then(|l| l.attr("typeface"))
+                    .filter(|t| !t.is_empty())
+                    .map(str::to_string)
+            };
             if let Some(f) = face("a:majorFont") {
                 self.doc.settings.major_font = f;
             }
@@ -688,8 +844,12 @@ impl Reader<'_> {
 
     /// `w:settings/w:clrSchemeMapping`: which scheme colour text1, background1… stand for.
     fn read_color_mapping(&mut self, path: &str) {
-        let Ok(Some(root)) = self.xml(path) else { return };
-        let Some(m) = root.child("w:clrSchemeMapping") else { return };
+        let Ok(Some(root)) = self.xml(path) else {
+            return;
+        };
+        let Some(m) = root.child("w:clrSchemeMapping") else {
+            return;
+        };
         let names = [
             "dark1",
             "light1",
@@ -728,19 +888,27 @@ impl Reader<'_> {
     }
 
     fn read_styles(&mut self, path: &str) -> Result<(), DocxError> {
-        let Some(root) = self.xml(path)? else { return Ok(()) };
+        let Some(root) = self.xml(path)? else {
+            return Ok(());
+        };
         // The default paragraph style must be called `Normal` in our model.
-        let has_normal = root.children("w:style").any(|s| s.attr("w:styleId") == Some("Normal"));
+        let has_normal = root
+            .children("w:style")
+            .any(|s| s.attr("w:styleId") == Some("Normal"));
         if !has_normal
-            && let Some(def) = root
-                .children("w:style")
-                .find(|s| s.attr("w:type") == Some("paragraph") && s.attr("w:default").is_some_and(|v| v == "1" || v == "true"))
+            && let Some(def) = root.children("w:style").find(|s| {
+                s.attr("w:type") == Some("paragraph")
+                    && s.attr("w:default").is_some_and(|v| v == "1" || v == "true")
+            })
             && let Some(id) = def.attr("w:styleId")
         {
             self.pc.alias.insert(id.to_string(), "Normal".into());
         }
         let mut sheet = StyleSheet::empty();
-        sheet.default_para_present = root.child("w:docDefaults").and_then(|dd| dd.child("w:pPrDefault")).is_some();
+        sheet.default_para_present = root
+            .child("w:docDefaults")
+            .and_then(|dd| dd.child("w:pPrDefault"))
+            .is_some();
         if let Some(dd) = root.child("w:docDefaults") {
             if let Some(r) = dd.child("w:rPrDefault").and_then(|d| d.child("w:rPr")) {
                 sheet.default_chr = self.pc.rpr(r);
@@ -753,7 +921,9 @@ impl Reader<'_> {
             sheet.default_chr.size = Some(10.0);
         }
         for s in root.children("w:style").take(10_000) {
-            let Some(raw_id) = s.attr("w:styleId").filter(|i| !i.is_empty()) else { continue };
+            let Some(raw_id) = s.attr("w:styleId").filter(|i| !i.is_empty()) else {
+                continue;
+            };
             let id = self.pc.style_id(raw_id);
             if sheet.get(&id).is_some() {
                 continue;
@@ -764,8 +934,15 @@ impl Reader<'_> {
                 "numbering" => StyleKind::Numbering,
                 _ => StyleKind::Paragraph,
             };
-            let name = s.child_val("w:name").map(ui_style_name).unwrap_or_else(|| id.clone());
-            let r = |n: &str| s.child_val(n).filter(|v| !v.is_empty()).map(|v| self.pc.style_id(v));
+            let name = s
+                .child_val("w:name")
+                .map(ui_style_name)
+                .unwrap_or_else(|| id.clone());
+            let r = |n: &str| {
+                s.child_val(n)
+                    .filter(|v| !v.is_empty())
+                    .map(|v| self.pc.style_id(v))
+            };
             let mut st = Style {
                 id: id.clone(),
                 name,
@@ -775,8 +952,11 @@ impl Reader<'_> {
                 linked: r("w:link"),
                 priority: s.child_val("w:uiPriority").and_then(u32_of),
                 quick: flag(s, "w:qFormat").unwrap_or(false),
-                hidden: flag(s, "w:semiHidden").unwrap_or(false) || flag(s, "w:hidden").unwrap_or(false),
-                builtin: !s.attr("w:customStyle").is_some_and(|v| v == "1" || v == "true"),
+                hidden: flag(s, "w:semiHidden").unwrap_or(false)
+                    || flag(s, "w:hidden").unwrap_or(false),
+                builtin: !s
+                    .attr("w:customStyle")
+                    .is_some_and(|v| v == "1" || v == "true"),
                 locked: flag(s, "w:locked").unwrap_or(false),
                 ..Default::default()
             };
@@ -799,8 +979,14 @@ impl Reader<'_> {
             .iter()
             .map(|s| match s.para.numbering {
                 Some(n) if n.num == props::LEVEL_ONLY => {
-                    let base = s.based_on.as_deref().and_then(|b| props::chain_list(&sheet, b));
-                    base.map(|num| wordcraft_doc::props::NumRef { num, level: n.level })
+                    let base = s
+                        .based_on
+                        .as_deref()
+                        .and_then(|b| props::chain_list(&sheet, b));
+                    base.map(|num| wordcraft_doc::props::NumRef {
+                        num,
+                        level: n.level,
+                    })
                 }
                 other => other,
             })
@@ -808,7 +994,11 @@ impl Reader<'_> {
         for (s, n) in sheet.styles.iter_mut().zip(fixed) {
             s.para.numbering = n;
         }
-        if sheet.default_para.numbering.is_some_and(|n| n.num == props::LEVEL_ONLY) {
+        if sheet
+            .default_para
+            .numbering
+            .is_some_and(|n| n.num == props::LEVEL_ONLY)
+        {
             sheet.default_para.numbering = None;
         }
         self.doc.styles = sheet;
@@ -825,11 +1015,21 @@ impl Reader<'_> {
             }
             t.fill = tp.child("w:shd").and_then(|e| self.pc.shd_fill(e));
             t.cell_margins = tp.child("w:tblCellMar").map(props::margins);
-            t.band_size = tp.child_val("w:tblStyleRowBandSize").and_then(u32_of).filter(|n| *n > 0).map(|n| n.min(1000));
+            t.band_size = tp
+                .child_val("w:tblStyleRowBandSize")
+                .and_then(u32_of)
+                .filter(|n| *n > 0)
+                .map(|n| n.min(1000));
         }
         for c in s.children("w:tblStylePr").take(64) {
-            let fill = c.child("w:tcPr").and_then(|p| p.child("w:shd")).and_then(|e| self.pc.shd_fill(e));
-            let cell_borders = c.child("w:tcPr").and_then(|p| p.child("w:tcBorders")).map(props::borders);
+            let fill = c
+                .child("w:tcPr")
+                .and_then(|p| p.child("w:shd"))
+                .and_then(|e| self.pc.shd_fill(e));
+            let cell_borders = c
+                .child("w:tcPr")
+                .and_then(|p| p.child("w:tcBorders"))
+                .map(props::borders);
             let chr = c.child("w:rPr").map(|r| self.pc.rpr(r)).unwrap_or_default();
             match c.attr("w:type") {
                 Some("wholeTable") => {
@@ -870,7 +1070,9 @@ impl Reader<'_> {
                     // The top rule is kept on its own (as built-in styles have it); the other edges
                     // are the region's borders.
                     t.total_border_top = cell_borders.and_then(|b| b.top);
-                    t.total_borders = cell_borders.map(|b| wordcraft_doc::props::Borders { top: None, ..b }).filter(|b| *b != Default::default());
+                    t.total_borders = cell_borders
+                        .map(|b| wordcraft_doc::props::Borders { top: None, ..b })
+                        .filter(|b| *b != Default::default());
                 }
                 Some("band1Vert") => {
                     t.col_band_fill = fill;
@@ -884,11 +1086,15 @@ impl Reader<'_> {
     }
 
     fn read_numbering(&mut self, path: &str) -> Result<(), DocxError> {
-        let Some(root) = self.xml(path)? else { return Ok(()) };
+        let Some(root) = self.xml(path)? else {
+            return Ok(());
+        };
         let mut abstracts = Vec::new();
         let mut links: Vec<(u32, String)> = Vec::new();
         for a in root.children("w:abstractNum").take(10_000) {
-            let Some(id) = a.attr("w:abstractNumId").and_then(u32_of) else { continue };
+            let Some(id) = a.attr("w:abstractNumId").and_then(u32_of) else {
+                continue;
+            };
             let mut levels: Vec<Level> = (0..9).map(default_level).collect();
             for l in a.children("w:lvl") {
                 let i = l.attr("w:ilvl").and_then(u32_of).unwrap_or(0) as usize;
@@ -899,17 +1105,30 @@ impl Reader<'_> {
             if let Some(link) = a.child_val("w:numStyleLink") {
                 links.push((id, link.to_string()));
             }
-            abstracts.push(AbstractNum { id, name: a.child_val("w:name").map(str::to_string), levels });
+            abstracts.push(AbstractNum {
+                id,
+                name: a.child_val("w:name").map(str::to_string),
+                levels,
+            });
         }
         let mut nums = Vec::new();
         for n in root.children("w:num").take(10_000) {
-            let (Some(id), Some(abs)) = (n.attr("w:numId").and_then(u32_of), n.child_val("w:abstractNumId").and_then(u32_of)) else { continue };
+            let (Some(id), Some(abs)) = (
+                n.attr("w:numId").and_then(u32_of),
+                n.child_val("w:abstractNumId").and_then(u32_of),
+            ) else {
+                continue;
+            };
             let (mut start_overrides, mut level_overrides) = (Vec::new(), Vec::new());
             for o in n.children("w:lvlOverride").take(9) {
                 let lvl = o.attr("w:ilvl").and_then(u32_of).unwrap_or(0).min(8) as u8;
                 if let Some(s) = o.child_val("w:startOverride").and_then(u32_of) {
                     start_overrides.push((lvl, s));
-                } else if let Some(s) = o.child("w:lvl").and_then(|l| l.child_val("w:start")).and_then(u32_of) {
+                } else if let Some(s) = o
+                    .child("w:lvl")
+                    .and_then(|l| l.child_val("w:start"))
+                    .and_then(u32_of)
+                {
                     start_overrides.push((lvl, s));
                 }
                 // A whole level definition replaces the abstract list's for this list.
@@ -917,13 +1136,28 @@ impl Reader<'_> {
                     level_overrides.push((lvl, self.level(l, lvl as usize)));
                 }
             }
-            nums.push(Num { id, abstract_id: abs, start_overrides, level_overrides });
+            nums.push(Num {
+                id,
+                abstract_id: abs,
+                start_overrides,
+                level_overrides,
+            });
         }
         // Abstracts that only link to a numbering style take that style's list levels.
         for (aid, style) in links {
-            let num = self.doc.styles.get(&self.pc.style_id(&style)).and_then(|s| s.para.numbering).map(|n| n.num);
-            let src = num.and_then(|n| nums.iter().find(|x: &&Num| x.id == n)).map(|x| x.abstract_id);
-            let levels = src.filter(|s| *s != aid).and_then(|s| abstracts.iter().find(|a: &&AbstractNum| a.id == s)).map(|a| a.levels.clone());
+            let num = self
+                .doc
+                .styles
+                .get(&self.pc.style_id(&style))
+                .and_then(|s| s.para.numbering)
+                .map(|n| n.num);
+            let src = num
+                .and_then(|n| nums.iter().find(|x: &&Num| x.id == n))
+                .map(|x| x.abstract_id);
+            let levels = src
+                .filter(|s| *s != aid)
+                .and_then(|s| abstracts.iter().find(|a: &&AbstractNum| a.id == s))
+                .map(|a| a.levels.clone());
             if let (Some(levels), Some(a)) = (levels, abstracts.iter_mut().find(|a| a.id == aid)) {
                 a.levels = levels;
             }
@@ -941,7 +1175,10 @@ impl Reader<'_> {
         if let Some(f) = l.child_val("w:numFmt") {
             lv.format = NumFormat::from_ooxml(f);
         }
-        lv.text = l.child_val("w:lvlText").map(|t| t.chars().take(64).collect()).unwrap_or_default();
+        lv.text = l
+            .child_val("w:lvlText")
+            .map(|t| t.chars().take(64).collect())
+            .unwrap_or_default();
         if let Some(j) = l.child_val("w:lvlJc") {
             lv.align = props::align(j);
         }
@@ -975,12 +1212,17 @@ impl Reader<'_> {
             .and_then(|t| tw(t, "w:pos"))
             .filter(|v| v.is_finite())
             .map(|v| v.clamp(-1584.0, 1584.0));
-        lv.style = l.child_val("w:pStyle").filter(|s| !s.is_empty()).map(|s| self.pc.style_id(s));
+        lv.style = l
+            .child_val("w:pStyle")
+            .filter(|s| !s.is_empty())
+            .map(|s| self.pc.style_id(s));
         lv
     }
 
     fn read_settings(&mut self, path: &str) -> Result<(), DocxError> {
-        let Some(root) = self.xml(path)? else { return Ok(()) };
+        let Some(root) = self.xml(path)? else {
+            return Ok(());
+        };
         let rels = self.pkg.rels(path);
         let s = &mut self.doc.settings;
         for k in root.els() {
@@ -1000,7 +1242,8 @@ impl Reader<'_> {
                         .children("w:compatSetting")
                         .find(|c| {
                             c.attr("w:name") == Some("compatibilityMode")
-                                && c.attr("w:uri").is_none_or(|u| u == "http://schemas.microsoft.com/office/word")
+                                && c.attr("w:uri")
+                                    .is_none_or(|u| u == "http://schemas.microsoft.com/office/word")
                         })
                         .and_then(|c| c.attr("w:val"));
                     if let Some(m) = mode.and_then(u32_of) {
@@ -1017,7 +1260,11 @@ impl Reader<'_> {
                 "w:drawingGridHorizontalSpacing" | "w:drawingGridVerticalSpacing" => {
                     if let Some(v) = tw(k, "w:val").filter(|v| *v > 0.0) {
                         let v = v.clamp(0.5, 1584.0);
-                        if k.name == "w:drawingGridHorizontalSpacing" { s.grid_h = v } else { s.grid_v = v }
+                        if k.name == "w:drawingGridHorizontalSpacing" {
+                            s.grid_h = v
+                        } else {
+                            s.grid_v = v
+                        }
                     }
                 }
                 "m:mathPr" => s.math = Some(math::read_math_pr(k)),
@@ -1054,7 +1301,9 @@ impl Reader<'_> {
     }
 
     fn read_notes(&mut self, path: &str, foot: bool) -> Result<(), DocxError> {
-        let Some(root) = self.xml(path)? else { return Ok(()) };
+        let Some(root) = self.xml(path)? else {
+            return Ok(());
+        };
         let rels = self.pkg.rels(path);
         let tag = if foot { "w:footnote" } else { "w:endnote" };
         for n in root.children(tag) {
@@ -1066,12 +1315,18 @@ impl Reader<'_> {
                 }
                 Some(_) => continue,
             }
-            let Some(fid) = n.attr("w:id").and_then(int) else { continue };
+            let Some(fid) = n.attr("w:id").and_then(int) else {
+                continue;
+            };
             if self.doc.parts.len() >= MAX_PARTS {
                 break;
             }
             // Reserve the id first: the note's own reference mark points at it.
-            let (pk, kind) = if foot { (PartKind::Footnote, NoteKind::Footnote) } else { (PartKind::Endnote, NoteKind::Endnote) };
+            let (pk, kind) = if foot {
+                (PartKind::Footnote, NoteKind::Footnote)
+            } else {
+                (PartKind::Endnote, NoteKind::Endnote)
+            };
             let id = self.doc.add_part(pk, Blocks::new());
             let mut sc = StoryCtx::default();
             let mut blocks = Blocks::new();
@@ -1096,7 +1351,11 @@ impl Reader<'_> {
     /// A document's own separator, continuation separator or continuation notice (`kind`, the
     /// note's `w:type`) for its footnotes or endnotes. The first of each kind counts.
     fn read_note_sep(&mut self, n: &El, rels: &Rels, foot: bool, kind: &str) {
-        let seps = if foot { &self.doc.footnote_separators } else { &self.doc.endnote_separators };
+        let seps = if foot {
+            &self.doc.footnote_separators
+        } else {
+            &self.doc.endnote_separators
+        };
         let taken = match kind {
             "separator" => seps.separator.is_some(),
             "continuationSeparator" => seps.continuation_separator.is_some(),
@@ -1114,7 +1373,11 @@ impl Reader<'_> {
         if blocks.is_empty() {
             blocks.push(para_block(Paragraph::new()));
         }
-        let seps = if foot { &mut self.doc.footnote_separators } else { &mut self.doc.endnote_separators };
+        let seps = if foot {
+            &mut self.doc.footnote_separators
+        } else {
+            &mut self.doc.endnote_separators
+        };
         let slot = match kind {
             "separator" => &mut seps.separator,
             "continuationSeparator" => &mut seps.continuation_separator,
@@ -1124,7 +1387,9 @@ impl Reader<'_> {
     }
 
     fn read_comments(&mut self, path: &str, ext: Option<&str>) -> Result<(), DocxError> {
-        let Some(root) = self.xml(path)? else { return Ok(()) };
+        let Some(root) = self.xml(path)? else {
+            return Ok(());
+        };
         let rels = self.pkg.rels(path);
         let mut by_para: HashMap<String, u32> = HashMap::new();
         let mut next_id = 0u32;
@@ -1140,7 +1405,9 @@ impl Reader<'_> {
             let id = match file_id.parse::<u32>() {
                 Ok(v) if !entries.contains_key(&v) => v,
                 _ => {
-                    while entries.contains_key(&next_id) || self.comment_map.values().any(|v| *v == next_id) {
+                    while entries.contains_key(&next_id)
+                        || self.comment_map.values().any(|v| *v == next_id)
+                    {
                         next_id += 1;
                     }
                     next_id
@@ -1171,8 +1438,14 @@ impl Reader<'_> {
             && let Ok(Some(x)) = self.xml(ext)
         {
             for e in x.els().filter(|e| e.local() == "commentEx") {
-                let Some(cid) = e.attr("w15:paraId").and_then(|p| by_para.get(p)).copied() else { continue };
-                let parent = e.attr("w15:paraIdParent").and_then(|p| by_para.get(p)).copied().filter(|p| *p != cid);
+                let Some(cid) = e.attr("w15:paraId").and_then(|p| by_para.get(p)).copied() else {
+                    continue;
+                };
+                let parent = e
+                    .attr("w15:paraIdParent")
+                    .and_then(|p| by_para.get(p))
+                    .copied()
+                    .filter(|p| *p != cid);
                 let done = e.attr("w15:done").is_some_and(|v| v == "1" || v == "true");
                 if let Some(c) = entries.get_mut(&cid) {
                     c.parent = parent;
@@ -1187,23 +1460,41 @@ impl Reader<'_> {
     /// Sources from a `b:Sources` custom XML part (other custom XML is left alone); at most
     /// [`MAX_SOURCES`] in all, and the document's citation style from `StyleName`.
     fn read_bibliography(&mut self, path: &str, seen: &mut BibSeen) -> Result<(), DocxError> {
-        let Some(root) = self.xml(path)? else { return Ok(()) };
+        let Some(root) = self.xml(path)? else {
+            return Ok(());
+        };
         if root.local() != "Sources" {
             return Ok(());
         }
         if self.doc.settings.bib_style.is_none()
-            && let Some(name) = root.attrs.iter().find(|(k, _)| k.rsplit(':').next() == Some("StyleName")).map(|(_, v)| v.trim())
+            && let Some(name) = root
+                .attrs
+                .iter()
+                .find(|(k, _)| k.rsplit(':').next() == Some("StyleName"))
+                .map(|(_, v)| v.trim())
             && !name.is_empty()
         {
             self.doc.settings.bib_style = Some(name.chars().take(MAX_STYLE_NAME).collect());
         }
-        let child_text = |el: &El, local: &str| el.els().find(|e| e.local() == local).map(|e| e.text()).unwrap_or_default();
+        let child_text = |el: &El, local: &str| {
+            el.els()
+                .find(|e| e.local() == local)
+                .map(|e| e.text())
+                .unwrap_or_default()
+        };
         let parse_persons = |parent: &El| -> String {
             let mut names = Vec::new();
             let person_els: Vec<&El> = {
-                let in_lists: Vec<&El> =
-                    parent.els().filter(|e| e.local() == "NameList").flat_map(|n| n.els().filter(|e| e.local() == "Person")).collect();
-                if in_lists.is_empty() { parent.els().filter(|e| e.local() == "Person").collect() } else { in_lists }
+                let in_lists: Vec<&El> = parent
+                    .els()
+                    .filter(|e| e.local() == "NameList")
+                    .flat_map(|n| n.els().filter(|e| e.local() == "Person"))
+                    .collect();
+                if in_lists.is_empty() {
+                    parent.els().filter(|e| e.local() == "Person").collect()
+                } else {
+                    in_lists
+                }
             };
             for name_el in person_els {
                 let last = child_text(name_el, "Last");
@@ -1225,7 +1516,9 @@ impl Reader<'_> {
 
         for src_el in root.els().filter(|e| e.local() == "Source") {
             if self.doc.sources.len() >= MAX_SOURCES {
-                log::warn!("docx: more than {MAX_SOURCES} bibliography sources; the rest are dropped");
+                log::warn!(
+                    "docx: more than {MAX_SOURCES} bibliography sources; the rest are dropped"
+                );
                 break;
             }
             let tag = child_text(src_el, "Tag");
@@ -1233,14 +1526,30 @@ impl Reader<'_> {
             let kind = crate::write::from_source_type(&raw_kind);
             let (author, editor) = match src_el.els().find(|e| e.local() == "Author") {
                 Some(a) => {
-                    let auth =
-                        a.els().find(|e| e.local() == "Author").map(parse_persons).filter(|s| !s.is_empty()).unwrap_or_else(|| parse_persons(a));
-                    let ed = a.els().find(|e| e.local() == "Editor").map(parse_persons).unwrap_or_default();
+                    let auth = a
+                        .els()
+                        .find(|e| e.local() == "Author")
+                        .map(parse_persons)
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or_else(|| parse_persons(a));
+                    let ed = a
+                        .els()
+                        .find(|e| e.local() == "Editor")
+                        .map(parse_persons)
+                        .unwrap_or_default();
                     (auth, ed)
                 }
                 None => (String::new(), String::new()),
             };
-            let editor = if editor.is_empty() { src_el.els().find(|e| e.local() == "Editor").map(parse_persons).unwrap_or_default() } else { editor };
+            let editor = if editor.is_empty() {
+                src_el
+                    .els()
+                    .find(|e| e.local() == "Editor")
+                    .map(parse_persons)
+                    .unwrap_or_default()
+            } else {
+                editor
+            };
             let title = child_text(src_el, "Title");
             let year = child_text(src_el, "Year");
             let month = child_text(src_el, "Month");
@@ -1278,7 +1587,14 @@ impl Reader<'_> {
                 continue;
             }
             let fresh = if tag.is_empty() {
-                seen.untagged.insert((title.clone(), if author.is_empty() { editor.clone() } else { author.clone() }))
+                seen.untagged.insert((
+                    title.clone(),
+                    if author.is_empty() {
+                        editor.clone()
+                    } else {
+                        author.clone()
+                    },
+                ))
             } else {
                 seen.tags.insert(tag.clone())
             };
@@ -1309,7 +1625,9 @@ impl Reader<'_> {
     }
 
     fn read_core(&mut self, path: &str) {
-        let Ok(Some(root)) = self.xml(path) else { return };
+        let Ok(Some(root)) = self.xml(path) else {
+            return;
+        };
         let c = &mut self.doc.core;
         for k in root.els() {
             let t = k.text().trim().to_string();
@@ -1333,7 +1651,12 @@ impl Reader<'_> {
 /// A level as the file defines it before its own elements: no indents (a level without `w:ind`
 /// leaves the label at the paragraph's left edge, as Word shows it), no text.
 fn default_level(_i: usize) -> Level {
-    Level { indent: 0.0, hanging: 0.0, text: String::new(), ..Level::default() }
+    Level {
+        indent: 0.0,
+        hanging: 0.0,
+        text: String::new(),
+        ..Level::default()
+    }
 }
 
 /// The password hash attributes of `w:documentProtection` that are kept (ECMA-376 §17.15.1.29:
@@ -1366,7 +1689,9 @@ fn read_protection(k: &El, s: &mut wordcraft_doc::Settings) {
     if !k.attr("w:enforcement").is_some_and(on) {
         return;
     }
-    let edit = k.attr("w:edit").filter(|e| matches!(*e, "readOnly" | "comments" | "trackedChanges" | "forms"));
+    let edit = k
+        .attr("w:edit")
+        .filter(|e| matches!(*e, "readOnly" | "comments" | "trackedChanges" | "forms"));
     let formatting = k.attr("w:formatting").is_some_and(on);
     if edit.is_none() && !formatting {
         return;
@@ -1375,6 +1700,10 @@ fn read_protection(k: &El, s: &mut wordcraft_doc::Settings) {
     s.protect_formatting = formatting;
     s.protect_hash = PROTECTION_HASH_ATTRS
         .iter()
-        .filter_map(|n| k.attr(n).filter(|v| !v.is_empty() && v.len() <= 1024).map(|v| (n.to_string(), v.to_string())))
+        .filter_map(|n| {
+            k.attr(n)
+                .filter(|v| !v.is_empty() && v.len() <= 1024)
+                .map(|v| (n.to_string(), v.to_string()))
+        })
         .collect();
 }

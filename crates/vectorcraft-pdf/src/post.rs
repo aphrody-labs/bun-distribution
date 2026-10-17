@@ -29,16 +29,25 @@ impl Thumbnail {
         let (w, h) = (self.width, self.height);
         let sized = (1..=THUMBNAIL_SIZE).contains(&w) && (1..=THUMBNAIL_SIZE).contains(&h);
         if !sized || self.rgb.len() as u64 != u64::from(w) * u64::from(h) * 3 {
-            return Err(PdfError::BadSetting(format!("a page thumbnail must be RGB pixels, 1 to {THUMBNAIL_SIZE} a side (got {w} × {h})")));
+            return Err(PdfError::BadSetting(format!(
+                "a page thumbnail must be RGB pixels, 1 to {THUMBNAIL_SIZE} a side (got {w} × {h})"
+            )));
         }
         let (space, pixels) = if gray {
             // Rec. 601 luma.
-            let luma = |p: &[u8; 3]| ((299 * u32::from(p[0]) + 587 * u32::from(p[1]) + 114 * u32::from(p[2]) + 500) / 1000) as u8;
-            ("DeviceGray", Cow::Owned(self.rgb.as_chunks::<3>().0.iter().map(luma).collect()))
+            let luma = |p: &[u8; 3]| {
+                ((299 * u32::from(p[0]) + 587 * u32::from(p[1]) + 114 * u32::from(p[2]) + 500)
+                    / 1000) as u8
+            };
+            (
+                "DeviceGray",
+                Cow::Owned(self.rgb.as_chunks::<3>().0.iter().map(luma).collect()),
+            )
         } else {
             ("DeviceRGB", Cow::Borrowed(self.rgb.as_slice()))
         };
-        let data = crate::output::deflate(&pixels).map_err(|e| PdfError::Write(format!("page thumbnail: {e}")))?;
+        let data = crate::output::deflate(&pixels)
+            .map_err(|e| PdfError::Write(format!("page thumbnail: {e}")))?;
         let mut out = format!("<</Width {w}/Height {h}/ColorSpace/{space}/BitsPerComponent 8/Filter/FlateDecode/Length {}>>\nstream\n", data.len())
             .into_bytes();
         out.extend_from_slice(&data);
@@ -53,7 +62,9 @@ fn thumbnails(pdf: Vec<u8>, thumbs: &[Thumbnail], gray: bool) -> Result<Vec<u8>,
     let Parsed { xref, pages, .. } = linearize::parse(&pdf).map_err(failed)?;
     let mut patch = Patch::new(&xref);
     for (page, thumb) in pages.iter().zip(thumbs) {
-        let (dict, _) = xref.dict(&pdf, *page).ok_or_else(|| failed("a page can't be read"))?;
+        let (dict, _) = xref
+            .dict(&pdf, *page)
+            .ok_or_else(|| failed("a page can't be read"))?;
         let n = patch.add_object(thumb.object(gray)?);
         patch.replace(dict, dict, format!("/Thumb {n} 0 R").into_bytes());
     }
@@ -69,17 +80,29 @@ fn linearised(pdf: &[u8], set: &PdfSettings) -> Result<Vec<u8>, PdfError> {
 
 /// The file the export wrote (`pdf`), finished as `opts` say; `editing`: it carries the editing
 /// data, to seal once the pages are final. What can't be done comes back in `warnings`.
-pub(crate) fn finish(pdf: Vec<u8>, opts: &PdfOptions, editing: bool, warnings: &mut Vec<String>) -> Result<Vec<u8>, PdfError> {
+pub(crate) fn finish(
+    pdf: Vec<u8>,
+    opts: &PdfOptions,
+    editing: bool,
+    warnings: &mut Vec<String>,
+) -> Result<Vec<u8>, PdfError> {
     let set = &opts.settings;
     let pdf = match (set.thumbnails, opts.thumbnails.is_empty()) {
         (true, false) => thumbnails(pdf, &opts.thumbnails, set.standard.is_pdfx())?,
         (true, true) => {
-            warnings.push("page thumbnails need the pages drawn, which weren't given: none are embedded".into());
+            warnings.push(
+                "page thumbnails need the pages drawn, which weren't given: none are embedded"
+                    .into(),
+            );
             pdf
         }
         (false, _) => pdf,
     };
-    let pdf = if editing { crate::editing::seal(pdf)? } else { pdf };
+    let pdf = if editing {
+        crate::editing::seal(pdf)?
+    } else {
+        pdf
+    };
     if !set.fast_web_view {
         return crate::encrypt::protect(pdf, set);
     }
@@ -107,7 +130,9 @@ pub(crate) fn declare_pdf13(pdf: &mut [u8]) {
 fn metadata_version(pdf: &[u8]) -> Option<usize> {
     const VERSION: &[u8] = b"<pdf:PDFVersion>1.4<";
     let p = linearize::parse(pdf).ok()?;
-    let Some(&Obj::Ref(n, _)) = p.objects.get(&p.root)?.value.get(b"Metadata") else { return None };
+    let Some(&Obj::Ref(n, _)) = p.objects.get(&p.root)?.value.get(b"Metadata") else {
+        return None;
+    };
     let o = p.objects.get(&n)?;
     let at = crate::lab_spot::find(pdf.get(..o.endobj)?, VERSION, o.value_span.1)?;
     Some(at + VERSION.len() - 2)

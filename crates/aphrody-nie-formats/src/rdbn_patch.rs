@@ -82,14 +82,24 @@ impl core::fmt::Display for PatchError {
             Self::ListeInconnue(n) => write!(f, "liste « {n} » absente du RDBN"),
             Self::LigneHorsPlage { demande, total } => {
                 write!(f, "ligne {demande} hors plage (la liste en a {total})")
-            },
+            }
             Self::ChampInconnu(n) => write!(f, "champ « {n} » absent du type de la liste"),
             Self::TypeIncompatible { champ, reel, tente } => {
-                write!(f, "champ « {champ} » est {reel:?}, écriture {tente} refusée")
-            },
-            Self::HorsBornes { offset, taille, tampon } => {
-                write!(f, "écriture de {taille} o à {offset} hors du tampon de {tampon} o")
-            },
+                write!(
+                    f,
+                    "champ « {champ} » est {reel:?}, écriture {tente} refusée"
+                )
+            }
+            Self::HorsBornes {
+                offset,
+                taille,
+                tampon,
+            } => {
+                write!(
+                    f,
+                    "écriture de {taille} o à {offset} hors du tampon de {tampon} o"
+                )
+            }
         }
     }
 }
@@ -117,7 +127,10 @@ pub fn localiser(
 
     let total = usize::try_from(root.value_count.max(0)).unwrap_or(0);
     if ligne >= total {
-        return Err(PatchError::LigneHorsPlage { demande: ligne, total });
+        return Err(PatchError::LigneHorsPlage {
+            demande: ligne,
+            total,
+        });
     }
 
     let ty = usize::try_from(root.type_index)
@@ -184,7 +197,10 @@ pub fn set_i32(data: &mut [u8], loc: FieldLoc, valeur: i32) -> Result<(), PatchE
 ///
 /// Voir [`set_i32`].
 pub fn set_i16(data: &mut [u8], loc: FieldLoc, valeur: i16) -> Result<(), PatchError> {
-    if !matches!(loc.field_type, RdbnFieldType::Short | RdbnFieldType::ActType) {
+    if !matches!(
+        loc.field_type,
+        RdbnFieldType::Short | RdbnFieldType::ActType
+    ) {
         return Err(PatchError::TypeIncompatible {
             champ: format!("{:?}", loc.field_type),
             reel: loc.field_type,
@@ -264,7 +280,10 @@ pub fn set_hash(data: &mut [u8], loc: FieldLoc, valeur: u32) -> Result<(), Patch
 ///
 /// Voir [`set_i32`].
 pub fn set_rates(data: &mut [u8], loc: FieldLoc, valeurs: [f32; 4]) -> Result<(), PatchError> {
-    if !matches!(loc.field_type, RdbnFieldType::Rates | RdbnFieldType::Position) {
+    if !matches!(
+        loc.field_type,
+        RdbnFieldType::Rates | RdbnFieldType::Position
+    ) {
         return Err(PatchError::TypeIncompatible {
             champ: format!("{:?}", loc.field_type),
             reel: loc.field_type,
@@ -394,7 +413,12 @@ pub fn patch_verifie(data: &mut [u8], modifs: &[Modif]) -> Result<Verification, 
         relues.push(val);
     }
 
-    Ok(Verification { taille_avant, taille_apres, octets_modifies: octets, relues })
+    Ok(Verification {
+        taille_avant,
+        taille_apres,
+        octets_modifies: octets,
+        relues,
+    })
 }
 
 /// Résultat d'un [`patch_verifie`].

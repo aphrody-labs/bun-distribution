@@ -27,14 +27,25 @@ pub struct SegMask {
 impl SegMask {
     /// From `side × side` logits over the whole image.
     pub fn from_logits(side: usize, logits: &[f32]) -> SegMask {
-        let q: Vec<u8> = logits.iter().take(side * side).map(|l| ((l * SCALE).round().clamp(-127.0, 127.0) as i8) as u8).collect();
+        let q: Vec<u8> = logits
+            .iter()
+            .take(side * side)
+            .map(|l| ((l * SCALE).round().clamp(-127.0, 127.0) as i8) as u8)
+            .collect();
         let z = miniz_oxide::deflate::compress_to_vec(&q, 8);
-        SegMask { side: side as u32, data: base64_encode(&z), rect: None }
+        SegMask {
+            side: side as u32,
+            data: base64_encode(&z),
+            rect: None,
+        }
     }
 
     /// From `side × side` logits over the part `rect` of the image.
     pub fn from_logits_in(side: usize, logits: &[f32], rect: [f64; 4]) -> SegMask {
-        SegMask { rect: Some(rect), ..SegMask::from_logits(side, logits) }
+        SegMask {
+            rect: Some(rect),
+            ..SegMask::from_logits(side, logits)
+        }
     }
 
     /// The covered part, normalized (the whole image without a `rect`); `None` when damaged.
@@ -68,7 +79,10 @@ pub(crate) fn de_detail<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Vec<Se
         fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             f.write_str("a list of segmentations")
         }
-        fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Vec<SegMask>, A::Error> {
+        fn visit_seq<A: serde::de::SeqAccess<'de>>(
+            self,
+            mut seq: A,
+        ) -> Result<Vec<SegMask>, A::Error> {
             let mut out = Vec::new();
             while out.len() < MAX_DETAIL {
                 match seq.next_element::<SegMask>()? {
@@ -88,7 +102,11 @@ const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 fn base64_encode(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for chunk in bytes.chunks(3) {
-        let b = [chunk.first().copied().unwrap_or(0), chunk.get(1).copied().unwrap_or(0), chunk.get(2).copied().unwrap_or(0)];
+        let b = [
+            chunk.first().copied().unwrap_or(0),
+            chunk.get(1).copied().unwrap_or(0),
+            chunk.get(2).copied().unwrap_or(0),
+        ];
         let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
         for i in 0..4 {
             if i <= chunk.len() {
@@ -151,7 +169,9 @@ mod tests {
         let patch = serde_json::to_value(SegMask::from_logits(4, &[1.0; 16])).unwrap();
         let shape = serde_json::json!({"kind": "object", "hint": [{"x": 0.5, "y": 0.5}], "detail": vec![patch; 10_000]});
         let s: crate::MaskShape = serde_json::from_value(shape).unwrap();
-        let crate::MaskShape::Object { detail, .. } = s else { panic!("an Object") };
+        let crate::MaskShape::Object { detail, .. } = s else {
+            panic!("an Object")
+        };
         assert_eq!(detail.len(), MAX_DETAIL);
         // and a whole develop document with them still loads
         let mut d = crate::DevelopSettings::default();
@@ -161,12 +181,20 @@ mod tests {
                 name: None,
                 op: crate::MaskOp::Add,
                 invert: false,
-                shape: crate::MaskShape::Prompt { text: "x".into(), seg: None, detail: vec![SegMask::from_logits(4, &[1.0; 16]); 50], edge: 0.0 },
+                shape: crate::MaskShape::Prompt {
+                    text: "x".into(),
+                    seg: None,
+                    detail: vec![SegMask::from_logits(4, &[1.0; 16]); 50],
+                    edge: 0.0,
+                },
             }],
             ..Default::default()
         });
-        let back: crate::DevelopSettings = serde_json::from_str(&serde_json::to_string(&d).unwrap()).unwrap();
-        let crate::MaskShape::Prompt { detail, .. } = &back.masks[0].components[0].shape else { panic!("a Prompt") };
+        let back: crate::DevelopSettings =
+            serde_json::from_str(&serde_json::to_string(&d).unwrap()).unwrap();
+        let crate::MaskShape::Prompt { detail, .. } = &back.masks[0].components[0].shape else {
+            panic!("a Prompt")
+        };
         assert_eq!(detail.len(), MAX_DETAIL);
     }
 
@@ -177,7 +205,22 @@ mod tests {
         assert!(m.logits().is_none(), "size mismatch");
         m.side = 100_000;
         assert!(m.logits().is_none(), "absurd size");
-        assert!(SegMask { side: 8, data: "not base64 !".into(), rect: None }.logits().is_none());
-        assert!(SegMask { rect: Some([0.5, 0.0, 0.2, 1.0]), ..SegMask::from_logits(2, &[0.0; 4]) }.bounds().is_none());
+        assert!(
+            SegMask {
+                side: 8,
+                data: "not base64 !".into(),
+                rect: None
+            }
+            .logits()
+            .is_none()
+        );
+        assert!(
+            SegMask {
+                rect: Some([0.5, 0.0, 0.2, 1.0]),
+                ..SegMask::from_logits(2, &[0.0; 4])
+            }
+            .bounds()
+            .is_none()
+        );
     }
 }

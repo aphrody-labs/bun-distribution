@@ -41,7 +41,15 @@ pub fn specs() -> Vec<CommandSpec> {
 /// the current slide.
 fn target(s: &Session, p: &Value, cmd: &str) -> Result<(ShapeId, MediaClip)> {
     let st = s.doc()?;
-    let media_of = |id: ShapeId| st.shape(id).and_then(|sh| if let ShapeKind::Media(m) = &sh.kind { Some((id, m.clone())) } else { None });
+    let media_of = |id: ShapeId| {
+        st.shape(id).and_then(|sh| {
+            if let ShapeKind::Media(m) = &sh.kind {
+                Some((id, m.clone()))
+            } else {
+                None
+            }
+        })
+    };
     let ids = targets(s, p)?;
     if let Some(found) = ids.iter().find_map(|id| media_of(*id)) {
         return Ok(found);
@@ -49,7 +57,11 @@ fn target(s: &Session, p: &Value, cmd: &str) -> Result<(ShapeId, MediaClip)> {
     if !ids.is_empty() && (p.get("id").is_some() || p.get("ids").is_some()) {
         return Err(bad(cmd, "not a media shape"));
     }
-    let all: Vec<(ShapeId, MediaClip)> = st.shapes().iter().filter_map(|sh| media_of(sh.id)).collect();
+    let all: Vec<(ShapeId, MediaClip)> = st
+        .shapes()
+        .iter()
+        .filter_map(|sh| media_of(sh.id))
+        .collect();
     match all.len() {
         1 => Ok(all.into_iter().next().ok_or_else(|| bad(cmd, "no media"))?),
         0 => Err(bad(cmd, "no audio or video on this slide")),
@@ -59,12 +71,19 @@ fn target(s: &Session, p: &Value, cmd: &str) -> Result<(ShapeId, MediaClip)> {
 
 fn request(s: &mut Session, p: &Value, cmd: &str, action: &str, ms: Option<u64>) -> Result<Value> {
     let (shape, _) = target(s, p, cmd)?;
-    s.ui_requests.push(UiRequest::Media { action: action.into(), shape, ms });
+    s.ui_requests.push(UiRequest::Media {
+        action: action.into(),
+        shape,
+        ms,
+    });
     Ok(json!({"id": shape}))
 }
 
 fn ms_param(p: &Value, key: &str) -> Option<u64> {
-    p.get(key).and_then(Value::as_f64).filter(|v| v.is_finite() && *v >= 0.0).map(|v| v as u64)
+    p.get(key)
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite() && *v >= 0.0)
+        .map(|v| v as u64)
 }
 
 fn play(s: &mut Session, p: &Value) -> Result<Value> {
@@ -97,8 +116,13 @@ pub(crate) fn probe_json(info: &deckcraft_media::MediaInfo) -> Value {
 fn info(s: &mut Session, p: &Value) -> Result<Value> {
     let (id, m) = target(s, p, "media.info")?;
     let st = s.doc()?;
-    let item = st.doc.media(m.media).ok_or_else(|| EngineError::Other("the media data is missing".into()))?;
-    let probe = deckcraft_media::probe(&item.data).map(|i| probe_json(&i)).unwrap_or_else(|e| json!({"error": e.to_string()}));
+    let item = st
+        .doc
+        .media(m.media)
+        .ok_or_else(|| EngineError::Other("the media data is missing".into()))?;
+    let probe = deckcraft_media::probe(&item.data)
+        .map(|i| probe_json(&i))
+        .unwrap_or_else(|e| json!({"error": e.to_string()}));
     Ok(json!({
         "id": id,
         "name": item.name,
@@ -135,9 +159,21 @@ fn poster_frame(s: &mut Session, p: &Value) -> Result<Value> {
     if !m.video {
         return Err(bad("media.posterFrame", "only videos have poster frames"));
     }
-    let ms = ms_param(p, "ms").or_else(|| s.media_status.get(&id).map(|st: &MediaStatus| st.position_ms)).unwrap_or(0);
-    let data = s.doc()?.doc.media(m.media).map(|i| i.data.clone()).ok_or_else(|| EngineError::Other("the media data is missing".into()))?;
-    let png = poster_png(&data, ms).ok_or_else(|| EngineError::Other("no frame could be decoded there".into()))?;
+    let ms = ms_param(p, "ms")
+        .or_else(|| {
+            s.media_status
+                .get(&id)
+                .map(|st: &MediaStatus| st.position_ms)
+        })
+        .unwrap_or(0);
+    let data = s
+        .doc()?
+        .doc
+        .media(m.media)
+        .map(|i| i.data.clone())
+        .ok_or_else(|| EngineError::Other("the media data is missing".into()))?;
+    let png = poster_png(&data, ms)
+        .ok_or_else(|| EngineError::Other("no frame could be decoded there".into()))?;
     let name = format!("poster{id}.png");
     let poster = s.edit(|doc, _| Ok(doc.add_media(&name, "image/png", png)))?;
     edit_shapes(s, &json!({"id": id}), "media.posterFrame", |sh| {
@@ -155,14 +191,28 @@ fn gif_play(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "media.gifPlay";
     let st = s.doc()?;
     let is_gif = |id: ShapeId| {
-        let Some(ShapeKind::Picture { fill }) = st.shape(id).map(|sh| &sh.kind) else { return false };
-        st.doc.media(fill.media).and_then(|m| crate::render::gif_frame(&m.data, &fill.adjust, 0.0)).is_some()
+        let Some(ShapeKind::Picture { fill }) = st.shape(id).map(|sh| &sh.kind) else {
+            return false;
+        };
+        st.doc
+            .media(fill.media)
+            .and_then(|m| crate::render::gif_frame(&m.data, &fill.adjust, 0.0))
+            .is_some()
     };
     let ids = targets(s, p)?;
     let id = match ids.iter().copied().find(|id| is_gif(*id)) {
         Some(id) => id,
-        None if !ids.is_empty() && (p.get("id").is_some() || p.get("ids").is_some()) => return Err(bad(cmd, "not an animated GIF")),
-        None => match st.shapes().iter().map(|sh| sh.id).filter(|id| is_gif(*id)).collect::<Vec<_>>().as_slice() {
+        None if !ids.is_empty() && (p.get("id").is_some() || p.get("ids").is_some()) => {
+            return Err(bad(cmd, "not an animated GIF"));
+        }
+        None => match st
+            .shapes()
+            .iter()
+            .map(|sh| sh.id)
+            .filter(|id| is_gif(*id))
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
             [id] => *id,
             [] => return Err(bad(cmd, "no animated GIF on this slide")),
             _ => return Err(bad(cmd, "select an animated GIF, or pass `id`")),
@@ -183,7 +233,9 @@ mod tests {
 
     fn wav() -> Vec<u8> {
         let rate = 8000u32;
-        let samples: Vec<i16> = (0..rate / 2).map(|i| ((i as f32 * 0.3).sin() * 3000.0) as i16).collect();
+        let samples: Vec<i16> = (0..rate / 2)
+            .map(|i| ((i as f32 * 0.3).sin() * 3000.0) as i16)
+            .collect();
         let data: Vec<u8> = samples.iter().flat_map(|s| s.to_le_bytes()).collect();
         let mut b = b"RIFF".to_vec();
         b.extend_from_slice(&(36 + data.len() as u32).to_le_bytes());
@@ -209,23 +261,48 @@ mod tests {
     fn insert_audio_probes_and_play_requests_reach_the_host() {
         let mut s = Session::with_new();
         let _ = s.execute("slide.new", &json!({"layout": "blank"}));
-        let r = s.execute("insert.audio", &json!({"name": "tone.wav", "data": base64_encode(&wav())})).expect("insert");
+        let r = s
+            .execute(
+                "insert.audio",
+                &json!({"name": "tone.wav", "data": base64_encode(&wav())}),
+            )
+            .expect("insert");
         assert_eq!(r["durationMs"], 500);
         assert_eq!(r["playable"], true);
         let id = r["id"].as_u64().expect("id");
         s.ui_requests.clear();
-        s.execute("media.play", &json!({"from": 100})).expect("play");
-        assert_eq!(s.ui_requests, vec![UiRequest::Media { action: "play".into(), shape: ShapeId(id as u32), ms: Some(100) }]);
-        s.execute("media.seek", &json!({"id": id, "ms": 250})).expect("seek");
+        s.execute("media.play", &json!({"from": 100}))
+            .expect("play");
+        assert_eq!(
+            s.ui_requests,
+            vec![UiRequest::Media {
+                action: "play".into(),
+                shape: ShapeId(id as u32),
+                ms: Some(100)
+            }]
+        );
+        s.execute("media.seek", &json!({"id": id, "ms": 250}))
+            .expect("seek");
         assert!(s.execute("media.seek", &json!({"id": id})).is_err());
         // The host reports state; media.info returns it with the probe.
-        s.media_status.insert(ShapeId(id as u32), MediaStatus { state: "playing".into(), position_ms: 250, duration_ms: 500, error: None });
+        s.media_status.insert(
+            ShapeId(id as u32),
+            MediaStatus {
+                state: "playing".into(),
+                position_ms: 250,
+                duration_ms: 500,
+                error: None,
+            },
+        );
         let i = s.execute("media.info", &json!({})).expect("info");
         assert_eq!(i["probe"]["audio"]["sampleRate"], 8000);
         assert_eq!(i["probe"]["container"], "wav");
         assert_eq!(i["status"]["positionMs"], 250);
         assert_eq!(i["status"]["state"], "playing");
-        assert!(s.execute("media.posterFrame", &json!({})).is_err(), "audio has no poster frame");
+        assert!(
+            s.execute("media.posterFrame", &json!({})).is_err(),
+            "audio has no poster frame"
+        );
     }
 
     #[test]
@@ -233,29 +310,61 @@ mod tests {
         let mut s = Session::with_new();
         let _ = s.execute("slide.new", &json!({"layout": "blank"}));
         assert!(s.execute("media.play", &json!({})).is_err());
-        let sh = s.execute("shape.insert", &json!({"preset": "rect", "rect": [0, 0, 10, 10]})).expect("shape");
+        let sh = s
+            .execute(
+                "shape.insert",
+                &json!({"preset": "rect", "rect": [0, 0, 10, 10]}),
+            )
+            .expect("shape");
         assert!(s.execute("media.play", &json!({"id": sh["id"]})).is_err());
     }
 
     #[test]
     fn gif_play_pauses_and_resumes_an_animated_gif() {
         use image::{Delay, Frame, Rgba, RgbaImage};
-        let frame = |c: [u8; 4]| Frame::from_parts(RgbaImage::from_pixel(8, 8, Rgba(c)), 0, 0, Delay::from_numer_denom_ms(100, 1));
+        let frame = |c: [u8; 4]| {
+            Frame::from_parts(
+                RgbaImage::from_pixel(8, 8, Rgba(c)),
+                0,
+                0,
+                Delay::from_numer_denom_ms(100, 1),
+            )
+        };
         let mut gif = Vec::new();
-        image::codecs::gif::GifEncoder::new(&mut gif).encode_frames([frame([255, 0, 0, 255]), frame([0, 0, 255, 255])]).expect("gif");
+        image::codecs::gif::GifEncoder::new(&mut gif)
+            .encode_frames([frame([255, 0, 0, 255]), frame([0, 0, 255, 255])])
+            .expect("gif");
         let mut s = Session::with_new();
         let _ = s.execute("slide.new", &json!({"layout": "blank"}));
-        assert!(s.execute("media.gifPlay", &json!({})).is_err(), "no GIF yet");
-        let r = s.execute("insert.picture", &json!({"name": "a.gif", "data": base64_encode(&gif)})).expect("insert");
+        assert!(
+            s.execute("media.gifPlay", &json!({})).is_err(),
+            "no GIF yet"
+        );
+        let r = s
+            .execute(
+                "insert.picture",
+                &json!({"name": "a.gif", "data": base64_encode(&gif)}),
+            )
+            .expect("insert");
         let id = ShapeId(r["id"].as_u64().expect("id") as u32);
         let r = s.execute("media.gifPlay", &json!({})).expect("toggle");
         assert_eq!(r["playing"], false);
         assert!(s.gif_paused.contains(&id));
-        let r = s.execute("media.gifPlay", &json!({"id": id, "play": true})).expect("play");
+        let r = s
+            .execute("media.gifPlay", &json!({"id": id, "play": true}))
+            .expect("play");
         assert_eq!(r["playing"], true);
         assert!(s.gif_paused.is_empty());
-        let sh = s.execute("shape.insert", &json!({"preset": "rect", "rect": [0, 0, 10, 10]})).expect("shape");
-        assert!(s.execute("media.gifPlay", &json!({"id": sh["id"]})).is_err());
+        let sh = s
+            .execute(
+                "shape.insert",
+                &json!({"preset": "rect", "rect": [0, 0, 10, 10]}),
+            )
+            .expect("shape");
+        assert!(
+            s.execute("media.gifPlay", &json!({"id": sh["id"]}))
+                .is_err()
+        );
     }
 
     #[test]
@@ -264,11 +373,24 @@ mod tests {
         let _ = s.execute("slide.new", &json!({"layout": "blank"}));
         // A minimal ASF header object with no children.
         let mut asf = vec![];
-        asf.extend_from_slice(&[0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C]);
+        asf.extend_from_slice(&[
+            0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62,
+            0xCE, 0x6C,
+        ]);
         asf.extend_from_slice(&30u64.to_le_bytes());
         asf.extend_from_slice(&[0; 6]);
-        let r = s.execute("insert.audio", &json!({"name": "song.wma", "data": base64_encode(&asf)})).expect("insert");
+        let r = s
+            .execute(
+                "insert.audio",
+                &json!({"name": "song.wma", "data": base64_encode(&asf)}),
+            )
+            .expect("insert");
         assert_eq!(r["playable"], false);
-        assert!(r["warning"].as_str().is_some_and(|w| w.contains("can't be played")), "{r}");
+        assert!(
+            r["warning"]
+                .as_str()
+                .is_some_and(|w| w.contains("can't be played")),
+            "{r}"
+        );
     }
 }

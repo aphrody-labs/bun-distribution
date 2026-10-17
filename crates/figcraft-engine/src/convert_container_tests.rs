@@ -12,11 +12,16 @@ fn id(v: Value) -> NodeId {
 }
 
 fn ex(s: &mut Session, cmd: &str, p: Value) -> Value {
-    s.execute(cmd, &p).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
+    s.execute(cmd, &p)
+        .unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
 }
 
 fn rect(s: &mut Session, parent: NodeId, x: f64, y: f64) -> NodeId {
-    id(ex(s, "shape.rectangle", json!({"parent": parent, "x": x, "y": y, "width": 40, "height": 20})))
+    id(ex(
+        s,
+        "shape.rectangle",
+        json!({"parent": parent, "x": x, "y": y, "width": 40, "height": 20}),
+    ))
 }
 
 /// A layer's box on the page: `[x0, y0, x1, y1]`, rounded.
@@ -38,20 +43,38 @@ fn a_frame_becomes_a_group_around_its_layers() {
         json!({"x": 100, "y": 50, "width": 300, "height": 200, "name": "Card", "props": {"fill": "#FF0000", "cornerRadius": 8}}),
     ));
     let (a, b) = (rect(&mut s, f, 20.0, 30.0), rect(&mut s, f, 120.0, 90.0));
-    ex(&mut s, "node.set", json!({"id": f, "props": {"opacity": 0.5}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": f, "props": {"opacity": 0.5}}),
+    );
     let before = [page_box(&s, a), page_box(&s, b)];
     let r = ex(&mut s, "object.convertToGroup", json!({"ids": [f]}));
     assert_eq!(r["ids"], json!([f]));
     let n = s.doc().unwrap().node(f).unwrap().clone();
     assert!(matches!(n.kind, NodeKind::Group));
-    assert_eq!((n.name.as_str(), n.opacity, n.children.clone()), ("Card", 0.5, vec![a, b]), "the same layer: name, opacity, layers");
-    assert!(n.fills.is_empty() && n.strokes.is_empty() && !n.clip && n.corners.uniform() == Some(0.0), "what only a frame has is gone");
-    assert_eq!([page_box(&s, a), page_box(&s, b)], before, "the layers stay where they are");
+    assert_eq!(
+        (n.name.as_str(), n.opacity, n.children.clone()),
+        ("Card", 0.5, vec![a, b]),
+        "the same layer: name, opacity, layers"
+    );
+    assert!(
+        n.fills.is_empty() && n.strokes.is_empty() && !n.clip && n.corners.uniform() == Some(0.0),
+        "what only a frame has is gone"
+    );
+    assert_eq!(
+        [page_box(&s, a), page_box(&s, b)],
+        before,
+        "the layers stay where they are"
+    );
     // A group's box is its layers': (120, 80) to (260, 160).
     assert_eq!(page_box(&s, f), [120.0, 80.0, 260.0, 160.0]);
     ex(&mut s, "edit.undo", json!({}));
     let n = s.doc().unwrap().node(f).unwrap();
-    assert!(matches!(n.kind, NodeKind::Frame) && n.fills.len() == 1 && n.clip, "one undo step brings the frame back");
+    assert!(
+        matches!(n.kind, NodeKind::Frame) && n.fills.len() == 1 && n.clip,
+        "one undo step brings the frame back"
+    );
     assert_eq!(page_box(&s, f), [100.0, 50.0, 400.0, 250.0]);
 }
 
@@ -59,32 +82,63 @@ fn a_frame_becomes_a_group_around_its_layers() {
 fn auto_layout_is_dropped_and_positions_kept() {
     let mut s = Session::new();
     let props = json!({"layout": "horizontal", "padding": 10, "gap": 10});
-    let f = id(ex(&mut s, "frame.create", json!({"x": 0, "y": 0, "width": 200, "height": 100, "props": props})));
+    let f = id(ex(
+        &mut s,
+        "frame.create",
+        json!({"x": 0, "y": 0, "width": 200, "height": 100, "props": props}),
+    ));
     let (a, b) = (rect(&mut s, f, 0.0, 0.0), rect(&mut s, f, 0.0, 0.0));
-    ex(&mut s, "node.set", json!({"id": b, "props": {"sizingH": "fill", "sizingV": "fill"}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": b, "props": {"sizingH": "fill", "sizingV": "fill"}}),
+    );
     // Laid out: a at (10, 10) 40 × 20, b fills (60, 10) to (190, 90).
     let before = [page_box(&s, a), page_box(&s, b)];
-    assert_eq!(before, [[10.0, 10.0, 50.0, 30.0], [60.0, 10.0, 190.0, 90.0]]);
+    assert_eq!(
+        before,
+        [[10.0, 10.0, 50.0, 30.0], [60.0, 10.0, 190.0, 90.0]]
+    );
     ex(&mut s, "object.convertToGroup", json!({"ids": [f]}));
     let doc = s.doc().unwrap();
     assert!(doc.node(f).unwrap().layout.is_none());
-    assert_eq!([page_box(&s, a), page_box(&s, b)], before, "the layout's positions and sizes are kept");
+    assert_eq!(
+        [page_box(&s, a), page_box(&s, b)],
+        before,
+        "the layout's positions and sizes are kept"
+    );
     let cl = &doc.node(b).unwrap().child_layout;
-    assert_eq!((cl.sizing_h, cl.sizing_v), (Sizing::Fixed, Sizing::Fixed), "nothing to fill in a group");
+    assert_eq!(
+        (cl.sizing_h, cl.sizing_v),
+        (Sizing::Fixed, Sizing::Fixed),
+        "nothing to fill in a group"
+    );
     // And back: a plain frame of the group's box, the layers still in place.
     ex(&mut s, "object.convertToFrame", json!({"ids": [f]}));
     let n = s.doc().unwrap().node(f).unwrap();
-    assert!(matches!(n.kind, NodeKind::Frame) && n.layout.is_none() && !n.clip && n.fills.is_empty());
-    assert_eq!((page_box(&s, f), [page_box(&s, a), page_box(&s, b)]), ([10.0, 10.0, 190.0, 90.0], before));
+    assert!(
+        matches!(n.kind, NodeKind::Frame) && n.layout.is_none() && !n.clip && n.fills.is_empty()
+    );
+    assert_eq!(
+        (page_box(&s, f), [page_box(&s, a), page_box(&s, b)]),
+        ([10.0, 10.0, 190.0, 90.0], before)
+    );
 }
 
 #[test]
 fn a_rotated_group_becomes_a_frame_in_place() {
     let mut s = Session::new();
     let page = s.page().unwrap();
-    let (a, b) = (rect(&mut s, page, 10.0, 10.0), rect(&mut s, page, 80.0, 60.0));
+    let (a, b) = (
+        rect(&mut s, page, 10.0, 10.0),
+        rect(&mut s, page, 80.0, 60.0),
+    );
     let g = id(ex(&mut s, "object.group", json!({"ids": [a, b]})));
-    ex(&mut s, "node.set", json!({"id": g, "props": {"rotation": 30}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": g, "props": {"rotation": 30}}),
+    );
     let before = [page_box(&s, a), page_box(&s, b), page_box(&s, g)];
     ex(&mut s, "object.convertToFrame", json!({"ids": [g]}));
     assert!(matches!(kind(&s, g), NodeKind::Frame));
@@ -98,15 +152,35 @@ fn a_rotated_group_becomes_a_frame_in_place() {
 fn what_cannot_convert_is_refused_and_nothing_changes() {
     let mut s = Session::new();
     let page = s.page().unwrap();
-    let f = id(ex(&mut s, "frame.create", json!({"x": 0, "y": 0, "width": 100, "height": 100})));
-    let inner = id(ex(&mut s, "frame.create", json!({"x": 10, "y": 10, "width": 50, "height": 50, "parent": f})));
+    let f = id(ex(
+        &mut s,
+        "frame.create",
+        json!({"x": 0, "y": 0, "width": 100, "height": 100}),
+    ));
+    let inner = id(ex(
+        &mut s,
+        "frame.create",
+        json!({"x": 10, "y": 10, "width": 50, "height": 50, "parent": f}),
+    ));
     rect(&mut s, inner, 0.0, 0.0);
     let comp = id(ex(&mut s, "component.create", json!({"ids": [f]})));
-    let inst = id(ex(&mut s, "instance.create", json!({"component": comp, "x": 300, "y": 0})));
+    let inst = id(ex(
+        &mut s,
+        "instance.create",
+        json!({"component": comp, "x": 300, "y": 0}),
+    ));
     let inst_inner = s.doc().unwrap().node(inst).unwrap().children[0];
-    let empty = id(ex(&mut s, "frame.create", json!({"x": 0, "y": 300, "width": 50, "height": 50})));
+    let empty = id(ex(
+        &mut s,
+        "frame.create",
+        json!({"x": 0, "y": 300, "width": 50, "height": 50}),
+    ));
     let loose = rect(&mut s, page, 500.0, 0.0);
-    let ok_frame = id(ex(&mut s, "frame.create", json!({"x": 0, "y": 500, "width": 50, "height": 50})));
+    let ok_frame = id(ex(
+        &mut s,
+        "frame.create",
+        json!({"x": 0, "y": 500, "width": 50, "height": 50}),
+    ));
     rect(&mut s, ok_frame, 5.0, 5.0);
     // (layer, what the message says)
     for (layer, says) in [
@@ -121,13 +195,22 @@ fn what_cannot_convert_is_refused_and_nothing_changes() {
                 continue;
             }
             // Together with a frame that could convert: all or nothing.
-            let e = s.execute(cmd, &json!({"ids": [ok_frame, layer]})).unwrap_err().to_string();
+            let e = s
+                .execute(cmd, &json!({"ids": [ok_frame, layer]}))
+                .unwrap_err()
+                .to_string();
             assert!(e.contains(says), "{cmd} on {layer}: {e}");
-            assert!(matches!(kind(&s, ok_frame), NodeKind::Frame), "{cmd}: nothing converts when one can't");
+            assert!(
+                matches!(kind(&s, ok_frame), NodeKind::Frame),
+                "{cmd}: nothing converts when one can't"
+            );
         }
     }
     // Already what was asked for: left alone, not an error.
-    assert_eq!(ex(&mut s, "object.convertToFrame", json!({"ids": [ok_frame]}))["ids"], json!([]));
+    assert_eq!(
+        ex(&mut s, "object.convertToFrame", json!({"ids": [ok_frame]}))["ids"],
+        json!([])
+    );
     // A frame inside a main component converts (its instances follow their main).
     ex(&mut s, "object.convertToGroup", json!({"ids": [inner]}));
     assert!(matches!(kind(&s, inner), NodeKind::Group));
@@ -135,15 +218,31 @@ fn what_cannot_convert_is_refused_and_nothing_changes() {
 
 #[test]
 fn junk_parameters_are_refused_not_fatal() {
-    let junk = [json!(null), json!(true), json!(-1), json!(1e308), json!("x"), json!([[1]]), json!({"a": 1}), json!([0, 999_999, "7"])];
+    let junk = [
+        json!(null),
+        json!(true),
+        json!(-1),
+        json!(1e308),
+        json!("x"),
+        json!([[1]]),
+        json!({"a": 1}),
+        json!([0, 999_999, "7"]),
+    ];
     for cmd in ["object.convertToGroup", "object.convertToFrame"] {
         for j in &junk {
             let mut s = Session::new();
-            let f = id(ex(&mut s, "frame.create", json!({"x": 0, "y": 0, "width": 50, "height": 50})));
+            let f = id(ex(
+                &mut s,
+                "frame.create",
+                json!({"x": 0, "y": 0, "width": 50, "height": 50}),
+            ));
             rect(&mut s, f, 0.0, 0.0);
             for p in [json!({"ids": j}), json!({"id": j}), j.clone()] {
                 let r = s.execute(cmd, &p);
-                assert!(!matches!(r, Err(EngineError::Internal { .. })), "{cmd} {p}: {r:?}");
+                assert!(
+                    !matches!(r, Err(EngineError::Internal { .. })),
+                    "{cmd} {p}: {r:?}"
+                );
             }
         }
     }

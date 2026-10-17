@@ -38,7 +38,11 @@ fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64, parent: Option<NodeId>)
 }
 
 fn section(s: &mut Session, x: f64, y: f64, w: f64, h: f64) -> NodeId {
-    id(ex(s, "node.create", json!({"type": "section", "x": x, "y": y, "width": w, "height": h})))
+    id(ex(
+        s,
+        "node.create",
+        json!({"type": "section", "x": x, "y": y, "width": w, "height": h}),
+    ))
 }
 
 /// Page bounds as (x, y, w, h).
@@ -62,7 +66,13 @@ fn drag(s: &mut Session, a: (f64, f64), b: (f64, f64), cmd: bool) {
     s.pointer(&ev(PointerKind::Down, a.0, a.1, cmd)).unwrap();
     for k in 1..=4 {
         let t = f64::from(k) / 4.0;
-        s.pointer(&ev(PointerKind::Move, a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t, cmd)).unwrap();
+        s.pointer(&ev(
+            PointerKind::Move,
+            a.0 + (b.0 - a.0) * t,
+            a.1 + (b.1 - a.1) * t,
+            cmd,
+        ))
+        .unwrap();
     }
     s.pointer(&ev(PointerKind::Up, b.0, b.1, cmd)).unwrap();
 }
@@ -94,8 +104,16 @@ fn resizing_a_frame_applies_constraints_and_a_group_scales() {
         let mut s = Session::new();
         let f = frame(&mut s, 0.0, 0.0, 100.0, 100.0, None);
         let c = rect(&mut s, 10.0, 10.0, 20.0, 20.0, Some(f));
-        ex(&mut s, "node.set", json!({"id": c, "props": {"constraints": {"horizontal": h}}}));
-        ex(&mut s, "node.set", json!({"id": f, "props": {"width": 200}}));
+        ex(
+            &mut s,
+            "node.set",
+            json!({"id": c, "props": {"constraints": {"horizontal": h}}}),
+        );
+        ex(
+            &mut s,
+            "node.set",
+            json!({"id": f, "props": {"width": 200}}),
+        );
         let (x, _, w, _) = wb(&s, c);
         assert_eq!((x, w), want, "{h}");
         s.undo().unwrap();
@@ -107,8 +125,15 @@ fn resizing_a_frame_applies_constraints_and_a_group_scales() {
     let a = rect(&mut s, 0.0, 0.0, 20.0, 20.0, None);
     let b = rect(&mut s, 30.0, 0.0, 20.0, 20.0, None);
     let g = id(ex(&mut s, "object.group", json!({"ids": [a, b]})));
-    ex(&mut s, "node.set", json!({"id": g, "props": {"width": 100}}));
-    assert_eq!((wb(&s, a), wb(&s, b)), ((0.0, 0.0, 40.0, 20.0), (60.0, 0.0, 40.0, 20.0)));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": g, "props": {"width": 100}}),
+    );
+    assert_eq!(
+        (wb(&s, a), wb(&s, b)),
+        ((0.0, 0.0, 40.0, 20.0), (60.0, 0.0, 40.0, 20.0))
+    );
 }
 
 #[test]
@@ -119,8 +144,16 @@ fn cmd_resize_of_a_frame_ignores_constraints() {
         let f = frame(&mut s, 0.0, 0.0, 100.0, 100.0, None);
         let c = rect(&mut s, 70.0, 40.0, 20.0, 20.0, Some(f));
         let wide = rect(&mut s, 10.0, 70.0, 20.0, 20.0, Some(f));
-        ex(&mut s, "node.set", json!({"id": c, "props": {"constraints": {"horizontal": "right"}}}));
-        ex(&mut s, "node.set", json!({"id": wide, "props": {"constraints": {"horizontal": "leftRight"}}}));
+        ex(
+            &mut s,
+            "node.set",
+            json!({"id": c, "props": {"constraints": {"horizontal": "right"}}}),
+        );
+        ex(
+            &mut s,
+            "node.set",
+            json!({"id": wide, "props": {"constraints": {"horizontal": "leftRight"}}}),
+        );
         ex(&mut s, "select.set", json!({"ids": [f]}));
         // The right edge's handle, dragged 100 to the right.
         drag(&mut s, (100.0, 50.0), (200.0, 50.0), cmd);
@@ -136,9 +169,17 @@ fn resizing_a_section_leaves_its_contents() {
     let mut s = Session::new();
     let sec = section(&mut s, 0.0, 0.0, 400.0, 300.0);
     let f = frame(&mut s, 300.0, 200.0, 50.0, 50.0, Some(sec));
-    ex(&mut s, "node.set", json!({"id": f, "props": {"constraints": {"horizontal": "scale", "vertical": "bottom"}}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": f, "props": {"constraints": {"horizontal": "scale", "vertical": "bottom"}}}),
+    );
     let before = wb(&s, f);
-    ex(&mut s, "node.set", json!({"id": sec, "props": {"width": 800, "height": 600}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": sec, "props": {"width": 800, "height": 600}}),
+    );
     assert_eq!(wb(&s, f), before, "a field edit");
     // Dragging the left edge: the section's origin moves, the frame doesn't.
     ex(&mut s, "select.set", json!({"ids": [sec]}));
@@ -146,7 +187,11 @@ fn resizing_a_section_leaves_its_contents() {
     assert_eq!(wb(&s, sec), (-100.0, 0.0, 900.0, 600.0));
     assert_eq!(wb(&s, f), before, "a handle drag");
     // Anchored resizes too.
-    ex(&mut s, "transform.resize", json!({"ids": [sec], "width": 500, "anchor": "r"}));
+    ex(
+        &mut s,
+        "transform.resize",
+        json!({"ids": [sec], "width": 500, "anchor": "r"}),
+    );
     assert_eq!(wb(&s, f), before, "transform.resize");
 }
 
@@ -158,11 +203,24 @@ fn clip_content_hides_and_unhides_what_overflows() {
         let mut s = Session::new();
         let f = frame(&mut s, 0.0, 0.0, 100.0, 100.0, None);
         let c = rect(&mut s, 80.0, 10.0, 60.0, 20.0, Some(f));
-        ex(&mut s, "node.set", json!({"id": f, "props": {"clip": clip}}));
+        ex(
+            &mut s,
+            "node.set",
+            json!({"id": f, "props": {"clip": clip}}),
+        );
         let page = s.page().unwrap();
-        let hit = s.doc().unwrap().hit_test(page, Point::new(120.0, 20.0), 0.0, None);
+        let hit = s
+            .doc()
+            .unwrap()
+            .hit_test(page, Point::new(120.0, 20.0), 0.0, None);
         assert_eq!(hit == Some(c), hit_outside, "clip {clip}");
-        assert_eq!(figcraft_render::render_node(s.doc().unwrap(), f, 1.0).unwrap().width(), export_w, "clip {clip}");
+        assert_eq!(
+            figcraft_render::render_node(s.doc().unwrap(), f, 1.0)
+                .unwrap()
+                .width(),
+            export_w,
+            "clip {clip}"
+        );
     }
     // New frames clip (silent on the default for Frame selection: pinned to the frame default).
     let mut s = Session::new();
@@ -183,10 +241,21 @@ fn frame_selection_wraps_the_layers_where_the_topmost_was() {
     let doc = s.doc().unwrap();
     // Bounds: 10..80 by 10..70.
     assert_eq!(wb(&s, f), (10.0, 10.0, 70.0, 60.0));
-    assert_eq!(doc.node(f).unwrap().children, vec![a, b], "the layers keep their order");
+    assert_eq!(
+        doc.node(f).unwrap().children,
+        vec![a, b],
+        "the layers keep their order"
+    );
     let page = s.page().unwrap();
-    assert_eq!(doc.node(page).unwrap().children, vec![other, f, top], "where b (the topmost selected) was");
-    assert_eq!((wb(&s, a), wb(&s, b)), ((10.0, 10.0, 20.0, 20.0), (50.0, 40.0, 30.0, 30.0)));
+    assert_eq!(
+        doc.node(page).unwrap().children,
+        vec![other, f, top],
+        "where b (the topmost selected) was"
+    );
+    assert_eq!(
+        (wb(&s, a), wb(&s, b)),
+        ((10.0, 10.0, 20.0, 20.0), (50.0, 40.0, 30.0, 30.0))
+    );
     assert_eq!(s.selection(), vec![f]);
     // Inside a frame, the new frame nests there.
     let outer = frame(&mut s, 500.0, 0.0, 200.0, 200.0, None);
@@ -205,20 +274,35 @@ fn grouping_and_ungrouping_keep_layers_in_place() {
     let mut s = Session::new();
     let a = rect(&mut s, 0.0, 0.0, 40.0, 20.0, None);
     let b = rect(&mut s, 60.0, 30.0, 20.0, 20.0, None);
-    ex(&mut s, "node.set", json!({"id": b, "props": {"rotation": 45}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": b, "props": {"rotation": 45}}),
+    );
     let before = (wb(&s, a), wb(&s, b));
     let g = id(ex(&mut s, "object.group", json!({"ids": [a, b]})));
     assert_eq!((wb(&s, a), wb(&s, b)), before);
     let hug = s.doc().unwrap().bounds_of(&[a, b]).unwrap();
-    assert_eq!(wb(&s, g), (hug.x0, hug.y0, hug.width(), hug.height()), "the group hugs its layers");
+    assert_eq!(
+        wb(&s, g),
+        (hug.x0, hug.y0, hug.width(), hug.height()),
+        "the group hugs its layers"
+    );
     // Rotating the group turns its layers with it; ungrouping leaves them where they ended up.
-    ex(&mut s, "transform.rotate", json!({"ids": [g], "degrees": 30}));
+    ex(
+        &mut s,
+        "transform.rotate",
+        json!({"ids": [g], "degrees": 30}),
+    );
     let worlds = |s: &Session| [a, b].map(|i| s.doc().unwrap().world_transform(i));
     let turned = worlds(&s);
     ex(&mut s, "object.ungroup", json!({"ids": [g]}));
     for (x, y) in worlds(&s).iter().zip(turned.iter()) {
         let (p, q) = (x.as_coeffs(), y.as_coeffs());
-        assert!(p.iter().zip(q.iter()).all(|(u, v)| (u - v).abs() < 1e-9), "{p:?} {q:?}");
+        assert!(
+            p.iter().zip(q.iter()).all(|(u, v)| (u - v).abs() < 1e-9),
+            "{p:?} {q:?}"
+        );
     }
     assert!(s.doc().unwrap().node(g).is_none());
     assert_eq!(s.selection(), vec![a, b]);
@@ -230,7 +314,11 @@ fn grouping_and_ungrouping_keep_layers_in_place() {
     assert_eq!(s.doc().unwrap().node(inner).unwrap().children, vec![a, b]);
     // Silent on what ungrouping does with the group's opacity: pinned (multiplied into the layers).
     let g = id(ex(&mut s, "object.group", json!({"ids": [c]})));
-    ex(&mut s, "node.set", json!({"id": g, "props": {"opacity": 0.5}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": g, "props": {"opacity": 0.5}}),
+    );
     ex(&mut s, "object.ungroup", json!({"ids": [g]}));
     assert_eq!(s.doc().unwrap().node(c).unwrap().opacity, 0.5);
 }
@@ -243,7 +331,11 @@ fn group_bounds_follow_their_layers_and_empty_groups_go() {
     let a = rect(&mut s, 0.0, 0.0, 20.0, 20.0, None);
     let b = rect(&mut s, 30.0, 0.0, 20.0, 20.0, None);
     let g = id(ex(&mut s, "object.group", json!({"ids": [a, b]})));
-    ex(&mut s, "transform.move", json!({"ids": [b], "dx": 50, "dy": 10}));
+    ex(
+        &mut s,
+        "transform.move",
+        json!({"ids": [b], "dx": 50, "dy": 10}),
+    );
     assert_eq!(wb(&s, g), (0.0, 0.0, 100.0, 30.0));
     ex(&mut s, "edit.delete", json!({"ids": [a, b]}));
     assert!(s.doc().unwrap().node(g).is_none());
@@ -257,11 +349,26 @@ fn group_opacity_applies_to_the_whole_group() {
     let a = rect(&mut s, 0.0, 0.0, 30.0, 10.0, None);
     let b = rect(&mut s, 20.0, 0.0, 30.0, 10.0, None);
     let g = id(ex(&mut s, "object.group", json!({"ids": [a, b]})));
-    ex(&mut s, "node.set", json!({"id": g, "props": {"opacity": 0.5}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": g, "props": {"opacity": 0.5}}),
+    );
     let (alone, overlap) = (pixel(&s, g, 5, 5)[3], pixel(&s, g, 25, 5)[3]);
-    assert!(alone.abs_diff(128) <= 1 && overlap == alone, "{alone} {overlap}");
-    ex(&mut s, "node.set", json!({"ids": [a, b], "props": {"opacity": 0.5}}));
-    ex(&mut s, "node.set", json!({"id": g, "props": {"opacity": 1}}));
+    assert!(
+        alone.abs_diff(128) <= 1 && overlap == alone,
+        "{alone} {overlap}"
+    );
+    ex(
+        &mut s,
+        "node.set",
+        json!({"ids": [a, b], "props": {"opacity": 0.5}}),
+    );
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": g, "props": {"opacity": 1}}),
+    );
     assert!(pixel(&s, g, 25, 5)[3].abs_diff(191) <= 1);
 }
 
@@ -299,10 +406,17 @@ fn x_and_y_are_relative_to_the_frame_not_the_group() {
     ex(&mut s, "object.group", json!({"ids": [c, d]}));
     assert_eq!(xy(&mut s, d), (520.0, 50.0));
     // A rotated group: its layers' X/Y are still in the frame's axes.
-    ex(&mut s, "transform.rotate", json!({"ids": [g], "degrees": 90}));
+    ex(
+        &mut s,
+        "transform.rotate",
+        json!({"ids": [g], "degrees": 90}),
+    );
     let t = s.doc().unwrap().world_transform(a).as_coeffs();
     let (x, y) = xy(&mut s, a);
-    assert!((x - (t[4] - 100.0)).abs() < 1e-9 && (y - (t[5] - 100.0)).abs() < 1e-9, "{x} {y}");
+    assert!(
+        (x - (t[4] - 100.0)).abs() < 1e-9 && (y - (t[5] - 100.0)).abs() < 1e-9,
+        "{x} {y}"
+    );
 }
 
 #[test]
@@ -322,7 +436,8 @@ fn clicks_pick_children_of_top_level_frames_and_whole_groups() {
     let sf = frame(&mut s, 20.0, 20.0, 100.0, 100.0, Some(sec));
     let sr = rect(&mut s, 10.0, 10.0, 20.0, 20.0, Some(sf));
     let doc = s.doc().unwrap().clone();
-    let pick = |leaf, ctx: &[NodeId], deep| figcraft_doc::geometry::select_target(&doc, leaf, ctx, deep);
+    let pick =
+        |leaf, ctx: &[NodeId], deep| figcraft_doc::geometry::select_target(&doc, leaf, ctx, deep);
     let enter = |leaf, sel: &[NodeId]| figcraft_doc::geometry::enter_target(&doc, leaf, sel);
     let cases: [(&str, NodeId, NodeId); 10] = [
         // A layer in a group in a top-level frame: the group.
@@ -363,9 +478,19 @@ fn drawing_a_frame_or_section_around_layers_puts_them_in_it() {
     ex(&mut s, "tool.frame", json!({}));
     drag(&mut s, (0.0, 0.0), (200.0, 200.0), false);
     let f = *s.selection().first().unwrap();
-    assert!(matches!(s.doc().unwrap().node(f).unwrap().kind, NodeKind::Frame));
-    assert_eq!((parent(&s, inside), parent(&s, partly), parent(&s, out)), (Some(f), Some(page), Some(page)));
-    assert_eq!(wb(&s, inside), (20.0, 20.0, 30.0, 30.0), "it doesn't move on the page");
+    assert!(matches!(
+        s.doc().unwrap().node(f).unwrap().kind,
+        NodeKind::Frame
+    ));
+    assert_eq!(
+        (parent(&s, inside), parent(&s, partly), parent(&s, out)),
+        (Some(f), Some(page), Some(page))
+    );
+    assert_eq!(
+        wb(&s, inside),
+        (20.0, 20.0, 30.0, 30.0),
+        "it doesn't move on the page"
+    );
     // One undo step takes the frame away and puts the layer back.
     s.undo().unwrap();
     assert_eq!(parent(&s, inside), Some(page));
@@ -381,9 +506,19 @@ fn drawing_a_frame_or_section_around_layers_puts_them_in_it() {
     ex(&mut s, "tool.section", json!({}));
     drag(&mut s, (-50.0, -50.0), (1500.0, 500.0), false);
     let sec = *s.selection().first().unwrap();
-    assert!(matches!(s.doc().unwrap().node(sec).unwrap().kind, NodeKind::Section { .. }));
-    assert_eq!((parent(&s, board), parent(&s, inside), parent(&s, out)), (Some(sec), Some(sec), Some(sec)));
-    assert_eq!(parent(&s, partly), Some(sec), "fully inside this larger one");
+    assert!(matches!(
+        s.doc().unwrap().node(sec).unwrap().kind,
+        NodeKind::Section { .. }
+    ));
+    assert_eq!(
+        (parent(&s, board), parent(&s, inside), parent(&s, out)),
+        (Some(sec), Some(sec), Some(sec))
+    );
+    assert_eq!(
+        parent(&s, partly),
+        Some(sec),
+        "fully inside this larger one"
+    );
     // A frame drawn around a section leaves the section out (sections don't go in frames).
     let lone = section(&mut s, 3000.0, 0.0, 100.0, 100.0);
     ex(&mut s, "tool.frame", json!({}));
@@ -435,13 +570,32 @@ fn sections_go_on_the_page_or_in_sections() {
         assert!(s.execute("node.reparent", &p).is_err(), "{rule}");
         assert_eq!(parent(&s, sec), Some(page), "{rule}");
     }
-    assert!(s.execute("object.group", &json!({"ids": [sec]})).is_err(), "grouping a section");
-    assert!(s.execute("object.frameSelection", &json!({"ids": [sec]})).is_err(), "framing a section");
-    assert!(s.execute("node.create", &json!({"type": "section", "parent": f})).is_err(), "a new section in a frame");
+    assert!(
+        s.execute("object.group", &json!({"ids": [sec]})).is_err(),
+        "grouping a section"
+    );
+    assert!(
+        s.execute("object.frameSelection", &json!({"ids": [sec]}))
+            .is_err(),
+        "framing a section"
+    );
+    assert!(
+        s.execute("node.create", &json!({"type": "section", "parent": f}))
+            .is_err(),
+        "a new section in a frame"
+    );
     // Into a section: fine.
-    ex(&mut s, "node.reparent", json!({"ids": [sec], "parent": outer}));
+    ex(
+        &mut s,
+        "node.reparent",
+        json!({"ids": [sec], "parent": outer}),
+    );
     assert_eq!(parent(&s, sec), Some(outer));
-    ex(&mut s, "node.reparent", json!({"ids": [sec], "parent": page}));
+    ex(
+        &mut s,
+        "node.reparent",
+        json!({"ids": [sec], "parent": page}),
+    );
     // Dragged over a frame, a section stays on the page.
     ex(&mut s, "select.set", json!({"ids": [sec]}));
     drag(&mut s, (600.0, 100.0), (150.0, 150.0), false);
@@ -469,7 +623,11 @@ fn top_level_frames_are_screens_and_export_whole() {
     assert_eq!(doc.top_frames(page), vec![a, b]);
     assert_eq!(doc.top_level_frame(nested), Some(a));
     let px = figcraft_render::render_node(doc, a, 2.0).unwrap();
-    assert_eq!((px.width(), px.height()), (200, 400), "the frame's own size at 2x");
+    assert_eq!(
+        (px.width(), px.height()),
+        (200, 400),
+        "the frame's own size at 2x"
+    );
 }
 
 #[test]
@@ -484,7 +642,10 @@ fn frames_and_groups_convert_through_frame_selection_and_remove_frame() {
     ex(&mut s, "object.ungroup", json!({"ids": [g]}));
     let doc = s.doc().unwrap();
     assert_eq!(doc.node(f).unwrap().children, vec![a, b]);
-    assert_eq!((wb(&s, a), wb(&s, f)), ((10.0, 10.0, 20.0, 20.0), (10.0, 10.0, 60.0, 20.0)));
+    assert_eq!(
+        (wb(&s, a), wb(&s, f)),
+        ((10.0, 10.0, 20.0, 20.0), (10.0, 10.0, 60.0, 20.0))
+    );
     let g2 = id(ex(&mut s, "object.group", json!({"ids": [a, b]})));
     ex(&mut s, "object.removeFrame", json!({"ids": [f]}));
     assert_eq!(parent(&s, g2), s.page().ok());

@@ -27,7 +27,11 @@ impl Scale {
                 let v = self.min + i as f64 * self.step;
                 // Snap away accumulated float error.
                 let snapped = (v / self.step).round() * self.step;
-                if snapped.abs() < self.step * 1e-9 { 0.0 } else { snapped }
+                if snapped.abs() < self.step * 1e-9 {
+                    0.0
+                } else {
+                    snapped
+                }
             })
             .collect()
     }
@@ -42,7 +46,11 @@ impl Scale {
 }
 
 pub(crate) fn clean(v: f64) -> f64 {
-    if v.is_finite() { v.clamp(-MAX_ABS, MAX_ABS) } else { 0.0 }
+    if v.is_finite() {
+        v.clamp(-MAX_ABS, MAX_ABS)
+    } else {
+        0.0
+    }
 }
 
 /// Picks a "nice" scale (steps of 1, 2 or 5 × 10ⁿ, 4–9 gridlines) covering `lo..=hi`.
@@ -63,7 +71,11 @@ pub fn nice_scale(lo: f64, hi: f64, force_zero: bool) -> Scale {
     }
     if lo == hi {
         // Both zero.
-        return Scale { min: 0.0, max: 1.0, step: 0.2 };
+        return Scale {
+            min: 0.0,
+            max: 1.0,
+            step: 0.2,
+        };
     }
     let range = hi - lo;
     if hi > 0.0 {
@@ -74,7 +86,11 @@ pub fn nice_scale(lo: f64, hi: f64, force_zero: bool) -> Scale {
     }
     let range = hi - lo;
     if !range.is_finite() || range <= 0.0 {
-        return Scale { min: 0.0, max: 1.0, step: 0.2 };
+        return Scale {
+            min: 0.0,
+            max: 1.0,
+            step: 0.2,
+        };
     }
     let e = (range / 8.0).log10().floor();
     let mut chosen = None;
@@ -102,7 +118,11 @@ pub fn nice_scale(lo: f64, hi: f64, force_zero: bool) -> Scale {
         max = 0.0;
     }
     if !(min.is_finite() && max.is_finite()) || max <= min {
-        return Scale { min: lo, max: hi, step: range };
+        return Scale {
+            min: lo,
+            max: hi,
+            step: range,
+        };
     }
     Scale { min, max, step }
 }
@@ -122,7 +142,10 @@ impl Fmt {
     pub fn new(code: &str) -> Fmt {
         let t = code.trim();
         let general = t.is_empty() || t.eq_ignore_ascii_case("general");
-        Fmt { general, fmt: NumberFormat::parse_cached(if general { "General" } else { t }) }
+        Fmt {
+            general,
+            fmt: NumberFormat::parse_cached(if general { "General" } else { t }),
+        }
     }
     /// Formats `v`; `step` (axis labels) fixes the decimals for General.
     pub fn format(&self, v: f64, step: Option<f64>) -> String {
@@ -152,7 +175,14 @@ fn general_text(v: f64, step: Option<f64>) -> String {
         Some(s) if s.is_finite() && s > 0.0 && v.abs() < 1e11 && v.abs() >= 1e-9 => {
             let d = (-s.log10().floor()).clamp(0.0, 10.0) as usize;
             let t = format!("{:.*}", d, v);
-            if t.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') { "0".into() } else { t }
+            if t.trim_start_matches('-')
+                .chars()
+                .all(|c| c == '0' || c == '.')
+            {
+                "0".into()
+            } else {
+                t
+            }
         }
         _ => number_to_text(v),
     }

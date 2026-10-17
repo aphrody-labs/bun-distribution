@@ -96,7 +96,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             place_load
         ),
-        cmd!("place.drop", "Place Loaded Graphic", [], None, "{spread?, x, y, rect?: [x0,y0,x1,y1], frame?: id}", has_doc, place_drop),
+        cmd!(
+            "place.drop",
+            "Place Loaded Graphic",
+            [],
+            None,
+            "{spread?, x, y, rect?: [x0,y0,x1,y1], frame?: id}",
+            has_doc,
+            place_drop
+        ),
         cmd!(
             "file.place",
             "Place…",
@@ -119,18 +127,36 @@ pub fn from_bytes(b: &[u8]) -> Result<Document> {
 
 fn file_new(s: &mut Session, p: &Value) -> Result<Value> {
     let mut nd = match str_param(p, "preset") {
-        Some(name) => NewDocument::from_preset(name).ok_or_else(|| bad("file.new", format!("unknown preset `{name}`")))?,
+        Some(name) => NewDocument::from_preset(name)
+            .ok_or_else(|| bad("file.new", format!("unknown preset `{name}`")))?,
         None => NewDocument::default(),
     };
     nd.width = f64_or(p, "width", nd.width);
     nd.height = f64_or(p, "height", nd.height);
-    nd.pages = p.get("pages").and_then(Value::as_u64).map(|v| v as usize).unwrap_or(nd.pages).clamp(1, 9999);
-    nd.facing_pages = p.get("facingPages").and_then(Value::as_bool).unwrap_or(nd.facing_pages);
-    nd.columns = p.get("columns").and_then(Value::as_u64).map(|v| v.clamp(1, 216) as u32).unwrap_or(nd.columns);
+    nd.pages = p
+        .get("pages")
+        .and_then(Value::as_u64)
+        .map(|v| v as usize)
+        .unwrap_or(nd.pages)
+        .clamp(1, 9999);
+    nd.facing_pages = p
+        .get("facingPages")
+        .and_then(Value::as_bool)
+        .unwrap_or(nd.facing_pages);
+    nd.columns = p
+        .get("columns")
+        .and_then(Value::as_u64)
+        .map(|v| v.clamp(1, 216) as u32)
+        .unwrap_or(nd.columns);
     nd.gutter = f64_or(p, "gutter", nd.gutter);
-    nd.primary_text_frame = p.get("primaryTextFrame").and_then(Value::as_bool).unwrap_or(false);
+    nd.primary_text_frame = p
+        .get("primaryTextFrame")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     match p.get("margins") {
-        Some(Value::Number(n)) => nd.margins = designcraft_doc::Margins::uniform(n.as_f64().unwrap_or(36.0)),
+        Some(Value::Number(n)) => {
+            nd.margins = designcraft_doc::Margins::uniform(n.as_f64().unwrap_or(36.0))
+        }
         Some(v @ Value::Object(_)) => {
             if let Ok(m) = serde_json::from_value(v.clone()) {
                 nd.margins = m;
@@ -142,9 +168,14 @@ fn file_new(s: &mut Session, p: &Value) -> Result<Value> {
         nd.bleed = [b; 4];
     }
     s.untitled += 1;
-    nd.title = str_param(p, "title").map(str::to_string).unwrap_or_else(|| format!("Untitled-{}", s.untitled));
+    nd.title = str_param(p, "title")
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("Untitled-{}", s.untitled));
     if nd.width <= 0.0 || nd.height <= 0.0 || nd.width > 15552.0 || nd.height > 15552.0 {
-        return Err(bad("file.new", "page size out of range (0 < size ≤ 216 in)"));
+        return Err(bad(
+            "file.new",
+            "page size out of range (0 < size ≤ 216 in)",
+        ));
     }
     let d = Document::new(&nd);
     let i = s.add_document(DocState::new(d, None));
@@ -184,15 +215,30 @@ fn file_open(s: &mut Session, p: &Value) -> Result<Value> {
 /// Load the fonts in the `Document Fonts` folder beside the document file at `path` for `d` alone
 /// (`d.font_scope`) → (the scope, for the document's state to hold; faces; a warning for each
 /// font file skipped). Nothing on the web (no folders).
-pub(crate) fn load_document_fonts(d: &mut Document, path: &str) -> (Option<Arc<crate::FontScope>>, usize, Vec<String>) {
+pub(crate) fn load_document_fonts(
+    d: &mut Document,
+    path: &str,
+) -> (Option<Arc<crate::FontScope>>, usize, Vec<String>) {
     #[cfg(not(target_arch = "wasm32"))]
     {
         use designcraft_fonts::DOCUMENT_FONTS_FOLDER;
-        let Some(folder) = std::path::Path::new(path).parent().map(document_fonts_folder) else { return (None, 0, Vec::new()) };
+        let Some(folder) = std::path::Path::new(path)
+            .parent()
+            .map(document_fonts_folder)
+        else {
+            return (None, 0, Vec::new());
+        };
         let r = designcraft_fonts::FontDb::global().load_document_fonts(&folder);
         d.font_scope = r.scope;
         let scope = (r.scope != 0).then(|| Arc::new(crate::FontScope(r.scope)));
-        (scope, r.faces, r.skipped.into_iter().map(|s| format!("{DOCUMENT_FONTS_FOLDER}: {s}")).collect())
+        (
+            scope,
+            r.faces,
+            r.skipped
+                .into_iter()
+                .map(|s| format!("{DOCUMENT_FONTS_FOLDER}: {s}"))
+                .collect(),
+        )
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -214,7 +260,12 @@ fn document_fonts_folder(dir: &std::path::Path) -> std::path::PathBuf {
         .into_iter()
         .flatten()
         .flatten()
-        .find(|e| e.file_name().to_str().is_some_and(|n| n.eq_ignore_ascii_case(DOCUMENT_FONTS_FOLDER)) && e.path().is_dir())
+        .find(|e| {
+            e.file_name()
+                .to_str()
+                .is_some_and(|n| n.eq_ignore_ascii_case(DOCUMENT_FONTS_FOLDER))
+                && e.path().is_dir()
+        })
         .map_or(exact, |e| e.path())
 }
 
@@ -238,12 +289,21 @@ fn file_save(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_param(p, "path")
         .map(str::to_string)
         .or_else(|| st.path.clone())
-        .ok_or_else(|| bad("file.save", "missing `path` (document has never been saved)"))?;
+        .ok_or_else(|| {
+            bad(
+                "file.save",
+                "missing `path` (document has never been saved)",
+            )
+        })?;
     // Prepare paths for the destination without changing the live document until persistence succeeds.
     let mut saved = (*st.doc).clone();
     super::datamerge::refresh_relative_paths(&mut saved, std::path::Path::new(&path));
     let paths_changed = saved.data_merge != st.doc.data_merge;
-    let saved = if paths_changed { Arc::new(saved) } else { st.doc.clone() };
+    let saved = if paths_changed {
+        Arc::new(saved)
+    } else {
+        st.doc.clone()
+    };
     let bytes = to_bytes(&saved);
     #[cfg(not(target_arch = "wasm32"))]
     crate::atomic::write_file(&path, &bytes)?;
@@ -265,16 +325,26 @@ fn file_save(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn file_place(s: &mut Session, p: &Value) -> Result<Value> {
     let (bytes, name, link) = if let Some(b) = str_param(p, "base64") {
-        (base64_decode(b), str_param(p, "name").unwrap_or("image").to_string(), None)
+        (
+            base64_decode(b),
+            str_param(p, "name").unwrap_or("image").to_string(),
+            None,
+        )
     } else if let Some(path) = str_param(p, "path") {
         #[cfg(not(target_arch = "wasm32"))]
         let b = std::fs::read(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
         #[cfg(target_arch = "wasm32")]
         let b: Vec<u8> = vec![];
-        let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.into());
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.into());
         (b, name, Some(path.to_string()))
     } else {
-        s.ui_requests.push(crate::UiRequest::Pick { purpose: "place".into(), params: json!({}) });
+        s.ui_requests.push(crate::UiRequest::Pick {
+            purpose: "place".into(),
+            params: json!({}),
+        });
         return ok();
     };
     // A page of another layout (IDML or DesignCraft): its objects, as one group.
@@ -284,7 +354,8 @@ fn file_place(s: &mut Session, p: &Value) -> Result<Value> {
     }
     // EPS: shown and printed through its preview (or a placeholder) at its bounding box size.
     let (bytes, eps_size) = if designcraft_images::is_eps(&bytes) {
-        let (proxy, size) = designcraft_images::eps_proxy(&bytes).ok_or_else(|| bad("file.place", "the EPS has no bounding box"))?;
+        let (proxy, size) = designcraft_images::eps_proxy(&bytes)
+            .ok_or_else(|| bad("file.place", "the EPS has no bounding box"))?;
         (proxy, Some(size))
     } else {
         (bytes, None)
@@ -312,28 +383,39 @@ fn file_place(s: &mut Session, p: &Value) -> Result<Value> {
         _ => 0,
     };
     let (pw, ph) = match pdf_page {
-        0 => designcraft_render::image_size(&bytes).ok_or_else(|| bad("file.place", "unsupported or corrupt image"))?,
+        0 => designcraft_render::image_size(&bytes)
+            .ok_or_else(|| bad("file.place", "unsupported or corrupt image"))?,
         n => designcraft_render::pdf_page_size(&bytes, n as usize)
             .map(|(w, h)| (w.round().max(1.0) as u32, h.round().max(1.0) as u32))
             .ok_or_else(|| bad("file.place", "can't read that PDF page"))?,
     };
     // 72 ppi by default unless the file says otherwise; scale so it fits the page when huge. PDF pages
     // and SVGs keep their exact size: rounding it to whole points would stretch them unevenly.
-    let (nw, nh) = eps_size.or_else(|| designcraft_render::natural_size(&bytes, pdf_page as usize)).unwrap_or((pw as f64, ph as f64));
+    let (nw, nh) = eps_size
+        .or_else(|| designcraft_render::natural_size(&bytes, pdf_page as usize))
+        .unwrap_or((pw as f64, ph as f64));
     // Image Import Options › Crop to: the frame shows that box of the PDF page.
     let crop_box = match str_param(p, "pdfCrop") {
         Some(k) if designcraft_render::is_pdf(&bytes) => {
             if !["crop", "trim", "bleed", "art", "media"].contains(&k) {
-                return Err(bad("file.place", format!("unknown pdfCrop `{k}` (crop, trim, bleed, art, media)")));
+                return Err(bad(
+                    "file.place",
+                    format!("unknown pdfCrop `{k}` (crop, trim, bleed, art, media)"),
+                ));
             }
-            designcraft_render::pdf_page_box(&bytes, pdf_page as usize, k).filter(|b| b.2 > 0.0 && b.3 > 0.0)
+            designcraft_render::pdf_page_box(&bytes, pdf_page as usize, k)
+                .filter(|b| b.2 > 0.0 && b.3 > 0.0)
         }
         Some(_) => None,
         None => None,
     };
     let target_frame = super::id_param(p, "frame").or_else(|| {
         let st = s.active()?;
-        st.selection.items.iter().copied().find(|i| st.doc.item(*i).is_some_and(|it| matches!(it.content, Content::Unassigned | Content::Graphic(_))))
+        st.selection.items.iter().copied().find(|i| {
+            st.doc
+                .item(*i)
+                .is_some_and(|it| matches!(it.content, Content::Unassigned | Content::Graphic(_)))
+        })
     });
     let spread = super::spread_param(p, "file.place")?;
     let lid = s.doc()?.active_layer;
@@ -343,7 +425,15 @@ fn file_place(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit(|d, sel| {
         let fresh = AssetId(d.alloc());
         let mime = designcraft_render::image_mime(&bytes).to_string();
-        let aid = d.add_asset(Asset { page: pdf_page, id: fresh, name, mime, link, data: Arc::new(bytes), pixels: Some((pw, ph)) });
+        let aid = d.add_asset(Asset {
+            page: pdf_page,
+            id: fresh,
+            name,
+            mime,
+            link,
+            data: Arc::new(bytes),
+            pixels: Some((pw, ph)),
+        });
         // The width the whole page (or image) gets; the height follows the proportions.
         let w = match want_w {
             Some(w) => w,
@@ -353,7 +443,9 @@ fn file_place(s: &mut Session, p: &Value) -> Result<Value> {
             }
         };
         let id = if let Some(fid) = target_frame {
-            let it = d.item_mut(fid).ok_or(designcraft_doc::DocError::NoItem(fid))?;
+            let it = d
+                .item_mut(fid)
+                .ok_or(designcraft_doc::DocError::NoItem(fid))?;
             let r = it.inner_bounds();
             // Fill the frame proportionally once. Auto-Fit stays off, so resizing the frame crops.
             let k = (r.width() / nw).max(r.height() / nh);
@@ -361,20 +453,34 @@ fn file_place(s: &mut Session, p: &Value) -> Result<Value> {
             it.content = Content::Graphic(Graphic {
                 asset: aid,
                 size: (nw, nh),
-                xf: Affine::translate((r.x0 + (r.width() - gw) / 2.0, r.y0 + (r.height() - gh) / 2.0)) * Affine::scale(k),
+                xf: Affine::translate((
+                    r.x0 + (r.width() - gw) / 2.0,
+                    r.y0 + (r.height() - gh) / 2.0,
+                )) * Affine::scale(k),
                 auto_fit: Default::default(),
                 fit_align: 4,
                 crop: [0.0; 4],
             });
             fid
         } else {
-            let sp = d.spread(spread).ok_or_else(|| bad("file.place", "no such spread"))?;
-            let pr = sp.pages.first().map(|pg| pg.margin_rect()).unwrap_or(Rect::new(36.0, 36.0, 300.0, 300.0));
+            let sp = d
+                .spread(spread)
+                .ok_or_else(|| bad("file.place", "no such spread"))?;
+            let pr = sp
+                .pages
+                .first()
+                .map(|pg| pg.margin_rect())
+                .unwrap_or(Rect::new(36.0, 36.0, 300.0, 300.0));
             let (x, y) = (px.unwrap_or(pr.x0), py.unwrap_or(pr.y0));
             let id = ItemId(d.alloc());
             let k = w / nw;
             let (bx, by, bw, bh) = crop_box.unwrap_or((0.0, 0.0, nw, nh));
-            let mut it = Item::new(id, lid, Shape::Rectangle, shapes::rectangle(Rect::new(x, y, x + bw * k, y + bh * k)));
+            let mut it = Item::new(
+                id,
+                lid,
+                Shape::Rectangle,
+                shapes::rectangle(Rect::new(x, y, x + bw * k, y + bh * k)),
+            );
             it.object_style = d.styles.default_graphic_frame.clone();
             it.content = Content::Graphic(Graphic {
                 asset: aid,
@@ -397,11 +503,21 @@ const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 pub fn base64_encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for c in data.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         out.push(B64[(n >> 18) as usize & 63] as char);
         out.push(B64[(n >> 12) as usize & 63] as char);
-        out.push(if c.len() > 1 { B64[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if c.len() > 2 { B64[n as usize & 63] as char } else { '=' });
+        out.push(if c.len() > 1 {
+            B64[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if c.len() > 2 {
+            B64[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     out
 }
@@ -431,25 +547,41 @@ pub fn base64_decode(s: &str) -> Vec<u8> {
 
 pub(crate) fn read_source(p: &Value) -> Result<(Vec<u8>, String, Option<String>)> {
     if let Some(b) = str_param(p, "base64") {
-        return Ok((base64_decode(b), str_param(p, "name").unwrap_or("image").to_string(), None));
+        return Ok((
+            base64_decode(b),
+            str_param(p, "name").unwrap_or("image").to_string(),
+            None,
+        ));
     }
     let path = str_param(p, "path").ok_or_else(|| bad("place", "missing `path` or `base64`"))?;
     #[cfg(not(target_arch = "wasm32"))]
     let b = std::fs::read(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     #[cfg(target_arch = "wasm32")]
     let b: Vec<u8> = vec![];
-    let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.into());
+    let name = std::path::Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.into());
     Ok((b, name, Some(path.to_string())))
 }
 
 fn place_load(s: &mut Session, p: &Value) -> Result<Value> {
     let (bytes, name, link) = read_source(p)?;
-    let (pw, ph) = designcraft_render::image_size(&bytes).ok_or_else(|| bad("place.load", "unsupported or corrupt image"))?;
+    let (pw, ph) = designcraft_render::image_size(&bytes)
+        .ok_or_else(|| bad("place.load", "unsupported or corrupt image"))?;
     let natural = designcraft_render::natural_size(&bytes, 0).unwrap_or((pw as f64, ph as f64));
     let aid = s.edit(|d, _| {
         let fresh = AssetId(d.alloc());
         let mime = designcraft_render::image_mime(&bytes).to_string();
-        Ok(d.add_asset(Asset { page: 0, id: fresh, name: name.clone(), mime, link: link.clone(), data: Arc::new(bytes), pixels: Some((pw, ph)) }))
+        Ok(d.add_asset(Asset {
+            page: 0,
+            id: fresh,
+            name: name.clone(),
+            mime,
+            link: link.clone(),
+            data: Arc::new(bytes),
+            pixels: Some((pw, ph)),
+        }))
     })?;
     s.loaded = Some((aid, natural));
     s.set_tool("placeGun");
@@ -457,7 +589,9 @@ fn place_load(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn place_drop(s: &mut Session, p: &Value) -> Result<Value> {
-    let (aid, (nw, nh)) = s.loaded.ok_or_else(|| bad("place.drop", "nothing loaded in the place cursor"))?;
+    let (aid, (nw, nh)) = s
+        .loaded
+        .ok_or_else(|| bad("place.drop", "nothing loaded in the place cursor"))?;
     let sr = super::spread_param(p, "place.drop")?;
     let lid = s.doc()?.active_layer;
     let frame = super::id_param(p, "frame");
@@ -466,13 +600,18 @@ fn place_drop(s: &mut Session, p: &Value) -> Result<Value> {
     let r = s.edit(|d, sel| {
         let id = match frame {
             Some(fid) => {
-                let it = d.item_mut(fid).ok_or(designcraft_doc::DocError::NoItem(fid))?;
+                let it = d
+                    .item_mut(fid)
+                    .ok_or(designcraft_doc::DocError::NoItem(fid))?;
                 let r = it.inner_bounds();
                 let k = (r.width() / nw).max(r.height() / nh);
                 it.content = Content::Graphic(Graphic {
                     asset: aid,
                     size: (nw, nh),
-                    xf: Affine::translate((r.x0 + (r.width() - nw * k) / 2.0, r.y0 + (r.height() - nh * k) / 2.0)) * Affine::scale(k),
+                    xf: Affine::translate((
+                        r.x0 + (r.width() - nw * k) / 2.0,
+                        r.y0 + (r.height() - nh * k) / 2.0,
+                    )) * Affine::scale(k),
                     auto_fit: Default::default(),
                     fit_align: 4,
                     crop: [0.0; 4],
@@ -523,7 +662,9 @@ fn snippet_export(s: &mut Session, p: &Value) -> Result<Value> {
         Some(path) => {
             #[cfg(not(target_arch = "wasm32"))]
             crate::atomic::write_file(path, &bytes)?;
-            Ok(json!({"path": path, "bytes": bytes.len(), "items": d.spreads.first().map(|s| s.items.len()).unwrap_or(0)}))
+            Ok(
+                json!({"path": path, "bytes": bytes.len(), "items": d.spreads.first().map(|s| s.items.len()).unwrap_or(0)}),
+            )
         }
         None => Ok(json!({"base64": base64_encode(&bytes), "bytes": bytes.len()})),
     }
@@ -543,15 +684,25 @@ fn place_layout_page(s: &mut Session, p: &Value, name: &str, bytes: &[u8]) -> Re
     if page == 0 || page > n {
         return Err(bad(ID, format!("the document has {n} page(s)")));
     }
-    let (si, pi) = src.page_loc(page - 1).ok_or_else(|| bad(ID, "no such page"))?;
+    let (si, pi) = src
+        .page_loc(page - 1)
+        .ok_or_else(|| bad(ID, "no such page"))?;
     let sp = &src.spreads[si];
     let pr = sp.pages[pi].bounds();
-    let ids: Vec<ItemId> = sp.items.iter().filter(|it| !it.hidden && sp.page_at_x(it.bounds().center().x) == Some(pi)).map(|it| it.id).collect();
+    let ids: Vec<ItemId> = sp
+        .items
+        .iter()
+        .filter(|it| !it.hidden && sp.page_at_x(it.bounds().center().x) == Some(pi))
+        .map(|it| it.id)
+        .collect();
     if ids.is_empty() {
         return Err(bad(ID, format!("page {page} has no objects")));
     }
     let to = super::spread_param(p, ID)?;
-    let off = match (p.get("x").and_then(Value::as_f64), p.get("y").and_then(Value::as_f64)) {
+    let off = match (
+        p.get("x").and_then(Value::as_f64),
+        p.get("y").and_then(Value::as_f64),
+    ) {
         (Some(x), Some(y)) => designcraft_geom::Vec2::new(x - pr.x0, y - pr.y0),
         _ => designcraft_geom::Vec2::new(-pr.x0, -pr.y0),
     };
@@ -561,8 +712,20 @@ fn place_layout_page(s: &mut Session, p: &Value, name: &str, bytes: &[u8]) -> Re
                 d.swatches.push(sw.clone());
             }
         }
-        let missing_p: Vec<_> = src.styles.paragraph.iter().filter(|ps| d.styles.para(&ps.name).is_none()).cloned().collect();
-        let missing_c: Vec<_> = src.styles.character.iter().filter(|cs| d.styles.char_style(&cs.name).is_none()).cloned().collect();
+        let missing_p: Vec<_> = src
+            .styles
+            .paragraph
+            .iter()
+            .filter(|ps| d.styles.para(&ps.name).is_none())
+            .cloned()
+            .collect();
+        let missing_c: Vec<_> = src
+            .styles
+            .character
+            .iter()
+            .filter(|cs| d.styles.char_style(&cs.name).is_none())
+            .cloned()
+            .collect();
         if !missing_p.is_empty() || !missing_c.is_empty() {
             let st = d.styles_mut();
             st.paragraph.extend(missing_p);
@@ -573,7 +736,10 @@ fn place_layout_page(s: &mut Session, p: &Value, name: &str, bytes: &[u8]) -> Re
         Ok(new)
     })?;
     if placed.len() > 1 {
-        let g = s.execute("object.group", &json!({"ids": placed.iter().map(|i| i.0).collect::<Vec<_>>()}))?;
+        let g = s.execute(
+            "object.group",
+            &json!({"ids": placed.iter().map(|i| i.0).collect::<Vec<_>>()}),
+        )?;
         return Ok(json!({"id": g["id"], "items": placed.len()}));
     }
     Ok(json!({"id": placed[0].0, "items": 1}))
@@ -582,13 +748,24 @@ fn place_layout_page(s: &mut Session, p: &Value, name: &str, bytes: &[u8]) -> Re
 pub(crate) fn snippet_place(s: &mut Session, p: &Value) -> Result<Value> {
     let (bytes, _, _) = read_source(p)?;
     let src = from_bytes(&bytes)?;
-    let ids: Vec<ItemId> = src.spreads.first().map(|sp| sp.items.iter().map(|i| i.id).collect()).unwrap_or_default();
+    let ids: Vec<ItemId> = src
+        .spreads
+        .first()
+        .map(|sp| sp.items.iter().map(|i| i.id).collect())
+        .unwrap_or_default();
     if ids.is_empty() {
         return Err(bad("snippet.place", "the snippet is empty"));
     }
     let sr = super::spread_param(p, "snippet.place")?;
-    let bounds = ids.iter().filter_map(|i| src.item(*i).map(|it| it.bounds())).reduce(|a, b| a.union(b)).unwrap_or(Rect::ZERO);
-    let off = match (p.get("x").and_then(Value::as_f64), p.get("y").and_then(Value::as_f64)) {
+    let bounds = ids
+        .iter()
+        .filter_map(|i| src.item(*i).map(|it| it.bounds()))
+        .reduce(|a, b| a.union(b))
+        .unwrap_or(Rect::ZERO);
+    let off = match (
+        p.get("x").and_then(Value::as_f64),
+        p.get("y").and_then(Value::as_f64),
+    ) {
         (Some(x), Some(y)) => designcraft_geom::Vec2::new(x - bounds.x0, y - bounds.y0),
         _ => designcraft_geom::Vec2::ZERO,
     };
@@ -599,8 +776,20 @@ pub(crate) fn snippet_place(s: &mut Session, p: &Value) -> Result<Value> {
                 d.swatches.push(sw.clone());
             }
         }
-        let missing_p: Vec<_> = src.styles.paragraph.iter().filter(|ps| d.styles.para(&ps.name).is_none()).cloned().collect();
-        let missing_c: Vec<_> = src.styles.character.iter().filter(|cs| d.styles.char_style(&cs.name).is_none()).cloned().collect();
+        let missing_p: Vec<_> = src
+            .styles
+            .paragraph
+            .iter()
+            .filter(|ps| d.styles.para(&ps.name).is_none())
+            .cloned()
+            .collect();
+        let missing_c: Vec<_> = src
+            .styles
+            .character
+            .iter()
+            .filter(|cs| d.styles.char_style(&cs.name).is_none())
+            .cloned()
+            .collect();
         if !missing_p.is_empty() || !missing_c.is_empty() {
             let st = d.styles_mut();
             st.paragraph.extend(missing_p);
@@ -635,14 +824,21 @@ fn can_revert(s: &Session) -> std::result::Result<(), String> {
 }
 
 fn file_revert(s: &mut Session, _: &Value) -> Result<Value> {
-    let path = s.doc()?.path.clone().ok_or_else(|| bad("file.revert", "the document has never been saved"))?;
+    let path = s
+        .doc()?
+        .path
+        .clone()
+        .ok_or_else(|| bad("file.revert", "the document has never been saved"))?;
     #[cfg(not(target_arch = "wasm32"))]
     {
         let mut d = if path.to_ascii_lowercase().ends_with(".idml") {
-            let bytes = std::fs::read(&path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+            let bytes =
+                std::fs::read(&path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
             designcraft_idml::import_idml(&bytes).map_err(|e| EngineError::Other(e.to_string()))?
         } else {
-            from_bytes(&std::fs::read(&path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?)?
+            from_bytes(
+                &std::fs::read(&path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?,
+            )?
         };
         // As opened again: the fonts beside it now (unchanged files are shared, not read again).
         let (fonts, _, _) = load_document_fonts(&mut d, &path);
@@ -660,7 +856,9 @@ fn file_revert(s: &mut Session, _: &Value) -> Result<Value> {
     #[cfg(target_arch = "wasm32")]
     {
         let _ = (s, path);
-        Err(EngineError::Other("revert isn't available on the web".into()))
+        Err(EngineError::Other(
+            "revert isn't available on the web".into(),
+        ))
     }
 }
 
@@ -674,8 +872,14 @@ mod pdf_crop_tests {
     fn place_pdf_cropped_to_its_trim_box() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        s.execute("layout.documentSetup", &json!({"bleed": 9})).unwrap();
-        let b64 = s.execute("file.exportPdf", &json!({"bleed": true})).unwrap()["base64"].as_str().unwrap().to_string();
+        s.execute("layout.documentSetup", &json!({"bleed": 9}))
+            .unwrap();
+        let b64 = s
+            .execute("file.exportPdf", &json!({"bleed": true}))
+            .unwrap()["base64"]
+            .as_str()
+            .unwrap()
+            .to_string();
         let mut t = Session::new();
         t.execute("file.new", &json!({})).unwrap();
         let size = |t: &mut Session, crop: &str| {
@@ -687,26 +891,56 @@ mod pdf_crop_tests {
         let full = size(&mut t, "crop");
         let trim = size(&mut t, "trim");
         assert!((full.width() - 630.0).abs() < 1e-6, "{full:?}");
-        assert!((trim.width() - 612.0).abs() < 1e-3 && (trim.height() - 792.0).abs() < 1e-3, "{trim:?}");
-        assert!(t.execute("file.place", &json!({"base64": b64, "name": "a.pdf", "pdfCrop": "nope"})).is_err());
+        assert!(
+            (trim.width() - 612.0).abs() < 1e-3 && (trim.height() - 792.0).abs() < 1e-3,
+            "{trim:?}"
+        );
+        assert!(
+            t.execute(
+                "file.place",
+                &json!({"base64": b64, "name": "a.pdf", "pdfCrop": "nope"})
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn placed_pdf_keeps_its_exact_page_size() {
         // A 100.4 x 50.4 pt page placed 100.4 pt wide is 50.4 pt tall, not stretched to whole points.
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 100.4, "height": 50.4, "pages": 1})).unwrap();
-        let b64 = s.execute("file.exportPdf", &json!({})).unwrap()["base64"].as_str().unwrap().to_string();
+        s.execute(
+            "file.new",
+            &json!({"width": 100.4, "height": 50.4, "pages": 1}),
+        )
+        .unwrap();
+        let b64 = s.execute("file.exportPdf", &json!({})).unwrap()["base64"]
+            .as_str()
+            .unwrap()
+            .to_string();
         let mut t = Session::new();
         t.execute("file.new", &json!({})).unwrap();
-        let r = t.execute("file.place", &json!({"base64": b64, "name": "a.pdf", "width": 100.4, "x": 0, "y": 0})).unwrap();
+        let r = t
+            .execute(
+                "file.place",
+                &json!({"base64": b64, "name": "a.pdf", "width": 100.4, "x": 0, "y": 0}),
+            )
+            .unwrap();
         let id = designcraft_doc::ItemId(r["id"].as_u64().unwrap());
         let d = &t.doc().unwrap().doc;
         let it = d.item(id).unwrap();
         let b = it.bounds();
-        assert!((b.width() - 100.4).abs() < 1e-3 && (b.height() - 50.4).abs() < 1e-3, "{b:?}");
-        let designcraft_doc::Content::Graphic(g) = &it.content else { panic!("not a graphic") };
-        assert!((g.size.0 - 100.4).abs() < 1e-3 && (g.size.1 - 50.4).abs() < 1e-3, "{:?}", g.size);
+        assert!(
+            (b.width() - 100.4).abs() < 1e-3 && (b.height() - 50.4).abs() < 1e-3,
+            "{b:?}"
+        );
+        let designcraft_doc::Content::Graphic(g) = &it.content else {
+            panic!("not a graphic")
+        };
+        assert!(
+            (g.size.0 - 100.4).abs() < 1e-3 && (g.size.1 - 50.4).abs() < 1e-3,
+            "{:?}",
+            g.size
+        );
     }
 }
 
@@ -721,20 +955,41 @@ mod layout_place_tests {
         let mut a = Session::new();
         a.execute("file.new", &json!({"pages": 2})).unwrap();
         a.execute("frame.create", &json!({"rect": [100, 100, 200, 150], "content": "text", "text": "From page one", "caret": false})).unwrap();
-        a.execute("frame.create", &json!({"rect": [300, 400, 350, 450]})).unwrap();
+        a.execute("frame.create", &json!({"rect": [300, 400, 350, 450]}))
+            .unwrap();
         let idml = designcraft_idml::export_idml(&a.doc().unwrap().doc);
         let b64 = super::base64_encode(&idml);
         let mut b = Session::new();
         b.execute("file.new", &json!({})).unwrap();
-        let r = b.execute("file.place", &json!({"base64": b64, "name": "src.idml", "layoutPage": 1, "x": 0, "y": 0})).unwrap();
+        let r = b
+            .execute(
+                "file.place",
+                &json!({"base64": b64, "name": "src.idml", "layoutPage": 1, "x": 0, "y": 0}),
+            )
+            .unwrap();
         assert_eq!(r["items"], 2);
         let d = &b.doc().unwrap().doc;
-        let g = d.item(designcraft_doc::ItemId(r["id"].as_u64().unwrap())).unwrap();
+        let g = d
+            .item(designcraft_doc::ItemId(r["id"].as_u64().unwrap()))
+            .unwrap();
         assert_eq!(g.children().len(), 2, "one group");
         let bb = g.bounds();
-        assert!((bb.x0 - 100.0).abs() < 1e-6 && (bb.y0 - 100.0).abs() < 1e-6, "page top-left at 0,0: {bb:?}");
-        assert!(d.stories.values().any(|st| st.text == "From page one"), "stories come along");
-        assert!(b.execute("file.place", &json!({"base64": b64, "name": "src.idml", "layoutPage": 2})).is_err(), "page 2 is empty");
+        assert!(
+            (bb.x0 - 100.0).abs() < 1e-6 && (bb.y0 - 100.0).abs() < 1e-6,
+            "page top-left at 0,0: {bb:?}"
+        );
+        assert!(
+            d.stories.values().any(|st| st.text == "From page one"),
+            "stories come along"
+        );
+        assert!(
+            b.execute(
+                "file.place",
+                &json!({"base64": b64, "name": "src.idml", "layoutPage": 2})
+            )
+            .is_err(),
+            "page 2 is empty"
+        );
     }
 }
 
@@ -755,15 +1010,22 @@ mod save_tests {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
         s.execute("frame.create", &json!({"rect": [36, 36, 300, 200], "content": "text", "text": "Saved whole", "caret": false})).unwrap();
-        s.execute("file.save", &json!({"path": path.to_string_lossy()})).unwrap();
-        s.execute("file.saveACopy", &json!({"path": path.to_string_lossy()})).unwrap();
+        s.execute("file.save", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
+        s.execute("file.saveACopy", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         let saved = super::from_bytes(&std::fs::read(&path).unwrap()).unwrap();
         assert!(saved.stories.values().any(|st| st.text == "Saved whole"));
-        let names: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name()).collect();
+        let names: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
         assert_eq!(names, ["doc.designcraft"], "no temporary file is left");
         // A folder that doesn't exist: an error naming the path.
         let missing = dir.join("missing").join("doc.designcraft");
-        let e = s.execute("file.save", &json!({"path": missing.to_string_lossy()})).unwrap_err();
+        let e = s
+            .execute("file.save", &json!({"path": missing.to_string_lossy()}))
+            .unwrap_err();
         assert!(e.to_string().contains("missing"), "{e}");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -780,7 +1042,8 @@ mod document_fonts_tests {
     use crate::Session;
 
     fn temp_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("dc-open-docfonts-{name}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("dc-open-docfonts-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join(DOCUMENT_FONTS_FOLDER)).unwrap();
         dir
@@ -789,9 +1052,22 @@ mod document_fonts_tests {
     /// A new document in `s` with a text frame holding `text` set in `family`.
     fn new_document(s: &mut Session, family: &str, text: &str) {
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [72, 72, 400, 300], "content": "text", "text": text})).unwrap();
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": text.len()})).unwrap();
-        s.execute("type.char", &json!({"fontFamily": family, "fontStyle": "Regular"})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [72, 72, 400, 300], "content": "text", "text": text}),
+            )
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": text.len()}),
+        )
+        .unwrap();
+        s.execute(
+            "type.char",
+            &json!({"fontFamily": family, "fontStyle": "Regular"}),
+        )
+        .unwrap();
     }
 
     /// A document whose text ("Hello") is set in `family`, written to `path` (`.idml`: as IDML).
@@ -805,13 +1081,19 @@ mod document_fonts_tests {
         if path.extension().is_some_and(|e| e == "idml") {
             std::fs::write(path, designcraft_idml::export_idml(&s.doc().unwrap().doc)).unwrap();
         } else {
-            s.execute("file.save", &json!({"path": path.to_string_lossy()})).unwrap();
+            s.execute("file.save", &json!({"path": path.to_string_lossy()}))
+                .unwrap();
         }
     }
 
     fn font_entry(s: &mut Session, family: &str) -> Value {
         let l = s.execute("font.list", &json!({})).unwrap();
-        l.as_array().unwrap().iter().find(|f| f["family"] == family).cloned().unwrap_or_else(|| panic!("{family} in {l}"))
+        l.as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["family"] == family)
+            .cloned()
+            .unwrap_or_else(|| panic!("{family} in {l}"))
     }
 
     /// Each character of the active document's text with the face it is drawn in.
@@ -820,7 +1102,13 @@ mod document_fonts_tests {
         let mut out = Vec::new();
         for (sid, story) in &st.doc.stories {
             let cs = s.cache.get(&st.doc, *sid, None);
-            for g in cs.frames.iter().flat_map(|ft| &ft.lines).flat_map(|l| &l.glyphs).filter(|g| g.visible && g.len > 0) {
+            for g in cs
+                .frames
+                .iter()
+                .flat_map(|ft| &ft.lines)
+                .flat_map(|l| &l.glyphs)
+                .filter(|g| g.visible && g.len > 0)
+            {
                 out.push((story.text[g.byte..].chars().next().unwrap(), g.face));
             }
         }
@@ -828,7 +1116,8 @@ mod document_fonts_tests {
     }
 
     fn open(s: &mut Session, path: &Path) -> Value {
-        s.execute("file.open", &json!({"path": path.to_string_lossy()})).unwrap()
+        s.execute("file.open", &json!({"path": path.to_string_lossy()}))
+            .unwrap()
     }
 
     #[test]
@@ -836,18 +1125,31 @@ mod document_fonts_tests {
         const FAMILY: &str = "DocFont Open Test";
         let dir = temp_dir("designcraft");
         let fonts = dir.join(DOCUMENT_FONTS_FOLDER);
-        std::fs::write(fonts.join("open.ttf"), font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap()).unwrap();
+        std::fs::write(
+            fonts.join("open.ttf"),
+            font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap(),
+        )
+        .unwrap();
         std::fs::write(fonts.join("broken.otf"), b"not a font").unwrap();
         let path = dir.join("Brochure.designcraft");
         write_document(&path, FAMILY);
         assert!(!FontDb::global().has_family(FAMILY));
 
         let mut s = Session::new();
-        let r = s.execute("file.open", &json!({"path": path.to_string_lossy()})).unwrap();
+        let r = s
+            .execute("file.open", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert_eq!(r["documentFonts"], 1, "{r}");
-        assert!(r["warnings"].to_string().contains("broken.otf"), "a damaged font is reported, not fatal: {r}");
+        assert!(
+            r["warnings"].to_string().contains("broken.otf"),
+            "a damaged font is reported, not fatal: {r}"
+        );
         let f = font_entry(&mut s, FAMILY);
-        assert_eq!((f["missing"].clone(), f["source"].clone()), (json!(false), json!("document")), "{f}");
+        assert_eq!(
+            (f["missing"].clone(), f["source"].clone()),
+            (json!(false), json!("document")),
+            "{f}"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -855,12 +1157,18 @@ mod document_fonts_tests {
     fn opening_an_idml_file_loads_its_document_fonts() {
         const FAMILY: &str = "DocFont IDML Test";
         let dir = temp_dir("idml");
-        std::fs::write(dir.join(DOCUMENT_FONTS_FOLDER).join("idml.ttf"), font_with(FAMILY, &['H']).unwrap()).unwrap();
+        std::fs::write(
+            dir.join(DOCUMENT_FONTS_FOLDER).join("idml.ttf"),
+            font_with(FAMILY, &['H']).unwrap(),
+        )
+        .unwrap();
         let path = dir.join("Brochure.idml");
         write_document(&path, FAMILY);
 
         let mut s = Session::new();
-        let r = s.execute("file.open", &json!({"path": path.to_string_lossy()})).unwrap();
+        let r = s
+            .execute("file.open", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert_eq!(r["documentFonts"], 1, "{r}");
         assert_eq!(font_entry(&mut s, FAMILY)["missing"], false);
         let _ = std::fs::remove_dir_all(&dir);
@@ -869,7 +1177,8 @@ mod document_fonts_tests {
     #[test]
     fn the_document_fonts_folder_is_found_whatever_its_case() {
         const FAMILY: &str = "DocFont Case Test";
-        let dir = std::env::temp_dir().join(format!("dc-open-docfonts-case-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("dc-open-docfonts-case-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let fonts = dir.join("Document fonts");
         std::fs::create_dir_all(&fonts).unwrap();
@@ -886,20 +1195,31 @@ mod document_fonts_tests {
 
     #[test]
     fn a_document_without_the_folder_opens_as_before() {
-        let dir = std::env::temp_dir().join(format!("dc-open-docfonts-none-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("dc-open-docfonts-none-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("Plain.designcraft");
         write_document(&path, designcraft_fonts::DEFAULT_FAMILY);
-        let r = Session::new().execute("file.open", &json!({"path": path.to_string_lossy()})).unwrap();
-        assert_eq!((r["documentFonts"].clone(), r["warnings"].clone()), (json!(0), json!([])), "{r}");
+        let r = Session::new()
+            .execute("file.open", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
+        assert_eq!(
+            (r["documentFonts"].clone(), r["warnings"].clone()),
+            (json!(0), json!([])),
+            "{r}"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
     #[test]
     fn document_fonts_belong_to_their_document() {
         const FAMILY: &str = "DocFont Scoped";
         let (a, b) = (temp_dir("scoped-a"), temp_dir("scoped-b"));
-        std::fs::write(a.join(DOCUMENT_FONTS_FOLDER).join("scoped.ttf"), font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap()).unwrap();
+        std::fs::write(
+            a.join(DOCUMENT_FONTS_FOLDER).join("scoped.ttf"),
+            font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap(),
+        )
+        .unwrap();
         write_document(&a.join("A.designcraft"), FAMILY);
         write_document(&b.join("B.designcraft"), FAMILY);
 
@@ -908,10 +1228,18 @@ mod document_fonts_tests {
         assert_eq!(open(&mut s, &b.join("B.designcraft"))["documentFonts"], 0);
         // B, open at the same time, doesn't have A's font.
         assert_eq!(font_entry(&mut s, FAMILY)["missing"], true);
-        assert!(glyph_faces(&s).iter().all(|(_, f)| f.family != FAMILY), "{:?}", glyph_faces(&s));
+        assert!(
+            glyph_faces(&s).iter().all(|(_, f)| f.family != FAMILY),
+            "{:?}",
+            glyph_faces(&s)
+        );
         s.execute("file.activate", &json!({"index": 0})).unwrap();
         assert_eq!(font_entry(&mut s, FAMILY)["source"], "document");
-        assert!(glyph_faces(&s).iter().all(|(_, f)| f.family == FAMILY), "{:?}", glyph_faces(&s));
+        assert!(
+            glyph_faces(&s).iter().all(|(_, f)| f.family == FAMILY),
+            "{:?}",
+            glyph_faces(&s)
+        );
         let _ = std::fs::remove_dir_all(&a);
         let _ = std::fs::remove_dir_all(&b);
     }
@@ -920,7 +1248,10 @@ mod document_fonts_tests {
     fn each_document_sets_its_own_font_of_a_name() {
         const FAMILY: &str = "DocFont Same";
         let (a, b) = (temp_dir("same-a"), temp_dir("same-b"));
-        let (a_font, b_font) = (a.join(DOCUMENT_FONTS_FOLDER).join("same.ttf"), b.join(DOCUMENT_FONTS_FOLDER).join("same.ttf"));
+        let (a_font, b_font) = (
+            a.join(DOCUMENT_FONTS_FOLDER).join("same.ttf"),
+            b.join(DOCUMENT_FONTS_FOLDER).join("same.ttf"),
+        );
         // A's font has both letters, B's only `b`.
         std::fs::write(&a_font, font_with(FAMILY, &['a', 'b']).unwrap()).unwrap();
         std::fs::write(&b_font, font_with(FAMILY, &['b']).unwrap()).unwrap();
@@ -932,7 +1263,8 @@ mod document_fonts_tests {
         open(&mut s, &a.join("A.designcraft"));
         open(&mut s, &b.join("B.designcraft"));
         // Fallback fonts for the `a` B's font lacks: never A's font.
-        s.execute("document.preferences", &json!({"glyphFallback": true})).unwrap();
+        s.execute("document.preferences", &json!({"glyphFallback": true}))
+            .unwrap();
         let in_b = glyph_faces(&s);
         s.execute("file.activate", &json!({"index": 0})).unwrap();
         let in_a = glyph_faces(&s);
@@ -942,7 +1274,10 @@ mod document_fonts_tests {
         }
         for (c, f) in &in_b {
             match c {
-                'a' => assert!(f.family != FAMILY, "B's font lacks `a`, and A's isn't B's: {f:?}"),
+                'a' => assert!(
+                    f.family != FAMILY,
+                    "B's font lacks `a`, and A's isn't B's: {f:?}"
+                ),
                 _ => assert_eq!(f.source, FontSource::Document(b_font.clone()), "`{c}` in B"),
             }
         }
@@ -954,7 +1289,11 @@ mod document_fonts_tests {
     fn closing_a_document_forgets_its_fonts_and_reopening_reuses_them() {
         const FAMILY: &str = "DocFont Closed";
         let dir = temp_dir("closed");
-        std::fs::write(dir.join(DOCUMENT_FONTS_FOLDER).join("closed.ttf"), font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap()).unwrap();
+        std::fs::write(
+            dir.join(DOCUMENT_FONTS_FOLDER).join("closed.ttf"),
+            font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap(),
+        )
+        .unwrap();
         let path = dir.join("Closed.designcraft");
         write_document(&path, FAMILY);
 
@@ -969,7 +1308,11 @@ mod document_fonts_tests {
         assert!(glyph_faces(&s).iter().all(|(_, f)| f.family != FAMILY));
         // Reopened, the document has its font again: the face loaded the first time.
         assert_eq!(open(&mut s, &path)["documentFonts"], 1);
-        assert!(glyph_faces(&s).iter().all(|(_, f)| *f == first), "{:?}", glyph_faces(&s));
+        assert!(
+            glyph_faces(&s).iter().all(|(_, f)| *f == first),
+            "{:?}",
+            glyph_faces(&s)
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -977,13 +1320,21 @@ mod document_fonts_tests {
     fn a_reverted_document_keeps_its_fonts() {
         const FAMILY: &str = "DocFont Reverted";
         let dir = temp_dir("revert");
-        std::fs::write(dir.join(DOCUMENT_FONTS_FOLDER).join("revert.ttf"), font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap()).unwrap();
+        std::fs::write(
+            dir.join(DOCUMENT_FONTS_FOLDER).join("revert.ttf"),
+            font_with(FAMILY, &['H', 'e', 'l', 'o']).unwrap(),
+        )
+        .unwrap();
         let path = dir.join("Revert.designcraft");
         write_document(&path, FAMILY);
 
         let mut s = Session::new();
         open(&mut s, &path);
-        s.execute("frame.create", &json!({"rect": [72, 400, 200, 500], "content": "text", "text": "x"})).unwrap();
+        s.execute(
+            "frame.create",
+            &json!({"rect": [72, 400, 200, 500], "content": "text", "text": "x"}),
+        )
+        .unwrap();
         s.execute("file.revert", &json!({})).unwrap();
         assert_eq!(font_entry(&mut s, FAMILY)["source"], "document");
         assert!(glyph_faces(&s).iter().all(|(_, f)| f.family == FAMILY));

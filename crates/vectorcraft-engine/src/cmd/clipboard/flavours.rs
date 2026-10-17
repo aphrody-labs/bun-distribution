@@ -39,7 +39,10 @@ pub const PASTE_ORDER: [&str; 6] = [SVG, PDF, EPS, EMF, TEXT, BITMAP];
 pub fn is_address(text: &str) -> bool {
     const SCHEMES: [&str; 6] = ["http://", "https://", "file://", "ftp://", "data:", "blob:"];
     let t = text.trim();
-    !t.chars().any(char::is_whitespace) && SCHEMES.iter().any(|s| t.get(..s.len()).is_some_and(|h| h.eq_ignore_ascii_case(s)) && t.len() > s.len())
+    !t.chars().any(char::is_whitespace)
+        && SCHEMES.iter().any(|s| {
+            t.get(..s.len()).is_some_and(|h| h.eq_ignore_ascii_case(s)) && t.len() > s.len()
+        })
 }
 
 /// Is `text` only a reference to a picture: an address ([`is_address`]), or markup that shows
@@ -55,9 +58,18 @@ fn only_images(html: &str) -> bool {
     let mut images = 0;
     let mut rest = html.trim();
     while !rest.is_empty() {
-        let Some(tag) = rest.strip_prefix('<') else { return false };
-        let Some(end) = tag.find('>') else { return false };
-        let name = tag.get(..end).unwrap_or_default().split(|c: char| c.is_whitespace() || c == '/').next().unwrap_or_default();
+        let Some(tag) = rest.strip_prefix('<') else {
+            return false;
+        };
+        let Some(end) = tag.find('>') else {
+            return false;
+        };
+        let name = tag
+            .get(..end)
+            .unwrap_or_default()
+            .split(|c: char| c.is_whitespace() || c == '/')
+            .next()
+            .unwrap_or_default();
         if name.eq_ignore_ascii_case("img") {
             images += 1;
         }
@@ -187,7 +199,9 @@ pub fn specs() -> Vec<CommandSpec> {
 fn type_only(n: &Node) -> bool {
     match &n.kind {
         NodeKind::Text(_) => true,
-        NodeKind::Group { children, .. } => !children.is_empty() && children.iter().all(|c| type_only(c)),
+        NodeKind::Group { children, .. } => {
+            !children.is_empty() && children.iter().all(|c| type_only(c))
+        }
         _ => false,
     }
 }
@@ -214,24 +228,38 @@ impl Session {
     /// The clipboard as a document whose one artboard is the objects' visual bounds (`None` when
     /// it is empty or has no extent).
     fn clipboard_cropped(&self) -> Option<(Document, vectorcraft_geom::Rect)> {
-        let b = self.clipboard.bounds().filter(|b| b.width() > 0.0 && b.height() > 0.0)?;
-        Some((fileio::with_single_artboard(self.clipboard.to_document(), b, "Clipboard"), b))
+        let b = self
+            .clipboard
+            .bounds()
+            .filter(|b| b.width() > 0.0 && b.height() > 0.0)?;
+        Some((
+            fileio::with_single_artboard(self.clipboard.to_document(), b, "Clipboard"),
+            b,
+        ))
     }
 
     /// A PNG of the copied objects at `scale` pixels per point → (bytes, width, height); `None`
     /// when the clipboard is empty.
     pub fn clipboard_png(&self, scale: f64) -> Result<Option<(Vec<u8>, u32, u32)>> {
         const C: &str = "clipboard.exportPng";
-        let Some((doc, b)) = self.clipboard_cropped() else { return Ok(None) };
+        let Some((doc, b)) = self.clipboard_cropped() else {
+            return Ok(None);
+        };
         let (w, h) = vectorcraft_render::raster_size(b, scale).map_err(|e| bad(C, e))?;
-        let png = fileio::encode(&doc, "png", &json!({ "scale": scale, "background": "transparent" }))?;
+        let png = fileio::encode(
+            &doc,
+            "png",
+            &json!({ "scale": scale, "background": "transparent" }),
+        )?;
         Ok(Some((png, w, h)))
     }
 
     /// A one-page PDF of the copied objects (without the native document inside); `None` when the
     /// clipboard is empty.
     pub fn clipboard_pdf(&self) -> Result<Option<Vec<u8>>> {
-        let Some((doc, _)) = self.clipboard_cropped() else { return Ok(None) };
+        let Some((doc, _)) = self.clipboard_cropped() else {
+            return Ok(None);
+        };
         fileio::encode(&doc, "pdf", &json!({ "preserveEditing": false })).map(Some)
     }
 
@@ -243,8 +271,14 @@ impl Session {
         let (svg, pdf) = (self.prefs.copy_as_svg, self.prefs.copy_as_pdf);
         let text = svg || self.clipboard.nodes.iter().all(type_only);
         // Art without an area (a lone guide-like line) has no page or picture.
-        let area = self.clipboard.bounds().is_some_and(|b| b.width() > 0.0 && b.height() > 0.0);
-        [(TEXT, text), (SVG, svg), (PDF, pdf && area), (PNG, area)].into_iter().filter_map(|(m, on)| on.then_some(m)).collect()
+        let area = self
+            .clipboard
+            .bounds()
+            .is_some_and(|b| b.width() > 0.0 && b.height() > 0.0);
+        [(TEXT, text), (SVG, svg), (PDF, pdf && area), (PNG, area)]
+            .into_iter()
+            .filter_map(|(m, on)| on.then_some(m))
+            .collect()
     }
 
     /// What Copy offers other apps, best first (see `clipboard.flavours`). A flavour that can't be
@@ -256,13 +290,27 @@ impl Session {
         let mut out = vec![];
         for mime in types {
             let data = match mime {
-                TEXT => self.clipboard_text().or_else(|| svg.clone()).map(String::into_bytes),
+                TEXT => self
+                    .clipboard_text()
+                    .or_else(|| svg.clone())
+                    .map(String::into_bytes),
                 SVG => svg.clone().map(String::into_bytes),
-                PDF => self.clipboard_pdf().inspect_err(|e| log::warn!("clipboard PDF: {e}")).ok().flatten(),
+                PDF => self
+                    .clipboard_pdf()
+                    .inspect_err(|e| log::warn!("clipboard PDF: {e}"))
+                    .ok()
+                    .flatten(),
                 _ => {
-                    let side = self.clipboard.bounds().map_or(1.0, |b| b.width().max(b.height()));
+                    let side = self
+                        .clipboard
+                        .bounds()
+                        .map_or(1.0, |b| b.width().max(b.height()));
                     let scale = (COPY_PNG_SIDE / side).clamp(0.01, 1.0);
-                    self.clipboard_png(scale).inspect_err(|e| log::warn!("clipboard PNG: {e}")).ok().flatten().map(|(png, ..)| png)
+                    self.clipboard_png(scale)
+                        .inspect_err(|e| log::warn!("clipboard PNG: {e}"))
+                        .ok()
+                        .flatten()
+                        .map(|(png, ..)| png)
                 }
             };
             out.extend(data.map(|data| Flavour { mime, data }));
@@ -275,7 +323,13 @@ impl Session {
     pub(super) fn load_clipboard(&mut self, mut clip: Clipboard, p: &Value) -> Result<usize> {
         let center = match point_param(p, "center") {
             Some(c) => c,
-            None => self.doc()?.doc.artboards.first().map(|a| a.rect.center()).unwrap_or_default(),
+            None => self
+                .doc()?
+                .doc
+                .artboards
+                .first()
+                .map(|a| a.rect.center())
+                .unwrap_or_default(),
         };
         if let Some(b) = clip.bounds() {
             let xf = Affine::translate(center - b.center());
@@ -298,10 +352,15 @@ fn data_param(p: &Value, cmd: &str) -> Result<Vec<u8>> {
 fn export_png(s: &mut Session, p: &Value) -> Result<Value> {
     let scale = f64_or(p, "scale", 1.0);
     if !(scale > 0.0 && scale <= 64.0) {
-        return Err(bad("clipboard.exportPng", "scale must be a number above 0, at most 64"));
+        return Err(bad(
+            "clipboard.exportPng",
+            "scale must be a number above 0, at most 64",
+        ));
     }
     Ok(match s.clipboard_png(scale)? {
-        Some((png, w, h)) => json!({ "dataBase64": vectorcraft_format::base64_encode(&png), "width": w, "height": h }),
+        Some((png, w, h)) => {
+            json!({ "dataBase64": vectorcraft_format::base64_encode(&png), "width": w, "height": h })
+        }
         None => json!({ "dataBase64": null }),
     })
 }
@@ -321,17 +380,31 @@ fn flavours(s: &mut Session, _: &Value) -> Result<Value> {
 fn import_image(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "clipboard.importImage";
     if let Some(m) = str_param(p, "mime").filter(|m| !m.starts_with("image/") || *m == SVG) {
-        return Err(bad(C, format!("`{m}` isn't a bitmap: use clipboard.importSvg, importPdf or importText")));
+        return Err(bad(
+            C,
+            format!("`{m}` isn't a bitmap: use clipboard.importSvg, importPdf or importText"),
+        ));
     }
     let img = fileio::raster_image(&data_param(p, C)?).map_err(|e| bad(C, e.to_string()))?;
     let (sx, sy) = pt_per_px(img.ppi);
     let (w, h) = (img.width, img.height);
-    let image =
-        ImageObject { key: img.key.clone(), width: w, height: h, xf: Affine::scale_non_uniform(sx, sy), link: None, placement: Default::default() };
-    let mut clip = Clipboard { nodes: vec![Node::new(NodeId(1), NodeKind::Image(Box::new(image)))], ..Default::default() };
+    let image = ImageObject {
+        key: img.key.clone(),
+        width: w,
+        height: h,
+        xf: Affine::scale_non_uniform(sx, sy),
+        link: None,
+        placement: Default::default(),
+    };
+    let mut clip = Clipboard {
+        nodes: vec![Node::new(NodeId(1), NodeKind::Image(Box::new(image)))],
+        ..Default::default()
+    };
     clip.images.insert(img.key, img.blob);
     let count = s.load_clipboard(clip, p)?;
-    Ok(json!({ "count": count, "width": w as f64 * sx, "height": h as f64 * sy, "pixelWidth": w, "pixelHeight": h }))
+    Ok(
+        json!({ "count": count, "width": w as f64 * sx, "height": h as f64 * sy, "pixelWidth": w, "pixelHeight": h }),
+    )
 }
 
 fn import_text(s: &mut Session, p: &Value) -> Result<Value> {
@@ -345,10 +418,20 @@ fn import_text(s: &mut Session, p: &Value) -> Result<Value> {
     if text.trim().is_empty() {
         return Err(bad(C, "the text is empty"));
     }
-    let mut t = TextObject::point(Point::ZERO, text, super::super::create::new_type_style(s, &Value::Null));
+    let mut t = TextObject::point(
+        Point::ZERO,
+        text,
+        super::super::create::new_type_style(s, &Value::Null),
+    );
     crate::cmd::typecmd::refresh_bounds(&mut t);
     let n = Node::new(NodeId(1), NodeKind::Text(Box::new(t)));
-    let count = s.load_clipboard(Clipboard { nodes: vec![n], ..Default::default() }, p)?;
+    let count = s.load_clipboard(
+        Clipboard {
+            nodes: vec![n],
+            ..Default::default()
+        },
+        p,
+    )?;
     Ok(json!({ "count": count }))
 }
 
@@ -372,7 +455,13 @@ fn import_eps(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Replace the clipboard with the objects of the picture `bytes`, read as the file `name` is
 /// opened (command `cmd`).
-fn import_picture(s: &mut Session, p: &Value, cmd: &str, name: &str, bytes: &[u8]) -> Result<Value> {
+fn import_picture(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    name: &str,
+    bytes: &[u8],
+) -> Result<Value> {
     let mut loaded = fileio::load(name, bytes).map_err(|e| bad(cmd, e.to_string()))?;
     loaded.doc.drop_edit_modes();
     let clip = Clipboard::from_document(&loaded.doc);
@@ -388,10 +477,18 @@ fn import_pdf(s: &mut Session, p: &Value) -> Result<Value> {
     let bytes = data_param(p, C)?;
     let page = match p.get("page") {
         None | Some(Value::Null) => 1,
-        Some(v) => v.as_u64().filter(|n| (1..=100_000).contains(n)).ok_or_else(|| bad(C, "page must be a whole number from 1"))? as usize,
+        Some(v) => {
+            v.as_u64()
+                .filter(|n| (1..=100_000).contains(n))
+                .ok_or_else(|| bad(C, "page must be a whole number from 1"))? as usize
+        }
     };
-    let opts = fileio::LoadOptions { password: str_param(p, "password").map(str::to_string), ..Default::default() };
-    let (mut doc, warnings) = fileio::page_document(&bytes, page - 1, &opts).map_err(|e| bad(C, e.to_string()))?;
+    let opts = fileio::LoadOptions {
+        password: str_param(p, "password").map(str::to_string),
+        ..Default::default()
+    };
+    let (mut doc, warnings) =
+        fileio::page_document(&bytes, page - 1, &opts).map_err(|e| bad(C, e.to_string()))?;
     doc.drop_edit_modes();
     let clip = Clipboard::from_document(&doc);
     if clip.is_empty() {

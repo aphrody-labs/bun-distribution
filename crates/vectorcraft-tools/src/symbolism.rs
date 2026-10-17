@@ -17,8 +17,8 @@ use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, Tool
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
     Some(match id {
         "paintbrush" => Box::new(BrushPaintTool::default()),
-        "symbolSprayer" | "symbolShifter" | "symbolScruncher" | "symbolSizer" | "symbolSpinner" | "symbolStainer" | "symbolScreener"
-        | "symbolStyler" => Box::new(SymbolismTool::new(id)),
+        "symbolSprayer" | "symbolShifter" | "symbolScruncher" | "symbolSizer" | "symbolSpinner"
+        | "symbolStainer" | "symbolScreener" | "symbolStyler" => Box::new(SymbolismTool::new(id)),
         _ => return None,
     })
 }
@@ -53,7 +53,18 @@ impl SymbolismTool {
             "symbolStyler" => "symbolStyler",
             _ => "symbolSprayer",
         };
-        Self { id, points: vec![], active: false, hover: None, alt: false, diameter: 80.0, intensity: 5.0, density: 5.0, symbol: None, style: None }
+        Self {
+            id,
+            points: vec![],
+            active: false,
+            hover: None,
+            alt: false,
+            diameter: 80.0,
+            intensity: 5.0,
+            density: 5.0,
+            symbol: None,
+            style: None,
+        }
     }
 
     fn label(&self) -> &'static str {
@@ -74,7 +85,8 @@ impl SymbolismTool {
         let radius = self.diameter / 2.0;
         let pts = points_json(&self.points);
         if self.id == "symbolSprayer" {
-            let mut v = json!({"points": pts, "radius": radius, "density": self.density, "alt": self.alt});
+            let mut v =
+                json!({"points": pts, "radius": radius, "density": self.density, "alt": self.alt});
             if let Some(s) = &self.symbol {
                 v["name"] = json!(s);
             }
@@ -122,7 +134,11 @@ impl Tool for SymbolismTool {
             }
             PointerKind::Drag if self.active => {
                 // Sprayer: thin the samples to a fraction of the brush; others: every few pixels.
-                let step = if self.id == "symbolSprayer" { (self.diameter * 0.15).max(cx.tol(3.0)) } else { cx.tol(3.0) };
+                let step = if self.id == "symbolSprayer" {
+                    (self.diameter * 0.15).max(cx.tol(3.0))
+                } else {
+                    cx.tol(3.0)
+                };
                 if self.points.last().is_some_and(|l| l.distance(p) < step) {
                     return vec![];
                 }
@@ -164,7 +180,12 @@ impl Tool for SymbolismTool {
     fn overlays(&self, _cx: &ToolContext) -> Vec<Overlay> {
         let Some(p) = self.hover else { return vec![] };
         let circle = kurbo::Circle::new(p, self.diameter / 2.0).to_path(0.1);
-        vec![Overlay::Path { path: circle, color: FEEDBACK, width: 1.0, dashed: false }]
+        vec![Overlay::Path {
+            path: circle,
+            color: FEEDBACK,
+            width: 1.0,
+            dashed: false,
+        }]
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
         Cursor::Crosshair
@@ -193,16 +214,27 @@ pub struct BrushPaintTool {
 
 impl Default for BrushPaintTool {
     fn default() -> Self {
-        Self { inner: GestureTool::new("paintbrush"), brush: None }
+        Self {
+            inner: GestureTool::new("paintbrush"),
+            brush: None,
+        }
     }
 }
 
 impl BrushPaintTool {
     fn brush_name(&self, cx: &ToolContext) -> Option<String> {
-        self.brush.clone().or_else(|| cx.doc.unknown.get("currentBrush").and_then(Value::as_str).map(str::to_string))
+        self.brush.clone().or_else(|| {
+            cx.doc
+                .unknown
+                .get("currentBrush")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        })
     }
     fn map(&self, cx: &ToolContext, acts: Vec<Action>) -> Vec<Action> {
-        let Some(b) = self.brush_name(cx) else { return acts };
+        let Some(b) = self.brush_name(cx) else {
+            return acts;
+        };
         acts.into_iter()
             .map(|a| match a {
                 Action::Preview(c, mut v) if c == "path.freehand" => {
@@ -269,9 +301,18 @@ mod tests {
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0));
         assert_eq!(a[0], Action::Begin("Symbol Sprayer".into()));
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 50.0, 0.0));
-        assert!(matches!(&a[0], Action::Preview(c, v) if c == "symbol.spray" && v["points"].as_array().unwrap().len() == 2));
-        assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 51.0, 0.0)).is_empty(), "thinned");
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 51.0, 0.0)), vec![Action::Commit]);
+        assert!(
+            matches!(&a[0], Action::Preview(c, v) if c == "symbol.spray" && v["points"].as_array().unwrap().len() == 2)
+        );
+        assert!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 51.0, 0.0))
+                .is_empty(),
+            "thinned"
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 51.0, 0.0)),
+            vec![Action::Commit]
+        );
         assert!(!t.busy());
     }
 
@@ -280,11 +321,25 @@ mod tests {
         let (d, _) = doc_with_rect();
         let (s, p) = (Selection::default(), paint());
         let cx = cx(&d, &s, &p);
-        for (id, tool) in [("symbolShifter", "shift"), ("symbolSizer", "size"), ("symbolStainer", "stain"), ("symbolStyler", "style")] {
+        for (id, tool) in [
+            ("symbolShifter", "shift"),
+            ("symbolSizer", "size"),
+            ("symbolStainer", "stain"),
+            ("symbolStyler", "style"),
+        ] {
             let mut t = create(id).unwrap();
             assert_eq!(t.id(), id);
-            let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 5.0, 5.0).with_mods(Mods { alt: true, ..Default::default() }));
-            assert!(matches!(&a[1], Action::Preview(c, v) if c == "symbol.adjust" && v["tool"] == tool && v["alt"] == true), "{a:?}");
+            let a = t.pointer(
+                &cx,
+                &PointerEvent::new(PointerKind::Down, 5.0, 5.0).with_mods(Mods {
+                    alt: true,
+                    ..Default::default()
+                }),
+            );
+            assert!(
+                matches!(&a[1], Action::Preview(c, v) if c == "symbol.adjust" && v["tool"] == tool && v["alt"] == true),
+                "{a:?}"
+            );
         }
     }
 
@@ -295,7 +350,14 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = SymbolismTool::new("symbolSizer");
         t.key(&cx, ToolKey::BracketRight, Mods::default());
-        t.key(&cx, ToolKey::BracketLeft, Mods { shift: true, ..Default::default() });
+        t.key(
+            &cx,
+            ToolKey::BracketLeft,
+            Mods {
+                shift: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(t.options()["diameter"], json!(90.0));
         assert_eq!(t.options()["intensity"], json!(4.0));
     }
@@ -309,14 +371,19 @@ mod tests {
             let mut t = BrushPaintTool::default();
             t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0));
             let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 30.0, 0.0));
-            assert!(matches!(&a[1], Action::Preview(c, _) if c == "path.freehand"), "no brush: plain freehand");
+            assert!(
+                matches!(&a[1], Action::Preview(c, _) if c == "path.freehand"),
+                "no brush: plain freehand"
+            );
         }
         d.unknown.insert("currentBrush".into(), json!("Charcoal"));
         let cx = cx(&d, &s, &p);
         let mut t = BrushPaintTool::default();
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0));
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 30.0, 0.0));
-        assert!(matches!(&a[1], Action::Preview(c, v) if c == "brush.freehand" && v["brush"] == "Charcoal"));
+        assert!(
+            matches!(&a[1], Action::Preview(c, v) if c == "brush.freehand" && v["brush"] == "Charcoal")
+        );
         t.set_option("brush", &json!("Dots"));
         assert_eq!(t.options()["brush"], "Dots");
     }

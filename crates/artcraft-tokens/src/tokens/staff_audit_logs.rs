@@ -14,4 +14,9 @@ pub struct StaffAuditLogToken(pub String);
 
 impl_string_token!(StaffAuditLogToken);
 impl_mysql_token_from_row!(StaffAuditLogToken);
-impl_crockford_generator!(StaffAuditLogToken, 32usize, TokenPrefix::StaffAuditLog, CrockfordLower);
+impl_crockford_generator!(
+    StaffAuditLogToken,
+    32usize,
+    TokenPrefix::StaffAuditLog,
+    CrockfordLower
+);

@@ -21,19 +21,30 @@ use crate::commands::CommandSpec;
 use crate::{EngineError, Result, Session};
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 fn has_selection(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| d.doc.selection.is_some()).map(|_| ()).ok_or_else(|| "no selection".into())
+    s.active()
+        .filter(|d| d.doc.selection.is_some())
+        .map(|_| ())
+        .ok_or_else(|| "no selection".into())
 }
 fn has_layer(s: &Session) -> std::result::Result<(), String> {
-    s.active().and_then(|d| d.active_layer).map(|_| ()).ok_or_else(|| "no active layer".into())
+    s.active()
+        .and_then(|d| d.active_layer)
+        .map(|_| ())
+        .ok_or_else(|| "no active layer".into())
 }
 fn f(p: &Value, k: &str, d: f64) -> f64 {
     p.get(k).and_then(Value::as_f64).unwrap_or(d)
 }
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 struct CompositeSampler<'a>(&'a Document);
@@ -50,9 +61,18 @@ fn select_sky(s: &mut Session, p: &Value) -> Result<Value> {
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let doc = d.doc.clone();
     let canvas = doc.bounds();
-    let params = SkyParams { threshold: f(p, "threshold", 50.0) as f32, softness: f(p, "softness", 50.0) as f32 };
-    let all = p.get("sampleAllLayers").and_then(Value::as_bool).unwrap_or(true);
-    let layer = d.active_layer.and_then(|id| doc.layer(id)).and_then(|l| l.surface());
+    let params = SkyParams {
+        threshold: f(p, "threshold", 50.0) as f32,
+        softness: f(p, "softness", 50.0) as f32,
+    };
+    let all = p
+        .get("sampleAllLayers")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    let layer = d
+        .active_layer
+        .and_then(|id| doc.layer(id))
+        .and_then(|l| l.surface());
     let region = match (all, layer) {
         (false, Some(surf)) => sky::select_sky(&SurfaceSampler(surf), canvas, params),
         _ => sky::select_sky(&CompositeSampler(&doc), canvas, params),
@@ -61,7 +81,9 @@ fn select_sky(s: &mut Session, p: &Value) -> Result<Value> {
     let m = SelectionMode::parse(if m == "new" { "replace" } else { m });
     let Some(region) = region else {
         // Photoshop reports "No sky was detected" and leaves the selection alone.
-        return Ok(json!({ "selected": doc.selection.is_some(), "changed": false, "coverage": 0.0, "message": "No sky was detected" }));
+        return Ok(
+            json!({ "selected": doc.selection.is_some(), "changed": false, "coverage": 0.0, "message": "No sky was detected" }),
+        );
     };
     let total: f64 = region.mask.iter().map(|v| f64::from(*v) / 255.0).sum();
     let coverage = total / (canvas.width() as f64 * canvas.height() as f64).max(1.0);
@@ -70,17 +92,24 @@ fn select_sky(s: &mut Session, p: &Value) -> Result<Value> {
         doc.selection = combine_region(doc.selection.as_ref(), Some(&region), m);
         Ok(doc.selection.is_some())
     })?;
-    Ok(json!({ "selected": selected, "changed": true, "coverage": coverage, "bounds": [b.x0, b.y0, b.width() as i32, b.height() as i32] }))
+    Ok(
+        json!({ "selected": selected, "changed": true, "coverage": coverage, "bounds": [b.x0, b.y0, b.width() as i32, b.height() as i32] }),
+    )
 }
 
 // ---------------------------------------------------------------- Isolate Layers
 
 fn isolate_layers(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.active_mut().ok_or(EngineError::NoDocument)?;
-    let on = p.get("on").and_then(Value::as_bool).unwrap_or(st.isolated_layers.is_empty());
+    let on = p
+        .get("on")
+        .and_then(Value::as_bool)
+        .unwrap_or(st.isolated_layers.is_empty());
     st.isolated_layers = if on { st.selected_layers() } else { Vec::new() };
     st.revision += 1;
-    Ok(json!({ "isolated": !st.isolated_layers.is_empty(), "layers": st.isolated_layers.iter().map(|l| l.0).collect::<Vec<_>>() }))
+    Ok(
+        json!({ "isolated": !st.isolated_layers.is_empty(), "layers": st.isolated_layers.iter().map(|l| l.0).collect::<Vec<_>>() }),
+    )
 }
 
 /// Whether a Layers panel row for `id` is listed under isolation (ancestors of an isolated layer
@@ -91,7 +120,10 @@ pub fn isolation_shows(doc: &Document, isolated: &[LayerId], id: LayerId) -> boo
     }
     fn contains(l: &photocraft_doc::Layer, set: &[LayerId]) -> bool {
         match &l.content {
-            photocraft_doc::LayerContent::Group(g) => g.children.iter().any(|c| set.contains(&c.id) || contains(c, set)),
+            photocraft_doc::LayerContent::Group(g) => g
+                .children
+                .iter()
+                .any(|c| set.contains(&c.id) || contains(c, set)),
             _ => false,
         }
     }
@@ -104,7 +136,9 @@ fn reference_point(p: &Value, r: [f64; 4]) -> [f64; 2] {
     let (x0, y0, x1, y1) = (r[0], r[1], r[2], r[3]);
     let (cx, cy) = ((x0 + x1) / 2.0, (y0 + y1) / 2.0);
     match p.get("reference") {
-        Some(Value::Array(a)) if a.len() >= 2 => [a[0].as_f64().unwrap_or(cx), a[1].as_f64().unwrap_or(cy)],
+        Some(Value::Array(a)) if a.len() >= 2 => {
+            [a[0].as_f64().unwrap_or(cx), a[1].as_f64().unwrap_or(cy)]
+        }
         Some(Value::String(k)) => match k.as_str() {
             "topLeft" => [x0, y0],
             "top" => [cx, y0],
@@ -138,20 +172,31 @@ fn affine_params(p: &Value, r: [f64; 4]) -> Homography {
     let [px, py] = reference_point(p, r);
     let (sx, sy) = (f(p, "scaleX", 100.0) / 100.0, f(p, "scaleY", 100.0) / 100.0);
     let a = f(p, "rotate", 0.0).to_radians();
-    let (kx, ky) = (f(p, "skewX", 0.0).to_radians().tan(), f(p, "skewY", 0.0).to_radians().tan());
+    let (kx, ky) = (
+        f(p, "skewX", 0.0).to_radians().tan(),
+        f(p, "skewY", 0.0).to_radians().tan(),
+    );
     let (dx, dy) = (f(p, "dx", f(p, "x", 0.0)), f(p, "dy", f(p, "y", 0.0)));
     let t = |x: f64, y: f64| Homography([1.0, 0.0, x, 0.0, 1.0, y, 0.0, 0.0, 1.0]);
     let (sa, ca) = a.sin_cos();
     let rot = Homography([ca, -sa, 0.0, sa, ca, 0.0, 0.0, 0.0, 1.0]);
     let skew = Homography([1.0, kx, 0.0, ky, 1.0, 0.0, 0.0, 0.0, 1.0]);
     let scale = Homography([sx, 0.0, 0.0, 0.0, sy, 0.0, 0.0, 0.0, 1.0]);
-    t(px + dx, py + dy).mul(&rot).mul(&skew).mul(&scale).mul(&t(-px, -py))
+    t(px + dx, py + dy)
+        .mul(&rot)
+        .mul(&skew)
+        .mul(&scale)
+        .mul(&t(-px, -py))
 }
 
 fn transform_selection(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "select.transformSelection";
     let d = s.active().ok_or(EngineError::NoDocument)?;
-    let sel = d.doc.selection.as_ref().ok_or_else(|| EngineError::Other("no selection".into()))?;
+    let sel = d
+        .doc
+        .selection
+        .as_ref()
+        .ok_or_else(|| EngineError::Other("no selection".into()))?;
     let b = sel.content_bounds();
     let rect = match p.get("rect").and_then(Value::as_array) {
         Some(a) if a.len() == 4 => {
@@ -160,17 +205,33 @@ fn transform_selection(s: &mut Session, p: &Value) -> Result<Value> {
         }
         _ => [b.x0 as f64, b.y0 as f64, b.x1 as f64, b.y1 as f64],
     };
-    let interp = Interp::parse(p.get("interpolation").and_then(Value::as_str).unwrap_or("bilinear"));
-    let is_warp = ["warp", "style", "mesh", "grid"].iter().any(|k| p.get(*k).is_some());
+    let interp = Interp::parse(
+        p.get("interpolation")
+            .and_then(Value::as_str)
+            .unwrap_or("bilinear"),
+    );
+    let is_warp = ["warp", "style", "mesh", "grid"]
+        .iter()
+        .any(|k| p.get(*k).is_some());
     if is_warp {
-        let r = Rect::new(rect[0].floor() as i32, rect[1].floor() as i32, rect[2].ceil() as i32, rect[3].ceil() as i32);
-        let w = crate::warp_cmds::warp_from_params(CMD, p, [r.x0 as f64, r.y0 as f64, r.x1 as f64, r.y1 as f64])?;
+        let r = Rect::new(
+            rect[0].floor() as i32,
+            rect[1].floor() as i32,
+            rect[2].ceil() as i32,
+            rect[3].ceil() as i32,
+        );
+        let w = crate::warp_cmds::warp_from_params(
+            CMD,
+            p,
+            [r.x0 as f64, r.y0 as f64, r.x1 as f64, r.y1 as f64],
+        )?;
         if w.is_identity() {
             return Ok(json!({"changed": false}));
         }
         let selected = s.edit("Transform Selection", |doc, _| {
             if let Some(sel) = &doc.selection {
-                doc.selection = Some(warp_mesh_gray(sel, &|x, y| w.map(x, y), interp)).filter(|s| !s.content_bounds().is_empty());
+                doc.selection = Some(warp_mesh_gray(sel, &|x, y| w.map(x, y), interp))
+                    .filter(|s| !s.content_bounds().is_empty());
             }
             Ok(doc.selection.is_some())
         })?;
@@ -190,13 +251,18 @@ fn transform_selection(s: &mut Session, p: &Value) -> Result<Value> {
     if h.inverse().is_none() {
         return Err(bad(CMD, "the transform collapses the selection"));
     }
-    if h.0.iter().zip(Homography::IDENTITY.0).all(|(a, b)| (a - b).abs() < 1e-12) {
+    if h.0
+        .iter()
+        .zip(Homography::IDENTITY.0)
+        .all(|(a, b)| (a - b).abs() < 1e-12)
+    {
         return Ok(json!({"changed": false, "selected": true}));
     }
     let selected = s.edit("Transform Selection", |doc, _| {
         if let Some(sel) = &doc.selection {
             crate::transform_cmds::check_budget(sel.content_bounds(), &h, "selection")?;
-            doc.selection = Some(crate::transform_cmds::warp_gray(sel, &h, interp)?).filter(|s| !s.content_bounds().is_empty());
+            doc.selection = Some(crate::transform_cmds::warp_gray(sel, &h, interp)?)
+                .filter(|s| !s.content_bounds().is_empty());
         }
         Ok(doc.selection.is_some())
     })?;
@@ -204,7 +270,11 @@ fn transform_selection(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn bounds_json(s: &Session) -> Value {
-    match s.active().and_then(|d| d.doc.selection.as_ref()).map(|s| s.content_bounds()) {
+    match s
+        .active()
+        .and_then(|d| d.doc.selection.as_ref())
+        .map(|s| s.content_bounds())
+    {
         Some(r) => json!([r.x0, r.y0, r.width() as i32, r.height() as i32]),
         None => Value::Null,
     }
@@ -250,12 +320,21 @@ mod tests {
     use super::*;
 
     fn sel_bounds(s: &Session) -> Option<Rect> {
-        s.active().unwrap().doc.selection.as_ref().map(|s| s.content_bounds())
+        s.active()
+            .unwrap()
+            .doc
+            .selection
+            .as_ref()
+            .map(|s| s.content_bounds())
     }
 
     fn landscape(depth: u64) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 160, "height": 100, "depth": depth})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 160, "height": 100, "depth": depth}),
+        )
+        .unwrap();
         s.edit("paint", |doc, active| {
             let l = doc.layer_mut(active.unwrap()).unwrap();
             let surf = l.surface_mut().unwrap();
@@ -304,7 +383,8 @@ mod tests {
     #[test]
     fn sky_without_sky_changes_nothing() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 40, "height": 40})).unwrap();
+        s.execute("file.new", json!({"width": 40, "height": 40}))
+            .unwrap();
         s.execute("edit.fill", json!({"color": "#504020"})).ok();
         let r = s.execute("select.sky", json!({})).unwrap();
         assert_eq!(r["changed"], json!(false));
@@ -314,7 +394,8 @@ mod tests {
     #[test]
     fn isolate_layers_toggles() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 20, "height": 20})).unwrap();
+        s.execute("file.new", json!({"width": 20, "height": 20}))
+            .unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
         let active = s.active().unwrap().active_layer.unwrap();
         let r = s.execute("select.isolateLayers", json!({})).unwrap();
@@ -324,7 +405,10 @@ mod tests {
         let bg = d.doc.layers[0].id;
         assert!(isolation_shows(&d.doc, &d.isolated_layers, active));
         assert!(!isolation_shows(&d.doc, &d.isolated_layers, bg));
-        assert_eq!(crate::inspect::document(d)["isolatedLayers"], json!([active.0]));
+        assert_eq!(
+            crate::inspect::document(d)["isolatedLayers"],
+            json!([active.0])
+        );
         let r = s.execute("select.isolateLayers", json!({})).unwrap();
         assert_eq!(r["isolated"], json!(false));
         assert!(s.active().unwrap().isolated_layers.is_empty());
@@ -332,8 +416,13 @@ mod tests {
 
     fn rect_sel() -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 100, "height": 100})).unwrap();
-        s.execute("select.rect", json!({"x": 20, "y": 30, "width": 20, "height": 10})).unwrap();
+        s.execute("file.new", json!({"width": 100, "height": 100}))
+            .unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 20, "y": 30, "width": 20, "height": 10}),
+        )
+        .unwrap();
         s
     }
 
@@ -341,39 +430,79 @@ mod tests {
     fn transform_selection_scales_rotates_and_moves() {
         let mut s = rect_sel();
         assert_eq!(sel_bounds(&s), Some(Rect::new(20, 30, 40, 40)));
-        let px0 = s.active().unwrap().doc.layers[0].surface().unwrap().read_region(Rect::new(0, 0, 100, 100));
-        s.execute("select.transformSelection", json!({"scaleX": 200, "scaleY": 200})).unwrap();
+        let px0 = s.active().unwrap().doc.layers[0]
+            .surface()
+            .unwrap()
+            .read_region(Rect::new(0, 0, 100, 100));
+        s.execute(
+            "select.transformSelection",
+            json!({"scaleX": 200, "scaleY": 200}),
+        )
+        .unwrap();
         let b = sel_bounds(&s).unwrap();
-        assert!((b.x0 - 10).abs() <= 1 && (b.x1 - 50).abs() <= 1 && (b.y0 - 25).abs() <= 1 && (b.y1 - 45).abs() <= 1, "{b:?}");
+        assert!(
+            (b.x0 - 10).abs() <= 1
+                && (b.x1 - 50).abs() <= 1
+                && (b.y0 - 25).abs() <= 1
+                && (b.y1 - 45).abs() <= 1,
+            "{b:?}"
+        );
         // Pixels untouched.
-        assert_eq!(s.active().unwrap().doc.layers[0].surface().unwrap().read_region(Rect::new(0, 0, 100, 100)), px0);
+        assert_eq!(
+            s.active().unwrap().doc.layers[0]
+                .surface()
+                .unwrap()
+                .read_region(Rect::new(0, 0, 100, 100)),
+            px0
+        );
         s.undo();
         assert_eq!(sel_bounds(&s), Some(Rect::new(20, 30, 40, 40)));
-        s.execute("select.transformSelection", json!({"rotate": 90})).unwrap();
+        s.execute("select.transformSelection", json!({"rotate": 90}))
+            .unwrap();
         let b = sel_bounds(&s).unwrap();
-        assert!(b.width().abs_diff(10) <= 2 && b.height().abs_diff(20) <= 2, "{b:?}");
+        assert!(
+            b.width().abs_diff(10) <= 2 && b.height().abs_diff(20) <= 2,
+            "{b:?}"
+        );
         s.undo();
-        s.execute("select.transformSelection", json!({"dx": 30, "dy": -10, "reference": "topLeft"})).unwrap();
+        s.execute(
+            "select.transformSelection",
+            json!({"dx": 30, "dy": -10, "reference": "topLeft"}),
+        )
+        .unwrap();
         assert_eq!(sel_bounds(&s), Some(Rect::new(50, 20, 70, 30)));
     }
 
     #[test]
     fn transform_selection_perspective_and_warp() {
         let mut s = rect_sel();
-        s.execute("select.transformSelection", json!({"corners": [[25, 30], [35, 30], [45, 40], [15, 40]]})).unwrap();
+        s.execute(
+            "select.transformSelection",
+            json!({"corners": [[25, 30], [35, 30], [45, 40], [15, 40]]}),
+        )
+        .unwrap();
         let sel = s.active().unwrap().doc.selection.clone().unwrap();
         assert!(sel.sample_channel(17, 39, 0) > 0.5 && sel.sample_channel(21, 31, 0) < 0.5);
         s.undo();
-        let r = s.execute("select.transformSelection", json!({"style": "arc", "bend": 50})).unwrap();
+        let r = s
+            .execute(
+                "select.transformSelection",
+                json!({"style": "arc", "bend": 50}),
+            )
+            .unwrap();
         assert_eq!(r["changed"], json!(true));
         assert_ne!(sel_bounds(&s), Some(Rect::new(20, 30, 40, 40)));
-        assert!(s.execute("select.transformSelection", json!({"scaleX": 0})).is_err());
+        assert!(
+            s.execute("select.transformSelection", json!({"scaleX": 0}))
+                .is_err()
+        );
     }
 
     #[test]
     fn transform_selection_needs_a_selection() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 10, "height": 10})).unwrap();
+        s.execute("file.new", json!({"width": 10, "height": 10}))
+            .unwrap();
         assert!(!s.is_enabled("select.transformSelection"));
     }
 }
@@ -387,11 +516,19 @@ mod hang_tests {
         // Regression (panic_hunt): a huge off-canvas transform used to allocate a buffer spanning
         // the old + new bounds and hang. It must return quickly without crashing.
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 24, "height": 16})).unwrap();
-        s.execute("select.rect", json!({"x": 1, "y": 1, "width": 6, "height": 5})).unwrap();
+        s.execute("file.new", json!({"width": 24, "height": 16}))
+            .unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 1, "y": 1, "width": 6, "height": 5}),
+        )
+        .unwrap();
         // dx/dy move the selection far off-canvas; scaleX enlarges it — the old code allocated a
         // buffer spanning the original + moved bounds (~1e5 × 1e5) and hung.
-        let r = s.execute("select.transformSelection", json!({"dx": 1e5, "dy": -1e5, "scaleX": 300.0}));
+        let r = s.execute(
+            "select.transformSelection",
+            json!({"dx": 1e5, "dy": -1e5, "scaleX": 300.0}),
+        );
         assert!(r.is_ok(), "far transform returns without hanging: {r:?}");
         // The document is still usable.
         assert!(s.execute("select.all", json!({})).is_ok());

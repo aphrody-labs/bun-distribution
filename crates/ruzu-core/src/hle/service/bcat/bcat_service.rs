@@ -301,8 +301,11 @@ mod tests {
         service.handlers[&command].handler_callback.unwrap()(&service, &mut ctx);
         assert_eq!(ctx.command_buffer()[6], RESULT_SUCCESS.get_inner_value());
         assert!(ctx.outgoing_copy_objects.is_empty());
-        assert!(service.handlers[&commands::REGISTER_BACKGROUND_DELIVERY_TASK]
-            .handler_callback.is_none());
+        assert!(
+            service.handlers[&commands::REGISTER_BACKGROUND_DELIVERY_TASK]
+                .handler_callback
+                .is_none()
+        );
     }
 }
 

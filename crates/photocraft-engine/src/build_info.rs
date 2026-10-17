@@ -15,12 +15,16 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The full git commit this build was made from, when the build environment recorded it.
 pub fn git_sha() -> Option<&'static str> {
-    option_env!("PHOTOCRAFT_BUILD_SHA").map(str::trim).filter(|s| !s.is_empty())
+    option_env!("PHOTOCRAFT_BUILD_SHA")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
 }
 
 /// The build date (`YYYY-MM-DD`), when the build environment recorded it.
 pub fn build_date() -> Option<&'static str> {
-    option_env!("PHOTOCRAFT_BUILD_DATE").map(str::trim).filter(|s| !s.is_empty())
+    option_env!("PHOTOCRAFT_BUILD_DATE")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
 }
 
 /// The commit shortened for display.
@@ -48,10 +52,19 @@ mod tests {
 
     #[test]
     fn long_version_formats() {
-        assert_eq!(format_long("1.2.3", Some("abc"), Some("2026-10-01")), "1.2.3 (abc, 2026-10-01)");
+        assert_eq!(
+            format_long("1.2.3", Some("abc"), Some("2026-10-01")),
+            "1.2.3 (abc, 2026-10-01)"
+        );
         assert_eq!(format_long("1.2.3", Some("abc"), None), "1.2.3 (abc)");
-        assert_eq!(format_long("1.2.3", None, Some("2026-10-01")), "1.2.3 (2026-10-01)");
-        assert_eq!(format_long("1.2.3-rc.1", None, None), "1.2.3-rc.1 (dev build)");
+        assert_eq!(
+            format_long("1.2.3", None, Some("2026-10-01")),
+            "1.2.3 (2026-10-01)"
+        );
+        assert_eq!(
+            format_long("1.2.3-rc.1", None, None),
+            "1.2.3-rc.1 (dev build)"
+        );
     }
 
     #[test]

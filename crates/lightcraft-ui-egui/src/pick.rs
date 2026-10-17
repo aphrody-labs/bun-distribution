@@ -40,25 +40,67 @@ pub struct PickRequest {
 }
 
 impl PickRequest {
-    pub fn files(title: Option<String>, filter: impl Into<String>, extensions: &'static [&'static str]) -> Self {
-        PickRequest { kind: PickKind::Files, title, filter: Some((filter.into(), extensions)), file_name: None }
+    pub fn files(
+        title: Option<String>,
+        filter: impl Into<String>,
+        extensions: &'static [&'static str],
+    ) -> Self {
+        PickRequest {
+            kind: PickKind::Files,
+            title,
+            filter: Some((filter.into(), extensions)),
+            file_name: None,
+        }
     }
 
-    pub fn file(title: impl Into<String>, filter: impl Into<String>, extensions: &'static [&'static str]) -> Self {
-        PickRequest { kind: PickKind::File, title: Some(title.into()), filter: Some((filter.into(), extensions)), file_name: None }
+    pub fn file(
+        title: impl Into<String>,
+        filter: impl Into<String>,
+        extensions: &'static [&'static str],
+    ) -> Self {
+        PickRequest {
+            kind: PickKind::File,
+            title: Some(title.into()),
+            filter: Some((filter.into(), extensions)),
+            file_name: None,
+        }
     }
 
     pub fn folder(title: impl Into<String>) -> Self {
-        PickRequest { kind: PickKind::Folder, title: Some(title.into()), filter: None, file_name: None }
+        PickRequest {
+            kind: PickKind::Folder,
+            title: Some(title.into()),
+            filter: None,
+            file_name: None,
+        }
     }
 
-    pub fn save(title: impl Into<String>, filter: impl Into<String>, extensions: &'static [&'static str], file_name: impl Into<String>) -> Self {
-        PickRequest { kind: PickKind::Save, title: Some(title.into()), filter: Some((filter.into(), extensions)), file_name: Some(file_name.into()) }
+    pub fn save(
+        title: impl Into<String>,
+        filter: impl Into<String>,
+        extensions: &'static [&'static str],
+        file_name: impl Into<String>,
+    ) -> Self {
+        PickRequest {
+            kind: PickKind::Save,
+            title: Some(title.into()),
+            filter: Some((filter.into(), extensions)),
+            file_name: Some(file_name.into()),
+        }
     }
 }
 
 /// What File ▸ Import Profiles & Presets… opens.
-pub const PRESET_EXTENSIONS: &[&str] = &["lcpreset", "xmp", "lrtemplate", "zip", "dng", "lmp", "mplumpack", "cube"];
+pub const PRESET_EXTENSIONS: &[&str] = &[
+    "lcpreset",
+    "xmp",
+    "lrtemplate",
+    "zip",
+    "dng",
+    "lmp",
+    "mplumpack",
+    "cube",
+];
 /// What Import Point Curve Presets… opens.
 pub const CURVE_PRESET_EXTENSIONS: &[&str] = &["lccurve", "json"];
 
@@ -105,10 +147,18 @@ pub fn ask(
         let kind = request.kind;
         match start(request) {
             Ok(rx) => {
-                app.pending_picks.push(Pending { command: command.to_string(), params: params.clone(), key, kind, rx });
+                app.pending_picks.push(Pending {
+                    command: command.to_string(),
+                    params: params.clone(),
+                    key,
+                    kind,
+                    rx,
+                });
                 return Picked::Later;
             }
-            Err(e) => log::warn!("{command}: no background file dialog ({e}); asking on the UI thread"),
+            Err(e) => {
+                log::warn!("{command}: no background file dialog ({e}); asking on the UI thread")
+            }
         }
     }
     match now(&mut app.services) {
@@ -142,7 +192,9 @@ pub fn poll(app: &mut LightcraftApp, ctx: &egui::Context) {
             Ok(paths) if paths.is_empty() => {}
             Ok(paths) => answered.push((p, paths)),
             Err(TryRecvError::Empty) => waiting.push(p),
-            Err(TryRecvError::Disconnected) => log::warn!("{}: the file dialog ended without an answer", p.command),
+            Err(TryRecvError::Disconnected) => {
+                log::warn!("{}: the file dialog ended without an answer", p.command)
+            }
         }
     }
     if !waiting.is_empty() {
@@ -175,7 +227,8 @@ mod tests {
     /// sender that answers it. Frames run through the headless harness, so [`poll`] and the import
     /// scan happen as in the app.
     fn app_with_picker() -> (Headless, Asked) {
-        let mut app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
+        let mut app =
+            LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
         let asked: Asked = Default::default();
         let a = asked.clone();
         app.services.picker = Some(Box::new(move |req| {
@@ -190,10 +243,19 @@ mod tests {
 
     fn photo_in(dir: &std::path::Path) -> String {
         std::fs::create_dir_all(dir).unwrap();
-        let img = lightcraft_raster::Rgba8::from_fn(16, 12, |x, y| [(x * 9) as u8, (y * 11) as u8, 50, 255]);
-        let o = lightcraft_engine::export::ExportOptions { format: lightcraft_engine::export::ExportFormat::Png, ..Default::default() };
+        let img = lightcraft_raster::Rgba8::from_fn(16, 12, |x, y| {
+            [(x * 9) as u8, (y * 11) as u8, 50, 255]
+        });
+        let o = lightcraft_engine::export::ExportOptions {
+            format: lightcraft_engine::export::ExportFormat::Png,
+            ..Default::default()
+        };
         let path = dir.join("one.png");
-        std::fs::write(&path, lightcraft_engine::export::encode_image(&img, &o).unwrap()).unwrap();
+        std::fs::write(
+            &path,
+            lightcraft_engine::export::encode_image(&img, &o).unwrap(),
+        )
+        .unwrap();
         path.to_string_lossy().to_string()
     }
 
@@ -220,7 +282,10 @@ mod tests {
             let asked = asked.lock().unwrap();
             assert_eq!(asked.len(), 1);
             assert_eq!(asked[0].0.kind, PickKind::Files);
-            assert_eq!(asked[0].0.filter.as_ref().map(|f| f.1), Some(lightcraft_engine::import::EXTENSIONS));
+            assert_eq!(
+                asked[0].0.filter.as_ref().map(|f| f.1),
+                Some(lightcraft_engine::import::EXTENSIONS)
+            );
         }
         // asking again while it is up opens no second dialog
         assert_eq!(h.app.run("file.addPhotos", json!({})).unwrap(), Value::Null);
@@ -228,7 +293,10 @@ mod tests {
         assert_eq!(asked.lock().unwrap().len(), 1);
         assert_eq!(h.app.pending_picks.len(), 1, "still waiting");
         // the user chooses a photo: the command runs again with it and opens the import review
-        asked.lock().unwrap()[0].1.send(vec![photo.clone()]).unwrap();
+        asked.lock().unwrap()[0]
+            .1
+            .send(vec![photo.clone()])
+            .unwrap();
         assert_eq!(import_sources(&mut h), Some(vec![photo]));
         assert!(h.app.pending_picks.is_empty());
         let _ = std::fs::remove_dir_all(&dir);
@@ -239,7 +307,10 @@ mod tests {
         let (mut h, asked) = app_with_picker();
         h.app.run("file.addPhotos", json!({})).unwrap();
         asked.lock().unwrap()[0].1.send(vec![]).unwrap();
-        assert!(import_sources(&mut h).is_none(), "cancelled: no import review");
+        assert!(
+            import_sources(&mut h).is_none(),
+            "cancelled: no import review"
+        );
         assert!(h.app.pending_picks.is_empty());
         // the dialog thread ends without answering (the host dropped the sender)
         h.app.run("file.addFolder", json!({})).unwrap();
@@ -256,16 +327,42 @@ mod tests {
         let (mut h, asked) = app_with_picker();
         h.app.run("file.addFolder", json!({})).unwrap();
         assert_eq!(asked.lock().unwrap()[0].0.kind, PickKind::Folder);
-        asked.lock().unwrap()[0].1.send(vec![dir.to_string_lossy().to_string()]).unwrap();
-        assert_eq!(import_sources(&mut h), Some(vec![dir.to_string_lossy().to_string()]));
+        asked.lock().unwrap()[0]
+            .1
+            .send(vec![dir.to_string_lossy().to_string()])
+            .unwrap();
+        assert_eq!(
+            import_sources(&mut h),
+            Some(vec![dir.to_string_lossy().to_string()])
+        );
         // a save dialog carries the suggested name; the command's other parameters survive
-        h.app.run("file.exportPresets", json!({"group": "Mine"})).unwrap();
-        let req = asked.lock().unwrap().last().map(|(r, _)| r.clone()).unwrap();
+        h.app
+            .run("file.exportPresets", json!({"group": "Mine"}))
+            .unwrap();
+        let req = asked
+            .lock()
+            .unwrap()
+            .last()
+            .map(|(r, _)| r.clone())
+            .unwrap();
         assert_eq!(req.kind, PickKind::Save);
         assert_eq!(req.file_name.as_deref(), Some("Mine.lcpreset"));
-        let p = with_answer(&json!({"group": "Mine"}), "path", PickKind::Save, &["/tmp/Mine.lcpreset".to_string(), "/tmp/other".to_string()]);
+        let p = with_answer(
+            &json!({"group": "Mine"}),
+            "path",
+            PickKind::Save,
+            &["/tmp/Mine.lcpreset".to_string(), "/tmp/other".to_string()],
+        );
         assert_eq!(p, json!({"group": "Mine", "path": "/tmp/Mine.lcpreset"}));
-        assert_eq!(with_answer(&Value::Null, "paths", PickKind::Files, &["a".to_string(), "b".to_string()]), json!({"paths": ["a", "b"]}));
+        assert_eq!(
+            with_answer(
+                &Value::Null,
+                "paths",
+                PickKind::Files,
+                &["a".to_string(), "b".to_string()]
+            ),
+            json!({"paths": ["a", "b"]})
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -273,7 +370,8 @@ mod tests {
     fn without_a_picker_the_synchronous_dialog_answers_at_once() {
         let dir = std::env::temp_dir().join(format!("lc-pick-sync-{}", std::process::id()));
         let photo = photo_in(&dir);
-        let mut app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
+        let mut app =
+            LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
         let p = photo.clone();
         app.services.pick_files = Some(Box::new(move || vec![p.clone()]));
         let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
@@ -281,9 +379,13 @@ mod tests {
         assert!(h.app.pending_picks.is_empty());
         assert_eq!(import_sources(&mut h), Some(vec![photo]));
         // and a host with neither shows nothing, as before
-        let mut bare = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
+        let mut bare =
+            LightcraftApp::new(lightcraft_engine::Session::with_demo(), Default::default());
         assert_eq!(bare.run("file.addPhotos", json!({})).unwrap(), Value::Null);
-        assert!(bare.run("file.importPresets", json!({})).is_err(), "no dialog on this platform");
+        assert!(
+            bare.run("file.importPresets", json!({})).is_err(),
+            "no dialog on this platform"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -141,12 +141,17 @@ impl DiskIndex {
 
     /// Keys of one kind (unordered).
     pub fn keys(&self, kind: Kind) -> Vec<u128> {
-        self.map.keys().filter(|k| k.0 == kind).map(|k| k.1).collect()
+        self.map
+            .keys()
+            .filter(|k| k.0 == kind)
+            .map(|k| k.1)
+            .collect()
     }
 
     /// Entries from least to most recently used.
     pub fn lru_order(&self) -> Vec<(Kind, u128)> {
-        let mut v: Vec<(u64, (Kind, u128))> = self.map.iter().map(|(k, m)| (m.last_use, *k)).collect();
+        let mut v: Vec<(u64, (Kind, u128))> =
+            self.map.iter().map(|(k, m)| (m.last_use, *k)).collect();
         v.sort_unstable_by_key(|e| e.0);
         v.into_iter().map(|e| e.1).collect()
     }
@@ -197,7 +202,12 @@ impl LayerPrefetch {
 
     /// Up to `max` keys to fetch before the next frame.
     pub fn plan(&self, index: &DiskIndex, max: usize) -> Vec<u128> {
-        self.recent.iter().copied().filter(|k| index.contains(Kind::Layer, *k)).take(max).collect()
+        self.recent
+            .iter()
+            .copied()
+            .filter(|k| index.contains(Kind::Layer, *k))
+            .take(max)
+            .collect()
     }
 
     pub fn clear(&mut self) {
@@ -244,7 +254,9 @@ impl Hash128 {
     pub fn write(&mut self, bytes: &[u8]) {
         for &b in bytes {
             self.0 ^= b as u128;
-            self.0 = self.0.wrapping_mul(0x0000_0000_0100_0000_0000_0000_0000_013b);
+            self.0 = self
+                .0
+                .wrapping_mul(0x0000_0000_0100_0000_0000_0000_0000_013b);
         }
     }
     pub fn write_u64(&mut self, v: u64) {
@@ -280,7 +292,8 @@ pub fn default_folder() -> PathBuf {
     if let Some(x) = std::env::var_os("XDG_CACHE_HOME") {
         return PathBuf::from(x).join("effectcraft/disk-cache");
     }
-    home.map(|h| h.join(".cache/effectcraft/disk-cache")).unwrap_or_else(|| std::env::temp_dir().join("effectcraft-disk-cache"))
+    home.map(|h| h.join(".cache/effectcraft/disk-cache"))
+        .unwrap_or_else(|| std::env::temp_dir().join("effectcraft-disk-cache"))
 }
 
 impl DiskCache {
@@ -298,7 +311,13 @@ impl DiskCache {
             evictions: AtomicU64::new(0),
             dropped: AtomicU64::new(0),
             tmp_counter: AtomicU64::new(0),
-            queue: Arc::new((Mutex::new(Queue { jobs: Default::default(), busy: false }), Condvar::new())),
+            queue: Arc::new((
+                Mutex::new(Queue {
+                    jobs: Default::default(),
+                    busy: false,
+                }),
+                Condvar::new(),
+            )),
             min_layer_ms: AtomicU64::new(30),
         });
         dc.rescan();
@@ -307,7 +326,9 @@ impl DiskCache {
         {
             let weak = Arc::downgrade(&dc);
             let q = dc.queue.clone();
-            std::thread::Builder::new().name("ec-disk-cache".into()).spawn(move || writer(weak, q))?;
+            std::thread::Builder::new()
+                .name("ec-disk-cache".into())
+                .spawn(move || writer(weak, q))?;
         }
         Ok(dc)
     }
@@ -320,23 +341,39 @@ impl DiskCache {
     pub fn rescan(&self) {
         let mut found: Vec<(std::time::SystemTime, Kind, u128, u64)> = vec![];
         for kind in [Kind::Frame, Kind::Layer] {
-            let Ok(shards) = std::fs::read_dir(self.dir.join(kind.dir())) else { continue };
+            let Ok(shards) = std::fs::read_dir(self.dir.join(kind.dir())) else {
+                continue;
+            };
             for shard in shards.flatten() {
-                let Ok(files) = std::fs::read_dir(shard.path()) else { continue };
+                let Ok(files) = std::fs::read_dir(shard.path()) else {
+                    continue;
+                };
                 for f in files.flatten() {
                     let p = f.path();
                     let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
                     if name.contains(".tmp") {
                         // A writer that died mid-write; old temporaries are removed.
-                        if f.metadata().and_then(|m| m.modified()).is_ok_and(|t| t.elapsed().is_ok_and(|e| e.as_secs() > 600)) {
+                        if f.metadata()
+                            .and_then(|m| m.modified())
+                            .is_ok_and(|t| t.elapsed().is_ok_and(|e| e.as_secs() > 600))
+                        {
                             let _ = std::fs::remove_file(&p);
                         }
                         continue;
                     }
-                    let Some(hex) = name.strip_suffix(".ecc") else { continue };
-                    let Ok(key) = u128::from_str_radix(hex, 16) else { continue };
+                    let Some(hex) = name.strip_suffix(".ecc") else {
+                        continue;
+                    };
+                    let Ok(key) = u128::from_str_radix(hex, 16) else {
+                        continue;
+                    };
                     let Ok(md) = f.metadata() else { continue };
-                    found.push((md.modified().unwrap_or(std::time::UNIX_EPOCH), kind, key, md.len()));
+                    found.push((
+                        md.modified().unwrap_or(std::time::UNIX_EPOCH),
+                        kind,
+                        key,
+                        md.len(),
+                    ));
                 }
             }
         }
@@ -352,7 +389,10 @@ impl DiskCache {
 
     fn path(&self, kind: Kind, key: u128) -> PathBuf {
         let hex = format!("{key:032x}");
-        self.dir.join(kind.dir()).join(&hex[..2]).join(format!("{hex}.ecc"))
+        self.dir
+            .join(kind.dir())
+            .join(&hex[..2])
+            .join(format!("{hex}.ecc"))
     }
 
     pub fn max_bytes(&self) -> u64 {
@@ -384,7 +424,11 @@ impl DiskCache {
     }
 
     pub fn stats(&self) -> DiskStats {
-        let (entries, bytes) = self.index.lock().map(|g| (g.len(), g.total())).unwrap_or_default();
+        let (entries, bytes) = self
+            .index
+            .lock()
+            .map(|g| (g.len(), g.total()))
+            .unwrap_or_default();
         DiskStats {
             entries,
             bytes,
@@ -647,7 +691,9 @@ pub fn entry_name(key: u128) -> String {
 /// The key of an entry file name (`None` for temporaries and other files).
 pub fn parse_entry_name(name: &str) -> Option<u128> {
     let hex = name.strip_suffix(".ecc")?;
-    (hex.len() == 32).then(|| u128::from_str_radix(hex, 16).ok()).flatten()
+    (hex.len() == 32)
+        .then(|| u128::from_str_radix(hex, 16).ok())
+        .flatten()
 }
 
 /// Check magic, kind and checksum; returns the payload.
@@ -676,7 +722,11 @@ fn decode_frame(p: &[u8]) -> Option<Frame8> {
     let w = u32::from_le_bytes(p[0..4].try_into().ok()?);
     let h = u32::from_le_bytes(p[4..8].try_into().ok()?);
     let rgba = lz4_flex::decompress_size_prepended(&p[8..]).ok()?;
-    (rgba.len() == w as usize * h as usize * 4).then_some(Frame8 { width: w, height: h, rgba })
+    (rgba.len() == w as usize * h as usize * 4).then_some(Frame8 {
+        width: w,
+        height: h,
+        rgba,
+    })
 }
 
 fn encode_layer(b: &Buf) -> Vec<u8> {
@@ -781,7 +831,10 @@ pub fn footage_salt(project: &effectcraft_project::Project) -> u64 {
 /// uses (nested comps, footage, solids, their proxies and Use Proxy switches, footage and proxy
 /// files' size and time). With expressions in play (which can read any comp) the whole project
 /// counts. Switches that don't change pixels (Audio, Lock, Shy, Hide Shy Layers) don't count.
-pub fn comp_content_key(project: &effectcraft_project::Project, comp: effectcraft_project::ItemId) -> u128 {
+pub fn comp_content_key(
+    project: &effectcraft_project::Project,
+    comp: effectcraft_project::ItemId,
+) -> u128 {
     use effectcraft_project::{ItemKind, LayerSource};
     let mut h = Hash128::default();
     h.write(RENDER_VERSION.as_bytes());
@@ -796,16 +849,24 @@ pub fn comp_content_key(project: &effectcraft_project::Project, comp: effectcraf
         let Some(it) = project.item(id) else { continue };
         if let ItemKind::Comp(c) = &it.kind {
             for l in &c.layers {
-                if let LayerSource::Comp { item } | LayerSource::Footage { item } | LayerSource::Solid { item } = l.source {
+                if let LayerSource::Comp { item }
+                | LayerSource::Footage { item }
+                | LayerSource::Solid { item } = l.source
+                {
                     stack.push(item);
                 }
                 if !expressions {
-                    l.props.walk("", &mut |_, p| expressions |= p.expr.is_some());
+                    l.props
+                        .walk("", &mut |_, p| expressions |= p.expr.is_some());
                 }
             }
         }
     }
-    let ids: Vec<effectcraft_project::ItemId> = if expressions { project.items.keys().copied().collect() } else { seen.into_iter().collect() };
+    let ids: Vec<effectcraft_project::ItemId> = if expressions {
+        project.items.keys().copied().collect()
+    } else {
+        seen.into_iter().collect()
+    };
     for id in ids {
         let Some(it) = project.item(id) else { continue };
         h.write_u64(id.0);
@@ -841,7 +902,10 @@ mod tests {
     use super::*;
 
     fn tmpdir(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("effectcraft-disk-cache-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!(
+            "effectcraft-disk-cache-{name}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&d);
         d
     }
@@ -849,10 +913,15 @@ mod tests {
     fn buf(seed: u32, w: u32, h: u32) -> Buf {
         let mut img = Image::new(w, h);
         for (i, p) in img.data.iter_mut().enumerate() {
-            let v = ((i as u32).wrapping_mul(2654435761u32).wrapping_add(seed) % 1000) as f32 / 999.0;
+            let v =
+                ((i as u32).wrapping_mul(2654435761u32).wrapping_add(seed) % 1000) as f32 / 999.0;
             *p = [v, v * 0.5, 1.0 - v, if i % 7 == 0 { 0.0 } else { 1.0 }];
         }
-        Buf { img, offset: [1.5, -2.25], scale: 0.5 }
+        Buf {
+            img,
+            offset: [1.5, -2.25],
+            scale: 0.5,
+        }
     }
 
     #[test]
@@ -864,7 +933,10 @@ mod tests {
         assert_eq!((ix.len(), ix.total()), (3, 300));
         assert!(ix.touch(Kind::Frame, 1));
         assert!(!ix.touch(Kind::Frame, 3));
-        assert_eq!(ix.lru_order(), vec![(Kind::Frame, 2), (Kind::Layer, 3), (Kind::Frame, 1)]);
+        assert_eq!(
+            ix.lru_order(),
+            vec![(Kind::Frame, 2), (Kind::Layer, 3), (Kind::Frame, 1)]
+        );
         assert_eq!(ix.evict(250), vec![(Kind::Frame, 2)]);
         assert!(ix.evict(250).is_empty());
         ix.insert(Kind::Frame, 1, 50);
@@ -879,7 +951,14 @@ mod tests {
     fn frame_entries_round_trip_and_names_parse() {
         let rgba: Vec<u8> = (0..4 * 6 * 3).map(|i| (i * 7 % 256) as u8).collect();
         let e = frame_entry(6, 3, &rgba);
-        assert_eq!(read_frame_entry(&e), Some(Frame8 { width: 6, height: 3, rgba: rgba.clone() }));
+        assert_eq!(
+            read_frame_entry(&e),
+            Some(Frame8 {
+                width: 6,
+                height: 3,
+                rgba: rgba.clone()
+            })
+        );
         let mut bad = e.clone();
         bad[20] ^= 1;
         assert!(read_frame_entry(&bad).is_none());
@@ -944,7 +1023,11 @@ mod tests {
         assert!(st.bytes <= per * 3 + per / 2, "{st:?}");
         assert_eq!(st.entries, 3);
         assert!(dc.contains(Kind::Layer, 0), "recently used survives");
-        assert!(!dc.contains(Kind::Layer, 1) && !dc.contains(Kind::Layer, 2) && !dc.contains(Kind::Layer, 3));
+        assert!(
+            !dc.contains(Kind::Layer, 1)
+                && !dc.contains(Kind::Layer, 2)
+                && !dc.contains(Kind::Layer, 3)
+        );
         assert_eq!(st.evictions, 3);
         // Files are really gone.
         let files = walk(&dir);

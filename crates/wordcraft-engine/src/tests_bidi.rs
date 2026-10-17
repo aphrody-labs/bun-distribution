@@ -24,7 +24,11 @@ fn session(text: &str, rtl: bool) -> Session {
 }
 
 fn props(s: &Session, i: usize) -> wordcraft_doc::props::ParaProps {
-    s.doc.para(StoryRef::Body, &wordcraft_doc::Path::top(i)).unwrap().props.clone()
+    s.doc
+        .para(StoryRef::Body, &wordcraft_doc::Path::top(i))
+        .unwrap()
+        .props
+        .clone()
 }
 
 fn caret_x(s: &mut Session) -> f32 {
@@ -38,7 +42,11 @@ fn direction_commands_change_only_the_reading_order() {
     run(&mut s, "para.alignCenter", json!({}));
     run(&mut s, "para.rtl", json!({}));
     assert_eq!(props(&s, 0).bidi, Some(true));
-    assert_eq!(props(&s, 0).align, Some(Align::Center), "direction doesn't touch alignment");
+    assert_eq!(
+        props(&s, 0).align,
+        Some(Align::Center),
+        "direction doesn't touch alignment"
+    );
     // Left-to-right again, and `value: false` means the other direction.
     run(&mut s, "para.ltr", json!({}));
     assert_eq!(props(&s, 0).bidi, Some(false));
@@ -46,7 +54,11 @@ fn direction_commands_change_only_the_reading_order() {
     assert_eq!(props(&s, 0).bidi, Some(true));
     // A new right-to-left paragraph starts at the right margin (start-aligned).
     let mut s = session("متن", true);
-    assert!((caret_x(&mut s) - 540.0).abs() < 0.5, "caret at {}", caret_x(&mut s));
+    assert!(
+        (caret_x(&mut s) - 540.0).abs() < 0.5,
+        "caret at {}",
+        caret_x(&mut s)
+    );
 }
 
 #[test]
@@ -55,8 +67,15 @@ fn alignment_buttons_mean_what_they_show_in_rtl_paragraphs() {
     // Align Left in a right-to-left paragraph moves text to the left: its end edge.
     run(&mut s, "para.alignLeft", json!({}));
     assert_eq!(props(&s, 0).align, Some(Align::Right));
-    let x_end = s.layout().caret(&Pos::body(0, "متن فارسی".len())).unwrap().x;
-    assert!((x_end - 72.0).abs() < 0.5, "text ends at the left margin: {x_end}");
+    let x_end = s
+        .layout()
+        .caret(&Pos::body(0, "متن فارسی".len()))
+        .unwrap()
+        .x;
+    assert!(
+        (x_end - 72.0).abs() < 0.5,
+        "text ends at the left margin: {x_end}"
+    );
     // Align Right is the start edge; pressing it again keeps it there.
     run(&mut s, "para.alignRight", json!({}));
     assert_eq!(props(&s, 0).align, Some(Align::Left));
@@ -76,17 +95,37 @@ fn font_commands_reach_persian_text() {
     run(&mut s, "format.bold", json!({}));
     run(&mut s, "format.size", json!({"size": 18}));
     run(&mut s, "format.font", json!({"name": "Vazirmatn"}));
-    let p = s.doc.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap();
+    let p = s
+        .doc
+        .para(StoryRef::Body, &wordcraft_doc::Path::top(0))
+        .unwrap();
     let c = p.props_of_char(0).clone();
     let rc = s.doc.styles.resolve_char(None, &c).complex();
-    assert_eq!((rc.font.as_str(), rc.size, rc.bold), ("Vazirmatn", 18.0, true), "the complex-script formatting follows");
+    assert_eq!(
+        (rc.font.as_str(), rc.size, rc.bold),
+        ("Vazirmatn", 18.0, true),
+        "the complex-script formatting follows"
+    );
     // Saved and reopened, Word sees bold and size for the Persian text too.
     let bytes = crate::io::save_bytes("x.docx", &s.doc).unwrap();
     let d = crate::io::open_bytes("x.docx", &bytes).unwrap();
-    let c = d.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap().props_of_char(0).clone();
+    let c = d
+        .para(StoryRef::Body, &wordcraft_doc::Path::top(0))
+        .unwrap()
+        .props_of_char(0)
+        .clone();
     let rc = d.styles.resolve_char(None, &c).complex();
-    assert_eq!((rc.font.as_str(), rc.size, rc.bold), ("Vazirmatn", 18.0, true));
-    assert_eq!(d.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap().props.bidi, Some(true));
+    assert_eq!(
+        (rc.font.as_str(), rc.size, rc.bold),
+        ("Vazirmatn", 18.0, true)
+    );
+    assert_eq!(
+        d.para(StoryRef::Body, &wordcraft_doc::Path::top(0))
+            .unwrap()
+            .props
+            .bidi,
+        Some(true)
+    );
 }
 
 #[test]
@@ -111,24 +150,54 @@ fn font_commands_override_inherited_complex_script_properties_explicitly() {
         if let Some(command) = command {
             run(&mut s, command, json!({}));
         }
-        let p = s.doc.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap();
+        let p = s
+            .doc
+            .para(StoryRef::Body, &wordcraft_doc::Path::top(0))
+            .unwrap();
         let c = p.props_of_char(0);
-        assert_eq!((c.size_cs, c.bold_cs, c.italic_cs), (Some(expected_size), Some(false), Some(false)));
-        let d = crate::io::open_bytes("x.docx", &crate::io::save_bytes("x.docx", &s.doc).unwrap()).unwrap();
-        let c = d.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap().props_of_char(0);
+        assert_eq!(
+            (c.size_cs, c.bold_cs, c.italic_cs),
+            (Some(expected_size), Some(false), Some(false))
+        );
+        let d = crate::io::open_bytes("x.docx", &crate::io::save_bytes("x.docx", &s.doc).unwrap())
+            .unwrap();
+        let c = d
+            .para(StoryRef::Body, &wordcraft_doc::Path::top(0))
+            .unwrap()
+            .props_of_char(0);
         let cs = d.styles.resolve_char(None, c).complex();
         assert_eq!((cs.size, cs.bold, cs.italic), (expected_size, false, false));
     }
     // The font dialog's command keeps formatting both scripts when given one value.
-    run(&mut s, "format.set", json!({"props": {"size": 10, "bold": true, "italic": true}}));
-    let p = s.doc.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap();
+    run(
+        &mut s,
+        "format.set",
+        json!({"props": {"size": 10, "bold": true, "italic": true}}),
+    );
+    let p = s
+        .doc
+        .para(StoryRef::Body, &wordcraft_doc::Path::top(0))
+        .unwrap();
     let c: &CharProps = p.props_of_char(0);
-    assert_eq!((c.size_cs, c.bold_cs, c.italic_cs), (Some(10.0), Some(true), Some(true)));
+    assert_eq!(
+        (c.size_cs, c.bold_cs, c.italic_cs),
+        (Some(10.0), Some(true), Some(true))
+    );
     // Callers can still supply distinct values explicitly, including false.
-    run(&mut s, "format.set", json!({"props": {"size": 12, "sizeCs": 18, "bold": true, "boldCs": false, "italic": true, "italicCs": false}}));
-    let p = s.doc.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap();
+    run(
+        &mut s,
+        "format.set",
+        json!({"props": {"size": 12, "sizeCs": 18, "bold": true, "boldCs": false, "italic": true, "italicCs": false}}),
+    );
+    let p = s
+        .doc
+        .para(StoryRef::Body, &wordcraft_doc::Path::top(0))
+        .unwrap();
     let c = p.props_of_char(0);
-    assert_eq!((c.size, c.size_cs, c.bold_cs, c.italic_cs), (Some(12.0), Some(18.0), Some(false), Some(false)));
+    assert_eq!(
+        (c.size, c.size_cs, c.bold_cs, c.italic_cs),
+        (Some(12.0), Some(18.0), Some(false), Some(false))
+    );
 }
 
 #[test]
@@ -138,8 +207,14 @@ fn arrow_keys_move_visually_in_rtl_text() {
     // From the start (the right edge), Left moves forward through the text.
     let x0 = caret_x(&mut s);
     run(&mut s, "caret.left", json!({}));
-    assert!(s.sel.focus.off > 0, "Left moves to the next character in right-to-left text");
-    assert!(caret_x(&mut s) < x0, "and the caret moves left on the screen");
+    assert!(
+        s.sel.focus.off > 0,
+        "Left moves to the next character in right-to-left text"
+    );
+    assert!(
+        caret_x(&mut s) < x0,
+        "and the caret moves left on the screen"
+    );
     run(&mut s, "caret.right", json!({}));
     assert_eq!(s.sel.focus.off, 0);
     // Right at the start edge goes nowhere in the first paragraph (no previous one).
@@ -154,7 +229,11 @@ fn arrow_keys_move_visually_in_rtl_text() {
         steps += 1;
     }
     assert!(steps <= fa.chars().count() + 1, "{steps} steps");
-    assert_eq!(s.sel.focus.path.last(), 1, "past the left end of the line: the next paragraph");
+    assert_eq!(
+        s.sel.focus.path.last(),
+        1,
+        "past the left end of the line: the next paragraph"
+    );
     assert_eq!(s.sel.focus.off, 0, "at its start (right edge)");
     // Shift+Left selects forward in logical order.
     run(&mut s, "caret.docStart", json!({}));
@@ -180,7 +259,10 @@ fn arrow_keys_in_mixed_text_visit_each_position() {
         }
         xs.push(caret_x(&mut s));
     }
-    assert!(xs.windows(2).all(|w| w[1] > w[0]), "each Right moves right: {xs:?}");
+    assert!(
+        xs.windows(2).all(|w| w[1] > w[0]),
+        "each Right moves right: {xs:?}"
+    );
     assert_eq!(s.sel.focus.off, t.len(), "ends at the end of the paragraph");
 }
 
@@ -188,7 +270,10 @@ fn arrow_keys_in_mixed_text_visit_each_position() {
 fn word_moves_follow_reading_order() {
     let mut s = session("یک دو سه", true);
     run(&mut s, "caret.wordLeft", json!({}));
-    assert!(s.sel.focus.off > 0, "Ctrl+Left goes to the next word in right-to-left text");
+    assert!(
+        s.sel.focus.off > 0,
+        "Ctrl+Left goes to the next word in right-to-left text"
+    );
     run(&mut s, "caret.wordRight", json!({}));
     assert_eq!(s.sel.focus.off, 0);
 }
@@ -231,7 +316,9 @@ fn typing_kurdish_in_new_document_advances_caret_smoothly() {
     let mut s = Session::new(wordcraft_doc::Document::new());
     let mut first_x = None;
     let mut last_x = 0.0;
-    for ch in ["م", "ن", " ", "ن", "ا", "و", "م", " ", "ه", "ێ", "ڤ", "ا", "ر", "ه"] {
+    for ch in [
+        "م", "ن", " ", "ن", "ا", "و", "م", " ", "ه", "ێ", "ڤ", "ا", "ر", "ه",
+    ] {
         run(&mut s, "text.insert", json!({"text": ch}));
         let l = s.layout();
         let c = l.caret(&s.sel.focus).unwrap();
@@ -242,6 +329,13 @@ fn typing_kurdish_in_new_document_advances_caret_smoothly() {
         // The caret must not jump back to the left margin (72.0), but stay near the right margin (540.0).
         assert!(c.x > 400.0, "caret should not be at left margin: {}", c.x);
     }
-    assert!(last_x < first_x.unwrap(), "caret should advance leftwards overall");
-    assert_eq!(props(&s, 0).bidi, Some(true), "paragraph auto-detected as right-to-left");
+    assert!(
+        last_x < first_x.unwrap(),
+        "caret should advance leftwards overall"
+    );
+    assert_eq!(
+        props(&s, 0).bidi,
+        Some(true),
+        "paragraph auto-detected as right-to-left"
+    );
 }

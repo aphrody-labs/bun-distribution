@@ -21,18 +21,37 @@ pub(crate) fn unturned_sect(s: &SectionProps, body_top: f32) -> SectionProps {
     v.page_w = s.page_h;
     v.page_h = s.page_w;
     v.gutter = 0.0;
-    let (top, right, bottom, left) = (body_top, s.margin_right, s.margin_bottom, s.margin_left + s.gutter);
+    let (top, right, bottom, left) = (
+        body_top,
+        s.margin_right,
+        s.margin_bottom,
+        s.margin_left + s.gutter,
+    );
     // The unturned frame's (u, v) lands at (W - v, u) for `Down` and (v, H - u) for `Up`: its
     // top edge is the real right edge (left for `Up`), its left edge the real top (bottom).
     match s.text_direction {
         TextDirection::Horizontal => return v,
         TextDirection::Down => {
-            (v.margin_top, v.margin_left, v.margin_bottom, v.margin_right) = (right, top, left, bottom);
-            v.page_borders = s.page_borders.as_ref().map(|b| Borders { top: b.right, left: b.top, bottom: b.left, right: b.bottom, ..*b });
+            (v.margin_top, v.margin_left, v.margin_bottom, v.margin_right) =
+                (right, top, left, bottom);
+            v.page_borders = s.page_borders.as_ref().map(|b| Borders {
+                top: b.right,
+                left: b.top,
+                bottom: b.left,
+                right: b.bottom,
+                ..*b
+            });
         }
         TextDirection::Up => {
-            (v.margin_top, v.margin_left, v.margin_bottom, v.margin_right) = (left, bottom, right, top);
-            v.page_borders = s.page_borders.as_ref().map(|b| Borders { top: b.left, left: b.bottom, bottom: b.right, right: b.top, ..*b });
+            (v.margin_top, v.margin_left, v.margin_bottom, v.margin_right) =
+                (left, bottom, right, top);
+            v.page_borders = s.page_borders.as_ref().map(|b| Borders {
+                top: b.left,
+                left: b.bottom,
+                bottom: b.right,
+                right: b.top,
+                ..*b
+            });
         }
     }
     v
@@ -64,7 +83,13 @@ pub(crate) fn turn_page(page: &mut Page, turn: TextDirection, phys: &SectionProp
     };
     let mut boxes: Vec<(u32, Rect, (f32, f32))> = Vec::new();
     for it in &mut page.items {
-        if let Placed::Object { rect, origin, text_box, .. } = it {
+        if let Placed::Object {
+            rect,
+            origin,
+            text_box,
+            ..
+        } = it
+        {
             let r = upright(*rect);
             if let Some(id) = text_box {
                 boxes.push((*id, *rect, (r.x - rect.x, r.y - rect.y)));
@@ -74,7 +99,10 @@ pub(crate) fn turn_page(page: &mut Page, turn: TextDirection, phys: &SectionProp
         }
     }
     let in_box = |it: &Placed| -> Option<(f32, f32)> {
-        if let Placed::Lines { story: StoryRef::Part(id), .. } = it
+        if let Placed::Lines {
+            story: StoryRef::Part(id),
+            ..
+        } = it
             && let Some((_, _, d)) = boxes.iter().find(|(b, _, _)| b == id)
         {
             return Some(*d);
@@ -82,7 +110,10 @@ pub(crate) fn turn_page(page: &mut Page, turn: TextDirection, phys: &SectionProp
         let r = bounds(it)?;
         boxes
             .iter()
-            .find(|(_, b, _)| b.expand(0.5).contains(Point::new(r.x, r.y)) && b.expand(0.5).contains(Point::new(r.right(), r.bottom())))
+            .find(|(_, b, _)| {
+                b.expand(0.5).contains(Point::new(r.x, r.y))
+                    && b.expand(0.5).contains(Point::new(r.right(), r.bottom()))
+            })
             .map(|(_, _, d)| *d)
     };
     for it in &mut page.items {
@@ -94,7 +125,9 @@ pub(crate) fn turn_page(page: &mut Page, turn: TextDirection, phys: &SectionProp
             continue;
         }
         match it {
-            Placed::Image { rect, .. } | Placed::Shape { rect, .. } | Placed::Graphic { rect, .. } => *rect = upright(*rect),
+            Placed::Image { rect, .. }
+            | Placed::Shape { rect, .. }
+            | Placed::Graphic { rect, .. } => *rect = upright(*rect),
             _ => it.turn(turn, ox, oy),
         }
     }
@@ -104,10 +137,24 @@ pub(crate) fn turn_page(page: &mut Page, turn: TextDirection, phys: &SectionProp
 /// in the section holds).
 fn bounds(it: &Placed) -> Option<Rect> {
     match it {
-        Placed::Lines { para, l0, l1, x, y, turn, .. } if !turn.is_turned() => {
+        Placed::Lines {
+            para,
+            l0,
+            l1,
+            x,
+            y,
+            turn,
+            ..
+        } if !turn.is_turned() => {
             let first = para.lines.get(*l0)?;
             let last = para.lines.get(l1.checked_sub(1)?)?;
-            let right = para.lines.get(*l0..*l1).unwrap_or(&[]).iter().map(|l| l.right).fold(0.0f32, f32::max);
+            let right = para
+                .lines
+                .get(*l0..*l1)
+                .unwrap_or(&[])
+                .iter()
+                .map(|l| l.right)
+                .fold(0.0f32, f32::max);
             Some(Rect::new(*x, *y, right, last.top + last.height - first.top))
         }
         Placed::Lines { .. } => it.turned_bounds(),
@@ -118,6 +165,11 @@ fn bounds(it: &Placed) -> Option<Rect> {
         | Placed::Clip { rect, .. }
         | Placed::Cell { rect, .. }
         | Placed::Object { rect, .. } => Some(*rect),
-        Placed::Rule { x0, y0, x1, y1, .. } => Some(Rect::new(x0.min(*x1), y0.min(*y1), (x1 - x0).abs(), (y1 - y0).abs())),
+        Placed::Rule { x0, y0, x1, y1, .. } => Some(Rect::new(
+            x0.min(*x1),
+            y0.min(*y1),
+            (x1 - x0).abs(),
+            (y1 - y0).abs(),
+        )),
     }
 }

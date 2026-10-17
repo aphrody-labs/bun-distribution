@@ -119,26 +119,42 @@ impl GeminiCliCredentials {
             .or_else(|| v.get("token"))
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned);
-        let refresh_token =
-            v.get("refresh_token").and_then(serde_json::Value::as_str).map(str::to_owned);
-        let expiry_date = v.get("expiry_date").and_then(serde_json::Value::as_i64).or_else(|| {
-            // Some CLI versions store `expires_in` (seconds) instead.
-            v.get("expires_in").and_then(serde_json::Value::as_i64).and_then(|sec| {
-                SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .ok()
-                    .and_then(|d| i64::try_from(d.as_millis()).ok())
-                    .map(|now_ms| now_ms + sec * 1000)
-            })
-        });
+        let refresh_token = v
+            .get("refresh_token")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
+        let expiry_date = v
+            .get("expiry_date")
+            .and_then(serde_json::Value::as_i64)
+            .or_else(|| {
+                // Some CLI versions store `expires_in` (seconds) instead.
+                v.get("expires_in")
+                    .and_then(serde_json::Value::as_i64)
+                    .and_then(|sec| {
+                        SystemTime::now()
+                            .duration_since(SystemTime::UNIX_EPOCH)
+                            .ok()
+                            .and_then(|d| i64::try_from(d.as_millis()).ok())
+                            .map(|now_ms| now_ms + sec * 1000)
+                    })
+            });
         let project_id = v
             .get("projectId")
             .or_else(|| v.get("project_id"))
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned);
-        let token_type = v.get("token_type").and_then(serde_json::Value::as_str).map(str::to_owned);
+        let token_type = v
+            .get("token_type")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
 
-        Ok(Self { access_token, refresh_token, expiry_date, project_id, token_type })
+        Ok(Self {
+            access_token,
+            refresh_token,
+            expiry_date,
+            project_id,
+            token_type,
+        })
     }
 
     /// Reads `<home>/.gemini/oauth_creds.json` and parses it.
@@ -151,8 +167,10 @@ impl GeminiCliCredentials {
     pub fn from_default_path() -> Result<Self, GeminiCliError> {
         let home = dirs::home_dir().ok_or(GeminiCliError::NoHomeDir)?;
         let path = home.join(".gemini").join(GEMINI_OAUTH_CREDS_FILENAME);
-        let raw = std::fs::read_to_string(&path)
-            .map_err(|source| GeminiCliError::CredsRead { path: path.clone(), source })?;
+        let raw = std::fs::read_to_string(&path).map_err(|source| GeminiCliError::CredsRead {
+            path: path.clone(),
+            source,
+        })?;
         Self::parse_json(&raw)
     }
 
@@ -304,8 +322,10 @@ mod tests {
 
     #[test]
     fn expiry_checks_use_provided_clock() {
-        let creds =
-            GeminiCliCredentials { expiry_date: Some(1_000), ..GeminiCliCredentials::default() };
+        let creds = GeminiCliCredentials {
+            expiry_date: Some(1_000),
+            ..GeminiCliCredentials::default()
+        };
         assert!(creds.is_expired_at(2_000));
         assert!(!creds.is_expired_at(500));
 
@@ -316,7 +336,11 @@ mod tests {
     #[test]
     fn resolve_bin_honors_aphrody_env_override() {
         // Use a path we control rather than depending on `which`.
-        let fake = if cfg!(windows) { r"C:\fake\gemini.exe" } else { "/opt/fake/gemini" };
+        let fake = if cfg!(windows) {
+            r"C:\fake\gemini.exe"
+        } else {
+            "/opt/fake/gemini"
+        };
         // SAFETY: tests are single-threaded by default for env mutation here.
         // We restore the variable on exit.
         let prev = env::var(ENV_GEMINI_BIN).ok();
@@ -339,11 +363,14 @@ mod tests {
             bin: PathBuf::from("/dev/null"),
             creds: GeminiCliCredentials::default(),
         };
-        let err = adapter.chat(ChatRequest::new("gemini-3.5-flash", vec![])).await.unwrap_err();
+        let err = adapter
+            .chat(ChatRequest::new("gemini-3.5-flash", vec![]))
+            .await
+            .unwrap_err();
         match err {
             GatewayError::Config(msg) => {
                 assert!(msg.contains("gemini_runtime"), "msg={msg}");
-            },
+            }
             other => panic!("expected Config error, got {other:?}"),
         }
     }

@@ -57,7 +57,9 @@ pub fn validate(codes: &[String], locale: &str) -> Result<(), &'static str> {
         || codes.iter().any(|code| {
             code.is_empty()
                 || code.len() > MAX_CODE_LEN
-                || code.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | ','))
+                || code
+                    .chars()
+                    .any(|c| c.is_control() || matches!(c, '/' | '\\' | ','))
         })
     {
         return Err("Require at most 200 exact resource codes of 1..128 bytes");
@@ -89,7 +91,11 @@ fn display_name<'a>(
         _ => 1,
     };
     for index in [requested, 1, 0, 2] {
-        if let Some(name) = names[index].as_deref().map(str::trim).filter(|name| !name.is_empty()) {
+        if let Some(name) = names[index]
+            .as_deref()
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+        {
             return (name, Some(["fr", "en", "ja"][index]));
         }
     }
@@ -100,8 +106,11 @@ fn display_name<'a>(
 pub fn resolve(conn: &Connection, codes: &[String], locale: &str) -> anyhow::Result<NamePage> {
     validate(codes, locale).map_err(anyhow::Error::msg)?;
     let mut seen = BTreeSet::new();
-    let codes: Vec<&str> =
-        codes.iter().map(String::as_str).filter(|code| seen.insert(*code)).collect();
+    let codes: Vec<&str> = codes
+        .iter()
+        .map(String::as_str)
+        .filter(|code| seen.insert(*code))
+        .collect();
     let mut page = NamePage {
         locale: locale.into(),
         records: Vec::new(),
@@ -167,8 +176,11 @@ pub fn resolve(conn: &Connection, codes: &[String], locale: &str) -> anyhow::Res
     }
     snapshot.commit()?;
     let matched: BTreeSet<&str> = page.records.iter().map(|row| row.code.as_str()).collect();
-    page.unresolved =
-        codes.into_iter().filter(|code| !matched.contains(code)).map(str::to_owned).collect();
+    page.unresolved = codes
+        .into_iter()
+        .filter(|code| !matched.contains(code))
+        .map(str::to_owned)
+        .collect();
     Ok(page)
 }
 
@@ -276,9 +288,12 @@ mod tests {
 
     #[test]
     fn retains_variant_ids_requested_language_and_missing_kinds() {
-        let page =
-            resolve(&fixture(), &["c01000100".into(), "c01000100".into(), "unknown".into()], "ja")
-                .unwrap();
+        let page = resolve(
+            &fixture(),
+            &["c01000100".into(), "c01000100".into(), "unknown".into()],
+            "ja",
+        )
+        .unwrap();
         assert_eq!(page.locale, "ja");
         assert_eq!(page.records.len(), 2);
         assert_eq!(page.records[0].id, "native-id-a");
@@ -293,17 +308,28 @@ mod tests {
 
     #[test]
     fn exact_asset_code_links_and_absent_translations_remain_explicit() {
-        let page =
-            resolve(&fixture(), &["keshin-exact".into(), "keshin".into(), "unnamed".into()], "de")
-                .unwrap();
+        let page = resolve(
+            &fixture(),
+            &["keshin-exact".into(), "keshin".into(), "unnamed".into()],
+            "de",
+        )
+        .unwrap();
         assert_eq!(page.locale, "de");
         assert_eq!(page.records.len(), 2);
-        let aura = page.records.iter().find(|row| row.kind == "keshin").unwrap();
+        let aura = page
+            .records
+            .iter()
+            .find(|row| row.kind == "keshin")
+            .unwrap();
         assert_eq!(aura.code, "keshin-exact");
         assert_eq!(aura.id, "aura-id");
         assert_eq!(aura.name, "Spirit");
         assert_eq!(aura.locale_used.as_deref(), Some("en"));
-        let unnamed = page.records.iter().find(|row| row.code == "unnamed").unwrap();
+        let unnamed = page
+            .records
+            .iter()
+            .find(|row| row.code == "unnamed")
+            .unwrap();
         assert_eq!(unnamed.name, "native-id-c");
         assert_eq!(unnamed.locale_used, None);
         assert_eq!(page.unresolved, ["keshin"]);
@@ -322,14 +348,20 @@ mod tests {
         assert!(page.records.iter().all(|record| record.kind == "chara"));
         assert_eq!(page.records[0].name, "Marc");
         assert_eq!(page.unresolved, ["keshin-exact"]);
-        assert_eq!(page.unavailable_kinds, ["skill", "item", "team", "keshin", "soul"]);
+        assert_eq!(
+            page.unavailable_kinds,
+            ["skill", "item", "team", "keshin", "soul"]
+        );
     }
 
     #[test]
     fn malformed_source_values_remain_errors() {
         let conn = fixture();
-        conn.execute("UPDATE inagle_characters SET name_fr = x'FF' WHERE id = 'native-id-a'", [])
-            .unwrap();
+        conn.execute(
+            "UPDATE inagle_characters SET name_fr = x'FF' WHERE id = 'native-id-a'",
+            [],
+        )
+        .unwrap();
         assert!(resolve(&conn, &["c01000100".into()], "fr").is_err());
     }
 

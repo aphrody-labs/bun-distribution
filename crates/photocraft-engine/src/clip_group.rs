@@ -20,7 +20,11 @@ use photocraft_doc::{Document, Layer, LayerId};
 /// The sibling list holding the layer at `path`, and the layer's index in it.
 fn siblings<'a>(doc: &'a Document, path: &[usize]) -> Option<(&'a [Layer], usize)> {
     let (&idx, parent) = path.split_last()?;
-    let list = if parent.is_empty() { &doc.layers[..] } else { doc.layer_at(parent)?.children()? };
+    let list = if parent.is_empty() {
+        &doc.layers[..]
+    } else {
+        doc.layer_at(parent)?.children()?
+    };
     Some((list, idx))
 }
 
@@ -34,11 +38,24 @@ fn neighbour(doc: &Document, id: LayerId, delta: isize) -> Option<&Layer> {
 /// The clip group `id` belongs to, base first, when it has one (a clipped layer, or a base with
 /// layers clipped to it).
 fn group_of(doc: &Document, id: LayerId) -> Vec<LayerId> {
-    let Some(path) = doc.path_of(id) else { return Vec::new() };
-    let Some((list, idx)) = siblings(doc, &path) else { return Vec::new() };
-    let base = list.iter().take(idx.saturating_add(1)).rposition(|l| !l.clipped);
+    let Some(path) = doc.path_of(id) else {
+        return Vec::new();
+    };
+    let Some((list, idx)) = siblings(doc, &path) else {
+        return Vec::new();
+    };
+    let base = list
+        .iter()
+        .take(idx.saturating_add(1))
+        .rposition(|l| !l.clipped);
     let Some(base) = base else { return Vec::new() };
-    let group: Vec<LayerId> = list.iter().skip(base).enumerate().take_while(|(i, l)| *i == 0 || l.clipped).map(|(_, l)| l.id).collect();
+    let group: Vec<LayerId> = list
+        .iter()
+        .skip(base)
+        .enumerate()
+        .take_while(|(i, l)| *i == 0 || l.clipped)
+        .map(|(_, l)| l.id)
+        .collect();
     if group.len() > 1 { group } else { Vec::new() }
 }
 
@@ -66,15 +83,35 @@ pub(crate) struct Before {
 impl Before {
     /// Read the clip groups of `moving` (moved or deleted together).
     pub(crate) fn read(doc: &Document, moving: &[LayerId]) -> Self {
-        let clipped = moving.iter().copied().filter(|&id| doc.layer(id).is_some_and(|l| l.clipped)).collect();
-        let groups = moving.iter().map(|&id| (id, group_of(doc, id))).filter(|(_, g)| !g.is_empty()).collect();
-        let mut left: Vec<LayerId> = moving.iter().flat_map(|&id| clipped_to(doc, id)).filter(|id| !moving.contains(id)).collect();
+        let clipped = moving
+            .iter()
+            .copied()
+            .filter(|&id| doc.layer(id).is_some_and(|l| l.clipped))
+            .collect();
+        let groups = moving
+            .iter()
+            .map(|&id| (id, group_of(doc, id)))
+            .filter(|(_, g)| !g.is_empty())
+            .collect();
+        let mut left: Vec<LayerId> = moving
+            .iter()
+            .flat_map(|&id| clipped_to(doc, id))
+            .filter(|id| !moving.contains(id))
+            .collect();
         left.dedup();
-        Self { moving: moving.to_vec(), clipped, groups, left }
+        Self {
+            moving: moving.to_vec(),
+            clipped,
+            groups,
+            left,
+        }
     }
 
     fn group(&self, id: LayerId) -> &[LayerId] {
-        self.groups.iter().find(|(m, _)| *m == id).map_or(&[], |(_, g)| g)
+        self.groups
+            .iter()
+            .find(|(m, _)| *m == id)
+            .map_or(&[], |(_, g)| g)
     }
 }
 
@@ -90,14 +127,18 @@ fn set_clipped(doc: &mut Document, id: LayerId, clipped: bool) {
 /// Create Clipping Mask). Then the layers that lost their base are released (rule 3), and any
 /// clipped layer with nothing below it (rule 4).
 pub(crate) fn settle(doc: &mut Document, placed: &[LayerId], before: &Before, force: bool) {
-    let mut order: Vec<(Vec<usize>, LayerId)> = placed.iter().filter_map(|&id| Some((doc.path_of(id)?, id))).collect();
+    let mut order: Vec<(Vec<usize>, LayerId)> = placed
+        .iter()
+        .filter_map(|&id| Some((doc.path_of(id)?, id)))
+        .collect();
     // Paths sort bottom to top within a sibling list: walk them from the top.
     order.sort();
     for (_, id) in order.into_iter().rev() {
         let group = before.group(id);
         let travelling = |n: LayerId| before.moving.contains(&n) && group.contains(&n);
         let joins = neighbour(doc, id, 1).is_some_and(|a| a.clipped && !travelling(a.id));
-        let stays = before.clipped.contains(&id) && neighbour(doc, id, -1).is_some_and(|b| b.clipped || group.contains(&b.id));
+        let stays = before.clipped.contains(&id)
+            && neighbour(doc, id, -1).is_some_and(|b| b.clipped || group.contains(&b.id));
         set_clipped(doc, id, force || joins || stays);
     }
     for &id in &before.left {
@@ -134,11 +175,19 @@ mod tests {
     /// A document holding `spec` (bottom to top, `*` = clipped) above its Background.
     fn stack(spec: &str) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
+        s.execute("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
         for name in spec.split_whitespace() {
-            let id = s.execute("layer.new.layer", json!({"name": name.trim_end_matches('*')})).unwrap()["layer"].clone();
+            let id = s
+                .execute(
+                    "layer.new.layer",
+                    json!({"name": name.trim_end_matches('*')}),
+                )
+                .unwrap()["layer"]
+                .clone();
             if name.ends_with('*') {
-                s.execute("layer.setProps", json!({"layer": id, "clipped": true})).unwrap();
+                s.execute("layer.setProps", json!({"layer": id, "clipped": true}))
+                    .unwrap();
             }
         }
         assert_eq!(shown(&s), spec);
@@ -148,13 +197,25 @@ mod tests {
     /// The stack above the Background, as [`stack`] writes it.
     fn shown(s: &Session) -> String {
         let doc = &s.active().unwrap().doc;
-        let names = doc.layers.iter().skip(1).map(|l| format!("{}{}", l.name, if l.clipped { "*" } else { "" }));
+        let names = doc
+            .layers
+            .iter()
+            .skip(1)
+            .map(|l| format!("{}{}", l.name, if l.clipped { "*" } else { "" }));
         names.collect::<Vec<_>>().join(" ")
     }
 
     fn id(s: &Session, name: &str) -> Value {
         let doc = &s.active().unwrap().doc;
-        json!(doc.walk().into_iter().find(|(_, _, l)| l.name == name).unwrap().2.id.0)
+        json!(
+            doc.walk()
+                .into_iter()
+                .find(|(_, _, l)| l.name == name)
+                .unwrap()
+                .2
+                .id
+                .0
+        )
     }
 
     fn run(s: &mut Session, cmd: &str, p: Value) {
@@ -169,7 +230,12 @@ mod tests {
     /// New Layer joins the clip group it lands in (#2203 rows 1–6).
     #[test]
     fn new_layer_joins_the_group_it_lands_in() {
-        for (spec, active, want) in [("B C*", "B", "B N* C*"), ("B C*", "C", "B C* N"), ("B C1* C2*", "C1", "B C1* N* C2*"), ("B U", "B", "B N U")] {
+        for (spec, active, want) in [
+            ("B C*", "B", "B N* C*"),
+            ("B C*", "C", "B C* N"),
+            ("B C1* C2*", "C1", "B C1* N* C2*"),
+            ("B U", "B", "B N U"),
+        ] {
             let mut s = stack(spec);
             select(&mut s, active);
             run(&mut s, "layer.new.layer", json!({"name": "N"}));
@@ -177,7 +243,11 @@ mod tests {
         }
         // Use Previous Layer to Create Clipping Mask.
         let mut s = stack("B");
-        run(&mut s, "layer.new.layer", json!({"name": "N", "clipToPrevious": true}));
+        run(
+            &mut s,
+            "layer.new.layer",
+            json!({"name": "N", "clipToPrevious": true}),
+        );
         assert_eq!(shown(&s), "B N*");
         // The report: three new layers with the base active all join its group.
         let mut s = stack("tpl Cont*");
@@ -220,18 +290,38 @@ mod tests {
             ("U B C1* C2*", vec!["U"], "C1", "above", "B C1* U* C2*"),
             ("B C1* C2* U", vec!["C1"], "U", "above", "B C2* U C1"),
             ("X B C1* C2*", vec!["C2"], "B", "below", "X C2 B C1*"),
-            ("B C1* C2* U V", vec!["U", "V"], "C1", "above", "B C1* U* V* C2*"),
-            ("X B C1* C2* U", vec!["B", "C1"], "U", "above", "X C2 U B C1*"),
+            (
+                "B C1* C2* U V",
+                vec!["U", "V"],
+                "C1",
+                "above",
+                "B C1* U* V* C2*",
+            ),
+            (
+                "X B C1* C2* U",
+                vec!["B", "C1"],
+                "U",
+                "above",
+                "X C2 U B C1*",
+            ),
         ] {
             let mut s = stack(spec);
             let ids: Vec<Value> = layers.iter().map(|n| id(&s, n)).collect();
             let t = id(&s, target);
-            run(&mut s, "layer.moveTo", json!({"layers": ids, "target": t, "position": pos}));
+            run(
+                &mut s,
+                "layer.moveTo",
+                json!({"layers": ids, "target": t, "position": pos}),
+            );
             assert_eq!(shown(&s), want, "{spec}: {layers:?} {pos} {target}");
         }
         let mut s = stack("B C1* C2* U");
         let (u, c1) = (id(&s, "U"), id(&s, "C1"));
-        run(&mut s, "layer.moveTo", json!({"layer": u, "target": c1, "position": "above", "copy": true}));
+        run(
+            &mut s,
+            "layer.moveTo",
+            json!({"layer": u, "target": c1, "position": "above", "copy": true}),
+        );
         assert_eq!(shown(&s), "B C1* U copy* C2* U");
     }
 
@@ -250,7 +340,11 @@ mod tests {
         let mut s = stack("X B C1* C2*");
         select(&mut s, "B");
         let c1 = id(&s, "C1");
-        run(&mut s, "layer.select", json!({"layer": c1, "mode": "toggle"}));
+        run(
+            &mut s,
+            "layer.select",
+            json!({"layer": c1, "mode": "toggle"}),
+        );
         run(&mut s, "layer.delete", json!({}));
         assert_eq!(shown(&s), "X C2");
         // Each change is one history step.
@@ -265,10 +359,18 @@ mod tests {
         let mut s = stack("A B U");
         let (a, b, u) = (id(&s, "A"), id(&s, "B"), id(&s, "U"));
         run(&mut s, "layer.select", json!({"layer": a}));
-        run(&mut s, "layer.select", json!({"layer": b, "mode": "toggle"}));
+        run(
+            &mut s,
+            "layer.select",
+            json!({"layer": b, "mode": "toggle"}),
+        );
         run(&mut s, "layer.groupLayers", json!({"name": "G"}));
         s.edit("orphans", |doc, _| {
-            for l in doc.layers.iter_mut().flat_map(|g| g.children_mut().into_iter().flatten()) {
+            for l in doc
+                .layers
+                .iter_mut()
+                .flat_map(|g| g.children_mut().into_iter().flatten())
+            {
                 l.clipped = true;
             }
             Ok(())
@@ -276,7 +378,12 @@ mod tests {
         .unwrap();
         run(&mut s, "layer.arrange.sendBackward", json!({"layer": u}));
         let doc = &s.active().unwrap().doc;
-        let g = doc.walk().into_iter().find(|(_, _, l)| l.name == "G").unwrap().2;
+        let g = doc
+            .walk()
+            .into_iter()
+            .find(|(_, _, l)| l.name == "G")
+            .unwrap()
+            .2;
         assert!(g.children().unwrap().iter().all(|l| !l.clipped));
     }
 }

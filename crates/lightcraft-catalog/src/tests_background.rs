@@ -22,7 +22,11 @@ struct Gated {
 
 impl Gated {
     fn new() -> Gated {
-        Gated { files: MemStore::new(), gate: Arc::new((Mutex::new(false), Condvar::new())), fail: Arc::new(AtomicBool::new(false)) }
+        Gated {
+            files: MemStore::new(),
+            gate: Arc::new((Mutex::new(false), Condvar::new())),
+            fail: Arc::new(AtomicBool::new(false)),
+        }
     }
     fn set_gate(&self, open: bool) {
         *self.gate.0.lock().unwrap() = open;
@@ -47,10 +51,16 @@ impl Store for Gated {
     fn write_atomic(&mut self, name: &str, data: &[u8]) -> std::io::Result<()> {
         self.files.write_atomic(name, data)
     }
-    fn write_atomic_with(&mut self, name: &str, fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>) -> std::io::Result<u64> {
+    fn write_atomic_with(
+        &mut self,
+        name: &str,
+        fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>,
+    ) -> std::io::Result<u64> {
         if name == SNAPSHOT {
             let (lock, cv) = &*self.gate;
-            let (open, timeout) = cv.wait_timeout_while(lock.lock().unwrap(), Duration::from_secs(20), |open| !*open).unwrap();
+            let (open, timeout) = cv
+                .wait_timeout_while(lock.lock().unwrap(), Duration::from_secs(20), |open| !*open)
+                .unwrap();
             if !*open || timeout.timed_out() {
                 return Err(std::io::Error::other("gate never opened"));
             }
@@ -82,9 +92,24 @@ fn edit(j: &mut Journal, live: &mut Catalog, k: u64) {
     let one = |live: &mut Catalog, k: u64| {
         let op = if live.len() < 4 || k.is_multiple_of(3) {
             let id = live.alloc_photo_id();
-            Op::AddPhoto { photo: Box::new(Photo::new(id, Source::File { path: format!("/p/{}.jpg", id.0) }, "p.jpg", "JPEG", 4, 3, "t")) }
+            Op::AddPhoto {
+                photo: Box::new(Photo::new(
+                    id,
+                    Source::File {
+                        path: format!("/p/{}.jpg", id.0),
+                    },
+                    "p.jpg",
+                    "JPEG",
+                    4,
+                    3,
+                    "t",
+                )),
+            }
         } else {
-            Op::SetRating { id: PhotoId(1 + k % live.len() as u64), rating: (k % 6) as u8 }
+            Op::SetRating {
+                id: PhotoId(1 + k % live.len() as u64),
+                rating: (k % 6) as u8,
+            }
         };
         live.apply(op.clone()).unwrap();
         op
@@ -144,20 +169,29 @@ fn background_snapshot_keeps_edits_made_while_it_runs() {
         during = j.seq() - n;
     }
     let r = assert_recovers(&g, &live);
-    assert_eq!((r.snapshot_seq, r.stale as u64, r.replayed as u64), (n, n, during));
+    assert_eq!(
+        (r.snapshot_seq, r.stale as u64, r.replayed as u64),
+        (n, n, during)
+    );
 
     // finishing trims the log to exactly the records after the snapshot, in order
     assert!(j.poll().unwrap());
     assert!(!j.snapshot_running());
     assert_eq!((j.snapshot_seq(), j.log_records()), (n, during));
     let log = String::from_utf8(g.files.get(LOG).unwrap()).unwrap();
-    let seqs: Vec<u64> = log.lines().map(|l| journal::decode_record(l).unwrap().0).collect();
+    let seqs: Vec<u64> = log
+        .lines()
+        .map(|l| journal::decode_record(l).unwrap().0)
+        .collect();
     assert_eq!(seqs, ((n + 1)..=j.seq()).collect::<Vec<_>>());
     assert_eq!(j.log_bytes(), log.len() as u64);
     let r = assert_recovers(&g, &live);
     assert_eq!((r.snapshot_seq, r.stale, r.replayed as u64), (n, 0, during));
     let s = j.stats();
-    assert!(s.last_snapshot.background && s.last_snapshot.records == n && !s.snapshot_running, "{s:?}");
+    assert!(
+        s.last_snapshot.background && s.last_snapshot.records == n && !s.snapshot_running,
+        "{s:?}"
+    );
 
     // and appending goes on after it
     edit(&mut j, &mut live, 99);
@@ -168,7 +202,10 @@ fn background_snapshot_keeps_edits_made_while_it_runs() {
 fn failed_background_snapshot_loses_nothing_and_retries_later() {
     let g = Gated::new();
     let (mut j, mut live, _) = Journal::open(Box::new(g.clone())).unwrap();
-    j.policy = SnapshotPolicy { max_records: 10, max_bytes: u64::MAX };
+    j.policy = SnapshotPolicy {
+        max_records: 10,
+        max_bytes: u64::MAX,
+    };
     for k in 0..12 {
         edit(&mut j, &mut live, k);
     }
@@ -254,7 +291,10 @@ fn dropping_the_journal_waits_for_its_snapshot() {
     assert_eq!(g.snapshot_seq_on_disk(), Some(n));
     let (_, c, r) = Journal::open(Box::new(g.files.clone())).unwrap();
     assert_eq!(c.to_snapshot(), live.to_snapshot());
-    assert_eq!((r.snapshot_seq, r.stale as u64, r.replayed as u64), (n, n, total - n));
+    assert_eq!(
+        (r.snapshot_seq, r.stale as u64, r.replayed as u64),
+        (n, n, total - n)
+    );
 }
 
 /// On disk, with a real worker thread: a crash mid-write leaves only a temp file, which loading
@@ -268,7 +308,11 @@ fn fs_store_background_snapshot() {
         edit(&mut j, &mut live, k);
     }
     // a previous crash mid-snapshot left a partial temp file
-    std::fs::write(dir.join(format!("{SNAPSHOT}.tmp")), b"{\"format\":\"lightcraft-catal").unwrap();
+    std::fs::write(
+        dir.join(format!("{SNAPSHOT}.tmp")),
+        b"{\"format\":\"lightcraft-catal",
+    )
+    .unwrap();
     let (mut j2, c2, r) = Journal::open(Box::new(FsStore::open(&dir).unwrap())).unwrap();
     assert_eq!((c2.to_snapshot(), r.snapshot_seq), (live.to_snapshot(), 0));
     drop(j);

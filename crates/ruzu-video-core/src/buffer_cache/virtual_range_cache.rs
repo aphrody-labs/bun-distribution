@@ -133,7 +133,12 @@ impl VirtualRangeCache {
         if !contiguous || expected != gpu_addr.wrapping_add(u64::from(size)) {
             entry.segments.clear();
         }
-        &self.entries.entry(key).insert_entry(entry).into_mut().segments
+        &self
+            .entries
+            .entry(key)
+            .insert_entry(entry)
+            .into_mut()
+            .segments
     }
 
     /// Upstream `Unmap`: records a GPU unmap to invalidate overlapping
@@ -322,7 +327,12 @@ mod tests {
     fn deferred_unmap_evicts_overlapping_entries_only() {
         let memory = MappedMemory {
             id: 7,
-            pages: vec![(0x1000, 0x8000), (0x2000, 0x20000), (0x5000, 0x30000), (0x6000, 0x40000)],
+            pages: vec![
+                (0x1000, 0x8000),
+                (0x2000, 0x20000),
+                (0x5000, 0x30000),
+                (0x6000, 0x40000),
+            ],
         };
         let mut cache = VirtualRangeCache::new();
         cache.query(&memory, 0x1000, 0x2000);

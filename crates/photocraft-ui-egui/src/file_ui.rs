@@ -19,7 +19,11 @@ fn no_params(p: &Value) -> bool {
 }
 
 fn default_dir(app: &PhotocraftApp) -> String {
-    app.session.active().and_then(|d| d.path.as_deref()).and_then(|p| p.rfind(['/', '\\']).map(|i| p[..i].to_string())).unwrap_or_else(|| ".".into())
+    app.session
+        .active()
+        .and_then(|d| d.path.as_deref())
+        .and_then(|p| p.rfind(['/', '\\']).map(|i| p[..i].to_string()))
+        .unwrap_or_else(|| ".".into())
 }
 
 /// A packaged macOS app does not start in a useful writable working directory. A saved
@@ -33,17 +37,33 @@ fn droplet_default_dir(app: &PhotocraftApp) -> String {
     if let Some(home) = std::env::var_os("HOME") {
         let home = std::path::PathBuf::from(home);
         let documents = home.join("Documents");
-        return if documents.is_dir() { documents } else { home }.to_string_lossy().into_owned();
+        return if documents.is_dir() { documents } else { home }
+            .to_string_lossy()
+            .into_owned();
     }
     dir
 }
 
 fn doc_stem(app: &PhotocraftApp) -> String {
-    app.session.active().map(|d| d.doc.name.rsplit_once('.').map_or(d.doc.name.clone(), |(a, _)| a.to_string())).unwrap_or_else(|| tl!("Untitled").into())
+    app.session
+        .active()
+        .map(|d| {
+            d.doc
+                .name
+                .rsplit_once('.')
+                .map_or(d.doc.name.clone(), |(a, _)| a.to_string())
+        })
+        .unwrap_or_else(|| tl!("Untitled").into())
 }
 
 /// A generic form dialog for `command` (rendered by `view_cmds::form_body`).
-fn form(app: &mut PhotocraftApp, command: &str, label: &str, fields: Value, choices: Value) -> Value {
+fn form(
+    app: &mut PhotocraftApp,
+    command: &str,
+    label: &str,
+    fields: Value,
+    choices: Value,
+) -> Value {
     let mut f = Map::new();
     f.insert("__command".into(), json!(command));
     f.insert("__label".into(), json!(label));
@@ -59,7 +79,12 @@ fn form(app: &mut PhotocraftApp, command: &str, label: &str, fields: Value, choi
 const SCRIPT_EXTENSIONS: &[&str] = &["psjs", "ccjs", "jsx", "js", "jsxbin", "json", "txt"];
 
 /// Menu items fronted here (dialogs before the engine command). `None` when not ours.
-pub fn invoke(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub fn invoke(
+    app: &mut PhotocraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     if !no_params(params) {
         return None;
     }
@@ -78,7 +103,9 @@ pub fn invoke(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &V
             app.session.active()?;
             json!({"dialog": open_print(app)})
         }
-        "file.export.exportPreferences" => return crate::prefs_ui::invoke(app, ctx, "edit.preferences.export", &json!({})),
+        "file.export.exportPreferences" => {
+            return crate::prefs_ui::invoke(app, ctx, "edit.preferences.export", &json!({}));
+        }
         "file.automate.contactSheetII" => form(
             app,
             id,
@@ -102,23 +129,46 @@ pub fn invoke(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &V
             )
         }
         "file.scripts.statistics" => {
-            let modes: Vec<&str> = photocraft_doc::StackMode::ALL.iter().map(|m| m.id()).collect();
-            form(app, id, "Image Statistics", json!({"mode": "median", "input": dir, "align": false}), json!({"mode": modes}))
+            let modes: Vec<&str> = photocraft_doc::StackMode::ALL
+                .iter()
+                .map(|m| m.id())
+                .collect();
+            form(
+                app,
+                id,
+                "Image Statistics",
+                json!({"mode": "median", "input": dir, "align": false}),
+                json!({"mode": modes}),
+            )
         }
         "file.scripts.browse" => {
-            return Some(app.pick_file_bytes_filtered(SCRIPT_EXTENSIONS, |app, name, bytes| {
-                let r = app.run("file.scripts.browse", json!({"script": String::from_utf8_lossy(&bytes)}));
-                if r.is_ok() {
-                    let template = "Ran script {name}";
-                    app.ui.status = crate::i18n::fmt(tl!(template), &[("name", &name)]);
-                }
-                r
-            }));
+            return Some(
+                app.pick_file_bytes_filtered(SCRIPT_EXTENSIONS, |app, name, bytes| {
+                    let r = app.run(
+                        "file.scripts.browse",
+                        json!({"script": String::from_utf8_lossy(&bytes)}),
+                    );
+                    if r.is_ok() {
+                        let template = "Ran script {name}";
+                        app.ui.status = crate::i18n::fmt(tl!(template), &[("name", &name)]);
+                    }
+                    r
+                }),
+            );
         }
         "file.scripts.scriptEventsManager" => {
             let enabled = app.session.prefs().script_events.enabled;
-            let events: Vec<&str> = photocraft_engine::automate_cmds::EVENTS.iter().map(|e| e.0).collect();
-            form(app, id, "Script Events Manager", json!({"enabled": enabled, "event": "openDocument", "script": "", "name": ""}), json!({"event": events}))
+            let events: Vec<&str> = photocraft_engine::automate_cmds::EVENTS
+                .iter()
+                .map(|e| e.0)
+                .collect();
+            form(
+                app,
+                id,
+                "Script Events Manager",
+                json!({"enabled": enabled, "event": "openDocument", "script": "", "name": ""}),
+                json!({"event": events}),
+            )
         }
         "file.package" => form(app, id, "Package", json!({"dir": dir}), json!({})),
         "file.export.pathsToIllustrator" => {
@@ -129,7 +179,13 @@ pub fn invoke(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &V
                 }
                 names.extend(d.doc.paths.iter().map(|p| p.name.clone()));
             }
-            form(app, id, "Export Paths to File", json!({"path": format!("{dir}/{stem}.ai"), "paths": "all"}), json!({"paths": names}))
+            form(
+                app,
+                id,
+                "Export Paths to File",
+                json!({"path": format!("{dir}/{stem}.ai"), "paths": "all"}),
+                json!({"paths": names}),
+            )
         }
         _ => return None,
     }))
@@ -139,7 +195,11 @@ pub fn invoke(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &V
 pub fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
     match id {
         "view.lockSlices" => Some(app.session.file_menu.slices_locked),
-        "file.generate.imageAssets" => Some(app.session.active().is_some_and(|d| app.session.file_menu.image_assets.contains(&d.doc.id))),
+        "file.generate.imageAssets" => Some(
+            app.session
+                .active()
+                .is_some_and(|d| app.session.file_menu.image_assets.contains(&d.doc.id)),
+        ),
         _ => None,
     }
 }
@@ -178,11 +238,20 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
 }
 
 pub fn confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Value, String> {
-    if f.contains_key("__web") { web_confirm(app, f) } else { print_confirm(app, f) }
+    if f.contains_key("__web") {
+        web_confirm(app, f)
+    } else {
+        print_confirm(app, f)
+    }
 }
 
 fn params(f: &Map<String, Value>) -> Value {
-    Value::Object(f.iter().filter(|(k, _)| !k.starts_with("__")).map(|(k, v)| (k.clone(), v.clone())).collect())
+    Value::Object(
+        f.iter()
+            .filter(|(k, _)| !k.starts_with("__"))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
+    )
 }
 
 fn s(f: &Map<String, Value>, k: &str, d: &str) -> String {
@@ -200,7 +269,13 @@ fn b(f: &Map<String, Value>, k: &str, d: bool) -> bool {
 #[path = "file_ui/web_preview.rs"]
 mod web_preview;
 
-const WEB_FORMATS: [(&str, &str); 5] = [("gif", "GIF"), ("png8", "PNG-8"), ("png24", "PNG-24"), ("jpeg", "JPEG"), ("wbmp", "WBMP")];
+const WEB_FORMATS: [(&str, &str); 5] = [
+    ("gif", "GIF"),
+    ("png8", "PNG-8"),
+    ("png24", "PNG-24"),
+    ("jpeg", "JPEG"),
+    ("wbmp", "WBMP"),
+];
 const WEB_COMMAND: &str = "file.export.saveForWebLegacy";
 
 pub fn open_web(app: &mut PhotocraftApp) -> u64 {
@@ -221,7 +296,10 @@ pub fn open_web(app: &mut PhotocraftApp) -> u64 {
         .unwrap_or_else(|| json!({"format": "jpeg", "quality": 60}));
     if let Value::Object(m) = last {
         for (k, v) in m {
-            if !matches!(k.as_str(), "path" | "dir" | "width" | "height" | "percent" | "colorTable" | "colorTableEdits") {
+            if !matches!(
+                k.as_str(),
+                "path" | "dir" | "width" | "height" | "percent" | "colorTable" | "colorTableEdits"
+            ) {
                 f.insert(k, v);
             }
         }
@@ -274,21 +352,40 @@ fn variants(p: &Value) -> Vec<Value> {
 
 /// The flattened preview image: pixels, width, height, full-size / proxy pixel ratio.
 type WebProxy = (Arc<Vec<[f32; 4]>>, u32, u32, f64, egui::Vec2);
-type WebCache = (String, Arc<egui::TextureHandle>, Option<(usize, Option<usize>, &'static str)>);
+type WebCache = (
+    String,
+    Arc<egui::TextureHandle>,
+    Option<(usize, Option<usize>, &'static str)>,
+);
 
 /// Renders one preview pane: the original (`None`) or an optimised variant.
-fn web_pane(app: &PhotocraftApp, ui: &mut egui::Ui, size: egui::Vec2, p: Option<&Value>, f: &mut Map<String, Value>, pane: usize, frame: Option<usize>) {
+fn web_pane(
+    app: &PhotocraftApp,
+    ui: &mut egui::Ui,
+    size: egui::Vec2,
+    p: Option<&Value>,
+    f: &mut Map<String, Value>,
+    pane: usize,
+    frame: Option<usize>,
+) {
     let t = Tokens::get(ui.ctx());
-    let Some(st) = app.session.active() else { return };
+    let Some(st) = app.session.active() else {
+        return;
+    };
     let doc = st.doc.clone();
     let rev = st.revision;
     // A bounded proxy; navigation never recomposites or re-encodes it.
     let base = p.cloned().unwrap_or_else(|| json!({}));
-    let size_sig = format!("{}|{}|{}|{}", base["percent"], base["width"], base["height"], base["convertToSrgb"]);
+    let size_sig = format!(
+        "{}|{}|{}|{}",
+        base["percent"], base["width"], base["height"], base["convertToSrgb"]
+    );
     let wkey = egui::Id::new(("web-proxy", doc.id.0, pane));
     let proxy_sig = format!("{rev}|{frame:?}|{size_sig}");
     let cached_proxy: Option<(String, WebProxy)> = ui.data(|d| d.get_temp(wkey));
-    let proxy = cached_proxy.filter(|(sig, _)| sig == &proxy_sig).map(|(_, proxy)| proxy);
+    let proxy = cached_proxy
+        .filter(|(sig, _)| sig == &proxy_sig)
+        .map(|(_, proxy)| proxy);
     let (px, w, h, ratio, source_size) = match proxy {
         Some(v) => v,
         None => {
@@ -301,10 +398,14 @@ fn web_pane(app: &PhotocraftApp, ui: &mut egui::Ui, size: egui::Vec2, p: Option<
             };
             let k = (2048.0 / fw.max(fh)).min(1.0);
             let st = WebSettings::from_params(&base, "preview").unwrap_or_default();
-            let Ok(doc) = web_frame_document(&doc, frame) else { return };
-            let Ok((wd, _, _)) =
-                web_cmds::web_document(&doc, &json!({"width": (fw * k).round().max(1.0), "height": (fh * k).round().max(1.0), "resample": "bilinear"}), &st)
-            else {
+            let Ok(doc) = web_frame_document(&doc, frame) else {
+                return;
+            };
+            let Ok((wd, _, _)) = web_cmds::web_document(
+                &doc,
+                &json!({"width": (fw * k).round().max(1.0), "height": (fh * k).round().max(1.0), "resample": "bilinear"}),
+                &st,
+            ) else {
                 return;
             };
             let buf = photocraft_compose::flatten(&wd);
@@ -319,16 +420,37 @@ fn web_pane(app: &PhotocraftApp, ui: &mut egui::Ui, size: egui::Vec2, p: Option<
             v
         }
     };
-    let sig = format!("{}|{rev}|{frame:?}|{size_sig}|{}", doc.id.0, p.map(|v| v.to_string()).unwrap_or_else(|| "original".into()));
+    let sig = format!(
+        "{}|{rev}|{frame:?}|{size_sig}|{}",
+        doc.id.0,
+        p.map(|v| v.to_string())
+            .unwrap_or_else(|| "original".into())
+    );
     let key = egui::Id::new(("web-pane", doc.id.0, pane));
     let cached: Option<WebCache> = ui.data(|d| d.get_temp(key));
     let (tex, info) = match cached.filter(|c| c.0 == sig) {
         Some((_, tex, info)) => (tex, info),
         None => {
             let (rgba, info) = match p {
-                None => (px.iter().flat_map(|q| q.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)).collect::<Vec<u8>>(), None),
-                Some(p) => match web_preview::optimized(ui, key, &format!("{}|{rev}|{frame:?}|{size_sig}", doc.id.0), p, &px, w, h) {
-                    Ok((preview, bytes, colors, ext)) => (preview, Some(((bytes as f64 * ratio) as usize, colors, ext))),
+                None => (
+                    px.iter()
+                        .flat_map(|q| q.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8))
+                        .collect::<Vec<u8>>(),
+                    None,
+                ),
+                Some(p) => match web_preview::optimized(
+                    ui,
+                    key,
+                    &format!("{}|{rev}|{frame:?}|{size_sig}", doc.id.0),
+                    p,
+                    &px,
+                    w,
+                    h,
+                ) {
+                    Ok((preview, bytes, colors, ext)) => (
+                        preview,
+                        Some(((bytes as f64 * ratio) as usize, colors, ext)),
+                    ),
                     Err(error) => {
                         ui.label(error);
                         (vec![0; (w * h * 4) as usize], None)
@@ -336,34 +458,65 @@ fn web_pane(app: &PhotocraftApp, ui: &mut egui::Ui, size: egui::Vec2, p: Option<
                 },
             };
             let img = egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &rgba);
-            let tex = Arc::new(ui.ctx().load_texture("web-pane", img, egui::TextureOptions::LINEAR));
+            let tex = Arc::new(ui.ctx().load_texture(
+                "web-pane",
+                img,
+                egui::TextureOptions::LINEAR,
+            ));
             ui.data_mut(|d| d.insert_temp(key, (sig, tex.clone(), info)));
             (tex, info)
         }
     };
     ui.vertical(|ui| {
         ui.set_width(size.x);
-        let (r, response) = ui.allocate_exact_size((size - egui::vec2(0.0, 42.0)).max(egui::vec2(1.0, 1.0)), egui::Sense::drag());
+        let (r, response) = ui.allocate_exact_size(
+            (size - egui::vec2(0.0, 42.0)).max(egui::vec2(1.0, 1.0)),
+            egui::Sense::drag(),
+        );
         let response = response.on_hover_cursor(egui::CursorIcon::Grab);
         if let Some(rects) = f.get_mut("__previewRects").and_then(Value::as_array_mut) {
             rects.push(json!([r.left(), r.top(), r.right(), r.bottom()]));
         }
         crate::widgets::checker(ui.painter(), r, 8.0);
         web_preview::paint(ui, r, &response, &tex, source_size, f);
-        ui.painter().rect_stroke(r, 0.0, egui::Stroke::new(1.0, t.separator), egui::StrokeKind::Inside);
+        ui.painter().rect_stroke(
+            r,
+            0.0,
+            egui::Stroke::new(1.0, t.separator),
+            egui::StrokeKind::Inside,
+        );
         let (l1, l2) = match (p, info) {
-            (None, _) => ("Original".to_string(), format!("{}  ·  {} × {} px", doc.name, doc.size.width, doc.size.height)),
+            (None, _) => (
+                "Original".to_string(),
+                format!(
+                    "{}  ·  {} × {} px",
+                    doc.name, doc.size.width, doc.size.height
+                ),
+            ),
             (Some(_), Some((bytes, colors, ext))) => {
                 // Photoshop's download estimate at 56.6 Kbps.
                 let secs = (bytes as f64 * 8.0 / 56_600.0).ceil();
                 (
-                    format!("{}  {}", ext.to_uppercase(), crate::sizing::human_bytes(bytes as f64)),
-                    format!("{secs} sec @ 56.6 Kbps{}", colors.map(|c| format!("  ·  {c} colors")).unwrap_or_default()),
+                    format!(
+                        "{}  {}",
+                        ext.to_uppercase(),
+                        crate::sizing::human_bytes(bytes as f64)
+                    ),
+                    format!(
+                        "{secs} sec @ 56.6 Kbps{}",
+                        colors
+                            .map(|c| format!("  ·  {c} colors"))
+                            .unwrap_or_default()
+                    ),
                 )
             }
             (Some(_), None) => ("—".into(), String::new()),
         };
-        let l1 = if ratio > 1.001 { format!("{l1}  ·  Proxy preview") } else { l1 };
+        let l1 = if ratio > 1.001 {
+            format!("{l1}  ·  Proxy preview")
+        } else {
+            l1
+        };
         ui.add(egui::Label::new(egui::RichText::new(l1).color(t.text).size(11.5)).truncate());
         ui.add(egui::Label::new(egui::RichText::new(l2).color(t.text_dim).size(11.0)).truncate());
     });
@@ -375,7 +528,16 @@ fn web_pane(app: &PhotocraftApp, ui: &mut egui::Ui, size: egui::Vec2, p: Option<
 fn printer_options(list: Option<&Value>, current: &str) -> Vec<(String, String)> {
     let printers: Vec<(&str, bool)> = list
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(|p| Some((p.get("name")?.as_str()?, p.get("default").and_then(Value::as_bool).unwrap_or(false)))).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|p| {
+                    Some((
+                        p.get("name")?.as_str()?,
+                        p.get("default").and_then(Value::as_bool).unwrap_or(false),
+                    ))
+                })
+                .collect()
+        })
         .unwrap_or_default();
     let pretty = |n: &str| n.replace('_', " ");
     let default = match printers.iter().find(|p| p.1) {
@@ -390,7 +552,14 @@ fn printer_options(list: Option<&Value>, current: &str) -> Vec<(String, String)>
     opts
 }
 
-fn dropdown_str(ui: &mut egui::Ui, id: &str, f: &mut Map<String, Value>, key: &str, opts: &[(&str, &str)], w: f32) {
+fn dropdown_str(
+    ui: &mut egui::Ui,
+    id: &str,
+    f: &mut Map<String, Value>,
+    key: &str,
+    opts: &[(&str, &str)],
+    w: f32,
+) {
     let mut v = s(f, key, opts.first().map_or("", |o| o.0));
     let o: Vec<(String, &str)> = opts.iter().map(|(k, l)| (k.to_string(), *l)).collect();
     if crate::widgets::dropdown(ui, id, &mut v, &o, w) {
@@ -404,7 +573,15 @@ fn check(ui: &mut egui::Ui, f: &mut Map<String, Value>, key: &str, label: &str, 
     f.insert(key.into(), json!(v));
 }
 
-fn number(ui: &mut egui::Ui, f: &mut Map<String, Value>, key: &str, label: &str, range: std::ops::RangeInclusive<f32>, unit: &str, d: f64) {
+fn number(
+    ui: &mut egui::Ui,
+    f: &mut Map<String, Value>,
+    key: &str,
+    label: &str,
+    range: std::ops::RangeInclusive<f32>,
+    unit: &str,
+    d: f64,
+) {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(tl!(&label)).color(t.text_dim));
@@ -425,7 +602,11 @@ fn advance_preview(frame: usize, duration: usize, fps: f32, last: f64, now: f64)
     if !last.is_finite() || now < last {
         return (frame, now);
     }
-    let fps = if fps.is_finite() && fps > 0.0 { f64::from(fps) } else { 30.0 };
+    let fps = if fps.is_finite() && fps > 0.0 {
+        f64::from(fps)
+    } else {
+        30.0
+    };
     let elapsed_frames = (now - last) * fps;
     if !elapsed_frames.is_finite() {
         return (frame, now);
@@ -436,25 +617,46 @@ fn advance_preview(frame: usize, duration: usize, fps: f32, last: f64, now: f64)
     }
     let delta = (steps % duration as f64) as usize % duration;
     let remaining = duration - frame;
-    let next = if delta >= remaining { delta - remaining } else { frame + delta };
+    let next = if delta >= remaining {
+        delta - remaining
+    } else {
+        frame + delta
+    };
     (next, now - (elapsed_frames - steps) / fps)
 }
 
-fn web_playback(ui: &mut egui::Ui, f: &mut Map<String, Value>, doc: &photocraft_doc::Document) -> Option<usize> {
+fn web_playback(
+    ui: &mut egui::Ui,
+    f: &mut Map<String, Value>,
+    doc: &photocraft_doc::Document,
+) -> Option<usize> {
     let mut timeline = doc.timeline.clone()?;
     timeline.clamp();
     if timeline.duration < 2 {
         return None;
     }
     let now = ui.input(|i| i.time);
-    let mut frame = f.get("__web_frame").and_then(Value::as_u64).and_then(|v| usize::try_from(v).ok()).unwrap_or(timeline.current).min(timeline.duration - 1);
+    let mut frame = f
+        .get("__web_frame")
+        .and_then(Value::as_u64)
+        .and_then(|v| usize::try_from(v).ok())
+        .unwrap_or(timeline.current)
+        .min(timeline.duration - 1);
     let mut last = n(f, "__web_time", now);
     let mut playing = b(f, "__web_playing", false);
     if playing {
         (frame, last) = advance_preview(frame, timeline.duration, timeline.fps, last, now);
     }
     ui.horizontal(|ui| {
-        if crate::icons::button(ui, if playing { "pause" } else { "play" }, 22.0, playing, if playing { tl!("Pause") } else { tl!("Play") }).clicked() {
+        if crate::icons::button(
+            ui,
+            if playing { "pause" } else { "play" },
+            22.0,
+            playing,
+            if playing { tl!("Pause") } else { tl!("Play") },
+        )
+        .clicked()
+        {
             playing = !playing;
             last = now;
         }
@@ -465,25 +667,42 @@ fn web_playback(ui: &mut egui::Ui, f: &mut Map<String, Value>, doc: &photocraft_
     f.insert("__web_playing".into(), json!(playing));
     if playing {
         let remaining = (1.0 / f64::from(timeline.fps) - (now - last)).clamp(0.0, 1.0);
-        ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(remaining));
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_secs_f64(remaining));
     }
     Some(frame)
 }
 
 /// Seek a preview copy, preserving any edits to the source's currently displayed frame.
-fn web_frame_document(doc: &photocraft_doc::Document, frame: Option<usize>) -> Result<photocraft_doc::Document, photocraft_engine::EngineError> {
-    let Some(frame) = frame else { return Ok(doc.clone()) };
+fn web_frame_document(
+    doc: &photocraft_doc::Document,
+    frame: Option<usize>,
+) -> Result<photocraft_doc::Document, photocraft_engine::EngineError> {
+    let Some(frame) = frame else {
+        return Ok(doc.clone());
+    };
     let mut preview = photocraft_engine::Session::new();
     preview.add_document(doc.clone(), None);
     preview.execute("timeline.setFrame", json!({"frame": frame}))?;
-    Ok((*preview.active().ok_or(photocraft_engine::EngineError::NoDocument)?.doc).clone())
+    Ok((*preview
+        .active()
+        .ok_or(photocraft_engine::EngineError::NoDocument)?
+        .doc)
+        .clone())
 }
 fn web_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) {
     let t = Tokens::get(ui.ctx());
-    let Some(doc) = app.session.active().map(|d| d.doc.clone()) else { return };
+    let Some(doc) = app.session.active().map(|d| d.doc.clone()) else {
+        return;
+    };
     ui.horizontal(|ui| {
         let mut view = s(f, "__view", "2up");
-        for (k, l) in [("original", tl!("Original")), ("optimized", tl!("Optimized")), ("2up", "2-Up"), ("4up", "4-Up")] {
+        for (k, l) in [
+            ("original", tl!("Original")),
+            ("optimized", tl!("Optimized")),
+            ("2up", "2-Up"),
+            ("4up", "4-Up"),
+        ] {
             if ui.selectable_label(view == k, tl!(&l)).clicked() {
                 view = k.into();
             }
@@ -498,7 +717,10 @@ fn web_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
     }
     let p = params(f);
     f.insert("__previewRects".into(), json!([]));
-    let area = egui::vec2((ui.available_width() - 270.0 - ui.spacing().item_spacing.x).max(260.0), (ui.available_height() - 48.0).max(180.0));
+    let area = egui::vec2(
+        (ui.available_width() - 270.0 - ui.spacing().item_spacing.x).max(260.0),
+        (ui.available_height() - 48.0).max(180.0),
+    );
     ui.horizontal_top(|ui| {
         // Previews grow with the dialog; settings retain their compact width.
         ui.vertical(|ui| {
@@ -508,8 +730,24 @@ fn web_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
                 "optimized" => web_pane(app, ui, area, Some(&p), f, 1, frame),
                 "2up" => {
                     ui.horizontal(|ui| {
-                        web_pane(app, ui, egui::vec2(area.x / 2.0 - 4.0, area.y), None, f, 0, frame);
-                        web_pane(app, ui, egui::vec2(area.x / 2.0 - 4.0, area.y), Some(&p), f, 1, frame);
+                        web_pane(
+                            app,
+                            ui,
+                            egui::vec2(area.x / 2.0 - 4.0, area.y),
+                            None,
+                            f,
+                            0,
+                            frame,
+                        );
+                        web_pane(
+                            app,
+                            ui,
+                            egui::vec2(area.x / 2.0 - 4.0, area.y),
+                            Some(&p),
+                            f,
+                            1,
+                            frame,
+                        );
                     });
                 }
                 _ => {
@@ -530,119 +768,161 @@ fn web_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
         // Settings scroll independently on smaller windows.
         ui.vertical(|ui| {
             ui.set_width(250.0);
-            egui::ScrollArea::vertical().id_salt("web-settings").max_height(area.y).show(ui, |ui| {
-                ui.label(egui::RichText::new(tl!("Preset")).color(t.text_dim));
-                let mut preset = s(f, "__preset", "");
-                let mut opts: Vec<(String, &str)> = vec![("".into(), "[Unnamed]")];
-                opts.extend(web_cmds::PRESETS.iter().map(|p| (p.to_string(), *p)));
-                if crate::widgets::dropdown(ui, "web-preset", &mut preset, &opts, 230.0) && !preset.is_empty() {
-                    if let Some(Value::Object(m)) = web_cmds::preset_settings(&preset).map(|st| st.to_params()) {
-                        f.extend(m);
-                    }
-                    f.insert("__preset".into(), json!(preset));
-                }
-                ui.add_space(4.0);
-                dropdown_str(ui, "web-format", f, "format", &WEB_FORMATS, 230.0);
-                ui.add_space(4.0);
-                let fmt = s(f, "format", "jpeg");
-                match fmt.as_str() {
-                    "gif" | "png8" => {
-                        dropdown_str(
-                            ui,
-                            "web-palette",
-                            f,
-                            "palette",
-                            &[
-                                ("perceptual", tl!("Perceptual")),
-                                ("selective", tl!("Selective")),
-                                ("adaptive", tl!("Adaptive")),
-                                ("restrictive", tl!("Restrictive (Web)")),
-                                ("exact", tl!("Exact")),
-                            ],
-                            150.0,
-                        );
-                        number(ui, f, "colors", tl!("Colors"), 2.0..=256.0, "", 128.0);
-                        dropdown_str(
-                            ui,
-                            "web-dither",
-                            f,
-                            "dither",
-                            &[("none", tl!("No Dither")), ("diffusion", tl!("Diffusion")), ("pattern", tl!("Pattern")), ("noise", tl!("Noise"))],
-                            150.0,
-                        );
-                        number(ui, f, "ditherAmount", tl!("Dither"), 0.0..=100.0, "%", 88.0);
-                        check(ui, f, "transparency", tl!("Transparency"), true);
-                        check(ui, f, "interlaced", tl!("Interlaced"), false);
-                        number(ui, f, "webSnap", tl!("Web Snap"), 0.0..=100.0, "%", 0.0);
-                    }
-                    "jpeg" => {
-                        number(ui, f, "quality", tl!("Quality"), 0.0..=100.0, "", 60.0);
-                        check(ui, f, "progressive", tl!("Progressive"), false);
-                        check(ui, f, "optimized", tl!("Optimized"), true);
-                        check(ui, f, "embedIcc", tl!("Embed Color Profile"), false);
-                    }
-                    "wbmp" => {
-                        dropdown_str(
-                            ui,
-                            "web-dither",
-                            f,
-                            "dither",
-                            &[("none", tl!("No Dither")), ("diffusion", tl!("Diffusion")), ("pattern", tl!("Pattern"))],
-                            150.0,
-                        );
-                    }
-                    _ => {
-                        check(ui, f, "transparency", tl!("Transparency"), true);
-                        check(ui, f, "interlaced", tl!("Interlaced"), false);
-                    }
-                }
-                if fmt != "png24" || !b(f, "transparency", true) {
-                    ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new(tl!("Matte")).color(t.text_dim));
-                        let mut m = s(f, "matte", "#ffffff");
-                        if ui.add(egui::TextEdit::singleline(&mut m).desired_width(80.0)).changed() {
-                            f.insert("matte".into(), json!(m));
+            egui::ScrollArea::vertical()
+                .id_salt("web-settings")
+                .max_height(area.y)
+                .show(ui, |ui| {
+                    ui.label(egui::RichText::new(tl!("Preset")).color(t.text_dim));
+                    let mut preset = s(f, "__preset", "");
+                    let mut opts: Vec<(String, &str)> = vec![("".into(), "[Unnamed]")];
+                    opts.extend(web_cmds::PRESETS.iter().map(|p| (p.to_string(), *p)));
+                    if crate::widgets::dropdown(ui, "web-preset", &mut preset, &opts, 230.0)
+                        && !preset.is_empty()
+                    {
+                        if let Some(Value::Object(m)) =
+                            web_cmds::preset_settings(&preset).map(|st| st.to_params())
+                        {
+                            f.extend(m);
                         }
+                        f.insert("__preset".into(), json!(preset));
+                    }
+                    ui.add_space(4.0);
+                    dropdown_str(ui, "web-format", f, "format", &WEB_FORMATS, 230.0);
+                    ui.add_space(4.0);
+                    let fmt = s(f, "format", "jpeg");
+                    match fmt.as_str() {
+                        "gif" | "png8" => {
+                            dropdown_str(
+                                ui,
+                                "web-palette",
+                                f,
+                                "palette",
+                                &[
+                                    ("perceptual", tl!("Perceptual")),
+                                    ("selective", tl!("Selective")),
+                                    ("adaptive", tl!("Adaptive")),
+                                    ("restrictive", tl!("Restrictive (Web)")),
+                                    ("exact", tl!("Exact")),
+                                ],
+                                150.0,
+                            );
+                            number(ui, f, "colors", tl!("Colors"), 2.0..=256.0, "", 128.0);
+                            dropdown_str(
+                                ui,
+                                "web-dither",
+                                f,
+                                "dither",
+                                &[
+                                    ("none", tl!("No Dither")),
+                                    ("diffusion", tl!("Diffusion")),
+                                    ("pattern", tl!("Pattern")),
+                                    ("noise", tl!("Noise")),
+                                ],
+                                150.0,
+                            );
+                            number(ui, f, "ditherAmount", tl!("Dither"), 0.0..=100.0, "%", 88.0);
+                            check(ui, f, "transparency", tl!("Transparency"), true);
+                            check(ui, f, "interlaced", tl!("Interlaced"), false);
+                            number(ui, f, "webSnap", tl!("Web Snap"), 0.0..=100.0, "%", 0.0);
+                        }
+                        "jpeg" => {
+                            number(ui, f, "quality", tl!("Quality"), 0.0..=100.0, "", 60.0);
+                            check(ui, f, "progressive", tl!("Progressive"), false);
+                            check(ui, f, "optimized", tl!("Optimized"), true);
+                            check(ui, f, "embedIcc", tl!("Embed Color Profile"), false);
+                        }
+                        "wbmp" => {
+                            dropdown_str(
+                                ui,
+                                "web-dither",
+                                f,
+                                "dither",
+                                &[
+                                    ("none", tl!("No Dither")),
+                                    ("diffusion", tl!("Diffusion")),
+                                    ("pattern", tl!("Pattern")),
+                                ],
+                                150.0,
+                            );
+                        }
+                        _ => {
+                            check(ui, f, "transparency", tl!("Transparency"), true);
+                            check(ui, f, "interlaced", tl!("Interlaced"), false);
+                        }
+                    }
+                    if fmt != "png24" || !b(f, "transparency", true) {
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new(tl!("Matte")).color(t.text_dim));
+                            let mut m = s(f, "matte", "#ffffff");
+                            if ui
+                                .add(egui::TextEdit::singleline(&mut m).desired_width(80.0))
+                                .changed()
+                            {
+                                f.insert("matte".into(), json!(m));
+                            }
+                        });
+                    }
+                    ui.add_space(6.0);
+                    check(ui, f, "convertToSrgb", tl!("Convert to sRGB"), true);
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new(tl!("Metadata")).color(t.text_dim));
+                        dropdown_str(
+                            ui,
+                            "web-meta",
+                            f,
+                            "metadata",
+                            &[
+                                ("none", tl!("None")),
+                                ("copyright", tl!("Copyright")),
+                                ("copyrightAndContact", tl!("Copyright and Contact Info")),
+                                ("all", tl!("All")),
+                            ],
+                            160.0,
+                        );
                     });
-                }
-                ui.add_space(6.0);
-                check(ui, f, "convertToSrgb", tl!("Convert to sRGB"), true);
-                ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new(tl!("Metadata")).color(t.text_dim));
-                    dropdown_str(
-                        ui,
-                        "web-meta",
-                        f,
-                        "metadata",
-                        &[
-                            ("none", tl!("None")),
-                            ("copyright", tl!("Copyright")),
-                            ("copyrightAndContact", tl!("Copyright and Contact Info")),
-                            ("all", tl!("All")),
-                        ],
-                        160.0,
+                    if matches!(fmt.as_str(), "gif" | "png8") {
+                        web_preview::table(ui, f);
+                    }
+                    ui.add_space(8.0);
+                    ui.label(
+                        egui::RichText::new(tl!("Image Size"))
+                            .font(crate::theme::semibold(12.0))
+                            .color(t.text),
                     );
-                });
-                if matches!(fmt.as_str(), "gif" | "png8") {
-                    web_preview::table(ui, f);
-                }
-                ui.add_space(8.0);
-                ui.label(egui::RichText::new(tl!("Image Size")).font(crate::theme::semibold(12.0)).color(t.text));
-                number(ui, f, "percent", tl!("Percent"), 1.0..=1000.0, "%", 100.0);
-                let pct = n(f, "percent", 100.0) / 100.0;
-                ui.label(
-                    egui::RichText::new(format!("W: {} px   H: {} px", (f64::from(doc.size.width) * pct).round(), (f64::from(doc.size.height) * pct).round()))
+                    number(ui, f, "percent", tl!("Percent"), 1.0..=1000.0, "%", 100.0);
+                    let pct = n(f, "percent", 100.0) / 100.0;
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "W: {} px   H: {} px",
+                            (f64::from(doc.size.width) * pct).round(),
+                            (f64::from(doc.size.height) * pct).round()
+                        ))
                         .color(t.text_dim)
                         .size(11.5),
-                );
-                let nslices = photocraft_doc::slices::resolve(&doc).len();
-                if !doc.slices.is_empty() {
-                    ui.add_space(6.0);
-                    ui.label(egui::RichText::new(crate::i18n::trn(crate::i18n::current(), nslices as u64, "{n} slice", "{n} slices")).color(t.text_dim));
-                    check(ui, f, "html", tl!("Save HTML and Images"), true);
-                    dropdown_str(ui, "web-slices", f, "slices", &[("all", tl!("All Slices")), ("user", tl!("All User Slices"))], 150.0);
-                }
-            });
+                    );
+                    let nslices = photocraft_doc::slices::resolve(&doc).len();
+                    if !doc.slices.is_empty() {
+                        ui.add_space(6.0);
+                        ui.label(
+                            egui::RichText::new(crate::i18n::trn(
+                                crate::i18n::current(),
+                                nslices as u64,
+                                "{n} slice",
+                                "{n} slices",
+                            ))
+                            .color(t.text_dim),
+                        );
+                        check(ui, f, "html", tl!("Save HTML and Images"), true);
+                        dropdown_str(
+                            ui,
+                            "web-slices",
+                            f,
+                            "slices",
+                            &[("all", tl!("All Slices")), ("user", tl!("All User Slices"))],
+                            150.0,
+                        );
+                    }
+                });
         });
     });
 }
@@ -651,7 +931,11 @@ fn web_confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Value,
     // Check while the control/input policy is still installed, before an asynchronous picker
     // can outlive the request. A browser download uses the interactive platform writer.
     let authorize = |p: &Value| -> Result<(), String> {
-        if let Some(authorize) = app.session.authorize.or(if app.automation_input { app.services.automation_authorize } else { None }) {
+        if let Some(authorize) = app.session.authorize.or(if app.automation_input {
+            app.services.automation_authorize
+        } else {
+            None
+        }) {
             authorize(WEB_COMMAND, p).map_err(|e| e.to_string())?;
         }
         if app.automation_input
@@ -678,13 +962,21 @@ fn web_confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Value,
     let doc = app.session.active().ok_or("no document")?.doc.clone();
     let has_slices = !doc.slices.is_empty();
     let html = b(f, "html", true);
-    let st = WebSettings::from_params(&p, "file.export.saveForWebLegacy").map_err(|e| e.to_string())?;
+    let st =
+        WebSettings::from_params(&p, "file.export.saveForWebLegacy").map_err(|e| e.to_string())?;
     let base = photocraft_doc::slices::base_name(&doc);
-    let suggested = if has_slices && html { format!("{base}.html") } else { format!("{base}.{}", st.format.ext()) };
+    let suggested = if has_slices && html {
+        format!("{base}.html")
+    } else {
+        format!("{base}.{}", st.format.ext())
+    };
     app.pick_save(&suggested, move |app, path| {
         app.refocus(doc.id)?;
         if has_slices {
-            let dir = path.rfind(['/', '\\']).map(|i| path[..i].to_string()).unwrap_or_else(|| ".".into());
+            let dir = path
+                .rfind(['/', '\\'])
+                .map(|i| path[..i].to_string())
+                .unwrap_or_else(|| ".".into());
             p["dir"] = json!(dir);
             p["html"] = json!(html);
         } else {
@@ -705,8 +997,12 @@ fn save_for_web(app: &mut PhotocraftApp, p: Value) -> Result<Value, String> {
         app.ui.status_error = true;
     })?;
     app.sync_views();
-    app.ui.status =
-        crate::i18n::trn(crate::i18n::current(), r["files"].as_array().map_or(0, Vec::len) as u64, "Saved for Web: {n} file", "Saved for Web: {n} files");
+    app.ui.status = crate::i18n::trn(
+        crate::i18n::current(),
+        r["files"].as_array().map_or(0, Vec::len) as u64,
+        "Saved for Web: {n} file",
+        "Saved for Web: {n} files",
+    );
     app.ui.status_error = false;
     Ok(r)
 }
@@ -717,8 +1013,10 @@ fn download_for_web(app: &mut PhotocraftApp, mut p: Value) -> Result<Value, Stri
     // beside the downloaded page, matching the names handed to the platform service.
     p["imagesFolder"] = json!("");
     let write = app.services.write.as_mut().ok_or("no download service")?;
-    web_cmds::save_for_web_with_writer(&mut app.session, &p, &mut |path, bytes| write(path, bytes).map_err(photocraft_engine::EngineError::Other))
-        .map_err(|e| e.to_string())
+    web_cmds::save_for_web_with_writer(&mut app.session, &p, &mut |path, bytes| {
+        write(path, bytes).map_err(photocraft_engine::EngineError::Other)
+    })
+    .map_err(|e| e.to_string())
 }
 
 // ---------- Print ----------
@@ -728,7 +1026,10 @@ pub fn open_print(app: &mut PhotocraftApp) -> u64 {
     f.insert("__print".into(), json!(true));
     f.insert("__label".into(), json!("PhotoCraft Print Settings"));
     // Asked once per opening: the Printer menu lists what the spooler knows now.
-    let printers = app.session.execute("file.printers", json!({})).unwrap_or_default();
+    let printers = app
+        .session
+        .execute("file.printers", json!({}))
+        .unwrap_or_default();
     f.insert("__printers".into(), printers["printers"].clone());
     if let Some(Value::Object(m)) = app.session.file_menu.last_print.clone() {
         f.extend(m);
@@ -775,7 +1076,13 @@ fn length_field(ui: &mut egui::Ui, label: &str, pt: &mut f64, units: &str) -> bo
     length_field_prec(ui, label, pt, units, 0)
 }
 
-fn length_field_prec(ui: &mut egui::Ui, label: &str, pt: &mut f64, units: &str, decimals: u32) -> bool {
+fn length_field_prec(
+    ui: &mut egui::Ui,
+    label: &str,
+    pt: &mut f64,
+    units: &str,
+    decimals: u32,
+) -> bool {
     let t = Tokens::get(ui.ctx());
     let k = unit_pt(units);
     let mut v = (*pt / k) as f32;
@@ -796,17 +1103,30 @@ fn length_field_prec(ui: &mut egui::Ui, label: &str, pt: &mut f64, units: &str, 
 fn print_paper_size(value: Option<&Value>) -> (f64, f64) {
     let default = (612.0, 792.0);
     match value {
-        Some(Value::Array(a)) => (a.first().and_then(Value::as_f64).unwrap_or(default.0), a.get(1).and_then(Value::as_f64).unwrap_or(default.1)),
-        Some(Value::String(name)) => photocraft_engine::print_cmds::PAPERS.iter().find(|p| p.0.eq_ignore_ascii_case(name)).map_or(default, |p| (p.1, p.2)),
+        Some(Value::Array(a)) => (
+            a.first().and_then(Value::as_f64).unwrap_or(default.0),
+            a.get(1).and_then(Value::as_f64).unwrap_or(default.1),
+        ),
+        Some(Value::String(name)) => photocraft_engine::print_cmds::PAPERS
+            .iter()
+            .find(|p| p.0.eq_ignore_ascii_case(name))
+            .map_or(default, |p| (p.1, p.2)),
         _ => default,
     }
 }
 
 fn print_paper_controls(ui: &mut egui::Ui, f: &mut Map<String, Value>) {
     let previous = f.get("paper").cloned();
-    let mut selected = if previous.as_ref().is_some_and(Value::is_array) { "custom".to_string() } else { s(f, "paper", "letter") };
+    let mut selected = if previous.as_ref().is_some_and(Value::is_array) {
+        "custom".to_string()
+    } else {
+        s(f, "paper", "letter")
+    };
     ui.horizontal(|ui| {
-        let mut papers: Vec<_> = photocraft_engine::print_cmds::PAPERS.iter().map(|p| (p.0.to_string(), p.0)).collect();
+        let mut papers: Vec<_> = photocraft_engine::print_cmds::PAPERS
+            .iter()
+            .map(|p| (p.0.to_string(), p.0))
+            .collect();
         papers.push(("custom".to_string(), tl!("Custom")));
         if crate::widgets::dropdown(ui, "print-paper", &mut selected, &papers, 110.0) {
             if selected == "custom" {
@@ -819,7 +1139,17 @@ fn print_paper_controls(ui: &mut egui::Ui, f: &mut Map<String, Value>) {
                 f.insert("paper".into(), json!(selected));
             }
         }
-        dropdown_str(ui, "print-orient", f, "orientation", &[("portrait", tl!("Portrait")), ("landscape", tl!("Landscape"))], 110.0);
+        dropdown_str(
+            ui,
+            "print-orient",
+            f,
+            "orientation",
+            &[
+                ("portrait", tl!("Portrait")),
+                ("landscape", tl!("Landscape")),
+            ],
+            110.0,
+        );
     });
     if f.get("paper").is_some_and(Value::is_array) {
         let (mut w, mut h) = print_paper_size(f.get("paper"));
@@ -841,7 +1171,9 @@ fn print_paper_controls(ui: &mut egui::Ui, f: &mut Map<String, Value>) {
 
 fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) {
     let t = Tokens::get(ui.ctx());
-    let Some(doc) = app.session.active().map(|d| d.doc.clone()) else { return };
+    let Some(doc) = app.session.active().map(|d| d.doc.clone()) else {
+        return;
+    };
     let p = params(f);
     ui.horizontal_top(|ui| {
         // Page preview.
@@ -851,23 +1183,46 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
             match photocraft_engine::print_cmds::layout(&doc, &p, "file.print") {
                 Ok(l) => {
                     let (pw, ph) = l.paper;
-                    let k = ((area.width() - 20.0) / pw as f32).min((area.height() - 20.0) / ph as f32);
-                    let page = egui::Rect::from_center_size(area.center(), egui::vec2(pw as f32 * k, ph as f32 * k));
+                    let k =
+                        ((area.width() - 20.0) / pw as f32).min((area.height() - 20.0) / ph as f32);
+                    let page = egui::Rect::from_center_size(
+                        area.center(),
+                        egui::vec2(pw as f32 * k, ph as f32 * k),
+                    );
                     ui.painter().rect_filled(page, 0.0, egui::Color32::WHITE);
-                    ui.painter().rect_stroke(page, 0.0, egui::Stroke::new(1.0, t.separator), egui::StrokeKind::Outside);
+                    ui.painter().rect_stroke(
+                        page,
+                        0.0,
+                        egui::Stroke::new(1.0, t.separator),
+                        egui::StrokeKind::Outside,
+                    );
                     let (x, y, w, h) = l.rect;
                     // Emulsion Down shows the page as it prints: mirrored.
                     let x = if l.emulsion_down { pw - x - w } else { x };
                     let img = egui::Rect::from_min_size(
-                        egui::pos2(page.left() + x as f32 * k, page.bottom() - (y + h) as f32 * k),
+                        egui::pos2(
+                            page.left() + x as f32 * k,
+                            page.bottom() - (y + h) as f32 * k,
+                        ),
                         egui::vec2(w as f32 * k, h as f32 * k),
                     );
-                    let key = egui::Id::new(("print-thumb", doc.id.0, app.session.active().map_or(0, |d| d.revision)));
+                    let key = egui::Id::new((
+                        "print-thumb",
+                        doc.id.0,
+                        app.session.active().map_or(0, |d| d.revision),
+                    ));
                     let tex: Option<Arc<egui::TextureHandle>> = ui.data(|d| d.get_temp(key));
                     let tex = tex.unwrap_or_else(|| {
                         let th = photocraft_compose::thumbnail(&doc, 400);
-                        let ci = egui::ColorImage::from_rgba_unmultiplied([th.width as usize, th.height as usize], &th.pixels);
-                        let tx = Arc::new(ui.ctx().load_texture("print-thumb", ci, egui::TextureOptions::LINEAR));
+                        let ci = egui::ColorImage::from_rgba_unmultiplied(
+                            [th.width as usize, th.height as usize],
+                            &th.pixels,
+                        );
+                        let tx = Arc::new(ui.ctx().load_texture(
+                            "print-thumb",
+                            ci,
+                            egui::TextureOptions::LINEAR,
+                        ));
                         ui.data_mut(|d| d.insert_temp(key, tx.clone()));
                         tx
                     });
@@ -880,11 +1235,26 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
                     clip.image(tex.id(), img, uv, egui::Color32::WHITE);
                     let mark = egui::Stroke::new(1.0, egui::Color32::BLACK);
                     if l.marks.corner_crop {
-                        for (c, dx, dy) in
-                            [(img.left_top(), -1.0, -1.0), (img.right_top(), 1.0, -1.0), (img.left_bottom(), -1.0, 1.0), (img.right_bottom(), 1.0, 1.0)]
-                        {
-                            clip.line_segment([c + egui::vec2(dx * 3.0, 0.0), c + egui::vec2(dx * 12.0, 0.0)], mark);
-                            clip.line_segment([c + egui::vec2(0.0, dy * 3.0), c + egui::vec2(0.0, dy * 12.0)], mark);
+                        for (c, dx, dy) in [
+                            (img.left_top(), -1.0, -1.0),
+                            (img.right_top(), 1.0, -1.0),
+                            (img.left_bottom(), -1.0, 1.0),
+                            (img.right_bottom(), 1.0, 1.0),
+                        ] {
+                            clip.line_segment(
+                                [
+                                    c + egui::vec2(dx * 3.0, 0.0),
+                                    c + egui::vec2(dx * 12.0, 0.0),
+                                ],
+                                mark,
+                            );
+                            clip.line_segment(
+                                [
+                                    c + egui::vec2(0.0, dy * 3.0),
+                                    c + egui::vec2(0.0, dy * 12.0),
+                                ],
+                                mark,
+                            );
                         }
                     }
                     if l.marks.registration {
@@ -898,15 +1268,30 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
                         }
                     }
                     let fits = x >= 0.0 && y >= 0.0 && x + w <= pw && y + h <= ph;
-                    let note = if fits { String::new() } else { "  ·  larger than the paper".to_string() };
+                    let note = if fits {
+                        String::new()
+                    } else {
+                        "  ·  larger than the paper".to_string()
+                    };
                     ui.label(
-                        egui::RichText::new(format!("Scale {:.1}%  ·  {:.2} × {:.2} in{note}", l.scale * 100.0, w / 72.0, h / 72.0))
-                            .color(if fits { t.text_dim } else { t.warning })
-                            .size(11.0),
+                        egui::RichText::new(format!(
+                            "Scale {:.1}%  ·  {:.2} × {:.2} in{note}",
+                            l.scale * 100.0,
+                            w / 72.0,
+                            h / 72.0
+                        ))
+                        .color(if fits { t.text_dim } else { t.warning })
+                        .size(11.0),
                     );
                 }
                 Err(e) => {
-                    ui.painter().text(area.center(), egui::Align2::CENTER_CENTER, e.to_string(), egui::FontId::proportional(12.0), t.text_dim);
+                    ui.painter().text(
+                        area.center(),
+                        egui::Align2::CENTER_CENTER,
+                        e.to_string(),
+                        egui::FontId::proportional(12.0),
+                        t.text_dim,
+                    );
                 }
             }
         });
@@ -915,14 +1300,19 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
             ui.set_width(340.0);
             let head = |ui: &mut egui::Ui, s: &str| {
                 ui.add_space(4.0);
-                ui.label(egui::RichText::new(s).font(crate::theme::semibold(12.0)).color(t.text));
+                ui.label(
+                    egui::RichText::new(s)
+                        .font(crate::theme::semibold(12.0))
+                        .color(t.text),
+                );
             };
             head(ui, tl!("Printer Setup"));
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(tl!("Printer")).color(t.text_dim));
                 let mut pr = s(f, "printer", "");
                 let opts = printer_options(f.get("__printers"), &pr);
-                let o: Vec<(String, &str)> = opts.iter().map(|(k, l)| (k.clone(), l.as_str())).collect();
+                let o: Vec<(String, &str)> =
+                    opts.iter().map(|(k, l)| (k.clone(), l.as_str())).collect();
                 if crate::widgets::dropdown(ui, "print-printer", &mut pr, &o, 240.0) {
                     f.insert("printer".into(), json!(pr));
                 }
@@ -947,7 +1337,9 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
                 // (output class) profile by its description.
                 let installed: Vec<_> = photocraft_engine::installed_profiles::installed()
                     .into_iter()
-                    .filter(|p| p.is_destination() && p.class == photocraft_cms::ProfileClass::Output)
+                    .filter(|p| {
+                        p.is_destination() && p.class == photocraft_cms::ProfileClass::Output
+                    })
                     .collect();
                 let mut profiles: Vec<(&str, &str)> = vec![
                     ("coated-cmyk", tl!("Coated CMYK")),
@@ -956,10 +1348,17 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
                     ("display-p3", tl!("Display P3")),
                     ("gray-gamma-2.2", tl!("Gray Gamma 2.2")),
                 ];
-                profiles.extend(installed.iter().map(|p| (p.path.as_str(), p.description.as_str())));
+                profiles.extend(
+                    installed
+                        .iter()
+                        .map(|p| (p.path.as_str(), p.description.as_str())),
+                );
                 // A remembered profile that is no longer installed still shows, by its file name.
                 let cur = s(f, "printerProfile", "coated-cmyk");
-                let stem = std::path::Path::new(&cur).file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                let stem = std::path::Path::new(&cur)
+                    .file_stem()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
                 if !profiles.iter().any(|(v, _)| *v == cur) {
                     profiles.push((cur.as_str(), stem.as_str()));
                 }
@@ -982,7 +1381,18 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
                 });
             }
             head(ui, tl!("Position and Size"));
-            dropdown_str(ui, "print-units", f, "units", &[("cm", tl!("Centimeters")), ("mm", tl!("Millimeters")), ("in", tl!("Inches"))], 130.0);
+            dropdown_str(
+                ui,
+                "print-units",
+                f,
+                "units",
+                &[
+                    ("cm", tl!("Centimeters")),
+                    ("mm", tl!("Millimeters")),
+                    ("in", tl!("Inches")),
+                ],
+                130.0,
+            );
             let units = s(f, "units", "cm");
             check(ui, f, "center", tl!("Center"), true);
             if !b(f, "center", true) {
@@ -1008,7 +1418,10 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
                         ui.label(egui::RichText::new(tl!("Scale")).color(t.text_dim));
                         let mut v = n(f, "scale", 100.0) as f32;
                         crate::widgets::value_field(ui, &mut v, 1.0..=1000.0, "%", 64.0);
-                        f.insert("scale".into(), json!((f64::from(v) * 100.0).round() / 100.0));
+                        f.insert(
+                            "scale".into(),
+                            json!((f64::from(v) * 100.0).round() / 100.0),
+                        );
                     });
                 }
                 ui.horizontal(|ui| {
@@ -1022,13 +1435,20 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
                         None
                     };
                     if let Some(k) = k.filter(|k| k.is_finite() && *k > 0.0) {
-                        f.insert("scale".into(), json!(((l.scale * k * 100.0) * 100.0).round() / 100.0));
+                        f.insert(
+                            "scale".into(),
+                            json!(((l.scale * k * 100.0) * 100.0).round() / 100.0),
+                        );
                         f.insert("scaleToFit".into(), json!(false));
                     }
                 });
                 if w > 0.0 {
                     let ppi = f64::from(doc.size.width) / (w / 72.0);
-                    ui.label(egui::RichText::new(format!("{} {ppi:.0} PPI", tl!("Print Resolution:"))).color(t.text_dim).size(11.0));
+                    ui.label(
+                        egui::RichText::new(format!("{} {ppi:.0} PPI", tl!("Print Resolution:")))
+                            .color(t.text_dim)
+                            .size(11.0),
+                    );
                 }
             }
             head(ui, tl!("Printing Marks"));
@@ -1045,7 +1465,14 @@ fn print_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Va
             check(ui, f, "emulsionDown", tl!("Emulsion Down"), false);
             head(ui, tl!("Save as PDF"));
             let mut out = s(f, "output", "");
-            if ui.add(egui::TextEdit::singleline(&mut out).hint_text(tl!("(print to the printer)")).desired_width(300.0)).changed() {
+            if ui
+                .add(
+                    egui::TextEdit::singleline(&mut out)
+                        .hint_text(tl!("(print to the printer)"))
+                        .desired_width(300.0),
+                )
+                .changed()
+            {
                 f.insert("output".into(), json!(out));
             }
         });
@@ -1063,7 +1490,10 @@ fn print_confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Valu
 pub(crate) fn print_status(app: &mut PhotocraftApp, r: &Value) {
     app.ui.status = if r["sent"] == json!(true) {
         let template = "Sent to the printer ({spooler})";
-        crate::i18n::fmt(tl!(template), &[("spooler", r["spooler"].as_str().unwrap_or(""))])
+        crate::i18n::fmt(
+            tl!(template),
+            &[("spooler", r["spooler"].as_str().unwrap_or(""))],
+        )
     } else {
         let template = "Printed to {path}";
         crate::i18n::fmt(tl!(template), &[("path", r["pdf"].as_str().unwrap_or(""))])
@@ -1076,8 +1506,15 @@ mod tests {
     use super::*;
 
     fn app() -> (PhotocraftApp, egui::Context) {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 120, "height": 80, "name": "web"})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run(
+            "file.new",
+            json!({"width": 120, "height": 80, "name": "web"}),
+        )
+        .unwrap();
         (app, egui::Context::default())
     }
 
@@ -1098,7 +1535,8 @@ mod tests {
     #[test]
     fn save_for_web_dialog_runs_the_command() {
         let (mut app, ctx) = app();
-        let r = crate::menus::invoke(&mut app, &ctx, "file.export.saveForWebLegacy", json!({})).unwrap();
+        let r = crate::menus::invoke(&mut app, &ctx, "file.export.saveForWebLegacy", json!({}))
+            .unwrap();
         let id = r["dialog"].as_u64().unwrap();
         let dir = std::env::temp_dir().join(format!("pc-webui-{}", std::process::id()));
         let path = dir.join("web.gif").to_string_lossy().into_owned();
@@ -1109,7 +1547,8 @@ mod tests {
         assert_eq!(r["files"][0], json!(path));
         assert!(std::fs::read(&path).unwrap().starts_with(b"GIF89a"));
         // The next dialog starts from those settings.
-        let r = crate::menus::invoke(&mut app, &ctx, "file.export.saveForWebLegacy", json!({})).unwrap();
+        let r = crate::menus::invoke(&mut app, &ctx, "file.export.saveForWebLegacy", json!({}))
+            .unwrap();
         let d = app.ui.dialog_mut(r["dialog"].as_u64().unwrap()).unwrap();
         assert_eq!(d.fields["format"], "gif");
         assert!(!d.fields.contains_key("path"));
@@ -1121,7 +1560,8 @@ mod tests {
     fn the_save_for_web_dialog_seeds_from_the_remembered_preferences() {
         let (mut app, _) = app();
         app.session.prefs.edit(|p| {
-            p.dialogs.insert(WEB_COMMAND.into(), json!({"format": "png8", "colors": 64}));
+            p.dialogs
+                .insert(WEB_COMMAND.into(), json!({"format": "png8", "colors": 64}));
         });
         let id = open_web(&mut app);
         let f = &app.ui.dialog_mut(id).unwrap().fields;
@@ -1132,9 +1572,20 @@ mod tests {
     #[test]
     fn save_for_web_starts_at_the_current_document_size() {
         let (mut app, _) = app();
-        let path = std::env::temp_dir().join(format!("pc-webui-size-{}.png", std::process::id())).to_string_lossy().into_owned();
-        app.run("file.export.saveForWebLegacy", json!({"path": path, "format": "png24", "width": 60, "height": 40, "percent": 50})).unwrap();
-        app.run("file.new", json!({"width": 240, "height": 160, "name": "next"})).unwrap();
+        let path = std::env::temp_dir()
+            .join(format!("pc-webui-size-{}.png", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
+        app.run(
+            "file.export.saveForWebLegacy",
+            json!({"path": path, "format": "png24", "width": 60, "height": 40, "percent": 50}),
+        )
+        .unwrap();
+        app.run(
+            "file.new",
+            json!({"width": 240, "height": 160, "name": "next"}),
+        )
+        .unwrap();
         let id = open_web(&mut app);
         let f = &app.ui.dialog_mut(id).unwrap().fields;
         assert_eq!(f["format"], "png24");
@@ -1149,7 +1600,9 @@ mod tests {
         let downloads = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
         let captured = downloads.clone();
         app.services.write = Some(Box::new(move |path, bytes| {
-            captured.borrow_mut().push((path.to_string(), bytes.to_vec()));
+            captured
+                .borrow_mut()
+                .push((path.to_string(), bytes.to_vec()));
             Ok(())
         }));
         download_for_web(&mut app, json!({"path": "web.png", "format": "png24"})).unwrap();
@@ -1157,46 +1610,89 @@ mod tests {
         assert!(downloads.borrow()[0].1.starts_with(b"\x89PNG\r\n\x1a\n"));
         downloads.borrow_mut().clear();
 
-        app.run("slice.new", json!({"rect": [0, 0, 60, 80], "name": "left"})).unwrap();
-        download_for_web(&mut app, json!({"dir": ".", "format": "png24", "html": true, "imagesFolder": "images"})).unwrap();
+        app.run("slice.new", json!({"rect": [0, 0, 60, 80], "name": "left"}))
+            .unwrap();
+        download_for_web(
+            &mut app,
+            json!({"dir": ".", "format": "png24", "html": true, "imagesFolder": "images"}),
+        )
+        .unwrap();
         let files = downloads.borrow();
-        let html = std::str::from_utf8(&files.iter().find(|(path, _)| path.ends_with(".html")).unwrap().1).unwrap();
-        assert!(!html.contains("images/"), "downloaded files are siblings, not an images directory");
+        let html = std::str::from_utf8(
+            &files
+                .iter()
+                .find(|(path, _)| path.ends_with(".html"))
+                .unwrap()
+                .1,
+        )
+        .unwrap();
+        assert!(
+            !html.contains("images/"),
+            "downloaded files are siblings, not an images directory"
+        );
         for (path, bytes) in files.iter().filter(|(path, _)| !path.ends_with(".html")) {
-            let name = std::path::Path::new(path).file_name().unwrap().to_str().unwrap();
-            assert!(html.contains(&format!("src=\"{name}\"")), "missing downloaded image {name}");
+            let name = std::path::Path::new(path)
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap();
+            assert!(
+                html.contains(&format!("src=\"{name}\"")),
+                "missing downloaded image {name}"
+            );
             assert!(!bytes.is_empty());
         }
         assert!(files.iter().any(|(path, _)| path.ends_with("spacer.gif")));
         drop(files);
 
         app.services.write = Some(Box::new(|_, _| Err("download failed".into())));
-        assert_eq!(download_for_web(&mut app, json!({"path": "fail.png", "format": "png24"})).unwrap_err(), "download failed");
+        assert_eq!(
+            download_for_web(&mut app, json!({"path": "fail.png", "format": "png24"})).unwrap_err(),
+            "download failed"
+        );
         app.services.write = None;
-        assert_eq!(download_for_web(&mut app, json!({"path": "missing.png"})).unwrap_err(), "no download service");
+        assert_eq!(
+            download_for_web(&mut app, json!({"path": "missing.png"})).unwrap_err(),
+            "no download service"
+        );
     }
 
     #[test]
     fn save_for_web_authorizes_before_opening_a_picker() {
         fn deny(_: &str, _: &Value) -> photocraft_engine::Result<()> {
-            Err(photocraft_engine::EngineError::Other("export denied".into()))
+            Err(photocraft_engine::EngineError::Other(
+                "export denied".into(),
+            ))
         }
         for explicit_path in [false, true] {
             for synthetic_input in [false, true] {
                 let (mut app, ctx) = app();
                 let id = open_web(&mut app);
                 if explicit_path {
-                    app.ui.dialog_mut(id).unwrap().fields.insert("path".into(), json!("denied.png"));
+                    app.ui
+                        .dialog_mut(id)
+                        .unwrap()
+                        .fields
+                        .insert("path".into(), json!("denied.png"));
                 }
                 app.services.automation_authorize = Some(deny);
-                app.services.file_dialog = Some(Box::new(|_, _, _| panic!("denied export must not show a picker")));
+                app.services.file_dialog = Some(Box::new(|_, _, _| {
+                    panic!("denied export must not show a picker")
+                }));
                 app.services.write = Some(Box::new(|_, _| panic!("denied export must not write")));
                 let error = if synthetic_input {
                     app.automation_input = true;
                     crate::dialogs::confirm(&mut app, id).unwrap_err()
                 } else {
-                    let (request, _) = crate::control::ControlRequest::new("ui.dialog.confirm", json!({"dialog": id}));
-                    let crate::control::Outcome::Done(reply) = crate::control::handle(&mut app, &ctx, &request) else { panic!("expected immediate denial") };
+                    let (request, _) = crate::control::ControlRequest::new(
+                        "ui.dialog.confirm",
+                        json!({"dialog": id}),
+                    );
+                    let crate::control::Outcome::Done(reply) =
+                        crate::control::handle(&mut app, &ctx, &request)
+                    else {
+                        panic!("expected immediate denial")
+                    };
                     assert_eq!(reply["ok"], false);
                     reply["error"].as_str().unwrap().to_string()
                 };
@@ -1209,7 +1705,13 @@ mod tests {
     #[test]
     fn save_for_web_authorizes_generated_palette_before_opening_a_picker() {
         fn deny_palette(_: &str, p: &Value) -> photocraft_engine::Result<()> {
-            if p.get("colorTable").is_some() { Err(photocraft_engine::EngineError::Other("palette denied".into())) } else { Ok(()) }
+            if p.get("colorTable").is_some() {
+                Err(photocraft_engine::EngineError::Other(
+                    "palette denied".into(),
+                ))
+            } else {
+                Ok(())
+            }
         }
         for synthetic_input in [false, true] {
             let (mut app, _) = app();
@@ -1219,13 +1721,20 @@ mod tests {
             assert!(!fields.contains_key("colorTable"));
             if synthetic_input {
                 app.automation_input = true;
-                app.services.automation_command = Some(Box::new(|cmd, p| deny_palette(cmd, p).map_err(|e| e.to_string())));
+                app.services.automation_command = Some(Box::new(|cmd, p| {
+                    deny_palette(cmd, p).map_err(|e| e.to_string())
+                }));
             } else {
                 app.session.authorize = Some(deny_palette);
             }
-            app.services.file_dialog = Some(Box::new(|_, _, _| panic!("denied palette must not show a picker")));
+            app.services.file_dialog = Some(Box::new(|_, _, _| {
+                panic!("denied palette must not show a picker")
+            }));
             app.services.write = Some(Box::new(|_, _| panic!("denied palette must not write")));
-            assert_eq!(crate::dialogs::confirm(&mut app, id).unwrap_err(), "palette denied");
+            assert_eq!(
+                crate::dialogs::confirm(&mut app, id).unwrap_err(),
+                "palette denied"
+            );
             assert!(!app.file_dialog_open());
         }
     }
@@ -1235,15 +1744,24 @@ mod tests {
         let (mut app, _) = app();
         let id = open_web(&mut app);
         let revision = app.session.active().unwrap().revision;
-        app.ui.dialog_mut(id).unwrap().fields.insert("__view".into(), json!("optimized"));
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1600.0, 1100.0)).build_ui_state(
-            |ui, app| {
-                if ui.ctx().fonts(|f| f.families().contains(&egui::FontFamily::Name("semibold".into()))) {
-                    crate::dialogs::show(app, ui.ctx());
-                }
-            },
-            app,
-        );
+        app.ui
+            .dialog_mut(id)
+            .unwrap()
+            .fields
+            .insert("__view".into(), json!("optimized"));
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1600.0, 1100.0))
+            .build_ui_state(
+                |ui, app| {
+                    if ui.ctx().fonts(|f| {
+                        f.families()
+                            .contains(&egui::FontFamily::Name("semibold".into()))
+                    }) {
+                        crate::dialogs::show(app, ui.ctx());
+                    }
+                },
+                app,
+            );
         PhotocraftApp::setup_context(&h.ctx, Default::default());
         h.run_steps(5);
         let pane = |h: &egui_kittest::Harness<'_, PhotocraftApp>| {
@@ -1254,37 +1772,70 @@ mod tests {
             )
         };
         let before = pane(&h);
-        let rects: Vec<egui::Rect> = h.ctx.data(|m| m.get_temp(egui::Id::new("pc-dialog-rects"))).unwrap();
+        let rects: Vec<egui::Rect> = h
+            .ctx
+            .data(|m| m.get_temp(egui::Id::new("pc-dialog-rects")))
+            .unwrap();
         let corner = rects[0].max - egui::vec2(14.0, 14.0);
         h.event(egui::Event::PointerMoved(corner));
         h.step();
-        h.event(egui::Event::PointerButton { pos: corner, button: egui::PointerButton::Primary, pressed: true, modifiers: egui::Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: corner,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: egui::Modifiers::NONE,
+        });
         h.step();
         let end = corner + egui::vec2(180.0, 100.0);
         h.event(egui::Event::PointerMoved(end));
         h.step();
-        h.event(egui::Event::PointerButton { pos: end, button: egui::PointerButton::Primary, pressed: false, modifiers: egui::Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: end,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: egui::Modifiers::NONE,
+        });
         h.run_steps(4);
         let after = pane(&h);
-        assert!(after.width() > before.width() + 100.0, "before {before:?}, after {after:?}, corner {corner:?}");
+        assert!(
+            after.width() > before.width() + 100.0,
+            "before {before:?}, after {after:?}, corner {corner:?}"
+        );
         assert!(after.height() > before.height() + 50.0);
         // Zoom in enough that the small fixture can pan, then drag the real pane.
-        h.state_mut().ui.dialogs[0].fields.insert("__zoom".into(), json!(16.0));
+        h.state_mut().ui.dialogs[0]
+            .fields
+            .insert("__zoom".into(), json!(16.0));
         h.run_steps(3);
         let at = pane(&h).center();
         h.event(egui::Event::PointerMoved(at));
         h.step();
-        h.event(egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed: true, modifiers: egui::Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: egui::Modifiers::NONE,
+        });
         h.step();
         let end = at + egui::vec2(35.0, 20.0);
         h.event(egui::Event::PointerMoved(end));
         h.step();
-        h.event(egui::Event::PointerButton { pos: end, button: egui::PointerButton::Primary, pressed: false, modifiers: egui::Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: end,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: egui::Modifiers::NONE,
+        });
         h.run_steps(3);
-        assert_ne!(h.state().ui.dialogs[0].fields["__center"], json!([0.5, 0.5]));
+        assert_ne!(
+            h.state().ui.dialogs[0].fields["__center"],
+            json!([0.5, 0.5])
+        );
         assert_eq!(h.state().session.active().unwrap().revision, revision);
         // Enter while editing a swatch must not export and close the parent dialog.
-        h.state_mut().ui.dialogs[0].fields.insert("format".into(), json!("gif"));
+        h.state_mut().ui.dialogs[0]
+            .fields
+            .insert("format".into(), json!("gif"));
         h.run_steps(4);
         use egui_kittest::kittest::Queryable;
         h.get_by_role(egui::accesskit::Role::ColorWell).click();
@@ -1298,7 +1849,9 @@ mod tests {
     #[test]
     fn palette_draft_survives_navigation_and_resets_when_colors_change() {
         let (app, _) = app();
-        let mut f = serde_json::from_value::<Map<String, Value>>(json!({"format": "gif", "colors": 16})).unwrap();
+        let mut f =
+            serde_json::from_value::<Map<String, Value>>(json!({"format": "gif", "colors": 16}))
+                .unwrap();
         web_preview::prepare_table(&app, &mut f).unwrap();
         let table = f["colorTable"].clone();
         f.insert("colorTableEdits".into(), json!({"0": "#12ab34"}));
@@ -1311,7 +1864,10 @@ mod tests {
         f.insert("interlaced".into(), json!(true));
         f.insert("dither".into(), json!("pattern"));
         web_preview::prepare_table(&app, &mut f).unwrap();
-        assert_eq!(f["colorTableEdits"]["0"], "#12ab34", "non-palette settings must retain edits");
+        assert_eq!(
+            f["colorTableEdits"]["0"], "#12ab34",
+            "non-palette settings must retain edits"
+        );
         f.insert("colors".into(), json!(8));
         web_preview::prepare_table(&app, &mut f).unwrap();
         assert!(!f.contains_key("colorTableEdits"));
@@ -1323,8 +1879,15 @@ mod tests {
         let (mut app, ctx) = app();
         let r = crate::menus::invoke(&mut app, &ctx, "file.print", json!({})).unwrap();
         let id = r["dialog"].as_u64().unwrap();
-        let out = std::env::temp_dir().join(format!("pc-printui-{}.pdf", std::process::id())).to_string_lossy().into_owned();
-        app.ui.dialog_mut(id).unwrap().fields.insert("output".into(), json!(out));
+        let out = std::env::temp_dir()
+            .join(format!("pc-printui-{}.pdf", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
+        app.ui
+            .dialog_mut(id)
+            .unwrap()
+            .fields
+            .insert("output".into(), json!(out));
         let r = crate::dialogs::confirm(&mut app, id).unwrap();
         assert_eq!(r["sent"], false);
         assert!(std::fs::read(&out).unwrap().starts_with(b"%PDF"));
@@ -1334,7 +1897,12 @@ mod tests {
         crate::menus::invoke(&mut app, &ctx, "file.generate.imageAssets", json!({})).unwrap();
         assert_eq!(checked(&app, "file.generate.imageAssets"), Some(true));
         // Form dialogs open for the rest.
-        for id in ["file.automate.contactSheetII", "file.scripts.statistics", "file.scripts.scriptEventsManager", "file.package"] {
+        for id in [
+            "file.automate.contactSheetII",
+            "file.scripts.statistics",
+            "file.scripts.scriptEventsManager",
+            "file.package",
+        ] {
             let r = crate::menus::invoke(&mut app, &ctx, id, json!({})).unwrap();
             assert!(r["dialog"].is_u64(), "{id}");
         }
@@ -1354,7 +1922,9 @@ mod tests {
         assert_eq!(printer_options(None, "").len(), 1);
         // The dialog asks the engine, and the list never reaches file.print's params.
         let (mut app, ctx) = app();
-        let id = crate::menus::invoke(&mut app, &ctx, "file.print", json!({})).unwrap()["dialog"].as_u64().unwrap();
+        let id = crate::menus::invoke(&mut app, &ctx, "file.print", json!({})).unwrap()["dialog"]
+            .as_u64()
+            .unwrap();
         let f = &app.ui.dialog_mut(id).unwrap().fields;
         assert!(f.get("__printers").is_some_and(Value::is_array));
         assert!(params(f).get("__printers").is_none());
@@ -1364,9 +1934,28 @@ mod tests {
     fn print_dialog_does_not_inherit_scripted_send_override() {
         for send in [false, true] {
             let (mut app, ctx) = app();
-            let out = std::env::temp_dir().join(format!("pc-printui-state-{}-{send}.pdf", std::process::id())).to_string_lossy().into_owned();
-            app.session.execute("file.print", json!({"output": out, "send": send, "dryRun": true})).unwrap();
-            assert!(app.session.file_menu.last_print.as_ref().unwrap().get("send").is_none());
+            let out = std::env::temp_dir()
+                .join(format!(
+                    "pc-printui-state-{}-{send}.pdf",
+                    std::process::id()
+                ))
+                .to_string_lossy()
+                .into_owned();
+            app.session
+                .execute(
+                    "file.print",
+                    json!({"output": out, "send": send, "dryRun": true}),
+                )
+                .unwrap();
+            assert!(
+                app.session
+                    .file_menu
+                    .last_print
+                    .as_ref()
+                    .unwrap()
+                    .get("send")
+                    .is_none()
+            );
             let r = crate::menus::invoke(&mut app, &ctx, "file.print", json!({})).unwrap();
             let id = r["dialog"].as_u64().unwrap();
             assert!(app.ui.dialog_mut(id).unwrap().fields.get("send").is_none());
@@ -1381,28 +1970,47 @@ mod web_playback_tests {
     use egui_kittest::{Harness, kittest::Queryable};
 
     fn animated_app(depth: u32) -> PhotocraftApp {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 32, "height": 24, "depth": depth})).unwrap();
-        app.run("timeline.create", json!({"duration": 3, "fps": 2})).unwrap();
-        app.run("layer.videoLayers.newBlankVideoLayer", json!({})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run(
+            "file.new",
+            json!({"width": 32, "height": 24, "depth": depth}),
+        )
+        .unwrap();
+        app.run("timeline.create", json!({"duration": 3, "fps": 2}))
+            .unwrap();
+        app.run("layer.videoLayers.newBlankVideoLayer", json!({}))
+            .unwrap();
         for (frame, color) in ["#ff0000", "#00ff00", "#0000ff"].iter().enumerate() {
-            app.run("timeline.setFrame", json!({"frame":frame})).unwrap();
+            app.run("timeline.setFrame", json!({"frame":frame}))
+                .unwrap();
             app.run("edit.fill", json!({"color":color})).unwrap();
         }
         app.run("timeline.setFrame", json!({"frame":0})).unwrap();
         app
     }
 
-    fn harness(app: PhotocraftApp, fields: Map<String, Value>) -> Harness<'static, (PhotocraftApp, Map<String, Value>)> {
-        let mut h = Harness::builder().with_size(egui::vec2(1000.0, 800.0)).with_step_dt(0.1).build_ui_state(
-            |ui, state: &mut (PhotocraftApp, Map<String, Value>)| {
-                if !ui.ctx().fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                    return;
-                }
-                web_body(&mut state.0, ui, &mut state.1);
-            },
-            (app, fields),
-        );
+    fn harness(
+        app: PhotocraftApp,
+        fields: Map<String, Value>,
+    ) -> Harness<'static, (PhotocraftApp, Map<String, Value>)> {
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1000.0, 800.0))
+            .with_step_dt(0.1)
+            .build_ui_state(
+                |ui, state: &mut (PhotocraftApp, Map<String, Value>)| {
+                    if !ui.ctx().fonts(|f| {
+                        f.families()
+                            .contains(&egui::FontFamily::Name("medium".into()))
+                    }) {
+                        return;
+                    }
+                    web_body(&mut state.0, ui, &mut state.1);
+                },
+                (app, fields),
+            );
         PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::ALL[0]);
         h.run_steps(3);
         h
@@ -1416,7 +2024,10 @@ mod web_playback_tests {
         fields.insert("__view".into(), json!("original"));
         fields.insert("format".into(), json!("gif"));
         let mut h = harness(app, fields);
-        assert!(h.query_by_label("Play").is_some(), "an animated document needs a preview playback control");
+        assert!(
+            h.query_by_label("Play").is_some(),
+            "an animated document needs a preview playback control"
+        );
         let original = h.state().0.session.active().unwrap().doc.clone();
         let revision = h.state().0.session.active().unwrap().revision;
         let history = h.state().0.session.active().unwrap().history.past_len();
@@ -1434,14 +2045,28 @@ mod web_playback_tests {
         h.get_by_label("Play").click();
         h.run_steps(2);
         assert_eq!(h.state().1["__web_playing"], true);
-        assert_eq!(h.state().1["__web_frame"], paused, "resuming must not count time spent paused");
+        assert_eq!(
+            h.state().1["__web_frame"],
+            paused,
+            "resuming must not count time spent paused"
+        );
         h.run_steps(6);
-        assert_ne!(h.state().1["__web_frame"], paused, "resuming must advance the preview again");
+        assert_ne!(
+            h.state().1["__web_frame"],
+            paused,
+            "resuming must advance the preview again"
+        );
         let st = h.state().0.session.active().unwrap();
         assert!(Arc::ptr_eq(&st.doc, &original));
         assert_eq!(st.revision, revision);
         assert_eq!(st.history.past_len(), history);
-        assert!(params(&h.state().1).as_object().unwrap().keys().all(|k| !k.starts_with("__")));
+        assert!(
+            params(&h.state().1)
+                .as_object()
+                .unwrap()
+                .keys()
+                .all(|k| !k.starts_with("__"))
+        );
         crate::dialogs::cancel(&mut h.state_mut().0, id).unwrap();
         let next = open_web(&mut h.state_mut().0);
         let fields = &h.state_mut().0.ui.dialog_mut(next).unwrap().fields;
@@ -1454,16 +2079,34 @@ mod web_playback_tests {
         for depth in [8, 16, 32] {
             let app = animated_app(depth);
             let source = app.session.active().unwrap().doc.clone();
-            for (frame, expected) in [[1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0]].iter().enumerate() {
+            for (frame, expected) in [
+                [1.0, 0.0, 0.0, 1.0],
+                [0.0, 1.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0, 1.0],
+            ]
+            .iter()
+            .enumerate()
+            {
                 let preview = web_frame_document(&source, Some(frame)).unwrap();
-                let (proxy, _, _) = web_cmds::web_document(&preview, &json!({"width":16,"height":12}), &WebSettings::default()).unwrap();
+                let (proxy, _, _) = web_cmds::web_document(
+                    &preview,
+                    &json!({"width":16,"height":12}),
+                    &WebSettings::default(),
+                )
+                .unwrap();
                 let pixels = photocraft_compose::flatten(&proxy);
                 for (actual, expected) in pixels.px[0].iter().zip(expected) {
-                    assert!((actual - expected).abs() < 0.002, "depth={depth} frame={frame}");
+                    assert!(
+                        (actual - expected).abs() < 0.002,
+                        "depth={depth} frame={frame}"
+                    );
                 }
             }
             assert_eq!(source.timeline.as_ref().unwrap().current, 0);
-            assert_eq!(photocraft_compose::flatten(&source).px[0], [1.0, 0.0, 0.0, 1.0]);
+            assert_eq!(
+                photocraft_compose::flatten(&source).px[0],
+                [1.0, 0.0, 0.0, 1.0]
+            );
         }
     }
 
@@ -1480,9 +2123,18 @@ mod web_playback_tests {
             h.state_mut().1.insert("__web_frame".into(), json!(frame));
             h.run_steps(2);
             for pane in 0usize..4 {
-                let proxy: (String, WebProxy) = h.ctx.data(|d| d.get_temp(egui::Id::new(("web-proxy", doc_id, pane)))).unwrap();
-                assert!(proxy.1.0[0][frame] > 0.99, "pane {pane} must show frame {frame}");
-                let cache: WebCache = h.ctx.data(|d| d.get_temp(egui::Id::new(("web-pane", doc_id, pane)))).unwrap();
+                let proxy: (String, WebProxy) = h
+                    .ctx
+                    .data(|d| d.get_temp(egui::Id::new(("web-proxy", doc_id, pane))))
+                    .unwrap();
+                assert!(
+                    proxy.1.0[0][frame] > 0.99,
+                    "pane {pane} must show frame {frame}"
+                );
+                let cache: WebCache = h
+                    .ctx
+                    .data(|d| d.get_temp(egui::Id::new(("web-pane", doc_id, pane))))
+                    .unwrap();
                 assert!(cache.0.contains(&format!("Some({frame})")));
             }
         }
@@ -1499,29 +2151,59 @@ mod web_playback_tests {
         let mut h = harness(app, fields);
         // Set the custom palette after the dialog has initialized its format defaults.
         let expected_palette = json!(["#ff0000", "#00ff00", "#0000ff"]);
-        h.state_mut().1.insert("colorTable".into(), expected_palette.clone());
+        h.state_mut()
+            .1
+            .insert("colorTable".into(), expected_palette.clone());
         h.run_steps(2);
         assert_eq!(h.state().1["colorTable"], expected_palette);
         let key = egui::Id::new(("web-pane", doc_id, 1usize)).with("indexed-source");
-        let encoded = |ctx: &egui::Context| ctx.data(|d| d.get_temp::<(String, Arc<Optimized>)>(key)).unwrap().1;
+        let encoded = |ctx: &egui::Context| {
+            ctx.data(|d| d.get_temp::<(String, Arc<Optimized>)>(key))
+                .unwrap()
+                .1
+        };
         let first = encoded(&h.ctx);
-        h.state_mut().1.insert("colorTableEdits".into(), json!({"0":"#ffff00"}));
+        h.state_mut()
+            .1
+            .insert("colorTableEdits".into(), json!({"0":"#ffff00"}));
         h.run_steps(2);
-        assert!(Arc::ptr_eq(&first, &encoded(&h.ctx)), "palette edits reuse the current frame's indices");
+        assert!(
+            Arc::ptr_eq(&first, &encoded(&h.ctx)),
+            "palette edits reuse the current frame's indices"
+        );
         let palette = h.state().1["colorTable"].clone();
         let center = h.state().1["__center"].clone();
         let mut previous = first;
-        for (frame, rgba) in [(1, [0, 255, 0, 255]), (2, [0, 0, 255, 255]), (0, [255, 0, 0, 255])] {
+        for (frame, rgba) in [
+            (1, [0, 255, 0, 255]),
+            (2, [0, 0, 255, 255]),
+            (0, [255, 0, 0, 255]),
+        ] {
             h.state_mut().1.insert("__web_frame".into(), json!(frame));
             h.run_steps(2);
             let next = encoded(&h.ctx);
-            assert!(!Arc::ptr_eq(&previous, &next), "a changed frame needs fresh indexed pixels");
+            assert!(
+                !Arc::ptr_eq(&previous, &next),
+                "a changed frame needs fresh indexed pixels"
+            );
             assert_eq!(&next.preview[..4], &rgba);
             assert_eq!(h.state().1["colorTable"], palette);
             assert_eq!(h.state().1["colorTableEdits"], json!({"0":"#ffff00"}));
             assert_eq!(h.state().1["__zoom"], 2.0);
             assert_eq!(h.state().1["__center"], center);
-            assert_eq!(h.state().0.session.active().unwrap().doc.timeline.as_ref().unwrap().current, 0);
+            assert_eq!(
+                h.state()
+                    .0
+                    .session
+                    .active()
+                    .unwrap()
+                    .doc
+                    .timeline
+                    .as_ref()
+                    .unwrap()
+                    .current,
+                0
+            );
             previous = next;
         }
     }
@@ -1529,10 +2211,15 @@ mod web_playback_tests {
     #[test]
     fn still_documents_have_no_playback_controls() {
         for duration in [None, Some(1)] {
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-            app.run("file.new", json!({"width":32,"height":24})).unwrap();
+            let mut app = PhotocraftApp::new(
+                photocraft_engine::Session::new(),
+                crate::Services::default(),
+            );
+            app.run("file.new", json!({"width":32,"height":24}))
+                .unwrap();
             if let Some(duration) = duration {
-                app.run("timeline.create", json!({"duration":duration,"fps":2})).unwrap();
+                app.run("timeline.create", json!({"duration":duration,"fps":2}))
+                    .unwrap();
             }
             let id = open_web(&mut app);
             let fields = app.ui.dialog_mut(id).unwrap().fields.clone();
@@ -1549,23 +2236,50 @@ mod web_playback_tests {
         let source = app.session.active().unwrap().doc.clone();
         let edited = web_frame_document(&source, Some(0)).unwrap();
         let other = web_frame_document(&source, Some(1)).unwrap();
-        assert_eq!(photocraft_compose::flatten(&edited).px[0], [1.0, 1.0, 0.0, 1.0]);
-        assert_eq!(photocraft_compose::flatten(&other).px[0], [0.0, 1.0, 0.0, 1.0]);
+        assert_eq!(
+            photocraft_compose::flatten(&edited).px[0],
+            [1.0, 1.0, 0.0, 1.0]
+        );
+        assert_eq!(
+            photocraft_compose::flatten(&other).px[0],
+            [0.0, 1.0, 0.0, 1.0]
+        );
         assert!(Arc::ptr_eq(&source, &app.session.active().unwrap().doc));
         assert_eq!(source.timeline.as_ref().unwrap().current, 0);
     }
 
     #[test]
     fn optimized_gif_preview_matches_each_frame_at_every_depth() {
-        let settings = WebSettings::from_params(&json!({"format":"gif","colors":16}), "preview").unwrap();
+        let settings =
+            WebSettings::from_params(&json!({"format":"gif","colors":16}), "preview").unwrap();
         for depth in [8, 16, 32] {
             let app = animated_app(depth);
-            for (frame, expected) in [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255]].iter().enumerate() {
-                let doc = web_frame_document(&app.session.active().unwrap().doc, Some(frame)).unwrap();
-                let (proxy, _, _) = web_cmds::web_document(&doc, &json!({"width":16,"height":12}), &settings).unwrap();
+            for (frame, expected) in [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255]]
+                .iter()
+                .enumerate()
+            {
+                let doc =
+                    web_frame_document(&app.session.active().unwrap().doc, Some(frame)).unwrap();
+                let (proxy, _, _) =
+                    web_cmds::web_document(&doc, &json!({"width":16,"height":12}), &settings)
+                        .unwrap();
                 let pixels = photocraft_compose::flatten(&proxy);
-                let optimized = web_cmds::optimize(&pixels.px, 16, photocraft_geom::Rect::new(0, 0, 16, 12), &settings, None, None, 72.0, true).unwrap();
-                assert_eq!(&optimized.preview[..4], expected, "depth={depth} frame={frame}");
+                let optimized = web_cmds::optimize(
+                    &pixels.px,
+                    16,
+                    photocraft_geom::Rect::new(0, 0, 16, 12),
+                    &settings,
+                    None,
+                    None,
+                    72.0,
+                    true,
+                )
+                .unwrap();
+                assert_eq!(
+                    &optimized.preview[..4],
+                    expected,
+                    "depth={depth} frame={frame}"
+                );
             }
         }
     }
@@ -1599,7 +2313,10 @@ mod web_clock_tests {
     #[test]
     fn malformed_or_changed_timeline_is_bounded() {
         assert_eq!(advance_preview(usize::MAX, 0, f32::NAN, 0.0, 1.0), (0, 1.0));
-        assert_eq!(advance_preview(usize::MAX - 2, usize::MAX, 2.0, 0.0, 1.0), (0, 1.0));
+        assert_eq!(
+            advance_preview(usize::MAX - 2, usize::MAX, 2.0, 0.0, 1.0),
+            (0, 1.0)
+        );
         assert_eq!(advance_preview(2, 3, 2.0, 10.0, 9.0), (2, 9.0));
     }
 }

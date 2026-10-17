@@ -51,7 +51,16 @@ pub enum Type {
 }
 
 /// Built-in types in their schema order (encoded as `!index`).
-const BUILTINS: [Type; 8] = [Type::Bool, Type::Byte, Type::Int, Type::Uint, Type::Float, Type::Str, Type::Int64, Type::Uint64];
+const BUILTINS: [Type; 8] = [
+    Type::Bool,
+    Type::Byte,
+    Type::Int,
+    Type::Uint,
+    Type::Float,
+    Type::Str,
+    Type::Int64,
+    Type::Uint64,
+];
 
 #[derive(Clone, Debug)]
 pub struct Field {
@@ -153,14 +162,24 @@ impl<'b> Reader<'b> {
     }
 
     fn byte(&mut self) -> Result<u8, KiwiError> {
-        let b = *self.data.get(self.pos).ok_or_else(|| KiwiError("unexpected end of data".into()))?;
+        let b = *self
+            .data
+            .get(self.pos)
+            .ok_or_else(|| KiwiError("unexpected end of data".into()))?;
         self.pos += 1;
         Ok(b)
     }
 
     fn take(&mut self, n: usize) -> Result<&'b [u8], KiwiError> {
-        let end = self.pos.checked_add(n).filter(|e| *e <= self.data.len()).ok_or_else(|| KiwiError("unexpected end of data".into()))?;
-        let s = self.data.get(self.pos..end).ok_or_else(|| KiwiError("unexpected end of data".into()))?;
+        let end = self
+            .pos
+            .checked_add(n)
+            .filter(|e| *e <= self.data.len())
+            .ok_or_else(|| KiwiError("unexpected end of data".into()))?;
+        let s = self
+            .data
+            .get(self.pos..end)
+            .ok_or_else(|| KiwiError("unexpected end of data".into()))?;
         self.pos = end;
         Ok(s)
     }
@@ -180,7 +199,11 @@ impl<'b> Reader<'b> {
 
     fn var_int(&mut self) -> Result<i32, KiwiError> {
         let v = self.var_uint()?;
-        Ok(if v & 1 != 0 { !((v >> 1) as i32) } else { (v >> 1) as i32 })
+        Ok(if v & 1 != 0 {
+            !((v >> 1) as i32)
+        } else {
+            (v >> 1) as i32
+        })
     }
 
     fn var_uint64(&mut self) -> Result<u64, KiwiError> {
@@ -202,7 +225,11 @@ impl<'b> Reader<'b> {
 
     fn var_int64(&mut self) -> Result<i64, KiwiError> {
         let v = self.var_uint64()?;
-        Ok(if v & 1 != 0 { !((v >> 1) as i64) } else { (v >> 1) as i64 })
+        Ok(if v & 1 != 0 {
+            !((v >> 1) as i64)
+        } else {
+            (v >> 1) as i64
+        })
     }
 
     fn var_float(&mut self) -> Result<f32, KiwiError> {
@@ -218,7 +245,10 @@ impl<'b> Reader<'b> {
 
     fn string(&mut self) -> Result<String, KiwiError> {
         let rest = self.data.get(self.pos..).unwrap_or_default();
-        let len = rest.iter().position(|b| *b == 0).ok_or_else(|| KiwiError("unterminated string".into()))?;
+        let len = rest
+            .iter()
+            .position(|b| *b == 0)
+            .ok_or_else(|| KiwiError("unterminated string".into()))?;
         let s = String::from_utf8_lossy(self.take(len)?).into_owned();
         self.pos += 1;
         Ok(s)
@@ -254,7 +284,12 @@ impl Schema {
                 let array = r.byte()? & 1 != 0;
                 let value = r.var_uint()?;
                 raw_types.push(ty);
-                fields.push(Field { name: fname, ty: None, array, value });
+                fields.push(Field {
+                    name: fname,
+                    ty: None,
+                    array,
+                    value,
+                });
             }
             defs.push(Def { name, kind, fields });
         }
@@ -267,11 +302,16 @@ impl Schema {
                     continue;
                 }
                 f.ty = Some(if raw < 0 {
-                    *BUILTINS.get((!raw) as usize).ok_or_else(|| KiwiError(format!("schema: unknown type {raw}")))?
+                    *BUILTINS
+                        .get((!raw) as usize)
+                        .ok_or_else(|| KiwiError(format!("schema: unknown type {raw}")))?
                 } else {
                     let i = raw as usize;
                     if i >= total {
-                        return err(format!("schema: field {} names missing definition {i}", f.name));
+                        return err(format!(
+                            "schema: field {} names missing definition {i}",
+                            f.name
+                        ));
                     }
                     Type::Def(i)
                 });
@@ -286,7 +326,11 @@ impl Schema {
 
     /// Decode a message of definition `root`.
     pub fn decode_message<'s>(&'s self, root: usize, data: &[u8]) -> Result<Kv<'s>, KiwiError> {
-        let mut d = Decoder { schema: self, r: Reader { data, pos: 0 }, budget: MAX_VALUES };
+        let mut d = Decoder {
+            schema: self,
+            r: Reader { data, pos: 0 },
+            budget: MAX_VALUES,
+        };
         d.def(root, 0)
     }
 }
@@ -299,7 +343,10 @@ struct Decoder<'s, 'b> {
 
 impl<'s> Decoder<'s, '_> {
     fn spend(&mut self, n: usize) -> Result<(), KiwiError> {
-        self.budget = self.budget.checked_sub(n).ok_or_else(|| KiwiError("message: too many values".into()))?;
+        self.budget = self
+            .budget
+            .checked_sub(n)
+            .ok_or_else(|| KiwiError("message: too many values".into()))?;
         Ok(())
     }
 
@@ -309,11 +356,17 @@ impl<'s> Decoder<'s, '_> {
         }
         self.spend(1)?;
         let schema = self.schema;
-        let d = schema.defs.get(i).ok_or_else(|| KiwiError("message: missing definition".into()))?;
+        let d = schema
+            .defs
+            .get(i)
+            .ok_or_else(|| KiwiError("message: missing definition".into()))?;
         match d.kind {
             Kind::Enum => {
                 let v = self.r.var_uint()?;
-                Ok(d.fields.iter().find(|f| f.value == v).map_or(Kv::Uint(u64::from(v)), |f| Kv::Enum(f.name.as_str())))
+                Ok(d.fields
+                    .iter()
+                    .find(|f| f.value == v)
+                    .map_or(Kv::Uint(u64::from(v)), |f| Kv::Enum(f.name.as_str())))
             }
             Kind::Struct => {
                 let mut out = Vec::with_capacity(d.fields.len());
@@ -329,7 +382,9 @@ impl<'s> Decoder<'s, '_> {
                     if id == 0 {
                         return Ok(Kv::Object(out));
                     }
-                    let f = d.fields.iter().find(|f| f.value == id).ok_or_else(|| KiwiError(format!("message: {} has no field {id}", d.name)))?;
+                    let f = d.fields.iter().find(|f| f.value == id).ok_or_else(|| {
+                        KiwiError(format!("message: {} has no field {id}", d.name))
+                    })?;
                     out.push((f.name.as_str(), self.field(f, depth)?));
                 }
             }
@@ -337,7 +392,8 @@ impl<'s> Decoder<'s, '_> {
     }
 
     fn field(&mut self, f: &Field, depth: usize) -> Result<Kv<'s>, KiwiError> {
-        let ty = f.ty.ok_or_else(|| KiwiError("message: untyped field".into()))?;
+        let ty =
+            f.ty.ok_or_else(|| KiwiError("message: untyped field".into()))?;
         if !f.array {
             return self.value(ty, depth);
         }
@@ -469,29 +525,49 @@ pub mod encode {
         Ok(w.0)
     }
 
-    fn encode_def(s: &Schema, i: usize, v: &Kv, w: &mut Writer, depth: usize) -> Result<(), KiwiError> {
+    fn encode_def(
+        s: &Schema,
+        i: usize,
+        v: &Kv,
+        w: &mut Writer,
+        depth: usize,
+    ) -> Result<(), KiwiError> {
         if depth > MAX_DEPTH {
             return err("encode: nested too deeply");
         }
-        let d = s.defs.get(i).ok_or_else(|| KiwiError("encode: missing definition".into()))?;
+        let d = s
+            .defs
+            .get(i)
+            .ok_or_else(|| KiwiError("encode: missing definition".into()))?;
         match d.kind {
             Kind::Enum => {
                 let value = match v {
                     Kv::Uint(u) => u32::try_from(*u).ok(),
-                    _ => v.str().and_then(|name| d.fields.iter().find(|f| f.name == name)).map(|f| f.value),
+                    _ => v
+                        .str()
+                        .and_then(|name| d.fields.iter().find(|f| f.name == name))
+                        .map(|f| f.value),
                 };
-                w.var_uint(value.ok_or_else(|| KiwiError(format!("encode: {v:?} is not a value of {}", d.name)))?);
+                w.var_uint(value.ok_or_else(|| {
+                    KiwiError(format!("encode: {v:?} is not a value of {}", d.name))
+                })?);
             }
             Kind::Struct => {
                 for f in &d.fields {
-                    let fv = v.get(&f.name).ok_or_else(|| KiwiError(format!("encode: {} needs field {}", d.name, f.name)))?;
+                    let fv = v.get(&f.name).ok_or_else(|| {
+                        KiwiError(format!("encode: {} needs field {}", d.name, f.name))
+                    })?;
                     encode_field(s, f, fv, w, depth)?;
                 }
             }
             Kind::Message => {
-                let Kv::Object(fields) = v else { return err(format!("encode: {} needs an object", d.name)) };
+                let Kv::Object(fields) = v else {
+                    return err(format!("encode: {} needs an object", d.name));
+                };
                 for (name, fv) in fields {
-                    let f = d.fields.iter().find(|f| f.name == *name).ok_or_else(|| KiwiError(format!("encode: {} has no field {name}", d.name)))?;
+                    let f = d.fields.iter().find(|f| f.name == *name).ok_or_else(|| {
+                        KiwiError(format!("encode: {} has no field {name}", d.name))
+                    })?;
                     w.var_uint(f.value);
                     encode_field(s, f, fv, w, depth)?;
                 }
@@ -501,18 +577,29 @@ pub mod encode {
         Ok(())
     }
 
-    fn encode_field(s: &Schema, f: &Field, v: &Kv, w: &mut Writer, depth: usize) -> Result<(), KiwiError> {
-        let ty = f.ty.ok_or_else(|| KiwiError("encode: untyped field".into()))?;
+    fn encode_field(
+        s: &Schema,
+        f: &Field,
+        v: &Kv,
+        w: &mut Writer,
+        depth: usize,
+    ) -> Result<(), KiwiError> {
+        let ty =
+            f.ty.ok_or_else(|| KiwiError("encode: untyped field".into()))?;
         if !f.array {
             return encode_value(s, ty, v, w, depth);
         }
-        let len = |n: usize| u32::try_from(n).map_err(|_| KiwiError(format!("encode: {} is too long", f.name)));
+        let len = |n: usize| {
+            u32::try_from(n).map_err(|_| KiwiError(format!("encode: {} is too long", f.name)))
+        };
         if let (Type::Byte, Kv::Bytes(b)) = (ty, v) {
             w.var_uint(len(b.len())?);
             w.0.extend_from_slice(b);
             return Ok(());
         }
-        let Kv::Array(items) = v else { return err(format!("encode: {} needs a list", f.name)) };
+        let Kv::Array(items) = v else {
+            return err(format!("encode: {} needs a list", f.name));
+        };
         w.var_uint(len(items.len())?);
         for it in items {
             encode_value(s, ty, it, w, depth)?;
@@ -531,7 +618,13 @@ pub mod encode {
         }
     }
 
-    fn encode_value(s: &Schema, ty: Type, v: &Kv, w: &mut Writer, depth: usize) -> Result<(), KiwiError> {
+    fn encode_value(
+        s: &Schema,
+        ty: Type,
+        v: &Kv,
+        w: &mut Writer,
+        depth: usize,
+    ) -> Result<(), KiwiError> {
         let bad = || KiwiError(format!("encode: {v:?} is not a {ty:?}"));
         let ranged = |lo: i128, hi: i128| int(v).filter(|i| (lo..=hi).contains(i)).ok_or_else(bad);
         match ty {
@@ -539,7 +632,12 @@ pub mod encode {
             Type::Byte => w.byte(ranged(0, 255)? as u8),
             Type::Int => w.var_int(ranged(i32::MIN.into(), i32::MAX.into())? as i32),
             Type::Uint => w.var_uint(ranged(0, u32::MAX.into())? as u32),
-            Type::Float => w.var_float(v.f64().map(|x| x as f32).filter(|x| x.is_finite()).ok_or_else(bad)?),
+            Type::Float => w.var_float(
+                v.f64()
+                    .map(|x| x as f32)
+                    .filter(|x| x.is_finite())
+                    .ok_or_else(bad)?,
+            ),
             Type::Str => w.string(v.str().ok_or_else(bad)?),
             Type::Int64 => w.var_int64(ranged(i64::MIN.into(), i64::MAX.into())? as i64),
             Type::Uint64 => w.var_uint64(ranged(0, u64::MAX.into())? as u64),
@@ -550,7 +648,9 @@ pub mod encode {
 }
 
 /// The built-in type names, in [`BUILTINS`] order.
-const BUILTIN_NAMES: [&str; 8] = ["bool", "byte", "int", "uint", "float", "string", "int64", "uint64"];
+const BUILTIN_NAMES: [&str; 8] = [
+    "bool", "byte", "int", "uint", "float", "string", "int64", "uint64",
+];
 
 impl Schema {
     /// A schema from a compact text form, one definition per line: `enum Name A B …` (values from
@@ -558,25 +658,38 @@ impl Schema {
     /// types being built-in names or other definitions'. `A=3` or `type field=7` gives a value or
     /// a field its own number.
     pub fn parse(text: &str) -> Result<Schema, KiwiError> {
-        let lines: Vec<Vec<&str>> = text.lines().map(|l| l.split_whitespace().collect::<Vec<_>>()).filter(|l| !l.is_empty()).collect();
+        let lines: Vec<Vec<&str>> = text
+            .lines()
+            .map(|l| l.split_whitespace().collect::<Vec<_>>())
+            .filter(|l| !l.is_empty())
+            .collect();
         let index = |name: &str| lines.iter().position(|l| l.get(1) == Some(&name));
         let mut defs = Vec::with_capacity(lines.len());
         for l in &lines {
-            let (Some(kind), Some(name)) = (l.first(), l.get(1)) else { return err("schema text: a definition needs a kind and a name") };
+            let (Some(kind), Some(name)) = (l.first(), l.get(1)) else {
+                return err("schema text: a definition needs a kind and a name");
+            };
             let rest = l.get(2..).unwrap_or_default();
             let (kind, fields) = match *kind {
                 "enum" => {
                     let mut fields = Vec::new();
                     for (n, i) in rest.iter().zip(0..) {
                         let (name, value) = numbered(n, i)?;
-                        fields.push(Field { name, ty: None, array: false, value });
+                        fields.push(Field {
+                            name,
+                            ty: None,
+                            array: false,
+                            value,
+                        });
                     }
                     (Kind::Enum, fields)
                 }
                 "struct" | "message" => {
                     let mut fields = Vec::new();
                     for (f, id) in rest.join(" ").split(',').zip(1..) {
-                        let Some((t, n)) = f.trim().split_once(' ') else { return err(format!("schema text: bad field `{f}` in {name}")) };
+                        let Some((t, n)) = f.trim().split_once(' ') else {
+                            return err(format!("schema text: bad field `{f}` in {name}"));
+                        };
                         let base = t.trim_end_matches("[]");
                         let ty = match BUILTIN_NAMES.iter().position(|b| *b == base) {
                             Some(i) => BUILTINS.get(i).copied(),
@@ -584,13 +697,29 @@ impl Schema {
                         }
                         .ok_or_else(|| KiwiError(format!("schema text: unknown type {base}")))?;
                         let (name, value) = numbered(n.trim(), id)?;
-                        fields.push(Field { name, ty: Some(ty), array: t.ends_with("[]"), value });
+                        fields.push(Field {
+                            name,
+                            ty: Some(ty),
+                            array: t.ends_with("[]"),
+                            value,
+                        });
                     }
-                    (if *kind == "struct" { Kind::Struct } else { Kind::Message }, fields)
+                    (
+                        if *kind == "struct" {
+                            Kind::Struct
+                        } else {
+                            Kind::Message
+                        },
+                        fields,
+                    )
                 }
                 k => return err(format!("schema text: unknown kind {k}")),
             };
-            defs.push(Def { name: name.to_string(), kind, fields });
+            defs.push(Def {
+                name: name.to_string(),
+                kind,
+                fields,
+            });
         }
         Ok(Schema { defs })
     }
@@ -600,6 +729,10 @@ impl Schema {
 fn numbered(token: &str, default: u32) -> Result<(String, u32), KiwiError> {
     match token.split_once('=') {
         None => Ok((token.to_string(), default)),
-        Some((name, n)) => Ok((name.to_string(), n.parse().map_err(|_| KiwiError(format!("schema text: bad number in `{token}`")))?)),
+        Some((name, n)) => Ok((
+            name.to_string(),
+            n.parse()
+                .map_err(|_| KiwiError(format!("schema text: bad number in `{token}`")))?,
+        )),
     }
 }

@@ -39,8 +39,13 @@ pub const COMPUTER_USE_TOOL: &str = "computer_use";
 ///
 /// Useful for a [`ToolProfileSpec::builtin_tools`] allow-list that wants the
 /// whole web surface without naming each tool.
-pub const BXC_BUILTIN_TOOLS: [&str; 5] =
-    ["web_search", "web_scrape", "js_eval", "google_ai", BROWSER_TOOL];
+pub const BXC_BUILTIN_TOOLS: [&str; 5] = [
+    "web_search",
+    "web_scrape",
+    "js_eval",
+    "google_ai",
+    BROWSER_TOOL,
+];
 
 /// One explicitly authorized `SKILL.md` file.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,7 +60,10 @@ impl SkillSpec {
     /// Create one explicit skill binding.
     #[must_use]
     pub fn new(name: impl Into<String>, path: impl Into<PathBuf>) -> Self {
-        Self { name: name.into(), path: path.into() }
+        Self {
+            name: name.into(),
+            path: path.into(),
+        }
     }
 }
 
@@ -77,7 +85,10 @@ impl PluginToolSpec {
     /// Create an empty, explicitly selected plugin contribution.
     #[must_use]
     pub fn new(id: impl Into<String>) -> Self {
-        Self { id: id.into(), ..Self::default() }
+        Self {
+            id: id.into(),
+            ..Self::default()
+        }
     }
 }
 
@@ -103,11 +114,16 @@ impl ToolProfileSpec {
     #[must_use]
     pub fn has_mcp_servers(&self) -> bool {
         !self.mcp_servers.is_empty()
-            || self.plugins.iter().any(|plugin| !plugin.mcp_servers.is_empty())
+            || self
+                .plugins
+                .iter()
+                .any(|plugin| !plugin.mcp_servers.is_empty())
     }
 
     fn allows_builtin(&self, name: &str) -> bool {
-        self.builtin_tools.as_ref().is_none_or(|allowed| allowed.contains(name))
+        self.builtin_tools
+            .as_ref()
+            .is_none_or(|allowed| allowed.contains(name))
     }
 }
 
@@ -183,18 +199,26 @@ impl ToolExecutor for CwdDefaulting {
 /// Resolve missing or relative working directories against `cwd`.
 fn with_default_cwd(inner: Arc<dyn ToolExecutor>, cwd: Option<&PathBuf>) -> Arc<dyn ToolExecutor> {
     match cwd {
-        Some(cwd) => Arc::new(CwdDefaulting { inner, cwd: cwd.clone() }),
+        Some(cwd) => Arc::new(CwdDefaulting {
+            inner,
+            cwd: cwd.clone(),
+        }),
         None => inner,
     }
 }
 
 fn profile_error(message: impl Into<String>) -> ToolError {
-    ToolError::InvalidArguments { tool: "tool_profile".to_owned(), message: message.into() }
+    ToolError::InvalidArguments {
+        tool: "tool_profile".to_owned(),
+        message: message.into(),
+    }
 }
 
 fn validate_component(kind: &str, value: &str) -> Result<(), ToolError> {
     if value.is_empty()
-        || !value.chars().all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-'))
+        || !value
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-'))
     {
         return Err(profile_error(format!(
             "{kind} `{value}` must contain only ASCII letters, digits, `_`, or `-`"
@@ -228,10 +252,16 @@ fn register_skill(
         |plugin_id| format!("skill__{plugin_id}__{}", skill.name),
     );
     let metadata = std::fs::metadata(&skill.path).map_err(|error| {
-        profile_error(format!("cannot inspect skill {}: {error}", skill.path.display()))
+        profile_error(format!(
+            "cannot inspect skill {}: {error}",
+            skill.path.display()
+        ))
     })?;
     if !metadata.is_file() {
-        return Err(profile_error(format!("skill path is not a file: {}", skill.path.display())));
+        return Err(profile_error(format!(
+            "skill path is not a file: {}",
+            skill.path.display()
+        )));
     }
     if metadata.len() > MAX_SKILL_BYTES {
         return Err(profile_error(format!(
@@ -240,7 +270,10 @@ fn register_skill(
         )));
     }
     let content = std::fs::read_to_string(&skill.path).map_err(|error| {
-        profile_error(format!("cannot read skill {}: {error}", skill.path.display()))
+        profile_error(format!(
+            "cannot read skill {}: {error}",
+            skill.path.display()
+        ))
     })?;
     registry.register(Arc::new(SkillTool::new(name, content)))
 }
@@ -267,7 +300,10 @@ fn validate_plugins(profile: &ToolProfileSpec) -> Result<(), ToolError> {
     for plugin in &profile.plugins {
         validate_component("plugin id", &plugin.id)?;
         if !seen.insert(&plugin.id) {
-            return Err(profile_error(format!("duplicate plugin id `{}`", plugin.id)));
+            return Err(profile_error(format!(
+                "duplicate plugin id `{}`",
+                plugin.id
+            )));
         }
     }
     Ok(())
@@ -287,7 +323,9 @@ fn profiled_mcp_servers(
             validate_component("MCP server id", server_name)?;
             let namespaced = format!("plugin__{}__{server_name}", plugin.id);
             if servers.insert(namespaced.clone(), config.clone()).is_some() {
-                return Err(profile_error(format!("duplicate MCP server id `{namespaced}`")));
+                return Err(profile_error(format!(
+                    "duplicate MCP server id `{namespaced}`"
+                )));
             }
         }
     }
@@ -330,13 +368,25 @@ pub fn build_tool_registry(config: &RuntimeConfig) -> Result<Arc<ToolRegistry>, 
 
     let shell: Arc<dyn ToolExecutor> =
         Arc::new(ShellExecTool::with_config(config.shell.to_shell_config()));
-    register_if_allowed(&mut registry, profile, with_default_cwd(shell, config.cwd.as_ref()))?;
+    register_if_allowed(
+        &mut registry,
+        profile,
+        with_default_cwd(shell, config.cwd.as_ref()),
+    )?;
 
     let patch: Arc<dyn ToolExecutor> = Arc::new(ApplyPatchTool::new());
-    register_if_allowed(&mut registry, profile, with_default_cwd(patch, config.cwd.as_ref()))?;
+    register_if_allowed(
+        &mut registry,
+        profile,
+        with_default_cwd(patch, config.cwd.as_ref()),
+    )?;
 
     let read_file: Arc<dyn ToolExecutor> = Arc::new(ReadFileTool::new());
-    register_if_allowed(&mut registry, profile, with_default_cwd(read_file, config.cwd.as_ref()))?;
+    register_if_allowed(
+        &mut registry,
+        profile,
+        with_default_cwd(read_file, config.cwd.as_ref()),
+    )?;
 
     let search_text: Arc<dyn ToolExecutor> = Arc::new(SearchTextTool::new());
     register_if_allowed(
@@ -421,13 +471,17 @@ fn desktop_computer_tool(section: Option<&ComputerUseConfig>) -> Option<Arc<dyn 
         denied_apps: section.denied_apps.clone().unwrap_or_default(),
     };
     let mut tool = if section.environment == Some(ComputerUseEnvironment::RemoteVnc) {
-        let host = section.endpoint.as_deref().or(section.remote_host.as_deref()).unwrap_or("omar");
+        let host = section
+            .endpoint
+            .as_deref()
+            .or(section.remote_host.as_deref())
+            .unwrap_or("omar");
         match ComputerTool::remote_vnc(host, None, policy) {
             Ok(tool) => tool,
             Err(e) => {
                 tracing::warn!("computer_use: VNC target {host}: {e}");
                 return None;
-            },
+            }
         }
     } else if let Some(host) = &section.remote_host {
         let mut target = RemoteComputerTarget::resolve(host);
@@ -440,7 +494,7 @@ fn desktop_computer_tool(section: Option<&ComputerUseConfig>) -> Option<Arc<dyn 
         match section.environment {
             Some(ComputerUseEnvironment::Wsl | ComputerUseEnvironment::RemoteWsl) => {
                 ComputerTool::remote_wsl(target, policy)
-            },
+            }
             _ => ComputerTool::remote_winclean(target, policy),
         }
     } else {
@@ -578,7 +632,10 @@ mod profile_tests {
     #[test]
     fn invalid_profile_identifiers_are_rejected() {
         let profile = ToolProfileSpec {
-            plugins: vec![PluginToolSpec { id: "other/profile".to_owned(), ..Default::default() }],
+            plugins: vec![PluginToolSpec {
+                id: "other/profile".to_owned(),
+                ..Default::default()
+            }],
             ..ToolProfileSpec::default()
         };
         let error = profiled_mcp_servers(&profile).unwrap_err();
@@ -604,24 +661,45 @@ mod bxc_surface_tests {
     fn bxc_web_surface_is_registered_by_default() {
         let registry = build_tool_registry(&RuntimeConfig::default()).unwrap();
         for name in BXC_BUILTIN_TOOLS {
-            assert!(registry.get(name).is_some(), "built-in `{name}` must be registered");
+            assert!(
+                registry.get(name).is_some(),
+                "built-in `{name}` must be registered"
+            );
         }
     }
 
     #[test]
     fn browser_and_desktop_computer_surfaces_coexist() {
         let registry = build_tool_registry(&RuntimeConfig::default()).unwrap();
-        assert!(registry.get(BROWSER_TOOL).is_some(), "browser surface missing");
-        assert!(registry.get("computer_use").is_some(), "desktop surface missing");
+        assert!(
+            registry.get(BROWSER_TOOL).is_some(),
+            "browser surface missing"
+        );
+        assert!(
+            registry.get("computer_use").is_some(),
+            "desktop surface missing"
+        );
     }
 
     #[test]
     fn computer_use_section_can_disable_the_desktop_surface() {
-        let section = ComputerUseConfig { enabled: Some(false), ..ComputerUseConfig::default() };
-        let config = RuntimeConfig { computer_use: Some(section), ..RuntimeConfig::default() };
+        let section = ComputerUseConfig {
+            enabled: Some(false),
+            ..ComputerUseConfig::default()
+        };
+        let config = RuntimeConfig {
+            computer_use: Some(section),
+            ..RuntimeConfig::default()
+        };
         let registry = build_tool_registry(&config).unwrap();
-        assert!(registry.get(COMPUTER_USE_TOOL).is_none(), "disabled section must unregister");
-        assert!(registry.get(BROWSER_TOOL).is_some(), "browser surface is independent");
+        assert!(
+            registry.get(COMPUTER_USE_TOOL).is_none(),
+            "disabled section must unregister"
+        );
+        assert!(
+            registry.get(BROWSER_TOOL).is_some(),
+            "browser surface is independent"
+        );
     }
 
     #[tokio::test]
@@ -631,9 +709,14 @@ mod bxc_surface_tests {
             environment: Some(ComputerUseEnvironment::Browser),
             ..ComputerUseConfig::default()
         };
-        let config = RuntimeConfig { computer_use: Some(section), ..RuntimeConfig::default() };
+        let config = RuntimeConfig {
+            computer_use: Some(section),
+            ..RuntimeConfig::default()
+        };
         let registry = build_tool_registry(&config).unwrap();
-        let tool = registry.get(COMPUTER_USE_TOOL).expect("desktop surface registered");
+        let tool = registry
+            .get(COMPUTER_USE_TOOL)
+            .expect("desktop surface registered");
         let output = tool
             .handle(serde_json::json!({ "action": "focus_window", "window_title": "Notepad" }))
             .await
@@ -645,9 +728,17 @@ mod bxc_surface_tests {
     #[tokio::test]
     async fn desktop_surface_without_backend_rejects_actions_instead_of_faking_them() {
         let registry = build_tool_registry(&RuntimeConfig::default()).unwrap();
-        let tool = registry.get(COMPUTER_USE_TOOL).expect("desktop surface registered");
-        let output = tool.handle(serde_json::json!({ "action": "screenshot" })).await.unwrap();
-        assert!(output.is_error, "no backend must not produce a screenshot: {output:?}");
+        let tool = registry
+            .get(COMPUTER_USE_TOOL)
+            .expect("desktop surface registered");
+        let output = tool
+            .handle(serde_json::json!({ "action": "screenshot" }))
+            .await
+            .unwrap();
+        assert!(
+            output.is_error,
+            "no backend must not produce a screenshot: {output:?}"
+        );
     }
 
     #[test]
@@ -656,9 +747,15 @@ mod bxc_surface_tests {
             builtin_tools: Some(BXC_BUILTIN_TOOLS.iter().map(|&n| n.to_owned()).collect()),
             ..ToolProfileSpec::default()
         };
-        let config = RuntimeConfig { tool_profile: Some(profile), ..RuntimeConfig::default() };
+        let config = RuntimeConfig {
+            tool_profile: Some(profile),
+            ..RuntimeConfig::default()
+        };
         let registry = build_tool_registry(&config).unwrap();
         assert!(registry.get("web_search").is_some());
-        assert!(registry.get("shell").is_none(), "allow-list must exclude shell");
+        assert!(
+            registry.get("shell").is_none(),
+            "allow-list must exclude shell"
+        );
     }
 }

@@ -1,7 +1,7 @@
-use bevy_math::{ops, Vec3, Vec3A, Vec4, Vec4Swizzles};
+use bevy_math::{Vec3, Vec3A, Vec4, Vec4Swizzles, ops};
 
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 

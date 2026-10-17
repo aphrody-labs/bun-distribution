@@ -39,14 +39,20 @@ pub enum MenuNode {
 impl MenuNode {
     /// `id|params` — a stable key for one item (native menu ids).
     pub fn key(id: &str, params: &Value) -> String {
-        if params.is_null() { id.to_string() } else { format!("{id}|{params}") }
+        if params.is_null() {
+            id.to_string()
+        } else {
+            format!("{id}|{params}")
+        }
     }
 }
 
 /// User-defined names in parameterized menus are data, not message keys.
 pub fn display_item_label<'a>(id: &str, params: &Value, label: &'a str) -> &'a str {
-    if matches!(id, "metadata.applyPreset" | "album.addPhotos" | "label.applySet")
-        || (id == "app.export" && params.get("preset").is_some())
+    if matches!(
+        id,
+        "metadata.applyPreset" | "album.addPhotos" | "label.applySet"
+    ) || (id == "app.export" && params.get("preset").is_some())
         || (id == "app.openLibrary" && params.get("path").is_some())
     {
         label
@@ -275,7 +281,12 @@ const HIDDEN: &[&str] = &[
 /// The selection includes a photo in Recently Deleted.
 pub(crate) fn selection_deleted(app: &LightcraftApp) -> bool {
     let s = &app.session;
-    s.selection.ids.iter().copied().chain(s.selection.active).any(|id| s.catalog.photo(id).is_some_and(|p| p.deleted))
+    s.selection
+        .ids
+        .iter()
+        .copied()
+        .chain(s.selection.active)
+        .any(|id| s.catalog.photo(id).is_some_and(|p| p.deleted))
 }
 
 /// Items only some hosts have are left out of the others' menus (the web build's library backup);
@@ -287,13 +298,29 @@ fn host_supports(app: &LightcraftApp, id: &str) -> bool {
         "photo.restore" | "photo.deletePermanently" => selection_deleted(app),
         "photo.delete" => !selection_deleted(app),
         // only where the trash is on screen
-        "library.emptyRecentlyDeleted" => app.session.source == lightcraft_engine::LibrarySource::RecentlyDeleted,
+        "library.emptyRecentlyDeleted" => {
+            app.session.source == lightcraft_engine::LibrarySource::RecentlyDeleted
+        }
         _ => true,
     }
 }
 
-fn item(id: &str, params: Value, label: impl Into<String>, shortcut: Option<&str>, enabled: bool, checked: Option<bool>) -> MenuNode {
-    MenuNode::Item { id: id.into(), params, label: label.into(), shortcut: shortcut.map(str::to_string), enabled, checked }
+fn item(
+    id: &str,
+    params: Value,
+    label: impl Into<String>,
+    shortcut: Option<&str>,
+    enabled: bool,
+    checked: Option<bool>,
+) -> MenuNode {
+    MenuNode::Item {
+        id: id.into(),
+        params,
+        label: label.into(),
+        shortcut: shortcut.map(str::to_string),
+        enabled,
+        checked,
+    }
 }
 
 /// Checked state of toggles and radio items.
@@ -302,7 +329,9 @@ pub fn checked(app: &LightcraftApp, id: &str) -> Option<bool> {
     let panel = |p: RightPanel| Some(u.right == p);
     match id {
         // Every language's command is checked when it is the active one.
-        _ if crate::menus::language_from_command(id).is_some() => Some(crate::menus::language_from_command(id) == Some(u.language)),
+        _ if crate::menus::language_from_command(id).is_some() => {
+            Some(crate::menus::language_from_command(id) == Some(u.language))
+        }
         "develop.autoSync" => Some(app.session.auto_sync),
         "view.photoCounts" => Some(u.show_counts),
         "view.secondWindow" => Some(u.second_window),
@@ -352,12 +381,18 @@ pub fn checked(app: &LightcraftApp, id: &str) -> Option<bool> {
 fn live_label(app: &LightcraftApp, id: &str, label: &str) -> String {
     let n = app.session.selection.ids.len();
     match id {
-        "edit.undo" => {
-            app.session.undo.last().map(|e| crate::i18n::tr_format!("Undo {}", crate::i18n::tr(&e.label))).unwrap_or_else(|| "Undo".into())
-        }
-        "edit.redo" => {
-            app.session.redo.last().map(|e| crate::i18n::tr_format!("Redo {}", crate::i18n::tr(&e.label))).unwrap_or_else(|| "Redo".into())
-        }
+        "edit.undo" => app
+            .session
+            .undo
+            .last()
+            .map(|e| crate::i18n::tr_format!("Undo {}", crate::i18n::tr(&e.label)))
+            .unwrap_or_else(|| "Undo".into()),
+        "edit.redo" => app
+            .session
+            .redo
+            .last()
+            .map(|e| crate::i18n::tr_format!("Redo {}", crate::i18n::tr(&e.label)))
+            .unwrap_or_else(|| "Redo".into()),
         "photo.delete" if n > 1 => crate::i18n::tr_format!("Delete {n} Photos", n = n),
         "photo.virtualCopy" if n > 1 => crate::i18n::tr_format!("Create {n} Virtual Copies", n = n),
         "dialog.rename" if n > 1 => crate::i18n::tr_format!("Rename {n} Photos…", n = n),
@@ -368,17 +403,31 @@ fn live_label(app: &LightcraftApp, id: &str, label: &str) -> String {
 
 /// The parameterized submenus.
 fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
-    let active = app.session.active().and_then(|id| app.session.catalog.photo(id).cloned());
+    let active = app
+        .session
+        .active()
+        .and_then(|id| app.session.catalog.photo(id).cloned());
     let has = active.is_some();
     Some(match name {
         "Previews" => {
-            let running = app.session.preview_build.as_ref().is_some_and(|b| !b.finished.load(std::sync::atomic::Ordering::Relaxed));
-            let scope = if app.session.selection.ids.len() > 1 { "Selected" } else { "Visible" };
+            let running = app
+                .session
+                .preview_build
+                .as_ref()
+                .is_some_and(|b| !b.finished.load(std::sync::atomic::Ordering::Relaxed));
+            let scope = if app.session.selection.ids.len() > 1 {
+                "Selected"
+            } else {
+                "Visible"
+            };
             vec![
                 item(
                     "library.buildPreviews",
                     json!({"size": "standard", "edge": app.ui.settings.standard_preview_edge()}),
-                    crate::i18n::tr_format!("Build Standard-Sized Previews ({scope})", scope = crate::i18n::tr(scope)),
+                    crate::i18n::tr_format!(
+                        "Build Standard-Sized Previews ({scope})",
+                        scope = crate::i18n::tr(scope)
+                    ),
                     None,
                     !running,
                     None,
@@ -386,18 +435,31 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 item(
                     "library.buildPreviews",
                     json!({"size": "full"}),
-                    crate::i18n::tr_format!("Build 1:1 Previews ({scope})", scope = crate::i18n::tr(scope)),
+                    crate::i18n::tr_format!(
+                        "Build 1:1 Previews ({scope})",
+                        scope = crate::i18n::tr(scope)
+                    ),
                     None,
                     !running,
                     None,
                 ),
-                item("library.cancelPreviews", Value::Null, "Stop Building Previews", None, running, None),
+                item(
+                    "library.cancelPreviews",
+                    Value::Null,
+                    "Stop Building Previews",
+                    None,
+                    running,
+                    None,
+                ),
                 MenuNode::Separator,
                 // (read and written on a worker thread: the originals may be on a slow drive)
                 item(
                     "library.smartPreviews",
                     json!({"background": true}),
-                    crate::i18n::tr_format!("Build Smart Previews ({scope})", scope = crate::i18n::tr(scope)),
+                    crate::i18n::tr_format!(
+                        "Build Smart Previews ({scope})",
+                        scope = crate::i18n::tr(scope)
+                    ),
                     None,
                     app.session.media.smart_dir.is_some() && !running,
                     None,
@@ -405,20 +467,41 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 item(
                     "library.smartPreviews",
                     json!({"discard": true, "background": true}),
-                    crate::i18n::tr_format!("Discard Smart Previews ({scope})", scope = crate::i18n::tr(scope)),
+                    crate::i18n::tr_format!(
+                        "Discard Smart Previews ({scope})",
+                        scope = crate::i18n::tr(scope)
+                    ),
                     None,
                     app.session.media.smart_dir.is_some() && !running,
                     None,
                 ),
                 MenuNode::Separator,
-                item("library.clearPreviews", Value::Null, "Discard Preview Cache", None, true, None),
+                item(
+                    "library.clearPreviews",
+                    Value::Null,
+                    "Discard Preview Cache",
+                    None,
+                    true,
+                    None,
+                ),
             ]
         }
         "Set Rating" => (0..=5u8)
             .map(|r| {
-                let label = if r == 0 { "None".to_string() } else { "★".repeat(r as usize) };
+                let label = if r == 0 {
+                    "None".to_string()
+                } else {
+                    "★".repeat(r as usize)
+                };
                 let sc = ["0", "1", "2", "3", "4", "5"][r as usize];
-                item("photo.rate", json!({"rating": r}), label, Some(sc), has, Some(active.as_ref().is_some_and(|p| p.rating == r)))
+                item(
+                    "photo.rate",
+                    json!({"rating": r}),
+                    label,
+                    Some(sc),
+                    has,
+                    Some(active.as_ref().is_some_and(|p| p.rating == r)),
+                )
             })
             .collect(),
         "Set Flag" => [
@@ -428,7 +511,14 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
         ]
         .into_iter()
         .map(|(f, label, sc, flag)| {
-            item("photo.flag", json!({"flag": f}), label, Some(sc), has, Some(active.as_ref().is_some_and(|p| p.flag == flag)))
+            item(
+                "photo.flag",
+                json!({"flag": f}),
+                label,
+                Some(sc),
+                has,
+                Some(active.as_ref().is_some_and(|p| p.flag == flag)),
+            )
         })
         .collect(),
         "Set Color Label" => {
@@ -452,7 +542,14 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 })
                 .collect();
             v.push(MenuNode::Separator);
-            v.push(item("photo.label", json!({"label": "none"}), "None", None, has, Some(active.as_ref().is_some_and(|p| p.label.is_none()))));
+            v.push(item(
+                "photo.label",
+                json!({"label": "none"}),
+                "None",
+                None,
+                has,
+                Some(active.as_ref().is_some_and(|p| p.label.is_none())),
+            ));
             v.push(MenuNode::Separator);
             // label sets: each a checkable item; Edit… names them
             let sets = lightcraft_engine::cmd::manage::label_sets_json(&app.session);
@@ -468,7 +565,14 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                     Some(current.as_deref() == Some(name)),
                 ));
             }
-            v.push(item("dialog.labelNames", Value::Null, "Edit Label Names…", None, true, None));
+            v.push(item(
+                "dialog.labelNames",
+                Value::Null,
+                "Edit Label Names…",
+                None,
+                true,
+                None,
+            ));
             v
         }
         "Sidebar Sections" => {
@@ -478,10 +582,26 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 .sections()
                 .iter()
                 .filter(|s| s.id.available())
-                .map(|s| item("view.sidebarSection", json!({"section": s.id.id()}), s.id.title(), None, true, Some(!s.hidden)))
+                .map(|s| {
+                    item(
+                        "view.sidebarSection",
+                        json!({"section": s.id.id()}),
+                        s.id.title(),
+                        None,
+                        true,
+                        Some(!s.hidden),
+                    )
+                })
                 .collect();
             v.push(MenuNode::Separator);
-            v.push(item("view.sidebarReset", Value::Null, "Reset Sidebar Sections", None, !layout.is_default(), None));
+            v.push(item(
+                "view.sidebarReset",
+                Value::Null,
+                "Reset Sidebar Sections",
+                None,
+                !layout.is_default(),
+                None,
+            ));
             v
         }
         "Appearance" => {
@@ -494,23 +614,66 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 ("dark", "Dark Mode", AppearanceMode::Dark),
             ]
             .into_iter()
-            .map(|(mode, label, m)| item("view.appearance", json!({"mode": mode}), label, None, true, Some(s.appearance_mode == m)))
+            .map(|(mode, label, m)| {
+                item(
+                    "view.appearance",
+                    json!({"mode": mode}),
+                    label,
+                    None,
+                    true,
+                    Some(s.appearance_mode == m),
+                )
+            })
             .collect();
-            v.push(item("view.appearance", Value::Null, "Next Appearance Mode", None, true, None));
+            v.push(item(
+                "view.appearance",
+                Value::Null,
+                "Next Appearance Mode",
+                None,
+                true,
+                None,
+            ));
             // the saved theme of each family is checked
-            for group in [[ThemeKind::Charcoal, ThemeKind::Midnight], [ThemeKind::Silver, ThemeKind::Paper]] {
+            for group in [
+                [ThemeKind::Charcoal, ThemeKind::Midnight],
+                [ThemeKind::Silver, ThemeKind::Paper],
+            ] {
                 v.push(MenuNode::Separator);
                 for k in group {
-                    let on = if k.is_dark() { s.dark_theme.kind() == k } else { s.light_theme.kind() == k };
-                    v.push(item("view.theme", json!({"theme": k.id()}), k.label(), None, true, Some(on)));
+                    let on = if k.is_dark() {
+                        s.dark_theme.kind() == k
+                    } else {
+                        s.light_theme.kind() == k
+                    };
+                    v.push(item(
+                        "view.theme",
+                        json!({"theme": k.id()}),
+                        k.label(),
+                        None,
+                        true,
+                        Some(on),
+                    ));
                 }
             }
             v
         }
         "Grid Info" => ["filename", "exposure", "date"]
             .into_iter()
-            .zip(["File Name", "Exposure (shutter · aperture · ISO)", "Capture Date"])
-            .map(|(k, label)| item("view.gridInfo", json!({"info": k}), label, None, true, Some(app.ui.grid_info == k)))
+            .zip([
+                "File Name",
+                "Exposure (shutter · aperture · ISO)",
+                "Capture Date",
+            ])
+            .map(|(k, label)| {
+                item(
+                    "view.gridInfo",
+                    json!({"info": k}),
+                    label,
+                    None,
+                    true,
+                    Some(app.ui.grid_info == k),
+                )
+            })
             .collect(),
         "Sort" => {
             use lightcraft_catalog::SortKey::*;
@@ -525,9 +688,25 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 ("Random", Random, "random"),
             ]
             .into_iter()
-            .map(|(label, key, k)| item("library.sort", json!({"key": k}), label, None, true, Some(cur.key == key)))
+            .map(|(label, key, k)| {
+                item(
+                    "library.sort",
+                    json!({"key": k}),
+                    label,
+                    None,
+                    true,
+                    Some(cur.key == key),
+                )
+            })
             .collect();
-            v.push(item("library.shuffle", json!({}), "Reshuffle", None, cur.key == Random, None));
+            v.push(item(
+                "library.shuffle",
+                json!({}),
+                "Reshuffle",
+                None,
+                cur.key == Random,
+                None,
+            ));
             v.push(MenuNode::Separator);
             // a shuffle has no direction worth choosing
             v.push(item(
@@ -555,12 +734,26 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 ("Group by Year", GroupBy::Year, "year"),
                 ("No Date Groups", GroupBy::None, "none"),
             ];
-            v.extend(groups.into_iter().map(|(label, g, k)| item("library.sort", json!({"group": k}), label, None, true, Some(cur.group == g))));
+            v.extend(groups.into_iter().map(|(label, g, k)| {
+                item(
+                    "library.sort",
+                    json!({"group": k}),
+                    label,
+                    None,
+                    true,
+                    Some(cur.group == g),
+                )
+            }));
             v
         }
         "Open Recent Library" => {
             let can = !crate::lightroom_import::is_running(app);
-            let open = app.session.library.as_ref().filter(|l| l.on_disk).map(|l| l.dir.clone());
+            let open = app
+                .session
+                .library
+                .as_ref()
+                .filter(|l| l.on_disk)
+                .map(|l| l.dir.clone());
             let mut v: Vec<MenuNode> = app
                 .ui
                 .settings
@@ -569,25 +762,70 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 .map(|r| {
                     let d = std::path::Path::new(r);
                     // a missing library (moved, drive disconnected) is shown greyed out
-                    let label =
-                        format!("{} — {}", crate::panels::settings::library_name(d), d.parent().map(|p| p.display().to_string()).unwrap_or_default());
-                    item("app.openLibrary", json!({"path": r}), label, None, can && d.is_dir(), Some(open.as_deref() == Some(d)))
+                    let label = format!(
+                        "{} — {}",
+                        crate::panels::settings::library_name(d),
+                        d.parent()
+                            .map(|p| p.display().to_string())
+                            .unwrap_or_default()
+                    );
+                    item(
+                        "app.openLibrary",
+                        json!({"path": r}),
+                        label,
+                        None,
+                        can && d.is_dir(),
+                        Some(open.as_deref() == Some(d)),
+                    )
                 })
                 .collect();
             if v.is_empty() {
-                v.push(item("app.clearRecentLibraries", Value::Null, "No Recent Libraries", None, false, None));
+                v.push(item(
+                    "app.clearRecentLibraries",
+                    Value::Null,
+                    "No Recent Libraries",
+                    None,
+                    false,
+                    None,
+                ));
             } else {
                 v.push(MenuNode::Separator);
-                v.push(item("app.clearRecentLibraries", Value::Null, "Clear Recent Libraries", None, true, None));
+                v.push(item(
+                    "app.clearRecentLibraries",
+                    Value::Null,
+                    "Clear Recent Libraries",
+                    None,
+                    true,
+                    None,
+                ));
             }
             v
         }
         "Import from Device" => {
             let devices = lightcraft_engine::devices::devices();
             if devices.is_empty() {
-                vec![item("file.addFromDevice", Value::Null, "No Camera or Card Found", None, false, None)]
+                vec![item(
+                    "file.addFromDevice",
+                    Value::Null,
+                    "No Camera or Card Found",
+                    None,
+                    false,
+                    None,
+                )]
             } else {
-                devices.into_iter().map(|d| item("file.addFromDevice", json!({"path": d.path}), format!("{}…", d.name), None, true, None)).collect()
+                devices
+                    .into_iter()
+                    .map(|d| {
+                        item(
+                            "file.addFromDevice",
+                            json!({"path": d.path}),
+                            format!("{}…", d.name),
+                            None,
+                            true,
+                            None,
+                        )
+                    })
+                    .collect()
             }
         }
         "Metadata Preset" => {
@@ -596,24 +834,67 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                 .session
                 .metadata_presets
                 .iter()
-                .map(|m| item("metadata.applyPreset", json!({"name": m.name}), m.name.clone(), None, sel, None))
+                .map(|m| {
+                    item(
+                        "metadata.applyPreset",
+                        json!({"name": m.name}),
+                        m.name.clone(),
+                        None,
+                        sel,
+                        None,
+                    )
+                })
                 .collect();
             if !v.is_empty() {
                 v.push(MenuNode::Separator);
             }
-            v.push(item("dialog.saveMetadataPreset", Value::Null, "Save Metadata Preset…", None, has, None));
+            v.push(item(
+                "dialog.saveMetadataPreset",
+                Value::Null,
+                "Save Metadata Preset…",
+                None,
+                has,
+                None,
+            ));
             v
         }
         "Select by" => {
-            let mut v: Vec<MenuNode> = [("pick", "Picks"), ("reject", "Rejects"), ("none", "Unflagged")]
-                .into_iter()
-                .map(|(f, label)| item("library.selectBy", json!({"flag": f}), label, None, true, None))
-                .collect();
+            let mut v: Vec<MenuNode> = [
+                ("pick", "Picks"),
+                ("reject", "Rejects"),
+                ("none", "Unflagged"),
+            ]
+            .into_iter()
+            .map(|(f, label)| {
+                item(
+                    "library.selectBy",
+                    json!({"flag": f}),
+                    label,
+                    None,
+                    true,
+                    None,
+                )
+            })
+            .collect();
             v.push(MenuNode::Separator);
             v.extend((1..=5u8).map(|r| {
-                item("library.selectBy", json!({"rating": r}), crate::i18n::tr_format!("{} and higher", "★".repeat(r as usize)), None, true, None)
+                item(
+                    "library.selectBy",
+                    json!({"rating": r}),
+                    crate::i18n::tr_format!("{} and higher", "★".repeat(r as usize)),
+                    None,
+                    true,
+                    None,
+                )
             }));
-            v.push(item("library.selectBy", json!({"rating": 0, "ratingOp": "eq"}), "Unrated", None, true, None));
+            v.push(item(
+                "library.selectBy",
+                json!({"rating": 0, "ratingOp": "eq"}),
+                "Unrated",
+                None,
+                true,
+                None,
+            ));
             v.push(MenuNode::Separator);
             v.extend(lightcraft_catalog::ColorLabel::ALL.iter().map(|l| {
                 let name = format!("{l:?}");
@@ -637,10 +918,24 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
                     v.push(MenuNode::Separator);
                 }
                 builtin = b;
-                v.push(item("app.export", json!({"preset": p.name, "background": true}), p.name, None, sel, None));
+                v.push(item(
+                    "app.export",
+                    json!({"preset": p.name, "background": true}),
+                    p.name,
+                    None,
+                    sel,
+                    None,
+                ));
             }
             v.push(MenuNode::Separator);
-            v.push(item("dialog.export", Value::Null, "Custom…", None, sel, None));
+            v.push(item(
+                "dialog.export",
+                Value::Null,
+                "Custom…",
+                None,
+                sel,
+                None,
+            ));
             v
         }
         "Add to Album" => {
@@ -650,17 +945,46 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
             let local_only = crate::panels::grid::local_only(app, &targets);
             let mut v: Vec<MenuNode> = vec![];
             if local_only {
-                v.push(item("photo.addToLibrary", Value::Null, crate::i18n::tr("Add to My Photos First"), None, false, None));
+                v.push(item(
+                    "photo.addToLibrary",
+                    Value::Null,
+                    crate::i18n::tr("Add to My Photos First"),
+                    None,
+                    false,
+                    None,
+                ));
                 v.push(MenuNode::Separator);
             }
-            let mut albums: Vec<_> = app.session.catalog.albums().filter(|a| !a.folder && !a.is_smart()).map(|a| (a.name.clone(), a.id.0)).collect();
+            let mut albums: Vec<_> = app
+                .session
+                .catalog
+                .albums()
+                .filter(|a| !a.folder && !a.is_smart())
+                .map(|a| (a.name.clone(), a.id.0))
+                .collect();
             albums.sort_by_key(|(n, _)| n.to_lowercase());
             let any = !albums.is_empty();
-            v.extend(albums.into_iter().map(|(name, id)| item("album.addPhotos", json!({"id": id}), name, None, sel && !local_only, None)));
+            v.extend(albums.into_iter().map(|(name, id)| {
+                item(
+                    "album.addPhotos",
+                    json!({"id": id}),
+                    name,
+                    None,
+                    sel && !local_only,
+                    None,
+                )
+            }));
             if any {
                 v.push(MenuNode::Separator);
             }
-            v.push(item("dialog.newAlbum", Value::Null, "New Album…", None, !local_only, None));
+            v.push(item(
+                "dialog.newAlbum",
+                Value::Null,
+                "New Album…",
+                None,
+                !local_only,
+                None,
+            ));
             v
         }
         _ => return None,
@@ -669,8 +993,19 @@ fn expanded(app: &LightcraftApp, name: &str) -> Option<Vec<MenuNode>> {
 
 fn node(app: &LightcraftApp, e: &MenuEntry) -> MenuNode {
     // Shift+P picks and advances in Library; don't advertise it on Presets in those views.
-    let shortcut = if e.id == "panel.presets" && crate::shortcuts::library_grid(app) { None } else { e.shortcut.as_deref() };
-    item(&e.id, Value::Null, live_label(app, &e.id, &e.label), shortcut, e.enabled, checked(app, &e.id))
+    let shortcut = if e.id == "panel.presets" && crate::shortcuts::library_grid(app) {
+        None
+    } else {
+        e.shortcut.as_deref()
+    };
+    item(
+        &e.id,
+        Value::Null,
+        live_label(app, &e.id, &e.label),
+        shortcut,
+        e.enabled,
+        checked(app, &e.id),
+    )
 }
 
 /// Drop leading, trailing and doubled separators (also inside submenus) and empty submenus.
@@ -700,12 +1035,18 @@ fn tidy(v: Vec<MenuNode>) -> Vec<MenuNode> {
 
 /// The whole menu bar: (title, items) per menu in [`MENUS`] order.
 pub fn menu_bar(app: &LightcraftApp) -> Vec<(String, Vec<MenuNode>)> {
-    let entries: Vec<MenuEntry> =
-        crate::menus::menu_entries(app).into_iter().filter(|e| !HIDDEN.contains(&e.id.as_str()) && host_supports(app, &e.id)).collect();
+    let entries: Vec<MenuEntry> = crate::menus::menu_entries(app)
+        .into_iter()
+        .filter(|e| !HIDDEN.contains(&e.id.as_str()) && host_supports(app, &e.id))
+        .collect();
     let mut used = vec![false; entries.len()];
     let mut bar = Vec::new();
     for title in MENUS {
-        let layout = LAYOUT.iter().find(|(t, _)| t == title).map(|(_, l)| *l).unwrap_or(&[]);
+        let layout = LAYOUT
+            .iter()
+            .find(|(t, _)| t == title)
+            .map(|(_, l)| *l)
+            .unwrap_or(&[]);
         let mut items = Vec::new();
         let mut last = Vec::new();
         let sub = |name: &str, used: &mut [bool]| -> Vec<MenuNode> {
@@ -715,7 +1056,11 @@ pub fn menu_bar(app: &LightcraftApp) -> Vec<(String, Vec<MenuNode>)> {
                 if !used[i] && e.menu.len() == 2 && e.menu[0] == *title && e.menu[1] == name {
                     used[i] = true;
                     // commands that open a dialog go last, after a separator
-                    if e.label.ends_with('…') { dialogs.push(node(app, e)) } else { children.push(node(app, e)) }
+                    if e.label.ends_with('…') {
+                        dialogs.push(node(app, e))
+                    } else {
+                        children.push(node(app, e))
+                    }
                 }
             }
             if !dialogs.is_empty() {
@@ -729,10 +1074,20 @@ pub fn menu_bar(app: &LightcraftApp) -> Vec<(String, Vec<MenuNode>)> {
                 items.push(MenuNode::Separator);
             } else if let Some(name) = slot.strip_prefix('@') {
                 let children = sub(name, &mut used);
-                items.push(MenuNode::Submenu { label: name.to_string(), children });
-            } else if let Some(i) = entries.iter().position(|e| e.id == *slot && e.menu.first().map(String::as_str) == Some(title)) {
+                items.push(MenuNode::Submenu {
+                    label: name.to_string(),
+                    children,
+                });
+            } else if let Some(i) = entries
+                .iter()
+                .position(|e| e.id == *slot && e.menu.first().map(String::as_str) == Some(title))
+            {
                 used[i] = true;
-                if LAST.contains(slot) { last.push(node(app, &entries[i])) } else { items.push(node(app, &entries[i])) }
+                if LAST.contains(slot) {
+                    last.push(node(app, &entries[i]))
+                } else {
+                    items.push(node(app, &entries[i]))
+                }
             }
         }
         // everything else that names this menu
@@ -751,7 +1106,10 @@ pub fn menu_bar(app: &LightcraftApp) -> Vec<(String, Vec<MenuNode>)> {
         }
         for name in extra_subs {
             let children = sub(&name, &mut used);
-            items.push(MenuNode::Submenu { label: name, children });
+            items.push(MenuNode::Submenu {
+                label: name,
+                children,
+            });
         }
         if !last.is_empty() {
             items.push(MenuNode::Separator);
@@ -766,7 +1124,15 @@ pub fn menu_bar(app: &LightcraftApp) -> Vec<(String, Vec<MenuNode>)> {
 /// Compare/Survey; Auto Advance moves on).
 pub fn run_item(app: &mut LightcraftApp, id: &str, params: Value) -> Result<Value, String> {
     let mut params = if params.is_null() { json!({}) } else { params };
-    let culling_cmd = matches!(id, "photo.rate" | "photo.flag" | "photo.label" | "photo.pick" | "photo.reject" | "photo.unflag");
+    let culling_cmd = matches!(
+        id,
+        "photo.rate"
+            | "photo.flag"
+            | "photo.label"
+            | "photo.pick"
+            | "photo.reject"
+            | "photo.unflag"
+    );
     if culling_cmd {
         crate::panels::compare::target_active(app, &mut params);
     }
@@ -814,7 +1180,16 @@ const TITLE_GAP: f32 = 24.0;
 /// Width of the in-window menu bar's titles.
 pub fn bar_width(ui: &egui::Ui) -> f32 {
     let t = crate::theme::Tokens::get(ui.ctx());
-    MENUS.iter().map(|m| ui.painter().layout_no_wrap(crate::i18n::tr(m).to_string(), t.font(13.0), t.text).size().x + TITLE_GAP).sum::<f32>()
+    MENUS
+        .iter()
+        .map(|m| {
+            ui.painter()
+                .layout_no_wrap(crate::i18n::tr(m).to_string(), t.font(13.0), t.text)
+                .size()
+                .x
+                + TITLE_GAP
+        })
+        .sum::<f32>()
 }
 
 /// The in-window menu bar (hosts without a native one): one dropdown per menu, or a single
@@ -825,7 +1200,13 @@ pub fn show_in_window(app: &mut LightcraftApp, ui: &mut egui::Ui, max_width: f32
     let font = t.font(13.0);
     let widths: Vec<f32> = bar
         .iter()
-        .map(|(title, _)| ui.painter().layout_no_wrap(crate::i18n::tr(title).to_string(), font.clone(), t.text).size().x + TITLE_GAP)
+        .map(|(title, _)| {
+            ui.painter()
+                .layout_no_wrap(crate::i18n::tr(title).to_string(), font.clone(), t.text)
+                .size()
+                .x
+                + TITLE_GAP
+        })
         .collect();
     let total: f32 = widths.iter().sum();
     let mut clicked: Option<(String, Value)> = None;
@@ -842,7 +1223,14 @@ pub fn show_in_window(app: &mut LightcraftApp, ui: &mut egui::Ui, max_width: f32
         let titles: Vec<egui::Response> = bar
             .iter()
             .map(|(title, _)| {
-                let r = ui.add(egui::Button::new(egui::RichText::new(crate::i18n::tr(title)).font(font.clone()).color(t.text_label)).frame(false));
+                let r = ui.add(
+                    egui::Button::new(
+                        egui::RichText::new(crate::i18n::tr(title))
+                            .font(font.clone())
+                            .color(t.text_label),
+                    )
+                    .frame(false),
+                );
                 crate::widgets::register(ui.ctx(), format!("menu:{title}"), r.rect);
                 r
             })
@@ -859,16 +1247,34 @@ pub fn show_in_window(app: &mut LightcraftApp, ui: &mut egui::Ui, max_width: f32
             egui::Popup::menu(r)
                 .close_behavior(close)
                 .open_memory(None)
-                .show(|ui| crate::menu_level::level(ui, 1, bar_bottom, |ui| nodes_ui(ui, items, mac, &mut clicked, 1, bar_bottom)));
+                .show(|ui| {
+                    crate::menu_level::level(ui, 1, bar_bottom, |ui| {
+                        nodes_ui(ui, items, mac, &mut clicked, 1, bar_bottom)
+                    })
+                });
         }
         ui.spacing_mut().item_spacing.x = saved;
     } else {
-        let r = ui.add(egui::Button::new(egui::RichText::new(crate::i18n::tr("Menu")).font(font.clone()).color(t.text_label)).frame(false));
+        let r = ui.add(
+            egui::Button::new(
+                egui::RichText::new(crate::i18n::tr("Menu"))
+                    .font(font.clone())
+                    .color(t.text_label),
+            )
+            .frame(false),
+        );
         crate::widgets::register(ui.ctx(), "menu:all", r.rect);
         egui::Popup::menu(&r).show(|ui| {
             crate::menu_level::level(ui, 1, bar_bottom, |ui| {
                 for (title, items) in &bar {
-                    submenu(ui, title, crate::i18n::tr(title).to_string(), 1, bar_bottom, |ui| nodes_ui(ui, items, mac, &mut clicked, 2, bar_bottom));
+                    submenu(
+                        ui,
+                        title,
+                        crate::i18n::tr(title).to_string(),
+                        1,
+                        bar_bottom,
+                        |ui| nodes_ui(ui, items, mac, &mut clicked, 2, bar_bottom),
+                    );
                 }
             });
         });
@@ -893,10 +1299,14 @@ pub fn show_in_window(app: &mut LightcraftApp, ui: &mut egui::Ui, max_width: f32
 fn switch_open_title(ctx: &egui::Context, titles: &[egui::Response]) -> Option<egui::Id> {
     let popup = egui::Popup::default_response_id;
     let key = egui::Id::new("lc-menubar-hover-opened");
-    let open = titles.iter().position(|r| egui::Popup::is_id_open(ctx, popup(r)));
+    let open = titles
+        .iter()
+        .position(|r| egui::Popup::is_id_open(ctx, popup(r)));
     // the menu a hover opened, until it closes or is clicked
     let mut confirmed = None;
-    let mut hover_opened: Option<egui::Id> = ctx.data(|d| d.get_temp(key)).filter(|id| open.is_some_and(|o| popup(&titles[o]) == *id));
+    let mut hover_opened: Option<egui::Id> = ctx
+        .data(|d| d.get_temp(key))
+        .filter(|id| open.is_some_and(|o| popup(&titles[o]) == *id));
     for (i, r) in titles.iter().enumerate() {
         if r.clicked() {
             // the click that follows a hover switch confirms the menu the hover opened
@@ -929,8 +1339,17 @@ fn switch_open_title(ctx: &egui::Context, titles: &[egui::Response]) -> Option<e
 /// A submenu row showing `text` at `depth`, whose rows `children` draws one level deeper,
 /// bounded like every level. The row is registered as `menusub:<label>` (the untranslated
 /// label), and while its submenu is open it is the anchor the next frame's room is measured from.
-fn submenu(ui: &mut egui::Ui, label: &str, text: String, depth: usize, bar_bottom: Option<f32>, children: impl FnOnce(&mut egui::Ui)) {
-    let r = ui.menu_button(text, |ui| crate::menu_level::level(ui, depth + 1, bar_bottom, children));
+fn submenu(
+    ui: &mut egui::Ui,
+    label: &str,
+    text: String,
+    depth: usize,
+    bar_bottom: Option<f32>,
+    children: impl FnOnce(&mut egui::Ui),
+) {
+    let r = ui.menu_button(text, |ui| {
+        crate::menu_level::level(ui, depth + 1, bar_bottom, children)
+    });
     crate::widgets::register(ui.ctx(), format!("menusub:{label}"), r.response.rect);
     if r.inner.is_some() {
         crate::menu_level::set_anchor(ui.ctx(), depth + 1, r.response.rect);
@@ -938,7 +1357,14 @@ fn submenu(ui: &mut egui::Ui, label: &str, text: String, depth: usize, bar_botto
 }
 
 /// `depth` is 1 for a top-level menu's rows; `bar_bottom` is where the menu bar ends.
-fn nodes_ui(ui: &mut egui::Ui, nodes: &[MenuNode], mac: bool, clicked: &mut Option<(String, Value)>, depth: usize, bar_bottom: Option<f32>) {
+fn nodes_ui(
+    ui: &mut egui::Ui,
+    nodes: &[MenuNode],
+    mac: bool,
+    clicked: &mut Option<(String, Value)>,
+    depth: usize,
+    bar_bottom: Option<f32>,
+) {
     ui.set_min_width(220.0);
     for n in nodes {
         match n {
@@ -946,21 +1372,42 @@ fn nodes_ui(ui: &mut egui::Ui, nodes: &[MenuNode], mac: bool, clicked: &mut Opti
                 ui.separator();
             }
             MenuNode::Submenu { label, children } => {
-                submenu(ui, label, format!("      {}", crate::i18n::tr(label)), depth, bar_bottom, |ui| {
-                    nodes_ui(ui, children, mac, clicked, depth + 1, bar_bottom)
-                });
+                submenu(
+                    ui,
+                    label,
+                    format!("      {}", crate::i18n::tr(label)),
+                    depth,
+                    bar_bottom,
+                    |ui| nodes_ui(ui, children, mac, clicked, depth + 1, bar_bottom),
+                );
             }
-            MenuNode::Item { id, params, label, shortcut, enabled, checked } => {
+            MenuNode::Item {
+                id,
+                params,
+                label,
+                shortcut,
+                enabled,
+                checked,
+            } => {
                 // a gutter for check marks, like native menus
-                let mut b = egui::Button::new(format!("      {}", display_item_label(id, params, label)));
+                let mut b =
+                    egui::Button::new(format!("      {}", display_item_label(id, params, label)));
                 if let Some(sc) = shortcut {
                     b = b.shortcut_text(shortcut_text(sc, mac));
                 }
                 let r = ui.add_enabled(*enabled, b);
                 if *checked == Some(true) {
                     let t = crate::theme::Tokens::get(ui.ctx());
-                    let c = egui::Rect::from_center_size(egui::pos2(r.rect.left() + 11.0, r.rect.center().y), egui::vec2(13.0, 13.0));
-                    crate::icons::paint(ui.painter(), c, crate::icons::Icon::Check, if *enabled { t.text } else { t.text_disabled });
+                    let c = egui::Rect::from_center_size(
+                        egui::pos2(r.rect.left() + 11.0, r.rect.center().y),
+                        egui::vec2(13.0, 13.0),
+                    );
+                    crate::icons::paint(
+                        ui.painter(),
+                        c,
+                        crate::icons::Icon::Check,
+                        if *enabled { t.text } else { t.text_disabled },
+                    );
                 }
                 if r.clicked() {
                     *clicked = Some((id.clone(), params.clone()));
@@ -995,32 +1442,61 @@ mod tests {
             let view = &bar.iter().find(|(t, _)| t == "View").expect("View menu").1;
             view.iter()
                 .find_map(|n| match n {
-                    MenuNode::Submenu { label, children } if label == "Sort" => Some(children.clone()),
+                    MenuNode::Submenu { label, children } if label == "Sort" => {
+                        Some(children.clone())
+                    }
                     _ => None,
                 })
                 .expect("Sort submenu")
         }
-        let count = |nodes: &[MenuNode]| nodes.iter().filter(|n| matches!(n, MenuNode::Item { id, .. } if id == "library.shuffle")).count();
+        let count = |nodes: &[MenuNode]| {
+            nodes
+                .iter()
+                .filter(|n| matches!(n, MenuNode::Item { id, .. } if id == "library.shuffle"))
+                .count()
+        };
         let mut a = app();
         let kids = sort_children(&menu_bar(&a));
         assert_eq!(count(&kids), 1);
-        assert!(matches!(find(&kids, "library.shuffle"), Some(MenuNode::Item { enabled: false, .. })), "off until Random is chosen");
-        a.session.execute("library.sort", &json!({"key": "random"})).expect("sort at random");
+        assert!(
+            matches!(
+                find(&kids, "library.shuffle"),
+                Some(MenuNode::Item { enabled: false, .. })
+            ),
+            "off until Random is chosen"
+        );
+        a.session
+            .execute("library.sort", &json!({"key": "random"}))
+            .expect("sort at random");
         let kids = sort_children(&menu_bar(&a));
         assert_eq!(count(&kids), 1);
-        assert!(matches!(find(&kids, "library.shuffle"), Some(MenuNode::Item { enabled: true, .. })));
+        assert!(matches!(
+            find(&kids, "library.shuffle"),
+            Some(MenuNode::Item { enabled: true, .. })
+        ));
         // no direction is shown as chosen while shuffling
         let dir_checked = |kids: &[MenuNode]| {
             kids.iter()
                 .filter_map(|n| match n {
-                    MenuNode::Item { label, checked, .. } if label == "Ascending" || label == "Descending" => Some(*checked),
+                    MenuNode::Item { label, checked, .. }
+                        if label == "Ascending" || label == "Descending" =>
+                    {
+                        Some(*checked)
+                    }
                     _ => None,
                 })
                 .collect::<Vec<_>>()
         };
         assert_eq!(dir_checked(&kids), vec![None, None]);
-        a.session.execute("library.sort", &json!({"key": "fileName"})).expect("sort by name");
-        assert!(dir_checked(&sort_children(&menu_bar(&a))).iter().all(Option::is_some), "checks come back for other keys");
+        a.session
+            .execute("library.sort", &json!({"key": "fileName"}))
+            .expect("sort by name");
+        assert!(
+            dir_checked(&sort_children(&menu_bar(&a)))
+                .iter()
+                .all(Option::is_some),
+            "checks come back for other keys"
+        );
     }
 
     /// File opens with the import entry points, worded as importing (not as adding a sidebar
@@ -1033,26 +1509,51 @@ mod tests {
             .iter()
             .take(3)
             .map(|n| match n {
-                MenuNode::Item { label, shortcut, .. } => format!("{label}{}", shortcut.as_deref().map(|s| format!(" [{s}]")).unwrap_or_default()),
+                MenuNode::Item {
+                    label, shortcut, ..
+                } => format!(
+                    "{label}{}",
+                    shortcut
+                        .as_deref()
+                        .map(|s| format!(" [{s}]"))
+                        .unwrap_or_default()
+                ),
                 MenuNode::Submenu { label, .. } => format!("{label} ▸"),
                 MenuNode::Separator => "---".into(),
             })
             .collect();
         assert_eq!(labels[0], "Import Photos… [Cmd+Shift+I]");
-        assert_eq!(labels[1..], ["Import from Folder…".to_string(), "Import from Device ▸".to_string()]);
+        assert_eq!(
+            labels[1..],
+            [
+                "Import from Folder…".to_string(),
+                "Import from Device ▸".to_string()
+            ]
+        );
         let all: Vec<MenuNode> = bar.iter().flat_map(|(_, v)| v.clone()).collect();
         let text = serde_json::to_string(&all).unwrap();
-        assert!(!text.contains("Add Folder") && !text.contains("\"Add Photos"), "no add-folder wording left in the menus");
+        assert!(
+            !text.contains("Add Folder") && !text.contains("\"Add Photos"),
+            "no add-folder wording left in the menus"
+        );
     }
 
     /// Back Up / Restore Library are the browser build's (its library lives in browser storage):
     /// absent from the desktop's menus, present and wired to the host where it provides them.
     #[test]
     fn library_backup_items_follow_the_host() {
-        let all = |app: &LightcraftApp| -> Vec<MenuNode> { menu_bar(app).into_iter().flat_map(|(_, v)| v).collect() };
+        let all = |app: &LightcraftApp| -> Vec<MenuNode> {
+            menu_bar(app).into_iter().flat_map(|(_, v)| v).collect()
+        };
         let mut desktop = app();
-        assert!(find(&all(&desktop), "file.backupLibrary").is_none() && find(&all(&desktop), "file.restoreLibrary").is_none());
-        assert!(run_item(&mut desktop, "file.backupLibrary", Value::Null).is_err(), "not available without the host");
+        assert!(
+            find(&all(&desktop), "file.backupLibrary").is_none()
+                && find(&all(&desktop), "file.restoreLibrary").is_none()
+        );
+        assert!(
+            run_item(&mut desktop, "file.backupLibrary", Value::Null).is_err(),
+            "not available without the host"
+        );
         let calls = std::rc::Rc::new(std::cell::Cell::new(0));
         let c = calls.clone();
         let services = crate::Services {
@@ -1060,13 +1561,18 @@ mod tests {
                 c.set(c.get() + 1);
                 Ok(json!({"photos": s.catalog.len()}))
             })),
-            restore_library: Some(Box::new(|_: &mut lightcraft_engine::Session| Ok(json!({"started": true})))),
+            restore_library: Some(Box::new(|_: &mut lightcraft_engine::Session| {
+                Ok(json!({"started": true}))
+            })),
             ..Default::default()
         };
         let mut web = LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
         let bar = all(&web);
         for id in ["file.backupLibrary", "file.restoreLibrary"] {
-            assert!(matches!(find(&bar, id), Some(MenuNode::Item { enabled: true, .. })), "{id}");
+            assert!(
+                matches!(find(&bar, id), Some(MenuNode::Item { enabled: true, .. })),
+                "{id}"
+            );
         }
         let r = run_item(&mut web, "file.backupLibrary", Value::Null).unwrap();
         assert!(r["photos"].as_u64().unwrap() > 0);
@@ -1082,10 +1588,26 @@ mod tests {
         let all: Vec<MenuNode> = bar.iter().flat_map(|(_, v)| v.clone()).collect();
         // every engine command with a menu path is reachable (parameterized ones via submenus; items
         // that follow the state, like Restore for deleted photos, when it applies)
-        for c in lightcraft_engine::command_specs().iter().filter(|c| !c.menu.is_empty() && !HIDDEN.contains(&c.id) && host_supports(&app, c.id)) {
-            assert!(find(&all, c.id).is_some(), "{} missing from the menu bar", c.id);
+        for c in lightcraft_engine::command_specs()
+            .iter()
+            .filter(|c| !c.menu.is_empty() && !HIDDEN.contains(&c.id) && host_supports(&app, c.id))
+        {
+            assert!(
+                find(&all, c.id).is_some(),
+                "{} missing from the menu bar",
+                c.id
+            );
         }
-        for id in ["photo.rate", "photo.flag", "photo.label", "library.sort", "album.addPhotos", "view.compare", "stack.group", "photo.virtualCopy"] {
+        for id in [
+            "photo.rate",
+            "photo.flag",
+            "photo.label",
+            "library.sort",
+            "album.addPhotos",
+            "view.compare",
+            "stack.group",
+            "photo.virtualCopy",
+        ] {
             assert!(find(&all, id).is_some(), "{id}");
         }
         // no doubled or dangling separators
@@ -1103,24 +1625,40 @@ mod tests {
         }
         bar.iter().for_each(|(_, v)| check(v));
         // live state: undo label, enabled, checked
-        let Some(MenuNode::Item { enabled, .. }) = find(&all, "edit.undo") else { panic!() };
+        let Some(MenuNode::Item { enabled, .. }) = find(&all, "edit.undo") else {
+            panic!()
+        };
         assert!(!enabled);
         run_item(&mut app, "photo.rate", json!({"rating": 3})).unwrap();
         let bar = menu_bar(&app);
         let all: Vec<MenuNode> = bar.iter().flat_map(|(_, v)| v.clone()).collect();
-        let Some(MenuNode::Item { label, enabled, .. }) = find(&all, "edit.undo") else { panic!() };
+        let Some(MenuNode::Item { label, enabled, .. }) = find(&all, "edit.undo") else {
+            panic!()
+        };
         assert_eq!((label.as_str(), *enabled), ("Undo Set Rating", true));
         let rated: Vec<_> = all
             .iter()
             .filter_map(|n| match n {
-                MenuNode::Submenu { label, children } if label == "Set Rating" => Some(children.clone()),
+                MenuNode::Submenu { label, children } if label == "Set Rating" => {
+                    Some(children.clone())
+                }
                 _ => None,
             })
             .flatten()
-            .filter(|n| matches!(n, MenuNode::Item { checked: Some(true), .. }))
+            .filter(|n| {
+                matches!(
+                    n,
+                    MenuNode::Item {
+                        checked: Some(true),
+                        ..
+                    }
+                )
+            })
             .collect();
         assert!(matches!(&rated[..], [MenuNode::Item { params, .. }] if params["rating"] == 3));
-        let Some(MenuNode::Item { checked, .. }) = find(&all, "view.filmstrip") else { panic!() };
+        let Some(MenuNode::Item { checked, .. }) = find(&all, "view.filmstrip") else {
+            panic!()
+        };
         assert_eq!(*checked, Some(app.ui.filmstrip));
     }
 
@@ -1131,18 +1669,28 @@ mod tests {
         let listed = LAYOUT.iter().find(|(t, _)| *t == "File").unwrap().1;
         let unlisted: Vec<String> = crate::menus::menu_entries(&app)
             .into_iter()
-            .filter(|e| e.menu.first().map(String::as_str) == Some("File") && !listed.contains(&e.id.as_str()) && !HIDDEN.contains(&e.id.as_str()))
+            .filter(|e| {
+                e.menu.first().map(String::as_str) == Some("File")
+                    && !listed.contains(&e.id.as_str())
+                    && !HIDDEN.contains(&e.id.as_str())
+            })
             .map(|e| e.id)
             .collect();
         assert!(!unlisted.is_empty(), "no fallback File entries to order");
         let bar = menu_bar(&app);
         let file = &bar.iter().find(|(t, _)| t == "File").unwrap().1;
         // Quit is the last item, alone in its separator group
-        assert!(matches!(file.last(), Some(MenuNode::Item { id, .. }) if id == "app.quit"), "{file:?}");
+        assert!(
+            matches!(file.last(), Some(MenuNode::Item { id, .. }) if id == "app.quit"),
+            "{file:?}"
+        );
         assert_eq!(file.get(file.len() - 2), Some(&MenuNode::Separator));
         // every fallback entry is still reachable, before Quit
         for id in &unlisted {
-            assert!(find(&file[..file.len() - 1], id).is_some(), "{id} missing before Quit");
+            assert!(
+                find(&file[..file.len() - 1], id).is_some(),
+                "{id} missing before Quit"
+            );
         }
     }
 
@@ -1151,43 +1699,77 @@ mod tests {
         let mut app = app();
         let bar = menu_bar(&app);
         let file = &bar.iter().find(|(t, _)| t == "File").unwrap().1;
-        let Some(MenuNode::Submenu { children, .. }) =
-            file.iter().find(|n| matches!(n, MenuNode::Submenu { label, .. } if label == "Export with Preset"))
-        else {
+        let Some(MenuNode::Submenu { children, .. }) = file.iter().find(
+            |n| matches!(n, MenuNode::Submenu { label, .. } if label == "Export with Preset"),
+        ) else {
             panic!("no Export with Preset submenu")
         };
         let presets: Vec<_> = children
             .iter()
             .filter_map(|n| match n {
-                MenuNode::Item { id, params, .. } if id == "app.export" => params["preset"].as_str().map(str::to_string),
+                MenuNode::Item { id, params, .. } if id == "app.export" => {
+                    params["preset"].as_str().map(str::to_string)
+                }
                 _ => None,
             })
             .collect();
         assert_eq!(presets.first().map(String::as_str), Some("JPEG (Small)"));
-        assert!(find(children, "dialog.export").is_some(), "Custom… opens the dialog");
+        assert!(
+            find(children, "dialog.export").is_some(),
+            "Custom… opens the dialog"
+        );
         // a user preset appears after the built-ins; choosing it exports with its settings
-        app.session.execute("export.savePreset", &json!({"name": "Tiny PNG", "params": {"format": "png", "width": 40}})).unwrap();
+        app.session
+            .execute(
+                "export.savePreset",
+                &json!({"name": "Tiny PNG", "params": {"format": "png", "width": 40}}),
+            )
+            .unwrap();
         let written = std::sync::Arc::new(std::sync::Mutex::new(Vec::<(String, Vec<u8>)>::new()));
         let w = written.clone();
         app.services.write = Some(Box::new(move |p: &str, b: &[u8]| {
             w.lock().unwrap().push((p.to_string(), b.to_vec()));
             Ok(())
         }));
-        let r = run_item(&mut app, "app.export", json!({"preset": "Tiny PNG", "dir": "/nonexistent-lc-test"})).unwrap();
+        let r = run_item(
+            &mut app,
+            "app.export",
+            json!({"preset": "Tiny PNG", "dir": "/nonexistent-lc-test"}),
+        )
+        .unwrap();
         assert_eq!(r["files"][0]["width"], 40, "{r}");
         let w = written.lock().unwrap();
-        assert!(w[0].0.starts_with("/nonexistent-lc-test/") && w[0].0.ends_with(".png"), "{}", w[0].0);
+        assert!(
+            w[0].0.starts_with("/nonexistent-lc-test/") && w[0].0.ends_with(".png"),
+            "{}",
+            w[0].0
+        );
         assert!(w[0].1.starts_with(b"\x89PNG"));
         // remembered (expanded) for Export with Previous, folder included
         let last = app.session.last_export.clone().unwrap();
-        assert_eq!((last["format"].as_str(), last["width"].as_u64(), last.get("preset")), (Some("png"), Some(40), None));
+        assert_eq!(
+            (
+                last["format"].as_str(),
+                last["width"].as_u64(),
+                last.get("preset")
+            ),
+            (Some("png"), Some(40), None)
+        );
         // a blank folder (the Export dialog's Folder field cleared) is refused with a clear message
         // instead of writing into the working directory
         let n = w.len();
         drop(w);
-        let r = run_item(&mut app, "app.export", json!({"preset": "Tiny PNG", "dir": "  "}));
+        let r = run_item(
+            &mut app,
+            "app.export",
+            json!({"preset": "Tiny PNG", "dir": "  "}),
+        );
         assert_eq!(r.unwrap_err(), crate::control::NO_EXPORT_FOLDER);
-        assert_eq!(written.lock().unwrap().len(), n, "nothing written without a folder");
+        assert_eq!(
+            written.lock().unwrap().len(),
+            n,
+            "nothing written without a folder"
+        );
     }
 
     #[test]
@@ -1195,23 +1777,40 @@ mod tests {
         let mut app = app();
         let bar = menu_bar(&app);
         let edit = &bar.iter().find(|(t, _)| t == "Edit").unwrap().1;
-        let Some(MenuNode::Submenu { children, .. }) = edit.iter().find(|n| matches!(n, MenuNode::Submenu { label, .. } if label == "Select by"))
+        let Some(MenuNode::Submenu { children, .. }) = edit
+            .iter()
+            .find(|n| matches!(n, MenuNode::Submenu { label, .. } if label == "Select by"))
         else {
             panic!("no Select by submenu")
         };
-        let Some(MenuNode::Item { id, params, .. }) = children.first() else { panic!() };
+        let Some(MenuNode::Item { id, params, .. }) = children.first() else {
+            panic!()
+        };
         let r = run_item(&mut app, id, params.clone()).unwrap();
         assert!(r["selected"].as_u64().is_some_and(|n| n > 0), "{r}");
         // the one-field prompt runs its command with the typed value
-        app.session.execute("version.create", &json!({"name": "A"})).unwrap();
-        crate::panels::dialogs::prompt(&mut app, "Rename Version", "Version name", "A", "version.rename", json!({"index": 0}), "name");
+        app.session
+            .execute("version.create", &json!({"name": "A"}))
+            .unwrap();
+        crate::panels::dialogs::prompt(
+            &mut app,
+            "Rename Version",
+            "Version name",
+            "A",
+            "version.rename",
+            json!({"index": 0}),
+            "name",
+        );
         if let Some(crate::state::Dialog::TextPrompt { value, .. }) = &mut app.ui.dialog {
             *value = "  Final  ".into();
         }
         let d = app.ui.dialog.take().unwrap();
         crate::panels::dialogs::confirm_dialog(&mut app, &d).unwrap();
         let id = app.session.active().unwrap();
-        assert_eq!(app.session.catalog.photo(id).unwrap().versions[0].name, "Final");
+        assert_eq!(
+            app.session.catalog.photo(id).unwrap().versions[0].name,
+            "Final"
+        );
     }
 
     #[test]
@@ -1227,7 +1826,9 @@ mod tests {
         assert_eq!(opened.lock().unwrap().as_slice(), [crate::links::HELP]);
         // merging with the last settings needs a selection of two or more
         let first = app.session.visible()[0].0;
-        app.session.execute("library.select", &json!({"ids": [first]})).unwrap();
+        app.session
+            .execute("library.select", &json!({"ids": [first]}))
+            .unwrap();
         assert!(run_item(&mut app, "merge.hdrLast", Value::Null).is_err());
     }
 
@@ -1236,8 +1837,20 @@ mod tests {
     #[test]
     fn open_log_folder_reveals_the_hosts_log_file() {
         let mut app = app();
-        let help = |app: &LightcraftApp| menu_bar(app).into_iter().find(|(t, _)| t == "Help").map(|(_, items)| items).unwrap_or_default();
-        assert!(matches!(find(&help(&app), "app.openLogFolder"), Some(MenuNode::Item { enabled: false, .. })), "listed in Help, off without a log");
+        let help = |app: &LightcraftApp| {
+            menu_bar(app)
+                .into_iter()
+                .find(|(t, _)| t == "Help")
+                .map(|(_, items)| items)
+                .unwrap_or_default()
+        };
+        assert!(
+            matches!(
+                find(&help(&app), "app.openLogFolder"),
+                Some(MenuNode::Item { enabled: false, .. })
+            ),
+            "listed in Help, off without a log"
+        );
         assert!(!crate::menus::ui_enabled(&app, "app.openLogFolder"));
         assert!(run_item(&mut app, "app.openLogFolder", Value::Null).is_err());
         let shown = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
@@ -1253,13 +1866,19 @@ mod tests {
         let log = "/home/a/.config/lightcraft/logs/lightcraft.log";
         app.services.log_file = Some(log.into());
         assert!(crate::menus::ui_enabled(&app, "app.openLogFolder"));
-        assert!(matches!(find(&help(&app), "app.openLogFolder"), Some(MenuNode::Item { enabled: true, .. })));
+        assert!(matches!(
+            find(&help(&app), "app.openLogFolder"),
+            Some(MenuNode::Item { enabled: true, .. })
+        ));
         let r = run_item(&mut app, "app.openLogFolder", Value::Null).unwrap();
         assert_eq!(r["path"], log);
         assert_eq!(shown.lock().unwrap().as_slice(), [log]);
         // the file manager's failure is the command's
         app.services.reveal = Some(Box::new(|_: &str| Err("no file manager".into())));
-        assert_eq!(run_item(&mut app, "app.openLogFolder", Value::Null).unwrap_err(), "no file manager");
+        assert_eq!(
+            run_item(&mut app, "app.openLogFolder", Value::Null).unwrap_err(),
+            "no file manager"
+        );
     }
 
     #[test]
@@ -1268,19 +1887,48 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("a")).unwrap();
         std::fs::create_dir_all(dir.join("b")).unwrap();
-        let img = lightcraft_raster::Rgba8::from_fn(16, 12, |x, y| [(x * 9) as u8, (y * 11) as u8, 50, 255]);
-        let o = lightcraft_engine::export::ExportOptions { format: lightcraft_engine::export::ExportFormat::Png, ..Default::default() };
-        std::fs::write(dir.join("a/one.png"), lightcraft_engine::export::encode_image(&img, &o).unwrap()).unwrap();
-        let mut app = LightcraftApp::new(lightcraft_engine::Session::new().with_fs(), Default::default());
-        app.session.execute("library.import", &json!({"paths": [dir.join("a").to_string_lossy()]})).unwrap();
+        let img = lightcraft_raster::Rgba8::from_fn(16, 12, |x, y| {
+            [(x * 9) as u8, (y * 11) as u8, 50, 255]
+        });
+        let o = lightcraft_engine::export::ExportOptions {
+            format: lightcraft_engine::export::ExportFormat::Png,
+            ..Default::default()
+        };
+        std::fs::write(
+            dir.join("a/one.png"),
+            lightcraft_engine::export::encode_image(&img, &o).unwrap(),
+        )
+        .unwrap();
+        let mut app = LightcraftApp::new(
+            lightcraft_engine::Session::new().with_fs(),
+            Default::default(),
+        );
+        app.session
+            .execute(
+                "library.import",
+                &json!({"paths": [dir.join("a").to_string_lossy()]}),
+            )
+            .unwrap();
         std::fs::rename(dir.join("a/one.png"), dir.join("b/one.png")).unwrap();
-        let r = run_item(&mut app, "file.findMissing", json!({"folder": dir.join("b").to_string_lossy(), "wait": true})).unwrap();
+        let r = run_item(
+            &mut app,
+            "file.findMissing",
+            json!({"folder": dir.join("b").to_string_lossy(), "wait": true}),
+        )
+        .unwrap();
         assert_eq!(r["found"].as_array().map(Vec::len), Some(1), "{r}");
         // Locate: an explicit file
         std::fs::rename(dir.join("b/one.png"), dir.join("one-renamed.png")).unwrap();
         let id = app.session.catalog.photos().next().unwrap().id;
-        app.session.execute("library.select", &json!({"ids": [id.0]})).unwrap();
-        run_item(&mut app, "photo.locate", json!({"path": dir.join("one-renamed.png").to_string_lossy()})).unwrap();
+        app.session
+            .execute("library.select", &json!({"ids": [id.0]}))
+            .unwrap();
+        run_item(
+            &mut app,
+            "photo.locate",
+            json!({"path": dir.join("one-renamed.png").to_string_lossy()}),
+        )
+        .unwrap();
         let p = app.session.catalog.photo(id).unwrap();
         assert_eq!(p.file_name, "one-renamed.png");
         let _ = std::fs::remove_dir_all(&dir);
@@ -1301,21 +1949,48 @@ mod tests {
         .unwrap();
         let mut app = app();
         let id = app.session.visible()[0].0;
-        app.session.execute("library.select", &json!({"ids": [id]})).unwrap();
-        app.session.execute("photo.setCaptureTime", &json!({"time": "2026-05-01T12:01:00", "each": true})).unwrap();
-        app.session.execute("photo.setMeta", &json!({"gps": null})).unwrap();
+        app.session
+            .execute("library.select", &json!({"ids": [id]}))
+            .unwrap();
+        app.session
+            .execute(
+                "photo.setCaptureTime",
+                &json!({"time": "2026-05-01T12:01:00", "each": true}),
+            )
+            .unwrap();
+        app.session
+            .execute("photo.setMeta", &json!({"gps": null}))
+            .unwrap();
         // in the Photo menu; without a file dialog (headless) it is disabled
-        let photo_menu = menu_bar(&app).into_iter().find(|(t, _)| t == "Photo").unwrap().1;
-        let Some(MenuNode::Item { enabled, .. }) = find(&photo_menu, "photo.tagFromTracklog") else { panic!("not in the Photo menu") };
+        let photo_menu = menu_bar(&app)
+            .into_iter()
+            .find(|(t, _)| t == "Photo")
+            .unwrap()
+            .1;
+        let Some(MenuNode::Item { enabled, .. }) = find(&photo_menu, "photo.tagFromTracklog")
+        else {
+            panic!("not in the Photo menu")
+        };
         assert!(!enabled);
         // a file without an offset asks for the camera's time zone; confirming runs the tagging
-        run_item(&mut app, "photo.tagFromTracklog", json!({"path": gpx.to_string_lossy()})).unwrap();
-        let Some(crate::state::Dialog::TextPrompt { value, .. }) = &mut app.ui.dialog else { panic!("no time-zone prompt") };
+        run_item(
+            &mut app,
+            "photo.tagFromTracklog",
+            json!({"path": gpx.to_string_lossy()}),
+        )
+        .unwrap();
+        let Some(crate::state::Dialog::TextPrompt { value, .. }) = &mut app.ui.dialog else {
+            panic!("no time-zone prompt")
+        };
         *value = " +02:00 ".into();
         let d = app.ui.dialog.take().unwrap();
         let r = crate::panels::dialogs::confirm_dialog(&mut app, &d).unwrap();
         assert_eq!(r["tagged"], 1, "{r}");
-        let p = app.session.catalog.photo(lightcraft_engine::catalog::PhotoId(id)).unwrap();
+        let p = app
+            .session
+            .catalog
+            .photo(lightcraft_engine::catalog::PhotoId(id))
+            .unwrap();
         assert_eq!(p.meta.gps, Some((46.001, 7.002)));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1323,7 +1998,12 @@ mod tests {
     #[test]
     fn metadata_preset_menu() {
         let mut app = app();
-        app.session.execute("photo.setMeta", &json!({"copyright": "© Me", "creator": "Me"})).unwrap();
+        app.session
+            .execute(
+                "photo.setMeta",
+                &json!({"copyright": "© Me", "creator": "Me"}),
+            )
+            .unwrap();
         run_item(&mut app, "dialog.saveMetadataPreset", Value::Null).unwrap();
         if let Some(crate::state::Dialog::TextPrompt { value, .. }) = &mut app.ui.dialog {
             *value = "Mine".into();
@@ -1332,12 +2012,19 @@ mod tests {
         crate::panels::dialogs::confirm_dialog(&mut app, &d).unwrap();
         let bar = menu_bar(&app);
         let all: Vec<MenuNode> = bar.iter().flat_map(|(_, v)| v.clone()).collect();
-        let Some(MenuNode::Item { id, params, .. }) = find(&all, "metadata.applyPreset") else { panic!("no preset item") };
+        let Some(MenuNode::Item { id, params, .. }) = find(&all, "metadata.applyPreset") else {
+            panic!("no preset item")
+        };
         assert_eq!(params["name"], "Mine");
         let other = app.session.visible()[1];
-        app.session.execute("library.select", &json!({"ids": [other.0]})).unwrap();
+        app.session
+            .execute("library.select", &json!({"ids": [other.0]}))
+            .unwrap();
         run_item(&mut app, id, params.clone()).unwrap();
-        assert_eq!(app.session.catalog.photo(other).unwrap().meta.copyright, "© Me");
+        assert_eq!(
+            app.session.catalog.photo(other).unwrap().meta.copyright,
+            "© Me"
+        );
     }
 
     #[test]

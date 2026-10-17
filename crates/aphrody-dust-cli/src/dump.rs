@@ -72,25 +72,25 @@ impl Dump {
             DumpCommand::Arm7(dump_arm7) => dump_arm7.run(&rom),
             DumpCommand::Arm9OverlayTable(dump_arm9_overlay_table) => {
                 dump_arm9_overlay_table.run(&rom)
-            },
+            }
             DumpCommand::Arm7OverlayTable(dump_arm7_overlay_table) => {
                 dump_arm7_overlay_table.run(&rom)
-            },
+            }
             DumpCommand::AutoloadInfo(dump_autoload_info) => dump_autoload_info.run(&mut arm9),
             DumpCommand::Autoload(dump_autoload) => dump_autoload.run(&mut arm9),
             DumpCommand::Fnt(dump_fnt) => dump_fnt.run(&rom),
             DumpCommand::Banner(dump_banner) => dump_banner.run(&rom),
             DumpCommand::Arm9Overlay(dump_arm9_overlay) => {
                 dump_arm9_overlay.run(&rom, self.decompress, self.compress)
-            },
+            }
             DumpCommand::Arm7Overlay(dump_arm7_overlay) => dump_arm7_overlay.run(&rom),
             DumpCommand::Arm9Footer(dump_arm9_footer) => dump_arm9_footer.run(&rom),
             DumpCommand::Arm9OverlaySignatures(dump_arm9_overlay_signatures) => {
                 dump_arm9_overlay_signatures.run(&rom)
-            },
+            }
             DumpCommand::MultibootSignature(dump_multiboot_signature) => {
                 dump_multiboot_signature.run(&rom)
-            },
+            }
             DumpCommand::Libraries(dump_libraries) => dump_libraries.run(&rom),
             DumpCommand::DsProt(dump_dsprot) => dump_dsprot.run(&rom),
         }
@@ -253,7 +253,9 @@ impl DumpArm9OverlayTable {
 
         if self.verify {
             if arm9_ovt.is_signed() {
-                let hmac_sha1_key = arm9.hmac_sha1_key()?.context("Failed to get HMAC-SHA1 key")?;
+                let hmac_sha1_key = arm9
+                    .hmac_sha1_key()?
+                    .context("Failed to get HMAC-SHA1 key")?;
                 let hmac_sha1 = HmacSha1::new(hmac_sha1_key);
 
                 if arm9_ovt.verify_signature(&hmac_sha1) {
@@ -497,7 +499,9 @@ impl DumpArm9OverlaySignatures {
         if self.verify {
             let mut arm9 = rom.arm9().clone();
             arm9.decompress()?;
-            let hmac_sha1_key = arm9.hmac_sha1_key()?.context("Failed to get HMAC-SHA1 key")?;
+            let hmac_sha1_key = arm9
+                .hmac_sha1_key()?
+                .context("Failed to get HMAC-SHA1 key")?;
             let hmac_sha1 = HmacSha1::new(hmac_sha1_key);
             for overlay in rom.arm9_overlays() {
                 if overlay.is_signed() {
@@ -516,7 +520,9 @@ impl DumpArm9OverlaySignatures {
         if self.compute {
             let mut arm9 = rom.arm9().clone();
             arm9.decompress()?;
-            let hmac_sha1_key = arm9.hmac_sha1_key()?.context("Failed to get HMAC-SHA1 key")?;
+            let hmac_sha1_key = arm9
+                .hmac_sha1_key()?
+                .context("Failed to get HMAC-SHA1 key")?;
             let hmac_sha1 = HmacSha1::new(hmac_sha1_key);
             for overlay in rom.arm9_overlays() {
                 let signature = overlay.compute_signature(&hmac_sha1)?;
@@ -591,12 +597,17 @@ impl DumpDsProt {
             overlay.decompress()?;
         }
 
-        let options = DsProtDecryptOptions { decode_relocations: true };
+        let options = DsProtDecryptOptions {
+            decode_relocations: true,
+        };
 
         let arm9 = rom.arm9_mut();
         if !self.yaml {
             if let Some(dsprot_result) = arm9.dsprot_state().as_option() {
-                println!("DS Protect found in ARM9 main:\n{}", dsprot_result.display(2));
+                println!(
+                    "DS Protect found in ARM9 main:\n{}",
+                    dsprot_result.display(2)
+                );
             }
 
             for overlay in rom.arm9_overlays_mut() {

@@ -74,7 +74,13 @@ pub fn tiling(pv: &PrintPreview, set: &PrintSettings) -> Vec<TilingPage> {
         let paper = Rect::new(0.0, 0.0, s.width, s.height);
         let page = back.transform_rect_bbox(paper);
         let imageable = back.transform_rect_bbox(paper.inflate(-m, -m));
-        out.push(TilingPage { artboard: s.artboard, number: out.len() + 1, printed: true, page: arr(page), imageable: arr(imageable) });
+        out.push(TilingPage {
+            artboard: s.artboard,
+            number: out.len() + 1,
+            printed: true,
+            page: arr(page),
+            imageable: arr(imageable),
+        });
     }
     out
 }

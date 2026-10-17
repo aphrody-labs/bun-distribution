@@ -62,7 +62,10 @@ pub fn extract_utf16_strings(bytes: &[u8]) -> Vec<String> {
 pub fn extract_msg_text(path: &Path, bytes: &[u8]) -> MsgText {
     let strings = extract_utf16_strings(bytes);
     MsgText {
-        file: path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default(),
+        file: path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default(),
         count: strings.len(),
         strings,
     }
@@ -98,7 +101,9 @@ pub fn extract_msg_tree(root: &Path, destination: &Path) -> crate::game::Result<
             if file_type.is_dir() {
                 pending.push(path);
             } else if file_type.is_file()
-                && path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("msg"))
+                && path
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("msg"))
             {
                 inputs.push(path);
             }
@@ -108,30 +113,51 @@ pub fn extract_msg_tree(root: &Path, destination: &Path) -> crate::game::Result<
 
     fs::create_dir(destination)?;
     for input in &inputs {
-        let relative = input.strip_prefix(root).map_err(|error| crate::game::ReError::ParseError {
-            context: "msg_tree",
-            details: error.to_string(),
-        })?;
+        let relative =
+            input
+                .strip_prefix(root)
+                .map_err(|error| crate::game::ReError::ParseError {
+                    context: "msg_tree",
+                    details: error.to_string(),
+                })?;
         let output = destination.join(relative).with_extension("msg.json");
-        let parent = output.parent().ok_or_else(|| crate::game::ReError::ParseError {
-            context: "msg_tree",
-            details: "output path has no parent".into(),
-        })?;
+        let parent = output
+            .parent()
+            .ok_or_else(|| crate::game::ReError::ParseError {
+                context: "msg_tree",
+                details: "output path has no parent".into(),
+            })?;
         fs::create_dir_all(parent)?;
         let bytes = fs::read(input)?;
         let report = extract_msg_text(input, &bytes);
         let json = serde_json::to_vec_pretty(&report).map_err(|error| {
-            crate::game::ReError::ParseError { context: "msg_tree", details: error.to_string() }
+            crate::game::ReError::ParseError {
+                context: "msg_tree",
+                details: error.to_string(),
+            }
         })?;
-        OpenOptions::new().write(true).create_new(true).open(&output)?.write_all(&json)?;
+        OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&output)?
+            .write_all(&json)?;
     }
 
-    let manifest = MsgBatchManifest { msg_files: inputs.len(), converted: inputs.len() };
+    let manifest = MsgBatchManifest {
+        msg_files: inputs.len(),
+        converted: inputs.len(),
+    };
     let manifest_path: PathBuf = destination.join("text_manifest.json");
-    let json = serde_json::to_vec_pretty(&manifest).map_err(|error| {
-        crate::game::ReError::ParseError { context: "msg_tree", details: error.to_string() }
-    })?;
-    OpenOptions::new().write(true).create_new(true).open(manifest_path)?.write_all(&json)?;
+    let json =
+        serde_json::to_vec_pretty(&manifest).map_err(|error| crate::game::ReError::ParseError {
+            context: "msg_tree",
+            details: error.to_string(),
+        })?;
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(manifest_path)?
+        .write_all(&json)?;
     Ok(manifest)
 }
 

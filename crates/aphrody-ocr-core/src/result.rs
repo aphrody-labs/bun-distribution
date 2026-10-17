@@ -61,7 +61,11 @@ impl ImageIdentity {
     /// Build the minimum safe identity from a path.
     #[must_use]
     pub fn from_path(path: PathBuf) -> Self {
-        Self { path, sha256: None, media_type: None }
+        Self {
+            path,
+            sha256: None,
+            media_type: None,
+        }
     }
 }
 
@@ -203,7 +207,10 @@ impl OcrResult {
             // A run of two or more letters is a word; a lone `a` beside a page
             // number is noise from the detector.
             words.clone().any(|word| word.chars().count() >= 2)
-                || block.text.chars().any(|c| !c.is_ascii() && c.is_alphabetic())
+                || block
+                    .text
+                    .chars()
+                    .any(|c| !c.is_ascii() && c.is_alphabetic())
         })
     }
 
@@ -235,7 +242,9 @@ impl OcrResult {
         });
         let dropped = before - self.blocks.len();
         if dropped > 0 {
-            self.quality.reasons.push(format!("dropped-{dropped}-noise-block(s)"));
+            self.quality
+                .reasons
+                .push(format!("dropped-{dropped}-noise-block(s)"));
         }
     }
 
@@ -251,7 +260,11 @@ impl OcrResult {
         self.blocks
             .iter()
             .map(|block| {
-                let cjk = block.text.chars().filter(|c| !c.is_ascii() && c.is_alphabetic()).count();
+                let cjk = block
+                    .text
+                    .chars()
+                    .filter(|c| !c.is_ascii() && c.is_alphabetic())
+                    .count();
                 let words = block
                     .text
                     .split(|c: char| !c.is_ascii_alphabetic())
@@ -288,7 +301,11 @@ impl OcrResult {
             .and_then(|text| text.get("markdown"))
             .and_then(serde_json::Value::as_str)
             .map(ToOwned::to_owned);
-        let status = if markdown.is_some() { OcrStatus::Text } else { OcrStatus::NoText };
+        let status = if markdown.is_some() {
+            OcrStatus::Text
+        } else {
+            OcrStatus::NoText
+        };
         Some(Self {
             schema: RESULT_SCHEMA_V2.to_owned(),
             page_id: image.to_owned(),
@@ -298,7 +315,10 @@ impl OcrResult {
             markdown,
             blocks: Vec::new(),
             quality: Quality::default(),
-            raw: value.get("raw").and_then(serde_json::Value::as_str).map(ToOwned::to_owned),
+            raw: value
+                .get("raw")
+                .and_then(serde_json::Value::as_str)
+                .map(ToOwned::to_owned),
         })
     }
 }
@@ -309,8 +329,10 @@ mod tests {
 
     #[test]
     fn no_text_is_not_depositable() {
-        let result =
-            OcrResult::no_text("page-1".into(), ImageIdentity::from_path("page-1.jpg".into()));
+        let result = OcrResult::no_text(
+            "page-1".into(),
+            ImageIdentity::from_path("page-1.jpg".into()),
+        );
         assert_eq!(result.schema, RESULT_SCHEMA_V2);
         assert_eq!(result.status, OcrStatus::NoText);
         assert!(!result.is_depositable());
@@ -356,7 +378,11 @@ mod tests {
     fn a_caption_page_scores_far_above_a_glyph_page() {
         // Databook 28, plate 0005: two dated captions.
         let captions = with_blocks(&["1984", "84-011984WJ51号其之会", "84-021984WJ52号真之三"]);
-        assert!(captions.content_score() >= 4, "score {}", captions.content_score());
+        assert!(
+            captions.content_score() >= 4,
+            "score {}",
+            captions.content_score()
+        );
 
         // Databook 29: a folio and one glyph lifted out of a drawing.
         let glyph = with_blocks(&["006", "公"]);
@@ -368,7 +394,11 @@ mod tests {
 
         // But a real title line is.
         let title = with_blocks(&["019", "DRAGONBAL アニメイラスト集　金色の戦士"]);
-        assert!(title.content_score() >= 4, "score {}", title.content_score());
+        assert!(
+            title.content_score() >= 4,
+            "score {}",
+            title.content_score()
+        );
     }
 
     #[test]
@@ -386,7 +416,15 @@ mod tests {
         ]);
         result.drop_noise_blocks();
         let kept: Vec<&str> = result.blocks.iter().map(|b| b.text.as_str()).collect();
-        assert_eq!(kept, ["1984", "14029", "84-011984WJ51号其之会", "84-021984WJ52号真之三"]);
+        assert_eq!(
+            kept,
+            [
+                "1984",
+                "14029",
+                "84-011984WJ51号其之会",
+                "84-021984WJ52号真之三"
+            ]
+        );
         assert_eq!(result.quality.reasons, ["dropped-4-noise-block(s)"]);
     }
 

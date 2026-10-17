@@ -32,7 +32,11 @@ impl X11Backend {
             let wayland = std::env::var("WAYLAND_DISPLAY").is_ok_and(|v| !v.is_empty());
             bail!(
                 "unsupported: no X11 display (DISPLAY unset{})",
-                if wayland { "; Wayland-only session" } else { "" }
+                if wayland {
+                    "; Wayland-only session"
+                } else {
+                    ""
+                }
             );
         }
         let (conn, screen_num) = RustConnection::connect(None)
@@ -41,15 +45,23 @@ impl X11Backend {
         if setup.image_byte_order != ImageOrder::LSB_FIRST {
             bail!("unsupported: big-endian X11 image byte order");
         }
-        let screen = setup.roots.get(screen_num).context("X11 screen not found")?;
+        let screen = setup
+            .roots
+            .get(screen_num)
+            .context("X11 screen not found")?;
         let root = screen.root;
         let depth = screen.root_depth;
-        let ok = setup.pixmap_formats.iter().any(|f| f.depth == depth && f.bits_per_pixel == 32);
+        let ok = setup
+            .pixmap_formats
+            .iter()
+            .any(|f| f.depth == depth && f.bits_per_pixel == 32);
         if !ok {
             bail!("unsupported: root depth {depth} has no 32 bpp pixmap format");
         }
         let (min, max) = (setup.min_keycode, setup.max_keycode);
-        conn.xtest_get_version(2, 2)?.reply().context("XTEST extension unavailable")?;
+        conn.xtest_get_version(2, 2)?
+            .reply()
+            .context("XTEST extension unavailable")?;
         let map = conn.get_keyboard_mapping(min, max - min + 1)?.reply()?;
         Ok(Self {
             conn,
@@ -81,7 +93,8 @@ impl X11Backend {
     }
 
     fn fake(&self, kind: u8, detail: u8, x: i16, y: i16) -> Result<()> {
-        self.conn.xtest_fake_input(kind, detail, 0, self.root, x, y, 0)?;
+        self.conn
+            .xtest_fake_input(kind, detail, 0, self.root, x, y, 0)?;
         self.conn.flush()?;
         Ok(())
     }
@@ -112,7 +125,13 @@ impl ScreenBackend for X11Backend {
         for px in bgra.as_chunks_mut::<4>().0 {
             px[3] = 0xFF;
         }
-        Ok(RawFrame { origin_x: 0, origin_y: 0, width: u32::from(w), height: u32::from(h), bgra })
+        Ok(RawFrame {
+            origin_x: 0,
+            origin_y: 0,
+            width: u32::from(w),
+            height: u32::from(h),
+            bgra,
+        })
     }
 
     fn mouse_move(&mut self, x: i32, y: i32) -> Result<()> {
@@ -126,7 +145,16 @@ impl ScreenBackend for X11Backend {
             MouseButton::Middle => 2,
             MouseButton::Right => 3,
         };
-        self.fake(if down { BUTTON_PRESS_EVENT } else { BUTTON_RELEASE_EVENT }, detail, 0, 0)
+        self.fake(
+            if down {
+                BUTTON_PRESS_EVENT
+            } else {
+                BUTTON_RELEASE_EVENT
+            },
+            detail,
+            0,
+            0,
+        )
     }
 
     fn wheel(&mut self, dx: i32, dy: i32) -> Result<()> {
@@ -149,14 +177,32 @@ impl ScreenBackend for X11Backend {
         let (kc, _) = self
             .find_keycode(keysym)
             .ok_or_else(|| anyhow!("no keycode for keysym {keysym:#x}"))?;
-        self.fake(if down { KEY_PRESS_EVENT } else { KEY_RELEASE_EVENT }, kc, 0, 0)
+        self.fake(
+            if down {
+                KEY_PRESS_EVENT
+            } else {
+                KEY_RELEASE_EVENT
+            },
+            kc,
+            0,
+            0,
+        )
     }
 
     fn keysym(&mut self, keysym: u32, down: bool) -> Result<()> {
         let (kc, _) = self
             .find_keycode(keysym)
             .ok_or_else(|| anyhow!("no keycode for keysym {keysym:#x}"))?;
-        self.fake(if down { KEY_PRESS_EVENT } else { KEY_RELEASE_EVENT }, kc, 0, 0)
+        self.fake(
+            if down {
+                KEY_PRESS_EVENT
+            } else {
+                KEY_RELEASE_EVENT
+            },
+            kc,
+            0,
+            0,
+        )
     }
 
     fn text(&mut self, text: &str) -> Result<()> {

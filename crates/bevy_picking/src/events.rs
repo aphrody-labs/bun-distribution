@@ -60,10 +60,10 @@ use bevy_window::Window;
 use tracing::debug;
 
 use crate::{
-    backend::{prelude::PointerLocation, HitData},
-    hover::{get_hovered_entities, is_directly_hovered, HoverMap, PreviousHoverMap},
-    pointer::{Location, PointerAction, PointerButton, PointerId, PointerInput, PointerMap},
     PickingSettings,
+    backend::{HitData, prelude::PointerLocation},
+    hover::{HoverMap, PreviousHoverMap, get_hovered_entities, is_directly_hovered},
+    pointer::{Location, PointerAction, PointerButton, PointerId, PointerInput, PointerMap},
 };
 ///
 /// Stores the common data needed for all pointer events.

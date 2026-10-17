@@ -36,7 +36,16 @@ fn to_iecode(siblings: &[CfgEntry]) -> Vec<serde_json::Value> {
 }
 
 fn int_values(e: &CfgEntry) -> Vec<i32> {
-    e.variables.iter().filter_map(|v| if let Value::Int(i) = v { Some(*i) } else { None }).collect()
+    e.variables
+        .iter()
+        .filter_map(|v| {
+            if let Value::Int(i) = v {
+                Some(*i)
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 fn visit(e: &CfgEntry, out: &mut Vec<(String, i32, i32, usize)>) {
@@ -54,9 +63,12 @@ fn visit(e: &CfgEntry, out: &mut Vec<(String, i32, i32, usize)>) {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let path = vfs
         .iter()
@@ -109,11 +121,17 @@ fn main() {
     }
     println!("// échantillons réels (playStyle -> nom, charaParamId hex, nb ints) :");
     for (ps, (name, id, n)) in &sample {
-        println!("//   playStyle={ps} : {name} charaParamId={:#010X} (ints={n})", *id as u32);
+        println!(
+            "//   playStyle={ps} : {name} charaParamId={:#010X} (ints={n})",
+            *id as u32
+        );
     }
     // Les 3 premiers noeuds en entier (values complets) pour fixture inline.
     for (name, id, ps, n) in nodes.iter().take(3) {
-        println!("//   {name}: values[0]={:#010X} values[5]={ps} ints={n}", *id as u32);
+        println!(
+            "//   {name}: values[0]={:#010X} values[5]={ps} ints={n}",
+            *id as u32
+        );
     }
 
     // ── Validation END-TO-END : faire tourner le VRAI module `aphrody_nie_data::playstyle` sur tout le
@@ -134,9 +152,19 @@ fn main() {
         parsed.len()
     );
     eprintln!("[module] distribution = {mdist:?}  sans_libellé = {no_label}");
-    assert_eq!(parsed.len(), nodes.len(), "module vs brut : nombre d'entrées");
-    assert_eq!(mdist, raw_dist, "module vs brut : distribution playStyle identique");
-    assert_eq!(no_label, 0, "tous les playStyle réels sont dans 0..=5 (libellé non nul)");
+    assert_eq!(
+        parsed.len(),
+        nodes.len(),
+        "module vs brut : nombre d'entrées"
+    );
+    assert_eq!(
+        mdist, raw_dist,
+        "module vs brut : distribution playStyle identique"
+    );
+    assert_eq!(
+        no_label, 0,
+        "tous les playStyle réels sont dans 0..=5 (libellé non nul)"
+    );
     eprintln!(
         "✓ END-TO-END OK : aphrody_nie_data::playstyle == extraction brute sur {} noeuds",
         nodes.len()

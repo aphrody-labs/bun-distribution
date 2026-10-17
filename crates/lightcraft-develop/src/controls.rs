@@ -66,7 +66,10 @@ pub enum Track {
     /// Green → magenta (tint).
     Tint,
     /// A two-colour gradient (sRGB hex strings).
-    Gradient { from: &'static str, to: &'static str },
+    Gradient {
+        from: &'static str,
+        to: &'static str,
+    },
     /// Hue shift for a mixer band: gradient from the neighbouring hues through the band colour.
     Hue { band: u8 },
     /// Saturation for a band: grey → band colour.
@@ -93,11 +96,19 @@ pub struct ControlSpec {
 
 impl ControlSpec {
     pub fn clamp(&self, v: f64) -> f64 {
-        if v.is_finite() { v.clamp(self.min, self.max) } else { self.default }
+        if v.is_finite() {
+            v.clamp(self.min, self.max)
+        } else {
+            self.default
+        }
     }
     pub fn format(&self, v: f64) -> String {
         let s = format!("{:.*}", self.decimals as usize, v);
-        if v > 0.0 && self.min < 0.0 { format!("+{s}") } else { s }
+        if v > 0.0 && self.min < 0.0 {
+            format!("+{s}")
+        } else {
+            s
+        }
     }
     /// Where `v` sits on the slider track, from 0 (left end) to 1 (right end). Linear, except for the Kelvin
     /// temperature, which follows Lightroom's scale: 2000–7000 K fill the left half evenly (100 K per 1 %), and
@@ -107,18 +118,30 @@ impl ControlSpec {
     pub fn position(&self, v: f64) -> f64 {
         let v = self.clamp(v);
         let p = match self.kelvin_scale() {
-            Some((centre, right)) if v > centre => 0.5 + 0.5 * (1.0 + (v - centre) / KELVIN_KNEE).ln() / right,
+            Some((centre, right)) if v > centre => {
+                0.5 + 0.5 * (1.0 + (v - centre) / KELVIN_KNEE).ln() / right
+            }
             Some((centre, _)) => 0.5 * (v - self.min) / (centre - self.min),
             None => (v - self.min) / (self.max - self.min).max(1e-9),
         };
-        if p.is_finite() { p.clamp(0.0, 1.0) } else { 0.0 }
+        if p.is_finite() {
+            p.clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
     }
     /// The value at track position `p` (0…1): the inverse of [`ControlSpec::position`], not yet on the steps.
     pub fn value_at(&self, p: f64) -> f64 {
-        let p = if p.is_finite() { p.clamp(0.0, 1.0) } else { 0.0 };
+        let p = if p.is_finite() {
+            p.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let v = match self.kelvin_scale() {
             Some(_) if p >= 1.0 => self.max,
-            Some((centre, right)) if p > 0.5 => centre + KELVIN_KNEE * (((2.0 * p - 1.0) * right).exp() - 1.0),
+            Some((centre, right)) if p > 0.5 => {
+                centre + KELVIN_KNEE * (((2.0 * p - 1.0) * right).exp() - 1.0)
+            }
             Some((centre, _)) => self.min + 2.0 * p * (centre - self.min),
             None => self.min + p * (self.max - self.min),
         };
@@ -128,7 +151,8 @@ impl ControlSpec {
     /// `None` for every other control, or a range the centre isn't inside.
     fn kelvin_scale(&self) -> Option<(f64, f64)> {
         let centre = KELVIN_CENTRE;
-        (self.id == "wb.temp" && self.min < centre && centre < self.max).then(|| (centre, (1.0 + (self.max - centre) / KELVIN_KNEE).ln()))
+        (self.id == "wb.temp" && self.min < centre && centre < self.max)
+            .then(|| (centre, (1.0 + (self.max - centre) / KELVIN_KNEE).ln()))
     }
 }
 
@@ -314,7 +338,10 @@ pub static INDEXED: &[ControlSpec] = &[
         default: 0.0,
         step: 1.0,
         decimals: 0,
-        track: Gradient { from: "#7a7a7a", to: "#e04a3a" },
+        track: Gradient {
+            from: "#7a7a7a",
+            to: "#e04a3a",
+        },
     },
     ControlSpec {
         id: "pointColor.lumShift",
@@ -325,7 +352,10 @@ pub static INDEXED: &[ControlSpec] = &[
         default: 0.0,
         step: 1.0,
         decimals: 0,
-        track: Gradient { from: "#202020", to: "#f0f0f0" },
+        track: Gradient {
+            from: "#202020",
+            to: "#f0f0f0",
+        },
     },
     ControlSpec {
         id: "pointColor.variance",
@@ -369,7 +399,10 @@ pub static INDEXED: &[ControlSpec] = &[
         default: 50.0,
         step: 1.0,
         decimals: 0,
-        track: Gradient { from: "#7a7a7a", to: "#e04a3a" },
+        track: Gradient {
+            from: "#7a7a7a",
+            to: "#e04a3a",
+        },
     },
     ControlSpec {
         id: "pointColor.lumRange",
@@ -380,7 +413,10 @@ pub static INDEXED: &[ControlSpec] = &[
         default: 50.0,
         step: 1.0,
         decimals: 0,
-        track: Gradient { from: "#202020", to: "#f0f0f0" },
+        track: Gradient {
+            from: "#202020",
+            to: "#f0f0f0",
+        },
     },
     ControlSpec {
         id: "redEye.pupilSize",
@@ -402,7 +438,10 @@ pub static INDEXED: &[ControlSpec] = &[
         default: 50.0,
         step: 1.0,
         decimals: 0,
-        track: Gradient { from: "#d0d0d0", to: "#101010" },
+        track: Gradient {
+            from: "#d0d0d0",
+            to: "#101010",
+        },
     },
 ];
 
@@ -444,7 +483,11 @@ fn indexed_field<'a>(s: &'a mut DevelopSettings, id: &str) -> Option<&'a mut f64
 
 fn indexed_get(s: &DevelopSettings, id: &str) -> Option<f64> {
     // (a clone keeps one accessor for get and set; these lists are tiny)
-    let mut c = DevelopSettings { point_colors: s.point_colors.clone(), red_eye: s.red_eye.clone(), ..DevelopSettings::default() };
+    let mut c = DevelopSettings {
+        point_colors: s.point_colors.clone(),
+        red_eye: s.red_eye.clone(),
+        ..DevelopSettings::default()
+    };
     indexed_field(&mut c, id).map(|v| *v)
 }
 
@@ -465,14 +508,18 @@ pub fn find(id: &str) -> Option<&'static ControlSpec> {
         return Some(c);
     }
     let (fam, _, field) = split_indexed(id)?;
-    INDEXED.iter().find(|c| c.id.strip_prefix(fam).and_then(|r| r.strip_prefix('.')) == Some(field))
+    INDEXED
+        .iter()
+        .find(|c| c.id.strip_prefix(fam).and_then(|r| r.strip_prefix('.')) == Some(field))
 }
 
 /// Every indexed control that exists in `s` (id, template spec), e.g. `pointColor.0.hueShift`.
 pub fn indexed_instances(s: &DevelopSettings) -> Vec<(String, &'static ControlSpec)> {
     let mut out = Vec::new();
     for spec in INDEXED {
-        let Some((fam, field)) = spec.id.split_once('.') else { continue };
+        let Some((fam, field)) = spec.id.split_once('.') else {
+            continue;
+        };
         let n = match fam {
             "pointColor" => s.point_colors.len(),
             "redEye" => s.red_eye.len(),
@@ -526,12 +573,27 @@ mod tests {
         s.point_colors.push(Default::default());
         s.point_colors.push(Default::default());
         assert!(set(&mut s, "pointColor.1.hueShift", 250.0));
-        assert_eq!(s.point_colors[1].hue_shift, 100.0, "clamped by the template spec");
+        assert_eq!(
+            s.point_colors[1].hue_shift, 100.0,
+            "clamped by the template spec"
+        );
         assert_eq!(get(&s, "pointColor.1.range"), Some(50.0));
-        assert_eq!(find("pointColor.7.lumRange").map(|c| c.id), Some("pointColor.lumRange"));
+        assert_eq!(
+            find("pointColor.7.lumRange").map(|c| c.id),
+            Some("pointColor.lumRange")
+        );
         assert!(find("pointColor.x.lumRange").is_none() && find("pointColor.0.nope").is_none());
-        let ids: Vec<String> = indexed_instances(&s).into_iter().map(|(id, _)| id).collect();
-        assert_eq!(ids.len(), 2 * INDEXED.iter().filter(|c| c.id.starts_with("pointColor.")).count());
+        let ids: Vec<String> = indexed_instances(&s)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(
+            ids.len(),
+            2 * INDEXED
+                .iter()
+                .filter(|c| c.id.starts_with("pointColor."))
+                .count()
+        );
         for (id, spec) in indexed_instances(&s) {
             assert!(get(&s, &id).is_some(), "{id}");
             assert!(spec.min <= spec.default && spec.default <= spec.max);
@@ -562,8 +624,14 @@ mod tests {
             (50000.0, 1.0, 1.0),
         ] {
             let p = temp.position(k);
-            assert!((p - model).abs() < 0.001, "{k} K at {p}, the model says {model}");
-            assert!((p - lightroom).abs() <= 0.021, "{k} K at {p}, Lightroom at {lightroom}");
+            assert!(
+                (p - model).abs() < 0.001,
+                "{k} K at {p}, the model says {model}"
+            );
+            assert!(
+                (p - lightroom).abs() <= 0.021,
+                "{k} K at {p}, Lightroom at {lightroom}"
+            );
         }
         // every 50 K step survives value → position → value, and the track never runs backwards
         let mut last = -1.0;
@@ -574,17 +642,58 @@ mod tests {
             let back = (temp.value_at(p) / temp.step).round() * temp.step;
             assert_eq!(back, k, "{k} K → {p} → {back}");
         }
-        assert_eq!((temp.value_at(-1.0), temp.value_at(2.0), temp.value_at(f64::NAN)), (2000.0, 50000.0, 2000.0));
-        assert_eq!((temp.position(1.0), temp.position(1e9), temp.position(f64::NAN)), (0.0, 1.0, temp.position(temp.default)));
+        assert_eq!(
+            (
+                temp.value_at(-1.0),
+                temp.value_at(2.0),
+                temp.value_at(f64::NAN)
+            ),
+            (2000.0, 50000.0, 2000.0)
+        );
+        assert_eq!(
+            (
+                temp.position(1.0),
+                temp.position(1e9),
+                temp.position(f64::NAN)
+            ),
+            (0.0, 1.0, temp.position(temp.default))
+        );
         let exposure = find("light.exposure").unwrap();
-        for (v, p) in [(-5.0, 0.0), (-2.5, 0.25), (0.0, 0.5), (1.0, 0.6), (5.0, 1.0)] {
-            assert!((exposure.position(v) - p).abs() < 1e-12 && (exposure.value_at(p) - v).abs() < 1e-12, "{v}");
+        for (v, p) in [
+            (-5.0, 0.0),
+            (-2.5, 0.25),
+            (0.0, 0.5),
+            (1.0, 0.6),
+            (5.0, 1.0),
+        ] {
+            assert!(
+                (exposure.position(v) - p).abs() < 1e-12
+                    && (exposure.value_at(p) - v).abs() < 1e-12,
+                "{v}"
+            );
         }
         // the relative temperature of rendered files (its own spec, centred on 0) isn't a Kelvin scale
-        let relative = ControlSpec { id: "wb.tempRel", min: -100.0, max: 100.0, default: 0.0, step: 1.0, ..*temp };
-        assert_eq!((relative.position(-50.0), relative.value_at(0.75)), (0.25, 50.0));
+        let relative = ControlSpec {
+            id: "wb.tempRel",
+            min: -100.0,
+            max: 100.0,
+            default: 0.0,
+            step: 1.0,
+            ..*temp
+        };
+        assert_eq!(
+            (relative.position(-50.0), relative.value_at(0.75)),
+            (0.25, 50.0)
+        );
         // a Kelvin range that doesn't contain the centre falls back to linear rather than dividing by zero
-        let narrow = ControlSpec { min: 7000.0, max: 9000.0, ..*temp };
-        assert_eq!((narrow.position(8000.0), narrow.value_at(0.5)), (0.5, 8000.0));
+        let narrow = ControlSpec {
+            min: 7000.0,
+            max: 9000.0,
+            ..*temp
+        };
+        assert_eq!(
+            (narrow.position(8000.0), narrow.value_at(0.5)),
+            (0.5, 8000.0)
+        );
     }
 }

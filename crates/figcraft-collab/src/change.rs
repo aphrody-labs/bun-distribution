@@ -16,7 +16,9 @@ pub struct Json(pub serde_json::Value);
 impl Json {
     /// The JSON value of `v`.
     pub fn of<T: Serialize + ?Sized>(v: &T) -> Result<Json, Error> {
-        serde_json::to_value(v).map(Json).map_err(|e| Error::Encode(e.to_string()))
+        serde_json::to_value(v)
+            .map(Json)
+            .map_err(|e| Error::Encode(e.to_string()))
     }
 
     /// Read the value as a `T` (what [`apply`](crate::Replica::apply) does to check a value's type).
@@ -49,7 +51,11 @@ impl<'de> Deserialize<'de> for Json {
                 serde_json::from_str(v).map(Json).map_err(E::custom)
             }
         }
-        if d.is_human_readable() { serde_json::Value::deserialize(d).map(Json) } else { d.deserialize_str(Text) }
+        if d.is_human_readable() {
+            serde_json::Value::deserialize(d).map(Json)
+        } else {
+            d.deserialize_str(Text)
+        }
     }
 }
 
@@ -60,7 +66,13 @@ pub enum Change {
     /// A new node (or one brought back, e.g. by undo): its type (the JSON of
     /// [`NodeKind`](figcraft_doc::NodeKind)), place in the tree (pages have no parent) and every
     /// property that differs from a new node of that type.
-    Create { id: NodeId, kind: Json, parent: Option<NodeId>, position: String, props: Vec<(Prop, Json)> },
+    Create {
+        id: NodeId,
+        kind: Json,
+        parent: Option<NodeId>,
+        position: String,
+        props: Vec<(Prop, Json)>,
+    },
     /// Property `prop` of node `id` is now `value`.
     Set { id: NodeId, prop: Prop, value: Json },
     /// Delete a node and everything inside it (deleting one that is already gone does nothing).
@@ -254,7 +266,9 @@ impl Target {
         match change {
             Change::Set { id, prop, .. } => Some(Target::Node(*id, *prop)),
             Change::SetDoc { prop, .. } => Some(Target::Doc(*prop)),
-            Change::Put { entry, .. } | Change::Remove { entry } => Some(Target::Entry(entry.clone())),
+            Change::Put { entry, .. } | Change::Remove { entry } => {
+                Some(Target::Entry(entry.clone()))
+            }
             Change::Create { .. } | Change::Delete { .. } => None,
         }
     }
@@ -263,10 +277,22 @@ impl Target {
     /// property, which writes nothing).
     pub fn write(&self, value: Option<&Json>) -> Option<Change> {
         match (self, value) {
-            (Target::Node(id, prop), Some(v)) => Some(Change::Set { id: *id, prop: *prop, value: v.clone() }),
-            (Target::Doc(prop), Some(v)) => Some(Change::SetDoc { prop: *prop, value: v.clone() }),
-            (Target::Entry(entry), Some(v)) => Some(Change::Put { entry: entry.clone(), value: v.clone() }),
-            (Target::Entry(entry), None) => Some(Change::Remove { entry: entry.clone() }),
+            (Target::Node(id, prop), Some(v)) => Some(Change::Set {
+                id: *id,
+                prop: *prop,
+                value: v.clone(),
+            }),
+            (Target::Doc(prop), Some(v)) => Some(Change::SetDoc {
+                prop: *prop,
+                value: v.clone(),
+            }),
+            (Target::Entry(entry), Some(v)) => Some(Change::Put {
+                entry: entry.clone(),
+                value: v.clone(),
+            }),
+            (Target::Entry(entry), None) => Some(Change::Remove {
+                entry: entry.clone(),
+            }),
             (Target::Node(..) | Target::Doc(_), None) => None,
         }
     }
@@ -304,7 +330,9 @@ impl Entry {
     /// space 0. `None` for entries keyed by something else (dev snapshots by layer, images by
     /// content).
     pub fn id_space(&self) -> Option<u32> {
-        use figcraft_doc::ids::{COLLECTION_ID_PREFIX, STYLE_ID_PREFIX, VARIABLE_ID_PREFIX, id_space, space_of};
+        use figcraft_doc::ids::{
+            COLLECTION_ID_PREFIX, STYLE_ID_PREFIX, VARIABLE_ID_PREFIX, id_space, space_of,
+        };
         match self {
             Entry::Style(id) => Some(id_space(id, STYLE_ID_PREFIX)),
             Entry::Variable(id) => Some(id_space(id, VARIABLE_ID_PREFIX)),

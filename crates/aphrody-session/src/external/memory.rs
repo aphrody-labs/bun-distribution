@@ -44,18 +44,29 @@ pub async fn workspace_memory(
     workspace: &std::path::Path,
     limit: usize,
 ) -> Result<Vec<MemoryRecord>, MemoryError> {
-    let workspace = workspace.canonicalize().unwrap_or_else(|_| workspace.to_path_buf());
+    let workspace = workspace
+        .canonicalize()
+        .unwrap_or_else(|_| workspace.to_path_buf());
     let mut records = Vec::new();
     for agent in [AgentKind::Claude, AgentKind::Codex, AgentKind::Agy] {
-        for record in provider.search(MemoryQuery::for_agent(memory_agent_id(agent))).await? {
-            let Some(path) = record.metadata["workspace"].as_str() else { continue };
+        for record in provider
+            .search(MemoryQuery::for_agent(memory_agent_id(agent)))
+            .await?
+        {
+            let Some(path) = record.metadata["workspace"].as_str() else {
+                continue;
+            };
             let path = std::path::Path::new(path);
             if path.canonicalize().unwrap_or_else(|_| path.to_path_buf()) == workspace {
                 records.push(record);
             }
         }
     }
-    records.sort_by(|a, b| b.created_at_unix_ms.cmp(&a.created_at_unix_ms).then(a.id.cmp(&b.id)));
+    records.sort_by(|a, b| {
+        b.created_at_unix_ms
+            .cmp(&a.created_at_unix_ms)
+            .then(a.id.cmp(&b.id))
+    });
     records.truncate(limit);
     Ok(records)
 }
@@ -63,7 +74,10 @@ pub async fn workspace_memory(
 /// Deterministic memory id of a record.
 #[must_use]
 pub fn memory_record_id(record: &ExternalRecord) -> String {
-    format!("external:{}:{}:{}:{}", record.agent, record.session_id, record.offset, record.part)
+    format!(
+        "external:{}:{}:{}:{}",
+        record.agent, record.session_id, record.offset, record.part
+    )
 }
 
 /// The memory entry of a synced record.
@@ -108,7 +122,10 @@ pub async fn feed_memory(
     records: &[ExternalRecord],
 ) -> Result<u64, MemoryError> {
     let mut fed = 0;
-    for record in records.iter().filter(|record| MEMORY_ROLES.contains(&record.role)) {
+    for record in records
+        .iter()
+        .filter(|record| MEMORY_ROLES.contains(&record.role))
+    {
         provider.add(to_memory_record(record)).await?;
         fed += 1;
     }
@@ -133,7 +150,9 @@ pub fn sync_into_memory(
 ) -> Result<SyncReport, SyncError> {
     let mut fed = 0u64;
     let mut report = sync_with(options, |batch| {
-        fed += runtime.block_on(feed_memory(provider, batch)).map_err(|error| error.to_string())?;
+        fed += runtime
+            .block_on(feed_memory(provider, batch))
+            .map_err(|error| error.to_string())?;
         Ok(())
     })?;
     report.memory = Some(MemoryFeedReport {

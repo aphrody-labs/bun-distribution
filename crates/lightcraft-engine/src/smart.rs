@@ -17,7 +17,9 @@ const MAGIC: &[u8] = b"LCSP1\n";
 
 /// The proxy's file name for a photo (by its content, so copies share one).
 pub fn file_name(p: &Photo) -> String {
-    let h = lightcraft_preview::Hasher128::new().str(&crate::media::content_key(p)).finish();
+    let h = lightcraft_preview::Hasher128::new()
+        .str(&crate::media::content_key(p))
+        .finish();
     format!("{:032x}.lcsp", h.0)
 }
 
@@ -43,7 +45,9 @@ pub fn existing_file_path(dir: &Path, sharded: PathBuf) -> PathBuf {
     if sharded.exists() {
         return sharded;
     }
-    let Some(name) = sharded.file_name() else { return sharded };
+    let Some(name) = sharded.file_name() else {
+        return sharded;
+    };
     let legacy = dir.join(name);
     if legacy.exists() { legacy } else { sharded }
 }
@@ -80,7 +84,12 @@ pub(crate) const ENCODE_VERSION: u64 = 2;
 /// Encode a source image (and the decoder's camera tone curve, if any) as a smart preview.
 pub fn encode(img: &Rgb32f, tone: Option<&CameraTone>) -> Result<Vec<u8>, String> {
     // scale so all but the brightest 0.05 % fit into 0..1
-    let mut lum: Vec<f32> = img.data.iter().map(|c| c[0].max(c[1]).max(c[2])).filter(|v| v.is_finite()).collect();
+    let mut lum: Vec<f32> = img
+        .data
+        .iter()
+        .map(|c| c[0].max(c[1]).max(c[2]))
+        .filter(|v| v.is_finite())
+        .collect();
     let scale = if lum.is_empty() {
         1.0
     } else {
@@ -97,7 +106,11 @@ pub fn encode(img: &Rgb32f, tone: Option<&CameraTone>) -> Result<Vec<u8>, String
             [e(c[0]), e(c[1]), e(c[2]), 255]
         })
         .collect();
-    let rgba = Rgba8 { width: img.width, height: img.height, data };
+    let rgba = Rgba8 {
+        width: img.width,
+        height: img.height,
+        data,
+    };
     let jpg = lightcraft_codecs::encode_jpeg(
         &lightcraft_codecs::EncodeImage::rgba8(&rgba),
         JPEG_QUALITY,
@@ -126,11 +139,17 @@ pub fn encode(img: &Rgb32f, tone: Option<&CameraTone>) -> Result<Vec<u8>, String
 /// curve is ignored, like a missing one).
 pub fn decode(bytes: &[u8]) -> Result<(Rgb32f, Option<CameraTone>), String> {
     let rest = bytes.strip_prefix(MAGIC).ok_or("not a smart preview")?;
-    let nl = rest.iter().position(|b| *b == b'\n').ok_or("bad smart preview")?;
+    let nl = rest
+        .iter()
+        .position(|b| *b == b'\n')
+        .ok_or("bad smart preview")?;
     let head: serde_json::Value = serde_json::from_slice(&rest[..nl]).map_err(|e| e.to_string())?;
     let scale = head["scale"].as_f64().unwrap_or(1.0) as f32;
-    let tone = head.get("tone").and_then(|t| serde_json::from_value::<CameraTone>(t.clone()).ok());
-    let d = lightcraft_codecs::decode(&rest[nl + 1..], Default::default()).map_err(|e| e.to_string())?;
+    let tone = head
+        .get("tone")
+        .and_then(|t| serde_json::from_value::<CameraTone>(t.clone()).ok());
+    let d = lightcraft_codecs::decode(&rest[nl + 1..], Default::default())
+        .map_err(|e| e.to_string())?;
     // the decoder undoes the sRGB encoding; the values are the source's own primaries
     let mut img = d.image;
     img.data.iter_mut().for_each(|c| *c = c.map(|v| v * scale));
@@ -149,12 +168,20 @@ pub fn check_writable(dir: &Path) -> Result<(), String> {
     if !dir.is_dir() {
         let parent_ok = dir.parent().is_some_and(|p| p.is_dir());
         if !parent_ok {
-            return Err(format!("{} is not available — reconnect the drive or choose another folder", dir.display()));
+            return Err(format!(
+                "{} is not available — reconnect the drive or choose another folder",
+                dir.display()
+            ));
         }
         std::fs::create_dir(dir).map_err(|e| format!("can't create {}: {e}", dir.display()))?;
     }
     let probe = dir.join(format!(".lightcraft-write-test-{}", std::process::id()));
-    std::fs::write(&probe, b"x").map_err(|e| format!("{} is not writable (is the drive full or read-only?): {e}", dir.display()))?;
+    std::fs::write(&probe, b"x").map_err(|e| {
+        format!(
+            "{} is not writable (is the drive full or read-only?): {e}",
+            dir.display()
+        )
+    })?;
     let _ = std::fs::remove_file(&probe);
     Ok(())
 }
@@ -162,7 +189,9 @@ pub fn check_writable(dir: &Path) -> Result<(), String> {
 /// The owned proxy files in both layouts. Do not follow symlinked directories or
 /// traverse unrelated folders inside a user-selected smart preview directory.
 fn files(dir: &Path) -> Vec<PathBuf> {
-    let Ok(entries) = std::fs::read_dir(dir) else { return Vec::new() };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut found = Vec::new();
     for e in entries.flatten() {
         let Ok(kind) = e.file_type() else { continue };
@@ -170,18 +199,30 @@ fn files(dir: &Path) -> Vec<PathBuf> {
             found.push(e.path()); // legacy layout
         } else if kind.is_dir() {
             let shard_name = e.file_name();
-            let Some(shard) = shard_name.to_str() else { continue };
-            if shard.len() != 2 || !shard.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()) {
+            let Some(shard) = shard_name.to_str() else {
+                continue;
+            };
+            if shard.len() != 2
+                || !shard
+                    .bytes()
+                    .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+            {
                 continue;
             }
-            let Ok(children) = std::fs::read_dir(e.path()) else { continue };
+            let Ok(children) = std::fs::read_dir(e.path()) else {
+                continue;
+            };
             for child in children.flatten() {
                 let name = child.file_name();
                 let Some(name) = name.to_str() else { continue };
-                let Some(stem) = name.strip_suffix(".lcsp") else { continue };
+                let Some(stem) = name.strip_suffix(".lcsp") else {
+                    continue;
+                };
                 if stem.len() == 32
                     && stem.starts_with(shard)
-                    && stem.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+                    && stem
+                        .bytes()
+                        .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
                     && child.file_type().is_ok_and(|kind| kind.is_file())
                 {
                     found.push(child.path());
@@ -194,10 +235,12 @@ fn files(dir: &Path) -> Vec<PathBuf> {
 
 /// The number of smart previews in `dir` and their total size in bytes.
 pub fn stats(dir: &Path) -> (usize, u64) {
-    files(dir).into_iter().fold((0usize, 0u64), |(count, bytes), path| {
-        let size = std::fs::metadata(path).map_or(0, |m| m.len());
-        (count.saturating_add(1), bytes.saturating_add(size))
-    })
+    files(dir)
+        .into_iter()
+        .fold((0usize, 0u64), |(count, bytes), path| {
+            let size = std::fs::metadata(path).map_or(0, |m| m.len());
+            (count.saturating_add(1), bytes.saturating_add(size))
+        })
 }
 
 /// What to do with the smart previews in the old folder when the location changes.
@@ -229,18 +272,29 @@ pub fn migrate(from: &Path, to: &Path, what: Existing) -> (usize, Vec<String>) {
         return (done, failed);
     }
     for src in files(from) {
-        let Some(name) = src.file_name() else { continue };
+        let Some(name) = src.file_name() else {
+            continue;
+        };
         let dst = name
             .to_str()
             .and_then(|n| n.strip_suffix(".lcsp"))
-            .filter(|stem| stem.len() == 32 && stem.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()))
+            .filter(|stem| {
+                stem.len() == 32
+                    && stem
+                        .bytes()
+                        .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+            })
             .map_or_else(|| to.join(name), |stem| to.join(&stem[..2]).join(name));
         let r = match what {
             Existing::Discard => std::fs::remove_file(&src),
             _ => {
                 let parent = dst.parent().unwrap_or(to);
                 // Create only the shard, never missing parent directories on an unplugged drive.
-                let prepare = if parent.is_dir() { Ok(()) } else { std::fs::create_dir(parent) };
+                let prepare = if parent.is_dir() {
+                    Ok(())
+                } else {
+                    std::fs::create_dir(parent)
+                };
                 prepare.and_then(|()| {
                     if is_valid(&dst) {
                         // named by content: the complete copy already there is the same preview
@@ -269,17 +323,25 @@ pub fn migrate(from: &Path, to: &Path, what: Existing) -> (usize, Vec<String>) {
 /// fails it (and is then rebuilt by Build Smart Previews, not counted as there).
 pub fn is_valid(path: &Path) -> bool {
     use std::io::{Read, Seek, SeekFrom};
-    let Ok(mut f) = std::fs::File::open(path) else { return false };
+    let Ok(mut f) = std::fs::File::open(path) else {
+        return false;
+    };
     let mut head = Vec::with_capacity(1024);
     if (&mut f).take(HEADER_MAX).read_to_end(&mut head).is_err() {
         return false;
     }
-    let Some(rest) = head.strip_prefix(MAGIC) else { return false };
-    let Some(nl) = rest.iter().position(|b| *b == b'\n') else { return false };
+    let Some(rest) = head.strip_prefix(MAGIC) else {
+        return false;
+    };
+    let Some(nl) = rest.iter().position(|b| *b == b'\n') else {
+        return false;
+    };
     let size_ok = rest
         .get(..nl)
         .and_then(|h| serde_json::from_slice::<serde_json::Value>(h).ok())
-        .is_some_and(|h| h["w"].as_u64().is_some_and(|w| w > 0) && h["h"].as_u64().is_some_and(|h| h > 0));
+        .is_some_and(|h| {
+            h["w"].as_u64().is_some_and(|w| w > 0) && h["h"].as_u64().is_some_and(|h| h > 0)
+        });
     if !size_ok || rest.get(nl + 1..nl + 3) != Some(&[0xFF, 0xD8][..]) {
         return false;
     }
@@ -290,13 +352,17 @@ pub fn is_valid(path: &Path) -> bool {
 /// The fit version a header records: a missing, negative, fractional or otherwise malformed value
 /// counts as 0 (older than any real version).
 fn header_look_version(head: &serde_json::Value) -> u64 {
-    head.get(LOOK_FIELD).and_then(serde_json::Value::as_u64).unwrap_or(0)
+    head.get(LOOK_FIELD)
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0)
 }
 
 /// The encode version a header records: a missing, negative, fractional or otherwise malformed
 /// value counts as 0 (older than any real version), like [`header_look_version`].
 fn header_encode_version(head: &serde_json::Value) -> u64 {
-    head.get(ENC_FIELD).and_then(serde_json::Value::as_u64).unwrap_or(0)
+    head.get(ENC_FIELD)
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0)
 }
 
 /// Whether the complete proxy at `path` is out of date for this build: written by an older
@@ -309,16 +375,25 @@ pub fn is_stale(path: &Path) -> bool {
     if !is_valid(path) {
         return false;
     }
-    let Ok(f) = std::fs::File::open(path) else { return false };
+    let Ok(f) = std::fs::File::open(path) else {
+        return false;
+    };
     let mut head = Vec::with_capacity(1024);
     if f.take(HEADER_MAX).read_to_end(&mut head).is_err() {
         return false;
     }
-    let Some(rest) = head.strip_prefix(MAGIC) else { return false };
-    let Some(nl) = rest.iter().position(|b| *b == b'\n') else { return false };
+    let Some(rest) = head.strip_prefix(MAGIC) else {
+        return false;
+    };
+    let Some(nl) = rest.iter().position(|b| *b == b'\n') else {
+        return false;
+    };
     rest.get(..nl)
         .and_then(|h| serde_json::from_slice::<serde_json::Value>(h).ok())
-        .is_some_and(|h| header_look_version(&h) < u64::from(crate::camera_preview::LOOK_VERSION) || header_encode_version(&h) < ENCODE_VERSION)
+        .is_some_and(|h| {
+            header_look_version(&h) < u64::from(crate::camera_preview::LOOK_VERSION)
+                || header_encode_version(&h) < ENCODE_VERSION
+        })
 }
 
 /// The marker file in a smart previews folder: the camera-look fit version and encode version its
@@ -332,15 +407,21 @@ const LOOK_MARKER: &str = "look-version";
 /// finds.
 pub fn look_checked(dir: &Path) -> bool {
     use std::io::Read;
-    let Ok(f) = std::fs::File::open(dir.join(LOOK_MARKER)) else { return false };
+    let Ok(f) = std::fs::File::open(dir.join(LOOK_MARKER)) else {
+        return false;
+    };
     let mut text = String::new();
     if f.take(64).read_to_string(&mut text).is_err() {
         return false;
     }
     let mut versions = text.split_whitespace();
-    let (Some(look), Some(enc)) = (versions.next(), versions.next()) else { return false };
+    let (Some(look), Some(enc)) = (versions.next(), versions.next()) else {
+        return false;
+    };
     match (look.parse::<u64>(), enc.parse::<u64>()) {
-        (Ok(look), Ok(enc)) => look >= u64::from(crate::camera_preview::LOOK_VERSION) && enc >= ENCODE_VERSION,
+        (Ok(look), Ok(enc)) => {
+            look >= u64::from(crate::camera_preview::LOOK_VERSION) && enc >= ENCODE_VERSION
+        }
         _ => false,
     }
 }
@@ -349,14 +430,24 @@ pub fn look_checked(dir: &Path) -> bool {
 /// version.
 pub fn mark_look_checked(dir: &Path) -> Result<(), String> {
     let path = dir.join(LOOK_MARKER);
-    let text = format!("{} {}\n", crate::camera_preview::LOOK_VERSION, ENCODE_VERSION);
-    lightcraft_catalog::safe_file::write_atomic(&path, text.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))
+    let text = format!(
+        "{} {}\n",
+        crate::camera_preview::LOOK_VERSION,
+        ENCODE_VERSION
+    );
+    lightcraft_catalog::safe_file::write_atomic(&path, text.as_bytes())
+        .map_err(|e| format!("{}: {e}", path.display()))
 }
 
 /// Load the proxy at `path`.
 pub fn load(path: &Path) -> Result<crate::media::DecodedSource, String> {
     let b = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    decode(&b).map(|(image, camera_tone)| crate::media::DecodedSource { image: Arc::new(image), info: None, camera_tone, denoised: None })
+    decode(&b).map(|(image, camera_tone)| crate::media::DecodedSource {
+        image: Arc::new(image),
+        info: None,
+        camera_tone,
+        denoised: None,
+    })
 }
 
 #[cfg(test)]
@@ -373,11 +464,17 @@ mod tests {
     #[test]
     fn writable_check_does_not_create_missing_parents() {
         let base = temp("writable");
-        assert!(check_writable(&base.join("new")).is_ok(), "one missing level is created");
+        assert!(
+            check_writable(&base.join("new")).is_ok(),
+            "one missing level is created"
+        );
         assert!(base.join("new").is_dir());
         let err = check_writable(&base.join("gone/deeper")).unwrap_err();
         assert!(err.contains("not available"), "{err}");
-        assert!(!base.join("gone").exists(), "no fallback onto the current drive");
+        assert!(
+            !base.join("gone").exists(),
+            "no fallback onto the current drive"
+        );
         let _ = std::fs::remove_dir_all(&base);
     }
 
@@ -394,7 +491,10 @@ mod tests {
         assert_eq!(stats(&a).0, 1);
         assert_eq!(migrate(&a, &b, Existing::Move).0, 1);
         assert_eq!((stats(&a).0, stats(&b).0), (0, 1));
-        assert!(a.join("note.txt").exists(), "only smart previews are touched");
+        assert!(
+            a.join("note.txt").exists(),
+            "only smart previews are touched"
+        );
         assert_eq!(migrate(&b, &a, Existing::Discard).0, 1);
         assert_eq!(stats(&b).0, 0);
         let _ = std::fs::remove_dir_all(&base);
@@ -462,12 +562,20 @@ mod tests {
         assert!(is_valid(&path));
         let loaded = load(&path).unwrap();
         assert_eq!(loaded.camera_tone, Some(tone));
-        let header = lightcraft_pipeline::SourceInfo { raw: true, ..Default::default() };
+        let header = lightcraft_pipeline::SourceInfo {
+            raw: true,
+            ..Default::default()
+        };
         assert_eq!(loaded.info_or(header).camera_tone, Some(tone));
         // a hostile curve (reversing knots) is ignored, not trusted
-        let nl = MAGIC.len() + bytes[MAGIC.len()..].iter().position(|b| *b == b'\n').unwrap();
+        let nl = MAGIC.len()
+            + bytes[MAGIC.len()..]
+                .iter()
+                .position(|b| *b == b'\n')
+                .unwrap();
         let mut head: serde_json::Value = serde_json::from_slice(&bytes[MAGIC.len()..nl]).unwrap();
-        let mut knots: Vec<[f32; 2]> = serde_json::from_value(head["tone"]["knots"].clone()).unwrap();
+        let mut knots: Vec<[f32; 2]> =
+            serde_json::from_value(head["tone"]["knots"].clone()).unwrap();
         knots.swap(3, 4);
         head["tone"]["knots"] = serde_json::json!(knots);
         let mut hostile = MAGIC.to_vec();
@@ -487,7 +595,10 @@ mod tests {
         let mut err = 0.0f64;
         for (a, b) in img.data.iter().zip(&back.data) {
             for k in 0..3 {
-                let (x, y) = (linear_to_srgb(a[k].clamp(0.0, 1.0)), linear_to_srgb(b[k].clamp(0.0, 1.0)));
+                let (x, y) = (
+                    linear_to_srgb(a[k].clamp(0.0, 1.0)),
+                    linear_to_srgb(b[k].clamp(0.0, 1.0)),
+                );
                 err += ((x - y) as f64).abs();
             }
         }
@@ -517,13 +628,23 @@ mod tests {
     /// CIE L*a*b* (D65) of a scene-linear colour: the perceptual yardstick a proxy is held to. The
     /// input is clamped into 0..1, the only range a proxy ever stores.
     fn lab(c: [f32; 3]) -> [f64; 3] {
-        let (r, g, b) = (c[0].clamp(0.0, 1.0) as f64, c[1].clamp(0.0, 1.0) as f64, c[2].clamp(0.0, 1.0) as f64);
+        let (r, g, b) = (
+            c[0].clamp(0.0, 1.0) as f64,
+            c[1].clamp(0.0, 1.0) as f64,
+            c[2].clamp(0.0, 1.0) as f64,
+        );
         let (x, y, z) = (
             (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047,
             0.2126 * r + 0.7152 * g + 0.0722 * b,
             (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883,
         );
-        let f = |t: f64| if t > 216.0 / 24389.0 { t.cbrt() } else { (841.0 / 108.0) * t + 4.0 / 29.0 };
+        let f = |t: f64| {
+            if t > 216.0 / 24389.0 {
+                t.cbrt()
+            } else {
+                (841.0 / 108.0) * t + 4.0 / 29.0
+            }
+        };
         let (fx, fy, fz) = (f(x), f(y), f(z));
         [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
     }
@@ -550,7 +671,12 @@ mod tests {
     /// purpose: it must not follow `encode` as that changes, so the fidelity test measures what the
     /// quality raise bought instead of trusting a written-down number.
     fn encode_at_q92(img: &Rgb32f) -> Vec<u8> {
-        let mut lum: Vec<f32> = img.data.iter().map(|c| c[0].max(c[1]).max(c[2])).filter(|v| v.is_finite()).collect();
+        let mut lum: Vec<f32> = img
+            .data
+            .iter()
+            .map(|c| c[0].max(c[1]).max(c[2]))
+            .filter(|v| v.is_finite())
+            .collect();
         let scale = if lum.is_empty() {
             1.0
         } else {
@@ -563,11 +689,16 @@ mod tests {
             .data
             .iter()
             .map(|c| {
-                let e = |v: f32| (linear_to_srgb((v / scale).clamp(0.0, 1.0)) * 255.0).round() as u8;
+                let e =
+                    |v: f32| (linear_to_srgb((v / scale).clamp(0.0, 1.0)) * 255.0).round() as u8;
                 [e(c[0]), e(c[1]), e(c[2]), 255]
             })
             .collect();
-        let rgba = Rgba8 { width: img.width, height: img.height, data };
+        let rgba = Rgba8 {
+            width: img.width,
+            height: img.height,
+            data,
+        };
         let jpg = lightcraft_codecs::encode_jpeg(
             &lightcraft_codecs::EncodeImage::rgba8(&rgba),
             92,
@@ -599,7 +730,9 @@ mod tests {
                 let (mut sa, mut sb, mut count) = ([0.0f64; 3], [0.0f64; 3], 0u32);
                 for y in by..(by + 8).min(h) {
                     for x in bx..(bx + 8).min(w) {
-                        if let (Some(ca), Some(cb)) = (a.data.get(y * a.width + x), b.data.get(y * b.width + x)) {
+                        if let (Some(ca), Some(cb)) =
+                            (a.data.get(y * a.width + x), b.data.get(y * b.width + x))
+                        {
                             for k in 0..3 {
                                 sa[k] += f64::from(ca[k]);
                                 sb[k] += f64::from(cb[k]);
@@ -613,7 +746,9 @@ mod tests {
                     lab([(sa[0] / d) as f32, (sa[1] / d) as f32, (sa[2] / d) as f32]),
                     lab([(sb[0] / d) as f32, (sb[1] / d) as f32, (sb[2] / d) as f32]),
                 );
-                sum += ((pa[0] - pb[0]).powi(2) + (pa[1] - pb[1]).powi(2) + (pa[2] - pb[2]).powi(2)).sqrt();
+                sum +=
+                    ((pa[0] - pb[0]).powi(2) + (pa[1] - pb[1]).powi(2) + (pa[2] - pb[2]).powi(2))
+                        .sqrt();
                 n += 1;
             }
         }
@@ -631,14 +766,20 @@ mod tests {
         let img = smooth_scene(256, 160);
         let ours = decode(&encode(&img, None).unwrap()).unwrap().0;
         let before = decode(&encode_at_q92(&img)).unwrap().0;
-        let block = (mean_block_delta_e(&img, &ours), mean_block_delta_e(&img, &before));
+        let block = (
+            mean_block_delta_e(&img, &ours),
+            mean_block_delta_e(&img, &before),
+        );
         let pixel = (mean_delta_e(&img, &ours), mean_delta_e(&img, &before));
         println!(
             "smooth-scene proxy round-trip: block-mean ΔE76 {:.3} at q{JPEG_QUALITY} vs {:.3} at q92 \
              (per-pixel {:.3} vs {:.3})",
             block.0, block.1, pixel.0, pixel.1
         );
-        assert!(block.1 > 0.0, "the old encoder must measure something to compare against");
+        assert!(
+            block.1 > 0.0,
+            "the old encoder must measure something to compare against"
+        );
         assert!(
             block.0 <= PROXY_BLOCK_GAIN * block.1,
             "q{JPEG_QUALITY} leaves a block-mean ΔE of {:.3}, not the ≤{:.3} the quality raise should buy over q92's {:.3} \
@@ -658,7 +799,11 @@ mod tests {
         std::fs::write(&path, &bytes).unwrap();
         assert!(!is_stale(&path), "this build's own proxy is up to date");
         // one written before the encode version was recorded is not
-        let nl = MAGIC.len() + bytes[MAGIC.len()..].iter().position(|b| *b == b'\n').unwrap();
+        let nl = MAGIC.len()
+            + bytes[MAGIC.len()..]
+                .iter()
+                .position(|b| *b == b'\n')
+                .unwrap();
         let head: serde_json::Value = serde_json::from_slice(&bytes[MAGIC.len()..nl]).unwrap();
         assert_eq!(head[ENC_FIELD].as_u64(), Some(ENCODE_VERSION));
         let mut older = head.as_object().cloned().unwrap_or_default();
@@ -674,7 +819,10 @@ mod tests {
         mark_look_checked(&dir).unwrap();
         assert!(look_checked(&dir));
         std::fs::write(dir.join(LOOK_MARKER), "99\n").unwrap();
-        assert!(!look_checked(&dir), "a look-only marker is not enough to skip the rebuild");
+        assert!(
+            !look_checked(&dir),
+            "a look-only marker is not enough to skip the rebuild"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -3,7 +3,7 @@
 pub struct MediaAssetId(pub String);
 
 impl MediaAssetId {
-  pub fn as_str(&self) -> &str {
-    &self.0
-  }
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }

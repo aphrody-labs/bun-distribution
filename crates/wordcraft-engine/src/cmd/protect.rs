@@ -28,8 +28,13 @@ pub fn specs() -> Vec<CommandSpec> {
 /// The protection state, as `review.restrict` returns it and the Restrict Editing pane shows it.
 pub fn state(s: &Session) -> Value {
     let st = &s.doc.settings;
-    let regions: Vec<Value> =
-        s.doc.perm_ranges().iter().filter(|r| editable_by(r, &s.author)).map(|r| json!({"start": r.start, "end": r.end})).collect();
+    let regions: Vec<Value> = s
+        .doc
+        .perm_ranges()
+        .iter()
+        .filter(|r| editable_by(r, &s.author))
+        .map(|r| json!({"start": r.start, "end": r.end}))
+        .collect();
     json!({
         "protection": st.protection,
         "formatting": st.protect_formatting,
@@ -53,34 +58,51 @@ fn editable_by(r: &PermRange, author: &str) -> bool {
 fn restrict(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(e) = p::str(v, "exception") {
         if enforced(&s.doc) {
-            return Err(CmdError::Disabled("stop protection before changing the exceptions".into()));
+            return Err(CmdError::Disabled(
+                "stop protection before changing the exceptions".into(),
+            ));
         }
         match e {
             "add" => add_exception(s)?,
             "remove" => remove_exceptions(s, false)?,
             "removeAll" => remove_exceptions(s, true)?,
-            _ => return Err(CmdError::Params("`exception` is \"add\", \"remove\" or \"removeAll\"".into())),
+            _ => {
+                return Err(CmdError::Params(
+                    "`exception` is \"add\", \"remove\" or \"removeAll\"".into(),
+                ));
+            }
         }
         return Ok(state(s));
     }
     if let Some(list) = v.get("lockedStyles") {
-        let Some(list) = list.as_array() else { return Err(CmdError::Params("`lockedStyles` is a list of style ids or names".into())) };
+        let Some(list) = list.as_array() else {
+            return Err(CmdError::Params(
+                "`lockedStyles` is a list of style ids or names".into(),
+            ));
+        };
         if enforced(&s.doc) {
-            return Err(CmdError::Disabled("stop protection before changing the formatting restrictions".into()));
+            return Err(CmdError::Disabled(
+                "stop protection before changing the formatting restrictions".into(),
+            ));
         }
         let names: Vec<&str> = list.iter().filter_map(Value::as_str).take(10_000).collect();
         for st in &mut s.doc.styles.styles {
-            st.locked = names.iter().any(|n| *n == st.id || n.eq_ignore_ascii_case(&st.name));
+            st.locked = names
+                .iter()
+                .any(|n| *n == st.id || n.eq_ignore_ascii_case(&st.name));
         }
     }
     let mode = p::str(v, "mode");
     if let Some(m) = mode
         && !MODES.contains(&m)
     {
-        return Err(CmdError::Params(format!("unknown `mode` {m:?}: none, readOnly, comments, trackedChanges or forms")));
+        return Err(CmdError::Params(format!(
+            "unknown `mode` {m:?}: none, readOnly, comments, trackedChanges or forms"
+        )));
     }
     let formatting = p::bool(v, "formatting");
-    let stop = p::bool(v, "stop") == Some(true) || (mode == Some("none") && formatting != Some(true));
+    let stop =
+        p::bool(v, "stop") == Some(true) || (mode == Some("none") && formatting != Some(true));
     if stop {
         return stop_protection(s, p::str(v, "password").unwrap_or(""));
     }
@@ -89,7 +111,9 @@ fn restrict(s: &mut Session, v: &Value) -> CmdResult {
         return Ok(state(s));
     }
     if enforced(&s.doc) && !s.doc.settings.protect_hash.is_empty() {
-        return Err(CmdError::Disabled("the document is protected with a password: stop protection first".into()));
+        return Err(CmdError::Disabled(
+            "the document is protected with a password: stop protection first".into(),
+        ));
     }
     let formatting = formatting.unwrap_or(false);
     let mode = mode.unwrap_or("none");
@@ -97,7 +121,8 @@ fn restrict(s: &mut Session, v: &Value) -> CmdResult {
         return stop_protection(s, "");
     }
     let hash = match p::str(v, "password").filter(|p| !p.is_empty()) {
-        Some(pw) => wordcraft_docx::protection_hash(pw, wordcraft_docx::DEFAULT_SPIN_COUNT).map_err(|e| CmdError::Params(e.to_string()))?,
+        Some(pw) => wordcraft_docx::protection_hash(pw, wordcraft_docx::DEFAULT_SPIN_COUNT)
+            .map_err(|e| CmdError::Params(e.to_string()))?,
         None => Vec::new(),
     };
     let st = &mut s.doc.settings;
@@ -123,10 +148,16 @@ fn stop_protection(s: &mut Session, password: &str) -> CmdResult {
         match wordcraft_docx::check_protection_password(&s.doc.settings.protect_hash, password) {
             PasswordCheck::NoPassword | PasswordCheck::Correct => {}
             PasswordCheck::Incorrect if password.is_empty() => {
-                return Err(CmdError::Params("type the document's password to stop protection".into()));
+                return Err(CmdError::Params(
+                    "type the document's password to stop protection".into(),
+                ));
             }
-            PasswordCheck::Incorrect => return Err(CmdError::Params("the password is incorrect".into())),
-            PasswordCheck::Unsupported => return Err(CmdError::Disabled(UNSUPPORTED_PASSWORD.into())),
+            PasswordCheck::Incorrect => {
+                return Err(CmdError::Params("the password is incorrect".into()));
+            }
+            PasswordCheck::Unsupported => {
+                return Err(CmdError::Disabled(UNSUPPORTED_PASSWORD.into()));
+            }
         }
     }
     let st = &mut s.doc.settings;
@@ -140,33 +171,62 @@ fn stop_protection(s: &mut Session, password: &str) -> CmdResult {
 fn add_exception(s: &mut Session) -> Result<(), CmdError> {
     let (a, b) = s.sel.ordered();
     if a == b || a.story != b.story {
-        return Err(CmdError::Params("select the text that stays editable".into()));
+        return Err(CmdError::Params(
+            "select the text that stays editable".into(),
+        ));
     }
-    let id = s.doc.perm_ranges().iter().map(|r| r.id).max().map_or(0, |m| m.saturating_add(1));
+    let id = s
+        .doc
+        .perm_ranges()
+        .iter()
+        .map(|r| r.id)
+        .max()
+        .map_or(0, |m| m.saturating_add(1));
     let props = CharProps::default();
     // The end first: inserting it can't move the start.
-    s.doc.insert_object(&b, InlineObject::PermEnd { id }, &props)?;
-    let after_start = s.doc.insert_object(&a, InlineObject::PermStart { id, group: "everyone".into(), editor: String::new() }, &props)?;
+    s.doc
+        .insert_object(&b, InlineObject::PermEnd { id }, &props)?;
+    let after_start = s.doc.insert_object(
+        &a,
+        InlineObject::PermStart {
+            id,
+            group: "everyone".into(),
+            editor: String::new(),
+        },
+        &props,
+    )?;
     let mut end = b.clone();
     if end.path == a.path && end.story == a.story {
         end.off += OBJ.len_utf8();
     }
-    s.sel = crate::Selection { anchor: after_start, focus: end };
+    s.sel = crate::Selection {
+        anchor: after_start,
+        focus: end,
+    };
     Ok(())
 }
 
 /// Remove the exceptions that touch the selection (or all of them).
 fn remove_exceptions(s: &mut Session, all: bool) -> Result<(), CmdError> {
     let (a, b) = s.sel.ordered();
-    let ids: Vec<u32> =
-        s.doc.perm_ranges().iter().filter(|r| all || (r.start.story == a.story && r.start <= b && a <= r.end)).map(|r| r.id).collect();
+    let ids: Vec<u32> = s
+        .doc
+        .perm_ranges()
+        .iter()
+        .filter(|r| all || (r.start.story == a.story && r.start <= b && a <= r.end))
+        .map(|r| r.id)
+        .collect();
     if ids.is_empty() {
         return Ok(());
     }
-    let stories: Vec<StoryRef> = std::iter::once(StoryRef::Body).chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k))).collect();
+    let stories: Vec<StoryRef> = std::iter::once(StoryRef::Body)
+        .chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k)))
+        .collect();
     for story in stories {
         for path in s.doc.para_paths(story) {
-            let Some(p) = s.doc.para(story, &path) else { continue };
+            let Some(p) = s.doc.para(story, &path) else {
+                continue;
+            };
             let marks: Vec<usize> = p
                 .object_offsets()
                 .into_iter()
@@ -196,7 +256,9 @@ fn always_allowed(id: &str) -> bool {
 /// lets it run as long as it only changes the exceptions (checked afterwards with
 /// [`outside_unchanged`]).
 pub(crate) fn check_before(s: &Session, id: &str, params: &Value) -> Result<bool, CmdError> {
-    let Some(mode) = s.doc.settings.protection.as_deref() else { return Ok(false) };
+    let Some(mode) = s.doc.settings.protection.as_deref() else {
+        return Ok(false);
+    };
     if always_allowed(id) {
         return Ok(false);
     }
@@ -204,13 +266,22 @@ pub(crate) fn check_before(s: &Session, id: &str, params: &Value) -> Result<bool
         check_formatting(s, id, params)?;
     }
     let comment_ok = id.starts_with("review.") && (id.contains("Comment") || id == "review.reply");
-    let exceptions = || s.doc.perm_ranges().iter().any(|r| editable_by(r, &s.author));
+    let exceptions = || {
+        s.doc
+            .perm_ranges()
+            .iter()
+            .any(|r| editable_by(r, &s.author))
+    };
     match mode {
         "readOnly" if exceptions() => Ok(true),
-        "readOnly" | "forms" => Err(CmdError::Disabled(format!("{id}: the document is protected (read only)"))),
+        "readOnly" | "forms" => Err(CmdError::Disabled(format!(
+            "{id}: the document is protected (read only)"
+        ))),
         "comments" if comment_ok => Ok(false),
         "comments" if exceptions() => Ok(true),
-        "comments" => Err(CmdError::Disabled(format!("{id}: only comments are allowed in this document"))),
+        "comments" => Err(CmdError::Disabled(format!(
+            "{id}: only comments are allowed in this document"
+        ))),
         _ => Ok(false),
     }
 }
@@ -226,17 +297,34 @@ fn check_formatting(s: &Session, id: &str, params: &Value) -> Result<(), CmdErro
         _ => None,
     };
     if let Some(name) = style {
-        let locked = s.doc.styles.styles.iter().any(|st| st.locked && (st.id == name || st.name.eq_ignore_ascii_case(name)));
-        return if locked { Err(CmdError::Disabled(format!("{id}: the style {name:?} is locked in this document"))) } else { Ok(()) };
+        let locked = s
+            .doc
+            .styles
+            .styles
+            .iter()
+            .any(|st| st.locked && (st.id == name || st.name.eq_ignore_ascii_case(name)));
+        return if locked {
+            Err(CmdError::Disabled(format!(
+                "{id}: the style {name:?} is locked in this document"
+            )))
+        } else {
+            Ok(())
+        };
     }
-    let direct = (id.starts_with("format.") && !matches!(id, "format.changeCase" | "format.state" | "format.fontDialog"))
+    let direct = (id.starts_with("format.")
+        && !matches!(
+            id,
+            "format.changeCase" | "format.state" | "format.fontDialog"
+        ))
         || (id.starts_with("para.") && !matches!(id, "para.sort" | "para.dialog"))
         || id.starts_with("styles.create")
         || id.starts_with("styles.modify")
         || id.starts_with("styles.update")
         || id.starts_with("styles.delete");
     if direct {
-        return Err(CmdError::Disabled(format!("{id}: formatting is limited to the document's styles")));
+        return Err(CmdError::Disabled(format!(
+            "{id}: formatting is limited to the document's styles"
+        )));
     }
     Ok(())
 }
@@ -257,16 +345,26 @@ enum Piece {
 
 /// Everything outside the editable ranges, in order.
 fn outside(doc: &Document, author: &str) -> Vec<Piece> {
-    let editable: Vec<u32> = doc.perm_ranges().iter().filter(|r| editable_by(r, author)).map(|r| r.id).collect();
+    let editable: Vec<u32> = doc
+        .perm_ranges()
+        .iter()
+        .filter(|r| editable_by(r, author))
+        .map(|r| r.id)
+        .collect();
     let mut out = Vec::new();
-    let stories = std::iter::once(StoryRef::Body).chain(doc.parts.keys().map(|k| StoryRef::Part(*k)));
+    let stories =
+        std::iter::once(StoryRef::Body).chain(doc.parts.keys().map(|k| StoryRef::Part(*k)));
     for story in stories {
         let mut open: Vec<u32> = Vec::new();
         for path in doc.para_paths(story) {
-            let Some(p) = doc.para(story, &path) else { continue };
+            let Some(p) = doc.para(story, &path) else {
+                continue;
+            };
             let mut k = 0;
             for (r, props) in p.run_ranges() {
-                let Some(text) = p.text.get(r.clone()) else { continue };
+                let Some(text) = p.text.get(r.clone()) else {
+                    continue;
+                };
                 let mut piece = String::new();
                 for (i, c) in text.char_indices() {
                     if c == OBJ {
@@ -318,14 +416,25 @@ fn flush(out: &mut Vec<Piece>, piece: &mut String, props: &CharProps, open: &[u3
 /// Did undo or redo take protection away (it may only be lifted with Stop Protection)?
 pub(crate) fn protection_lifted(before: &Document, after: &Document) -> bool {
     let (b, a) = (&before.settings, &after.settings);
-    b.protection.is_some() && (a.protection != b.protection || a.protect_formatting != b.protect_formatting || a.protect_hash != b.protect_hash)
+    b.protection.is_some()
+        && (a.protection != b.protection
+            || a.protect_formatting != b.protect_formatting
+            || a.protect_hash != b.protect_hash)
 }
 
 /// The first position in an editable range after `from` (wrapping round), for Find Next Region
 /// I Can Edit; with it, the range's end.
 pub fn next_region(s: &Session, from: &Pos) -> Option<(Pos, Pos)> {
-    let ranges: Vec<PermRange> = s.doc.perm_ranges().into_iter().filter(|r| editable_by(r, &s.author)).collect();
-    let next = ranges.iter().find(|r| r.start > *from).or_else(|| ranges.first())?;
+    let ranges: Vec<PermRange> = s
+        .doc
+        .perm_ranges()
+        .into_iter()
+        .filter(|r| editable_by(r, &s.author))
+        .collect();
+    let next = ranges
+        .iter()
+        .find(|r| r.start > *from)
+        .or_else(|| ranges.first())?;
     Some((next.start.clone(), next.end.clone()))
 }
 
@@ -340,10 +449,14 @@ mod tests {
 
     #[test]
     fn read_only_with_an_exception_allows_edits_only_inside_it() {
-        let mut s = Session::new(Document::from_text("Locked intro.\nFill in here.\nLocked end."));
+        let mut s = Session::new(Document::from_text(
+            "Locked intro.\nFill in here.\nLocked end.",
+        ));
         select(&mut s, "Fill in here.");
-        s.run("review.restrict", &json!({"exception": "add"})).unwrap();
-        s.run("review.restrict", &json!({"mode": "readOnly"})).unwrap();
+        s.run("review.restrict", &json!({"exception": "add"}))
+            .unwrap();
+        s.run("review.restrict", &json!({"mode": "readOnly"}))
+            .unwrap();
         // Inside the exception: typing works.
         select(&mut s, "here");
         s.run("text.insert", &json!({"text": "there"})).unwrap();
@@ -369,26 +482,42 @@ mod tests {
     fn password_guards_stop_protection_and_survives_docx() {
         let mut s = Session::new(Document::from_text("Secret plan.\nEditable part."));
         select(&mut s, "Editable part.");
-        s.run("review.restrict", &json!({"exception": "add"})).unwrap();
+        s.run("review.restrict", &json!({"exception": "add"}))
+            .unwrap();
         s.run("review.restrict", &json!({"mode": "readOnly", "password": "pw1", "formatting": true, "lockedStyles": ["Heading1"]})).unwrap();
         let bytes = crate::io::save_bytes("x.docx", &s.doc).unwrap();
         let doc = crate::io::open_bytes("x.docx", &bytes).unwrap();
         let st = &doc.settings;
         assert_eq!(st.protection.as_deref(), Some("readOnly"));
         assert!(st.protect_formatting);
-        assert!(st.protect_hash.iter().any(|(k, v)| k == "w:algorithmName" && v == "SHA-512"));
+        assert!(
+            st.protect_hash
+                .iter()
+                .any(|(k, v)| k == "w:algorithmName" && v == "SHA-512")
+        );
         assert!(doc.styles.get("Heading1").is_some_and(|x| x.locked));
         let r = doc.perm_ranges();
         assert_eq!(r.len(), 1);
         assert!(r[0].everyone());
         let mut t = Session::new(doc);
-        assert!(t.run("review.restrict", &json!({"stop": true, "password": "wrong"})).is_err());
+        assert!(
+            t.run(
+                "review.restrict",
+                &json!({"stop": true, "password": "wrong"})
+            )
+            .is_err()
+        );
         assert!(t.run("review.restrict", &json!({"mode": "none"})).is_err());
         assert!(t.run("para.heading1", &json!({})).is_err(), "locked style");
-        t.run("review.restrict", &json!({"stop": true, "password": "pw1"})).unwrap();
+        t.run("review.restrict", &json!({"stop": true, "password": "pw1"}))
+            .unwrap();
         assert!(t.doc.settings.protection.is_none());
         // The password isn't kept for Repeat or macros.
-        assert!(t.last_command.as_ref().is_none_or(|(_, p)| p.get("password").is_none()));
+        assert!(
+            t.last_command
+                .as_ref()
+                .is_none_or(|(_, p)| p.get("password").is_none())
+        );
     }
 
     /// A Word file with the legacy hash (`w:cryptAlgorithmSid`): a wrong password is rejected, the
@@ -414,14 +543,32 @@ mod tests {
             Session::new(doc)
         };
         let mut s = protected("4");
-        assert!(s.run("review.restrict", &json!({"stop": true, "password": "wrong"})).is_err());
-        assert!(s.run("review.restrict", &json!({"stop": true, "password": ""})).is_err());
+        assert!(
+            s.run(
+                "review.restrict",
+                &json!({"stop": true, "password": "wrong"})
+            )
+            .is_err()
+        );
+        assert!(
+            s.run("review.restrict", &json!({"stop": true, "password": ""}))
+                .is_err()
+        );
         assert!(super::enforced(&s.doc));
-        s.run("review.restrict", &json!({"stop": true, "password": "Example"})).unwrap();
+        s.run(
+            "review.restrict",
+            &json!({"stop": true, "password": "Example"}),
+        )
+        .unwrap();
         assert!(!super::enforced(&s.doc));
         // MD2 isn't supported: refused whatever the password.
         let mut s = protected("1");
-        let e = s.run("review.restrict", &json!({"stop": true, "password": "anything"})).unwrap_err();
+        let e = s
+            .run(
+                "review.restrict",
+                &json!({"stop": true, "password": "anything"}),
+            )
+            .unwrap_err();
         assert!(e.to_string().contains(super::UNSUPPORTED_PASSWORD));
         assert!(super::enforced(&s.doc));
     }

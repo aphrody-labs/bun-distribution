@@ -14,7 +14,11 @@ impl Exporter<'_> {
         if !m.any() {
             return;
         }
-        let bleed = if self.opts.bleed { self.doc.settings.bleed.map(|v| v.max(0.0)) } else { [0.0; 4] };
+        let bleed = if self.opts.bleed {
+            self.doc.settings.bleed.map(|v| v.max(0.0))
+        } else {
+            [0.0; 4]
+        };
         let start = mark_start(self.opts, bleed);
         let t = sh.trim;
         let mut bp = BezPath::new();
@@ -59,7 +63,10 @@ impl Exporter<'_> {
         if m.page_info {
             let mut info = format!("{title}    Page {}", sh.label);
             if let Some(c) = created.map(civil) {
-                info.push_str(&format!("    {:04}-{:02}-{:02} {:02}:{:02} UTC", c.0, c.1, c.2, c.3, c.4));
+                info.push_str(&format!(
+                    "    {:04}-{:02}-{:02} {:02}:{:02} UTC",
+                    c.0, c.1, c.2, c.3, c.4
+                ));
             }
             let at = (t.x0 + start + 6.0, t.y1 + start + 10.0);
             self.plain_text(s, &info, at, 6.0, registration(1.0, self.rgb_only));

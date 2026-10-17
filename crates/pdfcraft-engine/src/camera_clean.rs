@@ -24,7 +24,12 @@ pub enum Look {
 }
 
 impl Look {
-    pub const ALL: [Look; 4] = [Look::Original, Look::Colour, Look::Greyscale, Look::BlackWhite];
+    pub const ALL: [Look; 4] = [
+        Look::Original,
+        Look::Colour,
+        Look::Greyscale,
+        Look::BlackWhite,
+    ];
 
     /// The name tools use.
     pub fn name(self) -> &'static str {
@@ -56,16 +61,29 @@ pub fn apply(rgb: &[u8], width: u32, height: u32, look: Look, level: u8) -> Opti
     if w == 0 || h == 0 || w.checked_mul(h)?.checked_mul(3)? != rgb.len() {
         return None;
     }
-    let lum = |p: &[u8; 3]| ((p[0] as u32 * 299 + p[1] as u32 * 587 + p[2] as u32 * 114) / 1000) as u8;
+    let lum =
+        |p: &[u8; 3]| ((p[0] as u32 * 299 + p[1] as u32 * 587 + p[2] as u32 * 114) / 1000) as u8;
     Some(match look {
         Look::Original => Pixels::Rgb(rgb.to_vec()),
         Look::Colour => Pixels::Rgb(clean(rgb, width, height, level)?),
-        Look::Greyscale => Pixels::Grey(clean(rgb, width, height, level)?.as_chunks::<3>().0.iter().map(lum).collect()),
+        Look::Greyscale => Pixels::Grey(
+            clean(rgb, width, height, level)?
+                .as_chunks::<3>()
+                .0
+                .iter()
+                .map(lum)
+                .collect(),
+        ),
         Look::BlackWhite => {
             // The lighting evened out fully, then one threshold for the whole page.
             let even = clean(rgb, width, height, 50)?;
             let t = 0.45 + 0.4 * level.min(MAX_LEVEL) as f32 / MAX_LEVEL as f32;
-            let mut grey: Vec<u8> = even.as_chunks::<3>().0.iter().map(|p| if (lum(p) as f32 / 255.0) < t { 0 } else { 255 }).collect();
+            let mut grey: Vec<u8> = even
+                .as_chunks::<3>()
+                .0
+                .iter()
+                .map(|p| if (lum(p) as f32 / 255.0) < t { 0 } else { 255 })
+                .collect();
             despeckle_grey(&mut grey, w, h);
             Pixels::Grey(grey)
         }
@@ -121,7 +139,10 @@ impl Background {
     fn cell(&self, cx: isize, cy: isize) -> [f32; 3] {
         let cx = cx.clamp(0, self.cols as isize - 1) as usize;
         let cy = cy.clamp(0, self.rows as isize - 1) as usize;
-        self.cells.get(cy * self.cols + cx).copied().unwrap_or([1.0; 3])
+        self.cells
+            .get(cy * self.cols + cx)
+            .copied()
+            .unwrap_or([1.0; 3])
     }
 
     fn at(&self, x: usize, y: usize) -> [f32; 3] {
@@ -131,7 +152,12 @@ impl Background {
         let (x0, y0) = (fx.floor(), fy.floor());
         let (ax, ay) = (fx - x0, fy - y0);
         let (x0, y0) = (x0 as isize, y0 as isize);
-        let (a, b, c, d) = (self.cell(x0, y0), self.cell(x0 + 1, y0), self.cell(x0, y0 + 1), self.cell(x0 + 1, y0 + 1));
+        let (a, b, c, d) = (
+            self.cell(x0, y0),
+            self.cell(x0 + 1, y0),
+            self.cell(x0, y0 + 1),
+            self.cell(x0 + 1, y0 + 1),
+        );
         std::array::from_fn(|i| {
             let top = a[i] * (1.0 - ax) + b[i] * ax;
             let bottom = c[i] * (1.0 - ax) + d[i] * ax;
@@ -155,7 +181,9 @@ fn background(rgb: &[u8], w: usize, h: usize) -> Background {
                 for x in bx * block..((bx + 1) * block).min(w) {
                     if let Some(p) = rgb.get((y * w + x) * 3..(y * w + x) * 3 + 3) {
                         for (c, &v) in p.iter().enumerate() {
-                            if let Some(slot) = hist.get_mut(c).and_then(|hh| hh.get_mut(v as usize)) {
+                            if let Some(slot) =
+                                hist.get_mut(c).and_then(|hh| hh.get_mut(v as usize))
+                            {
                                 *slot += 1;
                             }
                         }
@@ -189,8 +217,10 @@ fn background(rgb: &[u8], w: usize, h: usize) -> Background {
         for x in 0..cols as isize {
             let own = get(&cells, x, y);
             lifted.push(std::array::from_fn(|c| {
-                let mut around: Vec<f32> =
-                    (-2..=2).flat_map(|dy| (-2..=2).map(move |dx| (dx, dy))).map(|(dx, dy)| get(&cells, x + dx, y + dy)[c]).collect();
+                let mut around: Vec<f32> = (-2..=2)
+                    .flat_map(|dy| (-2..=2).map(move |dx| (dx, dy)))
+                    .map(|(dx, dy)| get(&cells, x + dx, y + dy)[c])
+                    .collect();
                 around.sort_by(f32::total_cmp);
                 let paper = around.get(18).copied().unwrap_or(1.0);
                 own[c].max(paper)
@@ -216,7 +246,12 @@ fn background(rgb: &[u8], w: usize, h: usize) -> Background {
         }
         cells = next;
     }
-    Background { cols, rows, block: block as f32, cells }
+    Background {
+        cols,
+        rows,
+        block: block as f32,
+        cells,
+    }
 }
 
 /// [`despeckle`] for one grey byte per pixel.
@@ -231,19 +266,35 @@ fn despeckle_grey(grey: &mut [u8], w: usize, h: usize) {
 /// Lighten dark pixels with at most one dark neighbour (specks), in place.
 fn despeckle(rgb: &mut [u8], w: usize, h: usize) {
     let lum = |p: &[u8; 3]| (p[0] as u32 * 299 + p[1] as u32 * 587 + p[2] as u32 * 114) / 1000;
-    let dark: Vec<bool> = rgb.as_chunks::<3>().0.iter().map(|p| lum(p) < 128).collect();
+    let dark: Vec<bool> = rgb
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .map(|p| lum(p) < 128)
+        .collect();
     let is_dark = |x: isize, y: isize| {
-        x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && dark.get(y as usize * w + x as usize).copied().unwrap_or(false)
+        x >= 0
+            && y >= 0
+            && (x as usize) < w
+            && (y as usize) < h
+            && dark
+                .get(y as usize * w + x as usize)
+                .copied()
+                .unwrap_or(false)
     };
     for y in 0..h as isize {
         for x in 0..w as isize {
             if !is_dark(x, y) {
                 continue;
             }
-            let neighbours =
-                (-1..=1).flat_map(|dy| (-1..=1).map(move |dx| (dx, dy))).filter(|&(dx, dy)| (dx, dy) != (0, 0) && is_dark(x + dx, y + dy)).count();
+            let neighbours = (-1..=1)
+                .flat_map(|dy| (-1..=1).map(move |dx| (dx, dy)))
+                .filter(|&(dx, dy)| (dx, dy) != (0, 0) && is_dark(x + dx, y + dy))
+                .count();
             if neighbours <= 1
-                && let Some(p) = rgb.get_mut((y as usize * w + x as usize) * 3..(y as usize * w + x as usize) * 3 + 3)
+                && let Some(p) = rgb.get_mut(
+                    (y as usize * w + x as usize) * 3..(y as usize * w + x as usize) * 3 + 3,
+                )
             {
                 p.fill(255);
             }
@@ -262,7 +313,9 @@ mod tests {
         for y in 0..h {
             for x in 0..w {
                 let text = (y / 12) % 3 == 1 && x > w / 10 && x < 9 * w / 10 && (x / 9) % 6 != 0;
-                let stamp = (x as isize - (3 * w / 4) as isize).pow(2) + (y as isize - (3 * h / 4) as isize).pow(2) < (h as isize / 12).pow(2);
+                let stamp = (x as isize - (3 * w / 4) as isize).pow(2)
+                    + (y as isize - (3 * h / 4) as isize).pow(2)
+                    < (h as isize / 12).pow(2);
                 let speck = (x * 7919 + y * 104729) % 997 == 0;
                 let ink: [f32; 3] = if text || speck {
                     [0.12, 0.12, 0.12]
@@ -287,11 +340,19 @@ mod tests {
 
     /// A paper point (between text rows, away from the stamp).
     fn paper_points(w: usize, h: usize) -> Vec<(usize, usize)> {
-        [(0.05, 0.03), (0.5, 0.03), (0.95, 0.03), (0.05, 0.53), (0.5, 0.53), (0.97, 0.98), (0.03, 0.98)]
-            .iter()
-            .map(|&(fx, fy)| ((fx * w as f64) as usize, (fy * h as f64) as usize))
-            .map(|(x, y)| (x.min(w - 1), (y - y % 36 + 4).min(h - 1)))
-            .collect()
+        [
+            (0.05, 0.03),
+            (0.5, 0.03),
+            (0.95, 0.03),
+            (0.05, 0.53),
+            (0.5, 0.53),
+            (0.97, 0.98),
+            (0.03, 0.98),
+        ]
+        .iter()
+        .map(|&(fx, fy)| ((fx * w as f64) as usize, (fy * h as f64) as usize))
+        .map(|(x, y)| (x.min(w - 1), (y - y % 36 + 4).min(h - 1)))
+        .collect()
     }
 
     #[test]
@@ -307,13 +368,23 @@ mod tests {
         for (x, y) in paper_points(w, h) {
             let before = px(&img, w, x, y);
             let after = px(&out, w, x, y);
-            assert!(after.iter().all(|&v| v >= 235), "({x}, {y}) {before:?} → {after:?}");
+            assert!(
+                after.iter().all(|&v| v >= 235),
+                "({x}, {y}) {before:?} → {after:?}"
+            );
         }
         // The text stays dark everywhere, also in the shadow.
-        for (x, y) in [(w / 2, 13), (w / 2, 3 * 12 + 13), (w * 8 / 10, h - 40 - (h - 40) % 36 + 13)] {
+        for (x, y) in [
+            (w / 2, 13),
+            (w / 2, 3 * 12 + 13),
+            (w * 8 / 10, h - 40 - (h - 40) % 36 + 13),
+        ] {
             let after = px(&out, w, x, y);
             if (x / 9) % 6 != 0 {
-                assert!(after.iter().all(|&v| v <= 90), "text at ({x}, {y}): {after:?}");
+                assert!(
+                    after.iter().all(|&v| v <= 90),
+                    "text at ({x}, {y}): {after:?}"
+                );
             }
         }
     }
@@ -325,7 +396,11 @@ mod tests {
         let out = clean(&img, w as u32, h as u32, 100).unwrap();
         // The stamp's centre, on a row without text.
         let [r, g, b] = px(&out, w, 3 * w / 4, 3 * h / 4 + 12);
-        assert!(b as i32 - r as i32 > 60 && b as i32 - g as i32 > 40, "{:?}", [r, g, b]);
+        assert!(
+            b as i32 - r as i32 > 60 && b as i32 - g as i32 > 40,
+            "{:?}",
+            [r, g, b]
+        );
     }
 
     #[test]
@@ -334,7 +409,11 @@ mod tests {
         let img = photo(w, h, |x, _| [0.6 + 0.3 * x as f32 / w as f32; 3]);
         assert_eq!(clean(&img, w as u32, h as u32, 0).unwrap(), img);
         let mean = |v: &[u8]| v.iter().map(|&c| c as f64).sum::<f64>() / v.len() as f64;
-        let (a, b, c) = (mean(&img), mean(&clean(&img, w as u32, h as u32, 30).unwrap()), mean(&clean(&img, w as u32, h as u32, 100).unwrap()));
+        let (a, b, c) = (
+            mean(&img),
+            mean(&clean(&img, w as u32, h as u32, 30).unwrap()),
+            mean(&clean(&img, w as u32, h as u32, 100).unwrap()),
+        );
         assert!(a < b && b < c, "{a} {b} {c}");
     }
 
@@ -346,11 +425,18 @@ mod tests {
         let specks: Vec<(usize, usize)> = (0..h)
             .flat_map(|y| (0..w).map(move |x| (x, y)))
             // Specks away from the text rows (one touching a letter isn't isolated).
-            .filter(|&(x, y)| (x * 7919 + y * 104729) % 997 == 0 && (y / 12) % 3 == 0 && (2..10).contains(&(y % 12)))
+            .filter(|&(x, y)| {
+                (x * 7919 + y * 104729) % 997 == 0
+                    && (y / 12) % 3 == 0
+                    && (2..10).contains(&(y % 12))
+            })
             .collect();
         assert!(!specks.is_empty());
         for (x, y) in specks {
-            assert!(px(&out, w, x, y).iter().all(|&v| v > 200), "speck at ({x}, {y})");
+            assert!(
+                px(&out, w, x, y).iter().all(|&v| v > 200),
+                "speck at ({x}, {y})"
+            );
         }
         assert!(px(&out, w, w / 2 + 1, 13).iter().all(|&v| v < 60), "text");
     }
@@ -358,14 +444,32 @@ mod tests {
     #[test]
     fn the_looks() {
         let (w, h) = (240, 320);
-        let img = photo(w, h, |x, _| [0.95 - 0.4 * x as f32 / w as f32, 0.85 - 0.4 * x as f32 / w as f32, 0.65]);
-        assert_eq!(apply(&img, w as u32, h as u32, Look::Original, 80), Some(Pixels::Rgb(img.clone())));
-        let Some(Pixels::Rgb(colour)) = apply(&img, w as u32, h as u32, Look::Colour, 80) else { panic!("colour") };
+        let img = photo(w, h, |x, _| {
+            [
+                0.95 - 0.4 * x as f32 / w as f32,
+                0.85 - 0.4 * x as f32 / w as f32,
+                0.65,
+            ]
+        });
+        assert_eq!(
+            apply(&img, w as u32, h as u32, Look::Original, 80),
+            Some(Pixels::Rgb(img.clone()))
+        );
+        let Some(Pixels::Rgb(colour)) = apply(&img, w as u32, h as u32, Look::Colour, 80) else {
+            panic!("colour")
+        };
         assert_eq!(Some(colour), clean(&img, w as u32, h as u32, 80));
-        let Some(Pixels::Grey(grey)) = apply(&img, w as u32, h as u32, Look::Greyscale, 80) else { panic!("grey") };
+        let Some(Pixels::Grey(grey)) = apply(&img, w as u32, h as u32, Look::Greyscale, 80) else {
+            panic!("grey")
+        };
         assert_eq!(grey.len(), w * h);
-        let Some(Pixels::Grey(bw)) = apply(&img, w as u32, h as u32, Look::BlackWhite, 50) else { panic!("bw") };
-        assert!(bw.iter().all(|&v| v == 0 || v == 255), "only black and white");
+        let Some(Pixels::Grey(bw)) = apply(&img, w as u32, h as u32, Look::BlackWhite, 50) else {
+            panic!("bw")
+        };
+        assert!(
+            bw.iter().all(|&v| v == 0 || v == 255),
+            "only black and white"
+        );
         // Paper (between rows, across the shadow) is white; text is black.
         for x in [5, w / 2, w - 6] {
             assert_eq!(bw[3 * w + x], 255, "paper at x {x}");
@@ -376,7 +480,13 @@ mod tests {
             Some(Pixels::Grey(g)) => g.iter().filter(|&&v| v == 0).count(),
             _ => 0,
         };
-        assert!(black(0) <= black(50) && black(50) <= black(100), "{} {} {}", black(0), black(50), black(100));
+        assert!(
+            black(0) <= black(50) && black(50) <= black(100),
+            "{} {} {}",
+            black(0),
+            black(50),
+            black(100)
+        );
         for look in Look::ALL {
             assert_eq!(Look::from_name(look.name()), Some(look));
         }

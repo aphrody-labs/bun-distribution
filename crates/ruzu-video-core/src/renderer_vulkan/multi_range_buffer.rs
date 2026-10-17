@@ -17,7 +17,9 @@ use ash::vk;
 use ash::vk::Handle;
 
 use crate::vulkan_common::vulkan_device::{Device, DeviceReference};
-use crate::vulkan_common::vulkan_memory_allocator::{AllocatedBuffer, MemoryAllocator, MemoryUsage};
+use crate::vulkan_common::vulkan_memory_allocator::{
+    AllocatedBuffer, MemoryAllocator, MemoryUsage,
+};
 
 use super::scheduler::Scheduler;
 
@@ -165,8 +167,7 @@ impl MultiRangeBufferCache {
             return 0;
         };
         let owned = SparseBuffer::new(probe, device);
-        let reqs_info = vk::BufferMemoryRequirementsInfo2::default()
-            .buffer(owned.handle());
+        let reqs_info = vk::BufferMemoryRequirementsInfo2::default().buffer(owned.handle());
         let mut reqs2 = vk::MemoryRequirements2::default();
         unsafe { logical.get_buffer_memory_requirements2(&reqs_info, &mut reqs2) };
         *memory_type_bits = reqs2.memory_requirements.memory_type_bits;
@@ -246,8 +247,8 @@ impl MultiRangeBufferCache {
         let buffer_bind = vk::SparseBufferMemoryBindInfo::default()
             .buffer(raw)
             .binds(&binds);
-        let bind_info = vk::BindSparseInfo::default()
-            .buffer_binds(std::slice::from_ref(&buffer_bind));
+        let bind_info =
+            vk::BindSparseInfo::default().buffer_binds(std::slice::from_ref(&buffer_bind));
         let fence = unsafe { logical.create_fence(&vk::FenceCreateInfo::default(), None) }.ok()?;
         let bind_result = {
             let submit_mutex = scheduler.submit_mutex();
@@ -281,12 +282,7 @@ impl MultiRangeBufferCache {
             self.drain_retired(scheduler);
         }
         if self.retired.len() == Self::MAX_RETIRED {
-            let oldest = self
-                .retired
-                .iter()
-                .map(|item| item.tick)
-                .min()
-                .unwrap_or(0);
+            let oldest = self.retired.iter().map(|item| item.tick).min().unwrap_or(0);
             scheduler.wait(oldest);
             self.drain_retired(scheduler);
         }
@@ -403,8 +399,7 @@ impl MultiRangeBufferCache {
             if address_handle != vk::Buffer::null() {
                 entry.address = unsafe {
                     device.get_logical().get_buffer_device_address(
-                        &vk::BufferDeviceAddressInfo::default()
-                            .buffer(address_handle),
+                        &vk::BufferDeviceAddressInfo::default().buffer(address_handle),
                     )
                 };
             }
@@ -463,7 +458,13 @@ mod tests {
     use super::*;
     use ash::vk::Handle;
 
-    fn source(handle: u64, offset: u64, size: u64, tick: u64, memory_type: u32) -> MultiRangeSource {
+    fn source(
+        handle: u64,
+        offset: u64,
+        size: u64,
+        tick: u64,
+        memory_type: u32,
+    ) -> MultiRangeSource {
         MultiRangeSource {
             handle: vk::Buffer::from_raw(handle),
             memory: vk::DeviceMemory::from_raw(0x10),
@@ -512,7 +513,10 @@ mod tests {
     #[test]
     fn can_bind_sparse_requires_block_alignment_and_memory_type() {
         let cache = sparse_cache(true);
-        let aligned = [source(1, 0, 0x1_0000, 0, 1), source(2, 0x2_0000, 0x1_0000, 0, 1)];
+        let aligned = [
+            source(1, 0, 0x1_0000, 0, 1),
+            source(2, 0x2_0000, 0x1_0000, 0, 1),
+        ];
         assert!(cache.can_bind_sparse(&aligned));
         let misaligned_offset = [source(1, 0x1000, 0x1_0000, 0, 1)];
         assert!(!cache.can_bind_sparse(&misaligned_offset));

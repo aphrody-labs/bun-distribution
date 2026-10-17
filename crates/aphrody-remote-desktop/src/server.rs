@@ -59,7 +59,10 @@ fn authorized(headers: &HeaderMap, query: &TokenQuery, expected: &str) -> bool {
     let from_header = headers
         .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.strip_prefix("Bearer ").or_else(|| v.strip_prefix("bearer ")));
+        .and_then(|v| {
+            v.strip_prefix("Bearer ")
+                .or_else(|| v.strip_prefix("bearer "))
+        });
     let mut ok = false;
     if let Some(t) = from_header {
         ok |= tokens_equal(t.trim(), expected);
@@ -81,8 +84,9 @@ pub async fn serve(opts: ServeOptions) -> Result<()> {
     }
     let bind = opts.bind;
     let app = router(opts);
-    let listener =
-        tokio::net::TcpListener::bind(bind).await.with_context(|| format!("cannot bind {bind}"))?;
+    let listener = tokio::net::TcpListener::bind(bind)
+        .await
+        .with_context(|| format!("cannot bind {bind}"))?;
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
             let _ = tokio::signal::ctrl_c().await;
@@ -101,7 +105,10 @@ fn router(opts: ServeOptions) -> Router {
 
 async fn viewer() -> impl IntoResponse {
     (
-        [(header::CACHE_CONTROL, "no-store"), (header::REFERRER_POLICY, "no-referrer")],
+        [
+            (header::CACHE_CONTROL, "no-store"),
+            (header::REFERRER_POLICY, "no-referrer"),
+        ],
         Html(VIEWER_HTML),
     )
 }
@@ -203,16 +210,26 @@ fn handle_text(text: &str, shared: &Shared, tx: &std::sync::mpsc::SyncSender<Inp
         ClientMsg::MouseMove { x, y } => {
             let s = f64::from(shared.scale.load(Ordering::Relaxed));
             Input::Move(
-                shared.origin_x.load(Ordering::Relaxed).saturating_add((x * s).round() as i32),
-                shared.origin_y.load(Ordering::Relaxed).saturating_add((y * s).round() as i32),
+                shared
+                    .origin_x
+                    .load(Ordering::Relaxed)
+                    .saturating_add((x * s).round() as i32),
+                shared
+                    .origin_y
+                    .load(Ordering::Relaxed)
+                    .saturating_add((y * s).round() as i32),
             )
-        },
+        }
         ClientMsg::MouseDown { button } => Input::Button(MouseButton::parse(&button), true),
         ClientMsg::MouseUp { button } => Input::Button(MouseButton::parse(&button), false),
         ClientMsg::Wheel { dx, dy } => Input::Wheel(dx.round() as i32, -(dy.round() as i32)),
         ClientMsg::Key { code, down } => Input::Key(code, down),
         ClientMsg::Text { text } => Input::Text(text),
-        ClientMsg::Config { fps, quality, scale } => {
+        ClientMsg::Config {
+            fps,
+            quality,
+            scale,
+        } => {
             if let Some(v) = fps {
                 shared.fps.store(v.clamp(1, 60), Ordering::Relaxed);
             }
@@ -224,7 +241,7 @@ fn handle_text(text: &str, shared: &Shared, tx: &std::sync::mpsc::SyncSender<Inp
             }
             shared.force.store(true, Ordering::Relaxed);
             return;
-        },
+        }
     };
     // Input is best effort: a full queue drops the event rather than stalling the socket.
     let _ = tx.try_send(input);
@@ -236,7 +253,7 @@ fn capture_loop(shared: &Shared, tx: &mpsc::Sender<Out>) {
         Err(e) => {
             let _ = tx.blocking_send(Out::Error(format!("{e:#}")));
             return;
-        },
+        }
     };
     let os = std::env::consts::OS;
     let name = backend.name();
@@ -279,14 +296,14 @@ fn capture_loop(shared: &Shared, tx: &mpsc::Sender<Out>) {
                                 return;
                             }
                             last_hash = Some(hash);
-                        },
+                        }
                         Err(e) => {
                             let _ = tx.blocking_send(Out::Error(format!("{e:#}")));
                             return;
-                        },
+                        }
                     }
                 }
-            },
+            }
             Err(e) => {
                 // Transient failures happen on the lock screen / secure desktop.
                 failures += 1;
@@ -296,7 +313,7 @@ fn capture_loop(shared: &Shared, tx: &mpsc::Sender<Out>) {
                 }
                 std::thread::sleep(Duration::from_millis(200));
                 continue;
-            },
+            }
         }
         let fps = shared.fps.load(Ordering::Relaxed).clamp(1, 60);
         let period = Duration::from_micros(1_000_000 / u64::from(fps));
@@ -356,7 +373,9 @@ mod tests {
         assert!(authorized(&h, &none, "secret"));
         h.insert(header::AUTHORIZATION, "Bearer nope".parse().unwrap());
         assert!(!authorized(&h, &none, "secret"));
-        let q = TokenQuery { token: Some("secret".into()) };
+        let q = TokenQuery {
+            token: Some("secret".into()),
+        };
         assert!(authorized(&HeaderMap::new(), &q, "secret"));
     }
 

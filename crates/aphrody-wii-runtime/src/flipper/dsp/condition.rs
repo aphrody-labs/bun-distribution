@@ -29,16 +29,16 @@ impl BranchControl {
         match self {
             Self::GreaterThanOrEqual => {
                 dsp.registers.status.overflow() == dsp.registers.status.sign()
-            },
+            }
             Self::LessThan => dsp.registers.status.overflow() != dsp.registers.status.sign(),
             Self::GreaterThan => {
                 (dsp.registers.status.overflow() == dsp.registers.status.sign())
                     && !dsp.registers.status.arithmetic_zero()
-            },
+            }
             Self::LessThanOrEqual => {
                 (dsp.registers.status.overflow() != dsp.registers.status.sign())
                     || dsp.registers.status.arithmetic_zero()
-            },
+            }
             Self::NotZero => !dsp.registers.status.arithmetic_zero(),
             Self::Zero => dsp.registers.status.arithmetic_zero(),
             Self::NotCarry => !dsp.registers.status.carry(),
@@ -48,11 +48,11 @@ impl BranchControl {
             Self::AccumulatorNotZeroExtended => {
                 (dsp.registers.status.above_s32() || dsp.registers.status.top_two_bits_equal())
                     && !dsp.registers.status.arithmetic_zero()
-            },
+            }
             Self::AccumulatorNotZero => {
                 (!dsp.registers.status.above_s32() && !dsp.registers.status.top_two_bits_equal())
                     || dsp.registers.status.arithmetic_zero()
-            },
+            }
             Self::NotLogicalZero => !dsp.registers.status.logical_zero(),
             Self::LogicalZero => dsp.registers.status.logical_zero(),
             Self::Overflow => dsp.registers.status.overflow(),

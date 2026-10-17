@@ -63,7 +63,11 @@ impl CompiledPattern {
                 tokens.len()
             )));
         }
-        Ok(Self { name, tokens, patch_offset })
+        Ok(Self {
+            name,
+            tokens,
+            patch_offset,
+        })
     }
 
     /// Search for matches in a slice of bytes, tolerating either original `0x74` or patched `0xeb`.
@@ -78,7 +82,7 @@ impl CompiledPattern {
             for (j, token) in self.tokens.iter().enumerate() {
                 let byte = data[i + j];
                 match token {
-                    PatternToken::Wildcard => {},
+                    PatternToken::Wildcard => {}
                     PatternToken::Exact(expected) => {
                         // At the patch location, allow either original 0x74 or patched 0xeb
                         if j == self.patch_offset {
@@ -88,7 +92,7 @@ impl CompiledPattern {
                         } else if byte != *expected {
                             continue 'outer;
                         }
-                    },
+                    }
                 }
             }
             matches.push(i);

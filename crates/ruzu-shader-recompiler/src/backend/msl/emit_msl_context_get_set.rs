@@ -28,10 +28,14 @@ pub fn emit_set_attribute(
         });
     };
     if context.stage() == crate::stage::Stage::TessellationControl {
-        if attribute.is_clip_distance() && attribute.clip_distance_index() >= context.clip_distance_count() {
+        if attribute.is_clip_distance()
+            && attribute.clip_distance_index() >= context.clip_distance_count()
+        {
             return Ok(());
         }
-        let destination = context.tessellation_control_layout()?.output_expression(*attribute)?;
+        let destination = context
+            .tessellation_control_layout()?
+            .output_expression(*attribute)?;
         let value = context.value_expression(inst.arg(1), inst_ref, 1)?;
         context.emit_statement(&format!("{destination} = {value};"));
         return Ok(());
@@ -48,7 +52,11 @@ pub fn emit_set_attribute(
         return context.emit_set_point_size(inst_ref, inst.arg(1));
     }
     if attribute.is_clip_distance() {
-        return context.emit_set_clip_distance(inst_ref, attribute.clip_distance_index(), inst.arg(1));
+        return context.emit_set_clip_distance(
+            inst_ref,
+            attribute.clip_distance_index(),
+            inst.arg(1),
+        );
     }
     if *attribute == crate::ir::value::Attribute::LAYER {
         return context.emit_set_layer(inst_ref, inst.arg(1));
@@ -129,8 +137,16 @@ pub fn emit_invocation_info(
     context: &mut MslEmitContext,
     inst_ref: InstRef,
 ) -> Result<(), MslError> {
-    if matches!(context.stage(), crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval) {
-        return context.define(inst_ref, ir::Type::U32, "patch_vertices << 16u".into(), false);
+    if matches!(
+        context.stage(),
+        crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval
+    ) {
+        return context.define(
+            inst_ref,
+            ir::Type::U32,
+            "patch_vertices << 16u".into(),
+            false,
+        );
     }
     let vertices = context.geometry_input_vertices()?;
     context.define(
@@ -249,7 +265,9 @@ pub fn emit_get_attribute(
     };
     if context.stage() == crate::stage::Stage::TessellationControl {
         let vertex = context.value_expression(inst.arg(1), inst_ref, 1)?;
-        let expression = context.tessellation_control_layout()?.input_expression(*attribute, &vertex)?;
+        let expression = context
+            .tessellation_control_layout()?
+            .input_expression(*attribute, &vertex)?;
         return context.define(inst_ref, ir::Type::F32, expression, false);
     }
     if context.stage() == crate::stage::Stage::TessellationEval {
@@ -257,8 +275,12 @@ pub fn emit_get_attribute(
         // relevant only for per-control-point arrays, not these built-ins.
         let vertex = if attribute.is_generic() || attribute.is_position() {
             context.value_expression(inst.arg(1), inst_ref, 1)?
-        } else { String::new() };
-        let expression = context.tessellation_evaluation_layout()?.input_expression(*attribute, &vertex)?;
+        } else {
+            String::new()
+        };
+        let expression = context
+            .tessellation_evaluation_layout()?
+            .input_expression(*attribute, &vertex)?;
         return context.define(inst_ref, ir::Type::F32, expression, false);
     }
     if context.stage() == crate::stage::Stage::Geometry {
@@ -318,19 +340,33 @@ pub fn emit_get_attribute(
 
 /// Patch variables belong to the complete patch, unlike invocation-owned
 /// per-vertex outputs. Match Eden's generic loads and outer/inner stores.
-pub fn emit_patch(context: &mut MslEmitContext, inst_ref: InstRef, inst: &ir::Inst) -> Result<(), MslError> {
+pub fn emit_patch(
+    context: &mut MslEmitContext,
+    inst_ref: InstRef,
+    inst: &ir::Inst,
+) -> Result<(), MslError> {
     let Value::Patch(patch) = inst.arg(0) else {
-        return Err(MslError::ExpectedImmediate { opcode: inst.opcode, arg: 0, expected: "patch" });
+        return Err(MslError::ExpectedImmediate {
+            opcode: inst.opcode,
+            arg: 0,
+            expected: "patch",
+        });
     };
     let writing = inst.opcode == Opcode::SetPatch;
     if context.stage() == crate::stage::Stage::TessellationEval {
         if writing {
-            return Err(MslError::UnsupportedProgramFeature("patch store outside tessellation control"));
+            return Err(MslError::UnsupportedProgramFeature(
+                "patch store outside tessellation control",
+            ));
         }
-        let expression = context.tessellation_evaluation_layout()?.patch_expression(*patch)?;
+        let expression = context
+            .tessellation_evaluation_layout()?
+            .patch_expression(*patch)?;
         return context.define(inst_ref, ir::Type::F32, expression, false);
     }
-    let expression = context.tessellation_control_layout()?.patch_expression(*patch, writing)?;
+    let expression = context
+        .tessellation_control_layout()?
+        .patch_expression(*patch, writing)?;
     if writing {
         let value = context.value_expression(inst.arg(1), inst_ref, 1)?;
         context.emit_statement(&format!("{expression} = {value};"));
@@ -353,7 +389,11 @@ pub fn emit_get_attribute_u32(
             expected: "attribute",
         });
     };
-    if matches!(context.stage(), crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval) && *attribute == crate::ir::value::Attribute::PRIMITIVE_ID {
+    if matches!(
+        context.stage(),
+        crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval
+    ) && *attribute == crate::ir::value::Attribute::PRIMITIVE_ID
+    {
         return context.define(inst_ref, ir::Type::U32, "patch_id".into(), false);
     }
     if context.stage() == crate::stage::Stage::Geometry

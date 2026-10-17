@@ -426,10 +426,15 @@ mod tests {
             crate::configure_windows_gsk_renderer();
         }
         gtk::init().unwrap();
-        let app = gtk::Application::builder().application_id("org.ruzu.ShutdownThemeTest").build();
+        let app = gtk::Application::builder()
+            .application_id("org.ruzu.ShutdownThemeTest")
+            .build();
         app.register(None::<&gtk::gio::Cancellable>).unwrap();
-        let parent = gtk::ApplicationWindow::builder().application(&app)
-            .default_width(1280).default_height(720).build();
+        let parent = gtk::ApplicationWindow::builder()
+            .application(&app)
+            .default_width(1280)
+            .default_height(720)
+            .build();
         parent.present();
         let overlay = OverlayDialog::closing_software(&parent);
         let panel = overlay.window.child().unwrap();
@@ -439,18 +444,25 @@ mod tests {
             crate::main_window::update_ui_theme();
             let event_loop = gtk::glib::MainLoop::new(None, false);
             let done = event_loop.clone();
-            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || done.quit());
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || {
+                done.quit()
+            });
             event_loop.run();
             let context = panel.style_context();
             let background = context.lookup_color("theme_bg_color").unwrap();
             let foreground = context.lookup_color("theme_fg_color").unwrap();
-            assert_eq!(label.style_context().color(), foreground, "text must follow {theme}");
+            assert_eq!(
+                label.style_context().color(),
+                foreground,
+                "text must follow {theme}"
+            );
             // Inspect a rendered background pixel, not just the theme's named
             // palette: fixed RGB declarations can otherwise escape the test.
             let snapshot = gtk::Snapshot::new();
             snapshot.render_background(&context, 0.0, 0.0, 32.0, 32.0);
             let node = snapshot.to_node().unwrap();
-            let mut image = gtk::cairo::ImageSurface::create(gtk::cairo::Format::ARgb32, 32, 32).unwrap();
+            let mut image =
+                gtk::cairo::ImageSurface::create(gtk::cairo::Format::ARgb32, 32, 32).unwrap();
             {
                 let cr = gtk::cairo::Context::new(&image).unwrap();
                 node.draw(&cr);

@@ -81,7 +81,11 @@ pub struct MenuSettingParams {
 /// `cmp eax,2 / cmp eax,1 → mov reg,[val]` (sinon `mov reg,edi=0`).
 #[inline]
 fn decode_int(f: TypedField) -> i32 {
-    if f.tag == 2 || f.tag == 1 { f.raw as i32 } else { 0 }
+    if f.tag == 2 || f.tag == 1 {
+        f.raw as i32
+    } else {
+        0
+    }
 }
 
 /// Décode un champ *résolvable* (indices source 3/4/5). Tag `4` → résolution externe si l'octet
@@ -90,7 +94,11 @@ fn decode_int(f: TypedField) -> i32 {
 fn decode_resolvable(f: TypedField, resolve_ref: &impl Fn(TypedField) -> i32) -> i32 {
     if f.tag == 4 {
         // Garde du désassemblage : `cmp [rbx+val_off],dil` (dil=0) → résout si l'octet ≠ 0.
-        if (f.raw & 0xff) != 0 { resolve_ref(f) } else { 0 }
+        if (f.raw & 0xff) != 0 {
+            resolve_ref(f)
+        } else {
+            0
+        }
     } else if f.tag == 2 || f.tag == 1 {
         f.raw as i32
     } else {
@@ -234,6 +242,9 @@ mod tests {
             assert_eq!(field.tag, 4);
             0x0BAD_F00D_u32 as i32
         });
-        assert_eq!(p.p59c, 0x0BAD_F00D_u32 as i32, "résolveur appelé pour le champ 3");
+        assert_eq!(
+            p.p59c, 0x0BAD_F00D_u32 as i32,
+            "résolveur appelé pour le champ 3"
+        );
     }
 }

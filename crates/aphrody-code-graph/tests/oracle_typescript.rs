@@ -8,7 +8,11 @@ use aphrody_code_graph::extract::{extract_file, resolve::assemble};
 fn jaccard(expected: &BTreeSet<String>, actual: &BTreeSet<String>) -> f64 {
     let intersection = expected.intersection(actual).count() as f64;
     let union = expected.union(actual).count() as f64;
-    if union == 0.0 { 1.0 } else { intersection / union }
+    if union == 0.0 {
+        1.0
+    } else {
+        intersection / union
+    }
 }
 
 #[test]
@@ -35,7 +39,12 @@ fn nodes_and_edges_match_the_graphify_oracle_on_the_fixture() {
         .iter()
         .filter(|node| node.file.is_some())
         .map(|node| {
-            format!("{}|{}|{}", node.file.as_deref().unwrap(), node.label, node.kind.as_str())
+            format!(
+                "{}|{}|{}",
+                node.file.as_deref().unwrap(),
+                node.label,
+                node.kind.as_str()
+            )
         })
         .collect();
     let edges: BTreeSet<String> = graph

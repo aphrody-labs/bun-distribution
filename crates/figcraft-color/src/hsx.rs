@@ -28,7 +28,11 @@ fn wrap_hue(h: f32) -> f32 {
 }
 
 fn c01(v: f32) -> f32 {
-    if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 }
+    if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
 }
 
 impl Hsb {
@@ -60,7 +64,11 @@ impl Hsl {
         let d = max - min;
         let l = (max + min) / 2.0;
         let h = hue(r, g, b, max, d);
-        let s = if d <= 0.0 { 0.0 } else { d / (1.0 - (2.0 * l - 1.0).abs()).max(1e-6) };
+        let s = if d <= 0.0 {
+            0.0
+        } else {
+            d / (1.0 - (2.0 * l - 1.0).abs()).max(1e-6)
+        };
         Self { h, s: c01(s), l }
     }
 

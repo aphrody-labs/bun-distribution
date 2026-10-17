@@ -30,7 +30,9 @@ impl Channel {
         }
     }
     pub fn from_name(s: &str) -> Option<Channel> {
-        Channel::ALL.into_iter().find(|c| c.label().eq_ignore_ascii_case(s) || format!("{c:?}").eq_ignore_ascii_case(s))
+        Channel::ALL
+            .into_iter()
+            .find(|c| c.label().eq_ignore_ascii_case(s) || format!("{c:?}").eq_ignore_ascii_case(s))
     }
     pub fn channels(self) -> usize {
         if self == Channel::Rgb { 3 } else { 1 }
@@ -48,7 +50,12 @@ pub struct Plane {
 
 impl Plane {
     pub fn new(w: usize, h: usize, ch: usize) -> Plane {
-        Plane { w, h, ch, data: vec![0.0; w * h * ch] }
+        Plane {
+            w,
+            h,
+            ch,
+            data: vec![0.0; w * h * ch],
+        }
     }
 
     #[inline]
@@ -99,7 +106,14 @@ impl Plane {
     }
 
     /// Crop `w × h` pixels at `(x0, y0)` of `img` in the given channel (edges repeated outside).
-    pub fn from_image(img: &Image, channel: Channel, x0: i64, y0: i64, w: usize, h: usize) -> Plane {
+    pub fn from_image(
+        img: &Image,
+        channel: Channel,
+        x0: i64,
+        y0: i64,
+        w: usize,
+        h: usize,
+    ) -> Plane {
         let ch = channel.channels();
         let mut p = Plane::new(w, h, ch);
         if img.is_empty() {
@@ -111,7 +125,9 @@ impl Plane {
                 let i = (y * w + x) * ch;
                 match channel {
                     Channel::Rgb => p.data[i..i + 3].copy_from_slice(&px[..3]),
-                    Channel::Luminance => p.data[i] = 0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2],
+                    Channel::Luminance => {
+                        p.data[i] = 0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2]
+                    }
                     Channel::Saturation => {
                         let mx = px[0].max(px[1]).max(px[2]);
                         let mn = px[0].min(px[1]).min(px[2]);
@@ -129,7 +145,9 @@ impl Plane {
             return self.clone();
         }
         let r = (sigma * 3.0).ceil() as isize;
-        let mut k: Vec<f32> = (-r..=r).map(|i| (-(i * i) as f64 / (2.0 * sigma * sigma)).exp() as f32).collect();
+        let mut k: Vec<f32> = (-r..=r)
+            .map(|i| (-(i * i) as f64 / (2.0 * sigma * sigma)).exp() as f32)
+            .collect();
         let s: f32 = k.iter().sum();
         k.iter_mut().for_each(|v| *v /= s);
         let mut tmp = Plane::new(self.w, self.h, self.ch);
@@ -180,7 +198,10 @@ impl Plane {
             for x in 0..w {
                 for c in 0..self.ch {
                     let (sx, sy) = (2 * x as isize, 2 * y as isize);
-                    let v = self.at(sx, sy, c) + self.at(sx + 1, sy, c) + self.at(sx, sy + 1, c) + self.at(sx + 1, sy + 1, c);
+                    let v = self.at(sx, sy, c)
+                        + self.at(sx + 1, sy, c)
+                        + self.at(sx, sy + 1, c)
+                        + self.at(sx + 1, sy + 1, c);
                     let i = out.idx(x, y) + c;
                     out.data[i] = v * 0.25;
                 }
@@ -235,9 +256,19 @@ mod tests {
     #[test]
     fn channels() {
         let img = Image::filled(2, 2, [1.0, 0.5, 0.0, 1.0]);
-        assert_eq!(Plane::from_image(&img, Channel::Rgb, 0, 0, 2, 2).data[..3], [1.0, 0.5, 0.0]);
-        assert!((Plane::from_image(&img, Channel::Luminance, 0, 0, 2, 2).data[0] - (0.2126 + 0.3576)).abs() < 1e-6);
-        assert_eq!(Plane::from_image(&img, Channel::Saturation, 0, 0, 2, 2).data[0], 1.0);
+        assert_eq!(
+            Plane::from_image(&img, Channel::Rgb, 0, 0, 2, 2).data[..3],
+            [1.0, 0.5, 0.0]
+        );
+        assert!(
+            (Plane::from_image(&img, Channel::Luminance, 0, 0, 2, 2).data[0] - (0.2126 + 0.3576))
+                .abs()
+                < 1e-6
+        );
+        assert_eq!(
+            Plane::from_image(&img, Channel::Saturation, 0, 0, 2, 2).data[0],
+            1.0
+        );
         assert_eq!(Channel::from_name("luminance"), Some(Channel::Luminance));
     }
 }

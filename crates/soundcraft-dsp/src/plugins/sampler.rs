@@ -44,7 +44,14 @@ static SAMPLER_PARAMS: [ParamInfo; 19] = [
     lin("key_low", "Lowest Key", 0.0, 127.0, 0.0, Unit::None),
     lin("key_high", "Highest Key", 0.0, 127.0, 127.0, Unit::None),
     lin("vel_low", "Lowest Velocity", 1.0, 127.0, 1.0, Unit::None),
-    lin("vel_high", "Highest Velocity", 1.0, 127.0, 127.0, Unit::None),
+    lin(
+        "vel_high",
+        "Highest Velocity",
+        1.0,
+        127.0,
+        127.0,
+        Unit::None,
+    ),
     lin("velocity", "Velocity Sens", 0.0, 100.0, 70.0, Unit::Percent),
     log("attack", "Attack", 0.1, 5000.0, 1.0, Unit::Ms),
     log("decay", "Decay", 1.0, 10000.0, 300.0, Unit::Ms),
@@ -95,7 +102,16 @@ struct Voice {
 
 impl Voice {
     const fn new() -> Self {
-        Self { note: 0, held: false, gain: 0.0, pos: 0.0, step: 1.0, forward: true, looping: false, env: Adsr::new() }
+        Self {
+            note: 0,
+            held: false,
+            gain: 0.0,
+            pos: 0.0,
+            step: 1.0,
+            forward: true,
+            looping: false,
+            env: Adsr::new(),
+        }
     }
 
     fn active(&self) -> bool {
@@ -126,7 +142,11 @@ struct Derived {
 
 /// A MIDI key or velocity parameter as a whole number in `lo..=127`.
 fn whole(v: f32, lo: u8) -> u8 {
-    if v.is_finite() { v.round().clamp(f32::from(lo), 127.0) as u8 } else { lo }
+    if v.is_finite() {
+        v.round().clamp(f32::from(lo), 127.0) as u8
+    } else {
+        lo
+    }
 }
 
 fn ordered(a: u8, b: u8) -> (u8, u8) {
@@ -252,7 +272,11 @@ impl Sampler {
         if self.len == 0 || note < d.keys.0 || note > d.keys.1 || vel < d.vels.0 || vel > d.vels.1 {
             return;
         }
-        let semis = if d.key_track { f64::from(note) - d.root } else { 0.0 } + d.offset;
+        let semis = if d.key_track {
+            f64::from(note) - d.root
+        } else {
+            0.0
+        } + d.offset;
         let step = f64::from(self.sample_sr) / f64::from(self.sr) * 2f64.powf(semis / 12.0);
         if !step.is_finite() || step <= 0.0 {
             return;
@@ -269,7 +293,11 @@ impl Sampler {
                 self.voices
                     .iter()
                     .enumerate()
-                    .min_by(|(_, a), (_, b)| (a.held, a.env.level).partial_cmp(&(b.held, b.env.level)).unwrap_or(std::cmp::Ordering::Equal))
+                    .min_by(|(_, a), (_, b)| {
+                        (a.held, a.env.level)
+                            .partial_cmp(&(b.held, b.env.level))
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
                     .map(|(i, _)| i)
             })
             .unwrap_or(0);
@@ -277,7 +305,16 @@ impl Sampler {
         let looping = self.loop_frames().is_some_and(|(_, end)| start < end);
         let gain = (1.0 - d.sens) + d.sens * f32::from(vel) / 127.0;
         if let Some(v) = self.voices.get_mut(idx) {
-            *v = Voice { note, held: !d.one_shot, gain, pos: start, step: step.min(MAX_STEP), forward: true, looping, env: Adsr::new() };
+            *v = Voice {
+                note,
+                held: !d.one_shot,
+                gain,
+                pos: start,
+                step: step.min(MAX_STEP),
+                forward: true,
+                looping,
+                env: Adsr::new(),
+            };
             v.env.gate_on();
         }
     }
@@ -305,7 +342,9 @@ impl Sampler {
     /// Adds every voice's output for frame `n` into `io` and advances the voices.
     #[inline]
     fn render_frame(&mut self, io: &mut [Vec<f32>], ch: usize, n: usize, level: f32) {
-        let Some(sample) = self.sample.as_deref() else { return };
+        let Some(sample) = self.sample.as_deref() else {
+            return;
+        };
         let nch = sample.num_channels();
         let len = self.len as f64;
         let mode = self.d.loop_mode;
@@ -330,7 +369,11 @@ impl Sampler {
 /// Moves a voice's read position one output frame on, looping or ending it.
 #[inline]
 fn advance(v: &mut Voice, len: f64, region: Option<(f64, f64)>, mode: LoopMode) {
-    v.pos = if v.forward { v.pos + v.step } else { v.pos - v.step };
+    v.pos = if v.forward {
+        v.pos + v.step
+    } else {
+        v.pos - v.step
+    };
     match region {
         Some((ls, le)) if mode == LoopMode::PingPong => {
             if v.forward && v.pos >= le {
@@ -382,7 +425,10 @@ impl Plugin for Sampler {
         for b in io.iter_mut().take(ch) {
             b.iter_mut().take(frames).for_each(|x| *x = 0.0);
         }
-        let mut evs = [Event { offset: 0, kind: EventKind::AllOff }; MAX_EVENTS];
+        let mut evs = [Event {
+            offset: 0,
+            kind: EventKind::AllOff,
+        }; MAX_EVENTS];
         let count = {
             let sorted = self.events.sorted();
             for (d, s) in evs.iter_mut().zip(sorted) {
@@ -413,9 +459,17 @@ impl Plugin for Sampler {
     fn tail_samples(&self) -> usize {
         let release = ms_to_samples(self.p.v(RELEASE), self.sr);
         // A one-shot keeps playing its sample after the note ends.
-        let rest = if self.d.one_shot { self.len as f32 * self.sr / self.sample_sr } else { 0.0 };
+        let rest = if self.d.one_shot {
+            self.len as f32 * self.sr / self.sample_sr
+        } else {
+            0.0
+        };
         let t = release + rest;
-        if t.is_finite() { t.min(1.0e9) as usize } else { 0 }
+        if t.is_finite() {
+            t.min(1.0e9) as usize
+        } else {
+            0
+        }
     }
 
     fn note_on(&mut self, offset: usize, note: u8, velocity: u8) {
@@ -434,10 +488,16 @@ impl Plugin for Sampler {
         for v in &mut self.voices {
             v.stop();
         }
-        self.len = sample.as_deref().map_or(0, |s| if s.num_channels() == 0 { 0 } else { s.frames() });
+        self.len = sample
+            .as_deref()
+            .map_or(0, |s| if s.num_channels() == 0 { 0 } else { s.frames() });
         let rate = sample.as_deref().map_or(self.sr, |s| s.sample_rate());
         // An unusable rate plays at the host rate rather than not at all.
-        self.sample_sr = if rate.is_finite() && rate > 0.0 { rate.min(1_536_000.0) } else { self.sr };
+        self.sample_sr = if rate.is_finite() && rate > 0.0 {
+            rate.min(1_536_000.0)
+        } else {
+            self.sr
+        };
         self.sample = sample;
         true
     }
@@ -459,11 +519,16 @@ mod tests {
     }
 
     fn mono(sample_rate: f32, data: Vec<f32>) -> SampleBuffer {
-        SampleBuffer { sample_rate, channels: vec![data] }
+        SampleBuffer {
+            sample_rate,
+            channels: vec![data],
+        }
     }
 
     fn sine(freq: f32, sr: f32, len: usize) -> Vec<f32> {
-        (0..len).map(|i| 0.5 * (TAU * freq * i as f32 / sr).sin()).collect()
+        (0..len)
+            .map(|i| 0.5 * (TAU * freq * i as f32 / sr).sin())
+            .collect()
     }
 
     /// Renders `len` frames in 512-frame blocks; returns both channels.
@@ -487,8 +552,15 @@ mod tests {
 
     /// Frequency from upward zero crossings.
     fn freq(x: &[f32], sr: f32) -> f32 {
-        let ups: Vec<usize> = x.windows(2).enumerate().filter(|(_, w)| w[0] < 0.0 && w[1] >= 0.0).map(|(i, _)| i).collect();
-        let (Some(a), Some(b)) = (ups.first(), ups.last()) else { return 0.0 };
+        let ups: Vec<usize> = x
+            .windows(2)
+            .enumerate()
+            .filter(|(_, w)| w[0] < 0.0 && w[1] >= 0.0)
+            .map(|(i, _)| i)
+            .collect();
+        let (Some(a), Some(b)) = (ups.first(), ups.last()) else {
+            return 0.0;
+        };
         (ups.len() - 1) as f32 * sr / (b - a) as f32
     }
 
@@ -511,7 +583,12 @@ mod tests {
         let out = run(&mut s, 9600);
         // Past the 0.1-ms-ish attack the output is the sample itself, on both sides.
         for i in 100..9600 {
-            assert!((out[0][i] - data[i]).abs() < 1e-6, "frame {i}: {} vs {}", out[0][i], data[i]);
+            assert!(
+                (out[0][i] - data[i]).abs() < 1e-6,
+                "frame {i}: {} vs {}",
+                out[0][i],
+                data[i]
+            );
         }
         assert_eq!(out[0], out[1], "a mono sample feeds both channels");
     }
@@ -521,7 +598,11 @@ mod tests {
         let mut s = sampler(mono(SR, sine(400.0, SR, 96_000)));
         s.note_on(0, 72, 127);
         let up = run(&mut s, 24_000);
-        assert!((freq(&up[0][480..], SR) - 800.0).abs() < 2.0, "an octave up: {}", freq(&up[0][480..], SR));
+        assert!(
+            (freq(&up[0][480..], SR) - 800.0).abs() < 2.0,
+            "an octave up: {}",
+            freq(&up[0][480..], SR)
+        );
         s.reset();
         s.note_on(0, 53, 127);
         let down = run(&mut s, 24_000);
@@ -535,7 +616,11 @@ mod tests {
         s.note_on(0, 60, 127);
         let out = run(&mut s, 24_000);
         let want = 400.0 * 2f32.powf(1.0 / 12.0);
-        assert!((freq(&out[0][480..], SR) - want).abs() < 2.0, "{}", freq(&out[0][480..], SR));
+        assert!(
+            (freq(&out[0][480..], SR) - want).abs() < 2.0,
+            "{}",
+            freq(&out[0][480..], SR)
+        );
     }
 
     #[test]
@@ -553,7 +638,11 @@ mod tests {
         let mut s = sampler(mono(22_050.0, sine(300.0, 22_050.0, 22_050)));
         s.note_on(0, 60, 127);
         let out = run(&mut s, 60_000);
-        assert!((freq(&out[0][480..], SR) - 300.0).abs() < 1.0, "{}", freq(&out[0][480..], SR));
+        assert!(
+            (freq(&out[0][480..], SR) - 300.0).abs() < 1.0,
+            "{}",
+            freq(&out[0][480..], SR)
+        );
         // And it lasts as long as the recording: one second.
         assert!(peak(&out[0][46_000..47_500]) > 0.1);
         assert_eq!(peak(&out[0][48_200..]), 0.0, "the sample ended");
@@ -571,9 +660,15 @@ mod tests {
         s.set_param("key_high", 60.0);
         s.set_param("vel_low", 40.0);
         s.set_param("vel_high", 100.0);
-        for (note, vel, sounds) in
-            [(47, 80, false), (61, 80, false), (48, 80, true), (60, 80, true), (55, 39, false), (55, 101, false), (55, 40, true)]
-        {
+        for (note, vel, sounds) in [
+            (47, 80, false),
+            (61, 80, false),
+            (48, 80, true),
+            (60, 80, true),
+            (55, 39, false),
+            (55, 101, false),
+            (55, 40, true),
+        ] {
             s.reset();
             s.note_on(0, note, vel);
             let out = run(&mut s, 960);
@@ -597,7 +692,10 @@ mod tests {
         };
         assert!((level(100.0, 127) - 0.5).abs() < 1e-4);
         assert!((level(100.0, 64) - 0.5 * 64.0 / 127.0).abs() < 1e-4);
-        assert!((level(0.0, 1) - 0.5).abs() < 1e-4, "no sensitivity: every velocity is full level");
+        assert!(
+            (level(0.0, 1) - 0.5).abs() < 1e-4,
+            "no sensitivity: every velocity is full level"
+        );
         assert!(level(70.0, 30) < level(70.0, 127));
     }
 
@@ -612,9 +710,17 @@ mod tests {
         s.note_on(0, 60, 127);
         let out = run(&mut s, 24_000);
         // Linear attack: halfway up at 50 ms, full level at 100 ms, then decay to the sustain level.
-        assert!((out[0][2400] - 0.25).abs() < 0.01, "attack midpoint {}", out[0][2400]);
+        assert!(
+            (out[0][2400] - 0.25).abs() < 0.01,
+            "attack midpoint {}",
+            out[0][2400]
+        );
         assert!(peak(&out[0][4700..4900]) > 0.49);
-        assert!((out[0][20_000] - 0.25).abs() < 0.005, "sustain {}", out[0][20_000]);
+        assert!(
+            (out[0][20_000] - 0.25).abs() < 0.005,
+            "sustain {}",
+            out[0][20_000]
+        );
         s.note_off(0, 60);
         let out = run(&mut s, 24_000);
         assert!(out[0][100] > 0.2, "release starts from the sustain level");
@@ -636,9 +742,19 @@ mod tests {
         s.note_on(0, 60, 127);
         s.note_off(1000, 60);
         let out = run(&mut s, 30_000);
-        assert!(peak(&out[0][20_000..23_900]) > 0.1, "one shot: ignores the note-off");
-        assert_eq!(peak(&out[0][24_100..]), 0.0, "and stops at the end of the sample");
-        assert!(s.tail_samples() >= 24_000, "a one-shot's tail covers the sample");
+        assert!(
+            peak(&out[0][20_000..23_900]) > 0.1,
+            "one shot: ignores the note-off"
+        );
+        assert_eq!(
+            peak(&out[0][24_100..]),
+            0.0,
+            "and stops at the end of the sample"
+        );
+        assert!(
+            s.tail_samples() >= 24_000,
+            "a one-shot's tail covers the sample"
+        );
         // Stopping the transport still silences one-shots.
         s.reset();
         s.note_on(0, 60, 127);
@@ -655,7 +771,11 @@ mod tests {
         s.note_on(0, 60, 127);
         s.note_on(256, 60, 127);
         let out = run(&mut s, 4800);
-        assert!(peak(&out[0][2400..]) < 0.26, "voices did not stack: {}", peak(&out[0][2400..]));
+        assert!(
+            peak(&out[0][2400..]) < 0.26,
+            "voices did not stack: {}",
+            peak(&out[0][2400..])
+        );
         // One-shots overlap.
         s.set_param("play_mode", 1.0);
         s.reset();
@@ -674,10 +794,16 @@ mod tests {
         s.set_param("loop_start", 50.0);
         s.note_on(0, 60, 127);
         let out = run(&mut s, 48_000);
-        assert!(peak(&out[0][40_000..]) > 0.4, "still sounding long after the 0.1 s sample");
+        assert!(
+            peak(&out[0][40_000..]) > 0.4,
+            "still sounding long after the 0.1 s sample"
+        );
         // After the first pass it repeats the loop region (2400 frames, whole cycles of 480 Hz).
         for i in 0..2400 {
-            assert!((out[0][4800 + i] - data[2400 + i]).abs() < 1e-4, "frame {i}");
+            assert!(
+                (out[0][4800 + i] - data[2400 + i]).abs() < 1e-4,
+                "frame {i}"
+            );
         }
         assert!((freq(&out[0][4800..], SR) - 480.0).abs() < 1.0);
         // Without the loop the note ends with the sample.
@@ -698,7 +824,10 @@ mod tests {
         let out = run(&mut s, 3000);
         assert!(out[0][900] > out[0][500], "rising");
         assert!(out[0][1500] < out[0][1100], "falling after the loop end");
-        assert!(out[0][2500] > out[0][2100], "rising again after the loop start");
+        assert!(
+            out[0][2500] > out[0][2100],
+            "rising again after the loop start"
+        );
         assert!(out[0].iter().all(|x| x.is_finite() && *x <= 1.0));
     }
 
@@ -727,7 +856,10 @@ mod tests {
 
     #[test]
     fn stereo_samples_keep_their_sides() {
-        let sample = SampleBuffer { sample_rate: SR, channels: vec![vec![0.5; 4800], vec![-0.25; 4800]] };
+        let sample = SampleBuffer {
+            sample_rate: SR,
+            channels: vec![vec![0.5; 4800], vec![-0.25; 4800]],
+        };
         let mut s = sampler(sample);
         s.set_param("velocity", 0.0);
         s.note_on(0, 60, 127);
@@ -772,17 +904,47 @@ mod tests {
     #[test]
     fn hostile_samples_and_params_never_panic() {
         let samples = [
-            SampleBuffer { sample_rate: f32::NAN, channels: vec![vec![0.5; 100]] },
-            SampleBuffer { sample_rate: 0.0, channels: vec![vec![0.5; 100]] },
-            SampleBuffer { sample_rate: f32::INFINITY, channels: vec![vec![0.5; 100]] },
-            SampleBuffer { sample_rate: 1.0e-30, channels: vec![vec![0.5; 100]] },
-            SampleBuffer { sample_rate: SR, channels: vec![] },
-            SampleBuffer { sample_rate: SR, channels: vec![vec![]] },
-            SampleBuffer { sample_rate: SR, channels: vec![vec![0.5; 100], vec![0.5; 3]] },
-            SampleBuffer { sample_rate: SR, channels: vec![vec![0.5; 1]] },
-            SampleBuffer { sample_rate: SR, channels: vec![vec![f32::NAN; 100]; 9] },
+            SampleBuffer {
+                sample_rate: f32::NAN,
+                channels: vec![vec![0.5; 100]],
+            },
+            SampleBuffer {
+                sample_rate: 0.0,
+                channels: vec![vec![0.5; 100]],
+            },
+            SampleBuffer {
+                sample_rate: f32::INFINITY,
+                channels: vec![vec![0.5; 100]],
+            },
+            SampleBuffer {
+                sample_rate: 1.0e-30,
+                channels: vec![vec![0.5; 100]],
+            },
+            SampleBuffer {
+                sample_rate: SR,
+                channels: vec![],
+            },
+            SampleBuffer {
+                sample_rate: SR,
+                channels: vec![vec![]],
+            },
+            SampleBuffer {
+                sample_rate: SR,
+                channels: vec![vec![0.5; 100], vec![0.5; 3]],
+            },
+            SampleBuffer {
+                sample_rate: SR,
+                channels: vec![vec![0.5; 1]],
+            },
+            SampleBuffer {
+                sample_rate: SR,
+                channels: vec![vec![f32::NAN; 100]; 9],
+            },
         ];
-        let params: Vec<(&str, f32)> = SAMPLER_PARAMS.iter().flat_map(|p| [(p.id, f32::NAN), (p.id, f32::INFINITY), (p.id, -1.0e30)]).collect();
+        let params: Vec<(&str, f32)> = SAMPLER_PARAMS
+            .iter()
+            .flat_map(|p| [(p.id, f32::NAN), (p.id, f32::INFINITY), (p.id, -1.0e30)])
+            .collect();
         for sample in samples {
             let mut s = Sampler::new();
             s.prepare(f32::NAN, 0, 99);
@@ -810,7 +972,10 @@ mod tests {
                 s.note_on(0, 127, 127);
                 s.note_on(0, 0, 127);
                 let out = run(&mut s, 4096);
-                assert!(out[0].iter().all(|v| v.is_finite() && v.abs() < 4.0), "mode {mode} transpose {t}");
+                assert!(
+                    out[0].iter().all(|v| v.is_finite() && v.abs() < 4.0),
+                    "mode {mode} transpose {t}"
+                );
             }
         }
     }

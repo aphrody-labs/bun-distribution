@@ -9,8 +9,13 @@ use gridcraft_numfmt::{Formatted, NumberFormat, format_value};
 
 /// Parsed number formats are cached by code.
 fn parsed(code: &str) -> NumberFormat {
-    static CACHE: std::sync::LazyLock<Mutex<HashMap<String, NumberFormat>>> = std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
-    let lock = || CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    static CACHE: std::sync::LazyLock<Mutex<HashMap<String, NumberFormat>>> =
+        std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+    let lock = || {
+        CACHE
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    };
     if let Some(f) = lock().get(code) {
         return f.clone();
     }
@@ -40,8 +45,12 @@ pub fn format(v: &Value, code: &str, wb: &Workbook) -> Formatted {
 /// for a time alone) is used instead, and if even that would not read back, the serial.
 pub fn edit_text(wb: &Workbook, sheet: &Sheet, c: CellRef) -> String {
     let raw = sheet.input_text(c);
-    let Some(cell) = sheet.cell(c) else { return raw };
-    let Value::Number(n) = &cell.value else { return raw };
+    let Some(cell) = sheet.cell(c) else {
+        return raw;
+    };
+    let Value::Number(n) = &cell.value else {
+        return raw;
+    };
     let code = wb.styles.get(cell.style).num_fmt.as_str();
     if cell.formula.is_some() || !parsed(code).is_date() {
         return raw;
@@ -51,7 +60,9 @@ pub fn edit_text(wb: &Workbook, sheet: &Sheet, c: CellRef) -> String {
     if reads_back(&shown) {
         return shown;
     }
-    let Some(dt) = gridcraft_core::date::datetime_from_serial(wb.date_system, *n) else { return raw };
+    let Some(dt) = gridcraft_core::date::datetime_from_serial(wb.date_system, *n) else {
+        return raw;
+    };
     let time = format!("{:02}:{:02}:{:02}", dt.hour, dt.minute, dt.second);
     let date = format!("{:04}-{:02}-{:02}", dt.year, dt.month, dt.day);
     let iso = if *n < 1.0 {
@@ -110,7 +121,9 @@ pub fn value_text(wb: &Workbook, sheet: &Sheet, c: CellRef) -> String {
 
 /// Tab-separated text of a range, as the system clipboard gets it.
 pub fn range_text(wb: &Workbook, sheet: usize, r: RangeRef) -> String {
-    let Some(sh) = wb.sheet(sheet) else { return String::new() };
+    let Some(sh) = wb.sheet(sheet) else {
+        return String::new();
+    };
     let mut out = String::new();
     let r = clipboard_range(r);
     for row in r.start.row..=r.end.row {
@@ -139,7 +152,11 @@ pub fn range_text(wb: &Workbook, sheet: usize, r: RangeRef) -> String {
 
 /// The existing plain-text clipboard limit, shared with its HTML representation.
 pub(crate) fn clipboard_range(r: RangeRef) -> RangeRef {
-    if r.count() > 2_000_000 { RangeRef::new(r.start, r.start.offset_clamped(1999, 999)) } else { r }
+    if r.count() > 2_000_000 {
+        RangeRef::new(r.start, r.start.offset_clamped(1999, 999))
+    } else {
+        r
+    }
 }
 
 /// Status-bar statistics for a selection: average, count (non-empty), numerical count, min,
@@ -155,7 +172,11 @@ pub struct Stats {
 }
 
 pub fn stats(sheet: &Sheet, ranges: &[RangeRef]) -> Stats {
-    let mut s = Stats { min: f64::INFINITY, max: f64::NEG_INFINITY, ..Default::default() };
+    let mut s = Stats {
+        min: f64::INFINITY,
+        max: f64::NEG_INFINITY,
+        ..Default::default()
+    };
     let mut seen = std::collections::HashSet::new();
     for r in ranges {
         let r = match sheet.used_range().and_then(|u| r.intersection(&u)) {

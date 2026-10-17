@@ -4,7 +4,7 @@ use core::{
     ops::{Deref, DerefMut},
     ptr,
 };
-use std::alloc::{Layout, alloc, alloc_zeroed, dealloc};
+use std::alloc::{alloc, alloc_zeroed, dealloc, Layout};
 
 pub trait ByteSlice {
     /// # Safety
@@ -601,7 +601,12 @@ impl Drop for BoxedByteSlice {
     #[inline]
     fn drop(&mut self) {
         let layout = Layout::from_size_align((self.0.len() + 7) & !7, 8).unwrap();
-        unsafe { dealloc(Box::into_raw(mem::ManuallyDrop::take(&mut self.0)) as *mut u8, layout) }
+        unsafe {
+            dealloc(
+                Box::into_raw(mem::ManuallyDrop::take(&mut self.0)) as *mut u8,
+                layout,
+            )
+        }
     }
 }
 

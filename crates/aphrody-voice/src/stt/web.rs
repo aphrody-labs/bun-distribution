@@ -29,8 +29,9 @@ use wasm_bindgen::prelude::*;
 ///
 /// Returns `Err` when neither form is available.
 fn get_recognition_ctor() -> Result<Function, JsValue> {
-    let win: JsValue =
-        web_sys::window().ok_or_else(|| JsValue::from_str("no global `window` object"))?.into();
+    let win: JsValue = web_sys::window()
+        .ok_or_else(|| JsValue::from_str("no global `window` object"))?
+        .into();
 
     // Try standard name first.
     let standard = Reflect::get(&win, &JsValue::from_str("SpeechRecognition"))?;
@@ -44,7 +45,9 @@ fn get_recognition_ctor() -> Result<Function, JsValue> {
         return Ok(webkit.unchecked_into::<Function>());
     }
 
-    Err(JsValue::from_str("SpeechRecognition is unavailable in this browser"))
+    Err(JsValue::from_str(
+        "SpeechRecognition is unavailable in this browser",
+    ))
 }
 
 /// Call a named method on a `JsValue` object with no arguments.
@@ -103,11 +106,22 @@ impl WebSpeechRecognition {
         let inner: JsValue = Reflect::construct(&ctor, &args)?;
 
         // Configure the recogniser before the first `start()`.
-        Reflect::set(&inner, &JsValue::from_str("interimResults"), &JsValue::from_bool(true))?;
-        Reflect::set(&inner, &JsValue::from_str("continuous"), &JsValue::from_bool(false))?;
+        Reflect::set(
+            &inner,
+            &JsValue::from_str("interimResults"),
+            &JsValue::from_bool(true),
+        )?;
+        Reflect::set(
+            &inner,
+            &JsValue::from_str("continuous"),
+            &JsValue::from_bool(false),
+        )?;
         Reflect::set(&inner, &JsValue::from_str("lang"), &JsValue::from_str(lang))?;
 
-        Ok(WebSpeechRecognition { inner, lang: lang.to_owned() })
+        Ok(WebSpeechRecognition {
+            inner,
+            lang: lang.to_owned(),
+        })
     }
 
     /// The BCP-47 language tag this recogniser is configured for.
@@ -128,8 +142,16 @@ impl WebSpeechRecognition {
     /// Returns `Err(JsValue)` when `start()` itself throws (e.g. when called
     /// on an already-active recogniser).
     pub fn start(&self, on_result: Function, on_error: Function) -> Result<(), JsValue> {
-        Reflect::set(&self.inner, &JsValue::from_str("onresult"), on_result.as_ref())?;
-        Reflect::set(&self.inner, &JsValue::from_str("onerror"), on_error.as_ref())?;
+        Reflect::set(
+            &self.inner,
+            &JsValue::from_str("onresult"),
+            on_result.as_ref(),
+        )?;
+        Reflect::set(
+            &self.inner,
+            &JsValue::from_str("onerror"),
+            on_error.as_ref(),
+        )?;
         call_method(&self.inner, "start")?;
         Ok(())
     }

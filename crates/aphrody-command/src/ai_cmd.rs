@@ -27,19 +27,26 @@ fn is_installed_whisper(
     catalog
         .by_task(aphrody_models::ModelTask::SpeechToText)
         .iter()
-        .any(|entry| entry.primary().is_some_and(|file| file.reference == model.reference))
+        .any(|entry| {
+            entry
+                .primary()
+                .is_some_and(|file| file.reference == model.reference)
+        })
         || matches!(
-            model.inspection.as_ref().and_then(|inspection| inspection.details.as_ref()),
+            model
+                .inspection
+                .as_ref()
+                .and_then(|inspection| inspection.details.as_ref()),
             Some(aphrody_models::Details::Ggml(_))
         )
 }
 
 fn translation_backend(value: &str) -> Result<String, String> {
     match value.trim().to_ascii_lowercase().as_str() {
-        "local" | "offline" => {
-            Err("No local/offline translation runtime is connected; refusing to use a web backend."
-                .to_owned())
-        },
+        "local" | "offline" => Err(
+            "No local/offline translation runtime is connected; refusing to use a web backend."
+                .to_owned(),
+        ),
         "auto" | "web" | "web-google" | "web_google" | "google" | "google-rpc" | "rpc" | "gtx"
         | "mymemory" | "memory" => Ok(value.to_owned()),
         _ => Err(format!("Unknown translation backend: {value}")),
@@ -73,8 +80,15 @@ mod routing_tests {
             for file in &entry.files {
                 let model = installed(file.reference.clone());
                 let expected = entry.task == aphrody_models::ModelTask::SpeechToText
-                    && entry.primary().is_some_and(|primary| primary.reference == file.reference);
-                assert_eq!(super::is_installed_whisper(&model, catalog), expected, "{}", entry.id);
+                    && entry
+                        .primary()
+                        .is_some_and(|primary| primary.reference == file.reference);
+                assert_eq!(
+                    super::is_installed_whisper(&model, catalog),
+                    expected,
+                    "{}",
+                    entry.id
+                );
                 speech_models += usize::from(expected);
             }
         }
@@ -118,15 +132,20 @@ mod routing_tests {
 
     #[test]
     fn document_ai_preserves_owner_help_and_arguments() {
-        for tail in [vec!["--help"], vec!["translate", "a file.md", "fr", "--owner-option"]] {
+        for tail in [
+            vec!["--help"],
+            vec!["translate", "a file.md", "fr", "--owner-option"],
+        ] {
             let mut argv = vec!["aphrody", "ai", "doc-ai"];
             argv.extend(tail.iter().copied());
             let cli = crate::Cli::try_parse_from(argv)
                 .expect("document AI owner arguments must pass through");
             match cli.command {
-                Some(crate::Commands::Ai { action: super::AiAction::DocAi { args } }) => {
+                Some(crate::Commands::Ai {
+                    action: super::AiAction::DocAi { args },
+                }) => {
                     assert_eq!(args, tail);
-                },
+                }
                 _ => panic!("document AI must route through the AI namespace"),
             }
         }
@@ -255,34 +274,48 @@ pub(crate) async fn run(
                     "Document AI capability owner exited with code {code}"
                 ));
             }
-        },
+        }
         #[cfg(feature = "rag")]
         AiAction::Rag(args) => {
             crate::rag_cmd::run(args, overrides.clone()).await?;
-        },
+        }
         AiAction::Model { action } => {
             crate::model_cmd::run(action).await?;
-        },
+        }
         #[cfg(feature = "infer")]
         AiAction::Infer { action } => {
             crate::infer_cmd::run(action)?;
-        },
+        }
         AiAction::Voice { action } => {
             run_voice(action).await?;
-        },
+        }
         #[cfg(feature = "ocr")]
         AiAction::Ocr { action } => {
             crate::ocr_cmd::run(action).await?;
-        },
-        AiAction::Translate { text, source, target, backend, file, json } => {
-            crate::commands::TranslateCommand { text, source, target, backend, file, json }
-                .execute(ctx)
-                .await?;
-        },
+        }
+        AiAction::Translate {
+            text,
+            source,
+            target,
+            backend,
+            file,
+            json,
+        } => {
+            crate::commands::TranslateCommand {
+                text,
+                source,
+                target,
+                backend,
+                file,
+                json,
+            }
+            .execute(ctx)
+            .await?;
+        }
         AiAction::Memory { action } => match action {
             crate::MemoryAction::Local(action) => {
                 crate::memory_cmd::execute_local(action, overrides).await?;
-            },
+            }
             crate::MemoryAction::Migrate {
                 from,
                 to,
@@ -329,21 +362,21 @@ pub(crate) async fn run(
                 }
                 .execute(ctx)
                 .await?;
-            },
+            }
         },
         AiAction::Gateway { action } => {
             crate::gateway_cmd::run(action.unwrap_or_default()).await?;
-        },
+        }
         #[cfg(feature = "train")]
         AiAction::Train(args) => {
             crate::train_cmd::run(args).await?;
-        },
+        }
         AiAction::Agent(args) => {
             crate::codex_cmd::run(args).await?;
-        },
+        }
         AiAction::Status { json } => {
             run_ai_status(json).await?;
-        },
+        }
     }
     Ok(())
 }
@@ -361,7 +394,7 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
                     return Err(miette::miette!(
                         "Whisper weights for '{model_name}' not resolved. Run `aphrody ai model pull {model_name}` to fetch them locally."
                     ));
-                },
+                }
             };
             let data = std::fs::read(&file).map_err(|e| {
                 miette::miette!("Failed to read audio file {}: {e}", file.display())
@@ -392,12 +425,13 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
                 println!("=== Aphrody Voice Transcription ({model_name}) ===");
                 println!("{}", transcript.text);
             }
-        },
+        }
         VoiceAction::Status { json } => {
             let store = aphrody_models::ModelStore::open()
                 .map_err(|e| miette::miette!("open model store: {e}"))?;
-            let installed =
-                store.list().map_err(|error| miette::miette!("list model store: {error}"))?;
+            let installed = store
+                .list()
+                .map_err(|error| miette::miette!("list model store: {error}"))?;
             let catalog = aphrody_models::Catalog::builtin();
             let whisper_models: Vec<_> = installed
                 .into_iter()
@@ -438,7 +472,7 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
                     println!("    - {}", m["id"].as_str().unwrap_or(""));
                 }
             }
-        },
+        }
     }
     Ok(())
 }
@@ -499,7 +533,10 @@ pub(crate) async fn run_ai_status(json: bool) -> miette::Result<()> {
             topology.has_cuda,
             topology.cuda_device_count
         );
-        println!("  * Local Models:  {} weights in ~/.aphrody/models", installed_models.len());
+        println!(
+            "  * Local Models:  {} weights in ~/.aphrody/models",
+            installed_models.len()
+        );
         for m in &installed_models {
             println!(
                 "    - {:30} ({})",

@@ -542,7 +542,10 @@ kernel void bounded_fetch(const device uchar* data [[buffer(0)]], device float4*
         assert_eq!(command.status(), MTLCommandBufferStatus::Completed);
         let mut bytes = [0u8; 9 * 16];
         output.read(0, &mut bytes).unwrap();
-        assert_eq!(&bytes[..16], bytemuck::cast_slice::<f32, u8>(&[1f32, 2., 3., 4.]));
+        assert_eq!(
+            &bytes[..16],
+            bytemuck::cast_slice::<f32, u8>(&[1f32, 2., 3., 4.])
+        );
         assert!(bytes[16..].iter().all(|&byte| byte == 0));
     }
 

@@ -4,7 +4,10 @@
 use crate::codec::map_codec;
 use crate::ebml::{Children, float, int, string, uint};
 use crate::ids::*;
-use crate::track::{AudioInfo, Colour, ContentEncoding, MasteringMetadata, Projection, Track, TrackKind, VideoInfo, gcd};
+use crate::track::{
+    AudioInfo, Colour, ContentEncoding, MasteringMetadata, Projection, Track, TrackKind, VideoInfo,
+    gcd,
+};
 
 /// `Info` element.
 #[derive(Clone, Debug, PartialEq)]
@@ -127,7 +130,14 @@ pub struct TagTargets {
 
 impl Default for TagTargets {
     fn default() -> Self {
-        Self { type_value: 50, type_name: None, track_uids: Vec::new(), edition_uids: Vec::new(), chapter_uids: Vec::new(), attachment_uids: Vec::new() }
+        Self {
+            type_value: 50,
+            type_name: None,
+            track_uids: Vec::new(),
+            edition_uids: Vec::new(),
+            chapter_uids: Vec::new(),
+            attachment_uids: Vec::new(),
+        }
     }
 }
 
@@ -208,7 +218,13 @@ pub(crate) fn parse_cues(d: &[u8], out: &mut Vec<CuePoint>) {
             match e.id {
                 CUE_TIME => time = Some(uint(e.data)),
                 CUE_TRACK_POSITIONS => {
-                    let mut p = CuePosition { track: 0, cluster_position: u64::MAX, relative_position: None, block_number: None, duration: None };
+                    let mut p = CuePosition {
+                        track: 0,
+                        cluster_position: u64::MAX,
+                        relative_position: None,
+                        block_number: None,
+                        duration: None,
+                    };
                     for c in Children::new(e.data) {
                         match c.id {
                             CUE_TRACK => p.track = uint(c.data),
@@ -235,7 +251,16 @@ pub(crate) fn parse_cues(d: &[u8], out: &mut Vec<CuePoint>) {
 }
 
 fn parse_chapter(d: &[u8]) -> Chapter {
-    let mut c = Chapter { uid: 0, string_uid: None, start_ns: 0, end_ns: None, hidden: false, enabled: true, displays: Vec::new(), children: Vec::new() };
+    let mut c = Chapter {
+        uid: 0,
+        string_uid: None,
+        start_ns: 0,
+        end_ns: None,
+        hidden: false,
+        enabled: true,
+        displays: Vec::new(),
+        children: Vec::new(),
+    };
     for e in Children::new(d) {
         match e.id {
             CHAPTER_UID => c.uid = uint(e.data),
@@ -285,7 +310,14 @@ pub(crate) fn parse_chapters(d: &[u8], out: &mut Vec<Edition>) {
 }
 
 fn parse_simple_tag(d: &[u8]) -> SimpleTag {
-    let mut t = SimpleTag { name: String::new(), language: "und".into(), default: true, string: None, binary: None, children: Vec::new() };
+    let mut t = SimpleTag {
+        name: String::new(),
+        language: "und".into(),
+        default: true,
+        string: None,
+        binary: None,
+        children: Vec::new(),
+    };
     for e in Children::new(d) {
         match e.id {
             TAG_NAME => t.name = string(e.data),
@@ -451,7 +483,18 @@ fn parse_encodings(d: &[u8]) -> Vec<ContentEncoding> {
             ContentEncoding::Encryption { scope }
         } else {
             let (algo, settings) = comp.unwrap_or((0, Vec::new()));
-            if algo == 3 { ContentEncoding::HeaderStripping { bytes: settings, scope } } else { ContentEncoding::Compression { algo, settings, scope } }
+            if algo == 3 {
+                ContentEncoding::HeaderStripping {
+                    bytes: settings,
+                    scope,
+                }
+            } else {
+                ContentEncoding::Compression {
+                    algo,
+                    settings,
+                    scope,
+                }
+            }
         };
         list.push((order, enc));
     }

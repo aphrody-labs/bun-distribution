@@ -14,9 +14,23 @@ pub fn starts(n: usize, tile: usize, overlap: usize) -> Vec<usize> {
     }
     let step = tile.saturating_sub(overlap).max(1);
     // tiles needed so that start k·spacing with spacing ≤ step reaches n − tile
-    let Some(k) = (n - tile).div_ceil(step).checked_add(1).filter(|&k| k <= 1_000_000) else { return Vec::new() };
+    let Some(k) = (n - tile)
+        .div_ceil(step)
+        .checked_add(1)
+        .filter(|&k| k <= 1_000_000)
+    else {
+        return Vec::new();
+    };
     let last = n - tile;
-    (0..k).map(|i| if k == 1 { 0 } else { ((i as u128 * last as u128 + (k - 1) as u128 / 2) / (k - 1) as u128) as usize }).collect()
+    (0..k)
+        .map(|i| {
+            if k == 1 {
+                0
+            } else {
+                ((i as u128 * last as u128 + (k - 1) as u128 / 2) / (k - 1) as u128) as usize
+            }
+        })
+        .collect()
 }
 
 /// Weight of the cell at offset `p` (0-based, inside a tile of `tile` cells) along one axis: 1 in the middle, easing
@@ -29,7 +43,11 @@ pub fn weight(p: usize, tile: usize, fade: usize, has_before: bool, has_after: b
         (t * t * (3.0 - 2.0 * t)).max(1e-3)
     };
     let before = if has_before { ramp(p) } else { 1.0 };
-    let after = if has_after { ramp(tile.saturating_sub(1).saturating_sub(p)) } else { 1.0 };
+    let after = if has_after {
+        ramp(tile.saturating_sub(1).saturating_sub(p))
+    } else {
+        1.0
+    };
     before.min(after)
 }
 
@@ -57,13 +75,20 @@ mod tests {
 
     #[test]
     fn tiles_cover_the_axis_and_overlap_enough() {
-        for n in [513usize, 600, 900, 1000, 1024, 1500, 3024, 3600, 5000, 12345] {
+        for n in [
+            513usize, 600, 900, 1000, 1024, 1500, 3024, 3600, 5000, 12345,
+        ] {
             let s = starts(n, 512, 64);
             assert_eq!(s[0], 0, "n={n}");
             assert_eq!(*s.last().unwrap(), n - 512, "n={n}");
             for w in s.windows(2) {
                 assert!(w[1] > w[0], "starts increase, n={n}");
-                assert!(w[0] + 512 >= w[1] + 64, "at least 64 shared cells between {} and {}, n={n}", w[0], w[1]);
+                assert!(
+                    w[0] + 512 >= w[1] + 64,
+                    "at least 64 shared cells between {} and {}, n={n}",
+                    w[0],
+                    w[1]
+                );
             }
         }
     }

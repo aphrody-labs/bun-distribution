@@ -26,7 +26,18 @@ pub fn solid(alpha: f32) -> F {
         tag(b"FilS"),
         vec![(
             tag(b"Colr"),
-            F::Obj(tag(b"RGBA"), vec![(tag(b"_col"), F::Struct([0.2f32, 0.4, 0.6, alpha].iter().flat_map(|v| v.to_le_bytes()).collect()))]),
+            F::Obj(
+                tag(b"RGBA"),
+                vec![(
+                    tag(b"_col"),
+                    F::Struct(
+                        [0.2f32, 0.4, 0.6, alpha]
+                            .iter()
+                            .flat_map(|v| v.to_le_bytes())
+                            .collect(),
+                    ),
+                )],
+            ),
         )],
     )
 }
@@ -67,12 +78,22 @@ pub fn run(end: i32, attrs: Option<F>) -> Vec<(vectorcraft_affinity::stream::Tag
     fields
 }
 
-pub fn block(glyphs: F, runs: Vec<Vec<(vectorcraft_affinity::stream::Tag, F)>>, alignments: &[i32]) -> F {
+pub fn block(
+    glyphs: F,
+    runs: Vec<Vec<(vectorcraft_affinity::stream::Tag, F)>>,
+    alignments: &[i32],
+) -> F {
     F::Obj(
         tag(b"StBl"),
         vec![
             (tag(b"Glyp"), glyphs),
-            (tag(b"GAtt"), F::Obj(tag(b"GlAS"), vec![(tag(b"Runs"), F::Objs(tag(b"GlAR"), runs))])),
+            (
+                tag(b"GAtt"),
+                F::Obj(
+                    tag(b"GlAS"),
+                    vec![(tag(b"Runs"), F::Objs(tag(b"GlAR"), runs))],
+                ),
+            ),
             (
                 tag(b"PAtt"),
                 F::Obj(
@@ -83,7 +104,15 @@ pub fn block(glyphs: F, runs: Vec<Vec<(vectorcraft_affinity::stream::Tag, F)>>, 
                             tag(b"PaAR"),
                             alignments
                                 .iter()
-                                .map(|a| vec![(tag(b"Item"), F::Obj(tag(b"PAtt"), vec![(tag(b"Ints"), array_i32(b"Ints", &[*a]))]))])
+                                .map(|a| {
+                                    vec![(
+                                        tag(b"Item"),
+                                        F::Obj(
+                                            tag(b"PAtt"),
+                                            vec![(tag(b"Ints"), array_i32(b"Ints", &[*a]))],
+                                        ),
+                                    )]
+                                })
                                 .collect(),
                         ),
                     )],
@@ -101,19 +130,28 @@ pub fn document(blocks: Vec<F>, frame: bool, dpi: f64, transform: [f64; 6]) -> V
     let text = F::Obj(
         tag(if frame { b"TxtF" } else { b"TxtA" }),
         vec![
-            (tag(b"StSt"), F::Obj(tag(b"Stry"), vec![(tag(b"Blok"), F::Shared(blocks))])),
+            (
+                tag(b"StSt"),
+                F::Obj(tag(b"Stry"), vec![(tag(b"Blok"), F::Shared(blocks))]),
+            ),
             (
                 tag(b"TxtH"),
                 F::Obj(
                     tag(if frame { b"FrFr" } else { b"ArFr" }),
-                    vec![(tag(b"FrmB"), F::F64s(vec![10.0, 20.0, 210.0, 120.0])), (tag(b"ArtV"), F::F64(18.0))],
+                    vec![
+                        (tag(b"FrmB"), F::F64s(vec![10.0, 20.0, 210.0, 120.0])),
+                        (tag(b"ArtV"), F::F64(18.0)),
+                    ],
                 ),
             ),
             (tag(b"Xfrm"), F::F64s(transform.to_vec())),
         ],
     );
     let mut root = vec![
-        (tag(b"UVCn"), F::Obj(tag(b"UVCn"), vec![(tag(b"UPPI"), F::F64(dpi))])),
+        (
+            tag(b"UVCn"),
+            F::Obj(tag(b"UVCn"), vec![(tag(b"UPPI"), F::F64(dpi))]),
+        ),
         (
             tag(b"DocR"),
             F::Obj(
@@ -122,7 +160,10 @@ pub fn document(blocks: Vec<F>, frame: bool, dpi: f64, transform: [f64; 6]) -> V
                     tag(b"Chld"),
                     F::Shared(vec![F::Obj(
                         tag(b"Sprd"),
-                        vec![(tag(b"SprB"), F::F64s(vec![0.0, 0.0, 400.0, 300.0])), (tag(b"Chld"), F::Shared(vec![text]))],
+                        vec![
+                            (tag(b"SprB"), F::F64s(vec![0.0, 0.0, 400.0, 300.0])),
+                            (tag(b"Chld"), F::Shared(vec![text])),
+                        ],
                     )]),
                 )],
             ),

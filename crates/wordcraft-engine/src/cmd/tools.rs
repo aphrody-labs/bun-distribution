@@ -155,11 +155,23 @@ impl AutoCorrectPrefs {
     /// Drop what a damaged or hostile saved value could hold: empty or overlong entries,
     /// duplicates, too many of them.
     pub fn cleaned(mut self) -> Self {
-        let ok = |t: &str, max: usize| !t.trim().is_empty() && t.chars().count() <= max && !t.contains(['\n', '\r']);
+        let ok = |t: &str, max: usize| {
+            !t.trim().is_empty() && t.chars().count() <= max && !t.contains(['\n', '\r'])
+        };
         let mut seen = std::collections::HashSet::new();
-        self.entries.retain(|(a, b)| ok(a, MAX_FROM) && b.chars().count() <= MAX_TO && !b.contains(['\n', '\r']) && seen.insert(a.clone()));
+        self.entries.retain(|(a, b)| {
+            ok(a, MAX_FROM)
+                && b.chars().count() <= MAX_TO
+                && !b.contains(['\n', '\r'])
+                && seen.insert(a.clone())
+        });
         self.entries.truncate(MAX_ENTRIES);
-        for list in [&mut self.removed, &mut self.exceptions, &mut self.exceptions_removed, &mut self.initial_caps_exceptions] {
+        for list in [
+            &mut self.removed,
+            &mut self.exceptions,
+            &mut self.exceptions_removed,
+            &mut self.initial_caps_exceptions,
+        ] {
             let mut seen = std::collections::HashSet::new();
             list.retain(|a| ok(a, MAX_FROM) && seen.insert(a.clone()));
             list.truncate(MAX_ENTRIES);
@@ -184,16 +196,22 @@ impl AutoCorrectPrefs {
         AUTOCORRECT
             .iter()
             .filter(|(a, _)| english || !is_english_entry(a))
-            .filter(|(a, _)| !self.removed.iter().any(|r| r == a) && !self.entries.iter().any(|(e, _)| e == a))
+            .filter(|(a, _)| {
+                !self.removed.iter().any(|r| r == a) && !self.entries.iter().any(|(e, _)| e == a)
+            })
             .filter(|(a, _)| self.fractions || !FRACTIONS.contains(a))
             .find(|(a, _)| {
                 *a == word
-                    || (a.chars().all(|c| c.is_lowercase()) && word.to_lowercase() == *a && word.chars().next().is_some_and(char::is_uppercase))
+                    || (a.chars().all(|c| c.is_lowercase())
+                        && word.to_lowercase() == *a
+                        && word.chars().next().is_some_and(char::is_uppercase))
             })
             .map(|(a, b)| {
                 if *a != word && b.chars().next().is_some_and(char::is_lowercase) {
                     let mut c = b.chars();
-                    c.next().map(|x| x.to_uppercase().chain(c).collect::<String>()).unwrap_or_default()
+                    c.next()
+                        .map(|x| x.to_uppercase().chain(c).collect::<String>())
+                        .unwrap_or_default()
                 } else {
                     b.to_string()
                 }
@@ -204,11 +222,21 @@ impl AutoCorrectPrefs {
     pub fn list(&self) -> Vec<(String, String, bool)> {
         let mut v: Vec<(String, String, bool)> = AUTOCORRECT
             .iter()
-            .filter(|(a, _)| !self.removed.iter().any(|r| r == a) && !self.entries.iter().any(|(e, _)| e == a))
+            .filter(|(a, _)| {
+                !self.removed.iter().any(|r| r == a) && !self.entries.iter().any(|(e, _)| e == a)
+            })
             .map(|(a, b)| (a.to_string(), b.to_string(), true))
-            .chain(self.entries.iter().map(|(a, b)| (a.clone(), b.clone(), false)))
+            .chain(
+                self.entries
+                    .iter()
+                    .map(|(a, b)| (a.clone(), b.clone(), false)),
+            )
             .collect();
-        v.sort_by(|x, y| x.0.to_lowercase().cmp(&y.0.to_lowercase()).then(x.0.cmp(&y.0)));
+        v.sort_by(|x, y| {
+            x.0.to_lowercase()
+                .cmp(&y.0.to_lowercase())
+                .then(x.0.cmp(&y.0))
+        });
         v
     }
 
@@ -216,7 +244,12 @@ impl AutoCorrectPrefs {
     pub fn exception_list(&self) -> Vec<String> {
         let mut v: Vec<String> = NOT_SENTENCE_END
             .iter()
-            .filter(|a| !self.exceptions_removed.iter().any(|r| r.eq_ignore_ascii_case(a)))
+            .filter(|a| {
+                !self
+                    .exceptions_removed
+                    .iter()
+                    .any(|r| r.eq_ignore_ascii_case(a))
+            })
             .map(|a| a.to_string())
             .chain(self.exceptions.iter().map(|a| a.to_lowercase()))
             .collect();
@@ -228,9 +261,13 @@ impl AutoCorrectPrefs {
 
 /// Saved AutoCorrect options: anything that doesn't read as them reads as the defaults (a
 /// damaged `ui.json` never loses the other preferences).
-pub fn lenient_autocorrect<'de, D: serde::Deserializer<'de>>(d: D) -> Result<AutoCorrectPrefs, D::Error> {
+pub fn lenient_autocorrect<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<AutoCorrectPrefs, D::Error> {
     let v = Value::deserialize(d)?;
-    Ok(serde_json::from_value::<AutoCorrectPrefs>(v).map(AutoCorrectPrefs::cleaned).unwrap_or_default())
+    Ok(serde_json::from_value::<AutoCorrectPrefs>(v)
+        .map(AutoCorrectPrefs::cleaned)
+        .unwrap_or_default())
 }
 
 /// `tools.autocorrect`: change AutoCorrect Options and report them.
@@ -257,13 +294,22 @@ fn autocorrect_options(s: &mut Session, v: &Value) -> CmdResult {
             *f = b;
         }
     }
-    let bad = |t: &str, max: usize| t.trim().is_empty() || t.chars().count() > max || t.contains(['\n', '\r']);
+    let bad = |t: &str, max: usize| {
+        t.trim().is_empty() || t.chars().count() > max || t.contains(['\n', '\r'])
+    };
     if let Some(add) = v.get("add") {
-        let (Some(f), Some(t)) = (add.get("from").and_then(Value::as_str), add.get("to").and_then(Value::as_str)) else {
-            return Err(CmdError::Params("`add` is {\"from\": string, \"to\": string}".into()));
+        let (Some(f), Some(t)) = (
+            add.get("from").and_then(Value::as_str),
+            add.get("to").and_then(Value::as_str),
+        ) else {
+            return Err(CmdError::Params(
+                "`add` is {\"from\": string, \"to\": string}".into(),
+            ));
         };
         if bad(f, MAX_FROM) || t.chars().count() > MAX_TO || t.contains(['\n', '\r']) {
-            return Err(CmdError::Params(format!("an entry replaces 1–{MAX_FROM} characters (one line) with at most {MAX_TO}")));
+            return Err(CmdError::Params(format!(
+                "an entry replaces 1–{MAX_FROM} characters (one line) with at most {MAX_TO}"
+            )));
         }
         ac.entries.retain(|(a, _)| a != f);
         if ac.entries.len() >= MAX_ENTRIES {
@@ -284,10 +330,15 @@ fn autocorrect_options(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(e) = p::str(v, "addException") {
         let e = e.trim().to_lowercase();
         if bad(&e, MAX_FROM) || e.contains(char::is_whitespace) {
-            return Err(CmdError::Params("an exception is one abbreviation, like \"approx.\"".into()));
+            return Err(CmdError::Params(
+                "an exception is one abbreviation, like \"approx.\"".into(),
+            ));
         }
         ac.exceptions_removed.retain(|r| *r != e);
-        if !NOT_SENTENCE_END.contains(&e.as_str()) && !ac.exceptions.contains(&e) && ac.exceptions.len() < MAX_ENTRIES {
+        if !NOT_SENTENCE_END.contains(&e.as_str())
+            && !ac.exceptions.contains(&e)
+            && ac.exceptions.len() < MAX_ENTRIES
+        {
             ac.exceptions.push(e);
         }
     }
@@ -301,7 +352,9 @@ fn autocorrect_options(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(w) = p::str(v, "addInitialCapsException") {
         let w = w.trim();
         if bad(w, MAX_FROM) || w.contains(char::is_whitespace) {
-            return Err(CmdError::Params("an INitial CAps exception is one word, like \"IDs\"".into()));
+            return Err(CmdError::Params(
+                "an INitial CAps exception is one word, like \"IDs\"".into(),
+            ));
         }
         if !INITIAL_CAPS_EXCEPTIONS.contains(&w)
             && !ac.initial_caps_exceptions.iter().any(|e| e == w)
@@ -683,10 +736,11 @@ pub fn specs() -> Vec<CommandSpec> {
 /// Nothing at all sets US English, as before.
 fn language(s: &mut Session, v: &Value) -> CmdResult {
     let lang = match p::str(v, "lang") {
-        Some(t) => Some(
-            wordcraft_proof::lang::normalize_tag(t)
-                .ok_or_else(|| CmdError::Params(format!("`lang` must be a language tag such as pl-PL or en-US, not {t:?}")))?,
-        ),
+        Some(t) => Some(wordcraft_proof::lang::normalize_tag(t).ok_or_else(|| {
+            CmdError::Params(format!(
+                "`lang` must be a language tag such as pl-PL or en-US, not {t:?}"
+            ))
+        })?),
         None => None,
     };
     let no_proof = p::bool(v, "noProof");
@@ -695,7 +749,9 @@ fn language(s: &mut Session, v: &Value) -> CmdResult {
         s.prefs.detect_language = d;
     }
     if p::bool(v, "default") == Some(true) {
-        let l = lang.clone().ok_or_else(|| CmdError::Params("`default` needs `lang`".into()))?;
+        let l = lang
+            .clone()
+            .ok_or_else(|| CmdError::Params("`default` needs `lang`".into()))?;
         s.doc.styles.default_chr.lang = Some(l.clone());
         // A Normal style that names its own language follows the new default.
         if let Some(n) = s.doc.styles.styles.iter_mut().find(|x| x.id == "Normal")
@@ -723,12 +779,23 @@ fn language(s: &mut Session, v: &Value) -> CmdResult {
 
 fn macros(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(d) = v.get("define") {
-        let name = d.get("name").and_then(Value::as_str).unwrap_or("Macro").to_string();
+        let name = d
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("Macro")
+            .to_string();
         let steps: Vec<(String, Value)> = d
             .get("steps")
             .and_then(Value::as_array)
             .map(|a| {
-                a.iter().filter_map(|st| Some((st.get("command")?.as_str()?.to_string(), st.get("params").cloned().unwrap_or(json!({}))))).collect()
+                a.iter()
+                    .filter_map(|st| {
+                        Some((
+                            st.get("command")?.as_str()?.to_string(),
+                            st.get("params").cloned().unwrap_or(json!({})),
+                        ))
+                    })
+                    .collect()
             })
             .unwrap_or_default();
         s.macros.insert(name, steps);
@@ -737,7 +804,11 @@ fn macros(s: &mut Session, v: &Value) -> CmdResult {
         s.macros.remove(n);
     }
     if let Some(n) = p::str(v, "run") {
-        let steps = s.macros.get(n).cloned().ok_or_else(|| CmdError::Params(format!("no macro `{n}`")))?;
+        let steps = s
+            .macros
+            .get(n)
+            .cloned()
+            .ok_or_else(|| CmdError::Params(format!("no macro `{n}`")))?;
         for (id, params) in steps.iter().take(10_000) {
             if id == "tools.macros" {
                 continue;
@@ -747,7 +818,19 @@ fn macros(s: &mut Session, v: &Value) -> CmdResult {
         return Ok(json!({"ran": n, "steps": steps.len()}));
     }
     Ok(Value::Object(
-        s.macros.iter().map(|(k, v)| (k.clone(), json!(v.iter().map(|(c, p)| json!({"command": c, "params": p})).collect::<Vec<_>>()))).collect(),
+        s.macros
+            .iter()
+            .map(|(k, v)| {
+                (
+                    k.clone(),
+                    json!(
+                        v.iter()
+                            .map(|(c, p)| json!({"command": c, "params": p}))
+                            .collect::<Vec<_>>()
+                    ),
+                )
+            })
+            .collect(),
     ))
 }
 
@@ -765,23 +848,38 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
     }
     let ac = s.prefs.autocorrect.clone();
     let mut f = s.sel.focus.clone();
-    let Some(text) = s.doc.para_at(&f).map(|p| p.text.clone()) else { return Ok(()) };
-    let Some(before) = text.get(..f.off) else { return Ok(()) };
-    let Some(last) = before.chars().next_back() else { return Ok(()) };
+    let Some(text) = s.doc.para_at(&f).map(|p| p.text.clone()) else {
+        return Ok(());
+    };
+    let Some(before) = text.get(..f.off) else {
+        return Ok(());
+    };
+    let Some(last) = before.chars().next_back() else {
+        return Ok(());
+    };
     if !(on_enter || last == ' ' || ",.;:!?".contains(last)) {
         return Ok(());
     }
     let trigger = if on_enter { 0 } else { last.len_utf8() };
-    let Some(body) = before.get(..before.len() - trigger) else { return Ok(()) };
+    let Some(body) = before.get(..before.len() - trigger) else {
+        return Ok(());
+    };
     let start = body.rfind(char::is_whitespace).map(|i| i + 1).unwrap_or(0);
-    let Some(mut word) = body.get(start..).map(str::to_string) else { return Ok(()) };
+    let Some(mut word) = body.get(start..).map(str::to_string) else {
+        return Ok(());
+    };
     if word.is_empty() {
         return Ok(());
     }
     // TWo INitial CApitals and cAPS LOCK come first, so "TEh" is still a replacement's typo.
     if let Some((at, reps)) = case_fix(&ac, &word) {
         let para = s.doc.para_mut(f.story, &f.path)?;
-        let letters = word.get(at..).unwrap_or("").chars().take(reps.len()).collect::<String>();
+        let letters = word
+            .get(at..)
+            .unwrap_or("")
+            .chars()
+            .take(reps.len())
+            .collect::<String>();
         let mut end = start + at + letters.len();
         for (c, rep) in letters.chars().rev().zip(reps.iter().rev()) {
             let from = end.saturating_sub(c.len_utf8());
@@ -795,24 +893,46 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
         let fixed: String = reps.concat();
         f.off = (f.off + fixed.len()).saturating_sub(letters.len());
         s.sel = Selection::caret(f.clone());
-        word = format!("{}{fixed}{}", word.get(..at).unwrap_or(""), word.get(at + letters.len()..).unwrap_or(""));
+        word = format!(
+            "{}{fixed}{}",
+            word.get(..at).unwrap_or(""),
+            word.get(at + letters.len()..).unwrap_or("")
+        );
     }
     // A whole-word replacement, else "wait..." → "wait…".
     // The word's language (run, paragraph style, document default) picks the list (#835).
     // Text with no language at all is in the editing language (a Polish interface writes Polish),
     // else English. Proofing decides what is English the same way.
     let english = s.doc.para_at(&f).is_none_or(|p| {
-        let rc = s.doc.styles.resolve_char(p.props.style.as_deref(), p.props_of_char(start));
+        let rc = s
+            .doc
+            .styles
+            .resolve_char(p.props.style.as_deref(), p.props_of_char(start));
         let lang = rc.lang.as_deref().or(s.editing_lang.as_deref());
         wordcraft_proof::ProofLang::from_tag(lang) == wordcraft_proof::ProofLang::En
     });
-    let found = if ac.replace_text { ac.replacement_in(&word, english) } else { None };
+    let found = if ac.replace_text {
+        ac.replacement_in(&word, english)
+    } else {
+        None
+    };
     let (from, rep) = match found {
         Some(r) => (start, Some(r)),
-        None if ac.replace_text && word.len() > 3 && word.ends_with("...") => (start + word.len() - 3, Some("…".to_string())),
-        None if ac.replace_text => match SMILEYS.iter().find(|m| word.len() > m.len() && word.ends_with(**m)) {
+        None if ac.replace_text && word.len() > 3 && word.ends_with("...") => {
+            (start + word.len() - 3, Some("…".to_string()))
+        }
+        None if ac.replace_text => match SMILEYS
+            .iter()
+            .find(|m| word.len() > m.len() && word.ends_with(**m))
+        {
             // "ok:)" → "ok☺": only the smiley at the end of the word is replaced.
-            Some(m) => (start + word.len() - m.len(), AUTOCORRECT.iter().find(|(a, _)| a == m).map(|(_, b)| b.to_string())),
+            Some(m) => (
+                start + word.len() - m.len(),
+                AUTOCORRECT
+                    .iter()
+                    .find(|(a, _)| a == m)
+                    .map(|(_, b)| b.to_string()),
+            ),
             None => (start, None),
         },
         None => (start, None),
@@ -825,28 +945,53 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
         para.delete(from, end)?;
         para.insert_text(from, &rep, &props)?;
         caret = (f.off + rep.len()).saturating_sub(end - from);
-        s.sel = Selection::caret(Pos { off: caret, ..f.clone() });
+        s.sel = Selection::caret(Pos {
+            off: caret,
+            ..f.clone()
+        });
     }
     let end = caret.saturating_sub(trigger);
-    let Some(word) = s.doc.para_at(&f).and_then(|p| p.text.get(start..end)).map(str::to_string) else { return Ok(()) };
+    let Some(word) = s
+        .doc
+        .para_at(&f)
+        .and_then(|p| p.text.get(start..end))
+        .map(str::to_string)
+    else {
+        return Ok(());
+    };
     let at = |off: usize| Pos { off, ..f.clone() };
     // 1st, 22nd, 103rd → superscript suffix.
     if let Some(n) = ordinal_suffix(&word).filter(|_| ac.ordinals) {
-        s.doc.format_range(&at(end - n), &at(end), &|c| c.vert_align = Some(wordcraft_doc::props::VertAlign::Superscript))?;
+        s.doc.format_range(&at(end - n), &at(end), &|c| {
+            c.vert_align = Some(wordcraft_doc::props::VertAlign::Superscript)
+        })?;
         return Ok(());
     }
     // Web addresses become links (trailing punctuation stays outside).
     let lower = word.to_ascii_lowercase();
-    if ac.links && (lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("www.")) && word.len() > 8 {
+    if ac.links
+        && (lower.starts_with("http://")
+            || lower.starts_with("https://")
+            || lower.starts_with("www."))
+        && word.len() > 8
+    {
         let url = word.trim_end_matches(|c: char| ".,;:!?)]\"'”’".contains(c));
-        let href = if lower.starts_with("www.") { format!("http://{url}") } else { url.to_string() };
+        let href = if lower.starts_with("www.") {
+            format!("http://{url}")
+        } else {
+            url.to_string()
+        };
         let url_end = start + url.len();
         s.doc.format_range(&at(start), &at(url_end), &|c| {
             c.link = Some(href.clone());
             c.style = Some("Hyperlink".into());
         })?;
         // Typing after the link isn't part of it (but keeps the text's other formatting).
-        let mut after = s.doc.para_at(&f).map(|p| p.props_of_char(start).clone()).unwrap_or_default();
+        let mut after = s
+            .doc
+            .para_at(&f)
+            .map(|p| p.props_of_char(start).clone())
+            .unwrap_or_default();
         after.link = None;
         after.style = None;
         s.pending = Some(after);
@@ -854,7 +999,11 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
     }
     let before_word = text.get(..start).unwrap_or("");
     // The first word in a table cell follows its own option; other sentences the sentence one.
-    let sentence_on = if before_word.trim().is_empty() && f.path.cell().is_some() { ac.cap_cells } else { ac.cap_sentences };
+    let sentence_on = if before_word.trim().is_empty() && f.path.cell().is_some() {
+        ac.cap_cells
+    } else {
+        ac.cap_sentences
+    };
     let exceptions = ac.exception_list();
     // A replacement of several words ("brb" → "be right back") is capitalised by its first.
     let first = word.split_whitespace().next().unwrap_or("");
@@ -865,7 +1014,8 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
     } else {
         last
     };
-    let sentence = sentence_on && starts_sentence(before_word, &exceptions) && should_capitalize(first, next);
+    let sentence =
+        sentence_on && starts_sentence(before_word, &exceptions) && should_capitalize(first, next);
     let day = ac.cap_days && DAYS.contains(&first);
     if sentence || day {
         let para = s.doc.para_mut(f.story, &f.path)?;
@@ -882,10 +1032,14 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
 }
 
 /// Built-in words that keep their two initial capitals (plurals of two-letter abbreviations).
-pub const INITIAL_CAPS_EXCEPTIONS: &[&str] = &["CDs", "IDs", "PCs", "TVs", "DJs", "GBs", "KBs", "MBs", "TBs", "VMs"];
+pub const INITIAL_CAPS_EXCEPTIONS: &[&str] = &[
+    "CDs", "IDs", "PCs", "TVs", "DJs", "GBs", "KBs", "MBs", "TBs", "VMs",
+];
 
 /// Words with a lowercase first letter and the rest in capitals that aren't cAPS LOCK slips.
-const CAPS_LOCK_EXCEPTIONS: &[&str] = &["iOS", "mRNA", "tRNA", "rRNA", "cDNA", "eSIM", "eSATA", "iSCSI", "vCPU"];
+const CAPS_LOCK_EXCEPTIONS: &[&str] = &[
+    "iOS", "mRNA", "tRNA", "rRNA", "cDNA", "eSIM", "eSATA", "iSCSI", "vCPU",
+];
 
 /// The capitalisation fix for a finished word: TWo INitial CApitals ("WOrd" → "Word") or cAPS
 /// LOCK ("wORD" → "Word"). Returns the byte offset of the word's letters and each letter's
@@ -896,9 +1050,15 @@ fn case_fix(caps: &AutoCorrectPrefs, word: &str) -> Option<(usize, Vec<String>)>
     }
     let at = word.find(char::is_alphabetic)?;
     let rest = word.get(at..)?;
-    let letters = rest.get(..rest.find(|c: char| !c.is_alphabetic()).unwrap_or(rest.len()))?;
+    let letters = rest.get(
+        ..rest
+            .find(|c: char| !c.is_alphabetic())
+            .unwrap_or(rest.len()),
+    )?;
     let tail = rest.get(letters.len()..)?;
-    if !word.get(..at)?.chars().all(|c| "\"'“‘([".contains(c)) || !tail.chars().all(|c| "\"'”’)]".contains(c)) {
+    if !word.get(..at)?.chars().all(|c| "\"'“‘([".contains(c))
+        || !tail.chars().all(|c| "\"'”’)]".contains(c))
+    {
         return None;
     }
     let cs: Vec<char> = letters.chars().collect();
@@ -915,11 +1075,28 @@ fn case_fix(caps: &AutoCorrectPrefs, word: &str) -> Option<(usize, Vec<String>)>
         && !INITIAL_CAPS_EXCEPTIONS.contains(&letters)
         && !caps.initial_caps_exceptions.iter().any(|e| e == letters)
     {
-        return Some((at, std::iter::once(one(a)).chain(std::iter::once(lower(b))).chain(more.iter().map(|&c| one(c))).collect()));
+        return Some((
+            at,
+            std::iter::once(one(a))
+                .chain(std::iter::once(lower(b)))
+                .chain(more.iter().map(|&c| one(c)))
+                .collect(),
+        ));
     }
-    if caps.caps_lock && a.is_lowercase() && b.is_uppercase() && more.iter().all(|c| c.is_uppercase()) && !CAPS_LOCK_EXCEPTIONS.contains(&letters) {
+    if caps.caps_lock
+        && a.is_lowercase()
+        && b.is_uppercase()
+        && more.iter().all(|c| c.is_uppercase())
+        && !CAPS_LOCK_EXCEPTIONS.contains(&letters)
+    {
         let up = a.to_uppercase().collect::<String>();
-        return Some((at, std::iter::once(up).chain(std::iter::once(lower(b))).chain(more.iter().map(|&c| lower(c))).collect()));
+        return Some((
+            at,
+            std::iter::once(up)
+                .chain(std::iter::once(lower(b)))
+                .chain(more.iter().map(|&c| lower(c)))
+                .collect(),
+        ));
     }
     None
 }
@@ -944,12 +1121,20 @@ fn ordinal_suffix(word: &str) -> Option<usize> {
 
 /// Abbreviations whose full stop doesn't end a sentence.
 const NOT_SENTENCE_END: &[&str] = &[
-    "e.g.", "i.e.", "etc.", "vs.", "cf.", "mr.", "mrs.", "ms.", "dr.", "st.", "no.", "approx.", "fig.", "p.", "pp.", "jr.", "sr.", "ca.", "inc.",
-    "ltd.", "co.", "vol.", "a.m.", "p.m.",
+    "e.g.", "i.e.", "etc.", "vs.", "cf.", "mr.", "mrs.", "ms.", "dr.", "st.", "no.", "approx.",
+    "fig.", "p.", "pp.", "jr.", "sr.", "ca.", "inc.", "ltd.", "co.", "vol.", "a.m.", "p.m.",
 ];
 
 /// Names of days, capitalised as you type (Capitalize names of days).
-const DAYS: [&str; 7] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+const DAYS: [&str; 7] = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+];
 
 /// Does a word typed after `before` (the paragraph text up to the word) begin a sentence?
 /// `exceptions` are the lowercase abbreviations whose full stop doesn't end one.
@@ -965,7 +1150,11 @@ fn starts_sentence(before: &str, exceptions: &[String]) -> bool {
     if !t.ends_with(['.', '!', '?']) || t.ends_with("..") || t.ends_with('…') {
         return false;
     }
-    let prev = t.rsplit(char::is_whitespace).next().unwrap_or(t).trim_start_matches(|c: char| "\"'“‘([".contains(c));
+    let prev = t
+        .rsplit(char::is_whitespace)
+        .next()
+        .unwrap_or(t)
+        .trim_start_matches(|c: char| "\"'“‘([".contains(c));
     let lower = prev.to_lowercase();
     // "J." (an initial) or a known abbreviation.
     let initial = prev.chars().count() == 2 && prev.chars().next().is_some_and(char::is_uppercase);
@@ -982,7 +1171,9 @@ fn should_capitalize(word: &str, next: char) -> bool {
         return true;
     }
     word.chars().next().is_some_and(char::is_lowercase)
-        && word.chars().all(|c| c.is_alphabetic() || "'’-.".contains(c))
+        && word
+            .chars()
+            .all(|c| c.is_alphabetic() || "'’-.".contains(c))
         && !word.chars().any(char::is_uppercase)
         && !word.trim_end_matches('.').contains('.')
 }
@@ -1002,7 +1193,11 @@ struct CompareOptions {
 impl CompareOptions {
     /// The text a comparison sees: case folded and white space collapsed as the options say.
     fn key(&self, t: &str) -> String {
-        let t = if self.white_space { t.to_string() } else { t.split_whitespace().collect::<Vec<_>>().join(" ") };
+        let t = if self.white_space {
+            t.to_string()
+        } else {
+            t.split_whitespace().collect::<Vec<_>>().join(" ")
+        };
         if self.case { t } else { t.to_lowercase() }
     }
 }
@@ -1021,11 +1216,15 @@ fn compare(s: &mut Session, v: &Value) -> CmdResult {
     } else if let Some(path) = p::str(v, "path") {
         crate::io::open_path(std::path::Path::new(path)).map_err(CmdError::Failed)?
     } else {
-        return Err(CmdError::Params("`path` or `text` of the revised document is required".into()));
+        return Err(CmdError::Params(
+            "`path` or `text` of the revised document is required".into(),
+        ));
     };
     let show_in = p::str(v, "showIn").unwrap_or("original");
     if !matches!(show_in, "original" | "revised" | "new") {
-        return Err(CmdError::Params("`showIn` is \"original\", \"revised\" or \"new\"".into()));
+        return Err(CmdError::Params(
+            "`showIn` is \"original\", \"revised\" or \"new\"".into(),
+        ));
     }
     if let Some(path) = p::str(v, "original") {
         let doc = crate::io::open_path(std::path::Path::new(path)).map_err(CmdError::Failed)?;
@@ -1039,22 +1238,48 @@ fn compare(s: &mut Session, v: &Value) -> CmdResult {
         formatting: p::bool(v, "formatting").unwrap_or(true),
         characters: matches!(level, "character" | "char"),
     };
-    let not_honoured: Vec<&str> =
-        ["moves", "comments", "headersFooters", "footnotes", "textBoxes", "fields"].into_iter().filter(|k| v.get(*k).is_some()).collect();
-    let author = p::str(v, "author").map(str::trim).filter(|a| !a.is_empty()).map(str::to_string).unwrap_or_else(|| s.author.clone());
+    let not_honoured: Vec<&str> = [
+        "moves",
+        "comments",
+        "headersFooters",
+        "footnotes",
+        "textBoxes",
+        "fields",
+    ]
+    .into_iter()
+    .filter(|k| v.get(*k).is_some())
+    .collect();
+    let author = p::str(v, "author")
+        .map(str::trim)
+        .filter(|a| !a.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| s.author.clone());
     let date = super::now_iso();
     let old: Vec<Arc<Block>> = s.doc.body.clone();
     let new: Vec<Arc<Block>> = revised.body.clone();
-    s.doc.revisions.push(wordcraft_doc::Revision { kind: RevisionKind::Insert, author: author.clone(), date: date.clone(), move_name: None });
+    s.doc.revisions.push(wordcraft_doc::Revision {
+        kind: RevisionKind::Insert,
+        author: author.clone(),
+        date: date.clone(),
+        move_name: None,
+    });
     let ins = (s.doc.revisions.len() - 1) as u32;
-    s.doc.revisions.push(wordcraft_doc::Revision { kind: RevisionKind::Delete, author: author.clone(), date: date.clone(), move_name: None });
+    s.doc.revisions.push(wordcraft_doc::Revision {
+        kind: RevisionKind::Delete,
+        author: author.clone(),
+        date: date.clone(),
+        move_name: None,
+    });
     let del = (s.doc.revisions.len() - 1) as u32;
     let key = |b: &Arc<Block>| match &**b {
         Block::Para(p) => opts.key(&p.plain_text()),
         // Tables match as a whole, by their text.
         Block::Table(_) => format!("\u{0}table\u{0}{}", opts.key(&block_text(b, 0))),
     };
-    let ops = lcs_ops(&old.iter().map(key).collect::<Vec<_>>(), &new.iter().map(key).collect::<Vec<_>>());
+    let ops = lcs_ops(
+        &old.iter().map(key).collect::<Vec<_>>(),
+        &new.iter().map(key).collect::<Vec<_>>(),
+    );
     let mut out: Vec<Arc<Block>> = Vec::new();
     let (mut i, mut j) = (0usize, 0usize);
     let mut changes = 0usize;
@@ -1064,11 +1289,19 @@ fn compare(s: &mut Session, v: &Value) -> CmdResult {
             Some(Op::Same) => {
                 let (a, b) = (old.get(i), new.get(j));
                 // The revised block, with its formatting changes tracked.
-                if let (Some(Block::Para(pa)), Some(Block::Para(pb))) = (a.map(|x| &**x), b.map(|x| &**x)) {
+                if let (Some(Block::Para(pa)), Some(Block::Para(pb))) =
+                    (a.map(|x| &**x), b.map(|x| &**x))
+                {
                     let mut p = pb.clone();
                     if opts.formatting && pa.text == pb.text {
                         let before = s.doc.revisions.len();
-                        super::fmt_revisions::compare_formatting(pa, &mut p, &mut s.doc.revisions, &author, &date);
+                        super::fmt_revisions::compare_formatting(
+                            pa,
+                            &mut p,
+                            &mut s.doc.revisions,
+                            &author,
+                            &date,
+                        );
                         if s.doc.revisions.len() > before || p != *pb {
                             changes += 1;
                         }
@@ -1084,13 +1317,28 @@ fn compare(s: &mut Session, v: &Value) -> CmdResult {
             Some(_) => {
                 // A run of deletions and insertions: changed paragraphs pair up and are diffed
                 // word by word (or by character); the rest are deleted or inserted whole.
-                let run = ops.get(k..).unwrap_or_default().iter().take_while(|o| **o != Op::Same).count();
-                let dels = ops.get(k..k + run).unwrap_or_default().iter().filter(|o| **o == Op::Del).count();
+                let run = ops
+                    .get(k..)
+                    .unwrap_or_default()
+                    .iter()
+                    .take_while(|o| **o != Op::Same)
+                    .count();
+                let dels = ops
+                    .get(k..k + run)
+                    .unwrap_or_default()
+                    .iter()
+                    .filter(|o| **o == Op::Del)
+                    .count();
                 let inss = run - dels;
                 for x in 0..dels.max(inss) {
-                    let (a, b) = (if x < dels { old.get(i + x) } else { None }, if x < inss { new.get(j + x) } else { None });
+                    let (a, b) = (
+                        if x < dels { old.get(i + x) } else { None },
+                        if x < inss { new.get(j + x) } else { None },
+                    );
                     match (a.map(|x| &**x), b.map(|x| &**x)) {
-                        (Some(Block::Para(pa)), Some(Block::Para(pb))) => out.push(para_block(word_diff(pa, pb, ins, del, &opts))),
+                        (Some(Block::Para(pa)), Some(Block::Para(pb))) => {
+                            out.push(para_block(word_diff(pa, pb, ins, del, &opts)))
+                        }
                         _ => {
                             if let Some(x) = a {
                                 out.push(Arc::new(mark_block(x, &|c| c.del = Some(del), 0)));
@@ -1123,9 +1371,14 @@ fn compare(s: &mut Session, v: &Value) -> CmdResult {
 fn block_text(b: &Block, depth: usize) -> String {
     match b {
         Block::Para(p) => p.plain_text(),
-        Block::Table(t) if depth < 16 => {
-            t.rows.iter().flat_map(|r| r.cells.iter()).flat_map(|c| c.blocks.iter()).map(|x| block_text(x, depth + 1)).collect::<Vec<_>>().join("\t")
-        }
+        Block::Table(t) if depth < 16 => t
+            .rows
+            .iter()
+            .flat_map(|r| r.cells.iter())
+            .flat_map(|c| c.blocks.iter())
+            .map(|x| block_text(x, depth + 1))
+            .collect::<Vec<_>>()
+            .join("\t"),
         Block::Table(_) => String::new(),
     }
 }
@@ -1143,7 +1396,11 @@ fn mark_block(b: &Block, f: &dyn Fn(&mut CharProps), depth: usize) -> Block {
             let mut t = t.clone();
             if depth < 16 {
                 for c in t.rows.iter_mut().flat_map(|r| r.cells.iter_mut()) {
-                    c.blocks = c.blocks.iter().map(|x| Arc::new(mark_block(x, f, depth + 1))).collect();
+                    c.blocks = c
+                        .blocks
+                        .iter()
+                        .map(|x| Arc::new(mark_block(x, f, depth + 1)))
+                        .collect();
                 }
             }
             Block::Table(t)
@@ -1166,18 +1423,37 @@ const MAX_LCS: usize = 4000;
 /// middle (bounded size).
 fn lcs_ops<T: PartialEq>(a: &[T], b: &[T]) -> Vec<Op> {
     let pre = a.iter().zip(b).take_while(|(x, y)| x == y).count();
-    let (ra, rb) = (a.get(pre..).unwrap_or_default(), b.get(pre..).unwrap_or_default());
-    let suf = ra.iter().rev().zip(rb.iter().rev()).take_while(|(x, y)| x == y).count();
-    let (a, b) = (ra.get(..ra.len() - suf).unwrap_or_default(), rb.get(..rb.len() - suf).unwrap_or_default());
+    let (ra, rb) = (
+        a.get(pre..).unwrap_or_default(),
+        b.get(pre..).unwrap_or_default(),
+    );
+    let suf = ra
+        .iter()
+        .rev()
+        .zip(rb.iter().rev())
+        .take_while(|(x, y)| x == y)
+        .count();
+    let (a, b) = (
+        ra.get(..ra.len() - suf).unwrap_or_default(),
+        rb.get(..rb.len() - suf).unwrap_or_default(),
+    );
     let mut ops = vec![Op::Same; pre];
     let (n, m) = (a.len().min(MAX_LCS), b.len().min(MAX_LCS));
     let mut t = vec![vec![0u32; m + 1]; n + 1];
     for i in (0..n).rev() {
         for j in (0..m).rev() {
             let v = if a.get(i) == b.get(j) {
-                t.get(i + 1).and_then(|r| r.get(j + 1)).copied().unwrap_or(0) + 1
+                t.get(i + 1)
+                    .and_then(|r| r.get(j + 1))
+                    .copied()
+                    .unwrap_or(0)
+                    + 1
             } else {
-                t.get(i + 1).and_then(|r| r.get(j)).copied().unwrap_or(0).max(t.get(i).and_then(|r| r.get(j + 1)).copied().unwrap_or(0))
+                t.get(i + 1)
+                    .and_then(|r| r.get(j))
+                    .copied()
+                    .unwrap_or(0)
+                    .max(t.get(i).and_then(|r| r.get(j + 1)).copied().unwrap_or(0))
             };
             if let Some(c) = t.get_mut(i).and_then(|r| r.get_mut(j)) {
                 *c = v;
@@ -1227,7 +1503,10 @@ fn word_diff(a: &Paragraph, b: &Paragraph, ins: u32, del: u32, opts: &CompareOpt
     let (at, bt) = (a.plain_text(), b.plain_text());
     let chars = opts.characters && at.chars().count().max(bt.chars().count()) <= MAX_CHAR_DIFF;
     let (ta, tb) = (tokens(&at, chars), tokens(&bt, chars));
-    let ops = lcs_ops(&ta.iter().map(|t| opts.key(t)).collect::<Vec<_>>(), &tb.iter().map(|t| opts.key(t)).collect::<Vec<_>>());
+    let ops = lcs_ops(
+        &ta.iter().map(|t| opts.key(t)).collect::<Vec<_>>(),
+        &tb.iter().map(|t| opts.key(t)).collect::<Vec<_>>(),
+    );
     let mut p = Paragraph::new();
     p.props = b.props.clone();
     let base = a.runs.first().map(|r| r.props.clone()).unwrap_or_default();
@@ -1242,11 +1521,25 @@ fn word_diff(a: &Paragraph, b: &Paragraph, ins: u32, del: u32, opts: &CompareOpt
                 j += 1;
             }
             Op::Del => {
-                let _ = p.insert_text(at, ta.get(i).map(String::as_str).unwrap_or(""), &CharProps { del: Some(del), ..base.clone() });
+                let _ = p.insert_text(
+                    at,
+                    ta.get(i).map(String::as_str).unwrap_or(""),
+                    &CharProps {
+                        del: Some(del),
+                        ..base.clone()
+                    },
+                );
                 i += 1;
             }
             Op::Ins => {
-                let _ = p.insert_text(at, tb.get(j).map(String::as_str).unwrap_or(""), &CharProps { ins: Some(ins), ..base.clone() });
+                let _ = p.insert_text(
+                    at,
+                    tb.get(j).map(String::as_str).unwrap_or(""),
+                    &CharProps {
+                        ins: Some(ins),
+                        ..base.clone()
+                    },
+                );
                 j += 1;
             }
         }
@@ -1260,13 +1553,20 @@ fn accessibility(s: &mut Session, _: &Value) -> CmdResult {
 }
 
 fn inspect_doc(s: &mut Session, v: &Value) -> CmdResult {
-    let remove: Vec<String> =
-        v.get("remove").and_then(Value::as_array).map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()).unwrap_or_default();
-    let has_hidden = s
-        .doc
-        .para_paths(StoryRef::Body)
-        .iter()
-        .any(|p| s.doc.para(StoryRef::Body, p).is_some_and(|x| x.runs.iter().any(|r| r.props.hidden == Some(true))));
+    let remove: Vec<String> = v
+        .get("remove")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    let has_hidden = s.doc.para_paths(StoryRef::Body).iter().any(|p| {
+        s.doc
+            .para(StoryRef::Body, p)
+            .is_some_and(|x| x.runs.iter().any(|r| r.props.hidden == Some(true)))
+    });
     let report = json!({
         "comments": s.doc.comments.len(),
         "revisions": s.doc.para_paths(StoryRef::Body).iter().filter(|p| s.doc.para(StoryRef::Body, p).is_some_and(|x| x.runs.iter().any(|r| r.props.ins.is_some() || r.props.del.is_some()))).count(),
@@ -1292,7 +1592,12 @@ fn inspect_doc(s: &mut Session, v: &Value) -> CmdResult {
                     let ranges: Vec<(usize, usize)> = s
                         .doc
                         .para(StoryRef::Body, &path)
-                        .map(|p| p.run_ranges().filter(|(_, c)| c.hidden == Some(true)).map(|(r, _)| (r.start, r.end)).collect())
+                        .map(|p| {
+                            p.run_ranges()
+                                .filter(|(_, c)| c.hidden == Some(true))
+                                .map(|(r, _)| (r.start, r.end))
+                                .collect()
+                        })
                         .unwrap_or_default();
                     let para = s.doc.para_mut(StoryRef::Body, &path)?;
                     for (a, b) in ranges.into_iter().rev() {
@@ -1324,7 +1629,11 @@ fn quick_parts(s: &mut Session, v: &Value) -> CmdResult {
         s.building_blocks.remove(name);
     }
     if let Some(name) = p::str(v, "insert") {
-        let frag = s.building_blocks.get(name).cloned().ok_or_else(|| CmdError::Params(format!("no Quick Part `{name}`")))?;
+        let frag = s
+            .building_blocks
+            .get(name)
+            .cloned()
+            .ok_or_else(|| CmdError::Params(format!("no Quick Part `{name}`")))?;
         let at = delete_selection(s)?;
         let end = s.doc.insert_fragment(&at, &frag)?;
         s.sel = Selection::caret(end);
@@ -1333,12 +1642,21 @@ fn quick_parts(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn hf_nav(s: &mut Session, dir: i32) -> CmdResult {
-    let StoryRef::Part(cur) = s.sel.focus.story else { return Err(CmdError::Disabled("edit a header or footer first".into())) };
+    let StoryRef::Part(cur) = s.sel.focus.story else {
+        return Err(CmdError::Disabled("edit a header or footer first".into()));
+    };
     let mut ids: Vec<u32> = Vec::new();
     for (_, sect) in s.doc.sections() {
-        for id in [sect.headers.default, sect.headers.first, sect.headers.even, sect.footers.default, sect.footers.first, sect.footers.even]
-            .into_iter()
-            .flatten()
+        for id in [
+            sect.headers.default,
+            sect.headers.first,
+            sect.headers.even,
+            sect.footers.default,
+            sect.footers.first,
+            sect.footers.even,
+        ]
+        .into_iter()
+        .flatten()
         {
             if !ids.contains(&id) {
                 ids.push(id);
@@ -1347,31 +1665,51 @@ fn hf_nav(s: &mut Session, dir: i32) -> CmdResult {
     }
     let i = ids.iter().position(|x| *x == cur).unwrap_or(0) as i32;
     let n = ids.len().max(1) as i32;
-    let next = ids.get(((i + dir).rem_euclid(n)) as usize).copied().unwrap_or(cur);
+    let next = ids
+        .get(((i + dir).rem_euclid(n)) as usize)
+        .copied()
+        .unwrap_or(cur);
     s.sel = Selection::caret(s.doc.start_of(StoryRef::Part(next)));
     sel_result(s)
 }
 
 fn select_similar(s: &mut Session, _: &Value) -> CmdResult {
     let f = s.sel.ordered().0;
-    let target = s.doc.para_at(&f).map(|p| p.props_of_char(f.off).clone()).unwrap_or_default();
+    let target = s
+        .doc
+        .para_at(&f)
+        .map(|p| p.props_of_char(f.off).clone())
+        .unwrap_or_default();
     let mut first: Option<Pos> = None;
     let mut last: Option<Pos> = None;
     let mut count = 0;
     for path in s.doc.para_paths(f.story) {
-        let Some(p) = s.doc.para(f.story, &path) else { continue };
+        let Some(p) = s.doc.para(f.story, &path) else {
+            continue;
+        };
         for (r, c) in p.run_ranges() {
             if *c == target {
                 count += 1;
                 if first.is_none() {
-                    first = Some(Pos { story: f.story, path: path.clone(), off: r.start });
+                    first = Some(Pos {
+                        story: f.story,
+                        path: path.clone(),
+                        off: r.start,
+                    });
                 }
-                last = Some(Pos { story: f.story, path: path.clone(), off: r.end });
+                last = Some(Pos {
+                    story: f.story,
+                    path: path.clone(),
+                    off: r.end,
+                });
             }
         }
     }
     if let (Some(a), Some(b)) = (first, last) {
-        s.sel = Selection { anchor: a, focus: b };
+        s.sel = Selection {
+            anchor: a,
+            focus: b,
+        };
     }
     Ok(json!({"runs": count}))
 }
@@ -1380,7 +1718,12 @@ fn select_similar(s: &mut Session, _: &Value) -> CmdResult {
 /// Without params it opens the dialog; with any, it only does what they ask (no dialog).
 fn customize_keyboard(s: &mut Session, v: &Value) -> CmdResult {
     let reg = s.registry.clone();
-    let pair = |x: &Value| -> Result<(String, String), CmdError> { Ok((p::req_str(x, "command")?.to_string(), p::req_str(x, "key")?.to_string())) };
+    let pair = |x: &Value| -> Result<(String, String), CmdError> {
+        Ok((
+            p::req_str(x, "command")?.to_string(),
+            p::req_str(x, "key")?.to_string(),
+        ))
+    };
     let mut out = serde_json::Map::new();
     let mut asked = false;
     if p::bool(v, "reset") == Some(true) {
@@ -1396,7 +1739,10 @@ fn customize_keyboard(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(r) = v.get("remove") {
         asked = true;
         let (id, key) = pair(r)?;
-        out.insert("removed".into(), json!(s.keymap.remove(&reg, &id, &key).map_err(CmdError::Params)?));
+        out.insert(
+            "removed".into(),
+            json!(s.keymap.remove(&reg, &id, &key).map_err(CmdError::Params)?),
+        );
     }
     if let Some(id) = p::str(v, "command") {
         asked = true;
@@ -1407,11 +1753,21 @@ fn customize_keyboard(s: &mut Session, v: &Value) -> CmdResult {
     }
     if let Some(key) = p::str(v, "key") {
         asked = true;
-        let key = crate::keymap::normalize(key).ok_or_else(|| CmdError::Params(format!("`{key}` isn't a key (e.g. Mod+Shift+K, Alt+F7, F2)")))?;
-        out.insert("assignedTo".into(), json!(s.keymap.resolve(&reg, &key).map(|c| c.id)));
+        let key = crate::keymap::normalize(key).ok_or_else(|| {
+            CmdError::Params(format!(
+                "`{key}` isn't a key (e.g. Mod+Shift+K, Alt+F7, F2)"
+            ))
+        })?;
+        out.insert(
+            "assignedTo".into(),
+            json!(s.keymap.resolve(&reg, &key).map(|c| c.id)),
+        );
         out.insert("key".into(), json!(key));
     }
-    out.insert("custom".into(), serde_json::to_value(&s.keymap).unwrap_or(Value::Null));
+    out.insert(
+        "custom".into(),
+        serde_json::to_value(&s.keymap).unwrap_or(Value::Null),
+    );
     if !asked {
         s.ui_requests.push(json!({"open": "customizeKeyboard"}));
     }
@@ -1452,7 +1808,11 @@ fn customize_ribbon(s: &mut Session, v: &Value) -> CmdResult {
     let e = CmdError::Params;
     let str_of = |x: &Value, k: &str| x.get(k).and_then(Value::as_str).map(str::to_string);
     let req = |x: &Value, k: &str| p::req_str(x, k).map(str::to_string);
-    let by = |x: &Value| x.get("by").and_then(Value::as_i64).ok_or_else(|| e("`by` (integer, e.g. -1 or 1) is required".into()));
+    let by = |x: &Value| {
+        x.get("by")
+            .and_then(Value::as_i64)
+            .ok_or_else(|| e("`by` (integer, e.g. -1 or 1) is required".into()))
+    };
     let mut out = serde_json::Map::new();
     let mut asked = false;
     if let Some(x) = v.get("layout") {
@@ -1477,31 +1837,60 @@ fn customize_ribbon(s: &mut Session, v: &Value) -> CmdResult {
     }
     if let Some(x) = v.get("newTab") {
         asked = true;
-        let name = l.new_tab(str_of(x, "name").as_deref(), str_of(x, "after").as_deref()).map_err(e)?;
+        let name = l
+            .new_tab(str_of(x, "name").as_deref(), str_of(x, "after").as_deref())
+            .map_err(e)?;
         out.insert("tab".into(), json!(name));
     }
     if let Some(x) = v.get("newGroup") {
         asked = true;
-        let name = l.new_group(&req(x, "tab")?, str_of(x, "name").as_deref()).map_err(e)?;
+        let name = l
+            .new_group(&req(x, "tab")?, str_of(x, "name").as_deref())
+            .map_err(e)?;
         out.insert("group".into(), json!(name));
     }
     if let Some(x) = v.get("add") {
         asked = true;
-        let added = l.add(&reg, &req(x, "tab")?, &req(x, "group")?, &req(x, "command")?, str_of(x, "after").as_deref()).map_err(e)?;
+        let added = l
+            .add(
+                &reg,
+                &req(x, "tab")?,
+                &req(x, "group")?,
+                &req(x, "command")?,
+                str_of(x, "after").as_deref(),
+            )
+            .map_err(e)?;
         out.insert("added".into(), json!(added));
     }
     if let Some(x) = v.get("remove") {
         asked = true;
-        l.remove(&req(x, "tab")?, str_of(x, "group").as_deref(), str_of(x, "command").as_deref()).map_err(e)?;
+        l.remove(
+            &req(x, "tab")?,
+            str_of(x, "group").as_deref(),
+            str_of(x, "command").as_deref(),
+        )
+        .map_err(e)?;
     }
     if let Some(x) = v.get("rename") {
         asked = true;
-        let name = l.rename(&req(x, "tab")?, str_of(x, "group").as_deref(), &req(x, "to")?).map_err(e)?;
+        let name = l
+            .rename(
+                &req(x, "tab")?,
+                str_of(x, "group").as_deref(),
+                &req(x, "to")?,
+            )
+            .map_err(e)?;
         out.insert("name".into(), json!(name));
     }
     if let Some(x) = v.get("move") {
         asked = true;
-        l.move_by(&req(x, "tab")?, str_of(x, "group").as_deref(), str_of(x, "command").as_deref(), by(x)?).map_err(e)?;
+        l.move_by(
+            &req(x, "tab")?,
+            str_of(x, "group").as_deref(),
+            str_of(x, "command").as_deref(),
+            by(x)?,
+        )
+        .map_err(e)?;
     }
     if let Some(id) = p::str(v, "qatAdd") {
         asked = true;
@@ -1515,7 +1904,10 @@ fn customize_ribbon(s: &mut Session, v: &Value) -> CmdResult {
         asked = true;
         l.qat_move(&req(x, "command")?, by(x)?).map_err(e)?;
     }
-    out.insert("tabs".into(), serde_json::to_value(l.tabs().as_ref()).unwrap_or(Value::Null));
+    out.insert(
+        "tabs".into(),
+        serde_json::to_value(l.tabs().as_ref()).unwrap_or(Value::Null),
+    );
     out.insert("qat".into(), json!(l.qat()));
     if !asked {
         s.ui_requests.push(json!({"open": "customizeRibbon"}));
@@ -1530,10 +1922,18 @@ mod tests {
     #[test]
     fn compare_marks_changes() {
         let mut s = Session::new(Document::from_text("The cat sat.\nKeep this.\nOld line."));
-        let r = s.run("review.compare", &json!({"text": "The dog sat.\nKeep this.\nNew line here."})).unwrap();
+        let r = s
+            .run(
+                "review.compare",
+                &json!({"text": "The dog sat.\nKeep this.\nNew line here."}),
+            )
+            .unwrap();
         assert!(r["changes"].as_u64().unwrap() >= 2);
         s.run("review.acceptAll", &json!({})).unwrap();
-        assert_eq!(s.doc.plain_text(StoryRef::Body), "The dog sat.\nKeep this.\nNew line here.");
+        assert_eq!(
+            s.doc.plain_text(StoryRef::Body),
+            "The dog sat.\nKeep this.\nNew line here."
+        );
     }
 
     #[test]
@@ -1542,30 +1942,60 @@ mod tests {
         let revised = "The cat sat.\nTwo spaces here.";
         // By default both differences are changes.
         let mut s = Session::new(Document::from_text(original));
-        let r = s.run("review.compare", &json!({"text": revised, "author": "Reviewer"})).unwrap();
+        let r = s
+            .run(
+                "review.compare",
+                &json!({"text": revised, "author": "Reviewer"}),
+            )
+            .unwrap();
         assert_eq!(r["changes"], 2);
         assert!(s.doc.revisions.iter().any(|x| x.author == "Reviewer"));
         // Ignoring case and white space: no changes, and the result reads as the revised text.
         let mut s = Session::new(Document::from_text(original));
-        let r = s.run("review.compare", &json!({"text": revised, "caseChanges": false, "whiteSpace": false})).unwrap();
+        let r = s
+            .run(
+                "review.compare",
+                &json!({"text": revised, "caseChanges": false, "whiteSpace": false}),
+            )
+            .unwrap();
         assert_eq!(r["changes"], 0);
         assert_eq!(s.doc.plain_text(StoryRef::Body), revised);
         // Character level marks only the changed letters.
         let mut s = Session::new(Document::from_text("colour"));
-        s.run("review.compare", &json!({"text": "color", "level": "character"})).unwrap();
+        s.run(
+            "review.compare",
+            &json!({"text": "color", "level": "character"}),
+        )
+        .unwrap();
         let p = s.doc.body[0].as_para().unwrap();
-        let deleted: String = p.run_ranges().filter(|(_, c)| c.del.is_some()).map(|(r, _)| p.text[r].to_string()).collect();
+        let deleted: String = p
+            .run_ranges()
+            .filter(|(_, c)| c.del.is_some())
+            .map(|(r, _)| p.text[r].to_string())
+            .collect();
         assert_eq!(deleted, "u");
         // Formatting differences become formatting changes.
         let mut s = Session::new(Document::from_text("Same words."));
         let mut rev = Document::from_text("Same words.");
-        rev.format_range(&rev.start_of(StoryRef::Body), &rev.end_of(StoryRef::Body), &|c| c.bold = Some(true)).unwrap();
+        rev.format_range(
+            &rev.start_of(StoryRef::Body),
+            &rev.end_of(StoryRef::Body),
+            &|c| c.bold = Some(true),
+        )
+        .unwrap();
         let path = std::env::temp_dir().join(format!("wc-compare-{}.docx", std::process::id()));
         crate::io::save_path(&path, &rev).unwrap();
-        let r = s.run("review.compare", &json!({"path": path.to_string_lossy()})).unwrap();
+        let r = s
+            .run("review.compare", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         let _ = std::fs::remove_file(&path);
         assert_eq!(r["changes"], 1);
-        assert!(s.doc.revisions.iter().any(|x| x.kind == RevisionKind::Format));
+        assert!(
+            s.doc
+                .revisions
+                .iter()
+                .any(|x| x.kind == RevisionKind::Format)
+        );
     }
 
     #[test]
@@ -1593,7 +2023,8 @@ mod tests {
     #[test]
     fn protection_blocks_edits() {
         let mut s = Session::new(Document::from_text("locked"));
-        s.run("review.restrict", &json!({"mode": "readOnly"})).unwrap();
+        s.run("review.restrict", &json!({"mode": "readOnly"}))
+            .unwrap();
         assert!(s.run("text.insert", &json!({"text": "x"})).is_err());
         s.run("review.restrict", &json!({"mode": "none"})).unwrap();
         assert!(s.run("text.insert", &json!({"text": "x"})).is_ok());
@@ -1604,7 +2035,8 @@ mod tests {
         let mut s = Session::new(crate::sample::sample_document());
         let r = s.run("file.accessibility", &json!({})).unwrap();
         assert!(r["issues"].is_array());
-        s.run("select.text", &json!({"text": "Membership"})).unwrap();
+        s.run("select.text", &json!({"text": "Membership"}))
+            .unwrap();
         s.run("insert.quickParts", &json!({"save": "m"})).unwrap();
         s.run("caret.docEnd", &json!({})).unwrap();
         s.run("insert.quickParts", &json!({"insert": "m"})).unwrap();
@@ -1617,12 +2049,30 @@ mod tests {
     fn proofing_language_options() {
         let mut s = Session::new(Document::from_text("Bonjour"));
         s.run("select.all", &json!({})).unwrap();
-        s.run("review.language", &json!({"lang": "fr-FR", "noProof": true, "detect": false})).unwrap();
-        let rc = s.doc.para_at(&Pos::body(0, 1)).map(|p| p.props_at(1).clone()).unwrap();
-        assert_eq!((rc.lang.as_deref(), rc.no_proof), (Some("fr-FR"), Some(true)));
+        s.run(
+            "review.language",
+            &json!({"lang": "fr-FR", "noProof": true, "detect": false}),
+        )
+        .unwrap();
+        let rc = s
+            .doc
+            .para_at(&Pos::body(0, 1))
+            .map(|p| p.props_at(1).clone())
+            .unwrap();
+        assert_eq!(
+            (rc.lang.as_deref(), rc.no_proof),
+            (Some("fr-FR"), Some(true))
+        );
         assert!(!s.prefs.detect_language);
-        s.run("review.language", &json!({"lang": "de-DE", "default": true})).unwrap();
+        s.run(
+            "review.language",
+            &json!({"lang": "de-DE", "default": true}),
+        )
+        .unwrap();
         assert_eq!(s.doc.styles.default_chr.lang.as_deref(), Some("de-DE"));
-        assert!(s.run("review.language", &json!({"lang": "<script>"})).is_err());
+        assert!(
+            s.run("review.language", &json!({"lang": "<script>"}))
+                .is_err()
+        );
     }
 }

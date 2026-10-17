@@ -53,7 +53,13 @@ pub(crate) struct Grid8 {
 
 impl Grid8 {
     fn new(ox: usize, oy: usize, stride: usize, rows: usize) -> Grid8 {
-        Grid8 { data: vec![0; stride * rows], ox, oy, stride, rows }
+        Grid8 {
+            data: vec![0; stride * rows],
+            ox,
+            oy,
+            stride,
+            rows,
+        }
     }
     #[inline]
     pub fn get(&self, row: usize, col: usize) -> u8 {
@@ -62,14 +68,19 @@ impl Grid8 {
     /// Stores outside the grid are dropped (blocks reaching past the allocated margin).
     #[inline]
     pub fn set(&mut self, row: usize, col: usize, v: u8) {
-        if col >= self.ox && col < self.ox + self.stride && row >= self.oy && row < self.oy + self.rows {
+        if col >= self.ox
+            && col < self.ox + self.stride
+            && row >= self.oy
+            && row < self.oy + self.rows
+        {
             self.data[(row - self.oy) * self.stride + col - self.ox] = v;
         }
     }
     fn copy_into(&self, dst: &mut Grid8) {
         for y in 0..self.rows {
             let d = (self.oy + y - dst.oy) * dst.stride + self.ox - dst.ox;
-            dst.data[d..d + self.stride].copy_from_slice(&self.data[y * self.stride..(y + 1) * self.stride]);
+            dst.data[d..d + self.stride]
+                .copy_from_slice(&self.data[y * self.stride..(y + 1) * self.stride]);
         }
     }
 }
@@ -106,7 +117,14 @@ pub(crate) struct TileState {
 }
 
 impl TileState {
-    fn with(cur: FrameBuf, mi: MiInfo, cdef: Vec<i8>, lf_tx_size: [Grid8; 3], lr: LrUnits, cdef_cols: usize) -> TileState {
+    fn with(
+        cur: FrameBuf,
+        mi: MiInfo,
+        cdef: Vec<i8>,
+        lf_tx_size: [Grid8; 3],
+        lr: LrUnits,
+        cdef_cols: usize,
+    ) -> TileState {
         let (mi_cols, mi_rows) = (mi.cols, mi.rows);
         TileState {
             cur,
@@ -177,7 +195,14 @@ impl FrameState {
         let (ssx, ssy) = (c.subsampling_x as usize, c.subsampling_y as usize);
         let mi_cols = fh.mi_cols as usize;
         let mi_rows = fh.mi_rows as usize;
-        let cur = FrameBuf::new(fh.frame_width as usize, fh.frame_height as usize, c.num_planes, ssx, ssy, c.bit_depth);
+        let cur = FrameBuf::new(
+            fh.frame_width as usize,
+            fh.frame_height as usize,
+            c.num_planes,
+            ssx,
+            ssy,
+            c.bit_depth,
+        );
         let cdef_cols = mi_cols.div_ceil(16) + 2;
         let cdef_rows = mi_rows.div_ceil(16) + 2;
         let mut lr_unit_rows = [0; 3];
@@ -190,8 +215,10 @@ impl FrameState {
             let sub_x = if plane == 0 { 0 } else { ssx };
             let sub_y = if plane == 0 { 0 } else { ssy };
             let unit = fh.lr.loop_restoration_size[plane] as usize;
-            lr_unit_rows[plane] = count_units_in_frame(unit, (fh.frame_height as usize + sub_y) >> sub_y);
-            lr_unit_cols[plane] = count_units_in_frame(unit, (fh.upscaled_width as usize + sub_x) >> sub_x);
+            lr_unit_rows[plane] =
+                count_units_in_frame(unit, (fh.frame_height as usize + sub_y) >> sub_y);
+            lr_unit_cols[plane] =
+                count_units_in_frame(unit, (fh.upscaled_width as usize + sub_x) >> sub_x);
             let n = lr_unit_rows[plane] * lr_unit_cols[plane];
             lr.lr_type[plane] = vec![RESTORE_NONE as u8; n];
             lr.lr_wiener[plane] = vec![[[0; 3]; 2]; n];
@@ -260,7 +287,15 @@ impl FrameState {
         let x1 = if c1 >= mi_cols { usize::MAX } else { c1 * 4 };
         let y1 = if r1 >= mi_rows { usize::MAX } else { r1 * 4 };
         let cur = self.cur.region_like(c0 * 4, r0 * 4, x1, y1);
-        let mi = MiInfo::region(mi_cols, mi_rows, c0, r0, c1 - c0, r1 - r0, !self.mi.palette_size[0].is_empty());
+        let mi = MiInfo::region(
+            mi_cols,
+            mi_rows,
+            c0,
+            r0,
+            c1 - c0,
+            r1 - r0,
+            !self.mi.palette_size[0].is_empty(),
+        );
         let lf = std::array::from_fn(|p| {
             let (sx, sy) = if p == 0 { (0, 0) } else { (self.ssx, self.ssy) };
             let full = &self.lf_tx_size[p];
@@ -269,7 +304,14 @@ impl FrameState {
             let gy1 = if r1 >= mi_rows { full.rows } else { r1 >> sy };
             Grid8::new(gx0, gy0, gx1 - gx0, gy1 - gy0)
         });
-        TileState::with(cur, mi, vec![-1; self.cdef.len()], lf, self.lr.clone(), self.cdef_cols)
+        TileState::with(
+            cur,
+            mi,
+            vec![-1; self.cdef.len()],
+            lf,
+            self.lr.clone(),
+            self.cdef_cols,
+        )
     }
 
     /// Copy a tile's private buffers into the frame.

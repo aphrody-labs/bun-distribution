@@ -139,12 +139,17 @@ impl Entry {
     }
 
     fn is_cancelled(&self) -> bool {
-        self.cancel.as_ref().is_some_and(|c| c.load(Ordering::Relaxed))
+        self.cancel
+            .as_ref()
+            .is_some_and(|c| c.load(Ordering::Relaxed))
     }
 
     fn progress(&self, done: u64, total: u64) {
         self.total.store(total, Ordering::Relaxed);
-        self.done.store(if total > 0 { done.min(total) } else { done }, Ordering::Relaxed);
+        self.done.store(
+            if total > 0 { done.min(total) } else { done },
+            Ordering::Relaxed,
+        );
     }
 
     fn detail(&self, text: &str) {
@@ -171,7 +176,11 @@ impl Activity {
     /// Register a task; it is listed until the returned guard is dropped. `label` is English (the frontend
     /// translates it).
     pub fn start(&self, kind: &'static str, label: &str, cancel: Cancel) -> TaskGuard {
-        let id = self.inner.next.fetch_add(1, Ordering::Relaxed).saturating_add(1);
+        let id = self
+            .inner
+            .next
+            .fetch_add(1, Ordering::Relaxed)
+            .saturating_add(1);
         let cancel = match cancel {
             Cancel::No => None,
             Cancel::Yes => Some(Arc::new(AtomicBool::new(false))),
@@ -191,7 +200,10 @@ impl Activity {
             gate: Mutex::new(()),
         });
         lock(&self.inner.tasks).push(entry.clone());
-        TaskGuard { activity: self.clone(), entry }
+        TaskGuard {
+            activity: self.clone(),
+            entry,
+        }
     }
 
     /// Every task in flight, oldest first.
@@ -203,8 +215,15 @@ impl Activity {
     /// that can't be cancelled is an error.
     pub fn cancel(&self, id: u64) -> Result<(), String> {
         let tasks = lock(&self.inner.tasks);
-        let entry = tasks.iter().find(|e| e.id == id).ok_or_else(|| format!("no task {id}"))?;
-        if entry.try_cancel() { Ok(()) } else { Err(format!("{} can't be cancelled", entry.label)) }
+        let entry = tasks
+            .iter()
+            .find(|e| e.id == id)
+            .ok_or_else(|| format!("no task {id}"))?;
+        if entry.try_cancel() {
+            Ok(())
+        } else {
+            Err(format!("{} can't be cancelled", entry.label))
+        }
     }
 
     /// Ask every cancellable task to stop; returns how many were asked.
@@ -215,7 +234,11 @@ impl Activity {
 
     /// Tasks that quitting would cut short: cancellable ones not already stopping.
     pub fn running_cancellable(&self) -> Vec<TaskInfo> {
-        lock(&self.inner.tasks).iter().filter(|e| e.is_cancellable() && !e.is_cancelled()).map(|e| e.info()).collect()
+        lock(&self.inner.tasks)
+            .iter()
+            .filter(|e| e.is_cancellable() && !e.is_cancelled())
+            .map(|e| e.info())
+            .collect()
     }
 }
 
@@ -259,7 +282,9 @@ impl TaskGuard {
 
     /// For progress from another thread; it does not keep the row.
     pub fn handle(&self) -> TaskHandle {
-        TaskHandle { entry: self.entry.clone() }
+        TaskHandle {
+            entry: self.entry.clone(),
+        }
     }
 }
 
@@ -272,7 +297,10 @@ impl Drop for TaskGuard {
 
 impl std::fmt::Debug for TaskGuard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TaskGuard").field("id", &self.entry.id).field("kind", &self.entry.kind).finish()
+        f.debug_struct("TaskGuard")
+            .field("id", &self.entry.id)
+            .field("kind", &self.entry.kind)
+            .finish()
     }
 }
 
@@ -355,7 +383,11 @@ mod tests {
     #[test]
     fn cancel_all_counts_only_cancellable() {
         let a = Activity::default();
-        let (_x, _y, _z) = (a.start("export", "E", Cancel::Yes), a.start("import", "I", Cancel::Yes), a.start("faces", "F", Cancel::No));
+        let (_x, _y, _z) = (
+            a.start("export", "E", Cancel::Yes),
+            a.start("import", "I", Cancel::Yes),
+            a.start("faces", "F", Cancel::No),
+        );
         assert_eq!(a.cancel_all(), 2);
         assert!(a.running_cancellable().is_empty());
     }
@@ -379,9 +411,15 @@ mod tests {
     #[test]
     fn ids_are_unique_and_list_is_oldest_first() {
         let a = Activity::default();
-        let (g1, g2) = (a.start("export", "A", Cancel::Yes), a.start("import", "B", Cancel::Yes));
+        let (g1, g2) = (
+            a.start("export", "A", Cancel::Yes),
+            a.start("import", "B", Cancel::Yes),
+        );
         assert!(g2.id() > g1.id());
-        assert_eq!(a.list().iter().map(|t| t.id).collect::<Vec<_>>(), vec![g1.id(), g2.id()]);
+        assert_eq!(
+            a.list().iter().map(|t| t.id).collect::<Vec<_>>(),
+            vec![g1.id(), g2.id()]
+        );
     }
 
     #[test]
@@ -415,10 +453,17 @@ mod tests {
             h.set_cancellable(false);
             tx.send(f.load(Ordering::Relaxed)).unwrap();
         });
-        assert!(rx.recv_timeout(std::time::Duration::from_millis(100)).is_err(), "the switch waits for the cancel");
+        assert!(
+            rx.recv_timeout(std::time::Duration::from_millis(100))
+                .is_err(),
+            "the switch waits for the cancel"
+        );
         flag.store(true, Ordering::Relaxed); // the cancel goes through...
         drop(gate);
-        assert!(rx.recv_timeout(std::time::Duration::from_secs(10)).unwrap(), "...and the step sees it");
+        assert!(
+            rx.recv_timeout(std::time::Duration::from_secs(10)).unwrap(),
+            "...and the step sees it"
+        );
         worker.join().unwrap();
         // once it is off, cancels are refused
         let g2 = a.start("export", "Exporting", Cancel::Yes);

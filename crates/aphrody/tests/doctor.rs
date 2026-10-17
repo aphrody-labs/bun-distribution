@@ -72,14 +72,20 @@ fn doctor_text_supply_chain_section_present() {
 // ---------------------------------------------------------------------------
 #[test]
 fn doctor_text_verdict_present() {
-    let output = aphrody().arg("doctor").output().expect("aphrody doctor must produce output");
+    let output = aphrody()
+        .arg("doctor")
+        .output()
+        .expect("aphrody doctor must produce output");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let has_verdict = stdout.contains("Verdict: HEALTHY")
         || stdout.contains("Verdict: DEGRADED")
         || stdout.contains("Verdict: UNHEALTHY");
 
-    assert!(has_verdict, "stdout did not contain any recognised Verdict line.\nstdout:\n{stdout}");
+    assert!(
+        has_verdict,
+        "stdout did not contain any recognised Verdict line.\nstdout:\n{stdout}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +107,13 @@ fn doctor_json_valid_serde() {
     let value: serde_json::Value = serde_json::from_slice(&output.stdout)
         .expect("aphrody doctor --json stdout must be valid JSON");
 
-    for key in &["runtime", "peer_a2a", "supply_chain", "environment", "verdict"] {
+    for key in &[
+        "runtime",
+        "peer_a2a",
+        "supply_chain",
+        "environment",
+        "verdict",
+    ] {
         assert!(
             value.get(key).is_some(),
             "JSON output is missing top-level key `{key}`.\nJSON:\n{}",
@@ -110,7 +122,9 @@ fn doctor_json_valid_serde() {
     }
 
     // `verdict` must be a string with a recognisable value.
-    let verdict = value["verdict"].as_str().expect("JSON `verdict` field must be a string");
+    let verdict = value["verdict"]
+        .as_str()
+        .expect("JSON `verdict` field must be a string");
     assert!(
         matches!(verdict, "HEALTHY" | "DEGRADED" | "UNHEALTHY"),
         "unexpected verdict value: {verdict:?}"
@@ -122,7 +136,10 @@ fn doctor_json_valid_serde() {
 // ---------------------------------------------------------------------------
 #[test]
 fn doctor_exit_code_is_zero() {
-    let output = aphrody().arg("doctor").output().expect("aphrody doctor must produce output");
+    let output = aphrody()
+        .arg("doctor")
+        .output()
+        .expect("aphrody doctor must produce output");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 

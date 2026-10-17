@@ -18,7 +18,9 @@ pub fn guarded<T>(what: &str, f: impl FnOnce() -> Result<T>) -> Result<T> {
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_else(|| "unknown error".into());
             log::error!("{what} panicked: {msg}");
-            Err(EngineError::Other(format!("{what} failed with an internal error ({msg}); it was stopped and your project is still open")))
+            Err(EngineError::Other(format!(
+                "{what} failed with an internal error ({msg}); it was stopped and your project is still open"
+            )))
         }
     }
 }
@@ -38,7 +40,10 @@ mod tests {
         });
         assert!(r.is_err());
         assert_eq!(guarded("ok", || Ok(7)).unwrap(), 7);
-        assert!(matches!(guarded::<()>("err", || Err(EngineError::NoComp)), Err(EngineError::NoComp)));
+        assert!(matches!(
+            guarded::<()>("err", || Err(EngineError::NoComp)),
+            Err(EngineError::NoComp)
+        ));
     }
 
     #[test]
@@ -52,7 +57,10 @@ mod tests {
             })
         });
         assert!(r.is_err());
-        assert!(std::sync::Arc::ptr_eq(&before, &s.project), "the project is untouched");
+        assert!(
+            std::sync::Arc::ptr_eq(&before, &s.project),
+            "the project is untouched"
+        );
         // Later edits still work.
         let next = s.project.next_id;
         s.edit("Fine", None, |p, _| {

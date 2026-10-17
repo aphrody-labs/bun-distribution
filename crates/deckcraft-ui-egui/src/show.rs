@@ -5,7 +5,9 @@ use deckcraft_anim::{Layer, LinkJump, ShowAction, ShowState, Source, Timeline};
 use deckcraft_model::text::Hyperlink;
 use deckcraft_model::{Presentation, ShapeId};
 use deckcraft_render::{ParaState, RenderOpts, ShapeState};
-use egui::{Align2, Color32, CornerRadius, Mesh, Pos2, Rect, Sense, Stroke, TextureHandle, Ui, pos2, vec2};
+use egui::{
+    Align2, Color32, CornerRadius, Mesh, Pos2, Rect, Sense, Stroke, TextureHandle, Ui, pos2, vec2,
+};
 use serde_json::json;
 
 use crate::SlideApp;
@@ -122,13 +124,22 @@ impl Show {
             }
             ShowAction::Slide(i) => {
                 if self.rehearse {
-                    self.timings.push((self.timeline.as_ref().map(|t| t.0).unwrap_or(i), now - self.slide_start));
+                    self.timings.push((
+                        self.timeline.as_ref().map(|t| t.0).unwrap_or(i),
+                        now - self.slide_start,
+                    ));
                 }
                 let (kind, option, dur) = doc
                     .slides
                     .get(i)
                     .and_then(|s| s.transition.as_ref())
-                    .map(|t| (t.kind.clone(), t.option.clone(), t.duration_ms as f64 / 1000.0))
+                    .map(|t| {
+                        (
+                            t.kind.clone(),
+                            t.option.clone(),
+                            t.duration_ms as f64 / 1000.0,
+                        )
+                    })
                     .unwrap_or(("none".into(), String::new(), 0.0));
                 // Take the old slide's texture rather than cloning its handle: the new slide is
                 // otherwise rendered into the same texture, and the transition blends the new
@@ -138,7 +149,15 @@ impl Show {
                     self.last_viewed = from;
                 }
                 self.trans = if kind != "none" && dur > 0.0 && !doc.show.without_animation {
-                    Some(Transition { old, from, morph: None, start: now, kind, option, dur })
+                    Some(Transition {
+                        old,
+                        from,
+                        morph: None,
+                        start: now,
+                        kind,
+                        option,
+                        dur,
+                    })
                 } else {
                     None
                 };
@@ -190,7 +209,14 @@ fn state_for(tl: &Timeline, id: ShapeId, step: usize, t: f64) -> ShapeState {
             .into_iter()
             .map(|p| {
                 let a = tl.state(id, Some(p), step, t);
-                (p, ParaState { visible: a.visible, opacity: a.opacity, offset: deckcraft_geom::Vec2::new(a.offset_x, a.offset_y) })
+                (
+                    p,
+                    ParaState {
+                        visible: a.visible,
+                        opacity: a.opacity,
+                        offset: deckcraft_geom::Vec2::new(a.offset_x, a.offset_y),
+                    },
+                )
             })
             .collect(),
     }
@@ -208,12 +234,23 @@ fn quad_mesh(tex: Option<egui::TextureId>, rect: Rect, l: &Layer, color: Color32
         None => Mesh::default(),
     };
     let a = (l.alpha.clamp(0.0, 1.0) * 255.0) as u8;
-    let col = if tex.is_some() { Color32::from_white_alpha(a) } else { color.gamma_multiply(l.alpha.clamp(0.0, 1.0) as f32) };
+    let col = if tex.is_some() {
+        Color32::from_white_alpha(a)
+    } else {
+        color.gamma_multiply(l.alpha.clamp(0.0, 1.0) as f32)
+    };
     for k in 0..4 {
         let q = l.quad.get(k).copied().unwrap_or([0.0, 0.0]);
         let uv = l.uv.get(k).copied().unwrap_or([0.0, 0.0]);
-        let p = pos2(rect.min.x + q[0] as f32 * rect.width(), rect.min.y + q[1] as f32 * rect.height());
-        m.vertices.push(egui::epaint::Vertex { pos: p, uv: pos2(uv[0] as f32, uv[1] as f32), color: col });
+        let p = pos2(
+            rect.min.x + q[0] as f32 * rect.width(),
+            rect.min.y + q[1] as f32 * rect.height(),
+        );
+        m.vertices.push(egui::epaint::Vertex {
+            pos: p,
+            uv: pos2(uv[0] as f32, uv[1] as f32),
+            color: col,
+        });
     }
     m.add_triangle(0, 1, 2);
     m.add_triangle(0, 2, 3);
@@ -227,7 +264,9 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         return;
     };
     let now = ctx.input(|i| i.time);
-    let Some(mut show) = app.show.take() else { return };
+    let Some(mut show) = app.show.take() else {
+        return;
+    };
     if !show.started {
         show.started = true;
         show.slide_start = now;
@@ -245,9 +284,26 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         let keys: Vec<(egui::Key, egui::Modifiers)> = i
             .events
             .iter()
-            .filter_map(|e| if let egui::Event::Key { key, pressed: true, modifiers, .. } = e { Some((*key, *modifiers)) } else { None })
+            .filter_map(|e| {
+                if let egui::Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } = e
+                {
+                    Some((*key, *modifiers))
+                } else {
+                    None
+                }
+            })
             .collect();
-        (keys, i.pointer.primary_clicked(), i.pointer.secondary_clicked(), i.pointer.delta().length() > 0.0)
+        (
+            keys,
+            i.pointer.primary_clicked(),
+            i.pointer.secondary_clicked(),
+            i.pointer.delta().length() > 0.0,
+        )
     });
     if moved {
         show.last_move = now;
@@ -282,8 +338,20 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
             A if m.command => show.pen = false,
             Home => actions.push(show.state.goto(&doc, 0)),
             End => actions.push(show.state.goto(&doc, doc.slides.len().saturating_sub(1))),
-            B | Period => show.blank = if show.blank == Some(Color32::BLACK) { None } else { Some(Color32::BLACK) },
-            W | Comma => show.blank = if show.blank == Some(Color32::WHITE) { None } else { Some(Color32::WHITE) },
+            B | Period => {
+                show.blank = if show.blank == Some(Color32::BLACK) {
+                    None
+                } else {
+                    Some(Color32::BLACK)
+                }
+            }
+            W | Comma => {
+                show.blank = if show.blank == Some(Color32::WHITE) {
+                    None
+                } else {
+                    Some(Color32::WHITE)
+                }
+            }
             E => show.strokes.clear(),
             Num0 | Num1 | Num2 | Num3 | Num4 | Num5 | Num6 | Num7 | Num8 | Num9 => {
                 show.goto.push_str(k.name());
@@ -292,9 +360,21 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         }
     }
     let on_slide = !show.pen && !show.ended && show.blank.is_none() && !show.reading_bar_hit(&ctx);
-    let gif_click = if clicked && on_slide { gif_hit(&ctx, ui, &show, &doc, app) } else { None };
-    let media_click = if clicked && on_slide && gif_click.is_none() { media_hit(&ctx, ui, &show, &doc) } else { None };
-    let link = if on_slide && gif_click.is_none() && media_click.is_none() { link_hit(&ctx, ui, &mut show, &doc) } else { None };
+    let gif_click = if clicked && on_slide {
+        gif_hit(&ctx, ui, &show, &doc, app)
+    } else {
+        None
+    };
+    let media_click = if clicked && on_slide && gif_click.is_none() {
+        media_hit(&ctx, ui, &show, &doc)
+    } else {
+        None
+    };
+    let link = if on_slide && gif_click.is_none() && media_click.is_none() {
+        link_hit(&ctx, ui, &mut show, &doc)
+    } else {
+        None
+    };
     if let Some(id) = gif_click {
         let _ = app.run("media.gifPlay", json!({"id": id}));
     } else if let Some((id, clip)) = media_click {
@@ -357,10 +437,17 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
     let full = ui.max_rect();
     let painter = ui.painter_at(full);
     painter.rect_filled(full, CornerRadius::ZERO, Color32::BLACK);
-    let avail = if show.reading { Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0)) } else { full };
+    let avail = if show.reading {
+        Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0))
+    } else {
+        full
+    };
     let srect = fit(avail, &doc);
     let ppp = ctx.pixels_per_point();
-    let size = ((srect.width() * ppp).round().max(1.0) as u32, (srect.height() * ppp).round().max(1.0) as u32);
+    let size = (
+        (srect.width() * ppp).round().max(1.0) as u32,
+        (srect.height() * ppp).round().max(1.0) as u32,
+    );
     if show.ended {
         painter.text(
             pos2(full.center().x, full.min.y + 40.0),
@@ -373,12 +460,20 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         let idx = show.state.slide;
         let step = show.state.step;
         let animating = show.state.playing;
-        let t = if animating { now - show.step_start } else { 0.0 };
+        let t = if animating {
+            now - show.step_start
+        } else {
+            0.0
+        };
         let media = crate::media::slide_media(&doc, idx);
         let hidden: Vec<ShapeId> = media
             .iter()
             .filter(|(id, _, clip)| {
-                clip.hide_while_not_playing && !app.media.status(*id).is_some_and(|s| s.state != deckcraft_media::PlayState::Ended)
+                clip.hide_while_not_playing
+                    && !app
+                        .media
+                        .status(*id)
+                        .is_some_and(|s| s.state != deckcraft_media::PlayState::Ended)
             })
             .map(|m| m.0)
             .collect();
@@ -386,7 +481,14 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         let times: Vec<_> = gifs.iter().map(|g| (g.id, g.t)).collect();
         crate::media::gif_repaint(&ctx, &gifs);
         let gif = crate::media::gif_key(&gifs);
-        let key = Key { slide: idx, step, size, doc: std::sync::Arc::as_ptr(&doc) as usize, hidden: hidden.clone(), gif };
+        let key = Key {
+            slide: idx,
+            step,
+            size,
+            doc: std::sync::Arc::as_ptr(&doc) as usize,
+            hidden: hidden.clone(),
+            gif,
+        };
         let tex = if !animating && show.tex.as_ref().is_some_and(|(k, _)| *k == key) {
             show.tex.as_ref().map(|(_, t)| t.clone())
         } else {
@@ -399,8 +501,13 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
                 }
                 st
             };
-            let threads =
-                if cfg!(target_arch = "wasm32") { 0 } else { std::thread::available_parallelism().map(|n| n.get().min(8) as u16).unwrap_or(0) };
+            let threads = if cfg!(target_arch = "wasm32") {
+                0
+            } else {
+                std::thread::available_parallelism()
+                    .map(|n| n.get().min(8) as u16)
+                    .unwrap_or(0)
+            };
             let img = deckcraft_render::render_slide(
                 &doc,
                 idx,
@@ -425,8 +532,15 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
             Some(tex)
         };
         let mut drew = false;
-        let morphing = show.trans.as_ref().is_some_and(|tr| tr.kind == "morph" && tr.from.is_some() && now - tr.start < tr.dur);
-        let tl = if morphing { Some(show.timeline(&doc).clone()) } else { None };
+        let morphing = show
+            .trans
+            .as_ref()
+            .is_some_and(|tr| tr.kind == "morph" && tr.from.is_some() && now - tr.start < tr.dur);
+        let tl = if morphing {
+            Some(show.timeline(&doc).clone())
+        } else {
+            None
+        };
         let morph = match (&show.trans, tl) {
             (Some(tr), Some(tl)) => {
                 let p = ((now - tr.start) / tr.dur.max(0.01)).clamp(0.0, 1.0);
@@ -442,22 +556,50 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
             _ => None,
         };
         if let (Some((from, m)), Some(tr)) = (morph, show.trans.as_mut()) {
-            let f = |id: ShapeId| ShapeState { opacity: m.opacity_of(id), ..Default::default() };
-            let threads =
-                if cfg!(target_arch = "wasm32") { 0 } else { std::thread::available_parallelism().map(|n| n.get().min(8) as u16).unwrap_or(0) };
-            let opts =
-                RenderOpts { scale: size.0 as f64 / doc.slide_size.width.max(1.0), size: Some(size), state: Some(&f), threads, ..Default::default() };
+            let f = |id: ShapeId| ShapeState {
+                opacity: m.opacity_of(id),
+                ..Default::default()
+            };
+            let threads = if cfg!(target_arch = "wasm32") {
+                0
+            } else {
+                std::thread::available_parallelism()
+                    .map(|n| n.get().min(8) as u16)
+                    .unwrap_or(0)
+            };
+            let opts = RenderOpts {
+                scale: size.0 as f64 / doc.slide_size.width.max(1.0),
+                size: Some(size),
+                state: Some(&f),
+                threads,
+                ..Default::default()
+            };
             let text: Vec<deckcraft_render::TextMorph> = m
                 .text
                 .iter()
-                .map(|x| deckcraft_render::TextMorph { old: x.old, new: x.new, from: x.from, to: x.to, chars: x.chars, t: m.mix })
+                .map(|x| deckcraft_render::TextMorph {
+                    old: x.old,
+                    new: x.new,
+                    from: x.from,
+                    to: x.to,
+                    chars: x.chars,
+                    t: m.mix,
+                })
                 .collect();
             let paths: Vec<deckcraft_render::PathMorph> = m
                 .paths
                 .iter()
-                .map(|x| deckcraft_render::PathMorph { id: x.id, from: x.from.clone(), from_box: x.from_box, to_box: x.to_box, t: m.mix })
+                .map(|x| deckcraft_render::PathMorph {
+                    id: x.id,
+                    from: x.from.clone(),
+                    from_box: x.from_box,
+                    to_box: x.to_box,
+                    t: m.mix,
+                })
                 .collect();
-            let img = deckcraft_render::render_blend(&doc, from, idx, m.mix, &m.shapes, &text, &paths, &opts);
+            let img = deckcraft_render::render_blend(
+                &doc, from, idx, m.mix, &m.shapes, &text, &paths, &opts,
+            );
             let ci = crate::textures::to_color_image(&img, false);
             let frame = match tr.morph.take() {
                 Some(mut h) => {
@@ -466,7 +608,12 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
                 }
                 None => ctx.load_texture("morph", ci, egui::TextureOptions::LINEAR),
             };
-            painter.image(frame.id(), srect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+            painter.image(
+                frame.id(),
+                srect,
+                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
             tr.morph = Some(frame);
             drew = true;
             ctx.request_repaint();
@@ -492,7 +639,12 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         if !drew {
             show.trans = None;
             if let Some(tex) = &tex {
-                painter.image(tex.id(), srect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+                painter.image(
+                    tex.id(),
+                    srect,
+                    Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                    Color32::WHITE,
+                );
             }
             // Playing video: the current frame in its box, or full screen.
             let k = srect.width() / doc.slide_size.width.max(1.0) as f32;
@@ -503,12 +655,18 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
                 let r = if clip.full_screen && app.media.is_playing(*id) {
                     full
                 } else {
-                    Rect::from_min_size(pos2(srect.min.x + x.x as f32 * k, srect.min.y + x.y as f32 * k), vec2(x.w as f32 * k, x.h as f32 * k))
+                    Rect::from_min_size(
+                        pos2(srect.min.x + x.x as f32 * k, srect.min.y + x.y as f32 * k),
+                        vec2(x.w as f32 * k, x.h as f32 * k),
+                    )
                 };
                 crate::media::paint_frame(&painter, &app.media, *id, r);
             }
             // Play/pause on the animated GIF under the pointer.
-            if let Some(p) = ctx.input(|i| i.pointer.hover_pos()).filter(|_| !show.pen && now - show.last_move < 2.5) {
+            if let Some(p) = ctx
+                .input(|i| i.pointer.hover_pos())
+                .filter(|_| !show.pen && now - show.last_move < 2.5)
+            {
                 for g in &gifs {
                     let r = on_screen(srect, k, &g.rect);
                     if r.contains(p) {
@@ -526,7 +684,15 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         painter.rect_filled(full, CornerRadius::ZERO, c);
     }
     // Pen.
-    let resp = ui.interact(full, ui.id().with("show_pen"), if show.pen { Sense::drag() } else { Sense::hover() });
+    let resp = ui.interact(
+        full,
+        ui.id().with("show_pen"),
+        if show.pen {
+            Sense::drag()
+        } else {
+            Sense::hover()
+        },
+    );
     if show.pen {
         if resp.drag_started() {
             show.strokes.push(vec![]);
@@ -534,7 +700,10 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         if resp.dragged()
             && let (Some(p), Some(s)) = (resp.interact_pointer_pos(), show.strokes.last_mut())
         {
-            s.push(pos2((p.x - srect.min.x) / srect.width(), (p.y - srect.min.y) / srect.height()));
+            s.push(pos2(
+                (p.x - srect.min.x) / srect.width(),
+                (p.y - srect.min.y) / srect.height(),
+            ));
         }
         ctx.set_cursor_icon(egui::CursorIcon::Crosshair);
     } else if link.is_some() {
@@ -545,7 +714,15 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
     }
     let pen_col = theme::to_color32(doc.show.pen_color);
     for s in &show.strokes {
-        let pts: Vec<Pos2> = s.iter().map(|q| pos2(srect.min.x + q.x * srect.width(), srect.min.y + q.y * srect.height())).collect();
+        let pts: Vec<Pos2> = s
+            .iter()
+            .map(|q| {
+                pos2(
+                    srect.min.x + q.x * srect.width(),
+                    srect.min.y + q.y * srect.height(),
+                )
+            })
+            .collect();
         painter.add(egui::Shape::line(pts, Stroke::new(3.0, pen_col)));
     }
     // Reading view bar / on-screen controls.
@@ -561,7 +738,10 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
         );
         let mut child = ui.new_child(
             egui::UiBuilder::new()
-                .max_rect(Rect::from_min_max(pos2(bar.max.x - 260.0, bar.min.y), bar.max))
+                .max_rect(Rect::from_min_max(
+                    pos2(bar.max.x - 260.0, bar.min.y),
+                    bar.max,
+                ))
                 .layout(egui::Layout::right_to_left(egui::Align::Center)),
         );
         if child.button("Close").clicked() {
@@ -578,11 +758,22 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
             show.apply(a, &doc, now);
         }
     } else if now - show.last_move < 2.5 {
-        let bar = Rect::from_min_size(pos2(full.min.x + 20.0, full.max.y - 50.0), vec2(250.0, 34.0));
+        let bar = Rect::from_min_size(
+            pos2(full.min.x + 20.0, full.max.y - 50.0),
+            vec2(250.0, 34.0),
+        );
         painter.rect_filled(bar, CornerRadius::same(17), Color32::from_black_alpha(140));
-        let mut child =
-            ui.new_child(egui::UiBuilder::new().max_rect(bar.shrink2(vec2(10.0, 4.0))).layout(egui::Layout::left_to_right(egui::Align::Center)));
-        let b = |ui: &mut Ui, s: &str| ui.add(egui::Button::new(egui::RichText::new(s).color(Color32::WHITE).size(15.0)).frame(false));
+        let mut child = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(bar.shrink2(vec2(10.0, 4.0)))
+                .layout(egui::Layout::left_to_right(egui::Align::Center)),
+        );
+        let b = |ui: &mut Ui, s: &str| {
+            ui.add(
+                egui::Button::new(egui::RichText::new(s).color(Color32::WHITE).size(15.0))
+                    .frame(false),
+            )
+        };
         if b(&mut child, "◀").clicked() {
             let a = show.state.prev(&doc);
             show.apply(a, &doc, now);
@@ -607,12 +798,21 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
     if show.rehearse {
         let t = now - show.slide_start;
         let total = now - show.show_start;
-        let r = Rect::from_min_size(pos2(full.min.x + 12.0, full.min.y + 12.0), vec2(220.0, 30.0));
+        let r = Rect::from_min_size(
+            pos2(full.min.x + 12.0, full.min.y + 12.0),
+            vec2(220.0, 30.0),
+        );
         painter.rect_filled(r, CornerRadius::same(6), Color32::from_black_alpha(160));
         painter.text(
             r.center(),
             Align2::CENTER_CENTER,
-            format!("Slide {:02}:{:04.1}   Total {:02}:{:02}", (t / 60.0) as u32, t % 60.0, (total / 60.0) as u32, (total % 60.0) as u32),
+            format!(
+                "Slide {:02}:{:04.1}   Total {:02}:{:02}",
+                (t / 60.0) as u32,
+                t % 60.0,
+                (total / 60.0) as u32,
+                (total % 60.0) as u32
+            ),
             theme::font(13.0),
             Color32::WHITE,
         );
@@ -633,9 +833,13 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
             if let Some((_, tl)) = &show.timeline {
                 let _ = tl;
             }
-            show.timings.push((show.state.slide, now - show.slide_start));
+            show.timings
+                .push((show.state.slide, now - show.slide_start));
             for (i, secs) in show.timings.clone() {
-                let _ = app.run("transition.timing", json!({"index": i, "after": (secs * 1000.0).round() as u64}));
+                let _ = app.run(
+                    "transition.timing",
+                    json!({"index": i, "after": (secs * 1000.0).round() as u64}),
+                );
             }
             app.set_status("Slide timings recorded.");
         }
@@ -647,13 +851,22 @@ pub fn ui(app: &mut SlideApp, ui: &mut Ui) {
 /// Start the media of a newly shown slide: media from the previous slide stops unless it plays
 /// across slides; media set to start automatically plays. Everything stops at the end.
 fn show_media(app: &mut SlideApp, show: &mut Show, doc: &Presentation) {
-    let cur = if show.ended { None } else { Some(show.state.slide) };
+    let cur = if show.ended {
+        None
+    } else {
+        Some(show.state.slide)
+    };
     if show.media_slide == cur {
         return;
     }
     show.media_slide = cur;
     let keep: Vec<ShapeId> = match cur {
-        Some(_) => app.media.ids().into_iter().filter(|id| crate::media::find_clip(doc, *id).is_some_and(|c| c.play_across_slides)).collect(),
+        Some(_) => app
+            .media
+            .ids()
+            .into_iter()
+            .filter(|id| crate::media::find_clip(doc, *id).is_some_and(|c| c.play_across_slides))
+            .collect(),
         None => vec![],
     };
     for id in app.media.ids() {
@@ -664,56 +877,109 @@ fn show_media(app: &mut SlideApp, show: &mut Show, doc: &Presentation) {
     if let Some(i) = cur {
         for (id, _, clip) in crate::media::slide_media(doc, i) {
             if clip.autoplay && !keep.contains(&id) {
-                app.media.play(doc, id, &clip, None, crate::media::Owner::Show);
+                app.media
+                    .play(doc, id, &clip, None, crate::media::Owner::Show);
             }
         }
     }
 }
 
 /// The media shape under the pointer on the shown slide.
-fn media_hit(ctx: &egui::Context, ui: &Ui, show: &Show, doc: &Presentation) -> Option<(ShapeId, deckcraft_model::MediaClip)> {
+fn media_hit(
+    ctx: &egui::Context,
+    ui: &Ui,
+    show: &Show,
+    doc: &Presentation,
+) -> Option<(ShapeId, deckcraft_model::MediaClip)> {
     let p = ctx.input(|i| i.pointer.interact_pos())?;
     let full = ui.max_rect();
-    let avail = if show.reading { Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0)) } else { full };
+    let avail = if show.reading {
+        Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0))
+    } else {
+        full
+    };
     let srect = fit(avail, doc);
     let k = srect.width() / doc.slide_size.width.max(1.0) as f32;
-    crate::media::slide_media(doc, show.state.slide).into_iter().rev().find_map(|(id, x, clip)| {
-        let r = Rect::from_min_size(pos2(srect.min.x + x.x as f32 * k, srect.min.y + x.y as f32 * k), vec2(x.w as f32 * k, x.h as f32 * k));
-        r.contains(p).then_some((id, clip))
-    })
+    crate::media::slide_media(doc, show.state.slide)
+        .into_iter()
+        .rev()
+        .find_map(|(id, x, clip)| {
+            let r = Rect::from_min_size(
+                pos2(srect.min.x + x.x as f32 * k, srect.min.y + x.y as f32 * k),
+                vec2(x.w as f32 * k, x.h as f32 * k),
+            );
+            r.contains(p).then_some((id, clip))
+        })
 }
 
 /// The link under the pointer: the topmost shape action or text hyperlink on the current slide
 /// (a text link wins over its shape's action).
-fn link_hit(ctx: &egui::Context, ui: &Ui, show: &mut Show, doc: &Presentation) -> Option<Hyperlink> {
+fn link_hit(
+    ctx: &egui::Context,
+    ui: &Ui,
+    show: &mut Show,
+    doc: &Presentation,
+) -> Option<Hyperlink> {
     let p = ctx.input(|i| i.pointer.hover_pos())?;
     let full = ui.max_rect();
-    let avail = if show.reading { Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0)) } else { full };
+    let avail = if show.reading {
+        Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0))
+    } else {
+        full
+    };
     let srect = fit(avail, doc);
     let k = (srect.width() / doc.slide_size.width.max(1.0) as f32) as f64;
-    let (x, y) = ((p.x - srect.min.x) as f64 / k, (p.y - srect.min.y) as f64 / k);
+    let (x, y) = (
+        (p.x - srect.min.x) as f64 / k,
+        (p.y - srect.min.y) as f64 / k,
+    );
     let i = show.state.slide;
     if show.links.as_ref().is_none_or(|(s, _)| *s != i) {
         show.links = Some((i, deckcraft_render::place_slide(doc, i).links));
     }
     let (_, links) = show.links.as_ref()?;
-    links.iter().rev().find(|l| l.rect.x0 <= x && x <= l.rect.x1 && l.rect.y0 <= y && y <= l.rect.y1).map(|l| l.link.clone())
+    links
+        .iter()
+        .rev()
+        .find(|l| l.rect.x0 <= x && x <= l.rect.x1 && l.rect.y0 <= y && y <= l.rect.y1)
+        .map(|l| l.link.clone())
 }
 
 /// A slide-space box on screen, the slide being drawn in `srect` at `k` pixels per point.
 fn on_screen(srect: Rect, k: f32, x: &deckcraft_geom::Xfrm) -> Rect {
-    Rect::from_min_size(pos2(srect.min.x + x.x as f32 * k, srect.min.y + x.y as f32 * k), vec2(x.w as f32 * k, x.h as f32 * k))
+    Rect::from_min_size(
+        pos2(srect.min.x + x.x as f32 * k, srect.min.y + x.y as f32 * k),
+        vec2(x.w as f32 * k, x.h as f32 * k),
+    )
 }
 
 /// The animated GIF whose play/pause button is under the pointer on the shown slide.
-fn gif_hit(ctx: &egui::Context, ui: &Ui, show: &Show, doc: &Presentation, app: &mut SlideApp) -> Option<ShapeId> {
+fn gif_hit(
+    ctx: &egui::Context,
+    ui: &Ui,
+    show: &Show,
+    doc: &Presentation,
+    app: &mut SlideApp,
+) -> Option<ShapeId> {
     let p = ctx.input(|i| i.pointer.interact_pos())?;
     let full = ui.max_rect();
-    let avail = if show.reading { Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0)) } else { full };
+    let avail = if show.reading {
+        Rect::from_min_max(full.min, pos2(full.max.x, full.max.y - 34.0))
+    } else {
+        full
+    };
     let srect = fit(avail, doc);
     let k = srect.width() / doc.slide_size.width.max(1.0) as f32;
-    let gifs = app.media.gifs(doc, show.state.slide, ctx.input(|i| i.time), &app.session.gif_paused);
-    gifs.iter().rev().find(|g| crate::media::gif_button_rect(on_screen(srect, k, &g.rect)).contains(p)).map(|g| g.id)
+    let gifs = app.media.gifs(
+        doc,
+        show.state.slide,
+        ctx.input(|i| i.time),
+        &app.session.gif_paused,
+    );
+    gifs.iter()
+        .rev()
+        .find(|g| crate::media::gif_button_rect(on_screen(srect, k, &g.rect)).contains(p))
+        .map(|g| g.id)
 }
 
 impl Show {
@@ -721,14 +987,23 @@ impl Show {
         // Clicks on the on-screen controls must not also advance.
         ctx.input(|i| i.pointer.interact_pos()).is_some_and(|p| {
             let r = ctx.content_rect();
-            (self.reading && p.y > r.max.y - 34.0) || (!self.reading && p.y > r.max.y - 56.0 && p.x < r.min.x + 280.0)
+            (self.reading && p.y > r.max.y - 34.0)
+                || (!self.reading && p.y > r.max.y - 56.0 && p.x < r.min.x + 280.0)
         })
     }
 }
 
-fn presenter_window(ctx: &egui::Context, show: &mut Show, doc: &Presentation, now: f64, keep: &mut bool) {
+fn presenter_window(
+    ctx: &egui::Context,
+    show: &mut Show,
+    doc: &Presentation,
+    now: f64,
+    keep: &mut bool,
+) {
     let cur = show.state.slide;
-    let next = deckcraft_anim::show_order(doc).into_iter().find(|i| *i > cur);
+    let next = deckcraft_anim::show_order(doc)
+        .into_iter()
+        .find(|i| *i > cur);
     let cur_tex = show.tex.as_ref().map(|(_, t)| t.clone());
     if let Some(n) = next
         && show.next_tex.as_ref().is_none_or(|(k, _)| *k != n)
@@ -738,75 +1013,157 @@ fn presenter_window(ctx: &egui::Context, show: &mut Show, doc: &Presentation, no
             n,
             &RenderOpts {
                 scale: 480.0 / doc.slide_size.width.max(1.0),
-                size: Some((480, (480.0 * doc.slide_size.height / doc.slide_size.width.max(1.0)) as u32)),
+                size: Some((
+                    480,
+                    (480.0 * doc.slide_size.height / doc.slide_size.width.max(1.0)) as u32,
+                )),
                 ..Default::default()
             },
         );
-        show.next_tex = Some((n, ctx.load_texture("presenter-next", crate::textures::to_color_image(&img, false), egui::TextureOptions::LINEAR)));
+        show.next_tex = Some((
+            n,
+            ctx.load_texture(
+                "presenter-next",
+                crate::textures::to_color_image(&img, false),
+                egui::TextureOptions::LINEAR,
+            ),
+        ));
     }
-    let next_tex = show.next_tex.as_ref().filter(|(k, _)| Some(*k) == next).map(|(_, t)| t.clone());
-    let notes = doc.slides.get(cur).map(|s| s.notes_text()).unwrap_or_default();
+    let next_tex = show
+        .next_tex
+        .as_ref()
+        .filter(|(k, _)| Some(*k) == next)
+        .map(|(_, t)| t.clone());
+    let notes = doc
+        .slides
+        .get(cur)
+        .map(|s| s.notes_text())
+        .unwrap_or_default();
     let elapsed = now - show.show_start;
     let mut actions = vec![];
     ctx.show_viewport_immediate(
         egui::ViewportId::from_hash_of("deckcraft_presenter"),
-        egui::ViewportBuilder::default().with_title("Presenter View — DeckCraft").with_inner_size([1100.0, 700.0]),
+        egui::ViewportBuilder::default()
+            .with_title("Presenter View — DeckCraft")
+            .with_inner_size([1100.0, 700.0]),
         |ui, _| {
-            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(Color32::from_gray(24)).inner_margin(egui::Margin::same(16))).show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(
-                        egui::RichText::new(format!(
-                            "{:02}:{:02}:{:02}",
-                            (elapsed / 3600.0) as u32,
-                            (elapsed / 60.0) as u32 % 60,
-                            elapsed as u32 % 60
-                        ))
-                        .size(22.0)
-                        .color(Color32::WHITE),
+            egui::CentralPanel::default()
+                .frame(
+                    egui::Frame::NONE
+                        .fill(Color32::from_gray(24))
+                        .inner_margin(egui::Margin::same(16)),
+                )
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "{:02}:{:02}:{:02}",
+                                (elapsed / 3600.0) as u32,
+                                (elapsed / 60.0) as u32 % 60,
+                                elapsed as u32 % 60
+                            ))
+                            .size(22.0)
+                            .color(Color32::WHITE),
+                        );
+                        ui.add_space(20.0);
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "Slide {} of {}",
+                                cur + 1,
+                                doc.slides.len()
+                            ))
+                            .size(16.0)
+                            .color(Color32::from_gray(200)),
+                        );
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button("End Show").clicked() {
+                                *keep = false;
+                            }
+                            if ui.button("Next ▶").clicked() {
+                                actions.push(show.state.next(doc));
+                            }
+                            if ui.button("◀ Previous").clicked() {
+                                actions.push(show.state.prev(doc));
+                            }
+                        });
+                    });
+                    ui.add_space(10.0);
+                    let avail = ui.available_rect_before_wrap();
+                    let left = Rect::from_min_max(
+                        avail.min,
+                        pos2(avail.min.x + avail.width() * 0.62, avail.max.y),
                     );
-                    ui.add_space(20.0);
-                    ui.label(egui::RichText::new(format!("Slide {} of {}", cur + 1, doc.slides.len())).size(16.0).color(Color32::from_gray(200)));
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("End Show").clicked() {
-                            *keep = false;
+                    let right = Rect::from_min_max(pos2(left.max.x + 16.0, avail.min.y), avail.max);
+                    let cr = fit(
+                        Rect::from_min_max(
+                            left.min,
+                            pos2(left.max.x, left.min.y + left.height() * 0.8),
+                        ),
+                        doc,
+                    );
+                    let cr = Rect::from_min_size(left.min, cr.size());
+                    if let Some(t) = &cur_tex {
+                        ui.painter().image(
+                            t.id(),
+                            cr,
+                            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                            Color32::WHITE,
+                        );
+                    }
+                    let nr = Rect::from_min_size(
+                        right.min + vec2(0.0, 22.0),
+                        vec2(
+                            right.width(),
+                            right.width()
+                                * (doc.slide_size.height / doc.slide_size.width.max(1.0)) as f32,
+                        ),
+                    );
+                    ui.painter().text(
+                        right.min,
+                        Align2::LEFT_TOP,
+                        "Next",
+                        theme::font(13.0),
+                        Color32::from_gray(170),
+                    );
+                    match &next_tex {
+                        Some(t) => {
+                            ui.painter().image(
+                                t.id(),
+                                nr,
+                                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                                Color32::WHITE,
+                            );
                         }
-                        if ui.button("Next ▶").clicked() {
-                            actions.push(show.state.next(doc));
+                        None => {
+                            ui.painter().rect_filled(
+                                nr,
+                                CornerRadius::ZERO,
+                                Color32::from_gray(40),
+                            );
+                            ui.painter().text(
+                                nr.center(),
+                                Align2::CENTER_CENTER,
+                                "End of slide show",
+                                theme::font(13.0),
+                                Color32::from_gray(170),
+                            );
                         }
-                        if ui.button("◀ Previous").clicked() {
-                            actions.push(show.state.prev(doc));
-                        }
+                    }
+                    let notes_rect =
+                        Rect::from_min_max(pos2(right.min.x, nr.max.y + 16.0), right.max);
+                    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(notes_rect));
+                    egui::ScrollArea::vertical().show(&mut child, |ui| {
+                        ui.label(
+                            egui::RichText::new(if notes.is_empty() {
+                                "No notes."
+                            } else {
+                                &notes
+                            })
+                            .size(18.0)
+                            .color(Color32::from_gray(230)),
+                        );
                     });
                 });
-                ui.add_space(10.0);
-                let avail = ui.available_rect_before_wrap();
-                let left = Rect::from_min_max(avail.min, pos2(avail.min.x + avail.width() * 0.62, avail.max.y));
-                let right = Rect::from_min_max(pos2(left.max.x + 16.0, avail.min.y), avail.max);
-                let cr = fit(Rect::from_min_max(left.min, pos2(left.max.x, left.min.y + left.height() * 0.8)), doc);
-                let cr = Rect::from_min_size(left.min, cr.size());
-                if let Some(t) = &cur_tex {
-                    ui.painter().image(t.id(), cr, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
-                }
-                let nr = Rect::from_min_size(
-                    right.min + vec2(0.0, 22.0),
-                    vec2(right.width(), right.width() * (doc.slide_size.height / doc.slide_size.width.max(1.0)) as f32),
-                );
-                ui.painter().text(right.min, Align2::LEFT_TOP, "Next", theme::font(13.0), Color32::from_gray(170));
-                match &next_tex {
-                    Some(t) => {
-                        ui.painter().image(t.id(), nr, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
-                    }
-                    None => {
-                        ui.painter().rect_filled(nr, CornerRadius::ZERO, Color32::from_gray(40));
-                        ui.painter().text(nr.center(), Align2::CENTER_CENTER, "End of slide show", theme::font(13.0), Color32::from_gray(170));
-                    }
-                }
-                let notes_rect = Rect::from_min_max(pos2(right.min.x, nr.max.y + 16.0), right.max);
-                let mut child = ui.new_child(egui::UiBuilder::new().max_rect(notes_rect));
-                egui::ScrollArea::vertical().show(&mut child, |ui| {
-                    ui.label(egui::RichText::new(if notes.is_empty() { "No notes." } else { &notes }).size(18.0).color(Color32::from_gray(230)));
-                });
-            });
             if ui.input(|i| i.viewport().close_requested()) {
                 show.presenter = false;
             }
@@ -831,16 +1188,34 @@ mod tests {
         // texture and every transition blended the new slide with itself.
         let mut s = deckcraft_engine::Session::with_new();
         s.execute("slide.new", &json!({})).unwrap();
-        s.execute("transition.set", &json!({"kind": "fade", "index": 1})).unwrap();
+        s.execute("transition.set", &json!({"kind": "fade", "index": 1}))
+            .unwrap();
         let doc = s.active().unwrap().doc.clone();
         let ctx = egui::Context::default();
-        let red = ctx.load_texture("show", egui::ColorImage::filled([1, 1], Color32::RED), egui::TextureOptions::LINEAR);
+        let red = ctx.load_texture(
+            "show",
+            egui::ColorImage::filled([1, 1], Color32::RED),
+            egui::TextureOptions::LINEAR,
+        );
         let mut show = Show::new(&doc, 0, false, false);
-        show.tex = Some((Key { slide: 0, step: 0, size: (1, 1), doc: 0, hidden: vec![], gif: 0 }, red.clone()));
+        show.tex = Some((
+            Key {
+                slide: 0,
+                step: 0,
+                size: (1, 1),
+                doc: 0,
+                hidden: vec![],
+                gif: 0,
+            },
+            red.clone(),
+        ));
         assert!(show.apply(ShowAction::Slide(1), &doc, 0.0));
         let tr = show.trans.as_ref().expect("the fade plays");
         assert_eq!(tr.old.as_ref().map(TextureHandle::id), Some(red.id()));
         assert_eq!(tr.from, Some(0));
-        assert!(show.tex.is_none(), "the new slide gets a texture of its own instead of overwriting the old one");
+        assert!(
+            show.tex.is_none(),
+            "the new slide gets a texture of its own instead of overwriting the old one"
+        );
     }
 }

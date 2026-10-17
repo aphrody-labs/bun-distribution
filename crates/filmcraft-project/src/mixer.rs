@@ -39,7 +39,12 @@ pub const LANE_PAN51_CENTER: &str = "pan51.center";
 /// 5.1 panner LFE level (dB).
 pub const LANE_PAN51_LFE: &str = "pan51.lfe";
 /// The 5.1 panner lanes.
-pub const PAN51_LANES: [&str; 4] = [LANE_PAN51_X, LANE_PAN51_Y, LANE_PAN51_CENTER, LANE_PAN51_LFE];
+pub const PAN51_LANES: [&str; 4] = [
+    LANE_PAN51_X,
+    LANE_PAN51_Y,
+    LANE_PAN51_CENTER,
+    LANE_PAN51_LFE,
+];
 
 /// Default value of a 5.1 panner lane for a strip of channel format `channels`: puck at front
 /// centre, Center 100 %, LFE 0 dB for 5.1 strips (their LFE channel passes) and −∞ for mono /
@@ -49,7 +54,11 @@ pub fn pan51_default(key: &str, channels: crate::AudioChannels) -> Option<f64> {
         LANE_PAN51_X => Some(0.0),
         LANE_PAN51_Y => Some(100.0),
         LANE_PAN51_CENTER => Some(100.0),
-        LANE_PAN51_LFE => Some(if channels == crate::AudioChannels::Surround51 { 0.0 } else { FADER_MIN_DB }),
+        LANE_PAN51_LFE => Some(if channels == crate::AudioChannels::Surround51 {
+            0.0
+        } else {
+            FADER_MIN_DB
+        }),
         _ => None,
     }
 }
@@ -88,7 +97,13 @@ pub enum AutomationMode {
 }
 
 impl AutomationMode {
-    pub const ALL: [AutomationMode; 5] = [AutomationMode::Off, AutomationMode::Read, AutomationMode::Latch, AutomationMode::Touch, AutomationMode::Write];
+    pub const ALL: [AutomationMode; 5] = [
+        AutomationMode::Off,
+        AutomationMode::Read,
+        AutomationMode::Latch,
+        AutomationMode::Touch,
+        AutomationMode::Write,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             AutomationMode::Off => "Off",
@@ -99,7 +114,9 @@ impl AutomationMode {
         }
     }
     pub fn from_name(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|m| m.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.label().eq_ignore_ascii_case(s))
     }
     /// Plays stored automation.
     pub fn reads(self) -> bool {
@@ -107,7 +124,10 @@ impl AutomationMode {
     }
     /// Records automation during playback.
     pub fn writes(self) -> bool {
-        matches!(self, AutomationMode::Latch | AutomationMode::Touch | AutomationMode::Write)
+        matches!(
+            self,
+            AutomationMode::Latch | AutomationMode::Touch | AutomationMode::Write
+        )
     }
 }
 
@@ -128,7 +148,13 @@ pub enum InputMap {
 }
 
 impl InputMap {
-    pub const ALL: [InputMap; 5] = [InputMap::Stereo, InputMap::Left, InputMap::Right, InputMap::Swap, InputMap::Mono];
+    pub const ALL: [InputMap; 5] = [
+        InputMap::Stereo,
+        InputMap::Left,
+        InputMap::Right,
+        InputMap::Swap,
+        InputMap::Mono,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             InputMap::Stereo => "Stereo",
@@ -139,7 +165,9 @@ impl InputMap {
         }
     }
     pub fn from_name(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|m| m.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -162,7 +190,13 @@ pub struct TrackSend {
 
 impl TrackSend {
     pub fn new(target: TrackId) -> Self {
-        TrackSend { target, level_db: 0.0, pan: 0.0, pre_fader: false, muted: false }
+        TrackSend {
+            target,
+            level_db: 0.0,
+            pan: 0.0,
+            pre_fader: false,
+            muted: false,
+        }
     }
 }
 
@@ -199,19 +233,57 @@ pub struct LaneInfo {
 /// Range and behaviour of a non-effect lane (`volume`, `pan`, `mute`, `send.<i>.level`).
 pub fn lane_info(key: &str) -> Option<LaneInfo> {
     match key {
-        LANE_VOLUME => Some(LaneInfo { min: FADER_MIN_DB, max: FADER_MAX_DB, hold: false, unit: "dB" }),
-        LANE_PAN => Some(LaneInfo { min: -100.0, max: 100.0, hold: false, unit: "" }),
-        LANE_MUTE => Some(LaneInfo { min: 0.0, max: 1.0, hold: true, unit: "" }),
-        LANE_PAN51_X | LANE_PAN51_Y => Some(LaneInfo { min: -100.0, max: 100.0, hold: false, unit: "" }),
-        LANE_PAN51_CENTER => Some(LaneInfo { min: 0.0, max: 100.0, hold: false, unit: "%" }),
-        LANE_PAN51_LFE => Some(LaneInfo { min: FADER_MIN_DB, max: FADER_MAX_DB, hold: false, unit: "dB" }),
-        k if parse_send_lane(k).is_some() => Some(LaneInfo { min: FADER_MIN_DB, max: FADER_MAX_DB, hold: false, unit: "dB" }),
+        LANE_VOLUME => Some(LaneInfo {
+            min: FADER_MIN_DB,
+            max: FADER_MAX_DB,
+            hold: false,
+            unit: "dB",
+        }),
+        LANE_PAN => Some(LaneInfo {
+            min: -100.0,
+            max: 100.0,
+            hold: false,
+            unit: "",
+        }),
+        LANE_MUTE => Some(LaneInfo {
+            min: 0.0,
+            max: 1.0,
+            hold: true,
+            unit: "",
+        }),
+        LANE_PAN51_X | LANE_PAN51_Y => Some(LaneInfo {
+            min: -100.0,
+            max: 100.0,
+            hold: false,
+            unit: "",
+        }),
+        LANE_PAN51_CENTER => Some(LaneInfo {
+            min: 0.0,
+            max: 100.0,
+            hold: false,
+            unit: "%",
+        }),
+        LANE_PAN51_LFE => Some(LaneInfo {
+            min: FADER_MIN_DB,
+            max: FADER_MAX_DB,
+            hold: false,
+            unit: "dB",
+        }),
+        k if parse_send_lane(k).is_some() => Some(LaneInfo {
+            min: FADER_MIN_DB,
+            max: FADER_MAX_DB,
+            hold: false,
+            unit: "dB",
+        }),
         _ => None,
     }
 }
 
 pub fn parse_send_lane(key: &str) -> Option<usize> {
-    key.strip_prefix("send.")?.strip_suffix(".level")?.parse().ok()
+    key.strip_prefix("send.")?
+        .strip_suffix(".level")?
+        .parse()
+        .ok()
 }
 
 pub fn parse_fx_lane(key: &str) -> Option<(usize, &str)> {
@@ -227,7 +299,12 @@ impl Track {
             LANE_VOLUME => Some(self.volume_db),
             LANE_PAN => Some(self.pan),
             LANE_MUTE => Some(if self.muted { 1.0 } else { 0.0 }),
-            k if PAN51_LANES.contains(&k) => self.mixer.lanes.get(k).and_then(|p| p.value.as_f64()).or_else(|| pan51_default(k, self.channels)),
+            k if PAN51_LANES.contains(&k) => self
+                .mixer
+                .lanes
+                .get(k)
+                .and_then(|p| p.value.as_f64())
+                .or_else(|| pan51_default(k, self.channels)),
             k => {
                 if let Some(i) = parse_send_lane(k) {
                     return self.mixer.sends.get(i).map(|s| s.level_db);
@@ -253,12 +330,19 @@ impl Track {
         }
         let stat = self.lane_static(key)?;
         lane_info(key)?;
-        Some(self.mixer.lanes.entry(key.to_string()).or_insert_with(|| Param::new(ParamValue::Float(stat))))
+        Some(
+            self.mixer
+                .lanes
+                .entry(key.to_string())
+                .or_insert_with(|| Param::new(ParamValue::Float(stat))),
+        )
     }
 
     /// Lane keyframes (empty when the lane is not automated).
     pub fn lane_keyframes(&self, key: &str) -> &[Keyframe] {
-        self.lane(key).map(|p| p.keyframes.as_slice()).unwrap_or(&[])
+        self.lane(key)
+            .map(|p| p.keyframes.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Value of a lane at sequence time `t` as playback hears it (automation unless the mode is Off).
@@ -275,7 +359,13 @@ impl Track {
 
     /// All automated lane keys of this strip.
     pub fn automated_lanes(&self) -> Vec<String> {
-        let mut v: Vec<String> = self.mixer.lanes.iter().filter(|(_, p)| p.is_animated()).map(|(k, _)| k.clone()).collect();
+        let mut v: Vec<String> = self
+            .mixer
+            .lanes
+            .iter()
+            .filter(|(_, p)| p.is_animated())
+            .map(|(k, _)| k.clone())
+            .collect();
         for (slot, e) in self.effects.iter().enumerate() {
             for (pid, p) in &e.params {
                 if p.is_animated() {
@@ -295,7 +385,11 @@ impl Track {
             k if PAN51_LANES.contains(&k) => {
                 let Some(i) = lane_info(k) else { return false };
                 let v = v.clamp(i.min, i.max);
-                self.mixer.lanes.entry(k.to_string()).or_insert_with(|| Param::new(ParamValue::Float(v))).value = ParamValue::Float(v);
+                self.mixer
+                    .lanes
+                    .entry(k.to_string())
+                    .or_insert_with(|| Param::new(ParamValue::Float(v)))
+                    .value = ParamValue::Float(v);
             }
             k => {
                 if let Some(i) = parse_send_lane(k) {
@@ -333,7 +427,14 @@ impl Track {
         }
         self.mixer.sends.remove(i);
         let mut lanes = std::mem::take(&mut self.mixer.lanes);
-        let moved: Vec<(String, Param)> = lanes.iter().filter_map(|(k, p)| parse_send_lane(k).filter(|&j| j >= i).map(|_| (k.clone(), p.clone()))).collect();
+        let moved: Vec<(String, Param)> = lanes
+            .iter()
+            .filter_map(|(k, p)| {
+                parse_send_lane(k)
+                    .filter(|&j| j >= i)
+                    .map(|_| (k.clone(), p.clone()))
+            })
+            .collect();
         for (k, _) in &moved {
             lanes.remove(k);
         }
@@ -385,22 +486,37 @@ impl crate::Sequence {
 
     /// Ids of all strips in mixer order: audio tracks, submixes, Mix.
     pub fn strip_ids(&self) -> Vec<TrackId> {
-        self.audio_tracks.iter().chain(&self.submix_tracks).map(|t| t.id).chain(std::iter::once(MASTER_STRIP)).collect()
+        self.audio_tracks
+            .iter()
+            .chain(&self.submix_tracks)
+            .map(|t| t.id)
+            .chain(std::iter::once(MASTER_STRIP))
+            .collect()
     }
 
     /// An audio or submix track (the strips that have a fader besides the Mix).
     pub fn mix_track(&self, id: TrackId) -> Option<&Track> {
-        self.audio_tracks.iter().chain(&self.submix_tracks).find(|t| t.id == id)
+        self.audio_tracks
+            .iter()
+            .chain(&self.submix_tracks)
+            .find(|t| t.id == id)
     }
     pub fn mix_track_mut(&mut self, id: TrackId) -> Option<&mut Track> {
-        self.audio_tracks.iter_mut().chain(self.submix_tracks.iter_mut()).find(|t| t.id == id)
+        self.audio_tracks
+            .iter_mut()
+            .chain(self.submix_tracks.iter_mut())
+            .find(|t| t.id == id)
     }
     /// Channel format of the bus strip `id` feeds (its output submix, or the Mix).
     pub fn output_channels(&self, id: TrackId) -> crate::AudioChannels {
         if id == MASTER_STRIP {
             return self.settings.audio_master;
         }
-        match self.mix_track(id).and_then(|t| t.mixer.output).and_then(|o| self.submix_tracks.iter().find(|s| s.id == o)) {
+        match self
+            .mix_track(id)
+            .and_then(|t| t.mixer.output)
+            .and_then(|o| self.submix_tracks.iter().find(|s| s.id == o))
+        {
             Some(s) => s.channels,
             None => self.settings.audio_master,
         }
@@ -422,7 +538,12 @@ impl crate::Sequence {
 /// (every dropped point lies within `tolerance` of the line between the kept neighbours), then drop
 /// points closer than `min_interval` to the previous kept one (except the last). `hold` lanes keep
 /// only the points where the value changes.
-pub fn thin_points(points: &[(Tick, f64)], tolerance: f64, min_interval: Tick, hold: bool) -> Vec<(Tick, f64)> {
+pub fn thin_points(
+    points: &[(Tick, f64)],
+    tolerance: f64,
+    min_interval: Tick,
+    hold: bool,
+) -> Vec<(Tick, f64)> {
     let mut pts: Vec<(Tick, f64)> = Vec::with_capacity(points.len());
     for &(t, v) in points {
         match pts.last_mut() {
@@ -473,7 +594,12 @@ pub fn thin_points(points: &[(Tick, f64)], tolerance: f64, min_interval: Tick, h
         if !keep[i] {
             continue;
         }
-        if i + 1 < n && min_interval.0 > 0 && out.last().is_some_and(|l: &(Tick, f64)| p.0 - l.0 < min_interval) {
+        if i + 1 < n
+            && min_interval.0 > 0
+            && out
+                .last()
+                .is_some_and(|l: &(Tick, f64)| p.0 - l.0 < min_interval)
+        {
             continue;
         }
         out.push(p);
@@ -485,8 +611,21 @@ pub fn thin_points(points: &[(Tick, f64)], tolerance: f64, min_interval: Tick, h
 ///
 /// `before`/`after` are the lane values just outside the written range: when given, a keyframe is
 /// placed one `eps` outside the range so the automation outside `[t0, t1]` is unchanged.
-pub fn write_lane(param: &mut Param, t0: Tick, t1: Tick, points: &[(Tick, f64)], before: Option<f64>, after: Option<f64>, eps: Tick, hold: bool) {
-    let interp = if hold { Interpolation::Hold } else { Interpolation::Linear };
+pub fn write_lane(
+    param: &mut Param,
+    t0: Tick,
+    t1: Tick,
+    points: &[(Tick, f64)],
+    before: Option<f64>,
+    after: Option<f64>,
+    eps: Tick,
+    hold: bool,
+) {
+    let interp = if hold {
+        Interpolation::Hold
+    } else {
+        Interpolation::Linear
+    };
     param.keyframes.retain(|k| k.time < t0 || k.time > t1);
     let mut add = |t: Tick, v: f64| {
         let mut k = Keyframe::new(t, ParamValue::Float(v));
@@ -525,7 +664,11 @@ mod tests {
             assert_eq!(AutomationMode::from_name(m.label()), Some(m));
         }
         assert_eq!(AutomationMode::default(), AutomationMode::Read);
-        assert!(!AutomationMode::Off.reads() && AutomationMode::Touch.writes() && !AutomationMode::Read.writes());
+        assert!(
+            !AutomationMode::Off.reads()
+                && AutomationMode::Touch.writes()
+                && !AutomationMode::Read.writes()
+        );
     }
 
     #[test]
@@ -534,8 +677,10 @@ mod tests {
         t.volume_db = -6.0;
         assert_eq!(t.lane_value(LANE_VOLUME, Tick(0)), -6.0);
         let p = t.lane_mut(LANE_VOLUME).unwrap();
-        p.keyframes.push(Keyframe::new(Tick(0), ParamValue::Float(0.0)));
-        p.keyframes.push(Keyframe::new(Tick(100), ParamValue::Float(-20.0)));
+        p.keyframes
+            .push(Keyframe::new(Tick(0), ParamValue::Float(0.0)));
+        p.keyframes
+            .push(Keyframe::new(Tick(100), ParamValue::Float(-20.0)));
         assert_eq!(t.lane_value(LANE_VOLUME, Tick(50)), -10.0);
         t.mixer.mode = AutomationMode::Off;
         assert_eq!(t.lane_value(LANE_VOLUME, Tick(50)), -6.0);
@@ -545,9 +690,23 @@ mod tests {
     #[test]
     fn thinning_keeps_shape_within_tolerance() {
         // a ramp sampled densely collapses to its end points; a corner survives
-        let pts: Vec<(Tick, f64)> = (0..=100).map(|i| (Tick(i * 10), if i <= 50 { i as f64 * 0.2 } else { 10.0 - (i - 50) as f64 * 0.2 })).collect();
+        let pts: Vec<(Tick, f64)> = (0..=100)
+            .map(|i| {
+                (
+                    Tick(i * 10),
+                    if i <= 50 {
+                        i as f64 * 0.2
+                    } else {
+                        10.0 - (i - 50) as f64 * 0.2
+                    },
+                )
+            })
+            .collect();
         let th = thin_points(&pts, 0.01, Tick(0), false);
-        assert_eq!(th, vec![(Tick(0), 0.0), (Tick(500), 10.0), (Tick(1000), 0.0)]);
+        assert_eq!(
+            th,
+            vec![(Tick(0), 0.0), (Tick(500), 10.0), (Tick(1000), 0.0)]
+        );
         // every original point within tolerance of the thinned curve
         let mut p = Param::new(ParamValue::Float(0.0));
         write_lane(&mut p, Tick(0), Tick(1000), &th, None, None, Tick(1), false);
@@ -555,15 +714,42 @@ mod tests {
             assert!((p.scalar_at(t) - v).abs() <= 0.01 + 1e-9);
         }
         // hold lanes keep change points only
-        let m = [(Tick(0), 0.0), (Tick(10), 0.0), (Tick(20), 1.0), (Tick(30), 1.0), (Tick(40), 0.0)];
-        assert_eq!(thin_points(&m, 0.0, Tick(0), true), vec![(Tick(0), 0.0), (Tick(20), 1.0), (Tick(40), 0.0)]);
+        let m = [
+            (Tick(0), 0.0),
+            (Tick(10), 0.0),
+            (Tick(20), 1.0),
+            (Tick(30), 1.0),
+            (Tick(40), 0.0),
+        ];
+        assert_eq!(
+            thin_points(&m, 0.0, Tick(0), true),
+            vec![(Tick(0), 0.0), (Tick(20), 1.0), (Tick(40), 0.0)]
+        );
     }
 
     #[test]
     fn write_lane_preserves_outside() {
         let mut p = Param::new(ParamValue::Float(0.0));
-        write_lane(&mut p, Tick(0), Tick(1000), &[(Tick(0), -3.0), (Tick(1000), -3.0)], None, None, Tick(1), false);
-        write_lane(&mut p, Tick(400), Tick(600), &[(Tick(400), -20.0), (Tick(600), -20.0)], Some(-3.0), Some(-3.0), Tick(1), false);
+        write_lane(
+            &mut p,
+            Tick(0),
+            Tick(1000),
+            &[(Tick(0), -3.0), (Tick(1000), -3.0)],
+            None,
+            None,
+            Tick(1),
+            false,
+        );
+        write_lane(
+            &mut p,
+            Tick(400),
+            Tick(600),
+            &[(Tick(400), -20.0), (Tick(600), -20.0)],
+            Some(-3.0),
+            Some(-3.0),
+            Tick(1),
+            false,
+        );
         assert_eq!(p.scalar_at(Tick(200)), -3.0);
         assert_eq!(p.scalar_at(Tick(500)), -20.0);
         assert_eq!(p.scalar_at(Tick(800)), -3.0);
@@ -576,11 +762,17 @@ mod tests {
         for k in 0..3 {
             t.mixer.sends.push(TrackSend::new(TrackId(10 + k)));
             t.mixer.sends[k as usize].level_db = -(k as f64);
-            t.lane_mut(&send_lane(k as usize)).unwrap().keyframes.push(Keyframe::new(Tick(0), ParamValue::Float(-(k as f64))));
+            t.lane_mut(&send_lane(k as usize))
+                .unwrap()
+                .keyframes
+                .push(Keyframe::new(Tick(0), ParamValue::Float(-(k as f64))));
         }
         assert!(t.remove_send(1));
         assert_eq!(t.mixer.sends.len(), 2);
-        assert_eq!(t.lane_keyframes(&send_lane(1))[0].value, ParamValue::Float(-2.0));
+        assert_eq!(
+            t.lane_keyframes(&send_lane(1))[0].value,
+            ParamValue::Float(-2.0)
+        );
         assert!(t.lane(&send_lane(2)).is_none());
     }
 
@@ -596,8 +788,10 @@ mod tests {
         assert_eq!(t.lane_static(LANE_PAN51_X), Some(-100.0));
         assert!(t.automated_lanes().is_empty());
         let p = t.lane_mut(LANE_PAN51_X).unwrap();
-        p.keyframes.push(Keyframe::new(Tick(0), ParamValue::Float(-100.0)));
-        p.keyframes.push(Keyframe::new(Tick(100), ParamValue::Float(100.0)));
+        p.keyframes
+            .push(Keyframe::new(Tick(0), ParamValue::Float(-100.0)));
+        p.keyframes
+            .push(Keyframe::new(Tick(100), ParamValue::Float(100.0)));
         assert_eq!(t.lane_value(LANE_PAN51_X, Tick(50)), 0.0);
         assert_eq!(t.automated_lanes(), vec![LANE_PAN51_X.to_string()]);
         let back: Track = serde_json::from_str(&serde_json::to_string(&t).unwrap()).unwrap();

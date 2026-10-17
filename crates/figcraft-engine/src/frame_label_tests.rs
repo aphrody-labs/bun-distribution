@@ -18,16 +18,27 @@ fn ex(s: &mut Session, c: &str, p: Value) -> Value {
 /// top edge, from its top-left corner, as the canvas would publish it at zoom 1.
 fn setup() -> (Session, NodeId, [Point; 4]) {
     let mut s = Session::new();
-    let f = id_of(&ex(&mut s, "frame.create", json!({"x": 100, "y": 100, "width": 200, "height": 100}))["id"]).unwrap();
+    let f = id_of(
+        &ex(
+            &mut s,
+            "frame.create",
+            json!({"x": 100, "y": 100, "width": 200, "height": 100}),
+        )["id"],
+    )
+    .unwrap();
     ex(&mut s, "node.set", json!({"id": f, "rotation": 30}));
     let w = s.doc().unwrap().world_transform(f);
-    let q = [(0.0, -18.0), (60.0, -18.0), (60.0, -4.0), (0.0, -4.0)].map(|(x, y)| w * Point::new(x, y));
+    let q =
+        [(0.0, -18.0), (60.0, -18.0), (60.0, -4.0), (0.0, -4.0)].map(|(x, y)| w * Point::new(x, y));
     s.tool.labels = vec![(f, q)];
     (s, f, q)
 }
 
 fn center(q: &[Point; 4]) -> Point {
-    Point::new(q.iter().map(|p| p.x).sum::<f64>() / 4.0, q.iter().map(|p| p.y).sum::<f64>() / 4.0)
+    Point::new(
+        q.iter().map(|p| p.x).sum::<f64>() / 4.0,
+        q.iter().map(|p| p.y).sum::<f64>() / 4.0,
+    )
 }
 
 fn ev(kind: PointerKind, p: Point) -> PointerEvent {
@@ -48,16 +59,31 @@ fn pressing_a_rotated_frames_label_selects_and_drags_the_frame() {
     let before = s.doc().unwrap().world_bounds(f).unwrap();
     s.pointer(&ev(PointerKind::Down, c)).unwrap();
     assert_eq!(s.selection(), vec![f]);
-    s.pointer(&ev(PointerKind::Move, c + figcraft_geom::Vec2::new(40.0, 25.0))).unwrap();
-    s.pointer(&ev(PointerKind::Up, c + figcraft_geom::Vec2::new(40.0, 25.0))).unwrap();
+    s.pointer(&ev(
+        PointerKind::Move,
+        c + figcraft_geom::Vec2::new(40.0, 25.0),
+    ))
+    .unwrap();
+    s.pointer(&ev(
+        PointerKind::Up,
+        c + figcraft_geom::Vec2::new(40.0, 25.0),
+    ))
+    .unwrap();
     let after = s.doc().unwrap().world_bounds(f).unwrap();
-    assert!((after.x0 - before.x0 - 40.0).abs() < 1.0 && (after.y0 - before.y0 - 25.0).abs() < 1.0, "{before:?} → {after:?}");
+    assert!(
+        (after.x0 - before.x0 - 40.0).abs() < 1.0 && (after.y0 - before.y0 - 25.0).abs() < 1.0,
+        "{before:?} → {after:?}"
+    );
     assert_eq!(s.ds().unwrap().history.undo.len(), undo + 1);
     // Shift+press on the label of a selected frame takes it out of the selection.
     let mut shift = ev(PointerKind::Down, center(&s.tool.labels[0].1));
     shift.shift = true;
     s.pointer(&shift).unwrap();
-    s.pointer(&PointerEvent { kind: PointerKind::Up, ..shift }).unwrap();
+    s.pointer(&PointerEvent {
+        kind: PointerKind::Up,
+        ..shift
+    })
+    .unwrap();
     assert!(s.selection().is_empty());
 }
 
@@ -68,13 +94,28 @@ fn labels_of_frames_that_cant_be_picked_do_nothing() {
     let page = s.page().unwrap();
     assert_eq!(label_at(s.doc().unwrap(), page, &s.tool.labels, c), Some(f));
     // Just outside the strip.
-    assert_eq!(label_at(s.doc().unwrap(), page, &s.tool.labels, q[0] + (q[0] - q[2]) * 0.1), None);
+    assert_eq!(
+        label_at(
+            s.doc().unwrap(),
+            page,
+            &s.tool.labels,
+            q[0] + (q[0] - q[2]) * 0.1
+        ),
+        None
+    );
     ex(&mut s, "node.set", json!({"id": f, "locked": true}));
     assert_eq!(label_at(s.doc().unwrap(), page, &s.tool.labels, c), None);
     s.pointer(&ev(PointerKind::Down, c)).unwrap();
     s.pointer(&ev(PointerKind::Up, c)).unwrap();
-    assert!(s.selection().is_empty(), "a locked frame isn't picked by its label");
-    ex(&mut s, "node.set", json!({"id": f, "locked": false, "visible": false}));
+    assert!(
+        s.selection().is_empty(),
+        "a locked frame isn't picked by its label"
+    );
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": f, "locked": false, "visible": false}),
+    );
     assert_eq!(label_at(s.doc().unwrap(), page, &s.tool.labels, c), None);
     ex(&mut s, "node.set", json!({"id": f, "visible": true}));
     // Another page: the old page's labels don't apply.
@@ -88,5 +129,13 @@ fn labels_of_frames_that_cant_be_picked_do_nothing() {
     assert_eq!(label_at(s.doc().unwrap(), page, &s.tool.labels, c), None);
     let nan = [Point::new(f64::NAN, 0.0); 4];
     let flat = [Point::new(1.0, 1.0); 4];
-    assert_eq!(label_at(s.doc().unwrap(), page, &[(f, nan), (f, flat)], Point::new(1.0, 1.0)), None);
+    assert_eq!(
+        label_at(
+            s.doc().unwrap(),
+            page,
+            &[(f, nan), (f, flat)],
+            Point::new(1.0, 1.0)
+        ),
+        None
+    );
 }

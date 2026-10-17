@@ -26,7 +26,13 @@ const SCORE_BLOCK: usize = 64 << 20;
 
 /// Scaled dot-product attention on `[B, H, L, d]` tensors, with an optional additive bias
 /// broadcastable to `[B, H, Lq, Lk]`. Heads are processed in groups to bound memory.
-pub fn sdpa(q: &Tensor, k: &Tensor, v: &Tensor, bias: Option<&Tensor>, scale: f64) -> Result<Tensor> {
+pub fn sdpa(
+    q: &Tensor,
+    k: &Tensor,
+    v: &Tensor,
+    bias: Option<&Tensor>,
+    scale: f64,
+) -> Result<Tensor> {
     let (b, h, lq, _) = q.dims4()?;
     let lk = k.dim(2)?;
     let per_head = b.saturating_mul(lq).saturating_mul(lk).max(1);
@@ -44,7 +50,11 @@ pub fn sdpa(q: &Tensor, k: &Tensor, v: &Tensor, bias: Option<&Tensor>, scale: f6
         let vs = v.narrow(1, start, n)?;
         let mut att = (qs.matmul(&ks.t()?)? * scale)?;
         if let Some(bias) = bias {
-            let bs = if bias_heads > 1 { bias.narrow(1, start, n)? } else { bias.clone() };
+            let bs = if bias_heads > 1 {
+                bias.narrow(1, start, n)?
+            } else {
+                bias.clone()
+            };
             att = att.broadcast_add(&bs)?;
         }
         let att = candle_nn::ops::softmax_last_dim(&att)?;
@@ -71,7 +81,13 @@ impl Attention {
     }
 
     /// With the output projection called `out` (CLIP's `out_proj`).
-    pub fn named(hidden: usize, internal: usize, heads: usize, out: &str, vb: VarBuilder) -> Result<Self> {
+    pub fn named(
+        hidden: usize,
+        internal: usize,
+        heads: usize,
+        out: &str,
+        vb: VarBuilder,
+    ) -> Result<Self> {
         Ok(Self {
             q: linear(hidden, internal, vb.pp("q_proj"))?,
             k: linear(hidden, internal, vb.pp("k_proj"))?,
@@ -84,7 +100,9 @@ impl Attention {
 
     fn split(&self, x: &Tensor) -> Result<Tensor> {
         let (b, l, _) = x.dims3()?;
-        Ok(x.reshape((b, l, self.heads, self.head_dim))?.transpose(1, 2)?.contiguous()?)
+        Ok(x.reshape((b, l, self.heads, self.head_dim))?
+            .transpose(1, 2)?
+            .contiguous()?)
     }
 
     /// The q, k and v projections of `x` (for attention variants that transform them).
@@ -98,20 +116,31 @@ impl Attention {
     }
 
     /// `q`, `k`, `v`: `[B, L, hidden]`; `bias` broadcastable to `[B, heads, Lq, Lk]`.
-    pub fn forward(&self, q: &Tensor, k: &Tensor, v: &Tensor, bias: Option<&Tensor>) -> Result<Tensor> {
+    pub fn forward(
+        &self,
+        q: &Tensor,
+        k: &Tensor,
+        v: &Tensor,
+        bias: Option<&Tensor>,
+    ) -> Result<Tensor> {
         let (b, lq, _) = q.dims3()?;
         let q = self.split(&self.q.forward(q)?)?;
         let k = self.split(&self.k.forward(k)?)?;
         let v = self.split(&self.v.forward(v)?)?;
         let o = sdpa(&q, &k, &v, bias, (self.head_dim as f64).powf(-0.5))?;
-        let o = o.transpose(1, 2)?.reshape((b, lq, self.heads * self.head_dim))?;
+        let o = o
+            .transpose(1, 2)?
+            .reshape((b, lq, self.heads * self.head_dim))?;
         Ok(self.o.forward(&o)?)
     }
 }
 
 /// An additive key-padding bias `[1, 1, 1, L]` (0 for valid tokens, the f32 minimum for padding).
 pub fn padding_bias(valid: &[bool], device: &Device) -> Result<Tensor> {
-    let v: Vec<f32> = valid.iter().map(|&ok| if ok { 0.0 } else { f32::MIN }).collect();
+    let v: Vec<f32> = valid
+        .iter()
+        .map(|&ok| if ok { 0.0 } else { f32::MIN })
+        .collect();
     Ok(Tensor::from_vec(v, (1, 1, 1, valid.len()), device)?)
 }
 
@@ -124,7 +153,11 @@ pub struct Mlp {
 
 impl Mlp {
     pub fn new(hidden: usize, inter: usize, gelu: bool, vb: VarBuilder) -> Result<Self> {
-        Ok(Self { fc1: linear(hidden, inter, vb.pp("fc1"))?, fc2: linear(inter, hidden, vb.pp("fc2"))?, gelu })
+        Ok(Self {
+            fc1: linear(hidden, inter, vb.pp("fc1"))?,
+            fc2: linear(inter, hidden, vb.pp("fc2"))?,
+            gelu,
+        })
     }
 
     pub fn forward(&self, x: &Tensor) -> Result<Tensor> {
@@ -140,10 +173,19 @@ pub struct DecoderMlp {
 }
 
 impl DecoderMlp {
-    pub fn new(input: usize, hidden: usize, output: usize, n: usize, vb: VarBuilder) -> Result<Self> {
+    pub fn new(
+        input: usize,
+        hidden: usize,
+        output: usize,
+        n: usize,
+        vb: VarBuilder,
+    ) -> Result<Self> {
         let mut layers = Vec::with_capacity(n);
         for i in 0..n {
-            let (a, b) = (if i == 0 { input } else { hidden }, if i + 1 == n { output } else { hidden });
+            let (a, b) = (
+                if i == 0 { input } else { hidden },
+                if i + 1 == n { output } else { hidden },
+            );
             layers.push(linear(a, b, vb.pp(format!("layer{}", i + 1)))?);
         }
         Ok(Self { layers })
@@ -170,12 +212,24 @@ pub struct FeedForward {
 }
 
 impl FeedForward {
-    pub fn new(input: usize, hidden: usize, output: usize, n: usize, sigmoid: bool, vb: VarBuilder) -> Result<Self> {
+    pub fn new(
+        input: usize,
+        hidden: usize,
+        output: usize,
+        n: usize,
+        sigmoid: bool,
+        vb: VarBuilder,
+    ) -> Result<Self> {
         let mut layers = Vec::new();
         for i in 0..n.saturating_sub(2) {
             layers.push(linear(hidden, hidden, vb.pp(format!("layers.{i}")))?);
         }
-        Ok(Self { proj_in: linear(input, hidden, vb.pp("proj_in"))?, layers, proj_out: linear(hidden, output, vb.pp("proj_out"))?, sigmoid })
+        Ok(Self {
+            proj_in: linear(input, hidden, vb.pp("proj_in"))?,
+            layers,
+            proj_out: linear(hidden, output, vb.pp("proj_out"))?,
+            sigmoid,
+        })
     }
 
     pub fn forward(&self, x: &Tensor) -> Result<Tensor> {
@@ -184,7 +238,11 @@ impl FeedForward {
             x = l.forward(&x)?.relu()?;
         }
         let x = self.proj_out.forward(&x)?;
-        Ok(if self.sigmoid { candle_nn::ops::sigmoid(&x)? } else { x })
+        Ok(if self.sigmoid {
+            candle_nn::ops::sigmoid(&x)?
+        } else {
+            x
+        })
     }
 }
 
@@ -198,7 +256,9 @@ pub fn ln_channels(x: &Tensor, norm: &LayerNorm) -> Result<Tensor> {
 /// `normalize=True`, scale 2π): `[1, 2·feats, h, w]`, y features first.
 pub fn sine_grid(h: usize, w: usize, feats: usize, device: &Device) -> Result<Tensor> {
     let scale = 2.0 * std::f64::consts::PI;
-    let dim_t: Vec<f64> = (0..feats).map(|i| 10000f64.powf(2.0 * (i / 2) as f64 / feats as f64)).collect();
+    let dim_t: Vec<f64> = (0..feats)
+        .map(|i| 10000f64.powf(2.0 * (i / 2) as f64 / feats as f64))
+        .collect();
     let mut out = vec![0f32; 2 * feats * h * w];
     for y in 0..h {
         let ye = (y + 1) as f64 / (h as f64 + 1e-6) * scale;
@@ -206,7 +266,11 @@ pub fn sine_grid(h: usize, w: usize, feats: usize, device: &Device) -> Result<Te
             let xe = (x + 1) as f64 / (w as f64 + 1e-6) * scale;
             for (i, d) in dim_t.iter().enumerate() {
                 let (py, px) = (ye / d, xe / d);
-                let (vy, vx) = if i % 2 == 0 { (py.sin(), px.sin()) } else { (py.cos(), px.cos()) };
+                let (vy, vx) = if i % 2 == 0 {
+                    (py.sin(), px.sin())
+                } else {
+                    (py.cos(), px.cos())
+                };
                 if let Some(v) = out.get_mut((i * h + y) * w + x) {
                     *v = vy as f32;
                 }
@@ -233,7 +297,10 @@ pub fn cxcywh_to_xyxy(b: &Tensor) -> Result<Tensor> {
     let cy = b.narrow(D::Minus1, 1, 1)?;
     let w = (b.narrow(D::Minus1, 2, 1)? * 0.5)?;
     let h = (b.narrow(D::Minus1, 3, 1)? * 0.5)?;
-    Ok(Tensor::cat(&[(&cx - &w)?, (&cy - &h)?, (&cx + &w)?, (&cy + &h)?], D::Minus1)?)
+    Ok(Tensor::cat(
+        &[(&cx - &w)?, (&cy - &h)?, (&cx + &w)?, (&cy + &h)?],
+        D::Minus1,
+    )?)
 }
 
 /// A tensor's values as `f32` on the CPU.

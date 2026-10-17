@@ -25,8 +25,14 @@ pub enum Reduction {
 }
 
 impl Reduction {
-    pub const ALL: [Reduction; 6] =
-        [Reduction::Perceptual, Reduction::Selective, Reduction::Adaptive, Reduction::Web, Reduction::BlackWhite, Reduction::Gray];
+    pub const ALL: [Reduction; 6] = [
+        Reduction::Perceptual,
+        Reduction::Selective,
+        Reduction::Adaptive,
+        Reduction::Web,
+        Reduction::BlackWhite,
+        Reduction::Gray,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -51,7 +57,9 @@ impl Reduction {
     }
 
     pub fn from_id(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|r| r.id().eq_ignore_ascii_case(s) || r.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|r| r.id().eq_ignore_ascii_case(s) || r.label().eq_ignore_ascii_case(s))
     }
 
     /// Channel weights of colour distances.
@@ -77,7 +85,12 @@ pub enum Dither {
 }
 
 impl Dither {
-    pub const ALL: [Dither; 4] = [Dither::None, Dither::Diffusion, Dither::Pattern, Dither::Noise];
+    pub const ALL: [Dither; 4] = [
+        Dither::None,
+        Dither::Diffusion,
+        Dither::Pattern,
+        Dither::Noise,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -98,7 +111,9 @@ impl Dither {
     }
 
     pub fn from_id(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|d| d.id().eq_ignore_ascii_case(s) || d.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|d| d.id().eq_ignore_ascii_case(s) || d.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -151,7 +166,13 @@ pub fn quantize(rgba: &[u8], width: u32, height: u32, o: &PaletteOptions) -> Ind
 /// [`quantize`], keeping the `locked` colours in a reduced palette (the colour table's locked
 /// colours: reducing the colours further never drops them). Art with few enough colours keeps
 /// them all anyway; locked colours no pixel ends up using are left out.
-pub fn quantize_locked(rgba: &[u8], width: u32, height: u32, o: &PaletteOptions, locked: &[[u8; 3]]) -> Indexed {
+pub fn quantize_locked(
+    rgba: &[u8],
+    width: u32,
+    height: u32,
+    o: &PaletteOptions,
+    locked: &[[u8; 3]],
+) -> Indexed {
     let px = rgba.as_chunks::<4>().0;
     let clear = |p: &[u8; 4]| o.transparency && p[3] < 128;
     let gray = matches!(o.reduction, Reduction::Gray | Reduction::BlackWhite);
@@ -162,13 +183,20 @@ pub fn quantize_locked(rgba: &[u8], width: u32, height: u32, o: &PaletteOptions,
         .iter()
         .map(|p| {
             let a = if blend { p[3] as u32 } else { 255 };
-            let c = [0, 1, 2].map(|i| ((p[i] as u32 * a + matte[i] as u32 * (255 - a) + 127) / 255) as u8);
+            let c = [0, 1, 2]
+                .map(|i| ((p[i] as u32 * a + matte[i] as u32 * (255 - a) + 127) / 255) as u8);
             if gray { [luma(c); 3] } else { c }
         })
         .collect();
     let has_clear = px.iter().any(clear);
     let k = (o.colors.clamp(2, 256) as usize - usize::from(has_clear)).max(1);
-    let opaque = || colors.iter().zip(px).filter(|(_, p)| !clear(p)).map(|(c, _)| *c);
+    let opaque = || {
+        colors
+            .iter()
+            .zip(px)
+            .filter(|(_, p)| !clear(p))
+            .map(|(c, _)| *c)
+    };
     // Locked colours take their slots first (at least one is left for the reduction).
     let mut lock: Vec<[u8; 3]> = Vec::with_capacity(locked.len().min(k));
     for c in locked {
@@ -179,7 +207,12 @@ pub fn quantize_locked(rgba: &[u8], width: u32, height: u32, o: &PaletteOptions,
     let free = k - lock.len();
     let (mut palette, exact) = match o.reduction {
         Reduction::BlackWhite => (vec![[0; 3], [255; 3]], false),
-        Reduction::Gray => ((0..free).map(|i| [(i * 255 / (free - 1).max(1)) as u8; 3]).collect(), false),
+        Reduction::Gray => (
+            (0..free)
+                .map(|i| [(i * 255 / (free - 1).max(1)) as u8; 3])
+                .collect(),
+            false,
+        ),
         Reduction::Web => (web(opaque(), free), false),
         r => match distinct(opaque(), k) {
             Some(exact) => (exact, true),
@@ -197,7 +230,15 @@ pub fn quantize_locked(rgba: &[u8], width: u32, height: u32, o: &PaletteOptions,
     }
     let weights = o.reduction.weights();
     let dither = if exact { Dither::None } else { o.dither };
-    let mut indices = map(&colors, width as usize, &palette, weights, dither, f32::from(o.dither_amount.min(100)) / 100.0, |i| clear(&px[i]));
+    let mut indices = map(
+        &colors,
+        width as usize,
+        &palette,
+        weights,
+        dither,
+        f32::from(o.dither_amount.min(100)) / 100.0,
+        |i| clear(&px[i]),
+    );
     // Drop the entries no pixel uses (fixed palettes), keeping the order.
     let mut used = [false; 256];
     for (i, &ix) in indices.iter().enumerate() {
@@ -217,9 +258,19 @@ pub fn quantize_locked(rgba: &[u8], width: u32, height: u32, o: &PaletteOptions,
         }
     }
     for (i, ix) in indices.iter_mut().enumerate() {
-        *ix = if clear(&px[i]) { 0 } else { remap[*ix as usize] };
+        *ix = if clear(&px[i]) {
+            0
+        } else {
+            remap[*ix as usize]
+        };
     }
-    Indexed { width, height, palette: kept, transparent: has_clear.then_some(0), indices }
+    Indexed {
+        width,
+        height,
+        palette: kept,
+        transparent: has_clear.then_some(0),
+        indices,
+    }
 }
 
 /// Lightness as a grey value (Rec. 601 luma).
@@ -272,13 +323,21 @@ fn dist(a: [f32; 3], b: [f32; 3], w: [f32; 3]) -> f32 {
 fn median_cut(colors: impl Iterator<Item = [u8; 3]>, k: usize, r: Reduction) -> Vec<[u8; 3]> {
     let mut hist = vec![(0u32, [0u64; 3]); 1 << 15];
     for c in colors {
-        let h = &mut hist[(c[0] as usize >> 3) << 10 | (c[1] as usize >> 3) << 5 | c[2] as usize >> 3];
+        let h =
+            &mut hist[(c[0] as usize >> 3) << 10 | (c[1] as usize >> 3) << 5 | c[2] as usize >> 3];
         h.0 += 1;
         for (sum, v) in h.1.iter_mut().zip(c) {
             *sum += v as u64;
         }
     }
-    let mut cells: Vec<Cell> = hist.iter().filter(|h| h.0 > 0).map(|&(n, s)| Cell { mean: s.map(|v| v as f32 / n as f32), count: n }).collect();
+    let mut cells: Vec<Cell> = hist
+        .iter()
+        .filter(|h| h.0 > 0)
+        .map(|&(n, s)| Cell {
+            mean: s.map(|v| v as f32 / n as f32),
+            count: n,
+        })
+        .collect();
     let w = r.weights();
     // How much a box gains from a split: its widest weighted range, times its pixel count (how
     // often its colours occur) or a root of it (keeping rarer colours apart too).
@@ -292,7 +351,9 @@ fn median_cut(colors: impl Iterator<Item = [u8; 3]>, k: usize, r: Reduction) -> 
             }
             n += c.count as u64;
         }
-        let axis = (0..3).max_by(|&a, &b| (w[a] * (hi[a] - lo[a])).total_cmp(&(w[b] * (hi[b] - lo[b])))).unwrap_or(0);
+        let axis = (0..3)
+            .max_by(|&a, &b| (w[a] * (hi[a] - lo[a])).total_cmp(&(w[b] * (hi[b] - lo[b]))))
+            .unwrap_or(0);
         let range = w[axis] * (hi[axis] - lo[axis]);
         let weight = match r {
             Reduction::Adaptive => n as f32,
@@ -307,7 +368,14 @@ fn median_cut(colors: impl Iterator<Item = [u8; 3]>, k: usize, r: Reduction) -> 
         (0, cells.len(), s, axis)
     }];
     while boxes.len() < k {
-        let Some(at) = boxes.iter().enumerate().max_by(|x, y| x.1.2.total_cmp(&y.1.2)).map(|(i, _)| i) else { break };
+        let Some(at) = boxes
+            .iter()
+            .enumerate()
+            .max_by(|x, y| x.1.2.total_cmp(&y.1.2))
+            .map(|(i, _)| i)
+        else {
+            break;
+        };
         let (a, b, s, axis) = boxes[at];
         if s <= 0.0 {
             break;
@@ -336,7 +404,12 @@ fn median_cut(colors: impl Iterator<Item = [u8; 3]>, k: usize, r: Reduction) -> 
     }
     let mean = |b: &[Cell]| {
         let n: f64 = b.iter().map(|c| c.count as f64).sum();
-        [0, 1, 2].map(|i| (b.iter().map(|c| c.mean[i] as f64 * c.count as f64).sum::<f64>() / n.max(1.0)) as f32)
+        [0, 1, 2].map(|i| {
+            (b.iter()
+                .map(|c| c.mean[i] as f64 * c.count as f64)
+                .sum::<f64>()
+                / n.max(1.0)) as f32
+        })
     };
     let mut palette: Vec<[f32; 3]> = boxes.iter().map(|&(a, b, ..)| mean(&cells[a..b])).collect();
     // k-means: move each entry to the mean of the cells nearest to it.
@@ -357,7 +430,10 @@ fn median_cut(colors: impl Iterator<Item = [u8; 3]>, k: usize, r: Reduction) -> 
             }
         }
     }
-    let mut out: Vec<[u8; 3]> = palette.iter().map(|p| p.map(|v| v.round().clamp(0.0, 255.0) as u8)).collect();
+    let mut out: Vec<[u8; 3]> = palette
+        .iter()
+        .map(|p| p.map(|v| v.round().clamp(0.0, 255.0) as u8))
+        .collect();
     if r == Reduction::Selective {
         // Colours close to a web-safe one become it (they display without dithering in a browser
         // limited to those).
@@ -398,18 +474,32 @@ impl<'a> PaletteIndex<'a> {
     const SCAN_CUTOFF: usize = 12;
 
     fn new(colors: &'a [[f32; 3]], weights: [f32; 3]) -> Self {
-        let mut nodes = if colors.len() <= Self::SCAN_CUTOFF { Vec::new() } else { Vec::with_capacity(colors.len()) };
+        let mut nodes = if colors.len() <= Self::SCAN_CUTOFF {
+            Vec::new()
+        } else {
+            Vec::with_capacity(colors.len())
+        };
         let root = if colors.len() <= Self::SCAN_CUTOFF {
             None
         } else {
             let mut indices: Vec<usize> = (0..colors.len()).collect();
             Self::build(colors, weights, &mut indices, &mut nodes)
         };
-        Self { colors, weights, nodes, root }
+        Self {
+            colors,
+            weights,
+            nodes,
+            root,
+        }
     }
 
     // Median partitioning takes O(k log k) time and space for k palette entries.
-    fn build(colors: &[[f32; 3]], w: [f32; 3], ids: &mut [usize], nodes: &mut Vec<PaletteNode>) -> Option<usize> {
+    fn build(
+        colors: &[[f32; 3]],
+        w: [f32; 3],
+        ids: &mut [usize],
+        nodes: &mut Vec<PaletteNode>,
+    ) -> Option<usize> {
         if ids.is_empty() {
             return None;
         }
@@ -421,7 +511,9 @@ impl<'a> PaletteIndex<'a> {
                 hi[axis] = hi[axis].max(c[axis]);
             }
         }
-        let axis = (0..3).max_by(|&a, &b| (w[a] * (hi[a] - lo[a])).total_cmp(&(w[b] * (hi[b] - lo[b])))).unwrap_or(0);
+        let axis = (0..3)
+            .max_by(|&a, &b| (w[a] * (hi[a] - lo[a])).total_cmp(&(w[b] * (hi[b] - lo[b]))))
+            .unwrap_or(0);
         let mid = ids.len() / 2;
         ids.select_nth_unstable_by(mid, |&a, &b| {
             let ac = colors.get(a).map_or(0.0, |c| c[axis]);
@@ -431,7 +523,13 @@ impl<'a> PaletteIndex<'a> {
         let (before, rest) = ids.split_at_mut(mid);
         let (pivot, after) = rest.split_first_mut()?;
         let at = nodes.len();
-        nodes.push(PaletteNode { index: *pivot, lo, hi, left: None, right: None });
+        nodes.push(PaletteNode {
+            index: *pivot,
+            lo,
+            hi,
+            left: None,
+            right: None,
+        });
         let left = Self::build(colors, w, before, nodes);
         let right = Self::build(colors, w, after, nodes);
         if let Some(n) = nodes.get_mut(at) {
@@ -444,7 +542,9 @@ impl<'a> PaletteIndex<'a> {
     // Lower bound on *the same f32 weighted squared distance* as `dist`: avoid transforming
     // coordinates, which would change rounding and potentially break identical-palette ties.
     fn lower_bound(&self, id: usize, c: [f32; 3]) -> f32 {
-        let Some(n) = self.nodes.get(id) else { return f32::INFINITY };
+        let Some(n) = self.nodes.get(id) else {
+            return f32::INFINITY;
+        };
         (0..3)
             .map(|i| {
                 let gap = if c[i] < n.lo[i] {
@@ -461,7 +561,9 @@ impl<'a> PaletteIndex<'a> {
 
     fn search(&self, at: usize, c: [f32; 3], best: &mut (f32, usize)) {
         let Some(n) = self.nodes.get(at) else { return };
-        let Some(&p) = self.colors.get(n.index) else { return };
+        let Some(&p) = self.colors.get(n.index) else {
+            return;
+        };
         let d = dist(p, c, self.weights);
         if d < best.0 || (d == best.0 && n.index < best.1) {
             *best = (d, n.index);
@@ -527,7 +629,15 @@ fn noise(x: usize, y: usize) -> f32 {
 
 /// Map each colour to its nearest palette entry, dithering by `amount` (0–1). Pixels `skip`
 /// names (transparent) get index 0 and take no diffused error.
-fn map(colors: &[[u8; 3]], width: usize, palette: &[[u8; 3]], w: [f32; 3], dither: Dither, amount: f32, skip: impl Fn(usize) -> bool) -> Vec<u8> {
+fn map(
+    colors: &[[u8; 3]],
+    width: usize,
+    palette: &[[u8; 3]],
+    w: [f32; 3],
+    dither: Dither,
+    amount: f32,
+    skip: impl Fn(usize) -> bool,
+) -> Vec<u8> {
     let pal: Vec<[f32; 3]> = palette.iter().map(|c| c.map(f32::from)).collect();
     let index = PaletteIndex::new(&pal, w);
     // Nearest entries by colour: exact colours without dithering, a 6-bit grid with it.
@@ -574,7 +684,11 @@ fn map(colors: &[[u8; 3]], width: usize, palette: &[[u8; 3]], w: [f32; 3], dithe
                     }
                 }
                 Dither::Pattern | Dither::Noise => {
-                    let t = if dither == Dither::Pattern { bayer(x % 8, y % 8) } else { noise(x, y) };
+                    let t = if dither == Dither::Pattern {
+                        bayer(x % 8, y % 8)
+                    } else {
+                        noise(x, y)
+                    };
                     v = v.map(|ch| (ch + (t - 0.5) * step).clamp(0.0, 255.0));
                 }
             }
@@ -605,7 +719,11 @@ mod nearest_tests {
 
     // The original definition, retained only as a parity oracle for the spatial index.
     fn linear(colors: &[[f32; 3]], c: [f32; 3], w: [f32; 3]) -> usize {
-        colors.iter().enumerate().min_by(|a, b| dist(*a.1, c, w).total_cmp(&dist(*b.1, c, w))).map_or(0, |(i, _)| i)
+        colors
+            .iter()
+            .enumerate()
+            .min_by(|a, b| dist(*a.1, c, w).total_cmp(&dist(*b.1, c, w)))
+            .map_or(0, |(i, _)| i)
     }
 
     fn next(seed: &mut u32) -> u32 {
@@ -622,20 +740,25 @@ mod nearest_tests {
             for size in [0, 1, 2, 8, 12, 13, 16, 17, 32, 64, 128, 256] {
                 // Include duplicated colours, close k-means-style floating-point centres,
                 // and a wide colour gamut. Query points are fractional, as with dithering.
-                let colors: Vec<[f32; 3]> =
-                    (0..size)
-                        .map(|i| {
-                            if i % 11 == 0 {
-                                [127.0, 127.0, 127.0]
-                            } else {
-                                [0, 1, 2].map(|_| (next(&mut seed) % 65_536) as f32 * (255.0 / 65_535.0))
-                            }
-                        })
-                        .collect();
+                let colors: Vec<[f32; 3]> = (0..size)
+                    .map(|i| {
+                        if i % 11 == 0 {
+                            [127.0, 127.0, 127.0]
+                        } else {
+                            [0, 1, 2]
+                                .map(|_| (next(&mut seed) % 65_536) as f32 * (255.0 / 65_535.0))
+                        }
+                    })
+                    .collect();
                 let index = PaletteIndex::new(&colors, w);
                 for _ in 0..500 {
-                    let c = [0, 1, 2].map(|_| (next(&mut seed) % 65_536) as f32 * (255.0 / 65_535.0));
-                    assert_eq!(index.nearest(c), linear(&colors, c, w), "size {size}, weights {w:?}, query {c:?}");
+                    let c =
+                        [0, 1, 2].map(|_| (next(&mut seed) % 65_536) as f32 * (255.0 / 65_535.0));
+                    assert_eq!(
+                        index.nearest(c),
+                        linear(&colors, c, w),
+                        "size {size}, weights {w:?}, query {c:?}"
+                    );
                 }
             }
         }
@@ -648,10 +771,21 @@ mod nearest_tests {
         colors[0] = [0.0, 128.0, 128.0];
         colors[255] = [2.0, 128.0, 128.0];
         let index = PaletteIndex::new(&colors, [1.0; 3]);
-        assert_eq!(index.nearest([1.0, 128.0, 128.0]), 0, "equal distance to indices 0 and 255");
-        assert_eq!(index.nearest([128.0; 3]), 1, "equal among 254 identical colours");
+        assert_eq!(
+            index.nearest([1.0, 128.0, 128.0]),
+            0,
+            "equal distance to indices 0 and 255"
+        );
+        assert_eq!(
+            index.nearest([128.0; 3]),
+            1,
+            "equal among 254 identical colours"
+        );
         let colors = vec![[10.0, 10.0, 10.0]; 256];
-        assert_eq!(PaletteIndex::new(&colors, [0.55, 0.77, 0.34]).nearest([10.0; 3]), 0);
+        assert_eq!(
+            PaletteIndex::new(&colors, [0.55, 0.77, 0.34]).nearest([10.0; 3]),
+            0
+        );
     }
 
     /// Opt-in microbenchmark: compares the same nearest-neighbour queries, without image IO.
@@ -661,8 +795,12 @@ mod nearest_tests {
         use std::time::Instant;
 
         let mut seed = 0x87bb_7641;
-        let colors: Vec<[f32; 3]> = (0..256).map(|_| [0, 1, 2].map(|_| (next(&mut seed) % 256) as f32)).collect();
-        let queries: Vec<[f32; 3]> = (0..100_000).map(|_| [0, 1, 2].map(|_| (next(&mut seed) % 65_536) as f32 * (255.0 / 65_535.0))).collect();
+        let colors: Vec<[f32; 3]> = (0..256)
+            .map(|_| [0, 1, 2].map(|_| (next(&mut seed) % 256) as f32))
+            .collect();
+        let queries: Vec<[f32; 3]> = (0..100_000)
+            .map(|_| [0, 1, 2].map(|_| (next(&mut seed) % 65_536) as f32 * (255.0 / 65_535.0)))
+            .collect();
         let w = [0.55, 0.77, 0.34];
         let start = Instant::now();
         let baseline: Vec<_> = queries.iter().map(|&c| linear(&colors, c, w)).collect();

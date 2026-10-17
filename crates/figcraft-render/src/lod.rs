@@ -44,7 +44,10 @@ const SQUARE_CORNER_PX: f64 = 1.0;
 
 /// The largest font size a text uses.
 fn max_font_size(t: &TextData) -> f64 {
-    t.runs.iter().map(|r| r.style.font_size).fold(t.style.font_size, f64::max)
+    t.runs
+        .iter()
+        .map(|r| r.style.font_size)
+        .fold(t.style.font_size, f64::max)
 }
 
 /// Whether text node `n` is greeked at `scale` device pixels per unit.
@@ -54,7 +57,12 @@ pub fn greeked(n: &Node, scale: f64) -> bool {
 
 /// The paints of a text: the node's and its runs' own.
 fn text_paints<'a>(n: &'a Node, t: &'a TextData) -> impl Iterator<Item = &'a Paint> {
-    n.fills.iter().chain(t.runs.iter().filter_map(|r| r.style.fills.as_ref()).flatten())
+    n.fills.iter().chain(
+        t.runs
+            .iter()
+            .filter_map(|r| r.style.fills.as_ref())
+            .flatten(),
+    )
 }
 
 /// Whether the subtree of `n` can be splatted: no image or pattern paints (their colours aren't known
@@ -63,7 +71,8 @@ pub fn splattable(doc: &Document, n: &Node, depth: usize) -> bool {
     if depth > MAX_DEPTH {
         return false;
     }
-    let image = |p: &Paint| p.visible && matches!(p.kind, PaintKind::Image(_) | PaintKind::Pattern(_));
+    let image =
+        |p: &Paint| p.visible && matches!(p.kind, PaintKind::Image(_) | PaintKind::Pattern(_));
     let own = match &n.kind {
         NodeKind::Text(t) => text_paints(n, t).any(image),
         _ => n.fills.iter().any(image),
@@ -71,7 +80,11 @@ pub fn splattable(doc: &Document, n: &Node, depth: usize) -> bool {
     if own || n.strokes.iter().any(image) {
         return false;
     }
-    n.children.iter().filter_map(|c| doc.node(*c)).filter(|c| c.visible).all(|c| !c.is_mask && splattable(doc, c, depth + 1))
+    n.children
+        .iter()
+        .filter_map(|c| doc.node(*c))
+        .filter(|c| c.visible)
+        .all(|c| !c.is_mask && splattable(doc, c, depth + 1))
 }
 
 /// A paint's average colour as straight RGBA (alpha times the paint's opacity); `None` for
@@ -86,11 +99,24 @@ fn paint_color(p: &Paint) -> Option<[f32; 4]> {
         PaintKind::Gradient(g) => {
             let stops = g.sorted_stops();
             let n = stops.len().max(1) as f32;
-            stops.iter().fold([0.0; 4], |acc, s| [acc[0] + s.color.r / n, acc[1] + s.color.g / n, acc[2] + s.color.b / n, acc[3] + s.color.a / n])
+            stops.iter().fold([0.0; 4], |acc, s| {
+                [
+                    acc[0] + s.color.r / n,
+                    acc[1] + s.color.g / n,
+                    acc[2] + s.color.b / n,
+                    acc[3] + s.color.a / n,
+                ]
+            })
         }
         PaintKind::Image(_) | PaintKind::Pattern(_) => return None,
     };
-    let c = c.map(|v| if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 });
+    let c = c.map(|v| {
+        if v.is_finite() {
+            v.clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
+    });
     (c[3] * op > 0.0).then_some([c[0], c[1], c[2], c[3] * op])
 }
 
@@ -109,14 +135,23 @@ fn fill_share(n: &Node) -> f32 {
             // Rounded corners cut (4 − π) r² from the box.
             let r = (n.corners.radii.iter().sum::<f64>() / 4.0).clamp(0.0, w.min(h) / 2.0);
             let area = w * h;
-            if area > 0.0 { (1.0 - (4.0 - std::f64::consts::PI) * r * r / area).clamp(0.0, 1.0) as f32 } else { 1.0 }
+            if area > 0.0 {
+                (1.0 - (4.0 - std::f64::consts::PI) * r * r / area).clamp(0.0, 1.0) as f32
+            } else {
+                1.0
+            }
         }
     }
 }
 
 /// The local box a node's strokes paint in, and the share of it they cover.
 fn stroke_box(n: &Node) -> (Rect, f32) {
-    let wt = n.stroke.sides.map(|s| s.iter().copied().fold(0.0, f64::max)).unwrap_or(n.stroke.weight).max(0.0);
+    let wt = n
+        .stroke
+        .sides
+        .map(|s| s.iter().copied().fold(0.0, f64::max))
+        .unwrap_or(n.stroke.weight)
+        .max(0.0);
     let out = match n.stroke.align {
         StrokeAlign::Inside => 0.0,
         StrokeAlign::Center => wt / 2.0,
@@ -129,7 +164,11 @@ fn stroke_box(n: &Node) -> (Rect, f32) {
     let (w, h) = (n.width.abs(), n.height.abs());
     let length = if closed { 2.0 * (w + h) } else { w.hypot(h) };
     let area = r.area().abs();
-    let share = if area > 0.0 { (length * wt / area).clamp(0.0, 1.0) } else { 0.0 };
+    let share = if area > 0.0 {
+        (length * wt / area).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     (r, share as f32)
 }
 
@@ -140,7 +179,11 @@ fn text_share(t: &TextData, w: f64, h: f64) -> f32 {
     let chars = t.characters.chars().filter(|c| !c.is_whitespace()).count() as f64;
     // An average glyph is about half an em wide and a line about 1.2 em tall.
     let ink = chars * 0.5 * fs * 1.2 * fs;
-    if area > 0.0 && ink.is_finite() { TEXT_INK * (ink / area).clamp(0.0, 1.0) as f32 } else { 0.0 }
+    if area > 0.0 && ink.is_finite() {
+        TEXT_INK * (ink / area).clamp(0.0, 1.0) as f32
+    } else {
+        0.0
+    }
 }
 
 /// Fill a small rectangle (frame, component, instance…) by splatting: axis-aligned, its corners
@@ -148,17 +191,30 @@ fn text_share(t: &TextData, w: f64, h: f64) -> f32 {
 /// filter is what anti-aliasing computes anyway, without a path. Returns whether it did.
 pub fn splat_fills(pix: &mut Pixmap, n: &Node, xf: Affine) -> bool {
     use NodeKind as K;
-    if !matches!(n.kind, K::Rectangle | K::Frame | K::Component { .. } | K::ComponentSet { .. } | K::Instance { .. } | K::Section { .. })
-        || !axis_aligned(xf)
+    if !matches!(
+        n.kind,
+        K::Rectangle
+            | K::Frame
+            | K::Component { .. }
+            | K::ComponentSet { .. }
+            | K::Instance { .. }
+            | K::Section { .. }
+    ) || !axis_aligned(xf)
     {
         return false;
     }
     let c = xf.as_coeffs();
     let radius = n.corners.radii.iter().copied().fold(0.0, f64::max);
     let dev = figcraft_geom::transform_rect_bbox(xf, n.local_rect());
-    let simple =
-        |p: &Paint| !p.visible || (matches!(p.kind, PaintKind::Solid { .. }) && matches!(p.blend, BlendMode::Normal | BlendMode::PassThrough));
-    if !(radius * c[0].abs().max(c[3].abs()) < SQUARE_CORNER_PX && dev.area().abs() <= SMALL_AREA && n.fills.iter().all(simple)) {
+    let simple = |p: &Paint| {
+        !p.visible
+            || (matches!(p.kind, PaintKind::Solid { .. })
+                && matches!(p.blend, BlendMode::Normal | BlendMode::PassThrough))
+    };
+    if !(radius * c[0].abs().max(c[3].abs()) < SQUARE_CORNER_PX
+        && dev.area().abs() <= SMALL_AREA
+        && n.fills.iter().all(simple))
+    {
         return false;
     }
     for color in n.fills.iter().filter_map(paint_color) {
@@ -169,7 +225,15 @@ pub fn splat_fills(pix: &mut Pixmap, n: &Node, xf: Affine) -> bool {
 
 /// Splat node `n` (whose transform is already in `xf`) and its subtree onto `pix`. `clip` is the
 /// device rectangle clipping frames above leave visible; `alpha` the opacity they multiply in.
-pub fn splat_subtree(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, clip: Option<Rect>, alpha: f32, depth: usize) {
+pub fn splat_subtree(
+    ctx: &Ctx,
+    pix: &mut Pixmap,
+    n: &Node,
+    xf: Affine,
+    clip: Option<Rect>,
+    alpha: f32,
+    depth: usize,
+) {
     if depth > 256 || ctx.skip.contains(&n.id) || !n.visible || n.is_mask {
         return;
     }
@@ -178,14 +242,20 @@ pub fn splat_subtree(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, clip: Op
         return;
     }
     let local = n.local_rect();
-    let paint = |pix: &mut Pixmap, r: Rect, paints: &mut dyn Iterator<Item = &Paint>, share: f32| {
-        for c in paints.filter_map(paint_color) {
-            splat_local(pix, r, xf, clip, [c[0], c[1], c[2], c[3] * alpha * share]);
-        }
-    };
+    let paint =
+        |pix: &mut Pixmap, r: Rect, paints: &mut dyn Iterator<Item = &Paint>, share: f32| {
+            for c in paints.filter_map(paint_color) {
+                splat_local(pix, r, xf, clip, [c[0], c[1], c[2], c[3] * alpha * share]);
+            }
+        };
     match &n.kind {
         NodeKind::Page { .. } | NodeKind::Group => {}
-        NodeKind::Text(t) => paint(pix, local, &mut text_paints(n, t), text_share(t, n.width, n.height)),
+        NodeKind::Text(t) => paint(
+            pix,
+            local,
+            &mut text_paints(n, t),
+            text_share(t, n.width, n.height),
+        ),
         _ => {
             if figcraft_doc::geometry::is_closed(n) {
                 paint(pix, local, &mut n.fills.iter(), fill_share(n));
@@ -228,25 +298,49 @@ pub fn greek_text(pix: &mut Pixmap, n: &Node, xf: Affine, limit: Rect) {
         && single_line(t)
     {
         if !t.characters.trim().is_empty() {
-            let bar = Rect::new(0.0, n.height * LINE_BAR.0, n.width, n.height * LINE_BAR.1).intersect(limit);
+            let bar = Rect::new(0.0, n.height * LINE_BAR.0, n.width, n.height * LINE_BAR.1)
+                .intersect(limit);
             for c in n.fills.iter().filter_map(paint_color) {
                 fill_local(pix, bar, xf, [c[0], c[1], c[2], c[3] * TEXT_INK]);
             }
         }
         return;
     }
-    let Some((layout, dy)) = figcraft_text::layout_node(n) else { return };
+    let Some((layout, dy)) = figcraft_text::layout_node(n) else {
+        return;
+    };
     for line in &layout.lines {
-        let glyphs = layout.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]);
-        let Some(first) = glyphs.first() else { continue };
+        let glyphs = layout
+            .glyphs
+            .get(line.glyph_start..line.glyph_end)
+            .unwrap_or(&[]);
+        let Some(first) = glyphs.first() else {
+            continue;
+        };
         let size = glyphs.iter().map(|g| g.size.abs()).fold(0.0, f64::max);
-        let x0 = glyphs.iter().map(|g| g.x.min(g.x + g.advance)).fold(f64::INFINITY, f64::min);
-        let x1 = glyphs.iter().map(|g| g.x.max(g.x + g.advance)).fold(f64::NEG_INFINITY, f64::max);
-        let bar = Rect::new(x0, line.baseline + dy - size * BAR_HEIGHT, x1, line.baseline + dy).intersect(limit);
+        let x0 = glyphs
+            .iter()
+            .map(|g| g.x.min(g.x + g.advance))
+            .fold(f64::INFINITY, f64::min);
+        let x1 = glyphs
+            .iter()
+            .map(|g| g.x.max(g.x + g.advance))
+            .fold(f64::NEG_INFINITY, f64::max);
+        let bar = Rect::new(
+            x0,
+            line.baseline + dy - size * BAR_HEIGHT,
+            x1,
+            line.baseline + dy,
+        )
+        .intersect(limit);
         if !(bar.width() > 0.0 && bar.height() > 0.0) {
             continue;
         }
-        let fills = layout.styles.get(first.style).and_then(|s| s.fills.as_ref()).unwrap_or(&n.fills);
+        let fills = layout
+            .styles
+            .get(first.style)
+            .and_then(|s| s.fills.as_ref())
+            .unwrap_or(&n.fills);
         for c in fills.iter().filter_map(paint_color) {
             fill_local(pix, bar, xf, [c[0], c[1], c[2], c[3] * TEXT_INK]);
         }
@@ -272,7 +366,11 @@ fn fill_local(pix: &mut Pixmap, r: Rect, xf: Affine, color: [f32; 4]) {
     ) else {
         return;
     };
-    let paint = tiny_skia::Paint { shader: tiny_skia::Shader::SolidColor(c), anti_alias: true, ..Default::default() };
+    let paint = tiny_skia::Paint {
+        shader: tiny_skia::Shader::SolidColor(c),
+        anti_alias: true,
+        ..Default::default()
+    };
     pix.fill_rect(rect, &paint, ts_transform(xf), None);
 }
 
@@ -303,7 +401,12 @@ pub fn splat(pix: &mut Pixmap, r: Rect, color: [f32; 4]) {
         return;
     }
     // Premultiplied source at full coverage, in 0..=255.
-    let src = [color[0].clamp(0.0, 1.0) * 255.0, color[1].clamp(0.0, 1.0) * 255.0, color[2].clamp(0.0, 1.0) * 255.0, 255.0];
+    let src = [
+        color[0].clamp(0.0, 1.0) * 255.0,
+        color[1].clamp(0.0, 1.0) * 255.0,
+        color[2].clamp(0.0, 1.0) * 255.0,
+        255.0,
+    ];
     let opaque = src.map(|c| (c + 0.5) as u8);
     let mix = |d: &mut [u8], cov: f32| {
         if cov >= 1.0 {
@@ -320,12 +423,26 @@ pub fn splat(pix: &mut Pixmap, r: Rect, color: [f32; 4]) {
     let stride = pix.width() as usize * 4;
     let data = pix.data_mut();
     // Within the pixmap: the casts below stay in range.
-    let (px0, py0, px1, py1) = (x0.floor() as usize, y0.floor() as usize, x1.ceil() as usize, y1.ceil() as usize);
+    let (px0, py0, px1, py1) = (
+        x0.floor() as usize,
+        y0.floor() as usize,
+        x1.ceil() as usize,
+        y1.ceil() as usize,
+    );
     // How much of the first and last columns the rectangle covers (all of the ones between).
-    let (first, last) = if px1 - px0 == 1 { ((x1 - x0) as f32, 0.0) } else { ((px0 as f64 + 1.0 - x0) as f32, (x1 - (px1 - 1) as f64) as f32) };
+    let (first, last) = if px1 - px0 == 1 {
+        ((x1 - x0) as f32, 0.0)
+    } else {
+        (
+            (px0 as f64 + 1.0 - x0) as f32,
+            (x1 - (px1 - 1) as f64) as f32,
+        )
+    };
     for py in py0..py1 {
         let cy = (y1.min(py as f64 + 1.0) - y0.max(py as f64)) as f32 * a;
-        let Some(row) = data.get_mut(py * stride + px0 * 4..py * stride + px1 * 4) else { continue };
+        let Some(row) = data.get_mut(py * stride + px0 * 4..py * stride + px1 * 4) else {
+            continue;
+        };
         let mut pixels = row.chunks_exact_mut(4);
         if let Some(d) = pixels.next() {
             mix(d, first * cy);

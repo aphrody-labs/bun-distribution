@@ -231,7 +231,11 @@ pub(crate) fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
     let norm_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let norm_b: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if norm_a == 0.0 || norm_b == 0.0 { 0.0 } else { dot / (norm_a * norm_b) }
+    if norm_a == 0.0 || norm_b == 0.0 {
+        0.0
+    } else {
+        dot / (norm_a * norm_b)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +250,10 @@ mod tests {
     fn cosine_identical_vectors() {
         let v = vec![1.0_f32, 0.0, 0.0];
         let sim = cosine_similarity(&v, &v);
-        assert!((sim - 1.0).abs() < 1e-6, "identical vectors must have sim=1.0, got {sim}");
+        assert!(
+            (sim - 1.0).abs() < 1e-6,
+            "identical vectors must have sim=1.0, got {sim}"
+        );
     }
 
     #[test]
@@ -254,7 +261,10 @@ mod tests {
         let a = vec![1.0_f32, 0.0, 0.0];
         let b = vec![0.0_f32, 1.0, 0.0];
         let sim = cosine_similarity(&a, &b);
-        assert!(sim.abs() < 1e-6, "orthogonal vectors must have sim=0.0, got {sim}");
+        assert!(
+            sim.abs() < 1e-6,
+            "orthogonal vectors must have sim=0.0, got {sim}"
+        );
     }
 
     #[test]

@@ -13,7 +13,10 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use filmcraft_isobmff::{CodecConfig, SampleEntry};
 
 pub use crate::hw_frame::{FrameCodec, FrameStreamInfo, PictureParams};
-use crate::video::{avcc_length_size, h264_disposable, hevc_disposable, hvcc_length_size_and_tid, sar_par, vui_color};
+use crate::video::{
+    avcc_length_size, h264_disposable, hevc_disposable, hvcc_length_size_and_tid, sar_par,
+    vui_color,
+};
 use crate::{CodecError, Result};
 
 static ENABLED: AtomicBool = AtomicBool::new(true);
@@ -35,12 +38,16 @@ static BACKEND: std::sync::Mutex<Option<&'static str>> = std::sync::Mutex::new(N
 /// Record the OS decoder backend `filmcraft_platform::register` put in front of our decoders
 /// ("VideoToolbox", "Media Foundation"), for `perf.stats`.
 pub fn set_hw_backend(name: &'static str) {
-    *BACKEND.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(name);
+    *BACKEND
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(name);
 }
 
 /// The registered hardware decoder backend, if any ([`set_hw_backend`]).
 pub fn hw_backend() -> Option<&'static str> {
-    *BACKEND.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    *BACKEND
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// Process-wide hardware decoding counters (they only grow; subtract two snapshots to measure an
@@ -176,8 +183,12 @@ impl StreamInfo {
     pub fn parameters_changed(&self, sample: &[u8]) -> bool {
         match self {
             Self::Nal(i) => i.nals(sample).into_iter().any(|n| {
-                n.first().is_some_and(|&h| i.is_parameter_set(i.nal_type(h)))
-                    && !i.parameter_sets.iter().any(|p| without_trailing_zeros(p) == without_trailing_zeros(n))
+                n.first()
+                    .is_some_and(|&h| i.is_parameter_set(i.nal_type(h)))
+                    && !i
+                        .parameter_sets
+                        .iter()
+                        .any(|p| without_trailing_zeros(p) == without_trailing_zeros(n))
             }),
             Self::Frame(i) => i.parameters_changed(sample),
         }
@@ -216,7 +227,9 @@ fn read_sets(rec: &[u8], pos: &mut usize, count: usize, out: &mut Vec<Vec<u8>>) 
             .map(|b| u16::from_be_bytes([b[0], b[1]]) as usize)
             .ok_or_else(|| CodecError::Decode("configuration record truncated".into()))?;
         *pos += 2;
-        let nal = rec.get(*pos..*pos + len).ok_or_else(|| CodecError::Decode("configuration record truncated".into()))?;
+        let nal = rec
+            .get(*pos..*pos + len)
+            .ok_or_else(|| CodecError::Decode("configuration record truncated".into()))?;
         *pos += len;
         if !nal.is_empty() {
             out.push(nal.to_vec());
@@ -244,15 +257,24 @@ impl NalStreamInfo {
         let mut pos = 6;
         read_sets(avcc, &mut pos, (avcc[5] & 0x1f) as usize, &mut sets)?;
         let nsps = sets.len();
-        let npps = *avcc.get(pos).ok_or_else(|| CodecError::Decode("avcC truncated".into()))? as usize;
+        let npps = *avcc
+            .get(pos)
+            .ok_or_else(|| CodecError::Decode("avcC truncated".into()))?
+            as usize;
         pos += 1;
         read_sets(avcc, &mut pos, npps, &mut sets)?;
-        let sps_nal = sets.iter().take(nsps).find(|n| n.first().is_some_and(|h| h & 0x1f == 7)).ok_or_else(|| CodecError::Decode("avcC has no SPS".into()))?;
+        let sps_nal = sets
+            .iter()
+            .take(nsps)
+            .find(|n| n.first().is_some_and(|h| h & 0x1f == 7))
+            .ok_or_else(|| CodecError::Decode("avcC has no SPS".into()))?;
         if sets.len() == nsps {
             return Err(CodecError::Decode("avcC has no PPS".into()));
         }
-        let sps = filmcraft_h264::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(sps_nal.get(1..).unwrap_or_default()))
-            .map_err(|e| CodecError::Decode(e.to_string()))?;
+        let sps = filmcraft_h264::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(
+            sps_nal.get(1..).unwrap_or_default(),
+        ))
+        .map_err(|e| CodecError::Decode(e.to_string()))?;
         let crop = sps.crop_rect();
         let vui = sps.vui.clone().unwrap_or_default();
         Ok(Self {
@@ -267,7 +289,14 @@ impl NalStreamInfo {
             bit_depth_chroma: sps.bit_depth_chroma,
             interlaced: !sps.frame_mbs_only,
             profile_idc: sps.profile_idc,
-            color: vui_color(crop.2, crop.3, vui.colour_primaries, vui.matrix_coefficients, vui.transfer_characteristics, vui.full_range),
+            color: vui_color(
+                crop.2,
+                crop.3,
+                vui.colour_primaries,
+                vui.matrix_coefficients,
+                vui.transfer_characteristics,
+                vui.full_range,
+            ),
             par: sar_par(vui.sar),
             // as the software decoder's DPB (`max_reorder`)
             reorder: sps.max_num_reorder_frames().min(sps.max_dpb_frames()),
@@ -283,7 +312,9 @@ impl NalStreamInfo {
         let mut sets = Vec::new();
         let mut pos = 23;
         for _ in 0..hvcc[22] {
-            let hdr = hvcc.get(pos..pos + 3).ok_or_else(|| CodecError::Decode("hvcC truncated".into()))?;
+            let hdr = hvcc
+                .get(pos..pos + 3)
+                .ok_or_else(|| CodecError::Decode("hvcC truncated".into()))?;
             let (kind, n) = (hdr[0] & 0x3f, u16::from_be_bytes([hdr[1], hdr[2]]) as usize);
             pos += 3;
             let mut arr = Vec::new();
@@ -293,12 +324,19 @@ impl NalStreamInfo {
             }
         }
         let nal_type = |n: &[u8]| n.first().map(|h| (h >> 1) & 0x3f);
-        let sps_nal = sets.iter().find(|n| nal_type(n) == Some(33)).ok_or_else(|| CodecError::Decode("hvcC has no SPS".into()))?;
-        if !sets.iter().any(|n| nal_type(n) == Some(32)) || !sets.iter().any(|n| nal_type(n) == Some(34)) {
+        let sps_nal = sets
+            .iter()
+            .find(|n| nal_type(n) == Some(33))
+            .ok_or_else(|| CodecError::Decode("hvcC has no SPS".into()))?;
+        if !sets.iter().any(|n| nal_type(n) == Some(32))
+            || !sets.iter().any(|n| nal_type(n) == Some(34))
+        {
             return Err(CodecError::Decode("hvcC lacks a VPS or PPS".into()));
         }
-        let sps = filmcraft_hevc::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(sps_nal.get(2..).unwrap_or_default()))
-            .map_err(|e| CodecError::Decode(e.to_string()))?;
+        let sps = filmcraft_hevc::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(
+            sps_nal.get(2..).unwrap_or_default(),
+        ))
+        .map_err(|e| CodecError::Decode(e.to_string()))?;
         let crop = sps.crop_rect();
         let vui = sps.vui.clone().unwrap_or_default();
         Ok(Self {
@@ -313,7 +351,14 @@ impl NalStreamInfo {
             bit_depth_chroma: sps.bit_depth_chroma,
             interlaced: false,
             profile_idc: sps.ptl.profile_idc,
-            color: vui_color(crop.2, crop.3, vui.colour_primaries, vui.matrix_coefficients, vui.transfer_characteristics, vui.full_range),
+            color: vui_color(
+                crop.2,
+                crop.3,
+                vui.colour_primaries,
+                vui.matrix_coefficients,
+                vui.transfer_characteristics,
+                vui.full_range,
+            ),
             par: sar_par(vui.sar),
             reorder: sps.max_num_reorder as usize,
         })
@@ -321,7 +366,10 @@ impl NalStreamInfo {
 
     /// NAL unit types of a sample (stops at the first malformed length prefix).
     pub fn nal_types(&self, sample: &[u8]) -> Vec<u8> {
-        self.nals(sample).into_iter().filter_map(|n| n.first().map(|&h| self.nal_type(h))).collect()
+        self.nals(sample)
+            .into_iter()
+            .filter_map(|n| n.first().map(|&h| self.nal_type(h)))
+            .collect()
     }
 
     /// The NAL units of a length-prefixed sample (stops at the first malformed length prefix).
@@ -335,7 +383,9 @@ impl NalStreamInfo {
             }
             let len = pre.iter().fold(0usize, |a, &b| (a << 8) | b as usize);
             pos += ls;
-            let Some(n) = sample.get(pos..pos.saturating_add(len)) else { break };
+            let Some(n) = sample.get(pos..pos.saturating_add(len)) else {
+                break;
+            };
             pos += len;
             out.push(n);
         }
@@ -405,7 +455,12 @@ mod tests {
 
     #[test]
     fn hostile_records_are_errors() {
-        for rec in [&[][..], &[1, 2, 3], &[1, 0x64, 0, 0x1f, 0xff, 0xe1, 0, 9, 0x67], &[0; 30]] {
+        for rec in [
+            &[][..],
+            &[1, 2, 3],
+            &[1, 0x64, 0, 0x1f, 0xff, 0xe1, 0, 9, 0x67],
+            &[0; 30],
+        ] {
             assert!(NalStreamInfo::from_avcc(rec).is_err());
             assert!(NalStreamInfo::from_hvcc(rec).is_err());
         }
@@ -451,9 +506,21 @@ mod tests {
             v
         };
         assert!(!info.parameters_changed(&sample(&hvcc_pps)), "the same PPS");
-        assert!(!info.parameters_changed(&sample(&hvcc_pps[..7])), "a trailing zero byte is not part of the NAL unit");
-        assert!(!info.parameters_changed(&sample(&[&hvcc_pps[..], &[0, 0]].concat())), "nor are several");
-        assert!(info.parameters_changed(&sample(&hvcc_pps[..6])), "a missing byte that is not zero is a change");
-        assert!(info.parameters_changed(&sample(&[0x44, 0x01, 0xe0, 0xf7, 0xc0, 0x4c, 0x91])), "another PPS is a change");
+        assert!(
+            !info.parameters_changed(&sample(&hvcc_pps[..7])),
+            "a trailing zero byte is not part of the NAL unit"
+        );
+        assert!(
+            !info.parameters_changed(&sample(&[&hvcc_pps[..], &[0, 0]].concat())),
+            "nor are several"
+        );
+        assert!(
+            info.parameters_changed(&sample(&hvcc_pps[..6])),
+            "a missing byte that is not zero is a change"
+        );
+        assert!(
+            info.parameters_changed(&sample(&[0x44, 0x01, 0xe0, 0xf7, 0xc0, 0x4c, 0x91])),
+            "another PPS is a change"
+        );
     }
 }

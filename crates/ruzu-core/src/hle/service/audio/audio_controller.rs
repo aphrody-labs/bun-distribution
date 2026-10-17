@@ -2,10 +2,10 @@
 //!
 //! IAudioController service ("audctl").
 
-use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex, Weak};
 use super::errors::RESULT_INVALID_ARGUMENT;
 use crate::hle::service::ipc_helpers::{RequestParser, ResponseBuilder};
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex, Weak};
 
 use crate::hle::result::{ResultCode, RESULT_SUCCESS};
 use crate::hle::service::cmif_serialization::{CmifRequest, CmifResponse};
@@ -116,7 +116,9 @@ impl IAudioController {
     }
 
     fn unknown5000(&self) -> Arc<Self> {
-        self.self_reference.upgrade().expect("audio controller requires shared ownership")
+        self.self_reference
+            .upgrade()
+            .expect("audio controller requires shared ownership")
     }
 
     fn unknown5000_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
@@ -213,7 +215,11 @@ impl IAudioController {
                 Some(Self::is_speaker_auto_mute_enabled_handler),
                 "IsSpeakerAutoMuteEnabled",
             ),
-            (32, Some(Self::get_active_output_target_handler), "GetActiveOutputTarget"),
+            (
+                32,
+                Some(Self::get_active_output_target_handler),
+                "GetActiveOutputTarget",
+            ),
             (33, None, "GetTargetDeviceInfo"),
             (
                 34,
@@ -279,7 +285,8 @@ impl IAudioController {
             system: crate::core::SystemRef::null(),
             m_target_volumes: Mutex::new([15; 6]),
             m_target_muted: Mutex::new([false; 6]),
-            m_active_target: crate::hle::service::set::settings_types::AudioOutputModeTarget::Speaker as u32,
+            m_active_target:
+                crate::hle::service::set::settings_types::AudioOutputModeTarget::Speaker as u32,
             handlers,
             handlers_tipc: BTreeMap::new(),
         }
@@ -348,14 +355,21 @@ impl IAudioController {
     }
 
     fn get_target_volume(&self, target: u32) -> Result<i32, ResultCode> {
-        self.m_target_volumes.lock().unwrap().get(target as usize).copied().ok_or(RESULT_INVALID_ARGUMENT)
+        self.m_target_volumes
+            .lock()
+            .unwrap()
+            .get(target as usize)
+            .copied()
+            .ok_or(RESULT_INVALID_ARGUMENT)
     }
 
     fn set_target_volume(&self, target: u32, volume: i32) -> ResultCode {
         let volume = volume.clamp(0, 15);
         {
             let mut volumes = self.m_target_volumes.lock().unwrap();
-            let Some(slot) = volumes.get_mut(target as usize) else { return RESULT_INVALID_ARGUMENT; };
+            let Some(slot) = volumes.get_mut(target as usize) else {
+                return RESULT_INVALID_ARGUMENT;
+            };
             *slot = volume;
         }
         if target == self.m_active_target && !self.m_target_muted.lock().unwrap()[target as usize] {
@@ -364,9 +378,16 @@ impl IAudioController {
                 if let Some(audio) = self.system.get().audio_core() {
                     audio.set_audio_output_sink_volume(volume);
                 }
-                let service = self.system.get().service_manager().and_then(|manager| manager.lock().unwrap().get_service("audout:u"));
+                let service = self
+                    .system
+                    .get()
+                    .service_manager()
+                    .and_then(|manager| manager.lock().unwrap().get_service("audout:u"));
                 if let Some(service) = service {
-                    if let Some(manager) = service.as_any().downcast_ref::<super::audio_out_manager::IAudioOutManager>() {
+                    if let Some(manager) = service
+                        .as_any()
+                        .downcast_ref::<super::audio_out_manager::IAudioOutManager>(
+                    ) {
                         manager.set_all_audio_out_volume(volume);
                     }
                 }
@@ -380,24 +401,42 @@ impl IAudioController {
     }
 
     fn is_target_mute(&self, target: u32) -> Result<bool, ResultCode> {
-        self.m_target_muted.lock().unwrap().get(target as usize).copied().ok_or(RESULT_INVALID_ARGUMENT)
+        self.m_target_muted
+            .lock()
+            .unwrap()
+            .get(target as usize)
+            .copied()
+            .ok_or(RESULT_INVALID_ARGUMENT)
     }
 
     fn set_target_mute(&self, muted: bool, target: u32) -> ResultCode {
         {
             let mut states = self.m_target_muted.lock().unwrap();
-            let Some(slot) = states.get_mut(target as usize) else { return RESULT_INVALID_ARGUMENT; };
+            let Some(slot) = states.get_mut(target as usize) else {
+                return RESULT_INVALID_ARGUMENT;
+            };
             *slot = muted;
         }
         if target == self.m_active_target {
-            let volume = if muted { 0.0 } else { self.m_target_volumes.lock().unwrap()[target as usize] as f32 / 15.0 };
+            let volume = if muted {
+                0.0
+            } else {
+                self.m_target_volumes.lock().unwrap()[target as usize] as f32 / 15.0
+            };
             if !self.system.is_null() {
                 if let Some(audio) = self.system.get().audio_core() {
                     audio.set_audio_output_sink_volume(volume);
                 }
-                let service = self.system.get().service_manager().and_then(|manager| manager.lock().unwrap().get_service("audout:u"));
+                let service = self
+                    .system
+                    .get()
+                    .service_manager()
+                    .and_then(|manager| manager.lock().unwrap().get_service("audout:u"));
                 if let Some(service) = service {
-                    if let Some(manager) = service.as_any().downcast_ref::<super::audio_out_manager::IAudioOutManager>() {
+                    if let Some(manager) = service
+                        .as_any()
+                        .downcast_ref::<super::audio_out_manager::IAudioOutManager>(
+                    ) {
                         manager.set_all_audio_out_volume(volume);
                     }
                 }
@@ -615,7 +654,9 @@ impl IAudioController {
 }
 
 impl SessionRequestHandler for IAudioController {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, context: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, context)
     }
@@ -643,8 +684,9 @@ mod tests {
 
     #[test]
     fn duplicate_controller_preserves_identity_state_and_lifetime() {
-        let controller = IAudioController::with_system_settings(
-            Arc::new(SystemSettingsService::new_for_test())).into_shared();
+        let controller =
+            IAudioController::with_system_settings(Arc::new(SystemSettingsService::new_for_test()))
+                .into_shared();
         let duplicate = controller.unknown5000();
         assert!(Arc::ptr_eq(&controller, &duplicate));
         assert!(controller.handlers[&5000].handler_callback.is_some());
@@ -664,15 +706,17 @@ mod tests {
         let service =
             IAudioController::with_system_settings(Arc::new(SystemSettingsService::new_for_test()));
 
-        for cmd in [0_u32, 1, 2, 3, 4, 5, 9, 10, 12, 13, 14, 17, 18, 22, 30, 31, 32, 34] {
+        for cmd in [
+            0_u32, 1, 2, 3, 4, 5, 9, 10, 12, 13, 14, 17, 18, 22, 30, 31, 32, 34,
+        ] {
             assert!(service.handlers.contains_key(&cmd));
             assert!(service.handlers[&cmd].handler_callback.is_some());
         }
 
         for cmd in [
-            6_u32, 7, 8, 11, 15, 16, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 33,
-            35, 36, 37, 38, 39, 40, 41, 42, 10000, 10001, 10002, 10100, 10101, 10102, 10103, 10104,
-            10105, 10106, 50000,
+            6_u32, 7, 8, 11, 15, 16, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 33, 35, 36, 37, 38,
+            39, 40, 41, 42, 10000, 10001, 10002, 10100, 10101, 10102, 10103, 10104, 10105, 10106,
+            50000,
         ] {
             assert!(service.handlers.contains_key(&cmd));
             assert!(service.handlers[&cmd].handler_callback.is_none());
@@ -681,7 +725,8 @@ mod tests {
 
     #[test]
     fn target_volume_and_mute_validate_indices_and_round_trip_ipc() {
-        let service = IAudioController::with_system_settings(Arc::new(SystemSettingsService::new_for_test()));
+        let service =
+            IAudioController::with_system_settings(Arc::new(SystemSettingsService::new_for_test()));
         let original_mute = *common::settings::values().audio_muted.get_value();
         for target in [0, 1, 3, 4, 5] {
             assert_eq!(service.get_target_volume(target), Ok(15));
@@ -702,15 +747,26 @@ mod tests {
             }
         }
         for target in [6, u32::MAX] {
-            assert_eq!(service.get_target_volume(target), Err(RESULT_INVALID_ARGUMENT));
-            assert_eq!(service.set_target_volume(target, 1), RESULT_INVALID_ARGUMENT);
+            assert_eq!(
+                service.get_target_volume(target),
+                Err(RESULT_INVALID_ARGUMENT)
+            );
+            assert_eq!(
+                service.set_target_volume(target, 1),
+                RESULT_INVALID_ARGUMENT
+            );
             assert_eq!(service.is_target_mute(target), Err(RESULT_INVALID_ARGUMENT));
-            assert_eq!(service.set_target_mute(true, target), RESULT_INVALID_ARGUMENT);
+            assert_eq!(
+                service.set_target_mute(true, target),
+                RESULT_INVALID_ARGUMENT
+            );
         }
         let mut ctx = HLERequestContext::new();
         service.handlers[&32].handler_callback.unwrap()(&service, &mut ctx);
         assert_eq!(ctx.cmd_buf[8], AudioOutputModeTarget::Speaker as u32);
-        common::settings::values_mut().audio_muted.set_value(original_mute);
+        common::settings::values_mut()
+            .audio_muted
+            .set_value(original_mute);
     }
 
     #[test]

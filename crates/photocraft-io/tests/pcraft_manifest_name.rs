@@ -17,17 +17,35 @@ fn doc() -> photocraft_doc::Document {
 /// `document.name` as the bundle actually stores it.
 fn manifest_name(bytes: &[u8]) -> String {
     let archive = ZipReader::new(bytes).expect("zip");
-    let manifest: serde_json::Value = serde_json::from_slice(&archive.read_by_name("manifest.json", usize::MAX).expect("manifest")).expect("manifest json");
-    manifest["document"]["name"].as_str().expect("document.name").to_string()
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &archive
+            .read_by_name("manifest.json", usize::MAX)
+            .expect("manifest"),
+    )
+    .expect("manifest json");
+    manifest["document"]["name"]
+        .as_str()
+        .expect("document.name")
+        .to_string()
 }
 
 /// Save As to a new name: the written file names itself, so reopening it agrees with the session
 /// that wrote it instead of reporting the file it came from.
 #[test]
 fn export_names_the_manifest_after_the_file() {
-    let r = export(&doc(), "/tmp/somewhere/_nametest.pcraft", &ExportOptions::default()).expect("export");
+    let r = export(
+        &doc(),
+        "/tmp/somewhere/_nametest.pcraft",
+        &ExportOptions::default(),
+    )
+    .expect("export");
     assert_eq!(manifest_name(&r.bytes), "_nametest.pcraft");
-    assert_eq!(photocraft_format::load_from_bytes(&r.bytes).expect("load").name, "_nametest.pcraft");
+    assert_eq!(
+        photocraft_format::load_from_bytes(&r.bytes)
+            .expect("load")
+            .name,
+        "_nametest.pcraft"
+    );
 }
 
 /// A bare extension names no file and leaves the document's own name alone.

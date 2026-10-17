@@ -13,17 +13,30 @@ fn paras(doc: &Document) -> Vec<&Paragraph> {
 
 fn part_text(doc: &Document, id: Option<u32>) -> String {
     id.and_then(|i| doc.parts.get(&i))
-        .map(|p| p.blocks.iter().filter_map(|b| b.as_para()).map(|p| p.plain_text()).collect::<Vec<_>>().join("\n"))
+        .map(|p| {
+            p.blocks
+                .iter()
+                .filter_map(|b| b.as_para())
+                .map(|p| p.plain_text())
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
         .unwrap_or_default()
 }
 
 fn tiny_png_b64() -> String {
-    let img = image::RgbaImage::from_fn(2, 2, |x, y| image::Rgba([x as u8 * 100, y as u8 * 100, 50, 255]));
+    let img = image::RgbaImage::from_fn(2, 2, |x, y| {
+        image::Rgba([x as u8 * 100, y as u8 * 100, 50, 255])
+    });
     let mut out = std::io::Cursor::new(Vec::new());
     img.write_to(&mut out, image::ImageFormat::Png).unwrap();
     let b64 = base64::engine::general_purpose::STANDARD.encode(out.into_inner());
     // Line breaks inside base64, as the formats write it.
-    b64.as_bytes().chunks(20).map(|c| std::str::from_utf8(c).unwrap()).collect::<Vec<_>>().join("\n")
+    b64.as_bytes()
+        .chunks(20)
+        .map(|c| std::str::from_utf8(c).unwrap())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// A minimal Flat OPC package written by hand: namespaces declared on the package element only,
@@ -63,8 +76,13 @@ fn reads_a_hand_written_flat_opc_package() {
     let ps = paras(&doc);
     assert_eq!(ps[0].plain_text(), "Seed & soil");
     assert_eq!(ps[0].props_at(0).bold, Some(true));
-    assert_eq!(ps[1].props_at(0).link.as_deref(), Some("https://example.org/flat"));
-    assert!(matches!(ps[2].objects.first(), Some(InlineObject::Image { w, h, .. }) if *w == 24.0 && *h == 12.0));
+    assert_eq!(
+        ps[1].props_at(0).link.as_deref(),
+        Some("https://example.org/flat")
+    );
+    assert!(
+        matches!(ps[2].objects.first(), Some(InlineObject::Image { w, h, .. }) if *w == 24.0 && *h == 12.0)
+    );
     assert_eq!(doc.media.len(), 1);
 }
 
@@ -132,14 +150,22 @@ fn imports_word_2003_xml() {
     let ps = paras(&doc);
     assert_eq!(ps[0].plain_text(), "Plan");
     assert_eq!(ps[0].props.style.as_deref(), Some("Heading1"));
-    assert!(ps[0].objects.iter().any(|o| matches!(o, InlineObject::BookmarkStart { name, .. } if name == "plan")));
+    assert!(
+        ps[0]
+            .objects
+            .iter()
+            .any(|o| matches!(o, InlineObject::BookmarkStart { name, .. } if name == "plan"))
+    );
 
     let p = ps[1];
     assert_eq!(p.props.align, Some(Align::Center));
     assert_eq!(p.props.indent_first, Some(18.0));
     let loud = p.text.find("loud").unwrap();
     let c = p.props_of_char(loud);
-    assert_eq!((c.bold, c.italic, c.size, c.font.as_deref()), (Some(true), Some(true), Some(14.0), Some("Courier New")));
+    assert_eq!(
+        (c.bold, c.italic, c.size, c.font.as_deref()),
+        (Some(true), Some(true), Some(14.0), Some("Courier New"))
+    );
     assert!(c.underline.is_some() && c.color.is_some());
     assert!(p.plain_text().contains("Plain loud\tthen"));
     let note = p.objects.iter().find_map(|o| match o {
@@ -148,15 +174,30 @@ fn imports_word_2003_xml() {
     });
     assert_eq!(part_text(&doc, note), "Sown in May.");
 
-    assert_eq!(ps[2].props_at(0).link.as_deref(), Some("https://example.org/beans"));
+    assert_eq!(
+        ps[2].props_at(0).link.as_deref(),
+        Some("https://example.org/beans")
+    );
     let listed = ps[3];
     let num = listed.props.numbering.expect("list paragraph");
     let lvl = doc.numbering.level(num.num, num.level).expect("list level");
-    assert_eq!((lvl.format, lvl.text.as_str(), lvl.indent), (NumFormat::LowerLetter, "%1)", 36.0));
-    let ins = listed.props_of_char(listed.text.find("daily").unwrap()).ins.and_then(|i| doc.revisions.get(i as usize));
+    assert_eq!(
+        (lvl.format, lvl.text.as_str(), lvl.indent),
+        (NumFormat::LowerLetter, "%1)", 36.0)
+    );
+    let ins = listed
+        .props_of_char(listed.text.find("daily").unwrap())
+        .ins
+        .and_then(|i| doc.revisions.get(i as usize));
     assert_eq!(ins.map(|r| r.author.as_str()), Some("Ada"));
     let comment = doc.comments.values().next().expect("comment");
-    assert_eq!((comment.author.as_str(), part_text(&doc, Some(comment.part)).as_str()), ("Bo", "Too short?"));
+    assert_eq!(
+        (
+            comment.author.as_str(),
+            part_text(&doc, Some(comment.part)).as_str()
+        ),
+        ("Bo", "Too short?")
+    );
 
     let table = doc.body.iter().find_map(|b| match b.as_ref() {
         Block::Table(t) => Some(t),
@@ -164,37 +205,67 @@ fn imports_word_2003_xml() {
     });
     let table = table.expect("table");
     assert_eq!(table.rows.len(), 2);
-    assert_eq!(table.rows[0].cells[1].blocks.first().and_then(|b| b.as_para()).map(|p| p.plain_text()).as_deref(), Some("B1"));
+    assert_eq!(
+        table.rows[0].cells[1]
+            .blocks
+            .first()
+            .and_then(|b| b.as_para())
+            .map(|p| p.plain_text())
+            .as_deref(),
+        Some("B1")
+    );
 
-    let pic = ps.iter().flat_map(|p| p.objects.iter()).find(|o| matches!(o, InlineObject::Image { .. }));
+    let pic = ps
+        .iter()
+        .flat_map(|p| p.objects.iter())
+        .find(|o| matches!(o, InlineObject::Image { .. }));
     assert!(matches!(pic, Some(InlineObject::Image { w, h, .. }) if *w == 36.0 && *h == 18.0));
     assert_eq!(doc.media.len(), 1);
 
     assert_eq!(doc.last_section.page_w, 612.0);
     assert_eq!(doc.last_section.margin_left, 90.0);
-    assert_eq!(part_text(&doc, doc.last_section.headers.default), "Garden header");
+    assert_eq!(
+        part_text(&doc, doc.last_section.headers.default),
+        "Garden header"
+    );
 }
 
 #[test]
 fn hostile_word_xml_is_an_error_not_a_panic() {
     let flat = r#"<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">"#;
-    let w2003 = r#"<w:wordDocument xmlns:w="http://schemas.microsoft.com/office/word/2003/wordml">"#;
+    let w2003 =
+        r#"<w:wordDocument xmlns:w="http://schemas.microsoft.com/office/word/2003/wordml">"#;
     // Other XML (and non-XML) is refused with the Word XML error.
-    for other in ["<html><body>hi</body></html>", "", "not xml at all", "<package/>"] {
-        assert_eq!(read_xml(other.as_bytes()), Err(DocxError::NotWordXml), "{other:?}");
+    for other in [
+        "<html><body>hi</body></html>",
+        "",
+        "not xml at all",
+        "<package/>",
+    ] {
+        assert_eq!(
+            read_xml(other.as_bytes()),
+            Err(DocxError::NotWordXml),
+            "{other:?}"
+        );
     }
     // Broken packages: errors.
     for bad in [
         flat.to_string(),
         format!("{flat}</pkg:package>"),
-        format!("{flat}<pkg:part pkg:name=\"/word/document.xml\"><pkg:binaryData>!!!not base64</pkg:binaryData></pkg:part></pkg:package>"),
-        format!("{flat}<pkg:part pkg:name=\"/word/document.xml\"><pkg:xmlData><w:document></pkg:xmlData></pkg:part></pkg:package>"),
+        format!(
+            "{flat}<pkg:part pkg:name=\"/word/document.xml\"><pkg:binaryData>!!!not base64</pkg:binaryData></pkg:part></pkg:package>"
+        ),
+        format!(
+            "{flat}<pkg:part pkg:name=\"/word/document.xml\"><pkg:xmlData><w:document></pkg:xmlData></pkg:part></pkg:package>"
+        ),
     ] {
         assert!(read_xml(bad.as_bytes()).is_err(), "{bad}");
     }
     // Lenient leftovers never panic.
     for odd in [
-        format!("{flat}<pkg:part/><pkg:part pkg:name=\"\"><pkg:xmlData/></pkg:part><x/></pkg:package>"),
+        format!(
+            "{flat}<pkg:part/><pkg:part pkg:name=\"\"><pkg:xmlData/></pkg:part><x/></pkg:package>"
+        ),
         format!(
             "{w2003}<w:body><w:p><w:r><w:footnote w:type=\"separator\"/><w:pict><w:binData w:name=\"a\">%%%</w:binData><v:imagedata src=\"a\"/></w:pict></w:r></w:p></w:body></w:wordDocument>"
         ),
@@ -208,8 +279,13 @@ fn hostile_word_xml_is_an_error_not_a_panic() {
     // Too many parts.
     let mut many = String::from(flat);
     for i in 0..20_001 {
-        many.push_str(&format!("<pkg:part pkg:name=\"/p{i}.bin\"><pkg:binaryData>AA==</pkg:binaryData></pkg:part>"));
+        many.push_str(&format!(
+            "<pkg:part pkg:name=\"/p{i}.bin\"><pkg:binaryData>AA==</pkg:binaryData></pkg:part>"
+        ));
     }
     many.push_str("</pkg:package>");
-    assert!(matches!(read_xml(many.as_bytes()), Err(DocxError::Limit(_))));
+    assert!(matches!(
+        read_xml(many.as_bytes()),
+        Err(DocxError::Limit(_))
+    ));
 }

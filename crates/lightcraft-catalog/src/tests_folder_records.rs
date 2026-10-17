@@ -19,13 +19,26 @@ use crate::*;
 fn add(c: &mut Catalog, path: &str) {
     let id = c.alloc_photo_id();
     let name = path.rsplit('/').next().unwrap_or(path);
-    let p = Photo::new(id, Source::File { path: path.into() }, name, "JPEG", 60, 40, "2026-01-01T10:00:00");
+    let p = Photo::new(
+        id,
+        Source::File { path: path.into() },
+        name,
+        "JPEG",
+        60,
+        40,
+        "2026-01-01T10:00:00",
+    );
     c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
 }
 
 fn library() -> Catalog {
     let mut c = Catalog::new();
-    for p in ["/pics/trip/a.jpg", "/pics/trip/day1/b.jpg", "/pics/trip2/c.jpg", "/pics/home/d.jpg"] {
+    for p in [
+        "/pics/trip/a.jpg",
+        "/pics/trip/day1/b.jpg",
+        "/pics/trip2/c.jpg",
+        "/pics/home/d.jpg",
+    ] {
         add(&mut c, p);
     }
     c
@@ -62,14 +75,20 @@ fn a_labelled_folder_shows_its_label_in_the_tree_and_only_there() {
     let mut c = library();
     label(&mut c, "/pics/trip", Some(ColorLabel::Red));
     assert_eq!(c.folder_color_label("/pics/trip"), Some(ColorLabel::Red));
-    assert_eq!(tree_labels(&c), vec![("/pics/trip".to_string(), ColorLabel::Red)]);
+    assert_eq!(
+        tree_labels(&c),
+        vec![("/pics/trip".to_string(), ColorLabel::Red)]
+    );
 }
 
 #[test]
 fn however_a_folder_is_spelled_it_has_one_label() {
     let mut c = library();
     label(&mut c, "/pics//trip/", Some(ColorLabel::Green));
-    assert_eq!(c.folder_color_label("/pics/./trip"), Some(ColorLabel::Green));
+    assert_eq!(
+        c.folder_color_label("/pics/./trip"),
+        Some(ColorLabel::Green)
+    );
     label(&mut c, "/pics/home/../trip", Some(ColorLabel::Blue));
     assert_eq!(c.folder_color_label("/pics/trip"), Some(ColorLabel::Blue));
     assert_eq!(tree_labels(&c).len(), 1, "one folder, one record");
@@ -81,13 +100,20 @@ fn taking_the_label_off_leaves_no_record() {
     label(&mut c, "/pics/trip", Some(ColorLabel::Purple));
     label(&mut c, "/pics/trip", None);
     assert_eq!(c.folder_record("/pics/trip"), None);
-    assert!(!c.to_snapshot().contains("folder_records"), "nothing empty is saved");
+    assert!(
+        !c.to_snapshot().contains("folder_records"),
+        "nothing empty is saved"
+    );
 }
 
 #[test]
 fn an_empty_record_is_no_record() {
     let mut c = library();
-    c.apply(Op::SetFolderRecord { folder: "/pics/trip".into(), record: Some(FolderRecord::default()) }).unwrap();
+    c.apply(Op::SetFolderRecord {
+        folder: "/pics/trip".into(),
+        record: Some(FolderRecord::default()),
+    })
+    .unwrap();
     assert_eq!(c.folder_record("/pics/trip"), None);
 }
 
@@ -107,7 +133,12 @@ fn a_path_that_names_no_folder_is_refused() {
     let mut c = library();
     let before = c.to_snapshot();
     for bad in ["", "relative/trip", ".", "a/.."] {
-        let op = Op::SetFolderRecord { folder: bad.into(), record: Some(FolderRecord { label: Some(ColorLabel::Red) }) };
+        let op = Op::SetFolderRecord {
+            folder: bad.into(),
+            record: Some(FolderRecord {
+                label: Some(ColorLabel::Red),
+            }),
+        };
         assert!(c.apply(op).is_err(), "{bad:?} names no folder");
     }
     assert_eq!(c.to_snapshot(), before);
@@ -122,9 +153,19 @@ fn a_moved_folder_takes_its_labels_and_its_subfolders_labels_along() {
     let ops = c.folder_records_follow("/pics/trip", "/archive/2026/trip");
     c.apply(Op::Batch { ops }).unwrap();
     assert_eq!(c.folder_record("/pics/trip"), None);
-    assert_eq!(c.folder_color_label("/archive/2026/trip"), Some(ColorLabel::Red));
-    assert_eq!(c.folder_color_label("/archive/2026/trip/day1"), Some(ColorLabel::Green));
-    assert_eq!(c.folder_color_label("/pics/trip2"), Some(ColorLabel::Blue), "a neighbour that only starts the same stays");
+    assert_eq!(
+        c.folder_color_label("/archive/2026/trip"),
+        Some(ColorLabel::Red)
+    );
+    assert_eq!(
+        c.folder_color_label("/archive/2026/trip/day1"),
+        Some(ColorLabel::Green)
+    );
+    assert_eq!(
+        c.folder_color_label("/pics/trip2"),
+        Some(ColorLabel::Blue),
+        "a neighbour that only starts the same stays"
+    );
 }
 
 #[test]
@@ -137,8 +178,16 @@ fn undoing_a_move_brings_back_every_label_also_one_left_at_the_destination() {
     let before = c.to_snapshot();
     let ops = c.folder_records_follow("/pics/trip", "/pics/holiday");
     let undo = c.apply(Op::Batch { ops }).unwrap();
-    assert_eq!(c.folder_color_label("/pics/holiday"), Some(ColorLabel::Red), "the moved folder's label wins");
-    assert_eq!(c.folder_record("/pics/holiday/day9"), None, "what was known about the old folder goes");
+    assert_eq!(
+        c.folder_color_label("/pics/holiday"),
+        Some(ColorLabel::Red),
+        "the moved folder's label wins"
+    );
+    assert_eq!(
+        c.folder_record("/pics/holiday/day9"),
+        None,
+        "what was known about the old folder goes"
+    );
     c.apply(undo).unwrap();
     assert_eq!(c.to_snapshot(), before);
 }
@@ -146,7 +195,10 @@ fn undoing_a_move_brings_back_every_label_also_one_left_at_the_destination() {
 #[test]
 fn a_folder_without_labels_moves_without_ops() {
     let c = library();
-    assert!(c.folder_records_follow("/pics/trip", "/elsewhere/trip").is_empty());
+    assert!(
+        c.folder_records_follow("/pics/trip", "/elsewhere/trip")
+            .is_empty()
+    );
 }
 
 #[test]
@@ -156,9 +208,16 @@ fn an_unlabelled_folder_moved_onto_a_stale_label_does_not_inherit_it() {
     label(&mut c, "/pics/holiday", Some(ColorLabel::Purple));
     let ops = c.folder_records_follow("/pics/trip", "/pics/holiday");
     let undo = c.apply(Op::Batch { ops }).unwrap();
-    assert_eq!(c.folder_record("/pics/holiday"), None, "the folder now there is another one");
+    assert_eq!(
+        c.folder_record("/pics/holiday"),
+        None,
+        "the folder now there is another one"
+    );
     c.apply(undo).unwrap();
-    assert_eq!(c.folder_color_label("/pics/holiday"), Some(ColorLabel::Purple));
+    assert_eq!(
+        c.folder_color_label("/pics/holiday"),
+        Some(ColorLabel::Purple)
+    );
 }
 
 #[test]
@@ -168,7 +227,17 @@ fn labels_survive_the_journal_without_a_snapshot() {
     {
         let p = "/pics/trip/a.jpg";
         let id = c.alloc_photo_id();
-        let op = Op::AddPhoto { photo: Box::new(Photo::new(id, Source::File { path: p.into() }, "a.jpg", "JPEG", 6, 4, "2026-01-01")) };
+        let op = Op::AddPhoto {
+            photo: Box::new(Photo::new(
+                id,
+                Source::File { path: p.into() },
+                "a.jpg",
+                "JPEG",
+                6,
+                4,
+                "2026-01-01",
+            )),
+        };
         c.apply(op.clone()).unwrap();
         j.append(std::slice::from_ref(&op)).unwrap();
     }
@@ -178,7 +247,10 @@ fn labels_survive_the_journal_without_a_snapshot() {
     drop(j);
     let (_, reopened, r) = Journal::open(Box::new(m)).unwrap();
     assert!(r.replayed >= 2, "{r:?}");
-    assert_eq!(reopened.folder_color_label("/pics/trip"), Some(ColorLabel::Yellow));
+    assert_eq!(
+        reopened.folder_color_label("/pics/trip"),
+        Some(ColorLabel::Yellow)
+    );
 }
 
 #[test]
@@ -186,7 +258,10 @@ fn labels_survive_closing_and_reopening_the_library() {
     let mut c = library();
     label(&mut c, "/pics/home", Some(ColorLabel::Green));
     let reopened = Catalog::from_snapshot(&c.to_snapshot()).unwrap();
-    assert_eq!(reopened.folder_color_label("/pics/home"), Some(ColorLabel::Green));
+    assert_eq!(
+        reopened.folder_color_label("/pics/home"),
+        Some(ColorLabel::Green)
+    );
 }
 
 #[test]

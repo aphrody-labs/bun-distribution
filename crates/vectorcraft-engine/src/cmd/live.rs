@@ -10,8 +10,8 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::live::{
-    self, BlendDefaults, BlendOrientation, BlendSpacing, BlendSpec, EnvelopeKind, EnvelopeMap, EnvelopeOptions, GradientMesh, MeshAppearance,
-    PreserveShape, Spine,
+    self, BlendDefaults, BlendOrientation, BlendSpacing, BlendSpec, EnvelopeKind, EnvelopeMap,
+    EnvelopeOptions, GradientMesh, MeshAppearance, PreserveShape, Spine,
 };
 use vectorcraft_doc::{Appearance, Document, Node, NodeId, NodeKind, Selection};
 use vectorcraft_geom::{Affine, PathData, Point, Vec2};
@@ -304,7 +304,11 @@ fn roots_param(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
             }
         }
         let mut sel = Selection::default();
-        sel.set(ids.iter().copied().filter(|id| st.doc.node(*id).is_some_and(|n| !n.is_layer())));
+        sel.set(
+            ids.iter()
+                .copied()
+                .filter(|id| st.doc.node(*id).is_some_and(|n| !n.is_layer())),
+        );
         let ordered = sel.in_paint_order(&st.doc);
         // Drop ids nested inside other given ids.
         return Ok(ordered
@@ -312,7 +316,9 @@ fn roots_param(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
             .copied()
             .filter(|id| {
                 let anc = st.doc.ancestry(*id).unwrap_or_default();
-                !anc[..anc.len().saturating_sub(1)].iter().any(|a| ordered.contains(a))
+                !anc[..anc.len().saturating_sub(1)]
+                    .iter()
+                    .any(|a| ordered.contains(a))
             })
             .collect());
     }
@@ -348,19 +354,36 @@ fn is_mesh(n: &Node) -> bool {
 
 fn has_blend(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    if selected_of(s, is_blend).is_empty() { Err("select a blend".into()) } else { Ok(()) }
+    if selected_of(s, is_blend).is_empty() {
+        Err("select a blend".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_envelope(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    if selected_of(s, is_envelope).is_empty() { Err("select an envelope".into()) } else { Ok(()) }
+    if selected_of(s, is_envelope).is_empty() {
+        Err("select an envelope".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_mesh(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    if selected_of(s, is_mesh).is_empty() { Err("select a gradient mesh".into()) } else { Ok(()) }
+    if selected_of(s, is_mesh).is_empty() {
+        Err("select a gradient mesh".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// Wrap `roots` (paint order) into a new node built by `make`, placed where the topmost root was.
-fn wrap(d: &mut Document, sel: &mut Selection, roots: &[NodeId], make: impl FnOnce(NodeId, Vec<Arc<Node>>) -> Node) -> Result<NodeId> {
+fn wrap(
+    d: &mut Document,
+    sel: &mut Selection,
+    roots: &[NodeId],
+    make: impl FnOnce(NodeId, Vec<Arc<Node>>) -> Node,
+) -> Result<NodeId> {
     if roots.is_empty() {
         return Err(EngineError::Other("nothing to wrap".into()));
     }
@@ -406,9 +429,18 @@ fn spacing_param(p: &Value, cmd: &str, current: BlendSpacing) -> Result<BlendSpa
     let value = num("value");
     let sp = match mode {
         Some("smooth") | Some("smoothColor") => BlendSpacing::SmoothColor,
-        Some("steps") => BlendSpacing::Steps(value.or(num("steps")).unwrap_or(DEFAULT_STEPS as f64) as u32),
-        Some("distance") => BlendSpacing::Distance(value.or(num("distance")).unwrap_or(DEFAULT_DISTANCE)),
-        Some(o) => return Err(bad(cmd, format!("unknown spacing `{o}` (smooth|steps|distance)"))),
+        Some("steps") => {
+            BlendSpacing::Steps(value.or(num("steps")).unwrap_or(DEFAULT_STEPS as f64) as u32)
+        }
+        Some("distance") => {
+            BlendSpacing::Distance(value.or(num("distance")).unwrap_or(DEFAULT_DISTANCE))
+        }
+        Some(o) => {
+            return Err(bad(
+                cmd,
+                format!("unknown spacing `{o}` (smooth|steps|distance)"),
+            ));
+        }
         None => {
             if let Some(n) = num("steps") {
                 BlendSpacing::Steps(n as u32)
@@ -422,8 +454,12 @@ fn spacing_param(p: &Value, cmd: &str, current: BlendSpacing) -> Result<BlendSpa
         }
     };
     match sp {
-        BlendSpacing::Steps(n) if !(1..=1000).contains(&n) => Err(bad(cmd, "steps must be 1..1000")),
-        BlendSpacing::Distance(d) if !(d.is_finite() && d > 0.0) => Err(bad(cmd, "distance must be > 0")),
+        BlendSpacing::Steps(n) if !(1..=1000).contains(&n) => {
+            Err(bad(cmd, "steps must be 1..1000"))
+        }
+        BlendSpacing::Distance(d) if !(d.is_finite() && d > 0.0) => {
+            Err(bad(cmd, "distance must be > 0"))
+        }
         s => Ok(s),
     }
 }
@@ -439,15 +475,22 @@ fn orientation_param(p: &Value, current: BlendOrientation) -> BlendOrientation {
 /// `starts`: per object of `ids` (else of `roots`), the anchor its blend starts from.
 fn starts_param(p: &Value, roots: &[NodeId]) -> Result<Vec<(NodeId, u32)>> {
     const C: &str = "object.blend.make";
-    let Some(v) = p.get("starts").filter(|v| !v.is_null()) else { return Ok(vec![]) };
-    let list = v.as_array().ok_or_else(|| bad(C, "`starts` must be an array of anchor indices (or nulls)"))?;
+    let Some(v) = p.get("starts").filter(|v| !v.is_null()) else {
+        return Ok(vec![]);
+    };
+    let list = v
+        .as_array()
+        .ok_or_else(|| bad(C, "`starts` must be an array of anchor indices (or nulls)"))?;
     let owners = ids_param(p, "ids").unwrap_or_else(|| roots.to_vec());
     let mut out = vec![];
     for (id, a) in owners.iter().zip(list) {
         if a.is_null() {
             continue;
         }
-        let i = a.as_u64().and_then(|i| u32::try_from(i).ok()).ok_or_else(|| bad(C, "a start must be an anchor index ≥ 0 or null"))?;
+        let i = a
+            .as_u64()
+            .and_then(|i| u32::try_from(i).ok())
+            .ok_or_else(|| bad(C, "a start must be an anchor index ≥ 0 or null"))?;
         out.push((*id, i));
     }
     Ok(out)
@@ -455,12 +498,19 @@ fn starts_param(p: &Value, roots: &[NodeId]) -> Result<Vec<(NodeId, u32)>> {
 
 /// The first blend among `roots`.
 fn first_blend(d: &Document, roots: &[NodeId]) -> Option<Node> {
-    roots.iter().filter_map(|r| d.node(*r)).find(|n| is_blend(n)).cloned()
+    roots
+        .iter()
+        .filter_map(|r| d.node(*r))
+        .find(|n| is_blend(n))
+        .cloned()
 }
 
 /// Key objects of a blend made of `nodes` (paint order) and their start points: a blend among
 /// them gives its keys (with theirs), the other objects are keys themselves.
-fn merge_keys(nodes: Vec<Arc<Node>>, starts: &[(NodeId, u32)]) -> (Vec<Arc<Node>>, Vec<Option<u32>>) {
+fn merge_keys(
+    nodes: Vec<Arc<Node>>,
+    starts: &[(NodeId, u32)],
+) -> (Vec<Arc<Node>>, Vec<Option<u32>>) {
     let (mut keys, mut st) = (vec![], vec![]);
     for n in nodes {
         match &n.kind {
@@ -487,10 +537,23 @@ fn extend_spine(spec: &mut BlendSpec, old: &[Arc<Node>], old_spec: &BlendSpec, k
     if old_spec.spine.is_none() {
         return;
     }
-    let Some((mut path, anchors)) = live::pin_spine(old, old_spec) else { return };
-    let Some(first) = old.first().and_then(|f| keys.iter().position(|k| k.id == f.id)) else { return };
-    let Some(sp) = path.subpaths.first_mut().filter(|sp| !sp.closed) else { return };
-    let center = |k: &Arc<Node>| vectorcraft_geom::Anchor::corner(k.geometric_bounds().map(|b| b.center()).unwrap_or_default());
+    let Some((mut path, anchors)) = live::pin_spine(old, old_spec) else {
+        return;
+    };
+    let Some(first) = old
+        .first()
+        .and_then(|f| keys.iter().position(|k| k.id == f.id))
+    else {
+        return;
+    };
+    let Some(sp) = path.subpaths.first_mut().filter(|sp| !sp.closed) else {
+        return;
+    };
+    let center = |k: &Arc<Node>| {
+        vectorcraft_geom::Anchor::corner(
+            k.geometric_bounds().map(|b| b.center()).unwrap_or_default(),
+        )
+    };
     let before: Vec<_> = keys.iter().take(first).map(center).collect();
     let after: Vec<_> = keys.iter().skip(first + old.len()).map(center).collect();
     let shift = before.len();
@@ -500,7 +563,10 @@ fn extend_spine(spec: &mut BlendSpec, old: &[Arc<Node>], old_spec: &BlendSpec, k
     let mut ka: Vec<usize> = (0..shift).collect();
     ka.extend(anchors.iter().map(|a| a + shift));
     ka.extend(n..sp.anchors.len());
-    spec.key_anchors = ka.iter().map(|a| u32::try_from(*a).unwrap_or(u32::MAX)).collect();
+    spec.key_anchors = ka
+        .iter()
+        .map(|a| u32::try_from(*a).unwrap_or(u32::MAX))
+        .collect();
     spec.spine = Some(path);
 }
 
@@ -513,7 +579,10 @@ fn blend_make(s: &mut Session, p: &Value) -> Result<Value> {
     let starts = starts_param(p, &roots)?;
     let base = first_blend(&s.doc()?.doc, &roots);
     let cur = match base.as_ref().map(|n| &n.kind) {
-        Some(NodeKind::Blend { spec, .. }) => BlendDefaults { spacing: spec.spacing, orientation: spec.orientation },
+        Some(NodeKind::Blend { spec, .. }) => BlendDefaults {
+            spacing: spec.spacing,
+            orientation: spec.orientation,
+        },
         _ => s.prefs.blend_options.unwrap_or_default(),
     };
     let spacing = spacing_param(p, C, cur.spacing)?;
@@ -524,16 +593,34 @@ fn blend_make(s: &mut Session, p: &Value) -> Result<Value> {
             // A blend taking more keys keeps its name, transparency and spine; a new one is a
             // knockout group, so translucent steps don't show through each other.
             let mut n = base.unwrap_or_else(|| {
-                let mut n = Node::new(id, NodeKind::Group { children: vec![], clip: false });
+                let mut n = Node::new(
+                    id,
+                    NodeKind::Group {
+                        children: vec![],
+                        clip: false,
+                    },
+                );
                 n.knockout = vectorcraft_doc::Knockout::On;
                 n
             });
-            let mut spec = BlendSpec { spacing, orientation, starts, ..Default::default() };
-            if let NodeKind::Blend { children: old, spec: old_spec } = &n.kind {
+            let mut spec = BlendSpec {
+                spacing,
+                orientation,
+                starts,
+                ..Default::default()
+            };
+            if let NodeKind::Blend {
+                children: old,
+                spec: old_spec,
+            } = &n.kind
+            {
                 extend_spine(&mut spec, old, old_spec, &children);
             }
             n.id = id;
-            n.kind = NodeKind::Blend { children, spec: Box::new(spec) };
+            n.kind = NodeKind::Blend {
+                children,
+                spec: Box::new(spec),
+            };
             n
         })
     })?;
@@ -546,14 +633,22 @@ fn blend_release(s: &mut Session, _: &Value) -> Result<Value> {
         let (mut keys, mut spines, mut groups) = (vec![], vec![], vec![]);
         let mut released = Beside::replacing(d, &blends);
         for b in &blends {
-            let Some(n) = d.node(*b).cloned() else { continue };
-            let NodeKind::Blend { children, spec } = &n.kind else { continue };
+            let Some(n) = d.node(*b).cloned() else {
+                continue;
+            };
+            let NodeKind::Blend { children, spec } = &n.kind else {
+                continue;
+            };
             // The spine stays behind as a path that paints nothing, below the keys.
             let mut nodes = vec![];
             if let Some((path, _)) = live::blend_spine(children, spec) {
                 let id = d.alloc_id();
                 spines.push(id);
-                nodes.push(Node::path(id, path, Appearance::basic(Paint::None, Paint::None, 0.0)));
+                nodes.push(Node::path(
+                    id,
+                    path,
+                    Appearance::basic(Paint::None, Paint::None, 0.0),
+                ));
             }
             keys.extend(children.iter().map(|c| c.id));
             nodes.extend(children.iter().map(|c| (**c).clone()));
@@ -567,7 +662,10 @@ fn blend_release(s: &mut Session, _: &Value) -> Result<Value> {
                 || !n.appearance.effects.is_empty()
             {
                 let mut g = n.clone();
-                g.kind = NodeKind::Group { children: nodes.into_iter().map(Arc::new).collect(), clip: false };
+                g.kind = NodeKind::Group {
+                    children: nodes.into_iter().map(Arc::new).collect(),
+                    clip: false,
+                };
                 groups.push(g.id);
                 nodes = vec![g];
             }
@@ -599,15 +697,26 @@ fn edit_spine<T>(
 ) -> Result<T> {
     let id = match id_param(p, "id") {
         Some(id) => id,
-        None => *selected_of(s, is_blend).first().ok_or_else(|| bad(cmd, "select a blend or give `id`"))?,
+        None => *selected_of(s, is_blend)
+            .first()
+            .ok_or_else(|| bad(cmd, "select a blend or give `id`"))?,
     };
     let c = cmd.to_string();
     s.edit(label, move |d, _| {
-        let Some(NodeKind::Blend { children, spec }) = d.node_mut(id).map(|n| &mut n.kind) else { return Err(bad(&c, "not a blend")) };
-        let (mut path, mut anchors) = live::pin_spine(children, spec).ok_or_else(|| bad(&c, "the blend has no spine"))?;
-        let sp = path.subpaths.first_mut().ok_or_else(|| bad(&c, "the blend has no spine"))?;
+        let Some(NodeKind::Blend { children, spec }) = d.node_mut(id).map(|n| &mut n.kind) else {
+            return Err(bad(&c, "not a blend"));
+        };
+        let (mut path, mut anchors) =
+            live::pin_spine(children, spec).ok_or_else(|| bad(&c, "the blend has no spine"))?;
+        let sp = path
+            .subpaths
+            .first_mut()
+            .ok_or_else(|| bad(&c, "the blend has no spine"))?;
         let out = f(sp, &mut anchors, children)?;
-        spec.key_anchors = anchors.iter().map(|a| u32::try_from(*a).unwrap_or(u32::MAX)).collect();
+        spec.key_anchors = anchors
+            .iter()
+            .map(|a| u32::try_from(*a).unwrap_or(u32::MAX))
+            .collect();
         spec.spine = Some(path);
         Ok(out)
     })
@@ -616,7 +725,11 @@ fn edit_spine<T>(
 /// A point parameter that must be finite.
 fn finite_point(p: &Value, cmd: &str) -> Result<Point> {
     let q = Point::new(f64_req(p, "x", cmd)?, f64_req(p, "y", cmd)?);
-    if q.x.is_finite() && q.y.is_finite() && q.x.abs() < 1e9 && q.y.abs() < 1e9 { Ok(q) } else { Err(bad(cmd, "x and y must be finite")) }
+    if q.x.is_finite() && q.y.is_finite() && q.x.abs() < 1e9 && q.y.abs() < 1e9 {
+        Ok(q)
+    } else {
+        Err(bad(cmd, "x and y must be finite"))
+    }
 }
 
 fn spine_move_anchor(s: &mut Session, p: &Value) -> Result<Value> {
@@ -631,7 +744,10 @@ fn spine_move_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let independent = bool_or(p, "independent", false);
     edit_spine(s, p, C, "Reshape Spine", |sp, anchors, keys| {
-        let a = sp.anchors.get_mut(index).ok_or_else(|| bad(C, "no such spine point"))?;
+        let a = sp
+            .anchors
+            .get_mut(index)
+            .ok_or_else(|| bad(C, "no such spine point"))?;
         if let Some(out) = handle {
             a.set_handle(out, q, independent);
             return Ok(());
@@ -657,7 +773,13 @@ fn spine_reshape_segment(s: &mut Session, p: &Value) -> Result<Value> {
     if !(t.is_finite() && dv.x.is_finite() && dv.y.is_finite() && dv.hypot() < 1e9) {
         return Err(bad(C, "t, dx and dy must be finite"));
     }
-    edit_spine(s, p, C, "Reshape Spine", |sp, _, _| if sp.bend_segment(seg, t, dv) { Ok(()) } else { Err(bad(C, "no such spine segment")) })?;
+    edit_spine(s, p, C, "Reshape Spine", |sp, _, _| {
+        if sp.bend_segment(seg, t, dv) {
+            Ok(())
+        } else {
+            Err(bad(C, "no such spine segment"))
+        }
+    })?;
     ok()
 }
 
@@ -665,7 +787,9 @@ fn spine_add_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.blend.spine.addAnchor";
     let q = finite_point(p, C)?;
     let index = edit_spine(s, p, C, "Add Spine Point", |sp, anchors, _| {
-        let (_, seg, t, _, _) = PathData::single(sp.clone()).nearest(q).ok_or_else(|| bad(C, "the spine has no segments"))?;
+        let (_, seg, t, _, _) = PathData::single(sp.clone())
+            .nearest(q)
+            .ok_or_else(|| bad(C, "the spine has no segments"))?;
         let i = sp.insert_anchor(seg, t.clamp(1e-3, 1.0 - 1e-3));
         for a in anchors.iter_mut().filter(|a| **a >= i) {
             *a += 1;
@@ -697,7 +821,11 @@ fn spine_remove_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     ok()
 }
 
-fn edit_blends(s: &mut Session, label: &str, f: impl Fn(&mut Vec<Arc<Node>>, &mut BlendSpec)) -> Result<Value> {
+fn edit_blends(
+    s: &mut Session,
+    label: &str,
+    f: impl Fn(&mut Vec<Arc<Node>>, &mut BlendSpec),
+) -> Result<Value> {
     let blends = selected_of(s, is_blend);
     s.edit(label, |d, _| {
         for b in &blends {
@@ -714,7 +842,9 @@ fn edit_blends(s: &mut Session, label: &str, f: impl Fn(&mut Vec<Arc<Node>>, &mu
 fn selected_spec(s: &Session) -> Option<(NodeId, BlendSpec, Vec<NodeId>)> {
     let b = *selected_of(s, is_blend).first()?;
     match &s.doc().ok()?.doc.node(b)?.kind {
-        NodeKind::Blend { spec, children } => Some((b, (**spec).clone(), children.iter().map(|c| c.id).collect())),
+        NodeKind::Blend { spec, children } => {
+            Some((b, (**spec).clone(), children.iter().map(|c| c.id).collect()))
+        }
         _ => None,
     }
 }
@@ -725,7 +855,10 @@ fn blend_options(s: &mut Session, p: &Value) -> Result<Value> {
         // Nothing to set them on: the options new blends start with.
         let d = s.prefs.blend_options.unwrap_or_default();
         let spacing = spacing_param(p, C, d.spacing)?;
-        s.prefs.blend_options = Some(BlendDefaults { spacing, orientation: orientation_param(p, d.orientation) });
+        s.prefs.blend_options = Some(BlendDefaults {
+            spacing,
+            orientation: orientation_param(p, d.orientation),
+        });
         return Ok(json!({ "defaults": true }));
     };
     let spacing = spacing_param(p, C, cur.spacing)?;
@@ -744,7 +877,11 @@ fn blend_options_json(spacing: BlendSpacing, orientation: BlendOrientation) -> V
         BlendSpacing::Steps(n) => ("steps", n, DEFAULT_DISTANCE),
         BlendSpacing::Distance(d) => ("distance", DEFAULT_STEPS, d),
     };
-    let orientation = if orientation == BlendOrientation::AlignToPath { "path" } else { "page" };
+    let orientation = if orientation == BlendOrientation::AlignToPath {
+        "path"
+    } else {
+        "page"
+    };
     json!({ "spacing": mode, "steps": steps, "distance": distance, "orientation": orientation })
 }
 
@@ -761,7 +898,11 @@ fn blend_info(s: &mut Session, _: &Value) -> Result<Value> {
                 && let Some(sp) = path.subpaths.first()
             {
                 let pt = |p: Point| json!([p.x, p.y]);
-                let points: Vec<Value> = sp.anchors.iter().map(|a| json!({"x": a.p.x, "y": a.p.y, "in": pt(a.h_in), "out": pt(a.h_out)})).collect();
+                let points: Vec<Value> = sp
+                    .anchors
+                    .iter()
+                    .map(|a| json!({"x": a.p.x, "y": a.p.y, "in": pt(a.h_in), "out": pt(a.h_out)}))
+                    .collect();
                 v["spine"] = json!({"anchors": points, "closed": sp.closed, "keyAnchors": anchors, "explicit": spec.spine.is_some()});
             }
             v
@@ -791,9 +932,17 @@ fn blend_expand(s: &mut Session, _: &Value) -> Result<Value> {
 /// blend itself: id, name, visibility, lock, transparency (knockout and isolation included),
 /// opacity mask and appearance.
 fn expand_blend(d: &mut Document, id: NodeId) -> Result<()> {
-    let Some(n) = d.node(id).filter(|n| is_blend(n)).cloned() else { return Ok(()) };
+    let Some(n) = d.node(id).filter(|n| is_blend(n)).cloned() else {
+        return Ok(());
+    };
     let mut g = n.clone();
-    g.kind = NodeKind::Group { children: vectorcraft_render::expand_live(&n).into_iter().map(Arc::new).collect(), clip: false };
+    g.kind = NodeKind::Group {
+        children: vectorcraft_render::expand_live(&n)
+            .into_iter()
+            .map(Arc::new)
+            .collect(),
+        clip: false,
+    };
     fix_ids(d, &mut g);
     *d.node_mut(id).ok_or(EngineError::NoNode(id))? = g;
     Ok(())
@@ -827,9 +976,19 @@ fn keys_to_spine(children: &mut [Arc<Node>], spec: &BlendSpec) {
     let sp = Spine::new(path);
     for (i, c) in children.iter_mut().enumerate() {
         let pt = if pinned {
-            spec.key_anchors.get(i).and_then(|a| path.subpaths.first()?.anchors.get(*a as usize)).map(|a| a.p)
+            spec.key_anchors
+                .get(i)
+                .and_then(|a| path.subpaths.first()?.anchors.get(*a as usize))
+                .map(|a| a.p)
         } else {
-            sp.as_ref().map(|sp| sp.at(if k > 1 { i as f64 / (k - 1) as f64 } else { 0.0 }).0)
+            sp.as_ref().map(|sp| {
+                sp.at(if k > 1 {
+                    i as f64 / (k - 1) as f64
+                } else {
+                    0.0
+                })
+                .0
+            })
         };
         if let (Some(pt), Some(b)) = (pt, c.geometric_bounds()) {
             Arc::make_mut(c).transform(Affine::translate(pt - b.center()), false);
@@ -842,7 +1001,10 @@ fn pin(children: &[Arc<Node>], spec: &mut BlendSpec) -> bool {
     match live::pin_spine(children, spec) {
         Some((path, anchors)) => {
             spec.spine = Some(path);
-            spec.key_anchors = anchors.iter().map(|a| u32::try_from(*a).unwrap_or(u32::MAX)).collect();
+            spec.key_anchors = anchors
+                .iter()
+                .map(|a| u32::try_from(*a).unwrap_or(u32::MAX))
+                .collect();
             true
         }
         None => false,
@@ -871,12 +1033,21 @@ fn blend_replace_spine(s: &mut Session, _: &Value) -> Result<Value> {
         .find(|id| {
             !blends.contains(id)
                 && st.doc.node(*id).is_some_and(|n| n.path_data().is_some())
-                && !blends.iter().any(|b| st.doc.ancestry(*id).unwrap_or_default().contains(b))
+                && !blends
+                    .iter()
+                    .any(|b| st.doc.ancestry(*id).unwrap_or_default().contains(b))
         })
         .ok_or_else(|| EngineError::Other("Replace Spine: select a blend and a path".into()))?;
-    let Some(&b) = blends.first() else { return Err(EngineError::Other("Replace Spine: select a blend and a path".into())) };
+    let Some(&b) = blends.first() else {
+        return Err(EngineError::Other(
+            "Replace Spine: select a blend and a path".into(),
+        ));
+    };
     s.edit("Replace Spine", |d, sel| {
-        let spine = d.node(path).and_then(|n| n.path_data().cloned()).ok_or(EngineError::NoNode(path))?;
+        let spine = d
+            .node(path)
+            .and_then(|n| n.path_data().cloned())
+            .ok_or(EngineError::NoNode(path))?;
         d.remove(path)?;
         if let Some(NodeKind::Blend { children, spec }) = d.node_mut(b).map(|n| &mut n.kind) {
             spec.spine = Some(spine);
@@ -898,10 +1069,14 @@ fn blend_reverse_spine(s: &mut Session, _: &Value) -> Result<Value> {
             }
             keys_to_spine(children, spec);
         } else {
-            let centers: Vec<Point> = children.iter().map(|k| k.geometric_bounds().map(|b| b.center()).unwrap_or_default()).collect();
+            let centers: Vec<Point> = children
+                .iter()
+                .map(|k| k.geometric_bounds().map(|b| b.center()).unwrap_or_default())
+                .collect();
             let n = children.len();
             for (i, k) in children.iter_mut().enumerate() {
-                Arc::make_mut(k).transform(Affine::translate(centers[n - 1 - i] - centers[i]), false);
+                Arc::make_mut(k)
+                    .transform(Affine::translate(centers[n - 1 - i] - centers[i]), false);
             }
         }
     })
@@ -924,8 +1099,16 @@ fn blend_reverse_stack(s: &mut Session, _: &Value) -> Result<Value> {
 // ---------- Envelope ----------
 
 fn warp_kind(p: &Value, cmd: &str, cur: Option<&EnvelopeKind>) -> Result<EnvelopeKind> {
-    let (mut style, mut bend, mut h, mut v, mut horizontal) = ("arc".to_string(), 50.0, 0.0, 0.0, true);
-    if let Some(EnvelopeKind::Warp { style: s0, bend: b0, h: h0, v: v0, horizontal: z0 }) = cur {
+    let (mut style, mut bend, mut h, mut v, mut horizontal) =
+        ("arc".to_string(), 50.0, 0.0, 0.0, true);
+    if let Some(EnvelopeKind::Warp {
+        style: s0,
+        bend: b0,
+        h: h0,
+        v: v0,
+        horizontal: z0,
+    }) = cur
+    {
         (style, bend, h, v, horizontal) = (s0.clone(), *b0, *h0, *v0, *z0);
     }
     if let Some(s) = str_param(p, "style") {
@@ -943,16 +1126,38 @@ fn warp_kind(p: &Value, cmd: &str, cur: Option<&EnvelopeKind>) -> Result<Envelop
         Some("horizontal") => true,
         _ => bool_or(p, "horizontal", horizontal),
     };
-    Ok(EnvelopeKind::Warp { style, bend, h, v, horizontal })
+    Ok(EnvelopeKind::Warp {
+        style,
+        bend,
+        h,
+        v,
+        horizontal,
+    })
 }
 
 /// The options and fidelity new envelopes get (Envelope Options with no envelope selected).
 fn envelope_defaults(s: &Session) -> (EnvelopeOptions, f64) {
-    s.envelope_defaults.unwrap_or((EnvelopeOptions::NEW, live::default_fidelity()))
+    s.envelope_defaults
+        .unwrap_or((EnvelopeOptions::NEW, live::default_fidelity()))
 }
 
-fn envelope(id: NodeId, content: Vec<Arc<Node>>, kind: EnvelopeKind, (options, fidelity): (EnvelopeOptions, f64)) -> Node {
-    Node::new(id, NodeKind::Envelope { content, kind: Box::new(kind), fidelity, editing: false, options, frame: Box::new(Affine::IDENTITY) })
+fn envelope(
+    id: NodeId,
+    content: Vec<Arc<Node>>,
+    kind: EnvelopeKind,
+    (options, fidelity): (EnvelopeOptions, f64),
+) -> Node {
+    Node::new(
+        id,
+        NodeKind::Envelope {
+            content,
+            kind: Box::new(kind),
+            fidelity,
+            editing: false,
+            options,
+            frame: Box::new(Affine::IDENTITY),
+        },
+    )
 }
 
 /// `rows` and `cols` (or `columns`), 1..50 each, defaulting to `default`.
@@ -972,7 +1177,11 @@ fn env_make_warp(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(EngineError::Other("nothing selected".into()));
     }
     let defaults = envelope_defaults(s);
-    let id = s.edit("Make Envelope", |d, sel| wrap(d, sel, &roots, |id, content| envelope(id, content, kind, defaults)))?;
+    let id = s.edit("Make Envelope", |d, sel| {
+        wrap(d, sel, &roots, |id, content| {
+            envelope(id, content, kind, defaults)
+        })
+    })?;
     Ok(json!({ "id": id.0 }))
 }
 
@@ -980,11 +1189,21 @@ fn env_make_warp(s: &mut Session, p: &Value) -> Result<Value> {
 /// current surface (`maintain`), or a flat grid over its content.
 fn mesh_kind(map: &EnvelopeMap, maintain: bool, rows: u32, cols: u32) -> EnvelopeKind {
     if !maintain {
-        return EnvelopeKind::Mesh { rows, cols, points: map.grid(rows, cols), handles: vec![] };
+        return EnvelopeKind::Mesh {
+            rows,
+            cols,
+            points: map.grid(rows, cols),
+            handles: vec![],
+        };
     }
     // The surface's points with handles along it: the grid lines keep the current shape.
     let m = map.surface_mesh(rows, cols, Color::BLACK);
-    EnvelopeKind::Mesh { rows, cols, points: m.points.iter().map(|q| q.p).collect(), handles: m.points.iter().map(|q| q.handles).collect() }
+    EnvelopeKind::Mesh {
+        rows,
+        cols,
+        points: m.points.iter().map(|q| q.p).collect(),
+        handles: m.points.iter().map(|q| q.handles).collect(),
+    }
 }
 
 fn env_make_mesh(s: &mut Session, p: &Value) -> Result<Value> {
@@ -992,11 +1211,24 @@ fn env_make_mesh(s: &mut Session, p: &Value) -> Result<Value> {
     let (rows, cols) = rows_cols(p, C, (4, 4))?;
     let roots = roots_param(s, p)?;
     let st = s.doc()?;
-    let nodes: Vec<Arc<Node>> = roots.iter().filter_map(|id| st.doc.node(*id).cloned()).map(Arc::new).collect();
+    let nodes: Vec<Arc<Node>> = roots
+        .iter()
+        .filter_map(|id| st.doc.node(*id).cloned())
+        .map(Arc::new)
+        .collect();
     let src = live::nodes_bounds(&nodes).ok_or_else(|| bad(C, "selection has no bounds"))?;
-    let kind = EnvelopeKind::Mesh { rows, cols, points: live::grid_points(src, rows, cols), handles: vec![] };
+    let kind = EnvelopeKind::Mesh {
+        rows,
+        cols,
+        points: live::grid_points(src, rows, cols),
+        handles: vec![],
+    };
     let defaults = envelope_defaults(s);
-    let id = s.edit("Make Envelope", |d, sel| wrap(d, sel, &roots, |id, content| envelope(id, content, kind, defaults)))?;
+    let id = s.edit("Make Envelope", |d, sel| {
+        wrap(d, sel, &roots, |id, content| {
+            envelope(id, content, kind, defaults)
+        })
+    })?;
     Ok(json!({ "id": id.0 }))
 }
 
@@ -1004,9 +1236,13 @@ fn env_make_mesh(s: &mut Session, p: &Value) -> Result<Value> {
 fn outline_of(n: &Node) -> Option<PathData> {
     match &n.kind {
         NodeKind::Path { path, .. } => Some(path.clone()),
-        NodeKind::Compound { children, .. } => {
-            Some(PathData::new(children.iter().filter_map(|c| c.path_data()).flat_map(|p| p.subpaths.clone()).collect()))
-        }
+        NodeKind::Compound { children, .. } => Some(PathData::new(
+            children
+                .iter()
+                .filter_map(|c| c.path_data())
+                .flat_map(|p| p.subpaths.clone())
+                .collect(),
+        )),
         _ => None,
     }
 }
@@ -1017,12 +1253,22 @@ fn env_make_top(s: &mut Session, p: &Value) -> Result<Value> {
     if roots.len() < 2 {
         return Err(bad(C, "select the content and a path on top"));
     }
-    let Some((&top, content)) = roots.split_last() else { return Err(bad(C, "select the content and a path on top")) };
+    let Some((&top, content)) = roots.split_last() else {
+        return Err(bad(C, "select the content and a path on top"));
+    };
     let content = content.to_vec();
-    let path = s.doc()?.doc.node(top).and_then(outline_of).filter(|p| p.bounds().is_some()).ok_or_else(|| bad(C, "the top object must be a path"))?;
+    let path = s
+        .doc()?
+        .doc
+        .node(top)
+        .and_then(outline_of)
+        .filter(|p| p.bounds().is_some())
+        .ok_or_else(|| bad(C, "the top object must be a path"))?;
     let defaults = envelope_defaults(s);
     let id = s.edit("Make Envelope", |d, sel| {
-        let id = wrap(d, sel, &content, |id, content| envelope(id, content, EnvelopeKind::TopObject { path }, defaults))?;
+        let id = wrap(d, sel, &content, |id, content| {
+            envelope(id, content, EnvelopeKind::TopObject { path }, defaults)
+        })?;
         d.remove(top)?;
         Ok(id)
     })?;
@@ -1030,7 +1276,10 @@ fn env_make_top(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// The kind `f` makes of each selected envelope (from the envelope and its current kind).
-fn reshaped(s: &Session, f: impl Fn(&Node, &EnvelopeKind) -> Result<EnvelopeKind>) -> Result<Vec<(NodeId, EnvelopeKind)>> {
+fn reshaped(
+    s: &Session,
+    f: impl Fn(&Node, &EnvelopeKind) -> Result<EnvelopeKind>,
+) -> Result<Vec<(NodeId, EnvelopeKind)>> {
     let doc = &s.doc()?.doc;
     let mut out = vec![];
     for e in selected_of(s, is_envelope) {
@@ -1071,7 +1320,8 @@ fn env_reset_mesh(s: &mut Session, p: &Value) -> Result<Value> {
             _ => (4, 4),
         };
         let (rows, cols) = rows_cols(p, C, own)?;
-        let map = EnvelopeMap::of(env).ok_or_else(|| bad(C, "the envelope's content has no bounds"))?;
+        let map =
+            EnvelopeMap::of(env).ok_or_else(|| bad(C, "the envelope's content has no bounds"))?;
         Ok(mesh_kind(&map, maintain, rows, cols))
     })?;
     set_kinds(s, "Reset with Mesh", kinds)
@@ -1091,30 +1341,59 @@ fn envelope_options_json(mut v: Value, o: &EnvelopeOptions, fidelity: f64) -> Va
 /// `cur` with the options `p` sets.
 fn options_param(p: &Value, cmd: &str, cur: EnvelopeOptions) -> Result<EnvelopeOptions> {
     let preserve_shape = match str_param(p, "preserveShape") {
-        Some(v) => PreserveShape::parse(v).ok_or_else(|| bad(cmd, "preserveShape must be clippingMask|transparency"))?,
+        Some(v) => PreserveShape::parse(v)
+            .ok_or_else(|| bad(cmd, "preserveShape must be clippingMask|transparency"))?,
         None => cur.preserve_shape,
     };
     Ok(EnvelopeOptions {
         anti_alias: bool_or(p, "antiAlias", cur.anti_alias),
         preserve_shape,
         distort_appearance: bool_or(p, "distortAppearance", cur.distort_appearance),
-        distort_linear_gradients: bool_or(p, "distortLinearGradients", cur.distort_linear_gradients),
+        distort_linear_gradients: bool_or(
+            p,
+            "distortLinearGradients",
+            cur.distort_linear_gradients,
+        ),
         distort_pattern_fills: bool_or(p, "distortPatternFills", cur.distort_pattern_fills),
     })
 }
 
 fn env_info(s: &mut Session, _: &Value) -> Result<Value> {
     let doc = &s.doc()?.doc;
-    let env = selected_of(s, is_envelope).into_iter().find_map(|e| Some((e, &doc.node(e)?.kind)));
-    let Some((id, NodeKind::Envelope { kind, fidelity, editing, options, .. })) = env else {
+    let env = selected_of(s, is_envelope)
+        .into_iter()
+        .find_map(|e| Some((e, &doc.node(e)?.kind)));
+    let Some((
+        id,
+        NodeKind::Envelope {
+            kind,
+            fidelity,
+            editing,
+            options,
+            ..
+        },
+    )) = env
+    else {
         let (options, fidelity) = envelope_defaults(s);
-        return Ok(envelope_options_json(json!({ "id": null }), &options, fidelity));
+        return Ok(envelope_options_json(
+            json!({ "id": null }),
+            &options,
+            fidelity,
+        ));
     };
     let v = match &**kind {
-        EnvelopeKind::Warp { style, bend, h, v, horizontal } => {
+        EnvelopeKind::Warp {
+            style,
+            bend,
+            h,
+            v,
+            horizontal,
+        } => {
             json!({"type": "warp", "style": style, "bend": bend, "h": h, "v": v, "horizontal": horizontal})
         }
-        EnvelopeKind::Mesh { rows, cols, .. } => json!({"type": "mesh", "rows": rows, "cols": cols}),
+        EnvelopeKind::Mesh { rows, cols, .. } => {
+            json!({"type": "mesh", "rows": rows, "cols": cols})
+        }
         EnvelopeKind::TopObject { .. } => json!({"type": "topObject"}),
     };
     let mut v = envelope_options_json(v, options, *fidelity);
@@ -1129,17 +1408,31 @@ fn envelope_shape(env: &Node, kind: &EnvelopeKind) -> Option<Node> {
     let grey = Color::gray(0.25);
     let (rows, cols) = match kind {
         EnvelopeKind::TopObject { path } => {
-            return Some(Node::path(NodeId(0), path.clone(), Appearance::basic(Paint::solid(grey), Paint::None, 0.0)));
+            return Some(Node::path(
+                NodeId(0),
+                path.clone(),
+                Appearance::basic(Paint::solid(grey), Paint::None, 0.0),
+            ));
         }
         // The mesh itself, handles and all.
-        EnvelopeKind::Mesh { rows, cols, points, handles } => {
+        EnvelopeKind::Mesh {
+            rows,
+            cols,
+            points,
+            handles,
+        } => {
             let mut m = live::envelope_grid(*rows, *cols, points, handles)?;
             m.points.iter_mut().for_each(|q| q.color = grey);
             return Some(Node::new(NodeId(0), NodeKind::Mesh(m)));
         }
         EnvelopeKind::Warp { .. } => (4, 4),
     };
-    EnvelopeMap::of(env).map(|map| Node::new(NodeId(0), NodeKind::Mesh(map.surface_mesh(rows, cols, grey))))
+    EnvelopeMap::of(env).map(|map| {
+        Node::new(
+            NodeId(0),
+            NodeKind::Mesh(map.surface_mesh(rows, cols, grey)),
+        )
+    })
 }
 
 /// Released content keeps envelope `env`'s opacity, blend mode, isolation, knockout and opacity
@@ -1173,9 +1466,14 @@ fn env_release(s: &mut Session, _: &Value) -> Result<Value> {
         let mut out = vec![];
         let mut released = Beside::replacing(d, &envs);
         for e in &envs {
-            let Some(n) = d.node(*e).cloned() else { continue };
-            let NodeKind::Envelope { content, kind, .. } = &n.kind else { continue };
-            let mut nodes = carry_transparency(d, &n, content.iter().map(|c| (**c).clone()).collect());
+            let Some(n) = d.node(*e).cloned() else {
+                continue;
+            };
+            let NodeKind::Envelope { content, kind, .. } = &n.kind else {
+                continue;
+            };
+            let mut nodes =
+                carry_transparency(d, &n, content.iter().map(|c| (**c).clone()).collect());
             if let Some(mut shape) = envelope_shape(&n, kind) {
                 shape.id = d.alloc_id();
                 nodes.push(shape);
@@ -1207,17 +1505,34 @@ fn env_options(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = &s.doc()?.doc;
     let mut updates = vec![];
     for e in &envs {
-        if let Some(NodeKind::Envelope { kind, options, fidelity, .. }) = doc.node(*e).map(|n| &n.kind) {
+        if let Some(NodeKind::Envelope {
+            kind,
+            options,
+            fidelity,
+            ..
+        }) = doc.node(*e).map(|n| &n.kind)
+        {
             let kind = match &**kind {
                 k @ EnvelopeKind::Warp { .. } => warp_kind(p, C, Some(k))?,
                 k => k.clone(),
             };
-            updates.push((*e, kind, options_param(p, C, *options)?, fid.unwrap_or(*fidelity)));
+            updates.push((
+                *e,
+                kind,
+                options_param(p, C, *options)?,
+                fid.unwrap_or(*fidelity),
+            ));
         }
     }
     s.edit("Envelope Options", |d, _| {
         for (e, k, o, f) in updates {
-            if let Some(NodeKind::Envelope { kind, options, fidelity, .. }) = d.node_mut(e).map(|n| &mut n.kind) {
+            if let Some(NodeKind::Envelope {
+                kind,
+                options,
+                fidelity,
+                ..
+            }) = d.node_mut(e).map(|n| &mut n.kind)
+            {
                 (**kind, *options, *fidelity) = (k, o, f);
             }
         }
@@ -1274,25 +1589,39 @@ fn env_expand(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn env_edit_contents(s: &mut Session, p: &Value) -> Result<Value> {
     let envs = selected_of(s, is_envelope);
-    let cur = matches!(envs.first().and_then(|e| s.doc().ok()?.doc.node(*e)).map(|n| &n.kind), Some(NodeKind::Envelope { editing: true, .. }));
+    let cur = matches!(
+        envs.first()
+            .and_then(|e| s.doc().ok()?.doc.node(*e))
+            .map(|n| &n.kind),
+        Some(NodeKind::Envelope { editing: true, .. })
+    );
     let want = bool_or(p, "editing", !cur);
-    s.edit(if want { "Edit Contents" } else { "Edit Envelope" }, |d, sel| {
-        let mut content_ids = vec![];
-        for e in &envs {
-            if let Some(n) = d.node_mut(*e)
-                && let NodeKind::Envelope { editing, content, .. } = &mut n.kind
-            {
-                *editing = want;
-                content_ids.extend(content.iter().map(|c| c.id));
-            }
-        }
+    s.edit(
         if want {
-            sel.set(content_ids);
+            "Edit Contents"
         } else {
-            sel.set(envs.iter().copied());
-        }
-        Ok(())
-    })?;
+            "Edit Envelope"
+        },
+        |d, sel| {
+            let mut content_ids = vec![];
+            for e in &envs {
+                if let Some(n) = d.node_mut(*e)
+                    && let NodeKind::Envelope {
+                        editing, content, ..
+                    } = &mut n.kind
+                {
+                    *editing = want;
+                    content_ids.extend(content.iter().map(|c| c.id));
+                }
+            }
+            if want {
+                sel.set(content_ids);
+            } else {
+                sel.set(envs.iter().copied());
+            }
+            Ok(())
+        },
+    )?;
     Ok(json!({ "editing": want }))
 }
 
@@ -1306,10 +1635,18 @@ fn env_set_mesh_point(s: &mut Session, p: &Value) -> Result<Value> {
         let Some(NodeKind::Envelope { kind, .. }) = d.node_mut(id).map(|n| &mut n.kind) else {
             return Err(bad(C, "not a mesh envelope point"));
         };
-        let EnvelopeKind::Mesh { rows, cols, points, handles } = &mut **kind else {
+        let EnvelopeKind::Mesh {
+            rows,
+            cols,
+            points,
+            handles,
+        } = &mut **kind
+        else {
             return Err(bad(C, "not a mesh envelope point"));
         };
-        let at = *points.get(index).ok_or_else(|| bad(C, "not a mesh envelope point"))?;
+        let at = *points
+            .get(index)
+            .ok_or_else(|| bad(C, "not a mesh envelope point"))?;
         match handle {
             // The handles are offsets: they follow.
             None => points.get_mut(index).into_iter().for_each(|p| *p = q),
@@ -1334,7 +1671,9 @@ fn mesh_create(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.mesh.create";
     let (rows, cols) = rows_cols(p, C, (4, 4))?;
     let app = match str_param(p, "appearance") {
-        Some(a) => MeshAppearance::parse(a).ok_or_else(|| bad(C, "appearance must be flat|center|edge"))?,
+        Some(a) => {
+            MeshAppearance::parse(a).ok_or_else(|| bad(C, "appearance must be flat|center|edge"))?
+        }
         None => MeshAppearance::Flat,
     };
     let highlight = f64_or(p, "highlight", 100.0).clamp(0.0, 100.0);
@@ -1345,17 +1684,29 @@ fn mesh_create(s: &mut Session, p: &Value) -> Result<Value> {
         let mut out = vec![];
         let mut index = None;
         for id in &roots {
-            let Some(n) = d.node(*id).cloned() else { continue };
+            let Some(n) = d.node(*id).cloned() else {
+                continue;
+            };
             let Some(path) = outline_of(&n) else { continue };
             let m = match n.appearance.fill_paint() {
                 // The points take the colours the gradient paints there.
-                Paint::Gradient(g) => {
-                    path.bounds().and_then(|b| GradientMesh::for_path_with(&path, rows, cols, &*gradient_sampler(&g, b))).map(|mut m| {
+                Paint::Gradient(g) => path
+                    .bounds()
+                    .and_then(|b| {
+                        GradientMesh::for_path_with(&path, rows, cols, &*gradient_sampler(&g, b))
+                    })
+                    .map(|mut m| {
                         m.highlight(app, highlight);
                         m
-                    })
-                }
-                p => GradientMesh::for_path(&path, rows, cols, p.color().unwrap_or(Color::WHITE), app, highlight),
+                    }),
+                p => GradientMesh::for_path(
+                    &path,
+                    rows,
+                    cols,
+                    p.color().unwrap_or(Color::WHITE),
+                    app,
+                    highlight,
+                ),
             };
             let Some(mut m) = m else { continue };
             if let Some(q) = at {
@@ -1385,24 +1736,49 @@ fn mesh_create(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Run `f` on the gradient mesh `p.id` (one undo step `label`); with `envelopes`, a mesh
 /// envelope's grid too (its points and handles are written back: editing fills in the handles).
-fn with_mesh<T>(s: &mut Session, p: &Value, cmd: &str, label: &str, envelopes: bool, f: impl FnOnce(&mut GradientMesh) -> Result<T>) -> Result<T> {
+fn with_mesh<T>(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    label: &str,
+    envelopes: bool,
+    f: impl FnOnce(&mut GradientMesh) -> Result<T>,
+) -> Result<T> {
     let id = id_param(p, "id").ok_or_else(|| bad(cmd, "missing `id`"))?;
     let c = cmd.to_string();
-    s.edit(label, move |d, _| match d.node_mut(id).map(|n| &mut n.kind) {
-        Some(NodeKind::Mesh(m)) => f(m),
-        Some(NodeKind::Envelope { kind, .. }) if envelopes && matches!(**kind, EnvelopeKind::Mesh { .. }) => {
-            let EnvelopeKind::Mesh { rows, cols, points, handles } = &mut **kind else {
-                return Err(bad(&c, "not a gradient mesh or mesh envelope"));
-            };
-            let mut m = live::envelope_grid(*rows, *cols, points, handles).ok_or_else(|| bad(&c, "the envelope's mesh is malformed"))?;
-            let r = f(&mut m)?;
-            (*rows, *cols) = (m.rows, m.cols);
-            *points = m.points.iter().map(|q| q.p).collect();
-            *handles = m.points.iter().map(|q| q.handles).collect();
-            Ok(r)
+    s.edit(label, move |d, _| {
+        match d.node_mut(id).map(|n| &mut n.kind) {
+            Some(NodeKind::Mesh(m)) => f(m),
+            Some(NodeKind::Envelope { kind, .. })
+                if envelopes && matches!(**kind, EnvelopeKind::Mesh { .. }) =>
+            {
+                let EnvelopeKind::Mesh {
+                    rows,
+                    cols,
+                    points,
+                    handles,
+                } = &mut **kind
+                else {
+                    return Err(bad(&c, "not a gradient mesh or mesh envelope"));
+                };
+                let mut m = live::envelope_grid(*rows, *cols, points, handles)
+                    .ok_or_else(|| bad(&c, "the envelope's mesh is malformed"))?;
+                let r = f(&mut m)?;
+                (*rows, *cols) = (m.rows, m.cols);
+                *points = m.points.iter().map(|q| q.p).collect();
+                *handles = m.points.iter().map(|q| q.handles).collect();
+                Ok(r)
+            }
+            Some(_) => Err(bad(
+                &c,
+                if envelopes {
+                    "not a gradient mesh or mesh envelope"
+                } else {
+                    "not a gradient mesh"
+                },
+            )),
+            None => Err(EngineError::NoNode(id)),
         }
-        Some(_) => Err(bad(&c, if envelopes { "not a gradient mesh or mesh envelope" } else { "not a gradient mesh" })),
-        None => Err(EngineError::NoNode(id)),
     })
 }
 
@@ -1434,7 +1810,10 @@ fn mesh_set_color(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "missing `color` or `opacity`"));
     }
     with_mesh(s, p, C, "Mesh Point Color", false, |m| {
-        let pt = m.points.get_mut(index).ok_or_else(|| bad(C, "index out of range"))?;
+        let pt = m
+            .points
+            .get_mut(index)
+            .ok_or_else(|| bad(C, "index out of range"))?;
         if let Some(c) = color {
             pt.color = c;
         }
@@ -1452,7 +1831,10 @@ fn mesh_move_point(s: &mut Session, p: &Value) -> Result<Value> {
     let q = Point::new(f64_req(p, "x", C)?, f64_req(p, "y", C)?);
     let handle = handle_param(p, C)?;
     with_mesh(s, p, C, "Move Mesh Point", true, |m| {
-        let pt = m.points.get_mut(index).ok_or_else(|| bad(C, "index out of range"))?;
+        let pt = m
+            .points
+            .get_mut(index)
+            .ok_or_else(|| bad(C, "index out of range"))?;
         match handle {
             Some(h) => pt.handles[h] = q - pt.p,
             None => pt.p = q,
@@ -1467,7 +1849,9 @@ fn mesh_add_line(s: &mut Session, p: &Value) -> Result<Value> {
     let q = Point::new(f64_req(p, "x", C)?, f64_req(p, "y", C)?);
     let color = p.get("color").and_then(color_value);
     let index = with_mesh(s, p, C, "Add Mesh Line", true, |m| {
-        let i = m.add_lines_at(q).ok_or_else(|| bad(C, "point is outside the mesh"))?;
+        let i = m
+            .add_lines_at(q)
+            .ok_or_else(|| bad(C, "point is outside the mesh"))?;
         if let Some(c) = color {
             m.points[i].color = c;
         }
@@ -1480,7 +1864,11 @@ fn mesh_delete_point(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.mesh.deletePoint";
     let index = index_param(p, "index", C)?;
     with_mesh(s, p, C, "Delete Mesh Point", true, |m| {
-        if m.remove_point_lines(index) { Ok(()) } else { Err(bad(C, "only interior mesh lines can be deleted")) }
+        if m.remove_point_lines(index) {
+            Ok(())
+        } else {
+            Err(bad(C, "only interior mesh lines can be deleted"))
+        }
     })?;
     ok()
 }
@@ -1490,7 +1878,9 @@ fn mesh_expand(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = s.edit("Expand Gradient Mesh", |d, sel| {
         let mut out = vec![];
         for m in &meshes {
-            let Some(n) = d.node(*m).cloned() else { continue };
+            let Some(n) = d.node(*m).cloned() else {
+                continue;
+            };
             let mut g = live::expanded_group(&n, None);
             fix_ids(d, &mut g);
             out.extend(replace_with(d, *m, vec![g])?);

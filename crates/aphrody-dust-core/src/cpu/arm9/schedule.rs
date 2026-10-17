@@ -127,7 +127,8 @@ impl cpu::Schedule for Schedule {
 
     #[inline]
     fn set_timer_event(&mut self, i: timers::Index) {
-        self.schedule.set_event(Self::timer_event_slot(i), Event::Timer(i));
+        self.schedule
+            .set_event(Self::timer_event_slot(i), Event::Timer(i));
     }
 
     #[inline]

@@ -80,11 +80,15 @@ pub(crate) fn injected_fault() -> Fault {
 
 /// The threads copies made under [`Fault::Slow`] ran on (tests only).
 #[cfg(test)]
-static COPY_THREADS: std::sync::Mutex<Vec<std::thread::ThreadId>> = std::sync::Mutex::new(Vec::new());
+static COPY_THREADS: std::sync::Mutex<Vec<std::thread::ThreadId>> =
+    std::sync::Mutex::new(Vec::new());
 
 #[cfg(test)]
 pub(crate) fn copy_threads() -> Vec<std::thread::ThreadId> {
-    COPY_THREADS.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    COPY_THREADS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
 }
 
 fn injected(f: Fault) -> bool {
@@ -117,9 +121,19 @@ pub(crate) fn is_symlink(path: &Path) -> bool {
 /// The XMP sidecars beside `src`, both naming conventions (`IMG_1.xmp`, `IMG_1.CR3.xmp`; the
 /// `.xmp` extension in any case): (path, named after the stem).
 pub(crate) fn sidecars_of(src: &Path) -> Vec<(PathBuf, bool)> {
-    let (Some(dir), Some(name)) = (src.parent(), src.file_name().map(|n| n.to_string_lossy().to_string())) else { return Vec::new() };
-    let stem = src.file_stem().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-    let Ok(rd) = fs::read_dir(dir) else { return Vec::new() };
+    let (Some(dir), Some(name)) = (
+        src.parent(),
+        src.file_name().map(|n| n.to_string_lossy().to_string()),
+    ) else {
+        return Vec::new();
+    };
+    let stem = src
+        .file_stem()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let Ok(rd) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut out: Vec<(PathBuf, bool)> = rd
         .flatten()
         .filter_map(|e| {
@@ -151,33 +165,68 @@ pub(crate) fn place(src: &Path, dir: &Path, name: &str) -> Result<Placed, String
     };
     let mut dst = None;
     for i in 0..100_000u32 {
-        let d = if i == 0 { dir.join(name) } else { dir.join(format!("{stem}-{i}{ext}")) };
+        let d = if i == 0 {
+            dir.join(name)
+        } else {
+            dir.join(format!("{stem}-{i}{ext}"))
+        };
         match link_or_copy(src, &d) {
             Ok(()) => {
                 dst = Some(d);
                 break;
             }
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
-            Err(e) => return Err(format!("move {}: {e} (the original is kept)", src.display())),
+            Err(e) => {
+                return Err(format!(
+                    "move {}: {e} (the original is kept)",
+                    src.display()
+                ));
+            }
         }
     }
-    let Some(dst) = dst else { return Err(format!("move {}: no free name in {}", src.display(), dir.display())) };
-    let mut placed = Placed { src: src.to_path_buf(), dst, sidecars: Vec::new() };
+    let Some(dst) = dst else {
+        return Err(format!(
+            "move {}: no free name in {}",
+            src.display(),
+            dir.display()
+        ));
+    };
+    let mut placed = Placed {
+        src: src.to_path_buf(),
+        dst,
+        sidecars: Vec::new(),
+    };
     for (sc, stem_named) in sidecars_of(src) {
-        let sc_ext = sc.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_else(|| "xmp".into());
-        let sc_dst =
-            if stem_named { placed.dst.with_extension(&sc_ext) } else { PathBuf::from(format!("{}.{sc_ext}", placed.dst.to_string_lossy())) };
+        let sc_ext = sc
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_else(|| "xmp".into());
+        let sc_dst = if stem_named {
+            placed.dst.with_extension(&sc_ext)
+        } else {
+            PathBuf::from(format!("{}.{sc_ext}", placed.dst.to_string_lossy()))
+        };
         let r = if sc_dst.exists() {
             match same_bytes(&sc, &sc_dst) {
                 Ok(true) => Ok(false),
-                Ok(false) => Err(format!("a different sidecar is already at {} (the original is kept)", sc_dst.display())),
+                Ok(false) => Err(format!(
+                    "a different sidecar is already at {} (the original is kept)",
+                    sc_dst.display()
+                )),
                 Err(e) => Err(format!("{}: {e} (the original is kept)", sc_dst.display())),
             }
         } else {
-            link_or_copy(&sc, &sc_dst).map(|()| true).map_err(|e| format!("move {}: {e} (the original is kept)", sc.display()))
+            link_or_copy(&sc, &sc_dst)
+                .map(|()| true)
+                .map_err(|e| format!("move {}: {e} (the original is kept)", sc.display()))
         };
         match r {
-            Ok(created) => placed.sidecars.push(PlacedSidecar { src: sc, dst: sc_dst, created, stem: stem_named }),
+            Ok(created) => placed.sidecars.push(PlacedSidecar {
+                src: sc,
+                dst: sc_dst,
+                created,
+                stem: stem_named,
+            }),
             Err(e) => {
                 rollback(&placed);
                 return Err(e);
@@ -197,21 +246,39 @@ pub(crate) fn place(src: &Path, dir: &Path, name: &str) -> Result<Placed, String
 /// a third read of the card (issue #134). It also catches a source that changed since the probe
 /// (whose recorded metadata and hash would be stale). Without one the copy is compared byte for
 /// byte with the source.
-pub(crate) fn copy_new(src: &Path, dir: &Path, name: &str, expect: Option<lightcraft_preview::Hash128>) -> Result<PathBuf, String> {
+pub(crate) fn copy_new(
+    src: &Path,
+    dir: &Path,
+    name: &str,
+    expect: Option<lightcraft_preview::Hash128>,
+) -> Result<PathBuf, String> {
     fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let (stem, ext) = match name.rsplit_once('.') {
         Some((s, e)) if !s.is_empty() => (s.to_string(), format!(".{e}")),
         _ => (name.to_string(), String::new()),
     };
     for i in 0..100_000u32 {
-        let d = if i == 0 { dir.join(name) } else { dir.join(format!("{stem}-{i}{ext}")) };
+        let d = if i == 0 {
+            dir.join(name)
+        } else {
+            dir.join(format!("{stem}-{i}{ext}"))
+        };
         match copy_verified(src, &d, expect) {
             Ok(()) => return Ok(d),
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
-            Err(e) => return Err(format!("copy {}: {e} (nothing was imported from it; the original is untouched)", src.display())),
+            Err(e) => {
+                return Err(format!(
+                    "copy {}: {e} (nothing was imported from it; the original is untouched)",
+                    src.display()
+                ));
+            }
         }
     }
-    Err(format!("copy {}: no free name in {}", src.display(), dir.display()))
+    Err(format!(
+        "copy {}: no free name in {}",
+        src.display(),
+        dir.display()
+    ))
 }
 
 /// Undo a [`place`]: remove what it created at the destination (the sources were never touched).
@@ -231,17 +298,27 @@ pub(crate) fn finish(p: &Placed) -> Result<Vec<(String, String)>, String> {
         _ => false,
     };
     if !same {
-        return Err(format!("{} is missing or changed: the original is kept", p.dst.display()));
+        return Err(format!(
+            "{} is missing or changed: the original is kept",
+            p.dst.display()
+        ));
     }
     if injected(Fault::FailRemove) {
         return Err("could not remove the original (injected): it stays where it was".into());
     }
-    fs::remove_file(&p.src).map_err(|e| format!("could not remove the original ({e}): it stays where it was"))?;
+    fs::remove_file(&p.src)
+        .map_err(|e| format!("could not remove the original ({e}): it stays where it was"))?;
     let mut kept = Vec::new();
     for sc in &p.sidecars {
         let path = sc.src.to_string_lossy().to_string();
         if !same_bytes(&sc.src, &sc.dst).unwrap_or(false) {
-            kept.push((path, format!("{} is missing or changed: the sidecar is kept", sc.dst.display())));
+            kept.push((
+                path,
+                format!(
+                    "{} is missing or changed: the sidecar is kept",
+                    sc.dst.display()
+                ),
+            ));
             continue;
         }
         if sc.stem
@@ -261,16 +338,26 @@ pub(crate) fn finish(p: &Placed) -> Result<Vec<(String, String)>, String> {
 pub(crate) fn sibling_photo(sidecar: &Path) -> Option<String> {
     let dir = sidecar.parent()?;
     let stem = sidecar.file_stem()?.to_string_lossy().to_string();
-    fs::read_dir(dir).ok()?.flatten().map(|e| e.path()).find_map(|f| {
-        let ok = f.file_stem().is_some_and(|s| s.to_string_lossy() == stem) && crate::import::is_supported(&f);
-        ok.then(|| f.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default())
-    })
+    fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .find_map(|f| {
+            let ok = f.file_stem().is_some_and(|s| s.to_string_lossy() == stem)
+                && crate::import::is_supported(&f);
+            ok.then(|| {
+                f.file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default()
+            })
+        })
 }
 
 /// `dst` = `src` without touching `src`: a hard link, else a verified copy. Never overwrites
 /// (`AlreadyExists` when `dst` is taken).
 fn link_or_copy(src: &Path, dst: &Path) -> io::Result<()> {
-    let force_copy = injected(Fault::NoLink) || injected(Fault::FailWrite) || injected(Fault::Corrupt);
+    let force_copy =
+        injected(Fault::NoLink) || injected(Fault::FailWrite) || injected(Fault::Corrupt);
     if !force_copy && !is_symlink(src) {
         match fs::hard_link(src, dst) {
             Ok(()) => {
@@ -293,7 +380,11 @@ fn link_or_copy(src: &Path, dst: &Path) -> io::Result<()> {
 /// Copy into a new file, sync it to disk and verify it: against `expect` (the probe's hash of the
 /// source) when given, else byte for byte against the source. On any failure the partial copy is
 /// removed.
-pub(crate) fn copy_verified(src: &Path, dst: &Path, expect: Option<lightcraft_preview::Hash128>) -> io::Result<()> {
+pub(crate) fn copy_verified(
+    src: &Path,
+    dst: &Path,
+    expect: Option<lightcraft_preview::Hash128>,
+) -> io::Result<()> {
     let mut out = OpenOptions::new().write(true).create_new(true).open(dst)?;
     let r = (|| {
         let mut inp = File::open(src)?;
@@ -304,7 +395,10 @@ pub(crate) fn copy_verified(src: &Path, dst: &Path, expect: Option<lightcraft_pr
         io::copy(&mut inp, &mut out)?;
         #[cfg(test)]
         if injected(Fault::Slow) {
-            COPY_THREADS.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(std::thread::current().id());
+            COPY_THREADS
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push(std::thread::current().id());
             std::thread::sleep(std::time::Duration::from_millis(30));
         }
         if injected(Fault::Corrupt) {
@@ -315,11 +409,13 @@ pub(crate) fn copy_verified(src: &Path, dst: &Path, expect: Option<lightcraft_pr
             let _ = out.set_modified(m);
         }
         match expect {
-            Some(h) if hash_file(dst)? != h => {
-                Err(io::Error::other("the copy differs from the original as it was read for the import (a bad copy, or the file changed meanwhile)"))
-            }
+            Some(h) if hash_file(dst)? != h => Err(io::Error::other(
+                "the copy differs from the original as it was read for the import (a bad copy, or the file changed meanwhile)",
+            )),
             Some(_) => Ok(()),
-            None if !same_bytes(src, dst)? => Err(io::Error::other("the copy differs from the original")),
+            None if !same_bytes(src, dst)? => {
+                Err(io::Error::other("the copy differs from the original"))
+            }
             None => Ok(()),
         }
     })();

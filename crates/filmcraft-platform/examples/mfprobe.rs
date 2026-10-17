@@ -19,7 +19,9 @@ fn main() {
             println!("{path}: no video");
             continue;
         };
-        let Some(entry) = file.tracks[t].entries.first() else { continue };
+        let Some(entry) = file.tracks[t].entries.first() else {
+            continue;
+        };
         let Some(info) = filmcraft_platform::media_foundation::stream_info(entry) else {
             println!("{path}: not an avcC / hvcC / vpcC / av1C stream this backend reads");
             continue;
@@ -37,7 +39,9 @@ fn main() {
         }
         let (mut n, t0) = (0usize, std::time::Instant::now());
         for i in 0..file.tracks[t].samples.len() {
-            let Ok(s) = file.read_sample(&bytes, t, i) else { break };
+            let Ok(s) = file.read_sample(&bytes, t, i) else {
+                break;
+            };
             match d.decode(&s, file.tracks[t].samples[i].pts) {
                 Ok(f) => n += f.len(),
                 Err(e) => {

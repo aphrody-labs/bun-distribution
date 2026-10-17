@@ -39,7 +39,10 @@ fn qsb_trigger_items_et_conditions() {
     // DATA_ITEM_3 : 3 feuilles, toutes event-flag (ns 0xBE04A598/0x2A3D4543) → EventFlag multiple.
     let it3 = &cfg.items[3];
     assert_eq!(it3.condition.kind, UnlockType::EventFlag);
-    assert!(it3.condition.required_events.len() >= 2, "plusieurs event-flags requis");
+    assert!(
+        it3.condition.required_events.len() >= 2,
+        "plusieurs event-flags requis"
+    );
 }
 
 #[test]

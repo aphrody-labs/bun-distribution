@@ -10,7 +10,10 @@
 
 use super::{nefc, white_from_data};
 use crate::tiffraw::{Packing, check_image, read_image};
-use crate::{BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result};
+use crate::{
+    BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect,
+    Result,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::image::ImageInfo;
 use lightcraft_tiff::tags::{self as t, photometric};
@@ -23,8 +26,7 @@ const CROP_AREA: u16 = 0x0045;
 /// JPEG XS start of codestream (SOC, `FF10`) followed by its mandatory capabilities marker (CAP, `FF50`).
 const JPEG_XS_START: [u8; 4] = [0xff, 0x10, 0xff, 0x50];
 /// Why a High Efficiency NEF shows its embedded preview: the UI shows the part before " (".
-pub(crate) const HIGH_EFFICIENCY: &str =
-    "Nikon High Efficiency NEF (HE / HE★, a JPEG XS-based codec with no public specification; shoot RAW Lossless compressed to edit the raw data)";
+pub(crate) const HIGH_EFFICIENCY: &str = "Nikon High Efficiency NEF (HE / HE★, a JPEG XS-based codec with no public specification; shoot RAW Lossless compressed to edit the raw data)";
 /// Maker note `0x0014`, the "NRW" data block of Coolpix raws: `"NRW "` + a 4-character version, then fields. In
 /// version `0104` the `u32` at byte `0x20` is the black level in sample units (200 in the four 12-bit files here
 /// that have 200 as their darkest samples, 0 in the one whose samples reach 0).
@@ -34,7 +36,10 @@ const NRW_BLACK_AT: usize = 0x20;
 /// The NRW data block, when the maker note has one.
 fn nrw_data(mn: Option<&makernote::MakerNote>) -> Option<(&[u8], ByteOrder)> {
     let m = mn?;
-    m.ifd.bytes(NRW_DATA).filter(|b| b.starts_with(b"NRW ")).map(|b| (b, m.order))
+    m.ifd
+        .bytes(NRW_DATA)
+        .filter(|b| b.starts_with(b"NRW "))
+        .map(|b| (b, m.order))
 }
 
 /// Black level from the NRW data block, bounded to a quarter of the sample range so an unknown version's field
@@ -49,9 +54,17 @@ fn nrw_black(mn: Option<&makernote::MakerNote>, bits: u32) -> Option<f32> {
 /// Keep the active area/CFA origin unchanged: the default crop is applied after demosaicing.
 fn default_crop(mn: Option<&makernote::MakerNote>, w: usize, h: usize) -> Rect {
     let fallback = Rect::new(0, 0, w, h);
-    let Some(values) = mn.and_then(|m| m.ifd.u64s(CROP_AREA)) else { return fallback };
-    let [x, y, width, height] = values.as_slice() else { return fallback };
-    if *width == 0 || *height == 0 || x.checked_add(*width).is_none_or(|v| v > w as u64) || y.checked_add(*height).is_none_or(|v| v > h as u64) {
+    let Some(values) = mn.and_then(|m| m.ifd.u64s(CROP_AREA)) else {
+        return fallback;
+    };
+    let [x, y, width, height] = values.as_slice() else {
+        return fallback;
+    };
+    if *width == 0
+        || *height == 0
+        || x.checked_add(*width).is_none_or(|v| v > w as u64)
+        || y.checked_add(*height).is_none_or(|v| v > h as u64)
+    {
         return fallback;
     }
     Rect::new(*x as usize, *y as usize, *width as usize, *height as usize)
@@ -88,21 +101,51 @@ struct MeasuredBody {
 ///   sits at (10, 10). Green saturates at 3840–3851 while red and blue run on to 4095; one level of 3830 keeps
 ///   clipped highlights white.
 const MEASURED_BODIES: &[MeasuredBody] = &[
-    MeasuredBody { model: "NIKON D4", size: (4992, 3292), bits: 14, crop: (8, 6, 4928, 3280), white: Some(15520.0) },
-    MeasuredBody { model: "NIKON D7100", size: (6036, 4020), bits: 14, crop: (18, 10, 6000, 4000), white: None },
-    MeasuredBody { model: "NIKON D7100", size: (4812, 3212), bits: 14, crop: (6, 6, 4800, 3200), white: None },
-    MeasuredBody { model: "NIKON D90", size: (4352, 2868), bits: 12, crop: (10, 10, 4288, 2848), white: Some(3830.0) },
+    MeasuredBody {
+        model: "NIKON D4",
+        size: (4992, 3292),
+        bits: 14,
+        crop: (8, 6, 4928, 3280),
+        white: Some(15520.0),
+    },
+    MeasuredBody {
+        model: "NIKON D7100",
+        size: (6036, 4020),
+        bits: 14,
+        crop: (18, 10, 6000, 4000),
+        white: None,
+    },
+    MeasuredBody {
+        model: "NIKON D7100",
+        size: (4812, 3212),
+        bits: 14,
+        crop: (6, 6, 4800, 3200),
+        white: None,
+    },
+    MeasuredBody {
+        model: "NIKON D90",
+        size: (4352, 2868),
+        bits: 12,
+        crop: (10, 10, 4288, 2848),
+        white: Some(3830.0),
+    },
 ];
 
 fn measured_body(model: &str, w: usize, h: usize, bits: u32) -> Option<&'static MeasuredBody> {
-    MEASURED_BODIES.iter().find(|b| b.model == model.trim() && b.size == (w, h) && b.bits == bits)
+    MEASURED_BODIES
+        .iter()
+        .find(|b| b.model == model.trim() && b.size == (w, h) && b.bits == bits)
 }
 
 fn raw_ifd(tiff: &Tiff) -> Option<&Ifd> {
     tiff.all_ifds()
         .into_iter()
         .filter(|i| i.u16(t::PHOTOMETRIC) == Some(photometric::CFA))
-        .max_by_key(|i| i.u64(t::IMAGE_WIDTH).unwrap_or(0).saturating_mul(i.u64(t::IMAGE_LENGTH).unwrap_or(0)))
+        .max_by_key(|i| {
+            i.u64(t::IMAGE_WIDTH)
+                .unwrap_or(0)
+                .saturating_mul(i.u64(t::IMAGE_LENGTH).unwrap_or(0))
+        })
 }
 
 /// Rows the masked-column test reads, from the top of the frame. The header probe ([`Mode::Header`]) decodes
@@ -122,8 +165,17 @@ pub(crate) fn trailing_masked_columns(d: &[u16], w: usize, bits: u32) -> usize {
     if w < 128 || rows == 0 {
         return w;
     }
-    let col_mean = |x: usize| (0..rows).map(|y| d.get(y * w + x).copied().unwrap_or(0) as f64).sum::<f64>() / rows as f64;
-    let interior = (w / 4..w * 3 / 4).step_by(w / 64).map(col_mean).sum::<f64>() / 32.0;
+    let col_mean = |x: usize| {
+        (0..rows)
+            .map(|y| d.get(y * w + x).copied().unwrap_or(0) as f64)
+            .sum::<f64>()
+            / rows as f64
+    };
+    let interior = (w / 4..w * 3 / 4)
+        .step_by(w / 64)
+        .map(col_mean)
+        .sum::<f64>()
+        / 32.0;
     let white = ((1u32 << bits.clamp(1, 16)) - 1) as f64;
     let dark = (white * 0.01).min(interior * 0.1);
     let mut aw = w;
@@ -136,13 +188,18 @@ pub(crate) fn trailing_masked_columns(d: &[u16], w: usize, bits: u32) -> usize {
 pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     let tiff = Tiff::parse(bytes)?;
     let ifd0 = &tiff.ifds[0];
-    let raw = raw_ifd(&tiff).ok_or_else(|| RawError::Unsupported("NEF without a CFA image IFD".into()))?;
+    let raw = raw_ifd(&tiff)
+        .ok_or_else(|| RawError::Unsupported("NEF without a CFA image IFD".into()))?;
     let info = raw.image()?;
     let (w, h) = (info.width as usize, info.height as usize);
     let bits = info.bits() as u32;
     let make = ifd0.string(t::MAKE).unwrap_or_default();
-    let mn =
-        tiff.exif().and_then(|e| e.get(t::MAKER_NOTE)).and_then(|e| makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make));
+    let mn = tiff
+        .exif()
+        .and_then(|e| e.get(t::MAKER_NOTE))
+        .and_then(|e| {
+            makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make)
+        });
     // the header probe reads only the rows the masked-column test needs
     let rows = match mode {
         Mode::Full => h,
@@ -153,7 +210,9 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     } else {
         uncompressed(bytes, &info, tiff.order, mn.as_ref(), rows)?
     };
-    let RawData::U16(ref samples) = data else { return Err(RawError::Unsupported("float NEF".into())) };
+    let RawData::U16(ref samples) = data else {
+        return Err(RawError::Unsupported("float NEF".into()));
+    };
 
     // Maker note 0x003d is in 14-bit units whatever the sample depth: 12-bit files from the D750, D780, D850,
     // D7500 and Z 50 store 600 / 1008 / 400 / 400 / 1008 while their darkest samples are 150 / ~252 / 99 / 99 / ~250
@@ -163,7 +222,10 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         Some([a, b, c, d]) if [a, b, c, d].iter().all(|v| **v < 16384.0) => BlackLevel {
             repeat_rows: 2,
             repeat_cols: 2,
-            values: [a, b, c, d].iter().map(|v| (**v * black_scale) as f32).collect(),
+            values: [a, b, c, d]
+                .iter()
+                .map(|v| (**v * black_scale) as f32)
+                .collect(),
             ..Default::default()
         },
         _ => BlackLevel::uniform(nrw_black(mn.as_ref(), bits).unwrap_or(0.0)),
@@ -173,8 +235,15 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         .and_then(|m| m.ifd.f64s(WB_RB_LEVELS))
         .filter(|v| v.len() >= 2 && v[0] > 0.1 && v[1] > 0.1 && v[0] < 10.0 && v[1] < 10.0)
         .map(|v| [v[0] as f32, 1.0, v[1] as f32]);
-    let cfa = match (raw.u64s(t::CFA_REPEAT_PATTERN_DIM).as_deref(), raw.bytes(t::CFA_PATTERN_EP)) {
-        (Some([2, 2]), Some(p)) if p.len() == 4 && p.iter().all(|&c| c <= 2) => Cfa { width: 2, height: 2, pattern: p.to_vec() },
+    let cfa = match (
+        raw.u64s(t::CFA_REPEAT_PATTERN_DIM).as_deref(),
+        raw.bytes(t::CFA_PATTERN_EP),
+    ) {
+        (Some([2, 2]), Some(p)) if p.len() == 4 && p.iter().all(|&c| c <= 2) => Cfa {
+            width: 2,
+            height: 2,
+            pattern: p.to_vec(),
+        },
         _ => Cfa::bayer_static("RGGB"),
     };
     let body = measured_body(&ifd0.string(t::MODEL).unwrap_or_default(), w, h, bits);
@@ -187,7 +256,10 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         (None, Mode::Header) => ((1u32 << bits.clamp(1, 16)) - 1) as f32,
     };
     let crop = match body {
-        Some(&MeasuredBody { crop: (x, y, cw, ch), .. }) if x + cw <= active_w && y + ch <= h => Rect::new(x, y, cw, ch),
+        Some(&MeasuredBody {
+            crop: (x, y, cw, ch),
+            ..
+        }) if x + cw <= active_w && y + ch <= h => Rect::new(x, y, cw, ch),
         _ => default_crop(mn.as_ref(), active_w, h),
     };
     let mut metadata = lightcraft_meta::from_tiff(&tiff);
@@ -222,19 +294,41 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
 /// Uncompressed strips: 16-bit words or 12-bit packed, told apart by the strip size. Packed 12-bit data is an MSB-first
 /// byte stream, except in files with an NRW data block (Coolpix), where it is MSB-first inside little-endian 32-bit
 /// words (the rows are whole words). Reads the first `rows` rows (the strips that hold them) of the `info.height`.
-fn uncompressed(bytes: &[u8], info: &ImageInfo, order: ByteOrder, mn: Option<&makernote::MakerNote>, rows: usize) -> Result<RawData> {
+fn uncompressed(
+    bytes: &[u8],
+    info: &ImageInfo,
+    order: ByteOrder,
+    mn: Option<&makernote::MakerNote>,
+    rows: usize,
+) -> Result<RawData> {
     let (w, h) = (info.width as usize, info.height as usize);
     let bits = info.bits() as u32;
     let row_samples = w * info.samples_per_pixel as usize;
     let chunks = info.chunks(bytes.len() as u64);
-    let rows_in_first = chunks.first().map(|c| c.height as usize).unwrap_or(h).max(1);
-    let bytes_per_row = chunks.first().map(|c| c.len as usize / rows_in_first).unwrap_or(0);
+    let rows_in_first = chunks
+        .first()
+        .map(|c| c.height as usize)
+        .unwrap_or(h)
+        .max(1);
+    let bytes_per_row = chunks
+        .first()
+        .map(|c| c.len as usize / rows_in_first)
+        .unwrap_or(0);
     let packing = if bytes_per_row >= row_samples * 2 {
         Packing::Word16
-    } else if bits == 12 && bytes_per_row * 8 >= row_samples * 12 && bytes_per_row * 8 < row_samples * 13 {
-        if nrw_data(mn).is_some() && bytes_per_row.is_multiple_of(4) { Packing::Words32Msb } else { Packing::Msb }
+    } else if bits == 12
+        && bytes_per_row * 8 >= row_samples * 12
+        && bytes_per_row * 8 < row_samples * 13
+    {
+        if nrw_data(mn).is_some() && bytes_per_row.is_multiple_of(4) {
+            Packing::Words32Msb
+        } else {
+            Packing::Msb
+        }
     } else if info.compression == 1 && bits != 8 && bits != 16 {
-        return Err(RawError::Unsupported(format!("NEF uncompressed packing ({bytes_per_row} bytes per {row_samples}-sample row)")));
+        return Err(RawError::Unsupported(format!(
+            "NEF uncompressed packing ({bytes_per_row} bytes per {row_samples}-sample row)"
+        )));
     } else {
         Packing::Msb
     };
@@ -243,15 +337,26 @@ fn uncompressed(bytes: &[u8], info: &ImageInfo, order: ByteOrder, mn: Option<&ma
     }
     // the whole image's limits apply either way; then only the strips holding the first `rows` rows are unpacked
     check_image(bytes, info)?;
-    let top = ImageInfo { height: rows as u32, ..info.clone() };
+    let top = ImageInfo {
+        height: rows as u32,
+        ..info.clone()
+    };
     read_image(bytes, &top, order, packing)
 }
 
 /// Nikon Huffman-compressed strip (see [`super::nefc`]); the decode table is maker note `0x0096`. Decodes the first
 /// `rows` rows of the `info.height`.
-fn compressed(bytes: &[u8], info: &ImageInfo, mn: Option<&makernote::MakerNote>, rows: usize) -> Result<RawData> {
+fn compressed(
+    bytes: &[u8],
+    info: &ImageInfo,
+    mn: Option<&makernote::MakerNote>,
+    rows: usize,
+) -> Result<RawData> {
     let starts_with = |magic: &[u8]| {
-        let start = info.chunks(bytes.len() as u64).first().and_then(|c| usize::try_from(c.offset).ok());
+        let start = info
+            .chunks(bytes.len() as u64)
+            .first()
+            .and_then(|c| usize::try_from(c.offset).ok());
         start.and_then(|o| bytes.get(o..o.checked_add(magic.len())?)) == Some(magic)
     };
     if starts_with(&JPEG_XS_START) {
@@ -260,19 +365,38 @@ fn compressed(bytes: &[u8], info: &ImageInfo, mn: Option<&makernote::MakerNote>,
     // (some Z bodies label uncompressed, row-padded data 34713 without a table: not handled here yet)
     let table = mn
         .and_then(|m| Some((m.ifd.bytes(LINEARIZATION_TABLE)?, m.order)))
-        .ok_or_else(|| RawError::Unsupported("Nikon compressed NEF without a linearization table (maker note 0x96)".into()))?;
+        .ok_or_else(|| {
+            RawError::Unsupported(
+                "Nikon compressed NEF without a linearization table (maker note 0x96)".into(),
+            )
+        })?;
     if info.samples_per_pixel != 1 {
-        return Err(RawError::Unsupported(format!("Nikon compressed NEF with {} samples per pixel", info.samples_per_pixel)));
+        return Err(RawError::Unsupported(format!(
+            "Nikon compressed NEF with {} samples per pixel",
+            info.samples_per_pixel
+        )));
     }
     let bits = info.bits() as u32;
     let table = nefc::parse_table(table.0, table.1, bits)?;
     // one strip in every sample; several would be contiguous parts of the same bit stream
     let chunks = info.chunks(bytes.len() as u64);
-    let (Some(first), Some(last)) = (chunks.first(), chunks.last()) else { return Err(RawError::Corrupt("NEF: no image data".into())) };
+    let (Some(first), Some(last)) = (chunks.first(), chunks.last()) else {
+        return Err(RawError::Corrupt("NEF: no image data".into()));
+    };
     let end = last.offset.saturating_add(last.len).min(bytes.len() as u64);
-    let src = usize::try_from(first.offset).ok().zip(usize::try_from(end).ok()).and_then(|(a, b)| bytes.get(a..b));
+    let src = usize::try_from(first.offset)
+        .ok()
+        .zip(usize::try_from(end).ok())
+        .and_then(|(a, b)| bytes.get(a..b));
     let src = src.ok_or_else(|| RawError::Corrupt("NEF: image data outside the file".into()))?;
-    Ok(RawData::U16(nefc::decode_rows(src, info.width as usize, info.height as usize, rows, bits, &table)?))
+    Ok(RawData::U16(nefc::decode_rows(
+        src,
+        info.width as usize,
+        info.height as usize,
+        rows,
+        bits,
+        &table,
+    )?))
 }
 
 #[cfg(test)]
@@ -285,13 +409,30 @@ mod tests {
     }
 
     /// [`nef`] with an optional maker note (`Nikon\0` v2 header + embedded big-endian TIFF holding `note`).
-    fn nef_with_note(compression: u16, bits: u16, strips: Vec<Vec<u8>>, w: u32, h: u32, rps: u32, note: Option<IfdBuilder>) -> Vec<u8> {
+    fn nef_with_note(
+        compression: u16,
+        bits: u16,
+        strips: Vec<Vec<u8>>,
+        w: u32,
+        h: u32,
+        rps: u32,
+        note: Option<IfdBuilder>,
+    ) -> Vec<u8> {
         nef_in(ByteOrder::Big, compression, bits, strips, w, h, rps, note)
     }
 
     /// [`nef_with_note`] in either byte order (file and maker note).
     #[allow(clippy::too_many_arguments)]
-    fn nef_in(order: ByteOrder, compression: u16, bits: u16, strips: Vec<Vec<u8>>, w: u32, h: u32, rps: u32, note: Option<IfdBuilder>) -> Vec<u8> {
+    fn nef_in(
+        order: ByteOrder,
+        compression: u16,
+        bits: u16,
+        strips: Vec<Vec<u8>>,
+        w: u32,
+        h: u32,
+        rps: u32,
+        note: Option<IfdBuilder>,
+    ) -> Vec<u8> {
         let mut raw = IfdBuilder::new();
         raw.set(t::NEW_SUBFILE_TYPE, Value::Long(vec![0]));
         raw.set(t::IMAGE_WIDTH, Value::Long(vec![w]));
@@ -301,7 +442,10 @@ mod tests {
         raw.set(t::PHOTOMETRIC, Value::Short(vec![photometric::CFA]));
         raw.set(t::CFA_REPEAT_PATTERN_DIM, Value::Short(vec![2, 2]));
         raw.set(t::CFA_PATTERN_EP, Value::Byte(vec![2, 1, 1, 0]));
-        raw.set_image(ImageData::Strips { rows_per_strip: rps, strips });
+        raw.set_image(ImageData::Strips {
+            rows_per_strip: rps,
+            strips,
+        });
         let mut ifd0 = IfdBuilder::new();
         ifd0.set(t::MAKE, Value::Ascii("NIKON CORPORATION".into()));
         ifd0.set(t::MODEL, Value::Ascii("NIKON TEST".into()));
@@ -318,13 +462,20 @@ mod tests {
 
     #[test]
     fn preview_color_space_is_read_from_the_nikon_note() {
-        for (value, expected) in [(1, Some(crate::PreviewColorSpace::Srgb)), (2, Some(crate::PreviewColorSpace::AdobeRgb)), (3, None)] {
+        for (value, expected) in [
+            (1, Some(crate::PreviewColorSpace::Srgb)),
+            (2, Some(crate::PreviewColorSpace::AdobeRgb)),
+            (3, None),
+        ] {
             let mut mn = IfdBuilder::new();
             mn.set(0x001e, Value::Short(vec![value]));
             let bytes = nef_with_note(1, 14, vec![vec![0; 128]], 8, 8, 8, Some(mn));
             assert_eq!(crate::embedded_preview_color_space(&bytes), expected);
         }
-        assert_eq!(crate::embedded_preview_color_space(&nef(1, 14, vec![vec![0; 128]], 8, 8, 8)), None);
+        assert_eq!(
+            crate::embedded_preview_color_space(&nef(1, 14, vec![vec![0; 128]], 8, 8, 8)),
+            None
+        );
         assert_eq!(crate::embedded_preview_color_space(b"not a TIFF"), None);
     }
 
@@ -344,7 +495,11 @@ mod tests {
                 let mut mn = IfdBuilder::new();
                 mn.set(0x001e, Value::Short(vec![v]));
                 let mut bytes = b"Nikon   ".to_vec();
-                bytes.extend(TiffWriter::new(ByteOrder::Little, false).write(&[mn]).unwrap());
+                bytes.extend(
+                    TiffWriter::new(ByteOrder::Little, false)
+                        .write(&[mn])
+                        .unwrap(),
+                );
                 exif.set(t::MAKER_NOTE, Value::Undefined(bytes));
             }
             let mut ifd0 = IfdBuilder::new();
@@ -353,24 +508,40 @@ mod tests {
                 ifd0.set(t::DNG_VERSION, Value::Byte(vec![1, 4, 0, 0]));
             }
             ifd0.set_child(t::EXIF_IFD, exif);
-            TiffWriter::new(ByteOrder::Little, false).write(&[ifd0]).unwrap()
+            TiffWriter::new(ByteOrder::Little, false)
+                .write(&[ifd0])
+                .unwrap()
         };
         use crate::PreviewColorSpace::{AdobeRgb, Srgb};
         let f = crate::embedded_preview_color_space;
-        assert_eq!(f(&file("SONY", 0xFFFF, Some("R03"), None, false)), Some(AdobeRgb));
+        assert_eq!(
+            f(&file("SONY", 0xFFFF, Some("R03"), None, false)),
+            Some(AdobeRgb)
+        );
         assert_eq!(f(&file("SONY", 1, Some("R98"), None, false)), Some(Srgb));
         assert_eq!(f(&file("SONY", 0xFFFF, Some("R98"), None, false)), None);
         assert_eq!(f(&file("SONY", 0xFFFF, None, None, false)), None);
-        assert_eq!(f(&file("Canon", 0xFFFF, Some("R03"), None, false)), Some(AdobeRgb));
-        assert_eq!(f(&file("NIKON CORPORATION", 1, Some("R98"), Some(2), false)), Some(AdobeRgb));
-        assert_eq!(f(&file("NIKON CORPORATION", 0xFFFF, Some("R03"), None, false)), Some(AdobeRgb));
+        assert_eq!(
+            f(&file("Canon", 0xFFFF, Some("R03"), None, false)),
+            Some(AdobeRgb)
+        );
+        assert_eq!(
+            f(&file("NIKON CORPORATION", 1, Some("R98"), Some(2), false)),
+            Some(AdobeRgb)
+        );
+        assert_eq!(
+            f(&file("NIKON CORPORATION", 0xFFFF, Some("R03"), None, false)),
+            Some(AdobeRgb)
+        );
         assert_eq!(f(&file("Canon", 0xFFFF, Some("R03"), None, true)), None);
     }
 
     #[test]
     fn nikon_crop_area_preserves_sensor_origin_and_rejects_invalid_rectangles() {
         let (w, h) = (32, 24);
-        let words: Vec<u8> = (0..w * h).flat_map(|i| (100 + i as u16).to_be_bytes()).collect();
+        let words: Vec<u8> = (0..w * h)
+            .flat_map(|i| (100 + i as u16).to_be_bytes())
+            .collect();
         for (values, expected) in [
             (vec![2, 4, 28, 16], Rect::new(2, 4, 28, 16)),
             (vec![31, 4, 28, 16], Rect::new(0, 0, 32, 24)),
@@ -387,7 +558,10 @@ mod tests {
             assert_eq!(raw.metadata.width, Some(expected.width as u32));
             assert_eq!(raw.metadata.height, Some(expected.height as u32));
             let developed = raw.develop(crate::Method::Bilinear).unwrap();
-            assert_eq!((developed.width, developed.height), (expected.width, expected.height));
+            assert_eq!(
+                (developed.width, developed.height),
+                (expected.width, expected.height)
+            );
         }
     }
 
@@ -397,7 +571,14 @@ mod tests {
     fn measured_d4_image_area_and_white_level() {
         let (w, h) = (4992usize, 3292usize);
         let decode_as = |model: &str, bits: u16| {
-            let mut nef = nef(1, bits, vec![vec![0x10; w * h * 2]], w as u32, h as u32, h as u32);
+            let mut nef = nef(
+                1,
+                bits,
+                vec![vec![0x10; w * h * 2]],
+                w as u32,
+                h as u32,
+                h as u32,
+            );
             let at = nef.windows(10).position(|b| b == b"NIKON TEST").unwrap();
             let name = format!("{model:<10}");
             nef[at..at + 10].copy_from_slice(name.as_bytes());
@@ -406,7 +587,10 @@ mod tests {
         let d4 = decode_as("NIKON D4", 14);
         assert_eq!(d4.crop, Rect::new(8, 6, 4928, 3280));
         assert_eq!(d4.white, vec![15520.0]);
-        assert_eq!((d4.metadata.width, d4.metadata.height), (Some(4928), Some(3280)));
+        assert_eq!(
+            (d4.metadata.width, d4.metadata.height),
+            (Some(4928), Some(3280))
+        );
         let developed = d4.develop(crate::Method::Bilinear).unwrap();
         assert_eq!((developed.width, developed.height), (4928, 3280));
         for other in [decode_as("NIKON D5", 14), decode_as("NIKON D4", 12)] {
@@ -420,21 +604,40 @@ mod tests {
     #[test]
     fn measured_d7100_image_area() {
         let decode_as = |model: &str, (w, h): (usize, usize)| {
-            let mut nef = nef(1, 14, vec![vec![0x10; w * h * 2]], w as u32, h as u32, h as u32);
+            let mut nef = nef(
+                1,
+                14,
+                vec![vec![0x10; w * h * 2]],
+                w as u32,
+                h as u32,
+                h as u32,
+            );
             // the fixture's model is "NIKON TEST" plus its NUL: 11 bytes to overwrite
             let at = nef.windows(11).position(|b| b == b"NIKON TEST\0").unwrap();
             let name = format!("{model:\0<11}");
             nef[at..at + 11].copy_from_slice(name.as_bytes());
             crate::decode(&nef).unwrap()
         };
-        for (size, crop) in [((6036, 4020), Rect::new(18, 10, 6000, 4000)), ((4812, 3212), Rect::new(6, 6, 4800, 3200))] {
+        for (size, crop) in [
+            ((6036, 4020), Rect::new(18, 10, 6000, 4000)),
+            ((4812, 3212), Rect::new(6, 6, 4800, 3200)),
+        ] {
             let d7100 = decode_as("NIKON D7100", size);
             assert_eq!(d7100.crop, crop);
-            assert_eq!((d7100.metadata.width, d7100.metadata.height), (Some(crop.width as u32), Some(crop.height as u32)));
+            assert_eq!(
+                (d7100.metadata.width, d7100.metadata.height),
+                (Some(crop.width as u32), Some(crop.height as u32))
+            );
             assert_ne!(d7100.white, vec![15520.0]);
             let developed = d7100.develop(crate::Method::Bilinear).unwrap();
-            assert_eq!((developed.width, developed.height), (crop.width, crop.height));
-            assert_eq!(decode_as("NIKON D7200", size).crop, Rect::new(0, 0, size.0, size.1));
+            assert_eq!(
+                (developed.width, developed.height),
+                (crop.width, crop.height)
+            );
+            assert_eq!(
+                decode_as("NIKON D7200", size).crop,
+                Rect::new(0, 0, size.0, size.1)
+            );
         }
     }
 
@@ -447,14 +650,27 @@ mod tests {
         for row in px.chunks_mut(w) {
             row[4310..].fill(254);
         }
-        let mut nef = nef(1, 12, vec![px.iter().flat_map(|v| v.to_le_bytes()).collect()], w as u32, h as u32, h as u32);
+        let mut nef = nef(
+            1,
+            12,
+            vec![px.iter().flat_map(|v| v.to_le_bytes()).collect()],
+            w as u32,
+            h as u32,
+            h as u32,
+        );
         let at = nef.windows(10).position(|b| b == b"NIKON TEST").unwrap();
         nef[at..at + 10].copy_from_slice(b"NIKON D90 ");
         let d90 = crate::decode(&nef).unwrap();
         assert_eq!(d90.crop, Rect::new(10, 10, 4288, 2848));
-        assert!(d90.crop.x + d90.crop.width <= 4310, "the filler columns are outside the image");
+        assert!(
+            d90.crop.x + d90.crop.width <= 4310,
+            "the filler columns are outside the image"
+        );
         assert_eq!(d90.white, vec![3830.0]);
-        assert_eq!((d90.metadata.width, d90.metadata.height), (Some(4288), Some(2848)));
+        assert_eq!(
+            (d90.metadata.width, d90.metadata.height),
+            (Some(4288), Some(2848))
+        );
     }
 
     /// Issue #708: the active width is judged from the first [`MASK_ROWS`] rows in both modes, so the header probe
@@ -464,37 +680,93 @@ mod tests {
         let (w, h, rps) = (256usize, MASK_ROWS + 64, 8u32);
         let file = |masked_rows: std::ops::Range<usize>| {
             let words: Vec<u8> = (0..w * h)
-                .map(|i| if masked_rows.contains(&(i / w)) && i % w >= w - 8 { 0u16 } else { 1000 + (i % 7) as u16 })
+                .map(|i| {
+                    if masked_rows.contains(&(i / w)) && i % w >= w - 8 {
+                        0u16
+                    } else {
+                        1000 + (i % 7) as u16
+                    }
+                })
                 .flat_map(|v| v.to_be_bytes())
                 .collect();
-            nef(1, 14, words.chunks(w * 2 * rps as usize).map(|c| c.to_vec()).collect(), w as u32, h as u32, rps)
+            nef(
+                1,
+                14,
+                words
+                    .chunks(w * 2 * rps as usize)
+                    .map(|c| c.to_vec())
+                    .collect(),
+                w as u32,
+                h as u32,
+                rps,
+            )
         };
-        for (masked_rows, expected_width) in [(0..h, w - 8), (0..MASK_ROWS, w - 8), (MASK_ROWS..h, w), (0..0, w)] {
+        for (masked_rows, expected_width) in [
+            (0..h, w - 8),
+            (0..MASK_ROWS, w - 8),
+            (MASK_ROWS..h, w),
+            (0..0, w),
+        ] {
             let bytes = file(masked_rows.clone());
             let full = crate::decode(&bytes).unwrap();
-            assert_eq!(full.active_area.width, expected_width, "masked rows {masked_rows:?}");
+            assert_eq!(
+                full.active_area.width, expected_width,
+                "masked rows {masked_rows:?}"
+            );
             assert_eq!(full.crop.width, expected_width);
-            assert_eq!(crate::probe_info(&bytes).unwrap(), full.info(), "masked rows {masked_rows:?}");
+            assert_eq!(
+                crate::probe_info(&bytes).unwrap(),
+                full.info(),
+                "masked rows {masked_rows:?}"
+            );
         }
         // the shared rule on its own: nominal white, trailing columns at most 64, even width
-        let d: Vec<u16> = (0..w * 4).map(|i| if i % w >= w - 9 { 0 } else { 600 }).collect();
-        assert_eq!(trailing_masked_columns(&d, w, 14), w - 10, "nine dark columns trim to an even width");
+        let d: Vec<u16> = (0..w * 4)
+            .map(|i| if i % w >= w - 9 { 0 } else { 600 })
+            .collect();
+        assert_eq!(
+            trailing_masked_columns(&d, w, 14),
+            w - 10,
+            "nine dark columns trim to an even width"
+        );
         assert_eq!(trailing_masked_columns(&d, w, 12), w - 10);
-        assert_eq!(trailing_masked_columns(&d[..w - 1], w, 14), w, "less than a row of samples leaves the width alone");
-        assert_eq!(trailing_masked_columns(&[0; 64], 64, 14), 64, "narrow images are left alone");
+        assert_eq!(
+            trailing_masked_columns(&d[..w - 1], w, 14),
+            w,
+            "less than a row of samples leaves the width alone"
+        );
+        assert_eq!(
+            trailing_masked_columns(&[0; 64], 64, 14),
+            64,
+            "narrow images are left alone"
+        );
         assert_eq!(trailing_masked_columns(&[], 0, 14), 0);
     }
 
     #[test]
     fn black_level_tag_is_in_14_bit_units() {
         let (w, h) = (16usize, 4usize);
-        let words: Vec<u8> = (0..w * h).flat_map(|i| (100 + i as u16).to_be_bytes()).collect();
+        let words: Vec<u8> = (0..w * h)
+            .flat_map(|i| (100 + i as u16).to_be_bytes())
+            .collect();
         let note = || {
             let mut mn = IfdBuilder::new();
             mn.set(BLACK_LEVEL, Value::Short(vec![400, 404, 408, 412]));
             mn
         };
-        let black = |bits| crate::decode(&nef_with_note(1, bits, vec![words.clone()], w as u32, h as u32, h as u32, Some(note()))).unwrap().black;
+        let black = |bits| {
+            crate::decode(&nef_with_note(
+                1,
+                bits,
+                vec![words.clone()],
+                w as u32,
+                h as u32,
+                h as u32,
+                Some(note()),
+            ))
+            .unwrap()
+            .black
+        };
         assert_eq!(black(12).values, vec![100.0, 101.0, 102.0, 103.0]);
         assert_eq!(black(14).values, vec![400.0, 404.0, 408.0, 412.0]);
     }
@@ -504,7 +776,14 @@ mod tests {
         let (w, h) = (16usize, 6usize);
         let px: Vec<u16> = (0..w * h).map(|i| (i * 131 % 4096) as u16).collect();
         let words: Vec<u8> = px.iter().flat_map(|v| v.to_be_bytes()).collect();
-        let bytes = nef(1, 12, words.chunks(w * 2 * 3).map(|c| c.to_vec()).collect(), w as u32, h as u32, 3);
+        let bytes = nef(
+            1,
+            12,
+            words.chunks(w * 2 * 3).map(|c| c.to_vec()).collect(),
+            w as u32,
+            h as u32,
+            3,
+        );
         assert_eq!(crate::probe(&bytes), Some(RawFormat::Nef));
         let r = crate::decode(&bytes).unwrap();
         assert_eq!(r.data, RawData::U16(px.clone()));
@@ -540,7 +819,10 @@ mod tests {
                 bits
             });
             for word in stream.chunks(32) {
-                let v = word.iter().enumerate().fold(0u32, |a, (i, b)| a | (*b as u32) << (31 - i));
+                let v = word
+                    .iter()
+                    .enumerate()
+                    .fold(0u32, |a, (i, b)| a | (*b as u32) << (31 - i));
                 out.extend_from_slice(&match order {
                     ByteOrder::Little => v.to_le_bytes(),
                     ByteOrder::Big => v.to_be_bytes(),
@@ -557,7 +839,17 @@ mod tests {
         let packed = words32(&px, w, ByteOrder::Little);
         assert_eq!(packed.len(), w * h * 3 / 2);
         let decode = |note: Option<IfdBuilder>| {
-            crate::decode(&nef_in(ByteOrder::Little, 1, 12, vec![packed.clone()], w as u32, h as u32, h as u32, note)).unwrap()
+            crate::decode(&nef_in(
+                ByteOrder::Little,
+                1,
+                12,
+                vec![packed.clone()],
+                w as u32,
+                h as u32,
+                h as u32,
+                note,
+            ))
+            .unwrap()
         };
         let r = decode(Some(nrw_note(200)));
         assert_eq!(r.data, RawData::U16(px.clone()));
@@ -572,13 +864,18 @@ mod tests {
         // the maker-note black level (14-bit units) wins when present
         let mut both = nrw_note(200);
         both.set(BLACK_LEVEL, Value::Short(vec![400, 404, 408, 412]));
-        assert_eq!(decode(Some(both)).black.values, vec![100.0, 101.0, 102.0, 103.0]);
+        assert_eq!(
+            decode(Some(both)).black.values,
+            vec![100.0, 101.0, 102.0, 103.0]
+        );
     }
 
     #[test]
     fn compressed_without_table_is_unsupported() {
         let bytes = nef(34713, 14, vec![vec![0; 64]], 8, 8, 8);
-        let Err(RawError::Unsupported(why)) = crate::decode(&bytes) else { panic!("expected unsupported") };
+        let Err(RawError::Unsupported(why)) = crate::decode(&bytes) else {
+            panic!("expected unsupported")
+        };
         assert!(why.contains("linearization table"), "{why}");
     }
 
@@ -589,13 +886,20 @@ mod tests {
         let mut strip = vec![0xff, 0x10, 0xff, 0x50, 0x00, 0x22];
         strip.resize(64, 0);
         let bytes = nef(34713, 14, vec![strip], 8, 8, 8);
-        for result in [crate::decode(&bytes).map(|_| ()), crate::probe_info(&bytes).map(|_| ())] {
-            let Err(RawError::Unsupported(why)) = result else { panic!("expected unsupported") };
+        for result in [
+            crate::decode(&bytes).map(|_| ()),
+            crate::probe_info(&bytes).map(|_| ()),
+        ] {
+            let Err(RawError::Unsupported(why)) = result else {
+                panic!("expected unsupported")
+            };
             assert_eq!(why, HIGH_EFFICIENCY);
             assert!(why.starts_with("Nikon High Efficiency NEF ("), "{why}");
         }
         // a strip too short to hold the markers is still the missing-table case, not a panic
         let short = nef(34713, 14, vec![vec![0xff, 0x10]], 1, 1, 1);
-        assert!(matches!(crate::decode(&short), Err(RawError::Unsupported(w)) if w.contains("linearization table")));
+        assert!(
+            matches!(crate::decode(&short), Err(RawError::Unsupported(w)) if w.contains("linearization table"))
+        );
     }
 }

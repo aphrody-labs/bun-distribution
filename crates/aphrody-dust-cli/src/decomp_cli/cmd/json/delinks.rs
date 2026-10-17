@@ -63,17 +63,29 @@ impl JsonDelinks {
             .delink_files()
             .map(|file| {
                 let (file_path, _) = file.split_file_ext();
-                let base_path = if file.complete { &build_path } else { &delinks_path };
+                let base_path = if file.complete {
+                    &build_path
+                } else {
+                    &delinks_path
+                };
                 let object_to_link = base_path.join(&file_path).clean().with_extension("o");
                 let delink_file = delinks_path.join(&file_path).clean().with_extension("o");
 
-                Ok(DelinkFileJson { name: file.name.clone(), delink_file, object_to_link })
+                Ok(DelinkFileJson {
+                    name: file.name.clone(),
+                    delink_file,
+                    object_to_link,
+                })
             })
             .collect::<Result<Vec<_>>>()?;
 
         let arm9_lcf_file = build_path.join(ARM9_LCF_FILE_NAME).clean();
         let arm9_objects_file = build_path.join("objects.txt").clean();
 
-        Ok(ModulesJson { arm9_lcf_file, arm9_objects_file, files })
+        Ok(ModulesJson {
+            arm9_lcf_file,
+            arm9_objects_file,
+            files,
+        })
     }
 }

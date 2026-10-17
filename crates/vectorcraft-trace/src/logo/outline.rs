@@ -2,7 +2,8 @@
 
 use super::bezier::{fit_cubics, tangent};
 use super::geom::{
-    Cubic, all_within, arc_cubics, circle_fit, find_corners, finite, resample_closed, resample_open, sample_cubics, smooth_closed, smooth_open,
+    Cubic, all_within, arc_cubics, circle_fit, find_corners, finite, resample_closed,
+    resample_open, sample_cubics, smooth_closed, smooth_open,
 };
 use super::restore::{RestoreParams, restore_corners};
 use vectorcraft_geom::Point;
@@ -89,7 +90,11 @@ fn sweep(pts: &[Point], c: Point) -> Option<(f64, f64)> {
 /// A plain fit of the closed raw contour: no smoothing, corners or snapping.
 fn plain_fit(p: &[Point], tol: f64) -> Vec<Cubic> {
     let n = p.len();
-    let (Some(&first), Some(&second), Some(&last)) = (p.first(), p.get(1), p.get(n.saturating_sub(1))) else { return Vec::new() };
+    let (Some(&first), Some(&second), Some(&last)) =
+        (p.first(), p.get(1), p.get(n.saturating_sub(1)))
+    else {
+        return Vec::new();
+    };
     let t = second - last;
     let len = t.hypot();
     if len.is_nan() || len <= 1e-12 {
@@ -104,7 +109,9 @@ fn plain_fit(p: &[Point], tol: f64) -> Vec<Cubic> {
 /// One run between two corners, added to `segs`: a line or an arc where it is one, else fitted
 /// curves. `sg` is the smoothing, in samples.
 fn fit_run(run: &[Point], sg: f64, st: &Style, stats: &mut Stats, segs: &mut Vec<Cubic>) {
-    let (Some(&first), Some(&last)) = (run.first(), run.last()) else { return };
+    let (Some(&first), Some(&last)) = (run.first(), run.last()) else {
+        return;
+    };
     if run.len() < 4 {
         if run.len() >= 2 && first.distance(last) > 1e-9 {
             segs.push(line_cubic(first, last));
@@ -112,7 +119,9 @@ fn fit_run(run: &[Point], sg: f64, st: &Style, stats: &mut Stats, segs: &mut Vec
         return;
     }
     let sm = smooth_open(run, sg);
-    let (Some(&a), Some(&b)) = (sm.first(), sm.last()) else { return };
+    let (Some(&a), Some(&b)) = (sm.first(), sm.last()) else {
+        return;
+    };
     let len = a.distance(b);
     if st.snap && len > 1.5 {
         let d = b - a;
@@ -146,7 +155,12 @@ fn fit_run(run: &[Point], sg: f64, st: &Style, stats: &mut Stats, segs: &mut Vec
         }
         return;
     }
-    segs.extend(fit_cubics(&sm, tangent(&sm, 0, 4, 1), tangent(&sm, sm.len() - 1, 4, -1), st.tol));
+    segs.extend(fit_cubics(
+        &sm,
+        tangent(&sm, 0, 4, 1),
+        tangent(&sm, sm.len() - 1, 4, -1),
+        st.tol,
+    ));
 }
 
 /// The open run `p` as cubic Béziers from its first point to its last, both kept exactly: cut at
@@ -154,7 +168,9 @@ fn fit_run(run: &[Point], sg: f64, st: &Style, stats: &mut Stats, segs: &mut Vec
 /// put back here: a piece of an outline between two junctions ends on pixel corners anyway.)
 pub(crate) fn fit_open(p: &[Point], st: &Style, stats: &mut Stats) -> Vec<Cubic> {
     let mut segs = Vec::new();
-    let (Some(&first), Some(&last)) = (p.first(), p.last()) else { return segs };
+    let (Some(&first), Some(&last)) = (p.first(), p.last()) else {
+        return segs;
+    };
     let whole = |segs: &mut Vec<Cubic>| {
         if first.distance(last) > 1e-9 {
             segs.push(line_cubic(first, last));
@@ -168,21 +184,33 @@ pub(crate) fn fit_open(p: &[Point], st: &Style, stats: &mut Stats) -> Vec<Cubic>
     let s0 = smooth_open(&r, (0.18 / step).max(1.0));
     let w = ((st.corner_win / step).round() as usize).max(2);
     let angle = |i: usize| {
-        let (Some(&c), Some(&a), Some(&b)) = (s0.get(i), i.checked_sub(w).and_then(|j| s0.get(j)), s0.get(i + w)) else { return 0.0 };
+        let (Some(&c), Some(&a), Some(&b)) = (
+            s0.get(i),
+            i.checked_sub(w).and_then(|j| s0.get(j)),
+            s0.get(i + w),
+        ) else {
+            return 0.0;
+        };
         let (v1, v2) = (c - a, b - c);
         v1.cross(v2).atan2(v1.dot(v2)).abs().to_degrees()
     };
     let mut cuts = vec![0];
     for i in w..n.saturating_sub(w) {
         let here = angle(i);
-        if here >= st.corner_deg && here >= angle(i - 1) && here > angle(i + 1) && cuts.last().is_none_or(|&l| i - l > w) {
+        if here >= st.corner_deg
+            && here >= angle(i - 1)
+            && here > angle(i + 1)
+            && cuts.last().is_none_or(|&l| i - l > w)
+        {
             cuts.push(i);
         }
     }
     cuts.push(n - 1);
     let sg = st.sigma / step;
     for pair in cuts.windows(2) {
-        let Some(run) = r.get(pair[0]..=pair[1]) else { continue };
+        let Some(run) = r.get(pair[0]..=pair[1]) else {
+            continue;
+        };
         let before = segs.len();
         fit_run(run, sg, st, stats, &mut segs);
         // Every stretch must lead on to the next.
@@ -236,7 +264,9 @@ fn styled_fit(p: &[Point], st: &Style, stats: &mut Stats) -> Option<Vec<Cubic>> 
                 return Some(arc_cubics(c.c, c.r, a0, a0 + dir * std::f64::consts::TAU));
             }
         }
-        let (Some(&a), Some(&b), Some(&z)) = (s.first(), s.get(1), s.last()) else { return None };
+        let (Some(&a), Some(&b), Some(&z)) = (s.first(), s.get(1), s.last()) else {
+            return None;
+        };
         let t = b - z;
         let len = t.hypot();
         if len.is_nan() || len <= 1e-12 {
@@ -251,7 +281,9 @@ fn styled_fit(p: &[Point], st: &Style, stats: &mut Stats) -> Option<Vec<Cubic>> 
     for (ci, &i0) in corners.iter().enumerate() {
         let i1 = *corners.get((ci + 1) % corners.len())?;
         let count = if i1 <= i0 { i1 + n - i0 } else { i1 - i0 } + 1;
-        let run: Vec<Point> = (0..count).filter_map(|k| r.get((i0 + k) % n).copied()).collect();
+        let run: Vec<Point> = (0..count)
+            .filter_map(|k| r.get((i0 + k) % n).copied())
+            .collect();
         fit_run(&run, sg, st, stats, &mut segs);
     }
     (!segs.is_empty()).then_some(segs)
@@ -272,14 +304,22 @@ pub(crate) fn fit_outline(p: &[Point], st: &Style, stats: &mut Stats) -> Option<
     let checked = |st: &Style, local: &mut Stats| {
         styled_fit(p, st, local).filter(|s| sane(s)).filter(|s| {
             let samples = sample_cubics(s, st.check_step);
-            all_within(&samples, &reference, st.max_dev) && all_within(&reference, &samples, st.max_dev)
+            all_within(&samples, &reference, st.max_dev)
+                && all_within(&reference, &samples, st.max_dev)
         })
     };
     // A fit that strays is tried again without the clever parts before the plain fit, which
     // nothing checks.
     let fitted = checked(st, &mut local).or_else(|| {
         local = Stats::default();
-        checked(&Style { snap: false, restore: None, ..*st }, &mut local)
+        checked(
+            &Style {
+                snap: false,
+                restore: None,
+                ..*st
+            },
+            &mut local,
+        )
     });
     match fitted {
         Some(segs) => {
@@ -302,7 +342,10 @@ mod tests {
     use crate::logo::testutil::{circle, rounded_square};
 
     fn near_any(segs: &[Cubic], target: Point) -> f64 {
-        sample_cubics(segs, 0.01).iter().map(|q| q.distance(target)).fold(f64::MAX, f64::min)
+        sample_cubics(segs, 0.01)
+            .iter()
+            .map(|q| q.distance(target))
+            .fold(f64::MAX, f64::min)
     }
 
     #[test]
@@ -321,7 +364,8 @@ mod tests {
     #[test]
     fn a_disc_becomes_a_true_circle() {
         let mut st = Stats::default();
-        let segs = fit_outline(&circle(25.0, 25.0, 12.0, 700), &Style::default(), &mut st).expect("fit");
+        let segs =
+            fit_outline(&circle(25.0, 25.0, 12.0, 700), &Style::default(), &mut st).expect("fit");
         assert_eq!(st.circles, 1);
         assert_eq!(segs.len(), 4);
         // Smoothing shrinks a curve by about sigma^2 / (2 r): 0.01 px here.
@@ -338,19 +382,30 @@ mod tests {
         let signed = |segs: &[Cubic]| {
             let p = sample_cubics(segs, 0.1);
             let n = p.len();
-            (0..n).map(|i| p[i].x * p[(i + 1) % n].y - p[(i + 1) % n].x * p[i].y).sum::<f64>()
+            (0..n)
+                .map(|i| p[i].x * p[(i + 1) % n].y - p[(i + 1) % n].x * p[i].y)
+                .sum::<f64>()
         };
         let (mut a, mut b) = (Stats::default(), Stats::default());
         let f = fit_outline(&forward, &Style::default(), &mut a).expect("forward");
         let r = fit_outline(&backward, &Style::default(), &mut b).expect("backward");
         assert_eq!((a.circles, b.circles), (1, 1));
-        assert!(signed(&f) > 0.0 && signed(&r) < 0.0, "directions {} and {}", signed(&f), signed(&r));
+        assert!(
+            signed(&f) > 0.0 && signed(&r) < 0.0,
+            "directions {} and {}",
+            signed(&f),
+            signed(&r)
+        );
     }
 
     #[test]
     fn without_snapping_a_circle_is_still_smooth_and_close() {
         let mut st = Stats::default();
-        let style = Style { snap: false, restore: None, ..Style::default() };
+        let style = Style {
+            snap: false,
+            restore: None,
+            ..Style::default()
+        };
         let segs = fit_outline(&circle(25.0, 25.0, 12.0, 700), &style, &mut st).expect("fit");
         assert_eq!(st.circles, 0);
         for q in sample_cubics(&segs, 0.05) {
@@ -362,7 +417,10 @@ mod tests {
     fn the_guard_puts_back_a_plain_fit_when_the_clever_one_strays() {
         let mut st = Stats::default();
         // An absurdly tight limit makes every smoothed fit "stray".
-        let style = Style { max_dev: 1e-6, ..Style::default() };
+        let style = Style {
+            max_dev: 1e-6,
+            ..Style::default()
+        };
         let raw = rounded_square(0.7);
         let segs = fit_outline(&raw, &style, &mut st);
         assert_eq!(st.reverted, 1);
@@ -375,8 +433,23 @@ mod tests {
         let s = Style::default();
         assert!(fit_outline(&[], &s, &mut st).is_none());
         assert!(fit_outline(&[Point::new(1.0, 1.0); 3], &s, &mut st).is_none() || st.reverted > 0);
-        assert!(fit_outline(&[Point::new(f64::NAN, 0.0), Point::new(1.0, 1.0), Point::new(2.0, 0.0)], &s, &mut st).is_none());
-        let tiny = [Point::new(0.0, 0.0), Point::new(0.01, 0.0), Point::new(0.0, 0.01)];
+        assert!(
+            fit_outline(
+                &[
+                    Point::new(f64::NAN, 0.0),
+                    Point::new(1.0, 1.0),
+                    Point::new(2.0, 0.0)
+                ],
+                &s,
+                &mut st
+            )
+            .is_none()
+        );
+        let tiny = [
+            Point::new(0.0, 0.0),
+            Point::new(0.01, 0.0),
+            Point::new(0.0, 0.01),
+        ];
         let _ = fit_outline(&tiny, &s, &mut st);
         let _ = fit_outline(&circle(5.0, 5.0, 1e-9, 20), &s, &mut st);
         let _ = fit_outline(&circle(5.0, 5.0, 1e7, 50), &s, &mut st);

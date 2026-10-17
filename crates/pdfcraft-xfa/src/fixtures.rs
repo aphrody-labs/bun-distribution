@@ -69,8 +69,9 @@ pub fn template(rows: usize) -> String {
 /// [`template`] with a datasets packet holding `data` (the children of `xfa:data`).
 pub fn template_with_data(rows: usize, data: &str) -> String {
     let t = template(rows);
-    let packet =
-        format!("<xfa:datasets xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\"><xfa:data>{data}</xfa:data></xfa:datasets>\n</xdp:xdp>");
+    let packet = format!(
+        "<xfa:datasets xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\"><xfa:data>{data}</xfa:data></xfa:datasets>\n</xdp:xdp>"
+    );
     t.replace("</xdp:xdp>", &packet)
 }
 
@@ -110,7 +111,13 @@ fn assemble(objs: Vec<Vec<u8>>) -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -217,7 +224,9 @@ pub fn leave_template(data: &str) -> String {
     let datasets = if data.is_empty() {
         String::new()
     } else {
-        format!("<xfa:datasets xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\"><xfa:data>{data}</xfa:data></xfa:datasets>")
+        format!(
+            "<xfa:datasets xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\"><xfa:data>{data}</xfa:data></xfa:datasets>"
+        )
     };
     format!(
         r##"<?xml version="1.0" encoding="UTF-8"?>
@@ -281,7 +290,9 @@ pub fn fields_template(data: &str) -> String {
     let datasets = if data.is_empty() {
         String::new()
     } else {
-        format!("<xfa:datasets xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\"><xfa:data>{data}</xfa:data></xfa:datasets>")
+        format!(
+            "<xfa:datasets xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\"><xfa:data>{data}</xfa:data></xfa:datasets>"
+        )
     };
     format!(
         r##"<?xml version="1.0" encoding="UTF-8"?>

@@ -19,7 +19,9 @@ const PIECE: &str = "Illustrator"; // brand-ok: the key the files use
 
 /// A layer named `name` (shown, unlocked, printing, light blue) holding `art`.
 pub fn layer(name: &str, art: &str) -> String {
-    format!("%AI5_BeginLayer\n1 1 1 1 0 0 1 0 79 128 255 0 50 0 Lb\n({name}) Ln\n0 A\n0 Xw\n{art}\nLB\n%AI5_EndLayer--\n")
+    format!(
+        "%AI5_BeginLayer\n1 1 1 1 0 0 1 0 79 128 255 0 50 0 Lb\n({name}) Ln\n0 A\n0 Xw\n{art}\nLB\n%AI5_EndLayer--\n"
+    )
 }
 
 /// The path of the rectangle `x0 y0 x1 y1` (art space: y up).
@@ -29,7 +31,10 @@ pub fn rect(x0: f64, y0: f64, x1: f64, y1: f64) -> String {
 
 /// `name` given to the object before it (its XML id).
 pub fn named(name: &str) -> String {
-    format!("%_/ArtDictionary :\n%_/XMLUID : ({}) ; (AI10_ArtUID) ,\n%_;\n%_\n", name.replace(' ', "_"))
+    format!(
+        "%_/ArtDictionary :\n%_/XMLUID : ({}) ; (AI10_ArtUID) ,\n%_;\n%_\n",
+        name.replace(' ', "_")
+    )
 }
 
 /// A document of 200 × 100 pt with a bit of everything the reader reads. A layer `Art` that shows:
@@ -39,8 +44,7 @@ pub fn named(name: &str) -> String {
 /// locked sublayer `Sub`, and a 2 × 1 image with an alpha channel.
 pub fn sample_data() -> Vec<u8> {
     let red = "0 1 1 0 1 0 0 Xa\n";
-    let gradient =
-        "%AI5_BeginGradient: (Glow)\n(Glow) 1 2 Bd\n[\n%_0 0 0 0 1 1 1 2 1 6 50 0 Bs\n%_0 0 0 1 0 0 0 2 0.5 6 50 100 Bs\nBD\n%AI5_EndGradient\n";
+    let gradient = "%AI5_BeginGradient: (Glow)\n(Glow) 1 2 Bd\n[\n%_0 0 0 0 1 1 1 2 1 6 50 0 Bs\n%_0 0 0 1 0 0 0 2 0.5 6 50 100 Bs\nBD\n%AI5_EndGradient\n";
     let group = format!(
         "0 Ae\nu\n{red}{}f\n{}1 Xw\n0 0 1 0 0 0 1 XA\n2 w\n{}b\n0 Xw\nU\n{}9 () XW\n",
         rect(10.0, 50.0, 40.0, 90.0),
@@ -48,9 +52,18 @@ pub fn sample_data() -> Vec<u8> {
         rect(50.0, 50.0, 80.0, 90.0),
         named("Pair")
     );
-    let compound = format!("0 Ae\n*u\n{red}1 XR\n{}f\n{}f\n*U\n{}", rect(100.0, 50.0, 140.0, 90.0), rect(110.0, 60.0, 130.0, 80.0), named("Ring"));
-    let clip =
-        format!("0 Ae\nq\n0.5 g\n{}f\n{}h\nW\nn\nQ\n{}9 () XW\n", rect(150.0, 50.0, 190.0, 90.0), rect(160.0, 60.0, 180.0, 80.0), named("Window"));
+    let compound = format!(
+        "0 Ae\n*u\n{red}1 XR\n{}f\n{}f\n*U\n{}",
+        rect(100.0, 50.0, 140.0, 90.0),
+        rect(110.0, 60.0, 130.0, 80.0),
+        named("Ring")
+    );
+    let clip = format!(
+        "0 Ae\nq\n0.5 g\n{}f\n{}h\nW\nn\nQ\n{}9 () XW\n",
+        rect(150.0, 50.0, 190.0, 90.0),
+        rect(160.0, 60.0, 180.0, 80.0),
+        named("Window")
+    );
     let shaded = format!(
         "{}Bb\n1 (Glow) 0 0 0 1 1 0 0 1 0 0 1 Bg\n20 0 0 -20 30 25 Bm\nf\n0 BB\n{}2 0.5 0 0 0 Xy\n{red}{}f\n0 1 0 0 0 Xy\n",
         rect(10.0, 5.0, 50.0, 45.0),
@@ -71,7 +84,10 @@ pub fn sample_data() -> Vec<u8> {
     body.extend_from_slice(&image);
     body.extend_from_slice(b"LB\n%AI5_EndLayer--\n");
     let mut data = editing_data(200.0, 100.0, "").into_bytes();
-    let at = data.windows(14).position(|w| w == b"%%PageTrailer\n").unwrap_or(data.len());
+    let at = data
+        .windows(14)
+        .position(|w| w == b"%%PageTrailer\n")
+        .unwrap_or(data.len());
     data.splice(at..at, body);
     data
 }
@@ -156,6 +172,12 @@ fn with_private(private: &[u8], page: &str, key: &str, entries: &str) -> Vec<u8>
     for off in offsets {
         out.extend(format!("{off:010} 00000 n \n").bytes());
     }
-    out.extend(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objects.len() + 1).bytes());
+    out.extend(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objects.len() + 1
+        )
+        .bytes(),
+    );
     out
 }

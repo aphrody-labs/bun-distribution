@@ -3,7 +3,9 @@
 use soundcraft_time::Samples;
 
 /// Automation modes (per track).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum AutomationMode {
     Off,
     #[default]
@@ -38,7 +40,11 @@ impl AutomationMode {
     }
     pub fn from_id(s: &str) -> Option<AutomationMode> {
         let s = s.to_ascii_lowercase();
-        AutomationMode::ALL.into_iter().find(|m| m.label() == s || m.label().replace('/', "_") == s || format!("{m:?}").to_ascii_lowercase() == s)
+        AutomationMode::ALL.into_iter().find(|m| {
+            m.label() == s
+                || m.label().replace('/', "_") == s
+                || format!("{m:?}").to_ascii_lowercase() == s
+        })
     }
     pub fn reads(self) -> bool {
         !matches!(self, AutomationMode::Off)
@@ -46,7 +52,9 @@ impl AutomationMode {
 }
 
 /// Which parameter an automation lane controls.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum AutoParam {
     /// Fader level, dB.
     Volume,
@@ -100,7 +108,10 @@ impl AutoParam {
         }
         if let Some(rest) = s.strip_prefix("plugin:") {
             let (slot, param) = rest.split_once(':')?;
-            return Some(AutoParam::Plugin { slot: letter_slot(slot)?, param: param.to_string() });
+            return Some(AutoParam::Plugin {
+                slot: letter_slot(slot)?,
+                param: param.to_string(),
+            });
         }
         None
     }
@@ -121,7 +132,11 @@ pub fn slot_letter(i: u8) -> char {
 
 fn letter_slot(s: &str) -> Option<u8> {
     let c = s.chars().next()?.to_ascii_uppercase();
-    if s.len() == 1 && c.is_ascii_uppercase() { Some(c as u8 - b'A') } else { s.parse().ok() }
+    if s.len() == 1 && c.is_ascii_uppercase() {
+        Some(c as u8 - b'A')
+    } else {
+        s.parse().ok()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -141,13 +156,19 @@ pub struct AutomationLane {
 
 impl AutomationLane {
     pub fn new(param: AutoParam) -> Self {
-        AutomationLane { param, points: Vec::new(), enabled: true }
+        AutomationLane {
+            param,
+            points: Vec::new(),
+            enabled: true,
+        }
     }
 
     /// Value at `at` (linear interpolation; `default` when empty).
     pub fn value_at(&self, at: Samples, default: f32) -> f32 {
         let pts = &self.points;
-        let Some(first) = pts.first() else { return default };
+        let Some(first) = pts.first() else {
+            return default;
+        };
         if at <= first.at {
             return first.value;
         }
@@ -168,7 +189,11 @@ impl AutomationLane {
     /// Insert or replace a breakpoint.
     pub fn set_point(&mut self, at: Samples, value: f32) {
         let (lo, hi, _) = self.param.range();
-        let value = if value.is_nan() { 0.0 } else { value.clamp(lo, hi) };
+        let value = if value.is_nan() {
+            0.0
+        } else {
+            value.clamp(lo, hi)
+        };
         match self.points.binary_search_by(|p| p.at.cmp(&at)) {
             Ok(i) => {
                 if let Some(p) = self.points.get_mut(i) {
@@ -210,9 +235,19 @@ impl AutomationLane {
         let mut keep = vec![true; self.points.len()];
         let mut last = 0usize;
         for i in 1..self.points.len() - 1 {
-            let (Some(a), Some(b), Some(c)) = (self.points.get(last), self.points.get(i), self.points.get(i + 1)) else { continue };
+            let (Some(a), Some(b), Some(c)) = (
+                self.points.get(last),
+                self.points.get(i),
+                self.points.get(i + 1),
+            ) else {
+                continue;
+            };
             let span = (c.at - a.at) as f32;
-            let interp = if span > 0.0 { a.value + (c.value - a.value) * ((b.at - a.at) as f32 / span) } else { a.value };
+            let interp = if span > 0.0 {
+                a.value + (c.value - a.value) * ((b.at - a.at) as f32 / span)
+            } else {
+                a.value
+            };
             if (interp - b.value).abs() <= tolerance {
                 if let Some(k) = keep.get_mut(i) {
                     *k = false;
@@ -281,10 +316,22 @@ mod tests {
 
     #[test]
     fn param_ids() {
-        assert_eq!(AutoParam::parse("send_b_level"), Some(AutoParam::SendLevel(1)));
-        assert_eq!(AutoParam::parse("plugin:a:threshold"), Some(AutoParam::Plugin { slot: 0, param: "threshold".into() }));
+        assert_eq!(
+            AutoParam::parse("send_b_level"),
+            Some(AutoParam::SendLevel(1))
+        );
+        assert_eq!(
+            AutoParam::parse("plugin:a:threshold"),
+            Some(AutoParam::Plugin {
+                slot: 0,
+                param: "threshold".into()
+            })
+        );
         assert_eq!(AutoParam::parse("nope"), None);
-        assert_eq!(AutomationMode::from_id("touch/latch"), Some(AutomationMode::TouchLatch));
+        assert_eq!(
+            AutomationMode::from_id("touch/latch"),
+            Some(AutomationMode::TouchLatch)
+        );
     }
 
     #[test]

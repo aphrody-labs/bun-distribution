@@ -24,7 +24,11 @@ impl EvalTarget for MockTarget {
 
     async fn query(&self, _query: &str, limit: usize) -> Result<TargetResponse, EvalError> {
         let hits: Vec<RetrievedHit> = self.return_hits.iter().take(limit).cloned().collect();
-        Ok(TargetResponse { hits, mode_served: self.mode.clone(), latency_ms: 12 })
+        Ok(TargetResponse {
+            hits,
+            mode_served: self.mode.clone(),
+            latency_ms: 12,
+        })
     }
 }
 
@@ -82,7 +86,13 @@ async fn test_harness_eval_metrics_and_markdown() {
 
     // Case 1 hit at rank 1, Case 2 hit at rank 2
     // Recall@1 = 0.5, Recall@5 = 1.0, MRR = (1.0 + 0.5) / 2 = 0.75
-    let r5 = summary.report.overall.recall.get(&5).copied().unwrap_or(0.0);
+    let r5 = summary
+        .report
+        .overall
+        .recall
+        .get(&5)
+        .copied()
+        .unwrap_or(0.0);
     assert_eq!(r5, 1.0);
     assert!((summary.report.overall.mrr - 0.75).abs() < 1e-4);
 
@@ -106,7 +116,10 @@ async fn test_harness_gate_failure() {
         ..Default::default()
     }];
 
-    let opts = EvalOptions { gates: vec!["recall@5>=0.80".to_string()], ..Default::default() };
+    let opts = EvalOptions {
+        gates: vec!["recall@5>=0.80".to_string()],
+        ..Default::default()
+    };
 
     let summary = run_eval(&mock, &cases, &opts).await.expect("run eval");
     assert!(!summary.passed_gates);
@@ -127,44 +140,81 @@ async fn test_harness_condition_mismatch_aborts() {
         }
 
         async fn query(&self, _query: &str, _limit: usize) -> Result<TargetResponse, EvalError> {
-            let count = self.call_count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            let mode = if count == 0 { "hybrid".to_string() } else { "lexical".to_string() };
-            Ok(TargetResponse { hits: vec![], mode_served: mode, latency_ms: 10 })
+            let count = self
+                .call_count
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let mode = if count == 0 {
+                "hybrid".to_string()
+            } else {
+                "lexical".to_string()
+            };
+            Ok(TargetResponse {
+                hits: vec![],
+                mode_served: mode,
+                latency_ms: 10,
+            })
         }
     }
 
-    let target = MixedTarget { call_count: std::sync::atomic::AtomicUsize::new(0) };
+    let target = MixedTarget {
+        call_count: std::sync::atomic::AtomicUsize::new(0),
+    };
 
     let cases = vec![
-        GoldCase { q: "q1".to_string(), expect: vec!["a".to_string()], ..Default::default() },
-        GoldCase { q: "q2".to_string(), expect: vec!["b".to_string()], ..Default::default() },
+        GoldCase {
+            q: "q1".to_string(),
+            expect: vec!["a".to_string()],
+            ..Default::default()
+        },
+        GoldCase {
+            q: "q2".to_string(),
+            expect: vec!["b".to_string()],
+            ..Default::default()
+        },
     ];
 
     // With allow_mixed = false -> should abort with ConditionMismatch
-    let opts = EvalOptions { allow_mixed: false, ..Default::default() };
+    let opts = EvalOptions {
+        allow_mixed: false,
+        ..Default::default()
+    };
 
     let err = run_eval(&target, &cases, &opts).await.unwrap_err();
     match err {
         EvalError::ConditionMismatch { expected, observed } => {
             assert_eq!(expected, "hybrid");
             assert_eq!(observed, "lexical");
-        },
+        }
         other => panic!("Expected ConditionMismatch, got {:?}", other),
     }
 
     // With allow_mixed = true -> should succeed
-    let target_ok = MixedTarget { call_count: std::sync::atomic::AtomicUsize::new(0) };
-    let opts_allow = EvalOptions { allow_mixed: true, ..Default::default() };
+    let target_ok = MixedTarget {
+        call_count: std::sync::atomic::AtomicUsize::new(0),
+    };
+    let opts_allow = EvalOptions {
+        allow_mixed: true,
+        ..Default::default()
+    };
     let ok = run_eval(&target_ok, &cases, &opts_allow).await;
     assert!(ok.is_ok());
 }
 
 #[tokio::test]
 async fn missing_mode_is_rejected_even_when_mixed_modes_are_allowed() {
-    let target =
-        MockTarget { name: "unknown-mode".into(), mode: "unknown".into(), return_hits: vec![] };
-    let cases = vec![GoldCase { q: "query".into(), ..Default::default() }];
-    let opts = EvalOptions { allow_mixed: true, ..Default::default() };
+    let target = MockTarget {
+        name: "unknown-mode".into(),
+        mode: "unknown".into(),
+        return_hits: vec![],
+    };
+    let cases = vec![GoldCase {
+        q: "query".into(),
+        ..Default::default()
+    }];
+    let opts = EvalOptions {
+        allow_mixed: true,
+        ..Default::default()
+    };
     assert!(matches!(
         run_eval(&target, &cases, &opts).await,
         Err(EvalError::ConditionMismatch { .. })
@@ -190,7 +240,10 @@ async fn http_target_serializes_get_requests_at_two_qps() {
             let mut request = [0u8; 2048];
             let count = socket.read(&mut request).await.expect("read request");
             sender
-                .send((Instant::now(), String::from_utf8_lossy(&request[..count]).into_owned()))
+                .send((
+                    Instant::now(),
+                    String::from_utf8_lossy(&request[..count]).into_owned(),
+                ))
                 .expect("send observation");
             let body = r#"{"hits":[],"mode_served":"lexical"}"#;
             let response = format!(
@@ -198,7 +251,10 @@ async fn http_target_serializes_get_requests_at_two_qps() {
                  {}\r\nConnection: close\r\n\r\n{body}",
                 body.len()
             );
-            socket.write_all(response.as_bytes()).await.expect("respond");
+            socket
+                .write_all(response.as_bytes())
+                .await
+                .expect("respond");
         }
     });
     let target = aphrody_rag_eval::HttpTarget::new(format!("http://{addr}/search"))
@@ -211,7 +267,11 @@ async fn http_target_serializes_get_requests_at_two_qps() {
     assert!(at_second.duration_since(at_first) >= Duration::from_millis(480));
     assert!(request_first.starts_with("GET /search?"));
     assert!(request_second.starts_with("GET /search?"));
-    assert!(request_first.to_ascii_lowercase().contains("user-agent: aphrody-rag-eval/"));
+    assert!(
+        request_first
+            .to_ascii_lowercase()
+            .contains("user-agent: aphrody-rag-eval/")
+    );
 }
 
 #[tokio::test]
@@ -246,7 +306,10 @@ async fn test_local_index_target_evaluation() {
         .expect("insert chunk");
 
     let emb = embedder.embed_query("pub fn main").await.expect("embed");
-    store.insert_vector(chunk_id, embedder.model_id(), &emb).await.expect("insert vector");
+    store
+        .insert_vector(chunk_id, embedder.model_id(), &emb)
+        .await
+        .expect("insert vector");
 
     let searcher = Arc::new(RagSearcher::new(store).with_embedder(embedder));
     let local_target = LocalIndexTarget::new(searcher).with_mode(SearchMode::Hybrid);
@@ -257,10 +320,15 @@ async fn test_local_index_target_evaluation() {
         ..Default::default()
     }];
 
-    let opts =
-        EvalOptions { limit_k: 5, gates: vec!["recall@1==1.0".to_string()], ..Default::default() };
+    let opts = EvalOptions {
+        limit_k: 5,
+        gates: vec!["recall@1==1.0".to_string()],
+        ..Default::default()
+    };
 
-    let summary = run_eval(&local_target, &cases, &opts).await.expect("eval local target");
+    let summary = run_eval(&local_target, &cases, &opts)
+        .await
+        .expect("eval local target");
 
     assert!(summary.passed_gates);
     assert_eq!(summary.dominant_mode, "hybrid");
@@ -276,7 +344,9 @@ async fn test_http_target_circuit_breaker() {
         net::TcpListener,
     };
 
-    let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind listener");
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind listener");
     let addr = listener.local_addr().expect("local addr");
 
     tokio::spawn(async move {
@@ -294,20 +364,39 @@ async fn test_http_target_circuit_breaker() {
         .with_max_failures(3);
 
     let cases = vec![
-        GoldCase { q: "q1".to_string(), ..Default::default() },
-        GoldCase { q: "q2".to_string(), ..Default::default() },
-        GoldCase { q: "q3".to_string(), ..Default::default() },
-        GoldCase { q: "q4".to_string(), ..Default::default() },
+        GoldCase {
+            q: "q1".to_string(),
+            ..Default::default()
+        },
+        GoldCase {
+            q: "q2".to_string(),
+            ..Default::default()
+        },
+        GoldCase {
+            q: "q3".to_string(),
+            ..Default::default()
+        },
+        GoldCase {
+            q: "q4".to_string(),
+            ..Default::default()
+        },
     ];
 
-    let opts = EvalOptions { allow_mixed: true, ..Default::default() };
+    let opts = EvalOptions {
+        allow_mixed: true,
+        ..Default::default()
+    };
 
     let err = run_eval(&target, &cases, &opts).await.unwrap_err();
     match err {
-        EvalError::CircuitBreaker { consecutive_failures, last_status, .. } => {
+        EvalError::CircuitBreaker {
+            consecutive_failures,
+            last_status,
+            ..
+        } => {
             assert_eq!(consecutive_failures, 3);
             assert_eq!(last_status, 500);
-        },
+        }
         other => panic!("Expected CircuitBreaker error, got {:?}", other),
     }
 }

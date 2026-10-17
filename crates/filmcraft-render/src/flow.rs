@@ -64,7 +64,11 @@ struct Flow {
 
 impl Flow {
     fn zero(w: usize, h: usize) -> Self {
-        Self { w, h, uv: vec![[0.0; 2]; w.saturating_mul(h)] }
+        Self {
+            w,
+            h,
+            uv: vec![[0.0; 2]; w.saturating_mul(h)],
+        }
     }
     #[inline]
     fn at(&self, x: i64, y: i64) -> [f32; 2] {
@@ -78,11 +82,19 @@ impl Flow {
     /// Bilinear sample, clamped at the edges.
     #[inline]
     fn sample(&self, x: f32, y: f32) -> [f32; 2] {
-        let (x, y) = (if x.is_finite() { x } else { 0.0 }, if y.is_finite() { y } else { 0.0 });
+        let (x, y) = (
+            if x.is_finite() { x } else { 0.0 },
+            if y.is_finite() { y } else { 0.0 },
+        );
         let (x0, y0) = (x.floor(), y.floor());
         let (fx, fy) = (x - x0, y - y0);
         let (x0, y0) = (x0 as i64, y0 as i64);
-        let (a, b, c, d) = (self.at(x0, y0), self.at(x0 + 1, y0), self.at(x0, y0 + 1), self.at(x0 + 1, y0 + 1));
+        let (a, b, c, d) = (
+            self.at(x0, y0),
+            self.at(x0 + 1, y0),
+            self.at(x0, y0 + 1),
+            self.at(x0 + 1, y0 + 1),
+        );
         let mut o = [0.0; 2];
         for k in 0..2 {
             let top = a[k] + (b[k] - a[k]) * fx;
@@ -107,7 +119,10 @@ fn g_at(g: &Gray, x: i64, y: i64) -> f32 {
 /// Bilinear luma sample (pixel centres at integers), clamped; non-finite coordinates read the origin.
 #[inline]
 fn g_sample(g: &Gray, x: f32, y: f32) -> f32 {
-    let (x, y) = (if x.is_finite() { x } else { 0.0 }, if y.is_finite() { y } else { 0.0 });
+    let (x, y) = (
+        if x.is_finite() { x } else { 0.0 },
+        if y.is_finite() { y } else { 0.0 },
+    );
     let (x0, y0) = (x.floor(), y.floor());
     let (fx, fy) = (x - x0, y - y0);
     let (x0, y0) = (x0 as i64, y0 as i64);
@@ -121,7 +136,11 @@ fn g_sample(g: &Gray, x: f32, y: f32) -> f32 {
 #[inline]
 fn luma(p: [f32; 4]) -> f32 {
     let l = 0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2];
-    if l.is_finite() { l.clamp(0.0, 16.0).sqrt() } else { 0.0 }
+    if l.is_finite() {
+        l.clamp(0.0, 16.0).sqrt()
+    } else {
+        0.0
+    }
 }
 
 /// Luma of `img` box-reduced by `s` (≥ 1) in each direction.
@@ -168,20 +187,22 @@ fn box_sum<const N: usize>(w: usize, h: usize, src: &[[f32; N]], r: usize) -> Ve
     }
     // horizontal pass: prefix sums per row (f64, so differences of large sums stay exact)
     let mut tmp = vec![[0.0f64; N]; w * h];
-    tmp.par_chunks_mut(w).zip(src.par_chunks(w)).for_each(|(o, s)| {
-        let mut pre = vec![[0.0f64; N]; w + 1];
-        for x in 0..w {
-            for k in 0..N {
-                pre[x + 1][k] = pre[x][k] + s[x][k] as f64;
+    tmp.par_chunks_mut(w)
+        .zip(src.par_chunks(w))
+        .for_each(|(o, s)| {
+            let mut pre = vec![[0.0f64; N]; w + 1];
+            for x in 0..w {
+                for k in 0..N {
+                    pre[x + 1][k] = pre[x][k] + s[x][k] as f64;
+                }
             }
-        }
-        for (x, ox) in o.iter_mut().enumerate() {
-            let (lo, hi) = (x.saturating_sub(r), (x + r + 1).min(w));
-            for k in 0..N {
-                ox[k] = pre[hi][k] - pre[lo][k];
+            for (x, ox) in o.iter_mut().enumerate() {
+                let (lo, hi) = (x.saturating_sub(r), (x + r + 1).min(w));
+                for k in 0..N {
+                    ox[k] = pre[hi][k] - pre[lo][k];
+                }
             }
-        }
-    });
+        });
     // vertical pass: column prefix sums, then one output row per task
     let mut pre = vec![[0.0f64; N]; w * (h + 1)];
     for y in 0..h {
@@ -206,17 +227,28 @@ fn box_sum<const N: usize>(w: usize, h: usize, src: &[[f32; N]], r: usize) -> Ve
 /// Gauss–Newton refinement of `flow` (mapping `a` onto `b`: `a(x) ≈ b(x + u)`) at one level.
 fn refine(a: &Gray, b: &Gray, flow: &mut Flow) {
     let (w, h) = (a.w, a.h);
-    if w == 0 || h == 0 || a.px.len() != w * h || flow.uv.len() != w * h || (flow.w, flow.h) != (w, h) {
+    if w == 0
+        || h == 0
+        || a.px.len() != w * h
+        || flow.uv.len() != w * h
+        || (flow.w, flow.h) != (w, h)
+    {
         return;
     }
     let grad: Vec<[f32; 2]> = (0..w * h)
         .into_par_iter()
         .map(|i| {
             let (x, y) = ((i % w) as i64, (i / w) as i64);
-            [(g_at(a, x + 1, y) - g_at(a, x - 1, y)) * 0.5, (g_at(a, x, y + 1) - g_at(a, x, y - 1)) * 0.5]
+            [
+                (g_at(a, x + 1, y) - g_at(a, x - 1, y)) * 0.5,
+                (g_at(a, x, y + 1) - g_at(a, x, y - 1)) * 0.5,
+            ]
         })
         .collect();
-    let products: Vec<[f32; 3]> = grad.iter().map(|g| [g[0] * g[0], g[0] * g[1], g[1] * g[1]]).collect();
+    let products: Vec<[f32; 3]> = grad
+        .iter()
+        .map(|g| [g[0] * g[0], g[0] * g[1], g[1] * g[1]])
+        .collect();
     let tensor = box_sum(w, h, &products, WIN);
     for _ in 0..ITERS {
         let mismatch: Vec<[f32; 2]> = (0..w * h)
@@ -229,18 +261,21 @@ fn refine(a: &Gray, b: &Gray, flow: &mut Flow) {
             })
             .collect();
         let bsum = box_sum(w, h, &mismatch, WIN);
-        flow.uv.par_iter_mut().zip(tensor.par_iter().zip(bsum.par_iter())).for_each(|(f, (g, bv))| {
-            let (gxx, gxy, gyy) = (g[0] + DAMP, g[1], g[2] + DAMP);
-            let det = gxx * gyy - gxy * gxy;
-            if det > 1e-12 {
-                let dx = -(gyy * bv[0] - gxy * bv[1]) / det;
-                let dy = -(gxx * bv[1] - gxy * bv[0]) / det;
-                if dx.is_finite() && dy.is_finite() {
-                    f[0] += dx.clamp(-MAX_STEP, MAX_STEP);
-                    f[1] += dy.clamp(-MAX_STEP, MAX_STEP);
+        flow.uv
+            .par_iter_mut()
+            .zip(tensor.par_iter().zip(bsum.par_iter()))
+            .for_each(|(f, (g, bv))| {
+                let (gxx, gxy, gyy) = (g[0] + DAMP, g[1], g[2] + DAMP);
+                let det = gxx * gyy - gxy * gxy;
+                if det > 1e-12 {
+                    let dx = -(gyy * bv[0] - gxy * bv[1]) / det;
+                    let dy = -(gxx * bv[1] - gxy * bv[0]) / det;
+                    if dx.is_finite() && dy.is_finite() {
+                        f[0] += dx.clamp(-MAX_STEP, MAX_STEP);
+                        f[1] += dy.clamp(-MAX_STEP, MAX_STEP);
+                    }
                 }
-            }
-        });
+            });
     }
 }
 
@@ -264,11 +299,14 @@ fn prefer_still(a: &Gray, b: &Gray, flow: &mut Flow) {
         .collect();
     let sums = box_sum(w, h, &errs, WIN);
     let slack = ((2 * WIN + 1) * (2 * WIN + 1)) as f32 * NOISE * NOISE * 0.25;
-    flow.uv.par_iter_mut().zip(sums.par_iter()).for_each(|(f, e)| {
-        if e[1] <= e[0] + slack {
-            *f = [0.0; 2];
-        }
-    });
+    flow.uv
+        .par_iter_mut()
+        .zip(sums.par_iter())
+        .for_each(|(f, e)| {
+            if e[1] <= e[0] + slack {
+                *f = [0.0; 2];
+            }
+        });
 }
 
 /// 3×3 median of each flow component (removes isolated outliers, keeps motion edges).
@@ -334,13 +372,20 @@ fn dense_flow(pa: &[Gray], pb: &[Gray]) -> Option<Flow> {
 fn flow_at(a: &Gray, b: &Gray, f01: &Flow, f10: &Flow, t: f32) -> Flow {
     let (w, h) = (a.w, a.h);
     let n = w * h;
-    if n == 0 || [b.px.len(), f01.uv.len(), f10.uv.len(), a.px.len()].iter().any(|&l| l != n) {
+    if n == 0
+        || [b.px.len(), f01.uv.len(), f10.uv.len(), a.px.len()]
+            .iter()
+            .any(|&l| l != n)
+    {
         return Flow::zero(w, h);
     }
     let mut best = vec![f32::INFINITY; n];
     let mut out = vec![[0.0f32; 2]; n];
     // frame 0 moves forward by t·u01, frame 1 backward by (1−t)·u10 (= forward flow −u10)
-    for (src, dst, f, back, tt, sign) in [(a, b, f01, f10, t, 1.0f32), (b, a, f10, f01, 1.0 - t, -1.0f32)] {
+    for (src, dst, f, back, tt, sign) in [
+        (a, b, f01, f10, t, 1.0f32),
+        (b, a, f10, f01, 1.0 - t, -1.0f32),
+    ] {
         for y in 0..h {
             for x in 0..w {
                 let i = y * w + x;
@@ -348,7 +393,9 @@ fn flow_at(a: &Gray, b: &Gray, f01: &Flow, f10: &Flow, t: f32) -> Flow {
                 let (qx, qy) = (x as f32 + u[0], y as f32 + u[1]);
                 let photo = (src.px[i] - g_sample(dst, qx, qy)).abs();
                 let r = back.sample(qx, qy);
-                let fb = ((u[0] + r[0]).powi(2) + (u[1] + r[1]).powi(2)).sqrt().min(100.0);
+                let fb = ((u[0] + r[0]).powi(2) + (u[1] + r[1]).powi(2))
+                    .sqrt()
+                    .min(100.0);
                 let score = photo + FB_WEIGHT * fb;
                 if !score.is_finite() {
                     continue;
@@ -383,7 +430,16 @@ fn flow_at(a: &Gray, b: &Gray, f01: &Flow, f10: &Flow, t: f32) -> Flow {
                     continue;
                 }
                 let (mut sum, mut k) = ([0.0f32; 2], 0u32);
-                for (dx, dy) in [(-1i64, -1i64), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+                for (dx, dy) in [
+                    (-1i64, -1i64),
+                    (0, -1),
+                    (1, -1),
+                    (-1, 0),
+                    (1, 0),
+                    (-1, 1),
+                    (0, 1),
+                    (1, 1),
+                ] {
                     let (nx, ny) = (x as i64 + dx, y as i64 + dy);
                     if nx < 0 || ny < 0 || nx >= w as i64 || ny >= h as i64 {
                         continue;
@@ -417,7 +473,11 @@ fn agree(d: f32) -> f32 {
 /// The frame between `a` (time 0) and `b` (time 1) at `t` (0..1), motion compensated. Frames of
 /// different sizes (or empty ones) fall back to the plain cross-fade.
 pub fn interpolate(a: &Image, b: &Image, t: f32) -> Image {
-    let t = if t.is_finite() { t.clamp(0.0, 1.0) } else { 0.0 };
+    let t = if t.is_finite() {
+        t.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let n = a.w.saturating_mul(a.h).saturating_mul(4);
     if (a.w, a.h) != (b.w, b.h) || a.w == 0 || a.h == 0 || a.px.len() != n || b.px.len() != n {
         return a.clone().lerp(b, t);
@@ -430,43 +490,63 @@ pub fn interpolate(a: &Image, b: &Image, t: f32) -> Image {
     }
     let s = a.w.div_ceil(WORK_W).max(1);
     let (pa, pb) = (pyramid(work_luma(a, s)), pyramid(work_luma(b, s)));
-    let (Some(ga), Some(gb), Some(f01), Some(f10)) = (pa.first(), pb.first(), dense_flow(&pa, &pb), dense_flow(&pb, &pa)) else {
+    let (Some(ga), Some(gb), Some(f01), Some(f10)) = (
+        pa.first(),
+        pb.first(),
+        dense_flow(&pa, &pb),
+        dense_flow(&pb, &pa),
+    ) else {
         return a.clone().lerp(b, t);
     };
     let ft = flow_at(ga, gb, &f01, &f10, t);
     let sf = s as f32;
     let to_work = |v: f32| v / sf - 0.5;
     let mut out = Image::new(a.w, a.h);
-    out.px.par_chunks_mut(a.w * 4).enumerate().for_each(|(y, row)| {
-        for (x, o) in row.as_chunks_mut::<4>().0.iter_mut().enumerate() {
-            let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
-            let u = ft.sample(to_work(px), to_work(py));
-            let (ux, uy) = (u[0] * sf, u[1] * sf);
-            let (x0, y0) = (px - t * ux, py - t * uy);
-            let (x1, y1) = (px + (1.0 - t) * ux, py + (1.0 - t) * uy);
-            // does the fetched pixel itself move along this trajectory?
-            let ua = f01.sample(to_work(x0), to_work(y0));
-            let ub = f10.sample(to_work(x1), to_work(y1));
-            let ka = agree(((ua[0] - u[0]).powi(2) + (ua[1] - u[1]).powi(2)).sqrt());
-            let kb = agree(((ub[0] + u[0]).powi(2) + (ub[1] + u[1]).powi(2)).sqrt());
-            let (wa, wb) = ((1.0 - t) * ka, t * kb);
-            let ca = a.sample_bilinear_clamped(x0, y0);
-            let cb = b.sample_bilinear_clamped(x1, y1);
-            let i = (y * a.w + x) * 4;
-            let (Some(pa), Some(pb)) = (a.px.get(i..i + 4), b.px.get(i..i + 4)) else { continue };
-            let sum = wa + wb;
-            // a pixel that looks the same in both frames needs no motion compensation (static
-            // content, flat interiors): the cross-fade is right there and immune to flow errors
-            let changed = (luma([pa[0], pa[1], pa[2], 0.0]) - luma([pb[0], pb[1], pb[2], 0.0])).abs().max((pa[3] - pb[3]).abs());
-            let changed = if changed.is_finite() { ((changed - STILL_LUMA) / STILL_LUMA).clamp(0.0, 1.0) } else { 0.0 };
-            let conf = ka.max(kb) * changed;
-            for k in 0..4 {
-                let warped = if sum > 1e-6 { (ca[k] * wa + cb[k] * wb) / sum } else { ca[k] * (1.0 - t) + cb[k] * t };
-                let plain = pa[k] + (pb[k] - pa[k]) * t;
-                o[k] = plain + (warped - plain) * conf;
+    out.px
+        .par_chunks_mut(a.w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for (x, o) in row.as_chunks_mut::<4>().0.iter_mut().enumerate() {
+                let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
+                let u = ft.sample(to_work(px), to_work(py));
+                let (ux, uy) = (u[0] * sf, u[1] * sf);
+                let (x0, y0) = (px - t * ux, py - t * uy);
+                let (x1, y1) = (px + (1.0 - t) * ux, py + (1.0 - t) * uy);
+                // does the fetched pixel itself move along this trajectory?
+                let ua = f01.sample(to_work(x0), to_work(y0));
+                let ub = f10.sample(to_work(x1), to_work(y1));
+                let ka = agree(((ua[0] - u[0]).powi(2) + (ua[1] - u[1]).powi(2)).sqrt());
+                let kb = agree(((ub[0] + u[0]).powi(2) + (ub[1] + u[1]).powi(2)).sqrt());
+                let (wa, wb) = ((1.0 - t) * ka, t * kb);
+                let ca = a.sample_bilinear_clamped(x0, y0);
+                let cb = b.sample_bilinear_clamped(x1, y1);
+                let i = (y * a.w + x) * 4;
+                let (Some(pa), Some(pb)) = (a.px.get(i..i + 4), b.px.get(i..i + 4)) else {
+                    continue;
+                };
+                let sum = wa + wb;
+                // a pixel that looks the same in both frames needs no motion compensation (static
+                // content, flat interiors): the cross-fade is right there and immune to flow errors
+                let changed = (luma([pa[0], pa[1], pa[2], 0.0]) - luma([pb[0], pb[1], pb[2], 0.0]))
+                    .abs()
+                    .max((pa[3] - pb[3]).abs());
+                let changed = if changed.is_finite() {
+                    ((changed - STILL_LUMA) / STILL_LUMA).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
+                let conf = ka.max(kb) * changed;
+                for k in 0..4 {
+                    let warped = if sum > 1e-6 {
+                        (ca[k] * wa + cb[k] * wb) / sum
+                    } else {
+                        ca[k] * (1.0 - t) + cb[k] * t
+                    };
+                    let plain = pa[k] + (pb[k] - pa[k]) * t;
+                    o[k] = plain + (warped - plain) * conf;
+                }
             }
-        }
-    });
+        });
     out
 }
 
@@ -480,7 +560,10 @@ mod tests {
         for y in 0..h {
             for x in 0..w {
                 let (u, v) = (x as f32 + 0.5 - dx, y as f32 + 0.5 - dy);
-                let l = 0.35 + 0.15 * (u * 0.21).sin() * (v * 0.17).cos() + 0.1 * ((u + v) * 0.11).sin() + 0.05 * (u * 0.53 - v * 0.31).cos();
+                let l = 0.35
+                    + 0.15 * (u * 0.21).sin() * (v * 0.17).cos()
+                    + 0.1 * ((u + v) * 0.11).sin()
+                    + 0.05 * (u * 0.53 - v * 0.31).cos();
                 let i = (y * w + x) * 4;
                 img.px[i..i + 4].copy_from_slice(&[l, l * 0.9, l * 0.8, 1.0]);
             }
@@ -519,9 +602,18 @@ mod tests {
         let want = texture(160, 96, 3.0, -1.5);
         let flow = interpolate(&a, &b, 0.5);
         let blend = a.clone().lerp(&b, 0.5);
-        let (e_flow, e_blend) = (interior_diff(&flow, &want, 12), interior_diff(&blend, &want, 12));
-        assert!(e_flow < 0.006, "optical flow off the half-way picture: {e_flow}");
-        assert!(e_flow * 5.0 < e_blend, "optical flow {e_flow} should beat frame blending {e_blend}");
+        let (e_flow, e_blend) = (
+            interior_diff(&flow, &want, 12),
+            interior_diff(&blend, &want, 12),
+        );
+        assert!(
+            e_flow < 0.006,
+            "optical flow off the half-way picture: {e_flow}"
+        );
+        assert!(
+            e_flow * 5.0 < e_blend,
+            "optical flow {e_flow} should beat frame blending {e_blend}"
+        );
     }
 
     #[test]
@@ -542,11 +634,20 @@ mod tests {
         // the leading and trailing bands are where blending leaves ghosts
         for x in [42usize, 71] {
             let (f, bl, w) = (flow.get(x, 48)[0], blend.get(x, 48)[0], want.get(x, 48)[0]);
-            assert!((f - w).abs() < 0.1, "x={x}: flow {f}, want {w} (blend {bl})");
+            assert!(
+                (f - w).abs() < 0.1,
+                "x={x}: flow {f}, want {w} (blend {bl})"
+            );
             assert!((bl - w).abs() > 0.3, "x={x}: the blend should ghost here");
         }
-        assert!(flow.get(57, 48)[0] > 0.95, "the square's centre stays solid");
-        let (e_flow, e_blend) = (interior_diff(&flow, &want, 4), interior_diff(&blend, &want, 4));
+        assert!(
+            flow.get(57, 48)[0] > 0.95,
+            "the square's centre stays solid"
+        );
+        let (e_flow, e_blend) = (
+            interior_diff(&flow, &want, 4),
+            interior_diff(&blend, &want, 4),
+        );
         assert!(e_flow * 4.0 < e_blend, "flow {e_flow} vs blend {e_blend}");
     }
 
@@ -569,7 +670,11 @@ mod tests {
         }
         let mut b = a.clone();
         for (k, i) in (0..w * h).step_by(97).enumerate() {
-            let lit = if k % 2 == 0 { [0.6, 0.45, 0.1, 1.0] } else { [0.004, 0.004, 0.006, 1.0] };
+            let lit = if k % 2 == 0 {
+                [0.6, 0.45, 0.1, 1.0]
+            } else {
+                [0.004, 0.004, 0.006, 1.0]
+            };
             b.px[i * 4..i * 4 + 4].copy_from_slice(&lit);
         }
         let flow = interpolate(&a, &b, 0.5);
@@ -603,7 +708,11 @@ mod tests {
         let empty = Image::new(0, 0);
         assert_eq!(interpolate(&empty, &empty, 0.5).px.len(), 0);
         // a pixel buffer that does not match its size
-        let broken = Image { w: 32, h: 24, px: vec![0.0; 7] };
+        let broken = Image {
+            w: 32,
+            h: 24,
+            px: vec![0.0; 7],
+        };
         assert_eq!(interpolate(&broken, &a, 0.5).w, 32);
         // end points and non-finite weights
         assert_eq!(interpolate(&a, &small.clone(), f32::NAN).w, 32);

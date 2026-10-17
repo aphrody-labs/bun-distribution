@@ -122,15 +122,16 @@ impl Controller {
             0 => {
                 let is_first = !self.power_hold;
                 self.power_hold = self.control.hold();
-                self.power.handle_byte(value, is_first, arm7_schedule, emu_schedule)
-            },
+                self.power
+                    .handle_byte(value, is_first, arm7_schedule, emu_schedule)
+            }
 
             1 => {
                 let is_first = !self.firmware_hold;
                 self.firmware_hold = self.control.hold();
                 let is_last = !self.firmware_hold;
                 self.firmware.handle_byte(value, is_first, is_last)
-            },
+            }
 
             2 => {
                 let is_first = !self.touchscreen_hold;
@@ -142,7 +143,7 @@ impl Controller {
                     &self.power,
                     input_status,
                 )
-            },
+            }
 
             _ => {
                 // TODO: What's actually supposed to happen?
@@ -154,7 +155,7 @@ impl Controller {
                     if self.control.hold() { "(hold)" } else { "" },
                 );
                 0
-            },
+            }
         };
         // 8 bits at (8 << baud rate) cycles per bit
         let end_time = arm7_schedule.cur_time() + arm7::Timestamp(64 << self.control.baud_rate());

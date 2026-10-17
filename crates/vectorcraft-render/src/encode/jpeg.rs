@@ -43,7 +43,10 @@ impl ColorModel {
     /// By id or label, ignoring case (`grey` and `grayscale` are grey too).
     pub fn from_id(s: &str) -> Option<Self> {
         let s = s.to_ascii_lowercase();
-        Self::ALL.into_iter().find(|m| m.id() == s || m.label().eq_ignore_ascii_case(&s)).or_else(|| (s == "grey").then_some(ColorModel::Gray))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.id() == s || m.label().eq_ignore_ascii_case(&s))
+            .or_else(|| (s == "grey").then_some(ColorModel::Gray))
     }
 
     /// Bytes per pixel of the pixels [`encode`] takes.
@@ -97,7 +100,9 @@ impl Method {
     }
 
     pub fn from_id(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|m| m.id().eq_ignore_ascii_case(s) || m.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.id().eq_ignore_ascii_case(s) || m.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -117,16 +122,30 @@ pub struct JpegOptions {
 
 impl Default for JpegOptions {
     fn default() -> Self {
-        Self { color_model: ColorModel::Rgb, method: Method::Baseline, scans: 3, embed_icc: true }
+        Self {
+            color_model: ColorModel::Rgb,
+            method: Method::Baseline,
+            scans: 3,
+            embed_icc: true,
+        }
     }
 }
 
 /// Encode `px` (`o.color_model`'s channels per pixel: RGB, CMYK ink amounts with 0 = no ink, or
 /// grey) at `quality` 0–100, with the resolution `ppi` (if any) in the JFIF header.
-pub fn encode(px: &[u8], width: u32, height: u32, quality: u8, ppi: Option<f64>, o: &JpegOptions) -> Result<Vec<u8>, String> {
+pub fn encode(
+    px: &[u8],
+    width: u32,
+    height: u32,
+    quality: u8,
+    ppi: Option<f64>,
+    o: &JpegOptions,
+) -> Result<Vec<u8>, String> {
     let fail = |e: jpeg_encoder::EncodingError| format!("JPEG encoding failed: {e}");
     let (Ok(w), Ok(h)) = (u16::try_from(width), u16::try_from(height)) else {
-        return Err(format!("{width} × {height} pixels is too large for JPEG (at most 65535 pixels a side): lower the resolution"));
+        return Err(format!(
+            "{width} × {height} pixels is too large for JPEG (at most 65535 pixels a side): lower the resolution"
+        ));
     };
     if px.len() as u64 != u64::from(width) * u64::from(height) * o.color_model.channels() as u64 {
         return Err("JPEG encoding failed: pixel buffer doesn't match the image size".into());
@@ -146,7 +165,8 @@ pub fn encode(px: &[u8], width: u32, height: u32, quality: u8, ppi: Option<f64>,
         }
     }
     if o.embed_icc {
-        let icc = cms::icc_bytes(&o.color_model.profile()).map_err(|e| format!("JPEG colour profile: {e}"))?;
+        let icc = cms::icc_bytes(&o.color_model.profile())
+            .map_err(|e| format!("JPEG colour profile: {e}"))?;
         enc.add_icc_profile(&icc).map_err(fail)?;
     }
     let ty = match o.color_model {
@@ -177,7 +197,8 @@ pub(crate) fn screen_pixels(img: &Rendered, gray: bool) -> Vec<u8> {
 pub(crate) fn to_gray() -> impl Fn([u8; 3]) -> u8 {
     let linear: [f32; 256] = std::array::from_fn(|v| lab::srgb_to_linear(v as f32 / 255.0));
     move |[r, g, b]| {
-        let y = 0.2126 * linear[r as usize] + 0.7152 * linear[g as usize] + 0.0722 * linear[b as usize];
+        let y =
+            0.2126 * linear[r as usize] + 0.7152 * linear[g as usize] + 0.0722 * linear[b as usize];
         (lab::linear_to_srgb(y).clamp(0.0, 1.0) * 255.0).round() as u8
     }
 }
@@ -192,9 +213,10 @@ pub(crate) fn separated(img: &Rendered) -> Vec<u8> {
         .0
         .iter()
         .flat_map(|p| {
-            *seen
-                .entry(*p)
-                .or_insert_with(|| cms.srgb_to_cmyk(p.map(|v| v as f32 / 255.0), intent).map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8))
+            *seen.entry(*p).or_insert_with(|| {
+                cms.srgb_to_cmyk(p.map(|v| v as f32 / 255.0), intent)
+                    .map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)
+            })
         })
         .collect()
 }

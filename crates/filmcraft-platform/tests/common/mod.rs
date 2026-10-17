@@ -82,7 +82,12 @@ pub fn dir() -> PathBuf {
 pub fn fixture(ff: &Path, name: &str, args: &[&str]) -> Option<PathBuf> {
     let out = dir().join(name);
     filmcraft_testkit::fixtures::generate(&out, |tmp| {
-        let st = Command::new(ff).args(["-y", "-v", "error"]).args(args).arg(tmp).stdin(Stdio::null()).status();
+        let st = Command::new(ff)
+            .args(["-y", "-v", "error"])
+            .args(args)
+            .arg(tmp)
+            .stdin(Stdio::null())
+            .status();
         match st {
             Ok(s) if s.success() => true,
             other => {
@@ -109,17 +114,33 @@ pub struct Stream {
 pub fn read_stream(path: &Path) -> Stream {
     let bytes = std::fs::read(path).unwrap();
     let file = filmcraft_isobmff::open(bytes.clone()).unwrap();
-    let t = file.track_of_kind(filmcraft_isobmff::TrackKind::Video).unwrap();
+    let t = file
+        .track_of_kind(filmcraft_isobmff::TrackKind::Video)
+        .unwrap();
     let track = &file.tracks[t];
-    let samples = (0..track.samples.len()).map(|i| (file.read_sample(&bytes, t, i).unwrap(), track.samples[i].pts)).collect();
-    Stream { entry: track.entries[0].clone(), samples, sync: track.samples.iter().map(|s| s.is_sync).collect() }
+    let samples = (0..track.samples.len())
+        .map(|i| {
+            (
+                file.read_sample(&bytes, t, i).unwrap(),
+                track.samples[i].pts,
+            )
+        })
+        .collect();
+    Stream {
+        entry: track.entries[0].clone(),
+        samples,
+        sync: track.samples.iter().map(|s| s.is_sync).collect(),
+    }
 }
 
 /// Feed `samples` then flush.
 pub fn decode_all(d: &mut dyn VideoDecoder, samples: &[(Vec<u8>, i64)]) -> Vec<DecodedFrame> {
     let mut out = Vec::new();
     for (s, p) in samples {
-        out.extend(d.decode(s, *p).unwrap_or_else(|e| panic!("{}: {e}", d.name())));
+        out.extend(
+            d.decode(s, *p)
+                .unwrap_or_else(|e| panic!("{}: {e}", d.name())),
+        );
     }
     out.extend(d.flush());
     out
@@ -133,18 +154,57 @@ pub fn assert_same(what: &str, a: &[DecodedFrame], b: &[DecodedFrame]) {
     assert_eq!(pa, pb, "{what}: pts sequence");
     for (x, y) in a.iter().zip(b) {
         let (fx, fy) = (&x.frame, &y.frame);
-        assert_eq!((fx.width, fx.height, fx.par, fx.color), (fy.width, fy.height, fy.par, fy.color), "{what}: pts {} geometry / colour", x.pts);
+        assert_eq!(
+            (fx.width, fx.height, fx.par, fx.color),
+            (fy.width, fy.height, fy.par, fy.color),
+            "{what}: pts {} geometry / colour",
+            x.pts
+        );
         match (&fx.data, &fy.data) {
-            (PixelData::Yuv8 { planes: p, chroma: c, .. }, PixelData::Yuv8 { planes: q, chroma: d, .. }) => {
+            (
+                PixelData::Yuv8 {
+                    planes: p,
+                    chroma: c,
+                    ..
+                },
+                PixelData::Yuv8 {
+                    planes: q,
+                    chroma: d,
+                    ..
+                },
+            ) => {
                 assert_eq!(c, d, "{what}: chroma");
                 for i in 0..3 {
-                    assert!(p[i] == q[i], "{what}: pts {} plane {i} differs (max diff {})", x.pts, max_diff8(&p[i], &q[i]));
+                    assert!(
+                        p[i] == q[i],
+                        "{what}: pts {} plane {i} differs (max diff {})",
+                        x.pts,
+                        max_diff8(&p[i], &q[i])
+                    );
                 }
             }
-            (PixelData::Yuv16 { planes: p, chroma: c, bits: bx, .. }, PixelData::Yuv16 { planes: q, chroma: d, bits: by, .. }) => {
+            (
+                PixelData::Yuv16 {
+                    planes: p,
+                    chroma: c,
+                    bits: bx,
+                    ..
+                },
+                PixelData::Yuv16 {
+                    planes: q,
+                    chroma: d,
+                    bits: by,
+                    ..
+                },
+            ) => {
                 assert_eq!((c, bx), (d, by), "{what}: chroma / bits");
                 for i in 0..3 {
-                    assert!(p[i] == q[i], "{what}: pts {} plane {i} differs (max diff {})", x.pts, max_diff16(&p[i], &q[i]));
+                    assert!(
+                        p[i] == q[i],
+                        "{what}: pts {} plane {i} differs (max diff {})",
+                        x.pts,
+                        max_diff16(&p[i], &q[i])
+                    );
                 }
             }
             _ => panic!("{what}: pts {}: pixel formats differ", x.pts),
@@ -156,14 +216,24 @@ fn max_diff8(a: &[u8], b: &[u8]) -> String {
     if a.len() != b.len() {
         return format!("sizes {} vs {}", a.len(), b.len());
     }
-    a.iter().zip(b).map(|(x, y)| x.abs_diff(*y)).max().unwrap_or(0).to_string()
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| x.abs_diff(*y))
+        .max()
+        .unwrap_or(0)
+        .to_string()
 }
 
 fn max_diff16(a: &[u16], b: &[u16]) -> String {
     if a.len() != b.len() {
         return format!("sizes {} vs {}", a.len(), b.len());
     }
-    a.iter().zip(b).map(|(x, y)| x.abs_diff(*y)).max().unwrap_or(0).to_string()
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| x.abs_diff(*y))
+        .max()
+        .unwrap_or(0)
+        .to_string()
 }
 
 pub fn xorshift(seed: &mut u64) -> u64 {

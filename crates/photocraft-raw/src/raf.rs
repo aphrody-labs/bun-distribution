@@ -88,14 +88,22 @@ pub(crate) fn preview_range(bytes: &[u8]) -> Option<(usize, usize)> {
 /// The metadata directory's records as (tag, data).
 fn records(bytes: &[u8]) -> Vec<(u16, &[u8])> {
     let mut out = Vec::new();
-    let (Some(at), Some(len)) = (be32(bytes, 92), be32(bytes, 96)) else { return out };
-    let Some(dir) = at.checked_add(len).and_then(|end| bytes.get(at..end)) else { return out };
+    let (Some(at), Some(len)) = (be32(bytes, 92), be32(bytes, 96)) else {
+        return out;
+    };
+    let Some(dir) = at.checked_add(len).and_then(|end| bytes.get(at..end)) else {
+        return out;
+    };
     let n = be32(dir, 0).unwrap_or(0).min(MAX_RECORDS);
     let mut p = 4usize;
     for _ in 0..n {
-        let (Some(tag), Some(size)) = (be16(dir, p), be16(dir, p + 2)) else { break };
+        let (Some(tag), Some(size)) = (be16(dir, p), be16(dir, p + 2)) else {
+            break;
+        };
         let start = p + 4;
-        let Some(data) = dir.get(start..start + usize::from(size)) else { break };
+        let Some(data) = dir.get(start..start + usize::from(size)) else {
+            break;
+        };
         out.push((tag, data));
         p = start + usize::from(size);
     }
@@ -115,12 +123,32 @@ fn pair(recs: &[(u16, &[u8])], tag: u16) -> Option<(usize, usize)> {
 /// The CFA from XTransLayout (6×6) or FujiLayout (2×2), both stored reversed.
 fn layout_cfa(recs: &[(u16, &[u8])]) -> Option<Cfa> {
     if let Some(d) = record(recs, XTRANS_LAYOUT).filter(|d| d.len() == 36) {
-        let colors = d.iter().rev().map(|&c| (c <= 2).then_some(c)).collect::<Option<Vec<u8>>>()?;
-        return Some(Cfa { width: 6, height: 6, colors, origin_x: 0, origin_y: 0 });
+        let colors = d
+            .iter()
+            .rev()
+            .map(|&c| (c <= 2).then_some(c))
+            .collect::<Option<Vec<u8>>>()?;
+        return Some(Cfa {
+            width: 6,
+            height: 6,
+            colors,
+            origin_x: 0,
+            origin_y: 0,
+        });
     }
     let d = record(recs, FUJI_LAYOUT).filter(|d| d.len() == 4)?;
-    let colors: Vec<u8> = d.iter().rev().map(|&c| if c & 3 == 3 { 1 } else { c & 3 }).collect();
-    let cfa = Cfa { width: 2, height: 2, colors, origin_x: 0, origin_y: 0 };
+    let colors: Vec<u8> = d
+        .iter()
+        .rev()
+        .map(|&c| if c & 3 == 3 { 1 } else { c & 3 })
+        .collect();
+    let cfa = Cfa {
+        width: 2,
+        height: 2,
+        colors,
+        origin_x: 0,
+        origin_y: 0,
+    };
     cfa.is_bayer().then_some(cfa)
 }
 
@@ -144,7 +172,9 @@ fn packed_sample(src: &[u8], i: usize, bits: u32, packing: Packing) -> u16 {
     let mask = (1u32 << bits.min(16)) - 1;
     match packing {
         Packing::LsbFirst => {
-            let w = (0..4).fold(0u32, |w, k| w | u32::from(src.get(byte + k).copied().unwrap_or(0)) << (8 * k));
+            let w = (0..4).fold(0u32, |w, k| {
+                w | u32::from(src.get(byte + k).copied().unwrap_or(0)) << (8 * k)
+            });
             ((w >> shift) & mask) as u16
         }
         Packing::Words32MsbFirst => {
@@ -154,14 +184,27 @@ fn packed_sample(src: &[u8], i: usize, bits: u32, packing: Packing) -> u16 {
             ((w >> (32 - shift - bits.min(16))) & mask) as u16
         }
         Packing::U16 { le } => {
-            let b = [src.get(2 * i).copied().unwrap_or(0), src.get(2 * i + 1).copied().unwrap_or(0)];
-            if le { u16::from_le_bytes(b) } else { u16::from_be_bytes(b) }
+            let b = [
+                src.get(2 * i).copied().unwrap_or(0),
+                src.get(2 * i + 1).copied().unwrap_or(0),
+            ];
+            if le {
+                u16::from_le_bytes(b)
+            } else {
+                u16::from_be_bytes(b)
+            }
         }
     }
 }
 
 /// Unpacks a `width × height` strip.
-pub(crate) fn unpack(src: &[u8], width: usize, height: usize, bits: u32, packing: Packing) -> Vec<u16> {
+pub(crate) fn unpack(
+    src: &[u8],
+    width: usize,
+    height: usize,
+    bits: u32,
+    packing: Packing,
+) -> Vec<u16> {
     let mut data = vec![0u16; width * height];
     let band = par::band_rows(width);
     par::chunks_mut(&mut data, band * width, |b, chunk| {
@@ -176,15 +219,30 @@ pub(crate) fn unpack(src: &[u8], width: usize, height: usize, bits: u32, packing
 /// Orientation, make and model from the preview JPEG's EXIF (APP1) block.
 fn preview_exif(bytes: &[u8]) -> (Option<u16>, Option<String>, Option<String>) {
     let none = (None, None, None);
-    let Some((off, len)) = preview_range(bytes) else { return none };
-    let Some(jpeg) = off.checked_add(len).and_then(|end| bytes.get(off..end)) else { return none };
+    let Some((off, len)) = preview_range(bytes) else {
+        return none;
+    };
+    let Some(jpeg) = off.checked_add(len).and_then(|end| bytes.get(off..end)) else {
+        return none;
+    };
     if jpeg.get(0..4) != Some(&[0xFF, 0xD8, 0xFF, 0xE1]) || jpeg.get(6..12) != Some(b"Exif\0\0") {
         return none;
     }
-    let Some(t) = jpeg.get(12..).and_then(Tiff::new) else { return none };
-    let Some(ifd0) = t.ifd_at(t.first_ifd, 0) else { return none };
-    let orientation = t.tag_uint(&ifd0, tag::ORIENTATION).and_then(|o| u16::try_from(o).ok()).filter(|o| (1..=8).contains(o));
-    (orientation, t.tag_ascii(&ifd0, tag::MAKE), t.tag_ascii(&ifd0, tag::MODEL))
+    let Some(t) = jpeg.get(12..).and_then(Tiff::new) else {
+        return none;
+    };
+    let Some(ifd0) = t.ifd_at(t.first_ifd, 0) else {
+        return none;
+    };
+    let orientation = t
+        .tag_uint(&ifd0, tag::ORIENTATION)
+        .and_then(|o| u16::try_from(o).ok())
+        .filter(|o| (1..=8).contains(o));
+    (
+        orientation,
+        t.tag_ascii(&ifd0, tag::MAKE),
+        t.tag_ascii(&ifd0, tag::MODEL),
+    )
 }
 
 /// The model name in the RAF header (bytes 28..60).
@@ -198,26 +256,54 @@ fn header_model(bytes: &[u8]) -> Option<String> {
 pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Sensor> {
     let cfa_at = be32(bytes, 100).ok_or_else(|| RawError::malformed("RAF header is truncated"))?;
     let cfa_len = be32(bytes, 104).unwrap_or(0);
-    let region = bytes.get(cfa_at..).ok_or_else(|| RawError::malformed("RAF CFA region lies outside the file"))?;
-    let region = if cfa_len > 0 { region.get(..cfa_len).unwrap_or(region) } else { region };
-    let Some(t) = Tiff::new(region) else {
-        return Err(RawError::unsupported("Fujifilm RAF of an early FinePix / SuperCCD body (no CFA TIFF) is not decoded yet"));
+    let region = bytes
+        .get(cfa_at..)
+        .ok_or_else(|| RawError::malformed("RAF CFA region lies outside the file"))?;
+    let region = if cfa_len > 0 {
+        region.get(..cfa_len).unwrap_or(region)
+    } else {
+        region
     };
-    let ifd0 = t.ifd_at(t.first_ifd, 0).ok_or_else(|| RawError::malformed("RAF CFA TIFF has no IFD0"))?;
-    let fuji_at = t.tag_uint(&ifd0, FUJI_IFD).ok_or_else(|| RawError::unsupported("RAF without a Fuji raw IFD"))?;
-    let fuji = t.ifd_at(fuji_at as usize, 0).ok_or_else(|| RawError::malformed("RAF Fuji raw IFD is unreadable"))?;
+    let Some(t) = Tiff::new(region) else {
+        return Err(RawError::unsupported(
+            "Fujifilm RAF of an early FinePix / SuperCCD body (no CFA TIFF) is not decoded yet",
+        ));
+    };
+    let ifd0 = t
+        .ifd_at(t.first_ifd, 0)
+        .ok_or_else(|| RawError::malformed("RAF CFA TIFF has no IFD0"))?;
+    let fuji_at = t
+        .tag_uint(&ifd0, FUJI_IFD)
+        .ok_or_else(|| RawError::unsupported("RAF without a Fuji raw IFD"))?;
+    let fuji = t
+        .ifd_at(fuji_at as usize, 0)
+        .ok_or_else(|| RawError::malformed("RAF Fuji raw IFD is unreadable"))?;
 
-    let width = t.tag_uint(&fuji, RAW_WIDTH).ok_or_else(|| RawError::malformed("RAF has no raw width"))? as usize;
-    let height = t.tag_uint(&fuji, RAW_HEIGHT).ok_or_else(|| RawError::malformed("RAF has no raw height"))? as usize;
+    let width = t
+        .tag_uint(&fuji, RAW_WIDTH)
+        .ok_or_else(|| RawError::malformed("RAF has no raw width"))? as usize;
+    let height = t
+        .tag_uint(&fuji, RAW_HEIGHT)
+        .ok_or_else(|| RawError::malformed("RAF has no raw height"))? as usize;
     let bits = t.tag_uint(&fuji, RAW_BITS).unwrap_or(14);
     if !(8..=16).contains(&bits) {
-        return Err(RawError::unsupported(format!("RAF with {bits}-bit samples")));
+        return Err(RawError::unsupported(format!(
+            "RAF with {bits}-bit samples"
+        )));
     }
     limits.check(width as u64, height as u64, 2)?;
-    let offset = t.tag_uint(&fuji, STRIP_OFFSET).ok_or_else(|| RawError::malformed("RAF has no strip offset"))? as usize;
+    let offset = t
+        .tag_uint(&fuji, STRIP_OFFSET)
+        .ok_or_else(|| RawError::malformed("RAF has no strip offset"))? as usize;
     let count = t.tag_uint(&fuji, STRIP_BYTE_COUNT).unwrap_or(0) as usize;
-    let src = region.get(offset..).ok_or_else(|| RawError::malformed("RAF raw data lies outside the file"))?;
-    let src = if count > 0 { src.get(..count).unwrap_or(src) } else { src };
+    let src = region
+        .get(offset..)
+        .ok_or_else(|| RawError::malformed("RAF raw data lies outside the file"))?;
+    let src = if count > 0 {
+        src.get(..count).unwrap_or(src)
+    } else {
+        src
+    };
     let pixels = width * height;
     let packed = pixels.saturating_mul(bits as usize).div_ceil(8);
     let packing = if count >= pixels * 2 {
@@ -227,18 +313,27 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Sensor> {
     } else if count >= packed && bits == 14 {
         Packing::Words32MsbFirst
     } else if count >= packed {
-        return Err(RawError::unsupported(format!("Fujifilm RAF with packed {bits}-bit samples")));
+        return Err(RawError::unsupported(format!(
+            "Fujifilm RAF with packed {bits}-bit samples"
+        )));
     } else {
-        return Err(RawError::unsupported("Fujifilm compressed RAF is not decoded (no public description of the format)"));
+        return Err(RawError::unsupported(
+            "Fujifilm compressed RAF is not decoded (no public description of the format)",
+        ));
     };
-    let need = if matches!(packing, Packing::U16 { .. }) { pixels * 2 } else { packed };
+    let need = if matches!(packing, Packing::U16 { .. }) {
+        pixels * 2
+    } else {
+        packed
+    };
     if src.len() < need {
         return Err(RawError::malformed("RAF raw data is truncated"));
     }
     let data = unpack(src, width, height, bits, packing);
 
     let recs = records(bytes);
-    let cfa = layout_cfa(&recs).ok_or_else(|| RawError::unsupported("Fujifilm RAF without a recognised CFA layout"))?;
+    let cfa = layout_cfa(&recs)
+        .ok_or_else(|| RawError::unsupported("Fujifilm RAF without a recognised CFA layout"))?;
     let full = Rect::new(0, 0, width, height);
     let mut warnings = Vec::new();
 
@@ -256,9 +351,13 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Sensor> {
     let camera_wb = match t.tag_floats(&fuji, WB_GRB_LEVELS).as_slice() {
         [g, r, b, ..] if *g > 0.0 => Some([r / g, 1.0, b / g]),
         _ => record(&recs, WB_GRGB_LEVELS).and_then(|d| {
-            let v: Vec<f64> = (0..4).map_while(|k| be16(d, 2 * k).map(f64::from)).collect();
+            let v: Vec<f64> = (0..4)
+                .map_while(|k| be16(d, 2 * k).map(f64::from))
+                .collect();
             match v.as_slice() {
-                [g1, r, g2, b] if g1 + g2 > 0.0 => Some([2.0 * r / (g1 + g2), 1.0, 2.0 * b / (g1 + g2)]),
+                [g1, r, g2, b] if g1 + g2 > 0.0 => {
+                    Some([2.0 * r / (g1 + g2), 1.0, 2.0 * b / (g1 + g2)])
+                }
                 _ => None,
             }
         }),
@@ -315,7 +414,10 @@ mod tests {
     fn lsb_first_12_bit() {
         // 0xABC, 0x123 LSB first: byte0 = 0xBC, byte1 = 0x3A, byte2 = 0x12.
         let src = [0xBC, 0x3A, 0x12];
-        assert_eq!(unpack(&src, 2, 1, 12, Packing::LsbFirst), vec![0xABC, 0x123]);
+        assert_eq!(
+            unpack(&src, 2, 1, 12, Packing::LsbFirst),
+            vec![0xABC, 0x123]
+        );
     }
 
     #[test]
@@ -327,11 +429,23 @@ mod tests {
         for v in vals {
             acc = (acc << 14) | u64::from(v);
         }
-        let logical: Vec<u8> = (0..7).map(|k| (acc >> (8 * (6 - k))) as u8).chain([0]).collect();
-        let phys: Vec<u8> = logical.chunks(4).flat_map(|w| w.iter().rev().copied().collect::<Vec<_>>()).collect();
-        assert_eq!(unpack(&phys, 4, 1, 14, Packing::Words32MsbFirst), vals.to_vec());
+        let logical: Vec<u8> = (0..7)
+            .map(|k| (acc >> (8 * (6 - k))) as u8)
+            .chain([0])
+            .collect();
+        let phys: Vec<u8> = logical
+            .chunks(4)
+            .flat_map(|w| w.iter().rev().copied().collect::<Vec<_>>())
+            .collect();
+        assert_eq!(
+            unpack(&phys, 4, 1, 14, Packing::Words32MsbFirst),
+            vals.to_vec()
+        );
         // A short buffer reads as zeros rather than panicking.
-        assert_eq!(unpack(&phys[..3], 4, 1, 14, Packing::Words32MsbFirst).len(), 4);
+        assert_eq!(
+            unpack(&phys[..3], 4, 1, 14, Packing::Words32MsbFirst).len(),
+            4
+        );
     }
 
     #[test]

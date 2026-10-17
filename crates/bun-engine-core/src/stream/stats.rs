@@ -97,7 +97,11 @@ impl Stats {
         self.last = Some(at);
         self.all.push(sample);
         self.recent.push_back((at, sample));
-        while self.recent.front().is_some_and(|(t, _)| at.duration_since(*t) > Duration::from_secs(1)) {
+        while self
+            .recent
+            .front()
+            .is_some_and(|(t, _)| at.duration_since(*t) > Duration::from_secs(1))
+        {
             self.recent.pop_front();
         }
     }
@@ -106,10 +110,16 @@ impl Stats {
     pub fn recent(&self) -> Summary {
         let samples: Vec<Sample> = self.recent.iter().map(|(_, s)| *s).collect();
         let span = match (self.recent.front(), self.recent.back()) {
-            (Some((a, _)), Some((b, _))) if self.recent.len() > 1 => b.duration_since(*a).as_secs_f64(),
+            (Some((a, _)), Some((b, _))) if self.recent.len() > 1 => {
+                b.duration_since(*a).as_secs_f64()
+            }
             _ => 0.0,
         };
-        let fps = if span > 0.0 { (self.recent.len() - 1) as f64 / span } else { 0.0 };
+        let fps = if span > 0.0 {
+            (self.recent.len() - 1) as f64 / span
+        } else {
+            0.0
+        };
         let mut r2g: Vec<f64> = samples.iter().map(|s| s.recv_to_glass).collect();
         let mut c2g: Vec<f64> = samples.iter().filter_map(|s| s.capture_to_glass).collect();
         Summary {
@@ -129,8 +139,17 @@ impl Stats {
             (Some(a), Some(b)) => b.duration_since(a).as_secs_f64(),
             _ => 0.0,
         };
-        let fps = if span > 0.0 { (self.all.len() - 1) as f64 / span } else { 0.0 };
-        let mut out = format!("frames presented: {} over {:.2} s = {:.2} fps\n", self.all.len(), span, fps);
+        let fps = if span > 0.0 {
+            (self.all.len() - 1) as f64 / span
+        } else {
+            0.0
+        };
+        let mut out = format!(
+            "frames presented: {} over {:.2} s = {:.2} fps\n",
+            self.all.len(),
+            span,
+            fps
+        );
         let metrics: [(&str, Box<dyn Fn(&Sample) -> Option<f64>>); 12] = [
             ("encode (loopback host)", Box::new(|s| s.encode)),
             ("network + FEC reassembly", Box::new(|s| Some(s.net))),
@@ -142,18 +161,30 @@ impl Stats {
             ("submit -> GPU done", Box::new(|s| Some(s.gpu))),
             ("present GPU (EASU+RCAS+HUD)", Box::new(|s| s.present_gpu)),
             ("receive -> glass", Box::new(|s| Some(s.recv_to_glass))),
-            ("capture -> glass (loopback)", Box::new(|s| s.capture_to_glass)),
+            (
+                "capture -> glass (loopback)",
+                Box::new(|s| s.capture_to_glass),
+            ),
             ("host processing", Box::new(|s| Some(s.host))),
         ];
-        out.push_str(&format!("{:<32} {:>8} {:>8} {:>8} {:>8}\n", "stage (ms)", "mean", "p50", "p95", "p99"));
+        out.push_str(&format!(
+            "{:<32} {:>8} {:>8} {:>8} {:>8}\n",
+            "stage (ms)", "mean", "p50", "p95", "p99"
+        ));
         for (name, f) in metrics {
             let mut v: Vec<f64> = self.all.iter().filter_map(|s| f(s)).collect();
             if v.is_empty() {
                 continue;
             }
             let mean = v.iter().sum::<f64>() / v.len() as f64;
-            let (p50, p95, p99) = (percentile(&mut v, 0.5), percentile(&mut v, 0.95), percentile(&mut v, 0.99));
-            out.push_str(&format!("{name:<32} {mean:>8.3} {p50:>8.3} {p95:>8.3} {p99:>8.3}\n"));
+            let (p50, p95, p99) = (
+                percentile(&mut v, 0.5),
+                percentile(&mut v, 0.95),
+                percentile(&mut v, 0.99),
+            );
+            out.push_str(&format!(
+                "{name:<32} {mean:>8.3} {p50:>8.3} {p95:>8.3} {p99:>8.3}\n"
+            ));
         }
         out
     }

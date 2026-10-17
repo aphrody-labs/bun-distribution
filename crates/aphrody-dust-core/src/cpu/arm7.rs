@@ -419,7 +419,7 @@ impl<E: Engine> Arm7<E> {
                         0x1_0000,
                         (0x0300_0000, 0x037F_FFFF),
                     );
-                },
+                }
                 1 => {
                     self.map_sys_bus_ptr_range(
                         bus::ptrs::mask::ALL,
@@ -427,7 +427,7 @@ impl<E: Engine> Arm7<E> {
                         0x4000,
                         (0x0300_0000, 0x037F_FFFF),
                     );
-                },
+                }
                 2 => {
                     self.map_sys_bus_ptr_range(
                         bus::ptrs::mask::ALL,
@@ -435,7 +435,7 @@ impl<E: Engine> Arm7<E> {
                         0x4000,
                         (0x0300_0000, 0x037F_FFFF),
                     );
-                },
+                }
                 _ => {
                     self.map_sys_bus_ptr_range(
                         bus::ptrs::mask::ALL,
@@ -443,7 +443,7 @@ impl<E: Engine> Arm7<E> {
                         0x8000,
                         (0x0300_0000, 0x037F_FFFF),
                     );
-                },
+                }
             }
         }
     }

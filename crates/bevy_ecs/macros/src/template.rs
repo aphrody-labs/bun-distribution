@@ -1,9 +1,9 @@
-use bevy_macro_utils::{fq_std::FQDefault, BevyManifest};
+use bevy_macro_utils::{BevyManifest, fq_std::FQDefault};
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    parse::ParseStream, parse_macro_input, parse_quote, punctuated::Punctuated, spanned::Spanned,
     Data, DeriveInput, Fields, FieldsUnnamed, Ident, Index, Path, Result, Token, WhereClause,
+    parse::ParseStream, parse_macro_input, parse_quote, punctuated::Punctuated, spanned::Spanned,
 };
 
 const TEMPLATE_DEFAULT_ATTRIBUTE: &str = "default";
@@ -241,7 +241,9 @@ pub(crate) fn derive_from_template(input: TokenStream) -> TokenStream {
             }
 
             if variant_default_ident.is_none() {
-                panic!("Deriving Template for enums requires picking a default variant using #[default]");
+                panic!(
+                    "Deriving Template for enums requires picking a default variant using #[default]"
+                );
             }
 
             quote! {

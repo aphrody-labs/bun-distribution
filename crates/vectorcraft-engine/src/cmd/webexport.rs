@@ -144,7 +144,9 @@ fn de_key<'de, T: Keyed, D: Deserializer<'de>>(d: D) -> std::result::Result<T, D
 
 /// A size in pixels: a number, rounded to whole pixels (`300.0` is 300).
 fn de_pixels<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<Option<u32>, D::Error> {
-    let Some(v) = Option::<f64>::deserialize(d)? else { return Ok(None) };
+    let Some(v) = Option::<f64>::deserialize(d)? else {
+        return Ok(None);
+    };
     let px = v.round();
     if !(px.is_finite() && px >= 0.0 && px <= f64::from(u32::MAX)) {
         return Err(D::Error::custom(format!("{v} is not a size in pixels")));
@@ -166,7 +168,12 @@ pub enum WebFormat {
 }
 
 impl WebFormat {
-    pub const ALL: [WebFormat; 4] = [WebFormat::Gif, WebFormat::Jpg, WebFormat::Png8, WebFormat::Png24];
+    pub const ALL: [WebFormat; 4] = [
+        WebFormat::Gif,
+        WebFormat::Jpg,
+        WebFormat::Png8,
+        WebFormat::Png24,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -213,7 +220,12 @@ pub enum WebMetadata {
 }
 
 impl WebMetadata {
-    pub const ALL: [WebMetadata; 4] = [WebMetadata::None, WebMetadata::Copyright, WebMetadata::Contact, WebMetadata::All];
+    pub const ALL: [WebMetadata; 4] = [
+        WebMetadata::None,
+        WebMetadata::Copyright,
+        WebMetadata::Contact,
+        WebMetadata::All,
+    ];
 
     pub fn key(self) -> &'static str {
         match self {
@@ -333,7 +345,9 @@ impl ColorTable {
                         let [r, g, b, _] = c.to_rgba8(1.0);
                         [r, g, b]
                     })
-                    .ok_or_else(|| format!("colorTable.{what}: `{h}` is not a colour such as \"#ff8800\""))
+                    .ok_or_else(|| {
+                        format!("colorTable.{what}: `{h}` is not a colour such as \"#ff8800\"")
+                    })
             })
             .collect()
     }
@@ -435,7 +449,8 @@ impl WebSettings {
                 }
             }
         }
-        let s: WebSettings = serde_json::from_value(v).map_err(|e| format!("Save for Web settings: {e}"))?;
+        let s: WebSettings =
+            serde_json::from_value(v).map_err(|e| format!("Save for Web settings: {e}"))?;
         s.checked()
     }
 
@@ -446,16 +461,21 @@ impl WebSettings {
         self.web_snap = self.web_snap.min(100);
         self.lossy = self.lossy.min(100);
         self.quality = self.quality.min(100);
-        if let Some(p) = self.percent.filter(|p| !(p.is_finite() && *p > 0.0 && *p <= 6400.0)) {
+        if let Some(p) = self
+            .percent
+            .filter(|p| !(p.is_finite() && *p > 0.0 && *p <= 6400.0))
+        {
             return Err(format!("percent must be above 0 and at most 6400, not {p}"));
         }
         if self.width == Some(0) || self.height == Some(0) {
             return Err("width and height are at least 1 pixel".into());
         }
         self.matte_rgb()?;
-        for (list, what) in
-            [(&self.color_table.locked, "locked"), (&self.color_table.transparent, "transparent"), (&self.color_table.web_shift, "webShift")]
-        {
+        for (list, what) in [
+            (&self.color_table.locked, "locked"),
+            (&self.color_table.transparent, "transparent"),
+            (&self.color_table.web_shift, "webShift"),
+        ] {
             ColorTable::colors(list, what)?;
         }
         Ok(self)
@@ -484,25 +504,81 @@ pub struct WebPreset {
 /// The built-in presets (made here, named by what they do).
 pub fn builtin_presets() -> Vec<WebPreset> {
     let d = WebSettings::default;
-    let preset = |name: &str, settings: WebSettings| WebPreset { name: name.into(), settings };
+    let preset = |name: &str, settings: WebSettings| WebPreset {
+        name: name.into(),
+        settings,
+    };
     vec![
         preset("GIF, 128 colours", d()),
-        preset("GIF, 32 colours, no dither", WebSettings { colors: 32, dither: Dither::None, ..d() }),
-        preset("GIF, web-safe colours", WebSettings { reduction: Reduction::Web, colors: 256, dither: Dither::None, ..d() }),
-        preset("JPEG, quality 80", WebSettings { format: WebFormat::Jpg, quality: 80, ..d() }),
-        preset("JPEG, quality 50", WebSettings { format: WebFormat::Jpg, quality: 50, ..d() }),
-        preset("JPEG, quality 25", WebSettings { format: WebFormat::Jpg, quality: 25, ..d() }),
-        preset("PNG-8, 64 colours", WebSettings { format: WebFormat::Png8, colors: 64, ..d() }),
-        preset("PNG-24", WebSettings { format: WebFormat::Png24, ..d() }),
+        preset(
+            "GIF, 32 colours, no dither",
+            WebSettings {
+                colors: 32,
+                dither: Dither::None,
+                ..d()
+            },
+        ),
+        preset(
+            "GIF, web-safe colours",
+            WebSettings {
+                reduction: Reduction::Web,
+                colors: 256,
+                dither: Dither::None,
+                ..d()
+            },
+        ),
+        preset(
+            "JPEG, quality 80",
+            WebSettings {
+                format: WebFormat::Jpg,
+                quality: 80,
+                ..d()
+            },
+        ),
+        preset(
+            "JPEG, quality 50",
+            WebSettings {
+                format: WebFormat::Jpg,
+                quality: 50,
+                ..d()
+            },
+        ),
+        preset(
+            "JPEG, quality 25",
+            WebSettings {
+                format: WebFormat::Jpg,
+                quality: 25,
+                ..d()
+            },
+        ),
+        preset(
+            "PNG-8, 64 colours",
+            WebSettings {
+                format: WebFormat::Png8,
+                colors: 64,
+                ..d()
+            },
+        ),
+        preset(
+            "PNG-24",
+            WebSettings {
+                format: WebFormat::Png24,
+                ..d()
+            },
+        ),
     ]
 }
 
 fn saved_index(saved: &[WebPreset], name: &str) -> Option<usize> {
-    saved.iter().position(|p| p.name.eq_ignore_ascii_case(name.trim()))
+    saved
+        .iter()
+        .position(|p| p.name.eq_ignore_ascii_case(name.trim()))
 }
 
 fn is_builtin(name: &str) -> bool {
-    builtin_presets().iter().any(|p| p.name.eq_ignore_ascii_case(name.trim()))
+    builtin_presets()
+        .iter()
+        .any(|p| p.name.eq_ignore_ascii_case(name.trim()))
 }
 
 impl Session {
@@ -514,7 +590,11 @@ impl Session {
     }
 
     /// The settings `p` asks for: its `preset` (else `base`) with its settings keys.
-    pub fn web_settings_over(&self, base: &WebSettings, p: &Value) -> std::result::Result<WebSettings, String> {
+    pub fn web_settings_over(
+        &self,
+        base: &WebSettings,
+        p: &Value,
+    ) -> std::result::Result<WebSettings, String> {
         let start = match p.get("preset").and_then(Value::as_str) {
             Some(name) => {
                 let key = name.trim();
@@ -546,12 +626,23 @@ impl Session {
 pub fn region(doc: &Document, s: &WebSettings) -> std::result::Result<(Rect, f64), String> {
     let r = if s.clip_to_artboard {
         let i = s.artboard.unwrap_or(0);
-        doc.artboards.get(i).map(|a| a.rect).ok_or_else(|| format!("no artboard {i} (0-based; the document has {})", doc.artboards.len()))?
+        doc.artboards.get(i).map(|a| a.rect).ok_or_else(|| {
+            format!(
+                "no artboard {i} (0-based; the document has {})",
+                doc.artboards.len()
+            )
+        })?
     } else {
-        let slices = if s.slices == SliceScope::None { vec![] } else { doc.slice_layout() };
+        let slices = if s.slices == SliceScope::None {
+            vec![]
+        } else {
+            doc.slice_layout()
+        };
         slices
             .iter()
-            .fold(vectorcraft_render::encode::art_bounds(doc), |acc, a| vectorcraft_geom::union_opt(acc, Some(a.rect)))
+            .fold(vectorcraft_render::encode::art_bounds(doc), |acc, a| {
+                vectorcraft_geom::union_opt(acc, Some(a.rect))
+            })
             .ok_or("nothing to save: the document has no visible art")?
     };
     let scale = match (s.width, s.height, s.percent) {
@@ -591,7 +682,13 @@ pub fn render(doc: &Document, s: &WebSettings) -> std::result::Result<WebRender,
         ..Default::default()
     };
     let img = vectorcraft_render::Renderer::new().render_region_with(&doc, region, scale, &opts);
-    Ok(WebRender { rgba: img.to_straight(), width: img.width, height: img.height, region, scale })
+    Ok(WebRender {
+        rgba: img.to_straight(),
+        width: img.width,
+        height: img.height,
+        region,
+        scale,
+    })
 }
 
 /// One entry of a palette format's colour table.
@@ -625,7 +722,11 @@ pub struct Optimized {
 impl Optimized {
     /// The file the preview decodes ([`decode`]).
     pub fn display(&self) -> &[u8] {
-        if self.display.is_empty() { &self.bytes } else { &self.display }
+        if self.display.is_empty() {
+            &self.bytes
+        } else {
+            &self.display
+        }
     }
 }
 
@@ -638,39 +739,81 @@ pub fn hex([r, g, b]: [u8; 3]) -> String {
 fn flatten(rgba: &[u8], matte: [u8; 3]) -> impl Iterator<Item = [u8; 3]> + '_ {
     rgba.as_chunks::<4>().0.iter().map(move |p| {
         let a = u32::from(p[3]);
-        [0, 1, 2].map(|i| ((u32::from(p[i]) * a + u32::from(matte[i]) * (255 - a) + 127) / 255) as u8)
+        [0, 1, 2]
+            .map(|i| ((u32::from(p[i]) * a + u32::from(matte[i]) * (255 - a) + 127) / 255) as u8)
     })
 }
 
 /// The File Info text `s.metadata` lets into the files: `(keyword, text)`.
 fn metadata(doc: &Document, s: &WebSettings) -> Vec<(&'static str, String)> {
-    doc.metadata.png_text(&doc.title).into_iter().filter(|(k, _)| s.metadata.keeps(k)).map(|(k, v)| (k, v.into_owned())).collect()
+    doc.metadata
+        .png_text(&doc.title)
+        .into_iter()
+        .filter(|(k, _)| s.metadata.keeps(k))
+        .map(|(k, v)| (k, v.into_owned()))
+        .collect()
 }
 
 /// Encode straight RGBA pixels (`w`×`h`) as `s` says; `doc` gives the metadata.
-pub fn optimize(doc: &Document, rgba: &[u8], w: u32, h: u32, s: &WebSettings) -> std::result::Result<Optimized, String> {
+pub fn optimize(
+    doc: &Document,
+    rgba: &[u8],
+    w: u32,
+    h: u32,
+    s: &WebSettings,
+) -> std::result::Result<Optimized, String> {
     encode(doc, rgba, w, h, s, false)
 }
 
 /// [`optimize`] for the dialog's preview: also what [`Optimized::display`] decodes.
-pub fn preview_image(doc: &Document, rgba: &[u8], w: u32, h: u32, s: &WebSettings) -> std::result::Result<Optimized, String> {
+pub fn preview_image(
+    doc: &Document,
+    rgba: &[u8],
+    w: u32,
+    h: u32,
+    s: &WebSettings,
+) -> std::result::Result<Optimized, String> {
     encode(doc, rgba, w, h, s, true)
 }
 
-fn encode(doc: &Document, rgba: &[u8], w: u32, h: u32, s: &WebSettings, preview: bool) -> std::result::Result<Optimized, String> {
+fn encode(
+    doc: &Document,
+    rgba: &[u8],
+    w: u32,
+    h: u32,
+    s: &WebSettings,
+    preview: bool,
+) -> std::result::Result<Optimized, String> {
     if rgba.len() as u64 != u64::from(w) * u64::from(h) * 4 || w == 0 || h == 0 {
         return Err("Save for Web: the image is empty".into());
     }
     let matte = s.matte_rgb()?;
     let meta = metadata(doc, s);
-    let comment = || meta.iter().map(|(k, v)| format!("{k}: {v}")).collect::<Vec<_>>().join("\n");
+    let comment = || {
+        meta.iter()
+            .map(|(k, v)| format!("{k}: {v}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
     let png_extras = |file: Vec<u8>| {
-        let file = if s.convert_to_srgb { png::with_srgb(file) } else { file };
-        let text: Vec<(&str, std::borrow::Cow<str>)> = meta.iter().map(|(k, v)| (*k, v.as_str().into())).collect();
+        let file = if s.convert_to_srgb {
+            png::with_srgb(file)
+        } else {
+            file
+        };
+        let text: Vec<(&str, std::borrow::Cow<str>)> =
+            meta.iter().map(|(k, v)| (*k, v.as_str().into())).collect();
         png::with_text(file, &text)
     };
-    let png_options = png::PngOptions { ppi: Some(72.0), interlaced: s.interlaced };
-    let mut out = Optimized { width: w, height: h, ..Default::default() };
+    let png_options = png::PngOptions {
+        ppi: Some(72.0),
+        interlaced: s.interlaced,
+    };
+    let mut out = Optimized {
+        width: w,
+        height: h,
+        ..Default::default()
+    };
     out.bytes = match s.format {
         WebFormat::Jpg => {
             let rgb: Vec<u8> = flatten(rgba, matte.unwrap_or([255; 3])).flatten().collect();
@@ -679,18 +822,32 @@ fn encode(doc: &Document, rgba: &[u8], w: u32, h: u32, s: &WebSettings, preview:
                 (false, true) => jpeg::Method::Optimized,
                 (false, false) => jpeg::Method::Baseline,
             };
-            let o = jpeg::JpegOptions { color_model: jpeg::ColorModel::Rgb, method, scans: 3, embed_icc: s.embed_profile };
+            let o = jpeg::JpegOptions {
+                color_model: jpeg::ColorModel::Rgb,
+                method,
+                scans: 3,
+                embed_icc: s.embed_profile,
+            };
             if preview && method == jpeg::Method::Optimized {
-                let baseline = jpeg::JpegOptions { method: jpeg::Method::Baseline, embed_icc: false, ..o.clone() };
+                let baseline = jpeg::JpegOptions {
+                    method: jpeg::Method::Baseline,
+                    embed_icc: false,
+                    ..o.clone()
+                };
                 out.display = jpeg::encode(&rgb, w, h, s.quality, None, &baseline)?;
             }
-            web::jpeg_comment(jpeg::encode(&rgb, w, h, s.quality, Some(72.0), &o)?, &comment())
+            web::jpeg_comment(
+                jpeg::encode(&rgb, w, h, s.quality, Some(72.0), &o)?,
+                &comment(),
+            )
         }
         WebFormat::Png24 => {
             let file = match (s.transparency, matte.unwrap_or([255; 3])) {
                 (true, _) => png::encode(rgba, w, h, &png_options)?,
                 (false, m) => {
-                    let opaque: Vec<u8> = flatten(rgba, m).flat_map(|[r, g, b]| [r, g, b, 255]).collect();
+                    let opaque: Vec<u8> = flatten(rgba, m)
+                        .flat_map(|[r, g, b]| [r, g, b, 255])
+                        .collect();
                     png::encode(&opaque, w, h, &png_options)?
                 }
             };
@@ -718,7 +875,13 @@ struct PaletteImage {
     mapped: Vec<[u8; 3]>,
 }
 
-fn palette_image(rgba: &[u8], w: u32, h: u32, s: &WebSettings, matte: Option<[u8; 3]>) -> std::result::Result<PaletteImage, String> {
+fn palette_image(
+    rgba: &[u8],
+    w: u32,
+    h: u32,
+    s: &WebSettings,
+    matte: Option<[u8; 3]>,
+) -> std::result::Result<PaletteImage, String> {
     let table = &s.color_table;
     let locked = ColorTable::colors(&table.locked, "locked")?;
     let to_clear = ColorTable::colors(&table.transparent, "transparent")?;
@@ -735,8 +898,15 @@ fn palette_image(rgba: &[u8], w: u32, h: u32, s: &WebSettings, matte: Option<[u8
     // Map to transparent works on the colours the reduction made.
     let before = ix.palette.clone();
     let clear = ix.transparent.map(usize::from);
-    let mapped: Vec<[u8; 3]> = before.iter().enumerate().filter(|(i, c)| Some(*i) != clear && to_clear.contains(c)).map(|(_, c)| *c).collect();
-    let remap = web::to_transparent(&mut ix, |i| Some(i) != clear && before.get(i).is_some_and(|c| to_clear.contains(c)));
+    let mapped: Vec<[u8; 3]> = before
+        .iter()
+        .enumerate()
+        .filter(|(i, c)| Some(*i) != clear && to_clear.contains(c))
+        .map(|(_, c)| *c)
+        .collect();
+    let remap = web::to_transparent(&mut ix, |i| {
+        Some(i) != clear && before.get(i).is_some_and(|c| to_clear.contains(c))
+    });
     let mut sources = ix.palette.clone();
     for (old, new) in remap.iter().enumerate() {
         if let (Some(n), Some(c)) = (new, before.get(old))
@@ -762,7 +932,10 @@ fn palette_image(rgba: &[u8], w: u32, h: u32, s: &WebSettings, matte: Option<[u8
         web::lossy(&mut ix, rgba, s.lossy);
     }
     let order = web::sort(&mut ix, table.sort);
-    let sources: Vec<[u8; 3]> = order.iter().map(|&i| sources.get(i).copied().unwrap_or_default()).collect();
+    let sources: Vec<[u8; 3]> = order
+        .iter()
+        .map(|&i| sources.get(i).copied().unwrap_or_default())
+        .collect();
     let colors = ix
         .palette
         .iter()
@@ -781,14 +954,20 @@ fn palette_image(rgba: &[u8], w: u32, h: u32, s: &WebSettings, matte: Option<[u8
 
 /// An optimised image as straight RGBA → `(pixels, width, height)` (the dialog's preview).
 pub fn decode(o: &Optimized) -> std::result::Result<(Vec<u8>, u32, u32), String> {
-    let img = image::load_from_memory(o.display()).map_err(|e| format!("the optimised image can't be read back: {e}"))?.to_rgba8();
+    let img = image::load_from_memory(o.display())
+        .map_err(|e| format!("the optimised image can't be read back: {e}"))?
+        .to_rgba8();
     let (w, h) = img.dimensions();
     Ok((img.into_raw(), w, h))
 }
 
 /// Seconds to download `bytes` at `kbps` kilobits per second.
 pub fn download_seconds(bytes: usize, kbps: f64) -> f64 {
-    if kbps > 0.0 { bytes as f64 * 8.0 / (kbps * 1000.0) } else { 0.0 }
+    if kbps > 0.0 {
+        bytes as f64 * 8.0 / (kbps * 1000.0)
+    } else {
+        0.0
+    }
 }
 
 /// Connection speeds the dialog offers (kilobits per second).
@@ -805,11 +984,17 @@ struct Cell<'a> {
 
 /// The slices of `doc` that get cells (`selected`: the selected slice ids for
 /// [`SliceScope::Selected`]), in pixels of `r`. Empty when the document has none (or `s` says none).
-fn cells<'a>(areas: &'a [SliceArea], selected: &[NodeId], s: &WebSettings, r: &WebRender) -> std::result::Result<Vec<Cell<'a>>, String> {
+fn cells<'a>(
+    areas: &'a [SliceArea],
+    selected: &[NodeId],
+    s: &WebSettings,
+    r: &WebRender,
+) -> std::result::Result<Vec<Cell<'a>>, String> {
     if s.slices == SliceScope::None {
         return Ok(vec![]);
     }
-    let edge = |v: f64, o: f64, max: u32| ((v - o) * r.scale).round().clamp(0.0, f64::from(max)) as u32;
+    let edge =
+        |v: f64, o: f64, max: u32| ((v - o) * r.scale).round().clamp(0.0, f64::from(max)) as u32;
     let out: Vec<Cell> = areas
         .iter()
         .filter(|a| s.slices == SliceScope::All || a.id.is_some_and(|id| selected.contains(&id)))
@@ -834,7 +1019,11 @@ fn cells<'a>(areas: &'a [SliceArea], selected: &[NodeId], s: &WebSettings, r: &W
 fn crop(r: &WebRender, [x0, y0, x1, y1]: [u32; 4]) -> Vec<u8> {
     let stride = r.width as usize * 4;
     (y0..y1)
-        .flat_map(|y| r.rgba.get(y as usize * stride + x0 as usize * 4..y as usize * stride + x1 as usize * 4).unwrap_or_default())
+        .flat_map(|y| {
+            r.rgba
+                .get(y as usize * stride + x0 as usize * 4..y as usize * stride + x1 as usize * 4)
+                .unwrap_or_default()
+        })
         .copied()
         .collect()
 }
@@ -851,7 +1040,12 @@ const IMAGES: &str = "images";
 /// The files of an export of `doc` named after `stem`: one image (`<stem>.<ext>`), or one per
 /// slice (`images/<slice name>.<ext>`), and with HTML output the page (`<stem>.html`, its image in
 /// `images/`). The page comes first. Returns the image size too.
-pub fn export_files(doc: &Document, selected: &[NodeId], s: &WebSettings, stem: &str) -> std::result::Result<(Vec<WebFile>, (u32, u32)), String> {
+pub fn export_files(
+    doc: &Document,
+    selected: &[NodeId],
+    s: &WebSettings,
+    stem: &str,
+) -> std::result::Result<(Vec<WebFile>, (u32, u32)), String> {
     let r = render(doc, s)?;
     let areas = doc.slice_layout();
     let cells = cells(&areas, selected, s, &r)?;
@@ -861,29 +1055,57 @@ pub fn export_files(doc: &Document, selected: &[NodeId], s: &WebSettings, stem: 
     // (cell, image file name) for the page.
     let mut placed: Vec<(Option<&Cell>, Option<String>)> = vec![];
     if cells.is_empty() {
-        let name = if html { format!("{IMAGES}/{stem}.{ext}") } else { format!("{stem}.{ext}") };
-        images.push(WebFile { name: name.clone(), bytes: optimize(doc, &r.rgba, r.width, r.height, s)?.bytes });
+        let name = if html {
+            format!("{IMAGES}/{stem}.{ext}")
+        } else {
+            format!("{stem}.{ext}")
+        };
+        images.push(WebFile {
+            name: name.clone(),
+            bytes: optimize(doc, &r.rgba, r.width, r.height, s)?.bytes,
+        });
         placed.push((None, Some(name)));
     } else {
         let mut taken = HashSet::new();
         for c in &cells {
-            let kind = c.area.id.and_then(|id| doc.slice_options(id)).map(|o| o.kind).unwrap_or_default();
+            let kind = c
+                .area
+                .id
+                .and_then(|id| doc.slice_options(id))
+                .map(|o| o.kind)
+                .unwrap_or_default();
             if kind != SliceKind::Image {
                 placed.push((Some(c), None));
                 continue;
             }
-            let base: String = doc.slice_name(c.area).chars().map(|ch| if ch.is_alphanumeric() || "-_.".contains(ch) { ch } else { '-' }).collect();
+            let base: String = doc
+                .slice_name(c.area)
+                .chars()
+                .map(|ch| {
+                    if ch.is_alphanumeric() || "-_.".contains(ch) {
+                        ch
+                    } else {
+                        '-'
+                    }
+                })
+                .collect();
             let base = unique_name(&base, |n| taken.contains(&n.to_lowercase()));
             taken.insert(base.to_lowercase());
             let name = format!("{IMAGES}/{base}.{ext}");
             let [x0, y0, x1, y1] = c.px;
-            images.push(WebFile { name: name.clone(), bytes: optimize(doc, &crop(&r, c.px), x1 - x0, y1 - y0, s)?.bytes });
+            images.push(WebFile {
+                name: name.clone(),
+                bytes: optimize(doc, &crop(&r, c.px), x1 - x0, y1 - y0, s)?.bytes,
+            });
             placed.push((Some(c), Some(name)));
         }
     }
     let mut files = vec![];
     if html {
-        files.push(WebFile { name: format!("{stem}.html"), bytes: page(doc, stem, (r.width, r.height), &placed, s).into_bytes() });
+        files.push(WebFile {
+            name: format!("{stem}.html"),
+            bytes: page(doc, stem, (r.width, r.height), &placed, s).into_bytes(),
+        });
     }
     files.extend(images);
     Ok((files, (r.width, r.height)))
@@ -891,13 +1113,25 @@ pub fn export_files(doc: &Document, selected: &[NodeId], s: &WebSettings, stem: 
 
 /// The HTML page placing the image or the slices (absolutely positioned, so overlapping slices
 /// stack as laid out).
-fn page(doc: &Document, stem: &str, (w, h): (u32, u32), placed: &[(Option<&Cell>, Option<String>)], s: &WebSettings) -> String {
+fn page(
+    doc: &Document,
+    stem: &str,
+    (w, h): (u32, u32),
+    placed: &[(Option<&Cell>, Option<String>)],
+    s: &WebSettings,
+) -> String {
     use super::fileio::imagemap::attr;
     use std::fmt::Write as _;
     let id = attr(stem);
     let mut out = String::new();
-    let _ = writeln!(out, "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{id}</title>");
-    let _ = writeln!(out, "<style>\nbody {{ margin: 0; }}\n.slices {{ position: relative; width: {w}px; height: {h}px; }}");
+    let _ = writeln!(
+        out,
+        "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{id}</title>"
+    );
+    let _ = writeln!(
+        out,
+        "<style>\nbody {{ margin: 0; }}\n.slices {{ position: relative; width: {w}px; height: {h}px; }}"
+    );
     let _ = writeln!(
         out,
         ".slices > * {{ position: absolute; display: block; overflow: hidden; }}\n.slices img {{ display: block; border: 0; }}\n</style>"
@@ -908,16 +1142,36 @@ fn page(doc: &Document, stem: &str, (w, h): (u32, u32), placed: &[(Option<&Cell>
         let [x0, y0, x1, y1] = cell.map_or([0, 0, w, h], |c| c.px);
         let (cw, ch) = (x1 - x0, y1 - y0);
         let pos = format!("left: {x0}px; top: {y0}px; width: {cw}px; height: {ch}px;");
-        let o = cell.and_then(|c| c.area.id).and_then(|i| doc.slice_options(i)).cloned().unwrap_or_default();
+        let o = cell
+            .and_then(|c| c.area.id)
+            .and_then(|i| doc.slice_options(i))
+            .cloned()
+            .unwrap_or_default();
         match image {
             Some(src) => {
-                let img = format!("<img src=\"{}\" width=\"{cw}\" height=\"{ch}\" alt=\"{}\">", attr(src), attr(&o.alt));
+                let img = format!(
+                    "<img src=\"{}\" width=\"{cw}\" height=\"{ch}\" alt=\"{}\">",
+                    attr(src),
+                    attr(&o.alt)
+                );
                 if o.url.is_empty() {
                     let _ = writeln!(out, "<div style=\"{pos}\">{img}</div>");
                 } else {
-                    let target = if o.target.is_empty() { String::new() } else { format!(" target=\"{}\"", attr(&o.target)) };
-                    let title = if o.message.is_empty() { String::new() } else { format!(" title=\"{}\"", attr(&o.message)) };
-                    let _ = writeln!(out, "<a href=\"{}\"{target}{title} style=\"{pos}\">{img}</a>", attr(&o.url));
+                    let target = if o.target.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" target=\"{}\"", attr(&o.target))
+                    };
+                    let title = if o.message.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" title=\"{}\"", attr(&o.message))
+                    };
+                    let _ = writeln!(
+                        out,
+                        "<a href=\"{}\"{target}{title} style=\"{pos}\">{img}</a>",
+                        attr(&o.url)
+                    );
                 }
             }
             None => {
@@ -944,13 +1198,22 @@ fn page(doc: &Document, stem: &str, (w, h): (u32, u32), placed: &[(Option<&Cell>
                         .and_then(|c| c.area.id)
                         .and_then(|i| doc.node(i))
                         .and_then(|n| match &n.kind {
-                            NodeKind::Text(t) => Some(t.plain_text().split(['\n', '\r', '\u{2029}']).map(attr).collect::<Vec<_>>().join("<br>")),
+                            NodeKind::Text(t) => Some(
+                                t.plain_text()
+                                    .split(['\n', '\r', '\u{2029}'])
+                                    .map(attr)
+                                    .collect::<Vec<_>>()
+                                    .join("<br>"),
+                            ),
                             _ => None,
                         })
                         .unwrap_or_default(),
                     _ => o.text.clone(),
                 };
-                let _ = writeln!(out, "<div style=\"{pos}{bg} display: flex; justify-content: {justify}; align-items: {align};\">{text}</div>");
+                let _ = writeln!(
+                    out,
+                    "<div style=\"{pos}{bg} display: flex; justify-content: {justify}; align-items: {align};\">{text}</div>"
+                );
             }
         }
     }
@@ -969,8 +1232,13 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
         Some(p) => super::fileio::file_stem(p),
         None => super::fileio::file_stem(&st.doc.title),
     };
-    let stem = if stem.trim().is_empty() { "Untitled".to_string() } else { stem };
-    let (files, (width, height)) = export_files(&st.doc, &selected, &settings, &stem).map_err(|e| bad(C, e))?;
+    let stem = if stem.trim().is_empty() {
+        "Untitled".to_string()
+    } else {
+        stem
+    };
+    let (files, (width, height)) =
+        export_files(&st.doc, &selected, &settings, &stem).map_err(|e| bad(C, e))?;
     let total: usize = files.iter().map(|f| f.bytes.len()).sum();
     let Some(path) = path else {
         let rows: Vec<Value> = files.iter().map(|f| json!({ "name": f.name, "dataBase64": vectorcraft_format::base64_encode(&f.bytes) })).collect();
@@ -984,11 +1252,17 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
     let mut written = vec![];
     for f in &files {
         // A lone image goes where it was asked to.
-        let target = if files.len() == 1 && !f.name.contains('/') { path.to_string() } else { format!("{dir}{}", f.name) };
+        let target = if files.len() == 1 && !f.name.contains('/') {
+            path.to_string()
+        } else {
+            format!("{dir}{}", f.name)
+        };
         super::fileio::write_file(&target, &f.bytes)?;
         written.push(target);
     }
-    Ok(json!({ "path": written.first(), "files": written, "bytes": total, "width": width, "height": height }))
+    Ok(
+        json!({ "path": written.first(), "files": written, "bytes": total, "width": width, "height": height }),
+    )
 }
 
 fn preview(s: &mut Session, p: &Value) -> Result<Value> {
@@ -996,7 +1270,10 @@ fn preview(s: &mut Session, p: &Value) -> Result<Value> {
     let settings = s.web_settings(p).map_err(|e| bad(P, e))?;
     let kbps = f64_or(p, "kbps", 56.6);
     if !(kbps.is_finite() && kbps > 0.0) {
-        return Err(bad(P, format!("kbps must be a positive number, not {kbps}")));
+        return Err(bad(
+            P,
+            format!("kbps must be a positive number, not {kbps}"),
+        ));
     }
     let st = s.doc()?;
     let doc = &st.doc;
@@ -1004,10 +1281,22 @@ fn preview(s: &mut Session, p: &Value) -> Result<Value> {
     let areas = doc.slice_layout();
     let selected = super::slices::selected_slices(doc, &st.selection);
     let cells = cells(&areas, &selected, &settings, &r).map_err(|e| bad(P, e))?;
-    let images = cells.iter().filter(|c| c.area.id.and_then(|id| doc.slice_options(id)).is_none_or(|o| o.kind == SliceKind::Image)).count().max(1);
+    let images = cells
+        .iter()
+        .filter(|c| {
+            c.area
+                .id
+                .and_then(|id| doc.slice_options(id))
+                .is_none_or(|o| o.kind == SliceKind::Image)
+        })
+        .count()
+        .max(1);
     let o = match p.get("slice").and_then(Value::as_u64) {
         Some(n) => {
-            let c = cells.iter().find(|c| c.area.number as u64 == n).ok_or_else(|| bad(P, format!("no slice {n} in the image (see slice.list)")))?;
+            let c = cells
+                .iter()
+                .find(|c| c.area.number as u64 == n)
+                .ok_or_else(|| bad(P, format!("no slice {n} in the image (see slice.list)")))?;
             let [x0, y0, x1, y1] = c.px;
             optimize(doc, &crop(&r, c.px), x1 - x0, y1 - y0, &settings)
         }
@@ -1039,7 +1328,11 @@ fn preview(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn settings(s: &mut Session, p: &Value) -> Result<Value> {
     const S: &str = "webExport.settings";
-    let base = if bool_or(p, "reset", false) { WebSettings::default() } else { s.last_web_settings() };
+    let base = if bool_or(p, "reset", false) {
+        WebSettings::default()
+    } else {
+        s.last_web_settings()
+    };
     let next = s.web_settings_over(&base, p).map_err(|e| bad(S, e))?;
     if p.as_object().is_some_and(|o| !o.is_empty()) {
         s.prefs.web_export_settings = Some(next.clone());
@@ -1058,27 +1351,47 @@ fn presets_list(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn presets_save(s: &mut Session, p: &Value) -> Result<Value> {
     const S: &str = "webExport.presets.save";
-    let name = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(S, "give the preset a `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(S, "give the preset a `name`"))?
+        .to_string();
     if is_builtin(&name) {
-        return Err(bad(S, format!("`{name}` is a built-in preset and can't change: save it under another name")));
+        return Err(bad(
+            S,
+            format!("`{name}` is a built-in preset and can't change: save it under another name"),
+        ));
     }
     let at = saved_index(&s.prefs.web_export_presets, &name);
-    let base = at.and_then(|i| s.prefs.web_export_presets.get(i)).map(|q| q.settings.clone()).unwrap_or_default();
+    let base = at
+        .and_then(|i| s.prefs.web_export_presets.get(i))
+        .map(|q| q.settings.clone())
+        .unwrap_or_default();
     // Settings at the top level, or in `settings`.
     let mut keys = p.as_object().cloned().unwrap_or_default();
     if let Some(Value::Object(inner)) = keys.remove("settings") {
         keys.extend(inner);
     }
-    let settings = s.web_settings_over(&base, &Value::Object(keys)).map_err(|e| bad(S, e))?;
+    let settings = s
+        .web_settings_over(&base, &Value::Object(keys))
+        .map_err(|e| bad(S, e))?;
     let name = match str_param(p, "newName").map(str::trim) {
         Some("") => return Err(bad(S, "`newName` is empty")),
-        Some(n) if is_builtin(n) || saved_index(&s.prefs.web_export_presets, n).is_some_and(|i| Some(i) != at) => {
+        Some(n)
+            if is_builtin(n)
+                || saved_index(&s.prefs.web_export_presets, n).is_some_and(|i| Some(i) != at) =>
+        {
             return Err(bad(S, format!("a preset named `{n}` exists")));
         }
         Some(n) => n.to_string(),
-        None => at.and_then(|i| s.prefs.web_export_presets.get(i)).map_or(name, |q| q.name.clone()),
+        None => at
+            .and_then(|i| s.prefs.web_export_presets.get(i))
+            .map_or(name, |q| q.name.clone()),
     };
-    let preset = WebPreset { name: name.clone(), settings: settings.clone() };
+    let preset = WebPreset {
+        name: name.clone(),
+        settings: settings.clone(),
+    };
     match at.and_then(|i| s.prefs.web_export_presets.get_mut(i)) {
         Some(slot) => *slot = preset,
         None => s.prefs.web_export_presets.push(preset),
@@ -1092,6 +1405,7 @@ fn presets_delete(s: &mut Session, p: &Value) -> Result<Value> {
     if is_builtin(name) {
         return Err(bad(S, format!("`{name}` is a built-in preset and stays")));
     }
-    let i = saved_index(&s.prefs.web_export_presets, name).ok_or_else(|| bad(S, format!("no saved preset named `{name}`")))?;
+    let i = saved_index(&s.prefs.web_export_presets, name)
+        .ok_or_else(|| bad(S, format!("no saved preset named `{name}`")))?;
     Ok(json!({ "deleted": s.prefs.web_export_presets.remove(i).name }))
 }

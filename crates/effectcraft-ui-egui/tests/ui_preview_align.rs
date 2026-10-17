@@ -13,31 +13,67 @@ use serde_json::json;
 
 fn harness() -> Harness<'static, EffectcraftApp> {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Preview", "width": 320, "height": 180, "frameRate": 24, "duration": 10})).unwrap();
-    s.execute("layer.newSolid", json!({"name": "A", "color": "#406080", "width": 40, "height": 30})).unwrap();
-    s.execute("layer.newSolid", json!({"name": "B", "color": "#806040", "width": 60, "height": 20})).unwrap();
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_eframe(|_| EffectcraftApp::new(s));
+    s.execute(
+        "comp.new",
+        json!({"name": "Preview", "width": 320, "height": 180, "frameRate": 24, "duration": 10}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.newSolid",
+        json!({"name": "A", "color": "#406080", "width": 40, "height": 30}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.newSolid",
+        json!({"name": "B", "color": "#806040", "width": 60, "height": 20}),
+    )
+    .unwrap();
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(3);
     h
 }
 
-fn invoke(h: &mut Harness<'_, EffectcraftApp>, id: &str, p: serde_json::Value) -> serde_json::Value {
+fn invoke(
+    h: &mut Harness<'_, EffectcraftApp>,
+    id: &str,
+    p: serde_json::Value,
+) -> serde_json::Value {
     let ctx = h.ctx.clone();
     effectcraft_ui_egui::menus::invoke(h.state_mut(), &ctx, id, p).unwrap()
 }
 
 fn click(h: &mut Harness<'_, EffectcraftApp>, id: &str) {
-    let e = h.state().auto.find(id).unwrap_or_else(|| panic!("no {id}")).clone();
+    let e = h
+        .state()
+        .auto
+        .find(id)
+        .unwrap_or_else(|| panic!("no {id}"))
+        .clone();
     let p: Pos2 = pos2(e.rect[0] + e.rect[2] / 2.0, e.rect[1] + e.rect[3] / 2.0);
     h.input_mut().events.push(Event::PointerMoved(p));
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(2);
 }
 
 fn set(h: &mut Harness<'_, EffectcraftApp>, p: serde_json::Value) {
-    h.state_mut().session.execute("playback.settings.set", p).unwrap();
+    h.state_mut()
+        .session
+        .execute("playback.settings.set", p)
+        .unwrap();
 }
 
 #[test]
@@ -72,7 +108,10 @@ fn preview_panel_edits_the_shown_shortcut() {
     // Shortcut popup: Shift+Numpad 0; its options are shown and edited from now on.
     click(&mut h, "preview.shortcut");
     click(&mut h, "preview.shortcut.3");
-    assert_eq!(h.state().session.prefs.preview.current, PreviewShortcut::ShiftNumpad0);
+    assert_eq!(
+        h.state().session.prefs.preview.current,
+        PreviewShortcut::ShiftNumpad0
+    );
     click(&mut h, "preview.fullScreen");
     assert!(h.state().session.prefs.preview.shift_numpad0.full_screen);
     assert!(!h.state().session.prefs.preview.spacebar.full_screen);
@@ -87,8 +126,14 @@ fn preview_panel_edits_the_shown_shortcut() {
 fn playback_follows_the_shortcut_options() {
     let mut h = harness();
     // Numpad 0: Work Area from its start; the time returns when the preview stops.
-    h.state_mut().session.execute("comp.workArea", json!({"start": 2.0, "end": 4.0})).unwrap();
-    set(&mut h, json!({"shortcut": "numpad0", "moveTimeToPreviewTime": false, "resolution": "quarter", "includeOverlays": false}));
+    h.state_mut()
+        .session
+        .execute("comp.workArea", json!({"start": 2.0, "end": 4.0}))
+        .unwrap();
+    set(
+        &mut h,
+        json!({"shortcut": "numpad0", "moveTimeToPreviewTime": false, "resolution": "quarter", "includeOverlays": false}),
+    );
     h.state_mut().session.set_time(Tick::from_seconds_f64(7.0));
     invoke(&mut h, "playback.ramPreview", json!({}));
     let app = h.state();
@@ -105,7 +150,10 @@ fn playback_follows_the_shortcut_options() {
     assert!(h.state().overlays_visible());
 
     // Spacebar with Full Screen: the viewer is maximized while it plays.
-    set(&mut h, json!({"shortcut": "spacebar", "fullScreen": true, "skip": 2}));
+    set(
+        &mut h,
+        json!({"shortcut": "spacebar", "fullScreen": true, "skip": 2}),
+    );
     invoke(&mut h, "playback.toggle", json!({}));
     assert_eq!(h.state().ui.maximized, Some(PanelKind::Composition));
     assert_eq!(h.state().playback.plan.unwrap().step, 3);
@@ -113,7 +161,13 @@ fn playback_follows_the_shortcut_options() {
     assert_eq!(h.state().ui.maximized, None);
 
     // Shift+Spacebar from the keyboard plays with its own options.
-    let ev = Event::Key { key: egui::Key::Space, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::SHIFT };
+    let ev = Event::Key {
+        key: egui::Key::Space,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::SHIFT,
+    };
     h.input_mut().events.push(ev);
     h.step();
     assert!(h.state().playback.playing);
@@ -124,7 +178,10 @@ fn playback_follows_the_shortcut_options() {
 #[test]
 fn cache_before_playback_waits_then_plays_cached() {
     let mut h = harness();
-    set(&mut h, json!({"shortcut": "spacebar", "cacheBeforePlayback": true, "range": "entireDuration", "playFrom": "rangeStart"}));
+    set(
+        &mut h,
+        json!({"shortcut": "spacebar", "cacheBeforePlayback": true, "range": "entireDuration", "playFrom": "rangeStart"}),
+    );
     invoke(&mut h, "playback.toggle", json!({}));
     assert!(h.state().playback.caching);
     // Pressing again while caching ("If caching, play cached frames") stops only when nothing
@@ -145,11 +202,28 @@ fn align_panel_runs_align_and_distribute() {
     invoke(&mut h, "window.panel", json!({"panel": "align"}));
     h.state_mut().toggle_maximize(PanelKind::Align);
     h.run_steps(3);
-    for id in ["align.to", "align.left", "align.vcenter", "distribute.hcenter", "distribute.bottom"] {
+    for id in [
+        "align.to",
+        "align.left",
+        "align.vcenter",
+        "distribute.hcenter",
+        "distribute.bottom",
+    ] {
         assert!(h.state().auto.find(id).is_some(), "{id}");
     }
-    let ids: Vec<u64> = h.state().session.active_comp().unwrap().layers.iter().map(|l| l.id.0).collect();
-    h.state_mut().session.execute("layer.select", json!({"layers": ids})).unwrap();
+    let ids: Vec<u64> = h
+        .state()
+        .session
+        .active_comp()
+        .unwrap()
+        .layers
+        .iter()
+        .map(|l| l.id.0)
+        .collect();
+    h.state_mut()
+        .session
+        .execute("layer.select", json!({"layers": ids}))
+        .unwrap();
     h.run_steps(2);
     // (x position, width) of A and B (anchors in the middle of the solids).
     let pos = |h: &Harness<'_, EffectcraftApp>| -> Vec<(f64, f64)> {
@@ -158,7 +232,15 @@ fn align_panel_runs_align_and_distribute() {
             .iter()
             .map(|n| {
                 let l = c.layers.iter().find(|l| l.name == *n).unwrap();
-                let x = l.transform().unwrap().get("position").unwrap().value_at(Tick::ZERO).to_json()[0].as_f64().unwrap();
+                let x = l
+                    .transform()
+                    .unwrap()
+                    .get("position")
+                    .unwrap()
+                    .value_at(Tick::ZERO)
+                    .to_json()[0]
+                    .as_f64()
+                    .unwrap();
                 (x, if *n == "A" { 40.0 } else { 60.0 })
             })
             .collect()
@@ -167,7 +249,10 @@ fn align_panel_runs_align_and_distribute() {
     click(&mut h, "align.left");
     assert_eq!(pos(&h), vec![(20.0, 40.0), (30.0, 60.0)]);
     // One undo step for the whole alignment.
-    h.state_mut().session.execute("edit.undo", json!({})).unwrap();
+    h.state_mut()
+        .session
+        .execute("edit.undo", json!({}))
+        .unwrap();
     assert_eq!(pos(&h), orig);
     // Align Layers to: Selection — right edges meet at the rightmost.
     click(&mut h, "align.to");
@@ -178,8 +263,14 @@ fn align_panel_runs_align_and_distribute() {
     click(&mut h, "align.right");
     let p = pos(&h);
     let right = |(x, w): (f64, f64)| x + w / 2.0;
-    let goal = orig.iter().map(|v| right(*v)).fold(f64::NEG_INFINITY, f64::max);
-    assert!((right(p[0]) - goal).abs() < 1e-9 && (right(p[1]) - goal).abs() < 1e-9, "{p:?}");
+    let goal = orig
+        .iter()
+        .map(|v| right(*v))
+        .fold(f64::NEG_INFINITY, f64::max);
+    assert!(
+        (right(p[0]) - goal).abs() < 1e-9 && (right(p[1]) - goal).abs() < 1e-9,
+        "{p:?}"
+    );
     // Distribute needs three layers: nothing moves.
     click(&mut h, "distribute.hcenter");
     assert_eq!(pos(&h), p);
@@ -188,7 +279,10 @@ fn align_panel_runs_align_and_distribute() {
 #[test]
 fn cache_before_playback_plays_what_fits_in_ram() {
     let mut h = harness();
-    set(&mut h, json!({"shortcut": "spacebar", "cacheBeforePlayback": true, "range": "entireDuration", "playFrom": "rangeStart"}));
+    set(
+        &mut h,
+        json!({"shortcut": "spacebar", "cacheBeforePlayback": true, "range": "entireDuration", "playFrom": "rangeStart"}),
+    );
     h.run_steps(2);
     // Room for about 12 full-size frames: the 240-frame range can't all be cached.
     h.state().frames.set_budget(320 * 180 * 4 * 12);
@@ -202,9 +296,17 @@ fn cache_before_playback_plays_what_fits_in_ram() {
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
     let st = &h.state().playback;
-    assert!(st.playing && !st.caching, "caching finished and the preview plays");
+    assert!(
+        st.playing && !st.caching,
+        "caching finished and the preview plays"
+    );
     let pl = st.plan.unwrap();
-    assert!(pl.start == 0 && pl.end < 239 && pl.end >= 9, "cut to what fits: {}..{}", pl.start, pl.end);
+    assert!(
+        pl.start == 0 && pl.end < 239 && pl.end >= 9,
+        "cut to what fits: {}..{}",
+        pl.start,
+        pl.end
+    );
 }
 
 #[test]
@@ -217,14 +319,22 @@ fn auto_resolution_is_the_same_playing_and_paused() {
 
 #[test]
 fn achieved_frame_rate_and_real_time() {
-    let mut p = effectcraft_ui_egui::Playback { playing: true, fps: 24.0, ..Default::default() };
+    let mut p = effectcraft_ui_egui::Playback {
+        playing: true,
+        fps: 24.0,
+        ..Default::default()
+    };
     assert_eq!(p.achieved_fps(), None);
     for i in 0..25 {
         p.frame_shown(i as f64 / 24.0);
     }
     assert!((p.achieved_fps().unwrap() - 24.0).abs() < 1e-9);
     assert_eq!(p.real_time(), Some(true));
-    let mut slow = effectcraft_ui_egui::Playback { playing: true, fps: 24.0, ..Default::default() };
+    let mut slow = effectcraft_ui_egui::Playback {
+        playing: true,
+        fps: 24.0,
+        ..Default::default()
+    };
     for i in 0..13 {
         slow.frame_shown(i as f64 / 12.0);
     }
@@ -236,7 +346,12 @@ fn achieved_frame_rate_and_real_time() {
 fn cache_frames_when_idle_fills_the_work_area() {
     let mut h = harness();
     let cid = h.state().session.active_comp_id().unwrap();
-    let cached = |h: &Harness<'_, EffectcraftApp>| h.state().frames.cached_frames(&h.state().shown_series(cid)).len();
+    let cached = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .frames
+            .cached_frames(&h.state().shown_series(cid))
+            .len()
+    };
     // Off: only a few frames ahead of the current time are prefetched (the work area is the
     // whole 240 frames).
     for _ in 0..120 {

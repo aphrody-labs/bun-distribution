@@ -47,7 +47,14 @@ impl Crack {
     /// The index of the pixel `k` steps out from the inside pixel (0: the inside pixel, 1: the
     /// outside one, −1: the one behind the inside pixel), if the image has it.
     pub fn at(&self, k: i32) -> Option<usize> {
-        pixel((self.inside.0 + k * self.step.0, self.inside.1 + k * self.step.1), self.w, self.h)
+        pixel(
+            (
+                self.inside.0 + k * self.step.0,
+                self.inside.1 + k * self.step.1,
+            ),
+            self.w,
+            self.h,
+        )
     }
 }
 
@@ -103,17 +110,26 @@ pub(crate) fn outline(
     let n = v.len();
     let at = |i: usize| Point::new(f64::from(v[i % n].0), f64::from(v[i % n].1));
     if n < 4 {
-        return vec![Piece { pts: (0..n).map(at).collect(), hard: true, closed: true }];
+        return vec![Piece {
+            pts: (0..n).map(at).collect(),
+            hard: true,
+            closed: true,
+        }];
     }
     let mut edges = Vec::with_capacity(n);
     // Per crack: its shift, the region across it, and the edge it is on.
-    let (mut shifts, mut others, mut edge_of): (Vec<f64>, Vec<u32>, Vec<usize>) = (vec![], vec![], vec![]);
+    let (mut shifts, mut others, mut edge_of): (Vec<f64>, Vec<u32>, Vec<usize>) =
+        (vec![], vec![], vec![]);
     for i in 0..n {
         let (a, b) = (v[i], v[(i + 1) % n]);
         let (dx, dy) = (b.0 - a.0, b.1 - a.1);
         let dir = (dx.signum(), dy.signum());
         let len = dx.unsigned_abs().max(dy.unsigned_abs());
-        edges.push(Edge { dir, len: len as usize, first: shifts.len() });
+        edges.push(Edge {
+            dir,
+            len: len as usize,
+            first: shifts.len(),
+        });
         for k in 0..len as i32 {
             // The crack starts at corner `s`; the inside pixel is on its right (y down).
             let (sx, sy) = (a.0 + dir.0 * k, a.1 + dir.1 * k);
@@ -123,25 +139,41 @@ pub(crate) fn outline(
                 (-1, 0) => ((sx - 1, sy - 1), (sx - 1, sy)),
                 _ => ((sx, sy - 1), (sx - 1, sy - 1)),
             };
-            let crack = Crack { inside, step: (outside.0 - inside.0, outside.1 - inside.1), w, h };
+            let crack = Crack {
+                inside,
+                step: (outside.0 - inside.0, outside.1 - inside.1),
+                w,
+                h,
+            };
             let (s, other) = match crack.at(1) {
                 Some(_) => across(crack),
                 // The edge of the image is where it is.
                 _ => (0.0, border(dir)),
             };
-            shifts.push(if s.is_finite() { (s.clamp(-0.5, 0.5) * 1024.0).round() / 1024.0 } else { 0.0 });
+            shifts.push(if s.is_finite() {
+                (s.clamp(-0.5, 0.5) * 1024.0).round() / 1024.0
+            } else {
+                0.0
+            });
             others.push(other);
             edge_of.push(i);
         }
     }
     let cracks = shifts.len();
     if cracks == 0 {
-        return vec![Piece { pts: (0..n).map(at).collect(), hard: true, closed: true }];
+        return vec![Piece {
+            pts: (0..n).map(at).collect(),
+            hard: true,
+            closed: true,
+        }];
     }
     // The pixel corner each crack starts at.
     let corner_of = |c: usize| {
         let (i, e) = (edge_of[c], &edges[edge_of[c]]);
-        (v[i].0 + e.dir.0 * (c - e.first) as i32, v[i].1 + e.dir.1 * (c - e.first) as i32)
+        (
+            v[i].0 + e.dir.0 * (c - e.first) as i32,
+            v[i].1 + e.dir.1 * (c - e.first) as i32,
+        )
     };
     // A junction lies at the start of each crack whose neighbour is not the crack before's, and
     // where the callback says one is.
@@ -169,9 +201,15 @@ pub(crate) fn outline(
     // about the edge they share, and counts as none.)
     let turn = |i: usize| {
         let (a, b) = (edges[(i + n - 1) % n].dir, edges[i % n].dir);
-        if junctions[edges[i % n].first].is_some() { 0 } else { (a.0 * b.1 - a.1 * b.0).signum() }
+        if junctions[edges[i % n].first].is_some() {
+            0
+        } else {
+            (a.0 * b.1 - a.1 * b.0).signum()
+        }
     };
-    let step: Vec<bool> = (0..n).map(|i| edges[i].len == 1 && turn(i) * turn(i + 1) < 0).collect();
+    let step: Vec<bool> = (0..n)
+        .map(|i| edges[i].len == 1 && turn(i) * turn(i + 1) < 0)
+        .collect();
     let outward = |d: (i32, i32)| Vec2::new(f64::from(d.1), f64::from(-d.0));
     // The pixel at a corner of the shape lies on both of the corner's edges, and what it lacks of
     // the inside's colour is the doing of both: read as one edge's alone it dents the corner. The
@@ -219,7 +257,10 @@ pub(crate) fn outline(
             let (ea, eb) = (&edges[a], &edges[b]);
             // Edge `a` carried on one pixel further meets edge `b` carried back one.
             let meet = at(s1) + Vec2::new(f64::from(ea.dir.0), f64::from(ea.dir.1));
-            notch[s1] = Some(Some(meet + outward(ea.dir) * shifts[ea.first + ea.len - 1] + outward(eb.dir) * shifts[eb.first]));
+            notch[s1] = Some(Some(
+                meet + outward(ea.dir) * shifts[ea.first + ea.len - 1]
+                    + outward(eb.dir) * shifts[eb.first],
+            ));
             notch[s2] = Some(None);
         }
     }
@@ -229,7 +270,9 @@ pub(crate) fn outline(
     let mut c = 0;
     while c < cracks {
         // The cracks of one piece: up to the next junction.
-        let len = (1..cracks - c).find(|&k| junction((start + c + k) % cracks)).unwrap_or(cracks - c);
+        let len = (1..cracks - c)
+            .find(|&k| junction((start + c + k) % cracks))
+            .unwrap_or(cracks - c);
         let own: Vec<f64> = (0..len).map(|k| shifts[(start + c + k) % cracks]).collect();
         let hard = is_hard(&own);
         let mut pts = Vec::with_capacity(len + 2);
@@ -237,20 +280,29 @@ pub(crate) fn outline(
             let crack = (start + c + k) % cracks;
             let i = edge_of[crack];
             let (e, along_edge) = (&edges[i], crack - edges[i].first);
-            let corner = at(i) + Vec2::new(f64::from(e.dir.0), f64::from(e.dir.1)) * along_edge as f64;
+            let corner =
+                at(i) + Vec2::new(f64::from(e.dir.0), f64::from(e.dir.1)) * along_edge as f64;
             if k == 0 && first.is_some() {
                 // The junction itself: the one point every region around it has.
                 pts.push(junctions[crack].unwrap_or(corner));
             } else if along_edge == 0 && !step[i] && !step[(i + n - 1) % n] {
                 // A true corner: where its two edges, each moved by its own shift, meet.
                 let before = &edges[(i + n - 1) % n];
-                pts.push(corner + outward(before.dir) * shifts[(crack + cracks - 1) % cracks] + outward(e.dir) * shifts[crack]);
+                pts.push(
+                    corner
+                        + outward(before.dir) * shifts[(crack + cracks - 1) % cracks]
+                        + outward(e.dir) * shifts[crack],
+                );
             }
             if !hard && let Some(sharp) = notch[i] {
                 // A corner whose own pixel went to the other side: the corner, not the two steps.
                 pts.extend(sharp);
             } else if step[i] || !hard {
-                pts.push(corner + Vec2::new(f64::from(e.dir.0), f64::from(e.dir.1)) * 0.5 + outward(e.dir) * shifts[crack]);
+                pts.push(
+                    corner
+                        + Vec2::new(f64::from(e.dir.0), f64::from(e.dir.1)) * 0.5
+                        + outward(e.dir) * shifts[crack],
+                );
             }
         }
         if first.is_some() {
@@ -259,11 +311,19 @@ pub(crate) fn outline(
             let (x, y) = corner_of(next);
             pts.push(junctions[next].unwrap_or(Point::new(f64::from(x), f64::from(y))));
         }
-        pieces.push(Piece { pts, hard, closed: first.is_none() });
+        pieces.push(Piece {
+            pts,
+            hard,
+            closed: first.is_none(),
+        });
         c += len;
     }
     if first.is_none() && pieces.first().is_some_and(|p| p.pts.len() < 3) {
-        return vec![Piece { pts: (0..n).map(at).collect(), hard: true, closed: true }];
+        return vec![Piece {
+            pts: (0..n).map(at).collect(),
+            hard: true,
+            closed: true,
+        }];
     }
     pieces
 }
@@ -289,30 +349,49 @@ mod tests {
         let hard = pieces.iter().all(|p| p.hard);
         // Only the image's border makes junctions here: drop each piece's closing point.
         let split = pieces.len() > 1;
-        let pts = pieces.iter_mut().flat_map(|p| p.pts.drain(..p.pts.len() - usize::from(split))).collect();
+        let pts = pieces
+            .iter_mut()
+            .flat_map(|p| p.pts.drain(..p.pts.len() - usize::from(split)))
+            .collect();
         (pts, hard)
     }
 
     #[test]
     fn a_hard_rectangle_keeps_its_four_corners() {
         let (w, h) = (8, 6);
-        let mask: Vec<bool> = (0..w * h).map(|i| (2..6).contains(&(i % w)) && (1..5).contains(&(i / w))).collect();
+        let mask: Vec<bool> = (0..w * h)
+            .map(|i| (2..6).contains(&(i % w)) && (1..5).contains(&(i / w)))
+            .collect();
         let (pts, hard) = whole(&loop_of(&mask, w, h), w, h, &|_| 0.0);
         assert!(hard);
-        assert_eq!(pts, [(2.0, 1.0), (6.0, 1.0), (6.0, 5.0), (2.0, 5.0)].map(Point::from));
+        assert_eq!(
+            pts,
+            [(2.0, 1.0), (6.0, 1.0), (6.0, 5.0), (2.0, 5.0)].map(Point::from)
+        );
     }
 
     #[test]
     fn a_hard_staircase_becomes_the_sloped_line_through_its_steps() {
         // Below the line y = x / 4 + 2: treads four pixels long.
         let (w, h) = (16, 8);
-        let mask: Vec<bool> = (0..w * h).map(|i| (i / w) as f64 + 0.5 > (i % w) as f64 / 4.0 + 2.0).collect();
+        let mask: Vec<bool> = (0..w * h)
+            .map(|i| (i / w) as f64 + 0.5 > (i % w) as f64 / 4.0 + 2.0)
+            .collect();
         let (pts, hard) = whole(&loop_of(&mask, w, h), w, h, &|_| 0.0);
         assert!(hard);
         // Every step's middle lies on one line, a quarter of a pixel's rise per pixel.
-        let steps: Vec<Point> = pts.iter().copied().filter(|p| p.y.fract() == 0.5 && p.x > 0.0 && p.x < w as f64).collect();
+        let steps: Vec<Point> = pts
+            .iter()
+            .copied()
+            .filter(|p| p.y.fract() == 0.5 && p.x > 0.0 && p.x < w as f64)
+            .collect();
         assert_eq!(steps.len(), 4, "{pts:?}");
-        assert!(steps.windows(2).all(|s| ((s[1].y - s[0].y) / (s[1].x - s[0].x) - 0.25).abs() < 1e-9), "{steps:?}");
+        assert!(
+            steps
+                .windows(2)
+                .all(|s| ((s[1].y - s[0].y) / (s[1].x - s[0].x) - 0.25).abs() < 1e-9),
+            "{steps:?}"
+        );
     }
 
     #[test]
@@ -350,7 +429,12 @@ mod tests {
         // border, at junctions on the pixel grid.
         let right: Vec<&Point> = pts.iter().filter(|p| p.x > 3.05).collect();
         assert_eq!(right.len(), 4);
-        assert!(right.iter().all(|p| (p.x - if p.y < 2.0 { 3.3 } else { 3.1 }).abs() < 1e-3), "{right:?}");
+        assert!(
+            right
+                .iter()
+                .all(|p| (p.x - if p.y < 2.0 { 3.3 } else { 3.1 }).abs() < 1e-3),
+            "{right:?}"
+        );
         assert!(pts.contains(&Point::new(3.0, 0.0)) && pts.contains(&Point::new(3.0, 4.0)));
     }
 
@@ -366,20 +450,64 @@ mod tests {
     fn two_regions_get_the_same_points_for_their_shared_edge() {
         // Left and right halves meet along a staircase; each sees the other's shifts negated.
         let (w, h) = (12, 10);
-        let left: Vec<bool> = (0..w * h).map(|i| (i % w) as f64 + 0.5 < 4.0 + (i / w) as f64 * 0.4).collect();
+        let left: Vec<bool> = (0..w * h)
+            .map(|i| (i % w) as f64 + 0.5 < 4.0 + (i / w) as f64 * 0.4)
+            .collect();
         let right: Vec<bool> = left.iter().map(|b| !b).collect();
         let wave = |c: Crack| 0.4 * ((c.at(0).unwrap() + c.at(1).unwrap()) as f64).sin();
-        let a = outline(&loop_of(&left, w, h), w, h, &|c| (if left[c.at(0).unwrap()] { wave(c) } else { -wave(c) }, 1), &grid);
-        let b = outline(&loop_of(&right, w, h), w, h, &|c| (if left[c.at(0).unwrap()] { wave(c) } else { -wave(c) }, 2), &grid);
+        let a = outline(
+            &loop_of(&left, w, h),
+            w,
+            h,
+            &|c| {
+                (
+                    if left[c.at(0).unwrap()] {
+                        wave(c)
+                    } else {
+                        -wave(c)
+                    },
+                    1,
+                )
+            },
+            &grid,
+        );
+        let b = outline(
+            &loop_of(&right, w, h),
+            w,
+            h,
+            &|c| {
+                (
+                    if left[c.at(0).unwrap()] {
+                        wave(c)
+                    } else {
+                        -wave(c)
+                    },
+                    2,
+                )
+            },
+            &grid,
+        );
         // The piece that is not on the image's border, from either side.
         let inner = |pieces: &[Piece]| {
-            pieces.iter().find(|p| p.pts.iter().any(|q| q.x > 0.0 && q.x < w as f64 && q.y > 0.0 && q.y < h as f64)).unwrap().clone()
+            pieces
+                .iter()
+                .find(|p| {
+                    p.pts
+                        .iter()
+                        .any(|q| q.x > 0.0 && q.x < w as f64 && q.y > 0.0 && q.y < h as f64)
+                })
+                .unwrap()
+                .clone()
         };
         let (mut ours, theirs) = (inner(&a), inner(&b));
         ours.pts.reverse();
         assert_eq!(ours, theirs);
         assert!(ours.pts.len() > 12);
         // Each side of the image is a piece of its own: its corners are exact.
-        assert!(a.iter().chain(&b).all(|p| p.pts.first().is_some_and(|q| q.x.fract() == 0.0 && q.y.fract() == 0.0)));
+        assert!(a.iter().chain(&b).all(|p| {
+            p.pts
+                .first()
+                .is_some_and(|q| q.x.fract() == 0.0 && q.y.fract() == 0.0)
+        }));
     }
 }

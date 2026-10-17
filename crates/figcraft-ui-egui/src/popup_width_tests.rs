@@ -12,28 +12,55 @@ const SCREEN: egui::Vec2 = vec2(1440.0, 900.0);
 
 fn input(t: &mut f64, events: Vec<Event>) -> RawInput {
     *t += 1.0 / 60.0;
-    RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, SCREEN)), time: Some(*t), events, ..Default::default() }
+    RawInput {
+        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, SCREEN)),
+        time: Some(*t),
+        events,
+        ..Default::default()
+    }
 }
 
 fn press(p: Pos2, pressed: bool) -> Vec<Event> {
-    vec![Event::PointerMoved(p), Event::PointerButton { pos: p, button: PointerButton::Primary, pressed, modifiers: Default::default() }]
+    vec![
+        Event::PointerMoved(p),
+        Event::PointerButton {
+            pos: p,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        },
+    ]
 }
 
 /// The rects of the foreground areas (menus) showing.
 fn menus(ctx: &egui::Context) -> Vec<Rect> {
-    ctx.memory(|m| m.areas().visible_layer_ids().into_iter().filter(|l| l.order == Order::Foreground).filter_map(|l| m.area_rect(l.id)).collect())
+    ctx.memory(|m| {
+        m.areas()
+            .visible_layer_ids()
+            .into_iter()
+            .filter(|l| l.order == Order::Foreground)
+            .filter_map(|l| m.area_rect(l.id))
+            .collect()
+    })
 }
 
 /// The popup frame's margins, left plus right.
 fn frame_margins(ctx: &egui::Context) -> f32 {
-    egui::Frame::popup(&ctx.global_style()).total_margin().sum().x
+    egui::Frame::popup(&ctx.global_style())
+        .total_margin()
+        .sum()
+        .x
 }
 
 #[test]
 fn a_menu_is_as_wide_as_its_widest_row_and_does_not_wrap() {
     let ctx = egui::Context::default();
     let mut t = 0.0;
-    let items = [("Copy as code", "Cmd+Shift+C"), ("Paste", "Cmd+V"), ("A much longer menu item label", "")];
+    let items = [
+        ("Copy as code", "Cmd+Shift+C"),
+        ("Paste", "Cmd+V"),
+        ("A much longer menu item label", ""),
+    ];
     let mut frame = |events: Vec<Event>| {
         let mut out = ctx.run_ui(input(&mut t, events), |ui| {
             // A narrow icon button opens it.
@@ -54,15 +81,47 @@ fn a_menu_is_as_wide_as_its_widest_row_and_does_not_wrap() {
         frame(vec![]);
     }
     let shown = menus(&ctx);
-    let [menu] = shown.as_slice() else { panic!("one menu open: {shown:?}") };
-    let width = |s: &str, size: f32| ctx.fonts_mut(|f| f.layout_no_wrap(crate::toolbar::pretty_shortcut(s), regular(size), Color32::WHITE).size().x);
-    let content =
-        items.iter().map(|(l, k)| menu_row_width(width(l, 11.5), if k.is_empty() { 0.0 } else { width(k, 11.0) + 8.0 }).ceil()).fold(0.0, f32::max);
+    let [menu] = shown.as_slice() else {
+        panic!("one menu open: {shown:?}")
+    };
+    let width = |s: &str, size: f32| {
+        ctx.fonts_mut(|f| {
+            f.layout_no_wrap(
+                crate::toolbar::pretty_shortcut(s),
+                regular(size),
+                Color32::WHITE,
+            )
+            .size()
+            .x
+        })
+    };
+    let content = items
+        .iter()
+        .map(|(l, k)| {
+            menu_row_width(
+                width(l, 11.5),
+                if k.is_empty() {
+                    0.0
+                } else {
+                    width(k, 11.0) + 8.0
+                },
+            )
+            .ceil()
+        })
+        .fold(0.0, f32::max);
     let expected = content + frame_margins(&ctx);
-    assert!((menu.width() - expected).abs() <= 2.0, "menu {} wide, content needs {expected}", menu.width());
+    assert!(
+        (menu.width() - expected).abs() <= 2.0,
+        "menu {} wide, content needs {expected}",
+        menu.width()
+    );
     // One line per row.
     let rows = 26.0 * items.len() as f32;
-    assert!(menu.height() < rows + 40.0, "menu {} tall for {rows} of rows", menu.height());
+    assert!(
+        menu.height() < rows + 40.0,
+        "menu {} tall for {rows} of rows",
+        menu.height()
+    );
 }
 
 #[test]
@@ -97,7 +156,17 @@ fn right_panel_dropdown_menus_fit_the_panel() {
     let menu = menu.expect("the Ready for dev filter menu opens");
     // The dropdown spans the panel less its padding; its three short options fit in that.
     let dropdown = app.ui.right_width - 2.0 * crate::widgets::PAD;
-    assert!(menu.width() >= dropdown - 16.0, "menu {menu:?} at least as wide as its dropdown ({dropdown})");
-    assert!(menu.width() <= app.ui.right_width, "menu {menu:?} fits the {} px panel", app.ui.right_width);
-    assert!(menu.max.x <= SCREEN.x && menu.min.x >= panel_left - 8.0, "menu {menu:?} inside the window, under the panel");
+    assert!(
+        menu.width() >= dropdown - 16.0,
+        "menu {menu:?} at least as wide as its dropdown ({dropdown})"
+    );
+    assert!(
+        menu.width() <= app.ui.right_width,
+        "menu {menu:?} fits the {} px panel",
+        app.ui.right_width
+    );
+    assert!(
+        menu.max.x <= SCREEN.x && menu.min.x >= panel_left - 8.0,
+        "menu {menu:?} inside the window, under the panel"
+    );
 }

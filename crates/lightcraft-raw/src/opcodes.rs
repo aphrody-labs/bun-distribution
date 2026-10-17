@@ -120,14 +120,22 @@ pub enum Opcode {
 impl Opcode {
     /// Whether [`apply_list`] / [`apply_list3`] implement this opcode.
     pub fn is_applied(&self) -> bool {
-        !matches!(self, Opcode::Unknown { .. } | Opcode::TrimBounds { .. } | Opcode::WarpFisheye { .. })
+        !matches!(
+            self,
+            Opcode::Unknown { .. } | Opcode::TrimBounds { .. } | Opcode::WarpFisheye { .. }
+        )
     }
 
     /// Whether this is a lens correction (`WarpRectilinear`, `WarpRectilinear2`, `FixVignetteRadial`): from a DNG, or
     /// the equivalent of a camera's own correction recorded in its raw (Panasonic RW2). Developers that apply these
     /// through the "profile corrections" of the develop settings remove them before demosaicing.
     pub fn is_lens_correction(&self) -> bool {
-        matches!(self, Opcode::WarpRectilinear { .. } | Opcode::WarpRectilinear2 { .. } | Opcode::FixVignetteRadial { .. })
+        matches!(
+            self,
+            Opcode::WarpRectilinear { .. }
+                | Opcode::WarpRectilinear2 { .. }
+                | Opcode::FixVignetteRadial { .. }
+        )
     }
 }
 
@@ -137,7 +145,11 @@ impl Opcode {
 pub fn applied_ops(list: &[Opcode]) -> impl Iterator<Item = &Opcode> {
     let mut skip = false;
     list.iter().filter(move |op| {
-        let skipped = skip && matches!(op, Opcode::WarpRectilinear { .. } | Opcode::WarpFisheye { .. });
+        let skipped = skip
+            && matches!(
+                op,
+                Opcode::WarpRectilinear { .. } | Opcode::WarpFisheye { .. }
+            );
         skip = matches!(op, Opcode::WarpRectilinear2 { optional: true, .. });
         !skipped
     })
@@ -216,9 +228,19 @@ fn parse_one(id: u32, flags: u32, params: &[u8]) -> Option<Opcode> {
             }
             let mut planes = Vec::with_capacity(n);
             for _ in 0..n {
-                planes.push([f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?]);
+                planes.push([
+                    f(&mut r)?,
+                    f(&mut r)?,
+                    f(&mut r)?,
+                    f(&mut r)?,
+                    f(&mut r)?,
+                    f(&mut r)?,
+                ]);
             }
-            Opcode::WarpRectilinear { planes, center: [f(&mut r)?, f(&mut r)?] }
+            Opcode::WarpRectilinear {
+                planes,
+                center: [f(&mut r)?, f(&mut r)?],
+            }
         }
         2 => {
             let n = r.u32()? as usize;
@@ -229,7 +251,10 @@ fn parse_one(id: u32, flags: u32, params: &[u8]) -> Option<Opcode> {
             for _ in 0..n {
                 planes.push([f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?]);
             }
-            Opcode::WarpFisheye { planes, center: [f(&mut r)?, f(&mut r)?] }
+            Opcode::WarpFisheye {
+                planes,
+                center: [f(&mut r)?, f(&mut r)?],
+            }
         }
         14 => {
             let n = r.u32()? as usize;
@@ -249,29 +274,59 @@ fn parse_one(id: u32, flags: u32, params: &[u8]) -> Option<Opcode> {
                 }
                 planes.push(k);
             }
-            let center = [f(&mut r).filter(|v| v.abs() <= 4.0)?, f(&mut r).filter(|v| v.abs() <= 4.0)?];
-            Opcode::WarpRectilinear2 { planes, center, reciprocal: r.u32()? != 0, optional: flags & 1 != 0 }
+            let center = [
+                f(&mut r).filter(|v| v.abs() <= 4.0)?,
+                f(&mut r).filter(|v| v.abs() <= 4.0)?,
+            ];
+            Opcode::WarpRectilinear2 {
+                planes,
+                center,
+                reciprocal: r.u32()? != 0,
+                optional: flags & 1 != 0,
+            }
         }
-        3 => Opcode::FixVignetteRadial { k: [f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?], center: [f(&mut r)?, f(&mut r)?] },
-        4 => Opcode::FixBadPixelsConstant { constant: r.u32()?, bayer_phase: r.u32()? },
+        3 => Opcode::FixVignetteRadial {
+            k: [f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?, f(&mut r)?],
+            center: [f(&mut r)?, f(&mut r)?],
+        },
+        4 => Opcode::FixBadPixelsConstant {
+            constant: r.u32()?,
+            bayer_phase: r.u32()?,
+        },
         5 => {
             let bayer_phase = r.u32()?;
             let (np, nr) = (r.u32()? as usize, r.u32()? as usize);
             if np.saturating_mul(8).saturating_add(nr.saturating_mul(16)) > r.remaining() {
                 return None;
             }
-            let points = (0..np).map(|_| Some((r.u32()?, r.u32()?))).collect::<Option<_>>()?;
-            let rects = (0..nr).map(|_| Some([r.u32()?, r.u32()?, r.u32()?, r.u32()?])).collect::<Option<_>>()?;
-            Opcode::FixBadPixelsList { bayer_phase, points, rects }
+            let points = (0..np)
+                .map(|_| Some((r.u32()?, r.u32()?)))
+                .collect::<Option<_>>()?;
+            let rects = (0..nr)
+                .map(|_| Some([r.u32()?, r.u32()?, r.u32()?, r.u32()?]))
+                .collect::<Option<_>>()?;
+            Opcode::FixBadPixelsList {
+                bayer_phase,
+                points,
+                rects,
+            }
         }
-        6 => Opcode::TrimBounds { top: r.u32()?, left: r.u32()?, bottom: r.u32()?, right: r.u32()? },
+        6 => Opcode::TrimBounds {
+            top: r.u32()?,
+            left: r.u32()?,
+            bottom: r.u32()?,
+            right: r.u32()?,
+        },
         7 => {
             let area = r.area()?;
             let n = r.u32()? as usize;
             if n == 0 || n > 65536 || n * 2 > r.remaining() {
                 return None;
             }
-            Opcode::MapTable { area, table: (0..n).map(|_| r.u16()).collect::<Option<_>>()? }
+            Opcode::MapTable {
+                area,
+                table: (0..n).map(|_| r.u16()).collect::<Option<_>>()?,
+            }
         }
         8 => {
             let area = r.area()?;
@@ -279,7 +334,10 @@ fn parse_one(id: u32, flags: u32, params: &[u8]) -> Option<Opcode> {
             if deg > 8 {
                 return None;
             }
-            Opcode::MapPolynomial { area, coefficients: (0..=deg).map(|_| f(&mut r)).collect::<Option<_>>()? }
+            Opcode::MapPolynomial {
+                area,
+                coefficients: (0..=deg).map(|_| f(&mut r)).collect::<Option<_>>()?,
+            }
         }
         9 => {
             let area = r.area()?;
@@ -287,12 +345,22 @@ fn parse_one(id: u32, flags: u32, params: &[u8]) -> Option<Opcode> {
             let spacing = [f(&mut r)?, f(&mut r)?];
             let origin = [f(&mut r)?, f(&mut r)?];
             let mp = r.u32()?;
-            let n = (pv as usize).checked_mul(ph as usize)?.checked_mul(mp as usize)?;
+            let n = (pv as usize)
+                .checked_mul(ph as usize)?
+                .checked_mul(mp as usize)?;
             if n == 0 || n * 4 > r.remaining() {
                 return None;
             }
             let gains = (0..n).map(|_| r.f32()).collect::<Option<_>>()?;
-            Opcode::GainMap { area, points_v: pv, points_h: ph, spacing, origin, map_planes: mp, gains }
+            Opcode::GainMap {
+                area,
+                points_v: pv,
+                points_h: ph,
+                spacing,
+                origin,
+                map_planes: mp,
+                gains,
+            }
         }
         10..=13 => {
             let area = r.area()?;
@@ -308,21 +376,37 @@ fn parse_one(id: u32, flags: u32, params: &[u8]) -> Option<Opcode> {
                 _ => Opcode::ScalePerColumn { area, scales: v },
             }
         }
-        _ => Opcode::Unknown { id, flags, params: params.to_vec() },
+        _ => Opcode::Unknown {
+            id,
+            flags,
+            params: params.to_vec(),
+        },
     })
 }
 
 fn put_area(o: &mut Vec<u8>, a: &Area) {
-    for v in [a.top, a.left, a.bottom, a.right, a.plane, a.planes, a.row_pitch, a.col_pitch] {
+    for v in [
+        a.top,
+        a.left,
+        a.bottom,
+        a.right,
+        a.plane,
+        a.planes,
+        a.row_pitch,
+        a.col_pitch,
+    ] {
         o.extend_from_slice(&v.to_be_bytes());
     }
 }
 
 fn params(op: &Opcode) -> (u32, u32, Vec<u8>) {
     let mut o = Vec::new();
-    let f64s = |o: &mut Vec<u8>, v: &[f64]| v.iter().for_each(|x| o.extend_from_slice(&x.to_be_bytes()));
-    let u32s = |o: &mut Vec<u8>, v: &[u32]| v.iter().for_each(|x| o.extend_from_slice(&x.to_be_bytes()));
-    let f32s = |o: &mut Vec<u8>, v: &[f32]| v.iter().for_each(|x| o.extend_from_slice(&x.to_be_bytes()));
+    let f64s =
+        |o: &mut Vec<u8>, v: &[f64]| v.iter().for_each(|x| o.extend_from_slice(&x.to_be_bytes()));
+    let u32s =
+        |o: &mut Vec<u8>, v: &[u32]| v.iter().for_each(|x| o.extend_from_slice(&x.to_be_bytes()));
+    let f32s =
+        |o: &mut Vec<u8>, v: &[f32]| v.iter().for_each(|x| o.extend_from_slice(&x.to_be_bytes()));
     let id = match op {
         Opcode::WarpRectilinear { planes, center } => {
             u32s(&mut o, &[planes.len() as u32]);
@@ -336,7 +420,12 @@ fn params(op: &Opcode) -> (u32, u32, Vec<u8>) {
             f64s(&mut o, center);
             2
         }
-        Opcode::WarpRectilinear2 { planes, center, reciprocal, optional } => {
+        Opcode::WarpRectilinear2 {
+            planes,
+            center,
+            reciprocal,
+            optional,
+        } => {
             u32s(&mut o, &[planes.len() as u32]);
             planes.iter().for_each(|p| f64s(&mut o, p));
             f64s(&mut o, center);
@@ -348,24 +437,41 @@ fn params(op: &Opcode) -> (u32, u32, Vec<u8>) {
             f64s(&mut o, center);
             3
         }
-        Opcode::FixBadPixelsConstant { constant, bayer_phase } => {
+        Opcode::FixBadPixelsConstant {
+            constant,
+            bayer_phase,
+        } => {
             u32s(&mut o, &[*constant, *bayer_phase]);
             4
         }
-        Opcode::FixBadPixelsList { bayer_phase, points, rects } => {
-            u32s(&mut o, &[*bayer_phase, points.len() as u32, rects.len() as u32]);
+        Opcode::FixBadPixelsList {
+            bayer_phase,
+            points,
+            rects,
+        } => {
+            u32s(
+                &mut o,
+                &[*bayer_phase, points.len() as u32, rects.len() as u32],
+            );
             points.iter().for_each(|&(r, c)| u32s(&mut o, &[r, c]));
             rects.iter().for_each(|r| u32s(&mut o, r));
             5
         }
-        Opcode::TrimBounds { top, left, bottom, right } => {
+        Opcode::TrimBounds {
+            top,
+            left,
+            bottom,
+            right,
+        } => {
             u32s(&mut o, &[*top, *left, *bottom, *right]);
             6
         }
         Opcode::MapTable { area, table } => {
             put_area(&mut o, area);
             u32s(&mut o, &[table.len() as u32]);
-            table.iter().for_each(|v| o.extend_from_slice(&v.to_be_bytes()));
+            table
+                .iter()
+                .for_each(|v| o.extend_from_slice(&v.to_be_bytes()));
             7
         }
         Opcode::MapPolynomial { area, coefficients } => {
@@ -374,7 +480,15 @@ fn params(op: &Opcode) -> (u32, u32, Vec<u8>) {
             f64s(&mut o, coefficients);
             8
         }
-        Opcode::GainMap { area, points_v, points_h, spacing, origin, map_planes, gains } => {
+        Opcode::GainMap {
+            area,
+            points_v,
+            points_h,
+            spacing,
+            origin,
+            map_planes,
+            gains,
+        } => {
             put_area(&mut o, area);
             u32s(&mut o, &[*points_v, *points_h]);
             f64s(&mut o, spacing);
@@ -407,7 +521,12 @@ pub fn write_list(list: &[Opcode]) -> Vec<u8> {
     let mut out = (list.len() as u32).to_be_bytes().to_vec();
     for op in list {
         let (id, flags, p) = params(op);
-        for v in [id, if id == 14 { 0x0106_0000 } else { 0x0103_0000 }, flags, p.len() as u32] {
+        for v in [
+            id,
+            if id == 14 { 0x0106_0000 } else { 0x0103_0000 },
+            flags,
+            p.len() as u32,
+        ] {
             out.extend_from_slice(&v.to_be_bytes());
         }
         out.extend_from_slice(&p);
@@ -421,29 +540,68 @@ pub fn parse_list(d: &[u8]) -> Vec<Opcode> {
     let Some(count) = r.u32() else { return vec![] };
     let mut out = Vec::new();
     for _ in 0..count.min(4096) {
-        let (Some(id), Some(_ver), Some(flags), Some(size)) = (r.u32(), r.u32(), r.u32(), r.u32()) else { break };
-        let Some(params) = d.get(r.p..r.p.saturating_add(size as usize)) else { break };
+        let (Some(id), Some(_ver), Some(flags), Some(size)) = (r.u32(), r.u32(), r.u32(), r.u32())
+        else {
+            break;
+        };
+        let Some(params) = d.get(r.p..r.p.saturating_add(size as usize)) else {
+            break;
+        };
         r.p += size as usize;
-        out.push(parse_one(id, flags, params).unwrap_or(Opcode::Unknown { id, flags, params: params.to_vec() }));
+        out.push(parse_one(id, flags, params).unwrap_or(Opcode::Unknown {
+            id,
+            flags,
+            params: params.to_vec(),
+        }));
     }
     out
 }
 
-fn area_iter(a: &Area, w: usize, h: usize, cpp: usize) -> impl Iterator<Item = (usize, usize, usize)> + '_ {
+fn area_iter(
+    a: &Area,
+    w: usize,
+    h: usize,
+    cpp: usize,
+) -> impl Iterator<Item = (usize, usize, usize)> + '_ {
     let (t, l) = (a.top as usize, a.left as usize);
     let (b, r) = ((a.bottom as usize).min(h), (a.right as usize).min(w));
-    let (p0, p1) = (a.plane as usize, (a.plane as usize + a.planes.max(1) as usize).min(cpp));
+    let (p0, p1) = (
+        a.plane as usize,
+        (a.plane as usize + a.planes.max(1) as usize).min(cpp),
+    );
     (t..b.max(t))
         .step_by(a.row_pitch.max(1) as usize)
-        .flat_map(move |y| (l..r.max(l)).step_by(a.col_pitch.max(1) as usize).flat_map(move |x| (p0..p1.max(p0)).map(move |p| (x, y, p))))
+        .flat_map(move |y| {
+            (l..r.max(l))
+                .step_by(a.col_pitch.max(1) as usize)
+                .flat_map(move |x| (p0..p1.max(p0)).map(move |p| (x, y, p)))
+        })
 }
 
-fn gain_at(points_v: u32, points_h: u32, spacing: [f64; 2], origin: [f64; 2], map_planes: u32, gains: &[f32], rv: f64, rh: f64, plane: usize) -> f32 {
+fn gain_at(
+    points_v: u32,
+    points_h: u32,
+    spacing: [f64; 2],
+    origin: [f64; 2],
+    map_planes: u32,
+    gains: &[f32],
+    rv: f64,
+    rh: f64,
+    plane: usize,
+) -> f32 {
     let (pv, ph) = (points_v as usize, points_h as usize);
     let mp = map_planes as usize;
     let p = plane.min(mp - 1);
-    let fy = if spacing[0] > 0.0 { ((rv - origin[0]) / spacing[0]).clamp(0.0, (pv - 1) as f64) } else { 0.0 };
-    let fx = if spacing[1] > 0.0 { ((rh - origin[1]) / spacing[1]).clamp(0.0, (ph - 1) as f64) } else { 0.0 };
+    let fy = if spacing[0] > 0.0 {
+        ((rv - origin[0]) / spacing[0]).clamp(0.0, (pv - 1) as f64)
+    } else {
+        0.0
+    };
+    let fx = if spacing[1] > 0.0 {
+        ((rh - origin[1]) / spacing[1]).clamp(0.0, (ph - 1) as f64)
+    } else {
+        0.0
+    };
     let (y0, x0) = (fy.floor() as usize, fx.floor() as usize);
     let (y1, x1) = ((y0 + 1).min(pv - 1), (x0 + 1).min(ph - 1));
     let (ty, tx) = ((fy - y0 as f64) as f32, (fx - x0 as f64) as f32);
@@ -455,7 +613,11 @@ fn gain_at(points_v: u32, points_h: u32, spacing: [f64; 2], origin: [f64; 2], ma
 
 /// Radius normaliser: distance from the centre to the farthest image corner.
 fn max_radius(cx: f64, cy: f64, w: f64, h: f64) -> f64 {
-    [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().map(|&(x, y)| (x - cx).hypot(y - cy)).fold(0.0, f64::max).max(1e-9)
+    [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]
+        .iter()
+        .map(|&(x, y)| (x - cx).hypot(y - cy))
+        .fold(0.0, f64::max)
+        .max(1e-9)
 }
 
 /// Most pixels one bad-pixel opcode repairs (the list is 64 MB, `fix_pixels`' set about twice that). Uncapped, a
@@ -466,7 +628,15 @@ const MAX_BAD_PIXELS: usize = 1 << 22;
 /// Apply a list to an interleaved `w × h × cpp` buffer. `cfa` (when the data is a mosaic) is used by the
 /// bad-pixel opcodes. `scale` is the value of 1.0 in the buffer: 65535 for list 1 (raw 16-bit values), 1 for
 /// lists 2 and 3 (normalised values).
-pub fn apply_list(list: &[Opcode], buf: &mut [f32], w: usize, h: usize, cpp: usize, cfa: Option<&Cfa>, scale: f32) {
+pub fn apply_list(
+    list: &[Opcode],
+    buf: &mut [f32],
+    w: usize,
+    h: usize,
+    cpp: usize,
+    cfa: Option<&Cfa>,
+    scale: f32,
+) {
     for op in list {
         match op {
             Opcode::MapTable { area, table } => {
@@ -485,19 +655,40 @@ pub fn apply_list(list: &[Opcode], buf: &mut [f32], w: usize, h: usize, cpp: usi
                     *v = r as f32 * scale;
                 }
             }
-            Opcode::GainMap { area, points_v, points_h, spacing, origin, map_planes, gains } => {
+            Opcode::GainMap {
+                area,
+                points_v,
+                points_h,
+                spacing,
+                origin,
+                map_planes,
+                gains,
+            } => {
                 for (x, y, p) in area_iter(area, w, h, cpp) {
                     let rv = y as f64 / h as f64;
                     let rh = x as f64 / w as f64;
-                    let g = gain_at(*points_v, *points_h, *spacing, *origin, *map_planes, gains, rv, rh, p - area.plane as usize);
+                    let g = gain_at(
+                        *points_v,
+                        *points_h,
+                        *spacing,
+                        *origin,
+                        *map_planes,
+                        gains,
+                        rv,
+                        rh,
+                        p - area.plane as usize,
+                    );
                     buf[(y * w + x) * cpp + p] *= g;
                 }
             }
             Opcode::DeltaPerRow { area, deltas } | Opcode::DeltaPerColumn { area, deltas } => {
                 let per_row = matches!(op, Opcode::DeltaPerRow { .. });
                 for (x, y, p) in area_iter(area, w, h, cpp) {
-                    let i =
-                        if per_row { (y - area.top as usize) / area.row_pitch as usize } else { (x - area.left as usize) / area.col_pitch as usize };
+                    let i = if per_row {
+                        (y - area.top as usize) / area.row_pitch as usize
+                    } else {
+                        (x - area.left as usize) / area.col_pitch as usize
+                    };
                     if let Some(d) = deltas.get(i) {
                         buf[(y * w + x) * cpp + p] += d * scale;
                     }
@@ -506,8 +697,11 @@ pub fn apply_list(list: &[Opcode], buf: &mut [f32], w: usize, h: usize, cpp: usi
             Opcode::ScalePerRow { area, scales } | Opcode::ScalePerColumn { area, scales } => {
                 let per_row = matches!(op, Opcode::ScalePerRow { .. });
                 for (x, y, p) in area_iter(area, w, h, cpp) {
-                    let i =
-                        if per_row { (y - area.top as usize) / area.row_pitch as usize } else { (x - area.left as usize) / area.col_pitch as usize };
+                    let i = if per_row {
+                        (y - area.top as usize) / area.row_pitch as usize
+                    } else {
+                        (x - area.left as usize) / area.col_pitch as usize
+                    };
                     if let Some(s) = scales.get(i) {
                         buf[(y * w + x) * cpp + p] *= s;
                     }
@@ -518,8 +712,10 @@ pub fn apply_list(list: &[Opcode], buf: &mut [f32], w: usize, h: usize, cpp: usi
                 let m = max_radius(cx, cy, w as f64, h as f64);
                 for y in 0..h {
                     for x in 0..w {
-                        let r2 = ((x as f64 + 0.5 - cx).powi(2) + (y as f64 + 0.5 - cy).powi(2)) / (m * m);
-                        let g = 1.0 + r2 * (k[0] + r2 * (k[1] + r2 * (k[2] + r2 * (k[3] + r2 * k[4]))));
+                        let r2 = ((x as f64 + 0.5 - cx).powi(2) + (y as f64 + 0.5 - cy).powi(2))
+                            / (m * m);
+                        let g =
+                            1.0 + r2 * (k[0] + r2 * (k[1] + r2 * (k[2] + r2 * (k[3] + r2 * k[4]))));
                         for p in 0..cpp {
                             buf[(y * w + x) * cpp + p] *= g as f32;
                         }
@@ -528,13 +724,20 @@ pub fn apply_list(list: &[Opcode], buf: &mut [f32], w: usize, h: usize, cpp: usi
             }
             Opcode::FixBadPixelsConstant { constant, .. } => {
                 let c = (*constant as f64 / 65535.0 * scale as f64) as f32;
-                let bad: Vec<(usize, usize)> =
-                    (0..h).flat_map(|y| (0..w).map(move |x| (x, y))).filter(|&(x, y)| cpp == 1 && buf[y * w + x] == c).take(MAX_BAD_PIXELS).collect();
+                let bad: Vec<(usize, usize)> = (0..h)
+                    .flat_map(|y| (0..w).map(move |x| (x, y)))
+                    .filter(|&(x, y)| cpp == 1 && buf[y * w + x] == c)
+                    .take(MAX_BAD_PIXELS)
+                    .collect();
                 fix_pixels(buf, w, h, cpp, cfa, &bad);
             }
             Opcode::FixBadPixelsList { points, rects, .. } => {
-                let mut bad: Vec<(usize, usize)> =
-                    points.iter().map(|&(r, c)| (c as usize, r as usize)).filter(|&(x, y)| x < w && y < h).take(MAX_BAD_PIXELS).collect();
+                let mut bad: Vec<(usize, usize)> = points
+                    .iter()
+                    .map(|&(r, c)| (c as usize, r as usize))
+                    .filter(|&(x, y)| x < w && y < h)
+                    .take(MAX_BAD_PIXELS)
+                    .collect();
                 'rects: for r in rects {
                     let [t, l, b, rr] = r.map(|v| v as usize);
                     for y in t..b.min(h) {
@@ -554,7 +757,14 @@ pub fn apply_list(list: &[Opcode], buf: &mut [f32], w: usize, h: usize, cpp: usi
 }
 
 /// Replace listed pixels with the mean of the nearest same-colour neighbours that are not themselves bad.
-fn fix_pixels(buf: &mut [f32], w: usize, h: usize, cpp: usize, cfa: Option<&Cfa>, bad: &[(usize, usize)]) {
+fn fix_pixels(
+    buf: &mut [f32],
+    w: usize,
+    h: usize,
+    cpp: usize,
+    cfa: Option<&Cfa>,
+    bad: &[(usize, usize)],
+) {
     if bad.is_empty() {
         return;
     }
@@ -571,9 +781,23 @@ fn fix_pixels(buf: &mut [f32], w: usize, h: usize, cpp: usize, cfa: Option<&Cfa>
         for p in 0..cpp {
             let mut sum = 0.0;
             let mut n = 0;
-            for (dx, dy) in [(-step, 0), (step, 0), (0, -step), (0, step), (-step, -step), (step, step), (-step, step), (step, -step)] {
+            for (dx, dy) in [
+                (-step, 0),
+                (step, 0),
+                (0, -step),
+                (0, step),
+                (-step, -step),
+                (step, step),
+                (-step, step),
+                (step, -step),
+            ] {
                 let (nx, ny) = (x as isize + dx, y as isize + dy);
-                if nx < 0 || ny < 0 || nx >= w as isize || ny >= h as isize || is_bad.contains(&(nx as usize, ny as usize)) {
+                if nx < 0
+                    || ny < 0
+                    || nx >= w as isize
+                    || ny >= h as isize
+                    || is_bad.contains(&(nx as usize, ny as usize))
+                {
                     continue;
                 }
                 sum += buf[(ny as usize * w + nx as usize) * cpp + p];
@@ -594,8 +818,15 @@ pub fn apply_list3(list: &[Opcode], img: &mut Rgb32f) {
     let (w, h) = (img.width, img.height);
     for op in applied_ops(list) {
         match op {
-            Opcode::WarpRectilinear { planes, center } => *img = warp_rectilinear(img, planes, *center),
-            Opcode::WarpRectilinear2 { planes, center, reciprocal, .. } => *img = warp_rectilinear2(img, planes, *center, *reciprocal),
+            Opcode::WarpRectilinear { planes, center } => {
+                *img = warp_rectilinear(img, planes, *center)
+            }
+            Opcode::WarpRectilinear2 {
+                planes,
+                center,
+                reciprocal,
+                ..
+            } => *img = warp_rectilinear2(img, planes, *center, *reciprocal),
             Opcode::WarpFisheye { .. } | Opcode::TrimBounds { .. } | Opcode::Unknown { .. } => {}
             other => {
                 let mut flat: Vec<f32> = img.data.iter().flat_map(|p| *p).collect();
@@ -636,23 +867,33 @@ pub fn warp_rectilinear(img: &Rgb32f, planes: &[[f64; 6]], center: [f64; 2]) -> 
 
 /// DNG 1.6 `WarpRectilinear2`: the `WarpRectilinear` geometry (centre and normalisation as there), with the radial
 /// factor of [`wr2_factor`] in place of the even polynomial in `r²`. A pixel whose factor is not finite stays put.
-pub fn warp_rectilinear2(img: &Rgb32f, planes: &[[f64; WR2_LEN]], center: [f64; 2], reciprocal: bool) -> Rgb32f {
+pub fn warp_rectilinear2(
+    img: &Rgb32f,
+    planes: &[[f64; WR2_LEN]],
+    center: [f64; 2],
+    reciprocal: bool,
+) -> Rgb32f {
     let (w, h) = (img.width, img.height);
-    let Some(last) = planes.len().checked_sub(1) else { return img.clone() };
+    let Some(last) = planes.len().checked_sub(1) else {
+        return img.clone();
+    };
     let mut out = Rgb32f::new(w, h);
     let (cx, cy) = (center[0] * (w as f64 - 1.0), center[1] * (h as f64 - 1.0));
     let m = max_radius(cx, cy, w as f64 - 1.0, h as f64 - 1.0);
     lightcraft_raster::par_rows(&mut out.data, w, |y, row| {
         for (x, px) in row.iter_mut().enumerate() {
             for (c, v) in px.iter_mut().enumerate() {
-                let Some(k) = planes.get(c.min(last)) else { continue };
+                let Some(k) = planes.get(c.min(last)) else {
+                    continue;
+                };
                 let dx = (x as f64 - cx) / m;
                 let dy = (y as f64 - cy) / m;
                 let r2 = dx * dx + dy * dy;
                 let (sx, sy) = match wr2_factor(k, reciprocal, r2.sqrt()) {
-                    Some(f) => {
-                        (dx * f + k[15] * 2.0 * dx * dy + k[16] * (r2 + 2.0 * dx * dx), dy * f + k[16] * 2.0 * dx * dy + k[15] * (r2 + 2.0 * dy * dy))
-                    }
+                    Some(f) => (
+                        dx * f + k[15] * 2.0 * dx * dy + k[16] * (r2 + 2.0 * dx * dx),
+                        dy * f + k[16] * 2.0 * dx * dy + k[15] * (r2 + 2.0 * dy * dy),
+                    ),
                     None => (dx, dy),
                 };
                 let (fx, fy) = (cx + m * sx, cy + m * sy);
@@ -715,7 +956,12 @@ pub(crate) mod tests {
         let mut poly = area([0, 0, 3, 4, 0, 1, 1, 2]);
         poly.extend_from_slice(&1u32.to_be_bytes());
         poly.extend(be(&[0.0, 2.0]));
-        let blob = ListWriter::new().op(9, &gm).op(10, &dpr).op(8, &poly).op(99, &[1, 2, 3]).finish();
+        let blob = ListWriter::new()
+            .op(9, &gm)
+            .op(10, &dpr)
+            .op(8, &poly)
+            .op(99, &[1, 2, 3])
+            .finish();
         let list = parse_list(&blob);
         assert_eq!(list.len(), 4);
         assert!(matches!(list[3], Opcode::Unknown { id: 99, .. }));
@@ -730,7 +976,12 @@ pub(crate) mod tests {
         };
         for y in 0..h {
             for x in 0..w {
-                assert!((buf[y * w + x] - expect(x, y)).abs() < 1e-6, "{x},{y}: {} vs {}", buf[y * w + x], expect(x, y));
+                assert!(
+                    (buf[y * w + x] - expect(x, y)).abs() < 1e-6,
+                    "{x},{y}: {} vs {}",
+                    buf[y * w + x],
+                    expect(x, y)
+                );
             }
         }
     }
@@ -772,20 +1023,35 @@ pub(crate) mod tests {
         buf[..w].fill(500.0);
         buf[(h - 1) * w..].fill(900.0);
         apply_list(&[op], &mut buf, w, h, 1, None, 65535.0);
-        assert!(buf[w..2 * w].iter().all(|&v| v == 500.0), "row 1 (within the cap) not repaired: {:?}", &buf[w..w + 4]);
+        assert!(
+            buf[w..2 * w].iter().all(|&v| v == 500.0),
+            "row 1 (within the cap) not repaired: {:?}",
+            &buf[w..w + 4]
+        );
         let past = &buf[(h - 2) * w..(h - 1) * w];
-        assert!(past.iter().all(|&v| v == 0.0), "a row past the cap was rewritten: {:?}", &past[..4]);
+        assert!(
+            past.iter().all(|&v| v == 0.0),
+            "a row past the cap was rewritten: {:?}",
+            &past[..4]
+        );
     }
 
     #[test]
     fn bad_pixels_constant_is_capped() {
-        assert_bad_pixels_capped(Opcode::FixBadPixelsConstant { constant: 0, bayer_phase: 0 });
+        assert_bad_pixels_capped(Opcode::FixBadPixelsConstant {
+            constant: 0,
+            bayer_phase: 0,
+        });
     }
 
     #[test]
     fn bad_pixels_list_is_capped_inside_a_rectangle() {
         // top, left, bottom, right: every row but the first and the last
-        assert_bad_pixels_capped(Opcode::FixBadPixelsList { bayer_phase: 0, points: vec![], rects: vec![[1, 0, 2053, 2048]] });
+        assert_bad_pixels_capped(Opcode::FixBadPixelsList {
+            bayer_phase: 0,
+            points: vec![],
+            rects: vec![[1, 0, 2053, 2048]],
+        });
     }
 
     #[test]
@@ -810,42 +1076,114 @@ pub(crate) mod tests {
         let list = parse_list(&ListWriter::new().op(3, &p).finish());
         let mut flat = Rgb32f::filled(9, 9, [0.5; 3]);
         apply_list3(&list, &mut flat);
-        assert!(flat.get(0, 0)[0] > 0.85 && (flat.get(4, 4)[0] - 0.5).abs() < 0.01, "{:?}", flat.get(0, 0));
+        assert!(
+            flat.get(0, 0)[0] > 0.85 && (flat.get(4, 4)[0] - 0.5).abs() < 0.01,
+            "{:?}",
+            flat.get(0, 0)
+        );
     }
 
     #[test]
     fn warp_barrel_moves_pixels_outward() {
-        let img = Rgb32f::from_fn(31, 31, |x, y| if x == 24 && y == 15 { [1.0; 3] } else { [0.0; 3] });
+        let img = Rgb32f::from_fn(31, 31, |x, y| {
+            if x == 24 && y == 15 {
+                [1.0; 3]
+            } else {
+                [0.0; 3]
+            }
+        });
         // source radius = r (1 + k r²) with k < 0 → content moves outward
         let out = warp_rectilinear(&img, &[[1.0, -0.6, 0.0, 0.0, 0.0, 0.0]], [0.5, 0.5]);
-        let (bx, _) = (0..31).map(|x| (x, out.get(x, 15)[0])).fold((0, 0.0), |a, b| if b.1 > a.1 { b } else { a });
+        let (bx, _) = (0..31)
+            .map(|x| (x, out.get(x, 15)[0]))
+            .fold((0, 0.0), |a, b| if b.1 > a.1 { b } else { a });
         assert!(bx >= 25, "{bx}");
     }
 
     #[test]
     fn write_parse_roundtrip() {
-        let a = Area { top: 1, left: 2, bottom: 30, right: 40, plane: 0, planes: 3, row_pitch: 1, col_pitch: 2 };
+        let a = Area {
+            top: 1,
+            left: 2,
+            bottom: 30,
+            right: 40,
+            plane: 0,
+            planes: 3,
+            row_pitch: 1,
+            col_pitch: 2,
+        };
         let list = vec![
-            Opcode::WarpRectilinear { planes: vec![[1.0, 0.01, -0.002, 0.0, 1e-4, -2e-4]; 3], center: [0.5, 0.49] },
-            Opcode::WarpFisheye { planes: vec![[1.0, 0.1, 0.0, 0.0]], center: [0.5, 0.5] },
-            Opcode::FixVignetteRadial { k: [0.1, 0.2, 0.0, 0.0, 0.0], center: [0.5, 0.5] },
-            Opcode::FixBadPixelsConstant { constant: 0, bayer_phase: 1 },
-            Opcode::FixBadPixelsList { bayer_phase: 0, points: vec![(3, 4)], rects: vec![[1, 1, 2, 2]] },
-            Opcode::TrimBounds { top: 1, left: 1, bottom: 9, right: 9 },
-            Opcode::MapTable { area: a, table: vec![0, 100, 65535] },
-            Opcode::MapPolynomial { area: a, coefficients: vec![0.0, 1.0, -0.1] },
-            Opcode::GainMap { area: a, points_v: 2, points_h: 1, spacing: [1.0, 1.0], origin: [0.0, 0.0], map_planes: 1, gains: vec![1.0, 1.5] },
-            Opcode::DeltaPerRow { area: a, deltas: vec![0.1, 0.2] },
-            Opcode::DeltaPerColumn { area: a, deltas: vec![0.3] },
-            Opcode::ScalePerRow { area: a, scales: vec![1.1] },
-            Opcode::ScalePerColumn { area: a, scales: vec![0.9, 1.0] },
+            Opcode::WarpRectilinear {
+                planes: vec![[1.0, 0.01, -0.002, 0.0, 1e-4, -2e-4]; 3],
+                center: [0.5, 0.49],
+            },
+            Opcode::WarpFisheye {
+                planes: vec![[1.0, 0.1, 0.0, 0.0]],
+                center: [0.5, 0.5],
+            },
+            Opcode::FixVignetteRadial {
+                k: [0.1, 0.2, 0.0, 0.0, 0.0],
+                center: [0.5, 0.5],
+            },
+            Opcode::FixBadPixelsConstant {
+                constant: 0,
+                bayer_phase: 1,
+            },
+            Opcode::FixBadPixelsList {
+                bayer_phase: 0,
+                points: vec![(3, 4)],
+                rects: vec![[1, 1, 2, 2]],
+            },
+            Opcode::TrimBounds {
+                top: 1,
+                left: 1,
+                bottom: 9,
+                right: 9,
+            },
+            Opcode::MapTable {
+                area: a,
+                table: vec![0, 100, 65535],
+            },
+            Opcode::MapPolynomial {
+                area: a,
+                coefficients: vec![0.0, 1.0, -0.1],
+            },
+            Opcode::GainMap {
+                area: a,
+                points_v: 2,
+                points_h: 1,
+                spacing: [1.0, 1.0],
+                origin: [0.0, 0.0],
+                map_planes: 1,
+                gains: vec![1.0, 1.5],
+            },
+            Opcode::DeltaPerRow {
+                area: a,
+                deltas: vec![0.1, 0.2],
+            },
+            Opcode::DeltaPerColumn {
+                area: a,
+                deltas: vec![0.3],
+            },
+            Opcode::ScalePerRow {
+                area: a,
+                scales: vec![1.1],
+            },
+            Opcode::ScalePerColumn {
+                area: a,
+                scales: vec![0.9, 1.0],
+            },
             Opcode::WarpRectilinear2 {
                 planes: vec![wr2_set(&[(0, 0.5), (3, 0.1)]), wr2_set(&[(0, 0.25)])],
                 center: [0.5, 0.49],
                 reciprocal: true,
                 optional: true,
             },
-            Opcode::Unknown { id: 77, flags: 1, params: vec![1, 2, 3] },
+            Opcode::Unknown {
+                id: 77,
+                flags: 1,
+                params: vec![1, 2, 3],
+            },
         ];
         assert_eq!(parse_list(&write_list(&list)), list);
     }
@@ -854,7 +1192,11 @@ pub(crate) mod tests {
     fn truncated_lists_do_not_panic() {
         let mut gm = area([0, 0, 3, 4, 0, 1, 1, 1]);
         gm.extend_from_slice(&[0xff; 64]);
-        let blob = ListWriter::new().op(9, &gm).op(5, &[0xff; 12]).op(1, &[0, 0, 0, 9]).finish();
+        let blob = ListWriter::new()
+            .op(9, &gm)
+            .op(5, &[0xff; 12])
+            .op(1, &[0, 0, 0, 9])
+            .finish();
         for n in 0..blob.len() {
             let l = parse_list(&blob[..n]);
             let mut buf = vec![0.5f32; 12];
@@ -890,15 +1232,27 @@ pub(crate) mod tests {
         k[16] = -0.002;
         k[17] = 0.1;
         k[18] = 0.9;
-        let blob = ListWriter::new().op(14, &wr2_params(&[k, wr2_set(&[(0, 1.0)])], [0.5, 0.25], 1)).finish();
+        let blob = ListWriter::new()
+            .op(14, &wr2_params(&[k, wr2_set(&[(0, 1.0)])], [0.5, 0.25], 1))
+            .finish();
         let list = parse_list(&blob);
         assert_eq!(
             list,
-            vec![Opcode::WarpRectilinear2 { planes: vec![k, wr2_set(&[(0, 1.0)])], center: [0.5, 0.25], reciprocal: true, optional: false }]
+            vec![Opcode::WarpRectilinear2 {
+                planes: vec![k, wr2_set(&[(0, 1.0)])],
+                center: [0.5, 0.25],
+                reciprocal: true,
+                optional: false
+            }]
         );
         assert!(list[0].is_applied() && list[0].is_lens_correction());
         // written back as opcode 14, version 1.6.0.0, optional flag kept
-        let again = vec![Opcode::WarpRectilinear2 { planes: vec![k], center: [0.5, 0.5], reciprocal: false, optional: true }];
+        let again = vec![Opcode::WarpRectilinear2 {
+            planes: vec![k],
+            center: [0.5, 0.5],
+            reciprocal: false,
+            optional: true,
+        }];
         let bytes = write_list(&again);
         assert_eq!(bytes.get(4..8), Some(&14u32.to_be_bytes()[..]));
         assert_eq!(bytes.get(8..12), Some(&0x0106_0000u32.to_be_bytes()[..]));
@@ -923,7 +1277,13 @@ pub(crate) mod tests {
     #[test]
     fn warp_rectilinear2_matches_warp_rectilinear_on_even_terms() {
         // kr0 + kr2 r^2 + kr4 r^4 is WarpRectilinear's kr0 + kr1 r^2 + kr2 r^4
-        let img = Rgb32f::from_fn(31, 31, |x, y| [(x * 7 % 13) as f32 / 13.0, (y * 5 % 11) as f32 / 11.0, ((x + y) % 4) as f32 / 4.0]);
+        let img = Rgb32f::from_fn(31, 31, |x, y| {
+            [
+                (x * 7 % 13) as f32 / 13.0,
+                (y * 5 % 11) as f32 / 11.0,
+                ((x + y) % 4) as f32 / 4.0,
+            ]
+        });
         let a = warp_rectilinear(&img, &[[1.0, -0.3, 0.1, 0.0, 0.01, -0.02]], [0.5, 0.5]);
         let mut k = wr2_set(&[(0, 1.0), (2, -0.3), (4, 0.1)]);
         k[15] = 0.01;
@@ -949,7 +1309,12 @@ pub(crate) mod tests {
     #[test]
     fn malformed_warp_rectilinear2_is_unknown_not_a_panic() {
         let good = wr2_params(&[wr2_set(&[(0, 1.0)])], [0.5, 0.5], 0);
-        let is_wr2 = |p: &[u8]| matches!(parse_list(&ListWriter::new().op(14, p).finish()).as_slice(), [Opcode::WarpRectilinear2 { .. }]);
+        let is_wr2 = |p: &[u8]| {
+            matches!(
+                parse_list(&ListWriter::new().op(14, p).finish()).as_slice(),
+                [Opcode::WarpRectilinear2 { .. }]
+            )
+        };
         assert!(is_wr2(&good));
         // every truncation and any trailing byte
         for n in 0..good.len() {
@@ -997,10 +1362,24 @@ pub(crate) mod tests {
 
     #[test]
     fn warp_list_order_and_the_optional_skip_rule() {
-        let wr2 = |optional| Opcode::WarpRectilinear2 { planes: vec![wr2_set(&[(0, 1.0)])], center: [0.5, 0.5], reciprocal: false, optional };
-        let wr = Opcode::WarpRectilinear { planes: vec![[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]], center: [0.5, 0.5] };
-        let fish = Opcode::WarpFisheye { planes: vec![[1.0, 0.0, 0.0, 0.0]], center: [0.5, 0.5] };
-        let vig = Opcode::FixVignetteRadial { k: [0.0; 5], center: [0.5, 0.5] };
+        let wr2 = |optional| Opcode::WarpRectilinear2 {
+            planes: vec![wr2_set(&[(0, 1.0)])],
+            center: [0.5, 0.5],
+            reciprocal: false,
+            optional,
+        };
+        let wr = Opcode::WarpRectilinear {
+            planes: vec![[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+            center: [0.5, 0.5],
+        };
+        let fish = Opcode::WarpFisheye {
+            planes: vec![[1.0, 0.0, 0.0, 0.0]],
+            center: [0.5, 0.5],
+        };
+        let vig = Opcode::FixVignetteRadial {
+            k: [0.0; 5],
+            center: [0.5, 0.5],
+        };
         let d = std::mem::discriminant::<Opcode>;
         let ids = |l: &[Opcode]| applied_ops(l).map(d).collect::<Vec<_>>();
         // WarpRectilinear2 (optional) then WarpRectilinear / WarpFisheye: the second is skipped
@@ -1009,9 +1388,15 @@ pub(crate) mod tests {
         // not optional: both run, in list order
         assert_eq!(ids(&[wr2(false), wr.clone()]), vec![d(&wr2(false)), d(&wr)]);
         // only the opcode immediately after is skipped
-        assert_eq!(ids(&[wr2(true), vig.clone(), wr.clone()]), vec![d(&wr2(true)), d(&vig), d(&wr)]);
+        assert_eq!(
+            ids(&[wr2(true), vig.clone(), wr.clone()]),
+            vec![d(&wr2(true)), d(&vig), d(&wr)]
+        );
         // two in a row: both run, and the WarpRectilinear after the optional second one is skipped
-        assert_eq!(ids(&[wr2(true), wr2(true), wr.clone()]), vec![d(&wr2(true)); 2]);
+        assert_eq!(
+            ids(&[wr2(true), wr2(true), wr.clone()]),
+            vec![d(&wr2(true)); 2]
+        );
         // a WarpRectilinear before the WarpRectilinear2 runs, in list order
         assert_eq!(ids(&[wr.clone(), wr2(true)]), vec![d(&wr), d(&wr2(true))]);
         // the same from bytes: an optional (flag 1) opcode 14 followed by opcode 1
@@ -1029,7 +1414,11 @@ pub(crate) mod tests {
         assert_eq!(list.len(), 2);
         assert_eq!(applied_ops(&list).count(), 1);
         // a refused (Unknown) opcode 14 triggers no skip
-        let bad = Opcode::Unknown { id: 14, flags: 1, params: vec![] };
+        let bad = Opcode::Unknown {
+            id: 14,
+            flags: 1,
+            params: vec![],
+        };
         assert!(applied_ops(&[bad, wr]).any(|o| matches!(o, Opcode::WarpRectilinear { .. })));
     }
 }

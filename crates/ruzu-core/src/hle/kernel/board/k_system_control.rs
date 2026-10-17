@@ -293,7 +293,11 @@ mod tests {
         free_secure_memory(&mut memory, address, SECURE_ALIGNMENT, Pool::Applet as u32);
         assert_eq!(memory.get_free_size(Pool::Applet), free);
         assert_eq!(
-            allocate_secure_memory(&mut memory, SECURE_APPLET_MEMORY_SIZE * 2, Pool::Applet as u32),
+            allocate_secure_memory(
+                &mut memory,
+                SECURE_APPLET_MEMORY_SIZE * 2,
+                Pool::Applet as u32
+            ),
             Err(crate::hle::kernel::svc::svc_results::RESULT_OUT_OF_MEMORY)
         );
     }

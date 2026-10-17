@@ -73,7 +73,10 @@ impl PathMeasure {
     /// along the end tangents beyond either end.
     pub fn at(&self, s: f64) -> (Point, Vec2) {
         if self.is_empty() {
-            return (self.pts.first().copied().unwrap_or(Point::ZERO), Vec2::new(1.0, 0.0));
+            return (
+                self.pts.first().copied().unwrap_or(Point::ZERO),
+                Vec2::new(1.0, 0.0),
+            );
         }
         let len = self.length();
         let s = if self.closed { s.rem_euclid(len) } else { s };
@@ -84,7 +87,11 @@ impl PathMeasure {
         let (a, b) = (self.pts[k], self.pts[k + 1]);
         let seg = self.cum[k + 1] - self.cum[k];
         let d = b - a;
-        let tan = if seg > 0.0 { d / seg } else { Vec2::new(1.0, 0.0) };
+        let tan = if seg > 0.0 {
+            d / seg
+        } else {
+            Vec2::new(1.0, 0.0)
+        };
         (a + tan * (s - self.cum[k]), tan)
     }
 }
@@ -94,14 +101,30 @@ pub fn place(pm: &PathMeasure, s: f64, baseline_offset: f64, perpendicular: bool
     let (p, t) = pm.at(s);
     // y down: the normal pointing "below" the baseline is the tangent turned clockwise.
     let n = Vec2::new(-t.y, t.x);
-    let angle = if perpendicular { t.y.atan2(t.x).to_degrees() } else { 0.0 };
-    let off = if perpendicular { n * baseline_offset } else { Vec2::new(0.0, baseline_offset) };
+    let angle = if perpendicular {
+        t.y.atan2(t.x).to_degrees()
+    } else {
+        0.0
+    };
+    let off = if perpendicular {
+        n * baseline_offset
+    } else {
+        Vec2::new(0.0, baseline_offset)
+    };
     (p + off, angle)
 }
 
 /// Arc-length positions for character pivots of one line, given each pivot's x along the
 /// line, the line's [x0, x1] extent and alignment (0 = left, 1 = centre, 2 = right).
-pub fn arc_positions(xs: &[f64], line: [f64; 2], align: u8, length: f64, first_margin: f64, last_margin: f64, force: bool) -> Vec<f64> {
+pub fn arc_positions(
+    xs: &[f64],
+    line: [f64; 2],
+    align: u8,
+    length: f64,
+    first_margin: f64,
+    last_margin: f64,
+    force: bool,
+) -> Vec<f64> {
     if xs.is_empty() {
         return vec![];
     }
@@ -111,7 +134,10 @@ pub fn arc_positions(xs: &[f64], line: [f64; 2], align: u8, length: f64, first_m
         if (x1 - x0).abs() < 1e-9 {
             return vec![a; xs.len()];
         }
-        return xs.iter().map(|x| a + (b - a) * (x - x0) / (x1 - x0)).collect();
+        return xs
+            .iter()
+            .map(|x| a + (b - a) * (x - x0) / (x1 - x0))
+            .collect();
     }
     match align {
         1 => {
@@ -119,7 +145,10 @@ pub fn arc_positions(xs: &[f64], line: [f64; 2], align: u8, length: f64, first_m
             let c = (line[0] + line[1]) * 0.5;
             xs.iter().map(|x| mid + x - c).collect()
         }
-        2 => xs.iter().map(|x| length - last_margin - (line[1] - x)).collect(),
+        2 => xs
+            .iter()
+            .map(|x| length - last_margin - (line[1] - x))
+            .collect(),
         _ => xs.iter().map(|x| first_margin + x - line[0]).collect(),
     }
 }
@@ -149,7 +178,11 @@ mod tests {
         let path = kurbo::Shape::to_path(&c, 0.01);
         let m = PathMeasure::new(&path, false);
         assert!(m.closed);
-        assert!((m.length() - 2.0 * std::f64::consts::PI * 100.0).abs() < 0.5, "{}", m.length());
+        assert!(
+            (m.length() - 2.0 * std::f64::consts::PI * 100.0).abs() < 0.5,
+            "{}",
+            m.length()
+        );
         // Every point is on the circle; wraps.
         for k in 0..10 {
             let (q, _) = m.at(k as f64 * 97.0);
@@ -171,9 +204,21 @@ mod tests {
         let (q, a) = place(&m, 30.0, 10.0, false);
         assert!(a == 0.0 && (q.y - 80.0).abs() < 1e-9);
         let xs = [0.0, 10.0, 20.0];
-        assert_eq!(arc_positions(&xs, [0.0, 20.0], 0, 100.0, 5.0, 0.0, false), vec![5.0, 15.0, 25.0]);
-        assert_eq!(arc_positions(&xs, [0.0, 20.0], 2, 100.0, 0.0, 10.0, false), vec![70.0, 80.0, 90.0]);
-        assert_eq!(arc_positions(&xs, [0.0, 20.0], 1, 100.0, 0.0, 0.0, false), vec![40.0, 50.0, 60.0]);
-        assert_eq!(arc_positions(&xs, [0.0, 20.0], 0, 100.0, 10.0, 10.0, true), vec![10.0, 50.0, 90.0]);
+        assert_eq!(
+            arc_positions(&xs, [0.0, 20.0], 0, 100.0, 5.0, 0.0, false),
+            vec![5.0, 15.0, 25.0]
+        );
+        assert_eq!(
+            arc_positions(&xs, [0.0, 20.0], 2, 100.0, 0.0, 10.0, false),
+            vec![70.0, 80.0, 90.0]
+        );
+        assert_eq!(
+            arc_positions(&xs, [0.0, 20.0], 1, 100.0, 0.0, 0.0, false),
+            vec![40.0, 50.0, 60.0]
+        );
+        assert_eq!(
+            arc_positions(&xs, [0.0, 20.0], 0, 100.0, 10.0, 10.0, true),
+            vec![10.0, 50.0, 90.0]
+        );
     }
 }

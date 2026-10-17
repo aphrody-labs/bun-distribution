@@ -8,7 +8,9 @@ use rayon::prelude::*;
 
 use effectcraft_color::Label;
 use effectcraft_project::build;
-use effectcraft_project::{AlphaMode, BitDepth, Comp, Footage, FootageKind, ItemId, ItemKind, LayerSource, Project};
+use effectcraft_project::{
+    AlphaMode, BitDepth, Comp, Footage, FootageKind, ItemId, ItemKind, LayerSource, Project,
+};
 use effectcraft_time::{FrameRate, Tick};
 
 use crate::{FootageSource, Image, RenderOpts, Renderer};
@@ -30,10 +32,23 @@ impl FootageSource for Clip {
         });
         Some(Arc::new(img))
     }
-    fn frame_at_size(&self, item: ItemId, f: &Footage, t: Tick, w: u32, h: u32) -> Option<Arc<Image>> {
-        let Some(sizes) = &self.sizes else { return self.frame(item, f, t) };
+    fn frame_at_size(
+        &self,
+        item: ItemId,
+        f: &Footage,
+        t: Tick,
+        w: u32,
+        h: u32,
+    ) -> Option<Arc<Image>> {
+        let Some(sizes) = &self.sizes else {
+            return self.frame(item, f, t);
+        };
         sizes.lock().unwrap().push((w, h));
-        Some(Arc::new(effectcraft_raster::resample(&*self.frame(item, f, t)?, w, h)))
+        Some(Arc::new(effectcraft_raster::resample(
+            &*self.frame(item, f, t)?,
+            w,
+            h,
+        )))
     }
 }
 
@@ -41,7 +56,12 @@ fn project(depth: BitDepth, invert_alpha: bool) -> (Project, ItemId) {
     let mut p = Project::default();
     p.settings.bit_depth = depth;
     let comp = Comp::new(96, 54, FrameRate::FPS_30, Tick::from_seconds_f64(1.0));
-    let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.clone().into()));
+    let cid = p.add_item(
+        "Comp",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.clone().into()),
+    );
     let f = Footage {
         path: "clip.mp4".into(),
         kind: FootageKind::Video,
@@ -57,7 +77,14 @@ fn project(depth: BitDepth, invert_alpha: bool) -> (Project, ItemId) {
         ..Default::default()
     };
     let fid = p.add_item("clip", Label::Aqua, None, ItemKind::Footage(f));
-    let l = build::layer(&mut p, &comp, "clip", LayerSource::Footage { item: fid }, (96, 54), None);
+    let l = build::layer(
+        &mut p,
+        &comp,
+        "clip",
+        LayerSource::Footage { item: fid },
+        (96, 54),
+        None,
+    );
     p.comp_mut(cid).unwrap().layers.push(l);
     (p, cid)
 }
@@ -66,18 +93,43 @@ fn project(depth: BitDepth, invert_alpha: bool) -> (Project, ItemId) {
 fn reduced_renders_take_footage_resampled_by_the_source() {
     for depth in [BitDepth::Bpc8, BitDepth::Bpc32] {
         let (p, cid) = project(depth, false);
-        for (scale, asked) in [(1.0, None), (0.75, None), (0.5, Some((48, 27))), (1.0 / 3.0, Some((32, 18))), (0.25, Some((24, 14)))] {
-            let opts = RenderOpts { scale, ..Default::default() };
+        for (scale, asked) in [
+            (1.0, None),
+            (0.75, None),
+            (0.5, Some((48, 27))),
+            (1.0 / 3.0, Some((32, 18))),
+            (0.25, Some((24, 14))),
+        ] {
+            let opts = RenderOpts {
+                scale,
+                ..Default::default()
+            };
             let plain = Renderer::new(&p, &Clip { sizes: None }, opts).comp_frame(cid, Tick::ZERO);
-            let sized = Clip { sizes: Some(Mutex::default()) };
+            let sized = Clip {
+                sizes: Some(Mutex::default()),
+            };
             let frame = Renderer::new(&p, &sized, opts).comp_frame(cid, Tick::ZERO);
             assert_eq!(frame, plain, "{depth:?} at {scale}");
-            assert_eq!(sized.sizes.unwrap().into_inner().unwrap(), asked.into_iter().collect::<Vec<_>>(), "{depth:?} at {scale}");
+            assert_eq!(
+                sized.sizes.unwrap().into_inner().unwrap(),
+                asked.into_iter().collect::<Vec<_>>(),
+                "{depth:?} at {scale}"
+            );
         }
     }
     // Interpreted pixels (Invert Alpha) are interpreted at full size, then resampled.
     let (p, cid) = project(BitDepth::Bpc8, true);
-    let sized = Clip { sizes: Some(Mutex::default()) };
-    Renderer::new(&p, &sized, RenderOpts { scale: 0.5, ..Default::default() }).comp_frame(cid, Tick::ZERO);
+    let sized = Clip {
+        sizes: Some(Mutex::default()),
+    };
+    Renderer::new(
+        &p,
+        &sized,
+        RenderOpts {
+            scale: 0.5,
+            ..Default::default()
+        },
+    )
+    .comp_frame(cid, Tick::ZERO);
     assert!(sized.sizes.unwrap().into_inner().unwrap().is_empty());
 }

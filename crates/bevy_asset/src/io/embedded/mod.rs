@@ -11,11 +11,11 @@ mod embedded_watcher;
 #[cfg(feature = "embedded_watcher")]
 pub use embedded_watcher::*;
 
-use crate::io::{
-    memory::{Dir, MemoryAssetReader, Value},
-    AssetSourceBuilder, AssetSourceBuilders,
-};
 use crate::AssetServer;
+use crate::io::{
+    AssetSourceBuilder, AssetSourceBuilders,
+    memory::{Dir, MemoryAssetReader, Value},
+};
 use alloc::boxed::Box;
 use bevy_app::App;
 use bevy_ecs::{resource::Resource, world::World};
@@ -226,9 +226,7 @@ macro_rules! load_embedded_asset {
 /// [`embedded_asset!`]: crate::embedded_asset
 #[macro_export]
 macro_rules! embedded_path {
-    ($path_str: expr) => {{
-        $crate::embedded_path!("src", $path_str)
-    }};
+    ($path_str: expr) => {{ $crate::embedded_path!("src", $path_str) }};
 
     ($source_path: expr, $path_str: expr) => {{
         let crate_name = ::core::module_path!().split(':').next().unwrap();
@@ -350,9 +348,7 @@ pub fn _embedded_asset_path(
 /// [`embedded_path!`]: crate::embedded_path
 #[macro_export]
 macro_rules! embedded_asset {
-    ($app: expr, $path: expr) => {{
-        $crate::embedded_asset!($app, "src", $path)
-    }};
+    ($app: expr, $path: expr) => {{ $crate::embedded_asset!($app, "src", $path) }};
 
     ($app: expr, $source_path: expr, $path: expr) => {{
         let mut embedded = $app

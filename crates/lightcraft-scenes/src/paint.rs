@@ -16,7 +16,11 @@ fn hex(v: u32) -> C {
 }
 #[inline]
 fn mix(a: C, b: C, t: f32) -> C {
-    [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
+    [
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+    ]
 }
 #[inline]
 fn add(a: C, b: C) -> C {
@@ -66,7 +70,13 @@ fn sky(p: &P, s: &Sky, x: f32, v: f32) -> C {
     let mut c = mix(s.horizon, s.zenith, elev.powf(0.55));
     let (dx, dy) = (x - s.sun.0, (v - s.sun.1) * 1.0);
     let d = (dx * dx + dy * dy).sqrt();
-    c = add(c, mul(s.sun_col, s.glow * (0.9 * (-d * 9.0).exp() + 0.35 * (-d * 2.6).exp())));
+    c = add(
+        c,
+        mul(
+            s.sun_col,
+            s.glow * (0.9 * (-d * 9.0).exp() + 0.35 * (-d * 2.6).exp()),
+        ),
+    );
     let disc_r = 0.028;
     if s.sun_disc > 0.0 {
         let e = smooth(disc_r, disc_r * 0.8, d);
@@ -78,7 +88,10 @@ fn sky(p: &P, s: &Sky, x: f32, v: f32) -> C {
         if dens > 0.0 {
             let edge = fbm(x * 6.0, v * 14.0, p.seed ^ 0xed9e, 3) * 0.5 + 0.5;
             let lit = (-d * 2.2).exp() * 2.5 + 0.35 * edge;
-            let cc = add(mul(s.cloud_col, 0.55 + 0.3 * edge), mul(s.sun_col, lit * s.glow.min(1.2) * 0.5));
+            let cc = add(
+                mul(s.cloud_col, 0.55 + 0.3 * edge),
+                mul(s.sun_col, lit * s.glow.min(1.2) * 0.5),
+            );
             c = mix(c, cc, dens * 0.92);
         }
     }
@@ -109,7 +122,8 @@ struct Layer {
 /// Low-octave height, for shading (slopes of the detailed crest alias into vertical streaks).
 fn layer_h_lo(l: &Layer, x: f32) -> f32 {
     let n = if l.ridged {
-        0.75 * ridged(x * l.freq, 0.37, l.seed, 2) + 0.25 * (fbm(x * l.freq * 0.5, 1.7, l.seed, 2) * 0.5 + 0.5)
+        0.75 * ridged(x * l.freq, 0.37, l.seed, 2)
+            + 0.25 * (fbm(x * l.freq * 0.5, 1.7, l.seed, 2) * 0.5 + 0.5)
     } else {
         fbm(x * l.freq, 0.37, l.seed, 2) * 0.5 + 0.5
     };
@@ -118,7 +132,8 @@ fn layer_h_lo(l: &Layer, x: f32) -> f32 {
 
 fn layer_h(l: &Layer, x: f32) -> f32 {
     let n = if l.ridged {
-        0.75 * ridged(x * l.freq, 0.37, l.seed, 4) + 0.25 * (fbm(x * l.freq * 0.5, 1.7, l.seed, 3) * 0.5 + 0.5)
+        0.75 * ridged(x * l.freq, 0.37, l.seed, 4)
+            + 0.25 * (fbm(x * l.freq * 0.5, 1.7, l.seed, 3) * 0.5 + 0.5)
     } else {
         fbm(x * l.freq, 0.37, l.seed, 5) * 0.5 + 0.5
     };
@@ -146,7 +161,11 @@ fn terrain(l: &Layer, x: f32, v: f32, top: f32, sun_x: f32, sun_col: C, haze_col
     if l.snow > 0.0 {
         let s = l.snow * (0.6 + 0.5 * (fbm(x * 9.0, v * 4.0, l.seed ^ 5, 3) * 0.5 + 0.5));
         if depth < s * 0.18 * (1.0 - smooth(0.0, 0.18, depth) * 0.3) {
-            let sc = mix([0.55, 0.6, 0.72], add(sun_col, [0.35, 0.35, 0.4]), (0.55 + 0.45 * face).clamp(0.0, 1.0));
+            let sc = mix(
+                [0.55, 0.6, 0.72],
+                add(sun_col, [0.35, 0.35, 0.4]),
+                (0.55 + 0.45 * face).clamp(0.0, 1.0),
+            );
             c = mix(c, sc, 0.95);
         }
     }
@@ -179,7 +198,17 @@ fn pine(p: &P, x: f32, v: f32, ground: f32, height: f32, density: f32) -> Option
     best
 }
 
-fn water(p: &P, x: f32, v: f32, wl: f32, calm: f32, above: &dyn Fn(f32, f32) -> C, tint: C, sun: (f32, f32), sun_col: C) -> C {
+fn water(
+    p: &P,
+    x: f32,
+    v: f32,
+    wl: f32,
+    calm: f32,
+    above: &dyn Fn(f32, f32) -> C,
+    tint: C,
+    sun: (f32, f32),
+    sun_col: C,
+) -> C {
     let d = v - wl;
     let rip = fbm(x * 9.0, d * 60.0 / (d + 0.05), p.seed ^ 0xaa, 4) * (1.0 - calm);
     let rv = (wl - d * 1.0 + rip * (0.01 + 0.06 * (1.0 - calm)) * (d * 10.0 + 0.2)).max(0.0);
@@ -265,7 +294,10 @@ fn shade(kind: Kind, p: &P, x: f32, v: f32) -> C {
 
 fn alpine(p: &P, x: f32, v: f32, blue: bool) -> C {
     let hz = 0.62;
-    let sun = (p.aspect * (0.2 + 0.6 * p.r(1)), if blue { 0.75 } else { 0.28 + 0.1 * p.r(2) });
+    let sun = (
+        p.aspect * (0.2 + 0.6 * p.r(1)),
+        if blue { 0.75 } else { 0.28 + 0.1 * p.r(2) },
+    );
     let (sun_col, sk) = if blue {
         (
             hex(0xffb4a0),
@@ -302,7 +334,16 @@ fn alpine(p: &P, x: f32, v: f32, blue: bool) -> C {
     };
     let haze = if blue { hex(0x5d668f) } else { hex(0xc8b8b0) };
     let layers = [
-        Layer { base: 0.02, amp: 0.05, freq: 3.0, col: hex(0x24331f), haze: 0.1, snow: 0.0, ridged: false, seed: p.seed + 4 },
+        Layer {
+            base: 0.02,
+            amp: 0.05,
+            freq: 3.0,
+            col: hex(0x24331f),
+            haze: 0.1,
+            snow: 0.0,
+            ridged: false,
+            seed: p.seed + 4,
+        },
         Layer {
             base: 0.08,
             amp: 0.16,
@@ -327,7 +368,11 @@ fn alpine(p: &P, x: f32, v: f32, blue: bool) -> C {
     let wl = hz + 0.035;
     let above = |x: f32, v: f32| -> C {
         if let Some(t) = pine(p, x, v, wl, 0.16, 0.55) {
-            let rim = if blue { 0.0 } else { (1.0 - t).powi(4) * 0.0 + (t).powi(6) * 0.25 };
+            let rim = if blue {
+                0.0
+            } else {
+                (1.0 - t).powi(4) * 0.0 + (t).powi(6) * 0.25
+            };
             return add(mul(hex(0x0c140d), 1.0), mul(sun_col, rim * 0.2));
         }
         for l in &layers {
@@ -376,11 +421,21 @@ fn dunes(p: &P, x: f32, v: f32) -> C {
             let e = 0.001;
             let slope = (hfun(x + e) - hfun(x - e)) / (2.0 * e);
             let lit = (0.5 - slope * 1.2).clamp(0.0, 1.0);
-            let ripple = ((x * 260.0 + v * 90.0 + 8.0 * fbm(x * 3.0, v * 3.0, p.seed, 3)).sin() * 0.5 + 0.5) * 0.08;
-            let sand = mix(hex(0xb4562a), hex(0xf2a55c), (1.0 - (v - top) * 3.0).clamp(0.2, 1.0));
+            let ripple =
+                ((x * 260.0 + v * 90.0 + 8.0 * fbm(x * 3.0, v * 3.0, p.seed, 3)).sin() * 0.5 + 0.5)
+                    * 0.08;
+            let sand = mix(
+                hex(0xb4562a),
+                hex(0xf2a55c),
+                (1.0 - (v - top) * 3.0).clamp(0.2, 1.0),
+            );
             let shadow_fill = hex(0x5e3a3a);
             let shade = smooth(0.35, 0.65, lit);
-            let c = mix(mix(mul(sand, 0.28), shadow_fill, 0.45), mul(sand, 1.05 + ripple), shade);
+            let c = mix(
+                mix(mul(sand, 0.28), shadow_fill, 0.45),
+                mul(sand, 1.05 + ripple),
+                shade,
+            );
             let far = fi / 5.0;
             return mix(mul(c, 0.9), hex(0xe8c8b0), far * 0.45);
         }
@@ -406,10 +461,14 @@ fn ocean(p: &P, x: f32, v: f32) -> C {
     };
     // Headland silhouette on one side.
     let side = if p.r(5) > 0.5 { x } else { p.aspect - x };
-    let head = 0.18 * (1.0 - smooth(0.0, 0.35 * p.aspect, side)) * (0.8 + 0.4 * fbm(x * 4.0, 0.0, p.seed, 4));
+    let head = 0.18
+        * (1.0 - smooth(0.0, 0.35 * p.aspect, side))
+        * (0.8 + 0.4 * fbm(x * 4.0, 0.0, p.seed, 4));
     let above = |x: f32, v: f32| -> C {
         let side = if p.r(5) > 0.5 { x } else { p.aspect - x };
-        let head = 0.18 * (1.0 - smooth(0.0, 0.35 * p.aspect, side)) * (0.8 + 0.4 * fbm(x * 4.0, 0.0, p.seed, 4));
+        let head = 0.18
+            * (1.0 - smooth(0.0, 0.35 * p.aspect, side))
+            * (0.8 + 0.4 * fbm(x * 4.0, 0.0, p.seed, 4));
         if v > hz - head && v <= hz {
             return mix(hex(0x1c1420), hex(0x3a2230), (hz - v) * 2.0);
         }
@@ -443,15 +502,37 @@ fn aurora(p: &P, x: f32, v: f32) -> C {
         let yc = 0.40 + 0.12 * fbm(x * 0.9, 1.0, p.seed ^ 0xa0, 4);
         let d = yc - v;
         let rays = 0.55 + 0.45 * noise(x * 38.0, v * 1.5, p.seed ^ 0xb1).abs() * 1.6;
-        let i = if d > 0.0 { (-d / 0.16).exp() } else { (-(d / 0.018).powi(2)).exp() };
+        let i = if d > 0.0 {
+            (-d / 0.16).exp()
+        } else {
+            (-(d / 0.018).powi(2)).exp()
+        };
         let fold = 0.6 + 0.4 * fbm(x * 3.0, 0.3, p.seed ^ 0xc2, 3);
         let g = mul(hex(0x2cff8a), i * rays * fold * 2.2);
         let pur = mul(hex(0xa040ff), i * smooth(0.06, 0.3, d) * 1.4);
         add(g, pur)
     };
     let layers = [
-        Layer { base: 0.03, amp: 0.05, freq: 2.2, col: hex(0x0a0e12), haze: 0.0, snow: 0.0, ridged: false, seed: p.seed + 3 },
-        Layer { base: 0.07, amp: 0.2, freq: 1.2, col: hex(0x1a2430), haze: 0.1, snow: 0.9, ridged: true, seed: p.seed + 2 },
+        Layer {
+            base: 0.03,
+            amp: 0.05,
+            freq: 2.2,
+            col: hex(0x0a0e12),
+            haze: 0.0,
+            snow: 0.0,
+            ridged: false,
+            seed: p.seed + 3,
+        },
+        Layer {
+            base: 0.07,
+            amp: 0.2,
+            freq: 1.2,
+            col: hex(0x1a2430),
+            haze: 0.1,
+            snow: 0.9,
+            ridged: true,
+            seed: p.seed + 2,
+        },
     ];
     let wl = hz + 0.05;
     let above = |x: f32, v: f32| -> C {
@@ -465,7 +546,17 @@ fn aurora(p: &P, x: f32, v: f32) -> C {
         add(sky(p, &sk, x, v), aur(x, v))
     };
     if v > wl {
-        return water(p, x, v, wl, 0.9, &above, hex(0x020408), (-5.0, 5.0), [0.0; 3]);
+        return water(
+            p,
+            x,
+            v,
+            wl,
+            0.9,
+            &above,
+            hex(0x020408),
+            (-5.0, 5.0),
+            [0.0; 3],
+        );
     }
     above(x, v)
 }
@@ -479,8 +570,23 @@ fn forest(p: &P, x: f32, v: f32) -> C {
         let fi = i as f32;
         let ground = 0.5 + fi * 0.1;
         let depth = 1.0 - fi / 5.0;
-        let col = mix(mix(hex(0x0c1c10), hex(0x1c3020), depth), fog, depth.powf(0.8) * 0.88);
-        if pine(&P { seed: p.seed + i * 17, aspect: p.aspect }, x * (1.0 - fi * 0.08) + fi * 3.1, v, ground, 0.22 + fi * 0.07, 0.85).is_some()
+        let col = mix(
+            mix(hex(0x0c1c10), hex(0x1c3020), depth),
+            fog,
+            depth.powf(0.8) * 0.88,
+        );
+        if pine(
+            &P {
+                seed: p.seed + i * 17,
+                aspect: p.aspect,
+            },
+            x * (1.0 - fi * 0.08) + fi * 3.1,
+            v,
+            ground,
+            0.22 + fi * 0.07,
+            0.85,
+        )
+        .is_some()
             || v > ground
         {
             c = col;
@@ -491,7 +597,13 @@ fn forest(p: &P, x: f32, v: f32) -> C {
     let ang = dy.atan2(dx);
     let rays = (fbm(ang * 9.0, 0.0, p.seed ^ 0x9a, 4) * 0.5 + 0.5).powf(3.0);
     let dist = (dx * dx + dy * dy).sqrt();
-    add(c, mul(sun_col, rays * (-dist * 1.3).exp() * 0.7 + (-dist * 7.0).exp() * 1.6))
+    add(
+        c,
+        mul(
+            sun_col,
+            rays * (-dist * 1.3).exp() * 0.7 + (-dist * 7.0).exp() * 1.6,
+        ),
+    )
 }
 
 fn lavender(p: &P, x: f32, v: f32) -> C {
@@ -526,7 +638,11 @@ fn lavender(p: &P, x: f32, v: f32) -> C {
         let xw = (x - p.aspect * 0.5) / (dz + 0.004);
         let row = (xw * 9.0).sin() * smooth(0.0, 0.08, dz) + (1.0 - smooth(0.0, 0.08, dz)) * 0.3;
         let tex = fbm(xw * 3.0, z * 3.0, p.seed ^ 0x1a, 3);
-        let purple = mix(hex(0x5a3a9a), hex(0x9a70d8), (0.5 + 0.5 * tex).clamp(0.0, 1.0));
+        let purple = mix(
+            hex(0x5a3a9a),
+            hex(0x9a70d8),
+            (0.5 + 0.5 * tex).clamp(0.0, 1.0),
+        );
         let gap = hex(0x3a3a1e);
         let t = smooth(-0.4, 0.2, row + tex * 0.4 * (1.0 - smooth(0.0, 0.2, dz)));
         let mut c = mix(gap, purple, t);
@@ -548,7 +664,13 @@ fn macro_flower(p: &P, x: f32, v: f32) -> C {
         let r = 0.03 + 0.09 * p.r(300 + i);
         let d = ((x - cx).powi(2) + (v - cy).powi(2)).sqrt();
         if d < r {
-            let pal = [hex(0xd8e870), hex(0x80c040), hex(0xfff0b0), hex(0xf0a0c0), hex(0x60a8a0)];
+            let pal = [
+                hex(0xd8e870),
+                hex(0x80c040),
+                hex(0xfff0b0),
+                hex(0xf0a0c0),
+                hex(0x60a8a0),
+            ];
             let col = pal[(hash(i as i32, 1, p.seed) % 5) as usize];
             let rim = smooth(r * 0.8, r, d) * 0.4;
             let a = smooth(r, r * 0.93, d) * (0.25 + 0.35 * p.r(400 + i));
@@ -568,7 +690,11 @@ fn macro_flower(p: &P, x: f32, v: f32) -> C {
     let petal = ((th * n / 2.0).cos()).abs();
     let edge = 0.35 + 0.65 * petal.powf(0.45) + 0.03 * noise(th * 20.0, 0.0, p.seed);
     if r < edge {
-        let (pc, tip) = if p.seed.is_multiple_of(2) { (hex(0xe0408a), hex(0xffc0e0)) } else { (hex(0x8a3ad0), hex(0xe0c0ff)) };
+        let (pc, tip) = if p.seed.is_multiple_of(2) {
+            (hex(0xe0408a), hex(0xffc0e0))
+        } else {
+            (hex(0x8a3ad0), hex(0xe0c0ff))
+        };
         let vein = ((th * n * 7.0).sin() * 0.5 + 0.5) * 0.12;
         let t = (r / edge).clamp(0.0, 1.0);
         let mut col = mix(mul(pc, 0.55), tip, t.powf(1.5));
@@ -604,14 +730,22 @@ fn canyon(p: &P, x: f32, v: f32) -> C {
     let gap = (x - mid).abs() / p.aspect;
     let wall_top = hz + 0.25 - gap * 0.9 + 0.08 * fbm(x * 3.0, 0.0, p.seed, 5);
     if v > wall_top {
-        let strata = ((v * 70.0 + 3.0 * fbm(x * 2.0, v * 2.0, p.seed ^ 2, 4)).sin() * 0.5 + 0.5).powf(1.5);
+        let strata =
+            ((v * 70.0 + 3.0 * fbm(x * 2.0, v * 2.0, p.seed ^ 2, 4)).sin() * 0.5 + 0.5).powf(1.5);
         let base = mix(hex(0xa8401c), hex(0xe89050), strata);
         let cream = hex(0xe8c8a0);
         let mut c = mix(base, cream, smooth(0.8, 1.0, strata) * 0.5);
         let lit_side = x < mid;
         let depth = (v - wall_top).max(0.0);
-        let light = if lit_side { 1.0 - depth * 0.6 } else { 0.35 - depth * 0.2 };
-        c = mul(c, light.max(0.08) * (0.9 + 0.2 * fbm(x * 40.0, v * 40.0, p.seed ^ 9, 3)));
+        let light = if lit_side {
+            1.0 - depth * 0.6
+        } else {
+            0.35 - depth * 0.2
+        };
+        c = mul(
+            c,
+            light.max(0.08) * (0.9 + 0.2 * fbm(x * 40.0, v * 40.0, p.seed ^ 9, 3)),
+        );
         if !lit_side {
             c = add(c, mul(hex(0x6a4a60), 0.12));
         }
@@ -675,6 +809,9 @@ fn beach(p: &P, x: f32, v: f32) -> C {
         return add(c, refl);
     }
     let wet = smooth(shore + 0.04, shore, v);
-    let sand = mul(hex(0xf0dcb8), 0.9 + 0.12 * fbm(x * 80.0, v * 80.0, p.seed ^ 4, 3));
+    let sand = mul(
+        hex(0xf0dcb8),
+        0.9 + 0.12 * fbm(x * 80.0, v * 80.0, p.seed ^ 4, 3),
+    );
     mix(sand, mul(hex(0xc8b090), 0.9), wet)
 }

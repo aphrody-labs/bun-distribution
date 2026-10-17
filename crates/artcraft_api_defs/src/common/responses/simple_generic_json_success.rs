@@ -3,5 +3,5 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct SimpleGenericJsonSuccess {
-  pub success: bool,
+    pub success: bool,
 }

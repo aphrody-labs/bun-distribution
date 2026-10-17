@@ -10,8 +10,14 @@ use crate::{Mode, RawError, Result};
 use rayon::prelude::*;
 
 const BLOCK: usize = 768;
-const XTRANS: [[usize; 6]; 6] =
-    [[1, 1, 0, 1, 1, 2], [1, 1, 2, 1, 1, 0], [2, 0, 1, 0, 2, 1], [1, 1, 2, 1, 1, 0], [1, 1, 0, 1, 1, 2], [0, 2, 1, 2, 0, 1]];
+const XTRANS: [[usize; 6]; 6] = [
+    [1, 1, 0, 1, 1, 2],
+    [1, 1, 2, 1, 1, 0],
+    [2, 0, 1, 0, 2, 1],
+    [1, 1, 2, 1, 1, 0],
+    [1, 1, 0, 1, 1, 2],
+    [0, 2, 1, 2, 0, 1],
+];
 const MASKS: [[u8; 2]; 6] = [[10, 15], [15, 10], [14, 10], [15, 11], [11, 15], [10, 14]];
 
 fn corrupt(why: &str) -> RawError {
@@ -19,8 +25,12 @@ fn corrupt(why: &str) -> RawError {
 }
 
 fn be16(src: &[u8], at: usize) -> Result<usize> {
-    let s = src.get(at..at.saturating_add(2)).ok_or_else(|| corrupt("truncated header"))?;
-    let [a, b] = s else { return Err(corrupt("truncated header")) };
+    let s = src
+        .get(at..at.saturating_add(2))
+        .ok_or_else(|| corrupt("truncated header"))?;
+    let [a, b] = s else {
+        return Err(corrupt("truncated header"));
+    };
     Ok(u16::from_be_bytes([*a, *b]) as usize)
 }
 
@@ -30,23 +40,41 @@ struct Stripe<'a> {
     width: usize,
 }
 
-pub(super) fn decode(src: &[u8], width: usize, height: usize, bits: u32, xtrans: bool, mode: Mode) -> Result<Vec<u16>> {
+pub(super) fn decode(
+    src: &[u8],
+    width: usize,
+    height: usize,
+    bits: u32,
+    xtrans: bool,
+    mode: Mode,
+) -> Result<Vec<u16>> {
     let h = src.get(..16).ok_or_else(|| corrupt("truncated header"))?;
     if !h.starts_with(b"IS") {
         return Err(corrupt("missing compression signature"));
     }
-    let flag = h.get(2).copied().ok_or_else(|| corrupt("truncated header"))?;
+    let flag = h
+        .get(2)
+        .copied()
+        .ok_or_else(|| corrupt("truncated header"))?;
     if flag > 1 {
         return Err(corrupt("invalid compression flag"));
     }
-    let sensor = h.get(3).copied().ok_or_else(|| corrupt("truncated header"))?;
+    let sensor = h
+        .get(3)
+        .copied()
+        .ok_or_else(|| corrupt("truncated header"))?;
     if sensor != if xtrans { 16 } else { 0 } {
         return Err(corrupt("compression sensor type disagrees with CFA"));
     }
     if !matches!(bits, 12 | 14 | 16) {
-        return Err(RawError::Unsupported(format!("Fujifilm compressed RAF at {bits} bits")));
+        return Err(RawError::Unsupported(format!(
+            "Fujifilm compressed RAF at {bits} bits"
+        )));
     }
-    let count = h.get(13).copied().ok_or_else(|| corrupt("truncated header"))? as usize;
+    let count = h
+        .get(13)
+        .copied()
+        .ok_or_else(|| corrupt("truncated header"))? as usize;
     if h.get(4).copied() != Some(bits as u8)
         || be16(h, 5)? != height
         || be16(h, 9)? != width
@@ -60,7 +88,10 @@ pub(super) fn decode(src: &[u8], width: usize, height: usize, bits: u32, xtrans:
     {
         return Err(corrupt("inconsistent compression dimensions"));
     }
-    let n = width.checked_mul(height).filter(|&n| n <= crate::MAX_SAMPLES).ok_or(RawError::Limit("image too large"))?;
+    let n = width
+        .checked_mul(height)
+        .filter(|&n| n <= crate::MAX_SAMPLES)
+        .ok_or(RawError::Limit("image too large"))?;
     let table_end = 16 + count * 4;
     let mut offset = table_end.div_ceil(16) * 16;
     let quantizer_start = offset;
@@ -73,30 +104,54 @@ pub(super) fn decode(src: &[u8], width: usize, height: usize, bits: u32, xtrans:
     }
     let mut stripes = Vec::with_capacity(count);
     for i in 0..count {
-        let entry = src.get(16 + i * 4..20 + i * 4).ok_or_else(|| corrupt("truncated stripe size table"))?;
-        let [a, b, c, d] = entry else { return Err(corrupt("truncated stripe size table")) };
+        let entry = src
+            .get(16 + i * 4..20 + i * 4)
+            .ok_or_else(|| corrupt("truncated stripe size table"))?;
+        let [a, b, c, d] = entry else {
+            return Err(corrupt("truncated stripe size table"));
+        };
         let size = u32::from_be_bytes([*a, *b, *c, *d]) as usize;
-        let end = offset.checked_add(size).ok_or_else(|| corrupt("stripe size overflow"))?;
-        let bytes = src.get(offset..end).filter(|s| !s.is_empty()).ok_or_else(|| corrupt("stripe outside file"))?;
+        let end = offset
+            .checked_add(size)
+            .ok_or_else(|| corrupt("stripe size overflow"))?;
+        let bytes = src
+            .get(offset..end)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| corrupt("stripe outside file"))?;
         let quantizers = if flag == 0 {
             Some(
-                src.get(quantizer_start + i * quantizer_stride..quantizer_start + i * quantizer_stride + height / 6)
-                    .ok_or_else(|| corrupt("truncated quantizer table"))?,
+                src.get(
+                    quantizer_start + i * quantizer_stride
+                        ..quantizer_start + i * quantizer_stride + height / 6,
+                )
+                .ok_or_else(|| corrupt("truncated quantizer table"))?,
             )
         } else {
             None
         };
-        stripes.push(Stripe { bytes, quantizers, width: (width - i * BLOCK).min(BLOCK) });
+        stripes.push(Stripe {
+            bytes,
+            quantizers,
+            width: (width - i * BLOCK).min(BLOCK),
+        });
         offset = end;
     }
     if mode == Mode::Header {
         return Ok(Vec::new());
     }
-    let decoded: Vec<Vec<u16>> = stripes.par_iter().map(|s| decode_stripe(s, height, bits, xtrans)).collect::<Result<_>>()?;
+    let decoded: Vec<Vec<u16>> = stripes
+        .par_iter()
+        .map(|s| decode_stripe(s, height, bits, xtrans))
+        .collect::<Result<_>>()?;
     let mut output = vec![0; n];
     for (i, (stripe, data)) in stripes.iter().zip(&decoded).enumerate() {
-        for (row, samples) in output.chunks_exact_mut(width).zip(data.chunks_exact(stripe.width)) {
-            row.get_mut(i * BLOCK..i * BLOCK + stripe.width).ok_or_else(|| corrupt("invalid stripe placement"))?.copy_from_slice(samples);
+        for (row, samples) in output
+            .chunks_exact_mut(width)
+            .zip(data.chunks_exact(stripe.width))
+        {
+            row.get_mut(i * BLOCK..i * BLOCK + stripe.width)
+                .ok_or_else(|| corrupt("invalid stripe placement"))?
+                .copy_from_slice(samples);
         }
     }
     Ok(output)
@@ -111,13 +166,22 @@ struct Bits<'a> {
 
 impl<'a> Bits<'a> {
     fn new(src: &'a [u8]) -> Self {
-        Self { src, pos: 0, acc: 0, available: 0 }
+        Self {
+            src,
+            pos: 0,
+            acc: 0,
+            available: 0,
+        }
     }
 
     #[inline]
     fn get(&mut self, n: u32) -> Result<u32> {
         while self.available < n {
-            let b = self.src.get(self.pos).copied().ok_or_else(|| corrupt("truncated entropy stream"))?;
+            let b = self
+                .src
+                .get(self.pos)
+                .copied()
+                .ok_or_else(|| corrupt("truncated entropy stream"))?;
             self.pos += 1;
             self.acc = (self.acc << 8) | u64::from(b);
             self.available += 8;
@@ -134,14 +198,22 @@ impl<'a> Bits<'a> {
                 return Err(corrupt("invalid residual escape"));
             }
         }
-        let code = if zeros == limit { self.get(bits)? + 1 } else { (zeros << k) | self.get(k)? };
+        let code = if zeros == limit {
+            self.get(bits)? + 1
+        } else {
+            (zeros << k) | self.get(k)?
+        };
         if code > range {
             return Err(corrupt(&format!(
                 "residual {code} outside sample range {range} (k={k}, prefix={zeros}, bits={bits}, position={})",
                 self.pos * 8 - self.available as usize
             )));
         }
-        Ok(if code & 1 == 0 { (code / 2) as i32 } else { -((code / 2) as i32) - 1 })
+        Ok(if code & 1 == 0 {
+            (code / 2) as i32
+        } else {
+            -((code / 2) as i32) - 1
+        })
     }
 }
 
@@ -203,7 +275,10 @@ fn even_prediction(nw: i32, n: i32, ne: i32, nn: i32) -> i32 {
 
 #[inline]
 fn sample(rows: &[Vec<i32>], y: usize, x: usize) -> Result<i32> {
-    rows.get(y).and_then(|r| r.get(x)).copied().ok_or_else(|| corrupt("invalid predictor position"))
+    rows.get(y)
+        .and_then(|r| r.get(x))
+        .copied()
+        .ok_or_else(|| corrupt("invalid predictor position"))
 }
 
 fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) -> Result<Vec<u16>> {
@@ -211,17 +286,30 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
     let mut previous = vec![vec![vec![0; size + 2]; 2]; 3];
     let max = (1u32 << bits) - 1;
     let range = |near: u32| (max + 2 * near) / (2 * near + 1) + 1;
-    let seed = |near: u32| State { sum: ((range(near) + 32) / 64).max(2), count: 1 };
+    let seed = |near: u32| State {
+        sum: ((range(near) + 32) / 64).max(2),
+        count: 1,
+    };
     let mut states = [[[seed(0); 41]; 2]; 3];
     // Smooth regions retain finer precision and independent state across block quantizer changes.
-    let mut fine = [[[[seed(0); 5]; 2]; 3], [[[seed(1); 5]; 2]; 3], [[[seed(2); 5]; 2]; 3]];
+    let mut fine = [
+        [[[seed(0); 5]; 2]; 3],
+        [[[seed(1); 5]; 2]; 3],
+        [[[seed(2); 5]; 2]; 3],
+    ];
     let mut last_near = None;
     let mut reader = Bits::new(stripe.bytes);
-    let n = height.checked_mul(stripe.width).filter(|&n| n <= crate::MAX_SAMPLES).ok_or(RawError::Limit("image too large"))?;
+    let n = height
+        .checked_mul(stripe.width)
+        .filter(|&n| n <= crate::MAX_SAMPLES)
+        .ok_or(RawError::Limit("image too large"))?;
     let mut output = Vec::with_capacity(n);
     for group in 0..height / 6 {
         let near = match stripe.quantizers {
-            Some(q) => u32::from(*q.get(group).ok_or_else(|| corrupt("truncated quantizer table"))?),
+            Some(q) => u32::from(
+                *q.get(group)
+                    .ok_or_else(|| corrupt("truncated quantizer table"))?,
+            ),
             None => 0,
         };
         if last_near != Some(near) {
@@ -232,7 +320,9 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
         for pair in 0..6 {
             let colours = if pair % 2 == 0 { [0, 1] } else { [1, 2] };
             for &colour in &colours {
-                let lines = rows.get_mut(colour).ok_or_else(|| corrupt("invalid colour vector"))?;
+                let lines = rows
+                    .get_mut(colour)
+                    .ok_or_else(|| corrupt("invalid colour vector"))?;
                 let mut row = vec![0; size + 2];
                 let prev = lines.len() - 1;
                 let left = sample(lines, prev, 1)?;
@@ -247,22 +337,38 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
             }
             for even in (0..size + 8).step_by(2) {
                 for (odd, position) in [(0, Some(even)), (1, even.checked_sub(7))] {
-                    let Some(pos) = position.filter(|&x| x < size) else { continue };
+                    let Some(pos) = position.filter(|&x| x < size) else {
+                        continue;
+                    };
                     let x = pos + 1;
                     for (which, &colour) in colours.iter().enumerate() {
-                        let lines = rows.get_mut(colour).ok_or_else(|| corrupt("invalid colour vector"))?;
+                        let lines = rows
+                            .get_mut(colour)
+                            .ok_or_else(|| corrupt("invalid colour vector"))?;
                         let y = lines.len() - 1;
-                        let (nw, north, ne, nn) =
-                            (sample(lines, y - 1, x - 1)?, sample(lines, y - 1, x)?, sample(lines, y - 1, x + 1)?, sample(lines, y - 2, x)?);
+                        let (nw, north, ne, nn) = (
+                            sample(lines, y - 1, x - 1)?,
+                            sample(lines, y - 1, x)?,
+                            sample(lines, y - 1, x + 1)?,
+                            sample(lines, y - 2, x)?,
+                        );
                         let west = sample(lines, y, x - 1)?;
                         let east = sample(lines, y, x + 1)?;
                         let (predict, d1, d2) = if odd == 0 {
                             (even_prediction(nw, north, ne, nn), north - nn, nw - north)
                         } else {
-                            let p = if (nw.min(ne)..=nw.max(ne)).contains(&north) { (west + east) >> 1 } else { (west + east + 2 * north) >> 2 };
+                            let p = if (nw.min(ne)..=nw.max(ne)).contains(&north) {
+                                (west + east) >> 1
+                            } else {
+                                (west + east + 2 * north) >> 2
+                            };
                             (p, north - nw, nw - west)
                         };
-                        let real = !xtrans || MASKS.get(pair).and_then(|m| m.get(which)).is_some_and(|m| (m >> (pos % 4)) & 1 != 0);
+                        let real = !xtrans
+                            || MASKS
+                                .get(pair)
+                                .and_then(|m| m.get(which))
+                                .is_some_and(|m| (m >> (pos % 4)) & 1 != 0);
                         let value = if real {
                             let contrast = d1.unsigned_abs() + d2.unsigned_abs();
                             let precision = match contrast {
@@ -272,7 +378,13 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
                                 _ => near,
                             };
                             let (context, state) = if precision < near {
-                                let sign = |v: i32| if v.unsigned_abs() <= precision { 0 } else { v.signum() };
+                                let sign = |v: i32| {
+                                    if v.unsigned_abs() <= precision {
+                                        0
+                                    } else {
+                                        v.signum()
+                                    }
+                                };
                                 let context = 3 * sign(d1) + sign(d2);
                                 let state = fine
                                     .get_mut(precision as usize)
@@ -292,7 +404,12 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
                             };
                             let coded_range = range(precision);
                             let coded_bits = 32 - (coded_range - 1).leading_zeros();
-                            let mut delta = reader.residual(state.k(), coded_bits, coded_range, 4 * bits - coded_bits - 1)?;
+                            let mut delta = reader.residual(
+                                state.k(),
+                                coded_bits,
+                                coded_range,
+                                4 * bits - coded_bits - 1,
+                            )?;
                             state.update(delta);
                             if context < 0 {
                                 delta = -delta;
@@ -308,7 +425,10 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
                         } else {
                             predict
                         };
-                        *lines.get_mut(y).and_then(|r| r.get_mut(x)).ok_or_else(|| corrupt("invalid predictor position"))? = value;
+                        *lines
+                            .get_mut(y)
+                            .and_then(|r| r.get_mut(x))
+                            .ok_or_else(|| corrupt("invalid predictor position"))? = value;
                     }
                 }
             }
@@ -316,7 +436,11 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
         for y in 0..6 {
             for x in 0..stripe.width {
                 let colour = if xtrans {
-                    XTRANS.get(y).and_then(|r| r.get(x % 6)).copied().ok_or_else(|| corrupt("invalid CFA position"))?
+                    XTRANS
+                        .get(y)
+                        .and_then(|r| r.get(x % 6))
+                        .copied()
+                        .ok_or_else(|| corrupt("invalid CFA position"))?
                 } else {
                     match (y % 2, x % 2) {
                         (0, 0) => 0,
@@ -325,11 +449,23 @@ fn decode_stripe(stripe: &Stripe<'_>, height: usize, bits: u32, xtrans: bool) ->
                     }
                 };
                 let row = 2 + if colour == 1 { y } else { y / 2 };
-                let col = 1 + if xtrans { 2 * (x / 3) + (x % 3).min(1) } else { x / 2 };
-                output.push(sample(rows.get(colour).ok_or_else(|| corrupt("invalid colour vector"))?, row, col)? as u16);
+                let col = 1 + if xtrans {
+                    2 * (x / 3) + (x % 3).min(1)
+                } else {
+                    x / 2
+                };
+                output.push(sample(
+                    rows.get(colour)
+                        .ok_or_else(|| corrupt("invalid colour vector"))?,
+                    row,
+                    col,
+                )? as u16);
             }
         }
-        previous = rows.into_iter().map(|mut r| r.split_off(r.len() - 2)).collect();
+        previous = rows
+            .into_iter()
+            .map(|mut r| r.split_off(r.len() - 2))
+            .collect();
     }
     Ok(output)
 }
@@ -357,12 +493,15 @@ mod tests {
                 let width = if xtrans { 512 } else { 384 };
                 for even in (0usize..width + 8).step_by(2) {
                     for (parity, column) in [(0, Some(even)), (1, even.checked_sub(7))] {
-                        let Some(column) = column.filter(|&x| x < width) else { continue };
+                        let Some(column) = column.filter(|&x| x < width) else {
+                            continue;
+                        };
                         for colour in 0..2 {
                             if xtrans && (MASKS[pair][colour] >> (column % 4)) & 1 == 0 {
                                 continue;
                             }
-                            let (sum, count) = &mut if q == 0 { &mut main } else { &mut fine }[pair % 3][parity];
+                            let (sum, count) =
+                                &mut if q == 0 { &mut main } else { &mut fine }[pair % 3][parity];
                             let k = 32 - (sum.saturating_sub(1) / *count).leading_zeros();
                             stream.push(true);
                             stream.extend(std::iter::repeat_n(false, k as usize));
@@ -376,7 +515,15 @@ mod tests {
                 }
             }
         }
-        stream.chunks(8).map(|chunk| chunk.iter().enumerate().fold(0, |b, (i, bit)| b | (u8::from(*bit) << (7 - i)))).collect()
+        stream
+            .chunks(8)
+            .map(|chunk| {
+                chunk
+                    .iter()
+                    .enumerate()
+                    .fold(0, |b, (i, bit)| b | (u8::from(*bit) << (7 - i)))
+            })
+            .collect()
     }
 
     fn compressed(bits: u32, xtrans: bool, quantizers: Option<&[u8]>) -> Vec<u8> {
@@ -384,7 +531,11 @@ mod tests {
         let stream = zero_stream(bits, xtrans, quantizers);
         // Two stripes; the second is mostly padding, which must never enter the output.
         let mut out = b"IS".to_vec();
-        out.extend_from_slice(&[u8::from(quantizers.is_none()), if xtrans { 16 } else { 0 }, bits as u8]);
+        out.extend_from_slice(&[
+            u8::from(quantizers.is_none()),
+            if xtrans { 16 } else { 0 },
+            bits as u8,
+        ]);
         for v in [groups as u16 * 6, 1536, 780, 768] {
             out.extend_from_slice(&v.to_be_bytes());
         }
@@ -413,7 +564,11 @@ mod tests {
                     let src = compressed(bits, xtrans, q);
                     let out = decode(&src, 780, 18, bits, xtrans, Mode::Full).unwrap();
                     assert_eq!(out, vec![0; 780 * 18]);
-                    assert!(decode(&src, 780, 18, bits, xtrans, Mode::Header).unwrap().is_empty());
+                    assert!(
+                        decode(&src, 780, 18, bits, xtrans, Mode::Header)
+                            .unwrap()
+                            .is_empty()
+                    );
                     let layout = xtrans.then(|| {
                         let mut l = [0; 36];
                         for (to, from) in l.iter_mut().zip(XTRANS.iter().flatten().rev()) {
@@ -434,12 +589,18 @@ mod tests {
     fn malformed_headers_and_truncated_entropy_are_errors() {
         let valid = compressed(14, true, Some(&[1, 2, 0]));
         for len in (0..96).chain([valid.len() / 2, valid.len() - 1]) {
-            assert!(decode(&valid[..len], 780, 18, 14, true, Mode::Full).is_err(), "length {len}");
+            assert!(
+                decode(&valid[..len], 780, 18, 14, true, Mode::Full).is_err(),
+                "length {len}"
+            );
         }
         for at in [2, 3, 4, 5, 7, 9, 11, 13, 14, 16] {
             let mut src = valid.clone();
             src[at] ^= 0xff;
-            assert!(decode(&src, 780, 18, 14, true, Mode::Full).is_err(), "header byte {at}");
+            assert!(
+                decode(&src, 780, 18, 14, true, Mode::Full).is_err(),
+                "header byte {at}"
+            );
         }
         assert!(decode(&valid, usize::MAX, usize::MAX, 14, true, Mode::Full).is_err());
         let mut reader = Bits::new(&[0; 64]);
@@ -453,7 +614,10 @@ mod tests {
         let raf = super::super::raf::tests::raf(780, 18, 14, src, Some(layout), &[]);
         let mut mismatched = raf.clone();
         mismatched[108..112].copy_from_slice(&3u32.to_be_bytes());
-        assert!(crate::decode(&mismatched).is_err(), "declared lossy mode disagrees with lossless stream");
+        assert!(
+            crate::decode(&mismatched).is_err(),
+            "declared lossy mode disagrees with lossless stream"
+        );
         let bad_layout = layout.map(|c| {
             if c == 0 {
                 2
@@ -463,25 +627,51 @@ mod tests {
                 c
             }
         });
-        let raf = super::super::raf::tests::raf(780, 18, 14, compressed(14, true, None), Some(bad_layout), &[]);
-        assert!(matches!(crate::decode(&raf), Err(RawError::Unsupported(_))), "compression uses a fixed X-Trans arrangement");
+        let raf = super::super::raf::tests::raf(
+            780,
+            18,
+            14,
+            compressed(14, true, None),
+            Some(bad_layout),
+            &[],
+        );
+        assert!(
+            matches!(crate::decode(&raf), Err(RawError::Unsupported(_))),
+            "compression uses a fixed X-Trans arrangement"
+        );
         let mut raf = super::super::raf::tests::raf(780, 18, 16, vec![0; 780 * 18 * 2], None, &[]);
         for mode in [1u32, 4, u32::MAX] {
             raf[108..112].copy_from_slice(&mode.to_be_bytes());
-            assert!(matches!(crate::decode(&raf), Err(RawError::Unsupported(_))), "unknown mode {mode}");
-            assert!(matches!(crate::probe_info(&raf), Err(RawError::Unsupported(_))), "header-only mode {mode}");
+            assert!(
+                matches!(crate::decode(&raf), Err(RawError::Unsupported(_))),
+                "unknown mode {mode}"
+            );
+            assert!(
+                matches!(crate::probe_info(&raf), Err(RawError::Unsupported(_))),
+                "header-only mode {mode}"
+            );
         }
     }
 
     #[test]
     fn residual_sign_wrap_and_escape() {
         // Ordinary codes 0, 1, 2, 3 with k=2; then the escape for -8192.
-        let mut stream = vec![true, false, false, true, false, true, true, true, false, true, true, true];
+        let mut stream = vec![
+            true, false, false, true, false, true, true, true, false, true, true, true,
+        ];
         stream.extend(std::iter::repeat_n(false, 41));
         stream.push(true);
         let escaped = 16382u32;
         stream.extend((0..14).rev().map(|i| (escaped >> i) & 1 != 0));
-        let bytes: Vec<u8> = stream.chunks(8).map(|chunk| chunk.iter().enumerate().fold(0, |b, (i, bit)| b | (u8::from(*bit) << (7 - i)))).collect();
+        let bytes: Vec<u8> = stream
+            .chunks(8)
+            .map(|chunk| {
+                chunk
+                    .iter()
+                    .enumerate()
+                    .fold(0, |b, (i, bit)| b | (u8::from(*bit) << (7 - i)))
+            })
+            .collect();
         let mut reader = Bits::new(&bytes);
         for delta in [0, -1, 1, -2, -8192] {
             assert_eq!(reader.residual(2, 14, 16384, 41).unwrap(), delta);

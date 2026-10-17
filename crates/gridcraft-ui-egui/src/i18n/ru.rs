@@ -15,7 +15,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Insert Paste" => "Вставка со сдвигом",
         "Cut (⌘X)" => "Вырезать (⌘X)",
         "Copy (⌘C)" => "Копировать (⌘C)",
-        "Format Painter (double-click to keep it on)" => "Формат по образцу (дважды щёлкните, чтобы закрепить)",
+        "Format Painter (double-click to keep it on)" => {
+            "Формат по образцу (дважды щёлкните, чтобы закрепить)"
+        }
         "Bold (⌘B)" => "Полужирный (⌘B)",
         "Italic (⌘I)" => "Курсив (⌘I)",
         "Underline (⌘U)" => "Подчёркивание (⌘U)",
@@ -272,7 +274,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "Изменение",
         "Point" => "Указание",
         "Calculate" => "Вычисление",
-        "Select destination and press Enter or choose Paste" => "Выберите место вставки и нажмите Enter или выберите «Вставить»",
+        "Select destination and press Enter or choose Paste" => {
+            "Выберите место вставки и нажмите Enter или выберите «Вставить»"
+        }
         "General" => "Общий",
         "Number" => "Числовой",
         "Currency" => "Денежный",
@@ -386,7 +390,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
             "CSV-файл, веб-страница или PDF — это копия: книга остаётся в своём файле."
         }
-        "Save the workbook under another name or in another folder." => "Сохранить книгу под другим именем или в другой папке.",
+        "Save the workbook under another name or in another folder." => {
+            "Сохранить книгу под другим именем или в другой папке."
+        }
         "Print Active Sheets" => "Напечатать активные листы",
         "Print Entire Workbook" => "Напечатать всю книгу",
         "Fit Sheet on One Page" => "Вписать лист на одну страницу",
@@ -396,20 +402,28 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "Предыдущая страница",
         "Next page" => "Следующая страница",
         "Create PDF" => "Создать PDF",
-        "Save the sheet as a PDF document that keeps its page layout." => "Сохранить лист как PDF-документ с сохранением разметки страниц.",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "Сохранить лист как PDF-документ с сохранением разметки страниц."
+        }
         "Change File Type" => "Изменить тип файла",
         "CSV (Comma delimited)" => "CSV (разделители — запятые)",
-        "Save the active sheet as comma-separated text." => "Сохранить активный лист как текст с разделителями-запятыми.",
+        "Save the active sheet as comma-separated text." => {
+            "Сохранить активный лист как текст с разделителями-запятыми."
+        }
         "Web Page (.html)" => "Веб-страница (.html)",
         "Save the workbook as a web page." => "Сохранить книгу как веб-страницу.",
         "Options|General" => "Общие",
         "Options|Save" => "Сохранение",
         "Show formula bar" => "Показывать строку формул",
         "Enable AutoComplete for cell values" => "Включить автозавершение значений ячеек",
-        "Save .xlsx workbooks automatically after every change" => "Автоматически сохранять книги .xlsx после каждого изменения",
+        "Save .xlsx workbooks automatically after every change" => {
+            "Автоматически сохранять книги .xlsx после каждого изменения"
+        }
         "Workbook calculation" => "Вычисления в книге",
         "Enable iterative calculation" => "Включить итеративные вычисления",
-        "Calculation settings are saved with the workbook." => "Параметры вычислений сохраняются вместе с книгой.",
+        "Calculation settings are saved with the workbook." => {
+            "Параметры вычислений сохраняются вместе с книгой."
+        }
         _ => return None,
     })
 }

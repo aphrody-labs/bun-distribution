@@ -10,14 +10,23 @@ use serde_json::json;
 use crate::{Outcome, run_code};
 
 fn session() -> Session {
-    let mut s = Session { expr: Some(Arc::new(effectcraft_expr::Expressions)), expr_check: Some(effectcraft_expr::check_syntax), ..Default::default() };
+    let mut s = Session {
+        expr: Some(Arc::new(effectcraft_expr::Expressions)),
+        expr_check: Some(effectcraft_expr::check_syntax),
+        ..Default::default()
+    };
     crate::install(&mut s);
     s
 }
 
 fn ok(s: &mut Session, code: &str) -> Outcome {
     let o = run_code(s, code, "test.jsx");
-    assert!(o.error.is_none(), "script failed: {:?}\noutput: {:?}", o.error, o.output);
+    assert!(
+        o.error.is_none(),
+        "script failed: {:?}\noutput: {:?}",
+        o.error,
+        o.output
+    );
     o
 }
 
@@ -74,9 +83,17 @@ fn layers_groups_and_properties_are_callable() {
             "ADBE Slider Control"
         ])
     );
-    let c = s.project.items.values().find_map(|i| i.as_comp()).expect("comp");
+    let c = s
+        .project
+        .items
+        .values()
+        .find_map(|i| i.as_comp())
+        .expect("comp");
     let l = c.layers.first().expect("layer");
-    assert_eq!(l.props.prop("effects/#1/slider").map(|p| p.value.clone()), Some(KV::Scalar(42.0)));
+    assert_eq!(
+        l.props.prop("effects/#1/slider").map(|p| p.value.clone()),
+        Some(KV::Scalar(42.0))
+    );
 }
 
 #[test]
@@ -91,6 +108,12 @@ fn calling_without_a_name_is_a_script_error() {
         assert!(o.error.is_some(), "expected an error for {code}");
     }
     // A called layer still reports itself as a layer, and its JSON result is unchanged.
-    let o = ok(&mut s, "var c = app.project.items.addComp('N', 100, 100, 1, 1, 25); var l = c.layers.addNull(); l.name = 'Ctl'; l");
-    assert_eq!(o.result, json!({ "type": "[object AVLayer]", "name": "Ctl" }));
+    let o = ok(
+        &mut s,
+        "var c = app.project.items.addComp('N', 100, 100, 1, 1, 25); var l = c.layers.addNull(); l.name = 'Ctl'; l",
+    );
+    assert_eq!(
+        o.result,
+        json!({ "type": "[object AVLayer]", "name": "Ctl" })
+    );
 }

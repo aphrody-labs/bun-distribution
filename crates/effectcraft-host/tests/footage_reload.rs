@@ -61,10 +61,17 @@ fn near(a: [f32; 3], b: [f32; 4]) -> bool {
 /// A flat file as footage in a comp of its size: (session, footage item, comp).
 fn flat_in_comp(path: &str) -> (Session, ItemId, ItemId) {
     let mut s = effectcraft_host::session();
-    let r = s.execute_checked("file.import", json!({"paths": [path]})).unwrap();
+    let r = s
+        .execute_checked("file.import", json!({"paths": [path]}))
+        .unwrap();
     let item = ItemId(r["items"][0].as_u64().unwrap());
-    s.execute_checked("comp.new", json!({"name": "C", "width": 64, "height": 48, "frameRate": 30, "duration": 1})).unwrap();
-    s.execute_checked("layer.addItem", json!({"item": item.0})).unwrap();
+    s.execute_checked(
+        "comp.new",
+        json!({"name": "C", "width": 64, "height": 48, "frameRate": 30, "duration": 1}),
+    )
+    .unwrap();
+    s.execute_checked("layer.addItem", json!({"item": item.0}))
+        .unwrap();
     let cid = s.active_comp_id().unwrap();
     (s, item, cid)
 }
@@ -77,23 +84,56 @@ fn reload_footage_shows_the_new_pixels() {
     assert!(near(pixel(&s, cid, 32, 24), RED));
     // Same size, new colour: the frames decoded before must not be shown again.
     save(&path, &flat(BLUE, false));
-    let r = s.execute_checked("file.reloadFootage", json!({"items": [item.0]})).unwrap();
+    let r = s
+        .execute_checked("file.reloadFootage", json!({"items": [item.0]}))
+        .unwrap();
     assert_eq!(r["reloaded"], 1);
-    assert!(near(pixel(&s, cid, 32, 24), BLUE), "{:?}", pixel(&s, cid, 32, 24));
+    assert!(
+        near(pixel(&s, cid, 32, 24), BLUE),
+        "{:?}",
+        pixel(&s, cid, 32, 24)
+    );
 }
 
 #[test]
 fn reload_keeps_a_photoshop_layer_item_on_its_layer() {
     let path = tmp("layers.psd");
     let mut d = WDoc::new(64, 48);
-    d.layers = vec![WLayer::solid("Background", Rect::new(0, 0, 64, 48), RED), WLayer::solid("Patch", Rect::new(0, 0, 32, 48), BLUE)];
+    d.layers = vec![
+        WLayer::solid("Background", Rect::new(0, 0, 64, 48), RED),
+        WLayer::solid("Patch", Rect::new(0, 0, 32, 48), BLUE),
+    ];
     std::fs::write(&path, write(&d)).unwrap();
     let mut s = effectcraft_host::session();
-    let r = s.execute_checked("file.import", json!({"paths": [path], "importAs": "compositionLayerSizes"})).unwrap();
+    let r = s
+        .execute_checked(
+            "file.import",
+            json!({"paths": [path], "importAs": "compositionLayerSizes"}),
+        )
+        .unwrap();
     let cid = ItemId(r["comps"][0].as_u64().unwrap());
-    let items: Vec<ItemId> = r["items"].as_array().unwrap().iter().filter_map(|v| v.as_u64()).map(ItemId).collect();
-    let patch = *items.iter().find(|i| s.project.item(**i).is_some_and(|it| it.name.starts_with("Patch/"))).unwrap();
-    assert_eq!((footage(&s, patch).width, footage(&s, patch).layer.unwrap().index), (32, 1));
+    let items: Vec<ItemId> = r["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|v| v.as_u64())
+        .map(ItemId)
+        .collect();
+    let patch = *items
+        .iter()
+        .find(|i| {
+            s.project
+                .item(**i)
+                .is_some_and(|it| it.name.starts_with("Patch/"))
+        })
+        .unwrap();
+    assert_eq!(
+        (
+            footage(&s, patch).width,
+            footage(&s, patch).layer.unwrap().index
+        ),
+        (32, 1)
+    );
     assert!(near(pixel(&s, cid, 8, 24), BLUE));
     // In the other app: a layer added under the patch, and the patch narrower and green.
     d.layers = vec![
@@ -102,13 +142,30 @@ fn reload_keeps_a_photoshop_layer_item_on_its_layer() {
         WLayer::solid("Patch", Rect::new(0, 0, 24, 48), GREEN),
     ];
     save(&path, &write(&d));
-    let footage_items: Vec<u64> = items.iter().filter(|i| matches!(s.project.item(**i).map(|x| &x.kind), Some(ItemKind::Footage(_)))).map(|i| i.0).collect();
-    s.execute_checked("file.reloadFootage", json!({"items": footage_items})).unwrap();
+    let footage_items: Vec<u64> = items
+        .iter()
+        .filter(|i| {
+            matches!(
+                s.project.item(**i).map(|x| &x.kind),
+                Some(ItemKind::Footage(_))
+            )
+        })
+        .map(|i| i.0)
+        .collect();
+    s.execute_checked("file.reloadFootage", json!({"items": footage_items}))
+        .unwrap();
     let f = footage(&s, patch);
     let l = f.layer.clone().expect("still one layer of the file");
-    assert_eq!((l.name.as_str(), l.index, f.width, f.height), ("Patch", 2, 24, 48));
+    assert_eq!(
+        (l.name.as_str(), l.index, f.width, f.height),
+        ("Patch", 2, 24, 48)
+    );
     assert!(!f.missing);
-    assert!(near(pixel(&s, cid, 8, 24), GREEN), "{:?}", pixel(&s, cid, 8, 24));
+    assert!(
+        near(pixel(&s, cid, 8, 24), GREEN),
+        "{:?}",
+        pixel(&s, cid, 8, 24)
+    );
 }
 
 #[test]
@@ -119,13 +176,29 @@ fn changed_footage_reloads_by_itself_without_an_undo_step() {
     s.mark_saved();
     let undo = s.history.undo.len();
     // First look: remembered, nothing to reload.
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 0, "reloaded": 0}));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 0, "reloaded": 0})
+    );
     save(&path, &flat(BLUE, true));
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 1, "reloaded": 1}));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 1, "reloaded": 1})
+    );
     assert!(near(pixel(&s, cid, 32, 24), BLUE));
-    assert_eq!(s.history.undo.len(), undo, "the disk changed, not the project");
+    assert_eq!(
+        s.history.undo.len(),
+        undo,
+        "the disk changed, not the project"
+    );
     assert!(!s.is_dirty());
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 0, "reloaded": 0}));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 0, "reloaded": 0})
+    );
 }
 
 #[test]
@@ -133,16 +206,28 @@ fn a_file_still_being_written_is_tried_again() {
     let path = tmp("partial.psd");
     std::fs::write(&path, flat(RED, false)).unwrap();
     let (mut s, item, cid) = flat_in_comp(&path);
-    s.execute_checked("footage.reloadChanged", json!({})).unwrap();
+    s.execute_checked("footage.reloadChanged", json!({}))
+        .unwrap();
     // Another app has only written the start of the file so far.
     let full = flat(BLUE, true);
     save(&path, &full[..12]);
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 0, "reloaded": 0}));
-    assert!(!footage(&s, item).missing, "a file being written isn't missing");
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 0, "reloaded": 0})
+    );
+    assert!(
+        !footage(&s, item).missing,
+        "a file being written isn't missing"
+    );
     // Meanwhile it renders as whatever part of it can be decoded (here nothing); the next scan,
     // after the other app has finished, reads it whole.
     save(&path, &full);
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 1, "reloaded": 1}));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 1, "reloaded": 1})
+    );
     assert!(near(pixel(&s, cid, 32, 24), BLUE));
 }
 
@@ -173,24 +258,48 @@ fn background_scan_reloads_changed_footage() {
 fn image_sequences_reload_by_themselves_only_with_all_footage() {
     let png = |path: &str, v: u8| {
         std::thread::sleep(std::time::Duration::from_millis(30));
-        image::RgbaImage::from_pixel(8, 8, image::Rgba([v, 0, 0, 255])).save(path).unwrap();
+        image::RgbaImage::from_pixel(8, 8, image::Rgba([v, 0, 0, 255]))
+            .save(path)
+            .unwrap();
     };
     let (a, b) = (tmp("seq_0001.png"), tmp("seq_0002.png"));
     png(&a, 255);
     png(&b, 255);
     let mut s = effectcraft_host::session();
-    let r = s.execute_checked("file.import", json!({"paths": [&a], "sequence": true})).unwrap();
+    let r = s
+        .execute_checked("file.import", json!({"paths": [&a], "sequence": true}))
+        .unwrap();
     let item = ItemId(r["items"][0].as_u64().unwrap());
-    assert_eq!(footage(&s, item).sequence.len(), 2, "imported as a sequence");
+    assert_eq!(
+        footage(&s, item).sequence.len(),
+        2,
+        "imported as a sequence"
+    );
     // Non-Sequence Footage (the default, as in After Effects): sequences are never stamped.
     assert_eq!(s.prefs.import.auto_reload_footage, "nonSequence");
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 0, "reloaded": 0}));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 0, "reloaded": 0})
+    );
     png(&a, 0);
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 0, "reloaded": 0}));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 0, "reloaded": 0})
+    );
     // All Footage: every frame is watched (first seen now, so only remembered).
     s.prefs.import.auto_reload_footage = "all".into();
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap(), json!({"files": 0, "reloaded": 0}));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap(),
+        json!({"files": 0, "reloaded": 0})
+    );
     std::fs::write(&b, b"not yet a png").unwrap();
     png(&b, 128);
-    assert_eq!(s.execute_checked("footage.reloadChanged", json!({})).unwrap()["files"], json!(1));
+    assert_eq!(
+        s.execute_checked("footage.reloadChanged", json!({}))
+            .unwrap()["files"],
+        json!(1)
+    );
 }

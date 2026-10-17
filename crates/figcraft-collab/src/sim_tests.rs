@@ -15,7 +15,10 @@ pub(crate) struct Width;
 impl Recompute for Width {
     fn recompute(&self, doc: &mut Document, _: &Document, touched: &BTreeSet<NodeId>) {
         for id in touched {
-            let want = doc.node(*id).filter(|n| matches!(n.kind, NodeKind::Frame)).map(|n| n.children.len() as f64 * 10.0);
+            let want = doc
+                .node(*id)
+                .filter(|n| matches!(n.kind, NodeKind::Frame))
+                .map(|n| n.children.len() as f64 * 10.0);
             if let Some(w) = want
                 && doc.node(*id).is_some_and(|n| n.width != w)
                 && let Some(n) = doc.node_mut(*id)
@@ -30,9 +33,28 @@ pub(crate) fn base() -> Document {
     let mut d = Document::new("Shared");
     let page = d.first_page().unwrap();
     for i in 0..3 {
-        let f = d.create(page, NodeKind::Frame, &format!("F{i}"), i as f64 * 200.0, 0.0, 0.0, 100.0).unwrap();
+        let f = d
+            .create(
+                page,
+                NodeKind::Frame,
+                &format!("F{i}"),
+                i as f64 * 200.0,
+                0.0,
+                0.0,
+                100.0,
+            )
+            .unwrap();
         for j in 0..3 {
-            d.create(f, NodeKind::Rectangle, &format!("R{i}{j}"), 0.0, j as f64 * 20.0, 10.0, 10.0).unwrap();
+            d.create(
+                f,
+                NodeKind::Rectangle,
+                &format!("R{i}{j}"),
+                0.0,
+                j as f64 * 20.0,
+                10.0,
+                10.0,
+            )
+            .unwrap();
         }
         d.get_mut(f).unwrap().width = 30.0;
     }
@@ -45,14 +67,34 @@ pub(crate) fn random_edit(doc: &mut Document, rng: &mut Rng, derive: &dyn Recomp
     let before = doc.clone();
     doc.take_dirty();
     let ids: Vec<NodeId> = doc.ids().collect();
-    let containers: Vec<NodeId> = ids.iter().copied().filter(|i| doc.node(*i).is_some_and(|n| n.kind.is_container())).collect();
-    let layers: Vec<NodeId> = ids.iter().copied().filter(|i| doc.node(*i).is_some_and(|n| !n.is_page())).collect();
+    let containers: Vec<NodeId> = ids
+        .iter()
+        .copied()
+        .filter(|i| doc.node(*i).is_some_and(|n| n.kind.is_container()))
+        .collect();
+    let layers: Vec<NodeId> = ids
+        .iter()
+        .copied()
+        .filter(|i| doc.node(*i).is_some_and(|n| !n.is_page()))
+        .collect();
     let pick = |rng: &mut Rng, v: &[NodeId]| rng.pick(v).copied();
     match rng.below(14) {
         0 | 1 | 12 => {
             if let Some(p) = pick(rng, &containers) {
-                let kind = if rng.chance(0.3) { NodeKind::Frame } else { NodeKind::Rectangle };
-                let _ = doc.create(p, kind, "New", rng.below(500) as f64, rng.below(500) as f64, 10.0, 10.0);
+                let kind = if rng.chance(0.3) {
+                    NodeKind::Frame
+                } else {
+                    NodeKind::Rectangle
+                };
+                let _ = doc.create(
+                    p,
+                    kind,
+                    "New",
+                    rng.below(500) as f64,
+                    rng.below(500) as f64,
+                    10.0,
+                    10.0,
+                );
             }
         }
         2 => {
@@ -76,7 +118,10 @@ pub(crate) fn random_edit(doc: &mut Document, rng: &mut Rng, derive: &dyn Recomp
         }
         5..=7 => {
             if let Some(n) = pick(rng, &layers).and_then(|x| doc.node_mut(x)) {
-                n.transform = figcraft_geom::Affine::translate((rng.below(800) as f64 * 0.5, rng.below(800) as f64 * 0.25));
+                n.transform = figcraft_geom::Affine::translate((
+                    rng.below(800) as f64 * 0.5,
+                    rng.below(800) as f64 * 0.25,
+                ));
             }
         }
         8 => {
@@ -87,7 +132,11 @@ pub(crate) fn random_edit(doc: &mut Document, rng: &mut Rng, derive: &dyn Recomp
         }
         9 => {
             if let Some(n) = pick(rng, &layers).and_then(|x| doc.node_mut(x)) {
-                n.fills = vec![Paint::solid(Color::from_rgb8_const(rng.below(256) as u8, 0, 0))];
+                n.fills = vec![Paint::solid(Color::from_rgb8_const(
+                    rng.below(256) as u8,
+                    0,
+                    0,
+                ))];
             }
         }
         10 => {
@@ -158,7 +207,13 @@ fn derived_data_is_repaired_after_concurrent_edits() {
         let sim = run(seed, 3, 50, &Width);
         let doc = sim.server.document();
         for n in doc.nodes().filter(|n| matches!(n.kind, NodeKind::Frame)) {
-            assert_eq!(n.width, n.children.len() as f64 * 10.0, "seed {seed}: frame {} has {} children", n.id, n.children.len());
+            assert_eq!(
+                n.width,
+                n.children.len() as f64 * 10.0,
+                "seed {seed}: frame {} has {} children",
+                n.id,
+                n.children.len()
+            );
         }
     }
 }

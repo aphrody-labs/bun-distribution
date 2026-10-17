@@ -13,7 +13,14 @@
 //!
 //! Layer L2: depends only on the codec crates, never on the model or the UI. Builds for
 //! `wasm32-unknown-unknown` (no threads there: decoding runs inline).
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod audio;
@@ -69,7 +76,9 @@ pub enum Container {
 }
 
 /// The ASF header object GUID (30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C).
-pub(crate) const ASF_HEADER: [u8; 16] = [0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C];
+pub(crate) const ASF_HEADER: [u8; 16] = [
+    0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C,
+];
 
 impl Container {
     pub fn sniff(b: &[u8]) -> Container {
@@ -92,7 +101,13 @@ impl Container {
             Container::Asf
         } else if at(0, b"ID3") {
             // ID3v2 is followed by MP3 frames (or, rarely, ADTS).
-            let size = b.get(6..10).map(|s| s.iter().fold(0usize, |a, &x| (a << 7) | (x & 0x7f) as usize)).unwrap_or(0);
+            let size = b
+                .get(6..10)
+                .map(|s| {
+                    s.iter()
+                        .fold(0usize, |a, &x| (a << 7) | (x & 0x7f) as usize)
+                })
+                .unwrap_or(0);
             match Container::sniff(b.get(10 + size..).unwrap_or(&[])) {
                 Container::Adts => Container::Adts,
                 _ => Container::Mp3,

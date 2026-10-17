@@ -104,7 +104,10 @@ impl<S: Copy + Eq + Hash + Send + 'static, R: Send + 'static> JobPool<S, R> {
     pub fn default_threads() -> usize {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            std::thread::available_parallelism().map(|n| n.get().saturating_sub(1)).unwrap_or(4).clamp(2, 8)
+            std::thread::available_parallelism()
+                .map(|n| n.get().saturating_sub(1))
+                .unwrap_or(4)
+                .clamp(2, 8)
         }
         #[cfg(target_arch = "wasm32")]
         {
@@ -124,19 +127,26 @@ impl<S: Copy + Eq + Hash + Send + 'static, R: Send + 'static> JobPool<S, R> {
             for i in 0..self.threads {
                 let shared = self.shared.clone();
                 let tx = self.tx.clone();
-                let spawned = std::thread::Builder::new().name(format!("lc-job-{i}")).spawn(move || {
-                    let _ended = Ended(&shared);
-                    while let Some(e) = take(&shared, true) {
-                        let t0 = std::time::Instant::now();
-                        // the slot is free again when the job ends, also if it panics
-                        let _free = Free(&shared, e.slot);
-                        let result = (e.job)();
-                        let done = Done { slot: e.slot, key: e.key, result, ms: t0.elapsed().as_secs_f64() * 1000.0 };
-                        if tx.send(done).is_err() {
-                            break;
+                let spawned = std::thread::Builder::new()
+                    .name(format!("lc-job-{i}"))
+                    .spawn(move || {
+                        let _ended = Ended(&shared);
+                        while let Some(e) = take(&shared, true) {
+                            let t0 = std::time::Instant::now();
+                            // the slot is free again when the job ends, also if it panics
+                            let _free = Free(&shared, e.slot);
+                            let result = (e.job)();
+                            let done = Done {
+                                slot: e.slot,
+                                key: e.key,
+                                result,
+                                ms: t0.elapsed().as_secs_f64() * 1000.0,
+                            };
+                            if tx.send(done).is_err() {
+                                break;
+                            }
                         }
-                    }
-                });
+                    });
                 match spawned {
                     Ok(h) => {
                         live.push(h.thread().id());
@@ -188,7 +198,13 @@ impl<S: Copy + Eq + Hash + Send + 'static, R: Send + 'static> JobPool<S, R> {
         let (lock, cv) = (&self.shared.queue, &self.shared.cv);
         let mut q = lock.lock().unwrap_or_else(|e| e.into_inner());
         q.retain(|e| e.slot != slot);
-        q.push(Entry { slot, key, priority, seq: self.seq, job });
+        q.push(Entry {
+            slot,
+            key,
+            priority,
+            seq: self.seq,
+            job,
+        });
         cv.notify_one();
     }
 
@@ -217,7 +233,11 @@ impl<S: Copy + Eq + Hash + Send + 'static, R: Send + 'static> JobPool<S, R> {
 
     /// Is a job for `slot` queued?
     pub fn is_queued(&self, slot: S) -> bool {
-        self.shared.queue.lock().map(|q| q.iter().any(|e| e.slot == slot)).unwrap_or(false)
+        self.shared
+            .queue
+            .lock()
+            .map(|q| q.iter().any(|e| e.slot == slot))
+            .unwrap_or(false)
     }
 
     /// A finished job, if any.
@@ -237,10 +257,17 @@ impl<S: Copy + Eq + Hash + Send + 'static, R: Send + 'static> JobPool<S, R> {
     pub fn run_inline(&mut self, n: usize) -> usize {
         let mut ran = 0;
         while ran < n {
-            let Some(e) = take(&self.shared, false) else { break };
+            let Some(e) = take(&self.shared, false) else {
+                break;
+            };
             let _free = Free(&self.shared, e.slot);
             let result = (e.job)();
-            let _ = self.tx.send(Done { slot: e.slot, key: e.key, result, ms: 0.0 });
+            let _ = self.tx.send(Done {
+                slot: e.slot,
+                key: e.key,
+                result,
+                ms: 0.0,
+            });
             ran += 1;
         }
         ran
@@ -258,11 +285,19 @@ fn take<S: PartialEq + Copy, R>(shared: &Shared<S, R>, wait: bool) -> Option<Ent
         // (a slot with a job running waits for it: see `Shared::busy`)
         let best = {
             let busy = shared.busy.lock().unwrap_or_else(|e| e.into_inner());
-            q.iter().enumerate().filter(|(_, e)| !busy.contains(&e.slot)).max_by_key(|(_, e)| (e.priority, e.seq)).map(|(i, _)| i)
+            q.iter()
+                .enumerate()
+                .filter(|(_, e)| !busy.contains(&e.slot))
+                .max_by_key(|(_, e)| (e.priority, e.seq))
+                .map(|(i, _)| i)
         };
         if let Some(i) = best {
             let e = q.swap_remove(i);
-            shared.busy.lock().unwrap_or_else(|e| e.into_inner()).push(e.slot);
+            shared
+                .busy
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .push(e.slot);
             return Some(e);
         }
         if !wait {
@@ -302,7 +337,11 @@ struct Ended<'a, S, R>(&'a Shared<S, R>);
 impl<S, R> Drop for Ended<'_, S, R> {
     fn drop(&mut self) {
         let me = std::thread::current().id();
-        self.0.live.lock().unwrap_or_else(|e| e.into_inner()).retain(|id| *id != me);
+        self.0
+            .live
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|id| *id != me);
         self.0.ended.notify_all();
     }
 }
@@ -322,14 +361,24 @@ fn close<S, R>(shared: &Shared<S, R>) {
 /// [`JobPool::shutdown`]: wait up to `timeout` for the workers to end, without holding the queue
 /// lock, and never for the calling thread (a pool dropped by one of its own jobs).
 #[cfg(not(target_arch = "wasm32"))]
-fn stop<S, R>(shared: &Shared<S, R>, workers: &mut Vec<std::thread::JoinHandle<()>>, timeout: Duration) -> bool {
+fn stop<S, R>(
+    shared: &Shared<S, R>,
+    workers: &mut Vec<std::thread::JoinHandle<()>>,
+    timeout: Duration,
+) -> bool {
     close(shared);
     let me = std::thread::current().id();
     let t0 = std::time::Instant::now();
     let mut live = shared.live.lock().unwrap_or_else(|e| e.into_inner());
     while live.iter().any(|id| *id != me) {
-        let Some(left) = timeout.checked_sub(t0.elapsed()).filter(|d| !d.is_zero()) else { break };
-        live = shared.ended.wait_timeout(live, left).unwrap_or_else(|e| e.into_inner()).0;
+        let Some(left) = timeout.checked_sub(t0.elapsed()).filter(|d| !d.is_zero()) else {
+            break;
+        };
+        live = shared
+            .ended
+            .wait_timeout(live, left)
+            .unwrap_or_else(|e| e.into_inner())
+            .0;
     }
     let running: Vec<std::thread::ThreadId> = live.iter().copied().filter(|id| *id != me).collect();
     drop(live);
@@ -341,7 +390,10 @@ fn stop<S, R>(shared: &Shared<S, R>, workers: &mut Vec<std::thread::JoinHandle<(
         }
     }
     if !running.is_empty() {
-        log::warn!("job pool: {} job(s) still running after {timeout:?}; not waiting for them", running.len());
+        log::warn!(
+            "job pool: {} job(s) still running after {timeout:?}; not waiting for them",
+            running.len()
+        );
     }
     running.is_empty()
 }

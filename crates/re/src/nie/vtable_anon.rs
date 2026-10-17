@@ -106,7 +106,9 @@ pub fn anon_vtable_edges_into(
     };
 
     let mut known: HashSet<u64> = {
-        let mut q = db.conn().prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
+        let mut q = db
+            .conn()
+            .prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
         q.query_map([dst_bin], |r| r.get::<_, i64>(0).map(|v| v as u64))?
             .collect::<std::result::Result<_, _>>()?
     };
@@ -116,7 +118,10 @@ pub fn anon_vtable_edges_into(
     let mut all_methods: HashSet<u64> = HashSet::new();
 
     for name in [".rdata", ".data", "_RDATA", ".fptable", ".rodata"] {
-        let Some(sec) = pe.sections.iter().find(|s| s.name().is_ok_and(|n| n.starts_with(name)))
+        let Some(sec) = pe
+            .sections
+            .iter()
+            .find(|s| s.name().is_ok_and(|n| n.starts_with(name)))
         else {
             continue;
         };
@@ -233,8 +238,11 @@ mod tests {
         // Une suite de 2 est une coïncidence courante (deux pointeurs de
         // fonction voisins dans une structure) ; 3 est déjà un objet structuré.
         let suites = [vec![1u64], vec![1, 2], vec![1, 2, 3], vec![1, 2, 3, 4]];
-        let retenues: Vec<usize> =
-            suites.iter().filter(|s| s.len() >= MIN_SLOTS).map(Vec::len).collect();
+        let retenues: Vec<usize> = suites
+            .iter()
+            .filter(|s| s.len() >= MIN_SLOTS)
+            .map(Vec::len)
+            .collect();
         assert_eq!(retenues, vec![3, 4]);
     }
 

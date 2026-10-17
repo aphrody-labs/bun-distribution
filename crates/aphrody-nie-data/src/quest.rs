@@ -113,10 +113,16 @@ impl ParsedQuest {
         let quest_id = id_var.as_hash();
 
         // [1] = phase/chapter — 0 si type ≠ Int.
-        let phase = node.var(1).filter(|v| v.ty == "Int").map_or(0, |v| v.as_i64());
+        let phase = node
+            .var(1)
+            .filter(|v| v.ty == "Int")
+            .map_or(0, |v| v.as_i64());
 
         // [2] = type — 0 si type ≠ Int.
-        let quest_type = node.var(2).filter(|v| v.ty == "Int").map_or(0, |v| v.as_i64());
+        let quest_type = node
+            .var(2)
+            .filter(|v| v.ty == "Int")
+            .map_or(0, |v| v.as_i64());
 
         // [3] = title hash — doit être de type Int.
         let title_var = node.var(3)?;
@@ -134,7 +140,13 @@ impl ParsedQuest {
             None
         };
 
-        Some(Self { quest_id, title_hash, phase, quest_type, image })
+        Some(Self {
+            quest_id,
+            title_hash,
+            phase,
+            quest_type,
+            image,
+        })
     }
 }
 

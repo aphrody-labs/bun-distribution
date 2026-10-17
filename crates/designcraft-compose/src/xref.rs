@@ -27,9 +27,15 @@ impl XrefIndex {
             if st.anchors.is_empty() {
                 continue;
             }
-            let cs = if has_xrefs(st) { Arc::new(crate::compose_story(doc, *sid, &Default::default())) } else { get(*sid) };
+            let cs = if has_xrefs(st) {
+                Arc::new(crate::compose_story(doc, *sid, &Default::default()))
+            } else {
+                get(*sid)
+            };
             for a in &st.anchors {
-                let Some(pos) = st.anchor_pos(a.id) else { continue };
+                let Some(pos) = st.anchor_pos(a.id) else {
+                    continue;
+                };
                 if let Some((page, ..)) = crate::vars::place(doc, &cs, pos) {
                     pages.insert(a.id, (page, doc.page_name(page)));
                 }
@@ -52,20 +58,35 @@ impl XrefIndex {
 /// The text a cross-reference shows ("??" when its destination is gone, like an unresolved
 /// reference in typesetting).
 pub fn xref_text(doc: &Document, x: &xref::CrossRef, index: Option<&XrefIndex>) -> String {
-    let Some(mut v) = doc.xref_values(x.target) else { return "??".into() };
-    v.page = index.and_then(|i| i.page(x.target)).unwrap_or("?").to_string();
-    let def = doc.xref_format(&x.format).map_or("<fullPara />", |f| f.definition.as_str());
+    let Some(mut v) = doc.xref_values(x.target) else {
+        return "??".into();
+    };
+    v.page = index
+        .and_then(|i| i.page(x.target))
+        .unwrap_or("?")
+        .to_string();
+    let def = doc
+        .xref_format(&x.format)
+        .map_or("<fullPara />", |f| f.definition.as_str());
     xref::expand(def, &v)
 }
 
 /// Generated text of the cross-references in `range` of `story`, by byte of their mark.
-pub fn texts_in(doc: &Document, story: &Story, range: std::ops::Range<usize>, index: Option<&XrefIndex>) -> HashMap<usize, String> {
+pub fn texts_in(
+    doc: &Document,
+    story: &Story,
+    range: std::ops::Range<usize>,
+    index: Option<&XrefIndex>,
+) -> HashMap<usize, String> {
     let mut out = HashMap::new();
     if story.xrefs.is_empty() {
         return out;
     }
     let before = story.text[..range.start].matches(XREF_MARK).count();
-    for (k, (i, _)) in story.text[range.clone()].match_indices(XREF_MARK).enumerate() {
+    for (k, (i, _)) in story.text[range.clone()]
+        .match_indices(XREF_MARK)
+        .enumerate()
+    {
         if let Some(x) = story.xrefs.get(before + k) {
             out.insert(range.start + i, xref_text(doc, x, index));
         }

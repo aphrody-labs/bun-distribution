@@ -14,8 +14,14 @@ use crate::{
 };
 
 /// Presentation attributes and CSS properties that carry a colour.
-const PAINT_PROPERTIES: &[&str] =
-    &["fill", "stroke", "stop-color", "flood-color", "lighting-color", "color"];
+const PAINT_PROPERTIES: &[&str] = &[
+    "fill",
+    "stroke",
+    "stop-color",
+    "flood-color",
+    "lighting-color",
+    "color",
+];
 
 /// A colour substitution table.
 #[derive(Debug, Clone, Default)]
@@ -54,7 +60,8 @@ impl Theme {
     /// Value for `var(--name)`; `name` may be given with or without the leading `--`.
     #[must_use]
     pub fn var(mut self, name: &str, value: impl Into<String>) -> Self {
-        self.vars.insert(name.trim_start_matches("--").to_owned(), value.into());
+        self.vars
+            .insert(name.trim_start_matches("--").to_owned(), value.into());
         self
     }
 
@@ -86,7 +93,10 @@ impl Theme {
     #[must_use]
     pub fn m3(roles: &aphrody_m3_tokens::color::ColorRoles) -> Self {
         let vars = aphrody_m3_tokens::color::color_vars(roles);
-        let on_surface = vars.iter().find(|(k, _)| *k == "on-surface").map(|(_, v)| v.clone());
+        let on_surface = vars
+            .iter()
+            .find(|(k, _)| *k == "on-surface")
+            .map(|(_, v)| v.clone());
         let mut theme = Self::new();
         for (role, value) in vars {
             theme = theme.var(&format!("md-sys-color-{role}"), value);
@@ -150,7 +160,7 @@ impl Theme {
             .map(|decl| match decl.split_once(':') {
                 Some((prop, value)) if PAINT_PROPERTIES.contains(&prop.trim()) => {
                     format!("{}:{}", prop, self.resolve_paint(value))
-                },
+                }
                 Some((prop, value)) => format!("{}:{}", prop, self.resolve_vars(value)),
                 None => decl.to_owned(),
             })
@@ -162,7 +172,9 @@ impl Theme {
         let mut out = String::with_capacity(css.len());
         let mut rest = css;
         while let Some(open) = rest.find('{') {
-            let Some(close) = rest[open..].find('}') else { break };
+            let Some(close) = rest[open..].find('}') else {
+                break;
+            };
             out.push_str(&rest[..=open]);
             out.push_str(&self.resolve_declarations(&rest[open + 1..open + close]));
             out.push('}');
@@ -180,7 +192,7 @@ fn matching_paren(s: &str) -> Option<usize> {
             '(' => depth += 1,
             ')' if depth == 0 => return Some(i),
             ')' => depth -= 1,
-            _ => {},
+            _ => {}
         }
     }
     None
@@ -215,8 +227,11 @@ impl Rules for Theme {
     fn extra_attributes(&self, node: Node<'_, '_>) -> Vec<(String, String)> {
         match &self.root_paint {
             Some(paint) if node.parent_element().is_none() => {
-                vec![("fill".to_owned(), paint.clone()), ("color".to_owned(), paint.clone())]
-            },
+                vec![
+                    ("fill".to_owned(), paint.clone()),
+                    ("color".to_owned(), paint.clone()),
+                ]
+            }
             _ => Vec::new(),
         }
     }
@@ -275,6 +290,9 @@ mod tests {
     #[test]
     fn m3_theme_exposes_roles() {
         let theme = Theme::m3(&aphrody_m3_tokens::color::BASELINE);
-        assert_eq!(theme.resolve_paint("var(--md-sys-color-primary)"), "#6750A4");
+        assert_eq!(
+            theme.resolve_paint("var(--md-sys-color-primary)"),
+            "#6750A4"
+        );
     }
 }

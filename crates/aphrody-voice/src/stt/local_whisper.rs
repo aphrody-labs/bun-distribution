@@ -89,7 +89,9 @@ impl LocalWhisperBackend {
     /// fichiers ; toute erreur I/O est différée au premier appel de
     /// transcription.
     pub fn new(model_path: impl Into<String>) -> Self {
-        Self { model_path: model_path.into() }
+        Self {
+            model_path: model_path.into(),
+        }
     }
 }
 
@@ -137,7 +139,9 @@ mod real_impl {
     /// Le verrou est tenu pendant le chargement : deux appels simultanés sur
     /// un modèle pas encore chargé ne le lisent donc qu'une fois.
     fn context_for(model_path: &str) -> Result<std::sync::Arc<WhisperContext>, SttError> {
-        let mut contexts = CONTEXTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut contexts = CONTEXTS
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(context) = contexts.get(model_path) {
             return Ok(std::sync::Arc::clone(context));
         }
@@ -233,7 +237,11 @@ mod real_impl {
         Ok(Transcript {
             text: full_text,
             language: detected_lang.or_else(|| opts.language.clone()),
-            duration_s: if last_end_s > 0.0 { Some(last_end_s) } else { None },
+            duration_s: if last_end_s > 0.0 {
+                Some(last_end_s)
+            } else {
+                None
+            },
             segments: segments_out,
         })
     }
@@ -304,7 +312,11 @@ impl SttProvider for LocalWhisperBackend {
         }
 
         let transcript = self.transcribe(&buf, opts).await?;
-        let delta = TranscriptDelta { text: transcript.text, is_final: true, segment_id: 0 };
+        let delta = TranscriptDelta {
+            text: transcript.text,
+            is_final: true,
+            segment_id: 0,
+        };
         Ok(futures::stream::once(async move { Ok(delta) }))
     }
 }
@@ -367,7 +379,11 @@ impl SttProvider for LocalWhisperBackend {
         }
 
         let transcript = self.transcribe(&buf, opts).await?;
-        let delta = TranscriptDelta { text: transcript.text, is_final: true, segment_id: 0 };
+        let delta = TranscriptDelta {
+            text: transcript.text,
+            is_final: true,
+            segment_id: 0,
+        };
         Ok(futures::stream::once(async move { Ok(delta) }))
     }
 }
@@ -395,7 +411,10 @@ mod tests {
             .transcribe(b"", SttOptions::default())
             .await
             .expect_err("un buffer vide n'est pas transcriptible");
-        assert!(matches!(err, SttError::EmptyInput), "variante inattendue : {err}");
+        assert!(
+            matches!(err, SttError::EmptyInput),
+            "variante inattendue : {err}"
+        );
     }
 
     /// Sans la feature, l'appel ne doit **plus** renvoyer `NotImplemented` au
@@ -415,11 +434,11 @@ mod tests {
             // whisper.cpp absent du poste : état de la machine, pas du build.
             SttError::NotImplemented { reason } => {
                 assert!(reason.contains("whisper.cpp is not installed"), "{reason}");
-            },
+            }
             // whisper.cpp présent : l'échec porte alors sur le spec inconnu.
             SttError::Other(msg) => {
                 assert!(msg.contains("modele-qui-n-existe-pas"), "{msg}");
-            },
+            }
             other => panic!("variante inattendue : {other}"),
         }
     }
@@ -430,9 +449,11 @@ mod tests {
         let backend = LocalWhisperBackend::new("whisper-base-en");
         let audio_stream = futures::stream::empty::<Bytes>();
         // Flux vide -> buffer vide -> EmptyInput, sans toucher au disque.
-        let result = backend.transcribe_stream(audio_stream, SttOptions::default()).await;
+        let result = backend
+            .transcribe_stream(audio_stream, SttOptions::default())
+            .await;
         match result {
-            Err(SttError::EmptyInput) => {},
+            Err(SttError::EmptyInput) => {}
             Err(other) => panic!("variante inattendue : {other}"),
             Ok(_) => panic!("attendait Err de transcribe_stream, reçu Ok"),
         }
@@ -467,7 +488,11 @@ mod tests {
         }
 
         let result = real_impl::parse_wav_to_f32(&wav);
-        assert!(result.is_ok(), "parse WAV 16-bit échoué : {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "parse WAV 16-bit échoué : {:?}",
+            result.err()
+        );
         let samples = result.unwrap();
         assert_eq!(samples.len(), 4);
         assert!(samples.iter().all(|&s| s == 0.0));

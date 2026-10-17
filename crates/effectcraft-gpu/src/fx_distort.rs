@@ -65,7 +65,13 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 }
 
 /// Run a same-size per-pixel kernel over the buffer.
-fn run(e: &mut Enc, entry: &str, p: &Params, mut b: GBuf, data: Option<&wgpu::Buffer>) -> Option<GBuf> {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    mut b: GBuf,
+    data: Option<&wgpu::Buffer>,
+) -> Option<GBuf> {
     let out = e.scratch(b.img.width, b.img.height);
     e.pixels(entry, p, &b.img, None, &out, data);
     b.img = out;
@@ -100,7 +106,12 @@ fn bulge(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let edge = (lw.min(lh) * 0.1).max(1.0);
     let mut p = Params::default();
     p.f[0] = [c.0 as f32, c.1 as f32, rx as f32, ry as f32];
-    p.f[1] = [h as f32, taper as f32, if pin { 1.0 } else { 0.0 }, edge as f32];
+    p.f[1] = [
+        h as f32,
+        taper as f32,
+        if pin { 1.0 } else { 0.0 },
+        edge as f32,
+    ];
     p.f[2] = [x0 as f32, y0 as f32, lw as f32, lh as f32];
     run(e, "dst_bulge", &p, b, None)
 }
@@ -134,7 +145,12 @@ fn wave_warp(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         data[2 * bw + bh + y] = i as f32;
     }
     let mut p = Params::default();
-    p.u[0] = [ctx.params.e("waveType"), ctx.params.e("pinning"), ctx.seed ^ 0x3a7e, bw as u32];
+    p.u[0] = [
+        ctx.params.e("waveType"),
+        ctx.params.e("pinning"),
+        ctx.seed ^ 0x3a7e,
+        bw as u32,
+    ];
     p.f[0] = [dx as f32, dy as f32, h as f32, 0.0];
     p.f[2] = rect;
     let buf = e.data(&data);
@@ -181,11 +197,16 @@ fn turbulent(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let off = b.to_px(ctx.params.v2("offset"));
     let oct = ctx.params.f("complexity").clamp(1.0, 10.0);
     let evo = ctx.params.f("evolution") / 360.0;
-    let cycle = ctx.params.b("evolutionOptions/cycleEvolution").then(|| ctx.params.f("evolutionOptions/cycle").round().max(1.0));
+    let cycle = ctx
+        .params
+        .b("evolutionOptions/cycleEvolution")
+        .then(|| ctx.params.f("evolutionOptions/cycle").round().max(1.0));
     let falloff = if (3..=5).contains(&kind) { 0.3 } else { 0.5 };
     let (x0, y0, lw, lh) = util::layer_rect_at(ctx, b.offset, b.scale);
     let edge = (lw.min(lh) * 0.1).max(1.0);
-    let seed = (ctx.seed ^ 0x7d15).wrapping_add((ctx.params.f("evolutionOptions/randomSeed") as i64 as u32).wrapping_mul(0x9e37_79b9));
+    let seed = (ctx.seed ^ 0x7d15).wrapping_add(
+        (ctx.params.f("evolutionOptions/randomSeed") as i64 as u32).wrapping_mul(0x9e37_79b9),
+    );
     let (z0, z1, t) = match cycle {
         Some(c) => {
             let z = evo.rem_euclid(c);
@@ -194,7 +215,12 @@ fn turbulent(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         None => (evo as f32, 0.0, 0.0),
     };
     let mut p = Params::default();
-    p.u[0] = [kind, ctx.params.e("pinning"), seed, oct.ceil().max(1.0) as u32];
+    p.u[0] = [
+        kind,
+        ctx.params.e("pinning"),
+        seed,
+        oct.ceil().max(1.0) as u32,
+    ];
     p.u[1][0] = cycle.is_some() as u32;
     p.f[0] = [off.0 as f32, off.1 as f32, size as f32, amount as f32];
     p.f[1] = [z0, z1, t, (oct - oct.floor()) as f32];
@@ -237,7 +263,10 @@ fn displacement_map(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
                     _ => q + (os[k] - ls[k]) * 0.5,
                 };
                 let c = q + (os[k] - ls[k]) * 0.5;
-                (map_q * o.buf.scale + o.buf.offset[k], (0.0..os[k]).contains(&c))
+                (
+                    map_q * o.buf.scale + o.buf.offset[k],
+                    (0.0..os[k]).contains(&c),
+                )
             };
             for x in 0..w {
                 let (m, inside) = axis(x, 0);
@@ -255,7 +284,12 @@ fn displacement_map(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         }
         None => None,
     };
-    let idx = |s: Src| effectcraft_effects::util::SRC_ORDER.iter().position(|x| *x == s).unwrap_or(10) as u32;
+    let idx = |s: Src| {
+        effectcraft_effects::util::SRC_ORDER
+            .iter()
+            .position(|x| *x == s)
+            .unwrap_or(10) as u32
+    };
     let mut p = Params::default();
     p.u[0] = [idx(hs), idx(vs), mode, wrap as u32 | (center as u32) << 1];
     p.u[1] = [w as u32, h as u32, 0, 0];
@@ -278,7 +312,10 @@ fn mesh_warp(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (lw, lh) = (ctx.layer_size[0], ctx.layer_size[1]);
     let vert = |i: usize, j: usize| {
         let o = offs[j * (cols + 1) + i];
-        b.to_px([i as f64 / cols as f64 * lw + o.0, j as f64 / rows as f64 * lh + o.1])
+        b.to_px([
+            i as f64 / cols as f64 * lw + o.0,
+            j as f64 / rows as f64 * lh + o.1,
+        ])
     };
     let (nx, ny) = (cols * q, rows * q);
     let mut dest = Vec::with_capacity((nx + 1) * (ny + 1));
@@ -286,10 +323,20 @@ fn mesh_warp(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     for gj in 0..=ny {
         for gi in 0..=nx {
             let (ci, cj) = ((gi / q).min(cols - 1), (gj / q).min(rows - 1));
-            let (u, v) = ((gi - ci * q) as f64 / q as f64, (gj - cj * q) as f64 / q as f64);
-            let (p00, p10, p01, p11) = (vert(ci, cj), vert(ci + 1, cj), vert(ci, cj + 1), vert(ci + 1, cj + 1));
-            let x = (p00.0 * (1.0 - u) + p10.0 * u) * (1.0 - v) + (p01.0 * (1.0 - u) + p11.0 * u) * v;
-            let y = (p00.1 * (1.0 - u) + p10.1 * u) * (1.0 - v) + (p01.1 * (1.0 - u) + p11.1 * u) * v;
+            let (u, v) = (
+                (gi - ci * q) as f64 / q as f64,
+                (gj - cj * q) as f64 / q as f64,
+            );
+            let (p00, p10, p01, p11) = (
+                vert(ci, cj),
+                vert(ci + 1, cj),
+                vert(ci, cj + 1),
+                vert(ci + 1, cj + 1),
+            );
+            let x =
+                (p00.0 * (1.0 - u) + p10.0 * u) * (1.0 - v) + (p01.0 * (1.0 - u) + p11.0 * u) * v;
+            let y =
+                (p00.1 * (1.0 - u) + p10.1 * u) * (1.0 - v) + (p01.1 * (1.0 - u) + p11.1 * u) * v;
             dest.push((x, y));
             srcp.push(b.to_px([gi as f64 / nx as f64 * lw, gj as f64 / ny as f64 * lh]));
         }
@@ -299,7 +346,14 @@ fn mesh_warp(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 
 /// distort2::grid_warp: grid point `i` of the (nx+1)×(ny+1) grid at `dest[i]` shows the source at
 /// `srcp[i]` (Mesh Warp, Bezier Warp). Triangles in order, bucketed per output row.
-pub(crate) fn grid_warp(e: &mut Enc, b: GBuf, nx: usize, ny: usize, dest: &[(f64, f64)], srcp: &[(f64, f64)]) -> Option<GBuf> {
+pub(crate) fn grid_warp(
+    e: &mut Enc,
+    b: GBuf,
+    nx: usize,
+    ny: usize,
+    dest: &[(f64, f64)],
+    srcp: &[(f64, f64)],
+) -> Option<GBuf> {
     let idx = |i: usize, j: usize| j * (nx + 1) + i;
     let hh = b.img.height as usize;
     let mut tri_data: Vec<f32> = Vec::with_capacity(nx * ny * 24);
@@ -325,8 +379,21 @@ pub(crate) fn grid_warp(e: &mut Enc, b: GBuf, nx: usize, ny: usize, dest: &[(f64
                 }
                 let (sa, sb, sc) = (srcp[ia], srcp[ib], srcp[ic]);
                 tri_data.extend(
-                    [(pb.1 - pc.1) / den, (pc.0 - pb.0) / den, (pc.1 - pa.1) / den, (pa.0 - pc.0) / den, pc.0, pc.1, sa.0, sa.1, sb.0, sb.1, sc.0, sc.1]
-                        .map(|v| v as f32),
+                    [
+                        (pb.1 - pc.1) / den,
+                        (pc.0 - pb.0) / den,
+                        (pc.1 - pa.1) / den,
+                        (pa.0 - pc.0) / den,
+                        pc.0,
+                        pc.1,
+                        sa.0,
+                        sa.1,
+                        sb.0,
+                        sb.1,
+                        sc.0,
+                        sc.1,
+                    ]
+                    .map(|v| v as f32),
                 );
                 t += 1;
             }
@@ -370,16 +437,30 @@ fn mosaic(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let mut p = Params::default();
     if ctx.params.b("sharpColors") {
         let centre = |i: usize, c: f64| (((i as f64 / c).floor() + 0.5) * c) as i64 as f32;
-        let data: Vec<f32> = (0..w).map(|x| centre(x, cw)).chain((0..h).map(|y| centre(y, ch))).collect();
+        let data: Vec<f32> = (0..w)
+            .map(|x| centre(x, cw))
+            .chain((0..h).map(|y| centre(y, ch)))
+            .collect();
         p.u[0][0] = w as u32;
         let buf = e.data(&data);
         return run(e, "dst_mosaic_sharp", &p, b, Some(&buf));
     }
-    let (nx, ny) = ((w as f64 / cw).ceil() as usize, (h as f64 / ch).ceil() as usize);
-    let tx: Vec<usize> = (0..w).map(|x| ((x as f64 / cw) as usize).min(nx - 1)).collect();
-    let ty: Vec<usize> = (0..h).map(|y| ((y as f64 / ch) as usize).min(ny - 1)).collect();
+    let (nx, ny) = (
+        (w as f64 / cw).ceil() as usize,
+        (h as f64 / ch).ceil() as usize,
+    );
+    let tx: Vec<usize> = (0..w)
+        .map(|x| ((x as f64 / cw) as usize).min(nx - 1))
+        .collect();
+    let ty: Vec<usize> = (0..h)
+        .map(|y| ((y as f64 / ch) as usize).min(ny - 1))
+        .collect();
     // Tile bounds: tile i covers the columns with tx == i (tx is non-decreasing).
-    let bounds = |t: &[usize], n: usize| -> Vec<f32> { (0..=n).map(|i| t.partition_point(|&v| v < i) as f32).collect() };
+    let bounds = |t: &[usize], n: usize| -> Vec<f32> {
+        (0..=n)
+            .map(|i| t.partition_point(|&v| v < i) as f32)
+            .collect()
+    };
     let mut data: Vec<f32> = tx.iter().chain(&ty).map(|&v| v as f32).collect();
     data.extend(bounds(&tx, nx));
     data.extend(bounds(&ty, ny));
@@ -407,6 +488,11 @@ fn emboss(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let relief = ctx.params.f("relief") * b.scale;
     let (dx, dy) = (ang.cos() * relief, -ang.sin() * relief);
     let mut p = Params::default();
-    p.f[0] = [dx as f32, dy as f32, ctx.params.f("contrast") as f32 / 100.0, ctx.params.f("blend") as f32 / 100.0];
+    p.f[0] = [
+        dx as f32,
+        dy as f32,
+        ctx.params.f("contrast") as f32 / 100.0,
+        ctx.params.f("blend") as f32 / 100.0,
+    ];
     run(e, "dst_emboss", &p, b, None)
 }

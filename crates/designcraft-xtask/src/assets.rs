@@ -42,13 +42,21 @@ const ASSET_EXT: &[&str] = &[
 const ASSET_DIRS: &[&str] = &["assets/", "docs/images/", "examples/"];
 
 pub fn is_asset(path: &str) -> bool {
-    let ext = Path::new(path).extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).unwrap_or_default();
+    let ext = Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default();
     ASSET_DIRS.iter().any(|d| path.starts_with(d)) || ASSET_EXT.contains(&ext.as_str())
 }
 
 /// Paths that need an ASSETS.md entry but lack one.
 pub fn missing(files: &[String], assets_md: &str) -> Vec<String> {
-    files.iter().filter(|f| is_asset(f) && !assets_md.contains(&format!("`{f}`"))).cloned().collect()
+    files
+        .iter()
+        .filter(|f| is_asset(f) && !assets_md.contains(&format!("`{f}`")))
+        .cloned()
+        .collect()
 }
 
 pub fn run(root: &Path) -> Result<(), String> {
@@ -57,14 +65,26 @@ pub fn run(root: &Path) -> Result<(), String> {
         .args(["ls-files", "--cached", "--others", "--exclude-standard"])
         .output()
         .map_err(|e| format!("git ls-files: {e}"))?;
-    let files: Vec<String> = String::from_utf8_lossy(&out.stdout).lines().filter(|l| root.join(l).exists()).map(str::to_owned).collect();
-    let md = std::fs::read_to_string(root.join("ASSETS.md")).map_err(|e| format!("ASSETS.md: {e}"))?;
+    let files: Vec<String> = String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter(|l| root.join(l).exists())
+        .map(str::to_owned)
+        .collect();
+    let md =
+        std::fs::read_to_string(root.join("ASSETS.md")).map_err(|e| format!("ASSETS.md: {e}"))?;
     let miss = missing(&files, &md);
     if miss.is_empty() {
-        println!("assets: all {} asset files attributed in ASSETS.md", files.iter().filter(|f| is_asset(f)).count());
+        println!(
+            "assets: all {} asset files attributed in ASSETS.md",
+            files.iter().filter(|f| is_asset(f)).count()
+        );
         Ok(())
     } else {
-        Err(format!("{} asset file(s) lack an ASSETS.md entry (author, source, licence):\n  {}", miss.len(), miss.join("\n  ")))
+        Err(format!(
+            "{} asset file(s) lack an ASSETS.md entry (author, source, licence):\n  {}",
+            miss.len(),
+            miss.join("\n  ")
+        ))
     }
 }
 
@@ -74,9 +94,17 @@ mod tests {
 
     #[test]
     fn detects_unattributed_assets() {
-        let files = vec!["assets/icons/a.svg".to_string(), "crates/x/src/lib.rs".into(), "docs/images/b.png".into(), "tests/fixture.png".into()];
+        let files = vec![
+            "assets/icons/a.svg".to_string(),
+            "crates/x/src/lib.rs".into(),
+            "docs/images/b.png".into(),
+            "tests/fixture.png".into(),
+        ];
         let md = "| `assets/icons/a.svg` | me | here | MIT |";
-        assert_eq!(missing(&files, md), vec!["docs/images/b.png".to_string(), "tests/fixture.png".into()]);
+        assert_eq!(
+            missing(&files, md),
+            vec!["docs/images/b.png".to_string(), "tests/fixture.png".into()]
+        );
         assert!(!is_asset("crates/x/src/lib.rs"));
         assert!(is_asset("assets/fonts/OFL.txt"));
     }

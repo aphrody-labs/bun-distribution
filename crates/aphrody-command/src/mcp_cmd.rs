@@ -56,12 +56,16 @@ fn edit_add(
         return Err(miette::miette!("MCP server name cannot be empty"));
     }
     if url.is_some() == !command.is_empty() {
-        return Err(miette::miette!("provide exactly one of --url or a command after --"));
+        return Err(miette::miette!(
+            "provide exactly one of --url or a command after --"
+        ));
     }
     if let Some(url) = url
         && !(url.starts_with("https://") || url.starts_with("http://"))
     {
-        return Err(miette::miette!("MCP server URL must use http:// or https://"));
+        return Err(miette::miette!(
+            "MCP server URL must use http:// or https://"
+        ));
     }
     let servers = server_table_mut(document)?;
     if servers.contains_key(name) {
@@ -93,7 +97,9 @@ fn edit_remove(document: &mut DocumentMut, name: &str) -> miette::Result<()> {
 }
 
 fn write_agent_config(path: &Path, document: &DocumentMut) -> miette::Result<()> {
-    let parent = path.parent().ok_or_else(|| miette::miette!("invalid config path"))?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| miette::miette!("invalid config path"))?;
     std::fs::create_dir_all(parent)
         .map_err(|error| miette::miette!("create {}: {error}", parent.display()))?;
     let mut temporary = tempfile::NamedTempFile::new_in(parent)
@@ -141,7 +147,10 @@ pub(crate) fn get_server(name: &str) -> miette::Result<()> {
         McpTransportConfig::Http { .. } => ("http", 0),
         McpTransportConfig::StreamableHttp { .. } => ("streamable-http", 0),
     };
-    println!("{}", json!({"name": name, "transport": transport, "argument_count": argument_count}));
+    println!(
+        "{}",
+        json!({"name": name, "transport": transport, "argument_count": argument_count})
+    );
     Ok(())
 }
 
@@ -154,8 +163,13 @@ mod config_edit_tests {
         let original = "# keep root comment\nmodel = 'local' # keep model \
                         comment\n\n[mcp_servers.other]\ncommand = 'other' # keep other comment\n";
         let mut document: DocumentMut = original.parse().expect("fixture parses");
-        edit_add(&mut document, "new-server", None, &["server".into(), "--stdio".into()])
-            .expect("add server");
+        edit_add(
+            &mut document,
+            "new-server",
+            None,
+            &["server".into(), "--stdio".into()],
+        )
+        .expect("add server");
         let updated = document.to_string();
         assert!(updated.contains("# keep root comment"));
         assert!(updated.contains("# keep model comment"));
@@ -171,7 +185,13 @@ mod config_edit_tests {
         let original = "[mcp_servers.existing]\nurl = 'https://example.test/mcp'\n";
         let mut document: DocumentMut = original.parse().expect("fixture parses");
         assert!(
-            edit_add(&mut document, "existing", Some("https://example.test/mcp"), &[]).is_err()
+            edit_add(
+                &mut document,
+                "existing",
+                Some("https://example.test/mcp"),
+                &[]
+            )
+            .is_err()
         );
         assert!(edit_add(&mut document, "another", Some("file:///mcp"), &[]).is_err());
         assert!(edit_add(&mut document, "another", None, &[]).is_err());
@@ -206,7 +226,13 @@ mod config_edit_tests {
         write_agent_config(&path, &document).expect("atomic replace");
         let saved = std::fs::read_to_string(&path).expect("read saved config");
         assert!(saved.contains("# existing"));
-        assert_eq!(load_toml_servers(&path).expect("load saved config").servers.len(), 1);
+        assert_eq!(
+            load_toml_servers(&path)
+                .expect("load saved config")
+                .servers
+                .len(),
+            1
+        );
     }
 
     #[test]
@@ -238,7 +264,10 @@ mod config_edit_tests {
         else {
             panic!("expected HTTP server");
         };
-        assert_eq!(headers.get("X-Project").map(String::as_str), Some("workspace-1"));
+        assert_eq!(
+            headers.get("X-Project").map(String::as_str),
+            Some("workspace-1")
+        );
         assert_eq!(
             headers.get("Authorization").map(String::as_str),
             Some("Bearer ${APHRODY_TEST_MCP_MISSING_ENV}")
@@ -261,7 +290,11 @@ mod config_edit_tests {
             std::fs::write(&path, source).expect("write config");
             let config = load_toml_servers(&path).expect("load table-like config");
             assert_eq!(config.servers.len(), 2);
-            let remote = config.servers.iter().find(|server| server.name == "remote").unwrap();
+            let remote = config
+                .servers
+                .iter()
+                .find(|server| server.name == "remote")
+                .unwrap();
             let McpTransportConfig::StreamableHttp { headers, .. } = &remote.transport else {
                 panic!("expected HTTP transport");
             };
@@ -270,7 +303,11 @@ mod config_edit_tests {
                 Some("Bearer fixture-only")
             );
             assert_eq!(headers.get("X-Project").map(String::as_str), Some("scope"));
-            let local = config.servers.iter().find(|server| server.name == "local").unwrap();
+            let local = config
+                .servers
+                .iter()
+                .find(|server| server.name == "local")
+                .unwrap();
             let McpTransportConfig::Stdio { env, .. } = &local.transport else {
                 panic!("expected stdio transport");
             };
@@ -340,8 +377,11 @@ impl TerminalCommand for McpListCommand {
             return Ok(());
         }
         for spec in &cfg.servers {
-            let line =
-                if self.no_probe { describe_static(spec) } else { describe_live(spec).await };
+            let line = if self.no_probe {
+                describe_static(spec)
+            } else {
+                describe_live(spec).await
+            };
             println!("{line}");
         }
         Ok(())
@@ -394,7 +434,7 @@ async fn describe_live(spec: &McpServerConfig) -> serde_json::Value {
                         "server_info": info,
                         "tools": tool_descriptors,
                     })
-                },
+                }
             },
         },
     }
@@ -425,8 +465,14 @@ impl TerminalCommand for McpCallCommand {
     async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
         let parsed_args: serde_json::Value = serde_json::from_str(&self.args)
             .map_err(|e| miette::miette!("--args must be valid JSON: {e}"))?;
-        let envelope =
-            call_tool(self.config.as_deref(), &self.server, &self.tool, parsed_args, false).await?;
+        let envelope = call_tool(
+            self.config.as_deref(),
+            &self.server,
+            &self.tool,
+            parsed_args,
+            false,
+        )
+        .await?;
         println!("{envelope}");
         Ok(())
     }
@@ -465,12 +511,17 @@ async fn call_tool(
         .find(|s| s.name == server)
         .ok_or_else(|| miette::miette!("MCP server `{server}` not in config"))?;
     if http_only && matches!(spec.transport, McpTransportConfig::Stdio { .. }) {
-        return Err(miette::miette!("direct MCP workflows require a configured HTTP transport"));
+        return Err(miette::miette!(
+            "direct MCP workflows require a configured HTTP transport"
+        ));
     }
     let mut client = connect_client(&spec.transport)
         .await
         .map_err(|e| miette::miette!("connect to `{server}` failed: {e}"))?;
-    client.initialize().await.map_err(|e| miette::miette!("initialize `{server}` failed: {e}"))?;
+    client
+        .initialize()
+        .await
+        .map_err(|e| miette::miette!("initialize `{server}` failed: {e}"))?;
     let result = client
         .call_tool(tool, arguments)
         .await
@@ -484,7 +535,10 @@ async fn call_tool(
 
 fn resolve_config(path: Option<&std::path::Path>) -> miette::Result<McpConfig> {
     if let Some(path) = path {
-        if path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("toml")) {
+        if path
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("toml"))
+        {
             return load_toml_servers(path);
         }
         return load_mcp_config(path).map_err(|e| miette::miette!("load {}: {e}", path.display()));
@@ -498,7 +552,11 @@ fn resolve_config(path: Option<&std::path::Path>) -> miette::Result<McpConfig> {
 
 fn merge_toml_servers(mut merged: McpConfig, path: &Path) -> miette::Result<McpConfig> {
     for server in load_toml_servers(path)?.servers {
-        if let Some(existing) = merged.servers.iter_mut().find(|entry| entry.name == server.name) {
+        if let Some(existing) = merged
+            .servers
+            .iter_mut()
+            .find(|entry| entry.name == server.name)
+        {
             *existing = server;
         } else {
             merged.servers.push(server);
@@ -561,7 +619,11 @@ fn load_toml_servers(path: &Path) -> miette::Result<McpConfig> {
                 })
                 .transpose()?
                 .unwrap_or_default();
-            McpTransportConfig::Stdio { command: command.to_owned(), args, env }
+            McpTransportConfig::Stdio {
+                command: command.to_owned(),
+                args,
+                env,
+            }
         } else if let Some(url) = entry.get("url").and_then(Item::as_str) {
             let mut headers = entry
                 .get("http_headers")
@@ -586,13 +648,22 @@ fn load_toml_servers(path: &Path) -> miette::Result<McpConfig> {
                 .transpose()?
                 .unwrap_or_default();
             if let Some(var_name) = entry.get("bearer_token_env_var").and_then(Item::as_str) {
-                headers.insert("Authorization".to_owned(), format!("Bearer ${{{var_name}}}"));
+                headers.insert(
+                    "Authorization".to_owned(),
+                    format!("Bearer ${{{var_name}}}"),
+                );
             }
-            McpTransportConfig::StreamableHttp { url: url.to_owned(), headers }
+            McpTransportConfig::StreamableHttp {
+                url: url.to_owned(),
+                headers,
+            }
         } else {
             return Err(miette::miette!("MCP server `{name}` needs command or url"));
         };
-        config.servers.push(McpServerConfig { name: name.to_owned(), transport });
+        config.servers.push(McpServerConfig {
+            name: name.to_owned(),
+            transport,
+        });
     }
     Ok(config)
 }
@@ -604,11 +675,11 @@ async fn connect_client(
         McpTransportConfig::Stdio { command, args, env } => {
             let args_refs: Vec<&str> = args.iter().map(String::as_str).collect();
             McpClient::from_stdio(command, &args_refs, env).await
-        },
+        }
         McpTransportConfig::Http { url, headers }
         | McpTransportConfig::StreamableHttp { url, headers } => {
             McpClient::from_http_headers(url.clone(), &resolve_http_headers(headers)?)
-        },
+        }
     }
 }
 
@@ -618,17 +689,23 @@ fn resolve_http_headers(
     headers
         .iter()
         .map(|(name, value)| {
-            let prefix = if value.starts_with("Bearer ") { "Bearer " } else { "" };
+            let prefix = if value.starts_with("Bearer ") {
+                "Bearer "
+            } else {
+                ""
+            };
             let raw = value.strip_prefix(prefix).unwrap_or(value);
             let resolved =
                 if let Some(variable) = raw.strip_prefix("${").and_then(|s| s.strip_suffix('}')) {
-                    let secret =
-                        std::env::var(variable).ok().filter(|value| !value.is_empty()).ok_or_else(
-                            || aphrody_gemini_runtime::McpError::MissingHeaderEnvironment {
+                    let secret = std::env::var(variable)
+                        .ok()
+                        .filter(|value| !value.is_empty())
+                        .ok_or_else(|| {
+                            aphrody_gemini_runtime::McpError::MissingHeaderEnvironment {
                                 name: name.clone(),
                                 variable: variable.to_owned(),
-                            },
-                        )?;
+                            }
+                        })?;
                     format!("{prefix}{secret}")
                 } else {
                     value.clone()
@@ -671,8 +748,14 @@ mod tests {
         h.insert("Authorization".to_owned(), "Bearer abc123".to_owned());
         h.insert("X-Project".to_owned(), "workspace-1".to_owned());
         let resolved = resolve_http_headers(&h).expect("headers");
-        assert_eq!(resolved.get("Authorization").map(String::as_str), Some("Bearer abc123"));
-        assert_eq!(resolved.get("X-Project").map(String::as_str), Some("workspace-1"));
+        assert_eq!(
+            resolved.get("Authorization").map(String::as_str),
+            Some("Bearer abc123")
+        );
+        assert_eq!(
+            resolved.get("X-Project").map(String::as_str),
+            Some("workspace-1")
+        );
     }
 
     #[test]
@@ -684,7 +767,10 @@ mod tests {
         let mut h = HashMap::new();
         h.insert("Authorization".to_owned(), format!("Bearer ${{{var}}}"));
         assert_eq!(
-            resolve_http_headers(&h).expect("headers").get("Authorization").map(String::as_str),
+            resolve_http_headers(&h)
+                .expect("headers")
+                .get("Authorization")
+                .map(String::as_str),
             Some("Bearer secret-token")
         );
         unsafe { std::env::remove_var(var) };
@@ -693,7 +779,10 @@ mod tests {
     #[test]
     fn resolve_http_headers_fails_closed_on_missing_env() {
         let mut h = HashMap::new();
-        h.insert("Authorization".to_owned(), "Bearer ${APHRODY_TEST_DEFINITELY_UNSET}".to_owned());
+        h.insert(
+            "Authorization".to_owned(),
+            "Bearer ${APHRODY_TEST_DEFINITELY_UNSET}".to_owned(),
+        );
         assert!(matches!(
             resolve_http_headers(&h),
             Err(aphrody_gemini_runtime::McpError::MissingHeaderEnvironment { .. })
@@ -705,20 +794,31 @@ mod tests {
         let mut h = HashMap::new();
         h.insert("authorization".to_owned(), "Bearer xyz".to_owned());
         assert_eq!(
-            resolve_http_headers(&h).expect("headers").get("authorization").map(String::as_str),
+            resolve_http_headers(&h)
+                .expect("headers")
+                .get("authorization")
+                .map(String::as_str),
             Some("Bearer xyz")
         );
     }
 
     #[test]
     fn transport_tag_matches_variants() {
-        let s =
-            McpTransportConfig::Stdio { command: "x".into(), args: vec![], env: HashMap::new() };
+        let s = McpTransportConfig::Stdio {
+            command: "x".into(),
+            args: vec![],
+            env: HashMap::new(),
+        };
         assert_eq!(transport_tag(&s), "stdio");
-        let h = McpTransportConfig::Http { url: "https://x".into(), headers: HashMap::new() };
+        let h = McpTransportConfig::Http {
+            url: "https://x".into(),
+            headers: HashMap::new(),
+        };
         assert_eq!(transport_tag(&h), "http");
-        let sh =
-            McpTransportConfig::StreamableHttp { url: "https://x".into(), headers: HashMap::new() };
+        let sh = McpTransportConfig::StreamableHttp {
+            url: "https://x".into(),
+            headers: HashMap::new(),
+        };
         assert_eq!(transport_tag(&sh), "streamable-http");
     }
 }

@@ -105,7 +105,12 @@ pub fn rebuild_with_observer(
         observer,
     )?;
     let disassembly = completed(
-        crate::nie::disasm::recover_call_edges(db, target_binary_id, executable, options.skip_indirect),
+        crate::nie::disasm::recover_call_edges(
+            db,
+            target_binary_id,
+            executable,
+            options.skip_indirect,
+        ),
         WorkflowStep::Disassembly,
         observer,
     )?;
@@ -189,12 +194,18 @@ pub fn recover_with_observer(
         observer,
     )?;
     if options.dry_run {
-        return Ok(RecoverReport { ghidra, leaves, enrichment: None });
+        return Ok(RecoverReport {
+            ghidra,
+            leaves,
+            enrichment: None,
+        });
     }
 
     let rtti_binary_id = db
         .conn()
-        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |row| row.get(0))
+        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |row| {
+            row.get(0)
+        })
         .context("aucun binaire indexé")?;
     let anonymous_vtables = completed(
         crate::nie::vtable_anon::anon_vtable_edges_into(
@@ -222,7 +233,8 @@ pub fn recover_with_observer(
         observer,
     )?;
     let coverage = completed(
-        db.snapshot_coverage(options.binary_id).context("snapshot recovery coverage"),
+        db.snapshot_coverage(options.binary_id)
+            .context("snapshot recovery coverage"),
         WorkflowStep::CoverageSnapshot,
         observer,
     )?;
@@ -245,15 +257,21 @@ mod tests {
     use super::*;
     #[test]
     fn target_identity_preserves_contract() {
-        assert_eq!(pdata_identity("nie.exe", "abc"), ("nie.exe#pdata".into(), "abc-pdata".into()));
+        assert_eq!(
+            pdata_identity("nie.exe", "abc"),
+            ("nie.exe#pdata".into(), "abc-pdata".into())
+        );
     }
     #[test]
     fn observer_records_only_successful_steps_before_failure() {
         let mut seen = Vec::new();
         let mut observer = |s| seen.push(s);
         let _: Result<()> = completed(Ok(()), WorkflowStep::Leaves, &mut observer);
-        let failed: Result<()> =
-            completed(Err(anyhow::anyhow!("boom")), WorkflowStep::AnonymousVtables, &mut observer);
+        let failed: Result<()> = completed(
+            Err(anyhow::anyhow!("boom")),
+            WorkflowStep::AnonymousVtables,
+            &mut observer,
+        );
         assert!(failed.is_err());
         assert_eq!(seen, [WorkflowStep::Leaves]);
     }

@@ -1359,9 +1359,9 @@ mod tests {
     use crate::{
         component::ComponentIds,
         query::{
-            access::{AccessFilters, InvertibleComponentIdSet},
             Access, AccessConflicts, ComponentAccessKind, ComponentIdSet, FilteredAccess,
             FilteredAccessSet, UnboundedAccessError,
+            access::{AccessFilters, InvertibleComponentIdSet},
         },
     };
     use alloc::{vec, vec::Vec};

@@ -81,7 +81,9 @@ impl ReproductionPlan {
     pub fn from_image_bytes(png_or_jpeg_bytes: &[u8]) -> crate::Result<Self> {
         let theme = theme::theme_from_image_bytes(png_or_jpeg_bytes)?;
         Ok(Self {
-            source: ReproductionSource::Image { byte_len: png_or_jpeg_bytes.len() },
+            source: ReproductionSource::Image {
+                byte_len: png_or_jpeg_bytes.len(),
+            },
             theme,
             font_stacks: Vec::new(),
             corner_radius_dp: None,

@@ -5,10 +5,14 @@
 
 use filmcraft_codecs::hw::{FrameCodec, FrameStreamInfo, NalCodec, NalStreamInfo, StreamInfo};
 use windows::Win32::Graphics::Direct3D11::{
-    D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0, D3D11_DECODER_PROFILE_H264_VLD_NOFGT, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10,
+    D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0, D3D11_DECODER_PROFILE_H264_VLD_NOFGT,
+    D3D11_DECODER_PROFILE_HEVC_VLD_MAIN, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10,
     D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2, D3D11_DECODER_PROFILE_VP9_VLD_PROFILE0,
 };
-use windows::Win32::Media::MediaFoundation::{MF_MT_MPEG2_PROFILE, MFVideoFormat_AV1, MFVideoFormat_H264, MFVideoFormat_HEVC, MFVideoFormat_VP90};
+use windows::Win32::Media::MediaFoundation::{
+    MF_MT_MPEG2_PROFILE, MFVideoFormat_AV1, MFVideoFormat_H264, MFVideoFormat_HEVC,
+    MFVideoFormat_VP90,
+};
 use windows::core::GUID;
 
 use super::gpu::SurfaceFormat;
@@ -66,23 +70,44 @@ pub fn plan_nal(info: &NalStreamInfo) -> Result<Plan, String> {
         return Err(format!("chroma_format_idc {}", info.chroma_format_idc));
     }
     if info.bit_depth_luma != info.bit_depth_chroma || !matches!(info.bit_depth_luma, 8 | 10) {
-        return Err(format!("{}-bit luma / {}-bit chroma", info.bit_depth_luma, info.bit_depth_chroma));
+        return Err(format!(
+            "{}-bit luma / {}-bit chroma",
+            info.bit_depth_luma, info.bit_depth_chroma
+        ));
     }
     let (cx, cy, w, h) = info.crop;
-    if w == 0 || h == 0 || w > MAX_SIDE || h > MAX_SIDE || cx.saturating_add(w) > info.coded.0 || cy.saturating_add(h) > info.coded.1 {
+    if w == 0
+        || h == 0
+        || w > MAX_SIDE
+        || h > MAX_SIDE
+        || cx.saturating_add(w) > info.coded.0
+        || cy.saturating_add(h) > info.coded.1
+    {
         return Err(format!("picture size {w}x{h}"));
     }
     let ten = info.bit_depth_luma == 10;
     let (format, profile) = match (info.codec, info.profile_idc, ten) {
         // Baseline, Main and High (the profiles DXVA H.264 decoders list)
-        (NalCodec::H264, 66 | 77 | 100, false) => (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_H264_VLD_NOFGT),
-        (NalCodec::H264, p, _) => return Err(format!("H.264 profile {p} at {} bits", info.bit_depth_luma)),
+        (NalCodec::H264, 66 | 77 | 100, false) => {
+            (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_H264_VLD_NOFGT)
+        }
+        (NalCodec::H264, p, _) => {
+            return Err(format!("H.264 profile {p} at {} bits", info.bit_depth_luma));
+        }
         // Main and Main Still Picture
-        (NalCodec::Hevc, 1 | 3, false) => (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN),
+        (NalCodec::Hevc, 1 | 3, false) => {
+            (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN)
+        }
         (NalCodec::Hevc, 2, true) => (SurfaceFormat::P010, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10),
-        (NalCodec::Hevc, p, _) => return Err(format!("HEVC profile {p} at {} bits", info.bit_depth_luma)),
+        (NalCodec::Hevc, p, _) => {
+            return Err(format!("HEVC profile {p} at {} bits", info.bit_depth_luma));
+        }
     };
-    Ok(Plan { format, profile, size: info.coded })
+    Ok(Plan {
+        format,
+        profile,
+        size: info.coded,
+    })
 }
 
 /// What the decoder needs for a VP9 / AV1 stream, or why it is declined: 4:2:0 only, 8-bit
@@ -93,17 +118,28 @@ pub fn plan_frame(info: &FrameStreamInfo) -> Result<Plan, String> {
         return Err(format!("picture size {w}x{h}"));
     }
     if info.mono || info.subsampling != (1, 1) {
-        return Err(format!("chroma subsampling {:?}{}", info.subsampling, if info.mono { " (monochrome)" } else { "" }));
+        return Err(format!(
+            "chroma subsampling {:?}{}",
+            info.subsampling,
+            if info.mono { " (monochrome)" } else { "" }
+        ));
     }
     let (format, profile) = match (info.codec, info.profile, info.bit_depth) {
         (FrameCodec::Vp9, 0, 8) => (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_VP9_VLD_PROFILE0),
-        (FrameCodec::Vp9, 2, 10) => (SurfaceFormat::P010, D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2),
+        (FrameCodec::Vp9, 2, 10) => (
+            SurfaceFormat::P010,
+            D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2,
+        ),
         (FrameCodec::Vp9, p, b) => return Err(format!("VP9 profile {p} at {b} bits")),
         (FrameCodec::Av1, 0, 8) => (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0),
         (FrameCodec::Av1, 0, 10) => (SurfaceFormat::P010, D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0),
         (FrameCodec::Av1, p, b) => return Err(format!("AV1 profile {p} at {b} bits")),
     };
-    Ok(Plan { format, profile, size: info.size })
+    Ok(Plan {
+        format,
+        profile,
+        size: info.size,
+    })
 }
 
 impl Stream {
@@ -137,7 +173,14 @@ impl Stream {
             Self::Nal(info) => {
                 let (_, _, w, h) = info.crop;
                 match info.codec {
-                    NalCodec::H264 => Spec { subtype: MFVideoFormat_H264, label: "H.264", missing: "", size: (w, h), format, attrs: Vec::new() },
+                    NalCodec::H264 => Spec {
+                        subtype: MFVideoFormat_H264,
+                        label: "H.264",
+                        missing: "",
+                        size: (w, h),
+                        format,
+                        attrs: Vec::new(),
+                    },
                     NalCodec::Hevc => Spec {
                         subtype: MFVideoFormat_HEVC,
                         label: "HEVC",
@@ -146,7 +189,10 @@ impl Stream {
                         format,
                         // the HEVC decoder lists P010 output only when told the stream is Main 10
                         // (eAVEncH265VProfile_Main_420_8 = 1, eAVEncH265VProfile_Main_420_10 = 2)
-                        attrs: vec![(MF_MT_MPEG2_PROFILE, Attr::U32(if format == SurfaceFormat::P010 { 2 } else { 1 }))],
+                        attrs: vec![(
+                            MF_MT_MPEG2_PROFILE,
+                            Attr::U32(if format == SurfaceFormat::P010 { 2 } else { 1 }),
+                        )],
                     },
                 }
             }
@@ -175,10 +221,18 @@ impl Stream {
     /// until the first VP9 key frame says (colour and size come from its header).
     pub fn first_geometry(&self, format: SurfaceFormat) -> Geometry {
         match self {
-            Self::Nal(i) => Geometry { crop: i.crop, bits: format.bits(), color: i.color, par: i.par },
-            Self::Frame(i) => {
-                Geometry { crop: (0, 0, i.size.0, i.size.1), bits: format.bits(), color: i.color.unwrap_or(filmcraft_color::ColorInfo::REC709), par: (1, 1) }
-            }
+            Self::Nal(i) => Geometry {
+                crop: i.crop,
+                bits: format.bits(),
+                color: i.color,
+                par: i.par,
+            },
+            Self::Frame(i) => Geometry {
+                crop: (0, 0, i.size.0, i.size.1),
+                bits: format.bits(),
+                color: i.color.unwrap_or(filmcraft_color::ColorInfo::REC709),
+                par: (1, 1),
+            },
         }
     }
 
@@ -226,7 +280,12 @@ impl Stream {
             return None;
         }
         let p = i.picture_params(sample)?;
-        Some(Geometry { crop: (0, 0, p.size.0, p.size.1), bits: p.bit_depth, color: p.color, par: (1, 1) })
+        Some(Geometry {
+            crop: (0, 0, p.size.0, p.size.1),
+            bits: p.bit_depth,
+            color: p.color,
+            par: (1, 1),
+        })
     }
 }
 
@@ -260,12 +319,22 @@ mod tests {
     #[test]
     fn takes_h264_baseline_main_high_and_hevc_main_main10() {
         for p in [66, 77, 100] {
-            assert_eq!(plan_nal(&nal(NalCodec::H264, p, 8, 1)).unwrap().format, SurfaceFormat::Nv12, "H.264 profile {p}");
+            assert_eq!(
+                plan_nal(&nal(NalCodec::H264, p, 8, 1)).unwrap().format,
+                SurfaceFormat::Nv12,
+                "H.264 profile {p}"
+            );
         }
         let main = plan_nal(&nal(NalCodec::Hevc, 1, 8, 1)).unwrap();
-        assert_eq!((main.format, main.profile), (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN));
+        assert_eq!(
+            (main.format, main.profile),
+            (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN)
+        );
         let main10 = plan_nal(&nal(NalCodec::Hevc, 2, 10, 1)).unwrap();
-        assert_eq!((main10.format, main10.profile), (SurfaceFormat::P010, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10));
+        assert_eq!(
+            (main10.format, main10.profile),
+            (SurfaceFormat::P010, D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10)
+        );
     }
 
     #[test]
@@ -285,7 +354,10 @@ mod tests {
             (NalCodec::Hevc, 1, 8, 0),
             (NalCodec::Hevc, 1, 8, 3),
         ] {
-            assert!(plan_nal(&nal(codec, p, bits, chroma)).is_err(), "{codec:?} profile {p} {bits}-bit chroma {chroma}");
+            assert!(
+                plan_nal(&nal(codec, p, bits, chroma)).is_err(),
+                "{codec:?} profile {p} {bits}-bit chroma {chroma}"
+            );
         }
         let mut field_coded = nal(NalCodec::H264, 100, 8, 1);
         field_coded.interlaced = true;
@@ -298,7 +370,15 @@ mod tests {
 
     #[test]
     fn declines_absurd_pictures() {
-        for crop in [(0, 0, 0, 1080), (0, 0, 1920, 0), (0, 0, 9000, 1080), (0, 0, 1080, 9000), (8, 0, 1920, 1080), (0, 16, 1920, 1080), (u32::MAX, 0, 16, 16)] {
+        for crop in [
+            (0, 0, 0, 1080),
+            (0, 0, 1920, 0),
+            (0, 0, 9000, 1080),
+            (0, 0, 1080, 9000),
+            (8, 0, 1920, 1080),
+            (0, 16, 1920, 1080),
+            (u32::MAX, 0, 16, 16),
+        ] {
             let mut i = nal(NalCodec::H264, 100, 8, 1);
             i.crop = crop;
             assert!(plan_nal(&i).is_err(), "{crop:?}");
@@ -308,12 +388,29 @@ mod tests {
     #[test]
     fn takes_vp9_profiles_0_and_2_and_av1_main_in_420() {
         let a = plan_frame(&frame(FrameCodec::Vp9, 0, 8, (1, 1))).unwrap();
-        assert_eq!((a.format, a.profile), (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_VP9_VLD_PROFILE0));
+        assert_eq!(
+            (a.format, a.profile),
+            (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_VP9_VLD_PROFILE0)
+        );
         let b = plan_frame(&frame(FrameCodec::Vp9, 2, 10, (1, 1))).unwrap();
-        assert_eq!((b.format, b.profile), (SurfaceFormat::P010, D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2));
+        assert_eq!(
+            (b.format, b.profile),
+            (
+                SurfaceFormat::P010,
+                D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2
+            )
+        );
         let c = plan_frame(&frame(FrameCodec::Av1, 0, 8, (1, 1))).unwrap();
-        assert_eq!((c.format, c.profile), (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0));
-        assert_eq!(plan_frame(&frame(FrameCodec::Av1, 0, 10, (1, 1))).unwrap().format, SurfaceFormat::P010);
+        assert_eq!(
+            (c.format, c.profile),
+            (SurfaceFormat::Nv12, D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0)
+        );
+        assert_eq!(
+            plan_frame(&frame(FrameCodec::Av1, 0, 10, (1, 1)))
+                .unwrap()
+                .format,
+            SurfaceFormat::P010
+        );
     }
 
     #[test]
@@ -330,7 +427,10 @@ mod tests {
             (FrameCodec::Av1, 0, 12, (1, 1)),
             (FrameCodec::Av1, 0, 8, (1, 0)),
         ] {
-            assert!(plan_frame(&frame(codec, p, bits, ss)).is_err(), "{codec:?} profile {p} {bits}-bit {ss:?}");
+            assert!(
+                plan_frame(&frame(codec, p, bits, ss)).is_err(),
+                "{codec:?} profile {p} {bits}-bit {ss:?}"
+            );
         }
         let mut mono = frame(FrameCodec::Av1, 0, 8, (1, 1));
         mono.mono = true;

@@ -264,7 +264,11 @@ impl Spr {
             285 => self.tbu = value,
             287 => self.pvr = value,
             528..=543 | 560..=575 => {
-                tracing::warn!(spr_num, value = format!("{value:08X}"), "BAT register changed");
+                tracing::warn!(
+                    spr_num,
+                    value = format!("{value:08X}"),
+                    "BAT register changed"
+                );
                 match spr_num {
                     528 => self.ibat0u = value,
                     529 => self.ibat0l = value,
@@ -300,7 +304,7 @@ impl Spr {
                     575 => self.dbat7l = value,
                     _ => unreachable!(),
                 }
-            },
+            }
             912 => self.gqr0 = value,
             913 => self.gqr1 = value,
             914 => self.gqr2 = value,

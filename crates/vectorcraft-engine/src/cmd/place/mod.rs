@@ -33,7 +33,9 @@ use std::sync::Arc;
 
 use serde_json::{Value, json};
 use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, Document, ImageObject, LinkInfo, Node, NodeId, NodeKind, Scaling};
+use vectorcraft_doc::{
+    Appearance, Document, ImageObject, LinkInfo, Node, NodeId, NodeKind, Scaling,
+};
 use vectorcraft_geom::{Affine, Point, Rect, shapes};
 use vectorcraft_pdf::CropTo;
 
@@ -137,18 +139,36 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
     let src = fileio::source(p, cmd)?;
     let name = fileio::file_name(src.name);
     // An Affinity file is recognised by its signature, whatever its name says.
-    if fileio::TEXT_EXTS.contains(&fileio::extension(src.name).as_str()) && !vectorcraft_affinity::is_affinity(&src.bytes) {
+    if fileio::TEXT_EXTS.contains(&fileio::extension(src.name).as_str())
+        && !vectorcraft_affinity::is_affinity(&src.bytes)
+    {
         let text = text::import(&src.bytes, text::TextOptions::parse(p, cmd)?, cmd)?;
         if text.trim().is_empty() {
             return Err(bad(cmd, format!("`{name}` has no text to place")));
         }
-        return Ok(Loaded { name, format: &text::FORMAT, art: Art::Text(text), natural: TEXT_FRAME, warnings: vec![], link: None, board: None });
+        return Ok(Loaded {
+            name,
+            format: &text::FORMAT,
+            art: Art::Text(text),
+            natural: TEXT_FRAME,
+            warnings: vec![],
+            link: None,
+            board: None,
+        });
     }
-    let format = fileio::detect(src.name, &src.bytes)
-        .ok_or_else(|| bad(cmd, format!("can't place `{name}`: not a format VectorCraft reads (see document.formats)")))?;
+    let format = fileio::detect(src.name, &src.bytes).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("can't place `{name}`: not a format VectorCraft reads (see document.formats)"),
+        )
+    })?;
     let page = match p.get("page") {
         None => 1,
-        Some(v) => v.as_u64().filter(|n| (1..=100_000).contains(n)).ok_or_else(|| bad(cmd, "page must be a whole number from 1"))? as usize,
+        Some(v) => {
+            v.as_u64()
+                .filter(|n| (1..=100_000).contains(n))
+                .ok_or_else(|| bad(cmd, "page must be a whole number from 1"))? as usize
+        }
     };
     let mut opts = fileio::LoadOptions::from_params(cmd, p)?;
     if let Some(b) = board
@@ -157,11 +177,15 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         opts.dxf.fit_to = (b.width(), b.height());
     }
     // PostScript .ai files are read like EPS.
-    let pdf = matches!(format.id, "pdf" | "ai" | "ait") && !vectorcraft_pdf::is_postscript(&src.bytes);
+    let pdf =
+        matches!(format.id, "pdf" | "ai" | "ait") && !vectorcraft_pdf::is_postscript(&src.bytes);
     if !pdf && !matches!(opts.crop, CropTo::Crop | CropTo::Bounding) {
         return Err(bad(
             cmd,
-            format!("crop `{}`: only PDF pages have art, trim, bleed and media boxes; use \"crop\" or \"bounding\"", opts.crop.id()),
+            format!(
+                "crop `{}`: only PDF pages have art, trim, bleed and media boxes; use \"crop\" or \"bounding\"",
+                opts.crop.id()
+            ),
         ));
     }
     let crop = opts.crop != CropTo::Bounding;
@@ -170,33 +194,75 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         let page = page as u32;
         if let Some(path) = src.path.filter(|_| bool_or(p, "link", true)) {
             let s = document::source(src.name, &src.bytes, Some(path), page, !crop, cmd)?;
-            let link = LinkInfo { page: Some(page), ..super::links::link_info(path, &src.bytes) };
+            let link = LinkInfo {
+                page: Some(page),
+                ..super::links::link_info(path, &src.bytes)
+            };
             let (natural, warnings) = (s.frame, s.warnings.clone());
-            return Ok(Loaded { name, format, art: Art::Document(s, link.clone(), !crop), natural, warnings, link: Some(link), board: None });
+            return Ok(Loaded {
+                name,
+                format,
+                art: Art::Document(s, link.clone(), !crop),
+                natural,
+                warnings,
+                link: Some(link),
+                board: None,
+            });
         }
         let a = document::document_art(src.name, &src.bytes, src.path, page, !crop, cmd)?;
-        let art = Art::Vector { src: Box::new(a.doc), nodes: a.nodes, clip: a.clip };
-        return Ok(Loaded { name, format, art, natural: a.frame, warnings: a.warnings, link: None, board: None });
+        let art = Art::Vector {
+            src: Box::new(a.doc),
+            nodes: a.nodes,
+            clip: a.clip,
+        };
+        return Ok(Loaded {
+            name,
+            format,
+            art,
+            natural: a.frame,
+            warnings: a.warnings,
+            link: None,
+            board: None,
+        });
     }
     if format.raster {
         let img = fileio::raster_image(&src.bytes)?;
         let (sx, sy) = pt_per_px(img.ppi);
         let natural = Rect::new(0.0, 0.0, img.width as f64 * sx, img.height as f64 * sy);
-        let link = src.path.map(|path| super::links::link_info(path, &src.bytes));
-        let warnings = fileio::too_large_note(&img.blob.bytes).into_iter().collect();
-        return Ok(Loaded { name, format, art: Art::Image(img), natural, warnings, link, board: None });
+        let link = src
+            .path
+            .map(|path| super::links::link_info(path, &src.bytes));
+        let warnings = fileio::too_large_note(&img.blob.bytes)
+            .into_iter()
+            .collect();
+        return Ok(Loaded {
+            name,
+            format,
+            art: Art::Image(img),
+            natural,
+            warnings,
+            link,
+            board: None,
+        });
     }
     let anchored = format.id == "dxf" && (opts.dxf.fit || !opts.dxf.center);
     let (mut doc, warnings) = match format.id {
         // Only the page placed is read, its artboard the box asked for (Bounding Box: the art's
         // bounds, below).
         "pdf" | "ai" | "ait" if pdf => {
-            let o = fileio::LoadOptions { crop: if crop { opts.crop } else { CropTo::Crop }, ..opts };
-            fileio::page_document(&src.bytes, page - 1, &o).map_err(|e| bad(cmd, format!("{name}: {e}")))?
+            let o = fileio::LoadOptions {
+                crop: if crop { opts.crop } else { CropTo::Crop },
+                ..opts
+            };
+            fileio::page_document(&src.bytes, page - 1, &o)
+                .map_err(|e| bad(cmd, format!("{name}: {e}")))?
         }
         _ => {
             // Of the open options, only a DXF drawing's apply (the colour mode stays the file's).
-            let o = fileio::LoadOptions { dxf: opts.dxf, ..Default::default() };
+            let o = fileio::LoadOptions {
+                dxf: opts.dxf,
+                ..Default::default()
+            };
             let mut l = fileio::load_with(src.name, &src.bytes, &o)?;
             // An Affinity file whose native document couldn't be read is only its preview: it
             // must never silently stand in for the art.
@@ -222,30 +288,77 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         // default, as Illustrator places one, it is its art's bounds.
         let framed = matches!(format.id, "svg" | "svgz") && crop && p.get("crop").is_some();
         let frame = doc.artboards.first().map(|a| a.rect).filter(|_| framed);
-        (art_of(layers.iter().filter(|l| placeable(l)).flat_map(|l| l.children().into_iter().flatten())), frame)
+        (
+            art_of(
+                layers
+                    .iter()
+                    .filter(|l| placeable(l))
+                    .flat_map(|l| l.children().into_iter().flatten()),
+            ),
+            frame,
+        )
     } else {
         // The page placed is a PDF import's only one.
         let index = if pdf { 0 } else { page - 1 };
         let n = doc.artboards.len();
-        let board = doc.artboards.get(index).map(|a| a.rect).ok_or_else(|| bad(cmd, format!("page {page}: `{name}` has {n} page(s)")))?;
+        let board = doc
+            .artboards
+            .get(index)
+            .map(|a| a.rect)
+            .ok_or_else(|| bad(cmd, format!("page {page}: `{name}` has {n} page(s)")))?;
         // A PDF import has one layer per page; an EPS file's art is whatever lies on the artboard.
-        let pages = if pdf { layers.get(index..=index).unwrap_or_default() } else { &layers[..] };
+        let pages = if pdf {
+            layers.get(index..=index).unwrap_or_default()
+        } else {
+            &layers[..]
+        };
         (on_artboard(pages, board), crop.then_some(board))
     };
-    let natural = clip.or_else(|| nodes.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds())));
-    let natural = natural.filter(|r| r.width() > 0.0 || r.height() > 0.0).ok_or_else(|| bad(cmd, format!("`{name}` has no art to place")))?;
-    Ok(Loaded { name, format, art: Art::Vector { src: Box::new(doc), nodes, clip }, natural, warnings, link: None, board })
+    let natural = clip.or_else(|| {
+        nodes.iter().fold(None, |acc, n| {
+            vectorcraft_geom::union_opt(acc, n.visual_bounds())
+        })
+    });
+    let natural = natural
+        .filter(|r| r.width() > 0.0 || r.height() > 0.0)
+        .ok_or_else(|| bad(cmd, format!("`{name}` has no art to place")))?;
+    Ok(Loaded {
+        name,
+        format,
+        art: Art::Vector {
+            src: Box::new(doc),
+            nodes,
+            clip,
+        },
+        natural,
+        warnings,
+        link: None,
+        board,
+    })
 }
 
 /// The placeable art of `layers` that lies on `board`.
 fn on_artboard(layers: &[Arc<Node>], board: Rect) -> Vec<Node> {
-    let on_board = |c: &&Arc<Node>| c.visual_bounds().is_some_and(|b| b.intersect(board).area() > 0.0 || board.contains(b.origin()));
-    art_of(layers.iter().filter(|l| placeable(l)).flat_map(|l| l.children().into_iter().flatten()).filter(on_board))
+    let on_board = |c: &&Arc<Node>| {
+        c.visual_bounds()
+            .is_some_and(|b| b.intersect(board).area() > 0.0 || board.contains(b.origin()))
+    };
+    art_of(
+        layers
+            .iter()
+            .filter(|l| placeable(l))
+            .flat_map(|l| l.children().into_iter().flatten())
+            .filter(on_board),
+    )
 }
 
 /// A clipping path of rectangle `r`, with id `id`.
 fn clip_path(id: NodeId, r: Rect) -> Node {
-    let mut c = Node::path(id, shapes::rectangle(r), Appearance::basic(Paint::None, Paint::None, 0.0));
+    let mut c = Node::path(
+        id,
+        shapes::rectangle(r),
+        Appearance::basic(Paint::None, Paint::None, 0.0),
+    );
     if let NodeKind::Path { clipping, .. } = &mut c.kind {
         *clipping = true;
     }
@@ -264,7 +377,10 @@ fn art_of<'a>(nodes: impl Iterator<Item = &'a Arc<Node>>) -> Vec<Node> {
             NodeKind::Path { guide: true, .. } => None,
             NodeKind::Layer { children, .. } => placeable(c).then(|| {
                 let mut g = (**c).clone();
-                g.kind = NodeKind::Group { children: art_of(children.iter()).into_iter().map(Arc::new).collect(), clip: false };
+                g.kind = NodeKind::Group {
+                    children: art_of(children.iter()).into_iter().map(Arc::new).collect(),
+                    clip: false,
+                };
                 g
             }),
             _ => Some((**c).clone()),
@@ -288,15 +404,28 @@ fn build(d: &mut Document, l: Loaded, link: Option<LinkInfo>) -> Node {
             };
             Node::new(d.alloc_id(), NodeKind::Image(Box::new(im)))
         }
-        Art::Text(t) => Node::new(d.alloc_id(), NodeKind::Text(Box::new(text::area_text(t, l.natural)))),
+        Art::Text(t) => Node::new(
+            d.alloc_id(),
+            NodeKind::Text(Box::new(text::area_text(t, l.natural))),
+        ),
         Art::Document(s, link, bounding) => document::node(d, &s, link, bounding),
-        Art::Vector { src, mut nodes, clip } => {
+        Art::Vector {
+            src,
+            mut nodes,
+            clip,
+        } => {
             adopt::adopt(d, &src, &mut nodes);
             let mut children: Vec<Arc<Node>> = nodes.iter().map(|n| Arc::new(d.reid(n))).collect();
             if let Some(r) = clip {
                 children.insert(0, Arc::new(clip_path(d.alloc_id(), r)));
             }
-            Node::new(d.alloc_id(), NodeKind::Group { children, clip: clip.is_some() })
+            Node::new(
+                d.alloc_id(),
+                NodeKind::Group {
+                    children,
+                    clip: clip.is_some(),
+                },
+            )
         }
     };
     node.name = Some(l.name);
@@ -305,8 +434,17 @@ fn build(d: &mut Document, l: Loaded, link: Option<LinkInfo>) -> Node {
 
 /// `node` moved and scaled by `m` as a whole: strokes, effects and pattern tiles go along.
 pub(crate) fn transformed(mut node: Node, m: Affine) -> Node {
-    node.transform(m, Scaling { strokes: true, effects: Some(vectorcraft_render::effects::scale_effect), ..Default::default() });
-    adopt::each_mut(&mut node, &mut |n| vectorcraft_doc::pattern::transform_pattern_paints(n, m));
+    node.transform(
+        m,
+        Scaling {
+            strokes: true,
+            effects: Some(vectorcraft_render::effects::scale_effect),
+            ..Default::default()
+        },
+    );
+    adopt::each_mut(&mut node, &mut |n| {
+        vectorcraft_doc::pattern::transform_pattern_paints(n, m)
+    });
     node
 }
 
@@ -314,11 +452,16 @@ pub(crate) fn transformed(mut node: Node, m: Affine) -> Node {
 
 /// `[x, y, width, height]` with a positive size.
 fn rect_param(p: &Value) -> Result<Option<Rect>> {
-    let Some(v) = p.get("rect") else { return Ok(None) };
+    let Some(v) = p.get("rect") else {
+        return Ok(None);
+    };
     // All four or nothing: a malformed entry dropped would shift the others ([0, "bad", 10, 40, 50]).
     match finite_numbers(v) {
         Some([x, y, w, h]) if w > 0.0 && h > 0.0 => Ok(Some(Rect::new(x, y, x + w, y + h))),
-        _ => Err(bad(PLACE, "rect must be [x, y, width, height] with a positive width and height")),
+        _ => Err(bad(
+            PLACE,
+            "rect must be [x, y, width, height] with a positive width and height",
+        )),
     }
 }
 
@@ -327,7 +470,11 @@ fn rect_param(p: &Value) -> Result<Option<Rect>> {
 fn at_param(p: &Value) -> Result<Option<Point>> {
     p.get("at")
         .filter(|v| !v.is_null())
-        .map(|v| finite_numbers(v).map(|[x, y]| Point::new(x, y)).ok_or_else(|| bad(PLACE, "at must be [x, y]")))
+        .map(|v| {
+            finite_numbers(v)
+                .map(|[x, y]| Point::new(x, y))
+                .ok_or_else(|| bad(PLACE, "at must be [x, y]"))
+        })
         .transpose()
 }
 
@@ -336,22 +483,37 @@ fn at_param(p: &Value) -> Result<Option<Point>> {
 /// `image_xf`); other objects keep their centre.
 fn replace_xf(d: &Document, old: &Node, natural: Rect, image_xf: bool) -> Affine {
     if image_xf && let NodeKind::Image(im) = &old.kind {
-        let (sx, sy) = pt_per_px(d.images.get(&im.key).and_then(|b| fileio::ppi::resolution(&b.bytes)));
+        let (sx, sy) = pt_per_px(
+            d.images
+                .get(&im.key)
+                .and_then(|b| fileio::ppi::resolution(&b.bytes)),
+        );
         let full = Affine::scale_non_uniform(sx, sy);
         let centre = full * Point::new(im.width as f64 / 2.0, im.height as f64 / 2.0);
         if im.xf.determinant().abs() > 1e-12 {
             return im.xf * full.inverse() * Affine::translate(centre - natural.center());
         }
     }
-    let c = old.geometric_bounds().map_or(natural.center(), |b| b.center());
+    let c = old
+        .geometric_bounds()
+        .map_or(natural.center(), |b| b.center());
     Affine::translate(c - natural.center())
 }
 
 /// `rect` fitted with `natural`'s aspect, centred.
 fn fit(natural: Rect, r: Rect) -> Affine {
     let ratio = |a: f64, b: f64| (b > 1e-9).then(|| a / b);
-    let k = [ratio(r.width(), natural.width()), ratio(r.height(), natural.height())].into_iter().flatten().reduce(f64::min).unwrap_or(1.0);
-    Affine::translate(r.center().to_vec2()) * Affine::scale(k) * Affine::translate(-natural.center().to_vec2())
+    let k = [
+        ratio(r.width(), natural.width()),
+        ratio(r.height(), natural.height()),
+    ]
+    .into_iter()
+    .flatten()
+    .reduce(f64::min)
+    .unwrap_or(1.0);
+    Affine::translate(r.center().to_vec2())
+        * Affine::scale(k)
+        * Affine::translate(-natural.center().to_vec2())
 }
 
 fn place(s: &mut Session, p: &Value) -> Result<Value> {
@@ -360,10 +522,21 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
     let at = at_param(p)?;
     let rect = rect_param(p)?;
     if replace && (template || at.is_some() || rect.is_some()) {
-        return Err(bad(PLACE, "replace keeps the replaced object's place and transform: drop template, at and rect"));
+        return Err(bad(
+            PLACE,
+            "replace keeps the replaced object's place and transform: drop template, at and rect",
+        ));
     }
-    let corners = [at, rect.map(|r| r.origin()), rect.map(|r| Point::new(r.x1, r.y1))];
-    if corners.iter().flatten().any(|c| !(c.x.abs() <= MAX_COORD && c.y.abs() <= MAX_COORD)) {
+    let corners = [
+        at,
+        rect.map(|r| r.origin()),
+        rect.map(|r| Point::new(r.x1, r.y1)),
+    ];
+    if corners
+        .iter()
+        .flatten()
+        .any(|c| !(c.x.abs() <= MAX_COORD && c.y.abs() <= MAX_COORD))
+    {
         return Err(bad(PLACE, "at/rect lie outside the canvas"));
     }
     let st = s.doc()?;
@@ -390,17 +563,27 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
         (Some(o), _) => replace_xf(&st.doc, o, natural, !is_text),
         (None, Some(r)) => fit(natural, r),
         // Its artboard's bottom-left corner on the target's.
-        (None, None) if let (Some(src), Some(to)) = (loaded.board, target) => Affine::translate((to.x0 - src.x0, to.y1 - src.y1)),
+        (None, None) if let (Some(src), Some(to)) = (loaded.board, target) => {
+            Affine::translate((to.x0 - src.x0, to.y1 - src.y1))
+        }
         (None, None) => {
-            let c = at.or_else(|| st.doc.artboards.first().map(|a| a.rect.center())).unwrap_or_default();
+            let c = at
+                .or_else(|| st.doc.artboards.first().map(|a| a.rect.center()))
+                .unwrap_or_default();
             Affine::translate(c - natural.center())
         }
     };
     let parent = st.insertion_parent();
-    let below = st.current_layer().or_else(|| parent.and_then(|p| st.doc.layer_of(p)));
+    let below = st
+        .current_layer()
+        .or_else(|| parent.and_then(|p| st.doc.layer_of(p)));
     let link = loaded.link.take().filter(|_| bool_or(p, "link", true));
     let linked = link.is_some();
-    let (name, format, warnings) = (loaded.name.clone(), loaded.format.id, std::mem::take(&mut loaded.warnings));
+    let (name, format, warnings) = (
+        loaded.name.clone(),
+        loaded.format.id,
+        std::mem::take(&mut loaded.warnings),
+    );
     let (id, size) = s.edit("Place", |d, sel| {
         let node = transformed(build(d, loaded, link), m);
         let size = node.geometric_bounds().unwrap_or_default();
@@ -429,21 +612,31 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The artboard under `at`, else the first.
 fn board_at(d: &Document, at: Option<Point>) -> Option<Rect> {
-    at.and_then(|c| d.artboards.iter().find(|a| a.rect.contains(c))).or(d.artboards.first()).map(|a| a.rect)
+    at.and_then(|c| d.artboards.iter().find(|a| a.rect.contains(c)))
+        .or(d.artboards.first())
+        .map(|a| a.rect)
 }
 
 /// Placed type's frame without `rect` or Replace: the artboard under `at` (else the first) less a
 /// 36 pt margin.
 fn text_frame(d: &Document, at: Option<Point>) -> Rect {
     let board = board_at(d, at).unwrap_or(TEXT_FRAME);
-    Rect::from_center_size(board.center(), ((board.width() - 72.0).max(72.0), (board.height() - 72.0).max(72.0)))
+    Rect::from_center_size(
+        board.center(),
+        (
+            (board.width() - 72.0).max(72.0),
+            (board.height() - 72.0).max(72.0),
+        ),
+    )
 }
 
 /// A new locked template layer named after the file, right below the layer `below` (else at the
 /// bottom).
 fn template_layer(d: &mut Document, below: Option<NodeId>, name: &str) -> Result<NodeId> {
     let id = d.add_layer(Some(&format!("Template {name}")));
-    let at = below.and_then(|b| d.layers.iter().position(|l| l.id == b)).unwrap_or(0);
+    let at = below
+        .and_then(|b| d.layers.iter().position(|l| l.id == b))
+        .unwrap_or(0);
     d.move_node(id, None, at)?;
     if let Some(n) = d.node_mut(id) {
         n.locked = true;
@@ -458,10 +651,17 @@ fn template_layer(d: &mut Document, below: Option<NodeId>, name: &str) -> Result
 
 /// The files `file.place.queue` names, as `file.place` params.
 fn queued_files(p: &Value) -> Result<Vec<Value>> {
-    let list = |k: &str| p.get(k).and_then(Value::as_array).map(Vec::as_slice).unwrap_or_default();
+    let list = |k: &str| {
+        p.get(k)
+            .and_then(Value::as_array)
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+    };
     let mut out = vec![];
     for v in list("paths") {
-        let path = v.as_str().ok_or_else(|| bad(QUEUE, "paths must be strings"))?;
+        let path = v
+            .as_str()
+            .ok_or_else(|| bad(QUEUE, "paths must be strings"))?;
         out.push(json!({ "path": path }));
     }
     for f in list("files") {
@@ -489,7 +689,8 @@ fn queue(s: &mut Session, p: &Value) -> Result<Value> {
         match load(&q, QUEUE, None) {
             Ok(l) => {
                 let (w, h) = (l.natural.width(), l.natural.height());
-                let mut f = json!({ "name": l.name, "format": l.format.id, "width": w, "height": h });
+                let mut f =
+                    json!({ "name": l.name, "format": l.format.id, "width": w, "height": h });
                 entries.push(json!({ "params": q, "name": l.name, "width": w, "height": h }));
                 if let Some(px) = thumbnail {
                     f["thumbnailBase64"] = json!(thumbnail_png(l, px)?);
@@ -497,13 +698,19 @@ fn queue(s: &mut Session, p: &Value) -> Result<Value> {
                 files.push(f);
             }
             Err(e) => {
-                let name = str_param(&q, "path").or(str_param(&q, "name")).map(fileio::file_name).unwrap_or_default();
+                let name = str_param(&q, "path")
+                    .or(str_param(&q, "name"))
+                    .map(fileio::file_name)
+                    .unwrap_or_default();
                 skipped.push(json!({ "name": name, "error": e.to_string() }));
             }
         }
     }
     if entries.is_empty() {
-        let why = skipped.first().and_then(|e| e["error"].as_str()).unwrap_or("nothing to place");
+        let why = skipped
+            .first()
+            .and_then(|e| e["error"].as_str())
+            .unwrap_or("nothing to place");
         return Err(bad(QUEUE, why));
     }
     // Reloading the cursor keeps the tool to return to.
@@ -525,7 +732,9 @@ fn color_mode(bytes: &[u8]) -> &'static str {
         .and_then(|r| r.into_decoder().ok())
         .map(|d| d.original_color_type());
     match kind {
-        Some(E::L1 | E::La1 | E::L2 | E::La2 | E::L4 | E::La4 | E::L8 | E::La8 | E::L16 | E::La16) => "Grayscale",
+        Some(
+            E::L1 | E::La1 | E::L2 | E::La2 | E::L4 | E::La4 | E::L8 | E::La8 | E::L16 | E::La16,
+        ) => "Grayscale",
         Some(E::Cmyk8 | E::Cmyk16) => "CMYK",
         _ => "RGB",
     }
@@ -539,7 +748,10 @@ fn thumbnail_png(l: Loaded, px: f64) -> Result<String> {
     let node = build(&mut d, l, None);
     d.insert(layer, 0, node)?;
     let k = px.clamp(1.0, MAX_THUMBNAIL) / natural.width().max(natural.height()).max(1e-9);
-    let png = vectorcraft_render::Renderer::new().render_region(&d, natural, k, false).to_png().map_err(EngineError::Other)?;
+    let png = vectorcraft_render::Renderer::new()
+        .render_region(&d, natural, k, false)
+        .to_png()
+        .map_err(EngineError::Other)?;
     Ok(vectorcraft_format::base64_encode(&png))
 }
 
@@ -575,10 +787,16 @@ pub(crate) fn image_info(s: &mut Session, p: &Value) -> Result<Value> {
         _ => return Err(bad(C, "select one image or pass id")),
     };
     let n = st.doc.node(id).ok_or(EngineError::NoNode(id))?;
-    let NodeKind::Image(im) = &n.kind else { return Err(bad(C, format!("object {} is not an image", id.0))) };
+    let NodeKind::Image(im) = &n.kind else {
+        return Err(bad(C, format!("object {} is not an image", id.0)));
+    };
     // Effective resolution: 72 pt per inch over the points one pixel spans along each axis.
     let [a, b, c, d, ..] = im.xf.as_coeffs();
-    let ppi = |x: f64, y: f64| Some(x.hypot(y)).filter(|l| *l > 1e-12).map_or(0.0, |l| 72.0 / l);
+    let ppi = |x: f64, y: f64| {
+        Some(x.hypot(y))
+            .filter(|l| *l > 1e-12)
+            .map_or(0.0, |l| 72.0 / l)
+    };
     let size = n.geometric_bounds().unwrap_or_default();
     Ok(json!({
         "id": id.0,

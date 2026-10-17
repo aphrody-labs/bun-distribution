@@ -63,7 +63,10 @@ impl RandomPose {
         if motion_name_crc.is_zero() {
             return None;
         }
-        Some(Self { chara_body_type: field_i64(v, "charaBodyType").unwrap_or(0), motion_name_crc })
+        Some(Self {
+            chara_body_type: field_i64(v, "charaBodyType").unwrap_or(0),
+            motion_name_crc,
+        })
     }
 }
 
@@ -100,13 +103,18 @@ impl PhotoModeRandomPoseConfig {
     /// ```
     #[must_use]
     pub fn find_by_motion(&self, motion_name_crc: HashId) -> Option<&RandomPose> {
-        self.poses.iter().find(|p| p.motion_name_crc == motion_name_crc)
+        self.poses
+            .iter()
+            .find(|p| p.motion_name_crc == motion_name_crc)
     }
 
     /// Renvoie toutes les poses ayant ce `charaBodyType` exact (sans joker `255`).
     #[must_use]
     pub fn poses_for_body_type(&self, chara_body_type: i64) -> Vec<&RandomPose> {
-        self.poses.iter().filter(|p| p.chara_body_type == chara_body_type).collect()
+        self.poses
+            .iter()
+            .filter(|p| p.chara_body_type == chara_body_type)
+            .collect()
     }
 }
 

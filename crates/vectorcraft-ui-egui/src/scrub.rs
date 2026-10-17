@@ -70,9 +70,15 @@ pub(crate) enum Phase {
 }
 
 pub(crate) fn phase(ctx: &Context) -> Phase {
-    let Some(s) = ctx.data(|d| d.get_temp::<Scrub>(state_id())) else { return Phase::Idle };
+    let Some(s) = ctx.data(|d| d.get_temp::<Scrub>(state_id())) else {
+        return Phase::Idle;
+    };
     if ctx.drag_stopped_id() == Some(s.zone) {
-        if s.cancelled { Phase::Cancelled } else { Phase::Released }
+        if s.cancelled {
+            Phase::Cancelled
+        } else {
+            Phase::Released
+        }
     } else if ctx.is_being_dragged(s.zone) {
         Phase::Dragging
     } else {
@@ -122,7 +128,10 @@ fn take_label(ui: &Ui, field: Rect) -> Option<Rect> {
         l
     })?;
     let gap = field.left() - l.rect.right();
-    (l.pass == ui.ctx().cumulative_pass_nr() && (-1.0..=LABEL_GAP).contains(&gap) && field.y_range().contains(l.rect.center().y)).then_some(l.rect)
+    (l.pass == ui.ctx().cumulative_pass_nr()
+        && (-1.0..=LABEL_GAP).contains(&gap)
+        && field.y_range().contains(l.rect.center().y))
+    .then_some(l.rect)
 }
 
 /// Scrub numeric field `field`, its box at `rect`, showing `text`: `value` in its units, rounded
@@ -130,7 +139,14 @@ fn take_label(ui: &Ui, field: Rect) -> Option<Rect> {
 /// started at when Escape cancels the drag. A click on the label (or a press held without
 /// stepping) focuses the field with all of `text` selected. Nothing for a field without a label,
 /// disabled or showing no value (objects that differ).
-pub(crate) fn field(ui: &Ui, field: Id, rect: Rect, text: &str, value: Option<f64>, decimals: i32) -> Option<f64> {
+pub(crate) fn field(
+    ui: &Ui,
+    field: Id,
+    rect: Rect,
+    text: &str,
+    value: Option<f64>,
+    decimals: i32,
+) -> Option<f64> {
     let label = take_label(ui, rect)?;
     let value = value.filter(|v| v.is_finite())?;
     if !enabled(ui.ctx()) || !ui.is_enabled() {
@@ -153,13 +169,22 @@ fn drag(ui: &Ui, resp: &Response, field: Id, text: &str, value: f64, decimals: i
     if resp.drag_started() {
         // Typing elsewhere ends, as a click elsewhere ends it.
         ui.memory_mut(|m| m.stop_text_input());
-        let s = Scrub { zone: resp.id, start: value, pending: 0.0, step: 0.0, moved: false, cancelled: false };
+        let s = Scrub {
+            zone: resp.id,
+            start: value,
+            pending: 0.0,
+            step: 0.0,
+            moved: false,
+            cancelled: false,
+        };
         ui.data_mut(|d| d.insert_temp(state_id(), s));
     }
     if !(resp.dragged() || resp.drag_stopped()) {
         return None;
     }
-    let mut s = ui.data(|d| d.get_temp::<Scrub>(state_id())).filter(|s| s.zone == resp.id && !s.cancelled)?;
+    let mut s = ui
+        .data(|d| d.get_temp::<Scrub>(state_id()))
+        .filter(|s| s.zone == resp.id && !s.cancelled)?;
     // egui ends the drag on Escape: the field goes back to where it started.
     let out = if ui.input_mut(|i| i.consume_key(i.modifiers, Key::Escape)) {
         s.cancelled = true;

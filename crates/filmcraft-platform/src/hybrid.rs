@@ -134,8 +134,13 @@ impl HybridDecoder {
     /// (its call returned long ago), and if the failed sample itself is rejected its error is this
     /// call's, while the pictures replayed before it are kept for the next output.
     fn fall_back(&mut self, err: CodecError) -> Result<Vec<DecodedFrame>> {
-        let Some(mut hw) = self.hw.take() else { return Err(err) };
-        log::warn!("{} failed ({err}); continuing with the software decoder", hw.name());
+        let Some(mut hw) = self.hw.take() else {
+            return Err(err);
+        };
+        log::warn!(
+            "{} failed ({err}); continuing with the software decoder",
+            hw.name()
+        );
         filmcraft_codecs::hw::note_hw_fallback();
         for f in hw.flush() {
             if !self.emitted.contains(&f.pts) {
@@ -143,13 +148,16 @@ impl HybridDecoder {
             }
         }
         drop(hw);
-        let mut sw = filmcraft_codecs::software_video_decoder(&self.entry).map_err(|e| CodecError::Decode(format!("{err}; no software decoder: {e}")))?;
+        let mut sw = filmcraft_codecs::software_video_decoder(&self.entry)
+            .map_err(|e| CodecError::Decode(format!("{err}; no software decoder: {e}")))?;
         sw.set_draft(self.draft);
         self.sw = Some(sw);
         let Some(log) = self.log.take() else {
             // Too far from a restart point to replay: the next seek restarts in software.
             self.carry.clear();
-            return Err(CodecError::Decode(format!("{err} (continuing in software after the next seek)")));
+            return Err(CodecError::Decode(format!(
+                "{err} (continuing in software after the next seek)"
+            )));
         };
         let mut frames = Vec::new();
         let mut rejected = None;
@@ -185,7 +193,9 @@ impl VideoDecoder for HybridDecoder {
         }
         self.remember(sample, pts);
         if self.parameter_sets_changed(sample) {
-            return self.fall_back(CodecError::Decode("in-band parameter sets differ from the sample entry".into()));
+            return self.fall_back(CodecError::Decode(
+                "in-band parameter sets differ from the sample entry".into(),
+            ));
         }
         let Some(hw) = self.hw.as_mut() else {
             return Err(CodecError::Decode("no decoder".into()));

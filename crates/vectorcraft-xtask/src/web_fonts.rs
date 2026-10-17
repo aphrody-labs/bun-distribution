@@ -17,20 +17,42 @@ mod list;
 
 /// The hook: reads `CRAFT_FONTS_DIR` and Trunk's `TRUNK_STAGING_DIR`.
 pub fn run(root: &Path) -> Result<(), String> {
-    let var = |name| std::env::var_os(name).filter(|v| !v.is_empty()).map(PathBuf::from);
+    let var = |name| {
+        std::env::var_os(name)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
     run_with(root, var("CRAFT_FONTS_DIR"), var("TRUNK_STAGING_DIR"))
 }
 
-fn run_with(root: &Path, craft_fonts: Option<PathBuf>, staging: Option<PathBuf>) -> Result<(), String> {
-    let Some(dir) = craft_fonts else { return Ok(()) };
+fn run_with(
+    root: &Path,
+    craft_fonts: Option<PathBuf>,
+    staging: Option<PathBuf>,
+) -> Result<(), String> {
+    let Some(dir) = craft_fonts else {
+        return Ok(());
+    };
     // Relative like build.rs: from the workspace root, not the directory Trunk runs hooks in.
-    let dir = if dir.is_absolute() { dir } else { root.join(dir) };
-    let staging = staging.ok_or("TRUNK_STAGING_DIR is unset: run this as the Trunk post_build hook")?;
+    let dir = if dir.is_absolute() {
+        dir
+    } else {
+        root.join(dir)
+    };
+    let staging =
+        staging.ok_or("TRUNK_STAGING_DIR is unset: run this as the Trunk post_build hook")?;
     let (copied, skipped) = copy(&root.join("crates/text/web-fonts.txt"), &dir, &staging)?;
     if !skipped.is_empty() {
-        eprintln!("warning: web build won't fetch {} (not in CRAFT_FONTS_DIR={}; an older craft-fonts?)", skipped.join(", "), dir.display());
+        eprintln!(
+            "warning: web build won't fetch {} (not in CRAFT_FONTS_DIR={}; an older craft-fonts?)",
+            skipped.join(", "),
+            dir.display()
+        );
     }
-    println!("web-fonts: copied {copied} font(s) into {}", staging.join("fonts").display());
+    println!(
+        "web-fonts: copied {copied} font(s) into {}",
+        staging.join("fonts").display()
+    );
     Ok(())
 }
 
@@ -40,16 +62,26 @@ fn copy(list_path: &Path, dir: &Path, site: &Path) -> Result<(usize, Vec<String>
     let read = |p: &Path| std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()));
     let list = read(list_path)?;
     let manifest = read(&dir.join("fonts/manifest.txt"))?;
-    let rows: Vec<Vec<&str>> =
-        manifest.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).map(|l| l.split(" | ").map(str::trim).collect()).collect();
+    let rows: Vec<Vec<&str>> = manifest
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .map(|l| l.split(" | ").map(str::trim).collect())
+        .collect();
     let (mut copied, mut skipped) = (0, Vec::new());
     for e in list::parse_list(&list)? {
-        let Some(row) = rows.iter().find(|r| r.first() == Some(&e.family) && r.get(1) == Some(&e.style)) else {
+        let Some(row) = rows
+            .iter()
+            .find(|r| r.first() == Some(&e.family) && r.get(1) == Some(&e.style))
+        else {
             skipped.push(format!("{} {}", e.family, e.style));
             continue;
         };
         let (Some(file), Some(licence), Some(sha)) = (row.get(2), row.get(5), row.get(6)) else {
-            return Err(format!("malformed manifest row for {} {}", e.family, e.style));
+            return Err(format!(
+                "malformed manifest row for {} {}",
+                e.family, e.style
+            ));
         };
         let bytes = std::fs::read(dir.join(file)).map_err(|err| format!("{file}: {err}"))?;
         let got = sha256::hex(&bytes);
@@ -57,11 +89,16 @@ fn copy(list_path: &Path, dir: &Path, site: &Path) -> Result<(usize, Vec<String>
             return Err(format!("{file}: sha256 {got}, manifest says {sha}"));
         }
         let dest = site.join(list::url(sha, file));
-        let folder = dest.parent().ok_or_else(|| format!("{}: no parent folder", dest.display()))?;
+        let folder = dest
+            .parent()
+            .ok_or_else(|| format!("{}: no parent folder", dest.display()))?;
         std::fs::create_dir_all(folder).map_err(|err| format!("{}: {err}", folder.display()))?;
         std::fs::write(&dest, &bytes).map_err(|err| format!("{}: {err}", dest.display()))?;
-        let licence_name = Path::new(licence).file_name().ok_or_else(|| format!("{licence}: not a file"))?;
-        std::fs::copy(dir.join(licence), folder.join(licence_name)).map_err(|err| format!("{licence}: {err}"))?;
+        let licence_name = Path::new(licence)
+            .file_name()
+            .ok_or_else(|| format!("{licence}: not a file"))?;
+        std::fs::copy(dir.join(licence), folder.join(licence_name))
+            .map_err(|err| format!("{licence}: {err}"))?;
         copied += 1;
     }
     Ok((copied, skipped))
@@ -73,7 +110,8 @@ mod tests {
 
     /// A fake craft-fonts checkout with one face, and a list naming it plus one it lacks.
     fn fixture(name: &str, manifest_sha: Option<&str>) -> (PathBuf, PathBuf, PathBuf, String) {
-        let base = std::env::temp_dir().join(format!("xtask-web-fonts-{name}-{}", std::process::id()));
+        let base =
+            std::env::temp_dir().join(format!("xtask-web-fonts-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&base);
         let dir = base.join("craft-fonts");
         std::fs::create_dir_all(dir.join("fonts/a")).unwrap();
@@ -87,7 +125,11 @@ mod tests {
         )
         .unwrap();
         let list = base.join("web-fonts.txt");
-        std::fs::write(&list, "startup | A Sans | Regular\nbackground | Missing Sans | Bold\n").unwrap();
+        std::fs::write(
+            &list,
+            "startup | A Sans | Regular\nbackground | Missing Sans | Bold\n",
+        )
+        .unwrap();
         (list, dir, base.join("site"), sha)
     }
 
@@ -97,10 +139,20 @@ mod tests {
         let (copied, skipped) = copy(&list, &dir, &site).unwrap();
         assert_eq!(copied, 1);
         let at = site.join("fonts").join(&sha[..16]);
-        assert_eq!(std::fs::read(at.join("A-Regular.ttf")).unwrap(), b"font bytes");
+        assert_eq!(
+            std::fs::read(at.join("A-Regular.ttf")).unwrap(),
+            b"font bytes"
+        );
         assert_eq!(std::fs::read(at.join("OFL.txt")).unwrap(), b"licence");
-        assert_eq!(format!("fonts/{}/A-Regular.ttf", &sha[..16]), list::url(&sha, "fonts/a/A-Regular.ttf"));
-        assert_eq!(skipped, ["Missing Sans Bold"], "a face the checkout lacks is skipped, not an error");
+        assert_eq!(
+            format!("fonts/{}/A-Regular.ttf", &sha[..16]),
+            list::url(&sha, "fonts/a/A-Regular.ttf")
+        );
+        assert_eq!(
+            skipped,
+            ["Missing Sans Bold"],
+            "a face the checkout lacks is skipped, not an error"
+        );
     }
 
     #[test]

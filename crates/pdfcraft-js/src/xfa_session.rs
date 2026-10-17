@@ -15,7 +15,8 @@ use crate::xfa::{XfaDoc, XfaEvent, XfaNode, XfaOutcome};
 
 /// Tests: milliseconds the engine is made to take before it is ready for a script.
 #[cfg(test)]
-pub(crate) static START_DELAY_MS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub(crate) static START_DELAY_MS: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
 
 /// What one script run needs.
 #[derive(Clone, Debug)]
@@ -45,11 +46,21 @@ fn run_script(s: Script, doc: &XfaDoc, started: &dyn Fn()) -> XfaOutcome {
     if s.formcalc {
         // FormCalc has no engine to start: its time (and its own deadline) begins at once.
         started();
-        return crate::formcalc::run_formcalc_at(&s.source, &s.event, doc, s.root, s.limits, Some(s.timeout));
+        return crate::formcalc::run_formcalc_at(
+            &s.source,
+            &s.event,
+            doc,
+            s.root,
+            s.limits,
+            Some(s.timeout),
+        );
     }
     if let Some(why) = crate::refuse(&s.source) {
         started();
-        return XfaOutcome { error: Some(why), ..Default::default() };
+        return XfaOutcome {
+            error: Some(why),
+            ..Default::default()
+        };
     }
     crate::xfa::run_here(&s.source, &s.event, doc, s.root, s.limits, started)
 }
@@ -86,7 +97,11 @@ mod native {
 
     impl XfaSession {
         pub fn new(doc: XfaDoc) -> XfaSession {
-            XfaSession { doc, worker: None, dead: None }
+            XfaSession {
+                doc,
+                worker: None,
+                dead: None,
+            }
         }
 
         /// Why nothing more runs, once a script was abandoned.
@@ -101,38 +116,55 @@ mod native {
                 let (to, inbox) = channel::<Box<Script>>();
                 let (reply, from) = channel::<Reply>();
                 let doc = self.doc.clone();
-                let spawned = std::thread::Builder::new().name("pdfcraft-xfa-session".into()).stack_size(crate::SCRIPT_STACK).spawn(move || {
-                    crate::xfa::warm_up();
-                    // The caller is gone when a send fails: nothing to report then.
-                    let _ = reply.send(Reply::Ready);
-                    while let Ok(s) = inbox.recv() {
-                        let started = reply.clone();
-                        let o = run_script(*s, &doc, &move || {
-                            let _ = started.send(Reply::Started);
-                        });
-                        let _ = reply.send(Reply::Outcome(Box::new(o)));
-                    }
-                });
+                let spawned = std::thread::Builder::new()
+                    .name("pdfcraft-xfa-session".into())
+                    .stack_size(crate::SCRIPT_STACK)
+                    .spawn(move || {
+                        crate::xfa::warm_up();
+                        // The caller is gone when a send fails: nothing to report then.
+                        let _ = reply.send(Reply::Ready);
+                        while let Ok(s) = inbox.recv() {
+                            let started = reply.clone();
+                            let o = run_script(*s, &doc, &move || {
+                                let _ = started.send(Reply::Started);
+                            });
+                            let _ = reply.send(Reply::Outcome(Box::new(o)));
+                        }
+                    });
                 spawned.map_err(|e| format!("the script engine could not start: {e}"))?;
                 match from.recv_timeout(ENGINE_START_LIMIT) {
                     Ok(Reply::Ready) => {}
                     Ok(_) => return Err("the script engine answered out of turn".into()),
                     Err(RecvTimeoutError::Timeout) => {
-                        return Err(format!("the script engine took longer than {:.0} s to start", ENGINE_START_LIMIT.as_secs_f64()));
+                        return Err(format!(
+                            "the script engine took longer than {:.0} s to start",
+                            ENGINE_START_LIMIT.as_secs_f64()
+                        ));
                     }
-                    Err(RecvTimeoutError::Disconnected) => return Err("the script engine stopped with an internal error".into()),
+                    Err(RecvTimeoutError::Disconnected) => {
+                        return Err("the script engine stopped with an internal error".into());
+                    }
                 }
                 self.worker = Some(Worker { to, from });
             }
-            self.worker.as_mut().ok_or_else(|| "the script engine is not running".into())
+            self.worker
+                .as_mut()
+                .ok_or_else(|| "the script engine is not running".into())
         }
 
         /// Run one script, waiting at most its `timeout` from when the engine is ready for it
         /// (the engine itself gets [`ENGINE_START_LIMIT`] to be ready); past that it is
         /// abandoned on its thread and the session is dead.
         pub fn run(&mut self, script: Script) -> XfaOutcome {
-            let abandoned = |why: String| XfaOutcome { error: Some(why), abandoned: true, ..Default::default() };
-            let failed = |why: String| XfaOutcome { error: Some(why), ..Default::default() };
+            let abandoned = |why: String| XfaOutcome {
+                error: Some(why),
+                abandoned: true,
+                ..Default::default()
+            };
+            let failed = |why: String| XfaOutcome {
+                error: Some(why),
+                ..Default::default()
+            };
             if let Some(why) = &self.dead {
                 return abandoned(why.clone());
             }
@@ -164,9 +196,15 @@ mod native {
                     Ok(Reply::Ready) => continue,
                     Err(RecvTimeoutError::Timeout) => {
                         let why = if running {
-                            format!("the script ran longer than {:.1} s and was abandoned", timeout.as_secs_f64())
+                            format!(
+                                "the script ran longer than {:.1} s and was abandoned",
+                                timeout.as_secs_f64()
+                            )
                         } else {
-                            format!("the script engine took longer than {:.0} s to start", ENGINE_START_LIMIT.as_secs_f64())
+                            format!(
+                                "the script engine took longer than {:.0} s to start",
+                                ENGINE_START_LIMIT.as_secs_f64()
+                            )
                         };
                         self.dead = Some(why.clone());
                         // Dropping the sender ends the thread's loop once the script is done.

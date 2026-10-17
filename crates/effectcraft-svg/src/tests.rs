@@ -41,13 +41,21 @@ fn basic_shapes_structure() {
 fn basic_shapes_raster() {
     let d = parse(BASIC).unwrap();
     let img = rasterize(&d, 200, 100, 1.0);
-    let bg = [0x20 as f32 / 255.0, 0x28 as f32 / 255.0, 0x30 as f32 / 255.0, 1.0];
+    let bg = [
+        0x20 as f32 / 255.0,
+        0x28 as f32 / 255.0,
+        0x30 as f32 / 255.0,
+        1.0,
+    ];
     assert!(near(px(&img, 2, 2), bg, 1e-3));
     // Inside the box: tomato at group opacity 0.8 over the background.
     let tomato = [1.0, 99.0 / 255.0, 71.0 / 255.0];
     let want = [0, 1, 2].map(|i| tomato[i] * 0.8 + bg[i] * 0.2);
     let got = px(&img, 45, 35);
-    assert!(near(got, [want[0], want[1], want[2], 1.0], 2e-3), "{got:?} vs {want:?}");
+    assert!(
+        near(got, [want[0], want[1], want[2], 1.0], 2e-3),
+        "{got:?} vs {want:?}"
+    );
     // Scaled ×2: the same point lands at double the coordinates, edges stay sharp.
     let big = rasterize(&d, 400, 200, 2.0);
     assert!(near(px(&big, 90, 70), got, 2e-3));
@@ -58,9 +66,16 @@ fn paths_gradients_css_use() {
     let d = parse(PATHS).unwrap();
     assert_eq!(d.pixel_size(), (160, 120));
     let shapes = d.flatten();
-    assert_eq!(shapes.len(), 6, "{:?}", shapes.iter().map(|s| &s.2.name).collect::<Vec<_>>());
+    assert_eq!(
+        shapes.len(),
+        6,
+        "{:?}",
+        shapes.iter().map(|s| &s.2.name).collect::<Vec<_>>()
+    );
     // CSS class → gradient fill.
-    let Some(Paint::Gradient(g)) = &shapes[0].2.fill else { panic!("gradient expected") };
+    let Some(Paint::Gradient(g)) = &shapes[0].2.fill else {
+        panic!("gradient expected")
+    };
     assert!(g.bbox_units);
     assert_eq!(g.stops.len(), 2);
     assert_eq!(shapes[1].2.fill_rule, FillRule::EvenOdd);
@@ -68,10 +83,16 @@ fn paths_gradients_css_use() {
     assert!(shapes[2].2.fill.is_none());
     assert_eq!(shapes[2].2.stroke.as_ref().unwrap().width, 5.0);
     // use → the referenced path with the use's fill, translated.
-    assert_eq!(shapes[4].2.fill, Some(Paint::Color([128.0 / 255.0, 0.0, 128.0 / 255.0])));
+    assert_eq!(
+        shapes[4].2.fill,
+        Some(Paint::Color([128.0 / 255.0, 0.0, 128.0 / 255.0]))
+    );
     let p = shapes[4].0 * kurbo::Point::new(0.0, 0.0);
     assert!((p.x - 100.0).abs() < 1e-9 && (p.y - 110.0).abs() < 1e-9);
-    assert_eq!(shapes[5].2.stroke.as_ref().unwrap().dash, Some((vec![4.0, 2.0], 0.0)));
+    assert_eq!(
+        shapes[5].2.stroke.as_ref().unwrap().dash,
+        Some((vec![4.0, 2.0], 0.0))
+    );
 
     let img = rasterize(&d, 160, 120, 1.0);
     // Vertical gradient: yellow at the top, red at the bottom.
@@ -105,11 +126,18 @@ fn nested_svg_percentages_use_the_nearest_viewport() {
     .unwrap();
     let shapes = d.flatten();
     assert_eq!(shapes.len(), 4);
-    for ((_, _, shape), (name, width, height)) in
-        shapes.iter().zip([("inner", 20.0, 10.0), ("deep", 10.0, 5.0), ("outer", 50.0, 10.0), ("viewbox", 100.0, 50.0)])
-    {
+    for ((_, _, shape), (name, width, height)) in shapes.iter().zip([
+        ("inner", 20.0, 10.0),
+        ("deep", 10.0, 5.0),
+        ("outer", 50.0, 10.0),
+        ("viewbox", 100.0, 50.0),
+    ]) {
         assert_eq!(shape.name, name);
-        assert!(matches!(shape.geom, Geom::Rect { w, h, .. } if w == width && h == height), "{name}: {:?}", shape.geom);
+        assert!(
+            matches!(shape.geom, Geom::Rect { w, h, .. } if w == width && h == height),
+            "{name}: {:?}",
+            shape.geom
+        );
     }
     let img = rasterize(&d, 100, 80, 1.0);
     assert_eq!(px(&img, 15, 15), [1.0, 0.0, 0.0, 1.0]);
@@ -134,7 +162,10 @@ fn malformed_input() {
 fn transforms() {
     let m = parse_transform("translate(10,20) rotate(90) scale(2 3)");
     let p = m * kurbo::Point::new(1.0, 1.0);
-    assert!((p.x - 7.0).abs() < 1e-9 && (p.y - 22.0).abs() < 1e-9, "{p:?}");
+    assert!(
+        (p.x - 7.0).abs() < 1e-9 && (p.y - 22.0).abs() < 1e-9,
+        "{p:?}"
+    );
     let m = parse_transform("matrix(1 0 0 1 5 6) skewX(45)");
     let p = m * kurbo::Point::new(0.0, 1.0);
     assert!((p.x - 6.0).abs() < 1e-9 && (p.y - 7.0).abs() < 1e-9);
@@ -143,8 +174,17 @@ fn transforms() {
 #[test]
 fn deep_nesting_errors_instead_of_overflowing_the_stack() {
     // 100 000 nested groups overflowed the XML parser's stack and aborted the process.
-    let deep = |n: usize| format!("<svg xmlns=\"http://www.w3.org/2000/svg\">{}<rect width=\"5\" height=\"5\"/>{}</svg>", "<g>".repeat(n), "</g>".repeat(n));
-    assert!(matches!(crate::parse(deep(100_000).as_bytes()), Err(crate::Error::Xml(_))));
+    let deep = |n: usize| {
+        format!(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\">{}<rect width=\"5\" height=\"5\"/>{}</svg>",
+            "<g>".repeat(n),
+            "</g>".repeat(n)
+        )
+    };
+    assert!(matches!(
+        crate::parse(deep(100_000).as_bytes()),
+        Err(crate::Error::Xml(_))
+    ));
     assert!(crate::parse(deep(100).as_bytes()).is_ok());
     // Comments, CDATA, quoted '>' and self-closing tags don't count.
     let s = format!(

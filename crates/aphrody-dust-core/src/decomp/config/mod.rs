@@ -52,13 +52,13 @@ pub(crate) fn iter_words(text: &str) -> impl Iterator<Item = &str> {
                     if parens > 0 {
                         parens -= 1;
                     }
-                },
+                }
                 ch if parens == 0 && ch.is_whitespace() => {
                     let (word, next) = text.split_at(pos);
                     *text = next.trim_start();
                     return Some(word);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         let rest = *text;
@@ -93,14 +93,14 @@ pub(crate) fn iter_comma_separated(text: &str) -> impl Iterator<Item = &str> {
                     if parens > 0 {
                         parens -= 1;
                     }
-                },
+                }
                 ',' if parens == 0 => {
                     let (word, next) = text.split_at(pos);
                     let (_, next) = next.split_at(",".len());
                     *text = next;
                     return Some(word);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         let rest = *text;
@@ -157,7 +157,10 @@ pub struct Comments {
 
 impl Comments {
     pub fn new() -> Self {
-        Self { pre_lines: Vec::new(), post_comment: None }
+        Self {
+            pre_lines: Vec::new(),
+            post_comment: None,
+        }
     }
 
     pub fn display_pre_comments(&self) -> DisplayPreComments<'_> {
@@ -255,7 +258,10 @@ impl Iterator for CommentedLineIterator {
             return Some(Ok(CommentedLine {
                 text,
                 row: self.row,
-                comments: Comments { pre_lines, post_comment },
+                comments: Comments {
+                    pre_lines,
+                    post_comment,
+                },
             }));
         }
         None

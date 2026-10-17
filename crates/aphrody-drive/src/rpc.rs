@@ -27,7 +27,12 @@ impl JsonRpcRequest {
     /// A `2.0` request.
     #[must_use]
     pub fn new(method: impl Into<String>, params: Value, id: impl Into<String>) -> Self {
-        Self { jsonrpc: "2.0".into(), method: method.into(), params, id: id.into() }
+        Self {
+            jsonrpc: "2.0".into(),
+            method: method.into(),
+            params,
+            id: id.into(),
+        }
     }
 }
 
@@ -46,13 +51,23 @@ impl JsonRpcResponse {
     /// A successful response.
     #[must_use]
     pub fn ok(id: impl Into<String>, result: Value) -> Self {
-        Self { jsonrpc: "2.0".into(), id: id.into(), result: Some(result), error: None }
+        Self {
+            jsonrpc: "2.0".into(),
+            id: id.into(),
+            result: Some(result),
+            error: None,
+        }
     }
 
     /// A failed response.
     #[must_use]
     pub fn err(id: impl Into<String>, error: JsonRpcError) -> Self {
-        Self { jsonrpc: "2.0".into(), id: id.into(), result: None, error: Some(error) }
+        Self {
+            jsonrpc: "2.0".into(),
+            id: id.into(),
+            result: None,
+            error: Some(error),
+        }
     }
 }
 
@@ -148,8 +163,12 @@ pub fn ping_request() -> Value {
 /// A `Subscribe` request; `None` event types select [`DEFAULT_EVENT_SUBSCRIPTION`].
 #[must_use]
 pub fn subscribe_request(event_types: Option<Vec<String>>, filter: Option<Value>) -> Value {
-    let events = event_types
-        .unwrap_or_else(|| DEFAULT_EVENT_SUBSCRIPTION.iter().map(ToString::to_string).collect());
+    let events = event_types.unwrap_or_else(|| {
+        DEFAULT_EVENT_SUBSCRIPTION
+            .iter()
+            .map(ToString::to_string)
+            .collect()
+    });
     json!({ "Subscribe": { "event_types": events, "filter": filter } })
 }
 
@@ -202,7 +221,9 @@ pub fn response_lists_library(response: &Value, id: &str) -> Result<bool, String
         .ok_or_else(|| {
             format!("Invalid response format from libraries.list query. Raw: {response}")
         })?;
-    Ok(libraries.iter().any(|library| library.get("id").and_then(Value::as_str) == Some(id)))
+    Ok(libraries
+        .iter()
+        .any(|library| library.get("id").and_then(Value::as_str) == Some(id)))
 }
 
 #[cfg(test)]
@@ -214,13 +235,20 @@ mod tests {
         let request =
             JsonRpcRequest::new("query:libraries.list", json!({"include_stats": false}), "1");
         let text = serde_json::to_string(&request).unwrap();
-        assert_eq!(serde_json::from_str::<JsonRpcRequest>(&text).unwrap(), request);
+        assert_eq!(
+            serde_json::from_str::<JsonRpcRequest>(&text).unwrap(),
+            request
+        );
         assert!(text.contains(r#""jsonrpc":"2.0""#));
 
         let ok = serde_json::to_value(JsonRpcResponse::ok("1", json!([]))).unwrap();
         assert_eq!(ok, json!({"jsonrpc": "2.0", "id": "1", "result": []}));
 
-        let error = JsonRpcError { code: -32601, message: "method not found".into(), data: None };
+        let error = JsonRpcError {
+            code: -32601,
+            message: "method not found".into(),
+            data: None,
+        };
         let failed = serde_json::to_value(JsonRpcResponse::err("2", error.clone())).unwrap();
         assert_eq!(
             failed,
@@ -245,9 +273,15 @@ mod tests {
         let request = subscribe_request(None, None);
         let events = request["Subscribe"]["event_types"].as_array().unwrap();
         assert_eq!(events.len(), DEFAULT_EVENT_SUBSCRIPTION.len());
-        assert!(!events.iter().any(|event| event == "LogMessage" || event == "IndexingProgress"));
-        let custom =
-            subscribe_request(Some(vec!["JobQueued".into()]), Some(json!({"library_id": "x"})));
+        assert!(
+            !events
+                .iter()
+                .any(|event| event == "LogMessage" || event == "IndexingProgress")
+        );
+        let custom = subscribe_request(
+            Some(vec!["JobQueued".into()]),
+            Some(json!({"library_id": "x"})),
+        );
         assert_eq!(
             custom,
             json!({"Subscribe": {"event_types": ["JobQueued"], "filter": {"library_id": "x"}}})
@@ -267,7 +301,13 @@ mod tests {
         assert!(!response_lists_library(&listing, "c").unwrap());
         assert!(response_lists_library(&json!({"result": [{"id": "c"}]}), "c").unwrap());
         assert!(response_lists_library(&json!({"Error": "x"}), "c").is_err());
-        assert_eq!(open_library_request("/x")["Action"]["payload"]["path"], "/x");
-        assert_eq!(list_libraries_request()["Query"]["method"], "query:libraries.list");
+        assert_eq!(
+            open_library_request("/x")["Action"]["payload"]["path"],
+            "/x"
+        );
+        assert_eq!(
+            list_libraries_request()["Query"]["method"],
+            "query:libraries.list"
+        );
     }
 }

@@ -30,9 +30,16 @@ pub fn classify(target: &str) -> LinkKind {
     if RangeRef::parse(t).is_some() {
         return LinkKind::Internal(t.to_string());
     }
-    let Some((scheme, rest)) = t.split_once(':') else { return LinkKind::Internal(t.to_string()) };
-    let scheme_like = scheme.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
-        && scheme.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
+    let Some((scheme, rest)) = t.split_once(':') else {
+        return LinkKind::Internal(t.to_string());
+    };
+    let scheme_like = scheme
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic())
+        && scheme
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
     if !scheme_like {
         return LinkKind::Internal(t.to_string());
     }
@@ -40,7 +47,9 @@ pub fn classify(target: &str) -> LinkKind {
     if ALLOWED.contains(&lower.as_str()) && !rest.trim().is_empty() {
         LinkKind::External(t.to_string())
     } else {
-        LinkKind::Refused(format!("Links of type \"{lower}:\" aren't opened. Only http, https and mailto links are allowed."))
+        LinkKind::Refused(format!(
+            "Links of type \"{lower}:\" aren't opened. Only http, https and mailto links are allowed."
+        ))
     }
 }
 
@@ -50,10 +59,18 @@ mod tests {
 
     #[test]
     fn only_http_https_and_mailto_leave_the_workbook() {
-        for ok in ["http://a.example/x", "HTTPS://A.example", "  https://a.example  ", "MailTo:a@b.example"] {
+        for ok in [
+            "http://a.example/x",
+            "HTTPS://A.example",
+            "  https://a.example  ",
+            "MailTo:a@b.example",
+        ] {
             assert!(matches!(classify(ok), LinkKind::External(_)), "{ok}");
         }
-        assert_eq!(classify(" https://a.example "), LinkKind::External("https://a.example".into()));
+        assert_eq!(
+            classify(" https://a.example "),
+            LinkKind::External("https://a.example".into())
+        );
         for bad in [
             "javascript:alert(1)",
             "JaVaScRiPt:alert(1)",
@@ -70,14 +87,30 @@ mod tests {
             "mailto:",
             "x-custom://a",
         ] {
-            assert!(matches!(classify(bad), LinkKind::Refused(_)), "{bad:?} -> {:?}", classify(bad));
+            assert!(
+                matches!(classify(bad), LinkKind::Refused(_)),
+                "{bad:?} -> {:?}",
+                classify(bad)
+            );
         }
     }
 
     #[test]
     fn references_stay_internal() {
-        for r in ["Sheet2!A1", "'My Sheet'!B2:C3", "A1:B2", "#Sheet1!A1", "Total", "", "   "] {
-            assert!(matches!(classify(r), LinkKind::Internal(_)), "{r:?} -> {:?}", classify(r));
+        for r in [
+            "Sheet2!A1",
+            "'My Sheet'!B2:C3",
+            "A1:B2",
+            "#Sheet1!A1",
+            "Total",
+            "",
+            "   ",
+        ] {
+            assert!(
+                matches!(classify(r), LinkKind::Internal(_)),
+                "{r:?} -> {:?}",
+                classify(r)
+            );
         }
     }
 }

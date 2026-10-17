@@ -4,10 +4,12 @@
 //! Optional native stage-boundary timing. No Vulkan query/barrier emulation.
 //! Apple: Sampling GPU data into counter sample buffers.
 
-use std::time::{Duration, Instant};
-use std::ptr::NonNull;
 use std::panic::Location;
+use std::ptr::NonNull;
+use std::time::{Duration, Instant};
 
+use super::metal_pipeline_cache::MetalDepthStencilKey;
+use crate::texture_cache::types::NUM_RT;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_foundation::NSRange;
@@ -16,8 +18,6 @@ use objc2_metal::{
     MTLCounterSampleBuffer, MTLCounterSampleBufferDescriptor, MTLCounterSamplingPoint,
     MTLCounterSet, MTLDevice, MTLRenderPassDescriptor, MTLStorageMode, MTLTexture,
 };
-use crate::texture_cache::types::NUM_RT;
-use super::metal_pipeline_cache::MetalDepthStencilKey;
 
 const SAMPLE_COUNT: usize = 1024;
 const SAMPLE_PAGES: usize = 16;
@@ -39,7 +39,11 @@ struct DepthFeedbackSamples {
 fn texture_root(texture: &ProtocolObject<dyn MTLTexture>) -> (usize, usize, usize) {
     if let Some(parent) = texture.parentTexture() {
         let (root, level, slice) = texture_root(&parent);
-        (root, level + texture.parentRelativeLevel(), slice + texture.parentRelativeSlice())
+        (
+            root,
+            level + texture.parentRelativeLevel(),
+            slice + texture.parentRelativeSlice(),
+        )
     } else {
         (texture as *const _ as usize, 0, 0)
     }
@@ -47,7 +51,11 @@ fn texture_root(texture: &ProtocolObject<dyn MTLTexture>) -> (usize, usize, usiz
 
 impl DepthFeedbackSamples {
     fn observe_alias(&mut self, key: [usize; DEPTH_ALIAS_KEY_WORDS]) {
-        if let Some((_, count)) = self.aliases.iter_mut().find(|(existing, _)| *existing == key) {
+        if let Some((_, count)) = self
+            .aliases
+            .iter_mut()
+            .find(|(existing, _)| *existing == key)
+        {
             *count = count.saturating_add(1);
         } else if self.aliases.len() < MAX_RENDER_END_SITES {
             self.aliases.push((key, 1));
@@ -65,7 +73,11 @@ struct RenderEndSites {
 
 impl RenderEndSites {
     fn observe(&mut self, file: &'static str, line: u32, column: u32) {
-        if let Some(site) = self.sites.iter_mut().find(|s| (s.0, s.1, s.2) == (file, line, column)) {
+        if let Some(site) = self
+            .sites
+            .iter_mut()
+            .find(|s| (s.0, s.1, s.2) == (file, line, column))
+        {
             site.3 = site.3.saturating_add(1);
         } else if self.sites.len() < MAX_RENDER_END_SITES {
             self.sites.push((file, line, column, 1));
@@ -207,10 +219,9 @@ impl MetalGpuProfiler {
     }
 
     pub(super) fn acquire(&mut self) -> Option<StageSamples> {
-        if self
-            .last_capture
-            .is_some_and(|time| time.elapsed() < Duration::from_millis(1000 + (self.capture_count % 7) * 37))
-        {
+        if self.last_capture.is_some_and(|time| {
+            time.elapsed() < Duration::from_millis(1000 + (self.capture_count % 7) * 37)
+        }) {
             return None;
         }
         // CPU recording arrives in bursts after GPU waits. A wall-clock-only
@@ -233,7 +244,12 @@ impl MetalGpuProfiler {
 
     /// Caller has already observed successful command-buffer completion. Never
     /// reuse sample indices while their producing command buffer is in flight.
-    pub(super) fn completed(&mut self, tick: u64, mut samples: StageSamples, command_ms: Option<f64>) {
+    pub(super) fn completed(
+        &mut self,
+        tick: u64,
+        mut samples: StageSamples,
+        command_ms: Option<f64>,
+    ) {
         let clock_end = sample_clocks(&samples.buffers[0].device());
         let ns_per_tick = clock_scale(samples.clock_start, clock_end);
         let mut totals = [0u64; 4];
@@ -242,7 +258,12 @@ impl MetalGpuProfiler {
         if samples.count != 0 {
             // Missing/short page results remain invalid, never plausible zeroes.
             let mut bytes = vec![0xff; samples.count * 8];
-            for (page, buffer) in samples.buffers.iter().enumerate().take(samples.count.div_ceil(SAMPLE_COUNT)) {
+            for (page, buffer) in samples
+                .buffers
+                .iter()
+                .enumerate()
+                .take(samples.count.div_ceil(SAMPLE_COUNT))
+            {
                 let count = (samples.count - page * SAMPLE_COUNT).min(SAMPLE_COUNT);
                 // SAFETY: page-local indices are bounded; GPU already completed.
                 if let Some(data) = unsafe { buffer.resolveCounterRange(NSRange::new(0, count)) } {
@@ -265,11 +286,15 @@ impl MetalGpuProfiler {
                         }
                     }
                 }
-                let mut ranked: Vec<_> = samples.render_samples.iter().filter_map(|pass| {
-                    let vertex = sample_delta(bytes, pass.index)?;
-                    let fragment = sample_delta(bytes, pass.index + 2)?;
-                    Some((vertex.saturating_add(fragment), vertex, fragment, pass))
-                }).collect();
+                let mut ranked: Vec<_> = samples
+                    .render_samples
+                    .iter()
+                    .filter_map(|pass| {
+                        let vertex = sample_delta(bytes, pass.index)?;
+                        let fragment = sample_delta(bytes, pass.index + 2)?;
+                        Some((vertex.saturating_add(fragment), vertex, fragment, pass))
+                    })
+                    .collect();
                 ranked.sort_unstable_by_key(|entry| std::cmp::Reverse(entry.0));
                 // Stages can overlap: this ranks sampled cost, not wall time.
                 for (_, vertex, fragment, pass) in ranked.into_iter().take(8) {
@@ -279,7 +304,11 @@ impl MetalGpuProfiler {
                         pass.draws, pass.first_shaders, pass.last_shaders,
                         pass.mixed_shaders, pass.colors, pass.depth, pass.helper_draws);
                 }
-                let intervals = samples.stages.iter().filter_map(|stage| sample_pair(bytes, stage.index)).collect();
+                let intervals = samples
+                    .stages
+                    .iter()
+                    .filter_map(|stage| sample_pair(bytes, stage.index))
+                    .collect();
                 let (covered, span, max_gap) = interval_coverage(intervals);
                 log::info!("[METAL_BATCH_COVERAGE] tick={tick} command_ms={command_ms:?} ns_per_tick={ns_per_tick:?} covered_ms={:?} span_ms={:?} max_gap_ms={:?} stage_ms={:?} pages={} complete={}",
                     ns_per_tick.map(|s| covered as f64 * s / 1e6),
@@ -296,21 +325,32 @@ impl MetalGpuProfiler {
         for (file, line, column, count) in &samples.render_ends.sites {
             log::info!("[METAL_RENDER_END_SITE] tick={tick} file={file} line={line} column={column} count={count}");
         }
-        log::info!("[METAL_RENDER_END_COVERAGE] tick={tick} omitted={}", samples.render_ends.omitted);
+        log::info!(
+            "[METAL_RENDER_END_COVERAGE] tick={tick} omitted={}",
+            samples.render_ends.omitted
+        );
         samples.render_ends.sites.clear();
         samples.render_ends.omitted = 0;
         for (key, count) in &samples.depth_feedback.aliases {
             log::info!("[METAL_DEPTH_ALIAS] tick={tick} order=sample_level,mips,slice,array_length,type,depth_level,slice,render_layers,type,compare,write,stencil,barrier,stage,slot,shader_hash,pixel_format,front_compare,front_fail,front_depth_fail,front_pass,front_read_mask,front_write_mask,back_compare,back_fail,back_depth_fail,back_pass,back_read_mask,back_write_mask values={key:?} count={count}");
         }
-        log::info!("[METAL_DEPTH_ALIAS_COVERAGE] tick={tick} checks={} requested={} omitted={}", samples.depth_feedback.checks, samples.depth_feedback.requested, samples.depth_feedback.omitted);
+        log::info!(
+            "[METAL_DEPTH_ALIAS_COVERAGE] tick={tick} checks={} requested={} omitted={}",
+            samples.depth_feedback.checks,
+            samples.depth_feedback.requested,
+            samples.depth_feedback.omitted
+        );
         samples.depth_feedback = DepthFeedbackSamples::default();
         for (draw, (pass_index, shaders, state)) in samples.draw_states.iter().enumerate() {
             let pass = &samples.render_samples[*pass_index];
             log::info!("[METAL_DRAW_STATE] tick={tick} draw={draw} pass={} shaders={shaders:X?} depth_state={state:?} colors={:?} depth={:?}",
                 pass.index, pass.colors, pass.depth);
         }
-        log::info!("[METAL_DRAW_STATE_COVERAGE] tick={tick} recorded={} omitted={}",
-            samples.draw_states.len(), samples.omitted_draw_states);
+        log::info!(
+            "[METAL_DRAW_STATE_COVERAGE] tick={tick} recorded={} omitted={}",
+            samples.draw_states.len(),
+            samples.omitted_draw_states
+        );
         samples.draw_states.clear();
         samples.omitted_draw_states = 0;
         samples.count = 0;
@@ -326,7 +366,9 @@ impl MetalGpuProfiler {
 
 impl StageSamples {
     pub(super) fn observe_draw_state(&mut self, shaders: [u64; 6], state: MetalDepthStencilKey) {
-        let Some(pass) = self.current_render else { return };
+        let Some(pass) = self.current_render else {
+            return;
+        };
         if self.draw_states.len() == MAX_DRAW_STATES {
             self.omitted_draw_states = self.omitted_draw_states.saturating_add(1);
             return;
@@ -344,21 +386,45 @@ impl StageSamples {
         self.depth_feedback.checks += 1;
         self.depth_feedback.requested += u64::from(requested);
         let attachment = descriptor.depthAttachment();
-        let Some(depth) = attachment.texture() else { return };
+        let Some(depth) = attachment.texture() else {
+            return;
+        };
         let (depth_root, depth_level, depth_slice) = texture_root(&depth);
         for (stage, slot, shader_hash, texture) in textures {
             let (root, level, slice) = texture_root(texture);
-            if root != depth_root { continue; }
+            if root != depth_root {
+                continue;
+            }
             self.depth_feedback.observe_alias([
-                level, texture.mipmapLevelCount(), slice, texture.arrayLength(), texture.textureType().0,
-                depth_level + attachment.level(), depth_slice + attachment.slice(),
-                descriptor.renderTargetArrayLength(), depth.textureType().0,
-                state.depth_compare.0, usize::from(state.depth_write_enabled), usize::from(state.stencil_enabled), usize::from(requested),
-                stage, slot as usize, shader_hash as usize, texture.pixelFormat().0,
-                state.front.compare.0, state.front.stencil_fail.0, state.front.depth_fail.0,
-                state.front.depth_stencil_pass.0, state.front.read_mask as usize, state.front.write_mask as usize,
-                state.back.compare.0, state.back.stencil_fail.0, state.back.depth_fail.0,
-                state.back.depth_stencil_pass.0, state.back.read_mask as usize, state.back.write_mask as usize,
+                level,
+                texture.mipmapLevelCount(),
+                slice,
+                texture.arrayLength(),
+                texture.textureType().0,
+                depth_level + attachment.level(),
+                depth_slice + attachment.slice(),
+                descriptor.renderTargetArrayLength(),
+                depth.textureType().0,
+                state.depth_compare.0,
+                usize::from(state.depth_write_enabled),
+                usize::from(state.stencil_enabled),
+                usize::from(requested),
+                stage,
+                slot as usize,
+                shader_hash as usize,
+                texture.pixelFormat().0,
+                state.front.compare.0,
+                state.front.stencil_fail.0,
+                state.front.depth_fail.0,
+                state.front.depth_stencil_pass.0,
+                state.front.read_mask as usize,
+                state.front.write_mask as usize,
+                state.back.compare.0,
+                state.back.stencil_fail.0,
+                state.back.depth_fail.0,
+                state.back.depth_stencil_pass.0,
+                state.back.read_mask as usize,
+                state.back.write_mask as usize,
             ]);
         }
     }
@@ -366,7 +432,8 @@ impl StageSamples {
     #[track_caller]
     pub(super) fn observe_render_end(&mut self) {
         let site = Location::caller();
-        self.render_ends.observe(site.file(), site.line(), site.column());
+        self.render_ends
+            .observe(site.file(), site.line(), site.column());
     }
 
     #[cfg(test)]
@@ -375,7 +442,9 @@ impl StageSamples {
     }
 
     pub(super) fn observe_graphics_draw(&mut self, shaders: [u64; 6]) {
-        let Some(index) = self.current_render else { return };
+        let Some(index) = self.current_render else {
+            return;
+        };
         let pass = &mut self.render_samples[index];
         if pass.draws == 0 {
             pass.first_shaders = shaders;
@@ -387,7 +456,9 @@ impl StageSamples {
     }
 
     pub(super) fn observe_helper_draw(&mut self, work: RenderHelper) {
-        let Some(index) = self.current_render else { return };
+        let Some(index) = self.current_render else {
+            return;
+        };
         let count = &mut self.render_samples[index].helper_draws[work as usize];
         *count = count.saturating_add(1);
     }
@@ -403,7 +474,10 @@ impl StageSamples {
 
     #[cfg(test)]
     pub(super) fn work_counts(&self, work: ComputeWork) -> (usize, usize) {
-        (self.compute_calls[work as usize], self.render_breaks[work as usize])
+        (
+            self.compute_calls[work as usize],
+            self.render_breaks[work as usize],
+        )
     }
 
     fn reserve(&mut self, kinds: &[StageKind]) -> Option<usize> {
@@ -413,7 +487,9 @@ impl StageSamples {
         let needed = kinds.len() * 2;
         let start = if self.count % SAMPLE_COUNT + needed > SAMPLE_COUNT {
             self.count.next_multiple_of(SAMPLE_COUNT)
-        } else { self.count };
+        } else {
+            self.count
+        };
         if start + needed > TOTAL_SAMPLE_COUNT {
             self.omitted += kinds.len();
             return None;
@@ -435,7 +511,9 @@ impl StageSamples {
             return;
         };
         let describe = |texture: Option<Retained<ProtocolObject<dyn MTLTexture>>>| {
-            texture.map_or([0; 3], |texture| [texture.width(), texture.height(), texture.pixelFormat().0])
+            texture.map_or([0; 3], |texture| {
+                [texture.width(), texture.height(), texture.pixelFormat().0]
+            })
         };
         let colors = std::array::from_fn(|i| {
             describe(unsafe { descriptor.colorAttachments().objectAtIndexedSubscript(i) }.texture())
@@ -443,8 +521,14 @@ impl StageSamples {
         let depth = describe(descriptor.depthAttachment().texture());
         self.current_render = Some(self.render_samples.len());
         self.render_samples.push(RenderSample {
-            index, colors, depth, draws: 0, helper_draws: [0; 3], first_shaders: [0; 6],
-            last_shaders: [0; 6], mixed_shaders: false,
+            index,
+            colors,
+            depth,
+            draws: 0,
+            helper_draws: [0; 3],
+            first_shaders: [0; 6],
+            last_shaders: [0; 6],
+            mixed_shaders: false,
         });
         // SAFETY: attachment slot 0 exists; reserve validated all four indices.
         unsafe {
@@ -499,7 +583,9 @@ fn sample_clocks(device: &ProtocolObject<dyn MTLDevice>) -> [u64; 2] {
     let (mut cpu, mut gpu) = (0, 0);
     // Apple sampleTimestamps returns CPU nanoseconds, not mach_absolute_time ticks.
     // Only called before/after the sampled batch, never for each encoder.
-    unsafe { device.sampleTimestamps_gpuTimestamp(NonNull::from(&mut cpu), NonNull::from(&mut gpu)) };
+    unsafe {
+        device.sampleTimestamps_gpuTimestamp(NonNull::from(&mut cpu), NonNull::from(&mut gpu))
+    };
     [cpu, gpu]
 }
 
@@ -511,7 +597,9 @@ fn clock_scale(start: [u64; 2], end: [u64; 2]) -> Option<f64> {
 
 fn interval_coverage(mut intervals: Vec<(u64, u64)>) -> (u64, u64, u64) {
     intervals.sort_unstable();
-    let Some(&(first, mut end)) = intervals.first() else { return (0, 0, 0) };
+    let Some(&(first, mut end)) = intervals.first() else {
+        return (0, 0, 0);
+    };
     let mut covered = end - first;
     let mut max_gap = 0;
     for &(a, b) in &intervals[1..] {
@@ -548,7 +636,9 @@ mod tests {
     #[test]
     fn render_metadata_tracks_mixed_draws_and_stops_at_sample_budget() {
         let device = super::super::metal_device::MetalDevice::new().unwrap();
-        let Some(mut profiler) = MetalGpuProfiler::new(device.device()) else { return };
+        let Some(mut profiler) = MetalGpuProfiler::new(device.device()) else {
+            return;
+        };
         let mut samples = profiler.acquire().unwrap();
         let descriptor = MTLRenderPassDescriptor::new();
         samples.attach_render(&descriptor);
@@ -556,7 +646,8 @@ mod tests {
             depth_compare: objc2_metal::MTLCompareFunction::Equal,
             depth_write_enabled: false,
             stencil_enabled: false,
-            front: Default::default(), back: Default::default(),
+            front: Default::default(),
+            back: Default::default(),
         };
         samples.observe_draw_state([1; 6], depth);
         assert_eq!(samples.draw_states[0], (0, [1; 6], depth));
@@ -624,7 +715,9 @@ mod tests {
         samples.count = SAMPLE_COUNT;
         let descriptor = MTLBlitPassDescriptor::new();
         samples.attach_blit(&descriptor);
-        let encoder = command_buffer.blitCommandEncoderWithDescriptor(&descriptor).unwrap();
+        let encoder = command_buffer
+            .blitCommandEncoderWithDescriptor(&descriptor)
+            .unwrap();
         encoder.fillBuffer_range_value(output.handle(), NSRange::new(16, 16), 0x3c);
         encoder.endEncoding();
         command_buffer.commit();
@@ -647,7 +740,11 @@ mod tests {
         let data = unsafe { samples.buffers[1].resolveCounterRange(NSRange::new(0, 2)) }.unwrap();
         assert!(sample_delta(unsafe { data.as_bytes_unchecked() }, 0).is_some());
         assert!(clock_scale(samples.clock_start, sample_clocks(device.device())).is_some());
-        profiler.completed(1, samples, Some((command_buffer.GPUEndTime() - command_buffer.GPUStartTime()) * 1000.0));
+        profiler.completed(
+            1,
+            samples,
+            Some((command_buffer.GPUEndTime() - command_buffer.GPUStartTime()) * 1000.0),
+        );
     }
 
     #[test]
@@ -681,7 +778,9 @@ mod tests {
     #[test]
     fn batch_selection_varies_ordinal_without_consuming_skips_in_flight() {
         let device = super::super::metal_device::MetalDevice::new().unwrap();
-        let Some(mut profiler) = MetalGpuProfiler::new(device.device()) else { return };
+        let Some(mut profiler) = MetalGpuProfiler::new(device.device()) else {
+            return;
+        };
         for capture in 0..20 {
             profiler.last_capture = None;
             for remaining in (0..capture % 17).rev() {
@@ -721,7 +820,10 @@ mod tests {
         assert_eq!(clock_scale([100, 50], [300, 50]), None);
         assert_eq!(clock_scale([100, 50], [99, 60]), None);
         assert_eq!(clock_scale([100, 50], [300, 49]), None);
-        assert_eq!(interval_coverage(vec![(30, 50), (10, 20), (15, 18), (18, 25)]), (35, 40, 5));
+        assert_eq!(
+            interval_coverage(vec![(30, 50), (10, 20), (15, 18), (18, 25)]),
+            (35, 40, 5)
+        );
         assert_eq!(interval_coverage(vec![]), (0, 0, 0));
     }
 
@@ -775,14 +877,19 @@ mod tests {
     #[test]
     fn paged_samples_preserve_encoder_pairs_and_count_overflow() {
         let device = super::super::metal_device::MetalDevice::new().unwrap();
-        let Some(mut profiler) = MetalGpuProfiler::new(device.device()) else { return };
+        let Some(mut profiler) = MetalGpuProfiler::new(device.device()) else {
+            return;
+        };
         let mut samples = profiler.acquire().unwrap();
         for i in 0..SAMPLE_COUNT / 2 - 1 {
             assert_eq!(samples.reserve(&[StageKind::Compute]), Some(i * 2));
             samples.observe_compute(ComputeWork::ConditionalArguments, i % 2 == 0);
         }
         // Four render timestamps cannot straddle two counter buffers.
-        assert_eq!(samples.reserve(&[StageKind::Vertex, StageKind::Fragment]), Some(SAMPLE_COUNT));
+        assert_eq!(
+            samples.reserve(&[StageKind::Vertex, StageKind::Fragment]),
+            Some(SAMPLE_COUNT)
+        );
         assert_eq!(samples.count, SAMPLE_COUNT + 4);
         while samples.count < TOTAL_SAMPLE_COUNT {
             assert!(samples.reserve(&[StageKind::Compute]).is_some());
@@ -791,17 +898,31 @@ mod tests {
         assert_eq!(samples.count, TOTAL_SAMPLE_COUNT);
         assert_eq!(samples.omitted, 1);
         assert_eq!(samples.seen[0], 1);
-        assert_eq!(samples.compute_calls[ComputeWork::ConditionalArguments as usize], 511);
-        assert_eq!(samples.render_breaks[ComputeWork::ConditionalArguments as usize], 256);
+        assert_eq!(
+            samples.compute_calls[ComputeWork::ConditionalArguments as usize],
+            511
+        );
+        assert_eq!(
+            samples.render_breaks[ComputeWork::ConditionalArguments as usize],
+            256
+        );
         samples.observe_compute(ComputeWork::IndexConversion, true);
         samples.observe_compute(ComputeWork::QuadIndexConversion, false);
         samples.observe_compute(ComputeWork::QuadIndexConversion, true);
         assert_eq!(samples.work_counts(ComputeWork::IndexConversion), (1, 1));
-        assert_eq!(samples.work_counts(ComputeWork::QuadIndexConversion), (2, 1));
+        assert_eq!(
+            samples.work_counts(ComputeWork::QuadIndexConversion),
+            (2, 1)
+        );
         samples.observe_render_break(ComputeWork::EligibleUpload);
         assert_eq!(samples.work_counts(ComputeWork::EligibleUpload), (0, 1));
-        for work in [ComputeWork::OrderedUpload, ComputeWork::DedicatedUpload,
-            ComputeWork::BufferCopy, ComputeWork::BufferDownload, ComputeWork::BufferClear] {
+        for work in [
+            ComputeWork::OrderedUpload,
+            ComputeWork::DedicatedUpload,
+            ComputeWork::BufferCopy,
+            ComputeWork::BufferDownload,
+            ComputeWork::BufferClear,
+        ] {
             samples.observe_render_break(work);
             assert_eq!(samples.work_counts(work), (0, 1));
         }

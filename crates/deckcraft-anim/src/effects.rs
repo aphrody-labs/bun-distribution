@@ -68,13 +68,29 @@ pub(crate) fn emphasis_persists(effect: &str) -> bool {
 }
 
 fn uses_default_smoothing(effect: &str) -> bool {
-    matches!(effect, "fly" | "float" | "rise" | "peek" | "lines" | "arcs" | "turns" | "shapes" | "loops" | "customPath")
+    matches!(
+        effect,
+        "fly"
+            | "float"
+            | "rise"
+            | "peek"
+            | "lines"
+            | "arcs"
+            | "turns"
+            | "shapes"
+            | "loops"
+            | "customPath"
+    )
 }
 
 impl EffectSpec {
     /// Eased progress.
     pub fn eased(&self, p: f64) -> f64 {
-        if self.accel <= 0.0 && self.decel <= 0.0 && self.bounce <= 0.0 && uses_default_smoothing(&self.effect) {
+        if self.accel <= 0.0
+            && self.decel <= 0.0
+            && self.bounce <= 0.0
+            && uses_default_smoothing(&self.effect)
+        {
             smooth(p)
         } else {
             ease(p, self.accel, self.decel, self.bounce)
@@ -100,7 +116,9 @@ impl EffectSpec {
         match self.class {
             AnimClass::Entrance | AnimClass::Media => AnimState::default(),
             AnimClass::Exit => AnimState::hidden(),
-            AnimClass::Emphasis if emphasis_persists(&self.effect) => self.emphasis(1.0, cur).sanitized(),
+            AnimClass::Emphasis if emphasis_persists(&self.effect) => {
+                self.emphasis(1.0, cur).sanitized()
+            }
             AnimClass::Emphasis => AnimState::default(),
             AnimClass::Path => self.motion(1.0).sanitized(),
         }
@@ -121,7 +139,9 @@ impl EffectSpec {
         };
         match self.effect.as_str() {
             "appear" => st.visible = p > 0.0,
-            "fade" | "dissolve" | "randomBars" | "blinds" | "checkerboard" | "wheel" => st.opacity = e,
+            "fade" | "dissolve" | "randomBars" | "blinds" | "checkerboard" | "wheel" => {
+                st.opacity = e
+            }
             "fly" => {
                 let o = if o.is_empty() { "b" } else { o };
                 if o.contains('l') {
@@ -148,7 +168,11 @@ impl EffectSpec {
             "split" => {
                 let horz = o.starts_with("horz");
                 // "In" closes from the edges: approximated with the centre reveal plus a fade.
-                st.clip = if horz { center_clip(e, false, true) } else { center_clip(e, true, false) };
+                st.clip = if horz {
+                    center_clip(e, false, true)
+                } else {
+                    center_clip(e, true, false)
+                };
                 if o.ends_with("In") {
                     st.opacity = e;
                 }
@@ -166,7 +190,11 @@ impl EffectSpec {
                     || o.starts_with("circle")
                     || o.starts_with("diamond")
                     || o.starts_with("plus");
-                let f = if round { (e * std::f64::consts::SQRT_2).min(1.0) } else { e };
+                let f = if round {
+                    (e * std::f64::consts::SQRT_2).min(1.0)
+                } else {
+                    e
+                };
                 st.clip = center_clip(f, true, true);
                 if o.ends_with("In") || o == "in" {
                     st.opacity = e;
@@ -253,12 +281,24 @@ impl EffectSpec {
             "colorPulse" => st.tint = Some(cur.lerp(target, bump)),
             "teeter" => st.rotate = 8.0 * (p * 4.0 * PI).sin() * (1.0 - p * 0.5),
             "spin" => {
-                let amt = self.amount.filter(|a| a.is_finite()).unwrap_or(360.0).clamp(-36_000.0, 36_000.0);
-                let sign = if self.option == "counterClockwise" { -1.0 } else { 1.0 };
+                let amt = self
+                    .amount
+                    .filter(|a| a.is_finite())
+                    .unwrap_or(360.0)
+                    .clamp(-36_000.0, 36_000.0);
+                let sign = if self.option == "counterClockwise" {
+                    -1.0
+                } else {
+                    1.0
+                };
                 st.rotate = sign * amt * e;
             }
             "growShrink" => {
-                let amt = self.amount.filter(|a| a.is_finite() && *a > 0.0).unwrap_or(1.5).clamp(0.0, 100.0);
+                let amt = self
+                    .amount
+                    .filter(|a| a.is_finite() && *a > 0.0)
+                    .unwrap_or(1.5)
+                    .clamp(0.0, 100.0);
                 let s = 1.0 + (amt - 1.0) * e;
                 match self.option.as_str() {
                     "horz" => st.scale_x = s,
@@ -270,18 +310,29 @@ impl EffectSpec {
                 }
             }
             "desaturate" => {
-                let l = (0.299 * cur.r as f64 + 0.587 * cur.g as f64 + 0.114 * cur.b as f64).round().clamp(0.0, 255.0) as u8;
+                let l = (0.299 * cur.r as f64 + 0.587 * cur.g as f64 + 0.114 * cur.b as f64)
+                    .round()
+                    .clamp(0.0, 255.0) as u8;
                 st.tint = Some(cur.lerp(Rgba::rgba(l, l, l, cur.a), e));
             }
             "darken" => st.tint = Some(cur.lerp(Rgba::rgba(0, 0, 0, cur.a), 0.4 * e)),
             "lighten" => st.tint = Some(cur.lerp(Rgba::rgba(255, 255, 255, cur.a), 0.4 * e)),
             "transparency" => {
                 // `amount` is the transparency (0.5 = 50 %).
-                let a = self.amount.filter(|a| a.is_finite()).unwrap_or(0.5).clamp(0.0, 1.0);
+                let a = self
+                    .amount
+                    .filter(|a| a.is_finite())
+                    .unwrap_or(0.5)
+                    .clamp(0.0, 1.0);
                 st.opacity = 1.0 - a * e;
             }
-            "objectColor" | "fillColor" | "lineColor" | "fontColor" => st.tint = Some(cur.lerp(target, e)),
-            "complementaryColor" => st.tint = Some(cur.lerp(Rgba::rgba(255 - cur.r, 255 - cur.g, 255 - cur.b, cur.a), e)),
+            "objectColor" | "fillColor" | "lineColor" | "fontColor" => {
+                st.tint = Some(cur.lerp(target, e))
+            }
+            "complementaryColor" => {
+                st.tint =
+                    Some(cur.lerp(Rgba::rgba(255 - cur.r, 255 - cur.g, 255 - cur.b, cur.a), e))
+            }
             "underline" | "boldFlash" => {
                 st.scale_x = 1.0 + 0.04 * bump;
                 st.scale_y = st.scale_x;
@@ -304,7 +355,11 @@ impl EffectSpec {
             Some(mp) => mp.at(e),
             None => (0.0, 0.0),
         };
-        AnimState { offset_x: fx * self.slide_w, offset_y: fy * self.slide_h, ..Default::default() }
+        AnimState {
+            offset_x: fx * self.slide_w,
+            offset_y: fy * self.slide_h,
+            ..Default::default()
+        }
     }
 }
 

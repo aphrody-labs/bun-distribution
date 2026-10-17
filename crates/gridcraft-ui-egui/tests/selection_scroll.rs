@@ -9,33 +9,61 @@ use serde_json::json;
 type Harness = egui_kittest::Harness<'static, SheetApp>;
 
 /// Ctrl on Windows and Linux sets both `ctrl` and `command`.
-const CTRL: Modifiers = Modifiers { alt: false, ctrl: true, shift: false, mac_cmd: false, command: true };
-const CTRL_SHIFT: Modifiers = Modifiers { shift: true, ..CTRL };
+const CTRL: Modifiers = Modifiers {
+    alt: false,
+    ctrl: true,
+    shift: false,
+    mac_cmd: false,
+    command: true,
+};
+const CTRL_SHIFT: Modifiers = Modifiers {
+    shift: true,
+    ..CTRL
+};
 
 /// Column A filled down to A200 and row 1 filled across to CV1, far past one screen each way.
 fn harness() -> Harness {
     let mut s = Session::new();
     s.new_workbook();
     let down: Vec<Vec<i64>> = (1..=200).map(|r| vec![r]).collect();
-    s.execute("range.setValues", json!({"range": "A1", "values": down})).unwrap();
+    s.execute("range.setValues", json!({"range": "A1", "values": down}))
+        .unwrap();
     let across: Vec<i64> = (1..=100).collect();
-    s.execute("range.setValues", json!({"range": "A1", "values": [across]})).unwrap();
+    s.execute(
+        "range.setValues",
+        json!({"range": "A1", "values": [across]}),
+    )
+    .unwrap();
     s.execute("selection.set", json!({"cell": "A1"})).unwrap();
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            let ctx = ui.ctx().clone();
-            app.logic(&ctx);
-            app.ui(ui);
-        },
-        SheetApp::new(s, Default::default()),
-    );
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            SheetApp::new(s, Default::default()),
+        );
     h.run_steps(4);
     h
 }
 
 fn key(h: &mut Harness, k: Key, m: Modifiers) {
-    h.input_mut().events.push(Event::Key { key: k, physical_key: Some(k), pressed: true, repeat: false, modifiers: m });
-    h.input_mut().events.push(Event::Key { key: k, physical_key: Some(k), pressed: false, repeat: false, modifiers: m });
+    h.input_mut().events.push(Event::Key {
+        key: k,
+        physical_key: Some(k),
+        pressed: true,
+        repeat: false,
+        modifiers: m,
+    });
+    h.input_mut().events.push(Event::Key {
+        key: k,
+        physical_key: Some(k),
+        pressed: false,
+        repeat: false,
+        modifiers: m,
+    });
     h.run_steps(2);
 }
 
@@ -45,16 +73,26 @@ fn visible(h: &Harness, a1: &str) -> bool {
     let app = h.state();
     let sheet = app.session.active().unwrap().wb.active().unwrap();
     let geo = Geo::new(sheet, app.grid.rect.unwrap(), app.view().scroll);
-    geo.cells.contains(geo.cell_rect(sheet, CellRef::parse(a1).unwrap()).center())
+    geo.cells
+        .contains(geo.cell_rect(sheet, CellRef::parse(a1).unwrap()).center())
 }
 
 fn assert_extended(h: &Harness, anchor: &str, moving_end: &str) {
     let selection = &h.state().session.active().unwrap().selection;
-    let (anchor_cell, end_cell) = (CellRef::parse(anchor).unwrap(), CellRef::parse(moving_end).unwrap());
+    let (anchor_cell, end_cell) = (
+        CellRef::parse(anchor).unwrap(),
+        CellRef::parse(moving_end).unwrap(),
+    );
     assert_eq!(selection.current(), RangeRef::new(anchor_cell, end_cell));
     assert_eq!(selection.anchor, anchor_cell);
-    assert_eq!(selection.active, anchor_cell, "extending keeps the active cell on the anchor");
-    assert!(visible(h, moving_end), "the moving end {moving_end} is scrolled into view");
+    assert_eq!(
+        selection.active, anchor_cell,
+        "extending keeps the active cell on the anchor"
+    );
+    assert!(
+        visible(h, moving_end),
+        "the moving end {moving_end} is scrolled into view"
+    );
 }
 
 #[test]
@@ -63,7 +101,10 @@ fn ctrl_shift_arrows_scroll_the_moving_end_into_view() {
     let mut h = harness();
     key(&mut h, Key::ArrowDown, CTRL_SHIFT);
     assert_extended(&h, "A1", "A200");
-    assert!(!visible(&h, "A1"), "the view follows the moving end, away from the anchor");
+    assert!(
+        !visible(&h, "A1"),
+        "the view follows the moving end, away from the anchor"
+    );
     let mut h = harness();
     key(&mut h, Key::ArrowDown, CTRL);
     assert!(visible(&h, "A200") && !visible(&h, "A1"));

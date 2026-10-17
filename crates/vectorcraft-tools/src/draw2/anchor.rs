@@ -61,15 +61,26 @@ impl AnchorTool {
             "scissors" => "scissors",
             _ => "addAnchor",
         };
-        Self { id, state: State::Idle, guides: vec![], snap: HandleSnap::default() }
+        Self {
+            id,
+            state: State::Idle,
+            guides: vec![],
+            snap: HandleSnap::default(),
+        }
     }
 
     fn add(cx: &ToolContext, p: Point) -> Vec<Action> {
-        hit_segment(cx, p, cx.pick_tol()).map(insert_anchor).into_iter().collect()
+        hit_segment(cx, p, cx.pick_tol())
+            .map(insert_anchor)
+            .into_iter()
+            .collect()
     }
 
     fn delete(cx: &ToolContext, p: Point) -> Vec<Action> {
-        hit_anchor(cx, p, cx.point_tol()).map(remove_anchor).into_iter().collect()
+        hit_anchor(cx, p, cx.point_tol())
+            .map(remove_anchor)
+            .into_iter()
+            .collect()
     }
 }
 
@@ -101,23 +112,57 @@ impl Tool for AnchorTool {
             }
             ("scissors", PointerKind::Down) => {
                 if let Some((id, si, ai)) = hit_anchor(cx, p, point) {
-                    return vec![Action::Exec("path.split".into(), json!({"id": id.0, "subpath": si, "anchor": ai}))];
+                    return vec![Action::Exec(
+                        "path.split".into(),
+                        json!({"id": id.0, "subpath": si, "anchor": ai}),
+                    )];
                 }
                 match hit_segment(cx, p, tol) {
-                    Some((id, si, seg, t)) => vec![Action::Exec("path.split".into(), json!({"id": id.0, "subpath": si, "segment": seg, "t": t}))],
+                    Some((id, si, seg, t)) => vec![Action::Exec(
+                        "path.split".into(),
+                        json!({"id": id.0, "subpath": si, "segment": seg, "t": t}),
+                    )],
                     None => vec![],
                 }
             }
             ("anchorPoint", PointerKind::Down) => {
                 if let Some((id, si, ai, out)) = hit_handle(cx, p, point) {
-                    self.state = State::Handle { id, si, ai, out, began: false };
+                    self.state = State::Handle {
+                        id,
+                        si,
+                        ai,
+                        out,
+                        began: false,
+                    };
                     self.snap = HandleSnap::default();
                 } else if let Some((id, si, ai)) = hit_anchor(cx, p, point) {
-                    self.state = State::Convert { id, si, ai, start: p, began: false };
+                    self.state = State::Convert {
+                        id,
+                        si,
+                        ai,
+                        start: p,
+                        began: false,
+                    };
                 } else if let Some((id, si, seg, t)) = hit_segment(cx, p, tol) {
-                    self.state = State::Reshape { id, si, seg, t, start: p, began: false, spine: false };
+                    self.state = State::Reshape {
+                        id,
+                        si,
+                        seg,
+                        t,
+                        start: p,
+                        began: false,
+                        spine: false,
+                    };
                 } else if let Some((id, seg, t, _)) = crate::direct::hit_spine_segment(cx, p, tol) {
-                    self.state = State::Reshape { id, si: 0, seg, t, start: p, began: false, spine: true };
+                    self.state = State::Reshape {
+                        id,
+                        si: 0,
+                        seg,
+                        t,
+                        start: p,
+                        began: false,
+                        spine: true,
+                    };
                 }
                 vec![]
             }
@@ -125,15 +170,27 @@ impl Tool for AnchorTool {
                 let mut out = vec![];
                 let (began, far) = match self.state {
                     State::Idle => return out,
-                    State::Convert { began, start, .. } | State::Reshape { began, start, .. } => (began, p.distance(start) >= cx.tol(2.0)),
+                    State::Convert { began, start, .. } | State::Reshape { began, start, .. } => {
+                        (began, p.distance(start) >= cx.tol(2.0))
+                    }
                     State::Handle { began, .. } => (began, true),
                 };
                 if !began {
                     if !far {
                         return out;
                     }
-                    out.push(Action::Begin(if matches!(self.state, State::Convert { .. }) { "Convert Anchor Point" } else { "Reshape" }.into()));
-                    if let State::Convert { began, .. } | State::Handle { began, .. } | State::Reshape { began, .. } = &mut self.state {
+                    out.push(Action::Begin(
+                        if matches!(self.state, State::Convert { .. }) {
+                            "Convert Anchor Point"
+                        } else {
+                            "Reshape"
+                        }
+                        .into(),
+                    ));
+                    if let State::Convert { began, .. }
+                    | State::Handle { began, .. }
+                    | State::Reshape { began, .. } = &mut self.state
+                    {
                         *began = true;
                     }
                 }
@@ -143,7 +200,9 @@ impl Tool for AnchorTool {
                         "path.convertAnchor".into(),
                         json!({"id": id.0, "subpath": si, "anchor": ai, "to": "smooth", "x": p.x, "y": p.y}),
                     ),
-                    State::Handle { id, si, ai, out, .. } => {
+                    State::Handle {
+                        id, si, ai, out, ..
+                    } => {
                         let (q, guides) = self.snap.snap(cx, (id, si, ai), p, ev.mods.shift);
                         self.guides = guides;
                         Action::Preview(
@@ -151,11 +210,25 @@ impl Tool for AnchorTool {
                             json!({"id": id.0, "subpath": si, "anchor": ai, "which": if out { "out" } else { "in" }, "x": q.x, "y": q.y, "independent": true}),
                         )
                     }
-                    State::Reshape { id, seg, t, start, spine: true, .. } => Action::Preview(
+                    State::Reshape {
+                        id,
+                        seg,
+                        t,
+                        start,
+                        spine: true,
+                        ..
+                    } => Action::Preview(
                         "object.blend.spine.reshapeSegment".into(),
                         json!({"id": id.0, "segment": seg, "t": t, "dx": p.x - start.x, "dy": p.y - start.y}),
                     ),
-                    State::Reshape { id, si, seg, t, start, .. } => Action::Preview(
+                    State::Reshape {
+                        id,
+                        si,
+                        seg,
+                        t,
+                        start,
+                        ..
+                    } => Action::Preview(
                         "path.reshapeSegment".into(),
                         json!({"id": id.0, "subpath": si, "segment": seg, "t": t, "dx": p.x - start.x, "dy": p.y - start.y}),
                     ),
@@ -167,10 +240,18 @@ impl Tool for AnchorTool {
                 self.guides.clear();
                 let st = std::mem::replace(&mut self.state, State::Idle);
                 match st {
-                    State::Convert { began: true, .. } | State::Handle { began: true, .. } | State::Reshape { began: true, .. } => {
+                    State::Convert { began: true, .. }
+                    | State::Handle { began: true, .. }
+                    | State::Reshape { began: true, .. } => {
                         vec![Action::Commit]
                     }
-                    State::Convert { id, si, ai, began: false, .. } => {
+                    State::Convert {
+                        id,
+                        si,
+                        ai,
+                        began: false,
+                        ..
+                    } => {
                         let has_handles = cx
                             .doc
                             .node(id)
@@ -178,7 +259,10 @@ impl Tool for AnchorTool {
                             .and_then(|pd| pd.subpaths.get(si)?.anchors.get(ai))
                             .is_some_and(|a| a.has_in() || a.has_out());
                         if has_handles {
-                            vec![Action::Exec("path.convertAnchor".into(), json!({"id": id.0, "subpath": si, "anchor": ai, "to": "corner"}))]
+                            vec![Action::Exec(
+                                "path.convertAnchor".into(),
+                                json!({"id": id.0, "subpath": si, "anchor": ai, "to": "corner"}),
+                            )]
                         } else {
                             vec![]
                         }
@@ -192,12 +276,18 @@ impl Tool for AnchorTool {
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         let st = std::mem::replace(&mut self.state, State::Idle);
         match st {
-            State::Convert { began: true, .. } | State::Handle { began: true, .. } | State::Reshape { began: true, .. } => vec![Action::Commit],
+            State::Convert { began: true, .. }
+            | State::Handle { began: true, .. }
+            | State::Reshape { began: true, .. } => vec![Action::Commit],
             _ => vec![],
         }
     }
     fn overlays(&self, _cx: &ToolContext) -> Vec<Overlay> {
-        if matches!(self.state, State::Handle { .. }) { self.guides.clone() } else { vec![] }
+        if matches!(self.state, State::Handle { .. }) {
+            self.guides.clone()
+        } else {
+            vec![]
+        }
     }
     fn cursor(&self, cx: &ToolContext, p: Point, m: Mods) -> Cursor {
         match self.id {
@@ -231,11 +321,19 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = AnchorTool::new("addAnchor");
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 101.0));
-        assert!(matches!(&a[0], Action::Exec(c, v) if c == "path.insertAnchor" && v["id"] == id.0 && v["segment"] == 0));
+        assert!(
+            matches!(&a[0], Action::Exec(c, v) if c == "path.insertAnchor" && v["id"] == id.0 && v["segment"] == 0)
+        );
         assert!((t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 20.0, 20.0))).is_empty());
         let mut t = AnchorTool::new("deleteAnchor");
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 200.0, 101.0));
-        assert_eq!(a, vec![Action::Exec("path.removeAnchor".into(), json!({"id": id.0, "subpath": 0, "anchor": 1}))]);
+        assert_eq!(
+            a,
+            vec![Action::Exec(
+                "path.removeAnchor".into(),
+                json!({"id": id.0, "subpath": 0, "anchor": 1})
+            )]
+        );
     }
 
     #[test]
@@ -261,15 +359,25 @@ mod tests {
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 100.0, 100.0));
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 120.0, 90.0));
         assert_eq!(a[0], Action::Begin("Convert Anchor Point".into()));
-        assert!(matches!(&a[1], Action::Preview(c, v) if c == "path.convertAnchor" && v["to"] == "smooth" && v["id"] == id.0));
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 120.0, 90.0)), vec![Action::Commit]);
+        assert!(
+            matches!(&a[1], Action::Preview(c, v) if c == "path.convertAnchor" && v["to"] == "smooth" && v["id"] == id.0)
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 120.0, 90.0)),
+            vec![Action::Commit]
+        );
         // Clicking a corner without handles does nothing.
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 100.0, 100.0));
-        assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 100.0, 100.0)).is_empty());
+        assert!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 100.0, 100.0))
+                .is_empty()
+        );
         // Dragging a segment reshapes it.
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 200.0));
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 150.0, 230.0));
-        assert!(matches!(&a[1], Action::Preview(c, v) if c == "path.reshapeSegment" && v["dy"] == 30.0));
+        assert!(
+            matches!(&a[1], Action::Preview(c, v) if c == "path.reshapeSegment" && v["dy"] == 30.0)
+        );
     }
 
     /// #494: the Anchor Point tool picks within Selection & Anchor Display → Tolerance, and drags
@@ -279,10 +387,23 @@ mod tests {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        let mut sp = vectorcraft_geom::SubPath::polyline(&[Point::new(100.0, 300.0), Point::new(200.0, 300.0), Point::new(300.0, 300.0)], false);
-        sp.anchors[1] = vectorcraft_geom::Anchor::smooth(Point::new(200.0, 300.0), Point::new(240.0, 300.0));
+        let mut sp = vectorcraft_geom::SubPath::polyline(
+            &[
+                Point::new(100.0, 300.0),
+                Point::new(200.0, 300.0),
+                Point::new(300.0, 300.0),
+            ],
+            false,
+        );
+        sp.anchors[1] =
+            vectorcraft_geom::Anchor::smooth(Point::new(200.0, 300.0), Point::new(240.0, 300.0));
         let path = vectorcraft_geom::PathData::single(sp);
-        d.insert(Some(l), 1, vectorcraft_doc::Node::path(id, path, vectorcraft_doc::Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            1,
+            vectorcraft_doc::Node::path(id, path, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let mut s = Selection::default();
         s.set([id]);
         let p = paint();
@@ -297,12 +418,21 @@ mod tests {
         };
         // The segment 6 px off: picked with an 8 px tolerance, not with the default 3 px.
         assert_eq!(dragged(press(&cx(&d, &s, &p), 150.0, 306.0)), "");
-        let wide = ToolContext { selection_tolerance: 8.0, ..cx(&d, &s, &p) };
+        let wide = ToolContext {
+            selection_tolerance: 8.0,
+            ..cx(&d, &s, &p)
+        };
         assert_eq!(dragged(press(&wide, 150.0, 306.0)), "path.reshapeSegment");
         // The middle anchor's handle drags; with Show handles when multiple anchors are selected
         // off it's hidden (three anchors selected) and the press finds the segment under it.
-        assert_eq!(dragged(press(&cx(&d, &s, &p), 240.0, 301.0)), "path.setHandle");
-        let single = ToolContext { handles_multiple: false, ..cx(&d, &s, &p) };
+        assert_eq!(
+            dragged(press(&cx(&d, &s, &p), 240.0, 301.0)),
+            "path.setHandle"
+        );
+        let single = ToolContext {
+            handles_multiple: false,
+            ..cx(&d, &s, &p)
+        };
         assert_eq!(dragged(press(&single, 240.0, 301.0)), "path.reshapeSegment");
     }
 }

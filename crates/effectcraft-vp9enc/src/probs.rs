@@ -63,7 +63,11 @@ pub fn pareto(p: u8) -> [u8; 8] {
     let x = (p - 1) / 2;
     let mut t = [0u8; 8];
     for n in 0..8 {
-        t[n] = if p & 1 == 1 { PARETO_TABLE[x * 8 + n] } else { ((PARETO_TABLE[x * 8 + n] as u32 + PARETO_TABLE[(x + 1) * 8 + n] as u32) >> 1) as u8 };
+        t[n] = if p & 1 == 1 {
+            PARETO_TABLE[x * 8 + n]
+        } else {
+            ((PARETO_TABLE[x * 8 + n] as u32 + PARETO_TABLE[(x + 1) * 8 + n] as u32) >> 1) as u8
+        };
     }
     t
 }
@@ -157,7 +161,10 @@ pub fn tree_path(tree: &[i8], value: u8) -> impl Iterator<Item = (usize, bool)> 
         }
         false
     }
-    let mut p = Path { steps: [(0, false); 16], len: 0 };
+    let mut p = Path {
+        steps: [(0, false); 16],
+        len: 0,
+    };
     walk(tree, 0, value, &mut p);
     let Path { steps, len } = p;
     steps.into_iter().take(len).map(|(n, b)| (n as usize, b))
@@ -206,7 +213,11 @@ fn inv_recenter_nonneg(v: i32, m: i32) -> i32 {
 fn inv_remap_prob(delta: usize, prob: u8) -> u8 {
     let v = inv_map_table()[delta.min(254)] as i32;
     let m = prob as i32 - 1;
-    let r = if (m << 1) <= 255 { 1 + inv_recenter_nonneg(v, m) } else { 255 - inv_recenter_nonneg(v, 255 - 1 - m) };
+    let r = if (m << 1) <= 255 {
+        1 + inv_recenter_nonneg(v, m)
+    } else {
+        255 - inv_recenter_nonneg(v, 255 - 1 - m)
+    };
     r.clamp(1, 255) as u8
 }
 
@@ -273,7 +284,11 @@ pub fn plan_updates(old: &Probs, counts: &[[u32; 2]], inter: bool) -> Probs {
         }
         let o = old.0[i];
         let ideal = ((c[0] as f64 * 256.0 / n as f64).round() as i32).clamp(1, 255) as u8;
-        let cands: Vec<u8> = if is_mv(i) { vec![ideal | 1, ideal.saturating_sub(1).max(1) | 1] } else { vec![ideal] };
+        let cands: Vec<u8> = if is_mv(i) {
+            vec![ideal | 1, ideal.saturating_sub(1).max(1) | 1]
+        } else {
+            vec![ideal]
+        };
         let base = counts_cost(c, o) as i64;
         let mut best = (0i64, o);
         for p in cands {
@@ -325,7 +340,12 @@ fn mv_update(bc: &mut BoolEncoder, old: &Probs, new: &Probs, i: usize) {
 /// references and a fixed interpolation filter, moving the probabilities from `old` to `new`.
 /// Entries `new` cannot signal are left at `old` (and must be coded with `old`): the caller
 /// codes the tiles with the probabilities this returns.
-pub fn compressed_header(old: &Probs, new: &Probs, lossless: bool, inter: bool) -> (Vec<u8>, Probs) {
+pub fn compressed_header(
+    old: &Probs,
+    new: &Probs,
+    lossless: bool,
+    inter: bool,
+) -> (Vec<u8>, Probs) {
     let mut bc = BoolEncoder::new();
     bc.write(false, 128);
     if !lossless {
@@ -392,7 +412,11 @@ pub fn compressed_header(old: &Probs, new: &Probs, lossless: bool, inter: bool) 
     // What the decoder ends up with.
     let mut used = old.clone();
     for i in 0..NPROBS {
-        let ok = if is_mv(i) { new.0[i] & 1 == 1 } else { delta_for(old.0[i], new.0[i]).is_some() };
+        let ok = if is_mv(i) {
+            new.0[i] & 1 == 1
+        } else {
+            delta_for(old.0[i], new.0[i]).is_some()
+        };
         if ok && (inter || i < INTER_MODE) {
             used.0[i] = new.0[i];
         }

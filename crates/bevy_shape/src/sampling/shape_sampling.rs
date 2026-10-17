@@ -39,15 +39,15 @@
 
 use core::f32::consts::{FRAC_PI_2, PI, TAU};
 
-use crate::{dim2::*, dim3::*, Measured2d, Measured3d, Primitive2d};
-use bevy_math::{ops, NormedVectorSpace, ScalarField, Vec2, Vec3};
+use crate::{Measured2d, Measured3d, Primitive2d, dim2::*, dim3::*};
+use bevy_math::{NormedVectorSpace, ScalarField, Vec2, Vec3, ops};
 use rand::{
+    RngExt,
     distr::{
+        Distribution,
         uniform::SampleUniform,
         weighted::{Weight, WeightedIndex},
-        Distribution,
     },
-    RngExt,
 };
 
 /// Exposes methods to uniformly sample a variety of primitive shapes.

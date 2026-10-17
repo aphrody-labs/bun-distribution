@@ -22,7 +22,10 @@ use std::path::Path;
 /// What must survive a reboot.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "camelCase")]
-#[expect(clippy::large_enum_variant, reason = "a few dozen catalog entries, read once per run")]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "a few dozen catalog entries, read once per run"
+)]
 pub enum BootKind {
     /// systemd service, timer or socket: enabled, active and (long-running services) `Restart=`.
     #[serde(rename_all = "camelCase")]
@@ -118,7 +121,10 @@ impl BootEntry {
     }
 
     fn is_windows(&self) -> bool {
-        matches!(self.kind, BootKind::ScheduledTask { .. } | BootKind::WindowsService { .. })
+        matches!(
+            self.kind,
+            BootKind::ScheduledTask { .. } | BootKind::WindowsService { .. }
+        )
     }
 }
 
@@ -143,13 +149,21 @@ pub fn load_entries(root: &Path) -> Result<Vec<BootEntry>> {
 
 /// Expands `{root}` and `%VAR%` in the program of a scheduled task (Windows entries are local).
 pub fn expand_task(root: &Path, entry: &mut BootEntry) {
-    let BootKind::ScheduledTask { execute, arguments, working_directory, .. } = &mut entry.kind
+    let BootKind::ScheduledTask {
+        execute,
+        arguments,
+        working_directory,
+        ..
+    } = &mut entry.kind
     else {
         return;
     };
     let root = root.to_string_lossy().replace('/', "\\");
     let root = root.strip_prefix(r"\\?\").unwrap_or(&root);
-    for field in [execute, arguments, working_directory].into_iter().flatten() {
+    for field in [execute, arguments, working_directory]
+        .into_iter()
+        .flatten()
+    {
         *field = wintask::expand_env(&field.replace("{root}", root));
     }
 }
@@ -160,7 +174,9 @@ pub fn merge_entries(services: &[CatalogService], explicit: Vec<BootEntry>) -> V
     for s in services.iter().filter(|s| !s.is_retired()) {
         let Some(host) = s.host.clone() else { continue };
         let kind = match (&s.container, &s.unit) {
-            (Some(c), _) => BootKind::Docker { container: c.clone() },
+            (Some(c), _) => BootKind::Docker {
+                container: c.clone(),
+            },
             (None, Some(u)) => BootKind::Systemd { unit: u.clone() },
             _ => continue,
         };
@@ -172,7 +188,10 @@ pub fn merge_entries(services: &[CatalogService], explicit: Vec<BootEntry>) -> V
             _ => None,
         };
         let entry = BootEntry { host, kind, hold };
-        if !out.iter().any(|e| e.host == entry.host && e.kind == entry.kind) {
+        if !out
+            .iter()
+            .any(|e| e.host == entry.host && e.kind == entry.kind)
+        {
             out.push(entry);
         }
     }
@@ -210,10 +229,15 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
         (BootKind::Systemd { unit }, Observed::Props(p)) => {
             let get = |k: &str| p.get(k).map_or("", String::as_str);
             if get("LoadState") == "not-found" {
-                out.push((format!("unité {unit} absente de l'hôte (déploiement requis)"), None));
+                out.push((
+                    format!("unité {unit} absente de l'hôte (déploiement requis)"),
+                    None,
+                ));
             } else {
-                let enabled =
-                    matches!(get("UnitFileState"), "enabled" | "enabled-runtime" | "alias");
+                let enabled = matches!(
+                    get("UnitFileState"),
+                    "enabled" | "enabled-runtime" | "alias"
+                );
                 let indirect = get("UnitFileState") == "indirect" && unit.contains('@');
                 let active = get("ActiveState") == "active";
                 if !enabled && !indirect {
@@ -245,14 +269,17 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
                     ));
                 }
             }
-        },
+        }
         (BootKind::Docker { container }, Observed::Props(p)) => {
             let get = |k: &str| p.get(k).map_or("", String::as_str);
             let policy_ok = matches!(get("restart"), "always" | "unless-stopped");
             if !policy_ok {
                 out.push((
                     format!("restart policy '{}'", get("restart")),
-                    Some(format!("docker update --restart unless-stopped {}", q(container))),
+                    Some(format!(
+                        "docker update --restart unless-stopped {}",
+                        q(container)
+                    )),
                 ));
             }
             if get("running") != "true" {
@@ -261,16 +288,32 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
                     Some(format!("docker start {}", q(container))),
                 ));
             }
-        },
+        }
         (
-            BootKind::ScheduledTask { triggers, principal, desktop, periodic, .. },
+            BootKind::ScheduledTask {
+                triggers,
+                principal,
+                desktop,
+                periodic,
+                ..
+            },
             Observed::Json(j),
         ) => {
-            let have: Vec<&str> =
-                j["Triggers"].as_array().into_iter().flatten().filter_map(Value::as_str).collect();
-            let missing: Vec<&String> =
-                triggers.iter().filter(|t| !have.contains(&t.as_str())).collect();
-            let restart = if *periodic { 1 } else { j["RestartCount"].as_u64().unwrap_or(0) };
+            let have: Vec<&str> = j["Triggers"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect();
+            let missing: Vec<&String> = triggers
+                .iter()
+                .filter(|t| !have.contains(&t.as_str()))
+                .collect();
+            let restart = if *periodic {
+                1
+            } else {
+                j["RestartCount"].as_u64().unwrap_or(0)
+            };
             let enabled = j["Enabled"].as_bool().unwrap_or(false);
             let running = *periodic || j["State"].as_str() == Some("Running");
             let hidden = j["Hidden"].as_bool() == Some(true);
@@ -299,7 +342,8 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
             if !action_ok {
                 why.push(format!(
                     "action {} au lieu de la déclaration",
-                    seen.as_ref().map_or_else(|| "absente".to_owned(), |a| a.unwrapped().command)
+                    seen.as_ref()
+                        .map_or_else(|| "absente".to_owned(), |a| a.unwrapped().command)
                 ));
                 ops.push("action déclarée".to_owned());
             }
@@ -311,7 +355,11 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
                 why.push(format!("déclencheurs manquants {missing:?}"));
                 ops.push(format!(
                     "+{}",
-                    missing.iter().map(|t| t.as_str()).collect::<Vec<_>>().join(" +")
+                    missing
+                        .iter()
+                        .map(|t| t.as_str())
+                        .collect::<Vec<_>>()
+                        .join(" +")
                 ));
             }
             if restart == 0 {
@@ -329,11 +377,21 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
             if !why.is_empty() {
                 out.push((
                     why.join(", "),
-                    Some(format!("mettre à jour {} : {}", task_path(entry), ops.join(", "))),
+                    Some(format!(
+                        "mettre à jour {} : {}",
+                        task_path(entry),
+                        ops.join(", ")
+                    )),
                 ));
             }
-        },
-        (BootKind::WindowsService { name, restart_on_failure }, Observed::Json(j)) => {
+        }
+        (
+            BootKind::WindowsService {
+                name,
+                restart_on_failure,
+            },
+            Observed::Json(j),
+        ) => {
             let auto = matches!(j["StartMode"].as_str(), Some("Auto"));
             let running = j["State"].as_str() == Some("Running");
             let failure = !*restart_on_failure || j["FailureRestart"].as_bool() == Some(true);
@@ -358,7 +416,7 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
                     Some(format!("service {name} : {}", ops.join(", "))),
                 ));
             }
-        },
+        }
         (_, Observed::Missing) => {
             out.push((
                 "absent de l'hôte".to_owned(),
@@ -375,12 +433,14 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
                         task_path(entry),
                         task_principal(principal, *desktop).logon_label(),
                         triggers.join(", "),
-                        arguments.as_deref().map_or(String::new(), |a| format!(" {a}")),
+                        arguments
+                            .as_deref()
+                            .map_or(String::new(), |a| format!(" {a}")),
                     )),
                     _ => None,
                 },
             ));
-        },
+        }
         _ => out.push(("observation inattendue".to_owned(), None)),
     }
     out.into_iter()
@@ -418,8 +478,13 @@ fn system_root() -> String {
 
 /// The declared program of a task entry, wrapped in `conhost --headless` for desktop tasks.
 fn declared_action(entry: &BootEntry) -> Option<Action> {
-    let BootKind::ScheduledTask { execute, arguments, working_directory, desktop, .. } =
-        &entry.kind
+    let BootKind::ScheduledTask {
+        execute,
+        arguments,
+        working_directory,
+        desktop,
+        ..
+    } = &entry.kind
     else {
         return None;
     };
@@ -428,7 +493,11 @@ fn declared_action(entry: &BootEntry) -> Option<Action> {
         arguments: arguments.clone().filter(|a| !a.is_empty()),
         working_directory: working_directory.clone().filter(|d| !d.is_empty()),
     };
-    Some(if *desktop { action.headless(&system_root()) } else { action })
+    Some(if *desktop {
+        action.headless(&system_root())
+    } else {
+        action
+    })
 }
 
 fn observed_action(j: &Value) -> Option<Action> {
@@ -442,7 +511,9 @@ fn observed_action(j: &Value) -> Option<Action> {
 /// Same program and arguments, and the same working directory when one is declared.
 fn action_matches(declared: &Action, seen: &Action) -> bool {
     let dir = |a: &Action| {
-        a.working_directory.as_deref().map(|d| d.trim_end_matches('\\').to_ascii_lowercase())
+        a.working_directory
+            .as_deref()
+            .map(|d| d.trim_end_matches('\\').to_ascii_lowercase())
     };
     declared.same_program(seen)
         && (declared.working_directory.is_none() || dir(declared) == dir(seen))
@@ -464,7 +535,9 @@ fn observe_windows(
                 if scheduler.is_none() {
                     scheduler = Some(Scheduler::connect()?);
                 }
-                let Some(scheduler) = scheduler.as_ref() else { continue };
+                let Some(scheduler) = scheduler.as_ref() else {
+                    continue;
+                };
                 match scheduler.get(&task_path(entry))? {
                     None => Observed::Missing,
                     Some(registered) => {
@@ -485,9 +558,9 @@ fn observe_windows(
                             "RestartCount": seen.restart_count,
                             "Triggers": seen.triggers,
                         }))
-                    },
+                    }
                 }
-            },
+            }
             BootKind::WindowsService { name, .. } => match crate::winsvc::query(name)? {
                 None => Observed::Missing,
                 Some(state) => Observed::Json(json!({
@@ -546,7 +619,10 @@ fn apply_task(entry: &BootEntry) -> Result<String> {
                 principal,
                 highest,
                 triggers,
-                settings: Settings { restart: !*periodic, time_limit_minutes: *time_limit_minutes },
+                settings: Settings {
+                    restart: !*periodic,
+                    time_limit_minutes: *time_limit_minutes,
+                },
             };
             scheduler.register(
                 &full,
@@ -555,7 +631,7 @@ fn apply_task(entry: &BootEntry) -> Result<String> {
                 &user,
             )?;
             done.push("enregistrée");
-        },
+        }
         Some(registered) => {
             let seen = wintask::observe(&registered.xml).action;
             let action = match (declared, seen) {
@@ -563,25 +639,27 @@ fn apply_task(entry: &BootEntry) -> Result<String> {
                     if action_matches(&declared, &seen) && (!*desktop || seen.is_headless()) =>
                 {
                     None
-                },
+                }
                 (Some(declared), _) => Some(declared),
                 (None, Some(seen)) if *desktop && !seen.is_headless() => {
                     Some(seen.headless(&system_root()))
-                },
+                }
                 (None, _) => None,
             };
             let patch = Patch {
                 principal,
                 highest,
-                settings: (!*periodic)
-                    .then_some(Settings { restart: true, time_limit_minutes: None }),
+                settings: (!*periodic).then_some(Settings {
+                    restart: true,
+                    time_limit_minutes: None,
+                }),
                 add_triggers: triggers,
                 action,
             };
             let xml = wintask::patch_xml(&registered.xml, &patch, &user, &today);
             scheduler.register(&full, &xml, principal, &user)?;
             done.push("mise à jour");
-        },
+        }
     }
     if !*periodic && scheduler.get(&full)?.is_some_and(|r| r.state != "Running") {
         scheduler.run(&full)?;
@@ -594,13 +672,20 @@ fn apply_task(entry: &BootEntry) -> Result<String> {
 fn apply_windows(entry: &BootEntry) -> Result<String> {
     match &entry.kind {
         BootKind::ScheduledTask { .. } => apply_task(entry),
-        BootKind::WindowsService { name, restart_on_failure } => {
+        BootKind::WindowsService {
+            name,
+            restart_on_failure,
+        } => {
             let done = crate::winsvc::ensure(name, *restart_on_failure)?;
             Ok(format!(
                 "service {name} {}",
-                if done.is_empty() { "inchangé".to_owned() } else { done.join(", ") }
+                if done.is_empty() {
+                    "inchangé".to_owned()
+                } else {
+                    done.join(", ")
+                }
             ))
-        },
+        }
         _ => bail!("{} n'est pas une entrée Windows", entry.label()),
     }
 }
@@ -609,13 +694,18 @@ fn apply_windows(entry: &BootEntry) -> Result<String> {
 /// returns its exit code; only the `aphrody` binaries relaunch themselves.
 pub(crate) fn relaunch_elevated(command: &str) -> Result<i32> {
     let exe = std::env::current_exe().context("exécutable courant")?;
-    let stem =
-        exe.file_stem().map(|s| s.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let stem = exe
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
     if !stem.starts_with("aphrody") {
         bail!("droits administrateur requis : relancer `aphrody infra {command}` élevé");
     }
     let path = aphrody_proc::Elevation::detect().context("élévation")?;
-    eprintln!("{command}: corrections Windows en attente, relance élevée ({})", path.label());
+    eprintln!(
+        "{command}: corrections Windows en attente, relance élevée ({})",
+        path.label()
+    );
     let args: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
     aphrody_proc::run_elevated(exe.as_os_str(), &args, None).context("relance élevée")
 }
@@ -753,7 +843,10 @@ pub fn run_boot(
     }
     let hosts = hosts_of(&entries, host);
     if hosts.is_empty() {
-        bail!("aucune entrée de boot pour l'hôte {}", host.unwrap_or("<tous>"));
+        bail!(
+            "aucune entrée de boot pour l'hôte {}",
+            host.unwrap_or("<tous>")
+        );
     }
     let mut reports = Vec::new();
     for h in &hosts {
@@ -768,16 +861,21 @@ pub fn run_boot(
             Ok((n, findings)) => {
                 report.checked = n;
                 report.findings = findings;
-            },
+            }
             Err(e) => report.error = Some(format!("{e:#}")),
         }
         reports.push(report);
     }
-    let windows_pending =
-        reports.iter().filter(|r| r.error.is_none()).flat_map(|r| &r.findings).any(|f| {
+    let windows_pending = reports
+        .iter()
+        .filter(|r| r.error.is_none())
+        .flat_map(|r| &r.findings)
+        .any(|f| {
             f.held.is_none()
                 && f.fix.is_some()
-                && entries.iter().any(|e| e.label() == f.entry && e.is_windows())
+                && entries
+                    .iter()
+                    .any(|e| e.label() == f.entry && e.is_windows())
         });
     if action == BootAction::Apply
         && windows_pending
@@ -790,8 +888,9 @@ pub fn run_boot(
             bail!("apply élevé : code de sortie {code}");
         }
         return Ok(hosts.iter().any(|h| {
-            audit_host(&entries, h)
-                .map_or(true, |(_, findings)| findings.iter().any(|f| f.held.is_none()))
+            audit_host(&entries, h).map_or(true, |(_, findings)| {
+                findings.iter().any(|f| f.held.is_none())
+            })
         }));
     }
     if action == BootAction::Apply {
@@ -799,7 +898,9 @@ pub fn run_boot(
             let h = report.host.clone();
             for f in report.findings.iter().filter(|f| f.held.is_none()) {
                 let Some(fix) = &f.fix else { continue };
-                let windows_entry = entries.iter().find(|e| e.label() == f.entry && e.is_windows());
+                let windows_entry = entries
+                    .iter()
+                    .find(|e| e.label() == f.entry && e.is_windows());
                 let result = match windows_entry {
                     Some(entry) => apply_windows(entry),
                     None => run_host(&h, fix).map(|_| f.entry.clone()),
@@ -816,8 +917,9 @@ pub fn run_boot(
             }
         }
     }
-    let drift =
-        reports.iter().any(|r| r.error.is_some() || r.findings.iter().any(|f| f.held.is_none()));
+    let drift = reports
+        .iter()
+        .any(|r| r.error.is_some() || r.findings.iter().any(|f| f.held.is_none()));
     if json {
         println!("{}", serde_json::to_string_pretty(&reports)?);
     } else {
@@ -827,7 +929,10 @@ pub fn run_boot(
                 println!("  ERREUR {e}");
             }
             for f in &r.findings {
-                let held = f.held.as_deref().map_or(String::new(), |h| format!(" [retenu: {h}]"));
+                let held = f
+                    .held
+                    .as_deref()
+                    .map_or(String::new(), |h| format!(" [retenu: {h}]"));
                 println!("  DÉRIVE {}: {}{held}", f.entry, f.problem);
                 if action == BootAction::Plan {
                     match (&f.fix, &f.held) {
@@ -853,11 +958,20 @@ mod tests {
     use super::*;
 
     fn props(pairs: &[(&str, &str)]) -> Observed {
-        Observed::Props(pairs.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect())
+        Observed::Props(
+            pairs
+                .iter()
+                .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+                .collect(),
+        )
     }
 
     fn unit(u: &str) -> BootEntry {
-        BootEntry { host: "vps".into(), kind: BootKind::Systemd { unit: u.into() }, hold: None }
+        BootEntry {
+            host: "vps".into(),
+            kind: BootKind::Systemd { unit: u.into() },
+            hold: None,
+        }
     }
 
     #[test]
@@ -884,13 +998,21 @@ mod tests {
         ]);
         let f = evaluate(&e, &o);
         assert_eq!(f.len(), 1);
-        assert!(f[0].fix.as_deref().unwrap().contains("enable --now 'a.service'"));
+        assert!(
+            f[0].fix
+                .as_deref()
+                .unwrap()
+                .contains("enable --now 'a.service'")
+        );
     }
 
     #[test]
     fn systemd_missing_restart_is_manual_and_oneshot_exempt() {
-        let base =
-            [("LoadState", "loaded"), ("UnitFileState", "enabled"), ("ActiveState", "active")];
+        let base = [
+            ("LoadState", "loaded"),
+            ("UnitFileState", "enabled"),
+            ("ActiveState", "active"),
+        ];
         let mut p = base.to_vec();
         p.push(("Restart", "no"));
         let f = evaluate(&unit("a.service"), &props(&p));
@@ -914,16 +1036,33 @@ mod tests {
     fn docker_policy_and_running() {
         let e = BootEntry {
             host: "dbfr".into(),
-            kind: BootKind::Docker { container: "c1".into() },
+            kind: BootKind::Docker {
+                container: "c1".into(),
+            },
             hold: None,
         };
         assert!(
-            evaluate(&e, &props(&[("restart", "unless-stopped"), ("running", "true")])).is_empty()
+            evaluate(
+                &e,
+                &props(&[("restart", "unless-stopped"), ("running", "true")])
+            )
+            .is_empty()
         );
-        let f =
-            evaluate(&e, &props(&[("restart", "no"), ("running", "false"), ("status", "exited")]));
+        let f = evaluate(
+            &e,
+            &props(&[
+                ("restart", "no"),
+                ("running", "false"),
+                ("status", "exited"),
+            ]),
+        );
         assert_eq!(f.len(), 2);
-        assert!(f[0].fix.as_deref().unwrap().contains("update --restart unless-stopped"));
+        assert!(
+            f[0].fix
+                .as_deref()
+                .unwrap()
+                .contains("update --restart unless-stopped")
+        );
         assert!(f[1].fix.as_deref().unwrap().contains("docker start"));
     }
 
@@ -952,8 +1091,13 @@ mod tests {
         entry: &mut BootEntry,
         f: impl FnOnce(&mut bool, &mut bool, &mut Option<String>, &mut Option<String>),
     ) {
-        if let BootKind::ScheduledTask { desktop, periodic, execute, arguments, .. } =
-            &mut entry.kind
+        if let BootKind::ScheduledTask {
+            desktop,
+            periodic,
+            execute,
+            arguments,
+            ..
+        } = &mut entry.kind
         {
             f(desktop, periodic, execute, arguments);
         }
@@ -1013,7 +1157,10 @@ mod tests {
         assert!(evaluate(&e, &ok).is_empty());
         let missing = evaluate(&e, &Observed::Missing);
         let fix = missing[0].fix.as_deref().unwrap();
-        assert!(fix.starts_with("enregistrer \\Aphrody\\T (Interactive"), "{fix}");
+        assert!(
+            fix.starts_with("enregistrer \\Aphrody\\T (Interactive"),
+            "{fix}"
+        );
         assert_eq!(
             declared_action(&e).unwrap().arguments.as_deref(),
             Some("--headless \"C:\\x\\a.exe\"")
@@ -1072,7 +1219,10 @@ mod tests {
     fn windows_service_auto_and_failure_actions() {
         let e = BootEntry {
             host: "local".into(),
-            kind: BootKind::WindowsService { name: "S".into(), restart_on_failure: true },
+            kind: BootKind::WindowsService {
+                name: "S".into(),
+                restart_on_failure: true,
+            },
             hold: None,
         };
         let ok = Observed::Json(
@@ -1115,7 +1265,12 @@ mod tests {
         let (checked, findings) = audit_host(&entries, "local").unwrap();
         assert!(checked >= entries.iter().filter(|e| e.host == "local").count());
         for f in findings {
-            println!("{}: {} -> {}", f.entry, f.problem, f.fix.unwrap_or_default());
+            println!(
+                "{}: {} -> {}",
+                f.entry,
+                f.problem,
+                f.fix.unwrap_or_default()
+            );
         }
     }
 
@@ -1145,7 +1300,9 @@ mod tests {
         let e = unit("a.service");
         let d = BootEntry {
             host: "vps".into(),
-            kind: BootKind::Docker { container: "c".into() },
+            kind: BootKind::Docker {
+                container: "c".into(),
+            },
             hold: None,
         };
         let entries = [(0usize, &e), (1usize, &d)];

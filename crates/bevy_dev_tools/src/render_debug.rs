@@ -1,12 +1,12 @@
 //! Renderer debugging overlay
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, embedded_asset};
 use bevy_core_pipeline::{
+    FullscreenShader,
     mip_generation::experimental::depth::ViewDepthPyramid,
     schedule::{Core3d, Core3dSystems},
     upscaling::upscaling,
-    FullscreenShader,
 };
 use bevy_ecs::{
     component::Component,
@@ -18,24 +18,24 @@ use bevy_ecs::{
     schedule::IntoScheduleConfigs,
     system::{Commands, Query, Res, ResMut},
 };
-use bevy_input::{prelude::KeyCode, ButtonInput};
+use bevy_input::{ButtonInput, prelude::KeyCode};
 use bevy_log::info;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
+    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     extract_component::{ExtractComponent, ExtractComponentPlugin},
     extract_resource::{ExtractResource, ExtractResourcePlugin},
     render_resource::{
-        binding_types, BindGroupEntries, BindGroupLayout, BindGroupLayoutDescriptor,
-        BindGroupLayoutEntries, CachedRenderPipelineId, ColorTargetState, ColorWrites,
-        DynamicUniformBuffer, FragmentState, Operations, PipelineCache, RenderPassColorAttachment,
-        RenderPassDescriptor, RenderPipelineDescriptor, Sampler, SamplerDescriptor, ShaderStages,
-        ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines, TextureFormat,
-        TextureSampleType, VertexState,
+        BindGroupEntries, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
+        CachedRenderPipelineId, ColorTargetState, ColorWrites, DynamicUniformBuffer, FragmentState,
+        Operations, PipelineCache, RenderPassColorAttachment, RenderPassDescriptor,
+        RenderPipelineDescriptor, Sampler, SamplerDescriptor, ShaderStages, ShaderType,
+        SpecializedRenderPipeline, SpecializedRenderPipelines, TextureFormat, TextureSampleType,
+        VertexState, binding_types,
     },
     renderer::{RenderContext, RenderDevice, RenderQueue, ViewQuery},
     texture::FallbackImage,
     view::{ExtractedView, ViewTarget},
-    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_shader::Shader;
 use bevy_ui_render::render_pass::ui_pass;

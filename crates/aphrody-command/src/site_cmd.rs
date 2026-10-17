@@ -64,21 +64,36 @@ impl SiteCli {
             .map_or_else(std::env::current_dir, Ok)
             .into_diagnostic()?;
         match self.action {
-            SiteAction::Serve { bind, webos_url, app } => {
+            SiteAction::Serve {
+                bind,
+                webos_url,
+                app,
+            } => {
                 let webos_url = webos_url.or_else(|| std::env::var("BUN_WEBOS_URL").ok());
                 if app {
                     aphrody_app_server::serve_http_with_site(&root, bind, webos_url.as_deref())
                         .await
                         .into_diagnostic()
                 } else {
-                    aphrody_site::serve(&root, bind, webos_url.as_deref()).await.into_diagnostic()
+                    aphrody_site::serve(&root, bind, webos_url.as_deref())
+                        .await
+                        .into_diagnostic()
                 }
-            },
-            SiteAction::Catalog { kind, pretty, q, category, id } => {
+            }
+            SiteAction::Catalog {
+                kind,
+                pretty,
+                q,
+                category,
+                id,
+            } => {
                 let catalog = aphrody_site::Catalog::load(&root).into_diagnostic()?;
-                let value =
-                    catalog_value(&catalog, kind, &aphrody_site::SearchFilter { q, category, id })
-                        .into_diagnostic()?;
+                let value = catalog_value(
+                    &catalog,
+                    kind,
+                    &aphrody_site::SearchFilter { q, category, id },
+                )
+                .into_diagnostic()?;
                 let mut output = io::stdout().lock();
                 if pretty {
                     serde_json::to_writer_pretty(&mut output, &value)
@@ -87,7 +102,7 @@ impl SiteCli {
                 }
                 .into_diagnostic()?;
                 writeln!(output).into_diagnostic()
-            },
+            }
         }
     }
 }
@@ -123,7 +138,11 @@ mod tests {
                 .unwrap();
         assert!(matches!(
             cli.site.action,
-            SiteAction::Catalog { kind: CatalogKind::Templates, pretty: true, .. }
+            SiteAction::Catalog {
+                kind: CatalogKind::Templates,
+                pretty: true,
+                ..
+            }
         ));
         assert_eq!(cli.site.root, Some(PathBuf::from(".")));
         let cli = TestCli::try_parse_from([
@@ -146,7 +165,10 @@ mod tests {
             templates: serde_json::json!([{ "id": "native-template" }]),
         };
         let filter = aphrody_site::SearchFilter::default();
-        assert_eq!(catalog_value(&catalog, CatalogKind::Docs, &filter).unwrap(), catalog.docs);
+        assert_eq!(
+            catalog_value(&catalog, CatalogKind::Docs, &filter).unwrap(),
+            catalog.docs
+        );
         assert_eq!(
             catalog_value(&catalog, CatalogKind::Templates, &filter).unwrap(),
             catalog.templates
@@ -194,14 +216,19 @@ mod tests {
         assert_eq!(all["docs"].as_array().unwrap().len(), 1);
         assert_eq!(all["templates"], catalog.templates);
         assert_eq!(
-            catalog_value(&catalog, CatalogKind::Templates, &filter).unwrap_err().kind(),
+            catalog_value(&catalog, CatalogKind::Templates, &filter)
+                .unwrap_err()
+                .kind(),
             io::ErrorKind::InvalidInput
         );
         assert!(
             catalog_value(
                 &catalog,
                 CatalogKind::Templates,
-                &aphrody_site::SearchFilter { q: Some(String::new()), ..Default::default() }
+                &aphrody_site::SearchFilter {
+                    q: Some(String::new()),
+                    ..Default::default()
+                }
             )
             .is_ok()
         );

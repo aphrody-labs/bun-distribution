@@ -2,7 +2,7 @@
 
 use core::ops::{Div, Mul};
 
-use crate::{touch::TouchPhase, ButtonInput, ButtonState};
+use crate::{ButtonInput, ButtonState, touch::TouchPhase};
 #[cfg(feature = "bevy_reflect")]
 use bevy_ecs::prelude::ReflectMessage;
 use bevy_ecs::{
@@ -18,7 +18,7 @@ use derive_more::{Deref, DerefMut};
 #[cfg(feature = "bevy_reflect")]
 use {
     bevy_ecs::reflect::ReflectResource,
-    bevy_reflect::{std_traits::ReflectDefault, Reflect},
+    bevy_reflect::{Reflect, std_traits::ReflectDefault},
 };
 
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]

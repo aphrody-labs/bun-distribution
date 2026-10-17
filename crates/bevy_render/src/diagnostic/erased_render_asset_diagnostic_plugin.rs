@@ -6,8 +6,8 @@ use bevy_ecs::{resource::Resource, system::Res};
 use bevy_platform::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{
-    erased_render_asset::{ErasedRenderAsset, ErasedRenderAssets},
     Extract, ExtractSchedule, RenderApp,
+    erased_render_asset::{ErasedRenderAsset, ErasedRenderAssets},
 };
 
 /// Collects diagnostics for a [`ErasedRenderAsset`].

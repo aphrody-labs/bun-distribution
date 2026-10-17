@@ -12,7 +12,9 @@ use serde_json::{Value, json};
 use wordcraft_doc::graphic::{Graphic, GraphicKind};
 use wordcraft_doc::para::{Float, InlineObject};
 use wordcraft_doc::props::Rgb;
-use wordcraft_doc::smart_art::{MAX_ITEMS, MAX_LEVEL, SmartArtColors, SmartArtItem, SmartArtLayout, SmartArtSpec, clean_text};
+use wordcraft_doc::smart_art::{
+    MAX_ITEMS, MAX_LEVEL, SmartArtColors, SmartArtItem, SmartArtLayout, SmartArtSpec, clean_text,
+};
 
 use super::delete_selection;
 use super::objects::selected;
@@ -24,7 +26,8 @@ pub const DEFAULT_H: f32 = 252.0;
 
 const LAYOUTS: &str = "basicList|process|cycle|hierarchy|pyramid|radial|matrix|venn";
 const COLORS: &str = "accent1|accent2|accent3|accent4|accent5|accent6|colorful";
-const ITEMS: &str = r#"[string | {"text": string, "level"?: 0-7}] (a string's leading tabs are its level)"#;
+const ITEMS: &str =
+    r#"[string | {"text": string, "level"?: 0-7}] (a string's leading tabs are its level)"#;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
@@ -151,7 +154,9 @@ pub fn selected_smart_art(s: &Session) -> Option<Arc<SmartArtSpec>> {
 fn has_smart_art(s: &Session) -> Option<&'static str> {
     match selected(s) {
         Some((_, InlineObject::Graphic { graphic, .. })) if graphic.smart_art.is_some() => None,
-        Some((_, InlineObject::Graphic { graphic, .. })) if graphic.kind == GraphicKind::Diagram => {
+        Some((_, InlineObject::Graphic { graphic, .. }))
+            if graphic.kind == GraphicKind::Diagram =>
+        {
             Some("this SmartArt was made in another program: WordCraft shows it but can't edit it")
         }
         _ => Some("select a SmartArt graphic first"),
@@ -162,7 +167,15 @@ fn has_smart_art(s: &Session) -> Option<&'static str> {
 pub fn smart_art_graphic(spec: SmartArtSpec, theme: &[Rgb], w: f32, h: f32) -> Graphic {
     let spec = spec.sanitized();
     let items = wordcraft_docx::smart_art_items(&spec, theme, w, h);
-    Graphic { kind: GraphicKind::Diagram, items, w, h, source: None, chart: None, smart_art: Some(Arc::new(spec)) }
+    Graphic {
+        kind: GraphicKind::Diagram,
+        items,
+        w,
+        h,
+        source: None,
+        chart: None,
+        smart_art: Some(Arc::new(spec)),
+    }
 }
 
 /// Lay the SmartArt graphic of `o` out again at its current size (after a resize), if it has a model.
@@ -178,9 +191,9 @@ pub fn redraw(o: &mut InlineObject, theme: &[Rgb]) {
 fn layout_of(v: &Value) -> Result<Option<SmartArtLayout>, CmdError> {
     match v.get("layout") {
         None | Some(Value::Null) => Ok(None),
-        Some(Value::String(id)) => {
-            SmartArtLayout::from_id(id).map(Some).ok_or_else(|| CmdError::Params(format!("unknown layout `{}`: {LAYOUTS}", clean_text(id))))
-        }
+        Some(Value::String(id)) => SmartArtLayout::from_id(id).map(Some).ok_or_else(|| {
+            CmdError::Params(format!("unknown layout `{}`: {LAYOUTS}", clean_text(id)))
+        }),
         Some(_) => Err(CmdError::Params(format!("`layout`: {LAYOUTS}"))),
     }
 }
@@ -189,9 +202,9 @@ fn layout_of(v: &Value) -> Result<Option<SmartArtLayout>, CmdError> {
 fn colors_of(v: &Value) -> Result<Option<SmartArtColors>, CmdError> {
     match v.get("variant").or_else(|| v.get("colors")) {
         None | Some(Value::Null) => Ok(None),
-        Some(Value::String(id)) => {
-            SmartArtColors::from_id(id).map(Some).ok_or_else(|| CmdError::Params(format!("unknown colours `{}`: {COLORS}", clean_text(id))))
-        }
+        Some(Value::String(id)) => SmartArtColors::from_id(id).map(Some).ok_or_else(|| {
+            CmdError::Params(format!("unknown colours `{}`: {COLORS}", clean_text(id)))
+        }),
         Some(_) => Err(CmdError::Params(format!("`variant`: {COLORS}"))),
     }
 }
@@ -208,25 +221,37 @@ fn index(v: &Value, k: &str) -> Result<Option<usize>, CmdError> {
 
 /// Item `i` of `g` (default: the last).
 fn item_at(g: &SmartArtSpec, i: Option<usize>) -> Result<usize, CmdError> {
-    let last = g.items.len().checked_sub(1).ok_or_else(|| CmdError::Failed("the graphic has no items".into()))?;
+    let last = g
+        .items
+        .len()
+        .checked_sub(1)
+        .ok_or_else(|| CmdError::Failed("the graphic has no items".into()))?;
     match i {
         None => Ok(last),
         Some(i) if i <= last => Ok(i),
-        Some(i) => Err(CmdError::Params(format!("no item {i}: the graphic has {} items", last + 1))),
+        Some(i) => Err(CmdError::Params(format!(
+            "no item {i}: the graphic has {} items",
+            last + 1
+        ))),
     }
 }
 
 /// Items from JSON (at most [`MAX_ITEMS`]): strings (leading tabs give the level) or
 /// `{"text", "level"}` objects.
 fn items_of(v: &Value) -> Result<Vec<SmartArtItem>, CmdError> {
-    let a = v.as_array().ok_or_else(|| CmdError::Params(format!("`items`: {ITEMS}")))?;
+    let a = v
+        .as_array()
+        .ok_or_else(|| CmdError::Params(format!("`items`: {ITEMS}")))?;
     let items = a
         .iter()
         .take(MAX_ITEMS)
         .map(|it| match it {
             Value::String(t) => {
                 let tabs = t.chars().take_while(|c| *c == '\t').count();
-                Ok(SmartArtItem::new(clean_text(t), u8::try_from(tabs).unwrap_or(MAX_LEVEL).min(MAX_LEVEL)))
+                Ok(SmartArtItem::new(
+                    clean_text(t),
+                    u8::try_from(tabs).unwrap_or(MAX_LEVEL).min(MAX_LEVEL),
+                ))
             }
             Value::Object(_) => {
                 let text = match it.get("text") {
@@ -235,7 +260,10 @@ fn items_of(v: &Value) -> Result<Vec<SmartArtItem>, CmdError> {
                     Some(other) => clean_text(&other.to_string()),
                 };
                 let level = p::u64(it, "level").unwrap_or(0).min(u64::from(MAX_LEVEL));
-                Ok(SmartArtItem::new(text, u8::try_from(level).unwrap_or(MAX_LEVEL)))
+                Ok(SmartArtItem::new(
+                    text,
+                    u8::try_from(level).unwrap_or(MAX_LEVEL),
+                ))
             }
             _ => Err(CmdError::Params(format!("`items`: {ITEMS}"))),
         })
@@ -256,24 +284,49 @@ fn insert(s: &mut Session, v: &Value) -> CmdResult {
         spec.colors = c;
     }
     // Fitted to the text width, as a new graphic is.
-    let max_w = s.doc.sections().first().map(|(_, sp)| sp.text_width()).unwrap_or(468.0).max(36.0);
-    let w = p::f32(v, "width").unwrap_or(DEFAULT_W).clamp(36.0, 2000.0).min(max_w);
+    let max_w = s
+        .doc
+        .sections()
+        .first()
+        .map(|(_, sp)| sp.text_width())
+        .unwrap_or(468.0)
+        .max(36.0);
+    let w = p::f32(v, "width")
+        .unwrap_or(DEFAULT_W)
+        .clamp(36.0, 2000.0)
+        .min(max_w);
     let h = p::f32(v, "height").unwrap_or(DEFAULT_H).clamp(36.0, 2000.0);
     let graphic = smart_art_graphic(spec, &s.doc.settings.theme_colors, w, h);
     let out = json!({"smartArt": graphic.smart_art.as_deref(), "width": w, "height": h});
     let props = s.typing_props();
     let at = delete_selection(s)?;
-    let obj = InlineObject::Graphic { w, h, alt: String::new(), float: Float::default(), graphic: Arc::new(graphic) };
+    let obj = InlineObject::Graphic {
+        w,
+        h,
+        alt: String::new(),
+        float: Float::default(),
+        graphic: Arc::new(graphic),
+    };
     let end = s.doc.insert_object(&at, obj, &props)?;
-    s.sel = Selection { anchor: at, focus: end };
+    s.sel = Selection {
+        anchor: at,
+        focus: end,
+    };
     Ok(out)
 }
 
 /// Change the selected graphic's model with `f`, then lay it out again at its size.
 fn edit(s: &mut Session, f: impl Fn(&mut SmartArtSpec) -> Result<(), CmdError>) -> CmdResult {
-    let (pos, obj) = selected(s).ok_or_else(|| CmdError::Disabled("select a SmartArt graphic first".into()))?;
-    let InlineObject::Graphic { w, h, graphic, .. } = obj else { return Err(CmdError::Disabled("select a SmartArt graphic first".into())) };
-    let mut spec = graphic.smart_art.as_deref().cloned().ok_or_else(|| CmdError::Disabled("this SmartArt graphic can't be edited".into()))?;
+    let (pos, obj) =
+        selected(s).ok_or_else(|| CmdError::Disabled("select a SmartArt graphic first".into()))?;
+    let InlineObject::Graphic { w, h, graphic, .. } = obj else {
+        return Err(CmdError::Disabled("select a SmartArt graphic first".into()));
+    };
+    let mut spec = graphic
+        .smart_art
+        .as_deref()
+        .cloned()
+        .ok_or_else(|| CmdError::Disabled("this SmartArt graphic can't be edited".into()))?;
     f(&mut spec)?;
     let next = Arc::new(smart_art_graphic(spec, &s.doc.settings.theme_colors, w, h));
     let out = json!({"smartArt": next.smart_art.as_deref()});

@@ -17,15 +17,23 @@ use crate::{AppearanceItem, Document, Node, NodeId, NodeKind};
 impl Document {
     /// Every swatch: the ungrouped ones first, then each colour group's in order.
     pub fn swatches_iter(&self) -> impl Iterator<Item = &Swatch> {
-        self.swatches.iter().chain(self.swatch_groups.iter().flat_map(|g| g.swatches.iter()))
+        self.swatches
+            .iter()
+            .chain(self.swatch_groups.iter().flat_map(|g| g.swatches.iter()))
     }
     pub fn swatches_iter_mut(&mut self) -> impl Iterator<Item = &mut Swatch> {
-        self.swatches.iter_mut().chain(self.swatch_groups.iter_mut().flat_map(|g| g.swatches.iter_mut()))
+        self.swatches.iter_mut().chain(
+            self.swatch_groups
+                .iter_mut()
+                .flat_map(|g| g.swatches.iter_mut()),
+        )
     }
     /// Swatch `name`, the built-in Registration swatch ([`vectorcraft_color::swatch::registration`])
     /// included.
     pub fn swatch(&self, name: &str) -> Option<&Swatch> {
-        self.swatches_iter().find(|s| s.name == name).or_else(|| (name == REGISTRATION).then(vectorcraft_color::swatch::registration))
+        self.swatches_iter()
+            .find(|s| s.name == name)
+            .or_else(|| (name == REGISTRATION).then(vectorcraft_color::swatch::registration))
     }
     pub fn swatch_mut(&mut self, name: &str) -> Option<&mut Swatch> {
         self.swatches_iter_mut().find(|s| s.name == name)
@@ -35,7 +43,11 @@ impl Document {
     pub fn global_color(&self, name: &str) -> Option<Color> {
         let w = self.swatch(name).filter(|w| w.global)?;
         match &w.paint {
-            Paint::Solid { color, swatch: None, .. } => Some(self.linked_color(*color, w.spot)),
+            Paint::Solid {
+                color,
+                swatch: None,
+                ..
+            } => Some(self.linked_color(*color, w.spot)),
             _ => None,
         }
     }
@@ -46,7 +58,11 @@ impl Document {
         match color {
             Color::Lab { .. } if spot && !self.spot_use_lab => {
                 let cms = vectorcraft_color::cms::active();
-                cms.convert(&color, vectorcraft_color::cms::Model::Cmyk, cms.settings().intent)
+                cms.convert(
+                    &color,
+                    vectorcraft_color::cms::Model::Cmyk,
+                    cms.settings().intent,
+                )
             }
             _ => color,
         }
@@ -64,11 +80,17 @@ impl Document {
     /// Tint `tint` (0..1) of global swatch `name` as a solid paint linked to it.
     pub fn tint_paint(&self, name: &str, tint: f32) -> Option<Paint> {
         let tint = tint.clamp(0.0, 1.0);
-        Some(Paint::Solid { color: self.global_color(name)?.tinted(tint), swatch: Some(name.to_string()), tint })
+        Some(Paint::Solid {
+            color: self.global_color(name)?.tinted(tint),
+            swatch: Some(name.to_string()),
+            tint,
+        })
     }
     /// Index of the colour group holding swatch `name` (`None` when ungrouped or missing).
     pub fn swatch_group_of(&self, name: &str) -> Option<usize> {
-        self.swatch_groups.iter().position(|g| g.swatches.iter().any(|s| s.name == name))
+        self.swatch_groups
+            .iter()
+            .position(|g| g.swatches.iter().any(|s| s.name == name))
     }
     /// Is `name` used by a swatch or a colour group (they share one namespace)?
     pub fn swatch_name_taken(&self, name: &str) -> bool {
@@ -83,14 +105,23 @@ impl Document {
     }
     /// The first of "base `from`", "base `from + 1`"… no swatch or colour group uses.
     fn numbered_swatch_name(&self, base: &str, from: usize) -> String {
-        (from..).map(|i| format!("{base} {i}")).find(|n| !self.swatch_name_taken(n)).unwrap_or_else(|| base.to_string())
+        (from..)
+            .map(|i| format!("{base} {i}"))
+            .find(|n| !self.swatch_name_taken(n))
+            .unwrap_or_else(|| base.to_string())
     }
     /// The name a new swatch of `paint` gets by default, unused in the document: a colour's values
     /// ([`color_name`], made free like [`Document::free_swatch_name`]), or "New Gradient Swatch 1",
     /// "New Pattern Swatch 1"…
     pub fn new_swatch_name(&self, paint: &Paint) -> String {
         let base = match paint {
-            Paint::Solid { swatch: Some(n), tint, .. } if *tint < 1.0 => return self.free_swatch_name(&format!("{n} {}%", tint_percent(*tint))),
+            Paint::Solid {
+                swatch: Some(n),
+                tint,
+                ..
+            } if *tint < 1.0 => {
+                return self.free_swatch_name(&format!("{n} {}%", tint_percent(*tint)));
+            }
             Paint::Solid { color, .. } => return self.free_swatch_name(&color_name(*color)),
             Paint::Gradient(_) => "New Gradient Swatch",
             _ => "New Pattern Swatch",
@@ -135,8 +166,15 @@ impl Document {
     /// [`Document::map_solid_paints`] limited to the art in the subtrees of `ids` (each paint
     /// visited once even when an id is inside another).
     pub fn map_solid_paints_in(&mut self, ids: &[NodeId], f: &mut LinkFn) -> usize {
-        let roots: Vec<NodeId> =
-            ids.iter().copied().filter(|id| !self.ancestry(*id).is_some_and(|a| a[..a.len() - 1].iter().any(|p| ids.contains(p)))).collect();
+        let roots: Vec<NodeId> = ids
+            .iter()
+            .copied()
+            .filter(|id| {
+                !self
+                    .ancestry(*id)
+                    .is_some_and(|a| a[..a.len() - 1].iter().any(|p| ids.contains(p)))
+            })
+            .collect();
         let mut n = 0;
         for id in roots {
             let Some(node) = self.node(id) else { continue };
@@ -169,7 +207,10 @@ impl Document {
             .chain(self.graph_designs.iter().map(|g| &g.art))
             .chain(self.patterns.iter().flat_map(|p| &p.art))
             .for_each(|n| tree(n));
-        self.graphic_styles.iter().flat_map(|gs| &gs.appearance.items).for_each(|it| f(item_paint(it)));
+        self.graphic_styles
+            .iter()
+            .flat_map(|gs| &gs.appearance.items)
+            .for_each(|it| f(item_paint(it)));
     }
 }
 
@@ -180,11 +221,18 @@ pub fn color_name(c: Color) -> String {
     let pct = |v: f32| (v.clamp(0.0, 1.0) * 100.0).round();
     let byte = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round();
     match c {
-        Color::Cmyk { c, m, y, k } => format!("C={} M={} Y={} K={}", pct(c), pct(m), pct(y), pct(k)),
+        Color::Cmyk { c, m, y, k } => {
+            format!("C={} M={} Y={} K={}", pct(c), pct(m), pct(y), pct(k))
+        }
         Color::Rgb { r, g, b } => format!("R={} G={} B={}", byte(r), byte(g), byte(b)),
         Color::Gray { k } => format!("Gray K={}", pct(k)),
         // `+ 0.0` turns a rounded -0 into 0.
-        Color::Lab { l, a, b } => format!("L={} a={} b={}", l.round() + 0.0, a.round() + 0.0, b.round() + 0.0),
+        Color::Lab { l, a, b } => format!(
+            "L={} a={} b={}",
+            l.round() + 0.0,
+            a.round() + 0.0,
+            b.round() + 0.0
+        ),
     }
 }
 
@@ -199,7 +247,11 @@ pub fn node_colors(n: &Node, f: &mut dyn FnMut(&Color, Option<&str>)) {
         for p in node_paints(m) {
             match p {
                 Paint::Solid { color, swatch, .. } => f(color, swatch.as_deref()),
-                Paint::Gradient(g) => g.gradient.stops.iter().for_each(|s| f(&s.color, s.swatch.as_deref())),
+                Paint::Gradient(g) => g
+                    .gradient
+                    .stops
+                    .iter()
+                    .for_each(|s| f(&s.color, s.swatch.as_deref())),
                 _ => {}
             }
         }
@@ -229,7 +281,11 @@ fn node_paints(n: &Node) -> impl Iterator<Item = &Paint> {
         NodeKind::Text(t) => t.runs.as_slice(),
         _ => &[],
     };
-    n.appearance.items.iter().map(item_paint).chain(runs.iter().flat_map(|r| [&r.style.fill, &r.style.stroke]))
+    n.appearance
+        .items
+        .iter()
+        .map(item_paint)
+        .chain(runs.iter().flat_map(|r| [&r.style.fill, &r.style.stroke]))
 }
 
 /// Mutable [`node_paints`], in the same order.
@@ -238,7 +294,10 @@ fn node_paints_mut(n: &mut Node) -> impl Iterator<Item = &mut Paint> {
         NodeKind::Text(t) => t.runs.as_mut_slice(),
         _ => &mut [],
     };
-    n.appearance.items.iter_mut().map(item_paint_mut).chain(runs.iter_mut().flat_map(|r| [&mut r.style.fill, &mut r.style.stroke]))
+    n.appearance.items.iter_mut().map(item_paint_mut).chain(
+        runs.iter_mut()
+            .flat_map(|r| [&mut r.style.fill, &mut r.style.stroke]),
+    )
 }
 
 /// `n` with `f` applied to its subtree's linkable colours, or `None` when nothing changed (then
@@ -306,7 +365,11 @@ mod tests {
     use crate::Appearance;
 
     fn linked(color: Color, name: &str) -> Paint {
-        Paint::Solid { color, swatch: Some(name.into()), tint: 1.0 }
+        Paint::Solid {
+            color,
+            swatch: Some(name.into()),
+            tint: 1.0,
+        }
     }
 
     /// A document with a grouped global swatch "Brand", a rectangle filled with it and an unlinked one.
@@ -315,14 +378,24 @@ mod tests {
         let red = Color::rgb(1.0, 0.0, 0.0);
         d.swatch_groups.push(SwatchGroup {
             name: "Mine".into(),
-            swatches: vec![Swatch { name: "Brand".into(), paint: Paint::solid(red), global: true, spot: false }],
+            swatches: vec![Swatch {
+                name: "Brand".into(),
+                paint: Paint::solid(red),
+                global: true,
+                spot: false,
+            }],
         });
         let layer = d.layers[0].id;
         let mut ids = vec![];
         for paint in [linked(red, "Brand"), Paint::solid(red)] {
             let id = d.alloc_id();
             let r = shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
-            d.insert(Some(layer), usize::MAX, Node::path(id, r, Appearance::basic(paint, Paint::None, 0.0))).unwrap();
+            d.insert(
+                Some(layer),
+                usize::MAX,
+                Node::path(id, r, Appearance::basic(paint, Paint::None, 0.0)),
+            )
+            .unwrap();
             ids.push(id);
         }
         (d, ids[0], ids[1])
@@ -331,26 +404,51 @@ mod tests {
     #[test]
     fn lookups_cover_colour_groups() {
         let (mut d, _, _) = doc();
-        let total = d.swatches.len() + d.swatch_groups.iter().map(|g| g.swatches.len()).sum::<usize>();
+        let total = d.swatches.len()
+            + d.swatch_groups
+                .iter()
+                .map(|g| g.swatches.len())
+                .sum::<usize>();
         assert_eq!(d.swatches_iter().count(), total);
         assert!(d.swatch("Brand").is_some_and(|s| s.global));
-        assert_eq!(d.swatch_group_of("Brand").map(|g| d.swatch_groups[g].name.as_str()), Some("Mine"));
+        assert_eq!(
+            d.swatch_group_of("Brand")
+                .map(|g| d.swatch_groups[g].name.as_str()),
+            Some("Mine")
+        );
         d.swatch_mut("Brand").unwrap().spot = true;
         assert!(d.swatch("Brand").unwrap().spot);
-        assert!(d.swatch_name_taken("Mine") && d.swatch_name_taken("Brand") && !d.swatch_name_taken("Nope"));
-        assert_eq!(d.remove_swatch("Brand").map(|s| s.name), Some("Brand".into()));
+        assert!(
+            d.swatch_name_taken("Mine")
+                && d.swatch_name_taken("Brand")
+                && !d.swatch_name_taken("Nope")
+        );
+        assert_eq!(
+            d.remove_swatch("Brand").map(|s| s.name),
+            Some("Brand".into())
+        );
         assert!(d.swatch("Brand").is_none() && d.remove_swatch("Brand").is_none());
     }
 
     #[test]
     fn default_names_follow_the_colour_model() {
-        assert_eq!(color_name(Color::cmyk(0.1, 0.2, 0.3, -1e-7)), "C=10 M=20 Y=30 K=0");
+        assert_eq!(
+            color_name(Color::cmyk(0.1, 0.2, 0.3, -1e-7)),
+            "C=10 M=20 Y=30 K=0"
+        );
         assert_eq!(color_name(Color::rgb(1.0, 0.5, -1e-7)), "R=255 G=128 B=0");
         assert_eq!(color_name(Color::Gray { k: 0.4 }), "Gray K=40");
         let (d, _, _) = doc();
         assert_eq!(d.free_swatch_name("Brand"), "Brand 2");
-        assert_eq!(d.free_swatch_name("Mine"), "Mine 2", "colour groups share the namespace");
-        assert_eq!(d.new_swatch_name(&Paint::solid(Color::rgb(1.0, 0.0, 0.0))), "R=255 G=0 B=0");
+        assert_eq!(
+            d.free_swatch_name("Mine"),
+            "Mine 2",
+            "colour groups share the namespace"
+        );
+        assert_eq!(
+            d.new_swatch_name(&Paint::solid(Color::rgb(1.0, 0.0, 0.0))),
+            "R=255 G=0 B=0"
+        );
     }
 
     #[test]
@@ -366,10 +464,19 @@ mod tests {
             true
         });
         assert_eq!(n, 1);
-        assert_eq!(d.node(a).unwrap().appearance.fill_paint(), linked(blue, "Brand"));
-        assert_eq!(d.node(b).unwrap().appearance.fill_paint(), Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
+        assert_eq!(
+            d.node(a).unwrap().appearance.fill_paint(),
+            linked(blue, "Brand")
+        );
+        assert_eq!(
+            d.node(b).unwrap().appearance.fill_paint(),
+            Paint::solid(Color::rgb(1.0, 0.0, 0.0))
+        );
         let unchanged = |d: &Document| d.layers[0].children().unwrap()[1].clone();
-        assert!(Arc::ptr_eq(&unchanged(&d), &unchanged(&before)), "the unlinked rectangle is shared, not copied");
+        assert!(
+            Arc::ptr_eq(&unchanged(&d), &unchanged(&before)),
+            "the unlinked rectangle is shared, not copied"
+        );
         // Nothing to change: the tree is untouched.
         let again = d.clone();
         assert_eq!(d.map_solid_paints(&mut |_, _, _| false), 0);
@@ -385,10 +492,19 @@ mod tests {
             seen += 1;
             s.take().is_some()
         });
-        assert_eq!((n, seen), (1, 2), "the layer covers `a`: each fill is visited once");
-        assert_eq!(d.node(a).unwrap().appearance.fill_paint(), Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
+        assert_eq!(
+            (n, seen),
+            (1, 2),
+            "the layer covers `a`: each fill is visited once"
+        );
+        assert_eq!(
+            d.node(a).unwrap().appearance.fill_paint(),
+            Paint::solid(Color::rgb(1.0, 0.0, 0.0))
+        );
         let mut colors = vec![];
-        node_colors(d.node(b).unwrap(), &mut |c, s| colors.push((*c, s.map(str::to_string))));
+        node_colors(d.node(b).unwrap(), &mut |c, s| {
+            colors.push((*c, s.map(str::to_string)))
+        });
         assert_eq!(colors, [(Color::rgb(1.0, 0.0, 0.0), None)]);
     }
 }

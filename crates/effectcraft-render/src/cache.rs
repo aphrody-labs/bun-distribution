@@ -77,7 +77,15 @@ impl LayerCache {
     /// A cache holding at most `budget` bytes of pixels.
     pub fn new(budget: usize) -> LayerCache {
         LayerCache {
-            inner: Mutex::new(Inner { map: HashMap::new(), bytes: 0, budget, clock: 0, hits: 0, misses: 0, missed_at: HashMap::new() }),
+            inner: Mutex::new(Inner {
+                map: HashMap::new(),
+                bytes: 0,
+                budget,
+                clock: 0,
+                hits: 0,
+                misses: 0,
+                missed_at: HashMap::new(),
+            }),
             disk: Mutex::new(None),
             store: Mutex::new(None),
             gate: Mutex::new(None),
@@ -95,7 +103,14 @@ impl LayerCache {
     }
 
     fn gated(&self) -> bool {
-        self.gate.lock().ok().and_then(|g| g.as_ref().map(|g| g.load(std::sync::atomic::Ordering::Relaxed))).unwrap_or(false)
+        self.gate
+            .lock()
+            .ok()
+            .and_then(|g| {
+                g.as_ref()
+                    .map(|g| g.load(std::sync::atomic::Ordering::Relaxed))
+            })
+            .unwrap_or(false)
     }
 
     /// Attach (or detach) the disk cache. `salt` separates projects and footage versions (see
@@ -178,9 +193,14 @@ impl LayerCache {
         if self.gated() {
             return;
         }
-        let started = self.inner.lock().ok().and_then(|mut g| g.missed_at.remove(&key));
+        let started = self
+            .inner
+            .lock()
+            .ok()
+            .and_then(|mut g| g.missed_at.remove(&key));
         if let Some((dc, dk)) = self.disk_key(key) {
-            let slow = started.is_some_and(|t| t.elapsed().as_secs_f64() * 1e3 >= dc.min_layer_ms() as f64);
+            let slow = started
+                .is_some_and(|t| t.elapsed().as_secs_f64() * 1e3 >= dc.min_layer_ms() as f64);
             if slow {
                 dc.put_layer(dk, &buf);
             }
@@ -196,7 +216,14 @@ impl LayerCache {
         }
         g.clock += 1;
         let now = g.clock;
-        if let Some(old) = g.map.insert(key, Entry { buf, bytes, last_use: now }) {
+        if let Some(old) = g.map.insert(
+            key,
+            Entry {
+                buf,
+                bytes,
+                last_use: now,
+            },
+        ) {
             g.bytes -= old.bytes;
         }
         g.bytes += bytes;
@@ -247,7 +274,15 @@ impl LayerCache {
     }
 
     pub fn stats(&self) -> CacheStats {
-        self.inner.lock().map(|g| CacheStats { entries: g.map.len(), bytes: g.bytes, hits: g.hits, misses: g.misses }).unwrap_or_default()
+        self.inner
+            .lock()
+            .map(|g| CacheStats {
+                entries: g.map.len(),
+                bytes: g.bytes,
+                hits: g.hits,
+                misses: g.misses,
+            })
+            .unwrap_or_default()
     }
 }
 
@@ -299,7 +334,11 @@ impl Default for PrefetchStore {
 
 impl PrefetchStore {
     pub fn new(budget: usize) -> PrefetchStore {
-        PrefetchStore { st: Mutex::new(Prefetched::default()), budget, min_ms: PREFETCH_MIN_LAYER_MS }
+        PrefetchStore {
+            st: Mutex::new(Prefetched::default()),
+            budget,
+            min_ms: PREFETCH_MIN_LAYER_MS,
+        }
     }
 
     /// Store buffers that took at least `ms` to render (default [`PREFETCH_MIN_LAYER_MS`]).
@@ -316,9 +355,13 @@ impl PrefetchStore {
     /// A fetched entry (sealed bytes, [`crate::disk_cache::layer_entry`]) for `key`; `false`
     /// when damaged.
     pub fn provide(&self, key: u128, entry: &[u8]) -> bool {
-        let Some(buf) = crate::disk_cache::read_layer_entry(entry) else { return false };
+        let Some(buf) = crate::disk_cache::read_layer_entry(entry) else {
+            return false;
+        };
         let bytes = buf.img.data.len() * std::mem::size_of::<effectcraft_raster::Px>();
-        let Ok(mut s) = self.st.lock() else { return false };
+        let Ok(mut s) = self.st.lock() else {
+            return false;
+        };
         s.clock += 1;
         let now = s.clock;
         if let Some((old, _)) = s.ready.insert(key, (Arc::new(buf), now)) {
@@ -327,7 +370,9 @@ impl PrefetchStore {
         s.bytes += bytes;
         s.known.insert(key);
         while s.bytes > self.budget {
-            let Some((&k, _)) = s.ready.iter().min_by_key(|(_, (_, t))| *t) else { break };
+            let Some((&k, _)) = s.ready.iter().min_by_key(|(_, (_, t))| *t) else {
+                break;
+            };
             if let Some((b, _)) = s.ready.remove(&k) {
                 s.bytes -= b.img.data.len() * std::mem::size_of::<effectcraft_raster::Px>();
             }
@@ -337,17 +382,26 @@ impl PrefetchStore {
 
     /// Keys looked up and not found since the last call (each once).
     pub fn take_misses(&self) -> Vec<u128> {
-        self.st.lock().map(|mut s| std::mem::take(&mut s.misses)).unwrap_or_default()
+        self.st
+            .lock()
+            .map(|mut s| std::mem::take(&mut s.misses))
+            .unwrap_or_default()
     }
 
     /// Keys served since the last call (each once).
     pub fn take_hits(&self) -> Vec<u128> {
-        self.st.lock().map(|mut s| std::mem::take(&mut s.hits)).unwrap_or_default()
+        self.st
+            .lock()
+            .map(|mut s| std::mem::take(&mut s.hits))
+            .unwrap_or_default()
     }
 
     /// Entries to write: (key, sealed bytes).
     pub fn take_writes(&self) -> Vec<(u128, Vec<u8>)> {
-        self.st.lock().map(|mut s| std::mem::take(&mut s.writes)).unwrap_or_default()
+        self.st
+            .lock()
+            .map(|mut s| std::mem::take(&mut s.writes))
+            .unwrap_or_default()
     }
 
     /// Forget everything (Empty Disk Cache, Purge).
@@ -435,7 +489,10 @@ fn time_dependent(layer: &Layer) -> bool {
                 return true;
             }
             // Clone strokes reading another layer or another time.
-            if g.enabled && effectcraft_effects::paint::is_paint(g) && effectcraft_effects::paint::cache_key(g, 0.0).1 {
+            if g.enabled
+                && effectcraft_effects::paint::is_paint(g)
+                && effectcraft_effects::paint::cache_key(g, 0.0).1
+            {
                 return true;
             }
         }
@@ -485,7 +542,13 @@ pub fn layer_key(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bo
     // Time effects see property values at other times. Keyframes are part of the hashed
     // structure (and the layer time is folded in), but expressions may read other layers at
     // those times, which the key cannot see: such layers are not cached.
-    if reads_other_times(layer) && layer.props.children.iter().any(|c| matches!(c, Node::Group(g) if g.match_id != "transform" && has_expression(g))) {
+    if reads_other_times(layer)
+        && layer
+            .props
+            .children
+            .iter()
+            .any(|c| matches!(c, Node::Group(g) if g.match_id != "transform" && has_expression(g)))
+    {
         return None;
     }
     key_with(ctx, layer, scale, draft, blur, false)
@@ -494,7 +557,14 @@ pub fn layer_key(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bo
 /// Cache key for a layer's *input* at the context time: source → masks → its first `effects`
 /// effects (see `Renderer::layer_input`). Unlike [`layer_key`], footage layers are cached here
 /// (keyed by item and source time), since Time effects read many neighbouring frames.
-pub fn input_key(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, effects: usize) -> Option<u64> {
+pub fn input_key(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    scale: f64,
+    draft: bool,
+    blur: bool,
+    effects: usize,
+) -> Option<u64> {
     if layer.switches.adjustment {
         return None;
     }
@@ -521,11 +591,27 @@ fn has_expression(g: &PropGroup) -> bool {
 
 /// Cache key for an adjustment layer's footprint (its source through its masks, see
 /// `Renderer::adjustment_footprint`): the GPU compositor then uploads it once, not every frame.
-pub fn footprint_key(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool) -> Option<u64> {
-    Some(derive(key_any(ctx, layer, scale, draft, blur, false, None)?, 0xf007_9417))
+pub fn footprint_key(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    scale: f64,
+    draft: bool,
+    blur: bool,
+) -> Option<u64> {
+    Some(derive(
+        key_any(ctx, layer, scale, draft, blur, false, None)?,
+        0xf007_9417,
+    ))
 }
 
-fn key_with(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, footage: bool) -> Option<u64> {
+fn key_with(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    scale: f64,
+    draft: bool,
+    blur: bool,
+    footage: bool,
+) -> Option<u64> {
     if layer.switches.adjustment {
         return None;
     }
@@ -535,7 +621,15 @@ fn key_with(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, f
 /// `blur`: the layer is motion blurred in this render (`Renderer::mb_on`). `effects`: key only
 /// the first that many effects (a layer's input, see [`input_key`]).
 #[allow(clippy::too_many_arguments)]
-fn key_any(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, footage: bool, effects: Option<usize>) -> Option<u64> {
+fn key_any(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    scale: f64,
+    draft: bool,
+    blur: bool,
+    footage: bool,
+    effects: Option<usize>,
+) -> Option<u64> {
     let mut h = KeyHasher(0xcbf2_9ce4_8422_2325);
     ctx.comp.frame_rate.as_f64().to_bits().hash(&mut h);
     ctx.comp.enable_frame_blending.hash(&mut h);
@@ -543,13 +637,17 @@ fn key_any(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, fo
     match &layer.source {
         LayerSource::Solid { item } => {
             let it = ctx.project.item(*item)?;
-            let ItemKind::Solid(s) = &it.kind else { return None };
+            let ItemKind::Solid(s) = &it.kind else {
+                return None;
+            };
             hash_debug(&mut h, s);
         }
         LayerSource::Text | LayerSource::Shape => {}
         LayerSource::Footage { item } if footage => {
             let it = ctx.project.item(*item)?;
-            let ItemKind::Footage(f) = &it.kind else { return None };
+            let ItemKind::Footage(f) = &it.kind else {
+                return None;
+            };
             hash_debug(&mut h, f);
             // A proxy (and its Use Proxy switch) changes the pixels.
             hash_debug(&mut h, &it.proxy);
@@ -561,7 +659,9 @@ fn key_any(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, fo
         _ => return None,
     }
     // Bit depth and colour management change the pixels.
-    crate::color::Pipe::of(&ctx.project.settings).key().hash(&mut h);
+    crate::color::Pipe::of(&ctx.project.settings)
+        .key()
+        .hash(&mut h);
     ctx.comp_id.hash(&mut h);
     ctx.comp.width.hash(&mut h);
     ctx.comp.height.hash(&mut h);
@@ -573,7 +673,9 @@ fn key_any(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, fo
     hash_debug(&mut h, &layer.switches.pixels());
     // Mask motion blur and effects that read the shutter depend on whether the layer is motion
     // blurred in this render and on the comp's shutter.
-    if layer.masks().is_some_and(|m| !m.children.is_empty()) || layer.effects().is_some_and(|fx| !fx.children.is_empty()) {
+    if layer.masks().is_some_and(|m| !m.children.is_empty())
+        || layer.effects().is_some_and(|fx| !fx.children.is_empty())
+    {
         blur.hash(&mut h);
         ctx.comp.enable_motion_blur.hash(&mut h);
         ctx.comp.shutter_angle.to_bits().hash(&mut h);
@@ -616,7 +718,10 @@ fn key_any(ctx: &EvalCtx, layer: &Layer, scale: f64, draft: bool, blur: bool, fo
         && let Some(fx) = layer.effects()
     {
         let lt = layer.layer_time(ctx.time).seconds();
-        for g in fx.groups().filter(|g| g.enabled && effectcraft_effects::paint::is_paint(g)) {
+        for g in fx
+            .groups()
+            .filter(|g| g.enabled && effectcraft_effects::paint::is_paint(g))
+        {
             effectcraft_effects::paint::cache_key(g, lt).0.hash(&mut h);
         }
     }

@@ -57,7 +57,11 @@ const SCALES: [(&str, [f64; 2]); 9] = [
     ("1:100", [1.0, 100.0]),
 ];
 
-const TYPES: [&str; 3] = ["One Point Perspective", "Two Point Perspective", "Three Point Perspective"];
+const TYPES: [&str; 3] = [
+    "One Point Perspective",
+    "Two Point Perspective",
+    "Three Point Perspective",
+];
 
 pub(super) const SPEC: DialogSpec = DialogSpec {
     heading: |d| {
@@ -84,7 +88,11 @@ fn open_on(app: &mut VectorcraftApp, mut def: Value, mode: &str) {
 
 /// The active document's grid as Define Grid fields.
 fn grid_fields(app: &mut VectorcraftApp) -> Result<Value, String> {
-    Ok(app.session.execute("perspective.grid.get", &json!({})).map_err(|e| e.to_string())?["define"].take())
+    Ok(app
+        .session
+        .execute("perspective.grid.get", &json!({}))
+        .map_err(|e| e.to_string())?["define"]
+        .take())
 }
 
 /// Open Define Grid on the active document's grid.
@@ -104,9 +112,17 @@ pub fn open_save(app: &mut VectorcraftApp) -> Result<Value, String> {
 
 /// The preset editor: the saved preset `original` (Edit…), or a new preset starting from `base`
 /// (New…). Its OK returns to Edit → Perspective Grid Presets.
-pub fn open_edit(app: &mut VectorcraftApp, original: Option<&str>, base: &str) -> Result<(), String> {
+pub fn open_edit(
+    app: &mut VectorcraftApp,
+    original: Option<&str>,
+    base: &str,
+) -> Result<(), String> {
     let name = original.unwrap_or(base);
-    let mut def = json!(app.session.perspective_preset(name).ok_or_else(|| format!("no perspective grid preset named `{name}`"))?);
+    let mut def = json!(
+        app.session
+            .perspective_preset(name)
+            .ok_or_else(|| format!("no perspective grid preset named `{name}`"))?
+    );
     match original {
         Some(n) => def[ORIGINAL] = json!(n),
         None => def["name"] = json!(app.session.new_perspective_preset_name()),
@@ -155,30 +171,53 @@ fn unit(d: &Dialog) -> Unit {
 }
 
 fn kind(d: &Dialog) -> u8 {
-    d.fields.get("kind").and_then(Value::as_u64).map_or(2, |k| k.clamp(1, 3) as u8)
+    d.fields
+        .get("kind")
+        .and_then(Value::as_u64)
+        .map_or(2, |k| k.clamp(1, 3) as u8)
 }
 
 fn scale(d: &Dialog) -> [f64; 2] {
     let v = d.fields.get("scale").and_then(Value::as_array);
-    let at = |i: usize| v.and_then(|a| a.get(i)).and_then(Value::as_f64).unwrap_or(1.0);
+    let at = |i: usize| {
+        v.and_then(|a| a.get(i))
+            .and_then(Value::as_f64)
+            .unwrap_or(1.0)
+    };
     [at(0), at(1)]
 }
 
 /// A length field (`key`, in `unit`) `width` wide. Returns true when it changed.
 fn length(ui: &mut egui::Ui, d: &mut Dialog, key: &str, unit: Unit, width: f32) -> bool {
-    let pt = d.fields.get(key).and_then(Value::as_f64).map(|v| unit.to_pt(v));
-    let Some(v) = widgets::num_field(ui, ("persp-len", key), pt, unit, width) else { return false };
+    let pt = d
+        .fields
+        .get(key)
+        .and_then(Value::as_f64)
+        .map(|v| unit.to_pt(v));
+    let Some(v) = widgets::num_field(ui, ("persp-len", key), pt, unit, width) else {
+        return false;
+    };
     d.fields.insert(key.into(), json!(unit.from_pt(v)));
     true
 }
 
 /// One of the third vanishing point's coordinates (`i`: 0 = x, 1 = y).
 fn third_vp(ui: &mut egui::Ui, d: &mut Dialog, i: usize, unit: Unit, enabled: bool) {
-    let mut v = d.fields.get("thirdVp").and_then(Value::as_array).cloned().unwrap_or_else(|| vec![json!(0), json!(0)]);
+    let mut v = d
+        .fields
+        .get("thirdVp")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_else(|| vec![json!(0), json!(0)]);
     v.resize(2, json!(0));
     let pt = v.get(i).and_then(Value::as_f64).map(|x| unit.to_pt(x));
     ui.label(if i == 0 { "X:" } else { "Y:" });
-    if let Some(x) = ui.add_enabled_ui(enabled, |ui| widgets::num_field(ui, ("persp-vp3", i), pt, unit, 84.0)).inner {
+    if let Some(x) = ui
+        .add_enabled_ui(enabled, |ui| {
+            widgets::num_field(ui, ("persp-vp3", i), pt, unit, 84.0)
+        })
+        .inner
+    {
         v[i] = json!(unit.from_pt(x));
         d.fields.insert("thirdVp".into(), Value::Array(v));
     }
@@ -191,11 +230,20 @@ fn color(ui: &mut egui::Ui, d: &mut Dialog, key: &str, label: &str) {
     widgets::label_row(ui, label, LABEL, |ui| {
         let (chip, _) = ui.allocate_exact_size(egui::vec2(18.0, 18.0), egui::Sense::hover());
         if let Some(Rgb([r, g, b])) = cur {
-            ui.painter().rect_filled(chip, 2.0, egui::Color32::from_rgb(r, g, b));
+            ui.painter()
+                .rect_filled(chip, 2.0, egui::Color32::from_rgb(r, g, b));
         }
-        ui.painter().rect_stroke(chip, 2.0, egui::Stroke::new(1.0, t.input_border), egui::StrokeKind::Inside);
+        ui.painter().rect_stroke(
+            chip,
+            2.0,
+            egui::Stroke::new(1.0, t.input_border),
+            egui::StrokeKind::Inside,
+        );
         let hex = cur.map(|c| c.hex()).unwrap_or_default();
-        if let Some(c) = widgets::hex_field(ui, ("persp-color", key), hex.trim_start_matches('#')).as_deref().and_then(Rgb::parse) {
+        if let Some(c) = widgets::hex_field(ui, ("persp-color", key), hex.trim_start_matches('#'))
+            .as_deref()
+            .and_then(Rgb::parse)
+        {
             d.fields.insert(key.into(), json!(c.hex()));
         }
     });
@@ -214,27 +262,41 @@ fn name_row(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     let name = d.str("name");
     // The fields no longer the named preset's: [Custom].
     let fields: Option<GridDefinition> = serde_json::from_value(form::params(d)).ok();
-    let current = presets.iter().find(|p| p.name == name).filter(|p| fields.as_ref().is_some_and(|f| f.same(p)));
+    let current = presets
+        .iter()
+        .find(|p| p.name == name)
+        .filter(|p| fields.as_ref().is_some_and(|f| f.same(p)));
     if current.is_none() && !name.is_empty() {
         d.fields.insert("name".into(), json!(""));
     }
     let shown = current.map_or(CUSTOM, |p| p.name.as_str());
-    let names: Vec<&str> = std::iter::once(CUSTOM).chain(presets.iter().map(|p| p.name.as_str())).collect();
+    let names: Vec<&str> = std::iter::once(CUSTOM)
+        .chain(presets.iter().map(|p| p.name.as_str()))
+        .collect();
     // [Custom] and the built-in presets are ours (translated); the saved ones are names.
     let builtin = |k: usize| k == 0 || names.get(k).is_some_and(|n| is_builtin(n));
     widgets::label_row(ui, tl!("Preset:"), LABEL, |ui| {
         let picked = super::mixed_dropdown(ui, "persp-preset", shown, &names, 200.0, builtin);
-        if let Some(p) = picked.and_then(|i| i.checked_sub(1)).and_then(|i| presets.get(i)) {
+        if let Some(p) = picked
+            .and_then(|i| i.checked_sub(1))
+            .and_then(|i| presets.get(i))
+        {
             let mut fields = json!(p);
             fields[SHOWN] = fields["units"].clone();
             if let Some(o) = fields.as_object() {
                 d.fields.extend(o.clone());
             }
         }
-        if widgets::flat_button(ui, tl!("Save Preset…"), 96.0).on_hover_text(tl!("Save these settings as a preset")).clicked() {
+        if widgets::flat_button(ui, tl!("Save Preset…"), 96.0)
+            .on_hover_text(tl!("Save these settings as a preset"))
+            .clicked()
+        {
             d.fields.insert(MODE.into(), json!("save"));
             d.fields.insert(FROM.into(), json!("define"));
-            d.fields.insert("name".into(), json!(app.session.new_perspective_preset_name()));
+            d.fields.insert(
+                "name".into(),
+                json!(app.session.new_perspective_preset_name()),
+            );
         }
     });
     ui.add_space(8.0);
@@ -247,11 +309,17 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     ui.add_space(6.0);
     let k = kind(d);
     widgets::label_row(ui, tl!("Type:"), LABEL, |ui| {
-        if let Some(i) = widgets::dropdown(ui, "persp-type", TYPES[usize::from(k - 1)], &TYPES, 200.0) {
+        if let Some(i) =
+            widgets::dropdown(ui, "persp-type", TYPES[usize::from(k - 1)], &TYPES, 200.0)
+        {
             d.fields.insert("kind".into(), json!(i + 1));
         }
     });
-    let units: Vec<(&str, &str)> = Unit::ALL.iter().filter(|u| **u != Unit::FeetInches).map(|u| (u.key(), u.label())).collect();
+    let units: Vec<(&str, &str)> = Unit::ALL
+        .iter()
+        .filter(|u| **u != Unit::FeetInches)
+        .map(|u| (u.key(), u.label()))
+        .collect();
     form::choice(ui, d, "units", tl!("Units:"), (LABEL, 200.0), &units);
     // A new unit (the menu or `ui.dialog.set`) keeps the lengths: they are converted.
     let unit = unit(d);
@@ -274,7 +342,9 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let mut labels: Vec<&str> = SCALES.iter().map(|(l, _)| *l).collect();
     labels.push("Custom");
     widgets::label_row(ui, tl!("Scale:"), LABEL, |ui| {
-        if let Some(i) = widgets::dropdown(ui, "persp-scale", named.unwrap_or("Custom"), &labels, 200.0) {
+        if let Some(i) =
+            widgets::dropdown(ui, "persp-scale", named.unwrap_or("Custom"), &labels, 200.0)
+        {
             // Custom starts from the scale shown.
             let s = SCALES.get(i).map_or(sc, |(_, s)| *s);
             d.fields.insert("scale".into(), json!(s));
@@ -282,9 +352,14 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     });
     if named.is_none() {
         widgets::label_row(ui, "", LABEL, |ui| {
-            for (i, label) in [tl!("Artboard:"), tl!("Real World:")].into_iter().enumerate() {
+            for (i, label) in [tl!("Artboard:"), tl!("Real World:")]
+                .into_iter()
+                .enumerate()
+            {
                 ui.label(egui::RichText::new(label).color(t.text_dim));
-                if let Some(v) = widgets::plain_field(ui, ("persp-scale", i), sc[i], "", 3, 56.0).filter(|v| *v > 0.0 && v.is_finite()) {
+                if let Some(v) = widgets::plain_field(ui, ("persp-scale", i), sc[i], "", 3, 56.0)
+                    .filter(|v| *v > 0.0 && v.is_finite())
+                {
                     let mut s = sc;
                     s[i] = v;
                     d.fields.insert("scale".into(), json!(s));
@@ -308,7 +383,12 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     ui.add_space(4.0);
     widgets::label_row(ui, tl!("Viewing Angle:"), LABEL, |ui| {
         let a = d.f64("angle", 45.0);
-        if let Some(v) = ui.add_enabled_ui(k != 1, |ui| widgets::plain_field(ui, "persp-angle", a, "°", 2, FIELD)).inner {
+        if let Some(v) = ui
+            .add_enabled_ui(k != 1, |ui| {
+                widgets::plain_field(ui, "persp-angle", a, "°", 2, FIELD)
+            })
+            .inner
+        {
             d.fields.insert("angle".into(), json!(v));
         }
     });
@@ -332,8 +412,15 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     widgets::label_row(ui, tl!("Opacity:"), LABEL, |ui| {
         let v = d.f64("opacity", 50.0).clamp(0.0, 100.0);
         let track = |x: f32| egui::Color32::from_gray((60.0 + x * 160.0) as u8);
-        let mut new =
-            widgets::color_slider(ui, "persp-opacity", (v / 100.0) as f32, form::SLIDER_WIDTH, &track).0.map(|x| (f64::from(x) * 100.0).round());
+        let mut new = widgets::color_slider(
+            ui,
+            "persp-opacity",
+            (v / 100.0) as f32,
+            form::SLIDER_WIDTH,
+            &track,
+        )
+        .0
+        .map(|x| (f64::from(x) * 100.0).round());
         if let Some(x) = widgets::plain_field(ui, "persp-opacity-field", v, "%", 0, 52.0) {
             new = Some(x.round().clamp(0.0, 100.0));
         }

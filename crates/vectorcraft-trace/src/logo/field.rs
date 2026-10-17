@@ -15,15 +15,25 @@ pub(crate) fn blur_plane(plane: &mut [f32], w: usize, h: usize, sigma: f64) {
         return;
     }
     let r = (3.0 * sigma).ceil() as i64;
-    let k: Vec<f64> = (-r..=r).map(|i| (-0.5 * (i as f64 / sigma).powi(2)).exp()).collect();
+    let k: Vec<f64> = (-r..=r)
+        .map(|i| (-0.5 * (i as f64 / sigma).powi(2)).exp())
+        .collect();
     let sum: f64 = k.iter().sum();
     let at = |src: &[f32], x: i64, y: i64| {
-        f64::from(src.get(y.clamp(0, h as i64 - 1) as usize * w + x.clamp(0, w as i64 - 1) as usize).copied().unwrap_or(0.0))
+        f64::from(
+            src.get(y.clamp(0, h as i64 - 1) as usize * w + x.clamp(0, w as i64 - 1) as usize)
+                .copied()
+                .unwrap_or(0.0),
+        )
     };
     let mut tmp = vec![0.0f32; w * h];
     for y in 0..h as i64 {
         for x in 0..w as i64 {
-            let v: f64 = k.iter().enumerate().map(|(j, kv)| kv * at(plane, x + j as i64 - r, y)).sum();
+            let v: f64 = k
+                .iter()
+                .enumerate()
+                .map(|(j, kv)| kv * at(plane, x + j as i64 - r, y))
+                .sum();
             if let Some(d) = tmp.get_mut(y as usize * w + x as usize) {
                 *d = (v / sum) as f32;
             }
@@ -31,7 +41,11 @@ pub(crate) fn blur_plane(plane: &mut [f32], w: usize, h: usize, sigma: f64) {
     }
     for y in 0..h as i64 {
         for x in 0..w as i64 {
-            let v: f64 = k.iter().enumerate().map(|(j, kv)| kv * at(&tmp, x, y + j as i64 - r)).sum();
+            let v: f64 = k
+                .iter()
+                .enumerate()
+                .map(|(j, kv)| kv * at(&tmp, x, y + j as i64 - r))
+                .sum();
             if let Some(d) = plane.get_mut(y as usize * w + x as usize) {
                 *d = (v / sum) as f32;
             }
@@ -84,7 +98,10 @@ fn prefilter_line(c: &mut [f64]) {
             *v += z * prev;
         }
     }
-    let (a, b) = (c.get(n - 2).copied().unwrap_or(0.0), c.get(n - 1).copied().unwrap_or(0.0));
+    let (a, b) = (
+        c.get(n - 2).copied().unwrap_or(0.0),
+        c.get(n - 1).copied().unwrap_or(0.0),
+    );
     if let Some(last) = c.last_mut() {
         *last = (z / (z * z - 1.0)) * (z * a + b);
     }
@@ -126,7 +143,12 @@ fn taps(n_in: usize, u: usize) -> Vec<(i64, [f64; 4])> {
             let t = x - i0;
             let t2 = t * t;
             let t3 = t2 * t;
-            let w = [(1.0 - t).powi(3) / 6.0, (3.0 * t3 - 6.0 * t2 + 4.0) / 6.0, (-3.0 * t3 + 3.0 * t2 + 3.0 * t + 1.0) / 6.0, t3 / 6.0];
+            let w = [
+                (1.0 - t).powi(3) / 6.0,
+                (3.0 * t3 - 6.0 * t2 + 4.0) / 6.0,
+                (-3.0 * t3 + 3.0 * t2 + 3.0 * t + 1.0) / 6.0,
+                t3 / 6.0,
+            ];
             (i0 as i64 - 1, w)
         })
         .collect()

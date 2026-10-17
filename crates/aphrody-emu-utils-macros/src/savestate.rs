@@ -2,8 +2,8 @@ use proc_macro::Span;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, quote_spanned};
 use syn::{
-    Attribute, Data, DeriveInput, Expr, Fields, GenericParam, Lit, LitByteStr, LitInt, Meta, Path,
-    parse_macro_input, parse_str, spanned::Spanned,
+    parse_macro_input, parse_str, spanned::Spanned, Attribute, Data, DeriveInput, Expr, Fields,
+    GenericParam, Lit, LitByteStr, LitInt, Meta, Path,
 };
 
 fn meta_ident_eq(path: &Path, value: &str) -> bool {
@@ -109,7 +109,10 @@ impl FieldsData {
                 .map(|field| {
                     let ident = field.ident.clone().unwrap();
                     (
-                        Some(LitByteStr::new(&ident.to_string().into_bytes(), ident.span())),
+                        Some(LitByteStr::new(
+                            &ident.to_string().into_bytes(),
+                            ident.span(),
+                        )),
                         ident,
                         field,
                     )
@@ -241,8 +244,10 @@ impl FieldsData {
 
             if matches!(&load_kind, Some(LoadStoreKind::Fn(_)))
                 != matches!(&load_in_place_kind, Some(LoadStoreKind::Fn(_)))
-                && !((matches!(&load_kind, Some(LoadStoreKind::Default | LoadStoreKind::Value(_)))
-                    && only_load_in_place)
+                && !((matches!(
+                    &load_kind,
+                    Some(LoadStoreKind::Default | LoadStoreKind::Value(_))
+                ) && only_load_in_place)
                     || (matches!(
                         &load_in_place_kind,
                         Some(LoadStoreKind::Default | LoadStoreKind::Value(_))
@@ -260,13 +265,13 @@ impl FieldsData {
                         quote_spanned! {ident.span()=>
                             save.store(#ident)?
                         }
-                    },
+                    }
 
                     LoadStoreKind::Value(value) => {
                         quote_spanned! {ident.span()=>
                             save.store(#value)?
                         }
-                    },
+                    }
 
                     LoadStoreKind::Fn(value) => value,
                 };
@@ -289,20 +294,20 @@ impl FieldsData {
                                 #(save.start_field(#name)?;)*
                                 save.load_into(#ident)?;
                             }}
-                        },
+                        }
 
                         LoadStoreKind::Value(value) => {
                             quote_spanned! {ident.span()=>
                                 *#ident = #value;
                             }
-                        },
+                        }
 
                         LoadStoreKind::Fn(value) => {
                             quote_spanned! {ident.span()=> {
                                 #(save.start_field(#name)?;)*
                                 #value;
                             }}
-                        },
+                        }
                     });
                 }
 
@@ -314,11 +319,11 @@ impl FieldsData {
                                 #(save.start_field(#name)?;)*
                                 save.load()?
                             }}
-                        },
+                        }
 
                         LoadStoreKind::Value(value) => {
                             quote_spanned!(ident.span()=> {#value})
-                        },
+                        }
 
                         LoadStoreKind::Fn(value) => quote_spanned! {ident.span()=> {
                             #(save.start_field(#name)?;)*
@@ -356,11 +361,13 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         } else {
             quote!(where)
         };
-        let type_params_0 = input
-            .generics
-            .params
-            .iter()
-            .filter_map(|p| if let GenericParam::Type(p) = p { Some(&p.ident) } else { None });
+        let type_params_0 = input.generics.params.iter().filter_map(|p| {
+            if let GenericParam::Type(p) = p {
+                Some(&p.ident)
+            } else {
+                None
+            }
+        });
         let type_params_1 = type_params_0.clone();
         let type_params_2 = type_params_0.clone();
         (
@@ -370,21 +377,30 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         )
     };
 
-    let LoadStoreOptions { pre_store, post_store, post_load, only_load_in_place } =
-        LoadStoreOptions::parse(&input.attrs).unwrap_or_else(|message| panic!("{}", message));
+    let LoadStoreOptions {
+        pre_store,
+        post_store,
+        post_load,
+        only_load_in_place,
+    } = LoadStoreOptions::parse(&input.attrs).unwrap_or_else(|message| panic!("{}", message));
 
     match &input.data {
         Data::Struct(data) => {
-            let FieldsData { store, load_in_place, load } =
-                FieldsData::parse(&data.fields, false, only_load_in_place)
-                    .unwrap_or_else(|message| panic!("{}", message));
+            let FieldsData {
+                store,
+                load_in_place,
+                load,
+            } = FieldsData::parse(&data.fields, false, only_load_in_place)
+                .unwrap_or_else(|message| panic!("{}", message));
 
             let store_fields = store.into_iter();
             let load_fields_in_place = load_in_place.unwrap().into_iter();
             let load_fields = load.map(|load| load.into_iter());
 
-            let post_load_ident =
-                post_load.as_ref().map(|_| format_ident!("__internal_post_load")).into_iter();
+            let post_load_ident = post_load
+                .as_ref()
+                .map(|_| format_ident!("__internal_post_load"))
+                .into_iter();
             let post_load_ident_ = post_load_ident.clone();
             let load_post_load = quote! {
                 #(
@@ -401,8 +417,10 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
             let (store_fields, load_fields_in_place, load_fields) = match &data.fields {
                 Fields::Named(fields) => {
-                    let struct_fields_0 =
-                        fields.named.iter().map(|field| field.ident.as_ref().unwrap());
+                    let struct_fields_0 = fields
+                        .named
+                        .iter()
+                        .map(|field| field.ident.as_ref().unwrap());
                     let struct_fields_1 = struct_fields_0.clone();
                     let struct_fields_2 = struct_fields_0.clone();
                     let struct_fields_3 = struct_fields_0.clone();
@@ -435,7 +453,7 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                             }
                         }),
                     )
-                },
+                }
 
                 Fields::Unnamed(fields) => {
                     let struct_fields_0 =
@@ -463,7 +481,7 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                             }
                         }),
                     )
-                },
+                }
 
                 Fields::Unit => (
                     quote! {
@@ -535,7 +553,7 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 #loadable_impl
             }
             .into()
-        },
+        }
 
         Data::Enum(data) => {
             let discr_bits = (32
@@ -554,9 +572,12 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                         Span::call_site().into(),
                     ));
 
-                    let FieldsData { store, load_in_place, load } =
-                        FieldsData::parse(&variant.fields, !only_load_in_place, only_load_in_place)
-                            .unwrap_or_else(|message| panic!("{}", message));
+                    let FieldsData {
+                        store,
+                        load_in_place,
+                        load,
+                    } = FieldsData::parse(&variant.fields, !only_load_in_place, only_load_in_place)
+                        .unwrap_or_else(|message| panic!("{}", message));
 
                     let store_fields = store.into_iter();
                     let load_fields_in_place =
@@ -567,8 +588,10 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
                     match &variant.fields {
                         Fields::Named(fields) => {
-                            let variant_fields_0 =
-                                fields.named.iter().map(|field| field.ident.as_ref().unwrap());
+                            let variant_fields_0 = fields
+                                .named
+                                .iter()
+                                .map(|field| field.ident.as_ref().unwrap());
                             let variant_fields_1 = variant_fields_0.clone();
                             (
                                 quote! {
@@ -610,7 +633,7 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                                     }
                                 },
                             )
-                        },
+                        }
 
                         Fields::Unnamed(fields) => {
                             let variant_fields_0 =
@@ -645,7 +668,7 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                                     }
                                 },
                             )
-                        },
+                        }
 
                         Fields::Unit => (
                             quote! {
@@ -673,7 +696,9 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 })
                 .collect::<Vec<_>>();
 
-            let store_variants = variants_data.iter().map(|(store_variants, _)| store_variants);
+            let store_variants = variants_data
+                .iter()
+                .map(|(store_variants, _)| store_variants);
             let storable_impl = quote! {
                 #[allow(unused_variables)]
                 impl #impl_generics ::aphrody_emu_utils::Storable for #type_name #ty_generics
@@ -715,8 +740,10 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                     }
                 }
             } else {
-                let post_load_ident =
-                    post_load.as_ref().map(|_| format_ident!("__internal_post_load")).into_iter();
+                let post_load_ident = post_load
+                    .as_ref()
+                    .map(|_| format_ident!("__internal_post_load"))
+                    .into_iter();
                 let post_load_ident_ = post_load_ident.clone();
                 quote! {
                     #(
@@ -767,7 +794,7 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 #loadable_impl
             }
             .into()
-        },
+        }
         Data::Union(_) => unimplemented!("can't derive SavestateCapable on unions"),
     }
 }

@@ -56,8 +56,14 @@ WantedBy=multi-user.target
         assert_eq!(unit.wanted_by, vec!["multi-user.target"]);
         assert_eq!(unit.restart, RestartPolicy::OnFailure);
         assert_eq!(unit.restart_sec, 3);
-        assert_eq!(unit.environment.get("PORT").map(String::as_str), Some("8080"));
-        assert_eq!(unit.environment.get("MODE").map(String::as_str), Some("production"));
+        assert_eq!(
+            unit.environment.get("PORT").map(String::as_str),
+            Some("8080")
+        );
+        assert_eq!(
+            unit.environment.get("MODE").map(String::as_str),
+            Some("production")
+        );
     }
 
     #[test]
@@ -104,19 +110,30 @@ WantedBy=multi-user.target
         assert_eq!(subsystem.name(), "systemd");
 
         // List units
-        let list_res = subsystem.call("systemd_list_units", json!({})).await.expect("list");
+        let list_res = subsystem
+            .call("systemd_list_units", json!({}))
+            .await
+            .expect("list");
         assert!(list_res.get("units").is_some());
 
         // Get status
         let status_res = subsystem
-            .call("systemd_unit_status", json!({ "name": "aphrody-kernel.service" }))
+            .call(
+                "systemd_unit_status",
+                json!({ "name": "aphrody-kernel.service" }),
+            )
             .await
             .expect("status");
-        assert_eq!(status_res.get("state").and_then(|v| v.as_str()), Some("active"));
+        assert_eq!(
+            status_res.get("state").and_then(|v| v.as_str()),
+            Some("active")
+        );
 
         // Journal query
-        let journal_res =
-            subsystem.call("systemd_journal_query", json!({ "limit": 5 })).await.expect("journal");
+        let journal_res = subsystem
+            .call("systemd_journal_query", json!({ "limit": 5 }))
+            .await
+            .expect("journal");
         assert!(journal_res.get("entries").is_some());
     }
 }

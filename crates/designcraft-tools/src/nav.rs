@@ -22,17 +22,23 @@ impl Tool for HandTool {
             PointerKind::Down if ev.mods.alt => {
                 self.power = true;
                 self.last = Some(ev.pos);
-                vec![Action::View(json!({"powerZoom": "start", "at": [ev.pos.x, ev.pos.y]}))]
+                vec![Action::View(
+                    json!({"powerZoom": "start", "at": [ev.pos.x, ev.pos.y]}),
+                )]
             }
             PointerKind::Down => {
                 self.last = Some(ev.pos);
                 vec![]
             }
-            PointerKind::Drag if self.power => vec![Action::View(json!({"powerZoom": "move", "at": [ev.pos.x, ev.pos.y]}))],
+            PointerKind::Drag if self.power => vec![Action::View(
+                json!({"powerZoom": "move", "at": [ev.pos.x, ev.pos.y]}),
+            )],
             PointerKind::Up if self.power => {
                 self.power = false;
                 self.last = None;
-                vec![Action::View(json!({"powerZoom": "end", "at": [ev.pos.x, ev.pos.y]}))]
+                vec![Action::View(
+                    json!({"powerZoom": "end", "at": [ev.pos.x, ev.pos.y]}),
+                )]
             }
             PointerKind::Drag => {
                 // Canvas positions shift as we pan, so convert the delta to screen pixels once.
@@ -48,7 +54,11 @@ impl Tool for HandTool {
         }
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
-        if self.last.is_some() { Cursor::HandGrab } else { Cursor::Hand }
+        if self.last.is_some() {
+            Cursor::HandGrab
+        } else {
+            Cursor::Hand
+        }
     }
     fn busy(&self) -> bool {
         self.last.is_some()
@@ -77,7 +87,9 @@ impl Tool for ZoomTool {
                 vec![]
             }
             PointerKind::Drag => {
-                let Some((start, z0, _)) = self.press else { return vec![] };
+                let Some((start, z0, _)) = self.press else {
+                    return vec![];
+                };
                 // The press point stays put on screen, so this is the on-screen distance.
                 let dx = (ev.pos.x - start.x) * cx.zoom;
                 if dx.abs() < 3.0 && self.press.is_some_and(|p| !p.2) {
@@ -85,7 +97,9 @@ impl Tool for ZoomTool {
                 }
                 self.press = Some((start, z0, true));
                 let want = (z0 * (dx / SCRUB_PX).exp()).clamp(0.05, 40.0);
-                vec![Action::View(json!({"zoomAt": [start.x, start.y], "factor": want / cx.zoom.max(1e-9)}))]
+                vec![Action::View(
+                    json!({"zoomAt": [start.x, start.y], "factor": want / cx.zoom.max(1e-9)}),
+                )]
             }
             PointerKind::Up => {
                 let dragged = self.press.take().is_some_and(|p| p.2);
@@ -93,7 +107,9 @@ impl Tool for ZoomTool {
                     return vec![];
                 }
                 let f = if ev.mods.alt { 0.5 } else { 2.0 };
-                vec![Action::View(json!({"zoomAt": [ev.pos.x, ev.pos.y], "factor": f}))]
+                vec![Action::View(
+                    json!({"zoomAt": [ev.pos.x, ev.pos.y], "factor": f}),
+                )]
             }
             _ => vec![],
         }
@@ -102,7 +118,11 @@ impl Tool for ZoomTool {
         self.press.is_some_and(|p| p.2)
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, m: Mods) -> Cursor {
-        if m.alt { Cursor::ZoomOut } else { Cursor::ZoomIn }
+        if m.alt {
+            Cursor::ZoomOut
+        } else {
+            Cursor::ZoomIn
+        }
     }
 }
 
@@ -130,15 +150,22 @@ impl Tool for PlaceGun {
                 vec![]
             }
             PointerKind::Up => {
-                let Some(a) = self.start.take() else { return vec![] };
-                let Some((sr, sa)) = cx.layout.spread_at(a) else { return vec![] };
+                let Some(a) = self.start.take() else {
+                    return vec![];
+                };
+                let Some((sr, sa)) = cx.layout.spread_at(a) else {
+                    return vec![];
+                };
                 let b = cx.layout.to_spread(sr, ev.pos);
                 if (ev.pos - a).hypot() < cx.tol(3.0)
                     && let Some((_, id)) = cx.hit(a)
-                    && cx
-                        .doc
-                        .item(id)
-                        .is_some_and(|i| matches!(i.content, designcraft_doc::Content::Unassigned | designcraft_doc::Content::Graphic(_)))
+                    && cx.doc.item(id).is_some_and(|i| {
+                        matches!(
+                            i.content,
+                            designcraft_doc::Content::Unassigned
+                                | designcraft_doc::Content::Graphic(_)
+                        )
+                    })
                 {
                     return vec![Action::Exec("place.drop".into(), json!({"frame": id.0}))];
                 }
@@ -153,7 +180,9 @@ impl Tool for PlaceGun {
     }
     fn overlays(&self, _cx: &ToolContext) -> Vec<crate::Overlay> {
         match self.start {
-            Some(a) => vec![crate::Overlay::Marquee(designcraft_geom::Rect::from_points(a, self.cur))],
+            Some(a) => vec![crate::Overlay::Marquee(
+                designcraft_geom::Rect::from_points(a, self.cur),
+            )],
             None => vec![],
         }
     }
@@ -174,12 +203,21 @@ impl Tool for PageTool {
         if ev.kind != PointerKind::Up {
             return vec![];
         }
-        let Some((designcraft_doc::SpreadRef::Doc(si), sp)) = cx.layout.spread_at(ev.pos) else { return vec![] };
-        let Some(spread) = cx.doc.spreads.get(si) else { return vec![] };
-        let Some(pi) = spread.pages.iter().position(|p| p.bounds().contains(sp)) else { return vec![] };
+        let Some((designcraft_doc::SpreadRef::Doc(si), sp)) = cx.layout.spread_at(ev.pos) else {
+            return vec![];
+        };
+        let Some(spread) = cx.doc.spreads.get(si) else {
+            return vec![];
+        };
+        let Some(pi) = spread.pages.iter().position(|p| p.bounds().contains(sp)) else {
+            return vec![];
+        };
         let pg = &spread.pages[pi];
         let n = cx.doc.first_page_of_spread(si) + pi + 1;
-        vec![Action::Dialog("cmd:layout.pageSize".into(), json!({"pages": [n], "width": pg.width, "height": pg.height}))]
+        vec![Action::Dialog(
+            "cmd:layout.pageSize".into(),
+            json!({"pages": [n], "width": pg.width, "height": pg.height}),
+        )]
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
         Cursor::Arrow
@@ -198,10 +236,17 @@ impl Tool for PathTypeTool {
         if ev.kind != PointerKind::Up {
             return vec![];
         }
-        let Some((_, id)) = cx.hit(ev.pos) else { return vec![] };
-        let Some(it) = cx.doc.item(id) else { return vec![] };
+        let Some((_, id)) = cx.hit(ev.pos) else {
+            return vec![];
+        };
+        let Some(it) = cx.doc.item(id) else {
+            return vec![];
+        };
         match &it.content {
-            designcraft_doc::Content::Unassigned => vec![Action::Exec("type.onPath".into(), json!({"id": id.0})), Action::SwitchTool("type".into())],
+            designcraft_doc::Content::Unassigned => vec![
+                Action::Exec("type.onPath".into(), json!({"id": id.0})),
+                Action::SwitchTool("type".into()),
+            ],
             _ => vec![],
         }
     }
@@ -234,7 +279,9 @@ impl Tool for GapTool {
                 vec![]
             }
             PointerKind::Drag => {
-                let Some((sr, xf, p)) = self.start else { return vec![] };
+                let Some((sr, xf, p)) = self.start else {
+                    return vec![];
+                };
                 let d = (xf.inverse() * ev.pos) - p;
                 let mut out = vec![];
                 if !self.active {
@@ -252,7 +299,11 @@ impl Tool for GapTool {
             }
             PointerKind::Up => {
                 self.start = None;
-                if std::mem::take(&mut self.active) { vec![Action::Commit] } else { vec![] }
+                if std::mem::take(&mut self.active) {
+                    vec![Action::Commit]
+                } else {
+                    vec![]
+                }
             }
             _ => vec![],
         }
@@ -281,7 +332,11 @@ impl ConveyorTool {
 
 impl Tool for ConveyorTool {
     fn id(&self) -> &'static str {
-        if self.placer { "contentPlacer" } else { "contentCollector" }
+        if self.placer {
+            "contentPlacer"
+        } else {
+            "contentCollector"
+        }
     }
 
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
@@ -289,11 +344,19 @@ impl Tool for ConveyorTool {
             return vec![];
         }
         if self.placer {
-            let Some((sr, p)) = cx.layout.spread_at(ev.pos) else { return vec![] };
-            return vec![Action::Exec("conveyor.place".into(), json!({"spread": crate::spread_json(sr), "x": p.x, "y": p.y, "keep": ev.mods.alt}))];
+            let Some((sr, p)) = cx.layout.spread_at(ev.pos) else {
+                return vec![];
+            };
+            return vec![Action::Exec(
+                "conveyor.place".into(),
+                json!({"spread": crate::spread_json(sr), "x": p.x, "y": p.y, "keep": ev.mods.alt}),
+            )];
         }
         match cx.hit(ev.pos) {
-            Some((_, id)) => vec![Action::Exec("conveyor.collect".into(), json!({"ids": [id.0]}))],
+            Some((_, id)) => vec![Action::Exec(
+                "conveyor.collect".into(),
+                json!({"ids": [id.0]}),
+            )],
             None => vec![],
         }
     }

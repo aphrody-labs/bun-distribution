@@ -8,7 +8,11 @@ use proptest::prelude::*;
 use std::io::Read;
 
 fn sample() -> Vec<u8> {
-    save_to_bytes(&rich_doc(ColorMode::Rgb, SampleType::U8), &SaveOptions::default()).unwrap()
+    save_to_bytes(
+        &rich_doc(ColorMode::Rgb, SampleType::U8),
+        &SaveOptions::default(),
+    )
+    .unwrap()
 }
 
 fn rebuild(bytes: &[u8], f: impl Fn(&str, Vec<u8>) -> Option<Vec<u8>>) -> Vec<u8> {
@@ -31,7 +35,13 @@ fn older_bundles_without_text_metadata_still_load() {
             return Some(data);
         }
         let mut manifest: serde_json::Value = serde_json::from_slice(&data).unwrap();
-        assert!(manifest["document"]["metadata"].as_object_mut().unwrap().remove("text").is_some());
+        assert!(
+            manifest["document"]["metadata"]
+                .as_object_mut()
+                .unwrap()
+                .remove("text")
+                .is_some()
+        );
         Some(serde_json::to_vec(&manifest).unwrap())
     });
     doc.metadata.text.clear();
@@ -80,7 +90,12 @@ fn missing_manifest_is_error() {
 fn swapped_tile_content_fails_hash_check() {
     let b = sample();
     let r = zip::ZipReader::new(&b).unwrap();
-    let tiles: Vec<_> = r.entries.iter().filter(|e| e.name.starts_with("tiles/")).map(|e| e.name.clone()).collect();
+    let tiles: Vec<_> = r
+        .entries
+        .iter()
+        .filter(|e| e.name.starts_with("tiles/"))
+        .map(|e| e.name.clone())
+        .collect();
     let other = r.read_by_name(&tiles[1], usize::MAX).unwrap();
     let first = tiles[0].clone();
     let b2 = rebuild(&b, |n, d| Some(if n == first { other.clone() } else { d }));
@@ -90,7 +105,13 @@ fn swapped_tile_content_fails_hash_check() {
 
 #[test]
 fn bad_manifest_json() {
-    let b = rebuild(&sample(), |n, d| Some(if n == "manifest.json" { b"{not json".to_vec() } else { d }));
+    let b = rebuild(&sample(), |n, d| {
+        Some(if n == "manifest.json" {
+            b"{not json".to_vec()
+        } else {
+            d
+        })
+    });
     assert!(matches!(load_from_bytes(&b), Err(FormatError::Json(_))));
 }
 
@@ -100,13 +121,20 @@ fn bad_manifest_json() {
 #[test]
 fn over_deep_manifest_fails_cleanly() {
     let nested = |n: usize| format!("{}{}", "[".repeat(n), "]".repeat(n)).into_bytes();
-    let with_manifest = |m: Vec<u8>| rebuild(&sample(), |n, d| Some(if n == "manifest.json" { m.clone() } else { d }));
+    let with_manifest = |m: Vec<u8>| {
+        rebuild(&sample(), |n, d| {
+            Some(if n == "manifest.json" { m.clone() } else { d })
+        })
+    };
     let e = load_from_bytes(&with_manifest(nested(100_000))).unwrap_err();
     assert!(matches!(e, FormatError::LimitExceeded(_)), "{e}");
     let e = load_from_bytes(&with_manifest(nested(3 * MAX_GROUP_DEPTH))).unwrap_err();
     assert!(matches!(e, FormatError::Corrupt(_)), "{e}");
     // Brackets inside strings (escaped quotes included) don't count.
-    let e = load_from_bytes(&with_manifest(format!(r#"{{"x":"{}\"{}"}}"#, "[".repeat(100_000), "{".repeat(10)).into_bytes())).unwrap_err();
+    let e = load_from_bytes(&with_manifest(
+        format!(r#"{{"x":"{}\"{}"}}"#, "[".repeat(100_000), "{".repeat(10)).into_bytes(),
+    ))
+    .unwrap_err();
     assert!(matches!(e, FormatError::Corrupt(_)), "{e}");
 }
 
@@ -121,7 +149,10 @@ fn too_new_version_rejected() {
             d
         })
     });
-    assert!(matches!(load_from_bytes(&b), Err(FormatError::TooNew { found: 999, .. })));
+    assert!(matches!(
+        load_from_bytes(&b),
+        Err(FormatError::TooNew { found: 999, .. })
+    ));
 }
 
 #[test]
@@ -143,15 +174,27 @@ fn invalid_hash_strings_rejected() {
 #[test]
 fn manifest_size_limit() {
     let b = sample();
-    let opts = LoadOptions { max_manifest_bytes: 100, ..Default::default() };
-    assert!(matches!(load_from_bytes_with(&b, &opts), Err(FormatError::LimitExceeded(_))));
+    let opts = LoadOptions {
+        max_manifest_bytes: 100,
+        ..Default::default()
+    };
+    assert!(matches!(
+        load_from_bytes_with(&b, &opts),
+        Err(FormatError::LimitExceeded(_))
+    ));
 }
 
 #[test]
 fn total_size_limit() {
     let b = sample();
-    let opts = LoadOptions { max_total_bytes: 1000, ..Default::default() };
-    assert!(matches!(load_from_bytes_with(&b, &opts), Err(FormatError::LimitExceeded(_))));
+    let opts = LoadOptions {
+        max_total_bytes: 1000,
+        ..Default::default()
+    };
+    assert!(matches!(
+        load_from_bytes_with(&b, &opts),
+        Err(FormatError::LimitExceeded(_))
+    ));
 }
 
 /// A hostile manifest may name one stored tile at very many coordinates. The load decodes and
@@ -159,9 +202,17 @@ fn total_size_limit() {
 /// distinct bytes (#3315).
 #[test]
 fn many_references_to_one_tile_load_within_the_budget() {
-    let mut doc = photocraft_doc::Document::new("d", photocraft_doc::Size::new(256, 256), ColorMode::Rgb, SampleType::U8);
+    let mut doc = photocraft_doc::Document::new(
+        "d",
+        photocraft_doc::Size::new(256, 256),
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
     let mut l = photocraft_doc::Layer::raster("solid", doc.pixel_format());
-    l.surface_mut().unwrap().fill_rect(photocraft_geom::Rect::new(0, 0, 256, 256), &[1.0, 0.0, 0.0, 1.0]);
+    l.surface_mut().unwrap().fill_rect(
+        photocraft_geom::Rect::new(0, 0, 256, 256),
+        &[1.0, 0.0, 0.0, 1.0],
+    );
     doc.layers.push(l);
     let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
     let hostile = rebuild(&bytes, |name, data| {
@@ -169,20 +220,37 @@ fn many_references_to_one_tile_load_within_the_budget() {
             return Some(data);
         }
         let mut m: serde_json::Value = serde_json::from_slice(&data).unwrap();
-        let tiles = m["document"]["layers"][0]["content"]["surface"]["tiles"].as_array_mut().unwrap();
+        let tiles = m["document"]["layers"][0]["content"]["surface"]["tiles"]
+            .as_array_mut()
+            .unwrap();
         let hash = tiles[0]["hash"].clone();
-        *tiles = (0..256 * 256).map(|i| serde_json::json!({ "tx": i % 256, "ty": i / 256, "hash": hash })).collect();
+        *tiles = (0..256 * 256)
+            .map(|i| serde_json::json!({ "tx": i % 256, "ty": i / 256, "hash": hash }))
+            .collect();
         Some(serde_json::to_vec(&m).unwrap())
     });
     let one_tile = 256 * 256 * 4;
-    let back = load_from_bytes_with(&hostile, &LoadOptions { max_total_bytes: one_tile, ..Default::default() }).unwrap();
+    let back = load_from_bytes_with(
+        &hostile,
+        &LoadOptions {
+            max_total_bytes: one_tile,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let s = back.layers[0].surface().unwrap();
     assert_eq!(s.tile_count(), 256 * 256);
     let first = s.tiles().next().unwrap().1;
     assert!(s.tiles().all(|(_, t)| std::sync::Arc::ptr_eq(t, first)));
     // The one distinct tile is still charged against the budget.
-    let opts = LoadOptions { max_total_bytes: one_tile - 1, ..Default::default() };
-    assert!(matches!(load_from_bytes_with(&hostile, &opts), Err(FormatError::LimitExceeded(_))));
+    let opts = LoadOptions {
+        max_total_bytes: one_tile - 1,
+        ..Default::default()
+    };
+    assert!(matches!(
+        load_from_bytes_with(&hostile, &opts),
+        Err(FormatError::LimitExceeded(_))
+    ));
 }
 
 #[test]
@@ -190,10 +258,17 @@ fn directory_bundle_resave_repairs_tampered_objects() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("tamper");
     let mut writer = PcraftWriter::new();
-    writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+    writer
+        .save_dir(&doc, &dir, &SaveOptions::default())
+        .unwrap();
 
     for object_dir in ["tiles", "blobs"] {
-        let object = std::fs::read_dir(dir.join(object_dir)).unwrap().next().unwrap().unwrap().path();
+        let object = std::fs::read_dir(dir.join(object_dir))
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path();
         let original = std::fs::read(&object).unwrap();
         let mut decoder = ruzstd::decoding::StreamingDecoder::new(&original[..]).unwrap();
         let mut decoded = Vec::new();
@@ -203,13 +278,18 @@ fn directory_bundle_resave_repairs_tampered_objects() {
         } else {
             decoded.push(1);
         }
-        let hash_mismatched = ruzstd::encoding::compress_to_vec(decoded.as_slice(), ruzstd::encoding::CompressionLevel::Fastest);
+        let hash_mismatched = ruzstd::encoding::compress_to_vec(
+            decoded.as_slice(),
+            ruzstd::encoding::CompressionLevel::Fastest,
+        );
 
         for damaged in [hash_mismatched, b"garbage".to_vec()] {
             std::fs::write(&object, damaged).unwrap();
             assert!(load_path(&dir).is_err());
 
-            let stats = writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+            let stats = writer
+                .save_dir(&doc, &dir, &SaveOptions::default())
+                .unwrap();
             if object_dir == "tiles" {
                 assert_eq!(stats.tiles_written, 1);
             } else {
@@ -225,7 +305,12 @@ fn directory_bundle_resave_repairs_tampered_objects() {
 /// Damages one object in place without changing its length or modification time, the case a
 /// size-and-mtime cache alone would trust. Returns the damaged file's path.
 fn damage_in_place_keeping_size_and_mtime(dir: &std::path::Path) -> std::path::PathBuf {
-    let object = std::fs::read_dir(dir.join("tiles")).unwrap().next().unwrap().unwrap().path();
+    let object = std::fs::read_dir(dir.join("tiles"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
     let original = std::fs::read(&object).unwrap();
     let mtime = std::fs::metadata(&object).unwrap().modified().unwrap();
     // Flip one byte of the compressed payload; try positions until the bundle no longer loads.
@@ -233,10 +318,21 @@ fn damage_in_place_keeping_size_and_mtime(dir: &std::path::Path) -> std::path::P
         let mut damaged = original.clone();
         damaged[at] ^= 0x5a;
         std::fs::write(&object, &damaged).unwrap();
-        std::fs::File::options().write(true).open(&object).unwrap().set_modified(mtime).unwrap();
+        std::fs::File::options()
+            .write(true)
+            .open(&object)
+            .unwrap()
+            .set_modified(mtime)
+            .unwrap();
         if load_path(dir).is_err() {
-            assert_eq!(std::fs::metadata(&object).unwrap().len(), original.len() as u64);
-            assert_eq!(std::fs::metadata(&object).unwrap().modified().unwrap(), mtime);
+            assert_eq!(
+                std::fs::metadata(&object).unwrap().len(),
+                original.len() as u64
+            );
+            assert_eq!(
+                std::fs::metadata(&object).unwrap().modified().unwrap(),
+                mtime
+            );
             return object;
         }
     }
@@ -248,14 +344,20 @@ fn same_size_same_mtime_tamper_is_repaired_on_the_next_save() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("tamper-same-size");
     let mut writer = PcraftWriter::new();
-    writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+    writer
+        .save_dir(&doc, &dir, &SaveOptions::default())
+        .unwrap();
     // A second save trusts every object it verified in the first one.
-    writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+    writer
+        .save_dir(&doc, &dir, &SaveOptions::default())
+        .unwrap();
 
     damage_in_place_keeping_size_and_mtime(&dir);
     // The sample bundle is far below DEFAULT_REVERIFY_BUDGET, so the rolling re-check reads
     // every cached object again (and on Unix the change time differs as well).
-    let stats = writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+    let stats = writer
+        .save_dir(&doc, &dir, &SaveOptions::default())
+        .unwrap();
     assert_eq!(stats.tiles_written, 1);
     assert_eq!(load_path(&dir).unwrap(), doc);
     std::fs::remove_dir_all(dir).unwrap();
@@ -266,21 +368,31 @@ fn rolling_reverify_reaches_every_object_with_a_tiny_budget() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("tamper-rolling");
     let mut writer = PcraftWriter::new();
-    writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
-    let objects = ["tiles", "blobs"].iter().map(|d| std::fs::read_dir(dir.join(d)).unwrap().count()).sum::<usize>();
+    writer
+        .save_dir(&doc, &dir, &SaveOptions::default())
+        .unwrap();
+    let objects = ["tiles", "blobs"]
+        .iter()
+        .map(|d| std::fs::read_dir(dir.join(d)).unwrap().count())
+        .sum::<usize>();
 
     // One object per save: the oldest-checked one.
     writer.set_reverify_budget(1);
     damage_in_place_keeping_size_and_mtime(&dir);
     let mut repaired = false;
     for _ in 0..=objects {
-        let stats = writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+        let stats = writer
+            .save_dir(&doc, &dir, &SaveOptions::default())
+            .unwrap();
         if stats.tiles_written == 1 {
             repaired = true;
             break;
         }
     }
-    assert!(repaired, "a damaged object was not re-verified within {objects} saves");
+    assert!(
+        repaired,
+        "a damaged object was not re-verified within {objects} saves"
+    );
     assert_eq!(load_path(&dir).unwrap(), doc);
 
     // A zero budget re-reads nothing whose signature is unchanged; a fresh writer still verifies
@@ -288,7 +400,13 @@ fn rolling_reverify_reaches_every_object_with_a_tiny_budget() {
     let mut fresh = PcraftWriter::new();
     fresh.set_reverify_budget(0);
     damage_in_place_keeping_size_and_mtime(&dir);
-    assert_eq!(fresh.save_dir(&doc, &dir, &SaveOptions::default()).unwrap().tiles_written, 1);
+    assert_eq!(
+        fresh
+            .save_dir(&doc, &dir, &SaveOptions::default())
+            .unwrap()
+            .tiles_written,
+        1
+    );
     assert_eq!(load_path(&dir).unwrap(), doc);
     std::fs::remove_dir_all(dir).unwrap();
 }
@@ -303,7 +421,8 @@ fn deflated_zip_entries_are_readable() {
     let mut central = Vec::new();
     for e in &r.entries {
         let data = r.read(e, usize::MAX).unwrap();
-        let mut enc = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
+        let mut enc =
+            flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
         enc.write_all(&data).unwrap();
         let comp = enc.finish().unwrap();
         let crc = zip::crc32(&data);
@@ -381,7 +500,10 @@ fn sample_cached() -> &'static [u8] {
 /// layer's index.
 fn move_first_tile(v: &mut serde_json::Value, tx: i64, ty: i64) -> Option<usize> {
     let layers = v["document"]["layers"].as_array_mut()?;
-    let (i, tile) = layers.iter_mut().enumerate().find_map(|(i, l)| l["content"]["surface"]["tiles"].get_mut(0).map(|t| (i, t)))?;
+    let (i, tile) = layers
+        .iter_mut()
+        .enumerate()
+        .find_map(|(i, l)| l["content"]["surface"]["tiles"].get_mut(0).map(|t| (i, t)))?;
     tile["tx"] = tx.into();
     tile["ty"] = ty.into();
     Some(i)
@@ -402,19 +524,38 @@ fn tile_coordinates_outside_the_i32_pixel_range_are_rejected() {
                 d
             })
         });
-        (b, layer.get().expect("the sample has a raster layer with a tile"))
+        (
+            b,
+            layer
+                .get()
+                .expect("the sample has a raster layer with a tile"),
+        )
     };
     let (lo, hi) = (i64::from(i32::MIN / 256), i64::from(i32::MAX / 256 - 1));
-    for (tx, ty) in [(hi + 1, 0), (0, hi + 1), (lo - 1, 0), (0, lo - 1), (i64::from(i32::MAX), 0), (0, i64::from(i32::MIN))] {
+    for (tx, ty) in [
+        (hi + 1, 0),
+        (0, hi + 1),
+        (lo - 1, 0),
+        (0, lo - 1),
+        (i64::from(i32::MAX), 0),
+        (0, i64::from(i32::MIN)),
+    ] {
         let err = load_from_bytes(&with_tile_at(tx, ty).0).unwrap_err();
-        assert!(err.to_string().contains("outside the coordinate range"), "({tx}, {ty}): {err}");
+        assert!(
+            err.to_string().contains("outside the coordinate range"),
+            "({tx}, {ty}): {err}"
+        );
     }
     // The extreme valid indices still load, and the layer's bounds can be computed.
     for (tx, ty) in [(hi, hi), (lo, lo), (hi, lo)] {
         let (b, i) = with_tile_at(tx, ty);
         let doc = load_from_bytes(&b).unwrap_or_else(|e| panic!("({tx}, {ty}): {e}"));
         let s = doc.layers[i].surface().expect("raster layer");
-        assert!(s.tiles().any(|(c, _)| (i64::from(c.tx), i64::from(c.ty)) == (tx, ty)), "({tx}, {ty})");
+        assert!(
+            s.tiles()
+                .any(|(c, _)| (i64::from(c.tx), i64::from(c.ty)) == (tx, ty)),
+            "({tx}, {ty})"
+        );
         assert!(!s.content_bounds().is_empty());
     }
 }
@@ -424,7 +565,10 @@ fn an_unlimited_blob_budget_still_loads_blobs() {
     // `max_blob_bytes + 1` overflowed (debug panic; release read zero bytes, failing every blob).
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
-    let opts = LoadOptions { max_blob_bytes: usize::MAX, ..LoadOptions::default() };
+    let opts = LoadOptions {
+        max_blob_bytes: usize::MAX,
+        ..LoadOptions::default()
+    };
     assert_eq!(load_from_bytes_with(&bytes, &opts).unwrap(), doc);
 }
 
@@ -447,7 +591,10 @@ fn with_pattern_size(w: u64, h: u64) -> Vec<u8> {
 fn pattern_sizes_from_the_file_are_checked() {
     // A pattern can claim any size without tiles; painting it allocated per pixel (abort).
     let huge = load_from_bytes(&with_pattern_size(65_535, 65_535));
-    assert!(matches!(huge, Err(FormatError::LimitExceeded(_))), "{huge:?}");
+    assert!(
+        matches!(huge, Err(FormatError::LimitExceeded(_))),
+        "{huge:?}"
+    );
     let empty = load_from_bytes(&with_pattern_size(0, 24));
     assert!(matches!(empty, Err(FormatError::Corrupt(_))), "{empty:?}");
     assert!(load_from_bytes(&with_pattern_size(32, 24)).is_ok());
@@ -468,9 +615,17 @@ fn declared_canvas_outside_the_budget_is_refused() {
             Some(serde_json::to_vec(&manifest).unwrap())
         })
     };
-    for (w, h) in [(300_001, 1), (1, 300_001), (300_001, 300_001), (u64::from(u32::MAX), u64::from(u32::MAX))] {
+    for (w, h) in [
+        (300_001, 1),
+        (1, 300_001),
+        (300_001, 300_001),
+        (u64::from(u32::MAX), u64::from(u32::MAX)),
+    ] {
         let r = load_from_bytes(&with_size(w, h)).map(|d| d.size);
-        assert!(matches!(r, Err(FormatError::LimitExceeded(_))), "{w}x{h}: {r:?}");
+        assert!(
+            matches!(r, Err(FormatError::LimitExceeded(_))),
+            "{w}x{h}: {r:?}"
+        );
     }
     assert!(load_from_bytes(&with_size(0, 64)).is_err());
     // The largest creatable canvas loads, without allocating anything for its area: the layers
@@ -479,11 +634,29 @@ fn declared_canvas_outside_the_budget_is_refused() {
     let small = load_from_bytes(&sample()).unwrap();
     let big = load_from_bytes(&edge).unwrap();
     assert_eq!(big.size, photocraft_geom::Size::new(300_000, 300_000));
-    let tiles = |d: &photocraft_doc::Document| d.layers.iter().filter_map(|l| l.surface()).map(|s| s.tile_count()).sum::<usize>();
+    let tiles = |d: &photocraft_doc::Document| {
+        d.layers
+            .iter()
+            .filter_map(|l| l.surface())
+            .map(|s| s.tile_count())
+            .sum::<usize>()
+    };
     assert_eq!(tiles(&big), tiles(&small));
     // A caller may lower the budget.
-    let opts = LoadOptions { max_canvas_pixels: 1 << 20, ..Default::default() };
-    assert!(matches!(load_from_bytes_with(&edge, &opts), Err(FormatError::LimitExceeded(_))));
-    let opts = LoadOptions { max_canvas_side: 65_536, ..Default::default() };
-    assert!(matches!(load_from_bytes_with(&with_size(65_537, 1), &opts), Err(FormatError::LimitExceeded(_))));
+    let opts = LoadOptions {
+        max_canvas_pixels: 1 << 20,
+        ..Default::default()
+    };
+    assert!(matches!(
+        load_from_bytes_with(&edge, &opts),
+        Err(FormatError::LimitExceeded(_))
+    ));
+    let opts = LoadOptions {
+        max_canvas_side: 65_536,
+        ..Default::default()
+    };
+    assert!(matches!(
+        load_from_bytes_with(&with_size(65_537, 1), &opts),
+        Err(FormatError::LimitExceeded(_))
+    ));
 }

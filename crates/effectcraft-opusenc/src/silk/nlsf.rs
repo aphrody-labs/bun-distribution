@@ -36,7 +36,11 @@ pub fn quantize(target: &[f64], signal_type: usize, wb: bool) -> ([i32; 17], [i3
     let w: Vec<f64> = (0..order)
         .map(|k| {
             let prev = if k == 0 { 0.0 } else { target[k - 1] };
-            let next = if k + 1 == order { 32768.0 } else { target[k + 1] };
+            let next = if k + 1 == order {
+                32768.0
+            } else {
+                target[k + 1]
+            };
             1.0 / (target[k] - prev).max(50.0) + 1.0 / (next - target[k]).max(50.0)
         })
         .collect();
@@ -44,8 +48,14 @@ pub fn quantize(target: &[f64], signal_type: usize, wb: bool) -> ([i32; 17], [i3
     let n_cb = 32;
     let mut cands: Vec<(f64, usize)> = (0..n_cb)
         .map(|i1| {
-            let cb: &[i32] = if wb { &NLSF_CB_WB[i1] } else { &NLSF_CB_NBMB[i1] };
-            let d: f64 = (0..order).map(|k| w[k] * ((cb[k] << 7) as f64 - target[k]).powi(2)).sum();
+            let cb: &[i32] = if wb {
+                &NLSF_CB_WB[i1]
+            } else {
+                &NLSF_CB_NBMB[i1]
+            };
+            let d: f64 = (0..order)
+                .map(|k| w[k] * ((cb[k] << 7) as f64 - target[k]).powi(2))
+                .sum();
             (d + LAMBDA * icdf_bits(s1_tab, i1), i1)
         })
         .collect();
@@ -53,7 +63,11 @@ pub fn quantize(target: &[f64], signal_type: usize, wb: bool) -> ([i32; 17], [i3
     let qstep = if wb { 9830 } else { 11796 };
     let mut best = (f64::MAX, [0i32; 17], [0i32; MAX_LPC_ORDER]);
     for &(_, i1) in cands.iter().take(SURVIVORS) {
-        let cb1: &[i32] = if wb { &NLSF_CB_WB[i1] } else { &NLSF_CB_NBMB[i1] };
+        let cb1: &[i32] = if wb {
+            &NLSF_CB_WB[i1]
+        } else {
+            &NLSF_CB_NBMB[i1]
+        };
         let mut ix = [0i32; 17];
         ix[0] = i1 as i32;
         let mut bits = icdf_bits(s1_tab, i1);
@@ -69,13 +83,25 @@ pub fn quantize(target: &[f64], signal_type: usize, wb: bool) -> ([i32; 17], [i3
         let mut out_q10 = 0i32;
         for i in (0..order).rev() {
             let pred = if i + 1 < order {
-                let sel = if wb { NLSF_PSEL_WB[i1][i] } else { NLSF_PSEL_NBMB[i1][i] } as usize;
-                let wp = if wb { NLSF_PRED_WB[sel][i] } else { NLSF_PRED_NBMB[sel][i] };
+                let sel = if wb {
+                    NLSF_PSEL_WB[i1][i]
+                } else {
+                    NLSF_PSEL_NBMB[i1][i]
+                } as usize;
+                let wp = if wb {
+                    NLSF_PRED_WB[sel][i]
+                } else {
+                    NLSF_PRED_NBMB[sel][i]
+                };
                 (out_q10 * wp) >> 8
             } else {
                 0
             };
-            let cb = if wb { 8 + NLSF_SEL_WB[i1][i] as usize } else { NLSF_SEL_NBMB[i1][i] as usize };
+            let cb = if wb {
+                8 + NLSF_SEL_WB[i1][i] as usize
+            } else {
+                NLSF_SEL_NBMB[i1][i] as usize
+            };
             let tab = NLSF_STAGE2[cb];
             let want_q10 = (target[i] - (cb1[i] << 7) as f64) * w_q9[i] as f64 / 16384.0;
             let step = qstep as f64 * 1024.0 / 65536.0;
@@ -100,7 +126,9 @@ pub fn quantize(target: &[f64], signal_type: usize, wb: bool) -> ([i32; 17], [i3
             bits += stage2_bits(tab, bq.1);
         }
         let nlsf = nlsf_decode(&ix, wb);
-        let d: f64 = (0..order).map(|k| w[k] * (nlsf[k] as f64 - target[k]).powi(2)).sum();
+        let d: f64 = (0..order)
+            .map(|k| w[k] * (nlsf[k] as f64 - target[k]).powi(2))
+            .sum();
         let cost = d + LAMBDA * bits;
         if cost < best.0 {
             best = (cost, ix, nlsf);
@@ -118,11 +146,19 @@ mod tests {
         for wb in [false, true] {
             let order = if wb { 16 } else { 10 };
             // A smooth, plausible NLSF vector.
-            let target: Vec<f64> = (0..order).map(|k| 32768.0 * (k as f64 + 0.8 + 0.3 * (k as f64).sin()) / (order as f64 + 1.0)).collect();
+            let target: Vec<f64> = (0..order)
+                .map(|k| 32768.0 * (k as f64 + 0.8 + 0.3 * (k as f64).sin()) / (order as f64 + 1.0))
+                .collect();
             let (ix, nlsf) = quantize(&target, 1, wb);
             assert!(ix[1..=order].iter().all(|v| (-10..=10).contains(v)));
-            let max_err = (0..order).map(|k| (nlsf[k] as f64 - target[k]).abs()).fold(0.0, f64::max);
-            assert!(max_err < 1200.0, "wb={wb} max err {max_err}: {:?} vs {target:?}", &nlsf[..order]);
+            let max_err = (0..order)
+                .map(|k| (nlsf[k] as f64 - target[k]).abs())
+                .fold(0.0, f64::max);
+            assert!(
+                max_err < 1200.0,
+                "wb={wb} max err {max_err}: {:?} vs {target:?}",
+                &nlsf[..order]
+            );
         }
     }
 }

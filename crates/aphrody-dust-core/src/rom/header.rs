@@ -191,7 +191,9 @@ impl Header {
             rom_size_ds: context.rom_size.expect("ROM size must be known"),
             header_size: size_of::<raw::Header>() as u32,
             arm9_build_info_offset: if self.original.has_arm9_build_info_offset {
-                context.arm9_build_info_offset.map_or(0, |offset| offset + arm9_offset)
+                context
+                    .arm9_build_info_offset
+                    .map_or(0, |offset| offset + arm9_offset)
             } else {
                 0
             },
@@ -279,6 +281,10 @@ impl Header {
 
     /// Returns the version of this [`Header`].
     pub fn version(&self) -> HeaderVersion {
-        if self.ds_post_dsi.is_some() { HeaderVersion::DsPostDsi } else { HeaderVersion::Original }
+        if self.ds_post_dsi.is_some() {
+            HeaderVersion::DsPostDsi
+        } else {
+            HeaderVersion::Original
+        }
     }
 }

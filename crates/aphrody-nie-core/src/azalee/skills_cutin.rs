@@ -8,7 +8,10 @@ use std::vec::Vec;
 
 /// Localized name triplet used by a skill cut-in entry.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-#[cfg_attr(any(feature = "serde", feature = "data"), derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    any(feature = "serde", feature = "data"),
+    derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct LocalizedSkillName {
     /// French label.
     pub fr: String,
@@ -20,7 +23,10 @@ pub struct LocalizedSkillName {
 
 /// VFS assets associated with one hissatsu cut-in.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-#[cfg_attr(any(feature = "serde", feature = "data"), derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    any(feature = "serde", feature = "data"),
+    derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct SkillCutin {
     /// Event identifier used by the model and effects paths.
     pub event_id_name: String,
@@ -40,7 +46,10 @@ pub struct SkillCutin {
 
 /// Skill identity and gameplay values enriched with optional cut-in assets.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-#[cfg_attr(any(feature = "serde", feature = "data"), derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    any(feature = "serde", feature = "data"),
+    derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct SkillCutinEntry {
     /// Internal skill code, such as `whs01230`.
     pub skill_id_str: String,
@@ -95,7 +104,12 @@ impl SkillCutinCatalog {
         skills: Vec<SkillCutinEntry>,
         served_events: Vec<String>,
     ) -> Self {
-        Self { skill_count, cutin_count, skills, served_events }
+        Self {
+            skill_count,
+            cutin_count,
+            skills,
+            served_events,
+        }
     }
 
     /// Finds an entry by its exact internal code.
@@ -200,8 +214,10 @@ mod tests {
 
     #[test]
     fn lookup_is_exact_and_empty_events_are_not_served() {
-        let skill =
-            SkillCutinEntry { skill_id_str: "whs01230".into(), ..SkillCutinEntry::default() };
+        let skill = SkillCutinEntry {
+            skill_id_str: "whs01230".into(),
+            ..SkillCutinEntry::default()
+        };
         let catalog = SkillCutinCatalog::new(1, 1, vec![skill], vec!["ev60_00010".into()]);
         assert!(catalog.get_skill_cutin("whs01230").is_some());
         assert!(catalog.get_skill_cutin("WHS01230").is_none());

@@ -21,7 +21,11 @@ impl Dictionary {
     pub fn from_entries(mut entries: Vec<(String, u64)>) -> Dictionary {
         entries.sort_by(|a, b| a.0.as_bytes().cmp(b.0.as_bytes()));
         entries.dedup_by(|b, a| a.0 == b.0);
-        let mut d = Dictionary { words: String::new(), offs: vec![0], masks: Vec::with_capacity(entries.len()) };
+        let mut d = Dictionary {
+            words: String::new(),
+            offs: vec![0],
+            masks: Vec::with_capacity(entries.len()),
+        };
         for (w, m) in entries {
             d.words.push_str(&w);
             d.offs.push(d.words.len() as u32);
@@ -67,7 +71,12 @@ impl Dictionary {
         let mut prev: Vec<u8> = Vec::new();
         for (w, m) in self.iter() {
             let h = hyphenated(w, m).into_bytes();
-            let p = prev.iter().zip(&h).take_while(|(a, b)| a == b).count().min(255);
+            let p = prev
+                .iter()
+                .zip(&h)
+                .take_while(|(a, b)| a == b)
+                .count()
+                .min(255);
             raw.push(p as u8);
             raw.extend_from_slice(&h[p..]);
             raw.push(b'\n');
@@ -78,14 +87,25 @@ impl Dictionary {
 
     /// Deserialize data written by [`Dictionary::to_bytes`].
     pub fn from_bytes(data: &[u8]) -> Result<Dictionary, String> {
-        let raw = miniz_oxide::inflate::decompress_to_vec(data).map_err(|e| format!("hyphenation dictionary: inflate failed: {e:?}"))?;
-        let body = raw.strip_prefix(MAGIC).ok_or("hyphenation dictionary: bad header")?;
-        let mut d = Dictionary { words: String::with_capacity(body.len()), offs: vec![0], masks: Vec::new() };
+        let raw = miniz_oxide::inflate::decompress_to_vec(data)
+            .map_err(|e| format!("hyphenation dictionary: inflate failed: {e:?}"))?;
+        let body = raw
+            .strip_prefix(MAGIC)
+            .ok_or("hyphenation dictionary: bad header")?;
+        let mut d = Dictionary {
+            words: String::with_capacity(body.len()),
+            offs: vec![0],
+            masks: Vec::new(),
+        };
         let mut cur: Vec<u8> = Vec::new();
         let mut i = 0;
         while i < body.len() {
             let p = body[i] as usize;
-            let end = body[i + 1..].iter().position(|&b| b == b'\n').map(|e| i + 1 + e).ok_or("hyphenation dictionary: truncated")?;
+            let end = body[i + 1..]
+                .iter()
+                .position(|&b| b == b'\n')
+                .map(|e| i + 1 + e)
+                .ok_or("hyphenation dictionary: truncated")?;
             if p > cur.len() {
                 return Err("hyphenation dictionary: bad prefix".into());
             }
@@ -138,13 +158,29 @@ mod tests {
 
     #[test]
     fn roundtrip() {
-        let e: Vec<(String, u64)> = ["ty-pog-ra-phy", "cat", "hap-pen", "o'clock", "naïve-té", "naïve"].iter().map(|s| parse_hyphenated(s)).collect();
+        let e: Vec<(String, u64)> = [
+            "ty-pog-ra-phy",
+            "cat",
+            "hap-pen",
+            "o'clock",
+            "naïve-té",
+            "naïve",
+        ]
+        .iter()
+        .map(|s| parse_hyphenated(s))
+        .collect();
         let d = Dictionary::from_entries(e);
         let back = Dictionary::from_bytes(&d.to_bytes()).unwrap();
         assert_eq!(back.len(), 6);
-        assert_eq!(back.get("typography").map(|m| hyphenated("typography", m)), Some("ty-pog-ra-phy".to_string()));
+        assert_eq!(
+            back.get("typography").map(|m| hyphenated("typography", m)),
+            Some("ty-pog-ra-phy".to_string())
+        );
         assert_eq!(back.get("cat"), Some(0));
-        assert_eq!(back.get("naïveté").map(|m| hyphenated("naïveté", m)), Some("naïve-té".to_string()));
+        assert_eq!(
+            back.get("naïveté").map(|m| hyphenated("naïveté", m)),
+            Some("naïve-té".to_string())
+        );
         assert!(back.get("dog").is_none());
     }
 }

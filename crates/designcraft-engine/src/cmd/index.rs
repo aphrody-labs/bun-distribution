@@ -1,7 +1,9 @@
 //! Index: page references (New Page Reference) and Generate Index.
 
 use designcraft_doc::index::{IndexRange, IndexRef, IndexSpec, Resolved};
-use designcraft_doc::{Document, INDEX_MARK, ParaAttrs, ParaFormat, ParagraphStyle, SpreadRef, StoryId, TextSel};
+use designcraft_doc::{
+    Document, INDEX_MARK, ParaAttrs, ParaFormat, ParagraphStyle, SpreadRef, StoryId, TextSel,
+};
 use designcraft_geom::Rect;
 use serde_json::{Value, json};
 
@@ -29,10 +31,23 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             generate
         ),
-        cmd!("index.update", "Update Index", ["Layout", "Index"], None, "{} — regenerate the existing index", has_index, |s, _| {
-            let spec = s.doc()?.doc.index.clone().ok_or_else(|| bad("index.update", "no index"))?;
-            fill_index(s, spec, None)
-        }),
+        cmd!(
+            "index.update",
+            "Update Index",
+            ["Layout", "Index"],
+            None,
+            "{} — regenerate the existing index",
+            has_index,
+            |s, _| {
+                let spec = s
+                    .doc()?
+                    .doc
+                    .index
+                    .clone()
+                    .ok_or_else(|| bad("index.update", "no index"))?;
+                fill_index(s, spec, None)
+            }
+        ),
     ]
 }
 
@@ -46,23 +61,47 @@ fn in_story_text(s: &Session) -> std::result::Result<(), String> {
 
 fn has_index(s: &Session) -> std::result::Result<(), String> {
     match s.doc() {
-        Ok(st) if st.doc.index.as_ref().is_some_and(|t| st.doc.story(t.story).is_some()) => Ok(()),
+        Ok(st)
+            if st
+                .doc
+                .index
+                .as_ref()
+                .is_some_and(|t| st.doc.story(t.story).is_some()) =>
+        {
+            Ok(())
+        }
         _ => Err("the document has no index".into()),
     }
 }
 
 fn add_reference(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
-    let t = st.selection.text.ok_or_else(|| bad("index.addReference", "no insertion point"))?;
-    let selected = st.doc.story(t.story).map(|x| designcraft_doc::xref::clean(x.slice(t.range()))).unwrap_or_default();
+    let t = st
+        .selection
+        .text
+        .ok_or_else(|| bad("index.addReference", "no insertion point"))?;
+    let selected = st
+        .doc
+        .story(t.story)
+        .map(|x| designcraft_doc::xref::clean(x.slice(t.range())))
+        .unwrap_or_default();
     let topics: Vec<String> = if let Some(a) = p.get("topics").and_then(Value::as_array) {
-        a.iter().filter_map(Value::as_str).map(str::to_string).collect()
+        a.iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect()
     } else if let Some(t) = str_param(p, "topic") {
-        t.split('>').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect()
+        t.split('>')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
     } else if !selected.is_empty() {
         vec![selected]
     } else {
-        return Err(bad("index.addReference", "give `topic` or select the text to index"));
+        return Err(bad(
+            "index.addReference",
+            "give `topic` or select the text to index",
+        ));
     };
     if topics.is_empty() || topics.len() > 4 {
         return Err(bad("index.addReference", "1 to 4 topic levels"));
@@ -72,21 +111,41 @@ fn add_reference(s: &mut Session, p: &Value) -> Result<Value> {
         "currentPage" => IndexRange::CurrentPage,
         "toEndOfStory" => IndexRange::ToEndOfStory,
         "suppressPageRange" => IndexRange::SuppressPageRange,
-        "nextParagraphs" => IndexRange::NextParagraphs(p.get("paragraphs").and_then(Value::as_u64).unwrap_or(1) as u32),
+        "nextParagraphs" => IndexRange::NextParagraphs(
+            p.get("paragraphs").and_then(Value::as_u64).unwrap_or(1) as u32,
+        ),
         "see" => IndexRange::See(target()),
         "seeAlso" => IndexRange::SeeAlso(target()),
         r => return Err(bad("index.addReference", format!("unknown range `{r}`"))),
     };
-    let sort: Vec<String> =
-        p.get("sort").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default();
-    let r = IndexRef { topics, sort, range };
+    let sort: Vec<String> = p
+        .get("sort")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    let r = IndexRef {
+        topics,
+        sort,
+        range,
+    };
     s.edit(|d, sel| {
-        let st = d.story_mut(t.story).ok_or(designcraft_doc::DocError::NoStory(t.story))?;
+        let st = d
+            .story_mut(t.story)
+            .ok_or(designcraft_doc::DocError::NoStory(t.story))?;
         // InDesign puts the marker before the selected text.
         let at = t.range().start.min(st.len());
         st.insert_index_ref(at, r.clone());
         let shift = INDEX_MARK.len_utf8();
-        sel.text = Some(TextSel { anchor: t.anchor + shift, focus: t.focus + shift, ..t });
+        sel.text = Some(TextSel {
+            anchor: t.anchor + shift,
+            focus: t.focus + shift,
+            ..t
+        });
         Ok(json!({"pos": at}))
     })
 }
@@ -94,7 +153,11 @@ fn add_reference(s: &mut Session, p: &Value) -> Result<Value> {
 /// Every page reference with its page span.
 fn resolve(s: &Session, d: &Document, skip: Option<StoryId>) -> Vec<(StoryId, usize, Resolved)> {
     let mut out = Vec::new();
-    for st in d.stories.values().filter(|st| !st.index_refs.is_empty() && Some(st.id) != skip) {
+    for st in d
+        .stories
+        .values()
+        .filter(|st| !st.index_refs.is_empty() && Some(st.id) != skip)
+    {
         let cs = s.cache.get(d, st.id, None);
         let page = |pos: usize| designcraft_compose::vars::page_of(d, &cs, pos);
         for ((pos, _), r) in st.text.match_indices(INDEX_MARK).zip(&st.index_refs) {
@@ -113,7 +176,14 @@ fn resolve(s: &Session, d: &Document, skip: Option<StoryId>) -> Vec<(StoryId, us
                 (Some(a), None) => Some((a, a)),
                 _ => None,
             };
-            out.push((st.id, pos, Resolved { r: (**r).clone(), pages }));
+            out.push((
+                st.id,
+                pos,
+                Resolved {
+                    r: (**r).clone(),
+                    pages,
+                },
+            ));
         }
     }
     out
@@ -131,19 +201,47 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn ensure_styles(d: &mut Document) {
     let mut want = vec![
-        ("Index Title", ParaAttrs { space_after: Some(12.0), ..Default::default() }, Some(16.0)),
+        (
+            "Index Title",
+            ParaAttrs {
+                space_after: Some(12.0),
+                ..Default::default()
+            },
+            Some(16.0),
+        ),
         (
             "Index Section Head",
-            ParaAttrs { space_before: Some(8.0), space_after: Some(2.0), keep_with_next: Some(2), ..Default::default() },
+            ParaAttrs {
+                space_before: Some(8.0),
+                space_after: Some(2.0),
+                keep_with_next: Some(2),
+                ..Default::default()
+            },
             Some(11.0),
         ),
     ];
-    let levels = [("Index Level 1", 0.0), ("Index Level 2", 12.0), ("Index Level 3", 24.0), ("Index Level 4", 36.0)];
+    let levels = [
+        ("Index Level 1", 0.0),
+        ("Index Level 2", 12.0),
+        ("Index Level 3", 24.0),
+        ("Index Level 4", 36.0),
+    ];
     for (name, indent) in levels {
         // Hanging indent so turnover lines stand out from subtopics.
-        want.push((name, ParaAttrs { left_indent: Some(indent + 12.0), first_line_indent: Some(-12.0), ..Default::default() }, None));
+        want.push((
+            name,
+            ParaAttrs {
+                left_indent: Some(indent + 12.0),
+                first_line_indent: Some(-12.0),
+                ..Default::default()
+            },
+            None,
+        ));
     }
-    let missing: Vec<_> = want.into_iter().filter(|(n, ..)| d.styles.para(n).is_none()).collect();
+    let missing: Vec<_> = want
+        .into_iter()
+        .filter(|(n, ..)| d.styles.para(n).is_none())
+        .collect();
     if missing.is_empty() {
         return;
     }
@@ -154,15 +252,26 @@ fn ensure_styles(d: &mut Document) {
             based_on: Some(designcraft_doc::story::BASIC_PARAGRAPH.into()),
             next_style: None,
             para,
-            chars: designcraft_doc::CharAttrs { size, ..Default::default() },
+            chars: designcraft_doc::CharAttrs {
+                size,
+                ..Default::default()
+            },
             shortcut: String::new(),
         });
     }
 }
 
-fn fill_index(s: &mut Session, spec: IndexSpec, new_frame: Option<(usize, Option<Rect>)>) -> Result<Value> {
+fn fill_index(
+    s: &mut Session,
+    spec: IndexSpec,
+    new_frame: Option<(usize, Option<Rect>)>,
+) -> Result<Value> {
     let d0 = s.doc()?.doc.clone();
-    let existing = d0.index.as_ref().map(|i| i.story).filter(|sid| d0.story(*sid).is_some());
+    let existing = d0
+        .index
+        .as_ref()
+        .map(|i| i.story)
+        .filter(|sid| d0.story(*sid).is_some());
     let refs = resolve(s, &d0, existing);
     let resolved: Vec<Resolved> = refs.into_iter().map(|(_, _, r)| r).collect();
     let paras = designcraft_doc::index::build(&spec, &resolved, &|p| d0.page_name(p));
@@ -216,23 +325,59 @@ mod tests {
     #[test]
     fn page_references_build_an_index() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"pages": 3, "facingPages": false})).unwrap();
+        s.execute("file.new", &json!({"pages": 3, "facingPages": false}))
+            .unwrap();
         let mut sids = vec![];
         for page in 0..3usize {
             let sp = s.doc().unwrap().doc.page_loc(page).unwrap().0;
-            let text = ["Kerning adjusts pairs.", "Leading sets line spacing. Kerning again.", "Grids organise pages."][page];
+            let text = [
+                "Kerning adjusts pairs.",
+                "Leading sets line spacing. Kerning again.",
+                "Grids organise pages.",
+            ][page];
             let r = s.execute("frame.create", &json!({"spread": sp, "rect": [72, 72, 400, 300], "content": "text", "text": text})).unwrap();
-            sids.push(s.doc().unwrap().doc.item(designcraft_doc::ItemId(r["id"].as_u64().unwrap())).unwrap().text_frame().unwrap().story);
+            sids.push(
+                s.doc()
+                    .unwrap()
+                    .doc
+                    .item(designcraft_doc::ItemId(r["id"].as_u64().unwrap()))
+                    .unwrap()
+                    .text_frame()
+                    .unwrap()
+                    .story,
+            );
         }
         // Topic from the selected word, explicit nested topics, a See reference.
-        s.execute("text.select", &json!({"story": sids[0].0, "anchor": 0, "focus": 7})).unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": sids[0].0, "anchor": 0, "focus": 7}),
+        )
+        .unwrap();
         s.execute("index.addReference", &json!({})).unwrap();
-        s.execute("text.select", &json!({"story": sids[1].0, "anchor": 0, "focus": 0})).unwrap();
-        s.execute("index.addReference", &json!({"topic": "Type > Leading"})).unwrap();
-        s.execute("text.select", &json!({"story": sids[1].0, "anchor": 30, "focus": 30})).unwrap();
-        s.execute("index.addReference", &json!({"topic": "Kerning"})).unwrap();
-        s.execute("text.select", &json!({"story": sids[2].0, "anchor": 0, "focus": 0})).unwrap();
-        s.execute("index.addReference", &json!({"topic": "Line spacing", "range": "see", "target": "Type: Leading"})).unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": sids[1].0, "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute("index.addReference", &json!({"topic": "Type > Leading"}))
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": sids[1].0, "anchor": 30, "focus": 30}),
+        )
+        .unwrap();
+        s.execute("index.addReference", &json!({"topic": "Kerning"}))
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": sids[2].0, "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute(
+            "index.addReference",
+            &json!({"topic": "Line spacing", "range": "see", "target": "Type: Leading"}),
+        )
+        .unwrap();
         // The marker doesn't change the selection's text.
         let st = s.doc().unwrap().doc.story(sids[0]).unwrap().clone();
         let sel = s.doc().unwrap().selection.text.unwrap();
@@ -240,15 +385,29 @@ mod tests {
         assert!(st.text.starts_with(INDEX_MARK));
         let l = s.execute("index.list", &json!({})).unwrap();
         assert_eq!(l.as_array().unwrap().len(), 4);
-        s.execute("layout.pages.insert", &json!({"count": 1})).unwrap();
+        s.execute("layout.pages.insert", &json!({"count": 1}))
+            .unwrap();
         let r = s.execute("index.generate", &json!({"page": 4})).unwrap();
         let sid = StoryId(r["story"].as_u64().unwrap());
         let text = s.doc().unwrap().doc.story(sid).unwrap().text.clone();
-        assert_eq!(text, "Index\nK\nKerning  1, 2\nL\nLine spacing  See Type: Leading\nT\nType\nLeading  2");
-        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().paras[6].style, "Index Level 1");
-        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().paras[7].style, "Index Level 2");
+        assert_eq!(
+            text,
+            "Index\nK\nKerning  1, 2\nL\nLine spacing  See Type: Leading\nT\nType\nLeading  2"
+        );
+        assert_eq!(
+            s.doc().unwrap().doc.story(sid).unwrap().paras[6].style,
+            "Index Level 1"
+        );
+        assert_eq!(
+            s.doc().unwrap().doc.story(sid).unwrap().paras[7].style,
+            "Index Level 2"
+        );
         // Deleting a marked word removes its reference; update regenerates in place.
-        s.execute("text.select", &json!({"story": sids[0].0, "anchor": 0, "focus": INDEX_MARK.len_utf8() + 7})).unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": sids[0].0, "anchor": 0, "focus": INDEX_MARK.len_utf8() + 7}),
+        )
+        .unwrap();
         s.execute("text.delete", &json!({})).unwrap();
         s.execute("index.update", &json!({})).unwrap();
         let text = s.doc().unwrap().doc.story(sid).unwrap().text.clone();

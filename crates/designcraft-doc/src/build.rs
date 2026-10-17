@@ -11,7 +11,10 @@ use crate::ids::{ItemId, LayerId, PageId, SpreadId};
 use crate::item::Item;
 use crate::page::{Columns, Margins, Page, PageSide, ParentInfo, Section, Spread};
 use crate::styles::Styles;
-use crate::{DataMerge, DocError, DocSettings, Document, Intent, LAYER_COLORS, Layer, ParaFormat, Result, SpreadRef};
+use crate::{
+    DataMerge, DocError, DocSettings, Document, Intent, LAYER_COLORS, Layer, ParaFormat, Result,
+    SpreadRef,
+};
 
 /// A New Document preset.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -27,23 +30,125 @@ pub struct Preset {
 const MM: f64 = units::PT_PER_MM;
 
 pub const PRESETS: &[Preset] = &[
-    Preset { name: "Letter", intent: Intent::Print, width: 612.0, height: 792.0, units: Unit::Picas },
-    Preset { name: "Legal", intent: Intent::Print, width: 612.0, height: 1008.0, units: Unit::Picas },
-    Preset { name: "Tabloid", intent: Intent::Print, width: 792.0, height: 1224.0, units: Unit::Picas },
-    Preset { name: "Letter - Half", intent: Intent::Print, width: 396.0, height: 612.0, units: Unit::Picas },
-    Preset { name: "A3", intent: Intent::Print, width: 297.0 * MM, height: 420.0 * MM, units: Unit::Millimeters },
-    Preset { name: "A4", intent: Intent::Print, width: 210.0 * MM, height: 297.0 * MM, units: Unit::Millimeters },
-    Preset { name: "A5", intent: Intent::Print, width: 148.0 * MM, height: 210.0 * MM, units: Unit::Millimeters },
-    Preset { name: "A6", intent: Intent::Print, width: 105.0 * MM, height: 148.0 * MM, units: Unit::Millimeters },
-    Preset { name: "B5", intent: Intent::Print, width: 176.0 * MM, height: 250.0 * MM, units: Unit::Millimeters },
-    Preset { name: "Business Card", intent: Intent::Print, width: 252.0, height: 144.0, units: Unit::Picas },
-    Preset { name: "Postcard", intent: Intent::Print, width: 432.0, height: 288.0, units: Unit::Picas },
-    Preset { name: "Web 1920 × 1080", intent: Intent::Web, width: 1920.0, height: 1080.0, units: Unit::Pixels },
-    Preset { name: "Web 1366 × 768", intent: Intent::Web, width: 1366.0, height: 768.0, units: Unit::Pixels },
-    Preset { name: "Web 1024 × 768", intent: Intent::Web, width: 1024.0, height: 768.0, units: Unit::Pixels },
-    Preset { name: "Mobile 1080 × 1920", intent: Intent::Mobile, width: 1080.0, height: 1920.0, units: Unit::Pixels },
-    Preset { name: "Mobile 390 × 844", intent: Intent::Mobile, width: 390.0, height: 844.0, units: Unit::Pixels },
-    Preset { name: "Tablet 1024 × 1366", intent: Intent::Mobile, width: 1024.0, height: 1366.0, units: Unit::Pixels },
+    Preset {
+        name: "Letter",
+        intent: Intent::Print,
+        width: 612.0,
+        height: 792.0,
+        units: Unit::Picas,
+    },
+    Preset {
+        name: "Legal",
+        intent: Intent::Print,
+        width: 612.0,
+        height: 1008.0,
+        units: Unit::Picas,
+    },
+    Preset {
+        name: "Tabloid",
+        intent: Intent::Print,
+        width: 792.0,
+        height: 1224.0,
+        units: Unit::Picas,
+    },
+    Preset {
+        name: "Letter - Half",
+        intent: Intent::Print,
+        width: 396.0,
+        height: 612.0,
+        units: Unit::Picas,
+    },
+    Preset {
+        name: "A3",
+        intent: Intent::Print,
+        width: 297.0 * MM,
+        height: 420.0 * MM,
+        units: Unit::Millimeters,
+    },
+    Preset {
+        name: "A4",
+        intent: Intent::Print,
+        width: 210.0 * MM,
+        height: 297.0 * MM,
+        units: Unit::Millimeters,
+    },
+    Preset {
+        name: "A5",
+        intent: Intent::Print,
+        width: 148.0 * MM,
+        height: 210.0 * MM,
+        units: Unit::Millimeters,
+    },
+    Preset {
+        name: "A6",
+        intent: Intent::Print,
+        width: 105.0 * MM,
+        height: 148.0 * MM,
+        units: Unit::Millimeters,
+    },
+    Preset {
+        name: "B5",
+        intent: Intent::Print,
+        width: 176.0 * MM,
+        height: 250.0 * MM,
+        units: Unit::Millimeters,
+    },
+    Preset {
+        name: "Business Card",
+        intent: Intent::Print,
+        width: 252.0,
+        height: 144.0,
+        units: Unit::Picas,
+    },
+    Preset {
+        name: "Postcard",
+        intent: Intent::Print,
+        width: 432.0,
+        height: 288.0,
+        units: Unit::Picas,
+    },
+    Preset {
+        name: "Web 1920 × 1080",
+        intent: Intent::Web,
+        width: 1920.0,
+        height: 1080.0,
+        units: Unit::Pixels,
+    },
+    Preset {
+        name: "Web 1366 × 768",
+        intent: Intent::Web,
+        width: 1366.0,
+        height: 768.0,
+        units: Unit::Pixels,
+    },
+    Preset {
+        name: "Web 1024 × 768",
+        intent: Intent::Web,
+        width: 1024.0,
+        height: 768.0,
+        units: Unit::Pixels,
+    },
+    Preset {
+        name: "Mobile 1080 × 1920",
+        intent: Intent::Mobile,
+        width: 1080.0,
+        height: 1920.0,
+        units: Unit::Pixels,
+    },
+    Preset {
+        name: "Mobile 390 × 844",
+        intent: Intent::Mobile,
+        width: 390.0,
+        height: 844.0,
+        units: Unit::Pixels,
+    },
+    Preset {
+        name: "Tablet 1024 × 1366",
+        intent: Intent::Mobile,
+        width: 1024.0,
+        height: 1366.0,
+        units: Unit::Pixels,
+    },
 ];
 
 /// File → New → Document parameters.
@@ -97,7 +202,11 @@ impl NewDocument {
             height: p.height,
             units: p.units,
             facing_pages: !web,
-            margins: if p.units == Unit::Millimeters { Margins::uniform(12.7 * MM) } else { Margins::uniform(36.0) },
+            margins: if p.units == Unit::Millimeters {
+                Margins::uniform(12.7 * MM)
+            } else {
+                Margins::uniform(36.0)
+            },
             ..Default::default()
         })
     }
@@ -116,7 +225,11 @@ impl Document {
             slug: nd.slug,
             horizontal_units: nd.units,
             vertical_units: nd.units,
-            blend_space: if nd.intent == Intent::Print { crate::BlendSpace::Cmyk } else { crate::BlendSpace::Rgb },
+            blend_space: if nd.intent == Intent::Print {
+                crate::BlendSpace::Cmyk
+            } else {
+                crate::BlendSpace::Rgb
+            },
             glyph_fallback: false,
             ..Default::default()
         };
@@ -175,8 +288,16 @@ impl Document {
         // A-Parent.
         let parent_id = d.add_parent("A", "Parent", nd.columns, nd.gutter, nd.margins);
         // Document pages.
-        let pages: Vec<Page> = (0..nd.pages.max(1)).map(|_| d.make_page(Some(parent_id), nd.columns, nd.gutter, nd.margins)).collect();
-        d.spreads = vec![Arc::new(Spread { id: SpreadId(d.alloc()), pages, items: vec![], parent: None, allow_shuffle: true })];
+        let pages: Vec<Page> = (0..nd.pages.max(1))
+            .map(|_| d.make_page(Some(parent_id), nd.columns, nd.gutter, nd.margins))
+            .collect();
+        d.spreads = vec![Arc::new(Spread {
+            id: SpreadId(d.alloc()),
+            pages,
+            items: vec![],
+            parent: None,
+            allow_shuffle: true,
+        })];
         d.repaginate();
         if nd.primary_text_frame {
             d.add_primary_frames(nd.columns, nd.gutter);
@@ -190,9 +311,15 @@ impl Document {
         let mut prev: Option<ItemId> = None;
         let mut story = None;
         for page in 0..self.page_count() {
-            let Some((si, pi)) = self.page_loc(page) else { continue };
+            let Some((si, pi)) = self.page_loc(page) else {
+                continue;
+            };
             let r = self.spreads[si].pages[pi].margin_rect();
-            let Ok((fid, sid)) = self.add_text_frame(SpreadRef::Doc(si), r, layer, "", ParaFormat::default()) else { continue };
+            let Ok((fid, sid)) =
+                self.add_text_frame(SpreadRef::Doc(si), r, layer, "", ParaFormat::default())
+            else {
+                continue;
+            };
             if let Some(it) = self.item_mut(fid)
                 && let Some(tf) = it.text_frame_mut()
             {
@@ -210,14 +337,24 @@ impl Document {
         self.settings.primary_story = story;
     }
 
-    fn make_page(&mut self, parent: Option<SpreadId>, columns: u32, gutter: f64, margins: Margins) -> Page {
+    fn make_page(
+        &mut self,
+        parent: Option<SpreadId>,
+        columns: u32,
+        gutter: f64,
+        margins: Margins,
+    ) -> Page {
         Page {
             id: PageId(self.alloc()),
             width: self.settings.page_width,
             height: self.settings.page_height,
             x: 0.0,
             margins,
-            columns: Columns { count: columns.max(1), gutter, positions: None },
+            columns: Columns {
+                count: columns.max(1),
+                gutter,
+                positions: None,
+            },
             parent,
             side: PageSide::Single,
             overridden: vec![],
@@ -230,9 +367,18 @@ impl Document {
     }
 
     /// Add a parent spread (`prefix`-`name`) and return its id.
-    pub fn add_parent(&mut self, prefix: &str, name: &str, columns: u32, gutter: f64, margins: Margins) -> SpreadId {
+    pub fn add_parent(
+        &mut self,
+        prefix: &str,
+        name: &str,
+        columns: u32,
+        gutter: f64,
+        margins: Margins,
+    ) -> SpreadId {
         let n = if self.settings.facing_pages { 2 } else { 1 };
-        let mut pages: Vec<Page> = (0..n).map(|_| self.make_page(None, columns, gutter, margins)).collect();
+        let mut pages: Vec<Page> = (0..n)
+            .map(|_| self.make_page(None, columns, gutter, margins))
+            .collect();
         if n == 2 {
             pages[0].side = PageSide::Left;
             pages[1].side = PageSide::Right;
@@ -242,7 +388,11 @@ impl Document {
             id,
             pages,
             items: vec![],
-            parent: Some(ParentInfo { prefix: prefix.into(), name: name.into(), based_on: None }),
+            parent: Some(ParentInfo {
+                prefix: prefix.into(),
+                name: name.into(),
+                based_on: None,
+            }),
             allow_shuffle: true,
         };
         sp.relayout();
@@ -258,7 +408,11 @@ impl Document {
     pub fn next_parent_prefix(&self) -> String {
         for c in 'A'..='Z' {
             let s = c.to_string();
-            if !self.parents.iter().any(|p| p.parent.as_ref().is_some_and(|i| i.prefix == s)) {
+            if !self
+                .parents
+                .iter()
+                .any(|p| p.parent.as_ref().is_some_and(|i| i.prefix == s))
+            {
                 return s;
             }
         }
@@ -295,45 +449,62 @@ impl Document {
         let mut spreads: Vec<Spread> = Vec::new();
         let mut cur: Vec<(Page, Vec<Arc<Item>>)> = Vec::new();
         let total = pages.len();
-        let flush = |cur: &mut Vec<(Page, Vec<Arc<Item>>)>, spreads: &mut Vec<Spread>, id: SpreadId| {
-            if cur.is_empty() {
-                return;
-            }
-            let mut sp = Spread { id, pages: vec![], items: vec![], parent: None, allow_shuffle: true };
-            let n = cur.len();
-            let mut all_items = Vec::new();
-            for (i, (mut p, items)) in cur.drain(..).enumerate() {
-                p.side = if !facing {
-                    PageSide::Single
-                } else if n == 1 {
-                    // Lone page: right if odd page number position, decided by caller via side preset.
-                    p.side
-                } else if (i == 0) != rtl {
-                    PageSide::Left
-                } else {
-                    PageSide::Right
-                };
-                all_items.push(items);
-                sp.pages.push(p);
-            }
-            sp.relayout();
-            for (p, items) in sp.pages.iter().zip(all_items) {
-                for it in items {
-                    let mut it = Arc::unwrap_or_clone(it);
-                    it.xf = Affine::translate((p.x, 0.0)) * it.xf;
-                    sp.items.push(Arc::new(it));
+        let flush =
+            |cur: &mut Vec<(Page, Vec<Arc<Item>>)>, spreads: &mut Vec<Spread>, id: SpreadId| {
+                if cur.is_empty() {
+                    return;
                 }
-            }
-            spreads.push(sp);
-        };
+                let mut sp = Spread {
+                    id,
+                    pages: vec![],
+                    items: vec![],
+                    parent: None,
+                    allow_shuffle: true,
+                };
+                let n = cur.len();
+                let mut all_items = Vec::new();
+                for (i, (mut p, items)) in cur.drain(..).enumerate() {
+                    p.side = if !facing {
+                        PageSide::Single
+                    } else if n == 1 {
+                        // Lone page: right if odd page number position, decided by caller via side preset.
+                        p.side
+                    } else if (i == 0) != rtl {
+                        PageSide::Left
+                    } else {
+                        PageSide::Right
+                    };
+                    all_items.push(items);
+                    sp.pages.push(p);
+                }
+                sp.relayout();
+                for (p, items) in sp.pages.iter().zip(all_items) {
+                    for it in items {
+                        let mut it = Arc::unwrap_or_clone(it);
+                        it.xf = Affine::translate((p.x, 0.0)) * it.xf;
+                        sp.items.push(Arc::new(it));
+                    }
+                }
+                spreads.push(sp);
+            };
         // An even start page number (Document Setup › Start Page #) begins with a left page.
-        let shift = usize::from(self.sections.iter().find(|x| x.start == 0).and_then(|x| x.start_number).is_some_and(|n| n % 2 == 0));
+        let shift = usize::from(
+            self.sections
+                .iter()
+                .find(|x| x.start == 0)
+                .and_then(|x| x.start_number)
+                .is_some_and(|n| n % 2 == 0),
+        );
         for (i, (mut p, items)) in pages.into_iter().enumerate() {
             if facing {
                 // Page i (0-based) is a right page when its number is odd (1, 3, 5 …).
                 // Bound right to left, odd pages are left pages and spreads start on the right.
                 let odd = (i + shift) % 2 == 0;
-                p.side = if odd != rtl { PageSide::Right } else { PageSide::Left };
+                p.side = if odd != rtl {
+                    PageSide::Right
+                } else {
+                    PageSide::Left
+                };
                 let starts = if rtl { PageSide::Right } else { PageSide::Left };
                 if p.side == starts && !cur.is_empty() {
                     let id = SpreadId(self.alloc());
@@ -368,15 +539,24 @@ impl Document {
     }
 
     /// Insert `count` pages after absolute page `after` (None = at the start), using `parent`.
-    pub fn insert_pages(&mut self, after: Option<usize>, count: usize, parent: Option<SpreadId>) -> Result<Vec<PageId>> {
+    pub fn insert_pages(
+        &mut self,
+        after: Option<usize>,
+        count: usize,
+        parent: Option<SpreadId>,
+    ) -> Result<Vec<PageId>> {
         if count == 0 {
             return Ok(vec![]);
         }
         let n = self.page_count();
         let at = after.map_or(0, |a| (a + 1).min(n));
-        let template = self.page(at.saturating_sub(1).min(n.saturating_sub(1))).cloned();
-        let (cols, gutter, margins) =
-            template.as_ref().map(|t| (t.columns.count, t.columns.gutter, t.margins)).unwrap_or((1, 12.0, Margins::uniform(36.0)));
+        let template = self
+            .page(at.saturating_sub(1).min(n.saturating_sub(1)))
+            .cloned();
+        let (cols, gutter, margins) = template
+            .as_ref()
+            .map(|t| (t.columns.count, t.columns.gutter, t.margins))
+            .unwrap_or((1, 12.0, Margins::uniform(36.0)));
         let mut ids = Vec::new();
         let new_pages: Vec<Page> = (0..count)
             .map(|_| {
@@ -394,7 +574,13 @@ impl Document {
         let loc = match self.page_loc(at) {
             Some((si, 0)) if !self.spreads[si].allow_shuffle => {
                 let id = SpreadId(self.alloc());
-                let mut sp = Spread { id, pages: new_pages, items: vec![], parent: None, allow_shuffle: true };
+                let mut sp = Spread {
+                    id,
+                    pages: new_pages,
+                    items: vec![],
+                    parent: None,
+                    allow_shuffle: true,
+                };
                 sp.relayout();
                 self.spreads.insert(si, Arc::new(sp));
                 self.repaginate();
@@ -421,7 +607,13 @@ impl Document {
             }
             None => {
                 let id = SpreadId(self.alloc());
-                let mut sp = Spread { id, pages: new_pages, items: vec![], parent: None, allow_shuffle: true };
+                let mut sp = Spread {
+                    id,
+                    pages: new_pages,
+                    items: vec![],
+                    parent: None,
+                    allow_shuffle: true,
+                };
                 sp.relayout();
                 self.spreads.push(Arc::new(sp));
             }
@@ -433,9 +625,12 @@ impl Document {
     /// Delete absolute pages (items whose centre is on a deleted page are deleted too).
     pub fn delete_pages(&mut self, pages: &[usize]) -> Result<()> {
         if pages.len() >= self.page_count() {
-            return Err(DocError::Invalid("a document needs at least one page".into()));
+            return Err(DocError::Invalid(
+                "a document needs at least one page".into(),
+            ));
         }
-        let mut doomed: Vec<(usize, usize)> = pages.iter().filter_map(|p| self.page_loc(*p)).collect();
+        let mut doomed: Vec<(usize, usize)> =
+            pages.iter().filter_map(|p| self.page_loc(*p)).collect();
         doomed.sort();
         doomed.dedup();
         let mut remove_items: Vec<ItemId> = Vec::new();
@@ -505,10 +700,11 @@ impl Document {
         let src = Arc::make_mut(&mut self.spreads[si]);
         let page = src.pages.remove(pi);
         let pb = page.bounds();
-        let (moving, staying): (Vec<_>, Vec<_>) = std::mem::take(&mut src.items).into_iter().partition(|it| {
-            let c = it.bounds().center();
-            c.x >= pb.x0 && c.x < pb.x1
-        });
+        let (moving, staying): (Vec<_>, Vec<_>) =
+            std::mem::take(&mut src.items).into_iter().partition(|it| {
+                let c = it.bounds().center();
+                c.x >= pb.x0 && c.x < pb.x1
+            });
         src.items = staying;
         src.relayout();
         // Append to the target; objects keep their place on the page.
@@ -549,7 +745,11 @@ impl Document {
         let pi = self.parent_index(page.parent?)?;
         let ps = &self.parents[pi];
         // A parent spread can come without pages from a file.
-        let idx = if ps.pages.len() >= 2 && page.side == PageSide::Left { 0 } else { ps.pages.len().checked_sub(1)? };
+        let idx = if ps.pages.len() >= 2 && page.side == PageSide::Left {
+            0
+        } else {
+            ps.pages.len().checked_sub(1)?
+        };
         Some((pi, idx))
     }
 }
@@ -560,10 +760,16 @@ mod tests {
 
     #[test]
     fn new_facing_document_layout() {
-        let d = Document::new(&NewDocument { pages: 4, ..Default::default() });
+        let d = Document::new(&NewDocument {
+            pages: 4,
+            ..Default::default()
+        });
         assert_eq!(d.page_count(), 4);
         // [1] [2 3] [4]
-        assert_eq!(d.spreads.iter().map(|s| s.pages.len()).collect::<Vec<_>>(), vec![1, 2, 1]);
+        assert_eq!(
+            d.spreads.iter().map(|s| s.pages.len()).collect::<Vec<_>>(),
+            vec![1, 2, 1]
+        );
         assert_eq!(d.spreads[0].pages[0].side, PageSide::Right);
         assert_eq!(d.spreads[1].pages[0].side, PageSide::Left);
         assert_eq!(d.spreads[1].pages[1].x, 612.0);
@@ -576,7 +782,10 @@ mod tests {
     /// page used to compute index `0 - 1`.
     #[test]
     fn parent_without_pages_is_not_shown() {
-        let mut d = Document::new(&NewDocument { pages: 2, ..Default::default() });
+        let mut d = Document::new(&NewDocument {
+            pages: 2,
+            ..Default::default()
+        });
         assert!(d.parent_page_for(0).is_some());
         Arc::make_mut(&mut d.parents[0]).pages.clear();
         d.check().unwrap();
@@ -586,30 +795,56 @@ mod tests {
 
     #[test]
     fn non_facing_one_page_per_spread() {
-        let d = Document::new(&NewDocument { pages: 3, facing_pages: false, ..Default::default() });
+        let d = Document::new(&NewDocument {
+            pages: 3,
+            facing_pages: false,
+            ..Default::default()
+        });
         assert_eq!(d.spreads.len(), 3);
-        assert!(d.spreads.iter().all(|s| s.pages.len() == 1 && s.pages[0].side == PageSide::Single));
+        assert!(
+            d.spreads
+                .iter()
+                .all(|s| s.pages.len() == 1 && s.pages[0].side == PageSide::Single)
+        );
     }
 
     #[test]
     fn insert_and_delete_pages_reshuffle() {
-        let mut d = Document::new(&NewDocument { pages: 1, ..Default::default() });
-        d.insert_pages(Some(0), 3, d.parents.first().map(|p| p.id)).unwrap();
+        let mut d = Document::new(&NewDocument {
+            pages: 1,
+            ..Default::default()
+        });
+        d.insert_pages(Some(0), 3, d.parents.first().map(|p| p.id))
+            .unwrap();
         assert_eq!(d.page_count(), 4);
         assert_eq!(d.spreads.len(), 3);
         d.delete_pages(&[1, 2]).unwrap();
         assert_eq!(d.page_count(), 2);
-        assert_eq!(d.spreads.iter().map(|s| s.pages.len()).collect::<Vec<_>>(), vec![1, 1]);
+        assert_eq!(
+            d.spreads.iter().map(|s| s.pages.len()).collect::<Vec<_>>(),
+            vec![1, 1]
+        );
         assert!(d.delete_pages(&[0, 1]).is_err());
     }
 
     #[test]
     fn items_travel_with_pages() {
-        let mut d = Document::new(&NewDocument { pages: 3, ..Default::default() });
+        let mut d = Document::new(&NewDocument {
+            pages: 3,
+            ..Default::default()
+        });
         // Put a frame on page 3 (spread 1, page index 1).
         let lid = d.default_layer();
         let r = designcraft_geom::Rect::new(612.0 + 100.0, 100.0, 612.0 + 200.0, 200.0);
-        let (id, _) = d.add_text_frame(crate::SpreadRef::Doc(1), r, lid, "hello", Default::default()).unwrap();
+        let (id, _) = d
+            .add_text_frame(
+                crate::SpreadRef::Doc(1),
+                r,
+                lid,
+                "hello",
+                Default::default(),
+            )
+            .unwrap();
         d.move_page(2, 0).unwrap();
         // The frame's page is now page 1 (spread 0, single right page at x=0).
         let loc = d.find(id).unwrap();

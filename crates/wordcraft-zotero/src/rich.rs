@@ -45,7 +45,9 @@ fn from_doc(d: &Document, base: &CharProps) -> Vec<Paragraph> {
         let mut p = Paragraph::new();
         p.mark = base.clone();
         for (range, props) in src.run_ranges() {
-            let Some(t) = src.text.get(range) else { continue };
+            let Some(t) = src.text.get(range) else {
+                continue;
+            };
             let t: String = t.chars().filter(|c| *c != OBJ).collect();
             let at = p.len();
             let _ = p.insert_text(at, &t, &style_props(base, props));
@@ -88,5 +90,8 @@ pub fn fragment(text: &str, rich: bool, base: &CharProps) -> Fragment {
     if paras.is_empty() {
         paras.push(Paragraph::new());
     }
-    Fragment { blocks: paras.into_iter().map(Block::Para).collect(), ..Default::default() }
+    Fragment {
+        blocks: paras.into_iter().map(Block::Para).collect(),
+        ..Default::default()
+    }
 }

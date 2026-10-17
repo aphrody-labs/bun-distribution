@@ -16,8 +16,8 @@ impl_reflect! {
 #[cfg(test)]
 mod tests {
     use crate::{
-        enums::{Enum, VariantInfo, VariantType},
         FromReflect, PartialReflect, TypeInfo, Typed,
+        enums::{Enum, VariantInfo, VariantType},
     };
     use bevy_reflect_derive::Reflect;
     use static_assertions::assert_impl_all;
@@ -35,12 +35,16 @@ mod tests {
 
         let mut value = Some(123usize);
 
-        assert!(value
-            .reflect_partial_eq(&Some(123usize))
-            .unwrap_or_default());
-        assert!(!value
-            .reflect_partial_eq(&Some(321usize))
-            .unwrap_or_default());
+        assert!(
+            value
+                .reflect_partial_eq(&Some(123usize))
+                .unwrap_or_default()
+        );
+        assert!(
+            !value
+                .reflect_partial_eq(&Some(321usize))
+                .unwrap_or_default()
+        );
 
         assert_eq!("Some", value.variant_name());
         assert_eq!("core::option::Option<usize>::Some", value.variant_path());

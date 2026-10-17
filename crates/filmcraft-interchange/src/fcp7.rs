@@ -20,18 +20,23 @@ use std::collections::{HashMap, HashSet};
 use filmcraft_geom::Vec2;
 use filmcraft_media::{DemoScene, Generator, MediaKind};
 use filmcraft_project::{
-    BinId, ClipId, EffectInstance, Interpolation, ItemId, ItemKind, Keyframe, Label, Marker, MarkerId, MarkerKind, Param, ParamValue, Project, Sequence,
-    TrackItem, TrackKind, Transition, TransitionAlign, TransitionId, effect::find_effect_by_name, find_effect,
+    BinId, ClipId, EffectInstance, Interpolation, ItemId, ItemKind, Keyframe, Label, Marker,
+    MarkerId, MarkerKind, Param, ParamValue, Project, Sequence, TrackItem, TrackKind, Transition,
+    TransitionAlign, TransitionId, effect::find_effect_by_name, find_effect,
 };
 use filmcraft_time::{FrameRate, Tick, format_timecode_frames};
 use roxmltree::Node;
 
 use crate::common::{
-    Builder, MediaSpec, base_item, db_to_gain, empty_sequence, file_name, frames_round, gain_to_db, item_media, item_path, kind_from_ext, label_from, on_frame,
-    param, param_modified, path_to_file_url, rate_from_timebase, resolve_path, set_param, settings_for, standard_effects, timebase, transition_effect,
-    transition_name, unscaled,
+    Builder, MediaSpec, base_item, db_to_gain, empty_sequence, file_name, frames_round, gain_to_db,
+    item_media, item_path, kind_from_ext, label_from, on_frame, param, param_modified,
+    path_to_file_url, rate_from_timebase, resolve_path, set_param, settings_for, standard_effects,
+    timebase, transition_effect, transition_name, unscaled,
 };
-use crate::xml::{XmlWriter, bool_str, child, child_bool, child_f64, child_i64, child_text, children, elements, num, path_text};
+use crate::xml::{
+    XmlWriter, bool_str, child, child_bool, child_f64, child_i64, child_text, children, elements,
+    num, path_text,
+};
 use crate::{Error, ExportOptions, Format, ImportOptions, Imported, Report, Result};
 
 // ---------------------------------------------------------------------------------------------
@@ -60,15 +65,22 @@ fn generator_from(name: &str, id: &str, report: &mut Report) -> Generator {
     }
     match name.to_ascii_lowercase().as_str() {
         "slug" | "black video" => Generator::BlackVideo,
-        "color" | "color matte" | "colour matte" => Generator::ColorMatte { color: [0.0, 0.0, 0.0, 1.0] },
+        "color" | "color matte" | "colour matte" => Generator::ColorMatte {
+            color: [0.0, 0.0, 0.0, 1.0],
+        },
         "transparent video" => Generator::TransparentVideo,
         "counting leader" | "universal counting leader" => Generator::CountingLeader,
         n if n.starts_with("bars and tone") => Generator::BarsAndTone,
         n => {
-            if let Some(d) = DemoScene::ALL.iter().find(|d| d.file_name().eq_ignore_ascii_case(n)) {
+            if let Some(d) = DemoScene::ALL
+                .iter()
+                .find(|d| d.file_name().eq_ignore_ascii_case(n))
+            {
                 return Generator::Demo(*d);
             }
-            report.warn(format!("generator \"{name}\" is not supported; imported as Black Video"));
+            report.warn(format!(
+                "generator \"{name}\" is not supported; imported as Black Video"
+            ));
             Generator::BlackVideo
         }
     }
@@ -77,7 +89,10 @@ fn generator_from(name: &str, id: &str, report: &mut Report) -> Generator {
 fn read_rate(n: Node) -> Option<FrameRate> {
     let r = child(n, "rate")?;
     let tb = child_i64(r, "timebase")?;
-    Some(rate_from_timebase(tb, child_bool(r, "ntsc").unwrap_or(false)))
+    Some(rate_from_timebase(
+        tb,
+        child_bool(r, "ntsc").unwrap_or(false),
+    ))
 }
 
 fn write_rate(w: &mut XmlWriter, rate: FrameRate) {
@@ -145,7 +160,12 @@ pub(crate) fn import(text_in: &str, opts: &ImportOptions, report: &mut Report) -
         return Err(Error::parse(Format::Fcp7Xml, "root element is not <xmeml>"));
     }
     let mut imp = Imp {
-        b: Builder::new(root.descendants().find(|n| n.has_tag_name("project")).and_then(|p| child_text(p, "name")).unwrap_or("Imported XML")),
+        b: Builder::new(
+            root.descendants()
+                .find(|n| n.has_tag_name("project"))
+                .and_then(|p| child_text(p, "name"))
+                .unwrap_or("Imported XML"),
+        ),
         opts,
         report,
         files: HashMap::new(),
@@ -187,7 +207,10 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         for c in elements(n) {
             match c.tag_name().name() {
                 "project" => {
-                    let target = c.children().find(|x| x.has_tag_name("children")).unwrap_or(c);
+                    let target = c
+                        .children()
+                        .find(|x| x.has_tag_name("children"))
+                        .unwrap_or(c);
                     self.walk_container(target, bin, top);
                 }
                 "children" => self.walk_container(c, bin, top),
@@ -247,28 +270,49 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
     }
 
     /// Media item for a `<file>` element (definition or reference by id).
-    fn file(&mut self, n: Node<'a, 'i>, fallback_name: Option<&str>, bin: Option<BinId>) -> Option<ItemId> {
+    fn file(
+        &mut self,
+        n: Node<'a, 'i>,
+        fallback_name: Option<&str>,
+        bin: Option<BinId>,
+    ) -> Option<ItemId> {
         let key = node_key(n);
         if let Some(id) = self.file_items.get(&key) {
             return Some(*id);
         }
-        let def = if elements(n).next().is_some() { n } else { *self.files.get(&key)? };
-        let name = child_text(def, "name").filter(|s| !s.is_empty()).or(fallback_name).unwrap_or("Untitled").to_string();
+        let def = if elements(n).next().is_some() {
+            n
+        } else {
+            *self.files.get(&key)?
+        };
+        let name = child_text(def, "name")
+            .filter(|s| !s.is_empty())
+            .or(fallback_name)
+            .unwrap_or("Untitled")
+            .to_string();
         let rate = read_rate(def);
         let video = child(def, "media").and_then(|m| child(m, "video"));
         let audio = child(def, "media").and_then(|m| child(m, "audio"));
         let dims = video.map(|v| {
             let sc = child(v, "samplecharacteristics").unwrap_or(v);
-            (child_i64(sc, "width").unwrap_or(1920) as u32, child_i64(sc, "height").unwrap_or(1080) as u32)
+            (
+                child_i64(sc, "width").unwrap_or(1920) as u32,
+                child_i64(sc, "height").unwrap_or(1080) as u32,
+            )
         });
         let aud = audio.map(|a| {
             let sc = child(a, "samplecharacteristics").unwrap_or(a);
-            (child_i64(sc, "samplerate").unwrap_or(48_000) as u32, child_i64(a, "channelcount").unwrap_or(2) as u32)
+            (
+                child_i64(sc, "samplerate").unwrap_or(48_000) as u32,
+                child_i64(a, "channelcount").unwrap_or(2) as u32,
+            )
         });
         let r = rate.unwrap_or_default();
         let path = child_text(def, "pathurl").filter(|s| !s.is_empty());
         let mut spec = MediaSpec {
-            duration: child_i64(def, "duration").filter(|d| *d > 0).map(|d| r.tick_of(d)),
+            duration: child_i64(def, "duration")
+                .filter(|d| *d > 0)
+                .map(|d| r.tick_of(d)),
             video: dims.map(|(w, h)| (w, h, r)),
             audio: aud,
             start_tc: child(def, "timecode").and_then(|t| child_i64(t, "frame")),
@@ -287,12 +331,16 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let id = match path {
             Some(url) => {
                 let p = resolve_path(url, self.opts.base_dir.as_deref());
-                self.b.file_media(&format!("file:{p}"), &name, &p, &spec, bin)
+                self.b
+                    .file_media(&format!("file:{p}"), &name, &p, &spec, bin)
             }
             None => {
-                self.report.warn(format!("file \"{name}\" has no pathurl; imported offline"));
+                self.report
+                    .warn(format!("file \"{name}\" has no pathurl; imported offline"));
                 let p = resolve_path(&name, self.opts.base_dir.as_deref());
-                let id = self.b.file_media(&format!("fileid:{key}"), &name, &p, &spec, bin);
+                let id = self
+                    .b
+                    .file_media(&format!("fileid:{key}"), &name, &p, &spec, bin);
                 if let Some(m) = self.b.p.item_mut(id).and_then(|i| i.as_media_mut()) {
                     m.offline = true;
                 }
@@ -309,7 +357,11 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         if let Some(id) = self.seq_items.get(&key) {
             return Some(*id);
         }
-        let def = if child(n, "media").is_some() { n } else { *self.seq_defs.get(&key)? };
+        let def = if child(n, "media").is_some() {
+            n
+        } else {
+            *self.seq_defs.get(&key)?
+        };
         if !self.in_progress.insert(key.clone()) {
             self.report.warn("recursive nested sequence ignored");
             return None;
@@ -317,9 +369,21 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let name = child_text(def, "name").unwrap_or("Sequence").to_string();
         let rate = read_rate(def).unwrap_or_default();
         let tc = child(def, "timecode");
-        let df = tc.and_then(|t| child_text(t, "displayformat")).is_some_and(|d| d.eq_ignore_ascii_case("DF"));
-        let vfmt = child(def, "media").and_then(|m| child(m, "video")).and_then(|v| child(v, "format")).and_then(|f| child(f, "samplecharacteristics"));
-        let (w, h) = vfmt.map(|s| (child_i64(s, "width").unwrap_or(1920) as u32, child_i64(s, "height").unwrap_or(1080) as u32)).unwrap_or((1920, 1080));
+        let df = tc
+            .and_then(|t| child_text(t, "displayformat"))
+            .is_some_and(|d| d.eq_ignore_ascii_case("DF"));
+        let vfmt = child(def, "media")
+            .and_then(|m| child(m, "video"))
+            .and_then(|v| child(v, "format"))
+            .and_then(|f| child(f, "samplecharacteristics"));
+        let (w, h) = vfmt
+            .map(|s| {
+                (
+                    child_i64(s, "width").unwrap_or(1920) as u32,
+                    child_i64(s, "height").unwrap_or(1080) as u32,
+                )
+            })
+            .unwrap_or((1920, 1080));
         let mut settings = settings_for(rate, w, h, df);
         if let Some(sr) = child(def, "media")
             .and_then(|m| child(m, "audio"))
@@ -341,7 +405,9 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         seq.markers = read_markers(def, rate, &mut self.b);
         let media = child(def, "media");
         for (kind, tag) in [(TrackKind::Video, "video"), (TrackKind::Audio, "audio")] {
-            let Some(m) = media.and_then(|m| child(m, tag)) else { continue };
+            let Some(m) = media.and_then(|m| child(m, tag)) else {
+                continue;
+            };
             for (ti, tn) in children(m, "track").enumerate() {
                 self.b.ensure_tracks(&mut seq, kind, ti + 1);
                 self.track(&mut seq, id, kind, ti, tn, rate, (w, h));
@@ -359,7 +425,16 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn track(&mut self, seq: &mut Sequence, seq_id: ItemId, kind: TrackKind, ti: usize, tn: Node<'a, 'i>, rate: FrameRate, frame: (u32, u32)) {
+    fn track(
+        &mut self,
+        seq: &mut Sequence,
+        seq_id: ItemId,
+        kind: TrackKind,
+        ti: usize,
+        tn: Node<'a, 'i>,
+        rate: FrameRate,
+        frame: (u32, u32),
+    ) {
         {
             let t = &mut seq.tracks_mut(kind)[ti];
             t.enabled = child_bool(tn, "enabled").unwrap_or(true);
@@ -373,10 +448,19 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                         let xml_id = node_key(c);
                         self.xml_clip_ids.insert((seq_id, xml_id), ti_item.id);
                         if !refs.is_empty() {
-                            self.links.push(PendingLink { seq: seq_id, kind, track: ti, clip: ti_item.id, refs });
+                            self.links.push(PendingLink {
+                                seq: seq_id,
+                                kind,
+                                track: ti,
+                                clip: ti_item.id,
+                                refs,
+                            });
                         }
                         let t = &mut seq.tracks_mut(kind)[ti];
-                        if t.items.iter().any(|o| o.start < ti_item.end() && ti_item.start < o.end()) {
+                        if t.items
+                            .iter()
+                            .any(|o| o.start < ti_item.end() && ti_item.start < o.end())
+                        {
                             self.report.warn("overlapping clip items on one track; the later one was moved to a new track");
                             self.b.place(seq, kind, ti + 1, ti_item);
                         } else {
@@ -394,35 +478,60 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         }
     }
 
-    fn clip_item(&mut self, c: Node<'a, 'i>, kind: TrackKind, seq_rate: FrameRate, frame: (u32, u32)) -> Option<(TrackItem, Vec<String>)> {
+    fn clip_item(
+        &mut self,
+        c: Node<'a, 'i>,
+        kind: TrackKind,
+        seq_rate: FrameRate,
+        frame: (u32, u32),
+    ) -> Option<(TrackItem, Vec<String>)> {
         let name = child_text(c, "name").unwrap_or("").to_string();
         let rate = read_rate(c).unwrap_or(seq_rate);
         let item = if c.has_tag_name("generatoritem") {
             let eff = child(c, "effect");
-            let gname = eff.and_then(|e| child_text(e, "name")).unwrap_or(&name).to_string();
-            let gid = eff.and_then(|e| child_text(e, "effectid")).unwrap_or("").to_string();
+            let gname = eff
+                .and_then(|e| child_text(e, "name"))
+                .unwrap_or(&name)
+                .to_string();
+            let gid = eff
+                .and_then(|e| child_text(e, "effectid"))
+                .unwrap_or("")
+                .to_string();
             let mut g = generator_from(&gname, &gid, self.report);
             if let (Generator::ColorMatte { color }, Some(e)) = (&mut g, eff)
-                && let Some(v) = e.descendants().find(|d| d.has_tag_name("value") && child(*d, "red").is_some())
+                && let Some(v) = e
+                    .descendants()
+                    .find(|d| d.has_tag_name("value") && child(*d, "red").is_some())
             {
                 *color = read_color(v);
             }
-            let spec = MediaSpec { video: Some((frame.0, frame.1, seq_rate)), ..Default::default() };
+            let spec = MediaSpec {
+                video: Some((frame.0, frame.1, seq_rate)),
+                ..Default::default()
+            };
             let key = format!("gen:{}", serde_json::to_string(&g).unwrap_or_default());
-            let label = if name.is_empty() { g.label() } else { name.clone() };
+            let label = if name.is_empty() {
+                g.label()
+            } else {
+                name.clone()
+            };
             self.b.generator_media(&key, &label, g, &spec, None)
         } else if let Some(f) = child(c, "file") {
             match self.file(f, Some(&name), None) {
                 Some(item) => item,
                 None => {
-                    self.report.warn(format!("clip \"{name}\" refers to a file the document does not define; skipped"));
+                    self.report.warn(format!(
+                        "clip \"{name}\" refers to a file the document does not define; skipped"
+                    ));
                     return None;
                 }
             }
         } else if let Some(s) = child(c, "sequence") {
             self.sequence(s, None)?
         } else {
-            self.report.warn(format!("clip \"{name}\" has no media reference; imported offline"));
+            self.report.warn(format!(
+                "clip \"{name}\" has no media reference; imported offline"
+            ));
             let spec = MediaSpec {
                 video: (kind == TrackKind::Video).then_some((frame.0, frame.1, seq_rate)),
                 audio: (kind == TrackKind::Audio).then_some((48_000, 2)),
@@ -441,14 +550,22 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let end = child_i64(c, "end").unwrap_or(-1);
         let in_f = child_i64(c, "in").unwrap_or(0);
         let out_f = child_i64(c, "out").unwrap_or(in_f);
-        let src_in = child_i64(c, "pproTicksIn").map(Tick).unwrap_or_else(|| rate.tick_of(in_f));
-        let src_out = child_i64(c, "pproTicksOut").map(Tick).unwrap_or_else(|| rate.tick_of(out_f));
+        let src_in = child_i64(c, "pproTicksIn")
+            .map(Tick)
+            .unwrap_or_else(|| rate.tick_of(in_f));
+        let src_out = child_i64(c, "pproTicksOut")
+            .map(Tick)
+            .unwrap_or_else(|| rate.tick_of(out_f));
 
         // Speed from the Time Remap filter (or the in/out vs start/end ratio).
         let mut speed = 1.0;
         let mut reverse = false;
         let mut hold = false;
-        for eff in c.children().filter(|x| x.has_tag_name("filter")).filter_map(|f| child(f, "effect")) {
+        for eff in c
+            .children()
+            .filter(|x| x.has_tag_name("filter"))
+            .filter_map(|f| child(f, "effect"))
+        {
             if child_text(eff, "effectid") == Some("timeremap") {
                 for p in children(eff, "parameter") {
                     match child_text(p, "parameterid") {
@@ -465,7 +582,10 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                             }
                         }
                         Some("reverse") => reverse |= child_bool(p, "value").unwrap_or(false),
-                        Some("variablespeed") if child_bool(p, "value") == Some(true) || child_f64(p, "value").is_some_and(|v| v != 0.0) => {
+                        Some("variablespeed")
+                            if child_bool(p, "value") == Some(true)
+                                || child_f64(p, "value").is_some_and(|v| v != 0.0) =>
+                        {
                             self.report.warn("variable speed (time remap keyframes) is not supported; a constant speed was used");
                         }
                         _ => {}
@@ -475,29 +595,52 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         }
         let src_len = (src_out - src_in).abs();
         let (start_t, dur) = match (start >= 0, end >= 0) {
-            (true, true) => (seq_rate.tick_of(start), seq_rate.tick_of(end) - seq_rate.tick_of(start)),
+            (true, true) => (
+                seq_rate.tick_of(start),
+                seq_rate.tick_of(end) - seq_rate.tick_of(start),
+            ),
             (true, false) => {
-                let d = if hold { rate.tick_of(out_f - in_f) } else { unscaled(src_len, speed) };
+                let d = if hold {
+                    rate.tick_of(out_f - in_f)
+                } else {
+                    unscaled(src_len, speed)
+                };
                 (seq_rate.tick_of(start), d)
             }
             (false, true) => {
-                let d = if hold { rate.tick_of(out_f - in_f) } else { unscaled(src_len, speed) };
+                let d = if hold {
+                    rate.tick_of(out_f - in_f)
+                } else {
+                    unscaled(src_len, speed)
+                };
                 (seq_rate.tick_of(end) - d, d)
             }
             (false, false) => {
-                self.report.warn(format!("clip \"{name}\" has neither start nor end; skipped"));
+                self.report.warn(format!(
+                    "clip \"{name}\" has neither start nor end; skipped"
+                ));
                 return None;
             }
         };
         if dur <= Tick::ZERO {
             return None;
         }
-        let has_remap =
-            c.children().filter(|x| x.has_tag_name("filter")).filter_map(|f| child(f, "effect")).any(|e| child_text(e, "effectid") == Some("timeremap"));
+        let has_remap = c
+            .children()
+            .filter(|x| x.has_tag_name("filter"))
+            .filter_map(|f| child(f, "effect"))
+            .any(|e| child_text(e, "effectid") == Some("timeremap"));
         if !has_remap && !hold && src_len != dur && src_len > Tick::ZERO {
             speed = (src_len.0 as f64 / dur.0 as f64 * 10_000.0).round() / 10_000.0;
         }
-        let mut ti = self.b.clip(item, kind, if name.is_empty() { "Clip" } else { &name }, start_t, dur, src_in.min(src_out));
+        let mut ti = self.b.clip(
+            item,
+            kind,
+            if name.is_empty() { "Clip" } else { &name },
+            start_t,
+            dur,
+            src_in.min(src_out),
+        );
         ti.speed = speed;
         ti.reverse = reverse;
         if hold {
@@ -513,7 +656,8 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         // default (empty) channel mapping.
         if kind == TrackKind::Audio
             && let Some(idx) = audio_track_index(c)
-            && (idx > 1 || (idx == 1 && clip_seq_file(c).is_some_and(|k| self.split_files.contains(&k))))
+            && (idx > 1
+                || (idx == 1 && clip_seq_file(c).is_some_and(|k| self.split_files.contains(&k))))
             && let Ok(ch) = u16::try_from(idx - 1)
         {
             ti.source_channels = vec![ch];
@@ -523,14 +667,26 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
             // (read below) still overrides this.
             let stereo = matches!(&self.b.p.item(item).map(|i| &i.kind), Some(ItemKind::Media(m)) if m.info.audio().is_some_and(|a| a.channels == 2));
             if stereo && ch <= 1 {
-                set_param(&mut ti, "panner", "balance", Param::new(ParamValue::Float(if ch == 0 { -100.0 } else { 100.0 })));
+                set_param(
+                    &mut ti,
+                    "panner",
+                    "balance",
+                    Param::new(ParamValue::Float(if ch == 0 { -100.0 } else { 100.0 })),
+                );
             }
         }
         if let Some(mode) = child_text(c, "compositemode") {
             match BLEND_XML.iter().find(|(n, _)| n.eq_ignore_ascii_case(mode)) {
-                Some((_, v)) if *v != 0 => set_param(&mut ti, "opacity", "blend", Param::new(ParamValue::Choice(*v))),
+                Some((_, v)) if *v != 0 => set_param(
+                    &mut ti,
+                    "opacity",
+                    "blend",
+                    Param::new(ParamValue::Choice(*v)),
+                ),
                 Some(_) => {}
-                None => self.report.warn(format!("composite mode \"{mode}\" is not supported")),
+                None => self
+                    .report
+                    .warn(format!("composite mode \"{mode}\" is not supported")),
             }
         }
         ti.markers = read_markers(c, rate, &mut self.b);
@@ -538,7 +694,10 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         for f in c.children().filter(|x| x.has_tag_name("filter")) {
             self.filter(&mut ti, f, rate, frame, src_frame);
         }
-        let refs: Vec<String> = children(c, "link").filter_map(|l| child_text(l, "linkclipref")).map(str::to_string).collect();
+        let refs: Vec<String> = children(c, "link")
+            .filter_map(|l| child_text(l, "linkclipref"))
+            .map(str::to_string)
+            .collect();
         Some((ti, refs))
     }
 
@@ -550,14 +709,24 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         }
     }
 
-    fn filter(&mut self, ti: &mut TrackItem, f: Node, rate: FrameRate, frame: (u32, u32), src: (u32, u32)) {
+    fn filter(
+        &mut self,
+        ti: &mut TrackItem,
+        f: Node,
+        rate: FrameRate,
+        frame: (u32, u32),
+        src: (u32, u32),
+    ) {
         let Some(e) = child(f, "effect") else { return };
         let enabled = child_bool(f, "enabled").unwrap_or(true);
         let id = child_text(e, "effectid").unwrap_or("");
         let name = child_text(e, "name").unwrap_or(id);
         let params: Vec<Node> = children(e, "parameter").collect();
         let find = |pid: &str| {
-            params.iter().copied().find(|p| child_text(*p, "parameterid") == Some(pid) || child_text(*p, "name").is_some_and(|n| n.eq_ignore_ascii_case(pid)))
+            params.iter().copied().find(|p| {
+                child_text(*p, "parameterid") == Some(pid)
+                    || child_text(*p, "name").is_some_and(|n| n.eq_ignore_ascii_case(pid))
+            })
         };
         let (fw, fh) = (frame.0 as f64, frame.1 as f64);
         let (sw, sh) = (src.0 as f64, src.1 as f64);
@@ -571,14 +740,26 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                     set_param(ti, "motion", "rotation", read_param(p, rate, |v| v));
                 }
                 if let Some(p) = find("center") {
-                    let pr = read_point_param(p, rate, |x, y| Vec2::new(fw / 2.0 + x * fw, fh / 2.0 + y * fh));
-                    if pr.is_animated() || pr.value.as_vec2().is_some_and(|v| (v.x - fw / 2.0).abs() > 1e-9 || (v.y - fh / 2.0).abs() > 1e-9) {
+                    let pr = read_point_param(p, rate, |x, y| {
+                        Vec2::new(fw / 2.0 + x * fw, fh / 2.0 + y * fh)
+                    });
+                    if pr.is_animated()
+                        || pr.value.as_vec2().is_some_and(|v| {
+                            (v.x - fw / 2.0).abs() > 1e-9 || (v.y - fh / 2.0).abs() > 1e-9
+                        })
+                    {
                         set_param(ti, "motion", "position", pr);
                     }
                 }
                 if let Some(p) = find("centerOffset") {
-                    let pr = read_point_param(p, rate, |x, y| Vec2::new(sw / 2.0 + x * sw, sh / 2.0 + y * sh));
-                    if pr.is_animated() || pr.value.as_vec2().is_some_and(|v| (v.x - sw / 2.0).abs() > 1e-9 || (v.y - sh / 2.0).abs() > 1e-9) {
+                    let pr = read_point_param(p, rate, |x, y| {
+                        Vec2::new(sw / 2.0 + x * sw, sh / 2.0 + y * sh)
+                    });
+                    if pr.is_animated()
+                        || pr.value.as_vec2().is_some_and(|v| {
+                            (v.x - sw / 2.0).abs() > 1e-9 || (v.y - sh / 2.0).abs() > 1e-9
+                        })
+                    {
                         set_param(ti, "motion", "anchor", pr);
                     }
                 }
@@ -605,22 +786,38 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
                 }
             }
             _ => {
-                let def = filmcraft_project::find_effect(id).filter(|d| !d.intrinsic).or_else(|| find_effect_by_name(name).filter(|d| !d.intrinsic));
+                let def = filmcraft_project::find_effect(id)
+                    .filter(|d| !d.intrinsic)
+                    .or_else(|| find_effect_by_name(name).filter(|d| !d.intrinsic));
                 let Some(def) = def else {
-                    self.report.warn(format!("effect \"{name}\" is not supported and was skipped"));
+                    self.report.warn(format!(
+                        "effect \"{name}\" is not supported and was skipped"
+                    ));
                     return;
                 };
                 let mut inst = def.instance();
                 inst.enabled = enabled;
                 for pd in &def.params {
-                    let Some(p) = find(pd.id).or_else(|| find(pd.label)) else { continue };
+                    let Some(p) = find(pd.id).or_else(|| find(pd.label)) else {
+                        continue;
+                    };
                     let pr = match &pd.default {
                         ParamValue::Float(_) => read_param(p, rate, |v| v),
                         ParamValue::Vec2(_) => read_point_param(p, rate, Vec2::new),
-                        ParamValue::Bool(_) => Param::new(ParamValue::Bool(child_bool(p, "value").unwrap_or(false))),
-                        ParamValue::Choice(_) => Param::new(ParamValue::Choice(child_i64(p, "value").unwrap_or(0).max(0) as u32)),
-                        ParamValue::Color(_) => Param::new(ParamValue::Color(child(p, "value").map(read_color).unwrap_or([0.0, 0.0, 0.0, 1.0]))),
-                        ParamValue::Text(_) => Param::new(ParamValue::Text(child_text(p, "value").unwrap_or("").to_string())),
+                        ParamValue::Bool(_) => {
+                            Param::new(ParamValue::Bool(child_bool(p, "value").unwrap_or(false)))
+                        }
+                        ParamValue::Choice(_) => Param::new(ParamValue::Choice(
+                            child_i64(p, "value").unwrap_or(0).max(0) as u32,
+                        )),
+                        ParamValue::Color(_) => Param::new(ParamValue::Color(
+                            child(p, "value")
+                                .map(read_color)
+                                .unwrap_or([0.0, 0.0, 0.0, 1.0]),
+                        )),
+                        ParamValue::Text(_) => Param::new(ParamValue::Text(
+                            child_text(p, "value").unwrap_or("").to_string(),
+                        )),
                         ParamValue::Curve(_) | ParamValue::Path(_) => continue,
                     };
                     inst.params.insert(pd.id.to_string(), pr);
@@ -630,7 +827,14 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         }
     }
 
-    fn transition(&mut self, seq: &mut Sequence, kind: TrackKind, ti: usize, c: Node, rate: FrameRate) {
+    fn transition(
+        &mut self,
+        seq: &mut Sequence,
+        kind: TrackKind,
+        ti: usize,
+        c: Node,
+        rate: FrameRate,
+    ) {
         let start = child_i64(c, "start").unwrap_or(0);
         let end = child_i64(c, "end").unwrap_or(start);
         let (s, e) = (rate.tick_of(start), rate.tick_of(end));
@@ -638,16 +842,31 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
             return;
         }
         let eff = child(c, "effect");
-        let name = eff.and_then(|x| child_text(x, "name")).or_else(|| eff.and_then(|x| child_text(x, "effectid"))).unwrap_or("Cross Dissolve");
+        let name = eff
+            .and_then(|x| child_text(x, "name"))
+            .or_else(|| eff.and_then(|x| child_text(x, "effectid")))
+            .unwrap_or("Cross Dissolve");
         let effect = transition_effect(name, kind == TrackKind::Audio, self.report);
-        let align_s = child_text(c, "alignment").unwrap_or("").to_ascii_lowercase();
+        let align_s = child_text(c, "alignment")
+            .unwrap_or("")
+            .to_ascii_lowercase();
         let track = &mut seq.tracks_mut(kind)[ti];
         let (mut from, mut to) = (None, None);
         if align_s != "start-black" {
-            from = track.items.iter().filter(|i| i.end() >= s && i.end() <= e).max_by_key(|i| i.end()).map(|i| (i.id, i.end()));
+            from = track
+                .items
+                .iter()
+                .filter(|i| i.end() >= s && i.end() <= e)
+                .max_by_key(|i| i.end())
+                .map(|i| (i.id, i.end()));
         }
         if align_s != "end-black" {
-            to = track.items.iter().filter(|i| i.start >= s && i.start <= e).min_by_key(|i| i.start).map(|i| (i.id, i.start));
+            to = track
+                .items
+                .iter()
+                .filter(|i| i.start >= s && i.start <= e)
+                .min_by_key(|i| i.start)
+                .map(|i| (i.id, i.start));
         }
         // A cut needs both sides to meet.
         if let (Some((_, fe)), Some((_, ts))) = (from, to)
@@ -660,7 +879,9 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
             }
         }
         if from.is_none() && to.is_none() {
-            self.report.warn(format!("transition \"{name}\" at frame {start} has no adjacent clip; skipped"));
+            self.report.warn(format!(
+                "transition \"{name}\" at frame {start} has no adjacent clip; skipped"
+            ));
             return;
         }
         let cut = from.map(|f| f.1).or(to.map(|t| t.1)).unwrap_or(s);
@@ -673,7 +894,16 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
             _ => TransitionAlign::CenterAtCut,
         };
         let id = TransitionId(self.b.alloc());
-        track.transitions.push(Transition { id, effect, start: s, duration: e - s, from: from.map(|f| f.0), to: to.map(|t| t.0), align, reverse: false });
+        track.transitions.push(Transition {
+            id,
+            effect,
+            start: s,
+            duration: e - s,
+            from: from.map(|f| f.0),
+            to: to.map(|t| t.0),
+            align,
+            reverse: false,
+        });
         track.sort();
     }
 
@@ -682,14 +912,20 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
         let mut group_of: HashMap<(ItemId, ClipId), u64> = HashMap::new();
         let pending = std::mem::take(&mut self.links);
         for pl in &pending {
-            let mut members: Vec<ClipId> = pl.refs.iter().filter_map(|r| self.xml_clip_ids.get(&(pl.seq, r.clone())).copied()).collect();
+            let mut members: Vec<ClipId> = pl
+                .refs
+                .iter()
+                .filter_map(|r| self.xml_clip_ids.get(&(pl.seq, r.clone())).copied())
+                .collect();
             members.push(pl.clip);
             members.sort();
             members.dedup();
             if members.len() < 2 {
                 continue;
             }
-            let existing = members.iter().find_map(|m| group_of.get(&(pl.seq, *m)).copied());
+            let existing = members
+                .iter()
+                .find_map(|m| group_of.get(&(pl.seq, *m)).copied());
             let g = existing.unwrap_or_else(|| self.b.link_id());
             for m in members {
                 group_of.insert((pl.seq, m), g);
@@ -708,7 +944,12 @@ impl<'a, 'i> Imp<'a, 'i, '_> {
 
 fn read_color(v: Node) -> [f32; 4] {
     let c = |n: &str, d: f64| (child_f64(v, n).unwrap_or(d) / 255.0) as f32;
-    [c("red", 0.0), c("green", 0.0), c("blue", 0.0), c("alpha", 255.0)]
+    [
+        c("red", 0.0),
+        c("green", 0.0),
+        c("blue", 0.0),
+        c("alpha", 255.0),
+    ]
 }
 
 fn read_param(p: Node, rate: FrameRate, map: impl Fn(f64) -> f64) -> Param {
@@ -729,7 +970,10 @@ fn read_param(p: Node, rate: FrameRate, map: impl Fn(f64) -> f64) -> Param {
 }
 
 fn keyframe_interp(k: Node) -> Interpolation {
-    match path_text(k, &["interpolation", "name"]).map(str::to_ascii_lowercase).as_deref() {
+    match path_text(k, &["interpolation", "name"])
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
         Some("hold") => Interpolation::Hold,
         Some("bezier") | Some("fcpcurve") => Interpolation::Bezier,
         _ => Interpolation::Linear,
@@ -737,7 +981,10 @@ fn keyframe_interp(k: Node) -> Interpolation {
 }
 
 fn read_xy(v: Node) -> (f64, f64) {
-    (child_f64(v, "horiz").unwrap_or(0.0), child_f64(v, "vert").unwrap_or(0.0))
+    (
+        child_f64(v, "horiz").unwrap_or(0.0),
+        child_f64(v, "vert").unwrap_or(0.0),
+    )
 }
 
 fn read_point_param(p: Node, rate: FrameRate, map: impl Fn(f64, f64) -> Vec2) -> Param {
@@ -763,8 +1010,14 @@ fn read_markers(n: Node, rate: FrameRate, b: &mut Builder) -> Vec<Marker> {
         let in_f = child_i64(m, "in").unwrap_or(0);
         let out_f = child_i64(m, "out").unwrap_or(-1);
         let start = rate.tick_of(in_f);
-        let duration = if out_f > in_f { rate.tick_of(out_f) - start } else { Tick::ZERO };
-        let color = child_text(m, "color").and_then(label_from).unwrap_or(Label::Green);
+        let duration = if out_f > in_f {
+            rate.tick_of(out_f) - start
+        } else {
+            Tick::ZERO
+        };
+        let color = child_text(m, "color")
+            .and_then(label_from)
+            .unwrap_or(Label::Green);
         out.push(Marker {
             id: MarkerId(b.alloc()),
             start,
@@ -796,7 +1049,12 @@ struct Exp<'a, 'r> {
     next_clip: usize,
 }
 
-pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: &mut Report) -> Result<String> {
+pub(crate) fn export(
+    p: &Project,
+    seq_id: ItemId,
+    opts: &ExportOptions,
+    report: &mut Report,
+) -> Result<String> {
     p.sequence(seq_id).ok_or(Error::NoSequence(seq_id))?;
     let mut x = Exp {
         p,
@@ -821,13 +1079,17 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
 impl Exp<'_, '_> {
     fn seq_id(&mut self, id: ItemId) -> String {
         let n = self.seq_ids.len() + 1;
-        self.seq_ids.entry(id).or_insert_with(|| format!("sequence-{n}")).clone()
+        self.seq_ids
+            .entry(id)
+            .or_insert_with(|| format!("sequence-{n}"))
+            .clone()
     }
 
     fn write_timecode(&mut self, frame: i64, rate: FrameRate, df: bool) {
         self.w.open("timecode", &[]);
         write_rate(&mut self.w, rate);
-        self.w.text("string", format_timecode_frames(frame, rate, df));
+        self.w
+            .text("string", format_timecode_frames(frame, rate, df));
         self.w.text("frame", frame);
         self.w.text("displayformat", if df { "DF" } else { "NDF" });
         self.w.close();
@@ -847,7 +1109,14 @@ impl Exp<'_, '_> {
         let rate = seq.settings.frame_rate;
         let df = seq.settings.drop_frame && rate.supports_drop_frame();
         self.w.open("sequence", &[("id", &sid)]);
-        self.w.text("name", self.opts.name.clone().filter(|_| top).unwrap_or_else(|| it.name.clone()));
+        self.w.text(
+            "name",
+            self.opts
+                .name
+                .clone()
+                .filter(|_| top)
+                .unwrap_or_else(|| it.name.clone()),
+        );
         self.w.text("duration", frames_round(rate, seq.duration()));
         write_rate(&mut self.w, rate);
         self.write_timecode(seq.start_timecode, rate, df);
@@ -874,11 +1143,19 @@ impl Exp<'_, '_> {
                 }
             }
         }
-        if seq.all_tracks().any(|t| t.items.iter().any(|i| i.group.is_some())) {
-            self.report.info("clip groups have no FCP7 XML equivalent and were not exported");
+        if seq
+            .all_tracks()
+            .any(|t| t.items.iter().any(|i| i.group.is_some()))
+        {
+            self.report
+                .info("clip groups have no FCP7 XML equivalent and were not exported");
         }
         for kind in [TrackKind::Video, TrackKind::Audio] {
-            let tag = if kind == TrackKind::Video { "video" } else { "audio" };
+            let tag = if kind == TrackKind::Video {
+                "video"
+            } else {
+                "audio"
+            };
             self.w.open(tag, &[]);
             self.w.open("format", &[]);
             self.w.open("samplecharacteristics", &[]);
@@ -887,7 +1164,14 @@ impl Exp<'_, '_> {
                 self.w.text("width", seq.settings.width);
                 self.w.text("height", seq.settings.height);
                 self.w.text("anamorphic", "FALSE");
-                self.w.text("pixelaspectratio", if seq.settings.par == (1, 1) { "square" } else { "custom" });
+                self.w.text(
+                    "pixelaspectratio",
+                    if seq.settings.par == (1, 1) {
+                        "square"
+                    } else {
+                        "custom"
+                    },
+                );
                 self.w.text("fielddominance", "none");
             } else {
                 self.w.text("depth", 16);
@@ -898,8 +1182,18 @@ impl Exp<'_, '_> {
             for t in seq.tracks(kind) {
                 self.w.open("track", &[]);
                 // Clip and transition items in time order.
-                let mut order: Vec<(Tick, u8, usize)> = t.items.iter().enumerate().map(|(i, c)| (c.start, 1, i)).collect();
-                order.extend(t.transitions.iter().enumerate().map(|(i, tr)| (tr.start, 0, i)));
+                let mut order: Vec<(Tick, u8, usize)> = t
+                    .items
+                    .iter()
+                    .enumerate()
+                    .map(|(i, c)| (c.start, 1, i))
+                    .collect();
+                order.extend(
+                    t.transitions
+                        .iter()
+                        .enumerate()
+                        .map(|(i, tr)| (tr.start, 0, i)),
+                );
                 order.sort();
                 for (_, k, i) in order {
                     if k == 1 {
@@ -907,7 +1201,11 @@ impl Exp<'_, '_> {
                         let links: Vec<(String, TrackKind, usize, usize)> = c
                             .link
                             .and_then(|l| link_members.get(&l))
-                            .map(|m| m.iter().filter_map(|id| clip_xml.get(id).cloned()).collect())
+                            .map(|m| {
+                                m.iter()
+                                    .filter_map(|id| clip_xml.get(id).cloned())
+                                    .collect()
+                            })
                             .unwrap_or_default();
                         let xid = clip_xml[&c.id].0.clone();
                         self.write_clip(c, kind, seq, &xid, &links);
@@ -928,9 +1226,16 @@ impl Exp<'_, '_> {
         self.written_seqs.insert(id);
     }
 
-    fn write_transition(&mut self, tr: &Transition, kind: TrackKind, rate: FrameRate, t: &filmcraft_project::Track) {
+    fn write_transition(
+        &mut self,
+        tr: &Transition,
+        kind: TrackKind,
+        rate: FrameRate,
+        t: &filmcraft_project::Track,
+    ) {
         if !on_frame(rate, tr.start) || !on_frame(rate, tr.duration) {
-            self.report.warn("sub-frame transition positions were rounded to frames");
+            self.report
+                .warn("sub-frame transition positions were rounded to frames");
         }
         let align = match (tr.from, tr.to, tr.align) {
             (None, Some(_), _) => "start-black",
@@ -949,16 +1254,32 @@ impl Exp<'_, '_> {
         let name = transition_name(&tr.effect);
         self.w.text("name", &name);
         self.w.text("effectid", &name);
-        self.w.text("effectcategory", tr.effect.def().and_then(|d| d.category.get(1).copied()).unwrap_or("Dissolve"));
+        self.w.text(
+            "effectcategory",
+            tr.effect
+                .def()
+                .and_then(|d| d.category.get(1).copied())
+                .unwrap_or("Dissolve"),
+        );
         self.w.text("effecttype", "transition");
-        self.w.text("mediatype", if kind == TrackKind::Video { "video" } else { "audio" });
+        self.w.text(
+            "mediatype",
+            if kind == TrackKind::Video {
+                "video"
+            } else {
+                "audio"
+            },
+        );
         self.w.close();
         self.w.close();
     }
 
     fn master_id(&mut self, item: ItemId) -> String {
         let n = self.master_ids.len() + 1;
-        self.master_ids.entry(item).or_insert_with(|| format!("masterclip-{n}")).clone()
+        self.master_ids
+            .entry(item)
+            .or_insert_with(|| format!("masterclip-{n}"))
+            .clone()
     }
 
     /// Source-media (master clip) markers live on `<clip>`, not on timeline `<clipitem>`s.
@@ -967,7 +1288,9 @@ impl Exp<'_, '_> {
         let mut items = Vec::new();
         self.collect_file_media(seq_id, &mut seen, &mut items);
         for item in items {
-            let Some(m) = item_media(self.p, item) else { continue };
+            let Some(m) = item_media(self.p, item) else {
+                continue;
+            };
             if m.markers.is_empty() {
                 continue;
             }
@@ -976,8 +1299,17 @@ impl Exp<'_, '_> {
                 .video
                 .as_ref()
                 .map(|v| m.interpret.frame_rate.unwrap_or(v.frame_rate))
-                .unwrap_or_else(|| self.p.sequence(seq_id).map(|s| s.settings.frame_rate).unwrap_or_default());
-            let name = self.p.item(item).map(|i| i.name.clone()).unwrap_or_default();
+                .unwrap_or_else(|| {
+                    self.p
+                        .sequence(seq_id)
+                        .map(|s| s.settings.frame_rate)
+                        .unwrap_or_default()
+                });
+            let name = self
+                .p
+                .item(item)
+                .map(|i| i.name.clone())
+                .unwrap_or_default();
             let label = self.p.item(item).map(|i| i.label).unwrap_or(Label::Iris);
             let duration = m.info.duration;
             let markers = m.markers.clone();
@@ -999,23 +1331,38 @@ impl Exp<'_, '_> {
         if !seen.insert(seq) {
             return;
         }
-        let Some(s) = self.p.sequence(seq) else { return };
+        let Some(s) = self.p.sequence(seq) else {
+            return;
+        };
         for t in s.all_tracks() {
             for c in &t.items {
                 let base = base_item(self.p, c.item);
                 match self.p.item(base).map(|i| &i.kind) {
                     Some(ItemKind::Sequence(_)) => self.collect_file_media(base, seen, out),
-                    Some(ItemKind::Media(_)) if crate::common::generator_of(self.p, base).is_none() && !out.contains(&base) => out.push(base),
+                    Some(ItemKind::Media(_))
+                        if crate::common::generator_of(self.p, base).is_none()
+                            && !out.contains(&base) =>
+                    {
+                        out.push(base)
+                    }
                     _ => {}
                 }
             }
         }
     }
 
-    fn write_clip(&mut self, c: &TrackItem, kind: TrackKind, seq: &Sequence, xid: &str, links: &[(String, TrackKind, usize, usize)]) {
+    fn write_clip(
+        &mut self,
+        c: &TrackItem,
+        kind: TrackKind,
+        seq: &Sequence,
+        xid: &str,
+        links: &[(String, TrackKind, usize, usize)],
+    ) {
         let rate = seq.settings.frame_rate;
         if !on_frame(rate, c.start) || !on_frame(rate, c.duration) {
-            self.report.warn("sub-frame clip positions were rounded to frames");
+            self.report
+                .warn("sub-frame clip positions were rounded to frames");
         }
         if let Some(clip) = crate::common::uncarried_clip(self.p, c, rate) {
             self.report
@@ -1023,15 +1370,34 @@ impl Exp<'_, '_> {
         }
         let base = base_item(self.p, c.item);
         let generator = crate::common::generator_of(self.p, base).cloned();
-        let is_seq = matches!(self.p.item(base).map(|i| &i.kind), Some(ItemKind::Sequence(_)));
-        let tag = if generator.is_some() { "generatoritem" } else { "clipitem" };
+        let is_seq = matches!(
+            self.p.item(base).map(|i| &i.kind),
+            Some(ItemKind::Sequence(_))
+        );
+        let tag = if generator.is_some() {
+            "generatoritem"
+        } else {
+            "clipitem"
+        };
         let hold = c.frame_hold;
         let src_in = hold.unwrap_or(c.source_in);
-        let src_out = if hold.is_some() { src_in + c.duration } else { c.source_out() };
-        let (start_f, end_f, in_f) = (frames_round(rate, c.start), frames_round(rate, c.end()), frames_round(rate, src_in));
+        let src_out = if hold.is_some() {
+            src_in + c.duration
+        } else {
+            c.source_out()
+        };
+        let (start_f, end_f, in_f) = (
+            frames_round(rate, c.start),
+            frames_round(rate, c.end()),
+            frames_round(rate, src_in),
+        );
         // At normal speed (and on a freeze frame) the source span is the record span. Rounded on its own
         // it can come out a frame shorter or longer than `end - start` (#340), so derive it from them.
-        let out_f = if hold.is_some() || c.speed.abs() == 1.0 { in_f.saturating_add(end_f.saturating_sub(start_f)) } else { frames_round(rate, src_out) };
+        let out_f = if hold.is_some() || c.speed.abs() == 1.0 {
+            in_f.saturating_add(end_f.saturating_sub(start_f))
+        } else {
+            frames_round(rate, src_out)
+        };
         self.w.open(tag, &[("id", xid)]);
         if generator.is_none() && !is_seq {
             let mid = self.master_id(base);
@@ -1039,8 +1405,14 @@ impl Exp<'_, '_> {
         }
         self.w.text("name", &c.name);
         self.w.text("enabled", bool_str(c.enabled));
-        let media_dur = self.p.item(base).map(|i| i.duration()).unwrap_or(Tick::ZERO).max(src_out);
-        self.w.text("duration", frames_round(rate, media_dur).max(out_f));
+        let media_dur = self
+            .p
+            .item(base)
+            .map(|i| i.duration())
+            .unwrap_or(Tick::ZERO)
+            .max(src_out);
+        self.w
+            .text("duration", frames_round(rate, media_dur).max(out_f));
         write_rate(&mut self.w, rate);
         self.w.text("start", start_f);
         self.w.text("end", end_f);
@@ -1058,20 +1430,38 @@ impl Exp<'_, '_> {
         if kind == TrackKind::Audio {
             self.w.open("sourcetrack", &[]);
             self.w.text("mediatype", "audio");
-            self.w.text("trackindex", c.source_channels.first().map_or(1, |ch| u32::from(*ch).saturating_add(1)));
+            self.w.text(
+                "trackindex",
+                c.source_channels
+                    .first()
+                    .map_or(1, |ch| u32::from(*ch).saturating_add(1)),
+            );
             self.w.close();
         }
-        if let Some(blend) = param(c, "opacity", "blend").and_then(|p| p.value.as_f64()).map(|v| v as u32).filter(|v| *v != 0) {
+        if let Some(blend) = param(c, "opacity", "blend")
+            .and_then(|p| p.value.as_f64())
+            .map(|v| v as u32)
+            .filter(|v| *v != 0)
+        {
             match BLEND_XML.iter().find(|(_, v)| *v == blend) {
                 Some((n, _)) => self.w.text("compositemode", n),
-                None => self.report.warn("blend mode not representable in FCP7 XML; Normal used"),
+                None => self
+                    .report
+                    .warn("blend mode not representable in FCP7 XML; Normal used"),
             }
         }
         self.write_filters(c, kind, seq, base);
         for (lid, lkind, ti, ci) in links {
             self.w.open("link", &[]);
             self.w.text("linkclipref", lid);
-            self.w.text("mediatype", if *lkind == TrackKind::Video { "video" } else { "audio" });
+            self.w.text(
+                "mediatype",
+                if *lkind == TrackKind::Video {
+                    "video"
+                } else {
+                    "audio"
+                },
+            );
             self.w.text("trackindex", ti);
             self.w.text("clipindex", ci);
             self.w.close();
@@ -1105,9 +1495,18 @@ impl Exp<'_, '_> {
                 return;
             }
             other => {
-                self.report.info(format!("generator \"{}\" is written with a FilmCraft effect id", other.label()));
+                self.report.info(format!(
+                    "generator \"{}\" is written with a FilmCraft effect id",
+                    other.label()
+                ));
                 self.w.text("name", other.label());
-                self.w.text("effectid", format!("filmcraft:{}", serde_json::to_string(other).unwrap_or_default()));
+                self.w.text(
+                    "effectid",
+                    format!(
+                        "filmcraft:{}",
+                        serde_json::to_string(other).unwrap_or_default()
+                    ),
+                );
             }
         }
         self.w.text("effectcategory", "Matte");
@@ -1128,18 +1527,35 @@ impl Exp<'_, '_> {
             self.w.empty("file", &[("id", &fid)]);
             return;
         };
-        let name = self.p.item(item).map(|i| i.name.clone()).unwrap_or_default();
-        let frate = m.info.video.as_ref().map(|v| m.interpret.frame_rate.unwrap_or(v.frame_rate)).unwrap_or(seq_rate);
+        let name = self
+            .p
+            .item(item)
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
+        let frate = m
+            .info
+            .video
+            .as_ref()
+            .map(|v| m.interpret.frame_rate.unwrap_or(v.frame_rate))
+            .unwrap_or(seq_rate);
         self.w.open("file", &[("id", &fid)]);
         let path = item_path(self.p, item).unwrap_or("");
-        self.w.text("name", if name.is_empty() { file_name(path).to_string() } else { name });
+        self.w.text(
+            "name",
+            if name.is_empty() {
+                file_name(path).to_string()
+            } else {
+                name
+            },
+        );
         if crate::common::is_absolute(path) {
             self.w.text("pathurl", path_to_file_url(path, true));
         } else {
             self.w.text("pathurl", path);
         }
         write_rate(&mut self.w, frate);
-        self.w.text("duration", frames_round(frate, m.info.duration));
+        self.w
+            .text("duration", frames_round(frate, m.info.duration));
         let tc = m.info.start_timecode.unwrap_or(0);
         self.write_timecode(tc, frate, false);
         self.w.open("media", &[]);
@@ -1150,7 +1566,10 @@ impl Exp<'_, '_> {
             self.w.text("width", v.width);
             self.w.text("height", v.height);
             self.w.text("anamorphic", "FALSE");
-            self.w.text("pixelaspectratio", if v.par == (1, 1) { "square" } else { "custom" });
+            self.w.text(
+                "pixelaspectratio",
+                if v.par == (1, 1) { "square" } else { "custom" },
+            );
             self.w.text("fielddominance", "none");
             self.w.close();
             self.w.close();
@@ -1172,38 +1591,126 @@ impl Exp<'_, '_> {
         let rate = seq.settings.frame_rate;
         let (fw, fh) = (seq.settings.width as f64, seq.settings.height as f64);
         let (sw, sh) = match self.p.item(base).map(|i| &i.kind) {
-            Some(ItemKind::Media(m)) => m.info.video.as_ref().map(|v| (v.width as f64, v.height as f64)).unwrap_or((fw, fh)),
+            Some(ItemKind::Media(m)) => m
+                .info
+                .video
+                .as_ref()
+                .map(|v| (v.width as f64, v.height as f64))
+                .unwrap_or((fw, fh)),
             Some(ItemKind::Sequence(s)) => (s.settings.width as f64, s.settings.height as f64),
             _ => (fw, fh),
         };
         if kind == TrackKind::Video {
-            let motion_changed = ["position", "scale", "scale_width", "rotation", "anchor", "anti_flicker"].iter().any(|p| param_modified(c, "motion", p));
+            let motion_changed = [
+                "position",
+                "scale",
+                "scale_width",
+                "rotation",
+                "anchor",
+                "anti_flicker",
+            ]
+            .iter()
+            .any(|p| param_modified(c, "motion", p));
             if motion_changed {
-                if param_modified(c, "motion", "scale_width") || param(c, "motion", "uniform_scale").and_then(|p| p.value.as_bool()) == Some(false) {
+                if param_modified(c, "motion", "scale_width")
+                    || param(c, "motion", "uniform_scale").and_then(|p| p.value.as_bool())
+                        == Some(false)
+                {
                     self.report.warn("non-uniform scale is not supported by FCP7 Basic Motion; uniform scale written");
                 }
                 let enabled = c.effect("motion").is_none_or(|e| e.enabled);
-                self.open_effect("Basic Motion", "basic", "motion", "motion", "video", enabled);
-                self.float_param(c, "motion", "scale", "Scale", 0.0, 1000.0, rate, |v| v, "scale");
-                self.float_param(c, "motion", "rotation", "Rotation", -8640.0, 8640.0, rate, |v| v, "rotation");
-                self.point_param(c, "motion", "position", "Center", rate, "center", (fw, fh), |v| ((v.x - fw / 2.0) / fw, (v.y - fh / 2.0) / fh));
-                self.point_param(c, "motion", "anchor", "Anchor Point", rate, "centerOffset", (sw, sh), |v| ((v.x - sw / 2.0) / sw, (v.y - sh / 2.0) / sh));
+                self.open_effect(
+                    "Basic Motion",
+                    "basic",
+                    "motion",
+                    "motion",
+                    "video",
+                    enabled,
+                );
+                self.float_param(
+                    c,
+                    "motion",
+                    "scale",
+                    "Scale",
+                    0.0,
+                    1000.0,
+                    rate,
+                    |v| v,
+                    "scale",
+                );
+                self.float_param(
+                    c,
+                    "motion",
+                    "rotation",
+                    "Rotation",
+                    -8640.0,
+                    8640.0,
+                    rate,
+                    |v| v,
+                    "rotation",
+                );
+                self.point_param(
+                    c,
+                    "motion",
+                    "position",
+                    "Center",
+                    rate,
+                    "center",
+                    (fw, fh),
+                    |v| ((v.x - fw / 2.0) / fw, (v.y - fh / 2.0) / fh),
+                );
+                self.point_param(
+                    c,
+                    "motion",
+                    "anchor",
+                    "Anchor Point",
+                    rate,
+                    "centerOffset",
+                    (sw, sh),
+                    |v| ((v.x - sw / 2.0) / sw, (v.y - sh / 2.0) / sh),
+                );
                 if param_modified(c, "motion", "anti_flicker") {
-                    self.float_param(c, "motion", "anti_flicker", "Anti-flicker Filter", 0.0, 1.0, rate, |v| v, "antiflicker");
+                    self.float_param(
+                        c,
+                        "motion",
+                        "anti_flicker",
+                        "Anti-flicker Filter",
+                        0.0,
+                        1.0,
+                        rate,
+                        |v| v,
+                        "antiflicker",
+                    );
                 }
                 self.close_effect();
             }
             if param_modified(c, "opacity", "opacity") {
                 self.open_effect("Opacity", "opacity", "motion", "motion", "video", true);
-                self.float_param(c, "opacity", "opacity", "opacity", 0.0, 100.0, rate, |v| v, "opacity");
+                self.float_param(
+                    c,
+                    "opacity",
+                    "opacity",
+                    "opacity",
+                    0.0,
+                    100.0,
+                    rate,
+                    |v| v,
+                    "opacity",
+                );
                 self.close_effect();
             }
             if c.speed != 1.0 || c.reverse || c.frame_hold.is_some() {
                 if param(c, "time_remap", "speed").is_some_and(|p| p.is_animated()) {
-                    self.report.warn("speed ramps (time remapping keyframes) are not exported to FCP7 XML");
+                    self.report.warn(
+                        "speed ramps (time remapping keyframes) are not exported to FCP7 XML",
+                    );
                 }
                 self.open_effect("Time Remap", "timeremap", "motion", "motion", "video", true);
-                let sp = if c.frame_hold.is_some() { 0.0 } else { c.speed * 100.0 };
+                let sp = if c.frame_hold.is_some() {
+                    0.0
+                } else {
+                    c.speed * 100.0
+                };
                 self.simple_param("variablespeed", "variablespeed", "0");
                 self.simple_param("speed", "speed", &num(sp));
                 self.simple_param("reverse", "reverse", bool_str(c.reverse));
@@ -1216,19 +1723,56 @@ impl Exp<'_, '_> {
             }
             if param_modified(c, "volume", "level") || c.gain_db != 0.0 {
                 let g = c.gain_db;
-                self.open_effect("Audio Levels", "audiolevels", "audiolevels", "audiolevels", "audio", true);
-                self.float_param(c, "volume", "level", "Level", 0.0, 3.98109, rate, move |v| db_to_gain(v + g), "level");
+                self.open_effect(
+                    "Audio Levels",
+                    "audiolevels",
+                    "audiolevels",
+                    "audiolevels",
+                    "audio",
+                    true,
+                );
+                self.float_param(
+                    c,
+                    "volume",
+                    "level",
+                    "Level",
+                    0.0,
+                    3.98109,
+                    rate,
+                    move |v| db_to_gain(v + g),
+                    "level",
+                );
                 self.close_effect();
             }
             // A one-channel clip says where it is panned even when centred: without Audio Pan the
             // importer pans the halves of a split stereo file to their sides (#371).
             if param_modified(c, "panner", "balance") || c.source_channels.len() == 1 {
-                self.open_effect("Audio Pan", "audiopan", "audiopan", "audiopan", "audio", true);
-                self.float_param(c, "panner", "balance", "Pan", -1.0, 1.0, rate, |v| v / 100.0, "pan");
+                self.open_effect(
+                    "Audio Pan",
+                    "audiopan",
+                    "audiopan",
+                    "audiopan",
+                    "audio",
+                    true,
+                );
+                self.float_param(
+                    c,
+                    "panner",
+                    "balance",
+                    "Pan",
+                    -1.0,
+                    1.0,
+                    rate,
+                    |v| v / 100.0,
+                    "pan",
+                );
                 self.close_effect();
             }
-            if param_modified(c, "channel_volume", "left") || param_modified(c, "channel_volume", "right") {
-                self.report.warn("Channel Volume is not supported by FCP7 XML and was not exported");
+            if param_modified(c, "channel_volume", "left")
+                || param_modified(c, "channel_volume", "right")
+            {
+                self.report
+                    .warn("Channel Volume is not supported by FCP7 XML and was not exported");
             }
         }
         for e in standard_effects(c) {
@@ -1236,7 +1780,15 @@ impl Exp<'_, '_> {
         }
     }
 
-    fn open_effect(&mut self, name: &str, id: &str, category: &str, etype: &str, media: &str, enabled: bool) {
+    fn open_effect(
+        &mut self,
+        name: &str,
+        id: &str,
+        category: &str,
+        etype: &str,
+        media: &str,
+        enabled: bool,
+    ) {
         self.w.open("filter", &[]);
         if !enabled {
             self.w.text("enabled", "FALSE");
@@ -1275,15 +1827,26 @@ impl Exp<'_, '_> {
         map: impl Fn(f64) -> f64,
         xml_id: &str,
     ) {
-        let default = find_effect(effect).and_then(|d| d.param(pid)).and_then(|p| p.default.as_f64()).unwrap_or(0.0);
-        let p = param(c, effect, pid).cloned().unwrap_or_else(|| Param::new(ParamValue::Float(default)));
+        let default = find_effect(effect)
+            .and_then(|d| d.param(pid))
+            .and_then(|p| p.default.as_f64())
+            .unwrap_or(0.0);
+        let p = param(c, effect, pid)
+            .cloned()
+            .unwrap_or_else(|| Param::new(ParamValue::Float(default)));
         self.w.open("parameter", &[]);
         self.w.text("parameterid", xml_id);
         self.w.text("name", label);
         self.w.text("valuemin", num(min));
         self.w.text("valuemax", num(max));
-        self.w.text("value", num(map(p.value.as_f64().unwrap_or(default))));
-        self.keyframes(&p, rate, |v| v.as_f64().map(|x| num(map(x))), None::<fn(&mut XmlWriter, &ParamValue)>);
+        self.w
+            .text("value", num(map(p.value.as_f64().unwrap_or(default))));
+        self.keyframes(
+            &p,
+            rate,
+            |v| v.as_f64().map(|x| num(map(x))),
+            None::<fn(&mut XmlWriter, &ParamValue)>,
+        );
         self.w.close();
     }
 
@@ -1300,8 +1863,15 @@ impl Exp<'_, '_> {
         map: impl Fn(Vec2) -> (f64, f64),
     ) {
         let centre = Vec2::new(size.0 / 2.0, size.1 / 2.0);
-        let fix = |v: Vec2| Vec2::new(if v.x.is_nan() { centre.x } else { v.x }, if v.y.is_nan() { centre.y } else { v.y });
-        let p = param(c, effect, pid).cloned().unwrap_or_else(|| Param::new(ParamValue::Vec2(centre)));
+        let fix = |v: Vec2| {
+            Vec2::new(
+                if v.x.is_nan() { centre.x } else { v.x },
+                if v.y.is_nan() { centre.y } else { v.y },
+            )
+        };
+        let p = param(c, effect, pid)
+            .cloned()
+            .unwrap_or_else(|| Param::new(ParamValue::Vec2(centre)));
         self.w.open("parameter", &[]);
         self.w.text("parameterid", xml_id);
         self.w.text("name", label);
@@ -1341,11 +1911,18 @@ impl Exp<'_, '_> {
         }
     }
 
-    fn keyframes(&mut self, p: &Param, rate: FrameRate, val: impl Fn(&ParamValue) -> Option<String>, _custom: Option<fn(&mut XmlWriter, &ParamValue)>) {
+    fn keyframes(
+        &mut self,
+        p: &Param,
+        rate: FrameRate,
+        val: impl Fn(&ParamValue) -> Option<String>,
+        _custom: Option<fn(&mut XmlWriter, &ParamValue)>,
+    ) {
         for k in &p.keyframes {
             let Some(v) = val(&k.value) else { continue };
             if !on_frame(rate, k.time) {
-                self.report.info("sub-frame keyframes were rounded to frames");
+                self.report
+                    .info("sub-frame keyframes were rounded to frames");
             }
             self.w.open("keyframe", &[]);
             self.w.text("when", frames_round(rate, k.time));
@@ -1357,20 +1934,39 @@ impl Exp<'_, '_> {
 
     fn generic_effect(&mut self, e: &EffectInstance, kind: TrackKind, rate: FrameRate) {
         let Some(def) = e.def() else {
-            self.report.warn(format!("unknown effect \"{}\" was not exported", e.effect));
+            self.report
+                .warn(format!("unknown effect \"{}\" was not exported", e.effect));
             return;
         };
-        let media = if kind == TrackKind::Video { "video" } else { "audio" };
-        self.open_effect(def.name, def.id, def.category.get(1).copied().unwrap_or("Filter"), "filter", media, e.enabled);
+        let media = if kind == TrackKind::Video {
+            "video"
+        } else {
+            "audio"
+        };
+        self.open_effect(
+            def.name,
+            def.id,
+            def.category.get(1).copied().unwrap_or("Filter"),
+            "filter",
+            media,
+            e.enabled,
+        );
         for pd in &def.params {
-            let Some(p) = e.params.get(pd.id) else { continue };
+            let Some(p) = e.params.get(pd.id) else {
+                continue;
+            };
             match &p.value {
                 ParamValue::Float(v) => {
                     self.w.open("parameter", &[]);
                     self.w.text("parameterid", pd.id);
                     self.w.text("name", pd.label);
                     self.w.text("value", num(*v));
-                    self.keyframes(p, rate, |v| v.as_f64().map(num), None::<fn(&mut XmlWriter, &ParamValue)>);
+                    self.keyframes(
+                        p,
+                        rate,
+                        |v| v.as_f64().map(num),
+                        None::<fn(&mut XmlWriter, &ParamValue)>,
+                    );
                     self.w.close();
                 }
                 ParamValue::Vec2(v) => {
@@ -1378,12 +1974,17 @@ impl Exp<'_, '_> {
                     self.w.text("parameterid", pd.id);
                     self.w.text("name", pd.label);
                     self.w.open("value", &[]);
-                    self.w.text("horiz", num(if v.x.is_nan() { 0.0 } else { v.x }));
-                    self.w.text("vert", num(if v.y.is_nan() { 0.0 } else { v.y }));
+                    self.w
+                        .text("horiz", num(if v.x.is_nan() { 0.0 } else { v.x }));
+                    self.w
+                        .text("vert", num(if v.y.is_nan() { 0.0 } else { v.y }));
                     self.w.close();
                     self.w.close();
                     if p.is_animated() {
-                        self.report.warn(format!("point keyframes of \"{}\" were not exported", def.name));
+                        self.report.warn(format!(
+                            "point keyframes of \"{}\" were not exported",
+                            def.name
+                        ));
                     }
                 }
                 ParamValue::Bool(b) => self.simple_param(pd.id, pd.label, bool_str(*b)),
@@ -1397,7 +1998,10 @@ impl Exp<'_, '_> {
                     self.w.close();
                 }
                 ParamValue::Curve(_) | ParamValue::Path(_) => {
-                    self.report.warn(format!("curve parameters of \"{}\" are not supported by FCP7 XML", def.name));
+                    self.report.warn(format!(
+                        "curve parameters of \"{}\" are not supported by FCP7 XML",
+                        def.name
+                    ));
                 }
             }
         }
@@ -1422,7 +2026,14 @@ fn write_markers(w: &mut XmlWriter, markers: &[Marker], rate: FrameRate) {
         w.text("name", &m.name);
         let i = frames_round(rate, m.start);
         w.text("in", i);
-        w.text("out", if m.duration > Tick::ZERO { frames_round(rate, m.start + m.duration) } else { -1 });
+        w.text(
+            "out",
+            if m.duration > Tick::ZERO {
+                frames_round(rate, m.start + m.duration)
+            } else {
+                -1
+            },
+        );
         w.text("color", m.color.name());
         w.close();
     }

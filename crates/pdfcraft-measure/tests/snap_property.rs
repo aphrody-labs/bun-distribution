@@ -52,7 +52,11 @@ impl Rng {
     }
 
     fn below(&mut self, n: usize) -> usize {
-        if n == 0 { 0 } else { (self.next() % n as u64) as usize }
+        if n == 0 {
+            0
+        } else {
+            (self.next() % n as u64) as usize
+        }
     }
 }
 
@@ -117,11 +121,19 @@ fn one_page_pdf(content: &[u8]) -> Vec<u8> {
         bytes.extend_from_slice(b"\nendobj\n");
     }
     let xref = bytes.len();
-    bytes.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", objects.len() + 1).as_bytes());
+    bytes.extend_from_slice(
+        format!("xref\n0 {}\n0000000000 65535 f \n", objects.len() + 1).as_bytes(),
+    );
     for offset in offsets {
         bytes.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
     }
-    bytes.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objects.len() + 1).as_bytes());
+    bytes.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objects.len() + 1
+        )
+        .as_bytes(),
+    );
     bytes
 }
 
@@ -136,18 +148,46 @@ fn geometry_of(content: &[u8]) -> Geometry {
 
 /// Checks the bounds and finiteness that snapping relies on, and returns the extracted geometry.
 fn check_snap_invariants(content: &[u8]) -> Geometry {
-    assert!(content.len() <= MAX_CONTENT_BYTES, "generated content exceeded the byte cap");
+    assert!(
+        content.len() <= MAX_CONTENT_BYTES,
+        "generated content exceeded the byte cap"
+    );
     let geometry = geometry_of(content);
-    assert!(geometry.segments.len() <= MAX_GEOMETRY_SEGMENTS, "geometry exceeded the segment cap: {}", geometry.segments.len());
-    assert!(geometry.endpoints.len().saturating_add(geometry.midpoints.len()) <= MAX_SNAP_TARGETS, "geometry exceeded the snap-target cap");
-    assert!(geometry.segments.iter().flatten().copied().all(finite), "geometry contains a non-finite segment coordinate");
-    assert!(geometry.endpoints.iter().copied().all(finite), "geometry contains a non-finite endpoint");
-    assert!(geometry.midpoints.iter().copied().all(finite), "geometry contains a non-finite midpoint");
+    assert!(
+        geometry.segments.len() <= MAX_GEOMETRY_SEGMENTS,
+        "geometry exceeded the segment cap: {}",
+        geometry.segments.len()
+    );
+    assert!(
+        geometry
+            .endpoints
+            .len()
+            .saturating_add(geometry.midpoints.len())
+            <= MAX_SNAP_TARGETS,
+        "geometry exceeded the snap-target cap"
+    );
+    assert!(
+        geometry.segments.iter().flatten().copied().all(finite),
+        "geometry contains a non-finite segment coordinate"
+    );
+    assert!(
+        geometry.endpoints.iter().copied().all(finite),
+        "geometry contains a non-finite endpoint"
+    );
+    assert!(
+        geometry.midpoints.iter().copied().all(finite),
+        "geometry contains a non-finite midpoint"
+    );
 
     geometry.intersection_limited([0.0, 0.0], 10_000.0);
-    let snap = geometry.snap([0.0, 0.0], 10_000.0, SnapOptions::default()).unwrap();
+    let snap = geometry
+        .snap([0.0, 0.0], 10_000.0, SnapOptions::default())
+        .unwrap();
     if let Some(hit) = snap {
-        assert!(finite(hit.point) && hit.distance.is_finite(), "snap result contains a non-finite value");
+        assert!(
+            finite(hit.point) && hit.distance.is_finite(),
+            "snap result contains a non-finite value"
+        );
     }
     geometry
 }
@@ -173,5 +213,9 @@ fn mutated_snap_geometry_stays_bounded_and_finite() {
 fn high_curvature_geometry_hits_segment_cap() {
     let stress_curve = b"0 0 m 0 100000000 100000000 100000000 100000000 0 c S ".repeat(6);
     let geometry = check_snap_invariants(&stress_curve);
-    assert!(geometry.truncated, "high-curvature geometry did not report its extraction cap ({} segments)", geometry.segments.len());
+    assert!(
+        geometry.truncated,
+        "high-curvature geometry did not report its extraction cap ({} segments)",
+        geometry.segments.len()
+    );
 }

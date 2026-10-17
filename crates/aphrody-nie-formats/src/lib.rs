@@ -206,7 +206,7 @@ impl core::fmt::Display for FormatError {
         match self {
             Self::TooShort { got, need } => {
                 write!(f, "tampon trop court : {got} octets, {need} attendus")
-            },
+            }
             Self::BadMagic { format } => write!(f, "magic invalide pour {format}"),
             Self::Corrupt(s) => write!(f, "données corrompues : {s}"),
             Self::Malformed(s) => write!(f, "structure incohérente : {s}"),
@@ -503,7 +503,10 @@ impl FileFormat {
     /// Vrai si le format utilise l'ordre d'octets gros-boutiste (Big-Endian).
     #[must_use]
     pub const fn is_big_endian(self) -> bool {
-        matches!(self, Self::Cpk | Self::Utf | Self::Acb | Self::Usm | Self::Png)
+        matches!(
+            self,
+            Self::Cpk | Self::Utf | Self::Acb | Self::Usm | Self::Png
+        )
     }
 
     /// Vrai si le format supporte le chiffrement (Viola, CRI XOR, ou clé filename).
@@ -1125,7 +1128,9 @@ mod tests {
     /// et vérifie que detect() retourne FileFormat::G4nv (magic NAVM).
     #[test]
     fn g4nv_detect_golden_via_vfs() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data = std::path::Path::new(&dir).join("data");
         if !crate::vfs::donnees_disponibles(&data) {
             eprintln!("skip g4nv_detect_golden_via_vfs : NIE_GAME_DIR absent");
@@ -1147,11 +1152,17 @@ mod tests {
             None => {
                 eprintln!("skip g4nv_detect_golden_via_vfs : aucun .g4nv dans l'index VFS");
                 return;
-            },
+            }
         };
 
-        let bytes = vfs.read(&path).unwrap_or_else(|e| panic!("vfs.read({path}): {e}"));
-        assert!(bytes.len() >= 4, "fichier .g4nv trop court ({} octets) : {path}", bytes.len());
+        let bytes = vfs
+            .read(&path)
+            .unwrap_or_else(|e| panic!("vfs.read({path}): {e}"));
+        assert!(
+            bytes.len() >= 4,
+            "fichier .g4nv trop court ({} octets) : {path}",
+            bytes.len()
+        );
 
         let fmt = detect(&bytes);
         assert_eq!(
@@ -1163,8 +1174,16 @@ mod tests {
         );
 
         // Vérifie que les 4 premiers octets sont bien NAVM
-        assert_eq!(&bytes[..4], b"NAVM", "magic inattendu dans {path}: {:?}", &bytes[..4]);
+        assert_eq!(
+            &bytes[..4],
+            b"NAVM",
+            "magic inattendu dans {path}: {:?}",
+            &bytes[..4]
+        );
 
-        eprintln!("OK: detect({path}) == G4nv (magic NAVM, {} octets)", bytes.len());
+        eprintln!(
+            "OK: detect({path}) == G4nv (magic NAVM, {} octets)",
+            bytes.len()
+        );
     }
 }

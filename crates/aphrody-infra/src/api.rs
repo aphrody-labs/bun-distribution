@@ -51,7 +51,7 @@ impl ApiServer {
                             eprintln!("erreur traitement connexion: {e}");
                         }
                     });
-                },
+                }
                 Err(e) => eprintln!("erreur accept: {e}"),
             }
         }
@@ -102,64 +102,117 @@ fn route_request(root: &Path, target: &str, method: &str, path: &str) -> (&'stat
             .to_string(),
         ),
         ("GET", "/api/v1/catalog") => match load_service_catalog(root) {
-            Ok(cat) => ("200 OK", serde_json::to_string_pretty(&cat).unwrap_or_default()),
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(cat) => (
+                "200 OK",
+                serde_json::to_string_pretty(&cat).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/services") => match get_service_statuses(root, target, None) {
-            Ok(statuses) => {
-                ("200 OK", json!({ "target": target, "services": statuses }).to_string())
-            },
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(statuses) => (
+                "200 OK",
+                json!({ "target": target, "services": statuses }).to_string(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/validate") => match validate::run(root) {
-            Ok(report) => ("200 OK", serde_json::to_string_pretty(&report).unwrap_or_default()),
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(report) => (
+                "200 OK",
+                serde_json::to_string_pretty(&report).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/pipeline/plan") => match load_pipeline_config(root) {
-            Ok(config) => ("200 OK", serde_json::to_string_pretty(&config).unwrap_or_default()),
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(config) => (
+                "200 OK",
+                serde_json::to_string_pretty(&config).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/git/status") => match aphrody_git::inspect_repository(root) {
-            Ok(repo) => ("200 OK", serde_json::to_string_pretty(&repo).unwrap_or_default()),
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(repo) => (
+                "200 OK",
+                serde_json::to_string_pretty(&repo).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/vpn/proxy") => {
             let host = std::env::var(aphrody_vpn::PROXY_HOST_ENV).ok();
             let remote = std::env::var(aphrody_vpn::PROXY_REMOTE_ENV).ok();
             match aphrody_vpn::vps_proxy_target(host, remote) {
                 Ok((h, r)) => ("200 OK", json!({ "host": h, "remote": r }).to_string()),
-                Err(e) => {
-                    ("503 Service Unavailable", json!({ "error": e.to_string() }).to_string())
-                },
+                Err(e) => (
+                    "503 Service Unavailable",
+                    json!({ "error": e.to_string() }).to_string(),
+                ),
             }
-        },
+        }
         ("GET", "/api/v1/drive/mounts") => match crate::drive::VirtualDriveEngine::new() {
-            Ok(engine) => {
-                ("200 OK", serde_json::to_string_pretty(&engine.list_mounts()).unwrap_or_default())
-            },
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(engine) => (
+                "200 OK",
+                serde_json::to_string_pretty(&engine.list_mounts()).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/git/overview") => {
             match crate::drive::VirtualDriveEngine::new().and_then(|e| e.git_overview(root)) {
-                Ok(overview) => {
-                    ("200 OK", serde_json::to_string_pretty(&overview).unwrap_or_default())
-                },
-                Err(e) => {
-                    ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string())
-                },
+                Ok(overview) => (
+                    "200 OK",
+                    serde_json::to_string_pretty(&overview).unwrap_or_default(),
+                ),
+                Err(e) => (
+                    "500 Internal Server Error",
+                    json!({ "error": e.to_string() }).to_string(),
+                ),
             }
-        },
+        }
         ("GET", "/api/v1/git/graph") => match aphrody_git::commit_graph(root, 50) {
-            Ok(graph) => ("200 OK", serde_json::to_string_pretty(&graph).unwrap_or_default()),
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(graph) => (
+                "200 OK",
+                serde_json::to_string_pretty(&graph).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/git/branches") => match aphrody_git::list_branches(root) {
-            Ok(branches) => ("200 OK", serde_json::to_string_pretty(&branches).unwrap_or_default()),
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(branches) => (
+                "200 OK",
+                serde_json::to_string_pretty(&branches).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/git/worktrees") => match aphrody_git::list_worktrees(root) {
-            Ok(wts) => ("200 OK", serde_json::to_string_pretty(&wts).unwrap_or_default()),
-            Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
+            Ok(wts) => (
+                "200 OK",
+                serde_json::to_string_pretty(&wts).unwrap_or_default(),
+            ),
+            Err(e) => (
+                "500 Internal Server Error",
+                json!({ "error": e.to_string() }).to_string(),
+            ),
         },
         ("GET", "/api/v1/ssh/hosts") => (
             "200 OK",
@@ -187,19 +240,24 @@ fn route_request(root: &Path, target: &str, method: &str, path: &str) -> (&'stat
                         json!({ "error": format!("action non supportée: {}", action_str) })
                             .to_string(),
                     );
-                },
+                }
             };
 
             match execute_lifecycle(root, action, Some(service_id), target) {
-                Ok(results) => {
-                    ("200 OK", json!({ "action": action_str, "results": results }).to_string())
-                },
-                Err(e) => {
-                    ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string())
-                },
+                Ok(results) => (
+                    "200 OK",
+                    json!({ "action": action_str, "results": results }).to_string(),
+                ),
+                Err(e) => (
+                    "500 Internal Server Error",
+                    json!({ "error": e.to_string() }).to_string(),
+                ),
             }
-        },
-        _ => ("404 Not Found", json!({ "error": "route introuvable", "path": path }).to_string()),
+        }
+        _ => (
+            "404 Not Found",
+            json!({ "error": "route introuvable", "path": path }).to_string(),
+        ),
     }
 }
 

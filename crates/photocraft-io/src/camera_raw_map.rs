@@ -65,15 +65,45 @@ const SCALARS: &[(&str, &str)] = &[
 ];
 const ARRAYS: &[(&str, &[&str])] = &[
     ("curveSplits", &["PC_1", "PC_2", "PC_3"]),
-    ("hslHue", &["HA_R", "HA_O", "HA_Y", "HA_G", "HA_A", "HA_B", "HA_P", "HA_M"]),
-    ("hslSat", &["SA_R", "SA_O", "SA_Y", "SA_G", "SA_A", "SA_B", "SA_P", "SA_M"]),
-    ("hslLum", &["LA_R", "LA_O", "LA_Y", "LA_G", "LA_A", "LA_B", "LA_P", "LA_M"]),
+    (
+        "hslHue",
+        &[
+            "HA_R", "HA_O", "HA_Y", "HA_G", "HA_A", "HA_B", "HA_P", "HA_M",
+        ],
+    ),
+    (
+        "hslSat",
+        &[
+            "SA_R", "SA_O", "SA_Y", "SA_G", "SA_A", "SA_B", "SA_P", "SA_M",
+        ],
+    ),
+    (
+        "hslLum",
+        &[
+            "LA_R", "LA_O", "LA_Y", "LA_G", "LA_A", "LA_B", "LA_P", "LA_M",
+        ],
+    ),
 ];
-const CURVES: &[(&str, &str)] = &[("pointCurve", "Crv "), ("pointCurveRed", "CrvR"), ("pointCurveGreen", "CrvG"), ("pointCurveBlue", "CrvB")];
+const CURVES: &[(&str, &str)] = &[
+    ("pointCurve", "Crv "),
+    ("pointCurveRed", "CrvR"),
+    ("pointCurveGreen", "CrvG"),
+    ("pointCurveBlue", "CrvB"),
+];
 
 // These controls have no PhotoCraft counterpart yet. Their observed neutral values can be
 // retained in the template; active values must keep the entire filter opaque.
-const NEUTRAL_ONLY: &[(&str, i32)] = &[("LNRC", 0), ("CNRS", 50), ("MDis", 0), ("VigA", 0), ("VigM", 50), ("crfs", 100), ("TMMs", 0), ("PGTM", 0), ("RGBt", 0)];
+const NEUTRAL_ONLY: &[(&str, i32)] = &[
+    ("LNRC", 0),
+    ("CNRS", 50),
+    ("MDis", 0),
+    ("VigA", 0),
+    ("VigM", 50),
+    ("crfs", 100),
+    ("TMMs", 0),
+    ("PGTM", 0),
+    ("RGBt", 0),
+];
 
 fn default_params() -> Option<J> {
     serde_json::to_value(CameraRaw::default()).ok()
@@ -88,11 +118,19 @@ fn known_key(key: &str) -> bool {
 }
 
 fn get_param<'a>(params: &'a J, name: &str) -> Option<&'a J> {
-    if let Some((wheel, field)) = name.split_once('.') { params.get(wheel)?.get(field) } else { params.get(name) }
+    if let Some((wheel, field)) = name.split_once('.') {
+        params.get(wheel)?.get(field)
+    } else {
+        params.get(name)
+    }
 }
 
 fn get_param_mut<'a>(params: &'a mut J, name: &str) -> Option<&'a mut J> {
-    if let Some((wheel, field)) = name.split_once('.') { params.get_mut(wheel)?.get_mut(field) } else { params.get_mut(name) }
+    if let Some((wheel, field)) = name.split_once('.') {
+        params.get_mut(wheel)?.get_mut(field)
+    } else {
+        params.get_mut(name)
+    }
 }
 
 fn number_range(key: &str) -> std::ops::RangeInclusive<f64> {
@@ -101,8 +139,10 @@ fn number_range(key: &str) -> std::ops::RangeInclusive<f64> {
         "ShpR" => 0.5..=3.0,
         "Shrp" => 0.0..=150.0,
         "STSH" | "STHH" | "CgMH" | "CgGH" => 0.0..=360.0,
-        "PC_1" | "PC_2" | "PC_3" | "ShpD" | "ShpM" | "LNR " | "LNRD" | "CNR " | "CNRD" | "STSS" | "STHS" | "CgMS" | "CgGS" | "CgBl" | "GRNA" | "GRNS"
-        | "GRNF" | "PCVM" | "PCVF" => 0.0..=100.0,
+        "PC_1" | "PC_2" | "PC_3" | "ShpD" | "ShpM" | "LNR " | "LNRD" | "CNR " | "CNRD" | "STSS"
+        | "STHS" | "CgMS" | "CgGS" | "CgBl" | "GRNA" | "GRNS" | "GRNF" | "PCVM" | "PCVF" => {
+            0.0..=100.0
+        }
         _ => -100.0..=100.0,
     }
 }
@@ -117,8 +157,13 @@ fn read_number(d: &Descriptor, key: &str) -> Option<f64> {
 }
 
 fn read_curve(value: &Value) -> Option<J> {
-    let Value::List(values) = value else { return None };
-    if values.len() < 4 || !values.len().is_multiple_of(2) || values.len() > photocraft_algo::camera_raw::MAX_CURVE_POINTS * 2 {
+    let Value::List(values) = value else {
+        return None;
+    };
+    if values.len() < 4
+        || !values.len().is_multiple_of(2)
+        || values.len() > photocraft_algo::camera_raw::MAX_CURVE_POINTS * 2
+    {
         return None;
     }
     let points: Option<Vec<[f32; 2]>> = values
@@ -126,7 +171,9 @@ fn read_curve(value: &Value) -> Option<J> {
         .0
         .iter()
         .map(|[x, y]| {
-            let (Value::Integer(x), Value::Integer(y)) = (x, y) else { return None };
+            let (Value::Integer(x), Value::Integer(y)) = (x, y) else {
+                return None;
+            };
             Some([*x as f32, *y as f32])
         })
         .collect();
@@ -140,14 +187,20 @@ fn read_curve(value: &Value) -> Option<J> {
 
 fn descriptor_params(d: &Descriptor) -> Option<J> {
     if !d.class_id.is(CLASS)
-        || !matches!((int(d, "PrVN"), int(d, "PrVe")), (Some(5), Some(184549376)) | (Some(6), Some(251920384)))
+        || !matches!(
+            (int(d, "PrVN"), int(d, "PrVe")),
+            (Some(5), Some(184549376)) | (Some(6), Some(251920384))
+        )
         || !matches!(d.get("CrVe"), Some(Value::Text(_)))
     {
         return None;
     }
     // A partial decode would omit active processing (masks, profiles, HDR or other settings)
     // when the layer is re-rendered. Keep such a filter opaque instead.
-    if d.items.iter().any(|(key, _)| !known_key(&String::from_utf8_lossy(key.as_bytes()))) {
+    if d.items
+        .iter()
+        .any(|(key, _)| !known_key(&String::from_utf8_lossy(key.as_bytes())))
+    {
         return None;
     }
     if d.get("WBal").is_some_and(|v| !matches!(v, Value::Enumerated { type_id, value } if type_id.is("WBal") && value.is("Cst ")))
@@ -186,25 +239,39 @@ pub(super) fn import_params(item: &Descriptor) -> Option<J> {
     }
     let mut params = descriptor_params(get_desc(item, "Fltr")?)?;
     let mut template = item.clone();
-    let neutral = SmartFilter { command: String::new(), params: J::Null, blend: photocraft_color::BlendMode::Normal, opacity: 1.0, visible: true };
+    let neutral = SmartFilter {
+        command: String::new(),
+        params: J::Null,
+        blend: photocraft_color::BlendMode::Normal,
+        opacity: 1.0,
+        visible: true,
+    };
     set(&mut template, "blendOptions", blend_options(&neutral));
     set(&mut template, "enab", Value::Boolean(true));
     let bytes = template.to_bytes();
     if bytes.len() > MAX_TEMPLATE_BYTES {
         return None;
     }
-    params.as_object_mut()?.insert(TEMPLATE_KEY.into(), json!(to_hex(&bytes)));
+    params
+        .as_object_mut()?
+        .insert(TEMPLATE_KEY.into(), json!(to_hex(&bytes)));
     Some(params)
 }
 
 fn validate_splits(params: &J) -> Result<(), String> {
-    let values = params.get("curveSplits").and_then(J::as_array).ok_or("curveSplits must contain three numbers")?;
+    let values = params
+        .get("curveSplits")
+        .and_then(J::as_array)
+        .ok_or("curveSplits must contain three numbers")?;
     if values.len() != 3 {
         return Err("curveSplits must contain three numbers".into());
     }
     let mut previous = -1.0;
     for value in values {
-        let value = value.as_f64().filter(|v| v.is_finite() && (0.0..=100.0).contains(v)).ok_or("curve splits must be finite percentages")?;
+        let value = value
+            .as_f64()
+            .filter(|v| v.is_finite() && (0.0..=100.0).contains(v))
+            .ok_or("curve splits must be finite percentages")?;
         if value <= previous {
             return Err("curve splits must be strictly increasing".into());
         }
@@ -214,11 +281,18 @@ fn validate_splits(params: &J) -> Result<(), String> {
 }
 
 fn supported_param(key: &str) -> bool {
-    SCALARS.iter().any(|(p, _)| p.split('.').next() == Some(key)) || ARRAYS.iter().any(|(p, _)| *p == key) || CURVES.iter().any(|(p, _)| *p == key)
+    SCALARS
+        .iter()
+        .any(|(p, _)| p.split('.').next() == Some(key))
+        || ARRAYS.iter().any(|(p, _)| *p == key)
+        || CURVES.iter().any(|(p, _)| *p == key)
 }
 
 fn write_number(d: &mut Descriptor, key: &str, value: &J) -> Result<(), String> {
-    let number = value.as_f64().filter(|v| v.is_finite()).ok_or_else(|| format!("Camera Raw {key} must be finite"))?;
+    let number = value
+        .as_f64()
+        .filter(|v| v.is_finite())
+        .ok_or_else(|| format!("Camera Raw {key} must be finite"))?;
     if !number_range(key).contains(&number) {
         return Err(format!("Camera Raw {key} is outside the supported range"));
     }
@@ -235,38 +309,67 @@ fn write_number(d: &mut Descriptor, key: &str, value: &J) -> Result<(), String> 
 }
 
 pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
-    let object = params.as_object().ok_or("Camera Raw parameters must be an object")?;
+    let object = params
+        .as_object()
+        .ok_or("Camera Raw parameters must be an object")?;
     let defaults = default_params().ok_or("cannot encode Camera Raw defaults")?;
     for key in object.keys() {
         if key != "layer" && !key.starts_with("__") && defaults.get(key).is_none() {
-            return Err(format!("Camera Raw setting `{key}` has no verified PSD mapping"));
+            return Err(format!(
+                "Camera Raw setting `{key}` has no verified PSD mapping"
+            ));
         }
     }
-    for wheel in ["gradeShadows", "gradeMidtones", "gradeHighlights", "gradeGlobal"] {
-        if params.get(wheel).and_then(J::as_object).is_some_and(|v| v.keys().any(|k| !matches!(k.as_str(), "hue" | "sat" | "lum"))) {
-            return Err(format!("Camera Raw `{wheel}` contains an unknown wheel setting"));
+    for wheel in [
+        "gradeShadows",
+        "gradeMidtones",
+        "gradeHighlights",
+        "gradeGlobal",
+    ] {
+        if params.get(wheel).and_then(J::as_object).is_some_and(|v| {
+            v.keys()
+                .any(|k| !matches!(k.as_str(), "hue" | "sat" | "lum"))
+        }) {
+            return Err(format!(
+                "Camera Raw `{wheel}` contains an unknown wheel setting"
+            ));
         }
     }
     // Bound variable-sized curves before deserialization allocates their point arrays.
     for (param, _) in CURVES {
-        if params.get(*param).and_then(J::as_array).is_some_and(|v| v.len() > photocraft_algo::camera_raw::MAX_CURVE_POINTS) {
+        if params
+            .get(*param)
+            .and_then(J::as_array)
+            .is_some_and(|v| v.len() > photocraft_algo::camera_raw::MAX_CURVE_POINTS)
+        {
             return Err(format!("Camera Raw `{param}` has too many points"));
         }
     }
     let mut item = if let Some(raw) = object.get(TEMPLATE_KEY) {
-        let raw = raw.as_str().ok_or("Camera Raw PSD template must be hex text")?;
+        let raw = raw
+            .as_str()
+            .ok_or("Camera Raw PSD template must be hex text")?;
         if raw.len() > MAX_TEMPLATE_BYTES * 2 {
             return Err("Camera Raw PSD template is too large".into());
         }
         let bytes = from_hex(raw).ok_or("Camera Raw PSD template is not valid hex")?;
-        let item = Descriptor::from_bytes(&bytes).map_err(|e| format!("bad Camera Raw PSD template: {e}"))?;
-        if !item.class_id.is("filterFX") || int(&item, "filterID") != Some(FILTER_ID) || get_desc(&item, "Fltr").and_then(descriptor_params).is_none() {
+        let item = Descriptor::from_bytes(&bytes)
+            .map_err(|e| format!("bad Camera Raw PSD template: {e}"))?;
+        if !item.class_id.is("filterFX")
+            || int(&item, "filterID") != Some(FILTER_ID)
+            || get_desc(&item, "Fltr")
+                .and_then(descriptor_params)
+                .is_none()
+        {
             return Err("Camera Raw PSD template is not a supported Camera Raw filter".into());
         }
         item
     } else {
         Descriptor::new("filterFX")
-            .with("Nm  ", Value::Text(UnicodeString::new_nul("Camera Raw Filter")))
+            .with(
+                "Nm  ",
+                Value::Text(UnicodeString::new_nul("Camera Raw Filter")),
+            )
             .with("hasoptions", Value::Boolean(true))
             .with("FrgC", rgbc(0.0))
             .with("BckC", rgbc(255.0))
@@ -281,17 +384,26 @@ pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
             )
             .with("filterID", Value::Integer(FILTER_ID))
     };
-    let typed: CameraRaw = serde_json::from_value(params.clone()).map_err(|e| format!("bad Camera Raw parameters: {e}"))?;
+    let typed: CameraRaw = serde_json::from_value(params.clone())
+        .map_err(|e| format!("bad Camera Raw parameters: {e}"))?;
     typed.validate()?;
     let normalized = serde_json::to_value(typed).map_err(|e| e.to_string())?;
-    for (key, value) in normalized.as_object().ok_or("cannot encode Camera Raw parameters")? {
+    for (key, value) in normalized
+        .as_object()
+        .ok_or("cannot encode Camera Raw parameters")?
+    {
         if !supported_param(key) && defaults.get(key) != Some(value) {
-            return Err(format!("Camera Raw setting `{key}` has no verified PSD mapping"));
+            return Err(format!(
+                "Camera Raw setting `{key}` has no verified PSD mapping"
+            ));
         }
     }
     validate_splits(&normalized)?;
-    let mut d = get_desc(&item, "Fltr").cloned().ok_or("Camera Raw PSD template has no filter settings")?;
-    let original = descriptor_params(&d).ok_or("unsupported Camera Raw processing version or settings")?;
+    let mut d = get_desc(&item, "Fltr")
+        .cloned()
+        .ok_or("Camera Raw PSD template has no filter settings")?;
+    let original =
+        descriptor_params(&d).ok_or("unsupported Camera Raw processing version or settings")?;
     for (param, key) in SCALARS {
         let value = get_param(&normalized, param).ok_or("missing Camera Raw parameter")?;
         if get_param(&original, param) != Some(value) {
@@ -300,7 +412,10 @@ pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
                 set(
                     &mut d,
                     "WBal",
-                    Value::Enumerated { type_id: photocraft_psd::descriptor::Id::new("WBal"), value: photocraft_psd::descriptor::Id::new("Cst ") },
+                    Value::Enumerated {
+                        type_id: photocraft_psd::descriptor::Id::new("WBal"),
+                        value: photocraft_psd::descriptor::Id::new("Cst "),
+                    },
                 );
             }
         }
@@ -308,11 +423,16 @@ pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
     for (param, key) in CURVES {
         let value = normalized.get(*param).ok_or("missing Camera Raw curve")?;
         if original.get(*param) != Some(value) {
-            let points = value.as_array().ok_or("Camera Raw curve must be an array")?;
+            let points = value
+                .as_array()
+                .ok_or("Camera Raw curve must be an array")?;
             let mut levels: Vec<[f32; 2]> = Vec::new();
             for point in points {
                 let mut level = [0.0; 2];
-                let coordinates = point.as_array().filter(|c| c.len() == 2).ok_or("Camera Raw curve point must contain two coordinates")?;
+                let coordinates = point
+                    .as_array()
+                    .filter(|c| c.len() == 2)
+                    .ok_or("Camera Raw curve point must contain two coordinates")?;
                 for (out, coordinate) in level.iter_mut().zip(coordinates) {
                     let number = coordinate
                         .as_f64()
@@ -325,14 +445,22 @@ pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
             if levels.is_empty() {
                 levels = vec![[0.0, 0.0], [255.0, 255.0]];
             }
-            photocraft_algo::camera_raw::validate_curve(&levels).map_err(|e| format!("Camera Raw `{param}`: {e}"))?;
-            let values = levels.iter().flatten().map(|v| Value::Integer(*v as i32)).collect();
+            photocraft_algo::camera_raw::validate_curve(&levels)
+                .map_err(|e| format!("Camera Raw `{param}`: {e}"))?;
+            let values = levels
+                .iter()
+                .flatten()
+                .map(|v| Value::Integer(*v as i32))
+                .collect();
             set(&mut d, key, Value::List(values));
         }
     }
     for (param, keys) in ARRAYS {
         for (index, key) in keys.iter().enumerate() {
-            let value = normalized.get(*param).and_then(|v| v.get(index)).ok_or("missing Camera Raw array parameter")?;
+            let value = normalized
+                .get(*param)
+                .and_then(|v| v.get(index))
+                .ok_or("missing Camera Raw array parameter")?;
             if original.get(*param).and_then(|v| v.get(index)) != Some(value) {
                 write_number(&mut d, key, value)?;
             }
@@ -383,9 +511,18 @@ mod tests {
                 d = d.with(key, Value::Integer(value));
             }
         }
-        let f = SmartFilter { command: COMMAND.into(), params: J::Null, blend: BlendMode::Normal, opacity: 1.0, visible: true };
+        let f = SmartFilter {
+            command: COMMAND.into(),
+            params: J::Null,
+            blend: BlendMode::Normal,
+            opacity: 1.0,
+            visible: true,
+        };
         Descriptor::new("filterFX")
-            .with("Nm  ", Value::Text(UnicodeString::new_nul("Camera Raw Filter")))
+            .with(
+                "Nm  ",
+                Value::Text(UnicodeString::new_nul("Camera Raw Filter")),
+            )
             .with("blendOptions", blend_options(&f))
             .with("enab", Value::Boolean(true))
             .with("hasoptions", Value::Boolean(true))
@@ -398,7 +535,14 @@ mod tests {
     fn all_controls_item() -> Descriptor {
         let mut item = source_item();
         let mut d = get_desc(&item, "Fltr").unwrap().clone();
-        set(&mut d, "WBal", Value::Enumerated { type_id: photocraft_psd::descriptor::Id::new("WBal"), value: photocraft_psd::descriptor::Id::new("Cst ") });
+        set(
+            &mut d,
+            "WBal",
+            Value::Enumerated {
+                type_id: photocraft_psd::descriptor::Id::new("WBal"),
+                value: photocraft_psd::descriptor::Id::new("Cst "),
+            },
+        );
         set(&mut d, "ShpR", Value::Double(1.2));
         for (key, value) in [
             ("Temp", -26),
@@ -442,8 +586,22 @@ mod tests {
         for (key, neutral) in NEUTRAL_ONLY {
             set(&mut d, key, Value::Integer(*neutral));
         }
-        for (key, x, y) in [("Crv ", 146, 102), ("CrvR", 90, 174), ("CrvG", 162, 122), ("CrvB", 129, 202)] {
-            set(&mut d, key, Value::List([0, 0, x, y, 255, 255].into_iter().map(Value::Integer).collect()));
+        for (key, x, y) in [
+            ("Crv ", 146, 102),
+            ("CrvR", 90, 174),
+            ("CrvG", 162, 122),
+            ("CrvB", 129, 202),
+        ] {
+            set(
+                &mut d,
+                key,
+                Value::List(
+                    [0, 0, x, y, 255, 255]
+                        .into_iter()
+                        .map(Value::Integer)
+                        .collect(),
+                ),
+            );
         }
         set(&mut item, "Fltr", Value::Descriptor(d));
         item
@@ -457,8 +615,14 @@ mod tests {
         assert_eq!(f.params["temperature"], -26.0);
         assert_eq!(f.params["texture"], -31.0);
         assert!((f.params["sharpenRadius"].as_f64().unwrap() - 1.2).abs() < 1e-6);
-        assert_eq!(f.params["gradeHighlights"], json!({"hue": 316.0, "sat": 70.0, "lum": 28.0}));
-        assert_eq!(f.params["pointCurveBlue"], json!([[0.0, 0.0], [129.0, 202.0], [255.0, 255.0]]));
+        assert_eq!(
+            f.params["gradeHighlights"],
+            json!({"hue": 316.0, "sat": 70.0, "lum": 28.0})
+        );
+        assert_eq!(
+            f.params["pointCurveBlue"],
+            json!([[0.0, 0.0], [129.0, 202.0], [255.0, 255.0]])
+        );
         assert_eq!(item_for_filter(&f).unwrap(), source);
         let defaults = default_params().unwrap();
         for (param, key) in SCALARS {
@@ -469,15 +633,31 @@ mod tests {
             }
             *get_param_mut(&mut edited.params, param).unwrap() = json!(number);
             let mut expected = get_desc(&source, "Fltr").unwrap().clone();
-            set(&mut expected, key, if matches!(*key, "Ex12" | "ShpR") { Value::Double(number) } else { Value::Integer(number as i32) });
-            assert_eq!(get_desc(&item_for_filter(&edited).unwrap(), "Fltr"), Some(&expected), "{param}");
+            set(
+                &mut expected,
+                key,
+                if matches!(*key, "Ex12" | "ShpR") {
+                    Value::Double(number)
+                } else {
+                    Value::Integer(number as i32)
+                },
+            );
+            assert_eq!(
+                get_desc(&item_for_filter(&edited).unwrap(), "Fltr"),
+                Some(&expected),
+                "{param}"
+            );
         }
         for (param, key) in CURVES {
             let mut edited = f.clone();
             edited.params[*param] = json!([]);
             let item = item_for_filter(&edited).unwrap();
             let mut expected = get_desc(&source, "Fltr").unwrap().clone();
-            set(&mut expected, key, Value::List([0, 0, 255, 255].into_iter().map(Value::Integer).collect()));
+            set(
+                &mut expected,
+                key,
+                Value::List([0, 0, 255, 255].into_iter().map(Value::Integer).collect()),
+            );
             assert_eq!(get_desc(&item, "Fltr"), Some(&expected), "{param}");
             assert_eq!(filter_from_item(&item).params[*param], json!([]), "{param}");
         }
@@ -514,37 +694,57 @@ mod tests {
     #[test]
     #[ignore = "requires a user-supplied Camera Raw PSD"]
     fn all_sliders_fixture() {
-        let path = std::env::var("PHOTOCRAFT_CAMERA_RAW_PSD").expect("set PHOTOCRAFT_CAMERA_RAW_PSD");
-        let doc = crate::import("fixture.psd", &std::fs::read(path).unwrap()).unwrap().document;
+        let path =
+            std::env::var("PHOTOCRAFT_CAMERA_RAW_PSD").expect("set PHOTOCRAFT_CAMERA_RAW_PSD");
+        let doc = crate::import("fixture.psd", &std::fs::read(path).unwrap())
+            .unwrap()
+            .document;
         let original = doc
             .walk()
             .into_iter()
             .find_map(|(_, _, layer)| {
-                let photocraft_doc::LayerContent::Smart(sm) = &layer.content else { return None };
+                let photocraft_doc::LayerContent::Smart(sm) = &layer.content else {
+                    return None;
+                };
                 sm.smart_filters.iter().find_map(|f| {
                     let item = item_for_filter(f).ok()?;
-                    get_desc(&item, "Fltr").is_some_and(|d| d.class_id.is(CLASS)).then_some(item)
+                    get_desc(&item, "Fltr")
+                        .is_some_and(|d| d.class_id.is(CLASS))
+                        .then_some(item)
                 })
             })
             .expect("a Camera Raw descriptor");
-        assert_eq!(item_for_filter(&filter_from_item(&original)).unwrap(), original);
+        assert_eq!(
+            item_for_filter(&filter_from_item(&original)).unwrap(),
+            original
+        );
         let mut projected = original.clone();
         let mut d = get_desc(&original, "Fltr").unwrap().clone();
         // This is a codec projection, not an editable replacement for the source filter:
         // active Optics settings have no rendering counterpart, and PCVS is unverified.
-        d.items.retain(|(key, _)| !["MDis", "VigA", "PCVS"].iter().any(|k| key.is(k)));
+        d.items
+            .retain(|(key, _)| !["MDis", "VigA", "PCVS"].iter().any(|k| key.is(k)));
         set(&mut projected, "Fltr", Value::Descriptor(d));
         let mut f = filter_from_item(&projected);
         assert_eq!(f.command, COMMAND);
         assert_eq!(f.params["temperature"], -26.0);
         assert_eq!(f.params["sharpenAmount"], 43.0);
-        assert_eq!(f.params["gradeGlobal"], json!({"hue": 20.0, "sat": 61.0, "lum": 45.0}));
-        assert_eq!(f.params["pointCurveRed"], json!([[0.0, 0.0], [90.0, 174.0], [255.0, 255.0]]));
+        assert_eq!(
+            f.params["gradeGlobal"],
+            json!({"hue": 20.0, "sat": 61.0, "lum": 45.0})
+        );
+        assert_eq!(
+            f.params["pointCurveRed"],
+            json!([[0.0, 0.0], [90.0, 174.0], [255.0, 255.0]])
+        );
         assert_eq!(item_for_filter(&f).unwrap(), projected);
         f.params["exposure"] = json!(0.5);
         let mut expected = get_desc(&projected, "Fltr").unwrap().clone();
         set(&mut expected, "Ex12", Value::Double(0.5));
-        assert_eq!(get_desc(&item_for_filter(&f).unwrap(), "Fltr"), Some(&expected));
+        assert_eq!(
+            get_desc(&item_for_filter(&f).unwrap(), "Fltr"),
+            Some(&expected)
+        );
     }
 
     #[test]
@@ -557,7 +757,10 @@ mod tests {
         assert_eq!(f.params["curveDarks"], -21.0);
         assert_eq!(f.params["curveLights"], 38.0);
         assert_eq!(f.params["curveSplits"], json!([25.0, 50.0, 75.0]));
-        assert_eq!(f.params["hslHue"], json!([-50.0, 0.0, 29.0, 1.0, 0.0, 0.0, 0.0, 0.0]));
+        assert_eq!(
+            f.params["hslHue"],
+            json!([-50.0, 0.0, 29.0, 1.0, 0.0, 0.0, 0.0, 0.0])
+        );
         assert_eq!(item_for_filter(&f).unwrap(), source);
         f.params["exposure"] = json!(0.0);
         f.params["hslHue"][2] = json!(-20.0);
@@ -571,7 +774,10 @@ mod tests {
         assert_eq!(get_desc(&edited, "Fltr"), Some(&expected));
         assert_eq!(edited.get("futureOuterData"), source.get("futureOuterData"));
         let back = filter_from_item(&edited);
-        assert_eq!((back.visible, back.blend, back.opacity), (false, BlendMode::Multiply, 0.4));
+        assert_eq!(
+            (back.visible, back.blend, back.opacity),
+            (false, BlendMode::Multiply, 0.4)
+        );
         assert_eq!(back.params["exposure"], 0.0);
         assert_eq!(back.params["hslHue"][2], -20.0);
     }
@@ -589,16 +795,33 @@ mod tests {
             *get_param_mut(&mut params, param).unwrap() = json!(number);
         }
         for (param, keys) in ARRAYS {
-            params[*param] = if *param == "curveSplits" { json!([20, 45, 80]) } else { json!((0..keys.len()).map(|i| i as f64 + 1.0).collect::<Vec<_>>()) };
+            params[*param] = if *param == "curveSplits" {
+                json!([20, 45, 80])
+            } else {
+                json!((0..keys.len()).map(|i| i as f64 + 1.0).collect::<Vec<_>>())
+            };
         }
-        let f = SmartFilter { command: COMMAND.into(), params: params.clone(), blend: BlendMode::Screen, opacity: 0.5, visible: false };
+        let f = SmartFilter {
+            command: COMMAND.into(),
+            params: params.clone(),
+            blend: BlendMode::Screen,
+            opacity: 0.5,
+            visible: false,
+        };
         let item = item_for_filter(&f).unwrap();
         let back = filter_from_item(&Descriptor::from_bytes(&item.to_bytes()).unwrap());
-        assert_eq!((&back.command, back.visible, back.blend, back.opacity), (&f.command, false, BlendMode::Screen, 0.5));
+        assert_eq!(
+            (&back.command, back.visible, back.blend, back.opacity),
+            (&f.command, false, BlendMode::Screen, 0.5)
+        );
         // Compare slider numbers after both sides have been normalized through CameraRaw.
         let typed: CameraRaw = serde_json::from_value(params).unwrap();
         let expected = serde_json::to_value(typed).unwrap();
-        for param in SCALARS.iter().map(|(p, _)| *p).chain(ARRAYS.iter().map(|(p, _)| *p)) {
+        for param in SCALARS
+            .iter()
+            .map(|(p, _)| *p)
+            .chain(ARRAYS.iter().map(|(p, _)| *p))
+        {
             assert_eq!(get_param(&back.params, param), get_param(&expected, param));
         }
     }
@@ -634,7 +857,15 @@ mod tests {
         assert_eq!(d.get("Cr12"), Some(&Value::Integer(-12)));
         assert_eq!(d.get("HA_R"), Some(&Value::Integer(11)));
         assert_eq!(d.get("STSH"), Some(&Value::Integer(0)));
-        assert_eq!(d.get("Crv "), Some(&Value::List([0, 0, 100, 121, 201, 180, 255, 255].into_iter().map(Value::Integer).collect())));
+        assert_eq!(
+            d.get("Crv "),
+            Some(&Value::List(
+                [0, 0, 100, 121, 201, 180, 255, 255]
+                    .into_iter()
+                    .map(Value::Integer)
+                    .collect()
+            ))
+        );
         let back = filter_from_item(&item);
         assert_eq!(back.command, COMMAND);
         assert_eq!(back.params["contrast"], -12.0);

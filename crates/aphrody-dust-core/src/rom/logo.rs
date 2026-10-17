@@ -8,22 +8,85 @@ use crate::compress::huffman::{NibbleHuffman, NibbleHuffmanCode};
 /// Huffman codes for every combination of 4 pixels
 const HUFFMAN: NibbleHuffman = NibbleHuffman {
     codes: [
-        /* 0000 */ NibbleHuffmanCode { length: 1, bits: 0b1 },
-        /* 0001 */ NibbleHuffmanCode { length: 4, bits: 0b0110 },
-        /* 0010 */ NibbleHuffmanCode { length: 5, bits: 0b01010 },
-        /* 0011 */ NibbleHuffmanCode { length: 4, bits: 0b0100 },
-        /* 0100 */ NibbleHuffmanCode { length: 5, bits: 0b00010 },
-        /* 0101 */ NibbleHuffmanCode { length: 6, bits: 0b011110 },
-        /* 0110 */ NibbleHuffmanCode { length: 6, bits: 0b010110 },
-        /* 0111 */ NibbleHuffmanCode { length: 6, bits: 0b000110 },
-        /* 1000 */ NibbleHuffmanCode { length: 5, bits: 0b00110 },
-        /* 1001 */ NibbleHuffmanCode { length: 6, bits: 0b011111 },
-        /* 1010 */ NibbleHuffmanCode { length: 6, bits: 0b010111 },
-        /* 1011 */ NibbleHuffmanCode { length: 6, bits: 0b000111 },
-        /* 1100 */ NibbleHuffmanCode { length: 4, bits: 0b0010 },
-        /* 1101 */ NibbleHuffmanCode { length: 5, bits: 0b01110 },
-        /* 1110 */ NibbleHuffmanCode { length: 5, bits: 0b00111 },
-        /* 1111 */ NibbleHuffmanCode { length: 4, bits: 0b0000 },
+        /* 0000 */ NibbleHuffmanCode {
+            length: 1,
+            bits: 0b1,
+        },
+        /* 0001 */
+        NibbleHuffmanCode {
+            length: 4,
+            bits: 0b0110,
+        },
+        /* 0010 */
+        NibbleHuffmanCode {
+            length: 5,
+            bits: 0b01010,
+        },
+        /* 0011 */
+        NibbleHuffmanCode {
+            length: 4,
+            bits: 0b0100,
+        },
+        /* 0100 */
+        NibbleHuffmanCode {
+            length: 5,
+            bits: 0b00010,
+        },
+        /* 0101 */
+        NibbleHuffmanCode {
+            length: 6,
+            bits: 0b011110,
+        },
+        /* 0110 */
+        NibbleHuffmanCode {
+            length: 6,
+            bits: 0b010110,
+        },
+        /* 0111 */
+        NibbleHuffmanCode {
+            length: 6,
+            bits: 0b000110,
+        },
+        /* 1000 */
+        NibbleHuffmanCode {
+            length: 5,
+            bits: 0b00110,
+        },
+        /* 1001 */
+        NibbleHuffmanCode {
+            length: 6,
+            bits: 0b011111,
+        },
+        /* 1010 */
+        NibbleHuffmanCode {
+            length: 6,
+            bits: 0b010111,
+        },
+        /* 1011 */
+        NibbleHuffmanCode {
+            length: 6,
+            bits: 0b000111,
+        },
+        /* 1100 */
+        NibbleHuffmanCode {
+            length: 4,
+            bits: 0b0010,
+        },
+        /* 1101 */
+        NibbleHuffmanCode {
+            length: 5,
+            bits: 0b01110,
+        },
+        /* 1110 */
+        NibbleHuffmanCode {
+            length: 5,
+            bits: 0b00111,
+        },
+        /* 1111 */
+        NibbleHuffmanCode {
+            length: 4,
+            bits: 0b0000,
+        },
     ],
 };
 
@@ -41,7 +104,9 @@ pub struct Logo {
 
 impl Default for Logo {
     fn default() -> Self {
-        Self { pixels: [0u8; SIZE] }
+        Self {
+            pixels: [0u8; SIZE],
+        }
     }
 }
 
@@ -186,8 +251,14 @@ impl Logo {
         let image = ImageReader::open(path)?.decode()?;
         if image.width() != WIDTH as u32 || image.height() != HEIGHT as u32 {
             ImageSizeSnafu {
-                expected: ImageSize { width: WIDTH as u32, height: HEIGHT as u32 },
-                actual: ImageSize { width: image.width(), height: image.height() },
+                expected: ImageSize {
+                    width: WIDTH as u32,
+                    height: HEIGHT as u32,
+                },
+                actual: ImageSize {
+                    width: image.width(),
+                    height: image.height(),
+                },
             }
             .fail()?;
         }
@@ -220,7 +291,11 @@ impl Logo {
 
         let header = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
         if header != LOGO_HEADER {
-            InvalidHeaderSnafu { expected: LOGO_HEADER, actual: header }.fail()?;
+            InvalidHeaderSnafu {
+                expected: LOGO_HEADER,
+                actual: header,
+            }
+            .fail()?;
         }
 
         let footer = u32::from_le_bytes([
@@ -230,13 +305,21 @@ impl Logo {
             bytes[bytes.len() - 1],
         ]);
         if footer != LOGO_FOOTER {
-            InvalidFooterSnafu { expected: LOGO_FOOTER, actual: footer }.fail()?;
+            InvalidFooterSnafu {
+                expected: LOGO_FOOTER,
+                actual: footer,
+            }
+            .fail()?;
         }
 
         let len = bytes.len();
         let diff = &mut bytes[4..len - 4];
         if diff.len() != SIZE {
-            WrongSizeSnafu { expected: SIZE, actual: diff.len() }.fail()?;
+            WrongSizeSnafu {
+                expected: SIZE,
+                actual: diff.len(),
+            }
+            .fail()?;
         }
         HUFFMAN.diff16_to_data(diff);
 

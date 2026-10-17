@@ -6,8 +6,18 @@ use crate::EvalCtx;
 use effectcraft_project::{ItemId, ItemKind, Layer, LayerId, LayerSource, Node, PropGroup};
 use std::hash::Hash;
 
-pub(super) fn hash(h: &mut KeyHasher, ctx: &EvalCtx, layer: &Layer, effects: Option<usize>) -> Option<()> {
-    let mut deps = Dependencies { h, path: vec![(ctx.comp_id, layer.id)], remaining: 1024, other_times: super::reads_other_times(layer) };
+pub(super) fn hash(
+    h: &mut KeyHasher,
+    ctx: &EvalCtx,
+    layer: &Layer,
+    effects: Option<usize>,
+) -> Option<()> {
+    let mut deps = Dependencies {
+        h,
+        path: vec![(ctx.comp_id, layer.id)],
+        remaining: 1024,
+        other_times: super::reads_other_times(layer),
+    };
     deps.effects(ctx, layer, effects)
 }
 
@@ -25,7 +35,11 @@ impl Dependencies<'_> {
         if layer.switches.effects
             && let Some(fx) = layer.effects()
         {
-            for g in fx.groups().take(limit.unwrap_or(usize::MAX)).filter(|g| g.enabled) {
+            for g in fx
+                .groups()
+                .take(limit.unwrap_or(usize::MAX))
+                .filter(|g| g.enabled)
+            {
                 self.group(ctx, layer, g, 0)?;
             }
         }
@@ -69,7 +83,9 @@ impl Dependencies<'_> {
             return None;
         }
         self.remaining = self.remaining.checked_sub(1)?;
-        if (self.other_times || super::reads_other_times(layer)) && super::has_expression(&layer.props) {
+        if (self.other_times || super::reads_other_times(layer))
+            && super::has_expression(&layer.props)
+        {
             return None;
         }
         self.path.push(id);
@@ -82,7 +98,9 @@ impl Dependencies<'_> {
             layer.layer_time(ctx.time).0.hash(self.h);
         }
         match layer.source {
-            LayerSource::Solid { item } | LayerSource::Footage { item } | LayerSource::Comp { item } => {
+            LayerSource::Solid { item }
+            | LayerSource::Footage { item }
+            | LayerSource::Comp { item } => {
                 let source = ctx.project.item(item);
                 hash_debug(self.h, &source);
                 if let Some(source) = source {

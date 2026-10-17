@@ -32,14 +32,21 @@ impl Side {
     /// the corner. `None` when the side has no length.
     fn direction(&self) -> Option<Vec2> {
         let c = self.curve;
-        let d = [c.p1, c.p2, c.p3].into_iter().map(|q| q - c.p0).find(|d| d.hypot() > EPS)?;
+        let d = [c.p1, c.p2, c.p3]
+            .into_iter()
+            .map(|q| q - c.p0)
+            .find(|d| d.hypot() > EPS)?;
         let d = d / d.hypot();
         d.x.is_finite().then_some(d)
     }
 
     /// The side's length.
     fn length(&self) -> f64 {
-        if self.straight() { self.curve.p0.distance(self.curve.p3) } else { self.curve.arclen(ARCLEN_ACCURACY) }
+        if self.straight() {
+            self.curve.p0.distance(self.curve.p3)
+        } else {
+            self.curve.arclen(ARCLEN_ACCURACY)
+        }
     }
 
     /// The parameter `s` along the side from the corner, the point there and the direction the
@@ -48,7 +55,11 @@ impl Side {
         let c = self.curve;
         if self.straight() {
             let len = c.p0.distance(c.p3);
-            let t = if len > EPS { (s / len).clamp(0.0, 1.0) } else { 0.0 };
+            let t = if len > EPS {
+                (s / len).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
             return (t, c.p0 + u * s, u);
         }
         let t = c.inv_arclen(s, ARCLEN_ACCURACY).clamp(0.0, 1.0);
@@ -84,19 +95,40 @@ impl Corner {
     /// sides leave it straight on.
     fn of(sp: &SubPath, i: usize, index: usize) -> Option<Self> {
         let n = sp.anchors.len();
-        let (prev, next) = if sp.closed { ((i + n).checked_sub(1)? % n, (i + 1) % n) } else { (i.checked_sub(1)?, i + 1) };
-        let (a, prev, next) = (sp.anchors.get(i)?, sp.anchors.get(prev)?, sp.anchors.get(next)?);
+        let (prev, next) = if sp.closed {
+            ((i + n).checked_sub(1)? % n, (i + 1) % n)
+        } else {
+            (i.checked_sub(1)?, i + 1)
+        };
+        let (a, prev, next) = (
+            sp.anchors.get(i)?,
+            sp.anchors.get(prev)?,
+            sp.anchors.get(next)?,
+        );
         if a.kind == AnchorKind::Smooth {
             return None;
         }
-        let side_u = Side { curve: CubicBez::new(a.p, a.h_in, prev.h_out, prev.p) };
-        let side_v = Side { curve: CubicBez::new(a.p, a.h_out, next.h_in, next.p) };
+        let side_u = Side {
+            curve: CubicBez::new(a.p, a.h_in, prev.h_out, prev.p),
+        };
+        let side_v = Side {
+            curve: CubicBez::new(a.p, a.h_out, next.h_in, next.p),
+        };
         let (u, v) = (side_u.direction()?, side_v.direction()?);
         let (lu, lv) = (side_u.length(), side_v.length());
         if !(lu > EPS && lv > EPS && lu.is_finite() && lv.is_finite()) {
             return None;
         }
-        let c = Self { index, at: a.p, u, v, lu, lv, side_u, side_v };
+        let c = Self {
+            index,
+            at: a.p,
+            u,
+            v,
+            lu,
+            lv,
+            side_u,
+            side_v,
+        };
         (c.sin() > MIN_SINE).then_some(c)
     }
 
@@ -165,7 +197,14 @@ impl Corner {
             }
             CornerKind::Chamfer => (start, end),
         };
-        Cut { tu, tv, start, h_out, h_in, end }
+        Cut {
+            tu,
+            tv,
+            start,
+            h_out,
+            h_in,
+            end,
+        }
     }
 }
 
@@ -176,7 +215,12 @@ impl Corner {
     /// where the tangents at the cut's ends cross and the cut would stick out of the corner
     /// (#1512): there each handle is the share an arc takes of its tangent, up to that crossing
     /// (a third of the way to the other end where the tangents don't cross between them).
-    fn round_handles(&self, radius: f64, (start, du): (Point, Vec2), (end, dv): (Point, Vec2)) -> (f64, f64) {
+    fn round_handles(
+        &self,
+        radius: f64,
+        (start, du): (Point, Vec2),
+        (end, dv): (Point, Vec2),
+    ) -> (f64, f64) {
         let cos = du.dot(dv);
         let arc = arc_handle(-cos);
         if self.side_u.straight() && self.side_v.straight() {
@@ -222,7 +266,10 @@ fn arc_handle(cos: f64) -> f64 {
         return KAPPA;
     }
     let cos = cos.clamp(-1.0, 1.0);
-    let (sin_half, cos_half) = (((1.0 - cos) / 2.0).max(0.0).sqrt(), ((1.0 + cos) / 2.0).max(0.0).sqrt());
+    let (sin_half, cos_half) = (
+        ((1.0 - cos) / 2.0).max(0.0).sqrt(),
+        ((1.0 + cos) / 2.0).max(0.0).sqrt(),
+    );
     4.0 / 3.0 * sin_half / (1.0 + cos_half)
 }
 
@@ -243,10 +290,17 @@ pub fn path_corners(path: &PathData) -> Vec<Corner> {
 /// trimmed to what is left of it; a closed subpath whose first corner is cut starts where that
 /// cut ends, so the cut closes it. Also returns, per subpath, the anchor index in `path` each
 /// anchor comes from.
-pub fn cut_corners(path: &PathData, radii: &[f64], kinds: &[CornerKind]) -> (PathData, Vec<Vec<usize>>) {
+pub fn cut_corners(
+    path: &PathData,
+    radii: &[f64],
+    kinds: &[CornerKind],
+) -> (PathData, Vec<Vec<usize>>) {
     let corners = path_corners(path);
     let mut corners = corners.iter().peekable();
-    let (mut subpaths, mut sources) = (Vec::with_capacity(path.subpaths.len()), Vec::with_capacity(path.subpaths.len()));
+    let (mut subpaths, mut sources) = (
+        Vec::with_capacity(path.subpaths.len()),
+        Vec::with_capacity(path.subpaths.len()),
+    );
     let mut first = 0;
     for sp in &path.subpaths {
         let n = sp.anchors.len();
@@ -265,7 +319,10 @@ pub fn cut_corners(path: &PathData, radii: &[f64], kinds: &[CornerKind]) -> (Pat
             .map(|j| {
                 let k = (j + 1) % n;
                 let (a, b) = (sp.anchors.get(j)?, sp.anchors.get(k)?);
-                let (from, to) = (cuts.get(j).copied().flatten(), cuts.get(k).copied().flatten());
+                let (from, to) = (
+                    cuts.get(j).copied().flatten(),
+                    cuts.get(k).copied().flatten(),
+                );
                 if (from.is_none() && to.is_none()) || (k == 0 && !sp.closed) {
                     return None;
                 }
@@ -282,12 +339,30 @@ pub fn cut_corners(path: &PathData, radii: &[f64], kinds: &[CornerKind]) -> (Pat
         let mut closing = None;
         for (i, a) in sp.anchors.iter().enumerate() {
             let index = first + i;
-            let h_in = trimmed.get((i + n - 1) % n).copied().flatten().map_or(a.h_in, |(_, h)| h);
-            let h_out = trimmed.get(i).copied().flatten().map_or(a.h_out, |(h, _)| h);
+            let h_in = trimmed
+                .get((i + n - 1) % n)
+                .copied()
+                .flatten()
+                .map_or(a.h_in, |(_, h)| h);
+            let h_out = trimmed
+                .get(i)
+                .copied()
+                .flatten()
+                .map_or(a.h_out, |(h, _)| h);
             match cuts.get(i).copied().flatten() {
                 Some(c) => {
-                    let start = Anchor { p: c.start, h_in, h_out: c.h_out, kind: AnchorKind::Corner };
-                    let end = Anchor { p: c.end, h_in: c.h_in, h_out, kind: AnchorKind::Corner };
+                    let start = Anchor {
+                        p: c.start,
+                        h_in,
+                        h_out: c.h_out,
+                        kind: AnchorKind::Corner,
+                    };
+                    let end = Anchor {
+                        p: c.end,
+                        h_in: c.h_in,
+                        h_out,
+                        kind: AnchorKind::Corner,
+                    };
                     if i == 0 && sp.closed {
                         closing = Some(start);
                     } else {
@@ -332,11 +407,22 @@ mod tests {
         let corners = path_corners(&star);
         assert_eq!(corners.len(), 10);
         let angles: Vec<_> = corners.iter().map(|c| c.angle_deg()).collect();
-        assert!(angles.iter().step_by(2).all(|a| *a < 90.0), "tips are acute: {angles:?}");
-        assert!(angles.iter().skip(1).step_by(2).all(|a| *a > 90.0), "inner corners are obtuse: {angles:?}");
+        assert!(
+            angles.iter().step_by(2).all(|a| *a < 90.0),
+            "tips are acute: {angles:?}"
+        );
+        assert!(
+            angles.iter().skip(1).step_by(2).all(|a| *a > 90.0),
+            "inner corners are obtuse: {angles:?}"
+        );
         let (cut, from) = cut_corners(&star, &[4.0; 10], &[]);
         assert_eq!(cut.anchor_count(), 20);
-        assert_eq!(from, [vec![0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 0]]);
+        assert_eq!(
+            from,
+            [vec![
+                0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 0
+            ]]
+        );
         for c in &corners {
             // Both ends of the cut lie `setback` along the sides, as far from the arc's centre as
             // the radius, and that centre is `radius` from either side.
@@ -344,14 +430,24 @@ mod tests {
             let o = c.on_bisector(4.0 / c.sin());
             for p in [c.at + c.u * t, c.at + c.v * t] {
                 assert!((p.distance(o) - 4.0).abs() < 1e-9);
-                assert!(cut.anchors().any(|(_, _, a)| near(a.p, p)), "{p:?} is an anchor");
+                assert!(
+                    cut.anchors().any(|(_, _, a)| near(a.p, p)),
+                    "{p:?} is an anchor"
+                );
             }
         }
     }
 
     #[test]
     fn radii_stop_at_half_the_shorter_side_per_corner() {
-        let tri = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0), Point::new(0.0, 40.0)], true));
+        let tri = PathData::single(SubPath::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(100.0, 0.0),
+                Point::new(0.0, 40.0),
+            ],
+            true,
+        ));
         let corners = path_corners(&tri);
         assert_eq!(corners.len(), 3);
         for c in &corners {
@@ -369,16 +465,42 @@ mod tests {
     fn ends_curves_smooth_and_straight_anchors_are_no_corners() {
         // An open zig-zag: its ends aren't corners, nor is the anchor its sides run straight on through.
         let open = PathData::single(SubPath::polyline(
-            &[Point::new(0.0, 0.0), Point::new(50.0, 0.0), Point::new(100.0, 0.0), Point::new(100.0, 50.0), Point::new(150.0, 80.0)],
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(50.0, 0.0),
+                Point::new(100.0, 0.0),
+                Point::new(100.0, 50.0),
+                Point::new(150.0, 80.0),
+            ],
             false,
         ));
-        assert_eq!(path_corners(&open).iter().map(|c| c.index).collect::<Vec<_>>(), [2, 3]);
+        assert_eq!(
+            path_corners(&open)
+                .iter()
+                .map(|c| c.index)
+                .collect::<Vec<_>>(),
+            [2, 3]
+        );
         // Smooth anchors aren't corners.
         assert!(path_corners(&shapes::ellipse(Rect::new(0.0, 0.0, 10.0, 10.0))).is_empty());
         // A second subpath counts on from the first one's anchors.
         let two = PathData::new(vec![
-            SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(0.0, 10.0)], true),
-            SubPath::polyline(&[Point::new(50.0, 0.0), Point::new(60.0, 0.0), Point::new(50.0, 10.0)], true),
+            SubPath::polyline(
+                &[
+                    Point::new(0.0, 0.0),
+                    Point::new(10.0, 0.0),
+                    Point::new(0.0, 10.0),
+                ],
+                true,
+            ),
+            SubPath::polyline(
+                &[
+                    Point::new(50.0, 0.0),
+                    Point::new(60.0, 0.0),
+                    Point::new(50.0, 10.0),
+                ],
+                true,
+            ),
         ]);
         let (cut, from) = cut_corners(&two, &[0.0, 0.0, 0.0, 1.0], &[]);
         assert_eq!(from, [vec![0, 1, 2], vec![3, 4, 5, 3]]);
@@ -387,7 +509,15 @@ mod tests {
 
     /// The square `0..100` with its right side bulging out as a curve (#1144).
     fn bulging_square() -> PathData {
-        let mut sp = SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0), Point::new(100.0, 100.0), Point::new(0.0, 100.0)], true);
+        let mut sp = SubPath::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(100.0, 0.0),
+                Point::new(100.0, 100.0),
+                Point::new(0.0, 100.0),
+            ],
+            true,
+        );
         sp.anchors[1].h_out = Point::new(140.0, 30.0);
         sp.anchors[2].h_in = Point::new(140.0, 70.0);
         PathData::single(sp)
@@ -399,14 +529,26 @@ mod tests {
     fn corners_next_to_curves_are_cut_along_them() {
         let path = bulging_square();
         let corners = path_corners(&path);
-        assert_eq!(corners.iter().map(|c| c.index).collect::<Vec<_>>(), [0, 1, 2, 3]);
-        let side = kurbo::CubicBez::new(Point::new(100.0, 0.0), Point::new(140.0, 30.0), Point::new(140.0, 70.0), Point::new(100.0, 100.0));
+        assert_eq!(
+            corners.iter().map(|c| c.index).collect::<Vec<_>>(),
+            [0, 1, 2, 3]
+        );
+        let side = kurbo::CubicBez::new(
+            Point::new(100.0, 0.0),
+            Point::new(140.0, 30.0),
+            Point::new(140.0, 70.0),
+            Point::new(100.0, 100.0),
+        );
         // The curved side is longer than its chord, and limits its corners by its length.
         assert!(corners[1].lv > 100.0 + 1.0);
         let (cut, from) = cut_corners(&path, &[10.0; 4], &[]);
         assert_eq!(from, [vec![0, 1, 1, 2, 2, 3, 3, 0]]);
         let sp = &cut.subpaths[0];
-        let on_side = |p: Point| (0..=1000).map(|i| side.eval(f64::from(i) / 1000.0).distance(p)).fold(f64::MAX, f64::min);
+        let on_side = |p: Point| {
+            (0..=1000)
+                .map(|i| side.eval(f64::from(i) / 1000.0).distance(p))
+                .fold(f64::MAX, f64::min)
+        };
         // Corner 1's cut ends on the curve and corner 2's starts on it, and the trimmed curve
         // between them stays on the original one.
         let (a, b) = (sp.anchors[2], sp.anchors[3]);
@@ -420,11 +562,17 @@ mod tests {
             let (into, out) = if x.has_in() && x.has_out() {
                 (x.p - x.h_in, x.h_out - x.p)
             } else if x.has_out() {
-                (x.p - sp.anchors[(i + sp.anchors.len() - 1) % sp.anchors.len()].p, x.h_out - x.p)
+                (
+                    x.p - sp.anchors[(i + sp.anchors.len() - 1) % sp.anchors.len()].p,
+                    x.h_out - x.p,
+                )
             } else {
                 (x.h_in - x.p, x.p - sp.anchors[(i + 1) % sp.anchors.len()].p)
             };
-            assert!(into.normalize().cross(out.normalize()).abs() < 1e-6 && into.dot(out) > 0.0, "anchor {i}");
+            assert!(
+                into.normalize().cross(out.normalize()).abs() < 1e-6 && into.dot(out) > 0.0,
+                "anchor {i}"
+            );
         }
     }
 
@@ -433,8 +581,15 @@ mod tests {
     #[test]
     fn a_round_cut_next_to_a_curve_stays_inside_its_corner() {
         // A square whose top side arches up, meeting the upright sides at an angle.
-        let mut sp =
-            SubPath::polyline(&[Point::new(100.0, 150.0), Point::new(300.0, 150.0), Point::new(300.0, 300.0), Point::new(100.0, 300.0)], true);
+        let mut sp = SubPath::polyline(
+            &[
+                Point::new(100.0, 150.0),
+                Point::new(300.0, 150.0),
+                Point::new(300.0, 300.0),
+                Point::new(100.0, 300.0),
+            ],
+            true,
+        );
         sp.anchors[0].h_out = Point::new(120.0, 20.0);
         sp.anchors[1].h_in = Point::new(280.0, 20.0);
         let path = PathData::single(sp);
@@ -442,12 +597,18 @@ mod tests {
         for radius in [10.0, 60.0, 200.0, 1e6] {
             let (cut, _) = cut_corners(&path, &[radius, radius], &[]);
             let b = cut.bounds().unwrap();
-            assert!(bounds.union(b) == bounds, "radius {radius}: {b:?} is outside {bounds:?}");
+            assert!(
+                bounds.union(b) == bounds,
+                "radius {radius}: {b:?} is outside {bounds:?}"
+            );
             // Each cut's handles end before its tangents cross: the cut turns one way only.
             let a = &cut.subpaths[0].anchors;
             for (from, to) in [(a[a.len() - 1], a[0]), (a[1], a[2])] {
                 let (t0, t1, chord) = (from.h_out - from.p, to.p - to.h_in, to.p - from.p);
-                assert!(t0.cross(chord) * chord.cross(t1) > 0.0 && t0.cross(t1) * t0.cross(chord) > 0.0, "radius {radius}: {from:?} {to:?}");
+                assert!(
+                    t0.cross(chord) * chord.cross(t1) > 0.0 && t0.cross(t1) * t0.cross(chord) > 0.0,
+                    "radius {radius}: {from:?} {to:?}"
+                );
             }
         }
     }
@@ -456,7 +617,13 @@ mod tests {
     #[test]
     fn kinds_share_their_ends() {
         let star = shapes::star(Point::new(0.0, 0.0), 50.0, 25.0, 5, 0.0);
-        let ends = |k: CornerKind| -> Vec<Point> { cut_corners(&star, &[3.0; 10], &[k; 10]).0.anchors().map(|(_, _, a)| a.p).collect() };
+        let ends = |k: CornerKind| -> Vec<Point> {
+            cut_corners(&star, &[3.0; 10], &[k; 10])
+                .0
+                .anchors()
+                .map(|(_, _, a)| a.p)
+                .collect()
+        };
         let round = ends(CornerKind::Round);
         assert_eq!(ends(CornerKind::InvertedRound), round);
         assert_eq!(ends(CornerKind::Chamfer), round);

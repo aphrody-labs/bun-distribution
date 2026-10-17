@@ -10,21 +10,82 @@ use soundcraft_time::Samples;
 
 #[derive(Debug, Clone)]
 pub enum Dialog {
-    NewTracks { count: u32, format: String, kind: String, timebase: String, name: String },
-    NewSession { name: String, sample_rate: u32, demo: bool },
-    Bounce { path: String, format: String, bit_depth: String, normalize: bool },
-    RenameTrack { id: TrackId, name: String },
-    RenameClip { id: ClipId, name: String },
-    ClearClips { clips: Vec<ClipId>, sources: Vec<SourceId>, message: String },
-    PathPrompt { cmd: String, title: String, path: String, key: String },
-    Number { cmd: String, title: String, key: String, value: f64, suffix: String },
-    TempoChange { at: Samples, bpm: f64 }, // from double-clicking the tempo ruler
-    Fades { shape: String },
-    StripSilence { threshold: f64, min_ms: f64, pre_ms: f64, post_ms: f64 },
-    Group { name: String, edit: bool, mix: bool, members: Vec<(u64, String, bool)> },
-    Session { frame_rate: String, bit_depth: String },
-    ScoreSetup { title: String, composer: String, bars_per_system: u32, show_track_names: bool },
-    SaveChanges { then: (String, Value) },
+    NewTracks {
+        count: u32,
+        format: String,
+        kind: String,
+        timebase: String,
+        name: String,
+    },
+    NewSession {
+        name: String,
+        sample_rate: u32,
+        demo: bool,
+    },
+    Bounce {
+        path: String,
+        format: String,
+        bit_depth: String,
+        normalize: bool,
+    },
+    RenameTrack {
+        id: TrackId,
+        name: String,
+    },
+    RenameClip {
+        id: ClipId,
+        name: String,
+    },
+    ClearClips {
+        clips: Vec<ClipId>,
+        sources: Vec<SourceId>,
+        message: String,
+    },
+    PathPrompt {
+        cmd: String,
+        title: String,
+        path: String,
+        key: String,
+    },
+    Number {
+        cmd: String,
+        title: String,
+        key: String,
+        value: f64,
+        suffix: String,
+    },
+    TempoChange {
+        at: Samples,
+        bpm: f64,
+    }, // from double-clicking the tempo ruler
+    Fades {
+        shape: String,
+    },
+    StripSilence {
+        threshold: f64,
+        min_ms: f64,
+        pre_ms: f64,
+        post_ms: f64,
+    },
+    Group {
+        name: String,
+        edit: bool,
+        mix: bool,
+        members: Vec<(u64, String, bool)>,
+    },
+    Session {
+        frame_rate: String,
+        bit_depth: String,
+    },
+    ScoreSetup {
+        title: String,
+        composer: String,
+        bars_per_system: u32,
+        show_track_names: bool,
+    },
+    SaveChanges {
+        then: (String, Value),
+    },
 }
 
 #[derive(Default)]
@@ -56,17 +117,29 @@ impl Dialogs {
     }
 
     pub fn open_rename_track(&mut self, id: TrackId, name: &str) {
-        self.open = Some(Dialog::RenameTrack { id, name: name.to_string() });
+        self.open = Some(Dialog::RenameTrack {
+            id,
+            name: name.to_string(),
+        });
     }
 
     pub fn open_rename_clip(&mut self, id: ClipId, name: &str) {
-        self.open = Some(Dialog::RenameClip { id, name: name.to_string() });
+        self.open = Some(Dialog::RenameClip {
+            id,
+            name: name.to_string(),
+        });
     }
 
     /// Clip List › Clear: confirm before clips and files leave the session. False when there is nothing to clear.
     pub fn open_clear(&mut self, e: &Engine, clips: Vec<ClipId>, sources: Vec<SourceId>) -> bool {
-        let Some(message) = clear_message(e.session(), &clips, &sources) else { return false };
-        self.open = Some(Dialog::ClearClips { clips, sources, message });
+        let Some(message) = clear_message(e.session(), &clips, &sources) else {
+            return false;
+        };
+        self.open = Some(Dialog::ClearClips {
+            clips,
+            sources,
+            message,
+        });
         true
     }
 
@@ -80,19 +153,50 @@ impl Dialogs {
                 let ed = &e.session().edit;
                 return self.open_clear(e, ed.selected_clips.clone(), ed.selected_sources.clone());
             }
-            "track.new" => {
-                Dialog::NewTracks { count: 1, format: "Mono".into(), kind: "audio".into(), timebase: "samples".into(), name: "Audio".into() }
-            }
-            "session.new" => Dialog::NewSession { name: "Untitled".into(), sample_rate: 48_000, demo: false },
-            "file.bounce_mix" => {
-                Dialog::Bounce { path: format!("{home}/{name} Bounce.wav"), format: "wav".into(), bit_depth: "24".into(), normalize: false }
-            }
-            "file.import_audio" => Dialog::PathPrompt { cmd: id.into(), title: "Import Audio".into(), path: home, key: "path".into() },
-            "file.import_midi" => Dialog::PathPrompt { cmd: id.into(), title: "Import MIDI".into(), path: home, key: "path".into() },
-            "session.open" => Dialog::PathPrompt { cmd: id.into(), title: "Open Session".into(), path: home, key: "path".into() },
+            "track.new" => Dialog::NewTracks {
+                count: 1,
+                format: "Mono".into(),
+                kind: "audio".into(),
+                timebase: "samples".into(),
+                name: "Audio".into(),
+            },
+            "session.new" => Dialog::NewSession {
+                name: "Untitled".into(),
+                sample_rate: 48_000,
+                demo: false,
+            },
+            "file.bounce_mix" => Dialog::Bounce {
+                path: format!("{home}/{name} Bounce.wav"),
+                format: "wav".into(),
+                bit_depth: "24".into(),
+                normalize: false,
+            },
+            "file.import_audio" => Dialog::PathPrompt {
+                cmd: id.into(),
+                title: "Import Audio".into(),
+                path: home,
+                key: "path".into(),
+            },
+            "file.import_midi" => Dialog::PathPrompt {
+                cmd: id.into(),
+                title: "Import MIDI".into(),
+                path: home,
+                key: "path".into(),
+            },
+            "session.open" => Dialog::PathPrompt {
+                cmd: id.into(),
+                title: "Open Session".into(),
+                path: home,
+                key: "path".into(),
+            },
             "session.save" if e.path.is_some() => return false,
             "session.save" | "session.save_as" | "session.save_copy" => Dialog::PathPrompt {
-                cmd: if id == "session.save_copy" { id } else { "session.save_as" }.into(),
+                cmd: if id == "session.save_copy" {
+                    id
+                } else {
+                    "session.save_as"
+                }
+                .into(),
                 title: "Save Session As".into(),
                 // The browser has no folders: the name becomes the bundle file's name.
                 path: if home.is_empty() {
@@ -102,32 +206,87 @@ impl Dialogs {
                 },
                 key: "path".into(),
             },
-            "edit.repeat" => Dialog::Number { cmd: id.into(), title: "Repeat".into(), key: "count".into(), value: 2.0, suffix: "times".into() },
-            "edit.shift" => {
-                Dialog::Number { cmd: id.into(), title: "Shift (seconds)".into(), key: "by_seconds".into(), value: 1.0, suffix: "s".into() }
-            }
-            "event.transpose" => {
-                Dialog::Number { cmd: id.into(), title: "Transpose".into(), key: "semitones".into(), value: 12.0, suffix: "semitones".into() }
-            }
-            "event.quantize" => {
-                Dialog::Number { cmd: id.into(), title: "Quantize strength".into(), key: "strength".into(), value: 100.0, suffix: "%".into() }
-            }
-            "edit.fades_create" => Dialog::Fades { shape: "equal power".into() },
-            "edit.strip_silence" => Dialog::StripSilence { threshold: -48.0, min_ms: 50.0, pre_ms: 5.0, post_ms: 20.0 },
+            "edit.repeat" => Dialog::Number {
+                cmd: id.into(),
+                title: "Repeat".into(),
+                key: "count".into(),
+                value: 2.0,
+                suffix: "times".into(),
+            },
+            "edit.shift" => Dialog::Number {
+                cmd: id.into(),
+                title: "Shift (seconds)".into(),
+                key: "by_seconds".into(),
+                value: 1.0,
+                suffix: "s".into(),
+            },
+            "event.transpose" => Dialog::Number {
+                cmd: id.into(),
+                title: "Transpose".into(),
+                key: "semitones".into(),
+                value: 12.0,
+                suffix: "semitones".into(),
+            },
+            "event.quantize" => Dialog::Number {
+                cmd: id.into(),
+                title: "Quantize strength".into(),
+                key: "strength".into(),
+                value: 100.0,
+                suffix: "%".into(),
+            },
+            "edit.fades_create" => Dialog::Fades {
+                shape: "equal power".into(),
+            },
+            "edit.strip_silence" => Dialog::StripSilence {
+                threshold: -48.0,
+                min_ms: 50.0,
+                pre_ms: 5.0,
+                post_ms: 20.0,
+            },
             "track.group" => {
                 let s = e.session();
-                let members = s.tracks.iter().map(|t| (t.id.0, t.name.clone(), s.edit.selected_tracks.contains(&t.id))).collect();
-                Dialog::Group { name: format!("Group {}", s.groups.len() + 1), edit: true, mix: true, members }
+                let members = s
+                    .tracks
+                    .iter()
+                    .map(|t| {
+                        (
+                            t.id.0,
+                            t.name.clone(),
+                            s.edit.selected_tracks.contains(&t.id),
+                        )
+                    })
+                    .collect();
+                Dialog::Group {
+                    name: format!("Group {}", s.groups.len() + 1),
+                    edit: true,
+                    mix: true,
+                    members,
+                }
             }
-            "setup.session" => Dialog::Session { frame_rate: e.session().frame_rate.label().into(), bit_depth: "24".into() },
+            "setup.session" => Dialog::Session {
+                frame_rate: e.session().frame_rate.label().into(),
+                bit_depth: "24".into(),
+            },
             "file.score_setup" => {
                 let s = soundcraft_engine::score::ScoreSetup::from_session(e.session());
-                Dialog::ScoreSetup { title: s.title, composer: s.composer, bars_per_system: s.bars_per_system, show_track_names: s.show_track_names }
+                Dialog::ScoreSetup {
+                    title: s.title,
+                    composer: s.composer,
+                    bars_per_system: s.bars_per_system,
+                    show_track_names: s.show_track_names,
+                }
             }
             "clip.rename" => {
-                let target = soundcraft_engine::cmd::clip_ids_param(e, &json!({})).first().and_then(|id| e.session().find_clip(*id));
-                let Some((_, clip)) = target else { return false };
-                Dialog::RenameClip { id: clip.id, name: clip.name.clone() }
+                let target = soundcraft_engine::cmd::clip_ids_param(e, &json!({}))
+                    .first()
+                    .and_then(|id| e.session().find_clip(*id));
+                let Some((_, clip)) = target else {
+                    return false;
+                };
+                Dialog::RenameClip {
+                    id: clip.id,
+                    name: clip.name.clone(),
+                }
             }
             _ => match path_dialog(id, &home, &name) {
                 Some(d) => d,
@@ -141,8 +300,10 @@ impl Dialogs {
 /// When `id` would close a session with unsaved changes, ask first; true when the question is
 /// open instead. A take in progress is stopped first, so it counts as a change.
 pub fn ask_to_save(app: &mut SoundApp, id: &str, params: &Value) -> bool {
-    if !matches!(id, "session.new" | "session.open" | "session.close" | "session.revert" | "app.quit")
-        || soundcraft_engine::find_command(id).is_some_and(|c| (c.enabled)(&app.engine).is_err())
+    if !matches!(
+        id,
+        "session.new" | "session.open" | "session.close" | "session.revert" | "app.quit"
+    ) || soundcraft_engine::find_command(id).is_some_and(|c| (c.enabled)(&app.engine).is_err())
     {
         return false;
     }
@@ -152,7 +313,9 @@ pub fn ask_to_save(app: &mut SoundApp, id: &str, params: &Value) -> bool {
     if !app.engine.is_dirty() {
         return false;
     }
-    app.dialogs.open = Some(Dialog::SaveChanges { then: (id.into(), params.clone()) });
+    app.dialogs.open = Some(Dialog::SaveChanges {
+        then: (id.into(), params.clone()),
+    });
     true
 }
 
@@ -171,7 +334,9 @@ pub fn takes_path(id: &str) -> bool {
 }
 
 fn path_key(id: &str) -> Option<&'static str> {
-    let spec = soundcraft_engine::command_specs().iter().find(|c| c.id == id)?;
+    let spec = soundcraft_engine::command_specs()
+        .iter()
+        .find(|c| c.id == id)?;
     if spec.params.starts_with("{path?") && id != "file.print_score" {
         None
     } else if spec.params.starts_with("{path") {
@@ -184,7 +349,9 @@ fn path_key(id: &str) -> Option<&'static str> {
 }
 
 fn path_dialog(id: &str, home: &str, name: &str) -> Option<Dialog> {
-    let spec = soundcraft_engine::command_specs().iter().find(|c| c.id == id)?;
+    let spec = soundcraft_engine::command_specs()
+        .iter()
+        .find(|c| c.id == id)?;
     let key = path_key(id)?;
     let importing = id.contains("import") || id.contains("open");
     let ext = match id {
@@ -196,16 +363,41 @@ fn path_dialog(id: &str, home: &str, name: &str) -> Option<Dialog> {
         _ if id.contains("session") => ".scraft",
         _ => "",
     };
-    let path = if importing || key == "dir" { format!("{home}/") } else { format!("{home}/{name}{ext}") };
-    let title = format!("{} — {}", spec.menu.last().copied().unwrap_or("File"), spec.label.trim_end_matches("..."));
-    Some(Dialog::PathPrompt { cmd: id.into(), title, path, key: key.into() })
+    let path = if importing || key == "dir" {
+        format!("{home}/")
+    } else {
+        format!("{home}/{name}{ext}")
+    };
+    let title = format!(
+        "{} — {}",
+        spec.menu.last().copied().unwrap_or("File"),
+        spec.label.trim_end_matches("...")
+    );
+    Some(Dialog::PathPrompt {
+        cmd: id.into(),
+        title,
+        path,
+        key: key.into(),
+    })
 }
 
 fn clear_message(s: &Session, clips: &[ClipId], sources: &[SourceId]) -> Option<String> {
     let listed: std::collections::BTreeSet<ClipId> = clips.iter().copied().collect();
-    let names: Vec<&str> = s.tracks.iter().flat_map(|t| t.clips()).filter(|c| listed.contains(&c.id)).map(|c| c.name.as_str()).collect();
+    let names: Vec<&str> = s
+        .tracks
+        .iter()
+        .flat_map(|t| t.clips())
+        .filter(|c| listed.contains(&c.id))
+        .map(|c| c.name.as_str())
+        .collect();
     let files: Vec<_> = sources.iter().filter_map(|id| s.source(*id)).collect();
-    let count = |n: usize, what: &str| if n == 1 { format!("1 {what}") } else { format!("{n} {what}s") };
+    let count = |n: usize, what: &str| {
+        if n == 1 {
+            format!("1 {what}")
+        } else {
+            format!("{n} {what}s")
+        }
+    };
     let what = match (names.as_slice(), files.as_slice()) {
         ([], []) => return None,
         ([name], []) => format!("the clip \"{name}\""),
@@ -215,8 +407,18 @@ fn clear_message(s: &Session, clips: &[ClipId], sources: &[SourceId]) -> Option<
         (c, f) => format!("{} and {}", count(c.len(), "clip"), count(f.len(), "file")),
     };
     let mut text = format!("Remove {what} from the session?");
-    let used: Vec<(&str, usize)> =
-        files.iter().map(|f| (f.name.as_str(), s.clips_using(f.id).filter(|c| !listed.contains(&c.id)).count())).filter(|(_, n)| *n > 0).collect();
+    let used: Vec<(&str, usize)> = files
+        .iter()
+        .map(|f| {
+            (
+                f.name.as_str(),
+                s.clips_using(f.id)
+                    .filter(|c| !listed.contains(&c.id))
+                    .count(),
+            )
+        })
+        .filter(|(_, n)| *n > 0)
+        .collect();
     let n: usize = used.iter().map(|u| u.1).sum();
     let users = if n == 1 {
         "a clip on the timeline, which is removed too.".to_string()
@@ -231,7 +433,11 @@ fn clear_message(s: &Session, clips: &[ClipId], sources: &[SourceId]) -> Option<
         many => text += &format!(" {} of the files are used by {users}", many.len()),
     }
     if !files.is_empty() && files.iter().all(|f| !f.unsaved) {
-        text += if files.len() == 1 { " The file stays on disk." } else { " The files stay on disk." };
+        text += if files.len() == 1 {
+            " The file stays on disk."
+        } else {
+            " The files stay on disk."
+        };
     }
     Some(text)
 }
@@ -239,7 +445,9 @@ fn clear_message(s: &Session, clips: &[ClipId], sources: &[SourceId]) -> Option<
 fn default_dir() -> String {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".into())
+        std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .unwrap_or_else(|_| ".".into())
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -250,7 +458,9 @@ fn default_dir() -> String {
 /// Show the open dialog, if any.
 pub fn show(app: &mut SoundApp, ctx: &egui::Context) {
     audiosuite_window(app, ctx);
-    let Some(mut d) = app.dialogs.open.take() else { return };
+    let Some(mut d) = app.dialogs.open.take() else {
+        return;
+    };
     let mut keep = true;
     let mut action: Option<(String, Value)> = None;
     let mut save_first: Option<(String, Value)> = None;
@@ -548,7 +758,13 @@ pub fn show(app: &mut SoundApp, ctx: &egui::Context) {
                 }
             }
         });
-    if esc || ctx.memory(|m| m.data.get_temp::<bool>(egui::Id::new("dlg_cancel")).unwrap_or(false)) {
+    if esc
+        || ctx.memory(|m| {
+            m.data
+                .get_temp::<bool>(egui::Id::new("dlg_cancel"))
+                .unwrap_or(false)
+        })
+    {
         keep = false;
         app.dialogs.after_save = None;
         ctx.memory_mut(|m| m.data.remove::<bool>(egui::Id::new("dlg_cancel")));
@@ -567,12 +783,18 @@ pub fn show(app: &mut SoundApp, ctx: &egui::Context) {
         keep = false;
         action = None;
     }
-    let saving = action.as_ref().is_some_and(|(cmd, _)| cmd.starts_with("session.save"));
+    let saving = action
+        .as_ref()
+        .is_some_and(|(cmd, _)| cmd.starts_with("session.save"));
     if let Some((cmd, params)) = action {
         keep = false;
         match app.run(&cmd, params) {
             Ok(v) if cmd == "file.export_clips" => {
-                app.ui.status = format!("Exported {} clip(s) to {}", v["written"], v["dir"].as_str().unwrap_or_default());
+                app.ui.status = format!(
+                    "Exported {} clip(s) to {}",
+                    v["written"],
+                    v["dir"].as_str().unwrap_or_default()
+                );
             }
             Ok(_) => {}
             Err(e) => app.ui.status = e,
@@ -596,9 +818,13 @@ fn buttons(ui: &mut egui::Ui, ok: &str, enter: bool) -> bool {
     ui.separator();
     ui.horizontal(|ui| {
         if ui.button("Cancel").clicked() {
-            ui.ctx().memory_mut(|m| m.data.insert_temp(egui::Id::new("dlg_cancel"), true));
+            ui.ctx()
+                .memory_mut(|m| m.data.insert_temp(egui::Id::new("dlg_cancel"), true));
         }
-        if ui.add(egui::Button::new(egui::RichText::new(ok).strong()).fill(Tokens::current().accent)).clicked() {
+        if ui
+            .add(egui::Button::new(egui::RichText::new(ok).strong()).fill(Tokens::current().accent))
+            .clicked()
+        {
             pressed = true;
         }
     });
@@ -610,7 +836,10 @@ fn name_field(ui: &mut egui::Ui, name: &mut String) {
     let mut out = egui::TextEdit::singleline(name).show(ui);
     if !out.response.has_focus() {
         out.response.request_focus();
-        let all = egui::text::CCursorRange::two(egui::text::CCursor::new(0), egui::text::CCursor::new(name.chars().count()));
+        let all = egui::text::CCursorRange::two(
+            egui::text::CCursor::new(0),
+            egui::text::CCursor::new(name.chars().count()),
+        );
         out.state.cursor.set_char_range(Some(all));
         out.state.store(ui.ctx(), out.response.id);
     }
@@ -622,47 +851,66 @@ fn tempo_change_action(at: Samples, bpm: f64) -> (String, Value) {
 }
 
 fn audiosuite_window(app: &mut SoundApp, ctx: &egui::Context) {
-    let Some(process) = app.ui.audiosuite.clone() else { return };
+    let Some(process) = app.ui.audiosuite.clone() else {
+        return;
+    };
     let mut open = true;
-    let title = soundcraft_dsp::plugin_info(&process).map_or_else(|| process.replace('_', " "), |p| p.name.to_string());
-    egui::Window::new(format!("AudioSuite · {title}")).open(&mut open).default_width(360.0).show(ctx, |ui| {
-        let key = egui::Id::new(("as_params", process.clone()));
-        let mut params: std::collections::BTreeMap<String, f32> = ui.ctx().memory(|m| m.data.get_temp(key)).unwrap_or_default();
-        if let Some(info) = soundcraft_dsp::plugin_info(&process) {
-            for p in info.params {
-                let v = params.entry(p.id.to_string()).or_insert(p.default);
-                ui.add(egui::Slider::new(v, p.min..=p.max).text(p.name));
+    let title = soundcraft_dsp::plugin_info(&process)
+        .map_or_else(|| process.replace('_', " "), |p| p.name.to_string());
+    egui::Window::new(format!("AudioSuite · {title}"))
+        .open(&mut open)
+        .default_width(360.0)
+        .show(ctx, |ui| {
+            let key = egui::Id::new(("as_params", process.clone()));
+            let mut params: std::collections::BTreeMap<String, f32> = ui
+                .ctx()
+                .memory(|m| m.data.get_temp(key))
+                .unwrap_or_default();
+            if let Some(info) = soundcraft_dsp::plugin_info(&process) {
+                for p in info.params {
+                    let v = params.entry(p.id.to_string()).or_insert(p.default);
+                    ui.add(egui::Slider::new(v, p.min..=p.max).text(p.name));
+                }
+            } else {
+                match process.as_str() {
+                    "normalize" => {
+                        let v = params.entry("target_db".into()).or_insert(-0.1);
+                        ui.add(egui::Slider::new(v, -24.0..=0.0).text("Peak dB"));
+                    }
+                    "time_stretch" => {
+                        let v = params.entry("ratio".into()).or_insert(1.0);
+                        ui.add(egui::Slider::new(v, 0.25..=4.0).text("Length ratio"));
+                    }
+                    "pitch_shift" => {
+                        let v = params.entry("semitones".into()).or_insert(0.0);
+                        ui.add(egui::Slider::new(v, -24.0..=24.0).text("Semitones"));
+                    }
+                    "varispeed" => {
+                        let v = params.entry("speed".into()).or_insert(1.0);
+                        ui.add(egui::Slider::new(v, 0.25..=4.0).text("Speed"));
+                    }
+                    _ => {
+                        ui.label("No parameters.");
+                    }
+                }
             }
-        } else {
-            match process.as_str() {
-                "normalize" => {
-                    let v = params.entry("target_db".into()).or_insert(-0.1);
-                    ui.add(egui::Slider::new(v, -24.0..=0.0).text("Peak dB"));
-                }
-                "time_stretch" => {
-                    let v = params.entry("ratio".into()).or_insert(1.0);
-                    ui.add(egui::Slider::new(v, 0.25..=4.0).text("Length ratio"));
-                }
-                "pitch_shift" => {
-                    let v = params.entry("semitones".into()).or_insert(0.0);
-                    ui.add(egui::Slider::new(v, -24.0..=24.0).text("Semitones"));
-                }
-                "varispeed" => {
-                    let v = params.entry("speed".into()).or_insert(1.0);
-                    ui.add(egui::Slider::new(v, 0.25..=4.0).text("Speed"));
-                }
-                _ => {
-                    ui.label("No parameters.");
-                }
+            ui.ctx()
+                .memory_mut(|m| m.data.insert_temp(key, params.clone()));
+            ui.label(
+                egui::RichText::new(
+                    "Processes the selected clips and replaces them with rendered audio.",
+                )
+                .small(),
+            );
+            if ui.button(egui::RichText::new("Render").strong()).clicked() {
+                let p: serde_json::Map<String, Value> =
+                    params.iter().map(|(k, v)| (k.clone(), json!(v))).collect();
+                let _ = app.run(
+                    "audiosuite.process",
+                    json!({"process": process, "params": p}),
+                );
             }
-        }
-        ui.ctx().memory_mut(|m| m.data.insert_temp(key, params.clone()));
-        ui.label(egui::RichText::new("Processes the selected clips and replaces them with rendered audio.").small());
-        if ui.button(egui::RichText::new("Render").strong()).clicked() {
-            let p: serde_json::Map<String, Value> = params.iter().map(|(k, v)| (k.clone(), json!(v))).collect();
-            let _ = app.run("audiosuite.process", json!({"process": process, "params": p}));
-        }
-    });
+        });
     if !open {
         app.ui.audiosuite = None;
     }
@@ -676,7 +924,11 @@ mod tests {
     fn file_commands_get_path_prompts_with_sensible_names() {
         let e = soundcraft_engine::demo::demo_engine();
         let mut d = Dialogs::default();
-        for (id, ext) in [("file.export_sibelius", ".musicxml"), ("file.print_score", ".svg"), ("file.export_clip_groups", ".scgrp")] {
+        for (id, ext) in [
+            ("file.export_sibelius", ".musicxml"),
+            ("file.print_score", ".svg"),
+            ("file.export_clip_groups", ".scgrp"),
+        ] {
             assert!(takes_path(id), "{id}");
             assert!(d.open_for_command(&e, id), "{id}");
             match d.open.take() {
@@ -692,7 +944,13 @@ mod tests {
         assert!(!takes_path("file.send_to_sibelius"));
         assert!(!takes_path("edit.copy"));
         assert!(d.open_for_command(&e, "file.score_setup"));
-        assert!(matches!(d.open, Some(Dialog::ScoreSetup { bars_per_system: 4, .. })));
+        assert!(matches!(
+            d.open,
+            Some(Dialog::ScoreSetup {
+                bars_per_system: 4,
+                ..
+            })
+        ));
     }
 
     #[test]
@@ -702,15 +960,23 @@ mod tests {
         e.execute("edit.select_none", &json!({})).unwrap();
         assert!(!d.open_for_command(&e, "clip.rename"));
         let clip = e.session().track_by_name("Kick").unwrap().clips()[0].clone();
-        e.execute("edit.select", &json!({"clips": [clip.id.0]})).unwrap();
+        e.execute("edit.select", &json!({"clips": [clip.id.0]}))
+            .unwrap();
         assert!(d.open_for_command(&e, "clip.rename"));
-        assert!(matches!(d.open, Some(Dialog::RenameClip { id, ref name }) if id == clip.id && *name == clip.name));
+        assert!(
+            matches!(d.open, Some(Dialog::RenameClip { id, ref name }) if id == clip.id && *name == clip.name)
+        );
     }
 
     #[test]
     fn tempo_change_dialog_runs_a_real_command_at_its_position() {
         let (cmd, params) = tempo_change_action(96_000, 133.5);
-        assert!(soundcraft_engine::command_specs().iter().any(|c| c.id == cmd), "{cmd} is not a command");
+        assert!(
+            soundcraft_engine::command_specs()
+                .iter()
+                .any(|c| c.id == cmd),
+            "{cmd} is not a command"
+        );
         assert_eq!(params["at"], 96_000);
         assert_eq!(params["bpm"], 133.5);
     }
@@ -718,7 +984,14 @@ mod tests {
     #[test]
     fn clear_always_asks_and_names_the_timeline_clips_that_go_too() {
         let mut e = soundcraft_engine::demo::demo_engine();
-        let file = |e: &Engine, name: &str| e.session().sources.iter().find(|f| f.name == name).map(|f| f.id).unwrap();
+        let file = |e: &Engine, name: &str| {
+            e.session()
+                .sources
+                .iter()
+                .find(|f| f.name == name)
+                .map(|f| f.id)
+                .unwrap()
+        };
         let (kick, hats) = (file(&e, "Kick"), file(&e, "Hats"));
         let kick_clips: Vec<ClipId> = e.session().clips_using(kick).map(|c| c.id).collect();
         let snare = e.session().track_by_name("Snare").unwrap().clips()[0].id;
@@ -728,18 +1001,31 @@ mod tests {
         };
         let mut d = Dialogs::default();
         assert!(!d.open_for_command(&e, "clip.clear"));
-        e.execute("edit.select", &json!({"clips": [snare]})).unwrap();
+        e.execute("edit.select", &json!({"clips": [snare]}))
+            .unwrap();
         assert!(d.open_for_command(&e, "clip.clear"));
         assert_eq!(message(&d), "Remove the clip \"Snare\" from the session?");
-        e.execute("edit.select", &json!({"sources": [kick]})).unwrap();
+        e.execute("edit.select", &json!({"sources": [kick]}))
+            .unwrap();
         assert!(d.open_for_command(&e, "clip.clear"));
-        assert!(matches!(&d.open, Some(Dialog::ClearClips { clips, sources, .. }) if clips.is_empty() && *sources == vec![kick]));
-        assert_eq!(message(&d), "Remove the file \"Kick\" from the session? It is used by 3 clips on the timeline, which are removed too.");
+        assert!(
+            matches!(&d.open, Some(Dialog::ClearClips { clips, sources, .. }) if clips.is_empty() && *sources == vec![kick])
+        );
+        assert_eq!(
+            message(&d),
+            "Remove the file \"Kick\" from the session? It is used by 3 clips on the timeline, which are removed too."
+        );
         assert!(d.open_clear(&e, kick_clips.clone(), vec![kick]));
         assert_eq!(message(&d), "Remove 3 clips and 1 file from the session?");
         assert!(d.open_clear(&e, kick_clips, vec![kick, hats]));
-        assert_eq!(message(&d), "Remove 3 clips and 2 files from the session? \"Hats\" is used by a clip on the timeline, which is removed too.");
-        e.session_mut().sources.iter_mut().for_each(|f| f.unsaved = false);
+        assert_eq!(
+            message(&d),
+            "Remove 3 clips and 2 files from the session? \"Hats\" is used by a clip on the timeline, which is removed too."
+        );
+        e.session_mut()
+            .sources
+            .iter_mut()
+            .for_each(|f| f.unsaved = false);
         assert!(d.open_clear(&e, vec![], vec![kick, hats]));
         assert_eq!(
             message(&d),

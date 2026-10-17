@@ -94,8 +94,9 @@ fn game_movie_links(vfs: &Vfs) -> HashMap<String, (Option<String>, Option<String
         let Some(lists) = root.get("lists").and_then(serde_json::Value::as_array) else {
             continue;
         };
-        for values in
-            lists.iter().filter_map(|list| list.get("values").and_then(serde_json::Value::as_array))
+        for values in lists
+            .iter()
+            .filter_map(|list| list.get("values").and_then(serde_json::Value::as_array))
         {
             for row in values {
                 let Some(movie_path) = row.get("moviePath").and_then(serde_json::Value::as_str)
@@ -105,15 +106,19 @@ fn game_movie_links(vfs: &Vfs) -> HashMap<String, (Option<String>, Option<String
                 if !movie_path.ends_with(".usm") {
                     continue;
                 }
-                let music = row
-                    .get("bgmName")
-                    .map(|value| value.as_str().map_or_else(|| value.to_string(), str::to_owned));
+                let music = row.get("bgmName").map(|value| {
+                    value
+                        .as_str()
+                        .map_or_else(|| value.to_string(), str::to_owned)
+                });
                 let subtitles = row
                     .get("subtitleTextPath")
                     .and_then(serde_json::Value::as_str)
                     .filter(|path| !path.is_empty() && *path != "0xFFFFFFFF")
                     .map(str::to_owned);
-                links.entry(movie_path.to_owned()).or_insert((music, subtitles));
+                links
+                    .entry(movie_path.to_owned())
+                    .or_insert((music, subtitles));
             }
         }
     }
@@ -187,7 +192,10 @@ pub fn movie_catalog(vfs: &Vfs) -> MovieCatalog {
             movie
         })
         .collect::<Vec<_>>();
-    let mut sections = movies.iter().map(|movie| movie.section.clone()).collect::<Vec<_>>();
+    let mut sections = movies
+        .iter()
+        .map(|movie| movie.section.clone())
+        .collect::<Vec<_>>();
     sections.sort_unstable();
     sections.dedup();
     MovieCatalog { movies, sections }
@@ -216,7 +224,10 @@ pub fn web_video_stream(
         return Err("USM contains no video stream".to_owned());
     }
     if !movie.codec.lisible_par_navigateur() {
-        return Err(format!("Native codec {} has no browser decoder", movie.codec.nom()));
+        return Err(format!(
+            "Native codec {} has no browser decoder",
+            movie.codec.nom()
+        ));
     }
     movie
         .en_conteneur_web()
@@ -239,7 +250,10 @@ pub fn movie_audio_wav(
     }
     let track = crate::soundtrack::piste_de_film(vfs, usm::radical_de(path), movie.duree(), None)
         .ok_or_else(|| {
-        format!("{} has no container or external soundtrack", usm::radical_de(path))
+        format!(
+            "{} has no container or external soundtrack",
+            usm::radical_de(path)
+        )
     })?;
     crate::soundtrack::wav_de_la_cue(vfs, cache_dir, track.awb_id)
 }
@@ -277,7 +291,7 @@ pub fn metadata(original_name: &str, bytes: &[u8]) -> Result<String, String> {
         CodecVideo::Inconnu => Some("The native video codec is unresolved"),
         _ if info.entete.alpha != 0 => {
             Some("The native alpha track is not preserved by the web remuxer")
-        },
+        }
         _ => None,
     };
     serde_json::to_string(&serde_json::json!({
@@ -332,15 +346,18 @@ pub fn video_track(original_name: &str, bytes: &[u8]) -> Result<Vec<u8>, String>
         ),
         CodecVideo::Inconnu => {
             return Err("Cannot remux an unresolved native video codec".to_owned());
-        },
-        CodecVideo::H264 | CodecVideo::Vp9 => {},
+        }
+        CodecVideo::H264 | CodecVideo::Vp9 => {}
     }
     if movie.entete.alpha != 0 {
         return Err("Cannot discard the native alpha track during web remuxing".to_owned());
     }
     // The shared method selects mp4::muxer_h264_avec or webm::muxer_vp9 and preserves
     // its native frame-rate/display-size decisions. No codec interpretation lives here.
-    movie.en_conteneur_web().map(|container| container.octets).map_err(|error| error.to_string())
+    movie
+        .en_conteneur_web()
+        .map(|container| container.octets)
+        .map_err(|error| error.to_string())
 }
 
 pub fn audio_track(original_name: &str, bytes: &[u8], channel: u8) -> Result<Vec<u8>, String> {

@@ -203,7 +203,10 @@ fn fixture_item_0_app_category() {
 fn fixture_item_0_music_id() {
     let cfg = parse_music_app_config(&fixture_music_app());
     // MUSIC_APP_INFO_ITEM_0.var[1] = 1653231064 → 0x628A4DD8
-    assert_eq!(cfg.items[0].music_id, MUSIC_ID_0, "item[0].music_id = 0x628A4DD8");
+    assert_eq!(
+        cfg.items[0].music_id, MUSIC_ID_0,
+        "item[0].music_id = 0x628A4DD8"
+    );
 }
 
 #[test]
@@ -224,7 +227,10 @@ fn fixture_item_0_variant() {
 fn fixture_item_0_entry_id() {
     let cfg = parse_music_app_config(&fixture_music_app());
     // MUSIC_APP_INFO_ITEM_0.var[4] = 1169637250 → 0x45B73F82
-    assert_eq!(cfg.items[0].entry_id, ENTRY_ID_0, "item[0].entry_id = 0x45B73F82");
+    assert_eq!(
+        cfg.items[0].entry_id, ENTRY_ID_0,
+        "item[0].entry_id = 0x45B73F82"
+    );
 }
 
 #[test]
@@ -232,7 +238,10 @@ fn fixture_item_0_path_b64_present() {
     let cfg = parse_music_app_config(&fixture_music_app());
     // MUSIC_APP_INFO_ITEM_0.var[5] = String → has_path = true
     assert!(cfg.items[0].has_path(), "item[0].has_path = true");
-    assert_eq!(cfg.items[0].path_b64, "AAAAAA8FNbkZNtoAAQAyAAAnTHE=", "item[0].path_b64");
+    assert_eq!(
+        cfg.items[0].path_b64, "AAAAAA8FNbkZNtoAAQAyAAAnTHE=",
+        "item[0].path_b64"
+    );
 }
 
 #[test]
@@ -253,7 +262,10 @@ fn fixture_item_0_sort_index() {
 fn fixture_item_1_entry_id_et_track_no() {
     let cfg = parse_music_app_config(&fixture_music_app());
     // MUSIC_APP_INFO_ITEM_1.var[4] = 1695668893 → 0x6511DA9D, var[2] = 9
-    assert_eq!(cfg.items[1].entry_id, ENTRY_ID_1, "item[1].entry_id = 0x6511DA9D");
+    assert_eq!(
+        cfg.items[1].entry_id, ENTRY_ID_1,
+        "item[1].entry_id = 0x6511DA9D"
+    );
     assert_eq!(cfg.items[1].track_no, 9, "item[1].track_no = 9");
     assert_eq!(cfg.items[1].sort_index, 2, "item[1].sort_index = 2");
 }
@@ -265,7 +277,10 @@ fn fixture_item_2_path_absent() {
     assert_eq!(cfg.items[2].app_category, 2, "item[2].app_category = 2");
     assert!(!cfg.items[2].has_path(), "item[2].has_path = false");
     assert_eq!(cfg.items[2].path_b64, "", "item[2].path_b64 = vide");
-    assert_eq!(cfg.items[2].entry_id, ENTRY_ID_20, "item[2].entry_id = 0x345A43F7");
+    assert_eq!(
+        cfg.items[2].entry_id, ENTRY_ID_20,
+        "item[2].entry_id = 0x345A43F7"
+    );
     assert_eq!(cfg.items[2].sort_index, 21, "item[2].sort_index = 21");
 }
 
@@ -300,7 +315,11 @@ fn fixture_items_of_category() {
     let cat2 = cfg.items_of_category(2);
     assert_eq!(cat1.len(), 2, "2 items de catégorie 1 dans la fixture");
     assert_eq!(cat2.len(), 2, "2 items de catégorie 2 dans la fixture");
-    assert_eq!(cfg.items_of_category(3).len(), 0, "0 items de catégorie 3 dans la fixture");
+    assert_eq!(
+        cfg.items_of_category(3).len(),
+        0,
+        "0 items de catégorie 3 dans la fixture"
+    );
 }
 
 // ─── Tests sur le fichier réel (skip silencieux si absent) ────────────────────
@@ -342,16 +361,25 @@ fn real_file_item_0_champs() {
     // var[0] = 1 → app_category
     assert_eq!(cfg.items[0].app_category, 1, "item[0].app_category = 1");
     // var[1] = 1653231064 → music_id = 0x628A4DD8
-    assert_eq!(cfg.items[0].music_id, MUSIC_ID_0, "item[0].music_id = 0x628A4DD8");
+    assert_eq!(
+        cfg.items[0].music_id, MUSIC_ID_0,
+        "item[0].music_id = 0x628A4DD8"
+    );
     // var[2] = 2
     assert_eq!(cfg.items[0].track_no, 2, "item[0].track_no = 2");
     // var[3] = 0
     assert_eq!(cfg.items[0].variant, 0, "item[0].variant = 0");
     // var[4] = 1169637250 → entry_id = 0x45B73F82
-    assert_eq!(cfg.items[0].entry_id, ENTRY_ID_0, "item[0].entry_id = 0x45B73F82");
+    assert_eq!(
+        cfg.items[0].entry_id, ENTRY_ID_0,
+        "item[0].entry_id = 0x45B73F82"
+    );
     // var[5] = String présent
     assert!(cfg.items[0].has_path(), "item[0].has_path = true");
-    assert_eq!(cfg.items[0].path_b64, "AAAAAA8FNbkZNtoAAQAyAAAnTHE=", "item[0].path_b64");
+    assert_eq!(
+        cfg.items[0].path_b64, "AAAAAA8FNbkZNtoAAQAyAAAnTHE=",
+        "item[0].path_b64"
+    );
     // var[6] = 500
     assert_eq!(cfg.items[0].volume, 500, "item[0].volume = 500");
     // var[7] = 1
@@ -367,11 +395,17 @@ fn real_file_item_1_champs() {
 
     // MUSIC_APP_INFO_ITEM_1 (deuxième item du groupe 1)
     // var[1] = 1653231064 → même music_id que item_0
-    assert_eq!(cfg.items[1].music_id, MUSIC_ID_0, "item[1].music_id = 0x628A4DD8");
+    assert_eq!(
+        cfg.items[1].music_id, MUSIC_ID_0,
+        "item[1].music_id = 0x628A4DD8"
+    );
     // var[2] = 9 → track_no différent
     assert_eq!(cfg.items[1].track_no, 9, "item[1].track_no = 9");
     // var[4] = 1695668893 → entry_id = 0x6511DA9D
-    assert_eq!(cfg.items[1].entry_id, ENTRY_ID_1, "item[1].entry_id = 0x6511DA9D");
+    assert_eq!(
+        cfg.items[1].entry_id, ENTRY_ID_1,
+        "item[1].entry_id = 0x6511DA9D"
+    );
     // var[7] = 2
     assert_eq!(cfg.items[1].sort_index, 2, "item[1].sort_index = 2");
 }
@@ -387,9 +421,15 @@ fn real_file_item_20_path_absent() {
     // var[0] = 2 → app_category = 2
     assert_eq!(cfg.items[20].app_category, 2, "item[20].app_category = 2");
     // var[1] = 1009845833 → music_id = 0x3C310649
-    assert_eq!(cfg.items[20].music_id, MUSIC_ID_20, "item[20].music_id = 0x3C310649");
+    assert_eq!(
+        cfg.items[20].music_id, MUSIC_ID_20,
+        "item[20].music_id = 0x3C310649"
+    );
     // var[4] = 878330871 → entry_id = 0x345A43F7
-    assert_eq!(cfg.items[20].entry_id, ENTRY_ID_20, "item[20].entry_id = 0x345A43F7");
+    assert_eq!(
+        cfg.items[20].entry_id, ENTRY_ID_20,
+        "item[20].entry_id = 0x345A43F7"
+    );
     // var[5] = Int "0" → chemin absent
     assert!(!cfg.items[20].has_path(), "item[20].has_path = false");
     assert_eq!(cfg.items[20].path_b64, "", "item[20].path_b64 = vide");
@@ -422,9 +462,15 @@ fn real_file_item_52_groupe_3() {
     // var[0] = 3 → app_category = 3
     assert_eq!(cfg.items[52].app_category, 3, "item[52].app_category = 3");
     // var[1] = 22097913 → music_id = 0x01512FF9
-    assert_eq!(cfg.items[52].music_id, MUSIC_ID_52, "item[52].music_id = 0x01512FF9");
+    assert_eq!(
+        cfg.items[52].music_id, MUSIC_ID_52,
+        "item[52].music_id = 0x01512FF9"
+    );
     // var[4] = 154823239 → entry_id = 0x093A6A47
-    assert_eq!(cfg.items[52].entry_id, ENTRY_ID_52, "item[52].entry_id = 0x093A6A47");
+    assert_eq!(
+        cfg.items[52].entry_id, ENTRY_ID_52,
+        "item[52].entry_id = 0x093A6A47"
+    );
     // var[5] = Int "0" → chemin absent
     assert!(!cfg.items[52].has_path(), "item[52].has_path = false");
     // var[7] = 53
@@ -442,9 +488,15 @@ fn real_file_item_102_groupe_4() {
     // var[0] = 4 → app_category = 4
     assert_eq!(cfg.items[102].app_category, 4, "item[102].app_category = 4");
     // var[1] = 117412874 → music_id = 0x06FF940A
-    assert_eq!(cfg.items[102].music_id, MUSIC_ID_102, "item[102].music_id = 0x06FF940A");
+    assert_eq!(
+        cfg.items[102].music_id, MUSIC_ID_102,
+        "item[102].music_id = 0x06FF940A"
+    );
     // var[4] = 244634036 → entry_id = 0x0E94D1B4
-    assert_eq!(cfg.items[102].entry_id, ENTRY_ID_102, "item[102].entry_id = 0x0E94D1B4");
+    assert_eq!(
+        cfg.items[102].entry_id, ENTRY_ID_102,
+        "item[102].entry_id = 0x0E94D1B4"
+    );
     // var[7] = 103
     assert_eq!(cfg.items[102].sort_index, 103, "item[102].sort_index = 103");
 }
@@ -488,7 +540,10 @@ fn real_file_chemin_present_compte() {
     let avec_chemin = cfg.items.iter().filter(|it| it.has_path()).count();
     let sans_chemin = cfg.items.iter().filter(|it| !it.has_path()).count();
     assert_eq!(avec_chemin, 105, "105 items avec chemin audio");
-    assert_eq!(sans_chemin, 3, "3 items sans chemin audio (items 20, 21, 52)");
+    assert_eq!(
+        sans_chemin, 3,
+        "3 items sans chemin audio (items 20, 21, 52)"
+    );
 }
 
 #[test]
@@ -500,7 +555,12 @@ fn real_file_sort_index_sequentiel() {
 
     // Les sort_index doivent être 1..=108 dans l'ordre croissant
     for (i, item) in cfg.items.iter().enumerate() {
-        assert_eq!(item.sort_index, (i + 1) as i64, "sort_index[{i}] = {}", i + 1);
+        assert_eq!(
+            item.sort_index,
+            (i + 1) as i64,
+            "sort_index[{i}] = {}",
+            i + 1
+        );
     }
 }
 
@@ -535,7 +595,10 @@ fn real_file_find_by_entry_id() {
     let found = cfg.find_by_entry_id(ENTRY_ID_0);
     assert!(found.is_some(), "find_by_entry_id(0x45B73F82)");
     let it = found.unwrap();
-    assert_eq!(it.music_id, MUSIC_ID_0, "item trouvé: music_id = 0x628A4DD8");
+    assert_eq!(
+        it.music_id, MUSIC_ID_0,
+        "item trouvé: music_id = 0x628A4DD8"
+    );
     assert_eq!(it.sort_index, 1, "item trouvé: sort_index = 1");
 
     // Identifiant absent → None
@@ -557,5 +620,8 @@ fn real_file_variants_distribution() {
 
     // Le premier item avec variant=1 est MUSIC_APP_INFO_ITEM_21 (sort_index=22)
     let first_v1 = cfg.items.iter().find(|it| it.variant == 1).unwrap();
-    assert_eq!(first_v1.sort_index, 22, "premier item variant=1: sort_index = 22");
+    assert_eq!(
+        first_v1.sort_index, 22,
+        "premier item variant=1: sort_index = 22"
+    );
 }

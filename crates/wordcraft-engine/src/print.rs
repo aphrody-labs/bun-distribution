@@ -39,9 +39,14 @@ pub fn parse_page_range(spec: &str, total: usize) -> Result<Vec<usize>, String> 
             continue;
         }
         let page = |t: &str| -> Result<usize, String> {
-            let n: usize = t.parse().map_err(|_| format!("`{item}` isn't a page or a range like 2-4"))?;
+            let n: usize = t
+                .parse()
+                .map_err(|_| format!("`{item}` isn't a page or a range like 2-4"))?;
             if n == 0 || n > total {
-                return Err(format!("page {n} doesn't exist; the document has {total} page{}", if total == 1 { "" } else { "s" }));
+                return Err(format!(
+                    "page {n} doesn't exist; the document has {total} page{}",
+                    if total == 1 { "" } else { "s" }
+                ));
             }
             Ok(n)
         };
@@ -68,7 +73,12 @@ pub fn parse_page_range(spec: &str, total: usize) -> Result<Vec<usize>, String> 
     if !any {
         return Err("type the pages to print, like 1-3, 5".into());
     }
-    Ok(keep.iter().enumerate().filter(|(_, k)| **k).map(|(i, _)| i).collect())
+    Ok(keep
+        .iter()
+        .enumerate()
+        .filter(|(_, k)| **k)
+        .map(|(i, _)| i)
+        .collect())
 }
 
 /// What a print job holds: the pages (0-based, copies included, in print order).
@@ -89,30 +99,50 @@ pub struct PrintPlan {
 pub fn plan(v: &Value, total: usize, current: (usize, usize)) -> Result<PrintPlan, CmdError> {
     let bad = |m: String| CmdError::Params(m);
     let pages_text = p::str(v, "pages").filter(|t| !t.trim().is_empty());
-    let range = p::str(v, "range").unwrap_or(if pages_text.is_some() { "custom" } else { "all" });
+    let range = p::str(v, "range").unwrap_or(if pages_text.is_some() {
+        "custom"
+    } else {
+        "all"
+    });
     let last = total.saturating_sub(1);
     let mut pages: Vec<usize> = match range {
         "all" => (0..total).collect(),
         "current" => vec![current.0.min(last)],
-        "selection" => (current.0.min(last)..=current.1.min(last).max(current.0.min(last))).collect(),
+        "selection" => {
+            (current.0.min(last)..=current.1.min(last).max(current.0.min(last))).collect()
+        }
         "custom" => parse_page_range(pages_text.unwrap_or(""), total).map_err(bad)?,
-        other => return Err(bad(format!("unknown range `{other}`; use all, current, selection or custom"))),
+        other => {
+            return Err(bad(format!(
+                "unknown range `{other}`; use all, current, selection or custom"
+            )));
+        }
     };
     match p::str(v, "parity").unwrap_or("all") {
         "all" => {}
         // Page numbers are 1-based: the odd ones are indexes 0, 2, 4…
         "odd" => pages.retain(|i| i % 2 == 0),
         "even" => pages.retain(|i| i % 2 == 1),
-        other => return Err(bad(format!("unknown parity `{other}`; use all, odd or even"))),
+        other => {
+            return Err(bad(format!(
+                "unknown parity `{other}`; use all, odd or even"
+            )));
+        }
     }
     if pages.is_empty() {
         return Err(bad("no pages to print with these settings".into()));
     }
-    let copies = p::u64(v, "copies").unwrap_or(1).clamp(1, u64::from(MAX_COPIES)) as u32;
+    let copies = p::u64(v, "copies")
+        .unwrap_or(1)
+        .clamp(1, u64::from(MAX_COPIES)) as u32;
     let chosen = pages.len();
-    let total_out = chosen.checked_mul(copies as usize).filter(|n| *n <= MAX_PRINT_PAGES);
+    let total_out = chosen
+        .checked_mul(copies as usize)
+        .filter(|n| *n <= MAX_PRINT_PAGES);
     let Some(total_out) = total_out else {
-        return Err(bad(format!("{chosen} pages × {copies} copies is more than the {MAX_PRINT_PAGES} pages one print job can hold")));
+        return Err(bad(format!(
+            "{chosen} pages × {copies} copies is more than the {MAX_PRINT_PAGES} pages one print job can hold"
+        )));
     };
     let mut out = Vec::with_capacity(total_out);
     if p::bool(v, "collate").unwrap_or(true) {
@@ -124,7 +154,11 @@ pub fn plan(v: &Value, total: usize, current: (usize, usize)) -> Result<PrintPla
             out.extend(std::iter::repeat_n(pg, copies as usize));
         }
     }
-    Ok(PrintPlan { pages: out, chosen, copies })
+    Ok(PrintPlan {
+        pages: out,
+        chosen,
+        copies,
+    })
 }
 
 impl Session {
@@ -151,7 +185,8 @@ impl Session {
             comments: markup.comments,
             ..Default::default()
         };
-        let bytes = wordcraft_pdf::export_layout(&self.doc, &lay, &opts).map_err(|e| CmdError::Failed(e.to_string()))?;
+        let bytes = wordcraft_pdf::export_layout(&self.doc, &lay, &opts)
+            .map_err(|e| CmdError::Failed(e.to_string()))?;
         Ok((bytes, plan))
     }
 }
@@ -159,12 +194,18 @@ impl Session {
 /// `file.printPdf`: write the print job's PDF to `path` (no dialogs).
 pub(crate) fn print_pdf_to_file(s: &mut Session, v: &Value) -> Result<Value, CmdError> {
     let path = p::req_str(v, "path")?;
-    let path = if path.to_ascii_lowercase().ends_with(".pdf") { path.to_string() } else { format!("{path}.pdf") };
+    let path = if path.to_ascii_lowercase().ends_with(".pdf") {
+        path.to_string()
+    } else {
+        format!("{path}.pdf")
+    };
     let (bytes, plan) = s.print_pdf(v)?;
     // Through `io`, so an agent confined to an automation write root (#769) can't print elsewhere.
     #[cfg(not(target_arch = "wasm32"))]
     crate::io::write_file(&path, &bytes).map_err(CmdError::Failed)?;
-    Ok(json!({"path": path, "pages": plan.pages.len(), "chosen": plan.chosen, "copies": plan.copies, "bytes": bytes.len()}))
+    Ok(
+        json!({"path": path, "pages": plan.pages.len(), "chosen": plan.chosen, "copies": plan.copies, "bytes": bytes.len()}),
+    )
 }
 
 #[cfg(test)]
@@ -174,10 +215,26 @@ mod tests {
     #[test]
     fn ranges_parse_and_hostile_ones_are_errors() {
         assert_eq!(parse_page_range("1-3, 5", 6), Ok(vec![0, 1, 2, 4]));
-        assert_eq!(parse_page_range("5,1-2,2", 6), Ok(vec![0, 1, 4]), "document order, no repeats");
+        assert_eq!(
+            parse_page_range("5,1-2,2", 6),
+            Ok(vec![0, 1, 4]),
+            "document order, no repeats"
+        );
         assert_eq!(parse_page_range("4-", 6), Ok(vec![3, 4, 5]));
         assert_eq!(parse_page_range("-2", 6), Ok(vec![0, 1]));
-        for bad in ["", " , ", "0", "7", "3-1", "a", "1-2-3", "99999999999999999999999", "-", "1..3", &"1,".repeat(400)] {
+        for bad in [
+            "",
+            " , ",
+            "0",
+            "7",
+            "3-1",
+            "a",
+            "1-2-3",
+            "99999999999999999999999",
+            "-",
+            "1..3",
+            &"1,".repeat(400),
+        ] {
             assert!(parse_page_range(bad, 6).is_err(), "`{bad}` is refused");
         }
         assert!(parse_page_range("1", 0).is_err());
@@ -189,14 +246,26 @@ mod tests {
         assert_eq!(p(json!({})), Ok(vec![0, 1, 2, 3, 4, 5]));
         assert_eq!(p(json!({"range": "current"})), Ok(vec![2]));
         assert_eq!(p(json!({"range": "selection"})), Ok(vec![2, 3]));
-        assert_eq!(p(json!({"pages": "2-4", "copies": 2})), Ok(vec![1, 2, 3, 1, 2, 3]));
-        assert_eq!(p(json!({"pages": "2-3", "copies": 2, "collate": false})), Ok(vec![1, 1, 2, 2]));
+        assert_eq!(
+            p(json!({"pages": "2-4", "copies": 2})),
+            Ok(vec![1, 2, 3, 1, 2, 3])
+        );
+        assert_eq!(
+            p(json!({"pages": "2-3", "copies": 2, "collate": false})),
+            Ok(vec![1, 1, 2, 2])
+        );
         assert_eq!(p(json!({"parity": "even"})), Ok(vec![1, 3, 5]));
         assert!(p(json!({"range": "custom"})).is_err(), "custom needs pages");
         assert!(p(json!({"range": "everything"})).is_err());
-        assert!(p(json!({"range": "current", "parity": "even"})).is_err(), "page 3 is odd: nothing left");
+        assert!(
+            p(json!({"range": "current", "parity": "even"})).is_err(),
+            "page 3 is odd: nothing left"
+        );
         // Hostile copies are clamped; a job that would be too big is refused, not allocated.
-        assert_eq!(p(json!({"range": "current", "copies": 1e12})).map(|v| v.len()), Ok(MAX_COPIES as usize));
+        assert_eq!(
+            p(json!({"range": "current", "copies": 1e12})).map(|v| v.len()),
+            Ok(MAX_COPIES as usize)
+        );
         assert!(plan(&json!({"copies": 999}), 600, (0, 0)).is_err());
         assert_eq!(p(json!({"copies": -5, "range": "current"})), Ok(vec![2]));
     }
@@ -206,7 +275,9 @@ mod tests {
         let mut s = Session::new(crate::sample::sample_document());
         let pages = s.export_layout().pages.len();
         let (all, _) = s.print_pdf(&json!({})).unwrap();
-        let (one, plan) = s.print_pdf(&json!({"range": "current", "copies": 2})).unwrap();
+        let (one, plan) = s
+            .print_pdf(&json!({"range": "current", "copies": 2}))
+            .unwrap();
         assert!(all.starts_with(b"%PDF") && one.starts_with(b"%PDF"));
         assert_eq!(plan.pages.len(), 2);
         if pages > 2 {
@@ -232,12 +303,22 @@ mod tests {
         let inside = base.join("out/job").to_string_lossy().into_owned();
         let outside = base.join("outside/job").to_string_lossy().into_owned();
         confine(roots.as_ref(), || {
-            let e = s.run("file.printPdf", &json!({"path": outside})).unwrap_err().to_string();
+            let e = s
+                .run("file.printPdf", &json!({"path": outside}))
+                .unwrap_err()
+                .to_string();
             assert!(e.contains("outside the write root"), "{e}");
             s.run("file.printPdf", &json!({"path": inside})).unwrap();
         });
-        assert!(!base.join("outside/job.pdf").exists(), "nothing printed outside the root");
-        assert!(std::fs::read(base.join("out/job.pdf")).unwrap().starts_with(b"%PDF"));
+        assert!(
+            !base.join("outside/job.pdf").exists(),
+            "nothing printed outside the root"
+        );
+        assert!(
+            std::fs::read(base.join("out/job.pdf"))
+                .unwrap()
+                .starts_with(b"%PDF")
+        );
         // Without roots nothing is checked: the behaviour is unchanged.
         s.run("file.printPdf", &json!({"path": outside})).unwrap();
         assert!(base.join("outside/job.pdf").is_file());

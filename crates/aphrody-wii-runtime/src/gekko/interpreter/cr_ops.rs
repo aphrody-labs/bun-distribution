@@ -13,7 +13,10 @@ pub fn mcrxr<const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, instr: Instructio
         .with_eq(xer.carry())
         .with_so(false);
     ctx.gekko.cr.set_field(instr.crfd(), field);
-    ctx.gekko.spr.xer = xer.with_summary_overflow(false).with_overflow(false).with_carry(false);
+    ctx.gekko.spr.xer = xer
+        .with_summary_overflow(false)
+        .with_overflow(false)
+        .with_carry(false);
 }
 
 #[inline(always)]
@@ -32,14 +35,14 @@ pub fn cr_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
                 }
             }
             ctx.gekko.cr = ConditionRegister::from(cr);
-        },
+        }
         OP_MFCR => {
             ctx.gekko.write_gpr(instr.rd(), ctx.gekko.cr.raw());
-        },
+        }
         OP_MCRF => {
             let src = ctx.gekko.cr.get_field(instr.crfs());
             ctx.gekko.cr.set_field(instr.crfd(), src);
-        },
+        }
         // CR bit operations
         _ => {
             let a = ctx.gekko.cr.get_bit(instr.crba());
@@ -56,6 +59,6 @@ pub fn cr_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
                 _ => todo!("CR instruction with OP = {OP:#x}"),
             };
             ctx.gekko.cr.set_bit(instr.crbd(), result);
-        },
+        }
     }
 }

@@ -11,7 +11,10 @@ static COUNTER: AtomicU64 = AtomicU64::new(0);
 /// systems). Hidden, and unique per process and call.
 fn temp_path(path: &Path) -> PathBuf {
     let dir = parent_dir(path);
-    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "project".into());
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "project".into());
     let n = COUNTER.fetch_add(1, Ordering::Relaxed);
     dir.join(format!(".{name}.{}-{n}.tmp", std::process::id()))
 }
@@ -72,7 +75,10 @@ mod tests {
         atomic_write(&p, b"one").unwrap();
         atomic_write(&p, b"two").unwrap();
         assert_eq!(fs::read(&p).unwrap(), b"two");
-        let names: Vec<_> = fs::read_dir(&d).unwrap().map(|e| e.unwrap().file_name()).collect();
+        let names: Vec<_> = fs::read_dir(&d)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
         assert_eq!(names.len(), 1, "{names:?}");
         fs::remove_dir_all(&d).unwrap();
     }
@@ -87,7 +93,16 @@ mod tests {
         fs::create_dir_all(dir_target.join("x")).unwrap();
         assert!(atomic_write(&dir_target, b"bad").is_err());
         assert_eq!(fs::read(&p).unwrap(), b"good");
-        let tmp_left = fs::read_dir(&d).unwrap().filter(|e| e.as_ref().unwrap().file_name().to_string_lossy().ends_with(".tmp")).count();
+        let tmp_left = fs::read_dir(&d)
+            .unwrap()
+            .filter(|e| {
+                e.as_ref()
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .ends_with(".tmp")
+            })
+            .count();
         assert_eq!(tmp_left, 0);
         fs::remove_dir_all(&d).unwrap();
     }

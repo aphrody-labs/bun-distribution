@@ -90,8 +90,10 @@ async fn run(args: Args) -> Result<()> {
     init_tracing(&args.log)?;
 
     let backend = crate::Backend::from_str_loose(&args.backend);
-    let cache_path =
-        args.cache.clone().unwrap_or_else(|| PathBuf::from(".aphrody-translate-cache.json"));
+    let cache_path = args
+        .cache
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(".aphrody-translate-cache.json"));
 
     // Mode 1 : Traduction directe d'un texte unitaire (one-shot)
     if let Some(ref text) = args.text {
@@ -99,10 +101,18 @@ async fn run(args: Args) -> Result<()> {
             Translator::new(cache_path, args.contact_email.clone())?.with_backend(backend);
 
         let res = if args.source == "ja" || Translator::is_japanese(text) {
-            translator.translate_with_lang(text, "ja", &args.target).await?
+            translator
+                .translate_with_lang(text, "ja", &args.target)
+                .await?
         } else {
-            let src = if args.source == "auto" { "en" } else { &args.source };
-            translator.translate_with_lang(text, src, &args.target).await?
+            let src = if args.source == "auto" {
+                "en"
+            } else {
+                &args.source
+            };
+            translator
+                .translate_with_lang(text, src, &args.target)
+                .await?
         };
         println!("{res}");
         translator.persist().ok();
@@ -117,7 +127,12 @@ async fn run(args: Args) -> Result<()> {
     ));
 
     let langs = parse_lang_filter(&args.languages);
-    info!(?root, ?langs, in_place = args.in_place, "aphrody-translate start");
+    info!(
+        ?root,
+        ?langs,
+        in_place = args.in_place,
+        "aphrody-translate start"
+    );
 
     let files = walk_project(&root, &langs);
     info!(count = files.len(), "files queued");
@@ -131,7 +146,7 @@ async fn run(args: Args) -> Result<()> {
             Err(e) => {
                 warn!(?file, error = %e, "read failure, skipping");
                 continue;
-            },
+            }
         };
         let lang = Lang::from_path(&file);
         let comments = extract(&original, lang);
@@ -147,7 +162,7 @@ async fn run(args: Args) -> Result<()> {
                 Action::Drop => {
                     new_source.replace_range(c.start..c.end, "");
                     continue;
-                },
+                }
                 Action::Scrub => ai_patterns::scrub(&c.body),
                 Action::Keep => c.body.clone(),
             };
@@ -156,7 +171,11 @@ async fn run(args: Args) -> Result<()> {
                 body_clean.clone()
             } else {
                 let t = translator.lock().await.translate(&body_clean).await?;
-                if t.trim().is_empty() { body_clean.clone() } else { t }
+                if t.trim().is_empty() {
+                    body_clean.clone()
+                } else {
+                    t
+                }
             };
 
             let final_body = aphrodify::aphrodify(&translated);
@@ -245,10 +264,12 @@ fn is_french(text: &str) -> bool {
     if accents {
         return true;
     }
-    let hits = [" le ", " la ", " les ", " de ", " du ", " des ", " et ", " est "]
-        .iter()
-        .filter(|w| lower.contains(*w))
-        .count();
+    let hits = [
+        " le ", " la ", " les ", " de ", " du ", " des ", " et ", " est ",
+    ]
+    .iter()
+    .filter(|w| lower.contains(*w))
+    .count();
     hits >= 2
 }
 
@@ -270,20 +291,23 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return error.exit_code();
-        },
+        }
     };
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("aphrody-translate: runtime: {error}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run(args)) {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("Error: {error:?}");
             1
-        },
+        }
     }
 }

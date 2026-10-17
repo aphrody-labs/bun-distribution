@@ -7,11 +7,14 @@ use crate::generate::generate_mesh::providers::artcraft::request_common::send_ar
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftHunyuan3d2p0RequestState {
-  pub request: OmniGenMeshCostAndGenerateRequest,
+    pub request: OmniGenMeshCostAndGenerateRequest,
 }
 
 impl ArtcraftHunyuan3d2p0RequestState {
-  pub async fn send(&self, client: &RouterArtcraftClient) -> Result<GenerateMeshResponse, ArtcraftRouterError> {
-    send_artcraft_omni_mesh_request(&self.request, client).await
-  }
+    pub async fn send(
+        &self,
+        client: &RouterArtcraftClient,
+    ) -> Result<GenerateMeshResponse, ArtcraftRouterError> {
+        send_artcraft_omni_mesh_request(&self.request, client).await
+    }
 }

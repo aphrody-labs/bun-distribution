@@ -6,9 +6,13 @@
 
 use exr::meta::attribute::{AttributeValue, Text};
 use exr::prelude::{
-    AnyChannel, AnyChannels, Blocks, Compression, Encoding, FlatSamples, ImageAttributes, IntegerBounds, Layer, LayerAttributes, LineOrder, WritableImage,
+    AnyChannel, AnyChannels, Blocks, Compression, Encoding, FlatSamples, ImageAttributes,
+    IntegerBounds, Layer, LayerAttributes, LineOrder, WritableImage,
 };
-use photocraft_codecs::{Limits, cryptomatte_id, cryptomatte_key, cryptomatte_layers, cryptomatte_preview_color, decode_cryptomatte};
+use photocraft_codecs::{
+    Limits, cryptomatte_id, cryptomatte_key, cryptomatte_layers, cryptomatte_preview_color,
+    decode_cryptomatte,
+};
 
 // -------------------------------------------------------------------------------------------
 // The official hash test vectors (cryptomatte_utilities_tests.py, CryptoHashing).
@@ -29,16 +33,29 @@ fn mm3_hash_matches_the_official_vectors() {
     ];
     for (name, want) in vectors {
         let got = cryptomatte_id(name);
-        assert_eq!(got.to_bits(), (*want as f32).to_bits(), "ID bits of {name:?}");
+        assert_eq!(
+            got.to_bits(),
+            (*want as f32).to_bits(),
+            "ID bits of {name:?}"
+        );
     }
 }
 
 #[test]
 fn every_id_is_a_finite_normal_float() {
     // The exponent fix keeps IDs away from denormals, infinity and NaN, whatever the name.
-    for name in ["", "a", "hello", "CryptoAsset", "very long object name with ünïcödé"] {
+    for name in [
+        "",
+        "a",
+        "hello",
+        "CryptoAsset",
+        "very long object name with ünïcödé",
+    ] {
         let id = cryptomatte_id(name);
-        assert!(id.is_finite() && id.abs() >= f32::MIN_POSITIVE, "{name:?} -> {id}");
+        assert!(
+            id.is_finite() && id.abs() >= f32::MIN_POSITIVE,
+            "{name:?} -> {id}"
+        );
     }
 }
 
@@ -55,7 +72,14 @@ fn key_is_seven_hex_digits_of_the_id() {
 fn preview_color_shifts_the_id_bits() {
     let id = cryptomatte_id("cube");
     let [r, g, b] = cryptomatte_preview_color(id);
-    assert_eq!((r, g, b), (0.0, f32::from_bits(id.to_bits() << 8), f32::from_bits(id.to_bits() << 16)));
+    assert_eq!(
+        (r, g, b),
+        (
+            0.0,
+            f32::from_bits(id.to_bits() << 8),
+            f32::from_bits(id.to_bits() << 16)
+        )
+    );
 }
 
 // -------------------------------------------------------------------------------------------
@@ -74,26 +98,61 @@ fn cryptomatte_file(name: &str) -> Vec<u8> {
     // Stream 00: cube everywhere at 0.6; stream 01: sphere only in the first column.
     let s0: Vec<f32> = vec![cube; w * h];
     let s0c: Vec<f32> = vec![0.6; w * h];
-    let s1: Vec<f32> = (0..w * h).map(|p| if p % w == 0 { sphere } else { 0.0 }).collect();
-    let s1c: Vec<f32> = (0..w * h).map(|p| if p % w == 0 { 0.25 } else { 0.0 }).collect();
+    let s1: Vec<f32> = (0..w * h)
+        .map(|p| if p % w == 0 { sphere } else { 0.0 })
+        .collect();
+    let s1c: Vec<f32> = (0..w * h)
+        .map(|p| if p % w == 0 { 0.25 } else { 0.0 })
+        .collect();
     let mk = |n: String, v: Vec<f32>| AnyChannel::new(n.as_str(), FlatSamples::F32(v));
-    let list = vec![mk(format!("{name}00.red"), s0), mk(format!("{name}00.green"), s0c), mk(format!("{name}01.red"), s1), mk(format!("{name}01.green"), s1c)];
+    let list = vec![
+        mk(format!("{name}00.red"), s0),
+        mk(format!("{name}00.green"), s0c),
+        mk(format!("{name}01.red"), s1),
+        mk(format!("{name}01.green"), s1c),
+    ];
     let key = cryptomatte_key("CryptoAsset"); // attributes always use the canonical name
-    let manifest = format!("{{\"cube\":\"{:08x}\",\"sphere\":\"{:08x}\"}}", cube.to_bits(), sphere.to_bits());
+    let manifest = format!(
+        "{{\"cube\":\"{:08x}\",\"sphere\":\"{:08x}\"}}",
+        cube.to_bits(),
+        sphere.to_bits()
+    );
     let mut attrs = LayerAttributes::named(name);
-    attrs.other.insert(text(&format!("cryptomatte/{key}/name")), AttributeValue::Text(text("CryptoAsset")));
-    attrs.other.insert(text(&format!("cryptomatte/{key}/hash")), AttributeValue::Text(text(&key)));
-    attrs.other.insert(text(&format!("cryptomatte/{key}/conversion")), AttributeValue::Text(text("uint32_to_float32")));
-    attrs.other.insert(text(&format!("cryptomatte/{key}/manifest")), AttributeValue::Text(text(&manifest)));
+    attrs.other.insert(
+        text(&format!("cryptomatte/{key}/name")),
+        AttributeValue::Text(text("CryptoAsset")),
+    );
+    attrs.other.insert(
+        text(&format!("cryptomatte/{key}/hash")),
+        AttributeValue::Text(text(&key)),
+    );
+    attrs.other.insert(
+        text(&format!("cryptomatte/{key}/conversion")),
+        AttributeValue::Text(text("uint32_to_float32")),
+    );
+    attrs.other.insert(
+        text(&format!("cryptomatte/{key}/manifest")),
+        AttributeValue::Text(text(&manifest)),
+    );
     let layer = Layer::new(
         (w, h),
         attrs,
-        Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+        Encoding {
+            compression: Compression::Uncompressed,
+            blocks: Blocks::ScanLines,
+            line_order: LineOrder::Increasing,
+        },
         AnyChannels::sort(list.into_iter().collect()),
     );
-    let image = exr::image::Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer]);
+    let image = exr::image::Image::from_layers(
+        ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+        vec![layer],
+    );
     let mut out = std::io::Cursor::new(Vec::new());
-    image.write().to_buffered(&mut out).expect("synthetic cryptomatte exr writes");
+    image
+        .write()
+        .to_buffered(&mut out)
+        .expect("synthetic cryptomatte exr writes");
     out.into_inner()
 }
 
@@ -102,19 +161,35 @@ fn cryptomatte_file_short_suffix() -> Vec<u8> {
     let (w, h) = (4usize, 4usize);
     let id = cryptomatte_id("cube");
     let mk = |n: String, v: Vec<f32>| AnyChannel::new(n.as_str(), FlatSamples::F32(v));
-    let list = vec![mk("crypto_asset00.r".into(), vec![id; w * h]), mk("crypto_asset00.g".into(), vec![1.0; w * h])];
+    let list = vec![
+        mk("crypto_asset00.r".into(), vec![id; w * h]),
+        mk("crypto_asset00.g".into(), vec![1.0; w * h]),
+    ];
     let key = cryptomatte_key("CryptoAsset");
     let mut attrs = LayerAttributes::named("crypto_asset");
-    attrs.other.insert(text(&format!("cryptomatte/{key}/name")), AttributeValue::Text(text("CryptoAsset")));
+    attrs.other.insert(
+        text(&format!("cryptomatte/{key}/name")),
+        AttributeValue::Text(text("CryptoAsset")),
+    );
     let layer = Layer::new(
         (w, h),
         attrs,
-        Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+        Encoding {
+            compression: Compression::Uncompressed,
+            blocks: Blocks::ScanLines,
+            line_order: LineOrder::Increasing,
+        },
         AnyChannels::sort(list.into_iter().collect()),
     );
-    let image = exr::image::Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer]);
+    let image = exr::image::Image::from_layers(
+        ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+        vec![layer],
+    );
     let mut out = std::io::Cursor::new(Vec::new());
-    image.write().to_buffered(&mut out).expect("synthetic cryptomatte exr writes");
+    image
+        .write()
+        .to_buffered(&mut out)
+        .expect("synthetic cryptomatte exr writes");
     out.into_inner()
 }
 
@@ -170,20 +245,43 @@ fn short_channel_suffixes_decode_too() {
 fn cryptomatte_file_rgba(suffixes: [&str; 4]) -> Vec<u8> {
     let (w, h) = (4usize, 4usize);
     let [r, g, b, a] = suffixes;
-    let mk = |s: &str, v: f32| AnyChannel::new(format!("crypto00.{s}").as_str(), FlatSamples::F32(vec![v; w * h]));
-    let list = vec![mk(r, cryptomatte_id("cube")), mk(g, 0.6), mk(b, cryptomatte_id("sphere")), mk(a, 0.4)];
+    let mk = |s: &str, v: f32| {
+        AnyChannel::new(
+            format!("crypto00.{s}").as_str(),
+            FlatSamples::F32(vec![v; w * h]),
+        )
+    };
+    let list = vec![
+        mk(r, cryptomatte_id("cube")),
+        mk(g, 0.6),
+        mk(b, cryptomatte_id("sphere")),
+        mk(a, 0.4),
+    ];
     let key = cryptomatte_key("crypto");
     let mut attrs = LayerAttributes::named("crypto");
-    attrs.other.insert(text(&format!("cryptomatte/{key}/name")), AttributeValue::Text(text("crypto")));
+    attrs.other.insert(
+        text(&format!("cryptomatte/{key}/name")),
+        AttributeValue::Text(text("crypto")),
+    );
     let layer = Layer::new(
         (w, h),
         attrs,
-        Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+        Encoding {
+            compression: Compression::Uncompressed,
+            blocks: Blocks::ScanLines,
+            line_order: LineOrder::Increasing,
+        },
         AnyChannels::sort(list.into_iter().collect()),
     );
-    let image = exr::image::Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer]);
+    let image = exr::image::Image::from_layers(
+        ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+        vec![layer],
+    );
     let mut out = std::io::Cursor::new(Vec::new());
-    image.write().to_buffered(&mut out).expect("synthetic cryptomatte exr writes");
+    image
+        .write()
+        .to_buffered(&mut out)
+        .expect("synthetic cryptomatte exr writes");
     out.into_inner()
 }
 
@@ -206,7 +304,11 @@ fn blue_alpha_rank_of_a_set_decodes_too() {
 #[test]
 fn uppercase_channel_suffixes_decode_both_ranks() {
     // Blender and others write `.R/.G/.B/.A`; suffixes match regardless of case.
-    for suffixes in [["R", "G", "B", "A"], ["Red", "Green", "Blue", "Alpha"], ["r", "g", "b", "a"]] {
+    for suffixes in [
+        ["R", "G", "B", "A"],
+        ["Red", "Green", "Blue", "Alpha"],
+        ["r", "g", "b", "a"],
+    ] {
         let bytes = cryptomatte_file_rgba(suffixes);
         let buf = decode_cryptomatte(&bytes, "crypto", &Limits::default()).unwrap();
         let (cube, sphere) = (cryptomatte_id("cube"), cryptomatte_id("sphere"));
@@ -230,13 +332,27 @@ fn plain_exr_has_no_cryptomatte_layers() {
     let layer = Layer::new(
         (w, h),
         LayerAttributes::named("beauty"),
-        Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+        Encoding {
+            compression: Compression::Uncompressed,
+            blocks: Blocks::ScanLines,
+            line_order: LineOrder::Increasing,
+        },
         AnyChannels::sort(list.into_iter().collect()),
     );
-    let image = exr::image::Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer]);
+    let image = exr::image::Image::from_layers(
+        ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+        vec![layer],
+    );
     let mut out = std::io::Cursor::new(Vec::new());
-    image.write().to_buffered(&mut out).expect("synthetic exr writes");
-    assert!(cryptomatte_layers(&out.into_inner(), &Limits::default()).unwrap().is_empty());
+    image
+        .write()
+        .to_buffered(&mut out)
+        .expect("synthetic exr writes");
+    assert!(
+        cryptomatte_layers(&out.into_inner(), &Limits::default())
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -244,13 +360,19 @@ fn a_broken_manifest_degrades_to_empty_not_a_panic() {
     let mut bytes = cryptomatte_file("crypto_asset");
     // Corrupt the embedded manifest text (keep the attribute length: overwrite with '#').
     let needle = b"{\"cube\":";
-    let at = bytes.windows(needle.len()).position(|w| w == needle).expect("manifest json");
+    let at = bytes
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .expect("manifest json");
     for b in &mut bytes[at..at + 8] {
         *b = b'#';
     }
     let found = cryptomatte_layers(&bytes, &Limits::default()).unwrap();
     assert_eq!(found.len(), 1);
-    assert!(found[0].manifest.is_empty(), "a broken manifest yields no entries");
+    assert!(
+        found[0].manifest.is_empty(),
+        "a broken manifest yields no entries"
+    );
     // The samples still decode.
     let buf = decode_cryptomatte(&bytes, "CryptoAsset", &Limits::default()).unwrap();
     assert_eq!(buf.at(1, 0).len(), 1);
@@ -266,6 +388,13 @@ fn hostile_input_never_panics() {
         let _ = decode_cryptomatte(cut, "nothing", &Limits::default());
     }
     // Tiny limits refuse before allocating.
-    let e = cryptomatte_layers(&bytes, &Limits { max_alloc: 8, ..Limits::default() }).unwrap_err();
+    let e = cryptomatte_layers(
+        &bytes,
+        &Limits {
+            max_alloc: 8,
+            ..Limits::default()
+        },
+    )
+    .unwrap_err();
     assert!(e.to_string().contains("exceed"), "{e}");
 }

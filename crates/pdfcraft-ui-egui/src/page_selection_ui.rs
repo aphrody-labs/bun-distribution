@@ -22,8 +22,15 @@ pub(crate) fn parse(text: &str, count: usize) -> Result<Vec<usize>, PrintError> 
     let mut pages = BTreeSet::new();
     let mut budget = 1_000_000usize;
     let number = |token: &str| {
-        let n = token.trim().parse::<usize>().map_err(|_| PrintError::NotAPage(token.into()))?;
-        if n == 0 || n > count { Err(PrintError::OutOfRange(n, count)) } else { Ok(n - 1) }
+        let n = token
+            .trim()
+            .parse::<usize>()
+            .map_err(|_| PrintError::NotAPage(token.into()))?;
+        if n == 0 || n > count {
+            Err(PrintError::OutOfRange(n, count))
+        } else {
+            Ok(n - 1)
+        }
     };
     for part in text.split([',', ';']).map(str::trim) {
         let (a, b) = if let Some((a, b)) = part.split_once('-') {
@@ -34,7 +41,9 @@ pub(crate) fn parse(text: &str, count: usize) -> Result<Vec<usize>, PrintError> 
         };
         let (a, b) = (a.min(b), a.max(b));
         let size = b.saturating_sub(a).saturating_add(1);
-        budget = budget.checked_sub(size).ok_or_else(|| PrintError::NotAPage(part.into()))?;
+        budget = budget
+            .checked_sub(size)
+            .ok_or_else(|| PrintError::NotAPage(part.into()))?;
         pages.extend(a..=b);
     }
     Ok(pages.into_iter().collect())
@@ -52,13 +61,22 @@ fn formatted(pages: &BTreeSet<usize>) -> String {
         }
         let first = first.saturating_add(1);
         let last = last.saturating_add(1);
-        parts.push(if first == last { first.to_string() } else { format!("{first}-{last}") });
+        parts.push(if first == last {
+            first.to_string()
+        } else {
+            format!("{first}-{last}")
+        });
     }
     parts.join(", ")
 }
 
 impl PageSelectionInput {
-    pub(crate) fn show(&mut self, ui: &mut egui::Ui, selected: &BTreeSet<usize>, count: usize) -> Option<Vec<usize>> {
+    pub(crate) fn show(
+        &mut self,
+        ui: &mut egui::Ui,
+        selected: &BTreeSet<usize>,
+        count: usize,
+    ) -> Option<Vec<usize>> {
         if self.selection != *selected {
             self.selection.clone_from(selected);
             self.text = formatted(selected);
@@ -78,8 +96,16 @@ impl PageSelectionInput {
         ui.horizontal(|ui| {
             let label = tl!("Selected pages");
             ui.label(label);
-            let field = ui.add(egui::TextEdit::singleline(&mut self.text).id(id).desired_width(300.0).char_limit(16_384).hint_text("1, 12, 16-18"));
-            field.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::TextEdit, ui.is_enabled(), label));
+            let field = ui.add(
+                egui::TextEdit::singleline(&mut self.text)
+                    .id(id)
+                    .desired_width(300.0)
+                    .char_limit(16_384)
+                    .hint_text("1, 12, 16-18"),
+            );
+            field.widget_info(|| {
+                egui::WidgetInfo::labeled(egui::WidgetType::TextEdit, ui.is_enabled(), label)
+            });
             let apply = ui.button(tl!("Apply")).clicked();
             commit = ui.is_enabled() && !cancel && (field.lost_focus() || apply);
         });
@@ -112,10 +138,21 @@ mod tests {
     fn selection_ranges_are_sorted_unique_and_bounded() {
         let pages = parse("1,12,16-18,89,92,93,97,99", 100).unwrap();
         assert_eq!(pages, [0, 11, 15, 16, 17, 88, 91, 92, 96, 98]);
-        assert_eq!(formatted(&pages.into_iter().collect()), "1, 12, 16-18, 89, 92-93, 97, 99");
+        assert_eq!(
+            formatted(&pages.into_iter().collect()),
+            "1, 12, 16-18, 89, 92-93, 97, 99"
+        );
         assert_eq!(parse("3-1,2", 3).unwrap(), [0, 1, 2]);
         assert!(parse("  ", 0).unwrap().is_empty());
-        for text in ["0", "101", "1,", "x", "1--3", "18446744073709551616", "1-100000000"] {
+        for text in [
+            "0",
+            "101",
+            "1,",
+            "x",
+            "1--3",
+            "18446744073709551616",
+            "1-100000000",
+        ] {
             assert!(parse(text, 100).is_err(), "{text}");
         }
         assert!(parse(&"1,".repeat(10_000), 100).is_err());

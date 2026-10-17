@@ -55,10 +55,20 @@ struct List<T: Keyed> {
     get_mut: fn(&mut Document) -> &mut Vec<T>,
 }
 
-const STYLES: List<Style> =
-    List { whole: DocProp::Styles, order: DocProp::StyleOrder, entry: Entry::Style, get: |d| &d.styles, get_mut: |d| &mut d.styles };
-const COMMENTS: List<Comment> =
-    List { whole: DocProp::Comments, order: DocProp::CommentOrder, entry: Entry::Comment, get: |d| &d.comments, get_mut: |d| &mut d.comments };
+const STYLES: List<Style> = List {
+    whole: DocProp::Styles,
+    order: DocProp::StyleOrder,
+    entry: Entry::Style,
+    get: |d| &d.styles,
+    get_mut: |d| &mut d.styles,
+};
+const COMMENTS: List<Comment> = List {
+    whole: DocProp::Comments,
+    order: DocProp::CommentOrder,
+    entry: Entry::Comment,
+    get: |d| &d.comments,
+    get_mut: |d| &mut d.comments,
+};
 const COLLECTIONS: List<Collection> = List {
     whole: DocProp::Collections,
     order: DocProp::CollectionOrder,
@@ -85,27 +95,42 @@ impl<T: Keyed> List<T> {
             v.iter().all(|t| seen.insert(t.key()))
         };
         if !unique(la) || !unique(lb) {
-            out.push(Change::SetDoc { prop: self.whole, value: Json::of(lb)? });
+            out.push(Change::SetDoc {
+                prop: self.whole,
+                value: Json::of(lb)?,
+            });
             return Ok(());
         }
         let old: BTreeMap<T::Key, &T> = la.iter().map(|t| (t.key(), t)).collect();
         let new: BTreeSet<T::Key> = lb.iter().map(T::key).collect();
         for t in lb {
             if old.get(&t.key()).is_none_or(|o| *o != t) {
-                out.push(Change::Put { entry: (self.entry)(t.key()), value: Json::of(t)? });
+                out.push(Change::Put {
+                    entry: (self.entry)(t.key()),
+                    value: Json::of(t)?,
+                });
             }
         }
         for t in la {
             if !new.contains(&t.key()) {
-                out.push(Change::Remove { entry: (self.entry)(t.key()) });
+                out.push(Change::Remove {
+                    entry: (self.entry)(t.key()),
+                });
             }
         }
         // The order the puts and removes leave on `a` (survivors in place, new ones appended).
         let kb: Vec<T::Key> = lb.iter().map(T::key).collect();
-        let left: Vec<T::Key> =
-            la.iter().map(T::key).filter(|k| new.contains(k)).chain(kb.iter().filter(|k| !old.contains_key(*k)).cloned()).collect();
+        let left: Vec<T::Key> = la
+            .iter()
+            .map(T::key)
+            .filter(|k| new.contains(k))
+            .chain(kb.iter().filter(|k| !old.contains_key(*k)).cloned())
+            .collect();
         if left != kb {
-            out.push(Change::SetDoc { prop: self.order, value: Json::of(&kb)? });
+            out.push(Change::SetDoc {
+                prop: self.order,
+                value: Json::of(&kb)?,
+            });
         }
         Ok(())
     }
@@ -113,7 +138,9 @@ impl<T: Keyed> List<T> {
     fn put(&self, doc: &mut Document, key: T::Key, value: &Json) -> Result<(), Error> {
         let t: T = value.read("entry")?;
         if t.key() != key {
-            return Err(Error::Invalid("an entry's id must match the entry it is put at".into()));
+            return Err(Error::Invalid(
+                "an entry's id must match the entry it is put at".into(),
+            ));
         }
         let list = (self.get_mut)(doc);
         match list.iter_mut().find(|e| e.key() == key) {
@@ -168,13 +195,23 @@ struct ImageValue {
 }
 
 fn image_json(img: &ImageData) -> Result<Json, Error> {
-    Json::of(&ImageValue { width: img.width, height: img.height, bytes: base64::engine::general_purpose::STANDARD.encode(img.bytes.as_slice()) })
+    Json::of(&ImageValue {
+        width: img.width,
+        height: img.height,
+        bytes: base64::engine::general_purpose::STANDARD.encode(img.bytes.as_slice()),
+    })
 }
 
 fn image_of(value: &Json) -> Result<ImageData, Error> {
     let v: ImageValue = value.read("image")?;
-    let bytes = base64::engine::general_purpose::STANDARD.decode(v.bytes.as_bytes()).map_err(|e| Error::Invalid(format!("image: {e}")))?;
-    Ok(ImageData { bytes: Arc::new(bytes), width: v.width, height: v.height })
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(v.bytes.as_bytes())
+        .map_err(|e| Error::Invalid(format!("image: {e}")))?;
+    Ok(ImageData {
+        bytes: Arc::new(bytes),
+        width: v.width,
+        height: v.height,
+    })
 }
 
 macro_rules! doc_scalars {
@@ -226,7 +263,10 @@ fn diff_map<K: Ord + Clone, V>(
 ) -> Result<(), Error> {
     for (k, v) in b {
         if a.get(k).is_none_or(|o| !same(o, v)) {
-            out.push(Change::Put { entry: entry(k), value: json(v)? });
+            out.push(Change::Put {
+                entry: entry(k),
+                value: json(v)?,
+            });
         }
     }
     for k in a.keys() {
@@ -244,11 +284,22 @@ pub(crate) fn diff(a: &Document, b: &Document, out: &mut Vec<Change>) -> Result<
     COMMENTS.diff(a, b, out)?;
     COLLECTIONS.diff(a, b, out)?;
     VARIABLES.diff(a, b, out)?;
-    diff_map(&a.dev_snapshots, &b.dev_snapshots, |x, y| Arc::ptr_eq(x, y) || x == y, |k| Entry::DevSnapshot(*k), Json::of, out)?;
+    diff_map(
+        &a.dev_snapshots,
+        &b.dev_snapshots,
+        |x, y| Arc::ptr_eq(x, y) || x == y,
+        |k| Entry::DevSnapshot(*k),
+        Json::of,
+        out,
+    )?;
     diff_map(
         &a.images,
         &b.images,
-        |x, y| x.width == y.width && x.height == y.height && (Arc::ptr_eq(&x.bytes, &y.bytes) || x.bytes == y.bytes),
+        |x, y| {
+            x.width == y.width
+                && x.height == y.height
+                && (Arc::ptr_eq(&x.bytes, &y.bytes) || x.bytes == y.bytes)
+        },
         |k| Entry::Image(k.clone()),
         image_json,
         out,
@@ -332,8 +383,18 @@ pub(crate) fn entry_value(doc: &Document, entry: &Entry) -> Result<Option<Json>,
     let value = match entry {
         Entry::Style(k) => doc.styles.iter().find(|s| s.id == *k).map(Json::of),
         Entry::Comment(k) => doc.comments.iter().find(|c| c.id == *k).map(Json::of),
-        Entry::Collection(k) => doc.variables.collections.iter().find(|c| c.id == *k).map(Json::of),
-        Entry::Variable(k) => doc.variables.variables.iter().find(|v| v.id == *k).map(Json::of),
+        Entry::Collection(k) => doc
+            .variables
+            .collections
+            .iter()
+            .find(|c| c.id == *k)
+            .map(Json::of),
+        Entry::Variable(k) => doc
+            .variables
+            .variables
+            .iter()
+            .find(|v| v.id == *k)
+            .map(Json::of),
         Entry::DevSnapshot(k) => doc.dev_snapshots.get(k).map(|s| Json::of(s.as_ref())),
         Entry::Image(k) => doc.images.get(k).map(image_json),
     };
@@ -355,7 +416,10 @@ pub(crate) fn has(doc: &Document, entry: &Entry) -> bool {
 /// The entries of list `family` in `doc`.
 pub(crate) fn entries(doc: &Document, family: Family) -> Vec<Entry> {
     fn keys<T: Keyed>(list: &List<T>, doc: &Document) -> Vec<Entry> {
-        (list.get)(doc).iter().map(|t| (list.entry)(t.key())).collect()
+        (list.get)(doc)
+            .iter()
+            .map(|t| (list.entry)(t.key()))
+            .collect()
     }
     match family {
         Family::Styles => keys(&STYLES, doc),
@@ -380,11 +444,15 @@ pub(crate) fn current(doc: &Document, change: &Change) -> Result<Option<Change>,
                     Family::Variables => DocProp::Variables,
                 },
             };
-            Ok(Some(Change::SetDoc { prop, value: get(doc, prop)? }))
+            Ok(Some(Change::SetDoc {
+                prop,
+                value: get(doc, prop)?,
+            }))
         }
-        Change::Put { entry, .. } | Change::Remove { entry } => {
-            Ok(crate::change::Target::Entry(entry.clone()).write(entry_value(doc, entry)?.as_ref()))
-        }
+        Change::Put { entry, .. } | Change::Remove { entry } => Ok(crate::change::Target::Entry(
+            entry.clone(),
+        )
+        .write(entry_value(doc, entry)?.as_ref())),
         _ => Ok(None),
     }
 }

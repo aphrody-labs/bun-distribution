@@ -12,11 +12,11 @@ use std::sync::Arc;
 use super::application_manager_interface::IApplicationManagerInterface;
 use super::content_management_interface::IContentManagementInterface;
 use super::document_interface::IDocumentInterface;
-use super::ecommerce_interface::IECommerceInterface;
 use super::download_task_interface::IDownloadTaskInterface;
 use super::dynamic_rights_interface::IDynamicRightsInterface;
-use super::read_only_application_record_interface::IReadOnlyApplicationRecordInterface;
+use super::ecommerce_interface::IECommerceInterface;
 use super::read_only_application_control_data_interface::IReadOnlyApplicationControlDataInterface;
+use super::read_only_application_record_interface::IReadOnlyApplicationRecordInterface;
 use crate::hle::result::{ResultCode, RESULT_SUCCESS};
 use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
 use crate::hle::service::ipc_helpers::ResponseBuilder;
@@ -123,7 +123,10 @@ impl IServiceGetterInterface {
         IDynamicRightsInterface::new()
     }
 
-    fn get_dynamic_rights_interface_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_dynamic_rights_interface_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let interface = Arc::new(service.get_dynamic_rights_interface());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
@@ -132,7 +135,9 @@ impl IServiceGetterInterface {
     }
 
     /// GetReadOnlyApplicationControlDataInterface (cmd 7989).
-    pub fn get_read_only_application_control_data_interface(&self) -> IReadOnlyApplicationControlDataInterface {
+    pub fn get_read_only_application_control_data_interface(
+        &self,
+    ) -> IReadOnlyApplicationControlDataInterface {
         log::debug!(
             "IServiceGetterInterface::get_read_only_application_control_data_interface called"
         );
@@ -140,12 +145,17 @@ impl IServiceGetterInterface {
     }
 
     /// GetReadOnlyApplicationRecordInterface (cmd 7991).
-    pub fn get_read_only_application_record_interface(&self) -> IReadOnlyApplicationRecordInterface {
+    pub fn get_read_only_application_record_interface(
+        &self,
+    ) -> IReadOnlyApplicationRecordInterface {
         log::debug!("IServiceGetterInterface::get_read_only_application_record_interface called");
         IReadOnlyApplicationRecordInterface::new(self.system)
     }
 
-    fn get_read_only_application_control_data_interface_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_read_only_application_control_data_interface_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let interface = Arc::new(service.get_read_only_application_control_data_interface());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
@@ -153,7 +163,10 @@ impl IServiceGetterInterface {
         rb.push_ipc_interface(interface);
     }
 
-    fn get_read_only_application_record_interface_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_read_only_application_record_interface_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let interface = Arc::new(service.get_read_only_application_record_interface());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
@@ -215,7 +228,10 @@ impl IServiceGetterInterface {
         IDownloadTaskInterface::new()
     }
 
-    fn get_download_task_interface_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_download_task_interface_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let interface = Arc::new(service.get_download_task_interface());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
@@ -280,8 +296,14 @@ mod tests {
         ctx.set_session_request_manager(Arc::new(Mutex::new(SessionRequestManager::new())));
         service.handlers()[&7999].handler_callback.unwrap()(&service, &mut ctx);
         assert_eq!(ctx.outgoing_move_objects.len(), 1);
-        let KAutoObjectRef::ObjectId(id) = ctx.outgoing_move_objects[0] else { panic!("missing child session") };
-        let server = process.lock().unwrap().get_server_session_by_object_id(id).unwrap();
+        let KAutoObjectRef::ObjectId(id) = ctx.outgoing_move_objects[0] else {
+            panic!("missing child session")
+        };
+        let server = process
+            .lock()
+            .unwrap()
+            .get_server_session_by_object_id(id)
+            .unwrap();
         let manager = server.lock().unwrap().get_manager().unwrap().clone();
         let child = manager.lock().unwrap().session_handler().unwrap().clone();
         let document = child.as_any().downcast_ref::<IDocumentInterface>().unwrap();
@@ -294,14 +316,26 @@ mod tests {
             document.handlers()[&command].handler_callback.unwrap()(document, &mut ctx);
             let offset = ctx.get_data_payload_offset() as usize;
             assert_eq!(&ctx.command_buffer()[offset..offset + 2], &[0, 0]);
-            assert_eq!(ctx.write_size as usize, offset + if command == 23 { 2 } else { 4 });
+            assert_eq!(
+                ctx.write_size as usize,
+                offset + if command == 23 { 2 } else { 4 }
+            );
             if command == 92 {
                 let words = ctx.command_buffer();
-                assert_eq!(u64::from(words[offset + 2]) | (u64::from(words[offset + 3]) << 32), application_id);
+                assert_eq!(
+                    u64::from(words[offset + 2]) | (u64::from(words[offset + 3]) << 32),
+                    application_id
+                );
             }
         }
-        assert_eq!(std::mem::size_of::<super::super::ns_types::ContentPath>(), 16);
-        assert_eq!(std::mem::offset_of!(super::super::ns_types::ContentPath, program_id), 8);
+        assert_eq!(
+            std::mem::size_of::<super::super::ns_types::ContentPath>(),
+            16
+        );
+        assert_eq!(
+            std::mem::offset_of!(super::super::ns_types::ContentPath, program_id),
+            8
+        );
     }
 
     #[test]
@@ -386,7 +420,9 @@ mod tests {
 }
 
 impl SessionRequestHandler for IServiceGetterInterface {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, ctx)
     }

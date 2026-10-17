@@ -37,8 +37,11 @@ fn item_node(idx: usize, item_id: i64, item_type: i64, weight: i64) -> Value {
 
 /// Construit la paire BEG plate `[TABLE_n, ITEM_LIST_BEG_n]` pour une table.
 fn table_pair(t_idx: usize, table_id: i64, items: &[(i64, i64, i64)]) -> Vec<Value> {
-    let item_nodes: Vec<Value> =
-        items.iter().enumerate().map(|(i, (id, ty, w))| item_node(i, *id, *ty, *w)).collect();
+    let item_nodes: Vec<Value> = items
+        .iter()
+        .enumerate()
+        .map(|(i, (id, ty, w))| item_node(i, *id, *ty, *w))
+        .collect();
     vec![
         json!({
             "name": format!("NFC_LOTTERY_INFO_TABLE_{t_idx}"),
@@ -127,7 +130,11 @@ fn fixture_nfc() -> Value {
 #[test]
 fn nfc_trois_loteries() {
     let lotteries = parse_nfc_lottery_config(&fixture_nfc());
-    assert_eq!(lotteries.len(), 3, "3 loteries (NFC_LOTTERY_INFO_LIST_BEG var=3)");
+    assert_eq!(
+        lotteries.len(),
+        3,
+        "3 loteries (NFC_LOTTERY_INFO_LIST_BEG var=3)"
+    );
     assert_eq!(lotteries[0].lottery_id, 1, "lotteryId[0] = 1");
     assert_eq!(lotteries[1].lottery_id, 2, "lotteryId[1] = 2");
     assert_eq!(lotteries[2].lottery_id, 3, "lotteryId[2] = 3");
@@ -139,7 +146,11 @@ fn nfc_loterie1_table0_tableid() {
     let l1 = &lotteries[0];
     assert_eq!(l1.tables.len(), 1, "fixture : 1 table représentative");
     // tableId -878640993 & 0xFFFFFFFF = 0xCBA1009F
-    assert_eq!(l1.tables[0].table_id, HashId(0xCBA1009F), "tableId = 0xCBA1009F");
+    assert_eq!(
+        l1.tables[0].table_id,
+        HashId(0xCBA1009F),
+        "tableId = 0xCBA1009F"
+    );
     assert_eq!(l1.tables[0].table_id.to_hex(), "0xCBA1009F");
 }
 
@@ -169,7 +180,11 @@ fn nfc_loterie1_table0_15_items() {
 fn nfc_loterie1_table0_poids_total_100() {
     let lotteries = parse_nfc_lottery_config(&fixture_nfc());
     // 32+8+32+7 + 2×10 + 1 = 100.
-    assert_eq!(lotteries[0].tables[0].total_weight(), 100, "somme des poids = 100");
+    assert_eq!(
+        lotteries[0].tables[0].total_weight(),
+        100,
+        "somme des poids = 100"
+    );
 }
 
 #[test]

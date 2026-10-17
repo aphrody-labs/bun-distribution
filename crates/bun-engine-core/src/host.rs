@@ -3,12 +3,12 @@
 //! The caller constructs the core with its renderer, audio and firmware
 //! backends. This library neither creates a GPU device nor reads wall time.
 
+use crate::bevy::app::{App, Update};
+use crate::bevy::ecs::prelude::{NonSendMut, Res, ResMut, Resource};
 use aphrody_dust_core::{
     cpu::interpreter::Interpreter,
     emu::{Emu, RunOutput, input::Keys},
 };
-use crate::bevy::app::{App, Update};
-use crate::bevy::ecs::prelude::{NonSendMut, Res, ResMut, Resource};
 
 /// Input sampled immediately before an explicit emulator tick.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Resource)]
@@ -20,7 +20,10 @@ pub struct DsInput {
 
 impl Default for DsInput {
     fn default() -> Self {
-        Self { keys: Keys::empty(), touch: None }
+        Self {
+            keys: Keys::empty(),
+            touch: None,
+        }
     }
 }
 
@@ -115,11 +118,20 @@ impl DsHost {
 
     /// Mutate host backends or save storage between execution ticks.
     pub fn emu_mut(&mut self) -> &mut Emu<Interpreter> {
-        &mut self.app.world_mut().non_send_mut::<DsSession>().into_inner().emu
+        &mut self
+            .app
+            .world_mut()
+            .non_send_mut::<DsSession>()
+            .into_inner()
+            .emu
     }
 
     /// Returns the owned core without replacing its renderer or audio backend.
     pub fn into_emu(mut self) -> Emu<Interpreter> {
-        self.app.world_mut().remove_non_send::<DsSession>().expect("DS session exists").emu
+        self.app
+            .world_mut()
+            .remove_non_send::<DsSession>()
+            .expect("DS session exists")
+            .emu
     }
 }

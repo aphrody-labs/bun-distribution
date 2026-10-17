@@ -16,7 +16,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Insert Paste" => "Inserir Colagem",
         "Cut (⌘X)" => "Recortar (⌘X)",
         "Copy (⌘C)" => "Copiar (⌘C)",
-        "Format Painter (double-click to keep it on)" => "Pincel de Formatação (clique duas vezes para mantê-lo ativo)",
+        "Format Painter (double-click to keep it on)" => {
+            "Pincel de Formatação (clique duas vezes para mantê-lo ativo)"
+        }
         "Bold (⌘B)" => "Negrito (⌘B)",
         "Italic (⌘I)" => "Itálico (⌘I)",
         "Underline (⌘U)" => "Sublinhado (⌘U)",
@@ -114,7 +116,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Symbol" => "Símbolo",
         "Sparklines" => "Minigráficos",
         "Checkbox" => "Caixa de Seleção",
-        "Insert checkboxes in the selected cells" => "Inserir caixas de seleção nas células selecionadas",
+        "Insert checkboxes in the selected cells" => {
+            "Inserir caixas de seleção nas células selecionadas"
+        }
         "Header & Footer" => "Cabeçalho e Rodapé",
         "Draw with ink" => "Desenhar com Tinta",
         "Eraser" => "Borracha",
@@ -273,7 +277,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "Editar",
         "Point" => "Apontar",
         "Calculate" => "Calcular",
-        "Select destination and press Enter or choose Paste" => "Selecione o destino e pressione Enter ou escolha Colar",
+        "Select destination and press Enter or choose Paste" => {
+            "Selecione o destino e pressione Enter ou escolha Colar"
+        }
         "General" => "Geral",
         "Number" => "Número",
         "Currency" => "Moeda",
@@ -386,7 +392,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
             "Um arquivo CSV, página da Web ou PDF é uma cópia: a pasta de trabalho mantém o próprio arquivo."
         }
-        "Save the workbook under another name or in another folder." => "Salve a pasta de trabalho com outro nome ou em outra pasta.",
+        "Save the workbook under another name or in another folder." => {
+            "Salve a pasta de trabalho com outro nome ou em outra pasta."
+        }
         "Print Active Sheets" => "Imprimir planilhas ativas",
         "Print Entire Workbook" => "Imprimir toda a pasta de trabalho",
         "Fit Sheet on One Page" => "Ajustar planilha em uma página",
@@ -396,20 +404,28 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "Página anterior",
         "Next page" => "Próxima página",
         "Create PDF" => "Criar PDF",
-        "Save the sheet as a PDF document that keeps its page layout." => "Salve a planilha como um documento PDF que mantém o layout da página.",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "Salve a planilha como um documento PDF que mantém o layout da página."
+        }
         "Change File Type" => "Alterar tipo de arquivo",
         "CSV (Comma delimited)" => "CSV (separado por vírgulas)",
-        "Save the active sheet as comma-separated text." => "Salve a planilha ativa como texto separado por vírgulas.",
+        "Save the active sheet as comma-separated text." => {
+            "Salve a planilha ativa como texto separado por vírgulas."
+        }
         "Web Page (.html)" => "Página da Web (.html)",
         "Save the workbook as a web page." => "Salve a pasta de trabalho como uma página da Web.",
         "Options|General" => "Geral",
         "Options|Save" => "Salvar",
         "Show formula bar" => "Mostrar barra de fórmulas",
         "Enable AutoComplete for cell values" => "Habilitar AutoConclusão para valores de célula",
-        "Save .xlsx workbooks automatically after every change" => "Salvar pastas de trabalho .xlsx automaticamente após cada alteração",
+        "Save .xlsx workbooks automatically after every change" => {
+            "Salvar pastas de trabalho .xlsx automaticamente após cada alteração"
+        }
         "Workbook calculation" => "Cálculo da pasta de trabalho",
         "Enable iterative calculation" => "Habilitar cálculo iterativo",
-        "Calculation settings are saved with the workbook." => "As configurações de cálculo são salvas com a pasta de trabalho.",
+        "Calculation settings are saved with the workbook." => {
+            "As configurações de cálculo são salvas com a pasta de trabalho."
+        }
         "OK" => "OK",
         "Cancel" => "Cancelar",
         "Don't Save" => "Não Salvar",
@@ -421,7 +437,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Gradebook" => "Boletim de Notas",
         "this workbook" => "esta pasta de trabalho",
         "This workbook" => "Esta pasta de trabalho",
-        "Do you want to save the changes you made to {title}?" => "Deseja salvar as alterações feitas em {title}?",
+        "Do you want to save the changes you made to {title}?" => {
+            "Deseja salvar as alterações feitas em {title}?"
+        }
         "Save a copy as .{format}" => "Salvar uma cópia como .{format}",
         "Select a chart first." => "Selecione um gráfico primeiro.",
         "Text Box" => "Caixa de Texto",
@@ -489,7 +507,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Sheets: {sheets}" => "Planilhas: {sheets}",
         "Password (optional):" => "Senha (opcional):",
         "Password:" => "Senha:",
-        "Allow all users of this sheet to:" => "Permitir que todos os usuários desta planilha possam:",
+        "Allow all users of this sheet to:" => {
+            "Permitir que todos os usuários desta planilha possam:"
+        }
         "Format cells" => "Formatar células",
         "Format columns" => "Formatar colunas",
         "Format rows" => "Formatar linhas",
@@ -499,7 +519,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         " (password, unlocked)" => " (senha, desbloqueado)",
         " (password)" => " (senha)",
         "No ranges yet." => "Nenhum intervalo ainda.",
-        "Ranges that stay editable when the sheet is protected:" => "Intervalos que continuam editáveis quando a planilha está protegida:",
+        "Ranges that stay editable when the sheet is protected:" => {
+            "Intervalos que continuam editáveis quando a planilha está protegida:"
+        }
         "Action" => "Ação",
         "Modify" => "Modificar",
         "Unlock with password" => "Desbloquear com senha",
@@ -544,7 +566,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Start a conversation:" => "Iniciar uma conversa:",
         "Note:" => "Nota:",
         "Display:" => "Texto para exibição:",
-        "Link to (web address, e-mail or Sheet!A1):" => "Vincular a (endereço da Web, e-mail ou Planilha!A1):",
+        "Link to (web address, e-mail or Sheet!A1):" => {
+            "Vincular a (endereço da Web, e-mail ou Planilha!A1):"
+        }
         "ScreenTip:" => "Dica de tela:",
         "Data Range:" => "Intervalo de dados:",
         "Location Range:" => "Intervalo de local:",
@@ -565,11 +589,17 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Destination:" => "Destino:",
         "My data has headers" => "Meus dados contêm cabeçalhos",
         "Columns (blank = all, e.g. A,C):" => "Colunas (em branco = todas, p. ex. A,C):",
-        "Timeline range (blank: first column of the selection):" => "Intervalo da linha do tempo (em branco: primeira coluna da seleção):",
-        "Values range (blank: second column of the selection):" => "Intervalo de valores (em branco: segunda coluna da seleção):",
+        "Timeline range (blank: first column of the selection):" => {
+            "Intervalo da linha do tempo (em branco: primeira coluna da seleção):"
+        }
+        "Values range (blank: second column of the selection):" => {
+            "Intervalo de valores (em branco: segunda coluna da seleção):"
+        }
         "Confidence interval" => "Intervalo de confiança",
         "Confidence level (%):" => "Nível de confiança (%):",
-        "Seasonality (auto, 0 for none, or a season length):" => "Sazonalidade (automática, 0 para nenhuma ou a duração de um período):",
+        "Seasonality (auto, 0 for none, or a season length):" => {
+            "Sazonalidade (automática, 0 para nenhuma ou a duração de um período):"
+        }
         "Fill missing points using" => "Preencher pontos ausentes usando",
         "Interpolation" => "Interpolação",
         "Zeros" => "Zeros",
@@ -632,9 +662,13 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Last month" => "Mês passado",
         "This month" => "Este mês",
         "Next month" => "Próximo mês",
-        "Format values where this formula is true:" => "Formatar valores em que esta fórmula é verdadeira:",
+        "Format values where this formula is true:" => {
+            "Formatar valores em que esta fórmula é verdadeira:"
+        }
         "with" => "com",
-        "Light Red Fill with Dark Red Text" => "Preenchimento Vermelho Claro e Texto Vermelho Escuro",
+        "Light Red Fill with Dark Red Text" => {
+            "Preenchimento Vermelho Claro e Texto Vermelho Escuro"
+        }
         "Yellow Fill with Dark Yellow Text" => "Preenchimento Amarelo e Texto Amarelo Escuro",
         "Green Fill with Dark Green Text" => "Preenchimento Verde e Texto Verde Escuro",
         "Light Red Fill" => "Preenchimento Vermelho Claro",
@@ -655,14 +689,20 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "No picture selected" => "Nenhuma imagem selecionada",
         "Picture file path (PNG or JPEG):" => "Caminho do arquivo de imagem (PNG ou JPEG):",
         "Description (optional):" => "Descrição (opcional):",
-        "Fits inside the selected cell and moves with its content." => "Ajusta-se dentro da célula selecionada e move-se com o conteúdo dela.",
-        "Choose a PNG or JPEG no larger than 16 MB." => "Escolha um PNG ou JPEG de no máximo 16 MB.",
+        "Fits inside the selected cell and moves with its content." => {
+            "Ajusta-se dentro da célula selecionada e move-se com o conteúdo dela."
+        }
+        "Choose a PNG or JPEG no larger than 16 MB." => {
+            "Escolha um PNG ou JPEG de no máximo 16 MB."
+        }
         "About" => "Sobre",
         "Contributors" => "Colaboradores",
         "Models" => "Modelos",
         "Version {version}" => "Versão {version}",
         "Join the ArtCraft Discord" => "Participe do Discord da ArtCraft",
-        "This workbook has no scripts or macros." => "Esta pasta de trabalho não tem scripts nem macros.",
+        "This workbook has no scripts or macros." => {
+            "Esta pasta de trabalho não tem scripts nem macros."
+        }
         "(unnamed)" => "(sem nome)",
         "— VBA project (preserved, not run)" => "— Projeto VBA (preservado, não executado)",
         "— 1 step" => "— 1 etapa",
@@ -778,9 +818,13 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Keep" => "Manter",
         "Remove" => "Remover",
         "Horizontal (Category) Axis Labels:" => "Rótulos do Eixo Horizontal (Categorias):",
-        "There are no conditional formatting rules on this sheet." => "Não há regras de formatação condicional nesta planilha.",
+        "There are no conditional formatting rules on this sheet." => {
+            "Não há regras de formatação condicional nesta planilha."
+        }
         "applies to" => "aplica-se a",
-        "Type a command, e.g. freeze, chart, bold…" => "Digite um comando, p. ex. congelar, gráfico, negrito…",
+        "Type a command, e.g. freeze, chart, bold…" => {
+            "Digite um comando, p. ex. congelar, gráfico, negrito…"
+        }
         "Set cell:" => "Definir célula:",
         "To value:" => "Para valor:",
         "By changing cell:" => "Alternando célula:",
@@ -796,8 +840,12 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Rank and Percentile" => "Ordem e percentil",
         "Regression" => "Regressão",
         "t-Test: Paired Two Sample for Means" => "Teste t: duas amostras em par para médias",
-        "t-Test: Two-Sample Assuming Equal Variances" => "Teste t: duas amostras presumindo variâncias equivalentes",
-        "t-Test: Two-Sample Assuming Unequal Variances" => "Teste t: duas amostras presumindo variâncias diferentes",
+        "t-Test: Two-Sample Assuming Equal Variances" => {
+            "Teste t: duas amostras presumindo variâncias equivalentes"
+        }
+        "t-Test: Two-Sample Assuming Unequal Variances" => {
+            "Teste t: duas amostras presumindo variâncias diferentes"
+        }
         "Output options" => "Opções de saída",
         "Output Range:" => "Intervalo de saída:",
         "New Worksheet Ply:" => "Nova planilha:",
@@ -807,10 +855,14 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Variable 1 Range:" => "Intervalo da variável 1:",
         "Variable 2 Range:" => "Intervalo da variável 2:",
         "Summary statistics" => "Resumo estatístico",
-        "Confidence Level for Mean (%), blank for none:" => "Nível de confiabilidade para a média (%), em branco para nenhum:",
+        "Confidence Level for Mean (%), blank for none:" => {
+            "Nível de confiabilidade para a média (%), em branco para nenhum:"
+        }
         "Kth Largest (blank for none):" => "K-ésimo maior (em branco para nenhum):",
         "Kth Smallest (blank for none):" => "K-ésimo menor (em branco para nenhum):",
-        "Bin Range (blank for automatic bins):" => "Intervalo do bloco (em branco para blocos automáticos):",
+        "Bin Range (blank for automatic bins):" => {
+            "Intervalo do bloco (em branco para blocos automáticos):"
+        }
         "Pareto (sorted histogram)" => "Pareto (histograma classificado)",
         "Cumulative Percentage" => "Porcentagem cumulativa",
         "Alpha:" => "Alfa:",
@@ -836,7 +888,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Solve" => "Resolver",
         "Keep Solver Solution" => "Manter Solução do Solver",
         "Restore Original Values" => "Restaurar Valores Originais",
-        "The spelling check is complete for the entire sheet." => "A verificação ortográfica da planilha inteira foi concluída.",
+        "The spelling check is complete for the entire sheet." => {
+            "A verificação ortográfica da planilha inteira foi concluída."
+        }
         "Not in Dictionary ({cell}):" => "Não consta no dicionário ({cell}):",
         "Suggestions:" => "Sugestões:",
         "(No suggestions)" => "(Nenhuma sugestão)",
@@ -872,21 +926,27 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Down" => "Para Baixo",
         "Edit chart title" => "Editar título do gráfico",
         "Erase ink strokes" => "Apagar traços de tinta",
-        "Every command run in this session (replayable)" => "Todos os comandos executados nesta sessão (podem ser repetidos)",
+        "Every command run in this session (replayable)" => {
+            "Todos os comandos executados nesta sessão (podem ser repetidos)"
+        }
         "Expand formula bar" => "Expandir barra de fórmulas",
         "Filter (⌘⇧F)" => "Filtro (⌘⇧F)",
         "Filter by Selected Cell's Value" => "Filtrar pelo Valor da Célula Selecionada",
         "Find & Select" => "Localizar e Selecionar",
         "Flash Fill (⌘E)" => "Preenchimento Relâmpago (⌘E)",
         "Forecast Sheet" => "Planilha de Previsão",
-        "Forecast end (date or number; blank: a third of the history):" => "Fim da previsão (data ou número; em branco: um terço do histórico):",
+        "Forecast end (date or number; blank: a third of the history):" => {
+            "Fim da previsão (data ou número; em branco: um terço do histórico):"
+        }
         "Format Chart pane" => "Painel Formatar Gráfico",
         "Format as Table" => "Formatar como Tabela",
         "Hide" => "Ocultar",
         "Hide Sheet" => "Ocultar Planilha",
         "Hierarchy & more" => "Hierarquia e mais",
         "Highlighter" => "Marca-texto",
-        "How agents drive GridCraft (MCP / control channel)" => "Como os agentes controlam o GridCraft (MCP / canal de controle)",
+        "How agents drive GridCraft (MCP / control channel)" => {
+            "Como os agentes controlam o GridCraft (MCP / canal de controle)"
+        }
         "Import a text or CSV file" => "Importar um arquivo de texto ou CSV",
         "Insert Function" => "Inserir Função",
         "Insert Function (⇧F3)" => "Inserir Função (⇧F3)",
@@ -894,12 +954,16 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Insert Sheet" => "Inserir Planilha",
         "Insert Slicer" => "Inserir Segmentação de Dados",
         "Insert a picture" => "Inserir uma imagem",
-        "Insert a slicer to filter a table" => "Inserir uma segmentação de dados para filtrar uma tabela",
+        "Insert a slicer to filter a table" => {
+            "Inserir uma segmentação de dados para filtrar uma tabela"
+        }
         "Insert an icon" => "Inserir um ícone",
         "Insert…" => "Inserir…",
         "Line or Area" => "Linha ou Área",
         "Link…" => "Link…",
-        "Macros and scripts in this workbook (Alt+F8)" => "Macros e scripts nesta pasta de trabalho (Alt+F8)",
+        "Macros and scripts in this workbook (Alt+F8)" => {
+            "Macros e scripts nesta pasta de trabalho (Alt+F8)"
+        }
         "Middle Align" => "Alinhar no Meio",
         "More commands" => "Mais comandos",
         "Move or Copy Sheet…" => "Mover ou Copiar Planilha…",
@@ -931,13 +995,17 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Table (⌘T)" => "Tabela (⌘T)",
         "Table Styles" => "Estilos de Tabela",
         "Text to Columns" => "Texto para Colunas",
-        "The output range already holds data. Replace it with the report?" => "O intervalo de saída já contém dados. Substituí-los pelo relatório?",
+        "The output range already holds data. Replace it with the report?" => {
+            "O intervalo de saída já contém dados. Substituí-los pelo relatório?"
+        }
         "Top Align" => "Alinhar em Cima",
         "Undo (⌘Z)" => "Desfazer (⌘Z)",
         "Undo list" => "Lista de desfazer",
         "Unhide Sheet…" => "Reexibir Planilha…",
         "Up" => "Para Cima",
-        "Version, contributors and the AI models that helped" => "Versão, colaboradores e os modelos de IA que ajudaram",
+        "Version, contributors and the AI models that helped" => {
+            "Versão, colaboradores e os modelos de IA que ajudaram"
+        }
         "What-If Analysis" => "Teste de Hipóteses",
         "Zoom In" => "Ampliar",
         "Zoom Out" => "Reduzir",

@@ -14,4 +14,9 @@ pub struct UploadedVideoToken(pub String);
 
 impl_string_token!(UploadedVideoToken);
 impl_mysql_token_from_row!(UploadedVideoToken);
-impl_crockford_generator!(UploadedVideoToken, 32usize, TokenPrefix::UploadedVideo, CrockfordLower);
+impl_crockford_generator!(
+    UploadedVideoToken,
+    32usize,
+    TokenPrefix::UploadedVideo,
+    CrockfordLower
+);

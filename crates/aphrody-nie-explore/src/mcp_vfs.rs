@@ -32,9 +32,15 @@ fn decode_kind(path: &str) -> &'static str {
     let lower = path.to_ascii_lowercase();
     if lower.ends_with(".g4tx") {
         "tex"
-    } else if [".hca", ".adx", ".acb", ".awb"].iter().any(|ext| lower.ends_with(ext)) {
+    } else if [".hca", ".adx", ".acb", ".awb"]
+        .iter()
+        .any(|ext| lower.ends_with(ext))
+    {
         "audio"
-    } else if [".cfg.bin", ".objbin", ".mevbin"].iter().any(|ext| lower.ends_with(ext)) {
+    } else if [".cfg.bin", ".objbin", ".mevbin"]
+        .iter()
+        .any(|ext| lower.ends_with(ext))
+    {
         "cfg"
     } else {
         "raw"
@@ -49,7 +55,9 @@ pub fn list(vfs: &Vfs, prefix: &str, limit: usize) -> Value {
     for (path, entry) in vfs.iter() {
         let rest = if prefix.is_empty() {
             path
-        } else if let Some(rest) = path.strip_prefix(prefix).and_then(|rest| rest.strip_prefix('/'))
+        } else if let Some(rest) = path
+            .strip_prefix(prefix)
+            .and_then(|rest| rest.strip_prefix('/'))
         {
             rest
         } else {
@@ -74,17 +82,24 @@ pub fn list(vfs: &Vfs, prefix: &str, limit: usize) -> Value {
 
 pub fn search(vfs: &Vfs, query: &str, limit: usize) -> anyhow::Result<Value> {
     let query = query.trim();
-    anyhow::ensure!(!query.is_empty() && query.len() <= 16 * 1024, "invalid query");
-    let glob = query.chars().any(|c| matches!(c, '*' | '?' | '[' | ']' | '{' | '}'));
-    let matcher = glob.then(|| Glob::new(query).map(|g| g.compile_matcher())).transpose()?;
+    anyhow::ensure!(
+        !query.is_empty() && query.len() <= 16 * 1024,
+        "invalid query"
+    );
+    let glob = query
+        .chars()
+        .any(|c| matches!(c, '*' | '?' | '[' | ']' | '{' | '}'));
+    let matcher = glob
+        .then(|| Glob::new(query).map(|g| g.compile_matcher()))
+        .transpose()?;
     let folded = query.to_ascii_lowercase();
     let mut total = 0;
     let mut matches = Vec::new();
     for (path, entry) in vfs.iter() {
-        if !matcher
-            .as_ref()
-            .map_or_else(|| path.to_ascii_lowercase().contains(&folded), |m| m.is_match(path))
-        {
+        if !matcher.as_ref().map_or_else(
+            || path.to_ascii_lowercase().contains(&folded),
+            |m| m.is_match(path),
+        ) {
             continue;
         }
         total += 1;
@@ -116,13 +131,19 @@ pub fn stat(vfs: &Vfs, path: &str) -> anyhow::Result<Value> {
 
 pub fn cat(vfs: &Vfs, path: &str, cap: usize) -> anyhow::Result<Value> {
     let path = safe_path(path)?;
-    let e = vfs.find(path).ok_or_else(|| anyhow::anyhow!("path not found in VFS"))?;
-    let data = vfs.read(path).map_err(|e| anyhow::anyhow!("VFS read failed: {e}"))?;
+    let e = vfs
+        .find(path)
+        .ok_or_else(|| anyhow::anyhow!("path not found in VFS"))?;
+    let data = vfs
+        .read(path)
+        .map_err(|e| anyhow::anyhow!("VFS read failed: {e}"))?;
     let truncated = data.len() > cap;
     let slice = &data[..data.len().min(cap)];
     let mut value =
         json!({"path":path,"cpk":e.cpk_filename,"size":data.len(),"truncated":truncated});
-    let textual = ["txt", "json", "lua", "xml"].iter().any(|x| extension(path).contains(x));
+    let textual = ["txt", "json", "lua", "xml"]
+        .iter()
+        .any(|x| extension(path).contains(x));
     if textual && let Ok(text) = std::str::from_utf8(slice) {
         value["text"] = Value::String(text.to_owned())
     } else {
@@ -133,7 +154,9 @@ pub fn cat(vfs: &Vfs, path: &str, cap: usize) -> anyhow::Result<Value> {
 
 pub fn asset(vfs: &Vfs, path: &str, decode: &str, cap: usize) -> anyhow::Result<Value> {
     let path = safe_path(path)?;
-    let source = vfs.read(path).map_err(|e| anyhow::anyhow!("VFS read failed: {e}"))?;
+    let source = vfs
+        .read(path)
+        .map_err(|e| anyhow::anyhow!("VFS read failed: {e}"))?;
     let (bytes, content_type) = match decode {
         "raw" => (source, "application/octet-stream"),
         "cfg" => (
@@ -174,7 +197,10 @@ mod tests {
         let root = std::env::temp_dir().join(format!(
             "nie-mcp-vfs-{}-{}",
             std::process::id(),
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
         ));
         std::fs::create_dir_all(root.join("alpha/sub")).unwrap();
         std::fs::create_dir_all(root.join("beta")).unwrap();

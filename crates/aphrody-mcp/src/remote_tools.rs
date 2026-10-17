@@ -81,7 +81,12 @@ fn point(x: Option<i32>, y: Option<i32>, what: &str) -> Result<(i32, i32), Strin
 pub(crate) async fn call(req: RemoteVncRequest) -> CallToolResult {
     let target = match rd::target::resolve(&req.target, TargetKind::Vnc, None) {
         Ok(t) if t.kind == TargetKind::Vnc => t,
-        Ok(_) => return error(format!("{}: not a VNC target (use vnc://host:port)", req.target)),
+        Ok(_) => {
+            return error(format!(
+                "{}: not a VNC target (use vnc://host:port)",
+                req.target
+            ));
+        }
         Err(e) => return error(format!("{e:#}")),
     };
     let url = target.url();
@@ -101,7 +106,7 @@ pub(crate) async fn call(req: RemoteVncRequest) -> CallToolResult {
                     Ok(s) => Arc::clone(sessions.entry(url.clone()).or_insert(Arc::new(s))),
                     Err(e) => return error(format!("VNC {url}: {e:#}")),
                 }
-            },
+            }
         }
     };
     match run(&session, &req).await {
@@ -112,7 +117,7 @@ pub(crate) async fn call(req: RemoteVncRequest) -> CallToolResult {
                 s.close().await;
             }
             error(format!("VNC {url}: {message}"))
-        },
+        }
     }
 }
 
@@ -130,45 +135,45 @@ async fn run(vnc: &VncSession, req: &RemoteVncRequest) -> Result<CallToolResult,
                 ContentBlock::text(format!("{}x{} JPEG", shot.width, shot.height)),
                 ContentBlock::image(data, "image/jpeg"),
             ]))
-        },
+        }
         "click" | "double_click" => {
             let (x, y) = point(req.x, req.y, &req.action)?;
             let button = MouseButton::parse(req.button.as_deref().unwrap_or("left"));
             let count = if req.action == "click" { 1 } else { 2 };
             vnc.click(x, y, button, count).await.map_err(e)?;
             text(format!("{} {} at ({x}, {y})", req.action, button.as_str()))
-        },
+        }
         "move" => {
             let (x, y) = point(req.x, req.y, "move")?;
             vnc.move_to(x, y).await.map_err(e)?;
             text(format!("moved to ({x}, {y})"))
-        },
+        }
         "drag" => {
             let from = point(req.x, req.y, "drag")?;
             let to = point(req.end_x, req.end_y, "drag end")?;
             vnc.drag(from, to).await.map_err(e)?;
             text(format!("dragged {from:?} -> {to:?}"))
-        },
+        }
         "scroll" => {
             let (dx, dy) = (req.delta_x.unwrap_or(0), req.delta_y.unwrap_or(0));
             vnc.scroll(dx, dy).await.map_err(e)?;
             text(format!("scrolled ({dx}, {dy})"))
-        },
+        }
         "type" => {
             let s = req.text.as_deref().ok_or("type needs text")?;
             vnc.type_text(s).await.map_err(e)?;
             text(format!("typed {} character(s)", s.chars().count()))
-        },
+        }
         "keypress" => {
             let k = req.key.as_deref().ok_or("keypress needs key")?;
             vnc.keypress(k).await.map_err(e)?;
             text(format!("pressed {k}"))
-        },
+        }
         "wait" => {
             let ms = req.duration_ms.unwrap_or(500).min(10_000);
             tokio::time::sleep(Duration::from_millis(ms)).await;
             text(format!("waited {ms} ms"))
-        },
+        }
         other => Err(format!(
             "unknown action {other} (screenshot, click, double_click, move, drag, scroll, type, \
              keypress, wait, close)"
@@ -185,18 +190,30 @@ mod tests {
     }
 
     fn first_text(r: &CallToolResult) -> String {
-        r.content.first().and_then(|c| c.as_text()).map(|t| t.text.clone()).unwrap_or_default()
+        r.content
+            .first()
+            .and_then(|c| c.as_text())
+            .map(|t| t.text.clone())
+            .unwrap_or_default()
     }
 
     #[tokio::test]
     async fn rejects_non_vnc_targets_and_reports_unreachable_servers() {
         let r = call(req("http://127.0.0.1:8793", "screenshot")).await;
         assert_eq!(r.is_error, Some(true));
-        assert!(first_text(&r).contains("not a VNC target"), "{}", first_text(&r));
+        assert!(
+            first_text(&r).contains("not a VNC target"),
+            "{}",
+            first_text(&r)
+        );
 
         let r = call(req("vnc://127.0.0.1:9", "screenshot")).await;
         assert_eq!(r.is_error, Some(true));
-        assert!(first_text(&r).contains("vnc://127.0.0.1:9"), "{}", first_text(&r));
+        assert!(
+            first_text(&r).contains("vnc://127.0.0.1:9"),
+            "{}",
+            first_text(&r)
+        );
 
         let r = call(req("vnc://127.0.0.1:9", "close")).await;
         assert_eq!(r.is_error, Some(false));

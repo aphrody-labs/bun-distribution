@@ -9,47 +9,73 @@ type Harness = egui_kittest::Harness<'static, SheetApp>;
 fn harness(width: f32, active: usize) -> Harness {
     let mut s = Session::new();
     s.new_workbook();
-    s.execute("sheet.rename", json!({"sheet":0,"name":"Tab00"})).unwrap();
+    s.execute("sheet.rename", json!({"sheet":0,"name":"Tab00"}))
+        .unwrap();
     for i in 1..30 {
-        s.execute("home.insertSheet", json!({"name":format!("Tab{i:02}")})).unwrap();
+        s.execute("home.insertSheet", json!({"name":format!("Tab{i:02}")}))
+            .unwrap();
     }
-    s.execute("sheet.activate", json!({"sheet":active})).unwrap();
+    s.execute("sheet.activate", json!({"sheet":active}))
+        .unwrap();
     let mut fonts_ready = false;
-    let mut h = Harness::builder().with_step_dt(1.0 / 60.0).with_size(vec2(width, 120.0)).build_ui_state(
-        move |ui, app: &mut SheetApp| {
-            if !fonts_ready {
-                ui.ctx().set_fonts(gridcraft_ui_egui::theme::font_definitions());
-                fonts_ready = true;
-                return;
-            }
-            app.grid.cells_rect = Some(Rect::from_min_size(pos2(0.0, 0.0), vec2(ui.max_rect().width(), 80.0)));
-            gridcraft_ui_egui::tabs::sheet_tabs(app, ui);
-        },
-        SheetApp::new(s, Default::default()),
-    );
+    let mut h = Harness::builder()
+        .with_step_dt(1.0 / 60.0)
+        .with_size(vec2(width, 120.0))
+        .build_ui_state(
+            move |ui, app: &mut SheetApp| {
+                if !fonts_ready {
+                    ui.ctx()
+                        .set_fonts(gridcraft_ui_egui::theme::font_definitions());
+                    fonts_ready = true;
+                    return;
+                }
+                app.grid.cells_rect = Some(Rect::from_min_size(
+                    pos2(0.0, 0.0),
+                    vec2(ui.max_rect().width(), 80.0),
+                ));
+                gridcraft_ui_egui::tabs::sheet_tabs(app, ui);
+            },
+            SheetApp::new(s, Default::default()),
+        );
     h.run_steps(20);
     h
 }
 
 fn tab(h: &Harness, name: &str) -> Option<(Rect, Rect)> {
     h.output().shapes.iter().find_map(|s| match &s.shape {
-        Shape::Text(t) if t.galley.job.text == name => Some((t.visual_bounding_rect(), s.clip_rect)),
+        Shape::Text(t) if t.galley.job.text == name => {
+            Some((t.visual_bounding_rect(), s.clip_rect))
+        }
         _ => None,
     })
 }
 
 fn assert_visible(h: &Harness, name: &str) {
-    let (text, clip) = tab(h, name).unwrap_or_else(|| panic!("{name} was not painted in the tab viewport"));
-    assert!(clip.contains_rect(text), "{name} is clipped: text={text:?}, viewport={clip:?}");
+    let (text, clip) =
+        tab(h, name).unwrap_or_else(|| panic!("{name} was not painted in the tab viewport"));
+    assert!(
+        clip.contains_rect(text),
+        "{name} is clipped: text={text:?}, viewport={clip:?}"
+    );
 }
 
 fn click(h: &mut Harness, at: egui::Pos2) {
     h.input_mut().events.extend([
         Event::PointerMoved(at),
-        Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE },
+        Event::PointerButton {
+            pos: at,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        },
     ]);
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: at,
+        button: PointerButton::Primary,
+        pressed: false,
+        modifiers: Modifiers::NONE,
+    });
     h.run_steps(20);
 }
 
@@ -58,10 +84,14 @@ fn opening_and_activating_late_sheets_reveals_their_tabs() {
     for width in [500.0, 1000.0] {
         let mut h = harness(width, 29);
         assert_visible(&h, "Tab29");
-        h.state_mut().run("sheet.activate", json!({"sheet":0})).unwrap();
+        h.state_mut()
+            .run("sheet.activate", json!({"sheet":0}))
+            .unwrap();
         h.run_steps(20);
         assert_visible(&h, "Tab00");
-        h.state_mut().run("sheet.activate", json!({"sheet":20})).unwrap();
+        h.state_mut()
+            .run("sheet.activate", json!({"sheet":20}))
+            .unwrap();
         h.run_steps(20);
         assert_visible(&h, "Tab20");
     }
@@ -110,11 +140,23 @@ fn manual_wheel_and_trackpad_browsing_does_not_change_selection_or_snap_back() {
             modifiers: Modifiers::NONE,
         });
         h.run_steps(40);
-        assert!(!tab(&h, "Tab00").is_some_and(|(r, c)| c.contains_rect(r)), "gesture should browse away from the selected tab: {delta:?}");
-        assert_eq!(h.state().session.doc().unwrap().wb, before, "browsing tabs must not edit the workbook");
+        assert!(
+            !tab(&h, "Tab00").is_some_and(|(r, c)| c.contains_rect(r)),
+            "gesture should browse away from the selected tab: {delta:?}"
+        );
+        assert_eq!(
+            h.state().session.doc().unwrap().wb,
+            before,
+            "browsing tabs must not edit the workbook"
+        );
         h.run_steps(40);
-        assert!(!tab(&h, "Tab00").is_some_and(|(r, c)| c.contains_rect(r)), "idle frames must not snap back");
-        h.state_mut().run("sheet.activate", json!({"sheet":29})).unwrap();
+        assert!(
+            !tab(&h, "Tab00").is_some_and(|(r, c)| c.contains_rect(r)),
+            "idle frames must not snap back"
+        );
+        h.state_mut()
+            .run("sheet.activate", json!({"sheet":29}))
+            .unwrap();
         h.run_steps(20);
         assert_visible(&h, "Tab29");
     }
@@ -123,11 +165,17 @@ fn manual_wheel_and_trackpad_browsing_does_not_change_selection_or_snap_back() {
 fn hidden_sheets_long_names_and_window_resize_keep_active_tab_visible() {
     let mut h = harness(1000.0, 0);
     for sheet in 1..10 {
-        h.state_mut().run("sheet.hide", json!({"sheet":sheet})).unwrap();
+        h.state_mut()
+            .run("sheet.hide", json!({"sheet":sheet}))
+            .unwrap();
     }
     let name = "Quarterly results and forecasts";
-    h.state_mut().run("sheet.rename", json!({"sheet":29,"name":name})).unwrap();
-    h.state_mut().run("sheet.activate", json!({"sheet":29})).unwrap();
+    h.state_mut()
+        .run("sheet.rename", json!({"sheet":29,"name":name}))
+        .unwrap();
+    h.state_mut()
+        .run("sheet.activate", json!({"sheet":29}))
+        .unwrap();
     h.run_steps(20);
     assert_visible(&h, name);
     // Narrow, but still wide enough for the long tab next to the arrows and the All Sheets button.
@@ -157,8 +205,18 @@ fn overflow_leaves_the_worksheet_scrollbar_reachable() {
     // overflow; dragging its thumb is covered with a rendered grid in `interaction.rs`.
     for width in [500.0, 700.0, 1200.0] {
         let h = harness(width, 0);
-        let track = h.state().grid.hscroll.expect("the tab bar has a horizontal scrollbar");
-        assert!(track.width() >= 100.0, "{width}: the scrollbar keeps a usable width: {track:?}");
-        assert!(track.left() >= 0.0 && track.right() <= width + 0.5, "{width}: the scrollbar is offscreen: {track:?}");
+        let track = h
+            .state()
+            .grid
+            .hscroll
+            .expect("the tab bar has a horizontal scrollbar");
+        assert!(
+            track.width() >= 100.0,
+            "{width}: the scrollbar keeps a usable width: {track:?}"
+        );
+        assert!(
+            track.left() >= 0.0 && track.right() <= width + 0.5,
+            "{width}: the scrollbar is offscreen: {track:?}"
+        );
     }
 }

@@ -63,14 +63,22 @@ pub fn min(size: [u32; 2]) -> f32 {
 
 /// `zoom` within the range for a document of `size` px (a non-finite zoom becomes 100 %).
 pub fn clamp(zoom: f32, size: [u32; 2]) -> f32 {
-    if zoom.is_finite() { zoom.min(MAX).max(min(size)) } else { 1.0 }
+    if zoom.is_finite() {
+        zoom.min(MAX).max(min(size))
+    } else {
+        1.0
+    }
 }
 
 /// A zoom field's range in percent for `view`: the zoom range, and always the view's zoom (a
 /// field narrower than the zoom would clamp it and write it back every frame, which once made
 /// the wheel slide the image towards the pointer at 3200 %).
 pub fn percent_range(view: &crate::state::View) -> std::ops::RangeInclusive<f32> {
-    let z = if view.zoom.is_finite() { view.zoom } else { 1.0 };
+    let z = if view.zoom.is_finite() {
+        view.zoom
+    } else {
+        1.0
+    };
     (min(view.doc_size).min(z) * 100.0)..=(MAX.max(z) * 100.0)
 }
 
@@ -78,10 +86,19 @@ pub fn percent_range(view: &crate::state::View) -> std::ops::RangeInclusive<f32>
 pub fn step(zoom: f32, dir: i32, size: [u32; 2]) -> f32 {
     let z = clamp(zoom, size);
     let next = if dir > 0 {
-        LADDER.iter().copied().find(|s| *s > z * 1.001).unwrap_or(MAX)
+        LADDER
+            .iter()
+            .copied()
+            .find(|s| *s > z * 1.001)
+            .unwrap_or(MAX)
     } else {
         // Below the ladder's lowest step (reached by the wheel), Zoom Out stays put.
-        LADDER.iter().rev().copied().find(|s| *s < z * 0.999).unwrap_or(z)
+        LADDER
+            .iter()
+            .rev()
+            .copied()
+            .find(|s| *s < z * 0.999)
+            .unwrap_or(z)
     };
     clamp(next, size)
 }
@@ -105,7 +122,13 @@ mod tests {
             z = step(z, 1, PHOTO);
             up.push(pct(z));
         }
-        assert_eq!(up, [200.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 1200.0, 1600.0, 3200.0, 6400.0, 12800.0]);
+        assert_eq!(
+            up,
+            [
+                200.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 1200.0, 1600.0, 3200.0, 6400.0,
+                12800.0
+            ]
+        );
         assert_eq!(step(MAX, 1, PHOTO), MAX, "Zoom In stops at 12800 %");
         let mut z = 1.0;
         let mut down = Vec::new();
@@ -115,7 +138,10 @@ mod tests {
         }
         assert_eq!(
             down,
-            [66.667, 50.0, 33.333, 25.0, 16.667, 12.5, 8.333, 6.25, 5.0, 4.0, 3.0, 2.0, 1.5, 1.0, 0.7, 0.5, 0.4, 0.3, 0.2, 0.133],
+            [
+                66.667, 50.0, 33.333, 25.0, 16.667, 12.5, 8.333, 6.25, 5.0, 4.0, 3.0, 2.0, 1.5,
+                1.0, 0.7, 0.5, 0.4, 0.3, 0.2, 0.133
+            ],
             "the last step is the document's minimum (1500 px tall: 2 / 1500)"
         );
         assert_eq!(step(z, -1, PHOTO), z, "Zoom Out stops at the minimum");
@@ -139,7 +165,11 @@ mod tests {
         assert!(min(big) < 0.001);
         assert_eq!(step(0.0015, -1, big), 0.001);
         assert_eq!(step(0.001, -1, big), 0.001);
-        assert_eq!(step(0.0007, -1, big), 0.0007, "below the ladder Zoom Out stays put");
+        assert_eq!(
+            step(0.0007, -1, big),
+            0.0007,
+            "below the ladder Zoom Out stays put"
+        );
         // A 1 px document can't go below 200 %.
         assert_eq!(min([1, 1]), 2.0);
         assert_eq!(step(2.0, -1, [1, 1]), 2.0);

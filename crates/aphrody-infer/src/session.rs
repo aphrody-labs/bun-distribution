@@ -39,7 +39,11 @@ pub struct SessionConfig {
 
 impl Default for SessionConfig {
     fn default() -> Self {
-        Self { providers: vec![Accelerator::Cpu], intra_threads: None, optimize: true }
+        Self {
+            providers: vec![Accelerator::Cpu],
+            intra_threads: None,
+            optimize: true,
+        }
     }
 }
 
@@ -67,7 +71,10 @@ impl SessionConfig {
     /// Force a single provider, skipping the fallback chain.
     #[must_use]
     pub fn with_only(provider: Accelerator) -> Self {
-        Self { providers: vec![provider], ..Self::default() }
+        Self {
+            providers: vec![provider],
+            ..Self::default()
+        }
     }
 }
 
@@ -179,11 +186,11 @@ pub fn load(model_path: &Path, config: &SessionConfig) -> Result<LoadedModel> {
                     fallbacks,
                     path: model_path.to_path_buf(),
                 });
-            },
+            }
             Err(reason) => {
                 tracing::debug!(provider = provider.as_str(), %reason, "execution provider rejected");
                 fallbacks.push((*provider, reason));
-            },
+            }
         }
     }
 
@@ -225,12 +232,16 @@ fn try_build(
         // next provider in the chain instead of failing the build.
         _ => {
             return Err(format!("no ONNX Runtime execution provider for {provider}"));
-        },
+        }
     };
-    builder = builder.with_execution_providers(dispatch).map_err(|e| e.to_string())?;
+    builder = builder
+        .with_execution_providers(dispatch)
+        .map_err(|e| e.to_string())?;
 
     if let Some(threads) = config.intra_threads {
-        builder = builder.with_intra_threads(threads).map_err(|e| e.to_string())?;
+        builder = builder
+            .with_intra_threads(threads)
+            .map_err(|e| e.to_string())?;
     }
     if config.optimize {
         builder = builder
@@ -238,7 +249,9 @@ fn try_build(
             .map_err(|e| e.to_string())?;
     }
 
-    builder.commit_from_file(model_path).map_err(|e| e.to_string())
+    builder
+        .commit_from_file(model_path)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -246,7 +259,12 @@ mod tests {
     use super::*;
 
     fn profile(accelerators: Vec<Accelerator>) -> HardwareProfile {
-        HardwareProfile { accelerators, gpus: Vec::new(), cuda_toolkit: None, cpu_threads: 8 }
+        HardwareProfile {
+            accelerators,
+            gpus: Vec::new(),
+            cuda_toolkit: None,
+            cpu_threads: 8,
+        }
     }
 
     #[test]
@@ -280,13 +298,23 @@ mod tests {
         let missing = Path::new("does-not-exist-anywhere.onnx");
         let err = load(missing, &SessionConfig::default()).unwrap_err();
         let rendered = err.to_string();
-        assert!(rendered.contains("does-not-exist-anywhere.onnx"), "{rendered}");
+        assert!(
+            rendered.contains("does-not-exist-anywhere.onnx"),
+            "{rendered}"
+        );
     }
 
     #[test]
     fn an_empty_provider_chain_is_reported_plainly() {
-        let config = SessionConfig { providers: Vec::new(), ..SessionConfig::default() };
+        let config = SessionConfig {
+            providers: Vec::new(),
+            ..SessionConfig::default()
+        };
         let err = load(Path::new("whatever.onnx"), &config).unwrap_err();
-        assert!(err.to_string().contains("no execution provider was configured"), "{err}");
+        assert!(
+            err.to_string()
+                .contains("no execution provider was configured"),
+            "{err}"
+        );
     }
 }

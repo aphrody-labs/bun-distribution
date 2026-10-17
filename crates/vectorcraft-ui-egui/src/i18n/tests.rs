@@ -10,7 +10,14 @@ fn tags_map_to_languages() {
     assert_eq!(lang_from_tag("POSIX"), Some(Lang::EN));
     assert_eq!(lang_from_tag("nl_NL"), None);
     // German: Germany, Austria, Switzerland and the rest share the one catalog.
-    for tag in ["de", "de_DE.UTF-8", "de-AT", "de_CH", "de-LU", "de_DE.UTF-8@euro"] {
+    for tag in [
+        "de",
+        "de_DE.UTF-8",
+        "de-AT",
+        "de_CH",
+        "de-LU",
+        "de_DE.UTF-8@euro",
+    ] {
         assert_eq!(lang_from_tag(tag), Some(de()), "{tag}");
     }
     assert_eq!(lang_from_tag("ja_JP.UTF-8"), Lang::from_code("ja"));
@@ -46,7 +53,14 @@ fn tags_map_to_languages() {
     assert_eq!(lang_from_tag("zh_TW.UTF-8@radical"), Some(ZH()));
     // Simplified Chinese locales never pick up the Traditional catalog (they resolve to a
     // `zh-hans` catalog once one is registered, and to English until then).
-    for tag in ["zh-CN", "zh_CN.UTF-8", "zh_SG", "zh-Hans", "zh-Hans-CN", "zh"] {
+    for tag in [
+        "zh-CN",
+        "zh_CN.UTF-8",
+        "zh_SG",
+        "zh-Hans",
+        "zh-Hans-CN",
+        "zh",
+    ] {
         assert_eq!(lang_from_tag(tag), Lang::from_code("zh-hans"), "{tag}");
     }
     assert_eq!(lang_from_tag(""), None);
@@ -63,21 +77,44 @@ fn candidates_walk_from_specific_to_general() {
 
 #[test]
 fn os_language_lists_are_parsed() {
-    assert_eq!(first_supported("(\n    \"zh-Hant-TW\",\n    \"en-US\"\n)\n"), Some(ZH()));
-    assert_eq!(first_supported("(\n    \"nl-NL\",\n    \"en-US\"\n)\n"), Some(Lang::EN));
-    assert_eq!(first_supported("(\n    \"de-DE\",\n    \"en-US\"\n)\n"), Some(de()));
-    assert_eq!(first_supported("(\n    \"fr-FR\",\n    \"en-US\"\n)\n"), Lang::from_code("fr"));
+    assert_eq!(
+        first_supported("(\n    \"zh-Hant-TW\",\n    \"en-US\"\n)\n"),
+        Some(ZH())
+    );
+    assert_eq!(
+        first_supported("(\n    \"nl-NL\",\n    \"en-US\"\n)\n"),
+        Some(Lang::EN)
+    );
+    assert_eq!(
+        first_supported("(\n    \"de-DE\",\n    \"en-US\"\n)\n"),
+        Some(de())
+    );
+    assert_eq!(
+        first_supported("(\n    \"fr-FR\",\n    \"en-US\"\n)\n"),
+        Lang::from_code("fr")
+    );
     assert_eq!(first_supported("("), None);
     // Windows: `reg query HKCU\Control Panel\International /v LocaleName`.
     let reg = "\r\nHKEY_CURRENT_USER\\Control Panel\\International\r\n    LocaleName    REG_SZ    zh-TW\r\n\r\n";
     assert_eq!(registry_locale(reg).as_deref(), Some("zh-TW"));
-    assert_eq!(registry_locale(reg).as_deref().and_then(lang_from_tag), Some(ZH()));
-    assert_eq!(registry_locale("ERROR: The system was unable to find the specified registry key or value."), None);
+    assert_eq!(
+        registry_locale(reg).as_deref().and_then(lang_from_tag),
+        Some(ZH())
+    );
+    assert_eq!(
+        registry_locale(
+            "ERROR: The system was unable to find the specified registry key or value."
+        ),
+        None
+    );
 }
 
 #[test]
 fn preferences_resolve_with_fallback() {
-    assert_eq!(Lang::from_pref("zh-Hans"), Lang::from_code("zh-hans").unwrap());
+    assert_eq!(
+        Lang::from_pref("zh-Hans"),
+        Lang::from_code("zh-hans").unwrap()
+    );
     assert_eq!(Lang::from_pref("zh-hant"), ZH());
     assert_eq!(Lang::from_pref("ZH-Hant"), ZH());
     assert_eq!(Lang::from_pref("en"), Lang::EN);
@@ -110,21 +147,31 @@ fn lookups_fall_back_to_english() {
 
 #[test]
 fn catalog_kinds_are_parsed_and_looked_up() {
-    let c = Catalog::parse("# c\n\tHello\t你好\n@id\tfile.save\t儲存\nmenu\tWindows\t視窗們\n@plural\t{n} file|{n} files\t{n} 個檔案\n\n");
+    let c = Catalog::parse(
+        "# c\n\tHello\t你好\n@id\tfile.save\t儲存\nmenu\tWindows\t視窗們\n@plural\t{n} file|{n} files\t{n} 個檔案\n\n",
+    );
     assert_eq!(c.plain("Hello"), Some("你好"));
     assert_eq!(c.id("file.save"), Some("儲存"));
     assert_eq!(c.contextual("menu", "Windows"), Some("視窗們"));
     assert_eq!(c.contextual("other", "Windows"), None);
     assert_eq!(c.plural("{n} file", "{n} files", 0), Some("{n} 個檔案"));
-    assert_eq!(c.plural("{n} file", "{n} files", 5), Some("{n} 個檔案"), "an index past the forms clamps");
+    assert_eq!(
+        c.plural("{n} file", "{n} files", 5),
+        Some("{n} 個檔案"),
+        "an index past the forms clamps"
+    );
 }
 
 #[test]
 fn malformed_lines_are_reported_not_fatal() {
-    let (entries, errors) = parse_entries("\tok\t好\nno tabs here\n\tonly\n\ta\tb\tc\textra\n\t\tempty source\n");
+    let (entries, errors) =
+        parse_entries("\tok\t好\nno tabs here\n\tonly\n\ta\tb\tc\textra\n\t\tempty source\n");
     assert_eq!(entries.len(), 1);
     assert_eq!(errors.len(), 4, "{errors:?}");
-    assert_eq!(parse_entries("\ta\\tb\tx\\ny\\\\z\n").0[0], (String::new(), "a\tb".into(), "x\ny\\z".into()));
+    assert_eq!(
+        parse_entries("\ta\\tb\tx\\ny\\\\z\n").0[0],
+        (String::new(), "a\tb".into(), "x\ny\\z".into())
+    );
 }
 
 #[test]
@@ -134,7 +181,10 @@ fn plurals_and_placeholders() {
     assert_eq!(trn(Lang::EN, 7, "{n} item", "{n} items"), "7 items");
     assert_eq!(trn(ZH(), 1, "{n} item", "{n} items"), "1 個項目");
     assert_eq!(trn(ZH(), 7, "{n} item", "{n} items"), "7 個項目");
-    assert_eq!(fmt("{b} before {a}", &[("a", "x"), ("b", "y"), ("c", "z")]), "y before x");
+    assert_eq!(
+        fmt("{b} before {a}", &[("a", "x"), ("b", "y"), ("c", "z")]),
+        "y before x"
+    );
     assert_eq!(fmt("{missing}", &[]), "{missing}");
     assert_eq!(placeholders("a {x} b {y} {"), ["x", "y"]);
 }
@@ -143,15 +193,28 @@ fn plurals_and_placeholders() {
 #[test]
 fn bundled_catalogs_are_consistent() {
     for l in &LANGUAGES {
-        assert!(l.code == l.code.to_ascii_lowercase() && !l.name.is_empty(), "{}", l.code);
+        assert!(
+            l.code == l.code.to_ascii_lowercase() && !l.name.is_empty(),
+            "{}",
+            l.code
+        );
         let (entries, errors) = parse_entries(l.source);
         assert!(errors.is_empty(), "{}: {errors:?}", l.code);
         let mut seen = std::collections::HashSet::new();
         for (ctx, src, tr) in &entries {
-            assert!(seen.insert((ctx.clone(), src.clone())), "{}: duplicate {ctx:?} {src:?}", l.code);
+            assert!(
+                seen.insert((ctx.clone(), src.clone())),
+                "{}: duplicate {ctx:?} {src:?}",
+                l.code
+            );
             if ctx == "@plural" {
                 let one_other: Vec<&str> = src.split('|').collect();
-                assert_eq!(one_other.len(), 2, "{}: plural source must be `one|other`: {src:?}", l.code);
+                assert_eq!(
+                    one_other.len(),
+                    2,
+                    "{}: plural source must be `one|other`: {src:?}",
+                    l.code
+                );
                 for form in tr.split('|') {
                     let mut want = placeholders(one_other[1]);
                     let mut got = placeholders(form);
@@ -167,14 +230,23 @@ fn bundled_catalogs_are_consistent() {
             got.sort_unstable();
             assert_eq!(want, got, "{}: placeholders differ in {src:?}", l.code);
             if ctx.is_empty() {
-                assert_eq!(src.ends_with('…'), tr.ends_with('…'), "{}: ellipsis mismatch: {src:?}", l.code);
+                assert_eq!(
+                    src.ends_with('…'),
+                    tr.ends_with('…'),
+                    "{}: ellipsis mismatch: {src:?}",
+                    l.code
+                );
             }
             if ctx == "@id" {
                 // A command id, or an effect id: Effect menu items share `effect.apply` /
                 // `effect.dialog`, so the effect's own id is what tells them apart.
                 let known = crate::menus::UI_COMMANDS.iter().any(|c| c.0 == src)
-                    || vectorcraft_engine::cmd::command_specs().iter().any(|c| c.id == src)
-                    || vectorcraft_effects::effect_catalog().iter().any(|e| e.id == src);
+                    || vectorcraft_engine::cmd::command_specs()
+                        .iter()
+                        .any(|c| c.id == src)
+                    || vectorcraft_effects::effect_catalog()
+                        .iter()
+                        .any(|e| e.id == src);
                 assert!(known, "{}: unknown command id {src:?}", l.code);
             }
         }
@@ -185,11 +257,25 @@ fn bundled_catalogs_are_consistent() {
 /// labels, command labels, `tl!` literals), so labels from other apps don't creep in.
 #[test]
 fn partial_catalogs_only_translate_strings_the_ui_shows() {
-    let known: std::collections::BTreeSet<String> = crate::menus::menu_strings().into_iter().chain(tl_literals()).collect();
-    for l in LANGUAGES.iter().filter(|l| !l.complete_menus && !l.source.is_empty()) {
+    let known: std::collections::BTreeSet<String> = crate::menus::menu_strings()
+        .into_iter()
+        .chain(tl_literals())
+        .collect();
+    for l in LANGUAGES
+        .iter()
+        .filter(|l| !l.complete_menus && !l.source.is_empty())
+    {
         let (entries, _) = parse_entries(l.source);
-        let unknown: Vec<_> = entries.iter().filter(|(ctx, src, _)| ctx.is_empty() && !known.contains(src)).map(|(_, src, _)| src).collect();
-        assert!(unknown.is_empty(), "{}: not UI strings: {unknown:?}", l.code);
+        let unknown: Vec<_> = entries
+            .iter()
+            .filter(|(ctx, src, _)| ctx.is_empty() && !known.contains(src))
+            .map(|(_, src, _)| src)
+            .collect();
+        assert!(
+            unknown.is_empty(),
+            "{}: not UI strings: {unknown:?}",
+            l.code
+        );
     }
 }
 
@@ -198,13 +284,22 @@ fn partial_catalogs_only_translate_strings_the_ui_shows() {
 /// process-wide, and a Japanese frame would translate the tests running beside this one.
 #[test]
 fn the_engine_follows_the_interface_language() {
-    let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+    let mut app = crate::VectorcraftApp::new(
+        vectorcraft_engine::Session::new(),
+        crate::Services::default(),
+    );
     let ctx = egui::Context::default();
     let frame = |app: &mut crate::VectorcraftApp| {
-        ctx.run_ui(egui::RawInput::default(), |ui| app.logic(ui.ctx())).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |ui| app.logic(ui.ctx()))
+            .textures_delta
+            .clear();
     };
     frame(&mut app);
-    assert_eq!(app.session.ui_language.as_deref(), Some("en"), "tests resolve `auto` to English");
+    assert_eq!(
+        app.session.ui_language.as_deref(),
+        Some("en"),
+        "tests resolve `auto` to English"
+    );
     assert!(!app.session.japanese_interface());
     // Each frame hands the engine the language it draws in, whatever the engine had.
     app.session.ui_language = Some("ja".into());
@@ -221,28 +316,71 @@ fn the_engine_follows_the_interface_language() {
 #[test]
 fn language_command_sets_the_preference() {
     use crate::menus::{checked, run_ui_command};
-    let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
-    assert_eq!(checked(&app, "app.language", &serde_json::json!({"lang": "auto"})), Some(true));
-    run_ui_command(&mut app, "app.language", &serde_json::json!({"lang": "ja"})).unwrap().unwrap();
+    let mut app = crate::VectorcraftApp::new(
+        vectorcraft_engine::Session::new(),
+        crate::Services::default(),
+    );
+    assert_eq!(
+        checked(&app, "app.language", &serde_json::json!({"lang": "auto"})),
+        Some(true)
+    );
+    run_ui_command(&mut app, "app.language", &serde_json::json!({"lang": "ja"}))
+        .unwrap()
+        .unwrap();
     assert_eq!(app.session.prefs.interface_language, "ja");
     assert_eq!(app.ui_language(), Lang::from_code("ja").unwrap());
-    assert_eq!(checked(&app, "app.language", &serde_json::json!({"lang": "ja"})), Some(true));
-    assert_eq!(checked(&app, "app.language", &serde_json::json!({"lang": "auto"})), Some(false));
-    assert_eq!(checked(&app, "app.language", &serde_json::json!({"lang": "zh-hant"})), Some(false));
-    let err = run_ui_command(&mut app, "app.language", &serde_json::json!({"lang": "xx"})).unwrap().unwrap_err();
+    assert_eq!(
+        checked(&app, "app.language", &serde_json::json!({"lang": "ja"})),
+        Some(true)
+    );
+    assert_eq!(
+        checked(&app, "app.language", &serde_json::json!({"lang": "auto"})),
+        Some(false)
+    );
+    assert_eq!(
+        checked(
+            &app,
+            "app.language",
+            &serde_json::json!({"lang": "zh-hant"})
+        ),
+        Some(false)
+    );
+    let err = run_ui_command(&mut app, "app.language", &serde_json::json!({"lang": "xx"}))
+        .unwrap()
+        .unwrap_err();
     assert!(err.contains("auto") && err.contains("zh-hant"), "{err}");
     assert_eq!(app.session.prefs.interface_language, "ja");
-    run_ui_command(&mut app, "app.language", &serde_json::json!({"lang": "auto"})).unwrap().unwrap();
+    run_ui_command(
+        &mut app,
+        "app.language",
+        &serde_json::json!({"lang": "auto"}),
+    )
+    .unwrap()
+    .unwrap();
     assert_eq!(app.session.prefs.interface_language, "auto");
-    assert_eq!(checked(&app, "app.language", &serde_json::json!({"lang": "auto"})), Some(true));
+    assert_eq!(
+        checked(&app, "app.language", &serde_json::json!({"lang": "auto"})),
+        Some(true)
+    );
     // Every registered language is in the Mac App menu's Language, by its own name (the in-window
     // bar has no Language menu).
-    let layout = crate::native_menu::mac_layout(&app, &crate::native_menu::from_tree(&app, &crate::menus::menu_tree()), Lang::EN);
-    let app_menu = layout.bar.menus.into_iter().find(|m| m.title == "VectorCraft").expect("App menu");
+    let layout = crate::native_menu::mac_layout(
+        &app,
+        &crate::native_menu::from_tree(&app, &crate::menus::menu_tree()),
+        Lang::EN,
+    );
+    let app_menu = layout
+        .bar
+        .menus
+        .into_iter()
+        .find(|m| m.title == "VectorCraft")
+        .expect("App menu");
     fn items(nodes: &[crate::native_menu::Node], out: &mut Vec<String>) {
         for n in nodes {
             match n {
-                crate::native_menu::Node::Item(it) if it.command == Some("app.language") => out.push(it.label.clone()),
+                crate::native_menu::Node::Item(it) if it.command == Some("app.language") => {
+                    out.push(it.label.clone())
+                }
                 crate::native_menu::Node::Submenu { children, .. } => items(children, out),
                 _ => {}
             }
@@ -251,7 +389,11 @@ fn language_command_sets_the_preference() {
     let mut labels = vec![];
     items(&app_menu.children, &mut labels);
     for l in Lang::all() {
-        assert!(labels.iter().any(|x| x == l.name()), "{} missing from {labels:?}", l.code());
+        assert!(
+            labels.iter().any(|x| x == l.name()),
+            "{} missing from {labels:?}",
+            l.code()
+        );
     }
 }
 
@@ -267,7 +409,9 @@ fn is_cjk(c: char) -> bool {
 /// Chinese one waits for a Traditional Chinese UI font in craft-fonts).
 #[test]
 fn bundled_fonts_cover_the_catalogs() {
-    let japanese_ui_font = vectorcraft_text::CRAFT_FONTS.iter().any(|f| f.is_japanese());
+    let japanese_ui_font = vectorcraft_text::CRAFT_FONTS
+        .iter()
+        .any(|f| f.is_japanese());
     let ctx = egui::Context::default();
     crate::theme::install_fonts(&ctx);
     let mut output = ctx.run_ui(egui::RawInput::default(), |_| {});
@@ -283,18 +427,27 @@ fn bundled_fonts_cover_the_catalogs() {
         for l in LANGUAGES.iter().filter(|l| !l.source.is_empty()) {
             let (entries, _) = parse_entries(l.source);
             let cjk_checked = japanese_ui_font && l.code == "ja";
-            let chars: std::collections::BTreeSet<char> =
-                entries.iter().flat_map(|(_, _, tr)| tr.chars()).filter(|c| !c.is_whitespace() && (cjk_checked || !is_cjk(*c))).collect();
+            let chars: std::collections::BTreeSet<char> = entries
+                .iter()
+                .flat_map(|(_, _, tr)| tr.chars())
+                .filter(|c| !c.is_whitespace() && (cjk_checked || !is_cjk(*c)))
+                .collect();
             for family in &families {
                 let font = egui::FontId::new(13.0, family.clone());
-                let gone: String = chars.iter().filter(|c| !fonts.has_glyph(&font, **c)).collect();
+                let gone: String = chars
+                    .iter()
+                    .filter(|c| !fonts.has_glyph(&font, **c))
+                    .collect();
                 if !gone.is_empty() {
                     missing.insert(format!("{} in {family:?}", l.code), gone);
                 }
             }
         }
     });
-    assert!(missing.is_empty(), "characters without a glyph: {missing:#?}");
+    assert!(
+        missing.is_empty(),
+        "characters without a glyph: {missing:#?}"
+    );
 }
 
 /// The Traditional Chinese catalog holds no Simplified-only characters (a translation written
@@ -309,7 +462,11 @@ fn zh_hant_has_no_simplified_characters() {
             bad.push(format!("{ctx} {src:?} → {tr:?} has {c:?}"));
         }
     }
-    assert!(bad.is_empty(), "simplified characters in zh-hant.tsv:\n{}", bad.join("\n"));
+    assert!(
+        bad.is_empty(),
+        "simplified characters in zh-hant.tsv:\n{}",
+        bad.join("\n")
+    );
 }
 
 /// The Simplified Chinese catalog is written in Simplified characters and in the vocabulary of the
@@ -378,13 +535,25 @@ fn zh_hans_is_simplified_and_mainland() {
 #[test]
 fn complete_languages_translate_every_menu_string() {
     let strings = crate::menus::menu_strings();
-    assert!(strings.len() > 500, "menu scan found only {} strings", strings.len());
+    assert!(
+        strings.len() > 500,
+        "menu scan found only {} strings",
+        strings.len()
+    );
     for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
         let cat = l.catalog();
         // Languages that keep the product, workspace and perspective preset names in English.
         let kept = |s: &str| KEEPS_MENU_NAMES.contains(&l.code) && MENU_KEEP_AS_IS.contains(&s);
-        let missing: Vec<_> = strings.iter().filter(|s| !kept(s) && cat.plain(s).is_none()).collect();
-        assert!(missing.is_empty(), "{}: {} untranslated menu strings: {missing:#?}", l.code, missing.len());
+        let missing: Vec<_> = strings
+            .iter()
+            .filter(|s| !kept(s) && cat.plain(s).is_none())
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "{}: {} untranslated menu strings: {missing:#?}",
+            l.code,
+            missing.len()
+        );
     }
 }
 
@@ -395,11 +564,23 @@ fn complete_languages_translate_every_menu_string() {
 fn every_tl_literal_is_translated() {
     const KEEP_AS_IS: &[&str] = &[];
     let literals = tl_literals();
-    assert!(literals.len() > 300, "scan found only {} literals", literals.len());
+    assert!(
+        literals.len() > 300,
+        "scan found only {} literals",
+        literals.len()
+    );
     for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
         let cat = l.catalog();
-        let missing: Vec<_> = literals.iter().filter(|s| !KEEP_AS_IS.contains(&s.as_str()) && cat.plain(s).is_none()).collect();
-        assert!(missing.is_empty(), "{}: {} untranslated tl! strings: {missing:#?}", l.code, missing.len());
+        let missing: Vec<_> = literals
+            .iter()
+            .filter(|s| !KEEP_AS_IS.contains(&s.as_str()) && cat.plain(s).is_none())
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "{}: {} untranslated tl! strings: {missing:#?}",
+            l.code,
+            missing.len()
+        );
     }
 }
 
@@ -422,7 +603,9 @@ pub fn tl_literals() -> std::collections::BTreeSet<String> {
                     rest = &rest[at + 5..];
                     let mut end = 0;
                     let bytes = rest.as_bytes();
-                    while end < bytes.len() && !(bytes[end] == b'"' && (end == 0 || bytes[end - 1] != b'\\')) {
+                    while end < bytes.len()
+                        && !(bytes[end] == b'"' && (end == 0 || bytes[end - 1] != b'\\'))
+                    {
                         end += 1;
                     }
                     let lit = rest.get(..end).unwrap_or("").replace("\\\"", "\"");
@@ -440,10 +623,22 @@ pub fn tl_literals() -> std::collections::BTreeSet<String> {
 /// English source string a complete catalog has to cover, one per line, for translators.
 #[test]
 fn dump_source_strings() {
-    let Ok(path) = std::env::var("VECTORCRAFT_I18N_DUMP") else { return };
+    let Ok(path) = std::env::var("VECTORCRAFT_I18N_DUMP") else {
+        return;
+    };
     let mut all = crate::menus::menu_strings();
     all.extend(tl_literals());
-    let text: String = all.iter().map(|s| format!("{}\n", s.replace('\\', "\\\\").replace('\n', "\\n").replace('\t', "\\t"))).collect();
+    let text: String = all
+        .iter()
+        .map(|s| {
+            format!(
+                "{}\n",
+                s.replace('\\', "\\\\")
+                    .replace('\n', "\\n")
+                    .replace('\t', "\\t")
+            )
+        })
+        .collect();
     std::fs::write(path, text).expect("write dump");
 }
 
@@ -452,7 +647,9 @@ fn cs() -> Lang {
 }
 
 /// Languages whose catalogs leave [`MENU_KEEP_AS_IS`] in English.
-const KEEPS_MENU_NAMES: [&str; 13] = ["cs", "de", "es", "fr", "hu", "it", "ja", "ko", "pl", "pt-br", "ru", "uk", "vi"];
+const KEEPS_MENU_NAMES: [&str; 13] = [
+    "cs", "de", "es", "fr", "hu", "it", "ja", "ko", "pl", "pt-br", "ru", "uk", "vi",
+];
 
 /// Menu labels the menu-complete catalogs (Czech, German, Spanish, Italian, Japanese, Brazilian Portuguese) show as they are: the product name, a format name, the built-in workspace
 /// names and the perspective grid presets (names, shown untranslated wherever else they appear).
@@ -508,9 +705,16 @@ fn menu_labels() -> Vec<(&'static str, &'static str, serde_json::Value)> {
 /// with every toggle flipped.
 fn toggled_labels() -> Vec<String> {
     use serde_json::json;
-    let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+    let mut app = crate::VectorcraftApp::new(
+        vectorcraft_engine::Session::new(),
+        crate::Services::default(),
+    );
     app.run("file.new", json!({})).unwrap();
-    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 50})).unwrap();
+    app.run(
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 50, "height": 50}),
+    )
+    .unwrap();
     app.run("object.envelope.makeWithWarp", json!({})).unwrap();
     let toggles = [
         "view.outline",
@@ -554,24 +758,48 @@ fn menu_catalogs_translate_every_menu_label() {
     let language_name = |l: &str| Lang::all().any(|lang| lang.name() == l);
     // Font names and sizes, and installed plug-ins' own names, are not interface text.
     let interface = |(label, id, p): &(&str, &str, serde_json::Value)| {
-        let plugin = *id == "plugin.dialog" || p.get("effect").and_then(serde_json::Value::as_str).is_some_and(|e| e.starts_with("plugin."));
-        *id != "text.setStyle" && !plugin && shown.contains(*label) && !MENU_KEEP_AS_IS.contains(label) && !language_name(label)
+        let plugin = *id == "plugin.dialog"
+            || p.get("effect")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|e| e.starts_with("plugin."));
+        *id != "text.setStyle"
+            && !plugin
+            && shown.contains(*label)
+            && !MENU_KEEP_AS_IS.contains(label)
+            && !language_name(label)
     };
-    let mut all: Vec<String> = labels.iter().filter(|l| interface(l)).map(|(l, ..)| l.to_string()).collect();
+    let mut all: Vec<String> = labels
+        .iter()
+        .filter(|l| interface(l))
+        .map(|(l, ..)| l.to_string())
+        .collect();
     all.extend(toggled_labels());
     all.extend(crate::menus::CONTEXT_LABELS.iter().map(|l| l.to_string()));
     // The macOS menu bar's own labels, and its Settings submenu's Preferences pages.
     all.extend(crate::native_menu::MAC_LABELS.iter().map(|l| l.to_string()));
-    all.extend(vectorcraft_engine::cmd::prefscmds::PREF_CATEGORIES.iter().map(|l| l.to_string()));
+    all.extend(
+        vectorcraft_engine::cmd::prefscmds::PREF_CATEGORIES
+            .iter()
+            .map(|l| l.to_string()),
+    );
     all.sort();
     all.dedup();
     for code in KEEPS_MENU_NAMES {
         let lang = Lang::from_code(code).expect("registered");
         let missing: Vec<&String> = all.iter().filter(|l| !has(lang, l)).collect();
-        assert!(missing.is_empty(), "{code}: untranslated menu labels: {missing:?}");
+        assert!(
+            missing.is_empty(),
+            "{code}: untranslated menu labels: {missing:?}"
+        );
         for keep in MENU_KEEP_AS_IS {
-            assert!(labels.iter().any(|(l, ..)| l == keep), "`{keep}` isn't a menu label");
-            assert!(!has(lang, keep), "{code}: `{keep}` is both kept and translated");
+            assert!(
+                labels.iter().any(|(l, ..)| l == keep),
+                "`{keep}` isn't a menu label"
+            );
+            assert!(
+                !has(lang, keep),
+                "{code}: `{keep}` is both kept and translated"
+            );
         }
     }
     assert_eq!(tr(cs(), "File"), "Soubor");
@@ -580,7 +808,10 @@ fn menu_catalogs_translate_every_menu_label() {
     for tag in ["it", "it_IT.UTF-8", "it-CH", "it_SM"] {
         assert_eq!(lang_from_tag(tag), Lang::from_code("it"), "{tag}");
     }
-    assert_eq!(tr(Lang::from_code("pt-br").expect("pt-br"), "File"), "Arquivo");
+    assert_eq!(
+        tr(Lang::from_code("pt-br").expect("pt-br"), "File"),
+        "Arquivo"
+    );
     assert_eq!(tr(es(), "File"), "Archivo");
     assert_eq!(tr(de(), "File"), "Datei");
     assert_eq!(tr(it(), "Edit"), "Modifica");
@@ -631,10 +862,16 @@ fn hungarian_reads_as_hungarian() {
     assert_eq!(tr_id(hu(), "file.close", "Close"), "Bezárás");
     assert_eq!(tr_id(hu(), "pathfinder.add", "Add"), "Egyesítés");
     for n in [0, 1, 3, 21] {
-        assert_eq!(trn(hu(), n, "{n} Layer", "{n} Layers"), format!("{n} réteg"));
+        assert_eq!(
+            trn(hu(), n, "{n} Layer", "{n} Layers"),
+            format!("{n} réteg")
+        );
     }
     let nested = "command `object.group` is not available right now: nothing selected";
-    assert_eq!(message(hu(), nested), "a parancs jelenleg nem érhető el: `object.group`: nincs kijelölés");
+    assert_eq!(
+        message(hu(), nested),
+        "a parancs jelenleg nem érhető el: `object.group`: nincs kijelölés"
+    );
 }
 
 fn ko() -> Lang {
@@ -659,10 +896,16 @@ fn korean_reads_as_korean() {
         assert_eq!(tr(ko(), en), want);
     }
     for n in [0, 1, 3, 21] {
-        assert_eq!(trn(ko(), n, "{n} Layer", "{n} Layers"), format!("레이어 {n}개"));
+        assert_eq!(
+            trn(ko(), n, "{n} Layer", "{n} Layers"),
+            format!("레이어 {n}개")
+        );
     }
     let nested = "command `object.group` is not available right now: nothing selected";
-    assert_eq!(message(ko(), nested), "명령 `object.group`은(는) 지금 사용할 수 없습니다: 선택된 항목이 없습니다");
+    assert_eq!(
+        message(ko(), nested),
+        "명령 `object.group`은(는) 지금 사용할 수 없습니다: 선택된 항목이 없습니다"
+    );
 }
 
 fn vi() -> Lang {
@@ -692,7 +935,10 @@ fn vietnamese_reads_as_vietnamese() {
         assert_eq!(trn(vi(), n, "{n} Layer", "{n} Layers"), format!("{n} lớp"));
     }
     let nested = "command `object.group` is not available right now: nothing selected";
-    assert_eq!(message(vi(), nested), "lệnh `object.group` hiện không khả dụng: chưa chọn gì");
+    assert_eq!(
+        message(vi(), nested),
+        "lệnh `object.group` hiện không khả dụng: chưa chọn gì"
+    );
 }
 
 /// Ambiguous English terms keep their intended Vietnamese meaning across UI contexts.
@@ -715,11 +961,26 @@ fn vietnamese_domain_terms_are_consistent() {
     }
     assert_eq!(tr(vi(), "Appearance"), "Diện mạo");
     assert_eq!(tr_ctx(vi(), "theme", "Appearance"), "Giao diện");
-    assert_eq!(message(vi(), "no saved themes"), "chưa có bộ màu nào được lưu");
-    assert_eq!(message(vi(), r#"choice must be "merge" or "add", not `foo`"#), r#"lựa chọn phải là "merge" hoặc "add", không phải `foo`"#);
-    assert_eq!(message(vi(), "select a blend"), "hãy chọn một đối tượng hòa trộn");
-    assert_eq!(message(vi(), "select a repeat"), "hãy chọn một đối tượng lặp");
-    assert_eq!(message(vi(), "Replace Spine: select a blend and a path"), "Thay thế trục: chọn một đối tượng hòa trộn và một đường dẫn");
+    assert_eq!(
+        message(vi(), "no saved themes"),
+        "chưa có bộ màu nào được lưu"
+    );
+    assert_eq!(
+        message(vi(), r#"choice must be "merge" or "add", not `foo`"#),
+        r#"lựa chọn phải là "merge" hoặc "add", không phải `foo`"#
+    );
+    assert_eq!(
+        message(vi(), "select a blend"),
+        "hãy chọn một đối tượng hòa trộn"
+    );
+    assert_eq!(
+        message(vi(), "select a repeat"),
+        "hãy chọn một đối tượng lặp"
+    );
+    assert_eq!(
+        message(vi(), "Replace Spine: select a blend and a path"),
+        "Thay thế trục: chọn một đối tượng hòa trộn và một đường dẫn"
+    );
 }
 
 fn uk() -> Lang {
@@ -771,10 +1032,25 @@ fn german_reads_as_german() {
     assert_eq!(tr(de(), "Appearance"), "Aussehen");
     assert_eq!(tr_ctx(de(), "theme", "Appearance"), "Erscheinungsbild");
     let nested = "command `object.group` is not available right now: nothing selected";
-    assert_eq!(message(de(), nested), "der Befehl `object.group` ist derzeit nicht verfügbar: nichts ausgewählt");
+    assert_eq!(
+        message(de(), nested),
+        "der Befehl `object.group` ist derzeit nicht verfügbar: nichts ausgewählt"
+    );
     // Text styles are "…format" in German: the kind is joined to it ("Neues Zeichenformat erstellen").
-    assert_eq!(fmt(tr(de(), "Create New {kind} Style"), &[("kind", tr(de(), "Character"))]), "Neues Zeichenformat erstellen");
-    assert_eq!(fmt(tr(de(), "Show {kind} Brushes"), &[("kind", tr(de(), "Calligraphic"))]), "Kalligrafiepinsel einblenden");
+    assert_eq!(
+        fmt(
+            tr(de(), "Create New {kind} Style"),
+            &[("kind", tr(de(), "Character"))]
+        ),
+        "Neues Zeichenformat erstellen"
+    );
+    assert_eq!(
+        fmt(
+            tr(de(), "Show {kind} Brushes"),
+            &[("kind", tr(de(), "Calligraphic"))]
+        ),
+        "Kalligrafiepinsel einblenden"
+    );
 }
 
 /// French uses the vector-illustration vocabulary its users know, puts zero in the singular (« 0
@@ -871,10 +1147,16 @@ fn ukrainian_reads_as_ukrainian() {
         (121, "шар"),
         (124, "шари"),
     ] {
-        assert_eq!(trn(uk(), n, "{n} Layer", "{n} Layers"), format!("{n} {word}"));
+        assert_eq!(
+            trn(uk(), n, "{n} Layer", "{n} Layers"),
+            format!("{n} {word}")
+        );
     }
     let nested = "command `object.group` is not available right now: nothing selected";
-    assert_eq!(message(uk(), nested), "команда `object.group` зараз недоступна: нічого не виділено");
+    assert_eq!(
+        message(uk(), nested),
+        "команда `object.group` зараз недоступна: нічого не виділено"
+    );
 }
 
 /// Every Ukrainian plural has all three forms; exercise different endings through real lookups.
@@ -907,7 +1189,11 @@ fn ukrainian_plurals_have_three_forms() {
             (122, 1),
             (u64::MAX, 2),
         ] {
-            assert_eq!(trn(uk(), n, one, other), forms[form].replace("{n}", &n.to_string()), "{src}: {n}");
+            assert_eq!(
+                trn(uk(), n, one, other),
+                forms[form].replace("{n}", &n.to_string()),
+                "{src}: {n}"
+            );
         }
     }
     assert!(count >= 13, "Ukrainian plural rows missing");
@@ -917,17 +1203,32 @@ fn ukrainian_plurals_have_three_forms() {
 /// hint bar and a few labels are joined from pieces (" to finish", "Press ").
 #[test]
 fn spaced_catalogs_keep_the_spaces_around_fragments() {
-    let edge = |s: &str| (s.len() - s.trim_start_matches(' ').len(), s.len() - s.trim_end_matches(' ').len());
-    for l in LANGUAGES.iter().filter(|l| !l.source.is_empty() && !l.source.chars().any(is_cjk)) {
+    let edge = |s: &str| {
+        (
+            s.len() - s.trim_start_matches(' ').len(),
+            s.len() - s.trim_end_matches(' ').len(),
+        )
+    };
+    for l in LANGUAGES
+        .iter()
+        .filter(|l| !l.source.is_empty() && !l.source.chars().any(is_cjk))
+    {
         let (entries, _) = parse_entries(l.source);
-        let bad: Vec<_> = entries.iter().filter(|(ctx, src, tr)| ctx.is_empty() && edge(src) != edge(tr)).map(|(_, src, _)| src).collect();
+        let bad: Vec<_> = entries
+            .iter()
+            .filter(|(ctx, src, tr)| ctx.is_empty() && edge(src) != edge(tr))
+            .map(|(_, src, _)| src)
+            .collect();
         assert!(bad.is_empty(), "{}: spaces differ around {bad:?}", l.code);
     }
 }
 
 #[test]
 fn czech_plurals_have_three_forms() {
-    let forms: Vec<usize> = [0, 1, 2, 4, 5, 11, 21].into_iter().map(plural_czech).collect();
+    let forms: Vec<usize> = [0, 1, 2, 4, 5, 11, 21]
+        .into_iter()
+        .map(plural_czech)
+        .collect();
     assert_eq!(forms, [2, 0, 1, 1, 2, 2, 2]);
     // Every Czech plural row has the three forms, and each count picks its own.
     let (entries, _) = parse_entries(cs().0.source);
@@ -940,8 +1241,21 @@ fn czech_plurals_have_three_forms() {
         let (one, other) = src.split_once('|').expect("one|other source");
         let forms: Vec<_> = translated.split('|').collect();
         assert_eq!(forms.len(), 3, "{src}");
-        for (n, form) in [(1, 0), (2, 1), (4, 1), (0, 2), (5, 2), (11, 2), (21, 2), (u64::MAX, 2)] {
-            assert_eq!(trn(cs(), n, one, other), forms[form].replace("{n}", &n.to_string()), "{src}: {n}");
+        for (n, form) in [
+            (1, 0),
+            (2, 1),
+            (4, 1),
+            (0, 2),
+            (5, 2),
+            (11, 2),
+            (21, 2),
+            (u64::MAX, 2),
+        ] {
+            assert_eq!(
+                trn(cs(), n, one, other),
+                forms[form].replace("{n}", &n.to_string()),
+                "{src}: {n}"
+            );
         }
     }
     assert!(count >= 13, "Czech plural rows missing");
@@ -963,8 +1277,18 @@ fn czech_reads_as_czech() {
     ] {
         assert_eq!(tr(cs(), en), want);
     }
-    for (n, word) in [(0, "vrstev"), (1, "vrstva"), (2, "vrstvy"), (4, "vrstvy"), (5, "vrstev"), (11, "vrstev")] {
-        assert_eq!(trn(cs(), n, "{n} Layer", "{n} Layers"), format!("{n} {word}"));
+    for (n, word) in [
+        (0, "vrstev"),
+        (1, "vrstva"),
+        (2, "vrstvy"),
+        (4, "vrstvy"),
+        (5, "vrstev"),
+        (11, "vrstev"),
+    ] {
+        assert_eq!(
+            trn(cs(), n, "{n} Layer", "{n} Layers"),
+            format!("{n} {word}")
+        );
     }
     assert_eq!(tr_ctx(cs(), "axis", "Both"), "Obě");
     // "Add" is Unite in Effect › Pathfinder (an `@id` row for the effect id); "Přidat" elsewhere.
@@ -972,12 +1296,18 @@ fn czech_reads_as_czech() {
     assert_eq!(tr_id(cs(), "pathfinder.add", "Add"), "Sjednotit");
     assert_eq!(tr_id(cs(), "pathfinder.intersect", "Intersect"), "Protnout");
     let nested = "command `object.group` is not available right now: nothing selected";
-    assert_eq!(message(cs(), nested), "příkaz `object.group` nyní není k dispozici: nic není vybráno");
+    assert_eq!(
+        message(cs(), nested),
+        "příkaz `object.group` nyní není k dispozici: nic není vybráno"
+    );
 }
 
 #[test]
 fn russian_plurals_have_three_forms() {
-    let forms: Vec<usize> = [0, 1, 2, 4, 5, 11, 21, 22, 25, 111, 121].into_iter().map(plural_east_slavic).collect();
+    let forms: Vec<usize> = [0, 1, 2, 4, 5, 11, 21, 22, 25, 111, 121]
+        .into_iter()
+        .map(plural_east_slavic)
+        .collect();
     assert_eq!(forms, [2, 0, 1, 1, 2, 2, 0, 1, 2, 2, 0]);
 }
 
@@ -1013,14 +1343,24 @@ fn cyrillic_glyphs_are_available_without_system_fonts() {
     let mut output = ctx.run_ui(egui::RawInput::default(), |_| {});
     output.textures_delta.clear();
     ctx.fonts_mut(|fonts| {
-        let families: Vec<_> = fonts.definitions().families.iter().map(|(f, stack)| (f.clone(), stack.first().cloned())).collect();
+        let families: Vec<_> = fonts
+            .definitions()
+            .families
+            .iter()
+            .map(|(f, stack)| (f.clone(), stack.first().cloned()))
+            .collect();
         for (family, first) in families {
             let first = first.unwrap();
             let mut font = fonts.fonts.font(&family);
             let chars = font.characters();
-            for ch in "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯґєіїҐЄІЇ«»„“…–’".chars()
+            for ch in
+                "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯґєіїҐЄІЇ«»„“…–’"
+                    .chars()
             {
-                assert!(chars.get(&ch).is_some_and(|fonts| fonts.contains(&first)), "{first} ({family:?}) has no {ch}");
+                assert!(
+                    chars.get(&ch).is_some_and(|fonts| fonts.contains(&first)),
+                    "{first} ({family:?}) has no {ch}"
+                );
             }
         }
     });
@@ -1030,18 +1370,38 @@ fn cyrillic_glyphs_are_available_without_system_fonts() {
 /// the `interfaceLanguage` preference, and isn't written back.
 #[test]
 fn a_language_saved_by_an_older_version_carries_over() {
-    for (saved, want) in [("ja", "ja"), ("cs", "cs"), ("pt-br", "pt-br"), ("en", "auto"), ("xx", "auto")] {
-        let ui: crate::state::UiState = serde_json::from_value(serde_json::json!({"language": saved})).unwrap();
-        let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+    for (saved, want) in [
+        ("ja", "ja"),
+        ("cs", "cs"),
+        ("pt-br", "pt-br"),
+        ("en", "auto"),
+        ("xx", "auto"),
+    ] {
+        let ui: crate::state::UiState =
+            serde_json::from_value(serde_json::json!({"language": saved})).unwrap();
+        let mut app = crate::VectorcraftApp::new(
+            vectorcraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.ui = ui;
         crate::prefs_dialog::restore(&mut app);
         assert_eq!(app.session.prefs.interface_language, want, "saved {saved}");
-        assert!(serde_json::to_value(&app.ui).unwrap().get("language").is_none());
+        assert!(
+            serde_json::to_value(&app.ui)
+                .unwrap()
+                .get("language")
+                .is_none()
+        );
     }
     // A preference already set wins over the old field.
-    let ui: crate::state::UiState =
-        serde_json::from_value(serde_json::json!({"language": "ja", "engine_prefs": {"interfaceLanguage": "cs"}})).unwrap();
-    let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+    let ui: crate::state::UiState = serde_json::from_value(
+        serde_json::json!({"language": "ja", "engine_prefs": {"interfaceLanguage": "cs"}}),
+    )
+    .unwrap();
+    let mut app = crate::VectorcraftApp::new(
+        vectorcraft_engine::Session::new(),
+        crate::Services::default(),
+    );
     app.ui = ui;
     crate::prefs_dialog::restore(&mut app);
     assert_eq!(app.session.prefs.interface_language, "cs");
@@ -1057,11 +1417,18 @@ fn messages_translate_by_template_and_their_parts() {
         "@msg\t{a}{b}\tnever\n",
         "@msg\t{n} of {total}\t{total} contiene {n}\n",
     ));
-    assert_eq!(c.message("nothing selected").map(|m| m.0), Some("nada seleccionado"));
+    assert_eq!(
+        c.message("nothing selected").map(|m| m.0),
+        Some("nada seleccionado")
+    );
     // The template with the most literal text wins over the generic `{path}: {e}`.
     let (tr, caps) = c.message("Couldn't open a: b.svg: damaged").unwrap();
     assert_eq!(tr, "No se pudo abrir {name}: {e}");
-    assert_eq!(caps, [("name", "a"), ("e", "b.svg: damaged")], "a placeholder takes the shortest text that lets the rest match");
+    assert_eq!(
+        caps,
+        [("name", "a"), ("e", "b.svg: damaged")],
+        "a placeholder takes the shortest text that lets the rest match"
+    );
     assert_eq!(c.message("x of y").unwrap().1, [("n", "x"), ("total", "y")]);
     assert!(c.message("of y").is_none(), "a placeholder is never empty");
     assert!(c.message("something else").is_none());
@@ -1072,7 +1439,12 @@ fn messages_translate_by_template_and_their_parts() {
     // A reason inside a message is translated too, and parts without entries stay as they are.
     let nested = "command `object.group` is not available right now: nothing selected";
     let shown = message(es, nested);
-    assert!(shown.contains("`object.group`") && !shown.contains("nothing selected") && !shown.contains("not available"), "{shown}");
+    assert!(
+        shown.contains("`object.group`")
+            && !shown.contains("nothing selected")
+            && !shown.contains("not available"),
+        "{shown}"
+    );
     assert_eq!(message(Lang::EN, nested), nested);
 }
 
@@ -1082,16 +1454,38 @@ fn messages_translate_by_template_and_their_parts() {
 #[test]
 fn complete_languages_translate_every_message() {
     let messages = message_literals();
-    assert!(messages.len() > 300, "scan found only {} messages", messages.len());
+    assert!(
+        messages.len() > 300,
+        "scan found only {} messages",
+        messages.len()
+    );
     if let Ok(path) = std::env::var("VECTORCRAFT_I18N_DUMP_MESSAGES") {
-        std::fs::write(path, messages.iter().map(|m| format!("{m}\n")).collect::<String>()).expect("write dump");
+        std::fs::write(
+            path,
+            messages
+                .iter()
+                .map(|m| format!("{m}\n"))
+                .collect::<String>(),
+        )
+        .expect("write dump");
     }
     for code in COMPLETE_MESSAGES {
         let lang = Lang::from_code(code).expect("registered");
         let (entries, _) = parse_entries(lang.0.source);
-        let rows: std::collections::HashSet<&str> = entries.iter().filter(|(ctx, _, _)| ctx == "@msg").map(|(_, src, _)| src.as_str()).collect();
-        let missing: Vec<_> = messages.iter().filter(|m| !rows.contains(m.as_str())).collect();
-        assert!(missing.is_empty(), "{code}: {} untranslated messages: {missing:#?}", missing.len());
+        let rows: std::collections::HashSet<&str> = entries
+            .iter()
+            .filter(|(ctx, _, _)| ctx == "@msg")
+            .map(|(_, src, _)| src.as_str())
+            .collect();
+        let missing: Vec<_> = messages
+            .iter()
+            .filter(|m| !rows.contains(m.as_str()))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "{code}: {} untranslated messages: {missing:#?}",
+            missing.len()
+        );
     }
 }
 
@@ -1103,7 +1497,11 @@ fn align_reflect_and_shear_param_errors_are_translated() {
     let mut s = vectorcraft_engine::Session::new();
     s.execute("file.new", &json!({})).unwrap();
     for x in [0, 50] {
-        s.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 10, "height": 10})).unwrap();
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap();
     }
     s.execute("select.all", &json!({})).unwrap();
     for (cmd, p) in [
@@ -1111,14 +1509,19 @@ fn align_reflect_and_shear_param_errors_are_translated() {
         ("object.align", json!({"horizontal": "middle"})),
         ("object.align", json!({"vertical": "centre"})),
         ("object.align", json!({"horizontal": "left", "to": "page"})),
-        ("object.align", json!({"horizontal": "left", "bounds": "visual"})),
+        (
+            "object.align",
+            json!({"horizontal": "left", "bounds": "visual"}),
+        ),
         ("object.distributeSpacing", json!({"axis": "diagonal"})),
         ("object.distributeSpacing", json!({"spacing": "5"})),
         ("object.reflect", json!({"axis": "diagonal"})),
         ("object.shear", json!({"axis": "diagonal"})),
     ] {
         let e = s.execute(cmd, &p).unwrap_err();
-        let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{cmd} {p}: {e}") };
+        let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else {
+            panic!("{cmd} {p}: {e}")
+        };
         for code in COMPLETE_MESSAGES {
             let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
             assert!(!shown.contains(msg.as_str()), "{code}: {shown}");
@@ -1131,12 +1534,21 @@ fn align_reflect_and_shear_param_errors_are_translated() {
 #[test]
 fn unknown_parameter_errors_are_translated() {
     use serde_json::json;
-    for (cmd, p) in [("file.new", json!({"widht": 300})), ("select.all", json!({"zzz": 1})), ("shape.line", json!({"colour": "red"}))] {
+    for (cmd, p) in [
+        ("file.new", json!({"widht": 300})),
+        ("select.all", json!({"zzz": 1})),
+        ("shape.line", json!({"colour": "red"})),
+    ] {
         let e = vectorcraft_engine::check_params(cmd, &p).unwrap_err();
-        let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{cmd} {p}: {e}") };
+        let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else {
+            panic!("{cmd} {p}: {e}")
+        };
         for code in COMPLETE_MESSAGES.iter().chain(&["pt-br"]) {
             let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
-            assert!(!shown.contains("unknown parameter") && shown.contains(cmd), "{code}: {shown} ({msg})");
+            assert!(
+                !shown.contains("unknown parameter") && shown.contains(cmd),
+                "{code}: {shown} ({msg})"
+            );
         }
     }
 }
@@ -1150,12 +1562,21 @@ fn select_key_param_error_is_translated() {
     let mut s = vectorcraft_engine::Session::new();
     s.execute("file.new", &json!({})).unwrap();
     let rectangle = |s: &mut vectorcraft_engine::Session, x: u64| {
-        s.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 10, "height": 10})).unwrap()["id"].clone()
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap()["id"]
+            .clone()
     };
     let [a, b, unselected] = [0, 50, 100].map(|x| rectangle(&mut s, x));
     s.execute("select.set", &json!({"ids": [a, b]})).unwrap();
-    let e = s.execute("select.key", &json!({"id": unselected})).unwrap_err();
-    let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{e}") };
+    let e = s
+        .execute("select.key", &json!({"id": unselected}))
+        .unwrap_err();
+    let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else {
+        panic!("{e}")
+    };
     for code in COMPLETE_MESSAGES {
         let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
         assert!(!shown.contains(msg.as_str()), "{code}: {shown}");
@@ -1163,13 +1584,27 @@ fn select_key_param_error_is_translated() {
 }
 
 /// Languages whose catalogs cover every status and error message.
-const COMPLETE_MESSAGES: &[&str] = &["cs", "de", "es", "fr", "hu", "it", "ja", "ko", "pl", "ru", "uk", "vi"];
+const COMPLETE_MESSAGES: &[&str] = &[
+    "cs", "de", "es", "fr", "hu", "it", "ja", "ko", "pl", "ru", "uk", "vi",
+];
 
 /// Crates whose error and status messages reach the status bar.
-const MESSAGE_CRATES: &[&str] = &["ui-egui", "engine", "doc", "format", "svg", "pdf", "eps", "text", "plugins", "metafile", "cad", "trace"];
+const MESSAGE_CRATES: &[&str] = &[
+    "ui-egui", "engine", "doc", "format", "svg", "pdf", "eps", "text", "plugins", "metafile",
+    "cad", "trace",
+];
 
 /// Where a message literal starts: a status, an error value, a `thiserror` message.
-const MESSAGE_MARKERS: &[&str] = &[".status(", "ui.status = ", "status = ", "Other(", "Err(", "ok_or(", "ok_or_else(|| ", "#[error("];
+const MESSAGE_MARKERS: &[&str] = &[
+    ".status(",
+    "ui.status = ",
+    "status = ",
+    "Other(",
+    "Err(",
+    "ok_or(",
+    "ok_or_else(|| ",
+    "#[error(",
+];
 
 /// Messages that are signals, not text for people.
 const NOT_MESSAGES: &[&str] = &["quit", "cancelled"];
@@ -1179,7 +1614,10 @@ const NOT_MESSAGES: &[&str] = &["quit", "cancelled"];
 pub fn message_literals() -> std::collections::BTreeSet<String> {
     let crates = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
     let mut out = std::collections::BTreeSet::new();
-    let mut stack: Vec<_> = MESSAGE_CRATES.iter().map(|c| crates.join(c).join("src")).collect();
+    let mut stack: Vec<_> = MESSAGE_CRATES
+        .iter()
+        .map(|c| crates.join(c).join("src"))
+        .collect();
     while let Some(d) = stack.pop() {
         for entry in std::fs::read_dir(&d).into_iter().flatten().flatten() {
             let path = entry.path();
@@ -1195,8 +1633,13 @@ pub fn message_literals() -> std::collections::BTreeSet<String> {
                     for (at, _) in code.match_indices(marker) {
                         let rest = code[at + marker.len()..].trim_start();
                         let rest = rest.strip_prefix("format!(").map_or(rest, str::trim_start);
-                        let Some(lit) = rest.strip_prefix('"').and_then(string_literal) else { continue };
-                        let has_word = lit.as_bytes().windows(3).any(|w| w.iter().all(u8::is_ascii_lowercase));
+                        let Some(lit) = rest.strip_prefix('"').and_then(string_literal) else {
+                            continue;
+                        };
+                        let has_word = lit
+                            .as_bytes()
+                            .windows(3)
+                            .any(|w| w.iter().all(u8::is_ascii_lowercase));
                         if has_word && !NOT_MESSAGES.contains(&lit.as_str()) {
                             out.insert(as_template(&lit));
                         }
@@ -1214,7 +1657,10 @@ fn without_test_module(text: &str) -> &str {
     for (at, m) in text.match_indices("#[cfg(test)]") {
         let after = text[at + m.len()..].trim_start();
         if let Some(rest) = after.strip_prefix("mod ")
-            && rest.trim_start_matches(|c: char| c.is_alphanumeric() || c == '_').trim_start().starts_with('{')
+            && rest
+                .trim_start_matches(|c: char| c.is_alphanumeric() || c == '_')
+                .trim_start()
+                .starts_with('{')
         {
             return &text[..at];
         }
@@ -1280,17 +1726,45 @@ fn czech_render_site_follow_up() {
     }
     assert_eq!(tr_ctx(cs(), "diagnostics", "render"), "vykreslení");
     assert_eq!(tr_ctx(cs(), "diagnostics", "ui"), "rozhraní");
-    assert_eq!(fmt(tr(cs(), "Preset {number}"), &[("number", "12")]), "Přednastavení 12");
-    assert_eq!(fmt(tr(Lang::EN, "Preset {number}"), &[("number", "12")]), "Preset 12");
-    for (kind, expected) in [("Linear", "Lineární přechod"), ("Radial", "Kruhový přechod"), ("Freeform", "Volný přechod")] {
-        assert_eq!(fmt(tr(cs(), "{kind} Gradient"), &[("kind", tr_ctx(cs(), "gradient-kind", kind))]), expected);
-        assert_eq!(fmt(tr(Lang::EN, "{kind} Gradient"), &[("kind", tr_ctx(Lang::EN, "gradient-kind", kind))]), format!("{kind} Gradient"));
+    assert_eq!(
+        fmt(tr(cs(), "Preset {number}"), &[("number", "12")]),
+        "Přednastavení 12"
+    );
+    assert_eq!(
+        fmt(tr(Lang::EN, "Preset {number}"), &[("number", "12")]),
+        "Preset 12"
+    );
+    for (kind, expected) in [
+        ("Linear", "Lineární přechod"),
+        ("Radial", "Kruhový přechod"),
+        ("Freeform", "Volný přechod"),
+    ] {
+        assert_eq!(
+            fmt(
+                tr(cs(), "{kind} Gradient"),
+                &[("kind", tr_ctx(cs(), "gradient-kind", kind))]
+            ),
+            expected
+        );
+        assert_eq!(
+            fmt(
+                tr(Lang::EN, "{kind} Gradient"),
+                &[("kind", tr_ctx(Lang::EN, "gradient-kind", kind))]
+            ),
+            format!("{kind} Gradient")
+        );
     }
     assert_eq!(tr(cs(), "Japanese"), "Japonština");
     assert_eq!(tr_ctx(cs(), "mark-style", "Japanese"), "Japonské");
     assert_eq!(tr_ctx(Lang::EN, "mark-style", "Japanese"), "Japanese");
     assert_eq!(tr(cs(), "PRs"), "PR");
-    for (n, expected) in [(0, "0 commitů"), (1, "1 commit"), (2, "2 commity"), (4, "4 commity"), (5, "5 commitů")] {
+    for (n, expected) in [
+        (0, "0 commitů"),
+        (1, "1 commit"),
+        (2, "2 commity"),
+        (4, "4 commity"),
+        (5, "5 commitů"),
+    ] {
         assert_eq!(trn(cs(), n, "{n} commit", "{n} commits"), expected);
         assert_eq!(trn(cs(), n, "{n} PR", "{n} PRs"), format!("{n} PR"));
     }
@@ -1302,7 +1776,10 @@ fn pl() -> Lang {
 
 #[test]
 fn polish_plurals_have_three_forms() {
-    let forms: Vec<usize> = [0, 1, 2, 4, 5, 11, 12, 14, 21, 22, 25, 101, 112, 122].into_iter().map(plural_polish).collect();
+    let forms: Vec<usize> = [0, 1, 2, 4, 5, 11, 12, 14, 21, 22, 25, 101, 112, 122]
+        .into_iter()
+        .map(plural_polish)
+        .collect();
     assert_eq!(forms, [2, 0, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1]);
     // Every Polish plural row has the three forms, and each count picks its own.
     let (entries, _) = parse_entries(pl().0.source);
@@ -1316,7 +1793,11 @@ fn polish_plurals_have_three_forms() {
         assert_eq!(forms.len(), 3, "{src}");
         let (one, other) = src.split_once('|').unwrap();
         for (n, form) in [(1, 0), (3, 1), (5, 2), (21, 2), (22, 1)] {
-            assert_eq!(trn(pl(), n, one, other), forms[form].replace("{n}", &n.to_string()), "{src}: {n}");
+            assert_eq!(
+                trn(pl(), n, one, other),
+                forms[form].replace("{n}", &n.to_string()),
+                "{src}: {n}"
+            );
         }
     }
     assert!(count >= 13, "Polish plural rows missing");
@@ -1340,11 +1821,23 @@ fn polish_reads_as_polish() {
     ] {
         assert_eq!(tr(pl(), en), want);
     }
-    for (n, word) in [(1, "warstwa"), (3, "warstwy"), (5, "warstw"), (22, "warstwy"), (21, "warstw")] {
-        assert_eq!(trn(pl(), n, "{n} Layer", "{n} Layers"), format!("{n} {word}"));
+    for (n, word) in [
+        (1, "warstwa"),
+        (3, "warstwy"),
+        (5, "warstw"),
+        (22, "warstwy"),
+        (21, "warstw"),
+    ] {
+        assert_eq!(
+            trn(pl(), n, "{n} Layer", "{n} Layers"),
+            format!("{n} {word}")
+        );
     }
     assert_eq!(tr_ctx(pl(), "axis", "Both"), "Obie");
     assert_eq!(tr_id(pl(), "pathfinder.add", "Add"), "Połącz");
     let nested = "command `object.group` is not available right now: nothing selected";
-    assert_eq!(message(pl(), nested), "polecenie `object.group` jest teraz niedostępne: nic nie zaznaczono");
+    assert_eq!(
+        message(pl(), nested),
+        "polecenie `object.group` jest teraz niedostępne: nic nie zaznaczono"
+    );
 }

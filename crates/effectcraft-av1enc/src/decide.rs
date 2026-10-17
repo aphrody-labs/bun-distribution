@@ -52,7 +52,14 @@ impl FrameGeom {
     pub fn new(width: usize, height: usize) -> FrameGeom {
         let mi_cols = 2 * width.div_ceil(8);
         let mi_rows = 2 * height.div_ceil(8);
-        FrameGeom { width, height, mi_cols, mi_rows, sb_cols: mi_cols.div_ceil(16), sb_rows: mi_rows.div_ceil(16) }
+        FrameGeom {
+            width,
+            height,
+            mi_cols,
+            mi_rows,
+            sb_cols: mi_cols.div_ceil(16),
+            sb_rows: mi_rows.div_ceil(16),
+        }
     }
     /// Padded plane size (whole superblocks).
     pub fn padded(&self, plane: usize) -> (usize, usize) {
@@ -61,7 +68,11 @@ impl FrameGeom {
     }
     /// Visible plane size.
     pub fn visible(&self, plane: usize) -> (usize, usize) {
-        if plane == 0 { (self.width, self.height) } else { (self.width.div_ceil(2), self.height.div_ceil(2)) }
+        if plane == 0 {
+            (self.width, self.height)
+        } else {
+            (self.width.div_ceil(2), self.height.div_ceil(2))
+        }
     }
 }
 
@@ -91,13 +102,21 @@ pub(crate) fn tx_set(tx_sz: usize, is_inter: bool) -> usize {
 }
 
 pub(crate) fn tx_in_set(set: usize, is_inter: bool, tx_type: usize) -> bool {
-    if is_inter { TX_TYPE_IN_SET_INTER[set][tx_type] == 1 } else { TX_TYPE_IN_SET_INTRA[set][tx_type] == 1 }
+    if is_inter {
+        TX_TYPE_IN_SET_INTER[set][tx_type] == 1
+    } else {
+        TX_TYPE_IN_SET_INTRA[set][tx_type] == 1
+    }
 }
 
 /// The chroma transform type of an intra block (compute_tx_type for plane > 0).
 pub(crate) fn intra_uv_tx_type(uv_mode: usize, uv_tx: usize) -> usize {
     let t = MODE_TO_TXFM[uv_mode] as usize;
-    if tx_in_set(tx_set(uv_tx, false), false, t) { t } else { DCT_DCT }
+    if tx_in_set(tx_set(uv_tx, false), false, t) {
+        t
+    } else {
+        DCT_DCT
+    }
 }
 
 struct TxResult {
@@ -136,7 +155,14 @@ pub(crate) struct Decider<'a> {
 const MODE_BITS_INTRA: f64 = 3.0;
 
 impl<'a> Decider<'a> {
-    pub fn new(g: &'a FrameGeom, bd: u32, qidx: u8, intra_only: bool, src: &'a [Plane; 3], refr: Option<&'a RefFrame>) -> Self {
+    pub fn new(
+        g: &'a FrameGeom,
+        bd: u32,
+        qidx: u8,
+        intra_only: bool,
+        src: &'a [Plane; 3],
+        refr: Option<&'a RefFrame>,
+    ) -> Self {
         let bdi = ((bd - 8) >> 1) as usize;
         let dc_qi = DC_QLOOKUP[bdi][qidx as usize] as i64;
         let ac_qi = AC_QLOOKUP[bdi][qidx as usize] as i64;
@@ -163,7 +189,8 @@ impl<'a> Decider<'a> {
             lambda,
             lambda_sad: lambda.sqrt(),
             half: match refr {
-                Some(rf) => [(8, 0), (0, 8), (8, 8)].map(|(fx, fy)| subpel_plane(&rf.planes[0], g.width, g.height, fx, fy, bd)),
+                Some(rf) => [(8, 0), (0, 8), (8, 8)]
+                    .map(|(fx, fy)| subpel_plane(&rf.planes[0], g.width, g.height, fx, fy, bd)),
                 None => Default::default(),
             },
         }
@@ -179,7 +206,11 @@ impl<'a> Decider<'a> {
             let bd = &mut self.decoded[plane];
             for y in -1..=((16 >> s) as isize) {
                 for x in -1..=((16 >> s) as isize) {
-                    let v = if y < 0 && x < sb_w4 { true } else { x < 0 && y < sb_h4 };
+                    let v = if y < 0 && x < sb_w4 {
+                        true
+                    } else {
+                        x < 0 && y < sb_h4
+                    };
                     bd[(y + 1) as usize][(x + 1) as usize] = v;
                 }
             }
@@ -222,7 +253,10 @@ impl<'a> Decider<'a> {
             }
             v
         });
-        Snapshot { planes, decoded: self.decoded.clone() }
+        Snapshot {
+            planes,
+            decoded: self.decoded.clone(),
+        }
     }
 
     fn restore(&mut self, snap: &Snapshot, r: usize, c: usize, n4: usize) {
@@ -231,7 +265,8 @@ impl<'a> Decider<'a> {
             let (x0, y0, n) = ((c * 4) >> s, (r * 4) >> s, (n4 * 4) >> s);
             let pl = &mut self.rec[p];
             for (i, y) in (y0..y0 + n).enumerate() {
-                pl.data[y * pl.stride + x0..y * pl.stride + x0 + n].copy_from_slice(&snap.planes[p][i * n..i * n + n]);
+                pl.data[y * pl.stride + x0..y * pl.stride + x0 + n]
+                    .copy_from_slice(&snap.planes[p][i * n..i * n + n]);
             }
         }
         self.decoded.clone_from(&snap.decoded);
@@ -245,7 +280,13 @@ impl<'a> Decider<'a> {
         }
     }
 
-    fn partition(&mut self, r: usize, c: usize, bsize: usize, parent_mv: Option<[i32; 2]>) -> (Node, f64) {
+    fn partition(
+        &mut self,
+        r: usize,
+        c: usize,
+        bsize: usize,
+        parent_mv: Option<[i32; 2]>,
+    ) -> (Node, f64) {
         let g = self.g;
         if r >= g.mi_rows || c >= g.mi_cols {
             return (Node::Out, 0.0);
@@ -272,7 +313,11 @@ impl<'a> Decider<'a> {
         }
         let after_none = self.snapshot(r, c, n4);
         self.restore(&before, r, c, n4);
-        let pm = if leaf.is_inter { Some(leaf.mv) } else { parent_mv };
+        let pm = if leaf.is_inter {
+            Some(leaf.mv)
+        } else {
+            parent_mv
+        };
         let (node, cost_split) = self.split(r, c, sub, half, pm);
         let cost_split = cost_split + self.lambda * 2.0;
         if cost_split < cost_none {
@@ -284,7 +329,14 @@ impl<'a> Decider<'a> {
         }
     }
 
-    fn split(&mut self, r: usize, c: usize, sub: usize, half: usize, pm: Option<[i32; 2]>) -> (Node, f64) {
+    fn split(
+        &mut self,
+        r: usize,
+        c: usize,
+        sub: usize,
+        half: usize,
+        pm: Option<[i32; 2]>,
+    ) -> (Node, f64) {
         let (n0, c0) = self.partition(r, c, sub, pm);
         let (n1, c1) = self.partition(r, c + half, sub, pm);
         let (n2, c2) = self.partition(r + half, c, sub, pm);
@@ -293,7 +345,13 @@ impl<'a> Decider<'a> {
     }
 
     /// Best coding of the block as a single (NONE partition) block.
-    fn leaf(&mut self, r: usize, c: usize, bsize: usize, parent_mv: Option<[i32; 2]>) -> (Leaf, f64) {
+    fn leaf(
+        &mut self,
+        r: usize,
+        c: usize,
+        bsize: usize,
+        parent_mv: Option<[i32; 2]>,
+    ) -> (Leaf, f64) {
         let n4 = NUM_4X4_BLOCKS_WIDE[bsize] as usize;
         if self.intra_only {
             let res = self.intra_leaf(r, c, bsize);
@@ -348,7 +406,15 @@ impl<'a> Decider<'a> {
             .map(|&mode| {
                 predict_intra(&ed, &e, mode, &mut pred);
                 let sad = self.satd(0, c * 4, r * 4, n, &pred[..n * n]) as f64;
-                (sad + self.lambda_sad * if mode == DC_PRED { 1.0 } else { MODE_BITS_INTRA }, mode)
+                (
+                    sad + self.lambda_sad
+                        * if mode == DC_PRED {
+                            1.0
+                        } else {
+                            MODE_BITS_INTRA
+                        },
+                    mode,
+                )
             })
             .collect();
         ranked.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -370,7 +436,11 @@ impl<'a> Decider<'a> {
                 } else {
                     2.0
                 };
-                let mode_bits = if mode == DC_PRED { 1.0 } else { MODE_BITS_INTRA };
+                let mode_bits = if mode == DC_PRED {
+                    1.0
+                } else {
+                    MODE_BITS_INTRA
+                };
                 let cost = res.dist + self.lambda * (res.bits + type_bits + mode_bits);
                 if best.as_ref().is_none_or(|b| cost < b.0) {
                     best_pred[..n * n].copy_from_slice(&pred[..n * n]);
@@ -381,11 +451,25 @@ impl<'a> Decider<'a> {
         // Every ranked mode tries DCT_DCT, so `best` is always set; without a candidate the block
         // can't be coded intra (an infinite cost keeps it from being chosen).
         let Some((_, y_mode, tx_type_y, ty, recon)) = best else {
-            let leaf =
-                Leaf { bsize, is_inter: false, y_mode: DC_PRED, uv_mode: DC_PRED, tx_type_y: DCT_DCT, mv: [0, 0], skip: true, coefs: Default::default() };
+            let leaf = Leaf {
+                bsize,
+                is_inter: false,
+                y_mode: DC_PRED,
+                uv_mode: DC_PRED,
+                tx_type_y: DCT_DCT,
+                mv: [0, 0],
+                skip: true,
+                coefs: Default::default(),
+            };
             return (leaf, f64::INFINITY);
         };
-        self.put(0, c * 4, r * 4, n, recon.as_deref().unwrap_or(&best_pred[..n * n]));
+        self.put(
+            0,
+            c * 4,
+            r * 4,
+            n,
+            recon.as_deref().unwrap_or(&best_pred[..n * n]),
+        );
         let tx_type_y = if ty.nonzero { tx_type_y } else { DCT_DCT };
         self.mark_decoded(0, r, c, n4);
         // chroma (one mode for both planes)
@@ -430,17 +514,39 @@ impl<'a> Decider<'a> {
         let v = code_uv(1);
         let skip = !ty.nonzero && !u.nonzero && !v.nonzero;
         let dist = ty.dist + u.dist + v.dist;
-        let bits = if skip { 1.0 } else { ty.bits + u.bits + v.bits + 1.0 } + MODE_BITS_INTRA + 2.0;
-        let leaf = Leaf { bsize, is_inter: false, y_mode, uv_mode, tx_type_y, mv: [0, 0], skip, coefs: [ty.levels, u.levels, v.levels] };
+        let bits = if skip {
+            1.0
+        } else {
+            ty.bits + u.bits + v.bits + 1.0
+        } + MODE_BITS_INTRA
+            + 2.0;
+        let leaf = Leaf {
+            bsize,
+            is_inter: false,
+            y_mode,
+            uv_mode,
+            tx_type_y,
+            mv: [0, 0],
+            skip,
+            coefs: [ty.levels, u.levels, v.levels],
+        };
         (leaf, dist + self.lambda * bits)
     }
 
-    fn inter_leaf(&mut self, r: usize, c: usize, bsize: usize, parent_mv: Option<[i32; 2]>) -> (Leaf, f64) {
+    fn inter_leaf(
+        &mut self,
+        r: usize,
+        c: usize,
+        bsize: usize,
+        parent_mv: Option<[i32; 2]>,
+    ) -> (Leaf, f64) {
         let n4 = NUM_4X4_BLOCKS_WIDE[bsize] as usize;
         let n = n4 * 4;
         let log2 = n.trailing_zeros();
         // Inter blocks are only decided with a reference frame; without one, code intra.
-        let Some(refr) = self.refr else { return self.intra_leaf(r, c, bsize) };
+        let Some(refr) = self.refr else {
+            return self.intra_leaf(r, c, bsize);
+        };
         let (mv, mv_bits) = self.motion_search(r, c, n, parent_mv);
         let mut pred = vec![0u16; n * n];
         let mut tx = Vec::with_capacity(3);
@@ -450,7 +556,19 @@ impl<'a> Decider<'a> {
             let (vw, vh) = self.g.visible(p);
             let pn = n >> s;
             let (x, y) = ((c * 4) >> s, (r * 4) >> s);
-            predict_inter(&refr.planes[p], vw as i32 - 1, vh as i32 - 1, x, y, pn, pn, mv, s, self.bd, &mut pred[..pn * pn]);
+            predict_inter(
+                &refr.planes[p],
+                vw as i32 - 1,
+                vh as i32 - 1,
+                x,
+                y,
+                pn,
+                pn,
+                mv,
+                s,
+                self.bd,
+                &mut pred[..pn * pn],
+            );
             if bsize == BLOCK_64X64 {
                 // coded as a skip block: the prediction is the reconstruction
                 dist += self.sse(p, x, y, pn, &pred[..pn * pn]);
@@ -464,30 +582,70 @@ impl<'a> Decider<'a> {
         }
         let mode_bits = if mv == [0, 0] { 1.5 } else { 2.0 + mv_bits };
         if bsize == BLOCK_64X64 {
-            let leaf = Leaf { bsize, is_inter: true, y_mode: NEWMV, uv_mode: DC_PRED, tx_type_y: DCT_DCT, mv, skip: true, coefs: Default::default() };
+            let leaf = Leaf {
+                bsize,
+                is_inter: true,
+                y_mode: NEWMV,
+                uv_mode: DC_PRED,
+                tx_type_y: DCT_DCT,
+                mv,
+                skip: true,
+                coefs: Default::default(),
+            };
             return (leaf, dist + self.lambda * (mode_bits + 1.0));
         }
         let skip = tx.iter().all(|t| !t.nonzero);
-        let bits = mode_bits + if skip { 1.0 } else { 1.0 + tx.iter().map(|t| t.bits).sum::<f64>() };
+        let bits = mode_bits
+            + if skip {
+                1.0
+            } else {
+                1.0 + tx.iter().map(|t| t.bits).sum::<f64>()
+            };
         let [y, u, v]: [TxResult; 3] = match tx.try_into() {
             Ok(planes) => planes,
             // One transform block per plane was coded above.
             Err(_) => {
                 return (
-                    Leaf { bsize, is_inter: true, y_mode: NEWMV, uv_mode: DC_PRED, tx_type_y: DCT_DCT, mv, skip: true, coefs: Default::default() },
+                    Leaf {
+                        bsize,
+                        is_inter: true,
+                        y_mode: NEWMV,
+                        uv_mode: DC_PRED,
+                        tx_type_y: DCT_DCT,
+                        mv,
+                        skip: true,
+                        coefs: Default::default(),
+                    },
                     f64::INFINITY,
                 );
             }
         };
-        let leaf = Leaf { bsize, is_inter: true, y_mode: NEWMV, uv_mode: DC_PRED, tx_type_y: DCT_DCT, mv, skip, coefs: [y.levels, u.levels, v.levels] };
+        let leaf = Leaf {
+            bsize,
+            is_inter: true,
+            y_mode: NEWMV,
+            uv_mode: DC_PRED,
+            tx_type_y: DCT_DCT,
+            mv,
+            skip,
+            coefs: [y.levels, u.levels, v.levels],
+        };
         (leaf, dist + self.lambda * bits)
     }
 
     /// Full-sample motion search: candidate vectors then a shrinking diamond search.
     /// Returns the vector and an estimate of its coding cost in bits.
-    fn motion_search(&self, r: usize, c: usize, n: usize, parent_mv: Option<[i32; 2]>) -> ([i32; 2], f64) {
+    fn motion_search(
+        &self,
+        r: usize,
+        c: usize,
+        n: usize,
+        parent_mv: Option<[i32; 2]>,
+    ) -> ([i32; 2], f64) {
         let g = self.g;
-        let Some(refr) = self.refr else { return ([0, 0], 0.0) };
+        let Some(refr) = self.refr else {
+            return ([0, 0], 0.0);
+        };
         let mi = |rr: usize, cc: usize| self.mvs[rr * g.mi_cols + cc];
         let mut pred_mv = [0, 0];
         let mut cands: Vec<[i32; 2]> = vec![[0, 0]];
@@ -516,11 +674,26 @@ impl<'a> Decider<'a> {
             dx >= lim_x.0 && dx <= lim_x.1 && dy >= lim_y.0 && dy <= lim_y.1
         };
         let mv_bits = |m: [i32; 2]| -> f64 {
-            let comp = |d: i32| if d == 0 { 0.5 } else { 2.0 + 2.0 * ((d.abs() / 8) as f64 + 1.0).log2() };
+            let comp = |d: i32| {
+                if d == 0 {
+                    0.5
+                } else {
+                    2.0 + 2.0 * ((d.abs() / 8) as f64 + 1.0).log2()
+                }
+            };
             comp(m[0] - pred_mv[0]) + comp(m[1] - pred_mv[1])
         };
-        let cost =
-            |m: [i32; 2]| -> f64 { self.sad_ref(&refr.planes[0], x0 + (m[1] >> 3), y0 + (m[0] >> 3), c * 4, r * 4, n) as f64 + self.lambda_sad * mv_bits(m) };
+        let cost = |m: [i32; 2]| -> f64 {
+            self.sad_ref(
+                &refr.planes[0],
+                x0 + (m[1] >> 3),
+                y0 + (m[0] >> 3),
+                c * 4,
+                r * 4,
+                n,
+            ) as f64
+                + self.lambda_sad * mv_bits(m)
+        };
         let mut best = ([0, 0], f64::MAX);
         for &m in &cands {
             let m = [m[0] & !7, m[1] & !7];
@@ -579,7 +752,16 @@ impl<'a> Decider<'a> {
         }
         for step in [4, 2] {
             let center = best.0;
-            for d in [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]] {
+            for d in [
+                [-1, -1],
+                [-1, 0],
+                [-1, 1],
+                [0, -1],
+                [0, 1],
+                [1, -1],
+                [1, 0],
+                [1, 1],
+            ] {
                 let m = [center[0] + d[0] * step, center[1] + d[1] * step];
                 if !valid(m) {
                     continue;
@@ -639,7 +821,11 @@ impl<'a> Decider<'a> {
                 let (oy, hy) = ay[k.min(ny - 1)];
                 let (sx, sy) = ((x0 + ox) as usize, (y0 + oy) as usize);
                 match (hx, hy) {
-                    (false, false) => (&refr.planes[0].data, refr.planes[0].stride, sy * refr.planes[0].stride + sx),
+                    (false, false) => (
+                        &refr.planes[0].data,
+                        refr.planes[0].stride,
+                        sy * refr.planes[0].stride + sx,
+                    ),
                     (true, false) => (&self.half[0], w as usize, sy * w as usize + sx),
                     (false, true) => (&self.half[1], w as usize, sy * w as usize + sx),
                     (true, true) => (&self.half[2], w as usize, sy * w as usize + sx),
@@ -653,7 +839,10 @@ impl<'a> Decider<'a> {
             } else {
                 let (b, sb, ob) = src(1);
                 for i in 0..vh {
-                    let (ra, rb) = (&a[oa + i * sa..oa + i * sa + vw], &b[ob + i * sb..ob + i * sb + vw]);
+                    let (ra, rb) = (
+                        &a[oa + i * sa..oa + i * sa + vw],
+                        &b[ob + i * sb..ob + i * sb + vw],
+                    );
                     for (o, (&p, &q)) in out[i * n..i * n + vw].iter_mut().zip(ra.iter().zip(rb)) {
                         *o = ((p as u32 + q as u32 + 1) >> 1) as u16;
                     }
@@ -664,7 +853,11 @@ impl<'a> Decider<'a> {
         for i in 0..vh {
             for j in 0..vw {
                 let (xx, yy) = (x0 + j as i32, y0 + i as i32);
-                out[i * n + j] = if taps == 1 { fetch(0, xx, yy) } else { ((fetch(0, xx, yy) as u32 + fetch(1, xx, yy) as u32 + 1) >> 1) as u16 };
+                out[i * n + j] = if taps == 1 {
+                    fetch(0, xx, yy)
+                } else {
+                    ((fetch(0, xx, yy) as u32 + fetch(1, xx, yy) as u32 + 1) >> 1) as u16
+                };
             }
         }
     }
@@ -683,7 +876,11 @@ impl<'a> Decider<'a> {
             let rr = refp.row((ry + i as i32).clamp(0, ly) as usize);
             if inside {
                 let rrow = &rr[rx as usize..rx as usize + w];
-                sad += s.iter().zip(rrow).map(|(&a, &b)| (a as i32 - b as i32).unsigned_abs()).sum::<u32>() as u64;
+                sad += s
+                    .iter()
+                    .zip(rrow)
+                    .map(|(&a, &b)| (a as i32 - b as i32).unsigned_abs())
+                    .sum::<u32>() as u64;
             } else {
                 for j in 0..w {
                     let b = rr[(rx + j as i32).clamp(0, lx) as usize];
@@ -719,7 +916,10 @@ impl<'a> Decider<'a> {
                         col[i] = d[i * k + j];
                     }
                     hadamard(&mut col[..k]);
-                    s += col[..k].iter().map(|v| v.unsigned_abs() as u64).sum::<u64>();
+                    s += col[..k]
+                        .iter()
+                        .map(|v| v.unsigned_abs() as u64)
+                        .sum::<u64>();
                 }
                 total += s / (k as u64 / 2);
             }
@@ -736,7 +936,11 @@ impl<'a> Decider<'a> {
         let mut s = 0u64;
         for i in 0..h {
             let row = &src.row(y + i)[x..x + w];
-            s += row.iter().zip(&pred[i * n..i * n + w]).map(|(&a, &b)| (a as i32 - b as i32).unsigned_abs()).sum::<u32>() as u64;
+            s += row
+                .iter()
+                .zip(&pred[i * n..i * n + w])
+                .map(|(&a, &b)| (a as i32 - b as i32).unsigned_abs())
+                .sum::<u32>() as u64;
         }
         s
     }
@@ -771,7 +975,16 @@ impl<'a> Decider<'a> {
 
     /// Transform, quantise and reconstruct one square transform block of `plane` at (x, y)
     /// over the prediction `pred`; the reconstruction is written to `rec`.
-    fn code_tx(&mut self, p: usize, x: usize, y: usize, log2: u32, tx_type: usize, pred: &[u16], intra: bool) -> TxResult {
+    fn code_tx(
+        &mut self,
+        p: usize,
+        x: usize,
+        y: usize,
+        log2: u32,
+        tx_type: usize,
+        pred: &[u16],
+        intra: bool,
+    ) -> TxResult {
         let (res, recon) = self.try_tx(p, x, y, log2, tx_type, pred, intra);
         let n = 1usize << log2;
         self.put(p, x, y, n, recon.as_deref().unwrap_or(pred));
@@ -780,7 +993,16 @@ impl<'a> Decider<'a> {
 
     /// Transform and quantise one block; returns the result and its reconstruction (None: the
     /// prediction) without writing it.
-    fn try_tx(&self, p: usize, x: usize, y: usize, log2: u32, tx_type: usize, pred: &[u16], intra: bool) -> (TxResult, Option<Vec<u16>>) {
+    fn try_tx(
+        &self,
+        p: usize,
+        x: usize,
+        y: usize,
+        log2: u32,
+        tx_type: usize,
+        pred: &[u16],
+        intra: bool,
+    ) -> (TxResult, Option<Vec<u16>>) {
         let n = 1usize << log2;
         let tx_sz = tx_size_for(log2);
         let bd = self.bd;
@@ -802,26 +1024,62 @@ impl<'a> Decider<'a> {
             let q = if k == 0 { self.dc_q } else { self.ac_q };
             let a = (cf.abs() / q + rnd).floor() as i32;
             if a != 0 {
-                *l = if cf < 0.0 { -a.min(1 << 16) } else { a.min(1 << 16) };
+                *l = if cf < 0.0 {
+                    -a.min(1 << 16)
+                } else {
+                    a.min(1 << 16)
+                };
                 nonzero = true;
             }
         }
         let zero_dist = self.sse(p, x, y, n, pred);
         if !nonzero {
-            return (TxResult { levels, nonzero, dist: zero_dist, bits: 1.0 }, None);
+            return (
+                TxResult {
+                    levels,
+                    nonzero,
+                    dist: zero_dist,
+                    bits: 1.0,
+                },
+                None,
+            );
         }
         let recon = self.reconstruct(&levels, tx_sz, tx_type, pred, n, bd);
         let dist = self.sse(p, x, y, n, &recon);
         let bits = estimate_bits(&levels, tx_sz);
         if dist + self.lambda * bits >= zero_dist + self.lambda {
             levels.iter_mut().for_each(|l| *l = 0);
-            return (TxResult { levels, nonzero: false, dist: zero_dist, bits: 1.0 }, None);
+            return (
+                TxResult {
+                    levels,
+                    nonzero: false,
+                    dist: zero_dist,
+                    bits: 1.0,
+                },
+                None,
+            );
         }
-        (TxResult { levels, nonzero: true, dist, bits }, Some(recon))
+        (
+            TxResult {
+                levels,
+                nonzero: true,
+                dist,
+                bits,
+            },
+            Some(recon),
+        )
     }
 
     /// Dequantisation (7.12.3) and the inverse transform, added to the prediction.
-    fn reconstruct(&self, levels: &[i32], tx_sz: usize, tx_type: usize, pred: &[u16], n: usize, bd: u32) -> Vec<u16> {
+    fn reconstruct(
+        &self,
+        levels: &[i32],
+        tx_sz: usize,
+        tx_type: usize,
+        pred: &[u16],
+        n: usize,
+        bd: u32,
+    ) -> Vec<u16> {
         let denom: i64 = if tx_sz == TX_32X32 { 2 } else { 1 };
         let lim = 1i64 << (7 + bd);
         let mut deq = vec![0i32; n * n];
@@ -837,7 +1095,10 @@ impl<'a> Decider<'a> {
         let mut resid = vec![0i32; n * n];
         inverse_2d(&deq, &mut resid, tx_sz, tx_type, bd);
         let max = (1i32 << bd) - 1;
-        pred.iter().zip(&resid).map(|(&p, &r)| (p as i32 + r).clamp(0, max) as u16).collect()
+        pred.iter()
+            .zip(&resid)
+            .map(|(&p, &r)| (p as i32 + r).clamp(0, max) as u16)
+            .collect()
     }
 }
 

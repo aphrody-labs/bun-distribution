@@ -290,8 +290,10 @@ impl Plugin for GltfPlugin {
         {
             resource.0
         } else {
-            warn!("CompressedImageFormatSupport resource not found. It should either be initialized in finish() of \
-            RenderPlugin, or manually if not using the RenderPlugin or the WGPU backend.");
+            warn!(
+                "CompressedImageFormatSupport resource not found. It should either be initialized in finish() of \
+            RenderPlugin, or manually if not using the RenderPlugin or the WGPU backend."
+            );
             CompressedImageFormats::NONE
         };
 

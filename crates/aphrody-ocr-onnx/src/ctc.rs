@@ -35,24 +35,33 @@ impl CtcDecoder {
     /// Returns an error when the file cannot be read or parsed, or does not
     /// contain a non-empty scalar `PostProcess.character_dict` sequence.
     pub fn from_export_config(path: &Path) -> Result<Self> {
-        let source = fs::read_to_string(path)
-            .map_err(|source| OnnxOcrError::ReadConfig { path: path.to_path_buf(), source })?;
-        let root: Value = serde_yaml::from_str(&source)
-            .map_err(|source| OnnxOcrError::ParseConfig { path: path.to_path_buf(), source })?;
+        let source = fs::read_to_string(path).map_err(|source| OnnxOcrError::ReadConfig {
+            path: path.to_path_buf(),
+            source,
+        })?;
+        let root: Value =
+            serde_yaml::from_str(&source).map_err(|source| OnnxOcrError::ParseConfig {
+                path: path.to_path_buf(),
+                source,
+            })?;
         let Some(dict) = root
             .get("PostProcess")
             .and_then(Value::as_mapping)
             .and_then(|post| post.get(Value::String("character_dict".into())))
             .and_then(Value::as_sequence)
         else {
-            return Err(OnnxOcrError::MissingCharacterDict { path: path.to_path_buf() });
+            return Err(OnnxOcrError::MissingCharacterDict {
+                path: path.to_path_buf(),
+            });
         };
         let glyphs = dict
             .iter()
             .map(Value::as_str)
             .collect::<Option<Vec<_>>>()
             .filter(|glyphs| !glyphs.is_empty())
-            .ok_or_else(|| OnnxOcrError::MissingCharacterDict { path: path.to_path_buf() })?;
+            .ok_or_else(|| OnnxOcrError::MissingCharacterDict {
+                path: path.to_path_buf(),
+            })?;
         let mut classes = Vec::with_capacity(glyphs.len() + 2);
         classes.push("blank".into());
         classes.extend(glyphs.into_iter().map(str::to_owned));
@@ -72,8 +81,11 @@ impl CtcDecoder {
         let mut last = None;
         let mut emitted = Vec::new();
         for row in rows {
-            let Some((index, score)) =
-                row.iter().copied().enumerate().max_by(|a, b| a.1.total_cmp(&b.1))
+            let Some((index, score)) = row
+                .iter()
+                .copied()
+                .enumerate()
+                .max_by(|a, b| a.1.total_cmp(&b.1))
             else {
                 continue;
             };
@@ -95,7 +107,10 @@ impl CtcDecoder {
             let count = emitted.len() as f32;
             emitted.iter().map(|(_, score)| score).sum::<f32>() / count
         };
-        DecodedText { text: emitted.into_iter().map(|(glyph, _)| glyph).collect(), confidence }
+        DecodedText {
+            text: emitted.into_iter().map(|(glyph, _)| glyph).collect(),
+            confidence,
+        }
     }
 }
 
@@ -105,7 +120,9 @@ mod tests {
 
     #[test]
     fn greedy_ctc_removes_blanks_and_adjacent_repetitions() {
-        let decoder = CtcDecoder { classes: vec!["blank".into(), "A".into(), "B".into()] };
+        let decoder = CtcDecoder {
+            classes: vec!["blank".into(), "A".into(), "B".into()],
+        };
         let rows = [
             &[0.9, 0.1, 0.0][..],
             &[0.1, 0.8, 0.1][..],
@@ -113,6 +130,12 @@ mod tests {
             &[0.8, 0.1, 0.1][..],
             &[0.1, 0.2, 0.7][..],
         ];
-        assert_eq!(decoder.decode(&rows), DecodedText { text: "AB".into(), confidence: 0.75 });
+        assert_eq!(
+            decoder.decode(&rows),
+            DecodedText {
+                text: "AB".into(),
+                confidence: 0.75
+            }
+        );
     }
 }

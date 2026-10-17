@@ -44,7 +44,9 @@ use std::io::Read;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use photocraft_paint::tile::PREVIEW_SIDE;
-use photocraft_paint::{BrushPreset, BrushSettings, GrayTile, Pattern, PresetCaptures, StoredTile, TipShape};
+use photocraft_paint::{
+    BrushPreset, BrushSettings, GrayTile, Pattern, PresetCaptures, StoredTile, TipShape,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::Session;
@@ -99,7 +101,12 @@ pub trait PresetBackend: Send {
 /// (path separators, `..`) is refused so a backend never leaves its directory.
 fn valid_name(name: &str) -> bool {
     let leaf = name.strip_prefix("tips/").unwrap_or(name);
-    !leaf.is_empty() && leaf.len() <= 128 && !leaf.starts_with('.') && leaf.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '_' | '-' | '.'))
+    !leaf.is_empty()
+        && leaf.len() <= 128
+        && !leaf.starts_with('.')
+        && leaf
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '_' | '-' | '.'))
 }
 
 /// An in-memory store (tests, and frontends without a file system). Clones share the files.
@@ -109,18 +116,29 @@ pub struct MemBackend {
 }
 
 impl MemBackend {
-    fn lock(&self) -> Result<std::sync::MutexGuard<'_, std::collections::BTreeMap<String, Vec<u8>>>, String> {
-        self.files.lock().map_err(|_| "preset store lock poisoned".to_string())
+    fn lock(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, std::collections::BTreeMap<String, Vec<u8>>>, String>
+    {
+        self.files
+            .lock()
+            .map_err(|_| "preset store lock poisoned".to_string())
     }
 }
 
 impl PresetBackend for MemBackend {
     fn list(&self) -> Result<Vec<(String, u64)>, String> {
-        Ok(self.lock()?.iter().map(|(k, v)| (k.clone(), v.len() as u64)).collect())
+        Ok(self
+            .lock()?
+            .iter()
+            .map(|(k, v)| (k.clone(), v.len() as u64))
+            .collect())
     }
     fn read(&self, name: &str, max: u64) -> Result<Vec<u8>, String> {
         let files = self.lock()?;
-        let b = files.get(name).ok_or_else(|| format!("{name}: not found"))?;
+        let b = files
+            .get(name)
+            .ok_or_else(|| format!("{name}: not found"))?;
         if b.len() as u64 > max {
             return Err(format!("{name}: too large ({} bytes)", b.len()));
         }
@@ -160,7 +178,11 @@ impl DirBackend {
         Ok(self.root.join(name))
     }
     fn list_dir(&self, sub: &str, out: &mut Vec<(String, u64)>) -> Result<(), String> {
-        let dir = if sub.is_empty() { self.root.clone() } else { self.root.join(sub) };
+        let dir = if sub.is_empty() {
+            self.root.clone()
+        } else {
+            self.root.join(sub)
+        };
         let rd = match std::fs::read_dir(&dir) {
             Ok(rd) => rd,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
@@ -171,8 +193,14 @@ impl DirBackend {
             if !meta.is_file() {
                 continue;
             }
-            let Some(leaf) = entry.file_name().to_str().map(str::to_string) else { continue };
-            let name = if sub.is_empty() { leaf } else { format!("{sub}/{leaf}") };
+            let Some(leaf) = entry.file_name().to_str().map(str::to_string) else {
+                continue;
+            };
+            let name = if sub.is_empty() {
+                leaf
+            } else {
+                format!("{sub}/{leaf}")
+            };
             if valid_name(&name) {
                 out.push((name, meta.len()));
             }
@@ -194,10 +222,17 @@ impl PresetBackend for DirBackend {
         // A missing file, or a store directory that doesn't exist yet (Windows reports that as
         // "path not found", os error 3), reads as "not found", the wording `missing_file` and the
         // in-memory backend share, so it is an empty file rather than a warning.
-        let f = std::fs::File::open(&path)
-            .map_err(|e| if e.kind() == std::io::ErrorKind::NotFound { format!("{name}: not found") } else { format!("{name}: {e}") })?;
+        let f = std::fs::File::open(&path).map_err(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                format!("{name}: not found")
+            } else {
+                format!("{name}: {e}")
+            }
+        })?;
         let mut out = Vec::new();
-        f.take(max.saturating_add(1)).read_to_end(&mut out).map_err(|e| format!("{name}: {e}"))?;
+        f.take(max.saturating_add(1))
+            .read_to_end(&mut out)
+            .map_err(|e| format!("{name}: {e}"))?;
         if out.len() as u64 > max {
             return Err(format!("{name}: larger than {max} bytes"));
         }
@@ -205,7 +240,9 @@ impl PresetBackend for DirBackend {
     }
     fn write(&self, name: &str, bytes: &[u8]) -> Result<(), String> {
         let path = self.path(name)?;
-        let dir = path.parent().ok_or_else(|| format!("{name}: no parent directory"))?;
+        let dir = path
+            .parent()
+            .ok_or_else(|| format!("{name}: no parent directory"))?;
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
         photocraft_format::atomic_write(&path, bytes).map_err(|e| format!("{name}: {e}"))
     }
@@ -293,13 +330,27 @@ fn decode_tip_max(bytes: &[u8], max_side: u32) -> Result<GrayTile, String> {
     };
     let want = n * bytes_per;
     let mut raw = Vec::with_capacity(want as usize);
-    flate2::read::ZlibDecoder::new(&bytes[TIP_HEADER..]).take(want + 1).read_to_end(&mut raw).map_err(|e| format!("tip data: {e}"))?;
+    flate2::read::ZlibDecoder::new(&bytes[TIP_HEADER..])
+        .take(want + 1)
+        .read_to_end(&mut raw)
+        .map_err(|e| format!("tip data: {e}"))?;
     if raw.len() as u64 != want {
         return Err(format!("tip data has {} bytes, expected {want}", raw.len()));
     }
-    let data: Vec<u16> =
-        if bits == 8 { raw.iter().map(|&v| u16::from(v) * 257).collect() } else { raw.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect() };
-    Ok(GrayTile { width: w, height: h, data })
+    let data: Vec<u16> = if bits == 8 {
+        raw.iter().map(|&v| u16::from(v) * 257).collect()
+    } else {
+        raw.as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes(*c))
+            .collect()
+    };
+    Ok(GrayTile {
+        width: w,
+        height: h,
+        data,
+    })
 }
 
 // ------------------------------------------------------------------ group files
@@ -318,7 +369,9 @@ struct TipRefs {
 
 impl TipRefs {
     fn hashes(&self) -> impl Iterator<Item = &String> {
-        [&self.tip, &self.dual_tip, &self.texture].into_iter().flatten()
+        [&self.tip, &self.dual_tip, &self.texture]
+            .into_iter()
+            .flatten()
     }
 }
 
@@ -376,7 +429,17 @@ struct IndexFile {
 /// The group's file name: a readable, sanitised prefix plus a hash of the exact name, so
 /// different names never share a file.
 pub fn group_file_name(group: &str) -> String {
-    let mut stem: String = group.chars().map(|c| if c.is_ascii_alphanumeric() || matches!(c, ' ' | '_' | '-') { c } else { '_' }).take(48).collect();
+    let mut stem: String = group
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, ' ' | '_' | '-') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .take(48)
+        .collect();
     stem = stem.trim().to_string();
     if stem.is_empty() {
         stem = "Ungrouped".into();
@@ -441,7 +504,11 @@ fn set_stored(b: &mut BrushSettings, refs: [Option<StoredTile>; 3]) {
 
 /// Settings read from a group file with their tip references resolved: `None` when a referenced
 /// tip is missing.
-fn join_tips(mut b: BrushSettings, refs: &TipRefs, tiles: &HashMap<String, StoredTile>) -> Option<BrushSettings> {
+fn join_tips(
+    mut b: BrushSettings,
+    refs: &TipRefs,
+    tiles: &HashMap<String, StoredTile>,
+) -> Option<BrushSettings> {
     let get = |h: &Option<String>| -> Option<Option<StoredTile>> {
         match h {
             None => Some(None),
@@ -457,7 +524,12 @@ fn join_tips(mut b: BrushSettings, refs: &TipRefs, tiles: &HashMap<String, Store
 /// [`crate::brush_preset_cmds::MAX_FOLDER_DEPTH`] non-empty names): a hand-edited file can't
 /// build an absurd tree.
 fn sanitize_folder(folder: Vec<String>) -> Vec<String> {
-    folder.into_iter().map(|f| f.trim().to_string()).filter(|f| !f.is_empty()).take(crate::brush_preset_cmds::MAX_FOLDER_DEPTH).collect()
+    folder
+        .into_iter()
+        .map(|f| f.trim().to_string())
+        .filter(|f| !f.is_empty())
+        .take(crate::brush_preset_cmds::MAX_FOLDER_DEPTH)
+        .collect()
 }
 
 fn tip_file(hash: &str) -> String {
@@ -507,7 +579,13 @@ impl TipCache {
     /// Drop least recently used tips until within the limit (never `keep`, the one just used).
     fn evict(&mut self, keep: &str) {
         while self.bytes > self.limit {
-            let Some(oldest) = self.entries.iter().filter(|(k, _)| k.as_str() != keep).min_by_key(|(_, (_, used))| *used).map(|(k, _)| k.clone()) else {
+            let Some(oldest) = self
+                .entries
+                .iter()
+                .filter(|(k, _)| k.as_str() != keep)
+                .min_by_key(|(_, (_, used))| *used)
+                .map(|(k, _)| k.clone())
+            else {
                 break;
             };
             if let Some((t, _)) = self.entries.remove(&oldest) {
@@ -578,7 +656,10 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
         Vec::new()
     });
     let index: Option<IndexFile> = if files.iter().any(|(n, _)| n == INDEX_FILE) {
-        match backend.read(INDEX_FILE, MAX_INDEX_BYTES).and_then(|b| serde_json::from_slice(&b).map_err(|e| e.to_string())) {
+        match backend
+            .read(INDEX_FILE, MAX_INDEX_BYTES)
+            .and_then(|b| serde_json::from_slice(&b).map_err(|e| e.to_string()))
+        {
             Ok(i) => Some(i),
             Err(e) => {
                 warnings.push(format!("brush presets: {INDEX_FILE} skipped: {e}"));
@@ -589,35 +670,57 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
         None
     };
     // Group files in index order, then the rest by name.
-    let mut group_files: Vec<(String, u64)> = files.iter().filter(|(n, _)| !n.contains('/') && n.ends_with(&format!(".{GROUP_EXT}"))).cloned().collect();
+    let mut group_files: Vec<(String, u64)> = files
+        .iter()
+        .filter(|(n, _)| !n.contains('/') && n.ends_with(&format!(".{GROUP_EXT}")))
+        .cloned()
+        .collect();
     group_files.sort_by(|a, b| a.0.cmp(&b.0));
     if let Some(ix) = &index {
         let pos = |n: &str| ix.groups.iter().position(|g| g == n).unwrap_or(usize::MAX);
         group_files.sort_by_key(|(n, _)| pos(n));
     }
     if group_files.len() > MAX_GROUPS {
-        warnings.push(format!("brush presets: only the first {MAX_GROUPS} of {} groups were loaded", group_files.len()));
+        warnings.push(format!(
+            "brush presets: only the first {MAX_GROUPS} of {} groups were loaded",
+            group_files.len()
+        ));
         group_files.truncate(MAX_GROUPS);
     }
-    let tip_sizes: HashMap<String, u64> =
-        files.iter().filter_map(|(n, sz)| Some((n.strip_prefix(&format!("{TIPS_DIR}/"))?.strip_suffix(&format!(".{TIP_EXT}"))?.to_string(), *sz))).collect();
+    let tip_sizes: HashMap<String, u64> = files
+        .iter()
+        .filter_map(|(n, sz)| {
+            Some((
+                n.strip_prefix(&format!("{TIPS_DIR}/"))?
+                    .strip_suffix(&format!(".{TIP_EXT}"))?
+                    .to_string(),
+                *sz,
+            ))
+        })
+        .collect();
 
     // Parse the group files.
     let mut parsed: Vec<(String, u64, GroupFile)> = Vec::new();
     let mut skipped = HashSet::new();
     let mut failed = false;
     for (name, size) in group_files {
-        let r = backend.read(&name, MAX_GROUP_BYTES).and_then(|b| serde_json::from_slice::<GroupFile>(&b).map_err(|e| e.to_string())).and_then(|g| {
-            if g.format != GROUP_FORMAT {
-                Err(format!("unknown format `{}`", g.format))
-            } else if g.version != 1 {
-                Err(format!("unsupported version {}", g.version))
-            } else if g.presets.len() > MAX_PRESETS_PER_GROUP {
-                Err(format!("{} presets (limit {MAX_PRESETS_PER_GROUP})", g.presets.len()))
-            } else {
-                Ok(g)
-            }
-        });
+        let r = backend
+            .read(&name, MAX_GROUP_BYTES)
+            .and_then(|b| serde_json::from_slice::<GroupFile>(&b).map_err(|e| e.to_string()))
+            .and_then(|g| {
+                if g.format != GROUP_FORMAT {
+                    Err(format!("unknown format `{}`", g.format))
+                } else if g.version != 1 {
+                    Err(format!("unsupported version {}", g.version))
+                } else if g.presets.len() > MAX_PRESETS_PER_GROUP {
+                    Err(format!(
+                        "{} presets (limit {MAX_PRESETS_PER_GROUP})",
+                        g.presets.len()
+                    ))
+                } else {
+                    Ok(g)
+                }
+            });
         match r {
             Ok(g) => parsed.push((name, size, g)),
             Err(e) => {
@@ -631,7 +734,12 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
     // no full tip is decoded here (they load when a brush is used, `PresetStore::load_tile`).
     let wanted: Vec<String> = {
         let mut seen = HashSet::new();
-        parsed.iter().flat_map(|(_, _, g)| g.presets.iter().flat_map(|p| p.tips.hashes())).filter(|h| seen.insert(h.as_str())).cloned().collect()
+        parsed
+            .iter()
+            .flat_map(|(_, _, g)| g.presets.iter().flat_map(|p| p.tips.hashes()))
+            .filter(|h| seen.insert(h.as_str()))
+            .cloned()
+            .collect()
     };
     let mut info: HashMap<String, TipInfo> = HashMap::new();
     for (_, _, g) in &parsed {
@@ -639,7 +747,8 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
             info.entry(h.clone()).or_insert_with(|| i.clone());
         }
     }
-    let (tiles, regenerated) = load_tiles(backend.as_ref(), &wanted, &tip_sizes, &info, &mut warnings);
+    let (tiles, regenerated) =
+        load_tiles(backend.as_ref(), &wanted, &tip_sizes, &info, &mut warnings);
 
     let loaded_actions = load_actions(backend.as_ref(), &mut warnings);
     let actions_skipped = loaded_actions.is_none();
@@ -654,7 +763,10 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
         actions_rev: 0,
         actions_skipped,
         warnings: Vec::new(),
-        cache: Mutex::new(TipCache { limit: TIP_CACHE_BYTES, ..Default::default() }),
+        cache: Mutex::new(TipCache {
+            limit: TIP_CACHE_BYTES,
+            ..Default::default()
+        }),
     };
     let mut presets = Vec::new();
     for (file, size, g) in parsed {
@@ -668,7 +780,8 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
                     for h in sp.tips.hashes() {
                         stale |= regenerated.contains(h) || !g.tips.contains_key(h);
                         hashes.push(h.clone());
-                        if let Some(i) = info.get(h).filter(|i| tip_sizes.contains_key(&i.preview)) {
+                        if let Some(i) = info.get(h).filter(|i| tip_sizes.contains_key(&i.preview))
+                        {
                             hashes.push(i.preview.clone());
                         }
                     }
@@ -687,7 +800,9 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
         if missing > 0 {
             // Left on disk untouched (a sync never deletes a file it did not load).
             failed = true;
-            warnings.push(format!("brush presets: {file} skipped: {missing} preset(s) have missing or unreadable tips"));
+            warnings.push(format!(
+                "brush presets: {file} skipped: {missing} preset(s) have missing or unreadable tips"
+            ));
             skipped.insert(file);
             continue;
         }
@@ -697,7 +812,15 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
             }
         }
         presets.extend(items.iter().cloned());
-        store.groups.insert(file, Synced { presets: items, tips: hashes, bytes: size, stale });
+        store.groups.insert(
+            file,
+            Synced {
+                presets: items,
+                tips: hashes,
+                bytes: size,
+                stale,
+            },
+        );
     }
     store.skipped = skipped;
     // Tip files nothing references are garbage (e.g. left by a crash), unless a group failed to
@@ -707,15 +830,28 @@ pub fn open(backend: Box<dyn PresetBackend>) -> Opened {
             store.tips.entry(h.clone()).or_insert(*sz);
         }
     }
-    let hidden_builtins = index.as_ref().map(|i| i.hidden_builtins.clone()).unwrap_or_default();
+    let hidden_builtins = index
+        .as_ref()
+        .map(|i| i.hidden_builtins.clone())
+        .unwrap_or_default();
     let order = index.as_ref().map(|i| i.order.clone()).unwrap_or_default();
     store.index = index;
-    Opened { store, presets, hidden_builtins, order, warnings, actions }
+    Opened {
+        store,
+        presets,
+        hidden_builtins,
+        order,
+        warnings,
+        actions,
+    }
 }
 
 /// `actions.json`: a missing file is an empty list. Anything else unreadable is a warning.
 /// The saved actions; `None` when `actions.json` exists but could not be loaded.
-fn load_actions(backend: &dyn PresetBackend, warnings: &mut Vec<String>) -> Option<Vec<crate::actions_cmds::Action>> {
+fn load_actions(
+    backend: &dyn PresetBackend,
+    warnings: &mut Vec<String>,
+) -> Option<Vec<crate::actions_cmds::Action>> {
     let bytes = match backend.read(ACTIONS_FILE, MAX_ACTIONS_BYTES) {
         Ok(b) => b,
         Err(e) if missing_file(&e) => return Some(Vec::new()),
@@ -727,7 +863,10 @@ fn load_actions(backend: &dyn PresetBackend, warnings: &mut Vec<String>) -> Opti
     match serde_json::from_slice::<crate::actions_cmds::ActionsFile>(&bytes) {
         Ok(file) if file.version == 1 => Some(file.actions),
         Ok(file) => {
-            warnings.push(format!("actions: {ACTIONS_FILE} skipped: unsupported version {}", file.version));
+            warnings.push(format!(
+                "actions: {ACTIONS_FILE} skipped: unsupported version {}",
+                file.version
+            ));
             None
         }
         Err(e) => {
@@ -759,19 +898,39 @@ fn load_tiles(
 ) -> (HashMap<String, StoredTile>, HashSet<String>) {
     let mut tiles = HashMap::with_capacity(hashes.len());
     let mut todo = Vec::new();
-    let sane = |w: u32, h: u32| w > 0 && h > 0 && w <= MAX_TIP_SIDE && h <= MAX_TIP_SIDE && u64::from(w) * u64::from(h) <= MAX_TIP_SAMPLES;
+    let sane = |w: u32, h: u32| {
+        w > 0
+            && h > 0
+            && w <= MAX_TIP_SIDE
+            && h <= MAX_TIP_SIDE
+            && u64::from(w) * u64::from(h) <= MAX_TIP_SAMPLES
+    };
     for h in hashes {
         if !sizes.contains_key(h) {
             warnings.push(format!("brush presets: tip {h} skipped: file missing"));
             continue;
         }
-        let preview = info.get(h).filter(|i| sane(i.width, i.height) && sizes.contains_key(&i.preview)).and_then(|i| {
-            let bytes = backend.read(&tip_file(&i.preview), MAX_PREVIEW_BYTES).ok()?;
-            Some((i, decode_tip_max(&bytes, PREVIEW_SIDE).ok()?))
-        });
+        let preview = info
+            .get(h)
+            .filter(|i| sane(i.width, i.height) && sizes.contains_key(&i.preview))
+            .and_then(|i| {
+                let bytes = backend
+                    .read(&tip_file(&i.preview), MAX_PREVIEW_BYTES)
+                    .ok()?;
+                Some((i, decode_tip_max(&bytes, PREVIEW_SIDE).ok()?))
+            });
         match preview {
             Some((i, p)) => {
-                tiles.insert(h.clone(), StoredTile { key: h.clone(), width: i.width, height: i.height, preview: Arc::new(p), full: None });
+                tiles.insert(
+                    h.clone(),
+                    StoredTile {
+                        key: h.clone(),
+                        width: i.width,
+                        height: i.height,
+                        preview: Arc::new(p),
+                        full: None,
+                    },
+                );
             }
             None => todo.push(h.clone()),
         }
@@ -779,7 +938,10 @@ fn load_tiles(
     let mut regenerated = HashSet::new();
     for batch in todo.chunks(PREVIEW_BATCH) {
         // Reads stay sequential (the backend need not be Sync); decoding is the expensive part.
-        let raw: Vec<Result<Vec<u8>, String>> = batch.iter().map(|h| backend.read(&tip_file(h), MAX_TIP_BYTES)).collect();
+        let raw: Vec<Result<Vec<u8>, String>> = batch
+            .iter()
+            .map(|h| backend.read(&tip_file(h), MAX_TIP_BYTES))
+            .collect();
         let make = |r: &Result<Vec<u8>, String>| -> Result<(u32, u32, GrayTile), String> {
             let t = decode_tip(r.as_ref().map_err(Clone::clone)?)?;
             Ok((t.width, t.height, t.preview(PREVIEW_SIDE)))
@@ -794,7 +956,16 @@ fn load_tiles(
         for (h, r) in batch.iter().zip(made) {
             match r {
                 Ok((w, ht, p)) => {
-                    tiles.insert(h.clone(), StoredTile { key: h.clone(), width: w, height: ht, preview: Arc::new(p), full: None });
+                    tiles.insert(
+                        h.clone(),
+                        StoredTile {
+                            key: h.clone(),
+                            width: w,
+                            height: ht,
+                            preview: Arc::new(p),
+                            full: None,
+                        },
+                    );
                     regenerated.insert(h.clone());
                 }
                 Err(e) => warnings.push(format!("brush presets: tip {h} skipped: {e}")),
@@ -814,9 +985,11 @@ pub fn open_dir(root: impl Into<std::path::PathBuf>) -> Opened {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn open_dir_async(root: std::path::PathBuf) -> std::sync::mpsc::Receiver<Opened> {
     let (tx, rx) = std::sync::mpsc::channel();
-    let spawned = std::thread::Builder::new().name("brush-presets".into()).spawn(move || {
-        let _ = tx.send(open_dir(root));
-    });
+    let spawned = std::thread::Builder::new()
+        .name("brush-presets".into())
+        .spawn(move || {
+            let _ = tx.send(open_dir(root));
+        });
     if let Err(e) = spawned {
         // No thread: the caller simply never gets a store (presets stay session-only).
         eprintln!("brush presets: {e}");
@@ -838,7 +1011,12 @@ impl PresetStore {
     /// The decoded-tip cache: tips held, their bytes, decodes so far and the budget.
     pub fn tip_cache(&self) -> TipCacheStats {
         let c = self.cache.lock().unwrap_or_else(PoisonError::into_inner);
-        TipCacheStats { tips: c.entries.len(), bytes: c.bytes, decodes: c.decodes, limit: c.limit }
+        TipCacheStats {
+            tips: c.entries.len(),
+            bytes: c.bytes,
+            decodes: c.decodes,
+            limit: c.limit,
+        }
     }
 
     /// Change the decoded-tip cache's byte budget (evicting down to it at once).
@@ -865,7 +1043,10 @@ impl PresetStore {
         let bytes = self.backend.read(&tip_file(&t.key), MAX_TIP_BYTES)?;
         let full = decode_tip(&bytes).map_err(|e| format!("brush tip {}: {e}", t.key))?;
         if (full.width, full.height) != (t.width, t.height) {
-            return Err(format!("brush tip {} is {}×{} px, expected {}×{}", t.key, full.width, full.height, t.width, t.height));
+            return Err(format!(
+                "brush tip {} is {}×{} px, expected {}×{}",
+                t.key, full.width, full.height, t.width, t.height
+            ));
         }
         let full = Arc::new(full);
         cache.decodes += 1;
@@ -889,10 +1070,14 @@ impl PresetStore {
         for (group, idx) in &order {
             let file = group_file_name(group);
             files.push(file.clone());
-            let unchanged = self
-                .groups
-                .get(&file)
-                .is_some_and(|s| !s.stale && s.presets.len() == idx.len() && s.presets.iter().zip(idx).all(|(a, &i)| presets.get(i) == Some(a)));
+            let unchanged = self.groups.get(&file).is_some_and(|s| {
+                !s.stale
+                    && s.presets.len() == idx.len()
+                    && s.presets
+                        .iter()
+                        .zip(idx)
+                        .all(|(a, &i)| presets.get(i) == Some(a))
+            });
             if unchanged {
                 continue;
             }
@@ -903,37 +1088,76 @@ impl PresetStore {
                 ));
                 continue;
             }
-            let mut items: Vec<&mut BrushPreset> = presets.iter_mut().filter(|p| !p.builtin && p.group == *group).collect();
+            let mut items: Vec<&mut BrushPreset> = presets
+                .iter_mut()
+                .filter(|p| !p.builtin && p.group == *group)
+                .collect();
             if let Err(e) = self.write_group(&file, group, &mut items) {
-                self.warnings.push(format!("Couldn't save brush presets `{}`: {e}", if group.is_empty() { "(ungrouped)" } else { group }));
+                self.warnings.push(format!(
+                    "Couldn't save brush presets `{}`: {e}",
+                    if group.is_empty() {
+                        "(ungrouped)"
+                    } else {
+                        group
+                    }
+                ));
             }
         }
         // Groups that are gone.
-        let gone: Vec<String> = self.groups.keys().filter(|f| !files.contains(f)).cloned().collect();
+        let gone: Vec<String> = self
+            .groups
+            .keys()
+            .filter(|f| !files.contains(f))
+            .cloned()
+            .collect();
         for f in gone {
             match self.backend.remove(&f) {
                 Ok(()) => drop(self.groups.remove(&f)),
-                Err(e) => self.warnings.push(format!("Couldn't delete brush presets file: {e}")),
+                Err(e) => self
+                    .warnings
+                    .push(format!("Couldn't delete brush presets file: {e}")),
             }
         }
         // Tips nothing references any more.
         let used: HashSet<&String> = self.groups.values().flat_map(|g| g.tips.iter()).collect();
-        let unused: Vec<String> = self.tips.keys().filter(|h| !used.contains(h)).cloned().collect();
+        let unused: Vec<String> = self
+            .tips
+            .keys()
+            .filter(|h| !used.contains(h))
+            .cloned()
+            .collect();
         for h in unused {
             match self.backend.remove(&tip_file(&h)) {
                 Ok(()) => drop(self.tips.remove(&h)),
-                Err(e) => self.warnings.push(format!("Couldn't delete brush tip: {e}")),
+                Err(e) => self
+                    .warnings
+                    .push(format!("Couldn't delete brush tip: {e}")),
             }
         }
         // Index: group order and deleted built-ins.
-        let hidden: Vec<String> = builtin_names().iter().filter(|n| !presets.iter().any(|p| p.name.eq_ignore_ascii_case(n))).map(|n| n.to_string()).collect();
-        let groups: Vec<String> = files.into_iter().filter(|f| self.groups.contains_key(f)).collect();
+        let hidden: Vec<String> = builtin_names()
+            .iter()
+            .filter(|n| !presets.iter().any(|p| p.name.eq_ignore_ascii_case(n)))
+            .map(|n| n.to_string())
+            .collect();
+        let groups: Vec<String> = files
+            .into_iter()
+            .filter(|f| self.groups.contains_key(f))
+            .collect();
         // The full order is only saved once it differs from the default (built-ins, then the rest).
         let order: Vec<String> = presets.iter().map(|p| p.name.clone()).collect();
-        let default_order: Vec<String> = presets.iter().filter(|p| p.builtin).chain(presets.iter().filter(|p| !p.builtin)).map(|p| p.name.clone()).collect();
+        let default_order: Vec<String> = presets
+            .iter()
+            .filter(|p| p.builtin)
+            .chain(presets.iter().filter(|p| !p.builtin))
+            .map(|p| p.name.clone())
+            .collect();
         let builtins_in_order = {
             let names = builtin_names();
-            let mut it = presets.iter().filter(|p| p.builtin).map(|p| names.iter().position(|n| *n == p.name));
+            let mut it = presets
+                .iter()
+                .filter(|p| p.builtin)
+                .map(|p| names.iter().position(|n| *n == p.name));
             let first = it.next().flatten();
             it.try_fold(first, |prev, cur| match (prev, cur) {
                 (Some(a), Some(b)) if b > a => Some(Some(b)),
@@ -941,32 +1165,60 @@ impl PresetStore {
             })
             .is_some()
         };
-        let order = if builtins_in_order && order == default_order { Vec::new() } else { order };
-        let want = IndexFile { version: 1, groups, hidden_builtins: hidden, order };
-        let same = self.index.as_ref().is_some_and(|i| i.groups == want.groups && i.hidden_builtins == want.hidden_builtins && i.order == want.order);
+        let order = if builtins_in_order && order == default_order {
+            Vec::new()
+        } else {
+            order
+        };
+        let want = IndexFile {
+            version: 1,
+            groups,
+            hidden_builtins: hidden,
+            order,
+        };
+        let same = self.index.as_ref().is_some_and(|i| {
+            i.groups == want.groups
+                && i.hidden_builtins == want.hidden_builtins
+                && i.order == want.order
+        });
         if !same {
-            let empty = want.groups.is_empty() && want.hidden_builtins.is_empty() && want.order.is_empty();
+            let empty =
+                want.groups.is_empty() && want.hidden_builtins.is_empty() && want.order.is_empty();
             let r = if empty && self.index.is_none() {
                 Ok(())
             } else {
-                serde_json::to_vec_pretty(&want).map_err(|e| e.to_string()).and_then(|b| self.backend.write(INDEX_FILE, &b))
+                serde_json::to_vec_pretty(&want)
+                    .map_err(|e| e.to_string())
+                    .and_then(|b| self.backend.write(INDEX_FILE, &b))
             };
             match r {
                 Ok(()) => self.index = Some(want),
-                Err(e) => self.warnings.push(format!("Couldn't save the brush preset index: {e}")),
+                Err(e) => self
+                    .warnings
+                    .push(format!("Couldn't save the brush preset index: {e}")),
             }
         }
     }
 
     /// Write one tip file (`others` bytes are already used by the rest of the store).
-    fn put_tip(&mut self, h: &str, t: &GrayTile, others: u64, new_bytes: &mut u64, name: &str) -> Result<(), String> {
+    fn put_tip(
+        &mut self,
+        h: &str,
+        t: &GrayTile,
+        others: u64,
+        new_bytes: &mut u64,
+        name: &str,
+    ) -> Result<(), String> {
         let bytes = encode_tip(t);
         if bytes.is_empty() || bytes.len() as u64 > MAX_TIP_BYTES {
             return Err(format!("the tip of `{name}` is too large to save"));
         }
         *new_bytes += bytes.len() as u64;
         if others + *new_bytes > MAX_STORE_BYTES {
-            return Err(format!("the preset store is full ({} MB limit)", MAX_STORE_BYTES >> 20));
+            return Err(format!(
+                "the preset store is full ({} MB limit)",
+                MAX_STORE_BYTES >> 20
+            ));
         }
         self.backend.write(&tip_file(h), &bytes)?;
         self.tips.insert(h.to_string(), bytes.len() as u64);
@@ -976,8 +1228,19 @@ impl PresetStore {
     /// Write a group file (and any tip or preview file it needs that isn't on disk yet). Once it
     /// is written, the presets' bitmaps become stored tiles without their full bitmaps; on an
     /// error the presets are left unchanged.
-    fn write_group(&mut self, file: &str, group: &str, items: &mut [&mut BrushPreset]) -> Result<(), String> {
-        let others: u64 = self.groups.iter().filter(|(f, _)| f.as_str() != file).map(|(_, g)| g.bytes).sum::<u64>() + self.tips.values().sum::<u64>();
+    fn write_group(
+        &mut self,
+        file: &str,
+        group: &str,
+        items: &mut [&mut BrushPreset],
+    ) -> Result<(), String> {
+        let others: u64 = self
+            .groups
+            .iter()
+            .filter(|(f, _)| f.as_str() != file)
+            .map(|(_, g)| g.bytes)
+            .sum::<u64>()
+            + self.tips.values().sum::<u64>();
         let mut stored = Vec::with_capacity(items.len());
         let mut tiles = Vec::with_capacity(items.len());
         let mut hashes = Vec::new();
@@ -996,13 +1259,25 @@ impl PresetStore {
                         if !self.tips.contains_key(&h) {
                             self.put_tip(&h, t, others, &mut new_bytes, &p.name)?;
                         }
-                        StoredTile { key: h, width: t.width, height: t.height, preview: Arc::new(t.preview(PREVIEW_SIDE)), full: None }
+                        StoredTile {
+                            key: h,
+                            width: t.width,
+                            height: t.height,
+                            preview: Arc::new(t.preview(PREVIEW_SIDE)),
+                            full: None,
+                        }
                     }
                     Some(Bitmap::Stored(r)) => {
                         if !self.tips.contains_key(&r.key) {
-                            return Err(format!("the tip of `{}` is missing from the preset store", p.name));
+                            return Err(format!(
+                                "the tip of `{}` is missing from the preset store",
+                                p.name
+                            ));
                         }
-                        StoredTile { full: None, ..r.clone() }
+                        StoredTile {
+                            full: None,
+                            ..r.clone()
+                        }
                     }
                 };
                 let ph = tip_hash(&tile.preview);
@@ -1011,11 +1286,22 @@ impl PresetStore {
                 }
                 hashes.push(tile.key.clone());
                 hashes.push(ph.clone());
-                infos.insert(tile.key.clone(), TipInfo { width: tile.width, height: tile.height, preview: ph });
+                infos.insert(
+                    tile.key.clone(),
+                    TipInfo {
+                        width: tile.width,
+                        height: tile.height,
+                        preview: ph,
+                    },
+                );
                 *slot = Some(tile);
             }
             let key = |r: &Option<StoredTile>| r.as_ref().map(|t| t.key.clone());
-            let tips = TipRefs { tip: key(&refs[0]), dual_tip: key(&refs[1]), texture: key(&refs[2]) };
+            let tips = TipRefs {
+                tip: key(&refs[0]),
+                dual_tip: key(&refs[1]),
+                texture: key(&refs[2]),
+            };
             stored.push(StoredPreset {
                 name: p.name.clone(),
                 brush: settings_only(&mut p.brush),
@@ -1025,20 +1311,40 @@ impl PresetStore {
             });
             tiles.push(refs);
         }
-        let gf = GroupFile { format: GROUP_FORMAT.into(), version: 1, group: group.to_string(), presets: stored, tips: infos };
+        let gf = GroupFile {
+            format: GROUP_FORMAT.into(),
+            version: 1,
+            group: group.to_string(),
+            presets: stored,
+            tips: infos,
+        };
         let bytes = serde_json::to_vec(&gf).map_err(|e| e.to_string())?;
         if bytes.len() as u64 > MAX_GROUP_BYTES {
-            return Err(format!("the group is too large to save ({} MB limit)", MAX_GROUP_BYTES >> 20));
+            return Err(format!(
+                "the group is too large to save ({} MB limit)",
+                MAX_GROUP_BYTES >> 20
+            ));
         }
         if others + new_bytes + bytes.len() as u64 > MAX_STORE_BYTES {
-            return Err(format!("the preset store is full ({} MB limit)", MAX_STORE_BYTES >> 20));
+            return Err(format!(
+                "the preset store is full ({} MB limit)",
+                MAX_STORE_BYTES >> 20
+            ));
         }
         self.backend.write(file, &bytes)?;
         for (p, refs) in items.iter_mut().zip(tiles) {
             set_stored(&mut p.brush, refs);
         }
         let presets = items.iter().map(|p| (**p).clone()).collect();
-        self.groups.insert(file.to_string(), Synced { presets, tips: hashes, bytes: bytes.len() as u64, stale: false });
+        self.groups.insert(
+            file.to_string(),
+            Synced {
+                presets,
+                tips: hashes,
+                bytes: bytes.len() as u64,
+                stale: false,
+            },
+        );
         Ok(())
     }
 
@@ -1050,11 +1356,16 @@ impl PresetStore {
             return;
         }
         if self.actions_skipped {
-            self.warnings.push(format!("Couldn't save actions: {ACTIONS_FILE} could not be read, so it was left unchanged"));
+            self.warnings.push(format!(
+                "Couldn't save actions: {ACTIONS_FILE} could not be read, so it was left unchanged"
+            ));
             self.actions_rev = rev;
             return;
         }
-        let file = crate::actions_cmds::ActionsFile { version: 1, actions: list.to_vec() };
+        let file = crate::actions_cmds::ActionsFile {
+            version: 1,
+            actions: list.to_vec(),
+        };
         let bytes = match serde_json::to_vec_pretty(&file) {
             Ok(b) => b,
             Err(e) => {
@@ -1064,7 +1375,10 @@ impl PresetStore {
             }
         };
         if bytes.len() as u64 > MAX_ACTIONS_BYTES {
-            self.warnings.push(format!("actions: the action list is too large to save ({} MB limit)", MAX_ACTIONS_BYTES >> 20));
+            self.warnings.push(format!(
+                "actions: the action list is too large to save ({} MB limit)",
+                MAX_ACTIONS_BYTES >> 20
+            ));
             self.actions_rev = rev;
             return;
         }
@@ -1077,7 +1391,12 @@ impl PresetStore {
 
 fn builtin_names() -> &'static [String] {
     static NAMES: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
-    NAMES.get_or_init(|| photocraft_paint::presets::builtin().into_iter().map(|p| p.name).collect())
+    NAMES.get_or_init(|| {
+        photocraft_paint::presets::builtin()
+            .into_iter()
+            .map(|p| p.name)
+            .collect()
+    })
 }
 
 impl Session {
@@ -1091,11 +1410,26 @@ impl Session {
     /// built-in of the same name; presets created before the store finished loading win), hide
     /// deleted built-ins, then sync. Returns the load warnings.
     pub fn attach_preset_store(&mut self, opened: Opened) -> Vec<String> {
-        let Opened { store, presets, hidden_builtins, order, mut warnings, actions: disk } = opened;
+        let Opened {
+            store,
+            presets,
+            hidden_builtins,
+            order,
+            mut warnings,
+            actions: disk,
+        } = opened;
         let lib = &mut self.tools.presets;
-        lib.retain(|p| !(p.builtin && hidden_builtins.iter().any(|h| h.eq_ignore_ascii_case(&p.name))));
+        lib.retain(|p| {
+            !(p.builtin
+                && hidden_builtins
+                    .iter()
+                    .any(|h| h.eq_ignore_ascii_case(&p.name)))
+        });
         for p in presets {
-            match lib.iter_mut().find(|x| x.name.eq_ignore_ascii_case(&p.name)) {
+            match lib
+                .iter_mut()
+                .find(|x| x.name.eq_ignore_ascii_case(&p.name))
+            {
                 Some(x) if x.builtin => *x = p,
                 Some(_) => {}
                 None => lib.push(p),
@@ -1103,8 +1437,16 @@ impl Session {
         }
         // The saved panel order (stable: presets it doesn't name keep their order, at the end).
         if !order.is_empty() {
-            let pos: HashMap<String, usize> = order.iter().enumerate().map(|(i, n)| (n.to_lowercase(), i)).collect();
-            lib.sort_by_key(|p| pos.get(&p.name.to_lowercase()).copied().unwrap_or(usize::MAX));
+            let pos: HashMap<String, usize> = order
+                .iter()
+                .enumerate()
+                .map(|(i, n)| (n.to_lowercase(), i))
+                .collect();
+            lib.sort_by_key(|p| {
+                pos.get(&p.name.to_lowercase())
+                    .copied()
+                    .unwrap_or(usize::MAX)
+            });
         }
         self.preset_store = Some(store);
         // In-memory actions (created before the store finished loading) win on name. Disk-only
@@ -1117,7 +1459,12 @@ impl Session {
             }
         } else {
             for action in disk {
-                if !self.actions.list.iter().any(|have| have.name == action.name) {
+                if !self
+                    .actions
+                    .list
+                    .iter()
+                    .any(|have| have.name == action.name)
+                {
                     self.actions.list.push(action);
                 }
             }
@@ -1151,7 +1498,12 @@ impl Session {
     pub fn load_brush_tips(&self, b: &mut BrushSettings) -> Result<(), String> {
         let load = |r: &mut StoredTile| -> Result<(), String> {
             if r.full.is_none() {
-                let st = self.preset_store.as_ref().ok_or_else(|| format!("brush tip {} is not available: no preset store is attached", r.key))?;
+                let st = self.preset_store.as_ref().ok_or_else(|| {
+                    format!(
+                        "brush tip {} is not available: no preset store is attached",
+                        r.key
+                    )
+                })?;
                 r.full = Some(st.load_tile(r)?);
             }
             Ok(())
@@ -1178,25 +1530,40 @@ fn link_stored_tips(st: &PresetStore, b: &mut BrushSettings) {
             return None;
         }
         let h = tip_hash(g);
-        st.tips.contains_key(&h).then(|| StoredTile { key: h, width: g.width, height: g.height, preview: Arc::new(g.preview(PREVIEW_SIDE)), full: None })
+        st.tips.contains_key(&h).then(|| StoredTile {
+            key: h,
+            width: g.width,
+            height: g.height,
+            preview: Arc::new(g.preview(PREVIEW_SIDE)),
+            full: None,
+        })
     };
     if let TipShape::Sampled(g) = &b.tip
         && let Some(r) = link(g)
         && let TipShape::Sampled(g) = std::mem::take(&mut b.tip)
     {
-        b.tip = TipShape::Stored(StoredTile { full: Some(Arc::new(g)), ..r });
+        b.tip = TipShape::Stored(StoredTile {
+            full: Some(Arc::new(g)),
+            ..r
+        });
     }
     if let TipShape::Sampled(g) = &b.dual_brush.tip
         && let Some(r) = link(g)
         && let TipShape::Sampled(g) = std::mem::take(&mut b.dual_brush.tip)
     {
-        b.dual_brush.tip = TipShape::Stored(StoredTile { full: Some(Arc::new(g)), ..r });
+        b.dual_brush.tip = TipShape::Stored(StoredTile {
+            full: Some(Arc::new(g)),
+            ..r
+        });
     }
     if let Pattern::Tile(g) = &b.texture.pattern
         && let Some(r) = link(g)
         && let Pattern::Tile(g) = std::mem::take(&mut b.texture.pattern)
     {
-        b.texture.pattern = Pattern::Stored(StoredTile { full: Some(Arc::new(g)), ..r });
+        b.texture.pattern = Pattern::Stored(StoredTile {
+            full: Some(Arc::new(g)),
+            ..r
+        });
     }
 }
 

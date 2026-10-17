@@ -29,7 +29,11 @@ fn comptes_listes() {
     let Some(cfg) = load_real() else { return };
     assert_eq!(cfg.calendar.len(), 7, "m_AdventCalendarInfoList");
     assert_eq!(cfg.news.len(), 7, "m_NewsInfoList");
-    assert_eq!(cfg.login_bonus_reward_items.len(), 1, "m_LoginBonusRewardItem");
+    assert_eq!(
+        cfg.login_bonus_reward_items.len(),
+        1,
+        "m_LoginBonusRewardItem"
+    );
     assert_eq!(cfg.login_bonus_rewards.len(), 1, "m_LoginBonusReward");
     assert_eq!(cfg.login_bonus_infos.len(), 1, "m_LoginBonusInfo");
 }

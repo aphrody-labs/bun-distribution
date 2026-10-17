@@ -8,7 +8,11 @@ impl Instruction {
     pub fn ext_opcode(&self) -> Option<u8> {
         let nibble = (self.0 >> 12) & 0xF;
         if nibble >= 3 {
-            Some(if nibble == 3 { self.ext_9_15() } else { self.ext_8_15() })
+            Some(if nibble == 3 {
+                self.ext_9_15()
+            } else {
+                self.ext_8_15()
+            })
         } else {
             None
         }

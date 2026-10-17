@@ -245,25 +245,41 @@ fn utc_build_timestamp(seconds: u64) -> Option<String> {
     let valid = unsafe { libc::gmtime_s(&mut utc, &timestamp) == 0 };
     #[cfg(not(any(unix, windows)))]
     let valid = false;
-    valid.then(|| format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        utc.tm_year + 1900, utc.tm_mon + 1, utc.tm_mday,
-        utc.tm_hour, utc.tm_min, utc.tm_sec))
+    valid.then(|| {
+        format!(
+            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+            utc.tm_year + 1900,
+            utc.tm_mon + 1,
+            utc.tm_mday,
+            utc.tm_hour,
+            utc.tm_min,
+            utc.tm_sec
+        )
+    })
 }
 
 fn build_timestamp(source_date_epoch: Option<&str>) -> String {
     let seconds = match source_date_epoch {
-        Some(value) => value.parse::<u64>().expect("SOURCE_DATE_EPOCH must be nonnegative epoch seconds"),
-        None => std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
-            .expect("build time precedes the Unix epoch").as_secs(),
+        Some(value) => value
+            .parse::<u64>()
+            .expect("SOURCE_DATE_EPOCH must be nonnegative epoch seconds"),
+        None => std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("build time precedes the Unix epoch")
+            .as_secs(),
     };
     utc_build_timestamp(seconds).expect("build timestamp is outside the host calendar range")
 }
 
 fn main() {
     // Eden's ZBIC variant is separate from the ordinary zstd dependency.
-    let zbic = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap())
-        .join("externals/zbic");
-    for file in ["bridge.cpp", "vendor/src/zstd.c", "vendor/src/zstd.h", "vendor/src/zstd_errors.h"] {
+    let zbic = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("externals/zbic");
+    for file in [
+        "bridge.cpp",
+        "vendor/src/zstd.c",
+        "vendor/src/zstd.h",
+        "vendor/src/zstd_errors.h",
+    ] {
         println!("cargo:rerun-if-changed={}", zbic.join(file).display());
     }
     cc::Build::new()
@@ -307,7 +323,10 @@ fn main() {
     println!("cargo:rustc-env=GIT_BRANCH={branch}");
     println!("cargo:rustc-env=GIT_DESC={build_version}");
     println!("cargo:rustc-env=BUILD_NAME=Ruzu");
-    println!("cargo:rustc-env=BUILD_DATE={}", build_timestamp(env::var("SOURCE_DATE_EPOCH").ok().as_deref()));
+    println!(
+        "cargo:rustc-env=BUILD_DATE={}",
+        build_timestamp(env::var("SOURCE_DATE_EPOCH").ok().as_deref())
+    );
     println!("cargo:rustc-env=BUILD_VERSION={build_version}");
     println!("cargo:rustc-env=COMPILER_ID={}", compiler_id(repository));
 }

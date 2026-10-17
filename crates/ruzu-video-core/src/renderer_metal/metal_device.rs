@@ -9,8 +9,8 @@ use objc2_metal::{
     MTLArgumentBuffersTier, MTLCommandQueue, MTLCreateSystemDefaultDevice, MTLDevice, MTLGPUFamily,
     MTLReadWriteTextureTier,
 };
-use thiserror::Error;
 use std::sync::Arc;
+use thiserror::Error;
 
 use shader_recompiler::backend::msl::MslVersion;
 
@@ -145,8 +145,7 @@ impl MetalDeviceProfile {
     /// Apple feature tables expose 16 viewports from Apple5 and on Mac2.
     /// Older families support only the single-viewport API.
     pub fn max_viewports(&self) -> usize {
-        if self.highest_apple_family.is_some_and(|family| family >= 5)
-            || self.supports_mac2_family
+        if self.highest_apple_family.is_some_and(|family| family >= 5) || self.supports_mac2_family
         {
             16
         } else {
@@ -381,8 +380,12 @@ mod tests {
     fn viewport_limit_follows_device_family_not_host_cpu() {
         let mut profile = native_profile();
         for (apple, mac2, expected) in [
-            (None, false, 1), (Some(4), false, 1), (Some(5), false, 16),
-            (Some(7), false, 16), (Some(10), false, 16), (None, true, 16),
+            (None, false, 1),
+            (Some(4), false, 1),
+            (Some(5), false, 16),
+            (Some(7), false, 16),
+            (Some(10), false, 16),
+            (None, true, 16),
         ] {
             profile.highest_apple_family = apple;
             profile.supports_mac2_family = mac2;
@@ -394,15 +397,22 @@ mod tests {
     fn tessellation_limit_uses_queried_family() {
         let mut profile = native_profile();
         for (apple, mac2, expected) in [
-            (None, false, None), (Some(2), false, None),
-            (Some(3), false, Some(16)), (Some(4), false, Some(16)),
-            (Some(5), false, Some(64)), (Some(7), false, Some(64)),
-            (Some(10), false, Some(64)), (None, true, Some(64)),
+            (None, false, None),
+            (Some(2), false, None),
+            (Some(3), false, Some(16)),
+            (Some(4), false, Some(16)),
+            (Some(5), false, Some(64)),
+            (Some(7), false, Some(64)),
+            (Some(10), false, Some(64)),
+            (None, true, Some(64)),
         ] {
             profile.highest_apple_family = apple;
             profile.supports_mac2_family = mac2;
             assert_eq!(profile.max_tessellation_factor(), expected);
-            assert_eq!(profile.supports_indirect_tessellation(), expected == Some(64));
+            assert_eq!(
+                profile.supports_indirect_tessellation(),
+                expected == Some(64)
+            );
         }
     }
 

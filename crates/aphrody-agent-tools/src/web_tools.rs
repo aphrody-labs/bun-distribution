@@ -44,11 +44,15 @@ impl WebSearchTool {
     #[must_use]
     pub fn new() -> Self {
         let mut properties = BTreeMap::new();
-        properties
-            .insert("query".into(), JsonSchema::string(Some("Search query keywords.".into())));
+        properties.insert(
+            "query".into(),
+            JsonSchema::string(Some("Search query keywords.".into())),
+        );
         properties.insert(
             "num".into(),
-            JsonSchema::integer(Some("Maximum number of results to retrieve (default: 5).".into())),
+            JsonSchema::integer(Some(
+                "Maximum number of results to retrieve (default: 5).".into(),
+            )),
         );
 
         let definition = ToolDefinition::new(
@@ -61,7 +65,10 @@ impl WebSearchTool {
             ),
         );
 
-        Self { definition, budget: Duration::from_secs(45) }
+        Self {
+            definition,
+            budget: Duration::from_secs(45),
+        }
     }
 }
 
@@ -78,9 +85,11 @@ impl ToolExecutor for WebSearchTool {
     }
 
     async fn handle(&self, arguments: Value) -> Result<ToolOutput, ToolError> {
-        let args: WebSearchArgs = serde_json::from_value(arguments).map_err(|e| {
-            ToolError::InvalidArguments { tool: "web_search".into(), message: e.to_string() }
-        })?;
+        let args: WebSearchArgs =
+            serde_json::from_value(arguments).map_err(|e| ToolError::InvalidArguments {
+                tool: "web_search".into(),
+                message: e.to_string(),
+            })?;
 
         if args.query.trim().is_empty() {
             return Ok(ToolOutput::error("web_search: the query must not be empty"));
@@ -107,7 +116,7 @@ impl ToolExecutor for WebSearchTool {
                     }
                 }
                 Ok(ToolOutput::ok(out))
-            },
+            }
             Ok(Err(e)) => Ok(ToolOutput::error(format!("web_search failed: {e}"))),
             Err(_) => Ok(ToolOutput::error(format!(
                 "web_search exceeded its {}s budget",
@@ -144,7 +153,9 @@ impl WebScrapeTool {
         let mut properties = BTreeMap::new();
         properties.insert(
             "url".into(),
-            JsonSchema::string(Some("Target HTTP or HTTPS URL to scrape and convert.".into())),
+            JsonSchema::string(Some(
+                "Target HTTP or HTTPS URL to scrape and convert.".into(),
+            )),
         );
         properties.insert(
             "profile".into(),
@@ -163,7 +174,10 @@ impl WebScrapeTool {
             ),
         );
 
-        Self { definition, budget: Duration::from_secs(60) }
+        Self {
+            definition,
+            budget: Duration::from_secs(60),
+        }
     }
 }
 
@@ -180,9 +194,11 @@ impl ToolExecutor for WebScrapeTool {
     }
 
     async fn handle(&self, arguments: Value) -> Result<ToolOutput, ToolError> {
-        let args: WebScrapeArgs = serde_json::from_value(arguments).map_err(|e| {
-            ToolError::InvalidArguments { tool: "web_scrape".into(), message: e.to_string() }
-        })?;
+        let args: WebScrapeArgs =
+            serde_json::from_value(arguments).map_err(|e| ToolError::InvalidArguments {
+                tool: "web_scrape".into(),
+                message: e.to_string(),
+            })?;
 
         let mut request = Request::new(args.url).with_timeout(self.budget);
         if let Some(name) = args.profile.as_deref() {
@@ -194,9 +210,9 @@ impl ToolExecutor for WebScrapeTool {
             request = request.with_profile(profile);
         }
         match fetch(&request).await {
-            Ok(page) if page.body.trim().is_empty() => {
-                Ok(ToolOutput::error("web_scrape failed: the page produced an empty body"))
-            },
+            Ok(page) if page.body.trim().is_empty() => Ok(ToolOutput::error(
+                "web_scrape failed: the page produced an empty body",
+            )),
             Ok(page) => Ok(ToolOutput::ok(page.body)),
             Err(e) => Ok(ToolOutput::error(format!("web_scrape failed: {e}"))),
         }
@@ -256,13 +272,18 @@ impl ToolExecutor for JsEvalTool {
     }
 
     async fn handle(&self, arguments: Value) -> Result<ToolOutput, ToolError> {
-        let args: JsEvalArgs = serde_json::from_value(arguments).map_err(|e| {
-            ToolError::InvalidArguments { tool: "js_eval".into(), message: e.to_string() }
-        })?;
+        let args: JsEvalArgs =
+            serde_json::from_value(arguments).map_err(|e| ToolError::InvalidArguments {
+                tool: "js_eval".into(),
+                message: e.to_string(),
+            })?;
 
         let output = session::evaluate(&args.code, Duration::from_secs(10))
             .await
-            .map_err(|e| ToolError::Execution { tool: "js_eval".into(), message: e.to_string() })?;
+            .map_err(|e| ToolError::Execution {
+                tool: "js_eval".into(),
+                message: e.to_string(),
+            })?;
 
         Ok(ToolOutput::ok(if output.trim().is_empty() {
             "Execution finished successfully with empty output.".into()
@@ -332,9 +353,11 @@ impl ToolExecutor for GoogleAiTool {
     }
 
     async fn handle(&self, arguments: Value) -> Result<ToolOutput, ToolError> {
-        let args: GoogleAiArgs = serde_json::from_value(arguments).map_err(|e| {
-            ToolError::InvalidArguments { tool: "google_ai".into(), message: e.to_string() }
-        })?;
+        let args: GoogleAiArgs =
+            serde_json::from_value(arguments).map_err(|e| ToolError::InvalidArguments {
+                tool: "google_ai".into(),
+                message: e.to_string(),
+            })?;
 
         obscura_net::ensure_rustls_crypto_provider();
         let client = aphrody_gemini_web::GeminiWebClient::from_default_cookie_file("en")

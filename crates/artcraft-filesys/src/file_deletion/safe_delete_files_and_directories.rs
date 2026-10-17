@@ -25,15 +25,15 @@ use crate::file_deletion::safe_recursively_delete_files::safe_recursively_delete
 /// ]);
 /// ```
 pub fn safe_delete_files_and_directories<P: AsRef<Path>>(paths: &[P]) {
-  for path in paths {
-    let p = path.as_ref();
-    if p.is_file() {
-      safe_delete_file(p);
-    } else if p.is_dir() {
-      safe_recursively_delete_files(p);
-      safe_delete_directory(p);
-    } else {
-      warn!("Path {:?} is neither a file nor a directory", p);
+    for path in paths {
+        let p = path.as_ref();
+        if p.is_file() {
+            safe_delete_file(p);
+        } else if p.is_dir() {
+            safe_recursively_delete_files(p);
+            safe_delete_directory(p);
+        } else {
+            warn!("Path {:?} is neither a file nor a directory", p);
+        }
     }
-  }
 }

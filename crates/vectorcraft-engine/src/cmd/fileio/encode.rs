@@ -47,7 +47,9 @@ impl ArtboardPick {
             return Err("no artboards named".into());
         }
         match v.iter().find(|i| **i >= count) {
-            Some(i) => Err(format!("no artboard {i} (0-based; the document has {count})")),
+            Some(i) => Err(format!(
+                "no artboard {i} (0-based; the document has {count})"
+            )),
             None => Ok(Some(v)),
         }
     }
@@ -82,7 +84,10 @@ pub struct Encoded {
 
 impl Encoded {
     pub(super) fn one(bytes: Vec<u8>) -> Self {
-        Self { files: vec![(None, bytes)], ..Self::default() }
+        Self {
+            files: vec![(None, bytes)],
+            ..Self::default()
+        }
     }
 
     /// Every file to write for the destination `path` (a path or a file name): the file itself
@@ -98,15 +103,25 @@ impl Encoded {
             files => {
                 let boards: Vec<usize> = files.iter().filter_map(|(b, _)| *b).collect();
                 let file = std::path::Path::new(&path[dir.len()..]);
-                let stem = file.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
-                let ext = file.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+                let stem = file
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                let ext = file
+                    .extension()
+                    .map(|e| format!(".{}", e.to_string_lossy()))
+                    .unwrap_or_default();
                 let mut names = super::artboard_file_names(doc, &boards).into_iter();
                 files
                     .iter()
                     .map(|(b, bytes)| {
                         let name = match b {
                             None => path.to_string(),
-                            Some(_) => sibling(&format!("{stem}{}{}{ext}", self.joiner.unwrap_or("-"), names.next().unwrap_or_default())),
+                            Some(_) => sibling(&format!(
+                                "{stem}{}{}{ext}",
+                                self.joiner.unwrap_or("-"),
+                                names.next().unwrap_or_default()
+                            )),
                         };
                         (name, Cow::Borrowed(bytes.as_slice()))
                     })
@@ -119,10 +134,20 @@ impl Encoded {
             .filter_map(|m| {
                 let image = std::path::Path::new(&out.get(m.file)?.0);
                 let name = image.file_name()?.to_string_lossy();
-                Some((image.with_extension(m.kind.ext()).to_string_lossy().into_owned(), Cow::Owned(m.text(&name).into_bytes())))
+                Some((
+                    image
+                        .with_extension(m.kind.ext())
+                        .to_string_lossy()
+                        .into_owned(),
+                    Cow::Owned(m.text(&name).into_bytes()),
+                ))
             })
             .collect();
-        out.extend(self.linked.iter().map(|l| (sibling(&l.name), Cow::Borrowed(l.bytes.as_slice()))));
+        out.extend(
+            self.linked
+                .iter()
+                .map(|l| (sibling(&l.name), Cow::Borrowed(l.bytes.as_slice()))),
+        );
         out.extend(maps);
         out
     }
@@ -130,11 +155,23 @@ impl Encoded {
     /// The one file and the warnings, when the export wrote nothing else.
     fn single(self, f: &Format) -> Result<(Vec<u8>, Vec<String>)> {
         if !self.linked.is_empty() || !self.maps.is_empty() {
-            return Err(bad(C, format!("{} with linked images or an image map writes several files: use document.export", f.label)));
+            return Err(bad(
+                C,
+                format!(
+                    "{} with linked images or an image map writes several files: use document.export",
+                    f.label
+                ),
+            ));
         }
         match <[_; 1]>::try_from(self.files) {
             Ok([(_, bytes)]) => Ok((bytes, self.warnings)),
-            Err(_) => Err(bad(C, format!("{} writes one file per artboard here: use document.export, or name one artboard", f.label))),
+            Err(_) => Err(bad(
+                C,
+                format!(
+                    "{} writes one file per artboard here: use document.export, or name one artboard",
+                    f.label
+                ),
+            )),
         }
     }
 }
@@ -185,7 +222,12 @@ impl RasterOptions {
             return Err(bad(C, format!("ppi must be a positive number, not {ppi}")));
         }
         let ppi = self.ppi.unwrap_or(72.0 * self.scale.unwrap_or(1.0));
-        let color_model = parse(self.color_model.as_deref(), jpeg::ColorModel::from_id, "colorModel", "rgb, cmyk or gray")?;
+        let color_model = parse(
+            self.color_model.as_deref(),
+            jpeg::ColorModel::from_id,
+            "colorModel",
+            "rgb, cmyk or gray",
+        )?;
         let embed_icc = self.embed_icc.unwrap_or(true);
         Ok(RasterExportOptions {
             ppi: (ppi / 72.0).clamp(0.01, 64.0) * 72.0,
@@ -193,13 +235,27 @@ impl RasterOptions {
                 Some(v) => background(v).map_err(|e| bad(C, e))?,
                 None => page,
             },
-            anti_alias: self.anti_alias.as_deref().map(anti_alias).transpose().map_err(|e| bad(C, e))?.unwrap_or_default(),
+            anti_alias: self
+                .anti_alias
+                .as_deref()
+                .map(anti_alias)
+                .transpose()
+                .map_err(|e| bad(C, e))?
+                .unwrap_or_default(),
             interlaced: self.interlaced.unwrap_or(false),
             quality: self.quality.unwrap_or(90).min(100),
             jpeg: JpegOptions {
                 color_model,
-                method: parse(self.method.as_deref(), jpeg::Method::from_id, "method", "baseline, optimized or progressive")?,
-                scans: self.scans.unwrap_or(3).clamp(*jpeg::SCANS.start(), *jpeg::SCANS.end()),
+                method: parse(
+                    self.method.as_deref(),
+                    jpeg::Method::from_id,
+                    "method",
+                    "baseline, optimized or progressive",
+                )?,
+                scans: self
+                    .scans
+                    .unwrap_or(3)
+                    .clamp(*jpeg::SCANS.start(), *jpeg::SCANS.end()),
                 embed_icc,
             },
             palette: PaletteOptions {
@@ -210,7 +266,12 @@ impl RasterOptions {
                     "reduction",
                     "perceptual, selective, adaptive, web, blackWhite or gray",
                 )?,
-                dither: parse(self.dither.as_deref(), Dither::from_id, "dither", "none, diffusion, pattern or noise")?,
+                dither: parse(
+                    self.dither.as_deref(),
+                    Dither::from_id,
+                    "dither",
+                    "none, diffusion, pattern or noise",
+                )?,
                 dither_amount: self.dither_amount.unwrap_or(100).min(100),
                 transparency: self.transparency.unwrap_or(true),
                 matte: match &self.matte {
@@ -221,17 +282,29 @@ impl RasterOptions {
             tiff: TiffOptions {
                 color_model,
                 lzw: self.lzw.unwrap_or(true),
-                byte_order: parse(self.byte_order.as_deref(), ByteOrder::from_id, "byteOrder", "little or big")?,
+                byte_order: parse(
+                    self.byte_order.as_deref(),
+                    ByteOrder::from_id,
+                    "byteOrder",
+                    "little or big",
+                )?,
                 embed_icc,
             },
             bmp: bmp::BmpOptions {
-                os2: parse(self.file_format.as_deref(), bmp_layout, "fileFormat", "windows or os2")?,
+                os2: parse(
+                    self.file_format.as_deref(),
+                    bmp_layout,
+                    "fileFormat",
+                    "windows or os2",
+                )?,
                 depth: self.depth.unwrap_or(24),
                 rle: self.rle.unwrap_or(false),
                 top_down: self.flip_rows.unwrap_or(false),
                 gray: color_model == jpeg::ColorModel::Gray,
             },
-            tga: tga::TgaOptions { depth: self.depth.unwrap_or(24) },
+            tga: tga::TgaOptions {
+                depth: self.depth.unwrap_or(24),
+            },
             psd: psd::PsdOptions {
                 color_model,
                 layers: self.layers.unwrap_or(true),
@@ -257,8 +330,12 @@ fn bmp_layout(s: &str) -> Option<bool> {
 fn check_options(format: RasterFormat, o: &RasterExportOptions) -> Result<()> {
     let model = o.jpeg.color_model;
     let r = match format {
-        RasterFormat::Bmp if model == jpeg::ColorModel::Cmyk => Err("BMP files are RGB or grayscale: colorModel rgb or gray".to_string()),
-        RasterFormat::Tga if model != jpeg::ColorModel::Rgb => Err("Targa files are RGB: colorModel rgb".to_string()),
+        RasterFormat::Bmp if model == jpeg::ColorModel::Cmyk => {
+            Err("BMP files are RGB or grayscale: colorModel rgb or gray".to_string())
+        }
+        RasterFormat::Tga if model != jpeg::ColorModel::Rgb => {
+            Err("Targa files are RGB: colorModel rgb".to_string())
+        }
         RasterFormat::Bmp => o.bmp.check(),
         RasterFormat::Tga => o.tga.check(),
         _ => Ok(()),
@@ -267,8 +344,15 @@ fn check_options(format: RasterFormat, o: &RasterExportOptions) -> Result<()> {
 }
 
 /// An enum option by id (its default when absent).
-fn parse<T: Default>(v: Option<&str>, from_id: fn(&str) -> Option<T>, name: &str, ids: &str) -> Result<T> {
-    v.map(|s| from_id(s).ok_or_else(|| bad(C, format!("{name} `{s}`: {ids}")))).transpose().map(Option::unwrap_or_default)
+fn parse<T: Default>(
+    v: Option<&str>,
+    from_id: fn(&str) -> Option<T>,
+    name: &str,
+    ids: &str,
+) -> Result<T> {
+    v.map(|s| from_id(s).ok_or_else(|| bad(C, format!("{name} `{s}`: {ids}"))))
+        .transpose()
+        .map(Option::unwrap_or_default)
 }
 
 /// A raster background: `transparent` (also `none` or null), `white`, `black` or a colour
@@ -276,7 +360,11 @@ fn parse<T: Default>(v: Option<&str>, from_id: fn(&str) -> Option<T>, name: &str
 pub(crate) fn background(v: &Value) -> std::result::Result<Option<[u8; 3]>, String> {
     match v {
         Value::Null => Ok(None),
-        Value::String(s) if s.eq_ignore_ascii_case("transparent") || s.eq_ignore_ascii_case("none") => Ok(None),
+        Value::String(s)
+            if s.eq_ignore_ascii_case("transparent") || s.eq_ignore_ascii_case("none") =>
+        {
+            Ok(None)
+        }
         Value::String(s) if s.eq_ignore_ascii_case("white") => Ok(Some([255; 3])),
         Value::String(s) if s.eq_ignore_ascii_case("black") => Ok(Some([0; 3])),
         other => color_value(other)
@@ -284,7 +372,11 @@ pub(crate) fn background(v: &Value) -> std::result::Result<Option<[u8; 3]>, Stri
                 let [r, g, b, _] = c.to_rgba8(1.0);
                 Some([r, g, b])
             })
-            .ok_or_else(|| format!("background {other}: transparent, white, black or a colour such as \"#ff8800\"")),
+            .ok_or_else(|| {
+                format!(
+                    "background {other}: transparent, white, black or a colour such as \"#ff8800\""
+                )
+            }),
     }
 }
 
@@ -300,7 +392,10 @@ fn use_artboards(p: &Value) -> Result<Option<bool>> {
     match p.get("useArtboards") {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Bool(b)) => Ok(Some(*b)),
-        Some(v) => Err(bad(C, format!("useArtboards must be true or false, not {v}"))),
+        Some(v) => Err(bad(
+            C,
+            format!("useArtboards must be true or false, not {v}"),
+        )),
     }
 }
 
@@ -311,7 +406,13 @@ pub(super) fn single_artboard(doc: &Document, rect: Rect, name: &str) -> Documen
 
 /// `d` with one artboard, `rect`.
 pub(crate) fn with_single_artboard(mut d: Document, rect: Rect, name: &str) -> Document {
-    d.artboards = vec![Artboard { id: 1, name: name.into(), rect, show_center_mark: false, show_cross_hairs: false }];
+    d.artboards = vec![Artboard {
+        id: 1,
+        name: name.into(),
+        rect,
+        show_center_mark: false,
+        show_cross_hairs: false,
+    }];
     d
 }
 
@@ -340,7 +441,12 @@ fn check_format_size(f: &Format, w: f64, h: f64) -> Result<()> {
     if w.round() > max || h.round() > max {
         return Err(bad(
             C,
-            format!("{} × {} pixels is too large for {} (at most {max} pixels a side): lower the scale", w.round(), h.round(), f.label),
+            format!(
+                "{} × {} pixels is too large for {} (at most {max} pixels a side): lower the scale",
+                w.round(),
+                h.round(),
+                f.label
+            ),
         ));
     }
     Ok(())
@@ -357,7 +463,11 @@ pub fn encode(doc: &Document, format: &str, p: &Value) -> Result<Vec<u8>> {
 /// Like [`encode`], also returning the encoder's warnings (PDF and SVG: options not applied yet,
 /// features approximated or left out; every format that draws type: fonts written in the fallback
 /// font).
-pub fn encode_with_warnings(doc: &Document, format: &str, p: &Value) -> Result<(Vec<u8>, Vec<String>)> {
+pub fn encode_with_warnings(
+    doc: &Document,
+    format: &str,
+    p: &Value,
+) -> Result<(Vec<u8>, Vec<String>)> {
     let f = super::writable(C, Some(format), None)?;
     encode_all(doc, f.id, p)?.single(f)
 }
@@ -367,7 +477,10 @@ pub fn encode_all(doc: &Document, format: &str, p: &Value) -> Result<Encoded> {
     let format = super::writable(C, Some(format), None)?.id;
     // Formats with editing data prepare their drawn output separately from their original
     // document. Other formats only need the placed files' art.
-    if !matches!(format, "vectorcraft" | "template" | "ai" | "pdf" | "eps" | "svg" | "svgz") {
+    if !matches!(
+        format,
+        "vectorcraft" | "template" | "ai" | "pdf" | "eps" | "svg" | "svgz"
+    ) {
         let (full, warnings) = crate::cmd::place::document::full_documents(doc);
         if !warnings.is_empty() {
             let mut enc = encode_all_of(&full, format, p)?;
@@ -387,7 +500,8 @@ fn encode_all_of(doc: &Document, format: &str, p: &Value) -> Result<Encoded> {
     // An image the renderer couldn't decode draws nothing: say so rather than write a picture
     // that silently lacks it.
     if f.raster && vectorcraft_render::decode_failures() > failed {
-        enc.warnings.push("an image couldn't be decoded and is missing from the picture".into());
+        enc.warnings
+            .push("an image couldn't be decoded and is missing from the picture".into());
     }
     // Formats that draw type: missing fonts come out in the fallback font (PDF and SVG say so
     // themselves: SVG only when it outlines or embeds fonts).
@@ -404,9 +518,14 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
     let doc = &*doc.without_edit_modes();
     let n = doc.artboards.len();
     // SVG reads its own `useArtboards` (an SVG option).
-    let use_artboards = if f.raster || matches!(f.id, "pdf" | "ai" | "dxf" | "emf" | "wmf") { use_artboards(p)? } else { None };
+    let use_artboards = if f.raster || matches!(f.id, "pdf" | "ai" | "dxf" | "emf" | "wmf") {
+        use_artboards(p)?
+    } else {
+        None
+    };
     if use_artboards == Some(false) {
-        let bounds = vectorcraft_render::encode::art_bounds(doc).ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
+        let bounds = vectorcraft_render::encode::art_bounds(doc)
+            .ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
         let mut q = super::export::without_artboards(p);
         if let Some(o) = q.as_object_mut() {
             o.remove("useArtboards");
@@ -426,18 +545,26 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
         "dxf" => return super::dxf::encode(doc, p, use_artboards),
         // EPS reads its own `useArtboards` (the art's bounds unless asked).
         "eps" => return super::eps::encode(doc, p),
-        "emf" => return super::metafile::encode(doc, p, use_artboards, vectorcraft_metafile::Kind::Emf),
-        "wmf" => return super::metafile::encode(doc, p, use_artboards, vectorcraft_metafile::Kind::Wmf),
+        "emf" => {
+            return super::metafile::encode(doc, p, use_artboards, vectorcraft_metafile::Kind::Emf);
+        }
+        "wmf" => {
+            return super::metafile::encode(doc, p, use_artboards, vectorcraft_metafile::Kind::Wmf);
+        }
         "ai" => return super::save::encode_ai(C, f, doc, p),
         "pdf" => {
             let (bytes, warnings) = super::pdf::encode(C, doc, p)?;
-            return Ok(Encoded { warnings, ..Encoded::one(bytes) });
+            return Ok(Encoded {
+                warnings,
+                ..Encoded::one(bytes)
+            });
         }
         "png" | "jpg" | "webp" | "gif" | "png8" | "tiff" | "bmp" | "tga" | "psd" => {
             let o: RasterOptions = options(f, p)?;
             // New Document → Background Contents: White makes the export opaque, unless `background`
             // says otherwise (JPEG has no alpha: white either way).
-            let page = (doc.setup.background == vectorcraft_doc::Background::White).then_some([255; 3]);
+            let page =
+                (doc.setup.background == vectorcraft_doc::Background::White).then_some([255; 3]);
             let settings = o.settings(page)?;
             let scale = settings.scale();
             let format = match f.id {
@@ -459,20 +586,31 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
             };
             // JPEG Options → Image Map.
             let map = match (format, o.image_map.as_deref()) {
-                (RasterFormat::Jpeg, Some(m)) => MapKind::from_id(m).ok_or_else(|| bad(C, format!("imageMap `{m}`: none, client or server")))?,
+                (RasterFormat::Jpeg, Some(m)) => MapKind::from_id(m)
+                    .ok_or_else(|| bad(C, format!("imageMap `{m}`: none, client or server")))?,
                 _ => MapKind::None,
             };
             let mut enc = Encoded::default();
             let mut renderer = vectorcraft_render::Renderer::new();
             for b in chosen {
-                let region = doc.artboards.get(b).ok_or_else(|| bad(C, format!("no artboard {}", b + 1)))?.rect;
+                let region = doc
+                    .artboards
+                    .get(b)
+                    .ok_or_else(|| bad(C, format!("no artboard {}", b + 1)))?
+                    .rect;
                 check_format_size(f, region.width() * scale, region.height() * scale)?;
                 vectorcraft_render::raster_size(region, scale).map_err(|e| bad(C, e))?;
-                enc.maps.extend(imagemap::build(doc, region, scale, map, enc.files.len()));
-                let bytes = renderer.export_region(doc, region, format, &settings).map_err(EngineError::Other)?;
+                enc.maps
+                    .extend(imagemap::build(doc, region, scale, map, enc.files.len()));
+                let bytes = renderer
+                    .export_region(doc, region, format, &settings)
+                    .map_err(EngineError::Other)?;
                 // File Info as PNG text chunks.
                 let bytes = if matches!(format, RasterFormat::Png | RasterFormat::Png8) {
-                    vectorcraft_render::encode::png::with_text(bytes, &doc.metadata.png_text(&doc.title))
+                    vectorcraft_render::encode::png::with_text(
+                        bytes,
+                        &doc.metadata.png_text(&doc.title),
+                    )
                 } else {
                     bytes
                 };
@@ -482,7 +620,10 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
                 return Err(bad(C, "the document has no artboard"));
             }
             if format == RasterFormat::WebP && o.lossless == Some(false) {
-                enc.warnings.push("lossy WebP isn't available yet: the file is lossless (exact, but larger)".into());
+                enc.warnings.push(
+                    "lossy WebP isn't available yet: the file is lossless (exact, but larger)"
+                        .into(),
+                );
             }
             return Ok(enc);
         }

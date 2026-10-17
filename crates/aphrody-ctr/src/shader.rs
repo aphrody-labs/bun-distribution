@@ -12,15 +12,21 @@ pub enum Error {
 }
 
 fn bytes(data: &[u8], offset: usize, length: usize) -> Result<&[u8], Error> {
-    data.get(offset..offset.checked_add(length).ok_or(Error::Overflow)?).ok_or(Error::Truncated)
+    data.get(offset..offset.checked_add(length).ok_or(Error::Overflow)?)
+        .ok_or(Error::Truncated)
 }
 fn word(data: &[u8], offset: usize) -> Result<u32, Error> {
-    Ok(u32::from_le_bytes(bytes(data, offset, 4)?.try_into().unwrap()))
+    Ok(u32::from_le_bytes(
+        bytes(data, offset, 4)?.try_into().unwrap(),
+    ))
 }
 fn table(data: &[u8], base: usize, field: usize, stride: usize) -> Result<&[u8], Error> {
-    let offset = base.checked_add(word(data, base + field)? as usize).ok_or(Error::Overflow)?;
-    let length =
-        (word(data, base + field + 4)? as usize).checked_mul(stride).ok_or(Error::Overflow)?;
+    let offset = base
+        .checked_add(word(data, base + field)? as usize)
+        .ok_or(Error::Overflow)?;
+    let length = (word(data, base + field + 4)? as usize)
+        .checked_mul(stride)
+        .ok_or(Error::Overflow)?;
     bytes(data, offset, length)
 }
 
@@ -37,7 +43,10 @@ impl<'a> Binary<'a> {
             return Err(Error::Magic);
         }
         let count = word(data, 4)? as usize;
-        let program = count.checked_mul(4).and_then(|n| n.checked_add(8)).ok_or(Error::Overflow)?;
+        let program = count
+            .checked_mul(4)
+            .and_then(|n| n.checked_add(8))
+            .ok_or(Error::Overflow)?;
         bytes(data, 8, program - 8)?;
         if bytes(data, program, 4)? != b"DVLP" {
             return Err(Error::Magic);
@@ -45,7 +54,11 @@ impl<'a> Binary<'a> {
         bytes(data, program, 40)?;
         table(data, program, 8, 4)?;
         table(data, program, 16, 8)?;
-        let result = Self { data, count, program };
+        let result = Self {
+            data,
+            count,
+            program,
+        };
         for index in 0..count {
             result.executable(index)?;
         }
@@ -77,7 +90,13 @@ impl<'a> Binary<'a> {
         let outputs = table(self.data, base, 40, 8)?;
         let uniforms = table(self.data, base, 48, 8)?;
         let symbols = table(self.data, base, 56, 1)?;
-        Ok(Executable { header, constants, outputs, uniforms, symbols })
+        Ok(Executable {
+            header,
+            constants,
+            outputs,
+            uniforms,
+            symbols,
+        })
     }
 }
 
@@ -194,7 +213,10 @@ mod tests {
         let binary = Binary::parse(data).unwrap();
         assert_eq!(binary.executable_count(), 1);
         assert!(binary.code().is_empty());
-        assert_eq!(binary.executable(0).unwrap().output_map().unwrap(), OutputMap::default());
+        assert_eq!(
+            binary.executable(0).unwrap().output_map().unwrap(),
+            OutputMap::default()
+        );
         for length in 0..116 {
             assert!(Binary::parse(&data[..length]).is_err());
         }

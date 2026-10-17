@@ -26,7 +26,11 @@ impl OrientedBox {
     }
     /// The turned frame → the page (a rotation about the page origin).
     pub fn to_doc(&self) -> Affine {
-        if self.angle == 0.0 { Affine::IDENTITY } else { Affine::rotate(-self.angle.to_radians()) }
+        if self.angle == 0.0 {
+            Affine::IDENTITY
+        } else {
+            Affine::rotate(-self.angle.to_radians())
+        }
     }
     /// A page point in the turned frame.
     pub fn to_local(&self, p: Point) -> Point {
@@ -34,7 +38,11 @@ impl OrientedBox {
     }
     /// `a`, a transform of the turned frame, as a page transform.
     pub fn conjugate(&self, a: Affine) -> Affine {
-        if self.angle == 0.0 { a } else { self.to_doc() * a * self.to_doc().inverse() }
+        if self.angle == 0.0 {
+            a
+        } else {
+            self.to_doc() * a * self.to_doc().inverse()
+        }
     }
     pub fn center(&self) -> Point {
         self.to_doc() * self.rect.center()
@@ -46,7 +54,8 @@ impl OrientedBox {
     /// The corners on the page: top-left, top-right, bottom-right, bottom-left of the box itself.
     pub fn corners(&self) -> [Point; 4] {
         let r = self.rect;
-        [(r.x0, r.y0), (r.x1, r.y0), (r.x1, r.y1), (r.x0, r.y1)].map(|(x, y)| self.to_doc() * Point::new(x, y))
+        [(r.x0, r.y0), (r.x1, r.y0), (r.x1, r.y1), (r.x0, r.y1)]
+            .map(|(x, y)| self.to_doc() * Point::new(x, y))
     }
 }
 
@@ -89,21 +98,40 @@ impl Node {
     /// without changing it.
     pub fn bounds_in(&self, a: Affine, visual: bool) -> Option<Rect> {
         match &self.kind {
-            NodeKind::Group { children, clip: false } => {
-                let b = children.iter().fold(None, |acc, c| union_opt(acc, c.bounds_in(a, visual)));
+            NodeKind::Group {
+                children,
+                clip: false,
+            } => {
+                let b = children
+                    .iter()
+                    .fold(None, |acc, c| union_opt(acc, c.bounds_in(a, visual)));
                 // The group's own strokes paint around its members (as in `visual_bounds`).
-                let o = if visual { self.appearance.outset() } else { 0.0 };
+                let o = if visual {
+                    self.appearance.outset()
+                } else {
+                    0.0
+                };
                 b.map(|b| b.inflate(o, o))
             }
-            NodeKind::Group { children, clip: true } => {
+            NodeKind::Group {
+                children,
+                clip: true,
+            } => {
                 let clip = children.first()?;
-                let stroked = matches!(clip.kind, NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Text(_));
+                let stroked = matches!(
+                    clip.kind,
+                    NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Text(_)
+                );
                 clip.bounds_in(a, visual && stroked)
             }
             _ => {
                 let mut n = self.clone();
                 n.transform(a, false);
-                if visual { n.visual_bounds() } else { n.geometric_bounds() }
+                if visual {
+                    n.visual_bounds()
+                } else {
+                    n.geometric_bounds()
+                }
             }
         }
     }
@@ -112,9 +140,18 @@ impl Node {
 impl Document {
     /// The angle the bounding box of `ids` stands at: the `bbox_angle` they share, else 0.
     pub fn bbox_angle(&self, ids: &[NodeId]) -> f64 {
-        let mut angles = ids.iter().filter_map(|id| self.node(*id)).map(|n| n.bbox_angle);
-        let Some(first) = angles.next() else { return 0.0 };
-        if angles.all(|a| normalize_deg(a - first).abs() <= EPS_DEG) { first } else { 0.0 }
+        let mut angles = ids
+            .iter()
+            .filter_map(|id| self.node(*id))
+            .map(|n| n.bbox_angle);
+        let Some(first) = angles.next() else {
+            return 0.0;
+        };
+        if angles.all(|a| normalize_deg(a - first).abs() <= EPS_DEG) {
+            first
+        } else {
+            0.0
+        }
     }
     /// The bounding box of `ids` square to their shared angle ([`Document::bbox_angle`]):
     /// geometric bounds, or `visual` with their strokes.
@@ -123,8 +160,16 @@ impl Document {
         if angle == 0.0 {
             return self.bounds_of(ids, visual).map(OrientedBox::aligned);
         }
-        let to_local = OrientedBox { angle, rect: Rect::ZERO }.to_doc().inverse();
-        let rect = ids.iter().filter_map(|id| self.node(*id)).fold(None, |acc, n| union_opt(acc, n.bounds_in(to_local, visual)))?;
+        let to_local = OrientedBox {
+            angle,
+            rect: Rect::ZERO,
+        }
+        .to_doc()
+        .inverse();
+        let rect = ids
+            .iter()
+            .filter_map(|id| self.node(*id))
+            .fold(None, |acc, n| union_opt(acc, n.bounds_in(to_local, visual)))?;
         Some(OrientedBox { angle, rect })
     }
 }
@@ -153,11 +198,23 @@ mod tests {
 
     #[test]
     fn local_scales_keep_the_angle_exactly() {
-        let b = OrientedBox { angle: 45.0, rect: Rect::ZERO };
-        assert_eq!(transformed_angle(45.0, b.conjugate(Affine::scale_non_uniform(3.0, 0.5))), 45.0);
+        let b = OrientedBox {
+            angle: 45.0,
+            rect: Rect::ZERO,
+        };
+        assert_eq!(
+            transformed_angle(45.0, b.conjugate(Affine::scale_non_uniform(3.0, 0.5))),
+            45.0
+        );
         // A flip along the object's own axis keeps the box too.
-        let b = OrientedBox { angle: 135.0, rect: Rect::ZERO };
-        assert_eq!(transformed_angle(135.0, b.conjugate(Affine::scale_non_uniform(-1.0, 1.0))), 135.0);
+        let b = OrientedBox {
+            angle: 135.0,
+            rect: Rect::ZERO,
+        };
+        assert_eq!(
+            transformed_angle(135.0, b.conjugate(Affine::scale_non_uniform(-1.0, 1.0))),
+            135.0
+        );
     }
 
     #[test]
@@ -177,9 +234,21 @@ mod tests {
         let mut d = Document::new(500.0, 500.0);
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                id,
+                shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let c = Point::new(50.0, 25.0);
-        d.node_mut(id).unwrap().transform(Affine::translate(c.to_vec2()) * rot(30.0) * Affine::translate(-c.to_vec2()), false);
+        d.node_mut(id).unwrap().transform(
+            Affine::translate(c.to_vec2()) * rot(30.0) * Affine::translate(-c.to_vec2()),
+            false,
+        );
         let b = d.oriented_bounds(&[id], false).unwrap();
         assert!(close(b.angle, 30.0));
         assert!(close(b.rect.width(), 100.0) && close(b.rect.height(), 50.0));

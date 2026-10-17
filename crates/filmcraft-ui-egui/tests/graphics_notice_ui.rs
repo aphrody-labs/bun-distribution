@@ -22,7 +22,10 @@ impl Driver {
         let (tx, rx) = channel();
         let mut app = FilmcraftApp::new(Session::default()).with_control(rx);
         app.graphics_notice = notice;
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -50,11 +53,22 @@ impl Driver {
     fn ids(&mut self) -> Vec<String> {
         let v = self.call("ui.elements", json!({"prefix": "graphics.notice"}));
         assert_eq!(v["ok"], json!(true), "{v}");
-        v["result"].as_array().unwrap().iter().map(|e| e["id"].as_str().unwrap().to_string()).collect()
+        v["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["id"].as_str().unwrap().to_string())
+            .collect()
     }
     fn label(&mut self, id: &str) -> String {
         let v = self.call("ui.elements", json!({"prefix": id}));
-        v["result"].as_array().unwrap().iter().find(|e| e["id"] == id).map(|e| e["label"].as_str().unwrap().to_string()).unwrap_or_default()
+        v["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == id)
+            .map(|e| e["label"].as_str().unwrap().to_string())
+            .unwrap_or_default()
     }
     fn click(&mut self, id: &str) {
         let v = self.call("ui.click", json!({"id": id}));
@@ -85,13 +99,22 @@ fn the_reset_button_saves_the_default_mode_once_and_close_hides_the_notice() {
     );
     let mut d = Driver::new(Some(notice));
     let ids = d.ids();
-    for id in ["graphics.notice", "graphics.notice.reset", "graphics.notice.close"] {
+    for id in [
+        "graphics.notice",
+        "graphics.notice.reset",
+        "graphics.notice.close",
+    ] {
         assert!(ids.iter().any(|i| i == id), "{id} in {ids:?}");
     }
     assert!(d.label("graphics.notice").contains("software rendering"));
     d.click("graphics.notice.reset");
     assert_eq!(resets.get(), 1);
-    assert!(d.app().graphics_notice.as_ref().is_some_and(|n| n.reset_done));
+    assert!(
+        d.app()
+            .graphics_notice
+            .as_ref()
+            .is_some_and(|n| n.reset_done)
+    );
     // done: the button is gone, the notice says when it takes effect
     let ids = d.ids();
     assert!(!ids.iter().any(|i| i == "graphics.notice.reset"), "{ids:?}");
@@ -103,11 +126,23 @@ fn the_reset_button_saves_the_default_mode_once_and_close_hides_the_notice() {
 
 #[test]
 fn a_reset_that_cannot_be_saved_says_why_and_keeps_the_button() {
-    let notice = GraphicsNotice::new("DirectX 12 only", Box::new(|| Err("can't write graphics-start.json: read-only".into())));
+    let notice = GraphicsNotice::new(
+        "DirectX 12 only",
+        Box::new(|| Err("can't write graphics-start.json: read-only".into())),
+    );
     let mut d = Driver::new(Some(notice));
     d.click("graphics.notice.reset");
-    assert!(d.app().ui.status.contains("read-only"), "{}", d.app().ui.status);
-    assert!(d.app().graphics_notice.as_ref().is_some_and(|n| !n.reset_done));
+    assert!(
+        d.app().ui.status.contains("read-only"),
+        "{}",
+        d.app().ui.status
+    );
+    assert!(
+        d.app()
+            .graphics_notice
+            .as_ref()
+            .is_some_and(|n| !n.reset_done)
+    );
     assert!(d.ids().iter().any(|i| i == "graphics.notice.reset"));
 }
 
@@ -117,7 +152,13 @@ fn the_notice_follows_the_interface_language() {
     let mut d = Driver::new(Some(notice));
     d.app().ui.language = filmcraft_ui_egui::i18n::Language::Es;
     d.frames(3);
-    assert_eq!(d.label("graphics.notice"), "Modo gráfico seguro: renderizado por software");
-    assert_eq!(d.label("graphics.notice.reset"), "Usar gráficos predeterminados");
+    assert_eq!(
+        d.label("graphics.notice"),
+        "Modo gráfico seguro: renderizado por software"
+    );
+    assert_eq!(
+        d.label("graphics.notice.reset"),
+        "Usar gráficos predeterminados"
+    );
     filmcraft_ui_egui::i18n::set_current(filmcraft_ui_egui::i18n::Language::En);
 }

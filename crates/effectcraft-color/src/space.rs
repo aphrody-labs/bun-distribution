@@ -82,13 +82,21 @@ pub fn pq_decode(e: f64) -> f64 {
 /// ITU-R BT.2100 HLG OETF: scene light E (0..1) → signal.
 pub fn hlg_encode(e: f64) -> f64 {
     let e = e.max(0.0);
-    if e <= 1.0 / 12.0 { (3.0 * e).sqrt() } else { HLG_A * (12.0 * e - HLG_B).ln() + HLG_C }
+    if e <= 1.0 / 12.0 {
+        (3.0 * e).sqrt()
+    } else {
+        HLG_A * (12.0 * e - HLG_B).ln() + HLG_C
+    }
 }
 
 /// ITU-R BT.2100 HLG inverse OETF: signal → scene light E.
 pub fn hlg_decode(v: f64) -> f64 {
     let v = v.max(0.0);
-    if v <= 0.5 { v * v / 3.0 } else { (((v - HLG_C) / HLG_A).exp() + HLG_B) / 12.0 }
+    if v <= 0.5 {
+        v * v / 3.0
+    } else {
+        (((v - HLG_C) / HLG_A).exp() + HLG_B) / 12.0
+    }
 }
 
 /// Transfer curves (see [`ColorSpace::curve`]).
@@ -143,8 +151,14 @@ impl ColorSpace {
         ColorSpace::Rec2100Hlg,
     ];
     /// Spaces a project can work in (Project Settings ▸ Color ▸ Working Space).
-    pub const WORKING: [ColorSpace; 6] =
-        [ColorSpace::Srgb, ColorSpace::Rec709, ColorSpace::Rec2020, ColorSpace::DisplayP3, ColorSpace::AcesCg, ColorSpace::Aces2065];
+    pub const WORKING: [ColorSpace; 6] = [
+        ColorSpace::Srgb,
+        ColorSpace::Rec709,
+        ColorSpace::Rec2020,
+        ColorSpace::DisplayP3,
+        ColorSpace::AcesCg,
+        ColorSpace::Aces2065,
+    ];
 
     /// Display name (as in Project Settings ▸ Color ▸ Working Space).
     pub fn label(self) -> &'static str {
@@ -177,7 +191,11 @@ impl ColorSpace {
 
     /// Parse an id or label (case-insensitive, loose).
     pub fn parse(s: &str) -> Option<ColorSpace> {
-        let k: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let k: String = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
         match k.as_str() {
             "srgb" | "srgbiec6196621" | "srgbiec61966" | "iec6196621" => Some(ColorSpace::Srgb),
             "rec709" | "bt709" | "hdtvrec709" | "hdtv" | "709" => Some(ColorSpace::Rec709),
@@ -194,7 +212,9 @@ impl ColorSpace {
     /// Red, green and blue primaries (CIE xy).
     pub fn primaries(self) -> [[f64; 2]; 3] {
         match self {
-            ColorSpace::Srgb | ColorSpace::Rec709 => [[0.640, 0.330], [0.300, 0.600], [0.150, 0.060]],
+            ColorSpace::Srgb | ColorSpace::Rec709 => {
+                [[0.640, 0.330], [0.300, 0.600], [0.150, 0.060]]
+            }
             ColorSpace::Rec2020 | ColorSpace::Rec2100Pq | ColorSpace::Rec2100Hlg => BT2020,
             ColorSpace::DisplayP3 => [[0.680, 0.320], [0.265, 0.690], [0.150, 0.060]],
             ColorSpace::AcesCg => AP1,
@@ -235,7 +255,11 @@ impl ColorSpace {
     pub fn to_xyz(self) -> [[f64; 3]; 3] {
         let w = self.white();
         let m = rgb_to_xyz(self.primaries(), w);
-        if w == D65 { m } else { mul(&bradford(w, D65), &m) }
+        if w == D65 {
+            m
+        } else {
+            mul(&bradford(w, D65), &m)
+        }
     }
 
     /// Encoded value → linear light.
@@ -251,11 +275,19 @@ impl ColorSpace {
 
 /// Bradford chromatic adaptation from white `src` to white `dst` (CIE xy).
 pub fn bradford(src: [f64; 2], dst: [f64; 2]) -> [[f64; 3]; 3] {
-    const MB: [[f64; 3]; 3] = [[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [0.0389, -0.0685, 1.0296]];
+    const MB: [[f64; 3]; 3] = [
+        [0.8951, 0.2664, -0.1614],
+        [-0.7502, 1.7135, 0.0367],
+        [0.0389, -0.0685, 1.0296],
+    ];
     let xyz = |c: [f64; 2]| [c[0] / c[1], 1.0, (1.0 - c[0] - c[1]) / c[1]];
     let s = mul_vec(&MB, xyz(src));
     let d = mul_vec(&MB, xyz(dst));
-    let diag = [[d[0] / s[0], 0.0, 0.0], [0.0, d[1] / s[1], 0.0], [0.0, 0.0, d[2] / s[2]]];
+    let diag = [
+        [d[0] / s[0], 0.0, 0.0],
+        [0.0, d[1] / s[1], 0.0],
+        [0.0, 0.0, d[2] / s[2]],
+    ];
     mul(&invert(&MB), &mul(&diag, &MB))
 }
 
@@ -277,7 +309,8 @@ pub fn rgb_to_xyz(p: [[f64; 2]; 3], white: [f64; 2]) -> [[f64; 3]; 3] {
 
 /// 3×3 matrix inverse (the matrices here are always well conditioned).
 pub fn invert(m: &[[f64; 3]; 3]) -> [[f64; 3]; 3] {
-    let c = |r0: usize, c0: usize, r1: usize, c1: usize| m[r0][c0] * m[r1][c1] - m[r0][c1] * m[r1][c0];
+    let c =
+        |r0: usize, c0: usize, r1: usize, c1: usize| m[r0][c0] * m[r1][c1] - m[r0][c1] * m[r1][c0];
     let det = m[0][0] * c(1, 1, 2, 2) - m[0][1] * c(1, 0, 2, 2) + m[0][2] * c(1, 0, 2, 1);
     let k = 1.0 / det;
     [
@@ -316,7 +349,12 @@ pub struct Conversion {
 impl Conversion {
     /// From `from` (linear when `from_linear`) to `to` (linear when `to_linear`). `None` when
     /// the conversion is the identity.
-    pub fn new(from: ColorSpace, from_linear: bool, to: ColorSpace, to_linear: bool) -> Option<Conversion> {
+    pub fn new(
+        from: ColorSpace,
+        from_linear: bool,
+        to: ColorSpace,
+        to_linear: bool,
+    ) -> Option<Conversion> {
         let same_primaries = from.primaries() == to.primaries();
         let same_curve = from_linear == to_linear && (from_linear || from.curve() == to.curve());
         if same_primaries && same_curve {
@@ -330,17 +368,29 @@ impl Conversion {
         // between: go through linear.
         let decode = (!from_linear).then_some(from);
         let encode = (!to_linear).then_some(to);
-        Some(Conversion { decode, matrix, encode })
+        Some(Conversion {
+            decode,
+            matrix,
+            encode,
+        })
     }
 
     /// Decode only (encoded → linear in the same space).
     pub fn linearize(space: ColorSpace) -> Conversion {
-        Conversion { decode: Some(space), matrix: None, encode: None }
+        Conversion {
+            decode: Some(space),
+            matrix: None,
+            encode: None,
+        }
     }
 
     /// Encode only (linear → encoded in the same space).
     pub fn delinearize(space: ColorSpace) -> Conversion {
-        Conversion { decode: None, matrix: None, encode: Some(space) }
+        Conversion {
+            decode: None,
+            matrix: None,
+            encode: Some(space),
+        }
     }
 
     #[inline]
@@ -367,20 +417,40 @@ mod tests {
     fn srgb_matrix_matches_iec() {
         // IEC 61966-2-1 (rounded to 4 places).
         let m = ColorSpace::Srgb.to_xyz();
-        let want = [[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]];
+        let want = [
+            [0.4124, 0.3576, 0.1805],
+            [0.2126, 0.7152, 0.0722],
+            [0.0193, 0.1192, 0.9505],
+        ];
         for i in 0..3 {
             for j in 0..3 {
-                assert!((m[i][j] - want[i][j]).abs() < 2e-4, "{i}{j}: {} vs {}", m[i][j], want[i][j]);
+                assert!(
+                    (m[i][j] - want[i][j]).abs() < 2e-4,
+                    "{i}{j}: {} vs {}",
+                    m[i][j],
+                    want[i][j]
+                );
             }
         }
         // Rec. 2020 luminance row (BT.2020: 0.2627, 0.6780, 0.0593).
         let y = ColorSpace::Rec2020.to_xyz()[1];
-        assert!((y[0] - 0.2627).abs() < 1e-4 && (y[1] - 0.6780).abs() < 1e-4 && (y[2] - 0.0593).abs() < 1e-4, "{y:?}");
+        assert!(
+            (y[0] - 0.2627).abs() < 1e-4
+                && (y[1] - 0.6780).abs() < 1e-4
+                && (y[2] - 0.0593).abs() < 1e-4,
+            "{y:?}"
+        );
     }
 
     #[test]
     fn round_trips() {
-        let samples = [[0.2f32, 0.5, 0.8], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.03, 0.9, 0.4], [1.5, 0.2, 2.0]];
+        let samples = [
+            [0.2f32, 0.5, 0.8],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.03, 0.9, 0.4],
+            [1.5, 0.2, 2.0],
+        ];
         for a in ColorSpace::ALL {
             for b in ColorSpace::ALL {
                 for (al, bl) in [(false, false), (true, false), (false, true), (true, true)] {
@@ -398,7 +468,10 @@ mod tests {
                             // Pure power curves amplify f32 rounding near zero; PQ signals near 1.0
                             // stand for ~50× reference white.
                             let tol = if a.is_hdr() || b.is_hdr() { 1e-2 } else { 2e-3 };
-                            assert!((o[i] - c[i]).abs() < tol, "{a:?}{al}→{b:?}{bl}: {c:?} → {mid:?} → {o:?}");
+                            assert!(
+                                (o[i] - c[i]).abs() < tol,
+                                "{a:?}{al}→{b:?}{bl}: {c:?} → {mid:?} → {o:?}"
+                            );
                         }
                     }
                 }
@@ -426,14 +499,21 @@ mod tests {
         assert!((s.decode(s.encode(4.0)) - 4.0).abs() < 1e-4);
         assert!((s.decode(s.encode(-0.25)) + 0.25).abs() < 1e-5);
         assert!((ColorSpace::Rec709.decode(0.5) - 0.5f32.powf(2.4)).abs() < 1e-6);
-        assert_eq!(ColorSpace::parse("sRGB IEC61966-2.1"), Some(ColorSpace::Srgb));
+        assert_eq!(
+            ColorSpace::parse("sRGB IEC61966-2.1"),
+            Some(ColorSpace::Srgb)
+        );
         assert_eq!(ColorSpace::parse("Display P3"), Some(ColorSpace::DisplayP3));
     }
     #[test]
     fn aces_and_rec2100_spaces() {
         // SMPTE ST 2065-1 AP0 → XYZ (ACES white, unadapted).
         let m = rgb_to_xyz(ColorSpace::Aces2065.primaries(), ACES_WHITE);
-        let want = [[0.952_552_4, 0.0, 0.000_093_68], [0.343_966_4, 0.728_166_1, -0.072_132_5], [0.0, 0.0, 1.008_825_2]];
+        let want = [
+            [0.952_552_4, 0.0, 0.000_093_68],
+            [0.343_966_4, 0.728_166_1, -0.072_132_5],
+            [0.0, 0.0, 1.008_825_2],
+        ];
         for i in 0..3 {
             for j in 0..3 {
                 assert!((m[i][j] - want[i][j]).abs() < 1e-5, "{i}{j}: {}", m[i][j]);
@@ -444,7 +524,10 @@ mod tests {
         let w = c.apply([1.0, 1.0, 1.0]);
         assert!(w.iter().all(|v| (v - 1.0).abs() < 1e-3), "{w:?}");
         let r = c.apply([1.0, 0.0, 0.0]);
-        assert!((r[0] - 1.705).abs() < 3e-3 && r[1] < 0.0 && r[2] < 0.0, "{r:?}");
+        assert!(
+            (r[0] - 1.705).abs() < 3e-3 && r[1] < 0.0 && r[2] < 0.0,
+            "{r:?}"
+        );
         assert!(ColorSpace::AcesCg.is_linear() && !ColorSpace::Srgb.is_linear());
         // PQ: the BT.2408 reference white (1.0 = 203 cd/m²) encodes to ≈ 0.58; 10 000 cd/m² to 1.
         let pq = ColorSpace::Rec2100Pq;
@@ -454,14 +537,27 @@ mod tests {
         // HLG: reference white at 75%; the OETF is continuous at 1/12.
         let hlg = ColorSpace::Rec2100Hlg;
         assert!((hlg.encode(1.0) - 0.75).abs() < 1e-5, "{}", hlg.encode(1.0));
-        assert!((hlg_encode(1.0 / 12.0) - 0.5).abs() < 1e-9 && (hlg_encode(1.0) - 1.0).abs() < 1e-6);
+        assert!(
+            (hlg_encode(1.0 / 12.0) - 0.5).abs() < 1e-9 && (hlg_encode(1.0) - 1.0).abs() < 1e-6
+        );
         for v in [0.0f32, 0.01, 0.18, 1.0, 3.0] {
-            assert!((pq.decode(pq.encode(v)) - v).abs() < 1e-3 * v.max(1.0), "pq {v}");
-            assert!((hlg.decode(hlg.encode(v)) - v).abs() < 1e-3 * v.max(1.0), "hlg {v}");
+            assert!(
+                (pq.decode(pq.encode(v)) - v).abs() < 1e-3 * v.max(1.0),
+                "pq {v}"
+            );
+            assert!(
+                (hlg.decode(hlg.encode(v)) - v).abs() < 1e-3 * v.max(1.0),
+                "hlg {v}"
+            );
         }
         assert!(pq.is_hdr() && hlg.is_hdr() && !ColorSpace::Rec2020.is_hdr());
         // Same primaries as Rec. 2020: only the curve changes.
-        assert!(Conversion::new(ColorSpace::Rec2020, false, ColorSpace::Rec2100Pq, false).unwrap().matrix.is_none());
+        assert!(
+            Conversion::new(ColorSpace::Rec2020, false, ColorSpace::Rec2100Pq, false)
+                .unwrap()
+                .matrix
+                .is_none()
+        );
         for cs in ColorSpace::ALL {
             assert_eq!(ColorSpace::parse(cs.id()), Some(cs));
             assert_eq!(ColorSpace::parse(cs.label()), Some(cs), "{}", cs.label());

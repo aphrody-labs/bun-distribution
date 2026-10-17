@@ -648,7 +648,8 @@ impl LlamaModel {
     pub fn n_head(&self) -> u32 {
         // It's never possible for this to panic because while the API interface is defined as an int32_t,
         // the field it's accessing is a uint32_t.
-        u32::try_from(unsafe { aphrody_llama_sys::llama_model_n_head(self.model.as_ptr()) }).unwrap()
+        u32::try_from(unsafe { aphrody_llama_sys::llama_model_n_head(self.model.as_ptr()) })
+            .unwrap()
     }
 
     /// Returns the number of KV attention heads.

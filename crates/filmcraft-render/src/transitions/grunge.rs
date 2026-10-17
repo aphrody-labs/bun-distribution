@@ -4,7 +4,9 @@
 use std::f32::consts::{PI, TAU};
 
 use super::wipe::{WipeStyle, field_wipe};
-use super::{Tx, add_light, bell, fbm, hash, mid_mix, mix, paint, shutter, smoothstep, temporal, vnoise};
+use super::{
+    Tx, add_light, bell, fbm, hash, mid_mix, mix, paint, shutter, smoothstep, temporal, vnoise,
+};
 use crate::image::Image;
 
 /// Per-pixel A/B mix at weight `k`, both sampled (clamped) at (sx, sy).
@@ -45,11 +47,24 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let amp = amt * env * w * 0.15;
             paint(t.w, t.h, |x, y| {
                 // two block grids of different sizes, re-randomised a few times per second
-                let (bx, by) = ((x / (w / 8.0)).floor() as i32, (y / (h / 6.0)).floor() as i32);
-                let (cx, cy) = ((x / (w / 23.0)).floor() as i32, (y / (h / 13.0)).floor() as i32);
+                let (bx, by) = (
+                    (x / (w / 8.0)).floor() as i32,
+                    (y / (h / 6.0)).floor() as i32,
+                );
+                let (cx, cy) = (
+                    (x / (w / 23.0)).floor() as i32,
+                    (y / (h / 13.0)).floor() as i32,
+                );
                 let r = hash(bx, by, s.wrapping_add(frame as u32));
                 let fine = hash(cx, cy, s.wrapping_add(frame as u32 * 7 + 1));
-                let (ox, oy) = if r > 0.55 { ((hash(bx, by, s + 99) - 0.5) * amp, (hash(bx, by, s + 7) - 0.5) * amp * 0.3) } else { (0.0, 0.0) };
+                let (ox, oy) = if r > 0.55 {
+                    (
+                        (hash(bx, by, s + 99) - 0.5) * amp,
+                        (hash(bx, by, s + 7) - 0.5) * amp * 0.3,
+                    )
+                } else {
+                    (0.0, 0.0)
+                };
                 let swap = fine < k;
                 let kk = if swap { 1.0 } else { 0.0 };
                 let kk = mix([kk; 4], [k; 4], 1.0 - env)[0];
@@ -69,7 +84,10 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                     let zoom = 1.0 + 0.08 * e;
                     let (sn, cs) = r.sin_cos();
                     let (ux, uy) = ((x - w / 2.0) / zoom, (y - h / 2.0) / zoom);
-                    let (sx, sy) = (ux * cs - uy * sn + w / 2.0 - ox, ux * sn + uy * cs + h / 2.0 - oy);
+                    let (sx, sy) = (
+                        ux * cs - uy * sn + w / 2.0 - ox,
+                        ux * sn + uy * cs + h / 2.0 - oy,
+                    );
                     ab(t, sx, sy, mid_mix(q))
                 })
             })
@@ -112,7 +130,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let c = ab(t, x + ang.cos() * off, y + ang.sin() * off, kk);
                 let edge = (-(second - best) / (1.5 * u.max(0.5))).exp() * env;
                 let facet = 1.0 + (hash(id.0, id.1, s + 5) - 0.5) * 0.4 * env;
-                add_light([c[0] * facet, c[1] * facet, c[2] * facet, c[3]], [1.0; 4], edge * 0.8)
+                add_light(
+                    [c[0] * facet, c[1] * facet, c[2] * facet, c[3]],
+                    [1.0; 4],
+                    edge * 0.8,
+                )
             })
         }
         "glitch" => {
@@ -122,13 +144,26 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let band_h = h / (6.0 + 18.0 * hash(frame as i32, 0, s));
                 let band = (y / band_h.max(1.0)).floor() as i32;
                 let r = hash(band, frame as i32, s);
-                let ox = if r > 0.6 { (hash(band, frame as i32, s + 1) - 0.5) * amt * env * w * 0.25 } else { 0.0 };
+                let ox = if r > 0.6 {
+                    (hash(band, frame as i32, s + 1) - 0.5) * amt * env * w * 0.25
+                } else {
+                    0.0
+                };
                 let tau = 0.4 + 0.2 * hash(band, 9, s);
                 let kk = if p > tau { 1.0 } else { 0.0 };
                 let kk = kk * env + k * (1.0 - env);
-                let c = split(t, x - ox, y, amt * env * 18.0 * u * (r - 0.3).max(0.0) * 2.0, kk);
+                let c = split(
+                    t,
+                    x - ox,
+                    y,
+                    amt * env * 18.0 * u * (r - 0.3).max(0.0) * 2.0,
+                    kk,
+                );
                 // occasional blocky corruption
-                let (bx, by) = ((x / (24.0 * u.max(0.2))).floor() as i32, (y / (12.0 * u.max(0.2))).floor() as i32);
+                let (bx, by) = (
+                    (x / (24.0 * u.max(0.2))).floor() as i32,
+                    (y / (12.0 * u.max(0.2))).floor() as i32,
+                );
                 if hash(bx, by, s + frame * 3) > 1.0 - 0.04 * amt * env {
                     let v = hash(bx, by, s + 77);
                     return mix(c, [v, 1.0 - v, v * 0.5, 1.0], 0.8);
@@ -138,9 +173,15 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
         }
         "grunge" => {
             let scale = t.px("scale").max(4.0);
-            let st = WipeStyle { feather: 2.0 * t.scale, border: t.px("edge_width"), border_color: t.color("edge_color"), aa: 1.0 };
+            let st = WipeStyle {
+                feather: 2.0 * t.scale,
+                border: t.px("edge_width"),
+                border_color: t.color("edge_color"),
+                aa: 1.0,
+            };
             field_wipe(t, st, move |x, y| {
-                let n = fbm(x / scale, y / scale, s) * 0.8 + vnoise(x / (scale * 0.15), y / (scale * 0.15), s + 9) * 0.2;
+                let n = fbm(x / scale, y / scale, s) * 0.8
+                    + vnoise(x / (scale * 0.15), y / (scale * 0.15), s + 9) * 0.2;
                 n * scale * 3.0
             })
         }
@@ -171,7 +212,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
         "tv_power" => {
             let glow = t.color("glow_color");
             let line = t.px("line").max(1.0);
-            let (img, q) = if p < 0.5 { (t.a, p * 2.0) } else { (t.b, (1.0 - p) * 2.0) };
+            let (img, q) = if p < 0.5 {
+                (t.a, p * 2.0)
+            } else {
+                (t.b, (1.0 - p) * 2.0)
+            };
             // q: 0 = full picture, 1 = collapsed to a dot
             let sy = 1.0 - smoothstep(0.0, 0.65, q);
             let sx = 1.0 - smoothstep(0.6, 1.0, q);
@@ -201,13 +246,19 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let row = (y / (2.0 * u.max(0.5))).floor() as i32;
                 let jitter = (hash(row, frame as i32, s) - 0.5) * amt * env * w * 0.02;
                 let in_band = (-((y - band_y) / (h * 0.06)).powi(2)).exp();
-                let ox = jitter + in_band * amt * env * w * 0.08 * (vnoise(y * 0.05, p * 20.0, s) - 0.5) * 2.0;
+                let ox = jitter
+                    + in_band * amt * env * w * 0.08 * (vnoise(y * 0.05, p * 20.0, s) - 0.5) * 2.0;
                 let c = split(t, x - ox, y, amt * env * 10.0 * u, k);
                 let grain = (hash(x as i32, y as i32, s + frame) - 0.5) * 0.25 * amt * env;
                 let band_noise = in_band * env * amt * 0.5 * hash(x as i32 / 3, row, frame);
                 let l = super::luma(c);
                 let desat = mix(c, [l, l, l, c[3]], 0.4 * amt * env);
-                [desat[0] + grain + band_noise, desat[1] + grain + band_noise, desat[2] + grain + band_noise, desat[3]]
+                [
+                    desat[0] + grain + band_noise,
+                    desat[1] + grain + band_noise,
+                    desat[2] + grain + band_noise,
+                    desat[3],
+                ]
             })
         }
         _ => return None,

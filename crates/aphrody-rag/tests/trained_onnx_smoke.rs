@@ -22,7 +22,10 @@ async fn trained_embedding_export_loads_and_embeds() {
         "Rust is a programming language.".to_owned(),
         "A carrot is a vegetable.".to_owned(),
     ];
-    let vectors = embedder.embed_batch(&texts).await.expect("ONNX inference must succeed");
+    let vectors = embedder
+        .embed_batch(&texts)
+        .await
+        .expect("ONNX inference must succeed");
     assert_eq!(vectors.len(), texts.len());
     for vector in &vectors {
         assert_eq!(vector.len(), embedder.dimension());

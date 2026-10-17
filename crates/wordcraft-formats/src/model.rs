@@ -7,7 +7,8 @@ use std::sync::Arc;
 use wordcraft_doc::numbering::{AbstractNum, Level, ListKind, Num, levels_for};
 use wordcraft_doc::para::{InlineObject, OBJ, PAGE_BREAK, Run};
 use wordcraft_doc::props::{
-    Border, BorderStyle, Borders, CellProps, CharProps, NumRef, ParaProps, RowProps, TextColor, Underline, VMerge, VertAlign,
+    Border, BorderStyle, Borders, CellProps, CharProps, NumRef, ParaProps, RowProps, TextColor,
+    Underline, VMerge, VertAlign,
 };
 use wordcraft_doc::section::NumFormat;
 use wordcraft_doc::styles::{Style, StyleKind};
@@ -116,7 +117,10 @@ pub struct Para {
 
 impl Para {
     pub fn new(kind: Kind) -> Para {
-        Para { kind, ..Default::default() }
+        Para {
+            kind,
+            ..Default::default()
+        }
     }
     /// Append text, merging with the previous span when the formatting matches.
     pub fn push_text(&mut self, s: &str, f: &Fmt) {
@@ -149,7 +153,9 @@ impl Para {
         for i in &self.inlines {
             match i {
                 Inline::Text(t, f) => match f.font.as_deref() {
-                    Some(font) if wordcraft_doc::symbol_fonts::is_symbol_font(font) => s.push_str(&wordcraft_doc::symbol_fonts::map_text(font, t)),
+                    Some(font) if wordcraft_doc::symbol_fonts::is_symbol_font(font) => {
+                        s.push_str(&wordcraft_doc::symbol_fonts::map_text(font, t))
+                    }
                     _ => s.push_str(t),
                 },
                 Inline::Equation { linear: t, .. } => s.push_str(t),
@@ -159,7 +165,9 @@ impl Para {
         s
     }
     pub fn is_empty(&self) -> bool {
-        self.inlines.iter().all(|i| matches!(i, Inline::Text(t, _) if t.is_empty()))
+        self.inlines
+            .iter()
+            .all(|i| matches!(i, Inline::Text(t, _) if t.is_empty()))
     }
 
     /// Remove whitespace at the very start and end of the paragraph's text.
@@ -209,7 +217,15 @@ pub struct Cell {
 
 impl Default for Cell {
     fn default() -> Self {
-        Cell { blocks: Vec::new(), colspan: 1, rowspan: 1, covered: false, header: false, shading: None, borders: None }
+        Cell {
+            blocks: Vec::new(),
+            colspan: 1,
+            rowspan: 1,
+            covered: false,
+            header: false,
+            shading: None,
+            borders: None,
+        }
     }
 }
 
@@ -220,7 +236,13 @@ impl Cell {
         for b in &self.blocks {
             match b {
                 FBlock::Para(p) => v.push(p.text()),
-                FBlock::Table(t) => v.push(t.rows.iter().flat_map(|r| r.iter().map(Cell::text)).collect::<Vec<_>>().join(" ")),
+                FBlock::Table(t) => v.push(
+                    t.rows
+                        .iter()
+                        .flat_map(|r| r.iter().map(Cell::text))
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                ),
             }
         }
         v.join("\n")
@@ -238,7 +260,15 @@ pub struct FTable {
 
 impl FTable {
     pub fn cols(&self) -> usize {
-        self.rows.iter().map(|r| r.iter().map(|c| c.colspan.clamp(1, 63) as usize).sum::<usize>()).max().unwrap_or(0)
+        self.rows
+            .iter()
+            .map(|r| {
+                r.iter()
+                    .map(|c| c.colspan.clamp(1, 63) as usize)
+                    .sum::<usize>()
+            })
+            .max()
+            .unwrap_or(0)
     }
     /// After an importer that gives `rowspan` but no placeholder cells (HTML): insert covered
     /// cells into the rows below each spanning cell.
@@ -248,10 +278,16 @@ impl FTable {
             let mut g = 0usize;
             let mut ci = 0usize;
             while let Some(c) = self.rows.get(r).and_then(|row| row.get(ci)) {
-                let (span, rs, covered) = (c.colspan.clamp(1, 63) as usize, c.rowspan.clamp(1, 1000) as usize, c.covered);
+                let (span, rs, covered) = (
+                    c.colspan.clamp(1, 63) as usize,
+                    c.rowspan.clamp(1, 1000) as usize,
+                    c.covered,
+                );
                 if rs > 1 && !covered {
                     for k in 1..rs {
-                        let Some(row) = self.rows.get_mut(r + k) else { break };
+                        let Some(row) = self.rows.get_mut(r + k) else {
+                            break;
+                        };
                         // Find the index in that row at grid column `g`.
                         let mut x = 0usize;
                         let mut at = row.len();
@@ -263,7 +299,14 @@ impl FTable {
                             x += cc.colspan.clamp(1, 63) as usize;
                         }
                         if row.len() < 64 {
-                            row.insert(at, Cell { colspan: span as u32, covered: true, ..Default::default() });
+                            row.insert(
+                                at,
+                                Cell {
+                                    colspan: span as u32,
+                                    covered: true,
+                                    ..Default::default()
+                                },
+                            );
                         }
                     }
                 }
@@ -319,7 +362,11 @@ pub fn equations_as_text(inlines: &[Inline]) -> std::borrow::Cow<'_, [Inline]> {
 
 /// Text with characters the model reserves (U+FFFC) and stray controls removed.
 pub fn clean_text(s: &str) -> String {
-    s.chars().filter(|c| *c != OBJ && (!c.is_control() || matches!(c, '\t' | '\n' | '\u{000C}' | '\u{000E}'))).collect()
+    s.chars()
+        .filter(|c| {
+            *c != OBJ && (!c.is_control() || matches!(c, '\t' | '\n' | '\u{000C}' | '\u{000E}'))
+        })
+        .collect()
 }
 
 pub fn char_props(f: &Fmt) -> CharProps {
@@ -327,7 +374,11 @@ pub fn char_props(f: &Fmt) -> CharProps {
     CharProps {
         bold: on(f.bold),
         italic: on(f.italic),
-        underline: if f.underline { Some(Underline::Single) } else { None },
+        underline: if f.underline {
+            Some(Underline::Single)
+        } else {
+            None
+        },
         strike: on(f.strike),
         vert_align: if f.sup {
             Some(VertAlign::Superscript)
@@ -338,8 +389,14 @@ pub fn char_props(f: &Fmt) -> CharProps {
         },
         link: f.link.clone().filter(|l| !l.is_empty()),
         color: f.color.map(TextColor::Rgb),
-        size: f.size.filter(|s| s.is_finite() && *s >= 1.0 && *s <= 1638.0),
-        font: if f.code { Some(MONO_FONT.to_string()) } else { f.font.clone().filter(|s| !s.is_empty()) },
+        size: f
+            .size
+            .filter(|s| s.is_finite() && *s >= 1.0 && *s <= 1638.0),
+        font: if f.code {
+            Some(MONO_FONT.to_string())
+        } else {
+            f.font.clone().filter(|s| !s.is_empty())
+        },
         shading: f.background,
         ..Default::default()
     }
@@ -351,20 +408,44 @@ fn code_style() -> Style {
         name: CODE_STYLE.into(),
         kind: StyleKind::Paragraph,
         based_on: Some("Normal".into()),
-        para: ParaProps { space_after: Some(0.0), space_before: Some(0.0), line_spacing: Some(Default::default()), ..Default::default() },
-        chr: CharProps { font: Some(MONO_FONT.into()), size: Some(10.0), ..Default::default() },
+        para: ParaProps {
+            space_after: Some(0.0),
+            space_before: Some(0.0),
+            line_spacing: Some(Default::default()),
+            ..Default::default()
+        },
+        chr: CharProps {
+            font: Some(MONO_FONT.into()),
+            size: Some(10.0),
+            ..Default::default()
+        },
         quick: false,
         ..Default::default()
     }
 }
 
 fn rule_borders() -> Borders {
-    Borders { bottom: Some(Border { style: BorderStyle::Single, width: 0.75, color: Some(Rgb(0xA0, 0xA0, 0xA0)), space: 1.0 }), ..Default::default() }
+    Borders {
+        bottom: Some(Border {
+            style: BorderStyle::Single,
+            width: 0.75,
+            color: Some(Rgb(0xA0, 0xA0, 0xA0)),
+            space: 1.0,
+        }),
+        ..Default::default()
+    }
 }
 
 /// Append text (without object characters) or one inline object to the end of `p`.
 fn append(p: &mut Paragraph, text: &str, props: &CharProps, obj: Option<InlineObject>) {
-    let text: std::borrow::Cow<str> = if text.contains(OBJ) { text.chars().filter(|c| *c != OBJ).collect::<String>().into() } else { text.into() };
+    let text: std::borrow::Cow<str> = if text.contains(OBJ) {
+        text.chars()
+            .filter(|c| *c != OBJ)
+            .collect::<String>()
+            .into()
+    } else {
+        text.into()
+    };
     let piece = match obj {
         Some(o) => {
             p.objects.push(o);
@@ -378,7 +459,10 @@ fn append(p: &mut Paragraph, text: &str, props: &CharProps, obj: Option<InlineOb
     p.text.push_str(&piece);
     match p.runs.last_mut() {
         Some(last) if last.props == *props => last.len += piece.len(),
-        _ => p.runs.push(Run { len: piece.len(), props: props.clone() }),
+        _ => p.runs.push(Run {
+            len: piece.len(),
+            props: props.clone(),
+        }),
     }
 }
 
@@ -406,7 +490,10 @@ impl Builder<'_> {
             if out.props.style.is_none() {
                 out.props.style = Some("ListParagraph".into());
             }
-            out.props.numbering = Some(NumRef { num, level: li.level.min(8) });
+            out.props.numbering = Some(NumRef {
+                num,
+                level: li.level.min(8),
+            });
         }
         out.props.align = p.align;
         let sp = p.spacing;
@@ -433,19 +520,44 @@ impl Builder<'_> {
                 }
                 Inline::Image(img) => {
                     let key = self.doc.add_media(img.data.to_vec(), &img.ext);
-                    let (w, h) = (finite_or(img.w, 72.0).clamp(1.0, 1584.0), finite_or(img.h, 72.0).clamp(1.0, 1584.0));
-                    let obj = InlineObject::Image { media: key, w, h, alt: img.alt.clone(), float: Default::default(), crop: [0.0; 4], ole: None };
+                    let (w, h) = (
+                        finite_or(img.w, 72.0).clamp(1.0, 1584.0),
+                        finite_or(img.h, 72.0).clamp(1.0, 1584.0),
+                    );
+                    let obj = InlineObject::Image {
+                        media: key,
+                        w,
+                        h,
+                        alt: img.alt.clone(),
+                        float: Default::default(),
+                        crop: [0.0; 4],
+                        ole: None,
+                    };
                     append(&mut out, "", &CharProps::default(), Some(obj));
                 }
                 Inline::Anchor(name) => {
-                    append(&mut out, "", &CharProps::default(), Some(InlineObject::BookmarkStart { name: name.clone() }));
-                    append(&mut out, "", &CharProps::default(), Some(InlineObject::BookmarkEnd { name: name.clone() }));
+                    append(
+                        &mut out,
+                        "",
+                        &CharProps::default(),
+                        Some(InlineObject::BookmarkStart { name: name.clone() }),
+                    );
+                    append(
+                        &mut out,
+                        "",
+                        &CharProps::default(),
+                        Some(InlineObject::BookmarkEnd { name: name.clone() }),
+                    );
                 }
                 Inline::Figure(_) => {}
                 Inline::Equation { linear, display } => {
                     let linear = clean_text(linear);
                     if !linear.is_empty() {
-                        let obj = InlineObject::Equation { linear, display: *display, math: Default::default() };
+                        let obj = InlineObject::Equation {
+                            linear,
+                            display: *display,
+                            math: Default::default(),
+                        };
                         append(&mut out, "", &CharProps::default(), Some(obj));
                     }
                 }
@@ -478,10 +590,29 @@ impl Builder<'_> {
             })
             .collect();
         let numbering = &mut self.doc.numbering;
-        let aid = numbering.abstracts.iter().map(|a| a.id + 1).max().unwrap_or(0);
-        numbering.abstracts.push(AbstractNum { id: aid, name: None, levels });
-        let nid = numbering.nums.iter().map(|n| n.id + 1).max().unwrap_or(1).max(1);
-        numbering.nums.push(Num { id: nid, abstract_id: aid, ..Default::default() });
+        let aid = numbering
+            .abstracts
+            .iter()
+            .map(|a| a.id + 1)
+            .max()
+            .unwrap_or(0);
+        numbering.abstracts.push(AbstractNum {
+            id: aid,
+            name: None,
+            levels,
+        });
+        let nid = numbering
+            .nums
+            .iter()
+            .map(|n| n.id + 1)
+            .max()
+            .unwrap_or(1)
+            .max(1);
+        numbering.nums.push(Num {
+            id: nid,
+            abstract_id: aid,
+            ..Default::default()
+        });
         nid
     }
 
@@ -537,7 +668,12 @@ impl Builder<'_> {
     }
 
     fn table(&mut self, t: &FTable, depth: usize) -> Option<Table> {
-        let rows: Vec<&Vec<Cell>> = t.rows.iter().filter(|r| !r.is_empty()).take(wordcraft_doc::table::MAX_ROWS).collect();
+        let rows: Vec<&Vec<Cell>> = t
+            .rows
+            .iter()
+            .filter(|r| !r.is_empty())
+            .take(wordcraft_doc::table::MAX_ROWS)
+            .collect();
         if rows.is_empty() {
             return None;
         }
@@ -552,15 +688,24 @@ impl Builder<'_> {
         }
         tb.rows.clear();
         for r in rows {
-            let mut row = wordcraft_doc::Row { props: RowProps::default(), cells: Vec::new(), controls: Default::default() };
+            let mut row = wordcraft_doc::Row {
+                props: RowProps::default(),
+                cells: Vec::new(),
+                controls: Default::default(),
+            };
             row.props.header = !r.is_empty() && r.iter().all(|c| c.header);
             let mut g = 0usize;
             for c in r.iter().take(wordcraft_doc::table::MAX_COLS) {
                 let span = (c.colspan.clamp(1, 63) as usize).min(cols.saturating_sub(g).max(1));
-                let w: f32 = tb.grid.get(g..(g + span).min(tb.grid.len())).map(|s| s.iter().sum()).unwrap_or(72.0);
+                let w: f32 = tb
+                    .grid
+                    .get(g..(g + span).min(tb.grid.len()))
+                    .map(|s| s.iter().sum())
+                    .unwrap_or(72.0);
                 g += span;
                 let mut blocks = self.blocks(&c.blocks, depth + 1);
-                if blocks.is_empty() || matches!(blocks.last().map(|b| &**b), Some(Block::Table(_))) {
+                if blocks.is_empty() || matches!(blocks.last().map(|b| &**b), Some(Block::Table(_)))
+                {
                     blocks.push(para_block(Paragraph::new()));
                 }
                 let vmerge = if c.covered {
@@ -571,7 +716,14 @@ impl Builder<'_> {
                     VMerge::None
                 };
                 row.cells.push(wordcraft_doc::Cell {
-                    props: CellProps { width: Some(w), span: span as u32, vmerge, shading: c.shading, borders: c.borders, ..Default::default() },
+                    props: CellProps {
+                        width: Some(w),
+                        span: span as u32,
+                        vmerge,
+                        shading: c.shading,
+                        borders: c.borders,
+                        ..Default::default()
+                    },
                     blocks,
                     controls: Default::default(),
                 });
@@ -630,7 +782,11 @@ fn uses_kind(blocks: &[FBlock], k: Kind, depth: usize) -> bool {
     depth <= MAX_DEPTH
         && blocks.iter().any(|b| match b {
             FBlock::Para(p) => p.kind == k,
-            FBlock::Table(t) => t.rows.iter().flatten().any(|c| uses_kind(&c.blocks, k, depth + 1)),
+            FBlock::Table(t) => t
+                .rows
+                .iter()
+                .flatten()
+                .any(|c| uses_kind(&c.blocks, k, depth + 1)),
         })
 }
 
@@ -640,15 +796,28 @@ fn uses_kind(blocks: &[FBlock], k: Kind, depth: usize) -> bool {
 /// Is this a monospace family name?
 pub fn is_mono(font: &str) -> bool {
     let f = font.to_ascii_lowercase();
-    f.contains("courier") || f.contains("mono") || f.contains("consolas") || f.contains("menlo") || f.contains("code") || f == "monaco"
+    f.contains("courier")
+        || f.contains("mono")
+        || f.contains("consolas")
+        || f.contains("menlo")
+        || f.contains("code")
+        || f == "monaco"
 }
 
 fn is_code_style(doc: &Document, id: &str) -> bool {
     let names = |s: &str| {
         let l = s.to_ascii_lowercase().replace([' ', '-', '_'], "");
-        l == "code" || l.contains("preformatted") || l == "plaintext" || l == "codeblock" || l == "sourcecode"
+        l == "code"
+            || l.contains("preformatted")
+            || l == "plaintext"
+            || l == "codeblock"
+            || l == "sourcecode"
     };
-    doc.styles.chain(id).iter().any(|s| names(&s.id) || names(&s.name)) || names(id)
+    doc.styles
+        .chain(id)
+        .iter()
+        .any(|s| names(&s.id) || names(&s.name))
+        || names(id)
 }
 
 /// Character formatting from a run's character style chain plus direct formatting (the
@@ -685,7 +854,11 @@ fn fmt_of(doc: &Document, cp: &CharProps, in_code: bool) -> Fmt {
             _ => None,
         },
         size: e.size,
-        font: if code || in_code { None } else { e.font.clone() },
+        font: if code || in_code {
+            None
+        } else {
+            e.font.clone()
+        },
         background: e.highlight.and_then(|h| h.rgb()).or(e.shading),
     }
 }
@@ -698,13 +871,21 @@ pub fn para_kind(doc: &Document, p: &Paragraph) -> (Kind, Option<ListInfo>) {
         Kind::Heading((l + 1).min(6))
     } else if doc.styles.chain(style).iter().any(|s| s.id == "Title") {
         Kind::Title
-    } else if doc.styles.chain(style).iter().any(|s| s.id == "Quote" || s.id == "IntenseQuote") {
+    } else if doc
+        .styles
+        .chain(style)
+        .iter()
+        .any(|s| s.id == "Quote" || s.id == "IntenseQuote")
+    {
         Kind::Quote
     } else if is_code_style(doc, style) {
         Kind::Code
     } else if p.plain_text().trim().is_empty()
         && p.objects.iter().all(|o| o.is_marker())
-        && rp.borders.and_then(|b| b.bottom).is_some_and(|b| b.is_visible())
+        && rp
+            .borders
+            .and_then(|b| b.bottom)
+            .is_some_and(|b| b.is_visible())
     {
         Kind::Rule
     } else {
@@ -712,7 +893,10 @@ pub fn para_kind(doc: &Document, p: &Paragraph) -> (Kind, Option<ListInfo>) {
     };
     let list = rp.numbering.and_then(|n| {
         let lv = doc.numbering.level(n.num, n.level)?;
-        Some(ListInfo { ordered: !matches!(lv.format, NumFormat::Bullet | NumFormat::None), level: n.level.min(8) })
+        Some(ListInfo {
+            ordered: !matches!(lv.format, NumFormat::Bullet | NumFormat::None),
+            level: n.level.min(8),
+        })
     });
     (kind, list)
 }
@@ -724,7 +908,12 @@ fn media_ext(key: &str, data: &[u8]) -> String {
         Ok(image::ImageFormat::Gif) => "gif".into(),
         Ok(image::ImageFormat::WebP) => "webp".into(),
         Ok(image::ImageFormat::Bmp) => "bmp".into(),
-        _ => key.rsplit('.').next().filter(|e| e.len() <= 5 && *e != key).unwrap_or("png").to_ascii_lowercase(),
+        _ => key
+            .rsplit('.')
+            .next()
+            .filter(|e| e.len() <= 5 && *e != key)
+            .unwrap_or("png")
+            .to_ascii_lowercase(),
     }
 }
 
@@ -745,7 +934,9 @@ pub fn flow_paras(doc: &Document, p: &Paragraph) -> Vec<Para> {
     let in_code = kind == Kind::Code;
     let mut k = 0usize;
     for (range, props) in p.run_ranges() {
-        let Some(text) = p.text.get(range.clone()) else { continue };
+        let Some(text) = p.text.get(range.clone()) else {
+            continue;
+        };
         let hidden = props.hidden.unwrap_or(false) || props.del.is_some();
         let f = fmt_of(doc, props, in_code);
         let mut buf = String::new();
@@ -782,14 +973,20 @@ pub fn flow_paras(doc: &Document, p: &Paragraph) -> Vec<Para> {
                 continue;
             }
             match obj {
-                Some(InlineObject::Image { media, w, h, alt, .. }) => {
+                Some(InlineObject::Image {
+                    media, w, h, alt, ..
+                }) => {
                     if !buf.is_empty() {
                         out.push_text(&std::mem::take(&mut buf), &f);
                     }
                     match doc.media.get(media) {
-                        Some(data) => {
-                            out.inlines.push(Inline::Image(Img { data: data.clone(), ext: media_ext(media, data), w: *w, h: *h, alt: alt.clone() }))
-                        }
+                        Some(data) => out.inlines.push(Inline::Image(Img {
+                            data: data.clone(),
+                            ext: media_ext(media, data),
+                            w: *w,
+                            h: *h,
+                            alt: alt.clone(),
+                        })),
                         None if !alt.is_empty() => buf.push_str(alt),
                         None => {}
                     }
@@ -802,14 +999,25 @@ pub fn flow_paras(doc: &Document, p: &Paragraph) -> Vec<Para> {
                         out.inlines.push(Inline::Figure(alt.clone()));
                     }
                 }
-                Some(InlineObject::Equation { linear, display, math }) => {
+                Some(InlineObject::Equation {
+                    linear,
+                    display,
+                    math,
+                }) => {
                     if !buf.is_empty() {
                         out.push_text(&std::mem::take(&mut buf), &f);
                     }
                     // The linear format is the shared form; an equation known only by its
                     // structure gets it from there.
-                    let linear = if linear.is_empty() { wordcraft_doc::math::to_linear(&math.nodes) } else { linear.clone() };
-                    out.inlines.push(Inline::Equation { linear, display: *display });
+                    let linear = if linear.is_empty() {
+                        wordcraft_doc::math::to_linear(&math.nodes)
+                    } else {
+                        linear.clone()
+                    };
+                    out.inlines.push(Inline::Equation {
+                        linear,
+                        display: *display,
+                    });
                 }
                 Some(InlineObject::BookmarkStart { name }) if name != "_GoBack" => {
                     if !buf.is_empty() {
@@ -834,7 +1042,9 @@ fn flow_blocks(doc: &Document, bl: &Blocks, depth: usize) -> Vec<FBlock> {
     for b in bl {
         match &**b {
             Block::Para(p) => out.extend(flow_paras(doc, p).into_iter().map(FBlock::Para)),
-            Block::Table(t) if depth < MAX_DEPTH => out.push(FBlock::Table(flow_table(doc, t, depth))),
+            Block::Table(t) if depth < MAX_DEPTH => {
+                out.push(FBlock::Table(flow_table(doc, t, depth)))
+            }
             Block::Table(t) => {
                 for r in &t.rows {
                     for c in &r.cells {
@@ -857,7 +1067,10 @@ fn flow_table(doc: &Document, t: &Table, depth: usize) -> FTable {
             if c.props.vmerge == VMerge::Restart {
                 let g = t.grid_col(ri, ci);
                 for (k, below) in t.rows.iter().enumerate().skip(ri + 1) {
-                    let cont = t.cell_at_grid(k, g).and_then(|i| below.cells.get(i)).is_some_and(|bc| bc.props.vmerge == VMerge::Continue);
+                    let cont = t
+                        .cell_at_grid(k, g)
+                        .and_then(|i| below.cells.get(i))
+                        .is_some_and(|bc| bc.props.vmerge == VMerge::Continue);
                     if !cont {
                         break;
                     }
@@ -877,10 +1090,19 @@ fn flow_table(doc: &Document, t: &Table, depth: usize) -> FTable {
         rows.push(cells);
     }
     // Without a table style and without visible table or cell borders the table shows no grid.
-    let visible = |b: &Option<wordcraft_doc::props::Borders>| b.as_ref().is_some_and(|b| b.any_visible());
-    let borderless =
-        t.props.style.is_none() && !visible(&t.props.borders) && t.rows.iter().flat_map(|r| &r.cells).all(|c| !visible(&c.props.borders));
-    FTable { rows, widths: t.grid.clone(), borderless }
+    let visible =
+        |b: &Option<wordcraft_doc::props::Borders>| b.as_ref().is_some_and(|b| b.any_visible());
+    let borderless = t.props.style.is_none()
+        && !visible(&t.props.borders)
+        && t.rows
+            .iter()
+            .flat_map(|r| &r.cells)
+            .all(|c| !visible(&c.props.borders));
+    FTable {
+        rows,
+        widths: t.grid.clone(),
+        borderless,
+    }
 }
 
 /// The document body as a flow.
@@ -916,17 +1138,31 @@ pub fn sniff_image(data: &[u8]) -> Option<&'static str> {
 
 /// Pixel size of encoded image bytes.
 pub fn image_px(data: &[u8]) -> Option<(u32, u32)> {
-    image::ImageReader::new(std::io::Cursor::new(data)).with_guessed_format().ok()?.into_dimensions().ok()
+    image::ImageReader::new(std::io::Cursor::new(data))
+        .with_guessed_format()
+        .ok()?
+        .into_dimensions()
+        .ok()
 }
 
 /// A picture from bytes with an optional display size (points); the natural size (96 dpi) is
 /// used otherwise, shrunk to fit a 6.5" column.
-pub fn make_img(data: impl Into<Arc<Vec<u8>>>, w: Option<f32>, h: Option<f32>, alt: &str) -> Option<Img> {
+pub fn make_img(
+    data: impl Into<Arc<Vec<u8>>>,
+    w: Option<f32>,
+    h: Option<f32>,
+    alt: &str,
+) -> Option<Img> {
     let data = data.into();
     let ext = sniff_image(&data)?;
-    let (pw, ph) = image_px(&data).map(|(a, b)| (a as f32 * 0.75, b as f32 * 0.75)).unwrap_or((72.0, 72.0));
+    let (pw, ph) = image_px(&data)
+        .map(|(a, b)| (a as f32 * 0.75, b as f32 * 0.75))
+        .unwrap_or((72.0, 72.0));
     let (pw, ph) = (pw.max(1.0), ph.max(1.0));
-    let (mut w, mut h) = match (w.filter(|v| v.is_finite() && *v > 0.0), h.filter(|v| v.is_finite() && *v > 0.0)) {
+    let (mut w, mut h) = match (
+        w.filter(|v| v.is_finite() && *v > 0.0),
+        h.filter(|v| v.is_finite() && *v > 0.0),
+    ) {
         (Some(w), Some(h)) => (w, h),
         (Some(w), None) => (w, w * ph / pw),
         (None, Some(h)) => (h * pw / ph, h),
@@ -936,7 +1172,13 @@ pub fn make_img(data: impl Into<Arc<Vec<u8>>>, w: Option<f32>, h: Option<f32>, a
         h *= 468.0 / w;
         w = 468.0;
     }
-    Some(Img { data, ext: ext.to_string(), w: w.clamp(1.0, 1584.0), h: h.clamp(1.0, 1584.0), alt: alt.to_string() })
+    Some(Img {
+        data,
+        ext: ext.to_string(),
+        w: w.clamp(1.0, 1584.0),
+        h: h.clamp(1.0, 1584.0),
+        alt: alt.to_string(),
+    })
 }
 
 const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -944,7 +1186,11 @@ const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 pub fn base64_encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for ch in data.chunks(3) {
-        let b = [ch.first().copied().unwrap_or(0), ch.get(1).copied().unwrap_or(0), ch.get(2).copied().unwrap_or(0)];
+        let b = [
+            ch.first().copied().unwrap_or(0),
+            ch.get(1).copied().unwrap_or(0),
+            ch.get(2).copied().unwrap_or(0),
+        ];
         let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
         let idx = [(n >> 18) & 63, (n >> 12) & 63, (n >> 6) & 63, n & 63];
         for (i, v) in idx.iter().enumerate() {
@@ -989,7 +1235,11 @@ pub fn base64_decode(s: &str) -> Option<Vec<u8>> {
 pub fn data_uri(uri: &str) -> Option<Vec<u8>> {
     let rest = uri.trim().strip_prefix("data:")?;
     let (head, data) = rest.split_once(',')?;
-    if head.ends_with(";base64") { base64_decode(data) } else { Some(percent_decode(data)) }
+    if head.ends_with(";base64") {
+        base64_decode(data)
+    } else {
+        Some(percent_decode(data))
+    }
 }
 
 pub fn percent_decode(s: &str) -> Vec<u8> {
@@ -1058,7 +1308,11 @@ impl ListCounter {
     pub fn label(&mut self, li: ListInfo) -> String {
         let n = self.next(li);
         if !li.ordered {
-            return ["•", "◦", "▪"].get(li.level as usize % 3).copied().unwrap_or("•").to_string();
+            return ["•", "◦", "▪"]
+                .get(li.level as usize % 3)
+                .copied()
+                .unwrap_or("•")
+                .to_string();
         }
         match li.level % 3 {
             0 => format!("{n}."),
@@ -1073,7 +1327,11 @@ pub fn parse_color(s: &str) -> Option<Rgb> {
     let s = s.trim().to_ascii_lowercase();
     if let Some(h) = s.strip_prefix('#') {
         if h.len() == 3 && h.is_ascii() {
-            let d = |i: usize| h.get(i..i + 1).and_then(|x| u8::from_str_radix(x, 16).ok()).map(|v| v * 17);
+            let d = |i: usize| {
+                h.get(i..i + 1)
+                    .and_then(|x| u8::from_str_radix(x, 16).ok())
+                    .map(|v| v * 17)
+            };
             return Some(Rgb(d(0)?, d(1)?, d(2)?));
         }
         return Rgb::parse(h);
@@ -1086,9 +1344,14 @@ pub fn parse_color(s: &str) -> Option<Rgb> {
             .filter_map(|x| {
                 let x = x.trim();
                 if let Some(p) = x.strip_suffix('%') {
-                    p.trim().parse::<f32>().ok().map(|f| (f.clamp(0.0, 100.0) * 2.55).round() as u8)
+                    p.trim()
+                        .parse::<f32>()
+                        .ok()
+                        .map(|f| (f.clamp(0.0, 100.0) * 2.55).round() as u8)
                 } else {
-                    x.parse::<f32>().ok().map(|f| f.clamp(0.0, 255.0).round() as u8)
+                    x.parse::<f32>()
+                        .ok()
+                        .map(|f| f.clamp(0.0, 255.0).round() as u8)
                 }
             })
             .collect();
@@ -1125,7 +1388,16 @@ mod tests {
 
     #[test]
     fn base64_round_trip() {
-        for data in [&b""[..], b"f", b"fo", b"foo", b"foob", b"fooba", b"foobar", &[0, 255, 128, 7]] {
+        for data in [
+            &b""[..],
+            b"f",
+            b"fo",
+            b"foo",
+            b"foob",
+            b"fooba",
+            b"foobar",
+            &[0, 255, 128, 7],
+        ] {
             let e = base64_encode(data);
             assert_eq!(base64_decode(&e).unwrap(), data, "{e}");
         }
@@ -1147,18 +1419,36 @@ mod tests {
     #[test]
     fn list_labels() {
         let mut c = ListCounter::default();
-        let o = |level| ListInfo { ordered: true, level };
+        let o = |level| ListInfo {
+            ordered: true,
+            level,
+        };
         assert_eq!(c.label(o(0)), "1.");
         assert_eq!(c.label(o(1)), "a.");
         assert_eq!(c.label(o(1)), "b.");
         assert_eq!(c.label(o(0)), "2.");
-        assert_eq!(c.label(ListInfo { ordered: false, level: 0 }), "•");
+        assert_eq!(
+            c.label(ListInfo {
+                ordered: false,
+                level: 0
+            }),
+            "•"
+        );
     }
 
     #[test]
     fn covered_cells_inserted() {
         let mut t = FTable {
-            rows: vec![vec![Cell { rowspan: 2, ..Default::default() }, Cell::default()], vec![Cell::default()]],
+            rows: vec![
+                vec![
+                    Cell {
+                        rowspan: 2,
+                        ..Default::default()
+                    },
+                    Cell::default(),
+                ],
+                vec![Cell::default()],
+            ],
             widths: vec![],
             borderless: false,
         };

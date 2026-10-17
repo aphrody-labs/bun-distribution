@@ -68,18 +68,30 @@ pub(crate) async fn run(action: IndexAction) -> miette::Result<()> {
             }
             let mut index =
                 FsIndex::open(&db_path).map_err(|e| miette::miette!("open index: {e}"))?;
-            let count = index.build(&root).map_err(|e| miette::miette!("build index: {e}"))?;
-            println!("indexed {count} entries from {} into {}", root.display(), db_path.display());
+            let count = index
+                .build(&root)
+                .map_err(|e| miette::miette!("build index: {e}"))?;
+            println!(
+                "indexed {count} entries from {} into {}",
+                root.display(),
+                db_path.display()
+            );
             Ok(())
-        },
-        IndexAction::Search { query, db, limit, json } => {
+        }
+        IndexAction::Search {
+            query,
+            db,
+            limit,
+            json,
+        } => {
             let db_path = match db {
                 Some(p) => p,
                 None => default_db()?,
             };
             let index = FsIndex::open(&db_path).map_err(|e| miette::miette!("open index: {e}"))?;
-            let hits =
-                index.search(&query, limit).map_err(|e| miette::miette!("search index: {e}"))?;
+            let hits = index
+                .search(&query, limit)
+                .map_err(|e| miette::miette!("search index: {e}"))?;
             if json {
                 let rendered = serde_json::to_string_pretty(&hits)
                     .map_err(|e| miette::miette!("encode results: {e}"))?;
@@ -92,6 +104,6 @@ pub(crate) async fn run(action: IndexAction) -> miette::Result<()> {
                 }
             }
             Ok(())
-        },
+        }
     }
 }

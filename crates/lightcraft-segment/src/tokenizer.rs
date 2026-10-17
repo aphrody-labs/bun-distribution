@@ -25,7 +25,8 @@ fn bytes_to_unicode() -> [char; 256] {
     let mut map = ['\0'; 256];
     let mut n = 0u32;
     for b in 0..=255u8 {
-        let printable = (b'!'..=b'~').contains(&b) || (0xA1..=0xAC).contains(&b) || (0xAE..=0xFF).contains(&b);
+        let printable =
+            (b'!'..=b'~').contains(&b) || (0xA1..=0xAC).contains(&b) || (0xAE..=0xFF).contains(&b);
         let c = if printable {
             u32::from(b)
         } else {
@@ -42,8 +43,12 @@ fn bytes_to_unicode() -> [char; 256] {
 impl Tokenizer {
     /// From `vocab.json` and `merges.txt` in `dir`.
     pub fn load(dir: &Path) -> Result<Self> {
-        let read = |name: &str| std::fs::read_to_string(dir.join(name)).map_err(|e| Error::Model(format!("{name}: {e}")));
-        let vocab: HashMap<String, u32> = serde_json::from_str(&read("vocab.json")?).map_err(|e| Error::Model(format!("vocab.json: {e}")))?;
+        let read = |name: &str| {
+            std::fs::read_to_string(dir.join(name))
+                .map_err(|e| Error::Model(format!("{name}: {e}")))
+        };
+        let vocab: HashMap<String, u32> = serde_json::from_str(&read("vocab.json")?)
+            .map_err(|e| Error::Model(format!("vocab.json: {e}")))?;
         let merges = read("merges.txt")?;
         Ok(Self::new(vocab, &merges))
     }
@@ -52,18 +57,34 @@ impl Tokenizer {
         let ranks = merges
             .lines()
             .filter(|l| !l.starts_with("#version") && !l.trim().is_empty())
-            .filter_map(|l| l.split_once(' ').map(|(a, b)| (a.to_string(), b.to_string())))
+            .filter_map(|l| {
+                l.split_once(' ')
+                    .map(|(a, b)| (a.to_string(), b.to_string()))
+            })
             .enumerate()
             .map(|(i, p)| (p, i))
             .collect();
-        Self { vocab, ranks, byte_char: bytes_to_unicode() }
+        Self {
+            vocab,
+            ranks,
+            byte_char: bytes_to_unicode(),
+        }
     }
 
     /// Token ids (start, words, end, padding) and which positions are real tokens.
     pub fn encode(&self, text: &str) -> (Vec<u32>, Vec<bool>) {
         let mut ids = vec![BOS];
-        for word in pre_tokenize(&text.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()) {
-            let mapped: String = word.bytes().map(|b| self.byte_char.get(usize::from(b)).copied().unwrap_or('?')).collect();
+        for word in pre_tokenize(
+            &text
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .to_lowercase(),
+        ) {
+            let mapped: String = word
+                .bytes()
+                .map(|b| self.byte_char.get(usize::from(b)).copied().unwrap_or('?'))
+                .collect();
             for piece in self.bpe(&mapped) {
                 ids.push(self.vocab.get(&piece).copied().unwrap_or(EOS));
             }
@@ -91,7 +112,9 @@ impl Tokenizer {
                 })
                 .min();
             let Some((_, i)) = best else { break };
-            let (Some(a), Some(b)) = (syms.get(i).cloned(), syms.get(i + 1).cloned()) else { break };
+            let (Some(a), Some(b)) = (syms.get(i).cloned(), syms.get(i + 1).cloned()) else {
+                break;
+            };
             let merged = a.clone() + &b;
             // merge every occurrence of the pair, left to right
             let mut out = Vec::with_capacity(syms.len());
@@ -126,14 +149,27 @@ fn pre_tokenize(text: &str) -> Vec<String> {
             continue;
         }
         if c == '\'' {
-            let rest: String = chars.get(i + 1..(i + 3).min(chars.len())).map(|s| s.iter().collect()).unwrap_or_default();
+            let rest: String = chars
+                .get(i + 1..(i + 3).min(chars.len()))
+                .map(|s| s.iter().collect())
+                .unwrap_or_default();
             if let Some(k) = ["re", "ve", "ll"]
                 .iter()
                 .find(|k| rest.starts_with(**k))
                 .map(|k| k.len())
-                .or_else(|| rest.chars().next().filter(|c| matches!(c, 's' | 't' | 'm' | 'd')).map(|_| 1))
+                .or_else(|| {
+                    rest.chars()
+                        .next()
+                        .filter(|c| matches!(c, 's' | 't' | 'm' | 'd'))
+                        .map(|_| 1)
+                })
             {
-                out.push(chars.get(i..i + 1 + k).map(|s| s.iter().collect()).unwrap_or_default());
+                out.push(
+                    chars
+                        .get(i..i + 1 + k)
+                        .map(|s| s.iter().collect())
+                        .unwrap_or_default(),
+                );
                 i += 1 + k;
                 continue;
             }
@@ -146,11 +182,19 @@ fn pre_tokenize(text: &str) -> Vec<String> {
         } else if c.is_numeric() {
             i += 1;
         } else {
-            while chars.get(i).is_some_and(|c| !c.is_whitespace() && !c.is_alphabetic() && !c.is_numeric()) {
+            while chars
+                .get(i)
+                .is_some_and(|c| !c.is_whitespace() && !c.is_alphabetic() && !c.is_numeric())
+            {
                 i += 1;
             }
         }
-        out.push(chars.get(start..i).map(|s| s.iter().collect()).unwrap_or_default());
+        out.push(
+            chars
+                .get(start..i)
+                .map(|s| s.iter().collect())
+                .unwrap_or_default(),
+        );
     }
     out
 }
@@ -161,13 +205,19 @@ mod tests {
 
     #[test]
     fn splits_like_clip() {
-        assert_eq!(pre_tokenize("a dog's toy, 25 cats!"), ["a", "dog", "'s", "toy", ",", "2", "5", "cats", "!"]);
+        assert_eq!(
+            pre_tokenize("a dog's toy, 25 cats!"),
+            ["a", "dog", "'s", "toy", ",", "2", "5", "cats", "!"]
+        );
     }
 
     #[test]
     fn merges_by_rank() {
         let vocab: HashMap<String, u32> =
-            [("c", 1), ("a", 2), ("t</w>", 3), ("ca", 4), ("cat</w>", 5)].into_iter().map(|(k, v)| (k.to_string(), v)).collect();
+            [("c", 1), ("a", 2), ("t</w>", 3), ("ca", 4), ("cat</w>", 5)]
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v))
+                .collect();
         let t = Tokenizer::new(vocab, "#version: 0.2\nc a\nca t</w>\n");
         let (ids, valid) = t.encode("  CAT ");
         assert_eq!(&ids[..3], &[BOS, 5, EOS]);

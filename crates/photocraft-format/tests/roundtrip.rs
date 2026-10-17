@@ -9,7 +9,12 @@ use photocraft_doc::{Document, Layer, LayerContent, LayerId, Slice, TextLayer};
 use photocraft_format::*;
 use photocraft_raster::Rgba8Image;
 
-const MODES: [ColorMode; 4] = [ColorMode::Rgb, ColorMode::Grayscale, ColorMode::Cmyk, ColorMode::Lab];
+const MODES: [ColorMode; 4] = [
+    ColorMode::Rgb,
+    ColorMode::Grayscale,
+    ColorMode::Cmyk,
+    ColorMode::Lab,
+];
 
 #[test]
 fn custom_shape_stroke_roundtrip_keeps_every_style_field() {
@@ -30,7 +35,11 @@ fn custom_shape_stroke_roundtrip_keeps_every_style_field() {
             d.layers.push(Layer::new(
                 "Custom stroke",
                 LayerContent::Shape(photocraft_doc::ShapeLayer {
-                    path: photocraft_doc::Path::new(vec![photocraft_doc::Subpath::polygon(&[(10.0, 10.0), (40.0, 10.0), (25.0, 40.0)])]),
+                    path: photocraft_doc::Path::new(vec![photocraft_doc::Subpath::polygon(&[
+                        (10.0, 10.0),
+                        (40.0, 10.0),
+                        (25.0, 40.0),
+                    ])]),
                     stroke: Some(stroke),
                     ..Default::default()
                 }),
@@ -71,7 +80,9 @@ fn directory_bundle_roundtrip_all_modes() {
         for depth in SampleType::ALL {
             let doc = rich_doc(mode, depth);
             let dir = temp_dir("dir");
-            PcraftWriter::new().save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+            PcraftWriter::new()
+                .save_dir(&doc, &dir, &SaveOptions::default())
+                .unwrap();
             assert!(dir.join("manifest.json").is_file());
             assert_eq!(load_path(&dir).unwrap(), doc, "{mode:?} {depth:?}");
             std::fs::remove_dir_all(dir).unwrap();
@@ -84,7 +95,9 @@ fn save_path_zip_file() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("file");
     let path = dir.join("a.pcraft");
-    PcraftWriter::new().save_path(&doc, &path, &SaveOptions::default()).unwrap();
+    PcraftWriter::new()
+        .save_path(&doc, &path, &SaveOptions::default())
+        .unwrap();
     assert!(path.is_file());
     assert_eq!(load_path(&path).unwrap(), doc);
     std::fs::remove_dir_all(dir).unwrap();
@@ -96,10 +109,27 @@ fn load_bytes_source_matches_the_path_load() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("bytes-source");
     let bundle = dir.join("a.pcraft");
-    PcraftWriter::new().save_dir(&doc, &bundle, &SaveOptions::default()).unwrap();
-    let loaded = load_bytes_source(&FsDir { root: bundle.clone() }, &LoadOptions::default()).unwrap();
+    PcraftWriter::new()
+        .save_dir(&doc, &bundle, &SaveOptions::default())
+        .unwrap();
+    let loaded = load_bytes_source(
+        &FsDir {
+            root: bundle.clone(),
+        },
+        &LoadOptions::default(),
+    )
+    .unwrap();
     assert_eq!(loaded, doc);
-    assert!(load_bytes_source(&FsDir { root: bundle.join("no-such-dir") }, &LoadOptions::default()).is_err(), "a missing bundle errors");
+    assert!(
+        load_bytes_source(
+            &FsDir {
+                root: bundle.join("no-such-dir")
+            },
+            &LoadOptions::default()
+        )
+        .is_err(),
+        "a missing bundle errors"
+    );
     std::fs::remove_dir_all(dir).unwrap();
 }
 
@@ -115,10 +145,15 @@ fn read_entry_bounds_the_read_not_the_hint() {
         }
     }
     let mut endless = Endless;
-    let error = read_entry(&mut endless, 0, 100, "manifest.json").unwrap_err().to_string();
+    let error = read_entry(&mut endless, 0, 100, "manifest.json")
+        .unwrap_err()
+        .to_string();
     assert!(error.contains("exceeds"), "{error}");
     let mut small = &b"hi"[..];
-    assert_eq!(read_entry(&mut small, 2, 100, "manifest.json").unwrap(), b"hi");
+    assert_eq!(
+        read_entry(&mut small, 2, 100, "manifest.json").unwrap(),
+        b"hi"
+    );
 }
 
 /// Reads the on-disk bundle shape for [`load_bytes_source_matches_the_path_load`].
@@ -129,18 +164,32 @@ struct FsDir {
 impl ByteSource for FsDir {
     fn get(&self, path: &str, max: usize) -> Result<Vec<u8>> {
         let p = self.root.join(path);
-        let metadata = std::fs::metadata(&p).map_err(|_| FormatError::Corrupt(format!("missing `{path}`")))?;
+        let metadata =
+            std::fs::metadata(&p).map_err(|_| FormatError::Corrupt(format!("missing `{path}`")))?;
         if !metadata.is_file() {
-            return Err(FormatError::Corrupt(format!("`{path}` is not a regular file")));
+            return Err(FormatError::Corrupt(format!(
+                "`{path}` is not a regular file"
+            )));
         }
-        let mut file = std::fs::File::open(&p).map_err(|_| FormatError::Corrupt(format!("missing `{path}`")))?;
+        let mut file = std::fs::File::open(&p)
+            .map_err(|_| FormatError::Corrupt(format!("missing `{path}`")))?;
         read_entry(&mut file, metadata.len(), max, path)
     }
 }
 
 /// Deepest group nesting in `layers` (0 when there are no groups).
 fn group_depth(layers: &[Layer]) -> usize {
-    layers.iter().map(|l| if let photocraft_doc::LayerContent::Group(g) = &l.content { 1 + group_depth(&g.children) } else { 0 }).max().unwrap_or(0)
+    layers
+        .iter()
+        .map(|l| {
+            if let photocraft_doc::LayerContent::Group(g) = &l.content {
+                1 + group_depth(&g.children)
+            } else {
+                0
+            }
+        })
+        .max()
+        .unwrap_or(0)
 }
 
 /// [`rich_doc`] with its layers wrapped in groups until they are nested `levels` deep.
@@ -160,42 +209,96 @@ fn nested_doc(levels: usize, depth: SampleType) -> Document {
 #[test]
 fn deeply_nested_groups_roundtrip() {
     let run = || {
-        for (levels, depth) in [(40, SampleType::U8), (MAX_GROUP_DEPTH, SampleType::U16), (MAX_GROUP_DEPTH, SampleType::F32)] {
+        for (levels, depth) in [
+            (40, SampleType::U8),
+            (MAX_GROUP_DEPTH, SampleType::U16),
+            (MAX_GROUP_DEPTH, SampleType::F32),
+        ] {
             let doc = nested_doc(levels, depth);
-            let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
+            let back =
+                load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
             assert_eq!(back, doc, "{levels} levels at {depth:?}");
         }
     };
-    std::thread::Builder::new().stack_size(1 << 20).spawn(run).unwrap().join().unwrap();
+    std::thread::Builder::new()
+        .stack_size(1 << 20)
+        .spawn(run)
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 /// A save never writes a bundle the loader would reject for its nesting.
 #[test]
 fn nesting_beyond_the_load_limit_is_refused_at_save() {
-    let e = save_to_bytes(&nested_doc(MAX_GROUP_DEPTH + 1, SampleType::U8), &SaveOptions::default()).unwrap_err();
+    let e = save_to_bytes(
+        &nested_doc(MAX_GROUP_DEPTH + 1, SampleType::U8),
+        &SaveOptions::default(),
+    )
+    .unwrap_err();
     assert!(matches!(e, FormatError::LimitExceeded(_)), "{e}");
 }
 
 #[test]
 fn empty_document_roundtrips() {
-    let doc = Document::new("empty", photocraft_doc::Size::new(1, 1), ColorMode::Rgb, SampleType::U8);
-    assert_eq!(load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap(), doc);
+    let doc = Document::new(
+        "empty",
+        photocraft_doc::Size::new(1, 1),
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
+    assert_eq!(
+        load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap(),
+        doc
+    );
 }
 
 #[test]
 fn exhausted_document_ids_and_maximal_text_runs_roundtrip() {
-    let mut doc = Document::new("exhausted", photocraft_doc::Size::new(2, 1), ColorMode::Rgb, SampleType::U8);
-    doc.slices.list.push(Slice { id: u32::MAX, ..Default::default() });
-    doc.text_styles.character.push(CharacterStyleDef { id: u32::MAX, ..Default::default() });
-    doc.text_styles.paragraph.push(ParagraphStyleDef { id: u32::MAX, ..Default::default() });
+    let mut doc = Document::new(
+        "exhausted",
+        photocraft_doc::Size::new(2, 1),
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
+    doc.slices.list.push(Slice {
+        id: u32::MAX,
+        ..Default::default()
+    });
+    doc.text_styles.character.push(CharacterStyleDef {
+        id: u32::MAX,
+        ..Default::default()
+    });
+    doc.text_styles.paragraph.push(ParagraphStyleDef {
+        id: u32::MAX,
+        ..Default::default()
+    });
     doc.layers.push(Layer::new(
         "Text",
         LayerContent::Text(TextLayer {
             text: "ab".into(),
-            runs: vec![TextRun { len: 1, style: CharStyle::default() }, TextRun { len: usize::MAX, style: CharStyle { size_pt: 24.0, ..Default::default() } }],
+            runs: vec![
+                TextRun {
+                    len: 1,
+                    style: CharStyle::default(),
+                },
+                TextRun {
+                    len: usize::MAX,
+                    style: CharStyle {
+                        size_pt: 24.0,
+                        ..Default::default()
+                    },
+                },
+            ],
             paragraphs: vec![
-                photocraft_doc::text::ParagraphRun { len: 1, style: ParagraphStyle::default() },
-                photocraft_doc::text::ParagraphRun { len: usize::MAX, style: ParagraphStyle::default() },
+                photocraft_doc::text::ParagraphRun {
+                    len: 1,
+                    style: ParagraphStyle::default(),
+                },
+                photocraft_doc::text::ParagraphRun {
+                    len: usize::MAX,
+                    style: ParagraphStyle::default(),
+                },
             ],
             ..Default::default()
         }),
@@ -206,11 +309,19 @@ fn exhausted_document_ids_and_maximal_text_runs_roundtrip() {
     assert_eq!(loaded.slices.next_id(), None);
     assert_eq!(loaded.text_styles.next_char_id(), None);
     assert_eq!(loaded.text_styles.next_para_id(), None);
-    let LayerContent::Text(text) = &loaded.layers.last().unwrap().content else { panic!("text layer must roundtrip") };
-    assert_eq!(text.char_runs().iter().map(|r| r.len).sum::<usize>(), text.text.len());
+    let LayerContent::Text(text) = &loaded.layers.last().unwrap().content else {
+        panic!("text layer must roundtrip")
+    };
+    assert_eq!(
+        text.char_runs().iter().map(|r| r.len).sum::<usize>(),
+        text.text.len()
+    );
     assert_eq!(text.char_runs()[1].len, 1);
     assert_eq!(text.char_runs()[1].style.size_pt, 24.0);
-    assert_eq!(text.paragraph_runs().iter().map(|r| r.len).sum::<usize>(), text.text.len());
+    assert_eq!(
+        text.paragraph_runs().iter().map(|r| r.len).sum::<usize>(),
+        text.text.len()
+    );
 }
 
 #[test]
@@ -226,7 +337,11 @@ fn zip_incremental_only_new_tiles() {
     assert_eq!(s2.blobs_written, 0);
     // Touch one pixel of one layer: exactly one tile is new.
     let id = doc.layers[1].id;
-    doc.layer_mut(id).unwrap().surface_mut().unwrap().write_pixel(3, 3, &[0.5, 0.5, 0.5, 1.0]);
+    doc.layer_mut(id)
+        .unwrap()
+        .surface_mut()
+        .unwrap()
+        .write_pixel(3, 3, &[0.5, 0.5, 0.5, 1.0]);
     let (bytes, s3) = w.save_zip(&doc, &SaveOptions::default()).unwrap();
     assert_eq!(s3.tiles_written, 1);
     assert_eq!(load_from_bytes(&bytes).unwrap(), doc);
@@ -243,7 +358,9 @@ fn directory_incremental_and_gc() {
     assert_eq!(s2_same_writer.tiles_written, 0);
     assert_eq!(s2_same_writer.tiles_reused, s2_same_writer.tiles_total);
     // A fresh writer still skips files already on disk.
-    let s2 = PcraftWriter::new().save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
+    let s2 = PcraftWriter::new()
+        .save_dir(&doc, &dir, &SaveOptions::default())
+        .unwrap();
     assert_eq!(s2.tiles_written, 0);
     assert_eq!(s2.objects_removed, 0);
     // Delete a layer: its unique tiles get garbage-collected.
@@ -269,8 +386,15 @@ fn directory_save_rejects_object_directory_symlink_without_deleting_external_obj
     std::fs::write(&external_object, b"keep this object").unwrap();
     symlink(&outside, dir.join("tiles")).unwrap();
 
-    assert!(PcraftWriter::new().save_dir(&doc, &dir, &SaveOptions::default()).is_err());
-    assert_eq!(std::fs::read(&external_object).unwrap(), b"keep this object");
+    assert!(
+        PcraftWriter::new()
+            .save_dir(&doc, &dir, &SaveOptions::default())
+            .is_err()
+    );
+    assert_eq!(
+        std::fs::read(&external_object).unwrap(),
+        b"keep this object"
+    );
     assert!(!dir.join("manifest.json").exists());
 
     std::fs::remove_file(dir.join("tiles")).unwrap();
@@ -287,16 +411,35 @@ fn directory_save_rejects_object_symlink_without_overwriting_target() {
     let dir = temp_dir("symlink-object");
     let outside = temp_dir("symlink-object-outside");
     let mut writer = PcraftWriter::new();
-    writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
-    let object = std::fs::read_dir(dir.join("tiles")).unwrap().next().unwrap().unwrap().path();
+    writer
+        .save_dir(&doc, &dir, &SaveOptions::default())
+        .unwrap();
+    let object = std::fs::read_dir(dir.join("tiles"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
     std::fs::remove_file(&object).unwrap();
     let external_object = outside.join("external.zst");
     std::fs::write(&external_object, b"do not overwrite").unwrap();
     symlink(&external_object, &object).unwrap();
 
-    assert!(writer.save_dir(&doc, &dir, &SaveOptions::default()).is_err());
-    assert_eq!(std::fs::read(&external_object).unwrap(), b"do not overwrite");
-    assert!(std::fs::symlink_metadata(&object).unwrap().file_type().is_symlink());
+    assert!(
+        writer
+            .save_dir(&doc, &dir, &SaveOptions::default())
+            .is_err()
+    );
+    assert_eq!(
+        std::fs::read(&external_object).unwrap(),
+        b"do not overwrite"
+    );
+    assert!(
+        std::fs::symlink_metadata(&object)
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
 
     std::fs::remove_dir_all(dir).unwrap();
     std::fs::remove_dir_all(outside).unwrap();
@@ -312,10 +455,14 @@ fn directory_save_accepts_chosen_root_symlink_but_rejects_preview_symlink() {
     let root_link_parent = temp_dir("symlink-root-parent");
     let root_link = root_link_parent.join("linked.pcraft");
     symlink(&outside, &root_link).unwrap();
-    PcraftWriter::new().save_dir(&doc, &root_link, &SaveOptions::default()).unwrap();
+    PcraftWriter::new()
+        .save_dir(&doc, &root_link, &SaveOptions::default())
+        .unwrap();
     assert_eq!(load_path(&root_link).unwrap(), doc);
     let trailing_separator = std::path::PathBuf::from(format!("{}/", root_link.display()));
-    PcraftWriter::new().save_dir(&doc, &trailing_separator, &SaveOptions::default()).unwrap();
+    PcraftWriter::new()
+        .save_dir(&doc, &trailing_separator, &SaveOptions::default())
+        .unwrap();
     assert!(outside.join("manifest.json").is_file());
 
     let dir = temp_dir("symlink-preview");
@@ -323,7 +470,10 @@ fn directory_save_accepts_chosen_root_symlink_but_rejects_preview_symlink() {
     std::fs::write(&external_preview, b"keep preview").unwrap();
     std::fs::create_dir(dir.join("composite")).unwrap();
     symlink(&external_preview, dir.join("composite/preview.png")).unwrap();
-    let opts = SaveOptions { composite: Some(Rgba8Image::new(2, 2)), ..Default::default() };
+    let opts = SaveOptions {
+        composite: Some(Rgba8Image::new(2, 2)),
+        ..Default::default()
+    };
     assert!(PcraftWriter::new().save_dir(&doc, &dir, &opts).is_err());
     assert_eq!(std::fs::read(&external_preview).unwrap(), b"keep preview");
     assert!(!dir.join("manifest.json").exists());
@@ -346,7 +496,11 @@ fn directory_save_rejects_manifest_symlink_without_overwriting_target() {
     std::fs::write(&external_manifest, b"keep manifest").unwrap();
     symlink(&external_manifest, dir.join("manifest.json")).unwrap();
 
-    assert!(PcraftWriter::new().save_dir(&doc, &dir, &SaveOptions::default()).is_err());
+    assert!(
+        PcraftWriter::new()
+            .save_dir(&doc, &dir, &SaveOptions::default())
+            .is_err()
+    );
     assert_eq!(std::fs::read(&external_manifest).unwrap(), b"keep manifest");
     assert_eq!(std::fs::read_dir(dir.join("tiles")).unwrap().count(), 0);
 
@@ -356,13 +510,20 @@ fn directory_save_rejects_manifest_symlink_without_overwriting_target() {
 
 #[test]
 fn identical_tiles_are_stored_once() {
-    let mut doc = Document::new("d", photocraft_doc::Size::new(10, 10), ColorMode::Rgb, SampleType::U8);
+    let mut doc = Document::new(
+        "d",
+        photocraft_doc::Size::new(10, 10),
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
     let mut a = Layer::raster("a", doc.pixel_format());
     scribble(a.surface_mut().unwrap(), 5, false);
     let b = a.duplicate();
     doc.layers.push(a);
     doc.layers.push(b);
-    let (_, s) = PcraftWriter::new().save_zip(&doc, &SaveOptions::default()).unwrap();
+    let (_, s) = PcraftWriter::new()
+        .save_zip(&doc, &SaveOptions::default())
+        .unwrap();
     let per_layer = doc.layers[0].surface().unwrap().tile_count();
     assert_eq!(s.tiles_total, per_layer);
 }
@@ -376,16 +537,29 @@ fn solid_fill_reopens_with_one_shared_tile() {
         let size = photocraft_doc::Size::new(2048, 2048);
         let mut doc = Document::new("d", size, ColorMode::Rgb, depth);
         let mut l = Layer::raster("solid", doc.pixel_format());
-        l.surface_mut().unwrap().fill_rect(photocraft_geom::Rect::from_size(size), &[1.0, 0.5, 0.25, 1.0]);
+        l.surface_mut().unwrap().fill_rect(
+            photocraft_geom::Rect::from_size(size),
+            &[1.0, 0.5, 0.25, 1.0],
+        );
         doc.layers.push(l);
         let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
         let one_tile = (256 * 256 * doc.pixel_format().bytes_per_pixel()) as u64;
-        let back = load_from_bytes_with(&bytes, &LoadOptions { max_total_bytes: one_tile, ..Default::default() }).unwrap();
+        let back = load_from_bytes_with(
+            &bytes,
+            &LoadOptions {
+                max_total_bytes: one_tile,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(back, doc, "{depth:?}");
         let s = back.layers[0].surface().unwrap();
         assert_eq!(s.tile_count(), 64, "{depth:?}");
         let first = s.tiles().next().unwrap().1;
-        assert!(s.tiles().all(|(_, t)| std::sync::Arc::ptr_eq(t, first)), "{depth:?}: tiles not shared after reopening");
+        assert!(
+            s.tiles().all(|(_, t)| std::sync::Arc::ptr_eq(t, first)),
+            "{depth:?}: tiles not shared after reopening"
+        );
     }
 }
 
@@ -406,14 +580,24 @@ fn ids_preserved_and_counter_advanced() {
     }
     let back = load_from_bytes(&z.finish().unwrap()).unwrap();
     assert_eq!(back.layers[0].id.0, big);
-    assert!(LayerId::fresh().0 > big, "fresh ids must not collide with loaded ids");
+    assert!(
+        LayerId::fresh().0 > big,
+        "fresh ids must not collide with loaded ids"
+    );
 }
 
 #[test]
 fn fresh_ids_option() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
-    let back = load_from_bytes_with(&bytes, &LoadOptions { preserve_ids: false, ..Default::default() }).unwrap();
+    let back = load_from_bytes_with(
+        &bytes,
+        &LoadOptions {
+            preserve_ids: false,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     assert_ne!(back.id, doc.id);
     assert_ne!(back.layers[0].id, doc.layers[0].id);
     assert_eq!(back.layers.len(), doc.layers.len());
@@ -424,8 +608,15 @@ fn fresh_ids_option() {
 fn previews_embedded_and_readable() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let mut thumb = Rgba8Image::new(4, 3);
-    thumb.pixels.iter_mut().enumerate().for_each(|(i, p)| *p = i as u8);
-    let opts = SaveOptions { thumbnail: Some(thumb.clone()), composite: Some(thumb.clone()) };
+    thumb
+        .pixels
+        .iter_mut()
+        .enumerate()
+        .for_each(|(i, p)| *p = i as u8);
+    let opts = SaveOptions {
+        thumbnail: Some(thumb.clone()),
+        composite: Some(thumb.clone()),
+    };
     let bytes = save_to_bytes(&doc, &opts).unwrap();
     let png = read_thumbnail(&bytes).unwrap().unwrap();
     let img = photocraft_codecs::decode(&png).unwrap();
@@ -434,7 +625,11 @@ fn previews_embedded_and_readable() {
     let m = read_manifest(&bytes).unwrap();
     assert_eq!(m.composite.as_deref(), Some("composite/preview.png"));
     assert_eq!(m.format_version, FORMAT_VERSION);
-    assert!(read_thumbnail(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap().is_none());
+    assert!(
+        read_thumbnail(&save_to_bytes(&doc, &SaveOptions::default()).unwrap())
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -447,7 +642,11 @@ fn manifest_is_human_readable_json() {
     assert!(text.contains("\"format_version\": 1"));
     assert!(text.contains("\"Hue/Sat\""));
     assert!(text.contains("filter.blur.gaussian"));
-    assert!(r.entries.iter().any(|e| e.name.starts_with("tiles/") && e.name.ends_with(".zst")));
+    assert!(
+        r.entries
+            .iter()
+            .any(|e| e.name.starts_with("tiles/") && e.name.ends_with(".zst"))
+    );
     assert!(r.entries.iter().any(|e| e.name.starts_with("blobs/")));
 }
 
@@ -475,7 +674,11 @@ fn vector_fields_roundtrip_and_default_when_absent() {
     assert_eq!(back.paths, doc.paths);
     assert_eq!(back.work_path, doc.work_path);
     assert_eq!(back.clipping_path, doc.clipping_path);
-    let vm = |d: &Document| d.walk().into_iter().find_map(|(_, _, l)| l.vector_mask.clone());
+    let vm = |d: &Document| {
+        d.walk()
+            .into_iter()
+            .find_map(|(_, _, l)| l.vector_mask.clone())
+    };
     assert!(vm(&back).is_some());
     assert_eq!(vm(&back), vm(&doc));
     // Manifests written before the vector fields existed still load (serde defaults).
@@ -515,12 +718,24 @@ fn text_kerning_roundtrips_and_defaults() {
         d.walk()
             .into_iter()
             .find_map(|(_, _, l)| match &l.content {
-                LayerContent::Text(t) => Some(t.runs.iter().map(|r| (r.len, r.style.kerning, r.style.kern)).collect::<Vec<_>>()),
+                LayerContent::Text(t) => Some(
+                    t.runs
+                        .iter()
+                        .map(|r| (r.len, r.style.kerning, r.style.kern))
+                        .collect::<Vec<_>>(),
+                ),
                 _ => None,
             })
             .unwrap()
     };
-    assert_eq!(runs(&back), vec![(1, Kerning::Off, 120.0), (5, Kerning::Metrics, 0.0), (9, Kerning::Optical, 0.0)]);
+    assert_eq!(
+        runs(&back),
+        vec![
+            (1, Kerning::Off, 120.0),
+            (5, Kerning::Metrics, 0.0),
+            (9, Kerning::Optical, 0.0)
+        ]
+    );
     assert_eq!(runs(&back), runs(&doc));
     let m = read_manifest(&bytes).unwrap();
     let mut v = serde_json::to_value(&m.document).unwrap();
@@ -548,18 +763,37 @@ fn path_text_shape_roundtrips() {
     use photocraft_doc::vector::Subpath;
     let mut doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let path = Subpath::polyline(&[(0.0, 0.0), (50.0, 20.0), (120.0, 5.5)]);
-    let ids: Vec<LayerId> = doc.walk().into_iter().filter(|(_, _, l)| matches!(l.content, LayerContent::Text(_))).map(|(_, _, l)| l.id).collect();
+    let ids: Vec<LayerId> = doc
+        .walk()
+        .into_iter()
+        .filter(|(_, _, l)| matches!(l.content, LayerContent::Text(_)))
+        .map(|(_, _, l)| l.id)
+        .collect();
     for id in ids {
         if let Some(LayerContent::Text(t)) = doc.layer_mut(id).map(|l| &mut l.content) {
-            t.shape = TextShape::Path { path: path.clone(), start: 12.5, flip: true };
+            t.shape = TextShape::Path {
+                path: path.clone(),
+                start: 12.5,
+                flip: true,
+            };
         }
     }
     let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
-    let shape = back.walk().into_iter().find_map(|(_, _, l)| match &l.content {
-        LayerContent::Text(t) => Some(t.shape.clone()),
-        _ => None,
-    });
-    assert_eq!(shape, Some(TextShape::Path { path, start: 12.5, flip: true }));
+    let shape = back
+        .walk()
+        .into_iter()
+        .find_map(|(_, _, l)| match &l.content {
+            LayerContent::Text(t) => Some(t.shape.clone()),
+            _ => None,
+        });
+    assert_eq!(
+        shape,
+        Some(TextShape::Path {
+            path,
+            start: 12.5,
+            flip: true
+        })
+    );
 }
 
 #[test]
@@ -586,9 +820,24 @@ fn channel_restrictions_and_bevel_elements_roundtrip() {
         contour: None,
         texture: None,
     };
-    b.contour = Some(BevelContour { contour: Contour::Linear, range: 0.3, anti_alias: true });
-    b.texture = Some(BevelTexture { name: "p".into(), id: "i".into(), scale: 0.5, depth: -1.5, invert: true, link: false, phase: (1.0, 2.0) });
-    doc.layers[0].effects.items.push(Effect::BevelEmboss(Bevel { ..b }));
+    b.contour = Some(BevelContour {
+        contour: Contour::Linear,
+        range: 0.3,
+        anti_alias: true,
+    });
+    b.texture = Some(BevelTexture {
+        name: "p".into(),
+        id: "i".into(),
+        scale: 0.5,
+        depth: -1.5,
+        invert: true,
+        link: false,
+        phase: (1.0, 2.0),
+    });
+    doc.layers[0]
+        .effects
+        .items
+        .push(Effect::BevelEmboss(Bevel { ..b }));
     let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
     assert_eq!(back, doc);
     assert_eq!(back.layers[0].excluded_channels, 0b101);
@@ -599,8 +848,26 @@ fn blend_if_roundtrips() {
     use photocraft_doc::{BlendIf, BlendRange};
     let mut doc = rich_doc(ColorMode::Rgb, SampleType::U16);
     let mut bi = BlendIf::default();
-    bi.set(0, [BlendRange { black: [20, 60], white: [255, 255] }, BlendRange::FULL]);
-    bi.set(3, [BlendRange::FULL, BlendRange { black: [0, 0], white: [180, 220] }]);
+    bi.set(
+        0,
+        [
+            BlendRange {
+                black: [20, 60],
+                white: [255, 255],
+            },
+            BlendRange::FULL,
+        ],
+    );
+    bi.set(
+        3,
+        [
+            BlendRange::FULL,
+            BlendRange {
+                black: [0, 0],
+                white: [180, 220],
+            },
+        ],
+    );
     doc.layers[0].blend_if = bi.clone();
     let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
     assert_eq!(back, doc);
@@ -636,7 +903,12 @@ fn advanced_blending_roundtrips_and_defaults_when_absent() {
         // Only the non-default layers carry the field.
         let m = read_manifest(&bytes).unwrap();
         let v = serde_json::to_value(&m.document).unwrap();
-        let with = v["layers"].as_array().unwrap().iter().filter(|l| l.get("advanced").is_some()).count();
+        let with = v["layers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|l| l.get("advanced").is_some())
+            .count();
         assert_eq!(with, if doc.layers.len() > 1 { 2 } else { 1 });
         // An older manifest (no `advanced`) loads with the defaults.
         let mut old = v.clone();
@@ -652,7 +924,15 @@ fn advanced_blending_roundtrips_and_defaults_when_absent() {
 fn video_layer_frames_survive_roundtrip() {
     use photocraft_doc::{Timeline, VideoData, VideoSource};
     use photocraft_geom::Rect;
-    let mut doc = Document::new("Vid", photocraft_geom::Size { width: 8, height: 6 }, ColorMode::Rgb, SampleType::U8);
+    let mut doc = Document::new(
+        "Vid",
+        photocraft_geom::Size {
+            width: 8,
+            height: 6,
+        },
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
     doc.timeline = Some(Timeline::new(3, 24.0));
     let fmt = doc.pixel_format();
     let mut l = Layer::raster("Clip", fmt);
@@ -660,30 +940,53 @@ fn video_layer_frames_survive_roundtrip() {
     for i in 0..3u8 {
         let mut s = photocraft_raster::Surface::new(fmt);
         let v = i as f32 / 2.0;
-        s.fill_rect(Rect::new(0, 0, 8, 6), &photocraft_raster::from_rgba(&fmt, [v, 0.0, 1.0 - v, 1.0]));
+        s.fill_rect(
+            Rect::new(0, 0, 8, 6),
+            &photocraft_raster::from_rgba(&fmt, [v, 0.0, 1.0 - v, 1.0]),
+        );
         frames.push(s);
     }
     let mut vd = VideoData::new(frames, 24.0);
     vd.original_frames = Some(vd.frames.clone());
-    vd.source = VideoSource::File { path: "/tmp/seq".into() };
+    vd.source = VideoSource::File {
+        path: "/tmp/seq".into(),
+    };
     vd.show_altered = false;
     l.video = Some(vd);
     doc.layers.push(l);
 
     let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
     let back = load_from_bytes(&bytes).unwrap();
-    let v = back.layers.last().unwrap().video.as_ref().expect("video survived");
+    let v = back
+        .layers
+        .last()
+        .unwrap()
+        .video
+        .as_ref()
+        .expect("video survived");
     assert_eq!(v.frames.len(), 3);
     assert_eq!(v.original_frames.as_ref().map(Vec::len), Some(3));
-    assert_eq!(v.original_frames.as_ref().unwrap()[2].rgba(1, 1), v.frames[2].rgba(1, 1));
+    assert_eq!(
+        v.original_frames.as_ref().unwrap()[2].rgba(1, 1),
+        v.frames[2].rgba(1, 1)
+    );
     assert_eq!(v.fps, 24.0);
     assert!(!v.show_altered);
-    assert_eq!(v.source, VideoSource::File { path: "/tmp/seq".into() });
+    assert_eq!(
+        v.source,
+        VideoSource::File {
+            path: "/tmp/seq".into()
+        }
+    );
     assert_eq!(back.timeline.as_ref().unwrap().duration, 3);
     // A middle frame's pixel survived.
     let mut px = [[0.0f32; 4]; 1];
     v.frames[2].read_rgba_into(Rect::from_xywh(1, 1, 1, 1), &mut px);
-    assert!(px[0][0] > 0.9 && px[0][2] < 0.1, "frame 2 is reddish: {:?}", px[0]);
+    assert!(
+        px[0][0] > 0.9 && px[0][2] < 0.1,
+        "frame 2 is reddish: {:?}",
+        px[0]
+    );
 }
 
 /// Issue #1101: serde_json writes NaN and the infinities as `null`, which the manifest's float
@@ -698,7 +1001,17 @@ fn a_non_finite_float_is_refused_at_save_rather_than_breaking_every_later_load()
         (
             "exposure",
             Box::new(|d| {
-                d.insert_above(None, Layer::new("adj", LayerContent::Adjustment(Adjustment::Exposure { exposure: f32::NAN, offset: 0.0, gamma: 1.0 })));
+                d.insert_above(
+                    None,
+                    Layer::new(
+                        "adj",
+                        LayerContent::Adjustment(Adjustment::Exposure {
+                            exposure: f32::NAN,
+                            offset: 0.0,
+                            gamma: 1.0,
+                        }),
+                    ),
+                );
             }),
         ),
         (
@@ -706,26 +1019,58 @@ fn a_non_finite_float_is_refused_at_save_rather_than_breaking_every_later_load()
             Box::new(|d| {
                 d.insert_above(
                     None,
-                    Layer::new("adj", LayerContent::Adjustment(Adjustment::Exposure { exposure: 0.0, offset: 0.0, gamma: f32::NEG_INFINITY })),
+                    Layer::new(
+                        "adj",
+                        LayerContent::Adjustment(Adjustment::Exposure {
+                            exposure: 0.0,
+                            offset: 0.0,
+                            gamma: f32::NEG_INFINITY,
+                        }),
+                    ),
                 );
             }),
         ),
-        ("resolution_dpi", Box::new(|d| d.resolution_dpi = f32::INFINITY)),
+        (
+            "resolution_dpi",
+            Box::new(|d| d.resolution_dpi = f32::INFINITY),
+        ),
     ];
     for (field, mutate) in cases {
         let mut doc = base.clone();
         mutate(&mut doc);
         let err = save_to_bytes(&doc, &SaveOptions::default()).expect_err(field);
-        assert!(matches!(err, FormatError::NonFinite { .. }), "{field}: {err:?}");
+        assert!(
+            matches!(err, FormatError::NonFinite { .. }),
+            "{field}: {err:?}"
+        );
         let msg = err.to_string();
-        assert!(msg.contains(field) && msg.contains("NaN or infinite"), "{field}: {msg}");
+        assert!(
+            msg.contains(field) && msg.contains("NaN or infinite"),
+            "{field}: {msg}"
+        );
         // The incremental writer shares the check, for autosave and directory bundles.
         let mut w = PcraftWriter::new();
-        assert!(matches!(w.save_zip(&doc, &SaveOptions::default()), Err(FormatError::NonFinite { .. })), "{field}: PcraftWriter");
+        assert!(
+            matches!(
+                w.save_zip(&doc, &SaveOptions::default()),
+                Err(FormatError::NonFinite { .. })
+            ),
+            "{field}: PcraftWriter"
+        );
     }
     // The same document with finite values round-trips as before.
     let mut doc = base.clone();
-    doc.insert_above(None, Layer::new("adj", LayerContent::Adjustment(Adjustment::Exposure { exposure: 0.5, offset: 0.0, gamma: 1.0 })));
+    doc.insert_above(
+        None,
+        Layer::new(
+            "adj",
+            LayerContent::Adjustment(Adjustment::Exposure {
+                exposure: 0.5,
+                offset: 0.0,
+                gamma: 1.0,
+            }),
+        ),
+    );
     let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
     assert_eq!(back, doc);
 }

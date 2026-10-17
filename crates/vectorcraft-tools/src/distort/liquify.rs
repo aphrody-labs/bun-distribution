@@ -218,7 +218,11 @@ impl LiquifyParams {
 
     /// How far off the chord Simplify removes anchors (0: Simplify is off or not an option).
     fn simplify_tolerance(&self) -> f64 {
-        if self.kind.simplifies() && self.simplify_on { self.simplify / 100.0 * self.detail_spacing() * 0.02 } else { 0.0 }
+        if self.kind.simplifies() && self.simplify_on {
+            self.simplify / 100.0 * self.detail_spacing() * 0.02
+        } else {
+            0.0
+        }
     }
 
     fn radii(&self) -> (f64, f64) {
@@ -235,7 +239,9 @@ impl LiquifyParams {
     fn detail_spacing(&self) -> f64 {
         let (rx, ry) = self.radii();
         let extra = match self.kind {
-            LiquifyKind::Scallop | LiquifyKind::Crystallize | LiquifyKind::Wrinkle => 1.0 + self.complexity * 0.5,
+            LiquifyKind::Scallop | LiquifyKind::Crystallize | LiquifyKind::Wrinkle => {
+                1.0 + self.complexity * 0.5
+            }
             _ => 1.0,
         };
         (rx.min(ry) * 2.0 / (self.detail * 2.0 + 1.0) / extra).max(0.5)
@@ -264,7 +270,11 @@ pub fn dabs(points: &[Point], spacing: f64) -> Vec<Point> {
     for p in points {
         d.push((*p, 1.0));
     }
-    d.dabs.iter().chain(d.tail().as_ref()).map(|d| d.c).collect()
+    d.dabs
+        .iter()
+        .chain(d.tail().as_ref())
+        .map(|d| d.c)
+        .collect()
 }
 
 /// One brush dab: its centre and intensity (0..1).
@@ -300,11 +310,20 @@ pub struct Dabber {
 impl Dabber {
     /// The dabs of a stroke with brush `prm`.
     pub fn new(prm: &LiquifyParams) -> Self {
-        Self::with(prm.dab_spacing(), (!prm.use_pressure).then_some(prm.intensity), prm.kind.holds())
+        Self::with(
+            prm.dab_spacing(),
+            (!prm.use_pressure).then_some(prm.intensity),
+            prm.kind.holds(),
+        )
     }
 
     fn with(spacing: f64, intensity: Option<f64>, holds: bool) -> Self {
-        Self { spacing, intensity, holds, ..Self::default() }
+        Self {
+            spacing,
+            intensity,
+            holds,
+            ..Self::default()
+        }
     }
 
     /// The samples so far.
@@ -313,7 +332,10 @@ impl Dabber {
     }
 
     fn dab(&self, c: Point, pressure: f64) -> Dab {
-        Dab { c, intensity: self.intensity.unwrap_or(pressure.clamp(0.0, 1.0)) }
+        Dab {
+            c,
+            intensity: self.intensity.unwrap_or(pressure.clamp(0.0, 1.0)),
+        }
     }
 
     /// Add a sample, and the dabs up to it.
@@ -379,8 +401,17 @@ fn subdivide(sp: &mut SubPath, prm: &LiquifyParams, c: Point, spacing: f64) {
         }
         let cub = sp.segment(seg);
         let sb = vectorcraft_geom::kurbo::ParamCurveExtrema::bounding_box(&cub);
-        let touched = sb.intersect(bb).area() > 0.0 || (sb.width() == 0.0 || sb.height() == 0.0) && sb.inflate(1e-6, 1e-6).intersect(bb).area() > 0.0;
-        if !touched || !(0..=8).any(|i| prm.falloff(c, vectorcraft_geom::kurbo::ParamCurve::eval(&cub, i as f64 / 8.0)) > 0.0) {
+        let touched = sb.intersect(bb).area() > 0.0
+            || (sb.width() == 0.0 || sb.height() == 0.0)
+                && sb.inflate(1e-6, 1e-6).intersect(bb).area() > 0.0;
+        if !touched
+            || !(0..=8).any(|i| {
+                prm.falloff(
+                    c,
+                    vectorcraft_geom::kurbo::ParamCurve::eval(&cub, i as f64 / 8.0),
+                ) > 0.0
+            })
+        {
             seg += 1;
             continue;
         }
@@ -409,7 +440,16 @@ fn subdivide(sp: &mut SubPath, prm: &LiquifyParams, c: Point, spacing: f64) {
 
 /// Displace one point (`which`: 0 anchor, 1 in-handle, 2 out-handle).
 #[allow(clippy::too_many_arguments)]
-fn displace(prm: &LiquifyParams, c: Point, prev: Point, dab: u64, key: u64, q: Point, anchor_new: Option<Point>, anchor_old: Point) -> Point {
+fn displace(
+    prm: &LiquifyParams,
+    c: Point,
+    prev: Point,
+    dab: u64,
+    key: u64,
+    q: Point,
+    anchor_new: Option<Point>,
+    anchor_old: Point,
+) -> Point {
     let f = prm.falloff(c, q);
     let i = prm.intensity;
     let (rx, ry) = prm.radii();
@@ -431,7 +471,11 @@ fn displace(prm: &LiquifyParams, c: Point, prev: Point, dab: u64, key: u64, q: P
             Some(a) => {
                 // Handles swing sideways (curls) and stretch: arc-like details on the outline.
                 let h = q - anchor_old;
-                let phi = noise(dab, key, 7) * std::f64::consts::FRAC_PI_2 * i * f * (1.0 + prm.complexity * 0.2);
+                let phi = noise(dab, key, 7)
+                    * std::f64::consts::FRAC_PI_2
+                    * i
+                    * f
+                    * (1.0 + prm.complexity * 0.2);
                 let (s, co) = phi.sin_cos();
                 a + Vec2::new(h.x * co - h.y * s, h.x * s + h.y * co) * (1.0 + 0.6 * i * f)
             }
@@ -443,13 +487,23 @@ fn displace(prm: &LiquifyParams, c: Point, prev: Point, dab: u64, key: u64, q: P
         },
         LiquifyKind::Wrinkle => {
             let amp = i * f * 0.06 * r * (1.0 + prm.complexity * 0.1);
-            q + Vec2::new(noise(dab, key, 11) * prm.horizontal * amp, noise(dab, key, 13) * prm.vertical * amp)
+            q + Vec2::new(
+                noise(dab, key, 11) * prm.horizontal * amp,
+                noise(dab, key, 13) * prm.vertical * amp,
+            )
         }
     }
 }
 
 /// Apply one dab to a subpath (after subdivision).
-fn apply_dab(sp: &mut SubPath, prm: &LiquifyParams, c: Point, prev: Point, dab: u64, salt: u64) -> bool {
+fn apply_dab(
+    sp: &mut SubPath,
+    prm: &LiquifyParams,
+    c: Point,
+    prev: Point,
+    dab: u64,
+    salt: u64,
+) -> bool {
     let bb = prm.brush_bounds(c);
     let mut changed = false;
     for (ai, a) in sp.anchors.iter_mut().enumerate() {
@@ -458,7 +512,11 @@ fn apply_dab(sp: &mut SubPath, prm: &LiquifyParams, c: Point, prev: Point, dab: 
         }
         let key = hash(salt ^ (ai as u64).wrapping_mul(0x9e37_79b9));
         let old = *a;
-        let np = if prm.affect_anchors { displace(prm, c, prev, dab, key, old.p, None, old.p) } else { old.p };
+        let np = if prm.affect_anchors {
+            displace(prm, c, prev, dab, key, old.p, None, old.p)
+        } else {
+            old.p
+        };
         let moved = np - old.p;
         let handle = |h: Point, affect: bool, k: u64| -> Point {
             if h.distance(old.p) < 1e-12 {
@@ -468,7 +526,9 @@ fn apply_dab(sp: &mut SubPath, prm: &LiquifyParams, c: Point, prev: Point, dab: 
                 return h + moved;
             }
             match prm.kind {
-                LiquifyKind::Scallop | LiquifyKind::Crystallize => displace(prm, c, prev, dab, key ^ k, h, Some(np), old.p),
+                LiquifyKind::Scallop | LiquifyKind::Crystallize => {
+                    displace(prm, c, prev, dab, key ^ k, h, Some(np), old.p)
+                }
                 _ => displace(prm, c, prev, dab, key ^ k, h, None, old.p),
             }
         };
@@ -480,7 +540,11 @@ fn apply_dab(sp: &mut SubPath, prm: &LiquifyParams, c: Point, prev: Point, dab: 
                 p: np,
                 h_in: hi,
                 h_out: ho,
-                kind: if old.kind == AnchorKind::Smooth && prm.kind == LiquifyKind::Crystallize { AnchorKind::Corner } else { old.kind },
+                kind: if old.kind == AnchorKind::Smooth && prm.kind == LiquifyKind::Crystallize {
+                    AnchorKind::Corner
+                } else {
+                    old.kind
+                },
             };
         }
     }
@@ -516,7 +580,9 @@ fn simplify(sp: &mut SubPath, tol: f64, region: Rect) {
         }
         let (pa, k, pb) = (sp.anchors[i - 1], sp.anchors[i], sp.anchors[(i + 1) % n]);
         let flat = region.contains(k.p)
-            && [k.p, k.h_in, k.h_out, pa.h_out, pb.h_in].iter().all(|q| dist_seg(*q, pa.p, pb.p) <= tol)
+            && [k.p, k.h_in, k.h_out, pa.h_out, pb.h_in]
+                .iter()
+                .all(|q| dist_seg(*q, pa.p, pb.p) <= tol)
             && (k.p - pa.p).dot(pb.p - k.p) > 0.0;
         if flat {
             let lab = pa.p.distance(pb.p);
@@ -532,8 +598,19 @@ fn simplify(sp: &mut SubPath, tol: f64, region: Rect) {
 
 /// Apply a liquify stroke (its dabs, at the brush's intensity) to `path`. `salt` decorrelates
 /// noise between paths. Returns whether anything moved.
-pub fn apply_stroke(path: &mut PathData, dab_pts: &[Point], prm: &LiquifyParams, salt: u64) -> bool {
-    let dabs: Vec<Dab> = dab_pts.iter().map(|c| Dab { c: *c, intensity: prm.intensity }).collect();
+pub fn apply_stroke(
+    path: &mut PathData,
+    dab_pts: &[Point],
+    prm: &LiquifyParams,
+    salt: u64,
+) -> bool {
+    let dabs: Vec<Dab> = dab_pts
+        .iter()
+        .map(|c| Dab {
+            c: *c,
+            intensity: prm.intensity,
+        })
+        .collect();
     let mut ps = PathStroke::new(std::mem::take(path), salt);
     ps.advance(&dabs, prm);
     match ps.finish(&dabs, None, prm) {
@@ -550,12 +627,24 @@ pub fn apply_stroke(path: &mut PathData, dab_pts: &[Point], prm: &LiquifyParams,
 
 /// Does the brush box `bb` reach subpath `sp`?
 fn touches(sp: &SubPath, bb: Rect) -> bool {
-    sp_bounds(sp).is_some_and(|spb| spb.intersect(bb).area() > 0.0 || spb.width() == 0.0 || spb.height() == 0.0)
+    sp_bounds(sp).is_some_and(|spb| {
+        spb.intersect(bb).area() > 0.0 || spb.width() == 0.0 || spb.height() == 0.0
+    })
 }
 
 /// Apply dab `d` (number `di`, after the dab at `prev`) to every subpath of `path` it reaches.
-fn dab_on(path: &mut PathData, di: usize, d: Dab, prev: Point, prm: &LiquifyParams, salt: u64) -> bool {
-    let prm = LiquifyParams { intensity: d.intensity, ..*prm };
+fn dab_on(
+    path: &mut PathData,
+    di: usize,
+    d: Dab,
+    prev: Point,
+    prm: &LiquifyParams,
+    salt: u64,
+) -> bool {
+    let prm = LiquifyParams {
+        intensity: d.intensity,
+        ..*prm
+    };
     let (bb, spacing) = (prm.brush_bounds(d.c), prm.detail_spacing());
     let mut changed = false;
     for (si, sp) in path.subpaths.iter_mut().enumerate() {
@@ -563,7 +652,14 @@ fn dab_on(path: &mut PathData, di: usize, d: Dab, prev: Point, prm: &LiquifyPara
             continue;
         }
         subdivide(sp, &prm, d.c, spacing);
-        changed |= apply_dab(sp, &prm, d.c, prev, di as u64, hash(salt ^ (si as u64 + 1).wrapping_mul(0x1234_5678_9abc_def1)));
+        changed |= apply_dab(
+            sp,
+            &prm,
+            d.c,
+            prev,
+            di as u64,
+            hash(salt ^ (si as u64 + 1).wrapping_mul(0x1234_5678_9abc_def1)),
+        );
     }
     changed
 }
@@ -583,14 +679,22 @@ pub struct PathStroke {
 
 impl PathStroke {
     pub fn new(path: PathData, salt: u64) -> Self {
-        Self { path, salt, applied: 0, region: None }
+        Self {
+            path,
+            salt,
+            applied: 0,
+            region: None,
+        }
     }
 
     /// Apply the stroke's dabs not applied yet.
     pub fn advance(&mut self, dabs: &[Dab], prm: &LiquifyParams) {
         for di in self.applied..dabs.len() {
             let Some(&d) = dabs.get(di) else { break };
-            let prev = di.checked_sub(1).and_then(|i| dabs.get(i)).map_or(d.c, |p| p.c);
+            let prev = di
+                .checked_sub(1)
+                .and_then(|i| dabs.get(i))
+                .map_or(d.c, |p| p.c);
             if dab_on(&mut self.path, di, d, prev, prm, self.salt) {
                 let bb = prm.brush_bounds(d.c);
                 self.region = Some(self.region.map_or(bb, |r| r.union(bb)));
@@ -604,9 +708,21 @@ impl PathStroke {
     pub fn finish(&self, dabs: &[Dab], tail: Option<Dab>, prm: &LiquifyParams) -> Option<PathData> {
         let mut region = self.region;
         let mut out = None;
-        if let Some(t) = tail.filter(|t| self.path.subpaths.iter().any(|sp| touches(sp, prm.brush_bounds(t.c)))) {
+        if let Some(t) = tail.filter(|t| {
+            self.path
+                .subpaths
+                .iter()
+                .any(|sp| touches(sp, prm.brush_bounds(t.c)))
+        }) {
             let mut p = self.path.clone();
-            if dab_on(&mut p, dabs.len(), t, dabs.last().map_or(t.c, |d| d.c), prm, self.salt) {
+            if dab_on(
+                &mut p,
+                dabs.len(),
+                t,
+                dabs.last().map_or(t.c, |d| d.c),
+                prm,
+                self.salt,
+            ) {
                 let bb = prm.brush_bounds(t.c);
                 region = Some(region.map_or(bb, |r| r.union(bb)));
             }
@@ -626,7 +742,10 @@ impl PathStroke {
 
 /// The box around every anchor and handle of `path`: no dab outside it changes the path.
 pub fn reach_bounds(path: &PathData) -> Option<Rect> {
-    path.subpaths.iter().filter_map(sp_bounds).reduce(|a, b| a.union(b))
+    path.subpaths
+        .iter()
+        .filter_map(sp_bounds)
+        .reduce(|a, b| a.union(b))
 }
 
 fn sp_bounds(sp: &SubPath) -> Option<Rect> {
@@ -668,7 +787,15 @@ pub struct LiquifyTool {
 impl LiquifyTool {
     pub fn new(id: &str) -> Self {
         let kind = LiquifyKind::parse(id).unwrap_or(LiquifyKind::Warp);
-        Self { params: LiquifyParams::new(kind), show_brush: true, points: vec![], active: false, sizing: None, hover: None, held: 0.0 }
+        Self {
+            params: LiquifyParams::new(kind),
+            show_brush: true,
+            points: vec![],
+            active: false,
+            sizing: None,
+            hover: None,
+            held: 0.0,
+        }
     }
 
     /// The command + params for the stroke so far (with each sample's pressure while Use Pressure
@@ -676,7 +803,18 @@ impl LiquifyTool {
     pub fn command(&self, cx: &ToolContext) -> (String, Value) {
         let mut v = self.params.to_json();
         let pressure = self.params.use_pressure;
-        v["points"] = Value::Array(self.points.iter().map(|(p, f)| if pressure { json!([p.x, p.y, f]) } else { json!([p.x, p.y]) }).collect());
+        v["points"] = Value::Array(
+            self.points
+                .iter()
+                .map(|(p, f)| {
+                    if pressure {
+                        json!([p.x, p.y, f])
+                    } else {
+                        json!([p.x, p.y])
+                    }
+                })
+                .collect(),
+        );
         if !cx.selection.is_empty() {
             v["ids"] = crate::json_ids(&cx.selection.objects);
         }
@@ -686,7 +824,10 @@ impl LiquifyTool {
     /// Alt-drag from `s` to `p`: the brush grows or shrinks from its size at the press (its edge
     /// follows the pointer); with Shift it keeps its proportions.
     fn resize(&mut self, s: Sizing, p: Point, proportional: bool) {
-        let (w, h) = (s.width + 2.0 * (p.x - s.start.x), s.height + 2.0 * (p.y - s.start.y));
+        let (w, h) = (
+            s.width + 2.0 * (p.x - s.start.x),
+            s.height + 2.0 * (p.y - s.start.y),
+        );
         let (w, h) = if !proportional {
             (w, h)
         } else if (p.x - s.start.x).abs() >= (p.y - s.start.y).abs() {
@@ -709,7 +850,11 @@ impl Tool for LiquifyTool {
         let sample = (p, f64::from(ev.pressure).clamp(0.0, 1.0));
         match ev.kind {
             PointerKind::Down if ev.mods.alt => {
-                self.sizing = Some(Sizing { start: p, width: self.params.width, height: self.params.height });
+                self.sizing = Some(Sizing {
+                    start: p,
+                    width: self.params.width,
+                    height: self.params.height,
+                });
                 vec![]
             }
             PointerKind::Down => {
@@ -717,7 +862,10 @@ impl Tool for LiquifyTool {
                 self.active = true;
                 self.held = 0.0;
                 let (c, v) = self.command(cx);
-                vec![Action::Begin(self.params.kind.label().into()), Action::Preview(c, v)]
+                vec![
+                    Action::Begin(self.params.kind.label().into()),
+                    Action::Preview(c, v),
+                ]
             }
             PointerKind::Drag => {
                 if let Some(s) = self.sizing {
@@ -725,7 +873,12 @@ impl Tool for LiquifyTool {
                     self.hover = Some(s.start);
                     return vec![];
                 }
-                if !self.active || self.points.last().is_some_and(|(l, _)| l.distance(p) < cx.tol(2.0)) {
+                if !self.active
+                    || self
+                        .points
+                        .last()
+                        .is_some_and(|(l, _)| l.distance(p) < cx.tol(2.0))
+                {
                     return vec![];
                 }
                 self.points.push(sample);
@@ -748,9 +901,19 @@ impl Tool for LiquifyTool {
         }
     }
     fn overlays(&self, _cx: &ToolContext) -> Vec<Overlay> {
-        let Some(c) = self.hover.filter(|_| self.show_brush || self.sizing.is_some()) else { return vec![] };
+        let Some(c) = self
+            .hover
+            .filter(|_| self.show_brush || self.sizing.is_some())
+        else {
+            return vec![];
+        };
         vec![Overlay::Path {
-            path: ellipse_path(c, self.params.width / 2.0, self.params.height / 2.0, self.params.angle),
+            path: ellipse_path(
+                c,
+                self.params.width / 2.0,
+                self.params.height / 2.0,
+                self.params.angle,
+            ),
             color: [0x80, 0x80, 0x80],
             width: 1.0,
             dashed: false,
@@ -789,7 +952,11 @@ impl Tool for LiquifyTool {
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         self.hover = None;
         self.sizing = None;
-        if std::mem::take(&mut self.active) { vec![Action::Commit] } else { vec![] }
+        if std::mem::take(&mut self.active) {
+            vec![Action::Commit]
+        } else {
+            vec![]
+        }
     }
     /// Held still: every [`HOLD_EVERY`] the last sample repeats (one more dab there).
     fn tick(&mut self, cx: &ToolContext, dt: f64) -> Vec<Action> {
@@ -804,7 +971,9 @@ impl Tool for LiquifyTool {
             n += 1;
         }
         self.held = self.held.clamp(0.0, HOLD_EVERY);
-        let Some(&last) = self.points.last().filter(|_| n > 0) else { return vec![] };
+        let Some(&last) = self.points.last().filter(|_| n > 0) else {
+            return vec![];
+        };
         self.points.extend(std::iter::repeat_n(last, n as usize));
         let (c, v) = self.command(cx);
         vec![Action::Preview(c, v)]
@@ -824,15 +993,24 @@ mod tests {
     }
 
     fn prm(kind: LiquifyKind) -> LiquifyParams {
-        LiquifyParams { intensity: 1.0, ..LiquifyParams::new(kind) }
+        LiquifyParams {
+            intensity: 1.0,
+            ..LiquifyParams::new(kind)
+        }
     }
 
     #[test]
     fn dabs_are_evenly_spaced() {
         let d = dabs(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0)], 10.0);
         assert_eq!(d.len(), 11);
-        assert!(d.windows(2).all(|w| (w[0].distance(w[1]) - 10.0).abs() < 1e-9));
-        assert_eq!(dabs(&[Point::new(5.0, 5.0)], 10.0), vec![Point::new(5.0, 5.0)]);
+        assert!(
+            d.windows(2)
+                .all(|w| (w[0].distance(w[1]) - 10.0).abs() < 1e-9)
+        );
+        assert_eq!(
+            dabs(&[Point::new(5.0, 5.0)], 10.0),
+            vec![Point::new(5.0, 5.0)]
+        );
     }
 
     #[test]
@@ -848,7 +1026,10 @@ mod tests {
         // The right edge bulged outward near y = 100; the left edge (x = 0) did not move.
         let bb = a.bounds().unwrap();
         assert!(bb.x1 > 210.0, "{bb:?}");
-        assert!(a.anchors().all(|(_, _, an)| an.p.x > 150.0 || (an.p.x - 0.0).abs() < 1e-9));
+        assert!(
+            a.anchors()
+                .all(|(_, _, an)| an.p.x > 150.0 || (an.p.x - 0.0).abs() < 1e-9)
+        );
         assert!(a.anchor_count() > 4, "detail added anchors");
         // Anchors outside the brush are untouched.
         assert!(a.anchors().any(|(_, _, an)| an.p == Point::new(0.0, 0.0)));
@@ -860,11 +1041,21 @@ mod tests {
         let p = prm(LiquifyKind::Pucker);
         let mut a = square();
         apply_stroke(&mut a, &[c], &p, 1);
-        let near = |pd: &PathData| pd.anchors().filter(|(_, _, an)| an.p.distance(c) < 50.0).map(|(_, _, an)| an.p.x).fold(f64::MIN, f64::max);
+        let near = |pd: &PathData| {
+            pd.anchors()
+                .filter(|(_, _, an)| an.p.distance(c) < 50.0)
+                .map(|(_, _, an)| an.p.x)
+                .fold(f64::MIN, f64::max)
+        };
         assert!(near(&a) <= 200.0 + 1e-9);
         let mut b = square();
         // A brush just inside the right edge bulges it outward; the far edges stay put.
-        apply_stroke(&mut b, &[Point::new(180.0, 100.0); 3], &prm(LiquifyKind::Bloat), 1);
+        apply_stroke(
+            &mut b,
+            &[Point::new(180.0, 100.0); 3],
+            &prm(LiquifyKind::Bloat),
+            1,
+        );
         let bb = b.bounds().unwrap();
         assert!(bb.x1 > 205.0, "{bb:?}");
         assert_eq!((bb.x0, bb.y0, bb.y1), (0.0, 0.0, 200.0));
@@ -873,8 +1064,15 @@ mod tests {
     #[test]
     fn twirl_rotates_about_the_brush_centre() {
         let c = Point::new(100.0, 100.0);
-        let mut pd = PathData::single(SubPath::polyline(&[Point::new(80.0, 100.0), Point::new(120.0, 100.0)], false));
-        let p = LiquifyParams { detail: 1.0, simplify: 0.0, ..prm(LiquifyKind::Twirl) };
+        let mut pd = PathData::single(SubPath::polyline(
+            &[Point::new(80.0, 100.0), Point::new(120.0, 100.0)],
+            false,
+        ));
+        let p = LiquifyParams {
+            detail: 1.0,
+            simplify: 0.0,
+            ..prm(LiquifyKind::Twirl)
+        };
         apply_stroke(&mut pd, &[c], &p, 0);
         // Rotation preserves every anchor's distance to the centre (ends at 20, the midpoint at 0).
         for (_, _, a) in pd.anchors() {
@@ -887,9 +1085,19 @@ mod tests {
 
     #[test]
     fn noisy_tools_are_reproducible() {
-        for kind in [LiquifyKind::Scallop, LiquifyKind::Crystallize, LiquifyKind::Wrinkle] {
-            let p = LiquifyParams { horizontal: 1.0, ..prm(kind) };
-            let d = dabs(&[Point::new(200.0, 50.0), Point::new(200.0, 150.0)], p.dab_spacing());
+        for kind in [
+            LiquifyKind::Scallop,
+            LiquifyKind::Crystallize,
+            LiquifyKind::Wrinkle,
+        ] {
+            let p = LiquifyParams {
+                horizontal: 1.0,
+                ..prm(kind)
+            };
+            let d = dabs(
+                &[Point::new(200.0, 50.0), Point::new(200.0, 150.0)],
+                p.dab_spacing(),
+            );
             let (mut a, mut b) = (square(), square());
             assert!(apply_stroke(&mut a, &d, &p, 3), "{kind:?}");
             apply_stroke(&mut b, &d, &p, 3);
@@ -905,7 +1113,8 @@ mod tests {
         p.width = 60.0;
         let q = LiquifyParams::from_json(&p.to_json()).unwrap();
         assert_eq!(p, q);
-        let r = LiquifyParams::from_json(&json!({"tool": "warp", "diameter": 40, "intensity": 80})).unwrap();
+        let r = LiquifyParams::from_json(&json!({"tool": "warp", "diameter": 40, "intensity": 80}))
+            .unwrap();
         assert_eq!((r.width, r.height, r.intensity), (40.0, 40.0, 0.8));
     }
 }

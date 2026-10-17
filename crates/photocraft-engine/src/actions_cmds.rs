@@ -23,7 +23,10 @@ use crate::commands::CommandSpec;
 use crate::{EngineError, Result, Session};
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 /// One recorded action. `steps` is the `[[id, params], …]` shape `file.automate.batch` and
@@ -49,7 +52,13 @@ pub struct Action {
 
 impl Action {
     pub fn new(name: impl Into<String>, steps: Vec<(String, Value)>) -> Self {
-        Self { name: name.into(), steps, disabled: BTreeSet::new(), dialogs: BTreeSet::new(), set: None }
+        Self {
+            name: name.into(),
+            steps,
+            disabled: BTreeSet::new(),
+            dialogs: BTreeSet::new(),
+            set: None,
+        }
     }
 
     /// Apply `f` to every per-step index set (`disabled`, `dialogs`) after steps moved.
@@ -64,7 +73,10 @@ impl Action {
 
     /// The steps playback runs, with their indices in `steps`.
     pub fn enabled_steps(&self) -> impl Iterator<Item = (usize, &(String, Value))> {
-        self.steps.iter().enumerate().filter(|(i, _)| self.step_enabled(*i))
+        self.steps
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| self.step_enabled(*i))
     }
 }
 
@@ -125,7 +137,10 @@ pub fn shell_save_command(id: &str) -> bool {
 /// View-only menu commands recorded by the desktop shell. Headless playback reports
 /// them as unsupported instead of silently dropping them; Batch and droplets skip them.
 pub fn shell_view_command(id: &str) -> bool {
-    matches!(id, "view.fitOnScreen" | "view.actualPixels" | "view.zoomIn" | "view.zoomOut")
+    matches!(
+        id,
+        "view.fitOnScreen" | "view.actualPixels" | "view.zoomIn" | "view.zoomOut"
+    )
 }
 
 /// Shared validation for headless and shell playback. Does not start playback.
@@ -134,9 +149,22 @@ pub fn playback_plan(s: &Session, p: &Value) -> Result<(Action, usize)> {
         return Err(bad("actions.play", "an action is already playing"));
     }
     let idx = resolve(&s.actions.list, p, "actions.play")?;
-    let action = s.actions.list.get(idx).cloned().ok_or_else(|| bad("actions.play", "no such action"))?;
-    if s.actions.playback_stack.iter().any(|name| name == &action.name) || s.actions.recording.is_some_and(|(_, i)| i == idx) {
-        return Err(bad("actions.play", format!("recursive action call to `{}`", action.name)));
+    let action = s
+        .actions
+        .list
+        .get(idx)
+        .cloned()
+        .ok_or_else(|| bad("actions.play", "no such action"))?;
+    if s.actions
+        .playback_stack
+        .iter()
+        .any(|name| name == &action.name)
+        || s.actions.recording.is_some_and(|(_, i)| i == idx)
+    {
+        return Err(bad(
+            "actions.play",
+            format!("recursive action call to `{}`", action.name),
+        ));
     }
     if s.actions.playback_stack.len() >= 16 {
         return Err(bad("actions.play", "action nesting exceeds 16 levels"));
@@ -150,9 +178,16 @@ pub fn playback_plan(s: &Session, p: &Value) -> Result<(Action, usize)> {
 /// `steps` and in the copies become names, which resolve without the rest of the list. A target
 /// that doesn't resolve is left alone: it fails at playback, as it would have before.
 pub fn called_actions(list: &[Action], steps: &mut [(String, Value)]) -> Vec<Action> {
-    fn targets(list: &[Action], steps: &mut [(String, Value)], depth: usize, queue: &mut Vec<(usize, usize)>) {
+    fn targets(
+        list: &[Action],
+        steps: &mut [(String, Value)],
+        depth: usize,
+        queue: &mut Vec<(usize, usize)>,
+    ) {
         for (_, params) in steps.iter_mut().filter(|(id, _)| id == "actions.play") {
-            let Ok(i) = resolve(list, params, "actions.play") else { continue };
+            let Ok(i) = resolve(list, params, "actions.play") else {
+                continue;
+            };
             if let (Some(action), Some(obj)) = (list.get(i), params.as_object_mut()) {
                 obj.insert("action".into(), json!(action.name));
             }
@@ -167,7 +202,9 @@ pub fn called_actions(list: &[Action], steps: &mut [(String, Value)]) -> Vec<Act
         if depth > 16 || found.contains_key(&i) {
             continue;
         }
-        let Some(mut action) = list.get(i).cloned() else { continue };
+        let Some(mut action) = list.get(i).cloned() else {
+            continue;
+        };
         targets(list, &mut action.steps, depth + 1, &mut queue);
         found.insert(i, action);
     }
@@ -179,7 +216,11 @@ fn always(_: &Session) -> std::result::Result<(), String> {
 }
 
 fn num(v: &Value) -> Option<i64> {
-    v.as_i64().or_else(|| v.as_f64().filter(|f| f.is_finite()).map(|f| f.round() as i64))
+    v.as_i64().or_else(|| {
+        v.as_f64()
+            .filter(|f| f.is_finite())
+            .map(|f| f.round() as i64)
+    })
 }
 
 pub(crate) fn resolve(list: &[Action], p: &Value, cmd: &str) -> Result<usize> {
@@ -199,7 +240,10 @@ pub(crate) fn resolve(list: &[Action], p: &Value, cmd: &str) -> Result<usize> {
         return Ok(i);
     }
     match v.as_str() {
-        Some(name) if !name.is_empty() => list.iter().position(|a| a.name == name).ok_or_else(|| bad(cmd, format!("no action named `{name}`"))),
+        Some(name) if !name.is_empty() => list
+            .iter()
+            .position(|a| a.name == name)
+            .ok_or_else(|| bad(cmd, format!("no action named `{name}`"))),
         Some(_) => Err(bad(cmd, "action name is empty")),
         None => Err(bad(cmd, "\"action\" must be a name or an index")),
     }
@@ -220,22 +264,39 @@ fn from_step(p: &Value, len: usize) -> Result<usize> {
         return Err(bad("actions.play", "\"from\" is out of range"));
     };
     if i > len {
-        return Err(bad("actions.play", format!("\"from\" {i} is past the last step ({len})")));
+        return Err(bad(
+            "actions.play",
+            format!("\"from\" {i} is past the last step ({len})"),
+        ));
     }
     Ok(i)
 }
 
 fn list(s: &mut Session, _p: &Value) -> Result<Value> {
-    let actions: Vec<Value> = s.actions.list.iter().map(|a| json!({"name": a.name, "steps": a.steps.len(), "set": a.set})).collect();
-    let recording = s.actions.recording.and_then(|(_, i)| s.actions.list.get(i).map(|a| a.name.clone()));
+    let actions: Vec<Value> = s
+        .actions
+        .list
+        .iter()
+        .map(|a| json!({"name": a.name, "steps": a.steps.len(), "set": a.set}))
+        .collect();
+    let recording = s
+        .actions
+        .recording
+        .and_then(|(_, i)| s.actions.list.get(i).map(|a| a.name.clone()));
     Ok(json!({"actions": actions, "recording": recording}))
 }
 
 fn get(s: &mut Session, p: &Value) -> Result<Value> {
     let idx = resolve(&s.actions.list, p, "actions.get")?;
     let action = &s.actions.list[idx];
-    let steps: Vec<Value> = action.steps.iter().map(|(id, params)| json!([id, params])).collect();
-    Ok(json!({"name": action.name, "steps": steps, "disabled": action.disabled, "dialogs": action.dialogs, "set": action.set}))
+    let steps: Vec<Value> = action
+        .steps
+        .iter()
+        .map(|(id, params)| json!([id, params]))
+        .collect();
+    Ok(
+        json!({"name": action.name, "steps": steps, "disabled": action.disabled, "dialogs": action.dialogs, "set": action.set}),
+    )
 }
 
 fn record(s: &mut Session, p: &Value) -> Result<Value> {
@@ -249,8 +310,15 @@ fn record(s: &mut Session, p: &Value) -> Result<Value> {
         let name = match p.get("name") {
             None | Some(Value::Null) => {
                 let mut n = s.actions.list.len().saturating_add(1);
-                while s.actions.list.iter().any(|a| a.name == format!("Action {n}")) {
-                    n = n.checked_add(1).ok_or_else(|| bad("actions.record", "cannot allocate a unique action name"))?;
+                while s
+                    .actions
+                    .list
+                    .iter()
+                    .any(|a| a.name == format!("Action {n}"))
+                {
+                    n = n.checked_add(1).ok_or_else(|| {
+                        bad("actions.record", "cannot allocate a unique action name")
+                    })?;
                 }
                 format!("Action {n}")
             }
@@ -259,27 +327,44 @@ fn record(s: &mut Session, p: &Value) -> Result<Value> {
             Some(_) => return Err(bad("actions.record", "\"name\" must be a string")),
         };
         if s.actions.list.iter().any(|action| action.name == name) {
-            return Err(bad("actions.record", "an action with this name already exists"));
+            return Err(bad(
+                "actions.record",
+                "an action with this name already exists",
+            ));
         }
         s.actions.list.push(Action::new(name, Vec::new()));
         s.actions.touch();
         s.actions.list.len() - 1
     };
     s.actions.recording = Some((s.journal.len(), idx));
-    let name = s.actions.list.get(idx).map(|a| a.name.clone()).unwrap_or_default();
+    let name = s
+        .actions
+        .list
+        .get(idx)
+        .map(|a| a.name.clone())
+        .unwrap_or_default();
     Ok(json!({"action": name, "index": idx}))
 }
 
 /// Replayable journal entries not yet committed to this action while recording.
 pub fn pending_steps(s: &Session, action: usize) -> impl Iterator<Item = &(String, Value)> {
-    let from = s.actions.recording.filter(|(_, i)| *i == action).map_or(s.journal.len(), |(from, _)| from);
+    let from = s
+        .actions
+        .recording
+        .filter(|(_, i)| *i == action)
+        .map_or(s.journal.len(), |(from, _)| from);
     s.journal.iter().skip(from).filter(|(id, _)| replayable(id))
 }
 
 pub(crate) fn flush_recording(s: &mut Session) -> Result<()> {
-    let Some((_, idx)) = s.actions.recording else { return Ok(()) };
+    let Some((_, idx)) = s.actions.recording else {
+        return Ok(());
+    };
     if idx >= s.actions.list.len() {
-        return Err(bad("actions.stop", "the action being recorded no longer exists"));
+        return Err(bad(
+            "actions.stop",
+            "the action being recorded no longer exists",
+        ));
     }
     let steps: Vec<_> = pending_steps(s, idx).cloned().collect();
     s.actions.recording = Some((s.journal.len(), idx));
@@ -338,7 +423,12 @@ pub fn begin_playback(s: &mut Session, action: &Action) -> Result<Option<(usize,
     Ok(recording)
 }
 
-pub fn finish_playback(s: &mut Session, recording: Option<(usize, usize)>, action: &Action, from: usize) {
+pub fn finish_playback(
+    s: &mut Session,
+    recording: Option<(usize, usize)>,
+    action: &Action,
+    from: usize,
+) {
     s.actions.playback_stack.pop();
     s.actions.playing = s.actions.playing.saturating_sub(1);
     if let Some((_, idx)) = recording {
@@ -354,14 +444,24 @@ pub fn finish_playback(s: &mut Session, recording: Option<(usize, usize)>, actio
 /// Nested playback returns a structured failure even though the command itself succeeded.
 /// Promote it to the caller's failed step so no later parent steps run after a child fails.
 pub fn nested_failure(id: &str, value: &Value) -> Option<String> {
-    (id == "actions.play" || id == "actions.conditional").then(|| value.get("failed")).flatten().map(|failure| {
-        format!(
-            "action `{}` step {} failed: {}",
-            value.get("action").and_then(Value::as_str).unwrap_or(""),
-            failure.get("step").and_then(Value::as_u64).unwrap_or(0).saturating_add(1),
-            failure.get("error").and_then(Value::as_str).unwrap_or("unknown error")
-        )
-    })
+    (id == "actions.play" || id == "actions.conditional")
+        .then(|| value.get("failed"))
+        .flatten()
+        .map(|failure| {
+            format!(
+                "action `{}` step {} failed: {}",
+                value.get("action").and_then(Value::as_str).unwrap_or(""),
+                failure
+                    .get("step")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0)
+                    .saturating_add(1),
+                failure
+                    .get("error")
+                    .and_then(Value::as_str)
+                    .unwrap_or("unknown error")
+            )
+        })
 }
 
 fn play(s: &mut Session, p: &Value) -> Result<Value> {
@@ -376,7 +476,11 @@ fn play(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 pub(crate) fn not_playing(s: &Session, cmd: &str) -> Result<()> {
-    if s.actions.playing > 0 { Err(bad(cmd, "cannot edit actions during playback")) } else { Ok(()) }
+    if s.actions.playing > 0 {
+        Err(bad(cmd, "cannot edit actions during playback"))
+    } else {
+        Ok(())
+    }
 }
 
 /// Move to a final zero-based index, either in an action's steps or in the action list.
@@ -387,12 +491,20 @@ fn move_item(s: &mut Session, p: &Value) -> Result<Value> {
         p.get(key)
             .and_then(Value::as_u64)
             .and_then(|n| usize::try_from(n).ok())
-            .ok_or_else(|| bad("actions.move", format!("{key} must be a non-negative integer")))
+            .ok_or_else(|| {
+                bad(
+                    "actions.move",
+                    format!("{key} must be a non-negative integer"),
+                )
+            })
     };
     let to = index("to")?;
     if p.get("step").is_some() {
         let step = index("step")?;
-        let len = s.actions.list[idx].steps.len().saturating_add(pending_steps(s, idx).count());
+        let len = s.actions.list[idx]
+            .steps
+            .len()
+            .saturating_add(pending_steps(s, idx).count());
         if step >= len || to >= len {
             return Err(bad("actions.move", "step or destination is out of range"));
         }
@@ -438,8 +550,14 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     not_playing(s, "actions.delete")?;
     let idx = resolve(&s.actions.list, p, "actions.delete")?;
     if let Some(step) = p.get("step") {
-        let step = step.as_u64().and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad("actions.delete", "step must be a non-negative integer"))?;
-        let len = s.actions.list[idx].steps.len().saturating_add(pending_steps(s, idx).count());
+        let step = step
+            .as_u64()
+            .and_then(|i| usize::try_from(i).ok())
+            .ok_or_else(|| bad("actions.delete", "step must be a non-negative integer"))?;
+        let len = s.actions.list[idx]
+            .steps
+            .len()
+            .saturating_add(pending_steps(s, idx).count());
         if step >= len {
             return Err(bad("actions.delete", "step is out of range"));
         }
@@ -459,12 +577,16 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
                 Some(i)
             }
         });
-        let result = json!({"action": action.name, "deletedStep": step, "steps": action.steps.len()});
+        let result =
+            json!({"action": action.name, "deletedStep": step, "steps": action.steps.len()});
         s.actions.touch();
         return Ok(result);
     }
     if s.actions.recording.is_some() {
-        return Err(bad("actions.delete", "stop recording before deleting an action"));
+        return Err(bad(
+            "actions.delete",
+            "stop recording before deleting an action",
+        ));
     }
     let name = s.actions.list.remove(idx).name;
     s.actions.touch();
@@ -484,9 +606,16 @@ fn toggle(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let step = match p.get("step") {
         None | Some(Value::Null) => None,
-        Some(v) => Some(v.as_u64().and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(cmd, "step must be a non-negative integer"))?),
+        Some(v) => Some(
+            v.as_u64()
+                .and_then(|i| usize::try_from(i).ok())
+                .ok_or_else(|| bad(cmd, "step must be a non-negative integer"))?,
+        ),
     };
-    let len = s.actions.list[idx].steps.len().saturating_add(pending_steps(s, idx).count());
+    let len = s.actions.list[idx]
+        .steps
+        .len()
+        .saturating_add(pending_steps(s, idx).count());
     if step.is_some_and(|step| step >= len) {
         return Err(bad(cmd, "step is out of range"));
     }
@@ -524,17 +653,35 @@ fn rename(s: &mut Session, p: &Value) -> Result<Value> {
         Some(_) => return Err(bad("actions.rename", "\"name\" must be a string")),
         None => return Err(bad("actions.rename", "needs \"name\"")),
     };
-    let old = s.actions.list.get(idx).map(|a| a.name.clone()).ok_or_else(|| bad("actions.rename", "no such action"))?;
+    let old = s
+        .actions
+        .list
+        .get(idx)
+        .map(|a| a.name.clone())
+        .ok_or_else(|| bad("actions.rename", "no such action"))?;
     if old == name {
         return Ok(json!({"action": name, "index": idx}));
     }
     if s.actions.list.iter().any(|a| a.name == name) {
-        return Err(bad("actions.rename", "an action with this name already exists"));
+        return Err(bad(
+            "actions.rename",
+            "an action with this name already exists",
+        ));
     }
-    let pending = s.actions.recording.map_or(s.journal.len(), |(start, _)| start);
-    let calls = s.actions.list.iter_mut().flat_map(|a| a.steps.iter_mut()).chain(s.journal.iter_mut().skip(pending));
+    let pending = s
+        .actions
+        .recording
+        .map_or(s.journal.len(), |(start, _)| start);
+    let calls = s
+        .actions
+        .list
+        .iter_mut()
+        .flat_map(|a| a.steps.iter_mut())
+        .chain(s.journal.iter_mut().skip(pending));
     for (id, params) in calls {
-        if id == "actions.play" && params.get("action").and_then(Value::as_str) == Some(old.as_str()) {
+        if id == "actions.play"
+            && params.get("action").and_then(Value::as_str) == Some(old.as_str())
+        {
             params["action"] = json!(name);
         }
     }
@@ -542,7 +689,10 @@ fn rename(s: &mut Session, p: &Value) -> Result<Value> {
         action.name = name.clone();
     }
     s.actions.touch();
-    let (from, to) = (format!("{PLAY_SHORTCUT_PREFIX}{old}"), format!("{PLAY_SHORTCUT_PREFIX}{name}"));
+    let (from, to) = (
+        format!("{PLAY_SHORTCUT_PREFIX}{old}"),
+        format!("{PLAY_SHORTCUT_PREFIX}{name}"),
+    );
     if s.prefs().shortcuts.contains_key(&from) {
         s.edit_prefs(|prefs| {
             if let Some(key) = prefs.shortcuts.remove(&from) {
@@ -654,38 +804,98 @@ mod tests {
     use serde_json::json;
 
     fn pixel(s: &Session, layer: usize, x: i32, y: i32) -> Vec<f32> {
-        s.active().unwrap().doc.layers[layer].surface().unwrap().pixel(x, y)
+        s.active().unwrap().doc.layers[layer]
+            .surface()
+            .unwrap()
+            .pixel(x, y)
     }
 
     #[test]
     fn unchecked_steps_are_skipped_and_follow_move_and_delete() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
         let step = |name: &str| ("layer.new.layer".to_string(), json!({"name": name}));
-        s.actions.list.push(Action::new("Three", vec![step("A"), step("B"), step("C")]));
-        let names = |s: &Session| s.active().unwrap().doc.layers.iter().skip(1).map(|l| l.name.clone()).collect::<Vec<_>>();
+        s.actions
+            .list
+            .push(Action::new("Three", vec![step("A"), step("B"), step("C")]));
+        let names = |s: &Session| {
+            s.active()
+                .unwrap()
+                .doc
+                .layers
+                .iter()
+                .skip(1)
+                .map(|l| l.name.clone())
+                .collect::<Vec<_>>()
+        };
 
-        assert_eq!(s.execute("actions.toggle", json!({"action": "Three", "step": 1})).unwrap()["disabled"], json!([1]));
+        assert_eq!(
+            s.execute("actions.toggle", json!({"action": "Three", "step": 1}))
+                .unwrap()["disabled"],
+            json!([1])
+        );
         let played = s.execute("actions.play", json!({"action": 0})).unwrap();
         assert_eq!(played["ran"], 2);
         assert_eq!(names(&s), ["A", "C"], "the unchecked step is skipped");
-        assert_eq!(s.execute("actions.get", json!({"action": 0})).unwrap()["disabled"], json!([1]));
+        assert_eq!(
+            s.execute("actions.get", json!({"action": 0})).unwrap()["disabled"],
+            json!([1])
+        );
 
         // Moving step 3 to the top keeps B (now step 2) unchecked; deleting the moved step shifts it to 1.
-        s.execute("actions.move", json!({"action": 0, "step": 2, "to": 0})).unwrap();
-        let ids: Vec<_> = s.actions.list[0].steps.iter().map(|(_, p)| p["name"].as_str().unwrap()).collect();
-        assert_eq!((ids, s.actions.list[0].disabled.iter().copied().collect::<Vec<_>>()), (vec!["C", "A", "B"], vec![2]));
-        s.execute("actions.delete", json!({"action": 0, "step": 0})).unwrap();
-        assert_eq!(s.actions.list[0].steps, [step("A"), step("B")], "deleting removes only that step");
-        assert_eq!(s.actions.list[0].disabled.iter().copied().collect::<Vec<_>>(), [1]);
+        s.execute("actions.move", json!({"action": 0, "step": 2, "to": 0}))
+            .unwrap();
+        let ids: Vec<_> = s.actions.list[0]
+            .steps
+            .iter()
+            .map(|(_, p)| p["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            (
+                ids,
+                s.actions.list[0]
+                    .disabled
+                    .iter()
+                    .copied()
+                    .collect::<Vec<_>>()
+            ),
+            (vec!["C", "A", "B"], vec![2])
+        );
+        s.execute("actions.delete", json!({"action": 0, "step": 0}))
+            .unwrap();
+        assert_eq!(
+            s.actions.list[0].steps,
+            [step("A"), step("B")],
+            "deleting removes only that step"
+        );
+        assert_eq!(
+            s.actions.list[0]
+                .disabled
+                .iter()
+                .copied()
+                .collect::<Vec<_>>(),
+            [1]
+        );
 
         // The action's own check: all on unless all already are.
         s.execute("actions.toggle", json!({"action": 0})).unwrap();
         assert!(s.actions.list[0].disabled.is_empty());
         s.execute("actions.toggle", json!({"action": 0})).unwrap();
         assert_eq!(s.actions.list[0].disabled.len(), 2);
-        s.execute("actions.toggle", json!({"action": 0, "step": 0, "enabled": true})).unwrap();
-        assert_eq!(s.actions.list[0].disabled.iter().copied().collect::<Vec<_>>(), [1]);
+        s.execute(
+            "actions.toggle",
+            json!({"action": 0, "step": 0, "enabled": true}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.actions.list[0]
+                .disabled
+                .iter()
+                .copied()
+                .collect::<Vec<_>>(),
+            [1]
+        );
 
         for bad in [
             json!({"action": 0, "step": 2}),
@@ -697,7 +907,15 @@ mod tests {
         ] {
             assert!(s.execute("actions.toggle", bad.clone()).is_err(), "{bad}");
         }
-        assert_eq!(s.actions.list[0].disabled.iter().copied().collect::<Vec<_>>(), [1], "rejected toggles change nothing");
+        assert_eq!(
+            s.actions.list[0]
+                .disabled
+                .iter()
+                .copied()
+                .collect::<Vec<_>>(),
+            [1],
+            "rejected toggles change nothing"
+        );
     }
 
     #[test]
@@ -715,11 +933,27 @@ mod tests {
             disabled: Default::default(),
             ..Default::default()
         });
-        s.edit_prefs(|p| p.shortcuts.insert(format!("{PLAY_SHORTCUT_PREFIX}Action 1"), "F2".into()));
-        assert_eq!(s.execute("actions.rename", json!({"action": 0, "name": "Sepia"})).unwrap()["action"], "Sepia");
-        assert_eq!(s.execute("actions.list", json!({})).unwrap()["actions"][0]["name"], "Sepia");
+        s.edit_prefs(|p| {
+            p.shortcuts
+                .insert(format!("{PLAY_SHORTCUT_PREFIX}Action 1"), "F2".into())
+        });
+        assert_eq!(
+            s.execute("actions.rename", json!({"action": 0, "name": "Sepia"}))
+                .unwrap()["action"],
+            "Sepia"
+        );
+        assert_eq!(
+            s.execute("actions.list", json!({})).unwrap()["actions"][0]["name"],
+            "Sepia"
+        );
         assert_eq!(s.actions.list[1].steps[0].1["action"], "Sepia");
-        assert_eq!(s.prefs().shortcuts.get("actions.play:Sepia").map(String::as_str), Some("F2"));
+        assert_eq!(
+            s.prefs()
+                .shortcuts
+                .get("actions.play:Sepia")
+                .map(String::as_str),
+            Some("F2")
+        );
         assert!(!s.prefs().shortcuts.contains_key("actions.play:Action 1"));
         for bad in [
             json!({"action": 0, "name": ""}),
@@ -735,10 +969,18 @@ mod tests {
     }
 
     fn record_red(s: &mut Session, depth: u32) {
-        s.execute("file.new", json!({"width": 40, "height": 40, "depth": depth})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 40, "height": 40, "depth": depth}),
+        )
+        .unwrap();
         s.execute("actions.record", json!({"name": "Red"})).unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
-        s.execute("select.rect", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap();
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
         let _ = s.execute("document.pixel", json!({"x": 1, "y": 1}));
         let _ = s.execute("actions.list", json!({}));
@@ -746,13 +988,24 @@ mod tests {
     }
 
     fn translated_square(s: &mut Session, depth: u32) {
-        s.execute("file.new", json!({"width": 20, "height": 8, "depth": depth, "background": "transparent"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 20, "height": 8, "depth": depth, "background": "transparent"}),
+        )
+        .unwrap();
         s.edit("red square", |doc, _| {
-            doc.layers[0].surface_mut().unwrap().fill_rect(photocraft_geom::Rect::new(0, 2, 2, 4), &[1.0, 0.0, 0.0, 1.0]);
+            doc.layers[0].surface_mut().unwrap().fill_rect(
+                photocraft_geom::Rect::new(0, 2, 2, 4),
+                &[1.0, 0.0, 0.0, 1.0],
+            );
             Ok(())
         })
         .unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 4, 0], "interpolation": "nearest"})).unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 4, 0], "interpolation": "nearest"}),
+        )
+        .unwrap();
         assert_eq!(pixel(s, 0, 4, 2), vec![1.0, 0.0, 0.0, 1.0]);
     }
 
@@ -762,28 +1015,69 @@ mod tests {
             let mut s = Session::new();
             translated_square(&mut s, depth);
             let from = s.journal.len();
-            s.execute("actions.record", json!({"name": "Again"})).unwrap();
+            s.execute("actions.record", json!({"name": "Again"}))
+                .unwrap();
             s.execute("edit.transform.again", json!({})).unwrap();
-            let ids: Vec<&str> = s.journal.iter().skip(from).map(|(id, _)| id.as_str()).collect();
-            assert_eq!(ids, ["edit.transform", "edit.transform.again"], "both commands stay in the journal during recording");
-            let live_count = s.journal.iter().skip(from).filter(|(id, _)| replayable(id)).count();
+            let ids: Vec<&str> = s
+                .journal
+                .iter()
+                .skip(from)
+                .map(|(id, _)| id.as_str())
+                .collect();
+            assert_eq!(
+                ids,
+                ["edit.transform", "edit.transform.again"],
+                "both commands stay in the journal during recording"
+            );
+            let live_count = s
+                .journal
+                .iter()
+                .skip(from)
+                .filter(|(id, _)| replayable(id))
+                .count();
             s.execute("actions.stop", json!({})).unwrap();
-            let recorded = s.execute("actions.get", json!({"action": "Again"})).unwrap();
+            let recorded = s
+                .execute("actions.get", json!({"action": "Again"}))
+                .unwrap();
             let steps = recorded["steps"].as_array().unwrap();
-            assert_eq!(steps.len(), 1, "depth {depth}: record the concrete transform once");
-            assert_eq!(live_count, 1, "depth {depth}: the live Actions count agrees");
+            assert_eq!(
+                steps.len(),
+                1,
+                "depth {depth}: record the concrete transform once"
+            );
+            assert_eq!(
+                live_count, 1,
+                "depth {depth}: the live Actions count agrees"
+            );
             assert_eq!(steps[0][0], "edit.transform");
             assert_eq!(steps[0][1]["matrix"], json!([1, 0, 0, 1, 4, 0]));
             assert_eq!(steps[0][1]["interpolation"], "nearest");
 
             translated_square(&mut s, depth);
             let before = s.active().unwrap().history.past_len();
-            let played = s.execute("actions.play", json!({"action": "Again"})).unwrap();
+            let played = s
+                .execute("actions.play", json!({"action": "Again"}))
+                .unwrap();
             assert!(played.get("failed").is_none(), "depth {depth}: {played}");
-            assert_eq!(played["ran"], 1, "depth {depth}: apply the recorded transform once");
-            assert_eq!(s.active().unwrap().history.past_len(), before + 1, "depth {depth}: one undo step");
-            assert_eq!(pixel(&s, 0, 8, 2), vec![1.0, 0.0, 0.0, 1.0], "depth {depth}: moved four pixels");
-            assert_eq!(pixel(&s, 0, 12, 2), vec![0.0; 4], "depth {depth}: no second transform");
+            assert_eq!(
+                played["ran"], 1,
+                "depth {depth}: apply the recorded transform once"
+            );
+            assert_eq!(
+                s.active().unwrap().history.past_len(),
+                before + 1,
+                "depth {depth}: one undo step"
+            );
+            assert_eq!(
+                pixel(&s, 0, 8, 2),
+                vec![1.0, 0.0, 0.0, 1.0],
+                "depth {depth}: moved four pixels"
+            );
+            assert_eq!(
+                pixel(&s, 0, 12, 2),
+                vec![0.0; 4],
+                "depth {depth}: no second transform"
+            );
             assert!(s.undo());
             assert_eq!(pixel(&s, 0, 4, 2), vec![1.0, 0.0, 0.0, 1.0]);
             assert_eq!(pixel(&s, 0, 8, 2), vec![0.0; 4]);
@@ -798,31 +1092,67 @@ mod tests {
         for depth in [8, 16] {
             let mut s = Session::new();
             translated_square(&mut s, depth);
-            s.execute("actions.record", json!({"name": "Step"})).unwrap();
+            s.execute("actions.record", json!({"name": "Step"}))
+                .unwrap();
             s.execute("edit.transform.againCopy", json!({})).unwrap();
             s.execute("actions.stop", json!({})).unwrap();
             let got = s.execute("actions.get", json!({"action": "Step"})).unwrap();
-            let ids: Vec<&str> = got["steps"].as_array().unwrap().iter().map(|st| st[0].as_str().unwrap()).collect();
-            assert_eq!(ids, ["layer.duplicate", "edit.transform"], "depth {depth}: the concrete steps, not the wrapper");
+            let ids: Vec<&str> = got["steps"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|st| st[0].as_str().unwrap())
+                .collect();
+            assert_eq!(
+                ids,
+                ["layer.duplicate", "edit.transform"],
+                "depth {depth}: the concrete steps, not the wrapper"
+            );
             let action = s.actions.list[0].clone();
 
             // A new session has no transform to repeat: the concrete steps still play.
             let mut fresh = Session::new();
-            fresh.execute("file.new", json!({"width": 20, "height": 8, "depth": depth, "background": "transparent"})).unwrap();
+            fresh
+                .execute(
+                    "file.new",
+                    json!({"width": 20, "height": 8, "depth": depth, "background": "transparent"}),
+                )
+                .unwrap();
             fresh
                 .edit("red square", |doc, _| {
-                    doc.layers[0].surface_mut().unwrap().fill_rect(photocraft_geom::Rect::new(4, 2, 6, 4), &[1.0, 0.0, 0.0, 1.0]);
+                    doc.layers[0].surface_mut().unwrap().fill_rect(
+                        photocraft_geom::Rect::new(4, 2, 6, 4),
+                        &[1.0, 0.0, 0.0, 1.0],
+                    );
                     Ok(())
                 })
                 .unwrap();
             fresh.actions.list.push(action);
-            let played = fresh.execute("actions.play", json!({"action": "Step"})).unwrap();
+            let played = fresh
+                .execute("actions.play", json!({"action": "Step"}))
+                .unwrap();
             assert!(played.get("failed").is_none(), "depth {depth}: {played}");
             assert_eq!(played["ran"], 2, "depth {depth}");
-            assert_eq!(fresh.active().unwrap().doc.layers.len(), 2, "depth {depth}: one copy");
-            assert_eq!(pixel(&fresh, 0, 4, 2), vec![1.0, 0.0, 0.0, 1.0], "depth {depth}: the original stays");
-            assert_eq!(pixel(&fresh, 1, 8, 2), vec![1.0, 0.0, 0.0, 1.0], "depth {depth}: the copy moved four pixels");
-            assert_eq!(pixel(&fresh, 1, 4, 2), vec![0.0; 4], "depth {depth}: moved once");
+            assert_eq!(
+                fresh.active().unwrap().doc.layers.len(),
+                2,
+                "depth {depth}: one copy"
+            );
+            assert_eq!(
+                pixel(&fresh, 0, 4, 2),
+                vec![1.0, 0.0, 0.0, 1.0],
+                "depth {depth}: the original stays"
+            );
+            assert_eq!(
+                pixel(&fresh, 1, 8, 2),
+                vec![1.0, 0.0, 0.0, 1.0],
+                "depth {depth}: the copy moved four pixels"
+            );
+            assert_eq!(
+                pixel(&fresh, 1, 4, 2),
+                vec![0.0; 4],
+                "depth {depth}: moved once"
+            );
         }
     }
 
@@ -833,36 +1163,75 @@ mod tests {
         let mut s = Session::new();
         translated_square(&mut s, 8);
         let id = s.active().unwrap().active_layer.unwrap();
-        s.execute("layer.setProps", json!({"layer": id.0, "locks": {"position": true}})).unwrap();
-        s.execute("actions.record", json!({"name": "Locked"})).unwrap();
+        s.execute(
+            "layer.setProps",
+            json!({"layer": id.0, "locks": {"position": true}}),
+        )
+        .unwrap();
+        s.execute("actions.record", json!({"name": "Locked"}))
+            .unwrap();
         assert!(s.execute("edit.transform.againCopy", json!({})).is_err());
-        assert_eq!(s.execute("actions.stop", json!({})).unwrap()["steps"], 0, "no Duplicate step for a copy that was taken back");
+        assert_eq!(
+            s.execute("actions.stop", json!({})).unwrap()["steps"],
+            0,
+            "no Duplicate step for a copy that was taken back"
+        );
 
         // Straighten rolls back when its crop is refused after the rotation ran.
         ruled_background(&mut s, 8);
-        s.execute("image.analysis.rulerTool", json!({"start": [10, 30], "end": [70, 25]})).unwrap();
-        s.authorize = Some(|id, _| if id == "image.crop" { Err(EngineError::Other("refused".into())) } else { Ok(()) });
-        s.execute("actions.record", json!({"name": "Refused"})).unwrap();
-        assert!(s.execute("image.analysis.straightenLayer", json!({})).is_err());
-        assert_eq!(s.active().unwrap().doc.size.width, 80, "the rotation was taken back");
-        assert_eq!(s.execute("actions.stop", json!({})).unwrap()["steps"], 0, "no rotation step for a rotation that was taken back");
+        s.execute(
+            "image.analysis.rulerTool",
+            json!({"start": [10, 30], "end": [70, 25]}),
+        )
+        .unwrap();
+        s.authorize = Some(|id, _| {
+            if id == "image.crop" {
+                Err(EngineError::Other("refused".into()))
+            } else {
+                Ok(())
+            }
+        });
+        s.execute("actions.record", json!({"name": "Refused"}))
+            .unwrap();
+        assert!(
+            s.execute("image.analysis.straightenLayer", json!({}))
+                .is_err()
+        );
+        assert_eq!(
+            s.active().unwrap().doc.size.width,
+            80,
+            "the rotation was taken back"
+        );
+        assert_eq!(
+            s.execute("actions.stop", json!({})).unwrap()["steps"],
+            0,
+            "no rotation step for a rotation that was taken back"
+        );
     }
 
     #[test]
     fn record_script_that_plays_an_action_keeps_each_step_once() {
         let mut s = Session::new();
         translated_square(&mut s, 8);
-        s.execute("actions.record", json!({"name": "Inner"})).unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 1, 0], "interpolation": "nearest"})).unwrap();
+        s.execute("actions.record", json!({"name": "Inner"}))
+            .unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 1, 0], "interpolation": "nearest"}),
+        )
+        .unwrap();
         s.execute("actions.stop", json!({})).unwrap();
 
         // Browse records the concrete steps it ran, not itself (#3057): the script's transform and
         // the action call, each once, in order.
         let script = json!({"steps": [["edit.transform", {"matrix": [1, 0, 0, 1, 2, 0], "interpolation": "nearest"}], ["actions.play", {"action": "Inner"}]]});
-        s.execute("actions.record", json!({"name": "Outer"})).unwrap();
+        s.execute("actions.record", json!({"name": "Outer"}))
+            .unwrap();
         s.execute("file.scripts.browse", script.clone()).unwrap();
         s.execute("actions.stop", json!({})).unwrap();
-        let got = s.execute("actions.get", json!({"action": "Outer"})).unwrap();
+        let got = s
+            .execute("actions.get", json!({"action": "Outer"}))
+            .unwrap();
         assert_eq!(got["steps"], script["steps"]);
     }
 
@@ -870,15 +1239,22 @@ mod tests {
     fn record_explicit_transform_keeps_one_replayable_step() {
         let mut s = Session::new();
         translated_square(&mut s, 8);
-        s.execute("actions.record", json!({"name": "Move"})).unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 4, 0], "interpolation": "nearest"})).unwrap();
+        s.execute("actions.record", json!({"name": "Move"}))
+            .unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 4, 0], "interpolation": "nearest"}),
+        )
+        .unwrap();
         assert_eq!(s.execute("actions.stop", json!({})).unwrap()["steps"], 1);
         let recorded = s.execute("actions.get", json!({"action": "Move"})).unwrap();
         assert_eq!(recorded["steps"][0][0], "edit.transform");
 
         translated_square(&mut s, 8);
         let before = s.active().unwrap().history.past_len();
-        let played = s.execute("actions.play", json!({"action": "Move"})).unwrap();
+        let played = s
+            .execute("actions.play", json!({"action": "Move"}))
+            .unwrap();
         assert!(played.get("failed").is_none(), "{played}");
         assert_eq!(played["ran"], 1);
         assert_eq!(s.active().unwrap().history.past_len(), before + 1);
@@ -888,9 +1264,16 @@ mod tests {
 
     /// A Background with a red bar and a slanted ruler line, ready for Straighten.
     fn ruled_background(s: &mut Session, depth: u32) {
-        s.execute("file.new", json!({"width": 80, "height": 60, "depth": depth})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 80, "height": 60, "depth": depth}),
+        )
+        .unwrap();
         s.edit("red bar", |doc, _| {
-            doc.layers[0].surface_mut().unwrap().fill_rect(photocraft_geom::Rect::new(10, 20, 60, 8), &[1.0, 0.0, 0.0, 1.0]);
+            doc.layers[0].surface_mut().unwrap().fill_rect(
+                photocraft_geom::Rect::new(10, 20, 60, 8),
+                &[1.0, 0.0, 0.0, 1.0],
+            );
             Ok(())
         })
         .unwrap();
@@ -903,26 +1286,61 @@ mod tests {
         for depth in [8, 16] {
             let mut s = Session::new();
             ruled_background(&mut s, depth);
-            s.execute("actions.record", json!({"name": "Level"})).unwrap();
-            s.execute("image.analysis.rulerTool", json!({"start": [10, 30], "end": [70, 25]})).unwrap();
-            s.execute("image.analysis.straightenLayer", json!({})).unwrap();
+            s.execute("actions.record", json!({"name": "Level"}))
+                .unwrap();
+            s.execute(
+                "image.analysis.rulerTool",
+                json!({"start": [10, 30], "end": [70, 25]}),
+            )
+            .unwrap();
+            s.execute("image.analysis.straightenLayer", json!({}))
+                .unwrap();
             s.execute("actions.stop", json!({})).unwrap();
-            let got = s.execute("actions.get", json!({"action": "Level"})).unwrap();
-            let ids: Vec<&str> = got["steps"].as_array().unwrap().iter().map(|st| st[0].as_str().unwrap()).collect();
-            assert_eq!(ids, ["image.analysis.rulerTool", "image.analysis.straightenLayer"], "depth {depth}");
+            let got = s
+                .execute("actions.get", json!({"action": "Level"}))
+                .unwrap();
+            let ids: Vec<&str> = got["steps"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|st| st[0].as_str().unwrap())
+                .collect();
+            assert_eq!(
+                ids,
+                ["image.analysis.rulerTool", "image.analysis.straightenLayer"],
+                "depth {depth}"
+            );
             let direct = s.active().unwrap().doc.clone();
 
             ruled_background(&mut s, depth);
             let before = s.active().unwrap().history.past_len();
-            let played = s.execute("actions.play", json!({"action": "Level"})).unwrap();
+            let played = s
+                .execute("actions.play", json!({"action": "Level"}))
+                .unwrap();
             assert!(played.get("failed").is_none(), "depth {depth}: {played}");
             assert_eq!(played["ran"], 2, "depth {depth}");
-            assert_eq!(s.active().unwrap().history.past_len(), before + 1, "depth {depth}: one Straighten step (the ruler is no step)");
+            assert_eq!(
+                s.active().unwrap().history.past_len(),
+                before + 1,
+                "depth {depth}: one Straighten step (the ruler is no step)"
+            );
             let replayed = s.active().unwrap().doc.clone();
-            assert_eq!(replayed.size, direct.size, "depth {depth}: rotated and cropped once");
-            let r = photocraft_geom::Rect::new(0, 0, direct.size.width as i32, direct.size.height as i32);
+            assert_eq!(
+                replayed.size, direct.size,
+                "depth {depth}: rotated and cropped once"
+            );
+            let r = photocraft_geom::Rect::new(
+                0,
+                0,
+                direct.size.width as i32,
+                direct.size.height as i32,
+            );
             let px = |d: &photocraft_doc::Document| d.layers[0].surface().unwrap().read_region(r);
-            assert_eq!(px(&replayed), px(&direct), "depth {depth}: same pixels as the direct run");
+            assert_eq!(
+                px(&replayed),
+                px(&direct),
+                "depth {depth}: same pixels as the direct run"
+            );
         }
     }
 
@@ -931,7 +1349,12 @@ mod tests {
         let mut s = Session::new();
         record_red(&mut s, 8);
         let got = s.execute("actions.get", json!({"action": "Red"})).unwrap();
-        let ids: Vec<&str> = got["steps"].as_array().unwrap().iter().map(|st| st[0].as_str().unwrap()).collect();
+        let ids: Vec<&str> = got["steps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|st| st[0].as_str().unwrap())
+            .collect();
         assert_eq!(ids, ["layer.new.layer", "select.rect", "edit.fill"]);
         assert!(s.journal.iter().all(|(id, _)| !id.starts_with("actions.")));
         let listed = s.execute("actions.list", json!({})).unwrap();
@@ -944,15 +1367,28 @@ mod tests {
         for depth in [8, 16, 32] {
             let mut s = Session::new();
             record_red(&mut s, depth);
-            s.execute("file.new", json!({"width": 40, "height": 40, "depth": depth})).unwrap();
+            s.execute(
+                "file.new",
+                json!({"width": 40, "height": 40, "depth": depth}),
+            )
+            .unwrap();
             let before = s.active().unwrap().history.past_len();
             let r = s.execute("actions.play", json!({"action": 0})).unwrap();
             assert!(r.get("failed").is_none(), "depth {depth}: {r}");
             assert_eq!(r["ran"], 3, "depth {depth}");
             assert_eq!(s.active().unwrap().doc.layers.len(), 2, "depth {depth}");
-            assert_eq!(s.active().unwrap().history.past_len(), before + 3, "depth {depth}: one history step per played step");
+            assert_eq!(
+                s.active().unwrap().history.past_len(),
+                before + 3,
+                "depth {depth}: one history step per played step"
+            );
             let px = pixel(&s, 1, 5, 5);
-            assert!(px.iter().zip([1.0, 0.0, 0.0, 1.0]).all(|(a, b)| (a - b).abs() < 1.0e-5), "depth {depth}: {px:?}");
+            assert!(
+                px.iter()
+                    .zip([1.0, 0.0, 0.0, 1.0])
+                    .all(|(a, b)| (a - b).abs() < 1.0e-5),
+                "depth {depth}: {px:?}"
+            );
             assert_eq!(s.actions.playing, 0);
         }
     }
@@ -960,21 +1396,41 @@ mod tests {
     #[test]
     fn play_stops_at_the_failing_step_and_reports_it() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
+        s.execute("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
         s.execute("actions.record", json!({})).unwrap();
-        s.execute("layer.new.layer", json!({"name": "One"})).unwrap();
+        s.execute("layer.new.layer", json!({"name": "One"}))
+            .unwrap();
         s.execute("actions.stop", json!({})).unwrap();
-        s.actions.list[0].steps.push(("not.a.command".into(), json!({})));
-        s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
-        let r = s.execute("actions.play", json!({"action": "Action 1"})).unwrap();
+        s.actions.list[0]
+            .steps
+            .push(("not.a.command".into(), json!({})));
+        s.execute("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
+        let r = s
+            .execute("actions.play", json!({"action": "Action 1"}))
+            .unwrap();
         assert_eq!(r["ran"], 1);
         assert_eq!(r["failed"]["step"], 1);
         assert_eq!(r["failed"]["id"], "not.a.command");
-        assert!(r["failed"]["error"].as_str().unwrap().contains("unknown command"));
-        assert_eq!(s.active().unwrap().doc.layers.len(), 2, "the step before the failure is kept");
+        assert!(
+            r["failed"]["error"]
+                .as_str()
+                .unwrap()
+                .contains("unknown command")
+        );
+        assert_eq!(
+            s.active().unwrap().doc.layers.len(),
+            2,
+            "the step before the failure is kept"
+        );
         assert_eq!(s.actions.playing, 0);
         // A later play still runs.
-        assert_eq!(s.execute("actions.play", json!({"action": 0, "from": 1})).unwrap()["ran"], 0);
+        assert_eq!(
+            s.execute("actions.play", json!({"action": 0, "from": 1}))
+                .unwrap()["ran"],
+            0
+        );
     }
 
     #[test]
@@ -986,54 +1442,103 @@ mod tests {
             disabled: Default::default(),
             ..Default::default()
         });
-        let r = s.execute("actions.play", json!({"action": "Loop"})).unwrap();
+        let r = s
+            .execute("actions.play", json!({"action": "Loop"}))
+            .unwrap();
         assert_eq!(r["ran"], 0);
         assert_eq!(r["failed"]["id"], "actions.play");
-        assert!(r["failed"]["error"].as_str().unwrap().contains("recursive action"), "{r}");
+        assert!(
+            r["failed"]["error"]
+                .as_str()
+                .unwrap()
+                .contains("recursive action"),
+            "{r}"
+        );
         assert_eq!(s.actions.playing, 0);
     }
 
     #[test]
     fn play_checks_each_step_with_the_authorize_hook() {
         fn deny_file(id: &str, _: &Value) -> Result<()> {
-            if id.starts_with("file.") { Err(EngineError::Other(format!("automation command `{id}` is disabled"))) } else { Ok(()) }
+            if id.starts_with("file.") {
+                Err(EngineError::Other(format!(
+                    "automation command `{id}` is disabled"
+                )))
+            } else {
+                Ok(())
+            }
         }
         let mut s = Session::new();
         s.authorize = Some(deny_file);
         s.actions.list.push(Action {
             name: "Open".into(),
-            steps: vec![("file.open".into(), json!({"path": "/etc/passwd"})), ("layer.new.layer".into(), json!({}))],
+            steps: vec![
+                ("file.open".into(), json!({"path": "/etc/passwd"})),
+                ("layer.new.layer".into(), json!({})),
+            ],
             disabled: Default::default(),
             ..Default::default()
         });
-        let r = s.execute("actions.play", json!({"action": "Open"})).unwrap();
+        let r = s
+            .execute("actions.play", json!({"action": "Open"}))
+            .unwrap();
         assert_eq!(r["ran"], 0);
         assert_eq!(r["failed"]["step"], 0);
         assert_eq!(r["failed"]["id"], "file.open");
-        assert!(r["failed"]["error"].as_str().unwrap().contains("disabled"), "{r}");
-        assert!(s.documents().is_empty(), "the refused step does not open a document");
+        assert!(
+            r["failed"]["error"].as_str().unwrap().contains("disabled"),
+            "{r}"
+        );
+        assert!(
+            s.documents().is_empty(),
+            "the refused step does not open a document"
+        );
     }
 
     #[test]
     fn append_delete_and_from_step() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8, "background": "white"})).unwrap();
-        let started = s.execute("actions.record", json!({"name": "Grow"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 8, "height": 8, "background": "white"}),
+        )
+        .unwrap();
+        let started = s
+            .execute("actions.record", json!({"name": "Grow"}))
+            .unwrap();
         assert_eq!(started["index"], 0);
-        s.execute("layer.new.layer", json!({"name": "One"})).unwrap();
-        assert!(s.execute("actions.record", json!({})).is_err(), "already recording");
-        assert!(s.execute("actions.delete", json!({"action": 0})).is_err(), "delete while recording");
+        s.execute("layer.new.layer", json!({"name": "One"}))
+            .unwrap();
+        assert!(
+            s.execute("actions.record", json!({})).is_err(),
+            "already recording"
+        );
+        assert!(
+            s.execute("actions.delete", json!({"action": 0})).is_err(),
+            "delete while recording"
+        );
         let stopped = s.execute("actions.stop", json!({})).unwrap();
         assert_eq!(stopped["steps"], 1);
-        s.execute("actions.record", json!({"action": "Grow"})).unwrap();
-        s.execute("layer.new.layer", json!({"name": "Two"})).unwrap();
+        s.execute("actions.record", json!({"action": "Grow"}))
+            .unwrap();
+        s.execute("layer.new.layer", json!({"name": "Two"}))
+            .unwrap();
         assert_eq!(s.execute("actions.stop", json!({})).unwrap()["steps"], 2);
-        assert!(s.execute("actions.stop", json!({})).is_err(), "not recording");
+        assert!(
+            s.execute("actions.stop", json!({})).is_err(),
+            "not recording"
+        );
         let before = s.active().unwrap().doc.layers.len();
-        let r = s.execute("actions.play", json!({"action": "Grow", "from": 1})).unwrap();
+        let r = s
+            .execute("actions.play", json!({"action": "Grow", "from": 1}))
+            .unwrap();
         assert_eq!(r["ran"], 1);
         assert_eq!(s.active().unwrap().doc.layers.len(), before + 1);
-        assert_eq!(s.execute("actions.delete", json!({"action": "Grow"})).unwrap()["deleted"], "Grow");
+        assert_eq!(
+            s.execute("actions.delete", json!({"action": "Grow"}))
+                .unwrap()["deleted"],
+            "Grow"
+        );
         assert!(s.actions.list.is_empty());
         assert!(s.execute("actions.get", json!({"action": "Grow"})).is_err());
     }
@@ -1041,35 +1546,72 @@ mod tests {
     #[test]
     fn delete_one_step_while_recording_keeps_journal_and_remaining_steps() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        s.execute("actions.record", json!({"name": "Edit"})).unwrap();
-        s.execute("layer.new.layer", json!({"name": "Kept"})).unwrap();
-        s.execute("layer.new.layer", json!({"name": "Removed"})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
+        s.execute("actions.record", json!({"name": "Edit"}))
+            .unwrap();
+        s.execute("layer.new.layer", json!({"name": "Kept"}))
+            .unwrap();
+        s.execute("layer.new.layer", json!({"name": "Removed"}))
+            .unwrap();
         let journal = s.journal.clone();
         let rev = s.actions.rev;
         let before = s.actions.clone();
-        for step in [json!(-1), json!(2), json!(0.5), json!(null), json!("0"), json!(u64::MAX)] {
-            assert!(s.execute("actions.delete", json!({"action": 0, "step": step})).is_err());
+        for step in [
+            json!(-1),
+            json!(2),
+            json!(0.5),
+            json!(null),
+            json!("0"),
+            json!(u64::MAX),
+        ] {
+            assert!(
+                s.execute("actions.delete", json!({"action": 0, "step": step}))
+                    .is_err()
+            );
             assert_eq!(s.actions, before, "invalid deletion is atomic");
         }
         assert_eq!(pending_steps(&s, 0).count(), 2);
-        let result = s.execute("actions.delete", json!({"action": 0, "step": 1})).unwrap();
+        let result = s
+            .execute("actions.delete", json!({"action": 0, "step": 1}))
+            .unwrap();
         assert_eq!(result["steps"], 1);
-        assert_eq!(s.journal, journal, "deleting a recording does not erase executed commands");
-        assert_eq!(s.active().unwrap().doc.layers.len(), 3, "it does not undo document edits");
+        assert_eq!(
+            s.journal, journal,
+            "deleting a recording does not erase executed commands"
+        );
+        assert_eq!(
+            s.active().unwrap().doc.layers.len(),
+            3,
+            "it does not undo document edits"
+        );
         assert!(s.actions.recording.is_some());
         assert!(s.actions.rev > rev);
-        s.execute("layer.new.layer", json!({"name": "After"})).unwrap();
+        s.execute("layer.new.layer", json!({"name": "After"}))
+            .unwrap();
         s.execute("actions.stop", json!({})).unwrap();
-        assert_eq!(s.actions.list[0].steps.iter().map(|(_, p)| p["name"].as_str().unwrap()).collect::<Vec<_>>(), ["Kept", "After"]);
-        s.execute("actions.delete", json!({"action": "Edit", "step": 0})).unwrap();
+        assert_eq!(
+            s.actions.list[0]
+                .steps
+                .iter()
+                .map(|(_, p)| p["name"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["Kept", "After"]
+        );
+        s.execute("actions.delete", json!({"action": "Edit", "step": 0}))
+            .unwrap();
         assert_eq!(s.actions.list[0].steps[0].1["name"], "After");
         let saved = serde_json::to_string(&s.actions.list).unwrap();
         s.actions.list = serde_json::from_str(&saved).unwrap();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        assert_eq!(s.execute("actions.play", json!({"action": 0})).unwrap()["ran"], 1);
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
+        assert_eq!(
+            s.execute("actions.play", json!({"action": 0})).unwrap()["ran"],
+            1
+        );
         assert_eq!(s.active().unwrap().doc.layers[1].name, "After");
-        s.execute("actions.delete", json!({"action": 0, "step": 0})).unwrap();
+        s.execute("actions.delete", json!({"action": 0, "step": 0}))
+            .unwrap();
         assert_eq!(s.actions.list.len(), 1, "an empty action still exists");
         assert!(s.actions.list[0].steps.is_empty());
     }
@@ -1077,29 +1619,56 @@ mod tests {
     #[test]
     fn nested_call_records_one_named_step_and_tracks_child_edits() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 4, "height": 4})).unwrap();
+        s.execute("file.new", json!({"width": 4, "height": 4}))
+            .unwrap();
         s.actions.list.push(Action {
             name: "Child".into(),
             steps: vec![("layer.new.layer".into(), json!({"name": "Child layer"}))],
             disabled: Default::default(),
             ..Default::default()
         });
-        s.execute("actions.record", json!({"name": "Parent"})).unwrap();
-        s.execute("layer.new.layer", json!({"name": "Before"})).unwrap();
+        s.execute("actions.record", json!({"name": "Parent"}))
+            .unwrap();
+        s.execute("layer.new.layer", json!({"name": "Before"}))
+            .unwrap();
         s.execute("actions.play", json!({"action": 0})).unwrap();
-        assert_eq!(pending_steps(&s, 1).cloned().collect::<Vec<_>>(), [("actions.play".into(), json!({"action": "Child"}))]);
-        s.execute("layer.new.layer", json!({"name": "After"})).unwrap();
+        assert_eq!(
+            pending_steps(&s, 1).cloned().collect::<Vec<_>>(),
+            [("actions.play".into(), json!({"action": "Child"}))]
+        );
+        s.execute("layer.new.layer", json!({"name": "After"}))
+            .unwrap();
         s.execute("actions.stop", json!({})).unwrap();
-        assert_eq!(s.actions.list[1].steps.iter().map(|st| st.0.as_str()).collect::<Vec<_>>(), ["layer.new.layer", "actions.play", "layer.new.layer"]);
-        s.actions.list[0].steps.push(("layer.new.layer".into(), json!({"name": "Added later"})));
-        s.execute("actions.move", json!({"action": "Child", "to": 1})).unwrap();
+        assert_eq!(
+            s.actions.list[1]
+                .steps
+                .iter()
+                .map(|st| st.0.as_str())
+                .collect::<Vec<_>>(),
+            ["layer.new.layer", "actions.play", "layer.new.layer"]
+        );
+        s.actions.list[0]
+            .steps
+            .push(("layer.new.layer".into(), json!({"name": "Added later"})));
+        s.execute("actions.move", json!({"action": "Child", "to": 1}))
+            .unwrap();
         let saved = serde_json::to_string(&s.actions.list).unwrap();
         s.actions.list = serde_json::from_str(&saved).unwrap();
-        s.execute("file.new", json!({"width": 4, "height": 4})).unwrap();
-        let result = s.execute("actions.play", json!({"action": "Parent"})).unwrap();
+        s.execute("file.new", json!({"width": 4, "height": 4}))
+            .unwrap();
+        let result = s
+            .execute("actions.play", json!({"action": "Parent"}))
+            .unwrap();
         assert!(result.get("failed").is_none(), "{result}");
         assert_eq!(
-            s.active().unwrap().doc.layers.iter().skip(1).map(|l| l.name.as_str()).collect::<Vec<_>>(),
+            s.active()
+                .unwrap()
+                .doc
+                .layers
+                .iter()
+                .skip(1)
+                .map(|l| l.name.as_str())
+                .collect::<Vec<_>>(),
             ["Before", "Child layer", "Added later", "After"]
         );
         assert!(s.actions.playback_stack.is_empty());
@@ -1110,7 +1679,10 @@ mod tests {
         let mut s = Session::new();
         s.actions.list.push(Action {
             name: "A".into(),
-            steps: vec![("actions.play".into(), json!({"action": "B"})), ("file.new".into(), json!({"width": 2,"height": 2}))],
+            steps: vec![
+                ("actions.play".into(), json!({"action": "B"})),
+                ("file.new".into(), json!({"width": 2,"height": 2})),
+            ],
             disabled: Default::default(),
             ..Default::default()
         });
@@ -1124,16 +1696,34 @@ mod tests {
         assert!(r["failed"]["error"].as_str().unwrap().contains("recursive"));
         assert!(s.documents().is_empty());
         s.actions.list[1].steps = vec![("file.new".into(), json!({"width": 2,"height": 2}))];
-        s.authorize = Some(|id, _| if id == "file.new" { Err(EngineError::Other("denied nested file".into())) } else { Ok(()) });
+        s.authorize = Some(|id, _| {
+            if id == "file.new" {
+                Err(EngineError::Other("denied nested file".into()))
+            } else {
+                Ok(())
+            }
+        });
         let r = s.execute("actions.play", json!({"action": "A"})).unwrap();
-        assert!(r["failed"]["error"].as_str().unwrap().contains("denied nested file"));
+        assert!(
+            r["failed"]["error"]
+                .as_str()
+                .unwrap()
+                .contains("denied nested file")
+        );
         assert!(s.documents().is_empty());
         s.authorize = None;
         s.actions.list.clear();
         for i in 0..17 {
             s.actions.list.push(Action {
                 name: format!("N{i}"),
-                steps: if i < 16 { vec![("actions.play".into(), json!({"action":format!("N{}", i + 1)}))] } else { vec![] },
+                steps: if i < 16 {
+                    vec![(
+                        "actions.play".into(),
+                        json!({"action":format!("N{}", i + 1)}),
+                    )]
+                } else {
+                    vec![]
+                },
                 disabled: Default::default(),
                 ..Default::default()
             });
@@ -1143,14 +1733,21 @@ mod tests {
         assert_eq!(s.actions.playing, 0);
         assert!(s.actions.playback_stack.is_empty());
         s.actions.list[15].steps.clear();
-        assert!(s.execute("actions.play", json!({"action": "N0"})).unwrap().get("failed").is_none());
+        assert!(
+            s.execute("actions.play", json!({"action": "N0"}))
+                .unwrap()
+                .get("failed")
+                .is_none()
+        );
     }
 
     #[test]
     fn move_pending_steps_is_atomic_persists_and_changes_playback_order() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 4, "height": 4})).unwrap();
-        s.execute("actions.record", json!({"name": "Order"})).unwrap();
+        s.execute("file.new", json!({"width": 4, "height": 4}))
+            .unwrap();
+        s.execute("actions.record", json!({"name": "Order"}))
+            .unwrap();
         for name in ["One", "Two", "Three"] {
             s.execute("layer.new.layer", json!({"name": name})).unwrap();
         }
@@ -1166,39 +1763,81 @@ mod tests {
             assert_eq!(s.actions, before);
         }
         let journal = s.journal.clone();
-        s.execute("actions.move", json!({"action":0,"step":0,"to":2})).unwrap();
-        s.execute("actions.move", json!({"action":0,"step":1,"to":0})).unwrap();
+        s.execute("actions.move", json!({"action":0,"step":0,"to":2}))
+            .unwrap();
+        s.execute("actions.move", json!({"action":0,"step":1,"to":0}))
+            .unwrap();
         assert_eq!(s.journal, journal);
-        s.execute("layer.new.layer", json!({"name":"Four"})).unwrap();
+        s.execute("layer.new.layer", json!({"name":"Four"}))
+            .unwrap();
         s.execute("actions.stop", json!({})).unwrap();
-        assert_eq!(s.actions.list[0].steps.iter().map(|st| st.1["name"].as_str().unwrap()).collect::<Vec<_>>(), ["Three", "Two", "One", "Four"]);
-        s.execute("file.new", json!({"width":4,"height":4})).unwrap();
+        assert_eq!(
+            s.actions.list[0]
+                .steps
+                .iter()
+                .map(|st| st.1["name"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["Three", "Two", "One", "Four"]
+        );
+        s.execute("file.new", json!({"width":4,"height":4}))
+            .unwrap();
         s.execute("actions.play", json!({"action":0})).unwrap();
-        assert_eq!(s.active().unwrap().doc.layers.iter().skip(1).map(|l| l.name.as_str()).collect::<Vec<_>>(), ["Three", "Two", "One", "Four"]);
+        assert_eq!(
+            s.active()
+                .unwrap()
+                .doc
+                .layers
+                .iter()
+                .skip(1)
+                .map(|l| l.name.as_str())
+                .collect::<Vec<_>>(),
+            ["Three", "Two", "One", "Four"]
+        );
     }
 
     #[test]
     fn new_names_do_not_collide_with_named_calls() {
         let mut s = Session::new();
-        s.actions.list.push(Action { name: "Action 2".into(), steps: vec![], disabled: Default::default(), ..Default::default() });
-        assert_eq!(s.execute("actions.record", json!({})).unwrap()["action"], "Action 3");
+        s.actions.list.push(Action {
+            name: "Action 2".into(),
+            steps: vec![],
+            disabled: Default::default(),
+            ..Default::default()
+        });
+        assert_eq!(
+            s.execute("actions.record", json!({})).unwrap()["action"],
+            "Action 3"
+        );
         s.execute("actions.stop", json!({})).unwrap();
-        assert!(s.execute("actions.record", json!({"name":"Action 2"})).is_err());
+        assert!(
+            s.execute("actions.record", json!({"name":"Action 2"}))
+                .is_err()
+        );
         assert!(s.actions.recording.is_none());
     }
 
     #[test]
     fn moving_action_keeps_recording_attached_to_it() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width":4,"height":4})).unwrap();
+        s.execute("file.new", json!({"width":4,"height":4}))
+            .unwrap();
         for name in ["A", "B", "C"] {
-            s.actions.list.push(Action { name: name.into(), steps: vec![], disabled: Default::default(), ..Default::default() });
+            s.actions.list.push(Action {
+                name: name.into(),
+                steps: vec![],
+                disabled: Default::default(),
+                ..Default::default()
+            });
         }
         s.execute("actions.record", json!({"action":"B"})).unwrap();
-        s.execute("layer.new.layer", json!({"name":"before"})).unwrap();
-        s.execute("actions.move", json!({"action":"B","to":2})).unwrap();
-        s.execute("actions.move", json!({"action":"A","to":2})).unwrap();
-        s.execute("layer.new.layer", json!({"name":"after"})).unwrap();
+        s.execute("layer.new.layer", json!({"name":"before"}))
+            .unwrap();
+        s.execute("actions.move", json!({"action":"B","to":2}))
+            .unwrap();
+        s.execute("actions.move", json!({"action":"A","to":2}))
+            .unwrap();
+        s.execute("layer.new.layer", json!({"name":"after"}))
+            .unwrap();
         s.execute("actions.stop", json!({})).unwrap();
         assert_eq!(s.actions.list[1].name, "B");
         assert_eq!(s.actions.list[1].steps.len(), 2);
@@ -1222,13 +1861,25 @@ mod tests {
             json!({"from": -3}),
             json!({"action": "missing", "from": 4}),
         ];
-        for id in ["actions.list", "actions.get", "actions.record", "actions.stop", "actions.play", "actions.delete", "actions.move"] {
+        for id in [
+            "actions.list",
+            "actions.get",
+            "actions.record",
+            "actions.stop",
+            "actions.play",
+            "actions.delete",
+            "actions.move",
+        ] {
             for p in &junk {
                 let _ = s.execute(id, p.clone());
             }
         }
         assert_eq!(s.actions.playing, 0);
-        assert!(crate::commands::command_specs().iter().any(|c| c.id == "actions.play" && !c.journal && c.menu.is_empty()));
+        assert!(
+            crate::commands::command_specs()
+                .iter()
+                .any(|c| c.id == "actions.play" && !c.journal && c.menu.is_empty())
+        );
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -1238,9 +1889,14 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let mut s = Session::new();
         let warnings = s.attach_preset_store(crate::preset_store::open_dir(&dir));
-        assert!(warnings.iter().all(|w| !w.contains("actions")), "{warnings:?}");
-        s.execute("file.new", json!({"width": 4, "height": 4})).unwrap();
-        s.execute("actions.record", json!({"name": "Kept"})).unwrap();
+        assert!(
+            warnings.iter().all(|w| !w.contains("actions")),
+            "{warnings:?}"
+        );
+        s.execute("file.new", json!({"width": 4, "height": 4}))
+            .unwrap();
+        s.execute("actions.record", json!({"name": "Kept"}))
+            .unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("actions.stop", json!({})).unwrap();
         drop(s);
@@ -1250,21 +1906,32 @@ mod tests {
         let listed = t.execute("actions.list", json!({})).unwrap();
         assert_eq!(listed["actions"][0]["name"], "Kept");
         assert_eq!(listed["actions"][0]["steps"], 1);
-        assert_eq!(t.execute("actions.get", json!({"action": "Kept"})).unwrap()["steps"][0][0], "layer.new.layer");
+        assert_eq!(
+            t.execute("actions.get", json!({"action": "Kept"})).unwrap()["steps"][0][0],
+            "layer.new.layer"
+        );
 
         // An action created before the store finishes loading is kept, and a different one on
         // disk is merged in.
         let mut early = Session::new();
-        early.execute("actions.record", json!({"name": "Early"})).unwrap();
+        early
+            .execute("actions.record", json!({"name": "Early"}))
+            .unwrap();
         early.execute("actions.stop", json!({})).unwrap();
         early.attach_preset_store(crate::preset_store::open_dir(&dir));
         let names: Vec<String> = early.actions.list.iter().map(|a| a.name.clone()).collect();
-        assert!(names.contains(&"Early".into()) && names.contains(&"Kept".into()), "{names:?}");
+        assert!(
+            names.contains(&"Early".into()) && names.contains(&"Kept".into()),
+            "{names:?}"
+        );
 
         std::fs::write(dir.join("actions.json"), b"{").unwrap();
         let mut bad = Session::new();
         let warnings = bad.attach_preset_store(crate::preset_store::open_dir(&dir));
-        assert!(warnings.iter().any(|w| w.contains("actions")), "{warnings:?}");
+        assert!(
+            warnings.iter().any(|w| w.contains("actions")),
+            "{warnings:?}"
+        );
         assert!(bad.actions.list.is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1274,38 +1941,86 @@ mod tests {
     #[test]
     fn a_recorded_edit_run_replays_on_a_second_document() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 64, "height": 64, "background": "white"})).unwrap();
-        s.execute("actions.record", json!({"name": "Studio"})).unwrap();
-        s.execute("image.crop", json!({"x": 8, "y": 8, "width": 48, "height": 48})).unwrap();
-        s.execute("filter.blur.gaussianBlur", json!({"radius": 2})).unwrap();
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 12, "height": 12})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 64, "height": 64, "background": "white"}),
+        )
+        .unwrap();
+        s.execute("actions.record", json!({"name": "Studio"}))
+            .unwrap();
+        s.execute(
+            "image.crop",
+            json!({"x": 8, "y": 8, "width": 48, "height": 48}),
+        )
+        .unwrap();
+        s.execute("filter.blur.gaussianBlur", json!({"radius": 2}))
+            .unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 12, "height": 12}),
+        )
+        .unwrap();
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
         s.execute("select.deselect", json!({})).unwrap();
-        s.execute("type.create", json!({"x": 10, "y": 36, "text": "Hi", "size": 12, "color": "#000000"})).unwrap();
-        s.execute("type.setStyle", json!({"fauxBold": true})).unwrap();
+        s.execute(
+            "type.create",
+            json!({"x": 10, "y": 36, "text": "Hi", "size": 12, "color": "#000000"}),
+        )
+        .unwrap();
+        s.execute("type.setStyle", json!({"fauxBold": true}))
+            .unwrap();
         let stopped = s.execute("actions.stop", json!({})).unwrap();
         let steps = stopped["steps"].as_u64().unwrap();
         assert!(steps >= 7, "the recording keeps every family: {stopped}");
 
         // The second document: a different size, background and name. The replay must act here.
-        s.execute("file.new", json!({"width": 100, "height": 80, "background": "black", "name": "Second"})).unwrap();
-        let played = s.execute("actions.play", json!({"action": "Studio"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 100, "height": 80, "background": "black", "name": "Second"}),
+        )
+        .unwrap();
+        let played = s
+            .execute("actions.play", json!({"action": "Studio"}))
+            .unwrap();
         assert!(played.get("failed").is_none(), "replay: {played}");
-        assert_eq!(played["ran"].as_u64(), Some(steps), "every step ran: {played}");
+        assert_eq!(
+            played["ran"].as_u64(),
+            Some(steps),
+            "every step ran: {played}"
+        );
         let d = &s.active().unwrap().doc;
-        assert_eq!((d.size.width, d.size.height), (48, 48), "the crop replayed onto the second document");
-        assert_eq!(pixel(&s, 0, 16, 16), vec![1.0, 0.0, 0.0, 1.0], "the selection fill replayed");
-        assert_eq!(pixel(&s, 0, 2, 2), vec![0.0, 0.0, 0.0, 1.0], "outside the selection stays black");
+        assert_eq!(
+            (d.size.width, d.size.height),
+            (48, 48),
+            "the crop replayed onto the second document"
+        );
+        assert_eq!(
+            pixel(&s, 0, 16, 16),
+            vec![1.0, 0.0, 0.0, 1.0],
+            "the selection fill replayed"
+        );
+        assert_eq!(
+            pixel(&s, 0, 2, 2),
+            vec![0.0, 0.0, 0.0, 1.0],
+            "outside the selection stays black"
+        );
         let last = d.layers.last().unwrap();
         match &last.content {
             photocraft_doc::LayerContent::Text(t) => {
                 assert_eq!(t.text, "Hi", "the styled text replayed");
-                assert!(t.char_runs().iter().any(|r| r.style.faux_bold), "the bold run replayed");
+                assert!(
+                    t.char_runs().iter().any(|r| r.style.faux_bold),
+                    "the bold run replayed"
+                );
             }
             other => panic!("expected the recorded type layer, got {other:?}"),
         }
         // The first document is untouched.
         let first = &s.documents()[0].doc;
-        assert_eq!((first.size.width, first.size.height), (48, 48), "the recording document keeps its own crop");
+        assert_eq!(
+            (first.size.width, first.size.height),
+            (48, 48),
+            "the recording document keeps its own crop"
+        );
     }
 }

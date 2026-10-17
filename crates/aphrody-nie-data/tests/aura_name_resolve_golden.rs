@@ -39,8 +39,14 @@ fn aura(name_id: u32, desc_id: u32) -> AuraCmd {
 
 fn skill_text() -> Vec<(HashId, String)> {
     vec![
-        (HashId(0x0000_A001), String::from("Lancelot, le spadassin héroïque")),
-        (HashId(0x0000_A002), String::from("Le spadassin héroïque, un esprit du feu.")),
+        (
+            HashId(0x0000_A001),
+            String::from("Lancelot, le spadassin héroïque"),
+        ),
+        (
+            HashId(0x0000_A002),
+            String::from("Le spadassin héroïque, un esprit du feu."),
+        ),
     ]
 }
 
@@ -48,8 +54,14 @@ fn skill_text() -> Vec<(HashId, String)> {
 fn resolves_avatar_name_and_description() {
     let a = aura(0x0000_A001, 0x0000_A002);
     let t = skill_text();
-    assert_eq!(resolve_name(&a, &t), Some("Lancelot, le spadassin héroïque"));
-    assert_eq!(resolve_description(&a, &t), Some("Le spadassin héroïque, un esprit du feu."));
+    assert_eq!(
+        resolve_name(&a, &t),
+        Some("Lancelot, le spadassin héroïque")
+    );
+    assert_eq!(
+        resolve_description(&a, &t),
+        Some("Le spadassin héroïque, un esprit du feu.")
+    );
     // L'asset_code et l'id sont bien lus par from_node.
     assert_eq!(a.aura_id, HashId(0x7978_E1FA));
     assert_eq!(a.asset_code, "wks00020");

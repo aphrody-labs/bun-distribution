@@ -133,14 +133,24 @@ pub struct Plan {
 /// Document-level properties that belong to each copy, not to the work: the file name (a branch
 /// is named after itself) and the page it opens on.
 fn merges(c: &Change) -> bool {
-    !matches!(c, Change::SetDoc { prop: DocProp::Name | DocProp::CurrentPage, .. })
+    !matches!(
+        c,
+        Change::SetDoc {
+            prop: DocProp::Name | DocProp::CurrentPage,
+            ..
+        }
+    )
 }
 
 /// What a change writes, for finding the same write on both sides (creations: nothing; ids are
 /// never made twice, see [`Document::set_client_id`]).
 fn key_of(c: &Change) -> Option<Key> {
     Some(match c {
-        Change::Set { id, prop: Prop::Position, .. } => Key::Node(*id, Prop::Parent),
+        Change::Set {
+            id,
+            prop: Prop::Position,
+            ..
+        } => Key::Node(*id, Prop::Parent),
         Change::Set { id, prop, .. } => Key::Node(*id, *prop),
         Change::Delete { id } => Key::Layer(*id),
         Change::SetDoc { prop, .. } => Key::Doc(*prop),
@@ -165,8 +175,12 @@ const PER_ITEM: &[Prop] = &[Prop::Fills, Prop::Strokes, Prop::Effects];
 /// Both sides' writes `b` and `m` of list property `key` merged item by item against the base
 /// (see [`merge_items`]); `None` when `key` isn't such a list or the writes conflict.
 fn merged_list(base: &Document, key: &Key, b: Option<&Change>, m: Option<&Change>) -> Option<Json> {
-    let Key::Node(id, prop) = key else { return None };
-    let (Some(Change::Set { value: bv, .. }), Some(Change::Set { value: mv, .. })) = (b, m) else { return None };
+    let Key::Node(id, prop) = key else {
+        return None;
+    };
+    let (Some(Change::Set { value: bv, .. }), Some(Change::Set { value: mv, .. })) = (b, m) else {
+        return None;
+    };
     if !PER_ITEM.contains(prop) {
         return None;
     }
@@ -216,8 +230,17 @@ fn touching(gone: &BTreeSet<NodeId>, changes: &[Change]) -> Vec<usize> {
     let mut out = Vec::new();
     for (i, c) in changes.iter().enumerate() {
         let hit = match c {
-            Change::Set { id, prop: Prop::Parent, value } => {
-                doomed.contains(id) || value.read::<Option<NodeId>>("parent").ok().flatten().is_some_and(|p| doomed.contains(&p))
+            Change::Set {
+                id,
+                prop: Prop::Parent,
+                value,
+            } => {
+                doomed.contains(id)
+                    || value
+                        .read::<Option<NodeId>>("parent")
+                        .ok()
+                        .flatten()
+                        .is_some_and(|p| doomed.contains(&p))
             }
             Change::Set { id, .. } => doomed.contains(id),
             Change::Create { id, parent, .. } => {
@@ -262,7 +285,12 @@ pub fn plan(base: &Document, branch: &Document, main: &Document) -> Result<Plan,
         }
         match merged_list(base, &k, only(&bi, &bc), only(mi, &mc)) {
             Some(value) => lists.push((bi, mi.clone(), value)),
-            None => conflicts.push(Conflict { key: k, deleted_by: None, branch: bi, main: mi.clone() }),
+            None => conflicts.push(Conflict {
+                key: k,
+                deleted_by: None,
+                branch: bi,
+                main: mi.clone(),
+            }),
         }
     }
     // Both sides' writes of a list merged item by item become the merged list, so merging either
@@ -276,17 +304,33 @@ pub fn plan(base: &Document, branch: &Document, main: &Document) -> Result<Plan,
             }
         }
     }
-    for (side, changes, doc, other) in [(Side::Branch, &bc, branch, &mc), (Side::Main, &mc, main, &bc)] {
+    for (side, changes, doc, other) in [
+        (Side::Branch, &bc, branch, &mc),
+        (Side::Main, &mc, main, &bc),
+    ] {
         for (i, c) in changes.iter().enumerate() {
             let Change::Delete { id } = c else { continue };
             // Layers moved out before the deletion survive it.
-            let gone: BTreeSet<NodeId> = base.subtree(*id).into_iter().filter(|n| !doc.contains(*n)).collect();
+            let gone: BTreeSet<NodeId> = base
+                .subtree(*id)
+                .into_iter()
+                .filter(|n| !doc.contains(*n))
+                .collect();
             let edits = touching(&gone, other);
             if edits.is_empty() {
                 continue;
             }
-            let (branch, main) = if side == Side::Branch { (vec![i], edits) } else { (edits, vec![i]) };
-            conflicts.push(Conflict { key: Key::Layer(*id), deleted_by: Some(side), branch, main });
+            let (branch, main) = if side == Side::Branch {
+                (vec![i], edits)
+            } else {
+                (edits, vec![i])
+            };
+            conflicts.push(Conflict {
+                key: Key::Layer(*id),
+                deleted_by: Some(side),
+                branch,
+                main,
+            });
         }
     }
     Ok(Plan {
@@ -322,16 +366,31 @@ impl Plan {
 
     /// The conflicts `pick` has no side for.
     pub fn unresolved(&self, pick: &dyn Fn(&Key) -> Option<Side>) -> Vec<&Conflict> {
-        self.conflicts.iter().filter(|c| pick(&c.key).is_none()).collect()
+        self.conflicts
+            .iter()
+            .filter(|c| pick(&c.key).is_none())
+            .collect()
     }
 
     /// Merge `from`'s changes into `into` (the other side's document, as the plan was made from),
     /// each conflict resolved by `pick`. Fails when a conflict has no side, or when the result is
     /// not a valid document. Returns the merged document and the layers it touched.
-    pub fn merge(&self, into: &Document, from: Side, pick: &dyn Fn(&Key) -> Option<Side>) -> Result<(Document, BTreeSet<NodeId>), Error> {
-        let unresolved: Vec<String> = self.unresolved(pick).iter().map(|c| c.key.to_string()).collect();
+    pub fn merge(
+        &self,
+        into: &Document,
+        from: Side,
+        pick: &dyn Fn(&Key) -> Option<Side>,
+    ) -> Result<(Document, BTreeSet<NodeId>), Error> {
+        let unresolved: Vec<String> = self
+            .unresolved(pick)
+            .iter()
+            .map(|c| c.key.to_string())
+            .collect();
         if !unresolved.is_empty() {
-            return Err(Error::Invalid(format!("unresolved conflicts: {}", unresolved.join(", "))));
+            return Err(Error::Invalid(format!(
+                "unresolved conflicts: {}",
+                unresolved.join(", ")
+            )));
         }
         let mut skip: BTreeSet<usize> = BTreeSet::new();
         let mut batch = Vec::new();
@@ -352,8 +411,21 @@ impl Plan {
         }
         // shortcut: images a side stopped using are kept (unused ones cost file size only); drop
         // them if files grow.
-        let kept = |c: &Change| !matches!(c, Change::Remove { entry: Entry::Image(_) });
-        batch.extend(self.changes(from).iter().enumerate().filter(|(i, c)| !skip.contains(i) && kept(c)).map(|(_, c)| c.clone()));
+        let kept = |c: &Change| {
+            !matches!(
+                c,
+                Change::Remove {
+                    entry: Entry::Image(_)
+                }
+            )
+        };
+        batch.extend(
+            self.changes(from)
+                .iter()
+                .enumerate()
+                .filter(|(i, c)| !skip.contains(i) && kept(c))
+                .map(|(_, c)| c.clone()),
+        );
         let mut r = Replica::from_parts(into.clone(), self.positions(from.other()).clone());
         let applied = r.apply(&batch, Mode::Strict)?;
         Ok((r.document().clone(), applied.touched))
@@ -362,7 +434,10 @@ impl Plan {
     /// `into` (the other side's document) with only `from`'s changes at `indexes` applied, those
     /// that apply (for showing what one side's changes to a conflict look like).
     pub fn with_changes(&self, into: &Document, from: Side, indexes: &[usize]) -> Document {
-        let changes: Vec<Change> = indexes.iter().filter_map(|i| self.changes(from).get(*i).cloned()).collect();
+        let changes: Vec<Change> = indexes
+            .iter()
+            .filter_map(|i| self.changes(from).get(*i).cloned())
+            .collect();
         let mut r = Replica::from_parts(into.clone(), self.positions(from.other()).clone());
         let _ = r.apply(&changes, Mode::Lenient);
         r.document().clone()

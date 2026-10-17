@@ -80,7 +80,11 @@ pub struct WidgetNode {
     pub fill: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stroke: Option<String>,
-    #[serde(rename = "strokeWeight", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "strokeWeight",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub stroke_weight: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub radius: Option<f64>,
@@ -131,7 +135,10 @@ impl WidgetRender {
     /// Parse and validate a widget description.
     pub fn parse(text: &str) -> Result<WidgetRender, String> {
         if text.len() > MAX_WIDGET_BYTES {
-            return Err(format!("the widget is larger than {} MB", MAX_WIDGET_BYTES / (1024 * 1024)));
+            return Err(format!(
+                "the widget is larger than {} MB",
+                MAX_WIDGET_BYTES / (1024 * 1024)
+            ));
         }
         let mut w: WidgetRender = serde_json::from_str(text).map_err(|e| format!("widget: {e}"))?;
         if let Some(state) = &w.state {
@@ -140,18 +147,33 @@ impl WidgetRender {
         if w.root.kind != WidgetKind::Frame {
             return Err("widget: the root must be a frame".into());
         }
-        w.root.check(0, &mut Budget { nodes: 0, image_bytes: 0 }).map_err(|e| format!("widget: {e}"))?;
+        w.root
+            .check(
+                0,
+                &mut Budget {
+                    nodes: 0,
+                    image_bytes: 0,
+                },
+            )
+            .map_err(|e| format!("widget: {e}"))?;
         Ok(w)
     }
 }
 
 /// A widget's state: a JSON object of at most [`MAX_STATE_BYTES`] with short keys.
 pub fn check_state(state: &Map<String, Value>) -> Result<(), String> {
-    if state.keys().any(|k| k.is_empty() || k.chars().count() > MAX_STATE_KEY || k.chars().any(char::is_control)) {
-        return Err(format!("widget: a state key must be 1–{MAX_STATE_KEY} characters without control characters"));
+    if state.keys().any(|k| {
+        k.is_empty() || k.chars().count() > MAX_STATE_KEY || k.chars().any(char::is_control)
+    }) {
+        return Err(format!(
+            "widget: a state key must be 1–{MAX_STATE_KEY} characters without control characters"
+        ));
     }
     if serde_json::to_string(state).map_or(usize::MAX, |s| s.len()) > MAX_STATE_BYTES {
-        return Err(format!("widget: the state is larger than {} KB", MAX_STATE_BYTES / 1024));
+        return Err(format!(
+            "widget: the state is larger than {} KB",
+            MAX_STATE_BYTES / 1024
+        ));
     }
     Ok(())
 }
@@ -159,7 +181,9 @@ pub fn check_state(state: &Map<String, Value>) -> Result<(), String> {
 /// `v` when it's finite and within `lo..=hi`.
 fn within(what: &str, v: Option<f64>, lo: f64, hi: f64) -> Result<(), String> {
     match v {
-        Some(n) if !n.is_finite() || n < lo || n > hi => Err(format!("`{what}` must be a number from {lo} to {hi}")),
+        Some(n) if !n.is_finite() || n < lo || n > hi => {
+            Err(format!("`{what}` must be a number from {lo} to {hi}"))
+        }
         _ => Ok(()),
     }
 }
@@ -167,8 +191,12 @@ fn within(what: &str, v: Option<f64>, lo: f64, hi: f64) -> Result<(), String> {
 /// A colour as `#RRGGBB(AA)`.
 fn colour(what: &str, c: &mut Option<String>) -> Result<(), String> {
     if let Some(s) = c {
-        let parsed = Some(s.as_str()).filter(|s| s.len() <= 9).and_then(figcraft_color::Color::from_hex);
-        *s = parsed.ok_or_else(|| format!("`{what}` must be a hex colour like #FF5A5F"))?.to_css_hex();
+        let parsed = Some(s.as_str())
+            .filter(|s| s.len() <= 9)
+            .and_then(figcraft_color::Color::from_hex);
+        *s = parsed
+            .ok_or_else(|| format!("`{what}` must be a hex colour like #FF5A5F"))?
+            .to_css_hex();
     }
     Ok(())
 }
@@ -189,7 +217,13 @@ impl WidgetNode {
         for (what, v) in [("x", self.x), ("y", self.y)] {
             within(what, v, -MAX_SIZE, MAX_SIZE)?;
         }
-        for (what, v) in [("width", self.width), ("height", self.height), ("gap", self.gap), ("padding", self.padding), ("radius", self.radius)] {
+        for (what, v) in [
+            ("width", self.width),
+            ("height", self.height),
+            ("gap", self.gap),
+            ("padding", self.padding),
+            ("radius", self.radius),
+        ] {
             within(what, v, 0.0, MAX_SIZE)?;
         }
         within("strokeWeight", self.stroke_weight, 0.0, 64.0)?;
@@ -200,15 +234,31 @@ impl WidgetNode {
         colour("color", &mut self.color)?;
         let kind = self.kind;
         let only = |what: &str, used: bool, allowed: bool| {
-            if used && !allowed { Err(format!("`{what}` doesn't apply to a {kind:?} layer")) } else { Ok(()) }
+            if used && !allowed {
+                Err(format!("`{what}` doesn't apply to a {kind:?} layer"))
+            } else {
+                Ok(())
+            }
         };
-        only("children", !self.children.is_empty(), kind == WidgetKind::Frame)?;
         only(
-            "layout",
-            self.layout.is_some() || self.gap.is_some() || self.padding.is_some() || self.align.is_some() || self.justify.is_some(),
+            "children",
+            !self.children.is_empty(),
             kind == WidgetKind::Frame,
         )?;
-        only("text", !self.text.is_empty() || self.size.is_some() || self.color.is_some() || self.bold, kind == WidgetKind::Text)?;
+        only(
+            "layout",
+            self.layout.is_some()
+                || self.gap.is_some()
+                || self.padding.is_some()
+                || self.align.is_some()
+                || self.justify.is_some(),
+            kind == WidgetKind::Frame,
+        )?;
+        only(
+            "text",
+            !self.text.is_empty() || self.size.is_some() || self.color.is_some() || self.bold,
+            kind == WidgetKind::Text,
+        )?;
         only("data", !self.data.is_empty(), kind == WidgetKind::Image)?;
         if self.text.chars().count() > MAX_TEXT {
             return Err(format!("a text is longer than {MAX_TEXT} characters"));
@@ -220,13 +270,21 @@ impl WidgetNode {
             // Base64: four characters for three bytes (checked again when decoded).
             let bytes = self.data.trim().len() / 4 * 3;
             if self.data.trim().is_empty() || bytes > MAX_IMAGE_BYTES + 3 {
-                return Err(format!("an image needs `data` (base64) of at most {} KB", MAX_IMAGE_BYTES / 1024));
+                return Err(format!(
+                    "an image needs `data` (base64) of at most {} KB",
+                    MAX_IMAGE_BYTES / 1024
+                ));
             }
             budget.image_bytes += bytes;
             if budget.image_bytes > MAX_IMAGES_BYTES + 3 {
-                return Err(format!("the images are larger than {} MB together", MAX_IMAGES_BYTES / (1024 * 1024)));
+                return Err(format!(
+                    "the images are larger than {} MB together",
+                    MAX_IMAGES_BYTES / (1024 * 1024)
+                ));
             }
         }
-        self.children.iter_mut().try_for_each(|c| c.check(depth + 1, budget))
+        self.children
+            .iter_mut()
+            .try_for_each(|c| c.check(depth + 1, budget))
     }
 }

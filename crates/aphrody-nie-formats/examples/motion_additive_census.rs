@@ -16,7 +16,10 @@ fn main() {
         eprintln!("usage : motion_additive_census <prefixe/vfs/> [limite]");
         std::process::exit(2);
     });
-    let limite: usize = std::env::args().nth(2).and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
+    let limite: usize = std::env::args()
+        .nth(2)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(usize::MAX);
 
     let racine = aphrody_nie_formats::vfs::resolve_game_dir();
     let mut vfs = Vfs::new();
@@ -64,11 +67,18 @@ fn main() {
     }
 
     println!("prefixe        {prefixe}");
-    println!("paquets .g4pk  {} vus, {paquets_lus} lus, {illisibles} illisibles", paquets.len());
+    println!(
+        "paquets .g4pk  {} vus, {paquets_lus} lus, {illisibles} illisibles",
+        paquets.len()
+    );
     println!("clips          {clips}");
     println!(
         "ADDITIFS       {additifs} ({:.2} %)",
-        if clips == 0 { 0.0 } else { additifs as f64 * 100.0 / clips as f64 }
+        if clips == 0 {
+            0.0
+        } else {
+            additifs as f64 * 100.0 / clips as f64
+        }
     );
     for e in &exemples {
         println!("  exemple additif : {e}");

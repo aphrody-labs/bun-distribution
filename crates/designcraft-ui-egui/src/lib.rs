@@ -3,7 +3,14 @@
 //! The UI is thin: every action goes through [`DesignApp::run`], which dispatches UI commands
 //! (view/window) here and everything else to the engine. Menus, shortcuts, the ⌘K palette and
 //! the control channel ([`control`]) share that entry point.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod about;
@@ -401,7 +408,12 @@ pub struct View {
 
 impl Default for View {
     fn default() -> Self {
-        View { zoom: 0.5, origin: Point::new(-100.0, -100.0), fitted: false, rotation: 0 }
+        View {
+            zoom: 0.5,
+            origin: Point::new(-100.0, -100.0),
+            fitted: false,
+            rotation: 0,
+        }
     }
 }
 
@@ -593,12 +605,19 @@ impl DesignApp {
             return;
         }
         let (c, r) = self.other_pane.take().unwrap_or_default();
-        let old = (std::mem::replace(&mut self.canvas, c), std::mem::replace(&mut self.canvas_rect, r));
+        let old = (
+            std::mem::replace(&mut self.canvas, c),
+            std::mem::replace(&mut self.canvas_rect, r),
+        );
         self.other_pane = Some(old);
         self.pane = pane;
     }
     pub fn view_info(&self) -> ViewInfo {
-        ViewInfo { zoom: self.view().map(|v| v.zoom).unwrap_or(1.0), snap: self.ui.snap_view(), unit: self.ui.units }
+        ViewInfo {
+            zoom: self.view().map(|v| v.zoom).unwrap_or(1.0),
+            snap: self.ui.snap_view(),
+            unit: self.ui.units,
+        }
     }
 
     pub fn status(&mut self, s: impl Into<String>) {
@@ -623,7 +642,9 @@ impl DesignApp {
         let reqs = std::mem::take(&mut self.session.ui_requests);
         for r in reqs {
             match r {
-                UiRequest::Dialog { id, params } => self.ui.dialog = Some(dialogs::Dialog::new(&id, params)),
+                UiRequest::Dialog { id, params } => {
+                    self.ui.dialog = Some(dialogs::Dialog::new(&id, params))
+                }
                 UiRequest::View { params } => canvas::apply_view_request(self, &params),
                 UiRequest::Pick { purpose, params } => {
                     let _ = params;
@@ -642,16 +663,27 @@ impl DesignApp {
     /// command right away; asynchronous ones (web) deliver the file through the inbox.
     pub fn pick_and_open(&mut self, purpose: &str) -> Result<Value, String> {
         let target = self.session.active().map(|d| d.uid);
-        let cmd = if purpose == "place" { "file.place" } else { "file.open" };
+        let cmd = if purpose == "place" {
+            "file.place"
+        } else {
+            "file.open"
+        };
         if let Some(pick) = self.services.pick_open.as_mut() {
             return match pick(purpose) {
                 // Image Import Options: a multi-page PDF asks which page.
                 Some(path) if purpose == "place" && path.to_ascii_lowercase().ends_with(".pdf") => {
-                    let pages =
-                        self.services.read.as_mut().and_then(|r| r(&path).ok()).and_then(|b| designcraft_render::pdf_page_count(&b)).unwrap_or(1);
+                    let pages = self
+                        .services
+                        .read
+                        .as_mut()
+                        .and_then(|r| r(&path).ok())
+                        .and_then(|b| designcraft_render::pdf_page_count(&b))
+                        .unwrap_or(1);
                     if pages > 1 {
-                        self.ui.dialog =
-                            Some(dialogs::Dialog::new("pdfImport", json!({"path": path, "page": "1", "pages": pages, "target": target})));
+                        self.ui.dialog = Some(dialogs::Dialog::new(
+                            "pdfImport",
+                            json!({"path": path, "page": "1", "pages": pages, "target": target}),
+                        ));
                         Ok(Value::Null)
                     } else {
                         self.open_file(cmd, json!({"path": path}))
@@ -669,11 +701,17 @@ impl DesignApp {
     }
 
     pub fn import_request(&self, purpose: &str) -> ImportRequest {
-        ImportRequest { purpose: purpose.into(), target: self.session.active().map(|d| d.uid) }
+        ImportRequest {
+            purpose: purpose.into(),
+            target: self.session.active().map(|d| d.uid),
+        }
     }
 
     pub(crate) fn activate_import_target(&mut self, request: &ImportRequest) -> Result<(), String> {
-        let Some(index) = request.target.and_then(|uid| self.session.documents().iter().position(|d| d.uid == uid)) else {
+        let Some(index) = request
+            .target
+            .and_then(|uid| self.session.documents().iter().position(|d| d.uid == uid))
+        else {
             let message = "Import cancelled: the originating document has closed";
             self.status(message);
             return Err(message.into());
@@ -687,7 +725,10 @@ impl DesignApp {
     }
 
     pub(crate) fn confirm_pdf_import(&mut self, page: u64, crop: String) -> Result<Value, String> {
-        let file = self.pending_pdf.take().ok_or("PDF import cancelled: no pending file")?;
+        let file = self
+            .pending_pdf
+            .take()
+            .ok_or("PDF import cancelled: no pending file")?;
         self.activate_import_target(&file.request)?;
         self.open_file(
             "file.place",
@@ -699,9 +740,14 @@ impl DesignApp {
     /// replacing its options. Cancellation, replacement and target closure release its payload.
     fn drain_inbox(&mut self) {
         if let Some(file) = &self.pending_pdf {
-            let target_exists = self.session.documents().iter().any(|d| Some(d.uid) == file.request.target);
-            let owns_dialog =
-                self.ui.dialog.as_ref().is_some_and(|d| d.id == "pdfImport" && d.fields.get("async").and_then(Value::as_bool) == Some(true));
+            let target_exists = self
+                .session
+                .documents()
+                .iter()
+                .any(|d| Some(d.uid) == file.request.target);
+            let owns_dialog = self.ui.dialog.as_ref().is_some_and(|d| {
+                d.id == "pdfImport" && d.fields.get("async").and_then(Value::as_bool) == Some(true)
+            });
             if !target_exists || !owns_dialog {
                 self.pending_pdf = None;
                 if !target_exists {
@@ -712,11 +758,16 @@ impl DesignApp {
                 }
             }
         }
-        let Some(inbox) = self.services.inbox.clone() else { return };
+        let Some(inbox) = self.services.inbox.clone() else {
+            return;
+        };
         let files = std::mem::take(&mut *inbox.lock().unwrap_or_else(|e| e.into_inner()));
         for file in files {
             if self.ui.dialog.is_some() {
-                self.status(format!("{}: import cancelled while a dialog is open; choose the file again", file.name));
+                self.status(format!(
+                    "{}: import cancelled while a dialog is open; choose the file again",
+                    file.name
+                ));
                 continue;
             }
             let name = file.name.clone();
@@ -729,16 +780,20 @@ impl DesignApp {
     fn import_file(&mut self, file: ImportedFile) -> Result<Value, String> {
         let lower = file.name.to_ascii_lowercase();
         let layout = opens_as_document(&file.name);
-        let place =
-            file.request.purpose == "place" || (matches!(file.request.purpose.as_str(), "drop" | "open") && !layout && !lower.ends_with(".ase"));
+        let place = file.request.purpose == "place"
+            || (matches!(file.request.purpose.as_str(), "drop" | "open")
+                && !layout
+                && !lower.ends_with(".ase"));
         if place || lower.ends_with(".ase") || file.request.purpose == "swatches" {
             self.activate_import_target(&file.request)?;
         }
         if place && lower.ends_with(".pdf") {
             let pages = designcraft_render::pdf_page_count(&file.bytes).unwrap_or(1);
             if pages > 1 {
-                self.ui.dialog =
-                    Some(dialogs::Dialog::new("pdfImport", json!({"async": true, "name": file.name.clone(), "page": "1", "pages": pages})));
+                self.ui.dialog = Some(dialogs::Dialog::new(
+                    "pdfImport",
+                    json!({"async": true, "name": file.name.clone(), "page": "1", "pages": pages}),
+                ));
                 self.pending_pdf = Some(file);
                 return Ok(Value::Null);
             }
@@ -749,7 +804,10 @@ impl DesignApp {
         } else if place {
             self.open_file("file.place", json!({"name": file.name, "base64": b64}))
         } else {
-            let title = file.name.rsplit_once('.').map_or(file.name.as_str(), |(stem, _)| stem);
+            let title = file
+                .name
+                .rsplit_once('.')
+                .map_or(file.name.as_str(), |(stem, _)| stem);
             self.open_file("file.openBytes", json!({"name": title, "base64": b64}))
         }
     }
@@ -790,7 +848,9 @@ impl DesignApp {
         let now = ctx.input(|i| i.time);
         // Crash recovery: unsaved documents are written to the recovery folder every 30 s.
         #[cfg(not(target_arch = "wasm32"))]
-        if self.session.recovery_dir.is_some() && now - self.last_recovery > (self.session.prefs.recovery_minutes * 60.0).max(5.0) {
+        if self.session.recovery_dir.is_some()
+            && now - self.last_recovery > (self.session.prefs.recovery_minutes * 60.0).max(5.0)
+        {
             self.last_recovery = now;
             if self.session.documents().iter().any(|d| d.is_dirty())
                 && let Err(e) = self.session.execute("file.recovery.save", &json!({}))
@@ -844,8 +904,9 @@ impl DesignApp {
             if self.quitting.is_none() && !self.session.documents().iter().any(|d| d.is_dirty()) {
                 return;
             }
-            let approved =
-                self.quitting.as_ref().is_some_and(|q| q.pending.is_none()) && self.ui.dialog.is_none() && self.next_unapproved_document().is_none();
+            let approved = self.quitting.as_ref().is_some_and(|q| q.pending.is_none())
+                && self.ui.dialog.is_none()
+                && self.next_unapproved_document().is_none();
             if approved {
                 // Commit only when the backend receives the final close, after checking for
                 // edits that arrived since the last answer. Closing also discards recovery data.
@@ -863,10 +924,16 @@ impl DesignApp {
             ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
             ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
             if self.quitting.is_none() {
-                self.quitting = Some(QuitState { original_active: self.session.active().map(|d| d.uid), accepted: HashMap::new(), pending: None });
+                self.quitting = Some(QuitState {
+                    original_active: self.session.active().map(|d| d.uid),
+                    accepted: HashMap::new(),
+                    pending: None,
+                });
             }
         }
-        let Some(q) = self.quitting.as_ref() else { return };
+        let Some(q) = self.quitting.as_ref() else {
+            return;
+        };
         if let Some(uid) = q.pending {
             let asking = self.ui.dialog.as_ref().is_some_and(|d| {
                 d.id == "closeDocument"
@@ -889,8 +956,9 @@ impl DesignApp {
     /// terminate before egui receives its queued Close; an unfinished/stale plan leaves every
     /// document live so the host can preserve its recovery data instead.
     pub fn finish_confirmed_quit(&mut self) -> Result<(), String> {
-        let approved =
-            self.quitting.as_ref().is_some_and(|q| q.pending.is_none()) && self.ui.dialog.is_none() && self.next_unapproved_document().is_none();
+        let approved = self.quitting.as_ref().is_some_and(|q| q.pending.is_none())
+            && self.ui.dialog.is_none()
+            && self.next_unapproved_document().is_none();
         if !approved {
             return Ok(());
         }
@@ -912,14 +980,23 @@ impl DesignApp {
     }
 
     fn cancel_quit(&mut self) {
-        let Some(q) = self.quitting.take() else { return };
-        if let Some(i) = q.original_active.and_then(|uid| self.session.documents().iter().position(|d| d.uid == uid)) {
+        let Some(q) = self.quitting.take() else {
+            return;
+        };
+        if let Some(i) = q
+            .original_active
+            .and_then(|uid| self.session.documents().iter().position(|d| d.uid == uid))
+        {
             let _ = self.run("file.activate", json!({"index": i}));
         }
     }
 
     /// Save/Don't Save during Quit approves this UID's current revision, without destroying it.
-    pub(crate) fn confirm_quit_document(&mut self, uid: u64, discard: bool) -> Result<Value, String> {
+    pub(crate) fn confirm_quit_document(
+        &mut self,
+        uid: u64,
+        discard: bool,
+    ) -> Result<Value, String> {
         if self.quitting.as_ref().and_then(|q| q.pending) != Some(uid) {
             return Err("Quit confirmation is no longer active".into());
         }
@@ -930,12 +1007,20 @@ impl DesignApp {
             return Ok(Value::Null);
         };
         if !discard {
-            let saved = self.run("file.activate", json!({"index": i})).and_then(|_| self.run("app.save", json!({})));
+            let saved = self
+                .run("file.activate", json!({"index": i}))
+                .and_then(|_| self.run("app.save", json!({})));
             if let Err(e) = saved {
                 self.cancel_quit();
                 return Err(e);
             }
-            if self.session.documents().iter().find(|d| d.uid == uid).is_none_or(|d| d.is_dirty()) {
+            if self
+                .session
+                .documents()
+                .iter()
+                .find(|d| d.uid == uid)
+                .is_none_or(|d| d.is_dirty())
+            {
                 // No file chosen (or an asynchronous host save has not completed): stop quitting.
                 self.cancel_quit();
                 return Ok(Value::Null);
@@ -971,7 +1056,11 @@ impl DesignApp {
 
     /// A file dropped on the window: documents open, anything else is placed.
     pub fn open_dropped(&mut self, path: &str) -> Result<Value, String> {
-        let cmd = if opens_as_document(path) { "file.open" } else { "file.place" };
+        let cmd = if opens_as_document(path) {
+            "file.open"
+        } else {
+            "file.place"
+        };
         self.open_file(cmd, json!({"path": path}))
     }
 
@@ -980,13 +1069,26 @@ impl DesignApp {
     /// A successful import with warnings keeps the document and shows the warnings in an alert.
     pub fn open_file(&mut self, cmd: &str, params: Value) -> Result<Value, String> {
         let file = match params.get("path").and_then(Value::as_str) {
-            Some(path) => std::path::Path::new(path).file_name().map_or_else(|| path.to_string(), |n| n.to_string_lossy().to_string()),
-            None => params.get("name").and_then(Value::as_str).unwrap_or_default().to_string(),
+            Some(path) => std::path::Path::new(path)
+                .file_name()
+                .map_or_else(|| path.to_string(), |n| n.to_string_lossy().to_string()),
+            None => params
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string(),
         };
         let r = self.run(cmd, params);
         if let Err(e) = &r {
-            let title = if cmd == "file.place" { "Can't Place the File" } else { "Can't Open the File" };
-            self.ui.dialog = Some(dialogs::Dialog::new("alert", json!({"title": title, "file": file, "message": e})));
+            let title = if cmd == "file.place" {
+                "Can't Place the File"
+            } else {
+                "Can't Open the File"
+            };
+            self.ui.dialog = Some(dialogs::Dialog::new(
+                "alert",
+                json!({"title": title, "file": file, "message": e}),
+            ));
         } else if let Ok(result) = &r {
             let warnings: Vec<&str> = result
                 .get("warnings")
@@ -998,8 +1100,10 @@ impl DesignApp {
                 .collect();
             if !warnings.is_empty() {
                 self.status(format!("{file}: {}", warnings.join("; ")));
-                self.ui.dialog =
-                    Some(dialogs::Dialog::new("alert", json!({"title": "Import Warnings", "file": file, "message": warnings.join("\n")})));
+                self.ui.dialog = Some(dialogs::Dialog::new(
+                    "alert",
+                    json!({"title": "Import Warnings", "file": file, "message": warnings.join("\n")}),
+                ));
             }
         }
         r
@@ -1012,9 +1116,15 @@ impl DesignApp {
         }
         let n = match self.synthetic[0] {
             egui::Event::PointerMoved(_) | egui::Event::PointerButton { .. } => 1,
-            _ => self.synthetic.iter().position(|e| matches!(e, egui::Event::Key { pressed: false, .. })).map_or(self.synthetic.len(), |i| i + 1),
+            _ => self
+                .synthetic
+                .iter()
+                .position(|e| matches!(e, egui::Event::Key { pressed: false, .. }))
+                .map_or(self.synthetic.len(), |i| i + 1),
         };
-        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) = self.synthetic.first() {
+        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) =
+            self.synthetic.first()
+        {
             raw.events.push(egui::Event::PointerMoved(*p));
         }
         raw.events.extend(self.synthetic.drain(..n));
@@ -1042,7 +1152,8 @@ impl DesignApp {
             if dbg {
                 eprintln!("after app bar {:?}", ui.available_rect_before_wrap());
             }
-            if self.ui.control_bar && self.session.active().is_some() && self.ui.hidden_panels == 0 {
+            if self.ui.control_bar && self.session.active().is_some() && self.ui.hidden_panels == 0
+            {
                 chrome::control_bar(self, ui);
             }
             chrome::status_bar(self, ui);
@@ -1056,74 +1167,47 @@ impl DesignApp {
                 dock::show(self, ui);
             }
         }
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.pasteboard)).show(ui, |ui| {
-            if self.session.active().is_none() {
-                chrome::start_screen(self, ui);
-                return;
-            }
-            if !presenting {
-                chrome::doc_tabs(self, ui);
-            }
-            let split_layout = (self.split && !presenting)
-                .then(|| {
-                    craft_ui::layout::split_rect(
-                        ui.available_rect_before_wrap(),
-                        craft_ui::layout::SplitAxis::Horizontal,
-                        craft_ui::layout::SplitSize::Ratio(0.5),
-                        2.0,
-                        0.0,
-                    )
-                })
-                .flatten();
-            if let Some(layout) = split_layout {
-                // Two panes with a divider; each has its own view (zoom, scroll) and render cache.
-                ui.painter().rect_filled(layout.divider, 0.0, t.border);
-                // Resolve the clicked pane before either canvas handles this frame's keys.
-                if let Some(p) = ui.input(|i| i.pointer.any_pressed().then(|| i.pointer.interact_pos()).flatten()) {
-                    if layout.first.contains(p) {
-                        self.focus_pane = 0;
-                    } else if layout.second.contains(p) {
-                        self.focus_pane = 1;
-                    }
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(t.pasteboard))
+            .show(ui, |ui| {
+                if self.session.active().is_none() {
+                    chrome::start_screen(self, ui);
+                    return;
                 }
-                for (k, half) in [layout.first, layout.second].into_iter().enumerate() {
-                    self.switch_pane(k as u8);
-                    // A new pane starts at the other pane's view.
-                    if k == 1 && self.view().is_none() {
-                        self.switch_pane(0);
-                        let v = self.view().copied();
-                        self.switch_pane(1);
-                        if let (Some(mut v), Some(m)) = (v, self.view_mut()) {
-                            v.fitted = false;
-                            *m = v;
+                if !presenting {
+                    chrome::doc_tabs(self, ui);
+                }
+                let split_layout = (self.split && !presenting)
+                    .then(|| {
+                        craft_ui::layout::split_rect(
+                            ui.available_rect_before_wrap(),
+                            craft_ui::layout::SplitAxis::Horizontal,
+                            craft_ui::layout::SplitSize::Ratio(0.5),
+                            2.0,
+                            0.0,
+                        )
+                    })
+                    .flatten();
+                if let Some(layout) = split_layout {
+                    // Two panes with a divider; each has its own view (zoom, scroll) and render cache.
+                    ui.painter().rect_filled(layout.divider, 0.0, t.border);
+                    // Resolve the clicked pane before either canvas handles this frame's keys.
+                    if let Some(p) = ui.input(|i| {
+                        i.pointer
+                            .any_pressed()
+                            .then(|| i.pointer.interact_pos())
+                            .flatten()
+                    }) {
+                        if layout.first.contains(p) {
+                            self.focus_pane = 0;
+                        } else if layout.second.contains(p) {
+                            self.focus_pane = 1;
                         }
                     }
-                    ui.scope_builder(egui::UiBuilder::new().max_rect(half), |ui| canvas::show(self, ui));
-                }
-                self.switch_pane(self.focus_pane);
-            } else {
-                self.switch_pane(0);
-                // With a second window, the main one takes the focus back when clicked.
-                if !self.second_window || (ui.input(|i| i.pointer.any_pressed()) && ui.ui_contains_pointer()) {
-                    self.focus_pane = 0;
-                }
-                canvas::show(self, ui);
-            }
-        });
-        // New Window: pane 1 in a window of its own.
-        if self.second_window
-            && !presenting
-            && let Some(title) = self.session.active().map(|d| format!("{} — 2", d.doc.title))
-        {
-            let fill = t.pasteboard;
-            let ctx = ui.ctx().clone();
-            ctx.show_viewport_immediate(
-                egui::ViewportId::from_hash_of("designcraft_second_window"),
-                egui::ViewportBuilder::default().with_title(title).with_inner_size([960.0, 720.0]),
-                |ui, _class| {
-                    egui::CentralPanel::default().frame(egui::Frame::NONE.fill(fill)).show(ui, |ui| {
-                        self.switch_pane(1);
-                        if self.view().is_none() {
+                    for (k, half) in [layout.first, layout.second].into_iter().enumerate() {
+                        self.switch_pane(k as u8);
+                        // A new pane starts at the other pane's view.
+                        if k == 1 && self.view().is_none() {
                             self.switch_pane(0);
                             let v = self.view().copied();
                             self.switch_pane(1);
@@ -1132,11 +1216,56 @@ impl DesignApp {
                                 *m = v;
                             }
                         }
-                        if ui.input(|i| i.pointer.any_pressed()) {
-                            self.focus_pane = 1;
-                        }
-                        canvas::show(self, ui);
-                    });
+                        ui.scope_builder(egui::UiBuilder::new().max_rect(half), |ui| {
+                            canvas::show(self, ui)
+                        });
+                    }
+                    self.switch_pane(self.focus_pane);
+                } else {
+                    self.switch_pane(0);
+                    // With a second window, the main one takes the focus back when clicked.
+                    if !self.second_window
+                        || (ui.input(|i| i.pointer.any_pressed()) && ui.ui_contains_pointer())
+                    {
+                        self.focus_pane = 0;
+                    }
+                    canvas::show(self, ui);
+                }
+            });
+        // New Window: pane 1 in a window of its own.
+        if self.second_window
+            && !presenting
+            && let Some(title) = self
+                .session
+                .active()
+                .map(|d| format!("{} — 2", d.doc.title))
+        {
+            let fill = t.pasteboard;
+            let ctx = ui.ctx().clone();
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("designcraft_second_window"),
+                egui::ViewportBuilder::default()
+                    .with_title(title)
+                    .with_inner_size([960.0, 720.0]),
+                |ui, _class| {
+                    egui::CentralPanel::default()
+                        .frame(egui::Frame::NONE.fill(fill))
+                        .show(ui, |ui| {
+                            self.switch_pane(1);
+                            if self.view().is_none() {
+                                self.switch_pane(0);
+                                let v = self.view().copied();
+                                self.switch_pane(1);
+                                if let (Some(mut v), Some(m)) = (v, self.view_mut()) {
+                                    v.fitted = false;
+                                    *m = v;
+                                }
+                            }
+                            if ui.input(|i| i.pointer.any_pressed()) {
+                                self.focus_pane = 1;
+                            }
+                            canvas::show(self, ui);
+                        });
                     if ui.input(|i| i.viewport().close_requested()) {
                         self.second_window = false;
                         self.focus_pane = 0;
@@ -1158,7 +1287,9 @@ impl DesignApp {
     }
 
     fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            return;
+        };
         while let Ok(req) = rx.try_recv() {
             let reply = req.reply.clone();
             match control::handle(self, ctx, &req) {
@@ -1169,7 +1300,8 @@ impl DesignApp {
                     self.shot_token += 1;
                     let token = self.shot_token;
                     self.queued_shots.push((token, now_ms() + 120.0, 0));
-                    self.pending_shots.push((token, path, reply, now_ms() + 8000.0));
+                    self.pending_shots
+                        .push((token, path, reply, now_ms() + 8000.0));
                 }
             }
         }
@@ -1181,7 +1313,9 @@ impl DesignApp {
         self.queued_shots.retain_mut(|(token, at, frames)| {
             *frames += 1;
             if now >= *at && *frames >= 3 {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(*token)));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                    *token,
+                )));
                 false
             } else {
                 true
@@ -1201,8 +1335,14 @@ impl DesignApp {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        let token = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
                         Some((token, image.clone()))
                     }
                     _ => None,
@@ -1237,7 +1377,10 @@ pub fn now_ms() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs_f64() * 1000.0).unwrap_or(0.0)
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs_f64() * 1000.0)
+            .unwrap_or(0.0)
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -1249,7 +1392,9 @@ pub fn now_ms() -> f64 {
 /// Browsers report a key press as a string: the character it types, or a name made of ASCII
 /// letters and digits that starts with a capital. One key press never types such a word.
 pub fn is_key_name(text: &str) -> bool {
-    text.len() > 1 && text.starts_with(|c: char| c.is_ascii_uppercase()) && text.chars().all(|c| c.is_ascii_alphanumeric())
+    text.len() > 1
+        && text.starts_with(|c: char| c.is_ascii_uppercase())
+        && text.chars().all(|c| c.is_ascii_alphanumeric())
 }
 
 /// Drop text events that are key names. eframe's web backend sends the name of every key it
@@ -1258,7 +1403,8 @@ pub fn is_key_name(text: &str) -> bool {
 /// hold whole words, and is left alone.
 pub fn drop_key_name_text(raw: &mut egui::RawInput, text_field_focused: bool) {
     if !text_field_focused {
-        raw.events.retain(|e| !matches!(e, egui::Event::Text(t) if is_key_name(t)));
+        raw.events
+            .retain(|e| !matches!(e, egui::Event::Text(t) if is_key_name(t)));
     }
 }
 
@@ -1270,8 +1416,12 @@ mod tests {
     fn app_with_unsaved_document() -> DesignApp {
         let mut app = DesignApp::new(designcraft_engine::Session::new(), Services::default());
         app.run("file.new", json!({})).unwrap();
-        assert!(!app.session.documents()[0].is_dirty(), "a new document has nothing to save");
-        app.run("frame.create", json!({"rect": [36, 36, 136, 136]})).unwrap();
+        assert!(
+            !app.session.documents()[0].is_dirty(),
+            "a new document has nothing to save"
+        );
+        app.run("frame.create", json!({"rect": [36, 36, 136, 136]}))
+            .unwrap();
         assert!(app.session.documents()[0].is_dirty());
         app
     }
@@ -1282,14 +1432,24 @@ mod tests {
     fn closing_an_unsaved_document_asks_first() {
         let mut app = app_with_unsaved_document();
         menus::activate(&mut app, "file.close", &Value::Null);
-        assert_eq!(app.session.documents().len(), 1, "the document stays open until the user answers");
-        assert_eq!(app.ui.dialog.as_ref().map(|d| d.id.as_str()), Some("closeDocument"));
+        assert_eq!(
+            app.session.documents().len(),
+            1,
+            "the document stays open until the user answers"
+        );
+        assert_eq!(
+            app.ui.dialog.as_ref().map(|d| d.id.as_str()),
+            Some("closeDocument")
+        );
         // Cancel: nothing happens.
         app.ui.dialog = None;
         assert!(app.session.documents()[0].is_dirty());
         // The tab's × asks too.
         menus::close_document(&mut app, Some(0));
-        assert_eq!(app.ui.dialog.as_ref().map(|d| d.id.as_str()), Some("closeDocument"));
+        assert_eq!(
+            app.ui.dialog.as_ref().map(|d| d.id.as_str()),
+            Some("closeDocument")
+        );
         assert_eq!(app.session.documents().len(), 1);
     }
 
@@ -1297,7 +1457,12 @@ mod tests {
     fn closing_without_saving_discards_the_document() {
         let mut app = app_with_unsaved_document();
         menus::close_document(&mut app, None);
-        app.ui.dialog.as_mut().unwrap().fields.insert("discard".into(), json!(true));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("discard".into(), json!(true));
         dialogs::confirm(&mut app).unwrap();
         assert!(app.session.documents().is_empty());
         assert!(app.ui.dialog.is_none());
@@ -1306,16 +1471,23 @@ mod tests {
     #[test]
     fn closing_with_save_writes_the_file_then_closes() {
         let mut app = app_with_unsaved_document();
-        let path = std::env::temp_dir().join(format!("designcraft-close-test-{}.designcraft", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "designcraft-close-test-{}.designcraft",
+            std::process::id()
+        ));
         app.run("file.saveAs", json!({"path": path})).unwrap();
         let saved = std::fs::metadata(&path).unwrap().len();
-        app.run("frame.create", json!({"rect": [200, 200, 300, 300]})).unwrap();
+        app.run("frame.create", json!({"rect": [200, 200, 300, 300]}))
+            .unwrap();
         menus::close_document(&mut app, None);
         dialogs::confirm(&mut app).unwrap();
         assert!(app.session.documents().is_empty());
         let written = std::fs::metadata(&path).unwrap().len();
         std::fs::remove_file(&path).unwrap();
-        assert!(written > saved, "the second frame was saved ({saved} → {written} bytes)");
+        assert!(
+            written > saved,
+            "the second frame was saved ({saved} → {written} bytes)"
+        );
     }
 
     /// Save on a document that has no file opens the file picker; cancelling it must not close the
@@ -1340,18 +1512,33 @@ mod tests {
 
     /// One frame of the quit handling, with the window asked to close when `close`; returns the
     /// commands sent to the window.
-    fn quit_frame(app: &mut DesignApp, ctx: &egui::Context, close: bool) -> Vec<egui::ViewportCommand> {
+    fn quit_frame(
+        app: &mut DesignApp,
+        ctx: &egui::Context,
+        close: bool,
+    ) -> Vec<egui::ViewportCommand> {
         let mut raw = egui::RawInput::default();
         if close {
-            raw.viewports.entry(egui::ViewportId::ROOT).or_default().events.push(egui::ViewportEvent::Close);
+            raw.viewports
+                .entry(egui::ViewportId::ROOT)
+                .or_default()
+                .events
+                .push(egui::ViewportEvent::Close);
         }
         let mut out = ctx.run_ui(raw, |ui| app.handle_quit(ui.ctx()));
         out.textures_delta.clear();
-        out.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.commands.clone()).unwrap_or_default()
+        out.viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .map(|v| v.commands.clone())
+            .unwrap_or_default()
     }
 
     fn dialog_uid(app: &DesignApp) -> Option<u64> {
-        app.ui.dialog.as_ref().filter(|d| d.id == "closeDocument").and_then(|d| d.fields.get("uid")?.as_u64())
+        app.ui
+            .dialog
+            .as_ref()
+            .filter(|d| d.id == "closeDocument")
+            .and_then(|d| d.fields.get("uid")?.as_u64())
     }
 
     /// Quitting closed the window at once, losing unsaved changes (#544).
@@ -1360,7 +1547,10 @@ mod tests {
         let ctx = egui::Context::default();
         let mut app = app_with_unsaved_document();
         let cmds = quit_frame(&mut app, &ctx, true);
-        assert!(cmds.contains(&egui::ViewportCommand::CancelClose), "{cmds:?}");
+        assert!(
+            cmds.contains(&egui::ViewportCommand::CancelClose),
+            "{cmds:?}"
+        );
         assert_eq!(dialog_uid(&app), Some(app.session.documents()[0].uid));
         // Cancel: the window and the document stay as they were.
         app.ui.dialog = None;
@@ -1381,17 +1571,31 @@ mod tests {
         let ctx = egui::Context::default();
         let mut app = app_with_unsaved_document();
         app.run("file.new", json!({})).unwrap();
-        app.run("frame.create", json!({"rect": [36, 36, 136, 136]})).unwrap();
+        app.run("frame.create", json!({"rect": [36, 36, 136, 136]}))
+            .unwrap();
         app.run("file.new", json!({})).unwrap();
         let uids: Vec<u64> = app.session.documents().iter().map(|d| d.uid).collect();
         assert!(quit_frame(&mut app, &ctx, true).contains(&egui::ViewportCommand::CancelClose));
         for (n, uid) in uids.iter().take(2).enumerate() {
             assert_eq!(dialog_uid(&app), Some(*uid), "question {n}");
-            assert_eq!(app.session.active().map(|d| d.uid), Some(*uid), "the document asked about is shown");
-            app.ui.dialog.as_mut().unwrap().fields.insert("discard".into(), json!(true));
+            assert_eq!(
+                app.session.active().map(|d| d.uid),
+                Some(*uid),
+                "the document asked about is shown"
+            );
+            app.ui
+                .dialog
+                .as_mut()
+                .unwrap()
+                .fields
+                .insert("discard".into(), json!(true));
             dialogs::confirm(&mut app).unwrap();
             let cmds = quit_frame(&mut app, &ctx, false);
-            assert_eq!(cmds.contains(&egui::ViewportCommand::Close), n == 1, "{cmds:?}");
+            assert_eq!(
+                cmds.contains(&egui::ViewportCommand::Close),
+                n == 1,
+                "{cmds:?}"
+            );
         }
         // All documents stay open until the backend's final close commits the decision.
         assert_eq!(app.session.documents().len(), 3);
@@ -1405,21 +1609,46 @@ mod tests {
         let ctx = egui::Context::default();
         let mut app = app_with_unsaved_document();
         app.run("file.new", json!({})).unwrap();
-        app.run("frame.create", json!({"rect": [20, 20, 120, 120]})).unwrap();
+        app.run("frame.create", json!({"rect": [20, 20, 120, 120]}))
+            .unwrap();
         let uids: Vec<u64> = app.session.documents().iter().map(|d| d.uid).collect();
         let active = app.session.active().unwrap().uid;
         let revisions: Vec<u64> = app.session.documents().iter().map(|d| d.revision).collect();
-        let docs: Vec<_> = app.session.documents().iter().map(|d| d.doc.clone()).collect();
+        let docs: Vec<_> = app
+            .session
+            .documents()
+            .iter()
+            .map(|d| d.doc.clone())
+            .collect();
         quit_frame(&mut app, &ctx, true);
-        app.ui.dialog.as_mut().unwrap().fields.insert("discard".into(), json!(true));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("discard".into(), json!(true));
         dialogs::confirm(&mut app).unwrap();
         quit_frame(&mut app, &ctx, false);
         assert_eq!(dialog_uid(&app), Some(uids[1]));
         app.ui.dialog = None;
         assert!(!quit_frame(&mut app, &ctx, false).contains(&egui::ViewportCommand::Close));
-        assert_eq!(app.session.documents().iter().map(|d| d.uid).collect::<Vec<_>>(), uids);
+        assert_eq!(
+            app.session
+                .documents()
+                .iter()
+                .map(|d| d.uid)
+                .collect::<Vec<_>>(),
+            uids
+        );
         assert_eq!(app.session.active().unwrap().uid, active);
-        assert_eq!(app.session.documents().iter().map(|d| d.revision).collect::<Vec<_>>(), revisions);
+        assert_eq!(
+            app.session
+                .documents()
+                .iter()
+                .map(|d| d.revision)
+                .collect::<Vec<_>>(),
+            revisions
+        );
         for (d, original) in app.session.documents().iter().zip(docs) {
             assert!(std::sync::Arc::ptr_eq(&d.doc, &original));
             assert!(d.is_dirty());
@@ -1429,11 +1658,17 @@ mod tests {
 
     fn second_unsaved_document(app: &mut DesignApp) {
         app.run("file.new", json!({})).unwrap();
-        app.run("frame.create", json!({"rect": [20, 20, 120, 120]})).unwrap();
+        app.run("frame.create", json!({"rect": [20, 20, 120, 120]}))
+            .unwrap();
     }
 
     fn discard_quit_dialog(app: &mut DesignApp) {
-        app.ui.dialog.as_mut().unwrap().fields.insert("discard".into(), json!(true));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("discard".into(), json!(true));
         dialogs::confirm(app).unwrap();
     }
 
@@ -1443,8 +1678,15 @@ mod tests {
         let mut app = app_with_unsaved_document();
         let commands = quit_frame(&mut app, &ctx, true);
         assert!(commands.contains(&egui::ViewportCommand::CancelClose));
-        for command in [egui::ViewportCommand::Visible(true), egui::ViewportCommand::Minimized(false), egui::ViewportCommand::Focus] {
-            assert!(commands.contains(&command), "unsaved prompt must restore the window: {commands:?}");
+        for command in [
+            egui::ViewportCommand::Visible(true),
+            egui::ViewportCommand::Minimized(false),
+            egui::ViewportCommand::Focus,
+        ] {
+            assert!(
+                commands.contains(&command),
+                "unsaved prompt must restore the window: {commands:?}"
+            );
         }
         discard_quit_dialog(&mut app);
         let approved = quit_frame(&mut app, &ctx, false);
@@ -1462,7 +1704,9 @@ mod tests {
             assert!(
                 !commands.iter().any(|command| matches!(
                     command,
-                    egui::ViewportCommand::Visible(true) | egui::ViewportCommand::Minimized(false) | egui::ViewportCommand::Focus
+                    egui::ViewportCommand::Visible(true)
+                        | egui::ViewportCommand::Minimized(false)
+                        | egui::ViewportCommand::Focus
                 )),
                 "completed and immediate quits must not activate the window: {commands:?}"
             );
@@ -1477,7 +1721,12 @@ mod tests {
         second_unsaved_document(&mut app);
         let original_active = app.session.active().unwrap().uid;
         let uids: Vec<_> = app.session.documents().iter().map(|d| d.uid).collect();
-        let docs: Vec<_> = app.session.documents().iter().map(|d| d.doc.clone()).collect();
+        let docs: Vec<_> = app
+            .session
+            .documents()
+            .iter()
+            .map(|d| d.doc.clone())
+            .collect();
         let directory = tempfile::tempdir().unwrap();
         app.session.recovery_dir = Some(directory.path().to_path_buf());
         app.run("file.recovery.save", json!({})).unwrap();
@@ -1493,12 +1742,24 @@ mod tests {
         app.ui.dialog = None; // Cancel the second document, retaining the first Don't Save answer.
         assert!(!quit_frame(&mut app, &ctx, false).contains(&egui::ViewportCommand::Close));
         assert_eq!(app.session.active().unwrap().uid, original_active);
-        assert_eq!(app.session.documents().iter().map(|d| d.uid).collect::<Vec<_>>(), uids);
+        assert_eq!(
+            app.session
+                .documents()
+                .iter()
+                .map(|d| d.uid)
+                .collect::<Vec<_>>(),
+            uids
+        );
         for (document, original) in app.session.documents().iter().zip(docs) {
             assert!(std::sync::Arc::ptr_eq(&document.doc, &original));
             assert!(document.is_dirty());
             assert!(!document.history.undo.is_empty());
-            assert!(directory.path().join(format!("{}.designcraft", document.uid)).exists());
+            assert!(
+                directory
+                    .path()
+                    .join(format!("{}.designcraft", document.uid))
+                    .exists()
+            );
         }
         // A fresh Dock Quit must ask about the first document again after cancellation.
         assert!(quit_frame(&mut app, &ctx, true).contains(&egui::ViewportCommand::CancelClose));
@@ -1528,12 +1789,29 @@ mod tests {
         discard_quit_dialog(&mut app);
         assert!(quit_frame(&mut app, &ctx, false).contains(&egui::ViewportCommand::Close));
         assert_eq!(app.session.documents().len(), 2);
-        assert!(app.session.recovery_dir.as_ref().unwrap().join(format!("{}.designcraft", uids[1])).exists());
+        assert!(
+            app.session
+                .recovery_dir
+                .as_ref()
+                .unwrap()
+                .join(format!("{}.designcraft", uids[1]))
+                .exists()
+        );
         assert!(quit_frame(&mut app, &ctx, true).is_empty());
         assert!(app.session.documents().is_empty());
         assert!(path.exists());
-        assert_eq!(designcraft_engine::Session::new().execute("file.open", &json!({"path": path})).unwrap()["index"], 0);
-        assert_eq!(std::fs::read_dir(app.session.recovery_dir.as_ref().unwrap()).unwrap().count(), 0);
+        assert_eq!(
+            designcraft_engine::Session::new()
+                .execute("file.open", &json!({"path": path}))
+                .unwrap()["index"],
+            0
+        );
+        assert_eq!(
+            std::fs::read_dir(app.session.recovery_dir.as_ref().unwrap())
+                .unwrap()
+                .count(),
+            0
+        );
     }
 
     #[test]
@@ -1572,7 +1850,11 @@ mod tests {
         let mut app = app_with_unsaved_document();
         second_unsaved_document(&mut app);
         let path = std::env::temp_dir()
-            .join(format!("designcraft-quit-missing-{}-{}", std::process::id(), app.session.active().unwrap().uid))
+            .join(format!(
+                "designcraft-quit-missing-{}-{}",
+                std::process::id(),
+                app.session.active().unwrap().uid
+            ))
             .join("missing")
             .join("document.designcraft");
         assert!(!path.parent().unwrap().exists());
@@ -1596,7 +1878,10 @@ mod tests {
         let mut app = app_with_unsaved_document();
         second_unsaved_document(&mut app);
         let first = app.session.documents()[0].uid;
-        let path = std::env::temp_dir().join(format!("designcraft-quit-save-{}-{first}.designcraft", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "designcraft-quit-save-{}-{first}.designcraft",
+            std::process::id()
+        ));
         let picked = path.to_string_lossy().to_string();
         app.services.pick_save = Some(Box::new(move |_| Some(picked.clone())));
         quit_frame(&mut app, &ctx, true);
@@ -1622,10 +1907,15 @@ mod tests {
         discard_quit_dialog(&mut app);
         quit_frame(&mut app, &ctx, false);
         app.run("file.activate", json!({"index": 0})).unwrap();
-        app.run("frame.create", json!({"rect": [200, 200, 300, 300]})).unwrap();
+        app.run("frame.create", json!({"rect": [200, 200, 300, 300]}))
+            .unwrap();
         discard_quit_dialog(&mut app); // Approval is bound to the second UID, despite the switch.
         assert!(!quit_frame(&mut app, &ctx, false).contains(&egui::ViewportCommand::Close));
-        assert_eq!(dialog_uid(&app), Some(first), "new edit needs a fresh decision");
+        assert_eq!(
+            dialog_uid(&app),
+            Some(first),
+            "new edit needs a fresh decision"
+        );
         assert_eq!(app.session.documents().len(), 2);
     }
 
@@ -1649,7 +1939,10 @@ mod tests {
         let mut app = app_with_unsaved_document();
         second_unsaved_document(&mut app);
         let first = app.session.documents()[0].uid;
-        let path = std::env::temp_dir().join(format!("designcraft-quit-uid-{}-{first}.designcraft", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "designcraft-quit-uid-{}-{first}.designcraft",
+            std::process::id()
+        ));
         let picked = path.to_string_lossy().to_string();
         app.services.pick_save = Some(Box::new(move |_| Some(picked.clone())));
         quit_frame(&mut app, &ctx, true);
@@ -1668,7 +1961,10 @@ mod tests {
         let ctx = egui::Context::default();
         let mut app = app_with_unsaved_document();
         let uid = app.session.active().unwrap().uid;
-        let dir = std::env::temp_dir().join(format!("designcraft-quit-recovery-{}-{uid}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "designcraft-quit-recovery-{}-{uid}",
+            std::process::id()
+        ));
         app.session.recovery_dir = Some(dir.clone());
         app.run("file.recovery.save", json!({})).unwrap();
         let entry = dir.join(format!("{uid}.designcraft"));
@@ -1677,7 +1973,10 @@ mod tests {
         assert!(quit_frame(&mut app, &ctx, false).contains(&egui::ViewportCommand::Close));
         assert!(entry.exists(), "a queued close is not a committed close");
         assert!(quit_frame(&mut app, &ctx, true).is_empty());
-        assert!(!entry.exists(), "accepted Don't Save must not be recovered on restart");
+        assert!(
+            !entry.exists(),
+            "accepted Don't Save must not be recovered on restart"
+        );
         assert!(app.session.documents().is_empty());
         std::fs::remove_dir_all(dir).unwrap();
     }
@@ -1706,7 +2005,8 @@ mod tests {
             discard_quit_dialog(&mut app);
             quit_frame(&mut app, &ctx, false);
             if case == "stale" {
-                app.run("frame.create", json!({"rect": [200, 200, 300, 300]})).unwrap();
+                app.run("frame.create", json!({"rect": [200, 200, 300, 300]}))
+                    .unwrap();
             } else if case == "new document" {
                 second_unsaved_document(&mut app);
             }
@@ -1715,14 +2015,31 @@ mod tests {
                 .session
                 .documents()
                 .iter()
-                .map(|d| (d.uid, d.revision, d.doc.clone(), d.selection.items.clone(), d.history.undo.len(), d.history.redo.len()))
+                .map(|d| {
+                    (
+                        d.uid,
+                        d.revision,
+                        d.doc.clone(),
+                        d.selection.items.clone(),
+                        d.history.undo.len(),
+                        d.history.redo.len(),
+                    )
+                })
                 .collect();
             app.finish_confirmed_quit().unwrap();
             assert_eq!(app.session.documents().len(), before.len(), "{case}");
             assert_eq!(app.session.active().unwrap().uid, active, "{case}");
-            for (d, (uid, revision, doc, selection, undo, redo)) in app.session.documents().iter().zip(before) {
+            for (d, (uid, revision, doc, selection, undo, redo)) in
+                app.session.documents().iter().zip(before)
+            {
                 assert_eq!(
-                    (d.uid, d.revision, &d.selection.items, d.history.undo.len(), d.history.redo.len()),
+                    (
+                        d.uid,
+                        d.revision,
+                        &d.selection.items,
+                        d.history.undo.len(),
+                        d.history.redo.len()
+                    ),
                     (uid, revision, &selection, undo, redo),
                     "{case}"
                 );
@@ -1765,33 +2082,64 @@ mod tests {
         let mut app = DesignApp::new(designcraft_engine::Session::new(), Services::default());
         app.run("file.newSample", json!({})).unwrap();
         app.ui.control_bar = true;
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut DesignApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            app,
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut DesignApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                app,
+            );
         h.run_steps(4);
-        let bar = egui::containers::panel::PanelState::load(&h.ctx, egui::Id::new("control_bar")).unwrap().outer_rect;
+        let bar = egui::containers::panel::PanelState::load(&h.ctx, egui::Id::new("control_bar"))
+            .unwrap()
+            .outer_rect;
         assert!(bar.height() > 40.0, "{bar:?}");
-        let rows: Vec<egui::Rect> = h.query_all_by_label("Y:").map(|n| n.rect()).filter(|r| bar.contains(r.left_top())).collect();
+        let rows: Vec<egui::Rect> = h
+            .query_all_by_label("Y:")
+            .map(|n| n.rect())
+            .filter(|r| bar.contains(r.left_top()))
+            .collect();
         assert_eq!(rows.len(), 1, "the Y: caption of the Control panel");
-        assert!(rows[0].bottom() <= bar.bottom(), "Y: caption {:?} hangs below the Control panel {bar:?}", rows[0]);
+        assert!(
+            rows[0].bottom() <= bar.bottom(),
+            "Y: caption {:?} hangs below the Control panel {bar:?}",
+            rows[0]
+        );
     }
 
     #[test]
     fn key_names_sent_as_text_are_dropped() {
         let text = |t: &str| egui::Event::Text(t.to_string());
         let events = || {
-            vec![text("AltGraph"), text("é"), text("Dead"), text("A"), text("Unidentified"), text("ß"), text("AudioVolumeUp"), text("ab"), text("Æ")]
+            vec![
+                text("AltGraph"),
+                text("é"),
+                text("Dead"),
+                text("A"),
+                text("Unidentified"),
+                text("ß"),
+                text("AudioVolumeUp"),
+                text("ab"),
+                text("Æ"),
+            ]
         };
-        let mut raw = egui::RawInput { events: events(), ..Default::default() };
+        let mut raw = egui::RawInput {
+            events: events(),
+            ..Default::default()
+        };
         drop_key_name_text(&mut raw, false);
-        assert_eq!(raw.events, vec![text("é"), text("A"), text("ß"), text("ab"), text("Æ")]);
+        assert_eq!(
+            raw.events,
+            vec![text("é"), text("A"), text("ß"), text("ab"), text("Æ")]
+        );
         // A focused text field gets its text from input events, which can be whole words.
-        let mut raw = egui::RawInput { events: events(), ..Default::default() };
+        let mut raw = egui::RawInput {
+            events: events(),
+            ..Default::default()
+        };
         drop_key_name_text(&mut raw, true);
         assert_eq!(raw.events, events());
     }
@@ -1842,7 +2190,8 @@ mod tests {
 
     /// A temporary file named `name` whose bytes aren't a document or a graphic.
     fn unreadable_file(name: &str) -> std::path::PathBuf {
-        let path = std::env::temp_dir().join(format!("designcraft-ui-{}-{name}", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("designcraft-ui-{}-{name}", std::process::id()));
         std::fs::write(&path, b"neither a document nor a graphic").unwrap();
         path
     }
@@ -1851,7 +2200,10 @@ mod tests {
     fn alert(app: &DesignApp) -> (String, String) {
         let d = app.ui.dialog.as_ref().expect("an alert is open");
         assert_eq!(d.id, "alert");
-        (d.fields["title"].as_str().unwrap().to_string(), d.fields["message"].as_str().unwrap().to_string())
+        (
+            d.fields["title"].as_str().unwrap().to_string(),
+            d.fields["message"].as_str().unwrap().to_string(),
+        )
     }
 
     #[test]
@@ -1873,7 +2225,10 @@ mod tests {
         let _ = std::fs::remove_file(&path);
         let e = r.unwrap_err();
         let (title, message) = alert(&app);
-        assert_eq!(title, "Can't Open the File", "a document opens, it isn't placed");
+        assert_eq!(
+            title, "Can't Open the File",
+            "a document opens, it isn't placed"
+        );
         assert_eq!(message, e);
         assert!(app.ui.status.contains(&e), "the status line says it too");
         assert!(app.session.documents().is_empty());
@@ -1892,7 +2247,10 @@ mod tests {
     fn file_open_failures_show_an_alert() {
         let path = unreadable_file("open.designcraft");
         let picked = path.to_string_lossy().to_string();
-        let services = Services { pick_open: Some(Box::new(move |_| Some(picked.clone()))), ..Default::default() };
+        let services = Services {
+            pick_open: Some(Box::new(move |_| Some(picked.clone()))),
+            ..Default::default()
+        };
         let mut app = DesignApp::new(Session::new(), services);
         let e = app.run("app.openDialog", json!({})).unwrap_err();
         assert_eq!(alert(&app), ("Can't Open the File".to_string(), e));
@@ -1907,14 +2265,27 @@ mod tests {
     #[test]
     fn other_command_errors_stay_in_the_status_line() {
         let mut app = DesignApp::new(Session::new(), Services::default());
-        assert!(app.run("file.open", json!({"path": "/nonexistent/x.designcraft"})).is_err());
-        assert!(app.ui.dialog.is_none(), "a scripted file.open doesn't raise an alert");
+        assert!(
+            app.run("file.open", json!({"path": "/nonexistent/x.designcraft"}))
+                .is_err()
+        );
+        assert!(
+            app.ui.dialog.is_none(),
+            "a scripted file.open doesn't raise an alert"
+        );
         assert!(!app.ui.status.is_empty());
         // The control channel's app.open answers with the error; no alert waits for a click.
-        let (req, _rx) = control::ControlRequest::new("app.open", json!({"path": "/nonexistent/x.designcraft"}));
-        let control::Outcome::Done(r) = control::handle(&mut app, &egui::Context::default(), &req) else { panic!("app.open answers") };
+        let (req, _rx) =
+            control::ControlRequest::new("app.open", json!({"path": "/nonexistent/x.designcraft"}));
+        let control::Outcome::Done(r) = control::handle(&mut app, &egui::Context::default(), &req)
+        else {
+            panic!("app.open answers")
+        };
         assert_eq!(r["ok"], json!(false), "{r}");
-        assert!(app.ui.dialog.is_none(), "a control-channel app.open doesn't raise an alert");
+        assert!(
+            app.ui.dialog.is_none(),
+            "a control-channel app.open doesn't raise an alert"
+        );
     }
 }
 
@@ -1924,14 +2295,23 @@ mod import_warning_tests {
     use std::io::Write;
 
     fn idml(missing_parts: bool) -> Vec<u8> {
-        let missing = if missing_parts { r#"<idPkg:Spread src="Spreads/missing.xml"/><idPkg:Story src="Stories/missing.xml"/>"# } else { "" };
+        let missing = if missing_parts {
+            r#"<idPkg:Spread src="Spreads/missing.xml"/><idPkg:Story src="Stories/missing.xml"/>"#
+        } else {
+            ""
+        };
         let map = format!(
             r#"<Document xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" Self="d"><idPkg:Spread src="Spreads/one.xml"/>{missing}</Document>"#
         );
         let spread = r#"<idPkg:Spread xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging"><Spread Self="s"><Page Self="p" GeometricBounds="0 0 100 100" ItemTransform="1 0 0 1 0 0"/><Rectangle Self="r" ItemTransform="1 0 0 1 0 0"/></Spread></idPkg:Spread>"#;
         let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-        let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
-        for (name, text) in [("mimetype", designcraft_idml::MIMETYPE), ("designmap.xml", &map), ("Spreads/one.xml", spread)] {
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        for (name, text) in [
+            ("mimetype", designcraft_idml::MIMETYPE),
+            ("designmap.xml", &map),
+            ("Spreads/one.xml", spread),
+        ] {
             zip.start_file(name, options).unwrap();
             zip.write_all(text.as_bytes()).unwrap();
         }
@@ -1939,30 +2319,59 @@ mod import_warning_tests {
     }
 
     fn app() -> DesignApp {
-        let mut app = DesignApp::new(Session::new(), Services { inbox: Some(Inbox::default()), ..Default::default() });
-        app.run("file.new", json!({"title": "Existing work"})).unwrap();
-        app.run("frame.create", json!({"rect": [10, 10, 50, 50]})).unwrap();
+        let mut app = DesignApp::new(
+            Session::new(),
+            Services {
+                inbox: Some(Inbox::default()),
+                ..Default::default()
+            },
+        );
+        app.run("file.new", json!({"title": "Existing work"}))
+            .unwrap();
+        app.run("frame.create", json!({"rect": [10, 10, 50, 50]}))
+            .unwrap();
         app
     }
 
     fn assert_partial_import_warning(app: &mut DesignApp, file: &str) {
-        let dialog = app.ui.dialog.as_ref().expect("partial import must show an alert");
+        let dialog = app
+            .ui
+            .dialog
+            .as_ref()
+            .expect("partial import must show an alert");
         assert_eq!(dialog.id, "alert");
         assert_eq!(dialog.fields["title"], "Import Warnings");
         assert_eq!(dialog.fields["file"], file);
         for part in ["Spreads/missing.xml", "Stories/missing.xml"] {
-            assert!(dialog.fields["message"].as_str().unwrap().contains(part), "every missing part is named");
-            assert!(app.ui.status.contains(part), "the status line retains the warning");
+            assert!(
+                dialog.fields["message"].as_str().unwrap().contains(part),
+                "every missing part is named"
+            );
+            assert!(
+                app.ui.status.contains(part),
+                "the status line retains the warning"
+            );
         }
         assert_eq!(app.session.documents().len(), 2);
         assert_eq!(app.session.documents()[0].doc.title, "Existing work");
-        assert!(app.session.documents()[0].is_dirty(), "existing unsaved work stays intact");
+        assert!(
+            app.session.documents()[0].is_dirty(),
+            "existing unsaved work stays intact"
+        );
         assert_eq!(app.session.documents()[0].doc.spreads[0].items.len(), 1);
         assert_eq!(app.session.doc().unwrap().doc.spreads.len(), 1);
-        assert_eq!(app.session.doc().unwrap().doc.spreads[0].items.len(), 1, "available document content is kept");
+        assert_eq!(
+            app.session.doc().unwrap().doc.spreads[0].items.len(),
+            1,
+            "available document content is kept"
+        );
         dialogs::confirm(app).unwrap();
         assert!(app.ui.dialog.is_none(), "OK dismisses the warning");
-        assert_eq!(app.session.documents().len(), 2, "dismissing the warning keeps the imported document");
+        assert_eq!(
+            app.session.documents().len(),
+            2,
+            "dismissing the warning keeps the imported document"
+        );
     }
 
     #[test]
@@ -1976,7 +2385,9 @@ mod import_warning_tests {
 
     #[test]
     fn native_open_reports_partial_import_warnings_without_losing_documents() {
-        let path = std::env::temp_dir().join(format!("designcraft-partial-import-{}", std::process::id())).join("partial.idml");
+        let path = std::env::temp_dir()
+            .join(format!("designcraft-partial-import-{}", std::process::id()))
+            .join("partial.idml");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, idml(true)).unwrap();
         let picked = path.to_string_lossy().to_string();
@@ -1993,7 +2404,17 @@ mod import_warning_tests {
     fn inbox_open_reports_partial_import_warnings_without_losing_documents() {
         let mut app = app();
         let request = app.import_request("open");
-        app.services.inbox.as_ref().unwrap().lock().unwrap().push(ImportedFile { request, name: "partial.idml".into(), bytes: idml(true) });
+        app.services
+            .inbox
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .push(ImportedFile {
+                request,
+                name: "partial.idml".into(),
+                bytes: idml(true),
+            });
         app.drain_inbox();
         assert_partial_import_warning(&mut app, "partial");
     }
@@ -2026,18 +2447,21 @@ pub(crate) mod test_window {
         if app.session.active().is_none() {
             app.run("file.new", serde_json::json!({})).unwrap();
         }
-        let mut h = Harness::builder().with_size(size).with_max_steps(1000).build_ui_state(
-            |ui, w: &mut Window| {
-                // The builder runs a frame before the texture size can be raised: skip it.
-                if !w.ready {
-                    return;
-                }
-                let ctx = ui.ctx().clone();
-                w.app.logic(&ctx);
-                w.app.ui(ui);
-            },
-            Window { app, ready: false },
-        );
+        let mut h = Harness::builder()
+            .with_size(size)
+            .with_max_steps(1000)
+            .build_ui_state(
+                |ui, w: &mut Window| {
+                    // The builder runs a frame before the texture size can be raised: skip it.
+                    if !w.ready {
+                        return;
+                    }
+                    let ctx = ui.ctx().clone();
+                    w.app.logic(&ctx);
+                    w.app.ui(ui);
+                },
+                Window { app, ready: false },
+            );
         h.input_mut().max_texture_side = Some(8192);
         h.state_mut().ready = true;
         h.run_steps(6);
@@ -2058,7 +2482,9 @@ pub(crate) mod test_window {
 
     /// The outer rect of a side or top panel, from egui's memory.
     pub fn panel_rect(h: &Harness<'static, Window>, id: &str) -> egui::Rect {
-        egui::containers::panel::PanelState::load(&h.ctx, egui::Id::new(id)).map(|s| s.outer_rect).unwrap()
+        egui::containers::panel::PanelState::load(&h.ctx, egui::Id::new(id))
+            .map(|s| s.outer_rect)
+            .unwrap()
     }
 
     /// A primary click at `pos`, then a few frames.
@@ -2075,24 +2501,49 @@ mod browser_import_tests {
     use super::*;
 
     fn app() -> DesignApp {
-        let mut app = DesignApp::new(Session::new(), Services { inbox: Some(Inbox::default()), ..Default::default() });
+        let mut app = DesignApp::new(
+            Session::new(),
+            Services {
+                inbox: Some(Inbox::default()),
+                ..Default::default()
+            },
+        );
         app.run("file.new", json!({"title": "A"})).unwrap();
         app
     }
     fn deliver(app: &mut DesignApp, request: ImportRequest, name: &str, bytes: Vec<u8>) {
-        app.services.inbox.as_ref().unwrap().lock().unwrap().push(ImportedFile { request, name: name.into(), bytes });
+        app.services
+            .inbox
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .push(ImportedFile {
+                request,
+                name: name.into(),
+                bytes,
+            });
         app.drain_inbox();
     }
     fn image() -> Vec<u8> {
         br##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#ff0000"/></svg>"##.to_vec()
     }
     fn pdf_pages(count: usize) -> Vec<u8> {
-        let kids = (0..count).map(|i| format!("{} 0 R", 3 + i * 2)).collect::<Vec<_>>().join(" ");
-        let mut objects = vec!["<< /Type /Catalog /Pages 2 0 R >>".to_string(), format!("<< /Type /Pages /Kids [{kids}] /Count {count} >>")];
+        let kids = (0..count)
+            .map(|i| format!("{} 0 R", 3 + i * 2))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let mut objects = vec![
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            format!("<< /Type /Pages /Kids [{kids}] /Count {count} >>"),
+        ];
         for (i, color) in ["1 0 0", "0 1 0", "0 0 1"].iter().take(count).enumerate() {
             let content = format!("{color} rg 0 0 200 200 re f\n");
             objects.push(format!("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents {} 0 R >>", 4 + i * 2));
-            objects.push(format!("<< /Length {} >>\nstream\n{content}endstream", content.len()));
+            objects.push(format!(
+                "<< /Length {} >>\nstream\n{content}endstream",
+                content.len()
+            ));
         }
         let mut result = "%PDF-1.4\n".to_string();
         let mut offsets = Vec::new();
@@ -2101,11 +2552,17 @@ mod browser_import_tests {
             result.push_str(&format!("{} 0 obj\n{object}\nendobj\n", i + 1));
         }
         let xref = result.len();
-        result.push_str(&format!("xref\n0 {}\n0000000000 65535 f \n", offsets.len() + 1));
+        result.push_str(&format!(
+            "xref\n0 {}\n0000000000 65535 f \n",
+            offsets.len() + 1
+        ));
         for offset in offsets {
             result.push_str(&format!("{offset:010} 00000 n \n"));
         }
-        result.push_str(&format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objects.len() + 1));
+        result.push_str(&format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objects.len() + 1
+        ));
         result.into_bytes()
     }
     fn pdf() -> Vec<u8> {
@@ -2117,16 +2574,28 @@ mod browser_import_tests {
         let captured = std::sync::Arc::new(std::sync::Mutex::new(None));
         let copy = captured.clone();
         let mut app = app();
-        app.services.open_async = Some(Box::new(move |request| *copy.lock().unwrap() = Some(request)));
+        app.services.open_async = Some(Box::new(move |request| {
+            *copy.lock().unwrap() = Some(request)
+        }));
         let uid = app.session.doc().unwrap().uid;
         app.pick_and_open("place").unwrap();
         app.run("file.new", json!({"title": "B"})).unwrap();
         let request = captured.lock().unwrap().take().unwrap();
         assert_eq!(request.purpose, "place");
         assert_eq!(request.target, Some(uid));
-        assert!(app.session.documents().iter().all(|d| d.doc.assets.is_empty()));
+        assert!(
+            app.session
+                .documents()
+                .iter()
+                .all(|d| d.doc.assets.is_empty())
+        );
         deliver(&mut app, request, "broken.pdf", b"not a PDF".to_vec());
-        assert!(app.session.documents().iter().all(|d| d.doc.assets.is_empty()));
+        assert!(
+            app.session
+                .documents()
+                .iter()
+                .all(|d| d.doc.assets.is_empty())
+        );
         assert!(app.pending_pdf.is_none());
     }
 
@@ -2150,7 +2619,8 @@ mod browser_import_tests {
         let mut app = app();
         let request = app.import_request("place");
         app.run("file.close", json!({})).unwrap();
-        app.run("file.new", json!({"title": "replacement"})).unwrap();
+        app.run("file.new", json!({"title": "replacement"}))
+            .unwrap();
         deliver(&mut app, request, "red.svg", image());
         assert!(app.session.doc().unwrap().doc.assets.is_empty());
     }
@@ -2171,8 +2641,15 @@ mod browser_import_tests {
     #[test]
     fn layout_place_and_open_preserve_explicit_intent() {
         let mut source = Session::new();
-        source.execute("file.new", &json!({"title": "source"})).unwrap();
-        source.execute("frame.create", &json!({"rect": [10, 10, 50, 50], "content": "text", "text": "placed"})).unwrap();
+        source
+            .execute("file.new", &json!({"title": "source"}))
+            .unwrap();
+        source
+            .execute(
+                "frame.create",
+                &json!({"rect": [10, 10, 50, 50], "content": "text", "text": "placed"}),
+            )
+            .unwrap();
         let native = designcraft_engine::cmd::to_bytes(&source.doc().unwrap().doc);
         let idml = designcraft_idml::export_idml(&source.doc().unwrap().doc);
         for (name, bytes) in [("source.designcraft", native), ("source.idml", idml)] {
@@ -2181,7 +2658,15 @@ mod browser_import_tests {
             deliver(&mut app, request, name, bytes.clone());
             assert_eq!(app.session.documents().len(), 1);
             assert_eq!(app.session.doc().unwrap().doc.title, "A");
-            assert!(app.session.doc().unwrap().doc.stories.values().any(|s| s.text == "placed"));
+            assert!(
+                app.session
+                    .doc()
+                    .unwrap()
+                    .doc
+                    .stories
+                    .values()
+                    .any(|s| s.text == "placed")
+            );
             app.run("edit.undo", json!({})).unwrap();
             assert!(app.session.doc().unwrap().doc.stories.is_empty());
             app.run("edit.redo", json!({})).unwrap();
@@ -2201,10 +2686,23 @@ mod browser_import_tests {
         assert!(app.session.doc().unwrap().doc.assets.is_empty());
         assert_eq!(app.ui.dialog.as_ref().unwrap().id, "pdfImport");
         app.run("file.new", json!({"title": "B"})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("page".into(), json!("2"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("page".into(), json!("2"));
         dialogs::confirm(&mut app).unwrap();
         assert_eq!(app.session.active_index(), Some(0));
-        let asset = app.session.doc().unwrap().doc.assets.values().next().unwrap();
+        let asset = app
+            .session
+            .doc()
+            .unwrap()
+            .doc
+            .assets
+            .values()
+            .next()
+            .unwrap();
         assert_eq!(asset.page, 1);
         assert_eq!(*asset.data, bytes);
         assert!(app.pending_pdf.is_none());
@@ -2212,8 +2710,22 @@ mod browser_import_tests {
         let exported = app.run("file.exportPdf", json!({})).unwrap();
         let exported = designcraft_engine::cmd::base64_decode(exported["base64"].as_str().unwrap());
         let pixels = designcraft_render::render_pdf_page(&exported, 0, 400).unwrap();
-        assert!(pixels.data().iter().filter(|p| p.g > 240 && p.r < 10 && p.b < 10).count() > 1000);
-        assert_eq!(pixels.data().iter().filter(|p| p.r > 240 && p.g < 10 && p.b < 10).count(), 0);
+        assert!(
+            pixels
+                .data()
+                .iter()
+                .filter(|p| p.g > 240 && p.r < 10 && p.b < 10)
+                .count()
+                > 1000
+        );
+        assert_eq!(
+            pixels
+                .data()
+                .iter()
+                .filter(|p| p.r > 240 && p.g < 10 && p.b < 10)
+                .count(),
+            0
+        );
     }
 
     #[test]
@@ -2222,7 +2734,12 @@ mod browser_import_tests {
         for page in [0_u64, 4, 4_294_967_296, 4_294_967_297, u64::MAX] {
             let request = app.import_request("place");
             deliver(&mut app, request, "three.pdf", pdf());
-            app.ui.dialog.as_mut().unwrap().fields.insert("page".into(), json!(page.to_string()));
+            app.ui
+                .dialog
+                .as_mut()
+                .unwrap()
+                .fields
+                .insert("page".into(), json!(page.to_string()));
             // The native dialog clamps zero to one; positive invalid pages must fail.
             if page == 0 {
                 assert!(app.confirm_pdf_import(page, "crop".into()).is_err());
@@ -2235,9 +2752,25 @@ mod browser_import_tests {
         }
         let request = app.import_request("place");
         deliver(&mut app, request, "three.pdf", pdf());
-        app.ui.dialog.as_mut().unwrap().fields.insert("page".into(), json!("2"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("page".into(), json!("2"));
         dialogs::confirm(&mut app).unwrap();
-        assert_eq!(app.session.doc().unwrap().doc.assets.values().next().unwrap().page, 1);
+        assert_eq!(
+            app.session
+                .doc()
+                .unwrap()
+                .doc
+                .assets
+                .values()
+                .next()
+                .unwrap()
+                .page,
+            1
+        );
     }
 
     #[test]
@@ -2263,8 +2796,15 @@ mod browser_import_tests {
     fn ase_swatches_keep_purpose_and_target() {
         let mut source = Session::new();
         source.execute("file.new", &json!({})).unwrap();
-        source.execute("swatch.create", &json!({"name": "Import Teal", "color": "#108080"})).unwrap();
-        let data = source.execute("swatch.save", &json!({"names": ["Import Teal"]})).unwrap();
+        source
+            .execute(
+                "swatch.create",
+                &json!({"name": "Import Teal", "color": "#108080"}),
+            )
+            .unwrap();
+        let data = source
+            .execute("swatch.save", &json!({"names": ["Import Teal"]}))
+            .unwrap();
         let bytes = designcraft_engine::cmd::base64_decode(data["base64"].as_str().unwrap());
         for (purpose, name) in [("swatches", "picker-file"), ("drop", "palette.ase")] {
             let mut app = app();
@@ -2272,26 +2812,60 @@ mod browser_import_tests {
             app.run("file.new", json!({"title": "B"})).unwrap();
             deliver(&mut app, request, name, bytes.clone());
             assert_eq!(app.session.active_index(), Some(0));
-            assert!(app.session.documents()[0].doc.swatches.iter().any(|s| s.name == "Import Teal"));
-            assert!(!app.session.documents()[1].doc.swatches.iter().any(|s| s.name == "Import Teal"));
+            assert!(
+                app.session.documents()[0]
+                    .doc
+                    .swatches
+                    .iter()
+                    .any(|s| s.name == "Import Teal")
+            );
+            assert!(
+                !app.session.documents()[1]
+                    .doc
+                    .swatches
+                    .iter()
+                    .any(|s| s.name == "Import Teal")
+            );
         }
     }
 
     #[test]
     fn native_pdf_dialog_keeps_path_and_uid_at_confirmation() {
         let mut app = app();
-        let path = std::env::temp_dir().join(format!("designcraft-native-import-{}-{}.pdf", std::process::id(), app.session.doc().unwrap().uid));
+        let path = std::env::temp_dir().join(format!(
+            "designcraft-native-import-{}-{}.pdf",
+            std::process::id(),
+            app.session.doc().unwrap().uid
+        ));
         std::fs::write(&path, pdf()).unwrap();
         let pick_path = path.to_string_lossy().to_string();
         app.services.pick_open = Some(Box::new(move |_| Some(pick_path.clone())));
-        app.services.read = Some(Box::new(|path| std::fs::read(path).map_err(|e| e.to_string())));
+        app.services.read = Some(Box::new(|path| {
+            std::fs::read(path).map_err(|e| e.to_string())
+        }));
         app.pick_and_open("place").unwrap();
         assert_eq!(app.ui.dialog.as_ref().unwrap().id, "pdfImport");
         app.run("file.new", json!({"title": "B"})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("page".into(), json!("2"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("page".into(), json!("2"));
         dialogs::confirm(&mut app).unwrap();
         assert_eq!(app.session.active_index(), Some(0));
-        assert_eq!(app.session.doc().unwrap().doc.assets.values().next().unwrap().page, 1);
+        assert_eq!(
+            app.session
+                .doc()
+                .unwrap()
+                .doc
+                .assets
+                .values()
+                .next()
+                .unwrap()
+                .page,
+            1
+        );
         assert!(app.session.documents()[1].doc.assets.is_empty());
         std::fs::remove_file(path).unwrap();
     }

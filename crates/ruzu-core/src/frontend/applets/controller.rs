@@ -137,9 +137,11 @@ impl ControllerApplet for DefaultControllerApplet {
                 NpadStyleIndex::JoyconLeft => parameters.allow_left_joycon,
                 NpadStyleIndex::JoyconRight => parameters.allow_right_joycon,
                 NpadStyleIndex::GameCube => parameters.allow_gamecube_controller,
-                NpadStyleIndex::Handheld => parameters.enable_single_mode
-                    && parameters.allow_handheld
-                    && !common::settings::is_docked_mode(&common::settings::values()),
+                NpadStyleIndex::Handheld => {
+                    parameters.enable_single_mode
+                        && parameters.allow_handheld
+                        && !common::settings::is_docked_mode(&common::settings::values())
+                }
                 _ => false,
             };
             num_selected_players += usize::from(keep_connected[index]);
@@ -148,7 +150,11 @@ impl ControllerApplet for DefaultControllerApplet {
             with_controller(&handheld, |handheld| handheld.disconnect());
         }
 
-        for (index, controller) in controllers.into_iter().take(AVAILABLE_CONTROLLERS - 2).enumerate() {
+        for (index, controller) in controllers
+            .into_iter()
+            .take(AVAILABLE_CONTROLLERS - 2)
+            .enumerate()
+        {
             if keep_connected[index] {
                 continue;
             }
@@ -178,7 +184,9 @@ impl ControllerApplet for DefaultControllerApplet {
             } else {
                 panic!("Unable to add a new controller based on the given parameters");
             };
-            with_controller(&controller, |controller| controller.set_npad_style_index(style));
+            with_controller(&controller, |controller| {
+                controller.set_npad_style_index(style)
+            });
             with_controller(&controller, |controller| controller.connect(true));
         }
 
@@ -208,18 +216,24 @@ mod tests {
             });
         }
         let applet = DefaultControllerApplet::new(hid);
-        applet.reconfigure_controllers(Box::new(|success| assert!(success)), &ControllerParameters {
-            min_players: 2,
-            max_players: 2,
-            keep_controllers_connected: true,
-            allow_pro_controller: true,
-            allow_dual_joycons: true,
-            ..Default::default()
-        });
+        applet.reconfigure_controllers(
+            Box::new(|success| assert!(success)),
+            &ControllerParameters {
+                min_players: 2,
+                max_players: 2,
+                keep_controllers_connected: true,
+                allow_pro_controller: true,
+                allow_dual_joycons: true,
+                ..Default::default()
+            },
+        );
         assert!(!player_1.lock().is_connected(false));
         for controller in [&player_2, &player_3] {
             assert!(controller.lock().is_connected(false));
-            assert_eq!(controller.lock().get_npad_style_index(false), NpadStyleIndex::JoyconDual);
+            assert_eq!(
+                controller.lock().get_npad_style_index(false),
+                NpadStyleIndex::JoyconDual
+            );
         }
     }
 
@@ -246,7 +260,10 @@ mod tests {
             },
         );
         assert!(first.lock().is_connected(false));
-        assert_eq!(first.lock().get_npad_style_index(false), NpadStyleIndex::GameCube);
+        assert_eq!(
+            first.lock().get_npad_style_index(false),
+            NpadStyleIndex::GameCube
+        );
         assert!(!second.lock().is_connected(false));
     }
 

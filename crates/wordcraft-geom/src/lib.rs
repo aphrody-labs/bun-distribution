@@ -4,7 +4,14 @@
 //! twentieths of a point (twips) for most lengths, half-points for font sizes, eighths of a point
 //! for borders and English Metric Units (EMU, 914 400 per inch) for drawings. The conversions live
 //! here so every crate agrees on them.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use serde::{Deserialize, Serialize};
 
@@ -93,7 +100,11 @@ impl Unit {
     pub fn number(self, pt: f32, decimal: char) -> String {
         let v = finite(pt) / self.pt_per_unit();
         let s = format!("{v:.2}");
-        let s = if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.') } else { &s };
+        let s = if s.contains('.') {
+            s.trim_end_matches('0').trim_end_matches('.')
+        } else {
+            &s
+        };
         let s = if s == "-0" { "0" } else { s };
         s.replace('.', &decimal.to_string())
     }
@@ -107,7 +118,9 @@ pub fn parse_measure(s: &str, default: Unit) -> Option<f32> {
     if t.is_empty() {
         return None;
     }
-    let split = t.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-' || c == '+' || c == ',')).unwrap_or(t.len());
+    let split = t
+        .find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-' || c == '+' || c == ','))
+        .unwrap_or(t.len());
     let (num, unit) = t.split_at(split);
     let v: f32 = num.replace(',', ".").parse().ok()?;
     if !v.is_finite() {
@@ -151,7 +164,12 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
-        Rect { x: finite(x), y: finite(y), w: finite(w).max(0.0), h: finite(h).max(0.0) }
+        Rect {
+            x: finite(x),
+            y: finite(y),
+            w: finite(w).max(0.0),
+            h: finite(h).max(0.0),
+        }
     }
     pub fn right(&self) -> f32 {
         self.x + self.w
@@ -168,7 +186,12 @@ impl Rect {
     pub fn union(&self, o: &Rect) -> Rect {
         let x = self.x.min(o.x);
         let y = self.y.min(o.y);
-        Rect::new(x, y, self.right().max(o.right()) - x, self.bottom().max(o.bottom()) - y)
+        Rect::new(
+            x,
+            y,
+            self.right().max(o.right()) - x,
+            self.bottom().max(o.bottom()) - y,
+        )
     }
     pub fn inset(&self, l: f32, t: f32, r: f32, b: f32) -> Rect {
         Rect::new(self.x + l, self.y + t, self.w - l - r, self.h - t - b)
@@ -202,7 +225,11 @@ pub struct Spin {
 impl Spin {
     /// A spin with its angle normalised to `0..360`.
     pub fn new(deg: f32, flip_h: bool, flip_v: bool) -> Spin {
-        Spin { deg: normalize_degrees(deg), flip_h, flip_v }
+        Spin {
+            deg: normalize_degrees(deg),
+            flip_h,
+            flip_v,
+        }
     }
 
     /// No rotation and no mirroring.
@@ -262,7 +289,11 @@ impl Spin {
         // outer = R(θo)·Fo, self = R(θs)·Fs; Fo·R(θ) = R(±θ)·Fo (one mirror reverses the turn).
         let one_mirror = outer.flip_h != outer.flip_v;
         let inner = if one_mirror { -self.deg } else { self.deg };
-        Spin::new(outer.deg + inner, outer.flip_h != self.flip_h, outer.flip_v != self.flip_v)
+        Spin::new(
+            outer.deg + inner,
+            outer.flip_h != self.flip_h,
+            outer.flip_v != self.flip_v,
+        )
     }
 }
 
@@ -286,7 +317,10 @@ pub const PAPER_SIZES: &[(&str, f32, f32)] = &[
 pub fn paper_name(w: f32, h: f32) -> Option<&'static str> {
     PAPER_SIZES
         .iter()
-        .find(|(_, pw, ph)| ((pw - w).abs() < 0.5 && (ph - h).abs() < 0.5) || ((pw - h).abs() < 0.5 && (ph - w).abs() < 0.5))
+        .find(|(_, pw, ph)| {
+            ((pw - w).abs() < 0.5 && (ph - h).abs() < 0.5)
+                || ((pw - h).abs() < 0.5 && (ph - w).abs() < 0.5)
+        })
         .map(|(n, _, _)| *n)
 }
 

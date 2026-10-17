@@ -36,7 +36,16 @@ struct Sh {
 
 impl Sh {
     fn alpha() -> Self {
-        Sh { dx: 0.0, dy: 0.0, sigma: 0.0, spread: 0.0, color: Color::BLACK, knockout: false, inner: false, inverted: false }
+        Sh {
+            dx: 0.0,
+            dy: 0.0,
+            sigma: 0.0,
+            spread: 0.0,
+            color: Color::BLACK,
+            knockout: false,
+            inner: false,
+            inverted: false,
+        }
     }
     /// Still exactly the layer's alpha.
     fn is_plain(&self) -> bool {
@@ -73,7 +82,10 @@ fn stack(bottom: Img, top: Img) -> Img {
 
 /// The effects `filters` amount to on a layer whose user space maps to the page by `world`; `None`
 /// when one of them can't be expressed as effects.
-pub(crate) fn effects(filters: &[std::sync::Arc<usvg::filter::Filter>], world: Affine) -> Option<Vec<Effect>> {
+pub(crate) fn effects(
+    filters: &[std::sync::Arc<usvg::filter::Filter>],
+    world: Affine,
+) -> Option<Vec<Effect>> {
     let mut out = Vec::new();
     for f in filters {
         out.extend(filter(f, world)?);
@@ -102,7 +114,11 @@ fn filter(f: &usvg::filter::Filter, world: Affine) -> Option<Vec<Effect>> {
 fn primitive(k: &Kind, get: &dyn Fn(&Input) -> Option<Img>) -> Option<Img> {
     Some(match k {
         Kind::Offset(o) => match get(o.input())? {
-            Img::Shadow(s) => Img::Shadow(Sh { dx: s.dx + f64::from(o.dx()), dy: s.dy + f64::from(o.dy()), ..s }),
+            Img::Shadow(s) => Img::Shadow(Sh {
+                dx: s.dx + f64::from(o.dx()),
+                dy: s.dy + f64::from(o.dy()),
+                ..s
+            }),
             Img::Layer(b) if o.dx() == 0.0 && o.dy() == 0.0 => Img::Layer(b),
             Img::Clear => Img::Clear,
             _ => return None,
@@ -110,7 +126,10 @@ fn primitive(k: &Kind, get: &dyn Fn(&Input) -> Option<Img>) -> Option<Img> {
         Kind::GaussianBlur(g) => {
             let sigma = (f64::from(g.std_dev_x().get()) + f64::from(g.std_dev_y().get())) / 2.0;
             match get(g.input())? {
-                Img::Shadow(s) => Img::Shadow(Sh { sigma: s.sigma.hypot(sigma), ..s }),
+                Img::Shadow(s) => Img::Shadow(Sh {
+                    sigma: s.sigma.hypot(sigma),
+                    ..s
+                }),
                 Img::Layer(b) => Img::Layer(b.hypot(sigma)),
                 Img::Clear => Img::Clear,
                 _ => return None,
@@ -118,17 +137,30 @@ fn primitive(k: &Kind, get: &dyn Fn(&Input) -> Option<Img>) -> Option<Img> {
         }
         Kind::Flood(fl) => {
             let a = fl.opacity().get();
-            if a <= 0.0 { Img::Clear } else { Img::Flood(color(fl.color(), a)) }
+            if a <= 0.0 {
+                Img::Clear
+            } else {
+                Img::Flood(color(fl.color(), a))
+            }
         }
         Kind::Morphology(m) => match get(m.input())? {
             Img::Shadow(s) if s.sigma == 0.0 && s.spread == 0.0 && !s.inner && !s.inverted => {
                 let r = (f64::from(m.radius_x().get()) + f64::from(m.radius_y().get())) / 2.0;
-                Img::Shadow(Sh { spread: if m.operator() == MorphologyOperator::Dilate { r } else { -r }, ..s })
+                Img::Shadow(Sh {
+                    spread: if m.operator() == MorphologyOperator::Dilate {
+                        r
+                    } else {
+                        -r
+                    },
+                    ..s
+                })
             }
             _ => return None,
         },
         Kind::ColorMatrix(cm) => {
-            let ColorMatrixKind::Matrix(v) = cm.kind() else { return None };
+            let ColorMatrixKind::Matrix(v) = cm.kind() else {
+                return None;
+            };
             let s = match get(cm.input())? {
                 Img::Shadow(s) => s,
                 Img::Layer(0.0) => Sh::alpha(),
@@ -153,7 +185,13 @@ fn primitive(k: &Kind, get: &dyn Fn(&Input) -> Option<Img>) -> Option<Img> {
         }
         Kind::DropShadow(d) => {
             let sigma = (f64::from(d.std_dev_x().get()) + f64::from(d.std_dev_y().get())) / 2.0;
-            let s = Sh { dx: f64::from(d.dx()), dy: f64::from(d.dy()), sigma, color: color(d.color(), d.opacity().get()), ..Sh::alpha() };
+            let s = Sh {
+                dx: f64::from(d.dx()),
+                dy: f64::from(d.dy()),
+                sigma,
+                color: color(d.color(), d.opacity().get()),
+                ..Sh::alpha()
+            };
             match get(d.input())? {
                 Img::Layer(b) => stack(Img::Shadow(s), Img::Layer(b)),
                 _ => return None,
@@ -169,7 +207,10 @@ fn tint(v: &[f32], s: Sh) -> Option<Img> {
     let row = |r: usize| v.get(r * 5..r * 5 + 5);
     let (rr, gr, br, ar) = (row(0)?, row(1)?, row(2)?, row(3)?);
     let constant = |r: &[f32]| r.get(..4).is_some_and(|c| c.iter().all(|x| *x == 0.0));
-    if !(constant(rr) && constant(gr) && constant(br)) || ar.get(..3).is_none_or(|c| c.iter().any(|x| *x != 0.0)) || ar.get(4) != Some(&0.0) {
+    if !(constant(rr) && constant(gr) && constant(br))
+        || ar.get(..3).is_none_or(|c| c.iter().any(|x| *x != 0.0))
+        || ar.get(4) != Some(&0.0)
+    {
         return None;
     }
     let a = f64::from(*ar.get(3)?);
@@ -177,21 +218,47 @@ fn tint(v: &[f32], s: Sh) -> Option<Img> {
     if a >= 100.0 && [k(rr), k(gr), k(br)] == [0.0; 3] {
         return Some(Img::Shadow(s));
     }
-    Some(Img::Shadow(Sh { color: Color::new(k(rr), k(gr), k(br), (f64::from(s.color.a) * a).clamp(0.0, 1.0) as f32), ..s }))
+    Some(Img::Shadow(Sh {
+        color: Color::new(
+            k(rr),
+            k(gr),
+            k(br),
+            (f64::from(s.color.a) * a).clamp(0.0, 1.0) as f32,
+        ),
+        ..s
+    }))
 }
 
 fn composite(a: Img, b: Img, op: CompositeOperator) -> Option<Img> {
-    let tinted = |s: Sh, c: Color| Sh { color: Color::new(c.r, c.g, c.b, (c.a * s.color.a).clamp(0.0, 1.0)), ..s };
+    let tinted = |s: Sh, c: Color| Sh {
+        color: Color::new(c.r, c.g, c.b, (c.a * s.color.a).clamp(0.0, 1.0)),
+        ..s
+    };
     Some(match (op, a, b) {
         (CompositeOperator::Over, a, b) => stack(b, a),
-        (CompositeOperator::In, Img::Flood(c), Img::Shadow(s)) | (CompositeOperator::In, Img::Shadow(s), Img::Flood(c)) => Img::Shadow(tinted(s, c)),
+        (CompositeOperator::In, Img::Flood(c), Img::Shadow(s))
+        | (CompositeOperator::In, Img::Shadow(s), Img::Flood(c)) => Img::Shadow(tinted(s, c)),
         // A flood cut to everything but a shadow, then cut to the layer: an inner shadow.
-        (CompositeOperator::Out, Img::Flood(c), Img::Shadow(s)) if !s.inner && !s.inverted => Img::Shadow(Sh { inverted: true, ..tinted(s, c) }),
-        (CompositeOperator::In, Img::Shadow(s), Img::Shadow(l)) if s.inverted && l.is_plain() => {
-            Img::Shadow(Sh { inverted: false, inner: true, ..s })
+        (CompositeOperator::Out, Img::Flood(c), Img::Shadow(s)) if !s.inner && !s.inverted => {
+            Img::Shadow(Sh {
+                inverted: true,
+                ..tinted(s, c)
+            })
         }
-        (CompositeOperator::Out, Img::Shadow(s), Img::Shadow(l)) if l.is_plain() && !s.inner && !s.inverted => {
-            Img::Shadow(Sh { knockout: true, ..s })
+        (CompositeOperator::In, Img::Shadow(s), Img::Shadow(l)) if s.inverted && l.is_plain() => {
+            Img::Shadow(Sh {
+                inverted: false,
+                inner: true,
+                ..s
+            })
+        }
+        (CompositeOperator::Out, Img::Shadow(s), Img::Shadow(l))
+            if l.is_plain() && !s.inner && !s.inverted =>
+        {
+            Img::Shadow(Sh {
+                knockout: true,
+                ..s
+            })
         }
         // layer − shadow: inside the layer where the offset copy isn't.
         (CompositeOperator::Arithmetic { k1, k2, k3, k4 }, Img::Shadow(s), Img::Shadow(l))
@@ -214,7 +281,10 @@ fn to_effects(img: Img, world: Affine) -> Option<Vec<Effect>> {
     let mut out = Vec::new();
     for (i, l) in layers.iter().enumerate() {
         match l {
-            Img::Layer(b) if *b > 0.0 => out.push(EffectKind::LayerBlur(Blur { radius: 2.0 * b * k, ..Blur::default() })),
+            Img::Layer(b) if *b > 0.0 => out.push(EffectKind::LayerBlur(Blur {
+                radius: 2.0 * b * k,
+                ..Blur::default()
+            })),
             Img::Layer(_) => {}
             Img::Shadow(s) if s.inverted => return None,
             Img::Shadow(s) => {
@@ -229,7 +299,10 @@ fn to_effects(img: Img, world: Affine) -> Option<Vec<Effect>> {
                 };
                 match (s.inner, i < at) {
                     (false, true) => out.push(EffectKind::DropShadow(shadow)),
-                    (true, false) => out.push(EffectKind::InnerShadow(Shadow { show_behind: false, ..shadow })),
+                    (true, false) => out.push(EffectKind::InnerShadow(Shadow {
+                        show_behind: false,
+                        ..shadow
+                    })),
                     _ => return None,
                 }
             }
@@ -239,7 +312,14 @@ fn to_effects(img: Img, world: Affine) -> Option<Vec<Effect>> {
     if out.iter().any(|e| !effect_is_finite(e)) {
         return None;
     }
-    Some(out.into_iter().map(|kind| Effect { kind, visible: true }).collect())
+    Some(
+        out.into_iter()
+            .map(|kind| Effect {
+                kind,
+                visible: true,
+            })
+            .collect(),
+    )
 }
 
 /// `v` through `world` without its translation.
@@ -250,7 +330,11 @@ pub(crate) fn linear(world: Affine, v: Vec2) -> Vec2 {
 
 fn effect_is_finite(e: &EffectKind) -> bool {
     match e {
-        EffectKind::DropShadow(s) | EffectKind::InnerShadow(s) => [s.offset.0, s.offset.1, s.radius, s.spread].iter().all(|v| v.is_finite()),
+        EffectKind::DropShadow(s) | EffectKind::InnerShadow(s) => {
+            [s.offset.0, s.offset.1, s.radius, s.spread]
+                .iter()
+                .all(|v| v.is_finite())
+        }
         EffectKind::LayerBlur(b) => b.radius.is_finite(),
         _ => true,
     }

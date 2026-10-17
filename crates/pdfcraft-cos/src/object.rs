@@ -35,12 +35,17 @@ pub struct PdfString {
 
 impl PdfString {
     pub fn literal(bytes: impl Into<Vec<u8>>) -> Self {
-        Self { bytes: bytes.into(), hex: false }
+        Self {
+            bytes: bytes.into(),
+            hex: false,
+        }
     }
 
     /// A text string (ISO 32000-2 §7.9.2.2): PDFDocEncoding when possible, else UTF-16BE with BOM.
     pub fn text(s: &str) -> Self {
-        if s.chars().all(|c| (' '..='~').contains(&c) || c == '\n' || c == '\r' || c == '\t') {
+        if s.chars()
+            .all(|c| (' '..='~').contains(&c) || c == '\n' || c == '\r' || c == '\t')
+        {
             return Self::literal(s.as_bytes().to_vec());
         }
         let mut bytes = vec![0xFE, 0xFF];
@@ -59,7 +64,12 @@ impl PdfString {
     pub fn to_text(&self) -> String {
         let s = match self.bytes.as_slice() {
             [0xFE, 0xFF, rest @ ..] => {
-                let units: Vec<u16> = rest.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c)).collect();
+                let units: Vec<u16> = rest
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_be_bytes(*c))
+                    .collect();
                 String::from_utf16_lossy(&units)
             }
             [0xEF, 0xBB, 0xBF, rest @ ..] => String::from_utf8_lossy(rest).into_owned(),
@@ -69,7 +79,11 @@ impl PdfString {
                 _ => b.iter().map(|&c| pdfcraft_crypt::pdfdoc_char(c)).collect(),
             },
         };
-        if s.starts_with('\u{FEFF}') { s.trim_start_matches('\u{FEFF}').to_owned() } else { s }
+        if s.starts_with('\u{FEFF}') {
+            s.trim_start_matches('\u{FEFF}').to_owned()
+        } else {
+            s
+        }
     }
 }
 
@@ -92,7 +106,10 @@ impl Dict {
     }
 
     pub fn get_mut(&mut self, key: &[u8]) -> Option<&mut Object> {
-        self.entries.iter_mut().find(|(k, _)| k == key).map(|(_, v)| v)
+        self.entries
+            .iter_mut()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v)
     }
 
     /// Insert or replace, keeping the position of an existing key.
@@ -162,14 +179,20 @@ pub const MAX_DECODED: usize = 1 << 30;
 impl Stream {
     /// A new stream from already-encoded bytes (`/Length` is set at write time).
     pub fn from_raw(dict: Dict, raw: Vec<u8>) -> Self {
-        Self { dict, raw: raw.into() }
+        Self {
+            dict,
+            raw: raw.into(),
+        }
     }
 
     /// A new stream holding `data` compressed with Flate.
     pub fn flate(mut dict: Dict, data: &[u8]) -> Self {
         dict.set(b"Filter".to_vec(), Object::Name(b"FlateDecode".to_vec()));
         dict.remove(b"DecodeParms");
-        Self { dict, raw: pdfcraft_filters::encode_flate(data).into() }
+        Self {
+            dict,
+            raw: pdfcraft_filters::encode_flate(data).into(),
+        }
     }
 
     /// The filter chain declared in the dictionary.
@@ -218,7 +241,9 @@ impl Stream {
         if chain.is_empty() {
             return self.raw_within(max);
         }
-        pdfcraft_filters::decode_tolerant(&chain, &self.raw, max.min(MAX_DECODED)).map(|(v, _)| v).map_err(|e| CosError::Filter(e.to_string()))
+        pdfcraft_filters::decode_tolerant(&chain, &self.raw, max.min(MAX_DECODED))
+            .map(|(v, _)| v)
+            .map_err(|e| CosError::Filter(e.to_string()))
     }
 
     /// Decoded data, bounded by [`MAX_DECODED`]; any corruption is an error.
@@ -227,7 +252,8 @@ impl Stream {
         if chain.is_empty() {
             return self.raw_within(MAX_DECODED);
         }
-        pdfcraft_filters::decode(&chain, &self.raw, MAX_DECODED).map_err(|e| CosError::Filter(e.to_string()))
+        pdfcraft_filters::decode(&chain, &self.raw, MAX_DECODED)
+            .map_err(|e| CosError::Filter(e.to_string()))
     }
 
     /// Data after the first filter alone, bounded by `max`: the rest of the chain stays encoded.
@@ -238,7 +264,8 @@ impl Stream {
         if chain.is_empty() {
             return self.raw_within(max);
         }
-        pdfcraft_filters::decode(&chain, &self.raw, max.min(MAX_DECODED)).map_err(|e| CosError::Filter(e.to_string()))
+        pdfcraft_filters::decode(&chain, &self.raw, max.min(MAX_DECODED))
+            .map_err(|e| CosError::Filter(e.to_string()))
     }
 
     fn raw_within(&self, max: usize) -> Result<Vec<u8>, CosError> {
@@ -246,7 +273,9 @@ impl Stream {
         // An empty decoder chain still produces an owned output buffer: check its limit
         // before cloning, including streams whose /Crypt filter was applied on load.
         if self.raw.len() > max {
-            return Err(CosError::Filter(pdfcraft_filters::FilterError::LimitExceeded(max).to_string()));
+            return Err(CosError::Filter(
+                pdfcraft_filters::FilterError::LimitExceeded(max).to_string(),
+            ));
         }
         Ok(self.raw.to_vec())
     }
@@ -401,23 +430,41 @@ mod tests {
         utf8.extend_from_slice("第一章".as_bytes());
         assert_eq!(PdfString::literal(utf8).to_text(), "第一章");
         // Invalid UTF-8 after the BOM decodes lossily instead of vanishing.
-        assert_eq!(PdfString::literal(vec![0xEF, 0xBB, 0xBF, b'A', 0xFF, b'B']).to_text(), "A\u{FFFD}B");
+        assert_eq!(
+            PdfString::literal(vec![0xEF, 0xBB, 0xBF, b'A', 0xFF, b'B']).to_text(),
+            "A\u{FFFD}B"
+        );
         // BOM-less raw UTF-8 from producers that skip the BOM.
         assert_eq!(PdfString::literal("目录".as_bytes()).to_text(), "目录");
         // PDFDocEncoding Latin-1 (not valid UTF-8) stays PDFDocEncoding.
-        assert_eq!(PdfString::literal(vec![b'C', b'a', b'f', 0xE9]).to_text(), "Café");
+        assert_eq!(
+            PdfString::literal(vec![b'C', b'a', b'f', 0xE9]).to_text(),
+            "Café"
+        );
         // Doubled BOMs leave no U+FEFF behind.
-        assert_eq!(PdfString::literal(vec![0xFE, 0xFF, 0xFE, 0xFF, 0x00, b'A']).to_text(), "A");
-        assert_eq!(PdfString::literal(vec![0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF, b'A']).to_text(), "A");
+        assert_eq!(
+            PdfString::literal(vec![0xFE, 0xFF, 0xFE, 0xFF, 0x00, b'A']).to_text(),
+            "A"
+        );
+        assert_eq!(
+            PdfString::literal(vec![0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF, b'A']).to_text(),
+            "A"
+        );
         // Odd trailing byte and empty strings never panic.
-        assert_eq!(PdfString::literal(vec![0xFE, 0xFF, 0x00, b'A', 0x00]).to_text(), "A");
+        assert_eq!(
+            PdfString::literal(vec![0xFE, 0xFF, 0x00, b'A', 0x00]).to_text(),
+            "A"
+        );
         assert_eq!(PdfString::literal(vec![0xFE, 0xFF]).to_text(), "");
         assert_eq!(PdfString::literal(Vec::new()).to_text(), "");
     }
 
     #[test]
     fn pdfdoc_encoding_high_range() {
-        assert_eq!(PdfString::literal(vec![0x84, 0x92, 0xA0, b'A']).to_text(), "—™€A");
+        assert_eq!(
+            PdfString::literal(vec![0x84, 0x92, 0xA0, b'A']).to_text(),
+            "—™€A"
+        );
     }
 
     #[test]
@@ -435,7 +482,10 @@ mod tests {
     fn raw_streams_refuse_decoding_past_a_caller_limit() {
         let stream = Stream::from_raw(Dict::new(), b"abc".to_vec());
         for max in [0, 2] {
-            assert!(matches!(stream.decoded_within(max), Err(CosError::Filter(_))));
+            assert!(matches!(
+                stream.decoded_within(max),
+                Err(CosError::Filter(_))
+            ));
         }
     }
 
@@ -470,7 +520,12 @@ mod tests {
             assert_eq!(stream.decoded_within(usize::MAX).unwrap(), b"abc");
             assert_eq!(stream.decoded().unwrap(), b"abc");
             assert_eq!(stream.decoded_strict().unwrap(), b"abc");
-            assert!(Stream::from_raw(dict, Vec::new()).decoded_within(0).unwrap().is_empty());
+            assert!(
+                Stream::from_raw(dict, Vec::new())
+                    .decoded_within(0)
+                    .unwrap()
+                    .is_empty()
+            );
         }
     }
 
@@ -486,15 +541,30 @@ mod tests {
     fn first_filter_decodes_only_the_outer_wrapper() {
         let data = "0 0 m 100 100 l S\n".repeat(64).into_bytes();
         let inner = Stream::flate(Dict::new(), &data).raw.to_vec();
-        for (outer, name, corrupt) in [(Filter::Ascii85, "ASCII85Decode", &b"{~>"[..]), (Filter::AsciiHex, "ASCIIHexDecode", &b"G0>"[..])] {
+        for (outer, name, corrupt) in [
+            (Filter::Ascii85, "ASCII85Decode", &b"{~>"[..]),
+            (Filter::AsciiHex, "ASCIIHexDecode", &b"G0>"[..]),
+        ] {
             let encoded = pdfcraft_filters::encode(&outer, &Params::default(), &inner).unwrap();
             let mut dict = Dict::new();
-            dict.set(b"Filter".to_vec(), Object::Array(vec![Object::name(name), Object::name("FlateDecode")]));
+            dict.set(
+                b"Filter".to_vec(),
+                Object::Array(vec![Object::name(name), Object::name("FlateDecode")]),
+            );
             let stream = Stream::from_raw(dict.clone(), encoded);
-            assert_eq!(stream.decoded_first_filter_strict(usize::MAX).unwrap(), inner);
+            assert_eq!(
+                stream.decoded_first_filter_strict(usize::MAX).unwrap(),
+                inner
+            );
             assert_eq!(stream.decoded_strict().unwrap(), data);
-            assert!(matches!(stream.decoded_first_filter_strict(inner.len() - 1), Err(CosError::Filter(_))));
-            assert!(matches!(Stream::from_raw(dict, corrupt.to_vec()).decoded_first_filter_strict(usize::MAX), Err(CosError::Filter(_))));
+            assert!(matches!(
+                stream.decoded_first_filter_strict(inner.len() - 1),
+                Err(CosError::Filter(_))
+            ));
+            assert!(matches!(
+                Stream::from_raw(dict, corrupt.to_vec()).decoded_first_filter_strict(usize::MAX),
+                Err(CosError::Filter(_))
+            ));
         }
     }
 }

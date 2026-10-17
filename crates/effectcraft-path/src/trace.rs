@@ -35,7 +35,12 @@ pub struct TraceOpts {
 
 impl Default for TraceOpts {
     fn default() -> Self {
-        TraceOpts { threshold: 0.5, tolerance: 1.0, min_area: 10.0, corner_roundness: 0.5 }
+        TraceOpts {
+            threshold: 0.5,
+            tolerance: 1.0,
+            min_area: 10.0,
+            corner_roundness: 0.5,
+        }
     }
 }
 
@@ -73,16 +78,28 @@ pub fn trace(field: &[f32], w: usize, h: usize, o: &TraceOpts) -> Vec<Traced> {
     let depths: Vec<usize> = (0..polys.len())
         .map(|i| {
             let p = polys[i].1[0];
-            (0..polys.len()).filter(|&j| j != i && polys[j].2.abs() > polys[i].2.abs() && point_in_poly(p, &polys[j].1)).count()
+            (0..polys.len())
+                .filter(|&j| {
+                    j != i && polys[j].2.abs() > polys[i].2.abs() && point_in_poly(p, &polys[j].1)
+                })
+                .count()
         })
         .collect();
     let mut out: Vec<Traced> = polys
         .drain(..)
         .zip(depths)
-        .map(|((raw, simp, a), depth)| Traced { path: fit_loop(&raw, &simp, o.corner_roundness.clamp(0.0, 1.0)), depth, area: a })
+        .map(|((raw, simp, a), depth)| Traced {
+            path: fit_loop(&raw, &simp, o.corner_roundness.clamp(0.0, 1.0)),
+            depth,
+            area: a,
+        })
         .collect();
     // Outer outlines first, then holes, islands…; larger first within a depth.
-    out.sort_by(|a, b| a.depth.cmp(&b.depth).then(b.area.abs().total_cmp(&a.area.abs())));
+    out.sort_by(|a, b| {
+        a.depth
+            .cmp(&b.depth)
+            .then(b.area.abs().total_cmp(&a.area.abs()))
+    });
     out
 }
 
@@ -90,7 +107,13 @@ pub fn trace(field: &[f32], w: usize, h: usize, o: &TraceOpts) -> Vec<Traced> {
 fn contours(field: &[f32], w: usize, h: usize, thr: f32) -> Vec<Vec<[f64; 2]>> {
     // Padded grid: sample (i, j) of the padded grid is pixel (i - 1, j - 1), outside = -inf.
     let (gw, gh) = (w + 2, h + 2);
-    let val = |i: usize, j: usize| -> f32 { if i == 0 || j == 0 || i > w || j > h { f32::NEG_INFINITY } else { field[(j - 1) * w + (i - 1)] } };
+    let val = |i: usize, j: usize| -> f32 {
+        if i == 0 || j == 0 || i > w || j > h {
+            f32::NEG_INFINITY
+        } else {
+            field[(j - 1) * w + (i - 1)]
+        }
+    };
     let inside = |i: usize, j: usize| val(i, j) >= thr;
     // Edge ids: horizontal edge (i, j)-(i+1, j) = 2 * (j * gw + i); vertical (i, j)-(i, j+1) = +1.
     let pos = |i: usize, j: usize| [i as f64 - 0.5, j as f64 - 0.5];
@@ -117,7 +140,12 @@ fn contours(field: &[f32], w: usize, h: usize, thr: f32) -> Vec<Vec<[f64; 2]>> {
     for j in 0..gh - 1 {
         for i in 0..gw - 1 {
             // Corners: tl (i, j), tr (i+1, j), br (i+1, j+1), bl (i, j+1).
-            let (tl, tr, br, bl) = (inside(i, j), inside(i + 1, j), inside(i + 1, j + 1), inside(i, j + 1));
+            let (tl, tr, br, bl) = (
+                inside(i, j),
+                inside(i + 1, j),
+                inside(i + 1, j + 1),
+                inside(i, j + 1),
+            );
             let code = (tl as u8) << 3 | (tr as u8) << 2 | (br as u8) << 1 | bl as u8;
             if code == 0 || code == 15 {
                 continue;
@@ -138,7 +166,8 @@ fn contours(field: &[f32], w: usize, h: usize, thr: f32) -> Vec<Vec<[f64; 2]>> {
                 4 => seg(right, top),
                 5 => {
                     // tr + bl inside (saddle).
-                    let centre = (val(i, j) + val(i + 1, j) + val(i + 1, j + 1) + val(i, j + 1)) / 4.0;
+                    let centre =
+                        (val(i, j) + val(i + 1, j) + val(i + 1, j + 1) + val(i, j + 1)) / 4.0;
                     if centre >= thr {
                         seg(left, top);
                         seg(right, bottom);
@@ -153,7 +182,8 @@ fn contours(field: &[f32], w: usize, h: usize, thr: f32) -> Vec<Vec<[f64; 2]>> {
                 9 => seg(top, bottom),
                 10 => {
                     // tl + br inside (saddle).
-                    let centre = (val(i, j) + val(i + 1, j) + val(i + 1, j + 1) + val(i, j + 1)) / 4.0;
+                    let centre =
+                        (val(i, j) + val(i + 1, j) + val(i + 1, j + 1) + val(i, j + 1)) / 4.0;
                     if centre >= thr {
                         seg(top, right);
                         seg(bottom, left);
@@ -168,8 +198,12 @@ fn contours(field: &[f32], w: usize, h: usize, thr: f32) -> Vec<Vec<[f64; 2]>> {
                 14 => seg(bottom, left),
                 _ => {}
             }
-            for (e, a, b) in [(top, (i, j), (i + 1, j)), (bottom, (i, j + 1), (i + 1, j + 1)), (left, (i, j), (i, j + 1)), (right, (i + 1, j), (i + 1, j + 1))]
-            {
+            for (e, a, b) in [
+                (top, (i, j), (i + 1, j)),
+                (bottom, (i, j + 1), (i + 1, j + 1)),
+                (left, (i, j), (i, j + 1)),
+                (right, (i + 1, j), (i + 1, j + 1)),
+            ] {
                 if inside(a.0, a.1) != inside(b.0, b.1) {
                     point.entry(e).or_insert_with(|| cross(a, b));
                 }
@@ -218,7 +252,9 @@ fn point_in_poly(p: [f64; 2], poly: &[[f64; 2]]) -> bool {
     let mut j = n - 1;
     for i in 0..n {
         let (a, b) = (poly[i], poly[j]);
-        if (a[1] > p[1]) != (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0] {
+        if (a[1] > p[1]) != (b[1] > p[1])
+            && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]
+        {
             inside = !inside;
         }
         j = i;
@@ -229,7 +265,11 @@ fn point_in_poly(p: [f64; 2], poly: &[[f64; 2]]) -> bool {
 fn seg_dist(p: [f64; 2], a: [f64; 2], b: [f64; 2]) -> f64 {
     let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
     let l2 = dx * dx + dy * dy;
-    let t = if l2 > 0.0 { (((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if l2 > 0.0 {
+        (((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     ((p[0] - a[0] - t * dx).powi(2) + (p[1] - a[1] - t * dy).powi(2)).sqrt()
 }
 
@@ -285,7 +325,10 @@ fn fit_loop(raw: &[[f64; 2]], simp: &[[f64; 2]], round: f64) -> ShapePath {
         return ShapePath::polygon(simp, true);
     }
     // Raw index of each simplified vertex (they are raw points).
-    let idx: Vec<usize> = simp.iter().map(|s| raw.iter().position(|r| r == s).unwrap_or(0)).collect();
+    let idx: Vec<usize> = simp
+        .iter()
+        .map(|s| raw.iter().position(|r| r == s).unwrap_or(0))
+        .collect();
     let pt = |a: [f64; 2]| Point::new(a[0], a[1]);
     let v = |a: [f64; 2], b: [f64; 2]| Vec2::new(b[0] - a[0], b[1] - a[1]);
     // Per vertex: (direction leaving, direction arriving), blended between chord and smooth.
@@ -304,19 +347,34 @@ fn fit_loop(raw: &[[f64; 2]], simp: &[[f64; 2]], round: f64) -> ShapePath {
     for i in 0..n {
         let j = (i + 1) % n;
         let (a, b) = (idx[i], idx[j]);
-        let mut pts: Vec<Point> =
-            if b > a { raw[a..=b].iter().map(|q| pt(*q)).collect() } else { raw[a..].iter().chain(raw[..=b].iter()).map(|q| pt(*q)).collect() };
+        let mut pts: Vec<Point> = if b > a {
+            raw[a..=b].iter().map(|q| pt(*q)).collect()
+        } else {
+            raw[a..]
+                .iter()
+                .chain(raw[..=b].iter())
+                .map(|q| pt(*q))
+                .collect()
+        };
         if pts.len() < 2 {
             pts = vec![pt(simp[i]), pt(simp[j])];
         }
         let chord = pts[0].distance(pts[pts.len() - 1]);
         let (t0, t1) = (dirs[i].0, dirs[j].1);
-        let (c, _, _) = if pts.len() >= 3 { fit_single(&pts, t0, t1) } else { (kurbo::CubicBez::new(pts[0], pts[0], pts[1], pts[1]), 0.0, 0) };
+        let (c, _, _) = if pts.len() >= 3 {
+            fit_single(&pts, t0, t1)
+        } else {
+            (kurbo::CubicBez::new(pts[0], pts[0], pts[1], pts[1]), 0.0, 0)
+        };
         // Keep handles pointing along the tangents and within the chord.
         let max = chord * 0.5 * round.max(0.34);
         let l0 = (c.p1 - c.p0).dot(t0).clamp(0.0, max);
         let l1 = (c.p3 - c.p2).dot(t1).clamp(0.0, max);
-        let (l0, l1) = if pts.len() < 3 { (chord / 3.0 * round, chord / 3.0 * round) } else { (l0, l1) };
+        let (l0, l1) = if pts.len() < 3 {
+            (chord / 3.0 * round, chord / 3.0 * round)
+        } else {
+            (l0, l1)
+        };
         path.out_tangents[i] = [t0.x * l0, t0.y * l0];
         path.in_tangents[j] = [-t1.x * l1, -t1.y * l1];
     }
@@ -346,7 +404,14 @@ mod tests {
     /// Rasterise traced outlines with even-odd fill (as the Add / Subtract mask stack does).
     fn raster(t: &[Traced], w: usize, h: usize) -> Vec<f32> {
         let paths: Vec<_> = t.iter().map(|t| to_kurbo(&t.path)).collect();
-        fill_coverage(&paths, &Mat3::IDENTITY, w as u32, h as u32, FillRule::EvenOdd).data
+        fill_coverage(
+            &paths,
+            &Mat3::IDENTITY,
+            w as u32,
+            h as u32,
+            FillRule::EvenOdd,
+        )
+        .data
     }
 
     #[test]
@@ -366,7 +431,15 @@ mod tests {
             }
         }
         for round in [0.0, 0.5, 1.0] {
-            let t = trace(&field, w, h, &TraceOpts { corner_roundness: round, ..Default::default() });
+            let t = trace(
+                &field,
+                w,
+                h,
+                &TraceOpts {
+                    corner_roundness: round,
+                    ..Default::default()
+                },
+            );
             assert_eq!(t.len(), 3, "disc, square, hole");
             assert_eq!(t.iter().filter(|t| t.depth == 1).count(), 1, "one hole");
             let r = raster(&t, w, h);
@@ -376,16 +449,50 @@ mod tests {
             assert!(score > min, "IoU {score} at roundness {round}");
         }
         // A disc stays a disc when smooth.
-        let disc: Vec<f32> =
-            (0..w * h).map(|i| if ((i % w) as f64 + 0.5 - 30.0).powi(2) + ((i / w) as f64 + 0.5 - 40.0).powi(2) <= 400.0 { 1.0 } else { 0.0 }).collect();
-        let t = trace(&disc, w, h, &TraceOpts { corner_roundness: 1.0, tolerance: 1.5, ..Default::default() });
+        let disc: Vec<f32> = (0..w * h)
+            .map(|i| {
+                if ((i % w) as f64 + 0.5 - 30.0).powi(2) + ((i / w) as f64 + 0.5 - 40.0).powi(2)
+                    <= 400.0
+                {
+                    1.0
+                } else {
+                    0.0
+                }
+            })
+            .collect();
+        let t = trace(
+            &disc,
+            w,
+            h,
+            &TraceOpts {
+                corner_roundness: 1.0,
+                tolerance: 1.5,
+                ..Default::default()
+            },
+        );
         let truth_disc: Vec<bool> = disc.iter().map(|v| *v > 0.5).collect();
         let score = iou(&truth_disc, &raster(&t, w, h));
         assert!(score > 0.97, "disc IoU {score}");
-        assert!(t[0].path.vertices.len() < 40, "simplified to {}", t[0].path.vertices.len());
+        assert!(
+            t[0].path.vertices.len() < 40,
+            "simplified to {}",
+            t[0].path.vertices.len()
+        );
         // The square traces to 4 corners at zero roundness.
-        let t = trace(&field, w, h, &TraceOpts { corner_roundness: 0.0, tolerance: 1.0, ..Default::default() });
-        let sq = t.iter().find(|t| t.depth == 0 && t.path.vertices.iter().all(|v| v[0] > 55.0)).expect("square");
+        let t = trace(
+            &field,
+            w,
+            h,
+            &TraceOpts {
+                corner_roundness: 0.0,
+                tolerance: 1.0,
+                ..Default::default()
+            },
+        );
+        let sq = t
+            .iter()
+            .find(|t| t.depth == 0 && t.path.vertices.iter().all(|v| v[0] > 55.0))
+            .expect("square");
         assert!(sq.path.vertices.len() <= 8, "{:?}", sq.path.vertices);
     }
 
@@ -404,10 +511,45 @@ mod tests {
                 field[y * w + x] = 0.6;
             }
         }
-        assert_eq!(trace(&field, w, h, &TraceOpts { min_area: 10.0, ..Default::default() }).len(), 1);
-        assert_eq!(trace(&field, w, h, &TraceOpts { min_area: 1.0, ..Default::default() }).len(), 2);
+        assert_eq!(
+            trace(
+                &field,
+                w,
+                h,
+                &TraceOpts {
+                    min_area: 10.0,
+                    ..Default::default()
+                }
+            )
+            .len(),
+            1
+        );
+        assert_eq!(
+            trace(
+                &field,
+                w,
+                h,
+                &TraceOpts {
+                    min_area: 1.0,
+                    ..Default::default()
+                }
+            )
+            .len(),
+            2
+        );
         // Above 0.6 only the speck remains (and it is too small).
-        assert!(trace(&field, w, h, &TraceOpts { threshold: 0.7, ..Default::default() }).is_empty());
+        assert!(
+            trace(
+                &field,
+                w,
+                h,
+                &TraceOpts {
+                    threshold: 0.7,
+                    ..Default::default()
+                }
+            )
+            .is_empty()
+        );
         // Edge-touching shapes close along the border.
         let full = vec![1.0f32; 100];
         let t = trace(&full, 10, 10, &TraceOpts::default());

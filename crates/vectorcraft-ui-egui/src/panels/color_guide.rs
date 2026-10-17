@@ -19,7 +19,11 @@ use crate::VectorcraftApp;
 use crate::widgets::{self, menu_item};
 
 /// The base colour before one is set: an orange.
-const DEFAULT_BASE: Color = Color::Rgb { r: 230.0 / 255.0, g: 120.0 / 255.0, b: 40.0 / 255.0 };
+const DEFAULT_BASE: Color = Color::Rgb {
+    r: 230.0 / 255.0,
+    g: 120.0 / 255.0,
+    b: 40.0 / 255.0,
+};
 
 /// The guide's base colour: fixed once set; the current colour when the panel first shows.
 pub(crate) fn base_color(app: &VectorcraftApp, ctx: &egui::Context) -> Color {
@@ -64,8 +68,18 @@ fn guide(app: &VectorcraftApp, ctx: &egui::Context) -> Guide {
     if limit.is_empty() {
         return Guide::new(base, rule, &opts);
     }
-    let doc = app.session.active().filter(|_| limit == swatchlib::DOCUMENT_SWATCHES).map(|d| (d.uid, d.revision));
-    let key = GuideKey { base, rule, opts, limit: limit.clone(), doc };
+    let doc = app
+        .session
+        .active()
+        .filter(|_| limit == swatchlib::DOCUMENT_SWATCHES)
+        .map(|d| (d.uid, d.revision));
+    let key = GuideKey {
+        base,
+        rule,
+        opts,
+        limit: limit.clone(),
+        doc,
+    };
     if let Some((k, g)) = pstate::<Option<(GuideKey, Guide)>>(ctx, "cg-guide")
         && k == key
     {
@@ -97,7 +111,10 @@ fn limit_menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     ui.set_min_width(200.0);
     let cur = app.ui.color_guide_limit.clone();
     let mut chosen = None;
-    for (key, label) in [("", tl!("None")), (swatchlib::DOCUMENT_SWATCHES, swatches::DOCUMENT_SWATCHES)] {
+    for (key, label) in [
+        ("", tl!("None")),
+        (swatchlib::DOCUMENT_SWATCHES, swatches::DOCUMENT_SWATCHES),
+    ] {
         if menu_item(ui, label, true, cur == key) {
             chosen = Some(key.to_string());
         }
@@ -123,7 +140,11 @@ fn edit_or_apply(app: &mut VectorcraftApp, g: &Guide) {
 /// Save the selected cells' colours as swatches (one undo step).
 fn save_selected(app: &mut VectorcraftApp, ctx: &egui::Context) {
     let g = guide(app, ctx);
-    let colors: Vec<Value> = selected(ctx).into_iter().filter_map(|(r, c)| g.grid.get(r)?.get(c)).map(color_json).collect();
+    let colors: Vec<Value> = selected(ctx)
+        .into_iter()
+        .filter_map(|(r, c)| g.grid.get(r)?.get(c))
+        .map(color_json)
+        .collect();
     if !colors.is_empty() {
         app.run("swatch.new", json!({ "colors": colors })).ok();
     }
@@ -139,14 +160,22 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     ui.horizontal(|ui| {
         let (r, resp) = ui.allocate_exact_size(vec2(26.0, 26.0), Sense::click());
         widgets::swatch_tile(ui, r, &Paint::solid(base), false, resp.hovered());
-        if resp.on_hover_text(tl!("Set base color to the current color")).clicked()
+        if resp
+            .on_hover_text(tl!("Set base color to the current color"))
+            .clicked()
             && let Some(c) = active_paint(app).color()
         {
             set_pstate(&ctx, "cg-base", Some(c));
             clear_selection(&ctx);
         }
         let labels: Vec<&str> = Harmony::ALL.iter().map(|h| h.label()).collect();
-        if let Some(i) = widgets::dropdown(ui, "cg-rule", h.label(), &labels, ui.available_width() - 4.0) {
+        if let Some(i) = widgets::dropdown(
+            ui,
+            "cg-rule",
+            h.label(),
+            &labels,
+            ui.available_width() - 4.0,
+        ) {
             set_pstate(&ctx, "cg-harmony", i);
             clear_selection(&ctx);
         }
@@ -175,14 +204,32 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     for (ri, row) in g.grid.iter().enumerate() {
         let (rr, _) = ui.allocate_exact_size(vec2(ui.available_width(), 18.0), Sense::hover());
         for (ci, v) in row.iter().enumerate() {
-            let r = Rect::from_min_size(rr.min + vec2(x(ci), 0.0), vec2(x(ci + 1) - x(ci) - gap, 17.0));
+            let r = Rect::from_min_size(
+                rr.min + vec2(x(ci), 0.0),
+                vec2(x(ci + 1) - x(ci) - gap, 17.0),
+            );
             let resp = ui.interact(r, ui.id().with(("cg-v", ri, ci)), Sense::click());
             ui.painter().rect_filled(r, 0.0, c32(v));
             if sel.contains(&(ri, ci)) {
-                ui.painter().rect_stroke(r.shrink(1.0), 0.0, egui::Stroke::new(1.0, egui::Color32::WHITE), egui::StrokeKind::Inside);
-                ui.painter().rect_stroke(r, 0.0, egui::Stroke::new(1.5, t.accent), egui::StrokeKind::Outside);
+                ui.painter().rect_stroke(
+                    r.shrink(1.0),
+                    0.0,
+                    egui::Stroke::new(1.0, egui::Color32::WHITE),
+                    egui::StrokeKind::Inside,
+                );
+                ui.painter().rect_stroke(
+                    r,
+                    0.0,
+                    egui::Stroke::new(1.5, t.accent),
+                    egui::StrokeKind::Outside,
+                );
             } else if ci == centre {
-                ui.painter().rect_stroke(r, 0.0, egui::Stroke::new(1.0, t.text_strong), egui::StrokeKind::Inside);
+                ui.painter().rect_stroke(
+                    r,
+                    0.0,
+                    egui::Stroke::new(1.0, t.text_strong),
+                    egui::StrokeKind::Inside,
+                );
             }
             if resp.on_hover_text(v.to_hex()).clicked() {
                 if !multi {
@@ -207,12 +254,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         // The library the colours are limited to, centred between the ends.
         let middle = ui.available_width() - 40.0;
         let label = limit.as_deref().unwrap_or_default();
-        ui.add_sized([middle.max(0.0), 16.0], egui::Label::new(egui::RichText::new(label).size(11.0).color(t.text_dim)).truncate());
+        ui.add_sized(
+            [middle.max(0.0), 16.0],
+            egui::Label::new(egui::RichText::new(label).size(11.0).color(t.text_dim)).truncate(),
+        );
         widgets::dim_label(ui, right);
     });
     widgets::bottom_bar(ui, |ui| {
         let tip = match &limit {
-            Some(name) => crate::i18n::fmt(tl!("Limit colors to swatch library: {name}"), &[("name", name)]),
+            Some(name) => crate::i18n::fmt(
+                tl!("Limit colors to swatch library: {name}"),
+                &[("name", name)],
+            ),
             None => tl!("Limit colors to swatch library").into(),
         };
         // The tip is translated around the library's name, not looked up whole.
@@ -222,15 +275,42 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         // Recolor Artwork with the harmony colours as the new colours: the selected art's, or
         // (without art) the colours themselves, which OK saves as a colour group.
         let doc = app.session.active().is_some();
-        if widgets::icon_button_enabled(ui, "palette", tl!("Edit or Apply Colors"), false, doc, 24.0).clicked() {
+        if widgets::icon_button_enabled(
+            ui,
+            "palette",
+            tl!("Edit or Apply Colors"),
+            false,
+            doc,
+            24.0,
+        )
+        .clicked()
+        {
             edit_or_apply(app, &g);
         }
-        if widgets::icon_button_enabled(ui, "dc-new-item", tl!("Save selected colors as swatches"), false, !sel.is_empty(), 24.0).clicked() {
+        if widgets::icon_button_enabled(
+            ui,
+            "dc-new-item",
+            tl!("Save selected colors as swatches"),
+            false,
+            !sel.is_empty(),
+            24.0,
+        )
+        .clicked()
+        {
             save_selected(app, &ctx);
         }
-        if widgets::icon_button(ui, "dc-folder", tl!("Save color group to Swatch panel"), false, 24.0).clicked() {
+        if widgets::icon_button(
+            ui,
+            "dc-folder",
+            tl!("Save color group to Swatch panel"),
+            false,
+            24.0,
+        )
+        .clicked()
+        {
             let cs: Vec<_> = g.colors.iter().map(color_json).collect();
-            app.run("swatch.newGroup", json!({"name": h.label(), "colors": cs})).ok();
+            app.run("swatch.newGroup", json!({"name": h.label(), "colors": cs}))
+                .ok();
         }
     });
     if let Some(c) = chosen {
@@ -251,7 +331,12 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     ui.separator();
     let ctx = ui.ctx().clone();
-    if menu_item(ui, tl!("Save Colors as Swatches"), !selected(&ctx).is_empty(), false) {
+    if menu_item(
+        ui,
+        tl!("Save Colors as Swatches"),
+        !selected(&ctx).is_empty(),
+        false,
+    ) {
         save_selected(app, &ctx);
     }
     if menu_item(ui, tl!("Color Guide Options…"), true, false) {
@@ -266,7 +351,8 @@ mod tests {
 
     fn app() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
+        app.run("file.new", json!({"width": 100, "height": 100}))
+            .unwrap();
         app
     }
 
@@ -281,19 +367,29 @@ mod tests {
     #[test]
     fn base_stays_until_set_and_the_grid_follows_the_options() {
         let mut app = app();
-        app.run("paint.setFill", json!({"color": "#3366cc"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#3366cc"}))
+            .unwrap();
         let ctx = egui::Context::default();
         frame(&mut app, &ctx);
-        assert_eq!(base_color(&app, &ctx).to_hex(), "#3366cc", "the first show takes the current colour");
+        assert_eq!(
+            base_color(&app, &ctx).to_hex(),
+            "#3366cc",
+            "the first show takes the current colour"
+        );
         // Another current colour leaves the base alone.
-        app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#ff0000"}))
+            .unwrap();
         frame(&mut app, &ctx);
         assert_eq!(base_color(&app, &ctx).to_hex(), "#3366cc");
         app.ui.color_guide.steps = 6;
         frame(&mut app, &ctx);
         let g = guide(&app, &ctx);
         assert_eq!(g.grid[0].len(), 13);
-        assert_eq!(g.grid[0][6].to_hex(), "#3366cc", "the base sits in the centre of the first row");
+        assert_eq!(
+            g.grid[0][6].to_hex(),
+            "#3366cc",
+            "the base sits in the centre of the first row"
+        );
     }
 
     #[test]
@@ -309,51 +405,104 @@ mod tests {
         assert_eq!(st.doc.swatches.len(), before + 3);
         assert_eq!(st.history.undo.len(), undo + 1, "one undo step");
         let g = guide(&app, &ctx);
-        assert_eq!(st.doc.swatches.last().unwrap().paint.color().map(|c| c.to_hex()), Some(g.grid[0][8].to_hex()));
+        assert_eq!(
+            st.doc
+                .swatches
+                .last()
+                .unwrap()
+                .paint
+                .color()
+                .map(|c| c.to_hex()),
+            Some(g.grid[0][8].to_hex())
+        );
     }
 
     /// Every colour of the panel's guide.
     fn shown(app: &VectorcraftApp, ctx: &egui::Context) -> Vec<String> {
         let g = guide(app, ctx);
-        g.grid.iter().flatten().chain(&g.colors).map(Color::to_hex).collect()
+        g.grid
+            .iter()
+            .flatten()
+            .chain(&g.colors)
+            .map(Color::to_hex)
+            .collect()
     }
 
     fn library_hexes(app: &VectorcraftApp, id: &str) -> Vec<String> {
         let (_, lib) = swatchlib::library(&app.session, id).unwrap();
-        lib.iter().filter_map(|w| w.paint.color()).map(|c| c.to_hex()).collect()
+        lib.iter()
+            .filter_map(|w| w.paint.color())
+            .map(|c| c.to_hex())
+            .collect()
     }
 
     #[test]
     fn limit_to_library_snaps_the_panel_and_follows_the_document_swatches() {
         let mut app = app();
         let ctx = egui::Context::default();
-        app.run("paint.setFill", json!({"color": "#3a7bd5"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#3a7bd5"}))
+            .unwrap();
         frame(&mut app, &ctx);
-        assert!(shown(&app, &ctx).contains(&"#3a7bd5".to_string()), "no limit: the base itself");
-        let r = app.run("ui.colorGuideLimit", json!({"library": "Earth Tones"})).unwrap();
-        assert_eq!((r["limitTo"].as_str(), r["name"].as_str()), (Some("earth-tones"), Some("Earth Tones")));
+        assert!(
+            shown(&app, &ctx).contains(&"#3a7bd5".to_string()),
+            "no limit: the base itself"
+        );
+        let r = app
+            .run("ui.colorGuideLimit", json!({"library": "Earth Tones"}))
+            .unwrap();
+        assert_eq!(
+            (r["limitTo"].as_str(), r["name"].as_str()),
+            (Some("earth-tones"), Some("Earth Tones"))
+        );
         frame(&mut app, &ctx);
         let members = library_hexes(&app, "earth-tones");
-        assert!(shown(&app, &ctx).iter().all(|h| members.contains(h)), "every cell is a library colour");
+        assert!(
+            shown(&app, &ctx).iter().all(|h| members.contains(h)),
+            "every cell is a library colour"
+        );
         // The document's swatches: the cached guide follows a new swatch.
-        app.run("ui.colorGuideLimit", json!({"library": "document"})).unwrap();
+        app.run("ui.colorGuideLimit", json!({"library": "document"}))
+            .unwrap();
         frame(&mut app, &ctx);
         assert!(!shown(&app, &ctx).contains(&"#3a7bd4".to_string()));
-        app.run("swatch.new", json!({"colors": ["#3a7bd4"]})).unwrap();
+        app.run("swatch.new", json!({"colors": ["#3a7bd4"]}))
+            .unwrap();
         frame(&mut app, &ctx);
-        let doc: Vec<String> = app.session.doc().unwrap().doc.swatches_iter().filter_map(|w| w.paint.color()).map(|c| c.to_hex()).collect();
+        let doc: Vec<String> = app
+            .session
+            .doc()
+            .unwrap()
+            .doc
+            .swatches_iter()
+            .filter_map(|w| w.paint.color())
+            .map(|c| c.to_hex())
+            .collect();
         let cells = shown(&app, &ctx);
         assert!(cells.iter().all(|h| doc.contains(h)));
-        assert_eq!(guide(&app, &ctx).colors[0].to_hex(), "#3a7bd4", "the base snaps to the new swatch");
+        assert_eq!(
+            guide(&app, &ctx).colors[0].to_hex(),
+            "#3a7bd4",
+            "the base snaps to the new swatch"
+        );
         // The popup lists libraries with colours only, draws; unknown libraries are refused and ""
         // lifts the limit.
         let libs = colour_libraries(&app);
-        assert!(libs.iter().any(|l| l.id == "earth-tones") && !libs.iter().any(|l| l.id == "metallic-gradients"));
+        assert!(
+            libs.iter().any(|l| l.id == "earth-tones")
+                && !libs.iter().any(|l| l.id == "metallic-gradients")
+        );
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| limit_menu(&mut app, ui));
         out.textures_delta.clear();
-        assert!(app.run("ui.colorGuideLimit", json!({"library": "nope"})).is_err());
+        assert!(
+            app.run("ui.colorGuideLimit", json!({"library": "nope"}))
+                .is_err()
+        );
         assert_eq!(app.ui.color_guide_limit, "document");
-        assert_eq!(app.run("ui.colorGuideLimit", json!({"library": ""})).unwrap()["name"], Value::Null);
+        assert_eq!(
+            app.run("ui.colorGuideLimit", json!({"library": ""}))
+                .unwrap()["name"],
+            Value::Null
+        );
         assert!(shown(&app, &ctx).contains(&"#3a7bd5".to_string()));
     }
 
@@ -361,25 +510,56 @@ mod tests {
     fn edit_or_apply_without_art_saves_the_limited_colours_as_a_group() {
         let mut app = app();
         let ctx = egui::Context::default();
-        app.run("paint.setFill", json!({"color": "#c04020"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#c04020"}))
+            .unwrap();
         app.run("select.none", json!({})).unwrap();
-        app.run("ui.colorGuideLimit", json!({"library": "web-safe-216"})).unwrap();
+        app.run("ui.colorGuideLimit", json!({"library": "web-safe-216"}))
+            .unwrap();
         frame(&mut app, &ctx);
         let g = guide(&app, &ctx);
         edit_or_apply(&mut app, &g);
-        let d = app.ui.dialog.as_ref().expect("Recolor opens on the colours alone");
-        assert_eq!((d.kind.as_str(), d.str("limitTo").as_str()), ("recolor", "web-safe-216"), "limited to the same library");
+        let d = app
+            .ui
+            .dialog
+            .as_ref()
+            .expect("Recolor opens on the colours alone");
+        assert_eq!(
+            (d.kind.as_str(), d.str("limitTo").as_str()),
+            ("recolor", "web-safe-216"),
+            "limited to the same library"
+        );
         let groups = app.session.doc().unwrap().doc.swatch_groups.len();
         crate::dialogs::confirm(&mut app).unwrap();
         let doc = &app.session.doc().unwrap().doc;
-        assert_eq!(doc.swatch_groups.len(), groups + 1, "OK saves a new colour group");
-        let made: Vec<String> = doc.swatch_groups.last().unwrap().swatches.iter().filter_map(|w| w.paint.color()).map(|c| c.to_hex()).collect();
+        assert_eq!(
+            doc.swatch_groups.len(),
+            groups + 1,
+            "OK saves a new colour group"
+        );
+        let made: Vec<String> = doc
+            .swatch_groups
+            .last()
+            .unwrap()
+            .swatches
+            .iter()
+            .filter_map(|w| w.paint.color())
+            .map(|c| c.to_hex())
+            .collect();
         assert_eq!(made, g.colors.iter().map(Color::to_hex).collect::<Vec<_>>());
         let members = library_hexes(&app, "web-safe-216");
         assert!(made.iter().all(|h| members.contains(h)));
         // Colours from elsewhere snap to the library as the dialog opens.
-        app.run("ui.recolorDialog", json!({"colors": ["#123457"], "library": "web-safe-216"})).unwrap();
+        app.run(
+            "ui.recolorDialog",
+            json!({"colors": ["#123457"], "library": "web-safe-216"}),
+        )
+        .unwrap();
         let to = app.ui.dialog.as_ref().unwrap().fields["rows"][0]["to"].clone();
-        assert_eq!(vectorcraft_engine::cmd::color_value(&to).map(|c| c.to_hex()).as_deref(), Some("#003366"));
+        assert_eq!(
+            vectorcraft_engine::cmd::color_value(&to)
+                .map(|c| c.to_hex())
+                .as_deref(),
+            Some("#003366")
+        );
     }
 }

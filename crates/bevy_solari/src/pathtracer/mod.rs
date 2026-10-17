@@ -2,7 +2,7 @@ mod extract;
 mod node;
 mod prepare;
 
-use crate::{scene::RaytracingSceneBindings, SolariPlugins};
+use crate::{SolariPlugins, scene::RaytracingSceneBindings};
 use bevy_app::{App, Plugin};
 use bevy_asset::embedded_asset;
 use bevy_camera::Hdr;
@@ -11,10 +11,10 @@ use bevy_core_pipeline::{
     tonemapping::tonemapping,
 };
 use bevy_ecs::{component::Component, reflect::ReflectComponent, schedule::IntoScheduleConfigs};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
-    init_gpu_resource, renderer::RenderDevice, ExtractSchedule, Render, RenderApp, RenderStartup,
-    RenderSystems,
+    ExtractSchedule, Render, RenderApp, RenderStartup, RenderSystems, init_gpu_resource,
+    renderer::RenderDevice,
 };
 use extract::extract_pathtracer;
 use node::{init_pathtracer_pipelines, pathtracer};

@@ -797,10 +797,11 @@ mod tests {
                 .get(),
             &State::Off
         );
-        assert!(app
-            .world()
-            .get_resource::<bevy_state::state::State<ComputedState>>()
-            .is_none());
+        assert!(
+            app.world()
+                .get_resource::<bevy_state::state::State<ComputedState>>()
+                .is_none()
+        );
         assert!(app.world().get_entity(entity).is_err());
     }
 

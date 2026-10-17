@@ -43,7 +43,11 @@ pub struct MenuRenderLimits {
 
 impl Default for MenuRenderLimits {
     fn default() -> Self {
-        Self { max_canvas_pixels: 4096 * 4096, max_objects: 16_384, max_sprite_pixels: 4096 * 4096 }
+        Self {
+            max_canvas_pixels: 4096 * 4096,
+            max_objects: 16_384,
+            max_sprite_pixels: 4096 * 4096,
+        }
     }
 }
 
@@ -84,13 +88,25 @@ pub enum MenuRenderError {
 impl fmt::Display for MenuRenderError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::CanvasTooLarge { width, height, max_pixels } => {
-                write!(formatter, "menu canvas {width}x{height} exceeds {max_pixels} pixels")
-            },
+            Self::CanvasTooLarge {
+                width,
+                height,
+                max_pixels,
+            } => {
+                write!(
+                    formatter,
+                    "menu canvas {width}x{height} exceeds {max_pixels} pixels"
+                )
+            }
             Self::TooManyObjects { count, max } => {
                 write!(formatter, "menu layout has {count} objects; limit is {max}")
-            },
-            Self::SpriteTooLarge { logical_path, width, height, max_pixels } => write!(
+            }
+            Self::SpriteTooLarge {
+                logical_path,
+                width,
+                height,
+                max_pixels,
+            } => write!(
                 formatter,
                 "sprite {logical_path} is {width}x{height}; limit is {max_pixels} pixels"
             ),
@@ -173,8 +189,9 @@ where
     let cw = layout.canvas.w.max(1);
     let ch = layout.canvas.h.max(1);
     let canvas_pixels = u64::from(cw) * u64::from(ch);
-    let max_canvas_pixels =
-        limits.max_canvas_pixels.min(u64::try_from(usize::MAX / 4).unwrap_or(u64::MAX));
+    let max_canvas_pixels = limits
+        .max_canvas_pixels
+        .min(u64::try_from(usize::MAX / 4).unwrap_or(u64::MAX));
     if canvas_pixels > max_canvas_pixels {
         return Err(MenuRenderError::CanvasTooLarge {
             width: cw,
@@ -192,7 +209,10 @@ where
     // Painter's order : drawPriority croissant, stable sur l'index source.
     let mut order: Vec<usize> = (0..layout.objects.len()).collect();
     order.sort_by(|&a, &b| {
-        layout.objects[a].draw_priority.cmp(&layout.objects[b].draw_priority).then(a.cmp(&b))
+        layout.objects[a]
+            .draw_priority
+            .cmp(&layout.objects[b].draw_priority)
+            .then(a.cmp(&b))
     });
 
     // Décode + prépare chaque sprite visible. Les buffers RGBA sont conservés vivants (les
@@ -214,8 +234,9 @@ where
             continue;
         };
         let sprite_pixels = u64::from(tw) * u64::from(th);
-        let max_sprite_pixels =
-            limits.max_sprite_pixels.min(u64::try_from(usize::MAX / 4).unwrap_or(u64::MAX));
+        let max_sprite_pixels = limits
+            .max_sprite_pixels
+            .min(u64::try_from(usize::MAX / 4).unwrap_or(u64::MAX));
         if sprite_pixels > max_sprite_pixels {
             return Err(MenuRenderError::SpriteTooLarge {
                 logical_path: sp.logical_path.clone(),
@@ -224,8 +245,9 @@ where
                 max_pixels: max_sprite_pixels,
             });
         }
-        let expected_rgba_len =
-            usize::try_from(sprite_pixels).ok().and_then(|pixels| pixels.checked_mul(4));
+        let expected_rgba_len = usize::try_from(sprite_pixels)
+            .ok()
+            .and_then(|pixels| pixels.checked_mul(4));
         if tw == 0 || th == 0 || expected_rgba_len.is_none_or(|expected| rgba.len() < expected) {
             continue;
         }
@@ -292,7 +314,11 @@ mod tests {
                 anchor_x: 0.0,
                 anchor_y: 0.0,
             },
-            sprite: Some(Sprite { logical_path: path.to_string(), w: 1.0, h: 1.0 }),
+            sprite: Some(Sprite {
+                logical_path: path.to_string(),
+                w: 1.0,
+                h: 1.0,
+            }),
         }
     }
 
@@ -318,25 +344,40 @@ mod tests {
         let mut loaded = false;
         let error = render_menu_with_limits(
             &layout,
-            &MenuRenderLimits { max_canvas_pixels: 5, ..MenuRenderLimits::default() },
+            &MenuRenderLimits {
+                max_canvas_pixels: 5,
+                ..MenuRenderLimits::default()
+            },
             |_| {
                 loaded = true;
                 None
             },
         )
         .expect_err("six canvas pixels exceed the five-pixel budget");
-        assert_eq!(error, MenuRenderError::CanvasTooLarge { width: 3, height: 2, max_pixels: 5 });
+        assert_eq!(
+            error,
+            MenuRenderError::CanvasTooLarge {
+                width: 3,
+                height: 2,
+                max_pixels: 5
+            }
+        );
         assert!(!loaded);
     }
 
     #[test]
     fn object_and_sprite_budgets_are_enforced() {
-        let many =
-            Layout { canvas: Canvas { w: 1, h: 1 }, objects: vec![object("a"), object("b")] };
+        let many = Layout {
+            canvas: Canvas { w: 1, h: 1 },
+            objects: vec![object("a"), object("b")],
+        };
         assert_eq!(
             render_menu_with_limits(
                 &many,
-                &MenuRenderLimits { max_objects: 1, ..MenuRenderLimits::default() },
+                &MenuRenderLimits {
+                    max_objects: 1,
+                    ..MenuRenderLimits::default()
+                },
                 |_| None,
             ),
             Err(MenuRenderError::TooManyObjects { count: 2, max: 1 })
@@ -349,7 +390,10 @@ mod tests {
         assert_eq!(
             render_menu_with_limits(
                 &one,
-                &MenuRenderLimits { max_sprite_pixels: 3, ..MenuRenderLimits::default() },
+                &MenuRenderLimits {
+                    max_sprite_pixels: 3,
+                    ..MenuRenderLimits::default()
+                },
                 |_| Some((2, 2, vec![0; 16])),
             ),
             Err(MenuRenderError::SpriteTooLarge {

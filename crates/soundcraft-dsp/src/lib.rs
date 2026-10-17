@@ -1,4 +1,11 @@
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 //! SoundCraft DSP.
 //!
 //! Realtime plugins (EQ, dynamics, reverb, delay, modulation, harmonic, pitch, utilities and three
@@ -102,7 +109,9 @@ impl ParamInfo {
             return 0.0;
         }
         match self.taper {
-            Taper::Log if self.min > 0.0 => ((v / self.min).ln() / (self.max / self.min).ln()).clamp(0.0, 1.0),
+            Taper::Log if self.min > 0.0 => {
+                ((v / self.min).ln() / (self.max / self.min).ln()).clamp(0.0, 1.0)
+            }
             _ => ((v - self.min) / span).clamp(0.0, 1.0),
         }
     }
@@ -121,7 +130,11 @@ impl ParamInfo {
     pub fn format(&self, value: f32) -> String {
         let v = self.clamp(value);
         match self.unit {
-            Unit::Choice => self.choices.get(v as usize).map(|s| (*s).to_string()).unwrap_or_else(|| format!("{v}")),
+            Unit::Choice => self
+                .choices
+                .get(v as usize)
+                .map(|s| (*s).to_string())
+                .unwrap_or_else(|| format!("{v}")),
             Unit::Toggle => if v >= 0.5 { "On" } else { "Off" }.to_string(),
             Unit::Db => {
                 if v <= -95.9 {
@@ -260,7 +273,11 @@ pub trait SampleSource: Send + Sync {
     fn channel(&self, ch: usize) -> Option<&[f32]>;
     /// Frames per channel (the shortest channel, so every index below it is readable).
     fn frames(&self) -> usize {
-        (0..self.num_channels()).filter_map(|c| self.channel(c)).map(<[f32]>::len).min().unwrap_or(0)
+        (0..self.num_channels())
+            .filter_map(|c| self.channel(c))
+            .map(<[f32]>::len)
+            .min()
+            .unwrap_or(0)
     }
 }
 
@@ -306,7 +323,11 @@ pub const MIN_DB: f32 = -144.0;
 
 /// Converts decibels to linear gain. Anything at or below -144 dB (or NaN) is silence.
 pub fn db_to_gain(db: f32) -> f32 {
-    if db.is_nan() || db <= MIN_DB { 0.0 } else { 10f32.powf(db.min(200.0) / 20.0) }
+    if db.is_nan() || db <= MIN_DB {
+        0.0
+    } else {
+        10f32.powf(db.min(200.0) / 20.0)
+    }
 }
 
 /// Converts linear gain (sign ignored) to decibels, floored at -144 dB.
@@ -346,7 +367,10 @@ mod trait_default_tests {
     fn only_the_sampler_takes_samples() {
         for info in plugins() {
             let mut p = create(info.id).unwrap();
-            let s: Arc<dyn SampleSource> = Arc::new(SampleBuffer { sample_rate: 48_000.0, channels: vec![vec![0.0; 16]] });
+            let s: Arc<dyn SampleSource> = Arc::new(SampleBuffer {
+                sample_rate: 48_000.0,
+                channels: vec![vec![0.0; 16]],
+            });
             assert_eq!(p.set_sample(Some(s)), info.id == "sampler", "{}", info.id);
             assert_eq!(p.set_sample(None), info.id == "sampler", "{}", info.id);
         }
@@ -354,7 +378,10 @@ mod trait_default_tests {
 
     #[test]
     fn sample_buffer_frames_is_the_shortest_channel() {
-        let s = SampleBuffer { sample_rate: 44_100.0, channels: vec![vec![0.0; 10], vec![0.0; 7]] };
+        let s = SampleBuffer {
+            sample_rate: 44_100.0,
+            channels: vec![vec![0.0; 10], vec![0.0; 7]],
+        };
         assert_eq!(s.frames(), 7);
         assert_eq!(SampleBuffer::default().frames(), 0);
     }

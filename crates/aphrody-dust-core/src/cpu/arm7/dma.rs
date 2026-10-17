@@ -53,7 +53,7 @@ impl<E: Engine> Arm7<E> {
                 } else {
                     Timing::GbaSlot
                 }
-            },
+            }
         };
 
         let incr_shift = 1 + value.is_32_bit() as u8;
@@ -167,15 +167,19 @@ impl<E: Engine> Arm7<E> {
                     emu.arm7.last_dma_words[i.get() as usize],
                 );
 
-                emu.arm7.schedule.set_cur_time(emu.arm7.schedule.cur_time() + unit_timing);
+                emu.arm7
+                    .schedule
+                    .set_cur_time(emu.arm7.schedule.cur_time() + unit_timing);
 
                 let channel = &mut emu.arm7.dma.channels[i.get() as usize];
                 let prev_src_addr = channel.cur_src_addr;
                 let prev_dst_addr = channel.cur_dst_addr;
-                channel.cur_src_addr =
-                    channel.cur_src_addr.wrapping_add(channel.src_addr_incr as u32);
-                channel.cur_dst_addr =
-                    channel.cur_dst_addr.wrapping_add(channel.dst_addr_incr as u32);
+                channel.cur_src_addr = channel
+                    .cur_src_addr
+                    .wrapping_add(channel.src_addr_incr as u32);
+                channel.cur_dst_addr = channel
+                    .cur_dst_addr
+                    .wrapping_add(channel.dst_addr_incr as u32);
 
                 if ((channel.cur_src_addr ^ prev_src_addr) | (channel.cur_dst_addr ^ prev_dst_addr))
                     >> Timings::PAGE_SHIFT
@@ -221,15 +225,19 @@ impl<E: Engine> Arm7<E> {
                     (emu.arm7.last_dma_words[i.get() as usize] >> ((dst_addr & 2) << 3)) as u16,
                 );
 
-                emu.arm7.schedule.set_cur_time(emu.arm7.schedule.cur_time() + unit_timing);
+                emu.arm7
+                    .schedule
+                    .set_cur_time(emu.arm7.schedule.cur_time() + unit_timing);
 
                 let channel = &mut emu.arm7.dma.channels[i.get() as usize];
                 let prev_src_addr = channel.cur_src_addr;
                 let prev_dst_addr = channel.cur_dst_addr;
-                channel.cur_src_addr =
-                    channel.cur_src_addr.wrapping_add(channel.src_addr_incr as u32);
-                channel.cur_dst_addr =
-                    channel.cur_dst_addr.wrapping_add(channel.dst_addr_incr as u32);
+                channel.cur_src_addr = channel
+                    .cur_src_addr
+                    .wrapping_add(channel.src_addr_incr as u32);
+                channel.cur_dst_addr = channel
+                    .cur_dst_addr
+                    .wrapping_add(channel.dst_addr_incr as u32);
 
                 if ((channel.cur_src_addr ^ prev_src_addr) | (channel.cur_dst_addr ^ prev_dst_addr))
                     >> Timings::PAGE_SHIFT

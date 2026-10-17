@@ -135,26 +135,26 @@ pub fn spawn_session(
                         // A Shutdown / closed channel was observed mid-turn.
                         break;
                     }
-                },
+                }
                 Op::ExecApproval { .. } | Op::PatchApproval { .. } => {
                     // An approval that arrives outside a turn has nothing to
                     // answer; forward it to the gate so an in-flight wait (if
                     // any) can observe it, ignoring send failures.
                     let _ = approval_tx.send(submission.op);
-                },
+                }
                 Op::Interrupt => {
                     // No turn is currently running (we are between turns); a
                     // standalone interrupt is a no-op other than acknowledging.
-                },
+                }
                 Op::Steer { .. } => {
                     // No turn is running, so there is nothing to steer; the
                     // guidance is dropped. A client should start a turn with
                     // Op::UserInput instead.
-                },
+                }
                 Op::Compact => {
                     compact_session(&mut session, context_window, rollout.as_ref(), &event_sink)
                         .await;
-                },
+                }
                 Op::Shutdown => break,
             }
         }
@@ -162,12 +162,19 @@ pub fn spawn_session(
         if let Some(rollout) = rollout
             && let Err(error) = rollout.shutdown().await
         {
-            event_sink.emit(aphrody_agent_proto::EventMsg::Error { message: error.to_string() });
+            event_sink.emit(aphrody_agent_proto::EventMsg::Error {
+                message: error.to_string(),
+            });
         }
         session
     });
 
-    SessionHandle { submissions: sub_tx, events: Some(event_rx), task, tool_updates }
+    SessionHandle {
+        submissions: sub_tx,
+        events: Some(event_rx),
+        task,
+        tool_updates,
+    }
 }
 
 /// The outcome of [`drive_turn`]: the turn's result plus whether a shutdown
@@ -186,8 +193,14 @@ async fn compact_session(
     events: &EventSink,
 ) {
     let item_id = Submission::new(Op::Compact).id;
-    if let Err(error) =
-        emit(events, rollout, EventMsg::ContextCompactionStarted { item_id: item_id.clone() }).await
+    if let Err(error) = emit(
+        events,
+        rollout,
+        EventMsg::ContextCompactionStarted {
+            item_id: item_id.clone(),
+        },
+    )
+    .await
     {
         compaction_failed(events, rollout, error).await;
         return;
@@ -207,8 +220,12 @@ async fn compact_session(
             return;
         }
     }
-    if let Err(error) =
-        emit(events, rollout, EventMsg::ContextCompactionCompleted { item_id }).await
+    if let Err(error) = emit(
+        events,
+        rollout,
+        EventMsg::ContextCompactionCompleted { item_id },
+    )
+    .await
     {
         compaction_failed(events, rollout, error).await;
     }
@@ -219,7 +236,9 @@ async fn compaction_failed(
     rollout: Option<&RolloutRecorder>,
     error: crate::EngineError,
 ) {
-    let msg = EventMsg::Error { message: error.to_string() };
+    let msg = EventMsg::Error {
+        message: error.to_string(),
+    };
     // Try to persist the terminal error, but a failed recorder must not
     // prevent the live client from observing failure and releasing its turn.
     if emit(events, rollout, msg.clone()).await.is_err() {

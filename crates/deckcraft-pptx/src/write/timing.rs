@@ -27,14 +27,21 @@ pub fn transition(w: &mut W, x: &mut Exp, o: &mut Out, t: &Transition) {
         }
     };
     let mut effect = W::frag();
-    let ns = if t.kind == "none" { Some("p") } else { super::super::maps::transition_to_xml(&mut effect, &t.kind, &t.option) };
+    let ns = if t.kind == "none" {
+        Some("p")
+    } else {
+        super::super::maps::transition_to_xml(&mut effect, &t.kind, &t.option)
+    };
     let ns = match ns {
         Some(ns) => ns,
         None => {
             // Unknown kind: write the kept element if there is one, else a fade.
             if let Some(raw) = &t.raw
                 && let Ok(d) = crate::xml::parse(raw.as_bytes())
-                && let Some(e) = d.root.elements().find(|e| !matches!(e.local(), "sndAc" | "extLst"))
+                && let Some(e) = d
+                    .root
+                    .elements()
+                    .find(|e| !matches!(e.local(), "sndAc" | "extLst"))
                 && !crate::read::has_rel_refs(e)
             {
                 let prefix = e.prefix().to_string();
@@ -78,7 +85,14 @@ pub fn transition(w: &mut W, x: &mut Exp, o: &mut Out, t: &Transition) {
         _ => "p14",
     };
     w.open("mc:Choice", ch.a("Requires", req));
-    w.open("p:transition", A::new().a("spd", spd).o("p14:dur", (!is_none).then_some(dur)).o("advClick", adv_click).o("advTm", adv_tm));
+    w.open(
+        "p:transition",
+        A::new()
+            .a("spd", spd)
+            .o("p14:dur", (!is_none).then_some(dur))
+            .o("advClick", adv_click)
+            .o("advTm", adv_tm),
+    );
     if !is_none {
         w.raw(&effect.s);
     }
@@ -86,7 +100,13 @@ pub fn transition(w: &mut W, x: &mut Exp, o: &mut Out, t: &Transition) {
     w.close("p:transition");
     w.close("mc:Choice");
     w.open0("mc:Fallback");
-    w.open("p:transition", A::new().a("spd", spd).o("advClick", adv_click).o("advTm", adv_tm));
+    w.open(
+        "p:transition",
+        A::new()
+            .a("spd", spd)
+            .o("advClick", adv_click)
+            .o("advTm", adv_tm),
+    );
     if !is_none {
         if ns == "p" {
             w.raw(&effect.s);
@@ -133,9 +153,20 @@ fn tgt(w: &mut W, spid: u32, para: Option<u32>) {
     w.close("p:tgtEl");
 }
 
-fn cbhvr(w: &mut W, ids: &mut Ids, e: &Eff, dur: u32, delay: Option<u32>, attrs: &[&str], additive: Option<&str>) {
+fn cbhvr(
+    w: &mut W,
+    ids: &mut Ids,
+    e: &Eff,
+    dur: u32,
+    delay: Option<u32>,
+    attrs: &[&str],
+    additive: Option<&str>,
+) {
     w.open("p:cBhvr", A::new().o("additive", additive));
-    let a = A::new().a("id", ids.next()).a("dur", dur.max(1)).a("fill", "hold");
+    let a = A::new()
+        .a("id", ids.next())
+        .a("dur", dur.max(1))
+        .a("fill", "hold");
     match delay {
         Some(d) => {
             w.open("p:cTn", a);
@@ -167,13 +198,21 @@ fn set_vis(w: &mut W, ids: &mut Ids, e: &Eff, delay: u32, visible: bool) {
 }
 
 fn anim_effect(w: &mut W, ids: &mut Ids, e: &Eff, dur: u32, filter: &str, out: bool) {
-    w.open("p:animEffect", A::new().a("transition", if out { "out" } else { "in" }).a("filter", filter));
+    w.open(
+        "p:animEffect",
+        A::new()
+            .a("transition", if out { "out" } else { "in" })
+            .a("filter", filter),
+    );
     cbhvr(w, ids, e, dur, None, &[], None);
     w.close("p:animEffect");
 }
 
 fn anim_prop(w: &mut W, ids: &mut Ids, e: &Eff, dur: u32, attr: &str, from: &str, to: &str) {
-    w.open("p:anim", A::new().a("calcmode", "lin").a("valueType", "num"));
+    w.open(
+        "p:anim",
+        A::new().a("calcmode", "lin").a("valueType", "num"),
+    );
     cbhvr(w, ids, e, dur, None, &[attr], Some("base"));
     w.open0("p:tavLst");
     for (tm, v) in [(0, from), (100_000, to)] {
@@ -314,7 +353,19 @@ fn behaviors(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff) {
                     anim_effect(w, ids, e, dur, "fade", false);
                 }
                 "float" | "rise" => {
-                    anim_prop(w, ids, e, dur, "ppt_y", if a.option == "d" { "#ppt_y-.1" } else { "#ppt_y+.1" }, "#ppt_y");
+                    anim_prop(
+                        w,
+                        ids,
+                        e,
+                        dur,
+                        "ppt_y",
+                        if a.option == "d" {
+                            "#ppt_y-.1"
+                        } else {
+                            "#ppt_y+.1"
+                        },
+                        "#ppt_y",
+                    );
                     anim_effect(w, ids, e, dur, "fade", false);
                 }
                 other => anim_effect(w, ids, e, dur, filter_for(other, &a.option), false),
@@ -335,12 +386,28 @@ fn behaviors(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff) {
                 }
                 other => anim_effect(w, ids, e, dur, filter_for(other, &a.option), true),
             }
-            set_vis(w, ids, e, if a.effect == "disappear" { 0 } else { dur.saturating_sub(1) }, false);
+            set_vis(
+                w,
+                ids,
+                e,
+                if a.effect == "disappear" {
+                    0
+                } else {
+                    dur.saturating_sub(1)
+                },
+                false,
+            );
         }
         AnimClass::Emphasis => match a.effect.as_str() {
             "spin" | "teeter" => {
-                let deg = a.amount.unwrap_or(if a.effect == "teeter" { 4.0 } else { 360.0 });
-                let deg = if a.option == "counterClockwise" { -deg.abs() } else { deg };
+                let deg = a
+                    .amount
+                    .unwrap_or(if a.effect == "teeter" { 4.0 } else { 360.0 });
+                let deg = if a.option == "counterClockwise" {
+                    -deg.abs()
+                } else {
+                    deg
+                };
                 let by = (deg.clamp(-36_000.0, 36_000.0) * 60_000.0).round() as i64;
                 w.open("p:animRot", A::new().a("by", by));
                 cbhvr(w, ids, e, dur, None, &["r"], None);
@@ -350,17 +417,23 @@ fn behaviors(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff) {
                 w.open0("p:set");
                 cbhvr(w, ids, e, dur, None, &["style.opacity"], None);
                 w.open0("p:to");
-                w.val("p:strVal", format!("{:.2}", (1.0 - a.amount.unwrap_or(0.5)).clamp(0.0, 1.0)));
+                w.val(
+                    "p:strVal",
+                    format!("{:.2}", (1.0 - a.amount.unwrap_or(0.5)).clamp(0.0, 1.0)),
+                );
                 w.close("p:to");
                 w.close("p:set");
             }
-            "fillColor" | "objectColor" | "fontColor" | "lineColor" | "complementaryColor" | "darken" | "lighten" => {
+            "fillColor" | "objectColor" | "fontColor" | "lineColor" | "complementaryColor"
+            | "darken" | "lighten" => {
                 let attr = match a.effect.as_str() {
                     "fontColor" => "style.color",
                     "lineColor" => "stroke.color",
                     _ => "fillcolor",
                 };
-                let c = a.color.clone().unwrap_or(deckcraft_model::ColorRef::scheme(deckcraft_color::SchemeSlot::Accent2));
+                let c = a.color.clone().unwrap_or(deckcraft_model::ColorRef::scheme(
+                    deckcraft_color::SchemeSlot::Accent2,
+                ));
                 w.open("p:animClr", A::new().a("clrSpc", "rgb").a("dir", "cw"));
                 cbhvr(w, ids, e, dur, None, &[attr], None);
                 w.open0("p:to");
@@ -369,7 +442,10 @@ fn behaviors(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff) {
                 w.close("p:animClr");
             }
             _ => {
-                let s = a.amount.filter(|v| v.is_finite() && *v > 0.0).unwrap_or(if a.effect == "growShrink" { 1.5 } else { 1.1 });
+                let s = a
+                    .amount
+                    .filter(|v| v.is_finite() && *v > 0.0)
+                    .unwrap_or(if a.effect == "growShrink" { 1.5 } else { 1.1 });
                 let (sx, sy) = match a.option.as_str() {
                     "horz" => (s, 1.0),
                     "vert" => (1.0, s),
@@ -379,7 +455,9 @@ fn behaviors(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff) {
                 cbhvr(w, ids, e, dur, None, &[], None);
                 w.empty(
                     "p:by",
-                    A::new().a("x", (sx.clamp(0.01, 100.0) * 100_000.0).round() as i64).a("y", (sy.clamp(0.01, 100.0) * 100_000.0).round() as i64),
+                    A::new()
+                        .a("x", (sx.clamp(0.01, 100.0) * 100_000.0).round() as i64)
+                        .a("y", (sy.clamp(0.01, 100.0) * 100_000.0).round() as i64),
                 );
                 w.close("p:animScale");
             }
@@ -388,7 +466,11 @@ fn behaviors(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff) {
             let path = a
                 .path
                 .clone()
-                .filter(|p| !p.trim().is_empty() && p.chars().all(|c| c.is_ascii() && c != '"' && c != '<' && c != '&'))
+                .filter(|p| {
+                    !p.trim().is_empty()
+                        && p.chars()
+                            .all(|c| c.is_ascii() && c != '"' && c != '<' && c != '&')
+                })
                 .unwrap_or_else(|| {
                     match a.option.as_str() {
                         "up" => "M 0 0 L 0 -0.25 E",
@@ -398,7 +480,14 @@ fn behaviors(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff) {
                     }
                     .to_string()
                 });
-            w.open("p:animMotion", A::new().a("origin", "layout").a("path", path).a("pathEditMode", "relative").a("ptsTypes", ""));
+            w.open(
+                "p:animMotion",
+                A::new()
+                    .a("origin", "layout")
+                    .a("path", path)
+                    .a("pathEditMode", "relative")
+                    .a("ptsTypes", ""),
+            );
             cbhvr(w, ids, e, dur, None, &["ppt_x", "ppt_y"], None);
             w.close("p:animMotion");
         }
@@ -425,14 +514,18 @@ fn effect_par(w: &mut W, x: &mut Exp, ids: &mut Ids, e: &Eff, first_in_click: bo
     };
     let _ = first_in_click;
     let preset = crate::maps::preset_for(a);
-    let sub = crate::maps::subtype_from_option(&a.effect, &a.option).or(a.preset_subtype.filter(|_| a.preset_id == Some(preset))).unwrap_or(0);
+    let sub = crate::maps::subtype_from_option(&a.effect, &a.option)
+        .or(a.preset_subtype.filter(|_| a.preset_id == Some(preset)))
+        .unwrap_or(0);
     let repeat = match a.repeat {
         u32::MAX => Some("indefinite".to_string()),
         0 | 1 => None,
         n => Some((n.min(10_000) * 1000).to_string()),
     };
-    let accel = (a.smooth_start > 0.0).then(|| (a.smooth_start.clamp(0.0, 1.0) * 100_000.0).round() as i64);
-    let decel = (a.smooth_end > 0.0).then(|| (a.smooth_end.clamp(0.0, 1.0) * 100_000.0).round() as i64);
+    let accel =
+        (a.smooth_start > 0.0).then(|| (a.smooth_start.clamp(0.0, 1.0) * 100_000.0).round() as i64);
+    let decel =
+        (a.smooth_end > 0.0).then(|| (a.smooth_end.clamp(0.0, 1.0) * 100_000.0).round() as i64);
     w.open0("p:par");
     w.open(
         "p:cTn",
@@ -465,7 +558,9 @@ fn end_time(e: &Eff) -> u32 {
         u32::MAX => 1,
         n => n.min(100),
     };
-    e.a.delay_ms.saturating_add(e.a.duration_ms.saturating_mul(rep)).min(3_600_000)
+    e.a.delay_ms
+        .saturating_add(e.a.duration_ms.saturating_mul(rep))
+        .min(3_600_000)
 }
 
 /// click groups → after-groups → effects
@@ -529,7 +624,11 @@ fn click_pars(w: &mut W, x: &mut Exp, ids: &mut Ids, clicks: &Groups, interactiv
 }
 
 fn para_count(s: &Shape) -> u32 {
-    s.text.as_ref().map(|t| t.paragraphs.iter().filter(|p| !p.is_empty()).count()).unwrap_or(0).min(10_000) as u32
+    s.text
+        .as_ref()
+        .map(|t| t.paragraphs.iter().filter(|p| !p.is_empty()).count())
+        .unwrap_or(0)
+        .min(10_000) as u32
 }
 
 /// Write `p:timing` for a slide's animations.
@@ -543,14 +642,17 @@ pub fn timing(w: &mut W, x: &mut Exp, anims: &[Animation], shapes: &[Shape], idm
             log::warn!("pptx: animation on missing shape {} skipped", a.shape);
             continue;
         };
-        let Some(shape) = find_shape(shapes, a.shape) else { continue };
+        let Some(shape) = find_shape(shapes, a.shape) else {
+            continue;
+        };
         let grp = {
             let c = grp_count.entry(spid).or_insert(0);
             let g = *c;
             *c += 1;
             g
         };
-        let is_text_sp = matches!(shape.kind, ShapeKind::Shape) && shape.text.as_ref().is_some_and(|t| !t.is_empty());
+        let is_text_sp = matches!(shape.kind, ShapeKind::Shape)
+            && shape.text.as_ref().is_some_and(|t| !t.is_empty());
         let by_para = a.text_build == TextBuild::ByParagraph && is_text_sp && para_count(shape) > 0;
         let mut effs = vec![];
         if by_para {
@@ -558,7 +660,14 @@ pub fn timing(w: &mut W, x: &mut Exp, anims: &[Animation], shapes: &[Shape], idm
             let idxs: Vec<u32> = shape
                 .text
                 .as_ref()
-                .map(|t| t.paragraphs.iter().enumerate().filter(|(_, p)| !p.is_empty()).map(|(i, _)| i as u32).collect())
+                .map(|t| {
+                    t.paragraphs
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, p)| !p.is_empty())
+                        .map(|(i, _)| i as u32)
+                        .collect()
+                })
                 .unwrap_or_default();
             for (k, pi) in idxs.into_iter().enumerate() {
                 let start = if k == 0 {
@@ -568,10 +677,22 @@ pub fn timing(w: &mut W, x: &mut Exp, anims: &[Animation], shapes: &[Shape], idm
                 } else {
                     AnimStart::AfterPrevious
                 };
-                effs.push(Eff { a, spid, start, paragraph: Some(pi), grp });
+                effs.push(Eff {
+                    a,
+                    spid,
+                    start,
+                    paragraph: Some(pi),
+                    grp,
+                });
             }
         } else {
-            effs.push(Eff { a, spid, start: a.start, paragraph: a.paragraph, grp });
+            effs.push(Eff {
+                a,
+                spid,
+                start: a.start,
+                paragraph: a.paragraph,
+                grp,
+            });
         }
         if matches!(shape.kind, ShapeKind::Shape) && shape.text.is_some() {
             bld.push((spid, grp, by_para));
@@ -591,12 +712,25 @@ pub fn timing(w: &mut W, x: &mut Exp, anims: &[Animation], shapes: &[Shape], idm
     w.open0("p:timing");
     w.open0("p:tnLst");
     w.open0("p:par");
-    w.open("p:cTn", A::new().a("id", ids.next()).a("dur", "indefinite").a("restart", "never").a("nodeType", "tmRoot"));
+    w.open(
+        "p:cTn",
+        A::new()
+            .a("id", ids.next())
+            .a("dur", "indefinite")
+            .a("restart", "never")
+            .a("nodeType", "tmRoot"),
+    );
     w.open0("p:childTnLst");
     if !main.is_empty() {
         let clicks = group(main);
         w.open("p:seq", A::new().a("concurrent", 1).a("nextAc", "seek"));
-        w.open("p:cTn", A::new().a("id", ids.next()).a("dur", "indefinite").a("nodeType", "mainSeq"));
+        w.open(
+            "p:cTn",
+            A::new()
+                .a("id", ids.next())
+                .a("dur", "indefinite")
+                .a("nodeType", "mainSeq"),
+        );
         w.open0("p:childTnLst");
         click_pars(w, x, &mut ids, &clicks, false);
         w.close("p:childTnLst");
@@ -673,7 +807,14 @@ pub fn timing(w: &mut W, x: &mut Exp, anims: &[Animation], shapes: &[Shape], idm
     if !bld.is_empty() {
         w.open0("p:bldLst");
         for (spid, grp, by_para) in bld {
-            w.empty("p:bldP", A::new().a("spid", spid).a("grpId", grp).o("build", by_para.then_some("p")).t("animBg", !by_para));
+            w.empty(
+                "p:bldP",
+                A::new()
+                    .a("spid", spid)
+                    .a("grpId", grp)
+                    .o("build", by_para.then_some("p"))
+                    .t("animBg", !by_para),
+            );
         }
         w.close("p:bldLst");
     }

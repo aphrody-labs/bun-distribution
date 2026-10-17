@@ -29,7 +29,15 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 };
 
 /// Fields that are not remembered between exports (they belong to one export).
-const PER_EXPORT: [&str; 7] = ["format", "path", "useArtboards", "range", "artboard", "artboards", "selectedOnly"];
+const PER_EXPORT: [&str; 7] = [
+    "format",
+    "path",
+    "useArtboards",
+    "range",
+    "artboard",
+    "artboards",
+    "selectedOnly",
+];
 
 /// The options a first EPS Options dialog starts from (the export's defaults).
 fn defaults() -> Map<String, Value> {
@@ -62,7 +70,11 @@ pub fn open(app: &mut VectorcraftApp, params: &Value) {
     }
     fields.insert("format".into(), json!("eps"));
     // A built-in preset named by id (`medium`) shows as its name.
-    if let Some(label) = fields.get("flattenerPreset").and_then(Value::as_str).and_then(|p| FlattenOptions::preset_label(&p.to_ascii_lowercase())) {
+    if let Some(label) = fields
+        .get("flattenerPreset")
+        .and_then(Value::as_str)
+        .and_then(|p| FlattenOptions::preset_label(&p.to_ascii_lowercase()))
+    {
         fields.insert("flattenerPreset".into(), json!(label));
     }
     app.ui.dialog = Some(Dialog::new(KIND, Value::Object(fields)));
@@ -86,10 +98,14 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     });
     ui.add_space(8.0);
     widgets::subheader(ui, tl!("Transparency"));
-    let overprints: Vec<(&str, &str)> = Overprint::ALL.iter().map(|o| (o.id(), o.label())).collect();
+    let overprints: Vec<(&str, &str)> =
+        Overprint::ALL.iter().map(|o| (o.id(), o.label())).collect();
     choice(ui, d, "overprints", tl!("Overprints:"), &overprints);
     let presets = app.session.flattener_presets();
-    let names: Vec<(&str, &str)> = presets.iter().map(|p| (p.name.as_str(), p.name.as_str())).collect();
+    let names: Vec<(&str, &str)> = presets
+        .iter()
+        .map(|p| (p.name.as_str(), p.name.as_str()))
+        .collect();
     choice(ui, d, "flattenerPreset", tl!("Preset:"), &names);
     ui.add_space(8.0);
     widgets::subheader(ui, tl!("Fonts"));
@@ -99,8 +115,18 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     widgets::subheader(ui, tl!("Options"));
     check(ui, d, "includeLinkedFiles", tl!("Include Linked Files"));
     check(ui, d, "thumbnails", tl!("Include Document Thumbnails"));
-    check(ui, d, "cmykPostScript", tl!("Include CMYK PostScript in RGB Files"));
-    check(ui, d, "compatibleGradients", tl!("Compatible Gradient and Gradient Mesh Printing"));
+    check(
+        ui,
+        d,
+        "cmykPostScript",
+        tl!("Include CMYK PostScript in RGB Files"),
+    );
+    check(
+        ui,
+        d,
+        "compatibleGradients",
+        tl!("Compatible Gradient and Gradient Mesh Printing"),
+    );
     ui.add_space(4.0);
     let levels: Vec<(&str, &str)> = Level::ALL.iter().map(|l| (l.id(), l.label())).collect();
     // A level set as a number (`level: 2`) reads as its id.
@@ -113,9 +139,13 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     super::form::caption(
         ui,
         if Level::from_id(&d.str("level")) == Some(Level::Two) || d.bool("compatibleGradients") {
-            tl!("Transparency is flattened with the preset. Type is written as outlines; gradients as bands of colour.")
+            tl!(
+                "Transparency is flattened with the preset. Type is written as outlines; gradients as bands of colour."
+            )
         } else {
-            tl!("Transparency is flattened with the preset. Type is written as outlines; gradients stay smooth.")
+            tl!(
+                "Transparency is flattened with the preset. Type is written as outlines; gradients stay smooth."
+            )
         },
     );
     false
@@ -123,14 +153,26 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 
 /// Check the options, remember them, and write the file(s).
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
-    let params = fileio::eps::resolve(&super::form::params(d), &app.session.prefs.flattener_presets)?;
+    let params = fileio::eps::resolve(
+        &super::form::params(d),
+        &app.session.prefs.flattener_presets,
+    )?;
     // Nothing selected keeps the dialog open too.
     if let Some(st) = app.session.active() {
         fileio::export_source(st, &params).map_err(|e| e.to_string())?;
     }
-    app.ui.eps_options =
-        Value::Object(d.fields.iter().filter(|(k, _)| !PER_EXPORT.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())).collect());
+    app.ui.eps_options = Value::Object(
+        d.fields
+            .iter()
+            .filter(|(k, _)| !PER_EXPORT.contains(&k.as_str()))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
+    );
     app.ui.dialog = None;
-    let path = d.fields.get("path").and_then(Value::as_str).map(str::to_string);
+    let path = d
+        .fields
+        .get("path")
+        .and_then(Value::as_str)
+        .map(str::to_string);
     io::export(app, Some("eps"), path, &params)
 }

@@ -6,7 +6,11 @@ use proptest::prelude::*;
 use serde_json::{Value, json};
 
 fn still_alive(s: &mut Server) {
-    let r: Value = serde_json::from_str(&s.handle_line(r#"{"jsonrpc":"2.0","id":"alive","method":"ping"}"#).unwrap()).unwrap();
+    let r: Value = serde_json::from_str(
+        &s.handle_line(r#"{"jsonrpc":"2.0","id":"alive","method":"ping"}"#)
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(r["result"], json!({}));
 }
 
@@ -15,13 +19,16 @@ fn arb_json() -> impl Strategy<Value = Value> {
         Just(Value::Null),
         any::<bool>().prop_map(Value::from),
         any::<i64>().prop_map(Value::from),
-        any::<f64>().prop_filter("finite", |f| f.is_finite()).prop_map(Value::from),
+        any::<f64>()
+            .prop_filter("finite", |f| f.is_finite())
+            .prop_map(Value::from),
         "[a-z#0-9 .:/{}-]{0,12}".prop_map(Value::from),
     ];
     leaf.prop_recursive(3, 24, 6, |inner| {
         prop_oneof![
             prop::collection::vec(inner.clone(), 0..5).prop_map(Value::Array),
-            prop::collection::btree_map("[a-zA-Z]{1,8}", inner, 0..5).prop_map(|m| Value::Object(m.into_iter().collect())),
+            prop::collection::btree_map("[a-zA-Z]{1,8}", inner, 0..5)
+                .prop_map(|m| Value::Object(m.into_iter().collect())),
         ]
     })
 }
@@ -73,7 +80,10 @@ fn huge_and_deep_inputs() {
     let mut s = Server::headless();
     let deep = format!("{}{}", "[".repeat(10_000), "]".repeat(10_000));
     let _ = s.handle_line(&deep);
-    let long = format!(r#"{{"jsonrpc":"2.0","id":1,"method":"{}"}}"#, "x".repeat(1_000_000));
+    let long = format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"{}"}}"#,
+        "x".repeat(1_000_000)
+    );
     let _ = s.handle_line(&long);
     let _ = s.handle_line(
         &json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"inspect_document","arguments":{"depth": 1e300}}}).to_string(),

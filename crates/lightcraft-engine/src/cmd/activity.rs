@@ -27,7 +27,10 @@ pub fn specs() -> Vec<CommandSpec> {
                 if p.get("all").and_then(Value::as_bool) == Some(true) {
                     return Ok(json!({"cancelled": s.activity.cancel_all()}));
                 }
-                let id = p.get("id").and_then(Value::as_u64).ok_or_else(|| bad(C, "id or all"))?;
+                let id = p
+                    .get("id")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| bad(C, "id or all"))?;
                 s.activity.cancel(id).map_err(|e| bad(C, e))?;
                 Ok(json!({"cancelled": 1}))
             }
@@ -49,7 +52,9 @@ mod tests {
         let r = s.execute("activity.list", &json!({})).unwrap();
         assert_eq!(r["tasks"][0]["kind"], "export");
         assert_eq!(r["tasks"][0]["cancellable"], true);
-        let r = s.execute("activity.cancel", &json!({"id": g.id()})).unwrap();
+        let r = s
+            .execute("activity.cancel", &json!({"id": g.id()}))
+            .unwrap();
         assert_eq!(r["cancelled"], 1);
         assert!(g.is_cancelled());
     }
@@ -57,8 +62,14 @@ mod tests {
     #[test]
     fn cancel_all_and_errors() {
         let mut s = Session::new();
-        let (_a, _b) = (s.activity.start("export", "E", Cancel::Yes), s.activity.start("faces", "F", Cancel::No));
-        assert_eq!(s.execute("activity.cancel", &json!({"all": true})).unwrap()["cancelled"], 1);
+        let (_a, _b) = (
+            s.activity.start("export", "E", Cancel::Yes),
+            s.activity.start("faces", "F", Cancel::No),
+        );
+        assert_eq!(
+            s.execute("activity.cancel", &json!({"all": true})).unwrap()["cancelled"],
+            1
+        );
         assert!(s.execute("activity.cancel", &json!({"id": 999})).is_err());
         assert!(s.execute("activity.cancel", &json!({})).is_err());
     }

@@ -63,7 +63,11 @@ impl From<CoordEnvelope> for Envelope {
             body: value.body,
             re: value.re,
             channel_hint: Some(
-                value.channel_hint.into_iter().map(|hint| hint.as_str().to_owned()).collect(),
+                value
+                    .channel_hint
+                    .into_iter()
+                    .map(|hint| hint.as_str().to_owned())
+                    .collect(),
             ),
             extensions: BTreeMap::new(),
         }

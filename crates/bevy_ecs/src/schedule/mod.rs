@@ -320,7 +320,7 @@ mod tests {
 
         use crate::{
             change_detection::DetectChanges,
-            error::{ignore, FallbackErrorHandler, Result},
+            error::{FallbackErrorHandler, Result, ignore},
         };
 
         use super::*;

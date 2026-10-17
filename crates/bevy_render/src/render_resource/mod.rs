@@ -35,22 +35,18 @@ pub use uniform_buffer::*;
 
 // TODO: decide where re-exports should go
 pub use wgpu::{
-    util::{
-        BufferInitDescriptor, DispatchIndirectArgs, DrawIndexedIndirectArgs, DrawIndirectArgs,
-        TextureDataOrder,
-    },
     AccelerationStructureFlags, AccelerationStructureGeometryFlags,
     AccelerationStructureUpdateMode, AdapterInfo as WgpuAdapterInfo, AddressMode, AstcBlock,
     AstcChannel, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutEntry, BindingResource,
     BindingType, Blas, BlasBuildEntry, BlasGeometries, BlasGeometrySizeDescriptors,
     BlasTriangleGeometry, BlasTriangleGeometrySizeDescriptor, BlendComponent, BlendFactor,
     BlendOperation, BlendState, BufferAddress, BufferAsyncError, BufferBinding, BufferBindingType,
-    BufferDescriptor, BufferSize, BufferUsages, ColorTargetState, ColorWrites, CommandEncoder,
-    CommandEncoderDescriptor, CompareFunction, ComputePass, ComputePassDescriptor,
-    ComputePipelineDescriptor as RawComputePipelineDescriptor, CreateBlasDescriptor,
-    CreateTlasDescriptor, DepthBiasState, DepthStencilState, DownlevelFlags, Extent3d, Face,
-    Features as WgpuFeatures, FilterMode, FragmentState as RawFragmentState, FrontFace,
-    ImageSubresourceRange, IndexFormat, Limits as WgpuLimits, LoadOp, MapMode,
+    BufferDescriptor, BufferSize, BufferUsages, COPY_BUFFER_ALIGNMENT, ColorTargetState,
+    ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction, ComputePass,
+    ComputePassDescriptor, ComputePipelineDescriptor as RawComputePipelineDescriptor,
+    CreateBlasDescriptor, CreateTlasDescriptor, DepthBiasState, DepthStencilState, DownlevelFlags,
+    Extent3d, Face, Features as WgpuFeatures, FilterMode, FragmentState as RawFragmentState,
+    FrontFace, ImageSubresourceRange, IndexFormat, Limits as WgpuLimits, LoadOp, MapMode,
     MeshPipelineDescriptor as RawMeshPipelineDescriptor, MeshState as RawMeshState,
     MipmapFilterMode, MultisampleState, Operations, Origin3d, PipelineCompilationOptions,
     PipelineLayout, PipelineLayoutDescriptor, PollType, PolygonMode, PrimitiveState,
@@ -64,7 +60,11 @@ pub use wgpu::{
     TextureSampleType, TextureUsages, TextureView as WgpuTextureView, TextureViewDescriptor,
     TextureViewDimension, Tlas, TlasInstance, VertexAttribute,
     VertexBufferLayout as RawVertexBufferLayout, VertexFormat, VertexState as RawVertexState,
-    VertexStepMode, COPY_BUFFER_ALIGNMENT,
+    VertexStepMode,
+    util::{
+        BufferInitDescriptor, DispatchIndirectArgs, DrawIndexedIndirectArgs, DrawIndirectArgs,
+        TextureDataOrder,
+    },
 };
 
 pub mod encase {
@@ -76,9 +76,9 @@ pub use self::encase::{ShaderSize, ShaderType};
 
 pub use bevy_material::{
     bind_group_layout_entries::{
-        binding_types, BindGroupLayoutEntries, BindGroupLayoutEntryBuilder,
-        DynamicBindGroupLayoutEntries, IntoBindGroupLayoutEntryBuilder,
-        IntoBindGroupLayoutEntryBuilderArray, IntoIndexedBindGroupLayoutEntryBuilderArray,
+        BindGroupLayoutEntries, BindGroupLayoutEntryBuilder, DynamicBindGroupLayoutEntries,
+        IntoBindGroupLayoutEntryBuilder, IntoBindGroupLayoutEntryBuilderArray,
+        IntoIndexedBindGroupLayoutEntryBuilderArray, binding_types,
     },
     descriptor::{
         BindGroupLayoutDescriptor, CachedComputePipelineId, CachedRenderPipelineId,

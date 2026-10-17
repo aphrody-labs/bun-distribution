@@ -18,14 +18,24 @@ use crate::{VectorcraftApp, menus};
 fn app(doc: bool) -> VectorcraftApp {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
     if doc {
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        app.run("shape.rectangle", json!({"x": 20, "y": 20, "width": 37, "height": 40})).unwrap();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 20, "y": 20, "width": 37, "height": 40}),
+        )
+        .unwrap();
     }
     app
 }
 
 fn bar(app: &VectorcraftApp) -> MenuBar {
-    native_menu::mac_layout(app, &native_menu::from_tree(app, &menus::menu_tree()), Lang::EN).bar
+    native_menu::mac_layout(
+        app,
+        &native_menu::from_tree(app, &menus::menu_tree()),
+        Lang::EN,
+    )
+    .bar
 }
 
 /// A level's nodes as short names: an item's command (`---` a separator, `[label]` a submenu,
@@ -44,7 +54,11 @@ fn ids(nodes: &[Node]) -> Vec<String> {
 }
 
 fn menu<'a>(bar: &'a MenuBar, title: &str) -> &'a [Node] {
-    &bar.menus.iter().find(|m| m.title == title).unwrap_or_else(|| panic!("no {title} menu")).children
+    &bar.menus
+        .iter()
+        .find(|m| m.title == title)
+        .unwrap_or_else(|| panic!("no {title} menu"))
+        .children
 }
 
 fn submenu<'a>(nodes: &'a [Node], name: &str) -> &'a [Node] {
@@ -58,18 +72,44 @@ fn submenu<'a>(nodes: &'a [Node], name: &str) -> &'a [Node] {
 }
 
 fn items(nodes: &[Node]) -> Vec<&native_menu::Item> {
-    nodes.iter().filter_map(|n| if let Node::Item(it) = n { Some(it) } else { None }).collect()
+    nodes
+        .iter()
+        .filter_map(|n| {
+            if let Node::Item(it) = n {
+                Some(it)
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 fn find<'a>(bar: &'a MenuBar, command: &str) -> &'a native_menu::Item {
-    bar.items().into_iter().find(|it| it.command == Some(command)).unwrap_or_else(|| panic!("no {command} item"))
+    bar.items()
+        .into_iter()
+        .find(|it| it.command == Some(command))
+        .unwrap_or_else(|| panic!("no {command} item"))
 }
 
 #[test]
 fn vectorcraft_gets_a_mac_app_menu() {
     let bar = bar(&app(true));
     let titles: Vec<&str> = bar.menus.iter().map(|m| m.title.as_str()).collect();
-    assert_eq!(titles, ["VectorCraft", "File", "Edit", "Object", "Type", "Select", "Effect", "View", "Window", "Help"]);
+    assert_eq!(
+        titles,
+        [
+            "VectorCraft",
+            "File",
+            "Edit",
+            "Object",
+            "Type",
+            "Select",
+            "Effect",
+            "View",
+            "Window",
+            "Help"
+        ]
+    );
     let app_menu = &bar.menus[0];
     assert_eq!(app_menu.role, MenuRole::App);
     assert_eq!(
@@ -95,12 +135,25 @@ fn vectorcraft_gets_a_mac_app_menu() {
         (it.label.as_str(), it.shortcut)
     };
     assert_eq!(shown("help.about"), ("About VectorCraft", None));
-    assert_eq!(shown("app.quit"), ("Quit VectorCraft", Some("Cmd+Q")), "Quit is the app's own, so unsaved documents are asked about");
+    assert_eq!(
+        shown("app.quit"),
+        ("Quit VectorCraft", Some("Cmd+Q")),
+        "Quit is the app's own, so unsaved documents are asked about"
+    );
     // ⌘H stays View › Hide Edges (Illustrator's); Hide takes ⌃⌘H.
-    assert_eq!(shown(native_menu::HIDE), ("Hide VectorCraft", Some("Ctrl+Cmd+H")));
-    assert_eq!(shown(native_menu::HIDE_OTHERS), ("Hide Others", Some("Cmd+Alt+H")));
+    assert_eq!(
+        shown(native_menu::HIDE),
+        ("Hide VectorCraft", Some("Ctrl+Cmd+H"))
+    );
+    assert_eq!(
+        shown(native_menu::HIDE_OTHERS),
+        ("Hide Others", Some("Cmd+Alt+H"))
+    );
     assert_eq!(find(&bar, "view.edges").shortcut, Some("Cmd+H"));
-    assert_eq!(bar.menu(MenuRole::Help).map(|m| m.title.as_str()), Some("Help"));
+    assert_eq!(
+        bar.menu(MenuRole::Help).map(|m| m.title.as_str()),
+        Some("Help")
+    );
 }
 
 /// Settings ▸ lists the Preferences dialog's own pages, General… with ⌘K, and each opens the
@@ -111,17 +164,33 @@ fn settings_lists_every_preferences_page() {
     let bar = bar(&app);
     let pages = items(submenu(&bar.menus[0].children, "Settings"));
     assert_eq!(pages.len(), PREF_CATEGORIES.len());
-    assert_eq!((pages[0].label.as_str(), pages[0].shortcut), ("General…", Some("Cmd+K")));
+    assert_eq!(
+        (pages[0].label.as_str(), pages[0].shortcut),
+        ("General…", Some("Cmd+K"))
+    );
     assert!(pages[1..].iter().all(|it| it.shortcut.is_none()));
     for (it, page) in pages.iter().zip(PREF_CATEGORIES) {
-        assert_eq!((it.command, &it.params, it.label.clone()), (Some("edit.preferences"), &json!({"category": page}), format!("{page}…")));
+        assert_eq!(
+            (it.command, &it.params, it.label.clone()),
+            (
+                Some("edit.preferences"),
+                &json!({"category": page}),
+                format!("{page}…")
+            )
+        );
     }
     let units = pages.iter().find(|it| it.source == "Units").unwrap();
     let (id, p) = menus::click_target(units.source, units.command.unwrap(), &units.params);
-    assert_eq!(id, "edit.preferences", "a page opens the dialog, not a parameter form");
+    assert_eq!(
+        id, "edit.preferences",
+        "a page opens the dialog, not a parameter form"
+    );
     menus::invoke(&mut app, &id, p);
     let dialog = app.ui.dialog.as_ref().expect("Preferences open");
-    assert_eq!((dialog.kind.as_str(), dialog.fields.get("__category")), ("preferences", Some(&json!("Units"))));
+    assert_eq!(
+        (dialog.kind.as_str(), dialog.fields.get("__category")),
+        ("preferences", Some(&json!("Units")))
+    );
 }
 
 /// Language ▸: Automatic, then each language in its own name (in any UI language), the
@@ -132,22 +201,46 @@ fn language_and_appearance_are_in_the_app_menu() {
     app.session.prefs.interface_language = "ja".into();
     let bar = bar(&app);
     let app_menu = &bar.menus[0].children;
-    assert_eq!(ids(submenu(app_menu, "Language"))[..2], ["app.language", "---"], "Automatic, then the languages");
-    let langs: Vec<(String, Option<bool>)> = items(submenu(app_menu, "Language")).iter().map(|it| (it.label.clone(), it.checked)).collect();
+    assert_eq!(
+        ids(submenu(app_menu, "Language"))[..2],
+        ["app.language", "---"],
+        "Automatic, then the languages"
+    );
+    let langs: Vec<(String, Option<bool>)> = items(submenu(app_menu, "Language"))
+        .iter()
+        .map(|it| (it.label.clone(), it.checked))
+        .collect();
     let mut want = vec![("Automatic".to_string(), Some(false))];
     want.extend(Lang::all().map(|l| (l.name().to_string(), Some(l.code() == "ja"))));
     assert_eq!(langs, want);
     // In every UI language the languages keep their own names.
     for ui in Lang::all() {
         for l in Lang::all() {
-            assert_eq!(crate::i18n::tr_id(ui, "app.language", l.name()), l.name(), "{} in {}", l.name(), ui.code());
+            assert_eq!(
+                crate::i18n::tr_id(ui, "app.language", l.name()),
+                l.name(),
+                "{} in {}",
+                l.name(),
+                ui.code()
+            );
         }
     }
-    let appearance: Vec<(&'static str, Option<bool>)> = items(submenu(app_menu, "Appearance")).iter().map(|it| (it.source, it.checked)).collect();
+    let appearance: Vec<(&'static str, Option<bool>)> = items(submenu(app_menu, "Appearance"))
+        .iter()
+        .map(|it| (it.source, it.checked))
+        .collect();
     assert_eq!(appearance.len(), crate::theme::Brightness::ALL.len());
-    assert_eq!(appearance.iter().filter(|(_, c)| *c == Some(true)).count(), 1, "{appearance:?}");
+    assert_eq!(
+        appearance.iter().filter(|(_, c)| *c == Some(true)).count(),
+        1,
+        "{appearance:?}"
+    );
     assert!(appearance.iter().all(|(_, c)| c.is_some()));
-    assert_eq!(crate::i18n::tr_ctx(Lang::from_code("ja").unwrap(), "theme", "Appearance"), "外観", "the theme, not the Appearance panel");
+    assert_eq!(
+        crate::i18n::tr_ctx(Lang::from_code("ja").unwrap(), "theme", "Appearance"),
+        "外観",
+        "the theme, not the Appearance panel"
+    );
 }
 
 /// Everything the in-window bar lists is in the Mac menu bar, once: what moved to the app menu
@@ -161,7 +254,11 @@ fn every_in_window_item_is_in_the_mac_menu_bar_once() {
         for it in bar.items() {
             if let Some(c) = it.command {
                 // Settings ▸ opens Preferences on each page: one item per page instead of one.
-                let params = if c == "edit.preferences" { String::new() } else { it.params.to_string() };
+                let params = if c == "edit.preferences" {
+                    String::new()
+                } else {
+                    it.params.to_string()
+                };
                 *n.entry((c.to_string(), params)).or_default() += 1;
             }
         }
@@ -171,7 +268,13 @@ fn every_in_window_item_is_in_the_mac_menu_bar_once() {
     let mac = bar(&app);
     let (a, b) = (count(&in_window), count(&mac));
     // The in-window application menu's commands, its submenus' included.
-    let moved: Vec<&str> = MenuBar { menus: vec![in_window.menus[0].clone()] }.items().iter().filter_map(|it| it.command).collect();
+    let moved: Vec<&str> = MenuBar {
+        menus: vec![in_window.menus[0].clone()],
+    }
+    .items()
+    .iter()
+    .filter_map(|it| it.command)
+    .collect();
     for (key, n) in &a {
         let m = b.get(key).copied().unwrap_or(0);
         let want = match key.0.as_str() {
@@ -179,18 +282,37 @@ fn every_in_window_item_is_in_the_mac_menu_bar_once() {
             c if moved.contains(&c) => 1,
             _ => *n,
         };
-        assert_eq!(m, want, "{key:?} is listed {m} times on the Mac, {n} in the window");
+        assert_eq!(
+            m, want,
+            "{key:?} is listed {m} times on the Mac, {n} in the window"
+        );
     }
-    let system = [native_menu::HIDE, native_menu::HIDE_OTHERS, native_menu::MINIMIZE];
+    let system = [
+        native_menu::HIDE,
+        native_menu::HIDE_OTHERS,
+        native_menu::MINIMIZE,
+    ];
     // Language and Appearance have no in-window menu (synthesized in the App menu, as in PhotoCraft).
     let synthesized = ["app.language", "window.brightness"];
     for key in b.keys() {
-        assert!(a.contains_key(key) || system.contains(&key.0.as_str()) || synthesized.contains(&key.0.as_str()), "{key:?} isn't an in-window item");
+        assert!(
+            a.contains_key(key)
+                || system.contains(&key.0.as_str())
+                || synthesized.contains(&key.0.as_str()),
+            "{key:?} isn't an in-window item"
+        );
     }
     let help = ids(menu(&mac, "Help"));
-    assert!(help.contains(&"help.discord".to_string()) && !help.contains(&"help.about".to_string()), "{help:?}");
+    assert!(
+        help.contains(&"help.discord".to_string()) && !help.contains(&"help.about".to_string()),
+        "{help:?}"
+    );
     let edit = ids(menu(&mac, "Edit"));
-    assert!(!edit.contains(&"edit.preferences".to_string()) && edit.contains(&"edit.keyboardShortcuts".to_string()), "{edit:?}");
+    assert!(
+        !edit.contains(&"edit.preferences".to_string())
+            && edit.contains(&"edit.keyboardShortcuts".to_string()),
+        "{edit:?}"
+    );
     assert!(ids(menu(&mac, "Window")).contains(&"[Workspace]".to_string()));
 }
 
@@ -198,11 +320,30 @@ fn every_in_window_item_is_in_the_mac_menu_bar_once() {
 fn the_window_menu_has_the_system_items() {
     let bar = bar(&app(true));
     let window = ids(&bar.menu(MenuRole::Window).unwrap().children);
-    assert_eq!(window[..3], [native_menu::MINIMIZE.to_string(), "<Zoom>".into(), "---".into()]);
-    assert_eq!(window[window.len() - 2..], ["---".to_string(), "<BringAllToFront>".into()]);
-    assert_eq!(window[3], "window.newWindow", "then VectorCraft's own items");
-    assert_eq!(find(&bar, native_menu::MINIMIZE).shortcut, Some("Ctrl+Cmd+M"));
-    assert!(!window.iter().any(|i| i == "window.brightness"), "the theme is only in the app menu");
+    assert_eq!(
+        window[..3],
+        [
+            native_menu::MINIMIZE.to_string(),
+            "<Zoom>".into(),
+            "---".into()
+        ]
+    );
+    assert_eq!(
+        window[window.len() - 2..],
+        ["---".to_string(), "<BringAllToFront>".into()]
+    );
+    assert_eq!(
+        window[3], "window.newWindow",
+        "then VectorCraft's own items"
+    );
+    assert_eq!(
+        find(&bar, native_menu::MINIMIZE).shortcut,
+        Some("Ctrl+Cmd+M")
+    );
+    assert!(
+        !window.iter().any(|i| i == "window.brightness"),
+        "the theme is only in the app menu"
+    );
     assert_eq!(Standard::Zoom.label(), "Zoom");
 }
 
@@ -211,14 +352,31 @@ fn the_window_menu_has_the_system_items() {
 #[test]
 fn a_command_keeps_a_system_key_it_is_bound_to() {
     let mut app = app(true);
-    app.ui.shortcut_overrides.insert("view.grid".into(), "Ctrl+Cmd+H".into());
+    app.ui
+        .shortcut_overrides
+        .insert("view.grid".into(), "Ctrl+Cmd+H".into());
     crate::shortcut_editor::sync(&app.ui);
-    let layout = native_menu::mac_layout(&app, &native_menu::from_tree(&app, &menus::menu_tree()), Lang::EN);
+    let layout = native_menu::mac_layout(
+        &app,
+        &native_menu::from_tree(&app, &menus::menu_tree()),
+        Lang::EN,
+    );
     app.ui.shortcut_overrides.clear();
     crate::shortcut_editor::sync(&app.ui);
     assert_eq!(find(&layout.bar, native_menu::HIDE).shortcut, None);
-    assert_eq!(find(&layout.bar, "view.grid").shortcut, Some("Ctrl+Cmd+H"), "the user's override shows in the menu");
-    assert_eq!(layout.clashes.iter().map(|c| (c.shortcut, c.command)).collect::<Vec<_>>(), [("Ctrl+Cmd+H", "view.grid")]);
+    assert_eq!(
+        find(&layout.bar, "view.grid").shortcut,
+        Some("Ctrl+Cmd+H"),
+        "the user's override shows in the menu"
+    );
+    assert_eq!(
+        layout
+            .clashes
+            .iter()
+            .map(|c| (c.shortcut, c.command))
+            .collect::<Vec<_>>(),
+        [("Ctrl+Cmd+H", "view.grid")]
+    );
 }
 
 /// A native menu can't turn a plain item into a check item in place: opening a document or
@@ -227,9 +385,14 @@ fn a_command_keeps_a_system_key_it_is_bound_to() {
 fn documents_and_selections_change_state_not_structure() {
     let empty = native_menu::structure_key(&bar(&app(false)));
     let mut a = app(true);
-    assert_eq!(native_menu::structure_key(&bar(&a)), empty, "a document with a selected rectangle");
+    assert_eq!(
+        native_menu::structure_key(&bar(&a)),
+        empty,
+        "a document with a selected rectangle"
+    );
     a.run("select.none", json!({})).unwrap();
-    a.run("text.create", json!({"x": 50, "y": 50, "text": "Hi"})).unwrap();
+    a.run("text.create", json!({"x": 50, "y": 50, "text": "Hi"}))
+        .unwrap();
     assert!(!a.session.active().unwrap().selection.objects.is_empty());
     assert_eq!(native_menu::structure_key(&bar(&a)), empty, "type selected");
     // A recent file is a new item: the menus are rebuilt.
@@ -249,12 +412,34 @@ fn key_equivalents_are_command_and_function_keys_only() {
 #[test]
 fn key_equivalents_become_the_input_their_keys_make() {
     let cmd = |key| KeyboardShortcut::new(Modifiers::COMMAND, key);
-    let key = |key, pressed| Event::Key { key, physical_key: None, pressed, repeat: false, modifiers: Modifiers::COMMAND };
-    assert_eq!(native_menu::key_events(cmd(Key::A), || None), [key(Key::A, true), key(Key::A, false)]);
-    assert_eq!(native_menu::key_events(cmd(Key::C), || None), [Event::Copy, key(Key::C, false)]);
-    assert_eq!(native_menu::key_events(cmd(Key::X), || None), [Event::Cut, key(Key::X, false)]);
-    assert_eq!(native_menu::key_events(cmd(Key::V), || Some("a\r\nb".into())), [Event::Paste("a\nb".into())]);
-    assert_eq!(native_menu::key_events(cmd(Key::V), || None), [], "a picture: the release tells the paste");
+    let key = |key, pressed| Event::Key {
+        key,
+        physical_key: None,
+        pressed,
+        repeat: false,
+        modifiers: Modifiers::COMMAND,
+    };
+    assert_eq!(
+        native_menu::key_events(cmd(Key::A), || None),
+        [key(Key::A, true), key(Key::A, false)]
+    );
+    assert_eq!(
+        native_menu::key_events(cmd(Key::C), || None),
+        [Event::Copy, key(Key::C, false)]
+    );
+    assert_eq!(
+        native_menu::key_events(cmd(Key::X), || None),
+        [Event::Cut, key(Key::X, false)]
+    );
+    assert_eq!(
+        native_menu::key_events(cmd(Key::V), || Some("a\r\nb".into())),
+        [Event::Paste("a\nb".into())]
+    );
+    assert_eq!(
+        native_menu::key_events(cmd(Key::V), || None),
+        [],
+        "a picture: the release tells the paste"
+    );
 }
 
 /// The fake backend: the menus the app synced, and events to report.
@@ -298,7 +483,12 @@ impl Mac {
         if native {
             app.services.native_menu = Some(NativeMenu::new(Box::new(fake.clone())));
         }
-        let mut m = Mac { app, fake, ctx: egui::Context::default(), time: 0.0 };
+        let mut m = Mac {
+            app,
+            fake,
+            ctx: egui::Context::default(),
+            time: 0.0,
+        };
         for _ in 0..3 {
             m.frame(vec![]);
         }
@@ -337,7 +527,8 @@ impl Mac {
 
     /// Where the document's point (`x`, `y`) is on the screen.
     fn on_canvas(&self, x: f64, y: f64) -> Pos2 {
-        crate::canvas::Xf::new(self.app.canvas_rect.unwrap(), self.app.view().unwrap()).to_screen(vectorcraft_geom::Point::new(x, y))
+        crate::canvas::Xf::new(self.app.canvas_rect.unwrap(), self.app.view().unwrap())
+            .to_screen(vectorcraft_geom::Point::new(x, y))
     }
 
     /// Run `n` frames, each with the events that `step` returns (`step` may act on the app first),
@@ -365,7 +556,13 @@ impl Mac {
     fn rotate_preview(&mut self) {
         menus::invoke(&mut self.app, "object.rotate", json!({}));
         self.frame(vec![]);
-        self.app.ui.dialog.as_mut().unwrap().fields.insert("preview".into(), json!(true));
+        self.app
+            .ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("preview".into(), json!(true));
         self.frame(vec![]);
         assert!(self.app.session.in_interaction(), "the rotation previews");
     }
@@ -374,14 +571,24 @@ impl Mac {
     /// number of frames in which the app read the menus.
     fn angles(&mut self, n: usize) -> usize {
         self.reads(n, |m, i| {
-            crate::tests_synthetic::control(&mut m.app, &m.ctx, "ui.dialog.set", json!({"field": "angle", "value": 10 * (i + 1)}));
+            crate::tests_synthetic::control(
+                &mut m.app,
+                &m.ctx,
+                "ui.dialog.set",
+                json!({"field": "angle", "value": 10 * (i + 1)}),
+            );
             vec![]
         })
     }
 }
 
 fn click(at: Pos2, pressed: bool) -> Event {
-    Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE }
+    Event::PointerButton {
+        pos: at,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    }
 }
 
 /// Run `drag` on a new app with the fake native menu, and run it again on another new app until
@@ -389,7 +596,12 @@ fn click(at: Pos2, pressed: bool) -> Event {
 /// and what `drag` returned. The generations are process-wide and only grow. A test running
 /// alongside can bump them, and the app then reads the menus again.
 fn undisturbed<R>(drag: impl Fn(&mut Mac) -> R) -> (Mac, R) {
-    let generations = || (crate::shortcut_editor::GENERATION.load(std::sync::atomic::Ordering::Relaxed), crate::menus::plugin_revision());
+    let generations = || {
+        (
+            crate::shortcut_editor::GENERATION.load(std::sync::atomic::Ordering::Relaxed),
+            crate::menus::plugin_revision(),
+        )
+    };
     for _ in 0..20 {
         let mut m = Mac::new(true);
         let before = generations();
@@ -406,7 +618,12 @@ fn undisturbed<R>(drag: impl Fn(&mut Mac) -> R) -> (Mac, R) {
 #[test]
 fn key_equivalents_run_through_the_normal_shortcut_path_once() {
     let mut m = Mac::new(true);
-    m.app.run("shape.rectangle", json!({"x": 200, "y": 150, "width": 20, "height": 20})).unwrap();
+    m.app
+        .run(
+            "shape.rectangle",
+            json!({"x": 200, "y": 150, "width": 20, "height": 20}),
+        )
+        .unwrap();
     m.app.run("select.none", json!({})).unwrap();
     m.frame(vec![]);
     m.key_equivalent("Cmd+A");
@@ -419,7 +636,12 @@ fn key_equivalents_run_through_the_normal_shortcut_path_once() {
     // Idle frames don't read the menus again. The shortcut and plug-in generations are
     // process-wide, and tests running alongside with other shortcuts bump them (rightly reading
     // the menus again), so judge two idle frames in which they held still.
-    let globals = || (crate::shortcut_editor::GENERATION.load(std::sync::atomic::Ordering::Relaxed), crate::menus::plugin_revision());
+    let globals = || {
+        (
+            crate::shortcut_editor::GENERATION.load(std::sync::atomic::Ordering::Relaxed),
+            crate::menus::plugin_revision(),
+        )
+    };
     let quiet = (0..50).any(|_| {
         let (before, synced) = (globals(), m.fake.synced());
         m.frame(vec![]);
@@ -427,7 +649,10 @@ fn key_equivalents_run_through_the_normal_shortcut_path_once() {
         globals() == before && m.fake.synced() == synced
     });
     assert!(quiet, "nothing changed: the menus weren't read again");
-    assert_eq!(crate::control::inspect(&m.app, &m.ctx)["nativeMenuBar"], json!(true));
+    assert_eq!(
+        crate::control::inspect(&m.app, &m.ctx)["nativeMenuBar"],
+        json!(true)
+    );
 }
 
 /// Each step of a drag previews the move as a new revision: the menus aren't read again for it
@@ -436,13 +661,22 @@ fn key_equivalents_run_through_the_normal_shortcut_path_once() {
 fn a_drag_reads_the_menus_when_it_is_released() {
     let (mut m, (start, read)) = undisturbed(|m| {
         let start = m.start_move();
-        (start, m.reads(6, |_, i| vec![Event::PointerMoved(start + vec2(8.0 * (i + 2) as f32, 0.0))]))
+        (
+            start,
+            m.reads(6, |_, i| {
+                vec![Event::PointerMoved(start + vec2(8.0 * (i + 2) as f32, 0.0))]
+            }),
+        )
     });
     assert_eq!(read, 0, "the menus weren't read at any step of the drag");
     let synced = m.fake.synced();
     m.frame(vec![click(start + vec2(56.0, 0.0), false)]);
     assert!(!m.app.session.in_interaction());
-    assert_eq!(m.fake.synced(), synced + 1, "the menus were read on the release");
+    assert_eq!(
+        m.fake.synced(),
+        synced + 1,
+        "the menus were read on the release"
+    );
     assert_eq!(find(&m.fake.last(), "edit.undo").label, "Undo Move");
 }
 
@@ -452,20 +686,44 @@ fn a_drag_reads_the_menus_when_it_is_released() {
 fn escape_during_a_drag_reads_the_menus() {
     let (mut m, read) = undisturbed(|m| {
         m.app.run("select.none", json!({})).unwrap();
-        m.app.run("tool.select", json!({"tool": "rectangle"})).unwrap();
+        m.app
+            .run("tool.select", json!({"tool": "rectangle"}))
+            .unwrap();
         let start = m.on_canvas(200.0, 150.0);
         m.frame(vec![Event::PointerMoved(start), click(start, true)]);
         m.frame(vec![Event::PointerMoved(start + vec2(10.0, 10.0))]);
-        assert!(m.app.session.in_interaction(), "the rectangle is being drawn");
-        m.reads(6, |_, i| vec![Event::PointerMoved(start + vec2(10.0, 10.0) * (i + 2) as f32)])
+        assert!(
+            m.app.session.in_interaction(),
+            "the rectangle is being drawn"
+        );
+        m.reads(6, |_, i| {
+            vec![Event::PointerMoved(
+                start + vec2(10.0, 10.0) * (i + 2) as f32,
+            )]
+        })
     });
     assert_eq!(read, 0, "the menus weren't read at any step of the drag");
-    assert!(find(&m.fake.last(), "edit.cut").enabled, "the preview's rectangle is selected");
+    assert!(
+        find(&m.fake.last(), "edit.cut").enabled,
+        "the preview's rectangle is selected"
+    );
     let synced = m.fake.synced();
-    m.frame(vec![Event::Key { key: Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE }]);
-    assert!(!m.app.session.in_interaction(), "Escape dropped the rectangle");
+    m.frame(vec![Event::Key {
+        key: Key::Escape,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    }]);
+    assert!(
+        !m.app.session.in_interaction(),
+        "Escape dropped the rectangle"
+    );
     assert_eq!(m.fake.synced(), synced + 1, "the menus were read");
-    assert!(!find(&m.fake.last(), "edit.cut").enabled, "nothing is selected");
+    assert!(
+        !find(&m.fake.last(), "edit.cut").enabled,
+        "nothing is selected"
+    );
 }
 
 /// A move dragged off the canvas onto a panel stops being a move with its button still held
@@ -476,7 +734,13 @@ fn a_move_dragged_onto_a_panel_reads_the_menus() {
     let (mut m, (start, undo, read)) = undisturbed(|m| {
         let undo = find(&m.fake.last(), "edit.undo").label.clone();
         let start = m.start_move();
-        (start, undo, m.reads(4, |_, i| vec![Event::PointerMoved(start + vec2(8.0 * (i + 2) as f32, 0.0))]))
+        (
+            start,
+            undo,
+            m.reads(4, |_, i| {
+                vec![Event::PointerMoved(start + vec2(8.0 * (i + 2) as f32, 0.0))]
+            }),
+        )
     });
     assert_eq!(read, 0, "the menus weren't read at any step of the drag");
     let synced = m.fake.synced();
@@ -496,7 +760,10 @@ fn a_control_port_cancel_of_a_dialog_preview_reads_the_menus() {
         m.rotate_preview();
         m.angles(4)
     });
-    assert_eq!(read, 0, "the menus weren't read while the dialog previewed the angles");
+    assert_eq!(
+        read, 0,
+        "the menus weren't read while the dialog previewed the angles"
+    );
     let synced = m.fake.synced();
     crate::tests_synthetic::control(&mut m.app, &m.ctx, "ui.dialog.cancel", json!({}));
     m.frame(vec![]);
@@ -512,7 +779,10 @@ fn applying_a_dialog_preview_reads_the_menus() {
         m.rotate_preview();
         m.angles(4)
     });
-    assert_eq!(read, 0, "the menus weren't read while the dialog previewed the angles");
+    assert_eq!(
+        read, 0,
+        "the menus weren't read while the dialog previewed the angles"
+    );
     let synced = m.fake.synced();
     crate::tests_synthetic::control(&mut m.app, &m.ctx, "ui.dialog.confirm", json!({}));
     m.frame(vec![]);
@@ -536,13 +806,27 @@ fn the_font_menu_preview_reads_the_menus_when_it_ends() {
     };
     let (mut m, read) = undisturbed(|m| {
         m.app.run("select.none", json!({})).unwrap();
-        m.app.run("text.create", json!({"x": 50, "y": 50, "text": "Hi"})).unwrap();
+        m.app
+            .run("text.create", json!({"x": 50, "y": 50, "text": "Hi"}))
+            .unwrap();
         m.frame(vec![]);
-        assert_eq!(apply(m, FontPick::Preview("Source Serif 4".into(), None)), 1, "the menus were read as the preview began");
-        apply(m, FontPick::Preview("Source Sans 3".into(), None)) + apply(m, FontPick::Preview("Inter".into(), None))
+        assert_eq!(
+            apply(m, FontPick::Preview("Source Serif 4".into(), None)),
+            1,
+            "the menus were read as the preview began"
+        );
+        apply(m, FontPick::Preview("Source Sans 3".into(), None))
+            + apply(m, FontPick::Preview("Inter".into(), None))
     });
-    assert_eq!(read, 0, "the menus weren't read for the fonts after the first");
-    assert_eq!(apply(&mut m, FontPick::EndPreview), 1, "the menus were read as the preview ended");
+    assert_eq!(
+        read, 0,
+        "the menus weren't read for the fonts after the first"
+    );
+    assert_eq!(
+        apply(&mut m, FontPick::EndPreview),
+        1,
+        "the menus were read as the preview ended"
+    );
     assert!(!m.app.session.in_interaction());
 }
 
@@ -556,12 +840,33 @@ fn clicks_run_their_command_and_the_menus_follow() {
     m.fake.report(native_menu::Event::Click(rulers.clone()));
     m.frame(vec![]);
     assert_eq!(m.app.ui.view.rulers, !before);
-    assert_ne!(find(&m.fake.last(), "view.rulers").label, rulers.label, "the label flipped");
-    let other = m.fake.last().items().into_iter().find(|it| it.command == Some("window.brightness") && it.checked == Some(false)).cloned().unwrap();
+    assert_ne!(
+        find(&m.fake.last(), "view.rulers").label,
+        rulers.label,
+        "the label flipped"
+    );
+    let other = m
+        .fake
+        .last()
+        .items()
+        .into_iter()
+        .find(|it| it.command == Some("window.brightness") && it.checked == Some(false))
+        .cloned()
+        .unwrap();
     m.fake.report(native_menu::Event::Click(other.clone()));
     m.frame(vec![]);
-    assert_eq!(Some(m.app.ui.brightness.id()), other.params.get("brightness").and_then(Value::as_str));
-    let now = m.fake.last().items().into_iter().find(|it| it.params == other.params).cloned().unwrap();
+    assert_eq!(
+        Some(m.app.ui.brightness.id()),
+        other.params.get("brightness").and_then(Value::as_str)
+    );
+    let now = m
+        .fake
+        .last()
+        .items()
+        .into_iter()
+        .find(|it| it.params == other.params)
+        .cloned()
+        .unwrap();
     assert_eq!(now.checked, Some(true), "the checkmark moved");
 }
 
@@ -572,23 +877,58 @@ fn a_focused_field_keeps_select_all_and_copy() {
     let mut m = Mac::new(true);
     let (id, rect) = m
         .ctx
-        .viewport(|vp| vp.prev_pass.widgets.layers().flat_map(|(_, w)| w.iter()).map(|w| (w.id, w.rect)).collect::<Vec<_>>())
+        .viewport(|vp| {
+            vp.prev_pass
+                .widgets
+                .layers()
+                .flat_map(|(_, w)| w.iter())
+                .map(|w| (w.id, w.rect))
+                .collect::<Vec<_>>()
+        })
         .into_iter()
-        .find(|&(id, _)| m.ctx.data(|d| d.get_temp::<String>(id)).is_some_and(|t| t == "37 pt") && egui::TextEdit::load_state(&m.ctx, id).is_some())
+        .find(|&(id, _)| {
+            m.ctx
+                .data(|d| d.get_temp::<String>(id))
+                .is_some_and(|t| t == "37 pt")
+                && egui::TextEdit::load_state(&m.ctx, id).is_some()
+        })
         .expect("the W field");
-    let click = |pressed| Event::PointerButton { pos: rect.center(), button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
+    let click = |pressed| Event::PointerButton {
+        pos: rect.center(),
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    };
     m.frame(vec![Event::PointerMoved(rect.center()), click(true)]);
     m.frame(vec![click(false)]);
-    m.frame(vec![Event::Key { key: Key::End, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE }]);
+    m.frame(vec![Event::Key {
+        key: Key::End,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    }]);
     assert!(m.ctx.text_edit_focused());
     m.key_equivalent("Cmd+A");
-    let r = egui::TextEdit::load_state(&m.ctx, id).and_then(|s| s.cursor.char_range()).unwrap();
+    let r = egui::TextEdit::load_state(&m.ctx, id)
+        .and_then(|s| s.cursor.char_range())
+        .unwrap();
     let (a, b): (usize, usize) = (r.primary.index.into(), r.secondary.index.into());
     assert_eq!((a.min(b), a.max(b)), (0, 5), "⌘A selected the field's text");
     assert_eq!(m.selected(), 1, "not the art");
     let out = m.key_equivalent("Cmd+C");
-    let copied: Vec<_> =
-        out.platform_output.commands.iter().filter_map(|c| if let egui::OutputCommand::CopyText(t) = c { Some(t.as_str()) } else { None }).collect();
+    let copied: Vec<_> = out
+        .platform_output
+        .commands
+        .iter()
+        .filter_map(|c| {
+            if let egui::OutputCommand::CopyText(t) = c {
+                Some(t.as_str())
+            } else {
+                None
+            }
+        })
+        .collect();
     assert_eq!(copied, ["37 pt"]);
     assert!(m.app.session.clipboard.is_empty(), "no art copied");
 }
@@ -601,7 +941,13 @@ fn the_app_bar_hides_its_menus_with_the_mac_menu_bar() {
         let out = m.frame(vec![]);
         out.shapes
             .iter()
-            .filter_map(|s| if let egui::Shape::Text(t) = &s.shape { Some(t.galley.text().to_string()) } else { None })
+            .filter_map(|s| {
+                if let egui::Shape::Text(t) = &s.shape {
+                    Some(t.galley.text().to_string())
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>()
     };
     let (in_window, native) = (texts(false), texts(true));
@@ -620,12 +966,26 @@ fn the_menu_bar_is_inert_while_a_file_dialog_is_open() {
     let mut m = Mac::new(true);
     m.app.services.dialogs_are_sheets = true;
     let (shown, _) = crate::tests_picks::off_the_ui_thread(&mut m.app.services);
-    m.app.run("shape.rectangle", json!({"x": 200, "y": 150, "width": 20, "height": 20})).unwrap();
+    m.app
+        .run(
+            "shape.rectangle",
+            json!({"x": 200, "y": 150, "width": 20, "height": 20}),
+        )
+        .unwrap();
     m.app.run("select.none", json!({})).unwrap();
     m.frame(vec![]);
-    let rows = |bar: &MenuBar| bar.items().iter().map(|it| (it.command, it.params.clone(), it.enabled)).collect::<Vec<_>>();
+    let rows = |bar: &MenuBar| {
+        bar.items()
+            .iter()
+            .map(|it| (it.command, it.params.clone(), it.enabled))
+            .collect::<Vec<_>>()
+    };
     let before = m.fake.last();
-    let system = [native_menu::HIDE, native_menu::HIDE_OTHERS, native_menu::MINIMIZE];
+    let system = [
+        native_menu::HIDE,
+        native_menu::HIDE_OTHERS,
+        native_menu::MINIMIZE,
+    ];
     assert!(system.iter().all(|c| find(&before, c).enabled));
     assert!(m.app.run("file.open", json!({})).is_err());
     assert!(m.app.file_dialog_open());
@@ -633,22 +993,36 @@ fn the_menu_bar_is_inert_while_a_file_dialog_is_open() {
     let inert = m.fake.last();
     for it in inert.items() {
         let kept = it.command.is_some_and(|c| system.contains(&c));
-        assert_eq!(it.enabled, kept, "{:?} {} while the dialog is open", it.command, it.label);
+        assert_eq!(
+            it.enabled, kept,
+            "{:?} {} while the dialog is open",
+            it.command, it.label
+        );
     }
     // A click that raced the menu going inert isn't run; Minimize is.
     let rulers = (m.app.ui.view.rulers, find(&before, "view.rulers").clone());
     m.fake.report(native_menu::Event::Click(rulers.1.clone()));
     m.frame(vec![]);
     assert_eq!(m.app.ui.view.rulers, rulers.0);
-    m.fake.report(native_menu::Event::Click(find(&inert, native_menu::MINIMIZE).clone()));
-    assert!(m.frame(vec![]).viewport_output[&egui::ViewportId::ROOT].commands.contains(&egui::ViewportCommand::Minimized(true)));
+    m.fake.report(native_menu::Event::Click(
+        find(&inert, native_menu::MINIMIZE).clone(),
+    ));
+    assert!(
+        m.frame(vec![]).viewport_output[&egui::ViewportId::ROOT]
+            .commands
+            .contains(&egui::ViewportCommand::Minimized(true))
+    );
     // A key equivalent that raced it doesn't reach egui.
     let mut k = crate::shortcuts::parse("Cmd+A").unwrap();
     k.modifiers.mac_cmd = k.modifiers.command;
     m.fake.report(native_menu::Event::Key(k));
     let mut raw = egui::RawInput::default();
     m.app.raw_input_hook(&mut raw);
-    assert!(!raw.events.iter().any(|e| matches!(e, Event::Key { .. })), "{:?}", raw.events);
+    assert!(
+        !raw.events.iter().any(|e| matches!(e, Event::Key { .. })),
+        "{:?}",
+        raw.events
+    );
     m.key_equivalent("Cmd+A");
     assert_eq!(m.selected(), 0, "⌘A selected nothing");
     // Cancelled: the menus are as before, and work again.
@@ -658,7 +1032,10 @@ fn the_menu_bar_is_inert_while_a_file_dialog_is_open() {
     assert!(!m.app.file_dialog_open());
     // Every row from before is back as it was (tests running alongside may add plug-in rows).
     let after = rows(&m.fake.last());
-    assert!(rows(&before).iter().all(|r| after.contains(r)), "the menus are as before");
+    assert!(
+        rows(&before).iter().all(|r| after.contains(r)),
+        "the menus are as before"
+    );
     m.fake.report(native_menu::Event::Click(rulers.1));
     m.frame(vec![]);
     assert_eq!(m.app.ui.view.rulers, !rulers.0);

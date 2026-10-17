@@ -37,17 +37,23 @@ fn config_dir_with(platform: Platform, env: impl Fn(&str) -> Option<OsString>) -
         return (!dir.is_empty()).then(|| PathBuf::from(dir));
     }
     match platform {
-        Platform::Mac => env("HOME").map(|h| PathBuf::from(h).join("Library/Application Support/LightCraft")),
-        Platform::Windows => env("APPDATA").map(|a| PathBuf::from(a).join("LightCraft")),
-        Platform::Other => {
-            env("XDG_CONFIG_HOME").map(PathBuf::from).or_else(|| env("HOME").map(|h| PathBuf::from(h).join(".config"))).map(|c| c.join("lightcraft"))
+        Platform::Mac => {
+            env("HOME").map(|h| PathBuf::from(h).join("Library/Application Support/LightCraft"))
         }
+        Platform::Windows => env("APPDATA").map(|a| PathBuf::from(a).join("LightCraft")),
+        Platform::Other => env("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
+            .or_else(|| env("HOME").map(|h| PathBuf::from(h).join(".config")))
+            .map(|c| c.join("lightcraft")),
     }
 }
 
 /// Where face models are kept: `$LIGHTCRAFT_FACE_MODELS` if set, else `<config>/models`.
 pub fn default_face_models_dir() -> Option<PathBuf> {
-    std::env::var_os("LIGHTCRAFT_FACE_MODELS").filter(|v| !v.is_empty()).map(PathBuf::from).or_else(|| config_dir().map(|d| d.join("models")))
+    std::env::var_os("LIGHTCRAFT_FACE_MODELS")
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| config_dir().map(|d| d.join("models")))
 }
 
 /// Where opt-in denoise models are kept: `$LIGHTCRAFT_DENOISE_MODELS` if set, else `<config>/denoise-models`.
@@ -65,7 +71,9 @@ pub fn default_sam3_dir() -> Option<PathBuf> {
 
 /// [`default_sam3_dir`] for a given override and config folder: a non-empty override wins.
 fn sam3_dir(var: Option<std::ffi::OsString>, config: Option<PathBuf>) -> Option<PathBuf> {
-    var.filter(|v| !v.is_empty()).map(PathBuf::from).or_else(|| config.map(|d| d.join("models").join("sam3")))
+    var.filter(|v| !v.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| config.map(|d| d.join("models").join("sam3")))
 }
 
 impl Session {
@@ -73,7 +81,8 @@ impl Session {
     /// download mirrors in `<config>/models/sam3-mirrors.txt`.
     pub fn with_default_sam3_model(mut self) -> Self {
         self.segmenter.dir = default_sam3_dir();
-        self.segmenter.mirrors_file = config_dir().map(|d| d.join("models").join("sam3-mirrors.txt"));
+        self.segmenter.mirrors_file =
+            config_dir().map(|d| d.join("models").join("sam3-mirrors.txt"));
         self
     }
 
@@ -101,7 +110,10 @@ mod config_tests {
     use super::*;
 
     fn resolve(platform: Platform, vars: &[(&str, &str)]) -> Option<PathBuf> {
-        config_dir_with(platform, |name| vars.iter().find_map(|(key, value)| (*key == name).then(|| OsString::from(value))))
+        config_dir_with(platform, |name| {
+            vars.iter()
+                .find_map(|(key, value)| (*key == name).then(|| OsString::from(value)))
+        })
     }
 
     #[test]
@@ -130,11 +142,29 @@ mod config_tests {
 
     #[test]
     fn config_unset_override_keeps_platform_defaults() {
-        let vars = [("HOME", "/user"), ("APPDATA", "/roaming"), ("XDG_CONFIG_HOME", "/xdg")];
-        assert_eq!(resolve(Platform::Mac, &vars), Some(PathBuf::from("/user/Library/Application Support/LightCraft")));
-        assert_eq!(resolve(Platform::Windows, &vars), Some(PathBuf::from("/roaming/LightCraft")));
-        assert_eq!(resolve(Platform::Other, &vars), Some(PathBuf::from("/xdg/lightcraft")));
-        assert_eq!(resolve(Platform::Other, &[("HOME", "/user")]), Some(PathBuf::from("/user/.config/lightcraft")));
+        let vars = [
+            ("HOME", "/user"),
+            ("APPDATA", "/roaming"),
+            ("XDG_CONFIG_HOME", "/xdg"),
+        ];
+        assert_eq!(
+            resolve(Platform::Mac, &vars),
+            Some(PathBuf::from(
+                "/user/Library/Application Support/LightCraft"
+            ))
+        );
+        assert_eq!(
+            resolve(Platform::Windows, &vars),
+            Some(PathBuf::from("/roaming/LightCraft"))
+        );
+        assert_eq!(
+            resolve(Platform::Other, &vars),
+            Some(PathBuf::from("/xdg/lightcraft"))
+        );
+        assert_eq!(
+            resolve(Platform::Other, &[("HOME", "/user")]),
+            Some(PathBuf::from("/user/.config/lightcraft"))
+        );
         for platform in [Platform::Mac, Platform::Windows, Platform::Other] {
             assert_eq!(resolve(platform, &[]), None);
         }
@@ -145,7 +175,10 @@ mod config_tests {
     fn config_override_preserves_non_unicode_paths() {
         use std::os::unix::ffi::OsStringExt as _;
         let value = OsString::from_vec(b"isolated/\xff".to_vec());
-        assert_eq!(config_dir_with(Platform::Mac, |_| Some(value.clone())), Some(PathBuf::from(value)));
+        assert_eq!(
+            config_dir_with(Platform::Mac, |_| Some(value.clone())),
+            Some(PathBuf::from(value))
+        );
     }
 }
 
@@ -158,9 +191,15 @@ mod tests {
     fn sam3_dir_prefers_the_override() {
         let config = PathBuf::from("cfg");
         let fallback = Some(config.join("models").join("sam3"));
-        assert_eq!(sam3_dir(Some("elsewhere".into()), Some(config.clone())), Some(PathBuf::from("elsewhere")));
+        assert_eq!(
+            sam3_dir(Some("elsewhere".into()), Some(config.clone())),
+            Some(PathBuf::from("elsewhere"))
+        );
         assert_eq!(sam3_dir(None, Some(config.clone())), fallback);
-        assert_eq!(sam3_dir(Some(std::ffi::OsString::new()), Some(config)), fallback);
+        assert_eq!(
+            sam3_dir(Some(std::ffi::OsString::new()), Some(config)),
+            fallback
+        );
         assert_eq!(sam3_dir(None, None), None);
     }
 }

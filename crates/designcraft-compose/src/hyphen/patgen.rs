@@ -21,12 +21,48 @@ pub struct Level {
 
 /// Defaults tuned on the Moby list (see `examples/hyphgen.rs`).
 pub const DEFAULT_LEVELS: &[Level] = &[
-    Level { min_len: 1, max_len: 4, good_weight: 1, bad_weight: 2, threshold: 20 },
-    Level { min_len: 2, max_len: 5, good_weight: 2, bad_weight: 1, threshold: 8 },
-    Level { min_len: 3, max_len: 6, good_weight: 1, bad_weight: 4, threshold: 7 },
-    Level { min_len: 3, max_len: 7, good_weight: 3, bad_weight: 2, threshold: 2 },
-    Level { min_len: 4, max_len: 8, good_weight: 1, bad_weight: 20, threshold: 6 },
-    Level { min_len: 4, max_len: 8, good_weight: 3, bad_weight: 1, threshold: 2 },
+    Level {
+        min_len: 1,
+        max_len: 4,
+        good_weight: 1,
+        bad_weight: 2,
+        threshold: 20,
+    },
+    Level {
+        min_len: 2,
+        max_len: 5,
+        good_weight: 2,
+        bad_weight: 1,
+        threshold: 8,
+    },
+    Level {
+        min_len: 3,
+        max_len: 6,
+        good_weight: 1,
+        bad_weight: 4,
+        threshold: 7,
+    },
+    Level {
+        min_len: 3,
+        max_len: 7,
+        good_weight: 3,
+        bad_weight: 2,
+        threshold: 2,
+    },
+    Level {
+        min_len: 4,
+        max_len: 8,
+        good_weight: 1,
+        bad_weight: 20,
+        threshold: 6,
+    },
+    Level {
+        min_len: 4,
+        max_len: 8,
+        good_weight: 3,
+        bad_weight: 1,
+        threshold: 2,
+    },
 ];
 
 struct Word {
@@ -53,14 +89,20 @@ impl Score {
 }
 
 /// Train patterns from `(lowercase word, break char indices)` pairs. `log` receives progress lines.
-pub fn train(words: &[(Vec<char>, Vec<usize>)], levels: &[Level], log: &mut dyn FnMut(String)) -> Patterns {
+pub fn train(
+    words: &[(Vec<char>, Vec<usize>)],
+    levels: &[Level],
+    log: &mut dyn FnMut(String),
+) -> Patterns {
     let mut alpha = Alphabet::default();
     let mut data: Vec<Word> = Vec::with_capacity(words.len());
     'w: for (w, br) in words {
         let mut codes = Vec::with_capacity(w.len() + 2);
         codes.push(1);
         for &c in w {
-            let Some(k) = alpha.intern(c) else { continue 'w };
+            let Some(k) = alpha.intern(c) else {
+                continue 'w;
+            };
             codes.push(k);
         }
         codes.push(1);
@@ -116,10 +158,15 @@ pub fn train(words: &[(Vec<char>, Vec<usize>)], levels: &[Level], log: &mut dyn 
             let mut new: FxMap<u64, Box<[u8]>> = FxMap::default();
             let mut selected = 0usize;
             for (key, (g, b)) in counts {
-                if g > 0 && (g * lv.good_weight) as i64 - (b * lv.bad_weight) as i64 >= lv.threshold as i64 {
+                if g > 0
+                    && (g * lv.good_weight) as i64 - (b * lv.bad_weight) as i64
+                        >= lv.threshold as i64
+                {
                     let dot = ((key >> 54) & 15) as usize;
                     let letters = key & !(15u64 << 54);
-                    let e = new.entry(letters).or_insert_with(|| vec![0u8; len + 1].into_boxed_slice());
+                    let e = new
+                        .entry(letters)
+                        .or_insert_with(|| vec![0u8; len + 1].into_boxed_slice());
                     e[dot] = level;
                     selected += 1;
                 }
@@ -131,14 +178,22 @@ pub fn train(words: &[(Vec<char>, Vec<usize>)], levels: &[Level], log: &mut dyn 
                 apply(&new, len, &w.codes, &mut w.vals);
             }
             for (k, v) in new {
-                let e = pats.entry(k).or_insert_with(|| vec![0u8; len + 1].into_boxed_slice());
+                let e = pats
+                    .entry(k)
+                    .or_insert_with(|| vec![0u8; len + 1].into_boxed_slice());
                 for (a, b) in e.iter_mut().zip(v.iter()) {
                     *a = (*a).max(*b);
                 }
             }
             max_len = max_len.max(len);
             let sc = score_vals(&data);
-            log(format!("level {level} len {len}: +{selected} patterns ({} total); found {}/{} wrong {}", pats.len(), sc.found, sc.breaks, sc.wrong));
+            log(format!(
+                "level {level} len {len}: +{selected} patterns ({} total); found {}/{} wrong {}",
+                pats.len(),
+                sc.found,
+                sc.breaks,
+                sc.wrong
+            ));
         }
     }
     // Re-express through the public pattern type (TeX strings) so the alphabet matches at runtime.
@@ -152,7 +207,10 @@ pub fn train(words: &[(Vec<char>, Vec<usize>)], levels: &[Level], log: &mut dyn 
 }
 
 fn score_vals(data: &[Word]) -> Score {
-    let mut s = Score { words: data.len(), ..Default::default() };
+    let mut s = Score {
+        words: data.len(),
+        ..Default::default()
+    };
     for w in data {
         for p in 2..w.codes.len() - 1 {
             let on = w.vals[p] % 2 == 1;
@@ -226,8 +284,20 @@ mod tests {
         .map(|s| w(s))
         .collect();
         let levels = [
-            Level { min_len: 1, max_len: 4, good_weight: 1, bad_weight: 1, threshold: 2 },
-            Level { min_len: 1, max_len: 5, good_weight: 1, bad_weight: 1, threshold: 1 },
+            Level {
+                min_len: 1,
+                max_len: 4,
+                good_weight: 1,
+                bad_weight: 1,
+                threshold: 2,
+            },
+            Level {
+                min_len: 1,
+                max_len: 5,
+                good_weight: 1,
+                bad_weight: 1,
+                threshold: 1,
+            },
         ];
         let p = train(&list, &levels, &mut |_| {});
         let sc = score(&p, &list);
@@ -235,6 +305,9 @@ mod tests {
         assert!(sc.found >= sc.breaks - 1, "{sc:?}");
         assert!(sc.wrong <= 1, "{sc:?}");
         // Generalises to an unseen word with the same shape.
-        assert_eq!(p.points(&"bitter".chars().collect::<Vec<_>>()).unwrap(), vec![3]);
+        assert_eq!(
+            p.points(&"bitter".chars().collect::<Vec<_>>()).unwrap(),
+            vec![3]
+        );
     }
 }

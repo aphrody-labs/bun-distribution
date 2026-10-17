@@ -56,7 +56,10 @@ pub fn is_white(c: u8) -> bool {
     matches!(c, 0 | 9 | 10 | 12 | 13 | 32)
 }
 pub fn is_delim(c: u8) -> bool {
-    matches!(c, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%')
+    matches!(
+        c,
+        b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+    )
 }
 
 /// A byte lexer producing PDF objects (arrays and dictionaries nested).
@@ -87,7 +90,10 @@ impl<'a> Lexer<'a> {
 
     fn word(&mut self) -> &'a [u8] {
         let s = self.pos;
-        while self.pos < self.data.len() && !is_white(self.data[self.pos]) && !is_delim(self.data[self.pos]) {
+        while self.pos < self.data.len()
+            && !is_white(self.data[self.pos])
+            && !is_delim(self.data[self.pos])
+        {
             self.pos += 1;
         }
         &self.data[s..self.pos]
@@ -143,7 +149,11 @@ impl<'a> Lexer<'a> {
                 if hex.len() % 2 == 1 {
                     hex.push(b'0');
                 }
-                Some(Obj::Str(hex.chunks(2).map(|p| (hexv(p[0]) << 4) | hexv(p[1])).collect()))
+                Some(Obj::Str(
+                    hex.chunks(2)
+                        .map(|p| (hexv(p[0]) << 4) | hexv(p[1]))
+                        .collect(),
+                ))
             }
             b'>' if self.data.get(self.pos + 1) == Some(&b'>') => {
                 self.pos += 2;
@@ -202,7 +212,12 @@ impl<'a> Lexer<'a> {
         let g = self.word();
         if let Some(gn) = parse_num(g).filter(|g| g.fract() == 0.0 && *g >= 0.0) {
             self.skip_ws();
-            if self.data.get(self.pos) == Some(&b'R') && self.data.get(self.pos + 1).is_none_or(|c| is_white(*c) || is_delim(*c)) {
+            if self.data.get(self.pos) == Some(&b'R')
+                && self
+                    .data
+                    .get(self.pos + 1)
+                    .is_none_or(|c| is_white(*c) || is_delim(*c))
+            {
                 self.pos += 1;
                 return Obj::Ref(n as u32, gn as u16);
             }
@@ -221,7 +236,9 @@ impl<'a> Lexer<'a> {
             self.pos += 1;
             match c {
                 b'\\' => {
-                    let Some(&e) = self.data.get(self.pos) else { break };
+                    let Some(&e) = self.data.get(self.pos) else {
+                        break;
+                    };
                     self.pos += 1;
                     match e {
                         b'n' => out.push(b'\n'),
@@ -282,7 +299,10 @@ fn decode_name(w: &[u8]) -> String {
     let mut out = vec![];
     let mut i = 0;
     while i < w.len() {
-        if w[i] == b'#' && w.get(i + 1).is_some_and(u8::is_ascii_hexdigit) && w.get(i + 2).is_some_and(u8::is_ascii_hexdigit) {
+        if w[i] == b'#'
+            && w.get(i + 1).is_some_and(u8::is_ascii_hexdigit)
+            && w.get(i + 2).is_some_and(u8::is_ascii_hexdigit)
+        {
             out.push((hexv(w[i + 1]) << 4) | hexv(w[i + 2]));
             i += 3;
         } else {
@@ -294,12 +314,22 @@ fn decode_name(w: &[u8]) -> String {
 }
 
 pub fn parse_num(w: &[u8]) -> Option<f64> {
-    if w.is_empty() || !w.iter().all(|c| c.is_ascii_digit() || matches!(c, b'+' | b'-' | b'.')) || !w.iter().any(u8::is_ascii_digit) {
+    if w.is_empty()
+        || !w
+            .iter()
+            .all(|c| c.is_ascii_digit() || matches!(c, b'+' | b'-' | b'.'))
+        || !w.iter().any(u8::is_ascii_digit)
+    {
         return None;
     }
     let s = std::str::from_utf8(w).ok()?;
     // "--5" and similar malformed numbers: take what parses.
-    s.parse::<f64>().ok().or_else(|| s.trim_start_matches(['+', '-']).parse::<f64>().ok().map(|v| if s.starts_with('-') { -v } else { v }))
+    s.parse::<f64>().ok().or_else(|| {
+        s.trim_start_matches(['+', '-'])
+            .parse::<f64>()
+            .ok()
+            .map(|v| if s.starts_with('-') { -v } else { v })
+    })
 }
 
 // ------------------------------------------------------------------ filters
@@ -310,13 +340,21 @@ pub fn parse_num(w: &[u8]) -> Option<f64> {
 /// 1 GiB leaves room for more components and is PdfCraft's ceiling for one stream. 32-bit
 /// targets (the web build) get a quarter: their whole address space is 4 GiB, and the inflater's
 /// growing buffer can reserve about twice the limit.
-const MAX_INFLATED: usize = if cfg!(target_pointer_width = "32") { 256 << 20 } else { 1 << 30 };
+const MAX_INFLATED: usize = if cfg!(target_pointer_width = "32") {
+    256 << 20
+} else {
+    1 << 30
+};
 
 /// The tighter bound for object streams, which [`File::parse`] decodes eagerly (all of them,
 /// before any page is chosen). They hold only other objects' dictionaries, arrays, numbers and
 /// strings, so real ones are far smaller; PdfCraft uses 256 MiB for the object and
 /// cross-reference streams it decodes while loading. A quarter on 32-bit targets, as above.
-const MAX_OBJECT_STREAM: usize = if cfg!(target_pointer_width = "32") { 64 << 20 } else { 256 << 20 };
+const MAX_OBJECT_STREAM: usize = if cfg!(target_pointer_width = "32") {
+    64 << 20
+} else {
+    256 << 20
+};
 
 /// Decode a stream's data through its `/Filter` chain. Unknown filters (images: DCT, JPX, CCITT,
 /// JBIG2) give `None`.
@@ -330,10 +368,17 @@ pub fn decode_stream_within(file: &File, d: &Dict, raw: &[u8], max: usize) -> Op
     let filters: Vec<String> = match d.get("Filter").map(|f| file.resolve(f)) {
         None => vec![],
         Some(Obj::Name(n)) => vec![n.clone()],
-        Some(Obj::Array(a)) => a.iter().filter_map(|f| file.resolve(f).name().map(str::to_string)).collect(),
+        Some(Obj::Array(a)) => a
+            .iter()
+            .filter_map(|f| file.resolve(f).name().map(str::to_string))
+            .collect(),
         _ => vec![],
     };
-    let parms: Vec<Option<Dict>> = match d.get("DecodeParms").or_else(|| d.get("DP")).map(|p| file.resolve(p)) {
+    let parms: Vec<Option<Dict>> = match d
+        .get("DecodeParms")
+        .or_else(|| d.get("DP"))
+        .map(|p| file.resolve(p))
+    {
         Some(Obj::Dict(p)) => vec![Some(p.clone())],
         Some(Obj::Array(a)) => a.iter().map(|p| file.resolve(p).dict().cloned()).collect(),
         _ => vec![],
@@ -344,11 +389,23 @@ pub fn decode_stream_within(file: &File, d: &Dict, raw: &[u8], max: usize) -> Op
             "FlateDecode" | "Fl" => inflate(&data, max)?,
             "ASCIIHexDecode" | "AHx" => ascii_hex(&data, max)?,
             "ASCII85Decode" | "A85" => ascii85_within(&data, max)?,
-            "LZWDecode" | "LZW" => {
-                lzw(&data, parms.get(i).and_then(|p| p.as_ref()).and_then(|p| p.get("EarlyChange")).and_then(Obj::num).unwrap_or(1.0) != 0.0, max)?
-            }
+            "LZWDecode" | "LZW" => lzw(
+                &data,
+                parms
+                    .get(i)
+                    .and_then(|p| p.as_ref())
+                    .and_then(|p| p.get("EarlyChange"))
+                    .and_then(Obj::num)
+                    .unwrap_or(1.0)
+                    != 0.0,
+                max,
+            )?,
             "RunLengthDecode" | "RL" => run_length(&data, max)?,
-            "CCITTFaxDecode" | "CCF" => crate::ccitt::decode(&data, &ccitt_params(file, parms.get(i).and_then(|p| p.as_ref())), max)?,
+            "CCITTFaxDecode" | "CCF" => crate::ccitt::decode(
+                &data,
+                &ccitt_params(file, parms.get(i).and_then(|p| p.as_ref())),
+                max,
+            )?,
             _ => return None,
         };
         if data.len() > max {
@@ -372,8 +429,14 @@ fn ccitt_params(file: &File, d: Option<&Dict>) -> crate::ccitt::Params {
         _ => default,
     };
     p.k = file.get_num(d, "K").unwrap_or(0.0) as i64;
-    p.columns = file.get_num(d, "Columns").map(|c| c.max(1.0) as usize).unwrap_or(1728);
-    p.rows = file.get_num(d, "Rows").map(|r| r.max(0.0) as usize).unwrap_or(0);
+    p.columns = file
+        .get_num(d, "Columns")
+        .map(|c| c.max(1.0) as usize)
+        .unwrap_or(1728);
+    p.rows = file
+        .get_num(d, "Rows")
+        .map(|r| r.max(0.0) as usize)
+        .unwrap_or(0);
     p.end_of_line = flag("EndOfLine", false);
     p.byte_align = flag("EncodedByteAlign", false);
     p.end_of_block = flag("EndOfBlock", true);
@@ -384,8 +447,13 @@ fn ccitt_params(file: &File, d: Option<&Dict>) -> crate::ccitt::Params {
 /// Inflate zlib data (or raw deflate) to at most `max` bytes. A stream that inflates to more is
 /// undecodable (`None`), not salvaged as a truncated one.
 pub fn inflate(data: &[u8], max: usize) -> Option<Vec<u8>> {
-    use miniz_oxide::inflate::{TINFLStatus, decompress_to_vec_with_limit, decompress_to_vec_zlib_with_limit};
-    for attempt in [decompress_to_vec_zlib_with_limit, decompress_to_vec_with_limit] {
+    use miniz_oxide::inflate::{
+        TINFLStatus, decompress_to_vec_with_limit, decompress_to_vec_zlib_with_limit,
+    };
+    for attempt in [
+        decompress_to_vec_zlib_with_limit,
+        decompress_to_vec_with_limit,
+    ] {
         match attempt(data, max) {
             Ok(v) => return Some(v),
             Err(e) if e.status == TINFLStatus::HasMoreOutput => return None,
@@ -393,9 +461,11 @@ pub fn inflate(data: &[u8], max: usize) -> Option<Vec<u8>> {
         }
     }
     // Truncated streams: keep what inflates.
-    let mut d = miniz_oxide::inflate::stream::InflateState::new_boxed(miniz_oxide::DataFormat::Zlib);
+    let mut d =
+        miniz_oxide::inflate::stream::InflateState::new_boxed(miniz_oxide::DataFormat::Zlib);
     let mut out = vec![0u8; salvage_len(data.len(), max)];
-    let r = miniz_oxide::inflate::stream::inflate(&mut d, data, &mut out, miniz_oxide::MZFlush::Finish);
+    let r =
+        miniz_oxide::inflate::stream::inflate(&mut d, data, &mut out, miniz_oxide::MZFlush::Finish);
     (r.bytes_written > 0).then(|| out[..r.bytes_written].to_vec())
 }
 
@@ -409,7 +479,12 @@ pub fn salvage_len(data_len: usize, max: usize) -> usize {
 fn ascii_hex(data: &[u8], max: usize) -> Option<Vec<u8>> {
     let mut out = vec![];
     let mut high = None;
-    for c in data.iter().copied().take_while(|c| *c != b'>').filter(u8::is_ascii_hexdigit) {
+    for c in data
+        .iter()
+        .copied()
+        .take_while(|c| *c != b'>')
+        .filter(u8::is_ascii_hexdigit)
+    {
         if let Some(h) = high.take() {
             if out.len() >= max {
                 return None;
@@ -460,7 +535,9 @@ fn ascii85_within(data: &[u8], max: usize) -> Option<Vec<u8>> {
                     if out.len().checked_add(4)? > max {
                         return None;
                     }
-                    let v = group.iter().fold(0u32, |a, &d| a.wrapping_mul(85).wrapping_add(d));
+                    let v = group
+                        .iter()
+                        .fold(0u32, |a, &d| a.wrapping_mul(85).wrapping_add(d));
                     out.extend_from_slice(&v.to_be_bytes());
                     n = 0;
                 }
@@ -475,7 +552,9 @@ fn ascii85_within(data: &[u8], max: usize) -> Option<Vec<u8>> {
         for g in group.iter_mut().skip(n) {
             *g = 84;
         }
-        let v = group.iter().fold(0u32, |a, &d| a.wrapping_mul(85).wrapping_add(d));
+        let v = group
+            .iter()
+            .fold(0u32, |a, &d| a.wrapping_mul(85).wrapping_add(d));
         out.extend_from_slice(&v.to_be_bytes()[..n - 1]);
     }
     Some(out)
@@ -577,9 +656,18 @@ fn predict(data: &[u8], p: &Dict, max: usize) -> Option<Vec<u8>> {
     // A row that is zero bytes wide, overflows, or is not shorter than the data leaves no
     // complete row: nothing comes out, as it always did for the first and last, and the row
     // buffer (sized from `/Columns`) is not allocated.
-    let Some(pixel_bits) = g("Colors", 1.0).checked_mul(g("BitsPerComponent", 8.0)) else { return Some(vec![]) };
-    let Some(bpp) = pixel_bits.checked_add(7).map(|n| (n / 8).max(1)) else { return Some(vec![]) };
-    let Some(row) = g("Columns", 1.0).checked_mul(pixel_bits).and_then(|n| n.checked_add(7)).map(|n| n / 8).filter(|&n| n > 0 && n < data.len()) else {
+    let Some(pixel_bits) = g("Colors", 1.0).checked_mul(g("BitsPerComponent", 8.0)) else {
+        return Some(vec![]);
+    };
+    let Some(bpp) = pixel_bits.checked_add(7).map(|n| (n / 8).max(1)) else {
+        return Some(vec![]);
+    };
+    let Some(row) = g("Columns", 1.0)
+        .checked_mul(pixel_bits)
+        .and_then(|n| n.checked_add(7))
+        .map(|n| n / 8)
+        .filter(|&n| n > 0 && n < data.len())
+    else {
         return Some(vec![]);
     };
     let stride = row.checked_add(1)?;
@@ -632,19 +720,28 @@ fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
     if from >= hay.len() || needle.is_empty() {
         return None;
     }
-    hay[from..].windows(needle.len()).position(|w| w == needle).map(|p| p + from)
+    hay[from..]
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .map(|p| p + from)
 }
 
 impl File {
     pub fn parse(data: &[u8]) -> File {
-        let mut f = File { objects: HashMap::new(), trailers: vec![] };
+        let mut f = File {
+            objects: HashMap::new(),
+            trailers: vec![],
+        };
         let mut i = 0;
         while let Some(p) = find(data, b"obj", i) {
             i = p + 3;
             if p >= 3 && &data[p - 3..p] == b"end" {
                 continue;
             }
-            if data.get(p + 3).is_some_and(|c| !is_white(*c) && !is_delim(*c)) {
+            if data
+                .get(p + 3)
+                .is_some_and(|c| !is_white(*c) && !is_delim(*c))
+            {
                 continue;
             }
             // Walk back over "num gen ".
@@ -661,16 +758,22 @@ impl File {
                 while *q > 0 && data[*q - 1].is_ascii_digit() {
                     *q -= 1;
                 }
-                (*q < e).then(|| std::str::from_utf8(&data[*q..e]).ok()?.parse::<u32>().ok()).flatten()
+                (*q < e)
+                    .then(|| std::str::from_utf8(&data[*q..e]).ok()?.parse::<u32>().ok())
+                    .flatten()
             };
             if !back_ws(&mut q) {
                 continue;
             }
-            let Some(_gen) = back_digits(&mut q) else { continue };
+            let Some(_gen) = back_digits(&mut q) else {
+                continue;
+            };
             if !back_ws(&mut q) {
                 continue;
             }
-            let Some(num) = back_digits(&mut q) else { continue };
+            let Some(num) = back_digits(&mut q) else {
+                continue;
+            };
             if q > 0 && !is_white(data[q - 1]) && !is_delim(data[q - 1]) {
                 continue;
             }
@@ -743,18 +846,24 @@ impl File {
             .objects
             .values()
             .filter_map(|o| match o {
-                Obj::Stream(d, raw) if d.get("Type").and_then(Obj::name) == Some("ObjStm") => Some((d.clone(), raw.clone())),
+                Obj::Stream(d, raw) if d.get("Type").and_then(Obj::name) == Some("ObjStm") => {
+                    Some((d.clone(), raw.clone()))
+                }
                 _ => None,
             })
             .collect();
         for (d, raw) in streams {
-            let Some(dec) = decode_stream_within(&f, &d, &raw, MAX_OBJECT_STREAM) else { continue };
+            let Some(dec) = decode_stream_within(&f, &d, &raw, MAX_OBJECT_STREAM) else {
+                continue;
+            };
             let n = d.get("N").and_then(Obj::num).unwrap_or(0.0) as usize;
             let first = d.get("First").and_then(Obj::num).unwrap_or(0.0) as usize;
             let mut lx = Lexer::new(&dec, 0);
             let mut heads = vec![];
             for _ in 0..n.min(100_000) {
-                let (Some(Obj::Num(num)), Some(Obj::Num(off))) = (lx.next(), lx.next()) else { break };
+                let (Some(Obj::Num(num)), Some(Obj::Num(off))) = (lx.next(), lx.next()) else {
+                    break;
+                };
                 heads.push((num as u32, off as usize));
             }
             for (num, off) in heads {
@@ -787,7 +896,9 @@ impl File {
     }
 
     pub fn get<'a>(&'a self, d: &'a Dict, key: &str) -> Option<&'a Obj> {
-        d.get(key).map(|o| self.resolve(o)).filter(|o| !matches!(o, Obj::Null))
+        d.get(key)
+            .map(|o| self.resolve(o))
+            .filter(|o| !matches!(o, Obj::Null))
     }
 
     pub fn get_dict<'a>(&'a self, d: &'a Dict, key: &str) -> Option<&'a Dict> {
@@ -800,7 +911,10 @@ impl File {
 
     /// Numbers of an array (references resolved).
     pub fn nums(&self, o: &Obj) -> Vec<f64> {
-        self.resolve(o).array().map(|a| a.iter().filter_map(|x| self.resolve(x).num()).collect()).unwrap_or_default()
+        self.resolve(o)
+            .array()
+            .map(|a| a.iter().filter_map(|x| self.resolve(x).num()).collect())
+            .unwrap_or_default()
     }
 
     /// The document catalog.

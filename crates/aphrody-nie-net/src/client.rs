@@ -72,26 +72,30 @@ impl NetClient {
         };
         outbound_tx.send(hello)?;
 
-        let mut client = Self { tx: outbound_tx, rx: inbound_rx, player_id: None };
+        let mut client = Self {
+            tx: outbound_tx,
+            rx: inbound_rx,
+            player_id: None,
+        };
 
         // Wait for Welcome with bounded timeout
         let handshake_deadline = std::time::Duration::from_secs(5).min(timeout_dur);
         match tokio::time::timeout(handshake_deadline, client.next_message()).await {
             Ok(Some(NetMessage::Welcome { player_id, .. })) => {
                 client.player_id = Some(player_id);
-            },
+            }
             Ok(Some(NetMessage::Error { message })) => {
                 anyhow::bail!("Server rejected handshake: {message}");
-            },
+            }
             Ok(Some(other)) => {
                 anyhow::bail!("Expected Welcome message from server, received: {other:?}");
-            },
+            }
             Ok(None) => {
                 anyhow::bail!("Server closed connection before handshake completed");
-            },
+            }
             Err(_) => {
                 anyhow::bail!("Handshake timed out waiting for Welcome message");
-            },
+            }
         }
 
         Ok(client)
@@ -145,7 +149,10 @@ impl NetClient {
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_millis() as u64)
             .unwrap_or(0);
-        self.send(NetMessage::Ping { seq, client_time_ms })
+        self.send(NetMessage::Ping {
+            seq,
+            client_time_ms,
+        })
     }
 
     /// Enqueues for automated matchmaking.
@@ -170,7 +177,11 @@ impl NetClient {
 
     /// Synchronizes avatar movement inside Kizuna Town.
     pub fn send_town_move(&self, position: [f32; 3], velocity: [f32; 3], yaw: f32) -> SendResult {
-        self.send(NetMessage::TownMove { position, velocity, yaw })
+        self.send(NetMessage::TownMove {
+            position,
+            velocity,
+            yaw,
+        })
     }
 
     /// Displays a stamp/emote in Kizuna Town.
@@ -180,7 +191,9 @@ impl NetClient {
 
     /// Sends a chat message to all players visiting the current Kizuna Town.
     pub fn send_town_chat(&self, message: &str) -> SendResult {
-        self.send(NetMessage::TownChat { message: message.to_string() })
+        self.send(NetMessage::TownChat {
+            message: message.to_string(),
+        })
     }
 
     /// Places a decoration/pitch object in own Kizuna Town.
@@ -190,7 +203,9 @@ impl NetClient {
 
     /// Removes a placed object in own Kizuna Town.
     pub fn remove_town_object(&self, instance_id: &str) -> SendResult {
-        self.send(NetMessage::TownRemoveObject { instance_id: instance_id.to_string() })
+        self.send(NetMessage::TownRemoveObject {
+            instance_id: instance_id.to_string(),
+        })
     }
 
     /// Places a recruited character in own Kizuna Town.
@@ -200,7 +215,9 @@ impl NetClient {
 
     /// Removes a recruited character in own Kizuna Town.
     pub fn remove_town_character(&self, instance_id: &str) -> SendResult {
-        self.send(NetMessage::TownRemoveCharacter { instance_id: instance_id.to_string() })
+        self.send(NetMessage::TownRemoveCharacter {
+            instance_id: instance_id.to_string(),
+        })
     }
 
     /// Challenges a visiting friend in Kizuna Town to a direct match.
@@ -226,7 +243,9 @@ impl NetClient {
 
     /// Requests to inspect another player's Ultimate Team squad in town.
     pub fn inspect_player_squad(&self, target_player_id: &str) -> SendResult {
-        self.send(NetMessage::TownInspectSquad { target_player_id: target_player_id.to_string() })
+        self.send(NetMessage::TownInspectSquad {
+            target_player_id: target_player_id.to_string(),
+        })
     }
 }
 
@@ -240,7 +259,11 @@ mod tests {
         let (tx, outbound_rx) = mpsc::unbounded_channel();
         drop(outbound_rx);
         let (_inbound_tx, rx) = mpsc::unbounded_channel();
-        let client = NetClient { tx, rx, player_id: None };
+        let client = NetClient {
+            tx,
+            rx,
+            player_id: None,
+        };
         let error = client.ping(73).expect_err("closed receiver");
         assert!(matches!(error.0, NetMessage::Ping { seq: 73, .. }));
     }

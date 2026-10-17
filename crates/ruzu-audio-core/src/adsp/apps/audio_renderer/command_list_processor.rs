@@ -221,7 +221,9 @@ impl CommandListProcessor {
         // before executing commands (which may themselves read settings).
         let dump_audio_commands = *common::settings::values().dump_audio_commands.get_value();
         #[cfg(test)]
-        let dump_audio_commands = self.dump_audio_commands_override.unwrap_or(dump_audio_commands);
+        let dump_audio_commands = self
+            .dump_audio_commands_override
+            .unwrap_or(dump_audio_commands);
         let mut dump = if dump_audio_commands {
             Some(format!("\nSession {session_id}\n"))
         } else {
@@ -717,9 +719,13 @@ mod tests {
             stream,
         ));
         let previous = *common::settings::values().dump_audio_commands.get_value();
-        common::settings::values_mut().dump_audio_commands.set_value(true);
+        common::settings::values_mut()
+            .dump_audio_commands
+            .set_value(true);
         let _ = processor.process(0);
-        common::settings::values_mut().dump_audio_commands.set_value(previous);
+        common::settings::values_mut()
+            .dump_audio_commands
+            .set_value(previous);
 
         assert!(processor.get_last_dump().contains("Session 0"));
         assert!(processor.get_last_dump().contains("ClearMixBufferCommand"));

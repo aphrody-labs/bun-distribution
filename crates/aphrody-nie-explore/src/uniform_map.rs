@@ -31,7 +31,9 @@ fn from_path(path: &str, cpk: &str) -> Option<UniformModelEntry> {
 /// Builds the deterministic CRC-to-component inventory from an initialized VFS.
 #[must_use]
 pub fn build(vfs: &Vfs) -> Vec<UniformModelEntry> {
-    vfs.iter().filter_map(|(path, entry)| from_path(path, &entry.cpk_filename)).collect()
+    vfs.iter()
+        .filter_map(|(path, entry)| from_path(path, &entry.cpk_filename))
+        .collect()
 }
 
 #[cfg(test)]

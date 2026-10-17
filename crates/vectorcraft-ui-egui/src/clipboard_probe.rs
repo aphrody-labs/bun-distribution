@@ -54,8 +54,11 @@ impl Probe {
                         }
                     }
                     // Sleep until the next look (no looks while unwanted) or the UI's next word.
-                    let next =
-                        if wanted { wanted_rx.recv_timeout(PROBE_INTERVAL) } else { wanted_rx.recv().map_err(|_| RecvTimeoutError::Disconnected) };
+                    let next = if wanted {
+                        wanted_rx.recv_timeout(PROBE_INTERVAL)
+                    } else {
+                        wanted_rx.recv().map_err(|_| RecvTimeoutError::Disconnected)
+                    };
                     match next {
                         Ok(w) => wanted = w,
                         Err(RecvTimeoutError::Timeout) => {}
@@ -68,7 +71,12 @@ impl Probe {
                 drop(tx);
             })
             .ok()?;
-        Some(Self { wants: Some(wants), wanted: false, verdicts, last: false })
+        Some(Self {
+            wants: Some(wants),
+            wanted: false,
+            verdicts,
+            last: false,
+        })
     }
 
     /// Paste can take from the system clipboard: `wanted` (nothing copied in the app, a document
@@ -94,6 +102,10 @@ impl Drop for Probe {
     fn drop(&mut self) {
         self.wants = None;
         let end = Instant::now() + STOP_WAIT;
-        while self.verdicts.recv_timeout(end.saturating_duration_since(Instant::now())).is_ok() {}
+        while self
+            .verdicts
+            .recv_timeout(end.saturating_duration_since(Instant::now()))
+            .is_ok()
+        {}
     }
 }

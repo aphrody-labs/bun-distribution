@@ -49,7 +49,12 @@ fn tout_document_edit_param_fait_un_aller_retour_identique() {
             with_settings += 1;
         }
         let emitted = parsed.to_value();
-        assert_eq!(emitted, original, "aller-retour non identique pour {}", path.display());
+        assert_eq!(
+            emitted,
+            original,
+            "aller-retour non identique pour {}",
+            path.display()
+        );
     }
     // The optional trailing list is what a naive model drops without noticing; 21 documents of
     // 33 carry one, so the count is worth asserting rather than the mere fact that it parses.
@@ -67,7 +72,10 @@ fn le_gabarit_de_sauvegarde_porte_ce_que_la_mesure_annonce() {
     assert_eq!(document.tex_parts.len(), 9, "9 couches de texture");
     assert_eq!(document.mdl_parts.len(), 9, "9 parts de modèle");
     assert_eq!(document.bones.len(), 6, "6 éditions d'os");
-    assert!(document.settings.is_none(), "le gabarit de sauvegarde ne porte pas de liste SETTING");
+    assert!(
+        document.settings.is_none(),
+        "le gabarit de sauvegarde ne porte pas de liste SETTING"
+    );
 
     let colors: usize = document
         .tex_parts
@@ -78,7 +86,11 @@ fn le_gabarit_de_sauvegarde_porte_ce_que_la_mesure_annonce() {
         .sum();
     assert_eq!(colors, 31, "31 lignes de couleur au total");
 
-    let mirrored = document.tex_parts.iter().filter(|part| part.mirror.is_some()).count();
+    let mirrored = document
+        .tex_parts
+        .iter()
+        .filter(|part| part.mirror.is_some())
+        .count();
     assert_eq!(mirrored, 4, "4 couches ont une moitié miroir");
 }
 
@@ -89,7 +101,10 @@ fn une_morphologie_porte_une_liste_setting_et_le_gabarit_non() {
         serde_json::from_slice(&std::fs::read(path).expect("lecture")).expect("JSON");
     let document = CharaEditParam::parse(&value).expect("décodage");
 
-    let settings = document.settings.as_ref().expect("une morphologie porte la liste SETTING");
+    let settings = document
+        .settings
+        .as_ref()
+        .expect("une morphologie porte la liste SETTING");
     assert_eq!(settings.len(), 1);
     assert_eq!(settings[0].key, -1_694_245_095);
     assert_eq!(settings[0].value, 0);

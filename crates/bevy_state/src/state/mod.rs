@@ -525,9 +525,11 @@ mod tests {
 
         world.run_schedule(StateTransition);
         assert_eq!(world.resource::<State<SimpleState>>().0, SimpleState::A);
-        assert!(world
-            .resource::<Messages<StateTransitionEvent<SimpleState>>>()
-            .is_empty());
+        assert!(
+            world
+                .resource::<Messages<StateTransitionEvent<SimpleState>>>()
+                .is_empty()
+        );
 
         world.insert_resource(TransitionCounter::default());
         world.insert_resource(NextState::Pending(SimpleState::A));
@@ -550,8 +552,8 @@ mod tests {
     }
 
     #[test]
-    fn same_state_transition_should_emit_event_and_not_run_schedules_if_same_state_transitions_are_disallowed(
-    ) {
+    fn same_state_transition_should_emit_event_and_not_run_schedules_if_same_state_transitions_are_disallowed()
+     {
         let mut world = World::new();
         setup_state_transitions_in_world(&mut world);
         MessageRegistry::register_message::<StateTransitionEvent<SimpleState>>(&mut world);
@@ -576,9 +578,11 @@ mod tests {
 
         world.run_schedule(StateTransition);
         assert_eq!(world.resource::<State<SimpleState>>().0, SimpleState::A);
-        assert!(world
-            .resource::<Messages<StateTransitionEvent<SimpleState>>>()
-            .is_empty());
+        assert!(
+            world
+                .resource::<Messages<StateTransitionEvent<SimpleState>>>()
+                .is_empty()
+        );
 
         world.insert_resource(TransitionCounter::default());
         world.insert_resource(NextState::PendingIfDifferent(SimpleState::A));

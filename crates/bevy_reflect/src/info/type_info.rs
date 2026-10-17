@@ -1,7 +1,7 @@
 use crate::{
-    array::ArrayInfo, enums::EnumInfo, generics::impl_generic_info_methods, list::ListInfo,
-    map::MapInfo, set::SetInfo, structs::StructInfo, tuple::TupleInfo,
-    tuple_struct::TupleStructInfo, OpaqueInfo, ReflectKind, Type, TypePathTable,
+    OpaqueInfo, ReflectKind, Type, TypePathTable, array::ArrayInfo, enums::EnumInfo,
+    generics::impl_generic_info_methods, list::ListInfo, map::MapInfo, set::SetInfo,
+    structs::StructInfo, tuple::TupleInfo, tuple_struct::TupleStructInfo,
 };
 use core::any::{Any, TypeId};
 
@@ -204,8 +204,8 @@ impl TypeInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::info::typed::Typed;
     use crate::TypeInfoError;
+    use crate::info::typed::Typed;
     use alloc::vec::Vec;
     use bevy_platform::collections::HashSet;
 

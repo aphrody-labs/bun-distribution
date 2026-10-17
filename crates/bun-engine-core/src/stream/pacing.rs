@@ -28,8 +28,16 @@ pub enum PresentPolicy {
 impl PresentPolicy {
     pub fn preference(self) -> [wgpu::PresentMode; 3] {
         match self {
-            Self::LowLatency => [wgpu::PresentMode::Immediate, wgpu::PresentMode::Mailbox, wgpu::PresentMode::Fifo],
-            Self::Smooth => [wgpu::PresentMode::Fifo, wgpu::PresentMode::Mailbox, wgpu::PresentMode::Immediate],
+            Self::LowLatency => [
+                wgpu::PresentMode::Immediate,
+                wgpu::PresentMode::Mailbox,
+                wgpu::PresentMode::Fifo,
+            ],
+            Self::Smooth => [
+                wgpu::PresentMode::Fifo,
+                wgpu::PresentMode::Mailbox,
+                wgpu::PresentMode::Immediate,
+            ],
         }
     }
 }
@@ -48,8 +56,14 @@ pub enum PresentDecision {
 }
 
 /// Decide whether to render a frame `frame_age_ns` old at `refresh_rate_mhz`.
-pub fn decide_present(frame_age_ns: u64, refresh_rate_mhz: u32, tracker: &mut FrameAgeTracker) -> PresentDecision {
-    let threshold_ns = refresh_period_ns(refresh_rate_mhz).saturating_mul(u64::from(FRAME_AGE_THRESHOLD_FACTOR)) / 2;
+pub fn decide_present(
+    frame_age_ns: u64,
+    refresh_rate_mhz: u32,
+    tracker: &mut FrameAgeTracker,
+) -> PresentDecision {
+    let threshold_ns = refresh_period_ns(refresh_rate_mhz)
+        .saturating_mul(u64::from(FRAME_AGE_THRESHOLD_FACTOR))
+        / 2;
     let is_late = frame_age_ns > threshold_ns;
     if tracker.cooldown_remaining > 0 {
         tracker.cooldown_remaining -= 1;
@@ -71,6 +85,10 @@ pub fn decide_present(frame_age_ns: u64, refresh_rate_mhz: u32, tracker: &mut Fr
 
 /// Refresh period in nanoseconds for a millihertz rate.
 pub fn refresh_period_ns(refresh_rate_mhz: u32) -> u64 {
-    let rate = if refresh_rate_mhz == 0 { REFRESH_RATE_FALLBACK_HZ * 1000 } else { refresh_rate_mhz };
+    let rate = if refresh_rate_mhz == 0 {
+        REFRESH_RATE_FALLBACK_HZ * 1000
+    } else {
+        refresh_rate_mhz
+    };
     1_000_000_000_000u64 / u64::from(rate)
 }

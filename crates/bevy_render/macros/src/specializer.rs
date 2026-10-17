@@ -6,12 +6,12 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{format_ident, quote};
 use syn::{
+    DeriveInput, Expr, Field, Ident, Index, Member, Meta, MetaList, Pat, Path, Token, Type,
+    WherePredicate,
     parse::{Parse, ParseStream},
     parse_macro_input, parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
-    DeriveInput, Expr, Field, Ident, Index, Member, Meta, MetaList, Pat, Path, Token, Type,
-    WherePredicate,
 };
 
 const SPECIALIZE_ATTR_IDENT: &str = "specialize";
@@ -203,7 +203,9 @@ fn get_specialize_targets(
     let Some(specialize_meta_list) = specialize_attr else {
         return Err(syn::Error::new(
             Span::call_site(),
-            format!("#[derive({derive_name})] must be accompanied by #[specialize(..targets)].\n Example usages: #[specialize(RenderPipeline)], #[specialize(all)]")
+            format!(
+                "#[derive({derive_name})] must be accompanied by #[specialize(..targets)].\n Example usages: #[specialize(RenderPipeline)], #[specialize(all)]"
+            ),
         ));
     };
     syn::parse::<SpecializeImplTargets>(specialize_meta_list.tokens.clone().into())

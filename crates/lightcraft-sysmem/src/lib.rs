@@ -8,7 +8,14 @@
 //!
 //! This is LightCraft's only crate allowed `unsafe` (one FFI call, in `macos`). Its API is safe,
 //! and on failure or on other platforms it simply releases nothing.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 /// Return free allocator pages to the system. Returns the number of bytes released (always 0 on
 /// platforms where freed large blocks are already unmapped). Safe to call at any time, from any
@@ -72,7 +79,9 @@ mod tests {
 
     #[test]
     fn concurrent_calls_are_safe() {
-        let handles: Vec<_> = (0..4).map(|_| std::thread::spawn(release_free_memory)).collect();
+        let handles: Vec<_> = (0..4)
+            .map(|_| std::thread::spawn(release_free_memory))
+            .collect();
         for h in handles {
             assert!(h.join().is_ok());
         }

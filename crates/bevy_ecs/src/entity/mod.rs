@@ -1146,7 +1146,10 @@ impl fmt::Display for EntityValidButNotSpawnedError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let entity = self.entity;
         match self.location.into_option() {
-            Some(location) => write!(f, "The entity with ID {entity} is not spawned; its index was last despawned by {location}."),
+            Some(location) => write!(
+                f,
+                "The entity with ID {entity} is not spawned; its index was last despawned by {location}."
+            ),
             None => write!(
                 f,
                 "The entity with ID {entity} is not spawned; enable `track_location` feature for more details."
@@ -1160,10 +1163,14 @@ impl fmt::Display for EntityValidButNotSpawnedError {
 #[derive(thiserror::Error, Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntityNotSpawnedError {
     /// The entity was invalid.
-    #[error("Entity despawned: {0}\nNote that interacting with a despawned entity is the most common cause of this error but there are others")]
+    #[error(
+        "Entity despawned: {0}\nNote that interacting with a despawned entity is the most common cause of this error but there are others"
+    )]
     Invalid(#[from] InvalidEntityError),
     /// The entity was valid but was not spawned.
-    #[error("Entity not yet spawned: {0}\nNote that interacting with a not-yet-spawned entity is the most common cause of this error but there are others")]
+    #[error(
+        "Entity not yet spawned: {0}\nNote that interacting with a not-yet-spawned entity is the most common cause of this error but there are others"
+    )]
     ValidButNotSpawned(#[from] EntityValidButNotSpawnedError),
 }
 

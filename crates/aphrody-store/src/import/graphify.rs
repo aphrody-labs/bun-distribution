@@ -7,13 +7,7 @@
 //! and no network are involved. The native extractor (`aphrody-code-graph`) writes the same
 //! tables; this importer is also the bridge used as the parity oracle.
 
-use std::{
-    cell::RefCell,
-    collections::BTreeMap,
-    fmt,
-    io::Read,
-    path::Path,
-};
+use std::{cell::RefCell, collections::BTreeMap, fmt, io::Read, path::Path};
 
 use rusqlite::params;
 use serde::{
@@ -162,10 +156,10 @@ impl<'de> Visitor<'de> for TopVisitor<'_> {
                             return Err(de::Error::custom("sink aborted"));
                         }
                     }
-                },
+                }
                 _ => {
                     map.next_value::<IgnoredAny>()?;
-                },
+                }
             }
         }
         Ok(())
@@ -183,10 +177,14 @@ pub fn stream_graph_json(
 ) -> Result<()> {
     let sink_ref: Sink<'_> = RefCell::new(&mut sink);
     let failure = RefCell::new(None);
-    let mut de = serde_json::Deserializer::from_reader(std::io::BufReader::with_capacity(1 << 20, reader));
+    let mut de =
+        serde_json::Deserializer::from_reader(std::io::BufReader::with_capacity(1 << 20, reader));
     let result = de::Deserializer::deserialize_map(
         &mut de,
-        TopVisitor { sink: &sink_ref, failure: &failure },
+        TopVisitor {
+            sink: &sink_ref,
+            failure: &failure,
+        },
     );
     if let Some(error) = failure.into_inner() {
         return Err(error);
@@ -250,7 +248,11 @@ pub fn import_graph_json(
 ) -> Result<ImportReport> {
     let mut report = ImportReport::new("graphify", !apply);
     let file = std::fs::File::open(graph_json)?;
-    let source_id = if apply { Some(db.upsert_source("graphify", label, root)?) } else { None };
+    let source_id = if apply {
+        Some(db.upsert_source("graphify", label, root)?)
+    } else {
+        None
+    };
 
     let tx = db.conn.transaction()?;
     if let Some(id) = source_id {
@@ -276,7 +278,10 @@ pub fn import_graph_json(
             match item {
                 GraphItem::Node(n) => {
                     report.add("nodes", 1);
-                    report.add(&format!("node_kind:{}", node_kind(n.file_type.as_deref())), 1);
+                    report.add(
+                        &format!("node_kind:{}", node_kind(n.file_type.as_deref())),
+                        1,
+                    );
                     if let Some(c) = n.community {
                         let entry = communities.entry(c).or_insert((None, 0));
                         entry.1 += 1;
@@ -299,10 +304,13 @@ pub fn import_graph_json(
                             serde_json::to_string(&attrs)?
                         ])?;
                     }
-                },
+                }
                 GraphItem::Edge(e) => {
                     report.add("edges", 1);
-                    report.add(&format!("confidence:{}", confidence(e.confidence.as_deref())), 1);
+                    report.add(
+                        &format!("confidence:{}", confidence(e.confidence.as_deref())),
+                        1,
+                    );
                     *relations.entry(e.relation.clone()).or_insert(0) += 1;
                     if let Some(id) = source_id {
                         edge_stmt.execute(params![
@@ -318,7 +326,7 @@ pub fn import_graph_json(
                             e.context
                         ])?;
                     }
-                },
+                }
                 GraphItem::BuiltAtCommit(c) => commit = Some(c),
             }
             Ok(())
@@ -329,7 +337,12 @@ pub fn import_graph_json(
             "INSERT INTO graph_communities (source_id, id, name, size) VALUES (?1, ?2, ?3, ?4)",
         )?;
         for (cid, (name, size)) in &communities {
-            insert.execute(params![id, cid, name, i64::try_from(*size).unwrap_or(i64::MAX)])?;
+            insert.execute(params![
+                id,
+                cid,
+                name,
+                i64::try_from(*size).unwrap_or(i64::MAX)
+            ])?;
         }
         drop(insert);
         if let Some(c) = &commit {
@@ -388,7 +401,10 @@ mod tests {
         assert_eq!(report.counts["communities"], 2);
         assert_eq!(report.counts["confidence:INFERRED"], 1);
         assert_eq!(report.counts["relation:method"], 1);
-        let rows: i64 = db.conn().query_row("SELECT count(*) FROM graph_nodes", [], |r| r.get(0)).unwrap();
+        let rows: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM graph_nodes", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(rows, 0);
         assert!(db.source_id("graph:test").unwrap().is_none());
     }
@@ -404,9 +420,18 @@ mod tests {
         assert_eq!(q("SELECT count(*) FROM graph_edges"), 2);
         assert_eq!(q("SELECT count(*) FROM graph_communities"), 2);
         assert_eq!(q("SELECT count(*) FROM graph_nodes WHERE lang = 'rust'"), 2);
-        assert_eq!(q("SELECT count(*) FROM graph_nodes_fts WHERE graph_nodes_fts MATCH 'RagStore'"), 1);
-        let meta: String =
-            db.conn().query_row("SELECT meta_json FROM sources WHERE label = 'graph:test'", [], |r| r.get(0)).unwrap();
+        assert_eq!(
+            q("SELECT count(*) FROM graph_nodes_fts WHERE graph_nodes_fts MATCH 'RagStore'"),
+            1
+        );
+        let meta: String = db
+            .conn()
+            .query_row(
+                "SELECT meta_json FROM sources WHERE label = 'graph:test'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
         assert!(meta.contains("abc123"));
     }
 
@@ -417,7 +442,10 @@ mod tests {
         std::fs::write(&path, r#"{"nodes":[{"id":"a"},{"id":}"#).unwrap();
         let mut db = HomeDb::open_in_memory().unwrap();
         assert!(import_graph_json(&mut db, &path, "graph:bad", None, true).is_err());
-        let rows: i64 = db.conn().query_row("SELECT count(*) FROM graph_nodes", [], |r| r.get(0)).unwrap();
+        let rows: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM graph_nodes", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(rows, 0);
     }
 }

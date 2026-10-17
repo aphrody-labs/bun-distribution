@@ -47,7 +47,8 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         super::gradient::draw_radios(app, ui);
         divider(ui);
     }
-    let is_image = n_sel == 1 && matches!(first.as_ref().map(|n| &n.kind), Some(NodeKind::Image(_)));
+    let is_image =
+        n_sel == 1 && matches!(first.as_ref().map(|n| &n.kind), Some(NodeKind::Image(_)));
     if is_image {
         image_section(app, ui);
         divider(ui);
@@ -84,7 +85,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                     app.run(&format!("object.pathfinder.{op}"), json!({})).ok();
                 }
             }
-            if widgets::icon_button(ui, "ellipsis", tl!("More Pathfinder options"), false, 28.0).clicked() {
+            if widgets::icon_button(ui, "ellipsis", tl!("More Pathfinder options"), false, 28.0)
+                .clicked()
+            {
                 app.ui.open_panel = Some("pathfinder".into());
             }
         });
@@ -96,7 +99,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     divider(ui);
     section_header(ui, tl!("Quick Actions"));
-    let is_group = matches!(first.as_ref().map(|n| &n.kind), Some(NodeKind::Group { .. }));
+    let is_group = matches!(
+        first.as_ref().map(|n| &n.kind),
+        Some(NodeKind::Group { .. })
+    );
     let is_live = matches!(first.as_ref().map(|n| &n.kind), Some(NodeKind::Path { live: Some(l), .. }) if !matches!(**l, LiveShape::Path { .. }));
     let mut actions: Vec<(&str, &str)> = vec![];
     if n_sel > 1 {
@@ -120,7 +126,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     actions.push((tl!("Offset Path"), "object.path.offsetPath"));
     actions.push((tl!("Simplify"), "object.path.simplify"));
-    actions.push((tl!("Arrange: Bring to Front"), "object.arrange.bringToFront"));
+    actions.push((
+        tl!("Arrange: Bring to Front"),
+        "object.arrange.bringToFront",
+    ));
     actions.push((tl!("Lock"), "object.lock"));
     let w = (ui.available_width() - 6.0) / 2.0;
     for pair in actions.chunks(2) {
@@ -138,10 +147,21 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// panel's actions for it.
 fn image_section(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let Some(i) = crate::place::selected_image_info(app) else { return };
+    let Some(i) = crate::place::selected_image_info(app) else {
+        return;
+    };
     let (name, details) = crate::place::image_summary(i);
-    let (Some(id), linked) = (i["id"].as_u64(), i["linked"] == true) else { return };
-    section_header(ui, if linked { tl!("Linked File") } else { tl!("Embedded Image") });
+    let (Some(id), linked) = (i["id"].as_u64(), i["linked"] == true) else {
+        return;
+    };
+    section_header(
+        ui,
+        if linked {
+            tl!("Linked File")
+        } else {
+            tl!("Embedded Image")
+        },
+    );
     ui.add(egui::Label::new(egui::RichText::new(&name).size(12.0).color(t.text_strong)).truncate());
     dim_label(ui, &details);
     ui.add_space(4.0);
@@ -149,7 +169,8 @@ fn image_section(app: &mut VectorcraftApp, ui: &mut Ui) {
     let links = crate::panels::links::ID;
     ui.horizontal(|ui| crate::place::link_buttons(app, ui, id, linked, &name, Some(w)));
     ui.horizontal(|ui| {
-        if app.services.pick_open.is_some() && widgets::flat_button(ui, tl!("Relink…"), w).clicked() {
+        if app.services.pick_open.is_some() && widgets::flat_button(ui, tl!("Relink…"), w).clicked()
+        {
             crate::panels::links::relink(app, vec![id]);
         }
         if widgets::flat_button(ui, tl!("Links"), w).clicked() {
@@ -160,7 +181,12 @@ fn image_section(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// The one selected Image Trace object: its preset (choosing another traces it again with that
 /// one), view, Expand and Release.
-fn trace_section(app: &mut VectorcraftApp, ui: &mut Ui, preset: &str, view: vectorcraft_doc::TraceView) {
+fn trace_section(
+    app: &mut VectorcraftApp,
+    ui: &mut Ui,
+    preset: &str,
+    view: vectorcraft_doc::TraceView,
+) {
     section_header(ui, tl!("Image Trace"));
     ui.horizontal(|ui| {
         dim_label(ui, tl!("Preset:"));
@@ -169,7 +195,10 @@ fn trace_section(app: &mut VectorcraftApp, ui: &mut Ui, preset: &str, view: vect
     ui.horizontal(|ui| crate::panels::image_trace::view_row(app, ui, view, ui.available_width()));
     let w = (ui.available_width() - 6.0) / 2.0;
     ui.horizontal(|ui| {
-        for (label, id) in [(tl!("Expand"), "imageTrace.expand"), (tl!("Release"), "imageTrace.release")] {
+        for (label, id) in [
+            (tl!("Expand"), "imageTrace.expand"),
+            (tl!("Release"), "imageTrace.release"),
+        ] {
             if widgets::flat_button(ui, label, w).clicked() {
                 app.run(id, json!({})).ok();
             }
@@ -180,12 +209,17 @@ fn trace_section(app: &mut VectorcraftApp, ui: &mut Ui, preset: &str, view: vect
 /// Whether the selection uses more than one colour (`recolor.colors`), which offers the Recolor
 /// quick action; cached per document revision.
 fn multi_color(app: &mut VectorcraftApp, ctx: &egui::Context) -> bool {
-    let Some(st) = app.session.active() else { return false };
+    let Some(st) = app.session.active() else {
+        return false;
+    };
     let key = (st.uid, st.revision);
     match pstate::<Option<((u64, u64), bool)>>(ctx, "props-multi-color") {
         Some((k, multi)) if k == key => multi,
         _ => {
-            let r = app.session.execute("recolor.colors", &json!({})).unwrap_or_default();
+            let r = app
+                .session
+                .execute("recolor.colors", &json!({}))
+                .unwrap_or_default();
             let multi = r["colors"].as_array().is_some_and(|c| c.len() > 1);
             set_pstate(ctx, "props-multi-color", Some((key, multi)));
             multi
@@ -204,9 +238,18 @@ fn artboard_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
     let i = super::artboards::selected(app, n);
     let scale_art = super::artboards::scale_art(app);
     let move_art = super::artboards::move_art(app);
-    if let Some(ab) = app.session.active().and_then(|d| d.doc.artboards.get(i)).cloned() {
+    if let Some(ab) = app
+        .session
+        .active()
+        .and_then(|d| d.doc.artboards.get(i))
+        .cloned()
+    {
         // Its name as it is (names are never translated).
-        ui.label(egui::RichText::new(&ab.name).size(13.0).color(Tokens::get(ui.ctx()).text));
+        ui.label(
+            egui::RichText::new(&ab.name)
+                .size(13.0)
+                .color(Tokens::get(ui.ctx()).text),
+        );
         let fw = super::field_width(ui);
         egui::Grid::new("ab-grid").num_columns(4).spacing([4.0, 6.0]).min_col_width(0.0).show(ui, |ui| {
             let r = ab.rect;
@@ -234,10 +277,18 @@ fn artboard_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
     ui.add_space(4.0);
     let w = (ui.available_width() - 6.0) / 2.0;
     ui.horizontal(|ui| {
-        if widgets::flat_button(ui, tl!("New Artboard"), w).clicked() && app.run("artboard.new", json!({})).is_ok() {
+        if widgets::flat_button(ui, tl!("New Artboard"), w).clicked()
+            && app.run("artboard.new", json!({})).is_ok()
+        {
             super::artboards::select(app, n);
         }
-        if ui.add_enabled_ui(n > 1, |ui| widgets::flat_button(ui, tl!("Delete Artboard"), w)).inner.clicked() {
+        if ui
+            .add_enabled_ui(n > 1, |ui| {
+                widgets::flat_button(ui, tl!("Delete Artboard"), w)
+            })
+            .inner
+            .clicked()
+        {
             app.run("artboard.delete", json!({"index": i})).ok();
         }
     });
@@ -253,7 +304,13 @@ fn artboard_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// Rearrange All (#681): opens Rearrange All Artboards; disabled with fewer than two artboards.
 fn rearrange_button(app: &mut VectorcraftApp, ui: &mut Ui, artboards: usize, w: f32) {
-    if ui.add_enabled_ui(artboards > 1, |ui| widgets::flat_button(ui, tl!("Rearrange All"), w)).inner.clicked() {
+    if ui
+        .add_enabled_ui(artboards > 1, |ui| {
+            widgets::flat_button(ui, tl!("Rearrange All"), w)
+        })
+        .inner
+        .clicked()
+    {
         super::artboards::open_rearrange(app);
     }
 }
@@ -265,7 +322,13 @@ fn rearrange_button(app: &mut VectorcraftApp, ui: &mut Ui, artboards: usize, w: 
 fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize, w: f64, h: f64) {
     let landscape = w > h;
     // A preset `pw` × `ph` turned to the artboard's orientation.
-    let turned = |pw: f64, ph: f64| if (pw > ph) == landscape || pw == ph { (pw, ph) } else { (ph, pw) };
+    let turned = |pw: f64, ph: f64| {
+        if (pw > ph) == landscape || pw == ph {
+            (pw, ph)
+        } else {
+            (ph, pw)
+        }
+    };
     let same = |s: &newdoc::DocSettings| {
         let (pw, ph) = turned(s.width, s.height);
         (pw - w).abs() < 0.01 && (ph - h).abs() < 0.01
@@ -276,7 +339,12 @@ fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize, w: f64, h:
         .filter_map(|c| Some((c, newdoc::category(&app.session, c)?)))
         .filter(|(_, l)| !l.is_empty())
         .collect();
-    let current = cats.iter().flat_map(|(_, l)| l).find(|s| same(s)).map_or(tl!("Custom"), |s| crate::dialogs::preset_name(&s.name)).to_string();
+    let current = cats
+        .iter()
+        .flat_map(|(_, l)| l)
+        .find(|s| same(s))
+        .map_or(tl!("Custom"), |s| crate::dialogs::preset_name(&s.name))
+        .to_string();
     let mut size = None;
     ui.horizontal(|ui| {
         dim_label(ui, tl!("Preset:"));
@@ -286,7 +354,12 @@ fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize, w: f64, h:
                 ui.menu_button(tl!(cat), |ui| {
                     widgets::menu_scroll(ui, |ui| {
                         for s in list {
-                            if widgets::menu_item_name(ui, crate::dialogs::preset_name(&s.name), true, same(s)) {
+                            if widgets::menu_item_name(
+                                ui,
+                                crate::dialogs::preset_name(&s.name),
+                                true,
+                                same(s),
+                            ) {
                                 chosen = Some(turned(s.width, s.height));
                             }
                         }
@@ -297,14 +370,20 @@ fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize, w: f64, h:
         });
         ui.spacing_mut().item_spacing.x = 2.0;
         for (is_landscape, tip) in [(false, tl!("Portrait")), (true, tl!("Landscape"))] {
-            if widgets::orientation_button(ui, is_landscape, landscape == is_landscape, tip) && landscape != is_landscape {
+            if widgets::orientation_button(ui, is_landscape, landscape == is_landscape, tip)
+                && landscape != is_landscape
+            {
                 size = Some((h, w));
             }
         }
     });
     if let Some((width, height)) = size {
         let scale_art = super::artboards::scale_art(app);
-        app.run("artboard.setProps", json!({"index": i, "width": width, "height": height, "scaleArt": scale_art})).ok();
+        app.run(
+            "artboard.setProps",
+            json!({"index": i, "width": width, "height": height, "scaleArt": scale_art}),
+        )
+        .ok();
     }
 }
 
@@ -315,7 +394,8 @@ fn document_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
         dim_label(ui, tl!("Units"));
         let labels: Vec<&str> = Unit::ALL.iter().map(|u| u.label()).collect();
         if let Some(i) = widgets::dropdown(ui, "units", units.label(), &labels, 140.0) {
-            app.run("document.setUnits", json!({"units": labels[i]})).ok();
+            app.run("document.setUnits", json!({"units": labels[i]}))
+                .ok();
         }
     });
     let w = (ui.available_width() - 6.0) / 2.0;
@@ -345,7 +425,15 @@ fn document_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
             app.run("view.grid", json!({})).ok();
         }
         let transparency_grid = app.session.active().is_some_and(|d| d.transparency_grid);
-        if widgets::icon_button(ui, "square-dashed", tl!("Show Transparency Grid"), transparency_grid, 26.0).clicked() {
+        if widgets::icon_button(
+            ui,
+            "square-dashed",
+            tl!("Show Transparency Grid"),
+            transparency_grid,
+            26.0,
+        )
+        .clicked()
+        {
             app.run("view.transparencyGrid", json!({})).ok();
         }
     });
@@ -356,7 +444,15 @@ fn document_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
         if widgets::icon_button(ui, "layout-grid", tl!("Show Guides"), v.guides, 26.0).clicked() {
             app.run("view.guides", json!({})).ok();
         }
-        if widgets::icon_button(ui, "sparkles", tl!("Smart Guides (⌘U)"), v.smart_guides, 26.0).clicked() {
+        if widgets::icon_button(
+            ui,
+            "sparkles",
+            tl!("Smart Guides (⌘U)"),
+            v.smart_guides,
+            26.0,
+        )
+        .clicked()
+        {
             app.run("view.smartGuides", json!({})).ok();
         }
     });
@@ -373,7 +469,13 @@ fn document_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
     let fw = super::field_width(ui);
     ui.horizontal(|ui| {
         dim_label(ui, tl!("Keyboard Increment"));
-        if let Some(v) = widgets::num_field(ui, "kbinc", Some(app.session.prefs.keyboard_increment), units, fw) {
+        if let Some(v) = widgets::num_field(
+            ui,
+            "kbinc",
+            Some(app.session.prefs.keyboard_increment),
+            units,
+            fw,
+        ) {
             app.session.prefs.keyboard_increment = v.max(0.001);
         }
     });
@@ -416,26 +518,46 @@ pub fn transform_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         ui.add_space(6.0);
         let link = app.session.prefs.constrain_proportions;
-        egui::Grid::new("xf-grid").num_columns(4).spacing([4.0, 6.0]).min_col_width(0.0).show(ui, |ui| {
-            dim_label(ui, "X:");
-            if let Some(v) = widgets::num_field(ui, "tx", Some(rp.x - origin.x), units, fw) {
-                app.run("object.setBounds", json!({"x": v + origin.x, "reference": refi})).ok();
-            }
-            dim_label(ui, "W:");
-            if let Some(v) = widgets::num_field(ui, "tw", Some(b.width()), units, fw) {
-                app.run("object.setBounds", json!({"width": v, "reference": refi, "proportional": link})).ok();
-            }
-            ui.end_row();
-            dim_label(ui, "Y:");
-            if let Some(v) = widgets::num_field(ui, "ty", Some(rp.y - origin.y), units, fw) {
-                app.run("object.setBounds", json!({"y": v + origin.y, "reference": refi})).ok();
-            }
-            dim_label(ui, "H:");
-            if let Some(v) = widgets::num_field(ui, "th", Some(b.height()), units, fw) {
-                app.run("object.setBounds", json!({"height": v, "reference": refi, "proportional": link})).ok();
-            }
-            ui.end_row();
-        });
+        egui::Grid::new("xf-grid")
+            .num_columns(4)
+            .spacing([4.0, 6.0])
+            .min_col_width(0.0)
+            .show(ui, |ui| {
+                dim_label(ui, "X:");
+                if let Some(v) = widgets::num_field(ui, "tx", Some(rp.x - origin.x), units, fw) {
+                    app.run(
+                        "object.setBounds",
+                        json!({"x": v + origin.x, "reference": refi}),
+                    )
+                    .ok();
+                }
+                dim_label(ui, "W:");
+                if let Some(v) = widgets::num_field(ui, "tw", Some(b.width()), units, fw) {
+                    app.run(
+                        "object.setBounds",
+                        json!({"width": v, "reference": refi, "proportional": link}),
+                    )
+                    .ok();
+                }
+                ui.end_row();
+                dim_label(ui, "Y:");
+                if let Some(v) = widgets::num_field(ui, "ty", Some(rp.y - origin.y), units, fw) {
+                    app.run(
+                        "object.setBounds",
+                        json!({"y": v + origin.y, "reference": refi}),
+                    )
+                    .ok();
+                }
+                dim_label(ui, "H:");
+                if let Some(v) = widgets::num_field(ui, "th", Some(b.height()), units, fw) {
+                    app.run(
+                        "object.setBounds",
+                        json!({"height": v, "reference": refi, "proportional": link}),
+                    )
+                    .ok();
+                }
+                ui.end_row();
+            });
         super::transform::constrain_link(app, ui);
     });
     let fw = super::field_width(ui);
@@ -444,38 +566,69 @@ pub fn transform_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         crate::scrub::note_label(ui, icon.rect);
         // The bounding box's angle: a new value turns the selection to it.
         if let Some(a) = widgets::plain_field(ui, "rot", bx.angle, "°", 2, fw) {
-            app.run("object.rotate", json!({"angle": a, "absolute": true})).ok();
+            app.run("object.rotate", json!({"angle": a, "absolute": true}))
+                .ok();
         }
         ui.add_space(10.0);
         // Lucide's flip icons are named for their mirror line: flip-vertical-2 draws a vertical
         // line (the left-right flip), flip-horizontal-2 a horizontal one (top-bottom).
-        if widgets::icon_button(ui, "flip-vertical-2", tl!("Flip Along Horizontal Axis"), false, 24.0).clicked() {
+        if widgets::icon_button(
+            ui,
+            "flip-vertical-2",
+            tl!("Flip Along Horizontal Axis"),
+            false,
+            24.0,
+        )
+        .clicked()
+        {
             app.run("object.reflect", json!({"axis": "vertical"})).ok();
         }
-        if widgets::icon_button(ui, "flip-horizontal-2", tl!("Flip Along Vertical Axis"), false, 24.0).clicked() {
-            app.run("object.reflect", json!({"axis": "horizontal"})).ok();
+        if widgets::icon_button(
+            ui,
+            "flip-horizontal-2",
+            tl!("Flip Along Vertical Axis"),
+            false,
+            24.0,
+        )
+        .clicked()
+        {
+            app.run("object.reflect", json!({"axis": "horizontal"}))
+                .ok();
         }
         // More Options: the Transform panel's Scale Corners and Scale Strokes & Effects, open
         // while they are toggled.
         let more = widgets::icon_button(ui, "ellipsis", tl!("More Options"), false, 24.0);
-        egui::Popup::menu(&more).close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside).show(|ui| {
-            let (sc, ss) = (app.session.prefs.scale_corners, app.session.prefs.scale_strokes);
-            if widgets::check(ui, tl!("Scale Corners"), sc, true) {
-                super::transform::set_pref(app, "scaleCorners", !sc);
-            }
-            if widgets::check(ui, tl!("Scale Strokes & Effects"), ss, true) {
-                super::transform::set_pref(app, "scaleStrokes", !ss);
-            }
-        });
+        egui::Popup::menu(&more)
+            .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+            .show(|ui| {
+                let (sc, ss) = (
+                    app.session.prefs.scale_corners,
+                    app.session.prefs.scale_strokes,
+                );
+                if widgets::check(ui, tl!("Scale Corners"), sc, true) {
+                    super::transform::set_pref(app, "scaleCorners", !sc);
+                }
+                if widgets::check(ui, tl!("Scale Strokes & Effects"), ss, true) {
+                    super::transform::set_pref(app, "scaleStrokes", !ss);
+                }
+            });
     });
     // Live shape properties.
     if let Some(n) = first_selected(app)
-        && let NodeKind::Path { live: Some(live), .. } = &n.kind
+        && let NodeKind::Path {
+            live: Some(live), ..
+        } = &n.kind
     {
         match &**live {
-            vectorcraft_doc::LiveShape::Rectangle { .. } => corner_radius_row(app, ui, &n, "radius"),
-            vectorcraft_doc::LiveShape::Polygon { .. } => super::transform::polygon_rows(app, ui, &n, live, "props-polygon"),
-            vectorcraft_doc::LiveShape::Ellipse { pie, .. } => super::transform::pie_rows(app, ui, *pie, "props-pie"),
+            vectorcraft_doc::LiveShape::Rectangle { .. } => {
+                corner_radius_row(app, ui, &n, "radius")
+            }
+            vectorcraft_doc::LiveShape::Polygon { .. } => {
+                super::transform::polygon_rows(app, ui, &n, live, "props-polygon")
+            }
+            vectorcraft_doc::LiveShape::Ellipse { pie, .. } => {
+                super::transform::pie_rows(app, ui, *pie, "props-pie")
+            }
             _ => {}
         }
     }
@@ -490,7 +643,8 @@ fn appearance_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         widgets::field_label(ui, egui::RichText::new(tl!("Opacity")).size(12.0));
         ui.add_space(8.0);
         if let Some(o) = widgets::plain_field(ui, "ap-op", n.opacity as f64 * 100.0, "%", 0, fw) {
-            app.run("object.setProps", json!({"opacity": o.clamp(0.0, 100.0)})).ok();
+            app.run("object.setProps", json!({"opacity": o.clamp(0.0, 100.0)}))
+                .ok();
         }
         if widgets::icon_button(ui, "ellipsis", tl!("Transparency"), false, 22.0).clicked() {
             app.ui.open_panel = Some("transparency".into());
@@ -511,7 +665,11 @@ fn appearance_section(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// and the weight spinner with its presets. With nothing selected they set up the next object.
 fn fill_stroke_rows(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let weight = super::stroke::shown_weight(app, super::current_stroke(app).as_ref(), &super::stroke_mixed(app, ui.ctx()));
+    let weight = super::stroke::shown_weight(
+        app,
+        super::current_stroke(app).as_ref(),
+        &super::stroke_mixed(app, ui.ctx()),
+    );
     let fw = super::field_width(ui);
     ui.horizontal(|ui| {
         super::paint_chip(app, ui, false, 22.0, true);
@@ -546,7 +704,9 @@ pub fn type_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 3.0;
             super::paragraph::alignment_buttons(app, ui, &para, 24.0);
-            if widgets::icon_button(ui, "ellipsis", tl!("More Paragraph options"), false, 24.0).clicked() {
+            if widgets::icon_button(ui, "ellipsis", tl!("More Paragraph options"), false, 24.0)
+                .clicked()
+            {
                 app.ui.open_panel = Some("paragraph".into());
             }
         });
@@ -562,19 +722,35 @@ mod tests {
     use super::*;
 
     /// One frame of the panel with `events` → the texts painted, with their rects.
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<Event>) -> Vec<(String, Rect)> {
+    fn frame(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        events: Vec<Event>,
+    ) -> Vec<(String, Rect)> {
         panel_frame(app, ctx, events, show)
     }
 
-    fn panel_frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<Event>, draw: fn(&mut VectorcraftApp, &mut Ui)) -> Vec<(String, Rect)> {
-        let raw = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(300.0, 700.0))), events, ..Default::default() };
+    fn panel_frame(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        events: Vec<Event>,
+        draw: fn(&mut VectorcraftApp, &mut Ui),
+    ) -> Vec<(String, Rect)> {
+        let raw = egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(300.0, 700.0))),
+            events,
+            ..Default::default()
+        };
         let mut out = ctx.run_ui(raw, |ui| draw(app, ui));
         out.textures_delta.clear();
         out.shapes
             .iter()
             .filter_map(|s| {
                 if let egui::Shape::Text(t) = &s.shape {
-                    Some((t.galley.text().to_string(), Rect::from_min_size(t.pos, t.galley.size())))
+                    Some((
+                        t.galley.text().to_string(),
+                        Rect::from_min_size(t.pos, t.galley.size()),
+                    ))
                 } else {
                     None
                 }
@@ -583,8 +759,17 @@ mod tests {
     }
 
     fn click(app: &mut VectorcraftApp, ctx: &egui::Context, texts: &[(String, Rect)], label: &str) {
-        let at = texts.iter().find(|(t, _)| t == label).map(|(_, r)| r.center()).unwrap_or_else(|| panic!("no {label:?} in {texts:?}"));
-        let b = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
+        let at = texts
+            .iter()
+            .find(|(t, _)| t == label)
+            .map(|(_, r)| r.center())
+            .unwrap_or_else(|| panic!("no {label:?} in {texts:?}"));
+        let b = |pressed| Event::PointerButton {
+            pos: at,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
         frame(app, ctx, vec![Event::PointerMoved(at), b(true)]);
         frame(app, ctx, vec![b(false)]);
     }
@@ -595,12 +780,16 @@ mod tests {
     fn the_document_checkboxes_show_their_boxes_and_toggle() {
         for brightness in crate::theme::Brightness::ALL {
             let mut app = VectorcraftApp::new(Session::new(), Default::default());
-            app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+            app.run("file.new", json!({"width": 200, "height": 100}))
+                .unwrap();
             let ctx = egui::Context::default();
             crate::theme::install_fonts(&ctx);
             crate::theme::apply(&ctx, brightness);
             frame(&mut app, &ctx, vec![]);
-            let raw = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(300.0, 700.0))), ..Default::default() };
+            let raw = egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(300.0, 700.0))),
+                ..Default::default()
+            };
             let mut out = ctx.run_ui(raw, |ui| show(&mut app, ui));
             out.textures_delta.clear();
             let boxes = out
@@ -611,7 +800,8 @@ mod tests {
             assert!(boxes >= 3, "{brightness:?}: {boxes} checkbox outlines");
         }
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         let texts = frame(&mut app, &ctx, vec![]);
@@ -628,8 +818,16 @@ mod tests {
     #[test]
     fn the_gradient_tool_shows_the_gradient_type_and_draw() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-        let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 40})).unwrap()["id"].as_u64().unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
+        let id = app
+            .run(
+                "shape.rectangle",
+                json!({"x": 10, "y": 10, "width": 50, "height": 40}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         app.run("paint.setFill", json!({"gradient": {}})).unwrap();
         let ctx = egui::Context::default();
         let has = |texts: &[(String, Rect)], s: &str| texts.iter().any(|(t, _)| t == s);
@@ -637,15 +835,35 @@ mod tests {
         assert!(!has(&texts, "Gradient"), "only with the Gradient tool");
         app.select_tool("gradient");
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(has(&texts, "Gradient") && has(&texts, "Type:") && !has(&texts, "Draw:"), "{texts:?}");
-        app.run("paint.editGradient", json!({"kind": "freeform"})).unwrap();
+        assert!(
+            has(&texts, "Gradient") && has(&texts, "Type:") && !has(&texts, "Draw:"),
+            "{texts:?}"
+        );
+        app.run("paint.editGradient", json!({"kind": "freeform"}))
+            .unwrap();
         frame(&mut app, &ctx, vec![]);
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(has(&texts, "Draw:") && has(&texts, "Points") && has(&texts, "Lines"), "{texts:?}");
+        assert!(
+            has(&texts, "Draw:") && has(&texts, "Points") && has(&texts, "Lines"),
+            "{texts:?}"
+        );
         click(&mut app, &ctx, &texts, "Lines");
-        let fill = app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().appearance.fill_paint();
-        let vectorcraft_color::Paint::Gradient(g) = fill else { panic!("{fill:?}") };
-        assert_eq!(super::super::gradient::shown_points(&g).mode, vectorcraft_color::FreeformMode::Lines);
+        let fill = app
+            .session
+            .doc()
+            .unwrap()
+            .doc
+            .node(vectorcraft_doc::NodeId(id))
+            .unwrap()
+            .appearance
+            .fill_paint();
+        let vectorcraft_color::Paint::Gradient(g) = fill else {
+            panic!("{fill:?}")
+        };
+        assert_eq!(
+            super::super::gradient::shown_points(&g).mode,
+            vectorcraft_color::FreeformMode::Lines
+        );
     }
 
     /// #696: the number fields are all as wide: the Transform fields, the rotation, the corner
@@ -653,27 +871,41 @@ mod tests {
     #[test]
     fn the_number_fields_are_all_as_wide() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 40})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 50, "height": 40}),
+        )
+        .unwrap();
         let ctx = egui::Context::default();
         frame(&mut app, &ctx, vec![]);
         let texts = frame(&mut app, &ctx, vec![]);
         // The field each value is shown in: the narrowest widget around its text that isn't the
         // text alone.
         let field = |value: &str| {
-            let at = texts.iter().find(|(t, _)| t == value).map(|(_, r)| r.center()).unwrap_or_else(|| panic!("{value}: {texts:?}"));
+            let at = texts
+                .iter()
+                .find(|(t, _)| t == value)
+                .map(|(_, r)| r.center())
+                .unwrap_or_else(|| panic!("{value}: {texts:?}"));
             ctx.viewport(|vp| {
                 vp.prev_pass
                     .widgets
                     .layers()
                     .flat_map(|(_, w)| w.iter())
-                    .filter(|w| w.rect.contains(at) && w.rect.width() > 30.0 && w.rect.height() < 40.0)
+                    .filter(|w| {
+                        w.rect.contains(at) && w.rect.width() > 30.0 && w.rect.height() < 40.0
+                    })
                     .map(|w| w.rect.width())
                     .fold(f32::INFINITY, f32::min)
             })
         };
         let widths = [field("35 pt"), field("0°"), field("0 pt"), field("100%")];
-        assert!(widths.iter().all(|w| (w - widths[0]).abs() < 1.0), "X, rotation, corner radius, opacity: {widths:?}");
+        assert!(
+            widths.iter().all(|w| (w - widths[0]).abs() < 1.0),
+            "X, rotation, corner radius, opacity: {widths:?}"
+        );
     }
 
     /// The Transform section's More Options holds Scale Corners and Scale Strokes & Effects, and
@@ -681,8 +913,13 @@ mod tests {
     #[test]
     fn transform_more_options_toggles_scale_corners_and_strokes() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 20, "width": 30, "height": 40})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 20, "width": 30, "height": 40}),
+        )
+        .unwrap();
         let ctx = egui::Context::default();
         let has = |texts: &[(String, Rect)], s: &str| texts.iter().any(|(t, _)| t == s);
         frame(&mut app, &ctx, vec![]);
@@ -694,7 +931,12 @@ mod tests {
         'sweep: for dy in (12..60).step_by(6) {
             for x in (120..300).step_by(6) {
                 let at = egui::pos2(x as f32, h.bottom() + dy as f32);
-                let b = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
+                let b = |pressed| Event::PointerButton {
+                    pos: at,
+                    button: PointerButton::Primary,
+                    pressed,
+                    modifiers: Default::default(),
+                };
                 frame(&mut app, &ctx, vec![Event::PointerMoved(at), b(true)]);
                 frame(&mut app, &ctx, vec![b(false)]);
                 let texts = frame(&mut app, &ctx, vec![]);
@@ -705,11 +947,17 @@ mod tests {
             }
         }
         let texts = open.expect("More Options opens the popup");
-        let (sc, ss) = (app.session.prefs.scale_corners, app.session.prefs.scale_strokes);
+        let (sc, ss) = (
+            app.session.prefs.scale_corners,
+            app.session.prefs.scale_strokes,
+        );
         click(&mut app, &ctx, &texts, "Scale Corners");
         assert_eq!(app.session.prefs.scale_corners, !sc);
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(has(&texts, "Scale Strokes & Effects"), "still open after a toggle");
+        assert!(
+            has(&texts, "Scale Strokes & Effects"),
+            "still open after a toggle"
+        );
         click(&mut app, &ctx, &texts, "Scale Strokes & Effects");
         assert_eq!(app.session.prefs.scale_strokes, !ss);
     }
@@ -717,11 +965,22 @@ mod tests {
     /// Both panels forward the Move Artwork toggle when their actual X field is edited.
     #[test]
     fn artboard_coordinate_fields_move_art_in_properties_and_transform() {
-        for draw in [show as fn(&mut VectorcraftApp, &mut Ui), super::super::transform::show] {
+        for draw in [
+            show as fn(&mut VectorcraftApp, &mut Ui),
+            super::super::transform::show,
+        ] {
             for move_art in [false, true] {
                 let mut app = VectorcraftApp::new(Session::new(), Default::default());
-                app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-                let id = app.run("shape.rectangle", json!({"x": 10, "y": 20, "width": 30, "height": 40})).unwrap()["id"].as_u64().unwrap();
+                app.run("file.new", json!({"width": 200, "height": 100}))
+                    .unwrap();
+                let id = app
+                    .run(
+                        "shape.rectangle",
+                        json!({"x": 10, "y": 20, "width": 30, "height": 40}),
+                    )
+                    .unwrap()["id"]
+                    .as_u64()
+                    .unwrap();
                 app.select_tool("artboard");
                 app.session.set_tool_option("moveArt", &json!(move_art));
                 let ctx = egui::Context::default();
@@ -729,22 +988,55 @@ mod tests {
                 let texts = panel_frame(&mut app, &ctx, vec![], draw);
                 let label = texts.iter().find(|(t, _)| t == "X:").unwrap().1;
                 let at = egui::pos2(label.right() + 40.0, label.center().y);
-                let press = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
-                panel_frame(&mut app, &ctx, vec![Event::PointerMoved(at), press(true)], draw);
+                let press = |pressed| Event::PointerButton {
+                    pos: at,
+                    button: PointerButton::Primary,
+                    pressed,
+                    modifiers: Default::default(),
+                };
+                panel_frame(
+                    &mut app,
+                    &ctx,
+                    vec![Event::PointerMoved(at), press(true)],
+                    draw,
+                );
                 panel_frame(&mut app, &ctx, vec![press(false)], draw);
                 panel_frame(
                     &mut app,
                     &ctx,
-                    vec![Event::Key { key: egui::Key::ArrowUp, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() }],
+                    vec![Event::Key {
+                        key: egui::Key::ArrowUp,
+                        physical_key: None,
+                        pressed: true,
+                        repeat: false,
+                        modifiers: Default::default(),
+                    }],
                     draw,
                 );
                 let d = &app.session.doc().unwrap().doc;
-                assert_eq!(d.artboards[0].rect.x0, 1.0, "the focused X field steps its position");
-                assert_eq!(d.node(vectorcraft_doc::NodeId(id)).unwrap().geometric_bounds().unwrap().x0, if move_art { 11.0 } else { 10.0 });
+                assert_eq!(
+                    d.artboards[0].rect.x0, 1.0,
+                    "the focused X field steps its position"
+                );
+                assert_eq!(
+                    d.node(vectorcraft_doc::NodeId(id))
+                        .unwrap()
+                        .geometric_bounds()
+                        .unwrap()
+                        .x0,
+                    if move_art { 11.0 } else { 10.0 }
+                );
                 app.run("edit.undo", json!({})).unwrap();
                 let d = &app.session.doc().unwrap().doc;
                 assert_eq!(d.artboards[0].rect.x0, 0.0);
-                assert_eq!(d.node(vectorcraft_doc::NodeId(id)).unwrap().geometric_bounds().unwrap().x0, 10.0);
+                assert_eq!(
+                    d.node(vectorcraft_doc::NodeId(id))
+                        .unwrap()
+                        .geometric_bounds()
+                        .unwrap()
+                        .x0,
+                    10.0
+                );
             }
         }
     }
@@ -754,31 +1046,49 @@ mod tests {
     #[test]
     fn type_paragraph_section_hyphenates() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-        app.run("text.create", json!({"x": 10, "y": 50, "text": "Paragraph"})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
+        app.run(
+            "text.create",
+            json!({"x": 10, "y": 50, "text": "Paragraph"}),
+        )
+        .unwrap();
         let ctx = egui::Context::default();
         frame(&mut app, &ctx, vec![]);
         let texts = frame(&mut app, &ctx, vec![]);
         click(&mut app, &ctx, &texts, "Hyphenate");
-        let hyphenate = |app: &VectorcraftApp| crate::panels::character::text_style(app).unwrap().1.hyphenate;
+        let hyphenate = |app: &VectorcraftApp| {
+            crate::panels::character::text_style(app)
+                .unwrap()
+                .1
+                .hyphenate
+        };
         assert!(hyphenate(&app));
     }
 
     #[test]
     fn edit_artboards_adds_artboards_and_exits() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
         let ctx = egui::Context::default();
         let texts = frame(&mut app, &ctx, vec![]);
         click(&mut app, &ctx, &texts, "Edit Artboards");
         assert_eq!(app.session.tool_id(), "artboard");
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(texts.iter().any(|(t, _)| t == "Artboard 1") && texts.iter().any(|(t, _)| t == "200 pt"), "{texts:?}");
+        assert!(
+            texts.iter().any(|(t, _)| t == "Artboard 1")
+                && texts.iter().any(|(t, _)| t == "200 pt"),
+            "{texts:?}"
+        );
         click(&mut app, &ctx, &texts, "New Artboard");
         let boards = |app: &VectorcraftApp| app.session.active().unwrap().doc.artboards.len();
         assert_eq!(boards(&app), 2);
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(texts.iter().any(|(t, _)| t == "Artboard 2"), "the new artboard is the active one: {texts:?}");
+        assert!(
+            texts.iter().any(|(t, _)| t == "Artboard 2"),
+            "the new artboard is the active one: {texts:?}"
+        );
         click(&mut app, &ctx, &texts, "Delete Artboard");
         assert_eq!(boards(&app), 1);
         let texts = frame(&mut app, &ctx, vec![]);
@@ -791,19 +1101,31 @@ mod tests {
     #[test]
     fn rearrange_all_opens_the_dialog() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
         let ctx = egui::Context::default();
-        assert!(!frame(&mut app, &ctx, vec![]).iter().any(|(t, _)| t == "Rearrange All"), "one artboard: nothing to rearrange");
+        assert!(
+            !frame(&mut app, &ctx, vec![])
+                .iter()
+                .any(|(t, _)| t == "Rearrange All"),
+            "one artboard: nothing to rearrange"
+        );
         app.run("artboard.new", json!({})).unwrap();
         let texts = frame(&mut app, &ctx, vec![]);
         click(&mut app, &ctx, &texts, "Rearrange All");
         let kind = |app: &VectorcraftApp| app.ui.dialog.as_ref().map(|d| d.kind.clone());
-        assert_eq!(kind(&app).as_deref(), Some(crate::dialogs::rearrange_artboards::KIND));
+        assert_eq!(
+            kind(&app).as_deref(),
+            Some(crate::dialogs::rearrange_artboards::KIND)
+        );
         app.ui.dialog = None;
         app.select_tool("artboard");
         let texts = frame(&mut app, &ctx, vec![]);
         click(&mut app, &ctx, &texts, "Rearrange All");
-        assert_eq!(kind(&app).as_deref(), Some(crate::dialogs::rearrange_artboards::KIND));
+        assert_eq!(
+            kind(&app).as_deref(),
+            Some(crate::dialogs::rearrange_artboards::KIND)
+        );
     }
 
     /// #671: Edit Artboards shows the artboard's preset (Custom when it matches none) and its
@@ -812,35 +1134,68 @@ mod tests {
     fn edit_artboards_shows_the_preset_and_flips_the_orientation() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"preset": "Letter"})).unwrap();
-        app.run("artboard.setProps", json!({"index": 0, "x": 10, "y": 20})).unwrap();
+        app.run("artboard.setProps", json!({"index": 0, "x": 10, "y": 20}))
+            .unwrap();
         app.select_tool("artboard");
         let ctx = egui::Context::default();
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(texts.iter().any(|(t, _)| t == "Preset:") && texts.iter().any(|(t, _)| t == "Letter"), "{texts:?}");
+        assert!(
+            texts.iter().any(|(t, _)| t == "Preset:") && texts.iter().any(|(t, _)| t == "Letter"),
+            "{texts:?}"
+        );
         // The row's clickable widgets, left to right: the preset combo, Portrait, Landscape.
-        let row = texts.iter().find(|(t, _)| t == "Preset:").map(|(_, r)| *r).unwrap();
+        let row = texts
+            .iter()
+            .find(|(t, _)| t == "Preset:")
+            .map(|(_, r)| *r)
+            .unwrap();
         let buttons: Vec<Rect> = ctx.viewport(|vp| {
             let mut r: Vec<Rect> = vp
                 .prev_pass
                 .widgets
                 .layers()
                 .flat_map(|(_, w)| w.iter())
-                .filter(|w| w.sense.senses_click() && w.rect.y_range().contains(row.center().y) && w.rect.left() > row.right())
+                .filter(|w| {
+                    w.sense.senses_click()
+                        && w.rect.y_range().contains(row.center().y)
+                        && w.rect.left() > row.right()
+                })
                 .map(|w| w.rect)
                 .collect();
             r.sort_by(|a, b| a.left().total_cmp(&b.left()));
             r
         });
         let landscape = buttons.last().unwrap().center();
-        let press = |pressed| Event::PointerButton { pos: landscape, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
-        frame(&mut app, &ctx, vec![Event::PointerMoved(landscape), press(true)]);
+        let press = |pressed| Event::PointerButton {
+            pos: landscape,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        frame(
+            &mut app,
+            &ctx,
+            vec![Event::PointerMoved(landscape), press(true)],
+        );
         frame(&mut app, &ctx, vec![press(false)]);
         let rect = app.session.active().unwrap().doc.artboards[0].rect;
-        assert_eq!((rect.x0, rect.y0, rect.width(), rect.height()), (10.0, 20.0, 792.0, 612.0), "landscape, same corner");
+        assert_eq!(
+            (rect.x0, rect.y0, rect.width(), rect.height()),
+            (10.0, 20.0, 792.0, 612.0),
+            "landscape, same corner"
+        );
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(texts.iter().any(|(t, _)| t == "Letter"), "still Letter, turned: {texts:?}");
-        app.run("artboard.setProps", json!({"index": 0, "width": 333})).unwrap();
-        assert!(frame(&mut app, &ctx, vec![]).iter().any(|(t, _)| t == "Custom"));
+        assert!(
+            texts.iter().any(|(t, _)| t == "Letter"),
+            "still Letter, turned: {texts:?}"
+        );
+        app.run("artboard.setProps", json!({"index": 0, "width": 333}))
+            .unwrap();
+        assert!(
+            frame(&mut app, &ctx, vec![])
+                .iter()
+                .any(|(t, _)| t == "Custom")
+        );
     }
 
     /// #602: Edit Artboards shows Move and Scale Artwork with Artboard; with Scale on, a new size
@@ -848,37 +1203,72 @@ mod tests {
     #[test]
     fn edit_artboards_scales_the_art_with_scale_artwork_with_artboard() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-        let r = app.run("shape.rectangle", json!({"x": 20, "y": 20, "width": 40, "height": 40})).unwrap()["id"].as_u64().unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
+        let r = app
+            .run(
+                "shape.rectangle",
+                json!({"x": 20, "y": 20, "width": 40, "height": 40}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         app.select_tool("artboard");
         let ctx = egui::Context::default();
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(texts.iter().any(|(t, _)| t == "Move Artwork with Artboard"), "{texts:?}");
+        assert!(
+            texts.iter().any(|(t, _)| t == "Move Artwork with Artboard"),
+            "{texts:?}"
+        );
         assert_eq!(app.session.tool_options()["scaleArt"], false);
         click(&mut app, &ctx, &texts, "Scale Artwork with Artboard");
         assert_eq!(app.session.tool_options()["scaleArt"], true);
         // Portrait: 100 × 200, the art scaled by ½ across and 2 down.
         let texts = frame(&mut app, &ctx, vec![]);
-        let row = texts.iter().find(|(t, _)| t == "Preset:").map(|(_, r)| *r).unwrap();
+        let row = texts
+            .iter()
+            .find(|(t, _)| t == "Preset:")
+            .map(|(_, r)| *r)
+            .unwrap();
         let portrait = ctx.viewport(|vp| {
             let mut r: Vec<Rect> = vp
                 .prev_pass
                 .widgets
                 .layers()
                 .flat_map(|(_, w)| w.iter())
-                .filter(|w| w.sense.senses_click() && w.rect.y_range().contains(row.center().y) && w.rect.left() > row.right())
+                .filter(|w| {
+                    w.sense.senses_click()
+                        && w.rect.y_range().contains(row.center().y)
+                        && w.rect.left() > row.right()
+                })
                 .map(|w| w.rect)
                 .collect();
             r.sort_by(|a, b| a.left().total_cmp(&b.left()));
             r[r.len() - 2].center()
         });
-        let press = |pressed| Event::PointerButton { pos: portrait, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
-        frame(&mut app, &ctx, vec![Event::PointerMoved(portrait), press(true)]);
+        let press = |pressed| Event::PointerButton {
+            pos: portrait,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        frame(
+            &mut app,
+            &ctx,
+            vec![Event::PointerMoved(portrait), press(true)],
+        );
         frame(&mut app, &ctx, vec![press(false)]);
         let d = &app.session.active().unwrap().doc;
         let ab = d.artboards[0].rect;
         assert_eq!((ab.width(), ab.height()), (100.0, 200.0));
-        let b = d.node(vectorcraft_doc::NodeId(r)).unwrap().geometric_bounds().unwrap();
-        assert_eq!((b.x0, b.y0, b.width(), b.height()), (10.0, 40.0, 20.0, 80.0));
+        let b = d
+            .node(vectorcraft_doc::NodeId(r))
+            .unwrap()
+            .geometric_bounds()
+            .unwrap();
+        assert_eq!(
+            (b.x0, b.y0, b.width(), b.height()),
+            (10.0, 40.0, 20.0, 80.0)
+        );
     }
 }

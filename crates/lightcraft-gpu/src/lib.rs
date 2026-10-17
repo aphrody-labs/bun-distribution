@@ -20,7 +20,14 @@
 //!
 //! Before the process ends: [`begin_shutdown`], then [`wait_idle`] (issue #620, see `exit.rs`).
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -87,7 +94,11 @@ pub fn unavailable_reason() -> Option<String> {
         return Some("LightCraft is closing".into());
     }
     if BROKEN.load(Ordering::Relaxed) {
-        let r = BROKEN_REASON.lock().unwrap_or_else(|e| e.into_inner()).clone().unwrap_or_else(|| "device error".into());
+        let r = BROKEN_REASON
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+            .unwrap_or_else(|| "device error".into());
         return Some(format!("stopped after a GPU failure: {r}"));
     }
     if let Some(r) = broken_here() {
@@ -111,7 +122,10 @@ pub fn unavailable_reason() -> Option<String> {
 /// displays (`ui.inspect` → `perf.gpuFallback`): renders on other threads overwrite it, so a caller
 /// that wants the reason for *its own* render uses [`try_render`], which returns it.
 pub fn last_fallback() -> Option<String> {
-    LAST_FALLBACK.lock().unwrap_or_else(|e| e.into_inner()).clone()
+    LAST_FALLBACK
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
 }
 
 /// Why [`try_render`] made no GPU image: the caller renders on the CPU.
@@ -201,7 +215,10 @@ pub fn set_enabled(on: bool) {
 /// Whether GPU rendering is allowed (environment, preference, no earlier failure — real, or
 /// simulated on this thread).
 pub fn enabled() -> bool {
-    ENABLED.load(Ordering::Relaxed) && !BROKEN.load(Ordering::Relaxed) && !env_disabled() && broken_here().is_none()
+    ENABLED.load(Ordering::Relaxed)
+        && !BROKEN.load(Ordering::Relaxed)
+        && !env_disabled()
+        && broken_here().is_none()
 }
 
 /// The process is about to end: no GPU work starts from now on, on any thread. [`render`] returns
@@ -244,16 +261,25 @@ pub fn wait_idle(timeout: std::time::Duration) -> bool {
 #[cfg(all(feature = "denoise", not(target_arch = "wasm32")))]
 pub(crate) fn switched_off() -> Option<String> {
     if env_disabled() {
-        return Some(if backend::env_off() { "disabled by LIGHTCRAFT_GPU_BACKEND=off" } else { "disabled by LIGHTCRAFT_GPU=0" }.into());
+        return Some(
+            if backend::env_off() {
+                "disabled by LIGHTCRAFT_GPU_BACKEND=off"
+            } else {
+                "disabled by LIGHTCRAFT_GPU=0"
+            }
+            .into(),
+        );
     }
-    (!ENABLED.load(Ordering::Relaxed)).then(|| "disabled by the GPU rendering preference (app.gpu)".into())
+    (!ENABLED.load(Ordering::Relaxed))
+        .then(|| "disabled by the GPU rendering preference (app.gpu)".into())
 }
 
 /// `LIGHTCRAFT_GPU=0` (or `LIGHTCRAFT_GPU_BACKEND=off`): no GPU for the whole process.
 fn env_disabled() -> bool {
     static OFF: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *OFF.get_or_init(|| {
-        let off = std::env::var("LIGHTCRAFT_GPU").is_ok_and(|v| matches!(v.trim(), "0" | "off" | "false" | "no"));
+        let off = std::env::var("LIGHTCRAFT_GPU")
+            .is_ok_and(|v| matches!(v.trim(), "0" | "off" | "false" | "no"));
         #[cfg(not(target_arch = "wasm32"))]
         let off = off || backend::env_off();
         off
@@ -275,9 +301,12 @@ pub(crate) fn device() -> Option<&'static ctx::Gpu> {
     // creating the device is a long call into the driver: not once the process is ending
     let _work = exit::enter()?;
     GPU.get_or_init(|| {
-        let Some(backends) = backend::compute_backends() else { return Err("disabled by LIGHTCRAFT_GPU_BACKEND=off".into()) };
+        let Some(backends) = backend::compute_backends() else {
+            return Err("disabled by LIGHTCRAFT_GPU_BACKEND=off".into());
+        };
         let r = backend::with_init_marker(backends, || {
-            std::panic::catch_unwind(|| ctx::Gpu::new(backends)).unwrap_or_else(|_| Err("device creation panicked".into()))
+            std::panic::catch_unwind(|| ctx::Gpu::new(backends))
+                .unwrap_or_else(|_| Err("device creation panicked".into()))
         });
         if let Err(why) = &r {
             log::warn!("gpu: rendering on the CPU: {why}");
@@ -300,9 +329,11 @@ pub(crate) fn existing_device() -> Option<&'static ctx::Gpu> {
 pub fn warm_up() {
     #[cfg(not(target_arch = "wasm32"))]
     if !env_disabled() && ENABLED.load(Ordering::Relaxed) && GPU.get().is_none() {
-        let _ = std::thread::Builder::new().name("lc-gpu-init".into()).spawn(|| {
-            let _ = device();
-        });
+        let _ = std::thread::Builder::new()
+            .name("lc-gpu-init".into())
+            .spawn(|| {
+                let _ = device();
+            });
     }
 }
 
@@ -422,7 +453,10 @@ pub fn source_uploads() -> u64 {
 pub fn stage_bytes(stages: &StageCache) -> usize {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        stages.peek_extension::<GpuStages>().map(|g| g.bytes()).unwrap_or(0)
+        stages
+            .peek_extension::<GpuStages>()
+            .map(|g| g.bytes())
+            .unwrap_or(0)
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -433,7 +467,13 @@ pub fn stage_bytes(stages: &StageCache) -> usize {
 
 /// Render `src` with `s` on the GPU, reusing the device-resident stages kept with `stages` (the
 /// view's CPU stage cache). `None`: render on the CPU instead. [`try_render`] also says why.
-pub fn render(src: &Arc<Rgb32f>, info: &SourceInfo, s: &DevelopSettings, req: &RenderRequest, stages: Option<&StageCache>) -> Option<Rendered> {
+pub fn render(
+    src: &Arc<Rgb32f>,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+    stages: Option<&StageCache>,
+) -> Option<Rendered> {
     try_render(src, info, s, req, stages).ok()
 }
 
@@ -469,12 +509,20 @@ pub fn try_render(
         let ext = stages.map(|c| c.extension::<GpuStages>());
         let fault = take_fault();
         // A simulated failure stops GPU use on this thread only (see `BROKEN_HERE`).
-        let stop = |reason: &str| if fault.is_some() { mark_broken_here(reason) } else { mark_broken(reason) };
+        let stop = |reason: &str| {
+            if fault.is_some() {
+                mark_broken_here(reason)
+            } else {
+                mark_broken(reason)
+            }
+        };
         let _ = ctx::take_failure(); // nothing left over from an earlier render on this thread
         let (r, scoped) = {
             let _scope = ctx::RenderScope::new(gpu);
             let errors = ctx::ErrorScopes::push(gpu);
-            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| render::render(gpu, src, info, s, req, ext.as_deref(), fault)));
+            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                render::render(gpu, src, info, s, req, ext.as_deref(), fault)
+            }));
             (r, errors.pop())
         };
         // An error the device raised explains the readback failures that follow it; a buffer
@@ -517,7 +565,10 @@ pub fn try_render(
             }
             // a device error on another thread or a lost device during the render
             (Ok(Some(_)), None) if BROKEN.load(Ordering::Relaxed) => {
-                format!("device failure during the render: {}", unavailable_reason().unwrap_or_default())
+                format!(
+                    "device failure during the render: {}",
+                    unavailable_reason().unwrap_or_default()
+                )
             }
             (Ok(Some(r)), None) => return Ok(r),
             // every path of `render::render` that gives up records a failure first; should one

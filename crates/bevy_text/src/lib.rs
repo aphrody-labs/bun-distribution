@@ -77,7 +77,7 @@ pub mod prelude {
     };
 }
 
-use bevy_app::{prelude::*, PropagateSet};
+use bevy_app::{PropagateSet, prelude::*};
 use bevy_asset::AssetApp;
 use bevy_ecs::prelude::*;
 

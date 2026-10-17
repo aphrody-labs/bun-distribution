@@ -6,7 +6,9 @@ use std::sync::Arc;
 use designcraft_color::swatch::{ColorType, SwatchValue};
 use designcraft_color::{BlendMode as DcBlend, Color, GradientKind};
 use designcraft_compose::Cache;
-use designcraft_doc::{AssetId, Content, Document, Item, PageSide, Spread, StrokeAlign, StrokeType};
+use designcraft_doc::{
+    AssetId, Content, Document, Item, PageSide, Spread, StrokeAlign, StrokeType,
+};
 use designcraft_geom::kurbo::{PathEl, Shape as _};
 use designcraft_geom::{Affine, BezPath, Rect, Vec2, corners};
 use krilla::color::{cmyk, luma, rgb};
@@ -16,7 +18,9 @@ use krilla::image::Image;
 use krilla::metadata::Metadata;
 use krilla::num::NormalizedF32;
 use krilla::page::PageSettings;
-use krilla::paint::{Fill, FillRule, LinearGradient, RadialGradient, SpreadMethod, Stop, Stroke, StrokeDash};
+use krilla::paint::{
+    Fill, FillRule, LinearGradient, RadialGradient, SpreadMethod, Stop, Stroke, StrokeDash,
+};
 use krilla::surface::Surface;
 use krilla::tagging::{Artifact, ArtifactType, ContentTag, Identifier, Tag, TagGroup, TagTree};
 
@@ -41,12 +45,18 @@ pub(crate) const MARK_LEN: f64 = 18.0;
 
 fn bleed_lr(side: PageSide, b: [f64; 4]) -> (f64, f64) {
     // Bleed is top, bottom, inside, outside; single-sided pages read inside as left.
-    if side == PageSide::Left { (b[3], b[2]) } else { (b[2], b[3]) }
+    if side == PageSide::Left {
+        (b[3], b[2])
+    } else {
+        (b[2], b[3])
+    }
 }
 
 /// The spread each exported PDF page shows (in page order).
 pub fn sheet_spreads(doc: &Document, opts: &PdfOptions) -> Vec<usize> {
-    sheets(doc, opts).map(|v| v.iter().map(|s| s.spread).collect()).unwrap_or_default()
+    sheets(doc, opts)
+        .map(|v| v.iter().map(|s| s.spread).collect())
+        .unwrap_or_default()
 }
 
 fn sheets(doc: &Document, opts: &PdfOptions) -> Result<Vec<Sheet>> {
@@ -61,7 +71,10 @@ fn sheets(doc: &Document, opts: &PdfOptions) -> Result<Vec<Sheet>> {
     if let Some(bad) = pages.iter().find(|p| **p >= count) {
         return Err(PdfError::BadPage(bad + 1));
     }
-    let b = doc.settings.bleed.map(|v| if opts.bleed { v.max(0.0) } else { 0.0 });
+    let b = doc
+        .settings
+        .bleed
+        .map(|v| if opts.bleed { v.max(0.0) } else { 0.0 });
     let mut out: Vec<Sheet> = Vec::new();
     let mut seen_spreads: Vec<usize> = Vec::new();
     for abs in pages {
@@ -73,9 +86,19 @@ fn sheets(doc: &Document, opts: &PdfOptions) -> Result<Vec<Sheet>> {
             }
             seen_spreads.push(si);
             let first = doc.first_page_of_spread(si);
-            let (l, _) = sp.pages.first().map(|p| bleed_lr(p.side, b)).unwrap_or((b[2], b[3]));
-            let (_, r) = sp.pages.last().map(|p| bleed_lr(p.side, b)).unwrap_or((b[2], b[3]));
-            let names: Vec<String> = (0..sp.pages.len()).map(|i| doc.page_name(first + i)).collect();
+            let (l, _) = sp
+                .pages
+                .first()
+                .map(|p| bleed_lr(p.side, b))
+                .unwrap_or((b[2], b[3]));
+            let (_, r) = sp
+                .pages
+                .last()
+                .map(|p| bleed_lr(p.side, b))
+                .unwrap_or((b[2], b[3]));
+            let names: Vec<String> = (0..sp.pages.len())
+                .map(|i| doc.page_name(first + i))
+                .collect();
             (sp.bounds(), l, r, names.join("–"))
         } else {
             let p = &sp.pages[pi];
@@ -89,18 +112,31 @@ fn sheets(doc: &Document, opts: &PdfOptions) -> Result<Vec<Sheet>> {
         } else {
             bleed
         };
-        out.push(Sheet { spread: si, trim, bleed, media, label });
+        out.push(Sheet {
+            spread: si,
+            trim,
+            bleed,
+            media,
+            label,
+        });
     }
     Ok(out)
 }
 
 /// Distance from the trim edge where marks start: the offset, but never inside the bleed.
 pub(crate) fn mark_start(opts: &PdfOptions, bleed: [f64; 4]) -> f64 {
-    bleed.iter().copied().fold(opts.marks.offset.max(0.0), f64::max)
+    bleed
+        .iter()
+        .copied()
+        .fold(opts.marks.offset.max(0.0), f64::max)
 }
 
 /// Like [`export_pdf`], also returning warnings about approximated or dropped features.
-pub fn export_pdf_with_report(doc: &Document, cache: &Cache, opts: &PdfOptions) -> Result<ExportReport> {
+pub fn export_pdf_with_report(
+    doc: &Document,
+    cache: &Cache,
+    opts: &PdfOptions,
+) -> Result<ExportReport> {
     let sheets = sheets(doc, opts)?;
     let warnings = Vec::new();
     let (version, archival) = match opts.standard {
@@ -113,11 +149,17 @@ pub fn export_pdf_with_report(doc: &Document, cache: &Cache, opts: &PdfOptions) 
         cb = cb.with_archival_validator(a);
     }
     let configuration = cb.finish().map_err(|e| PdfError::Write(format!("{e:?}")))?;
-    let settings = krilla::SerializeSettings { compress_content_streams: opts.compress, configuration, ..Default::default() };
+    let settings = krilla::SerializeSettings {
+        compress_content_streams: opts.compress,
+        configuration,
+        ..Default::default()
+    };
     let mut pdf = krilla::Document::new_with(settings);
 
     let title = opts.title.clone().unwrap_or_else(|| doc.title.clone());
-    let mut meta = Metadata::new().creator("DesignCraft".into()).producer("DesignCraft".into());
+    let mut meta = Metadata::new()
+        .creator("DesignCraft".into())
+        .producer("DesignCraft".into());
     if !title.is_empty() {
         meta = meta.title(title.clone());
     }
@@ -170,7 +212,11 @@ pub fn export_pdf_with_report(doc: &Document, cache: &Cache, opts: &PdfOptions) 
         pdf.set_outline(o);
     }
     for (sheet_idx, sh) in sheets.iter().enumerate() {
-        let size = Size::from_wh(sh.media.width().max(1.0) as f32, sh.media.height().max(1.0) as f32).ok_or(PdfError::NoPages)?;
+        let size = Size::from_wh(
+            sh.media.width().max(1.0) as f32,
+            sh.media.height().max(1.0) as f32,
+        )
+        .ok_or(PdfError::NoPages)?;
         let local = |r: Rect| {
             krilla::geom::Rect::from_ltrb(
                 (r.x0 - sh.media.x0) as f32,
@@ -179,7 +225,9 @@ pub fn export_pdf_with_report(doc: &Document, cache: &Cache, opts: &PdfOptions) 
                 (r.y1 - sh.media.y0) as f32,
             )
         };
-        let settings = PageSettings::new(size).with_trim_box(local(sh.trim)).with_bleed_box(local(sh.bleed));
+        let settings = PageSettings::new(size)
+            .with_trim_box(local(sh.trim))
+            .with_bleed_box(local(sh.bleed));
         let mut page = pdf.start_page_with(settings);
         let mut s = page.surface();
         s.push_transform(&tf(Affine::translate(-sh.media.origin().to_vec2())));
@@ -190,7 +238,10 @@ pub fn export_pdf_with_report(doc: &Document, cache: &Cache, opts: &PdfOptions) 
             s.pop();
         }
         if opts.tagged {
-            s.start_tagged(ContentTag::Artifact(Artifact::new(ArtifactType::Page, None)));
+            s.start_tagged(ContentTag::Artifact(Artifact::new(
+                ArtifactType::Page,
+                None,
+            )));
         }
         ex.marks(&mut s, sh, &title, created);
         if opts.tagged {
@@ -207,17 +258,26 @@ pub fn export_pdf_with_report(doc: &Document, cache: &Cache, opts: &PdfOptions) 
         pdf.set_tag_tree(ex.tag_tree());
     }
     ex.check_placed_versions()?;
-    let mut bytes = pdf.finish().map_err(|e| PdfError::Write(format!("{e:?}")))?;
+    let mut bytes = pdf
+        .finish()
+        .map_err(|e| PdfError::Write(format!("{e:?}")))?;
     // Transparency blends in the document's blend space: CMYK for print (and always in PDF/X).
     let mut warnings = ex.warnings;
-    if !ex.rgb_only && (doc.settings.blend_space == designcraft_doc::BlendSpace::Cmyk || opts.standard == Standard::PdfX4) {
+    if !ex.rgb_only
+        && (doc.settings.blend_space == designcraft_doc::BlendSpace::Cmyk
+            || opts.standard == Standard::PdfX4)
+    {
         // The rewrite matches krilla's exact output; in PDF/X-4, `check_pdfx4` reports any
         // group that got past it, with its page.
         crate::pdfx::cmyk_group_spaces(&mut bytes);
     }
     // Form fields (Buttons and Forms) and, for interactive PDF, video and sound; not in PDF/X.
     let fields = crate::forms::collect(doc, &sheets);
-    let media = if opts.media { crate::forms::collect_media(doc, &sheets) } else { Vec::new() };
+    let media = if opts.media {
+        crate::forms::collect_media(doc, &sheets)
+    } else {
+        Vec::new()
+    };
     if !fields.is_empty() || !media.is_empty() {
         if opts.standard == Standard::PdfX4 {
             warnings.push("PDF/X-4: form fields and media were left out".into());
@@ -239,21 +299,28 @@ pub fn export_pdf_with_report(doc: &Document, cache: &Cache, opts: &PdfOptions) 
         }
     }
     warnings.dedup();
-    Ok(ExportReport { bytes, pages: sheets.len(), warnings })
+    Ok(ExportReport {
+        bytes,
+        pages: sheets.len(),
+        warnings,
+    })
 }
 
 /// One PDF from several (a book's documents), every page carried over as vectors; each part
 /// comes with its pages' sizes (points).
 pub fn merge_pdfs(parts: &[(Vec<u8>, Vec<(f32, f32)>)], title: Option<&str>) -> Result<Vec<u8>> {
     let mut pdf = krilla::Document::new_with(krilla::SerializeSettings::default());
-    let mut meta = Metadata::new().creator("DesignCraft".into()).producer("DesignCraft".into());
+    let mut meta = Metadata::new()
+        .creator("DesignCraft".into())
+        .producer("DesignCraft".into());
     if let Some(t) = title {
         meta = meta.title(t.to_string());
     }
     pdf.set_metadata(meta);
     let mut pages = 0;
     for (bytes, sizes) in parts {
-        let src = krilla::pdf::Pdf::new(Arc::new(bytes.clone())).map_err(|e| PdfError::Write(format!("{e:?}")))?;
+        let src = krilla::pdf::Pdf::new(Arc::new(bytes.clone()))
+            .map_err(|e| PdfError::Write(format!("{e:?}")))?;
         let doc = krilla::pdf::PdfDocument::new(Arc::new(src));
         for (i, &(w, h)) in sizes.iter().enumerate() {
             let size = Size::from_wh(w.max(1.0), h.max(1.0)).ok_or(PdfError::NoPages)?;
@@ -293,25 +360,47 @@ pub struct BookletOptions {
 pub fn booklet_pairs(n: usize, kind: BookletKind) -> Vec<(Option<usize>, Option<usize>)> {
     let page = |i: usize| (i < n).then_some(i);
     match kind {
-        BookletKind::TwoUpConsecutive => (0..n.div_ceil(2)).map(|k| (page(2 * k), page(2 * k + 1))).collect(),
+        BookletKind::TwoUpConsecutive => (0..n.div_ceil(2))
+            .map(|k| (page(2 * k), page(2 * k + 1)))
+            .collect(),
         BookletKind::SaddleStitch => {
             let m = n.div_ceil(4).max(1) * 4;
-            (0..m / 2).map(|i| if i % 2 == 0 { (page(m - 1 - i), page(i)) } else { (page(i), page(m - 1 - i)) }).collect()
+            (0..m / 2)
+                .map(|i| {
+                    if i % 2 == 0 {
+                        (page(m - 1 - i), page(i))
+                    } else {
+                        (page(i), page(m - 1 - i))
+                    }
+                })
+                .collect()
         }
     }
 }
 
 /// An imposed PDF: two document pages per sheet, in booklet order.
-pub fn export_booklet(doc: &Document, cache: &Cache, opts: &BookletOptions) -> Result<ExportReport> {
+pub fn export_booklet(
+    doc: &Document,
+    cache: &Cache,
+    opts: &BookletOptions,
+) -> Result<ExportReport> {
     let n = doc.page_count();
     if n == 0 {
         return Err(PdfError::NoPages);
     }
-    let pdf_opts = PdfOptions { title: opts.title.clone(), ..PdfOptions::default() };
-    let settings = krilla::SerializeSettings { compress_content_streams: true, ..Default::default() };
+    let pdf_opts = PdfOptions {
+        title: opts.title.clone(),
+        ..PdfOptions::default()
+    };
+    let settings = krilla::SerializeSettings {
+        compress_content_streams: true,
+        ..Default::default()
+    };
     let mut pdf = krilla::Document::new_with(settings);
     let title = opts.title.clone().unwrap_or_else(|| doc.title.clone());
-    let mut meta = Metadata::new().creator("DesignCraft".into()).producer("DesignCraft".into());
+    let mut meta = Metadata::new()
+        .creator("DesignCraft".into())
+        .producer("DesignCraft".into());
     if !title.is_empty() {
         meta = meta.title(title);
     }
@@ -356,12 +445,17 @@ pub fn export_booklet(doc: &Document, cache: &Cache, opts: &BookletOptions) -> R
         let mut page = pdf.start_page_with(PageSettings::new(size));
         let mut s = page.surface();
         for (slot, abs) in [(0.0, left), (pw + gap, right)] {
-            let Some((si, pi)) = abs.and_then(|a| doc.page_loc(a)) else { continue };
+            let Some((si, pi)) = abs.and_then(|a| doc.page_loc(a)) else {
+                continue;
+            };
             let p = &doc.spreads[si].pages[pi];
             let r = Rect::new(p.x, 0.0, p.x + p.width, p.height);
             // Pages narrower than the slot sit against the fold.
             let dx = if slot == 0.0 { pw - p.width } else { 0.0 };
-            s.push_transform(&tf(Affine::translate((slot + dx - p.x, (ph - p.height) / 2.0))));
+            s.push_transform(&tf(Affine::translate((
+                slot + dx - p.x,
+                (ph - p.height) / 2.0,
+            ))));
             ex.clip = r;
             if let Some(clip) = to_path(&r.to_path(0.1)) {
                 s.push_clip_path(&clip, &FillRule::NonZero);
@@ -374,19 +468,28 @@ pub fn export_booklet(doc: &Document, cache: &Cache, opts: &BookletOptions) -> R
         page.finish();
     }
     ex.check_placed_versions()?;
-    let mut bytes = pdf.finish().map_err(|e| PdfError::Write(format!("{e:?}")))?;
+    let mut bytes = pdf
+        .finish()
+        .map_err(|e| PdfError::Write(format!("{e:?}")))?;
     if doc.settings.blend_space == designcraft_doc::BlendSpace::Cmyk {
         crate::pdfx::cmyk_group_spaces(&mut bytes);
     }
     let mut warnings = ex.warnings;
     warnings.dedup();
-    Ok(ExportReport { bytes, pages: pairs.len(), warnings })
+    Ok(ExportReport {
+        bytes,
+        pages: pairs.len(),
+        warnings,
+    })
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn now_unix() -> Option<i64> {
     use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now().duration_since(UNIX_EPOCH).ok().map(|d| d.as_secs() as i64)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
+        .map(|d| d.as_secs() as i64)
 }
 #[cfg(target_arch = "wasm32")]
 fn now_unix() -> Option<i64> {
@@ -406,7 +509,14 @@ pub(crate) fn civil(t: i64) -> (i64, u8, u8, u8, u8, u8) {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
-    (year, month as u8, day as u8, (secs / 3600) as u8, (secs / 60 % 60) as u8, (secs % 60) as u8)
+    (
+        year,
+        month as u8,
+        day as u8,
+        (secs / 3600) as u8,
+        (secs / 60 % 60) as u8,
+        (secs % 60) as u8,
+    )
 }
 
 /// A successful conversion and its name-independent diagnostic. Replayed once for each asset.
@@ -423,7 +533,8 @@ type ImageContentCache = HashMap<Arc<Vec<u8>>, ConvertedImage>;
 
 // Unit tests force collisions through the real cache path; production keeps RandomState.
 #[cfg(test)]
-type ImageContentCache = HashMap<Arc<Vec<u8>>, ConvertedImage, std::hash::BuildHasherDefault<ConstantImageHasher>>;
+type ImageContentCache =
+    HashMap<Arc<Vec<u8>>, ConvertedImage, std::hash::BuildHasherDefault<ConstantImageHasher>>;
 #[cfg(test)]
 #[derive(Default)]
 struct ConstantImageHasher;
@@ -479,7 +590,14 @@ enum TagEntry {
 
 pub(crate) fn tf(a: Affine) -> Transform {
     let c = a.as_coeffs();
-    Transform::from_row(c[0] as f32, c[1] as f32, c[2] as f32, c[3] as f32, c[4] as f32, c[5] as f32)
+    Transform::from_row(
+        c[0] as f32,
+        c[1] as f32,
+        c[2] as f32,
+        c[3] as f32,
+        c[4] as f32,
+        c[5] as f32,
+    )
 }
 
 pub(crate) fn to_path(bp: &BezPath) -> Option<Path> {
@@ -489,7 +607,9 @@ pub(crate) fn to_path(bp: &BezPath) -> Option<Path> {
             PathEl::MoveTo(p) => pb.move_to(p.x as f32, p.y as f32),
             PathEl::LineTo(p) => pb.line_to(p.x as f32, p.y as f32),
             PathEl::QuadTo(a, p) => pb.quad_to(a.x as f32, a.y as f32, p.x as f32, p.y as f32),
-            PathEl::CurveTo(a, b, p) => pb.cubic_to(a.x as f32, a.y as f32, b.x as f32, b.y as f32, p.x as f32, p.y as f32),
+            PathEl::CurveTo(a, b, p) => pb.cubic_to(
+                a.x as f32, a.y as f32, b.x as f32, b.y as f32, p.x as f32, p.y as f32,
+            ),
             PathEl::ClosePath => pb.close(),
         }
     }
@@ -497,7 +617,12 @@ pub(crate) fn to_path(bp: &BezPath) -> Option<Path> {
 }
 
 pub(crate) fn norm(v: f32) -> NormalizedF32 {
-    NormalizedF32::new(if v.is_finite() { v.clamp(0.0, 1.0) } else { 1.0 }).unwrap_or(NormalizedF32::ONE)
+    NormalizedF32::new(if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        1.0
+    })
+    .unwrap_or(NormalizedF32::ONE)
 }
 
 fn q(v: f32) -> u8 {
@@ -532,7 +657,11 @@ pub(crate) fn device(c: &Color, rgb_only: bool) -> krilla::color::Color {
 pub(crate) fn registration(tint: f32, rgb_only: bool) -> krilla::color::Color {
     use krilla::color::separation::{Color as SepColor, SeparationColorant, SeparationSpace};
     let alt = regular(&Color::cmyk(1.0, 1.0, 1.0, 1.0), rgb_only);
-    SepColor::new(q(tint), SeparationSpace::new(SeparationColorant::AllColorants, alt)).into()
+    SepColor::new(
+        q(tint),
+        SeparationSpace::new(SeparationColorant::AllColorants, alt),
+    )
+    .into()
 }
 
 fn blend(b: DcBlend) -> krilla::blend::BlendMode {
@@ -562,13 +691,18 @@ fn rects_overlap(a: Rect, b: Rect) -> bool {
 }
 
 pub(crate) fn solid_fill(c: krilla::color::Color, opacity: f32) -> Fill {
-    Fill { paint: c.into(), opacity: norm(opacity), rule: FillRule::NonZero }
+    Fill {
+        paint: c.into(),
+        opacity: norm(opacity),
+        rule: FillRule::NonZero,
+    }
 }
 
 impl Exporter<'_> {
     /// A print document, or a PDF/X file (whose output intent is CMYK).
     pub(crate) fn for_print(&self) -> bool {
-        self.doc.settings.intent == designcraft_doc::Intent::Print || self.opts.standard == Standard::PdfX4
+        self.doc.settings.intent == designcraft_doc::Intent::Print
+            || self.opts.standard == Standard::PdfX4
     }
 
     pub(crate) fn warn(&mut self, w: impl Into<String>) {
@@ -591,33 +725,61 @@ impl Exporter<'_> {
                 // [Paper] prints no ink (it knocks out what lies below); its colour is only what
                 // the screen shows. Written as RGB white (`1 1 1 rg`) it would put DeviceRGB in a
                 // CMYK print file.
-                SwatchValue::Paper { .. } if self.for_print() => return Some(device(&Color::cmyk(0.0, 0.0, 0.0, 0.0), self.rgb_only)),
+                SwatchValue::Paper { .. } if self.for_print() => {
+                    return Some(device(&Color::cmyk(0.0, 0.0, 0.0, 0.0), self.rgb_only));
+                }
                 SwatchValue::Tint { base, tint: bt } => {
                     t *= bt;
                     n = base;
                 }
                 SwatchValue::Registration => return Some(registration(t, self.rgb_only)),
-                SwatchValue::Color { color: _, color_type: ColorType::Spot } => {
+                SwatchValue::Color {
+                    color: _,
+                    color_type: ColorType::Spot,
+                } => {
                     // Ink Manager: an alias prints on another ink; converted inks go to process.
                     let (ink, process) = self.doc.inks.resolve(&sw.name);
-                    let target =
-                        self.doc.swatch(ink).filter(|w| matches!(w.value, SwatchValue::Color { color_type: ColorType::Spot, .. })).unwrap_or(sw);
-                    let SwatchValue::Color { color, .. } = &target.value else { break };
+                    let target = self
+                        .doc
+                        .swatch(ink)
+                        .filter(|w| {
+                            matches!(
+                                w.value,
+                                SwatchValue::Color {
+                                    color_type: ColorType::Spot,
+                                    ..
+                                }
+                            )
+                        })
+                        .unwrap_or(sw);
+                    let SwatchValue::Color { color, .. } = &target.value else {
+                        break;
+                    };
                     if process {
-                        return Some(device(&designcraft_color::swatch::apply_tint(*color, t), self.rgb_only));
+                        return Some(device(
+                            &designcraft_color::swatch::apply_tint(*color, t),
+                            self.rgb_only,
+                        ));
                     }
-                    let space = SeparationSpace::new(SeparationColorant::Custom(target.name.clone()), regular(color, self.rgb_only));
+                    let space = SeparationSpace::new(
+                        SeparationColorant::Custom(target.name.clone()),
+                        regular(color, self.rgb_only),
+                    );
                     return Some(SepColor::new(q(t), space).into());
                 }
                 _ => break,
             }
         }
-        self.doc.resolve_color(name, tint).map(|c| device(&c, self.rgb_only))
+        self.doc
+            .resolve_color(name, tint)
+            .map(|c| device(&c, self.rgb_only))
     }
 
     fn spread(&mut self, s: &mut Surface, si: usize) {
         let doc = self.doc;
-        let Some(sp) = doc.spreads.get(si) else { return };
+        let Some(sp) = doc.spreads.get(si) else {
+            return;
+        };
         let first = doc.first_page_of_spread(si);
         for layer in doc.layers.iter().rev() {
             if !layer.visible || !layer.printable {
@@ -627,7 +789,9 @@ impl Exporter<'_> {
                 if !page.show_parent_items {
                     continue;
                 }
-                let Some((ppi, ppage)) = doc.parent_page_for(first + pi) else { continue };
+                let Some((ppi, ppage)) = doc.parent_page_for(first + pi) else {
+                    continue;
+                };
                 let parent = &doc.parents[ppi];
                 let dx = page.x - parent.pages[ppage].x;
                 for it in &parent.items {
@@ -635,7 +799,9 @@ impl Exporter<'_> {
                         continue;
                     }
                     // Parent items belong to the parent page they sit on.
-                    if parent.page_at_x(it.bounds().center().x) != Some(ppage) && parent.pages.len() > 1 {
+                    if parent.page_at_x(it.bounds().center().x) != Some(ppage)
+                        && parent.pages.len() > 1
+                    {
                         continue;
                     }
                     self.top_item(s, it, Affine::translate((dx, 0.0)), Some(first + pi), true);
@@ -678,15 +844,28 @@ impl Exporter<'_> {
     }
 
     /// A spread or parent item, inside its structure tag when tagging.
-    fn top_item(&mut self, s: &mut Surface, it: &Item, parent: Affine, page: Option<usize>, on_parent: bool) {
+    fn top_item(
+        &mut self,
+        s: &mut Surface,
+        it: &Item,
+        parent: Affine,
+        page: Option<usize>,
+        on_parent: bool,
+    ) {
         if !self.opts.tagged || it.hidden || it.nonprinting {
             return self.item(s, it, parent, page);
         }
         let story = it.text_frame().map(|t| t.story);
-        let figure = !it.alt_text.is_empty() || matches!(it.content, Content::Graphic(_)) || it.has_nested_items();
+        let figure = !it.alt_text.is_empty()
+            || matches!(it.content, Content::Graphic(_))
+            || it.has_nested_items();
         if on_parent || it.export_options.artifact || (story.is_none() && !figure) {
             // Page furniture and decoration.
-            let kind = if on_parent { ArtifactType::Page } else { ArtifactType::Other };
+            let kind = if on_parent {
+                ArtifactType::Page
+            } else {
+                ArtifactType::Other
+            };
             s.start_tagged(ContentTag::Artifact(Artifact::new(kind, None)));
             self.item(s, it, parent, page);
             s.end_tagged();
@@ -721,18 +900,42 @@ impl Exporter<'_> {
                 TagEntry::Story(sid) => {
                     // One structure element per paragraph: headings and quotes from the
                     // paragraph style's Export Tagging, else P.
-                    let mut paras: Vec<usize> = self.para_tags.keys().filter(|(s, _)| *s == sid).map(|(_, p)| *p).collect();
+                    let mut paras: Vec<usize> = self
+                        .para_tags
+                        .keys()
+                        .filter(|(s, _)| *s == sid)
+                        .map(|(_, p)| *p)
+                        .collect();
                     paras.sort_unstable();
                     let story = self.doc.story(sid);
                     for pi in paras {
                         let ids = self.para_tags.remove(&(sid, pi)).unwrap_or_default();
-                        let style = story.and_then(|st| st.paras.get(pi)).map(|p| p.style.clone()).unwrap_or_default();
-                        let tag = self.doc.styles.export_tag(&style, false).map(|e| e.tag.clone()).unwrap_or_default();
-                        let text = || story.and_then(|st| st.para_ranges().get(pi).map(|r| st.text[r.clone()].trim().to_string()));
+                        let style = story
+                            .and_then(|st| st.paras.get(pi))
+                            .map(|p| p.style.clone())
+                            .unwrap_or_default();
+                        let tag = self
+                            .doc
+                            .styles
+                            .export_tag(&style, false)
+                            .map(|e| e.tag.clone())
+                            .unwrap_or_default();
+                        let text = || {
+                            story.and_then(|st| {
+                                st.para_ranges()
+                                    .get(pi)
+                                    .map(|r| st.text[r.clone()].trim().to_string())
+                            })
+                        };
                         let kind: krilla::tagging::TagKind = match tag.as_str() {
                             h if h.len() == 2 && h.starts_with('h') => {
                                 let n = h[1..].parse::<u16>().unwrap_or(1).clamp(1, 6);
-                                Tag::Hn(std::num::NonZeroU16::new(n).unwrap_or(std::num::NonZeroU16::MIN), text()).into()
+                                Tag::Hn(
+                                    std::num::NonZeroU16::new(n)
+                                        .unwrap_or(std::num::NonZeroU16::MIN),
+                                    text(),
+                                )
+                                .into()
                             }
                             "blockquote" => Tag::BlockQuote.into(),
                             _ => Tag::P.into(),
@@ -758,10 +961,20 @@ impl Exporter<'_> {
         // Gradient feather: a luminosity mask (white = opaque) over the object.
         let xf = parent * it.xf;
         let (p0, p1) = gf.points(it.inner_bounds());
-        let gray = |a: f32| -> krilla::color::Color { luma::Color::new((a.clamp(0.0, 1.0) * 255.0).round() as u8).into() };
+        let gray = |a: f32| -> krilla::color::Color {
+            luma::Color::new((a.clamp(0.0, 1.0) * 255.0).round() as u8).into()
+        };
         let stops = vec![
-            Stop { offset: NormalizedF32::ZERO, color: gray(gf.start), opacity: NormalizedF32::ONE },
-            Stop { offset: NormalizedF32::ONE, color: gray(gf.end), opacity: NormalizedF32::ONE },
+            Stop {
+                offset: NormalizedF32::ZERO,
+                color: gray(gf.start),
+                opacity: NormalizedF32::ONE,
+            },
+            Stop {
+                offset: NormalizedF32::ONE,
+                color: gray(gf.end),
+                opacity: NormalizedF32::ONE,
+            },
         ];
         let paint: krilla::paint::Paint = if gf.radial {
             let r = (p1 - p0).hypot().max(1e-3) as f32;
@@ -791,18 +1004,27 @@ impl Exporter<'_> {
             }
             .into()
         };
-        let area = it.inner_bounds().inflate(it.stroke.extent() + 4.0, it.stroke.extent() + 4.0);
+        let area = it
+            .inner_bounds()
+            .inflate(it.stroke.extent() + 4.0, it.stroke.extent() + 4.0);
         let mut sb = s.stream_builder();
         let mut ms = sb.surface();
         ms.push_transform(&tf(xf));
         if let Some(p) = to_path(&area.to_path(0.1)) {
-            ms.set_fill(Some(Fill { paint, opacity: NormalizedF32::ONE, rule: FillRule::NonZero }));
+            ms.set_fill(Some(Fill {
+                paint,
+                opacity: NormalizedF32::ONE,
+                rule: FillRule::NonZero,
+            }));
             ms.draw_path(&p);
         }
         ms.pop();
         ms.finish();
         let stream = sb.finish();
-        s.push_mask(krilla::mask::Mask::new(stream, krilla::mask::MaskType::Luminosity));
+        s.push_mask(krilla::mask::Mask::new(
+            stream,
+            krilla::mask::MaskType::Luminosity,
+        ));
         self.item_inner(s, it, parent, page);
         s.pop();
     }
@@ -812,7 +1034,13 @@ impl Exporter<'_> {
             return;
         }
         let ds = &it.effects.drop_shadow;
-        let grow = it.stroke.extent() + 2.0 + if ds.on { ds.distance.abs() + ds.size.abs() } else { 0.0 };
+        let grow = it.stroke.extent()
+            + 2.0
+            + if ds.on {
+                ds.distance.abs() + ds.size.abs()
+            } else {
+                0.0
+            };
         let vb = parent.transform_rect_bbox(it.bounds()).inflate(grow, grow);
         if !rects_overlap(vb, self.clip) {
             return;
@@ -820,7 +1048,11 @@ impl Exporter<'_> {
         let xf = parent * it.xf;
         if it.has_nested_items() {
             // A frame with items pasted into it: fill, the items clipped to the frame, stroke.
-            let bp = if it.corners.is_none() { it.path.to_bezpath() } else { corners::apply(&it.path, &it.corners) };
+            let bp = if it.corners.is_none() {
+                it.path.to_bezpath()
+            } else {
+                corners::apply(&it.path, &it.corners)
+            };
             let path = to_path(&bp);
             let pushes = Self::push_group(s, it.opacity, it.blend);
             s.push_transform(&tf(xf));
@@ -829,7 +1061,11 @@ impl Exporter<'_> {
                 && let Some(paint) = self.fill_paint(&it.fill, bp.bounding_box())
             {
                 s.set_stroke(None);
-                s.set_fill(Some(Fill { paint, opacity: NormalizedF32::ONE, rule: FillRule::NonZero }));
+                s.set_fill(Some(Fill {
+                    paint,
+                    opacity: NormalizedF32::ONE,
+                    rule: FillRule::NonZero,
+                }));
                 s.draw_path(p);
                 s.set_fill(None);
             }
@@ -870,12 +1106,19 @@ impl Exporter<'_> {
             return;
         }
         let doc = self.doc;
-        let bp = if it.corners.is_none() { it.path.to_bezpath() } else { corners::apply(&it.path, &it.corners) };
+        let bp = if it.corners.is_none() {
+            it.path.to_bezpath()
+        } else {
+            corners::apply(&it.path, &it.corners)
+        };
         let path = to_path(&bp);
         let pushes = Self::push_group(s, it.opacity, it.blend);
         let frame_art = self.tag_story.is_some();
         if frame_art {
-            s.start_tagged(ContentTag::Artifact(Artifact::new(ArtifactType::Other, None)));
+            s.start_tagged(ContentTag::Artifact(Artifact::new(
+                ArtifactType::Other,
+                None,
+            )));
         }
         // Drop shadow (simple offset silhouette, like the renderer).
         if ds.on
@@ -902,7 +1145,11 @@ impl Exporter<'_> {
                 self.warn("overprint is not exported yet");
             }
             s.set_stroke(None);
-            s.set_fill(Some(Fill { paint, opacity: NormalizedF32::ONE, rule: FillRule::NonZero }));
+            s.set_fill(Some(Fill {
+                paint,
+                opacity: NormalizedF32::ONE,
+                rule: FillRule::NonZero,
+            }));
             s.draw_path(p);
             s.set_fill(None);
         }
@@ -912,7 +1159,12 @@ impl Exporter<'_> {
         // Content.
         match &it.content {
             Content::Graphic(g) => {
-                let g = &if it.media.is_some() { it.drawn_graphic(&self.doc.assets).unwrap_or_else(|| g.clone()) } else { g.clone() };
+                let g = &if it.media.is_some() {
+                    it.drawn_graphic(&self.doc.assets)
+                        .unwrap_or_else(|| g.clone())
+                } else {
+                    g.clone()
+                };
                 if let Some(p) = &path {
                     s.push_clip_path(p, &FillRule::NonZero);
                     self.graphic(s, g);
@@ -925,14 +1177,23 @@ impl Exporter<'_> {
                     // Type on a path: the glyphs as outlines along the path.
                     for (si, gp) in designcraft_compose::path_glyphs(&cs, ft, &bp, pt) {
                         let st = &cs.styles[si as usize];
-                        if let (Some(c), Some(p)) = (self.swatch_color(&st.fill, st.fill_tint), to_path(&gp)) {
-                            s.set_fill(Some(Fill { paint: c.into(), opacity: NormalizedF32::ONE, rule: FillRule::NonZero }));
+                        if let (Some(c), Some(p)) =
+                            (self.swatch_color(&st.fill, st.fill_tint), to_path(&gp))
+                        {
+                            s.set_fill(Some(Fill {
+                                paint: c.into(),
+                                opacity: NormalizedF32::ONE,
+                                rule: FillRule::NonZero,
+                            }));
                             s.draw_path(&p);
                             s.set_fill(None);
                         }
                     }
                 } else if let Some(ft) = cs.frame(it.id) {
-                    let text = doc.story(tfr.story).map(|st| st.text.as_str()).unwrap_or("");
+                    let text = doc
+                        .story(tfr.story)
+                        .map(|st| st.text.as_str())
+                        .unwrap_or("");
                     let local = doc.text_local(it);
                     if local != Affine::IDENTITY {
                         s.push_transform(&tf(local));
@@ -950,7 +1211,10 @@ impl Exporter<'_> {
             && let Some(p) = &path
         {
             if frame_art {
-                s.start_tagged(ContentTag::Artifact(Artifact::new(ArtifactType::Other, None)));
+                s.start_tagged(ContentTag::Artifact(Artifact::new(
+                    ArtifactType::Other,
+                    None,
+                )));
             }
             self.stroke(s, it, &bp, p);
             if frame_art {
@@ -969,7 +1233,12 @@ impl Exporter<'_> {
             if let Some(ft) = cs.frame(it.id) {
                 for o in &ft.objects {
                     if let Some(obj) = st.objects.get(o.index) {
-                        self.item(s, &obj.item, xf * Affine::translate(o.origin.to_vec2()), page);
+                        self.item(
+                            s,
+                            &obj.item,
+                            xf * Affine::translate(o.origin.to_vec2()),
+                            page,
+                        );
                     }
                 }
             }
@@ -977,7 +1246,11 @@ impl Exporter<'_> {
     }
 
     /// A swatch fill (solid or gradient) in the item's inner space. `None` for [None]/unknown.
-    fn fill_paint(&mut self, fill: &designcraft_doc::Fill, bounds: Rect) -> Option<krilla::paint::Paint> {
+    fn fill_paint(
+        &mut self,
+        fill: &designcraft_doc::Fill,
+        bounds: Rect,
+    ) -> Option<krilla::paint::Paint> {
         let (swatch, tint, angle) = (fill.swatch.as_str(), fill.tint, fill.gradient_angle);
         if let Some(g) = designcraft_color::swatch::resolve_gradient(&self.doc.swatches, swatch) {
             let kind = g.kind;
@@ -989,7 +1262,11 @@ impl Exporter<'_> {
                 Color::Gray { .. } => 1,
                 _ => 3,
             };
-            let mixed = expanded.first().is_some_and(|(_, first, _)| expanded.iter().any(|(_, c, _)| components(c) != components(first)));
+            let mixed = expanded.first().is_some_and(|(_, first, _)| {
+                expanded
+                    .iter()
+                    .any(|(_, c, _)| components(c) != components(first))
+            });
             if mixed {
                 self.warn(format!("gradient '{swatch}': mixed color spaces converted to RGB (colour appearance and separations may change)"));
             }
@@ -1006,7 +1283,11 @@ impl Exporter<'_> {
                     // leave every homogeneous gradient on its existing device-space path.
                     device(&c, self.rgb_only)
                 };
-                stops.push(Stop { offset: norm(o), color, opacity: norm(a) });
+                stops.push(Stop {
+                    offset: norm(o),
+                    color,
+                    opacity: norm(a),
+                });
             }
             if stops.is_empty() {
                 return None;
@@ -1016,7 +1297,10 @@ impl Exporter<'_> {
             return Some(match kind {
                 GradientKind::Radial => {
                     let (c, r) = match v {
-                        Some([x0, y0, x1, y1]) => (designcraft_geom::Point::new(x0, y0), Vec2::new(x1 - x0, y1 - y0).hypot()),
+                        Some([x0, y0, x1, y1]) => (
+                            designcraft_geom::Point::new(x0, y0),
+                            Vec2::new(x1 - x0, y1 - y0).hypot(),
+                        ),
                         None => (c, bounds.width().max(bounds.height()) / 2.0),
                     };
                     let r = r.max(1e-3) as f32;
@@ -1037,10 +1321,15 @@ impl Exporter<'_> {
                 }
                 _ => {
                     let a = angle.unwrap_or(0.0).to_radians();
-                    let half = ((bounds.width() * a.cos().abs() + bounds.height() * a.sin().abs()) / 2.0).max(1e-3);
+                    let half = ((bounds.width() * a.cos().abs() + bounds.height() * a.sin().abs())
+                        / 2.0)
+                        .max(1e-3);
                     let d = Vec2::new(a.cos(), -a.sin()) * half;
                     let (p0, p1) = match v {
-                        Some([x0, y0, x1, y1]) => (designcraft_geom::Point::new(x0, y0), designcraft_geom::Point::new(x1, y1)),
+                        Some([x0, y0, x1, y1]) => (
+                            designcraft_geom::Point::new(x0, y0),
+                            designcraft_geom::Point::new(x1, y1),
+                        ),
                         None => (c - d, c + d),
                     };
                     LinearGradient {
@@ -1062,7 +1351,9 @@ impl Exporter<'_> {
 
     fn stroke(&mut self, s: &mut Surface, it: &Item, bp: &BezPath, path: &Path) {
         let st = &it.stroke;
-        let Some(c) = self.swatch_color(&st.swatch, st.tint) else { return };
+        let Some(c) = self.swatch_color(&st.swatch, st.tint) else {
+            return;
+        };
         let closed = it.path.is_closed();
         let mut cap = match st.cap {
             designcraft_doc::Cap::Butt => krilla::paint::LineCap::Butt,
@@ -1078,12 +1369,21 @@ impl Exporter<'_> {
             if let Some(g) = self.swatch_color(&st.gap_swatch, st.gap_tint)
                 && st.gap_swatch != designcraft_color::swatch::NONE
             {
-                s.set_stroke(Some(Stroke { paint: g.into(), width: st.weight as f32, opacity: NormalizedF32::ONE, ..Default::default() }));
+                s.set_stroke(Some(Stroke {
+                    paint: g.into(),
+                    width: st.weight as f32,
+                    opacity: NormalizedF32::ONE,
+                    ..Default::default()
+                }));
                 s.set_fill(None);
                 s.draw_path(path);
                 s.set_stroke(None);
             }
-            s.set_fill(Some(Fill { paint: c.into(), opacity: NormalizedF32::ONE, rule: FillRule::NonZero }));
+            s.set_fill(Some(Fill {
+                paint: c.into(),
+                opacity: NormalizedF32::ONE,
+                rule: FillRule::NonZero,
+            }));
             s.draw_path(&op);
             s.set_fill(None);
             return;
@@ -1094,11 +1394,17 @@ impl Exporter<'_> {
                 if pat.len() % 2 == 1 {
                     pat.extend(pat.clone());
                 }
-                Some(StrokeDash { array: pat, offset: 0.0 })
+                Some(StrokeDash {
+                    array: pat,
+                    offset: 0.0,
+                })
             }
             StrokeType::Dotted => {
                 cap = krilla::paint::LineCap::Round;
-                Some(StrokeDash { array: vec![0.0, (st.weight * 2.0) as f32], offset: 0.0 })
+                Some(StrokeDash {
+                    array: vec![0.0, (st.weight * 2.0) as f32],
+                    offset: 0.0,
+                })
             }
             _ => None,
         };
@@ -1115,7 +1421,9 @@ impl Exporter<'_> {
             }
             StrokeAlign::Outside if closed => {
                 // Clip to everything outside the path: a big frame plus the path, even-odd.
-                let b = bp.bounding_box().inflate(width * 2.0 + 10.0, width * 2.0 + 10.0);
+                let b = bp
+                    .bounding_box()
+                    .inflate(width * 2.0 + 10.0, width * 2.0 + 10.0);
                 let mut outside = b.to_path(0.1);
                 outside.extend(bp.iter());
                 if let Some(p) = to_path(&outside) {
@@ -1131,7 +1439,12 @@ impl Exporter<'_> {
             && let Some(g) = self.swatch_color(&st.gap_swatch, st.gap_tint)
         {
             // Gap colour under dashes and dots.
-            s.set_stroke(Some(Stroke { paint: g.into(), width: width as f32, opacity: NormalizedF32::ONE, ..Default::default() }));
+            s.set_stroke(Some(Stroke {
+                paint: g.into(),
+                width: width as f32,
+                opacity: NormalizedF32::ONE,
+                ..Default::default()
+            }));
             s.draw_path(path);
         }
         s.set_stroke(Some(Stroke {
@@ -1156,12 +1469,21 @@ impl Exporter<'_> {
             let Some(p) = to_path(&h.path) else { continue };
             match h.outline {
                 Some(w) => {
-                    s.set_stroke(Some(Stroke { paint: c.clone().into(), width: w as f32, opacity: NormalizedF32::ONE, ..Default::default() }));
+                    s.set_stroke(Some(Stroke {
+                        paint: c.clone().into(),
+                        width: w as f32,
+                        opacity: NormalizedF32::ONE,
+                        ..Default::default()
+                    }));
                     s.draw_path(&p);
                     s.set_stroke(None);
                 }
                 None => {
-                    s.set_fill(Some(krilla::paint::Fill { paint: c.clone().into(), opacity: NormalizedF32::ONE, rule: FillRule::NonZero }));
+                    s.set_fill(Some(krilla::paint::Fill {
+                        paint: c.clone().into(),
+                        opacity: NormalizedF32::ONE,
+                        rule: FillRule::NonZero,
+                    }));
                     s.draw_path(&p);
                     s.set_fill(None);
                 }
@@ -1197,7 +1519,10 @@ impl Exporter<'_> {
             && let Ok(pdf) = krilla::pdf::Pdf::new(Arc::new(bytes))
             && pdf.version() <= max
         {
-            self.warn(format!("{}: a PDF 1.7 placed in a PDF 1.6 file, embedded as PDF 1.6", asset.name));
+            self.warn(format!(
+                "{}: a PDF 1.7 placed in a PDF 1.6 file, embedded as PDF 1.6",
+                asset.name
+            ));
             return Some(krilla::pdf::PdfDocument::new(Arc::new(pdf)));
         }
         let v = match have {
@@ -1243,33 +1568,57 @@ impl Exporter<'_> {
         let mut mode = RasterMode::for_standard(self.opts.standard);
         mode.interpolate &= self.interpolate;
         let img = match fmt {
-            Some(image::ImageFormat::Jpeg) => jpeg(data.clone().into(), || embedded_icc(&data), mode),
+            Some(image::ImageFormat::Jpeg) => {
+                jpeg(data.clone().into(), || embedded_icc(&data), mode)
+            }
             // A CMYK TIFF keeps its ink values (`image` decodes it to RGB, and 100% K would print
             // as four-colour black). PDF/A exports are RGB only.
-            Some(image::ImageFormat::Tiff) if !self.rgb_only && designcraft_images::is_cmyk_tiff(&data) => match cmyk_tiff(&data, mode) {
-                Some(img) => Some(img),
-                None => {
-                    warning = Some(CMYK_FALLBACK_WARNING);
-                    self.warn(format!("{}: {CMYK_FALLBACK_WARNING}", asset.name));
-                    lossless(&data, fmt, mode)
+            Some(image::ImageFormat::Tiff)
+                if !self.rgb_only && designcraft_images::is_cmyk_tiff(&data) =>
+            {
+                match cmyk_tiff(&data, mode) {
+                    Some(img) => Some(img),
+                    None => {
+                        warning = Some(CMYK_FALLBACK_WARNING);
+                        self.warn(format!("{}: {CMYK_FALLBACK_WARNING}", asset.name));
+                        lossless(&data, fmt, mode)
+                    }
                 }
-            },
-            _ if self.opts.compress_images => recompress(&data, mode).or_else(|| lossless(&data, fmt, mode)),
+            }
+            _ if self.opts.compress_images => {
+                recompress(&data, mode).or_else(|| lossless(&data, fmt, mode))
+            }
             _ => lossless(&data, fmt, mode),
         };
         if img.is_none() {
             if data.is_empty() {
                 // A linked file that wasn't found when the document was opened: nothing to decode.
-                let at = asset.link.as_deref().map(|l| format!(" ({l})")).unwrap_or_default();
-                self.warn(format!("image `{}` is missing{at} and was skipped", asset.name));
+                let at = asset
+                    .link
+                    .as_deref()
+                    .map(|l| format!(" ({l})"))
+                    .unwrap_or_default();
+                self.warn(format!(
+                    "image `{}` is missing{at} and was skipped",
+                    asset.name
+                ));
             } else {
-                self.warn(format!("image `{}` could not be decoded and was skipped", asset.name));
+                self.warn(format!(
+                    "image `{}` could not be decoded and was skipped",
+                    asset.name
+                ));
             }
         }
         if let Some(image) = &img {
             // Share the original encoded payload. HashMap checks exact bytes after hashing,
             // so collisions cannot merge distinct images or their diagnostics.
-            self.images_by_content.insert(data, ConvertedImage { image: image.clone(), warning });
+            self.images_by_content.insert(
+                data,
+                ConvertedImage {
+                    image: image.clone(),
+                    warning,
+                },
+            );
         }
         self.images.insert(id, img.clone());
         img
@@ -1289,9 +1638,18 @@ impl Exporter<'_> {
             tri.close_path();
             s.push_transform(&tf(g.xf));
             s.set_stroke(None);
-            for (bp, c) in [(Rect::new(0.0, 0.0, w, h).to_path(0.1), rgb::Color::new(48, 48, 52)), (tri, rgb::Color::new(235, 235, 235))] {
+            for (bp, c) in [
+                (
+                    Rect::new(0.0, 0.0, w, h).to_path(0.1),
+                    rgb::Color::new(48, 48, 52),
+                ),
+                (tri, rgb::Color::new(235, 235, 235)),
+            ] {
                 if let Some(p) = to_path(&bp) {
-                    s.set_fill(Some(Fill { paint: c.into(), ..Default::default() }));
+                    s.set_fill(Some(Fill {
+                        paint: c.into(),
+                        ..Default::default()
+                    }));
                     s.draw_path(&p);
                 }
             }
@@ -1304,7 +1662,10 @@ impl Exporter<'_> {
         if let Some(asset) = doc.assets.get(&g.asset)
             && asset.data.starts_with(b"%PDF")
         {
-            let Some(size) = Size::from_wh(g.size.0.max(1e-3) as f32, g.size.1.max(1e-3) as f32) else { return };
+            let Some(size) = Size::from_wh(g.size.0.max(1e-3) as f32, g.size.1.max(1e-3) as f32)
+            else {
+                return;
+            };
             let placed = match self.pdfs.get(&g.asset) {
                 Some(p) => p.clone(),
                 None => {
@@ -1324,14 +1685,26 @@ impl Exporter<'_> {
         if let Some(asset) = self.doc.assets.get(&g.asset)
             && designcraft_images::is_svg(&asset.data)
         {
-            let Some(size) = Size::from_wh(g.size.0.max(1e-3) as f32, g.size.1.max(1e-3) as f32) else { return };
-            let tree = self.svgs.entry(g.asset).or_insert_with(|| designcraft_images::svg_tree(&asset.data).map(Arc::new)).clone();
+            let Some(size) = Size::from_wh(g.size.0.max(1e-3) as f32, g.size.1.max(1e-3) as f32)
+            else {
+                return;
+            };
+            let tree = self
+                .svgs
+                .entry(g.asset)
+                .or_insert_with(|| designcraft_images::svg_tree(&asset.data).map(Arc::new))
+                .clone();
             match tree {
                 Some(tree) => {
                     use krilla_svg::SurfaceExt;
                     s.push_transform(&tf(g.xf));
-                    if s.draw_svg(&tree, size, krilla_svg::SvgSettings::default()).is_none() {
-                        self.warn(format!("{}: parts of the placed SVG could not be drawn", asset.name));
+                    if s.draw_svg(&tree, size, krilla_svg::SvgSettings::default())
+                        .is_none()
+                    {
+                        self.warn(format!(
+                            "{}: parts of the placed SVG could not be drawn",
+                            asset.name
+                        ));
                     }
                     s.pop();
                 }
@@ -1339,8 +1712,12 @@ impl Exporter<'_> {
             }
             return;
         }
-        let Some(img) = self.load_image(g.asset) else { return };
-        let Some(size) = Size::from_wh(g.size.0.max(1e-3) as f32, g.size.1.max(1e-3) as f32) else { return };
+        let Some(img) = self.load_image(g.asset) else {
+            return;
+        };
+        let Some(size) = Size::from_wh(g.size.0.max(1e-3) as f32, g.size.1.max(1e-3) as f32) else {
+            return;
+        };
         s.push_transform(&tf(g.xf));
         s.draw_image(img, size);
         s.pop();
@@ -1361,7 +1738,8 @@ fn relabel_pdf_header(data: &[u8], from: &[u8], to: &[u8]) -> Option<Vec<u8>> {
 }
 
 /// The sRGB profile (ICC v2.1) that untagged RGB images carry in PDF/X-4.
-pub(crate) static SRGB_ICC: &[u8] = include_bytes!("../../../assets/designcraft/icc/sRGB-v2-magic.icc");
+pub(crate) static SRGB_ICC: &[u8] =
+    include_bytes!("../../../assets/designcraft/icc/sRGB-v2-magic.icc");
 
 /// How raster images are written for the export's standard.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1375,14 +1753,21 @@ struct RasterMode {
 
 impl RasterMode {
     fn for_standard(standard: Standard) -> Self {
-        Self { interpolate: standard == Standard::None, tag_rgb: standard == Standard::PdfX4 }
+        Self {
+            interpolate: standard == Standard::None,
+            tag_rgb: standard == Standard::PdfX4,
+        }
     }
 }
 
 /// The ICC profile embedded in an image file, if it has one.
 fn embedded_icc(data: &[u8]) -> Option<Vec<u8>> {
     use image::ImageDecoder;
-    let mut dec = image::ImageReader::new(std::io::Cursor::new(data)).with_guessed_format().ok()?.into_decoder().ok()?;
+    let mut dec = image::ImageReader::new(std::io::Cursor::new(data))
+        .with_guessed_format()
+        .ok()?
+        .into_decoder()
+        .ok()?;
     dec.icc_profile().ok().flatten()
 }
 
@@ -1394,7 +1779,11 @@ fn is_rgb_icc(icc: &[u8]) -> bool {
 /// A JPEG, passed through. With `tag_rgb`, a JPEG keeps its own profile, and one without gets
 /// sRGB. krilla uses a profile only when its channels match the JPEG's, so a grey or CMYK JPEG
 /// without a profile stays DeviceGray or DeviceCMYK.
-fn jpeg(data: krilla::Data, icc: impl FnOnce() -> Option<Vec<u8>>, mode: RasterMode) -> Option<Image> {
+fn jpeg(
+    data: krilla::Data,
+    icc: impl FnOnce() -> Option<Vec<u8>>,
+    mode: RasterMode,
+) -> Option<Image> {
     if !mode.tag_rgb {
         return Image::from_jpeg(data, mode.interpolate).ok();
     }
@@ -1409,21 +1798,39 @@ fn jpeg(data: krilla::Data, icc: impl FnOnce() -> Option<Vec<u8>>, mode: RasterM
 /// its own.
 fn untagged_rgb(data: &[u8]) -> bool {
     use image::ImageDecoder;
-    let Some(mut dec) = image::ImageReader::new(std::io::Cursor::new(data)).with_guessed_format().ok().and_then(|r| r.into_decoder().ok()) else {
+    let Some(mut dec) = image::ImageReader::new(std::io::Cursor::new(data))
+        .with_guessed_format()
+        .ok()
+        .and_then(|r| r.into_decoder().ok())
+    else {
         return false;
     };
-    let grey = matches!(dec.color_type(), image::ColorType::L8 | image::ColorType::La8 | image::ColorType::L16 | image::ColorType::La16);
+    let grey = matches!(
+        dec.color_type(),
+        image::ColorType::L8
+            | image::ColorType::La8
+            | image::ColorType::L16
+            | image::ColorType::La16
+    );
     !grey && dec.icc_profile().ok().flatten().is_none()
 }
 
-fn lossless(data: &Arc<Vec<u8>>, fmt: Option<image::ImageFormat>, mode: RasterMode) -> Option<Image> {
+fn lossless(
+    data: &Arc<Vec<u8>>,
+    fmt: Option<image::ImageFormat>,
+    mode: RasterMode,
+) -> Option<Image> {
     let i = mode.interpolate;
     // krilla reads PNG, GIF and WebP lazily: a damaged file is accepted here and fails the whole
     // export when the PDF is written. Decoding it first means it is skipped, like any other
     // image that can't be decoded.
     let rgba = designcraft_images::decode_rgba(data)?;
     let direct = match fmt {
-        Some(image::ImageFormat::Png | image::ImageFormat::Gif | image::ImageFormat::WebP) if mode.tag_rgb && untagged_rgb(data) => None,
+        Some(image::ImageFormat::Png | image::ImageFormat::Gif | image::ImageFormat::WebP)
+            if mode.tag_rgb && untagged_rgb(data) =>
+        {
+            None
+        }
         Some(image::ImageFormat::Png) => Image::from_png(data.clone().into(), i).ok(),
         Some(image::ImageFormat::Gif) => Image::from_gif(data.clone().into(), i).ok(),
         Some(image::ImageFormat::WebP) => Image::from_webp(data.clone().into(), i).ok(),
@@ -1451,7 +1858,9 @@ struct SrgbImage {
 impl SrgbImage {
     fn new(rgba: image::RgbaImage) -> Option<Self> {
         let size = rgba.dimensions();
-        let pixels = usize::try_from(size.0).ok()?.checked_mul(usize::try_from(size.1).ok()?)?;
+        let pixels = usize::try_from(size.0)
+            .ok()?
+            .checked_mul(usize::try_from(size.1).ok()?)?;
         let mut rgb = Vec::with_capacity(pixels.checked_mul(3)?);
         let mut alpha = Vec::with_capacity(pixels);
         for p in rgba.pixels() {
@@ -1459,7 +1868,11 @@ impl SrgbImage {
             alpha.push(p.0[3]);
         }
         let alpha = alpha.iter().any(|a| *a < 255).then(|| Arc::new(alpha));
-        Some(Self { rgb: Arc::new(rgb), alpha, size })
+        Some(Self {
+            rgb: Arc::new(rgb),
+            alpha,
+            size,
+        })
     }
 }
 
@@ -1516,8 +1929,11 @@ impl krilla::image::CustomImage for CmykImage {
 fn cmyk_tiff(data: &[u8], mode: RasterMode) -> Option<Image> {
     let r = designcraft_images::decode_cmyk_tiff(data)?;
     // krilla panics when the channel lengths don't match the size.
-    let pixels = usize::try_from(r.width).ok()?.checked_mul(usize::try_from(r.height).ok()?)?;
-    if r.cmyk.len() != pixels.checked_mul(4)? || r.alpha.as_ref().is_some_and(|a| a.len() != pixels) {
+    let pixels = usize::try_from(r.width)
+        .ok()?
+        .checked_mul(usize::try_from(r.height).ok()?)?;
+    if r.cmyk.len() != pixels.checked_mul(4)? || r.alpha.as_ref().is_some_and(|a| a.len() != pixels)
+    {
         return None;
     }
     Image::from_custom(CmykImage(Arc::new(r)), mode.interpolate).ok()
@@ -1533,8 +1949,19 @@ fn recompress(data: &[u8], mode: RasterMode) -> Option<Image> {
     let rgb = img.to_rgb8();
     let mut buf = Vec::new();
     let enc = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, 90);
-    image::ImageEncoder::write_image(enc, rgb.as_raw(), rgb.width(), rgb.height(), image::ExtendedColorType::Rgb8).ok()?;
-    jpeg(buf.into(), || embedded_icc(data).filter(|p| is_rgb_icc(p)), mode)
+    image::ImageEncoder::write_image(
+        enc,
+        rgb.as_raw(),
+        rgb.width(),
+        rgb.height(),
+        image::ExtendedColorType::Rgb8,
+    )
+    .ok()?;
+    jpeg(
+        buf.into(),
+        || embedded_icc(data).filter(|p| is_rgb_icc(p)),
+        mode,
+    )
 }
 
 #[cfg(test)]
@@ -1545,14 +1972,27 @@ mod image_content_cache_tests {
     fn png(w: u32, h: u32, color: [u8; 4]) -> Vec<u8> {
         let image = image::RgbaImage::from_pixel(w, h, image::Rgba(color));
         let mut bytes = Vec::new();
-        image.write_to(&mut std::io::Cursor::new(&mut bytes), image::ImageFormat::Png).unwrap();
+        image
+            .write_to(
+                &mut std::io::Cursor::new(&mut bytes),
+                image::ImageFormat::Png,
+            )
+            .unwrap();
         bytes
     }
     fn asset(doc: &mut Document, bytes: Vec<u8>, name: &str) -> AssetId {
         let id = AssetId(doc.alloc());
         doc.assets.insert(
             id,
-            Arc::new(Asset { id, name: name.into(), mime: "image/png".into(), link: None, data: Arc::new(bytes), pixels: None, page: 0 }),
+            Arc::new(Asset {
+                id,
+                name: name.into(),
+                mime: "image/png".into(),
+                link: None,
+                data: Arc::new(bytes),
+                pixels: None,
+                page: 0,
+            }),
         );
         id
     }
@@ -1600,17 +2040,36 @@ mod image_content_cache_tests {
         h2.write(&d.assets[&b1].data);
         assert_eq!(h1.finish(), h2.finish());
         assert_ne!(d.assets[&a1].data, d.assets[&b1].data);
-        for (id, count, size) in [(a1, 1, (2, 1)), (b1, 2, (1, 2)), (a2, 2, (2, 1)), (a1, 2, (2, 1)), (b2, 2, (1, 2))] {
+        for (id, count, size) in [
+            (a1, 1, (2, 1)),
+            (b1, 2, (1, 2)),
+            (a2, 2, (2, 1)),
+            (a1, 2, (2, 1)),
+            (b2, 2, (1, 2)),
+        ] {
             assert_eq!(ex.load_image(id).unwrap().size(), size);
-            assert_eq!(ex.image_conversions, count, "count actual converter executions, not krilla resource equality");
+            assert_eq!(
+                ex.image_conversions, count,
+                "count actual converter executions, not krilla resource equality"
+            );
         }
         assert_eq!(ex.images.len(), 4);
         assert_eq!(ex.images_by_content.len(), 2);
-        let first_key = ex.images_by_content.keys().find(|key| key.as_slice() == d.assets[&a1].data.as_slice()).unwrap();
-        assert!(Arc::ptr_eq(first_key, &d.assets[&a1].data), "cache keys share the original encoded payload");
+        let first_key = ex
+            .images_by_content
+            .keys()
+            .find(|key| key.as_slice() == d.assets[&a1].data.as_slice())
+            .unwrap();
+        assert!(
+            Arc::ptr_eq(first_key, &d.assets[&a1].data),
+            "cache keys share the original encoded payload"
+        );
         ex.images_by_content.clear();
         assert_eq!(ex.load_image(a1).unwrap().size(), (2, 1));
-        assert_eq!(ex.image_conversions, 2, "the AssetId cache remains the first lookup");
+        assert_eq!(
+            ex.image_conversions, 2,
+            "the AssetId cache remains the first lookup"
+        );
         assert!(ex.images_by_content.is_empty());
     }
     #[test]
@@ -1638,7 +2097,10 @@ mod image_content_cache_tests {
         let b = asset(&mut d, data, "b");
         let cache = Cache::new();
         for compress_images in [false, true, false] {
-            let opts = PdfOptions { compress_images, ..Default::default() };
+            let opts = PdfOptions {
+                compress_images,
+                ..Default::default()
+            };
             let mut ex = exporter(&d, &cache, &opts);
             assert!(ex.load_image(a).is_some());
             assert!(ex.load_image(b).is_some());
@@ -1658,14 +2120,23 @@ mod image_content_cache_tests {
         let b = asset(&mut d, bytes, "ink-b.tif");
         let cache = Cache::new();
         for compress_images in [false, true] {
-            let opts = PdfOptions { compress_images, ..Default::default() };
+            let opts = PdfOptions {
+                compress_images,
+                ..Default::default()
+            };
             let mut ex = exporter(&d, &cache, &opts);
             for id in [a, b, a, b] {
                 assert_eq!(ex.load_image(id).unwrap().size(), (2, 1));
             }
             assert_eq!(ex.image_conversions, 1);
             assert_eq!(ex.images_by_content.len(), 1);
-            assert_eq!(ex.warnings, [format!("ink-a.tif: {CMYK_FALLBACK_WARNING}"), format!("ink-b.tif: {CMYK_FALLBACK_WARNING}")]);
+            assert_eq!(
+                ex.warnings,
+                [
+                    format!("ink-a.tif: {CMYK_FALLBACK_WARNING}"),
+                    format!("ink-b.tif: {CMYK_FALLBACK_WARNING}")
+                ]
+            );
         }
     }
 
@@ -1677,8 +2148,17 @@ mod image_content_cache_tests {
             let bytes = crate::image_fixtures::cmyk_tiff(alpha, false);
             let a = asset(&mut d, bytes.clone(), "a.tif");
             let b = asset(&mut d, bytes, "b.tif");
-            for standard in [Standard::None, Standard::PdfA2b, Standard::PdfX4, Standard::PdfA2b, Standard::None] {
-                let opts = PdfOptions { standard, ..Default::default() };
+            for standard in [
+                Standard::None,
+                Standard::PdfA2b,
+                Standard::PdfX4,
+                Standard::PdfA2b,
+                Standard::None,
+            ] {
+                let opts = PdfOptions {
+                    standard,
+                    ..Default::default()
+                };
                 let mut ex = exporter(&d, &cache, &opts);
                 ex.rgb_only = standard == Standard::PdfA2b;
                 // The pinned image decoder does not support CMYKA as RGB. Associated alpha
@@ -1688,10 +2168,28 @@ mod image_content_cache_tests {
                 assert_eq!(first.is_some(), succeeds, "{alpha:?} {standard:?}");
                 if alpha.is_none() {
                     let (space, samples) = image_color_samples(first.unwrap());
-                    assert_eq!(space, if ex.rgb_only { "DeviceRGB" } else { "DeviceCMYK" });
-                    assert_eq!(samples, if ex.rgb_only { vec![0, 0, 0, 255, 0, 0] } else { crate::image_fixtures::INKS.to_vec() });
+                    assert_eq!(
+                        space,
+                        if ex.rgb_only {
+                            "DeviceRGB"
+                        } else {
+                            "DeviceCMYK"
+                        }
+                    );
+                    assert_eq!(
+                        samples,
+                        if ex.rgb_only {
+                            vec![0, 0, 0, 255, 0, 0]
+                        } else {
+                            crate::image_fixtures::INKS.to_vec()
+                        }
+                    );
                 }
-                assert_eq!(ex.load_image(b).is_some(), succeeds, "{alpha:?} {standard:?}");
+                assert_eq!(
+                    ex.load_image(b).is_some(),
+                    succeeds,
+                    "{alpha:?} {standard:?}"
+                );
                 assert_eq!(ex.load_image(a).is_some(), succeeds);
                 assert_eq!(ex.image_conversions, if succeeds { 1 } else { 2 });
                 assert_eq!(ex.images_by_content.len(), usize::from(succeeds));
@@ -1699,8 +2197,14 @@ mod image_content_cache_tests {
                     assert!(ex.warnings.is_empty());
                 } else {
                     for name in ["a.tif", "b.tif"] {
-                        assert!(ex.warnings.contains(&format!("image `{name}` could not be decoded and was skipped")));
-                        assert_eq!(ex.warnings.contains(&format!("{name}: {CMYK_FALLBACK_WARNING}")), !ex.rgb_only);
+                        assert!(ex.warnings.contains(&format!(
+                            "image `{name}` could not be decoded and was skipped"
+                        )));
+                        assert_eq!(
+                            ex.warnings
+                                .contains(&format!("{name}: {CMYK_FALLBACK_WARNING}")),
+                            !ex.rgb_only
+                        );
                     }
                 }
             }
@@ -1724,9 +2228,21 @@ mod image_content_cache_tests {
             .objects()
             .into_iter()
             .filter_map(|o| o.into_stream())
-            .find(|s| s.dict().get::<Name>("Subtype").is_some_and(|n| n.as_str() == "Image"))
+            .find(|s| {
+                s.dict()
+                    .get::<Name>("Subtype")
+                    .is_some_and(|n| n.as_str() == "Image")
+            })
             .unwrap();
-        (stream.dict().get::<Name>("ColorSpace").unwrap().as_str().to_owned(), stream.decoded().unwrap().into_owned())
+        (
+            stream
+                .dict()
+                .get::<Name>("ColorSpace")
+                .unwrap()
+                .as_str()
+                .to_owned(),
+            stream.decoded().unwrap().into_owned(),
+        )
     }
 
     #[test]
@@ -1742,12 +2258,19 @@ mod image_content_cache_tests {
         let mut ex = exporter(&d, &cache, &opts);
         assert!(ex.load_image(a).is_some());
         assert!(ex.load_image(b).is_some());
-        assert_eq!(duplicate.strong_count(), 1, "a content hit must not retain the second encoded allocation");
+        assert_eq!(
+            duplicate.strong_count(),
+            1,
+            "a content hit must not retain the second encoded allocation"
+        );
         let key = ex.images_by_content.keys().next().unwrap();
         assert!(Arc::ptr_eq(key, &d.assets[&a].data));
         drop(ex);
         drop(d);
-        assert!(payload.upgrade().is_none(), "no converted image or encoded key outlives this exporter");
+        assert!(
+            payload.upgrade().is_none(),
+            "no converted image or encoded key outlives this exporter"
+        );
         assert!(duplicate.upgrade().is_none());
     }
 }

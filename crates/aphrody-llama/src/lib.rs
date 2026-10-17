@@ -473,7 +473,9 @@ pub fn list_llama_ggml_backend_devices() -> Vec<LlamaBackendDevice> {
         let memory_free = props.memory_free;
         let device_type = match props.type_ {
             aphrody_llama_sys::GGML_BACKEND_DEVICE_TYPE_CPU => LlamaBackendDeviceType::Cpu,
-            aphrody_llama_sys::GGML_BACKEND_DEVICE_TYPE_ACCEL => LlamaBackendDeviceType::Accelerator,
+            aphrody_llama_sys::GGML_BACKEND_DEVICE_TYPE_ACCEL => {
+                LlamaBackendDeviceType::Accelerator
+            }
             aphrody_llama_sys::GGML_BACKEND_DEVICE_TYPE_GPU => LlamaBackendDeviceType::Gpu,
             aphrody_llama_sys::GGML_BACKEND_DEVICE_TYPE_IGPU => {
                 LlamaBackendDeviceType::IntegratedGpu

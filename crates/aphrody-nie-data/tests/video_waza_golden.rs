@@ -61,7 +61,10 @@ fn movie_zero_real_no_caption() {
     assert_eq!(v0.movie.fede_in_time, 1.0);
     assert_eq!(v0.movie.fede_out_time, 1.0);
     assert_eq!(v0.movie.staffroll_data_name, "0xFFFFFFFF"); // sentinelle « aucun »
-    assert!(v0.caption.is_none(), "captionId 0x00000000 → pas de légende");
+    assert!(
+        v0.caption.is_none(),
+        "captionId 0x00000000 → pas de légende"
+    );
 }
 
 #[test]

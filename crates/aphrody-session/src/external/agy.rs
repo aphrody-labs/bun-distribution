@@ -30,7 +30,11 @@ const AGENT: AgentKind = AgentKind::Agy;
 
 /// Transcript of conversation `id` below `root`.
 pub(super) fn transcript_path(root: &Path, id: &str) -> std::path::PathBuf {
-    root.join("brain").join(id).join(".system_generated").join("logs").join("transcript.jsonl")
+    root.join("brain")
+        .join(id)
+        .join(".system_generated")
+        .join("logs")
+        .join("transcript.jsonl")
 }
 
 pub(super) fn discover(root: &Path, issues: &mut Vec<SyncIssue>) -> Vec<SessionSource> {
@@ -41,35 +45,44 @@ pub(super) fn discover(root: &Path, issues: &mut Vec<SyncIssue>) -> Vec<SessionS
 
     // conversation id -> workspace, from the most to the least authoritative.
     let mut current: HashMap<String, String> = HashMap::new();
-    if let Some(Value::Object(map)) =
-        read_aux_json(&root.join("cache").join("last_conversations.json"), AGENT, issues)
-    {
+    if let Some(Value::Object(map)) = read_aux_json(
+        &root.join("cache").join("last_conversations.json"),
+        AGENT,
+        issues,
+    ) {
         let mut pairs: Vec<(&String, &Value)> = map.iter().collect();
         // Deterministic when one conversation is current for two directories.
         pairs.sort_by(|a, b| a.0.cmp(b.0));
         for (workspace, id) in pairs {
             if let Some(id) = id.as_str() {
-                current.entry(id.to_owned()).or_insert_with(|| workspace.clone());
+                current
+                    .entry(id.to_owned())
+                    .or_insert_with(|| workspace.clone());
             }
         }
     }
     let mut history: HashMap<String, String> = HashMap::new();
     for entry in read_aux_jsonl(&root.join("history.jsonl"), AGENT, issues) {
-        if let (Some(id), Some(workspace)) =
-            (str_field(&entry, "conversationId"), str_field(&entry, "workspace"))
-        {
+        if let (Some(id), Some(workspace)) = (
+            str_field(&entry, "conversationId"),
+            str_field(&entry, "workspace"),
+        ) {
             // Later prompts win: the latest directory a conversation ran in.
             history.insert(id.to_owned(), workspace.to_owned());
         }
     }
     let mut metadata: HashMap<String, (Option<String>, Option<String>)> = HashMap::new();
-    if let Some(value) =
-        read_aux_json(&root.join("cache").join("conversation_metadata.json"), AGENT, issues)
-        && let Some(Value::Object(conversations)) = value.get("conversations")
+    if let Some(value) = read_aux_json(
+        &root.join("cache").join("conversation_metadata.json"),
+        AGENT,
+        issues,
+    ) && let Some(Value::Object(conversations)) = value.get("conversations")
     {
         for (id, entry) in conversations {
             let summary = entry.get("summary").unwrap_or(entry);
-            let title = str_field(summary, "Title").map(str::to_owned).filter(|t| !t.is_empty());
+            let title = str_field(summary, "Title")
+                .map(str::to_owned)
+                .filter(|t| !t.is_empty());
             let workspace = summary
                 .get("WorkspaceURIs")
                 .and_then(Value::as_array)
@@ -91,8 +104,11 @@ pub(super) fn discover(root: &Path, issues: &mut Vec<SyncIssue>) -> Vec<SessionS
             continue;
         };
         let (title, meta_workspace) = metadata.get(&id).cloned().unwrap_or_default();
-        let workspace =
-            current.get(&id).cloned().or_else(|| history.get(&id).cloned()).or(meta_workspace);
+        let workspace = current
+            .get(&id)
+            .cloned()
+            .or_else(|| history.get(&id).cloned())
+            .or(meta_workspace);
         sources.push(SessionSource {
             agent: AGENT,
             path,
@@ -112,7 +128,11 @@ pub(super) fn parse_line(value: &Value, _ctx: &mut LineContext) -> Vec<Draft> {
     let kind = str_field(value, "type").unwrap_or_default();
     let content = str_field(value, "content").unwrap_or_default();
     let error = str_field(value, "error").unwrap_or_default();
-    let content_or_error = if content.trim().is_empty() { error } else { content };
+    let content_or_error = if content.trim().is_empty() {
+        error
+    } else {
+        content
+    };
 
     let mut out = Vec::new();
     if kind == "USER_INPUT" || source.starts_with("USER") {
@@ -131,7 +151,12 @@ pub(super) fn parse_line(value: &Value, _ctx: &mut LineContext) -> Vec<Draft> {
             for call in calls {
                 let name = str_field(call, "name").unwrap_or("tool");
                 let args = render_args(call.get("args"));
-                push(&mut out, Role::ToolCall, format!("{name} {args}").trim_end().to_owned(), ts);
+                push(
+                    &mut out,
+                    Role::ToolCall,
+                    format!("{name} {args}").trim_end().to_owned(),
+                    ts,
+                );
             }
         }
         if content.trim().is_empty() && !error.trim().is_empty() {

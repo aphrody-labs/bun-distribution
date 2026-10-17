@@ -35,19 +35,33 @@ fn shader_module_src(
         texture_set_vert_outputs,
         texture_frag_inputs,
         texture_get_color,
-    } = ifdef!(pipeline.texture_mapping_enabled(), TextureCode::new(texture_bg_index));
+    } = ifdef!(
+        pipeline.texture_mapping_enabled(),
+        TextureCode::new(texture_bg_index)
+    );
 
-    let ToonCode { toon_uniforms, toon_get_color } =
-        ifdef!(pipeline.mode() >= 2, ToonCode::new(toon_bg_index));
+    let ToonCode {
+        toon_uniforms,
+        toon_get_color,
+    } = ifdef!(pipeline.mode() >= 2, ToonCode::new(toon_bg_index));
 
-    let AttrsCode { attrs_frag_outputs, attrs_init_frag_outputs } =
-        ifdef!(pipeline.attrs_enabled(), AttrsCode::new());
+    let AttrsCode {
+        attrs_frag_outputs,
+        attrs_init_frag_outputs,
+    } = ifdef!(pipeline.attrs_enabled(), AttrsCode::new());
 
-    let FogCode { fog_uniforms, fog_set_frag_outputs } =
-        ifdef!(pipeline.fog_enabled(), FogCode::new(fog_enabled_bg_index));
+    let FogCode {
+        fog_uniforms,
+        fog_set_frag_outputs,
+    } = ifdef!(pipeline.fog_enabled(), FogCode::new(fog_enabled_bg_index));
 
-    let EdgeMarkingCode { edge_marking_uniforms, edge_marking_set_frag_outputs } =
-        ifdef!(pipeline.edge_marking_enabled(), EdgeMarkingCode::new(id_bg_index));
+    let EdgeMarkingCode {
+        edge_marking_uniforms,
+        edge_marking_set_frag_outputs,
+    } = ifdef!(
+        pipeline.edge_marking_enabled(),
+        EdgeMarkingCode::new(id_bg_index)
+    );
 
     let get_output_color = get_output_color(pipeline.mode(), pipeline.texture_mapping_enabled());
 

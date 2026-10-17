@@ -30,13 +30,19 @@ pub fn templates() -> Value {
 
 pub fn read(b: &mut dyn Backend, uri: &str) -> Result<Value, ReadError> {
     if uri == DOC_URI {
-        return b.call("document.inspect", json!({"depth": 8})).map_err(ReadError::Backend);
+        return b
+            .call("document.inspect", json!({"depth": 8}))
+            .map_err(ReadError::Backend);
     }
     if uri == COMMANDS_URI {
-        return b.call("engine.commands", json!({})).map_err(ReadError::Backend);
+        return b
+            .call("engine.commands", json!({}))
+            .map_err(ReadError::Backend);
     }
     if let Some(id) = uri.strip_prefix("figcraft://node/") {
-        let Some(id) = figcraft_engine::params::id_of(&Value::String(id.to_string())) else { return Err(ReadError::NotFound(uri.into())) };
+        let Some(id) = figcraft_engine::params::id_of(&Value::String(id.to_string())) else {
+            return Err(ReadError::NotFound(uri.into()));
+        };
         return match b.call("node.get", json!({"id": id.0, "depth": 2})) {
             Ok(Value::Null) => Err(ReadError::NotFound(uri.into())),
             Ok(v) => Ok(v),
@@ -45,10 +51,16 @@ pub fn read(b: &mut dyn Backend, uri: &str) -> Result<Value, ReadError> {
         };
     }
     if let Some(id) = uri.strip_prefix("figcraft://command/") {
-        let all = b.call("engine.commands", json!({})).map_err(ReadError::Backend)?;
+        let all = b
+            .call("engine.commands", json!({}))
+            .map_err(ReadError::Backend)?;
         return all
             .as_array()
-            .and_then(|a| a.iter().find(|c| c.get("id").and_then(Value::as_str) == Some(id)).cloned())
+            .and_then(|a| {
+                a.iter()
+                    .find(|c| c.get("id").and_then(Value::as_str) == Some(id))
+                    .cloned()
+            })
             .ok_or_else(|| ReadError::NotFound(uri.into()));
     }
     Err(ReadError::NotFound(uri.into()))

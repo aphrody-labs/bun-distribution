@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct FirehoseEntryToken(pub String);
 
 impl_string_token!(FirehoseEntryToken);
-impl_crockford_generator!(FirehoseEntryToken, 32usize, LegacyTokenPrefix::FirehoseEntry, CrockfordLower);
+impl_crockford_generator!(
+    FirehoseEntryToken,
+    32usize,
+    LegacyTokenPrefix::FirehoseEntry,
+    CrockfordLower
+);

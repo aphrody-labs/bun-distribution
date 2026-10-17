@@ -46,11 +46,24 @@ impl ClipLine {
     /// before it becomes the active layer.
     pub fn commands(&self, doc: &Document, key: &str) -> Vec<(String, Value)> {
         if !self.release {
-            return vec![("layer.createClippingMask".into(), json!({"layer": self.upper.0}))];
+            return vec![(
+                "layer.createClippingMask".into(),
+                json!({"layer": self.upper.0}),
+            )];
         }
-        let mut out: Vec<(String, Value)> =
-            release_chain(doc, self.upper).into_iter().map(|id| ("layer.releaseClippingMask".into(), json!({"layer": id.0, "coalesce": key}))).collect();
-        out.push(("layer.select".into(), json!({"layer": self.upper.0, "mode": "replace"})));
+        let mut out: Vec<(String, Value)> = release_chain(doc, self.upper)
+            .into_iter()
+            .map(|id| {
+                (
+                    "layer.releaseClippingMask".into(),
+                    json!({"layer": id.0, "coalesce": key}),
+                )
+            })
+            .collect();
+        out.push((
+            "layer.select".into(),
+            json!({"layer": self.upper.0, "mode": "replace"}),
+        ));
         out
     }
 }
@@ -58,9 +71,13 @@ impl ClipLine {
 /// The layers a release on `upper` frees: it and the clipped layers stacked directly above it.
 fn release_chain(doc: &Document, upper: LayerId) -> Vec<LayerId> {
     let mut out = vec![upper];
-    let Some(mut path) = doc.path_of(upper) else { return out };
+    let Some(mut path) = doc.path_of(upper) else {
+        return out;
+    };
     while let Some(last) = path.pop() {
-        let Some(next) = last.checked_add(1) else { break };
+        let Some(next) = last.checked_add(1) else {
+            break;
+        };
         path.push(next);
         match doc.layer_at(&path) {
             Some(l) if l.clipped => out.push(l.id),
@@ -76,9 +93,17 @@ pub fn at(doc: &Document, rows: &[RowRects], p: Pos2) -> Option<ClipLine> {
     rows.windows(2).find_map(|pair| {
         let [above, below] = pair else { return None };
         // Between the eye column and the right-hand indicators (the effects triangle takes clicks).
-        let right = above.indicators.iter().chain(&below.indicators).map(|(_, r)| r.left()).fold(below.row.right() - RIGHT_PAD, f32::min);
+        let right = above
+            .indicators
+            .iter()
+            .chain(&below.indicators)
+            .map(|(_, r)| r.left())
+            .fold(below.row.right() - RIGHT_PAD, f32::min);
         let y = below.row.top();
-        let rect = Rect::from_x_y_ranges(Rangef::new(below.row.left() + EYE_W, right), Rangef::new(y - ABOVE, y + BELOW));
+        let rect = Rect::from_x_y_ranges(
+            Rangef::new(below.row.left() + EYE_W, right),
+            Rangef::new(y - ABOVE, y + BELOW),
+        );
         if !rect.contains(p) {
             return None;
         }
@@ -93,7 +118,11 @@ pub fn at(doc: &Document, rows: &[RowRects], p: Pos2) -> Option<ClipLine> {
         if matches!(&l.content, LayerContent::Group(g) if g.expanded && !g.children.is_empty()) {
             return None;
         }
-        Some(ClipLine { upper, release: l.clipped, rect })
+        Some(ClipLine {
+            upper,
+            release: l.clipped,
+            rect,
+        })
     })
 }
 
@@ -102,15 +131,29 @@ pub fn at(doc: &Document, rows: &[RowRects], p: Pos2) -> Option<ClipLine> {
 pub fn show(ui: &mut egui::Ui, doc: &Document, actions: &mut Vec<(String, Value)>) {
     let ctx = ui.ctx().clone();
     let (alt, hover) = ctx.input(|i| (i.modifiers.alt, i.pointer.hover_pos()));
-    let Some(p) = hover.filter(|_| alt && ctx.dragged_id().is_none()) else { return };
-    let Some(line) = at(doc, &crate::layer_row_ui::recorded(&ctx), p).filter(|l| ui.rect_contains_pointer(l.rect)) else { return };
+    let Some(p) = hover.filter(|_| alt && ctx.dragged_id().is_none()) else {
+        return;
+    };
+    let Some(line) = at(doc, &crate::layer_row_ui::recorded(&ctx), p)
+        .filter(|l| ui.rect_contains_pointer(l.rect))
+    else {
+        return;
+    };
     // Registered after the rows, so it is on top of them and gets the click.
     let resp = ui.interact(line.rect, ui.id().with("clip-line"), Sense::click());
-    let label = if line.release { "Release Clipping Mask" } else { "Create Clipping Mask" };
+    let label = if line.release {
+        "Release Clipping Mask"
+    } else {
+        "Create Clipping Mask"
+    };
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
     // PhotoCraft's own cursors: a hooked arrow onto the layer below, and the same arrow with a
     // small "no" badge to release. The arrow's tip, (15, 16) of the 24-unit box, is the hot spot.
-    let icon = if line.release { "clip-release" } else { "clip-below" };
+    let icon = if line.release {
+        "clip-release"
+    } else {
+        "clip-below"
+    };
     crate::icons::cursor(&ctx, icon, p, vec2(15.0, 16.0) / 24.0, CURSOR_SIZE);
     ctx.set_cursor_icon(egui::CursorIcon::None);
     if resp.clicked() {

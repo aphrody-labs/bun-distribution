@@ -176,7 +176,8 @@ impl RendererBase for RendererNull {
         layout: ruzu_core::frontend::framebuffer_layout::FramebufferLayout,
         layer_stack: ruzu_core::hle::service::nvnflinger::hwc_layer::LayerStackId,
     ) {
-        self.base_data.request_screenshot(data, callback, layout, layer_stack);
+        self.base_data
+            .request_screenshot(data, callback, layout, layer_stack);
     }
 
     fn set_gpu_ticks_getter(&mut self, getter: crate::renderer_base::GpuTicksGetter) {
@@ -261,12 +262,21 @@ fn read_back(
                 _ => {
                     let v = u16::from_le_bytes([px[0], px[1]]);
                     let (r, g, b) = (v >> 11, (v >> 5) & 0x3F, v & 0x1F);
-                    [(r << 3 | r >> 2) as u8, (g << 2 | g >> 4) as u8, (b << 3 | b >> 2) as u8, 0xFF]
+                    [
+                        (r << 3 | r >> 2) as u8,
+                        (g << 2 | g >> 4) as u8,
+                        (b << 3 | b >> 2) as u8,
+                        0xFF,
+                    ]
                 }
             });
         }
     }
-    Some(CapturedFrame { width, height, rgba })
+    Some(CapturedFrame {
+        width,
+        height,
+        rgba,
+    })
 }
 
 #[cfg(test)]

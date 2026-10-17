@@ -54,11 +54,17 @@ impl ChallengeStore {
     /// Creates a new challenge store.
     #[must_use]
     pub fn new() -> Self {
-        Self { challenges: HashMap::new(), seed: 0xCAFE_BABE }
+        Self {
+            challenges: HashMap::new(),
+            seed: 0xCAFE_BABE,
+        }
     }
 
     fn now_secs() -> u64 {
-        SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
     }
 
     fn gen_code(&mut self) -> String {
@@ -117,7 +123,11 @@ impl ChallengeStore {
     #[must_use]
     pub fn get_challenge(&self, code: &str) -> Option<&Challenge> {
         let c = self.challenges.get(code)?;
-        if c.is_expired(Self::now_secs()) { None } else { Some(c) }
+        if c.is_expired(Self::now_secs()) {
+            None
+        } else {
+            Some(c)
+        }
     }
 
     /// Consumes (removes) a single-use challenge.
@@ -249,7 +259,11 @@ pub enum ScoreOutcome {
     /// Both players agree on the scoreline (Home goals `s1`, Away goals `s2`).
     Agree { s1: u8, s2: u8 },
     /// Forfeit by timeout: one player submitted, the other failed to respond.
-    Forfeit { s1: u8, s2: u8, forfeit_user_id: String },
+    Forfeit {
+        s1: u8,
+        s2: u8,
+        forfeit_user_id: String,
+    },
     /// Scorelines disagree or invalid: flagged for dispute and screenshot review.
     Dispute,
 }
@@ -262,7 +276,10 @@ pub fn resolve_scores(home: &ScoreInput, away: &ScoreInput, forced_timeout: bool
     }
 
     if scores_agree(home, away) {
-        return ScoreOutcome::Agree { s1: home.my_score, s2: away.my_score };
+        return ScoreOutcome::Agree {
+            s1: home.my_score,
+            s2: away.my_score,
+        };
     }
 
     if forced_timeout {
@@ -351,8 +368,16 @@ impl PlayerMatchState {
     pub fn to_score_input(&self) -> ScoreInput {
         ScoreInput {
             user_id: self.user_id.clone(),
-            my_score: if self.my_score >= 0 { self.my_score as u8 } else { 0 },
-            opp_score: if self.opp_score >= 0 { self.opp_score as u8 } else { 0 },
+            my_score: if self.my_score >= 0 {
+                self.my_score as u8
+            } else {
+                0
+            },
+            opp_score: if self.opp_score >= 0 {
+                self.opp_score as u8
+            } else {
+                0
+            },
             submitted: self.submitted,
         }
     }
@@ -414,8 +439,10 @@ impl RankedMatchRoom {
         }
         if self.players.values().all(|p| p.started_match) {
             self.status = MatchRoomStatus::Playing;
-            self.started_at =
-                SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            self.started_at = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
             true
         } else {
             false
@@ -440,10 +467,16 @@ impl RankedMatchRoom {
             p.submitted = true;
         }
 
-        let home_input =
-            self.players.values().find(|p| p.team == TeamSide::Home).map(|p| p.to_score_input());
-        let away_input =
-            self.players.values().find(|p| p.team == TeamSide::Away).map(|p| p.to_score_input());
+        let home_input = self
+            .players
+            .values()
+            .find(|p| p.team == TeamSide::Home)
+            .map(|p| p.to_score_input());
+        let away_input = self
+            .players
+            .values()
+            .find(|p| p.team == TeamSide::Away)
+            .map(|p| p.to_score_input());
 
         let (Some(home), Some(away)) = (home_input, away_input) else {
             return ScoreOutcome::Wait;
@@ -454,12 +487,12 @@ impl RankedMatchRoom {
             ScoreOutcome::Agree { s1, s2 } => {
                 self.status = MatchRoomStatus::Finished;
                 self.finished_score = Some((s1, s2));
-            },
+            }
             ScoreOutcome::Dispute => {
                 self.status = MatchRoomStatus::Disputed;
                 self.dispute_reason = "Score disagreement between players".into();
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         outcome
@@ -470,7 +503,10 @@ impl RankedMatchRoom {
         self.chat.push(RankedChatMessage {
             user_id,
             text,
-            at_secs: SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+            at_secs: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
         });
     }
 }
@@ -517,14 +553,20 @@ pub struct RankedTelemetry {
 
 impl Default for RankedTelemetry {
     fn default() -> Self {
-        Self { events: VecDeque::with_capacity(1000), max_capacity: 1000 }
+        Self {
+            events: VecDeque::with_capacity(1000),
+            max_capacity: 1000,
+        }
     }
 }
 
 impl RankedTelemetry {
     #[must_use]
     pub fn new(max_capacity: usize) -> Self {
-        Self { events: VecDeque::with_capacity(max_capacity), max_capacity }
+        Self {
+            events: VecDeque::with_capacity(max_capacity),
+            max_capacity,
+        }
     }
 
     /// Logs an event into the telemetry journal.
@@ -594,9 +636,21 @@ mod tests {
     #[test]
     fn test_queue_pair_selection() {
         let candidates = vec![
-            QueueCandidate { user_id: "p1".into(), elo: 500, enqueued_at_ms: 1000 },
-            QueueCandidate { user_id: "p2".into(), elo: 520, enqueued_at_ms: 1000 },
-            QueueCandidate { user_id: "p3".into(), elo: 900, enqueued_at_ms: 1000 },
+            QueueCandidate {
+                user_id: "p1".into(),
+                elo: 500,
+                enqueued_at_ms: 1000,
+            },
+            QueueCandidate {
+                user_id: "p2".into(),
+                elo: 520,
+                enqueued_at_ms: 1000,
+            },
+            QueueCandidate {
+                user_id: "p3".into(),
+                elo: 900,
+                enqueued_at_ms: 1000,
+            },
         ];
 
         let pair = select_queue_pair(&candidates, 2000, 50).unwrap();
@@ -605,19 +659,34 @@ mod tests {
 
     #[test]
     fn test_score_double_validation_agree() {
-        let home =
-            ScoreInput { user_id: "home_user".into(), my_score: 3, opp_score: 1, submitted: true };
-        let away =
-            ScoreInput { user_id: "away_user".into(), my_score: 1, opp_score: 3, submitted: true };
+        let home = ScoreInput {
+            user_id: "home_user".into(),
+            my_score: 3,
+            opp_score: 1,
+            submitted: true,
+        };
+        let away = ScoreInput {
+            user_id: "away_user".into(),
+            my_score: 1,
+            opp_score: 3,
+            submitted: true,
+        };
 
         assert!(scores_agree(&home, &away));
-        assert_eq!(resolve_scores(&home, &away, false), ScoreOutcome::Agree { s1: 3, s2: 1 });
+        assert_eq!(
+            resolve_scores(&home, &away, false),
+            ScoreOutcome::Agree { s1: 3, s2: 1 }
+        );
     }
 
     #[test]
     fn test_score_double_validation_dispute() {
-        let home =
-            ScoreInput { user_id: "home_user".into(), my_score: 3, opp_score: 1, submitted: true };
+        let home = ScoreInput {
+            user_id: "home_user".into(),
+            my_score: 3,
+            opp_score: 1,
+            submitted: true,
+        };
         let away = ScoreInput {
             user_id: "away_user".into(),
             my_score: 2,
@@ -649,7 +718,10 @@ mod tests {
         // Player 1 submits 4-2
         assert_eq!(room.submit_score("p1", 4, 2), ScoreOutcome::Wait);
         // Player 2 submits 2-4 (agrees)
-        assert_eq!(room.submit_score("p2", 2, 4), ScoreOutcome::Agree { s1: 4, s2: 2 });
+        assert_eq!(
+            room.submit_score("p2", 2, 4),
+            ScoreOutcome::Agree { s1: 4, s2: 2 }
+        );
         assert_eq!(room.status, MatchRoomStatus::Finished);
         assert_eq!(room.finished_score, Some((4, 2)));
     }
@@ -657,10 +729,23 @@ mod tests {
     #[test]
     fn test_telemetry_recording() {
         let mut tel = RankedTelemetry::new(5);
-        tel.log(RankedEventType::QueueJoin, None, Some("p1".into()), "Joined 1v1");
-        tel.log(RankedEventType::QueuePair, Some("R1".into()), Some("p1".into()), "Paired");
+        tel.log(
+            RankedEventType::QueueJoin,
+            None,
+            Some("p1".into()),
+            "Joined 1v1",
+        );
+        tel.log(
+            RankedEventType::QueuePair,
+            Some("R1".into()),
+            Some("p1".into()),
+            "Paired",
+        );
 
         assert_eq!(tel.recent_events(10).len(), 2);
-        assert_eq!(tel.recent_events(1)[0].event_type, RankedEventType::QueuePair);
+        assert_eq!(
+            tel.recent_events(1)[0].event_type,
+            RankedEventType::QueuePair
+        );
     }
 }

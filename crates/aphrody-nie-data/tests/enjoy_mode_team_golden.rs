@@ -32,7 +32,11 @@ fn load() -> Option<serde_json::Value> {
 fn vingt_huit_equipes() {
     let Some(root) = load() else { return };
     let cfg = parse_enjoy_mode_team_config(&root);
-    assert_eq!(cfg.teams.len(), 28, "28 équipes dans ENJOY_MODE_TEAM_INFO_LIST_BEG_0");
+    assert_eq!(
+        cfg.teams.len(),
+        28,
+        "28 équipes dans ENJOY_MODE_TEAM_INFO_LIST_BEG_0"
+    );
 }
 
 #[test]
@@ -76,7 +80,10 @@ fn recherche_par_team_id() {
 fn dispatch_typed_atteint_azalee() {
     use aphrody_nie_data::typed::{decode_by_key, family_key};
     let Some(root) = load() else { return };
-    assert_eq!(family_key("enjoy_mode_team_config_1.04.02.00.cfg.bin"), "enjoy_mode_team_config");
+    assert_eq!(
+        family_key("enjoy_mode_team_config_1.04.02.00.cfg.bin"),
+        "enjoy_mode_team_config"
+    );
     let (label, json) =
         decode_by_key("enjoy_mode_team_config", &root).expect("famille typée câblée");
     assert_eq!(label, "enjoy_mode_team");

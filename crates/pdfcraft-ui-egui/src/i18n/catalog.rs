@@ -52,7 +52,9 @@ pub fn placeholders(text: &str) -> Vec<&str> {
     let mut names = Vec::new();
     let mut rest = text;
     while let Some((_, after_open)) = rest.split_once('{') {
-        let Some((name, after_close)) = after_open.split_once('}') else { break };
+        let Some((name, after_close)) = after_open.split_once('}') else {
+            break;
+        };
         names.push(name);
         rest = after_close;
     }
@@ -62,22 +64,33 @@ pub fn placeholders(text: &str) -> Vec<&str> {
 
 /// Check one entry against its English source. `forms` is the language's number of plural forms.
 fn validate(entry: &Entry, forms: usize) -> Result<(), String> {
-    let Entry { context, source, translation } = entry;
+    let Entry {
+        context,
+        source,
+        translation,
+    } = entry;
     match context.as_str() {
         // The source is a command id, not a template; the bundled-catalog tests check the id
         // exists and compare the translation with that command's English label.
         "@id" => Ok(()),
         "@plural" => {
             let english: Vec<&str> = source.split('|').collect();
-            let [one, other] = english.as_slice() else { return Err("plural source must be one|other".into()) };
+            let [one, other] = english.as_slice() else {
+                return Err("plural source must be one|other".into());
+            };
             if one.is_empty() || other.is_empty() || placeholders(one) != placeholders(other) {
-                return Err("English plural forms must be nonempty and have matching placeholders".into());
+                return Err(
+                    "English plural forms must be nonempty and have matching placeholders".into(),
+                );
             }
             let translated: Vec<&str> = translation.split('|').collect();
             if translated.len() != forms || translated.iter().any(|form| form.is_empty()) {
                 return Err(format!("expected {forms} nonempty plural forms"));
             }
-            if translated.iter().any(|form| placeholders(form) != placeholders(other)) {
+            if translated
+                .iter()
+                .any(|form| placeholders(form) != placeholders(other))
+            {
                 return Err("plural placeholders differ from the English source".into());
             }
             Ok(())
@@ -97,10 +110,19 @@ fn validate(entry: &Entry, forms: usize) -> Result<(), String> {
 
 fn parse_line(line: &str, forms: usize) -> Result<Entry, String> {
     let mut columns = line.split('\t');
-    let (Some(context), Some(source), Some(translation), None) = (columns.next(), columns.next(), columns.next(), columns.next()) else {
+    let (Some(context), Some(source), Some(translation), None) = (
+        columns.next(),
+        columns.next(),
+        columns.next(),
+        columns.next(),
+    ) else {
         return Err("expected `context<TAB>source<TAB>translation`".into());
     };
-    let entry = Entry { context: unescape(context)?, source: unescape(source)?, translation: unescape(translation)? };
+    let entry = Entry {
+        context: unescape(context)?,
+        source: unescape(source)?,
+        translation: unescape(translation)?,
+    };
     if entry.source.is_empty() || entry.translation.is_empty() {
         return Err("source and translation must be nonempty".into());
     }
@@ -122,7 +144,10 @@ pub fn parse_entries(text: &str, forms: usize) -> (Vec<Entry>, Vec<String>) {
         let line_no = index.saturating_add(1);
         match parse_line(line, forms) {
             Ok(entry) if !seen.insert((entry.context.clone(), entry.source.clone())) => {
-                errors.push(format!("line {line_no}: duplicate key {:?} / {:?}", entry.context, entry.source));
+                errors.push(format!(
+                    "line {line_no}: duplicate key {:?} / {:?}",
+                    entry.context, entry.source
+                ));
             }
             Ok(entry) => entries.push(entry),
             Err(error) => errors.push(format!("line {line_no}: {error}")),
@@ -136,7 +161,12 @@ impl Catalog {
     pub fn parse(text: &str, forms: usize) -> (Catalog, Vec<String>) {
         let (entries, errors) = parse_entries(text, forms);
         let mut c = Catalog::default();
-        for Entry { context, source, translation } in entries {
+        for Entry {
+            context,
+            source,
+            translation,
+        } in entries
+        {
             match context.as_str() {
                 "" => {
                     c.plain.insert(source, translation);
@@ -145,10 +175,14 @@ impl Catalog {
                     c.ids.insert(source, translation);
                 }
                 "@plural" => {
-                    c.plurals.insert(source, translation.split('|').map(str::to_string).collect());
+                    c.plurals
+                        .insert(source, translation.split('|').map(str::to_string).collect());
                 }
                 _ => {
-                    c.contextual.entry(context).or_default().insert(source, translation);
+                    c.contextual
+                        .entry(context)
+                        .or_default()
+                        .insert(source, translation);
                 }
             }
         }
@@ -158,8 +192,13 @@ impl Catalog {
     /// Rewrite every translation (each plural form on its own), e.g. into display order for a
     /// right-to-left language. Keys are untouched.
     pub fn map_translations(&mut self, f: impl Fn(&str) -> String) {
-        let tables = std::iter::once(&mut self.plain).chain(self.contextual.values_mut()).chain(std::iter::once(&mut self.ids));
-        for translation in tables.flat_map(HashMap::values_mut).chain(self.plurals.values_mut().flatten()) {
+        let tables = std::iter::once(&mut self.plain)
+            .chain(self.contextual.values_mut())
+            .chain(std::iter::once(&mut self.ids));
+        for translation in tables
+            .flat_map(HashMap::values_mut)
+            .chain(self.plurals.values_mut().flatten())
+        {
             *translation = f(translation);
         }
     }
@@ -179,6 +218,8 @@ impl Catalog {
     /// The plural form `index` of the message whose English forms are `one|other`.
     pub fn plural(&self, one: &str, other: &str, index: usize) -> Option<&str> {
         let forms = self.plurals.get(&format!("{one}|{other}"))?;
-        forms.get(index.min(forms.len().saturating_sub(1))).map(String::as_str)
+        forms
+            .get(index.min(forms.len().saturating_sub(1)))
+            .map(String::as_str)
     }
 }

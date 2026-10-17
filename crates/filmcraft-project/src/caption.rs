@@ -28,7 +28,12 @@ pub enum CaptionFormat {
 }
 
 impl CaptionFormat {
-    pub const ALL: [CaptionFormat; 4] = [CaptionFormat::Subtitle, CaptionFormat::Cea608, CaptionFormat::Cea708, CaptionFormat::Teletext];
+    pub const ALL: [CaptionFormat; 4] = [
+        CaptionFormat::Subtitle,
+        CaptionFormat::Cea608,
+        CaptionFormat::Cea708,
+        CaptionFormat::Teletext,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             CaptionFormat::Subtitle => "Subtitle",
@@ -39,7 +44,10 @@ impl CaptionFormat {
     }
     pub fn from_name(s: &str) -> Option<CaptionFormat> {
         let n = s.to_ascii_lowercase().replace(['-', ' ', '_'], "");
-        Self::ALL.iter().copied().find(|f| f.label().to_ascii_lowercase().replace(['-', ' '], "") == n)
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|f| f.label().to_ascii_lowercase().replace(['-', ' '], "") == n)
     }
     /// Characters per line limit used when wrapping (608 is fixed at 32 columns).
     pub fn max_columns(self) -> Option<usize> {
@@ -190,12 +198,18 @@ impl CaptionTrack {
         }
     }
     pub fn end(&self) -> Tick {
-        self.captions.iter().map(Caption::end).max().unwrap_or(Tick::ZERO)
+        self.captions
+            .iter()
+            .map(Caption::end)
+            .max()
+            .unwrap_or(Tick::ZERO)
     }
     /// Caption covering `t`.
     pub fn caption_at(&self, t: Tick) -> Option<&Caption> {
         let idx = self.captions.partition_point(|c| c.start <= t);
-        idx.checked_sub(1).map(|i| &self.captions[i]).filter(|c| t < c.end())
+        idx.checked_sub(1)
+            .map(|i| &self.captions[i])
+            .filter(|c| t < c.end())
     }
     pub fn caption(&self, id: ClipId) -> Option<&Caption> {
         self.captions.iter().find(|c| c.id == id)
@@ -211,12 +225,18 @@ impl CaptionTrack {
         self.check_bounds()?;
         for c in &self.captions {
             if c.duration.0 <= 0 {
-                return Err(format!("{}: caption {:?} has non-positive duration", self.name, c.id));
+                return Err(format!(
+                    "{}: caption {:?} has non-positive duration",
+                    self.name, c.id
+                ));
             }
         }
         for w in self.captions.windows(2) {
             if w[0].end() > w[1].start {
-                return Err(format!("{}: captions {:?} and {:?} overlap", self.name, w[0].id, w[1].id));
+                return Err(format!(
+                    "{}: captions {:?} and {:?} overlap",
+                    self.name, w[0].id, w[1].id
+                ));
             }
         }
         Ok(())
@@ -225,7 +245,10 @@ impl CaptionTrack {
     pub fn check_bounds(&self) -> Result<(), String> {
         for c in &self.captions {
             if !crate::bounded_time_range(c.start, c.duration) {
-                return Err(format!("{}: caption {:?} is outside supported time bounds", self.name, c.id));
+                return Err(format!(
+                    "{}: caption {:?} is outside supported time bounds",
+                    self.name, c.id
+                ));
             }
         }
         Ok(())
@@ -317,8 +340,14 @@ mod tests {
         assert_eq!(t.caption_at(Tick(120)).unwrap().text, "c1");
         assert!(t.caption_at(Tick(160)).is_none());
         assert!(t.check().is_ok());
-        assert_eq!(CaptionFormat::from_name("cea608"), Some(CaptionFormat::Cea608));
-        assert_eq!(CaptionFormat::from_name("CEA-708"), Some(CaptionFormat::Cea708));
+        assert_eq!(
+            CaptionFormat::from_name("cea608"),
+            Some(CaptionFormat::Cea608)
+        );
+        assert_eq!(
+            CaptionFormat::from_name("CEA-708"),
+            Some(CaptionFormat::Cea708)
+        );
     }
 
     #[test]

@@ -29,7 +29,9 @@ pub const MAX_NEST: usize = 128;
 
 /// The warning for clips left out for nesting deeper than [`MAX_NEST`].
 pub fn deep_clips() -> String {
-    format!("clips nested more than {MAX_NEST} deep were left out: what they clip is clipped by the clips around them")
+    format!(
+        "clips nested more than {MAX_NEST} deep were left out: what they clip is clipped by the clips around them"
+    )
 }
 
 /// Objects in drawing order, each with its clips (outermost first).
@@ -70,7 +72,11 @@ fn nest_at(doc: &mut Document, items: Drawn, depth: usize) -> Vec<Arc<Node>> {
 fn clip_group(doc: &mut Document, c: &Clip, items: Drawn, depth: usize) -> Arc<Node> {
     let mut children = vec![];
     if let Some((bp, r)) = &c.region {
-        let mut path = Node::path(doc.alloc_id(), PathData::from_bezpath(bp), Appearance::default());
+        let mut path = Node::path(
+            doc.alloc_id(),
+            PathData::from_bezpath(bp),
+            Appearance::default(),
+        );
         if let NodeKind::Path { clipping, rule, .. } = &mut path.kind {
             *clipping = true;
             *rule = *r;
@@ -78,5 +84,11 @@ fn clip_group(doc: &mut Document, c: &Clip, items: Drawn, depth: usize) -> Arc<N
         children.push(Arc::new(path));
     }
     children.extend(nest_at(doc, items, depth + 1));
-    Arc::new(Node::new(doc.alloc_id(), NodeKind::Group { children, clip: c.region.is_some() }))
+    Arc::new(Node::new(
+        doc.alloc_id(),
+        NodeKind::Group {
+            children,
+            clip: c.region.is_some(),
+        },
+    ))
 }

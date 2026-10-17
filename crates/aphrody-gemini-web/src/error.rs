@@ -31,7 +31,11 @@ pub enum GeminiError {
     /// The Boq RPC executed but the response carried a non-2xx HTTP status or a
     /// `UserDisplayableError` envelope.
     #[error("RPC {rpc_id} returned HTTP {status}: {message}")]
-    Rpc { rpc_id: String, status: u16, message: String },
+    Rpc {
+        rpc_id: String,
+        status: u16,
+        message: String,
+    },
 
     /// Response body could not be parsed (envelope shape unexpected, inner JSON
     /// malformed, missing field on a `wrb.fr` array).

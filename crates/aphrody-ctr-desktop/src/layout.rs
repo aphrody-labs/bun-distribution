@@ -24,7 +24,12 @@ impl Layout {
         let (bw, bh) = (BOTTOM_SIZE.0 as f32, BOTTOM_SIZE.1 as f32);
         let scale = (w / tw).min(h / (th + bh));
         let y0 = (h - (th + bh) * scale) / 2.0;
-        let top = Rect { x: (w - tw * scale) / 2.0, y: y0, width: tw * scale, height: th * scale };
+        let top = Rect {
+            x: (w - tw * scale) / 2.0,
+            y: y0,
+            width: tw * scale,
+            height: th * scale,
+        };
         let bottom = Rect {
             x: (w - bw * scale) / 2.0,
             y: y0 + th * scale,

@@ -24,11 +24,18 @@ impl StderrLog {
 
 impl log::Log for StderrLog {
     fn enabled(&self, m: &Metadata) -> bool {
-        m.level() <= self.level && (m.level() <= Level::Warn || m.target().starts_with("lightcraft"))
+        m.level() <= self.level
+            && (m.level() <= Level::Warn || m.target().starts_with("lightcraft"))
     }
     fn log(&self, r: &Record) {
         if self.enabled(r.metadata()) {
-            eprintln!("{}: {} {}: {}", self.prefix, r.level(), r.target(), r.args());
+            eprintln!(
+                "{}: {} {}: {}",
+                self.prefix,
+                r.level(),
+                r.target(),
+                r.args()
+            );
         }
     }
     fn flush(&self) {}
@@ -51,7 +58,9 @@ pub fn level_from(lightcraft_log: Option<&str>, rust_log: Option<&str>) -> Level
     if let Some(l) = lightcraft_log.and_then(parse_level) {
         return l;
     }
-    let Some(rust_log) = rust_log else { return LevelFilter::Warn };
+    let Some(rust_log) = rust_log else {
+        return LevelFilter::Warn;
+    };
     let mut bare = None;
     let mut ours: Option<LevelFilter> = None;
     for directive in rust_log.split(',') {
@@ -71,7 +80,10 @@ pub fn level_from(lightcraft_log: Option<&str>, rust_log: Option<&str>) -> Level
 /// Install the stderr logger at the level the environment asks for. Does nothing when a logger is
 /// already installed.
 pub fn install(prefix: &'static str) {
-    let level = level_from(std::env::var("LIGHTCRAFT_LOG").ok().as_deref(), std::env::var("RUST_LOG").ok().as_deref());
+    let level = level_from(
+        std::env::var("LIGHTCRAFT_LOG").ok().as_deref(),
+        std::env::var("RUST_LOG").ok().as_deref(),
+    );
     static LOGGER: std::sync::OnceLock<StderrLog> = std::sync::OnceLock::new();
     if log::set_logger(LOGGER.get_or_init(|| StderrLog::new(prefix, level))).is_ok() {
         log::set_max_level(level);
@@ -91,16 +103,37 @@ mod tests {
         assert_eq!(level_from(None, Some("TRACE")), LevelFilter::Trace);
         assert_eq!(level_from(None, Some("off")), LevelFilter::Off);
         assert_eq!(level_from(Some("info"), None), LevelFilter::Info);
-        assert_eq!(level_from(Some("error"), Some("debug")), LevelFilter::Error, "LIGHTCRAFT_LOG wins");
-        assert_eq!(level_from(Some("nonsense"), Some("debug")), LevelFilter::Debug, "an unknown LIGHTCRAFT_LOG is ignored");
+        assert_eq!(
+            level_from(Some("error"), Some("debug")),
+            LevelFilter::Error,
+            "LIGHTCRAFT_LOG wins"
+        );
+        assert_eq!(
+            level_from(Some("nonsense"), Some("debug")),
+            LevelFilter::Debug,
+            "an unknown LIGHTCRAFT_LOG is ignored"
+        );
     }
 
     #[test]
     fn rust_log_directives_set_lightcraft_s_level() {
-        assert_eq!(level_from(None, Some("lightcraft=debug,wgpu=warn")), LevelFilter::Debug);
-        assert_eq!(level_from(None, Some("wgpu_core=trace")), LevelFilter::Warn, "other crates' directives don't apply");
-        assert_eq!(level_from(None, Some("error,lightcraft_gpu=info")), LevelFilter::Info);
-        assert_eq!(level_from(None, Some("lightcraft_gpu=info,lightcraft_engine=trace")), LevelFilter::Trace);
+        assert_eq!(
+            level_from(None, Some("lightcraft=debug,wgpu=warn")),
+            LevelFilter::Debug
+        );
+        assert_eq!(
+            level_from(None, Some("wgpu_core=trace")),
+            LevelFilter::Warn,
+            "other crates' directives don't apply"
+        );
+        assert_eq!(
+            level_from(None, Some("error,lightcraft_gpu=info")),
+            LevelFilter::Info
+        );
+        assert_eq!(
+            level_from(None, Some("lightcraft_gpu=info,lightcraft_engine=trace")),
+            LevelFilter::Trace
+        );
         assert_eq!(level_from(None, Some("info,naga=off")), LevelFilter::Info);
     }
 

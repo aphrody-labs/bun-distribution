@@ -18,19 +18,30 @@ pub fn magnitude_db(samples: &[f32], fft_size: usize) -> Vec<f32> {
     let mut buf: Vec<Complex<f32>> = (0..n)
         .map(|i| {
             let w = 0.5 - 0.5 * (std::f32::consts::TAU * i as f32 / n as f32).cos();
-            let x = samples.get(i).copied().filter(|v| v.is_finite()).unwrap_or(0.0);
+            let x = samples
+                .get(i)
+                .copied()
+                .filter(|v| v.is_finite())
+                .unwrap_or(0.0);
             Complex::new(x * w, 0.0)
         })
         .collect();
     fft.process(&mut buf);
     // Hann coherent gain is 0.5; a sine's energy splits across ±f.
     let scale = 2.0 / (n as f32 * 0.5);
-    buf.iter().take(n / 2 + 1).map(|c| crate::gain_to_db(c.norm() * scale)).collect()
+    buf.iter()
+        .take(n / 2 + 1)
+        .map(|c| crate::gain_to_db(c.norm() * scale))
+        .collect()
 }
 
 /// Frequency in Hz of bin `k` for a given FFT size.
 pub fn bin_hz(k: usize, fft_size: usize, sample_rate: f32) -> f32 {
-    if fft_size == 0 { 0.0 } else { k as f32 * sample_rate / fft_size as f32 }
+    if fft_size == 0 {
+        0.0
+    } else {
+        k as f32 * sample_rate / fft_size as f32
+    }
 }
 
 #[cfg(test)]
@@ -43,7 +54,9 @@ mod tests {
         let n = 4096;
         let k = 100;
         let f = bin_hz(k, n, sr);
-        let x: Vec<f32> = (0..n).map(|i| (std::f32::consts::TAU * f * i as f32 / sr).sin()).collect();
+        let x: Vec<f32> = (0..n)
+            .map(|i| (std::f32::consts::TAU * f * i as f32 / sr).sin())
+            .collect();
         let m = magnitude_db(&x, n);
         assert_eq!(m.len(), n / 2 + 1);
         assert!(m[k].abs() < 0.1, "{}", m[k]);

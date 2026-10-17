@@ -1,5 +1,3 @@
-use crate::generate::generate_image::providers::midjourney::request::MidjourneyRequestState;
-use crate::generate::generate_image::providers::midjourney::cost::MidjourneyCostState;
 use crate::api::router_provider::RouterProvider;
 use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -91,398 +89,453 @@ use crate::generate::generate_image::providers::kinovi::midjourney_8::cost::Kino
 use crate::generate::generate_image::providers::kinovi::midjourney_8::request::KinoviMidjourney8RequestState;
 use crate::generate::generate_image::providers::kinovi::seedream_5p0_pro::cost::KinoviSeedream5p0ProCostState;
 use crate::generate::generate_image::providers::kinovi::seedream_5p0_pro::request::KinoviSeedream5p0ProRequestState;
+use crate::generate::generate_image::providers::midjourney::cost::MidjourneyCostState;
+use crate::generate::generate_image::providers::midjourney::request::MidjourneyRequestState;
 
 #[derive(Clone, Debug)]
 pub enum ImageGenerationRequest {
-  MidjourneyRequest(MidjourneyRequestState),
-  // ── Artcraft provider (omni-gen image endpoint) ──
-  ArtcraftFlux1Dev(ArtcraftFlux1DevRequestState),
-  ArtcraftFlux1Schnell(ArtcraftFlux1SchnellRequestState),
-  ArtcraftFluxPro1p1(ArtcraftFluxPro1p1RequestState),
-  ArtcraftFluxPro1p1Ultra(ArtcraftFluxPro1p1UltraRequestState),
-  ArtcraftGptImage1(ArtcraftGptImage1RequestState),
-  ArtcraftGptImage1p5(ArtcraftGptImage1p5RequestState),
-  ArtcraftGptImage2(ArtcraftGptImage2RequestState),
-  ArtcraftGptImage2p5Flare(ArtcraftGptImage2p5FlareRequestState),
-  ArtcraftGptImage2p5Sunburst(ArtcraftGptImage2p5SunburstRequestState),
-  ArtcraftNanoBanana(ArtcraftNanoBananaRequestState),
-  ArtcraftNanoBanana2(ArtcraftNanoBanana2RequestState),
-  ArtcraftNanoBananaPro(ArtcraftNanoBananaProRequestState),
-  ArtcraftSeedream4(ArtcraftSeedream4RequestState),
-  ArtcraftSeedream4p5(ArtcraftSeedream4p5RequestState),
-  ArtcraftSeedream5Lite(ArtcraftSeedream5LiteRequestState),
-  ArtcraftSeedream5p0Pro(ArtcraftSeedream5p0ProRequestState),
-  ArtcraftSeedream5p0ProUltra(ArtcraftSeedream5p0ProUltraRequestState),
-  ArtcraftQwenEdit2511Angles(ArtcraftQwenEdit2511AnglesRequestState),
-  ArtcraftFlux2LoraAngles(ArtcraftFlux2LoraAnglesRequestState),
-  ArtcraftMidjourney7(ArtcraftMidjourney7RequestState),
-  ArtcraftMidjourney7Niji(ArtcraftMidjourney7NijiRequestState),
-  ArtcraftMidjourney8(ArtcraftMidjourney8RequestState),
+    MidjourneyRequest(MidjourneyRequestState),
+    // ── Artcraft provider (omni-gen image endpoint) ──
+    ArtcraftFlux1Dev(ArtcraftFlux1DevRequestState),
+    ArtcraftFlux1Schnell(ArtcraftFlux1SchnellRequestState),
+    ArtcraftFluxPro1p1(ArtcraftFluxPro1p1RequestState),
+    ArtcraftFluxPro1p1Ultra(ArtcraftFluxPro1p1UltraRequestState),
+    ArtcraftGptImage1(ArtcraftGptImage1RequestState),
+    ArtcraftGptImage1p5(ArtcraftGptImage1p5RequestState),
+    ArtcraftGptImage2(ArtcraftGptImage2RequestState),
+    ArtcraftGptImage2p5Flare(ArtcraftGptImage2p5FlareRequestState),
+    ArtcraftGptImage2p5Sunburst(ArtcraftGptImage2p5SunburstRequestState),
+    ArtcraftNanoBanana(ArtcraftNanoBananaRequestState),
+    ArtcraftNanoBanana2(ArtcraftNanoBanana2RequestState),
+    ArtcraftNanoBananaPro(ArtcraftNanoBananaProRequestState),
+    ArtcraftSeedream4(ArtcraftSeedream4RequestState),
+    ArtcraftSeedream4p5(ArtcraftSeedream4p5RequestState),
+    ArtcraftSeedream5Lite(ArtcraftSeedream5LiteRequestState),
+    ArtcraftSeedream5p0Pro(ArtcraftSeedream5p0ProRequestState),
+    ArtcraftSeedream5p0ProUltra(ArtcraftSeedream5p0ProUltraRequestState),
+    ArtcraftQwenEdit2511Angles(ArtcraftQwenEdit2511AnglesRequestState),
+    ArtcraftFlux2LoraAngles(ArtcraftFlux2LoraAnglesRequestState),
+    ArtcraftMidjourney7(ArtcraftMidjourney7RequestState),
+    ArtcraftMidjourney7Niji(ArtcraftMidjourney7NijiRequestState),
+    ArtcraftMidjourney8(ArtcraftMidjourney8RequestState),
 
-  // ── Fal provider ──
-  FalFlux1Dev(FalFlux1DevRequestState),
-  FalFlux1Schnell(FalFlux1SchnellRequestState),
-  FalFluxPro1p1(FalFluxPro1p1RequestState),
-  FalFluxPro1p1Ultra(FalFluxPro1p1UltraRequestState),
-  FalGptImage1(FalGptImage1RequestState),
-  FalGptImage1p5(FalGptImage1p5RequestState),
-  FalGptImage2(FalGptImage2RequestState),
-  FalGptImage2p5Flare(FalGptImage2p5FlareRequestState),
-  FalGptImage2p5Sunburst(FalGptImage2p5SunburstRequestState),
-  FalNanoBanana(FalNanoBananaRequestState),
-  FalNanoBanana2(FalNanoBanana2RequestState),
-  FalNanoBananaPro(FalNanoBananaProRequestState),
-  FalSeedream4(FalSeedream4RequestState),
-  FalSeedream4p5(FalSeedream4p5RequestState),
-  FalSeedream5Lite(FalSeedream5LiteRequestState),
-  FalQwenEdit2511Angles(FalQwenEdit2511AnglesRequestState),
-  FalFlux2LoraAngles(FalFlux2LoraAnglesRequestState),
+    // ── Fal provider ──
+    FalFlux1Dev(FalFlux1DevRequestState),
+    FalFlux1Schnell(FalFlux1SchnellRequestState),
+    FalFluxPro1p1(FalFluxPro1p1RequestState),
+    FalFluxPro1p1Ultra(FalFluxPro1p1UltraRequestState),
+    FalGptImage1(FalGptImage1RequestState),
+    FalGptImage1p5(FalGptImage1p5RequestState),
+    FalGptImage2(FalGptImage2RequestState),
+    FalGptImage2p5Flare(FalGptImage2p5FlareRequestState),
+    FalGptImage2p5Sunburst(FalGptImage2p5SunburstRequestState),
+    FalNanoBanana(FalNanoBananaRequestState),
+    FalNanoBanana2(FalNanoBanana2RequestState),
+    FalNanoBananaPro(FalNanoBananaProRequestState),
+    FalSeedream4(FalSeedream4RequestState),
+    FalSeedream4p5(FalSeedream4p5RequestState),
+    FalSeedream5Lite(FalSeedream5LiteRequestState),
+    FalQwenEdit2511Angles(FalQwenEdit2511AnglesRequestState),
+    FalFlux2LoraAngles(FalFlux2LoraAnglesRequestState),
 
-  // ── Kinovi / KinoviWeb provider (Midjourney + Seedream image generation) ──
-  KinoviMidjourney7(KinoviMidjourney7RequestState),
-  KinoviMidjourney7Niji(KinoviMidjourney7NijiRequestState),
-  KinoviMidjourney8(KinoviMidjourney8RequestState),
-  KinoviSeedream5p0Pro(KinoviSeedream5p0ProRequestState),
+    // ── Kinovi / KinoviWeb provider (Midjourney + Seedream image generation) ──
+    KinoviMidjourney7(KinoviMidjourney7RequestState),
+    KinoviMidjourney7Niji(KinoviMidjourney7NijiRequestState),
+    KinoviMidjourney8(KinoviMidjourney8RequestState),
+    KinoviSeedream5p0Pro(KinoviSeedream5p0ProRequestState),
 }
 
 impl ImageGenerationRequest {
-  pub fn get_provider(&self) -> RouterProvider {
-    match self {
-      Self::MidjourneyRequest(_) => RouterProvider::Midjourney,
-      Self::ArtcraftFlux1Dev(_) => RouterProvider::Artcraft,
-      Self::ArtcraftFlux1Schnell(_) => RouterProvider::Artcraft,
-      Self::ArtcraftFluxPro1p1(_) => RouterProvider::Artcraft,
-      Self::ArtcraftFluxPro1p1Ultra(_) => RouterProvider::Artcraft,
-      Self::ArtcraftGptImage1(_) => RouterProvider::Artcraft,
-      Self::ArtcraftGptImage1p5(_) => RouterProvider::Artcraft,
-      Self::ArtcraftGptImage2(_) => RouterProvider::Artcraft,
-      Self::ArtcraftGptImage2p5Flare(_) => RouterProvider::Artcraft,
-      Self::ArtcraftGptImage2p5Sunburst(_) => RouterProvider::Artcraft,
-      Self::ArtcraftNanoBanana(_) => RouterProvider::Artcraft,
-      Self::ArtcraftNanoBanana2(_) => RouterProvider::Artcraft,
-      Self::ArtcraftNanoBananaPro(_) => RouterProvider::Artcraft,
-      Self::ArtcraftSeedream4(_) => RouterProvider::Artcraft,
-      Self::ArtcraftSeedream4p5(_) => RouterProvider::Artcraft,
-      Self::ArtcraftSeedream5Lite(_) => RouterProvider::Artcraft,
-      Self::ArtcraftSeedream5p0Pro(_) => RouterProvider::Artcraft,
-      Self::ArtcraftSeedream5p0ProUltra(_) => RouterProvider::Artcraft,
-      Self::ArtcraftQwenEdit2511Angles(_) => RouterProvider::Artcraft,
-      Self::ArtcraftFlux2LoraAngles(_) => RouterProvider::Artcraft,
-      Self::ArtcraftMidjourney7(_) => RouterProvider::Artcraft,
-      Self::ArtcraftMidjourney7Niji(_) => RouterProvider::Artcraft,
-      Self::ArtcraftMidjourney8(_) => RouterProvider::Artcraft,
+    pub fn get_provider(&self) -> RouterProvider {
+        match self {
+            Self::MidjourneyRequest(_) => RouterProvider::Midjourney,
+            Self::ArtcraftFlux1Dev(_) => RouterProvider::Artcraft,
+            Self::ArtcraftFlux1Schnell(_) => RouterProvider::Artcraft,
+            Self::ArtcraftFluxPro1p1(_) => RouterProvider::Artcraft,
+            Self::ArtcraftFluxPro1p1Ultra(_) => RouterProvider::Artcraft,
+            Self::ArtcraftGptImage1(_) => RouterProvider::Artcraft,
+            Self::ArtcraftGptImage1p5(_) => RouterProvider::Artcraft,
+            Self::ArtcraftGptImage2(_) => RouterProvider::Artcraft,
+            Self::ArtcraftGptImage2p5Flare(_) => RouterProvider::Artcraft,
+            Self::ArtcraftGptImage2p5Sunburst(_) => RouterProvider::Artcraft,
+            Self::ArtcraftNanoBanana(_) => RouterProvider::Artcraft,
+            Self::ArtcraftNanoBanana2(_) => RouterProvider::Artcraft,
+            Self::ArtcraftNanoBananaPro(_) => RouterProvider::Artcraft,
+            Self::ArtcraftSeedream4(_) => RouterProvider::Artcraft,
+            Self::ArtcraftSeedream4p5(_) => RouterProvider::Artcraft,
+            Self::ArtcraftSeedream5Lite(_) => RouterProvider::Artcraft,
+            Self::ArtcraftSeedream5p0Pro(_) => RouterProvider::Artcraft,
+            Self::ArtcraftSeedream5p0ProUltra(_) => RouterProvider::Artcraft,
+            Self::ArtcraftQwenEdit2511Angles(_) => RouterProvider::Artcraft,
+            Self::ArtcraftFlux2LoraAngles(_) => RouterProvider::Artcraft,
+            Self::ArtcraftMidjourney7(_) => RouterProvider::Artcraft,
+            Self::ArtcraftMidjourney7Niji(_) => RouterProvider::Artcraft,
+            Self::ArtcraftMidjourney8(_) => RouterProvider::Artcraft,
 
-      Self::FalFlux1Dev(_) => RouterProvider::Fal,
-      Self::FalFlux1Schnell(_) => RouterProvider::Fal,
-      Self::FalFluxPro1p1(_) => RouterProvider::Fal,
-      Self::FalFluxPro1p1Ultra(_) => RouterProvider::Fal,
-      Self::FalGptImage1(_) => RouterProvider::Fal,
-      Self::FalGptImage1p5(_) => RouterProvider::Fal,
-      Self::FalGptImage2(_) => RouterProvider::Fal,
-      Self::FalGptImage2p5Flare(_) => RouterProvider::Fal,
-      Self::FalGptImage2p5Sunburst(_) => RouterProvider::Fal,
-      Self::FalNanoBanana(_) => RouterProvider::Fal,
-      Self::FalNanoBanana2(_) => RouterProvider::Fal,
-      Self::FalNanoBananaPro(_) => RouterProvider::Fal,
-      Self::FalSeedream4(_) => RouterProvider::Fal,
-      Self::FalSeedream4p5(_) => RouterProvider::Fal,
-      Self::FalSeedream5Lite(_) => RouterProvider::Fal,
-      Self::FalQwenEdit2511Angles(_) => RouterProvider::Fal,
-      Self::FalFlux2LoraAngles(_) => RouterProvider::Fal,
+            Self::FalFlux1Dev(_) => RouterProvider::Fal,
+            Self::FalFlux1Schnell(_) => RouterProvider::Fal,
+            Self::FalFluxPro1p1(_) => RouterProvider::Fal,
+            Self::FalFluxPro1p1Ultra(_) => RouterProvider::Fal,
+            Self::FalGptImage1(_) => RouterProvider::Fal,
+            Self::FalGptImage1p5(_) => RouterProvider::Fal,
+            Self::FalGptImage2(_) => RouterProvider::Fal,
+            Self::FalGptImage2p5Flare(_) => RouterProvider::Fal,
+            Self::FalGptImage2p5Sunburst(_) => RouterProvider::Fal,
+            Self::FalNanoBanana(_) => RouterProvider::Fal,
+            Self::FalNanoBanana2(_) => RouterProvider::Fal,
+            Self::FalNanoBananaPro(_) => RouterProvider::Fal,
+            Self::FalSeedream4(_) => RouterProvider::Fal,
+            Self::FalSeedream4p5(_) => RouterProvider::Fal,
+            Self::FalSeedream5Lite(_) => RouterProvider::Fal,
+            Self::FalQwenEdit2511Angles(_) => RouterProvider::Fal,
+            Self::FalFlux2LoraAngles(_) => RouterProvider::Fal,
 
-      Self::KinoviMidjourney7(_) => RouterProvider::KinoviWeb,
-      Self::KinoviMidjourney7Niji(_) => RouterProvider::KinoviWeb,
-      Self::KinoviMidjourney8(_) => RouterProvider::KinoviWeb,
-      Self::KinoviSeedream5p0Pro(_) => RouterProvider::KinoviWeb,
+            Self::KinoviMidjourney7(_) => RouterProvider::KinoviWeb,
+            Self::KinoviMidjourney7Niji(_) => RouterProvider::KinoviWeb,
+            Self::KinoviMidjourney8(_) => RouterProvider::KinoviWeb,
+            Self::KinoviSeedream5p0Pro(_) => RouterProvider::KinoviWeb,
+        }
     }
-  }
 
-  pub fn estimate_cost(&self) -> Result<ImageGenerationCostEstimate, ArtcraftRouterError> {
-    match self {
-      Self::MidjourneyRequest(request) => Ok(MidjourneyCostState::from_request(request).estimate_cost()),
-      // ── Artcraft ──
-      Self::ArtcraftFlux1Dev(request) => {
-        Ok(ArtcraftFlux1DevCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftFlux1Schnell(request) => {
-        Ok(ArtcraftFlux1SchnellCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftFluxPro1p1(request) => {
-        Ok(ArtcraftFluxPro1p1CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftFluxPro1p1Ultra(request) => {
-        Ok(ArtcraftFluxPro1p1UltraCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftGptImage1(request) => {
-        Ok(ArtcraftGptImage1CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftGptImage1p5(request) => {
-        Ok(ArtcraftGptImage1p5CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftGptImage2(request) => {
-        Ok(ArtcraftGptImage2CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftGptImage2p5Flare(request) => {
-        Ok(ArtcraftGptImage2p5FlareCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftGptImage2p5Sunburst(request) => {
-        Ok(ArtcraftGptImage2p5SunburstCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftNanoBanana(request) => {
-        Ok(ArtcraftNanoBananaCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftNanoBanana2(request) => {
-        Ok(ArtcraftNanoBanana2CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftNanoBananaPro(request) => {
-        Ok(ArtcraftNanoBananaProCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftSeedream4(request) => {
-        Ok(ArtcraftSeedream4CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftSeedream4p5(request) => {
-        Ok(ArtcraftSeedream4p5CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftSeedream5Lite(request) => {
-        Ok(ArtcraftSeedream5LiteCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftSeedream5p0Pro(request) => {
-        Ok(ArtcraftSeedream5p0ProCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftSeedream5p0ProUltra(request) => {
-        Ok(ArtcraftSeedream5p0ProUltraCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftQwenEdit2511Angles(request) => {
-        Ok(ArtcraftQwenEdit2511AnglesCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftFlux2LoraAngles(request) => {
-        Ok(ArtcraftFlux2LoraAnglesCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftMidjourney7(request) => {
-        Ok(ArtcraftMidjourney7CostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftMidjourney7Niji(request) => {
-        Ok(ArtcraftMidjourney7NijiCostState::from_request(request).estimate_cost())
-      }
-      Self::ArtcraftMidjourney8(request) => {
-        Ok(ArtcraftMidjourney8CostState::from_request(request).estimate_cost())
-      }
+    pub fn estimate_cost(&self) -> Result<ImageGenerationCostEstimate, ArtcraftRouterError> {
+        match self {
+            Self::MidjourneyRequest(request) => {
+                Ok(MidjourneyCostState::from_request(request).estimate_cost())
+            }
+            // ── Artcraft ──
+            Self::ArtcraftFlux1Dev(request) => {
+                Ok(ArtcraftFlux1DevCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftFlux1Schnell(request) => {
+                Ok(ArtcraftFlux1SchnellCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftFluxPro1p1(request) => {
+                Ok(ArtcraftFluxPro1p1CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftFluxPro1p1Ultra(request) => {
+                Ok(ArtcraftFluxPro1p1UltraCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftGptImage1(request) => {
+                Ok(ArtcraftGptImage1CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftGptImage1p5(request) => {
+                Ok(ArtcraftGptImage1p5CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftGptImage2(request) => {
+                Ok(ArtcraftGptImage2CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftGptImage2p5Flare(request) => {
+                Ok(ArtcraftGptImage2p5FlareCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftGptImage2p5Sunburst(request) => {
+                Ok(ArtcraftGptImage2p5SunburstCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftNanoBanana(request) => {
+                Ok(ArtcraftNanoBananaCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftNanoBanana2(request) => {
+                Ok(ArtcraftNanoBanana2CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftNanoBananaPro(request) => {
+                Ok(ArtcraftNanoBananaProCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftSeedream4(request) => {
+                Ok(ArtcraftSeedream4CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftSeedream4p5(request) => {
+                Ok(ArtcraftSeedream4p5CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftSeedream5Lite(request) => {
+                Ok(ArtcraftSeedream5LiteCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftSeedream5p0Pro(request) => {
+                Ok(ArtcraftSeedream5p0ProCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftSeedream5p0ProUltra(request) => {
+                Ok(ArtcraftSeedream5p0ProUltraCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftQwenEdit2511Angles(request) => {
+                Ok(ArtcraftQwenEdit2511AnglesCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftFlux2LoraAngles(request) => {
+                Ok(ArtcraftFlux2LoraAnglesCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftMidjourney7(request) => {
+                Ok(ArtcraftMidjourney7CostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftMidjourney7Niji(request) => {
+                Ok(ArtcraftMidjourney7NijiCostState::from_request(request).estimate_cost())
+            }
+            Self::ArtcraftMidjourney8(request) => {
+                Ok(ArtcraftMidjourney8CostState::from_request(request).estimate_cost())
+            }
 
-      // ── Fal ──
-      Self::FalFlux1Dev(request) => Ok(FalFlux1DevCostState::from_request(request).estimate_cost()),
-      Self::FalFlux1Schnell(request) => Ok(FalFlux1SchnellCostState::from_request(request).estimate_cost()),
-      Self::FalFluxPro1p1(request) => Ok(FalFluxPro1p1CostState::from_request(request).estimate_cost()),
-      Self::FalFluxPro1p1Ultra(request) => Ok(FalFluxPro1p1UltraCostState::from_request(request).estimate_cost()),
-      Self::FalGptImage1(request) => Ok(FalGptImage1CostState::from_request(request).estimate_cost()),
-      Self::FalGptImage1p5(request) => Ok(FalGptImage1p5CostState::from_request(request).estimate_cost()),
-      Self::FalGptImage2(request) => Ok(FalGptImage2CostState::from_request(request).estimate_cost()),
-      Self::FalGptImage2p5Flare(request) => Ok(FalGptImage2p5FlareCostState::from_request(request).estimate_cost()),
-      Self::FalGptImage2p5Sunburst(request) => Ok(FalGptImage2p5SunburstCostState::from_request(request).estimate_cost()),
-      Self::FalNanoBanana(request) => Ok(FalNanoBananaCostState::from_request(request).estimate_cost()),
-      Self::FalNanoBanana2(request) => Ok(FalNanoBanana2CostState::from_request(request).estimate_cost()),
-      Self::FalNanoBananaPro(request) => Ok(FalNanoBananaProCostState::from_request(request).estimate_cost()),
-      Self::FalSeedream4(request) => Ok(FalSeedream4CostState::from_request(request).estimate_cost()),
-      Self::FalSeedream4p5(request) => Ok(FalSeedream4p5CostState::from_request(request).estimate_cost()),
-      Self::FalSeedream5Lite(request) => Ok(FalSeedream5LiteCostState::from_request(request).estimate_cost()),
-      Self::FalQwenEdit2511Angles(request) => Ok(FalQwenEdit2511AnglesCostState::from_request(request).estimate_cost()),
-      Self::FalFlux2LoraAngles(request) => Ok(FalFlux2LoraAnglesCostState::from_request(request).estimate_cost()),
+            // ── Fal ──
+            Self::FalFlux1Dev(request) => {
+                Ok(FalFlux1DevCostState::from_request(request).estimate_cost())
+            }
+            Self::FalFlux1Schnell(request) => {
+                Ok(FalFlux1SchnellCostState::from_request(request).estimate_cost())
+            }
+            Self::FalFluxPro1p1(request) => {
+                Ok(FalFluxPro1p1CostState::from_request(request).estimate_cost())
+            }
+            Self::FalFluxPro1p1Ultra(request) => {
+                Ok(FalFluxPro1p1UltraCostState::from_request(request).estimate_cost())
+            }
+            Self::FalGptImage1(request) => {
+                Ok(FalGptImage1CostState::from_request(request).estimate_cost())
+            }
+            Self::FalGptImage1p5(request) => {
+                Ok(FalGptImage1p5CostState::from_request(request).estimate_cost())
+            }
+            Self::FalGptImage2(request) => {
+                Ok(FalGptImage2CostState::from_request(request).estimate_cost())
+            }
+            Self::FalGptImage2p5Flare(request) => {
+                Ok(FalGptImage2p5FlareCostState::from_request(request).estimate_cost())
+            }
+            Self::FalGptImage2p5Sunburst(request) => {
+                Ok(FalGptImage2p5SunburstCostState::from_request(request).estimate_cost())
+            }
+            Self::FalNanoBanana(request) => {
+                Ok(FalNanoBananaCostState::from_request(request).estimate_cost())
+            }
+            Self::FalNanoBanana2(request) => {
+                Ok(FalNanoBanana2CostState::from_request(request).estimate_cost())
+            }
+            Self::FalNanoBananaPro(request) => {
+                Ok(FalNanoBananaProCostState::from_request(request).estimate_cost())
+            }
+            Self::FalSeedream4(request) => {
+                Ok(FalSeedream4CostState::from_request(request).estimate_cost())
+            }
+            Self::FalSeedream4p5(request) => {
+                Ok(FalSeedream4p5CostState::from_request(request).estimate_cost())
+            }
+            Self::FalSeedream5Lite(request) => {
+                Ok(FalSeedream5LiteCostState::from_request(request).estimate_cost())
+            }
+            Self::FalQwenEdit2511Angles(request) => {
+                Ok(FalQwenEdit2511AnglesCostState::from_request(request).estimate_cost())
+            }
+            Self::FalFlux2LoraAngles(request) => {
+                Ok(FalFlux2LoraAnglesCostState::from_request(request).estimate_cost())
+            }
 
-      Self::KinoviMidjourney7(request) => Ok(KinoviMidjourney7CostState::from_request(request).estimate_cost()),
-      Self::KinoviMidjourney7Niji(request) => Ok(KinoviMidjourney7NijiCostState::from_request(request).estimate_cost()),
-      Self::KinoviMidjourney8(request) => Ok(KinoviMidjourney8CostState::from_request(request).estimate_cost()),
-      Self::KinoviSeedream5p0Pro(request) => Ok(KinoviSeedream5p0ProCostState::from_request(request).estimate_cost()),
+            Self::KinoviMidjourney7(request) => {
+                Ok(KinoviMidjourney7CostState::from_request(request).estimate_cost())
+            }
+            Self::KinoviMidjourney7Niji(request) => {
+                Ok(KinoviMidjourney7NijiCostState::from_request(request).estimate_cost())
+            }
+            Self::KinoviMidjourney8(request) => {
+                Ok(KinoviMidjourney8CostState::from_request(request).estimate_cost())
+            }
+            Self::KinoviSeedream5p0Pro(request) => {
+                Ok(KinoviSeedream5p0ProCostState::from_request(request).estimate_cost())
+            }
+        }
     }
-  }
 
-  pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-    match self {
-      Self::MidjourneyRequest(request) => request.send(client.get_midjourney_client_ref()?).await,
-      // ── Artcraft (omni-gen image endpoint) ──
-      Self::ArtcraftFlux1Dev(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftFlux1Schnell(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftFluxPro1p1(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftFluxPro1p1Ultra(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftGptImage1(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftGptImage1p5(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftGptImage2(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftGptImage2p5Flare(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftGptImage2p5Sunburst(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftNanoBanana(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftNanoBanana2(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftNanoBananaPro(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftSeedream4(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftSeedream4p5(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftSeedream5Lite(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftSeedream5p0Pro(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftSeedream5p0ProUltra(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftQwenEdit2511Angles(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftFlux2LoraAngles(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftMidjourney7(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftMidjourney7Niji(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
-      Self::ArtcraftMidjourney8(request) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        request.send(artcraft_client).await
-      }
+    pub async fn send_request(
+        &self,
+        client: &RouterClient,
+    ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
+        match self {
+            Self::MidjourneyRequest(request) => {
+                request.send(client.get_midjourney_client_ref()?).await
+            }
+            // ── Artcraft (omni-gen image endpoint) ──
+            Self::ArtcraftFlux1Dev(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftFlux1Schnell(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftFluxPro1p1(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftFluxPro1p1Ultra(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftGptImage1(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftGptImage1p5(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftGptImage2(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftGptImage2p5Flare(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftGptImage2p5Sunburst(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftNanoBanana(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftNanoBanana2(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftNanoBananaPro(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftSeedream4(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftSeedream4p5(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftSeedream5Lite(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftSeedream5p0Pro(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftSeedream5p0ProUltra(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftQwenEdit2511Angles(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftFlux2LoraAngles(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftMidjourney7(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftMidjourney7Niji(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
+            Self::ArtcraftMidjourney8(request) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                request.send(artcraft_client).await
+            }
 
-      // ── Fal ──
-      Self::FalFlux1Dev(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalFlux1Schnell(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalFluxPro1p1(request) => {
-        // Flux Pro 1.1 is webhook-required — uses the webhook-only RouterFalClient.
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalFluxPro1p1Ultra(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalGptImage1(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalGptImage1p5(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalGptImage2(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalGptImage2p5Flare(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalGptImage2p5Sunburst(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalNanoBanana(request) => {
-        // nano_banana (Gemini 2.5 Flash) is webhook-required.
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalNanoBanana2(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalNanoBananaPro(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalSeedream4(request) => {
-        // Seedream v4 is webhook-required.
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalSeedream4p5(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalSeedream5Lite(request) => {
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalQwenEdit2511Angles(request) => {
-        // Webhook-required endpoint.
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
-      Self::FalFlux2LoraAngles(request) => {
-        // Webhook-required endpoint.
-        let fal_client = client.get_fal_client_ref()?;
-        request.send(fal_client).await
-      }
+            // ── Fal ──
+            Self::FalFlux1Dev(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalFlux1Schnell(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalFluxPro1p1(request) => {
+                // Flux Pro 1.1 is webhook-required — uses the webhook-only RouterFalClient.
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalFluxPro1p1Ultra(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalGptImage1(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalGptImage1p5(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalGptImage2(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalGptImage2p5Flare(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalGptImage2p5Sunburst(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalNanoBanana(request) => {
+                // nano_banana (Gemini 2.5 Flash) is webhook-required.
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalNanoBanana2(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalNanoBananaPro(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalSeedream4(request) => {
+                // Seedream v4 is webhook-required.
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalSeedream4p5(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalSeedream5Lite(request) => {
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalQwenEdit2511Angles(request) => {
+                // Webhook-required endpoint.
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
+            Self::FalFlux2LoraAngles(request) => {
+                // Webhook-required endpoint.
+                let fal_client = client.get_fal_client_ref()?;
+                request.send(fal_client).await
+            }
 
-      // ── Kinovi / KinoviWeb (Midjourney + Seedream) ──
-      Self::KinoviMidjourney7(request) => {
-        let seedance_client = client.get_kinovi_web_client_ref()
-          .map_err(ArtcraftRouterError::Client)?;
-        request.send(seedance_client).await
-      }
-      Self::KinoviMidjourney7Niji(request) => {
-        let seedance_client = client.get_kinovi_web_client_ref()
-          .map_err(ArtcraftRouterError::Client)?;
-        request.send(seedance_client).await
-      }
-      Self::KinoviMidjourney8(request) => {
-        let seedance_client = client.get_kinovi_web_client_ref()
-          .map_err(ArtcraftRouterError::Client)?;
-        request.send(seedance_client).await
-      }
-      Self::KinoviSeedream5p0Pro(request) => {
-        let seedance_client = client.get_kinovi_web_client_ref()
-          .map_err(ArtcraftRouterError::Client)?;
-        request.send(seedance_client).await
-      }
+            // ── Kinovi / KinoviWeb (Midjourney + Seedream) ──
+            Self::KinoviMidjourney7(request) => {
+                let seedance_client = client
+                    .get_kinovi_web_client_ref()
+                    .map_err(ArtcraftRouterError::Client)?;
+                request.send(seedance_client).await
+            }
+            Self::KinoviMidjourney7Niji(request) => {
+                let seedance_client = client
+                    .get_kinovi_web_client_ref()
+                    .map_err(ArtcraftRouterError::Client)?;
+                request.send(seedance_client).await
+            }
+            Self::KinoviMidjourney8(request) => {
+                let seedance_client = client
+                    .get_kinovi_web_client_ref()
+                    .map_err(ArtcraftRouterError::Client)?;
+                request.send(seedance_client).await
+            }
+            Self::KinoviSeedream5p0Pro(request) => {
+                let seedance_client = client
+                    .get_kinovi_web_client_ref()
+                    .map_err(ArtcraftRouterError::Client)?;
+                request.send(seedance_client).await
+            }
+        }
     }
-  }
 }

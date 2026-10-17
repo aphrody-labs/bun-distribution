@@ -1,7 +1,9 @@
 //! Morph: matching shapes between two slides, interpolating their boxes and building the frames.
 
 use deckcraft_model::resolve::{self, Ctx};
-use deckcraft_model::{ColorRef, Fill, Geom, Presentation, Rgba, Shape, ShapeId, ShapeKind, Slide, Xfrm, walk};
+use deckcraft_model::{
+    ColorRef, Fill, Geom, Presentation, Rgba, Shape, ShapeId, ShapeKind, Slide, Xfrm, walk,
+};
 
 use crate::clampf;
 use crate::easing::smooth;
@@ -39,7 +41,11 @@ pub fn morph_pairs(a: &Slide, b: &Slide) -> Vec<(ShapeId, ShapeId)> {
             if used_a.get(i).copied().unwrap_or(true) {
                 continue;
             }
-            let found = b.shapes.iter().enumerate().find(|(j, sb)| !used_b.get(*j).copied().unwrap_or(true) && pass(sa, sb));
+            let found = b
+                .shapes
+                .iter()
+                .enumerate()
+                .find(|(j, sb)| !used_b.get(*j).copied().unwrap_or(true) && pass(sa, sb));
             if let Some((j, sb)) = found {
                 if let Some(u) = used_a.get_mut(i) {
                     *u = true;
@@ -137,13 +143,22 @@ pub struct MorphText {
 impl MorphFrame {
     /// Opacity of shape `id` of the frame.
     pub fn opacity_of(&self, id: ShapeId) -> f64 {
-        self.opacity.iter().find(|(s, _)| *s == id).map(|(_, o)| *o).unwrap_or(1.0)
+        self.opacity
+            .iter()
+            .find(|(s, _)| *s == id)
+            .map(|(_, o)| *o)
+            .unwrap_or(1.0)
     }
 }
 
 fn mix_color(a: Rgba, b: Rgba, t: f64) -> Rgba {
     let m = |x: u8, y: u8| clampf(lerp(x as f64, y as f64, t), 0.0, 255.0, 0.0).round() as u8;
-    Rgba { r: m(a.r, b.r), g: m(a.g, b.g), b: m(a.b, b.b), a: m(a.a, b.a) }
+    Rgba {
+        r: m(a.r, b.r),
+        g: m(a.g, b.g),
+        b: m(a.b, b.b),
+        a: m(a.a, b.a),
+    }
 }
 
 fn solid_color(ctx: Option<&Ctx>, s: &Shape) -> Option<Rgba> {
@@ -163,14 +178,34 @@ fn box_of(ctx: Option<&Ctx>, s: &Shape) -> Option<Xfrm> {
 
 /// The content of a shape apart from what Morph interpolates (identity, box and fill).
 fn content(s: &Shape) -> Shape {
-    Shape { id: ShapeId(0), name: String::new(), xfrm: None, fill: None, ..s.clone() }
+    Shape {
+        id: ShapeId(0),
+        name: String::new(),
+        xfrm: None,
+        fill: None,
+        ..s.clone()
+    }
 }
 
 /// Whether two shapes differ in their geometry only, and it is drawn as an outline (shapes,
 /// pictures, connectors), so the outline can morph.
 fn reshaped(a: &Shape, b: &Shape) -> bool {
-    let outlined = |s: &Shape| matches!(s.kind, ShapeKind::Shape | ShapeKind::Picture { .. } | ShapeKind::Connector { .. });
-    a.geom != b.geom && outlined(a) && outlined(b) && Shape { geom: Geom::default(), ..content(a) } == Shape { geom: Geom::default(), ..content(b) }
+    let outlined = |s: &Shape| {
+        matches!(
+            s.kind,
+            ShapeKind::Shape | ShapeKind::Picture { .. } | ShapeKind::Connector { .. }
+        )
+    };
+    a.geom != b.geom
+        && outlined(a)
+        && outlined(b)
+        && Shape {
+            geom: Geom::default(),
+            ..content(a)
+        } == Shape {
+            geom: Geom::default(),
+            ..content(b)
+        }
 }
 
 /// Morph frame from slide `a` to slide `b` at progress `t` (0..1, eased here). Paired shapes
@@ -180,18 +215,41 @@ fn reshaped(a: &Shape, b: &Shape) -> bool {
 /// box; with the transition option `words` or `characters` their texts are listed in
 /// [`MorphFrame::text`] to morph word by word or character by character. Unpaired shapes of `a` fade out, unpaired shapes of `b` fade in, and shapes of `b` for
 /// which `hidden_b` is true (entrance animations, hidden media) stay out of the frame.
-pub fn morph_frame(pres: &Presentation, a: &Slide, b: &Slide, t: f64, hidden_b: &dyn Fn(ShapeId) -> bool) -> MorphFrame {
+pub fn morph_frame(
+    pres: &Presentation,
+    a: &Slide,
+    b: &Slide,
+    t: f64,
+    hidden_b: &dyn Fn(ShapeId) -> bool,
+) -> MorphFrame {
     let s = smooth(clampf(t, 0.0, 1.0, 0.0));
     let ca = Ctx::for_slide(pres, a);
     let cb = Ctx::for_slide(pres, b);
-    let pairs: Vec<(ShapeId, ShapeId)> = morph_pairs(a, b).into_iter().filter(|(_, ib)| !hidden_b(*ib)).collect();
+    let pairs: Vec<(ShapeId, ShapeId)> = morph_pairs(a, b)
+        .into_iter()
+        .filter(|(_, ib)| !hidden_b(*ib))
+        .collect();
     let mut next = 1u32;
-    walk(&a.shapes, &mut |x, _| next = next.max(x.id.0.saturating_add(1)));
-    walk(&b.shapes, &mut |x, _| next = next.max(x.id.0.saturating_add(1)));
-    let mut f = MorphFrame { mix: s, ..Default::default() };
-    let by = b.transition.as_ref().map(|tr| tr.option.as_str()).unwrap_or("");
+    walk(&a.shapes, &mut |x, _| {
+        next = next.max(x.id.0.saturating_add(1))
+    });
+    walk(&b.shapes, &mut |x, _| {
+        next = next.max(x.id.0.saturating_add(1))
+    });
+    let mut f = MorphFrame {
+        mix: s,
+        ..Default::default()
+    };
+    let by = b
+        .transition
+        .as_ref()
+        .map(|tr| tr.option.as_str())
+        .unwrap_or("");
     let (by_text, chars) = (by == "words" || by == "characters", by == "characters");
-    let has_text = |x: &Shape| x.text.as_ref().is_some_and(|t| !t.is_empty()) && !matches!(x.kind, ShapeKind::Group { .. } | ShapeKind::Table(_));
+    let has_text = |x: &Shape| {
+        x.text.as_ref().is_some_and(|t| !t.is_empty())
+            && !matches!(x.kind, ShapeKind::Group { .. } | ShapeKind::Table(_))
+    };
     let mut text = Vec::new();
     let mut paths = Vec::new();
     let mut push = |mut sh: Shape, old: bool, op: f64| {
@@ -210,7 +268,10 @@ pub fn morph_frame(pres: &Presentation, a: &Slide, b: &Slide, t: f64, hidden_b: 
         }
     }
     for sb in &b.shapes {
-        let pair = pairs.iter().find(|(_, ib)| *ib == sb.id).and_then(|(ia, _)| a.shapes.iter().find(|x| x.id == *ia));
+        let pair = pairs
+            .iter()
+            .find(|(_, ib)| *ib == sb.id)
+            .and_then(|(ia, _)| a.shapes.iter().find(|x| x.id == *ia));
         let Some(sa) = pair else {
             if !hidden_b(sb.id) {
                 push(sb.clone(), false, s);
@@ -224,25 +285,54 @@ pub fn morph_frame(pres: &Presentation, a: &Slide, b: &Slide, t: f64, hidden_b: 
         };
         let reshape = reshaped(sa, sb);
         if reshape || content(sa) == content(sb) {
-            let mut m = Shape { xfrm: x, ..sb.clone() };
-            if let (Some(fa), Some(fb)) = (solid_color(ca.as_ref(), sa), solid_color(cb.as_ref(), sb))
+            let mut m = Shape {
+                xfrm: x,
+                ..sb.clone()
+            };
+            if let (Some(fa), Some(fb)) =
+                (solid_color(ca.as_ref(), sa), solid_color(cb.as_ref(), sb))
                 && fa != fb
             {
                 m.fill = Some(Fill::solid(ColorRef::rgb(mix_color(fa, fb, s))));
             }
             let id = push(m, false, 1.0);
             if reshape && let (Some(from_box), Some(to_box)) = (xa, xb) {
-                paths.push(MorphPath { id, from: sa.geom.clone(), from_box, to_box });
+                paths.push(MorphPath {
+                    id,
+                    from: sa.geom.clone(),
+                    from_box,
+                    to_box,
+                });
             }
         } else {
-            let new = push(Shape { xfrm: x, ..sb.clone() }, false, s);
-            let old = push(Shape { xfrm: x, ..sa.clone() }, true, 1.0 - s);
+            let new = push(
+                Shape {
+                    xfrm: x,
+                    ..sb.clone()
+                },
+                false,
+                s,
+            );
+            let old = push(
+                Shape {
+                    xfrm: x,
+                    ..sa.clone()
+                },
+                true,
+                1.0 - s,
+            );
             if by_text
                 && has_text(sa)
                 && has_text(sb)
                 && let (Some(from), Some(to)) = (box_of(ca.as_ref(), sa), box_of(cb.as_ref(), sb))
             {
-                text.push(MorphText { old, new, from, to, chars });
+                text.push(MorphText {
+                    old,
+                    new,
+                    from,
+                    to,
+                    chars,
+                });
             }
         }
     }

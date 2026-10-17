@@ -458,7 +458,10 @@ mod tests {
         shared.initialize();
 
         let condition = &shared.npad_condition;
-        assert_eq!(std::mem::offset_of!(SharedMemoryFormat, npad_condition), 0x3E200);
+        assert_eq!(
+            std::mem::offset_of!(SharedMemoryFormat, npad_condition),
+            0x3E200
+        );
         assert_eq!(std::mem::size_of::<SharedMemoryFormat>(), 0x40000);
         assert_eq!(std::mem::offset_of!(NpadCondition, is_initialized), 4);
         assert_eq!(std::mem::offset_of!(NpadCondition, hold_type), 8);

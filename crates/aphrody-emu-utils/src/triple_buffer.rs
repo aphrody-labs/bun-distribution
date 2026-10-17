@@ -1,8 +1,8 @@
 use std::{
     cell::UnsafeCell,
     sync::{
-        Arc,
         atomic::{AtomicU8, Ordering},
+        Arc,
     },
 };
 
@@ -53,10 +53,20 @@ impl<T> Receiver<T> {
 
 pub fn init<T>([frame0, frame1, frame2]: [T; 3]) -> (Sender<T>, Receiver<T>) {
     let buffers = Arc::new(Buffers {
-        frame_data: [UnsafeCell::new(frame0), UnsafeCell::new(frame1), UnsafeCell::new(frame2)],
+        frame_data: [
+            UnsafeCell::new(frame0),
+            UnsafeCell::new(frame1),
+            UnsafeCell::new(frame2),
+        ],
         next: AtomicU8::new(1),
     });
-    (Sender { buffers: Arc::clone(&buffers), i: 0 }, Receiver { buffers, i: 2 })
+    (
+        Sender {
+            buffers: Arc::clone(&buffers),
+            i: 0,
+        },
+        Receiver { buffers, i: 2 },
+    )
 }
 
 /// Create a triple buffer whose three frames are initialized with zero bytes.
@@ -66,7 +76,13 @@ pub fn init<T>([frame0, frame1, frame2]: [T; 3]) -> (Sender<T>, Receiver<T>) {
 pub unsafe fn init_zeroed<T>() -> (Sender<T>, Receiver<T>) {
     let buffers = Arc::<Buffers<T>>::new_zeroed().assume_init();
     buffers.next.store(1, Ordering::Relaxed);
-    (Sender { buffers: Arc::clone(&buffers), i: 0 }, Receiver { buffers, i: 2 })
+    (
+        Sender {
+            buffers: Arc::clone(&buffers),
+            i: 0,
+        },
+        Receiver { buffers, i: 2 },
+    )
 }
 
 pub fn reset<T>(
@@ -78,7 +94,7 @@ pub fn reset<T>(
     receiver.i = 2;
     unsafe {
         reset(&mut *UnsafeCell::raw_get(
-            sender.buffers.frame_data.as_ptr() as *const UnsafeCell<[T; 3]>
+            sender.buffers.frame_data.as_ptr() as *const UnsafeCell<[T; 3]>,
         ));
     }
 }

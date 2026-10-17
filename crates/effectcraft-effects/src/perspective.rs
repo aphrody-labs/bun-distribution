@@ -13,8 +13,21 @@ use rayon::prelude::*;
 use crate::util::{Plane, gauss_plane, layer_rect, premul, smoothstep, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, ParamSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Perspective", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Perspective",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn norm3(v: [f64; 3]) -> [f64; 3] {
@@ -126,7 +139,10 @@ fn radial_shadow(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if ctx.params.b("resizeLayer") && !ctx.adjustment {
         let l = b.to_px(lp0);
         let (bw, bh) = (b.img.width as f64, b.img.height as f64);
-        let grow = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)].iter().map(|(cx, cy)| ((cx - l.0).hypot(cy - l.1)) * (k - 1.0)).fold(0.0, f64::max);
+        let grow = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)]
+            .iter()
+            .map(|(cx, cy)| ((cx - l.0).hypot(cy - l.1)) * (k - 1.0))
+            .fold(0.0, f64::max);
         b.pad((grow + soft * 1.5).ceil() as u32 + 1);
     }
     let l = b.to_px(lp0);
@@ -137,9 +153,17 @@ fn radial_shadow(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let (qx, qy) = (x as f64 + 0.5, y as f64 + 0.5);
             let s = src.sample_bilinear(l.0 + (qx - l.0) / k, l.1 + (qy - l.1) / k);
             let (sc, sa) = unpremul(s);
-            let mut a = if glass { (sa * (1.0 - sa) * 4.0).clamp(0.0, 1.0) } else { sa };
+            let mut a = if glass {
+                (sa * (1.0 - sa) * 4.0).clamp(0.0, 1.0)
+            } else {
+                sa
+            };
             a *= opacity * color[3];
-            let c = [color[0] + (sc[0] - color[0]) * influence, color[1] + (sc[1] - color[1]) * influence, color[2] + (sc[2] - color[2]) * influence];
+            let c = [
+                color[0] + (sc[0] - color[0]) * influence,
+                color[1] + (sc[1] - color[1]) * influence,
+                color[2] + (sc[2] - color[2]) * influence,
+            ];
             *px = premul(c, a);
         }
     });
@@ -147,12 +171,15 @@ fn radial_shadow(ctx: &EffectCtx, mut b: Buf) -> Buf {
         sh = gaussian_blur(&sh, soft * 0.5, soft * 0.5, false);
     }
     if !only {
-        sh.data.par_iter_mut().zip(src.data.par_iter()).for_each(|(s, o)| {
-            let kk = 1.0 - o[3];
-            for c in 0..4 {
-                s[c] = o[c] + s[c] * kk;
-            }
-        });
+        sh.data
+            .par_iter_mut()
+            .zip(src.data.par_iter())
+            .for_each(|(s, o)| {
+                let kk = 1.0 - o[3];
+                for c in 0..4 {
+                    s[c] = o[c] + s[c] * kk;
+                }
+            });
     }
     b.img = sh;
     b
@@ -189,7 +216,11 @@ impl Shading {
         }
         let nl = dot3(n, self.l).max(0.0) as f32;
         let hv = norm3([self.l[0], self.l[1], self.l[2] + 1.0]);
-        let spec = if nl > 0.0 { (dot3(n, hv).max(0.0) as f32).powf(self.shininess) * self.specular } else { 0.0 };
+        let spec = if nl > 0.0 {
+            (dot3(n, hv).max(0.0) as f32).powf(self.shininess) * self.specular
+        } else {
+            0.0
+        };
         let mut o = [0.0f32; 3];
         for i in 0..3 {
             let lc = self.color[i] * self.intensity;
@@ -201,7 +232,12 @@ impl Shading {
 
 fn over(top: Px, bottom: Px) -> Px {
     let k = 1.0 - top[3];
-    [top[0] + bottom[0] * k, top[1] + bottom[1] * k, top[2] + bottom[2] * k, top[3] + bottom[3] * k]
+    [
+        top[0] + bottom[0] * k,
+        top[1] + bottom[1] * k,
+        top[2] + bottom[2] * k,
+        top[3] + bottom[3] * k,
+    ]
 }
 
 /// Sample the layer as a texture at normalised (u, v), wrapping horizontally.
@@ -221,7 +257,11 @@ fn cylinder(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let c = b.to_px(ctx.params.v2("position"));
     // Keep the pre-existing Rotation control as an additional texture spin.
     let spin = ctx.params.f("rotation").to_radians();
-    let (rx, ry, rz) = (ctx.params.f("rotationX"), ctx.params.f("rotationY"), ctx.params.f("rotationZ"));
+    let (rx, ry, rz) = (
+        ctx.params.f("rotationX"),
+        ctx.params.f("rotationY"),
+        ctx.params.f("rotationZ"),
+    );
     let tilted = rx != 0.0 || ry != 0.0 || rz != 0.0;
     let m = rot_xyz(rx, ry, rz);
     // The cylinder's local Y axis after rotation, in viewer coordinates.
@@ -244,8 +284,23 @@ fn cylinder(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 }
                 let th = s.asin();
                 let cz = th.cos();
-                let front = || sh.shade(texel(&src, rect, (th + spin) / std::f64::consts::TAU + 0.5, v), [s, 0.0, cz]);
-                let back = || sh.shade(texel(&src, rect, (std::f64::consts::PI - th + spin) / std::f64::consts::TAU + 0.5, v), [-s, 0.0, cz]);
+                let front = || {
+                    sh.shade(
+                        texel(&src, rect, (th + spin) / std::f64::consts::TAU + 0.5, v),
+                        [s, 0.0, cz],
+                    )
+                };
+                let back = || {
+                    sh.shade(
+                        texel(
+                            &src,
+                            rect,
+                            (std::f64::consts::PI - th + spin) / std::f64::consts::TAU + 0.5,
+                            v,
+                        ),
+                        [-s, 0.0, cz],
+                    )
+                };
                 *px = match mode {
                     1 => front(),
                     2 => back(),
@@ -265,13 +320,21 @@ fn cylinder(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let root = discriminant.sqrt();
             let face = |z: f64, back: bool| {
                 // Rᵀ turns the intersection into cylinder-local coordinates.
-                let local = [m[0][0] * dx + m[1][0] * dy + m[2][0] * z, m[0][1] * dx + m[1][1] * dy + m[2][1] * z, m[0][2] * dx + m[1][2] * dy + m[2][2] * z];
+                let local = [
+                    m[0][0] * dx + m[1][0] * dy + m[2][0] * z,
+                    m[0][1] * dx + m[1][1] * dy + m[2][1] * z,
+                    m[0][2] * dx + m[1][2] * dy + m[2][2] * z,
+                ];
                 let u = (local[0].atan2(local[2]) + spin) / std::f64::consts::TAU + 0.5;
                 let v = local[1] / h + 0.5;
                 let sign = if back { -1.0 } else { 1.0 };
                 let nx = local[0] / r * sign;
                 let nz = local[2] / r * sign;
-                let normal = [m[0][0] * nx + m[0][2] * nz, m[1][0] * nx + m[1][2] * nz, m[2][0] * nx + m[2][2] * nz];
+                let normal = [
+                    m[0][0] * nx + m[0][2] * nz,
+                    m[1][0] * nx + m[1][2] * nz,
+                    m[2][0] * nx + m[2][2] * nz,
+                ];
                 sh.shade(texel(&src, rect, u, v), normal)
             };
             let front = || face((-bq + root) / a, false);
@@ -310,7 +373,11 @@ fn sphere(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let rect = layer_rect(ctx, &b);
     let r = (ctx.params.f("radius") * b.scale).max(0.5);
     let c = b.to_px(ctx.params.v2("offset"));
-    let m = rot_xyz(ctx.params.f("rotationX"), ctx.params.f("rotationY"), ctx.params.f("rotationZ"));
+    let m = rot_xyz(
+        ctx.params.f("rotationX"),
+        ctx.params.f("rotationY"),
+        ctx.params.f("rotationZ"),
+    );
     let mode = ctx.params.e("render");
     let sh = Shading::from(ctx);
     let src = b.img.clone();
@@ -323,7 +390,12 @@ fn sphere(ctx: &EffectCtx, mut b: Buf) -> Buf {
         ];
         let lon = t[0].atan2(t[2]);
         let lat = t[1].clamp(-1.0, 1.0).asin();
-        texel(&src, rect, lon / std::f64::consts::TAU + 0.5, lat / std::f64::consts::PI + 0.5)
+        texel(
+            &src,
+            rect,
+            lon / std::f64::consts::TAU + 0.5,
+            lat / std::f64::consts::PI + 0.5,
+        )
     };
     b.img.rows_mut().for_each(|(y, row)| {
         let sy = (y as f64 + 0.5 - c.1) / r;
@@ -382,19 +454,64 @@ pub fn specs() -> Vec<EffectSpec> {
     let pt = |x, y| Value::Vec2([x, y]);
     let shading = || {
         vec![
-            p("lightIntensity", "Light Intensity", num(100.0), slider(0.0, 400.0, 0.0, 200.0, 1)),
-            p("lightColor", "Light Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-            p("lightHeight", "Light Height", num(50.0), slider(-90.0, 90.0, -90.0, 90.0, 1)),
-            p("lightDirection", "Light Direction", num(-45.0), ParamUi::Angle),
-            p("ambient", "Ambient", num(20.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-            p("diffuse", "Diffuse", num(80.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-            p("specular", "Specular", num(20.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-            p("roughness", "Roughness", num(0.05), slider(0.001, 0.5, 0.001, 0.5, 3)),
+            p(
+                "lightIntensity",
+                "Light Intensity",
+                num(100.0),
+                slider(0.0, 400.0, 0.0, 200.0, 1),
+            ),
+            p(
+                "lightColor",
+                "Light Color",
+                col(1.0, 1.0, 1.0),
+                ParamUi::Color,
+            ),
+            p(
+                "lightHeight",
+                "Light Height",
+                num(50.0),
+                slider(-90.0, 90.0, -90.0, 90.0, 1),
+            ),
+            p(
+                "lightDirection",
+                "Light Direction",
+                num(-45.0),
+                ParamUi::Angle,
+            ),
+            p(
+                "ambient",
+                "Ambient",
+                num(20.0),
+                slider(0.0, 200.0, 0.0, 100.0, 1),
+            ),
+            p(
+                "diffuse",
+                "Diffuse",
+                num(80.0),
+                slider(0.0, 200.0, 0.0, 100.0, 1),
+            ),
+            p(
+                "specular",
+                "Specular",
+                num(20.0),
+                slider(0.0, 200.0, 0.0, 100.0, 1),
+            ),
+            p(
+                "roughness",
+                "Roughness",
+                num(0.05),
+                slider(0.001, 0.5, 0.001, 0.5, 3),
+            ),
         ]
     };
     let render = || popup(&["Full", "Outside", "Inside"]);
     let mut cyl = vec![
-        p("radius", "Radius", num(100.0), slider(0.0, 400.0, 0.0, 200.0, 1)),
+        p(
+            "radius",
+            "Radius",
+            num(100.0),
+            slider(0.0, 400.0, 0.0, 200.0, 1),
+        ),
         p("position", "Position", pt(0.5, 0.5), ParamUi::Point),
         p("rotation", "Rotation", num(0.0), ParamUi::Angle),
         p("rotationX", "Rotation X", num(0.0), ParamUi::Angle),
@@ -404,7 +521,12 @@ pub fn specs() -> Vec<EffectSpec> {
     ];
     cyl.extend(shading());
     let mut sph = vec![
-        p("radius", "Radius", num(120.0), slider(0.0, 4000.0, 0.0, 1000.0, 1)),
+        p(
+            "radius",
+            "Radius",
+            num(120.0),
+            slider(0.0, 4000.0, 0.0, 1000.0, 1),
+        ),
         p("offset", "Offset", pt(0.5, 0.5), ParamUi::Point),
         p("rotationX", "Rotation X", num(0.0), ParamUi::Angle),
         p("rotationY", "Rotation Y", num(0.0), ParamUi::Angle),
@@ -417,10 +539,25 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.perspective.bevelalpha",
             "Bevel Alpha",
             vec![
-                p("edgeThickness", "Edge Thickness", num(2.0), slider(0.0, 200.0, 0.0, 10.0, 2)),
+                p(
+                    "edgeThickness",
+                    "Edge Thickness",
+                    num(2.0),
+                    slider(0.0, 200.0, 0.0, 10.0, 2),
+                ),
                 p("lightAngle", "Light Angle", num(-60.0), ParamUi::Angle),
-                p("lightColor", "Light Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("lightIntensity", "Light Intensity", num(0.4), slider(0.0, 1.0, 0.0, 1.0, 2)),
+                p(
+                    "lightColor",
+                    "Light Color",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "lightIntensity",
+                    "Light Intensity",
+                    num(0.4),
+                    slider(0.0, 1.0, 0.0, 1.0, 2),
+                ),
             ],
             bevel_alpha,
         ),
@@ -428,10 +565,25 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.perspective.beveledges",
             "Bevel Edges",
             vec![
-                p("edgeThickness", "Edge Thickness", num(0.1), slider(0.0, 0.5, 0.0, 0.5, 2)),
+                p(
+                    "edgeThickness",
+                    "Edge Thickness",
+                    num(0.1),
+                    slider(0.0, 0.5, 0.0, 0.5, 2),
+                ),
                 p("lightAngle", "Light Angle", num(-60.0), ParamUi::Angle),
-                p("lightColor", "Light Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("lightIntensity", "Light Intensity", num(0.25), slider(0.0, 1.0, 0.0, 1.0, 2)),
+                p(
+                    "lightColor",
+                    "Light Color",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "lightIntensity",
+                    "Light Intensity",
+                    num(0.25),
+                    slider(0.0, 1.0, 0.0, 1.0, 2),
+                ),
             ],
             bevel_edges,
         ),
@@ -440,14 +592,49 @@ pub fn specs() -> Vec<EffectSpec> {
             "Radial Shadow",
             vec![
                 p("color", "Shadow Color", col(0.0, 0.0, 0.0), ParamUi::Color),
-                p("opacity", "Opacity", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 0),
+                ),
                 p("lightSource", "Light Source", pt(0.3, 0.2), ParamUi::Point),
-                p("projectionDistance", "Projection Distance", num(10.0), slider(0.0, 1000.0, 0.0, 100.0, 1)),
-                p("softness", "Softness", num(0.0), slider(0.0, 1000.0, 0.0, 100.0, 1)),
-                p("render", "Render", Value::Enum(0), popup(&["Regular", "Glass Edge"])),
-                p("colorInfluence", "Color Influence", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-                p("shadowOnly", "Shadow Only", Value::Bool(false), ParamUi::Checkbox),
-                p("resizeLayer", "Resize Layer", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "projectionDistance",
+                    "Projection Distance",
+                    num(10.0),
+                    slider(0.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "softness",
+                    "Softness",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "render",
+                    "Render",
+                    Value::Enum(0),
+                    popup(&["Regular", "Glass Edge"]),
+                ),
+                p(
+                    "colorInfluence",
+                    "Color Influence",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "shadowOnly",
+                    "Shadow Only",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "resizeLayer",
+                    "Resize Layer",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             radial_shadow,
         ),
@@ -459,12 +646,37 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("from", "From", pt(0.3, 0.2), ParamUi::Point),
                 p("to", "To", pt(0.5, 0.5), ParamUi::Point),
-                p("height", "Height", num(50.0), slider(0.0, 1000.0, 0.0, 200.0, 1)),
-                p("coneAngle", "Cone Angle", num(20.0), slider(0.1, 89.9, 1.0, 89.0, 1)),
-                p("edgeSoftness", "Edge Softness", num(25.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "height",
+                    "Height",
+                    num(50.0),
+                    slider(0.0, 1000.0, 0.0, 200.0, 1),
+                ),
+                p(
+                    "coneAngle",
+                    "Cone Angle",
+                    num(20.0),
+                    slider(0.1, 89.9, 1.0, 89.0, 1),
+                ),
+                p(
+                    "edgeSoftness",
+                    "Edge Softness",
+                    num(25.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
                 p("color", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("intensity", "Intensity", num(100.0), slider(0.0, 400.0, 0.0, 200.0, 1)),
-                p("render", "Render", Value::Enum(0), popup(&["Light", "Light Only"])),
+                p(
+                    "intensity",
+                    "Intensity",
+                    num(100.0),
+                    slider(0.0, 400.0, 0.0, 200.0, 1),
+                ),
+                p(
+                    "render",
+                    "Render",
+                    Value::Enum(0),
+                    popup(&["Light", "Light Only"]),
+                ),
             ],
             spotlight,
         ),
@@ -478,7 +690,13 @@ mod tests {
 
     fn run(id: &str, img: &Image, set: &[(&str, Value)]) -> Buf {
         let s = find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in set {
             params.values.insert(k.to_string(), v.clone());
         }
@@ -487,12 +705,28 @@ mod tests {
             if let (ParamUi::Point, Value::Vec2(f)) = (&ps.ui, &ps.default)
                 && !set.iter().any(|(k, _)| *k == ps.id)
             {
-                params.values.insert(ps.id.to_string(), Value::Vec2([f[0] * img.width as f64, f[1] * img.height as f64]));
+                params.values.insert(
+                    ps.id.to_string(),
+                    Value::Vec2([f[0] * img.width as f64, f[1] * img.height as f64]),
+                );
             }
         }
-        let ctx =
-            EffectCtx { params: &params, time: 0.0, layer_size: [img.width as f64, img.height as f64], seed: 1, adjustment: false, env: Default::default() };
-        (s.render)(&ctx, Buf { img: img.clone(), offset: [0.0, 0.0], scale: 1.0 })
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [img.width as f64, img.height as f64],
+            seed: 1,
+            adjustment: false,
+            env: Default::default(),
+        };
+        (s.render)(
+            &ctx,
+            Buf {
+                img: img.clone(),
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
     }
 
     fn square(w: u32, h: u32, m: u32, c: [f32; 3]) -> Image {
@@ -508,7 +742,12 @@ mod tests {
     #[test]
     fn bevel_alpha_lights_one_side_and_shades_other() {
         let img = square(40, 40, 10, [0.5, 0.5, 0.5]);
-        let out = run("ec.perspective.bevelalpha", &img, &[("lightAngle", num(-90.0)), ("edgeThickness", num(4.0))]).img;
+        let out = run(
+            "ec.perspective.bevelalpha",
+            &img,
+            &[("lightAngle", num(-90.0)), ("edgeThickness", num(4.0))],
+        )
+        .img;
         // Light from the left: the left edge brightens, the right edge darkens, centre unchanged.
         let left = out.get(10, 20)[0];
         let right = out.get(29, 20)[0];
@@ -521,7 +760,12 @@ mod tests {
     #[test]
     fn bevel_edges_only_touches_the_border_band() {
         let img = Image::filled(40, 40, [0.5, 0.5, 0.5, 1.0]);
-        let out = run("ec.perspective.beveledges", &img, &[("lightAngle", num(0.0))]).img;
+        let out = run(
+            "ec.perspective.beveledges",
+            &img,
+            &[("lightAngle", num(0.0))],
+        )
+        .img;
         assert!(out.get(20, 1)[0] > 0.5, "top lit");
         assert!(out.get(20, 38)[0] < 0.5, "bottom shaded");
         assert_eq!(out.get(20, 20)[0], 0.5);
@@ -533,7 +777,11 @@ mod tests {
         let out = run(
             "ec.perspective.radialshadow",
             &img,
-            &[("lightSource", Value::Vec2([30.0, 30.0])), ("projectionDistance", num(100.0)), ("opacity", num(100.0))],
+            &[
+                ("lightSource", Value::Vec2([30.0, 30.0])),
+                ("projectionDistance", num(100.0)),
+                ("opacity", num(100.0)),
+            ],
         )
         .img;
         // The original stays on top.
@@ -569,12 +817,22 @@ mod tests {
     fn cylinder_axis_rotations_affect_geometry_and_texture() {
         let img = Image::filled(100, 100, [0.5, 0.5, 0.5, 1.0]);
         let default = run("ec.perspective.cccylinder", &img, &[]).img;
-        let x_tilt = run("ec.perspective.cccylinder", &img, &[("rotationX", num(70.0))]).img;
+        let x_tilt = run(
+            "ec.perspective.cccylinder",
+            &img,
+            &[("rotationX", num(70.0))],
+        )
+        .img;
         // Tilting the finite cylinder shortens its vertical projection.
         assert!(default.get(50, 10)[3] > 0.99);
         assert_eq!(x_tilt.get(50, 10)[3], 0.0);
         assert!(x_tilt.get(50, 50)[3] > 0.99);
-        let z_roll = run("ec.perspective.cccylinder", &img, &[("rotationZ", num(90.0))]).img;
+        let z_roll = run(
+            "ec.perspective.cccylinder",
+            &img,
+            &[("rotationZ", num(90.0))],
+        )
+        .img;
         // A quarter turn moves the side wall from vertical to horizontal.
         assert_eq!(default.get(5, 50)[3], 0.0);
         assert!(z_roll.get(5, 50)[3] > 0.99);
@@ -586,15 +844,28 @@ mod tests {
             }
         }
         let baseline = run("ec.perspective.cccylinder", &striped, &[]).img;
-        let spun = run("ec.perspective.cccylinder", &striped, &[("rotationY", num(90.0))]).img;
+        let spun = run(
+            "ec.perspective.cccylinder",
+            &striped,
+            &[("rotationY", num(90.0))],
+        )
+        .img;
         assert!((baseline.get(50, 50)[0] - spun.get(50, 50)[0]).abs() > 0.05);
     }
 
     #[test]
     fn spotlight_darkens_outside_cone() {
         let img = Image::filled(80, 80, [1.0, 1.0, 1.0, 1.0]);
-        let out =
-            run("ec.perspective.ccspotlight", &img, &[("from", Value::Vec2([40.0, 40.0])), ("to", Value::Vec2([40.0, 40.0])), ("edgeSoftness", num(0.0))]).img;
+        let out = run(
+            "ec.perspective.ccspotlight",
+            &img,
+            &[
+                ("from", Value::Vec2([40.0, 40.0])),
+                ("to", Value::Vec2([40.0, 40.0])),
+                ("edgeSoftness", num(0.0)),
+            ],
+        )
+        .img;
         assert!((out.get(40, 40)[0] - 1.0).abs() < 1e-4);
         assert_eq!(out.get(2, 2)[0], 0.0);
         assert_eq!(out.get(2, 2)[3], 1.0);

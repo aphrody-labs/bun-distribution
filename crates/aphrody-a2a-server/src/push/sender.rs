@@ -22,7 +22,10 @@ pub struct HttpPushSenderConfig {
 
 impl Default for HttpPushSenderConfig {
     fn default() -> Self {
-        HttpPushSenderConfig { timeout: Duration::from_secs(30), fail_on_error: false }
+        HttpPushSenderConfig {
+            timeout: Duration::from_secs(30),
+            fail_on_error: false,
+        }
     }
 }
 
@@ -33,7 +36,10 @@ impl HttpPushSender {
             .timeout(config.timeout)
             .build()
             .expect("failed to create HTTP client");
-        HttpPushSender { client, fail_on_error: config.fail_on_error }
+        HttpPushSender {
+            client,
+            fail_on_error: config.fail_on_error,
+        }
     }
 
     /// Send an event to the push notification endpoint.
@@ -47,8 +53,11 @@ impl HttpPushSender {
             Err(e) => return self.handle_error(format!("failed to serialize event: {e}")),
         };
 
-        let mut request =
-            self.client.post(&config.url).header("Content-Type", "application/json").body(body);
+        let mut request = self
+            .client
+            .post(&config.url)
+            .header("Content-Type", "application/json")
+            .body(body);
 
         if let Some(ref token) = config.token {
             request = request.header("A2A-Notification-Token", token);
@@ -60,11 +69,11 @@ impl HttpPushSender {
             match auth.scheme.to_lowercase().as_str() {
                 "bearer" => {
                     request = request.header("Authorization", format!("Bearer {creds}"));
-                },
+                }
                 "basic" => {
                     request = request.header("Authorization", format!("Basic {creds}"));
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -75,7 +84,7 @@ impl HttpPushSender {
                         .handle_error(format!("push endpoint returned status: {}", resp.status()));
                 }
                 Ok(())
-            },
+            }
             Err(e) => self.handle_error(format!("failed to send push notification: {e}")),
         }
     }
@@ -112,7 +121,10 @@ mod tests {
     #[test]
     fn test_sender_new_custom() {
         install_crypto_provider();
-        let config = HttpPushSenderConfig { timeout: Duration::from_secs(10), fail_on_error: true };
+        let config = HttpPushSenderConfig {
+            timeout: Duration::from_secs(10),
+            fail_on_error: true,
+        };
         let sender = HttpPushSender::new(Some(config));
         assert!(sender.fail_on_error);
     }
@@ -155,7 +167,11 @@ mod tests {
         let event = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let result = sender.send_push(&config, event).await;
@@ -182,7 +198,11 @@ mod tests {
         let event = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let result = sender.send_push(&config, event).await;
@@ -208,7 +228,11 @@ mod tests {
         let event = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         // Will fail to connect but exercises basic auth header path
@@ -235,7 +259,11 @@ mod tests {
         let event = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let result = sender.send_push(&config, event).await;

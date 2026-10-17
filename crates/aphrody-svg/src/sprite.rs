@@ -14,8 +14,16 @@ use crate::{
 };
 
 /// Root attributes that describe the viewport, not the drawing; not copied onto `<symbol>`.
-const VIEWPORT_ATTRIBUTES: &[&str] =
-    &["width", "height", "viewBox", "id", "x", "y", "version", "baseProfile"];
+const VIEWPORT_ATTRIBUTES: &[&str] = &[
+    "width",
+    "height",
+    "viewBox",
+    "id",
+    "x",
+    "y",
+    "version",
+    "baseProfile",
+];
 
 /// One sprite member.
 #[derive(Debug, Clone, Copy)]
@@ -62,7 +70,9 @@ impl Rules for Prefixer<'_> {
 
 fn is_valid_id(id: &str) -> bool {
     let mut chars = id.chars();
-    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+    chars
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
 }
 
@@ -78,26 +88,46 @@ pub fn symbol(entry: SpriteEntry<'_>) -> Result<String> {
     let root = doc.root_element();
     let geometry = Geometry {
         view_box: root.attribute("viewBox").and_then(ViewBox::parse),
-        width: root.attribute("width").and_then(crate::viewbox::length_to_px),
-        height: root.attribute("height").and_then(crate::viewbox::length_to_px),
+        width: root
+            .attribute("width")
+            .and_then(crate::viewbox::length_to_px),
+        height: root
+            .attribute("height")
+            .and_then(crate::viewbox::length_to_px),
     };
     let view_box = match geometry.view_box {
         Some(vb) => vb,
         None => {
             let (w, h) = geometry.size().ok_or(Error::NoSize)?;
-            ViewBox { x: 0.0, y: 0.0, width: w, height: h }
-        },
+            ViewBox {
+                x: 0.0,
+                y: 0.0,
+                width: w,
+                height: h,
+            }
+        }
     };
-    let mut out =
-        format!(r#"<symbol id="{}" viewBox="{}""#, escape_attr(entry.id), view_box.to_attribute(6));
+    let mut out = format!(
+        r#"<symbol id="{}" viewBox="{}""#,
+        escape_attr(entry.id),
+        view_box.to_attribute(6)
+    );
     for attr in root.attributes() {
         if attr.namespace().is_none() && !VIEWPORT_ATTRIBUTES.contains(&attr.name()) {
-            out.push_str(&format!(r#" {}="{}""#, attr.name(), escape_attr(attr.value())));
+            out.push_str(&format!(
+                r#" {}="{}""#,
+                attr.name(),
+                escape_attr(attr.value())
+            ));
         }
     }
     out.push('>');
     let inherited = [(None, SVG_NS), (Some("xlink"), XLINK_NS)];
-    out.push_str(&xml::write_children(root, &Prefixer { prefix: entry.id }, &inherited));
+    out.push_str(&xml::write_children(
+        root,
+        &Prefixer { prefix: entry.id },
+        &inherited,
+    ));
     out.push_str("</symbol>");
     Ok(out)
 }
@@ -112,7 +142,10 @@ pub fn sprite(entries: &[SpriteEntry<'_>]) -> Result<String> {
         format!(r#"<svg xmlns="{SVG_NS}" xmlns:xlink="{XLINK_NS}" style="display:none">"#);
     for entry in entries {
         if !seen.insert(entry.id) {
-            return Err(Error::Invalid(format!("duplicate symbol id {:?}", entry.id)));
+            return Err(Error::Invalid(format!(
+                "duplicate symbol id {:?}",
+                entry.id
+            )));
         }
         out.push_str(&symbol(*entry)?);
     }
@@ -142,8 +175,11 @@ mod tests {
     fn prefixes_internal_ids_and_keeps_paint() {
         let a = r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor"><defs><linearGradient id="g"/></defs><path fill="url(#g)" d="M0 0"/></svg>"#;
         let b = r##"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 -960 960 960"><path id="p" d="M1 1"/><use xlink:href="#p"/></svg>"##;
-        let out = sprite(&[SpriteEntry { id: "a", svg: a }, SpriteEntry { id: "b", svg: b }])
-            .expect("ok");
+        let out = sprite(&[
+            SpriteEntry { id: "a", svg: a },
+            SpriteEntry { id: "b", svg: b },
+        ])
+        .expect("ok");
         assert!(
             out.contains(
                 r#"<symbol id="a" viewBox="0 0 24 24" fill="none" stroke="currentColor">"#
@@ -164,9 +200,19 @@ mod tests {
     fn rejects_duplicates_and_bad_ids() {
         let s = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>"#;
         assert!(
-            sprite(&[SpriteEntry { id: "x", svg: s }, SpriteEntry { id: "x", svg: s }]).is_err()
+            sprite(&[
+                SpriteEntry { id: "x", svg: s },
+                SpriteEntry { id: "x", svg: s }
+            ])
+            .is_err()
         );
-        assert!(symbol(SpriteEntry { id: "1\"bad", svg: s }).is_err());
+        assert!(
+            symbol(SpriteEntry {
+                id: "1\"bad",
+                svg: s
+            })
+            .is_err()
+        );
         assert_eq!(
             use_ref("x", Some(24.0)),
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><use href="#x"/></svg>"##

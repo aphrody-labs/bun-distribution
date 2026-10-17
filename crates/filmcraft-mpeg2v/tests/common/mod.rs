@@ -26,12 +26,35 @@ pub const HD1080I: Spec = Spec {
     name: "m2v_1080i",
     lavfi: "testsrc2=size=1920x1080:rate=50,tinterlace=mode=interleave_top,setfield=tff",
     frames: 25,
-    enc: &["-c:v", "mpeg2video", "-flags", "+ilme+ildct", "-bf", "2", "-g", "12", "-b:v", "25M", "-maxrate", "25M", "-bufsize", "9M"],
+    enc: &[
+        "-c:v",
+        "mpeg2video",
+        "-flags",
+        "+ilme+ildct",
+        "-bf",
+        "2",
+        "-g",
+        "12",
+        "-b:v",
+        "25M",
+        "-maxrate",
+        "25M",
+        "-bufsize",
+        "9M",
+    ],
     pix_fmt: "yuv420p",
 };
 
 pub fn path(spec: &Spec) -> PathBuf {
-    fixture_dir().join(format!("{}.{}", spec.name, if spec.enc.contains(&"mpeg1video") { "m1v" } else { "m2v" }))
+    fixture_dir().join(format!(
+        "{}.{}",
+        spec.name,
+        if spec.enc.contains(&"mpeg1video") {
+            "m1v"
+        } else {
+            "m2v"
+        }
+    ))
 }
 
 /// Generate (or reuse) the fixture.
@@ -39,9 +62,24 @@ pub fn make(ff: &Path, spec: &Spec) -> Option<PathBuf> {
     let out = path(spec);
     filmcraft_testkit::fixtures::generate(&out, |tmp| {
         let frames = spec.frames.to_string();
-        let fmt = if spec.enc.contains(&"mpeg1video") { "mpeg1video" } else { "mpeg2video" };
+        let fmt = if spec.enc.contains(&"mpeg1video") {
+            "mpeg1video"
+        } else {
+            "mpeg2video"
+        };
         let st = Command::new(ff)
-            .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", spec.lavfi, "-frames:v", &frames])
+            .args([
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                spec.lavfi,
+                "-frames:v",
+                &frames,
+            ])
             .args(spec.enc)
             .args(["-f", fmt])
             .arg(tmp)
@@ -56,11 +94,23 @@ pub fn ffmpeg_frames(ff: &Path, file: &Path, pix_fmt: &str) -> Vec<u8> {
     let o = Command::new(ff)
         .args(["-hide_banner", "-loglevel", "error", "-i"])
         .arg(file)
-        .args(["-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", pix_fmt, "-"])
+        .args([
+            "-fps_mode",
+            "passthrough",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            pix_fmt,
+            "-",
+        ])
         .stdin(Stdio::null())
         .output()
         .expect("run ffmpeg");
-    assert!(o.status.success(), "ffmpeg: {}", String::from_utf8_lossy(&o.stderr));
+    assert!(
+        o.status.success(),
+        "ffmpeg: {}",
+        String::from_utf8_lossy(&o.stderr)
+    );
     o.stdout
 }
 
@@ -88,7 +138,11 @@ pub struct Stats {
 
 impl Stats {
     pub fn psnr(&self) -> f64 {
-        if self.sse == 0.0 { f64::INFINITY } else { 10.0 * (255.0 * 255.0 * self.n as f64 / self.sse).log10() }
+        if self.sse == 0.0 {
+            f64::INFINITY
+        } else {
+            10.0 * (255.0 * 255.0 * self.n as f64 / self.sse).log10()
+        }
     }
     pub fn add(&mut self, a: &[u8], b: &[u8]) {
         assert_eq!(a.len(), b.len(), "plane size");

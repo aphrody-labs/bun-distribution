@@ -16,7 +16,6 @@ pub enum Architecture {
     AArch32 = 1,
 }
 
-
 /// CPU context captured at the time of fatal error.
 ///
 /// Corresponds to `FatalInfo` in upstream fatal.cpp.
@@ -45,7 +44,11 @@ const _: () = assert!(std::mem::size_of::<FatalInfo>() == 0x250);
 
 impl FatalInfo {
     pub fn arch_as_string(&self) -> &'static str {
-        if self.arch == Architecture::AArch64 as i32 { "AArch64" } else { "AArch32" }
+        if self.arch == Architecture::AArch64 as i32 {
+            "AArch64"
+        } else {
+            "AArch32"
+        }
     }
 }
 
@@ -67,7 +70,6 @@ pub enum FatalType {
     ErrorReport = 1,
     ErrorScreen = 2,
 }
-
 
 /// Generate a human-readable crash report from fatal info.
 ///
@@ -115,15 +117,31 @@ pub fn generate_error_report(system: crate::core::SystemRef, error_code: u32, in
                 i, info.backtrace[i as usize]
             );
         }
-        crash_report += &format!("Architecture:                    {}\n", info.arch_as_string());
+        crash_report += &format!(
+            "Architecture:                    {}\n",
+            info.arch_as_string()
+        );
         crash_report += &format!("Unknown 10:                      {:#016x}\n", info.unk10);
     }
 
     log::error!("{}", crash_report);
     system.get_reporter().save_crash_report(
-        title_id, error_code, info.set_flags, info.program_entry_point, info.sp, info.pc,
-        info.pstate, info.afsr0, info.afsr1, info.esr, info.far, &info.registers,
-        &info.backtrace, info.backtrace_size, info.arch_as_string(), info.unk10,
+        title_id,
+        error_code,
+        info.set_flags,
+        info.program_entry_point,
+        info.sp,
+        info.pc,
+        info.pstate,
+        info.afsr0,
+        info.afsr1,
+        info.esr,
+        info.far,
+        &info.registers,
+        &info.backtrace,
+        info.backtrace_size,
+        info.arch_as_string(),
+        info.unk10,
     );
 }
 
@@ -136,7 +154,11 @@ pub fn throw_fatal_error(
     fatal_type: u32,
     info: &FatalInfo,
 ) {
-    log::error!("Threw fatal error type {} with error code {:#x}", fatal_type, error_code);
+    log::error!(
+        "Threw fatal error type {} with error code {:#x}",
+        fatal_type,
+        error_code
+    );
     match fatal_type {
         0 => {
             generate_error_report(system, error_code, info);
@@ -182,7 +204,10 @@ impl Interface {
         rb.push_result(crate::hle::result::RESULT_SUCCESS);
     }
 
-    pub fn throw_fatal_with_policy_handler(&self, ctx: &mut crate::hle::service::hle_ipc::HLERequestContext) {
+    pub fn throw_fatal_with_policy_handler(
+        &self,
+        ctx: &mut crate::hle::service::hle_ipc::HLERequestContext,
+    ) {
         let mut rp = crate::hle::service::ipc_helpers::RequestParser::new(ctx);
         let error_code = rp.pop_u32();
         let fatal_type = rp.pop_u32();
@@ -191,7 +216,10 @@ impl Interface {
         rb.push_result(crate::hle::result::RESULT_SUCCESS);
     }
 
-    pub fn throw_fatal_with_cpu_context_handler(&self, ctx: &mut crate::hle::service::hle_ipc::HLERequestContext) {
+    pub fn throw_fatal_with_cpu_context_handler(
+        &self,
+        ctx: &mut crate::hle::service::hle_ipc::HLERequestContext,
+    ) {
         let mut rp = crate::hle::service::ipc_helpers::RequestParser::new(ctx);
         let error_code = rp.pop_u32();
         let fatal_type = rp.pop_u32();
@@ -263,9 +291,17 @@ impl Interface {
         for value in info.registers.iter_mut().chain(info.backtrace.iter_mut()) {
             *value = u64::from_le(*value);
         }
-        for value in [&mut info.sp, &mut info.pc, &mut info.pstate, &mut info.afsr0,
-            &mut info.afsr1, &mut info.esr, &mut info.far, &mut info.program_entry_point,
-            &mut info.set_flags] {
+        for value in [
+            &mut info.sp,
+            &mut info.pc,
+            &mut info.pstate,
+            &mut info.afsr0,
+            &mut info.afsr1,
+            &mut info.esr,
+            &mut info.far,
+            &mut info.program_entry_point,
+            &mut info.set_flags,
+        ] {
             *value = u64::from_le(*value);
         }
         info.backtrace_size = u32::from_le(info.backtrace_size);
@@ -326,23 +362,38 @@ mod tests {
         assert_eq!(offset_of!(FatalInfo, backtrace_size), 0x240);
         assert_eq!(offset_of!(FatalInfo, arch), 0x244);
         assert_eq!(offset_of!(FatalInfo, unk10), 0x248);
-        for (raw, expected) in [(0, "AArch64"), (1, "AArch32"), (-1, "AArch32"), (i32::MAX, "AArch32")] {
-            let info = FatalInfo { arch: raw, ..FatalInfo::default() };
+        for (raw, expected) in [
+            (0, "AArch64"),
+            (1, "AArch32"),
+            (-1, "AArch32"),
+            (i32::MAX, "AArch32"),
+        ] {
+            let info = FatalInfo {
+                arch: raw,
+                ..FatalInfo::default()
+            };
             assert_eq!(info.arch_as_string(), expected);
         }
     }
 
     #[test]
     fn invalid_context_sizes_are_rejected_before_copying_guest_bytes() {
-        let interface = Interface::new(crate::core::SystemRef::null(),
-            std::sync::Arc::new(Module::new()), "fatal:u");
+        let interface = Interface::new(
+            crate::core::SystemRef::null(),
+            std::sync::Arc::new(Module::new()),
+            "fatal:u",
+        );
         for len in [0, 1, 0x24F, 0x251] {
             let buffer = vec![0; len];
             let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 interface.throw_fatal_with_cpu_context(0, FatalType::ErrorReport as u32, &buffer);
-            })).unwrap_err();
-            let message = panic.downcast_ref::<String>().map(String::as_str)
-                .or_else(|| panic.downcast_ref::<&str>().copied()).unwrap_or("");
+            }))
+            .unwrap_err();
+            let message = panic
+                .downcast_ref::<String>()
+                .map(String::as_str)
+                .or_else(|| panic.downcast_ref::<&str>().copied())
+                .unwrap_or("");
             assert!(message.contains("Invalid fatal info buffer size"));
         }
     }
@@ -356,92 +407,144 @@ mod tests {
                 .env(CHILD, "1").status().unwrap().success());
             return;
         }
-        std::thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(|| {
-            use std::sync::Arc;
-            use crate::core::{System, SystemRef};
-            use crate::hle::kernel::k_process::{KProcess, ProcessLock};
-            use crate::hle::service::service::ServiceFramework;
-            use crate::hle::service::hle_ipc::HLERequestContext;
-            use common::fs::path_util::{set_ruzu_path, RuzuPath};
-            let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-            let directory = std::env::temp_dir().join(format!("ruzu-fatal-report-{}-{nonce}", std::process::id()));
-            std::fs::create_dir(&directory).unwrap();
-            std::fs::create_dir(directory.join("sdmc")).unwrap();
-            set_ruzu_path(RuzuPath::LogDir, &directory);
-            set_ruzu_path(RuzuPath::SDMCDir, &directory.join("sdmc"));
-            let mut system = Box::new(System::new());
-            let mut process = KProcess::new();
-            process.program_id = 42;
-            system.set_current_process_arc(Arc::new(ProcessLock::new(process)));
-            system.set_runtime_program_id(99);
-            let module = Arc::new(Module::new());
-            let service = super::super::fatal_u::FatalU::new(module.clone(), SystemRef::from_ref(&system));
-            let private = super::super::fatal_p::FatalP::new(module, SystemRef::from_ref(&system));
-            assert!(!private.interface.system.is_null());
-            assert!(private.handlers().values().all(|h| h.handler_callback.is_none()));
-            let reports = directory.join("crash_report");
-            let read_report = || -> serde_json::Value {
-                let paths: Vec<_> = std::fs::read_dir(&reports).unwrap().map(|e| e.unwrap().path()).collect();
-                assert_eq!(paths.len(), 1);
-                let report = serde_json::from_slice(&std::fs::read(&paths[0]).unwrap()).unwrap();
-                std::fs::remove_file(&paths[0]).unwrap();
-                report
-            };
-            let invoke_policy = |policy| {
-                let mut ctx = HLERequestContext::new();
-                ctx.command_buffer_mut()[2] = 0x1234;
-                ctx.command_buffer_mut()[3] = policy;
-                service.handlers()[&1].handler_callback.unwrap()(&service, &mut ctx);
-                assert_eq!(ctx.write_size, 8);
-                assert_eq!(ctx.command_buffer()[6], 0);
-            };
-            common::settings::values_mut().reporting_services.set_value(false);
-            invoke_policy(FatalType::ErrorReport as u32);
-            assert!(!reports.exists());
-            common::settings::values_mut().reporting_services.set_value(true);
-            common::settings::values_mut().use_debug_asserts.set_value(false);
-            invoke_policy(u32::MAX); // Unknown enum values are not coerced to policy zero.
-            assert!(!reports.exists());
-            invoke_policy(FatalType::ErrorReport as u32);
-            let report = read_report();
-            assert_eq!(report["report_common"]["title_id"], "000000000000002A");
-            assert_eq!(report["report_common"]["result_raw"], "00001234");
-            assert_eq!(report["processor_state"]["architecture"], "AArch64");
-            assert_eq!(report["processor_state"]["backtrace_size"], "00000000");
-            invoke_policy(FatalType::ErrorReportAndScreen as u32);
-            assert_eq!(read_report()["report_common"]["title_id"], "000000000000002A");
-            invoke_policy(FatalType::ErrorScreen as u32);
-            assert_eq!(std::fs::read_dir(&reports).unwrap().count(), 0);
+        std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024)
+            .spawn(|| {
+                use crate::core::{System, SystemRef};
+                use crate::hle::kernel::k_process::{KProcess, ProcessLock};
+                use crate::hle::service::hle_ipc::HLERequestContext;
+                use crate::hle::service::service::ServiceFramework;
+                use common::fs::path_util::{set_ruzu_path, RuzuPath};
+                use std::sync::Arc;
+                let nonce = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos();
+                let directory = std::env::temp_dir()
+                    .join(format!("ruzu-fatal-report-{}-{nonce}", std::process::id()));
+                std::fs::create_dir(&directory).unwrap();
+                std::fs::create_dir(directory.join("sdmc")).unwrap();
+                set_ruzu_path(RuzuPath::LogDir, &directory);
+                set_ruzu_path(RuzuPath::SDMCDir, &directory.join("sdmc"));
+                let mut system = Box::new(System::new());
+                let mut process = KProcess::new();
+                process.program_id = 42;
+                system.set_current_process_arc(Arc::new(ProcessLock::new(process)));
+                system.set_runtime_program_id(99);
+                let module = Arc::new(Module::new());
+                let service = super::super::fatal_u::FatalU::new(
+                    module.clone(),
+                    SystemRef::from_ref(&system),
+                );
+                let private =
+                    super::super::fatal_p::FatalP::new(module, SystemRef::from_ref(&system));
+                assert!(!private.interface.system.is_null());
+                assert!(private
+                    .handlers()
+                    .values()
+                    .all(|h| h.handler_callback.is_none()));
+                let reports = directory.join("crash_report");
+                let read_report = || -> serde_json::Value {
+                    let paths: Vec<_> = std::fs::read_dir(&reports)
+                        .unwrap()
+                        .map(|e| e.unwrap().path())
+                        .collect();
+                    assert_eq!(paths.len(), 1);
+                    let report =
+                        serde_json::from_slice(&std::fs::read(&paths[0]).unwrap()).unwrap();
+                    std::fs::remove_file(&paths[0]).unwrap();
+                    report
+                };
+                let invoke_policy = |policy| {
+                    let mut ctx = HLERequestContext::new();
+                    ctx.command_buffer_mut()[2] = 0x1234;
+                    ctx.command_buffer_mut()[3] = policy;
+                    service.handlers()[&1].handler_callback.unwrap()(&service, &mut ctx);
+                    assert_eq!(ctx.write_size, 8);
+                    assert_eq!(ctx.command_buffer()[6], 0);
+                };
+                common::settings::values_mut()
+                    .reporting_services
+                    .set_value(false);
+                invoke_policy(FatalType::ErrorReport as u32);
+                assert!(!reports.exists());
+                common::settings::values_mut()
+                    .reporting_services
+                    .set_value(true);
+                common::settings::values_mut()
+                    .use_debug_asserts
+                    .set_value(false);
+                invoke_policy(u32::MAX); // Unknown enum values are not coerced to policy zero.
+                assert!(!reports.exists());
+                invoke_policy(FatalType::ErrorReport as u32);
+                let report = read_report();
+                assert_eq!(report["report_common"]["title_id"], "000000000000002A");
+                assert_eq!(report["report_common"]["result_raw"], "00001234");
+                assert_eq!(report["processor_state"]["architecture"], "AArch64");
+                assert_eq!(report["processor_state"]["backtrace_size"], "00000000");
+                invoke_policy(FatalType::ErrorReportAndScreen as u32);
+                assert_eq!(
+                    read_report()["report_common"]["title_id"],
+                    "000000000000002A"
+                );
+                invoke_policy(FatalType::ErrorScreen as u32);
+                assert_eq!(std::fs::read_dir(&reports).unwrap().count(), 0);
 
-            let mut wire = [0xA5u8; 0x250];
-            for index in 0..72usize {
-                wire[index * 8..index * 8 + 8].copy_from_slice(&(0xABC0 + index as u64).to_le_bytes());
-            }
-            wire[0x240..0x244].copy_from_slice(&40u32.to_le_bytes());
-            wire[0x244..0x248].copy_from_slice(&(-1i32).to_ne_bytes());
-            wire[0x248..0x24C].copy_from_slice(&0xABCDu32.to_le_bytes());
-            service.interface.throw_fatal_with_cpu_context(0x1234, FatalType::ErrorReport as u32, &wire);
-            let report = read_report();
-            let cpu = &report["processor_state"];
-            assert_eq!(report["report_common"]["title_id"], "000000000000002A");
-            assert_eq!(cpu["architecture"], "AArch32");
-            assert_eq!(cpu["backtrace_size"], "00000028");
-            assert_eq!(cpu["backtrace"].as_array().unwrap().len(), 32);
-            for i in 0..31 {
-                assert_eq!(cpu["registers"][format!("X{i:02}")], format!("{:016X}", 0xABC0 + i));
-            }
-            for (name, offset) in [("sp", 0xF8), ("pc", 0x100), ("pstate", 0x108),
-                ("afsr0", 0x110), ("afsr1", 0x118), ("esr", 0x120), ("far", 0x128),
-                ("entry_point", 0x230), ("set_flags", 0x238)] {
-                assert_eq!(cpu[name], format!("{:016X}", 0xABC0 + offset / 8));
-            }
-            for i in 0..32 { assert_eq!(cpu["backtrace"][i], format!("{:016X}", 0xABC0 + 0x130 / 8 + i)); }
-            assert_eq!(cpu["unknown_10"], "0000ABCD");
-            common::settings::values_mut().reporting_services.set_value(false);
-            drop(private);
-            drop(service);
-            drop(system);
-            std::fs::remove_dir_all(directory).unwrap();
-        }).unwrap().join().unwrap();
+                let mut wire = [0xA5u8; 0x250];
+                for index in 0..72usize {
+                    wire[index * 8..index * 8 + 8]
+                        .copy_from_slice(&(0xABC0 + index as u64).to_le_bytes());
+                }
+                wire[0x240..0x244].copy_from_slice(&40u32.to_le_bytes());
+                wire[0x244..0x248].copy_from_slice(&(-1i32).to_ne_bytes());
+                wire[0x248..0x24C].copy_from_slice(&0xABCDu32.to_le_bytes());
+                service.interface.throw_fatal_with_cpu_context(
+                    0x1234,
+                    FatalType::ErrorReport as u32,
+                    &wire,
+                );
+                let report = read_report();
+                let cpu = &report["processor_state"];
+                assert_eq!(report["report_common"]["title_id"], "000000000000002A");
+                assert_eq!(cpu["architecture"], "AArch32");
+                assert_eq!(cpu["backtrace_size"], "00000028");
+                assert_eq!(cpu["backtrace"].as_array().unwrap().len(), 32);
+                for i in 0..31 {
+                    assert_eq!(
+                        cpu["registers"][format!("X{i:02}")],
+                        format!("{:016X}", 0xABC0 + i)
+                    );
+                }
+                for (name, offset) in [
+                    ("sp", 0xF8),
+                    ("pc", 0x100),
+                    ("pstate", 0x108),
+                    ("afsr0", 0x110),
+                    ("afsr1", 0x118),
+                    ("esr", 0x120),
+                    ("far", 0x128),
+                    ("entry_point", 0x230),
+                    ("set_flags", 0x238),
+                ] {
+                    assert_eq!(cpu[name], format!("{:016X}", 0xABC0 + offset / 8));
+                }
+                for i in 0..32 {
+                    assert_eq!(
+                        cpu["backtrace"][i],
+                        format!("{:016X}", 0xABC0 + 0x130 / 8 + i)
+                    );
+                }
+                assert_eq!(cpu["unknown_10"], "0000ABCD");
+                common::settings::values_mut()
+                    .reporting_services
+                    .set_value(false);
+                drop(private);
+                drop(service);
+                drop(system);
+                std::fs::remove_dir_all(directory).unwrap();
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
 }

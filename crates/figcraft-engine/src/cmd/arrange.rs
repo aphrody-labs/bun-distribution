@@ -11,53 +11,163 @@ use crate::{Result, Session, bad, spec};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        spec!("align.left", "Align left", "{ids?}", true, |s, p| align(s, p, Al::Left)),
-        spec!("align.hcenter", "Align horizontal centers", "{ids?}", true, |s, p| align(s, p, Al::HCenter)),
-        spec!("align.right", "Align right", "{ids?}", true, |s, p| align(s, p, Al::Right)),
-        spec!("align.top", "Align top", "{ids?}", true, |s, p| align(s, p, Al::Top)),
-        spec!("align.vcenter", "Align vertical centers", "{ids?}", true, |s, p| align(s, p, Al::VCenter)),
-        spec!("align.bottom", "Align bottom", "{ids?}", true, |s, p| align(s, p, Al::Bottom)),
-        spec!("distribute.horizontal", "Distribute horizontal spacing", "{ids?, spacing?}", true, |s, p| distribute(s, p, true)),
-        spec!("distribute.vertical", "Distribute vertical spacing", "{ids?, spacing?}", true, |s, p| distribute(s, p, false)),
+        spec!("align.left", "Align left", "{ids?}", true, |s, p| align(
+            s,
+            p,
+            Al::Left
+        )),
+        spec!(
+            "align.hcenter",
+            "Align horizontal centers",
+            "{ids?}",
+            true,
+            |s, p| align(s, p, Al::HCenter)
+        ),
+        spec!("align.right", "Align right", "{ids?}", true, |s, p| align(
+            s,
+            p,
+            Al::Right
+        )),
+        spec!("align.top", "Align top", "{ids?}", true, |s, p| align(
+            s,
+            p,
+            Al::Top
+        )),
+        spec!(
+            "align.vcenter",
+            "Align vertical centers",
+            "{ids?}",
+            true,
+            |s, p| align(s, p, Al::VCenter)
+        ),
+        spec!(
+            "align.bottom",
+            "Align bottom",
+            "{ids?}",
+            true,
+            |s, p| align(s, p, Al::Bottom)
+        ),
+        spec!(
+            "distribute.horizontal",
+            "Distribute horizontal spacing",
+            "{ids?, spacing?}",
+            true,
+            |s, p| distribute(s, p, true)
+        ),
+        spec!(
+            "distribute.vertical",
+            "Distribute vertical spacing",
+            "{ids?, spacing?}",
+            true,
+            |s, p| distribute(s, p, false)
+        ),
         spec!("arrange.tidy", "Tidy up", "{ids?, spacing?}", true, tidy),
-        spec!("arrange.packH", "Pack horizontal", "{ids?}", true, |s, p| pack(s, p, true)),
-        spec!("arrange.packV", "Pack vertical", "{ids?}", true, |s, p| pack(s, p, false)),
-        spec!("arrange.roundToPixels", "Round to pixels", "{ids?}", true, round_px),
-        spec!("arrange.front", "Bring to front", "{ids?}", true, |s, p| zorder(s, p, Z::Front)),
-        spec!("arrange.forward", "Bring forward", "{ids?}", true, |s, p| zorder(s, p, Z::Forward)),
-        spec!("arrange.backward", "Send backward", "{ids?}", true, |s, p| zorder(s, p, Z::Backward)),
-        spec!("arrange.back", "Send to back", "{ids?}", true, |s, p| zorder(s, p, Z::Back)),
-        spec!("object.flipH", "Flip horizontal", "{ids?} (in vector edit mode without ids: the selected points)", true, |s, p| flip(s, p, true)),
-        spec!("object.flipV", "Flip vertical", "{ids?} (in vector edit mode without ids: the selected points)", true, |s, p| flip(s, p, false)),
-        spec!("object.rotate180", "Rotate 180°", "{ids?} (in vector edit mode without ids: the selected points)", true, |s, p| rotate_by(
-            s, p, 180.0
-        )),
-        spec!("object.rotateLeft", "Rotate 90° left", "{ids?} (in vector edit mode without ids: the selected points)", true, |s, p| rotate_by(
-            s, p, 90.0
-        )),
-        spec!("object.rotateRight", "Rotate 90° right", "{ids?} (in vector edit mode without ids: the selected points)", true, |s, p| {
-            rotate_by(s, p, -90.0)
+        spec!(
+            "arrange.packH",
+            "Pack horizontal",
+            "{ids?}",
+            true,
+            |s, p| pack(s, p, true)
+        ),
+        spec!("arrange.packV", "Pack vertical", "{ids?}", true, |s, p| {
+            pack(s, p, false)
         }),
-        spec!("transform.move", "Move", "{ids?, dx, dy}  (page units)", true, |s, p| {
-            let (dx, dy) = (num_or(p, "dx", 0.0), num_or(p, "dy", 0.0));
-            let ids = req_targets("transform.move", s, p)?;
-            let doc = s.doc_mut()?;
-            for i in roots(doc, &ids) {
-                move_world(doc, i, dx, dy)?;
+        spec!(
+            "arrange.roundToPixels",
+            "Round to pixels",
+            "{ids?}",
+            true,
+            round_px
+        ),
+        spec!("arrange.front", "Bring to front", "{ids?}", true, |s, p| {
+            zorder(s, p, Z::Front)
+        }),
+        spec!(
+            "arrange.forward",
+            "Bring forward",
+            "{ids?}",
+            true,
+            |s, p| zorder(s, p, Z::Forward)
+        ),
+        spec!(
+            "arrange.backward",
+            "Send backward",
+            "{ids?}",
+            true,
+            |s, p| zorder(s, p, Z::Backward)
+        ),
+        spec!("arrange.back", "Send to back", "{ids?}", true, |s, p| {
+            zorder(s, p, Z::Back)
+        }),
+        spec!(
+            "object.flipH",
+            "Flip horizontal",
+            "{ids?} (in vector edit mode without ids: the selected points)",
+            true,
+            |s, p| flip(s, p, true)
+        ),
+        spec!(
+            "object.flipV",
+            "Flip vertical",
+            "{ids?} (in vector edit mode without ids: the selected points)",
+            true,
+            |s, p| flip(s, p, false)
+        ),
+        spec!(
+            "object.rotate180",
+            "Rotate 180°",
+            "{ids?} (in vector edit mode without ids: the selected points)",
+            true,
+            |s, p| rotate_by(s, p, 180.0)
+        ),
+        spec!(
+            "object.rotateLeft",
+            "Rotate 90° left",
+            "{ids?} (in vector edit mode without ids: the selected points)",
+            true,
+            |s, p| rotate_by(s, p, 90.0)
+        ),
+        spec!(
+            "object.rotateRight",
+            "Rotate 90° right",
+            "{ids?} (in vector edit mode without ids: the selected points)",
+            true,
+            |s, p| { rotate_by(s, p, -90.0) }
+        ),
+        spec!(
+            "transform.move",
+            "Move",
+            "{ids?, dx, dy}  (page units)",
+            true,
+            |s, p| {
+                let (dx, dy) = (num_or(p, "dx", 0.0), num_or(p, "dy", 0.0));
+                let ids = req_targets("transform.move", s, p)?;
+                let doc = s.doc_mut()?;
+                for i in roots(doc, &ids) {
+                    move_world(doc, i, dx, dy)?;
+                }
+                ok()
             }
-            ok()
-        }),
-        spec!("transform.moveTo", "Move to", "{ids?, x, y} (page coordinates of the selection's top-left)", true, |s, p| {
-            let ids = req_targets("transform.moveTo", s, p)?;
-            let doc = s.doc_mut()?;
-            let ids = roots(doc, &ids);
-            let b = doc.bounds_of(&ids).ok_or_else(|| bad("transform.moveTo", "nothing to move"))?;
-            let (dx, dy) = (num_or(p, "x", b.x0) - b.x0, num_or(p, "y", b.y0) - b.y0);
-            for i in ids {
-                move_world(doc, i, dx, dy)?;
+        ),
+        spec!(
+            "transform.moveTo",
+            "Move to",
+            "{ids?, x, y} (page coordinates of the selection's top-left)",
+            true,
+            |s, p| {
+                let ids = req_targets("transform.moveTo", s, p)?;
+                let doc = s.doc_mut()?;
+                let ids = roots(doc, &ids);
+                let b = doc
+                    .bounds_of(&ids)
+                    .ok_or_else(|| bad("transform.moveTo", "nothing to move"))?;
+                let (dx, dy) = (num_or(p, "x", b.x0) - b.x0, num_or(p, "y", b.y0) - b.y0);
+                for i in ids {
+                    move_world(doc, i, dx, dy)?;
+                }
+                ok()
             }
-            ok()
-        }),
+        ),
         spec!(
             "transform.rotate",
             "Rotate",
@@ -91,9 +201,15 @@ pub fn specs() -> Vec<CommandSpec> {
             "{x, y (page coords) | reset: true} — the point the selection turns about (default its centre); kept while the selection lasts, not saved",
             false,
             |s, p| {
-                let at = num(p, "x").zip(num(p, "y")).map(|(x, y)| Point::new(x, y)).filter(|_| boolean(p, "reset") != Some(true));
+                let at = num(p, "x")
+                    .zip(num(p, "y"))
+                    .map(|(x, y)| Point::new(x, y))
+                    .filter(|_| boolean(p, "reset") != Some(true));
                 if at.is_none() && boolean(p, "reset") != Some(true) {
-                    return Err(bad("transform.setRotationOrigin", "give `x` and `y`, or `reset: true`"));
+                    return Err(bad(
+                        "transform.setRotationOrigin",
+                        "give `x` and `y`, or `reset: true`",
+                    ));
                 }
                 s.set_rotation_origin(at)?;
                 let on = s.ds()?.origin_handle().is_some();
@@ -107,7 +223,13 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             scale_cmd
         ),
-        spec!("transform.resize", "Resize", "{ids?, width?, height?, anchor? (tl|t|tr|l|c|r|bl|b|br)}", true, resize_cmd),
+        spec!(
+            "transform.resize",
+            "Resize",
+            "{ids?, width?, height?, anchor? (tl|t|tr|l|c|r|bl|b|br)}",
+            true,
+            resize_cmd
+        ),
     ]
 }
 
@@ -131,7 +253,10 @@ fn origin_json(s: &Session, editing: bool) -> Value {
 /// Move a node by `(dx, dy)` in page units.
 pub fn move_world(doc: &mut Document, id: NodeId, dx: f64, dy: f64) -> Result<()> {
     let n = doc.get(id)?;
-    let pw = n.parent.map(|p| doc.world_transform(p)).unwrap_or(Affine::IDENTITY);
+    let pw = n
+        .parent
+        .map(|p| doc.world_transform(p))
+        .unwrap_or(Affine::IDENTITY);
     let d = pw.inverse() * Affine::translate((dx, dy)) * pw;
     let n = doc.get_mut(id)?;
     n.transform = d * n.transform;
@@ -161,7 +286,9 @@ fn align(s: &mut Session, p: &Value, a: Al) -> Result<Value> {
         doc.bounds_of(&ids).unwrap_or_default()
     };
     for i in ids {
-        let Some(b) = doc.world_bounds(i) else { continue };
+        let Some(b) = doc.world_bounds(i) else {
+            continue;
+        };
         let (dx, dy) = match a {
             Al::Left => (target.x0 - b.x0, 0.0),
             Al::HCenter => (target.center().x - b.center().x, 0.0),
@@ -182,12 +309,31 @@ fn distribute(s: &mut Session, p: &Value, horizontal: bool) -> Result<Value> {
     if ids.len() < 3 && num(p, "spacing").is_none() {
         return ok();
     }
-    let mut items: Vec<(NodeId, Rect)> = ids.iter().filter_map(|i| doc.world_bounds(*i).map(|b| (*i, b))).collect();
-    items.sort_by(|a, b| if horizontal { a.1.x0.total_cmp(&b.1.x0) } else { a.1.y0.total_cmp(&b.1.y0) });
-    let total: f64 = items.iter().map(|(_, b)| if horizontal { b.width() } else { b.height() }).sum();
-    let (Some(first), Some(last)) = (items.first(), items.last()) else { return ok() };
-    let span = if horizontal { last.1.x1 - first.1.x0 } else { last.1.y1 - first.1.y0 };
-    let gap = num(p, "spacing").unwrap_or((span - total) / (items.len().saturating_sub(1).max(1)) as f64);
+    let mut items: Vec<(NodeId, Rect)> = ids
+        .iter()
+        .filter_map(|i| doc.world_bounds(*i).map(|b| (*i, b)))
+        .collect();
+    items.sort_by(|a, b| {
+        if horizontal {
+            a.1.x0.total_cmp(&b.1.x0)
+        } else {
+            a.1.y0.total_cmp(&b.1.y0)
+        }
+    });
+    let total: f64 = items
+        .iter()
+        .map(|(_, b)| if horizontal { b.width() } else { b.height() })
+        .sum();
+    let (Some(first), Some(last)) = (items.first(), items.last()) else {
+        return ok();
+    };
+    let span = if horizontal {
+        last.1.x1 - first.1.x0
+    } else {
+        last.1.y1 - first.1.y0
+    };
+    let gap =
+        num(p, "spacing").unwrap_or((span - total) / (items.len().saturating_sub(1).max(1)) as f64);
     let mut pos = if horizontal { first.1.x0 } else { first.1.y0 };
     for (i, b) in items.clone() {
         if horizontal {
@@ -206,7 +352,10 @@ fn tidy(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = req_targets("arrange.tidy", s, p)?;
     let doc = s.doc_mut()?;
     let ids = roots(doc, &ids);
-    let mut items: Vec<(NodeId, Rect)> = ids.iter().filter_map(|i| doc.world_bounds(*i).map(|b| (*i, b))).collect();
+    let mut items: Vec<(NodeId, Rect)> = ids
+        .iter()
+        .filter_map(|i| doc.world_bounds(*i).map(|b| (*i, b)))
+        .collect();
     if items.len() < 2 {
         return ok();
     }
@@ -215,7 +364,13 @@ fn tidy(s: &mut Session, p: &Value) -> Result<Value> {
     let mut rows: Vec<Vec<(NodeId, Rect)>> = Vec::new();
     for it in items {
         match rows.last_mut() {
-            Some(row) if row.iter().any(|(_, b)| it.1.center().y < b.y1 && it.1.center().y > b.y0) => row.push(it),
+            Some(row)
+                if row
+                    .iter()
+                    .any(|(_, b)| it.1.center().y < b.y1 && it.1.center().y > b.y0) =>
+            {
+                row.push(it)
+            }
             _ => rows.push(vec![it]),
         }
     }
@@ -290,10 +445,16 @@ fn zorder(s: &mut Session, p: &Value, z: Z) -> Result<Value> {
         _ => ids.clone(),
     };
     for i in order {
-        let Some(parent) = doc.get(i)?.parent else { continue };
+        let Some(parent) = doc.get(i)?.parent else {
+            continue;
+        };
         let len = doc.get(parent)?.children.len();
         let cur = doc.index_in_parent(i).unwrap_or(0);
-        let siblings_selected = |k: usize, doc: &Document| doc.node(parent).and_then(|pn| pn.children.get(k)).is_some_and(|c| ids.contains(c));
+        let siblings_selected = |k: usize, doc: &Document| {
+            doc.node(parent)
+                .and_then(|pn| pn.children.get(k))
+                .is_some_and(|c| ids.contains(c))
+        };
         let target = match z {
             Z::Front => len.saturating_sub(1),
             Z::Back => 0,
@@ -335,7 +496,11 @@ fn zorder(s: &mut Session, p: &Value, z: Z) -> Result<Value> {
 fn flip(s: &mut Session, p: &Value, horizontal: bool) -> Result<Value> {
     // Editing a vector with points selected: flip them in their box.
     let points = crate::vectoredit::transform::transform_in_edit_mode(s, p, |b| {
-        if horizontal { b.onto(b.width, 0.0, 0.0, b.height) } else { b.onto(0.0, b.height, b.width, 0.0) }
+        if horizontal {
+            b.onto(b.width, 0.0, 0.0, b.height)
+        } else {
+            b.onto(0.0, b.height, b.width, 0.0)
+        }
     });
     if let Some(r) = points {
         return r;
@@ -343,9 +508,15 @@ fn flip(s: &mut Session, p: &Value, horizontal: bool) -> Result<Value> {
     let ids = req_targets("flip", s, p)?;
     let doc = s.doc_mut()?;
     let ids = roots(doc, &ids);
-    let Some(b) = doc.bounds_of(&ids) else { return ok() };
+    let Some(b) = doc.bounds_of(&ids) else {
+        return ok();
+    };
     let c = b.center();
-    let m = if horizontal { Affine::new([-1.0, 0.0, 0.0, 1.0, 2.0 * c.x, 0.0]) } else { Affine::new([1.0, 0.0, 0.0, -1.0, 0.0, 2.0 * c.y]) };
+    let m = if horizontal {
+        Affine::new([-1.0, 0.0, 0.0, 1.0, 2.0 * c.x, 0.0])
+    } else {
+        Affine::new([1.0, 0.0, 0.0, -1.0, 0.0, 2.0 * c.y])
+    };
     for i in ids {
         let w = doc.world_transform(i);
         doc.set_world_transform(i, m * w)?;
@@ -354,11 +525,15 @@ fn flip(s: &mut Session, p: &Value, horizontal: bool) -> Result<Value> {
 }
 
 fn rotate_by(s: &mut Session, p: &Value, deg: f64) -> Result<Value> {
-    if let Some(r) = crate::vectoredit::transform::transform_in_edit_mode(s, p, |b| figcraft_geom::rotate_about(Affine::IDENTITY, b.center(), deg)) {
+    if let Some(r) = crate::vectoredit::transform::transform_in_edit_mode(s, p, |b| {
+        figcraft_geom::rotate_about(Affine::IDENTITY, b.center(), deg)
+    }) {
         return r;
     }
     let ids = req_targets("rotate", s, p)?;
-    let Some(pivot) = turn_pivot(s, &ids)? else { return ok() };
+    let Some(pivot) = turn_pivot(s, &ids)? else {
+        return ok();
+    };
     let doc = s.doc_mut()?;
     for i in roots(doc, &ids) {
         rotate_world(doc, i, pivot, deg)?;
@@ -370,14 +545,21 @@ fn rotate_by(s: &mut Session, p: &Value, deg: f64) -> Result<Value> {
 /// centre of their bounds.
 fn turn_pivot(s: &Session, ids: &[NodeId]) -> Result<Option<Point>> {
     let ds = s.ds()?;
-    Ok(ds.moved_origin().filter(|_| ds.selection == ids).or_else(|| ds.doc.bounds_of(&roots(&ds.doc, ids)).map(|b| b.center())))
+    Ok(ds
+        .moved_origin()
+        .filter(|_| ds.selection == ids)
+        .or_else(|| ds.doc.bounds_of(&roots(&ds.doc, ids)).map(|b| b.center())))
 }
 
 /// Scale a node and everything in it uniformly (the Scale tool): sizes and positions (whatever
 /// the children's constraints), strokes, effects, radii, auto layout spacing, min/max sizes,
 /// layout grids, ruler guides, tiled images and text sizes.
 pub fn scale_node(doc: &mut Document, id: NodeId, k: f64) -> Result<()> {
-    let k = if k.is_finite() && k > 0.0 { k } else { return Ok(()) };
+    let k = if k.is_finite() && k > 0.0 {
+        k
+    } else {
+        return Ok(());
+    };
     let sub = doc.subtree(id);
     let tiles = |paints: &mut Vec<figcraft_color::Paint>| {
         for p in paints {
@@ -393,7 +575,10 @@ pub fn scale_node(doc: &mut Document, id: NodeId, k: f64) -> Result<()> {
         tiles(&mut n.fills);
         tiles(&mut n.strokes);
         let cl = &mut n.child_layout;
-        for v in [&mut cl.min_w, &mut cl.max_w, &mut cl.min_h, &mut cl.max_h].into_iter().flatten() {
+        for v in [&mut cl.min_w, &mut cl.max_w, &mut cl.min_h, &mut cl.max_h]
+            .into_iter()
+            .flatten()
+        {
             *v *= k;
         }
         for g in &mut n.grids {
@@ -441,7 +626,12 @@ pub fn scale_node(doc: &mut Document, id: NodeId, k: f64) -> Result<()> {
             l.gap *= k;
             l.cross_gap *= k;
             l.padding = l.padding.map(|x| x * k);
-            for t in l.column_tracks.iter_mut().chain(l.row_tracks.iter_mut()).filter(|t| t.sizing == Sizing::Fixed) {
+            for t in l
+                .column_tracks
+                .iter_mut()
+                .chain(l.row_tracks.iter_mut())
+                .filter(|t| t.sizing == Sizing::Fixed)
+            {
                 t.value *= k;
             }
         }
@@ -494,10 +684,15 @@ fn scale_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let b = doc.bounds_of(&ids).unwrap_or_default();
     let pivot = Point::new(num_or(p, "cx", b.x0), num_or(p, "cy", b.y0));
     for i in ids {
-        let Some(nb) = doc.world_bounds(i) else { continue };
+        let Some(nb) = doc.world_bounds(i) else {
+            continue;
+        };
         scale_node(doc, i, k)?;
         // Keep relative position to the pivot.
-        let target = Point::new(pivot.x + (nb.x0 - pivot.x) * k, pivot.y + (nb.y0 - pivot.y) * k);
+        let target = Point::new(
+            pivot.x + (nb.x0 - pivot.x) * k,
+            pivot.y + (nb.y0 - pivot.y) * k,
+        );
         if let Some(after) = doc.world_bounds(i) {
             move_world(doc, i, target.x - after.x0, target.y - after.y0)?;
         }
@@ -507,17 +702,26 @@ fn scale_cmd(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub(crate) fn resize_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = req_targets("transform.resize", s, p)?;
-    let (col, row) = string(p, "anchor").and_then(|a| crate::tools::anchor_of(&a)).unwrap_or((0, 0));
+    let (col, row) = string(p, "anchor")
+        .and_then(|a| crate::tools::anchor_of(&a))
+        .unwrap_or((0, 0));
     let (ax, ay) = (f64::from(col) / 2.0, f64::from(row) / 2.0);
     let doc = s.doc_mut()?;
     for i in ids {
         let n = doc.get(i)?;
         let (ow, oh) = (n.width, n.height);
-        let (w, h) = (num(p, "width").unwrap_or(ow).max(0.0), num(p, "height").unwrap_or(oh).max(0.0));
+        let (w, h) = (
+            num(p, "width").unwrap_or(ow).max(0.0),
+            num(p, "height").unwrap_or(oh).max(0.0),
+        );
         let fixed_local = Point::new(ow * ax, oh * ay);
         let before = n.transform * fixed_local;
         // A section's contents stay where they are on the page, wherever its anchor puts it.
-        let kept = if matches!(n.kind, NodeKind::Section { .. }) { super::props::children_worlds(doc, i) } else { Vec::new() };
+        let kept = if matches!(n.kind, NodeKind::Section { .. }) {
+            super::props::children_worlds(doc, i)
+        } else {
+            Vec::new()
+        };
         super::props::resize_node(doc, i, w, h)?;
         let n = doc.get_mut(i)?;
         let after = n.transform * Point::new(w * ax, h * ay);
@@ -529,7 +733,11 @@ pub(crate) fn resize_cmd(s: &mut Session, p: &Value) -> Result<Value> {
             n.child_layout.sizing_v = Sizing::Fixed;
         }
         if let NodeKind::Text(t) = &mut n.kind {
-            t.auto_resize = if num(p, "height").is_some() { TextAutoResize::None } else { TextAutoResize::Height };
+            t.auto_resize = if num(p, "height").is_some() {
+                TextAutoResize::None
+            } else {
+                TextAutoResize::Height
+            };
         }
         super::props::restore_worlds(doc, &kept)?;
     }

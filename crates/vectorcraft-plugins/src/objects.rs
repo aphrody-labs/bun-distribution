@@ -10,7 +10,9 @@ use std::sync::Arc;
 
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, AppearanceItem, Document, FillLayer, Node, NodeId, NodeKind, StrokeLayer};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, Document, FillLayer, Node, NodeId, NodeKind, StrokeLayer,
+};
 use vectorcraft_geom::{FillRule, PathData, Point, Rect};
 
 use crate::{Error, Result};
@@ -76,9 +78,17 @@ fn paint_json(p: &Paint) -> Value {
 pub fn geometry(n: &Node) -> Option<(PathData, FillRule, bool)> {
     match &n.kind {
         NodeKind::Path { path, rule, .. } => Some((path.clone(), *rule, false)),
-        NodeKind::Compound { children, rule } => {
-            Some((PathData::new(children.iter().filter_map(|c| c.path_data()).flat_map(|p| p.subpaths.iter().cloned()).collect()), *rule, true))
-        }
+        NodeKind::Compound { children, rule } => Some((
+            PathData::new(
+                children
+                    .iter()
+                    .filter_map(|c| c.path_data())
+                    .flat_map(|p| p.subpaths.iter().cloned())
+                    .collect(),
+            ),
+            *rule,
+            true,
+        )),
         _ => None,
     }
 }
@@ -87,13 +97,29 @@ pub fn geometry(n: &Node) -> Option<(PathData, FillRule, bool)> {
 /// fillRule, fills, strokes, opacity, bounds}`.
 pub fn encode(n: &Node) -> Option<Value> {
     let (path, rule, compound) = geometry(n)?;
-    let fills: Vec<Value> =
-        n.appearance.items.iter().filter_map(|i| if let AppearanceItem::Fill(f) = i { Some(paint_json(&f.paint)) } else { None }).collect();
+    let fills: Vec<Value> = n
+        .appearance
+        .items
+        .iter()
+        .filter_map(|i| {
+            if let AppearanceItem::Fill(f) = i {
+                Some(paint_json(&f.paint))
+            } else {
+                None
+            }
+        })
+        .collect();
     let strokes: Vec<Value> = n
         .appearance
         .items
         .iter()
-        .filter_map(|i| if let AppearanceItem::Stroke(s) = i { Some(json!({"paint": paint_json(&s.paint), "width": s.width})) } else { None })
+        .filter_map(|i| {
+            if let AppearanceItem::Stroke(s) = i {
+                Some(json!({"paint": paint_json(&s.paint), "width": s.width}))
+            } else {
+                None
+            }
+        })
         .collect();
     let mut o = json!({
         "id": n.id.0, "type": if compound { "compound" } else { "path" }, "path": path, "fillRule": rule_name(rule),
@@ -108,7 +134,11 @@ pub fn encode(n: &Node) -> Option<Value> {
 /// The input document of a filter run: `{"objects": [...]}` for `ids` (paths and compound paths;
 /// others are left out).
 pub fn encode_input(doc: &Document, ids: &[NodeId]) -> Vec<u8> {
-    let objects: Vec<Value> = ids.iter().filter_map(|id| doc.node(*id)).filter_map(encode).collect();
+    let objects: Vec<Value> = ids
+        .iter()
+        .filter_map(|id| doc.node(*id))
+        .filter_map(encode)
+        .collect();
     serde_json::to_vec(&json!({ "objects": objects })).unwrap_or_default()
 }
 
@@ -120,7 +150,10 @@ fn check_point(p: Point, at: &str) -> Result<()> {
     if p.x.is_finite() && p.y.is_finite() && p.x.abs() <= MAX_COORD && p.y.abs() <= MAX_COORD {
         Ok(())
     } else {
-        Err(out_err(at, format!("coordinate out of range (limit ±{MAX_COORD} pt)")))
+        Err(out_err(
+            at,
+            format!("coordinate out of range (limit ±{MAX_COORD} pt)"),
+        ))
     }
 }
 
@@ -131,7 +164,10 @@ fn decode_path(v: &Value, at: &str, anchors: &mut usize) -> Result<PathData> {
     path.subpaths.retain(|sp| !sp.anchors.is_empty());
     *anchors = anchors.saturating_add(path.anchor_count());
     if *anchors > MAX_ANCHORS {
-        return Err(out_err(at, format!("too many anchor points (limit {MAX_ANCHORS})")));
+        return Err(out_err(
+            at,
+            format!("too many anchor points (limit {MAX_ANCHORS})"),
+        ));
     }
     for (_, _, a) in path.anchors() {
         for p in [a.p, a.h_in, a.h_out] {
@@ -151,10 +187,23 @@ fn unit(v: f32) -> f32 {
 /// `c` with its components in range.
 fn clamp_color(c: Color) -> Color {
     match c {
-        Color::Rgb { r, g, b } => Color::Rgb { r: unit(r), g: unit(g), b: unit(b) },
-        Color::Cmyk { c, m, y, k } => Color::Cmyk { c: unit(c), m: unit(m), y: unit(y), k: unit(k) },
+        Color::Rgb { r, g, b } => Color::Rgb {
+            r: unit(r),
+            g: unit(g),
+            b: unit(b),
+        },
+        Color::Cmyk { c, m, y, k } => Color::Cmyk {
+            c: unit(c),
+            m: unit(m),
+            y: unit(y),
+            k: unit(k),
+        },
         Color::Gray { k } => Color::Gray { k: unit(k) },
-        Color::Lab { l, a, b } => Color::Lab { l: l.clamp(0.0, 100.0), a: a.clamp(-128.0, 127.0), b: b.clamp(-128.0, 127.0) },
+        Color::Lab { l, a, b } => Color::Lab {
+            l: l.clamp(0.0, 100.0),
+            a: a.clamp(-128.0, 127.0),
+            b: b.clamp(-128.0, 127.0),
+        },
     }
 }
 
@@ -191,15 +240,28 @@ fn decode_paint(v: &Value, at: &str) -> Result<Paint> {
                 if let Some(f) = geom.focal {
                     check_point(f, at)?;
                 }
-                geom.aspect = if geom.aspect.is_finite() { geom.aspect.clamp(0.01, 100.0) } else { 1.0 };
+                geom.aspect = if geom.aspect.is_finite() {
+                    geom.aspect.clamp(0.01, 100.0)
+                } else {
+                    1.0
+                };
             }
             if let Some(ff) = &mut g.freeform {
-                if ff.points.len() > MAX_ITEMS || ff.lines.len() > MAX_ITEMS || ff.lines.iter().any(|l| l.len() > MAX_ITEMS) {
-                    return Err(out_err(at, format!("a freeform gradient holds at most {MAX_ITEMS} points and lines")));
+                if ff.points.len() > MAX_ITEMS
+                    || ff.lines.len() > MAX_ITEMS
+                    || ff.lines.iter().any(|l| l.len() > MAX_ITEMS)
+                {
+                    return Err(out_err(
+                        at,
+                        format!("a freeform gradient holds at most {MAX_ITEMS} points and lines"),
+                    ));
                 }
                 let n = ff.points.len();
                 if ff.lines.iter().flatten().any(|i| *i >= n) {
-                    return Err(out_err(at, "a freeform gradient line names a point it doesn't have"));
+                    return Err(out_err(
+                        at,
+                        "a freeform gradient line names a point it doesn't have",
+                    ));
                 }
                 for pt in &mut ff.points {
                     check_point(pt.at, at)?;
@@ -210,7 +272,11 @@ fn decode_paint(v: &Value, at: &str) -> Result<Paint> {
             }
         }
         Paint::Pattern { xf, .. } => {
-            if !xf.as_coeffs().iter().all(|c| c.is_finite() && c.abs() <= MAX_COORD) {
+            if !xf
+                .as_coeffs()
+                .iter()
+                .all(|c| c.is_finite() && c.abs() <= MAX_COORD)
+            {
                 return Err(out_err(at, "pattern transform out of range"));
             }
         }
@@ -223,10 +289,14 @@ fn opt<'a>(o: &'a serde_json::Map<String, Value>, key: &str) -> Option<&'a Value
 }
 
 fn decode_object(v: &Value, at: &str, anchors: &mut usize) -> Result<OutObject> {
-    let o = v.as_object().ok_or_else(|| out_err(at, "an object must be a JSON object"))?;
+    let o = v
+        .as_object()
+        .ok_or_else(|| out_err(at, "an object must be a JSON object"))?;
     let mut out = OutObject::default();
     if let Some(id) = opt(o, "id") {
-        out.id = Some(NodeId(id.as_u64().ok_or_else(|| out_err(at, "`id` must be the id of an input object"))?));
+        out.id = Some(NodeId(id.as_u64().ok_or_else(|| {
+            out_err(at, "`id` must be the id of an input object")
+        })?));
     }
     if let Some(t) = opt(o, "type") {
         out.compound = Some(match t.as_str() {
@@ -238,7 +308,13 @@ fn decode_object(v: &Value, at: &str, anchors: &mut usize) -> Result<OutObject> 
     if let Some(n) = o.get("name") {
         let name = match n {
             Value::Null => String::new(),
-            n => n.as_str().ok_or_else(|| out_err(at, "`name` must be a string"))?.chars().filter(|c| !c.is_control()).take(256).collect(),
+            n => n
+                .as_str()
+                .ok_or_else(|| out_err(at, "`name` must be a string"))?
+                .chars()
+                .filter(|c| !c.is_control())
+                .take(256)
+                .collect(),
         };
         out.name = Some(name);
     }
@@ -256,28 +332,46 @@ fn decode_object(v: &Value, at: &str, anchors: &mut usize) -> Result<OutObject> 
         match opt(o, key) {
             None => Ok(None),
             Some(Value::Array(a)) if a.len() <= MAX_ITEMS => Ok(Some(a)),
-            Some(_) => Err(out_err(at, format!("`{key}` must be an array of at most {MAX_ITEMS} entries"))),
+            Some(_) => Err(out_err(
+                at,
+                format!("`{key}` must be an array of at most {MAX_ITEMS} entries"),
+            )),
         }
     };
     if let Some(fills) = list("fills")? {
-        out.fills = Some(fills.iter().enumerate().map(|(i, f)| decode_paint(f, &format!("{at}.fills[{i}]"))).collect::<Result<_>>()?);
+        out.fills = Some(
+            fills
+                .iter()
+                .enumerate()
+                .map(|(i, f)| decode_paint(f, &format!("{at}.fills[{i}]")))
+                .collect::<Result<_>>()?,
+        );
     }
     if let Some(strokes) = list("strokes")? {
         let mut v = Vec::with_capacity(strokes.len());
         for (i, s) in strokes.iter().enumerate() {
             let at = format!("{at}.strokes[{i}]");
-            let s = s.as_object().ok_or_else(|| out_err(&at, "a stroke must be {\"paint\", \"width\"}"))?;
+            let s = s
+                .as_object()
+                .ok_or_else(|| out_err(&at, "a stroke must be {\"paint\", \"width\"}"))?;
             let paint = decode_paint(s.get("paint").unwrap_or(&Value::Null), &at)?;
             let width = match opt(s, "width") {
                 None => None,
-                Some(w) => Some(w.as_f64().ok_or_else(|| out_err(&at, "`width` must be a number"))?.clamp(0.0, MAX_STROKE_WIDTH)),
+                Some(w) => Some(
+                    w.as_f64()
+                        .ok_or_else(|| out_err(&at, "`width` must be a number"))?
+                        .clamp(0.0, MAX_STROKE_WIDTH),
+                ),
             };
             v.push(OutStroke { paint, width });
         }
         out.strokes = Some(v);
     }
     if let Some(op) = opt(o, "opacity") {
-        out.opacity = Some(unit(op.as_f64().ok_or_else(|| out_err(at, "`opacity` must be a number"))? as f32));
+        out.opacity = Some(unit(
+            op.as_f64()
+                .ok_or_else(|| out_err(at, "`opacity` must be a number"))? as f32,
+        ));
     }
     Ok(out)
 }
@@ -285,22 +379,43 @@ fn decode_object(v: &Value, at: &str, anchors: &mut usize) -> Result<OutObject> 
 /// Parses a plug-in's output: `{"objects": [...]}`, or `{"error": "message"}` when the plug-in
 /// declined (the message reaches the user).
 pub fn decode(bytes: &[u8]) -> Result<Vec<OutObject>> {
-    let v: Value = serde_json::from_slice(bytes).map_err(|e| Error::Output(format!("not JSON: {e}")))?;
+    let v: Value =
+        serde_json::from_slice(bytes).map_err(|e| Error::Output(format!("not JSON: {e}")))?;
     if let Some(e) = v.get("error").filter(|e| !e.is_null()) {
-        let msg: String = e.as_str().map_or_else(|| e.to_string(), str::to_string).chars().filter(|c| !c.is_control()).take(300).collect();
+        let msg: String = e
+            .as_str()
+            .map_or_else(|| e.to_string(), str::to_string)
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(300)
+            .collect();
         return Err(Error::Failed(msg));
     }
-    let objects = v.get("objects").and_then(Value::as_array).ok_or_else(|| Error::Output("expected {\"objects\": [...]}".into()))?;
+    let objects = v
+        .get("objects")
+        .and_then(Value::as_array)
+        .ok_or_else(|| Error::Output("expected {\"objects\": [...]}".into()))?;
     if objects.len() > MAX_OBJECTS {
-        return Err(Error::Output(format!("{} objects (limit {MAX_OBJECTS})", objects.len())));
+        return Err(Error::Output(format!(
+            "{} objects (limit {MAX_OBJECTS})",
+            objects.len()
+        )));
     }
     let mut anchors = 0;
-    objects.iter().enumerate().map(|(i, o)| decode_object(o, &format!("objects[{i}]"), &mut anchors)).collect()
+    objects
+        .iter()
+        .enumerate()
+        .map(|(i, o)| decode_object(o, &format!("objects[{i}]"), &mut anchors))
+        .collect()
 }
 
 /// The paints of `ap`'s fills (`fill`) or strokes, in paint order.
 fn paints(ap: &Appearance, fill: bool) -> Vec<&Paint> {
-    ap.items.iter().filter(|i| i.is_fill() == fill).map(AppearanceItem::paint).collect()
+    ap.items
+        .iter()
+        .filter(|i| i.is_fill() == fill)
+        .map(AppearanceItem::paint)
+        .collect()
 }
 
 /// `p` without swatch links: a plug-in's colours are its own, so only paints it returned
@@ -329,7 +444,10 @@ fn admit(doc: &Document, p: Paint, was: Option<&Paint>, at: &str) -> Result<Pain
     if let Paint::Pattern { pattern, .. } = &p
         && doc.pattern(pattern).is_none()
     {
-        return Err(out_err(at, format!("the document has no pattern {pattern:?}")));
+        return Err(out_err(
+            at,
+            format!("the document has no pattern {pattern:?}"),
+        ));
     }
     Ok(if was == Some(&p) { p } else { unlinked(p) })
 }
@@ -338,12 +456,21 @@ fn admit(doc: &Document, p: Paint, was: Option<&Paint>, at: &str) -> Result<Pain
 /// removed (from the top), missing ones added above the last item of their kind (fills at the
 /// bottom, strokes on top when the object has none).
 fn set_items(ap: &mut Appearance, fill: bool, new: Vec<(Paint, Option<f64>)>) {
-    let idx: Vec<usize> = ap.items.iter().enumerate().filter(|(_, i)| i.is_fill() == fill).map(|(k, _)| k).collect();
+    let idx: Vec<usize> = ap
+        .items
+        .iter()
+        .enumerate()
+        .filter(|(_, i)| i.is_fill() == fill)
+        .map(|(k, _)| k)
+        .collect();
     for &i in idx.iter().skip(new.len()).rev() {
         ap.remove_item(i);
     }
     let kept = new.len().min(idx.len());
-    let mut at = idx.get(..kept).and_then(<[usize]>::last).map_or(if fill { 0 } else { ap.items.len() }, |i| i + 1);
+    let mut at = idx
+        .get(..kept)
+        .and_then(<[usize]>::last)
+        .map_or(if fill { 0 } else { ap.items.len() }, |i| i + 1);
     for (k, (paint, width)) in new.into_iter().enumerate() {
         match idx.get(k).and_then(|&i| ap.items.get_mut(i)) {
             Some(AppearanceItem::Fill(f)) => f.paint = paint,
@@ -380,11 +507,20 @@ fn members(doc: &mut Document, old: &[Arc<Node>], path: PathData) -> Vec<Arc<Nod
 
 /// Writes `o` into `n` (an input object, or a fresh node for a new one).
 fn write(doc: &mut Document, n: &mut Node, o: OutObject, at: &str) -> Result<()> {
-    let (cur_path, cur_rule, cur_compound) = geometry(n).unwrap_or((PathData::default(), FillRule::NonZero, false));
+    let (cur_path, cur_rule, cur_compound) =
+        geometry(n).unwrap_or((PathData::default(), FillRule::NonZero, false));
     let compound = o.compound.unwrap_or(cur_compound);
     let rule = o.rule.unwrap_or(cur_rule);
     match (&mut n.kind, compound) {
-        (NodeKind::Path { path, rule: r, live, .. }, false) => {
+        (
+            NodeKind::Path {
+                path,
+                rule: r,
+                live,
+                ..
+            },
+            false,
+        ) => {
             if let Some(p) = o.path {
                 *path = p;
                 *live = None;
@@ -398,21 +534,58 @@ fn write(doc: &mut Document, n: &mut Node, o: OutObject, at: &str) -> Result<()>
             *r = rule;
         }
         (NodeKind::Compound { .. }, false) => {
-            n.kind = NodeKind::Path { path: o.path.unwrap_or(cur_path), rule, live: None, clipping: false, guide: false };
+            n.kind = NodeKind::Path {
+                path: o.path.unwrap_or(cur_path),
+                rule,
+                live: None,
+                clipping: false,
+                guide: false,
+            };
         }
-        (_, true) => n.kind = NodeKind::Compound { children: members(doc, &[], o.path.unwrap_or(cur_path)), rule },
-        (_, false) => n.kind = NodeKind::Path { path: o.path.unwrap_or(cur_path), rule, live: None, clipping: false, guide: false },
+        (_, true) => {
+            n.kind = NodeKind::Compound {
+                children: members(doc, &[], o.path.unwrap_or(cur_path)),
+                rule,
+            }
+        }
+        (_, false) => {
+            n.kind = NodeKind::Path {
+                path: o.path.unwrap_or(cur_path),
+                rule,
+                live: None,
+                clipping: false,
+                guide: false,
+            }
+        }
     }
     for (fill, new) in [
-        (true, o.fills.map(|f| f.into_iter().map(|p| (p, None)).collect::<Vec<_>>())),
-        (false, o.strokes.map(|s| s.into_iter().map(|s| (s.paint, s.width)).collect())),
+        (
+            true,
+            o.fills
+                .map(|f| f.into_iter().map(|p| (p, None)).collect::<Vec<_>>()),
+        ),
+        (
+            false,
+            o.strokes
+                .map(|s| s.into_iter().map(|s| (s.paint, s.width)).collect()),
+        ),
     ] {
         let Some(new) = new else { continue };
         let was = paints(&n.appearance, fill);
         let admitted = new
             .into_iter()
             .enumerate()
-            .map(|(i, (p, w))| Ok((admit(doc, p, was.get(i).copied(), &format!("{at}.{}[{i}]", if fill { "fills" } else { "strokes" }))?, w)))
+            .map(|(i, (p, w))| {
+                Ok((
+                    admit(
+                        doc,
+                        p,
+                        was.get(i).copied(),
+                        &format!("{at}.{}[{i}]", if fill { "fills" } else { "strokes" }),
+                    )?,
+                    w,
+                ))
+            })
             .collect::<Result<Vec<_>>>()?;
         set_items(&mut n.appearance, fill, admitted);
     }
@@ -436,8 +609,19 @@ pub fn filter_targets(doc: &Document, selected: &[NodeId]) -> Vec<NodeId> {
             }
             let picked = inside || sel.contains(&n.id);
             match &n.kind {
-                NodeKind::Path { guide: false, clipping: false, .. } | NodeKind::Compound { .. } if picked => out.push(n.id),
-                NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => visit(children, sel, picked, out),
+                NodeKind::Path {
+                    guide: false,
+                    clipping: false,
+                    ..
+                }
+                | NodeKind::Compound { .. }
+                    if picked =>
+                {
+                    out.push(n.id)
+                }
+                NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => {
+                    visit(children, sel, picked, out)
+                }
                 _ => {}
             }
         }
@@ -461,7 +645,11 @@ struct Plan {
 
 impl Plan {
     fn pending(&self) -> bool {
-        !(self.replace.is_empty() && self.delete.is_empty() && self.before.is_empty() && self.after.is_empty() && self.top.is_none())
+        !(self.replace.is_empty()
+            && self.delete.is_empty()
+            && self.before.is_empty()
+            && self.after.is_empty()
+            && self.top.is_none())
     }
 
     /// The edited `list` (the children of `parent`), `None` when nothing in it changed.
@@ -474,7 +662,13 @@ impl Plan {
                 }
                 return out;
             }
-            let mut emitted: Vec<Arc<Node>> = self.before.remove(&c.id).unwrap_or_default().into_iter().map(Arc::new).collect();
+            let mut emitted: Vec<Arc<Node>> = self
+                .before
+                .remove(&c.id)
+                .unwrap_or_default()
+                .into_iter()
+                .map(Arc::new)
+                .collect();
             let mut changed = !emitted.is_empty();
             if self.delete.remove(&c.id) {
                 changed = true;
@@ -482,7 +676,9 @@ impl Plan {
                 emitted.push(Arc::new(r));
                 changed = true;
             } else if let Some(ch) = match &c.kind {
-                NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => self.list(Some(c.id), children),
+                NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => {
+                    self.list(Some(c.id), children)
+                }
                 _ => None,
             } {
                 let mut m = (**c).clone();
@@ -508,7 +704,8 @@ impl Plan {
         if self.top.as_ref().is_some_and(|(p, _)| *p == parent)
             && let Some((_, nodes)) = self.top.take()
         {
-            out.get_or_insert_with(|| list.to_vec()).extend(nodes.into_iter().map(Arc::new));
+            out.get_or_insert_with(|| list.to_vec())
+                .extend(nodes.into_iter().map(Arc::new));
         }
         out
     }
@@ -522,7 +719,12 @@ impl Plan {
 /// input object, just below the first one listed after them (at the first input object's place
 /// when the output keeps none; on top of `parent` when there were no inputs). Input objects missing
 /// from the output are deleted. Returns the resulting objects in output order (to select).
-pub fn apply_output(doc: &mut Document, inputs: &[NodeId], out: Vec<OutObject>, parent: Option<NodeId>) -> Result<Vec<NodeId>> {
+pub fn apply_output(
+    doc: &mut Document,
+    inputs: &[NodeId],
+    out: Vec<OutObject>,
+    parent: Option<NodeId>,
+) -> Result<Vec<NodeId>> {
     let wanted: HashSet<NodeId> = inputs.iter().copied().collect();
     let mut originals: HashMap<NodeId, Node> = HashMap::new();
     doc.walk(|n| {
@@ -540,7 +742,11 @@ pub fn apply_output(doc: &mut Document, inputs: &[NodeId], out: Vec<OutObject>, 
         match o.id {
             Some(id) => {
                 let mut n = originals.remove(&id).ok_or_else(|| {
-                    let why = if wanted.contains(&id) { "is listed twice" } else { "is not the id of an input object" };
+                    let why = if wanted.contains(&id) {
+                        "is listed twice"
+                    } else {
+                        "is not the id of an input object"
+                    };
                     out_err(&at, format!("{} {why}", id.0))
                 })?;
                 write(doc, &mut n, o, &at)?;
@@ -583,14 +789,22 @@ pub fn apply_output(doc: &mut Document, inputs: &[NodeId], out: Vec<OutObject>, 
         doc.layers = list;
     }
     if plan.pending() {
-        return Err(Error::Output("the objects to change are no longer in the document".into()));
+        return Err(Error::Output(
+            "the objects to change are no longer in the document".into(),
+        ));
     }
     Ok(result)
 }
 
 /// The geometry of an effect's output: every returned object's path, in order.
 pub fn output_geometry(objects: Vec<OutObject>) -> PathData {
-    PathData::new(objects.into_iter().filter_map(|o| o.path).flat_map(|p| p.subpaths).collect())
+    PathData::new(
+        objects
+            .into_iter()
+            .filter_map(|o| o.path)
+            .flat_map(|p| p.subpaths)
+            .collect(),
+    )
 }
 
 #[cfg(test)]

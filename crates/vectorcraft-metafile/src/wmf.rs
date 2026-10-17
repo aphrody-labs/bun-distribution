@@ -14,7 +14,9 @@ use vectorcraft_geom::{Affine, BezPath, FillRule, Point, Rect};
 
 use crate::bytes::Out;
 use crate::dib::{self, Rgba};
-use crate::emf::{PS_ENDCAP_FLAT, PS_ENDCAP_SQUARE, PS_JOIN_BEVEL, PS_JOIN_MITER, SRCCOPY, colorref};
+use crate::emf::{
+    PS_ENDCAP_FLAT, PS_ENDCAP_SQUARE, PS_JOIN_BEVEL, PS_JOIN_MITER, SRCCOPY, colorref,
+};
 use crate::scene::{Op, Pen};
 
 /// The key a placeable header starts with.
@@ -49,26 +51,46 @@ const NULL_PEN: u16 = 0;
 const NULL_BRUSH: u16 = 1;
 
 const TRANSLUCENT_IMAGES: &str = "WMF has no transparency: images are written over white";
-const TURNED_IMAGES: &str = "WMF can't rotate or skew images: they are written upright, filling their bounds";
+const TURNED_IMAGES: &str =
+    "WMF can't rotate or skew images: they are written upright, filling their bounds";
 
 /// Does `bytes` start like a WMF (placeable, or a plain memory or disk metafile header)?
 pub(crate) fn is_wmf(bytes: &[u8]) -> bool {
-    let u16_at = |at: usize| bytes.get(at..at + 2).and_then(|b| b.try_into().ok()).map(u16::from_le_bytes);
-    let placeable = bytes.get(..4).is_some_and(|b| b == PLACEABLE_KEY.to_le_bytes());
-    placeable || (matches!(u16_at(0), Some(1 | 2)) && u16_at(2) == Some(9) && matches!(u16_at(4), Some(0x0100 | 0x0300)))
+    let u16_at = |at: usize| {
+        bytes
+            .get(at..at + 2)
+            .and_then(|b| b.try_into().ok())
+            .map(u16::from_le_bytes)
+    };
+    let placeable = bytes
+        .get(..4)
+        .is_some_and(|b| b == PLACEABLE_KEY.to_le_bytes());
+    placeable
+        || (matches!(u16_at(0), Some(1 | 2))
+            && u16_at(2) == Some(9)
+            && matches!(u16_at(4), Some(0x0100 | 0x0300)))
 }
 
 /// The logical units an inch for a picture `w` × `h` points: the most, up to 1440, that keep its
 /// size within 16 bits.
 pub(crate) fn units_per_inch(w: f64, h: f64) -> u16 {
     let side_in = w.max(h) / 72.0;
-    let fit = if side_in > 0.0 { (MAX_I16 / side_in).floor() } else { MAX_INCH };
+    let fit = if side_in > 0.0 {
+        (MAX_I16 / side_in).floor()
+    } else {
+        MAX_INCH
+    };
     fit.clamp(1.0, MAX_INCH) as u16
 }
 
 /// The XOR of the first ten 16-bit words of a placeable header.
 pub(crate) fn checksum(header: &[u8]) -> u16 {
-    header.as_chunks::<2>().0.iter().take(10).fold(0, |acc, w| acc ^ u16::from_le_bytes(*w))
+    header
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .take(10)
+        .fold(0, |acc, w| acc ^ u16::from_le_bytes(*w))
 }
 
 /// `bp` flattened to within `tol`: each subpath's points and whether it closes.
@@ -262,7 +284,13 @@ impl Writer {
 
     fn dev(&self, p: Point) -> [i16; 2] {
         let q = self.to_dev * p;
-        let c = |v: f64| if v.is_finite() { v.round().clamp(-MAX_I16, MAX_I16) as i16 } else { 0 };
+        let c = |v: f64| {
+            if v.is_finite() {
+                v.round().clamp(-MAX_I16, MAX_I16) as i16
+            } else {
+                0
+            }
+        };
         [c(q.x), c(q.y)]
     }
 
@@ -331,7 +359,11 @@ impl Writer {
             LineJoin::Round => 0,
             LineJoin::Bevel => PS_JOIN_BEVEL,
         };
-        let key = PenKey { style: (cap | join) as u16, width: (p.width * self.k).round().clamp(1.0, MAX_I16) as i16, color: colorref(p.rgb) };
+        let key = PenKey {
+            style: (cap | join) as u16,
+            width: (p.width * self.k).round().clamp(1.0, MAX_I16) as i16,
+            color: colorref(p.rgb),
+        };
         let slot = match self.pen {
             Some((slot, k)) if k == key => slot,
             old => {
@@ -354,7 +386,11 @@ impl Writer {
     }
 
     fn fill(&mut self, bp: &BezPath, rule: FillRule, rgb: [u8; 3]) {
-        let polys: Vec<Vec<[i16; 2]>> = flatten(bp, FLATNESS / self.k).iter().map(|(p, _)| self.points(p)).filter(|p| p.len() > 2).collect();
+        let polys: Vec<Vec<[i16; 2]>> = flatten(bp, FLATNESS / self.k)
+            .iter()
+            .map(|(p, _)| self.points(p))
+            .filter(|p| p.len() > 2)
+            .collect();
         if polys.is_empty() {
             return;
         }
@@ -380,8 +416,11 @@ impl Writer {
 
     fn stroke(&mut self, bp: &BezPath, pen: &Pen) {
         let path = crate::scene::dashed(bp, pen.dash.as_ref());
-        let lines: Vec<(Vec<[i16; 2]>, bool)> =
-            flatten(&path, FLATNESS / self.k).iter().map(|(p, closed)| (self.points(p), *closed)).filter(|(p, _)| p.len() > 1).collect();
+        let lines: Vec<(Vec<[i16; 2]>, bool)> = flatten(&path, FLATNESS / self.k)
+            .iter()
+            .map(|(p, closed)| (self.points(p), *closed))
+            .filter(|(p, _)| p.len() > 1)
+            .collect();
         if lines.is_empty() {
             return;
         }

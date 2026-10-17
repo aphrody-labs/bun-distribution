@@ -12,7 +12,9 @@ use axum::{
 };
 
 pub(crate) fn token() -> Option<String> {
-    std::env::var("APHRODY_A2A_COORD_TOKEN").ok().filter(|value| !value.trim().is_empty())
+    std::env::var("APHRODY_A2A_COORD_TOKEN")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
 }
 
 pub(crate) fn validate_bind(bind: SocketAddr, token: Option<&str>) -> std::io::Result<()> {
@@ -38,7 +40,10 @@ async fn require_bearer(
     next: Next,
 ) -> Response {
     let discovery = request.method() == Method::GET
-        && matches!(request.uri().path(), "/ping" | "/.well-known/agent-card.json");
+        && matches!(
+            request.uri().path(),
+            "/ping" | "/.well-known/agent-card.json"
+        );
     if discovery || matches!(auth.build(request.headers()).await, Ok(Some(_))) {
         return next.run(request).await;
     }

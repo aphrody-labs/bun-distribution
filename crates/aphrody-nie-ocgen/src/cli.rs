@@ -114,7 +114,10 @@ fn read_recipes(data: &Path, slug: &str) -> Result<Vec<Recipe>, Error> {
         .collect();
     paths.sort();
     if paths.is_empty() {
-        return Err(Error::Io(format!("{} : aucun 3d-recipe*.json", dir.display())));
+        return Err(Error::Io(format!(
+            "{} : aucun 3d-recipe*.json",
+            dir.display()
+        )));
     }
 
     let mut recipes = Vec::with_capacity(paths.len());
@@ -155,11 +158,17 @@ fn collect_iecode(root: &Path, path: &Path, out: &mut Vec<Source>) -> Result<(),
             |_| PathBuf::from(path.file_name().unwrap_or_default()),
             Path::to_path_buf,
         );
-        out.push(Source { path: path.to_path_buf(), relative });
+        out.push(Source {
+            path: path.to_path_buf(),
+            relative,
+        });
         return Ok(());
     }
     if !path.is_dir() {
-        return Err(Error::Io(format!("{} : ni fichier ni dossier", path.display())));
+        return Err(Error::Io(format!(
+            "{} : ni fichier ni dossier",
+            path.display()
+        )));
     }
     let mut entries: Vec<PathBuf> = std::fs::read_dir(path)
         .map_err(|error| Error::Io(format!("{} : {error}", path.display())))?
@@ -209,7 +218,10 @@ fn encode_to(source: &Path, target: PathBuf) -> Result<(PathBuf, usize), Error> 
     let bytes = aphrody_nie_formats::cfgbin::encode_iecode_t2b(&document)
         .map_err(|error| Error::Format(format!("{} : {error}", source.display())))?;
     let relu = aphrody_nie_formats::cfgbin::t2b_to_iecode_json(&bytes).ok_or_else(|| {
-        Error::Format(format!("{} : le T2B produit ne se relit pas", source.display()))
+        Error::Format(format!(
+            "{} : le T2B produit ne se relit pas",
+            source.display()
+        ))
     })?;
     if relu != document {
         return Err(Error::Format(format!(
@@ -262,15 +274,19 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                 );
             }
             Ok(())
-        },
+        }
         OcgenCmd::Slots { data, out } => {
             let sources = EditorSources::load(data)?;
             let survey = crate::recipe::survey_slots(&sources);
             match out {
                 Some(path) => {
                     write_json(path, &survey)?;
-                    println!("{} slots écrits dans {}", survey.slots.len(), path.display());
-                },
+                    println!(
+                        "{} slots écrits dans {}",
+                        survey.slots.len(),
+                        path.display()
+                    );
+                }
                 None => {
                     println!(
                         "{} documents inspectés, {} slots de couleur",
@@ -286,10 +302,10 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                             slot.colors.join(" ")
                         );
                     }
-                },
+                }
             }
             Ok(())
-        },
+        }
         OcgenCmd::Measure { slug, data } => {
             let recipes = read_recipes(data, slug)?;
             let references =
@@ -297,7 +313,11 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
             let sheets = references.sheets();
             println!("{} planches décodées", sheets.len());
             for recipe in &recipes {
-                println!("{} \u{2014} {} sondes", recipe.internal_code, recipe.probes.len());
+                println!(
+                    "{} \u{2014} {} sondes",
+                    recipe.internal_code,
+                    recipe.probes.len()
+                );
                 for probe in &recipe.probes {
                     let sheet = sheets
                         .iter()
@@ -319,7 +339,7 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                 }
             }
             Ok(())
-        },
+        }
         OcgenCmd::Encode { paths, out } => {
             let mut sources = Vec::new();
             for path in paths {
@@ -364,13 +384,15 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                 sources.len()
             );
             Ok(())
-        },
+        }
         OcgenCmd::Icons { slug, data, out } => {
             let recipes = read_recipes(data, slug)?;
             let specs: Vec<&crate::icon::IconSpec> =
                 recipes.iter().flat_map(|recipe| &recipe.icons).collect();
             if specs.is_empty() {
-                return Err(Error::Io(format!("{slug} : aucune recette ne déclare d'icône")));
+                return Err(Error::Io(format!(
+                    "{slug} : aucune recette ne déclare d'icône"
+                )));
             }
             let references =
                 crate::sources::ReferenceSet::load(&oc_root(data, slug).join("source"))?;
@@ -405,7 +427,7 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                 crate::icon::payload_format()
             );
             Ok(())
-        },
+        }
         OcgenCmd::Run { slug, data, out } => {
             let recipes = read_recipes(data, slug)?;
             std::fs::create_dir_all(out)
@@ -423,7 +445,7 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                     .join(", ")
             );
             Ok(())
-        },
+        }
         OcgenCmd::Validate { slug, data } => {
             let root = oc_root(data, slug);
             let profile_path = root.join("game/complete-profile.json");
@@ -448,15 +470,22 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                 .pointer("/versions/byron")
                 .and_then(|v| v.as_array())
                 .map_or(0, Vec::len)
-                + profile.pointer("/versions/shawn").and_then(|v| v.as_array()).map_or(0, Vec::len);
+                + profile
+                    .pointer("/versions/shawn")
+                    .and_then(|v| v.as_array())
+                    .map_or(0, Vec::len);
             let coverage = profile
                 .pointer("/coverage")
                 .and_then(|v| v.as_object())
-                .map_or(0, |o| o.values().filter(|v| v.as_bool() == Some(true)).count());
+                .map_or(0, |o| {
+                    o.values().filter(|v| v.as_bool() == Some(true)).count()
+                });
             let roles = identity
                 .pointer("/roles")
                 .and_then(|v| v.as_object())
-                .map_or(0, |o| o.values().filter(|v| v.as_bool() == Some(true)).count());
+                .map_or(0, |o| {
+                    o.values().filter(|v| v.as_bool() == Some(true)).count()
+                });
             let miximax = profile
                 .pointer("/miximax/id")
                 .and_then(serde_json::Value::as_str)
@@ -477,7 +506,7 @@ pub fn run(op: &OcgenCmd) -> Result<(), Error> {
                 "OC {slug} valide : {variants} variantes, {coverage} couvertures, {roles} rôles, Mixi-Max {miximax}"
             );
             Ok(())
-        },
+        }
     }
 }
 
@@ -520,7 +549,10 @@ fn run_one(recipe: &Recipe, data: &Path, out: &Path) -> Result<(), Error> {
     println!("  changements appliqués : {}", report.applied.len());
     println!("  avertissements        : {}", report.warnings.len());
     for warning in &report.warnings {
-        println!("    [{}] {} \u{2014} {}", warning.stage, warning.subject, warning.reason);
+        println!(
+            "    [{}] {} \u{2014} {}",
+            warning.stage, warning.subject, warning.reason
+        );
     }
     println!(
         "  ressources de modèle présentes dans ce checkout : {} / {}",

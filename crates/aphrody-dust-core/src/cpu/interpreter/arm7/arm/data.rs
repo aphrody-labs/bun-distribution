@@ -28,9 +28,12 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             let src = reg!(emu.arm7, instr >> 16 & 0xF);
             inc_r15!(emu.arm7, 4);
             (src, op)
-        },
+        }
 
-        DpOperand::Reg { shift_ty, shift_imm } => {
+        DpOperand::Reg {
+            shift_ty,
+            shift_imm,
+        } => {
             let op_reg = instr & 0xF;
             if shift_imm {
                 let shift = (instr >> 7 & 0x1F) as u8;
@@ -39,16 +42,16 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
                     match shift_ty {
                         ShiftTy::Lsl => {
                             shifts::lsl_imm_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                         ShiftTy::Lsr => {
                             shifts::lsr_imm_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                         ShiftTy::Asr => {
                             shifts::asr_imm_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                         ShiftTy::Ror => {
                             shifts::ror_imm_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                     }
                 } else {
                     match shift_ty {
@@ -71,16 +74,16 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
                     match shift_ty {
                         ShiftTy::Lsl => {
                             shifts::lsl_reg_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                         ShiftTy::Lsr => {
                             shifts::lsr_reg_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                         ShiftTy::Asr => {
                             shifts::asr_reg_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                         ShiftTy::Ror => {
                             shifts::ror_reg_s(&mut emu.arm7.engine_data.regs, value, shift)
-                        },
+                        }
                     }
                 } else {
                     match shift_ty {
@@ -92,7 +95,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
                 };
                 (reg!(emu.arm7, instr >> 16 & 0xF), op)
             }
-        },
+        }
     };
 
     let result = match OP_TY {
@@ -102,7 +105,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 src & op
             }
-        },
+        }
 
         DpOpTy::Eor => {
             if SET_FLAGS {
@@ -110,7 +113,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 src ^ op
             }
-        },
+        }
 
         DpOpTy::Sub => {
             if SET_FLAGS {
@@ -118,7 +121,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 src.wrapping_sub(op)
             }
-        },
+        }
 
         DpOpTy::Rsb => {
             if SET_FLAGS {
@@ -126,7 +129,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 op.wrapping_sub(src)
             }
-        },
+        }
 
         DpOpTy::Add => {
             if SET_FLAGS {
@@ -134,7 +137,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 src.wrapping_add(op)
             }
-        },
+        }
 
         DpOpTy::Adc => {
             if SET_FLAGS {
@@ -142,7 +145,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 arithmetic::adc(&emu.arm7.engine_data.regs, src, op)
             }
-        },
+        }
 
         DpOpTy::Sbc => {
             if SET_FLAGS {
@@ -150,7 +153,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 arithmetic::adc(&emu.arm7.engine_data.regs, src, !op)
             }
-        },
+        }
 
         DpOpTy::Rsc => {
             if SET_FLAGS {
@@ -158,27 +161,27 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 arithmetic::adc(&emu.arm7.engine_data.regs, op, !src)
             }
-        },
+        }
 
         DpOpTy::Tst => {
             bit_ops::tst(&mut emu.arm7.engine_data.regs, src, op);
             0
-        },
+        }
 
         DpOpTy::Teq => {
             bit_ops::teq(&mut emu.arm7.engine_data.regs, src, op);
             0
-        },
+        }
 
         DpOpTy::Cmp => {
             arithmetic::cmp(&mut emu.arm7.engine_data.regs, src, op);
             0
-        },
+        }
 
         DpOpTy::Cmn => {
             arithmetic::cmn(&mut emu.arm7.engine_data.regs, src, op);
             0
-        },
+        }
 
         DpOpTy::Orr => {
             if SET_FLAGS {
@@ -186,14 +189,14 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 src | op
             }
-        },
+        }
 
         DpOpTy::Mov => {
             if SET_FLAGS {
                 bit_ops::set_nz(&mut emu.arm7.engine_data.regs, op);
             }
             op
-        },
+        }
 
         DpOpTy::Bic => {
             if SET_FLAGS {
@@ -201,7 +204,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
             } else {
                 src & !op
             }
-        },
+        }
 
         DpOpTy::Mvn => {
             let result = !op;
@@ -209,7 +212,7 @@ pub fn dp_op<const OP_TY: DpOpTy, const OPERAND: DpOperand, const SET_FLAGS: boo
                 bit_ops::set_nz(&mut emu.arm7.engine_data.regs, result);
             }
             result
-        },
+        }
     };
     let dst_reg = instr >> 12 & 0xF;
     if OP_TY.is_test() {

@@ -53,9 +53,24 @@ pub const BLUE: [u8; 3] = [0x4a, 0x7c, 0xff];
 pub(crate) fn target_overlays(p: Point, r: f64) -> Vec<Overlay> {
     let circle = vectorcraft_geom::kurbo::Circle::new(p, r * 0.6).to_path(0.05);
     vec![
-        Overlay::Path { path: circle, color: CYAN, width: 1.0, dashed: false },
-        Overlay::Line { a: Point::new(p.x - r, p.y), b: Point::new(p.x + r, p.y), color: CYAN, dashed: false },
-        Overlay::Line { a: Point::new(p.x, p.y - r), b: Point::new(p.x, p.y + r), color: CYAN, dashed: false },
+        Overlay::Path {
+            path: circle,
+            color: CYAN,
+            width: 1.0,
+            dashed: false,
+        },
+        Overlay::Line {
+            a: Point::new(p.x - r, p.y),
+            b: Point::new(p.x + r, p.y),
+            color: CYAN,
+            dashed: false,
+        },
+        Overlay::Line {
+            a: Point::new(p.x, p.y - r),
+            b: Point::new(p.x, p.y + r),
+            color: CYAN,
+            dashed: false,
+        },
     ]
 }
 
@@ -76,13 +91,24 @@ pub(crate) fn polygon(pts: &[Point], closed: bool) -> BezPath {
 }
 
 pub(crate) fn rect_corners(r: Rect) -> [Point; 4] {
-    [Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)]
+    [
+        Point::new(r.x0, r.y0),
+        Point::new(r.x1, r.y0),
+        Point::new(r.x1, r.y1),
+        Point::new(r.x0, r.y1),
+    ]
 }
 
 /// The node that owns the appearance for a hit leaf (a compound path's child → the compound).
 pub fn paint_owner(doc: &Document, leaf: NodeId) -> NodeId {
     match doc.parent_of(leaf) {
-        Some(p) if doc.node(p).is_some_and(|n| matches!(n.kind, NodeKind::Compound { .. })) => p,
+        Some(p)
+            if doc
+                .node(p)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Compound { .. })) =>
+        {
+            p
+        }
         _ => leaf,
     }
 }

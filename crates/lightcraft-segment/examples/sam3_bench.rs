@@ -8,18 +8,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut model = lightcraft_segment::Sam3::load(&dir)?;
     eprintln!("load: {:?} on {:?}", t.elapsed(), model.device());
     let (w, h) = (1200, 800);
-    let rgb: Vec<u8> = (0..w * h * 3).map(|i| ((i / 3 % w) * 255 / w) as u8).collect();
+    let rgb: Vec<u8> = (0..w * h * 3)
+        .map(|i| ((i / 3 % w) * 255 / w) as u8)
+        .collect();
     for run in 0..3 {
         let t = std::time::Instant::now();
         let mut enc = model.encode(&rgb, w, h)?;
         lightcraft_segment::sync(&model)?;
         let e = t.elapsed();
         let t = std::time::Instant::now();
-        let p = model.segment_clicks(&mut enc, &[lightcraft_segment::Click { x: 0.5, y: 0.5, positive: true }])?;
+        let p = model.segment_clicks(
+            &mut enc,
+            &[lightcraft_segment::Click {
+                x: 0.5,
+                y: 0.5,
+                positive: true,
+            }],
+        )?;
         let c = t.elapsed();
         let t = std::time::Instant::now();
         let d = model.segment_text(&mut enc, "sky", 0.5)?;
-        eprintln!("run {run}: encode {e:?}, click {c:?} (score {:.2}), text {:?} ({})", p.score, t.elapsed(), d.is_some());
+        eprintln!(
+            "run {run}: encode {e:?}, click {c:?} (score {:.2}), text {:?} ({})",
+            p.score,
+            t.elapsed(),
+            d.is_some()
+        );
     }
     Ok(())
 }

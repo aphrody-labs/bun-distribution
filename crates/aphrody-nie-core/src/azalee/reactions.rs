@@ -22,7 +22,13 @@ pub enum ReactionType {
 
 impl ReactionType {
     /// All reactions in stable public order.
-    pub const ALL: [Self; 5] = [Self::Like, Self::Fire, Self::Clap, Self::MindBlown, Self::Sad];
+    pub const ALL: [Self; 5] = [
+        Self::Like,
+        Self::Fire,
+        Self::Clap,
+        Self::MindBlown,
+        Self::Sad,
+    ];
 
     /// Returns the historical transport code.
     #[must_use]
@@ -105,7 +111,10 @@ pub enum ReactionError {
 /// Creates an initial state containing every reaction at zero.
 #[must_use]
 pub fn create_reaction_states() -> ReactionStates {
-    ReactionType::ALL.into_iter().map(|reaction| (reaction, ReactionState::default())).collect()
+    ReactionType::ALL
+        .into_iter()
+        .map(|reaction| (reaction, ReactionState::default()))
+        .collect()
 }
 
 /// Validates and normalizes an article identifier.
@@ -172,15 +181,39 @@ mod tests {
     #[test]
     fn creates_all_states_and_aggregates_unknown_rows_safely() {
         let rows = [
-            ReactionRow { reaction_type: "like", user_id: "u1" },
-            ReactionRow { reaction_type: "like", user_id: "u2" },
-            ReactionRow { reaction_type: "fire", user_id: "u1" },
-            ReactionRow { reaction_type: "unknown", user_id: "u1" },
+            ReactionRow {
+                reaction_type: "like",
+                user_id: "u1",
+            },
+            ReactionRow {
+                reaction_type: "like",
+                user_id: "u2",
+            },
+            ReactionRow {
+                reaction_type: "fire",
+                user_id: "u1",
+            },
+            ReactionRow {
+                reaction_type: "unknown",
+                user_id: "u1",
+            },
         ];
         let states = accumulate_reaction_states(rows, Some("u1"));
         assert_eq!(states.len(), 5);
-        assert_eq!(states[&ReactionType::Like], ReactionState { count: 2, user_reacted: true });
-        assert_eq!(states[&ReactionType::Fire], ReactionState { count: 1, user_reacted: true });
+        assert_eq!(
+            states[&ReactionType::Like],
+            ReactionState {
+                count: 2,
+                user_reacted: true
+            }
+        );
+        assert_eq!(
+            states[&ReactionType::Fire],
+            ReactionState {
+                count: 1,
+                user_reacted: true
+            }
+        );
         assert_eq!(states[&ReactionType::Sad], ReactionState::default());
     }
 }

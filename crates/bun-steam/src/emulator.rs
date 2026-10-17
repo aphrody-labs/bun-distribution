@@ -96,8 +96,12 @@ impl Default for SteamEmulatorState {
         // Seed default canonical Level-5 AI / friend avatars
         friends.insert(
             76561198000000001,
-            SteamFriend::new(76561198000000001, "Mark Evans (Mamoru)".into(), PersonaState::Online)
-                .with_presence("status", "Kizuna Town Training"),
+            SteamFriend::new(
+                76561198000000001,
+                "Mark Evans (Mamoru)".into(),
+                PersonaState::Online,
+            )
+            .with_presence("status", "Kizuna Town Training"),
         );
         friends.insert(
             76561198000000002,
@@ -110,8 +114,12 @@ impl Default for SteamEmulatorState {
         );
         friends.insert(
             76561198000000003,
-            SteamFriend::new(76561198000000003, "Jude Sharp (Kidou)".into(), PersonaState::Online)
-                .with_presence("status", "Analyzing Tactics"),
+            SteamFriend::new(
+                76561198000000003,
+                "Jude Sharp (Kidou)".into(),
+                PersonaState::Online,
+            )
+            .with_presence("status", "Analyzing Tactics"),
         );
 
         Self {
@@ -216,7 +224,8 @@ impl SteamApiEmulator {
     /// Emulates `SteamFriends018::SetRichPresence()`.
     pub fn set_rich_presence(&self, key: &str, value: &str) -> bool {
         let mut st = self.state.write().unwrap();
-        st.local_rich_presence.insert(key.to_string(), value.to_string());
+        st.local_rich_presence
+            .insert(key.to_string(), value.to_string());
         true
     }
 
@@ -310,7 +319,10 @@ mod tests {
         emu.set_rich_presence("status", "Rank Match - Final");
         let lobby_id = emu.create_lobby(2);
         assert!(emu.set_lobby_data(lobby_id, "inacode", "INA-8888"));
-        assert_eq!(emu.get_lobby_data(lobby_id, "inacode").as_deref(), Some("INA-8888"));
+        assert_eq!(
+            emu.get_lobby_data(lobby_id, "inacode").as_deref(),
+            Some("INA-8888")
+        );
 
         emu.set_achievement("ACH_FIRST_VICTORY");
         assert!(emu.get_achievement("ACH_FIRST_VICTORY"));

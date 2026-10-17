@@ -17,7 +17,11 @@ fn fixture_files() -> Vec<(String, Vec<u8>)> {
             if p.is_dir() {
                 walk(&p, root, out);
             } else if p.extension().is_some_and(|x| x == "rs") {
-                let rel = p.strip_prefix(root).unwrap().to_string_lossy().replace('\\', "/");
+                let rel = p
+                    .strip_prefix(root)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/");
                 out.push((rel, std::fs::read(&p).unwrap()));
             }
         }
@@ -56,14 +60,24 @@ fn nodes_and_edges_match_the_graphify_oracle_on_the_fixture() {
         .map(|v| v.as_str().unwrap().to_owned())
         .collect();
 
-    let files = fixture_files().into_iter().map(|(rel, src)| extract_file(&rel, &src)).collect();
+    let files = fixture_files()
+        .into_iter()
+        .map(|(rel, src)| extract_file(&rel, &src))
+        .collect();
     let (graph, _) = assemble(files);
 
     let nodes: BTreeSet<String> = graph
         .nodes
         .iter()
         .filter(|n| n.file.is_some())
-        .map(|n| format!("{}|{}|{}", n.file.as_deref().unwrap(), n.label, n.kind.as_str()))
+        .map(|n| {
+            format!(
+                "{}|{}|{}",
+                n.file.as_deref().unwrap(),
+                n.label,
+                n.kind.as_str()
+            )
+        })
         .collect();
     let edges: BTreeSet<String> = graph
         .edges
@@ -106,8 +120,16 @@ fn nodes_and_edges_match_the_graphify_oracle_on_the_fixture() {
     ]
     .into_iter()
     .collect();
-    assert!(missing_edges.is_empty(), "edge jaccard {edge_j:.3}: missing {missing_edges:?}");
-    let unexpected: Vec<_> =
-        extra_edges.iter().filter(|e| !enrichment.contains(e.as_str())).collect();
-    assert!(unexpected.is_empty(), "edge jaccard {edge_j:.3}: unexpected extra {unexpected:?}");
+    assert!(
+        missing_edges.is_empty(),
+        "edge jaccard {edge_j:.3}: missing {missing_edges:?}"
+    );
+    let unexpected: Vec<_> = extra_edges
+        .iter()
+        .filter(|e| !enrichment.contains(e.as_str()))
+        .collect();
+    assert!(
+        unexpected.is_empty(),
+        "edge jaccard {edge_j:.3}: unexpected extra {unexpected:?}"
+    );
 }

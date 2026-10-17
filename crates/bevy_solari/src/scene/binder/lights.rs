@@ -4,7 +4,7 @@ use bevy_ecs::{
     entity::{Entity, EntityHashSet},
     system::Query,
 };
-use bevy_math::{ops::cos, Vec3};
+use bevy_math::{Vec3, ops::cos};
 use bevy_pbr::ExtractedDirectionalLight;
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_render::render_resource::{AtomicSparseBufferVec, BufferUsages};

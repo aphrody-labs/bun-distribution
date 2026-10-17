@@ -82,9 +82,17 @@ pub enum KernelError {
     #[error("a subsystem named `{0}` is already registered")]
     DuplicateSubsystem(String),
     #[error("tool `{tool}` of `{subsystem}` is already served by `{owner}`")]
-    DuplicateTool { tool: String, subsystem: String, owner: String },
+    DuplicateTool {
+        tool: String,
+        subsystem: String,
+        owner: String,
+    },
     #[error("skill `{skill}` of `{subsystem}` is already served by `{owner}`")]
-    DuplicateSkill { skill: String, subsystem: String, owner: String },
+    DuplicateSkill {
+        skill: String,
+        subsystem: String,
+        owner: String,
+    },
     #[error("tool names starting with `{SKILL_TOOL_PREFIX}` are reserved for skills: `{0}`")]
     ReservedName(String),
     #[error("kernel audit configuration is invalid: {0}")]
@@ -240,7 +248,10 @@ impl Kernel {
         if tokio::runtime::Handle::try_current().is_err() {
             return Err(KernelError::AuditRuntimeUnavailable);
         }
-        let mut audit = self.audit.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut audit = self
+            .audit
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if audit.is_some() {
             return Err(KernelError::AuditAlreadyConfigured);
         }
@@ -318,7 +329,12 @@ impl Kernel {
                     });
                 }
                 for entry in registry.subsystems.values() {
-                    if entry.subsystem.skills().iter().any(|other| other.name == skill.name) {
+                    if entry
+                        .subsystem
+                        .skills()
+                        .iter()
+                        .any(|other| other.name == skill.name)
+                    {
                         return Err(KernelError::DuplicateSkill {
                             skill: skill.name.clone(),
                             subsystem: name.clone(),
@@ -344,9 +360,14 @@ impl Kernel {
                     }
                 })
             };
-            registry
-                .subsystems
-                .insert(name.clone(), Entry { subsystem, remote, agent: Some(agent) });
+            registry.subsystems.insert(
+                name.clone(),
+                Entry {
+                    subsystem,
+                    remote,
+                    agent: Some(agent),
+                },
+            );
             registry.rebuild_cache();
         }
         self.bus.publish(Event {
@@ -368,7 +389,9 @@ impl Kernel {
             }
             removed
         };
-        let Some(mut entry) = removed else { return false };
+        let Some(mut entry) = removed else {
+            return false;
+        };
         if let Some(agent) = entry.agent.take() {
             agent.abort();
         }
@@ -442,7 +465,7 @@ impl Kernel {
                     return Err(SubsystemError::InvalidArguments(
                         "skill parameters must be an object".into(),
                     ));
-                },
+                }
             };
             return self.run_skill(skill, &params).await;
         }
@@ -521,12 +544,14 @@ impl Kernel {
                 )));
             }
             let arguments = skill.render_step(step, params, previous.as_ref())?;
-            let result = Box::pin(self.call(&step.tool, arguments)).await.map_err(|error| {
-                SubsystemError::Failed(format!(
-                    "skill {name} step {index} ({}): {error}",
-                    step.tool
-                ))
-            })?;
+            let result = Box::pin(self.call(&step.tool, arguments))
+                .await
+                .map_err(|error| {
+                    SubsystemError::Failed(format!(
+                        "skill {name} step {index} ({}): {error}",
+                        step.tool
+                    ))
+                })?;
             steps.push(json!({ "tool": step.tool, "result": result }));
             previous = Some(result);
         }

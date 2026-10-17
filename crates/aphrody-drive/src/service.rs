@@ -72,7 +72,10 @@ pub fn launchd_plist(daemon: &Path, data_dir: &Path, log_dir: &Path) -> String {
 
 /// Quote one argument for a systemd `ExecStart=` line.
 fn systemd_quote(argument: &str) -> String {
-    format!("\"{}\"", argument.replace('\\', "\\\\").replace('"', "\\\""))
+    format!(
+        "\"{}\"",
+        argument.replace('\\', "\\\\").replace('"', "\\\"")
+    )
 }
 
 /// The systemd user unit.
@@ -161,11 +164,16 @@ fn quiet(program: &str) -> Command {
 
 #[cfg(any(target_os = "macos", target_os = "linux", windows))]
 fn run(command: &mut Command, what: &str) -> Result<(), String> {
-    let output = command.output().map_err(|error| format!("Failed to {what}: {error}"))?;
+    let output = command
+        .output()
+        .map_err(|error| format!("Failed to {what}: {error}"))?;
     if output.status.success() {
         Ok(())
     } else {
-        Err(format!("Failed to {what}: {}", String::from_utf8_lossy(&output.stderr).trim()))
+        Err(format!(
+            "Failed to {what}: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
     }
 }
 
@@ -176,7 +184,9 @@ fn home() -> Result<std::path::PathBuf, String> {
 
 #[cfg(target_os = "macos")]
 fn plist_path() -> Result<std::path::PathBuf, String> {
-    Ok(home()?.join("Library/LaunchAgents").join(format!("{LAUNCHD_LABEL}.plist")))
+    Ok(home()?
+        .join("Library/LaunchAgents")
+        .join(format!("{LAUNCHD_LABEL}.plist")))
 }
 
 #[cfg(target_os = "linux")]
@@ -229,7 +239,10 @@ pub fn install(daemon: &Path, data_dir: &Path) -> Result<(), String> {
         std::fs::write(&plist, launchd_plist(daemon, data_dir, &log_dir))
             .map_err(|error| format!("Failed to write plist file: {error}"))?;
         let _ = quiet("launchctl").arg("unload").arg(&plist).output();
-        run(quiet("launchctl").arg("load").arg(&plist), "load daemon service")
+        run(
+            quiet("launchctl").arg("load").arg(&plist),
+            "load daemon service",
+        )
     }
     #[cfg(target_os = "linux")]
     {
@@ -240,24 +253,43 @@ pub fn install(daemon: &Path, data_dir: &Path) -> Result<(), String> {
         }
         std::fs::write(&unit, systemd_unit(daemon, data_dir))
             .map_err(|error| format!("Failed to write service file: {error}"))?;
-        run(quiet("systemctl").args(["--user", "daemon-reload"]), "reload systemd")?;
-        run(quiet("systemctl").args(["--user", "enable", SYSTEMD_UNIT]), "enable service")?;
-        run(quiet("systemctl").args(["--user", "start", SYSTEMD_UNIT]), "start daemon service")
+        run(
+            quiet("systemctl").args(["--user", "daemon-reload"]),
+            "reload systemd",
+        )?;
+        run(
+            quiet("systemctl").args(["--user", "enable", SYSTEMD_UNIT]),
+            "enable service",
+        )?;
+        run(
+            quiet("systemctl").args(["--user", "start", SYSTEMD_UNIT]),
+            "start daemon service",
+        )
     }
     #[cfg(windows)]
     {
-        let _ = quiet("schtasks").args(["/Delete", "/TN", WINDOWS_TASK, "/F"]).output();
+        let _ = quiet("schtasks")
+            .args(["/Delete", "/TN", WINDOWS_TASK, "/F"])
+            .output();
         let xml_path =
             std::env::temp_dir().join(format!("aphrody-drive-task-{}.xml", std::process::id()));
-        std::fs::write(&xml_path, utf16le_with_bom(&windows_task_xml(daemon, data_dir)))
-            .map_err(|error| format!("Failed to write task XML: {error}"))?;
+        std::fs::write(
+            &xml_path,
+            utf16le_with_bom(&windows_task_xml(daemon, data_dir)),
+        )
+        .map_err(|error| format!("Failed to write task XML: {error}"))?;
         let created = run(
-            quiet("schtasks").args(["/Create", "/TN", WINDOWS_TASK, "/XML"]).arg(&xml_path),
+            quiet("schtasks")
+                .args(["/Create", "/TN", WINDOWS_TASK, "/XML"])
+                .arg(&xml_path),
             "create scheduled task",
         );
         let _ = std::fs::remove_file(&xml_path);
         created?;
-        run(quiet("schtasks").args(["/Run", "/TN", WINDOWS_TASK]), "start daemon task")
+        run(
+            quiet("schtasks").args(["/Run", "/TN", WINDOWS_TASK]),
+            "start daemon task",
+        )
     }
     #[cfg(not(any(target_os = "macos", target_os = "linux", windows)))]
     {
@@ -285,24 +317,35 @@ pub fn uninstall() -> Result<(), String> {
     {
         let unit = unit_path()?;
         if unit.exists() {
-            let _ = quiet("systemctl").args(["--user", "stop", SYSTEMD_UNIT]).output();
-            let _ = quiet("systemctl").args(["--user", "disable", SYSTEMD_UNIT]).output();
+            let _ = quiet("systemctl")
+                .args(["--user", "stop", SYSTEMD_UNIT])
+                .output();
+            let _ = quiet("systemctl")
+                .args(["--user", "disable", SYSTEMD_UNIT])
+                .output();
             std::fs::remove_file(&unit)
                 .map_err(|error| format!("Failed to remove service file: {error}"))?;
-            let _ = quiet("systemctl").args(["--user", "daemon-reload"]).output();
+            let _ = quiet("systemctl")
+                .args(["--user", "daemon-reload"])
+                .output();
         }
         Ok(())
     }
     #[cfg(windows)]
     {
-        let _ = quiet("schtasks").args(["/End", "/TN", WINDOWS_TASK]).output();
+        let _ = quiet("schtasks")
+            .args(["/End", "/TN", WINDOWS_TASK])
+            .output();
         let output = quiet("schtasks")
             .args(["/Delete", "/TN", WINDOWS_TASK, "/F"])
             .output()
             .map_err(|error| format!("Failed to delete scheduled task: {error}"))?;
         if !output.status.success() {
             // A missing task is fine; anything else is only worth a warning.
-            log::warn!("schtasks /Delete: {}", String::from_utf8_lossy(&output.stderr).trim());
+            log::warn!(
+                "schtasks /Delete: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
         }
         Ok(())
     }
@@ -342,7 +385,9 @@ mod tests {
         assert_eq!(xml_escape(r#"a&b<c>"d'"#), "a&amp;b&lt;c&gt;&quot;d&apos;");
         let xml = windows_task_xml(Path::new(r"C:\A&B\sd-daemon.exe"), Path::new(r"C:\data"));
         assert!(xml.contains("<Command>conhost.exe</Command>"));
-        assert!(xml.contains(r#"<Arguments>--headless "C:\A&amp;B\sd-daemon.exe" --data-dir "C:\data"</Arguments>"#));
+        assert!(xml.contains(
+            r#"<Arguments>--headless "C:\A&amp;B\sd-daemon.exe" --data-dir "C:\data"</Arguments>"#
+        ));
         assert!(xml.contains("<Hidden>true</Hidden>"));
     }
 
@@ -354,8 +399,10 @@ mod tests {
 
     #[test]
     fn unit_quotes_paths_with_spaces() {
-        let unit =
-            systemd_unit(Path::new("/opt/my apps/sd-daemon"), Path::new("/home/u/.aphrody/drive"));
+        let unit = systemd_unit(
+            Path::new("/opt/my apps/sd-daemon"),
+            Path::new("/home/u/.aphrody/drive"),
+        );
         assert!(unit.contains(
             "ExecStart=\"/opt/my apps/sd-daemon\" --data-dir \"/home/u/.aphrody/drive\"\n"
         ));

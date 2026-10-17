@@ -59,7 +59,11 @@ fn cell_criterion(v: &Value) -> Option<Criterion> {
                 && !s.eq_ignore_ascii_case("TRUE")
                 && !s.eq_ignore_ascii_case("FALSE")
                 && CellError::parse(s).is_none();
-            if plain_text && !s.ends_with('*') { Some(Criterion::parse(&Value::from(format!("{s}*")))) } else { Some(Criterion::parse(v)) }
+            if plain_text && !s.ends_with('*') {
+                Some(Criterion::parse(&Value::from(format!("{s}*"))))
+            } else {
+                Some(Criterion::parse(v))
+            }
         }
         other => Some(Criterion::parse(other)),
     }
@@ -74,7 +78,9 @@ fn matching_records(db: &Array, crit: &Array, ctx: &mut dyn Ctx) -> Vec<usize> {
         let mut conds = Vec::new();
         for c in 0..crit.cols {
             let Some(cell) = crit.get(r, c) else { continue };
-            let Some(cr) = cell_criterion(cell) else { continue };
+            let Some(cr) = cell_criterion(cell) else {
+                continue;
+            };
             let col = match crit.get(0, c) {
                 Some(Value::Text(t)) => find_column(db, t),
                 Some(Value::Number(n)) => find_column(db, &gridcraft_core::number_to_text(*n)),
@@ -126,7 +132,10 @@ fn select<'a>(a: &'a [Arg], ctx: &mut dyn Ctx) -> R<Selection<'a>> {
 fn field_numbers(a: &[Arg], c: &mut dyn Ctx) -> R<Vec<f64>> {
     let s = select(a, c)?;
     let f = s.field.ok_or(CellError::Value)?;
-    Ok(s.records.iter().filter_map(|&r| s.db.get(r, f).and_then(Value::as_f64)).collect())
+    Ok(s.records
+        .iter()
+        .filter_map(|&r| s.db.get(r, f).and_then(Value::as_f64))
+        .collect())
 }
 
 fn dsum(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
@@ -144,7 +153,11 @@ fn daverage(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
 fn dcount(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
     let s = select(a, c)?;
     let n = match s.field {
-        Some(f) => s.records.iter().filter(|&&r| matches!(s.db.get(r, f), Some(Value::Number(_)))).count(),
+        Some(f) => s
+            .records
+            .iter()
+            .filter(|&&r| matches!(s.db.get(r, f), Some(Value::Number(_))))
+            .count(),
         None => s.records.len(),
     };
     num_val(n as f64)
@@ -153,7 +166,11 @@ fn dcount(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
 fn dcounta(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
     let s = select(a, c)?;
     let n = match s.field {
-        Some(f) => s.records.iter().filter(|&&r| !matches!(s.db.get(r, f), None | Some(Value::Empty))).count(),
+        Some(f) => s
+            .records
+            .iter()
+            .filter(|&&r| !matches!(s.db.get(r, f), None | Some(Value::Empty)))
+            .count(),
         None => s.records.len(),
     };
     num_val(n as f64)
@@ -163,8 +180,11 @@ fn dget(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
     let s = select(a, c)?;
     let f = s.field.ok_or(CellError::Value)?;
     // Records whose field is blank (or "") don't count, as in Excel.
-    let mut found =
-        s.records.iter().filter_map(|&r| s.db.get(r, f)).filter(|v| !matches!(v, Value::Empty) && !matches!(v, Value::Text(t) if t.is_empty()));
+    let mut found = s
+        .records
+        .iter()
+        .filter_map(|&r| s.db.get(r, f))
+        .filter(|v| !matches!(v, Value::Empty) && !matches!(v, Value::Text(t) if t.is_empty()));
     match (found.next(), found.next()) {
         (None, _) => Err(CellError::Value),
         (Some(v), None) => Ok(v.clone()),
@@ -219,7 +239,16 @@ fn dstdevp(a: &[Arg], c: &mut dyn Ctx) -> R<Value> {
 
 pub(crate) fn specs() -> Vec<FnSpec> {
     vec![
-        f!("DSUM", 3, 3, Database, A, "DSUM(database, field, criteria)", "Adds the numbers in a field of the records that meet the criteria.", dsum),
+        f!(
+            "DSUM",
+            3,
+            3,
+            Database,
+            A,
+            "DSUM(database, field, criteria)",
+            "Adds the numbers in a field of the records that meet the criteria.",
+            dsum
+        ),
         f!(
             "DAVERAGE",
             3,
@@ -260,8 +289,26 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Returns the field value of the single record that meets the criteria.",
             dget
         ),
-        f!("DMAX", 3, 3, Database, A, "DMAX(database, field, criteria)", "Largest number in a field of the matching records.", dmax),
-        f!("DMIN", 3, 3, Database, A, "DMIN(database, field, criteria)", "Smallest number in a field of the matching records.", dmin),
+        f!(
+            "DMAX",
+            3,
+            3,
+            Database,
+            A,
+            "DMAX(database, field, criteria)",
+            "Largest number in a field of the matching records.",
+            dmax
+        ),
+        f!(
+            "DMIN",
+            3,
+            3,
+            Database,
+            A,
+            "DMIN(database, field, criteria)",
+            "Smallest number in a field of the matching records.",
+            dmin
+        ),
         f!(
             "DPRODUCT",
             3,
@@ -292,8 +339,26 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Population standard deviation of a field over the matching records.",
             dstdevp
         ),
-        f!("DVAR", 3, 3, Database, A, "DVAR(database, field, criteria)", "Sample variance of a field over the matching records.", dvar),
-        f!("DVARP", 3, 3, Database, A, "DVARP(database, field, criteria)", "Population variance of a field over the matching records.", dvarp),
+        f!(
+            "DVAR",
+            3,
+            3,
+            Database,
+            A,
+            "DVAR(database, field, criteria)",
+            "Sample variance of a field over the matching records.",
+            dvar
+        ),
+        f!(
+            "DVARP",
+            3,
+            3,
+            Database,
+            A,
+            "DVARP(database, field, criteria)",
+            "Population variance of a field over the matching records.",
+            dvarp
+        ),
     ]
 }
 
@@ -305,7 +370,13 @@ mod tests {
     /// The classic orchard table.
     fn db() -> Value {
         arr(vec![
-            vec![tv("Tree"), tv("Height"), tv("Age"), tv("Yield"), tv("Profit")],
+            vec![
+                tv("Tree"),
+                tv("Height"),
+                tv("Age"),
+                tv("Yield"),
+                tv("Profit"),
+            ],
             vec![tv("Apple"), nv(18.0), nv(20.0), nv(14.0), nv(105.0)],
             vec![tv("Pear"), nv(12.0), nv(12.0), nv(10.0), nv(96.0)],
             vec![tv("Cherry"), nv(13.0), nv(14.0), nv(9.0), nv(105.0)],
@@ -318,9 +389,30 @@ mod tests {
     /// Apple with height > 10, OR any pear.
     fn crit() -> Value {
         arr(vec![
-            vec![tv("Tree"), tv("Height"), tv("Age"), tv("Yield"), tv("Profit"), tv("Height")],
-            vec![tv("=Apple"), tv(">10"), Value::Empty, Value::Empty, Value::Empty, tv("<16")],
-            vec![tv("=Pear"), Value::Empty, Value::Empty, Value::Empty, Value::Empty, Value::Empty],
+            vec![
+                tv("Tree"),
+                tv("Height"),
+                tv("Age"),
+                tv("Yield"),
+                tv("Profit"),
+                tv("Height"),
+            ],
+            vec![
+                tv("=Apple"),
+                tv(">10"),
+                Value::Empty,
+                Value::Empty,
+                Value::Empty,
+                tv("<16"),
+            ],
+            vec![
+                tv("=Pear"),
+                Value::Empty,
+                Value::Empty,
+                Value::Empty,
+                Value::Empty,
+                Value::Empty,
+            ],
         ])
     }
 
@@ -350,32 +442,125 @@ mod tests {
     #[test]
     fn simple_criteria() {
         let c = |cells: Vec<Value>| arr(vec![vec![tv("Tree"), tv("Height")], cells]);
-        close(ev("DSUM", vec![rf(db()), t("Profit"), rf(c(vec![tv("Apple"), Value::Empty]))]), 225.0);
+        close(
+            ev(
+                "DSUM",
+                vec![
+                    rf(db()),
+                    t("Profit"),
+                    rf(c(vec![tv("Apple"), Value::Empty])),
+                ],
+            ),
+            225.0,
+        );
         // Plain text matches values that begin with it.
-        close(ev("DCOUNT", vec![rf(db()), t("Age"), rf(c(vec![tv("P"), Value::Empty]))]), 2.0);
-        close(ev("DCOUNT", vec![rf(db()), t("Age"), rf(c(vec![tv("=P"), Value::Empty]))]), 0.0);
-        close(ev("DSUM", vec![rf(db()), t("Yield"), rf(c(vec![Value::Empty, tv(">=13")]))]), 33.0);
-        close(ev("DSUM", vec![rf(db()), t("Yield"), rf(c(vec![Value::Empty, nv(18.0)]))]), 14.0);
-        close(ev("DSUM", vec![rf(db()), t("Yield"), rf(c(vec![Value::Empty, Value::Empty]))]), 57.0);
-        close(ev("DSUM", vec![rf(db()), t("Yield"), rf(c(vec![tv("*e*"), tv("<10")]))]), 14.0);
+        close(
+            ev(
+                "DCOUNT",
+                vec![rf(db()), t("Age"), rf(c(vec![tv("P"), Value::Empty]))],
+            ),
+            2.0,
+        );
+        close(
+            ev(
+                "DCOUNT",
+                vec![rf(db()), t("Age"), rf(c(vec![tv("=P"), Value::Empty]))],
+            ),
+            0.0,
+        );
+        close(
+            ev(
+                "DSUM",
+                vec![rf(db()), t("Yield"), rf(c(vec![Value::Empty, tv(">=13")]))],
+            ),
+            33.0,
+        );
+        close(
+            ev(
+                "DSUM",
+                vec![rf(db()), t("Yield"), rf(c(vec![Value::Empty, nv(18.0)]))],
+            ),
+            14.0,
+        );
+        close(
+            ev(
+                "DSUM",
+                vec![
+                    rf(db()),
+                    t("Yield"),
+                    rf(c(vec![Value::Empty, Value::Empty])),
+                ],
+            ),
+            57.0,
+        );
+        close(
+            ev(
+                "DSUM",
+                vec![rf(db()), t("Yield"), rf(c(vec![tv("*e*"), tv("<10")]))],
+            ),
+            14.0,
+        );
         // Header only: every record matches.
-        close(ev("DCOUNTA", vec![rf(db()), t("tree"), rf(arr(vec![vec![tv("Tree")]]))]), 6.0);
+        close(
+            ev(
+                "DCOUNTA",
+                vec![rf(db()), t("tree"), rf(arr(vec![vec![tv("Tree")]]))],
+            ),
+            6.0,
+        );
         // Unknown criteria label never matches.
-        close(ev("DCOUNT", vec![rf(db()), t("Age"), rf(arr(vec![vec![tv("Color")], vec![tv("red")]]))]), 0.0);
+        close(
+            ev(
+                "DCOUNT",
+                vec![
+                    rf(db()),
+                    t("Age"),
+                    rf(arr(vec![vec![tv("Color")], vec![tv("red")]])),
+                ],
+            ),
+            0.0,
+        );
     }
 
     #[test]
     fn dget_and_empty() {
         let c = |tree: &str| arr(vec![vec![tv("Tree")], vec![tv(tree)]]);
-        close(ev("DGET", vec![rf(db()), t("Yield"), rf(c("=Cherry"))]), 9.0);
-        is_err(ev("DGET", vec![rf(db()), t("Yield"), rf(c("=Apple"))]), CellError::Num);
-        is_err(ev("DGET", vec![rf(db()), t("Yield"), rf(c("=Plum"))]), CellError::Value);
-        is_err(ev("DAVERAGE", vec![rf(db()), t("Yield"), rf(c("=Plum"))]), CellError::Div0);
+        close(
+            ev("DGET", vec![rf(db()), t("Yield"), rf(c("=Cherry"))]),
+            9.0,
+        );
+        is_err(
+            ev("DGET", vec![rf(db()), t("Yield"), rf(c("=Apple"))]),
+            CellError::Num,
+        );
+        is_err(
+            ev("DGET", vec![rf(db()), t("Yield"), rf(c("=Plum"))]),
+            CellError::Value,
+        );
+        is_err(
+            ev("DAVERAGE", vec![rf(db()), t("Yield"), rf(c("=Plum"))]),
+            CellError::Div0,
+        );
         close(ev("DMAX", vec![rf(db()), t("Yield"), rf(c("=Plum"))]), 0.0);
-        close(ev("DPRODUCT", vec![rf(db()), t("Yield"), rf(c("=Plum"))]), 0.0);
-        is_err(ev("DSTDEV", vec![rf(db()), t("Yield"), rf(c("=Cherry"))]), CellError::Div0);
-        close(ev("DSTDEVP", vec![rf(db()), t("Yield"), rf(c("=Cherry"))]), 0.0);
-        is_err(ev("DSUM", vec![e(CellError::Ref), t("Yield"), rf(c("=Cherry"))]), CellError::Ref);
+        close(
+            ev("DPRODUCT", vec![rf(db()), t("Yield"), rf(c("=Plum"))]),
+            0.0,
+        );
+        is_err(
+            ev("DSTDEV", vec![rf(db()), t("Yield"), rf(c("=Cherry"))]),
+            CellError::Div0,
+        );
+        close(
+            ev("DSTDEVP", vec![rf(db()), t("Yield"), rf(c("=Cherry"))]),
+            0.0,
+        );
+        is_err(
+            ev(
+                "DSUM",
+                vec![e(CellError::Ref), t("Yield"), rf(c("=Cherry"))],
+            ),
+            CellError::Ref,
+        );
         close(ev("DCOUNTA", vec![rf(db()), empty(), rf(c("=Pear"))]), 2.0);
     }
 
@@ -393,7 +578,10 @@ mod tests {
             vec![tv("i"), nv(0.0)],
         ]);
         let get = |index: &str| {
-            let crit = arr(vec![vec![tv("Index"), tv("Value")], vec![tv(index), tv("")]]);
+            let crit = arr(vec![
+                vec![tv("Index"), tv("Value")],
+                vec![tv(index), tv("")],
+            ]);
             ev("DGET", vec![rf(db.clone()), t("Index"), rf(crit)])
         };
         // Like any plain text, "" is a "begins with" pattern: it matches every text value.
@@ -403,12 +591,22 @@ mod tests {
         is_err(get("i"), CellError::Value);
         is_err(get("f"), CellError::Value);
         let all = arr(vec![vec![tv("Value")], vec![tv("")]]);
-        close(ev("DCOUNTA", vec![rf(db.clone()), t("Index"), rf(all)]), 4.0);
+        close(
+            ev("DCOUNTA", vec![rf(db.clone()), t("Index"), rf(all)]),
+            4.0,
+        );
 
         // Under a label that names no field, "" is a condition that never holds.
-        let db = arr(vec![vec![tv("One"), tv("Two"), tv("Three")], vec![tv("a"), tv("c"), tv("x")], vec![tv("b"), tv("d"), tv("y")]]);
+        let db = arr(vec![
+            vec![tv("One"), tv("Two"), tv("Three")],
+            vec![tv("a"), tv("c"), tv("x")],
+            vec![tv("b"), tv("d"), tv("y")],
+        ]);
         let get = |label: Value, value: Value| {
-            let crit = arr(vec![vec![tv("One"), label, tv("Three")], vec![tv("a"), value, tv("x")]]);
+            let crit = arr(vec![
+                vec![tv("One"), label, tv("Three")],
+                vec![tv("a"), value, tv("x")],
+            ]);
             ev("DGET", vec![rf(db.clone()), t("One"), rf(crit)])
         };
         is_text(get(Value::Empty, Value::Empty), "a");

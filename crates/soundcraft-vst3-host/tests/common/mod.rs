@@ -26,10 +26,19 @@ pub fn fixture_dir() -> &'static Path {
         } else if cfg!(windows) {
             ("vst3_fixture.dll", "x86_64-win", "Fixture.vst3")
         } else {
-            ("libvst3_fixture.so", if cfg!(target_arch = "aarch64") { "aarch64-linux" } else { "x86_64-linux" }, "Fixture.so")
+            (
+                "libvst3_fixture.so",
+                if cfg!(target_arch = "aarch64") {
+                    "aarch64-linux"
+                } else {
+                    "x86_64-linux"
+                },
+                "Fixture.so",
+            )
         };
         let built = target.join("debug").join(lib);
-        let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("vst3-fixture-install-{}", std::process::id()));
+        let dir = Path::new(env!("CARGO_TARGET_TMPDIR"))
+            .join(format!("vst3-fixture-install-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         // Install as a real bundle to exercise bundle resolution and the module entry.
         let bin = dir.join("vendor/Fixture.vst3/Contents").join(folder);

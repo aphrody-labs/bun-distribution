@@ -5,7 +5,14 @@
 //! develop pipeline's highlight recovery, tone mapping and colour tools have something real to do.
 //! Every scene is deterministic for its seed. No external assets: zero licensing or privacy risk.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod noise;
 mod paint;
@@ -82,7 +89,11 @@ impl Scene {
 
     fn fit(&self, max_edge: usize) -> (usize, usize) {
         let a = self.aspect();
-        let (w, h) = if a >= 1.0 { (max_edge, (max_edge as f32 / a).round() as usize) } else { ((max_edge as f32 * a).round() as usize, max_edge) };
+        let (w, h) = if a >= 1.0 {
+            (max_edge, (max_edge as f32 / a).round() as usize)
+        } else {
+            ((max_edge as f32 * a).round() as usize, max_edge)
+        };
         (w.max(1), h.max(1))
     }
 }
@@ -105,8 +116,22 @@ const DEFS: &[Def] = &[
         location: "Dolomites",
         keywords: &["mountains", "lake", "sunrise"],
     },
-    Def { kind: Kind::Dunes, name: "Dune ridges", seed: 7, portrait: false, location: "Namib", keywords: &["desert", "dunes"] },
-    Def { kind: Kind::OceanSunset, name: "Last light over the sea", seed: 3, portrait: false, location: "Big Sur", keywords: &["ocean", "sunset"] },
+    Def {
+        kind: Kind::Dunes,
+        name: "Dune ridges",
+        seed: 7,
+        portrait: false,
+        location: "Namib",
+        keywords: &["desert", "dunes"],
+    },
+    Def {
+        kind: Kind::OceanSunset,
+        name: "Last light over the sea",
+        seed: 3,
+        portrait: false,
+        location: "Big Sur",
+        keywords: &["ocean", "sunset"],
+    },
     Def {
         kind: Kind::Aurora,
         name: "Aurora over the ridge",
@@ -115,26 +140,166 @@ const DEFS: &[Def] = &[
         location: "Lofoten",
         keywords: &["night", "aurora", "stars"],
     },
-    Def { kind: Kind::MistyForest, name: "Morning fog", seed: 5, portrait: false, location: "Black Forest", keywords: &["forest", "fog"] },
-    Def { kind: Kind::Lavender, name: "Lavender rows", seed: 9, portrait: false, location: "Valensole", keywords: &["fields", "lavender", "summer"] },
-    Def { kind: Kind::Macro, name: "Cosmos bloom", seed: 13, portrait: true, location: "Home garden", keywords: &["flower", "macro", "bokeh"] },
-    Def { kind: Kind::Canyon, name: "Canyon walls", seed: 17, portrait: false, location: "Utah", keywords: &["canyon", "rock"] },
-    Def { kind: Kind::Beach, name: "Lagoon", seed: 19, portrait: false, location: "Maldives", keywords: &["beach", "tropical"] },
-    Def { kind: Kind::BlueHour, name: "Blue hour peaks", seed: 23, portrait: false, location: "Patagonia", keywords: &["mountains", "blue hour"] },
-    Def { kind: Kind::AlpineLake, name: "Still water", seed: 41, portrait: false, location: "Banff", keywords: &["mountains", "lake"] },
-    Def { kind: Kind::OceanSunset, name: "Golden horizon", seed: 44, portrait: false, location: "Algarve", keywords: &["ocean", "sunset"] },
-    Def { kind: Kind::Dunes, name: "Afternoon sand", seed: 57, portrait: true, location: "Sahara", keywords: &["desert"] },
-    Def { kind: Kind::Aurora, name: "Green curtains", seed: 60, portrait: false, location: "Yukon", keywords: &["night", "aurora"] },
-    Def { kind: Kind::Macro, name: "Pink petals", seed: 71, portrait: false, location: "Home garden", keywords: &["flower", "macro"] },
-    Def { kind: Kind::MistyForest, name: "Valley haze", seed: 73, portrait: false, location: "Oregon", keywords: &["forest", "fog"] },
-    Def { kind: Kind::Canyon, name: "Red layers", seed: 79, portrait: true, location: "Arizona", keywords: &["canyon"] },
-    Def { kind: Kind::Beach, name: "Turquoise shallows", seed: 83, portrait: false, location: "Bahamas", keywords: &["beach"] },
-    Def { kind: Kind::Lavender, name: "Evening fields", seed: 89, portrait: false, location: "Provence", keywords: &["fields"] },
-    Def { kind: Kind::BlueHour, name: "Cold summit", seed: 97, portrait: false, location: "Alps", keywords: &["mountains", "snow"] },
-    Def { kind: Kind::AlpineLake, name: "Alpenglow", seed: 101, portrait: true, location: "Zermatt", keywords: &["mountains"] },
-    Def { kind: Kind::OceanSunset, name: "Calm sea", seed: 107, portrait: false, location: "Crete", keywords: &["ocean"] },
-    Def { kind: Kind::Macro, name: "Violet bloom", seed: 113, portrait: false, location: "Kew", keywords: &["flower"] },
-    Def { kind: Kind::Dunes, name: "Wind lines", seed: 127, portrait: false, location: "Death Valley", keywords: &["desert"] },
+    Def {
+        kind: Kind::MistyForest,
+        name: "Morning fog",
+        seed: 5,
+        portrait: false,
+        location: "Black Forest",
+        keywords: &["forest", "fog"],
+    },
+    Def {
+        kind: Kind::Lavender,
+        name: "Lavender rows",
+        seed: 9,
+        portrait: false,
+        location: "Valensole",
+        keywords: &["fields", "lavender", "summer"],
+    },
+    Def {
+        kind: Kind::Macro,
+        name: "Cosmos bloom",
+        seed: 13,
+        portrait: true,
+        location: "Home garden",
+        keywords: &["flower", "macro", "bokeh"],
+    },
+    Def {
+        kind: Kind::Canyon,
+        name: "Canyon walls",
+        seed: 17,
+        portrait: false,
+        location: "Utah",
+        keywords: &["canyon", "rock"],
+    },
+    Def {
+        kind: Kind::Beach,
+        name: "Lagoon",
+        seed: 19,
+        portrait: false,
+        location: "Maldives",
+        keywords: &["beach", "tropical"],
+    },
+    Def {
+        kind: Kind::BlueHour,
+        name: "Blue hour peaks",
+        seed: 23,
+        portrait: false,
+        location: "Patagonia",
+        keywords: &["mountains", "blue hour"],
+    },
+    Def {
+        kind: Kind::AlpineLake,
+        name: "Still water",
+        seed: 41,
+        portrait: false,
+        location: "Banff",
+        keywords: &["mountains", "lake"],
+    },
+    Def {
+        kind: Kind::OceanSunset,
+        name: "Golden horizon",
+        seed: 44,
+        portrait: false,
+        location: "Algarve",
+        keywords: &["ocean", "sunset"],
+    },
+    Def {
+        kind: Kind::Dunes,
+        name: "Afternoon sand",
+        seed: 57,
+        portrait: true,
+        location: "Sahara",
+        keywords: &["desert"],
+    },
+    Def {
+        kind: Kind::Aurora,
+        name: "Green curtains",
+        seed: 60,
+        portrait: false,
+        location: "Yukon",
+        keywords: &["night", "aurora"],
+    },
+    Def {
+        kind: Kind::Macro,
+        name: "Pink petals",
+        seed: 71,
+        portrait: false,
+        location: "Home garden",
+        keywords: &["flower", "macro"],
+    },
+    Def {
+        kind: Kind::MistyForest,
+        name: "Valley haze",
+        seed: 73,
+        portrait: false,
+        location: "Oregon",
+        keywords: &["forest", "fog"],
+    },
+    Def {
+        kind: Kind::Canyon,
+        name: "Red layers",
+        seed: 79,
+        portrait: true,
+        location: "Arizona",
+        keywords: &["canyon"],
+    },
+    Def {
+        kind: Kind::Beach,
+        name: "Turquoise shallows",
+        seed: 83,
+        portrait: false,
+        location: "Bahamas",
+        keywords: &["beach"],
+    },
+    Def {
+        kind: Kind::Lavender,
+        name: "Evening fields",
+        seed: 89,
+        portrait: false,
+        location: "Provence",
+        keywords: &["fields"],
+    },
+    Def {
+        kind: Kind::BlueHour,
+        name: "Cold summit",
+        seed: 97,
+        portrait: false,
+        location: "Alps",
+        keywords: &["mountains", "snow"],
+    },
+    Def {
+        kind: Kind::AlpineLake,
+        name: "Alpenglow",
+        seed: 101,
+        portrait: true,
+        location: "Zermatt",
+        keywords: &["mountains"],
+    },
+    Def {
+        kind: Kind::OceanSunset,
+        name: "Calm sea",
+        seed: 107,
+        portrait: false,
+        location: "Crete",
+        keywords: &["ocean"],
+    },
+    Def {
+        kind: Kind::Macro,
+        name: "Violet bloom",
+        seed: 113,
+        portrait: false,
+        location: "Kew",
+        keywords: &["flower"],
+    },
+    Def {
+        kind: Kind::Dunes,
+        name: "Wind lines",
+        seed: 127,
+        portrait: false,
+        location: "Death Valley",
+        keywords: &["desert"],
+    },
 ];
 
 const CAMERAS: &[(&str, &str, f32)] = &[
@@ -149,7 +314,11 @@ pub fn demo_library() -> Vec<Scene> {
     DEFS.iter()
         .enumerate()
         .map(|(i, d)| {
-            let cam = if d.kind == Kind::Macro { CAMERAS[3] } else { CAMERAS[i % 3] };
+            let cam = if d.kind == Kind::Macro {
+                CAMERAS[3]
+            } else {
+                CAMERAS[i % 3]
+            };
             let shutter = match d.kind {
                 Kind::Aurora => "8",
                 Kind::BlueHour => "1/4",
@@ -161,7 +330,11 @@ pub fn demo_library() -> Vec<Scene> {
                 Kind::BlueHour => 400,
                 _ => [100, 200, 64, 100][i % 4],
             };
-            let (w, h) = if d.portrait { (4000, 6000) } else { (6000, 4000) };
+            let (w, h) = if d.portrait {
+                (4000, 6000)
+            } else {
+                (6000, 4000)
+            };
             Scene {
                 id: i as u32 + 1,
                 name: d.name.to_string(),
@@ -176,7 +349,13 @@ pub fn demo_library() -> Vec<Scene> {
                     aperture: [2.8, 8.0, 11.0, 4.0][i % 4],
                     shutter,
                     iso,
-                    captured: format!("2026-{:02}-{:02}T{:02}:{:02}:00", 3 + i % 7, 1 + (i * 5) % 27, 5 + (i * 3) % 15, (i * 17) % 60),
+                    captured: format!(
+                        "2026-{:02}-{:02}T{:02}:{:02}:00",
+                        3 + i % 7,
+                        1 + (i * 5) % 27,
+                        5 + (i * 3) % 15,
+                        (i * 17) % 60
+                    ),
                     location: d.location,
                     keywords: d.keywords.to_vec(),
                 },
@@ -199,7 +378,13 @@ mod tests {
         // every scene renders finite, non-negative, non-trivial images
         for s in &lib {
             let img = s.render_fit(48);
-            assert!(img.data.iter().all(|p| p.iter().all(|v| v.is_finite() && *v >= 0.0)), "{}", s.name);
+            assert!(
+                img.data
+                    .iter()
+                    .all(|p| p.iter().all(|v| v.is_finite() && *v >= 0.0)),
+                "{}",
+                s.name
+            );
             let mean: f32 = img.data.iter().map(|p| p[1]).sum::<f32>() / img.len() as f32;
             assert!(mean > 0.005 && mean < 3.0, "{} mean {mean}", s.name);
         }
@@ -220,7 +405,12 @@ mod tests {
     fn the_serial_render_is_the_same_picture() {
         for s in demo_library().iter().take(3) {
             for edge in [40, 700] {
-                assert_eq!(s.render_fit_serial(edge), s.render_fit(edge), "{} at {edge}", s.name);
+                assert_eq!(
+                    s.render_fit_serial(edge),
+                    s.render_fit(edge),
+                    "{} at {edge}",
+                    s.name
+                );
             }
         }
         assert!(paint::render_serial(Kind::Dunes, 1, 0, 5).data.is_empty());
@@ -232,8 +422,19 @@ mod tests {
         let s = &demo_library()[1];
         let small = s.render(60, 40);
         let big = s.render(240, 160);
-        let down = lightcraft_raster::resample::resize(&big, 60, 40, lightcraft_raster::resample::Filter::Box);
-        let err: f32 = small.data.iter().zip(&down.data).map(|(a, b)| (a[1] - b[1]).abs()).sum::<f32>() / small.len() as f32;
+        let down = lightcraft_raster::resample::resize(
+            &big,
+            60,
+            40,
+            lightcraft_raster::resample::Filter::Box,
+        );
+        let err: f32 = small
+            .data
+            .iter()
+            .zip(&down.data)
+            .map(|(a, b)| (a[1] - b[1]).abs())
+            .sum::<f32>()
+            / small.len() as f32;
         assert!(err < 0.08, "{err}");
     }
 }

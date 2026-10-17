@@ -20,15 +20,21 @@ struct Driver {
 impl Driver {
     /// The demo project saved (in name) in a fresh folder, so pasted images are written there.
     fn demo(name: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("filmcraft-clipboard-{name}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("filmcraft-clipboard-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         session.path = Some(dir.join("film.fcproj").to_string_lossy().into_owned());
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx, dir };
         d.frames(4);
         d
@@ -75,20 +81,44 @@ impl Driver {
     /// Ctrl+V as egui-winit delivers it when the system clipboard holds no text: the press is
     /// dropped, only the release arrives.
     fn ctrl_v_without_text(&mut self, modifiers: egui::Modifiers) {
-        let key = |pressed| egui::Event::Key { key: egui::Key::V, physical_key: Some(egui::Key::V), pressed, repeat: false, modifiers };
-        self.harness.input_mut().events.extend([egui::Event::ModifiersChanged(modifiers), key(false)]);
+        let key = |pressed| egui::Event::Key {
+            key: egui::Key::V,
+            physical_key: Some(egui::Key::V),
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        self.harness
+            .input_mut()
+            .events
+            .extend([egui::Event::ModifiersChanged(modifiers), key(false)]);
         self.frames(1);
-        self.harness.input_mut().events.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+        self.harness
+            .input_mut()
+            .events
+            .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
         self.frames(2);
     }
 
     /// Ctrl+V with text on the clipboard: egui-winit sends `Event::Paste`, then the release.
     fn ctrl_v_with_text(&mut self) {
-        let release =
-            egui::Event::Key { key: egui::Key::V, physical_key: Some(egui::Key::V), pressed: false, repeat: false, modifiers: egui::Modifiers::COMMAND };
-        self.harness.input_mut().events.extend([egui::Event::ModifiersChanged(egui::Modifiers::COMMAND), egui::Event::Paste("text".into()), release]);
+        let release = egui::Event::Key {
+            key: egui::Key::V,
+            physical_key: Some(egui::Key::V),
+            pressed: false,
+            repeat: false,
+            modifiers: egui::Modifiers::COMMAND,
+        };
+        self.harness.input_mut().events.extend([
+            egui::Event::ModifiersChanged(egui::Modifiers::COMMAND),
+            egui::Event::Paste("text".into()),
+            release,
+        ]);
         self.frames(1);
-        self.harness.input_mut().events.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+        self.harness
+            .input_mut()
+            .events
+            .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
         self.frames(2);
     }
 
@@ -98,7 +128,11 @@ impl Driver {
         let mut v = Vec::new();
         for (kind, tracks) in [('V', &q.video_tracks), ('A', &q.audio_tracks)] {
             for (i, t) in tracks.iter().enumerate() {
-                v.extend(t.items.iter().map(|c| (kind, i, c.id.0, c.name.clone(), c.start.0, c.end().0)));
+                v.extend(
+                    t.items
+                        .iter()
+                        .map(|c| (kind, i, c.id.0, c.name.clone(), c.start.0, c.end().0)),
+                );
             }
         }
         v
@@ -112,7 +146,11 @@ impl Drop for Driver {
 }
 
 fn red_image() -> ClipboardMedia {
-    ClipboardMedia::Image { width: 32, height: 18, rgba: [220, 30, 30, 255].repeat(32 * 18) }
+    ClipboardMedia::Image {
+        width: 32,
+        height: 18,
+        rgba: [220, 30, 30, 255].repeat(32 * 18),
+    }
 }
 
 /// Ctrl+V in the Timeline with an image on the clipboard (no text, so only the key release
@@ -130,12 +168,28 @@ fn ctrl_v_pastes_an_image_above_the_footage() {
     for c in &before {
         assert!(after.contains(c), "{c:?} is untouched");
     }
-    let new: Vec<_> = after.iter().filter(|c| !before.contains(c)).cloned().collect();
+    let new: Vec<_> = after
+        .iter()
+        .filter(|c| !before.contains(c))
+        .cloned()
+        .collect();
     assert_eq!(new.len(), 1, "one clip pasted: {new:?}");
     let (kind, track, _, name, start, end) = new[0].clone();
-    assert_eq!((kind, name.as_str(), start), ('V', "Pasted Image 1.png", at));
-    assert!(track > 0 && before.iter().any(|c| c.0 == 'V' && c.1 < track && c.4 < end && c.5 > start), "it sits above a clip");
-    assert!(d.dir.join("Pasted Image 1.png").is_file(), "saved next to the project");
+    assert_eq!(
+        (kind, name.as_str(), start),
+        ('V', "Pasted Image 1.png", at)
+    );
+    assert!(
+        track > 0
+            && before
+                .iter()
+                .any(|c| c.0 == 'V' && c.1 < track && c.4 < end && c.5 > start),
+        "it sits above a clip"
+    );
+    assert!(
+        d.dir.join("Pasted Image 1.png").is_file(),
+        "saved next to the project"
+    );
     d.ok("ui.menu.invoke", json!({"id": "edit.undo"}));
     assert_eq!(d.clips(), before);
 }
@@ -147,16 +201,34 @@ fn copied_files_paste_and_paste_insert_inserts() {
     let mut d = Driver::demo("files");
     d.ok("ui.set", json!({"focused": "Timeline"}));
     let png = d.dir.join("copied.png");
-    image::RgbaImage::from_pixel(16, 9, image::Rgba([0, 200, 0, 255])).save(&png).unwrap();
+    image::RgbaImage::from_pixel(16, 9, image::Rgba([0, 200, 0, 255]))
+        .save(&png)
+        .unwrap();
     let path = png.to_string_lossy().into_owned();
-    d.app().hooks.clipboard_media = Some(Box::new(move || Some(ClipboardMedia::Files(vec![path.clone()]))));
+    d.app().hooks.clipboard_media = Some(Box::new(move || {
+        Some(ClipboardMedia::Files(vec![path.clone()]))
+    }));
     let before = d.clips();
     d.ctrl_v_with_text();
-    let new: Vec<_> = d.clips().into_iter().filter(|c| !before.contains(c)).collect();
-    assert_eq!(new.iter().map(|c| c.3.as_str()).collect::<Vec<_>>(), ["copied.png"]);
+    let new: Vec<_> = d
+        .clips()
+        .into_iter()
+        .filter(|c| !before.contains(c))
+        .collect();
+    assert_eq!(
+        new.iter().map(|c| c.3.as_str()).collect::<Vec<_>>(),
+        ["copied.png"]
+    );
     assert!(new[0].1 > 0, "not over the footage on V1");
     // Paste Insert: on V1, pushing the clips after the playhead right
-    let v1_end = |d: &mut Driver| d.clips().iter().filter(|c| c.0 == 'V' && c.1 == 0).map(|c| c.5).max().unwrap();
+    let v1_end = |d: &mut Driver| {
+        d.clips()
+            .iter()
+            .filter(|c| c.0 == 'V' && c.1 == 0)
+            .map(|c| c.5)
+            .max()
+            .unwrap()
+    };
     let end = v1_end(&mut d);
     d.ctrl_v_without_text(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT);
     assert!(v1_end(&mut d) > end, "Ctrl+Shift+V inserts on V1");
@@ -172,7 +244,14 @@ fn ctrl_v_in_the_project_panel_imports() {
     d.ctrl_v_without_text(egui::Modifiers::COMMAND);
     assert_eq!(d.clips(), before, "nothing on the Timeline");
     assert_eq!(d.app().session.project.items.len(), items + 1);
-    assert!(d.app().session.project.items.values().any(|i| i.name == "Pasted Image 1.png"));
+    assert!(
+        d.app()
+            .session
+            .project
+            .items
+            .values()
+            .any(|i| i.name == "Pasted Image 1.png")
+    );
 }
 
 /// With nothing but clips copied in FilmCraft, Ctrl+V pastes the clips as before, also when the
@@ -183,10 +262,22 @@ fn without_media_ctrl_v_pastes_copied_clips() {
     let mut d = Driver::demo("clips");
     d.ok("ui.set", json!({"focused": "Timeline"}));
     let asked = d.clipboard(None);
-    let first = d.clips().into_iter().find(|c| c.0 == 'V' && c.1 == 0).unwrap();
-    d.ok("engine.execute", json!({"command": "timeline.select", "params": {"clips": [first.2]}}));
+    let first = d
+        .clips()
+        .into_iter()
+        .find(|c| c.0 == 'V' && c.1 == 0)
+        .unwrap();
+    d.ok(
+        "engine.execute",
+        json!({"command": "timeline.select", "params": {"clips": [first.2]}}),
+    );
     d.ok("ui.menu.invoke", json!({"id": "edit.copy"}));
-    let copies = |d: &mut Driver| d.clips().iter().filter(|c| c.0 == 'V' && c.3 == first.3).count();
+    let copies = |d: &mut Driver| {
+        d.clips()
+            .iter()
+            .filter(|c| c.0 == 'V' && c.3 == first.3)
+            .count()
+    };
     let n = copies(&mut d);
     let asked_after_copy = asked.get();
     assert!(asked_after_copy >= 1, "Copy looks at lingering OS media");
@@ -204,7 +295,11 @@ fn without_media_ctrl_v_pastes_copied_clips() {
         d.frames(1);
     }
     d.frames(2);
-    assert_eq!((copies(&mut d), asked.get()), (n + 1, asked_after_copy + 1), "V alone pastes nothing");
+    assert_eq!(
+        (copies(&mut d), asked.get()),
+        (n + 1, asked_after_copy + 1),
+        "V alone pastes nothing"
+    );
 }
 
 /// Files left on the OS clipboard from before Copy/Cut must not steal Paste: Ctrl+V pastes the
@@ -214,18 +309,35 @@ fn ctrl_v_pastes_a_cut_clip_even_when_old_files_linger_on_the_clipboard() {
     let mut d = Driver::demo("cut-linger");
     d.ok("ui.set", json!({"focused": "Timeline"}));
     let png = d.dir.join("stale.png");
-    image::RgbaImage::from_pixel(8, 8, image::Rgba([0, 0, 200, 255])).save(&png).unwrap();
+    image::RgbaImage::from_pixel(8, 8, image::Rgba([0, 0, 200, 255]))
+        .save(&png)
+        .unwrap();
     let path = png.to_string_lossy().into_owned();
-    d.app().hooks.clipboard_media = Some(Box::new(move || Some(ClipboardMedia::Files(vec![path.clone()]))));
-    let first = d.clips().into_iter().find(|c| c.0 == 'V' && c.1 == 0).unwrap();
-    d.ok("engine.execute", json!({"command": "timeline.select", "params": {"clips": [first.2]}}));
+    d.app().hooks.clipboard_media = Some(Box::new(move || {
+        Some(ClipboardMedia::Files(vec![path.clone()]))
+    }));
+    let first = d
+        .clips()
+        .into_iter()
+        .find(|c| c.0 == 'V' && c.1 == 0)
+        .unwrap();
+    d.ok(
+        "engine.execute",
+        json!({"command": "timeline.select", "params": {"clips": [first.2]}}),
+    );
     d.ok("ui.menu.invoke", json!({"id": "edit.cut"}));
-    assert!(d.clips().iter().all(|c| c.2 != first.2), "the clip left the timeline");
+    assert!(
+        d.clips().iter().all(|c| c.2 != first.2),
+        "the clip left the timeline"
+    );
     let named = |d: &mut Driver| d.clips().iter().filter(|c| c.3 == first.3).count();
     assert_eq!(named(&mut d), 0);
     d.ctrl_v_with_text();
     assert!(named(&mut d) >= 1, "the cut clip is pasted");
-    assert!(!d.clips().iter().any(|c| c.3.contains("stale")), "lingering OS files are not pasted");
+    assert!(
+        !d.clips().iter().any(|c| c.3.contains("stale")),
+        "lingering OS files are not pasted"
+    );
 }
 
 /// Copy from the keyboard (Ctrl+C as `Event::Copy`) also snapshots lingering OS media, so Ctrl+V
@@ -235,17 +347,44 @@ fn ctrl_c_then_ctrl_v_pastes_clips_not_lingering_files() {
     let mut d = Driver::demo("copy-linger");
     d.ok("ui.set", json!({"focused": "Timeline"}));
     let png = d.dir.join("stale.png");
-    image::RgbaImage::from_pixel(8, 8, image::Rgba([0, 200, 0, 255])).save(&png).unwrap();
+    image::RgbaImage::from_pixel(8, 8, image::Rgba([0, 200, 0, 255]))
+        .save(&png)
+        .unwrap();
     let path = png.to_string_lossy().into_owned();
-    d.app().hooks.clipboard_media = Some(Box::new(move || Some(ClipboardMedia::Files(vec![path.clone()]))));
-    let first = d.clips().into_iter().find(|c| c.0 == 'V' && c.1 == 0).unwrap();
-    d.ok("engine.execute", json!({"command": "timeline.select", "params": {"clips": [first.2]}}));
-    d.harness.input_mut().events.extend([egui::Event::ModifiersChanged(egui::Modifiers::COMMAND), egui::Event::Copy]);
+    d.app().hooks.clipboard_media = Some(Box::new(move || {
+        Some(ClipboardMedia::Files(vec![path.clone()]))
+    }));
+    let first = d
+        .clips()
+        .into_iter()
+        .find(|c| c.0 == 'V' && c.1 == 0)
+        .unwrap();
+    d.ok(
+        "engine.execute",
+        json!({"command": "timeline.select", "params": {"clips": [first.2]}}),
+    );
+    d.harness.input_mut().events.extend([
+        egui::Event::ModifiersChanged(egui::Modifiers::COMMAND),
+        egui::Event::Copy,
+    ]);
     d.frames(1);
-    d.harness.input_mut().events.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+    d.harness
+        .input_mut()
+        .events
+        .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
     d.frames(2);
     assert!(!d.app().session.state.clipboard.is_empty());
-    let n = d.clips().iter().filter(|c| c.0 == 'V' && c.3 == first.3).count();
+    let n = d
+        .clips()
+        .iter()
+        .filter(|c| c.0 == 'V' && c.3 == first.3)
+        .count();
     d.ctrl_v_with_text();
-    assert_eq!(d.clips().iter().filter(|c| c.0 == 'V' && c.3 == first.3).count(), n + 1);
+    assert_eq!(
+        d.clips()
+            .iter()
+            .filter(|c| c.0 == 'V' && c.3 == first.3)
+            .count(),
+        n + 1
+    );
 }

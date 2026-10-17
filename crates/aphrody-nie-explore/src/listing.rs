@@ -31,9 +31,10 @@ pub fn stats(vfs: &Vfs, extension_limit: usize) -> VfsStats {
     let mut counts: BTreeMap<String, u32> = BTreeMap::new();
     for (path, _) in vfs.iter() {
         let name = path.rsplit('/').next().unwrap_or(path);
-        let extension = name
-            .rsplit_once('.')
-            .map_or_else(|| "<none>".to_owned(), |(_, extension)| extension.to_ascii_lowercase());
+        let extension = name.rsplit_once('.').map_or_else(
+            || "<none>".to_owned(),
+            |(_, extension)| extension.to_ascii_lowercase(),
+        );
         *counts.entry(extension).or_default() += 1;
     }
     let mut top_extensions: Vec<_> = counts.into_iter().collect();
@@ -183,13 +184,18 @@ pub fn ls_paged(vfs: &Vfs, prefix: &str, limit: usize, offset: usize) -> Listing
         dirs: dirs
             .into_iter()
             .filter(|(name, _)| !name.is_empty())
-            .map(|(name, count)| DirEntry { name: name.to_string(), count })
+            .map(|(name, count)| DirEntry {
+                name: name.to_string(),
+                count,
+            })
             .collect(),
         files,
         file_total,
         file_offset: offset,
-        role: crate::folder_roles::describe_folder(prefix)
-            .map(|r| Role { role: r.role.to_string(), status: r.status.to_string() }),
+        role: crate::folder_roles::describe_folder(prefix).map(|r| Role {
+            role: r.role.to_string(),
+            status: r.status.to_string(),
+        }),
     }
 }
 
@@ -246,7 +252,11 @@ pub fn find_paged(
     }
     out.sort_by(|a, b| a.path.cmp(&b.path));
     let total = out.len();
-    FindResult { files: out.into_iter().skip(offset).take(limit).collect(), total, offset }
+    FindResult {
+        files: out.into_iter().skip(offset).take(limit).collect(),
+        total,
+        offset,
+    }
 }
 
 /// Première page de résultats — forme courte de [`find_paged`].

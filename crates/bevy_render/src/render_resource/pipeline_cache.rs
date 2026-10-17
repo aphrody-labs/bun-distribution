@@ -5,9 +5,9 @@ use bevy_material::descriptor::{
 use smallvec::SmallVec;
 
 use crate::{
-    render_resource::*,
-    renderer::{wgpu_wrapper, RenderDevice},
     Extract,
+    render_resource::*,
+    renderer::{RenderDevice, wgpu_wrapper},
 };
 use alloc::{borrow::Cow, sync::Arc};
 use bevy_asset::{AssetEvent, AssetId, Assets, Handle};
@@ -17,7 +17,7 @@ use bevy_ecs::{
     system::{Res, ResMut},
 };
 use bevy_log::error;
-use bevy_platform::collections::{hash_map::RawEntryMut, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::RawEntryMut};
 use bevy_shader::{
     CachedPipelineId, Shader, ShaderCache, ShaderCacheError, ShaderCacheSource, ShaderDefVal,
     ValidateShader,

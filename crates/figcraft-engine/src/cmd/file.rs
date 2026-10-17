@@ -19,7 +19,9 @@ pub fn specs() -> Vec<CommandSpec> {
             // A property of the page from here on: a later change of theme leaves it alone.
             let background = s.new_page_background();
             for page in doc.pages.clone() {
-                if let Some(NodeKind::Page { background: b, .. }) = doc.node_mut(page).map(|n| &mut n.kind) {
+                if let Some(NodeKind::Page { background: b, .. }) =
+                    doc.node_mut(page).map(|n| &mut n.kind)
+                {
                     *b = background;
                 }
             }
@@ -41,7 +43,13 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             open_recent
         ),
-        spec!("file.save", "Save", "{path?} (programmatic saves need a path the first time)", false, save),
+        spec!(
+            "file.save",
+            "Save",
+            "{path?} (programmatic saves need a path the first time)",
+            false,
+            save
+        ),
         spec!("file.saveAs", "Save as", "{path}", false, save_as),
         spec!(
             "file.export",
@@ -57,13 +65,19 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             export_layers
         ),
-        spec!("file.exportSvg", "Export selection as SVG", "{ids?, path?}", false, |s, p| {
-            let mut q = p.clone();
-            if let Some(o) = q.as_object_mut() {
-                o.insert("format".into(), json!("svg"));
+        spec!(
+            "file.exportSvg",
+            "Export selection as SVG",
+            "{ids?, path?}",
+            false,
+            |s, p| {
+                let mut q = p.clone();
+                if let Some(o) = q.as_object_mut() {
+                    o.insert("format".into(), json!("svg"));
+                }
+                export(s, &q)
             }
-            export(s, &q)
-        }),
+        ),
         spec!(
             "file.exportFramesPdf",
             "Export frames to PDF",
@@ -78,8 +92,20 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             import
         ),
-        spec!("file.placeImage", "Place image", "{path | data, x?, y?}", true, super::create::place_image),
-        spec!("file.close", "Close tab", "{index?, force? (discard unsaved changes)}", false, close),
+        spec!(
+            "file.placeImage",
+            "Place image",
+            "{path | data, x?, y?}",
+            true,
+            super::create::place_image
+        ),
+        spec!(
+            "file.close",
+            "Close tab",
+            "{index?, force? (discard unsaved changes)}",
+            false,
+            close
+        ),
         spec!(
             "file.recover",
             "Recover file",
@@ -113,12 +139,16 @@ pub fn specs() -> Vec<CommandSpec> {
             Ok(json!({"index": s.active}))
         }),
         spec!("file.revert", "Revert to saved", "{}", false, |s, _| {
-            let path = s.ds()?.path.clone().ok_or_else(|| EngineError::Disabled("file.revert".into(), "the file was never saved".into()))?;
+            let path = s.ds()?.path.clone().ok_or_else(|| {
+                EngineError::Disabled("file.revert".into(), "the file was never saved".into())
+            })?;
             let (loaded, _) = load_path(&path, None)?;
             let i = s.active;
             let uid = s.ds()?.uid;
             if let Some(slot) = s.docs.get_mut(i) {
-                *slot = DocState::new(loaded.doc, Some(path)).with_versions(loaded.versions).with_branches(loaded.branches);
+                *slot = DocState::new(loaded.doc, Some(path))
+                    .with_versions(loaded.versions)
+                    .with_branches(loaded.branches);
             }
             // Edits on its branch tabs are reverted too.
             crate::branches::close_tabs(s, uid, None);
@@ -131,11 +161,17 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             save_version
         ),
-        spec!("file.versionHistory", "Show version history", "{}  opens the panel; returns the versions like `version.list`", false, |s, _| {
-            let list = version_list(s.ds()?);
-            s.request_ui("panel.versionHistory", json!({}));
-            Ok(list)
-        }),
+        spec!(
+            "file.versionHistory",
+            "Show version history",
+            "{}  opens the panel; returns the versions like `version.list`",
+            false,
+            |s, _| {
+                let list = version_list(s.ds()?);
+                s.request_ui("panel.versionHistory", json!({}));
+                Ok(list)
+            }
+        ),
         spec!(
             "version.list",
             "List versions",
@@ -150,33 +186,49 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             restore_version
         ),
-        spec!("version.rename", "Rename version", "{id | index, name, description?}  a titled autosave becomes a named version", false, |s, p| {
-            const CMD: &str = "version.rename";
-            let name = req_string(CMD, p, "name")?;
-            if name.trim().is_empty() {
-                return Err(bad(CMD, "`name` can't be empty"));
+        spec!(
+            "version.rename",
+            "Rename version",
+            "{id | index, name, description?}  a titled autosave becomes a named version",
+            false,
+            |s, p| {
+                const CMD: &str = "version.rename";
+                let name = req_string(CMD, p, "name")?;
+                if name.trim().is_empty() {
+                    return Err(bad(CMD, "`name` can't be empty"));
+                }
+                let ds = s.ds_mut()?;
+                let i = version_index(CMD, ds, p)?;
+                let description = string(p, "description");
+                let v = ds
+                    .versions_mut()
+                    .get_mut(i)
+                    .ok_or_else(|| bad(CMD, "no such version"))?;
+                v.name = figcraft_format::clip(name.trim(), figcraft_format::MAX_VERSION_NAME);
+                // A titled autosave is a named version (never dropped to make room).
+                v.auto = false;
+                if let Some(d) = description {
+                    v.description =
+                        figcraft_format::clip(d.trim(), figcraft_format::MAX_VERSION_DESCRIPTION);
+                }
+                Ok(version_json(i, v))
             }
-            let ds = s.ds_mut()?;
-            let i = version_index(CMD, ds, p)?;
-            let description = string(p, "description");
-            let v = ds.versions_mut().get_mut(i).ok_or_else(|| bad(CMD, "no such version"))?;
-            v.name = figcraft_format::clip(name.trim(), figcraft_format::MAX_VERSION_NAME);
-            // A titled autosave is a named version (never dropped to make room).
-            v.auto = false;
-            if let Some(d) = description {
-                v.description = figcraft_format::clip(d.trim(), figcraft_format::MAX_VERSION_DESCRIPTION);
+        ),
+        spec!(
+            "version.delete",
+            "Delete version",
+            "{id | index}",
+            false,
+            |s, p| {
+                let ds = s.ds_mut()?;
+                let i = version_index("version.delete", ds, p)?;
+                let v = ds.versions_mut().remove(i);
+                if ds.preview.as_ref().is_some_and(|pv| pv.id == v.id) {
+                    ds.end_preview();
+                }
+                ok()
             }
-            Ok(version_json(i, v))
-        }),
-        spec!("version.delete", "Delete version", "{id | index}", false, |s, p| {
-            let ds = s.ds_mut()?;
-            let i = version_index("version.delete", ds, p)?;
-            let v = ds.versions_mut().remove(i);
-            if ds.preview.as_ref().is_some_and(|pv| pv.id == v.id) {
-                ds.end_preview();
-            }
-            ok()
-        }),
+        ),
         spec!(
             "version.preview",
             "View version",
@@ -185,8 +237,12 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let ds = s.ds_mut()?;
                 let i = version_index("version.preview", ds, p)?;
-                let v = ds.versions.get(i).ok_or_else(|| bad("version.preview", "no such version"))?;
-                let (id, name, time, out) = (v.id.clone(), v.name.clone(), v.time, version_json(i, v));
+                let v = ds
+                    .versions
+                    .get(i)
+                    .ok_or_else(|| bad("version.preview", "no such version"))?;
+                let (id, name, time, out) =
+                    (v.id.clone(), v.name.clone(), v.time, version_json(i, v));
                 let doc = read_version(v)?;
                 ds.start_preview(&id, &name, time, doc);
                 Ok(out)
@@ -199,9 +255,13 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             autosave
         ),
-        spec!("version.exitPreview", "Back to current version", "{}  end a version preview", false, |s, _| {
-            Ok(json!({"ended": s.ds_mut()?.end_preview()}))
-        }),
+        spec!(
+            "version.exitPreview",
+            "Back to current version",
+            "{}  end a version preview",
+            false,
+            |s, _| { Ok(json!({"ended": s.ds_mut()?.end_preview()})) }
+        ),
         spec!(
             "version.duplicate",
             "Duplicate version",
@@ -209,7 +269,10 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             |s, p| {
                 let ds = s.ds()?;
-                let v = ds.versions.get(version_index("version.duplicate", ds, p)?).ok_or_else(|| bad("version.duplicate", "no such version"))?;
+                let v = ds
+                    .versions
+                    .get(version_index("version.duplicate", ds, p)?)
+                    .ok_or_else(|| bad("version.duplicate", "no such version"))?;
                 let mut doc = (*read_version(v)?).clone();
                 doc.name = format!("{} ({})", ds.doc.name, v.name);
                 doc.take_dirty();
@@ -226,8 +289,12 @@ pub fn specs() -> Vec<CommandSpec> {
             s.active = i;
             ok()
         }),
-        spec!("doc.nextTab", "Next tab", "{}", false, |s, _| cycle_doc(s, 1)),
-        spec!("doc.previousTab", "Previous tab", "{}", false, |s, _| cycle_doc(s, -1)),
+        spec!("doc.nextTab", "Next tab", "{}", false, |s, _| cycle_doc(
+            s, 1
+        )),
+        spec!("doc.previousTab", "Previous tab", "{}", false, |s, _| {
+            cycle_doc(s, -1)
+        }),
         spec!("doc.list", "List documents", "{}", false, |s, _| {
             Ok(Value::Array(
                 s.docs
@@ -273,7 +340,12 @@ const AUTOSAVE: &str = "Autosave";
 /// Add a version of `ds`'s document as it is now (`auto`: a checkpoint) and return it. The oldest
 /// autosave makes room when the autosaves or the history are full; versions the user named are
 /// never dropped, so a history full of them takes nothing (None).
-pub(crate) fn add_version(ds: &mut DocState, name: &str, description: &str, auto: bool) -> Option<Value> {
+pub(crate) fn add_version(
+    ds: &mut DocState,
+    name: &str,
+    description: &str,
+    auto: bool,
+) -> Option<Value> {
     let autos = ds.versions.iter().filter(|v| v.auto).count();
     if ((auto && autos >= MAX_AUTOSAVES) || ds.versions.len() >= figcraft_format::MAX_VERSIONS)
         && let Some(oldest) = ds.versions.iter().position(|v| v.auto)
@@ -305,7 +377,13 @@ fn snapshot_version(ds: &DocState, name: &str, description: &str) -> Version {
     if snap.current_page != Some(ds.page) {
         Arc::make_mut(&mut snap).current_page = Some(ds.page);
     }
-    Version::new(unique_id(|id| ds.versions.iter().any(|v| v.id == id)), name, description, super::comment::now_secs(), snap)
+    Version::new(
+        unique_id(|id| ds.versions.iter().any(|v| v.id == id)),
+        name,
+        description,
+        super::comment::now_secs(),
+        snap,
+    )
 }
 
 fn version_list(ds: &DocState) -> Value {
@@ -328,22 +406,34 @@ fn version_list(ds: &DocState) -> Value {
 /// The version named by `id`, else by `index` (validated: never negative, never past the end).
 fn version_index(cmd: &str, ds: &DocState, p: &Value) -> Result<usize> {
     if let Some(id) = string(p, "id") {
-        return ds.versions.iter().position(|v| v.id == id).ok_or_else(|| bad(cmd, format!("no version `{id}`")));
+        return ds
+            .versions
+            .iter()
+            .position(|v| v.id == id)
+            .ok_or_else(|| bad(cmd, format!("no version `{id}`")));
     }
     if get(p, "index").is_none() {
         return Err(bad(cmd, "pass the version's `id` or `index`"));
     }
     let i = req_index(cmd, p, "index")?;
-    if i < ds.versions.len() { Ok(i) } else { Err(bad(cmd, format!("no version at index {i}"))) }
+    if i < ds.versions.len() {
+        Ok(i)
+    } else {
+        Err(bad(cmd, format!("no version at index {i}")))
+    }
 }
 
 fn read_version(v: &Version) -> Result<Arc<Document>> {
-    v.document().map_err(|e| EngineError::Other(format!("version “{}” can't be read: {e}", v.name)))
+    v.document()
+        .map_err(|e| EngineError::Other(format!("version “{}” can't be read: {e}", v.name)))
 }
 
 /// A new version or branch id: the time in milliseconds (hex), not `taken`.
 pub(crate) fn unique_id(taken: impl Fn(&str) -> bool) -> String {
-    let mut n = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0);
+    let mut n = web_time::SystemTime::now()
+        .duration_since(web_time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
     loop {
         let id = format!("{n:x}");
         if !taken(&id) {
@@ -359,17 +449,25 @@ fn save_version(s: &mut Session, p: &Value) -> Result<Value> {
     if ds.versions.len() >= figcraft_format::MAX_VERSIONS {
         return Err(EngineError::Disabled(
             "file.saveVersion".into(),
-            format!("the version history is full ({} versions): delete old versions first", figcraft_format::MAX_VERSIONS),
+            format!(
+                "the version history is full ({} versions): delete old versions first",
+                figcraft_format::MAX_VERSIONS
+            ),
         ));
     }
-    let name =
-        string(p, "name").map(|n| n.trim().to_string()).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("Version {}", ds.versions.len() + 1));
+    let name = string(p, "name")
+        .map(|n| n.trim().to_string())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| format!("Version {}", ds.versions.len() + 1));
     let description = string(p, "description").unwrap_or_default();
     // The version opens on the page shown when it was saved.
     add_version(ds, &name, description.trim(), false).ok_or_else(|| {
         EngineError::Disabled(
             "file.saveVersion".into(),
-            format!("the version history is full ({} versions): delete old versions first", figcraft_format::MAX_VERSIONS),
+            format!(
+                "the version history is full ({} versions): delete old versions first",
+                figcraft_format::MAX_VERSIONS
+            ),
         )
     })
 }
@@ -382,11 +480,19 @@ fn restore_version(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let ds = s.ds_mut()?;
     let i = version_index(CMD, ds, p)?;
-    let v = ds.versions.get(i).ok_or_else(|| bad(CMD, "no such version"))?;
+    let v = ds
+        .versions
+        .get(i)
+        .ok_or_else(|| bad(CMD, "no such version"))?;
     let (id, mut doc) = (v.id.clone(), read_version(v)?);
     // Restoring never loses work: the document as it is goes into the history first.
     keep_in_history(ds);
-    let out = ds.versions.iter().enumerate().find(|(_, v)| v.id == id).map_or(Value::Null, |(i, v)| version_json(i, v));
+    let out = ds
+        .versions
+        .iter()
+        .enumerate()
+        .find(|(_, v)| v.id == id)
+        .map_or(Value::Null, |(i, v)| version_json(i, v));
     let d = Arc::make_mut(&mut doc);
     d.name = ds.doc.name.clone();
     // What the file published belongs to the file, not to the version.
@@ -414,8 +520,13 @@ fn restore_version(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The recovery copy at `path` as a document with unsaved changes and no path.
 pub(crate) fn recovered(path: &str) -> Result<DocState> {
-    let loaded = read(path).and_then(|b| figcraft_format::load_bytes_with_versions(&b).map_err(|e| EngineError::Other(e.to_string())))?;
-    Ok(DocState::new(loaded.doc, None).with_versions(loaded.versions).with_branches(loaded.branches).unsaved())
+    let loaded = read(path).and_then(|b| {
+        figcraft_format::load_bytes_with_versions(&b).map_err(|e| EngineError::Other(e.to_string()))
+    })?;
+    Ok(DocState::new(loaded.doc, None)
+        .with_versions(loaded.versions)
+        .with_branches(loaded.branches)
+        .unsaved())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -425,14 +536,18 @@ fn read(path: &str) -> Result<Vec<u8>> {
 
 #[cfg(target_arch = "wasm32")]
 fn read(path: &str) -> Result<Vec<u8>> {
-    Err(EngineError::Other(format!("{path}: no file system in the browser")))
+    Err(EngineError::Other(format!(
+        "{path}: no file system in the browser"
+    )))
 }
 
 /// The bytes of file `path`, refused when it's larger than `max`.
 pub(crate) fn read_capped(path: &str, max: u64) -> Result<Vec<u8>> {
     let meta = std::fs::metadata(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     if !meta.is_file() || meta.len() > max {
-        return Err(EngineError::Other(format!("{path}: not a file of at most {max} bytes")));
+        return Err(EngineError::Other(format!(
+            "{path}: not a file of at most {max} bytes"
+        )));
     }
     read(path)
 }
@@ -450,15 +565,25 @@ pub(crate) fn write(path: &str, bytes: &[u8]) -> Result<()> {
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn write(path: &str, _bytes: &[u8]) -> Result<()> {
-    Err(EngineError::Other(format!("{path}: no file system in the browser")))
+    Err(EngineError::Other(format!(
+        "{path}: no file system in the browser"
+    )))
 }
 
 fn ext(path: &str) -> String {
-    std::path::Path::new(path).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase()
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase()
 }
 
 fn file_stem(path: &str) -> String {
-    std::path::Path::new(path).file_stem().and_then(|e| e.to_str()).unwrap_or("Untitled").to_string()
+    std::path::Path::new(path)
+        .file_stem()
+        .and_then(|e| e.to_str())
+        .unwrap_or("Untitled")
+        .to_string()
 }
 
 /// Load a document from any supported file (REST API file JSON images come from an `images`
@@ -468,15 +593,25 @@ pub fn load(path: &str) -> Result<(Document, Vec<String>)> {
 }
 
 pub fn load_bytes(bytes: &[u8], name_hint: &str) -> Result<(Document, Vec<String>)> {
-    load_with(bytes, name_hint, None, &figcraft_format::rest::no_images).map(|(l, _)| (l.doc, l.issues))
+    load_with(bytes, name_hint, None, &figcraft_format::rest::no_images)
+        .map(|(l, _)| (l.doc, l.issues))
 }
 
 /// [`load`] with the version history, also telling whether the file was REST API file JSON. A REST
 /// import reads its variables from `variables`, else from a variables JSON next to the file.
 pub fn load_path(path: &str, variables: Option<&Value>) -> Result<(figcraft_format::Loaded, bool)> {
     let bytes = read(path)?;
-    let sibling = if variables.is_none() { sibling_variables(path) } else { None };
-    load_with(&bytes, path, variables.or(sibling.as_ref()), &rest_images(path))
+    let sibling = if variables.is_none() {
+        sibling_variables(path)
+    } else {
+        None
+    };
+    load_with(
+        &bytes,
+        path,
+        variables.or(sibling.as_ref()),
+        &rest_images(path),
+    )
 }
 
 /// Load from bytes. Returns the document with its notes (repairs of a native file, or import
@@ -492,31 +627,69 @@ fn load_with(
         "svg" => {
             let mut doc = Document::new(file_stem(name_hint));
             let page = doc.first_page().ok_or(EngineError::NoDocument)?;
-            let notes = figcraft_svg::import_svg_with_notes(&mut doc, bytes, page, 0.0, 0.0, &file_stem(name_hint))
-                .map_err(|e| EngineError::Other(e.to_string()))?
-                .notes;
-            Ok((figcraft_format::Loaded { issues: notes, ..doc.into() }, false))
+            let notes = figcraft_svg::import_svg_with_notes(
+                &mut doc,
+                bytes,
+                page,
+                0.0,
+                0.0,
+                &file_stem(name_hint),
+            )
+            .map_err(|e| EngineError::Other(e.to_string()))?
+            .notes;
+            Ok((
+                figcraft_format::Loaded {
+                    issues: notes,
+                    ..doc.into()
+                },
+                false,
+            ))
         }
         "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "tif" | "tiff" => {
             let mut doc = Document::new(file_stem(name_hint));
             let page = doc.first_page().ok_or(EngineError::NoDocument)?;
-            let (hash, w, h) = figcraft_format::add_image(&mut doc, bytes.to_vec()).map_err(|e| EngineError::Other(e.to_string()))?;
-            let id = doc.create(page, NodeKind::Rectangle, &file_stem(name_hint), 0.0, 0.0, f64::from(w), f64::from(h))?;
-            doc.get_mut(id)?.fills = vec![figcraft_color::Paint::image(hash, figcraft_color::ImageScaleMode::Fill)];
+            let (hash, w, h) = figcraft_format::add_image(&mut doc, bytes.to_vec())
+                .map_err(|e| EngineError::Other(e.to_string()))?;
+            let id = doc.create(
+                page,
+                NodeKind::Rectangle,
+                &file_stem(name_hint),
+                0.0,
+                0.0,
+                f64::from(w),
+                f64::from(h),
+            )?;
+            doc.get_mut(id)?.fills = vec![figcraft_color::Paint::image(
+                hash,
+                figcraft_color::ImageScaleMode::Fill,
+            )];
             Ok((doc.into(), false))
         }
         _ => {
             if let Some(r) = figcraft_format::fig::try_import(bytes, &file_stem(name_hint)) {
                 let (mut doc, warnings) = r.map_err(|e| EngineError::Other(e.to_string()))?;
                 link_instances(&mut doc);
-                return Ok((figcraft_format::Loaded { issues: warnings, ..doc.into() }, true));
+                return Ok((
+                    figcraft_format::Loaded {
+                        issues: warnings,
+                        ..doc.into()
+                    },
+                    true,
+                ));
             }
             if let Some(r) = figcraft_format::rest::try_import_with(bytes, variables, images) {
                 let (mut doc, warnings) = r.map_err(|e| EngineError::Other(e.to_string()))?;
                 link_instances(&mut doc);
-                return Ok((figcraft_format::Loaded { issues: warnings, ..doc.into() }, true));
+                return Ok((
+                    figcraft_format::Loaded {
+                        issues: warnings,
+                        ..doc.into()
+                    },
+                    true,
+                ));
             }
-            let mut loaded = figcraft_format::load_bytes_with_versions(bytes).map_err(|e| EngineError::Other(e.to_string()))?;
+            let mut loaded = figcraft_format::load_bytes_with_versions(bytes)
+                .map_err(|e| EngineError::Other(e.to_string()))?;
             if loaded.doc.name.is_empty() {
                 loaded.doc.name = file_stem(name_hint);
             }
@@ -529,8 +702,11 @@ fn load_with(
 /// innermost first so outer instances settle last.
 fn link_instances(doc: &mut Document) {
     crate::style_vars::after_load(doc);
-    let mut insts: Vec<(usize, NodeId)> =
-        doc.nodes().filter(|n| matches!(n.kind, NodeKind::Instance { .. })).map(|n| (doc.ancestors(n.id).len(), n.id)).collect();
+    let mut insts: Vec<(usize, NodeId)> = doc
+        .nodes()
+        .filter(|n| matches!(n.kind, NodeKind::Instance { .. }))
+        .map(|n| (doc.ancestors(n.id).len(), n.id))
+        .collect();
     insts.sort_by_key(|a| std::cmp::Reverse(a.0));
     for (_, i) in insts {
         crate::components::rebase_instance(doc, i);
@@ -545,18 +721,31 @@ const MAX_IMAGE_FILE: u64 = 256 * 1024 * 1024;
 /// the file.
 #[cfg(not(target_arch = "wasm32"))]
 fn rest_images(path: &str) -> impl Fn(&str) -> Option<Vec<u8>> {
-    let dir = std::path::Path::new(path).parent().map(|d| d.join("images"));
+    let dir = std::path::Path::new(path)
+        .parent()
+        .map(|d| d.join("images"));
     move |r: &str| {
         // Image refs are content hashes; anything else never becomes a path.
-        if r.is_empty() || r.len() > 128 || !r.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_') {
+        if r.is_empty()
+            || r.len() > 128
+            || !r
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+        {
             return None;
         }
         let dir = dir.as_ref()?;
-        ["", ".png", ".jpg", ".jpeg", ".gif", ".webp"].iter().find_map(|e| {
-            let p = dir.join(format!("{r}{e}"));
-            let meta = std::fs::metadata(&p).ok()?;
-            if meta.is_file() && meta.len() <= MAX_IMAGE_FILE { std::fs::read(&p).ok() } else { None }
-        })
+        ["", ".png", ".jpg", ".jpeg", ".gif", ".webp"]
+            .iter()
+            .find_map(|e| {
+                let p = dir.join(format!("{r}{e}"));
+                let meta = std::fs::metadata(&p).ok()?;
+                if meta.is_file() && meta.len() <= MAX_IMAGE_FILE {
+                    std::fs::read(&p).ok()
+                } else {
+                    None
+                }
+            })
     }
 }
 
@@ -578,7 +767,14 @@ fn sibling_variables(path: &str) -> Option<Value> {
     }
     let file = std::path::Path::new(path);
     let dir = file.parent()?;
-    [format!("{}.variables.json", file_stem(path)), "variables.json".to_string()].iter().map(|n| dir.join(n)).filter(|c| c != file).find_map(|c| {
+    [
+        format!("{}.variables.json", file_stem(path)),
+        "variables.json".to_string(),
+    ]
+    .iter()
+    .map(|n| dir.join(n))
+    .filter(|c| c != file)
+    .find_map(|c| {
         let meta = std::fs::metadata(&c).ok()?;
         if !meta.is_file() || meta.len() > MAX_VARIABLES_FILE {
             return None;
@@ -595,16 +791,26 @@ fn sibling_variables(_path: &str) -> Option<Value> {
 
 /// The local variables JSON a command passes as `variables`: an object, JSON text or a file path.
 pub(crate) fn variables_param(cmd: &str, p: &Value) -> Result<Option<Value>> {
-    let parse = |text: &[u8]| serde_json::from_slice::<Value>(text).map_err(|e| bad(cmd, format!("variables: {e}")));
+    let parse = |text: &[u8]| {
+        serde_json::from_slice::<Value>(text).map_err(|e| bad(cmd, format!("variables: {e}")))
+    };
     let v = match get(p, "variables") {
         None | Some(Value::Null) => return Ok(None),
         Some(v @ Value::Object(_)) => v.clone(),
         Some(Value::String(s)) if s.trim_start().starts_with('{') => parse(s.as_bytes())?,
         Some(Value::String(path)) => parse(&read(path)?)?,
-        Some(_) => return Err(bad(cmd, "variables: the local variables JSON (an object, JSON text or a path)")),
+        Some(_) => {
+            return Err(bad(
+                cmd,
+                "variables: the local variables JSON (an object, JSON text or a path)",
+            ));
+        }
     };
     if !figcraft_format::rest::is_variables_json(&v) {
-        return Err(bad(cmd, "variables: expected the local variables JSON (`meta.variableCollections` and `meta.variables`)"));
+        return Err(bad(
+            cmd,
+            "variables: expected the local variables JSON (`meta.variableCollections` and `meta.variables`)",
+        ));
     }
     Ok(Some(v))
 }
@@ -627,7 +833,13 @@ fn open_recent(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let path = match (string(p, "path"), num(p, "index")) {
         (Some(path), _) => Some(path),
-        (None, Some(i)) => Some(s.prefs.recent_files.get(i.max(0.0) as usize).cloned().ok_or_else(|| bad(CMD, "no such recent file"))?),
+        (None, Some(i)) => Some(
+            s.prefs
+                .recent_files
+                .get(i.max(0.0) as usize)
+                .cloned()
+                .ok_or_else(|| bad(CMD, "no such recent file"))?,
+        ),
         _ => None,
     };
     if let Some(path) = path {
@@ -642,7 +854,9 @@ fn open_recent(s: &mut Session, p: &Value) -> Result<Value> {
         .recent_files
         .iter()
         .map(|r| {
-            let name = std::path::Path::new(r).file_name().map_or_else(|| r.clone(), |f| f.to_string_lossy().into_owned());
+            let name = std::path::Path::new(r)
+                .file_name()
+                .map_or_else(|| r.clone(), |f| f.to_string_lossy().into_owned());
             json!({"path": r, "name": name, "exists": std::path::Path::new(r).exists()})
         })
         .collect();
@@ -653,7 +867,11 @@ fn open(s: &mut Session, p: &Value) -> Result<Value> {
     let path = req_string("file.open", p, "path")?;
     let variables = variables_param("file.open", p)?;
     // Already open: switch to it.
-    if let Some(i) = s.docs.iter().position(|d| d.path.as_deref() == Some(path.as_str())) {
+    if let Some(i) = s
+        .docs
+        .iter()
+        .position(|d| d.path.as_deref() == Some(path.as_str()))
+    {
         s.active = i;
         remember(s, &path);
         return Ok(json!({"index": i}));
@@ -662,7 +880,11 @@ fn open(s: &mut Session, p: &Value) -> Result<Value> {
     remember(s, &path);
     let native = !rest && matches!(ext(&path).as_str(), "figcraft" | "json");
     let warnings = rest || ext(&path) == "svg";
-    s.docs.push(DocState::new(loaded.doc, native.then_some(path)).with_versions(loaded.versions).with_branches(loaded.branches));
+    s.docs.push(
+        DocState::new(loaded.doc, native.then_some(path))
+            .with_versions(loaded.versions)
+            .with_branches(loaded.branches),
+    );
     s.active = s.docs.len() - 1;
     let mut out = json!({"index": s.active});
     out[if warnings { "warnings" } else { "repairs" }] = json!(loaded.issues);
@@ -689,7 +911,8 @@ pub fn file_bytes(ds: &DocState) -> Result<Vec<u8>> {
     let mut doc = (*ds.doc).clone();
     doc.current_page = Some(ds.page);
     let thumb = thumbnail(&doc);
-    figcraft_format::save_bytes_with_history(&doc, thumb.as_deref(), &ds.versions, &ds.branches).map_err(|e| EngineError::Other(e.to_string()))
+    figcraft_format::save_bytes_with_history(&doc, thumb.as_deref(), &ds.versions, &ds.branches)
+        .map_err(|e| EngineError::Other(e.to_string()))
 }
 
 fn color_profile(s: &mut Session, p: &Value) -> Result<Value> {
@@ -698,9 +921,11 @@ fn color_profile(s: &mut Session, p: &Value) -> Result<Value> {
         s.request_ui("dialog.colorProfile", json!({}));
         return Ok(json!({"profile": s.doc()?.color_profile.id(), "changed": false}));
     };
-    let profile = figcraft_color::ColorProfile::parse(&name).ok_or_else(|| bad(cmd, "profile: srgb or displayP3"))?;
+    let profile = figcraft_color::ColorProfile::parse(&name)
+        .ok_or_else(|| bad(cmd, "profile: srgb or displayP3"))?;
     let convert = boolean(p, "convert").unwrap_or(true);
-    let changed = s.doc()?.color_profile != profile && s.doc_mut()?.set_color_profile(profile, convert);
+    let changed =
+        s.doc()?.color_profile != profile && s.doc_mut()?.set_color_profile(profile, convert);
     Ok(json!({"profile": profile.id(), "changed": changed}))
 }
 
@@ -714,7 +939,11 @@ fn save_to(s: &mut Session, path: String) -> Result<Value> {
     ds.mark_saved();
     ds.revision += 1;
     let uid = ds.uid;
-    for tab in s.docs.iter_mut().filter(|d| d.branch_of.as_ref().is_some_and(|(m, _)| *m == uid)) {
+    for tab in s
+        .docs
+        .iter_mut()
+        .filter(|d| d.branch_of.as_ref().is_some_and(|(m, _)| *m == uid))
+    {
         tab.mark_saved();
     }
     remember(s, &path);
@@ -725,11 +954,20 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(path) = string(p, "path") {
         return save_to(s, path);
     }
-    match s.docs.get(crate::branches::file_tab(s)).ok_or(EngineError::NoDocument)?.path.clone() {
+    match s
+        .docs
+        .get(crate::branches::file_tab(s))
+        .ok_or(EngineError::NoDocument)?
+        .path
+        .clone()
+    {
         Some(path) => save_to(s, path),
         None => {
             s.request_ui("dialog.saveAs", json!({}));
-            Err(EngineError::Disabled("file.save".into(), "the file has no path yet: pass `path`".into()))
+            Err(EngineError::Disabled(
+                "file.save".into(),
+                "the file has no path yet: pass `path`".into(),
+            ))
         }
     }
 }
@@ -744,23 +982,49 @@ fn save_as(s: &mut Session, p: &Value) -> Result<Value> {
         }
         None => {
             s.request_ui("dialog.saveAs", json!({}));
-            Err(EngineError::Disabled("file.saveAs".into(), "pass `path`".into()))
+            Err(EngineError::Disabled(
+                "file.saveAs".into(),
+                "pass `path`".into(),
+            ))
         }
     }
 }
 
 /// Encode `ids` (or the page) in `format` at `scale`.
-pub fn export_bytes(doc: &Document, ids: &[NodeId], format: ExportFormat, scale: f64) -> Result<Vec<u8>> {
-    export_bytes_with(doc, ids, &ExportSetting { format, ..Default::default() }, scale)
+pub fn export_bytes(
+    doc: &Document,
+    ids: &[NodeId],
+    format: ExportFormat,
+    scale: f64,
+) -> Result<Vec<u8>> {
+    export_bytes_with(
+        doc,
+        ids,
+        &ExportSetting {
+            format,
+            ..Default::default()
+        },
+        scale,
+    )
 }
 
 /// The page area exporting `ids` with `setting` covers: what they paint (a clipping frame's own
 /// area), or their boxes with "include bounding box" and for slices.
-pub fn export_area(doc: &Document, ids: &[NodeId], setting: &ExportSetting) -> Option<figcraft_geom::Rect> {
+pub fn export_area(
+    doc: &Document,
+    ids: &[NodeId],
+    setting: &ExportSetting,
+) -> Option<figcraft_geom::Rect> {
     ids.iter()
         .filter_map(|i| {
-            let slice = doc.node(*i).is_some_and(|n| matches!(n.kind, NodeKind::Slice));
-            if setting.include_bounding_box || slice { doc.world_bounds(*i) } else { figcraft_render::export_bounds(doc, *i) }
+            let slice = doc
+                .node(*i)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Slice));
+            if setting.include_bounding_box || slice {
+                doc.world_bounds(*i)
+            } else {
+                figcraft_render::export_bounds(doc, *i)
+            }
         })
         .reduce(|a, b| a.union(b))
 }
@@ -768,8 +1032,15 @@ pub fn export_area(doc: &Document, ids: &[NodeId], setting: &ExportSetting) -> O
 /// What an export of `ids` draws, bottom to top: the layers themselves, or (contents only off,
 /// and always for slices) every top-level layer of their page, so whatever shows in the area is in.
 fn drawn_layers(doc: &Document, ids: &[NodeId], setting: &ExportSetting) -> Vec<NodeId> {
-    let slice = ids.iter().any(|i| doc.node(*i).is_some_and(|n| matches!(n.kind, NodeKind::Slice)));
-    match ids.first().and_then(|i| doc.page_of(*i)).and_then(|p| doc.node(p)) {
+    let slice = ids.iter().any(|i| {
+        doc.node(*i)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Slice))
+    });
+    match ids
+        .first()
+        .and_then(|i| doc.page_of(*i))
+        .and_then(|p| doc.node(p))
+    {
         Some(page) if slice || !setting.contents_only => page.children.clone(),
         _ => super::edit::z_sorted(doc, ids),
     }
@@ -777,7 +1048,12 @@ fn drawn_layers(doc: &Document, ids: &[NodeId], setting: &ExportSetting) -> Vec<
 
 /// [`export_bytes`] with an export setting's format and options (its size is `scale`: see
 /// [`export_scale`]): contents only, include bounding box, the SVG options and PDF print settings.
-pub fn export_bytes_with(doc: &Document, ids: &[NodeId], setting: &ExportSetting, scale: f64) -> Result<Vec<u8>> {
+pub fn export_bytes_with(
+    doc: &Document,
+    ids: &[NodeId],
+    setting: &ExportSetting,
+    scale: f64,
+) -> Result<Vec<u8>> {
     let nothing = || EngineError::Disabled("file.export".into(), "nothing to export".into());
     if ids.is_empty() {
         return Err(nothing());
@@ -787,7 +1063,10 @@ pub fn export_bytes_with(doc: &Document, ids: &[NodeId], setting: &ExportSetting
     // The layers' own area unless an option or a slice says otherwise.
     let own_area = setting.contents_only
         && !setting.include_bounding_box
-        && !ids.iter().any(|i| doc.node(*i).is_some_and(|n| matches!(n.kind, NodeKind::Slice)));
+        && !ids.iter().any(|i| {
+            doc.node(*i)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Slice))
+        });
     match setting.format {
         // SVG and PDF colours are sRGB: a Display P3 file exports converted (out-of-gamut colours clip).
         ExportFormat::Svg => {
@@ -797,19 +1076,29 @@ pub fn export_bytes_with(doc: &Document, ids: &[NodeId], setting: &ExportSetting
                 simplify_stroke: setting.svg_simplify_stroke,
                 bounds: Some(area),
             };
-            figcraft_svg::export_svg(&doc.in_srgb(), &drawn, &opts).map(String::into_bytes).ok_or_else(nothing)
+            figcraft_svg::export_svg(&doc.in_srgb(), &drawn, &opts)
+                .map(String::into_bytes)
+                .ok_or_else(nothing)
         }
         ExportFormat::Pdf => {
             let doc = &*doc.in_srgb();
             // Frames export one page each; anything else shares one page.
-            let all_frames = own_area && ids.iter().all(|i| doc.node(*i).is_some_and(|n| n.kind.is_frame_like()));
-            let groups: Vec<Vec<NodeId>> = if all_frames { ids.iter().map(|i| vec![*i]).collect() } else { vec![drawn] };
+            let all_frames = own_area
+                && ids
+                    .iter()
+                    .all(|i| doc.node(*i).is_some_and(|n| n.kind.is_frame_like()));
+            let groups: Vec<Vec<NodeId>> = if all_frames {
+                ids.iter().map(|i| vec![*i]).collect()
+            } else {
+                vec![drawn]
+            };
             pdf_bytes(doc, &groups, &setting.print, (!own_area).then_some(area))
         }
         _ => {
             let pix = figcraft_render::render_area(doc, &drawn, area, scale)
                 .ok_or_else(|| EngineError::Other("render failed (empty or too large)".into()))?;
-            figcraft_render::encode_export(&pix, setting.format, doc.color_profile).map_err(EngineError::Other)
+            figcraft_render::encode_export(&pix, setting.format, doc.color_profile)
+                .map_err(EngineError::Other)
         }
     }
 }
@@ -852,7 +1141,9 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
             write(&path, &bytes)?;
             Ok(json!({"path": path, "bytes": bytes.len(), "format": format.ext()}))
         }
-        None => Ok(json!({"format": format.ext(), "data": base64::engine::general_purpose::STANDARD.encode(&bytes)})),
+        None => Ok(
+            json!({"format": format.ext(), "data": base64::engine::general_purpose::STANDARD.encode(&bytes)}),
+        ),
     }
 }
 
@@ -866,13 +1157,16 @@ fn export_fig(s: &mut Session, p: &Value) -> Result<Value> {
             write(&path, &bytes)?;
             Ok(json!({"path": path, "bytes": bytes.len(), "format": "fig", "warnings": warnings}))
         }
-        None => Ok(json!({"format": "fig", "data": base64::engine::general_purpose::STANDARD.encode(&bytes), "warnings": warnings})),
+        None => Ok(
+            json!({"format": "fig", "data": base64::engine::general_purpose::STANDARD.encode(&bytes), "warnings": warnings}),
+        ),
     }
 }
 
 /// `doc` as a `.fig` file (with a thumbnail) and the warnings about what was left out.
 pub fn fig_bytes(doc: &Document) -> Result<(Vec<u8>, Vec<String>)> {
-    figcraft_format::fig::export(doc, thumbnail(doc).as_deref()).map_err(|e| EngineError::Other(e.to_string()))
+    figcraft_format::fig::export(doc, thumbnail(doc).as_deref())
+        .map_err(|e| EngineError::Other(e.to_string()))
 }
 
 /// The scale that gives `ids` (their export area together) `setting`'s export size.
@@ -889,7 +1183,8 @@ pub(super) fn export_setting(cmd: &str, mut e: ExportSetting, p: &Value) -> Resu
         e.suffix = s.chars().filter(|c| !c.is_control()).take(200).collect();
     }
     if let Some(f) = string(p, "format") {
-        e.format = ExportFormat::from_ext(&f).ok_or_else(|| bad(cmd, "format: png|jpg|svg|pdf|webp"))?;
+        e.format =
+            ExportFormat::from_ext(&f).ok_or_else(|| bad(cmd, "format: png|jpg|svg|pdf|webp"))?;
     }
     e.print = print_param(cmd, p, e.print)?;
     for (key, slot) in [
@@ -901,7 +1196,9 @@ pub(super) fn export_setting(cmd: &str, mut e: ExportSetting, p: &Value) -> Resu
     ] {
         match get(p, key) {
             None | Some(Value::Null) => {}
-            Some(v) => *slot = bool_of(v).ok_or_else(|| bad(cmd, format!("{key}: true or false")))?,
+            Some(v) => {
+                *slot = bool_of(v).ok_or_else(|| bad(cmd, format!("{key}: true or false")))?
+            }
         }
     }
     Ok(e)
@@ -909,7 +1206,9 @@ pub(super) fn export_setting(cmd: &str, mut e: ExportSetting, p: &Value) -> Resu
 
 /// Whether `p` sets any PDF print option.
 fn has_print_param(p: &Value) -> bool {
-    ["bleed", "cropMarks", "bleedMarks", "cmyk"].iter().any(|k| get(p, k).is_some_and(|v| !v.is_null()))
+    ["bleed", "cropMarks", "bleedMarks", "cmyk"]
+        .iter()
+        .any(|k| get(p, k).is_some_and(|v| !v.is_null()))
 }
 
 /// `base` with the PDF print options `p` sets: `bleed` (points, or a length like "3mm" or
@@ -927,10 +1226,16 @@ pub(super) fn print_param(cmd: &str, p: &Value, mut base: PrintSettings) -> Resu
                 .ok_or_else(|| bad(cmd, "bleed: points, or a length like \"3mm\" or \"0.125in\" (up to 144 pt, 2 in)"))?;
         }
     }
-    for (key, slot) in [("cropMarks", &mut base.crop_marks), ("bleedMarks", &mut base.bleed_marks), ("cmyk", &mut base.cmyk)] {
+    for (key, slot) in [
+        ("cropMarks", &mut base.crop_marks),
+        ("bleedMarks", &mut base.bleed_marks),
+        ("cmyk", &mut base.cmyk),
+    ] {
         match get(p, key) {
             None | Some(Value::Null) => {}
-            Some(v) => *slot = bool_of(v).ok_or_else(|| bad(cmd, format!("{key}: true or false")))?,
+            Some(v) => {
+                *slot = bool_of(v).ok_or_else(|| bad(cmd, format!("{key}: true or false")))?
+            }
         }
     }
     Ok(base)
@@ -941,10 +1246,19 @@ fn size_param(cmd: &str, p: &Value) -> Result<Option<ExportSize>> {
     let size = match get(p, "size") {
         None | Some(Value::Null) => return Ok(None),
         Some(Value::String(s)) => ExportSize::parse(s),
-        Some(Value::Number(n)) => n.as_f64().and_then(|value| ExportSize::Scale { value }.checked()),
-        Some(v) => serde_json::from_value::<ExportSize>(v.clone()).ok().and_then(ExportSize::checked),
+        Some(Value::Number(n)) => n
+            .as_f64()
+            .and_then(|value| ExportSize::Scale { value }.checked()),
+        Some(v) => serde_json::from_value::<ExportSize>(v.clone())
+            .ok()
+            .and_then(ExportSize::checked),
     };
-    size.map(Some).ok_or_else(|| bad(cmd, "size: 2x, 512w or 512h (or {by: scale|width|height, value})"))
+    size.map(Some).ok_or_else(|| {
+        bad(
+            cmd,
+            "size: 2x, 512w or 512h (or {by: scale|width|height, value})",
+        )
+    })
 }
 
 /// Most files one `file.exportLayers` writes.
@@ -960,11 +1274,18 @@ pub struct ExportJob {
 /// The files exporting `ids` with their export settings makes, with unique names (repeats get
 /// " 2", " 3"…). Layers without settings make none.
 pub fn export_jobs(doc: &Document, ids: &[NodeId]) -> Vec<ExportJob> {
-    jobs_for(ids.iter().filter_map(|i| Some((*i, doc.node(*i)?.exports.clone()))), doc)
+    jobs_for(
+        ids.iter()
+            .filter_map(|i| Some((*i, doc.node(*i)?.exports.clone()))),
+        doc,
+    )
 }
 
 /// The files exporting each layer with the settings beside it makes (see [`export_jobs`]).
-pub fn jobs_for(items: impl IntoIterator<Item = (NodeId, Vec<ExportSetting>)>, doc: &Document) -> Vec<ExportJob> {
+pub fn jobs_for(
+    items: impl IntoIterator<Item = (NodeId, Vec<ExportSetting>)>,
+    doc: &Document,
+) -> Vec<ExportJob> {
     let mut used = std::collections::BTreeSet::new();
     let mut out = Vec::new();
     for (id, settings) in items {
@@ -976,10 +1297,21 @@ pub fn jobs_for(items: impl IntoIterator<Item = (NodeId, Vec<ExportSetting>)>, d
             }
             let stem = format!("{base}{}", safe_file_name(&e.file_suffix()));
             let ext = e.format.ext();
-            let file =
-                (1..).map(|k| if k == 1 { format!("{stem}.{ext}") } else { format!("{stem} {k}.{ext}") }).find(|f| used.insert(f.to_lowercase()));
+            let file = (1..)
+                .map(|k| {
+                    if k == 1 {
+                        format!("{stem}.{ext}")
+                    } else {
+                        format!("{stem} {k}.{ext}")
+                    }
+                })
+                .find(|f| used.insert(f.to_lowercase()));
             if let Some(file) = file {
-                out.push(ExportJob { id, setting: e, file });
+                out.push(ExportJob {
+                    id,
+                    setting: e,
+                    file,
+                });
             }
         }
     }
@@ -989,19 +1321,40 @@ pub fn jobs_for(items: impl IntoIterator<Item = (NodeId, Vec<ExportSetting>)>, d
 /// The file path a layer name exports to, without extension: each `/` makes a folder; `.` and
 /// `..` segments are dropped, so it stays inside the export folder.
 fn export_path(name: &str) -> String {
-    let parts: Vec<String> =
-        name.split('/').map(|seg| safe_file_name(seg).trim().trim_end_matches('.').to_string()).filter(|seg| !seg.is_empty()).take(32).collect();
-    if parts.is_empty() { "Untitled".into() } else { parts.join("/") }
+    let parts: Vec<String> = name
+        .split('/')
+        .map(|seg| safe_file_name(seg).trim().trim_end_matches('.').to_string())
+        .filter(|seg| !seg.is_empty())
+        .take(32)
+        .collect();
+    if parts.is_empty() {
+        "Untitled".into()
+    } else {
+        parts.join("/")
+    }
 }
 
 /// `name` without path separators and characters file systems reject.
 fn safe_file_name(name: &str) -> String {
-    name.chars().take(200).map(|c| if c.is_control() || "/\\:*?\"<>|".contains(c) { '_' } else { c }).collect()
+    name.chars()
+        .take(200)
+        .map(|c| {
+            if c.is_control() || "/\\:*?\"<>|".contains(c) {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect()
 }
 
 /// Layers on `page` that have export settings (document order).
 pub fn exportable_layers(doc: &Document, page: NodeId) -> Vec<NodeId> {
-    doc.subtree(page).into_iter().skip(1).filter(|i| doc.node(*i).is_some_and(|n| !n.exports.is_empty())).collect()
+    doc.subtree(page)
+        .into_iter()
+        .skip(1)
+        .filter(|i| doc.node(*i).is_some_and(|n| !n.exports.is_empty()))
+        .collect()
 }
 
 fn export_layers(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1010,18 +1363,34 @@ fn export_layers(s: &mut Session, p: &Value) -> Result<Value> {
     let assets = boolean(p, "assets").unwrap_or(false);
     let mut ids = targets(s, p);
     if ids.is_empty() {
-        ids = if assets { vec![s.page()?] } else { exportable_layers(doc, s.page()?) };
+        ids = if assets {
+            vec![s.page()?]
+        } else {
+            exportable_layers(doc, s.page()?)
+        };
     }
-    let jobs = if assets { crate::devinspect::asset_jobs(doc, &ids) } else { export_jobs(doc, &ids) };
+    let jobs = if assets {
+        crate::devinspect::asset_jobs(doc, &ids)
+    } else {
+        export_jobs(doc, &ids)
+    };
     if jobs.is_empty() {
-        return Err(EngineError::Disabled(cmd.into(), "no export settings (add one with export.add)".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "no export settings (add one with export.add)".into(),
+        ));
     }
     let dir = string(p, "dir");
     // Print options passed here stand in for every PDF setting's own.
-    let print = has_print_param(p).then(|| print_param(cmd, p, PrintSettings::default())).transpose()?;
+    let print = has_print_param(p)
+        .then(|| print_param(cmd, p, PrintSettings::default()))
+        .transpose()?;
     let mut files = Vec::with_capacity(jobs.len());
     for job in &jobs {
-        let setting = ExportSetting { print: print.unwrap_or(job.setting.print), ..job.setting.clone() };
+        let setting = ExportSetting {
+            print: print.unwrap_or(job.setting.print),
+            ..job.setting.clone()
+        };
         let scale = export_scale(doc, &[job.id], &setting);
         let bytes = export_bytes_with(doc, &[job.id], &setting, scale)?;
         let mut f = json!({"name": job.file, "id": job.id, "bytes": bytes.len()});
@@ -1046,8 +1415,18 @@ fn export_layers(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// A PDF with one page per group of layers (an sRGB document), titled after the file; `area`
 /// sizes a single page to that page area instead of the layers' bounds.
-fn pdf_bytes(doc: &Document, groups: &[Vec<NodeId>], print: &PrintSettings, area: Option<figcraft_geom::Rect>) -> Result<Vec<u8>> {
-    let opts = figcraft_pdf::PdfOptions { title: Some(doc.name.clone()), print: *print, area, ..Default::default() };
+fn pdf_bytes(
+    doc: &Document,
+    groups: &[Vec<NodeId>],
+    print: &PrintSettings,
+    area: Option<figcraft_geom::Rect>,
+) -> Result<Vec<u8>> {
+    let opts = figcraft_pdf::PdfOptions {
+        title: Some(doc.name.clone()),
+        print: *print,
+        area,
+        ..Default::default()
+    };
     figcraft_pdf::export_groups(doc, groups, &opts).map_err(|e| EngineError::Other(e.to_string()))
 }
 
@@ -1056,10 +1435,16 @@ pub fn frames_pdf(doc: &Document, page: NodeId, print: &PrintSettings) -> Result
     let mut frames = doc.top_frames(page);
     frames.retain(|f| doc.node(*f).is_some_and(|n| n.visible));
     if frames.is_empty() {
-        return Err(EngineError::Disabled("file.exportFramesPdf".into(), "the page has no visible frames".into()));
+        return Err(EngineError::Disabled(
+            "file.exportFramesPdf".into(),
+            "the page has no visible frames".into(),
+        ));
     }
     let groups: Vec<Vec<NodeId>> = frames.iter().map(|f| vec![*f]).collect();
-    Ok((pdf_bytes(&doc.in_srgb(), &groups, print, None)?, frames.len()))
+    Ok((
+        pdf_bytes(&doc.in_srgb(), &groups, print, None)?,
+        frames.len(),
+    ))
 }
 
 /// Every top-level frame of a page (reading order), one PDF page each.
@@ -1077,7 +1462,9 @@ fn export_frames_pdf(s: &mut Session, p: &Value) -> Result<Value> {
             write(&path, &bytes)?;
             Ok(json!({"path": path, "bytes": bytes.len(), "pages": pages}))
         }
-        None => Ok(json!({"format": "pdf", "pages": pages, "data": base64::engine::general_purpose::STANDARD.encode(&bytes)})),
+        None => Ok(
+            json!({"format": "pdf", "pages": pages, "data": base64::engine::general_purpose::STANDARD.encode(&bytes)}),
+        ),
     }
 }
 
@@ -1089,7 +1476,9 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
     } else if let Some(d) = string(p, "data") {
         let d = d.split_once(',').map(|(_, b)| b.to_string()).unwrap_or(d);
         (
-            base64::engine::general_purpose::STANDARD.decode(d.trim()).map_err(|e| bad("file.import", e.to_string()))?,
+            base64::engine::general_purpose::STANDARD
+                .decode(d.trim())
+                .map_err(|e| bad("file.import", e.to_string()))?,
             string(p, "name").unwrap_or_else(|| "import.png".into()),
         )
     } else {
@@ -1103,13 +1492,17 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
             let doc = s.doc_mut()?;
             let (x, y) = (x.unwrap_or(center.0), y.unwrap_or(center.1));
             let imported =
-                figcraft_svg::import_svg_with_notes(doc, &bytes, page, x, y, &file_stem(&name)).map_err(|e| EngineError::Other(e.to_string()))?;
+                figcraft_svg::import_svg_with_notes(doc, &bytes, page, x, y, &file_stem(&name))
+                    .map_err(|e| EngineError::Other(e.to_string()))?;
             let id = imported.frame;
             // Centred on the point (a paste lands in the middle of the view).
             if boolean(p, "center").unwrap_or(false)
                 && let Some(n) = doc.node_mut(id)
             {
-                n.transform = figcraft_geom::Affine::translate(((x - n.width / 2.0).round(), (y - n.height / 2.0).round()));
+                n.transform = figcraft_geom::Affine::translate((
+                    (x - n.width / 2.0).round(),
+                    (y - n.height / 2.0).round(),
+                ));
             }
             s.set_selection(vec![id]);
             let mut out = json!({"id": id});
@@ -1124,8 +1517,17 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
                 Some(r) => r,
                 None => &figcraft_format::rest::no_images,
             };
-            let sibling = if variables.is_none() { path.as_deref().and_then(sibling_variables) } else { None };
-            let (other, rest) = load_with(&bytes, &name, variables.as_ref().or(sibling.as_ref()), images)?;
+            let sibling = if variables.is_none() {
+                path.as_deref().and_then(sibling_variables)
+            } else {
+                None
+            };
+            let (other, rest) = load_with(
+                &bytes,
+                &name,
+                variables.as_ref().or(sibling.as_ref()),
+                images,
+            )?;
             let pages = append_pages(s.doc_mut()?, &other.doc)?;
             let mut out = json!({"pages": pages});
             if rest {
@@ -1135,7 +1537,10 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
         }
         _ => {
             let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-            super::create::place_image(s, &json!({"data": b64, "x": x.unwrap_or(center.0), "y": y.unwrap_or(center.1), "name": file_stem(&name)}))
+            super::create::place_image(
+                s,
+                &json!({"data": b64, "x": x.unwrap_or(center.0), "y": y.unwrap_or(center.1), "name": file_stem(&name)}),
+            )
         }
     }
 }
@@ -1153,10 +1558,34 @@ fn append_pages(doc: &mut Document, other: &Document) -> Result<Vec<NodeId>> {
             doc.styles.push(st.clone());
         }
     }
-    let have: std::collections::BTreeSet<String> = doc.variables.collections.iter().map(|c| c.id.clone()).collect();
-    doc.variables.collections.extend(other.variables.collections.iter().filter(|c| !have.contains(&c.id)).cloned());
-    let have: std::collections::BTreeSet<String> = doc.variables.variables.iter().map(|v| v.id.clone()).collect();
-    doc.variables.variables.extend(other.variables.variables.iter().filter(|v| !have.contains(&v.id)).cloned());
+    let have: std::collections::BTreeSet<String> = doc
+        .variables
+        .collections
+        .iter()
+        .map(|c| c.id.clone())
+        .collect();
+    doc.variables.collections.extend(
+        other
+            .variables
+            .collections
+            .iter()
+            .filter(|c| !have.contains(&c.id))
+            .cloned(),
+    );
+    let have: std::collections::BTreeSet<String> = doc
+        .variables
+        .variables
+        .iter()
+        .map(|v| v.id.clone())
+        .collect();
+    doc.variables.variables.extend(
+        other
+            .variables
+            .variables
+            .iter()
+            .filter(|v| !have.contains(&v.id))
+            .cloned(),
+    );
     let mut map = std::collections::BTreeMap::new();
     for pg in &other.pages {
         for id in other.subtree(*pg).into_iter().skip(1) {
@@ -1175,13 +1604,20 @@ fn append_pages(doc: &mut Document, other: &Document) -> Result<Vec<NodeId>> {
             n.kind = kind;
         }
         for c in &pn.children {
-            let nodes: Vec<Node> = other.subtree(*c).into_iter().filter_map(|i| other.node(i).cloned()).collect();
+            let nodes: Vec<Node> = other
+                .subtree(*c)
+                .into_iter()
+                .filter_map(|i| other.node(i).cloned())
+                .collect();
             doc.paste_nodes(&nodes, &map, *c, np, None)?;
         }
         new_pages.push(np);
     }
     for new in map.values() {
-        let src = doc.node(*new).and_then(|n| n.source).and_then(|s| map.get(&s).copied());
+        let src = doc
+            .node(*new)
+            .and_then(|n| n.source)
+            .and_then(|s| map.get(&s).copied());
         if let (Some(src), Some(n)) = (src, doc.node_mut(*new)) {
             n.source = Some(src);
         }
@@ -1192,11 +1628,16 @@ fn append_pages(doc: &mut Document, other: &Document) -> Result<Vec<NodeId>> {
 
 fn close(s: &mut Session, p: &Value) -> Result<Value> {
     let i = num(p, "index").map(|x| x as usize).unwrap_or(s.active);
-    let Some(ds) = s.docs.get(i) else { return Err(bad("file.close", "no such document")) };
+    let Some(ds) = s.docs.get(i) else {
+        return Err(bad("file.close", "no such document"));
+    };
     // A branch tab's edits are in its main file already (which then has unsaved changes).
     if ds.branch_of.is_none() && ds.is_dirty() && !boolean(p, "force").unwrap_or(false) {
         s.request_ui("dialog.unsaved", json!({"index": i}));
-        return Err(EngineError::Disabled("file.close".into(), "the document has unsaved changes (pass force: true to discard)".into()));
+        return Err(EngineError::Disabled(
+            "file.close".into(),
+            "the document has unsaved changes (pass force: true to discard)".into(),
+        ));
     }
     let uid = ds.uid;
     s.docs.remove(i);
@@ -1242,7 +1683,9 @@ mod rest_import_tests {
     }
 
     fn instance(doc: &Document) -> &Node {
-        doc.nodes().find(|n| matches!(n.kind, NodeKind::Instance { .. })).unwrap()
+        doc.nodes()
+            .find(|n| matches!(n.kind, NodeKind::Instance { .. }))
+            .unwrap()
     }
 
     #[test]
@@ -1250,14 +1693,23 @@ mod rest_import_tests {
         let bytes = serde_json::to_vec(&kit()).unwrap();
         let (doc, warnings) = load_bytes(&bytes, "kit.json").unwrap();
         assert_eq!(doc.name, "Kit");
-        assert!(warnings.iter().any(|w| w.contains("placeholder")), "{warnings:?}");
+        assert!(
+            warnings.iter().any(|w| w.contains("placeholder")),
+            "{warnings:?}"
+        );
         let inst = instance(&doc);
-        let NodeKind::Instance { component, .. } = inst.kind else { panic!() };
+        let NodeKind::Instance { component, .. } = inst.kind else {
+            panic!()
+        };
         assert_eq!(inst.source, Some(component));
         let main_label = doc.node(component).unwrap().children[0];
         let label = doc.node(inst.children[0]).unwrap();
         assert_eq!(label.source, Some(main_label));
-        assert!(label.overrides.contains("characters"), "{:?}", label.overrides);
+        assert!(
+            label.overrides.contains("characters"),
+            "{:?}",
+            label.overrides
+        );
         assert!(crate::components::mirror_issues(&doc).is_empty());
         assert!(thumbnail(&doc).is_some());
     }
@@ -1269,7 +1721,9 @@ mod rest_import_tests {
         let png = {
             let mut d = Document::new("x");
             let p = d.first_page().unwrap();
-            let id = d.create(p, NodeKind::Rectangle, "R", 0.0, 0.0, 3.0, 2.0).unwrap();
+            let id = d
+                .create(p, NodeKind::Rectangle, "R", 0.0, 0.0, 3.0, 2.0)
+                .unwrap();
             export_bytes(&d, &[id], ExportFormat::Png, 1.0).unwrap()
         };
         std::fs::write(dir.join("images").join("photo1.png"), &png).unwrap();
@@ -1279,29 +1733,58 @@ mod rest_import_tests {
 
         let mut s = Session::new();
         let r = s.execute("file.open", &json!({"path": path})).unwrap();
-        assert!(r["warnings"].as_array().is_some_and(|w| w.iter().all(|w| !w.as_str().unwrap_or("").contains("placeholder"))), "{r}");
+        assert!(
+            r["warnings"].as_array().is_some_and(|w| w
+                .iter()
+                .all(|w| !w.as_str().unwrap_or("").contains("placeholder"))),
+            "{r}"
+        );
         assert!(r.get("repairs").is_none());
-        assert_eq!(s.ds().unwrap().path, None, "an import is never saved over its JSON");
+        assert_eq!(
+            s.ds().unwrap().path,
+            None,
+            "an import is never saved over its JSON"
+        );
         let doc = s.doc().unwrap();
         let photo = doc.nodes().find(|n| n.name == "Photo").unwrap();
-        let figcraft_color::PaintKind::Image(img) = &photo.fills[0].kind else { panic!() };
-        assert_eq!(doc.images.get(&img.image).map(|i| (i.width, i.height)), Some((3, 2)), "read from images/ next to the file");
+        let figcraft_color::PaintKind::Image(img) = &photo.fills[0].kind else {
+            panic!()
+        };
+        assert_eq!(
+            doc.images.get(&img.image).map(|i| (i.width, i.height)),
+            Some((3, 2)),
+            "read from images/ next to the file"
+        );
 
         // Import into another document: pages are appended and references follow the new ids.
         let mut s = Session::new();
-        let data = base64::engine::general_purpose::STANDARD.encode(serde_json::to_vec(&kit()).unwrap());
-        let r = s.execute("file.import", &json!({"data": data, "name": "kit.json"})).unwrap();
+        let data =
+            base64::engine::general_purpose::STANDARD.encode(serde_json::to_vec(&kit()).unwrap());
+        let r = s
+            .execute("file.import", &json!({"data": data, "name": "kit.json"}))
+            .unwrap();
         assert_eq!(r["pages"].as_array().map(Vec::len), Some(1));
         assert!(r["warnings"].is_array(), "{r}");
         let doc = s.doc().unwrap();
         assert_eq!(doc.pages.len(), 2);
         let page = doc.node(doc.pages[1]).unwrap();
-        assert!(matches!(page.kind, NodeKind::Page { background, .. } if (background.r - 0.9).abs() < 1e-6));
+        assert!(
+            matches!(page.kind, NodeKind::Page { background, .. } if (background.r - 0.9).abs() < 1e-6)
+        );
         let inst = instance(doc);
-        let NodeKind::Instance { component, .. } = inst.kind else { panic!() };
-        assert!(doc.node(component).is_some_and(|c| matches!(c.kind, NodeKind::Component { .. })));
+        let NodeKind::Instance { component, .. } = inst.kind else {
+            panic!()
+        };
+        assert!(
+            doc.node(component)
+                .is_some_and(|c| matches!(c.kind, NodeKind::Component { .. }))
+        );
         let label = doc.node(inst.children[0]).unwrap();
-        assert!(label.source.is_some_and(|src| doc.is_ancestor(component, src)));
+        assert!(
+            label
+                .source
+                .is_some_and(|src| doc.is_ancestor(component, src))
+        );
         assert!(crate::components::mirror_issues(doc).is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }

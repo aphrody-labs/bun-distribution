@@ -9,14 +9,33 @@ use super::quantize::Indexed;
 pub fn encode(img: &Indexed, interlaced: bool) -> Result<Vec<u8>, String> {
     let fail = |e: gif::EncodingError| format!("GIF encoding failed: {e}");
     let (Ok(w), Ok(h)) = (u16::try_from(img.width), u16::try_from(img.height)) else {
-        return Err(format!("{} × {} pixels is too large for GIF (at most 65535 pixels a side): lower the resolution", img.width, img.height));
+        return Err(format!(
+            "{} × {} pixels is too large for GIF (at most 65535 pixels a side): lower the resolution",
+            img.width, img.height
+        ));
     };
-    if w == 0 || h == 0 || img.indices.len() != w as usize * h as usize || img.palette.is_empty() || img.palette.len() > 256 {
+    if w == 0
+        || h == 0
+        || img.indices.len() != w as usize * h as usize
+        || img.palette.is_empty()
+        || img.palette.len() > 256
+    {
         return Err("GIF encoding failed: the palette image is malformed".into());
     }
-    let buffer = if interlaced { Cow::Owned(interlace(&img.indices, w as usize)) } else { Cow::Borrowed(img.indices.as_slice()) };
+    let buffer = if interlaced {
+        Cow::Owned(interlace(&img.indices, w as usize))
+    } else {
+        Cow::Borrowed(img.indices.as_slice())
+    };
     let mut enc = gif::Encoder::new(Vec::new(), w, h, &img.palette.concat()).map_err(fail)?;
-    let frame = gif::Frame { width: w, height: h, buffer, transparent: img.transparent, interlaced, ..gif::Frame::default() };
+    let frame = gif::Frame {
+        width: w,
+        height: h,
+        buffer,
+        transparent: img.transparent,
+        interlaced,
+        ..gif::Frame::default()
+    };
     enc.write_frame(&frame).map_err(fail)?;
     enc.into_inner().map_err(fail)
 }

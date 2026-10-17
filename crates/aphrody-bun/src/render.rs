@@ -147,10 +147,15 @@ pub unsafe extern "C" fn bun_rs_render3d_png(
         return std::ptr::null_mut();
     };
     let frame = {
-        let mut pipeline = pipeline.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut pipeline = pipeline
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         pipeline.render(&scene)
     };
-    let Ok(png_bytes) = frame.map_err(|_| ()).and_then(|f| f.to_png().map_err(|_| ())) else {
+    let Ok(png_bytes) = frame
+        .map_err(|_| ())
+        .and_then(|f| f.to_png().map_err(|_| ()))
+    else {
         return std::ptr::null_mut();
     };
     let boxed: Box<[u8]> = png_bytes.into_boxed_slice();
@@ -239,7 +244,12 @@ mod render3d_tests {
         // SAFETY: `json` is a live buffer for its own length; `out_len` is a
         // valid local `usize`.
         let ptr = unsafe {
-            bun_rs_render3d_png(json.as_ptr(), json.len(), policy, std::ptr::addr_of_mut!(out_len))
+            bun_rs_render3d_png(
+                json.as_ptr(),
+                json.len(),
+                policy,
+                std::ptr::addr_of_mut!(out_len),
+            )
         };
         if ptr.is_null() {
             assert_eq!(out_len, 0);

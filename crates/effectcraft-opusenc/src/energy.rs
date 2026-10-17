@@ -69,7 +69,11 @@ pub fn quant_coarse_energy(
     budget: i32,
 ) {
     let prob = &E_PROB_MODEL[lm][intra as usize];
-    let (coef, beta) = if intra { (0.0, BETA_INTRA) } else { (PRED_COEF[lm], BETA_COEF[lm]) };
+    let (coef, beta) = if intra {
+        (0.0, BETA_INTRA)
+    } else {
+        (PRED_COEF[lm], BETA_COEF[lm])
+    };
     let mut prev = [0f32; 2];
     for i in start..end {
         for ch in 0..c {
@@ -94,7 +98,15 @@ pub fn quant_coarse_energy(
                 qi = laplace_encode(enc, qi, (prob[pi] as u32) << 7, (prob[pi + 1] as u32) << 6);
             } else if budget - tell >= 2 {
                 qi = qi.clamp(-1, 1);
-                enc.icdf(if qi < 0 { (-2 * qi - 1) as usize } else { (2 * qi) as usize }, &SMALL_ENERGY_ICDF, 2);
+                enc.icdf(
+                    if qi < 0 {
+                        (-2 * qi - 1) as usize
+                    } else {
+                        (2 * qi) as usize
+                    },
+                    &SMALL_ENERGY_ICDF,
+                    2,
+                );
             } else if budget - tell >= 1 {
                 qi = qi.clamp(-1, 0);
                 enc.bit_logp(qi == -1, 1);
@@ -212,16 +224,29 @@ mod tests {
             for intra in 0..2 {
                 for band in 0..21 {
                     let prob = &E_PROB_MODEL[lm][intra];
-                    let (fs, decay) = ((prob[2 * band] as u32) << 7, (prob[2 * band + 1] as u32) << 6);
+                    let (fs, decay) = (
+                        (prob[2 * band] as u32) << 7,
+                        (prob[2 * band + 1] as u32) << 6,
+                    );
                     let vals: Vec<i32> = (-64..=64).collect();
                     let mut e = RangeEncoder::new();
-                    let coded: Vec<i32> = vals.iter().map(|&v| laplace_encode(&mut e, v, fs, decay)).collect();
+                    let coded: Vec<i32> = vals
+                        .iter()
+                        .map(|&v| laplace_encode(&mut e, v, fs, decay))
+                        .collect();
                     let size = (e.tell() as usize).div_ceil(8);
                     let buf = e.done(size);
                     let mut d = RangeDecoder::new(&buf);
                     for (&v, &c) in vals.iter().zip(&coded) {
-                        assert!(c == v || (c.signum() == v.signum() && c.abs() < v.abs()), "clamp {v} -> {c}");
-                        assert_eq!(laplace_decode(&mut d, fs, decay), c, "lm={lm} intra={intra} band={band} v={v}");
+                        assert!(
+                            c == v || (c.signum() == v.signum() && c.abs() < v.abs()),
+                            "clamp {v} -> {c}"
+                        );
+                        assert_eq!(
+                            laplace_decode(&mut d, fs, decay),
+                            c,
+                            "lm={lm} intra={intra} band={band} v={v}"
+                        );
                     }
                 }
             }

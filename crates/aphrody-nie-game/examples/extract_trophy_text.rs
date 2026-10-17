@@ -44,9 +44,12 @@ fn load(vfs: &Vfs, pred: impl Fn(&str) -> bool, what: &str) -> serde_json::Value
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let cfg = load(
         &vfs,
@@ -75,9 +78,20 @@ fn main() {
     eprintln!("[trophy_text fr] entrées = {}", text.len());
 
     use aphrody_nie_data::trophy::{decode_unlock, resolve_description, resolve_name};
-    let named = config.infos.iter().filter(|t| resolve_name(t, &text).is_some()).count();
-    let described = config.infos.iter().filter(|t| resolve_description(t, &text).is_some()).count();
-    eprintln!("noms résolus = {named}/{} ; descriptions = {described}", config.infos.len());
+    let named = config
+        .infos
+        .iter()
+        .filter(|t| resolve_name(t, &text).is_some())
+        .count();
+    let described = config
+        .infos
+        .iter()
+        .filter(|t| resolve_description(t, &text).is_some())
+        .count();
+    eprintln!(
+        "noms résolus = {named}/{} ; descriptions = {described}",
+        config.infos.len()
+    );
     assert!(named > 0, "au moins un nom de trophée résolu");
 
     // Distribution des types de condition de déblocage (open_cond décodé).
@@ -94,10 +108,21 @@ fn main() {
     }
     eprintln!("conditions de déblocage = {kinds:?}");
 
-    for t in config.infos.iter().filter(|t| resolve_name(t, &text).is_some()).take(5) {
+    for t in config
+        .infos
+        .iter()
+        .filter(|t| resolve_name(t, &text).is_some())
+        .take(5)
+    {
         let n = resolve_name(t, &text).unwrap_or("");
         let d = resolve_description(t, &text).map(|s| s.chars().take(45).collect::<String>());
-        eprintln!("  trophy {} ({}) → {:?}  desc={:?}", t.trophy_id.to_hex(), t.code, n, d);
+        eprintln!(
+            "  trophy {} ({}) → {:?}  desc={:?}",
+            t.trophy_id.to_hex(),
+            t.code,
+            n,
+            d
+        );
     }
     eprintln!(
         "✓ END-TO-END OK : {named} noms / {described} descriptions de trophées résolus + conditions décodées"

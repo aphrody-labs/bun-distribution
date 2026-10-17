@@ -34,15 +34,32 @@ fn tool_artboard(app: &VectorcraftApp) -> Option<(usize, Rect)> {
         return None;
     }
     let i = usize::try_from(app.session.tool_options().get("active")?.as_u64()?).ok()?;
-    app.session.active()?.doc.artboards.get(i).map(|a| (i, a.rect))
+    app.session
+        .active()?
+        .doc
+        .artboards
+        .get(i)
+        .map(|a| (i, a.rect))
 }
 
 /// Where an artboard goes when the panel sets its X, Y, W or H: the reference point `refi` moves to
 /// the new X/Y or stays put while the size changes (both sides together when `link` is on).
-pub fn artboard_rect(r: Rect, refi: usize, x: Option<f64>, y: Option<f64>, w: Option<f64>, h: Option<f64>, link: bool) -> Rect {
+pub fn artboard_rect(
+    r: Rect,
+    refi: usize,
+    x: Option<f64>,
+    y: Option<f64>,
+    w: Option<f64>,
+    h: Option<f64>,
+    link: bool,
+) -> Rect {
     let rp = vectorcraft_geom::reference_point(r, refi);
     let (w0, h0) = (r.width(), r.height());
-    let (nw, nh) = if link { constrained(w0, h0, w, h) } else { (w.unwrap_or(w0), h.unwrap_or(h0)) };
+    let (nw, nh) = if link {
+        constrained(w0, h0, w, h)
+    } else {
+        (w.unwrap_or(w0), h.unwrap_or(h0))
+    };
     // Where the reference point sits across the box (0, ½ or 1 of each side).
     let fx = if w0 > 1e-9 { (rp.x - r.x0) / w0 } else { 0.0 };
     let fy = if h0 > 1e-9 { (rp.y - r.y0) / h0 } else { 0.0 };
@@ -71,26 +88,34 @@ fn artboard_fields(app: &mut VectorcraftApp, ui: &mut Ui, index: usize, r: Rect)
             ui.data_mut(|d| d.insert_temp(egui::Id::new("refpt"), i));
         }
         ui.add_space(4.0);
-        egui::Grid::new("xfp-ab-grid").num_columns(4).spacing([4.0, 6.0]).min_col_width(0.0).show(ui, |ui| {
-            widgets::dim_label(ui, "X:");
-            if let Some(v) = widgets::num_field(ui, "xfp-ab-x", Some(rp.x - origin.x), units, 80.0) {
-                set(app, Some(v + origin.x), None, None, None);
-            }
-            widgets::dim_label(ui, "W:");
-            if let Some(v) = widgets::num_field(ui, "xfp-ab-w", Some(r.width()), units, 80.0) {
-                set(app, None, None, Some(v), None);
-            }
-            ui.end_row();
-            widgets::dim_label(ui, "Y:");
-            if let Some(v) = widgets::num_field(ui, "xfp-ab-y", Some(rp.y - origin.y), units, 80.0) {
-                set(app, None, Some(v + origin.y), None, None);
-            }
-            widgets::dim_label(ui, "H:");
-            if let Some(v) = widgets::num_field(ui, "xfp-ab-h", Some(r.height()), units, 80.0) {
-                set(app, None, None, None, Some(v));
-            }
-            ui.end_row();
-        });
+        egui::Grid::new("xfp-ab-grid")
+            .num_columns(4)
+            .spacing([4.0, 6.0])
+            .min_col_width(0.0)
+            .show(ui, |ui| {
+                widgets::dim_label(ui, "X:");
+                if let Some(v) =
+                    widgets::num_field(ui, "xfp-ab-x", Some(rp.x - origin.x), units, 80.0)
+                {
+                    set(app, Some(v + origin.x), None, None, None);
+                }
+                widgets::dim_label(ui, "W:");
+                if let Some(v) = widgets::num_field(ui, "xfp-ab-w", Some(r.width()), units, 80.0) {
+                    set(app, None, None, Some(v), None);
+                }
+                ui.end_row();
+                widgets::dim_label(ui, "Y:");
+                if let Some(v) =
+                    widgets::num_field(ui, "xfp-ab-y", Some(rp.y - origin.y), units, 80.0)
+                {
+                    set(app, None, Some(v + origin.y), None, None);
+                }
+                widgets::dim_label(ui, "H:");
+                if let Some(v) = widgets::num_field(ui, "xfp-ab-h", Some(r.height()), units, 80.0) {
+                    set(app, None, None, None, Some(v));
+                }
+                ui.end_row();
+            });
         constrain_link(app, ui);
     });
 }
@@ -103,7 +128,13 @@ fn selected_guides(app: &VectorcraftApp) -> Option<(Option<f64>, Option<f64>)> {
         return None;
     }
     let least = |vertical: bool| {
-        st.selection.guides.iter().filter_map(|i| st.doc.guides.get(*i)).filter(|g| g.vertical == vertical).map(|g| g.pos).min_by(f64::total_cmp)
+        st.selection
+            .guides
+            .iter()
+            .filter_map(|i| st.doc.guides.get(*i))
+            .filter(|g| g.vertical == vertical)
+            .map(|g| g.pos)
+            .min_by(f64::total_cmp)
     };
     Some((least(true), least(false)))
 }
@@ -113,19 +144,28 @@ fn selected_guides(app: &VectorcraftApp) -> Option<(Option<f64>, Option<f64>)> {
 fn guide_fields(app: &mut VectorcraftApp, ui: &mut Ui, (x, y): (Option<f64>, Option<f64>)) {
     let units = app.session.general_unit();
     let origin = app.ruler_origin();
-    egui::Grid::new("xfp-guide-grid").num_columns(2).spacing([4.0, 6.0]).min_col_width(0.0).show(ui, |ui| {
-        for (label, id, pos, origin, by) in [("X:", "xfp-guide-x", x, origin.x, "dx"), ("Y:", "xfp-guide-y", y, origin.y, "dy")] {
-            widgets::dim_label(ui, label);
-            ui.add_enabled_ui(pos.is_some(), |ui| {
-                if let (Some(v), Some(pos)) = (widgets::num_field(ui, id, pos.map(|p| p - origin), units, 80.0), pos)
-                    && let Err(e) = app.run("guide.move", json!({ by: v + origin - pos }))
-                {
-                    app.status(e);
-                }
-            });
-            ui.end_row();
-        }
-    });
+    egui::Grid::new("xfp-guide-grid")
+        .num_columns(2)
+        .spacing([4.0, 6.0])
+        .min_col_width(0.0)
+        .show(ui, |ui| {
+            for (label, id, pos, origin, by) in [
+                ("X:", "xfp-guide-x", x, origin.x, "dx"),
+                ("Y:", "xfp-guide-y", y, origin.y, "dy"),
+            ] {
+                widgets::dim_label(ui, label);
+                ui.add_enabled_ui(pos.is_some(), |ui| {
+                    if let (Some(v), Some(pos)) = (
+                        widgets::num_field(ui, id, pos.map(|p| p - origin), units, 80.0),
+                        pos,
+                    ) && let Err(e) = app.run("guide.move", json!({ by: v + origin - pos }))
+                    {
+                        app.status(e);
+                    }
+                });
+                ui.end_row();
+            }
+        });
 }
 
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
@@ -158,26 +198,54 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         ui.add_space(4.0);
         ui.add_enabled_ui(has, |ui| {
-            egui::Grid::new("xfp-grid").num_columns(4).spacing([4.0, 6.0]).min_col_width(0.0).show(ui, |ui| {
-                widgets::dim_label(ui, "X:");
-                if let Some(v) = widgets::num_field(ui, "xfp-x", rp.map(|p| p.x - origin.x), units, 80.0) {
-                    app.run("object.setBounds", json!({"x": v + origin.x, "reference": refi})).ok();
-                }
-                widgets::dim_label(ui, "W:");
-                if let Some(v) = widgets::num_field(ui, "xfp-w", bounds.map(|b| b.width()), units, 80.0) {
-                    app.run("object.setBounds", json!({"width": v, "reference": refi, "proportional": link})).ok();
-                }
-                ui.end_row();
-                widgets::dim_label(ui, "Y:");
-                if let Some(v) = widgets::num_field(ui, "xfp-y", rp.map(|p| p.y - origin.y), units, 80.0) {
-                    app.run("object.setBounds", json!({"y": v + origin.y, "reference": refi})).ok();
-                }
-                widgets::dim_label(ui, "H:");
-                if let Some(v) = widgets::num_field(ui, "xfp-h", bounds.map(|b| b.height()), units, 80.0) {
-                    app.run("object.setBounds", json!({"height": v, "reference": refi, "proportional": link})).ok();
-                }
-                ui.end_row();
-            });
+            egui::Grid::new("xfp-grid")
+                .num_columns(4)
+                .spacing([4.0, 6.0])
+                .min_col_width(0.0)
+                .show(ui, |ui| {
+                    widgets::dim_label(ui, "X:");
+                    if let Some(v) =
+                        widgets::num_field(ui, "xfp-x", rp.map(|p| p.x - origin.x), units, 80.0)
+                    {
+                        app.run(
+                            "object.setBounds",
+                            json!({"x": v + origin.x, "reference": refi}),
+                        )
+                        .ok();
+                    }
+                    widgets::dim_label(ui, "W:");
+                    if let Some(v) =
+                        widgets::num_field(ui, "xfp-w", bounds.map(|b| b.width()), units, 80.0)
+                    {
+                        app.run(
+                            "object.setBounds",
+                            json!({"width": v, "reference": refi, "proportional": link}),
+                        )
+                        .ok();
+                    }
+                    ui.end_row();
+                    widgets::dim_label(ui, "Y:");
+                    if let Some(v) =
+                        widgets::num_field(ui, "xfp-y", rp.map(|p| p.y - origin.y), units, 80.0)
+                    {
+                        app.run(
+                            "object.setBounds",
+                            json!({"y": v + origin.y, "reference": refi}),
+                        )
+                        .ok();
+                    }
+                    widgets::dim_label(ui, "H:");
+                    if let Some(v) =
+                        widgets::num_field(ui, "xfp-h", bounds.map(|b| b.height()), units, 80.0)
+                    {
+                        app.run(
+                            "object.setBounds",
+                            json!({"height": v, "reference": refi, "proportional": link}),
+                        )
+                        .ok();
+                    }
+                    ui.end_row();
+                });
         });
         constrain_link(app, ui);
     });
@@ -189,36 +257,90 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             crate::scrub::note_label(ui, icon.rect);
             // The bounding box's angle: a new value turns the selection to it.
             let angle = bx.map_or(0.0, |b| b.angle);
-            if let Some(a) = widgets::spin_plain(ui, "xfp-rot", angle, "°", 2, 96.0, 15.0, -360.0, &ANGLE_PRESETS)
-                && a != angle
+            if let Some(a) = widgets::spin_plain(
+                ui,
+                "xfp-rot",
+                angle,
+                "°",
+                2,
+                96.0,
+                15.0,
+                -360.0,
+                &ANGLE_PRESETS,
+            ) && a != angle
             {
-                app.run("object.rotate", json!({"angle": a, "absolute": true, "origin": origin})).ok();
+                app.run(
+                    "object.rotate",
+                    json!({"angle": a, "absolute": true, "origin": origin}),
+                )
+                .ok();
             }
             ui.add_space(4.0);
             let icon = icons::icon(ui, "dc-shear", 16.0, t.icon).on_hover_text(tl!("Shear"));
             crate::scrub::note_label(ui, icon.rect);
             // Shear is relative: the field rests at 0° and a new value shears by it.
-            if let Some(a) = widgets::spin_plain(ui, "xfp-shear", 0.0, "°", 2, 96.0, 15.0, -89.0, &SHEAR_PRESETS)
-                && a != 0.0
+            if let Some(a) = widgets::spin_plain(
+                ui,
+                "xfp-shear",
+                0.0,
+                "°",
+                2,
+                96.0,
+                15.0,
+                -89.0,
+                &SHEAR_PRESETS,
+            ) && a != 0.0
                 && a.abs() < 90.0
             {
-                app.run("object.shear", json!({"angle": a, "axis": "horizontal", "origin": origin})).ok();
+                app.run(
+                    "object.shear",
+                    json!({"angle": a, "axis": "horizontal", "origin": origin}),
+                )
+                .ok();
             }
         });
     });
     ui.horizontal(|ui| {
         // Lucide's flip icons are named for their mirror line: flip-vertical-2 draws a vertical
         // line (the left-right flip), flip-horizontal-2 a horizontal one (top-bottom).
-        if widgets::icon_button_enabled(ui, "flip-vertical-2", tl!("Flip Horizontal"), false, has, 24.0).clicked() {
-            app.run("object.reflect", json!({"axis": "vertical", "origin": origin})).ok();
+        if widgets::icon_button_enabled(
+            ui,
+            "flip-vertical-2",
+            tl!("Flip Horizontal"),
+            false,
+            has,
+            24.0,
+        )
+        .clicked()
+        {
+            app.run(
+                "object.reflect",
+                json!({"axis": "vertical", "origin": origin}),
+            )
+            .ok();
         }
-        if widgets::icon_button_enabled(ui, "flip-horizontal-2", tl!("Flip Vertical"), false, has, 24.0).clicked() {
-            app.run("object.reflect", json!({"axis": "horizontal", "origin": origin})).ok();
+        if widgets::icon_button_enabled(
+            ui,
+            "flip-horizontal-2",
+            tl!("Flip Vertical"),
+            false,
+            has,
+            24.0,
+        )
+        .clicked()
+        {
+            app.run(
+                "object.reflect",
+                json!({"axis": "horizontal", "origin": origin}),
+            )
+            .ok();
         }
     });
     // Live shape properties (a path with live corners is no shape).
     if let Some(n) = first_selected(app)
-        && let NodeKind::Path { live: Some(live), .. } = &n.kind
+        && let NodeKind::Path {
+            live: Some(live), ..
+        } = &n.kind
         && !matches!(**live, vectorcraft_doc::LiveShape::Path { .. })
     {
         widgets::divider(ui);
@@ -245,7 +367,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         return;
     }
     widgets::divider(ui);
-    let (sc, ss) = (app.session.prefs.scale_corners, app.session.prefs.scale_strokes);
+    let (sc, ss) = (
+        app.session.prefs.scale_corners,
+        app.session.prefs.scale_strokes,
+    );
     if widgets::check(ui, tl!("Scale Corners"), sc, true) {
         set_pref(app, "scaleCorners", !sc);
     }
@@ -257,7 +382,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// An ellipse's Pie Start and End Angle (degrees, counterclockwise from 3 o'clock; 0 to 360 is the
 /// whole ellipse) and Invert Pie, which shows the other part of it (Transform and Properties panels).
 pub(crate) fn pie_rows(app: &mut VectorcraftApp, ui: &mut Ui, pie: (f64, f64), id: &str) {
-    for (label, key, v) in [(tl!("Pie Start Angle:"), "pieStart", pie.0), (tl!("Pie End Angle:"), "pieEnd", pie.1)] {
+    for (label, key, v) in [
+        (tl!("Pie Start Angle:"), "pieStart", pie.0),
+        (tl!("Pie End Angle:"), "pieEnd", pie.1),
+    ] {
         ui.horizontal(|ui| {
             widgets::dim_label(ui, label);
             if let Some(a) = widgets::plain_field(ui, (id, key), v, "°", 1, 60.0) {
@@ -266,15 +394,24 @@ pub(crate) fn pie_rows(app: &mut VectorcraftApp, ui: &mut Ui, pie: (f64, f64), i
         });
     }
     if widgets::flat_button(ui, tl!("Invert Pie"), 90.0).clicked() {
-        app.run("object.setLiveShape", json!({"invertPie": true})).ok();
+        app.run("object.setLiveShape", json!({"invertPie": true}))
+            .ok();
     }
 }
 
 /// A live polygon's Polygon Properties (Transform and Properties panels): its side count, angle
 /// (counterclockwise), corner type and radius, radius (centre to vertex) and side length, and Make
 /// Sides Equal, which an uneven scale enables.
-pub(crate) fn polygon_rows(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, live: &LiveShape, id: &str) {
-    let LiveShape::Polygon { sides, .. } = live else { return };
+pub(crate) fn polygon_rows(
+    app: &mut VectorcraftApp,
+    ui: &mut Ui,
+    n: &Node,
+    live: &LiveShape,
+    id: &str,
+) {
+    let LiveShape::Polygon { sides, .. } = live else {
+        return;
+    };
     let (units, fw) = (app.session.general_unit(), super::field_width(ui));
     let radius = live.polygon_radius();
     let side = radius.map(|r| 2.0 * r * (std::f64::consts::PI / f64::from((*sides).max(3))).sin());
@@ -282,37 +419,56 @@ pub(crate) fn polygon_rows(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, live
     let kinds: Vec<&str> = CornerKind::ALL.iter().map(|k| corner_kind(*k)).collect();
     // The `object.setLiveShape` param an edited field sets.
     let mut set = None;
-    egui::Grid::new((id, "grid")).num_columns(2).spacing([6.0, 6.0]).show(ui, |ui| {
-        widgets::dim_label(ui, tl!("Sides:"));
-        if let Some(s) = widgets::plain_field(ui, (id, "sides"), f64::from(*sides), "", 0, fw) {
-            set = Some(("sides", json!(s.round().max(3.0) as u64)));
-        }
-        ui.end_row();
-        widgets::dim_label(ui, tl!("Angle:"));
-        if let Some(a) = widgets::plain_field(ui, (id, "angle"), live.polygon_angle().unwrap_or(0.0), "°", 1, fw) {
-            set = Some(("polygonAngle", json!(a)));
-        }
-        ui.end_row();
-        widgets::dim_label(ui, tl!("Corner:"));
-        if let Some(k) = widgets::dropdown_names(ui, (id, "kind"), kind.map_or("", corner_kind), &kinds, fw).and_then(|i| CornerKind::ALL.get(i)) {
-            set = Some(("kind", json!(k)));
-        }
-        ui.end_row();
-        widgets::dim_label(ui, tl!("Corner Radius:"));
-        super::corner_radius_field(app, ui, n, (id, "cornerRadius"), fw);
-        ui.end_row();
-        widgets::dim_label(ui, tl!("Radius:"));
-        if let Some(r) = widgets::num_field(ui, (id, "radius"), radius, units, fw) {
-            set = Some(("polygonRadius", json!(r)));
-        }
-        ui.end_row();
-        widgets::dim_label(ui, tl!("Side Length:"));
-        if let Some(l) = widgets::num_field(ui, (id, "side"), side, units, fw) {
-            set = Some(("sideLength", json!(l)));
-        }
-        ui.end_row();
-    });
-    if ui.add_enabled_ui(!live.polygon_sides_equal(), |ui| widgets::flat_button(ui, tl!("Make Sides Equal"), 130.0)).inner.clicked() {
+    egui::Grid::new((id, "grid"))
+        .num_columns(2)
+        .spacing([6.0, 6.0])
+        .show(ui, |ui| {
+            widgets::dim_label(ui, tl!("Sides:"));
+            if let Some(s) = widgets::plain_field(ui, (id, "sides"), f64::from(*sides), "", 0, fw) {
+                set = Some(("sides", json!(s.round().max(3.0) as u64)));
+            }
+            ui.end_row();
+            widgets::dim_label(ui, tl!("Angle:"));
+            if let Some(a) = widgets::plain_field(
+                ui,
+                (id, "angle"),
+                live.polygon_angle().unwrap_or(0.0),
+                "°",
+                1,
+                fw,
+            ) {
+                set = Some(("polygonAngle", json!(a)));
+            }
+            ui.end_row();
+            widgets::dim_label(ui, tl!("Corner:"));
+            if let Some(k) =
+                widgets::dropdown_names(ui, (id, "kind"), kind.map_or("", corner_kind), &kinds, fw)
+                    .and_then(|i| CornerKind::ALL.get(i))
+            {
+                set = Some(("kind", json!(k)));
+            }
+            ui.end_row();
+            widgets::dim_label(ui, tl!("Corner Radius:"));
+            super::corner_radius_field(app, ui, n, (id, "cornerRadius"), fw);
+            ui.end_row();
+            widgets::dim_label(ui, tl!("Radius:"));
+            if let Some(r) = widgets::num_field(ui, (id, "radius"), radius, units, fw) {
+                set = Some(("polygonRadius", json!(r)));
+            }
+            ui.end_row();
+            widgets::dim_label(ui, tl!("Side Length:"));
+            if let Some(l) = widgets::num_field(ui, (id, "side"), side, units, fw) {
+                set = Some(("sideLength", json!(l)));
+            }
+            ui.end_row();
+        });
+    if ui
+        .add_enabled_ui(!live.polygon_sides_equal(), |ui| {
+            widgets::flat_button(ui, tl!("Make Sides Equal"), 130.0)
+        })
+        .inner
+        .clicked()
+    {
         set = Some(("makeSidesEqual", json!(true)));
     }
     if let Some((key, v)) = set {
@@ -324,7 +480,14 @@ pub(crate) fn polygon_rows(app: &mut VectorcraftApp, ui: &mut Ui, n: &Node, live
 /// popover under it, as the Stroke link does with the Stroke panel.
 pub fn link(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let resp = ui.link(egui::RichText::new(tl!("Transform")).size(12.0).color(t.text).underline()).on_hover_text(tl!("Transform options"));
+    let resp = ui
+        .link(
+            egui::RichText::new(tl!("Transform"))
+                .size(12.0)
+                .color(t.text)
+                .underline(),
+        )
+        .on_hover_text(tl!("Transform options"));
     widgets::popover(&resp, resp.clicked(), |ui| {
         ui.set_width(300.0);
         show(app, ui);
@@ -335,7 +498,15 @@ pub fn link(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// `constrainProportions` preference, which the size fields pass on as `proportional`.
 pub fn constrain_link(app: &mut VectorcraftApp, ui: &mut Ui) {
     let on = app.session.prefs.constrain_proportions;
-    if widgets::icon_button(ui, if on { "link" } else { "link-2-off" }, tl!("Constrain Width and Height Proportions"), on, 22.0).clicked() {
+    if widgets::icon_button(
+        ui,
+        if on { "link" } else { "link-2-off" },
+        tl!("Constrain Width and Height Proportions"),
+        on,
+        22.0,
+    )
+    .clicked()
+    {
         set_pref(app, "constrainProportions", !on);
     }
 }
@@ -350,7 +521,16 @@ pub fn set_pref(app: &mut VectorcraftApp, key: &str, on: bool) {
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let hidden: bool = pstate(ui.ctx(), "xf-hide-options");
     let has = super::selection_len(app) > 0;
-    if menu_item(ui, if hidden { tl!("Show Options") } else { tl!("Hide Options") }, true, false) {
+    if menu_item(
+        ui,
+        if hidden {
+            tl!("Show Options")
+        } else {
+            tl!("Hide Options")
+        },
+        true,
+        false,
+    ) {
         set_pstate(ui.ctx(), "xf-hide-options", !hidden);
     }
     ui.separator();
@@ -358,7 +538,8 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         app.run("object.reflect", json!({"axis": "vertical"})).ok();
     }
     if menu_item(ui, tl!("Flip Vertical"), has, false) {
-        app.run("object.reflect", json!({"axis": "horizontal"})).ok();
+        app.run("object.reflect", json!({"axis": "horizontal"}))
+            .ok();
     }
     ui.separator();
     let ss = app.session.prefs.scale_strokes;
@@ -398,30 +579,58 @@ mod tests {
     #[test]
     fn use_preview_bounds_shows_the_visual_size_and_checks_the_align_flyout() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 100, "height": 50})).unwrap();
+        app.run("file.new", json!({"width": 300, "height": 300}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 100, "height": 50}),
+        )
+        .unwrap();
         app.run("stroke.set", json!({"weight": 10})).unwrap();
         assert!(texts(&mut app, show).iter().any(|t| t == "100 pt"));
-        assert!(texts(&mut app, crate::panels::align::menu).iter().any(|t| t == "   Use Preview Bounds"));
+        assert!(
+            texts(&mut app, crate::panels::align::menu)
+                .iter()
+                .any(|t| t == "   Use Preview Bounds")
+        );
         set_pref(&mut app, "usePreviewBounds", true);
         let shown = texts(&mut app, show);
-        assert!(shown.iter().any(|t| t == "110 pt") && shown.iter().any(|t| t == "60 pt"), "{shown:?}");
-        assert!(texts(&mut app, crate::panels::align::menu).iter().any(|t| t == "✓ Use Preview Bounds"));
+        assert!(
+            shown.iter().any(|t| t == "110 pt") && shown.iter().any(|t| t == "60 pt"),
+            "{shown:?}"
+        );
+        assert!(
+            texts(&mut app, crate::panels::align::menu)
+                .iter()
+                .any(|t| t == "✓ Use Preview Bounds")
+        );
     }
 
     #[test]
     fn rotation_field_shows_the_angle_the_box_keeps() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 100, "height": 50})).unwrap();
-        app.run("object.rotate", json!({"angle": 45, "absolute": true})).unwrap();
+        app.run("file.new", json!({"width": 300, "height": 300}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 100, "height": 50}),
+        )
+        .unwrap();
+        app.run("object.rotate", json!({"angle": 45, "absolute": true}))
+            .unwrap();
         let shown = texts(&mut app, show);
         // The angle stays, and W/H are the rectangle's own sides.
         assert!(shown.iter().any(|t| t == "45°"), "{shown:?}");
-        assert!(shown.iter().any(|t| t == "100 pt") && shown.iter().any(|t| t == "50 pt"), "{shown:?}");
+        assert!(
+            shown.iter().any(|t| t == "100 pt") && shown.iter().any(|t| t == "50 pt"),
+            "{shown:?}"
+        );
         app.run("object.resetBoundingBox", json!({})).unwrap();
         let shown = texts(&mut app, show);
-        assert!(shown.iter().any(|t| t == "0°") && !shown.iter().any(|t| t == "100 pt"), "{shown:?}");
+        assert!(
+            shown.iter().any(|t| t == "0°") && !shown.iter().any(|t| t == "100 pt"),
+            "{shown:?}"
+        );
     }
 
     /// #812: a selected live polygon shows its Polygon Properties in the Transform panel and the
@@ -429,60 +638,110 @@ mod tests {
     #[test]
     fn a_polygon_shows_its_polygon_properties() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
-        app.run("shape.polygon", json!({"cx": 150, "cy": 150, "radius": 50, "sides": 6})).unwrap();
-        for draw in [show as fn(&mut VectorcraftApp, &mut Ui), crate::panels::properties::transform_section] {
+        app.run("file.new", json!({"width": 300, "height": 300}))
+            .unwrap();
+        app.run(
+            "shape.polygon",
+            json!({"cx": 150, "cy": 150, "radius": 50, "sides": 6}),
+        )
+        .unwrap();
+        for draw in [
+            show as fn(&mut VectorcraftApp, &mut Ui),
+            crate::panels::properties::transform_section,
+        ] {
             let shown = texts(&mut app, draw);
             // A hexagon's side is as long as its radius.
-            for t in ["Sides:", "6", "Angle:", "0°", "Corner:", "Round", "Corner Radius:", "Radius:", "Side Length:", "50 pt", "Make Sides Equal"] {
+            for t in [
+                "Sides:",
+                "6",
+                "Angle:",
+                "0°",
+                "Corner:",
+                "Round",
+                "Corner Radius:",
+                "Radius:",
+                "Side Length:",
+                "50 pt",
+                "Make Sides Equal",
+            ] {
                 assert!(shown.iter().any(|s| s == t), "{t} in {shown:?}");
             }
         }
-        assert!(texts(&mut app, show).iter().any(|s| s == "Polygon Properties:"));
-        app.run("object.scale", json!({"sx": 200, "sy": 100})).unwrap();
+        assert!(
+            texts(&mut app, show)
+                .iter()
+                .any(|s| s == "Polygon Properties:")
+        );
+        app.run("object.scale", json!({"sx": 200, "sy": 100}))
+            .unwrap();
         let live = |app: &VectorcraftApp| match &first_selected(app).unwrap().kind {
             NodeKind::Path { live: Some(l), .. } => l.clone(),
             k => panic!("{k:?}"),
         };
         assert!(!live(&app).polygon_sides_equal());
-        app.run("object.setLiveShape", json!({"makeSidesEqual": true})).unwrap();
+        app.run("object.setLiveShape", json!({"makeSidesEqual": true}))
+            .unwrap();
         assert!(live(&app).polygon_sides_equal());
     }
 
     #[test]
     fn the_artboard_tool_shows_the_active_artboard() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 40, "height": 30})).unwrap();
-        assert!(texts(&mut app, show).iter().any(|t| t == "40 pt"), "the selection first");
+        app.run("file.new", json!({"width": 300, "height": 200}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 40, "height": 30}),
+        )
+        .unwrap();
+        assert!(
+            texts(&mut app, show).iter().any(|t| t == "40 pt"),
+            "the selection first"
+        );
         app.run("tool.select", json!({"tool": "artboard"})).unwrap();
         let shown = texts(&mut app, show);
         // Centre reference point: X 150, Y 100, W 300, H 200; no rotate/shear for artboards.
         for v in ["150 pt", "100 pt", "300 pt", "200 pt"] {
             assert!(shown.iter().any(|t| t == v), "{v} in {shown:?}");
         }
-        assert!(!shown.iter().any(|t| t == "40 pt" || t == "0°"), "{shown:?}");
+        assert!(
+            !shown.iter().any(|t| t == "40 pt" || t == "0°"),
+            "{shown:?}"
+        );
     }
 
     /// #1597: with only ruler guides selected the panel shows their X or Y, and nothing of the art.
     #[test]
     fn selected_guides_show_their_position() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
-        app.run("guide.add", json!({"vertical": true, "pos": 120})).unwrap();
-        app.run("guide.add", json!({"vertical": false, "pos": 45})).unwrap();
+        app.run("file.new", json!({"width": 300, "height": 200}))
+            .unwrap();
+        app.run("guide.add", json!({"vertical": true, "pos": 120}))
+            .unwrap();
+        app.run("guide.add", json!({"vertical": false, "pos": 45}))
+            .unwrap();
         app.run("guide.select", json!({"indexes": [0]})).unwrap();
         assert_eq!(selected_guides(&app), Some((Some(120.0), None)));
         let shown = texts(&mut app, show);
-        assert!(shown.iter().any(|t| t == "120 pt") && !shown.iter().any(|t| t == "W:" || t == "45 pt"), "{shown:?}");
+        assert!(
+            shown.iter().any(|t| t == "120 pt") && !shown.iter().any(|t| t == "W:" || t == "45 pt"),
+            "{shown:?}"
+        );
         app.run("guide.select", json!({"indexes": [0, 1]})).unwrap();
         let shown = texts(&mut app, show);
-        assert!(shown.iter().any(|t| t == "120 pt") && shown.iter().any(|t| t == "45 pt"), "{shown:?}");
+        assert!(
+            shown.iter().any(|t| t == "120 pt") && shown.iter().any(|t| t == "45 pt"),
+            "{shown:?}"
+        );
         // The field's edit: the vertical guide moves, the horizontal one stays.
         app.run("guide.move", json!({"dx": 30})).unwrap();
         assert_eq!(selected_guides(&app), Some((Some(150.0), Some(45.0))));
         // Art selected with them: the art's box, as before.
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 40, "height": 30})).unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 40, "height": 30}),
+        )
+        .unwrap();
         assert_eq!(selected_guides(&app), None);
     }
 
@@ -490,12 +749,24 @@ mod tests {
     fn artboard_fields_keep_the_reference_point() {
         let r = Rect::new(0.0, 0.0, 300.0, 200.0);
         // Centre: a new X centres it there, a new W grows it both ways.
-        assert_eq!(artboard_rect(r, 4, Some(200.0), None, None, None, false), Rect::new(50.0, 0.0, 350.0, 200.0));
-        assert_eq!(artboard_rect(r, 4, None, None, Some(400.0), None, false), Rect::new(-50.0, 0.0, 350.0, 200.0));
+        assert_eq!(
+            artboard_rect(r, 4, Some(200.0), None, None, None, false),
+            Rect::new(50.0, 0.0, 350.0, 200.0)
+        );
+        assert_eq!(
+            artboard_rect(r, 4, None, None, Some(400.0), None, false),
+            Rect::new(-50.0, 0.0, 350.0, 200.0)
+        );
         // Top-left: a new W keeps the left edge; linked, H follows.
-        assert_eq!(artboard_rect(r, 0, None, None, Some(600.0), None, true), Rect::new(0.0, 0.0, 600.0, 400.0));
+        assert_eq!(
+            artboard_rect(r, 0, None, None, Some(600.0), None, true),
+            Rect::new(0.0, 0.0, 600.0, 400.0)
+        );
         // Bottom-right: a new Y puts the bottom edge there.
-        assert_eq!(artboard_rect(r, 8, None, Some(500.0), None, None, false), Rect::new(0.0, 300.0, 300.0, 500.0));
+        assert_eq!(
+            artboard_rect(r, 8, None, Some(500.0), None, None, false),
+            Rect::new(0.0, 300.0, 300.0, 500.0)
+        );
     }
 
     #[test]

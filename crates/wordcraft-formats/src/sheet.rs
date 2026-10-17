@@ -81,7 +81,10 @@ pub fn detect(bytes: &[u8]) -> Option<Kind> {
 /// The sheet names, in workbook order.
 pub fn sheet_names(bytes: &[u8]) -> Result<Vec<String>, String> {
     let mut pkg = Package::open(bytes)?;
-    match pkg.kind().ok_or("not an Excel or OpenDocument spreadsheet")? {
+    match pkg
+        .kind()
+        .ok_or("not an Excel or OpenDocument spreadsheet")?
+    {
         Kind::Xlsx => Ok(xlsx_sheets(&mut pkg)?.into_iter().map(|s| s.name).collect()),
         Kind::Ods => Ok(ods_read(&pkg.read("content.xml")?, None)?.0),
     }
@@ -91,7 +94,10 @@ pub fn sheet_names(bytes: &[u8]) -> Result<Vec<String>, String> {
 /// workbook's sheet names.
 pub fn read_rows(bytes: &[u8], pick: Pick<'_>) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
     let mut pkg = Package::open(bytes)?;
-    match pkg.kind().ok_or("not an Excel or OpenDocument spreadsheet")? {
+    match pkg
+        .kind()
+        .ok_or("not an Excel or OpenDocument spreadsheet")?
+    {
         Kind::Xlsx => {
             let sheets = xlsx_sheets(&mut pkg)?;
             let names: Vec<String> = sheets.iter().map(|s| s.name.clone()).collect();
@@ -138,7 +144,11 @@ fn resolve(names: &[String], pick: Pick<'_>) -> Result<usize, String> {
     }
     match pick {
         Pick::Index(i) if i < names.len() => Ok(i),
-        Pick::Index(i) => Err(format!("the workbook has {} sheets; there is no sheet {}", names.len(), i.saturating_add(1))),
+        Pick::Index(i) => Err(format!(
+            "the workbook has {} sheets; there is no sheet {}",
+            names.len(),
+            i.saturating_add(1)
+        )),
         Pick::Name(n) => names
             .iter()
             .position(|s| s == n)
@@ -157,7 +167,8 @@ struct Package<'a> {
 
 impl<'a> Package<'a> {
     fn open(bytes: &'a [u8]) -> Result<Self, String> {
-        let zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a valid spreadsheet package ({e})"))?;
+        let zip = zip::ZipArchive::new(Cursor::new(bytes))
+            .map_err(|e| format!("not a valid spreadsheet package ({e})"))?;
         Ok(Package { zip, total: 0 })
     }
 
@@ -167,12 +178,17 @@ impl<'a> Package<'a> {
 
     /// Inflate an entry, refusing ones (or a workbook) larger than the caps.
     fn read(&mut self, name: &str) -> Result<Vec<u8>, String> {
-        let f = self.zip.by_name(name).map_err(|_| format!("{name} is missing"))?;
+        let f = self
+            .zip
+            .by_name(name)
+            .map_err(|_| format!("{name} is missing"))?;
         if f.size() > MAX_ENTRY {
             return Err(format!("{name} is too large"));
         }
         let mut out = Vec::new();
-        f.take(MAX_ENTRY + 1).read_to_end(&mut out).map_err(|e| format!("{name}: {e}"))?;
+        f.take(MAX_ENTRY + 1)
+            .read_to_end(&mut out)
+            .map_err(|e| format!("{name}: {e}"))?;
         let len = out.len() as u64;
         self.total = self.total.saturating_add(len);
         if len > MAX_ENTRY || self.total > MAX_TOTAL {
@@ -187,7 +203,9 @@ impl<'a> Package<'a> {
         }
         if self.has("content.xml") {
             let ods = match self.read("mimetype") {
-                Ok(m) => String::from_utf8_lossy(&m).trim().starts_with("application/vnd.oasis.opendocument.spreadsheet"),
+                Ok(m) => String::from_utf8_lossy(&m)
+                    .trim()
+                    .starts_with("application/vnd.oasis.opendocument.spreadsheet"),
                 // No mimetype entry: only a package without a text document is taken as one.
                 Err(_) => !self.has("word/document.xml"),
             };
@@ -203,12 +221,16 @@ impl<'a> Package<'a> {
     fn workbook_path(&mut self) -> Option<String> {
         if let Ok(rels) = self.read("_rels/.rels") {
             for r in relationships(&rels, "") {
-                if r.kind.ends_with("/officeDocument") && r.target.to_ascii_lowercase().contains("workbook") && self.has(&r.target) {
+                if r.kind.ends_with("/officeDocument")
+                    && r.target.to_ascii_lowercase().contains("workbook")
+                    && self.has(&r.target)
+                {
                     return Some(r.target);
                 }
             }
         }
-        self.has("xl/workbook.xml").then(|| "xl/workbook.xml".to_string())
+        self.has("xl/workbook.xml")
+            .then(|| "xl/workbook.xml".to_string())
     }
 }
 
@@ -252,8 +274,12 @@ fn walk(xml: &[u8], mut f: impl FnMut(Ev<'_>)) {
                 }
                 depth = depth.saturating_sub(1);
             }
-            Ok(Event::Text(t)) if depth <= MAX_XML_DEPTH => f(Ev::Text(t.decode().map(|c| c.into_owned()).unwrap_or_default())),
-            Ok(Event::CData(t)) if depth <= MAX_XML_DEPTH => f(Ev::Text(String::from_utf8_lossy(&t).into_owned())),
+            Ok(Event::Text(t)) if depth <= MAX_XML_DEPTH => f(Ev::Text(
+                t.decode().map(|c| c.into_owned()).unwrap_or_default(),
+            )),
+            Ok(Event::CData(t)) if depth <= MAX_XML_DEPTH => {
+                f(Ev::Text(String::from_utf8_lossy(&t).into_owned()))
+            }
             Ok(Event::GeneralRef(g)) if depth <= MAX_XML_DEPTH => {
                 let s = match &g[..] {
                     b"amp" => "&".to_string(),
@@ -261,7 +287,12 @@ fn walk(xml: &[u8], mut f: impl FnMut(Ev<'_>)) {
                     b"gt" => ">".to_string(),
                     b"quot" => "\"".to_string(),
                     b"apos" => "'".to_string(),
-                    _ => g.resolve_char_ref().ok().flatten().map(|c| c.to_string()).unwrap_or_default(),
+                    _ => g
+                        .resolve_char_ref()
+                        .ok()
+                        .flatten()
+                        .map(|c| c.to_string())
+                        .unwrap_or_default(),
                 };
                 f(Ev::Text(s));
             }
@@ -273,9 +304,16 @@ fn walk(xml: &[u8], mut f: impl FnMut(Ev<'_>)) {
 
 /// An attribute's value by local name.
 fn attr(e: &BytesStart<'_>, name: &[u8]) -> Option<String> {
-    e.attributes().with_checks(false).flatten().take(64).find(|a| a.key.local_name().as_ref() == name).map(|a| {
-        a.normalized_value(XmlVersion::Explicit1_0).map(|c| c.into_owned()).unwrap_or_else(|_| String::from_utf8_lossy(&a.value).into_owned())
-    })
+    e.attributes()
+        .with_checks(false)
+        .flatten()
+        .take(64)
+        .find(|a| a.key.local_name().as_ref() == name)
+        .map(|a| {
+            a.normalized_value(XmlVersion::Explicit1_0)
+                .map(|c| c.into_owned())
+                .unwrap_or_else(|_| String::from_utf8_lossy(&a.value).into_owned())
+        })
 }
 
 /// `s` + `t`, keeping `s` at most [`MAX_CELL_CHARS`] characters.
@@ -340,7 +378,11 @@ fn relationships(xml: &[u8], dir: &str) -> Vec<Rel> {
                 return;
             }
             let target = attr(e, b"Target").unwrap_or_default();
-            v.push(Rel { id: attr(e, b"Id").unwrap_or_default(), kind: attr(e, b"Type").unwrap_or_default(), target: join(dir, &target) });
+            v.push(Rel {
+                id: attr(e, b"Id").unwrap_or_default(),
+                kind: attr(e, b"Type").unwrap_or_default(),
+                target: join(dir, &target),
+            });
         }
     });
     v
@@ -348,7 +390,11 @@ fn relationships(xml: &[u8], dir: &str) -> Vec<Rel> {
 
 /// A relative part name resolved against `dir` (`/` = package root).
 fn join(dir: &str, target: &str) -> String {
-    let mut parts: Vec<&str> = if target.starts_with('/') { Vec::new() } else { dir.split('/').filter(|p| !p.is_empty()).collect() };
+    let mut parts: Vec<&str> = if target.starts_with('/') {
+        Vec::new()
+    } else {
+        dir.split('/').filter(|p| !p.is_empty()).collect()
+    };
     for seg in target.split('/') {
         match seg {
             "" | "." => {}
@@ -387,14 +433,23 @@ struct Workbook {
 fn workbook(pkg: &mut Package<'_>) -> Result<Workbook, String> {
     let path = pkg.workbook_path().ok_or("the workbook part is missing")?;
     let xml = pkg.read(&path)?;
-    let rels = pkg.read(&rels_of(&path)).map(|r| relationships(&r, dir_of(&path))).unwrap_or_default();
+    let rels = pkg
+        .read(&rels_of(&path))
+        .map(|r| relationships(&r, dir_of(&path)))
+        .unwrap_or_default();
     let mut listed: Vec<(String, String)> = Vec::new();
     let mut date1904 = false;
     walk(&xml, |ev| {
         if let Ev::Start(e) = ev {
             match e.local_name().as_ref() {
-                b"sheet" if listed.len() < MAX_SHEETS => listed.push((attr(e, b"name").unwrap_or_default(), attr(e, b"id").unwrap_or_default())),
-                b"workbookPr" => date1904 = attr(e, b"date1904").is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true")),
+                b"sheet" if listed.len() < MAX_SHEETS => listed.push((
+                    attr(e, b"name").unwrap_or_default(),
+                    attr(e, b"id").unwrap_or_default(),
+                )),
+                b"workbookPr" => {
+                    date1904 = attr(e, b"date1904")
+                        .is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                }
                 _ => {}
             }
         }
@@ -403,12 +458,26 @@ fn workbook(pkg: &mut Package<'_>) -> Result<Workbook, String> {
         .into_iter()
         .filter_map(|(name, id)| {
             // Worksheets only: chart and dialog sheets hold no cells.
-            let r = rels.iter().find(|r| r.id == id && r.kind.ends_with("/worksheet"))?;
-            Some(SheetRef { name, path: r.target.clone() })
+            let r = rels
+                .iter()
+                .find(|r| r.id == id && r.kind.ends_with("/worksheet"))?;
+            Some(SheetRef {
+                name,
+                path: r.target.clone(),
+            })
         })
         .collect();
-    let part = |suffix: &str| rels.iter().find(|r| r.kind.ends_with(suffix)).map(|r| r.target.clone());
-    Ok(Workbook { sheets, date1904, shared: part("/sharedStrings"), styles: part("/styles") })
+    let part = |suffix: &str| {
+        rels.iter()
+            .find(|r| r.kind.ends_with(suffix))
+            .map(|r| r.target.clone())
+    };
+    Ok(Workbook {
+        sheets,
+        date1904,
+        shared: part("/sharedStrings"),
+        styles: part("/styles"),
+    })
 }
 
 fn xlsx_sheets(pkg: &mut Package<'_>) -> Result<Vec<SheetRef>, String> {
@@ -524,13 +593,19 @@ fn cell_formats(xml: &[u8]) -> Vec<Option<DateKind>> {
                 }
             }
             b"cellXfs" => in_xfs = true,
-            b"xf" if in_xfs && xfs.len() < MAX_XFS => xfs.push(attr(e, b"numFmtId").and_then(|v| v.trim().parse().ok()).unwrap_or(0)),
+            b"xf" if in_xfs && xfs.len() < MAX_XFS => xfs.push(
+                attr(e, b"numFmtId")
+                    .and_then(|v| v.trim().parse().ok())
+                    .unwrap_or(0),
+            ),
             _ => {}
         },
         Ev::End(n) if n.as_slice() == b"cellXfs" => in_xfs = false,
         _ => {}
     });
-    xfs.into_iter().map(|id| custom.get(&id).copied().unwrap_or_else(|| builtin_date(id))).collect()
+    xfs.into_iter()
+        .map(|id| custom.get(&id).copied().unwrap_or_else(|| builtin_date(id)))
+        .collect()
 }
 
 /// A cell reference's 0-based column (`C5` → 2); `None` when it isn't one.
@@ -562,11 +637,23 @@ struct XCell {
 
 fn xlsx_rows(pkg: &mut Package<'_>, path: &str) -> Result<Vec<Vec<String>>, String> {
     let wb = workbook(pkg)?;
-    let shared = match wb.shared.as_deref().or(pkg.has("xl/sharedStrings.xml").then_some("xl/sharedStrings.xml")).map(str::to_string) {
+    let shared = match wb
+        .shared
+        .as_deref()
+        .or(pkg
+            .has("xl/sharedStrings.xml")
+            .then_some("xl/sharedStrings.xml"))
+        .map(str::to_string)
+    {
         Some(p) => shared_strings(&pkg.read(&p)?),
         None => Vec::new(),
     };
-    let formats = match wb.styles.as_deref().or(pkg.has("xl/styles.xml").then_some("xl/styles.xml")).map(str::to_string) {
+    let formats = match wb
+        .styles
+        .as_deref()
+        .or(pkg.has("xl/styles.xml").then_some("xl/styles.xml"))
+        .map(str::to_string)
+    {
         Some(p) => cell_formats(&pkg.read(&p)?),
         None => Vec::new(),
     };
@@ -581,7 +668,9 @@ fn xlsx_rows(pkg: &mut Package<'_>, path: &str) -> Result<Vec<Vec<String>>, Stri
         Ev::Start(e) => match e.local_name().as_ref() {
             b"sheetData" => in_data = true,
             b"row" if in_data => {
-                row_no = attr(e, b"r").and_then(|v| v.trim().parse().ok()).unwrap_or(row_no.saturating_add(1));
+                row_no = attr(e, b"r")
+                    .and_then(|v| v.trim().parse().ok())
+                    .unwrap_or(row_no.saturating_add(1));
                 next_col = 0;
             }
             b"c" if in_data => {
@@ -591,8 +680,15 @@ fn xlsx_rows(pkg: &mut Package<'_>, path: &str) -> Result<Vec<Vec<String>>, Stri
                     None => next_col,
                 };
                 next_col = col.saturating_add(1);
-                let style = attr(e, b"s").and_then(|v| v.trim().parse().ok()).unwrap_or(0);
-                cell = Some(XCell { col, kind: attr(e, b"t").unwrap_or_default(), style, ..Default::default() });
+                let style = attr(e, b"s")
+                    .and_then(|v| v.trim().parse().ok())
+                    .unwrap_or(0);
+                cell = Some(XCell {
+                    col,
+                    kind: attr(e, b"t").unwrap_or_default(),
+                    style,
+                    ..Default::default()
+                });
             }
             b"v" => in_v = cell.is_some(),
             b"t" => in_is_t = cell.is_some(),
@@ -645,17 +741,34 @@ fn xlsx_rows(pkg: &mut Package<'_>, path: &str) -> Result<Vec<Vec<String>>, Stri
     Ok(grid.rows)
 }
 
-fn xlsx_value(c: &XCell, shared: &[String], formats: &[Option<DateKind>], date1904: bool) -> String {
+fn xlsx_value(
+    c: &XCell,
+    shared: &[String],
+    formats: &[Option<DateKind>],
+    date1904: bool,
+) -> String {
     let v = c.value.trim();
     match c.kind.as_str() {
-        "s" => v.parse::<usize>().ok().and_then(|i| shared.get(i)).cloned().unwrap_or_default(),
+        "s" => v
+            .parse::<usize>()
+            .ok()
+            .and_then(|i| shared.get(i))
+            .cloned()
+            .unwrap_or_default(),
         "inlineStr" => c.inline.clone(),
         "str" | "e" => c.value.clone(),
-        "b" => if v == "1" || v.eq_ignore_ascii_case("true") { "TRUE" } else { "FALSE" }.into(),
+        "b" => if v == "1" || v.eq_ignore_ascii_case("true") {
+            "TRUE"
+        } else {
+            "FALSE"
+        }
+        .into(),
         "d" => iso_datetime(v).unwrap_or_else(|| v.to_string()),
         _ if v.is_empty() => c.inline.clone(),
         _ => {
-            let Ok(x) = v.parse::<f64>() else { return v.to_string() };
+            let Ok(x) = v.parse::<f64>() else {
+                return v.to_string();
+            };
             match formats.get(c.style).copied().flatten() {
                 Some(kind) => serial_date(x, date1904, kind).unwrap_or_else(|| number(x)),
                 None => number(x),
@@ -674,7 +787,11 @@ fn number(x: f64) -> String {
         return format!("{x:.0}");
     }
     let rounded: f64 = format!("{x:.14e}").parse().unwrap_or(x);
-    if rounded.abs() >= 1e15 || rounded.abs() < 1e-9 { format!("{rounded:E}") } else { rounded.to_string() }
+    if rounded.abs() >= 1e15 || rounded.abs() < 1e-9 {
+        format!("{rounded:E}")
+    } else {
+        rounded.to_string()
+    }
 }
 
 /// A serial date-time (days since the workbook's epoch) in ISO 8601 form.
@@ -700,7 +817,11 @@ fn serial_date(serial: f64, date1904: bool, kind: DateKind) -> Option<String> {
     };
     let (y, m, d) = civil(days + epoch);
     let (h, mi, s) = (secs / 3600, secs / 60 % 60, secs % 60);
-    let time = if s == 0 { format!("{h:02}:{mi:02}") } else { format!("{h:02}:{mi:02}:{s:02}") };
+    let time = if s == 0 {
+        format!("{h:02}:{mi:02}")
+    } else {
+        format!("{h:02}:{mi:02}:{s:02}")
+    };
     Some(match kind {
         DateKind::Date => format!("{y:04}-{m:02}-{d:02}"),
         DateKind::Time => time,
@@ -734,11 +855,21 @@ fn iso_datetime(v: &str) -> Option<String> {
         return None;
     }
     let mut out = format!("{y:04}-{m:02}-{d:02}");
-    let hms: Vec<u32> = time.split(['Z', '+', '.']).next().unwrap_or("").split(':').filter_map(|p| p.parse().ok()).collect();
+    let hms: Vec<u32> = time
+        .split(['Z', '+', '.'])
+        .next()
+        .unwrap_or("")
+        .split(':')
+        .filter_map(|p| p.parse().ok())
+        .collect();
     if let [h, mi, rest @ ..] = hms.as_slice() {
         let s = rest.first().copied().unwrap_or(0);
         if (*h, *mi, s) != (0, 0, 0) {
-            out.push_str(&if s == 0 { format!(" {h:02}:{mi:02}") } else { format!(" {h:02}:{mi:02}:{s:02}") });
+            out.push_str(&if s == 0 {
+                format!(" {h:02}:{mi:02}")
+            } else {
+                format!(" {h:02}:{mi:02}:{s:02}")
+            });
         }
     }
     Some(out)
@@ -759,7 +890,11 @@ fn iso_time(v: &str) -> Option<String> {
         }
     }
     let s = s.round() as u64;
-    Some(if s == 0 { format!("{h:02}:{m:02}") } else { format!("{h:02}:{m:02}:{s:02}") })
+    Some(if s == 0 {
+        format!("{h:02}:{m:02}")
+    } else {
+        format!("{h:02}:{m:02}:{s:02}")
+    })
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -792,7 +927,9 @@ fn ods_read(xml: &[u8], want: Option<usize>) -> Result<(Vec<String>, Vec<Vec<Str
             if n == b"table" {
                 if tables == 0 && names.len() < MAX_SHEETS {
                     collecting = want == Some(names.len());
-                    names.push(attr(e, b"name").unwrap_or_else(|| format!("Sheet{}", names.len() + 1)));
+                    names.push(
+                        attr(e, b"name").unwrap_or_else(|| format!("Sheet{}", names.len() + 1)),
+                    );
                 }
                 tables += 1;
                 return;
@@ -802,11 +939,17 @@ fn ods_read(xml: &[u8], want: Option<usize>) -> Result<(Vec<String>, Vec<Vec<Str
             }
             match n {
                 b"table-row" => {
-                    let repeat = attr(e, b"number-rows-repeated").and_then(|v| v.trim().parse().ok()).unwrap_or(1u64).max(1);
+                    let repeat = attr(e, b"number-rows-repeated")
+                        .and_then(|v| v.trim().parse().ok())
+                        .unwrap_or(1u64)
+                        .max(1);
                     row = Some((Vec::new(), 0, repeat));
                 }
                 b"table-cell" | b"covered-table-cell" if row.is_some() => {
-                    let repeat = attr(e, b"number-columns-repeated").and_then(|v| v.trim().parse().ok()).unwrap_or(1u64).max(1);
+                    let repeat = attr(e, b"number-columns-repeated")
+                        .and_then(|v| v.trim().parse().ok())
+                        .unwrap_or(1u64)
+                        .max(1);
                     let kind = attr(e, b"value-type").unwrap_or_default();
                     let value = match kind.as_str() {
                         "float" => attr(e, b"value"),
@@ -840,7 +983,10 @@ fn ods_read(xml: &[u8], want: Option<usize>) -> Result<(Vec<String>, Vec<Vec<Str
                     in_p += 1;
                 }
                 b"s" if in_p > 0 && skip == 0 => {
-                    let k = attr(e, b"c").and_then(|v| v.trim().parse::<usize>().ok()).unwrap_or(1).clamp(1, 1_000);
+                    let k = attr(e, b"c")
+                        .and_then(|v| v.trim().parse::<usize>().ok())
+                        .unwrap_or(1)
+                        .clamp(1, 1_000);
                     if let Some(c) = cell.as_mut() {
                         push_capped(&mut c.text, &" ".repeat(k));
                     }
@@ -885,7 +1031,9 @@ fn ods_read(xml: &[u8], want: Option<usize>) -> Result<(Vec<String>, Vec<Vec<Str
                     if n == b"covered-table-cell" {
                         skip = skip.saturating_sub(1);
                     }
-                    let (Some(c), Some((cells, pending, _))) = (cell.take(), row.as_mut()) else { return };
+                    let (Some(c), Some((cells, pending, _))) = (cell.take(), row.as_mut()) else {
+                        return;
+                    };
                     let text = ods_value(&c);
                     if text.is_empty() {
                         *pending = pending.saturating_add(c.repeat);
@@ -893,7 +1041,8 @@ fn ods_read(xml: &[u8], want: Option<usize>) -> Result<(Vec<String>, Vec<Vec<Str
                     }
                     // Blank cells before this one, then the value as often as it repeats, as far
                     // as the columns allow.
-                    let blanks = (*pending).min(MAX_COLS.saturating_sub(cells.len()) as u64) as usize;
+                    let blanks =
+                        (*pending).min(MAX_COLS.saturating_sub(cells.len()) as u64) as usize;
                     cells.resize(cells.len() + blanks, String::new());
                     *pending = 0;
                     let times = c.repeat.min(MAX_COLS.saturating_sub(cells.len()) as u64) as usize;
@@ -917,10 +1066,18 @@ fn ods_read(xml: &[u8], want: Option<usize>) -> Result<(Vec<String>, Vec<Vec<Str
 fn ods_value(c: &OCell) -> String {
     let v = c.value.as_deref().map(str::trim);
     match (c.kind.as_str(), v) {
-        ("float", Some(v)) => v.parse::<f64>().map(number).unwrap_or_else(|_| c.text.clone()),
+        ("float", Some(v)) => v
+            .parse::<f64>()
+            .map(number)
+            .unwrap_or_else(|_| c.text.clone()),
         ("date", Some(v)) => iso_datetime(v).unwrap_or_else(|| c.text.clone()),
         ("time", Some(v)) => iso_time(v).unwrap_or_else(|| c.text.clone()),
-        ("boolean", Some(v)) => if v.eq_ignore_ascii_case("true") || v == "1" { "TRUE" } else { "FALSE" }.into(),
+        ("boolean", Some(v)) => if v.eq_ignore_ascii_case("true") || v == "1" {
+            "TRUE"
+        } else {
+            "FALSE"
+        }
+        .into(),
         _ => c.text.clone(),
     }
 }
@@ -932,7 +1089,8 @@ mod tests {
 
     fn zip(entries: &[(&str, &str)]) -> Vec<u8> {
         let mut z = zip::ZipWriter::new(Cursor::new(Vec::new()));
-        let o = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let o = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
         for (name, body) in entries {
             z.start_file(*name, o).unwrap();
             z.write_all(body.as_bytes()).unwrap();
@@ -969,14 +1127,28 @@ mod tests {
         </sheetData><mergeCells count="1"><mergeCell ref="A4:B4"/></mergeCells></worksheet>"#;
         let book = xlsx(sheet);
         assert_eq!(detect(&book), Some(Kind::Xlsx));
-        assert_eq!(sheet_names(&book).unwrap(), ["People", "Notes"], "chart sheets aren't listed");
+        assert_eq!(
+            sheet_names(&book).unwrap(),
+            ["People", "Notes"],
+            "chart sheets aren't listed"
+        );
         let (names, rows) = read_rows(&book, Pick::Index(0)).unwrap();
         assert_eq!(names.len(), 2);
-        assert_eq!(rows.len(), 3, "blank rows (2, and 5 with nothing readable) are dropped: {rows:?}");
+        assert_eq!(
+            rows.len(),
+            3,
+            "blank rows (2, and 5 with nothing readable) are dropped: {rows:?}"
+        );
         assert_eq!(rows[0], ["Name", "Born", "", "Name", "Name"]);
-        assert_eq!(field_names(&rows[0]), ["Name", "Born", "Column 3", "Name 2", "Name 3"]);
+        assert_eq!(
+            field_names(&rows[0]),
+            ["Name", "Born", "Column 3", "Name 2", "Name 3"]
+        );
         assert_eq!(rows[1], ["Ada Lovelace", "2024-03-05", "", "0.3", "TRUE"]);
-        assert_eq!(rows[2], ["Alan", "1900-01-01", "12", "Alan!", "2024-03-05 12:00"]);
+        assert_eq!(
+            rows[2],
+            ["Alan", "1900-01-01", "12", "Alan!", "2024-03-05 12:00"]
+        );
         let (_, notes) = read_rows(&book, Pick::Name("notes")).unwrap();
         assert_eq!(notes, [["x"]]);
         assert!(read_rows(&book, Pick::Index(5)).is_err());
@@ -993,13 +1165,19 @@ mod tests {
               <table:table-row table:number-rows-repeated="2"><table:table-cell office:value-type="string" table:number-columns-spanned="2"><text:p>Ada<text:s text:c="2"/>L</text:p><text:p>x</text:p><office:annotation><text:p>note</text:p></office:annotation></table:table-cell><table:covered-table-cell office:value-type="string"><text:p>hidden</text:p></table:covered-table-cell><table:table-cell office:value-type="float" office:value="3.50"><text:p>3,5</text:p></table:table-cell><table:table-cell office:value-type="date" office:date-value="2024-03-05T00:00:00"/><table:table-cell office:value-type="boolean" office:boolean-value="false"/><table:table-cell office:value-type="time" office:time-value="PT13H45M00S"/></table:table-row>
               <table:table-row table:number-rows-repeated="1048570"><table:table-cell table:number-columns-repeated="1024"/></table:table-row>
             </table:table></office:spreadsheet></office:body></office:document-content>"#;
-        let book = zip(&[("mimetype", "application/vnd.oasis.opendocument.spreadsheet"), ("content.xml", content)]);
+        let book = zip(&[
+            ("mimetype", "application/vnd.oasis.opendocument.spreadsheet"),
+            ("content.xml", content),
+        ]);
         assert_eq!(detect(&book), Some(Kind::Ods));
         assert_eq!(sheet_names(&book).unwrap(), ["First", "Guests"]);
         let (_, rows) = read_rows(&book, Pick::Name("Guests")).unwrap();
         assert_eq!(rows.len(), 3);
         assert_eq!(rows[0], ["Name", "", "", "When", "Tag", "Tag"]);
-        assert_eq!(rows[1], ["Ada  L\nx", "", "3.5", "2024-03-05", "FALSE", "13:45"]);
+        assert_eq!(
+            rows[1],
+            ["Ada  L\nx", "", "3.5", "2024-03-05", "FALSE", "13:45"]
+        );
         assert_eq!(rows[1], rows[2]);
     }
 
@@ -1010,15 +1188,25 @@ mod tests {
         let content = format!(
             r#"<office:document-content xmlns:office="o" xmlns:table="t" xmlns:text="x"><office:body><office:spreadsheet><table:table table:name="S">{row}</table:table></office:spreadsheet></office:body></office:document-content>"#
         );
-        let book = zip(&[("mimetype", "application/vnd.oasis.opendocument.spreadsheet"), ("content.xml", &content)]);
+        let book = zip(&[
+            ("mimetype", "application/vnd.oasis.opendocument.spreadsheet"),
+            ("content.xml", &content),
+        ]);
         let (_, rows) = read_rows(&book, Pick::Index(0)).unwrap();
         assert!(rows.len() <= MAX_ROWS && rows.iter().all(|r| r.len() <= MAX_COLS));
         assert!(rows.iter().map(Vec::len).sum::<usize>() <= MAX_CELLS);
         // A zip bomb: a tiny entry that inflates past the entry cap is refused.
         let big = "<a>".to_string() + &"x".repeat((MAX_ENTRY + 10) as usize) + "</a>";
-        let bomb = zip(&[("mimetype", "application/vnd.oasis.opendocument.spreadsheet"), ("content.xml", &big)]);
+        let bomb = zip(&[
+            ("mimetype", "application/vnd.oasis.opendocument.spreadsheet"),
+            ("content.xml", &big),
+        ]);
         assert!(bomb.len() < 1 << 20, "the bomb is small: {}", bomb.len());
-        assert!(read_rows(&bomb, Pick::Index(0)).unwrap_err().contains("too large"));
+        assert!(
+            read_rows(&bomb, Pick::Index(0))
+                .unwrap_err()
+                .contains("too large")
+        );
         // Huge cell references, long strings and junk.
         let long = "y".repeat(MAX_CELL_CHARS + 50);
         let sheet = format!(
@@ -1026,8 +1214,20 @@ mod tests {
         );
         let (_, rows) = read_rows(&xlsx(&sheet), Pick::Index(0)).unwrap();
         assert_eq!(rows[0][0].chars().count(), MAX_CELL_CHARS);
-        assert_eq!(rows[0], [long[..MAX_CELL_CHARS].to_string(), String::new(), "1E308".to_string()]);
-        for junk in [&b""[..], b"PK\x03\x04junk", b"not a zip", &zip(&[("content.xml", "<<<")])] {
+        assert_eq!(
+            rows[0],
+            [
+                long[..MAX_CELL_CHARS].to_string(),
+                String::new(),
+                "1E308".to_string()
+            ]
+        );
+        for junk in [
+            &b""[..],
+            b"PK\x03\x04junk",
+            b"not a zip",
+            &zip(&[("content.xml", "<<<")]),
+        ] {
             let _ = sheet_names(junk);
             let _ = read_rows(junk, Pick::Index(0));
         }
@@ -1040,9 +1240,18 @@ mod tests {
         assert_eq!(custom_date("\"days\" 0.00"), None);
         assert_eq!(custom_date("General"), None);
         assert_eq!(custom_date("[Red]#,##0.00"), None);
-        assert_eq!(serial_date(61.0, false, DateKind::Date).as_deref(), Some("1900-03-01"));
-        assert_eq!(serial_date(0.0, true, DateKind::Date).as_deref(), Some("1904-01-01"));
-        assert_eq!(serial_date(0.75, false, DateKind::Time).as_deref(), Some("18:00"));
+        assert_eq!(
+            serial_date(61.0, false, DateKind::Date).as_deref(),
+            Some("1900-03-01")
+        );
+        assert_eq!(
+            serial_date(0.0, true, DateKind::Date).as_deref(),
+            Some("1904-01-01")
+        );
+        assert_eq!(
+            serial_date(0.75, false, DateKind::Time).as_deref(),
+            Some("18:00")
+        );
         assert_eq!(serial_date(-1.0, false, DateKind::Date), None);
         assert_eq!(number(1234567.0), "1234567");
         assert_eq!(number(0.1 + 0.2), "0.3");

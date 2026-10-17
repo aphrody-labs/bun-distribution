@@ -87,7 +87,9 @@ pub fn normalize(text: &str, lang: Lang) -> Result<Vec<Token>, NormalizeError> {
             },
             '-' if peek(rest, 1).is_some_and(|c| c.is_ascii_digit()) => {
                 pos += 1;
-                if let Some((tokens, used)) = parse_number_cluster(rest.get(1..).unwrap_or(""), lang) {
+                if let Some((tokens, used)) =
+                    parse_number_cluster(rest.get(1..).unwrap_or(""), lang)
+                {
                     pos += used;
                     out.push(Token::Word("minus".into()));
                     out.extend(tokens);
@@ -120,7 +122,10 @@ pub fn normalize(text: &str, lang: Lang) -> Result<Vec<Token>, NormalizeError> {
                 // leftover one ends a sentence.
                 let mut question = false;
                 let mut bang = false;
-                while matches!(peek(text.get(pos..).unwrap_or(""), 0), Some('.' | '!' | '?')) {
+                while matches!(
+                    peek(text.get(pos..).unwrap_or(""), 0),
+                    Some('.' | '!' | '?')
+                ) {
                     match peek(text.get(pos..).unwrap_or(""), 0) {
                         Some('?') => question = true,
                         Some('!') => bang = true,
@@ -135,7 +140,10 @@ pub fn normalize(text: &str, lang: Lang) -> Result<Vec<Token>, NormalizeError> {
                 } else {
                     Token::SentenceEnd
                 };
-                if !matches!(out.last(), Some(Token::SentenceEnd) | Some(Token::SentenceEndWith(_))) {
+                if !matches!(
+                    out.last(),
+                    Some(Token::SentenceEnd) | Some(Token::SentenceEndWith(_))
+                ) {
                     out.push(terminator);
                 }
             }
@@ -237,7 +245,9 @@ fn pause_millis(number: &str, unit: &str) -> Option<u32> {
                         frac_digits.push(ch.to_digit(10)?);
                     }
                 } else {
-                    whole = whole.checked_mul(10)?.checked_add(u64::from(ch.to_digit(10)?))?;
+                    whole = whole
+                        .checked_mul(10)?
+                        .checked_add(u64::from(ch.to_digit(10)?))?;
                     if whole > u64::from(MAX_PAUSE_MS) {
                         return Some(MAX_PAUSE_MS);
                     }
@@ -269,7 +279,11 @@ fn parse_money(rest: &str, lang: Lang) -> Option<(Vec<String>, usize)> {
     let (value, digits, used, minor, had_minor) = parse_amount(rest.get(skip..)?, lang)?;
     if digits > MAX_CARDINAL_DIGITS || has_leading_zero(&value, digits) {
         // Oversized amounts: every digit, unit-free, no overflow.
-        let all = rest.get(skip..skip + used)?.chars().filter(|c| c.is_ascii_digit()).collect::<String>();
+        let all = rest
+            .get(skip..skip + used)?
+            .chars()
+            .filter(|c| c.is_ascii_digit())
+            .collect::<String>();
         let (words, _) = digit_run_as_words(&all);
         return Some((words, used + skip));
     }
@@ -351,7 +365,11 @@ fn parse_amount(rest: &str, _lang: Lang) -> Option<(u64, usize, usize, u32, bool
     // not five minor units. Preserve the existing two-digit and longer readings.
     let minor = if had_minor {
         let value = frac_digits.parse::<u32>().ok()?;
-        if frac_digits.len() == 1 { value * 10 } else { value }
+        if frac_digits.len() == 1 {
+            value * 10
+        } else {
+            value
+        }
     } else {
         0
     };
@@ -362,7 +380,10 @@ fn parse_amount(rest: &str, _lang: Lang) -> Option<(u64, usize, usize, u32, bool
 fn grouping_followed_by_3(rest: &str, sep_index: usize) -> bool {
     let after = rest.get(sep_index + 1..).unwrap_or("");
     let digits: String = after.chars().take_while(|c| c.is_ascii_digit()).collect();
-    let boundary = after.get(digits.len()..).and_then(|r| r.chars().next()).is_none_or(|c| !c.is_ascii_digit());
+    let boundary = after
+        .get(digits.len()..)
+        .and_then(|r| r.chars().next())
+        .is_none_or(|c| !c.is_ascii_digit());
     digits.len() == 3 && boundary
 }
 
@@ -425,7 +446,12 @@ fn parse_time(rest: &str) -> Option<(Vec<Token>, usize)> {
 /// when there is no digit at `start`.
 fn digit_run(s: &str, start: usize, max: usize) -> Option<usize> {
     let sub = s.get(start..)?;
-    let end = sub.char_indices().take(max).take_while(|&(_, c)| c.is_ascii_digit()).map(|(i, c)| i + c.len_utf8()).last()?;
+    let end = sub
+        .char_indices()
+        .take(max)
+        .take_while(|&(_, c)| c.is_ascii_digit())
+        .map(|(i, c)| i + c.len_utf8())
+        .last()?;
     Some(start + end)
 }
 
@@ -453,7 +479,8 @@ fn parse_date(rest: &str, lang: Lang) -> Option<(Vec<Token>, usize)> {
         return None;
     }
     let (b, b_end) = read_u64(rest, a_end + 1, 2)?;
-    if peek(rest, b_end) != Some('/') || !peek(rest, b_end + 1).is_some_and(|c| c.is_ascii_digit()) {
+    if peek(rest, b_end) != Some('/') || !peek(rest, b_end + 1).is_some_and(|c| c.is_ascii_digit())
+    {
         return None;
     }
     let (year, year_end) = read_u64(rest, b_end + 1, 4)?;
@@ -543,8 +570,16 @@ fn parse_fraction(rest: &str) -> Option<(Vec<Token>, usize)> {
         return Some((words.into_iter().map(Token::Word).collect(), d_end));
     }
     match d {
-        2 => words.push(if n > 1 { "halves".into() } else { "half".into() }),
-        4 => words.push(if n > 1 { "quarters".into() } else { "quarter".into() }),
+        2 => words.push(if n > 1 {
+            "halves".into()
+        } else {
+            "half".into()
+        }),
+        4 => words.push(if n > 1 {
+            "quarters".into()
+        } else {
+            "quarter".into()
+        }),
         _ => {
             let mut denom = english_ordinal(d);
             if n > 1 {
@@ -587,7 +622,10 @@ fn parse_number_core(rest: &str, lang: Lang) -> Option<(Vec<Token>, usize)> {
         return None;
     }
     if overflowed || digits.len() > MAX_CARDINAL_DIGITS {
-        let words: Vec<Token> = digits.chars().map(|c| Token::Word(english_digit_word(c).into())).collect();
+        let words: Vec<Token> = digits
+            .chars()
+            .map(|c| Token::Word(english_digit_word(c).into()))
+            .collect();
         return Some((words, used));
     }
     let value: u64 = digits.parse().ok()?;
@@ -595,14 +633,27 @@ fn parse_number_core(rest: &str, lang: Lang) -> Option<(Vec<Token>, usize)> {
         return Some((tokens, u));
     }
     if has_leading_zero_str(&digits) {
-        let words: Vec<Token> = digits.chars().map(|c| Token::Word(english_digit_word(c).into())).collect();
+        let words: Vec<Token> = digits
+            .chars()
+            .map(|c| Token::Word(english_digit_word(c).into()))
+            .collect();
         return Some((words, used));
     }
     // A year is a bare, ungrouped 4-digit number standing alone.
-    if !grouped && digits.len() == 4 && (1100..=2099).contains(&value) && year_is_standalone(rest, used) {
+    if !grouped
+        && digits.len() == 4
+        && (1100..=2099).contains(&value)
+        && year_is_standalone(rest, used)
+    {
         return Some((year_words(value, lang), used));
     }
-    Some((english_cardinal(value).into_iter().map(Token::Word).collect(), used))
+    Some((
+        english_cardinal(value)
+            .into_iter()
+            .map(Token::Word)
+            .collect(),
+        used,
+    ))
 }
 
 fn has_leading_zero_str(digits: &str) -> bool {
@@ -614,21 +665,38 @@ fn has_leading_zero_str(digits: &str) -> bool {
 /// Percentage sign attached to a number, or separated from it by whitespace.
 fn percent_suffix_len(rest: &str) -> Option<usize> {
     let suffix = rest.trim_start_matches(char::is_whitespace);
-    suffix.strip_prefix('%').map(|_| rest.len() - suffix.len() + 1)
+    suffix
+        .strip_prefix('%')
+        .map(|_| rest.len() - suffix.len() + 1)
 }
 
 /// Retain digit-by-digit reading of zero-prefixed integer portions, even when
 /// followed by a percent sign or decimal fraction.
 fn spoken_integer(value: u64, digits: &str) -> Vec<String> {
-    if has_leading_zero_str(digits) { digits.chars().map(|c| english_digit_word(c).into()).collect() } else { english_cardinal(value) }
+    if has_leading_zero_str(digits) {
+        digits
+            .chars()
+            .map(|c| english_digit_word(c).into())
+            .collect()
+    } else {
+        english_cardinal(value)
+    }
 }
 
-fn parse_continuation(rest: &str, used: usize, value: u64, digits: &str) -> Option<(Vec<Token>, usize)> {
+fn parse_continuation(
+    rest: &str,
+    used: usize,
+    value: u64,
+    digits: &str,
+) -> Option<(Vec<Token>, usize)> {
     let after = rest.get(used..)?;
     if let Some(suffix_len) = percent_suffix_len(after) {
         let mut words = spoken_integer(value, digits);
         words.push("percent".into());
-        return Some((words.into_iter().map(Token::Word).collect(), used + suffix_len));
+        return Some((
+            words.into_iter().map(Token::Word).collect(),
+            used + suffix_len,
+        ));
     }
     match peek(after, 0) {
         Some('s' | 'S' | 't' | 'T' | 'n' | 'N' | 'd' | 'D' | 'r' | 'R') => {
@@ -649,7 +717,10 @@ fn parse_continuation(rest: &str, used: usize, value: u64, digits: &str) -> Opti
             let number_end = used + 1 + frac_used;
             if let Some(suffix_len) = rest.get(number_end..).and_then(percent_suffix_len) {
                 words.push("percent".into());
-                return Some((words.into_iter().map(Token::Word).collect(), number_end + suffix_len));
+                return Some((
+                    words.into_iter().map(Token::Word).collect(),
+                    number_end + suffix_len,
+                ));
             }
             Some((words.into_iter().map(Token::Word).collect(), number_end))
         }
@@ -686,7 +757,10 @@ fn parse_digit_groups(rest: &str, used: usize) -> Option<(Vec<Token>, usize)> {
         let group = groups.first()?;
         let leading_zero = has_leading_zero_str(rest.get(..used)?) || group.starts_with('0');
         // Total digits across the whole cluster: the integer before the dash plus this group.
-        let total = rest.get(..used).map_or(0, |head| head.chars().filter(char::is_ascii_digit).count()) + group.len();
+        let total = rest
+            .get(..used)
+            .map_or(0, |head| head.chars().filter(char::is_ascii_digit).count())
+            + group.len();
         if !leading_zero && total < 7 {
             // "2-3" → "two to three".
             let b = group.parse::<u64>().ok()?;
@@ -710,8 +784,12 @@ fn parse_digit_groups(rest: &str, used: usize) -> Option<(Vec<Token>, usize)> {
         }
         return Some((words, end));
     }
-    let total: usize = groups.iter().map(String::len).sum::<usize>() + rest.get(..used).map_or(0, |head| head.chars().filter(char::is_ascii_digit).count());
-    let leading_zero = has_leading_zero_str(rest.get(..used)?) || groups.iter().any(|g| g.starts_with('0'));
+    let total: usize = groups.iter().map(String::len).sum::<usize>()
+        + rest
+            .get(..used)
+            .map_or(0, |head| head.chars().filter(char::is_ascii_digit).count());
+    let leading_zero =
+        has_leading_zero_str(rest.get(..used)?) || groups.iter().any(|g| g.starts_with('0'));
     if total >= 7 || leading_zero {
         let mut words: Vec<Token> = Vec::new();
         if let Some(head) = rest.get(..used) {
@@ -745,7 +823,10 @@ fn parse_digit_groups(rest: &str, used: usize) -> Option<(Vec<Token>, usize)> {
 }
 
 fn is_ordinal_suffix(suffix: &str) -> bool {
-    matches!(suffix.to_ascii_lowercase().as_str(), "st" | "nd" | "rd" | "th")
+    matches!(
+        suffix.to_ascii_lowercase().as_str(),
+        "st" | "nd" | "rd" | "th"
+    )
 }
 
 /// A 4-digit number reads as a year when nothing alphanumeric follows. Any
@@ -854,23 +935,41 @@ fn english_below_hundred(n: u64) -> Vec<String> {
         "eighteen",
         "nineteen",
     ];
-    const TENS: [&str; 10] = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+    const TENS: [&str; 10] = [
+        "", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+    ];
     if n < 20 {
         return vec![UNITS.get(n as usize).copied().unwrap_or("").into()];
     }
     let tens = TENS.get((n / 10) as usize).copied().unwrap_or("");
     let units = n % 10;
-    if units == 0 { vec![tens.into()] } else { vec![format!("{tens}-{}", UNITS.get(units as usize).copied().unwrap_or(""))] }
+    if units == 0 {
+        vec![tens.into()]
+    } else {
+        vec![format!(
+            "{tens}-{}",
+            UNITS.get(units as usize).copied().unwrap_or("")
+        )]
+    }
 }
 
 /// English ordinal: "7th" → "seventh", "21st" → "twenty-first", "100th" → "one hundredth".
 fn english_ordinal(value: u64) -> String {
     let mut words = english_cardinal(value);
-    let Some(last) = words.pop() else { return "zeroth".into() };
+    let Some(last) = words.pop() else {
+        return "zeroth".into();
+    };
     let stem = words.join(" ");
-    if matches!(last.as_str(), "hundred" | "thousand" | "million" | "billion" | "trillion") {
+    if matches!(
+        last.as_str(),
+        "hundred" | "thousand" | "million" | "billion" | "trillion"
+    ) {
         // The scale word takes the ordinal form: "one hundred" → "one hundredth".
-        return if stem.is_empty() { format!("{last}th") } else { format!("{stem} {last}th") };
+        return if stem.is_empty() {
+            format!("{last}th")
+        } else {
+            format!("{stem} {last}th")
+        };
     }
     let (prefix, tail) = match last.rsplit_once('-') {
         Some((p, t)) => (format!("{p}-"), t),
@@ -894,7 +993,11 @@ fn english_ordinal(value: u64) -> String {
 }
 
 fn attach(stem: String, s: &str) -> String {
-    if stem.is_empty() { s.to_string() } else { format!("{stem} {s}") }
+    if stem.is_empty() {
+        s.to_string()
+    } else {
+        format!("{stem} {s}")
+    }
 }
 
 /// English year readings: 1999 → "nineteen ninety-nine", 1905 → "nineteen oh five",
@@ -905,7 +1008,9 @@ fn year_words(year: u64, _lang: Lang) -> Vec<Token> {
         out.push(Token::Word("two".into()));
         out.push(Token::Word("thousand".into()));
         if !year.is_multiple_of(10) {
-            out.push(Token::Word(english_digit_word(digit_char((year % 10) as u32)).into()));
+            out.push(Token::Word(
+                english_digit_word(digit_char((year % 10) as u32)).into(),
+            ));
         }
         return out;
     }
@@ -918,7 +1023,9 @@ fn year_words(year: u64, _lang: Lang) -> Vec<Token> {
         out.push(Token::Word("hundred".into()));
     } else if rest < 10 {
         out.push(Token::Word("oh".into()));
-        out.push(Token::Word(english_digit_word(digit_char(rest as u32)).into()));
+        out.push(Token::Word(
+            english_digit_word(digit_char(rest as u32)).into(),
+        ));
     } else {
         for w in english_cardinal(rest) {
             out.push(Token::Word(w));
@@ -940,12 +1047,20 @@ fn parse_wordish(rest: &str, _lang: Lang) -> Option<(Vec<Token>, usize)> {
     let lower = word.to_ascii_lowercase();
 
     // a.m. / p.m. — a single letter, a dot, "m", and a dot or boundary.
-    if word.len() == 1 && matches!(lower.as_str(), "a" | "p") && peek(rest, used) == Some('.') && matches!(peek(rest, used + 1), Some('m') | Some('M')) {
+    if word.len() == 1
+        && matches!(lower.as_str(), "a" | "p")
+        && peek(rest, used) == Some('.')
+        && matches!(peek(rest, used + 1), Some('m') | Some('M'))
+    {
         let after_m = used + 2;
         if peek(rest, after_m).is_none_or(|c| !c.is_alphanumeric()) {
             let mut tokens = vec![Token::Word(word.to_ascii_lowercase())];
             tokens.push(Token::Word("m".into()));
-            let consumed = if peek(rest, after_m) == Some('.') { after_m + 1 } else { after_m };
+            let consumed = if peek(rest, after_m) == Some('.') {
+                after_m + 1
+            } else {
+                after_m
+            };
             return Some((tokens, consumed));
         }
     }
@@ -957,7 +1072,11 @@ fn parse_wordish(rest: &str, _lang: Lang) -> Option<(Vec<Token>, usize)> {
     {
         let pair = format!("{lower}{second}");
         if matches!(pair.as_str(), "eg" | "ie") && peek(rest, used + 2) == Some('.') {
-            let expansion = if pair == "eg" { "for example" } else { "that is" };
+            let expansion = if pair == "eg" {
+                "for example"
+            } else {
+                "that is"
+            };
             return Some((vec![Token::Word(expansion.into())], used + 3));
         }
     }
@@ -979,7 +1098,10 @@ fn parse_wordish(rest: &str, _lang: Lang) -> Option<(Vec<Token>, usize)> {
 }
 
 fn leading_apostrophes(rest: &str) -> usize {
-    rest.chars().take_while(|c| *c == '\'' || *c == '’').map(char::len_utf8).sum()
+    rest.chars()
+        .take_while(|c| *c == '\'' || *c == '’')
+        .map(char::len_utf8)
+        .sum()
 }
 
 /// Expansions for `Mr.` etc.; the dot is consumed so it never ends a sentence.
@@ -999,7 +1121,11 @@ fn dotted_abbreviation(lower: &str, rest: &str, used: usize) -> Option<(Vec<Toke
                 i += 1;
             }
             let capitalised = peek(rest, i).is_some_and(|c| c.is_uppercase());
-            vec![Token::Word(if capitalised { "saint".into() } else { "street".into() })]
+            vec![Token::Word(if capitalised {
+                "saint".into()
+            } else {
+                "street".into()
+            })]
         }
         "vs" => vec![Token::Word("versus".into())],
         "etc" => vec![Token::Word("et cetera".into())],
@@ -1029,7 +1155,9 @@ fn dotted_abbreviation(lower: &str, rest: &str, used: usize) -> Option<(Vec<Toke
 /// before the first vowel (TDA, NBC, FBI, HTML are spelled; NASA, UNESCO stay words).
 /// A small allowlist of known pronounceable acronyms is kept as words regardless.
 fn is_spellable_acronym(word: &str) -> bool {
-    const KEEP_AS_WORDS: [&str; 8] = ["NASA", "UNESCO", "NATO", "UNICEF", "OPEC", "FIFA", "RADAR", "SONAR"];
+    const KEEP_AS_WORDS: [&str; 8] = [
+        "NASA", "UNESCO", "NATO", "UNICEF", "OPEC", "FIFA", "RADAR", "SONAR",
+    ];
     let letters: Vec<char> = word.chars().collect();
     if letters.len() < 2 || letters.len() > 5 || !letters.iter().all(|c| c.is_ascii_uppercase()) {
         return false;
@@ -1148,8 +1276,14 @@ mod tests {
         assert_eq!(words("100", Lang::EnUs), "one hundred");
         assert_eq!(words("105", Lang::EnUs), "one hundred five");
         assert_eq!(words("999", Lang::EnUs), "nine hundred ninety-nine");
-        assert_eq!(words("1,234", Lang::EnUs), "one thousand two hundred thirty-four");
-        assert_eq!(words("1,234,567", Lang::EnUs), "one million two hundred thirty-four thousand five hundred sixty-seven");
+        assert_eq!(
+            words("1,234", Lang::EnUs),
+            "one thousand two hundred thirty-four"
+        );
+        assert_eq!(
+            words("1,234,567", Lang::EnUs),
+            "one million two hundred thirty-four thousand five hundred sixty-seven"
+        );
         assert_eq!(words("1000000", Lang::EnUs), "one million");
         assert_eq!(words("1000000000", Lang::EnUs), "one billion");
         assert_eq!(
@@ -1165,7 +1299,10 @@ mod tests {
     #[test]
     fn oversized_and_leading_zero_numbers_go_digit_by_digit() {
         assert_eq!(words("007", Lang::EnUs), "zero zero seven");
-        assert_eq!(words("12345678901234", Lang::EnUs), "one two three four five six seven eight nine zero one two three four");
+        assert_eq!(
+            words("12345678901234", Lang::EnUs),
+            "one two three four five six seven eight nine zero one two three four"
+        );
         assert_eq!(words("0.5", Lang::EnUs), "zero point five");
     }
 
@@ -1223,12 +1360,21 @@ mod tests {
         assert_eq!(words("$2.5", Lang::EnUs), "two dollars and fifty cents");
         assert_eq!(words("$0.5", Lang::EnUs), "zero dollars and fifty cents");
         assert_eq!(words("$1.05", Lang::EnUs), "one dollar and five cents");
-        assert_eq!(words("The price is $1.5.", Lang::EnUs), words("The price is $1.50.", Lang::EnUs));
+        assert_eq!(
+            words("The price is $1.5.", Lang::EnUs),
+            words("The price is $1.50.", Lang::EnUs)
+        );
         assert_eq!(words("£1.5", Lang::EnGb), "one pound and fifty pence");
         assert_eq!(words("€1.5", Lang::EnUs), "one euro and fifty cents");
         assert_eq!(words("$5.05", Lang::EnUs), "five dollars and five cents");
-        assert_eq!(words("$0.75", Lang::EnUs), "zero dollars and seventy-five cents");
-        assert_eq!(words("$1,234.56", Lang::EnUs), "one thousand two hundred thirty-four dollars and fifty-six cents");
+        assert_eq!(
+            words("$0.75", Lang::EnUs),
+            "zero dollars and seventy-five cents"
+        );
+        assert_eq!(
+            words("$1,234.56", Lang::EnUs),
+            "one thousand two hundred thirty-four dollars and fifty-six cents"
+        );
         assert_eq!(words("€2", Lang::EnUs), "two euros");
         assert_eq!(words("€1", Lang::EnUs), "one euro");
         assert_eq!(words("£2.50", Lang::EnUs), "two pounds and fifty pence");
@@ -1252,7 +1398,10 @@ mod tests {
                 ("0800-100", "zero eight zero zero one zero zero"),
                 ("5-10-15", "five to ten to fifteen"),
                 ("zero one two", "zero one two"),
-                ("zero eight zero zero five five", "zero eight zero zero five five"),
+                (
+                    "zero eight zero zero five five",
+                    "zero eight zero zero five five",
+                ),
             ] {
                 assert_eq!(words(input, lang), expected, "{lang:?}: {input}");
             }
@@ -1266,12 +1415,24 @@ mod tests {
             assert_eq!(words("5-10-15", lang), "five to ten to fifteen");
             assert_eq!(words("10-20-30", lang), "ten to twenty to thirty");
             assert_eq!(words("1-2-3-4", lang), "one to two to three to four");
-            assert_eq!(words("1-2-3-4-5", lang), "one to two to three to four to five");
-            assert_eq!(words("1-2-3-4-5-6", lang), "one to two to three to four to five to six");
+            assert_eq!(
+                words("1-2-3-4-5", lang),
+                "one to two to three to four to five"
+            );
+            assert_eq!(
+                words("1-2-3-4-5-6", lang),
+                "one to two to three to four to five to six"
+            );
             assert_eq!(words("2-3", lang), "two to three");
             assert_eq!(words("10-12", lang), "ten to twelve");
-            assert_eq!(words("555-0134", lang), "five five five zero one three four");
-            assert_eq!(words("005-010-015", lang), "zero zero five zero one zero zero one five");
+            assert_eq!(
+                words("555-0134", lang),
+                "five five five zero one three four"
+            );
+            assert_eq!(
+                words("005-010-015", lang),
+                "zero zero five zero one zero zero one five"
+            );
         }
     }
 
@@ -1288,7 +1449,10 @@ mod tests {
             assert_eq!(words("50\u{a0}%", lang), "fifty percent");
             assert_eq!(words("100 %", lang), "one hundred percent");
             assert_eq!(words("20.5 %", lang), "twenty point five percent");
-            assert_eq!(words("20.5%", lang), words("twenty point five percent", lang));
+            assert_eq!(
+                words("20.5%", lang),
+                words("twenty point five percent", lang)
+            );
         }
     }
 
@@ -1304,7 +1468,10 @@ mod tests {
         // Not years: outside the range, or part of a bigger number.
         assert_eq!(words("2100", Lang::EnUs), "two thousand one hundred");
         assert_eq!(words("1099", Lang::EnUs), "one thousand ninety-nine");
-        assert_eq!(words("19995", Lang::EnUs), "nineteen thousand nine hundred ninety-five");
+        assert_eq!(
+            words("19995", Lang::EnUs),
+            "nineteen thousand nine hundred ninety-five"
+        );
     }
 
     #[test]
@@ -1321,23 +1488,50 @@ mod tests {
 
     #[test]
     fn dates() {
-        assert_eq!(words("10/7/2026", Lang::EnUs), "October seventh twenty twenty-six");
-        assert_eq!(words("7/10/2026", Lang::EnGb), "the seventh of October twenty twenty-six");
+        assert_eq!(
+            words("10/7/2026", Lang::EnUs),
+            "October seventh twenty twenty-six"
+        );
+        assert_eq!(
+            words("7/10/2026", Lang::EnGb),
+            "the seventh of October twenty twenty-six"
+        );
         assert_eq!(words("Oct. 7th", Lang::EnUs), "October seventh");
         assert_eq!(words("Jan. 1st", Lang::EnUs), "January first");
         assert_eq!(words("Sept. 3rd", Lang::EnUs), "September third");
         assert_eq!(words("May 5th", Lang::EnUs), "May fifth");
-        assert_eq!(words("October 7th, 2026", Lang::EnUs), "October seventh , twenty twenty-six");
-        assert_eq!(words("9/9/1999", Lang::EnUs), "September ninth nineteen ninety-nine");
-        assert_eq!(words("13/7/2026", Lang::EnUs), "thirteen slash seven slash twenty twenty-six");
-        assert_eq!(words("10/7/2026.", Lang::EnUs), "October seventh twenty twenty-six |");
+        assert_eq!(
+            words("October 7th, 2026", Lang::EnUs),
+            "October seventh , twenty twenty-six"
+        );
+        assert_eq!(
+            words("9/9/1999", Lang::EnUs),
+            "September ninth nineteen ninety-nine"
+        );
+        assert_eq!(
+            words("13/7/2026", Lang::EnUs),
+            "thirteen slash seven slash twenty twenty-six"
+        );
+        assert_eq!(
+            words("10/7/2026.", Lang::EnUs),
+            "October seventh twenty twenty-six |"
+        );
     }
 
     #[test]
     fn digit_groups() {
-        assert_eq!(words("555-0134", Lang::EnUs), "five five five zero one three four");
-        assert_eq!(words("555-0134-22", Lang::EnUs), "five five five zero one three four two two");
-        assert_eq!(words("0800-100", Lang::EnUs), "zero eight zero zero one zero zero");
+        assert_eq!(
+            words("555-0134", Lang::EnUs),
+            "five five five zero one three four"
+        );
+        assert_eq!(
+            words("555-0134-22", Lang::EnUs),
+            "five five five zero one three four two two"
+        );
+        assert_eq!(
+            words("0800-100", Lang::EnUs),
+            "zero eight zero zero one zero zero"
+        );
         assert_eq!(words("2-3", Lang::EnUs), "two to three");
         assert_eq!(words("10-12", Lang::EnUs), "ten to twelve");
     }
@@ -1409,8 +1603,14 @@ mod tests {
                 assert_eq!(words(input, lang), expected, "{input:?} {lang:?}");
             }
         }
-        assert_eq!(words("10/7/2026", Lang::EnUs), "October seventh twenty twenty-six");
-        assert_eq!(words("7/10/2026", Lang::EnGb), "the seventh of October twenty twenty-six");
+        assert_eq!(
+            words("10/7/2026", Lang::EnUs),
+            "October seventh twenty twenty-six"
+        );
+        assert_eq!(
+            words("7/10/2026", Lang::EnGb),
+            "the seventh of October twenty twenty-six"
+        );
     }
 
     #[test]
@@ -1457,27 +1657,54 @@ mod tests {
         assert_eq!(flat(&tokens), "Hi | Bye |! What |?");
         // Runs of terminators are one end; the strongest terminator wins.
         assert_eq!(flat(&normalize("Wow!!!", Lang::EnUs).unwrap()), "Wow |!");
-        assert_eq!(flat(&normalize("Really?! Yes.", Lang::EnUs).unwrap()), "Really |? Yes |");
+        assert_eq!(
+            flat(&normalize("Really?! Yes.", Lang::EnUs).unwrap()),
+            "Really |? Yes |"
+        );
         // The terminator is carried through for intonation (M7.11 fix round).
         assert_eq!(flat(&normalize("Go!", Lang::EnUs).unwrap()), "Go |!");
         assert_eq!(flat(&normalize("Done.", Lang::EnUs).unwrap()), "Done |");
-        assert_eq!(flat(&normalize("Is it 1999?", Lang::EnUs).unwrap()), "Is it nineteen ninety-nine |?");
-        assert_eq!(flat(&normalize("Call 555-0134!", Lang::EnUs).unwrap()), "Call five five five zero one three four |!");
-        assert_eq!(flat(&normalize("Wait... what?", Lang::EnUs).unwrap()), "Wait | what |?");
+        assert_eq!(
+            flat(&normalize("Is it 1999?", Lang::EnUs).unwrap()),
+            "Is it nineteen ninety-nine |?"
+        );
+        assert_eq!(
+            flat(&normalize("Call 555-0134!", Lang::EnUs).unwrap()),
+            "Call five five five zero one three four |!"
+        );
+        assert_eq!(
+            flat(&normalize("Wait... what?", Lang::EnUs).unwrap()),
+            "Wait | what |?"
+        );
         assert_eq!(flat(&normalize("No!!", Lang::EnUs).unwrap()), "No |!");
-        assert_eq!(flat(&normalize("Are you there?!", Lang::EnUs).unwrap()), "Are you there |?");
+        assert_eq!(
+            flat(&normalize("Are you there?!", Lang::EnUs).unwrap()),
+            "Are you there |?"
+        );
         assert_eq!(flat(&normalize("Yes?", Lang::EnGb).unwrap()), "Yes |?");
         // A decimal point is not a sentence end; an abbreviation's dot is consumed.
-        assert_eq!(flat(&normalize("It costs 3.14 dollars.", Lang::EnUs).unwrap()), "It costs three point one four dollars |");
-        assert_eq!(flat(&normalize("Mr. Smith called.", Lang::EnUs).unwrap()), "mister Smith called |");
+        assert_eq!(
+            flat(&normalize("It costs 3.14 dollars.", Lang::EnUs).unwrap()),
+            "It costs three point one four dollars |"
+        );
+        assert_eq!(
+            flat(&normalize("Mr. Smith called.", Lang::EnUs).unwrap()),
+            "mister Smith called |"
+        );
         // No sentence end inside "1,234." until the real end.
-        assert_eq!(flat(&normalize("Total: 1,234.", Lang::EnUs).unwrap()), "Total : one thousand two hundred thirty-four |");
+        assert_eq!(
+            flat(&normalize("Total: 1,234.", Lang::EnUs).unwrap()),
+            "Total : one thousand two hundred thirty-four |"
+        );
     }
 
     #[test]
     fn the_briefs_example_sentence() {
         assert_eq!(
-            words("Call 555-0134 by 3:30 p.m. on Oct. 7th, it's $3.50 (20% off)", Lang::EnUs),
+            words(
+                "Call 555-0134 by 3:30 p.m. on Oct. 7th, it's $3.50 (20% off)",
+                Lang::EnUs
+            ),
             "Call five five five zero one three four by three thirty p m on October seventh , it's three dollars and fifty cents ( twenty percent off )"
         );
     }
@@ -1493,7 +1720,10 @@ mod tests {
     #[test]
     fn bad_grouping_falls_back() {
         assert_eq!(words("1,23", Lang::EnUs), "one , twenty-three");
-        assert_eq!(words("1,2345", Lang::EnUs), "one , two thousand three hundred forty-five");
+        assert_eq!(
+            words("1,2345", Lang::EnUs),
+            "one , two thousand three hundred forty-five"
+        );
     }
 
     #[test]
@@ -1534,36 +1764,72 @@ mod tests {
 
     #[test]
     fn deterministic() {
-        let samples = ["Call 555-0134 by 3:30 p.m. on Oct. 7th, it's $3.50 (20% off)", "1,234", "[pause 1s]", "TDA & NASA"];
+        let samples = [
+            "Call 555-0134 by 3:30 p.m. on Oct. 7th, it's $3.50 (20% off)",
+            "1,234",
+            "[pause 1s]",
+            "TDA & NASA",
+        ];
         for s in samples {
             let a = normalize(s, Lang::EnUs).unwrap();
             let b = normalize(s, Lang::EnUs).unwrap();
             assert_eq!(a, b);
             let c = normalize(s, Lang::EnGb).unwrap();
-            assert_eq!(flat(&a), flat(&c), "langs only change word choices, not structure");
+            assert_eq!(
+                flat(&a),
+                flat(&c),
+                "langs only change word choices, not structure"
+            );
         }
     }
 
     #[test]
     fn british_vs_american() {
         assert_eq!(words("£2.50", Lang::EnGb), "two pounds and fifty pence");
-        assert_eq!(words("7/10/2026", Lang::EnGb), "the seventh of October twenty twenty-six");
-        assert_eq!(words("10/7/2026", Lang::EnUs), "October seventh twenty twenty-six");
-        assert_eq!(words("1,234", Lang::EnGb), "one thousand two hundred thirty-four");
+        assert_eq!(
+            words("7/10/2026", Lang::EnGb),
+            "the seventh of October twenty twenty-six"
+        );
+        assert_eq!(
+            words("10/7/2026", Lang::EnUs),
+            "October seventh twenty twenty-six"
+        );
+        assert_eq!(
+            words("1,234", Lang::EnGb),
+            "one thousand two hundred thirty-four"
+        );
     }
 
     #[test]
     fn sentence_final_numbers_end_the_sentence() {
         assert_eq!(words("in 1999.", Lang::EnUs), "in nineteen ninety-nine |");
-        assert_eq!(words("costs $1,234,567.", Lang::EnUs), "costs one million two hundred thirty-four thousand five hundred sixty-seven dollars |");
-        assert_eq!(words("It was 3.5 percent.", Lang::EnUs), "It was three point five percent |");
-        assert_eq!(words("Version 2. Next.", Lang::EnUs), "Version two | Next |");
-        assert_eq!(words("Call 555-0134.", Lang::EnUs), "Call five five five zero one three four |");
+        assert_eq!(
+            words("costs $1,234,567.", Lang::EnUs),
+            "costs one million two hundred thirty-four thousand five hundred sixty-seven dollars |"
+        );
+        assert_eq!(
+            words("It was 3.5 percent.", Lang::EnUs),
+            "It was three point five percent |"
+        );
+        assert_eq!(
+            words("Version 2. Next.", Lang::EnUs),
+            "Version two | Next |"
+        );
+        assert_eq!(
+            words("Call 555-0134.", Lang::EnUs),
+            "Call five five five zero one three four |"
+        );
         assert_eq!(words("At 3:30.", Lang::EnUs), "At three thirty |");
-        assert_eq!(words("On 10/7/2026.", Lang::EnUs), "On October seventh twenty twenty-six |");
+        assert_eq!(
+            words("On 10/7/2026.", Lang::EnUs),
+            "On October seventh twenty twenty-six |"
+        );
         assert_eq!(words("Up 20%.", Lang::EnUs), "Up twenty percent |");
         // The review's two failing sentences.
-        assert_eq!(words("Dr. Smith lives on Main St. in 1999.", Lang::EnUs), "doctor Smith lives on Main street in nineteen ninety-nine |");
+        assert_eq!(
+            words("Dr. Smith lives on Main St. in 1999.", Lang::EnUs),
+            "doctor Smith lives on Main street in nineteen ninety-nine |"
+        );
         assert_eq!(
             words("The TDA project for NASA costs $1,234,567.", Lang::EnUs),
             "The T D A project for NASA costs one million two hundred thirty-four thousand five hundred sixty-seven dollars |"

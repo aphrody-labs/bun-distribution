@@ -45,7 +45,9 @@ pub(crate) fn mk_rotation(doc: &Document, wd: &Dict) -> i64 {
     let Some(mk) = mk_obj.as_dict() else { return 0 };
     let Some(r_obj) = mk.get(b"R") else { return 0 };
     let resolved = doc.resolve(r_obj);
-    let Some(r) = degrees(&resolved) else { return 0 };
+    let Some(r) = degrees(&resolved) else {
+        return 0;
+    };
     match r.rem_euclid(360) {
         q @ (0 | 90 | 180 | 270) => q,
         _ => 0,
@@ -78,14 +80,24 @@ pub(crate) fn placement(rotation: i64, page_w: f64, page_h: f64) -> Placement {
         270 => (page_h, page_w, Some([0.0, -1.0, 1.0, 0.0, 0.0, page_h])),
         _ => (page_w, page_h, None),
     };
-    Placement { layout_w, layout_h, matrix }
+    Placement {
+        layout_w,
+        layout_h,
+        matrix,
+    }
 }
 
 pub(crate) fn set_form_box(d: &mut Dict, place: Placement) {
     let box_ = [0.0, 0.0, place.layout_w, place.layout_h];
-    d.set(b"BBox".to_vec(), Object::Array(box_.iter().map(|v| Object::Real(*v)).collect()));
+    d.set(
+        b"BBox".to_vec(),
+        Object::Array(box_.iter().map(|v| Object::Real(*v)).collect()),
+    );
     if let Some(m) = place.matrix {
-        d.set(b"Matrix".to_vec(), Object::Array(m.iter().map(|v| Object::Real(*v)).collect()));
+        d.set(
+            b"Matrix".to_vec(),
+            Object::Array(m.iter().map(|v| Object::Real(*v)).collect()),
+        );
     }
 }
 
@@ -100,16 +112,31 @@ pub struct Da {
 
 pub fn parse_da(da: &str) -> Da {
     let toks: Vec<&str> = da.split_whitespace().collect();
-    let mut out = Da { font: "Helv".into(), size: 0.0, color: "0 g".into() };
+    let mut out = Da {
+        font: "Helv".into(),
+        size: 0.0,
+        color: "0 g".into(),
+    };
     for (i, t) in toks.iter().enumerate() {
         match *t {
             "Tf" if i >= 2 => {
                 out.font = toks[i - 2].trim_start_matches('/').to_string();
-                out.size = toks[i - 1].parse::<f64>().ok().filter(|s| s.is_finite() && *s >= 0.0).unwrap_or(0.0).min(300.0);
+                out.size = toks[i - 1]
+                    .parse::<f64>()
+                    .ok()
+                    .filter(|s| s.is_finite() && *s >= 0.0)
+                    .unwrap_or(0.0)
+                    .min(300.0);
             }
-            "g" if i >= 1 && toks[i - 1].parse::<f64>().is_ok() => out.color = format!("{} g", toks[i - 1]),
-            "rg" if i >= 3 && toks[i - 3..i].iter().all(|x| x.parse::<f64>().is_ok()) => out.color = format!("{} rg", toks[i - 3..i].join(" ")),
-            "k" if i >= 4 && toks[i - 4..i].iter().all(|x| x.parse::<f64>().is_ok()) => out.color = format!("{} k", toks[i - 4..i].join(" ")),
+            "g" if i >= 1 && toks[i - 1].parse::<f64>().is_ok() => {
+                out.color = format!("{} g", toks[i - 1])
+            }
+            "rg" if i >= 3 && toks[i - 3..i].iter().all(|x| x.parse::<f64>().is_ok()) => {
+                out.color = format!("{} rg", toks[i - 3..i].join(" "))
+            }
+            "k" if i >= 4 && toks[i - 4..i].iter().all(|x| x.parse::<f64>().is_ok()) => {
+                out.color = format!("{} k", toks[i - 4..i].join(" "))
+            }
             _ => {}
         }
     }
@@ -149,9 +176,10 @@ impl FontText {
     fn first_unencodable(&self, s: &str) -> Option<char> {
         match self {
             Self::WinAnsi => pdfcraft_fonts::first_undrawable(s),
-            Self::Simple(metrics) => {
-                s.chars().map(|c| if c == '\t' { ' ' } else { c }).find(|c| metrics.encode(c.encode_utf8(&mut [0; 4])).is_none())
-            }
+            Self::Simple(metrics) => s
+                .chars()
+                .map(|c| if c == '\t' { ' ' } else { c })
+                .find(|c| metrics.encode(c.encode_utf8(&mut [0; 4])).is_none()),
             Self::Unicode(cmap) => cmap.first_unencodable(s),
         }
     }
@@ -177,14 +205,22 @@ fn dr_font(doc: &Document, name: &str) -> Option<(Object, FontText)> {
         // Japanese, Chinese and Korean forms: a CID font addressed by Unicode (a non-embedded
         // `/HeiseiMin-W3` with `/UniJIS-UCS2-H`, say). Embedded CMap streams and Identity-H need
         // the font's own mapping, so those still fall back to Helvetica.
-        Some(b"Type0") => return Some((entry, FontText::Unicode(UnicodeCMap::from_name(fd.name(b"Encoding")?)?))),
+        Some(b"Type0") => {
+            return Some((
+                entry,
+                FontText::Unicode(UnicodeCMap::from_name(fd.name(b"Encoding")?)?),
+            ));
+        }
         _ => return None,
     }
     // Symbolic fonts (ZapfDingbats, Symbol) can't show WinAnsi text.
     if matches!(fd.name(b"BaseFont"), Some(b"ZapfDingbats" | b"Symbol")) {
         return None;
     }
-    Some((entry, FontText::Simple(Box::new(Metrics::from_dict(doc, fd)))))
+    Some((
+        entry,
+        FontText::Simple(Box::new(Metrics::from_dict(doc, fd))),
+    ))
 }
 
 fn helvetica() -> Object {
@@ -198,7 +234,11 @@ fn helvetica() -> Object {
 
 fn color_array(doc: &Document, mk: Option<&Dict>, key: &[u8]) -> Option<String> {
     let a = doc.resolve(mk?.get(key)?);
-    let v: Vec<f64> = a.as_array()?.iter().filter_map(|x| doc.resolve(x).as_f64()).collect();
+    let v: Vec<f64> = a
+        .as_array()?
+        .iter()
+        .filter_map(|x| doc.resolve(x).as_f64())
+        .collect();
     match v.as_slice() {
         [g] => Some(format!("{} g", n(*g))),
         [r, g, b] => Some(format!("{} {} {} rg", n(*r), n(*g), n(*b))),
@@ -218,20 +258,41 @@ fn stroke_op(fill: &str) -> String {
 
 /// Background and border from `/MK` and `/BS`; returns (content, border width).
 fn frame(doc: &Document, wd: &Dict, w: f64, h: f64) -> (String, f64) {
-    let mk = wd.get(b"MK").map(|m| doc.resolve(m)).and_then(|m| m.as_dict().cloned());
+    let mk = wd
+        .get(b"MK")
+        .map(|m| doc.resolve(m))
+        .and_then(|m| m.as_dict().cloned());
     let mut c = String::new();
     if let Some(bg) = color_array(doc, mk.as_ref(), b"BG") {
         c.push_str(&format!("{bg}\n0 0 {} {} re f\n", n(w), n(h)));
     }
-    let bs = wd.get(b"BS").map(|b| doc.resolve(b)).and_then(|b| b.as_dict().cloned());
-    let bw = bs.as_ref().and_then(|b| b.get(b"W")).and_then(|x| doc.resolve(x).as_f64()).unwrap_or(1.0).max(0.0);
+    let bs = wd
+        .get(b"BS")
+        .map(|b| doc.resolve(b))
+        .and_then(|b| b.as_dict().cloned());
+    let bw = bs
+        .as_ref()
+        .and_then(|b| b.get(b"W"))
+        .and_then(|x| doc.resolve(x).as_f64())
+        .unwrap_or(1.0)
+        .max(0.0);
     if let Some(bc) = color_array(doc, mk.as_ref(), b"BC")
         && bw > 0.0
     {
-        let style = bs.as_ref().and_then(|b| b.name(b"S").map(<[u8]>::to_vec)).unwrap_or_default();
+        let style = bs
+            .as_ref()
+            .and_then(|b| b.name(b"S").map(<[u8]>::to_vec))
+            .unwrap_or_default();
         if style == b"U" {
             // Underline: only the bottom edge.
-            c.push_str(&format!("{}\n{} w\n0 {} m {} {} l S\n", stroke_op(&bc), n(bw), n(bw / 2.0), n(w), n(bw / 2.0)));
+            c.push_str(&format!(
+                "{}\n{} w\n0 {} m {} {} l S\n",
+                stroke_op(&bc),
+                n(bw),
+                n(bw / 2.0),
+                n(w),
+                n(bw / 2.0)
+            ));
             return (c, bw);
         }
         let dashed = style == b"D";
@@ -248,7 +309,11 @@ fn frame(doc: &Document, wd: &Dict, w: f64, h: f64) -> (String, f64) {
         if style == b"B" || style == b"I" {
             // Beveled: a light top-left and a darker bottom-right inside the border; inset:
             // grey top-left and light grey bottom-right.
-            let (tl, br) = if style == b"B" { ("1 g", "0.5 g") } else { ("0.5 g", "0.75 g") };
+            let (tl, br) = if style == b"B" {
+                ("1 g", "0.5 g")
+            } else {
+                ("0.5 g", "0.75 g")
+            };
             let (x0, y0, x1, y1) = (bw, bw, w - bw, h - bw);
             let k = bw;
             c.push_str(&format!(
@@ -293,14 +358,26 @@ pub fn field_appearance(doc: &Document, f: &Field, w: &Widget, values: &[String]
 
 /// [`field_appearance`], where `format` false means `values` are already what to show (a
 /// custom Format script ran).
-pub fn field_appearance_as(doc: &Document, f: &Field, w: &Widget, values: &[String], format: bool) -> Stream {
+pub fn field_appearance_as(
+    doc: &Document,
+    f: &Field,
+    w: &Widget,
+    values: &[String],
+    format: bool,
+) -> Stream {
     field_appearance_drawn(doc, f, w, values, format).0
 }
 
 /// [`field_appearance_as`] with the first character it drew as `?` because the field's font can't
 /// hold it: the form's font is a simple (WinAnsi) font, Helvetica stands in for one PdfCraft can't
 /// write with (an embedded subset, `Identity-H`), or a UCS-2 CMap meets a character beyond U+FFFF.
-pub fn field_appearance_drawn(doc: &Document, f: &Field, w: &Widget, values: &[String], format: bool) -> (Stream, Option<char>) {
+pub fn field_appearance_drawn(
+    doc: &Document,
+    f: &Field,
+    w: &Widget,
+    values: &[String],
+    format: bool,
+) -> (Stream, Option<char>) {
     // The Format event: what is shown, not what is stored.
     let formatted: Vec<String>;
     let values = if format
@@ -315,16 +392,37 @@ pub fn field_appearance_drawn(doc: &Document, f: &Field, w: &Widget, values: &[S
     };
     let wobj = doc.get(w.obj);
     let wd = wobj.as_dict().cloned().unwrap_or_default();
-    let (page_w, page_h) = ((w.rect[2] - w.rect[0]).max(1.0), (w.rect[3] - w.rect[1]).max(1.0));
+    let (page_w, page_h) = (
+        (w.rect[2] - w.rect[0]).max(1.0),
+        (w.rect[3] - w.rect[1]).max(1.0),
+    );
     let place = placement(mk_rotation(doc, &wd), page_w, page_h);
     let (width, height) = (place.layout_w, place.layout_h);
-    let da = parse_da(wd.get(b"DA").and_then(|o| doc.resolve(o).as_string().map(|s| s.to_text())).as_deref().unwrap_or(&f.da));
+    let da = parse_da(
+        wd.get(b"DA")
+            .and_then(|o| doc.resolve(o).as_string().map(|s| s.to_text()))
+            .as_deref()
+            .unwrap_or(&f.da),
+    );
     let text: String = if f.kind == FieldKind::Combo {
-        values.iter().map(|v| f.options.iter().find(|(e, _)| e == v).map_or(v.clone(), |(_, d)| d.clone())).collect::<Vec<_>>().join(", ")
+        values
+            .iter()
+            .map(|v| {
+                f.options
+                    .iter()
+                    .find(|(e, _)| e == v)
+                    .map_or(v.clone(), |(_, d)| d.clone())
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
     } else {
         values.first().cloned().unwrap_or_default()
     };
-    let text = if f.has(flags::PASSWORD) { "*".repeat(text.chars().count()) } else { text };
+    let text = if f.has(flags::PASSWORD) {
+        "*".repeat(text.chars().count())
+    } else {
+        text
+    };
     let can_show = |enc: &FontText| {
         if f.kind == FieldKind::List {
             f.options.iter().all(|(_, display)| enc.can_encode(display))
@@ -342,13 +440,19 @@ pub fn field_appearance_drawn(doc: &Document, f: &Field, w: &Widget, values: &[S
     let (mut c, bw) = frame(doc, &wd, width, height);
     let pad = 2.0 + bw;
     let inner_w = (width - 2.0 * pad).max(1.0);
-    let q = wd.get(b"Q").and_then(|o| doc.resolve(o).as_int()).unwrap_or(f.quadding);
+    let q = wd
+        .get(b"Q")
+        .and_then(|o| doc.resolve(o).as_int())
+        .unwrap_or(f.quadding);
     let mut body: Vec<u8> = Vec::new();
     // The first character drawn that the font can't hold (drawn as `?`), for the caller to report.
     let mut unencodable: Option<char> = None;
     let mut show = |body: &mut Vec<u8>, x: f64, y: f64, text: &str| {
         // A line break in a single-line value is a space, as in viewers (multiline text is split).
-        let text: String = text.chars().map(|c| if matches!(c, '\n' | '\r') { ' ' } else { c }).collect();
+        let text: String = text
+            .chars()
+            .map(|c| if matches!(c, '\n' | '\r') { ' ' } else { c })
+            .collect();
         if unencodable.is_none() {
             unencodable = enc.first_unencodable(&text);
         }
@@ -372,26 +476,42 @@ pub fn field_appearance_drawn(doc: &Document, f: &Field, w: &Widget, values: &[S
                 size = 12.0;
             }
             let line = size * 1.15;
-            let top = wd.get(b"TI").and_then(|o| doc.resolve(o).as_int()).unwrap_or(0).max(0) as usize;
+            let top = wd
+                .get(b"TI")
+                .and_then(|o| doc.resolve(o).as_int())
+                .unwrap_or(0)
+                .max(0) as usize;
             let mut y = height - pad;
             for (export, display) in f.options.iter().skip(top) {
                 if y - line < 0.0 {
                     break;
                 }
                 if values.contains(export) {
-                    c.push_str(&format!("0.6 0.75 0.86 rg\n{} {} {} {} re f\n", n(bw), n(y - line), n(width - 2.0 * bw), n(line)));
+                    c.push_str(&format!(
+                        "0.6 0.75 0.86 rg\n{} {} {} {} re f\n",
+                        n(bw),
+                        n(y - line),
+                        n(width - 2.0 * bw),
+                        n(line)
+                    ));
                 }
                 show(&mut body, pad, y - line + size * 0.25, display);
                 y -= line;
             }
         }
         _ => {
-            let comb = f.has(flags::COMB) && !f.has(flags::MULTILINE) && !f.has(flags::PASSWORD) && f.max_len.is_some_and(|m| m > 0);
+            let comb = f.has(flags::COMB)
+                && !f.has(flags::MULTILINE)
+                && !f.has(flags::PASSWORD)
+                && f.max_len.is_some_and(|m| m > 0);
             if f.kind == FieldKind::Text && f.has(flags::MULTILINE) {
                 if size == 0.0 {
                     // Auto size: the largest size (≤ 12) whose wrapped lines fit the height.
                     size = 12.0;
-                    while size > 4.0 && wrap_with(&text, size, inner_w, width_of).len() as f64 * size * 1.15 > height - 2.0 * pad {
+                    while size > 4.0
+                        && wrap_with(&text, size, inner_w, width_of).len() as f64 * size * 1.15
+                            > height - 2.0 * pad
+                    {
                         size -= 0.5;
                     }
                 }
@@ -418,7 +538,12 @@ pub fn field_appearance_drawn(doc: &Document, f: &Field, w: &Widget, values: &[S
                     let cell = width / cells as f64;
                     for (i, ch) in text.chars().take(cells).enumerate() {
                         let s = ch.to_string();
-                        show(&mut body, cell * i as f64 + (cell - width_of(&s, size)) / 2.0, y, &s);
+                        show(
+                            &mut body,
+                            cell * i as f64 + (cell - width_of(&s, size)) / 2.0,
+                            y,
+                            &s,
+                        );
                     }
                 } else {
                     show(&mut body, x_for(&text, size), y, &text);
@@ -460,7 +585,10 @@ pub fn field_appearance_drawn(doc: &Document, f: &Field, w: &Widget, values: &[S
 pub fn check_box_states(doc: &mut Document, w: &Widget, kind: FieldKind, on_name: &str) -> Dict {
     let wobj = doc.get(w.obj);
     let wd = wobj.as_dict().cloned().unwrap_or_default();
-    let (page_w, page_h) = ((w.rect[2] - w.rect[0]).max(1.0), (w.rect[3] - w.rect[1]).max(1.0));
+    let (page_w, page_h) = (
+        (w.rect[2] - w.rect[0]).max(1.0),
+        (w.rect[3] - w.rect[1]).max(1.0),
+    );
     let place = placement(mk_rotation(doc, &wd), page_w, page_h);
     let (width, height) = (place.layout_w, place.layout_h);
     let (frame_c, _) = frame(doc, &wd, width, height);
@@ -490,7 +618,12 @@ fn check_mark(style: crate::author::CheckStyle, cx: f64, cy: f64, s: f64) -> Str
     let polygon = |pts: &[(f64, f64)]| {
         let mut c = String::from("0 g\n");
         for (i, (x, y)) in pts.iter().enumerate() {
-            c.push_str(&format!("{} {} {} ", n(*x), n(*y), if i == 0 { "m" } else { "l" }));
+            c.push_str(&format!(
+                "{} {} {} ",
+                n(*x),
+                n(*y),
+                if i == 0 { "m" } else { "l" }
+            ));
         }
         c.push_str("h f\n");
         c
@@ -522,7 +655,13 @@ fn check_mark(style: crate::author::CheckStyle, cx: f64, cy: f64, s: f64) -> Str
         }
         CheckStyle::Square => {
             let d = s * 0.22;
-            format!("0 g\n{} {} {} {} re f\n", n(cx - d), n(cy - d), n(2.0 * d), n(2.0 * d))
+            format!(
+                "0 g\n{} {} {} {} re f\n",
+                n(cx - d),
+                n(cy - d),
+                n(2.0 * d),
+                n(2.0 * d)
+            )
         }
         CheckStyle::Diamond => {
             let d = s * 0.3;
@@ -582,8 +721,22 @@ mod tests {
 
     #[test]
     fn default_appearance_strings_parse() {
-        assert_eq!(parse_da("/Helv 0 Tf 0 g"), Da { font: "Helv".into(), size: 0.0, color: "0 g".into() });
-        assert_eq!(parse_da("0.1 0.2 0.3 rg /F1 11 Tf"), Da { font: "F1".into(), size: 11.0, color: "0.1 0.2 0.3 rg".into() });
+        assert_eq!(
+            parse_da("/Helv 0 Tf 0 g"),
+            Da {
+                font: "Helv".into(),
+                size: 0.0,
+                color: "0 g".into()
+            }
+        );
+        assert_eq!(
+            parse_da("0.1 0.2 0.3 rg /F1 11 Tf"),
+            Da {
+                font: "F1".into(),
+                size: 11.0,
+                color: "0.1 0.2 0.3 rg".into()
+            }
+        );
         assert_eq!(parse_da("/Cour 9 Tf 0 0 0 1 k").color, "0 0 0 1 k");
         assert_eq!(parse_da("garbage").font, "Helv");
         assert_eq!(stroke_op("1 0 0 rg"), "1 0 0 RG");

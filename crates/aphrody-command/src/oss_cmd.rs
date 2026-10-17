@@ -11,10 +11,15 @@ pub(crate) async fn run_daemon(state_root: PathBuf, role: String) -> miette::Res
     let role =
         Role::parse(&role).ok_or_else(|| miette::miette!("unknown llama daemon role: {role}"))?;
     tokio::task::spawn_blocking(move || {
-        let runtime =
-            tokio::runtime::Builder::new_current_thread().enable_all().build().into_diagnostic()?;
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .into_diagnostic()?;
         runtime
-            .block_on(aphrody_llama_server::daemon::run(&StateDirs::new(state_root), role))
+            .block_on(aphrody_llama_server::daemon::run(
+                &StateDirs::new(state_root),
+                role,
+            ))
             .map(|_| ())
             .map_err(|error| miette::miette!("llama daemon: {error}"))
     })

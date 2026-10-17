@@ -39,7 +39,10 @@ impl EventWeaponInfo {
     /// Parse une entrée (infaillible : position significative).
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
-        Self { weapon_id: field_hash(v, "weapon_id"), weight: field_i64(v, "weight").unwrap_or(0) }
+        Self {
+            weapon_id: field_hash(v, "weapon_id"),
+            weight: field_i64(v, "weight").unwrap_or(0),
+        }
     }
 }
 
@@ -254,7 +257,10 @@ mod tests {
         let cfg = parse_happen_event_npc_common(&fixture());
         assert_eq!(
             cfg.weapon_info[0],
-            EventWeaponInfo { weapon_id: HashId(0xC4C2_C944), weight: 3 }
+            EventWeaponInfo {
+                weapon_id: HashId(0xC4C2_C944),
+                weight: 3
+            }
         );
         let a = &cfg.aimed_info[0];
         assert_eq!(a.npc_type_id, HashId(0x11F1_F540));

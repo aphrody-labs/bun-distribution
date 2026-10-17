@@ -13,7 +13,10 @@ const T: Duration = Duration::from_secs(20);
 
 /// Given LightCraft with the integrated title bar (macOS) in a 1200×800 window.
 fn integrated() -> Headless {
-    let services = Services { png: None, ..Default::default() };
+    let services = Services {
+        png: None,
+        ..Default::default()
+    };
     let mut app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
     app.integrated_titlebar = true;
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
@@ -22,7 +25,12 @@ fn integrated() -> Headless {
 }
 
 fn widget(h: &Headless, id: &str) -> egui::Rect {
-    h.app.widgets.iter().find(|(w, _)| w == id).map(|(_, r)| *r).unwrap_or_else(|| panic!("no widget {id}"))
+    h.app
+        .widgets
+        .iter()
+        .find(|(w, _)| w == id)
+        .map(|(_, r)| *r)
+        .unwrap_or_else(|| panic!("no widget {id}"))
 }
 
 /// Empty top-bar space: where the traffic lights sit, left of the sidebar button.
@@ -51,7 +59,13 @@ fn double_click_on_the_empty_bar_zooms_then_restores() {
     }
     h.request("ui.click", json!({"x": p.x, "y": p.y, "count": 2}), T);
     play(&mut h);
-    assert_eq!(h.window_commands, vec![ViewportCommand::Maximized(true), ViewportCommand::Maximized(false)]);
+    assert_eq!(
+        h.window_commands,
+        vec![
+            ViewportCommand::Maximized(true),
+            ViewportCommand::Maximized(false)
+        ]
+    );
 }
 
 // Scenario: dragging the empty top bar starts a window move
@@ -59,7 +73,11 @@ fn double_click_on_the_empty_bar_zooms_then_restores() {
 fn dragging_the_empty_bar_moves_the_window() {
     let mut h = integrated();
     let p = empty_spot(&h);
-    h.request("ui.drag", json!({"x": p.x, "y": p.y, "toX": p.x + 120.0, "toY": p.y + 40.0}), T);
+    h.request(
+        "ui.drag",
+        json!({"x": p.x, "y": p.y, "toX": p.x + 120.0, "toY": p.y + 40.0}),
+        T,
+    );
     play(&mut h);
     assert_eq!(h.window_commands, vec![ViewportCommand::StartDrag]);
 }
@@ -79,7 +97,11 @@ fn single_click_on_the_empty_bar_does_nothing() {
 fn double_click_on_a_button_does_not_zoom() {
     let mut h = integrated();
     let r = widget(&h, "icon:help");
-    h.request("ui.click", json!({"x": r.center().x, "y": r.center().y, "count": 2}), T);
+    h.request(
+        "ui.click",
+        json!({"x": r.center().x, "y": r.center().y, "count": 2}),
+        T,
+    );
     play(&mut h);
     assert!(h.window_commands.is_empty(), "{:?}", h.window_commands);
 }
@@ -99,7 +121,11 @@ fn dragging_from_a_button_does_not_move_the_window() {
 fn double_click_in_the_search_field_does_not_zoom() {
     let mut h = integrated();
     let r = widget(&h, "field:search");
-    h.request("ui.click", json!({"x": r.center().x, "y": r.center().y, "count": 2}), T);
+    h.request(
+        "ui.click",
+        json!({"x": r.center().x, "y": r.center().y, "count": 2}),
+        T,
+    );
     play(&mut h);
     assert!(h.window_commands.is_empty(), "{:?}", h.window_commands);
 }
@@ -107,7 +133,10 @@ fn double_click_in_the_search_field_does_not_zoom() {
 // Scenario: a window with its native title bar (Windows, Linux) leaves the bar alone
 #[test]
 fn without_the_integrated_title_bar_the_bar_is_not_a_window_handle() {
-    let services = Services { png: None, ..Default::default() };
+    let services = Services {
+        png: None,
+        ..Default::default()
+    };
     let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
     h.settle(Duration::from_secs(120));

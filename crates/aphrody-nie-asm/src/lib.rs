@@ -300,19 +300,29 @@ impl Mem {
     /// `[base]`.
     #[must_use]
     pub fn base(base: Reg) -> Self {
-        Self { base: Some(base), ..Self::default() }
+        Self {
+            base: Some(base),
+            ..Self::default()
+        }
     }
 
     /// `[base + disp]`.
     #[must_use]
     pub fn base_disp(base: Reg, disp: i32) -> Self {
-        Self { base: Some(base), disp, ..Self::default() }
+        Self {
+            base: Some(base),
+            disp,
+            ..Self::default()
+        }
     }
 
     /// `[rip → cible]`.
     #[must_use]
     pub fn rip(target: u64) -> Self {
-        Self { rip: Some(target), ..Self::default() }
+        Self {
+            rip: Some(target),
+            ..Self::default()
+        }
     }
 }
 
@@ -373,7 +383,10 @@ impl UnOp {
     /// Vrai si l'opération appartient au groupe `F7` (sinon `FF`).
     #[must_use]
     pub fn is_f7(self) -> bool {
-        matches!(self, Self::Not | Self::Neg | Self::Mul | Self::Imul1 | Self::Div | Self::Idiv)
+        matches!(
+            self,
+            Self::Not | Self::Neg | Self::Mul | Self::Imul1 | Self::Div | Self::Idiv
+        )
     }
 }
 
@@ -1279,13 +1292,16 @@ fn modrm_mem(out: &mut Vec<u8>, reg: u8, m: Mem, at: u64, base: usize, imm_len: 
         0b01 => out.push(m.disp as u8),
         0b10 => out.extend_from_slice(&m.disp.to_le_bytes()),
         _ if base.is_none() => out.extend_from_slice(&m.disp.to_le_bytes()),
-        _ => {},
+        _ => {}
     }
 }
 
 /// Bits REX portés par un opérande mémoire.
 fn mem_rex(m: Mem) -> (u8, u8) {
-    (m.index.map_or(0, |(r, _)| r.hi()), m.base.map_or(0, Reg::hi))
+    (
+        m.index.map_or(0, |(r, _)| r.hi()),
+        m.base.map_or(0, Reg::hi),
+    )
 }
 
 /// Instruction registre↔mémoire.
@@ -1339,13 +1355,13 @@ fn rm_form(
             rex_forced(out, size.rex_w(), reg_hi, 0, r.hi(), needs_rex8(size, r));
             out.extend_from_slice(opcodes);
             out.push(0xC0 | ((reg & 7) << 3) | r.lo());
-        },
+        }
         Rm::M(m) => {
             let (x, b) = mem_rex(m);
             rex(out, size.rex_w(), reg_hi, x, b);
             out.extend_from_slice(opcodes);
             modrm_mem(out, reg, m, at, base, imm.len());
-        },
+        }
     }
     out.extend_from_slice(imm);
 }
@@ -1392,50 +1408,78 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
         Insn::RetImm(n) => {
             out.push(0xC2);
             out.extend_from_slice(&n.to_le_bytes());
-        },
+        }
         Insn::Int3 => out.push(0xCC),
         Insn::Nop(n) => nop(out, n),
         Insn::Push(r, force) => {
             rex_forced(out, false, 0, 0, r.hi(), force);
             out.push(0x50 + r.lo());
-        },
+        }
         Insn::Pop(r, force) => {
             rex_forced(out, false, 0, 0, r.hi(), force);
             out.push(0x58 + r.lo());
-        },
+        }
         Insn::MovRegImm8(r, imm) => {
             rex_forced(out, false, 0, 0, r.hi(), needs_rex8(Size::B, r));
             out.push(0xB0 + r.lo());
             out.push(imm);
-        },
+        }
         Insn::MovRegImm32(r, imm) => {
             rex(out, false, 0, 0, r.hi());
             out.push(0xB8 + r.lo());
             out.extend_from_slice(&imm.to_le_bytes());
-        },
+        }
         Insn::MovRegImm64(r, imm) => {
             rex(out, true, 0, 0, r.hi());
             out.push(0xB8 + r.lo());
             out.extend_from_slice(&imm.to_le_bytes());
-        },
+        }
         Insn::MovRR(size, dst, src) => {
-            reg_form(out, size, if size == Size::B { 0x8A } else { 0x8B }, dst, src);
-        },
+            reg_form(
+                out,
+                size,
+                if size == Size::B { 0x8A } else { 0x8B },
+                dst,
+                src,
+            );
+        }
         Insn::MovRRRex(dst, src) => {
             reg_form_forced(out, Size::D, 0x8B, dst, src, true);
-        },
+        }
         Insn::MovRRm(size, dst, src) => {
-            reg_form(out, size, if size == Size::B { 0x88 } else { 0x89 }, src, dst);
-        },
+            reg_form(
+                out,
+                size,
+                if size == Size::B { 0x88 } else { 0x89 },
+                src,
+                dst,
+            );
+        }
         Insn::MovRRmRex(dst, src) => {
             reg_form_forced(out, Size::D, 0x89, src, dst, true);
-        },
+        }
         Insn::Load(size, r, m) => {
-            mem_form(out, size, if size == Size::B { 0x8A } else { 0x8B }, r, m, at, 0);
-        },
+            mem_form(
+                out,
+                size,
+                if size == Size::B { 0x8A } else { 0x8B },
+                r,
+                m,
+                at,
+                0,
+            );
+        }
         Insn::Store(size, m, r) => {
-            mem_form(out, size, if size == Size::B { 0x88 } else { 0x89 }, r, m, at, 0);
-        },
+            mem_form(
+                out,
+                size,
+                if size == Size::B { 0x88 } else { 0x89 },
+                r,
+                m,
+                at,
+                0,
+            );
+        }
         Insn::StoreImm32(size, m, imm) => {
             let base = out.len();
             opsize(out, size);
@@ -1444,7 +1488,7 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(0xC7);
             modrm_mem(out, 0, m, at, base, if size == Size::W { 2 } else { 4 });
             imm_sized(out, size, imm);
-        },
+        }
         Insn::Lea(r, m) => mem_form(out, Size::Q, 0x8D, r, m, at, 0),
         Insn::AluRR(op, size, dst, src) => reg_form(out, size, alu_rm_op(op, size), dst, src),
         // Sens inverse : le registre source occupe le champ `/r`, la destination
@@ -1485,10 +1529,10 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 out.push(0xC0 | (op.digit() << 3) | r.lo());
                 imm_sized(out, size, imm);
             }
-        },
+        }
         Insn::TestRR(size, a, b) => {
             reg_form(out, size, if size == Size::B { 0x84 } else { 0x85 }, b, a);
-        },
+        }
         Insn::Shift(op, size, r, imm) => {
             opsize(out, size);
             // `shr bpl, 5` exige un REX nul (`40`) : sans lui, le numéro 5
@@ -1497,13 +1541,13 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(if size == Size::B { 0xC0 } else { 0xC1 });
             out.push(0xC0 | (op.digit() << 3) | r.lo());
             out.push(imm);
-        },
+        }
         Insn::MovzxR(src_size, dst, src) => {
             rex(out, false, dst.hi(), 0, src.hi());
             out.push(0x0F);
             out.push(if src_size == Size::B { 0xB6 } else { 0xB7 });
             out.push(0xC0 | (dst.lo() << 3) | src.lo());
-        },
+        }
         Insn::MovzxM(src_size, dst, m) => {
             let base = out.len();
             let (x, b) = mem_rex(m);
@@ -1511,31 +1555,31 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(0x0F);
             out.push(if src_size == Size::B { 0xB6 } else { 0xB7 });
             modrm_mem(out, dst.lo(), m, at, base, 0);
-        },
+        }
         Insn::Movsxd(dst, src) => reg_form(out, Size::Q, 0x63, dst, src),
         Insn::Setcc(c, r) => {
             rex(out, false, 0, 0, r.hi());
             out.push(0x0F);
             out.push(0x90 + c.code());
             out.push(0xC0 | r.lo());
-        },
+        }
         Insn::IncMem32(m) => {
             let base = out.len();
             let (x, b) = mem_rex(m);
             rex(out, false, 0, x, b);
             out.push(0xFF);
             modrm_mem(out, 0, m, at, base, 0);
-        },
+        }
         Insn::JmpReg(r, w) => {
             rex_forced(out, w, 0, 0, r.hi(), w);
             out.push(0xFF);
             out.push(0xE0 | r.lo());
-        },
+        }
         Insn::Call(target) => {
             out.push(0xE8);
             let rel = target.wrapping_sub(at.wrapping_add(5)) as i32;
             out.extend_from_slice(&rel.to_le_bytes());
-        },
+        }
         Insn::Jmp(target, short) => {
             if short {
                 out.push(0xEB);
@@ -1545,7 +1589,7 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 let rel = target.wrapping_sub(at.wrapping_add(5)) as i32;
                 out.extend_from_slice(&rel.to_le_bytes());
             }
-        },
+        }
         Insn::Jcc(c, target, short) => {
             if short {
                 out.push(0x70 + c.code());
@@ -1556,7 +1600,7 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 let rel = target.wrapping_sub(at.wrapping_add(6)) as i32;
                 out.extend_from_slice(&rel.to_le_bytes());
             }
-        },
+        }
         Insn::AluI(op, size, rm, v, wide) => {
             let (imm, short) = imm_bytes(size, v, wide);
             // Forme accumulateur : MSVC préfère `3D id` (cmp eax, imm32) à
@@ -1580,16 +1624,16 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 0x81
             };
             rm_form(out, size, &[opcode], op.digit(), 0, rm, at, &imm);
-        },
+        }
         Insn::MovI(size, rm, v) => {
             let (imm, _) = imm_bytes(size, v, true);
             let opcode = if size == Size::B { 0xC6 } else { 0xC7 };
             rm_form(out, size, &[opcode], 0, 0, rm, at, &imm);
-        },
+        }
         Insn::Test(size, rm, r) => {
             let opcode = if size == Size::B { 0x84 } else { 0x85 };
             rm_form(out, size, &[opcode], r.lo(), r.hi(), rm, at, &[]);
-        },
+        }
         Insn::TestI(size, rm, v) => {
             let (imm, _) = imm_bytes(size, v, true);
             // `test al, imm8` = A8, `test eax, imm32` = A9 : même idiome.
@@ -1604,11 +1648,11 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             }
             let opcode = if size == Size::B { 0xF6 } else { 0xF7 };
             rm_form(out, size, &[opcode], 0, 0, rm, at, &imm);
-        },
+        }
         Insn::LockUn(op, size, rm) => {
             out.push(0xF0);
             encode_one(Insn::Un(op, size, rm), at + 1, out);
-        },
+        }
         Insn::Un(op, size, rm) => {
             let opcode = if op.is_f7() {
                 if size == Size::B { 0xF6 } else { 0xF7 }
@@ -1626,17 +1670,17 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 _ => size,
             };
             rm_form(out, sz, &[opcode], op.digit(), 0, rm, at, &[]);
-        },
+        }
         Insn::Imul(size, r, rm) => rm_form(out, size, &[0x0F, 0xAF], r.lo(), r.hi(), rm, at, &[]),
         Insn::ImulI(size, r, rm, v) => {
             let (imm, short) = imm_bytes(size, v, false);
             let opcode = if short { 0x6B } else { 0x69 };
             rm_form(out, size, &[opcode], r.lo(), r.hi(), rm, at, &imm);
-        },
+        }
         Insn::Movsx(src, dst_size, r, rm) => {
             let opcode = if src == Size::B { 0xBE } else { 0xBF };
             rm_form(out, dst_size, &[0x0F, opcode], r.lo(), r.hi(), rm, at, &[]);
-        },
+        }
         Insn::LeaD(r, m) => mem_form(out, Size::D, 0x8D, r, m, at, 0),
         Insn::MovMoffs(size, addr, store) => {
             opsize(out, size);
@@ -1648,29 +1692,38 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 (false, true) => 0xA3,
             });
             out.extend_from_slice(&addr.to_le_bytes());
-        },
+        }
         Insn::Sse(op, dst, src) => {
             let (prefix, opcode, _) = op.encoding();
             sse_form_full(out, prefix, opcode, dst, src, at, None, op.three_byte());
-        },
+        }
         Insn::Cmov(c, size, r, rm) => {
-            rm_form(out, size, &[0x0F, 0x40 + c.code()], r.lo(), r.hi(), rm, at, &[]);
-        },
+            rm_form(
+                out,
+                size,
+                &[0x0F, 0x40 + c.code()],
+                r.lo(),
+                r.hi(),
+                rm,
+                at,
+                &[],
+            );
+        }
         Insn::Bswap(size, r) => {
             rex(out, size.rex_w(), 0, 0, r.hi());
             out.push(0x0F);
             out.push(0xC8 | r.lo());
-        },
+        }
         Insn::PushfPopf(pop) => out.push(if pop { 0x9D } else { 0x9C }),
         Insn::PushImm(v) => {
             out.push(0x68);
             out.extend_from_slice(&v.to_le_bytes());
-        },
+        }
         Insn::StringOp(op, size) => {
             opsize(out, size);
             rex(out, size.rex_w(), 0, 0, 0);
             out.push(op.opcode(size));
-        },
+        }
         Insn::LockCmpxchg(size, m, r) => {
             out.push(0xF0);
             let base = out.len() - 1;
@@ -1680,10 +1733,19 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(0x0F);
             out.push(if size == Size::B { 0xB0 } else { 0xB1 });
             modrm_mem(out, r.lo(), m, at, base, 0);
-        },
+        }
         Insn::BitScan(bsr, size, r, rm) => {
-            rm_form(out, size, &[0x0F, if bsr { 0xBD } else { 0xBC }], r.lo(), r.hi(), rm, at, &[]);
-        },
+            rm_form(
+                out,
+                size,
+                &[0x0F, if bsr { 0xBD } else { 0xBC }],
+                r.lo(),
+                r.hi(),
+                rm,
+                at,
+                &[],
+            );
+        }
         Insn::LockXadd(size, m, r) => {
             out.push(0xF0);
             let base = out.len() - 1;
@@ -1693,7 +1755,7 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(0x0F);
             out.push(if size == Size::B { 0xC0 } else { 0xC1 });
             modrm_mem(out, r.lo(), m, at, base, 0);
-        },
+        }
         Insn::Vex(op, dst, src1, src2, imm) => {
             let base = out.len();
             let (map, pp, opcode, w, _) = op.encoding();
@@ -1721,12 +1783,12 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 XmmRm::X(rr) => out.push(0xC0 | (dst.lo() << 3) | rr.lo()),
                 XmmRm::M(m) => {
                     modrm_mem(out, dst.lo(), m, at, base, usize::from(imm.is_some()));
-                },
+                }
             }
             if let Some(v) = imm {
                 out.push(v);
             }
-        },
+        }
         Insn::Vex256(op, dst, src1, src2, imm) => {
             let base = out.len();
             let (map, pp, opcode, w, _) = op.encoding();
@@ -1749,12 +1811,12 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                 YmmRm::Y(rr) => out.push(0xC0 | (dst.lo() << 3) | rr.lo()),
                 YmmRm::M(m) => {
                     modrm_mem(out, dst.lo(), m, at, base, usize::from(imm.is_some()));
-                },
+                }
             }
             if let Some(v) = imm {
                 out.push(v);
             }
-        },
+        }
         Insn::Prefetch(hint, m) => {
             let base = out.len();
             let (x, b) = mem_rex(m);
@@ -1762,21 +1824,29 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(0x0F);
             out.push(0x18);
             modrm_mem(out, hint, m, at, base, 0);
-        },
+        }
         Insn::RepString(op, size) => {
             out.push(0xF3);
             opsize(out, size);
             rex(out, size.rex_w(), 0, 0, 0);
             out.push(op.opcode(size));
-        },
+        }
         Insn::XchgMem(size, m, r) => {
-            mem_form(out, size, if size == Size::B { 0x86 } else { 0x87 }, r, m, at, 0);
-        },
+            mem_form(
+                out,
+                size,
+                if size == Size::B { 0x86 } else { 0x87 },
+                r,
+                m,
+                at,
+                0,
+            );
+        }
         Insn::XchgAcc(size, r) => {
             opsize(out, size);
             rex(out, size.rex_w(), 0, 0, r.hi());
             out.push(0x90 | r.lo());
-        },
+        }
         Insn::SseShift(op, x, imm) => {
             let (opcode, digit) = op.encoding();
             out.push(0x66);
@@ -1785,7 +1855,7 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(opcode);
             out.push(0xC0 | (digit << 3) | x.lo());
             out.push(imm);
-        },
+        }
         Insn::SseMovmsk(op, r, x) => {
             let (p66, opcode) = op.encoding();
             if p66 {
@@ -1795,16 +1865,25 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
             out.push(0x0F);
             out.push(opcode);
             out.push(0xC0 | (r.lo() << 3) | x.lo());
-        },
+        }
         Insn::SseI(op, dst, src, imm) => {
             let (prefix, opcode, _) = op.encoding();
-            sse_form_full(out, prefix, opcode, dst, src, at, Some(imm), op.three_byte());
-        },
+            sse_form_full(
+                out,
+                prefix,
+                opcode,
+                dst,
+                src,
+                at,
+                Some(imm),
+                op.three_byte(),
+            );
+        }
         Insn::Extractps(dst, src, imm) => {
             out.push(0x66);
             rex(out, false, src.hi(), 0, dst.hi());
             out.extend_from_slice(&[0x0F, 0x3A, 0x17, 0xC0 | (src.lo() << 3) | dst.lo(), imm]);
-        },
+        }
         Insn::CvtToXmm(op, dst, src, size) => {
             let (prefix, opcode) = op.encoding();
             let base = out.len();
@@ -1815,16 +1894,16 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                     out.push(0x0F);
                     out.push(opcode);
                     out.push(0xC0 | (dst.lo() << 3) | r.lo());
-                },
+                }
                 Rm::M(m) => {
                     let (x, b) = mem_rex(m);
                     rex(out, size.rex_w(), dst.hi(), x, b);
                     out.push(0x0F);
                     out.push(opcode);
                     modrm_mem(out, dst.lo(), m, at, base, 0);
-                },
+                }
             }
-        },
+        }
         Insn::MovdToXmm(dst, src, size) => {
             let base = out.len();
             // `movq xmm, m64` a sa forme dediee `F3 0F 7E /r`, plus courte que
@@ -1848,16 +1927,16 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                     out.push(0x0F);
                     out.push(0x6E);
                     out.push(0xC0 | (dst.lo() << 3) | r.lo());
-                },
+                }
                 Rm::M(m) => {
                     let (x, b) = mem_rex(m);
                     rex(out, size.rex_w(), dst.hi(), x, b);
                     out.push(0x0F);
                     out.push(0x6E);
                     modrm_mem(out, dst.lo(), m, at, base, 0);
-                },
+                }
             }
-        },
+        }
         Insn::MovdToRm(dst, src, size) => {
             let base = out.len();
             // Symetrique : `movq m64, xmm` s'encode `66 0F D6 /r`.
@@ -1879,16 +1958,16 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                     out.push(0x0F);
                     out.push(0x7E);
                     out.push(0xC0 | (src.lo() << 3) | r.lo());
-                },
+                }
                 Rm::M(m) => {
                     let (x, b) = mem_rex(m);
                     rex(out, size.rex_w(), src.hi(), x, b);
                     out.push(0x0F);
                     out.push(0x7E);
                     modrm_mem(out, src.lo(), m, at, base, 0);
-                },
+                }
             }
-        },
+        }
         Insn::NoOperand(op) => match op {
             NoOp::Cwde => out.push(0x98),
             NoOp::Cdqe => out.extend_from_slice(&[0x48, 0x98]),
@@ -1898,32 +1977,32 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
         },
         Insn::SetccRm(c, rm) => {
             rm_form(out, Size::B, &[0x0F, 0x90 + c.code()], 0, 0, rm, at, &[]);
-        },
+        }
         Insn::Shift1(op, size, rm) => {
             let opcode = if size == Size::B { 0xD0 } else { 0xD1 };
             rm_form(out, size, &[opcode], op.digit(), 0, rm, at, &[]);
-        },
+        }
         Insn::ShiftCl(op, size, rm) => {
             let opcode = if size == Size::B { 0xD2 } else { 0xD3 };
             rm_form(out, size, &[opcode], op.digit(), 0, rm, at, &[]);
-        },
+        }
         Insn::BitRm(op, size, rm, r) => {
             rm_form(out, size, &[0x0F, op.opcode()], r.lo(), r.hi(), rm, at, &[]);
-        },
+        }
         Insn::BitImm(op, size, rm, imm) => {
             rm_form(out, size, &[0x0F, 0xBA], op.digit(), 0, rm, at, &[imm]);
-        },
+        }
         Insn::MovsxdRm(dst, src) => {
             rm_form(out, Size::Q, &[0x63], dst.lo(), dst.hi(), src, at, &[]);
-        },
+        }
         Insn::MovzxRm(src_size, dst_size, r, rm) => {
             let opcode = if src_size == Size::B { 0xB6 } else { 0xB7 };
             movx_form(out, src_size, dst_size, opcode, r, rm, at);
-        },
+        }
         Insn::MovsxRm(src_size, dst_size, r, rm) => {
             let opcode = if src_size == Size::B { 0xBE } else { 0xBF };
             movx_form(out, src_size, dst_size, opcode, r, rm, at);
-        },
+        }
         Insn::Stmxcsr(m) => rm_form(out, Size::D, &[0x0F, 0xAE], 3, 0, Rm::M(m), at, &[]),
         Insn::CvtToReg(op, dst, src, size) => {
             let (prefix, opcode) = op.encoding();
@@ -1935,23 +2014,23 @@ fn encode_one(i: Insn, at: u64, out: &mut Vec<u8>) {
                     out.push(0x0F);
                     out.push(opcode);
                     out.push(0xC0 | (dst.lo() << 3) | x.lo());
-                },
+                }
                 XmmRm::M(m) => {
                     let (xr, b) = mem_rex(m);
                     rex(out, size.rex_w(), dst.hi(), xr, b);
                     out.push(0x0F);
                     out.push(opcode);
                     modrm_mem(out, dst.lo(), m, at, base, 0);
-                },
+                }
             }
-        },
+        }
         Insn::SseStore(op, m, src) => {
             let (prefix, load, store) = op.encoding();
             // Sans forme « mémoire ← registre », l'opération n'est pas stockable :
             // on retombe sur l'opcode de chargement, et la comparaison byte-à-byte
             // rejettera l'unité — jamais de silence.
             sse_form(out, prefix, store.unwrap_or(load), src, XmmRm::M(m), at);
-        },
+        }
     }
 }
 
@@ -1973,13 +2052,13 @@ fn movx_form(
             rex_forced(out, dst_size.rex_w(), r.hi(), 0, x.hi(), force);
             out.extend_from_slice(&[0x0F, opcode]);
             out.push(0xC0 | (r.lo() << 3) | x.lo());
-        },
+        }
         Rm::M(m) => {
             let (ix, b) = mem_rex(m);
             rex(out, dst_size.rex_w(), r.hi(), ix, b);
             out.extend_from_slice(&[0x0F, opcode]);
             modrm_mem(out, r.lo(), m, at, base, 0);
-        },
+        }
     }
 }
 
@@ -2018,7 +2097,7 @@ fn sse_form_full(
 ) {
     let base = out.len();
     match prefix {
-        SsePrefix::None => {},
+        SsePrefix::None => {}
         SsePrefix::P66 => out.push(0x66),
         SsePrefix::F2 => out.push(0xF2),
         SsePrefix::F3 => out.push(0xF3),
@@ -2032,7 +2111,7 @@ fn sse_form_full(
             }
             out.push(opcode);
             out.push(0xC0 | (reg.lo() << 3) | x.lo());
-        },
+        }
         XmmRm::M(m) => {
             let (x, b) = mem_rex(m);
             rex(out, false, reg.hi(), x, b);
@@ -2042,7 +2121,7 @@ fn sse_form_full(
             }
             out.push(opcode);
             modrm_mem(out, reg.lo(), m, at, base, usize::from(imm.is_some()));
-        },
+        }
     }
     if let Some(v) = imm {
         out.push(v);
@@ -2063,11 +2142,22 @@ fn nop(out: &mut Vec<u8>, n: u8) {
         &[0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
         &[0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
         &[0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
-        &[0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
-        &[0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
-        &[0x66, 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
-        &[0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
-        &[0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00],
+        &[
+            0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ],
+        &[
+            0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ],
+        &[
+            0x66, 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ],
+        &[
+            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ],
+        &[
+            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00,
+            0x00,
+        ],
     ];
     if let Some(f) = FORMS.get(n as usize) {
         out.extend_from_slice(f);
@@ -2087,15 +2177,24 @@ mod tests {
         assert_eq!(encode(&[Insn::Ret]), vec![0xC3]);
         assert_eq!(encode(&[Insn::RetImm(0)]), vec![0xC2, 0x00, 0x00]);
         // `mov al, 1 ; ret` — 320 unités (gestionnaires « return true »)
-        assert_eq!(encode(&[Insn::MovRegImm8(Reg::Rax, 1), Insn::Ret]), vec![0xB0, 0x01, 0xC3]);
+        assert_eq!(
+            encode(&[Insn::MovRegImm8(Reg::Rax, 1), Insn::Ret]),
+            vec![0xB0, 0x01, 0xC3]
+        );
         // `xor eax, eax ; ret` — 163 unités (dialecte MSVC : 33, pas 31)
         assert_eq!(
-            encode(&[Insn::AluRR(Alu::Xor, Size::D, Reg::Rax, Reg::Rax), Insn::Ret]),
+            encode(&[
+                Insn::AluRR(Alu::Xor, Size::D, Reg::Rax, Reg::Rax),
+                Insn::Ret
+            ]),
             vec![0x33, 0xC0, 0xC3]
         );
         // `xor al, al ; ret` — 163 unités
         assert_eq!(
-            encode(&[Insn::AluRR(Alu::Xor, Size::B, Reg::Rax, Reg::Rax), Insn::Ret]),
+            encode(&[
+                Insn::AluRR(Alu::Xor, Size::B, Reg::Rax, Reg::Rax),
+                Insn::Ret
+            ]),
             vec![0x32, 0xC0, 0xC3]
         );
         // `mov rax, rcx ; ret` — 178 unités (MSVC : 8B, pas 89)
@@ -2128,7 +2227,9 @@ mod tests {
                 Insn::Store(Size::Q, Mem::base_disp(Reg::Rcx, 8), Reg::R8),
                 Insn::Ret
             ]),
-            vec![0x48, 0x89, 0x11, 0x48, 0x8B, 0xC1, 0x4C, 0x89, 0x41, 0x08, 0xC3]
+            vec![
+                0x48, 0x89, 0x11, 0x48, 0x8B, 0xC1, 0x4C, 0x89, 0x41, 0x08, 0xC3
+            ]
         );
         // `lea rax, [rcx+8] ; ret` — 265 unités
         assert_eq!(
@@ -2152,10 +2253,17 @@ mod tests {
         );
         // Forme SIB imposée par rsp.
         assert_eq!(
-            encode(&[Insn::Load(Size::Q, Reg::Rax, Mem::base_disp(Reg::Rsp, 0x28))]),
+            encode(&[Insn::Load(
+                Size::Q,
+                Reg::Rax,
+                Mem::base_disp(Reg::Rsp, 0x28)
+            )]),
             vec![0x48, 0x8B, 0x44, 0x24, 0x28]
         );
-        assert_eq!(encode(&[Insn::IncMem32(Mem::base(Reg::Rcx))]), vec![0xFF, 0x01]);
+        assert_eq!(
+            encode(&[Insn::IncMem32(Mem::base(Reg::Rcx))]),
+            vec![0xFF, 0x01]
+        );
         // `and rax, -1 ; shl rdx, 0x20 ; or rax, rdx ; ret`
         assert_eq!(
             encode(&[
@@ -2164,14 +2272,25 @@ mod tests {
                 Insn::AluRR(Alu::Or, Size::Q, Reg::Rax, Reg::Rdx),
                 Insn::Ret
             ]),
-            vec![0x48, 0x83, 0xE0, 0xFF, 0x48, 0xC1, 0xE2, 0x20, 0x48, 0x0B, 0xC2, 0xC3]
+            vec![
+                0x48, 0x83, 0xE0, 0xFF, 0x48, 0xC1, 0xE2, 0x20, 0x48, 0x0B, 0xC2, 0xC3
+            ]
         );
         assert_eq!(encode(&[Insn::JmpReg(Reg::Rax, false)]), vec![0xFF, 0xE0]);
         // MSVC emet un REX.W superflu sur `jmp rax` : la forge exige l'octet.
-        assert_eq!(encode(&[Insn::JmpReg(Reg::Rax, true)]), vec![0x48, 0xFF, 0xE0]);
+        assert_eq!(
+            encode(&[Insn::JmpReg(Reg::Rax, true)]),
+            vec![0x48, 0xFF, 0xE0]
+        );
         // Registre haut : REX.B seul, puis REX.W|B.
-        assert_eq!(encode(&[Insn::JmpReg(Reg::R8, false)]), vec![0x41, 0xFF, 0xE0]);
-        assert_eq!(encode(&[Insn::JmpReg(Reg::R8, true)]), vec![0x49, 0xFF, 0xE0]);
+        assert_eq!(
+            encode(&[Insn::JmpReg(Reg::R8, false)]),
+            vec![0x41, 0xFF, 0xE0]
+        );
+        assert_eq!(
+            encode(&[Insn::JmpReg(Reg::R8, true)]),
+            vec![0x49, 0xFF, 0xE0]
+        );
         assert_eq!(
             encode(&[Insn::Nop(10)]),
             vec![0x66, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -2216,7 +2335,10 @@ mod tests {
             vec![0xE8, 0xFB, 0x0F, 0x00, 0x00]
         );
         // saut arrière court
-        assert_eq!(encode_at(&[Insn::Jmp(0x1_4000_0000, true)], 0x1_4000_0010), vec![0xEB, 0xEE]);
+        assert_eq!(
+            encode_at(&[Insn::Jmp(0x1_4000_0000, true)], 0x1_4000_0010),
+            vec![0xEB, 0xEE]
+        );
         // jcc near
         assert_eq!(
             encode_at(&[Insn::Jcc(Cond::E, 0x1_4000_0100, false)], 0x1_4000_0000),
@@ -2229,32 +2351,56 @@ mod tests {
         );
         // `lea rax, [rip → 0x140002000]` depuis 0x140001000
         assert_eq!(
-            encode_at(&[Insn::Lea(Reg::Rax, Mem::rip(0x1_4000_2000))], 0x1_4000_1000),
+            encode_at(
+                &[Insn::Lea(Reg::Rax, Mem::rip(0x1_4000_2000))],
+                0x1_4000_1000
+            ),
             vec![0x48, 0x8D, 0x05, 0xF9, 0x0F, 0x00, 0x00]
         );
         // `mov rax, [rip → cible]` : le déplacement part de la fin de l'instruction
         assert_eq!(
-            encode_at(&[Insn::Load(Size::Q, Reg::Rax, Mem::rip(0x1_4000_2000))], 0x1_4000_1000),
+            encode_at(
+                &[Insn::Load(Size::Q, Reg::Rax, Mem::rip(0x1_4000_2000))],
+                0x1_4000_1000
+            ),
             vec![0x48, 0x8B, 0x05, 0xF9, 0x0F, 0x00, 0x00]
         );
         // Immédiat après un opérande rip : le rel32 doit en tenir compte.
         assert_eq!(
-            encode_at(&[Insn::StoreImm32(Size::D, Mem::rip(0x1_4000_2000), 7)], 0x1_4000_1000),
+            encode_at(
+                &[Insn::StoreImm32(Size::D, Mem::rip(0x1_4000_2000), 7)],
+                0x1_4000_1000
+            ),
             vec![0xC7, 0x05, 0xF6, 0x0F, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00]
         );
     }
 
     #[test]
     fn formes_de_comparaison_et_conversion() {
-        assert_eq!(encode(&[Insn::TestRR(Size::Q, Reg::Rax, Reg::Rax)]), vec![0x48, 0x85, 0xC0]);
-        assert_eq!(encode(&[Insn::TestRR(Size::B, Reg::Rax, Reg::Rax)]), vec![0x84, 0xC0]);
+        assert_eq!(
+            encode(&[Insn::TestRR(Size::Q, Reg::Rax, Reg::Rax)]),
+            vec![0x48, 0x85, 0xC0]
+        );
+        assert_eq!(
+            encode(&[Insn::TestRR(Size::B, Reg::Rax, Reg::Rax)]),
+            vec![0x84, 0xC0]
+        );
         assert_eq!(
             encode(&[Insn::AluRI(Alu::Cmp, Size::D, Reg::Rax, 5, false)]),
             vec![0x83, 0xF8, 0x05]
         );
-        assert_eq!(encode(&[Insn::Setcc(Cond::E, Reg::Rax)]), vec![0x0F, 0x94, 0xC0]);
-        assert_eq!(encode(&[Insn::MovzxR(Size::B, Reg::Rax, Reg::Rcx)]), vec![0x0F, 0xB6, 0xC1]);
-        assert_eq!(encode(&[Insn::Movsxd(Reg::Rax, Reg::Rcx)]), vec![0x48, 0x63, 0xC1]);
+        assert_eq!(
+            encode(&[Insn::Setcc(Cond::E, Reg::Rax)]),
+            vec![0x0F, 0x94, 0xC0]
+        );
+        assert_eq!(
+            encode(&[Insn::MovzxR(Size::B, Reg::Rax, Reg::Rcx)]),
+            vec![0x0F, 0xB6, 0xC1]
+        );
+        assert_eq!(
+            encode(&[Insn::Movsxd(Reg::Rax, Reg::Rcx)]),
+            vec![0x48, 0x63, 0xC1]
+        );
         assert_eq!(
             encode(&[Insn::MovRegImm64(Reg::Rax, 0x1234_5678_9abc_def0)]),
             vec![0x48, 0xB8, 0xF0, 0xDE, 0xBC, 0x9A, 0x78, 0x56, 0x34, 0x12]
@@ -2286,18 +2432,29 @@ mod tests {
 
     #[test]
     fn vmovdqu_ymm_mem_encode_et_parse() {
-        let insn =
-            Insn::Vex256(VexOp::Vmovdqu, Ymm(6), Ymm(0), YmmRm::M(Mem::rip(0x1418afa60)), None);
+        let insn = Insn::Vex256(
+            VexOp::Vmovdqu,
+            Ymm(6),
+            Ymm(0),
+            YmmRm::M(Mem::rip(0x1418afa60)),
+            None,
+        );
         assert_eq!(
             encode_at(&[insn], 0x14071db0a),
             vec![0xC5, 0xFE, 0x6F, 0x35, 0x4E, 0x1F, 0x19, 0x01]
         );
-        assert_eq!(text::parse_insn("vmovdqu ymm6, [rip 0x1418afa60]").unwrap(), insn);
+        assert_eq!(
+            text::parse_insn("vmovdqu ymm6, [rip 0x1418afa60]").unwrap(),
+            insn
+        );
     }
 
     #[test]
     fn registres_etendus_portent_rex() {
-        assert_eq!(encode(&[Insn::MovRR(Size::Q, Reg::R8, Reg::R9)]), vec![0x4D, 0x8B, 0xC1]);
+        assert_eq!(
+            encode(&[Insn::MovRR(Size::Q, Reg::R8, Reg::R9)]),
+            vec![0x4D, 0x8B, 0xC1]
+        );
         assert_eq!(
             encode(&[Insn::Store(Size::Q, Mem::base(Reg::R12), Reg::Rax)]),
             vec![0x49, 0x89, 0x04, 0x24]
@@ -2311,7 +2468,11 @@ mod tests {
     #[test]
     fn deplacement_32_bits_quand_disp8_ne_suffit_pas() {
         assert_eq!(
-            encode(&[Insn::Load(Size::Q, Reg::Rax, Mem::base_disp(Reg::Rcx, 0x1234))]),
+            encode(&[Insn::Load(
+                Size::Q,
+                Reg::Rax,
+                Mem::base_disp(Reg::Rcx, 0x1234)
+            )]),
             vec![0x48, 0x8B, 0x81, 0x34, 0x12, 0x00, 0x00]
         );
     }

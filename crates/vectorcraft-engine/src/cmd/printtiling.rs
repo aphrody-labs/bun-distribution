@@ -48,7 +48,10 @@ pub fn specs() -> Vec<CommandSpec> {
 
 fn show(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc_mut()?;
-    st.print_tiling = p.get("on").and_then(Value::as_bool).unwrap_or(!st.print_tiling);
+    st.print_tiling = p
+        .get("on")
+        .and_then(Value::as_bool)
+        .unwrap_or(!st.print_tiling);
     Ok(json!({ "on": st.print_tiling }))
 }
 
@@ -89,13 +92,27 @@ fn set_origin(s: &mut Session, p: &Value) -> Result<Value> {
         let regions = vectorcraft_pdf::print_regions(doc, &set).map_err(|e| pdf_error(SET, e))?;
         let picked = match p.get("artboard").filter(|v| !v.is_null()) {
             Some(v) => {
-                let i = v.as_u64().ok_or_else(|| bad(SET, "artboard must be a 0-based index"))? as usize;
-                regions.iter().find(|(a, _)| a.is_none() || *a == Some(i)).ok_or_else(|| bad(SET, format!("artboard {i} doesn't print")))?
+                let i = v
+                    .as_u64()
+                    .ok_or_else(|| bad(SET, "artboard must be a 0-based index"))?
+                    as usize;
+                regions
+                    .iter()
+                    .find(|(a, _)| a.is_none() || *a == Some(i))
+                    .ok_or_else(|| bad(SET, format!("artboard {i} doesn't print")))?
             }
-            None => regions.iter().find(|(_, r)| r.contains(at)).or(regions.first()).ok_or_else(|| bad(SET, "nothing prints"))?,
+            None => regions
+                .iter()
+                .find(|(_, r)| r.contains(at))
+                .or(regions.first())
+                .ok_or_else(|| bad(SET, "nothing prints"))?,
         };
         let corner = picked.1.origin();
-        TileOrigin { placed: true, x: at.x - corner.x, y: at.y - corner.y }
+        TileOrigin {
+            placed: true,
+            x: at.x - corner.x,
+            y: at.y - corner.y,
+        }
     };
     set.check().map_err(|e| pdf_error(SET, e))?;
     if set != current {

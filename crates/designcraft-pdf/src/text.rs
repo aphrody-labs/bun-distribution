@@ -40,18 +40,34 @@ fn same_run(a: &PlacedGlyph, b: &PlacedGlyph) -> bool {
 }
 
 /// Merge bars of one paint layer; underlines and strikes must never be merged together.
-fn text_rules(cs: &ComposedStory, ft: &FrameText, underline: bool) -> Vec<(designcraft_compose::Rule, Rect)> {
+fn text_rules(
+    cs: &ComposedStory,
+    ft: &FrameText,
+    underline: bool,
+) -> Vec<(designcraft_compose::Rule, Rect)> {
     let mut bars: Vec<(designcraft_compose::Rule, Rect)> = Vec::new();
     for line in &ft.lines {
         for g in line.glyphs.iter().filter(|g| g.visible) {
             let style = &cs.styles[g.style as usize];
-            let (on, rule) = if underline { (style.underline, &style.underline_rule) } else { (style.strikethrough, &style.strike_rule) };
+            let (on, rule) = if underline {
+                (style.underline, &style.underline_rule)
+            } else {
+                (style.strikethrough, &style.strike_rule)
+            };
             if !on {
                 continue;
             }
-            let rect = rule.rect(g.x, g.x + g.adv, designcraft_compose::rule_baseline(style, line, g));
+            let rect = rule.rect(
+                g.x,
+                g.x + g.adv,
+                designcraft_compose::rule_baseline(style, line, g),
+            );
             match bars.last_mut() {
-                Some((last_rule, last)) if last_rule == rule && (last.y0 - rect.y0).abs() < 1e-6 && (rect.x0 - last.x1).abs() < 0.5 => {
+                Some((last_rule, last))
+                    if last_rule == rule
+                        && (last.y0 - rect.y0).abs() < 1e-6
+                        && (rect.x0 - last.x1).abs() < 0.5 =>
+                {
                     last.x1 = rect.x1;
                 }
                 _ => bars.push((rule.clone(), rect)),
@@ -68,7 +84,11 @@ impl Exporter<'_> {
             .or_insert_with(|| {
                 if face.is_variable() {
                     // A named instance: krilla embeds the font at these axis settings.
-                    let coords: Vec<(krilla::text::Tag, f32)> = face.coords.iter().map(|(t, v)| (krilla::text::Tag::new(t), *v)).collect();
+                    let coords: Vec<(krilla::text::Tag, f32)> = face
+                        .coords
+                        .iter()
+                        .map(|(t, v)| (krilla::text::Tag::new(t), *v))
+                        .collect();
                     Font::new_variable(face.data().to_vec().into(), face.index(), &coords)
                 } else {
                     Font::new(face.data().to_vec().into(), face.index())
@@ -95,7 +115,10 @@ impl Exporter<'_> {
     fn as_artifact(&mut self, s: &mut Surface, f: impl FnOnce(&mut Self, &mut Surface)) {
         match self.tag_story.take() {
             Some(sid) => {
-                s.start_tagged(ContentTag::Artifact(Artifact::new(ArtifactType::Other, None)));
+                s.start_tagged(ContentTag::Artifact(Artifact::new(
+                    ArtifactType::Other,
+                    None,
+                )));
                 f(self, s);
                 s.end_tagged();
                 self.tag_story = Some(sid);
@@ -105,10 +128,20 @@ impl Exporter<'_> {
     }
 
     /// A glyph run, tagged under its paragraph while a story is being tagged.
-    fn tagged_run(&mut self, s: &mut Surface, cs: &ComposedStory, gs: &[PlacedGlyph], baseline: f64, story: &str) {
+    fn tagged_run(
+        &mut self,
+        s: &mut Surface,
+        cs: &ComposedStory,
+        gs: &[PlacedGlyph],
+        baseline: f64,
+        story: &str,
+    ) {
         match self.tag_story {
             Some(sid) => {
-                let pi = self.doc.story(sid).map_or(0, |st| st.para_at(gs[0].byte.min(st.len())));
+                let pi = self
+                    .doc
+                    .story(sid)
+                    .map_or(0, |st| st.para_at(gs[0].byte.min(st.len())));
                 let id = s.start_tagged(ContentTag::Span(SpanTag::empty()));
                 self.run(s, cs, gs, baseline, story);
                 s.end_tagged();
@@ -118,7 +151,13 @@ impl Exporter<'_> {
         }
     }
 
-    pub(crate) fn frame_text(&mut self, s: &mut Surface, cs: &ComposedStory, ft: &FrameText, story: &str) {
+    pub(crate) fn frame_text(
+        &mut self,
+        s: &mut Surface,
+        cs: &ComposedStory,
+        ft: &FrameText,
+        story: &str,
+    ) {
         // Paragraph shading and rules under the text.
         self.as_artifact(s, |me, s| {
             for d in &ft.decos {
@@ -161,7 +200,10 @@ impl Exporter<'_> {
                     continue;
                 }
                 let mut j = i + 1;
-                while j < gs.len() && same_run(g, &gs[j]) && !(ft.vertical && (gs[j].upright || gs[j].tcy.is_some())) {
+                while j < gs.len()
+                    && same_run(g, &gs[j])
+                    && !(ft.vertical && (gs[j].upright || gs[j].tcy.is_some()))
+                {
                     j += 1;
                 }
                 self.tagged_run(s, cs, &gs[i..j], l.baseline, story);
@@ -211,18 +253,32 @@ impl Exporter<'_> {
             }
             for seg in &t.strokes {
                 let st = &seg.stroke;
-                let Some(col) = self.swatch_color(&st.color, st.tint) else { continue };
+                let Some(col) = self.swatch_color(&st.color, st.tint) else {
+                    continue;
+                };
                 let (cap, dash) = match &st.kind {
-                    designcraft_doc::StrokeType::Dashed { pattern } if pattern.iter().any(|v| *v > 0.0) => {
+                    designcraft_doc::StrokeType::Dashed { pattern }
+                        if pattern.iter().any(|v| *v > 0.0) =>
+                    {
                         let mut pat: Vec<f32> = pattern.iter().map(|v| v.max(0.0) as f32).collect();
                         if pat.len() % 2 == 1 {
                             pat.extend(pat.clone());
                         }
-                        (krilla::paint::LineCap::Butt, Some(krilla::paint::StrokeDash { array: pat, offset: 0.0 }))
+                        (
+                            krilla::paint::LineCap::Butt,
+                            Some(krilla::paint::StrokeDash {
+                                array: pat,
+                                offset: 0.0,
+                            }),
+                        )
                     }
-                    designcraft_doc::StrokeType::Dotted => {
-                        (krilla::paint::LineCap::Round, Some(krilla::paint::StrokeDash { array: vec![0.0, (st.weight * 2.0) as f32], offset: 0.0 }))
-                    }
+                    designcraft_doc::StrokeType::Dotted => (
+                        krilla::paint::LineCap::Round,
+                        Some(krilla::paint::StrokeDash {
+                            array: vec![0.0, (st.weight * 2.0) as f32],
+                            offset: 0.0,
+                        }),
+                    ),
                     _ => (krilla::paint::LineCap::Square, None),
                 };
                 let mut bp = BezPath::new();
@@ -230,7 +286,13 @@ impl Exporter<'_> {
                 bp.line_to(seg.b);
                 let Some(p) = to_path(&bp) else { continue };
                 s.set_fill(None);
-                s.set_stroke(Some(Stroke { paint: col.into(), width: st.weight as f32, line_cap: cap, dash, ..Default::default() }));
+                s.set_stroke(Some(Stroke {
+                    paint: col.into(),
+                    width: st.weight as f32,
+                    line_cap: cap,
+                    dash,
+                    ..Default::default()
+                }));
                 s.draw_path(&p);
                 s.set_stroke(None);
             }
@@ -254,7 +316,9 @@ impl Exporter<'_> {
         // Byte of the previous glyph when it came straight from the story (cluster continuation).
         let mut prev_src: Option<usize> = None;
         for g in glyphs {
-            let src = story.get(g.byte..g.byte + g.len).filter(|t| !t.is_empty() && !t.chars().any(is_marker));
+            let src = story
+                .get(g.byte..g.byte + g.len)
+                .filter(|t| !t.is_empty() && !t.chars().any(is_marker));
             let range = if let Some(t) = src {
                 prev_src = Some(g.byte);
                 let a = text.len();
@@ -286,27 +350,45 @@ impl Exporter<'_> {
         (text, ranges)
     }
 
-    fn run(&mut self, s: &mut Surface, cs: &ComposedStory, glyphs: &[PlacedGlyph], baseline: f64, story: &str) {
+    fn run(
+        &mut self,
+        s: &mut Surface,
+        cs: &ComposedStory,
+        glyphs: &[PlacedGlyph],
+        baseline: f64,
+        story: &str,
+    ) {
         let g0 = &glyphs[0];
         let st = &cs.styles[g0.style as usize];
         let fill = self.swatch_color(&st.fill, st.fill_tint);
-        let stroke =
-            if st.stroke != designcraft_color::swatch::NONE && st.stroke_weight > 0.0 { self.swatch_color(&st.stroke, st.stroke_tint) } else { None };
+        let stroke = if st.stroke != designcraft_color::swatch::NONE && st.stroke_weight > 0.0 {
+            self.swatch_color(&st.stroke, st.stroke_tint)
+        } else {
+            None
+        };
         if fill.is_none() && stroke.is_none() {
             return;
         }
         let face = g0.face;
         let size = g0.sy * face.upem;
         let hs = g0.sx / g0.sy;
-        let skew = if st.skew != 0.0 { Affine::new([1.0, 0.0, -st.skew.to_radians().tan(), 1.0, 0.0, 0.0]) } else { Affine::IDENTITY };
-        let origin = Affine::translate((g0.x, baseline + g0.y)) * skew * Affine::scale_non_uniform(hs, 1.0);
+        let skew = if st.skew != 0.0 {
+            Affine::new([1.0, 0.0, -st.skew.to_radians().tan(), 1.0, 0.0, 0.0])
+        } else {
+            Affine::IDENTITY
+        };
+        let origin =
+            Affine::translate((g0.x, baseline + g0.y)) * skew * Affine::scale_non_uniform(hs, 1.0);
         // A missing glyph is drawn as its box: PDF/A and PDF/UA forbid showing .notdef as text.
         if g0.gid == 0 {
             self.outline_run(s, glyphs, origin, size, fill, stroke, st.stroke_weight);
             return;
         }
         let Some(font) = self.font(&face) else {
-            self.warn(format!("font `{} {}` could not be embedded; its text was drawn as outlines", face.family, face.style));
+            self.warn(format!(
+                "font `{} {}` could not be embedded; its text was drawn as outlines",
+                face.family, face.style
+            ));
             self.outline_run(s, glyphs, origin, size, fill, stroke, st.stroke_weight);
             return;
         };
@@ -318,13 +400,32 @@ impl Exporter<'_> {
             .enumerate()
             .map(|(i, (g, r))| {
                 let next = glyphs.get(i + 1).map_or(g.x + g.adv, |n| n.x);
-                KrillaGlyph::new(GlyphId::new(g.gid), ((next - g.x) * k) as f32, 0.0, 0.0, 0.0, r, None)
+                KrillaGlyph::new(
+                    GlyphId::new(g.gid),
+                    ((next - g.x) * k) as f32,
+                    0.0,
+                    0.0,
+                    0.0,
+                    r,
+                    None,
+                )
             })
             .collect();
         s.push_transform(&tf(origin));
         s.set_fill(fill.map(|c| solid_fill(c, 1.0)));
-        s.set_stroke(stroke.map(|c| Stroke { paint: c.into(), width: st.stroke_weight as f32, ..Default::default() }));
-        s.draw_glyphs(Point::from_xy(0.0, 0.0), &kg, font, &text, size as f32, false);
+        s.set_stroke(stroke.map(|c| Stroke {
+            paint: c.into(),
+            width: st.stroke_weight as f32,
+            ..Default::default()
+        }));
+        s.draw_glyphs(
+            Point::from_xy(0.0, 0.0),
+            &kg,
+            font,
+            &text,
+            size as f32,
+            false,
+        );
         s.set_fill(None);
         s.set_stroke(None);
         s.pop();
@@ -355,7 +456,11 @@ impl Exporter<'_> {
         let Some(p) = to_path(&bp) else { return };
         s.push_transform(&tf(origin));
         s.set_fill(fill.map(|c| solid_fill(c, 1.0)));
-        s.set_stroke(stroke.map(|c| Stroke { paint: c.into(), width: stroke_weight as f32, ..Default::default() }));
+        s.set_stroke(stroke.map(|c| Stroke {
+            paint: c.into(),
+            width: stroke_weight as f32,
+            ..Default::default()
+        }));
         s.draw_path(&p);
         s.set_fill(None);
         s.set_stroke(None);
@@ -363,7 +468,14 @@ impl Exporter<'_> {
     }
 
     /// One line of plain text in the bundled UI face (page information mark).
-    pub(crate) fn plain_text(&mut self, s: &mut Surface, text: &str, at: (f64, f64), size: f64, color: krilla::color::Color) {
+    pub(crate) fn plain_text(
+        &mut self,
+        s: &mut Surface,
+        text: &str,
+        at: (f64, f64),
+        size: f64,
+        color: krilla::color::Color,
+    ) {
         let face = FontDb::global().face(designcraft_fonts::FALLBACK_FAMILY, "Regular");
         let Some(font) = self.font(&face) else { return };
         let shaped = designcraft_fonts::shape(&face, text, &[], |c| c);
@@ -372,7 +484,12 @@ impl Exporter<'_> {
             .iter()
             .enumerate()
             .map(|(i, g)| {
-                let end = shaped.iter().skip(i + 1).map(|n| n.cluster).find(|c| *c != g.cluster).unwrap_or(text.len());
+                let end = shaped
+                    .iter()
+                    .skip(i + 1)
+                    .map(|n| n.cluster)
+                    .find(|c| *c != g.cluster)
+                    .unwrap_or(text.len());
                 let end = if end > g.cluster { end } else { text.len() };
                 KrillaGlyph::new(
                     GlyphId::new(g.gid),
@@ -387,7 +504,14 @@ impl Exporter<'_> {
             .collect();
         s.set_stroke(None);
         s.set_fill(Some(solid_fill(color, 1.0)));
-        s.draw_glyphs(Point::from_xy(at.0 as f32, at.1 as f32), &glyphs, font, text, size as f32, false);
+        s.draw_glyphs(
+            Point::from_xy(at.0 as f32, at.1 as f32),
+            &glyphs,
+            font,
+            text,
+            size as f32,
+            false,
+        );
         s.set_fill(None);
     }
 }

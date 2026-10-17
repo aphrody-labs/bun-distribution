@@ -27,7 +27,12 @@ pub struct Cell {
 
 impl Cell {
     pub fn new(text: &str) -> Self {
-        Cell { text: TextBody::from_text(text), grid_span: 1, row_span: 1, ..Default::default() }
+        Cell {
+            text: TextBody::from_text(text),
+            grid_span: 1,
+            row_span: 1,
+            ..Default::default()
+        }
     }
     pub fn is_covered(&self) -> bool {
         self.h_merge || self.v_merge
@@ -84,7 +89,12 @@ impl Table {
         let cw = if cols > 0 { width / cols as f64 } else { width };
         Table {
             cols: vec![cw; cols],
-            rows: (0..rows).map(|_| Row { height: row_height, cells: (0..cols).map(|_| Cell::new("")).collect() }).collect(),
+            rows: (0..rows)
+                .map(|_| Row {
+                    height: row_height,
+                    cells: (0..cols).map(|_| Cell::new("")).collect(),
+                })
+                .collect(),
             ..Default::default()
         }
     }
@@ -108,8 +118,18 @@ impl Table {
     }
     pub fn insert_row(&mut self, at: usize) {
         let at = at.min(self.rows.len());
-        let h = self.rows.get(at.saturating_sub(1)).map(|r| r.height).unwrap_or(30.0);
-        self.rows.insert(at, Row { height: h, cells: (0..self.cols.len()).map(|_| Cell::new("")).collect() });
+        let h = self
+            .rows
+            .get(at.saturating_sub(1))
+            .map(|r| r.height)
+            .unwrap_or(30.0);
+        self.rows.insert(
+            at,
+            Row {
+                height: h,
+                cells: (0..self.cols.len()).map(|_| Cell::new("")).collect(),
+            },
+        );
     }
     pub fn insert_col(&mut self, at: usize) {
         let at = at.min(self.cols.len());
@@ -173,8 +193,13 @@ impl Table {
     }
     /// Undo a merge at (r, c).
     pub fn split(&mut self, r: usize, c: usize) -> bool {
-        let Some(cell) = self.cell(r, c) else { return false };
-        let (gs, rs) = (cell.grid_span.max(1) as usize, cell.row_span.max(1) as usize);
+        let Some(cell) = self.cell(r, c) else {
+            return false;
+        };
+        let (gs, rs) = (
+            cell.grid_span.max(1) as usize,
+            cell.row_span.max(1) as usize,
+        );
         if gs == 1 && rs == 1 {
             return false;
         }
@@ -309,7 +334,10 @@ pub enum TableBorder {
 
 /// Built-in table styles: (id, label). Styles are generated from the theme accents.
 pub fn table_styles() -> Vec<(String, String)> {
-    let mut v = vec![("none".to_string(), "No Style, No Grid".to_string()), ("grid".to_string(), "No Style, Table Grid".to_string())];
+    let mut v = vec![
+        ("none".to_string(), "No Style, No Grid".to_string()),
+        ("grid".to_string(), "No Style, Table Grid".to_string()),
+    ];
     for (kind, label) in [
         ("light1", "Light Style 1"),
         ("light2", "Light Style 2"),
@@ -339,7 +367,10 @@ mod tests {
         assert!(t.delete_row(0) && t.delete_col(0));
         assert_eq!((t.n_rows(), t.n_cols()), (3, 3));
         assert!(t.merge(0, 0, 1, 1));
-        assert_eq!(t.cell(0, 0).map(|c| (c.grid_span, c.row_span)), Some((2, 2)));
+        assert_eq!(
+            t.cell(0, 0).map(|c| (c.grid_span, c.row_span)),
+            Some((2, 2))
+        );
         assert!(t.cell(1, 1).is_some_and(|c| c.is_covered()));
         assert!(t.split(0, 0));
         assert!(!t.cell(1, 1).is_some_and(|c| c.is_covered()));

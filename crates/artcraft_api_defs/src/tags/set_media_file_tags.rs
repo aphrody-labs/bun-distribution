@@ -9,7 +9,7 @@ use crate::tags::common::TagDetails;
 
 #[derive(Deserialize, ToSchema)]
 pub struct SetMediaFileTagsPathInfo {
-  pub media_file_token: MediaFileToken,
+    pub media_file_token: MediaFileToken,
 }
 
 /// Exactly one of `maybe_tags` / `maybe_tags_list` must be set (400 if
@@ -18,22 +18,22 @@ pub struct SetMediaFileTagsPathInfo {
 /// is allowed — it clears all tags from the media file.
 #[derive(Deserialize, ToSchema)]
 pub struct SetMediaFileTagsRequest {
-  /// Comma-separated tags, e.g. `"cats, Sci-Fi, wallpaper"`.
-  pub maybe_tags: Option<String>,
+    /// Comma-separated tags, e.g. `"cats, Sci-Fi, wallpaper"`.
+    pub maybe_tags: Option<String>,
 
-  /// Tags as a list. Entries are still trimmed.
-  pub maybe_tags_list: Option<Vec<String>>,
+    /// Tags as a list. Entries are still trimmed.
+    pub maybe_tags_list: Option<Vec<String>>,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct SetMediaFileTagsSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// The media file's full tag set after the operation, with canonical
-  /// tokens and fresh use counts.
-  pub tags: Vec<TagDetails>,
+    /// The media file's full tag set after the operation, with canonical
+    /// tokens and fresh use counts.
+    pub tags: Vec<TagDetails>,
 
-  /// How many previously-attached tag links were removed because they
-  /// weren't mentioned in the request. (Orphaned tags are not deleted.)
-  pub removed_count: u64,
+    /// How many previously-attached tag links were removed because they
+    /// weren't mentioned in the request. (Orphaned tags are not deleted.)
+    pub removed_count: u64,
 }

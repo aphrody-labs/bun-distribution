@@ -12,7 +12,17 @@ const NOW: &str = "2026-10-05T10:00:00";
 /// A Local record of `/pics/<folder>/IMG_<i>.JPG` as a browse catalogues it (with its baseline).
 fn local(c: &mut Catalog, folder: &str, i: u32) -> PhotoId {
     let id = c.alloc_photo_id();
-    let mut p = Photo::new(id, Source::File { path: format!("/pics/{folder}/IMG_{i}.JPG") }, &format!("IMG_{i}.JPG"), "JPEG", 60, 40, OLD);
+    let mut p = Photo::new(
+        id,
+        Source::File {
+            path: format!("/pics/{folder}/IMG_{i}.JPG"),
+        },
+        &format!("IMG_{i}.JPG"),
+        "JPEG",
+        60,
+        40,
+        OLD,
+    );
     p.meta.camera = "Cam".into();
     p.meta.creator = "From EXIF".into(); // file metadata is part of the baseline, not a user change
     p.focal_and_wb_for_test();
@@ -30,7 +40,11 @@ impl Photo {
 }
 
 fn browsed(c: &mut Catalog, folder: &str, at: &str) {
-    c.apply(Op::SetBrowsed { folder: format!("/pics/{folder}"), at: Some(at.into()) }).unwrap();
+    c.apply(Op::SetBrowsed {
+        folder: format!("/pics/{folder}"),
+        at: Some(at.into()),
+    })
+    .unwrap();
 }
 
 fn plan(c: &Catalog, days: u32) -> ForgetPlan {
@@ -54,12 +68,26 @@ fn untouched_records_of_old_folders_are_forgotten() {
     browsed(&mut c, "recent", "2026-10-01T09:00:00");
     // a library photo in the old folder is never a candidate
     let lib = c.alloc_photo_id();
-    let mut p = Photo::new(lib, Source::File { path: "/pics/old/LIB.JPG".into() }, "LIB.JPG", "JPEG", 6, 4, OLD);
+    let mut p = Photo::new(
+        lib,
+        Source::File {
+            path: "/pics/old/LIB.JPG".into(),
+        },
+        "LIB.JPG",
+        "JPEG",
+        6,
+        4,
+        OLD,
+    );
     p.set_local_baseline();
     c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
 
     let dry = plan(&c, 30);
-    assert_eq!((dry.local, dry.evict.len(), dry.kept_recent), (8, 5, 3), "{dry:?}");
+    assert_eq!(
+        (dry.local, dry.evict.len(), dry.kept_recent),
+        (8, 5, 3),
+        "{dry:?}"
+    );
     assert_eq!(dry.evict, old);
     assert_eq!(c.len(), 9, "a plan changes nothing");
     let done = run(&mut c, 30);
@@ -88,7 +116,9 @@ fn any_user_change_keeps_a_record() {
             c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
         })
     };
-    let op = |f: fn(PhotoId) -> Op| -> Change { Box::new(move |c: &mut Catalog, id: PhotoId| drop(c.apply(f(id)).unwrap())) };
+    let op = |f: fn(PhotoId) -> Op| -> Change {
+        Box::new(move |c: &mut Catalog, id: PhotoId| drop(c.apply(f(id)).unwrap()))
+    };
     let edited = || {
         let mut d = DevelopSettings::default();
         d.light.exposure = 0.3;
@@ -96,18 +126,59 @@ fn any_user_change_keeps_a_record() {
     };
     let changes: Vec<(&str, Change)> = vec![
         ("rating", op(|id| Op::SetRating { id, rating: 3 })),
-        ("flag", op(|id| Op::SetFlag { id, flag: Flag::Reject })),
-        ("label", op(|id| Op::SetLabel { id, label: Some(ColorLabel::Red) })),
-        ("develop", Box::new(move |c, id| drop(c.apply(Op::SetDevelop { id, settings: edited(), label: "Exposure".into(), edited: None }).unwrap()))),
-        ("crop", set(|p| Arc::make_mut(&mut p.develop).crop.flip_h = true)),
+        (
+            "flag",
+            op(|id| Op::SetFlag {
+                id,
+                flag: Flag::Reject,
+            }),
+        ),
+        (
+            "label",
+            op(|id| Op::SetLabel {
+                id,
+                label: Some(ColorLabel::Red),
+            }),
+        ),
+        (
+            "develop",
+            Box::new(move |c, id| {
+                drop(
+                    c.apply(Op::SetDevelop {
+                        id,
+                        settings: edited(),
+                        label: "Exposure".into(),
+                        edited: None,
+                    })
+                    .unwrap(),
+                )
+            }),
+        ),
+        (
+            "crop",
+            set(|p| Arc::make_mut(&mut p.develop).crop.flip_h = true),
+        ),
         (
             "history only",
             Box::new(|c, id| {
-                let step = HistoryStep { label: "Reset".into(), settings: Arc::new(DevelopSettings::default()) };
+                let step = HistoryStep {
+                    label: "Reset".into(),
+                    settings: Arc::new(DevelopSettings::default()),
+                };
                 drop(c.apply(Op::PushHistory { id, step }).unwrap())
             }),
         ),
-        ("versions", set(|p| p.versions.push(Version { name: "v".into(), created: NOW.into(), settings: p.develop.clone(), auto: false }))),
+        (
+            "versions",
+            set(|p| {
+                p.versions.push(Version {
+                    name: "v".into(),
+                    created: NOW.into(),
+                    settings: p.develop.clone(),
+                    auto: false,
+                })
+            }),
+        ),
         ("title", set(|p| p.meta.title = "T".into())),
         ("caption", set(|p| p.meta.caption = "C".into())),
         ("keywords", set(|p| p.meta.keywords.push("k".into()))),
@@ -115,11 +186,29 @@ fn any_user_change_keeps_a_record() {
         ("gps", set(|p| p.meta.gps = Some((1.0, 2.0)))),
         ("copyright", set(|p| p.meta.copyright = "© me".into())),
         ("creator edit", set(|p| p.meta.creator = "Me".into())),
-        ("capture time", op(|id| Op::SetCaptured { id, captured: Some("2020-01-01T00:00:00".into()) })),
+        (
+            "capture time",
+            op(|id| Op::SetCaptured {
+                id,
+                captured: Some("2020-01-01T00:00:00".into()),
+            }),
+        ),
         ("rename", set(|p| p.file_name = "renamed.JPG".into())),
-        ("culling", op(|id| Op::SetAnalysis { id, analysis: Some(Analysis::default()) })),
+        (
+            "culling",
+            op(|id| Op::SetAnalysis {
+                id,
+                analysis: Some(Analysis::default()),
+            }),
+        ),
         ("deleted", op(|id| Op::SetDeleted { id, deleted: true })),
-        ("pick", op(|id| Op::SetFlag { id, flag: Flag::Pick })),
+        (
+            "pick",
+            op(|id| Op::SetFlag {
+                id,
+                flag: Flag::Pick,
+            }),
+        ),
         (
             "album",
             Box::new(|c, id| {
@@ -134,7 +223,16 @@ fn any_user_change_keeps_a_record() {
             Box::new(|c, id| {
                 let other = local(c, "elsewhere", 99);
                 let s = c.alloc_stack_id();
-                drop(c.apply(Op::AddStack { stack: Stack { id: s, photos: vec![id, other], collapsed: false } }).unwrap())
+                drop(
+                    c.apply(Op::AddStack {
+                        stack: Stack {
+                            id: s,
+                            photos: vec![id, other],
+                            collapsed: false,
+                        },
+                    })
+                    .unwrap(),
+                )
             }),
         ),
         (
@@ -180,7 +278,17 @@ fn upgrade_without_times_forgets_nothing_then_counts_from_then() {
     // legacy records: no baseline
     let legacy = |c: &mut Catalog, i: u32, f: fn(&mut Photo)| {
         let id = c.alloc_photo_id();
-        let mut p = Photo::new(id, Source::File { path: format!("/pics/a/L{i}.JPG") }, "L.JPG", "JPEG", 6, 4, OLD);
+        let mut p = Photo::new(
+            id,
+            Source::File {
+                path: format!("/pics/a/L{i}.JPG"),
+            },
+            "L.JPG",
+            "JPEG",
+            6,
+            4,
+            OLD,
+        );
         p.meta.camera = "Cam".into();
         p.local = true;
         f(&mut p);
@@ -224,10 +332,18 @@ fn forgetting_is_journaled_and_replays() {
     }
     // log what was built so far: the ops are the records as added
     for p in c.photos() {
-        ops.push(Op::AddPhoto { photo: Box::new((**p).clone()) });
+        ops.push(Op::AddPhoto {
+            photo: Box::new((**p).clone()),
+        });
     }
-    ops.push(Op::SetBrowsed { folder: "/pics/old".into(), at: Some(OLD.into()) });
-    ops.push(Op::SetBrowsed { folder: "/pics/new".into(), at: Some(NOW.into()) });
+    ops.push(Op::SetBrowsed {
+        folder: "/pics/old".into(),
+        at: Some(OLD.into()),
+    });
+    ops.push(Op::SetBrowsed {
+        folder: "/pics/new".into(),
+        at: Some(NOW.into()),
+    });
     browsed(&mut c, "old", OLD);
     browsed(&mut c, "new", NOW);
     j.append(&ops).unwrap();
@@ -256,9 +372,17 @@ fn forgetting_is_journaled_and_replays() {
 fn op_photo_ids_cover_nested_ops() {
     let op = Op::Batch {
         ops: vec![
-            Op::SetRating { id: PhotoId(1), rating: 1 },
-            Op::SetAlbumPhotos { id: AlbumId(1), photos: vec![PhotoId(2), PhotoId(3)] },
-            Op::Batch { ops: vec![Op::RemovePhoto { id: PhotoId(4) }] },
+            Op::SetRating {
+                id: PhotoId(1),
+                rating: 1,
+            },
+            Op::SetAlbumPhotos {
+                id: AlbumId(1),
+                photos: vec![PhotoId(2), PhotoId(3)],
+            },
+            Op::Batch {
+                ops: vec![Op::RemovePhoto { id: PhotoId(4) }],
+            },
         ],
     };
     let mut ids = Vec::new();

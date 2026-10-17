@@ -59,9 +59,17 @@ pub enum MemoryIndexError {
     #[error("input size exceeds limit {limit} bytes")]
     InputTooLarge { limit: usize },
     #[error("field `{field}` at entry {entry} exceeds limit {limit} bytes")]
-    FieldTooLarge { entry: usize, field: &'static str, limit: usize },
+    FieldTooLarge {
+        entry: usize,
+        field: &'static str,
+        limit: usize,
+    },
     #[error("entry {entry} has {actual} anchors; limit is {limit}")]
-    TooManyAnchors { entry: usize, actual: usize, limit: usize },
+    TooManyAnchors {
+        entry: usize,
+        actual: usize,
+        limit: usize,
+    },
     #[error("entry {entry} has invalid hexadecimal address `{address}`")]
     InvalidAddress { entry: usize, address: String },
     #[error("entry {entry} confidence must be finite and between 0 and 1")]
@@ -134,7 +142,11 @@ impl MemoryIndex {
                 name: normalize(entry.name.as_deref().unwrap_or_default()),
                 subsystem: normalize(entry.subsystem.as_deref().unwrap_or_default()),
                 role: normalize(entry.role.as_deref().unwrap_or_default()),
-                anchors: entry.anchors.iter().map(|anchor| normalize(anchor)).collect(),
+                anchors: entry
+                    .anchors
+                    .iter()
+                    .map(|anchor| normalize(anchor))
+                    .collect(),
                 entry: entry.clone(),
             });
         }
@@ -161,7 +173,9 @@ impl MemoryIndex {
     /// same input always produces the same output.
     pub fn search(&self, query: &str, limit: usize) -> Result<SearchResult, MemoryIndexError> {
         if query.len() > MAX_FIELD_BYTES {
-            return Err(MemoryIndexError::QueryTooLarge { limit: MAX_FIELD_BYTES });
+            return Err(MemoryIndexError::QueryTooLarge {
+                limit: MAX_FIELD_BYTES,
+            });
         }
         if limit > MAX_RESULTS {
             return Err(MemoryIndexError::ResultLimitTooLarge {
@@ -170,11 +184,18 @@ impl MemoryIndex {
             });
         }
 
-        let terms: Vec<String> = normalize(query).split_whitespace().map(str::to_owned).collect();
+        let terms: Vec<String> = normalize(query)
+            .split_whitespace()
+            .map(str::to_owned)
+            .collect();
         let mut hits = Vec::new();
         for indexed in &self.entries {
             if let Some((score, matched_fields)) = score(indexed, &terms) {
-                hits.push(SearchHit { entry: indexed.entry.clone(), score, matched_fields });
+                hits.push(SearchHit {
+                    entry: indexed.entry.clone(),
+                    score,
+                    matched_fields,
+                });
             }
         }
         hits.sort_by(|left, right| {
@@ -203,26 +224,39 @@ fn validate_field(
     total_bytes: &mut usize,
 ) -> Result<(), MemoryIndexError> {
     if value.len() > MAX_FIELD_BYTES {
-        return Err(MemoryIndexError::FieldTooLarge { entry, field, limit: MAX_FIELD_BYTES });
+        return Err(MemoryIndexError::FieldTooLarge {
+            entry,
+            field,
+            limit: MAX_FIELD_BYTES,
+        });
     }
     *total_bytes = total_bytes
         .checked_add(value.len())
-        .ok_or(MemoryIndexError::InputTooLarge { limit: MAX_INPUT_BYTES })?;
+        .ok_or(MemoryIndexError::InputTooLarge {
+            limit: MAX_INPUT_BYTES,
+        })?;
     if *total_bytes > MAX_INPUT_BYTES {
-        return Err(MemoryIndexError::InputTooLarge { limit: MAX_INPUT_BYTES });
+        return Err(MemoryIndexError::InputTooLarge {
+            limit: MAX_INPUT_BYTES,
+        });
     }
     Ok(())
 }
 
 fn canonical_address(address: &str) -> Option<String> {
-    let digits = address.trim().strip_prefix("0x").or_else(|| address.trim().strip_prefix("0X"))?;
+    let digits = address
+        .trim()
+        .strip_prefix("0x")
+        .or_else(|| address.trim().strip_prefix("0X"))?;
     if digits.is_empty()
         || digits.len() > 16
         || !digits.bytes().all(|byte| byte.is_ascii_hexdigit())
     {
         return None;
     }
-    u64::from_str_radix(digits, 16).ok().map(|value| format!("0x{value:x}"))
+    u64::from_str_radix(digits, 16)
+        .ok()
+        .map(|value| format!("0x{value:x}"))
 }
 
 fn normalize(value: &str) -> String {
@@ -320,8 +354,14 @@ mod tests {
         assert_eq!(result.total_entries, 2);
         assert_eq!(result.total_matches, 1);
         assert_eq!(result.hits[0].entry.address, "0x1400024b80");
-        assert_eq!(result.hits[0].entry.name.as_deref(), Some("funcLuaMenuCommand"));
-        assert_eq!(result.hits[0].entry.subsystem.as_deref(), Some("mainmenu01"));
+        assert_eq!(
+            result.hits[0].entry.name.as_deref(),
+            Some("funcLuaMenuCommand")
+        );
+        assert_eq!(
+            result.hits[0].entry.subsystem.as_deref(),
+            Some("mainmenu01")
+        );
         assert_eq!(result.hits[0].entry.anchors, ["CHARA_PARAM_INFO", "G4TX"]);
     }
 
@@ -370,12 +410,19 @@ mod tests {
 
     #[test]
     fn serializes_addresses_as_precision_safe_strings() {
-        let index =
-            MemoryIndex::new(vec![entry("0xffffffffffffffff", "maximum_address", "pdata", &[])])
-                .unwrap();
+        let index = MemoryIndex::new(vec![entry(
+            "0xffffffffffffffff",
+            "maximum_address",
+            "pdata",
+            &[],
+        )])
+        .unwrap();
         let result = index.search("maximum", 1).unwrap();
         assert_eq!(result.hits[0].entry.address, "0xffffffffffffffff");
         let json = serde_json::to_value(result).unwrap();
-        assert_eq!(json["hits"][0]["entry"]["address"], serde_json::json!("0xffffffffffffffff"));
+        assert_eq!(
+            json["hits"][0]["entry"]["address"],
+            serde_json::json!("0xffffffffffffffff")
+        );
     }
 }

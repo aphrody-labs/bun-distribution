@@ -92,7 +92,10 @@ fn escapes(base: &std::path::Path, linked: bool) -> Vec<String> {
         "./././../outside.pdf".into(),
         base.join("outside.pdf").to_string_lossy().into_owned(),
         base.join("new-outside.pdf").to_string_lossy().into_owned(),
-        base.join("sub").join("new-outside.pdf").to_string_lossy().into_owned(),
+        base.join("sub")
+            .join("new-outside.pdf")
+            .to_string_lossy()
+            .into_owned(),
     ];
     if linked {
         out.push("link-out/outside.pdf".into());
@@ -117,20 +120,30 @@ fn dir_symlink(target: &std::path::Path, link: &std::path::Path) -> std::io::Res
     }
     #[cfg(not(any(unix, windows)))]
     {
-        Err(std::io::Error::other(format!("no symbolic links here: {} {}", target.display(), link.display())))
+        Err(std::io::Error::other(format!(
+            "no symbolic links here: {} {}",
+            target.display(),
+            link.display()
+        )))
     }
 }
 
 /// The properties of `def` whose values are paths, by name and whether they are a list.
 fn path_props(def: &pdfcraft_automation::ToolDef) -> Vec<(String, bool)> {
-    let Some(props) = def.input_schema["properties"].as_object() else { return Vec::new() };
+    let Some(props) = def.input_schema["properties"].as_object() else {
+        return Vec::new();
+    };
     props
         .iter()
         .filter(|(name, spec)| {
             // `out` (an output file) and `image` (a picture to place) are paths when they are
             // strings; `image` is an image number elsewhere, which the integer check skips.
-            let is_pathish = matches!(name.as_str(), "path" | "paths" | "folder" | "out_dir" | "file" | "out" | "image")
-                || spec["description"].as_str().is_some_and(|d| d.starts_with("A file path"));
+            let is_pathish = matches!(
+                name.as_str(),
+                "path" | "paths" | "folder" | "out_dir" | "file" | "out" | "image"
+            ) || spec["description"]
+                .as_str()
+                .is_some_and(|d| d.starts_with("A file path"));
             // `file_page` is a page number inside a file, not a path.
             is_pathish && spec["type"] != "integer"
         })
@@ -144,10 +157,15 @@ fn path_props(def: &pdfcraft_automation::ToolDef) -> Vec<(String, bool)> {
 /// `doc` gets a **real** open document when one is given. Without that, almost every tool fails at
 /// `self.doc()` before it ever looks at a path, and a confinement test would pass vacuously — as
 /// an earlier version of this file did, even with `resolve` disabled entirely.
-fn plausible_with(def: &pdfcraft_automation::ToolDef, doc: Option<u64>) -> serde_json::Map<String, Value> {
+fn plausible_with(
+    def: &pdfcraft_automation::ToolDef,
+    doc: Option<u64>,
+) -> serde_json::Map<String, Value> {
     let mut obj = plausible(def);
     if let Some(id) = doc
-        && def.input_schema["properties"].as_object().is_some_and(|p| p.contains_key("doc"))
+        && def.input_schema["properties"]
+            .as_object()
+            .is_some_and(|p| p.contains_key("doc"))
     {
         obj.insert("doc".into(), json!(id));
     }
@@ -156,8 +174,16 @@ fn plausible_with(def: &pdfcraft_automation::ToolDef, doc: Option<u64>) -> serde
 
 fn plausible(def: &pdfcraft_automation::ToolDef) -> serde_json::Map<String, Value> {
     let mut obj = serde_json::Map::new();
-    let props = def.input_schema["properties"].as_object().cloned().unwrap_or_default();
-    for req in def.input_schema["required"].as_array().into_iter().flatten().filter_map(Value::as_str) {
+    let props = def.input_schema["properties"]
+        .as_object()
+        .cloned()
+        .unwrap_or_default();
+    for req in def.input_schema["required"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+    {
         let spec = props.get(req).cloned().unwrap_or(Value::Null);
         let value = match spec["type"].as_str() {
             Some("integer") => json!(1),
@@ -178,7 +204,9 @@ fn guarded(a: &mut Automation, tool: &str, args: &Value) -> std::result::Result<
     match result {
         Ok(Ok(_)) => Ok(()),
         // Any ToolError is a good outcome: the agent is told what was wrong.
-        Ok(Err(ToolError::UnknownTool(_) | ToolError::InvalidArgs(_) | ToolError::Failed(_))) => Ok(()),
+        Ok(Err(ToolError::UnknownTool(_) | ToolError::InvalidArgs(_) | ToolError::Failed(_))) => {
+            Ok(())
+        }
         Err(panic) => {
             let what = panic
                 .downcast_ref::<&str>()
@@ -200,13 +228,23 @@ fn no_tool_panics_on_hostile_arguments() {
 
     for def in tools() {
         // The whole arguments object, not just its properties.
-        for bad in [json!(null), json!([]), json!("string"), json!(7), json!(true), json!({})] {
+        for bad in [
+            json!(null),
+            json!([]),
+            json!("string"),
+            json!(7),
+            json!(true),
+            json!({}),
+        ] {
             calls += 1;
             if let Err(e) = guarded(&mut a, def.name, &bad) {
                 failures.push(e);
             }
         }
-        let props: Vec<String> = def.input_schema["properties"].as_object().map(|p| p.keys().cloned().collect()).unwrap_or_default();
+        let props: Vec<String> = def.input_schema["properties"]
+            .as_object()
+            .map(|p| p.keys().cloned().collect())
+            .unwrap_or_default();
         for prop in &props {
             for value in &values {
                 let mut obj = plausible(&def);
@@ -219,12 +257,21 @@ fn no_tool_panics_on_hostile_arguments() {
         }
     }
 
-    eprintln!("hostile arguments: {calls} calls over {} tools, {} panics", tools().len(), failures.len());
+    eprintln!(
+        "hostile arguments: {calls} calls over {} tools, {} panics",
+        tools().len(),
+        failures.len()
+    );
     for f in failures.iter().take(20) {
         eprintln!("  {f}");
     }
     let _ = std::fs::remove_dir_all(&root);
-    assert!(failures.is_empty(), "{} tool call(s) panicked; the first is: {}", failures.len(), failures.first().map_or("", String::as_str));
+    assert!(
+        failures.is_empty(),
+        "{} tool call(s) panicked; the first is: {}",
+        failures.len(),
+        failures.first().map_or("", String::as_str)
+    );
 }
 
 #[test]
@@ -256,7 +303,9 @@ fn no_tool_escapes_the_root() {
     let mut a = Automation::new().with_root(&root).expect("root");
 
     // A real document, so tools reach their path arguments instead of failing on `doc` first.
-    let created = a.call("doc_create", &json!({ "from": "blank", "pages": 1 })).expect("create a blank document");
+    let created = a
+        .call("doc_create", &json!({ "from": "blank", "pages": 1 }))
+        .expect("create a blank document");
     let doc = created
         .into_iter()
         .find_map(|c| match c {
@@ -273,7 +322,14 @@ fn no_tool_escapes_the_root() {
         for (prop, is_list) in path_props(&def) {
             for escape in escapes(&base, linked) {
                 let mut obj = plausible_with(&def, Some(doc));
-                obj.insert(prop.clone(), if is_list { json!([escape]) } else { json!(escape) });
+                obj.insert(
+                    prop.clone(),
+                    if is_list {
+                        json!([escape])
+                    } else {
+                        json!(escape)
+                    },
+                );
                 let args = Value::Object(obj);
                 tried += 1;
                 match catch_unwind(AssertUnwindSafe(|| a.call(def.name, &args))) {
@@ -305,13 +361,25 @@ fn no_tool_escapes_the_root() {
         }
     }
 
-    eprintln!("root confinement: {tried} escape attempts over {} tools, {refused} refused, {} leaks", tools().len(), leaked.len());
+    eprintln!(
+        "root confinement: {tried} escape attempts over {} tools, {refused} refused, {} leaks",
+        tools().len(),
+        leaked.len()
+    );
     for l in leaked.iter().take(20) {
         eprintln!("  {l}");
     }
     let _ = std::fs::remove_dir_all(&base);
-    assert!(tried > 100, "only {tried} escape attempts: the path properties are not being found");
-    assert!(leaked.is_empty(), "{} confinement failure(s); the first is: {}", leaked.len(), leaked.first().map_or("", String::as_str));
+    assert!(
+        tried > 100,
+        "only {tried} escape attempts: the path properties are not being found"
+    );
+    assert!(
+        leaked.is_empty(),
+        "{} confinement failure(s); the first is: {}",
+        leaked.len(),
+        leaked.first().map_or("", String::as_str)
+    );
 }
 
 /// Every regular file under `dir` with its size, not following symbolic links.
@@ -319,10 +387,14 @@ fn listing(dir: &Path) -> Vec<(PathBuf, u64)> {
     let mut out = Vec::new();
     let mut stack = vec![dir.to_path_buf()];
     while let Some(d) = stack.pop() {
-        let Ok(entries) = std::fs::read_dir(&d) else { continue };
+        let Ok(entries) = std::fs::read_dir(&d) else {
+            continue;
+        };
         for entry in entries.flatten() {
             let path = entry.path();
-            let Ok(meta) = std::fs::symlink_metadata(&path) else { continue };
+            let Ok(meta) = std::fs::symlink_metadata(&path) else {
+                continue;
+            };
             if meta.file_type().is_symlink() {
                 continue; // do not walk through a link we planted
             }

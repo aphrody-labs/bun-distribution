@@ -16,9 +16,9 @@ use thiserror::Error;
 use crate::{
     error::Result,
     schedule::graph::{
-        index, row_col, DiGraph, DiGraphToposortError,
+        DiGraph, DiGraphToposortError,
         Direction::{Incoming, Outgoing},
-        GraphNodeId, UnGraph,
+        GraphNodeId, UnGraph, index, row_col,
     },
 };
 
@@ -728,7 +728,7 @@ pub struct DagOverlappingGroupError<K>(pub K, pub K);
 mod tests {
     use core::ops::DerefMut;
 
-    use crate::schedule::graph::{index, Dag, Direction, GraphNodeId, UnGraph};
+    use crate::schedule::graph::{Dag, Direction, GraphNodeId, UnGraph, index};
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct TestNode(u32);
@@ -800,19 +800,27 @@ mod tests {
         assert!(analysis1.connected().contains(&(TestNode(2), TestNode(3))));
         assert!(analysis1.connected().contains(&(TestNode(1), TestNode(3))));
 
-        assert!(!analysis1
-            .disconnected()
-            .contains(&(TestNode(2), TestNode(1))));
-        assert!(!analysis1
-            .disconnected()
-            .contains(&(TestNode(3), TestNode(2))));
-        assert!(!analysis1
-            .disconnected()
-            .contains(&(TestNode(3), TestNode(1))));
+        assert!(
+            !analysis1
+                .disconnected()
+                .contains(&(TestNode(2), TestNode(1)))
+        );
+        assert!(
+            !analysis1
+                .disconnected()
+                .contains(&(TestNode(3), TestNode(2)))
+        );
+        assert!(
+            !analysis1
+                .disconnected()
+                .contains(&(TestNode(3), TestNode(1)))
+        );
 
-        assert!(analysis1
-            .transitive_edges()
-            .contains(&(TestNode(1), TestNode(3))));
+        assert!(
+            analysis1
+                .transitive_edges()
+                .contains(&(TestNode(1), TestNode(3)))
+        );
 
         assert!(analysis1.check_for_redundant_edges().is_err());
 

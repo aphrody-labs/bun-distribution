@@ -42,11 +42,7 @@ impl FatalU {
 
         log::debug!("fatal:u created");
         Self {
-            interface: super::fatal::Interface::new(
-                system,
-                module,
-                "fatal:u",
-            ),
+            interface: super::fatal::Interface::new(system, module, "fatal:u"),
             handlers,
             handlers_tipc: BTreeMap::new(),
         }

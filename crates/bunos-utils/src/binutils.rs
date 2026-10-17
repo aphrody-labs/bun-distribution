@@ -86,7 +86,11 @@ fn nm(args: Vec<OsString>) -> i32 {
             if symbol.is_global() {
                 code = code.to_ascii_uppercase();
             }
-            let sym = if demangled { demangle(sym) } else { sym.to_owned() };
+            let sym = if demangled {
+                demangle(sym)
+            } else {
+                sym.to_owned()
+            };
             if symbol.is_undefined() {
                 println!("{:>16} {code} {sym}", "");
             } else {
@@ -98,7 +102,10 @@ fn nm(args: Vec<OsString>) -> i32 {
 
 fn size(args: Vec<OsString>) -> i32 {
     let (_, files) = split(&args);
-    println!("{:>10} {:>10} {:>10} {:>10} filename", "text", "data", "bss", "dec");
+    println!(
+        "{:>10} {:>10} {:>10} {:>10} filename",
+        "text", "data", "bss", "dec"
+    );
     each_object("size", &files, |name, file| {
         use object::SectionKind as K;
         let (mut text, mut data, mut bss) = (0u64, 0u64, 0u64);
@@ -112,7 +119,10 @@ fn size(args: Vec<OsString>) -> i32 {
                 _ => {}
             }
         }
-        println!("{text:>10} {data:>10} {bss:>10} {:>10} {name}", text + data + bss);
+        println!(
+            "{text:>10} {data:>10} {bss:>10} {:>10} {name}",
+            text + data + bss
+        );
     })
 }
 
@@ -120,14 +130,24 @@ fn headers(name: &str, file: &object::File<'_>) {
     println!("{name}:");
     println!("  Format:       {:?}", file.format());
     println!("  Architecture: {:?}", file.architecture());
-    println!("  Endianness:   {}", if file.is_little_endian() { "little" } else { "big" });
+    println!(
+        "  Endianness:   {}",
+        if file.is_little_endian() {
+            "little"
+        } else {
+            "big"
+        }
+    );
     println!("  64-bit:       {}", file.is_64());
     println!("  Kind:         {:?}", file.kind());
     println!("  Entry point:  {:#x}", file.entry());
 }
 
 fn sections(file: &object::File<'_>) {
-    println!("{:>4} {:<24} {:>16} {:>10} kind", "Idx", "Name", "Address", "Size");
+    println!(
+        "{:>4} {:<24} {:>16} {:>10} kind",
+        "Idx", "Name", "Address", "Size"
+    );
     for section in file.sections() {
         println!(
             "{:>4} {:<24} {:016x} {:010x} {:?}",
@@ -230,7 +250,9 @@ fn addr2line(args: Vec<OsString>) -> i32 {
             continue;
         };
         if functions {
-            let name = loader.find_symbol(probe).map_or_else(|| "??".into(), demangle);
+            let name = loader
+                .find_symbol(probe)
+                .map_or_else(|| "??".into(), demangle);
             println!("{name}");
         }
         match loader.find_location(probe) {
@@ -264,7 +286,11 @@ pub fn ar_read(args: Vec<OsString>) -> i32 {
             return 1;
         }
     };
-    let wanted: Vec<String> = args.iter().skip(3).map(|a| a.to_string_lossy().into_owned()).collect();
+    let wanted: Vec<String> = args
+        .iter()
+        .skip(3)
+        .map(|a| a.to_string_lossy().into_owned())
+        .collect();
     for member in archive.members().flatten() {
         let name = String::from_utf8_lossy(member.name()).into_owned();
         if !wanted.is_empty() && !wanted.contains(&name) {

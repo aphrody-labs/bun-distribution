@@ -6,7 +6,14 @@
 //! like every WordCraft parser, is lenient by design (unknown structures are skipped, bad numbers
 //! fall back to defaults) and bounded (stream sizes, piece counts and property counts are
 //! capped), so hostile input yields an error or a best-effort document, never a panic.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod drawing;
 mod fib;
@@ -71,10 +78,15 @@ pub enum DocbinError {
 
 /// Read a `.doc` (Word 97-2003 binary) file into a [`Document`].
 pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
-    let mut comp = cfb::CompoundFile::open(std::io::Cursor::new(bytes)).map_err(|e| DocbinError::Container(e.to_string()))?;
-    let word = stream(&mut comp, "WordDocument").ok_or_else(|| DocbinError::NotWord("no WordDocument stream".into()))?;
+    let mut comp = cfb::CompoundFile::open(std::io::Cursor::new(bytes))
+        .map_err(|e| DocbinError::Container(e.to_string()))?;
+    let word = stream(&mut comp, "WordDocument")
+        .ok_or_else(|| DocbinError::NotWord("no WordDocument stream".into()))?;
     if word.len() as u64 > MAX_STREAM {
-        return Err(DocbinError::Limit(format!("WordDocument stream is {} bytes", word.len())));
+        return Err(DocbinError::Limit(format!(
+            "WordDocument stream is {} bytes",
+            word.len()
+        )));
     }
     let fib = fib::Fib::parse(&word)?;
     if fib.encrypted {
@@ -82,20 +94,38 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
     }
     // The FIB names the Table stream (0Table or 1Table); fall back to whichever exists,
     // since files written by other writers sometimes carry the wrong bit.
-    let named = if fib.which_tbl_stm { "1Table" } else { "0Table" };
-    let other = if fib.which_tbl_stm { "0Table" } else { "1Table" };
-    let table = stream(&mut comp, named).or_else(|| stream(&mut comp, other)).unwrap_or_default();
+    let named = if fib.which_tbl_stm {
+        "1Table"
+    } else {
+        "0Table"
+    };
+    let other = if fib.which_tbl_stm {
+        "0Table"
+    } else {
+        "1Table"
+    };
+    let table = stream(&mut comp, named)
+        .or_else(|| stream(&mut comp, other))
+        .unwrap_or_default();
     if table.len() as u64 > MAX_STREAM {
-        return Err(DocbinError::Limit(format!("Table stream is {} bytes", table.len())));
+        return Err(DocbinError::Limit(format!(
+            "Table stream is {} bytes",
+            table.len()
+        )));
     }
 
     // The piece table locates every character in the WordDocument stream.
-    let (fc_clx, lcb_clx) =
-        fib.pair(fib::pair::CLX).filter(|(_, lcb)| *lcb > 0).ok_or_else(|| DocbinError::Malformed("the FIB has no piece table (Clx)".into()))?;
+    let (fc_clx, lcb_clx) = fib
+        .pair(fib::pair::CLX)
+        .filter(|(_, lcb)| *lcb > 0)
+        .ok_or_else(|| DocbinError::Malformed("the FIB has no piece table (Clx)".into()))?;
     let pieces = piece::PieceTable::parse(&table, fc_clx, lcb_clx)?;
 
     // Styles, fonts and the formatting bin tables; each is optional in broken files.
-    let fonts = fib.pair(fib::pair::STTBF_FFN).map(|(f, l)| stsh::fonts(&table, f, l)).unwrap_or_default();
+    let fonts = fib
+        .pair(fib::pair::STTBF_FFN)
+        .map(|(f, l)| stsh::fonts(&table, f, l))
+        .unwrap_or_default();
     let raw_styles = match fib.pair(fib::pair::STSHF) {
         Some((f, l)) => stsh::parse(&table, f, l)?,
         None => Vec::new(),
@@ -111,7 +141,10 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
 
     let data = stream(&mut comp, "Data").unwrap_or_default();
     if data.len() as u64 > MAX_STREAM {
-        return Err(DocbinError::Limit(format!("Data stream is {} bytes", data.len())));
+        return Err(DocbinError::Limit(format!(
+            "Data stream is {} bytes",
+            data.len()
+        )));
     }
 
     let mut doc = Document::new();
@@ -127,7 +160,9 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
     // length here and to the last piece's CP inside `walk`.
     let ftn_base = fib.ccp.text;
     let hdd_base = fib.ccp.text.saturating_add(fib.ccp.ftn);
-    let edn_base = hdd_base.saturating_add(fib.ccp.hdd).saturating_add(fib.ccp.atn);
+    let edn_base = hdd_base
+        .saturating_add(fib.ccp.hdd)
+        .saturating_add(fib.ccp.atn);
     let mut pics = media::Pictures::default();
 
     let ctx = WalkCtx {
@@ -155,9 +190,18 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
         .map(officeart::content)
         .unwrap_or_default();
     let mut tb_stories = std::collections::HashMap::new();
-    for (pair, base, len) in [(fib::pair::PLCF_TXBX_TXT, txbx_base, fib.ccp.txbx), (fib::pair::PLCF_HDR_TXBX_TXT, hdr_txbx_base, fib.ccp.hdr_txbx)] {
+    for (pair, base, len) in [
+        (fib::pair::PLCF_TXBX_TXT, txbx_base, fib.ccp.txbx),
+        (
+            fib::pair::PLCF_HDR_TXBX_TXT,
+            hdr_txbx_base,
+            fib.ccp.hdr_txbx,
+        ),
+    ] {
         for (spid, ab) in drawing::textbox_stories(&table, fib.pair(pair)) {
-            let Some((a, b)) = story(base, len, ab) else { continue };
+            let Some((a, b)) = story(base, len, ab) else {
+                continue;
+            };
             if doc.parts.len() >= MAX_PARTS || tb_stories.contains_key(&spid) {
                 continue;
             }
@@ -165,11 +209,32 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
             tb_stories.insert(spid, doc.add_part(PartKind::TextBox, blocks));
         }
     }
-    let build = drawing::Build { bstore: &art.bstore, delay: &word, stories: &tb_stories };
-    let mut drawn = drawing::anchors(&table, fib.pair(fib::pair::PLC_SPA_MOM), 0, &art.main, &build, &mut pics);
-    drawn.extend(drawing::anchors(&table, fib.pair(fib::pair::PLC_SPA_HDR), hdd_base, &art.header, &build, &mut pics));
+    let build = drawing::Build {
+        bstore: &art.bstore,
+        delay: &word,
+        stories: &tb_stories,
+    };
+    let mut drawn = drawing::anchors(
+        &table,
+        fib.pair(fib::pair::PLC_SPA_MOM),
+        0,
+        &art.main,
+        &build,
+        &mut pics,
+    );
+    drawn.extend(drawing::anchors(
+        &table,
+        fib.pair(fib::pair::PLC_SPA_HDR),
+        hdd_base,
+        &art.header,
+        &build,
+        &mut pics,
+    ));
     drawn.sort_by_key(|(cp, _)| *cp);
-    let ctx = WalkCtx { drawn: &drawn, ..ctx };
+    let ctx = WalkCtx {
+        drawn: &drawn,
+        ..ctx
+    };
 
     // Header and footer parts: skip the six separator stories, then six stories per section
     // in the order even header, odd (default) header, even footer, odd (default) footer,
@@ -177,8 +242,12 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
     let mut hf_ids: Vec<(usize, usize, u32)> = Vec::new();
     for si in 0..sects.len() {
         for k in 0..6usize {
-            let Some(&ab) = stories.get(6 + si * 6 + k) else { break };
-            let Some((a, b)) = story(hdd_base, fib.ccp.hdd, ab) else { continue };
+            let Some(&ab) = stories.get(6 + si * 6 + k) else {
+                break;
+            };
+            let Some((a, b)) = story(hdd_base, fib.ccp.hdd, ab) else {
+                continue;
+            };
             if doc.parts.len() >= MAX_PARTS {
                 continue;
             }
@@ -197,16 +266,30 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
     // Footnote and endnote stories: each text range becomes a part; the reference CPs then
     // link to the part ids during the main walk.
     let mut note_links: Vec<(u32, NoteKind, u32)> = Vec::new();
-    for (cp, ab) in notes::parse_notes(&table, &fib, fib::pair::PLCF_FND_REF, fib::pair::PLCF_FND_TXT) {
-        let Some((a, b)) = story(ftn_base, fib.ccp.ftn, ab) else { continue };
+    for (cp, ab) in notes::parse_notes(
+        &table,
+        &fib,
+        fib::pair::PLCF_FND_REF,
+        fib::pair::PLCF_FND_TXT,
+    ) {
+        let Some((a, b)) = story(ftn_base, fib.ccp.ftn, ab) else {
+            continue;
+        };
         let blocks = table::assemble(walk(&ctx, a, b, &mut pics));
         if !blocks.is_empty() && doc.parts.len() < MAX_PARTS {
             let id = doc.add_part(PartKind::Footnote, blocks);
             note_links.push((cp, NoteKind::Footnote, id));
         }
     }
-    for (cp, ab) in notes::parse_notes(&table, &fib, fib::pair::PLCF_END_REF, fib::pair::PLCF_END_TXT) {
-        let Some((a, b)) = story(edn_base, fib.ccp.edn, ab) else { continue };
+    for (cp, ab) in notes::parse_notes(
+        &table,
+        &fib,
+        fib::pair::PLCF_END_REF,
+        fib::pair::PLCF_END_TXT,
+    ) {
+        let Some((a, b)) = story(edn_base, fib.ccp.edn, ab) else {
+            continue;
+        };
         let blocks = table::assemble(walk(&ctx, a, b, &mut pics));
         if !blocks.is_empty() && doc.parts.len() < MAX_PARTS {
             let id = doc.add_part(PartKind::Endnote, blocks);
@@ -218,7 +301,12 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
     let marks = notes::parse_bookmarks(&table, &fib);
     let mut sect_ends: Vec<u32> = sects.iter().map(|s| s.end_cp).collect();
     sect_ends.sort_unstable();
-    let ctx = WalkCtx { notes: &note_links, marks: &marks, sect_ends: &sect_ends, ..ctx };
+    let ctx = WalkCtx {
+        notes: &note_links,
+        marks: &marks,
+        sect_ends: &sect_ends,
+        ..ctx
+    };
 
     // Sections: each section's properties attach to the paragraph that ends it (its story of
     // header/footer parts included); the section reaching the end of the text is the final one.
@@ -226,9 +314,22 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
     let last = sects.last().map(|s| s.props.clone());
     for (si, sec) in sects.iter().enumerate() {
         let mut props = sec.props.clone();
-        let id_of = |k: usize| hf_ids.iter().find(|(s, kk, _)| *s == si && *kk == k).map(|(_, _, id)| *id);
-        props.headers = HeaderSet { even: id_of(0), default: id_of(1), first: id_of(4) };
-        props.footers = HeaderSet { even: id_of(2), default: id_of(3), first: id_of(5) };
+        let id_of = |k: usize| {
+            hf_ids
+                .iter()
+                .find(|(s, kk, _)| *s == si && *kk == k)
+                .map(|(_, _, id)| *id)
+        };
+        props.headers = HeaderSet {
+            even: id_of(0),
+            default: id_of(1),
+            first: id_of(4),
+        };
+        props.footers = HeaderSet {
+            even: id_of(2),
+            default: id_of(3),
+            first: id_of(5),
+        };
         let is_final = si + 1 == sects.len() || sec.end_cp >= fib.ccp.text;
         if is_final {
             continue; // handled below through `last`
@@ -242,9 +343,22 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
     }
     if let Some(mut l) = last {
         let si = sects.len().saturating_sub(1);
-        let id_of = |k: usize| hf_ids.iter().find(|(s, kk, _)| *s == si && *kk == k).map(|(_, _, id)| *id);
-        l.headers = HeaderSet { even: id_of(0), default: id_of(1), first: id_of(4) };
-        l.footers = HeaderSet { even: id_of(2), default: id_of(3), first: id_of(5) };
+        let id_of = |k: usize| {
+            hf_ids
+                .iter()
+                .find(|(s, kk, _)| *s == si && *kk == k)
+                .map(|(_, _, id)| *id)
+        };
+        l.headers = HeaderSet {
+            even: id_of(0),
+            default: id_of(1),
+            first: id_of(4),
+        };
+        l.footers = HeaderSet {
+            even: id_of(2),
+            default: id_of(3),
+            first: id_of(5),
+        };
         doc.last_section = l;
     }
 
@@ -308,7 +422,10 @@ impl ParaBuild {
                 }
             }
             _ => {
-                self.runs.push(Run { len, props: props.clone() });
+                self.runs.push(Run {
+                    len,
+                    props: props.clone(),
+                });
                 self.cur = Some(props);
             }
         }
@@ -357,14 +474,19 @@ fn walk(ctx: &WalkCtx, cp_start: u32, cp_end: u32, pics: &mut media::Pictures) -
             }
         };
         // A section mark (0x0C) at a section's end is that section's last paragraph mark.
-        let section_mark = c == '\u{C}' && ctx.sect_ends.binary_search(&cp.saturating_add(1)).is_ok();
+        let section_mark =
+            c == '\u{C}' && ctx.sect_ends.binary_search(&cp.saturating_add(1)).is_ok();
         match c {
             '\r' | '\u{7}' | '\u{C}' if c != '\u{C}' || section_mark => {
                 // Paragraph mark: its PAPX covers the FC range of the paragraph it ends, so
                 // querying at the mark's own FC finds that paragraph's properties.
                 let fc_mark = ctx.pieces.fc_of_cp(cp).unwrap_or(0);
                 let (istd, papx) = ctx.papx_bins.papx(ctx.word, fc_mark);
-                if let Some(st) = ctx.raw_styles.get(istd as usize).filter(|s| !s.name.is_empty()) {
+                if let Some(st) = ctx
+                    .raw_styles
+                    .get(istd as usize)
+                    .filter(|s| !s.name.is_empty())
+                {
                     pb.props.style = Some(fmt::style_id(&st.name));
                 }
                 let mut row = table::decode(papx);
@@ -391,7 +513,11 @@ fn walk(ctx: &WalkCtx, cp_start: u32, cp_end: u32, pics: &mut media::Pictures) -
                     pb.props.numbering = Some(NumRef { num, level: ilvl });
                 }
                 let fc = ctx.pieces.fc_of_cp(cp).unwrap_or(0);
-                pb.mark = char_props(ctx.chpx_bins.chpx(ctx.word, fc), ctx.fonts, &CharProps::default());
+                pb.mark = char_props(
+                    ctx.chpx_bins.chpx(ctx.word, fc),
+                    ctx.fonts,
+                    &CharProps::default(),
+                );
                 let done = std::mem::take(&mut pb);
                 out.push(ParaOut {
                     para: Paragraph {
@@ -412,7 +538,13 @@ fn walk(ctx: &WalkCtx, cp_start: u32, cp_end: u32, pics: &mut media::Pictures) -
                     Some(f) => {
                         f.depth = f.depth.saturating_add(1);
                     }
-                    None => field = Some(FieldBuild { depth: 1, instr: String::new(), sep: None }),
+                    None => {
+                        field = Some(FieldBuild {
+                            depth: 1,
+                            instr: String::new(),
+                            sep: None,
+                        })
+                    }
                 }
                 cp = cp.saturating_add(1);
                 continue;
@@ -462,7 +594,13 @@ fn walk(ctx: &WalkCtx, cp_start: u32, cp_end: u32, pics: &mut media::Pictures) -
             '\u{8}' => {
                 // Drawn object anchor: the floating shape or picture anchored at this CP.
                 let at = ctx.drawn.partition_point(|(c, _)| *c < cp);
-                for (_, obj) in ctx.drawn.get(at..).unwrap_or_default().iter().take_while(|(c, _)| *c == cp) {
+                for (_, obj) in ctx
+                    .drawn
+                    .get(at..)
+                    .unwrap_or_default()
+                    .iter()
+                    .take_while(|(c, _)| *c == cp)
+                {
                     pb.push('\u{FFFC}', CharProps::default());
                     pb.objects.push(obj.clone());
                 }
@@ -472,7 +610,11 @@ fn walk(ctx: &WalkCtx, cp_start: u32, cp_end: u32, pics: &mut media::Pictures) -
                 let at = ctx.notes.partition_point(|(c, _, _)| *c < cp);
                 if let Some((_, kind, id)) = ctx.notes.get(at).filter(|(c, _, _)| *c == cp) {
                     pb.push('\u{FFFC}', CharProps::default());
-                    pb.objects.push(InlineObject::NoteRef { kind: *kind, id: *id, custom: String::new() });
+                    pb.objects.push(InlineObject::NoteRef {
+                        kind: *kind,
+                        id: *id,
+                        custom: String::new(),
+                    });
                 }
             }
             '\t' => push_formatted(&mut pb, cp, '\t', ctx, field.as_mut()),
@@ -491,7 +633,14 @@ fn walk(ctx: &WalkCtx, cp_start: u32, cp_end: u32, pics: &mut media::Pictures) -
     if !pb.text.is_empty() {
         let done = pb;
         out.push(ParaOut {
-            para: Paragraph { text: done.text, runs: done.runs, props: done.props, mark: done.mark, objects: done.objects, ..Default::default() },
+            para: Paragraph {
+                text: done.text,
+                runs: done.runs,
+                props: done.props,
+                mark: done.mark,
+                objects: done.objects,
+                ..Default::default()
+            },
             end_cp: cp_end,
             row: table::RowInfo::default(),
         });
@@ -521,13 +670,20 @@ fn finish_field(pb: &mut ParaBuild, f: FieldBuild) {
         return;
     }
     pb.push('\u{FFFC}', CharProps::default());
-    pb.objects.push(InlineObject::Field { instr, result: result_text, locked: false, code: false });
+    pb.objects.push(InlineObject::Field {
+        instr,
+        result: result_text,
+        locked: false,
+        code: false,
+    });
 }
 
 /// `HYPERLINK "url"` / `HYPERLINK url \l "bookmark"` → the model link target
 /// (`#bookmark` for internal links); `None` when not a hyperlink.
 fn hyperlink_target(instr: &str) -> Option<String> {
-    let rest = instr.strip_prefix("HYPERLINK").or_else(|| instr.strip_prefix("hyperlink"))?;
+    let rest = instr
+        .strip_prefix("HYPERLINK")
+        .or_else(|| instr.strip_prefix("hyperlink"))?;
     let rest = rest.strip_prefix(' ').unwrap_or(rest);
     if rest.is_empty() {
         return None;
@@ -538,7 +694,13 @@ fn hyperlink_target(instr: &str) -> Option<String> {
     while let Some(tok) = tokens.next() {
         match tok {
             "\\l" => {
-                local = Some(tokens.next().unwrap_or_default().trim_matches('"').to_string());
+                local = Some(
+                    tokens
+                        .next()
+                        .unwrap_or_default()
+                        .trim_matches('"')
+                        .to_string(),
+                );
             }
             "\\o" | "\\m" | "\\n" | "\\t" => {
                 let _ = tokens.next();
@@ -582,7 +744,13 @@ fn num_of(ilfo: i32) -> Option<u32> {
 /// plus the piece's Prm, over the paragraph style's base character props. Inside a field,
 /// the character is recorded into the instruction or the cached result instead of (or as
 /// well as) the visible text.
-fn push_formatted(pb: &mut ParaBuild, cp: u32, c: char, ctx: &WalkCtx, field: Option<&mut FieldBuild>) {
+fn push_formatted(
+    pb: &mut ParaBuild,
+    cp: u32,
+    c: char,
+    ctx: &WalkCtx,
+    field: Option<&mut FieldBuild>,
+) {
     let fc = ctx.pieces.fc_of_cp(cp).unwrap_or(0);
     let grpprl = ctx.chpx_bins.chpx(ctx.word, fc);
     let default;
@@ -613,7 +781,10 @@ fn apply_prm(props: &mut CharProps, prm: PrmRef<'_>, fonts: &[String], base: &Ch
         PrmRef::Sprm0 { isprm, val } => {
             if let Some(op) = sprm::from_prm0(isprm) {
                 let operand = [val];
-                let prl = Prl { op, operand: &operand };
+                let prl = Prl {
+                    op,
+                    operand: &operand,
+                };
                 if prl.sgc() == 2 {
                     fmt::apply_char(props, &prl, base, fonts);
                 }

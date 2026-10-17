@@ -2,7 +2,7 @@ use bevy_macro_utils::{ensure_no_collision, get_struct_fields};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, parse_quote, DeriveInput};
+use syn::{DeriveInput, parse_macro_input, parse_quote};
 
 use crate::{bevy_ecs_path, world_query::world_query_impl};
 

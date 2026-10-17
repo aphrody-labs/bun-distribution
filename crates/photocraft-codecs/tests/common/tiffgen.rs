@@ -43,25 +43,44 @@ pub struct Dir {
 
 impl Dir {
     pub fn tag(mut self, tag: u16, ty: u16, values: &[u64]) -> Self {
-        self.entries.push((tag, ty, values.iter().map(|&v| V::N(v)).collect()));
+        self.entries
+            .push((tag, ty, values.iter().map(|&v| V::N(v)).collect()));
         self
     }
     pub fn bytes(mut self, tag: u16, ty: u16, data: &[u8]) -> Self {
-        self.entries.push((tag, ty, data.iter().map(|&v| V::N(u64::from(v))).collect()));
+        self.entries
+            .push((tag, ty, data.iter().map(|&v| V::N(u64::from(v))).collect()));
         self
     }
     pub fn sub_ifds(mut self, ty: u16, dirs: &[usize]) -> Self {
-        self.entries.push((330, ty, dirs.iter().map(|&d| V::Ifd(d)).collect()));
+        self.entries
+            .push((330, ty, dirs.iter().map(|&d| V::Ifd(d)).collect()));
         self
     }
 }
 
 /// A basic directory: `w`×`h`, `spp` samples of `bits` bits, the given photometric, chunky,
 /// uncompressed, one strip per `rows` rows holding `data` (already in file byte order).
-pub fn strips(w: u32, h: u32, bits: u16, spp: u16, photometric: u16, rows: u32, data: &[u8]) -> Dir {
+pub fn strips(
+    w: u32,
+    h: u32,
+    bits: u16,
+    spp: u16,
+    photometric: u16,
+    rows: u32,
+    data: &[u8],
+) -> Dir {
     let row = (w as usize * bits as usize * spp as usize).div_ceil(8);
-    let chunks = data.chunks((row * rows as usize).max(1)).map(<[u8]>::to_vec).collect();
-    Dir { entries: base(w, h, bits, spp, photometric), chunks, tiled: false }.tag(278, LONG, &[u64::from(rows)])
+    let chunks = data
+        .chunks((row * rows as usize).max(1))
+        .map(<[u8]>::to_vec)
+        .collect();
+    Dir {
+        entries: base(w, h, bits, spp, photometric),
+        chunks,
+        tiled: false,
+    }
+    .tag(278, LONG, &[u64::from(rows)])
 }
 
 pub fn base(w: u32, h: u32, bits: u16, spp: u16, photometric: u16) -> Vec<(u16, u16, Vec<V>)> {
@@ -90,9 +109,27 @@ pub struct Built {
 /// Builds a file. `chain` lists the directories of the main IFD chain in order; directories not
 /// in it are only reachable through SubIFD references.
 pub fn build(little: bool, big: bool, dirs: &[Dir], chain: &[usize]) -> Built {
-    let e16 = |v: u16| if little { v.to_le_bytes().to_vec() } else { v.to_be_bytes().to_vec() };
-    let e32 = |v: u32| if little { v.to_le_bytes().to_vec() } else { v.to_be_bytes().to_vec() };
-    let e64 = |v: u64| if little { v.to_le_bytes().to_vec() } else { v.to_be_bytes().to_vec() };
+    let e16 = |v: u16| {
+        if little {
+            v.to_le_bytes().to_vec()
+        } else {
+            v.to_be_bytes().to_vec()
+        }
+    };
+    let e32 = |v: u32| {
+        if little {
+            v.to_le_bytes().to_vec()
+        } else {
+            v.to_be_bytes().to_vec()
+        }
+    };
+    let e64 = |v: u64| {
+        if little {
+            v.to_le_bytes().to_vec()
+        } else {
+            v.to_be_bytes().to_vec()
+        }
+    };
     let enc = |ty: u16, v: u64| -> Vec<u8> {
         match type_size(ty) {
             1 => vec![v as u8],
@@ -114,7 +151,11 @@ pub fn build(little: bool, big: bool, dirs: &[Dir], chain: &[usize]) -> Built {
         if !d.chunks.is_empty() || !e.iter().any(|x| x.0 == ot) {
             e.retain(|x| x.0 != ot && x.0 != ct);
             e.push((ot, off_ty, vec![V::N(0); d.chunks.len()]));
-            e.push((ct, off_ty, d.chunks.iter().map(|c| V::N(c.len() as u64)).collect()));
+            e.push((
+                ct,
+                off_ty,
+                d.chunks.iter().map(|c| V::N(c.len() as u64)).collect(),
+            ));
         }
         e.sort_by_key(|x| x.0);
         full.push(e);
@@ -172,7 +213,11 @@ pub fn build(little: bool, big: bool, dirs: &[Dir], chain: &[usize]) -> Built {
             }
         };
         let mut table = Vec::new();
-        table.extend(if big { e64(e.len() as u64) } else { e16(e.len() as u16) });
+        table.extend(if big {
+            e64(e.len() as u64)
+        } else {
+            e16(e.len() as u16)
+        });
         for (tag, ty, vals) in e {
             let mut data = Vec::new();
             for (i, v) in vals.iter().enumerate() {
@@ -180,7 +225,11 @@ pub fn build(little: bool, big: bool, dirs: &[Dir], chain: &[usize]) -> Built {
             }
             table.extend(e16(*tag));
             table.extend(e16(*ty));
-            table.extend(if big { e64(vals.len() as u64) } else { e32(vals.len() as u32) });
+            table.extend(if big {
+                e64(vals.len() as u64)
+            } else {
+                e32(vals.len() as u32)
+            });
             if data.len() <= inline {
                 data.resize(inline, 0);
                 table.extend(data);
@@ -194,19 +243,32 @@ pub fn build(little: bool, big: bool, dirs: &[Dir], chain: &[usize]) -> Built {
             f.push(0);
         }
         assert_eq!(f.len() as u64, ifd_at[k]);
-        let next = chain.iter().position(|&c| c == k).and_then(|p| chain.get(p + 1)).map_or(0, |&n| ifd_at[n]);
+        let next = chain
+            .iter()
+            .position(|&c| c == k)
+            .and_then(|p| chain.get(p + 1))
+            .map_or(0, |&n| ifd_at[n]);
         f.extend(table);
         next_at[k] = f.len() as u64;
         f.extend(if big { e64(next) } else { e32(next as u32) });
     }
-    Built { bytes: f, ifd_at, next_at, chunk_at }
+    Built {
+        bytes: f,
+        ifd_at,
+        next_at,
+        chunk_at,
+    }
 }
 
 /// Overwrites the next-IFD pointer of directory `k` (for cycles and dangling pointers).
 pub fn set_next(b: &mut Built, little: bool, big: bool, k: usize, to: u64) {
     let at = b.next_at[k] as usize;
     let v = if big {
-        if little { to.to_le_bytes().to_vec() } else { to.to_be_bytes().to_vec() }
+        if little {
+            to.to_le_bytes().to_vec()
+        } else {
+            to.to_be_bytes().to_vec()
+        }
     } else if little {
         (to as u32).to_le_bytes().to_vec()
     } else {
@@ -216,7 +278,13 @@ pub fn set_next(b: &mut Built, little: bool, big: bool, k: usize, to: u64) {
 }
 
 /// Locates entry `tag` of directory `k`: `(entry position, type, count, value position)`.
-pub fn find_entry(b: &Built, little: bool, big: bool, k: usize, tag: u16) -> Option<(usize, u16, u64, usize)> {
+pub fn find_entry(
+    b: &Built,
+    little: bool,
+    big: bool,
+    k: usize,
+    tag: u16,
+) -> Option<(usize, u16, u64, usize)> {
     let f = &b.bytes;
     let rd = |at: usize, n: usize| -> u64 {
         let s = &f[at..at + n];
@@ -228,7 +296,11 @@ pub fn find_entry(b: &Built, little: bool, big: bool, k: usize, tag: u16) -> Opt
         v
     };
     let at = b.ifd_at[k] as usize;
-    let (n, first, entry, inline) = if big { (rd(at, 8), at + 8, 20, 8) } else { (rd(at, 2), at + 2, 12, 4) };
+    let (n, first, entry, inline) = if big {
+        (rd(at, 8), at + 8, 20, 8)
+    } else {
+        (rd(at, 2), at + 2, 12, 4)
+    };
     for i in 0..n as usize {
         let e = first + i * entry;
         if rd(e, 2) as u16 != tag {
@@ -237,18 +309,38 @@ pub fn find_entry(b: &Built, little: bool, big: bool, k: usize, tag: u16) -> Opt
         let ty = rd(e + 2, 2) as u16;
         let count = if big { rd(e + 4, 8) } else { rd(e + 4, 4) };
         let field = e + if big { 12 } else { 8 };
-        let value_at = if count as usize * type_size(ty) <= inline { field } else { rd(field, inline) as usize };
+        let value_at = if count as usize * type_size(ty) <= inline {
+            field
+        } else {
+            rd(field, inline) as usize
+        };
         return Some((e, ty, count, value_at));
     }
     None
 }
 
 /// Overwrites value `i` of entry `tag` in directory `k` (in its own type and width).
-pub fn patch_value(b: &mut Built, little: bool, big: bool, k: usize, tag: u16, i: usize, value: u64) {
+pub fn patch_value(
+    b: &mut Built,
+    little: bool,
+    big: bool,
+    k: usize,
+    tag: u16,
+    i: usize,
+    value: u64,
+) {
     let (_, ty, _, at) = find_entry(b, little, big, k, tag).expect("tag present");
     let n = type_size(ty);
-    let bytes = if little { value.to_le_bytes() } else { value.to_be_bytes() };
-    let v = if little { bytes[..n].to_vec() } else { bytes[8 - n..].to_vec() };
+    let bytes = if little {
+        value.to_le_bytes()
+    } else {
+        value.to_be_bytes()
+    };
+    let v = if little {
+        bytes[..n].to_vec()
+    } else {
+        bytes[8 - n..].to_vec()
+    };
     let at = at + i * n;
     b.bytes[at..at + n].copy_from_slice(&v);
 }
@@ -257,7 +349,11 @@ pub fn patch_value(b: &mut Built, little: bool, big: bool, k: usize, tag: u16, i
 pub fn patch_count(b: &mut Built, little: bool, big: bool, k: usize, tag: u16, count: u64) {
     let (e, ..) = find_entry(b, little, big, k, tag).expect("tag present");
     let v = if big {
-        if little { count.to_le_bytes().to_vec() } else { count.to_be_bytes().to_vec() }
+        if little {
+            count.to_le_bytes().to_vec()
+        } else {
+            count.to_be_bytes().to_vec()
+        }
     } else if little {
         (count as u32).to_le_bytes().to_vec()
     } else {
@@ -268,16 +364,41 @@ pub fn patch_count(b: &mut Built, little: bool, big: bool, k: usize, tag: u16, c
 
 /// Samples to file bytes in the given order.
 pub fn u16s(v: &[u16], little: bool) -> Vec<u8> {
-    v.iter().flat_map(|x| if little { x.to_le_bytes() } else { x.to_be_bytes() }).collect()
+    v.iter()
+        .flat_map(|x| {
+            if little {
+                x.to_le_bytes()
+            } else {
+                x.to_be_bytes()
+            }
+        })
+        .collect()
 }
 pub fn f32s(v: &[f32], little: bool) -> Vec<u8> {
-    v.iter().flat_map(|x| if little { x.to_le_bytes() } else { x.to_be_bytes() }).collect()
+    v.iter()
+        .flat_map(|x| {
+            if little {
+                x.to_le_bytes()
+            } else {
+                x.to_be_bytes()
+            }
+        })
+        .collect()
 }
 
 /// Splits an interleaved `w`×`h` image of `spp` samples (`bps` bytes each) into tiles of
 /// `tw`×`th`, padded with zeros; chunky (one blob per tile) or planar (all tiles of plane 0,
 /// then plane 1, …).
-pub fn tile_split(px: &[u8], w: usize, h: usize, spp: usize, bps: usize, tw: usize, th: usize, planar: bool) -> Vec<Vec<u8>> {
+pub fn tile_split(
+    px: &[u8],
+    w: usize,
+    h: usize,
+    spp: usize,
+    bps: usize,
+    tw: usize,
+    th: usize,
+    planar: bool,
+) -> Vec<Vec<u8>> {
     let across = w.div_ceil(tw);
     let down = h.div_ceil(th);
     let planes = if planar { spp } else { 1 };
@@ -309,7 +430,14 @@ pub fn tile_split(px: &[u8], w: usize, h: usize, spp: usize, bps: usize, tw: usi
 
 /// Splits an interleaved image into planar strips of `rows` rows: plane 0's strips, then
 /// plane 1's, ….
-pub fn planar_strips(px: &[u8], w: usize, h: usize, spp: usize, bps: usize, rows: usize) -> Vec<Vec<u8>> {
+pub fn planar_strips(
+    px: &[u8],
+    w: usize,
+    h: usize,
+    spp: usize,
+    bps: usize,
+    rows: usize,
+) -> Vec<Vec<u8>> {
     let mut out = Vec::new();
     for p in 0..spp {
         for y0 in (0..h).step_by(rows) {

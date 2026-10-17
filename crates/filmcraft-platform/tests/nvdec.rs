@@ -22,7 +22,10 @@ fn hardware(s: &Stream) -> Option<Box<dyn VideoDecoder>> {
         Some(Ok(d)) => Some(d),
         Some(Err(e)) => panic!("factory error: {e}"),
         None => {
-            eprintln!("SKIPPED: no NVDEC hardware decoder for {}", s.entry.codec.name());
+            eprintln!(
+                "SKIPPED: no NVDEC hardware decoder for {}",
+                s.entry.codec.name()
+            );
             None
         }
     }
@@ -33,14 +36,44 @@ fn software(s: &Stream) -> Box<dyn VideoDecoder> {
 }
 
 fn streams(ff: &std::path::Path) -> Vec<(String, Stream)> {
-    let mut out: Vec<_> =
-        ["h264_high.mp4", "hevc_main.mp4", "hevc_main10.mp4"].iter().filter_map(|n| Some((n.to_string(), read_stream(&named(ff, n)?)))).collect();
+    let mut out: Vec<_> = ["h264_high.mp4", "hevc_main.mp4", "hevc_main10.mp4"]
+        .iter()
+        .filter_map(|n| Some((n.to_string(), read_stream(&named(ff, n)?))))
+        .collect();
     let src = "testsrc2=s=1920x1080:r=24:d=2,noise=alls=12:allf=t";
     let gop = "bframes=3:b-pyramid=normal:keyint=24:min-keyint=24:scenecut=0:ref=4";
     let x265 = format!("log-level=error:{}", gop.replace("normal", "1"));
     let cases: [(&str, Vec<&str>); 2] = [
-        ("nv_h264_1080.mp4", vec!["-c:v", "libx264", "-profile:v", "high", "-preset", "veryfast", "-x264-params", gop, "-pix_fmt", "yuv420p"]),
-        ("nv_hevc_main10_1080.mp4", vec!["-c:v", "libx265", "-preset", "ultrafast", "-tag:v", "hvc1", "-x265-params", &x265, "-pix_fmt", "yuv420p10le"]),
+        (
+            "nv_h264_1080.mp4",
+            vec![
+                "-c:v",
+                "libx264",
+                "-profile:v",
+                "high",
+                "-preset",
+                "veryfast",
+                "-x264-params",
+                gop,
+                "-pix_fmt",
+                "yuv420p",
+            ],
+        ),
+        (
+            "nv_hevc_main10_1080.mp4",
+            vec![
+                "-c:v",
+                "libx265",
+                "-preset",
+                "ultrafast",
+                "-tag:v",
+                "hvc1",
+                "-x265-params",
+                &x265,
+                "-pix_fmt",
+                "yuv420p10le",
+            ],
+        ),
     ];
     for (name, enc) in cases {
         let args: Vec<&str> = ["-f", "lavfi", "-i", src].into_iter().chain(enc).collect();
@@ -80,8 +113,16 @@ fn bit_exact_with_the_software_decoder() {
         }
         hw.reset();
         sw.reset();
-        assert_same(&format!("{name} after resets"), &decode_all(hw.as_mut(), &s.samples), &decode_all(sw.as_mut(), &s.samples));
-        assert!(hw.name().starts_with("NVDEC"), "{name}: stayed in hardware ({})", hw.name());
+        assert_same(
+            &format!("{name} after resets"),
+            &decode_all(hw.as_mut(), &s.samples),
+            &decode_all(sw.as_mut(), &s.samples),
+        );
+        assert!(
+            hw.name().starts_with("NVDEC"),
+            "{name}: stayed in hardware ({})",
+            hw.name()
+        );
     }
 }
 
@@ -102,7 +143,11 @@ fn mid_stream_failure_continues_in_software() {
             let mut d = HybridDecoder::new(Box::new(nv), s.entry.clone(), info.clone());
             let out = decode_all(&mut d, &s.samples);
             assert!(!d.is_hardware(), "{name}: switched to software");
-            assert_same(&format!("{name} failing at sample {fail_at}"), &out, &reference);
+            assert_same(
+                &format!("{name} failing at sample {fail_at}"),
+                &out,
+                &reference,
+            );
         }
     }
 }
@@ -112,16 +157,55 @@ fn declines_what_the_hardware_path_does_not_take() {
     let ff = filmcraft_testkit::require_ffmpeg!();
     let src = "testsrc2=s=640x360:r=24:d=1";
     let cases: [(&str, Vec<&str>); 3] = [
-        ("va_h264_interlaced.mp4", vec!["-c:v", "libx264", "-x264-params", "interlaced=1:keyint=12", "-pix_fmt", "yuv420p"]),
-        ("va_h264_10bit.mp4", vec!["-c:v", "libx264", "-profile:v", "high10", "-pix_fmt", "yuv420p10le"]),
-        ("va_hevc_422.mp4", vec!["-c:v", "libx265", "-tag:v", "hvc1", "-x265-params", "log-level=error:keyint=12", "-pix_fmt", "yuv422p10le"]),
+        (
+            "va_h264_interlaced.mp4",
+            vec![
+                "-c:v",
+                "libx264",
+                "-x264-params",
+                "interlaced=1:keyint=12",
+                "-pix_fmt",
+                "yuv420p",
+            ],
+        ),
+        (
+            "va_h264_10bit.mp4",
+            vec![
+                "-c:v",
+                "libx264",
+                "-profile:v",
+                "high10",
+                "-pix_fmt",
+                "yuv420p10le",
+            ],
+        ),
+        (
+            "va_hevc_422.mp4",
+            vec![
+                "-c:v",
+                "libx265",
+                "-tag:v",
+                "hvc1",
+                "-x265-params",
+                "log-level=error:keyint=12",
+                "-pix_fmt",
+                "yuv422p10le",
+            ],
+        ),
     ];
     for (name, enc) in cases {
         let args: Vec<&str> = ["-f", "lavfi", "-i", src].into_iter().chain(enc).collect();
-        let Some(path) = fixture(&ff, name, &args) else { continue };
-        assert!(filmcraft_platform::nvdec_factory(&read_stream(&path).entry).is_none(), "{name}: declined");
+        let Some(path) = fixture(&ff, name, &args) else {
+            continue;
+        };
+        assert!(
+            filmcraft_platform::nvdec_factory(&read_stream(&path).entry).is_none(),
+            "{name}: declined"
+        );
     }
-    let Some(path) = named(&ff, "h264_high.mp4") else { return };
+    let Some(path) = named(&ff, "h264_high.mp4") else {
+        return;
+    };
     let s = read_stream(&path);
     filmcraft_codecs::hw::set_hardware_decoding(false);
     let off = filmcraft_platform::nvdec_factory(&s.entry).is_none();
@@ -144,7 +228,9 @@ fn damaged_samples_never_crash_or_hang() {
                     let mut seed = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
                     // through the hybrid, and straight into the hardware decoder (no fallback)
                     let mut d = filmcraft_platform::nvdec_factory(&entry).unwrap().unwrap();
-                    let mut raw = NvDecoder::new(NalStreamInfo::from_entry(&entry).unwrap().unwrap()).unwrap();
+                    let mut raw =
+                        NvDecoder::new(NalStreamInfo::from_entry(&entry).unwrap().unwrap())
+                            .unwrap();
                     for (i, (smp, pts)) in samples.iter().enumerate().take(40) {
                         let mut m = smp.clone();
                         match xorshift(&mut seed) % 4 {
@@ -157,7 +243,9 @@ fn damaged_samples_never_crash_or_hang() {
                                 }
                             }
                             1 => m.truncate((xorshift(&mut seed) as usize) % m.len().max(1)),
-                            2 if m.len() > 4 => m[..4].copy_from_slice(&(xorshift(&mut seed) as u32).to_be_bytes()),
+                            2 if m.len() > 4 => {
+                                m[..4].copy_from_slice(&(xorshift(&mut seed) as u32).to_be_bytes())
+                            }
                             _ => {}
                         }
                         let _ = d.decode(&m, *pts);

@@ -3,15 +3,15 @@ use core::ptr::NonNull;
 use bevy_ptr::{ConstNonNull, MovingPtr};
 
 use crate::{
-    archetype::{Archetype, ArchetypeCreated, ArchetypeId, SpawnBundleStatus, ARCHETYPE_CREATED},
+    archetype::{ARCHETYPE_CREATED, Archetype, ArchetypeCreated, ArchetypeId, SpawnBundleStatus},
     bundle::{Bundle, BundleId, BundleInfo, DynamicBundle, InsertMode},
     change_detection::{MaybeLocation, Tick},
     entity::{Entity, EntityAllocator, EntityLocation},
     event::{EntityComponentsTrigger, GlobalTrigger},
-    lifecycle::{AddEvent, InsertEvent, ADD, INSERT},
+    lifecycle::{ADD, AddEvent, INSERT, InsertEvent},
     relationship::RelationshipHookMode,
     storage::Table,
-    world::{unsafe_world_cell::UnsafeWorldCell, World},
+    world::{World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 // SAFETY: We have exclusive world access so our pointers can't be invalidated externally

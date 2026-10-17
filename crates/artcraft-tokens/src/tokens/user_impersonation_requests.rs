@@ -14,4 +14,9 @@ pub struct UserImpersonationRequestToken(pub String);
 
 impl_string_token!(UserImpersonationRequestToken);
 impl_mysql_token_from_row!(UserImpersonationRequestToken);
-impl_crockford_generator!(UserImpersonationRequestToken, 32usize, TokenPrefix::UserImpersonationRequest, CrockfordLower);
+impl_crockford_generator!(
+    UserImpersonationRequestToken,
+    32usize,
+    TokenPrefix::UserImpersonationRequest,
+    CrockfordLower
+);

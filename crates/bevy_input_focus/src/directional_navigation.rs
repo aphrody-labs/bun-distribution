@@ -56,7 +56,7 @@
 //! - **Cross-layer navigation**: Connect elements across different UI layers or z-index levels
 //! - **Custom behavior**: Implement domain-specific navigation patterns (e.g., spreadsheet-style wrapping)
 
-use crate::{navigator::find_best_candidate, FocusCause, InputFocus};
+use crate::{FocusCause, InputFocus, navigator::find_best_candidate};
 use bevy_app::prelude::*;
 use bevy_ecs::{
     entity::{EntityHashMap, EntityHashSet},
@@ -67,7 +67,7 @@ use bevy_math::{CompassOctant, Vec2};
 use thiserror::Error;
 
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{prelude::*, Reflect};
+use bevy_reflect::{Reflect, prelude::*};
 
 /// A plugin that sets up the directional navigation resources.
 #[derive(Default)]

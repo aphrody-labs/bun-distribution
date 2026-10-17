@@ -6,22 +6,36 @@ fn hex_roundtrip_and_shorthands() {
     assert_eq!(Color::from_hex("f").unwrap().to_hex(), "FFFFFF");
     assert_eq!(Color::from_hex("ab").unwrap().to_hex(), "ABABAB");
     assert_eq!(Color::from_hex("abc").unwrap().to_hex(), "AABBCC");
-    assert_eq!(Color::from_hex("FF000080").unwrap().to_rgba8(), [255, 0, 0, 128]);
+    assert_eq!(
+        Color::from_hex("FF000080").unwrap().to_rgba8(),
+        [255, 0, 0, 128]
+    );
     assert!(Color::from_hex("xyz").is_none());
     assert!(Color::from_hex("12345").is_none());
 }
 
 #[test]
 fn css_parsing() {
-    assert_eq!(Color::parse_css("rgb(255, 0, 0)").unwrap().to_hex(), "FF0000");
-    assert_eq!(Color::parse_css("rgba(0 0 255 / 50%)").unwrap().to_rgba8(), [0, 0, 255, 128]);
-    assert_eq!(Color::parse_css("hsl(120, 100%, 50%)").unwrap().to_hex(), "00FF00");
+    assert_eq!(
+        Color::parse_css("rgb(255, 0, 0)").unwrap().to_hex(),
+        "FF0000"
+    );
+    assert_eq!(
+        Color::parse_css("rgba(0 0 255 / 50%)").unwrap().to_rgba8(),
+        [0, 0, 255, 128]
+    );
+    assert_eq!(
+        Color::parse_css("hsl(120, 100%, 50%)").unwrap().to_hex(),
+        "00FF00"
+    );
     assert_eq!(Color::parse_css("white").unwrap(), Color::WHITE);
 }
 
 #[test]
 fn hsb_roundtrip() {
-    for hex in ["0D99FF", "F24822", "14AE5C", "000000", "FFFFFF", "808080", "9747FF"] {
+    for hex in [
+        "0D99FF", "F24822", "14AE5C", "000000", "FFFFFF", "808080", "9747FF",
+    ] {
         let c = Color::from_hex(hex).unwrap();
         assert_eq!(Hsb::from_color(c).to_color().to_hex(), hex);
         assert_eq!(Hsl::from_color(c).to_color().to_hex(), hex);
@@ -32,7 +46,16 @@ fn hsb_roundtrip() {
 fn gradient_sampling() {
     let g = Gradient {
         kind: GradientKind::Linear,
-        stops: vec![ColorStop { position: 1.0, color: Color::WHITE }, ColorStop { position: 0.0, color: Color::BLACK }],
+        stops: vec![
+            ColorStop {
+                position: 1.0,
+                color: Color::WHITE,
+            },
+            ColorStop {
+                position: 0.0,
+                color: Color::BLACK,
+            },
+        ],
         from: (0.0, 0.0),
         to: (1.0, 0.0),
         width: (0.0, 1.0),
@@ -56,8 +79,14 @@ fn paint_serde_shape() {
 #[test]
 fn blend_names() {
     assert_eq!(BlendMode::from_name("multiply"), Some(BlendMode::Multiply));
-    assert_eq!(BlendMode::from_name("Color burn"), Some(BlendMode::ColorBurn));
-    assert_eq!(BlendMode::from_name("PASS_THROUGH"), Some(BlendMode::PassThrough));
+    assert_eq!(
+        BlendMode::from_name("Color burn"),
+        Some(BlendMode::ColorBurn)
+    );
+    assert_eq!(
+        BlendMode::from_name("PASS_THROUGH"),
+        Some(BlendMode::PassThrough)
+    );
 }
 
 #[test]
@@ -78,12 +107,23 @@ fn colour_deserializes_from_many_forms() {
 
 #[test]
 fn crop_defaults_to_fill_and_roundtrips() {
-    let img =
-        ImagePaint { image: String::new(), scale_mode: ImageScaleMode::Crop, scale: 1.0, rotation: 0, crop: None, filters: ImageFilters::default() };
+    let img = ImagePaint {
+        image: String::new(),
+        scale_mode: ImageScaleMode::Crop,
+        scale: 1.0,
+        rotation: 0,
+        crop: None,
+        filters: ImageFilters::default(),
+    };
     // A 200×100 image in a 100×100 box: Fill scales to 100 tall, 200 wide, centred → x from -0.5 to 1.5.
     let c = img.effective_crop(200.0, 100.0, 100.0, 100.0);
     let (x0, y0, x1, y1) = ImagePaint::crop_rect(c);
-    assert!((x0 + 0.5).abs() < 1e-9 && (x1 - 1.5).abs() < 1e-9 && y0.abs() < 1e-9 && (y1 - 1.0).abs() < 1e-9);
+    assert!(
+        (x0 + 0.5).abs() < 1e-9
+            && (x1 - 1.5).abs() < 1e-9
+            && y0.abs() < 1e-9
+            && (y1 - 1.0).abs() < 1e-9
+    );
     let back = ImagePaint::crop_from_rect(x0, y0, x1, y1);
     for (a, b) in back.iter().zip(c.iter()) {
         assert!((a - b).abs() < 1e-9);

@@ -45,10 +45,15 @@ fn load(vfs: &Vfs, pred: impl Fn(&str) -> bool, what: &str) -> serde_json::Value
 }
 
 fn main() {
-    let out = std::env::args().nth(1).unwrap_or_else(|| "var/shops-resolved.json".into());
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let out = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "var/shops-resolved.json".into());
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let shops = aphrody_nie_data::shop::parse_shop_config(&load(
         &vfs,
@@ -94,5 +99,9 @@ fn main() {
     let txt = serde_json::to_string_pretty(&doc).expect("serialize");
     std::fs::create_dir_all(Path::new(&out).parent().unwrap_or(Path::new("."))).ok();
     std::fs::write(&out, &txt).unwrap_or_else(|e| panic!("écriture {out} : {e}"));
-    eprintln!("✓ export-shops: {} boutiques résolues → {out} ({} octets)", doc["count"], txt.len());
+    eprintln!(
+        "✓ export-shops: {} boutiques résolues → {out} ({} octets)",
+        doc["count"],
+        txt.len()
+    );
 }

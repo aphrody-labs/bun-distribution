@@ -1218,18 +1218,33 @@ mod tests {
             Opcode::ImageAtomicXor32,
             Opcode::ImageAtomicExchange32,
         ] {
-            for texture_type in [TextureType::Color1D, TextureType::ColorArray1D, TextureType::Color2D, TextureType::Buffer] {
+            for texture_type in [
+                TextureType::Color1D,
+                TextureType::ColorArray1D,
+                TextureType::Color2D,
+                TextureType::Buffer,
+            ] {
                 let mut program = Program::new(ShaderStage::Fragment);
                 program.blocks.push(Block::new());
-                program.block_mut(0).append_inst(Inst::with_flags(opcode, vec![], TextureInstInfo {
-                    texture_type: texture_type as u8,
-                    ..Default::default()
-                }.to_u32()));
+                program.block_mut(0).append_inst(Inst::with_flags(
+                    opcode,
+                    vec![],
+                    TextureInstInfo {
+                        texture_type: texture_type as u8,
+                        ..Default::default()
+                    }
+                    .to_u32(),
+                ));
                 collect_shader_info_pass(&mut program);
                 assert!(program.info.uses_atomic_image_u32, "{opcode:?}");
-                assert_eq!(program.info.uses_image_1d,
-                    matches!(texture_type, TextureType::Color1D | TextureType::ColorArray1D),
-                    "{opcode:?} {texture_type:?}");
+                assert_eq!(
+                    program.info.uses_image_1d,
+                    matches!(
+                        texture_type,
+                        TextureType::Color1D | TextureType::ColorArray1D
+                    ),
+                    "{opcode:?} {texture_type:?}"
+                );
             }
         }
     }

@@ -37,16 +37,29 @@ fn diff_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let ds = s.ds()?;
     let from: Arc<Document> = match string(p, "against").as_deref().unwrap_or("undo") {
         "undo" if s.live_doc(ds.uid) => {
-            return Err(EngineError::Disabled("collab.diff".into(), "in a live session undo is per user: compare against \"saved\"".into()));
+            return Err(EngineError::Disabled(
+                "collab.diff".into(),
+                "in a live session undo is per user: compare against \"saved\"".into(),
+            ));
         }
-        "undo" => {
-            ds.history.undo.last().map(|e| e.doc.clone()).ok_or_else(|| EngineError::Disabled("collab.diff".into(), "nothing to undo".into()))?
-        }
+        "undo" => ds
+            .history
+            .undo
+            .last()
+            .map(|e| e.doc.clone())
+            .ok_or_else(|| EngineError::Disabled("collab.diff".into(), "nothing to undo".into()))?,
         "saved" => ds.saved_doc.clone(),
-        other => return Err(bad("collab.diff", format!("`against` is \"undo\" or \"saved\", not {other:?}"))),
+        other => {
+            return Err(bad(
+                "collab.diff",
+                format!("`against` is \"undo\" or \"saved\", not {other:?}"),
+            ));
+        }
     };
     let base = Replica::new((*from).clone());
     let d = diff(&base, &ds.doc).map_err(|e| EngineError::Other(e.to_string()))?;
-    let bytes = message::encode(&d.changes).map_err(|e| EngineError::Other(e.to_string()))?.len();
+    let bytes = message::encode(&d.changes)
+        .map_err(|e| EngineError::Other(e.to_string()))?
+        .len();
     Ok(json!({"changes": d.changes, "count": d.changes.len(), "bytes": bytes}))
 }

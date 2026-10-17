@@ -50,7 +50,11 @@ pub enum RawFatError {
 impl FileAlloc {
     fn check_size(data: &'_ [u8]) -> Result<(), RawFatError> {
         let size = size_of::<Self>();
-        if data.len().is_multiple_of(size) { Ok(()) } else { InvalidSizeSnafu {}.fail() }
+        if data.len().is_multiple_of(size) {
+            Ok(())
+        } else {
+            InvalidSizeSnafu {}.fail()
+        }
     }
 
     fn handle_pod_cast<T>(result: Result<T, PodCastError>, addr: usize) -> Result<T, RawFatError> {

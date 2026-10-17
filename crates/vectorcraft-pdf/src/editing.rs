@@ -52,11 +52,16 @@ pub(crate) fn embedded_file(native: &[u8], compress: bool, date: Option<DateTime
 /// Write the hash of the pages of `pdf` (written with an [`embedded_file`]) over the placeholder.
 pub(crate) fn seal(pdf: Vec<u8>) -> Result<Vec<u8>, PdfError> {
     let data = Arc::new(pdf);
-    let hash = page_hash(&Pdf::new(data.clone()).map_err(|e| PdfError::Write(format!("can't read back the written PDF: {e:?}")))?);
+    let hash = page_hash(
+        &Pdf::new(data.clone())
+            .map_err(|e| PdfError::Write(format!("can't read back the written PDF: {e:?}")))?,
+    );
     let mut pdf = Arc::try_unwrap(data).unwrap_or_else(|d| (*d).clone());
-    let at = find(&pdf, format!("({DESCRIPTION}{PLACEHOLDER})").as_bytes(), 0).map(|i| i + 1 + DESCRIPTION.len());
-    let slot =
-        at.and_then(|i| pdf.get_mut(i..i + PLACEHOLDER.len())).ok_or_else(|| PdfError::Write("the editing data's hash has no place".into()))?;
+    let at = find(&pdf, format!("({DESCRIPTION}{PLACEHOLDER})").as_bytes(), 0)
+        .map(|i| i + 1 + DESCRIPTION.len());
+    let slot = at
+        .and_then(|i| pdf.get_mut(i..i + PLACEHOLDER.len()))
+        .ok_or_else(|| PdfError::Write("the editing data's hash has no place".into()))?;
     slot.copy_from_slice(hash.as_bytes());
     Ok(pdf)
 }
@@ -76,13 +81,20 @@ pub fn editing_with(bytes: &[u8], password: Option<&str>) -> Option<Editing> {
 pub(crate) fn editing_in(pdf: &Pdf) -> Option<Editing> {
     let xref = pdf.xref();
     let catalog = xref.get::<Dict<'_>>(xref.root_id())?;
-    let tree = catalog.get::<Dict<'_>>(b"Names")?.get::<Dict<'_>>(b"EmbeddedFiles")?;
+    let tree = catalog
+        .get::<Dict<'_>>(b"Names")?
+        .get::<Dict<'_>>(b"EmbeddedFiles")?;
     let spec = editing_spec(&tree, 0)?;
     let files = spec.get::<Dict<'_>>(b"EF")?;
-    let stream = files.get::<Stream<'_>>(b"F").or_else(|| files.get::<Stream<'_>>(b"UF"))?;
+    let stream = files
+        .get::<Stream<'_>>(b"F")
+        .or_else(|| files.get::<Stream<'_>>(b"UF"))?;
     let data = stream.decoded().map(|d| d.into_owned()).unwrap_or_default();
     // The hash ends the description; editing data described otherwise is trusted.
-    let desc = spec.get::<PdfString<'_>>(b"Desc").map(|d| String::from_utf8_lossy(d.as_bytes()).into_owned()).unwrap_or_default();
+    let desc = spec
+        .get::<PdfString<'_>>(b"Desc")
+        .map(|d| String::from_utf8_lossy(d.as_bytes()).into_owned())
+        .unwrap_or_default();
     let intact = match desc.rsplit_once("hash ") {
         Some((_, hash)) => hash.trim() == page_hash(pdf),
         None => true,
@@ -105,24 +117,36 @@ fn editing_spec<'a>(node: &Dict<'a>, depth: usize) -> Option<Dict<'a>> {
     if depth >= MAX_DEPTH {
         return None;
     }
-    node.get::<Array<'a>>(b"Kids")?.iter::<Dict<'a>>().find_map(|kid| editing_spec(&kid, depth + 1))
+    node.get::<Array<'a>>(b"Kids")?
+        .iter::<Dict<'a>>()
+        .find_map(|kid| editing_spec(&kid, depth + 1))
 }
 
 /// A file specification naming the editing file (current or legacy name).
 fn is_editing_file(spec: &Dict<'_>) -> bool {
-    [&b"UF"[..], b"F"].into_iter().filter_map(|k| spec.get::<PdfString<'_>>(k)).any(|name| {
-        let name = name.as_bytes();
-        name == EDITING_FILE.as_bytes() || name == LEGACY_EDITING_FILE.as_bytes()
-    })
+    [&b"UF"[..], b"F"]
+        .into_iter()
+        .filter_map(|k| spec.get::<PdfString<'_>>(k))
+        .any(|name| {
+            let name = name.as_bytes();
+            name == EDITING_FILE.as_bytes() || name == LEGACY_EDITING_FILE.as_bytes()
+        })
 }
 
 /// FNV-1a of the pages' media boxes and decoded content, as 16 hex digits.
 fn page_hash(pdf: &Pdf) -> String {
-    let fnv = |h: u64, bytes: &[u8]| bytes.iter().fold(h, |h, b| (h ^ u64::from(*b)).wrapping_mul(0x100000001b3));
+    let fnv = |h: u64, bytes: &[u8]| {
+        bytes
+            .iter()
+            .fold(h, |h, b| (h ^ u64::from(*b)).wrapping_mul(0x100000001b3))
+    };
     let mut h = 0xcbf29ce484222325;
     for page in pdf.pages().iter() {
         let b = page.media_box();
-        h = fnv(h, format!("[{} {} {} {}]", b.x0, b.y0, b.x1, b.y1).as_bytes());
+        h = fnv(
+            h,
+            format!("[{} {} {} {}]", b.x0, b.y0, b.x1, b.y1).as_bytes(),
+        );
         h = fnv(h, page.page_stream().unwrap_or_default());
     }
     format!("{h:016x}")

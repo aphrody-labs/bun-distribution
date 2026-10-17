@@ -1,14 +1,14 @@
-use super::{prepare::PathtracerAccumulationTexture, Pathtracer};
+use super::{Pathtracer, prepare::PathtracerAccumulationTexture};
 use crate::scene::RaytracingSceneBindings;
-use bevy_asset::{load_embedded_asset, AssetServer};
+use bevy_asset::{AssetServer, load_embedded_asset};
 use bevy_ecs::{prelude::*, resource::Resource, system::Commands};
 use bevy_render::{
     camera::ExtractedCamera,
     render_resource::{
-        binding_types::{texture_storage_2d, uniform_buffer},
         BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
         CachedComputePipelineId, ComputePassDescriptor, ComputePipelineDescriptor,
         ImageSubresourceRange, PipelineCache, ShaderStages, StorageTextureAccess, TextureFormat,
+        binding_types::{texture_storage_2d, uniform_buffer},
     },
     renderer::{RenderContext, RenderDevice, ViewQuery},
     view::{ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms},

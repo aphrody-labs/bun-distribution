@@ -48,7 +48,14 @@ fn str_value(layer: &Layer, ectx: &EvalCtx, g: &PropGroup, id: &str) -> String {
     }
 }
 
-fn set_str(actions: &mut Actions, layer: &Layer, g: &PropGroup, id: &str, v: String, merge: Option<String>) {
+fn set_str(
+    actions: &mut Actions,
+    layer: &Layer,
+    g: &PropGroup,
+    id: &str,
+    v: String,
+    merge: Option<String>,
+) {
     let Some(p) = g.get(id) else { return };
     let mut a = json!({"layer": layer.id.0, "prop": p.uid, "value": v});
     if let Some(m) = merge {
@@ -61,7 +68,11 @@ fn set_str(actions: &mut Actions, layer: &Layer, g: &PropGroup, id: &str, v: Str
 fn register_points(app: &mut EffectcraftApp, prefix: &str, gr: Rect, pts: &[[f32; 2]]) {
     for (i, q) in pts.iter().enumerate() {
         let s = pos2(gr.min.x + q[0] * gr.width(), gr.max.y - q[1] * gr.height());
-        app.auto.add(&format!("{prefix}.point.{i}"), Rect::from_center_size(s, vec2(9.0, 9.0)), &format!("Point {}", i + 1));
+        app.auto.add(
+            &format!("{prefix}.point.{i}"),
+            Rect::from_center_size(s, vec2(9.0, 9.0)),
+            &format!("Point {}", i + 1),
+        );
     }
 }
 
@@ -81,7 +92,11 @@ fn tabs(
     let mut x = x0;
     let mut out = None;
     for (i, name) in names.iter().enumerate() {
-        let w = if cols.is_empty() { 16.0 + name.chars().count() as f32 * 6.2 } else { 20.0 };
+        let w = if cols.is_empty() {
+            16.0 + name.chars().count() as f32 * 6.2
+        } else {
+            20.0
+        };
         let r = Rect::from_min_size(pos2(x, cy - 9.0), vec2(w, 18.0));
         let resp = ui.interact(r, egui::Id::new((id, i)), Sense::click());
         let sel = i == cur;
@@ -98,7 +113,13 @@ fn tabs(
                 }
             }
             None => {
-                p.text(r.center(), Align2::CENTER_CENTER, *name, Tokens::ui(11.0), if sel { t.text } else { t.text_dim });
+                p.text(
+                    r.center(),
+                    Align2::CENTER_CENTER,
+                    *name,
+                    Tokens::ui(11.0),
+                    if sel { t.text } else { t.text_dim },
+                );
             }
         }
         app.auto.add(&format!("{id}.{i}"), r, name);
@@ -111,10 +132,26 @@ fn tabs(
     out
 }
 
-fn reset_link(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, r: Rect, id: &str) -> bool {
+fn reset_link(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    p: &egui::Painter,
+    r: Rect,
+    id: &str,
+) -> bool {
     let t = app.tokens;
     let resp = ui.interact(r, egui::Id::new(id), Sense::click());
-    p.text(r.center(), Align2::CENTER_CENTER, tr("Reset"), Tokens::ui(11.5), if resp.hovered() { t.hot_text } else { t.text_dim });
+    p.text(
+        r.center(),
+        Align2::CENTER_CENTER,
+        tr("Reset"),
+        Tokens::ui(11.5),
+        if resp.hovered() {
+            t.hot_text
+        } else {
+            t.text_dim
+        },
+    );
     app.auto.add(id, r, "Reset");
     resp.clicked()
 }
@@ -154,13 +191,20 @@ pub fn inline_editor(
 ) {
     match (effect, path) {
         (LUMETRI, "curves/rgbCurves/") => rgb_curves(app, ui, p, layer, root, g, ectx, r, actions),
-        (LUMETRI, "curves/hueSaturationCurves/") => huesat_curves(app, ui, p, layer, root, g, ectx, r, actions),
+        (LUMETRI, "curves/hueSaturationCurves/") => {
+            huesat_curves(app, ui, p, layer, root, g, ectx, r, actions)
+        }
         (COLORAMA, "outputCycle/") => colorama_wheel(app, ui, p, layer, root, g, ectx, r, actions),
         _ => {}
     }
 }
 
-const RGB_CURVES: [(&str, &str); 4] = [("master", "Master"), ("red", "Red"), ("green", "Green"), ("blue", "Blue")];
+const RGB_CURVES: [(&str, &str); 4] = [
+    ("master", "Master"),
+    ("red", "Red"),
+    ("green", "Green"),
+    ("blue", "Blue"),
+];
 
 #[allow(clippy::too_many_arguments)]
 fn rgb_curves(
@@ -177,19 +221,53 @@ fn rgb_curves(
     let t = app.tokens;
     let euid = root.uid;
     let prefix = format!("effectControls.effect.{euid}.lumetri.rgbCurves");
-    let ch = app.ui.fx_curve_channel.get(&g.uid).copied().unwrap_or(0).min(3);
+    let ch = app
+        .ui
+        .fx_curve_channel
+        .get(&g.uid)
+        .copied()
+        .unwrap_or(0)
+        .min(3);
     let x0 = r.min.x + 38.0;
     let cy = r.min.y + 15.0;
-    let cols = [Color32::from_gray(0xe8), Color32::from_rgb(0xf0, 0x50, 0x50), Color32::from_rgb(0x50, 0xd0, 0x60), Color32::from_rgb(0x50, 0x80, 0xff)];
+    let cols = [
+        Color32::from_gray(0xe8),
+        Color32::from_rgb(0xf0, 0x50, 0x50),
+        Color32::from_rgb(0x50, 0xd0, 0x60),
+        Color32::from_rgb(0x50, 0x80, 0xff),
+    ];
     let names: Vec<&str> = RGB_CURVES.iter().map(|c| c.1).collect();
-    if let Some(n) = tabs(app, ui, p, x0, cy, ch, &names, &cols, &format!("{prefix}.channel")) {
+    if let Some(n) = tabs(
+        app,
+        ui,
+        p,
+        x0,
+        cy,
+        ch,
+        &names,
+        &cols,
+        &format!("{prefix}.channel"),
+    ) {
         app.ui.fx_curve_channel.insert(g.uid, n);
     }
     let id = RGB_CURVES[ch].0;
     let cur = fw::CurvePoints::parse(&str_value(layer, ectx, g, id));
     let size = graph_size(r.width());
-    if reset_link(app, ui, p, Rect::from_min_size(pos2(x0 + size - 44.0, cy - 9.0), vec2(44.0, 18.0)), &format!("{prefix}.reset")) {
-        set_str(actions, layer, g, id, fw::CurvePoints::identity().format(), None);
+    if reset_link(
+        app,
+        ui,
+        p,
+        Rect::from_min_size(pos2(x0 + size - 44.0, cy - 9.0), vec2(44.0, 18.0)),
+        &format!("{prefix}.reset"),
+    ) {
+        set_str(
+            actions,
+            layer,
+            g,
+            id,
+            fw::CurvePoints::identity().format(),
+            None,
+        );
     }
     let gr = Rect::from_min_size(pos2(x0, r.min.y + 30.0), vec2(size, size));
     let gid = egui::Id::new(("lumetri-rgb", euid, ch));
@@ -200,7 +278,13 @@ fn rgb_curves(
     if let Some(np) = edit.changed {
         set_str(actions, layer, g, id, np.format(), Some(key));
     }
-    p.text(pos2(gr.min.x, gr.max.y + 11.0), Align2::LEFT_CENTER, tr("Click adds a point; drag one off to remove"), Tokens::ui(10.5), t.text_faint);
+    p.text(
+        pos2(gr.min.x, gr.max.y + 11.0),
+        Align2::LEFT_CENTER,
+        tr("Click adds a point; drag one off to remove"),
+        Tokens::ui(10.5),
+        t.text_faint,
+    );
 }
 
 /// A hue / saturation curve's points (`x,y` in 0..1, y = ½ neutral), any count (empty = flat).
@@ -224,9 +308,17 @@ impl OffsetPoints {
         let f = |v: f32| {
             let s = format!("{v:.4}");
             let s = s.trim_end_matches('0').trim_end_matches('.').to_string();
-            if s.is_empty() || s == "-0" { "0".into() } else { s }
+            if s.is_empty() || s == "-0" {
+                "0".into()
+            } else {
+                s
+            }
         };
-        self.0.iter().map(|q| format!("{},{}", f(q[0]), f(q[1]))).collect::<Vec<_>>().join(" ")
+        self.0
+            .iter()
+            .map(|q| format!("{},{}", f(q[0]), f(q[1])))
+            .collect::<Vec<_>>()
+            .join(" ")
     }
     pub fn insert(&mut self, x: f32, y: f32) -> usize {
         let i = self.0.partition_point(|q| q[0] < x);
@@ -239,8 +331,16 @@ impl OffsetPoints {
         if i >= n {
             return;
         }
-        let lo = if i == 0 { 0.0 } else { self.0[i - 1][0] + 0.002 };
-        let hi = if i + 1 == n { 1.0 } else { self.0[i + 1][0] - 0.002 };
+        let lo = if i == 0 {
+            0.0
+        } else {
+            self.0[i - 1][0] + 0.002
+        };
+        let hi = if i + 1 == n {
+            1.0
+        } else {
+            self.0[i + 1][0] - 0.002
+        };
         self.0[i] = [x.clamp(lo, hi.max(lo)), y.clamp(0.0, 1.0)];
     }
     pub fn hit(&self, x: f32, y: f32, r: [f32; 2]) -> Option<usize> {
@@ -284,11 +384,27 @@ fn huesat_curves(
     let t = app.tokens;
     let euid = root.uid;
     let prefix = format!("effectControls.effect.{euid}.lumetri.hueSatCurves");
-    let k = app.ui.fx_curve_channel.get(&g.uid).copied().unwrap_or(0).min(4);
+    let k = app
+        .ui
+        .fx_curve_channel
+        .get(&g.uid)
+        .copied()
+        .unwrap_or(0)
+        .min(4);
     let x0 = r.min.x + 38.0;
     let cy = r.min.y + 15.0;
     let names: Vec<&str> = HUESAT.iter().map(|c| c.1).collect();
-    if let Some(n) = tabs(app, ui, p, x0, cy, k, &names, &[], &format!("{prefix}.curve")) {
+    if let Some(n) = tabs(
+        app,
+        ui,
+        p,
+        x0,
+        cy,
+        k,
+        &names,
+        &[],
+        &format!("{prefix}.curve"),
+    ) {
         app.ui.fx_curve_channel.insert(g.uid, n);
     }
     let (id, name, axis, periodic) = HUESAT[k];
@@ -306,13 +422,28 @@ fn huesat_curves(
             _ => Color32::from(egui::ecolor::Hsva::new(0.0, f, 0.85, 1.0)),
         };
         let x = gr.min.x + gr.width() * i as f32 / n as f32;
-        let band = Rect::from_min_max(pos2(x, gr.max.y - 8.0), pos2(x + gr.width() / n as f32 + 0.5, gr.max.y));
+        let band = Rect::from_min_max(
+            pos2(x, gr.max.y - 8.0),
+            pos2(x + gr.width() / n as f32 + 0.5, gr.max.y),
+        );
         p.rect_filled(band, 0.0, c);
-        p.rect_filled(Rect::from_min_max(pos2(band.min.x, gr.min.y), pos2(band.max.x, gr.max.y - 8.0)), 0.0, c.gamma_multiply(0.12));
+        p.rect_filled(
+            Rect::from_min_max(pos2(band.min.x, gr.min.y), pos2(band.max.x, gr.max.y - 8.0)),
+            0.0,
+            c.gamma_multiply(0.12),
+        );
     }
     let to_s = |x: f32, y: f32| pos2(gr.min.x + x * gr.width(), gr.max.y - y * gr.height());
-    p.line_segment([to_s(0.0, 0.5), to_s(1.0, 0.5)], Stroke::new(1.0, Color32::from_white_alpha(60)));
-    p.rect_stroke(gr, 0.0, Stroke::new(1.0, t.field_border), StrokeKind::Outside);
+    p.line_segment(
+        [to_s(0.0, 0.5), to_s(1.0, 0.5)],
+        Stroke::new(1.0, Color32::from_white_alpha(60)),
+    );
+    p.rect_stroke(
+        gr,
+        0.0,
+        Stroke::new(1.0, t.field_border),
+        StrokeKind::Outside,
+    );
     let curve = OffsetCurve::parse(&cur.format(), periodic);
     let line: Vec<Pos2> = (0..=96)
         .map(|i| {
@@ -320,7 +451,10 @@ fn huesat_curves(
             to_s(x, 0.5 + curve.as_ref().map(|c| c.at(x)).unwrap_or(0.0))
         })
         .collect();
-    p.add(egui::Shape::line(line, Stroke::new(1.5, Color32::from_gray(0xe8))));
+    p.add(egui::Shape::line(
+        line,
+        Stroke::new(1.5, Color32::from_gray(0xe8)),
+    ));
     let gid = egui::Id::new(("lumetri-hs", euid, k));
     let resp = ui.interact(gr.expand(6.0), gid, Sense::click_and_drag());
     app.auto.add(&format!("{prefix}.graph"), gr, name);
@@ -329,11 +463,28 @@ fn huesat_curves(
     for (i, q) in cur.0.iter().enumerate() {
         let s = to_s(q[0], q[1]);
         let hr = Rect::from_center_size(s, vec2(7.0, 7.0));
-        p.circle_filled(s, 3.5, if dragging == Some(i) { Color32::WHITE } else { Color32::from_rgb(0x1c, 0x1c, 0x1c) });
+        p.circle_filled(
+            s,
+            3.5,
+            if dragging == Some(i) {
+                Color32::WHITE
+            } else {
+                Color32::from_rgb(0x1c, 0x1c, 0x1c)
+            },
+        );
         p.circle_stroke(s, 3.5, Stroke::new(1.2, Color32::WHITE));
-        app.auto.add(&format!("{prefix}.point.{i}"), hr, &format!("Point {}", i + 1));
+        app.auto.add(
+            &format!("{prefix}.point.{i}"),
+            hr,
+            &format!("Point {}", i + 1),
+        );
     }
-    let to_g = |s: Pos2| [((s.x - gr.min.x) / gr.width()).clamp(0.0, 1.0), ((gr.max.y - s.y) / gr.height()).clamp(0.0, 1.0)];
+    let to_g = |s: Pos2| {
+        [
+            ((s.x - gr.min.x) / gr.width()).clamp(0.0, 1.0),
+            ((gr.max.y - s.y) / gr.height()).clamp(0.0, 1.0),
+        ]
+    };
     let hit_r = [7.0 / gr.width(), 7.0 / gr.height()];
     let mut changed: Option<OffsetPoints> = None;
     let alt = ui.input(|i| i.modifiers.alt);
@@ -395,10 +546,22 @@ fn huesat_curves(
     if let Some(np) = changed {
         set_str(actions, layer, g, id, np.format(), Some(key));
     }
-    if reset_link(app, ui, p, Rect::from_min_size(pos2(gr.max.x - 44.0, gr.max.y + 4.0), vec2(44.0, 18.0)), &format!("{prefix}.reset")) {
+    if reset_link(
+        app,
+        ui,
+        p,
+        Rect::from_min_size(pos2(gr.max.x - 44.0, gr.max.y + 4.0), vec2(44.0, 18.0)),
+        &format!("{prefix}.reset"),
+    ) {
         set_str(actions, layer, g, id, String::new(), None);
     }
-    p.text(pos2(gr.min.x, gr.max.y + 13.0), Align2::LEFT_CENTER, tr("Click adds a point (½ height = no change)"), Tokens::ui(10.5), t.text_faint);
+    p.text(
+        pos2(gr.min.x, gr.max.y + 13.0),
+        Align2::LEFT_CENTER,
+        tr("Click adds a point (½ height = no change)"),
+        Tokens::ui(10.5),
+        t.text_faint,
+    );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -413,13 +576,21 @@ pub fn format_palette(stops: &[(f32, [f32; 4])]) -> String {
     let f = |v: f32| {
         let s = format!("{v:.4}");
         let s = s.trim_end_matches('0').trim_end_matches('.').to_string();
-        if s.is_empty() || s == "-0" { "0".into() } else { s }
+        if s.is_empty() || s == "-0" {
+            "0".into()
+        } else {
+            s
+        }
     };
     stops
         .iter()
         .map(|(pos, c)| {
             let rgb = format!("{},{},{}", f(c[0]), f(c[1]), f(c[2]));
-            if (c[3] - 1.0).abs() > 1e-4 { format!("{}:{rgb},{}", f(*pos), f(c[3])) } else { format!("{}:{rgb}", f(*pos)) }
+            if (c[3] - 1.0).abs() > 1e-4 {
+                format!("{}:{rgb},{}", f(*pos), f(c[3]))
+            } else {
+                format!("{}:{rgb}", f(*pos))
+            }
         })
         .collect::<Vec<_>>()
         .join(" ")
@@ -456,13 +627,36 @@ fn colorama_wheel(
     let t = app.tokens;
     let euid = root.uid;
     let prefix = format!("effectControls.effect.{euid}.colorama");
-    let preset = g.get("usePresetPalette").map(|pr| ectx.value(layer, pr).as_enum()).unwrap_or(0);
+    let preset = g
+        .get("usePresetPalette")
+        .map(|pr| ectx.value(layer, pr).as_enum())
+        .unwrap_or(0);
     let custom = preset as usize == effectcraft_engine::effects::COLORAMA_PRESETS.len() - 1;
-    let interp = g.get("interpolatePalette").is_none_or(|pr| ectx.value(layer, pr).as_bool());
-    let pal = if custom { ColoramaPalette::parse(&str_value(layer, ectx, g, "palette")) } else { None }.unwrap_or_else(|| ColoramaPalette::preset(preset));
+    let interp = g
+        .get("interpolatePalette")
+        .is_none_or(|pr| ectx.value(layer, pr).as_bool());
+    let pal = if custom {
+        ColoramaPalette::parse(&str_value(layer, ectx, g, "palette"))
+    } else {
+        None
+    }
+    .unwrap_or_else(|| ColoramaPalette::preset(preset));
     let x0 = r.min.x + 38.0;
-    let label = if custom { "Custom palette" } else { effectcraft_engine::effects::COLORAMA_PRESETS.get(preset as usize).copied().unwrap_or("Preset") };
-    p.text(pos2(x0, r.min.y + 15.0), Align2::LEFT_CENTER, tr_args("Output Cycle: {}", &[&label]), Tokens::ui(11.5), t.text_dim);
+    let label = if custom {
+        "Custom palette"
+    } else {
+        effectcraft_engine::effects::COLORAMA_PRESETS
+            .get(preset as usize)
+            .copied()
+            .unwrap_or("Preset")
+    };
+    p.text(
+        pos2(x0, r.min.y + 15.0),
+        Align2::LEFT_CENTER,
+        tr_args("Output Cycle: {}", &[&label]),
+        Tokens::ui(11.5),
+        t.text_dim,
+    );
     let size = wheel_size(r.width());
     let c = pos2(x0 + size / 2.0, r.min.y + 30.0 + size / 2.0);
     let (outer, inner) = (size / 2.0 - 8.0, size / 2.0 - 26.0);
@@ -471,7 +665,12 @@ fn colorama_wheel(
     for i in 0..n {
         let (a0, a1) = (i as f32 / n as f32, (i + 1) as f32 / n as f32);
         let col = rgba8(pal.eval((a0 + a1) * 0.5, interp));
-        let quad = vec![wheel_point(c, inner, a0), wheel_point(c, outer, a0), wheel_point(c, outer, a1 + 0.002), wheel_point(c, inner, a1 + 0.002)];
+        let quad = vec![
+            wheel_point(c, inner, a0),
+            wheel_point(c, outer, a0),
+            wheel_point(c, outer, a1 + 0.002),
+            wheel_point(c, inner, a1 + 0.002),
+        ];
         p.add(egui::Shape::convex_polygon(quad, col, Stroke::NONE));
     }
     p.circle_stroke(c, outer, Stroke::new(1.0, Color32::from_black_alpha(160)));
@@ -479,7 +678,8 @@ fn colorama_wheel(
     let wid = egui::Id::new(("colorama-wheel", euid));
     let ring = Rect::from_center_size(c, vec2(outer * 2.0 + 40.0, outer * 2.0 + 40.0));
     let resp = ui.interact(ring, wid, Sense::click_and_drag());
-    app.auto.add(&format!("{prefix}.wheel"), ring, "Output Cycle");
+    app.auto
+        .add(&format!("{prefix}.wheel"), ring, "Output Cycle");
     let sel_id = wid.with("sel");
     let drag_id = wid.with("drag");
     let mut sel: usize = ui.data(|d| d.get_temp(sel_id)).unwrap_or(0);
@@ -497,10 +697,25 @@ fn colorama_wheel(
         p.add(egui::Shape::convex_polygon(
             vec![tip, a, b],
             fill,
-            Stroke::new(if i == sel || dragging == Some(i) { 1.6 } else { 1.0 }, if i == sel { Color32::WHITE } else { Color32::from_gray(0x80) }),
+            Stroke::new(
+                if i == sel || dragging == Some(i) {
+                    1.6
+                } else {
+                    1.0
+                },
+                if i == sel {
+                    Color32::WHITE
+                } else {
+                    Color32::from_gray(0x80)
+                },
+            ),
         ));
         let hr = Rect::from_center_size(wheel_point(c, outer + 8.0, *ph), vec2(14.0, 14.0));
-        app.auto.add(&format!("{prefix}.stop.{i}"), hr, &format!("Stop {}", i + 1));
+        app.auto.add(
+            &format!("{prefix}.stop.{i}"),
+            hr,
+            &format!("Stop {}", i + 1),
+        );
         stop_rects.push(hr);
     }
     let hit = |q: Pos2| -> Option<usize> {
@@ -508,13 +723,21 @@ fn colorama_wheel(
             .iter()
             .enumerate()
             .filter(|(_, hr)| hr.expand(3.0).contains(q))
-            .min_by(|a, b| a.1.center().distance(q).total_cmp(&b.1.center().distance(q)))
+            .min_by(|a, b| {
+                a.1.center()
+                    .distance(q)
+                    .total_cmp(&b.1.center().distance(q))
+            })
             .map(|(i, _)| i)
     };
     let mut new_stops: Option<Vec<(f32, [f32; 4])>> = None;
     let alt = ui.input(|i| i.modifiers.alt);
     // One undo step per click or drag (a colour pick is its own step).
-    let key = gesture_key(ui, wid, resp.drag_started() || resp.clicked() || !resp.dragged());
+    let key = gesture_key(
+        ui,
+        wid,
+        resp.drag_started() || resp.clicked() || !resp.dragged(),
+    );
     if resp.drag_started()
         && let Some(q) = ui.input(|i| i.pointer.press_origin())
         && let Some(i) = hit(q)
@@ -579,7 +802,10 @@ fn colorama_wheel(
         p.text(
             pos2(sr.max.x + 8.0, sr.center().y),
             Align2::LEFT_CENTER,
-            tr_args("Stop {} at {}°", &[&(sel + 1), &format!("{:.0}", ph * 360.0)]),
+            tr_args(
+                "Stop {} at {}°",
+                &[&(sel + 1), &format!("{:.0}", ph * 360.0)],
+            ),
             Tokens::ui(11.0),
             t.text_dim,
         );
@@ -650,7 +876,12 @@ pub fn header_editor(
 /// Glow's Arbitrary Map: "red | green | blue" Curves point lists.
 pub fn split_map(s: &str) -> [fw::CurvePoints; 3] {
     let mut parts = s.split('|');
-    std::array::from_fn(|_| parts.next().map(fw::CurvePoints::parse).unwrap_or_else(fw::CurvePoints::identity))
+    std::array::from_fn(|_| {
+        parts
+            .next()
+            .map(fw::CurvePoints::parse)
+            .unwrap_or_else(fw::CurvePoints::identity)
+    })
 }
 
 pub fn join_map(m: &[fw::CurvePoints; 3]) -> String {
@@ -658,15 +889,38 @@ pub fn join_map(m: &[fw::CurvePoints; 3]) -> String {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn glow_map(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, layer: &Layer, g: &PropGroup, ectx: &EvalCtx, r: Rect, actions: &mut Actions) {
+fn glow_map(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    p: &egui::Painter,
+    layer: &Layer,
+    g: &PropGroup,
+    ectx: &EvalCtx,
+    r: Rect,
+    actions: &mut Actions,
+) {
     let t = app.tokens;
     let euid = g.uid;
     let prefix = format!("effectControls.effect.{euid}.glow");
-    let mode = g.get("colors").map(|pr| ectx.value(layer, pr).as_enum()).unwrap_or(0);
+    let mode = g
+        .get("colors")
+        .map(|pr| ectx.value(layer, pr).as_enum())
+        .unwrap_or(0);
     let x0 = r.min.x + 38.0;
-    let num = |id: &str| g.get(id).map(|pr| ectx.value(layer, pr).as_f64()).unwrap_or(0.0);
-    let looping = g.get("colorLooping").map(|pr| ectx.value(layer, pr).as_enum()).unwrap_or(2);
-    let (loops, phase, mid) = (num("colorLoops") as f32, (num("colorPhase") / 360.0) as f32, (num("abMidpoint") / 100.0) as f32);
+    let num = |id: &str| {
+        g.get(id)
+            .map(|pr| ectx.value(layer, pr).as_f64())
+            .unwrap_or(0.0)
+    };
+    let looping = g
+        .get("colorLooping")
+        .map(|pr| ectx.value(layer, pr).as_enum())
+        .unwrap_or(2);
+    let (loops, phase, mid) = (
+        num("colorLoops") as f32,
+        (num("colorPhase") / 360.0) as f32,
+        (num("abMidpoint") / 100.0) as f32,
+    );
     let map = split_map(&str_value(layer, ectx, g, "arbitraryMap"));
     let color_at = |l: f32| -> Color32 {
         let tt = effectcraft_engine::effects::glow_ab_t(l, looping, loops, phase, mid);
@@ -687,26 +941,75 @@ fn glow_map(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, laye
         }
     };
     let size = graph_size(r.width());
-    let strip_y = if mode == 2 { r.min.y + 30.0 + size + 12.0 } else { r.min.y + 8.0 };
+    let strip_y = if mode == 2 {
+        r.min.y + 30.0 + size + 12.0
+    } else {
+        r.min.y + 8.0
+    };
     let strip = Rect::from_min_size(pos2(x0, strip_y), vec2(size, 12.0));
     let n = 64;
     for i in 0..n {
         let f = (i as f32 + 0.5) / n as f32;
         let x = strip.min.x + strip.width() * i as f32 / n as f32;
-        p.rect_filled(Rect::from_min_max(pos2(x, strip.min.y), pos2(x + strip.width() / n as f32 + 0.5, strip.max.y)), 0.0, color_at(f));
+        p.rect_filled(
+            Rect::from_min_max(
+                pos2(x, strip.min.y),
+                pos2(x + strip.width() / n as f32 + 0.5, strip.max.y),
+            ),
+            0.0,
+            color_at(f),
+        );
     }
-    p.rect_stroke(strip, 0.0, Stroke::new(1.0, t.field_border), StrokeKind::Outside);
-    app.auto.add(&format!("{prefix}.colorMap"), strip, "Glow colour map");
-    p.text(pos2(strip.max.x + 8.0, strip.center().y), Align2::LEFT_CENTER, tr("Colour map"), Tokens::ui(10.5), t.text_faint);
+    p.rect_stroke(
+        strip,
+        0.0,
+        Stroke::new(1.0, t.field_border),
+        StrokeKind::Outside,
+    );
+    app.auto
+        .add(&format!("{prefix}.colorMap"), strip, "Glow colour map");
+    p.text(
+        pos2(strip.max.x + 8.0, strip.center().y),
+        Align2::LEFT_CENTER,
+        tr("Colour map"),
+        Tokens::ui(10.5),
+        t.text_faint,
+    );
     if mode != 2 {
         return;
     }
-    let ch = app.ui.fx_curve_channel.get(&euid).copied().unwrap_or(0).min(2);
-    let cols = [Color32::from_rgb(0xf0, 0x50, 0x50), Color32::from_rgb(0x50, 0xd0, 0x60), Color32::from_rgb(0x50, 0x80, 0xff)];
-    if let Some(n) = tabs(app, ui, p, x0, r.min.y + 15.0, ch, &["Red", "Green", "Blue"], &cols, &format!("{prefix}.channel")) {
+    let ch = app
+        .ui
+        .fx_curve_channel
+        .get(&euid)
+        .copied()
+        .unwrap_or(0)
+        .min(2);
+    let cols = [
+        Color32::from_rgb(0xf0, 0x50, 0x50),
+        Color32::from_rgb(0x50, 0xd0, 0x60),
+        Color32::from_rgb(0x50, 0x80, 0xff),
+    ];
+    if let Some(n) = tabs(
+        app,
+        ui,
+        p,
+        x0,
+        r.min.y + 15.0,
+        ch,
+        &["Red", "Green", "Blue"],
+        &cols,
+        &format!("{prefix}.channel"),
+    ) {
         app.ui.fx_curve_channel.insert(euid, n);
     }
-    if reset_link(app, ui, p, Rect::from_min_size(pos2(x0 + size - 44.0, r.min.y + 6.0), vec2(44.0, 18.0)), &format!("{prefix}.reset")) {
+    if reset_link(
+        app,
+        ui,
+        p,
+        Rect::from_min_size(pos2(x0 + size - 44.0, r.min.y + 6.0), vec2(44.0, 18.0)),
+        &format!("{prefix}.reset"),
+    ) {
         let mut m = map.clone();
         m[ch] = fw::CurvePoints::identity();
         set_str(actions, layer, g, "arbitraryMap", join_map(&m), None);
@@ -714,7 +1017,8 @@ fn glow_map(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, laye
     let gr = Rect::from_min_size(pos2(x0, r.min.y + 30.0), vec2(size, size));
     let gid = egui::Id::new(("glow-map", euid, ch));
     let (resp, edit) = fw::curves_graph(ui, gr, &map[ch], ch + 1, false, gid, &t);
-    app.auto.add(&format!("{prefix}.graph"), gr, "Arbitrary Map");
+    app.auto
+        .add(&format!("{prefix}.graph"), gr, "Arbitrary Map");
     register_points(app, &prefix, gr, &map[ch].0);
     let key = gesture_key(ui, gid, resp.drag_started() || resp.clicked());
     if let Some(np) = edit.changed {
@@ -732,7 +1036,10 @@ pub fn parse_pairs(s: &str) -> Vec<(f64, f64)> {
     s.split_whitespace()
         .filter_map(|tk| {
             let (a, b) = tk.split_once(',')?;
-            Some((a.trim().parse::<f64>().ok()?.rem_euclid(1.0), b.trim().parse::<f64>().ok()?.rem_euclid(1.0)))
+            Some((
+                a.trim().parse::<f64>().ok()?.rem_euclid(1.0),
+                b.trim().parse::<f64>().ok()?.rem_euclid(1.0),
+            ))
         })
         .collect()
 }
@@ -743,7 +1050,10 @@ pub fn format_pairs(v: &[(f64, f64)]) -> String {
         let s = s.trim_end_matches('0').trim_end_matches('.').to_string();
         if s.is_empty() { "0".into() } else { s }
     };
-    v.iter().map(|(a, b)| format!("{},{}", f(*a), f(*b))).collect::<Vec<_>>().join(" ")
+    v.iter()
+        .map(|(a, b)| format!("{},{}", f(*a), f(*b)))
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// A new pair in the widest gap between the destination fractions (the source fraction
@@ -765,8 +1075,15 @@ pub fn add_pair(v: &[(f64, f64)]) -> (f64, f64) {
         }
     }
     let (a, b) = (s[best], s[(best + 1) % n]);
-    let ds = if n == 1 { 1.0 } else { (b.0 - a.0).rem_euclid(1.0) };
-    ((a.0 + ds * 0.5).rem_euclid(1.0), (a.1 + gap * 0.5).rem_euclid(1.0))
+    let ds = if n == 1 {
+        1.0
+    } else {
+        (b.0 - a.0).rem_euclid(1.0)
+    };
+    (
+        (a.0 + ds * 0.5).rem_euclid(1.0),
+        (a.1 + gap * 0.5).rem_euclid(1.0),
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -786,28 +1103,99 @@ fn reshape_buttons(
     let b1 = Rect::from_min_size(pos2(r.min.x + 24.0, r.min.y + 4.0), vec2(84.0, 22.0));
     let b2 = Rect::from_min_size(pos2(b1.max.x + 8.0, b1.min.y), vec2(96.0, 22.0));
     let b3 = Rect::from_min_size(pos2(b2.max.x + 8.0, b1.min.y), vec2(56.0, 22.0));
-    if widgets::text_button(ui, b1, "Add Point", false, &t, egui::Id::new(("reshape-add", euid))).clicked() {
+    if widgets::text_button(
+        ui,
+        b1,
+        "Add Point",
+        false,
+        &t,
+        egui::Id::new(("reshape-add", euid)),
+    )
+    .clicked()
+    {
         let mut v = pairs.clone();
         v.push(add_pair(&pairs));
-        set_str(actions, layer, g, "correspondencePoints", format_pairs(&v), None);
+        set_str(
+            actions,
+            layer,
+            g,
+            "correspondencePoints",
+            format_pairs(&v),
+            None,
+        );
     }
-    app.auto.add(&format!("effectControls.effect.{euid}.reshape.add"), b1, "Add Point");
-    if widgets::text_button(ui, b2, "Remove Point", false, &t, egui::Id::new(("reshape-remove", euid))).clicked() && !pairs.is_empty() {
+    app.auto.add(
+        &format!("effectControls.effect.{euid}.reshape.add"),
+        b1,
+        "Add Point",
+    );
+    if widgets::text_button(
+        ui,
+        b2,
+        "Remove Point",
+        false,
+        &t,
+        egui::Id::new(("reshape-remove", euid)),
+    )
+    .clicked()
+        && !pairs.is_empty()
+    {
         let mut v = pairs.clone();
         v.pop();
-        set_str(actions, layer, g, "correspondencePoints", format_pairs(&v), None);
+        set_str(
+            actions,
+            layer,
+            g,
+            "correspondencePoints",
+            format_pairs(&v),
+            None,
+        );
     }
-    app.auto.add(&format!("effectControls.effect.{euid}.reshape.remove"), b2, "Remove Point");
-    if widgets::text_button(ui, b3, "Clear", false, &t, egui::Id::new(("reshape-clear", euid))).clicked() && !pairs.is_empty() {
-        set_str(actions, layer, g, "correspondencePoints", String::new(), None);
+    app.auto.add(
+        &format!("effectControls.effect.{euid}.reshape.remove"),
+        b2,
+        "Remove Point",
+    );
+    if widgets::text_button(
+        ui,
+        b3,
+        "Clear",
+        false,
+        &t,
+        egui::Id::new(("reshape-clear", euid)),
+    )
+    .clicked()
+        && !pairs.is_empty()
+    {
+        set_str(
+            actions,
+            layer,
+            g,
+            "correspondencePoints",
+            String::new(),
+            None,
+        );
     }
-    app.auto.add(&format!("effectControls.effect.{euid}.reshape.clear"), b3, "Clear");
+    app.auto.add(
+        &format!("effectControls.effect.{euid}.reshape.clear"),
+        b3,
+        "Clear",
+    );
     let status = if pairs.is_empty() {
         "Correspondence: automatic (select the effect to edit points on the viewer)".to_string()
     } else {
-        format!("{} correspondence point(s): drag them along the mask outlines in the viewer", pairs.len())
+        format!(
+            "{} correspondence point(s): drag them along the mask outlines in the viewer",
+            pairs.len()
+        )
     };
-    p.text(pos2(r.min.x + 24.0, r.min.y + 38.0), Align2::LEFT_CENTER, status, Tokens::ui(11.5), t.text_dim);
+    p.text(
+        pos2(r.min.x + 24.0, r.min.y + 38.0),
+        Align2::LEFT_CENTER,
+        status,
+        Tokens::ui(11.5),
+        t.text_dim,
+    );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -820,13 +1208,17 @@ const NO_CHANNEL: &str = "(none)";
 
 /// Whether `prop` (in group `g`) is one of EXtractoR's channel parameters.
 pub fn is_extractor_channel(g: &PropGroup, prop: &effectcraft_engine::project::Property) -> bool {
-    matches!(&g.kind, GroupKind::Effect { effect } if effect == EXTRACTOR) && EXTRACTOR_CHANNELS.contains(&prop.match_id.as_str())
+    matches!(&g.kind, GroupKind::Effect { effect } if effect == EXTRACTOR)
+        && EXTRACTOR_CHANNELS.contains(&prop.match_id.as_str())
 }
 
 /// The OpenEXR layer EXtractoR's red, green and blue come from (`""`: the unnamed layer), or
 /// `None` when they mix layers.
 fn extractor_layer(vals: &[String; 4]) -> Option<&str> {
-    let mut layers = vals[..3].iter().filter(|v| !v.trim().is_empty()).map(|v| effectcraft_engine::raster::channels3d::split_channel(v.trim()).0);
+    let mut layers = vals[..3]
+        .iter()
+        .filter(|v| !v.trim().is_empty())
+        .map(|v| effectcraft_engine::raster::channels3d::split_channel(v.trim()).0);
     let first = layers.next()?;
     layers.all(|l| l == first).then_some(first)
 }
@@ -854,9 +1246,18 @@ fn extractor_layers(
         None => "Custom".to_string(),
     };
     // Lined up with the parameter names and value popups below (Effect Controls' row layout).
-    p.text(pos2(r.min.x + 37.0, r.center().y), Align2::LEFT_CENTER, tr("Layer"), Tokens::ui(12.0), t.text);
+    p.text(
+        pos2(r.min.x + 37.0, r.center().y),
+        Align2::LEFT_CENTER,
+        tr("Layer"),
+        Tokens::ui(12.0),
+        t.text,
+    );
     let vx = (r.min.x + r.width() * 0.48).max(r.min.x + 161.0);
-    let dr = Rect::from_min_size(pos2(vx, r.center().y - 9.0), vec2((r.max.x - vx - 56.0).clamp(80.0, 200.0), 18.0));
+    let dr = Rect::from_min_size(
+        pos2(vx, r.center().y - 9.0),
+        vec2((r.max.x - vx - 56.0).clamp(80.0, 200.0), 18.0),
+    );
     let pop = egui::Id::new(("extractor-layers", euid));
     if widgets::dropdown(ui, dr, &label, &t, egui::Id::new(("extractor-layer", euid)))
         .on_hover_text(tr("The OpenEXR layer shown in red, green, blue and alpha"))
@@ -864,7 +1265,11 @@ fn extractor_layers(
     {
         widgets::open_popup(ui, pop);
     }
-    app.auto.add(&format!("effectControls.effect.{euid}.extractor.layer"), dr, "Layer");
+    app.auto.add(
+        &format!("effectControls.effect.{euid}.extractor.layer"),
+        dr,
+        "Layer",
+    );
     // The footage's layers, read only while the list is open (each frame of a sequence is a file).
     if !widgets::popup_is_open(ui, pop) {
         return;
@@ -873,10 +1278,22 @@ fn extractor_layers(
     let layers: Vec<&str> = aux.as_ref().map(|a| a.layers()).unwrap_or_default();
     let names: Vec<String> = match layers.as_slice() {
         [] => vec!["No layers: not a multi-layer OpenEXR file".into()],
-        _ => layers.iter().map(|l| if l.is_empty() { "RGBA".to_string() } else { l.to_string() }).collect(),
+        _ => layers
+            .iter()
+            .map(|l| {
+                if l.is_empty() {
+                    "RGBA".to_string()
+                } else {
+                    l.to_string()
+                }
+            })
+            .collect(),
     };
     let cur = names.iter().position(|n| *n == label);
-    if let (Some(i), Some(aux)) = (widgets::popup_menu(ui, pop, dr.left_bottom(), &names, cur), aux.as_ref()) {
+    if let (Some(i), Some(aux)) = (
+        widgets::popup_menu(ui, pop, dr.left_bottom(), &names, cur),
+        aux.as_ref(),
+    ) {
         let Some(l) = layers.get(i) else { return };
         let merge = format!("extractor-layer-{euid}-{}", ui.ctx().cumulative_pass_nr());
         for (id, v) in EXTRACTOR_CHANNELS.iter().zip(aux.layer_rgba(l)) {
@@ -898,24 +1315,42 @@ pub fn channel_popup(
 ) {
     let t = app.tokens;
     let uid = prop.uid;
-    let label = if cur.trim().is_empty() { NO_CHANNEL } else { cur };
+    let label = if cur.trim().is_empty() {
+        NO_CHANNEL
+    } else {
+        cur
+    };
     let pop = egui::Id::new(("ec-chpop", uid));
     if widgets::dropdown(ui, r, label, &t, egui::Id::new(("ec-ch", uid))).clicked() {
         widgets::open_popup(ui, pop);
     }
-    app.auto.add(&format!("effectControls.prop.{uid}.value"), r, &prop.name);
+    app.auto
+        .add(&format!("effectControls.prop.{uid}.value"), r, &prop.name);
     if !widgets::popup_is_open(ui, pop) {
         return;
     }
     let mut opts: Vec<String> = ["R", "G", "B", "A"].map(String::from).to_vec();
     if let Some(aux) = app.session.layer_channels(layer.id) {
-        opts.extend(aux.names().into_iter().filter(|n| !opts.iter().any(|o| o.eq_ignore_ascii_case(n))).map(String::from).collect::<Vec<_>>());
+        opts.extend(
+            aux.names()
+                .into_iter()
+                .filter(|n| !opts.iter().any(|o| o.eq_ignore_ascii_case(n)))
+                .map(String::from)
+                .collect::<Vec<_>>(),
+        );
     }
     opts.push(NO_CHANNEL.into());
     let sel = opts.iter().position(|o| o.eq_ignore_ascii_case(label));
     if let Some(i) = widgets::popup_menu(ui, pop, r.left_bottom(), &opts, sel) {
-        let v = opts.get(i).filter(|o| *o != NO_CHANNEL).cloned().unwrap_or_default();
-        actions.push(("prop.set".into(), json!({"layer": layer.id.0, "prop": uid, "value": v})));
+        let v = opts
+            .get(i)
+            .filter(|o| *o != NO_CHANNEL)
+            .cloned()
+            .unwrap_or_default();
+        actions.push((
+            "prop.set".into(),
+            json!({"layer": layer.id.0, "prop": uid, "value": v}),
+        ));
     }
 }
 
@@ -933,7 +1368,11 @@ pub fn nearest_fraction(pts: &[[f64; 2]], closed: bool, q: [f64; 2]) -> f64 {
         let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
         let l2 = dx * dx + dy * dy;
         let l = l2.sqrt();
-        let tt = if l2 > 0.0 { (((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / l2).clamp(0.0, 1.0) } else { 0.0 };
+        let tt = if l2 > 0.0 {
+            (((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / l2).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let d = (a[0] + dx * tt - q[0]).hypot(a[1] + dy * tt - q[1]);
         if d < best {
             best = d;
@@ -961,44 +1400,76 @@ pub fn reshape_overlay(
 ) {
     let shapes = effectcraft_engine::render::masks::shapes(ectx, layer);
     let mask = |id: &str| -> Option<(Vec<[f64; 2]>, bool)> {
-        let i = g.get(id).map(|pr| ectx.value(layer, pr).as_enum()).unwrap_or(0) as usize;
+        let i = g
+            .get(id)
+            .map(|pr| ectx.value(layer, pr).as_enum())
+            .unwrap_or(0) as usize;
         let s = shapes.get(i.checked_sub(1)?)?;
         (s.points.len() >= 2).then(|| (s.points.clone(), s.closed))
     };
-    let (Some(src), Some(dst)) = (mask("sourceMask"), mask("destinationMask")) else { return };
+    let (Some(src), Some(dst)) = (mask("sourceMask"), mask("destinationMask")) else {
+        return;
+    };
     let to_screen = |q: [f64; 2]| map.to_screen(fw::layer_to_comp(m, q));
     let outline = |pts: &[[f64; 2]], closed: bool, col: Color32| {
         let mut v: Vec<Pos2> = pts.iter().map(|q| to_screen(*q)).collect();
         if closed && let Some(f) = v.first().copied() {
             v.push(f);
         }
-        painter.add(egui::Shape::dashed_line(&v, Stroke::new(1.0, col), 5.0, 3.0));
+        painter.add(egui::Shape::dashed_line(
+            &v,
+            Stroke::new(1.0, col),
+            5.0,
+            3.0,
+        ));
     };
-    let (ys, cs) = (Color32::from_rgb(0xff, 0xd8, 0x40), Color32::from_rgb(0x40, 0xd8, 0xff));
+    let (ys, cs) = (
+        Color32::from_rgb(0xff, 0xd8, 0x40),
+        Color32::from_rgb(0x40, 0xd8, 0xff),
+    );
     outline(&src.0, src.1, ys);
     outline(&dst.0, dst.1, cs);
     let at = |pts: &[[f64; 2]], closed: bool, f: f64| {
         let len = effectcraft_engine::effects::util::poly_length(pts, closed);
         effectcraft_engine::effects::util::poly_point_at(pts, closed, f * len).0
     };
-    let raw = match g.get("correspondencePoints").map(|pr| ectx.value(layer, pr)) {
+    let raw = match g
+        .get("correspondencePoints")
+        .map(|pr| ectx.value(layer, pr))
+    {
         Some(Value::Str(s)) => s,
         _ => String::new(),
     };
     let pairs = parse_pairs(&raw);
     let ctx = ui.ctx().clone();
     for (i, (fs, fd)) in pairs.iter().enumerate() {
-        let (ps, pd) = (to_screen(at(&src.0, src.1, *fs)), to_screen(at(&dst.0, dst.1, *fd)));
+        let (ps, pd) = (
+            to_screen(at(&src.0, src.1, *fs)),
+            to_screen(at(&dst.0, dst.1, *fd)),
+        );
         painter.line_segment([ps, pd], Stroke::new(1.0, Color32::from_white_alpha(150)));
         for (end, s, col) in [(0usize, ps, ys), (1, pd, cs)] {
             let hr = Rect::from_center_size(s, vec2(12.0, 12.0));
             let id = egui::Id::new(("reshape-pt", g.uid, i, end));
             let resp = ui.interact(hr, id, Sense::drag());
             let hot = resp.hovered() || resp.dragged();
-            painter.rect_filled(Rect::from_center_size(s, vec2(7.0, 7.0)), 0.0, if hot { Color32::WHITE } else { col });
-            painter.rect_stroke(Rect::from_center_size(s, vec2(7.0, 7.0)), 0.0, Stroke::new(1.0, Color32::BLACK), StrokeKind::Outside);
+            painter.rect_filled(
+                Rect::from_center_size(s, vec2(7.0, 7.0)),
+                0.0,
+                if hot { Color32::WHITE } else { col },
+            );
+            painter.rect_stroke(
+                Rect::from_center_size(s, vec2(7.0, 7.0)),
+                0.0,
+                Stroke::new(1.0, Color32::BLACK),
+                StrokeKind::Outside,
+            );
             let which = if end == 0 { "source" } else { "dest" };
-            app.auto.add(&format!("viewer.reshape.{}.{which}.{i}", g.uid), hr, &format!("Correspondence point {} ({which})", i + 1));
+            app.auto.add(
+                &format!("viewer.reshape.{}.{which}.{i}", g.uid),
+                hr,
+                &format!("Correspondence point {} ({which})", i + 1),
+            );
             if hot {
                 ctx.set_cursor_icon(egui::CursorIcon::Move);
             }
@@ -1026,8 +1497,15 @@ pub fn reshape_overlay(
 /// renders.
 fn mesh_grid(layer: &Layer, ectx: &EvalCtx, g: &PropGroup) -> (usize, usize, Vec<(f64, f64)>) {
     let n = |id: &str| {
-        let v = g.get(id).map(|p| ectx.value(layer, p).as_f64()).unwrap_or(7.0);
-        if v.is_finite() { v.round().clamp(1.0, 31.0) as usize } else { 7 }
+        let v = g
+            .get(id)
+            .map(|p| ectx.value(layer, p).as_f64())
+            .unwrap_or(7.0);
+        if v.is_finite() {
+            v.round().clamp(1.0, 31.0) as usize
+        } else {
+            7
+        }
     };
     let (rows, cols) = (n("rows"), n("columns"));
     let count = (rows + 1) * (cols + 1);
@@ -1040,8 +1518,17 @@ fn mesh_grid(layer: &Layer, ectx: &EvalCtx, g: &PropGroup) -> (usize, usize, Vec
 
 /// The `mesh` parameter's text for these offsets (the inverse of `parse_mesh`).
 fn format_mesh(offs: &[(f64, f64)]) -> String {
-    let r = |v: f64| if v.is_finite() { (v * 1000.0).round() / 1000.0 + 0.0 } else { 0.0 };
-    offs.iter().map(|o| format!("{},{}", r(o.0), r(o.1))).collect::<Vec<_>>().join(" ")
+    let r = |v: f64| {
+        if v.is_finite() {
+            (v * 1000.0).round() / 1000.0 + 0.0
+        } else {
+            0.0
+        }
+    };
+    offs.iter()
+        .map(|o| format!("{},{}", r(o.0), r(o.1)))
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Mesh Warp on the Composition viewer (#303): the distortion mesh's grid over the layer, with
@@ -1062,7 +1549,12 @@ pub fn mesh_warp_overlay(
 ) {
     let (rows, cols, offs) = mesh_grid(layer, ectx, g);
     let [lw, lh] = ectx.effect_bounds(layer).0;
-    let rest = |k: usize| [(k % (cols + 1)) as f64 / cols as f64 * lw, (k / (cols + 1)) as f64 / rows as f64 * lh];
+    let rest = |k: usize| {
+        [
+            (k % (cols + 1)) as f64 / cols as f64 * lw,
+            (k / (cols + 1)) as f64 / rows as f64 * lh,
+        ]
+    };
     let screen: Vec<Pos2> = offs
         .iter()
         .enumerate()
@@ -1091,9 +1583,18 @@ pub fn mesh_warp_overlay(
         let hot = resp.hovered() || resp.dragged();
         let dot = Rect::from_center_size(*s, vec2(5.0, 5.0));
         painter.rect_filled(dot, 0.0, if hot { accent } else { Color32::WHITE });
-        painter.rect_stroke(dot, 0.0, Stroke::new(1.0, Color32::BLACK), StrokeKind::Outside);
+        painter.rect_stroke(
+            dot,
+            0.0,
+            Stroke::new(1.0, Color32::BLACK),
+            StrokeKind::Outside,
+        );
         let (row, col) = (k / (cols + 1), k % (cols + 1));
-        app.auto.add(&format!("viewer.meshWarp.{}.{row}.{col}", g.uid), hr, &format!("Mesh vertex (row {row}, column {col})"));
+        app.auto.add(
+            &format!("viewer.meshWarp.{}.{row}.{col}", g.uid),
+            hr,
+            &format!("Mesh vertex (row {row}, column {col})"),
+        );
         if hot {
             ctx.set_cursor_icon(egui::CursorIcon::Move);
         }
@@ -1121,7 +1622,10 @@ mod tests {
         let offs = vec![(0.0, 0.0), (12.5, -3.25), (1.0 / 3.0, f64::NAN)];
         let s = format_mesh(&offs);
         assert_eq!(s, "0,0 12.5,-3.25 0.333,0");
-        assert_eq!(effectcraft_engine::effects::parse_mesh(&s), vec![(0.0, 0.0), (12.5, -3.25), (0.333, 0.0)]);
+        assert_eq!(
+            effectcraft_engine::effects::parse_mesh(&s),
+            vec![(0.0, 0.0), (12.5, -3.25), (0.333, 0.0)]
+        );
     }
 
     #[test]
@@ -1142,11 +1646,17 @@ mod tests {
     #[test]
     fn reshape_pairs_and_outline_fractions() {
         assert_eq!(parse_pairs("0.25,0 1.5,0.5"), vec![(0.25, 0.0), (0.5, 0.5)]);
-        assert_eq!(format_pairs(&[(0.25, 0.0), (0.5, 0.125)]), "0.25,0 0.5,0.125");
+        assert_eq!(
+            format_pairs(&[(0.25, 0.0), (0.5, 0.125)]),
+            "0.25,0 0.5,0.125"
+        );
         assert_eq!(add_pair(&[]), (0.0, 0.0));
         assert_eq!(add_pair(&[(0.1, 0.0)]), (0.6, 0.5));
         let (s, d) = add_pair(&[(0.0, 0.0), (0.2, 0.25)]);
-        assert!((d - 0.625).abs() < 1e-9 && (s - 0.6).abs() < 1e-9, "{s} {d}");
+        assert!(
+            (d - 0.625).abs() < 1e-9 && (s - 0.6).abs() < 1e-9,
+            "{s} {d}"
+        );
         // A 10×10 square (closed): the point nearest (10, 5) is 3/8 of the way round.
         let sq = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]];
         assert!((nearest_fraction(&sq, true, [12.0, 5.0]) - 0.375).abs() < 1e-9);

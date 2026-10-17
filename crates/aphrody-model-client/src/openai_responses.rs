@@ -116,7 +116,7 @@ fn message_to_items(message: &ChatMessage) -> Vec<Value> {
                     flush_content(&mut items, &mut content, role);
                     items.push(opaque.clone());
                 }
-            },
+            }
             Part::FunctionCall { id, name, args } => {
                 flush_content(&mut items, &mut content, role);
                 items.push(json!({
@@ -125,8 +125,13 @@ fn message_to_items(message: &ChatMessage) -> Vec<Value> {
                     "name": name,
                     "arguments": args.to_string(),
                 }));
-            },
-            Part::FunctionResponse { id, name, response, images } => {
+            }
+            Part::FunctionResponse {
+                id,
+                name,
+                response,
+                images,
+            } => {
                 flush_content(&mut items, &mut content, role);
                 let output = match response {
                     Value::String(text) => text.clone(),
@@ -147,7 +152,7 @@ fn message_to_items(message: &ChatMessage) -> Vec<Value> {
                     image_content.extend(images.iter().map(input_image));
                     items.push(json!({ "role": "user", "content": image_content }));
                 }
-            },
+            }
         }
     }
     flush_content(&mut items, &mut content, role);
@@ -203,7 +208,10 @@ impl ResponsesStreamParser {
     /// Feed one SSE `data:` payload, returning the neutral events it produced.
     pub(crate) fn feed_event(&mut self, data: &str) -> Result<Vec<ModelStreamEvent>, ModelError> {
         let value: Value = serde_json::from_str(data)?;
-        let kind = value.get("type").and_then(Value::as_str).unwrap_or_default();
+        let kind = value
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
         let str_field = |key: &str| value.get(key).and_then(Value::as_str).unwrap_or_default();
 
         let events = match kind {
@@ -216,14 +224,15 @@ impl ResponsesStreamParser {
                     "" => Vec::new(),
                     delta => vec![ModelStreamEvent::ReasoningDelta(delta.to_owned())],
                 }
-            },
+            }
             "response.output_item.added" => {
                 let item = value.get("item").unwrap_or(&Value::Null);
                 if item.get("type").and_then(Value::as_str) == Some("function_call") {
                     let field =
                         |key: &str| item.get(key).and_then(Value::as_str).unwrap_or_default();
                     let (item_id, call_id, name) = (field("id"), field("call_id"), field("name"));
-                    self.announced.push((item_id.to_owned(), call_id.to_owned(), name.to_owned()));
+                    self.announced
+                        .push((item_id.to_owned(), call_id.to_owned(), name.to_owned()));
                     vec![ModelStreamEvent::ToolCallDelta {
                         id: (!call_id.is_empty()).then(|| call_id.to_owned()),
                         name: (!name.is_empty()).then(|| name.to_owned()),
@@ -232,7 +241,7 @@ impl ResponsesStreamParser {
                 } else {
                     Vec::new()
                 }
-            },
+            }
             "response.function_call_arguments.delta" => {
                 let (id, name) = match self.announced(str_field("item_id")) {
                     Some((call_id, name)) => (
@@ -246,7 +255,7 @@ impl ResponsesStreamParser {
                     name,
                     arguments_fragment: str_field("delta").to_owned(),
                 }]
-            },
+            }
             "response.function_call_arguments.done" => {
                 let item_id = str_field("item_id").to_owned();
                 let announced = self.announced(&item_id);
@@ -256,7 +265,9 @@ impl ResponsesStreamParser {
                 }
                 .filter(|call_id| !call_id.is_empty());
                 let name = match str_field("name") {
-                    "" => announced.map(|(_, name)| name.to_owned()).unwrap_or_default(),
+                    "" => announced
+                        .map(|(_, name)| name.to_owned())
+                        .unwrap_or_default(),
                     name => name.to_owned(),
                 };
                 self.pending.push(PendingCall {
@@ -266,7 +277,7 @@ impl ResponsesStreamParser {
                     arguments: str_field("arguments").to_owned(),
                 });
                 Vec::new()
-            },
+            }
             "response.output_item.done" => {
                 let item = value.get("item").unwrap_or(&Value::Null);
                 match item.get("type").and_then(Value::as_str) {
@@ -277,7 +288,7 @@ impl ResponsesStreamParser {
                     }],
                     _ => Vec::new(),
                 }
-            },
+            }
             "response.completed" => {
                 let mut events = self.flush_pending();
                 let response = value.get("response").unwrap_or(&value);
@@ -289,7 +300,7 @@ impl ResponsesStreamParser {
                         .map(str::to_owned),
                 });
                 events
-            },
+            }
             "response.incomplete" => {
                 let reason = value
                     .pointer("/response/incomplete_details/reason")
@@ -298,7 +309,7 @@ impl ResponsesStreamParser {
                 return Err(ModelError::Stream(format!(
                     "OpenAI Responses response incomplete: {reason}"
                 )));
-            },
+            }
             "response.failed" | "error" => {
                 let message = value
                     .pointer("/response/error/message")
@@ -306,8 +317,11 @@ impl ResponsesStreamParser {
                     .or_else(|| value.get("message"))
                     .and_then(Value::as_str)
                     .unwrap_or("OpenAI Responses stream failed");
-                return Err(ModelError::Api { status: 502, message: message.to_owned() });
-            },
+                return Err(ModelError::Api {
+                    status: 502,
+                    message: message.to_owned(),
+                });
+            }
             _ => Vec::new(),
         };
         Ok(events)
@@ -328,11 +342,17 @@ impl ResponsesStreamParser {
             .map(|index| self.pending.remove(index));
 
         let name = match field("name") {
-            "" => stashed.as_ref().map(|call| call.name.clone()).unwrap_or_default(),
+            "" => stashed
+                .as_ref()
+                .map(|call| call.name.clone())
+                .unwrap_or_default(),
             name => name.to_owned(),
         };
         let arguments = match field("arguments") {
-            "" => stashed.as_ref().map(|call| call.arguments.clone()).unwrap_or_default(),
+            "" => stashed
+                .as_ref()
+                .map(|call| call.arguments.clone())
+                .unwrap_or_default(),
             arguments => arguments.to_owned(),
         };
         let call_id = match field("call_id") {
@@ -365,8 +385,14 @@ fn tool_call_event(call_id: Option<String>, name: String, arguments: &str) -> Mo
     } else {
         serde_json::from_str(arguments).unwrap_or_else(|_| Value::String(arguments.to_owned()))
     };
-    let id = call_id.filter(|id| !id.is_empty()).unwrap_or_else(|| crate::generate_call_id(&name));
-    ModelStreamEvent::ToolCall { id, name, arguments }
+    let id = call_id
+        .filter(|id| !id.is_empty())
+        .unwrap_or_else(|| crate::generate_call_id(&name));
+    ModelStreamEvent::ToolCall {
+        id,
+        name,
+        arguments,
+    }
 }
 
 /// Concatenate the `summary[].text` entries of a reasoning item.
@@ -384,7 +410,12 @@ fn reasoning_summary_text(item: &Value) -> String {
 }
 
 fn parse_usage(usage: &Value) -> TokenUsage {
-    let count = |pointer: &str| usage.pointer(pointer).and_then(Value::as_u64).unwrap_or_default();
+    let count = |pointer: &str| {
+        usage
+            .pointer(pointer)
+            .and_then(Value::as_u64)
+            .unwrap_or_default()
+    };
     TokenUsage {
         input_tokens: count("/input_tokens"),
         output_tokens: count("/output_tokens"),
@@ -423,7 +454,9 @@ impl LocalResponsesClient {
     pub fn new(base_url: impl Into<String>, model: impl Into<String>) -> Self {
         let root = base_url.into();
         let runtime = ProviderRuntime::keyless(format!("{}/v1", root.trim_end_matches('/')));
-        Self { inner: OpenAiCompatClient::from_provider(runtime, OpenAiWire::Responses, model) }
+        Self {
+            inner: OpenAiCompatClient::from_provider(runtime, OpenAiWire::Responses, model),
+        }
     }
 }
 
@@ -457,14 +490,15 @@ fn frames_to_items(
         }
         match parser.feed_event(data) {
             Ok(events) => {
-                *terminal |=
-                    events.iter().any(|event| matches!(event, ModelStreamEvent::Completed { .. }));
+                *terminal |= events
+                    .iter()
+                    .any(|event| matches!(event, ModelStreamEvent::Completed { .. }));
                 items.extend(events.into_iter().map(Ok));
-            },
+            }
             Err(error) => {
                 *terminal = true;
                 items.push(Err(error));
-            },
+            }
         }
         if *terminal {
             break;
@@ -481,7 +515,7 @@ fn append_utf8(buffer: &mut String, pending: &mut Vec<u8>, chunk: &[u8]) -> Resu
         Ok(text) => {
             buffer.push_str(text);
             pending.clear();
-        },
+        }
         Err(error) if error.error_len().is_none() => {
             let valid = error.valid_up_to();
             // The prefix ending at valid_up_to is guaranteed to be valid UTF-8.
@@ -490,7 +524,7 @@ fn append_utf8(buffer: &mut String, pending: &mut Vec<u8>, chunk: &[u8]) -> Resu
                     .map_err(|error| ModelError::Stream(format!("invalid utf-8: {error}")))?,
             );
             pending.drain(..valid);
-        },
+        }
         Err(error) => return Err(ModelError::Stream(format!("invalid utf-8: {error}"))),
     }
     Ok(())
@@ -538,14 +572,14 @@ where
                                     (stream, buffer, pending_utf8, parser, ended),
                                 ));
                             }
-                        },
+                        }
                         Some(Err(error)) => {
                             ended = true;
                             return Some((
                                 futures::stream::iter(vec![Err(error)]),
                                 (stream, buffer, pending_utf8, parser, ended),
                             ));
-                        },
+                        }
                         None => {
                             // A final frame may lack its terminating blank line.
                             let tail = std::mem::take(&mut buffer);
@@ -569,7 +603,7 @@ where
                                 futures::stream::iter(items),
                                 (stream, buffer, pending_utf8, parser, ended),
                             ));
-                        },
+                        }
                     }
                 }
             },
@@ -720,14 +754,20 @@ mod tests {
         let events = parse_responses_event(&payload).unwrap();
         assert_eq!(
             events,
-            vec![ModelStreamEvent::ReasoningItem { text: "plan".into(), opaque: item.clone() }]
+            vec![ModelStreamEvent::ReasoningItem {
+                text: "plan".into(),
+                opaque: item.clone()
+            }]
         );
 
         let turn = ChatTurn {
             messages: vec![ChatMessage {
                 role: Role::Model,
                 parts: vec![
-                    Part::Reasoning { text: "plan".into(), opaque: item.clone() },
+                    Part::Reasoning {
+                        text: "plan".into(),
+                        opaque: item.clone(),
+                    },
                     Part::function_call("call_1", "shell", json!({ "cmd": "ls" })),
                 ],
             }],
@@ -824,8 +864,10 @@ mod tests {
         let bytes = futures::stream::iter(vec![Ok::<bytes::Bytes, ModelError>(
             bytes::Bytes::from_static(chunk.as_bytes()),
         )]);
-        let events: Vec<ModelStreamEvent> =
-            responses_sse_stream(bytes).map(Result::unwrap).collect().await;
+        let events: Vec<ModelStreamEvent> = responses_sse_stream(bytes)
+            .map(Result::unwrap)
+            .collect()
+            .await;
         assert_eq!(
             events,
             vec![
@@ -868,8 +910,10 @@ mod tests {
                 .map(|byte| Ok::<_, ModelError>(bytes::Bytes::copy_from_slice(&[*byte])))
                 .collect::<Vec<_>>(),
         );
-        let events: Vec<ModelStreamEvent> =
-            responses_sse_stream(bytes).map(Result::unwrap).collect().await;
+        let events: Vec<ModelStreamEvent> = responses_sse_stream(bytes)
+            .map(Result::unwrap)
+            .collect()
+            .await;
         assert_eq!(
             events,
             vec![
@@ -934,14 +978,17 @@ mod tests {
         let sequences = [
             vec![
                 Err(ModelError::Stream("connection reset".into())),
-                Ok(bytes::Bytes::from_static(b"data: {\"type\":\"response.completed\"}\n\n")),
+                Ok(bytes::Bytes::from_static(
+                    b"data: {\"type\":\"response.completed\"}\n\n",
+                )),
             ],
             vec![Ok(bytes::Bytes::from_static(&[0xff]))],
             vec![Ok(bytes::Bytes::from_static(&[0xe6, 0x97]))],
         ];
         for chunks in sequences {
-            let events: Vec<_> =
-                responses_sse_stream(futures::stream::iter(chunks)).collect().await;
+            let events: Vec<_> = responses_sse_stream(futures::stream::iter(chunks))
+                .collect()
+                .await;
             assert_eq!(events.len(), 2);
             assert!(matches!(events[0], Ok(ModelStreamEvent::Created)));
             assert!(matches!(events[1], Err(ModelError::Stream(_))));

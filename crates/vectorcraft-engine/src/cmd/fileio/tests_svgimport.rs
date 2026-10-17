@@ -14,7 +14,10 @@ struct Folder(PathBuf);
 
 impl Folder {
     fn new(name: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("vectorcraft-svgimport-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "vectorcraft-svgimport-{name}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("img")).unwrap();
         Self(dir)
@@ -65,7 +68,14 @@ fn opening_an_svg_links_its_images_from_its_folder() {
     let path = write_svg(&dir);
     let mut s = Session::new();
     let r = s.execute("document.open", &json!({"path": path})).unwrap();
-    assert!(r["warnings"].as_array().unwrap().iter().any(|w| w.as_str().unwrap().contains("gone.png")), "{r}");
+    assert!(
+        r["warnings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|w| w.as_str().unwrap().contains("gone.png")),
+        "{r}"
+    );
     let missing = r["missingLinks"].as_array().unwrap();
     assert_eq!(missing.len(), 1, "{r}");
     assert_eq!(missing[0]["name"], "gone.png");
@@ -73,20 +83,35 @@ fn opening_an_svg_links_its_images_from_its_folder() {
     let ims = images(&s);
     assert_eq!(ims.len(), 2);
     let photo = ims[0].link.as_ref().unwrap();
-    assert_eq!(PathBuf::from(&photo.path), PathBuf::from(dir.file("img/photo.png")));
-    assert!(photo.modified.is_some() && photo.hash.is_some(), "{photo:?}");
+    assert_eq!(
+        PathBuf::from(&photo.path),
+        PathBuf::from(dir.file("img/photo.png"))
+    );
+    assert!(
+        photo.modified.is_some() && photo.hash.is_some(),
+        "{photo:?}"
+    );
     assert_eq!((ims[0].width, ims[0].height), (300, 200));
     // Links reports the found file as it is, the missing one as missing.
     let c = s.execute("links.check", &json!({})).unwrap();
-    assert_eq!((c["missing"].as_u64(), c["modified"].as_u64()), (Some(1), Some(0)), "{c}");
+    assert_eq!(
+        (c["missing"].as_u64(), c["modified"].as_u64()),
+        (Some(1), Some(0)),
+        "{c}"
+    );
     // Once the file is there, Update Links reads it into the placeholder's box.
     std::fs::write(dir.file("img/gone.png"), png(50, 50)).unwrap();
     let r = s.execute("links.update", &json!({})).unwrap();
     assert_eq!(r["updated"].as_array().unwrap().len(), 1, "{r}");
     let gone = &images(&s)[1];
     assert_eq!((gone.width, gone.height), (50, 50));
-    let b = gone.xf.transform_rect_bbox(vectorcraft_geom::Rect::new(0.0, 0.0, 50.0, 50.0));
-    assert!((b.x0 - 200.0).abs() < 1e-6 && (b.width() - 100.0).abs() < 1e-6, "{b:?}");
+    let b = gone
+        .xf
+        .transform_rect_bbox(vectorcraft_geom::Rect::new(0.0, 0.0, 50.0, 50.0));
+    assert!(
+        (b.x0 - 200.0).abs() < 1e-6 && (b.width() - 100.0).abs() < 1e-6,
+        "{b:?}"
+    );
 }
 
 #[test]
@@ -94,7 +119,8 @@ fn placing_an_svg_reads_its_linked_images() {
     let dir = Folder::new("place");
     let path = write_svg(&dir);
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 300}))
+        .unwrap();
     s.execute("file.place", &json!({"path": path})).unwrap();
     let ims = images(&s);
     assert_eq!(ims.len(), 2);

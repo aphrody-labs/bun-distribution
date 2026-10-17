@@ -44,25 +44,53 @@ fn draft_playback_never_reaches_exports() {
     // Default: nothing is a draft, every frame exact.
     let g0 = filmcraft_codecs::gop_stats();
     for i in 0..n {
-        let f = src.video_frame(FrameRequest { time: rate.tick_of(i as i64), scale: 0.5 }).expect("frame");
-        assert_eq!(max_diff(&planes(&f), &reference(i)), 0, "frame {i} without draft mode");
+        let f = src
+            .video_frame(FrameRequest {
+                time: rate.tick_of(i as i64),
+                scale: 0.5,
+            })
+            .expect("frame");
+        assert_eq!(
+            max_diff(&planes(&f), &reference(i)),
+            0,
+            "frame {i} without draft mode"
+        );
     }
-    assert_eq!(filmcraft_codecs::gop_stats().draft, g0.draft, "draft decoding is off by default");
+    assert_eq!(
+        filmcraft_codecs::gop_stats().draft,
+        g0.draft,
+        "draft decoding is off by default"
+    );
 
     // Draft playback at 1/2 resolution on a fresh source: non-reference pictures are drafts.
     let src = filmcraft_codecs::open_bytes("draft_h264.mp4", bytes(&file)).expect("open");
     let g1 = filmcraft_codecs::gop_stats();
     let mut approximate = 0;
     for i in 0..n {
-        let f = with_draft(true, || src.video_frame(FrameRequest { time: rate.tick_of(i as i64), scale: 0.5 })).expect("frame");
+        let f = with_draft(true, || {
+            src.video_frame(FrameRequest {
+                time: rate.tick_of(i as i64),
+                scale: 0.5,
+            })
+        })
+        .expect("frame");
         approximate += (max_diff(&planes(&f), &reference(i)) > 0) as usize;
     }
     let drafts = filmcraft_codecs::gop_stats().draft - g1.draft;
-    assert!(drafts > 0 && approximate > 0 && approximate as u64 <= drafts, "{drafts} draft frames, {approximate} differ");
+    assert!(
+        drafts > 0 && approximate > 0 && approximate as u64 <= drafts,
+        "{drafts} draft frames, {approximate} differ"
+    );
 
     // Then an export from the same source (no draft hint): every frame is exact again.
     for i in 0..n {
-        let f = src.video_frame(FrameRequest::full(rate.tick_of(i as i64))).expect("frame");
-        assert_eq!(max_diff(&planes(&f), &reference(i)), 0, "export frame {i} after draft playback");
+        let f = src
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .expect("frame");
+        assert_eq!(
+            max_diff(&planes(&f), &reference(i)),
+            0,
+            "export frame {i} after draft playback"
+        );
     }
 }

@@ -37,7 +37,8 @@ impl Shown {
     /// The last dialog shown answers `paths`.
     pub(crate) fn answer(&self, paths: &[&str]) {
         let (_, tx) = self.0.borrow_mut().pop().expect("a dialog is showing");
-        tx.send(paths.iter().map(|p| p.to_string()).collect()).unwrap();
+        tx.send(paths.iter().map(|p| p.to_string()).collect())
+            .unwrap();
     }
 }
 
@@ -70,9 +71,16 @@ pub(crate) fn off_the_ui_thread(services: &mut Services) -> (Shown, Written) {
 /// A desktop app whose dialogs show off the UI thread, as sheets on the window when `sheets`
 /// (macOS) or as windows of their own (Linux).
 fn with_dialogs(sheets: bool) -> (VectorcraftApp, Shown, Written) {
-    let mut services = Services { dialogs_are_sheets: sheets, ..Default::default() };
+    let mut services = Services {
+        dialogs_are_sheets: sheets,
+        ..Default::default()
+    };
     let (shown, written) = off_the_ui_thread(&mut services);
-    (VectorcraftApp::new(Session::new(), services), shown, written)
+    (
+        VectorcraftApp::new(Session::new(), services),
+        shown,
+        written,
+    )
 }
 
 /// The macOS app: its dialogs are sheets.
@@ -102,12 +110,18 @@ fn frame(
 ) -> Vec<(String, Rect)> {
     fn texts(s: &egui::Shape, out: &mut Vec<(String, Rect)>) {
         match s {
-            egui::Shape::Text(t) => out.push((t.galley.text().to_string(), t.visual_bounding_rect())),
+            egui::Shape::Text(t) => {
+                out.push((t.galley.text().to_string(), t.visual_bounding_rect()))
+            }
             egui::Shape::Vec(v) => v.iter().for_each(|s| texts(s, out)),
             _ => {}
         }
     }
-    let raw = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(SCREEN.0, SCREEN.1))), events, ..Default::default() };
+    let raw = egui::RawInput {
+        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(SCREEN.0, SCREEN.1))),
+        events,
+        ..Default::default()
+    };
     let mut out = ctx.run_ui(raw, |ui| draw(app, ui));
     out.textures_delta.clear();
     let mut v = vec![];
@@ -120,7 +134,12 @@ fn at(texts: &[(String, Rect)], label: &str) -> Pos2 {
     texts
         .iter()
         .find(|(t, _)| t.trim() == label)
-        .unwrap_or_else(|| panic!("no `{label}` in {:?}", texts.iter().map(|t| &t.0).collect::<Vec<_>>()))
+        .unwrap_or_else(|| {
+            panic!(
+                "no `{label}` in {:?}",
+                texts.iter().map(|t| &t.0).collect::<Vec<_>>()
+            )
+        })
         .1
         .center()
 }
@@ -132,8 +151,18 @@ fn click(app: &mut VectorcraftApp, label: &str, draw: impl Fn(&mut VectorcraftAp
     frame(&ctx, app, vec![], &draw);
     frame(&ctx, app, vec![], &draw);
     let pos = at(&frame(&ctx, app, vec![], &draw), label);
-    let button = |pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
-    frame(&ctx, app, vec![egui::Event::PointerMoved(pos), button(true), button(false)], &draw);
+    let button = |pressed| egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Primary,
+        pressed,
+        modifiers: Default::default(),
+    };
+    frame(
+        &ctx,
+        app,
+        vec![egui::Event::PointerMoved(pos), button(true), button(false)],
+        &draw,
+    );
 }
 
 /// The open dialog, drawn as the app draws it.
@@ -144,7 +173,10 @@ fn dialogs(app: &mut VectorcraftApp, ui: &mut egui::Ui) {
 /// The active document written to `Poster.vectorcraft` in a folder of its own named after `tag`
 /// → (the folder, the file).
 fn saved_document(app: &mut VectorcraftApp, tag: &str) -> (std::path::PathBuf, String) {
-    let b64 = app.run("document.serialize", json!({})).unwrap()["dataBase64"].as_str().unwrap().to_string();
+    let b64 = app.run("document.serialize", json!({})).unwrap()["dataBase64"]
+        .as_str()
+        .unwrap()
+        .to_string();
     let dir = std::env::temp_dir().join(format!("vc-picks-{tag}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let file = dir.join("Poster.vectorcraft");
@@ -159,17 +191,31 @@ fn file_open_opens_what_its_dialog_picks_when_it_answers() {
     let (mut app, shown, _) = app();
     // The dialog shows; File › Open gives up for now, without a "cancelled".
     assert!(app.run("file.open", json!({})).is_err());
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Open(_)]
+    ));
     poll(&mut app);
-    assert!(app.session.documents().is_empty() && app.ui.status.is_empty(), "{}", app.ui.status);
+    assert!(
+        app.session.documents().is_empty() && app.ui.status.is_empty(),
+        "{}",
+        app.ui.status
+    );
     // Another dialog waits for this one.
     assert!(app.run("file.open", json!({})).is_err());
     assert_eq!(shown.requests().len(), 1);
-    assert!(app.ui.status.contains("file dialog is open"), "{}", app.ui.status);
+    assert!(
+        app.ui.status.contains("file dialog is open"),
+        "{}",
+        app.ui.status
+    );
     shown.answer(&["/art/a.svg"]);
     poll(&mut app);
     assert_eq!(app.session.documents().len(), 1);
-    assert_eq!(app.session.active().and_then(|d| d.path.clone()).as_deref(), Some("/art/a.svg"));
+    assert_eq!(
+        app.session.active().and_then(|d| d.path.clone()).as_deref(),
+        Some("/art/a.svg")
+    );
     // Cancelled: nothing happens, and dialogs show again.
     assert!(app.run("file.open", json!({})).is_err());
     shown.answer(&[]);
@@ -182,10 +228,18 @@ fn file_open_opens_what_its_dialog_picks_when_it_answers() {
 #[test]
 fn save_as_goes_on_with_the_path_picked() {
     let (mut app, shown, written) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run(
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 30, "height": 20}),
+    )
+    .unwrap();
     assert!(app.run("file.saveAs", json!({})).is_err());
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Save(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Save(_)]
+    ));
     shown.answer(&["/art/poster.svg"]);
     poll(&mut app);
     // SVG Options asks next, and its OK writes the file there.
@@ -203,7 +257,10 @@ fn a_dialogs_folder_button_fills_its_field_when_the_picker_answers() {
     assert_eq!(shown.requests(), [PickRequest::Folder]);
     shown.answer(&["/out"]);
     poll(&mut app);
-    assert_eq!(app.ui.dialog.as_ref().map(|d| d.str("folder")).as_deref(), Some("/out"));
+    assert_eq!(
+        app.ui.dialog.as_ref().map(|d| d.str("folder")).as_deref(),
+        Some("/out")
+    );
 }
 
 /// Separations Preview › Load Profile… asks off the UI thread, and the profile picked is loaded
@@ -211,14 +268,21 @@ fn a_dialogs_folder_button_fills_its_field_when_the_picker_answers() {
 #[test]
 fn load_profile_asks_off_the_ui_thread() {
     let (mut app, shown, _) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     click(&mut app, "Load Profile…", crate::panels::separations::show);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(p)] if p.filters.iter().any(|(_, e)| e.contains(&"icc"))));
+    assert!(
+        matches!(shown.requests().as_slice(), [PickRequest::Open(p)] if p.filters.iter().any(|(_, e)| e.contains(&"icc")))
+    );
     poll(&mut app);
     assert!(app.ui.status.is_empty(), "{}", app.ui.status);
     shown.answer(&["/no/such/profile.icc"]);
     poll(&mut app);
-    assert!(app.ui.status.contains("/no/such/profile.icc"), "color.loadProfile ran on the path: {}", app.ui.status);
+    assert!(
+        app.ui.status.contains("/no/such/profile.icc"),
+        "color.loadProfile ran on the path: {}",
+        app.ui.status
+    );
 }
 
 /// The Swatches libraries menu's Other Library… asks off the UI thread; the file picked (another
@@ -226,16 +290,29 @@ fn load_profile_asks_off_the_ui_thread() {
 #[test]
 fn other_swatch_library_asks_off_the_ui_thread() {
     let (mut app, shown, _) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("swatch.new", json!({"name": "Signal", "color": "#ff3300"})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run("swatch.new", json!({"name": "Signal", "color": "#ff3300"}))
+        .unwrap();
     let (dir, file) = saved_document(&mut app, "swatches");
     click(&mut app, "Other Library…", library_menu::<SwatchLibraries>);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Open(_)]
+    ));
     poll(&mut app);
-    assert!(app.ui.library_panel.is_none() && app.ui.status.is_empty(), "{}", app.ui.status);
+    assert!(
+        app.ui.library_panel.is_none() && app.ui.status.is_empty(),
+        "{}",
+        app.ui.status
+    );
     shown.answer(&[&file]);
     poll(&mut app);
-    let open = app.ui.library_panel.clone().unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
+    let open = app
+        .ui
+        .library_panel
+        .clone()
+        .unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
     assert_eq!(open.kind, "swatches");
     let (_, lib) = vectorcraft_engine::cmd::swatchlib::library(&app.session, &open.id).unwrap();
     assert!(lib.swatch("Signal").is_some(), "{}", open.id);
@@ -247,15 +324,34 @@ fn other_swatch_library_asks_off_the_ui_thread() {
 #[test]
 fn other_graphic_style_library_asks_off_the_ui_thread() {
     let (mut app, shown, _) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap()["id"].clone();
-    app.run("graphicStyle.new", json!({"name": "Poster Look", "id": id})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    let id = app
+        .run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 30, "height": 20}),
+        )
+        .unwrap()["id"]
+        .clone();
+    app.run("graphicStyle.new", json!({"name": "Poster Look", "id": id}))
+        .unwrap();
     let (dir, file) = saved_document(&mut app, "styles");
-    click(&mut app, "Other Library…", library_menu::<GraphicStyleLibraries>);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
+    click(
+        &mut app,
+        "Other Library…",
+        library_menu::<GraphicStyleLibraries>,
+    );
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Open(_)]
+    ));
     shown.answer(&[&file]);
     poll(&mut app);
-    let open = app.ui.library_panel.clone().unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
+    let open = app
+        .ui
+        .library_panel
+        .clone()
+        .unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
     assert_eq!(open.kind, "graphicStyles");
     let (_, lib) = vectorcraft_engine::cmd::stylelib::library(&app.session, &open.id).unwrap();
     assert!(lib.style("Poster Look").is_some(), "{}", open.id);
@@ -268,21 +364,37 @@ fn other_graphic_style_library_asks_off_the_ui_thread() {
 #[test]
 fn keyboard_shortcuts_import_and_export_ask_off_the_ui_thread() {
     let (mut app, shown, written) = app();
-    let set = crate::shortcut_editor::export_json("Custom", &BTreeMap::from([("view.grid".to_string(), "Ctrl+Alt+G".to_string())]));
+    let set = crate::shortcut_editor::export_json(
+        "Custom",
+        &BTreeMap::from([("view.grid".to_string(), "Ctrl+Alt+G".to_string())]),
+    );
     let (_, want) = crate::shortcut_editor::import_json(&set).unwrap();
     let bytes = serde_json::to_vec(&set).unwrap();
     app.services.read = Some(Box::new(move |_: &str| Ok(bytes.clone())));
     app.run("edit.keyboardShortcuts", json!({})).unwrap();
     click(&mut app, "Import…", dialogs);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Open(_)]
+    ));
     shown.answer(&["/keys/mine.json"]);
     poll(&mut app);
     let d = app.ui.dialog.as_ref().expect("the dialog stays open");
-    assert_eq!((d.kind.as_str(), &d.fields["overrides"]), ("shortcuts", &serde_json::to_value(&want).unwrap()));
-    assert!(d.str("__message").starts_with("Imported"), "{}", d.str("__message"));
+    assert_eq!(
+        (d.kind.as_str(), &d.fields["overrides"]),
+        ("shortcuts", &serde_json::to_value(&want).unwrap())
+    );
+    assert!(
+        d.str("__message").starts_with("Imported"),
+        "{}",
+        d.str("__message")
+    );
     assert!(app.ui.shortcut_overrides.is_empty(), "kept only on OK");
     click(&mut app, "Export…", dialogs);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Save(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Save(_)]
+    ));
     shown.answer(&["/keys/out.json"]);
     poll(&mut app);
     assert_eq!(*written.borrow(), ["/keys/out.json"]);
@@ -294,7 +406,10 @@ fn keyboard_shortcuts_import_and_export_ask_off_the_ui_thread() {
     assert_eq!(*written.borrow(), ["/keys/out.json"]);
     assert_eq!(app.ui.status, picks::dialog_gone());
     // The command waits for its dialog too: no data in place of the file.
-    assert_eq!(app.run("shortcuts.export", json!({})), Err("cancelled".to_string()));
+    assert_eq!(
+        app.run("shortcuts.export", json!({})),
+        Err("cancelled".to_string())
+    );
     shown.answer(&["/keys/command.json"]);
     poll(&mut app);
     assert_eq!(*written.borrow(), ["/keys/out.json", "/keys/command.json"]);
@@ -321,19 +436,44 @@ fn a_folder_for_a_closed_dialog_is_dropped() {
 fn preset_dialogs_export_asks_off_the_ui_thread() {
     use vectorcraft_engine::cmd::{flatten, pdfcmds, perspgrid, printpresets};
     let cases = [
-        ("pdf.preset.save", json!({"name": "Mine"}), "ui.pdfPresetsDialog", pdfcmds::PRESET_FORMAT),
-        ("print.presets.save", json!({"name": "Mine", "settings": {"copies": 2}}), "ui.printPresetsDialog", printpresets::PRESET_FORMAT),
-        ("flattener.presets.save", json!({"name": "Mine", "balance": 20}), "ui.flattenerPresetsDialog", flatten::PRESET_FORMAT),
-        ("perspective.presets.save", json!({"name": "Mine"}), "ui.perspectivePresetsDialog", perspgrid::PRESET_FORMAT),
+        (
+            "pdf.preset.save",
+            json!({"name": "Mine"}),
+            "ui.pdfPresetsDialog",
+            pdfcmds::PRESET_FORMAT,
+        ),
+        (
+            "print.presets.save",
+            json!({"name": "Mine", "settings": {"copies": 2}}),
+            "ui.printPresetsDialog",
+            printpresets::PRESET_FORMAT,
+        ),
+        (
+            "flattener.presets.save",
+            json!({"name": "Mine", "balance": 20}),
+            "ui.flattenerPresetsDialog",
+            flatten::PRESET_FORMAT,
+        ),
+        (
+            "perspective.presets.save",
+            json!({"name": "Mine"}),
+            "ui.perspectivePresetsDialog",
+            perspgrid::PRESET_FORMAT,
+        ),
     ];
     for (save, params, open, ext) in cases {
         let (mut app, shown, written) = app();
-        app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+        app.run("file.new", json!({"width": 100, "height": 80}))
+            .unwrap();
         app.run(save, params).unwrap();
         app.run(open, json!({"selected": "Mine"})).unwrap();
         let kind = dialog_kind(&app).unwrap().to_string();
         click(&mut app, "Export…", dialogs);
-        assert!(matches!(shown.requests().as_slice(), [PickRequest::Save(_)]), "{open}: {:?}", shown.requests());
+        assert!(
+            matches!(shown.requests().as_slice(), [PickRequest::Save(_)]),
+            "{open}: {:?}",
+            shown.requests()
+        );
         assert!(written.borrow().is_empty(), "{open}");
         let path = format!("/presets/mine.{ext}");
         shown.answer(&[&path]);
@@ -348,8 +488,10 @@ fn preset_dialogs_export_asks_off_the_ui_thread() {
 #[test]
 fn save_as_saves_the_document_that_asked() {
     let (mut app, shown, written) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("file.new", json!({"width": 200, "height": 160})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run("file.new", json!({"width": 200, "height": 160}))
+        .unwrap();
     let uids: Vec<u64> = app.session.documents().iter().map(|d| d.uid).collect();
     app.run("document.activate", json!({"index": 0})).unwrap();
     assert!(app.run("file.saveAs", json!({})).is_err());
@@ -360,7 +502,12 @@ fn save_as_saves_the_document_that_asked() {
     assert_eq!(dialog_kind(&app), Some("svgOptions"));
     crate::dialogs::confirm(&mut app).unwrap();
     assert_eq!(*written.borrow(), ["/art/a.svg"]);
-    let paths: Vec<Option<String>> = app.session.documents().iter().map(|d| d.path.clone()).collect();
+    let paths: Vec<Option<String>> = app
+        .session
+        .documents()
+        .iter()
+        .map(|d| d.path.clone())
+        .collect();
     assert_eq!(paths, [Some("/art/a.svg".to_string()), None]);
     assert_eq!(app.session.active().map(|d| d.uid), Some(uids[0]));
 }
@@ -370,18 +517,29 @@ fn save_as_saves_the_document_that_asked() {
 #[test]
 fn an_answer_for_a_closed_document_is_dropped() {
     let (mut app, shown, written) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("file.new", json!({"width": 200, "height": 160})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run("file.new", json!({"width": 200, "height": 160}))
+        .unwrap();
     app.run("document.activate", json!({"index": 0})).unwrap();
     assert!(app.run("file.saveAs", json!({})).is_err());
-    app.session.execute("file.close", &json!({"index": 0})).unwrap();
+    app.session
+        .execute("file.close", &json!({"index": 0}))
+        .unwrap();
     app.sync_views();
     shown.answer(&["/art/a.svg"]);
     poll(&mut app);
     assert_eq!(app.ui.status, CLOSED);
     assert!(written.borrow().is_empty());
     assert_eq!(dialog_kind(&app), None, "no SVG Options");
-    assert_eq!(app.session.documents().iter().map(|d| d.path.clone()).collect::<Vec<_>>(), [None]);
+    assert_eq!(
+        app.session
+            .documents()
+            .iter()
+            .map(|d| d.path.clone())
+            .collect::<Vec<_>>(),
+        [None]
+    );
     assert!(!app.file_dialog_open());
 }
 
@@ -390,27 +548,41 @@ fn an_answer_for_a_closed_document_is_dropped() {
 #[test]
 fn a_buttons_second_dialog_shows_off_the_ui_thread_too() {
     let (mut app, shown, _) = app();
-    let (from, done) = (Rc::new(RefCell::new(None::<String>)), Rc::new(RefCell::new(vec![])));
+    let (from, done) = (
+        Rc::new(RefCell::new(None::<String>)),
+        Rc::new(RefCell::new(vec![])),
+    );
     let (f, d) = (from.clone(), done.clone());
     picks::button(&mut app, move |app| {
         if f.borrow().is_none() {
             let picked = picks::open(app, &FilePick::default());
             *f.borrow_mut() = picked;
         }
-        let Some(source) = f.borrow().clone() else { return };
+        let Some(source) = f.borrow().clone() else {
+            return;
+        };
         if let Some(to) = picks::save(app, &FilePick::named("copy.svg")) {
             d.borrow_mut().push((source, to));
         }
     });
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Open(_)]
+    ));
     shown.answer(&["/art/in.svg"]);
     poll(&mut app);
     assert_eq!(from.borrow().as_deref(), Some("/art/in.svg"));
-    assert_eq!(shown.requests(), [PickRequest::Save(FilePick::named("copy.svg"))]);
+    assert_eq!(
+        shown.requests(),
+        [PickRequest::Save(FilePick::named("copy.svg"))]
+    );
     assert!(app.file_dialog_open() && done.borrow().is_empty());
     shown.answer(&["/art/out.svg"]);
     poll(&mut app);
-    assert_eq!(*done.borrow(), [("/art/in.svg".to_string(), "/art/out.svg".to_string())]);
+    assert_eq!(
+        *done.borrow(),
+        [("/art/in.svg".to_string(), "/art/out.svg".to_string())]
+    );
     assert!(!app.file_dialog_open());
 }
 
@@ -420,14 +592,25 @@ fn a_buttons_second_dialog_shows_off_the_ui_thread_too() {
 #[test]
 fn nothing_closes_or_quits_while_a_sheet_is_open() {
     let (mut app, shown, _) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("file.new", json!({"width": 200, "height": 160})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run("file.new", json!({"width": 200, "height": 160}))
+        .unwrap();
     assert!(!app.file_dialog_open() && !app.file_sheet_open());
     assert!(app.run("file.open", json!({})).is_err());
     assert!(app.file_dialog_open() && app.file_sheet_open());
     let refused = |app: &mut VectorcraftApp| {
-        for (id, p) in [("app.quit", json!({})), ("file.close", json!({})), ("file.close", json!({"index": 0})), ("file.closeAll", json!({}))] {
-            assert_eq!(app.run(id, p.clone()), Err(picks::busy().to_string()), "{id} {p}");
+        for (id, p) in [
+            ("app.quit", json!({})),
+            ("file.close", json!({})),
+            ("file.close", json!({"index": 0})),
+            ("file.closeAll", json!({})),
+        ] {
+            assert_eq!(
+                app.run(id, p.clone()),
+                Err(picks::busy().to_string()),
+                "{id} {p}"
+            );
         }
         assert_eq!(app.session.documents().len(), 2);
         assert_ne!(app.ui.status, "quit");
@@ -462,8 +645,10 @@ fn nothing_closes_or_quits_while_a_sheet_is_open() {
 #[test]
 fn on_linux_documents_close_while_a_dialog_is_open() {
     let (mut app, shown, written) = with_dialogs(false);
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("file.new", json!({"width": 200, "height": 160})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run("file.new", json!({"width": 200, "height": 160}))
+        .unwrap();
     app.run("document.activate", json!({"index": 0})).unwrap();
     assert!(app.run("file.saveAs", json!({})).is_err());
     assert!(app.file_dialog_open() && !app.file_sheet_open());
@@ -486,13 +671,21 @@ fn on_linux_documents_close_while_a_dialog_is_open() {
 #[test]
 fn an_open_answer_goes_on_after_the_active_document_closes() {
     let (mut app, shown, _) = with_dialogs(false);
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     assert!(app.run("file.open", json!({})).is_err());
     app.run("file.close", json!({})).unwrap();
     assert!(app.session.documents().is_empty());
     shown.answer(&["/art/b.svg"]);
     poll(&mut app);
-    assert_eq!(app.session.documents().iter().map(|d| d.path.clone()).collect::<Vec<_>>(), [Some("/art/b.svg".to_string())]);
+    assert_eq!(
+        app.session
+            .documents()
+            .iter()
+            .map(|d| d.path.clone())
+            .collect::<Vec<_>>(),
+        [Some("/art/b.svg".to_string())]
+    );
     assert_ne!(app.ui.status, CLOSED);
 }
 
@@ -501,27 +694,63 @@ fn an_open_answer_goes_on_after_the_active_document_closes() {
 #[test]
 fn save_changes_answers_for_its_own_document() {
     let (mut app, shown, written) = with_dialogs(false);
-    let modified = |app: &mut VectorcraftApp| app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
+    let modified = |app: &mut VectorcraftApp| {
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap()
+    };
     // X clean, A modified and untitled, C modified with a file.
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     modified(&mut app);
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     modified(&mut app);
     app.session.active_mut().unwrap().path = Some("/art/c.vectorcraft".into());
     let uids: Vec<u64> = app.session.documents().iter().map(|d| d.uid).collect();
     app.run("file.closeAll", json!({})).unwrap();
-    assert_eq!(app.ui.dialog.as_ref().map(|d| d.fields["uid"].clone()), Some(json!(uids[1])), "asks about A");
+    assert_eq!(
+        app.ui.dialog.as_ref().map(|d| d.fields["uid"].clone()),
+        Some(json!(uids[1])),
+        "asks about A"
+    );
     // Save: A's Save dialog shows, and X closes meanwhile.
     assert!(crate::dialogs::confirm(&mut app).is_err());
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Save(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Save(_)]
+    ));
     app.run("file.close", json!({"index": 0})).unwrap();
     shown.answer(&["/art/a.vectorcraft"]);
     poll(&mut app);
-    assert_eq!(*written.borrow(), ["/art/a.vectorcraft"], "{}", app.ui.status);
-    assert_eq!(app.session.documents().iter().map(|d| d.uid).collect::<Vec<_>>(), [uids[2]], "A closed, C untouched");
-    let d = app.ui.dialog.as_ref().expect("Save Changes asks about C next");
-    assert_eq!((d.kind.as_str(), &d.fields["uid"]), (crate::unsaved::KIND, &json!(uids[2])));
+    assert_eq!(
+        *written.borrow(),
+        ["/art/a.vectorcraft"],
+        "{}",
+        app.ui.status
+    );
+    assert_eq!(
+        app.session
+            .documents()
+            .iter()
+            .map(|d| d.uid)
+            .collect::<Vec<_>>(),
+        [uids[2]],
+        "A closed, C untouched"
+    );
+    let d = app
+        .ui
+        .dialog
+        .as_ref()
+        .expect("Save Changes asks about C next");
+    assert_eq!(
+        (d.kind.as_str(), &d.fields["uid"]),
+        (crate::unsaved::KIND, &json!(uids[2]))
+    );
 }
 
 /// A dialog asked for while another is open is refused, and the status bar says so rather than
@@ -549,7 +778,8 @@ fn a_refused_dialog_says_why() {
 #[test]
 fn a_panic_inside_an_entry_leaves_none_behind() {
     let (mut app, shown, written) = app();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     let r = vectorcraft_engine::guard::catch_panic(|| picks::button(&mut app, |_| panic!("a bug")));
     assert!(r.is_err());
     app.picks.recover();
@@ -563,17 +793,31 @@ fn a_panic_inside_an_entry_leaves_none_behind() {
 
 /// One whole frame of the app (its logic and its window); `close` presses the window's close
 /// button.
-fn app_frame(ctx: &egui::Context, app: &mut VectorcraftApp, close: bool) -> Vec<egui::ViewportCommand> {
-    let mut raw = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 900.0))), ..Default::default() };
+fn app_frame(
+    ctx: &egui::Context,
+    app: &mut VectorcraftApp,
+    close: bool,
+) -> Vec<egui::ViewportCommand> {
+    let mut raw = egui::RawInput {
+        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 900.0))),
+        ..Default::default()
+    };
     if close {
-        raw.viewports.entry(egui::ViewportId::ROOT).or_default().events.push(egui::ViewportEvent::Close);
+        raw.viewports
+            .entry(egui::ViewportId::ROOT)
+            .or_default()
+            .events
+            .push(egui::ViewportEvent::Close);
     }
     let mut out = ctx.run_ui(raw, |ui| {
         app.logic(ui.ctx());
         app.ui(ui);
     });
     out.textures_delta.clear();
-    out.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.commands.clone()).unwrap_or_default()
+    out.viewport_output
+        .get(&egui::ViewportId::ROOT)
+        .map(|v| v.commands.clone())
+        .unwrap_or_default()
 }
 
 /// The window's close button doesn't close the window while a dialog's sheet is on it: the status
@@ -583,16 +827,29 @@ fn the_window_stays_open_while_a_sheet_is_on_it() {
     for sheets in [true, false] {
         let (mut app, shown, _) = with_dialogs(sheets);
         let ctx = egui::Context::default();
-        app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+        app.run("file.new", json!({"width": 100, "height": 80}))
+            .unwrap();
         app_frame(&ctx, &mut app, false);
         assert!(app.run("file.open", json!({})).is_err());
         let commands = app_frame(&ctx, &mut app, true);
-        assert_eq!(commands.contains(&egui::ViewportCommand::CancelClose), sheets, "sheets: {sheets}");
-        assert_eq!(app.ui.status == picks::busy(), sheets, "sheets: {sheets}: {}", app.ui.status);
+        assert_eq!(
+            commands.contains(&egui::ViewportCommand::CancelClose),
+            sheets,
+            "sheets: {sheets}"
+        );
+        assert_eq!(
+            app.ui.status == picks::busy(),
+            sheets,
+            "sheets: {sheets}: {}",
+            app.ui.status
+        );
         assert_eq!(app.session.documents().len(), 1);
         shown.answer(&[]);
         app_frame(&ctx, &mut app, false);
-        assert!(!app_frame(&ctx, &mut app, true).contains(&egui::ViewportCommand::CancelClose), "sheets: {sheets}");
+        assert!(
+            !app_frame(&ctx, &mut app, true).contains(&egui::ViewportCommand::CancelClose),
+            "sheets: {sheets}"
+        );
     }
 }
 
@@ -603,14 +860,21 @@ fn inspect_tells_the_file_dialog_open() {
     let (mut app, shown, _) = app();
     let ctx = egui::Context::default();
     let shows = |app: &VectorcraftApp| crate::control::inspect(app, &ctx)["fileDialog"].clone();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     assert_eq!(shows(&app), Value::Null);
     /// What asks for a kind of dialog.
     type Ask = fn(&mut VectorcraftApp);
     let asks: [(&str, Ask); 4] = [
-        ("open", |app| assert!(app.run("file.open", json!({})).is_err())),
-        ("save", |app| assert!(app.run("file.saveAs", json!({})).is_err())),
-        ("place", |app| assert!(app.run("file.place", json!({})).is_err())),
+        ("open", |app| {
+            assert!(app.run("file.open", json!({})).is_err())
+        }),
+        ("save", |app| {
+            assert!(app.run("file.saveAs", json!({})).is_err())
+        }),
+        ("place", |app| {
+            assert!(app.run("file.place", json!({})).is_err())
+        }),
         ("folder", |app| {
             let mut d = Dialog::new("exportForScreens", json!({"folder": ""}));
             app.ui.dialog = Some(d.clone());
@@ -659,7 +923,10 @@ fn code_only(src: &str) -> String {
                 }
             }
             out.push(' ');
-        } else if c == 'r' && (i == 0 || !ident(i - 1) || (b[i - 1] == 'b' && (i < 2 || !ident(i - 2)))) && matches!(next, Some('"' | '#')) {
+        } else if c == 'r'
+            && (i == 0 || !ident(i - 1) || (b[i - 1] == 'b' && (i < 2 || !ident(i - 2))))
+            && matches!(next, Some('"' | '#'))
+        {
             // A raw string r"…", r#"…"# (or a raw identifier r#name, kept).
             let hashes = b[i + 1..].iter().take_while(|&&c| c == '#').count();
             if b.get(i + 1 + hashes) != Some(&'"') {
@@ -667,7 +934,9 @@ fn code_only(src: &str) -> String {
                 i += 1;
                 continue;
             }
-            let close: Vec<char> = std::iter::once('"').chain(std::iter::repeat_n('#', hashes)).collect();
+            let close: Vec<char> = std::iter::once('"')
+                .chain(std::iter::repeat_n('#', hashes))
+                .collect();
             i += 2 + hashes;
             while i < b.len() && !b[i..].starts_with(&close) {
                 i += 1;
@@ -750,7 +1019,11 @@ fn in_line_dialogs(code: &str) -> Vec<String> {
                 continue;
             }
             // What follows, over line breaks.
-            let next: String = rest.chars().filter(|c| !c.is_whitespace()).take(40).collect();
+            let next: String = rest
+                .chars()
+                .filter(|c| !c.is_whitespace())
+                .take(40)
+                .collect();
             if !next.starts_with(".is_some()") && !next.starts_with(".is_none()") {
                 found.push(format!("{field}{next}"));
             }
@@ -774,13 +1047,27 @@ fn only_picks_shows_the_hosts_dialogs() {
                 .and_then(|f| f(&crate::FilePick { filters: vec![("ICC Profiles", &["icc", "icm"])], ..Default::default() }))
         {"#;
     assert_eq!(in_line_dialogs(&code_only(before)).len(), 1);
-    assert_eq!(in_line_dialogs(&code_only("let s = &mut app.services; let p = (s.pick_save.as_mut()?)(&pick);")).len(), 1);
-    assert_eq!(in_line_dialogs(&code_only("let Some(f) = &mut s.pick_open else { return };")).len(), 1);
+    assert_eq!(
+        in_line_dialogs(&code_only(
+            "let s = &mut app.services; let p = (s.pick_save.as_mut()?)(&pick);"
+        ))
+        .len(),
+        1
+    );
+    assert_eq!(
+        in_line_dialogs(&code_only(
+            "let Some(f) = &mut s.pick_open else { return };"
+        ))
+        .len(),
+        1
+    );
     let fine = "let paths = if app.services.pick_open_multi.is_some() { 1 } else { 2 }; // app.services.pick_open.as_mut()\n\
                 let t = \"services.pick_folder.take()\"; let c = '\"'; let u = s.pick_folder.is_none();";
     assert_eq!(in_line_dialogs(&code_only(fine)), Vec::<String>::new());
     assert_eq!(
-        without_tests(&code_only("fn a() {}\n#[cfg(test)]\nmod tests;\n#[cfg(test)]\nmod t { fn b() { x.pick_open.take(); } }\nfn c() {}")),
+        without_tests(&code_only(
+            "fn a() {}\n#[cfg(test)]\nmod tests;\n#[cfg(test)]\nmod t { fn b() { x.pick_open.take(); } }\nfn c() {}"
+        )),
         "fn a() {}\n\n\nfn c() {}"
     );
 
@@ -791,12 +1078,23 @@ fn only_picks_shows_the_hosts_dialogs() {
     while let Some(d) = stack.pop() {
         for entry in std::fs::read_dir(&d).into_iter().flatten().flatten() {
             let path = entry.path();
-            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_string();
             if path.is_dir() {
                 stack.push(path);
             } else if name.ends_with(".rs") && !name.starts_with("tests") && name != "picks.rs" {
-                let key = path.strip_prefix(&dir).unwrap().to_string_lossy().replace('\\', "/");
-                scanned.insert(key, without_tests(&code_only(&std::fs::read_to_string(&path).unwrap())));
+                let key = path
+                    .strip_prefix(&dir)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                scanned.insert(
+                    key,
+                    without_tests(&code_only(&std::fs::read_to_string(&path).unwrap())),
+                );
             }
         }
     }
@@ -809,9 +1107,24 @@ fn only_picks_shows_the_hosts_dialogs() {
         ("place.rs", ".pick_open_multi.is_some()"),
         ("panels/separations.rs", "picks::open("),
     ] {
-        let flat: String = scanned.get(file).unwrap_or_else(|| panic!("{file} not read")).chars().filter(|c| !c.is_whitespace()).collect();
+        let flat: String = scanned
+            .get(file)
+            .unwrap_or_else(|| panic!("{file} not read"))
+            .chars()
+            .filter(|c| !c.is_whitespace())
+            .collect();
         assert!(flat.contains(code), "{file} lost `{code}`");
     }
-    let found: Vec<String> = scanned.iter().flat_map(|(file, code)| in_line_dialogs(code).into_iter().map(move |c| format!("{file}: {c}"))).collect();
-    assert!(found.is_empty(), "file dialogs shown in line, not through `picks`: {found:#?}");
+    let found: Vec<String> = scanned
+        .iter()
+        .flat_map(|(file, code)| {
+            in_line_dialogs(code)
+                .into_iter()
+                .map(move |c| format!("{file}: {c}"))
+        })
+        .collect();
+    assert!(
+        found.is_empty(),
+        "file dialogs shown in line, not through `picks`: {found:#?}"
+    );
 }

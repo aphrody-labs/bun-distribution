@@ -52,7 +52,9 @@ impl StateWriter {
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        StateWriter { buf: Vec::with_capacity(capacity) }
+        StateWriter {
+            buf: Vec::with_capacity(capacity),
+        }
     }
 
     pub fn into_inner(self) -> Vec<u8> {
@@ -328,7 +330,8 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         #[cfg(not(feature = "jit"))]
         self.mmio.clear_code_refcount();
 
-        self.render_sink.exec(crate::host::GxAction::InvalidateCaches);
+        self.render_sink
+            .exec(crate::host::GxAction::InvalidateCaches);
         self.render_sink.reset_efb();
 
         Ok(())

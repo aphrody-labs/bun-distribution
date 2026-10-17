@@ -3,7 +3,14 @@
 //! PDF user space is y-up with the origin at the bottom-left of the page; view space is y-down.
 //! `PageRect` is always in PDF user space (points, 1/72 inch).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod perspective;
 
@@ -18,7 +25,12 @@ pub struct PageRect {
 
 impl PageRect {
     pub fn new(x0: f32, y0: f32, x1: f32, y1: f32) -> Self {
-        Self { x0: x0.min(x1), y0: y0.min(y1), x1: x0.max(x1), y1: y0.max(y1) }
+        Self {
+            x0: x0.min(x1),
+            y0: y0.min(y1),
+            x1: x0.max(x1),
+            y1: y0.max(y1),
+        }
     }
     pub fn width(&self) -> f32 {
         self.x1 - self.x0

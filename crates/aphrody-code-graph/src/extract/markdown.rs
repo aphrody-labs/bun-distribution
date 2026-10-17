@@ -14,7 +14,14 @@ fn wiki_links(line: &str, out: &mut Vec<String>) {
         let after = &rest[start + 2..];
         let Some(end) = after.find("]]") else { break };
         let inner = &after[..end];
-        let target = inner.split('|').next().unwrap_or("").split('#').next().unwrap_or("").trim();
+        let target = inner
+            .split('|')
+            .next()
+            .unwrap_or("")
+            .split('#')
+            .next()
+            .unwrap_or("")
+            .trim();
         if !target.is_empty() {
             out.push(target.to_owned());
         }
@@ -125,11 +132,17 @@ mod tests {
         let f = extract("memory/MEMORY.md", src.as_bytes());
         let labels: Vec<&str> = f.nodes.iter().map(|n| n.label.as_str()).collect();
         assert_eq!(labels, ["MEMORY.md", "Memory", "Next step"]);
-        let links: Vec<(&str, ImportKind)> =
-            f.imports.iter().map(|i| (i.specifier.as_str(), i.kind)).collect();
+        let links: Vec<(&str, ImportKind)> = f
+            .imports
+            .iter()
+            .map(|i| (i.specifier.as_str(), i.kind))
+            .collect();
         assert_eq!(
             links,
-            [("bun-core-idioms", ImportKind::Wiki), ("bun-build.md", ImportKind::Link)]
+            [
+                ("bun-core-idioms", ImportKind::Wiki),
+                ("bun-build.md", ImportKind::Link)
+            ]
         );
     }
 }

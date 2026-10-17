@@ -16,7 +16,9 @@ pub use figcraft_collab::message::PluginEntry;
 use figcraft_collab::message::{PluginReply, PluginReq};
 pub use figcraft_plugin::bundle;
 pub use figcraft_plugin::bundle::newer as newer_version;
-use figcraft_plugin::bundle::{Asset, Bundle, MAX_ASSETS, check_asset_name, compare_versions, newer, sha256_hex};
+use figcraft_plugin::bundle::{
+    Asset, Bundle, MAX_ASSETS, check_asset_name, compare_versions, newer, sha256_hex,
+};
 use serde_json::{Value, json};
 
 use crate::cmd::CommandSpec;
@@ -26,7 +28,8 @@ use crate::plugins::{InstalledPlugin, MANIFEST_FILE, Manifest, installed, regist
 use crate::{EngineError, Result, Session, bad, spec};
 
 /// Why there's no plugin directory here (the browser build, sessions without the network).
-pub const NO_DIRECTORY: &str = "plugin directories on a server need the desktop app, figcraft-cli or the MCP server";
+pub const NO_DIRECTORY: &str =
+    "plugin directories on a server need the desktop app, figcraft-cli or the MCP server";
 /// Largest bundle downloaded or published (a server's own cap is at most this).
 pub const MAX_BUNDLE: usize = 32 << 20;
 /// The module's file name in an installed plugin's folder, and the folder its assets go in.
@@ -43,12 +46,21 @@ pub struct Listing {
 
 /// A server address without its query (the key), as it's shown and remembered.
 pub fn address(server: &str) -> String {
-    server.trim().split('?').next().unwrap_or_default().to_string()
+    server
+        .trim()
+        .split('?')
+        .next()
+        .unwrap_or_default()
+        .to_string()
 }
 
 /// The installed version of plugin `id`, if it is installed.
 pub fn installed_version<'a>(s: &'a Session, id: &str) -> Option<&'a str> {
-    s.prefs.plugins.iter().find(|p| p.manifest.id == id).map(|p| p.manifest.version.as_str())
+    s.prefs
+        .plugins
+        .iter()
+        .find(|p| p.manifest.id == id)
+        .map(|p| p.manifest.version.as_str())
 }
 
 /// Entry `e` with whether it's installed (its version) and whether that's older.
@@ -65,15 +77,30 @@ fn server(s: &Session, cmd: &str, p: &Value) -> Result<String> {
     string(p, "server")
         .filter(|v| !v.trim().is_empty())
         .or_else(|| s.prefs.plugin_directory.clone())
-        .ok_or_else(|| bad(cmd, "`server` required: the server's address, like ws://host:47900/"))
+        .ok_or_else(|| {
+            bad(
+                cmd,
+                "`server` required: the server's address, like ws://host:47900/",
+            )
+        })
 }
 
 /// One request to the directory at `server`; a refusal is an error.
 fn request(s: &mut Session, server: &str, req: PluginReq) -> Result<PluginReply> {
-    match s.net(NetRequest::Plugins { server: server.to_string(), req })?.0 {
-        NetReply::Plugins(Ok(PluginReply::Failed { reason }) | Err(reason)) => Err(EngineError::Other(reason)),
+    match s
+        .net(NetRequest::Plugins {
+            server: server.to_string(),
+            req,
+        })?
+        .0
+    {
+        NetReply::Plugins(Ok(PluginReply::Failed { reason }) | Err(reason)) => {
+            Err(EngineError::Other(reason))
+        }
         NetReply::Plugins(Ok(r)) => Ok(r),
-        _ => Err(EngineError::Other("the server answered something else".into())),
+        _ => Err(EngineError::Other(
+            "the server answered something else".into(),
+        )),
     }
 }
 
@@ -85,18 +112,24 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "plugin.directory.list";
     let server = server(s, cmd, p)?;
     let query = string(p, "query").unwrap_or_default();
-    let PluginReply::List(entries) = request(s, &server, PluginReq::List { query })? else { return Err(unexpected(cmd)) };
+    let PluginReply::List(entries) = request(s, &server, PluginReq::List { query })? else {
+        return Err(unexpected(cmd));
+    };
     let server = address(&server);
     let plugins: Vec<Value> = entries.iter().map(|e| describe(s, e)).collect();
     s.prefs.plugin_directory = Some(server.clone());
-    s.plugins.directory = Some(Listing { server: server.clone(), entries });
+    s.plugins.directory = Some(Listing {
+        server: server.clone(),
+        entries,
+    });
     Ok(json!({"server": server, "plugins": plugins}))
 }
 
 /// Download, check and install a plugin (see the module docs).
 fn install(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "plugin.directory.install";
-    let id = string(p, "id").ok_or_else(|| bad(cmd, "`id` required (see plugin.directory.list)"))?;
+    let id =
+        string(p, "id").ok_or_else(|| bad(cmd, "`id` required (see plugin.directory.list)"))?;
     if get(p, "confirm") != Some(&Value::Bool(true)) {
         return Err(bad(
             cmd,
@@ -105,22 +138,43 @@ fn install(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let server = server(s, cmd, p)?;
     let version = string(p, "version");
-    let PluginReply::Bundle { entry, bundle: bytes } = request(s, &server, PluginReq::Fetch { id: id.clone(), version: version.clone() })? else {
+    let PluginReply::Bundle {
+        entry,
+        bundle: bytes,
+    } = request(
+        s,
+        &server,
+        PluginReq::Fetch {
+            id: id.clone(),
+            version: version.clone(),
+        },
+    )?
+    else {
         return Err(unexpected(cmd));
     };
     let fail = |why: &str| EngineError::Other(format!("{id} wasn't installed: {why}"));
-    if entry.id != id || version.as_deref().is_some_and(|v| compare_versions(&entry.version, v) != Some(Ordering::Equal)) {
-        return Err(fail("the server sent another plugin than the one asked for"));
+    if entry.id != id
+        || version
+            .as_deref()
+            .is_some_and(|v| compare_versions(&entry.version, v) != Some(Ordering::Equal))
+    {
+        return Err(fail(
+            "the server sent another plugin than the one asked for",
+        ));
     }
     if bytes.len() > MAX_BUNDLE {
         return Err(fail("the download is too large"));
     }
     let sha = sha256_hex(&bytes);
     if sha != entry.sha256 {
-        return Err(fail("the download doesn't match the SHA-256 the directory lists"));
+        return Err(fail(
+            "the download doesn't match the SHA-256 the directory lists",
+        ));
     }
     if string(p, "sha256").is_some_and(|want| !want.trim().eq_ignore_ascii_case(&sha)) {
-        return Err(fail("the download isn't the version that was shown (its SHA-256 differs)"));
+        return Err(fail(
+            "the download isn't the version that was shown (its SHA-256 differs)",
+        ));
     }
     let bundle = Bundle::decode(&bytes, MAX_BUNDLE).map_err(|e| fail(&e))?;
     let mut manifest = bundle.check().map_err(|e| fail(&e))?;
@@ -138,7 +192,15 @@ fn install(s: &mut Session, p: &Value) -> Result<Value> {
         "path": path,
         "source": source,
     });
-    let replaced = register(s, InstalledPlugin { manifest, path, source: Some(source) }, bundle.wasm);
+    let replaced = register(
+        s,
+        InstalledPlugin {
+            manifest,
+            path,
+            source: Some(source),
+        },
+        bundle.wasm,
+    );
     let mut out = out;
     out["replaced"] = json!(replaced);
     Ok(out)
@@ -148,7 +210,9 @@ fn install(s: &mut Session, p: &Value) -> Result<Value> {
 /// of its id, so no id reaches the file system), its module renamed; the manifest's path. Without
 /// an install folder (the browser, the CLI and tests) the plugin lasts for the session.
 fn save(s: &Session, m: &mut Manifest, b: &Bundle) -> std::result::Result<Option<String>, String> {
-    let Some(root) = s.plugins.install_dir.clone() else { return Ok(None) };
+    let Some(root) = s.plugins.install_dir.clone() else {
+        return Ok(None);
+    };
     #[cfg(not(target_arch = "wasm32"))]
     {
         use std::fs;
@@ -167,7 +231,10 @@ fn save(s: &Session, m: &mut Manifest, b: &Bundle) -> std::result::Result<Option
                     fs::write(partial.join(ASSETS).join(&a.name), &a.data)?;
                 }
             }
-            fs::write(partial.join(MANIFEST_FILE), serde_json::to_vec_pretty(&*m).map_err(std::io::Error::other)?)
+            fs::write(
+                partial.join(MANIFEST_FILE),
+                serde_json::to_vec_pretty(&*m).map_err(std::io::Error::other)?,
+            )
         };
         let done = write().and_then(|()| {
             if folder.exists() {
@@ -179,7 +246,9 @@ fn save(s: &Session, m: &mut Manifest, b: &Bundle) -> std::result::Result<Option
             let _ = fs::remove_dir_all(&partial);
             return Err(format!("couldn't write it to {}: {e}", root.display()));
         }
-        Ok(Some(folder.join(MANIFEST_FILE).to_string_lossy().into_owned()))
+        Ok(Some(
+            folder.join(MANIFEST_FILE).to_string_lossy().into_owned(),
+        ))
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -211,36 +280,60 @@ fn bundle_from_disk(cmd: &str, path: &str) -> Result<Bundle> {
     if file.is_dir() {
         file.push(MANIFEST_FILE);
     }
-    let text =
-        String::from_utf8(read_file(&file, figcraft_plugin::manifest::MAX_MANIFEST_BYTES)?).map_err(|_| bad(cmd, "the manifest isn't UTF-8 text"))?;
+    let text = String::from_utf8(read_file(
+        &file,
+        figcraft_plugin::manifest::MAX_MANIFEST_BYTES,
+    )?)
+    .map_err(|_| bad(cmd, "the manifest isn't UTF-8 text"))?;
     let m = Manifest::parse(&text).map_err(|e| bad(cmd, e))?;
     let wasm = module_file(&file, &m)?;
     let mut assets = Vec::new();
     let dir = file.parent().map(|d| d.join(ASSETS));
     if let Some(entries) = dir.as_ref().and_then(|d| std::fs::read_dir(d).ok()) {
-        let mut names: Vec<(String, std::path::PathBuf)> =
-            entries.flatten().filter(|e| e.path().is_file()).map(|e| (e.file_name().to_string_lossy().into_owned(), e.path())).collect();
+        let mut names: Vec<(String, std::path::PathBuf)> = entries
+            .flatten()
+            .filter(|e| e.path().is_file())
+            .map(|e| (e.file_name().to_string_lossy().into_owned(), e.path()))
+            .collect();
         names.sort();
         if names.len() > MAX_ASSETS {
-            return Err(bad(cmd, format!("a plugin's assets folder holds at most {MAX_ASSETS} files")));
+            return Err(bad(
+                cmd,
+                format!("a plugin's assets folder holds at most {MAX_ASSETS} files"),
+            ));
         }
         for (name, path) in names {
             check_asset_name(&name).map_err(|e| bad(cmd, e))?;
-            assets.push(Asset { name, data: read_file(&path, MAX_BUNDLE)? });
+            assets.push(Asset {
+                name,
+                data: read_file(&path, MAX_BUNDLE)?,
+            });
         }
     }
-    Ok(Bundle { manifest: text, wasm, assets })
+    Ok(Bundle {
+        manifest: text,
+        wasm,
+        assets,
+    })
 }
 
 #[cfg(target_arch = "wasm32")]
 fn bundle_from_disk(cmd: &str, _path: &str) -> Result<Bundle> {
-    Err(bad(cmd, "there are no files in the browser: publish an installed plugin with `plugin`"))
+    Err(bad(
+        cmd,
+        "there are no files in the browser: publish an installed plugin with `plugin`",
+    ))
 }
 
 /// Publish a plugin folder (or an installed plugin) as a new version (needs the server's key).
 fn publish(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "plugin.directory.publish";
-    let server = string(p, "server").ok_or_else(|| bad(cmd, "`server` required: ws://host:port/?key=… (`figcraft-server key` prints it)"))?;
+    let server = string(p, "server").ok_or_else(|| {
+        bad(
+            cmd,
+            "`server` required: ws://host:port/?key=… (`figcraft-server key` prints it)",
+        )
+    })?;
     let bundle = match (string(p, "path"), string(p, "plugin")) {
         (Some(path), _) => bundle_from_disk(cmd, &path)?,
         (None, Some(id)) => {
@@ -249,28 +342,53 @@ fn publish(s: &mut Session, p: &Value) -> Result<Value> {
                 Some(path) => bundle_from_disk(cmd, path)?,
                 None => {
                     let wasm = crate::plugins::module_of(s, &ip)?;
-                    let manifest = serde_json::to_string(&ip.manifest).map_err(|e| EngineError::Other(e.to_string()))?;
-                    Bundle { manifest, wasm: wasm.to_vec(), assets: Vec::new() }
+                    let manifest = serde_json::to_string(&ip.manifest)
+                        .map_err(|e| EngineError::Other(e.to_string()))?;
+                    Bundle {
+                        manifest,
+                        wasm: wasm.to_vec(),
+                        assets: Vec::new(),
+                    }
                 }
             }
         }
-        (None, None) => return Err(bad(cmd, "pass `path` (a plugin folder or its figcraft-plugin.json) or `plugin` (an installed plugin's id)")),
+        (None, None) => {
+            return Err(bad(
+                cmd,
+                "pass `path` (a plugin folder or its figcraft-plugin.json) or `plugin` (an installed plugin's id)",
+            ));
+        }
     };
     // Checked here too, for a clear message before anything is sent.
     bundle.check().map_err(|e| bad(cmd, e))?;
     let bytes = bundle.encode();
     if bytes.len() > MAX_BUNDLE {
-        return Err(bad(cmd, format!("the plugin is larger than {} MiB", MAX_BUNDLE >> 20)));
+        return Err(bad(
+            cmd,
+            format!("the plugin is larger than {} MiB", MAX_BUNDLE >> 20),
+        ));
     }
-    let PluginReply::Published(entry) = request(s, &server, PluginReq::Publish { bundle: bytes })? else { return Err(unexpected(cmd)) };
+    let PluginReply::Published(entry) = request(s, &server, PluginReq::Publish { bundle: bytes })?
+    else {
+        return Err(unexpected(cmd));
+    };
     Ok(json!({"published": entry, "server": address(&server)}))
 }
 
 fn unpublish(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "plugin.directory.unpublish";
     let id = string(p, "id").ok_or_else(|| bad(cmd, "`id` required"))?;
-    let server = string(p, "server").ok_or_else(|| bad(cmd, "`server` required: ws://host:port/?key=…"))?;
-    let PluginReply::Removed(versions) = request(s, &server, PluginReq::Unpublish { id: id.clone(), version: string(p, "version") })? else {
+    let server =
+        string(p, "server").ok_or_else(|| bad(cmd, "`server` required: ws://host:port/?key=…"))?;
+    let PluginReply::Removed(versions) = request(
+        s,
+        &server,
+        PluginReq::Unpublish {
+            id: id.clone(),
+            version: string(p, "version"),
+        },
+    )?
+    else {
         return Err(unexpected(cmd));
     };
     Ok(json!({"id": id, "removed": versions}))

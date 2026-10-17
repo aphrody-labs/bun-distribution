@@ -8,10 +8,10 @@ use crate::generate::generate_image::providers::artcraft::build_common::build_ar
 use crate::generate::generate_image::providers::artcraft::seedream_4p5::request::ArtcraftSeedream4p5RequestState;
 
 pub fn build_artcraft_seedream_4p5(
-  builder: GenerateImageRequestBuilder,
+    builder: GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_image_request(builder, CommonImageModelEnum::Seedream4p5)?;
-  Ok(ImageGenerationDraftOrRequest::Request(
-    ImageGenerationRequest::ArtcraftSeedream4p5(ArtcraftSeedream4p5RequestState { request }),
-  ))
+    let request = build_artcraft_omni_image_request(builder, CommonImageModelEnum::Seedream4p5)?;
+    Ok(ImageGenerationDraftOrRequest::Request(
+        ImageGenerationRequest::ArtcraftSeedream4p5(ArtcraftSeedream4p5RequestState { request }),
+    ))
 }

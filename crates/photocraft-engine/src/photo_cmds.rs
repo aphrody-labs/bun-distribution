@@ -47,7 +47,10 @@ impl Stopwatch {
 pub(crate) const REGISTER_SIDE: usize = 1200;
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 // ---------- sources ----------
@@ -66,13 +69,20 @@ type Loaded = (Vec<Source>, PixelFormat, Option<std::sync::Arc<Vec<u8>>>);
 
 fn load_sources(s: &Session, p: &Value, cmd: &str) -> Result<Loaded> {
     let mut docs: Vec<(String, Document)> = Vec::new();
-    if p.get("useOpenDocuments").and_then(Value::as_bool).unwrap_or(false) {
+    if p.get("useOpenDocuments")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
         for d in s.documents() {
             docs.push((d.doc.name.clone(), (*d.doc).clone()));
         }
     }
     let paths: Vec<String> = match p.get("paths").or_else(|| p.get("input")) {
-        Some(Value::Array(a)) => a.iter().filter_map(Value::as_str).map(str::to_string).collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect(),
         Some(Value::String(dir)) => list_images(dir)?,
         _ => Vec::new(),
     };
@@ -81,35 +91,67 @@ fn load_sources(s: &Session, p: &Value, cmd: &str) -> Result<Loaded> {
         docs.push((file_name(path), import(&file_name(path), &bytes)?));
     }
     if docs.is_empty() {
-        return Err(bad(cmd, "pass \"paths\" (files or a folder) or \"useOpenDocuments\": true"));
+        return Err(bad(
+            cmd,
+            "pass \"paths\" (files or a folder) or \"useOpenDocuments\": true",
+        ));
     }
     let first = &docs[0].1;
     let mut fmt = first.pixel_format();
-    if matches!(fmt.mode, ColorMode::Cmyk | ColorMode::Lab | ColorMode::Multichannel) {
+    if matches!(
+        fmt.mode,
+        ColorMode::Cmyk | ColorMode::Lab | ColorMode::Multichannel
+    ) {
         // Registration and blending work in RGB; like Photoshop, the result is RGB.
         fmt = PixelFormat::new(ColorMode::Rgb, fmt.sample, true);
     }
-    let icc = (first.pixel_format().mode == fmt.mode).then(|| first.icc_profile.clone()).flatten();
+    let icc = (first.pixel_format().mode == fmt.mode)
+        .then(|| first.icc_profile.clone())
+        .flatten();
     let out = docs
         .into_iter()
         .map(|(name, d)| {
-            let info = d.metadata.exif.as_ref().map(|e| exif::read(e)).unwrap_or_default();
-            Source { name, surf: flattened(&d, fmt), w: d.size.width as usize, h: d.size.height as usize, exif: info }
+            let info = d
+                .metadata
+                .exif
+                .as_ref()
+                .map(|e| exif::read(e))
+                .unwrap_or_default();
+            Source {
+                name,
+                surf: flattened(&d, fmt),
+                w: d.size.width as usize,
+                h: d.size.height as usize,
+                exif: info,
+            }
         })
         .collect();
     Ok((out, fmt, icc))
 }
 
 /// Luminance and coverage of `surf` over `area`, box-downsampled by `k`.
-pub(crate) fn luma_alpha(surf: &Surface, area: Rect, k: usize) -> (usize, usize, Vec<f32>, Vec<f32>) {
+pub(crate) fn luma_alpha(
+    surf: &Surface,
+    area: Rect,
+    k: usize,
+) -> (usize, usize, Vec<f32>, Vec<f32>) {
     let fmt = surf.format();
     let n = fmt.channels();
     let (w, h) = (area.width() as usize, area.height() as usize);
     let (sw, sh) = (w.div_ceil(k).max(1), h.div_ceil(k).max(1));
-    let (mut l, mut a, mut cnt) = (vec![0.0f32; sw * sh], vec![0.0f32; sw * sh], vec![0.0f32; sw * sh]);
+    let (mut l, mut a, mut cnt) = (
+        vec![0.0f32; sw * sh],
+        vec![0.0f32; sw * sh],
+        vec![0.0f32; sw * sh],
+    );
     // Row by row keeps memory small for large images.
     for y in 0..h {
-        let row = surf.read_region(Rect::new(area.x0, area.y0 + y as i32, area.x1, area.y0 + y as i32 + 1));
+        let row = surf.read_region(Rect::new(
+            area.x0,
+            area.y0 + y as i32,
+            area.x1,
+            area.y0 + y as i32 + 1,
+        ));
         for x in 0..w {
             let p = to_rgba(&fmt, &row[x * n..(x + 1) * n]);
             let i = (y / k) * sw + x / k;
@@ -128,23 +170,54 @@ pub(crate) fn luma_alpha(surf: &Surface, area: Rect, k: usize) -> (usize, usize,
 
 /// Registers `images` (surface, content area) and returns full-resolution placements.
 /// `focal35` is the 35 mm-equivalent focal length when known (EXIF).
-pub(crate) fn register(images: &[(&Surface, Rect)], layout: Layout, reference: Option<usize>, geometric: bool, focal35: Option<f64>) -> Option<Alignment> {
-    let side = images.iter().map(|(_, r)| r.width().max(r.height()) as usize).max().unwrap_or(1);
+pub(crate) fn register(
+    images: &[(&Surface, Rect)],
+    layout: Layout,
+    reference: Option<usize>,
+    geometric: bool,
+    focal35: Option<f64>,
+) -> Option<Alignment> {
+    let side = images
+        .iter()
+        .map(|(_, r)| r.width().max(r.height()) as usize)
+        .max()
+        .unwrap_or(1);
     let k = side.div_ceil(REGISTER_SIDE).max(1);
     let prepared: Vec<panorama::PreparedImage> = images
         .iter()
         .map(|(s, r)| {
             let (w, h, l, a) = luma_alpha(s, *r, k);
-            let valid = a.iter().any(|v| *v < 0.5).then(|| a.iter().map(|v| *v > 0.5).collect());
+            let valid = a
+                .iter()
+                .any(|v| *v < 0.5)
+                .then(|| a.iter().map(|v| *v > 0.5).collect());
             (w, h, l, valid)
         })
         .collect();
     let feats = panorama::detect_many(&prepared, 800);
     let matches = panorama::match_pairs(&feats);
     let focal = focal35.map(|f| f / 36.0 * side as f64 / k as f64);
-    let a = panorama::align(&feats, &matches, &AlignOptions { layout, focal, reference, geometric })?;
+    let a = panorama::align(
+        &feats,
+        &matches,
+        &AlignOptions {
+            layout,
+            focal,
+            reference,
+            geometric,
+        },
+    )?;
     let kf = k as f64;
-    Some(Alignment { placements: a.placements.iter().map(|p| p.as_ref().map(|p| p.scaled(kf))).collect(), focal: a.focal * kf, rms: a.rms * kf, ..a })
+    Some(Alignment {
+        placements: a
+            .placements
+            .iter()
+            .map(|p| p.as_ref().map(|p| p.scaled(kf)))
+            .collect(),
+        focal: a.focal * kf,
+        rms: a.rms * kf,
+        ..a
+    })
 }
 
 /// The intensity registration searches planes at most this many pixels across: the pose is
@@ -159,7 +232,8 @@ const DIRECT_MIN_OVERLAP: f64 = 0.25;
 const DIRECT_MIN_CORRELATION: f64 = 0.5;
 
 /// The error of either registration when the layers have no detail in common.
-pub(crate) const NO_DETAIL: &str = "Auto-Align couldn't find enough matching detail between the layers";
+pub(crate) const NO_DETAIL: &str =
+    "Auto-Align couldn't find enough matching detail between the layers";
 
 /// Registers `images` (surface, content area, all of one size) by intensity
 /// ([`photocraft_algo::direct`]), for layers that nearly coincide (a focus or exposure bracket,
@@ -168,7 +242,11 @@ pub(crate) const NO_DETAIL: &str = "Auto-Align couldn't find enough matching det
 /// nothing full-resolution is held or warped. A layer whose best pose overlaps its neighbour
 /// too little or explains too little of it is no fit, and fails with [`NO_DETAIL`]. Planar
 /// layouts only; Auto means a similarity (Collage).
-pub(crate) fn register_direct(images: &[(&Surface, Rect)], layout: Layout, reference: usize) -> std::result::Result<Alignment, String> {
+pub(crate) fn register_direct(
+    images: &[(&Surface, Rect)],
+    layout: Layout,
+    reference: usize,
+) -> std::result::Result<Alignment, String> {
     use photocraft_algo::direct::{self, Plane, Pose};
     use photocraft_algo::transform::Homography;
     let (motion, layout) = match layout {
@@ -180,9 +258,14 @@ pub(crate) fn register_direct(images: &[(&Surface, Rect)], layout: Layout, refer
         }
     };
     let n = images.len();
-    let Some(&(_, area)) = images.get(reference) else { return Err("no layers to align".into()) };
+    let Some(&(_, area)) = images.get(reference) else {
+        return Err("no layers to align".into());
+    };
     let (fw, fh) = (area.width().max(1) as usize, area.height().max(1) as usize);
-    if images.iter().any(|(_, r)| (r.width(), r.height()) != (area.width(), area.height())) {
+    if images
+        .iter()
+        .any(|(_, r)| (r.width(), r.height()) != (area.width(), area.height()))
+    {
         return Err("the layers to align have different sizes".into());
     }
     // Luminance at the search scale: the box average over k×k pixels, read row by row.
@@ -191,7 +274,10 @@ pub(crate) fn register_direct(images: &[(&Surface, Rect)], layout: Layout, refer
         .iter()
         .map(|(s, r)| {
             let (_, _, l, a) = luma_alpha(s, *r, k);
-            let valid = a.iter().any(|v| *v < 0.5).then(|| a.iter().map(|v| *v > 0.5).collect());
+            let valid = a
+                .iter()
+                .any(|v| *v < 0.5)
+                .then(|| a.iter().map(|v| *v > 0.5).collect());
             (l, valid)
         })
         .collect();
@@ -201,15 +287,33 @@ pub(crate) fn register_direct(images: &[(&Surface, Rect)], layout: Layout, refer
     let mut rmss = Vec::new();
     let mut pairs = Vec::new();
     for dir in [1i64, -1] {
-        let Some((ref_luma, ref_valid)) = planes.get(reference) else { continue };
+        let Some((ref_luma, ref_valid)) = planes.get(reference) else {
+            continue;
+        };
         let (mut prev_luma, mut prev_valid) = (ref_luma.clone(), ref_valid.clone());
         let mut init = Pose::IDENTITY;
         let mut i = reference as i64 + dir;
         while i >= 0 && (i as usize) < n {
             let idx = i as usize;
             let Some((l, v)) = planes.get(idx) else { break };
-            let target = Plane { w, h, luma: l, valid: v.as_deref() };
-            let reg = direct::register(&Plane { w, h, luma: &prev_luma, valid: prev_valid.as_deref() }, &target, motion, init, 0);
+            let target = Plane {
+                w,
+                h,
+                luma: l,
+                valid: v.as_deref(),
+            };
+            let reg = direct::register(
+                &Plane {
+                    w,
+                    h,
+                    luma: &prev_luma,
+                    valid: prev_valid.as_deref(),
+                },
+                &target,
+                motion,
+                init,
+                0,
+            );
             if reg.overlap < min_overlap || reg.correlation < DIRECT_MIN_CORRELATION {
                 return Err(NO_DETAIL.into());
             }
@@ -226,35 +330,85 @@ pub(crate) fn register_direct(images: &[(&Surface, Rect)], layout: Layout, refer
     }
     let center = [fw as f64 / 2.0, fh as f64 / 2.0];
     let to_center = Homography([1.0, 0.0, center[0], 0.0, 1.0, center[1], 0.0, 0.0, 1.0]);
-    let placement = |hm: &Homography| Placement { projection: panorama::Projection::Plane, focal: fw.max(fh) as f64, center, k1: 0.0, h: hm.mul(&to_center) };
+    let placement = |hm: &Homography| Placement {
+        projection: panorama::Projection::Plane,
+        focal: fw.max(fh) as f64,
+        center,
+        k1: 0.0,
+        h: hm.mul(&to_center),
+    };
     // The pose is in fractions of the layer: its matrix at full resolution places the layer.
-    let placements: Vec<Option<Placement>> =
-        (0..n).map(|i| if i == reference { Some(placement(&Homography::IDENTITY)) } else { poses[i].map(|p| placement(&p.matrix(fw, fh))) }).collect();
-    let rms = if rmss.is_empty() { 0.0 } else { rmss.iter().sum::<f64>() / rmss.len() as f64 };
-    Ok(Alignment { layout, reference, placements, focal: 0.0, k1: 0.0, pairs, rms })
+    let placements: Vec<Option<Placement>> = (0..n)
+        .map(|i| {
+            if i == reference {
+                Some(placement(&Homography::IDENTITY))
+            } else {
+                poses[i].map(|p| placement(&p.matrix(fw, fh)))
+            }
+        })
+        .collect();
+    let rms = if rmss.is_empty() {
+        0.0
+    } else {
+        rmss.iter().sum::<f64>() / rmss.len() as f64
+    };
+    Ok(Alignment {
+        layout,
+        reference,
+        placements,
+        focal: 0.0,
+        k1: 0.0,
+        pairs,
+        rms,
+    })
 }
 
 /// The 35 mm focal length agreed by the sources' EXIF (median), if any.
 fn exif_focal(srcs: &[Source]) -> Option<f64> {
-    let mut f: Vec<f64> = srcs.iter().filter_map(|s| s.exif.focal_length_35mm).collect();
+    let mut f: Vec<f64> = srcs
+        .iter()
+        .filter_map(|s| s.exif.focal_length_35mm)
+        .collect();
     f.sort_by(f64::total_cmp);
     f.get(f.len() / 2).copied()
 }
 
 /// Warps the content of `surf` inside `rect` by a placement shifted by `offset`; image
 /// coordinates are surface coordinates minus `origin`.
-pub(crate) fn warp_placed(surf: &Surface, rect: Rect, origin: (f64, f64), pl: &Placement, offset: (f64, f64), interp: Interp) -> Result<Surface> {
+pub(crate) fn warp_placed(
+    surf: &Surface,
+    rect: Rect,
+    origin: (f64, f64),
+    pl: &Placement,
+    offset: (f64, f64),
+    interp: Interp,
+) -> Result<Surface> {
     let pl = pl.translated(offset.0, offset.1);
     if let Some(h) = plane_matrix(&pl, origin) {
         return Ok(warp_surface(surf, rect, &h, interp)?);
     }
-    Ok(warp_mesh_surface(surf, rect, &|x, y| pl.forward(x - origin.0, y - origin.1), interp))
+    Ok(warp_mesh_surface(
+        surf,
+        rect,
+        &|x, y| pl.forward(x - origin.0, y - origin.1),
+        interp,
+    ))
 }
 
 /// The projective matrix of a planar, distortion-free placement (surface px → panorama px).
 pub(crate) fn plane_matrix(pl: &Placement, origin: (f64, f64)) -> Option<Homography> {
     (pl.projection == panorama::Projection::Plane && pl.k1 == 0.0).then(|| {
-        let t = Homography([1.0, 0.0, -pl.center[0] - origin.0, 0.0, 1.0, -pl.center[1] - origin.1, 0.0, 0.0, 1.0]);
+        let t = Homography([
+            1.0,
+            0.0,
+            -pl.center[0] - origin.0,
+            0.0,
+            1.0,
+            -pl.center[1] - origin.1,
+            0.0,
+            0.0,
+            1.0,
+        ]);
         pl.h.mul(&t)
     })
 }
@@ -272,7 +426,15 @@ fn roi_of(surf: &Surface, area: Rect) -> RoiImage {
         px.extend_from_slice(&q[..cc]);
         alpha.push(if fmt.alpha { q[n - 1] } else { 1.0 });
     }
-    RoiImage { x0: area.x0, y0: area.y0, w, h, ch: cc, px, alpha }
+    RoiImage {
+        x0: area.x0,
+        y0: area.y0,
+        w,
+        h,
+        ch: cc,
+        px,
+        alpha,
+    }
 }
 
 /// Placements, source sizes and the panorama offset (for vignette removal).
@@ -289,18 +451,38 @@ pub(crate) struct Blended {
 
 /// Gain compensation (+ optional vignetting), seams in `order`, multi-band blending. Inputs are
 /// surfaces already in panorama coordinates with alpha. `geometry` enables vignette removal.
-pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seamless: bool, gains: bool, geometry: Option<BlendGeometry>) -> Blended {
+pub(crate) fn seam_blend(
+    warped: &[Surface],
+    canvas: Rect,
+    order: &[usize],
+    seamless: bool,
+    gains: bool,
+    geometry: Option<BlendGeometry>,
+) -> Blended {
     let n = warped.len();
     let fmt = warped.first().map_or(PixelFormat::RGBA8, Surface::format);
     let mut rois: Vec<RoiImage> = warped
         .iter()
         .map(|s| {
             let b = s.content_bounds().intersect(&canvas);
-            if b.is_empty() { RoiImage { x0: 0, y0: 0, w: 0, h: 0, ch: fmt.mode.color_channels(), px: Vec::new(), alpha: Vec::new() } } else { roi_of(s, b) }
+            if b.is_empty() {
+                RoiImage {
+                    x0: 0,
+                    y0: 0,
+                    w: 0,
+                    h: 0,
+                    ch: fmt.mode.color_channels(),
+                    px: Vec::new(),
+                    alpha: Vec::new(),
+                }
+            } else {
+                roi_of(s, b)
+            }
         })
         .collect();
     // Photometric model in panorama coordinates relative to the canvas origin used by placements.
-    let shifted: Option<Vec<Placement>> = geometry.map(|(pl, _, off)| pl.iter().map(|p| p.translated(off.0, off.1)).collect());
+    let shifted: Option<Vec<Placement>> =
+        geometry.map(|(pl, _, off)| pl.iter().map(|p| p.translated(off.0, off.1)).collect());
     let geo = match (&shifted, geometry) {
         (Some(pl), Some((_, sizes, _))) => Some((pl.as_slice(), sizes)),
         _ => None,
@@ -315,11 +497,16 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
         for y in 0..roi.h {
             for x in 0..roi.w {
                 let r2 = if vig && let Some((pl, sizes)) = geo {
-                    pl[i].inverse((roi.x0 + x as i32) as f64 + 0.5, (roi.y0 + y as i32) as f64 + 0.5).map_or(0.0, |(sx, sy)| {
-                        let (w, h) = (sizes[i].0 as f64, sizes[i].1 as f64);
-                        let (dx, dy) = (sx - w / 2.0, sy - h / 2.0);
-                        (dx * dx + dy * dy) / (w * w / 4.0 + h * h / 4.0)
-                    })
+                    pl[i]
+                        .inverse(
+                            (roi.x0 + x as i32) as f64 + 0.5,
+                            (roi.y0 + y as i32) as f64 + 0.5,
+                        )
+                        .map_or(0.0, |(sx, sy)| {
+                            let (w, h) = (sizes[i].0 as f64, sizes[i].1 as f64);
+                            let (dx, dy) = (sx - w / 2.0, sy - h / 2.0);
+                            (dx * dx + dy * dy) / (w * w / 4.0 + h * h / 4.0)
+                        })
                 } else {
                     0.0
                 };
@@ -327,7 +514,11 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
                 for c in 0..ch {
                     let f = photo.factor(i, c, r2);
                     let v = &mut roi.px[k * ch + c];
-                    *v = if fmt.mode == ColorMode::Cmyk { 1.0 - (1.0 - *v) * f } else { *v * f };
+                    *v = if fmt.mode == ColorMode::Cmyk {
+                        1.0 - (1.0 - *v) * f
+                    } else {
+                        *v * f
+                    };
                     if fmt.sample != SampleType::F32 {
                         *v = v.clamp(0.0, 1.0);
                     }
@@ -336,7 +527,10 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
         }
     }
     // Seams on a ≤ 1000 px grid.
-    let (cw, chh) = (canvas.width().max(1) as usize, canvas.height().max(1) as usize);
+    let (cw, chh) = (
+        canvas.width().max(1) as usize,
+        canvas.height().max(1) as usize,
+    );
     let s = cw.max(chh).div_ceil(1000).max(1);
     let (gw, gh) = (cw.div_ceil(s), chh.div_ceil(s));
     let mut luma = vec![vec![0.0f32; gw * gh]; n];
@@ -345,7 +539,10 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
         let mut acc = vec![(0.0f32, 0.0f32, 0u32); gw * gh];
         for y in 0..roi.h {
             for x in 0..roi.w {
-                let (u, v) = ((roi.x0 - canvas.x0) as usize + x, (roi.y0 - canvas.y0) as usize + y);
+                let (u, v) = (
+                    (roi.x0 - canvas.x0) as usize + x,
+                    (roi.y0 - canvas.y0) as usize + y,
+                );
                 let g = (v / s).min(gh - 1) * gw + (u / s).min(gw - 1);
                 let k = y * roi.w + x;
                 let l = roi.px[k * roi.ch..(k + 1) * roi.ch].iter().sum::<f32>() / roi.ch as f32;
@@ -375,7 +572,11 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
     let alpha_at = |j: usize, x: i32, y: i32| -> f32 {
         let r = &rois[j];
         let (lx, ly) = (x - r.x0, y - r.y0);
-        if lx < 0 || ly < 0 || lx as usize >= r.w || ly as usize >= r.h { 0.0 } else { r.alpha[ly as usize * r.w + lx as usize] }
+        if lx < 0 || ly < 0 || lx as usize >= r.w || ly as usize >= r.h {
+            0.0
+        } else {
+            r.alpha[ly as usize * r.w + lx as usize]
+        }
     };
     let weights: Vec<Vec<f32>> = rois
         .iter()
@@ -396,15 +597,28 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
                         return 0.0;
                     }
                     // Fallback: the earliest covering image wins.
-                    let first = (0..n).filter(|&j| alpha_at(j, x, y) >= 0.5).min_by_key(|&j| rank[j]);
+                    let first = (0..n)
+                        .filter(|&j| alpha_at(j, x, y) >= 0.5)
+                        .min_by_key(|&j| rank[j]);
                     if first == Some(i) { 1.0 } else { 0.0 }
                 })
                 .collect()
         })
         .collect();
     // Shift ROIs to canvas-relative coordinates for the blend.
-    let local: Vec<RoiImage> = rois.iter().map(|r| RoiImage { x0: r.x0 - canvas.x0, y0: r.y0 - canvas.y0, ..r.clone() }).collect();
-    let levels = if seamless { panorama::blend_levels(cw, chh).min(7) } else { 1 };
+    let local: Vec<RoiImage> = rois
+        .iter()
+        .map(|r| RoiImage {
+            x0: r.x0 - canvas.x0,
+            y0: r.y0 - canvas.y0,
+            ..r.clone()
+        })
+        .collect();
+    let levels = if seamless {
+        panorama::blend_levels(cw, chh).min(7)
+    } else {
+        1
+    };
     let (blend, cov) = panorama::multiband(cw, chh, &local, &weights, levels);
     let cc = fmt.mode.color_channels();
     let nch = fmt.channels();
@@ -414,7 +628,11 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
         for i in 0..cw * chh {
             for c in 0..cc {
                 let v = blend[i * cc + c];
-                data[i * nch + c] = if fmt.sample == SampleType::F32 { v } else { v.clamp(0.0, 1.0) };
+                data[i * nch + c] = if fmt.sample == SampleType::F32 {
+                    v
+                } else {
+                    v.clamp(0.0, 1.0)
+                };
             }
             data[i * nch + nch - 1] = cov[i];
         }
@@ -429,11 +647,18 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
             let mut px = vec![0.0f32; roi.w * roi.h * nch];
             let mut mask = vec![0.0f32; roi.w * roi.h];
             for k in 0..roi.w * roi.h {
-                let (u, v) = ((roi.x0 - canvas.x0) as usize + k % roi.w, (roi.y0 - canvas.y0) as usize + k / roi.w);
+                let (u, v) = (
+                    (roi.x0 - canvas.x0) as usize + k % roi.w,
+                    (roi.y0 - canvas.y0) as usize + k / roi.w,
+                );
                 let g = v * cw + u;
                 let inside = wt[k] > 0.5;
                 for c in 0..cc {
-                    px[k * nch + c] = if inside && seamless { data_clamp(blend[g * cc + c], fmt) } else { roi.px[k * cc + c] };
+                    px[k * nch + c] = if inside && seamless {
+                        data_clamp(blend[g * cc + c], fmt)
+                    } else {
+                        roi.px[k * cc + c]
+                    };
                 }
                 px[k * nch + nch - 1] = roi.alpha[k];
                 mask[k] = wt[k];
@@ -451,11 +676,20 @@ pub(crate) fn seam_blend(warped: &[Surface], canvas: Rect, order: &[usize], seam
             (ls, ms)
         })
         .collect();
-    Blended { layers, composite, gains: photo.gains, vignette: photo.vignette }
+    Blended {
+        layers,
+        composite,
+        gains: photo.gains,
+        vignette: photo.vignette,
+    }
 }
 
 fn data_clamp(v: f32, fmt: PixelFormat) -> f32 {
-    if fmt.sample == SampleType::F32 { v } else { v.clamp(0.0, 1.0) }
+    if fmt.sample == SampleType::F32 {
+        v
+    } else {
+        v.clamp(0.0, 1.0)
+    }
 }
 
 /// Seam order: the reference first, then by distance of each image's centre from it.
@@ -468,8 +702,13 @@ pub(crate) fn seam_order(warped: &[Surface], reference: usize) -> Vec<usize> {
     let mut order: Vec<usize> = (0..warped.len()).collect();
     order.sort_by(|&a, &b| {
         let (ca, cb) = (centre(&warped[a]), centre(&warped[b]));
-        let (da, db) = ((ca.0 - rc.0).hypot(ca.1 - rc.1), (cb.0 - rc.0).hypot(cb.1 - rc.1));
-        (a != reference).cmp(&(b != reference)).then(da.total_cmp(&db))
+        let (da, db) = (
+            (ca.0 - rc.0).hypot(ca.1 - rc.1),
+            (cb.0 - rc.0).hypot(cb.1 - rc.1),
+        );
+        (a != reference)
+            .cmp(&(b != reference))
+            .then(da.total_cmp(&db))
     });
     order
 }
@@ -483,14 +722,26 @@ fn photomerge(s: &mut Session, p: &Value) -> Result<Value> {
     let layout =
         Layout::parse(layout_s).ok_or_else(|| bad(cmd, format!("unknown layout `{layout_s}` (auto|perspective|cylindrical|spherical|collage|reposition)")))?;
     let blend = p.get("blend").and_then(Value::as_bool).unwrap_or(true);
-    let vignette = p.get("vignetteRemoval").and_then(Value::as_bool).unwrap_or(false);
-    let geometric = p.get("geometricCorrection").and_then(Value::as_bool).unwrap_or(false);
-    let fill = p.get("contentAwareFill").and_then(Value::as_bool).unwrap_or(false);
+    let vignette = p
+        .get("vignetteRemoval")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let geometric = p
+        .get("geometricCorrection")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let fill = p
+        .get("contentAwareFill")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let (srcs, fmt, icc) = load_sources(s, p, cmd)?;
     if srcs.len() < 2 {
         return Err(bad(cmd, "Photomerge needs two or more images"));
     }
-    let focal_param = p.get("focalLength").and_then(Value::as_f64).filter(|f| *f > 0.0);
+    let focal_param = p
+        .get("focalLength")
+        .and_then(Value::as_f64)
+        .filter(|f| *f > 0.0);
     let doc_name = format!("Untitled_Panorama{}", s.documents().len() + 1);
     // A background job when started with `Session::start` (#210): alignment, warping and
     // blending run on a worker, checking for cancellation between stages and images.
@@ -501,16 +752,30 @@ fn photomerge(s: &mut Session, p: &Value) -> Result<Value> {
         move |ctx| {
             ctx.progress(0.0, "Photomerge: aligning images");
             let focal35 = focal_param.or_else(|| exif_focal(&srcs));
-            let images: Vec<(&Surface, Rect)> = srcs.iter().map(|s| (&s.surf, Rect::new(0, 0, s.w as i32, s.h as i32))).collect();
-            let al = register(&images, layout, None, geometric, focal35)
-                .ok_or_else(|| EngineError::Other("Photomerge couldn't find enough matching detail between the images".into()))?;
+            let images: Vec<(&Surface, Rect)> = srcs
+                .iter()
+                .map(|s| (&s.surf, Rect::new(0, 0, s.w as i32, s.h as i32)))
+                .collect();
+            let al = register(&images, layout, None, geometric, focal35).ok_or_else(|| {
+                EngineError::Other(
+                    "Photomerge couldn't find enough matching detail between the images".into(),
+                )
+            })?;
             let t_reg = t0.ms() / 1000.0;
             ctx.check()?;
             ctx.progress(0.35, "Photomerge: warping images");
-            let placed: Vec<usize> = (0..srcs.len()).filter(|&i| al.placements[i].is_some()).collect();
+            let placed: Vec<usize> = (0..srcs.len())
+                .filter(|&i| al.placements[i].is_some())
+                .collect();
             // Parallel to `placed`.
-            let placements: Vec<&Placement> = placed.iter().filter_map(|&i| al.placements[i].as_ref()).collect();
-            let failed: Vec<String> = (0..srcs.len()).filter(|&i| al.placements[i].is_none()).map(|i| srcs[i].name.clone()).collect();
+            let placements: Vec<&Placement> = placed
+                .iter()
+                .filter_map(|&i| al.placements[i].as_ref())
+                .collect();
+            let failed: Vec<String> = (0..srcs.len())
+                .filter(|&i| al.placements[i].is_none())
+                .map(|i| srcs[i].name.clone())
+                .collect();
             // Canvas: union of the placed images.
             let (mut x0, mut y0, mut x1, mut y1) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
             for (&i, pl) in placed.iter().zip(&placements) {
@@ -521,8 +786,14 @@ fn photomerge(s: &mut Session, p: &Value) -> Result<Value> {
                 y1 = y1.max(b[3]);
             }
             let (cw, ch) = ((x1 - x0).ceil(), (y1 - y0).ceil());
-            if !(cw.is_finite() && ch.is_finite()) || cw > 30_000.0 || ch > 30_000.0 || cw * ch > 6.0e8 {
-                return Err(EngineError::Other(format!("the panorama would be {cw}×{ch} px; try another layout")));
+            if !(cw.is_finite() && ch.is_finite())
+                || cw > 30_000.0
+                || ch > 30_000.0
+                || cw * ch > 6.0e8
+            {
+                return Err(EngineError::Other(format!(
+                    "the panorama would be {cw}×{ch} px; try another layout"
+                )));
             }
             let canvas = Rect::new(0, 0, cw as i32, ch as i32);
             let offset = (-x0.floor(), -y0.floor());
@@ -534,20 +805,33 @@ fn photomerge(s: &mut Session, p: &Value) -> Result<Value> {
                     .map(|(k, (&i, pl))| {
                         ctx.check()?;
                         ctx.progress(0.35 + 0.25 * k as f32 / placed.len().max(1) as f32, "");
-                        warp_placed(&srcs[i].surf, Rect::new(0, 0, srcs[i].w as i32, srcs[i].h as i32), (0.0, 0.0), pl, offset, Interp::Bicubic)
+                        warp_placed(
+                            &srcs[i].surf,
+                            Rect::new(0, 0, srcs[i].w as i32, srcs[i].h as i32),
+                            (0.0, 0.0),
+                            pl,
+                            offset,
+                            Interp::Bicubic,
+                        )
                     })
                     .collect::<Result<Vec<Surface>>>()?
             };
             let t_warp = t0.ms() / 1000.0;
             ctx.check()?;
             ctx.progress(0.6, "Photomerge: blending images");
-            let mut doc = Document::new(doc_name, Size::new(cw as u32, ch as u32), fmt.mode, fmt.sample);
+            let mut doc = Document::new(
+                doc_name,
+                Size::new(cw as u32, ch as u32),
+                fmt.mode,
+                fmt.sample,
+            );
             doc.icc_profile = icc;
             let mut info = json!({});
             let ref_pos = placed.iter().position(|&i| i == al.reference).unwrap_or(0);
             if blend {
                 let pls: Vec<Placement> = placements.iter().map(|p| (*p).clone()).collect();
-                let sizes: Vec<(usize, usize)> = placed.iter().map(|&i| (srcs[i].w, srcs[i].h)).collect();
+                let sizes: Vec<(usize, usize)> =
+                    placed.iter().map(|&i| (srcs[i].w, srcs[i].h)).collect();
                 let order = seam_order(&warped, ref_pos);
                 let geo = vignette.then_some((pls.as_slice(), sizes.as_slice(), offset));
                 let b = seam_blend(&warped, canvas, &order, true, true, geo);
@@ -563,11 +847,17 @@ fn photomerge(s: &mut Session, p: &Value) -> Result<Value> {
                 if fill {
                     ctx.progress(0.85, "Photomerge: filling edges");
                     let filled = content_aware_fill(&b.composite, canvas);
-                    doc.layers.push(Layer::new("Content-Aware Fill", LayerContent::Raster(filled)));
+                    doc.layers.push(Layer::new(
+                        "Content-Aware Fill",
+                        LayerContent::Raster(filled),
+                    ));
                 }
             } else {
                 for (k, px) in warped.into_iter().enumerate() {
-                    doc.layers.push(Layer::new(srcs[placed[k]].name.clone(), LayerContent::Raster(px)));
+                    doc.layers.push(Layer::new(
+                        srcs[placed[k]].name.clone(),
+                        LayerContent::Raster(px),
+                    ));
                 }
             }
             let n = doc.layers.len();
@@ -650,7 +940,8 @@ fn content_aware_fill(comp: &Surface, canvas: Rect) -> Surface {
                 let (x2, y2) = ((xi + 1).min(sw - 1), (yi + 1).min(sh - 1));
                 let (tx, ty) = (fx - xi as f32, fy - yi as f32);
                 let at = |xx: usize, yy: usize| filled[(yy * sw + xx) * cc + c];
-                let fv = (at(xi, yi) * (1.0 - tx) + at(x2, yi) * tx) * (1.0 - ty) + (at(xi, y2) * (1.0 - tx) + at(x2, y2) * tx) * ty;
+                let fv = (at(xi, yi) * (1.0 - tx) + at(x2, yi) * tx) * (1.0 - ty)
+                    + (at(xi, y2) * (1.0 - tx) + at(x2, y2) * tx) * ty;
                 let _ = i;
                 out[o + c] = full[o + c] * a + fv * (1.0 - a);
             }
@@ -683,7 +974,9 @@ fn merge_to_hdr(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let (w, h) = (srcs[0].w, srcs[0].h);
     if srcs.iter().any(|s| s.w != w || s.h != h) {
-        return Err(EngineError::Other("the exposures must have the same pixel dimensions".into()));
+        return Err(EngineError::Other(
+            "the exposures must have the same pixel dimensions".into(),
+        ));
     }
     let area = Rect::new(0, 0, w as i32, h as i32);
     let mut imgs: Vec<Vec<[f32; 4]>> = srcs
@@ -696,9 +989,18 @@ fn merge_to_hdr(s: &mut Session, p: &Value) -> Result<Value> {
         .collect();
     // Exposures: explicit EV, EXIF, or estimated.
     let (exposures, source): (Vec<f64>, &str) = match p.get("exposures").and_then(Value::as_array) {
-        Some(a) if a.len() == srcs.len() => (a.iter().map(|v| 2f64.powf(v.as_f64().unwrap_or(0.0))).collect(), "params"),
+        Some(a) if a.len() == srcs.len() => (
+            a.iter()
+                .map(|v| 2f64.powf(v.as_f64().unwrap_or(0.0)))
+                .collect(),
+            "params",
+        ),
         Some(_) => return Err(bad(cmd, "`exposures` needs one EV value per image")),
-        None => match srcs.iter().map(|s| s.exif.exposure_factor()).collect::<Option<Vec<f64>>>() {
+        None => match srcs
+            .iter()
+            .map(|s| s.exif.exposure_factor())
+            .collect::<Option<Vec<f64>>>()
+        {
             Some(e) => (e, "exif"),
             None => {
                 let refs: Vec<&[[f32; 4]]> = imgs.iter().map(Vec::as_slice).collect();
@@ -725,7 +1027,11 @@ fn merge_to_hdr(s: &mut Session, p: &Value) -> Result<Value> {
                 g[j] += (54.0 * q[0] + 183.0 * q[1] + 19.0 * q[2]) / 256.0;
                 c[j] += 1.0;
             }
-            (sw, sh, g.iter().zip(&c).map(|(a, b)| a / b.max(1.0)).collect())
+            (
+                sw,
+                sh,
+                g.iter().zip(&c).map(|(a, b)| a / b.max(1.0)).collect(),
+            )
         };
         let (sw, sh, gref) = grey(&imgs[mid]);
         for i in 0..srcs.len() {
@@ -740,7 +1046,10 @@ fn merge_to_hdr(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
     }
-    let ghost_base = p.get("ghostBase").and_then(Value::as_u64).map(|v| v as usize);
+    let ghost_base = p
+        .get("ghostBase")
+        .and_then(Value::as_u64)
+        .map(|v| v as usize);
     if ghost_base.is_some_and(|g| g >= srcs.len()) {
         return Err(bad(cmd, "`ghostBase` is an image index"));
     }
@@ -751,16 +1060,29 @@ fn merge_to_hdr(s: &mut Session, p: &Value) -> Result<Value> {
         &refs,
         &MergeOptions {
             exposures: exposures.clone(),
-            remove_ghosts: p.get("removeGhosts").and_then(Value::as_bool).unwrap_or(false),
+            remove_ghosts: p
+                .get("removeGhosts")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
             ghost_base,
             response: None,
         },
     );
-    let mode = p.get("mode").and_then(|v| v.as_str().map(str::to_string).or_else(|| v.as_u64().map(|n| n.to_string()))).unwrap_or_else(|| "32".into());
+    let mode = p
+        .get("mode")
+        .and_then(|v| {
+            v.as_str()
+                .map(str::to_string)
+                .or_else(|| v.as_u64().map(|n| n.to_string()))
+        })
+        .unwrap_or_else(|| "32".into());
     let (depth, mut px) = match mode.as_str() {
         "32" => (SampleType::F32, merged.px.clone()),
         "16" | "8" => {
-            let method = p.get("method").and_then(Value::as_str).unwrap_or("localAdaptation");
+            let method = p
+                .get("method")
+                .and_then(Value::as_str)
+                .unwrap_or("localAdaptation");
             let f = |k: &str, d: f64| p.get(k).and_then(Value::as_f64).unwrap_or(d) as f32;
             let tm = match method {
                 "localAdaptation" => ToneMethod::LocalAdaptation(HdrToning {
@@ -775,22 +1097,52 @@ fn merge_to_hdr(s: &mut Session, p: &Value) -> Result<Value> {
                     saturation: f("saturation", 20.0).clamp(-100.0, 100.0),
                     curve: Vec::new(),
                 }),
-                "exposureGamma" => ToneMethod::ExposureGamma { exposure: f("exposure", 0.0), gamma: f("gamma", 1.0) },
+                "exposureGamma" => ToneMethod::ExposureGamma {
+                    exposure: f("exposure", 0.0),
+                    gamma: f("gamma", 1.0),
+                },
                 "highlightCompression" => ToneMethod::HighlightCompression,
                 "equalizeHistogram" => ToneMethod::EqualizeHistogram,
-                other => return Err(bad(cmd, format!("unknown method `{other}` (localAdaptation|exposureGamma|highlightCompression|equalizeHistogram)"))),
+                other => {
+                    return Err(bad(
+                        cmd,
+                        format!(
+                            "unknown method `{other}` (localAdaptation|exposureGamma|highlightCompression|equalizeHistogram)"
+                        ),
+                    ));
+                }
             };
             let mut v = merged.px.clone();
             hdr::tone_map(&mut v, w, h, &tm);
-            (if mode == "16" { SampleType::U16 } else { SampleType::U8 }, v)
+            (
+                if mode == "16" {
+                    SampleType::U16
+                } else {
+                    SampleType::U8
+                },
+                v,
+            )
         }
         other => return Err(bad(cmd, format!("`mode` must be 32|16|8, not {other}"))),
     };
     for q in px.iter_mut() {
         q[3] = 1.0;
     }
-    let mut doc = Document::new(format!("Untitled_HDR{}", s.documents().len() + 1), Size::new(w as u32, h as u32), ColorMode::Rgb, depth);
-    doc.icc_profile = if depth == SampleType::F32 { Some(photocraft_cms::builtin::Builtin::LinearSrgb.profile().to_bytes()) } else { icc };
+    let mut doc = Document::new(
+        format!("Untitled_HDR{}", s.documents().len() + 1),
+        Size::new(w as u32, h as u32),
+        ColorMode::Rgb,
+        depth,
+    );
+    doc.icc_profile = if depth == SampleType::F32 {
+        Some(
+            photocraft_cms::builtin::Builtin::LinearSrgb
+                .profile()
+                .to_bytes(),
+        )
+    } else {
+        icc
+    };
     let fmt = doc.pixel_format();
     let n = fmt.channels();
     let mut data = vec![0.0f32; w * h * n];
@@ -799,7 +1151,8 @@ fn merge_to_hdr(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let mut surf = Surface::new(fmt);
     surf.write_region(area, &data);
-    doc.layers.push(Layer::new("Background", LayerContent::Raster(surf)));
+    doc.layers
+        .push(Layer::new("Background", LayerContent::Raster(surf)));
     let idx = s.add_document(doc, None);
     let ev0 = exposures[order[0]];
     Ok(json!({
@@ -837,13 +1190,19 @@ fn crop_and_straighten(s: &mut Session, _p: &Value) -> Result<Value> {
     }
     let found = scancrop::find_photos(w, h, &rgba);
     if found.is_empty() {
-        return Err(EngineError::Other("no photos found on a uniform background".into()));
+        return Err(EngineError::Other(
+            "no photos found on a uniform background".into(),
+        ));
     }
     let mut out = Vec::new();
     for (k, f) in found.iter().enumerate() {
-        let (pw, ph) = (f.width.round().max(1.0) as u32, f.height.round().max(1.0) as u32);
+        let (pw, ph) = (
+            f.width.round().max(1.0) as u32,
+            f.height.round().max(1.0) as u32,
+        );
         let corners = f.corners();
-        let hq = Homography::rect_to_quad([0.0, 0.0, pw as f64, ph as f64], corners).and_then(|h| h.inverse());
+        let hq = Homography::rect_to_quad([0.0, 0.0, pw as f64, ph as f64], corners)
+            .and_then(|h| h.inverse());
         let Some(hm) = hq else { continue };
         let warped = warp_surface(&flat, area, &hm, Interp::Bicubic)?;
         let keep = Rect::new(0, 0, pw as i32, ph as i32);
@@ -856,7 +1215,12 @@ fn crop_and_straighten(s: &mut Session, _p: &Value) -> Result<Value> {
             q[n - 1] = 1.0;
         }
         px.write_region(keep, &data);
-        let mut nd = Document::new(format!("{} copy {}", doc.name, k + 1), Size::new(pw, ph), doc.mode, doc.depth);
+        let mut nd = Document::new(
+            format!("{} copy {}", doc.name, k + 1),
+            Size::new(pw, ph),
+            doc.mode,
+            doc.depth,
+        );
         nd.icc_profile = doc.icc_profile.clone();
         nd.resolution_dpi = doc.resolution_dpi;
         let mut bg = Layer::new("Background", LayerContent::Raster(px));
@@ -872,7 +1236,9 @@ fn crop_and_straighten(s: &mut Session, _p: &Value) -> Result<Value> {
 // ---------- specs ----------
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn always(_: &Session) -> std::result::Result<(), String> {
@@ -922,7 +1288,9 @@ mod tests {
     fn scene(w: usize, h: usize, seed: u64) -> Vec<[f32; 4]> {
         let mut z = seed;
         let mut rnd = || {
-            z = z.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            z = z
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             (z >> 33) as f64 / (1u64 << 31) as f64
         };
         let mut px: Vec<[f32; 4]> = (0..w * h)
@@ -955,11 +1323,20 @@ mod tests {
         }
         let mut s = Surface::new(fmt);
         s.write_region(Rect::new(0, 0, w as i32, h as i32), &data);
-        d.layers.push(Layer::new("Background", LayerContent::Raster(s)));
+        d.layers
+            .push(Layer::new("Background", LayerContent::Raster(s)));
         d
     }
 
-    fn crop(px: &[[f32; 4]], sw: usize, x0: usize, y0: usize, w: usize, h: usize, gain: f32) -> Vec<[f32; 4]> {
+    fn crop(
+        px: &[[f32; 4]],
+        sw: usize,
+        x0: usize,
+        y0: usize,
+        w: usize,
+        h: usize,
+        gain: f32,
+    ) -> Vec<[f32; 4]> {
         (0..w * h)
             .map(|i| {
                 let q = px[(y0 + i / w) * sw + x0 + i % w];
@@ -975,26 +1352,55 @@ mod tests {
             let sc = scene(sw, sh, 5);
             let mut s = Session::new();
             // Three overlapping crops, the middle one 15 % brighter (gain compensation).
-            for (k, (x0, g)) in [(0usize, 1.0f32), (130, 1.15), (260, 1.0)].into_iter().enumerate() {
-                s.add_document(doc_from(&format!("img{k}"), &crop(&sc, sw, x0, 10, 220, 200, g), 220, 200, depth), None);
+            for (k, (x0, g)) in [(0usize, 1.0f32), (130, 1.15), (260, 1.0)]
+                .into_iter()
+                .enumerate()
+            {
+                s.add_document(
+                    doc_from(
+                        &format!("img{k}"),
+                        &crop(&sc, sw, x0, 10, 220, 200, g),
+                        220,
+                        200,
+                        depth,
+                    ),
+                    None,
+                );
             }
-            let r = s.execute("file.automate.photomerge", json!({"useOpenDocuments": true, "layout": "reposition"})).unwrap();
+            let r = s
+                .execute(
+                    "file.automate.photomerge",
+                    json!({"useOpenDocuments": true, "layout": "reposition"}),
+                )
+                .unwrap();
             assert_eq!(r["placed"].as_array().unwrap().len(), 3, "{r}");
             let (w, h) = (r["width"].as_u64().unwrap(), r["height"].as_u64().unwrap());
-            assert!((w as i64 - 480).abs() <= 2 && (h as i64 - 200).abs() <= 2, "{depth:?} {w}×{h}");
+            assert!(
+                (w as i64 - 480).abs() <= 2 && (h as i64 - 200).abs() <= 2,
+                "{depth:?} {w}×{h}"
+            );
             let d = &s.active().unwrap().doc;
             assert_eq!(d.layers.len(), 3);
             assert!(d.layers.iter().all(|l| l.mask.is_some()));
             // Masks partition the panorama: every covered pixel is shown by exactly one layer.
             for &(x, y) in &[(20, 100), (200, 50), (380, 150), (470, 120)] {
-                let shown: f32 = d.layers.iter().map(|l| l.mask.as_ref().unwrap().value(x, y) * l.surface().unwrap().rgba(x, y)[3]).sum();
+                let shown: f32 = d
+                    .layers
+                    .iter()
+                    .map(|l| {
+                        l.mask.as_ref().unwrap().value(x, y) * l.surface().unwrap().rgba(x, y)[3]
+                    })
+                    .sum();
                 assert!((shown - 1.0).abs() < 0.01, "({x},{y}) {shown}");
             }
             // The composite matches the scene up to the global gain.
             let comp = photocraft_compose::flatten(d);
             let at = |x: i32, y: i32| comp.px[(y * comp.rect.width() as i32 + x) as usize];
             let gains = r["photometric"]["gains"].as_array().unwrap();
-            assert!(gains[1][0].as_f64().unwrap() > gains[0][0].as_f64().unwrap() * 1.05, "{r}");
+            assert!(
+                gains[1][0].as_f64().unwrap() > gains[0][0].as_f64().unwrap() * 1.05,
+                "{r}"
+            );
             let probe = at(160, 100);
             let truth = sc[110 * sw + 160];
             assert!((probe[1] - truth[1]).abs() < 0.08, "{probe:?} vs {truth:?}");
@@ -1004,16 +1410,40 @@ mod tests {
         let sc = scene(sw, sh, 8);
         let mut s = Session::new();
         for (k, x0) in [0usize, 180].into_iter().enumerate() {
-            s.add_document(doc_from(&format!("p{k}"), &crop(&sc, sw, x0, 10, 260, 200, 1.0), 260, 200, SampleType::U8), None);
+            s.add_document(
+                doc_from(
+                    &format!("p{k}"),
+                    &crop(&sc, sw, x0, 10, 260, 200, 1.0),
+                    260,
+                    200,
+                    SampleType::U8,
+                ),
+                None,
+            );
         }
-        let r = s.execute("file.automate.photomerge", json!({"useOpenDocuments": true, "layout": "perspective", "blend": false})).unwrap();
+        let r = s
+            .execute(
+                "file.automate.photomerge",
+                json!({"useOpenDocuments": true, "layout": "perspective", "blend": false}),
+            )
+            .unwrap();
         assert_eq!(r["layout"], "perspective");
         let d = &s.active().unwrap().doc;
         assert!(d.layers.iter().all(|l| l.mask.is_none()));
         assert!((r["width"].as_i64().unwrap() - 440).abs() <= 8, "{r}");
-        assert!(s.execute("file.automate.photomerge", json!({"useOpenDocuments": true, "layout": "zigzag"})).is_err());
+        assert!(
+            s.execute(
+                "file.automate.photomerge",
+                json!({"useOpenDocuments": true, "layout": "zigzag"})
+            )
+            .is_err()
+        );
         let mut empty = Session::new();
-        assert!(empty.execute("file.automate.photomerge", json!({})).is_err());
+        assert!(
+            empty
+                .execute("file.automate.photomerge", json!({}))
+                .is_err()
+        );
     }
 
     #[test]
@@ -1026,12 +1456,22 @@ mod tests {
         for (k, pan) in [-0.45f64, 0.0, 0.45].into_iter().enumerate() {
             let px: Vec<[f32; 4]> = (0..tw * th)
                 .map(|i| {
-                    let (dx, dy) = ((i % tw) as f64 - tw as f64 / 2.0, (i / tw) as f64 - th as f64 / 2.0);
-                    let (u, v) = (sw as f64 / 2.0 + f * (dx.atan2(f) + pan), sh as f64 / 2.0 + f * dy / dx.hypot(f));
-                    sc[(v.round().clamp(0.0, sh as f64 - 1.0) as usize) * sw + u.round().clamp(0.0, sw as f64 - 1.0) as usize]
+                    let (dx, dy) = (
+                        (i % tw) as f64 - tw as f64 / 2.0,
+                        (i / tw) as f64 - th as f64 / 2.0,
+                    );
+                    let (u, v) = (
+                        sw as f64 / 2.0 + f * (dx.atan2(f) + pan),
+                        sh as f64 / 2.0 + f * dy / dx.hypot(f),
+                    );
+                    sc[(v.round().clamp(0.0, sh as f64 - 1.0) as usize) * sw
+                        + u.round().clamp(0.0, sw as f64 - 1.0) as usize]
                 })
                 .collect();
-            s.add_document(doc_from(&format!("c{k}"), &px, tw, th, SampleType::U8), None);
+            s.add_document(
+                doc_from(&format!("c{k}"), &px, tw, th, SampleType::U8),
+                None,
+            );
         }
         let r = s.execute("file.automate.photomerge", json!({"useOpenDocuments": true, "layout": "cylindrical", "contentAwareFill": true})).unwrap();
         assert_eq!(r["layout"], "cylindrical");
@@ -1041,7 +1481,10 @@ mod tests {
         assert_eq!(top.name, "Content-Aware Fill");
         // The fill layer is opaque everywhere (the bow-tie corners are filled).
         let b = d.bounds();
-        assert!(top.surface().unwrap().rgba(1, 1)[3] > 0.99 && top.surface().unwrap().rgba(b.x1 - 2, b.y1 - 2)[3] > 0.99);
+        assert!(
+            top.surface().unwrap().rgba(1, 1)[3] > 0.99
+                && top.surface().unwrap().rgba(b.x1 - 2, b.y1 - 2)[3] > 0.99
+        );
     }
 
     #[test]
@@ -1074,10 +1517,23 @@ mod tests {
             })));
             s.add_document(d, None);
         }
-        let r = s.execute("file.automate.mergeToHdrPro", json!({"useOpenDocuments": true})).unwrap();
+        let r = s
+            .execute(
+                "file.automate.mergeToHdrPro",
+                json!({"useOpenDocuments": true}),
+            )
+            .unwrap();
         assert_eq!(r["exposureSource"], "exif");
-        let ev: Vec<f64> = r["ev"].as_array().unwrap().iter().map(|v| v.as_f64().unwrap()).collect();
-        assert!((ev[1] - 2.0).abs() < 1e-6 && (ev[2] - 4.0).abs() < 1e-6, "{ev:?}");
+        let ev: Vec<f64> = r["ev"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        assert!(
+            (ev[1] - 2.0).abs() < 1e-6 && (ev[2] - 4.0).abs() < 1e-6,
+            "{ev:?}"
+        );
         let d = &s.active().unwrap().doc;
         assert_eq!(d.depth, SampleType::F32);
         let l = d.layers[0].surface().unwrap();
@@ -1089,7 +1545,12 @@ mod tests {
         let out = r["document"].as_u64().unwrap() as usize;
         s.close(out);
         // 8-bit tone-mapped output with explicit EVs.
-        for method in ["localAdaptation", "exposureGamma", "highlightCompression", "equalizeHistogram"] {
+        for method in [
+            "localAdaptation",
+            "exposureGamma",
+            "highlightCompression",
+            "equalizeHistogram",
+        ] {
             let r = s
                 .execute("file.automate.mergeToHdrPro", json!({"paths": [], "useOpenDocuments": true, "exposures": [0, 2, 4], "mode": "8", "method": method}))
                 .unwrap();
@@ -1099,18 +1560,31 @@ mod tests {
             let out = r["document"].as_u64().unwrap() as usize;
             s.close(out);
         }
-        assert!(s.execute("file.automate.mergeToHdrPro", json!({"useOpenDocuments": true, "exposures": [0, 1]})).is_err());
+        assert!(
+            s.execute(
+                "file.automate.mergeToHdrPro",
+                json!({"useOpenDocuments": true, "exposures": [0, 1]})
+            )
+            .is_err()
+        );
     }
 
     fn photocraft_algo_srgb(v: f32) -> f32 {
-        if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+        if v <= 0.003_130_8 {
+            v * 12.92
+        } else {
+            1.055 * v.powf(1.0 / 2.4) - 0.055
+        }
     }
 
     #[test]
     fn crop_and_straighten_makes_documents() {
         let (w, h) = (500usize, 360usize);
         let mut px = vec![[0.98f32, 0.98, 0.98, 1.0]; w * h];
-        let photos = [([140.0f64, 120.0f64], 160.0f64, 110.0f64, 6.0f64), ([360.0, 240.0], 150.0, 120.0, -9.0)];
+        let photos = [
+            ([140.0f64, 120.0f64], 160.0f64, 110.0f64, 6.0f64),
+            ([360.0, 240.0], 150.0, 120.0, -9.0),
+        ];
         for (c, pw, ph, ang) in photos {
             let (s, co) = ang.to_radians().sin_cos();
             for y in 0..h {
@@ -1126,19 +1600,31 @@ mod tests {
         let mut s = Session::new();
         s.add_document(doc_from("scan", &px, w, h, SampleType::U16), None);
         assert!(s.is_enabled("file.automate.cropAndStraightenPhotos"));
-        let r = s.execute("file.automate.cropAndStraightenPhotos", json!({})).unwrap();
+        let r = s
+            .execute("file.automate.cropAndStraightenPhotos", json!({}))
+            .unwrap();
         let found = r["photos"].as_array().unwrap();
         assert_eq!(found.len(), 2, "{r}");
         assert_eq!(s.documents().len(), 3);
         assert!((found[0]["angle"].as_f64().unwrap() - 6.0).abs() < 1.0);
         let d = &s.documents()[1].doc;
-        assert!((d.size.width as i64 - 158).abs() <= 4 && (d.size.height as i64 - 108).abs() <= 4, "{:?}", d.size);
+        assert!(
+            (d.size.width as i64 - 158).abs() <= 4 && (d.size.height as i64 - 108).abs() <= 4,
+            "{:?}",
+            d.size
+        );
         assert_eq!(d.depth, SampleType::U16);
         // Upright: the photo's horizontal gradient runs along x.
         let l = d.layers[0].surface().unwrap();
-        let (a, b) = (l.rgba(10, d.size.height as i32 / 2)[0], l.rgba(d.size.width as i32 - 10, d.size.height as i32 / 2)[0]);
+        let (a, b) = (
+            l.rgba(10, d.size.height as i32 / 2)[0],
+            l.rgba(d.size.width as i32 - 10, d.size.height as i32 / 2)[0],
+        );
         assert!(b > a + 0.15, "{a} {b}");
-        let (c, e) = (l.rgba(d.size.width as i32 / 2, 6)[0], l.rgba(d.size.width as i32 / 2, d.size.height as i32 - 6)[0]);
+        let (c, e) = (
+            l.rgba(d.size.width as i32 / 2, 6)[0],
+            l.rgba(d.size.width as i32 / 2, d.size.height as i32 - 6)[0],
+        );
         assert!((c - e).abs() < 0.05);
     }
 }

@@ -5,7 +5,14 @@
 //! - [`pdf`]: signature fields in a document — listing and validating them, and signing
 //!   (PAdES B-B, `ETSI.CAdES.detached`) with an incremental save.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod cms;
 pub mod der;
@@ -28,8 +35,9 @@ pub use der::Time;
 pub use graphic::Graphic;
 pub use keys::{DigestAlg, PrivateKey, PublicKey};
 pub use pdf::{
-    Appearance, AppearanceLabels, Detail, DigestCache, Fill, Modification, SignOptions, SignatureInfo, Status, TrustStore, WORDINGS, Words,
-    in_english, kind, list as signatures, sign, sign_with_timestamp, timestamp_document, validate,
+    Appearance, AppearanceLabels, Detail, DigestCache, Fill, Modification, SignOptions,
+    SignatureInfo, Status, TrustStore, WORDINGS, Words, in_english, kind, list as signatures, sign,
+    sign_with_timestamp, timestamp_document, validate,
 };
 pub use pkcs12::DigitalId;
 pub use timestamp::{TimestampAuthority, TimestampQuery, TimestampToken};

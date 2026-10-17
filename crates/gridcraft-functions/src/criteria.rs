@@ -52,10 +52,26 @@ impl Criterion {
     /// Parses a criterion value the way COUNTIF does.
     pub(crate) fn parse(v: &Value) -> Criterion {
         match v {
-            Value::Number(n) => Criterion { op: Op::Eq, operand: Operand::Number(*n), bare_empty: false },
-            Value::Bool(b) => Criterion { op: Op::Eq, operand: Operand::Bool(*b), bare_empty: false },
-            Value::Error(e) => Criterion { op: Op::Eq, operand: Operand::Error(*e), bare_empty: false },
-            Value::Empty => Criterion { op: Op::Eq, operand: Operand::Number(0.0), bare_empty: false },
+            Value::Number(n) => Criterion {
+                op: Op::Eq,
+                operand: Operand::Number(*n),
+                bare_empty: false,
+            },
+            Value::Bool(b) => Criterion {
+                op: Op::Eq,
+                operand: Operand::Bool(*b),
+                bare_empty: false,
+            },
+            Value::Error(e) => Criterion {
+                op: Op::Eq,
+                operand: Operand::Error(*e),
+                bare_empty: false,
+            },
+            Value::Empty => Criterion {
+                op: Op::Eq,
+                operand: Operand::Number(0.0),
+                bare_empty: false,
+            },
             Value::Array(a) => Criterion::parse(a.data.first().unwrap_or(&Value::Empty)),
             Value::Text(t) => Criterion::parse_text(t),
         }
@@ -69,7 +85,10 @@ impl Criterion {
         match v {
             Value::Array(a) => Criterion::parse_arg(a.data.first().unwrap_or(&Value::Empty)),
             // A UTF-8 string has at least as many bytes as UTF-16 units, so short text skips the count.
-            Value::Text(t) if t.len() > MAX_CRITERION_UTF16_UNITS && t.encode_utf16().nth(MAX_CRITERION_UTF16_UNITS).is_some() => {
+            Value::Text(t)
+                if t.len() > MAX_CRITERION_UTF16_UNITS
+                    && t.encode_utf16().nth(MAX_CRITERION_UTF16_UNITS).is_some() =>
+            {
                 Err(CellError::Value)
             }
             other => Ok(Criterion::parse(other)),
@@ -82,7 +101,9 @@ impl Criterion {
     /// MINIFS). A cut through a surrogate pair matches nothing; see `Operand::CutText`.
     pub(crate) fn parse_arg_truncated(v: &Value) -> Criterion {
         match v {
-            Value::Array(a) => Criterion::parse_arg_truncated(a.data.first().unwrap_or(&Value::Empty)),
+            Value::Array(a) => {
+                Criterion::parse_arg_truncated(a.data.first().unwrap_or(&Value::Empty))
+            }
             Value::Text(t) if t.len() > MAX_CRITERION_UTF16_UNITS => {
                 let mut units = 0;
                 for (i, c) in t.char_indices() {
@@ -92,7 +113,11 @@ impl Criterion {
                         }
                         // The cut falls between the two halves of `c`.
                         let (op, rest) = split_op(&t[..i]);
-                        return Criterion { op, operand: Operand::CutText(rest.to_string()), bare_empty: false };
+                        return Criterion {
+                            op,
+                            operand: Operand::CutText(rest.to_string()),
+                            bare_empty: false,
+                        };
                     }
                     units += c.len_utf16();
                 }
@@ -104,7 +129,11 @@ impl Criterion {
 
     fn parse_text(t: &str) -> Criterion {
         if t.is_empty() {
-            return Criterion { op: Op::Eq, operand: Operand::Blank, bare_empty: true };
+            return Criterion {
+                op: Op::Eq,
+                operand: Operand::Blank,
+                bare_empty: true,
+            };
         }
         let (op, rest) = split_op(t);
         let operand = if rest.is_empty() {
@@ -120,7 +149,11 @@ impl Criterion {
         } else {
             Operand::Text(rest.to_string())
         };
-        Criterion { op, operand, bare_empty: false }
+        Criterion {
+            op,
+            operand,
+            bare_empty: false,
+        }
     }
 
     /// Whether a cell value satisfies the criterion.
@@ -184,8 +217,12 @@ impl Criterion {
             Operand::CutText(kept) => match self.op {
                 Op::Eq => false,
                 Op::Ne => true,
-                Op::Lt | Op::Le => matches!(&v, Value::Text(t) if compare_text(t, kept) != Ordering::Greater),
-                Op::Gt | Op::Ge => matches!(&v, Value::Text(t) if compare_text(t, kept) == Ordering::Greater),
+                Op::Lt | Op::Le => {
+                    matches!(&v, Value::Text(t) if compare_text(t, kept) != Ordering::Greater)
+                }
+                Op::Gt | Op::Ge => {
+                    matches!(&v, Value::Text(t) if compare_text(t, kept) == Ordering::Greater)
+                }
             },
         }
     }
@@ -310,7 +347,10 @@ pub(crate) fn wildcard_find(pattern: &str, text: &str, start: usize) -> Option<u
     if p.is_empty() {
         return if start <= t.len() { Some(start) } else { None };
     }
-    (start..t.len()).find(|&i| t.get(i..).is_some_and(|rest| match_from(&p, rest, false).is_some()))
+    (start..t.len()).find(|&i| {
+        t.get(i..)
+            .is_some_and(|rest| match_from(&p, rest, false).is_some())
+    })
 }
 
 /// Exact-or-wildcard equality used by MATCH/VLOOKUP/XLOOKUP exact modes: text with wildcards
@@ -370,7 +410,11 @@ mod tests {
         assert!(m("#N/A", Value::Error(CellError::NA)));
         assert!(Criterion::parse(&Value::Number(3.0)).matches(&Value::Number(3.0)));
         assert!(Criterion::parse(&Value::Number(0.3)).matches(&Value::Number(0.1 + 0.2)));
-        assert!(lookup_equal(&Value::Number(0.3), &Value::Number(0.1 + 0.2), false));
+        assert!(lookup_equal(
+            &Value::Number(0.3),
+            &Value::Number(0.1 + 0.2),
+            false
+        ));
         assert!(m("<>a*", Value::from("bcd")));
         assert!(m(">1/1/2020", Value::Number(44000.0)));
         // Text patterns never match blank cells, but an empty string is text.

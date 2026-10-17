@@ -126,8 +126,16 @@ pub fn entry_offset(row: u8, channel: u8, entry: u32, mode_special: bool) -> usi
     } else {
         2
     };
-    let uv_entry = if entry < N_ENTRIES as u32 { entry as usize } else { 0 };
-    let uv_channel = if channel < N_CHANNELS { channel as usize } else { 0 };
+    let uv_entry = if entry < N_ENTRIES as u32 {
+        entry as usize
+    } else {
+        0
+    };
+    let uv_channel = if channel < N_CHANNELS {
+        channel as usize
+    } else {
+        0
+    };
     (uv_entry + 8) * ENTRY_STRIDE + uv_channel * CHANNEL_STRIDE + uv_row * ROW_STRIDE
 }
 

@@ -92,7 +92,10 @@ pub struct LcfVariable {
 
 impl LcfVariable {
     fn new(symbol: impl Display, value: impl Display) -> Self {
-        Self { symbol: symbol.to_string(), value: value.to_string() }
+        Self {
+            symbol: symbol.to_string(),
+            value: value.to_string(),
+        }
     }
 }
 
@@ -206,7 +209,7 @@ impl Lcf {
                 AutoloadKind::Dtcm => "dtcm.lcf".to_string(),
                 AutoloadKind::Unknown(autoload_index) => {
                     format!("autoload_{autoload_index:03}.lcf")
-                },
+                }
             },
             ModuleKind::Overlay(overlay_id) => format!("overlay_{overlay_id:03}.lcf"),
         }
@@ -234,7 +237,11 @@ impl Lcf {
                 // Migrated files will have the same name as the original, that is intentional
                 continue;
             }
-            let filename = file.name.rsplit_once(['/', '\\']).unwrap_or(("", &file.name)).1;
+            let filename = file
+                .name
+                .rsplit_once(['/', '\\'])
+                .unwrap_or(("", &file.name))
+                .1;
             match delink_files.entry(filename.to_string()) {
                 hash_map::Entry::Occupied(occupied_entry) => {
                     log::error!(
@@ -244,10 +251,10 @@ impl Lcf {
                         occupied_entry.get()
                     );
                     success = false;
-                },
+                }
                 hash_map::Entry::Vacant(vacant_entry) => {
                     vacant_entry.insert(delinks.module_kind());
-                },
+                }
             }
         }
         success
@@ -264,15 +271,27 @@ impl LcfModule {
         let module_config = match kind {
             ModuleKind::Arm9 => &config.main_module,
             ModuleKind::Autoload(autoload) => {
-                &config.autoloads.iter().find(|a| a.kind == autoload).unwrap().module
-            },
+                &config
+                    .autoloads
+                    .iter()
+                    .find(|a| a.kind == autoload)
+                    .unwrap()
+                    .module
+            }
             ModuleKind::Overlay(overlay_id) => {
-                &config.overlays.iter().find(|o| o.id == overlay_id).unwrap().module
-            },
+                &config
+                    .overlays
+                    .iter()
+                    .find(|o| o.id == overlay_id)
+                    .unwrap()
+                    .module
+            }
         };
 
-        let output_file =
-            format!("build/{}", module_config.object.file_name().unwrap().to_string_lossy());
+        let output_file = format!(
+            "build/{}",
+            module_config.object.file_name().unwrap().to_string_lossy()
+        );
         let module_name = match kind {
             ModuleKind::Arm9 => "ARM9".to_string(),
             ModuleKind::Autoload(autoload) => match autoload {
@@ -300,7 +319,10 @@ impl LcfModule {
                 let end_address = section.end_address() + if append_zero { 4 } else { 0 };
                 let end_alignment = if end_address % 32 == 0 { 32 } else { 4 };
                 let (start_symbol, end_symbol) = if exceptix {
-                    ("__exception_table_start__".to_string(), "__exception_table_end__".to_string())
+                    (
+                        "__exception_table_start__".to_string(),
+                        "__exception_table_end__".to_string(),
+                    )
                 } else {
                     let boundary_name = section.boundary_name();
                     (
@@ -324,7 +346,10 @@ impl LcfModule {
                             let name = file
                                 .rsplit_once(['/', '\\'])
                                 .map_or(file.as_str(), |(_, basefile)| basefile);
-                            LcfFile { name: format!("{name}.o"), section_name }
+                            LcfFile {
+                                name: format!("{name}.o"),
+                                section_name,
+                            }
                         })
                         .collect::<Vec<_>>()
                 };
@@ -343,7 +368,10 @@ impl LcfModule {
 
         let end_address = delinks.sections.end_address().unwrap();
 
-        let in_tcm = matches!(kind, ModuleKind::Autoload(AutoloadKind::Itcm | AutoloadKind::Dtcm));
+        let in_tcm = matches!(
+            kind,
+            ModuleKind::Autoload(AutoloadKind::Itcm | AutoloadKind::Dtcm)
+        );
 
         Ok(Self {
             name: module_name,
@@ -374,16 +402,19 @@ impl LinkModules {
                 OverlayGroupLocation::AfterStatic => {
                     let last_static_module = link_modules.last_static_module();
                     format!("AFTER({})", last_static_module.name)
-                },
+                }
                 OverlayGroupLocation::After(ids) => {
                     format!(
                         "AFTER({})",
-                        ids.iter().map(|id| format!("OV{id:03}")).collect::<Vec<_>>().join(", ")
+                        ids.iter()
+                            .map(|id| format!("OV{id:03}"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     )
-                },
+                }
                 OverlayGroupLocation::Static => {
                     format!("{:#010x}", group.start_address)
-                },
+                }
             };
 
             for &overlay_id in &group.overlays {
@@ -428,7 +459,10 @@ impl LinkModules {
                 delinks_map,
             )?);
         }
-        Ok(Self { modules, last_static_index: prev_static_index })
+        Ok(Self {
+            modules,
+            last_static_index: prev_static_index,
+        })
     }
 
     fn last_static_module(&self) -> &LcfModule {

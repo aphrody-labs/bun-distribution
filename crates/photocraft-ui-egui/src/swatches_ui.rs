@@ -30,12 +30,25 @@ fn c32(c: [f32; 3]) -> Color32 {
 /// Display colours of every swatch, rebuilt when the library or the working spaces change.
 fn colors(app: &PhotocraftApp, ctx: &egui::Context) -> Arc<Vec<Vec<Color32>>> {
     let c = &app.session.color.settings;
-    let key = egui::Id::new(("swatch-colors", app.session.presets.rev, &c.working_rgb, &c.working_cmyk, &c.working_gray));
+    let key = egui::Id::new((
+        "swatch-colors",
+        app.session.presets.rev,
+        &c.working_rgb,
+        &c.working_cmyk,
+        &c.working_gray,
+    ));
     if let Some(v) = ctx.data(|d| d.get_temp::<Arc<Vec<Vec<Color32>>>>(key)) {
         return v;
     }
     let conv = photocraft_engine::presets::swatches::SwatchConv::new(&app.session);
-    let v: Arc<Vec<Vec<Color32>>> = Arc::new(app.session.presets.swatches.iter().map(|g| g.items.iter().map(|s| c32(conv.rgb(&s.color))).collect()).collect());
+    let v: Arc<Vec<Vec<Color32>>> = Arc::new(
+        app.session
+            .presets
+            .swatches
+            .iter()
+            .map(|g| g.items.iter().map(|s| c32(conv.rgb(&s.color))).collect())
+            .collect(),
+    );
     ctx.data_mut(|d| {
         // Only the newest table is kept.
         if let Some(old) = d.get_temp::<egui::Id>(egui::Id::new("swatch-colors-key")) {
@@ -49,8 +62,19 @@ fn colors(app: &PhotocraftApp, ctx: &egui::Context) -> Arc<Vec<Vec<Color32>>> {
 
 /// Set the foreground (or background) colour from a swatch.
 pub fn use_swatch(app: &mut PhotocraftApp, name: &str, background: bool) {
-    let target = if background { "background" } else { "foreground" };
-    if run(app, "swatches.use", json!({"swatch": name, "target": target})).is_some() && !background {
+    let target = if background {
+        "background"
+    } else {
+        "foreground"
+    };
+    if run(
+        app,
+        "swatches.use",
+        json!({"swatch": name, "target": target}),
+    )
+    .is_some()
+        && !background
+    {
         // Clicking a swatch while characters are selected recolours them (#364).
         crate::type_tool::foreground_changed(app);
     }
@@ -61,7 +85,17 @@ pub fn panel(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let lib = &app.session.presets.swatches;
     let groups: Vec<GroupView> = lib
         .iter()
-        .map(|g| GroupView { name: g.name.clone(), items: g.items.iter().map(|s| ItemView { key: s.name.clone(), name: s.name.clone() }).collect() })
+        .map(|g| GroupView {
+            name: g.name.clone(),
+            items: g
+                .items
+                .iter()
+                .map(|s| ItemView {
+                    key: s.name.clone(),
+                    name: s.name.clone(),
+                })
+                .collect(),
+        })
         .collect();
     let table = colors(app, ui.ctx());
     let canvas = app.last_canvas_rect;
@@ -69,11 +103,31 @@ pub fn panel(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     st.sizes.entry(PANEL.to_string()).or_insert(DEFAULT_SIZE);
     let max_h = (ui.available_height() - 30.0).max(60.0);
     let card_border = crate::theme::Tokens::get(ui.ctx()).card_border;
-    let events = browser(ui, &mut st, PANEL, &groups, Place { canvas, max_h, new_tip: tl!("Create new swatch") }, &mut |ui, r: Rect, gi, ii| {
-        let c = table.get(gi).and_then(|g| g.get(ii)).copied().unwrap_or(Color32::GRAY);
-        ui.painter().rect_filled(r, CornerRadius::same(2), c);
-        ui.painter().rect_stroke(r, CornerRadius::same(2), egui::Stroke::new(1.0, card_border), egui::StrokeKind::Inside);
-    });
+    let events = browser(
+        ui,
+        &mut st,
+        PANEL,
+        &groups,
+        Place {
+            canvas,
+            max_h,
+            new_tip: tl!("Create new swatch"),
+        },
+        &mut |ui, r: Rect, gi, ii| {
+            let c = table
+                .get(gi)
+                .and_then(|g| g.get(ii))
+                .copied()
+                .unwrap_or(Color32::GRAY);
+            ui.painter().rect_filled(r, CornerRadius::same(2), c);
+            ui.painter().rect_stroke(
+                r,
+                CornerRadius::same(2),
+                egui::Stroke::new(1.0, card_border),
+                egui::StrokeKind::Inside,
+            );
+        },
+    );
     app.ui.presets_ui = st;
     let mods = ui.input(|i| i.modifiers);
     for e in events {
@@ -83,7 +137,10 @@ pub fn panel(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
 
 fn handle(app: &mut PhotocraftApp, e: Ev, background: bool) {
     let sel = |app: &mut PhotocraftApp, k: &str| {
-        app.ui.presets_ui.selected.insert(PANEL.into(), k.to_string());
+        app.ui
+            .presets_ui
+            .selected
+            .insert(PANEL.into(), k.to_string());
     };
     match e {
         Ev::Select(k) => {
@@ -97,7 +154,9 @@ fn handle(app: &mut PhotocraftApp, e: Ev, background: bool) {
         // Swatches don't drop onto the canvas.
         Ev::Drop(..) => {}
         Ev::Rename(k, n) => {
-            if run(app, "swatches.rename", json!({"swatch": k, "name": n})).is_some() && app.ui.presets_ui.selected.get(PANEL) == Some(&k) {
+            if run(app, "swatches.rename", json!({"swatch": k, "name": n})).is_some()
+                && app.ui.presets_ui.selected.get(PANEL) == Some(&k)
+            {
                 sel(app, &n);
             }
         }
@@ -107,7 +166,11 @@ fn handle(app: &mut PhotocraftApp, e: Ev, background: bool) {
             }
         }
         Ev::Move(k, g) => drop(run(app, "swatches.move", json!({"swatch": k, "to": g}))),
-        Ev::RenameGroup(g, n) => drop(run(app, "swatches.renameGroup", json!({"group": g, "name": n}))),
+        Ev::RenameGroup(g, n) => drop(run(
+            app,
+            "swatches.renameGroup",
+            json!({"group": g, "name": n}),
+        )),
         Ev::DeleteGroup(g) => drop(run(app, "swatches.deleteGroup", json!({"group": g}))),
         Ev::NewGroup => new_group(app),
         Ev::New => new_swatch(app),
@@ -117,16 +180,21 @@ fn handle(app: &mut PhotocraftApp, e: Ev, background: bool) {
 /// New Swatch: the foreground colour, named and selected, then renamed in place (Photoshop asks
 /// for the name).
 fn new_swatch(app: &mut PhotocraftApp) {
-    let group = app
-        .ui
-        .presets_ui
-        .selected
-        .get(PANEL)
-        .and_then(|k| app.session.presets.swatches.iter().find(|g| g.items.iter().any(|s| &s.name == k)).map(|g| g.name.clone()));
+    let group = app.ui.presets_ui.selected.get(PANEL).and_then(|k| {
+        app.session
+            .presets
+            .swatches
+            .iter()
+            .find(|g| g.items.iter().any(|s| &s.name == k))
+            .map(|g| g.name.clone())
+    });
     let p = group.map_or_else(|| json!({}), |g| json!({"group": g}));
     if let Some(r) = run(app, "swatches.add", p) {
         let name = r["name"].as_str().unwrap_or_default().to_string();
-        app.ui.presets_ui.selected.insert(PANEL.into(), name.clone());
+        app.ui
+            .presets_ui
+            .selected
+            .insert(PANEL.into(), name.clone());
         app.ui.presets_ui.renaming = Some((PANEL.into(), name.clone(), name));
     }
 }
@@ -150,8 +218,16 @@ fn source(name: &str, bytes: &[u8]) -> Value {
 }
 
 /// Import an `.aco`/`.ase` file's bytes (File › Open, drag and drop, the panel menu).
-pub fn import_bytes(app: &mut PhotocraftApp, name: &str, bytes: &[u8], replace: bool) -> Result<Value, String> {
-    let stem = std::path::Path::new(name).file_stem().map(|s| s.to_string_lossy().to_string()).filter(|s| !s.trim().is_empty());
+pub fn import_bytes(
+    app: &mut PhotocraftApp,
+    name: &str,
+    bytes: &[u8],
+    replace: bool,
+) -> Result<Value, String> {
+    let stem = std::path::Path::new(name)
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .filter(|s| !s.trim().is_empty());
     let mut p = source(name, bytes);
     p["mode"] = json!(if replace { "replace" } else { "append" });
     if let Some(stem) = stem {
@@ -159,17 +235,32 @@ pub fn import_bytes(app: &mut PhotocraftApp, name: &str, bytes: &[u8], replace: 
     }
     let r = app.run("swatches.import", p)?;
     let n = r["count"].as_u64().unwrap_or(0);
-    let warnings: Vec<String> = r.get("warnings").and_then(|w| serde_json::from_value(w.clone()).ok()).unwrap_or_default();
+    let warnings: Vec<String> = r
+        .get("warnings")
+        .and_then(|w| serde_json::from_value(w.clone()).ok())
+        .unwrap_or_default();
     let shown = crate::file_open::display_name(name);
     app.ui.status_error = false;
     let imported = crate::i18n::fmt(
-        &crate::i18n::trn(crate::i18n::current(), n, "Imported {n} swatch from {file}", "Imported {n} swatches from {file}"),
+        &crate::i18n::trn(
+            crate::i18n::current(),
+            n,
+            "Imported {n} swatch from {file}",
+            "Imported {n} swatches from {file}",
+        ),
         &[("file", &shown)],
     );
     app.ui.status = match warnings.first() {
         Some(warning) => {
             let template = "{message} (notes: {n}; {warning})";
-            crate::i18n::fmt(tl!(template), &[("message", &imported), ("n", &warnings.len().to_string()), ("warning", warning)])
+            crate::i18n::fmt(
+                tl!(template),
+                &[
+                    ("message", &imported),
+                    ("n", &warnings.len().to_string()),
+                    ("warning", warning),
+                ],
+            )
         }
         None => imported,
     };
@@ -183,14 +274,22 @@ fn import_dialog(app: &mut PhotocraftApp, replace: bool) -> Result<Value, String
 
 fn export_dialog(app: &mut PhotocraftApp, format: &str) -> Result<Value, String> {
     let r = app.run("swatches.export", json!({"format": format}))?;
-    let bytes = r["data"].as_str().and_then(photocraft_engine::paint::tile::b64_decode).ok_or("the export returned no data")?;
+    let bytes = r["data"]
+        .as_str()
+        .and_then(photocraft_engine::paint::tile::b64_decode)
+        .ok_or("the export returned no data")?;
     let n = r["count"].as_u64().unwrap_or(0);
     app.pick_save(&format!("Swatches.{format}"), move |app, path| {
         let write = app.services.write.as_mut().ok_or("no writer configured")?;
         write(&path, &bytes)?;
         app.ui.status_error = false;
         app.ui.status = crate::i18n::fmt(
-            &crate::i18n::trn(crate::i18n::current(), n, "Exported {n} swatch to {file}", "Exported {n} swatches to {file}"),
+            &crate::i18n::trn(
+                crate::i18n::current(),
+                n,
+                "Exported {n} swatch to {file}",
+                "Exported {n} swatches to {file}",
+            ),
             &[("file", &crate::file_open::display_name(&path))],
         );
         Ok(json!({"path": path, "count": n}))
@@ -199,7 +298,12 @@ fn export_dialog(app: &mut PhotocraftApp, format: &str) -> Result<Value, String>
 
 /// The Swatches entries of the panel group's menu ("…").
 pub fn panel_menu(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
-    let empty = app.session.presets.swatches.iter().all(|g| g.items.is_empty());
+    let empty = app
+        .session
+        .presets
+        .swatches
+        .iter()
+        .all(|g| g.items.is_empty());
     let mut act: Option<&str> = None;
     if ui.button(tl!("New Swatch…")).clicked() {
         act = Some("new");
@@ -214,10 +318,19 @@ pub fn panel_menu(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     if ui.button(tl!("Replace Swatches…")).clicked() {
         act = Some("replace");
     }
-    if ui.add_enabled(!empty, egui::Button::new(tl!("Export Swatches…"))).clicked() {
+    if ui
+        .add_enabled(!empty, egui::Button::new(tl!("Export Swatches…")))
+        .clicked()
+    {
         act = Some("aco");
     }
-    if ui.add_enabled(!empty, egui::Button::new(tl!("Export Swatches for Exchange…"))).clicked() {
+    if ui
+        .add_enabled(
+            !empty,
+            egui::Button::new(tl!("Export Swatches for Exchange…")),
+        )
+        .clicked()
+    {
         act = Some("ase");
     }
     ui.separator();
@@ -251,9 +364,15 @@ pub fn panel_menu(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
 /// The Color Picker's Add to Swatches: the picked colour, in the model the user typed it in
 /// (CMYK or Lab values kept by the picker), else RGB.
 pub fn add_from_picker(app: &mut PhotocraftApp, f: &serde_json::Map<String, Value>) {
-    let color = if let Some(c) = f.get("__cmyk").and_then(|v| serde_json::from_value::<[f32; 4]>(v.clone()).ok()) {
+    let color = if let Some(c) = f
+        .get("__cmyk")
+        .and_then(|v| serde_json::from_value::<[f32; 4]>(v.clone()).ok())
+    {
         json!({"model": "cmyk", "values": c.map(|v| v * 100.0)})
-    } else if let Some(l) = f.get("__lab").and_then(|v| serde_json::from_value::<[f32; 3]>(v.clone()).ok()) {
+    } else if let Some(l) = f
+        .get("__lab")
+        .and_then(|v| serde_json::from_value::<[f32; 3]>(v.clone()).ok())
+    {
         json!({"model": "lab", "values": l})
     } else {
         json!(f.get("color").and_then(Value::as_str).unwrap_or("#000000"))
@@ -279,8 +398,18 @@ mod tests {
         // Held modifiers, as when the user holds Alt while clicking.
         h.event(egui::Event::ModifiersChanged(modifiers));
         h.run_steps(1);
-        h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers });
-        h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers });
+        h.event(egui::Event::PointerButton {
+            pos: p,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers,
+        });
+        h.event(egui::Event::PointerButton {
+            pos: p,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers,
+        });
         h.run_steps(2);
         h.event(egui::Event::ModifiersChanged(Modifiers::NONE));
         h.run_steps(1);
@@ -290,13 +419,25 @@ mod tests {
     fn drag(h: &mut Harness<'_, PhotocraftApp>, from: egui::Pos2, to: egui::Pos2) {
         h.event(egui::Event::PointerMoved(from));
         h.run_steps(1);
-        h.event(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: from,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(1);
         for i in 1..=6 {
-            h.event(egui::Event::PointerMoved(from + (to - from) * (i as f32 / 6.0)));
+            h.event(egui::Event::PointerMoved(
+                from + (to - from) * (i as f32 / 6.0),
+            ));
             h.run_steps(1);
         }
-        h.event(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: to,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(3);
     }
 
@@ -308,9 +449,20 @@ mod tests {
     /// Clicking a swatch while characters are selected recolours them, not just the foreground.
     #[test]
     fn clicking_a_swatch_recolours_selected_type() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 400, "height": 200})).unwrap();
-        let id = app.run("type.create", json!({"text": "Hello world", "size": 40, "x": 20, "y": 100, "color": "#ffffff"})).unwrap()["layer"].as_u64().unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 400, "height": 200}))
+            .unwrap();
+        let id = app
+            .run(
+                "type.create",
+                json!({"text": "Hello world", "size": 40, "x": 20, "y": 100, "color": "#ffffff"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
         app.ui.tool = Tool::Type;
         app.ui.text_edit = Some(crate::state::TextEdit {
             layer: id,
@@ -324,15 +476,27 @@ mod tests {
             preedit: None,
         });
         // Recolour with a visible colour: put Red first.
-        app.run("swatches.move", json!({"swatch": "Red", "to": "Grays", "position": 0})).unwrap();
-        let mut h = Harness::builder().with_size(vec2(300.0, 300.0)).build_ui_state(|ui, app: &mut PhotocraftApp| panel(app, ui), app);
+        app.run(
+            "swatches.move",
+            json!({"swatch": "Red", "to": "Grays", "position": 0}),
+        )
+        .unwrap();
+        let mut h = Harness::builder()
+            .with_size(vec2(300.0, 300.0))
+            .build_ui_state(|ui, app: &mut PhotocraftApp| panel(app, ui), app);
         h.run_steps(2);
         let p = first_cell(&h);
         click(&mut h, p, Modifiers::NONE);
         let red = [230.0 / 255.0, 40.0 / 255.0, 40.0 / 255.0, 1.0];
         assert_eq!(h.state().session.tools.foreground, red);
         let st = h.state().session.active().unwrap();
-        let Some(photocraft_doc::LayerContent::Text(t)) = st.doc.layer(photocraft_doc::LayerId(id)).map(|l| &l.content) else { panic!("type layer") };
+        let Some(photocraft_doc::LayerContent::Text(t)) = st
+            .doc
+            .layer(photocraft_doc::LayerId(id))
+            .map(|l| &l.content)
+        else {
+            panic!("type layer")
+        };
         let runs = t.char_runs();
         assert_eq!(runs[0].len, 5, "the selection is its own run");
         assert_eq!(runs[0].style.color.to_rgba8(), [230, 40, 40, 255]);
@@ -341,15 +505,36 @@ mod tests {
 
     #[test]
     fn alt_click_sets_the_background_and_selects() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.session.tools.background = [0.0, 0.0, 1.0, 1.0];
-        let mut h = Harness::builder().with_size(vec2(300.0, 300.0)).build_ui_state(|ui, app: &mut PhotocraftApp| panel(app, ui), app);
+        let mut h = Harness::builder()
+            .with_size(vec2(300.0, 300.0))
+            .build_ui_state(|ui, app: &mut PhotocraftApp| panel(app, ui), app);
         h.run_steps(2);
         let p = first_cell(&h);
         click(&mut h, p, Modifiers::ALT);
-        assert_eq!(h.state().session.tools.background, [0.0, 0.0, 0.0, 1.0], "Black");
-        assert_eq!(h.state().session.tools.foreground, [0.0, 0.0, 0.0, 1.0], "foreground untouched (default black)");
-        assert_eq!(h.state().ui.presets_ui.selected.get(PANEL).map(String::as_str), Some("Black"));
+        assert_eq!(
+            h.state().session.tools.background,
+            [0.0, 0.0, 0.0, 1.0],
+            "Black"
+        );
+        assert_eq!(
+            h.state().session.tools.foreground,
+            [0.0, 0.0, 0.0, 1.0],
+            "foreground untouched (default black)"
+        );
+        assert_eq!(
+            h.state()
+                .ui
+                .presets_ui
+                .selected
+                .get(PANEL)
+                .map(String::as_str),
+            Some("Black")
+        );
         // The footer's trash deletes the selection.
         let n = h.state().session.presets.swatches[0].items.len();
         handle(h.state_mut(), Ev::Delete("Black".into()), false);
@@ -358,19 +543,38 @@ mod tests {
 
     #[test]
     fn new_swatch_from_the_foreground_and_picker() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.session.tools.foreground = [0.5, 0.25, 1.0, 1.0];
-        app.ui.presets_ui.selected.insert(PANEL.into(), "Dark Red".into());
+        app.ui
+            .presets_ui
+            .selected
+            .insert(PANEL.into(), "Dark Red".into());
         new_swatch(&mut app);
-        let dark = app.session.presets.swatches.iter().find(|g| g.name == "Dark").unwrap();
-        assert_eq!(dark.items.last().unwrap().name, "Color Swatch 1", "into the selected swatch's group");
+        let dark = app
+            .session
+            .presets
+            .swatches
+            .iter()
+            .find(|g| g.name == "Dark")
+            .unwrap();
+        assert_eq!(
+            dark.items.last().unwrap().name,
+            "Color Swatch 1",
+            "into the selected swatch's group"
+        );
         assert!(app.ui.presets_ui.renaming.is_some(), "renamed in place");
         let mut f = serde_json::Map::new();
         f.insert("color".into(), json!("#00ffff"));
         f.insert("__cmyk".into(), json!([1.0, 0.0, 0.0, 0.0]));
         add_from_picker(&mut app, &f);
         let s = app.session.presets.swatches[0].items.last().unwrap();
-        assert_eq!(s.color, photocraft_engine::presets::swatches::SwatchColor::Cmyk([1.0, 0.0, 0.0, 0.0]));
+        assert_eq!(
+            s.color,
+            photocraft_engine::presets::swatches::SwatchColor::Cmyk([1.0, 0.0, 0.0, 0.0])
+        );
     }
 
     #[test]
@@ -379,9 +583,11 @@ mod tests {
         type Written = Arc<Mutex<Vec<(String, Vec<u8>)>>>;
         let written: Written = Arc::default();
         let w = written.clone();
-        let aco =
-            photocraft_psd::aco::write(&[photocraft_psd::aco::AcoSwatch { name: "Teal".into(), color: photocraft_psd::aco::AcoColor::Rgb([0, 32768, 32768]) }])
-                .unwrap();
+        let aco = photocraft_psd::aco::write(&[photocraft_psd::aco::AcoSwatch {
+            name: "Teal".into(),
+            color: photocraft_psd::aco::AcoColor::Rgb([0, 32768, 32768]),
+        }])
+        .unwrap();
         use crate::file_dialog::FileDialogAnswer;
         let answers = vec![
             Some(FileDialogAnswer::Contents("Ocean.aco".into(), aco.clone())),
@@ -416,21 +622,48 @@ mod tests {
     /// state (UI state is serde, so it saves and reloads with the rest of the panel state).
     #[test]
     fn dragging_a_group_header_reorders_and_persists() {
-        let app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        let mut h = Harness::builder().with_size(vec2(300.0, 4000.0)).build_ui_state(|ui, app: &mut PhotocraftApp| panel(app, ui), app);
+        let app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        let mut h = Harness::builder()
+            .with_size(vec2(300.0, 4000.0))
+            .build_ui_state(|ui, app: &mut PhotocraftApp| panel(app, ui), app);
         h.run_steps(2);
         let headers = crate::preset_panels::last_group_headers(&h.ctx, PANEL);
-        assert!(headers.len() >= 2, "the default library has folders: {headers:?}");
+        assert!(
+            headers.len() >= 2,
+            "the default library has folders: {headers:?}"
+        );
         let names: Vec<String> = headers.iter().map(|(n, _)| n.clone()).collect();
         let (first, first_r) = &headers[0];
         let (last, last_r) = headers.last().unwrap();
         // Drag the last folder's header above the first; the insertion lands before it.
-        drag(&mut h, last_r.center(), egui::pos2(first_r.center().x, first_r.top() + 1.0));
+        drag(
+            &mut h,
+            last_r.center(),
+            egui::pos2(first_r.center().x, first_r.top() + 1.0),
+        );
         let order = h.state().ui.presets_ui.display_order(PANEL, &names);
         assert_eq!(order.len(), names.len());
-        assert_eq!(names.get(order[0]).map(String::as_str), Some(last.as_str()), "the dragged folder moved to the front: {order:?}");
-        assert_eq!(names.get(order[1]).map(String::as_str), Some(first.as_str()));
+        assert_eq!(
+            names.get(order[0]).map(String::as_str),
+            Some(last.as_str()),
+            "the dragged folder moved to the front: {order:?}"
+        );
+        assert_eq!(
+            names.get(order[1]).map(String::as_str),
+            Some(first.as_str())
+        );
         // The reorder is remembered by name (not by the positions it happened to have).
-        assert_eq!(h.state().ui.presets_ui.group_order.get(PANEL).and_then(|o| o.first()), Some(last));
+        assert_eq!(
+            h.state()
+                .ui
+                .presets_ui
+                .group_order
+                .get(PANEL)
+                .and_then(|o| o.first()),
+            Some(last)
+        );
     }
 }

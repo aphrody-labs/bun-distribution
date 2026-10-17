@@ -37,18 +37,21 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
 /// through the environment, so the arguments are ignored. Returns the process exit code.
 #[must_use]
 pub fn cli_main(_args: Vec<OsString>) -> i32 {
-    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("aphrody-agent-home-memory: runtime: {error}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run()) {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("aphrody-agent-home-memory: {error}");
             1
-        },
+        }
     }
 }

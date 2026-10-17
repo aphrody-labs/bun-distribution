@@ -104,7 +104,11 @@ fn find_matching_paren(input: &str) -> Option<usize> {
 
 /// Calculate 1-indexed line number at a given byte offset.
 fn line_number_at(content: &str, offset: usize) -> usize {
-    content[..offset.min(content.len())].chars().filter(|&c| c == '\n').count() + 1
+    content[..offset.min(content.len())]
+        .chars()
+        .filter(|&c| c == '\n')
+        .count()
+        + 1
 }
 
 /// Parse the body of a `prefix_rule(...)` call.
@@ -122,23 +126,23 @@ fn parse_prefix_rule_block(block: &str, line: usize) -> Result<PrefixRule> {
             "pattern" => {
                 let tokens = parse_string_list(val.trim(), line)?;
                 pattern = Some(PrefixPattern::from_tokens(&tokens)?);
-            },
+            }
             "decision" => {
                 let dec_str = parse_string_literal(val.trim(), line)?;
                 decision = Decision::parse(&dec_str)?;
-            },
+            }
             "justification" => {
                 justification = Some(parse_string_literal(val.trim(), line)?);
-            },
+            }
             "match" => {
                 match_examples = parse_examples_list(val.trim(), line)?;
-            },
+            }
             "not_match" => {
                 not_match_examples = parse_examples_list(val.trim(), line)?;
-            },
+            }
             _ => {
                 // Ignore unknown metadata attributes
-            },
+            }
         }
     }
 
@@ -220,7 +224,11 @@ fn split_key_value(input: &str) -> Option<(String, String)> {
     let eq_pos = trimmed.find('=')?;
     let key = trimmed[..eq_pos].trim().to_string();
     let val = trimmed[eq_pos + 1..].trim().to_string();
-    if key.is_empty() { None } else { Some((key, val)) }
+    if key.is_empty() {
+        None
+    } else {
+        Some((key, val))
+    }
 }
 
 /// Parse a string literal like `"hello"` or `'hello'`.
@@ -231,7 +239,10 @@ fn parse_string_literal(input: &str, line: usize) -> Result<String> {
     {
         Ok(trimmed[1..trimmed.len() - 1].to_string())
     } else {
-        Err(Error::ParseError { line, message: format!("Expected string literal, got: {trimmed}") })
+        Err(Error::ParseError {
+            line,
+            message: format!("Expected string literal, got: {trimmed}"),
+        })
     }
 }
 
@@ -387,10 +398,14 @@ mod tests {
             .evaluate(&["git".to_string(), "reset".to_string(), "--hard".to_string()])
             .expect("must match");
         assert_eq!(eval_forbidden.decision, Decision::Forbidden);
-        assert_eq!(eval_forbidden.justification.as_deref(), Some("destructive operation"));
+        assert_eq!(
+            eval_forbidden.justification.as_deref(),
+            Some("destructive operation")
+        );
 
-        let eval_allow =
-            policy.evaluate(&["ls".to_string(), "-la".to_string()]).expect("must match");
+        let eval_allow = policy
+            .evaluate(&["ls".to_string(), "-la".to_string()])
+            .expect("must match");
         assert_eq!(eval_allow.decision, Decision::Allow);
     }
 }

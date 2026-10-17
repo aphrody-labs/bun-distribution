@@ -35,6 +35,9 @@ impl FrameStats {
     pub fn causes(&self) -> Value {
         let mut top: Vec<(&(&'static str, u32), &u64)> = self.causes.iter().collect();
         top.sort_by(|a, b| b.1.cmp(a.1));
-        top.into_iter().take(TOP_CAUSES).map(|((file, line), n)| json!({"at": format!("{file}:{line}"), "count": n})).collect()
+        top.into_iter()
+            .take(TOP_CAUSES)
+            .map(|((file, line), n)| json!({"at": format!("{file}:{line}"), "count": n}))
+            .collect()
     }
 }

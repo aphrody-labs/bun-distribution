@@ -27,7 +27,10 @@ pub struct PendingResponse {
 /// directly so each fd has its own cursor.
 enum FdEntry {
     Shared(String),
-    Owned { path: String, dev: Box<dyn IosDevice> },
+    Owned {
+        path: String,
+        dev: Box<dyn IosDevice>,
+    },
 }
 
 pub struct Starlet {
@@ -73,7 +76,13 @@ impl Starlet {
     /// per-open resources (host-backed real files).
     pub fn allocate_owned_fd(&mut self, path: &str, dev: Box<dyn IosDevice>) -> i32 {
         let fd = self.fresh_fd();
-        self.handles.insert(fd, FdEntry::Owned { path: path.to_owned(), dev });
+        self.handles.insert(
+            fd,
+            FdEntry::Owned {
+                path: path.to_owned(),
+                dev,
+            },
+        );
         fd
     }
 
@@ -94,7 +103,10 @@ impl Starlet {
         };
 
         if let Some(path) = path {
-            return self.devices.get_mut(&path).map(|b| b.as_mut() as &mut dyn IosDevice);
+            return self
+                .devices
+                .get_mut(&path)
+                .map(|b| b.as_mut() as &mut dyn IosDevice);
         }
 
         match self.handles.get_mut(&fd)? {
@@ -128,7 +140,9 @@ impl Starlet {
     }
 
     pub fn wiimote_rumble(&self) -> bool {
-        self.devices.get(WIIMOTE_DEVICE_PATH).is_some_and(|dev| dev.wiimote_rumble())
+        self.devices
+            .get(WIIMOTE_DEVICE_PATH)
+            .is_some_and(|dev| dev.wiimote_rumble())
     }
 
     pub fn set_nunchuk(&mut self, buttons: u8, stick_x: u8, stick_y: u8) -> bool {
@@ -138,7 +152,9 @@ impl Starlet {
     }
 
     pub fn set_ir_pointer(&mut self, pointer: Option<(u16, u16)>) -> bool {
-        self.devices.get_mut(WIIMOTE_DEVICE_PATH).is_some_and(|dev| dev.set_ir_pointer(pointer))
+        self.devices
+            .get_mut(WIIMOTE_DEVICE_PATH)
+            .is_some_and(|dev| dev.set_ir_pointer(pointer))
     }
 
     pub fn tick_wiimote(&mut self) {
@@ -179,15 +195,26 @@ impl System<{ crate::WII }> {
         let fs_root = self.starlet.host_fs_root.clone();
         ipc::fs::nand::ensure_skeleton(&fs_root);
 
-        self.starlet.register("/dev/stm/immediate", Box::new(stm::Immediate));
-        self.starlet.register("/dev/stm/eventhook", Box::new(stm::EventHook));
-        self.starlet.register("/dev/fs", Box::new(ipc::fs::FileSystem::new(fs_root.clone())));
         self.starlet
-            .register("/shared2/sys/SYSCONF", Box::new(ipc::sysconf::SysConf::new(&fs_root)));
-        self.starlet.register("/dev/di", Box::new(ipc::di::DiskInterface::new()));
-        self.starlet.register("/dev/es", Box::new(ipc::es::ETicketServices));
-        self.starlet.register(WIIMOTE_DEVICE_PATH, Box::new(ipc::usb::Bluetooth::new()));
-        self.starlet.register("/dev/sdio/slot0", Box::new(ipc::sdio::SdCard));
+            .register("/dev/stm/immediate", Box::new(stm::Immediate));
+        self.starlet
+            .register("/dev/stm/eventhook", Box::new(stm::EventHook));
+        self.starlet.register(
+            "/dev/fs",
+            Box::new(ipc::fs::FileSystem::new(fs_root.clone())),
+        );
+        self.starlet.register(
+            "/shared2/sys/SYSCONF",
+            Box::new(ipc::sysconf::SysConf::new(&fs_root)),
+        );
+        self.starlet
+            .register("/dev/di", Box::new(ipc::di::DiskInterface::new()));
+        self.starlet
+            .register("/dev/es", Box::new(ipc::es::ETicketServices));
+        self.starlet
+            .register(WIIMOTE_DEVICE_PATH, Box::new(ipc::usb::Bluetooth::new()));
+        self.starlet
+            .register("/dev/sdio/slot0", Box::new(ipc::sdio::SdCard));
     }
 
     pub fn create_device_context(&mut self) -> (&mut Starlet, DeviceContext<'_>) {
@@ -210,7 +237,9 @@ pub fn dispatch_command<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, cmd_pa
         crate::hollywood::ipc::deliver_ack(sys);
         return;
     }
-    sys.starlet.pending.push_back(PendingResponse { cmd_paddr, result });
+    sys.starlet
+        .pending
+        .push_back(PendingResponse { cmd_paddr, result });
     self::ensure_delivery_scheduled::<SYSTEM>(sys, FINALIZE_DELAY_US);
 }
 
@@ -242,7 +271,10 @@ fn process_command<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, cmd_paddr: 
     const IOS_IOCTL: u32 = 6;
     const IOS_IOCTLV: u32 = 7;
 
-    assert!(SYSTEM == crate::WII, "Starlet dispatch reached on non-Wii system");
+    assert!(
+        SYSTEM == crate::WII,
+        "Starlet dispatch reached on non-Wii system"
+    );
 
     let wii: &mut crate::Wii = unsafe { ::core::mem::transmute(sys) };
     let cmd = wii.mmio.phys_read_u32(cmd_paddr);
@@ -259,25 +291,33 @@ fn process_command<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, cmd_paddr: 
             let fd = if let Some(dev) = starlet.device_for_path(&path) {
                 ctx.device_path = path.clone();
                 let rc = dev.open(&mut ctx, mode);
-                if rc >= 0 { starlet.allocate_fd(&path) } else { rc }
+                if rc >= 0 {
+                    starlet.allocate_fd(&path)
+                } else {
+                    rc
+                }
             } else if let Some(real) = HostBackedFile::try_open(&starlet.host_fs_root, &path, mode)
             {
                 starlet.allocate_owned_fd(&path, Box::new(real))
             } else {
-                let rc = if path.starts_with("/dev/") { IPC_ENOENT } else { FS_ENOENT };
+                let rc = if path.starts_with("/dev/") {
+                    IPC_ENOENT
+                } else {
+                    FS_ENOENT
+                };
                 tracing::debug!(%path, rc, "IOS_Open: not found");
                 rc
             };
             tracing::debug!(%path, mode, fd, "IOS_Open");
 
             fd
-        },
+        }
         IOS_CLOSE => {
             let device_path = self::bind_fd_context(starlet, &mut ctx, fd);
 
             tracing::debug!(fd, device = device_path.as_str(), "IOS_Close");
             starlet.close_fd(fd, &mut ctx)
-        },
+        }
         IOS_READ => {
             let out_ptr = ctx.mmio.phys_read_u32(cmd_paddr + 0x0C);
             let out_len = ctx.mmio.phys_read_u32(cmd_paddr + 0x10);
@@ -295,7 +335,7 @@ fn process_command<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, cmd_paddr: 
                 Some(dev) => dev.read(&mut ctx, out_ptr, out_len),
                 None => IPC_EINVAL,
             }
-        },
+        }
         IOS_WRITE => {
             let in_ptr = ctx.mmio.phys_read_u32(cmd_paddr + 0x0C);
             let in_len = ctx.mmio.phys_read_u32(cmd_paddr + 0x10);
@@ -313,19 +353,25 @@ fn process_command<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, cmd_paddr: 
                 Some(dev) => dev.write(&mut ctx, in_ptr, in_len),
                 None => IPC_EINVAL,
             }
-        },
+        }
         IOS_SEEK => {
             let offset = ctx.mmio.phys_read_u32(cmd_paddr + 0x0C) as i32;
             let whence = ctx.mmio.phys_read_u32(cmd_paddr + 0x10) as i32;
             let device_path = self::bind_fd_context(starlet, &mut ctx, fd);
 
-            tracing::debug!(fd, device = device_path.as_str(), offset, whence, "IOS_Seek");
+            tracing::debug!(
+                fd,
+                device = device_path.as_str(),
+                offset,
+                whence,
+                "IOS_Seek"
+            );
 
             match starlet.device_for_fd(fd) {
                 Some(dev) => dev.seek(&mut ctx, offset, whence),
                 None => IPC_EINVAL,
             }
-        },
+        }
         IOS_IOCTL => {
             let ioctl_cmd = ctx.mmio.phys_read_u32(cmd_paddr + 0x0C);
             let in_ptr = ctx.mmio.phys_read_u32(cmd_paddr + 0x10);
@@ -349,7 +395,7 @@ fn process_command<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, cmd_paddr: 
                 Some(dev) => dev.ioctl(&mut ctx, ioctl_cmd, in_ptr, in_len, out_ptr, out_len),
                 None => IPC_EINVAL,
             }
-        },
+        }
         IOS_IOCTLV => {
             let ioctl_cmd = ctx.mmio.phys_read_u32(cmd_paddr + 0x0C);
             let in_count = ctx.mmio.phys_read_u32(cmd_paddr + 0x10);
@@ -368,11 +414,11 @@ fn process_command<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, cmd_paddr: 
                 Some(dev) => dev.ioctlv(&mut ctx, ioctl_cmd, in_count, io_count, vec_ptr),
                 None => IPC_EINVAL,
             }
-        },
+        }
         other => {
             tracing::error!(cmd = other, "unimplemented IOS command");
             IPC_EINVAL
-        },
+        }
     }
 }
 
@@ -392,7 +438,9 @@ fn read_c_string(ctx: &mut DeviceContext<'_>, paddr: u32) -> String {
 }
 
 fn bind_fd_context(starlet: &Starlet, ctx: &mut DeviceContext<'_>, fd: i32) -> String {
-    let device_path = starlet.device_path_for_fd(fd).unwrap_or_else(|| "<invalid>".to_owned());
+    let device_path = starlet
+        .device_path_for_fd(fd)
+        .unwrap_or_else(|| "<invalid>".to_owned());
     ctx.device_path = device_path.clone();
     device_path
 }
@@ -465,7 +513,7 @@ impl Starlet {
                 FdEntry::Shared(path) => {
                     w.u8(0);
                     w.str(path);
-                },
+                }
                 FdEntry::Owned { path, dev } => {
                     w.u8(1);
                     w.str(path);
@@ -473,7 +521,7 @@ impl Starlet {
                     let (mode, offset) = dev.host_file_state().unwrap_or((0, 0));
                     w.u32(mode);
                     w.u64(offset);
-                },
+                }
             }
         }
     }
@@ -488,7 +536,10 @@ impl Starlet {
         self.pending.clear();
         let pending_count = r.u32()?;
         for _ in 0..pending_count {
-            self.pending.push_back(PendingResponse { cmd_paddr: r.u32()?, result: r.i32()? });
+            self.pending.push_back(PendingResponse {
+                cmd_paddr: r.u32()?,
+                result: r.i32()?,
+            });
         }
 
         let device_count = r.u32()?;
@@ -513,7 +564,7 @@ impl Starlet {
             match r.u8()? {
                 0 => {
                     self.handles.insert(fd, FdEntry::Shared(r.str()?));
-                },
+                }
                 1 => {
                     let path = r.str()?;
                     let mode = r.u32()?;
@@ -521,16 +572,22 @@ impl Starlet {
 
                     match HostBackedFile::reopen(&self.host_fs_root, &path, mode, offset) {
                         Some(dev) => {
-                            self.handles.insert(fd, FdEntry::Owned { path, dev: Box::new(dev) });
-                        },
+                            self.handles.insert(
+                                fd,
+                                FdEntry::Owned {
+                                    path,
+                                    dev: Box::new(dev),
+                                },
+                            );
+                        }
                         None => {
                             tracing::warn!(
                                 path,
                                 "savestate: failed to reopen NAND file, dropping fd"
                             );
-                        },
+                        }
                     }
-                },
+                }
                 _ => return Err(crate::savestate::StateError::Corrupt("bad fd entry tag")),
             }
         }

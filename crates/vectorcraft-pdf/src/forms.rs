@@ -41,7 +41,12 @@ pub(crate) struct PdfLayer<'a> {
 pub(crate) fn pdf_layers(doc: &Document) -> Vec<PdfLayer<'_>> {
     fn add<'a>(nodes: &'a [Arc<Node>], parent: Option<usize>, out: &mut Vec<PdfLayer<'a>>) {
         for n in nodes {
-            if let NodeKind::Layer { template: false, children, .. } = &n.kind {
+            if let NodeKind::Layer {
+                template: false,
+                children,
+                ..
+            } = &n.kind
+            {
                 let i = out.len();
                 out.push(PdfLayer { node: n, parent });
                 add(children, Some(i), out);
@@ -115,9 +120,14 @@ impl Object<'_> {
         let data = pdf.get(start..end)?;
         let mut out = vec![];
         match self.dict.get(b"Filter") {
-            None => out.extend_from_slice(data.get(..usize::try_from(limit).unwrap_or(usize::MAX).min(data.len()))?),
+            None => out.extend_from_slice(
+                data.get(..usize::try_from(limit).unwrap_or(usize::MAX).min(data.len()))?,
+            ),
             Some(Obj::Name(b"FlateDecode")) => {
-                flate2::read::ZlibDecoder::new(data).take(limit).read_to_end(&mut out).ok()?;
+                flate2::read::ZlibDecoder::new(data)
+                    .take(limit)
+                    .read_to_end(&mut out)
+                    .ok()?;
             }
             Some(_) => return None,
         }
@@ -126,8 +136,14 @@ impl Object<'_> {
 
     /// Replace the stream's data with `content` (compressed as before).
     fn rewrite(&self, patch: &mut Patch, content: &[u8]) -> Result<(), PdfError> {
-        let ((len_start, len_end), (start, end)) = self.stream.ok_or_else(|| bad("a content stream isn't a stream"))?;
-        let data = if self.dict.get(b"Filter").is_some() { deflate(content).map_err(|e| bad(&e.to_string()))? } else { content.to_vec() };
+        let ((len_start, len_end), (start, end)) = self
+            .stream
+            .ok_or_else(|| bad("a content stream isn't a stream"))?;
+        let data = if self.dict.get(b"Filter").is_some() {
+            deflate(content).map_err(|e| bad(&e.to_string()))?
+        } else {
+            content.to_vec()
+        };
         patch.replace(len_start, len_end, data.len().to_string().into_bytes());
         patch.replace(start, end, data);
         Ok(())
@@ -144,7 +160,11 @@ impl Object<'_> {
             Some((Tok::Word(w), ..)) => Some(w),
             _ => None,
         };
-        let (Some(b"q"), Some(x), Some(y), Some(b"m")) = (word(), word().and_then(int), word().and_then(int), word()) else { return None };
+        let (Some(b"q"), Some(x), Some(y), Some(b"m")) =
+            (word(), word().and_then(int), word().and_then(int), word())
+        else {
+            return None;
+        };
         match x {
             _ if x == i64::from(LAYER_X) => usize::try_from(y).ok().map(Mark::Layer),
             _ if x == i64::from(OVERPRINT_X) && y == 0 => Some(Mark::Overprint),
@@ -178,10 +198,21 @@ fn resources<'o>(objects: &'o HashMap<u32, Object<'_>>, o: &'o Object<'_>) -> Op
 
 /// Add `entries` (`/VCoc0 12 0 R`) to the `category` (`Properties`, `ExtGState`) of resource
 /// dictionary `res`.
-fn add_resources(patch: &mut Patch, res: &Obj<'_>, category: &str, entries: &str) -> Result<(), PdfError> {
+fn add_resources(
+    patch: &mut Patch,
+    res: &Obj<'_>,
+    category: &str,
+    entries: &str,
+) -> Result<(), PdfError> {
     match (res.get(category.as_bytes()), res) {
-        (Some(Obj::Dict { start, .. }), _) => patch.replace(start + 2, start + 2, entries.as_bytes().to_vec()),
-        (None, Obj::Dict { start, .. }) => patch.replace(start + 2, start + 2, format!("/{category}<<{entries}>>").into_bytes()),
+        (Some(Obj::Dict { start, .. }), _) => {
+            patch.replace(start + 2, start + 2, entries.as_bytes().to_vec())
+        }
+        (None, Obj::Dict { start, .. }) => patch.replace(
+            start + 2,
+            start + 2,
+            format!("/{category}<<{entries}>>").into_bytes(),
+        ),
         _ => return Err(bad("unexpected resources")),
     }
     Ok(())
@@ -230,26 +261,43 @@ fn mark_layers(content: &[u8], forms: &HashMap<&[u8], usize>) -> Option<(Vec<u8>
 /// option is off, locked when it is locked — and the uses of its forms its optional content;
 /// with `overprint`, the overprinting forms get a graphics state that overprints (`/OP`, `/op`,
 /// `/OPM 1`; `/OPM 0` in PDF/A, which allows no other with ICC-based CMYK colours).
-pub(crate) fn finish(pdf: Vec<u8>, doc: &Document, set: &PdfSettings, layers: bool, overprint: bool) -> Result<Vec<u8>, PdfError> {
+pub(crate) fn finish(
+    pdf: Vec<u8>,
+    doc: &Document,
+    set: &PdfSettings,
+    layers: bool,
+    overprint: bool,
+) -> Result<Vec<u8>, PdfError> {
     if !layers && !overprint {
         return Ok(pdf);
     }
-    let xref = Xref::read(&pdf).ok_or_else(|| bad("the written PDF has no cross-reference table"))?;
+    let xref =
+        Xref::read(&pdf).ok_or_else(|| bad("the written PDF has no cross-reference table"))?;
     let objects = objects(&pdf, &xref);
-    let marks: HashMap<u32, Mark> = objects.iter().filter_map(|(n, o)| Some((*n, o.mark(&pdf)?))).collect();
+    let marks: HashMap<u32, Mark> = objects
+        .iter()
+        .filter_map(|(n, o)| Some((*n, o.mark(&pdf)?)))
+        .collect();
     let mut patch = Patch::new(&xref);
     if overprint {
         let opm = u8::from(set.standard != Standard::PdfA2b);
-        let gs = patch.add_object(format!("<</Type/ExtGState/OP true/op true/OPM {opm}>>").into_bytes());
+        let gs =
+            patch.add_object(format!("<</Type/ExtGState/OP true/op true/OPM {opm}>>").into_bytes());
         for (n, _) in marks.iter().filter(|(_, m)| **m == Mark::Overprint) {
             let Some(o) = objects.get(n) else { continue };
-            let (Some(content), Some(res)) = (o.data(&pdf, u64::MAX), resources(&objects, o)) else {
+            let (Some(content), Some(res)) = (o.data(&pdf, u64::MAX), resources(&objects, o))
+            else {
                 return Err(bad("an overprinting form can't be read"));
             };
             let mut new = format!("/{OVERPRINT_GS} gs\n").into_bytes();
             new.extend_from_slice(&content);
             o.rewrite(&mut patch, &new)?;
-            add_resources(&mut patch, res, "ExtGState", &format!("/{OVERPRINT_GS} {gs} 0 R"))?;
+            add_resources(
+                &mut patch,
+                res,
+                "ExtGState",
+                &format!("/{OVERPRINT_GS} {gs} 0 R"),
+            )?;
         }
     }
     if layers {
@@ -287,12 +335,26 @@ fn write_layers(
     for (i, PdfLayer { node: l, parent }) in layers.iter().enumerate() {
         let siblings = children.entry(*parent).or_default();
         siblings.push(i);
-        let name = l.name.clone().unwrap_or_else(|| format!("Layer {}", siblings.len()));
-        let printable = matches!(l.kind, NodeKind::Layer { printable: true, .. });
+        let name = l
+            .name
+            .clone()
+            .unwrap_or_else(|| format!("Layer {}", siblings.len()));
+        let printable = matches!(
+            l.kind,
+            NodeKind::Layer {
+                printable: true,
+                ..
+            }
+        );
         let on = |b: bool| if b { "ON" } else { "OFF" };
         let g = patch.add_object(
-            format!("<</Type/OCG/Name{}/Usage<</View<</ViewState/{}>>/Print<</PrintState/{}>>>>>>", text_string(&name), on(l.visible), on(printable))
-                .into_bytes(),
+            format!(
+                "<</Type/OCG/Name{}/Usage<</View<</ViewState/{}>>/Print<</PrintState/{}>>>>>>",
+                text_string(&name),
+                on(l.visible),
+                on(printable)
+            )
+            .into_bytes(),
         );
         groups.insert(i, g);
         all.push(g);
@@ -310,8 +372,12 @@ fn write_layers(
             _ if o.dict.name(b"Subtype") == Some(b"Form") => Some(o),
             _ => None,
         };
-        let (Some(content), Some(res)) = (content, resources(objects, o)) else { continue };
-        let Some(Obj::Dict { entries, .. }) = res.get(b"XObject") else { continue };
+        let (Some(content), Some(res)) = (content, resources(objects, o)) else {
+            continue;
+        };
+        let Some(Obj::Dict { entries, .. }) = res.get(b"XObject") else {
+            continue;
+        };
         let forms: HashMap<&[u8], usize> = entries
             .iter()
             .filter_map(|(name, x)| {
@@ -325,13 +391,25 @@ fn write_layers(
         if forms.is_empty() {
             continue;
         }
-        let data = content.data(pdf, u64::MAX).ok_or_else(|| bad("a content stream can't be read"))?;
-        let Some((new, marked)) = mark_layers(&data, &forms) else { continue };
+        let data = content
+            .data(pdf, u64::MAX)
+            .ok_or_else(|| bad("a content stream can't be read"))?;
+        let Some((new, marked)) = mark_layers(&data, &forms) else {
+            continue;
+        };
         content.rewrite(patch, &new)?;
-        let entries: String = marked.iter().filter_map(|i| Some(format!("/{LAYER_OC}{i} {} 0 R", groups.get(i)?))).collect();
+        let entries: String = marked
+            .iter()
+            .filter_map(|i| Some(format!("/{LAYER_OC}{i} {} 0 R", groups.get(i)?)))
+            .collect();
         add_resources(patch, res, "Properties", &entries)?;
     }
-    let refs = |v: &[u32]| v.iter().map(|g| format!("{g} 0 R")).collect::<Vec<_>>().join(" ");
+    let refs = |v: &[u32]| {
+        v.iter()
+            .map(|g| format!("{g} 0 R"))
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
     let mut config = format!("/Name(Layers)/Order[{}]", order(&children, &groups, None));
     if !off.is_empty() {
         config.push_str(&format!("/OFF[{}]", refs(&off)));
@@ -341,11 +419,26 @@ fn write_layers(
     }
     // Viewers apply the print states when printing (the standards allow no automatic states).
     if set.standard == Standard::None {
-        config.push_str(&format!("/AS[<</Event/Print/OCGs[{}]/Category[/Print]>>]", refs(&all)));
+        config.push_str(&format!(
+            "/AS[<</Event/Print/OCGs[{}]/Category[/Print]>>]",
+            refs(&all)
+        ));
     }
-    let root = xref.trailer_ref(pdf, b"/Root").and_then(|n| objects.get(&n));
-    let Some(Object { dict: Obj::Dict { start, .. }, .. }) = root else { return Err(bad("the written PDF has no catalog")) };
-    patch.replace(start + 2, start + 2, format!("/OCProperties<</OCGs[{}]/D<<{config}>>>>", refs(&all)).into_bytes());
+    let root = xref
+        .trailer_ref(pdf, b"/Root")
+        .and_then(|n| objects.get(&n));
+    let Some(Object {
+        dict: Obj::Dict { start, .. },
+        ..
+    }) = root
+    else {
+        return Err(bad("the written PDF has no catalog"));
+    };
+    patch.replace(
+        start + 2,
+        start + 2,
+        format!("/OCProperties<</OCGs[{}]/D<<{config}>>>>", refs(&all)).into_bytes(),
+    );
     Ok(())
 }
 
@@ -357,19 +450,40 @@ const UNBOXED: &[u8] = b"[-32767 -32767 32767 32767]";
 
 /// Give the layer's form `o` the [`UNBOXED`] box.
 fn unbox(pdf: &[u8], o: &Object<'_>, patch: &mut Patch) -> Result<(), PdfError> {
-    let Obj::Dict { start, end, .. } = o.dict else { return Err(bad("a layer's form has no dictionary")) };
-    let dict = pdf.get(start..end).ok_or_else(|| bad("a layer's form can't be read"))?;
+    let Obj::Dict { start, end, .. } = o.dict else {
+        return Err(bad("a layer's form has no dictionary"));
+    };
+    let dict = pdf
+        .get(start..end)
+        .ok_or_else(|| bad("a layer's form can't be read"))?;
     // The writer writes the box as an array of numbers.
-    let at = dict.windows(5).position(|w| w == b"/BBox").ok_or_else(|| bad("a layer's form has no box"))? + 5;
-    let open = at + dict.get(at..).and_then(|d| d.iter().position(|&c| c == b'[')).ok_or_else(|| bad("a layer's form box isn't an array"))?;
-    let close = open + dict.get(open..).and_then(|d| d.iter().position(|&c| c == b']')).ok_or_else(|| bad("a layer's form box isn't an array"))? + 1;
+    let at = dict
+        .windows(5)
+        .position(|w| w == b"/BBox")
+        .ok_or_else(|| bad("a layer's form has no box"))?
+        + 5;
+    let open = at
+        + dict
+            .get(at..)
+            .and_then(|d| d.iter().position(|&c| c == b'['))
+            .ok_or_else(|| bad("a layer's form box isn't an array"))?;
+    let close = open
+        + dict
+            .get(open..)
+            .and_then(|d| d.iter().position(|&c| c == b']'))
+            .ok_or_else(|| bad("a layer's form box isn't an array"))?
+        + 1;
     patch.replace(start + open, start + close, UNBOXED.to_vec());
     Ok(())
 }
 
 /// The `/Order` entries of `parent`'s sublayers (the top-level layers for none), the top one first
 /// as Layers panels list them, each followed by an array of its own sublayers when it has some.
-fn order(children: &HashMap<Option<usize>, Vec<usize>>, groups: &HashMap<usize, u32>, parent: Option<usize>) -> String {
+fn order(
+    children: &HashMap<Option<usize>, Vec<usize>>,
+    groups: &HashMap<usize, u32>,
+    parent: Option<usize>,
+) -> String {
     let mut out = vec![];
     for &i in children.get(&parent).into_iter().flatten().rev() {
         let Some(g) = groups.get(&i) else { continue };

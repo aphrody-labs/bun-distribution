@@ -119,44 +119,112 @@ fn new_comment(s: &mut Session, v: &Value) -> CmdResult {
         match s.doc.para_at(&a) {
             Some(para) if !para.is_empty() => {
                 let (x, y) = para.word_at(a.off);
-                let y = para.text.get(x..y).map(|w| x + w.trim_end().len()).unwrap_or(y);
-                (Pos { off: x, ..a.clone() }, Pos { off: y, ..a })
+                let y = para
+                    .text
+                    .get(x..y)
+                    .map(|w| x + w.trim_end().len())
+                    .unwrap_or(y);
+                (
+                    Pos {
+                        off: x,
+                        ..a.clone()
+                    },
+                    Pos { off: y, ..a },
+                )
             }
             _ => (a.clone(), a),
         }
     } else {
         (a, b)
     };
-    let part = s.doc.add_part(PartKind::Comment, vec![para_block(Paragraph::with_text(&text, Default::default()))]);
-    let id = s.doc.comments.keys().next_back().map(|k| k + 1).unwrap_or(0);
+    let part = s.doc.add_part(
+        PartKind::Comment,
+        vec![para_block(Paragraph::with_text(&text, Default::default()))],
+    );
+    let id = s
+        .doc
+        .comments
+        .keys()
+        .next_back()
+        .map(|k| k + 1)
+        .unwrap_or(0);
     let initials = s.user_initials();
-    s.doc.comments.insert(id, Comment { author: s.author.clone(), initials, date: now_iso(), parent: None, resolved: false, part });
+    s.doc.comments.insert(
+        id,
+        Comment {
+            author: s.author.clone(),
+            initials,
+            date: now_iso(),
+            parent: None,
+            resolved: false,
+            part,
+        },
+    );
     let props = Default::default();
-    s.doc.insert_object(&b, InlineObject::CommentEnd { id }, &props)?;
-    s.doc.insert_object(&a, InlineObject::CommentStart { id }, &props)?;
+    s.doc
+        .insert_object(&b, InlineObject::CommentEnd { id }, &props)?;
+    s.doc
+        .insert_object(&a, InlineObject::CommentStart { id }, &props)?;
     s.view.comments_pane = true;
     Ok(json!({"id": id, "story": part}))
 }
 
 fn reply(s: &mut Session, v: &Value) -> CmdResult {
-    let parent = p::u64(v, "id").map(|x| x as u32).ok_or_else(|| CmdError::Params("`id` required".into()))?;
+    let parent = p::u64(v, "id")
+        .map(|x| x as u32)
+        .ok_or_else(|| CmdError::Params("`id` required".into()))?;
     if !s.doc.comments.contains_key(&parent) {
         return Err(CmdError::Params("no such comment".into()));
     }
     let text = p::req_str(v, "text")?;
-    let part = s.doc.add_part(PartKind::Comment, vec![para_block(Paragraph::with_text(text, Default::default()))]);
-    let id = s.doc.comments.keys().next_back().map(|k| k + 1).unwrap_or(0);
+    let part = s.doc.add_part(
+        PartKind::Comment,
+        vec![para_block(Paragraph::with_text(text, Default::default()))],
+    );
+    let id = s
+        .doc
+        .comments
+        .keys()
+        .next_back()
+        .map(|k| k + 1)
+        .unwrap_or(0);
     let initials = s.user_initials();
-    s.doc.comments.insert(id, Comment { author: s.author.clone(), initials, date: now_iso(), parent: Some(parent), resolved: false, part });
+    s.doc.comments.insert(
+        id,
+        Comment {
+            author: s.author.clone(),
+            initials,
+            date: now_iso(),
+            parent: Some(parent),
+            resolved: false,
+            part,
+        },
+    );
     Ok(json!({"id": id}))
 }
 
 /// Replace a comment's (or reply's) text; each line becomes a paragraph.
 fn edit_comment(s: &mut Session, v: &Value) -> CmdResult {
-    let id = p::u64(v, "id").and_then(|x| u32::try_from(x).ok()).ok_or_else(|| CmdError::Params("`id` required".into()))?;
+    let id = p::u64(v, "id")
+        .and_then(|x| u32::try_from(x).ok())
+        .ok_or_else(|| CmdError::Params("`id` required".into()))?;
     let text = p::req_str(v, "text")?;
-    let part = s.doc.comments.get(&id).map(|c| c.part).ok_or_else(|| CmdError::Params("no such comment".into()))?;
-    let blocks = text.split('\n').take(10_000).map(|l| para_block(Paragraph::with_text(l.trim_end_matches('\r'), Default::default()))).collect();
+    let part = s
+        .doc
+        .comments
+        .get(&id)
+        .map(|c| c.part)
+        .ok_or_else(|| CmdError::Params("no such comment".into()))?;
+    let blocks = text
+        .split('\n')
+        .take(10_000)
+        .map(|l| {
+            para_block(Paragraph::with_text(
+                l.trim_end_matches('\r'),
+                Default::default(),
+            ))
+        })
+        .collect();
     s.doc.set_story(StoryRef::Part(part), blocks)?;
     Ok(json!({"id": id}))
 }
@@ -177,10 +245,14 @@ fn comment_at_caret(s: &Session) -> Option<u32> {
         }
     }
     open.last().copied().or_else(|| {
-        p.object_offsets().into_iter().find_map(|o| match p.object_at(o) {
-            Some(InlineObject::CommentStart { id }) | Some(InlineObject::CommentEnd { id }) => Some(*id),
-            _ => None,
-        })
+        p.object_offsets()
+            .into_iter()
+            .find_map(|o| match p.object_at(o) {
+                Some(InlineObject::CommentStart { id }) | Some(InlineObject::CommentEnd { id }) => {
+                    Some(*id)
+                }
+                _ => None,
+            })
     })
 }
 
@@ -213,10 +285,19 @@ fn delete_comment(s: &mut Session, v: &Value) -> CmdResult {
     let ids: Vec<u32> = if p::bool(v, "all").unwrap_or(false) {
         s.doc.comments.keys().copied().collect()
     } else {
-        let id = p::u64(v, "id").map(|x| x as u32).or_else(|| comment_at_caret(s)).ok_or_else(|| CmdError::Params("no comment here".into()))?;
+        let id = p::u64(v, "id")
+            .map(|x| x as u32)
+            .or_else(|| comment_at_caret(s))
+            .ok_or_else(|| CmdError::Params("no comment here".into()))?;
         // The comment and its replies.
         let mut v = vec![id];
-        v.extend(s.doc.comments.iter().filter(|(_, c)| c.parent == Some(id)).map(|(k, _)| *k));
+        v.extend(
+            s.doc
+                .comments
+                .iter()
+                .filter(|(_, c)| c.parent == Some(id))
+                .map(|(k, _)| *k),
+        );
         v
     };
     remove_anchors(s, &ids)?;
@@ -233,10 +314,19 @@ fn delete_comment(s: &mut Session, v: &Value) -> CmdResult {
 pub fn comment_list(s: &Session) -> Vec<(u32, Option<Pos>)> {
     let mut found: Vec<(u32, Option<Pos>)> = Vec::new();
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         for o in p.object_offsets() {
             if let Some(InlineObject::CommentStart { id }) = p.object_at(o) {
-                found.push((*id, Some(Pos { story: StoryRef::Body, path: path.clone(), off: o })));
+                found.push((
+                    *id,
+                    Some(Pos {
+                        story: StoryRef::Body,
+                        path: path.clone(),
+                        off: o,
+                    }),
+                ));
             }
         }
     }
@@ -267,7 +357,11 @@ fn list_comments(s: &mut Session, _: &Value) -> CmdResult {
 fn nav_comment(s: &mut Session, dir: i32) -> CmdResult {
     let list: Vec<Pos> = comment_list(s).into_iter().filter_map(|(_, p)| p).collect();
     let caret = s.sel.focus.clone();
-    let t = if dir > 0 { list.iter().find(|p| **p > caret).or(list.first()) } else { list.iter().rev().find(|p| **p < caret).or(list.last()) };
+    let t = if dir > 0 {
+        list.iter().find(|p| **p > caret).or(list.first())
+    } else {
+        list.iter().rev().find(|p| **p < caret).or(list.last())
+    };
     if let Some(p) = t {
         s.sel = Selection::caret(p.clone());
     }
@@ -295,7 +389,15 @@ fn resolve_para(
     let ranges: Vec<(usize, usize, bool, bool, bool)> = para
         .run_ranges()
         .filter(|(r, _)| r.end > from && r.start < to)
-        .map(|(r, c)| (r.start.max(from), r.end.min(to), c.ins.is_some(), c.del.is_some(), c.fmt_change.is_some()))
+        .map(|(r, c)| {
+            (
+                r.start.max(from),
+                r.end.min(to),
+                c.ins.is_some(),
+                c.del.is_some(),
+                c.fmt_change.is_some(),
+            )
+        })
         .collect();
     for (a, b, ins, del, fmt) in ranges.into_iter().rev() {
         if (del && accept) || (ins && !accept) {
@@ -311,7 +413,12 @@ fn resolve_para(
     if !mark {
         return Ok(());
     }
-    if para.mark.fmt_change.is_some() || para.section.as_ref().is_some_and(|x| x.fmt_change.is_some()) {
+    if para.mark.fmt_change.is_some()
+        || para
+            .section
+            .as_ref()
+            .is_some_and(|x| x.fmt_change.is_some())
+    {
         fmt_revisions::resolve_char(&mut para.mark, accept);
         if let Some(sec) = para.section.as_deref_mut() {
             fmt_revisions::resolve_section(sec, accept);
@@ -325,7 +432,9 @@ fn resolve_para(
     // An inserted paragraph mark that is rejected, or a deleted one that is accepted, goes away:
     // the next paragraph joins this one (the split is undone). The mark at the end of a story
     // or cell can't go, so it just stops being a revision.
-    if ((del.is_some() && accept) || (ins.is_some() && !accept)) && super::join_next_para(s, story, path)? {
+    if ((del.is_some() && accept) || (ins.is_some() && !accept))
+        && super::join_next_para(s, story, path)?
+    {
         return Ok(());
     }
     let para = s.doc.para_mut(story, path)?;
@@ -337,13 +446,22 @@ fn resolve_para(
 
 /// Accept or reject the changes of the table cell `path` is in: the table's, its row's and the
 /// cell's own. Returns whether there were any.
-fn resolve_cell(s: &mut Session, story: StoryRef, path: &wordcraft_doc::Path, accept: bool) -> Result<bool, CmdError> {
-    let Some((tp, r, c)) = path.cell() else { return Ok(false) };
+fn resolve_cell(
+    s: &mut Session,
+    story: StoryRef,
+    path: &wordcraft_doc::Path,
+    accept: bool,
+) -> Result<bool, CmdError> {
+    let Some((tp, r, c)) = path.cell() else {
+        return Ok(false);
+    };
     let has = s.doc.table(story, &tp).is_some_and(|t| {
         let row = t.rows.get(r);
         t.props.fmt_change.is_some()
             || row.is_some_and(|x| x.props.fmt_change.is_some())
-            || row.and_then(|x| x.cells.get(c)).is_some_and(|x| x.props.fmt_change.is_some())
+            || row
+                .and_then(|x| x.cells.get(c))
+                .is_some_and(|x| x.props.fmt_change.is_some())
     });
     if !has {
         return Ok(false);
@@ -371,7 +489,13 @@ struct Change {
 
 impl Change {
     fn format(a: Pos, b: Pos, rev: u32, props: Vec<Value>) -> Change {
-        Change { a, b, kind: "format", rev: Some(rev), props }
+        Change {
+            a,
+            b,
+            kind: "format",
+            rev: Some(rev),
+            props,
+        }
     }
 }
 
@@ -383,9 +507,27 @@ fn mark_change(s: &Session, story: StoryRef, path: &wordcraft_doc::Path) -> Opti
     if kind.is_empty() {
         return None;
     }
-    let a = Pos { story, path: path.clone(), off: p.len() };
-    let b = if super::has_next_para(s, story, path) { Pos { story, path: path.with_last(path.last().saturating_add(1)), off: 0 } } else { a.clone() };
-    Some(Change { a, b, kind, rev: p.mark.ins.or(p.mark.del), props: Vec::new() })
+    let a = Pos {
+        story,
+        path: path.clone(),
+        off: p.len(),
+    };
+    let b = if super::has_next_para(s, story, path) {
+        Pos {
+            story,
+            path: path.with_last(path.last().saturating_add(1)),
+            off: 0,
+        }
+    } else {
+        a.clone()
+    };
+    Some(Change {
+        a,
+        b,
+        kind,
+        rev: p.mark.ins.or(p.mark.del),
+        props: Vec::new(),
+    })
 }
 
 /// The kind of an insertion / deletion change: `insert`, `delete`, or for one end of a move
@@ -422,7 +564,9 @@ pub fn move_changes(s: &Session) -> Vec<(Pos, String, bool)> {
 }
 
 fn resolve_all(s: &mut Session, accept: bool) -> CmdResult {
-    let stories: Vec<StoryRef> = std::iter::once(StoryRef::Body).chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k))).collect();
+    let stories: Vec<StoryRef> = std::iter::once(StoryRef::Body)
+        .chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k)))
+        .collect();
     for st in stories {
         for path in s.doc.para_paths(st).into_iter().rev() {
             let len = s.doc.para(st, &path).map(|p| p.len()).unwrap_or(0);
@@ -452,17 +596,23 @@ fn resolve_sel(s: &mut Session, accept: bool) -> CmdResult {
         // else the paragraph's formatting, else the table cell's.
         let found = s.doc.para_at(&a).and_then(|p| {
             let runs: Vec<_> = p.run_ranges().collect();
-            let i = runs
-                .iter()
-                .position(|(r, c)| r.start <= a.off && a.off <= r.end && (c.ins.is_some() || c.del.is_some() || c.fmt_change.is_some()))?;
+            let i = runs.iter().position(|(r, c)| {
+                r.start <= a.off
+                    && a.off <= r.end
+                    && (c.ins.is_some() || c.del.is_some() || c.fmt_change.is_some())
+            })?;
             let (mut start, mut end) = (runs[i].0.start, runs[i].0.end);
             let key = (runs[i].1.ins, runs[i].1.del);
             if key == (None, None) {
                 return Some(start..end);
             }
             // Comment anchors split a revision's text into several runs; the revision goes on past them.
-            let is_anchor =
-                |k: usize| matches!(p.object_at(runs[k].0.start), Some(InlineObject::CommentStart { .. } | InlineObject::CommentEnd { .. }));
+            let is_anchor = |k: usize| {
+                matches!(
+                    p.object_at(runs[k].0.start),
+                    Some(InlineObject::CommentStart { .. } | InlineObject::CommentEnd { .. })
+                )
+            };
             let same = |k: usize| (runs[k].1.ins, runs[k].1.del) == key;
             let mut k = i;
             while k > 0 {
@@ -488,10 +638,22 @@ fn resolve_sel(s: &mut Session, accept: bool) -> CmdResult {
             }
             Some(start..end)
         });
-        let para_fmt = s.doc.para_at(&a).is_some_and(|p| p.props.fmt_change.is_some() || p.props.num_change.is_some());
-        let mark_fmt = s.doc.para_at(&a).is_some_and(|p| a.off == p.len() && p.mark.fmt_change.is_some());
+        let para_fmt = s
+            .doc
+            .para_at(&a)
+            .is_some_and(|p| p.props.fmt_change.is_some() || p.props.num_change.is_some());
+        let mark_fmt = s
+            .doc
+            .para_at(&a)
+            .is_some_and(|p| a.off == p.len() && p.mark.fmt_change.is_some());
         match found {
-            Some(r) => (Pos { off: r.start, ..a.clone() }, Pos { off: r.end, ..a }),
+            Some(r) => (
+                Pos {
+                    off: r.start,
+                    ..a.clone()
+                },
+                Pos { off: r.end, ..a },
+            ),
             None if mark_fmt || mark_change(s, a.story, &a.path).is_some_and(|m| m.a == a) => {
                 caret_mark = Some(a.path.clone());
                 (a.clone(), a)
@@ -518,7 +680,8 @@ fn resolve_sel(s: &mut Session, accept: bool) -> CmdResult {
         let to = if path == b.path { b.off } else { len };
         // A paragraph's mark is in the selection when the selection goes on past it.
         let mark = path != b.path || caret_mark.as_ref() == Some(&path);
-        let props = (ranged && (path != b.path || to > from)) || caret_props.as_ref() == Some(&path);
+        let props =
+            (ranged && (path != b.path || to > from)) || caret_props.as_ref() == Some(&path);
         resolve_para(s, a.story, &path, from, to, mark, props, accept)?;
         if ranged {
             resolve_cell(s, a.story, &path, accept)?;
@@ -532,9 +695,15 @@ fn resolve_sel(s: &mut Session, accept: bool) -> CmdResult {
 
 fn changes(s: &Session) -> Vec<Change> {
     let mut out: Vec<Change> = Vec::new();
-    let mk = |path: &wordcraft_doc::Path, off| Pos { story: StoryRef::Body, path: path.clone(), off };
+    let mk = |path: &wordcraft_doc::Path, off| Pos {
+        story: StoryRef::Body,
+        path: path.clone(),
+        off,
+    };
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         // A table's, row's and cell's changes sit at the start of the cell's first paragraph.
         if path.last() == 0
             && let Some((tp, r, c)) = path.cell()
@@ -543,46 +712,105 @@ fn changes(s: &Session) -> Vec<Change> {
             let row = t.rows.get(r);
             let cell = row.and_then(|x| x.cells.get(c));
             let found = [
-                (r == 0 && c == 0).then(|| t.props.fmt_change.as_ref().map(|ch| (ch.rev, fmt_revisions::table_diff(&t.props)))).flatten(),
-                (c == 0).then(|| row.and_then(|x| x.props.fmt_change.as_ref().map(|ch| (ch.rev, fmt_revisions::row_diff(&x.props))))).flatten(),
-                cell.and_then(|x| x.props.fmt_change.as_ref().map(|ch| (ch.rev, fmt_revisions::cell_diff(&x.props)))),
+                (r == 0 && c == 0)
+                    .then(|| {
+                        t.props
+                            .fmt_change
+                            .as_ref()
+                            .map(|ch| (ch.rev, fmt_revisions::table_diff(&t.props)))
+                    })
+                    .flatten(),
+                (c == 0)
+                    .then(|| {
+                        row.and_then(|x| {
+                            x.props
+                                .fmt_change
+                                .as_ref()
+                                .map(|ch| (ch.rev, fmt_revisions::row_diff(&x.props)))
+                        })
+                    })
+                    .flatten(),
+                cell.and_then(|x| {
+                    x.props
+                        .fmt_change
+                        .as_ref()
+                        .map(|ch| (ch.rev, fmt_revisions::cell_diff(&x.props)))
+                }),
             ];
             for (rev, props) in found.into_iter().flatten() {
                 out.push(Change::format(mk(&path, 0), mk(&path, 0), rev, props));
             }
         }
         if let Some(ch) = &p.props.fmt_change {
-            out.push(Change::format(mk(&path, 0), mk(&path, p.len()), ch.rev, fmt_revisions::para_diff(&p.props)));
+            out.push(Change::format(
+                mk(&path, 0),
+                mk(&path, p.len()),
+                ch.rev,
+                fmt_revisions::para_diff(&p.props),
+            ));
         }
         for (r, c) in p.run_ranges() {
             let kind = run_kind(&s.doc, c.ins, c.del);
             if !kind.is_empty() {
-                out.push(Change { a: mk(&path, r.start), b: mk(&path, r.end), kind, rev: c.ins.or(c.del), props: Vec::new() });
+                out.push(Change {
+                    a: mk(&path, r.start),
+                    b: mk(&path, r.end),
+                    kind,
+                    rev: c.ins.or(c.del),
+                    props: Vec::new(),
+                });
             }
             let Some(ch) = &c.fmt_change else { continue };
             let props = fmt_revisions::char_diff(c);
             // Neighbouring runs changed the same way by the same revision are one change.
-            if let Some(last) =
-                out.last_mut().filter(|l| l.kind == "format" && l.rev == Some(ch.rev) && l.b == mk(&path, r.start) && l.props == props)
-            {
+            if let Some(last) = out.last_mut().filter(|l| {
+                l.kind == "format"
+                    && l.rev == Some(ch.rev)
+                    && l.b == mk(&path, r.start)
+                    && l.props == props
+            }) {
                 last.b = mk(&path, r.end);
             } else {
-                out.push(Change::format(mk(&path, r.start), mk(&path, r.end), ch.rev, props));
+                out.push(Change::format(
+                    mk(&path, r.start),
+                    mk(&path, r.end),
+                    ch.rev,
+                    props,
+                ));
             }
         }
         if let Some(ch) = &p.mark.fmt_change {
             let end = mk(&path, p.len());
-            out.push(Change::format(end.clone(), end, ch.rev, fmt_revisions::char_diff(&p.mark)));
+            out.push(Change::format(
+                end.clone(),
+                end,
+                ch.rev,
+                fmt_revisions::char_diff(&p.mark),
+            ));
         }
         out.extend(mark_change(s, StoryRef::Body, &path));
-        if let Some(ch) = p.section.as_ref().and_then(|x| x.fmt_change.as_ref().map(|ch| (ch.rev, x))) {
+        if let Some(ch) = p
+            .section
+            .as_ref()
+            .and_then(|x| x.fmt_change.as_ref().map(|ch| (ch.rev, x)))
+        {
             let end = mk(&path, p.len());
-            out.push(Change::format(end.clone(), end, ch.0, fmt_revisions::section_diff(ch.1)));
+            out.push(Change::format(
+                end.clone(),
+                end,
+                ch.0,
+                fmt_revisions::section_diff(ch.1),
+            ));
         }
     }
     if let Some(ch) = &s.doc.last_section.fmt_change {
         let end = s.doc.end_of(StoryRef::Body);
-        out.push(Change::format(end.clone(), end, ch.rev, fmt_revisions::section_diff(&s.doc.last_section)));
+        out.push(Change::format(
+            end.clone(),
+            end,
+            ch.rev,
+            fmt_revisions::section_diff(&s.doc.last_section),
+        ));
     }
     out
 }
@@ -593,7 +821,11 @@ pub fn format_changes(s: &Session) -> Vec<(Pos, String, Vec<Value>)> {
         .into_iter()
         .filter(|c| c.kind == "format")
         .map(|c| {
-            let author = c.rev.and_then(|r| s.doc.revisions.get(r as usize)).map(|r| r.author.clone()).unwrap_or_default();
+            let author = c
+                .rev
+                .and_then(|r| s.doc.revisions.get(r as usize))
+                .map(|r| r.author.clone())
+                .unwrap_or_default();
             (c.a, author, c.props)
         })
         .collect()
@@ -610,10 +842,16 @@ pub fn has_format_changes(doc: &wordcraft_doc::Document) -> bool {
                 || p.mark.fmt_change.is_some()
                 || p.runs.iter().any(|r| r.props.fmt_change.is_some())
                 || p.section.as_ref().is_some_and(|x| x.fmt_change.is_some())
-                || path.cell().and_then(|(tp, r, c)| doc.table(StoryRef::Body, &tp).map(|t| (t, r, c))).is_some_and(|(t, r, c)| {
-                    t.props.fmt_change.is_some()
-                        || t.rows.get(r).is_some_and(|x| x.props.fmt_change.is_some() || x.cells.get(c).is_some_and(|x| x.props.fmt_change.is_some()))
-                })
+                || path
+                    .cell()
+                    .and_then(|(tp, r, c)| doc.table(StoryRef::Body, &tp).map(|t| (t, r, c)))
+                    .is_some_and(|(t, r, c)| {
+                        t.props.fmt_change.is_some()
+                            || t.rows.get(r).is_some_and(|x| {
+                                x.props.fmt_change.is_some()
+                                    || x.cells.get(c).is_some_and(|x| x.props.fmt_change.is_some())
+                            })
+                    })
         })
     })
 }
@@ -638,20 +876,43 @@ const MAX_DELETION_BALLOONS: usize = 500;
 /// move is left out: it has its "Moved from" balloon ([`move_changes`]).
 pub fn deletion_balloons(s: &Session) -> Vec<DeletionBalloon> {
     let doc = &s.doc;
-    let author = |rev: u32| doc.revisions.get(rev as usize).map(|r| r.author.clone()).unwrap_or_default();
-    let mk = |path: &wordcraft_doc::Path, off| Pos { story: StoryRef::Body, path: path.clone(), off };
+    let author = |rev: u32| {
+        doc.revisions
+            .get(rev as usize)
+            .map(|r| r.author.clone())
+            .unwrap_or_default()
+    };
+    let mk = |path: &wordcraft_doc::Path, off| Pos {
+        story: StoryRef::Body,
+        path: path.clone(),
+        off,
+    };
     let mut out = Vec::new();
     for path in doc.para_paths(StoryRef::Body) {
-        let Some(p) = doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         for (r, c) in p.run_ranges() {
             // Inserted and then deleted text is a deletion (it's drawn and left out as one).
-            let Some(rev) = plain_deletion(doc, c.del) else { continue };
-            push_deletion(&mut out, mk(&path, r.start), mk(&path, r.end), author(rev), p.text.get(r).unwrap_or(""));
+            let Some(rev) = plain_deletion(doc, c.del) else {
+                continue;
+            };
+            push_deletion(
+                &mut out,
+                mk(&path, r.start),
+                mk(&path, r.end),
+                author(rev),
+                p.text.get(r).unwrap_or(""),
+            );
         }
         if let Some(rev) = plain_deletion(doc, p.mark.del) {
             let at = mk(&path, p.len());
             let next = path.with_last(path.last().saturating_add(1));
-            let end = if super::has_next_para(s, StoryRef::Body, &path) { mk(&next, 0) } else { at.clone() };
+            let end = if super::has_next_para(s, StoryRef::Body, &path) {
+                mk(&next, 0)
+            } else {
+                at.clone()
+            };
             push_deletion(&mut out, at, end, author(rev), "¶");
         }
     }
@@ -661,15 +922,33 @@ pub fn deletion_balloons(s: &Session) -> Vec<DeletionBalloon> {
 /// Add `author`'s deleted `text` (from `at` to `end`) to `out`: to the last balloon when that
 /// deletion ends at `at` and is theirs, else as a new one. Each balloon carries where its deletion
 /// ends and how many characters its text has.
-fn push_deletion(out: &mut Vec<(DeletionBalloon, Pos, usize)>, at: Pos, end: Pos, author: String, text: &str) {
-    let joins = out.last().is_some_and(|(d, e, _)| *e == at && d.author == author);
+fn push_deletion(
+    out: &mut Vec<(DeletionBalloon, Pos, usize)>,
+    at: Pos,
+    end: Pos,
+    author: String,
+    text: &str,
+) {
+    let joins = out
+        .last()
+        .is_some_and(|(d, e, _)| *e == at && d.author == author);
     if !joins {
         if out.len() >= MAX_DELETION_BALLOONS {
             return;
         }
-        out.push((DeletionBalloon { at, author, text: String::new() }, end.clone(), 0));
+        out.push((
+            DeletionBalloon {
+                at,
+                author,
+                text: String::new(),
+            },
+            end.clone(),
+            0,
+        ));
     }
-    let Some((d, e, chars)) = out.last_mut() else { return };
+    let Some((d, e, chars)) = out.last_mut() else {
+        return;
+    };
     *e = end;
     for c in text.chars() {
         if *chars > DELETION_TEXT_CHARS {
@@ -678,12 +957,19 @@ fn push_deletion(out: &mut Vec<(DeletionBalloon, Pos, usize)>, at: Pos, end: Pos
         let c = match c {
             // Pictures, fields and other objects show no text of their own.
             wordcraft_doc::para::OBJ => continue,
-            '\t' | wordcraft_doc::para::LINE_BREAK | wordcraft_doc::para::PAGE_BREAK | wordcraft_doc::para::COLUMN_BREAK => ' ',
+            '\t'
+            | wordcraft_doc::para::LINE_BREAK
+            | wordcraft_doc::para::PAGE_BREAK
+            | wordcraft_doc::para::COLUMN_BREAK => ' ',
             c if c.is_control() => continue,
             c => c,
         };
         *chars += 1;
-        d.text.push(if *chars > DELETION_TEXT_CHARS { '…' } else { c });
+        d.text.push(if *chars > DELETION_TEXT_CHARS {
+            '…'
+        } else {
+            c
+        });
     }
 }
 
@@ -697,8 +983,12 @@ fn plain_deletion(doc: &wordcraft_doc::Document, del: Option<u32>) -> Option<u32
 /// first).
 pub fn has_deletions(doc: &wordcraft_doc::Document) -> bool {
     doc.para_paths(StoryRef::Body).iter().any(|path| {
-        doc.para(StoryRef::Body, path)
-            .is_some_and(|p| plain_deletion(doc, p.mark.del).is_some() || p.runs.iter().any(|r| plain_deletion(doc, r.props.del).is_some()))
+        doc.para(StoryRef::Body, path).is_some_and(|p| {
+            plain_deletion(doc, p.mark.del).is_some()
+                || p.runs
+                    .iter()
+                    .any(|r| plain_deletion(doc, r.props.del).is_some())
+        })
     })
 }
 
@@ -706,12 +996,20 @@ fn nav_change(s: &mut Session, dir: i32) -> CmdResult {
     let list = changes(s);
     let caret = s.sel.ordered();
     let t = if dir > 0 {
-        list.iter().find(|c| c.a >= caret.1 && (c.a > caret.0 || c.b > caret.1)).or(list.first())
+        list.iter()
+            .find(|c| c.a >= caret.1 && (c.a > caret.0 || c.b > caret.1))
+            .or(list.first())
     } else {
-        list.iter().rev().find(|c| c.b <= caret.0 && (c.b < caret.1 || c.a < caret.0)).or(list.last())
+        list.iter()
+            .rev()
+            .find(|c| c.b <= caret.0 && (c.b < caret.1 || c.a < caret.0))
+            .or(list.last())
     };
     if let Some(c) = t {
-        s.sel = Selection { anchor: c.a.clone(), focus: c.b.clone() };
+        s.sel = Selection {
+            anchor: c.a.clone(),
+            focus: c.b.clone(),
+        };
     }
     sel_result(s)
 }
@@ -732,9 +1030,16 @@ fn list_changes(s: &mut Session, _: &Value) -> CmdResult {
                     v["props"] = json!(c.props);
                 }
                 // One end of a move: its name links it with the other end.
-                if let Some(name) = rev.and_then(|r| r.move_name.as_deref()).filter(|_| c.kind.starts_with("move")) {
+                if let Some(name) = rev
+                    .and_then(|r| r.move_name.as_deref())
+                    .filter(|_| c.kind.starts_with("move"))
+                {
                     v["move"] = json!(name);
-                    v["description"] = json!(if c.kind == "moveFrom" { "Moved from" } else { "Moved to" });
+                    v["description"] = json!(if c.kind == "moveFrom" {
+                        "Moved from"
+                    } else {
+                        "Moved to"
+                    });
                 }
                 v
             })
@@ -746,10 +1051,18 @@ fn word_count(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(b) = p::bool(v, "includeTextBoxes") {
         s.prefs.count_notes = b;
     }
-    let stories = if s.prefs.count_notes { s.doc.counted_stories() } else { vec![StoryRef::Body] };
+    let stories = if s.prefs.count_notes {
+        s.doc.counted_stories()
+    } else {
+        vec![StoryRef::Body]
+    };
     // A selected picture, shape or text box isn't a text selection: count the document.
     let text = if s.sel.is_collapsed() || super::objects::object_selection(s).is_some() {
-        stories.iter().map(|st| s.doc.plain_text(*st)).collect::<Vec<_>>().join("\n")
+        stories
+            .iter()
+            .map(|st| s.doc.plain_text(*st))
+            .collect::<Vec<_>>()
+            .join("\n")
     } else {
         s.selected_text()
     };
@@ -786,23 +1099,54 @@ fn word_count(s: &mut Session, v: &Value) -> CmdResult {
 
 /// Issues (spelling + grammar) in one paragraph as positions, each in its run's language and
 /// skipping text left unchecked — the same issues the layout underlines.
-fn para_issues(s: &Session, story: StoryRef, path: &wordcraft_doc::Path) -> Vec<(Pos, Pos, wordcraft_proof::Issue)> {
-    let Some(p) = s.doc.para(story, path) else { return Vec::new() };
+fn para_issues(
+    s: &Session,
+    story: StoryRef,
+    path: &wordcraft_doc::Path,
+) -> Vec<(Pos, Pos, wordcraft_proof::Issue)> {
+    let Some(p) = s.doc.para(story, path) else {
+        return Vec::new();
+    };
     let runs = wordcraft_layout::para::proof_runs(&s.doc, p, None);
     wordcraft_layout::para::paragraph_issues(p, &runs, &s.prefs.spelling(), true)
         .into_iter()
-        .map(|i| (Pos { story, path: path.clone(), off: i.start }, Pos { story, path: path.clone(), off: i.end }, i))
+        .map(|i| {
+            (
+                Pos {
+                    story,
+                    path: path.clone(),
+                    off: i.start,
+                },
+                Pos {
+                    story,
+                    path: path.clone(),
+                    off: i.end,
+                },
+                i,
+            )
+        })
         .collect()
 }
 
 /// The issue under a position.
 fn issue_at(s: &Session, at: &Pos) -> Option<(Pos, Pos, wordcraft_proof::Issue)> {
-    para_issues(s, at.story, &at.path).into_iter().find(|(a, b, _)| a.off <= at.off && at.off <= b.off)
+    para_issues(s, at.story, &at.path)
+        .into_iter()
+        .find(|(a, b, _)| a.off <= at.off && at.off <= b.off)
 }
 
 fn issue_json(s: &Session, a: &Pos, b: &Pos, i: &wordcraft_proof::Issue) -> Value {
-    let word = s.doc.para_at(a).and_then(|p| p.text.get(a.off..b.off)).unwrap_or("").to_string();
-    let sugg = if i.kind == wordcraft_proof::IssueKind::Spelling { wordcraft_proof::suggest_in(&word, 6, i.lang) } else { i.suggestions.clone() };
+    let word = s
+        .doc
+        .para_at(a)
+        .and_then(|p| p.text.get(a.off..b.off))
+        .unwrap_or("")
+        .to_string();
+    let sugg = if i.kind == wordcraft_proof::IssueKind::Spelling {
+        wordcraft_proof::suggest_in(&word, 6, i.lang)
+    } else {
+        i.suggestions.clone()
+    };
     json!({
         "start": pos_json(a), "end": pos_json(b), "text": word,
         "kind": if i.kind == wordcraft_proof::IssueKind::Spelling { "spelling" } else { "grammar" },
@@ -817,13 +1161,18 @@ fn next_issue(s: &mut Session, _: &Value) -> CmdResult {
     let paths = s.doc.para_paths(story);
     let start = paths.iter().position(|p| *p == caret.path).unwrap_or(0);
     for k in 0..paths.len() {
-        let Some(path) = paths.get((start + k) % paths.len().max(1)) else { break };
+        let Some(path) = paths.get((start + k) % paths.len().max(1)) else {
+            break;
+        };
         for (a, b, i) in para_issues(s, story, path) {
             if k == 0 && a.off < caret.off && start + k < paths.len() && paths.len() > 1 {
                 continue;
             }
             let r = issue_json(s, &a, &b, &i);
-            s.sel = Selection { anchor: a, focus: b };
+            s.sel = Selection {
+                anchor: a,
+                focus: b,
+            };
             return Ok(r);
         }
     }
@@ -845,7 +1194,10 @@ fn all_issues(s: &mut Session, _: &Value) -> CmdResult {
 }
 
 fn suggestions(s: &mut Session, v: &Value) -> CmdResult {
-    let at = v.get("pos").and_then(super::parse_pos).unwrap_or_else(|| s.sel.focus.clone());
+    let at = v
+        .get("pos")
+        .and_then(super::parse_pos)
+        .unwrap_or_else(|| s.sel.focus.clone());
     match issue_at(s, &at) {
         Some((a, b, i)) => Ok(issue_json(s, &a, &b, &i)),
         None => Ok(Value::Null),
@@ -861,9 +1213,15 @@ fn thesaurus(s: &mut Session, v: &Value) -> CmdResult {
         ("small", &["little", "tiny", "compact", "minor", "modest"]),
         ("fast", &["quick", "rapid", "swift", "speedy"]),
         ("slow", &["unhurried", "gradual", "leisurely", "sluggish"]),
-        ("happy", &["glad", "cheerful", "content", "joyful", "pleased"]),
+        (
+            "happy",
+            &["glad", "cheerful", "content", "joyful", "pleased"],
+        ),
         ("sad", &["unhappy", "sorrowful", "downcast", "gloomy"]),
-        ("important", &["significant", "key", "vital", "essential", "major"]),
+        (
+            "important",
+            &["significant", "key", "vital", "essential", "major"],
+        ),
         ("show", &["display", "reveal", "present", "demonstrate"]),
         ("make", &["create", "build", "produce", "craft", "form"]),
         ("use", &["employ", "apply", "utilize", "operate"]),
@@ -874,13 +1232,19 @@ fn thesaurus(s: &mut Session, v: &Value) -> CmdResult {
         ("think", &["believe", "consider", "reckon", "suppose"]),
         ("new", &["fresh", "novel", "recent", "modern"]),
         ("old", &["aged", "former", "ancient", "vintage"]),
-        ("beautiful", &["lovely", "attractive", "gorgeous", "stunning"]),
+        (
+            "beautiful",
+            &["lovely", "attractive", "gorgeous", "stunning"],
+        ),
         ("easy", &["simple", "effortless", "straightforward"]),
         ("hard", &["difficult", "tough", "demanding", "firm"]),
         ("work", &["labor", "effort", "job", "task", "operate"]),
         ("idea", &["concept", "notion", "thought", "plan"]),
         ("change", &["alter", "modify", "adjust", "shift"]),
-        ("great", &["excellent", "superb", "terrific", "considerable"]),
+        (
+            "great",
+            &["excellent", "superb", "terrific", "considerable"],
+        ),
         ("very", &["extremely", "highly", "truly", "really"]),
         ("shared", &["common", "joint", "communal", "mutual"]),
         ("community", &["group", "society", "collective", "circle"]),
@@ -889,12 +1253,19 @@ fn thesaurus(s: &mut Session, v: &Value) -> CmdResult {
         Some(w) => w.to_lowercase(),
         None => {
             let f = s.sel.focus.clone();
-            let p = s.doc.para_at(&f).ok_or_else(|| CmdError::Failed("no word".into()))?;
+            let p = s
+                .doc
+                .para_at(&f)
+                .ok_or_else(|| CmdError::Failed("no word".into()))?;
             let (a, b) = p.word_at(f.off);
             p.text.get(a..b).unwrap_or("").trim().to_lowercase()
         }
     };
-    let syn = T.iter().find(|(w, _)| *w == word).map(|(_, l)| l.to_vec()).unwrap_or_default();
+    let syn = T
+        .iter()
+        .find(|(w, _)| *w == word)
+        .map(|(_, l)| l.to_vec())
+        .unwrap_or_default();
     Ok(json!({"word": word, "synonyms": syn}))
 }
 
@@ -907,7 +1278,9 @@ fn tracking_options(s: &mut Session, v: &Value) -> CmdResult {
         match p::str(v, k) {
             None => Ok(cur),
             Some(c) if c == auto => Ok(None),
-            Some(c) => Rgb::parse(c).map(Some).ok_or_else(|| CmdError::Params(format!("`{k}`: \"{auto}\" or RRGGBB"))),
+            Some(c) => Rgb::parse(c)
+                .map(Some)
+                .ok_or_else(|| CmdError::Params(format!("`{k}`: \"{auto}\" or RRGGBB"))),
         }
     };
     let pick = |k: &str| p::str(v, k);
@@ -923,16 +1296,21 @@ fn tracking_options(s: &mut Session, v: &Value) -> CmdResult {
         }
     }
     if let Some(x) = pick("balloons") {
-        m.balloons = BalloonMode::parse(x).ok_or_else(|| CmdError::Params("`balloons`: revisions|inline|commentsAndFormatting".into()))?;
+        m.balloons = BalloonMode::parse(x).ok_or_else(|| {
+            CmdError::Params("`balloons`: revisions|inline|commentsAndFormatting".into())
+        })?;
     }
     if let Some(x) = pick("insertMark") {
-        m.insert_mark = InsertMark::parse(x).ok_or_else(|| CmdError::Params("unknown `insertMark`".into()))?;
+        m.insert_mark =
+            InsertMark::parse(x).ok_or_else(|| CmdError::Params("unknown `insertMark`".into()))?;
     }
     if let Some(x) = pick("deleteMark") {
-        m.delete_mark = DeleteMark::parse(x).ok_or_else(|| CmdError::Params("unknown `deleteMark`".into()))?;
+        m.delete_mark =
+            DeleteMark::parse(x).ok_or_else(|| CmdError::Params("unknown `deleteMark`".into()))?;
     }
     if let Some(x) = pick("changedLines") {
-        m.changed_lines = ChangeBar::parse(x).ok_or_else(|| CmdError::Params("unknown `changedLines`".into()))?;
+        m.changed_lines =
+            ChangeBar::parse(x).ok_or_else(|| CmdError::Params("unknown `changedLines`".into()))?;
     }
     m.insert_color = color("insertColor", "byAuthor", m.insert_color)?;
     m.delete_color = color("deleteColor", "byAuthor", m.delete_color)?;
@@ -947,7 +1325,9 @@ fn tracking_options(s: &mut Session, v: &Value) -> CmdResult {
 
 /// The Track Changes Options as `review.trackingOptions` takes them.
 pub fn tracking_json(m: &wordcraft_layout::display::MarkupOptions) -> Value {
-    let hex = |c: Option<wordcraft_doc::Rgb>, auto: &str| c.map(|c| c.hex()).unwrap_or_else(|| auto.to_string());
+    let hex = |c: Option<wordcraft_doc::Rgb>, auto: &str| {
+        c.map(|c| c.hex()).unwrap_or_else(|| auto.to_string())
+    };
     json!({
         "comments": m.comments,
         "ink": m.ink,
@@ -976,16 +1356,38 @@ mod tests {
     fn draws(s: &mut Session) -> (Vec<Draw>, f32) {
         let l = s.layout();
         let page = &l.pages[0];
-        let opts = DisplayOptions { revisions: s.prefs.markup.clone(), ..Default::default() };
+        let opts = DisplayOptions {
+            revisions: s.prefs.markup.clone(),
+            ..Default::default()
+        };
         (page_display(&s.doc, page, &opts), page.body.x)
     }
 
     fn glyph_colors(d: &[Draw]) -> Vec<(wordcraft_doc::Rgb, bool)> {
-        d.iter().filter_map(|x| if let Draw::Glyphs { color, synth_bold, .. } = x { Some((*color, *synth_bold)) } else { None }).collect()
+        d.iter()
+            .filter_map(|x| {
+                if let Draw::Glyphs {
+                    color, synth_bold, ..
+                } = x
+                {
+                    Some((*color, *synth_bold))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     fn lines(d: &[Draw]) -> Vec<(f32, f32, f32, f32)> {
-        d.iter().filter_map(|x| if let Draw::Line { x0, y0, x1, y1, .. } = x { Some((*x0, *y0, *x1, *y1)) } else { None }).collect()
+        d.iter()
+            .filter_map(|x| {
+                if let Draw::Line { x0, y0, x1, y1, .. } = x {
+                    Some((*x0, *y0, *x1, *y1))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     /// #328: Track Changes Options change how an insertion and a deletion are drawn, the bar
@@ -995,21 +1397,45 @@ mod tests {
         let mut s = Session::new(Document::new());
         // No proofing squiggles among the lines.
         s.view.proofing = false;
-        s.run("document.setText", &json!({"text": "keep gone"})).unwrap();
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
+        s.run("document.setText", &json!({"text": "keep gone"}))
+            .unwrap();
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
         s.run("caret.docStart", &json!({})).unwrap();
         s.run("text.insert", &json!({"text": "new "})).unwrap();
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 9}, "focus": {"block": 0, "off": 13}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 9}, "focus": {"block": 0, "off": 13}}),
+        )
+        .unwrap();
         s.run("text.delete", &json!({})).unwrap();
 
         // Defaults: underlined insertion and struck deletion in the author's colour, a bar left of
         // the text.
         let (d, body_x) = draws(&mut s);
-        let bars: Vec<_> = lines(&d).into_iter().filter(|(x0, _, x1, _)| x0 == x1 && *x0 < body_x).collect();
-        assert_eq!(bars.len(), 1, "one changed line, one bar in the left margin");
-        let horizontal = lines(&d).into_iter().filter(|(_, y0, _, y1)| y0 == y1).count();
-        assert_eq!(horizontal, 2, "an underline and a strikethrough: {:?}", lines(&d));
-        let author = glyph_colors(&d).iter().filter(|(c, _)| *c != wordcraft_doc::Rgb::BLACK).count();
+        let bars: Vec<_> = lines(&d)
+            .into_iter()
+            .filter(|(x0, _, x1, _)| x0 == x1 && *x0 < body_x)
+            .collect();
+        assert_eq!(
+            bars.len(),
+            1,
+            "one changed line, one bar in the left margin"
+        );
+        let horizontal = lines(&d)
+            .into_iter()
+            .filter(|(_, y0, _, y1)| y0 == y1)
+            .count();
+        assert_eq!(
+            horizontal,
+            2,
+            "an underline and a strikethrough: {:?}",
+            lines(&d)
+        );
+        let author = glyph_colors(&d)
+            .iter()
+            .filter(|(c, _)| *c != wordcraft_doc::Rgb::BLACK)
+            .count();
         assert!(author >= 2, "insertion and deletion in the author's colour");
 
         // Bold, fixed-colour insertions; hidden deletions; no bars.
@@ -1019,20 +1445,60 @@ mod tests {
                 &json!({"insertMark": "bold", "insertColor": "00AA00", "deleteMark": "hidden", "changedLines": "none", "balloons": "inline"}),
             )
             .unwrap();
-        assert_eq!((r["insertMark"].as_str(), r["deleteColor"].as_str(), r["balloons"].as_str()), (Some("bold"), Some("byAuthor"), Some("inline")));
+        assert_eq!(
+            (
+                r["insertMark"].as_str(),
+                r["deleteColor"].as_str(),
+                r["balloons"].as_str()
+            ),
+            (Some("bold"), Some("byAuthor"), Some("inline"))
+        );
         let (d, _) = draws(&mut s);
-        assert!(lines(&d).is_empty(), "no underline, no strikethrough, no bar: {:?}", lines(&d));
-        assert!(glyph_colors(&d).contains(&(wordcraft_doc::Rgb(0, 0xAA, 0), true)), "a bold green insertion");
-        let text: String = d.iter().filter_map(|x| if let Draw::Glyphs { text, .. } = x { Some(text.as_str()) } else { None }).collect();
-        assert!(!text.contains("gone"), "the deletion takes no room: {text:?}");
+        assert!(
+            lines(&d).is_empty(),
+            "no underline, no strikethrough, no bar: {:?}",
+            lines(&d)
+        );
+        assert!(
+            glyph_colors(&d).contains(&(wordcraft_doc::Rgb(0, 0xAA, 0), true)),
+            "a bold green insertion"
+        );
+        let text: String = d
+            .iter()
+            .filter_map(|x| {
+                if let Draw::Glyphs { text, .. } = x {
+                    Some(text.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert!(
+            !text.contains("gone"),
+            "the deletion takes no room: {text:?}"
+        );
 
         // Unknown choices are refused; reading changes nothing.
-        assert!(s.run("review.trackingOptions", &json!({"deleteMark": "sparkles"})).is_err());
-        assert_eq!(s.run("review.trackingOptions", &json!({})).unwrap()["insertColor"], "00AA00");
+        assert!(
+            s.run("review.trackingOptions", &json!({"deleteMark": "sparkles"}))
+                .is_err()
+        );
+        assert_eq!(
+            s.run("review.trackingOptions", &json!({})).unwrap()["insertColor"],
+            "00AA00"
+        );
     }
 
     fn glyph_text(d: &[Draw]) -> String {
-        d.iter().filter_map(|x| if let Draw::Glyphs { text, .. } = x { Some(text.as_str()) } else { None }).collect()
+        d.iter()
+            .filter_map(|x| {
+                if let Draw::Glyphs { text, .. } = x {
+                    Some(text.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     /// Show revisions in balloons: a tracked deletion leaves the text for a balloon at its place
@@ -1044,9 +1510,15 @@ mod tests {
         let mut s = Session::new(Document::new());
         s.view.proofing = false;
         s.author = "Ana".into();
-        s.run("document.setText", &json!({"text": "keep gone stay"})).unwrap();
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 5}, "focus": {"block": 0, "off": 10}})).unwrap();
+        s.run("document.setText", &json!({"text": "keep gone stay"}))
+            .unwrap();
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 5}, "focus": {"block": 0, "off": 10}}),
+        )
+        .unwrap();
         s.run("text.delete", &json!({})).unwrap();
 
         // The default (only comments and formatting in balloons): struck through inline.
@@ -1054,27 +1526,62 @@ mod tests {
         let (d, _) = draws(&mut s);
         assert!(glyph_text(&d).contains("gone"), "{:?}", glyph_text(&d));
 
-        s.run("review.trackingOptions", &json!({"balloons": "revisions"})).unwrap();
+        s.run("review.trackingOptions", &json!({"balloons": "revisions"}))
+            .unwrap();
         assert!(s.revisions_in_balloons());
         let (d, body_x) = draws(&mut s);
-        assert!(!glyph_text(&d).contains("gone"), "the deletion left the text: {:?}", glyph_text(&d));
-        let horizontal = lines(&d).into_iter().filter(|(_, y0, _, y1)| y0 == y1).count();
-        assert_eq!(horizontal, 0, "no strikethrough left behind: {:?}", lines(&d));
-        assert_eq!(lines(&d).into_iter().filter(|(x0, _, x1, _)| x0 == x1 && *x0 < body_x).count(), 1, "the changed line keeps its bar");
+        assert!(
+            !glyph_text(&d).contains("gone"),
+            "the deletion left the text: {:?}",
+            glyph_text(&d)
+        );
+        let horizontal = lines(&d)
+            .into_iter()
+            .filter(|(_, y0, _, y1)| y0 == y1)
+            .count();
+        assert_eq!(
+            horizontal,
+            0,
+            "no strikethrough left behind: {:?}",
+            lines(&d)
+        );
+        assert_eq!(
+            lines(&d)
+                .into_iter()
+                .filter(|(x0, _, x1, _)| x0 == x1 && *x0 < body_x)
+                .count(),
+            1,
+            "the changed line keeps its bar"
+        );
         let at = wordcraft_doc::Pos::body(0, 5);
-        assert_eq!(deletion_balloons(&s), vec![DeletionBalloon { at: at.clone(), author: "Ana".into(), text: "gone ".into() }]);
+        assert_eq!(
+            deletion_balloons(&s),
+            vec![DeletionBalloon {
+                at: at.clone(),
+                author: "Ana".into(),
+                text: "gone ".into()
+            }]
+        );
         // The balloon's anchor is where the deletion was: between "keep " and "stay".
         let l = s.layout();
-        let (anchor, stay) = (l.caret(&at).unwrap().x, l.caret(&wordcraft_doc::Pos::body(0, 10)).unwrap().x);
-        assert!((anchor - stay).abs() < 0.01, "the deletion takes no room: {anchor} vs {stay}");
+        let (anchor, stay) = (
+            l.caret(&at).unwrap().x,
+            l.caret(&wordcraft_doc::Pos::body(0, 10)).unwrap().x,
+        );
+        assert!(
+            (anchor - stay).abs() < 0.01,
+            "the deletion takes no room: {anchor} vs {stay}"
+        );
 
         // No balloons beside the page while the Comments pane lists comments: inline again.
         s.run("view.commentsPane", &json!({"value": true})).unwrap();
         assert!(!s.revisions_in_balloons());
         assert!(glyph_text(&draws(&mut s).0).contains("gone"));
-        s.run("view.commentsPane", &json!({"value": false})).unwrap();
+        s.run("view.commentsPane", &json!({"value": false}))
+            .unwrap();
         assert!(!glyph_text(&draws(&mut s).0).contains("gone"));
-        s.run("review.trackingOptions", &json!({"balloons": "inline"})).unwrap();
+        s.run("review.trackingOptions", &json!({"balloons": "inline"}))
+            .unwrap();
         assert!(!s.revisions_in_balloons());
         assert!(glyph_text(&draws(&mut s).0).contains("gone"));
     }
@@ -1086,19 +1593,36 @@ mod tests {
         use super::{DELETION_TEXT_CHARS, deletion_balloons};
         let mut s = Session::new(Document::new());
         s.author = "Ana".into();
-        s.run("document.setText", &json!({"text": "one two\nthree four"})).unwrap();
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
+        s.run("document.setText", &json!({"text": "one two\nthree four"}))
+            .unwrap();
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
         // "two", then the paragraph mark and "three" in a second deletion: one balloon.
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 4}, "focus": {"block": 0, "off": 7}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 4}, "focus": {"block": 0, "off": 7}}),
+        )
+        .unwrap();
         s.run("text.delete", &json!({})).unwrap();
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 7}, "focus": {"block": 1, "off": 5}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 7}, "focus": {"block": 1, "off": 5}}),
+        )
+        .unwrap();
         s.run("text.delete", &json!({})).unwrap();
         // Bo's deletion right after Ana's is a balloon of its own.
         s.author = "Bo".into();
-        s.run("select.range", &json!({"anchor": {"block": 1, "off": 5}, "focus": {"block": 1, "off": 10}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 1, "off": 5}, "focus": {"block": 1, "off": 10}}),
+        )
+        .unwrap();
         s.run("text.delete", &json!({})).unwrap();
         let b = deletion_balloons(&s);
-        let got: Vec<(&str, &str)> = b.iter().map(|d| (d.author.as_str(), d.text.as_str())).collect();
+        let got: Vec<(&str, &str)> = b
+            .iter()
+            .map(|d| (d.author.as_str(), d.text.as_str()))
+            .collect();
         assert_eq!(got, vec![("Ana", "two¶three"), ("Bo", " four")]);
         assert_eq!(b[0].at, wordcraft_doc::Pos::body(0, 4));
 
@@ -1106,7 +1630,8 @@ mod tests {
         let mut s = Session::new(Document::new());
         let long = "word ".repeat(400);
         s.run("document.setText", &json!({"text": long})).unwrap();
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
         s.run("select.all", &json!({})).unwrap();
         s.run("text.delete", &json!({})).unwrap();
         let b = deletion_balloons(&s);
@@ -1123,29 +1648,72 @@ mod tests {
         use super::{DeletionBalloon, deletion_balloons, has_deletions, move_changes};
         use wordcraft_doc::Pos;
         let mut s = Session::new(Document::new());
-        s.run("document.setText", &json!({"text": "First one.\nSecond one.\nThird one."})).unwrap();
+        s.run(
+            "document.setText",
+            &json!({"text": "First one.\nSecond one.\nThird one."}),
+        )
+        .unwrap();
         s.run("file.setAuthor", &json!({"name": "Ana"})).unwrap();
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
         // The second paragraph, with its mark, cut and pasted before the first: a move.
-        s.run("select.range", &json!({"anchor": {"block": 1, "off": 0}, "focus": {"block": 2, "off": 0}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 1, "off": 0}, "focus": {"block": 2, "off": 0}}),
+        )
+        .unwrap();
         s.run("edit.cut", &json!({})).unwrap();
-        s.run("caret.set", &json!({"pos": {"block": 0, "off": 0}})).unwrap();
+        s.run("caret.set", &json!({"pos": {"block": 0, "off": 0}}))
+            .unwrap();
         s.run("edit.paste", &json!({})).unwrap();
-        s.run("review.trackingOptions", &json!({"balloons": "revisions"})).unwrap();
+        s.run("review.trackingOptions", &json!({"balloons": "revisions"}))
+            .unwrap();
         assert!(s.revisions_in_balloons());
 
-        let ends: Vec<(Pos, bool)> = move_changes(&s).into_iter().map(|(at, _, from)| (at, from)).collect();
-        assert_eq!(ends, vec![(Pos::body(0, 0), false), (Pos::body(2, 0), true)]);
-        assert!(deletion_balloons(&s).is_empty(), "the move's source has its \"Moved from\" balloon only: {:?}", deletion_balloons(&s));
-        assert!(!has_deletions(&s.doc), "a move alone needs no deletion balloons");
-        assert_eq!(glyph_text(&draws(&mut s).0), "Second one.First one.Third one.", "the moved-away text left the text");
+        let ends: Vec<(Pos, bool)> = move_changes(&s)
+            .into_iter()
+            .map(|(at, _, from)| (at, from))
+            .collect();
+        assert_eq!(
+            ends,
+            vec![(Pos::body(0, 0), false), (Pos::body(2, 0), true)]
+        );
+        assert!(
+            deletion_balloons(&s).is_empty(),
+            "the move's source has its \"Moved from\" balloon only: {:?}",
+            deletion_balloons(&s)
+        );
+        assert!(
+            !has_deletions(&s.doc),
+            "a move alone needs no deletion balloons"
+        );
+        assert_eq!(
+            glyph_text(&draws(&mut s).0),
+            "Second one.First one.Third one.",
+            "the moved-away text left the text"
+        );
 
         // "Third " deleted right where the moved-away paragraph ends: not joined to it.
-        s.run("select.range", &json!({"anchor": {"block": 3, "off": 0}, "focus": {"block": 3, "off": 6}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 3, "off": 0}, "focus": {"block": 3, "off": 6}}),
+        )
+        .unwrap();
         s.run("text.delete", &json!({})).unwrap();
         assert!(has_deletions(&s.doc));
-        assert_eq!(deletion_balloons(&s), vec![DeletionBalloon { at: Pos::body(3, 0), author: "Ana".into(), text: "Third ".into() }]);
-        assert_eq!(move_changes(&s).len(), 2, "the move keeps both its balloons");
+        assert_eq!(
+            deletion_balloons(&s),
+            vec![DeletionBalloon {
+                at: Pos::body(3, 0),
+                author: "Ana".into(),
+                text: "Third ".into()
+            }]
+        );
+        assert_eq!(
+            move_changes(&s).len(),
+            2,
+            "the move keeps both its balloons"
+        );
     }
 
     /// Revisions in balloons take deletions out of the body only, where their balloons are:
@@ -1158,32 +1726,79 @@ mod tests {
         let mut s = Session::new(Document::new());
         s.view.proofing = false;
         s.author = "Ana".into();
-        s.run("document.setText", &json!({"text": "Body zeta keep"})).unwrap();
-        let part = |v: serde_json::Value, key: &str| StoryRef::Part(v[key].as_u64().unwrap() as u32);
-        let header = part(s.run("insert.header", &json!({"text": "Head alpha"})).unwrap(), "story");
+        s.run("document.setText", &json!({"text": "Body zeta keep"}))
+            .unwrap();
+        let part =
+            |v: serde_json::Value, key: &str| StoryRef::Part(v[key].as_u64().unwrap() as u32);
+        let header = part(
+            s.run("insert.header", &json!({"text": "Head alpha"}))
+                .unwrap(),
+            "story",
+        );
         s.run("insert.closeHeader", &json!({})).unwrap();
-        let footer = part(s.run("insert.footer", &json!({"text": "Foot beta"})).unwrap(), "story");
+        let footer = part(
+            s.run("insert.footer", &json!({"text": "Foot beta"}))
+                .unwrap(),
+            "story",
+        );
         s.run("insert.closeHeader", &json!({})).unwrap();
         let in_body = json!({"pos": {"block": 0, "off": 4}});
         s.run("caret.set", &in_body).unwrap();
-        let footnote = part(s.run("references.footnote", &json!({"text": "Note gamma"})).unwrap(), "id");
+        let footnote = part(
+            s.run("references.footnote", &json!({"text": "Note gamma"}))
+                .unwrap(),
+            "id",
+        );
         s.run("caret.set", &in_body).unwrap();
-        let endnote = part(s.run("references.endnote", &json!({"text": "End delta"})).unwrap(), "id");
+        let endnote = part(
+            s.run("references.endnote", &json!({"text": "End delta"}))
+                .unwrap(),
+            "id",
+        );
         s.run("caret.set", &in_body).unwrap();
-        let text_box = part(s.run("insert.textBox", &json!({"text": "Box epsilon"})).unwrap(), "story");
+        let text_box = part(
+            s.run("insert.textBox", &json!({"text": "Box epsilon"}))
+                .unwrap(),
+            "story",
+        );
 
         // With Track Changes on, a word deleted in each story.
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
-        let words = [(StoryRef::Body, "zeta"), (header, "alpha"), (footer, "beta"), (footnote, "gamma"), (endnote, "delta"), (text_box, "epsilon")];
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
+        let words = [
+            (StoryRef::Body, "zeta"),
+            (header, "alpha"),
+            (footer, "beta"),
+            (footnote, "gamma"),
+            (endnote, "delta"),
+            (text_box, "epsilon"),
+        ];
         for (story, word) in words {
-            let at = s.doc.para(story, &Path::top(0)).and_then(|p| p.text.find(word)).unwrap();
+            let at = s
+                .doc
+                .para(story, &Path::top(0))
+                .and_then(|p| p.text.find(word))
+                .unwrap();
             let pos = |off: usize| json!({"story": story, "path": [0], "off": off});
-            s.run("select.range", &json!({"anchor": pos(at), "focus": pos(at + word.len())})).unwrap();
+            s.run(
+                "select.range",
+                &json!({"anchor": pos(at), "focus": pos(at + word.len())}),
+            )
+            .unwrap();
             s.run("text.delete", &json!({})).unwrap();
             let p = s.doc.para(story, &Path::top(0)).unwrap();
-            assert!(p.run_ranges().any(|(r, c)| c.del.is_some() && p.text.get(r) == Some(word)), "{word} is a tracked deletion");
+            assert!(
+                p.run_ranges()
+                    .any(|(r, c)| c.del.is_some() && p.text.get(r) == Some(word)),
+                "{word} is a tracked deletion"
+            );
         }
-        let struck = |d: &[Draw]| lines(d).into_iter().filter(|(_, y0, _, y1)| y0 == y1).count();
+        let struck = |d: &[Draw]| {
+            lines(d)
+                .into_iter()
+                .filter(|(_, y0, _, y1)| y0 == y1)
+                .count()
+        };
 
         // Comments and formatting in balloons: every deletion struck through where it was.
         let (d, _) = draws(&mut s);
@@ -1194,22 +1809,43 @@ mod tests {
         let all_struck = struck(&d);
 
         // Revisions in balloons: only the body's deletion leaves the text, for its balloon.
-        s.run("review.trackingOptions", &json!({"balloons": "revisions"})).unwrap();
+        s.run("review.trackingOptions", &json!({"balloons": "revisions"}))
+            .unwrap();
         assert!(s.revisions_in_balloons());
         let (d, _) = draws(&mut s);
         let text = glyph_text(&d);
-        assert!(!text.contains("zeta"), "the body's deletion left the text: {text:?}");
+        assert!(
+            !text.contains("zeta"),
+            "the body's deletion left the text: {text:?}"
+        );
         for (_, word) in &words[1..] {
             assert!(text.contains(word), "{word} stays inline: {text:?}");
         }
-        assert_eq!(struck(&d), all_struck - 1, "the other deletions stay struck through");
+        assert_eq!(
+            struck(&d),
+            all_struck - 1,
+            "the other deletions stay struck through"
+        );
         // Its balloon is the only one: the notes' and text box's objects sit before "zeta".
-        let at = s.doc.para(StoryRef::Body, &Path::top(0)).and_then(|p| p.text.find("zeta")).unwrap();
-        assert_eq!(deletion_balloons(&s), vec![DeletionBalloon { at: Pos::body(0, at), author: "Ana".into(), text: "zeta".into() }]);
+        let at = s
+            .doc
+            .para(StoryRef::Body, &Path::top(0))
+            .and_then(|p| p.text.find("zeta"))
+            .unwrap();
+        assert_eq!(
+            deletion_balloons(&s),
+            vec![DeletionBalloon {
+                at: Pos::body(0, at),
+                author: "Ana".into(),
+                text: "zeta".into()
+            }]
+        );
     }
 
     fn body_para(s: &Session) -> &wordcraft_doc::Paragraph {
-        s.doc.para(wordcraft_doc::StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap()
+        s.doc
+            .para(wordcraft_doc::StoryRef::Body, &wordcraft_doc::Path::top(0))
+            .unwrap()
     }
 
     /// A comment inside a tracked insertion splits it into several runs; Accept and Reject at the
@@ -1220,17 +1856,46 @@ mod tests {
             let mut s = Session::new(Document::new());
             s.view.proofing = false;
             s.author = "Ana".into();
-            s.run("review.trackChanges", &json!({"value": true})).unwrap();
-            s.run("text.insert", &json!({"text": "hello world"})).unwrap();
-            s.run("select.range", &json!({"anchor": {"block": 0, "off": 3}, "focus": {"block": 0, "off": 8}})).unwrap();
-            s.run("review.newComment", &json!({"text": "note"})).unwrap();
-            assert!(body_para(&s).runs.len() > 3, "the comment anchors split the insertion");
-            s.run("select.range", &json!({"anchor": {"block": 0, "off": 1}, "focus": {"block": 0, "off": 1}})).unwrap();
-            s.run(if accept { "review.accept" } else { "review.reject" }, &json!({})).unwrap();
+            s.run("review.trackChanges", &json!({"value": true}))
+                .unwrap();
+            s.run("text.insert", &json!({"text": "hello world"}))
+                .unwrap();
+            s.run(
+                "select.range",
+                &json!({"anchor": {"block": 0, "off": 3}, "focus": {"block": 0, "off": 8}}),
+            )
+            .unwrap();
+            s.run("review.newComment", &json!({"text": "note"}))
+                .unwrap();
+            assert!(
+                body_para(&s).runs.len() > 3,
+                "the comment anchors split the insertion"
+            );
+            s.run(
+                "select.range",
+                &json!({"anchor": {"block": 0, "off": 1}, "focus": {"block": 0, "off": 1}}),
+            )
+            .unwrap();
+            s.run(
+                if accept {
+                    "review.accept"
+                } else {
+                    "review.reject"
+                },
+                &json!({}),
+            )
+            .unwrap();
             let p = body_para(&s);
-            assert!(p.runs.iter().all(|r| r.props.ins.is_none()), "no tracked insertion is left");
+            assert!(
+                p.runs.iter().all(|r| r.props.ins.is_none()),
+                "no tracked insertion is left"
+            );
             // The comment's anchors are objects in the text; read past them.
-            let shown: String = p.text.chars().filter(|c| *c != wordcraft_doc::para::OBJ).collect();
+            let shown: String = p
+                .text
+                .chars()
+                .filter(|c| *c != wordcraft_doc::para::OBJ)
+                .collect();
             assert_eq!(shown.contains("hello"), accept, "{:?}", p.text);
         }
     }
@@ -1241,13 +1906,28 @@ mod tests {
         let mut s = Session::new(Document::new());
         s.view.proofing = false;
         s.author = "Ana".into();
-        s.run("document.setText", &json!({"text": "plain words here"})).unwrap();
+        s.run("document.setText", &json!({"text": "plain words here"}))
+            .unwrap();
         // Untracked formatting is no revision.
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 12}, "focus": {"block": 0, "off": 16}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 12}, "focus": {"block": 0, "off": 16}}),
+        )
+        .unwrap();
         s.run("format.italic", &json!({})).unwrap();
-        assert!(body_para(&s).runs.iter().all(|r| r.props.fmt_change.is_none()));
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 6}, "focus": {"block": 0, "off": 11}})).unwrap();
+        assert!(
+            body_para(&s)
+                .runs
+                .iter()
+                .all(|r| r.props.fmt_change.is_none())
+        );
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 6}, "focus": {"block": 0, "off": 11}}),
+        )
+        .unwrap();
         s.run("format.bold", &json!({})).unwrap();
         s.run("format.size", &json!({"size": 14})).unwrap();
         s.run("para.alignCenter", &json!({})).unwrap();
@@ -1260,26 +1940,66 @@ mod tests {
     fn formatting_is_tracked_while_tracking_changes() {
         let mut s = formatted_while_tracking();
         let p = body_para(&s);
-        let ch = p.props_of_char(6).fmt_change.as_deref().expect("a formatting change on \"words\"");
-        assert_eq!((ch.old.bold, ch.old.size), (None, None), "the formatting before the first change is kept");
+        let ch = p
+            .props_of_char(6)
+            .fmt_change
+            .as_deref()
+            .expect("a formatting change on \"words\"");
+        assert_eq!(
+            (ch.old.bold, ch.old.size),
+            (None, None),
+            "the formatting before the first change is kept"
+        );
         let rev = &s.doc.revisions[ch.rev as usize];
-        assert_eq!((rev.kind, rev.author.as_str()), (wordcraft_doc::RevisionKind::Format, "Ana"));
-        assert!(p.props_of_char(0).fmt_change.is_none() && p.props_of_char(13).fmt_change.is_none());
-        assert_eq!(p.props.fmt_change.as_deref().map(|c| c.old.align), Some(None));
+        assert_eq!(
+            (rev.kind, rev.author.as_str()),
+            (wordcraft_doc::RevisionKind::Format, "Ana")
+        );
+        assert!(
+            p.props_of_char(0).fmt_change.is_none() && p.props_of_char(13).fmt_change.is_none()
+        );
+        assert_eq!(
+            p.props.fmt_change.as_deref().map(|c| c.old.align),
+            Some(None)
+        );
 
         let list = s.run("review.changes", &json!({})).unwrap();
-        let desc: Vec<&str> = list.as_array().unwrap().iter().filter(|c| c["kind"] == "format").filter_map(|c| c["description"].as_str()).collect();
-        assert_eq!(desc, ["Formatted: Align: center", "Formatted: Bold, Bold cs, Size: 14, Size cs: 14"], "{list:#}");
+        let desc: Vec<&str> = list
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|c| c["kind"] == "format")
+            .filter_map(|c| c["description"].as_str())
+            .collect();
+        assert_eq!(
+            desc,
+            [
+                "Formatted: Align: center",
+                "Formatted: Bold, Bold cs, Size: 14, Size cs: 14"
+            ],
+            "{list:#}"
+        );
 
         let (d, body_x) = draws(&mut s);
-        let bars = lines(&d).into_iter().filter(|(x0, _, x1, _)| x0 == x1 && *x0 < body_x).count();
+        let bars = lines(&d)
+            .into_iter()
+            .filter(|(x0, _, x1, _)| x0 == x1 && *x0 < body_x)
+            .count();
         assert_eq!(bars, 1, "one changed line, one bar");
 
         // Formatting changed back is no change any more.
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 6}, "focus": {"block": 0, "off": 11}})).unwrap();
-        s.run("format.set", &json!({"props": {"bold": false}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 6}, "focus": {"block": 0, "off": 11}}),
+        )
+        .unwrap();
+        s.run("format.set", &json!({"props": {"bold": false}}))
+            .unwrap();
         s.run("format.size", &json!({"size": 11})).unwrap();
-        assert!(body_para(&s).props_of_char(6).fmt_change.is_some(), "explicit Not Bold and 11 pt differ from inherited");
+        assert!(
+            body_para(&s).props_of_char(6).fmt_change.is_some(),
+            "explicit Not Bold and 11 pt differ from inherited"
+        );
     }
 
     /// #41: rejecting restores the formatting before the change; accepting keeps the new
@@ -1292,18 +2012,44 @@ mod tests {
         let c = p.props_of_char(6);
         assert_eq!((c.bold, c.size, c.fmt_change.is_none()), (None, None, true));
         assert_eq!((p.props.align, p.props.fmt_change.is_none()), (None, true));
-        assert_eq!(p.props_of_char(13).italic, Some(true), "untracked formatting stays");
+        assert_eq!(
+            p.props_of_char(13).italic,
+            Some(true),
+            "untracked formatting stays"
+        );
 
         s.run("edit.undo", &json!({})).unwrap();
         // Accept at the caret: just the run's change.
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 8}, "focus": {"block": 0, "off": 8}})).unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 8}, "focus": {"block": 0, "off": 8}}),
+        )
+        .unwrap();
         s.run("review.accept", &json!({})).unwrap();
         let p = body_para(&s);
-        assert_eq!((p.props_of_char(6).bold, p.props_of_char(6).fmt_change.is_none()), (Some(true), true));
-        assert!(p.props.fmt_change.is_some(), "the paragraph's change is still there");
+        assert_eq!(
+            (
+                p.props_of_char(6).bold,
+                p.props_of_char(6).fmt_change.is_none()
+            ),
+            (Some(true), true)
+        );
+        assert!(
+            p.props.fmt_change.is_some(),
+            "the paragraph's change is still there"
+        );
         s.run("review.acceptAll", &json!({})).unwrap();
         let p = body_para(&s);
-        assert_eq!((p.props.align, p.props.fmt_change.is_none()), (Some(wordcraft_doc::props::Align::Center), true));
-        assert!(s.run("review.changes", &json!({})).unwrap().as_array().unwrap().is_empty());
+        assert_eq!(
+            (p.props.align, p.props.fmt_change.is_none()),
+            (Some(wordcraft_doc::props::Align::Center), true)
+        );
+        assert!(
+            s.run("review.changes", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
     }
 }

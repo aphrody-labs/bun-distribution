@@ -4,7 +4,10 @@
 use std::f32::consts::TAU;
 
 use super::wipe::{WipeStyle, field_wipe, shape_dist, wipe_px};
-use super::{Tx, add_light, bell, blurred, ease_in, ease_in_out, ease_out, hash, mid_mix, mix, over, paint, sample_wrap, scale4, smoothstep};
+use super::{
+    Tx, add_light, bell, blurred, ease_in, ease_in_out, ease_out, hash, mid_mix, mix, over, paint,
+    sample_wrap, scale4, smoothstep,
+};
 use crate::image::Image;
 
 /// Horizontal distance on a wrapping (360°) frame.
@@ -30,9 +33,19 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let amt = t.frac("amount");
             let chroma = id == "vr_chroma_leaks";
             let cols: [[f32; 4]; 4] = if chroma {
-                [[1.0, 0.1, 0.55, 1.0], [0.1, 0.75, 1.0, 1.0], [1.0, 0.85, 0.1, 1.0], [0.5, 0.2, 1.0, 1.0]]
+                [
+                    [1.0, 0.1, 0.55, 1.0],
+                    [0.1, 0.75, 1.0, 1.0],
+                    [1.0, 0.85, 0.1, 1.0],
+                    [0.5, 0.2, 1.0, 1.0],
+                ]
             } else {
-                [[1.0, 0.6, 0.25, 1.0], [1.0, 0.45, 0.15, 1.0], [1.0, 0.85, 0.6, 1.0], [1.0, 0.7, 0.4, 1.0]]
+                [
+                    [1.0, 0.6, 0.25, 1.0],
+                    [1.0, 0.45, 0.15, 1.0],
+                    [1.0, 0.85, 0.6, 1.0],
+                    [1.0, 0.7, 0.4, 1.0],
+                ]
             };
             let blobs: Vec<(f32, f32, f32, [f32; 4])> = (0..4)
                 .map(|i| {
@@ -69,15 +82,23 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let (rx, ry) = (wrap_dx(x, cx, w), y - cy);
                 let a = ry.atan2(rx);
                 let r = (rx * rx + ry * ry).sqrt() / h;
-                let rays = (0.5 + 0.5 * (a * 23.0 + p * 3.0).sin() * (a * 7.0 - p * 2.0).cos()).powi(6);
+                let rays =
+                    (0.5 + 0.5 * (a * 23.0 + p * 3.0).sin() * (a * 7.0 - p * 2.0).cos()).powi(6);
                 let fall = (-r * 1.5).exp();
-                add_light(c, [1.0, 0.97, 0.9, 1.0], (rays * fall + (-r * 6.0).exp() * 0.8) * amt * env * 2.0)
+                add_light(
+                    c,
+                    [1.0, 0.97, 0.9, 1.0],
+                    (rays * fall + (-r * 6.0).exp() * 0.8) * amt * env * 2.0,
+                )
             })
         }
         "vr_mobius_zoom" => {
             let zoom = t.frac("zoom");
             let twist = t.num("twist").to_radians();
-            let (za, zb) = (1.0 + zoom * 3.0 * ease_in((p / 0.5).min(1.0)), 1.0 + zoom * 3.0 * (1.0 - ease_out(((p - 0.5) / 0.5).clamp(0.0, 1.0))));
+            let (za, zb) = (
+                1.0 + zoom * 3.0 * ease_in((p / 0.5).min(1.0)),
+                1.0 + zoom * 3.0 * (1.0 - ease_out(((p - 0.5) / 0.5).clamp(0.0, 1.0))),
+            );
             let rmax = (w * w + h * h).sqrt() / 2.0;
             paint(t.w, t.h, |x, y| {
                 let sample = |img: &Image, z: f32, tw: f32| {
@@ -87,8 +108,16 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                     let r2 = r / z;
                     sample_wrap(img, w / 2.0 + r2 * a.cos(), h / 2.0 + r2 * a.sin())
                 };
-                let a = if k < 1.0 { sample(t.a, za, twist * env) } else { [0.0; 4] };
-                let b = if k > 0.0 { sample(t.b, zb, -twist * env) } else { [0.0; 4] };
+                let a = if k < 1.0 {
+                    sample(t.a, za, twist * env)
+                } else {
+                    [0.0; 4]
+                };
+                let b = if k > 0.0 {
+                    sample(t.b, zb, -twist * env)
+                } else {
+                    [0.0; 4]
+                };
                 mix(a, b, k)
             })
         }
@@ -100,7 +129,11 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 // wrap the block grid horizontally so the seam column matches
                 let cols = (w / bs).ceil().max(1.0) as i32;
                 let tau = soft + (1.0 - 2.0 * soft) * hash(bx.rem_euclid(cols), by, s);
-                mix(t.pa(x, y), t.pb(x, y), smoothstep(tau - soft, tau + soft, p))
+                mix(
+                    t.pa(x, y),
+                    t.pb(x, y),
+                    smoothstep(tau - soft, tau + soft, p),
+                )
             })
         }
         "vr_spherical_blur" => {
@@ -114,16 +147,27 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let size = t.px("size").max(4.0);
             let rot_deg = t.num("rotation");
             let order = t.choice("order");
-            let st = WipeStyle { feather: t.px("softness"), border: 0.0, border_color: [0.0; 4], aa: 1.0 };
+            let st = WipeStyle {
+                feather: t.px("softness"),
+                border: 0.0,
+                border_color: [0.0; 4],
+                aa: 1.0,
+            };
             let (cols, rows) = ((w / size).ceil().max(1.0), (h / size).ceil().max(1.0));
-            let diag = ((cols / 2.0).powi(2) + (rows / 2.0).powi(2)).sqrt().max(1.0);
+            let diag = ((cols / 2.0).powi(2) + (rows / 2.0).powi(2))
+                .sqrt()
+                .max(1.0);
             field_wipe(t, st, move |x, y| {
                 let (cx, cy) = ((x / size).floor(), (y / size).floor());
                 let (lx, ly) = (x - (cx + 0.5) * size, y - (cy + 0.5) * size);
                 let (u, v) = rot(lx / (size * 0.5), ly / (size * 0.5), rot_deg);
                 let delay = match order {
                     1 => cx / cols,
-                    2 => (((cx + 0.5) - cols / 2.0).powi(2) + ((cy + 0.5) - rows / 2.0).powi(2)).sqrt() / diag,
+                    2 => {
+                        (((cx + 0.5) - cols / 2.0).powi(2) + ((cy + 0.5) - rows / 2.0).powi(2))
+                            .sqrt()
+                            / diag
+                    }
                     _ => hash(cx as i32, cy as i32, s),
                 };
                 (shape_dist(shape, u, v) + delay * 1.5) * size * 0.5
@@ -132,15 +176,30 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
         "shape_flow" => {
             let shape = t.choice("shape");
             let (dx, dy) = t.dir();
-            let st = WipeStyle { feather: t.px("softness"), border: 0.0, border_color: [0.0; 4], aa: 1.0 };
+            let st = WipeStyle {
+                feather: t.px("softness"),
+                border: 0.0,
+                border_color: [0.0; 4],
+                aa: 1.0,
+            };
             let c1 = (w / 2.0, h / 2.0);
             let c0 = (c1.0 - dx * w * 0.75, c1.1 - dy * h * 0.75);
-            let cover = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().map(|&(x, y)| shape_dist(shape, x - c1.0, y - c1.1)).fold(0.0f32, f32::max);
+            let cover = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]
+                .iter()
+                .map(|&(x, y)| shape_dist(shape, x - c1.0, y - c1.1))
+                .fold(0.0f32, f32::max);
             let rmax = cover * 1.05 + st.feather + 4.0;
             let e = ease_out(p);
             let (cx, cy) = (c0.0 + (c1.0 - c0.0) * e, c0.1 + (c1.1 - c0.1) * e);
             let r = rmax * ease_in_out(p);
-            paint(t.w, t.h, |x, y| wipe_px(&st, t.pa(x, y), t.pb(x, y), shape_dist(shape, x - cx, y - cy) - r))
+            paint(t.w, t.h, |x, y| {
+                wipe_px(
+                    &st,
+                    t.pa(x, y),
+                    t.pb(x, y),
+                    shape_dist(shape, x - cx, y - cy) - r,
+                )
+            })
         }
         // ---------------- Text ----------------
         "text_animator" => {
@@ -148,7 +207,10 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let rows = t.num("rows").round().clamp(1.0, 64.0);
             let (cw, ch) = (w / cols, h / rows);
             paint(t.w, t.h, |x, y| {
-                let (ci, ri) = ((x / cw).floor().min(cols - 1.0), (y / ch).floor().min(rows - 1.0));
+                let (ci, ri) = (
+                    (x / cw).floor().min(cols - 1.0),
+                    (y / ch).floor().min(rows - 1.0),
+                );
                 let delay = 0.6 * (0.7 * ci / cols + 0.3 * ri / rows);
                 let q = ((p - delay) / 0.4).clamp(0.0, 1.0);
                 let (top, bot) = (ri * ch, (ri + 1.0) * ch);
@@ -167,14 +229,21 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let cur = (p * n).floor();
             let (cw, ch) = (w / cols, h / rows);
             paint(t.w, t.h, |x, y| {
-                let (ci, ri) = ((x / cw).floor().min(cols - 1.0), (y / ch).floor().min(rows - 1.0));
+                let (ci, ri) = (
+                    (x / cw).floor().min(cols - 1.0),
+                    (y / ch).floor().min(rows - 1.0),
+                );
                 let i = ri * cols + ci;
                 if i < cur {
                     t.pb(x, y)
                 } else if i == cur && cursor {
                     // a caret block in the lower part of the cell
                     let ly = (y - ri * ch) / ch;
-                    if ly > 0.15 { over(t.pa(x, y), scale4([1.0, 1.0, 1.0, 1.0], 0.75)) } else { t.pa(x, y) }
+                    if ly > 0.15 {
+                        over(t.pa(x, y), scale4([1.0, 1.0, 1.0, 1.0], 0.75))
+                    } else {
+                        t.pa(x, y)
+                    }
                 } else {
                     t.pa(x, y)
                 }

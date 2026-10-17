@@ -16,7 +16,11 @@ pub struct MonotoneCurve {
 impl MonotoneCurve {
     /// Build from points; sorts by x, merges duplicates. Fewer than two points → identity.
     pub fn new(points: &[(f64, f64)]) -> MonotoneCurve {
-        let mut p: Vec<(f64, f64)> = points.iter().copied().filter(|(x, y)| x.is_finite() && y.is_finite()).collect();
+        let mut p: Vec<(f64, f64)> = points
+            .iter()
+            .copied()
+            .filter(|(x, y)| x.is_finite() && y.is_finite())
+            .collect();
         p.sort_by(|a, b| a.0.total_cmp(&b.0));
         p.dedup_by(|a, b| (a.0 - b.0).abs() < 1e-9);
         if p.len() < 2 {
@@ -25,12 +29,18 @@ impl MonotoneCurve {
         let n = p.len();
         let xs: Vec<f64> = p.iter().map(|q| q.0).collect();
         let ys: Vec<f64> = p.iter().map(|q| q.1).collect();
-        let d: Vec<f64> = (0..n - 1).map(|i| (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i])).collect();
+        let d: Vec<f64> = (0..n - 1)
+            .map(|i| (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]))
+            .collect();
         let mut ms = vec![0.0; n];
         ms[0] = d[0];
         ms[n - 1] = d[n - 2];
         for i in 1..n - 1 {
-            ms[i] = if d[i - 1] * d[i] <= 0.0 { 0.0 } else { (d[i - 1] + d[i]) / 2.0 };
+            ms[i] = if d[i - 1] * d[i] <= 0.0 {
+                0.0
+            } else {
+                (d[i - 1] + d[i]) / 2.0
+            };
         }
         // Fritsch–Carlson limiter where the data is monotone within a segment.
         for i in 0..n - 1 {
@@ -78,11 +88,19 @@ impl MonotoneCurve {
 
     /// Sample into a LUT of `n` entries over `0..1`.
     pub fn to_lut(&self, n: usize) -> Lut1 {
-        Lut1 { v: (0..n).map(|i| self.eval(i as f64 / (n - 1) as f64) as f32).collect() }
+        Lut1 {
+            v: (0..n)
+                .map(|i| self.eval(i as f64 / (n - 1) as f64) as f32)
+                .collect(),
+        }
     }
 
     pub fn points(&self) -> Vec<(f64, f64)> {
-        self.xs.iter().copied().zip(self.ys.iter().copied()).collect()
+        self.xs
+            .iter()
+            .copied()
+            .zip(self.ys.iter().copied())
+            .collect()
     }
 }
 
@@ -94,10 +112,14 @@ pub struct Lut1 {
 
 impl Lut1 {
     pub fn identity(n: usize) -> Lut1 {
-        Lut1 { v: (0..n).map(|i| i as f32 / (n - 1) as f32).collect() }
+        Lut1 {
+            v: (0..n).map(|i| i as f32 / (n - 1) as f32).collect(),
+        }
     }
     pub fn from_fn(n: usize, f: impl Fn(f32) -> f32) -> Lut1 {
-        Lut1 { v: (0..n).map(|i| f(i as f32 / (n - 1) as f32)).collect() }
+        Lut1 {
+            v: (0..n).map(|i| f(i as f32 / (n - 1) as f32)).collect(),
+        }
     }
     #[inline]
     pub fn eval(&self, x: f32) -> f32 {
@@ -109,11 +131,16 @@ impl Lut1 {
     }
     /// `self ∘ inner` (apply `inner` first).
     pub fn compose(&self, inner: &Lut1) -> Lut1 {
-        Lut1 { v: inner.v.iter().map(|&x| self.eval(x)).collect() }
+        Lut1 {
+            v: inner.v.iter().map(|&x| self.eval(x)).collect(),
+        }
     }
     pub fn is_identity(&self) -> bool {
         let n = self.v.len();
-        self.v.iter().enumerate().all(|(i, &y)| (y - i as f32 / (n - 1) as f32).abs() < 1e-6)
+        self.v
+            .iter()
+            .enumerate()
+            .all(|(i, &y)| (y - i as f32 / (n - 1) as f32).abs() < 1e-6)
     }
 }
 
@@ -133,7 +160,13 @@ mod tests {
 
     #[test]
     fn passes_through_points_and_is_monotone() {
-        let pts = [(0.0, 0.0), (0.25, 0.15), (0.5, 0.5), (0.75, 0.88), (1.0, 1.0)];
+        let pts = [
+            (0.0, 0.0),
+            (0.25, 0.15),
+            (0.5, 0.5),
+            (0.75, 0.88),
+            (1.0, 1.0),
+        ];
         let c = MonotoneCurve::new(&pts);
         for (x, y) in pts {
             assert!((c.eval(x) - y).abs() < 1e-12);

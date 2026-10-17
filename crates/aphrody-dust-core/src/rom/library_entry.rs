@@ -9,7 +9,10 @@ pub struct LibraryEntry<'a> {
 impl<'a> LibraryEntry<'a> {
     /// Creates a new [`LibraryEntry`].
     pub fn new(address: u32, version_string: &'a str) -> Self {
-        Self { address, version_string }
+        Self {
+            address,
+            version_string,
+        }
     }
 
     /// Returns the address of this [`LibraryEntry`].
@@ -24,7 +27,10 @@ impl<'a> LibraryEntry<'a> {
 
     /// Returns a [`DisplayLibraryEntry`] which implements [`Display`].
     pub fn display(&'a self, indent: usize) -> DisplayLibraryEntry<'a> {
-        DisplayLibraryEntry { entry: self, indent }
+        DisplayLibraryEntry {
+            entry: self,
+            indent,
+        }
     }
 }
 

@@ -15,7 +15,14 @@ const MAX_TEXT: usize = 65_536;
 const MAX_KEYWORD: usize = 256;
 const MAX_KEYWORDS: usize = 1000;
 /// Values `file.info` reports but doesn't take (fed back, they are ignored).
-const READ_ONLY: [&str; 6] = ["created", "modified", "colorMode", "units", "artboards", "objects"];
+const READ_ONLY: [&str; 6] = [
+    "created",
+    "modified",
+    "colorMode",
+    "units",
+    "artboards",
+    "objects",
+];
 
 /// What `file.info` reports (and takes back).
 pub(crate) fn info_json(d: &Document) -> Value {
@@ -79,17 +86,29 @@ fn apply(title: &mut String, m: &mut DocMetadata, k: &str, v: &Value) -> Result<
                 .as_u64()
                 .filter(|r| *r <= u64::from(MAX_RATING))
                 .and_then(|r| u8::try_from(r).ok())
-                .ok_or_else(|| bad(C, format!("rating must be a whole number from 0 to {MAX_RATING}")))?
+                .ok_or_else(|| {
+                    bad(
+                        C,
+                        format!("rating must be a whole number from 0 to {MAX_RATING}"),
+                    )
+                })?
         }
         "copyrightStatus" => {
-            m.copyright_status =
-                v.as_str().and_then(CopyrightStatus::parse).ok_or_else(|| bad(C, "copyrightStatus must be unknown, copyrighted or publicDomain"))?
+            m.copyright_status = v.as_str().and_then(CopyrightStatus::parse).ok_or_else(|| {
+                bad(
+                    C,
+                    "copyrightStatus must be unknown, copyrighted or publicDomain",
+                )
+            })?
         }
         "copyrightNotice" => m.copyright_notice = text(k, v, true)?,
         "copyrightUrl" => {
             let url = text(k, v, false)?;
             if url.chars().any(char::is_whitespace) || url.chars().count() > 2048 {
-                return Err(bad(C, "copyrightUrl must be a URL (no spaces, at most 2048 characters)"));
+                return Err(bad(
+                    C,
+                    "copyrightUrl must be a URL (no spaces, at most 2048 characters)",
+                ));
             }
             m.copyright_url = url;
         }
@@ -108,10 +127,21 @@ fn text(k: &str, v: &Value, multiline: bool) -> Result<String> {
         _ => return Err(bad(C, format!("{k} must be text"))),
     };
     if s.chars().count() > MAX_TEXT {
-        return Err(bad(C, format!("{k} is too long (at most {MAX_TEXT} characters)")));
+        return Err(bad(
+            C,
+            format!("{k} is too long (at most {MAX_TEXT} characters)"),
+        ));
     }
-    if s.chars().any(|c| c.is_control() && !(multiline && matches!(c, '\n' | '\r' | '\t'))) {
-        return Err(bad(C, format!("{k} has control characters{}", if multiline { "" } else { " or line breaks" })));
+    if s.chars()
+        .any(|c| c.is_control() && !(multiline && matches!(c, '\n' | '\r' | '\t')))
+    {
+        return Err(bad(
+            C,
+            format!(
+                "{k} has control characters{}",
+                if multiline { "" } else { " or line breaks" }
+            ),
+        ));
     }
     Ok(s.to_string())
 }
@@ -122,14 +152,27 @@ fn keywords(v: &Value) -> Result<Vec<String>> {
     let parts: Vec<String> = match v {
         Value::Null => vec![],
         Value::String(s) => s.split([',', ';']).map(str::to_string).collect(),
-        Value::Array(a) => a.iter().map(|x| text("keywords", x, false)).collect::<Result<_>>()?,
-        _ => return Err(bad(C, "keywords must be a list of words or a comma-separated string")),
+        Value::Array(a) => a
+            .iter()
+            .map(|x| text("keywords", x, false))
+            .collect::<Result<_>>()?,
+        _ => {
+            return Err(bad(
+                C,
+                "keywords must be a list of words or a comma-separated string",
+            ));
+        }
     };
     let mut seen = std::collections::HashSet::new();
     let mut out: Vec<String> = vec![];
     for k in parts.iter().map(|k| k.trim()).filter(|k| !k.is_empty()) {
         if k.chars().count() > MAX_KEYWORD || k.chars().any(char::is_control) {
-            return Err(bad(C, format!("keywords must be at most {MAX_KEYWORD} characters, without control characters")));
+            return Err(bad(
+                C,
+                format!(
+                    "keywords must be at most {MAX_KEYWORD} characters, without control characters"
+                ),
+            ));
         }
         if seen.insert(k.to_lowercase()) {
             out.push(k.to_string());

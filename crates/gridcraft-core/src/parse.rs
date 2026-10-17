@@ -18,25 +18,46 @@ pub struct Parsed {
 /// stays text. A leading apostrophe forces text.
 pub fn parse_input(s: &str, sys: DateSystem) -> Parsed {
     if s.is_empty() {
-        return Parsed { value: Value::Empty, format: None };
+        return Parsed {
+            value: Value::Empty,
+            format: None,
+        };
     }
     if let Some(rest) = s.strip_prefix('\'') {
-        return Parsed { value: Value::text(rest), format: None };
+        return Parsed {
+            value: Value::text(rest),
+            format: None,
+        };
     }
     let t = s.trim();
     if t.eq_ignore_ascii_case("TRUE") {
-        return Parsed { value: Value::Bool(true), format: None };
+        return Parsed {
+            value: Value::Bool(true),
+            format: None,
+        };
     }
     if t.eq_ignore_ascii_case("FALSE") {
-        return Parsed { value: Value::Bool(false), format: None };
+        return Parsed {
+            value: Value::Bool(false),
+            format: None,
+        };
     }
     if let Some(e) = CellError::parse(t) {
-        return Parsed { value: Value::Error(e), format: None };
+        return Parsed {
+            value: Value::Error(e),
+            format: None,
+        };
     }
     if let Some((n, f)) = parse_numeric(t, sys) {
-        return Parsed { value: Value::number(n), format: f };
+        return Parsed {
+            value: Value::number(n),
+            format: f,
+        };
     }
-    Parsed { value: Value::text(s), format: None }
+    Parsed {
+        value: Value::text(s),
+        format: None,
+    }
 }
 
 /// Numeric text as arithmetic coerces it ("1,000", "50%", "$3", "1/2/2020", "10:00").
@@ -115,7 +136,10 @@ fn parse_plain(t: &str) -> Option<(f64, Option<&'static str>)> {
         s.to_string()
     };
     let b = digits.as_bytes();
-    if !b.iter().all(|c| c.is_ascii_digit() || matches!(c, b'.' | b'e' | b'E' | b'+' | b'-')) {
+    if !b
+        .iter()
+        .all(|c| c.is_ascii_digit() || matches!(c, b'.' | b'e' | b'E' | b'+' | b'-'))
+    {
         return None;
     }
     if !b.first().is_some_and(|c| c.is_ascii_digit() || *c == b'.') {
@@ -133,13 +157,21 @@ fn parse_plain(t: &str) -> Option<(f64, Option<&'static str>)> {
         n = -n;
     }
     let fmt = if currency {
-        Some(if digits.contains('.') { "\"$\"#,##0.00" } else { "\"$\"#,##0" })
+        Some(if digits.contains('.') {
+            "\"$\"#,##0.00"
+        } else {
+            "\"$\"#,##0"
+        })
     } else if percent {
         Some(if digits.contains('.') { "0.00%" } else { "0%" })
     } else if sci {
         Some("0.00E+00")
     } else if has_sep {
-        Some(if digits.contains('.') { "#,##0.00" } else { "#,##0" })
+        Some(if digits.contains('.') {
+            "#,##0.00"
+        } else {
+            "#,##0"
+        })
     } else {
         None
     };
@@ -166,14 +198,18 @@ fn month_from_name(s: &str) -> Option<u32> {
     if l.len() < 3 {
         return None;
     }
-    MONTHS.iter().position(|m| m.to_ascii_lowercase().starts_with(&l)).map(|i| i as u32 + 1)
+    MONTHS
+        .iter()
+        .position(|m| m.to_ascii_lowercase().starts_with(&l))
+        .map(|i| i as u32 + 1)
 }
 
 /// Time part: `h:mm`, `h:mm:ss`, `h:mm:ss.000`, `h AM`, with optional AM/PM.
 fn parse_time(t: &str) -> Option<(f64, bool, bool)> {
     let t = t.trim();
     let lower = t.to_ascii_lowercase();
-    let (body, ampm) = if let Some(b) = lower.strip_suffix("am").or_else(|| lower.strip_suffix('a')) {
+    let (body, ampm) = if let Some(b) = lower.strip_suffix("am").or_else(|| lower.strip_suffix('a'))
+    {
         (b.trim().to_string(), Some(false))
     } else if let Some(b) = lower.strip_suffix("pm").or_else(|| lower.strip_suffix('p')) {
         (b.trim().to_string(), Some(true))
@@ -223,12 +259,20 @@ fn parse_date(t: &str, sys: DateSystem) -> Option<(f64, &'static str)> {
             return valid_ymd(sys, y, m, d).map(|s| (s, "yyyy-mm-dd"));
         }
         if let (Some(m), Some(d), Some(y)) = (num(a), num(b), num(c)) {
-            let y = if c.len() <= 2 { if y < 30 { 2000 + y } else { 1900 + y } } else { y };
+            let y = if c.len() <= 2 {
+                if y < 30 { 2000 + y } else { 1900 + y }
+            } else {
+                y
+            };
             return valid_ymd(sys, y, m, d).map(|s| (s, "m/d/yyyy"));
         }
         // 4-Mar-2026
         if let (Some(d), Some(m), Some(y)) = (num(a), month_from_name(b), num(c)) {
-            let y = if c.len() <= 2 { if y < 30 { 2000 + y } else { 1900 + y } } else { y };
+            let y = if c.len() <= 2 {
+                if y < 30 { 2000 + y } else { 1900 + y }
+            } else {
+                y
+            };
             return valid_ymd(sys, y, m as i64, d).map(|s| (s, "d-mmm-yy"));
         }
     }
@@ -250,7 +294,11 @@ fn parse_date(t: &str, sys: DateSystem) -> Option<(f64, &'static str)> {
             return valid_ymd(sys, current_year(), m as i64, d).map(|s| (s, "d-mmm"));
         }
         if let (Some(m), Some(y)) = (month_from_name(a), num(b)) {
-            let y = if b.len() <= 2 { if y < 30 { 2000 + y } else { 1900 + y } } else { y };
+            let y = if b.len() <= 2 {
+                if y < 30 { 2000 + y } else { 1900 + y }
+            } else {
+                y
+            };
             return valid_ymd(sys, y, m as i64, 1).map(|s| (s, "mmm-yy"));
         }
     }
@@ -258,12 +306,22 @@ fn parse_date(t: &str, sys: DateSystem) -> Option<(f64, &'static str)> {
     let words: Vec<&str> = t.split([' ', ',']).filter(|w| !w.is_empty()).collect();
     if words.len() == 3 {
         // Two-digit years follow the same 2029 rule as the dashed forms above.
-        let expand = |w: &str, y: i64| if w.len() <= 2 { if y < 30 { 2000 + y } else { 1900 + y } } else { y };
-        if let (Some(m), Some(d), Some(y)) = (month_from_name(words[0]), num(words[1]), num(words[2])) {
+        let expand = |w: &str, y: i64| {
+            if w.len() <= 2 {
+                if y < 30 { 2000 + y } else { 1900 + y }
+            } else {
+                y
+            }
+        };
+        if let (Some(m), Some(d), Some(y)) =
+            (month_from_name(words[0]), num(words[1]), num(words[2]))
+        {
             let y = expand(words[2], y);
             return valid_ymd(sys, y, m as i64, d).map(|s| (s, "d-mmm-yy"));
         }
-        if let (Some(d), Some(m), Some(y)) = (num(words[0]), month_from_name(words[1]), num(words[2])) {
+        if let (Some(d), Some(m), Some(y)) =
+            (num(words[0]), month_from_name(words[1]), num(words[2]))
+        {
             let y = expand(words[2], y);
             return valid_ymd(sys, y, m as i64, d).map(|s| (s, "d-mmm-yy"));
         }
@@ -328,7 +386,13 @@ mod tests {
 
     #[test]
     fn month_name_short_year() {
-        for s in ["Mar 4, 26", "Mar 4 26", "March 4 26", "4 March 26", "Mar 4, 2026"] {
+        for s in [
+            "Mar 4, 26",
+            "Mar 4 26",
+            "March 4 26",
+            "4 March 26",
+            "Mar 4, 2026",
+        ] {
             assert_eq!(p(s).value, Value::Number(46085.0), "{s}");
         }
         assert_eq!(p("Mar 4, 99").value, p("Mar 4, 1999").value);
@@ -395,7 +459,13 @@ mod tests {
         assert_eq!(p("2/29/1901").value, Value::text("2/29/1901"));
         assert_eq!(p("2/30/1900").value, Value::text("2/30/1900"));
         // The 1904 system starts after it.
-        assert_eq!(parse_input("2/29/1900", DateSystem::D1904).value, Value::text("2/29/1900"));
-        assert_eq!(parse_input("2/29/1904", DateSystem::D1904).value, Value::Number(59.0));
+        assert_eq!(
+            parse_input("2/29/1900", DateSystem::D1904).value,
+            Value::text("2/29/1900")
+        );
+        assert_eq!(
+            parse_input("2/29/1904", DateSystem::D1904).value,
+            Value::Number(59.0)
+        );
     }
 }

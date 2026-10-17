@@ -22,21 +22,24 @@ use crate::{Issue, IssueKind, ProofLang, words};
 
 /// Words Polish repeats on purpose: interjections, onomatopoeia and emphatic doubling.
 const ALLOWED_REPEATS: &[&str] = &[
-    "to", "tak", "nie", "no", "ha", "he", "hi", "hej", "oj", "aj", "ej", "ach", "och", "ech", "puk", "hop", "bum", "cyk", "tik", "pa", "fiu", "la",
-    "bardzo", "dawno", "daleko", "długo",
+    "to", "tak", "nie", "no", "ha", "he", "hi", "hej", "oj", "aj", "ej", "ach", "och", "ech",
+    "puk", "hop", "bum", "cyk", "tik", "pa", "fiu", "la", "bardzo", "dawno", "daleko", "długo",
 ];
 
 /// Abbreviations written with a final period after which a sentence goes on in lower case
 /// (lower case, without the period).
 const ABBREVIATIONS: &[&str] = &[
-    "np", "itd", "itp", "tzn", "tj", "tzw", "ok", "ul", "al", "pl", "os", "in", "wg", "zob", "por", "str", "ss", "nr", "pkt", "ust", "art", "par",
-    "rozdz", "tab", "rys", "il", "przyp", "red", "wyd", "oprac", "tłum", "cyt", "jw", "ds", "im", "ks", "św", "bł", "prof", "dr", "doc", "hab",
-    "inż", "mgr", "lek", "płk", "gen", "mjr", "kpt", "ppłk", "sierż", "szer", "kmdr", "adm", "abp", "bp", "br", "ub", "bm", "pn", "płd", "płn",
-    "wsch", "zach", "gł", "godz", "min", "sek", "tys", "mln", "mld", "zł", "gr", "kg", "dag", "mies", "tyg", "pon", "wt", "śr", "czw", "pt", "sob",
-    "niedz", "sty", "lut", "mar", "kwi", "cze", "lip", "sie", "wrz", "paź", "lis", "gru", "ang", "niem", "franc", "łac", "ros", "wł", "hiszp", "pol",
-    "lit", "dosł", "przen", "pot", "zdrob", "fot", "ryc", "tel", "kom", "ew", "ob", "obyw", "pp", "zm", "ur", "ca", "vs", "etc", "cdn", "dot", "wz",
-    "zw", "zał", "cz", "rr", "ww", "jęz", "jun", "sen", "mec", "red", "dyr", "kier", "proc", "poj", "lp", "lm", "zaw", "woj", "pow", "gm", "wsp",
-    "nast", "poprz", "ang", "fr",
+    "np", "itd", "itp", "tzn", "tj", "tzw", "ok", "ul", "al", "pl", "os", "in", "wg", "zob", "por",
+    "str", "ss", "nr", "pkt", "ust", "art", "par", "rozdz", "tab", "rys", "il", "przyp", "red",
+    "wyd", "oprac", "tłum", "cyt", "jw", "ds", "im", "ks", "św", "bł", "prof", "dr", "doc", "hab",
+    "inż", "mgr", "lek", "płk", "gen", "mjr", "kpt", "ppłk", "sierż", "szer", "kmdr", "adm", "abp",
+    "bp", "br", "ub", "bm", "pn", "płd", "płn", "wsch", "zach", "gł", "godz", "min", "sek", "tys",
+    "mln", "mld", "zł", "gr", "kg", "dag", "mies", "tyg", "pon", "wt", "śr", "czw", "pt", "sob",
+    "niedz", "sty", "lut", "mar", "kwi", "cze", "lip", "sie", "wrz", "paź", "lis", "gru", "ang",
+    "niem", "franc", "łac", "ros", "wł", "hiszp", "pol", "lit", "dosł", "przen", "pot", "zdrob",
+    "fot", "ryc", "tel", "kom", "ew", "ob", "obyw", "pp", "zm", "ur", "ca", "vs", "etc", "cdn",
+    "dot", "wz", "zw", "zał", "cz", "rr", "ww", "jęz", "jun", "sen", "mec", "red", "dyr", "kier",
+    "proc", "poj", "lp", "lm", "zaw", "woj", "pow", "gm", "wsp", "nast", "poprz", "ang", "fr",
 ];
 
 /// Subordinating conjunctions and relative pronouns that open a clause: a comma comes before
@@ -227,7 +230,14 @@ const PREPOSITIONS: &[&str] = &[
 ];
 
 fn issue(start: usize, end: usize, message: String, suggestions: Vec<String>) -> Issue {
-    Issue { start, end, kind: IssueKind::Grammar, message, suggestions, lang: ProofLang::Pl }
+    Issue {
+        start,
+        end,
+        kind: IssueKind::Grammar,
+        message,
+        suggestions,
+        lang: ProofLang::Pl,
+    }
 }
 
 fn capitalize(w: &str) -> String {
@@ -236,7 +246,10 @@ fn capitalize(w: &str) -> String {
 
 /// Polish vowels (and the accented vowels of loanwords).
 fn is_vowel(c: char) -> bool {
-    matches!(c.to_lowercase().next().unwrap_or(c), 'a' | 'ą' | 'e' | 'ę' | 'i' | 'o' | 'ó' | 'u' | 'y' | 'é' | 'á' | 'ö' | 'ü' | 'í' | 'ú')
+    matches!(
+        c.to_lowercase().next().unwrap_or(c),
+        'a' | 'ą' | 'e' | 'ę' | 'i' | 'o' | 'ó' | 'u' | 'y' | 'é' | 'á' | 'ö' | 'ü' | 'í' | 'ú'
+    )
 }
 
 fn is_consonant(c: char) -> bool {
@@ -260,14 +273,23 @@ pub fn check(text: &str) -> Vec<Issue> {
 fn repeated_words(text: &str, ws: &[(usize, usize)], v: &mut Vec<Issue>) {
     for pair in ws.windows(2) {
         let [(a0, b0), (a1, b1)] = pair else { continue };
-        let (Some(w0), Some(w1), Some(gap)) = (text.get(*a0..*b0), text.get(*a1..*b1), text.get(*b0..*a1)) else { continue };
+        let (Some(w0), Some(w1), Some(gap)) =
+            (text.get(*a0..*b0), text.get(*a1..*b1), text.get(*b0..*a1))
+        else {
+            continue;
+        };
         if !gap.is_empty()
             && gap.chars().all(char::is_whitespace)
             && w0.chars().all(char::is_alphabetic)
             && w0.to_lowercase() == w1.to_lowercase()
             && !ALLOWED_REPEATS.contains(&w0.to_lowercase().as_str())
         {
-            v.push(issue(*a0, *b1, format!("Powtórzone słowo: „{w1}”"), vec![w0.to_string()]));
+            v.push(issue(
+                *a0,
+                *b1,
+                format!("Powtórzone słowo: „{w1}”"),
+                vec![w0.to_string()],
+            ));
         }
     }
 }
@@ -288,11 +310,18 @@ fn spaces(text: &str, v: &mut Vec<Issue>) {
             // ` ...` is an ellipsis, ` .5` a number.
             '.' => !matches!(after, Some('.')) && !after.is_some_and(|a| a.is_ascii_digit()),
             // ` :)`, ` :-)`, ` :D` and similar are emoticons; ` ?!` is still a stray space.
-            ':' | '!' | '?' => after.is_none_or(|a| a.is_whitespace() || matches!(a, '"' | '”' | '»' | '’' | '!' | '?')),
+            ':' | '!' | '?' => after.is_none_or(|a| {
+                a.is_whitespace() || matches!(a, '"' | '”' | '»' | '’' | '!' | '?')
+            }),
             _ => false,
         };
         if flag {
-            v.push(issue(i, i + 1 + p.len_utf8(), "Zbędna spacja przed znakiem interpunkcyjnym".into(), vec![p.to_string()]));
+            v.push(issue(
+                i,
+                i + 1 + p.len_utf8(),
+                "Zbędna spacja przed znakiem interpunkcyjnym".into(),
+                vec![p.to_string()],
+            ));
         }
     }
     for (i, _) in text.match_indices("  ") {
@@ -308,7 +337,9 @@ fn spaces(text: &str, v: &mut Vec<Issue>) {
 fn abbreviation_or_number(prev: &str) -> bool {
     prev.chars().count() <= 1
         || prev.chars().any(|c| c.is_ascii_digit())
-        || (prev.chars().all(|c| matches!(c, 'I' | 'V' | 'X' | 'L' | 'C' | 'D' | 'M')))
+        || (prev
+            .chars()
+            .all(|c| matches!(c, 'I' | 'V' | 'X' | 'L' | 'C' | 'D' | 'M')))
         || ABBREVIATIONS.contains(&prev.to_lowercase().as_str())
 }
 
@@ -319,14 +350,18 @@ const OPENING: [char; 8] = ['„', '"', '“', '«', '(', '[', '\'', '‚'];
 /// an abbreviation), then space, with nothing but quotes and brackets around?
 fn ends_sentence(gap: &str, prev: &str) -> bool {
     let t = gap.trim_start_matches(CLOSING);
-    let Some(end) = t.chars().next() else { return false };
+    let Some(end) = t.chars().next() else {
+        return false;
+    };
     if !matches!(end, '.' | '!' | '?') || t.starts_with("..") {
         return false;
     }
     if end == '.' && abbreviation_or_number(prev) {
         return false;
     }
-    let rest = t.trim_start_matches(['.', '!', '?']).trim_start_matches(CLOSING);
+    let rest = t
+        .trim_start_matches(['.', '!', '?'])
+        .trim_start_matches(CLOSING);
     rest.starts_with(char::is_whitespace) && rest.trim_start().chars().all(|c| OPENING.contains(&c))
 }
 
@@ -337,22 +372,46 @@ fn sentence_capitals(text: &str, ws: &[(usize, usize)], v: &mut Vec<Issue>) {
         let Some(w) = text.get(a..b) else { continue };
         let starts = if k == 0 {
             let before = text.get(..a).unwrap_or("");
-            !list_item && before.chars().all(|c| c.is_whitespace() || OPENING.contains(&c))
+            !list_item
+                && before
+                    .chars()
+                    .all(|c| c.is_whitespace() || OPENING.contains(&c))
         } else {
-            let Some(&(pa, pb)) = ws.get(k - 1) else { continue };
-            ends_sentence(text.get(pb..a).unwrap_or(""), text.get(pa..pb).unwrap_or(""))
+            let Some(&(pa, pb)) = ws.get(k - 1) else {
+                continue;
+            };
+            ends_sentence(
+                text.get(pb..a).unwrap_or(""),
+                text.get(pa..pb).unwrap_or(""),
+            )
         };
-        if starts && w.chars().next().is_some_and(char::is_lowercase) && w.chars().all(char::is_alphabetic) {
-            v.push(issue(a, b, "Wielka litera na początku zdania".into(), vec![capitalize(w)]));
+        if starts
+            && w.chars().next().is_some_and(char::is_lowercase)
+            && w.chars().all(char::is_alphabetic)
+        {
+            v.push(issue(
+                a,
+                b,
+                "Wielka litera na początku zdania".into(),
+                vec![capitalize(w)],
+            ));
         }
     }
 }
 
 fn missing_commas(text: &str, ws: &[(usize, usize)], v: &mut Vec<Issue>) {
     for k in 1..ws.len() {
-        let (Some(&(pa, pb)), Some(&(a, b))) = (ws.get(k - 1), ws.get(k)) else { continue };
-        let (Some(prev), Some(w), Some(gap)) = (text.get(pa..pb), text.get(a..b), text.get(pb..a)) else { continue };
-        if !CLAUSE_OPENERS.contains(&w) || gap.is_empty() || !gap.chars().all(|c| c == ' ' || c == '\u{a0}') {
+        let (Some(&(pa, pb)), Some(&(a, b))) = (ws.get(k - 1), ws.get(k)) else {
+            continue;
+        };
+        let (Some(prev), Some(w), Some(gap)) = (text.get(pa..pb), text.get(a..b), text.get(pb..a))
+        else {
+            continue;
+        };
+        if !CLAUSE_OPENERS.contains(&w)
+            || gap.is_empty()
+            || !gap.chars().all(|c| c == ' ' || c == '\u{a0}')
+        {
             continue;
         }
         if !prev.chars().all(char::is_alphabetic) {
@@ -366,14 +425,23 @@ fn missing_commas(text: &str, ws: &[(usize, usize)], v: &mut Vec<Issue>) {
         if w.starts_with("któr") && (PREPOSITIONS.contains(&p) || p == "to") {
             continue;
         }
-        v.push(issue(pb, b, format!("Brak przecinka przed „{w}”"), vec![format!(", {w}")]));
+        v.push(issue(
+            pb,
+            b,
+            format!("Brak przecinka przed „{w}”"),
+            vec![format!(", {w}")],
+        ));
     }
 }
 
 fn we_ze(text: &str, ws: &[(usize, usize)], v: &mut Vec<Issue>) {
     for pair in ws.windows(2) {
         let [(a0, b0), (a1, b1)] = pair else { continue };
-        let (Some(w0), Some(w1), Some(gap)) = (text.get(*a0..*b0), text.get(*a1..*b1), text.get(*b0..*a1)) else { continue };
+        let (Some(w0), Some(w1), Some(gap)) =
+            (text.get(*a0..*b0), text.get(*a1..*b1), text.get(*b0..*a1))
+        else {
+            continue;
+        };
         if gap != " " && gap != "\u{a0}" {
             continue;
         }
@@ -381,18 +449,37 @@ fn we_ze(text: &str, ws: &[(usize, usize)], v: &mut Vec<Issue>) {
         let c: Vec<char> = next.chars().collect();
         let at = |i: usize| c.get(i).copied();
         let (long, wanted) = match w0 {
-            "w" | "W" => ("we", (at(0) == Some('w') && at(1).is_some_and(is_consonant)) || next == "mnie"),
+            "w" | "W" => (
+                "we",
+                (at(0) == Some('w') && at(1).is_some_and(is_consonant)) || next == "mnie",
+            ),
             "z" | "Z" => {
                 // The first sound: `sz` is one consonant (`z szafy`, but `ze szkoły`).
-                let after = if at(0) == Some('s') && at(1) == Some('z') { at(2) } else { at(1) };
+                let after = if at(0) == Some('s') && at(1) == Some('z') {
+                    at(2)
+                } else {
+                    at(1)
+                };
                 let sibilant = matches!(at(0), Some('s' | 'z' | 'ś' | 'ź' | 'ż'));
-                ("ze", (sibilant && after.is_some_and(is_consonant)) || next == "mną")
+                (
+                    "ze",
+                    (sibilant && after.is_some_and(is_consonant)) || next == "mną",
+                )
             }
             _ => continue,
         };
         if wanted {
-            let fixed = if w0.starts_with(char::is_uppercase) { capitalize(long) } else { long.to_string() };
-            v.push(issue(*a0, *b0, format!("Przed tym słowem piszemy „{long}”"), vec![fixed]));
+            let fixed = if w0.starts_with(char::is_uppercase) {
+                capitalize(long)
+            } else {
+                long.to_string()
+            };
+            v.push(issue(
+                *a0,
+                *b0,
+                format!("Przed tym słowem piszemy „{long}”"),
+                vec![fixed],
+            ));
         }
     }
 }
@@ -405,7 +492,9 @@ fn doubled_punctuation(text: &str, v: &mut Vec<Issue>) {
             i += 1;
             continue;
         }
-        let run = bytes.get(i..).map_or(0, |r| r.iter().take_while(|&&x| x == b).count());
+        let run = bytes
+            .get(i..)
+            .map_or(0, |r| r.iter().take_while(|&&x| x == b).count());
         let flag = match b {
             b'.' => run == 2,
             _ => run >= 2,
@@ -414,15 +503,26 @@ fn doubled_punctuation(text: &str, v: &mut Vec<Issue>) {
             let end = i + run;
             let suggestions: Vec<String> = match b {
                 // `,,` before a word, after a space: a typed opening quote.
-                b',' if text.get(end..).and_then(|t| t.chars().next()).is_some_and(char::is_alphabetic)
-                    && (i == 0 || text.get(..i).is_some_and(|t| t.ends_with(char::is_whitespace))) =>
+                b',' if text
+                    .get(end..)
+                    .and_then(|t| t.chars().next())
+                    .is_some_and(char::is_alphabetic)
+                    && (i == 0
+                        || text
+                            .get(..i)
+                            .is_some_and(|t| t.ends_with(char::is_whitespace))) =>
                 {
                     vec!["„".into()]
                 }
                 b'.' => vec![".".into(), "…".into()],
                 _ => vec![char::from(b).to_string()],
             };
-            v.push(issue(i, end, "Powtórzony znak interpunkcyjny".into(), suggestions));
+            v.push(issue(
+                i,
+                end,
+                "Powtórzony znak interpunkcyjny".into(),
+                suggestions,
+            ));
         }
         i += run.max(1);
     }
@@ -433,7 +533,10 @@ mod tests {
     use super::*;
 
     fn messages(t: &str) -> Vec<String> {
-        check(t).into_iter().map(|i| format!("{}@{}", i.message, &t[i.start..i.end])).collect()
+        check(t)
+            .into_iter()
+            .map(|i| format!("{}@{}", i.message, &t[i.start..i.end]))
+            .collect()
     }
 
     fn clean(t: &str) {
@@ -447,28 +550,57 @@ mod tests {
         assert_eq!(v.len(), 2, "{v:?}");
         assert_eq!(v[0].message, "Powtórzone słowo: „ma”");
         assert_eq!(v[0].suggestions, ["ma"]);
-        assert!(v.iter().all(|i| i.lang == ProofLang::Pl && i.kind == IssueKind::Grammar));
+        assert!(
+            v.iter()
+                .all(|i| i.lang == ProofLang::Pl && i.kind == IssueKind::Grammar)
+        );
         clean("Tak tak, to to samo. Ha ha!");
     }
 
     #[test]
     fn spaces_and_punctuation() {
         let m = messages("Ala ma kota , a kot ma Alę .  Czy na pewno ?");
-        assert!(m.contains(&"Zbędna spacja przed znakiem interpunkcyjnym@ ,".to_string()), "{m:?}");
-        assert!(m.contains(&"Zbędna spacja przed znakiem interpunkcyjnym@ .".to_string()), "{m:?}");
-        assert!(m.contains(&"Zbędna spacja przed znakiem interpunkcyjnym@ ?".to_string()), "{m:?}");
+        assert!(
+            m.contains(&"Zbędna spacja przed znakiem interpunkcyjnym@ ,".to_string()),
+            "{m:?}"
+        );
+        assert!(
+            m.contains(&"Zbędna spacja przed znakiem interpunkcyjnym@ .".to_string()),
+            "{m:?}"
+        );
+        assert!(
+            m.contains(&"Zbędna spacja przed znakiem interpunkcyjnym@ ?".to_string()),
+            "{m:?}"
+        );
         assert!(m.contains(&"Podwójna spacja@  ".to_string()), "{m:?}");
         clean("Fajnie :) Naprawdę :-) Albo :D Wartość .5 i wielokropek ...");
         let m = messages("Powiedział ,,tak” i poszedł.. Potem;; koniec.");
-        assert_eq!(m.iter().filter(|x| x.starts_with("Powtórzony znak")).count(), 3, "{m:?}");
-        assert_eq!(check("Powiedział ,,tak”.").iter().find(|i| i.message.starts_with("Powtórzony")).unwrap().suggestions, ["„"]);
+        assert_eq!(
+            m.iter()
+                .filter(|x| x.starts_with("Powtórzony znak"))
+                .count(),
+            3,
+            "{m:?}"
+        );
+        assert_eq!(
+            check("Powiedział ,,tak”.")
+                .iter()
+                .find(|i| i.message.starts_with("Powtórzony"))
+                .unwrap()
+                .suggestions,
+            ["„"]
+        );
         clean("Czekał… i czekał... aż do rana.");
     }
 
     #[test]
     fn sentence_start_capitals() {
         let m = messages("to jest zdanie. a to drugie! czy trzecie? tak.");
-        assert_eq!(m.iter().filter(|x| x.starts_with("Wielka litera")).count(), 4, "{m:?}");
+        assert_eq!(
+            m.iter().filter(|x| x.starts_with("Wielka litera")).count(),
+            4,
+            "{m:?}"
+        );
         assert_eq!(check("ala ma kota.")[0].suggestions, ["Ala"]);
         // Abbreviations, initials, ordinals, dates, ellipses and dialogue dashes.
         clean("Kupiłem owoce, np. jabłka, gruszki itp. oraz warzywa.");
@@ -484,7 +616,9 @@ mod tests {
 
     #[test]
     fn missing_commas() {
-        let m = messages("Wiem że przyjdzie. Mam kota który śpi. Zostałem bo musiałem. Idę aby zdążyć. Nie przyszedł ponieważ padało.");
+        let m = messages(
+            "Wiem że przyjdzie. Mam kota który śpi. Zostałem bo musiałem. Idę aby zdążyć. Nie przyszedł ponieważ padało.",
+        );
         for want in [
             "Brak przecinka przed „że”@ że",
             "Brak przecinka przed „który”@ który",
@@ -509,7 +643,13 @@ mod tests {
     #[test]
     fn we_and_ze() {
         let m = messages("Spotkamy się w wtorek w Wrocławiu z szkoły z mną.");
-        assert_eq!(m.iter().filter(|x| x.starts_with("Przed tym słowem")).count(), 4, "{m:?}");
+        assert_eq!(
+            m.iter()
+                .filter(|x| x.starts_with("Przed tym słowem"))
+                .count(),
+            4,
+            "{m:?}"
+        );
         let v = check("Z szkoły wracam.");
         assert_eq!(v[0].suggestions, ["Ze"]);
         clean("Byłem w wodzie, w wieku dziesięciu lat, z szafą, z siostrą i z zamkiem.");

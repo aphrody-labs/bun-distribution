@@ -126,7 +126,10 @@ impl Embedder {
             .map_err(|e| EmbedError::ModelInit(e.to_string()))?;
         let expected = kind.dimension();
         if info_dim != expected {
-            return Err(EmbedError::DimensionMismatch { expected, actual: info_dim });
+            return Err(EmbedError::DimensionMismatch {
+                expected,
+                actual: info_dim,
+            });
         }
 
         let options = InitOptions::new(fe_model)
@@ -136,7 +139,11 @@ impl Embedder {
         let model =
             TextEmbedding::try_new(options).map_err(|e| EmbedError::ModelInit(e.to_string()))?;
 
-        Ok(Self { model, kind, dimension: info_dim })
+        Ok(Self {
+            model,
+            kind,
+            dimension: info_dim,
+        })
     }
 
     /// The embedding dimension produced by this model (e.g. `384`).
@@ -203,7 +210,9 @@ impl Embedder {
     /// See [`Embedder::embed_batch`].
     pub fn embed_one(&mut self, text: &str) -> Result<Vec<f32>> {
         let mut out = self.embed_batch(&[text], None)?;
-        out.pop().ok_or(EmbedError::Inference("model returned no vector for a single input".into()))
+        out.pop().ok_or(EmbedError::Inference(
+            "model returned no vector for a single input".into(),
+        ))
     }
 }
 

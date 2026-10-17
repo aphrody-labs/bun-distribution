@@ -38,7 +38,11 @@ impl Rng {
     }
     /// `0..n` (`0` when `n` is 0).
     fn below(&mut self, n: usize) -> usize {
-        if n == 0 { 0 } else { (self.next() % n as u64) as usize }
+        if n == 0 {
+            0
+        } else {
+            (self.next() % n as u64) as usize
+        }
     }
     fn chance(&mut self, one_in: usize) -> bool {
         self.below(one_in) == 0
@@ -50,7 +54,14 @@ struct OneFile(Vec<u8>);
 
 impl Services for OneFile {
     fn read_file(&self, path: &str) -> std::io::Result<Vec<u8>> {
-        if path == PATH { Ok(self.0.clone()) } else { Err(std::io::Error::new(std::io::ErrorKind::NotFound, path.to_string())) }
+        if path == PATH {
+            Ok(self.0.clone())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                path.to_string(),
+            ))
+        }
     }
     fn write_file(&self, _: &str, _: &[u8]) -> std::io::Result<()> {
         Err(std::io::Error::other("the fuzzer writes nothing"))
@@ -73,7 +84,10 @@ impl Services for OneFile {
 /// it opened, `Ok(false)` when it was refused. `Err` only for a crash: a panic in the open
 /// itself, or one the command guard caught in a query.
 fn open_input(bytes: Vec<u8>) -> Result<bool, String> {
-    let mut s = Session { services: Arc::new(OneFile(bytes)), ..Default::default() };
+    let mut s = Session {
+        services: Arc::new(OneFile(bytes)),
+        ..Default::default()
+    };
     if crate::commands::open_for_tests(&mut s, &json!({ "path": PATH })).is_err() {
         return Ok(false); // refused: fine
     }
@@ -82,11 +96,18 @@ fn open_input(bytes: Vec<u8>) -> Result<bool, String> {
         _ => Ok(()),
     };
     crashed(s.execute("project.summary", json!({})))?;
-    let comps: Vec<_> = s.project.comps().map(|(id, c)| (id.0, c.layers.iter().map(|l| l.id.0).collect::<Vec<_>>())).collect();
+    let comps: Vec<_> = s
+        .project
+        .comps()
+        .map(|(id, c)| (id.0, c.layers.iter().map(|l| l.id.0).collect::<Vec<_>>()))
+        .collect();
     for (comp, layers) in comps.into_iter().take(4) {
         crashed(s.execute("comp.info", json!({ "comp": comp })))?;
         for layer in layers.into_iter().take(8) {
-            crashed(s.execute("layer.tree", json!({ "comp": comp, "layer": layer, "depth": 3, "time": 1.0 })))?;
+            crashed(s.execute(
+                "layer.tree",
+                json!({ "comp": comp, "layer": layer, "depth": 3, "time": 1.0 }),
+            ))?;
         }
     }
     // The first frame the viewer shows, at thumbnail size.
@@ -94,7 +115,12 @@ fn open_input(bytes: Vec<u8>) -> Result<bool, String> {
         && let Some(c) = s.project.comp(id)
     {
         let scale = (32.0 / f64::from(c.width.max(c.height).max(1))).min(1.0);
-        effectcraft_render::render_frame(&s.project, id, effectcraft_time::Tick::from_seconds_f64(1.0), scale);
+        effectcraft_render::render_frame(
+            &s.project,
+            id,
+            effectcraft_time::Tick::from_seconds_f64(1.0),
+            scale,
+        );
     }
     Ok(true)
 }
@@ -102,20 +128,28 @@ fn open_input(bytes: Vec<u8>) -> Result<bool, String> {
 /// Run one input on its own thread: a panic becomes its message, a hang a timeout.
 fn run_guarded(bytes: Vec<u8>, deadline: Duration) -> Result<bool, String> {
     let (tx, rx) = std::sync::mpsc::channel();
-    let spawned = std::thread::Builder::new().name("fuzz-open".into()).stack_size(8 << 20).spawn(move || {
-        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| open_input(bytes)));
-        let r = match r {
-            Ok(r) => r,
-            Err(p) => {
-                Err(format!("panic: {}", p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_default()))
-            }
-        };
-        let _ = tx.send(r);
-    });
+    let spawned = std::thread::Builder::new()
+        .name("fuzz-open".into())
+        .stack_size(8 << 20)
+        .spawn(move || {
+            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| open_input(bytes)));
+            let r = match r {
+                Ok(r) => r,
+                Err(p) => Err(format!(
+                    "panic: {}",
+                    p.downcast_ref::<&str>()
+                        .map(|s| s.to_string())
+                        .or_else(|| p.downcast_ref::<String>().cloned())
+                        .unwrap_or_default()
+                )),
+            };
+            let _ = tx.send(r);
+        });
     if let Err(e) = spawned {
         return Err(format!("couldn't start the fuzz thread: {e}"));
     }
-    rx.recv_timeout(deadline).unwrap_or_else(|_| Err(format!("hang: no result within {deadline:?}")))
+    rx.recv_timeout(deadline)
+        .unwrap_or_else(|_| Err(format!("hang: no result within {deadline:?}")))
 }
 
 /// Small projects covering what a project holds: the empty project, and the demo cut down to
@@ -155,8 +189,38 @@ const TOKENS: &[&str] = &[
     "&#xD800;", "&#;", "&#x;", "&amp", "\u{feff}", "é", "\u{1F600}",
 ];
 
-const NUMBERS: &[f64] = &[0.0, -0.0, 1.0, -1.0, 0.5, -0.5, 2.0, 1e-300, 1e15, 1e300, -1e300, 4294967295.0, 4294967296.0, 65536.0, 254016000000.0];
-const INTEGERS: &[i64] = &[0, -1, 1, 2, 3, 255, 256, 65535, 2147483647, -2147483648, i64::MAX, i64::MIN, 9_007_199_254_740_993];
+const NUMBERS: &[f64] = &[
+    0.0,
+    -0.0,
+    1.0,
+    -1.0,
+    0.5,
+    -0.5,
+    2.0,
+    1e-300,
+    1e15,
+    1e300,
+    -1e300,
+    4294967295.0,
+    4294967296.0,
+    65536.0,
+    254016000000.0,
+];
+const INTEGERS: &[i64] = &[
+    0,
+    -1,
+    1,
+    2,
+    3,
+    255,
+    256,
+    65535,
+    2147483647,
+    -2147483648,
+    i64::MAX,
+    i64::MIN,
+    9_007_199_254_740_993,
+];
 
 /// Every node of `v`, depth first (the root is 0).
 fn count(v: &Value) -> usize {
@@ -192,7 +256,18 @@ fn interesting(r: &mut Rng, around: &Value) -> Value {
             Some(x) => json!(x * [-1.0, 2.0, 1e6, 1e-6, 0.0][r.below(5)]),
             None => Value::Null,
         },
-        3 => json!(["", "#999", "@0", "effects/#1", "../../x", "\u{0}", "transform/position", &"a".repeat(r.below(300))][r.below(8)]),
+        3 => json!(
+            [
+                "",
+                "#999",
+                "@0",
+                "effects/#1",
+                "../../x",
+                "\u{0}",
+                "transform/position",
+                &"a".repeat(r.below(300))
+            ][r.below(8)]
+        ),
         4 => Value::Bool(r.chance(2)),
         5 => json!([]),
         _ => Value::Null,
@@ -204,7 +279,9 @@ fn mutate_tree(r: &mut Rng, v: &mut Value) {
     let n = count(v);
     for _ in 0..1 + r.below(4) {
         let k = r.below(n.max(1));
-        let donor = node_mut(v, r.below(n.max(1))).map(|d| d.clone()).unwrap_or(Value::Null);
+        let donor = node_mut(v, r.below(n.max(1)))
+            .map(|d| d.clone())
+            .unwrap_or(Value::Null);
         let Some(node) = node_mut(v, k) else { return };
         match r.below(6) {
             0 | 1 => *node = interesting(r, node),
@@ -230,7 +307,13 @@ fn mutate_tree(r: &mut Rng, v: &mut Value) {
             }
             _ => {
                 if let Value::Object(m) = node {
-                    m.insert(["id", "parent", "source", "schema", "nextId", "layers", "items", "kind"][r.below(8)].into(), interesting(r, &Value::Null));
+                    m.insert(
+                        [
+                            "id", "parent", "source", "schema", "nextId", "layers", "items", "kind",
+                        ][r.below(8)]
+                        .into(),
+                        interesting(r, &Value::Null),
+                    );
                 }
             }
         }
@@ -269,13 +352,30 @@ fn mutate_bytes(r: &mut Rng, b: &mut Vec<u8>) {
             5 if len > 0 => b.truncate(r.below(len)),
             6 => {
                 // Deep nesting: what a recursive reader overflows its stack on.
-                let (open, close) = [("[", "]"), ("<arr>", "</arr>"), ("<obj><m n=\"a\">", "</m></obj>")][r.below(3)];
+                let (open, close) = [
+                    ("[", "]"),
+                    ("<arr>", "</arr>"),
+                    ("<obj><m n=\"a\">", "</m></obj>"),
+                ][r.below(3)];
                 let depth = [200, 5_000, 200_000][r.below(3)];
                 // Where the reader expects a value: after an opening token of the same kind.
-                let opens: Vec<usize> = b.windows(open.len().min(5)).enumerate().filter(|(_, w)| *w == &open.as_bytes()[..w.len()]).map(|(i, _)| i).collect();
-                let at = if opens.is_empty() { r.below(len + 1) } else { opens[r.below(opens.len())] };
+                let opens: Vec<usize> = b
+                    .windows(open.len().min(5))
+                    .enumerate()
+                    .filter(|(_, w)| *w == &open.as_bytes()[..w.len()])
+                    .map(|(i, _)| i)
+                    .collect();
+                let at = if opens.is_empty() {
+                    r.below(len + 1)
+                } else {
+                    opens[r.below(opens.len())]
+                };
                 let mut nest = open.repeat(depth).into_bytes();
-                nest.extend(close.repeat(if r.chance(2) { depth } else { 0 }).into_bytes());
+                nest.extend(
+                    close
+                        .repeat(if r.chance(2) { depth } else { 0 })
+                        .into_bytes(),
+                );
                 b.splice(at..at, nest);
             }
             _ => {}
@@ -288,11 +388,19 @@ fn mutate(r: &mut Rng, seeds: &[Vec<u8>]) -> Vec<u8> {
     let mut b = seeds[r.below(seeds.len())].clone();
     if r.chance(2) {
         let text = String::from_utf8_lossy(&b).to_string();
-        let json = if crate::xml_project::is_xml(&text) { crate::xml_project::from_xml(&text).ok() } else { Some(text) };
+        let json = if crate::xml_project::is_xml(&text) {
+            crate::xml_project::from_xml(&text).ok()
+        } else {
+            Some(text)
+        };
         if let Some(mut v) = json.and_then(|j| serde_json::from_str::<Value>(&j).ok()) {
             mutate_tree(r, &mut v);
             let j = v.to_string();
-            b = if r.chance(3) { crate::xml_project::to_xml(&j).unwrap_or(j).into_bytes() } else { j.into_bytes() };
+            b = if r.chance(3) {
+                crate::xml_project::to_xml(&j).unwrap_or(j).into_bytes()
+            } else {
+                j.into_bytes()
+            };
         }
     }
     if r.chance(3) || b.is_empty() {
@@ -302,7 +410,10 @@ fn mutate(r: &mut Rng, seeds: &[Vec<u8>]) -> Vec<u8> {
 }
 
 fn env_u64(name: &str, default: u64) -> u64 {
-    std::env::var(name).ok().and_then(|v| v.trim().parse().ok()).unwrap_or(default)
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(default)
 }
 
 #[test]
@@ -330,13 +441,24 @@ fn fuzz_file_open_never_crashes() {
             Ok(o) => opened += usize::from(o),
             Err(e) => {
                 let head = String::from_utf8_lossy(&input[..input.len().min(200)]).to_string();
-                failures.push(format!("iteration {i} (seed {seed:#x}, {} bytes): {e}\n  input starts: {head:?}", input.len()));
+                failures.push(format!(
+                    "iteration {i} (seed {seed:#x}, {} bytes): {e}\n  input starts: {head:?}",
+                    input.len()
+                ));
                 if failures.len() >= 5 {
                     break;
                 }
             }
         }
     }
-    assert!(failures.is_empty(), "File ▸ Open crashed on {} of {ran} fuzz inputs:\n{}", failures.len(), failures.join("\n"));
-    eprintln!("fuzz_file_open: {ran} inputs ({opened} opened) in {:?}, no crashes", began.elapsed());
+    assert!(
+        failures.is_empty(),
+        "File ▸ Open crashed on {} of {ran} fuzz inputs:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
+    eprintln!(
+        "fuzz_file_open: {ran} inputs ({opened} opened) in {:?}, no crashes",
+        began.elapsed()
+    );
 }

@@ -73,7 +73,15 @@ pub struct NoteRule {
 
 impl Default for NoteRule {
     fn default() -> Self {
-        NoteRule { on: true, weight: 1.0, color: designcraft_color::swatch::BLACK.into(), tint: 1.0, width: 72.0, offset: 0.0, left_indent: 0.0 }
+        NoteRule {
+            on: true,
+            weight: 1.0,
+            color: designcraft_color::swatch::BLACK.into(),
+            tint: 1.0,
+            width: 72.0,
+            offset: 0.0,
+            left_indent: 0.0,
+        }
     }
 }
 
@@ -138,7 +146,11 @@ impl FootnoteOptions {
             AffixIn::Reference => !text,
             AffixIn::Text => text,
         };
-        if affix { format!("{}{num}{}", self.prefix, self.suffix) } else { num }
+        if affix {
+            format!("{}{num}{}", self.prefix, self.suffix)
+        } else {
+            num
+        }
     }
 }
 
@@ -187,7 +199,10 @@ impl Story {
             let id = self.next_note_id();
             let mut text = Story::new(StoryId(0));
             text.chars[0].format = CharFormat::default();
-            self.notes.insert((k + i).min(self.notes.len()), Arc::new(Footnote { id, text }));
+            self.notes.insert(
+                (k + i).min(self.notes.len()),
+                Arc::new(Footnote { id, text }),
+            );
         }
     }
 
@@ -205,12 +220,19 @@ impl Story {
     pub(crate) fn check_notes(&self) -> Result<(), String> {
         let n = self.text.matches(FOOTNOTE_REF).count();
         if n != self.notes.len() {
-            return Err(format!("story {}: {n} footnote references, {} footnotes", self.id.0, self.notes.len()));
+            return Err(format!(
+                "story {}: {n} footnote references, {} footnotes",
+                self.id.0,
+                self.notes.len()
+            ));
         }
         let mut ids = std::collections::HashSet::new();
         for note in &self.notes {
             if !ids.insert(note.id) {
-                return Err(format!("story {}: footnote id {} used twice", self.id.0, note.id));
+                return Err(format!(
+                    "story {}: footnote id {} used twice",
+                    self.id.0, note.id
+                ));
             }
             note.text.check()?;
         }
@@ -222,22 +244,37 @@ impl crate::Document {
     /// How many numbers of list `name` stories before `sid` used (page order), so `sid`'s numbering
     /// carries on — 0 for lists that don't continue across stories.
     pub fn list_start(&self, sid: StoryId, name: &str) -> u32 {
-        if !self.settings.lists.iter().any(|l| l.name == name && l.continue_across_stories) {
+        if !self
+            .settings
+            .lists
+            .iter()
+            .any(|l| l.name == name && l.continue_across_stories)
+        {
             return 0;
         }
         let key = |st: &Story| -> (usize, u64) {
-            let page = st.frames.first().and_then(|f| self.page_of_item(*f)).unwrap_or(usize::MAX);
+            let page = st
+                .frames
+                .first()
+                .and_then(|f| self.page_of_item(*f))
+                .unwrap_or(usize::MAX);
             (page, st.id.0)
         };
         let Some(me) = self.story(sid) else { return 0 };
         let mine = key(me);
-        let mut before: Vec<&Story> = self.stories.values().map(|s| s.as_ref()).filter(|st| st.id != sid && key(st) < mine).collect();
+        let mut before: Vec<&Story> = self
+            .stories
+            .values()
+            .map(|s| s.as_ref())
+            .filter(|st| st.id != sid && key(st) < mine)
+            .collect();
         before.sort_by_key(|st| key(st));
         let mut n = 0u32;
         for st in before {
             for (p, r) in st.paras.iter().zip(st.para_ranges()) {
                 let (pp, _) = self.styles.resolve_para(p);
-                if pp.list_type == crate::ListType::Numbers && pp.list_name == name && !r.is_empty() {
+                if pp.list_type == crate::ListType::Numbers && pp.list_name == name && !r.is_empty()
+                {
                     n = pp.start_at.map_or(n.saturating_add(1), |s| s.max(1));
                 }
             }
@@ -253,19 +290,32 @@ impl crate::Document {
             return o.start_at;
         }
         let key = |st: &Story| -> (usize, u64) {
-            let page = st.frames.first().and_then(|f| self.page_of_item(*f)).unwrap_or(usize::MAX);
+            let page = st
+                .frames
+                .first()
+                .and_then(|f| self.page_of_item(*f))
+                .unwrap_or(usize::MAX);
             (page, st.id.0)
         };
-        let Some(me) = self.story(sid) else { return o.start_at };
+        let Some(me) = self.story(sid) else {
+            return o.start_at;
+        };
         let mine = key(me);
-        let before: usize = self.stories.values().filter(|st| st.id != sid && !st.notes.is_empty() && key(st) < mine).map(|st| st.notes.len()).sum();
+        let before: usize = self
+            .stories
+            .values()
+            .filter(|st| st.id != sid && !st.notes.is_empty() && key(st) < mine)
+            .map(|st| st.notes.len())
+            .sum();
         o.start_at + before as u32
     }
 
     /// Absolute page an item sits on (its center), None on parent pages / pasteboard-only spreads.
     pub fn page_of_item(&self, id: crate::ItemId) -> Option<usize> {
         let loc = self.find(id)?;
-        let crate::SpreadRef::Doc(si) = loc.spread else { return None };
+        let crate::SpreadRef::Doc(si) = loc.spread else {
+            return None;
+        };
         let sp = self.spread(loc.spread)?;
         let c = self.item(id)?.bounds().center();
         Some(self.first_page_of_spread(si) + sp.page_at_x(c.x).unwrap_or(0))

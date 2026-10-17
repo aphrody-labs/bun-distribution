@@ -19,15 +19,50 @@ pub fn specs() -> Vec<CommandSpec> {
             has_tracks,
             new_clip
         ),
-        cmd!("midi.note_add", "Add Note", [], None, "{clip, pitch, start_ticks, length_ticks?: 480, velocity?: 100, channel?: 0}", always, note_add),
-        cmd!("midi.note_edit", "Edit Note", [], None, "{clip, index, pitch?, start_ticks?, length_ticks?, velocity?}", always, note_edit),
-        cmd!("midi.note_delete", "Delete Notes", [], None, "{clip, indices: [n]}", always, note_delete),
-        cmd!("midi.notes_move", "Move Notes", [], None, "{clip, indices: [n], ticks?: 0, semitones?: 0}", always, notes_move),
+        cmd!(
+            "midi.note_add",
+            "Add Note",
+            [],
+            None,
+            "{clip, pitch, start_ticks, length_ticks?: 480, velocity?: 100, channel?: 0}",
+            always,
+            note_add
+        ),
+        cmd!(
+            "midi.note_edit",
+            "Edit Note",
+            [],
+            None,
+            "{clip, index, pitch?, start_ticks?, length_ticks?, velocity?}",
+            always,
+            note_edit
+        ),
+        cmd!(
+            "midi.note_delete",
+            "Delete Notes",
+            [],
+            None,
+            "{clip, indices: [n]}",
+            always,
+            note_delete
+        ),
+        cmd!(
+            "midi.notes_move",
+            "Move Notes",
+            [],
+            None,
+            "{clip, indices: [n], ticks?: 0, semitones?: 0}",
+            always,
+            notes_move
+        ),
     ]
 }
 
 fn clip_id(p: &Value, cmd: &str) -> Result<ClipId> {
-    p.get("clip").and_then(Value::as_u64).map(ClipId).ok_or_else(|| bad(cmd, "`clip` id required"))
+    p.get("clip")
+        .and_then(Value::as_u64)
+        .map(ClipId)
+        .ok_or_else(|| bad(cmd, "`clip` id required"))
 }
 
 fn seq_mut<'a>(e: &'a mut Engine, id: ClipId, cmd: &str) -> Result<&'a mut Sequence> {
@@ -47,21 +82,35 @@ fn notes(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn new_clip(e: &mut Engine, p: &Value) -> Result<Value> {
-    let t = tracks_required(e, "midi.new_clip", p)?.first().copied().ok_or_else(|| bad("midi.new_clip", "no track"))?;
+    let t = tracks_required(e, "midi.new_clip", p)?
+        .first()
+        .copied()
+        .ok_or_else(|| bad("midi.new_clip", "no track"))?;
     if !e.session().track(t).is_some_and(|x| x.kind.is_midi()) {
         return Err(bad("midi.new_clip", "not a MIDI or instrument track"));
     }
     let mut r = range_param(e, "midi.new_clip", p)?;
     if r.is_empty() {
         let s = e.session();
-        let bar = soundcraft_time::GridValue::Note { value: soundcraft_time::NoteValue::Bar, dotted: false, triplet: false };
+        let bar = soundcraft_time::GridValue::Note {
+            value: soundcraft_time::NoteValue::Bar,
+            dotted: false,
+            triplet: false,
+        };
         let start = bar.line_at_or_before(r.start, s.sample_rate, &s.tempo, s.frame_rate);
-        r = soundcraft_time::Range::new(start, bar.next_line(start, s.sample_rate, &s.tempo, s.frame_rate));
+        r = soundcraft_time::Range::new(
+            start,
+            bar.next_line(start, s.sample_rate, &s.tempo, s.frame_rate),
+        );
     }
     let s = e.session_mut();
     let id = s.new_clip_id();
     let name = s.track(t).map(|x| x.name.clone()).unwrap_or_default();
-    crate::edit::place_clip(s, t, Clip::midi(id, name, r.start, r.len(), Sequence::default()));
+    crate::edit::place_clip(
+        s,
+        t,
+        Clip::midi(id, name, r.start, r.len(), Sequence::default()),
+    );
     Ok(json!({"clip": id, "start": r.start, "end": r.end}))
 }
 
@@ -84,9 +133,15 @@ fn note_add(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn note_edit(e: &mut Engine, p: &Value) -> Result<Value> {
     let id = clip_id(p, "midi.note_edit")?;
-    let idx = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad("midi.note_edit", "`index` required"))? as usize;
+    let idx = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad("midi.note_edit", "`index` required"))? as usize;
     let seq = seq_mut(e, id, "midi.note_edit")?;
-    let n = seq.notes.get_mut(idx).ok_or_else(|| bad("midi.note_edit", "index out of range"))?;
+    let n = seq
+        .notes
+        .get_mut(idx)
+        .ok_or_else(|| bad("midi.note_edit", "index out of range"))?;
     if let Some(v) = p.get("pitch").and_then(Value::as_i64) {
         n.pitch = v.clamp(0, 127) as u8;
     }
@@ -105,7 +160,15 @@ fn note_edit(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn indices(p: &Value) -> Vec<usize> {
-    p.get("indices").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(|x| x as usize).collect()).unwrap_or_default()
+    p.get("indices")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_u64)
+                .map(|x| x as usize)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn note_delete(e: &mut Engine, p: &Value) -> Result<Value> {
@@ -146,25 +209,54 @@ mod tests {
     #[test]
     fn create_clip_add_edit_move_delete() {
         let mut e = Engine::default();
-        let t = e.session_mut().add_track(TrackKind::Instrument, ChannelFormat::Stereo, Some("Keys"));
+        let t =
+            e.session_mut()
+                .add_track(TrackKind::Instrument, ChannelFormat::Stereo, Some("Keys"));
         let r = e.execute("midi.new_clip", &json!({"track": t.0})).unwrap();
         let clip = r["clip"].as_u64().unwrap();
-        e.execute("midi.note_add", &json!({"clip": clip, "pitch": 60, "start_ticks": 0})).unwrap();
-        e.execute("midi.note_add", &json!({"clip": clip, "pitch": 64, "start_ticks": 480})).unwrap();
-        e.execute("midi.note_edit", &json!({"clip": clip, "index": 0, "velocity": 30})).unwrap();
-        e.execute("midi.notes_move", &json!({"clip": clip, "indices": [1], "semitones": 3})).unwrap();
+        e.execute(
+            "midi.note_add",
+            &json!({"clip": clip, "pitch": 60, "start_ticks": 0}),
+        )
+        .unwrap();
+        e.execute(
+            "midi.note_add",
+            &json!({"clip": clip, "pitch": 64, "start_ticks": 480}),
+        )
+        .unwrap();
+        e.execute(
+            "midi.note_edit",
+            &json!({"clip": clip, "index": 0, "velocity": 30}),
+        )
+        .unwrap();
+        e.execute(
+            "midi.notes_move",
+            &json!({"clip": clip, "indices": [1], "semitones": 3}),
+        )
+        .unwrap();
         let n = e.execute("midi.notes", &json!({"clip": clip})).unwrap();
         assert_eq!(n["notes"][0]["velocity"], 30);
         assert_eq!(n["notes"][1]["pitch"], 67);
-        e.execute("midi.note_delete", &json!({"clip": clip, "indices": [0]})).unwrap();
-        assert_eq!(e.execute("midi.notes", &json!({"clip": clip})).unwrap()["notes"].as_array().map(Vec::len), Some(1));
-        assert!(e.execute("midi.note_edit", &json!({"clip": clip, "index": 99})).is_err());
+        e.execute("midi.note_delete", &json!({"clip": clip, "indices": [0]}))
+            .unwrap();
+        assert_eq!(
+            e.execute("midi.notes", &json!({"clip": clip})).unwrap()["notes"]
+                .as_array()
+                .map(Vec::len),
+            Some(1)
+        );
+        assert!(
+            e.execute("midi.note_edit", &json!({"clip": clip, "index": 99}))
+                .is_err()
+        );
     }
 
     #[test]
     fn rejects_audio_tracks() {
         let mut e = Engine::default();
-        let t = e.session_mut().add_track(TrackKind::Audio, ChannelFormat::Mono, None);
+        let t = e
+            .session_mut()
+            .add_track(TrackKind::Audio, ChannelFormat::Mono, None);
         assert!(e.execute("midi.new_clip", &json!({"track": t.0})).is_err());
     }
 }

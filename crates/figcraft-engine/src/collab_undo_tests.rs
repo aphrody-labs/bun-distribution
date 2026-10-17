@@ -9,7 +9,14 @@ use crate::Session;
 use crate::collab::EngineRecompute;
 use crate::collab_tests::{base, random_command};
 
-fn session(seed: u64, clients: usize, rounds: usize, drops: bool, limits: Limits, recompute: &dyn Recompute) -> Sim {
+fn session(
+    seed: u64,
+    clients: usize,
+    rounds: usize,
+    drops: bool,
+    limits: Limits,
+    recompute: &dyn Recompute,
+) -> Sim {
     let mut sim = Sim::with_limits(base(), clients, seed, 10, limits).unwrap();
     for _ in 0..rounds {
         let i = sim.rng().below(clients);
@@ -32,7 +39,8 @@ fn session(seed: u64, clients: usize, rounds: usize, drops: bool, limits: Limits
                 let mut rng = Rng::new(sim.rng().next_u64());
                 let (cmd, params) = random_command(s.doc().unwrap(), &mut rng, false);
                 if s.execute(cmd, &params).is_ok() {
-                    sim.edit(i, s.doc().unwrap()).unwrap_or_else(|e| panic!("seed {seed}: {cmd} {params}: {e}"));
+                    sim.edit(i, s.doc().unwrap())
+                        .unwrap_or_else(|e| panic!("seed {seed}: {cmd} {params}: {e}"));
                 }
             }
         }
@@ -47,8 +55,16 @@ fn session(seed: u64, clients: usize, rounds: usize, drops: bool, limits: Limits
     if let Err(e) = sim.converged() {
         panic!("seed {seed}: {e}");
     }
-    assert!(sim.violations.is_empty(), "seed {seed}: {:?}", sim.violations);
-    assert!(sim.server.document().validate().is_empty(), "seed {seed}: {:?}", sim.server.document().validate());
+    assert!(
+        sim.violations.is_empty(),
+        "seed {seed}: {:?}",
+        sim.violations
+    );
+    assert!(
+        sim.server.document().validate().is_empty(),
+        "seed {seed}: {:?}",
+        sim.server.document().validate()
+    );
     sim
 }
 
@@ -60,7 +76,18 @@ fn people_undoing_real_commands_converge_without_reverting_others() {
     }
     // Dropped connections, and a log short enough that long absences catch up with snapshots.
     for seed in 10..13 {
-        undos += session(seed, 3, 60, true, Limits { max_log_batches: 4, ..Limits::default() }, &EngineRecompute).undos;
+        undos += session(
+            seed,
+            3,
+            60,
+            true,
+            Limits {
+                max_log_batches: 4,
+                ..Limits::default()
+            },
+            &EngineRecompute,
+        )
+        .undos;
     }
     assert!(undos > 20, "only {undos} undos and redos accepted");
 }
@@ -69,7 +96,10 @@ fn people_undoing_real_commands_converge_without_reverting_others() {
 #[ignore = "longer run for development: cargo test -p figcraft-engine collab -- --ignored"]
 fn many_people_undoing_real_commands_converge() {
     for seed in 100..160 {
-        let limits = Limits { max_log_batches: if seed % 2 == 0 { 5 } else { 10_000 }, ..Limits::default() };
+        let limits = Limits {
+            max_log_batches: if seed % 2 == 0 { 5 } else { 10_000 },
+            ..Limits::default()
+        };
         session(seed, 4, 150, seed % 3 == 0, limits, &EngineRecompute);
     }
 }

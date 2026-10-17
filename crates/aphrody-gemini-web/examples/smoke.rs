@@ -36,7 +36,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(prompt) = std::env::args().nth(1) {
         println!("\nsending: {prompt}");
         let reply = client.ask(&prompt, None).await?;
-        println!("reply ({} candidate(s)):\n{}", reply.candidate_count, reply.text);
+        println!(
+            "reply ({} candidate(s)):\n{}",
+            reply.candidate_count, reply.text
+        );
         println!(
             "thread: cid={:?} rid={:?} rcid={:?}",
             reply.metadata.conversation_id, reply.metadata.response_id, reply.metadata.choice_id,

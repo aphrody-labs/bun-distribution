@@ -32,7 +32,10 @@ pub const PERSPECTIVE: &str = "edit.perspectiveWarp";
 pub const PERSPECTIVE_SMART: &str = "layer.smartObjects.perspectiveWarp";
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 // ---------- params ----------
@@ -40,7 +43,8 @@ fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
 /// Liquify params: the strokes and the field resolution (`meshSize`, px per field node).
 pub fn liquify_params(cmd: &str, p: &Value, canvas: Rect) -> Result<(Vec<LiquifyStroke>, f64)> {
     let strokes: Vec<LiquifyStroke> = match p.get("strokes") {
-        Some(v) => serde_json::from_value(v.clone()).map_err(|e| bad(cmd, format!("bad `strokes`: {e}")))?,
+        Some(v) => serde_json::from_value(v.clone())
+            .map_err(|e| bad(cmd, format!("bad `strokes`: {e}")))?,
         None => Vec::new(),
     };
     for s in &strokes {
@@ -49,7 +53,9 @@ pub fn liquify_params(cmd: &str, p: &Value, canvas: Rect) -> Result<(Vec<Liquify
     let cell = match p.get("meshSize") {
         None | Some(Value::Null) => auto_cell(canvas),
         Some(v) => {
-            let c = v.as_f64().ok_or_else(|| bad(cmd, "`meshSize` is px per field node (1..64)"))?;
+            let c = v
+                .as_f64()
+                .ok_or_else(|| bad(cmd, "`meshSize` is px per field node (1..64)"))?;
             if !(1.0..=64.0).contains(&c) {
                 return Err(bad(cmd, "`meshSize` must be 1..64"));
             }
@@ -66,48 +72,83 @@ pub fn puppet_params(cmd: &str, p: &Value) -> Result<PuppetWarp> {
             .map_err(|e| bad(cmd, format!("bad `pins` (each {{\"src\":[x,y],\"dst\":[x,y],\"rotate\":deg?,\"depth\":n?}}): {e}")))?,
         None => Vec::new(),
     };
-    if pins.iter().any(|q| q.src.iter().chain(&q.dst).any(|v| !v.is_finite()) || q.rotate.is_some_and(|r| !r.is_finite())) {
+    if pins.iter().any(|q| {
+        q.src.iter().chain(&q.dst).any(|v| !v.is_finite())
+            || q.rotate.is_some_and(|r| !r.is_finite())
+    }) {
         return Err(bad(cmd, "pin coordinates must be finite"));
     }
     let mode = match p.get("mode").and_then(Value::as_str) {
-        Some(m) => PuppetMode::parse(m).ok_or_else(|| bad(cmd, format!("unknown mode \"{m}\" (rigid|normal|distort)")))?,
+        Some(m) => PuppetMode::parse(m)
+            .ok_or_else(|| bad(cmd, format!("unknown mode \"{m}\" (rigid|normal|distort)")))?,
         None => PuppetMode::Normal,
     };
     let density = match p.get("density").and_then(Value::as_str) {
-        Some(d) => PuppetDensity::parse(d).ok_or_else(|| bad(cmd, format!("unknown density \"{d}\" (fewer|normal|more)")))?,
+        Some(d) => PuppetDensity::parse(d)
+            .ok_or_else(|| bad(cmd, format!("unknown density \"{d}\" (fewer|normal|more)")))?,
         None => PuppetDensity::Normal,
     };
     let expansion = p.get("expansion").and_then(Value::as_f64).unwrap_or(2.0);
     if !expansion.is_finite() || expansion.abs() > 200.0 {
         return Err(bad(cmd, "`expansion` must be -200..200 px"));
     }
-    Ok(PuppetWarp { pins, mode, density, expansion })
+    Ok(PuppetWarp {
+        pins,
+        mode,
+        density,
+        expansion,
+    })
 }
 
 /// Perspective Warp params (planes, after the optional straighten).
 pub fn perspective_params(cmd: &str, p: &Value) -> Result<Vec<Plane>> {
     let mut planes: Vec<Plane> = match p.get("planes") {
-        Some(v) => serde_json::from_value(v.clone()).map_err(|e| bad(cmd, format!("bad `planes` (each {{\"src\":[4×[x,y]],\"dst\":[4×[x,y]]}}): {e}")))?,
-        None => return Err(bad(cmd, "pass `planes`: [{\"src\":[[x,y]×4],\"dst\":[[x,y]×4]}]")),
+        Some(v) => serde_json::from_value(v.clone()).map_err(|e| {
+            bad(
+                cmd,
+                format!("bad `planes` (each {{\"src\":[4×[x,y]],\"dst\":[4×[x,y]]}}): {e}"),
+            )
+        })?,
+        None => {
+            return Err(bad(
+                cmd,
+                "pass `planes`: [{\"src\":[[x,y]×4],\"dst\":[[x,y]×4]}]",
+            ));
+        }
     };
     if planes.is_empty() {
         return Err(bad(cmd, "`planes` is empty"));
     }
-    if planes.iter().any(|q| q.src.iter().chain(&q.dst).flatten().any(|v| !v.is_finite())) {
+    if planes
+        .iter()
+        .any(|q| q.src.iter().chain(&q.dst).flatten().any(|v| !v.is_finite()))
+    {
         return Err(bad(cmd, "plane corners must be finite"));
     }
     if let Some(s) = p.get("straighten").and_then(Value::as_str) {
-        let mode = Straighten::parse(s).ok_or_else(|| bad(cmd, format!("unknown straighten \"{s}\" (horizontal|vertical|auto)")))?;
+        let mode = Straighten::parse(s).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown straighten \"{s}\" (horizontal|vertical|auto)"),
+            )
+        })?;
         straighten(&mut planes, mode);
     }
     if PerspectiveMap::new(&planes).is_none() {
-        return Err(bad(cmd, "a plane is degenerate (its corners must form a quad)"));
+        return Err(bad(
+            cmd,
+            "a plane is degenerate (its corners must form a quad)",
+        ));
     }
     Ok(planes)
 }
 
 fn interp(p: &Value) -> Interp {
-    Interp::parse(p.get("interpolation").and_then(Value::as_str).unwrap_or("bicubic"))
+    Interp::parse(
+        p.get("interpolation")
+            .and_then(Value::as_str)
+            .unwrap_or("bicubic"),
+    )
 }
 
 // ---------- pixel operations ----------
@@ -124,8 +165,15 @@ fn mix_by_selection(old: &Surface, new: &Surface, sel: &Surface) -> Surface {
     let (o, w) = (old.read_region(area), new.read_region(area));
     let mut r = vec![0.0f32; o.len()];
     let aw = area.width() as usize;
-    for (i, ((op, np), rp)) in o.chunks_exact(n).zip(w.chunks_exact(n)).zip(r.chunks_exact_mut(n)).enumerate() {
-        let k = sel.sample_channel(area.x0 + (i % aw) as i32, area.y0 + (i / aw) as i32, 0).clamp(0.0, 1.0);
+    for (i, ((op, np), rp)) in o
+        .chunks_exact(n)
+        .zip(w.chunks_exact(n))
+        .zip(r.chunks_exact_mut(n))
+        .enumerate()
+    {
+        let k = sel
+            .sample_channel(area.x0 + (i % aw) as i32, area.y0 + (i / aw) as i32, 0)
+            .clamp(0.0, 1.0);
         if !fmt.alpha {
             for c in 0..n {
                 rp[c] = op[c] + (np[c] - op[c]) * k;
@@ -137,7 +185,11 @@ fn mix_by_selection(old: &Surface, new: &Surface, sel: &Surface) -> Surface {
         rp[a] = oa;
         for c in 0..a {
             let pm = op[c] * op[a] + (np[c] * np[a] - op[c] * op[a]) * k;
-            rp[c] = if oa > 0.0 { (pm / oa).clamp(0.0, 1.0) } else { 0.0 };
+            rp[c] = if oa > 0.0 {
+                (pm / oa).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
         }
     }
     out.write_region(area, &r);
@@ -146,7 +198,12 @@ fn mix_by_selection(old: &Surface, new: &Surface, sel: &Surface) -> Surface {
 }
 
 /// Liquifies a surface over `canvas` (the field's extent).
-pub fn liquify_surface(surf: &Surface, strokes: &[LiquifyStroke], cell: f64, canvas: Rect) -> Surface {
+pub fn liquify_surface(
+    surf: &Surface,
+    strokes: &[LiquifyStroke],
+    cell: f64,
+    canvas: Rect,
+) -> Surface {
     let field = LiquifyField::from_strokes(canvas, cell, strokes);
     apply_liquify(surf, &field)
 }
@@ -167,7 +224,9 @@ pub fn perspective_surface(surf: &Surface, planes: &[Plane], interp: Interp) -> 
     if PerspectiveMap::is_identity(planes) || b.is_empty() {
         return surf.clone();
     }
-    let Some(m) = PerspectiveMap::new(planes) else { return surf.clone() };
+    let Some(m) = PerspectiveMap::new(planes) else {
+        return surf.clone();
+    };
     warp_mesh_surface(surf, b, &|x, y| m.map(x, y), interp)
 }
 
@@ -180,8 +239,15 @@ pub fn apply_to_surface(id: &str, params: &Value, surf: &Surface, canvas: Rect) 
             Some(liquify_surface(surf, &strokes, cell, canvas))
         }
         // A stored warp too far to render leaves the smart object as it is (#1019).
-        PUPPET | PUPPET_SMART => Some(puppet_surface(surf, &puppet_params(id, params).ok()?, interp(params)).unwrap_or_else(|| surf.clone())),
-        PERSPECTIVE | PERSPECTIVE_SMART => Some(perspective_surface(surf, &perspective_params(id, params).ok()?, interp(params))),
+        PUPPET | PUPPET_SMART => Some(
+            puppet_surface(surf, &puppet_params(id, params).ok()?, interp(params))
+                .unwrap_or_else(|| surf.clone()),
+        ),
+        PERSPECTIVE | PERSPECTIVE_SMART => Some(perspective_surface(
+            surf,
+            &perspective_params(id, params).ok()?,
+            interp(params),
+        )),
         _ => None,
     }
 }
@@ -191,7 +257,10 @@ pub fn apply_to_surface(id: &str, params: &Value, surf: &Surface, canvas: Rect) 
 fn target(s: &Session, p: &Value) -> Result<LayerId> {
     match p.get("layer").and_then(Value::as_u64) {
         Some(v) => Ok(LayerId(v)),
-        None => s.active().and_then(|d| d.active_layer).ok_or(EngineError::Other("no active layer".into())),
+        None => s
+            .active()
+            .and_then(|d| d.active_layer)
+            .ok_or(EngineError::Other("no active layer".into())),
     }
 }
 
@@ -201,13 +270,21 @@ fn pixel_layer(s: &Session) -> std::result::Result<(), String> {
     match &d.doc.layer(id).ok_or("no active layer")?.content {
         LayerContent::Raster(_) => Ok(()),
         LayerContent::Smart(sm) if sm.cache.is_some() => Ok(()),
-        other => Err(format!("needs a pixel layer or smart object (active layer is {} {} layer)", other.article(), other.kind_name())),
+        other => Err(format!(
+            "needs a pixel layer or smart object (active layer is {} {} layer)",
+            other.article(),
+            other.kind_name()
+        )),
     }
 }
 
 fn smart_layer(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    match d.active_layer.and_then(|id| d.doc.layer(id)).map(|l| &l.content) {
+    match d
+        .active_layer
+        .and_then(|id| d.doc.layer(id))
+        .map(|l| &l.content)
+    {
         Some(LayerContent::Smart(_)) => Ok(()),
         _ => Err("the active layer is not a smart object".into()),
     }
@@ -216,7 +293,10 @@ fn smart_layer(s: &Session) -> std::result::Result<(), String> {
 fn check_locks(l: &Layer, group: Locks, position: bool) -> Result<()> {
     let locks = l.locks.union(group);
     if locks.all || locks.pixels || (position && locks.position) {
-        return Err(EngineError::Other(format!("Could not complete your request because the layer \"{}\" is locked", l.name)));
+        return Err(EngineError::Other(format!(
+            "Could not complete your request because the layer \"{}\" is locked",
+            l.name
+        )));
     }
     Ok(())
 }
@@ -228,7 +308,15 @@ type MaskFn<'a> = Option<&'a dyn Fn(&Surface, Option<&Surface>) -> Result<Surfac
 /// Deforms a layer's pixels (with the selection and canvas); an `Err` leaves the layer as it was.
 type LayerFn<'a> = &'a dyn Fn(&Surface, Option<&Surface>, Rect) -> Result<Surface>;
 
-fn run_on_layer(s: &mut Session, cmd: &str, label: &str, p: &Value, moves: bool, f: LayerFn, mask: MaskFn) -> Result<Value> {
+fn run_on_layer(
+    s: &mut Session,
+    cmd: &str,
+    label: &str,
+    p: &Value,
+    moves: bool,
+    f: LayerFn,
+    mask: MaskFn,
+) -> Result<Value> {
     let id = target(s, p)?;
     let mut params = p.clone();
     if let Value::Object(m) = &mut params {
@@ -247,12 +335,20 @@ fn run_on_layer(s: &mut Session, cmd: &str, label: &str, p: &Value, moves: bool,
             // As filters do: a pixel or full lock refuses the smart filter (the position lock
             // doesn't, since the smart object itself stays put).
             check_locks(l, group, false)?;
-            let sf = SmartFilter { command: cmd.to_string(), params: params.clone(), blend: photocraft_color::BlendMode::Normal, opacity: 1.0, visible: true };
+            let sf = SmartFilter {
+                command: cmd.to_string(),
+                params: params.clone(),
+                blend: photocraft_color::BlendMode::Normal,
+                opacity: 1.0,
+                visible: true,
+            };
             return crate::smart_cmds::add_smart_filter(doc, id, sf, selection.as_ref());
         }
         check_locks(l, group, moves)?;
         let LayerContent::Raster(surf) = &mut l.content else {
-            return Err(EngineError::Other(format!("{label} needs a pixel layer (rasterize it first)")));
+            return Err(EngineError::Other(format!(
+                "{label} needs a pixel layer (rasterize it first)"
+            )));
         };
         *surf = f(surf, selection.as_ref(), canvas)?;
         // A linked layer mask follows a geometric warp, only where the pixels moved (#3083).
@@ -275,7 +371,10 @@ fn liquify(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let t0 = Stopwatch::start();
     let field = LiquifyField::from_strokes(canvas, cell, &strokes);
-    let smart = matches!(s.active().and_then(|d| d.doc.layer(id)).map(|l| &l.content), Some(LayerContent::Smart(_)));
+    let smart = matches!(
+        s.active().and_then(|d| d.doc.layer(id)).map(|l| &l.content),
+        Some(LayerContent::Smart(_))
+    );
     if field.is_identity() && !smart {
         return Ok(json!({"layer": id.0, "changed": false}));
     }
@@ -302,7 +401,11 @@ fn liquify(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Lifts the selected pixels (when there is a selection), deforms them with `f` and puts them
 /// back over the rest; without a selection deforms the whole surface.
-fn deform_selected(surf: &Surface, sel: Option<&Surface>, f: &dyn Fn(&Surface) -> Result<Surface>) -> Result<Surface> {
+fn deform_selected(
+    surf: &Surface,
+    sel: Option<&Surface>,
+    f: &dyn Fn(&Surface) -> Result<Surface>,
+) -> Result<Surface> {
     match sel {
         Some(sel) => {
             let (lifted, mut rest) = crate::transform_cmds::split_selected(surf, sel)?;
@@ -313,7 +416,11 @@ fn deform_selected(surf: &Surface, sel: Option<&Surface>, f: &dyn Fn(&Surface) -
         }
         None => {
             let fmt = surf.format();
-            let src = if fmt.alpha { surf.clone() } else { surf.convert(PixelFormat::new(fmt.mode, fmt.sample, true)) };
+            let src = if fmt.alpha {
+                surf.clone()
+            } else {
+                surf.convert(PixelFormat::new(fmt.mode, fmt.sample, true))
+            };
             f(&src)
         }
     }
@@ -322,30 +429,60 @@ fn deform_selected(surf: &Surface, sel: Option<&Surface>, f: &dyn Fn(&Surface) -
 fn puppet(s: &mut Session, p: &Value, cmd: &str) -> Result<Value> {
     let w = puppet_params(cmd, p)?;
     let id = target(s, p)?;
-    let smart = matches!(s.active().and_then(|d| d.doc.layer(id)).map(|l| &l.content), Some(LayerContent::Smart(_)));
+    let smart = matches!(
+        s.active().and_then(|d| d.doc.layer(id)).map(|l| &l.content),
+        Some(LayerContent::Smart(_))
+    );
     if w.is_identity() && !smart {
         return Ok(json!({"layer": id.0, "changed": false}));
     }
     let it = interp(p);
-    let too_far = || bad(cmd, "the pins stretch the content too far: the result would cover more than 2^30 pixels");
-    run_on_layer(s, cmd, "Puppet Warp", p, true, &|surf, sel, _| deform_selected(surf, sel, &|x| puppet_surface(x, &w, it).ok_or_else(too_far)), None)
+    let too_far = || {
+        bad(
+            cmd,
+            "the pins stretch the content too far: the result would cover more than 2^30 pixels",
+        )
+    };
+    run_on_layer(
+        s,
+        cmd,
+        "Puppet Warp",
+        p,
+        true,
+        &|surf, sel, _| {
+            deform_selected(surf, sel, &|x| {
+                puppet_surface(x, &w, it).ok_or_else(too_far)
+            })
+        },
+        None,
+    )
 }
 
 fn perspective(s: &mut Session, p: &Value, cmd: &str) -> Result<Value> {
     let planes = perspective_params(cmd, p)?;
     let id = target(s, p)?;
-    let smart = matches!(s.active().and_then(|d| d.doc.layer(id)).map(|l| &l.content), Some(LayerContent::Smart(_)));
+    let smart = matches!(
+        s.active().and_then(|d| d.doc.layer(id)).map(|l| &l.content),
+        Some(LayerContent::Smart(_))
+    );
     if PerspectiveMap::is_identity(&planes) && !smart {
         return Ok(json!({"layer": id.0, "changed": false, "planes": planes}));
     }
     let it = interp(p);
     let map = PerspectiveMap::new(&planes);
     let mask_fn = |m: &Surface, sel: Option<&Surface>| {
-        let Some(map) = &map else { return Ok(m.clone()) };
+        let Some(map) = &map else {
+            return Ok(m.clone());
+        };
         let f = |x, y| map.map(x, y);
         let whole = |m: &Surface| Ok(warp_mesh_gray(m, &f, Interp::Bilinear));
         match sel {
-            Some(sel) => crate::transform_cmds::move_gray_selected(m, sel, &|lifted, src| Ok(warp_mesh_surface(lifted, src, &f, Interp::Bilinear)), &whole),
+            Some(sel) => crate::transform_cmds::move_gray_selected(
+                m,
+                sel,
+                &|lifted, src| Ok(warp_mesh_surface(lifted, src, &f, Interp::Bilinear)),
+                &whole,
+            ),
             None => whole(m),
         }
     };

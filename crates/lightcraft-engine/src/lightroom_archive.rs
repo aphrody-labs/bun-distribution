@@ -72,7 +72,9 @@ pub fn store(directory: &Path, data: &CatalogImport) -> Result<PathBuf, String> 
         }
     }
 
-    let index = managed.last().map_or(0, |entry| entry.index.saturating_add(1));
+    let index = managed
+        .last()
+        .map_or(0, |entry| entry.index.saturating_add(1));
     if managed.last().is_some_and(|entry| entry.index == u64::MAX) {
         let _ = remove_managed_file(&temporary);
         return Err("managed Lightroom archive index is exhausted".into());
@@ -91,7 +93,11 @@ pub fn store(directory: &Path, data: &CatalogImport) -> Result<PathBuf, String> 
             return Err(error.to_string());
         }
     };
-    let new_entry = Managed { index, path: destination.clone(), size };
+    let new_entry = Managed {
+        index,
+        path: destination.clone(),
+        size,
+    };
     let mut after = managed;
     after.push(new_entry);
     after.sort_by_key(|entry| entry.index);
@@ -116,11 +122,16 @@ pub fn store(directory: &Path, data: &CatalogImport) -> Result<PathBuf, String> 
         return Err(error.to_string());
     }
     if let Err(error) = remove_managed_file(&temporary) {
-        return Err(format!("archive published but temporary cleanup failed: {error}"));
+        return Err(format!(
+            "archive published but temporary cleanup failed: {error}"
+        ));
     }
     for (old, held) in quarantined {
         if let Err(error) = remove_managed_file(&held) {
-            return Err(format!("archive published but could not retire {}: {error}", old.display()));
+            return Err(format!(
+                "archive published but could not retire {}: {error}",
+                old.display()
+            ));
         }
     }
     Ok(destination)
@@ -128,7 +139,10 @@ pub fn store(directory: &Path, data: &CatalogImport) -> Result<PathBuf, String> 
 
 /// Store source data when possible. An archive that reaches its bounded size is
 /// omitted with a warning so catalog import can still complete.
-pub fn store_best_effort(directory: &Path, data: &CatalogImport) -> Result<Option<PathBuf>, String> {
+pub fn store_best_effort(
+    directory: &Path,
+    data: &CatalogImport,
+) -> Result<Option<PathBuf>, String> {
     match store(directory, data) {
         Ok(path) => Ok(Some(path)),
         Err(error) if error.contains("Lightroom archive exceeds 32 MiB") => Ok(None),
@@ -147,14 +161,20 @@ fn prepare_directory(directory: &Path) -> Result<(), String> {
     match fs::symlink_metadata(directory) {
         Ok(meta) => {
             if meta.file_type().is_symlink() || !meta.is_dir() {
-                return Err(format!("archive directory is not a real directory: {}", directory.display()));
+                return Err(format!(
+                    "archive directory is not a real directory: {}",
+                    directory.display()
+                ));
             }
         }
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
             fs::create_dir_all(directory).map_err(|e| e.to_string())?;
             let meta = fs::symlink_metadata(directory).map_err(|e| e.to_string())?;
             if meta.file_type().is_symlink() || !meta.is_dir() {
-                return Err(format!("archive directory is not a real directory: {}", directory.display()));
+                return Err(format!(
+                    "archive directory is not a real directory: {}",
+                    directory.display()
+                ));
             }
         }
         Err(error) => return Err(error.to_string()),
@@ -164,17 +184,28 @@ fn prepare_directory(directory: &Path) -> Result<(), String> {
 
 fn managed_files(directory: &Path) -> Result<Vec<Managed>, String> {
     let mut files = Vec::new();
-    for (seen, result) in fs::read_dir(directory).map_err(|e| e.to_string())?.enumerate() {
+    for (seen, result) in fs::read_dir(directory)
+        .map_err(|e| e.to_string())?
+        .enumerate()
+    {
         if seen >= MAX_SCAN {
-            return Err(format!("too many entries in archive directory (limit {MAX_SCAN})"));
+            return Err(format!(
+                "too many entries in archive directory (limit {MAX_SCAN})"
+            ));
         }
         let entry = result.map_err(|e| e.to_string())?;
-        let Some(index) = parse_managed_name(&entry.file_name()) else { continue };
+        let Some(index) = parse_managed_name(&entry.file_name()) else {
+            continue;
+        };
         let meta = fs::symlink_metadata(entry.path()).map_err(|e| e.to_string())?;
         if meta.file_type().is_symlink() || !meta.is_file() {
             continue;
         }
-        files.push(Managed { index, path: entry.path(), size: meta.len() });
+        files.push(Managed {
+            index,
+            path: entry.path(),
+            size: meta.len(),
+        });
     }
     Ok(files)
 }
@@ -205,7 +236,11 @@ fn next_destination(directory: &Path, mut index: u64) -> Result<PathBuf, String>
     for _ in 0..MAX_SCAN {
         let path = directory.join(format!("{NAME_PREFIX}{index}{NAME_SUFFIX}"));
         match fs::symlink_metadata(&path) {
-            Ok(_) => index = index.checked_add(1).ok_or("managed archive index is exhausted")?,
+            Ok(_) => {
+                index = index
+                    .checked_add(1)
+                    .ok_or("managed archive index is exhausted")?
+            }
             Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(path),
             Err(error) => return Err(error.to_string()),
         }
@@ -215,7 +250,10 @@ fn next_destination(directory: &Path, mut index: u64) -> Result<PathBuf, String>
 
 fn write_archive(path: &Path, data: &CatalogImport) -> Result<(), String> {
     lightcraft_catalog::safe_file::write_atomic_with(path, &mut |raw| {
-        let mut bounded = BoundedWriter { inner: raw, total: 0 };
+        let mut bounded = BoundedWriter {
+            inner: raw,
+            total: 0,
+        };
         bounded.write_all(HEADER)?;
         let mut compressor = ZlibWriter::new(&mut bounded);
         serde_json::to_writer(&mut compressor, &ArchiveRef(data)).map_err(json_io)?;
@@ -237,7 +275,10 @@ struct BoundedWriter<'a> {
 
 impl Write for BoundedWriter<'_> {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        let next = self.total.checked_add(bytes.len() as u64).ok_or_else(limit_error)?;
+        let next = self
+            .total
+            .checked_add(bytes.len() as u64)
+            .ok_or_else(limit_error)?;
         if next > MAX_ARCHIVE_BYTES {
             return Err(limit_error());
         }
@@ -252,7 +293,10 @@ impl Write for BoundedWriter<'_> {
 }
 
 fn limit_error() -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, "Lightroom archive exceeds 32 MiB")
+    io::Error::new(
+        io::ErrorKind::InvalidData,
+        "Lightroom archive exceeds 32 MiB",
+    )
 }
 
 struct ZlibWriter<'a, 'b> {
@@ -264,7 +308,11 @@ struct ZlibWriter<'a, 'b> {
 impl<'a, 'b> ZlibWriter<'a, 'b> {
     fn new(sink: &'a mut BoundedWriter<'b>) -> ZlibWriter<'a, 'b> {
         let flags = create_comp_flags_from_zip_params(6, 15, 0);
-        ZlibWriter { sink, compressor: CompressorOxide::new(flags), plain: 0 }
+        ZlibWriter {
+            sink,
+            compressor: CompressorOxide::new(flags),
+            plain: 0,
+        }
     }
 
     fn run(&mut self, input: &[u8], flush: MZFlush) -> io::Result<()> {
@@ -278,20 +326,34 @@ impl<'a, 'b> ZlibWriter<'a, 'b> {
                 Ok(MZStatus::Ok) => {
                     let consumed = result.bytes_consumed;
                     if consumed > rest.len() {
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid compressor progress"));
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            "invalid compressor progress",
+                        ));
                     }
                     rest = &rest[consumed..];
                     if rest.is_empty() && flush == MZFlush::None {
                         return Ok(());
                     }
                     if consumed == 0 && result.bytes_written == 0 {
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, "compressor made no progress"));
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            "compressor made no progress",
+                        ));
                     }
                 }
                 Ok(status) => {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, format!("unsupported compressor status: {status:?}")));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("unsupported compressor status: {status:?}"),
+                    ));
                 }
-                Err(error) => return Err(io::Error::new(io::ErrorKind::InvalidData, format!("compression failed: {error:?}"))),
+                Err(error) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("compression failed: {error:?}"),
+                    ));
+                }
             }
         }
     }
@@ -306,7 +368,10 @@ impl Write for ZlibWriter<'_, '_> {
         if bytes.is_empty() {
             return Ok(0);
         }
-        let next = self.plain.checked_add(bytes.len() as u64).ok_or_else(limit_error)?;
+        let next = self
+            .plain
+            .checked_add(bytes.len() as u64)
+            .ok_or_else(limit_error)?;
         if next > MAX_ARCHIVE_BYTES {
             return Err(limit_error());
         }
@@ -323,7 +388,11 @@ impl Write for ZlibWriter<'_, '_> {
 fn same_bounded(left: &Path, right: &Path) -> io::Result<bool> {
     let left_meta = fs::symlink_metadata(left)?;
     let right_meta = fs::symlink_metadata(right)?;
-    if left_meta.file_type().is_symlink() || right_meta.file_type().is_symlink() || !left_meta.is_file() || !right_meta.is_file() {
+    if left_meta.file_type().is_symlink()
+        || right_meta.file_type().is_symlink()
+        || !left_meta.is_file()
+        || !right_meta.is_file()
+    {
         return Ok(false);
     }
     let left_len = left_meta.len();
@@ -354,13 +423,22 @@ fn retirement_set(entries: &[Managed]) -> Result<Vec<Managed>, String> {
     retirement_set_protected(entries, None)
 }
 
-fn retirement_set_protected(entries: &[Managed], protected: Option<&Path>) -> Result<Vec<Managed>, String> {
+fn retirement_set_protected(
+    entries: &[Managed],
+    protected: Option<&Path>,
+) -> Result<Vec<Managed>, String> {
     let mut ordered = entries.to_vec();
     ordered.sort_by_key(|entry| entry.index);
-    let mut total = ordered.iter().try_fold(0u64, |sum, entry| sum.checked_add(entry.size)).ok_or("archive size overflow")?;
+    let mut total = ordered
+        .iter()
+        .try_fold(0u64, |sum, entry| sum.checked_add(entry.size))
+        .ok_or("archive size overflow")?;
     let mut retirees = Vec::new();
     while ordered.len() > MAX_MANAGED_ARCHIVES || total > MAX_TOTAL_ARCHIVE_BYTES {
-        let Some(position) = ordered.iter().position(|entry| protected.is_none_or(|path| entry.path != path)) else {
+        let Some(position) = ordered
+            .iter()
+            .position(|entry| protected.is_none_or(|path| entry.path != path))
+        else {
             return Err("cannot satisfy archive retention limit".into());
         };
         let oldest = ordered.remove(position);
@@ -370,12 +448,20 @@ fn retirement_set_protected(entries: &[Managed], protected: Option<&Path>) -> Re
     Ok(retirees)
 }
 
-fn prune_existing(directory: &Path, entries: &mut [Managed], protected: Option<&Path>) -> Result<(), String> {
+fn prune_existing(
+    directory: &Path,
+    entries: &mut [Managed],
+    protected: Option<&Path>,
+) -> Result<(), String> {
     let retirees = retirement_set_protected(entries, protected)?;
     let quarantined = quarantine(&retirees)?;
     for (old, held) in quarantined {
         if let Err(error) = remove_managed_file(&held) {
-            return Err(format!("could not retire {} from {}: {error}", old.display(), directory.display()));
+            return Err(format!(
+                "could not retire {} from {}: {error}",
+                old.display(),
+                directory.display()
+            ));
         }
     }
     Ok(())
@@ -385,11 +471,16 @@ fn quarantine(entries: &[Managed]) -> Result<Vec<(PathBuf, PathBuf)>, String> {
     let mut moved = Vec::new();
     let pid = std::process::id();
     for (slot, entry) in entries.iter().enumerate() {
-        let held = entry.path.with_file_name(format!(".lightroom-retire-{pid}-{slot}.tmp"));
+        let held = entry
+            .path
+            .with_file_name(format!(".lightroom-retire-{pid}-{slot}.tmp"));
         match fs::symlink_metadata(&held) {
             Ok(_) => {
                 rollback_quarantine(&moved);
-                return Err(format!("retention temporary path already exists: {}", held.display()));
+                return Err(format!(
+                    "retention temporary path already exists: {}",
+                    held.display()
+                ));
             }
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(error) => {
@@ -403,7 +494,10 @@ fn quarantine(entries: &[Managed]) -> Result<Vec<(PathBuf, PathBuf)>, String> {
         })?;
         if meta.file_type().is_symlink() || !meta.is_file() {
             rollback_quarantine(&moved);
-            return Err(format!("managed archive changed into non-file: {}", entry.path.display()));
+            return Err(format!(
+                "managed archive changed into non-file: {}",
+                entry.path.display()
+            ));
         }
         if let Err(error) = fs::rename(&entry.path, &held) {
             rollback_quarantine(&moved);
@@ -423,14 +517,20 @@ fn rollback_quarantine(moved: &[(PathBuf, PathBuf)]) {
 fn publish_new(temporary: &Path, destination: &Path) -> io::Result<()> {
     match fs::hard_link(temporary, destination) {
         Ok(()) => Ok(()),
-        Err(error) => Err(io::Error::new(error.kind(), format!("cannot atomically publish archive: {error}"))),
+        Err(error) => Err(io::Error::new(
+            error.kind(),
+            format!("cannot atomically publish archive: {error}"),
+        )),
     }
 }
 
 fn remove_managed_file(path: &Path) -> io::Result<()> {
     let meta = fs::symlink_metadata(path)?;
     if meta.file_type().is_symlink() || !meta.is_file() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "refusing to remove non-regular archive path"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "refusing to remove non-regular archive path",
+        ));
     }
     fs::remove_file(path)
 }
@@ -511,7 +611,11 @@ mod tests {
     static NEXT: AtomicU64 = AtomicU64::new(0);
 
     fn tempdir() -> PathBuf {
-        let path = std::env::temp_dir().join(format!("lightcraft-lr-archive-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        let path = std::env::temp_dir().join(format!(
+            "lightcraft-lr-archive-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
         fs::create_dir_all(&path).unwrap();
         path
     }
@@ -532,25 +636,44 @@ mod tests {
             source_id: 7,
             uuid: "uuid-7".into(),
             path: "/photos/one.raw".into(),
-            image: BTreeMap::from([("rating".into(), serde_json::json!(5)), ("opaque_blob".into(), serde_json::json!([1, 2, 3, 4]))]),
+            image: BTreeMap::from([
+                ("rating".into(), serde_json::json!(5)),
+                ("opaque_blob".into(), serde_json::json!([1, 2, 3, 4])),
+            ]),
             settings: "s = { Exposure2012 = 0.75 }".into(),
             xmp: "<xmp>decoded</xmp>".into(),
             keywords: vec!["Trips|Goa".into()],
-            history: vec![BTreeMap::from([("text".into(), serde_json::json!("step")), ("curve".into(), serde_json::json!([0, 128, 255]))])],
-            snapshots: vec![BTreeMap::from([("name".into(), serde_json::json!("before"))])],
+            history: vec![BTreeMap::from([
+                ("text".into(), serde_json::json!("step")),
+                ("curve".into(), serde_json::json!([0, 128, 255])),
+            ])],
+            snapshots: vec![BTreeMap::from([(
+                "name".into(),
+                serde_json::json!("before"),
+            )])],
         };
         CatalogImport {
             source: "source.lrcat".into(),
             photos: vec![photo],
-            collections: vec![BTreeMap::from([("name".into(), serde_json::json!("Keepers"))])],
+            collections: vec![BTreeMap::from([(
+                "name".into(),
+                serde_json::json!("Keepers"),
+            )])],
             members: vec![BTreeMap::from([("image".into(), serde_json::json!(7))])],
-            collection_content: vec![BTreeMap::from([("rule".into(), serde_json::json!("rating > 3"))])],
+            collection_content: vec![BTreeMap::from([(
+                "rule".into(),
+                serde_json::json!("rating > 3"),
+            )])],
             warnings: vec!["one warning".into()],
         }
     }
 
     fn managed_count(path: &Path) -> usize {
-        fs::read_dir(path).unwrap().filter_map(Result::ok).filter(|entry| parse_managed_name(&entry.file_name()).is_some()).count()
+        fs::read_dir(path)
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|entry| parse_managed_name(&entry.file_name()).is_some())
+            .count()
     }
 
     #[test]
@@ -571,7 +694,10 @@ mod tests {
         let first = store(&path, &input).unwrap();
         for index in 1..MAX_MANAGED_ARCHIVES {
             let filler = path.join(format!("lightroom-import-{index}.lca"));
-            File::create(filler).unwrap().set_len(19 * 1024 * 1024).unwrap();
+            File::create(filler)
+                .unwrap()
+                .set_len(19 * 1024 * 1024)
+                .unwrap();
         }
         let reused = store(&path, &input).unwrap();
         assert_eq!(reused, first);
@@ -619,7 +745,10 @@ mod tests {
                 settings: String::new(),
                 xmp: String::new(),
                 keywords: Vec::new(),
-                history: vec![BTreeMap::from([("text".into(), serde_json::json!(format!("history-{index}-{}", "x".repeat(8 * 1024))))])],
+                history: vec![BTreeMap::from([(
+                    "text".into(),
+                    serde_json::json!(format!("history-{index}-{}", "x".repeat(8 * 1024))),
+                )])],
                 snapshots: Vec::new(),
             })
             .collect();
@@ -634,24 +763,55 @@ mod tests {
         let archive = store(&path, &rich_data()).unwrap();
         let bytes = fs::read(archive).unwrap();
         assert!(bytes.starts_with(HEADER));
-        let json = miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(&bytes[HEADER.len()..], MAX_ARCHIVE_BYTES as usize).unwrap();
+        let json = miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(
+            &bytes[HEADER.len()..],
+            MAX_ARCHIVE_BYTES as usize,
+        )
+        .unwrap();
         let decoded: Value = serde_json::from_slice(&json).unwrap();
         assert_eq!(decoded["version"], serde_json::json!(FORMAT_VERSION));
         assert_eq!(decoded["source"], serde_json::json!("source.lrcat"));
         assert_eq!(decoded["photos"].as_array().unwrap().len(), 1);
         assert_eq!(decoded["photos"][0]["source_id"], serde_json::json!(7));
         assert_eq!(decoded["photos"][0]["uuid"], serde_json::json!("uuid-7"));
-        assert_eq!(decoded["photos"][0]["path"], serde_json::json!("/photos/one.raw"));
-        assert_eq!(decoded["photos"][0]["settings"], serde_json::json!("s = { Exposure2012 = 0.75 }"));
-        assert_eq!(decoded["photos"][0]["xmp"], serde_json::json!("<xmp>decoded</xmp>"));
-        assert_eq!(decoded["photos"][0]["keywords"], serde_json::json!(["Trips|Goa"]));
-        assert_eq!(decoded["photos"][0]["image"]["rating"], serde_json::json!(5));
-        assert_eq!(decoded["photos"][0]["image"]["opaque_blob"], serde_json::json!([1, 2, 3, 4]));
+        assert_eq!(
+            decoded["photos"][0]["path"],
+            serde_json::json!("/photos/one.raw")
+        );
+        assert_eq!(
+            decoded["photos"][0]["settings"],
+            serde_json::json!("s = { Exposure2012 = 0.75 }")
+        );
+        assert_eq!(
+            decoded["photos"][0]["xmp"],
+            serde_json::json!("<xmp>decoded</xmp>")
+        );
+        assert_eq!(
+            decoded["photos"][0]["keywords"],
+            serde_json::json!(["Trips|Goa"])
+        );
+        assert_eq!(
+            decoded["photos"][0]["image"]["rating"],
+            serde_json::json!(5)
+        );
+        assert_eq!(
+            decoded["photos"][0]["image"]["opaque_blob"],
+            serde_json::json!([1, 2, 3, 4])
+        );
         assert_eq!(decoded["photos"][0]["history"].as_array().unwrap().len(), 1);
-        assert_eq!(decoded["photos"][0]["history"][0]["curve"], serde_json::json!([0, 128, 255]));
-        assert_eq!(decoded["photos"][0]["snapshots"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            decoded["photos"][0]["history"][0]["curve"],
+            serde_json::json!([0, 128, 255])
+        );
+        assert_eq!(
+            decoded["photos"][0]["snapshots"].as_array().unwrap().len(),
+            1
+        );
         assert_eq!(decoded["collections"].as_array().unwrap().len(), 1);
-        assert_eq!(decoded["collections"][0]["name"], serde_json::json!("Keepers"));
+        assert_eq!(
+            decoded["collections"][0]["name"],
+            serde_json::json!("Keepers")
+        );
         assert_eq!(decoded["members"].as_array().unwrap().len(), 1);
         assert_eq!(decoded["members"][0]["image"], serde_json::json!(7));
         assert_eq!(decoded["collection_content"].as_array().unwrap().len(), 1);
@@ -662,12 +822,23 @@ mod tests {
     #[test]
     fn retention_enforces_aggregate_byte_cap_with_small_synthetic_entries() {
         let mut entries: Vec<_> = (0..MAX_MANAGED_ARCHIVES as u64)
-            .map(|index| Managed { index, path: PathBuf::from(format!("lightroom-import-{index}.lca")), size: 20 * 1024 * 1024 })
+            .map(|index| Managed {
+                index,
+                path: PathBuf::from(format!("lightroom-import-{index}.lca")),
+                size: 20 * 1024 * 1024,
+            })
             .collect();
-        entries.push(Managed { index: 8, path: PathBuf::from("lightroom-import-8.lca"), size: 20 * 1024 * 1024 });
+        entries.push(Managed {
+            index: 8,
+            path: PathBuf::from("lightroom-import-8.lca"),
+            size: 20 * 1024 * 1024,
+        });
         let retirees = retirement_set(&entries).unwrap();
         assert_eq!(retirees.len(), 3);
-        assert_eq!(retirees.iter().map(|entry| entry.index).collect::<Vec<_>>(), vec![0, 1, 2]);
+        assert_eq!(
+            retirees.iter().map(|entry| entry.index).collect::<Vec<_>>(),
+            vec![0, 1, 2]
+        );
     }
 
     #[test]
@@ -677,7 +848,11 @@ mod tests {
         let held = path.join(format!(".lightroom-retire-{}-0.tmp", std::process::id()));
         fs::write(&old, b"old archive").unwrap();
         fs::write(&held, b"occupied").unwrap();
-        let entry = Managed { index: 0, path: old.clone(), size: 11 };
+        let entry = Managed {
+            index: 0,
+            path: old.clone(),
+            size: 11,
+        };
         assert!(quarantine(&[entry]).is_err());
         assert_eq!(fs::read(&old).unwrap(), b"old archive");
         fs::remove_dir_all(path).unwrap();

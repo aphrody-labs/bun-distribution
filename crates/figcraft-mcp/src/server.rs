@@ -53,12 +53,19 @@ fn error(id: Value, code: i64, message: impl Into<String>) -> Value {
 }
 
 fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
-    payload.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| payload.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into())
+    payload
+        .downcast_ref::<&str>()
+        .map(|s| s.to_string())
+        .or_else(|| payload.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "panic".into())
 }
 
 impl Server {
     pub fn new(backend: Box<dyn Backend>) -> Self {
-        Self { backend, initialized: false }
+        Self {
+            backend,
+            initialized: false,
+        }
     }
 
     /// A server over a fresh headless session.
@@ -105,7 +112,11 @@ impl Server {
                 if batch.is_empty() {
                     Some(error(Value::Null, INVALID_REQUEST, "empty batch"))
                 } else {
-                    let replies: Vec<Value> = batch.into_iter().take(1000).filter_map(|m| self.handle(m)).collect();
+                    let replies: Vec<Value> = batch
+                        .into_iter()
+                        .take(1000)
+                        .filter_map(|m| self.handle(m))
+                        .collect();
                     (!replies.is_empty()).then_some(Value::Array(replies))
                 }
             }
@@ -117,14 +128,25 @@ impl Server {
 
     /// Handle one JSON-RPC message; `None` for notifications and responses.
     pub fn handle(&mut self, msg: Value) -> Option<Value> {
-        let Value::Object(o) = &msg else { return Some(error(Value::Null, INVALID_REQUEST, "message must be a JSON object")) };
+        let Value::Object(o) = &msg else {
+            return Some(error(
+                Value::Null,
+                INVALID_REQUEST,
+                "message must be a JSON object",
+            ));
+        };
         let id = o.get("id").cloned();
         let Some(method) = o.get("method").and_then(Value::as_str) else {
             // A response to a server→client request (we send none): ignore.
             if o.contains_key("result") || o.contains_key("error") {
                 return None;
             }
-            return Some(error(id.filter(|i| i.is_string() || i.is_number()).unwrap_or(Value::Null), INVALID_REQUEST, "missing `method` (a string)"));
+            return Some(error(
+                id.filter(|i| i.is_string() || i.is_number())
+                    .unwrap_or(Value::Null),
+                INVALID_REQUEST,
+                "missing `method` (a string)",
+            ));
         };
         let params = o.get("params").cloned().unwrap_or(Value::Null);
         let Some(id) = id else {
@@ -132,14 +154,27 @@ impl Server {
             return None;
         };
         if !(id.is_string() || id.is_number()) {
-            return Some(error(Value::Null, INVALID_REQUEST, "`id` must be a string or number"));
+            return Some(error(
+                Value::Null,
+                INVALID_REQUEST,
+                "`id` must be a string or number",
+            ));
         }
         if !(params.is_object() || params.is_null()) {
             return Some(error(id, INVALID_PARAMS, "`params` must be an object"));
         }
         // A bug that panics fails this request only; the server keeps serving.
-        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.request(method, &params))).unwrap_or_else(|p| {
-            Err((INTERNAL_ERROR, format!("internal error in `{method}`: {} (please report this bug)", panic_message(p.as_ref()))))
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.request(method, &params)
+        }))
+        .unwrap_or_else(|p| {
+            Err((
+                INTERNAL_ERROR,
+                format!(
+                    "internal error in `{method}`: {} (please report this bug)",
+                    panic_message(p.as_ref())
+                ),
+            ))
         });
         Some(match r {
             Ok(r) => response(id, r),
@@ -150,7 +185,9 @@ impl Server {
     fn notification(&mut self, method: &str) {
         match method {
             "notifications/initialized" => self.initialized = true,
-            "notifications/cancelled" | "notifications/progress" | "notifications/roots/list_changed" => {}
+            "notifications/cancelled"
+            | "notifications/progress"
+            | "notifications/roots/list_changed" => {}
             other => log::debug!("ignoring notification {other}"),
         }
     }
@@ -158,8 +195,15 @@ impl Server {
     fn request(&mut self, method: &str, params: &Value) -> Result<Value, (i64, String)> {
         match method {
             "initialize" => {
-                let asked = params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOL_VERSION);
-                let version = if SUPPORTED_VERSIONS.contains(&asked) { asked } else { PROTOCOL_VERSION };
+                let asked = params
+                    .get("protocolVersion")
+                    .and_then(Value::as_str)
+                    .unwrap_or(PROTOCOL_VERSION);
+                let version = if SUPPORTED_VERSIONS.contains(&asked) {
+                    asked
+                } else {
+                    PROTOCOL_VERSION
+                };
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": {
@@ -174,7 +218,10 @@ impl Server {
             "ping" => Ok(json!({})),
             "tools/list" => Ok(json!({"tools": tool_definitions()})),
             "tools/call" => {
-                let name = params.get("name").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing tool `name` (a string)".to_string()))?;
+                let name = params
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing tool `name` (a string)".to_string()))?;
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
                 if !(args.is_object() || args.is_null()) {
                     return Err((INVALID_PARAMS, "`arguments` must be an object".into()));
@@ -187,16 +234,26 @@ impl Server {
             "resources/list" => Ok(resources::list()),
             "resources/templates/list" => Ok(resources::templates()),
             "resources/read" => {
-                let uri = params.get("uri").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing `uri` (a string)".to_string()))?;
+                let uri = params
+                    .get("uri")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing `uri` (a string)".to_string()))?;
                 let v = resources::read(self.backend.as_mut(), uri).map_err(|e| match e {
-                    resources::ReadError::NotFound(uri) => (RESOURCE_NOT_FOUND, format!("resource not found: {uri}")),
+                    resources::ReadError::NotFound(uri) => {
+                        (RESOURCE_NOT_FOUND, format!("resource not found: {uri}"))
+                    }
                     resources::ReadError::Backend(why) => (INTERNAL_ERROR, why),
                 })?;
-                Ok(json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": serde_json::to_string_pretty(&v).unwrap_or_default()}]}))
+                Ok(
+                    json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": serde_json::to_string_pretty(&v).unwrap_or_default()}]}),
+                )
             }
             "prompts/list" => Ok(prompts::list()),
             "prompts/get" => {
-                let name = params.get("name").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing prompt `name` (a string)".to_string()))?;
+                let name = params.get("name").and_then(Value::as_str).ok_or((
+                    INVALID_PARAMS,
+                    "missing prompt `name` (a string)".to_string(),
+                ))?;
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
                 prompts::get(name, &args).map_err(|e| (INVALID_PARAMS, e))
             }

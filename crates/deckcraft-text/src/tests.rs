@@ -18,7 +18,17 @@ fn setup(text: &str, w: f64, h: f64) -> (Presentation, Shape) {
 
 fn lay(p: &Presentation, sh: &Shape, w: f64, h: f64) -> TextLayout {
     let ctx = Ctx::for_slide(p, &p.slides[0]).unwrap();
-    layout(&ctx, sh, sh.text.as_ref().unwrap(), &Opts { rect: Rect::new(0.0, 0.0, w, h), fields: &NoFields, prompt_color: None, no_shrink: false })
+    layout(
+        &ctx,
+        sh,
+        sh.text.as_ref().unwrap(),
+        &Opts {
+            rect: Rect::new(0.0, 0.0, w, h),
+            fields: &NoFields,
+            prompt_color: None,
+            no_shrink: false,
+        },
+    )
 }
 
 #[test]
@@ -28,7 +38,11 @@ fn wraps_long_text_into_lines() {
     let l = lay(&p, &sh, 200.0, 400.0);
     assert!(l.lines.len() >= 3, "{} lines", l.lines.len());
     for li in &l.lines {
-        assert!(li.caret_x.last().unwrap() <= &(200.0 + 0.5), "line too wide: {:?}", li.caret_x.last());
+        assert!(
+            li.caret_x.last().unwrap() <= &(200.0 + 0.5),
+            "line too wide: {:?}",
+            li.caret_x.last()
+        );
         assert_eq!(li.caret_x.len(), li.end - li.start + 1);
     }
     // Lines cover the text without gaps (spaces at wraps are skipped).
@@ -63,10 +77,24 @@ fn glyphs_and_width(family: &str, text: &str, kern: Option<f64>) -> (usize, f64)
 /// The first installed or bundled family of `families` for which `pick` holds.
 fn first_family(families: &[&str], pick: impl Fn(&FontFace) -> bool) -> Option<String> {
     let db = FontDb::global();
-    families.iter().filter(|f| db.has_family(f)).map(|f| db.face(f, "Regular")).find(|f| pick(f)).map(|f| f.family.clone())
+    families
+        .iter()
+        .filter(|f| db.has_family(f))
+        .map(|f| db.face(f, "Regular"))
+        .find(|f| pick(f))
+        .map(|f| f.family.clone())
 }
 
-const LATIN_FAMILIES: &[&str] = &["Carlito", "Calibri", "DejaVu Sans", "Liberation Sans", "Inter", "Arial", "Cambria", "Times New Roman"];
+const LATIN_FAMILIES: &[&str] = &[
+    "Carlito",
+    "Calibri",
+    "DejaVu Sans",
+    "Liberation Sans",
+    "Inter",
+    "Arial",
+    "Cambria",
+    "Times New Roman",
+];
 
 #[test]
 fn latin_text_draws_no_ligatures() {
@@ -84,8 +112,16 @@ fn latin_text_draws_no_ligatures() {
 #[test]
 fn pairs_are_kerned_only_from_the_kern_size() {
     let kerns = |f: &FontFace| {
-        let w = |feat: &[deckcraft_fonts::Feature]| deckcraft_fonts::shape(f, "AVATAR", feat, |c| c).iter().map(|g| g.x_advance).sum::<i32>();
-        w(&[]) != w(&deckcraft_fonts::feature("-kern").into_iter().collect::<Vec<_>>())
+        let w = |feat: &[deckcraft_fonts::Feature]| {
+            deckcraft_fonts::shape(f, "AVATAR", feat, |c| c)
+                .iter()
+                .map(|g| g.x_advance)
+                .sum::<i32>()
+        };
+        w(&[])
+            != w(&deckcraft_fonts::feature("-kern")
+                .into_iter()
+                .collect::<Vec<_>>())
     };
     let Some(family) = first_family(LATIN_FAMILIES, kerns) else {
         eprintln!("skipped: no font that kerns AVATAR");
@@ -97,20 +133,46 @@ fn pairs_are_kerned_only_from_the_kern_size() {
     let (_, at) = glyphs_and_width(&family, "AVATAR WAVE", Some(40.0));
     let (_, above) = glyphs_and_width(&family, "AVATAR WAVE", Some(48.0));
     assert!(on < off - 2.0, "{family}: kerned {on} vs {off}");
-    assert!((at - on).abs() < 0.01, "kerned at exactly the threshold size");
-    assert!((above - off).abs() < 0.01, "40 pt is below a 48 pt threshold");
+    assert!(
+        (at - on).abs() < 0.01,
+        "kerned at exactly the threshold size"
+    );
+    assert!(
+        (above - off).abs() < 0.01,
+        "40 pt is below a 48 pt threshold"
+    );
 }
 
 #[test]
 fn ligatures_stay_for_scripts_that_need_them() {
-    let has = |f: &[deckcraft_fonts::Feature], tag: &str| f.iter().any(|x| Some(*x) == deckcraft_fonts::feature(tag));
-    let cells =
-        |s: &str| s.chars().map(|ch| Cell { ch, style: 0, face: 0, level: 0, glyphs: vec![], adv: 0.0, head: 0, boundary: true }).collect::<Vec<_>>();
+    let has = |f: &[deckcraft_fonts::Feature], tag: &str| {
+        f.iter().any(|x| Some(*x) == deckcraft_fonts::feature(tag))
+    };
+    let cells = |s: &str| {
+        s.chars()
+            .map(|ch| Cell {
+                ch,
+                style: 0,
+                face: 0,
+                level: 0,
+                glyphs: vec![],
+                adv: 0.0,
+                head: 0,
+                boundary: true,
+            })
+            .collect::<Vec<_>>()
+    };
     let latin = shaping_features(&cells("office"), &[], Some(*b"Latn"));
     assert!(has(&latin, "-liga") && has(&latin, "-clig") && has(&latin, "-kern"));
     // Arabic needs its ligatures; emoji sequences are joined by them.
-    assert!(!has(&shaping_features(&cells("\u{644}\u{627}"), &[], Some(*b"Arab")), "-liga"));
-    assert!(!has(&shaping_features(&cells("a\u{1F469}\u{200D}\u{1F4BB}"), &[], Some(*b"Latn")), "-liga"));
+    assert!(!has(
+        &shaping_features(&cells("\u{644}\u{627}"), &[], Some(*b"Arab")),
+        "-liga"
+    ));
+    assert!(!has(
+        &shaping_features(&cells("a\u{1F469}\u{200D}\u{1F4BB}"), &[], Some(*b"Latn")),
+        "-liga"
+    ));
     assert!(!has(&shaping_features(&cells("12"), &[], None), "-liga"));
 }
 
@@ -119,9 +181,14 @@ fn only_the_first_character_of_a_bullet_is_drawn() {
     // "••" (seen in the wild) draws one dot in PowerPoint.
     for (char, glyphs) in [("\u{2022}\u{2022}", 1), ("\u{2022}", 1), ("-->", 1)] {
         let (p, mut sh) = setup("One", 600.0, 300.0);
-        sh.text.as_mut().unwrap().paragraphs[0].props.bullet = Some(Bullet::Char { char: char.into() });
+        sh.text.as_mut().unwrap().paragraphs[0].props.bullet =
+            Some(Bullet::Char { char: char.into() });
         let l = lay(&p, &sh, 600.0, 300.0);
-        let bullet = l.runs.iter().find(|r| r.chars == (0, 0)).expect("bullet run");
+        let bullet = l
+            .runs
+            .iter()
+            .find(|r| r.chars == (0, 0))
+            .expect("bullet run");
         assert_eq!(bullet.glyphs.len(), glyphs, "{char:?}");
     }
     // The first grapheme cluster is kept whole.
@@ -130,7 +197,10 @@ fn only_the_first_character_of_a_bullet_is_drawn() {
 
 #[test]
 fn shrink_on_overflow() {
-    let text = (0..30).map(|i| format!("Line number {i}")).collect::<Vec<_>>().join("\n");
+    let text = (0..30)
+        .map(|i| format!("Line number {i}"))
+        .collect::<Vec<_>>()
+        .join("\n");
     let (p, sh) = setup(&text, 600.0, 200.0);
     let l = lay(&p, &sh, 600.0, 200.0);
     assert!(l.font_scale < 1.0, "scale {}", l.font_scale);
@@ -163,20 +233,35 @@ fn composition_is_underlined_per_line() {
     let (x0, x1, y) = u[0];
     let (cx0, ..) = l.caret(a).unwrap();
     let (cx1, ..) = l.caret(b).unwrap();
-    assert!((x0 - cx0).abs() < 0.01 && (x1 - cx1).abs() < 0.01, "{u:?} vs carets {cx0} {cx1}");
+    assert!(
+        (x0 - cx0).abs() < 0.01 && (x1 - cx1).abs() < 0.01,
+        "{u:?} vs carets {cx0} {cx1}"
+    );
     let line = &l.lines[0];
-    assert!(y > line.baseline && y <= line.bottom, "under the baseline: {y} ({} – {})", line.baseline, line.bottom);
+    assert!(
+        y > line.baseline && y <= line.bottom,
+        "under the baseline: {y} ({} – {})",
+        line.baseline,
+        line.bottom
+    );
     // Reversed ends give the same; an empty composition, nothing.
     assert_eq!(l.composition_underlines(b, a), u);
     assert!(l.composition_underlines(a, a).is_empty());
 
     // Wrapped: one underline per line.
-    let (p, sh) = setup("가나다라마바사아자차카타파하 가나다라마바사아자차카타파하 가나다라마바사", 120.0, 400.0);
+    let (p, sh) = setup(
+        "가나다라마바사아자차카타파하 가나다라마바사아자차카타파하 가나다라마바사",
+        120.0,
+        400.0,
+    );
     let l = lay(&p, &sh, 120.0, 400.0);
     assert!(l.lines.len() >= 2);
     let u = l.composition_underlines(Pos { para: 0, ch: 0 }, Pos { para: 0, ch: 40 });
     assert!(u.len() >= 2, "{u:?}");
-    assert!(u.windows(2).all(|w| w[1].2 > w[0].2), "each lower than the last: {u:?}");
+    assert!(
+        u.windows(2).all(|w| w[1].2 > w[0].2),
+        "each lower than the last: {u:?}"
+    );
     // Positions past the text never panic.
     let _ = l.composition_underlines(Pos { para: 3, ch: 0 }, Pos { para: 9, ch: 99 });
 }
@@ -203,7 +288,11 @@ fn empty_and_hostile_bodies_never_panic() {
     t.paragraphs = vec![Paragraph {
         runs: vec![
             Run::new("\t\u{b}\u{b}🙂 ﷽ 日本語"),
-            Run { text: String::new(), props: Default::default(), kind: deckcraft_model::text::RunKind::Break },
+            Run {
+                text: String::new(),
+                props: Default::default(),
+                kind: deckcraft_model::text::RunKind::Break,
+            },
         ],
         ..Default::default()
     }];
@@ -230,7 +319,10 @@ fn autonum_formats() {
 fn numbered_list_counts() {
     let (p, mut sh) = setup("a\nb\nc", 400.0, 300.0);
     for para in &mut sh.text.as_mut().unwrap().paragraphs {
-        para.props.bullet = Some(Bullet::AutoNum { scheme: "arabicPeriod".into(), start_at: 1 });
+        para.props.bullet = Some(Bullet::AutoNum {
+            scheme: "arabicPeriod".into(),
+            start_at: 1,
+        });
     }
     let l = lay(&p, &sh, 400.0, 300.0);
     assert!(l.runs.len() >= 6);
@@ -244,7 +336,10 @@ const MIXED: &str = "سنة 2024 (Retrait) فقط";
 fn bidi_setup(runs: Vec<Run>, w: f64, rtl: bool, align: Align) -> (Presentation, Shape) {
     let (p, mut sh) = setup("x", w, 300.0);
     let t = sh.text.as_mut().unwrap();
-    t.paragraphs = vec![Paragraph { runs, ..Default::default() }];
+    t.paragraphs = vec![Paragraph {
+        runs,
+        ..Default::default()
+    }];
     let pp = &mut t.paragraphs[0].props;
     pp.rtl = Some(rtl);
     pp.align = Some(align);
@@ -285,7 +380,11 @@ fn rtl_mixed_string_is_reordered_per_line() {
     assert!(mid(9) > mid(16) && mid(17) < mid(10));
     // Right-aligned at the start edge S = W - rIns; the downstream caret at 0 is that edge.
     let right_edge = l.inner.x1;
-    assert!((line.extent.1 - right_edge).abs() < 0.5, "{} vs {right_edge}", line.extent.1);
+    assert!(
+        (line.extent.1 - right_edge).abs() < 0.5,
+        "{} vs {right_edge}",
+        line.extent.1
+    );
     assert!((line.caret_x[0] - line.extent.1).abs() < 0.01);
     // Levels after L1: Arabic odd, digits and Latin even.
     assert_eq!(line.levels[0], 1);
@@ -304,16 +403,33 @@ fn rtl_paragraph_starts_at_the_right_with_the_bullet_outside() {
     let line = &l.lines[0];
     // Text starts marL from the right edge; the bullet hangs at S - (marL + indent) = S.
     let s_edge = l.inner.x1;
-    assert!((line.extent.1 - (s_edge - 36.0)).abs() < 0.5, "text right {} expected {}", line.extent.1, s_edge - 36.0);
-    let bullet = l.runs.iter().find(|r| r.chars == (0, 0)).expect("bullet run");
+    assert!(
+        (line.extent.1 - (s_edge - 36.0)).abs() < 0.5,
+        "text right {} expected {}",
+        line.extent.1,
+        s_edge - 36.0
+    );
+    let bullet = l
+        .runs
+        .iter()
+        .find(|r| r.chars == (0, 0))
+        .expect("bullet run");
     let bx = bullet.glyphs[0].1;
-    assert!(bx > line.extent.1 - 0.5, "bullet {bx} right of the text {}", line.extent.1);
+    assert!(
+        bx > line.extent.1 - 0.5,
+        "bullet {bx} right of the text {}",
+        line.extent.1
+    );
     assert!(bx < s_edge, "bullet inside the box");
     // An LTR paragraph keeps the bullet on the left.
     sh.text.as_mut().unwrap().paragraphs[0].props.rtl = Some(false);
     sh.text.as_mut().unwrap().paragraphs[0].props.align = Some(Align::Left);
     let l = lay(&p, &sh, 400.0, 300.0);
-    let bullet = l.runs.iter().find(|r| r.chars == (0, 0)).expect("bullet run");
+    let bullet = l
+        .runs
+        .iter()
+        .find(|r| r.chars == (0, 0))
+        .expect("bullet run");
     assert!(bullet.glyphs[0].1 < l.lines[0].extent.0);
 }
 
@@ -321,7 +437,10 @@ fn rtl_paragraph_starts_at_the_right_with_the_bullet_outside() {
 fn rtl_left_and_center_alignment() {
     let (p, sh) = bidi_setup(vec![Run::new("سلام")], 400.0, true, Align::Left);
     let l = lay(&p, &sh, 400.0, 300.0);
-    assert!((l.lines[0].extent.0 - l.inner.x0).abs() < 0.5, "algn=l is flush left in RTL too");
+    assert!(
+        (l.lines[0].extent.0 - l.inner.x0).abs() < 0.5,
+        "algn=l is flush left in RTL too"
+    );
     let (p, sh) = bidi_setup(vec![Run::new("سلام")], 400.0, true, Align::Center);
     let l = lay(&p, &sh, 400.0, 300.0);
     let c = (l.lines[0].extent.0 + l.lines[0].extent.1) / 2.0;
@@ -331,16 +450,26 @@ fn rtl_left_and_center_alignment() {
 #[test]
 fn bidi_caret_stops_round_trip_through_hit_testing() {
     for rtl in [true, false] {
-        let (p, sh) = bidi_setup(vec![Run::new(MIXED)], 2000.0, rtl, if rtl { Align::Right } else { Align::Left });
+        let (p, sh) = bidi_setup(
+            vec![Run::new(MIXED)],
+            2000.0,
+            rtl,
+            if rtl { Align::Right } else { Align::Left },
+        );
         let l = lay(&p, &sh, 2000.0, 300.0);
         let line = &l.lines[0];
         for (x, ch, aff) in line.visual_stops() {
             let (cx, ..) = l.caret_at(Pos { para: 0, ch }, aff).unwrap();
-            assert!((cx - x).abs() < 0.01, "stop {ch} {aff:?}: caret {cx} vs stop {x}");
+            assert!(
+                (cx - x).abs() < 0.01,
+                "stop {ch} {aff:?}: caret {cx} vs stop {x}"
+            );
         }
         // Clicking just inside either side of each grapheme puts the caret on that side.
         for (a, b) in line.graphemes() {
-            let Some((x0, x1)) = line.grapheme_box(a, b) else { continue };
+            let Some((x0, x1)) = line.grapheme_box(a, b) else {
+                continue;
+            };
             if x1 - x0 < 1.0 {
                 continue;
             }
@@ -349,7 +478,10 @@ fn bidi_caret_stops_round_trip_through_hit_testing() {
                 let (pos, aff) = l.hit_affinity(Point::new(x, y));
                 let (cx, ..) = l.caret_at(pos, aff).unwrap();
                 let side = if x < (x0 + x1) / 2.0 { x0 } else { x1 };
-                assert!((cx - side).abs() < 0.01, "rtl={rtl} grapheme {a}: hit {x} -> {pos:?} {aff:?} caret {cx}, expected {side}");
+                assert!(
+                    (cx - side).abs() < 0.01,
+                    "rtl={rtl} grapheme {a}: hit {x} -> {pos:?} {aff:?} caret {cx}, expected {side}"
+                );
             }
         }
     }
@@ -371,22 +503,43 @@ fn visual_movement_walks_the_line_left_to_right() {
         (pos, aff) = (np, na);
         xs.push(l.caret_at(pos, aff).unwrap().0);
     }
-    assert!(xs.windows(2).all(|w| w[1] > w[0]), "moving right always moves right: {xs:?}");
+    assert!(
+        xs.windows(2).all(|w| w[1] > w[0]),
+        "moving right always moves right: {xs:?}"
+    );
     let right = l.lines[0].extent.1;
-    assert!((xs.last().unwrap() - right).abs() < 0.01, "reaches the right edge");
+    assert!(
+        (xs.last().unwrap() - right).abs() < 0.01,
+        "reaches the right edge"
+    );
     // Right arrow at the right edge of an RTL paragraph's only line goes nowhere.
     assert_eq!(l.move_caret(pos, aff, true, MoveMode::Visual).0, pos);
     // Moving left from the right edge in an RTL paragraph is logically forward.
-    let (p1, _) = l.move_caret(Pos { para: 0, ch: 0 }, Affinity::Downstream, false, MoveMode::Visual);
+    let (p1, _) = l.move_caret(
+        Pos { para: 0, ch: 0 },
+        Affinity::Downstream,
+        false,
+        MoveMode::Visual,
+    );
     assert_eq!(p1.ch, 1);
 }
 
 #[test]
 fn logical_movement_steps_over_harakat() {
     // beh + fatha + teh: the fatha belongs to the beh's grapheme.
-    let (p, sh) = bidi_setup(vec![Run::new("\u{0628}\u{064E}\u{062A}")], 400.0, true, Align::Right);
+    let (p, sh) = bidi_setup(
+        vec![Run::new("\u{0628}\u{064E}\u{062A}")],
+        400.0,
+        true,
+        Align::Right,
+    );
     let l = lay(&p, &sh, 400.0, 300.0);
-    let (n1, _) = l.move_caret(Pos { para: 0, ch: 0 }, Affinity::Downstream, true, MoveMode::Logical);
+    let (n1, _) = l.move_caret(
+        Pos { para: 0, ch: 0 },
+        Affinity::Downstream,
+        true,
+        MoveMode::Logical,
+    );
     assert_eq!(n1.ch, 2);
     let (n2, _) = l.move_caret(n1, Affinity::Downstream, false, MoveMode::Logical);
     assert_eq!(n2.ch, 0);
@@ -403,7 +556,11 @@ fn selection_is_the_union_of_visual_boxes() {
     let r = l.selection_rects(Pos { para: 0, ch: 1 }, Pos { para: 0, ch: 5 });
     assert_eq!(r.len(), 2, "{r:?}");
     // The whole line is one box.
-    assert_eq!(l.selection_rects(Pos { para: 0, ch: 0 }, Pos { para: 0, ch: 9 }).len(), 1);
+    assert_eq!(
+        l.selection_rects(Pos { para: 0, ch: 0 }, Pos { para: 0, ch: 9 })
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -416,17 +573,29 @@ fn paint_only_style_changes_keep_arabic_joining() {
     let glyphs = |runs: Vec<Run>| {
         let (p, sh) = bidi_setup(runs, 400.0, true, Align::Right);
         let l = lay(&p, &sh, 400.0, 300.0);
-        let mut g: Vec<(u32, f64)> = l.runs.iter().flat_map(|r| r.glyphs.iter().map(|g| (g.0, g.1))).collect();
+        let mut g: Vec<(u32, f64)> = l
+            .runs
+            .iter()
+            .flat_map(|r| r.glyphs.iter().map(|g| (g.0, g.1)))
+            .collect();
         g.sort_by(|a, b| a.1.total_cmp(&b.1));
         g.into_iter().map(|g| g.0).collect::<Vec<_>>()
     };
     let whole = glyphs(vec![Run::new(word)]);
     let mut red = Run::new("سن");
-    red.props.fill = Some(Fill::solid(deckcraft_model::style::ColorRef::rgb(Rgba::from_hex("C00000").unwrap())));
+    red.props.fill = Some(Fill::solid(deckcraft_model::style::ColorRef::rgb(
+        Rgba::from_hex("C00000").unwrap(),
+    )));
     let split = glyphs(vec![red, Run::new("ة")]);
-    assert_eq!(whole, split, "a colour change inside a word keeps the joined forms");
+    assert_eq!(
+        whole, split,
+        "a colour change inside a word keeps the joined forms"
+    );
     // And the joined forms differ from the isolated letters.
-    let isolated: Vec<u32> = word.chars().map(|c| arabic_face().unwrap().glyph_for(c)).collect();
+    let isolated: Vec<u32> = word
+        .chars()
+        .map(|c| arabic_face().unwrap().glyph_for(c))
+        .collect();
     assert_ne!(whole.iter().rev().copied().collect::<Vec<_>>(), isolated);
 }
 
@@ -442,7 +611,11 @@ fn just_low_stretches_arabic_with_kashida() {
             .iter()
             .map(|r| {
                 let tg = r.face.glyph_for('\u{0640}');
-                if tg == 0 { 0 } else { r.glyphs.iter().filter(|g| g.0 == tg).count() }
+                if tg == 0 {
+                    0
+                } else {
+                    r.glyphs.iter().filter(|g| g.0 == tg).count()
+                }
             })
             .sum::<usize>()
     };
@@ -452,7 +625,11 @@ fn just_low_stretches_arabic_with_kashida() {
     assert!(l.lines.len() >= 2);
     let first = &l.lines[0];
     let w = l.inner.width();
-    assert!((first.extent.1 - first.extent.0 - w).abs() < 0.5, "first line fills the box: {:?} vs {w}", first.extent);
+    assert!(
+        (first.extent.1 - first.extent.0 - w).abs() < 0.5,
+        "first line fills the box: {:?} vs {w}",
+        first.extent
+    );
     if l.runs.iter().all(|r| r.face.glyph_for('\u{0640}') == 0) {
         eprintln!("skipped: the Arabic face has no tatweel");
         return;
@@ -479,20 +656,43 @@ fn wrapped_rtl_lines_break_in_logical_order() {
         assert!(w[1].start >= w[0].end);
     }
     for line in &l.lines {
-        assert!(line.extent.0 >= l.inner.x0 - 0.5, "line fits: {:?}", line.extent);
+        assert!(
+            line.extent.0 >= l.inner.x0 - 0.5,
+            "line fits: {:?}",
+            line.extent
+        );
         assert!((line.extent.1 - l.inner.x1).abs() < 0.5, "flush right");
     }
     // Upstream affinity at a wrap keeps the caret on the earlier line.
     let end0 = l.lines[0].end;
-    assert_eq!(l.line_of_affine(Pos { para: 0, ch: end0 }, Affinity::Upstream), Some(0));
+    assert_eq!(
+        l.line_of_affine(Pos { para: 0, ch: end0 }, Affinity::Upstream),
+        Some(0)
+    );
 }
 
 #[test]
 fn hostile_bidi_input_never_panics() {
-    let nasty = format!("{}\t\u{b}\u{202E}abc\u{2069}{}(]))[ ١٢٣ \u{0640}\u{064E}\u{064E}\u{200D}", "\u{202B}".repeat(200), "\u{2067}".repeat(130));
+    let nasty = format!(
+        "{}\t\u{b}\u{202E}abc\u{2069}{}(]))[ ١٢٣ \u{0640}\u{064E}\u{064E}\u{200D}",
+        "\u{202B}".repeat(200),
+        "\u{2067}".repeat(130)
+    );
     for rtl in [true, false] {
-        for align in [Align::Left, Align::Right, Align::Center, Align::Justify, Align::JustLow, Align::Distributed] {
-            let (p, sh) = bidi_setup(vec![Run::new(nasty.clone()), Run::new(MIXED)], 60.0, rtl, align);
+        for align in [
+            Align::Left,
+            Align::Right,
+            Align::Center,
+            Align::Justify,
+            Align::JustLow,
+            Align::Distributed,
+        ] {
+            let (p, sh) = bidi_setup(
+                vec![Run::new(nasty.clone()), Run::new(MIXED)],
+                60.0,
+                rtl,
+                align,
+            );
             let l = lay(&p, &sh, 60.0, 60.0);
             for line in &l.lines {
                 assert_eq!(line.caret_x.len(), line.end - line.start + 1);
@@ -502,7 +702,16 @@ fn hostile_bidi_input_never_panics() {
             let _ = l.selection_rects(Pos { para: 0, ch: 0 }, Pos { para: 0, ch: 9999 });
             let mut pos = (Pos::default(), Affinity::Downstream);
             for i in 0..50 {
-                pos = l.move_caret(pos.0, pos.1, i % 3 != 0, if i % 2 == 0 { MoveMode::Visual } else { MoveMode::Logical });
+                pos = l.move_caret(
+                    pos.0,
+                    pos.1,
+                    i % 3 != 0,
+                    if i % 2 == 0 {
+                        MoveMode::Visual
+                    } else {
+                        MoveMode::Logical
+                    },
+                );
             }
             let _ = l.caret_at(Pos { para: 7, ch: 7 }, Affinity::Upstream);
         }
@@ -527,7 +736,10 @@ fn superscript_and_subscript_advance_at_their_drawn_size() {
     let normal = run_width("superscript", None);
     for b in [Some(0.3), Some(-0.25)] {
         let w = run_width("superscript", b);
-        assert!((w / normal - SUB_SUPER).abs() < 0.02, "{b:?}: {w} vs {normal}");
+        assert!(
+            (w / normal - SUB_SUPER).abs() < 0.02,
+            "{b:?}: {w} vs {normal}"
+        );
     }
 }
 
@@ -543,14 +755,19 @@ fn superscript_glyphs_sit_inside_their_cells() {
     assert!((r.size - 24.0 * SUB_SUPER).abs() < 1e-6);
     for (g, (ci, _)) in r.glyphs.iter().zip(&r.cells) {
         let (x0, x1) = line.edges[*ci - line.start];
-        assert!(g.1 >= x0 - 0.01 && g.1 < x1, "glyph at {} outside its cell {x0}..{x1}", g.1);
+        assert!(
+            g.1 >= x0 - 0.01 && g.1 < x1,
+            "glyph at {} outside its cell {x0}..{x1}",
+            g.1
+        );
     }
 }
 
 /// A wrapping numbered paragraph with `marL` and `indent`; returns (bullet x, first line's text
 /// x, second line's text x).
 fn hanging(margin: f64, indent: f64, bullet: Bullet) -> (Option<f64>, f64, f64) {
-    let text = "Wrapping words go on and on so the paragraph needs at least two or three lines here";
+    let text =
+        "Wrapping words go on and on so the paragraph needs at least two or three lines here";
     let (p, mut sh) = setup(text, 300.0, 300.0);
     let para = &mut sh.text.as_mut().unwrap().paragraphs[0];
     para.props.bullet = Some(bullet);
@@ -558,7 +775,11 @@ fn hanging(margin: f64, indent: f64, bullet: Bullet) -> (Option<f64>, f64, f64) 
     para.props.indent = Some(indent);
     let l = lay(&p, &sh, 300.0, 300.0);
     assert!(l.lines.len() >= 2, "{} lines", l.lines.len());
-    let bx = l.runs.iter().find(|r| r.cells.is_empty() && !r.glyphs.is_empty()).map(|r| r.glyphs[0].1);
+    let bx = l
+        .runs
+        .iter()
+        .find(|r| r.cells.is_empty() && !r.glyphs.is_empty())
+        .map(|r| r.glyphs[0].1);
     (bx, l.lines[0].caret_x[0], l.lines[1].caret_x[0])
 }
 
@@ -566,17 +787,35 @@ fn hanging(margin: f64, indent: f64, bullet: Bullet) -> (Option<f64>, f64, f64) 
 fn a_hang_past_the_box_edge_keeps_its_width_on_the_first_line() {
     // PowerPoint, marL 0 / indent -36pt: the number sits at the box's edge, the first line's text
     // 36pt in, and the wrapped lines at the margin (observed with PowerPoint's slide export).
-    let num = || Bullet::AutoNum { scheme: "arabicPeriod".into(), start_at: 1 };
+    let num = || Bullet::AutoNum {
+        scheme: "arabicPeriod".into(),
+        start_at: 1,
+    };
     let (bx, first, rest) = hanging(0.0, -36.0, num());
-    assert!((first - rest - 36.0).abs() < 0.5, "first {first} rest {rest}");
-    assert!((bx.unwrap() - rest).abs() < 0.5, "bullet {bx:?} rest {rest}");
+    assert!(
+        (first - rest - 36.0).abs() < 0.5,
+        "first {first} rest {rest}"
+    );
+    assert!(
+        (bx.unwrap() - rest).abs() < 0.5,
+        "bullet {bx:?} rest {rest}"
+    );
     // marL 18 / indent -54: number at the edge, first line at 54, the rest at 18.
     let (bx, first, rest) = hanging(18.0, -54.0, num());
-    assert!((first - rest - 36.0).abs() < 0.5, "first {first} rest {rest}");
-    assert!((rest - bx.unwrap() - 18.0).abs() < 0.5, "bullet {bx:?} rest {rest}");
+    assert!(
+        (first - rest - 36.0).abs() < 0.5,
+        "first {first} rest {rest}"
+    );
+    assert!(
+        (rest - bx.unwrap() - 18.0).abs() < 0.5,
+        "bullet {bx:?} rest {rest}"
+    );
     // A character bullet behaves the same.
     let (_, first, rest) = hanging(0.0, -36.0, Bullet::Char { char: "•".into() });
-    assert!((first - rest - 36.0).abs() < 0.5, "first {first} rest {rest}");
+    assert!(
+        (first - rest - 36.0).abs() < 0.5,
+        "first {first} rest {rest}"
+    );
     // Without a bullet the first line just starts at the edge.
     let (_, first, rest) = hanging(0.0, -36.0, Bullet::None);
     assert!((first - rest).abs() < 0.5, "first {first} rest {rest}");
@@ -584,7 +823,14 @@ fn a_hang_past_the_box_edge_keeps_its_width_on_the_first_line() {
 
 #[test]
 fn an_ordinary_hang_still_puts_the_text_at_the_margin() {
-    let (bx, first, rest) = hanging(36.0, -36.0, Bullet::AutoNum { scheme: "arabicPeriod".into(), start_at: 1 });
+    let (bx, first, rest) = hanging(
+        36.0,
+        -36.0,
+        Bullet::AutoNum {
+            scheme: "arabicPeriod".into(),
+            start_at: 1,
+        },
+    );
     assert!((first - rest).abs() < 0.5, "first {first} rest {rest}");
     assert!((rest - bx.unwrap() - 36.0).abs() < 0.5);
 }
@@ -612,7 +858,11 @@ fn single_spaced_lines_are_1_2_times_the_size_apart_whatever_the_font() {
         // Each line is 1.2 × the size tall (the face is not compared across lines: another
         // test's thread can load the family between them, see #252).
         for line in &l.lines {
-            assert!((line.bottom - line.top - size * LINE_PITCH).abs() < 1e-6, "{size}: {}", line.bottom - line.top);
+            assert!(
+                (line.bottom - line.top - size * LINE_PITCH).abs() < 1e-6,
+                "{size}: {}",
+                line.bottom - line.top
+            );
         }
         let face = &l.runs[0].face;
         let first = &l.lines[0];
@@ -629,7 +879,10 @@ fn wrapped(text: &str, w: f64, set: impl Fn(&mut ParaProps)) -> Vec<String> {
     set(&mut t.paragraphs[0].props);
     let l = lay(&p, &sh, w, 600.0);
     let chars: Vec<char> = text.chars().collect();
-    l.lines.iter().map(|li| chars[li.start..li.end].iter().collect()).collect()
+    l.lines
+        .iter()
+        .map(|li| chars[li.start..li.end].iter().collect())
+        .collect()
 }
 
 /// Width of `text` on one line.
@@ -648,14 +901,23 @@ fn a_word_does_not_break_after_a_slash_or_backslash() {
         let w = one_line(&text) * 0.6;
         let lines = wrapped(&text, w, |_| {});
         assert!(lines.len() >= 2, "{lines:?}");
-        assert!(lines[0].chars().count() > "alpha/beta".len(), "filled to the edge, not cut at a separator: {lines:?}");
+        assert!(
+            lines[0].chars().count() > "alpha/beta".len(),
+            "filled to the edge, not cut at a separator: {lines:?}"
+        );
     }
     // latinLnBrk on: Unicode's break after a slash is allowed again.
     let text = "alpha/beta/gamma/delta/epsilon";
-    let lines = wrapped(text, one_line(text) * 0.6, |p| p.latin_line_break = Some(true));
+    let lines = wrapped(text, one_line(text) * 0.6, |p| {
+        p.latin_line_break = Some(true)
+    });
     assert!(lines[0].ends_with('/'), "{lines:?}");
     // A slash followed by a space still breaks, and hyphens still break.
-    let lines = wrapped("alpha-beta-gamma-delta-epsilon", one_line("alpha-beta-gamma-") + 1.0, |_| {});
+    let lines = wrapped(
+        "alpha-beta-gamma-delta-epsilon",
+        one_line("alpha-beta-gamma-") + 1.0,
+        |_| {},
+    );
     assert_eq!(lines[0], "alpha-beta-gamma-");
 }
 
@@ -664,9 +926,17 @@ fn korean_wraps_between_words() {
     let text = "한국어 안녕하세요 반갑습니다 감사합니다";
     let w = one_line("한국어 안녕하세요 반") + 0.5;
     let lines = wrapped(text, w, |_| {});
-    assert_eq!(lines.iter().map(|l| l.trim_end()).collect::<Vec<_>>(), ["한국어 안녕하세요", "반갑습니다", "감사합니다"], "{lines:?}");
+    assert_eq!(
+        lines.iter().map(|l| l.trim_end()).collect::<Vec<_>>(),
+        ["한국어 안녕하세요", "반갑습니다", "감사합니다"],
+        "{lines:?}"
+    );
     // Japanese and Chinese still break between characters.
-    let lines = wrapped("日本語の文章は空白なしで続きます", one_line("日本語の文章") + 0.5, |_| {});
+    let lines = wrapped(
+        "日本語の文章は空白なしで続きます",
+        one_line("日本語の文章") + 0.5,
+        |_| {},
+    );
     assert_eq!(lines[0], "日本語の文章");
 }
 
@@ -696,9 +966,23 @@ fn emoji_take_a_colour_face_when_one_is_installed() {
     for s in ["😀", "👍🏽", "❤\u{FE0F}", "👨\u{200D}👩\u{200D}👧"] {
         let (p, sh) = bidi_setup(vec![Run::new(format!("a{s}b"))], 2000.0, false, Align::Left);
         let l = lay(&p, &sh, 2000.0, 300.0);
-        let emoji = l.runs.iter().find(|r| r.cells.iter().any(|(_, c)| !c.is_ascii())).unwrap();
-        assert!(emoji.face.is_color(), "{s:?} drawn with {}", emoji.face.family);
-        assert!(l.runs.iter().filter(|r| r.cells.iter().all(|(_, c)| c.is_ascii())).all(|r| !r.face.is_color()), "the letters keep a text face");
+        let emoji = l
+            .runs
+            .iter()
+            .find(|r| r.cells.iter().any(|(_, c)| !c.is_ascii()))
+            .unwrap();
+        assert!(
+            emoji.face.is_color(),
+            "{s:?} drawn with {}",
+            emoji.face.family
+        );
+        assert!(
+            l.runs
+                .iter()
+                .filter(|r| r.cells.iter().all(|(_, c)| c.is_ascii()))
+                .all(|r| !r.face.is_color()),
+            "the letters keep a text face"
+        );
     }
 }
 
@@ -713,13 +997,20 @@ fn a_bullet_the_text_font_lacks_falls_back_to_a_face_that_has_it() {
     }
     let (p, mut sh) = setup("One\nTwo", 600.0, 300.0);
     for para in &mut sh.text.as_mut().unwrap().paragraphs {
-        para.props.bullet = Some(Bullet::AutoNum { scheme: "circleNumDbPlain".into(), start_at: 1 });
+        para.props.bullet = Some(Bullet::AutoNum {
+            scheme: "circleNumDbPlain".into(),
+            start_at: 1,
+        });
     }
     let l = lay(&p, &sh, 600.0, 300.0);
     let bullets: Vec<_> = l.runs.iter().filter(|r| r.cells.is_empty()).collect();
     assert_eq!(bullets.len(), 2);
     for b in bullets {
-        assert!(b.face.covers('①'), "drawn with {}, which lacks the circled digit", b.face.family);
+        assert!(
+            b.face.covers('①'),
+            "drawn with {}, which lacks the circled digit",
+            b.face.family
+        );
         assert!(b.glyphs.iter().all(|g| g.0 != 0), "no missing-glyph box");
     }
 }
@@ -745,7 +1036,10 @@ fn an_installed_symbol_font_draws_its_own_bullet() {
         return;
     }
     let face = db.face("Wingdings 2", "Regular");
-    assert_eq!(symbol_font_char(&face, "\u{ea}", Some("Wingdings 2")), Some('\u{f0ea}'));
+    assert_eq!(
+        symbol_font_char(&face, "\u{ea}", Some("Wingdings 2")),
+        Some('\u{f0ea}')
+    );
     assert_eq!(symbol_font_char(&face, "\u{ea}", Some("Arial")), None);
 }
 
@@ -755,9 +1049,20 @@ fn symbol_char_maps_symbol_font_codes() {
     let face = FontDb::global().face("Inter", "Regular");
     assert_eq!(symbol_char(&face, "Arial", 'n'), None, "not a symbol font");
     assert_eq!(symbol_char(&face, "Webdings", 'n'), Some('\u{25CF}'));
-    assert_eq!(symbol_char(&face, "Webdings", '\u{F06E}'), Some('\u{25CF}'), "the private-use form of the code");
-    assert_eq!(symbol_char(&face, "Wingdings", '\u{F06E}'), Some('\u{25A0}'));
-    assert_eq!(symbol_char(&face, "Wingdings", '\u{100}'), None, "not a symbol code");
+    assert_eq!(
+        symbol_char(&face, "Webdings", '\u{F06E}'),
+        Some('\u{25CF}'),
+        "the private-use form of the code"
+    );
+    assert_eq!(
+        symbol_char(&face, "Wingdings", '\u{F06E}'),
+        Some('\u{25A0}')
+    );
+    assert_eq!(
+        symbol_char(&face, "Wingdings", '\u{100}'),
+        None,
+        "not a symbol code"
+    );
 }
 
 #[test]
@@ -776,8 +1081,22 @@ fn symbol_font_characters_draw_in_the_sym_font() {
     para.runs[0].props.font = Some("Arial".into());
     para.runs[0].props.font_sym = Some(symbol.into());
     let l = lay(&p, &sh, 600.0, 300.0);
-    let families: Vec<(String, (usize, usize))> = l.runs.iter().map(|r| (r.face.family.clone(), r.chars)).collect();
-    assert!(families.iter().any(|(f, c)| f.eq_ignore_ascii_case(symbol) && c.0 == 1), "{families:?}");
+    let families: Vec<(String, (usize, usize))> = l
+        .runs
+        .iter()
+        .map(|r| (r.face.family.clone(), r.chars))
+        .collect();
+    assert!(
+        families
+            .iter()
+            .any(|(f, c)| f.eq_ignore_ascii_case(symbol) && c.0 == 1),
+        "{families:?}"
+    );
     // The letters around it keep the run's font.
-    assert!(families.iter().all(|(f, c)| c.0 == 1 || !f.eq_ignore_ascii_case(symbol)), "{families:?}");
+    assert!(
+        families
+            .iter()
+            .all(|(f, c)| c.0 == 1 || !f.eq_ignore_ascii_case(symbol)),
+        "{families:?}"
+    );
 }

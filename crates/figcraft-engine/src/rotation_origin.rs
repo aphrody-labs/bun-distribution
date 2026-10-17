@@ -29,12 +29,24 @@ pub struct RotationOrigin {
 fn box_points(doc: &Document, sel: &[NodeId]) -> Option<[Point; 9]> {
     let [a, b, c, d] = selection_box(doc, &roots(doc, sel))?;
     let mid = |p: Point, q: Point| p.midpoint(q);
-    Some([a, b, c, d, mid(a, b), mid(b, c), mid(c, d), mid(d, a), mid(a, c)])
+    Some([
+        a,
+        b,
+        c,
+        d,
+        mid(a, b),
+        mid(b, c),
+        mid(c, d),
+        mid(d, a),
+        mid(a, c),
+    ])
 }
 
 impl DocState {
     fn current_origin(&self) -> Option<&RotationOrigin> {
-        self.rotation_origin.as_ref().filter(|o| !o.ids.is_empty() && o.ids == self.selection)
+        self.rotation_origin
+            .as_ref()
+            .filter(|o| !o.ids.is_empty() && o.ids == self.selection)
     }
 
     /// Where the selection turns about when its origin was moved (page coordinates).
@@ -47,30 +59,41 @@ impl DocState {
     /// The selection's rotation origin (page coordinates): where it was moved, else the centre of
     /// its box.
     pub fn origin_point(&self) -> Option<Point> {
-        self.moved_origin().or_else(|| box_points(&self.doc, &self.selection).map(|b| b[8]))
+        self.moved_origin()
+            .or_else(|| box_points(&self.doc, &self.selection).map(|b| b[8]))
     }
 
     /// The origin handle while it shows (page coordinates; not while editing text or points).
     pub fn origin_handle(&self) -> Option<Point> {
-        self.current_origin().filter(|o| o.editing && self.text_edit.is_none() && self.vector_edit.is_none())?;
+        self.current_origin()
+            .filter(|o| o.editing && self.text_edit.is_none() && self.vector_edit.is_none())?;
         self.origin_point()
     }
 
     /// Whether `p` (page coordinates) is on the origin handle at `zoom`.
     pub fn on_origin_handle(&self, p: Point, zoom: f64) -> bool {
-        self.origin_handle().is_some_and(|o| (o - p).hypot() * zoom.max(1e-6) <= GRAB_PX)
+        self.origin_handle()
+            .is_some_and(|o| (o - p).hypot() * zoom.max(1e-6) <= GRAB_PX)
     }
 
     /// The selection's origin state, started for it if it has none.
     fn origin_mut(&mut self, cmd: &str) -> Result<&mut RotationOrigin> {
         if self.selection.is_empty() {
-            return Err(EngineError::Disabled(cmd.to_string(), "nothing is selected".into()));
+            return Err(EngineError::Disabled(
+                cmd.to_string(),
+                "nothing is selected".into(),
+            ));
         }
         self.revision += 1;
         let ids = &self.selection;
-        let o = self.rotation_origin.get_or_insert_with(RotationOrigin::default);
+        let o = self
+            .rotation_origin
+            .get_or_insert_with(RotationOrigin::default);
         if o.ids != *ids {
-            *o = RotationOrigin { ids: ids.clone(), ..RotationOrigin::default() };
+            *o = RotationOrigin {
+                ids: ids.clone(),
+                ..RotationOrigin::default()
+            };
         }
         Ok(o)
     }
@@ -91,7 +114,9 @@ impl Session {
         let world = first.map(|i| ds.doc.world_transform(i));
         let o = ds.origin_mut("transform.setRotationOrigin")?;
         o.at = match (p, world) {
-            (Some(p), Some(w)) if w.determinant().abs() > 1e-12 => Some(w.inverse() * p).filter(|q| q.x.is_finite() && q.y.is_finite()),
+            (Some(p), Some(w)) if w.determinant().abs() > 1e-12 => {
+                Some(w.inverse() * p).filter(|q| q.x.is_finite() && q.y.is_finite())
+            }
             _ => None,
         };
         Ok(())

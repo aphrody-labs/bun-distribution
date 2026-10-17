@@ -36,23 +36,37 @@ pub fn track(app: &mut PhotocraftApp, ctx: &egui::Context) -> Option<LayerId> {
     let id = active?;
     for group in closed_ancestors(app, id) {
         // A view change (no history step); a failure just leaves the group closed.
-        let _ = app.session.execute("layer.setExpanded", json!({"layer": group.0, "expanded": true}));
+        let _ = app.session.execute(
+            "layer.setExpanded",
+            json!({"layer": group.0, "expanded": true}),
+        );
     }
     Some(id)
 }
 
 /// The groups containing `id` that are closed, outermost first.
 fn closed_ancestors(app: &PhotocraftApp, id: LayerId) -> Vec<LayerId> {
-    let Some(doc) = app.session.active().map(|s| &s.doc) else { return Vec::new() };
-    let Some(path) = doc.path_of(id) else { return Vec::new() };
-    (1..path.len()).filter_map(|n| doc.layer_at(path.get(..n)?)).filter(|l| matches!(&l.content, LayerContent::Group(g) if !g.expanded)).map(|l| l.id).collect()
+    let Some(doc) = app.session.active().map(|s| &s.doc) else {
+        return Vec::new();
+    };
+    let Some(path) = doc.path_of(id) else {
+        return Vec::new();
+    };
+    (1..path.len())
+        .filter_map(|n| doc.layer_at(path.get(..n)?))
+        .filter(|l| matches!(&l.content, LayerContent::Group(g) if !g.expanded))
+        .map(|l| l.id)
+        .collect()
 }
 
 /// After drawing the row that started at `top` in the Layers scroll area, scroll it into view
 /// if any of it is hidden (no animation: Photoshop jumps).
 pub fn scroll_to_row(ui: &egui::Ui, top: f32) {
     let bottom = ui.min_rect().bottom().max(top);
-    let row = Rect::from_min_max(pos2(ui.min_rect().left(), top), pos2(ui.min_rect().right(), bottom));
+    let row = Rect::from_min_max(
+        pos2(ui.min_rect().left(), top),
+        pos2(ui.min_rect().right(), bottom),
+    );
     let view = ui.clip_rect();
     if row.top() < view.top() - 0.5 || row.bottom() > view.bottom() + 0.5 {
         ui.scroll_to_rect_animation(row, None, egui::style::ScrollAnimation::none());

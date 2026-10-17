@@ -39,7 +39,11 @@ pub struct SyncState {
 
 impl Default for SyncState {
     fn default() -> Self {
-        Self { version: STATE_VERSION, sources: BTreeMap::new(), mirrors: BTreeMap::new() }
+        Self {
+            version: STATE_VERSION,
+            sources: BTreeMap::new(),
+            mirrors: BTreeMap::new(),
+        }
     }
 }
 
@@ -84,8 +88,10 @@ impl SyncState {
             Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Self::default()),
             Err(error) => return Err(SyncError::io(path)(error)),
         };
-        serde_json::from_slice(&raw)
-            .map_err(|source| SyncError::CorruptState { path: path.to_path_buf(), source })
+        serde_json::from_slice(&raw).map_err(|source| SyncError::CorruptState {
+            path: path.to_path_buf(),
+            source,
+        })
     }
 
     /// Write the state to `path` atomically (temporary file, `fsync`, rename).
@@ -110,7 +116,10 @@ impl SyncState {
         &'a self,
         mirror: &'a str,
     ) -> impl Iterator<Item = &'a String> + 'a {
-        self.sources.iter().filter(move |(_, entry)| entry.mirror == mirror).map(|(key, _)| key)
+        self.sources
+            .iter()
+            .filter(move |(_, entry)| entry.mirror == mirror)
+            .map(|(key, _)| key)
     }
 }
 

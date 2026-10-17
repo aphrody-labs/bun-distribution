@@ -305,7 +305,11 @@ impl Part {
     pub fn function_call(name: impl Into<String>, args: serde_json::Value) -> Self {
         Self {
             text: None,
-            function_call: Some(FunctionCall { name: name.into(), args, id: None }),
+            function_call: Some(FunctionCall {
+                name: name.into(),
+                args,
+                id: None,
+            }),
             function_response: None,
             thought: None,
         }
@@ -320,7 +324,11 @@ impl Part {
     ) -> Self {
         Self {
             text: None,
-            function_call: Some(FunctionCall { name: name.into(), args, id: Some(id.into()) }),
+            function_call: Some(FunctionCall {
+                name: name.into(),
+                args,
+                id: Some(id.into()),
+            }),
             function_response: None,
             thought: None,
         }
@@ -332,7 +340,11 @@ impl Part {
         Self {
             text: None,
             function_call: None,
-            function_response: Some(FunctionResponse { name: name.into(), response, id: None }),
+            function_response: Some(FunctionResponse {
+                name: name.into(),
+                response,
+                id: None,
+            }),
             thought: None,
         }
     }
@@ -374,7 +386,10 @@ impl Content {
     /// Build a single-text-part `user` content turn.
     #[must_use]
     pub fn user_text(text: impl Into<String>) -> Self {
-        Self { role: Some("user".to_owned()), parts: vec![Part::text(text)] }
+        Self {
+            role: Some("user".to_owned()),
+            parts: vec![Part::text(text)],
+        }
     }
 }
 
@@ -481,8 +496,16 @@ impl GenerateContentResponse {
     #[must_use]
     pub fn first_text(&self) -> Option<String> {
         let content = self.candidates.first()?.content.as_ref()?;
-        let joined: String = content.parts.iter().filter_map(|p| p.text.as_deref()).collect();
-        if joined.is_empty() { None } else { Some(joined) }
+        let joined: String = content
+            .parts
+            .iter()
+            .filter_map(|p| p.text.as_deref())
+            .collect();
+        if joined.is_empty() {
+            None
+        } else {
+            Some(joined)
+        }
     }
 }
 
@@ -570,12 +593,21 @@ mod tests {
         }"#;
 
         let resp: LoadCodeAssistResponse = serde_json::from_str(sample).expect("parse");
-        assert_eq!(resp.current_tier.as_ref().unwrap().id.as_deref(), Some("free-tier"));
+        assert_eq!(
+            resp.current_tier.as_ref().unwrap().id.as_deref(),
+            Some("free-tier")
+        );
         assert_eq!(resp.current_tier.as_ref().unwrap().is_default, Some(true));
         assert_eq!(resp.allowed_tiers.len(), 2);
         assert_eq!(resp.allowed_tiers[1].id.as_deref(), Some("standard-tier"));
-        assert_eq!(resp.allowed_tiers[1].user_defined_cloudaicompanion_project, Some(true));
-        assert_eq!(resp.cloudaicompanion_project.as_deref(), Some("resolved-project-id"));
+        assert_eq!(
+            resp.allowed_tiers[1].user_defined_cloudaicompanion_project,
+            Some(true)
+        );
+        assert_eq!(
+            resp.cloudaicompanion_project.as_deref(),
+            Some("resolved-project-id")
+        );
         round_trip(&resp);
     }
 
@@ -599,7 +631,10 @@ mod tests {
         let resp: FetchAvailableModelsResponse = serde_json::from_str(sample).expect("parse");
         assert_eq!(resp.models.len(), 2);
         assert_eq!(resp.models[0].name.as_deref(), Some("gemini-2.0-flash"));
-        assert_eq!(resp.models[0].display_name.as_deref(), Some("Gemini 2.0 Flash"));
+        assert_eq!(
+            resp.models[0].display_name.as_deref(),
+            Some("Gemini 2.0 Flash")
+        );
         assert!(resp.models[0].capabilities.is_some());
         assert_eq!(resp.models[1].name.as_deref(), Some("gemini-2.0-pro"));
         assert!(resp.models[1].display_name.is_none());
@@ -618,7 +653,10 @@ mod tests {
         let resp: FetchAvailableModelsResponse = serde_json::from_str(sample).expect("parse");
         assert_eq!(resp.models.len(), 2);
         assert_eq!(resp.models[0].name.as_deref(), Some("gemini-3-flash"));
-        assert_eq!(resp.models[0].display_name.as_deref(), Some("Gemini 3 Flash"));
+        assert_eq!(
+            resp.models[0].display_name.as_deref(),
+            Some("Gemini 3 Flash")
+        );
         assert_eq!(resp.models[1].name.as_deref(), Some("gemini-3-pro"));
         round_trip(&resp);
     }
@@ -669,7 +707,10 @@ mod tests {
         let req = GenerateContentRequest::from_prompt("Hello, world");
         assert_eq!(req.contents.len(), 1);
         assert_eq!(req.contents[0].role.as_deref(), Some("user"));
-        assert_eq!(req.contents[0].parts[0].text.as_deref(), Some("Hello, world"));
+        assert_eq!(
+            req.contents[0].parts[0].text.as_deref(),
+            Some("Hello, world")
+        );
         round_trip(&req);
 
         let json = serde_json::to_string(&req).unwrap();

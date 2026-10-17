@@ -64,14 +64,25 @@ fn le_rapport_se_reconstruit_depuis_les_artefacts() {
         "on ne produit pas plus d'octets que le fichier n'en compte"
     );
     let pct = r.produced_pct();
-    assert!((0.0..=100.0).contains(&pct), "part produite hors bornes : {pct}");
-    assert!((0.0..=100.0).contains(&r.code_pct()), "part du .text hors bornes : {}", r.code_pct());
+    assert!(
+        (0.0..=100.0).contains(&pct),
+        "part produite hors bornes : {pct}"
+    );
+    assert!(
+        (0.0..=100.0).contains(&r.code_pct()),
+        "part du .text hors bornes : {}",
+        r.code_pct()
+    );
 
     // La part produite se recompose exactement de ses seaux — et `semantic`
     // n'en fait **pas** partie : un portage validé sémantiquement n'a pas
     // produit d'octet.
     let somme = r.emitted.bytes + r.assembled.bytes + r.matched_bytes.bytes;
-    assert_eq!(somme, r.produced_bytes(), "les seaux comptés doivent sommer à la part produite");
+    assert_eq!(
+        somme,
+        r.produced_bytes(),
+        "les seaux comptés doivent sommer à la part produite"
+    );
 
     println!(
         "forge : {:.4} % du fichier, {:.4} % du .text ({} / {} octets)",

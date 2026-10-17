@@ -4,9 +4,16 @@
 
 use proptest::prelude::*;
 use vectorcraft_geom::hit::{distance_to_outline, fill_contains, stroke_contains};
-use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, PathEl, Point, Rect, Shape, Vec2, shapes};
-use vectorcraft_testkit::geom::{grid, hausdorff, polygon_area, rect_contains, sample, sample_path};
-use vectorcraft_testkit::strategies::{arb_closed_shape, arb_convex_polygon, arb_path_data, arb_point, arb_rect, arb_star_polygon, polygon_path};
+use vectorcraft_geom::{
+    Affine, BezPath, FillRule, PathData, PathEl, Point, Rect, Shape, Vec2, shapes,
+};
+use vectorcraft_testkit::geom::{
+    grid, hausdorff, polygon_area, rect_contains, sample, sample_path,
+};
+use vectorcraft_testkit::strategies::{
+    arb_closed_shape, arb_convex_polygon, arb_path_data, arb_point, arb_rect, arb_star_polygon,
+    polygon_path,
+};
 
 fn els_close(a: &BezPath, b: &BezPath, eps: f64) -> bool {
     let (a, b) = (a.elements(), b.elements());
@@ -15,8 +22,12 @@ fn els_close(a: &BezPath, b: &BezPath, eps: f64) -> bool {
     }
     let pc = |p: Point, q: Point| p.distance(q) <= eps;
     a.iter().zip(b).all(|(x, y)| match (x, y) {
-        (PathEl::MoveTo(p), PathEl::MoveTo(q)) | (PathEl::LineTo(p), PathEl::LineTo(q)) => pc(*p, *q),
-        (PathEl::CurveTo(p1, p2, p3), PathEl::CurveTo(q1, q2, q3)) => pc(*p1, *q1) && pc(*p2, *q2) && pc(*p3, *q3),
+        (PathEl::MoveTo(p), PathEl::MoveTo(q)) | (PathEl::LineTo(p), PathEl::LineTo(q)) => {
+            pc(*p, *q)
+        }
+        (PathEl::CurveTo(p1, p2, p3), PathEl::CurveTo(q1, q2, q3)) => {
+            pc(*p1, *q1) && pc(*p2, *q2) && pc(*p3, *q3)
+        }
         (PathEl::QuadTo(p1, p2), PathEl::QuadTo(q1, q2)) => pc(*p1, *q1) && pc(*p2, *q2),
         (PathEl::ClosePath, PathEl::ClosePath) => true,
         _ => false,
@@ -301,6 +312,10 @@ fn empty_and_degenerate_paths() {
     });
     assert_eq!(one.anchor_count(), 1);
     assert_eq!(one.bounds(), Some(Rect::new(5.0, 5.0, 5.0, 5.0)));
-    assert!(!fill_contains(&one.to_bezpath(), FillRule::NonZero, Point::new(5.0, 5.0)));
+    assert!(!fill_contains(
+        &one.to_bezpath(),
+        FillRule::NonZero,
+        Point::new(5.0, 5.0)
+    ));
     let _ = grid(Rect::new(0.0, 0.0, 1.0, 1.0), 2);
 }

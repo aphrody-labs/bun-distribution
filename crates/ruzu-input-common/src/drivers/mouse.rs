@@ -482,7 +482,9 @@ mod tests {
         mouse.update_stick_input();
         // Clamp to 1.5 before applying the 50% high-magnitude decay.
         assert!((mouse.last_mouse_change.0 - 0.75).abs() < 1e-6);
-        common::settings::values_mut().mouse_panning_deadzone_counterweight.set_value(60);
+        common::settings::values_mut()
+            .mouse_panning_deadzone_counterweight
+            .set_value(60);
         mouse.last_mouse_change = (0.0, 0.0);
         mouse.move_cursor(1, 0, 0, 0);
         assert!((mouse.last_mouse_change.0 - 0.6).abs() < 1e-6);
@@ -493,8 +495,12 @@ mod tests {
         mouse.move_cursor(100, 100, 0, 0);
         mouse.update_stick_input();
         assert_eq!(mouse.last_mouse_change, previous);
-        common::settings::values_mut().mouse_enabled.set_value(false);
-        common::settings::values_mut().mouse_panning.set_value(false);
+        common::settings::values_mut()
+            .mouse_enabled
+            .set_value(false);
+        common::settings::values_mut()
+            .mouse_panning
+            .set_value(false);
         assert!(!mouse.is_mouse_panning_enabled());
     }
 

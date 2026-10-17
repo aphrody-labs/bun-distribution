@@ -98,15 +98,18 @@ impl Net {
         if ops.is_empty() || ops.len() > MAX_OPS {
             return invalid("the network has no layers or too many");
         }
-        let mut shapes = vec![Shape { channels: in_channels, level: 0 }];
+        let mut shapes = vec![Shape {
+            channels: in_channels,
+            level: 0,
+        }];
         let mut weights = 0usize;
         for (i, op) in ops.iter().enumerate() {
             let shape_of = |t: TensorId| {
-                shapes
-                    .get(t)
-                    .copied()
-                    .filter(|_| t <= i)
-                    .ok_or_else(|| NetError::Invalid(format!("layer {i} reads tensor {t}, which does not exist yet")))
+                shapes.get(t).copied().filter(|_| t <= i).ok_or_else(|| {
+                    NetError::Invalid(format!(
+                        "layer {i} reads tensor {t}, which does not exist yet"
+                    ))
+                })
             };
             let out = match op {
                 Op::Conv(c) => {
@@ -115,13 +118,19 @@ impl Net {
                         Some(s2) => {
                             let b = shape_of(s2)?;
                             if b.level != a.level {
-                                return invalid(format!("layer {i} joins tensors of different resolutions"));
+                                return invalid(format!(
+                                    "layer {i} joins tensors of different resolutions"
+                                ));
                             }
                             (a.channels + b.channels, a.level)
                         }
                         None => (a.channels, a.level),
                     };
-                    if c.cin != cin || c.cout == 0 || c.cout > MAX_CHANNELS || !(c.k == 1 || c.k == 3) {
+                    if c.cin != cin
+                        || c.cout == 0
+                        || c.cout > MAX_CHANNELS
+                        || !(c.k == 1 || c.k == 3)
+                    {
                         return invalid(format!(
                             "layer {i}: a convolution of {} to {} channels with a {}-wide kernel does not fit",
                             c.cin, c.cout, c.k
@@ -130,37 +139,68 @@ impl Net {
                     check_weights(
                         i,
                         &c.weight,
-                        c.cout.checked_mul(cin).and_then(|n| n.checked_mul(c.k * c.k)),
+                        c.cout
+                            .checked_mul(cin)
+                            .and_then(|n| n.checked_mul(c.k * c.k)),
                         &c.bias,
                         c.cout,
                         c.leaky,
                         &mut weights,
                     )?;
-                    Shape { channels: c.cout, level }
+                    Shape {
+                        channels: c.cout,
+                        level,
+                    }
                 }
                 Op::ConvT2(c) => {
                     let a = shape_of(c.src)?;
                     if c.cin != a.channels || c.cout == 0 || c.cout > MAX_CHANNELS {
-                        return invalid(format!("layer {i}: a transposed convolution of {} to {} channels does not fit", c.cin, c.cout));
+                        return invalid(format!(
+                            "layer {i}: a transposed convolution of {} to {} channels does not fit",
+                            c.cin, c.cout
+                        ));
                     }
-                    check_weights(i, &c.weight, c.cin.checked_mul(c.cout).and_then(|n| n.checked_mul(4)), &c.bias, c.cout, c.leaky, &mut weights)?;
-                    Shape { channels: c.cout, level: a.level - 1 }
+                    check_weights(
+                        i,
+                        &c.weight,
+                        c.cin.checked_mul(c.cout).and_then(|n| n.checked_mul(4)),
+                        &c.bias,
+                        c.cout,
+                        c.leaky,
+                        &mut weights,
+                    )?;
+                    Shape {
+                        channels: c.cout,
+                        level: a.level - 1,
+                    }
                 }
                 Op::MaxPool2 { src } => {
                     let a = shape_of(*src)?;
-                    Shape { channels: a.channels, level: a.level + 1 }
+                    Shape {
+                        channels: a.channels,
+                        level: a.level + 1,
+                    }
                 }
                 Op::DepthToSpace2 { src } => {
                     let a = shape_of(*src)?;
                     if !a.channels.is_multiple_of(4) {
-                        return invalid(format!("layer {i}: depth-to-space needs a multiple of 4 channels"));
+                        return invalid(format!(
+                            "layer {i}: depth-to-space needs a multiple of 4 channels"
+                        ));
                     }
-                    Shape { channels: a.channels / 4, level: a.level - 1 }
+                    Shape {
+                        channels: a.channels / 4,
+                        level: a.level - 1,
+                    }
                 }
             };
             shapes.push(out);
         }
-        Ok(Net { in_channels, ops, shapes })
+        Ok(Net {
+            in_channels,
+            ops,
+            shapes,
+        })
     }
 
     /// The layers: layer `i` makes tensor `i + 1`.
@@ -184,14 +224,22 @@ impl Net {
 
     /// The deepest resolution level: a tile must be a multiple of `2^this` cells wide.
     pub fn depth(&self) -> u32 {
-        self.shapes.iter().map(|s| s.level.max(0) as u32).max().unwrap_or(0)
+        self.shapes
+            .iter()
+            .map(|s| s.level.max(0) as u32)
+            .max()
+            .unwrap_or(0)
     }
 
     /// Can the network run on a `tile × tile` input and give `[out_channels, 2·tile, 2·tile]`? (Pooling must divide
     /// the tile, and the output must be one level above the input.)
     pub fn fits_tile(&self, tile: usize) -> bool {
-        let Some(multiple) = 1usize.checked_shl(self.depth()) else { return false };
-        tile > 0 && tile.is_multiple_of(multiple) && self.shapes.last().is_some_and(|s| s.level == -1)
+        let Some(multiple) = 1usize.checked_shl(self.depth()) else {
+            return false;
+        };
+        tile > 0
+            && tile.is_multiple_of(multiple)
+            && self.shapes.last().is_some_and(|s| s.level == -1)
     }
 
     /// Multiply-adds for one tile, for estimating time.
@@ -200,7 +248,11 @@ impl Net {
             let side = if level >= 0 {
                 tile.checked_shr(level as u32).unwrap_or(0)
             } else {
-                tile.saturating_mul(1usize.checked_shl(level.unsigned_abs()).unwrap_or(usize::MAX))
+                tile.saturating_mul(
+                    1usize
+                        .checked_shl(level.unsigned_abs())
+                        .unwrap_or(usize::MAX),
+                )
             };
             (side as u64).saturating_mul(side as u64)
         };
@@ -212,7 +264,8 @@ impl Net {
                 match op {
                     Op::Conv(c) => out.saturating_mul((c.cin * c.cout * c.k * c.k) as u64),
                     // every input pixel makes a 2 × 2 block: as many multiply-adds as the 2 × 2-wide kernel has weights
-                    Op::ConvT2(c) => pixels(self.shapes.get(c.src).map_or(0, |s| s.level)).saturating_mul((c.cin * c.cout * 4) as u64),
+                    Op::ConvT2(c) => pixels(self.shapes.get(c.src).map_or(0, |s| s.level))
+                        .saturating_mul((c.cin * c.cout * 4) as u64),
                     _ => 0,
                 }
             })
@@ -230,9 +283,13 @@ fn check_weights(
     total: &mut usize,
 ) -> Result<(), NetError> {
     if want != Some(weight.len()) || bias.len() != cout {
-        return invalid(format!("layer {layer}: the weights are not the size its shape needs"));
+        return invalid(format!(
+            "layer {layer}: the weights are not the size its shape needs"
+        ));
     }
-    *total = total.saturating_add(weight.len()).saturating_add(bias.len());
+    *total = total
+        .saturating_add(weight.len())
+        .saturating_add(bias.len());
     if *total > MAX_WEIGHTS {
         return invalid("the network has too many weights");
     }
@@ -247,11 +304,27 @@ mod tests {
     use super::*;
 
     fn conv(src: TensorId, src2: Option<TensorId>, cin: usize, cout: usize, k: usize) -> Op {
-        Op::Conv(Conv { src, src2, cin, cout, k, weight: vec![0.1; cout * cin * k * k], bias: vec![0.0; cout], leaky: Some(0.2) })
+        Op::Conv(Conv {
+            src,
+            src2,
+            cin,
+            cout,
+            k,
+            weight: vec![0.1; cout * cin * k * k],
+            bias: vec![0.0; cout],
+            leaky: Some(0.2),
+        })
     }
 
     fn convt(src: TensorId, cin: usize, cout: usize) -> Op {
-        Op::ConvT2(ConvT2 { src, cin, cout, weight: vec![0.1; cin * cout * 4], bias: vec![0.0; cout], leaky: None })
+        Op::ConvT2(ConvT2 {
+            src,
+            cin,
+            cout,
+            weight: vec![0.1; cin * cout * 4],
+            bias: vec![0.0; cout],
+            leaky: None,
+        })
     }
 
     /// A two-level network of the shape the denoisers have: 4 → 8 channels, pool, 16 channels, up, join, 12, and the
@@ -292,13 +365,29 @@ mod tests {
     fn a_u_net_is_described_with_its_shapes_and_costs() {
         let net = Net::new(4, unet()).unwrap();
         assert_eq!(net.out_channels(), 3);
-        assert_eq!(net.shape(3), Some(Shape { channels: 16, level: 1 }));
-        assert_eq!(net.shape(7), Some(Shape { channels: 3, level: -1 }));
+        assert_eq!(
+            net.shape(3),
+            Some(Shape {
+                channels: 16,
+                level: 1
+            })
+        );
+        assert_eq!(
+            net.shape(7),
+            Some(Shape {
+                channels: 3,
+                level: -1
+            })
+        );
         assert_eq!(net.depth(), 1);
         assert!(net.fits_tile(64) && !net.fits_tile(63) && !net.fits_tile(0));
         // 64 × 64 cells: layer 1 = 4096·4·8·9, and so on; just check it is the sum of what the layers cost
         let t = 64u64;
-        let want = t * t * 4 * 8 * 9 + (t / 2) * (t / 2) * 8 * 16 * 9 + (t / 2) * (t / 2) * 16 * 8 * 4 + t * t * 16 * 8 * 9 + t * t * 8 * 12;
+        let want = t * t * 4 * 8 * 9
+            + (t / 2) * (t / 2) * 8 * 16 * 9
+            + (t / 2) * (t / 2) * 16 * 8 * 4
+            + t * t * 16 * 8 * 9
+            + t * t * 8 * 12;
         assert_eq!(net.macs(64), want);
     }
 
@@ -333,13 +422,22 @@ mod tests {
         assert!(Net::new(4, ops).is_err());
         assert!(Net::new(4, vec![]).is_err());
         assert!(Net::new(4, vec![Op::DepthToSpace2 { src: 0 }]).is_ok());
-        assert!(Net::new(4, vec![Op::DepthToSpace2 { src: 0 }, Op::DepthToSpace2 { src: 1 }]).is_err());
+        assert!(
+            Net::new(
+                4,
+                vec![Op::DepthToSpace2 { src: 0 }, Op::DepthToSpace2 { src: 1 }]
+            )
+            .is_err()
+        );
         assert!(Net::new(2, vec![Op::DepthToSpace2 { src: 0 }]).is_err());
     }
 
     #[test]
     fn a_network_that_does_not_end_one_level_up_does_not_fit_a_tile() {
         let net = Net::new(4, unet()[..6].to_vec()).unwrap();
-        assert!(!net.fits_tile(64), "no depth-to-space: the output is not at twice the resolution");
+        assert!(
+            !net.fits_tile(64),
+            "no depth-to-space: the output is not at twice the resolution"
+        );
     }
 }

@@ -5,7 +5,9 @@
 //! (so ½/¼ playback resolution renders the same look). Colour-grading math runs on display-encoded
 //! straight colour where artists expect it (contrast, levels, posterize), linear light elsewhere.
 
-use filmcraft_color::{GradeSpace, hsl_to_rgb, linear_to_srgb, luma709, rgb_to_hsl, srgb_to_linear};
+use filmcraft_color::{
+    GradeSpace, hsl_to_rgb, linear_to_srgb, luma709, rgb_to_hsl, srgb_to_linear,
+};
 use filmcraft_geom::{Affine, Vec2};
 use filmcraft_project::{EffectInstance, ParamValue};
 use filmcraft_time::Tick;
@@ -59,24 +61,45 @@ pub(crate) fn choice(e: &EffectInstance, id: &str) -> u32 {
     }
 }
 pub(crate) fn color(e: &EffectInstance, id: &str, cx: &FxCtx) -> [f32; 4] {
-    e.param(id).and_then(|p| p.value_at(cx.t).as_color()).unwrap_or([1.0; 4])
+    e.param(id)
+        .and_then(|p| p.value_at(cx.t).as_color())
+        .unwrap_or([1.0; 4])
 }
 /// A point param in working-image pixels; NaN components default to the image centre.
 pub(crate) fn point(e: &EffectInstance, id: &str, cx: &FxCtx, img: &Image) -> Vec2 {
-    let v = e.param(id).map(|p| p.vec2_at(cx.t)).unwrap_or(Vec2::new(f64::NAN, f64::NAN));
+    let v = e
+        .param(id)
+        .map(|p| p.vec2_at(cx.t))
+        .unwrap_or(Vec2::new(f64::NAN, f64::NAN));
     Vec2::new(
-        if v.x.is_nan() { img.w as f64 / 2.0 } else { v.x * cx.px_scale as f64 },
-        if v.y.is_nan() { img.h as f64 / 2.0 } else { v.y * cx.px_scale as f64 },
+        if v.x.is_nan() {
+            img.w as f64 / 2.0
+        } else {
+            v.x * cx.px_scale as f64
+        },
+        if v.y.is_nan() {
+            img.h as f64 / 2.0
+        } else {
+            v.y * cx.px_scale as f64
+        },
     )
 }
 
 #[inline]
 pub(crate) fn enc(c: [f32; 3]) -> [f32; 3] {
-    [linear_to_srgb(c[0].max(0.0)), linear_to_srgb(c[1].max(0.0)), linear_to_srgb(c[2].max(0.0))]
+    [
+        linear_to_srgb(c[0].max(0.0)),
+        linear_to_srgb(c[1].max(0.0)),
+        linear_to_srgb(c[2].max(0.0)),
+    ]
 }
 #[inline]
 pub(crate) fn dec(c: [f32; 3]) -> [f32; 3] {
-    [srgb_to_linear(c[0].clamp(0.0, 1.0)), srgb_to_linear(c[1].clamp(0.0, 1.0)), srgb_to_linear(c[2].clamp(0.0, 1.0))]
+    [
+        srgb_to_linear(c[0].clamp(0.0, 1.0)),
+        srgb_to_linear(c[1].clamp(0.0, 1.0)),
+        srgb_to_linear(c[2].clamp(0.0, 1.0)),
+    ]
 }
 
 /// Stable seed for the *exact* frame timestamp. A fixed 30 Hz quantizer
@@ -87,7 +110,9 @@ pub(crate) fn noise_frame_seed(cx: &FxCtx) -> u64 {
 }
 
 pub(crate) fn hash3(x: usize, y: usize, z: u64) -> f32 {
-    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F) ^ z.wrapping_mul(0x1656_67B1_9E37_79F9);
+    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F)
+        ^ z.wrapping_mul(0x1656_67B1_9E37_79F9);
     h ^= h >> 31;
     h = h.wrapping_mul(0xBF58_476D_1CE4_E5B9);
     h ^= h >> 29;
@@ -103,7 +128,11 @@ const MEDIAN_MAX_RADIUS: f32 = 100.0;
 /// at full resolution). It stays within the parameter's range whatever a project file says, since
 /// the filter costs radius² per pixel, and within the image.
 fn median_radius(radius: f32, px_scale: f32, longest_side: usize) -> isize {
-    let scale = if px_scale.is_finite() { px_scale.max(0.0) } else { 1.0 };
+    let scale = if px_scale.is_finite() {
+        px_scale.max(0.0)
+    } else {
+        1.0
+    };
     let r = radius * scale;
     if !(r.is_finite() && r > 0.0) {
         return 0;
@@ -120,7 +149,9 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         return;
     }
     // effects with a GPU implementation: evaluated parameters + CPU reference (`gpufx`)
-    if let Some(op) = crate::gpufx::FxOp::eval(e, cx, img.w, img.h).filter(|op| e.effect != "lumetri" || op.gpu_ok()) {
+    if let Some(op) = crate::gpufx::FxOp::eval(e, cx, img.w, img.h)
+        .filter(|op| e.effect != "lumetri" || op.gpu_ok())
+    {
         op.apply(img);
         return;
     }
@@ -138,26 +169,37 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let clip = b(e, "clip");
             let frame = noise_frame_seed(cx);
             let w = img.w;
-            img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w {
-                    let p = &mut row[x * 4..x * 4 + 4];
-                    let a = p[3];
-                    if a <= 0.0 {
-                        continue;
+            img.px
+                .par_chunks_mut(w * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w {
+                        let p = &mut row[x * 4..x * 4 + 4];
+                        let a = p[3];
+                        if a <= 0.0 {
+                            continue;
+                        }
+                        let n0 = hash3(x, y, frame) - 0.5;
+                        let ns = if colored {
+                            [
+                                n0,
+                                hash3(x, y, frame + 7777) - 0.5,
+                                hash3(x, y, frame + 99_991) - 0.5,
+                            ]
+                        } else {
+                            [n0; 3]
+                        };
+                        let c = enc([p[0] / a, p[1] / a, p[2] / a]);
+                        let mut o = [c[0] + ns[0] * amt, c[1] + ns[1] * amt, c[2] + ns[2] * amt];
+                        if clip {
+                            o = o.map(|v| v.clamp(0.0, 1.0));
+                        }
+                        let o = dec(o);
+                        p[0] = o[0] * a;
+                        p[1] = o[1] * a;
+                        p[2] = o[2] * a;
                     }
-                    let n0 = hash3(x, y, frame) - 0.5;
-                    let ns = if colored { [n0, hash3(x, y, frame + 7777) - 0.5, hash3(x, y, frame + 99_991) - 0.5] } else { [n0; 3] };
-                    let c = enc([p[0] / a, p[1] / a, p[2] / a]);
-                    let mut o = [c[0] + ns[0] * amt, c[1] + ns[1] * amt, c[2] + ns[2] * amt];
-                    if clip {
-                        o = o.map(|v| v.clamp(0.0, 1.0));
-                    }
-                    let o = dec(o);
-                    p[0] = o[0] * a;
-                    p[1] = o[1] * a;
-                    p[2] = o[2] * a;
-                }
-            });
+                });
         }
         "mosaic" => {
             let bx = f(e, "horizontal", cx).max(1.0) as usize;
@@ -169,25 +211,34 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let blend = f(e, "blend", cx) / 100.0;
             let src = img.clone();
             let w = img.w;
-            img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w {
-                    let l = |dx: isize, dy: isize| {
-                        let p = src.get_clamped(x as isize + dx, y as isize + dy);
-                        luma709(p[0], p[1], p[2])
-                    };
-                    let gx = l(1, -1) + 2.0 * l(1, 0) + l(1, 1) - l(-1, -1) - 2.0 * l(-1, 0) - l(-1, 1);
-                    let gy = l(-1, 1) + 2.0 * l(0, 1) + l(1, 1) - l(-1, -1) - 2.0 * l(0, -1) - l(1, -1);
-                    let mut m = (gx * gx + gy * gy).sqrt().min(1.0);
-                    if !inv {
-                        m = 1.0 - m;
+            img.px
+                .par_chunks_mut(w * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w {
+                        let l = |dx: isize, dy: isize| {
+                            let p = src.get_clamped(x as isize + dx, y as isize + dy);
+                            luma709(p[0], p[1], p[2])
+                        };
+                        let gx = l(1, -1) + 2.0 * l(1, 0) + l(1, 1)
+                            - l(-1, -1)
+                            - 2.0 * l(-1, 0)
+                            - l(-1, 1);
+                        let gy = l(-1, 1) + 2.0 * l(0, 1) + l(1, 1)
+                            - l(-1, -1)
+                            - 2.0 * l(0, -1)
+                            - l(1, -1);
+                        let mut m = (gx * gx + gy * gy).sqrt().min(1.0);
+                        if !inv {
+                            m = 1.0 - m;
+                        }
+                        let o = src.get(x, y);
+                        let a = o[3];
+                        for k in 0..3 {
+                            row[x * 4 + k] = m * a * (1.0 - blend) + o[k] * blend;
+                        }
                     }
-                    let o = src.get(x, y);
-                    let a = o[3];
-                    for k in 0..3 {
-                        row[x * 4 + k] = m * a * (1.0 - blend) + o[k] * blend;
-                    }
-                }
-            });
+                });
         }
         "emboss" => {
             let dir = (f(e, "direction", cx) as f64).to_radians();
@@ -197,30 +248,46 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let (dx, dy) = ((dir.cos() as f32) * relief, (-dir.sin() as f32) * relief);
             let src = img.clone();
             let w = img.w;
-            img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w {
-                    let a = src.sample_bilinear_clamped(x as f32 + 0.5 + dx, y as f32 + 0.5 + dy);
-                    let bq = src.sample_bilinear_clamped(x as f32 + 0.5 - dx, y as f32 + 0.5 - dy);
-                    let v = srgb_to_linear((0.5 + (luma709(a[0], a[1], a[2]) - luma709(bq[0], bq[1], bq[2])) * contrast * 2.0).clamp(0.0, 1.0));
-                    let o = src.get(x, y);
-                    for k in 0..3 {
-                        row[x * 4 + k] = v * o[3] * (1.0 - blend) + o[k] * blend;
+            img.px
+                .par_chunks_mut(w * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w {
+                        let a =
+                            src.sample_bilinear_clamped(x as f32 + 0.5 + dx, y as f32 + 0.5 + dy);
+                        let bq =
+                            src.sample_bilinear_clamped(x as f32 + 0.5 - dx, y as f32 + 0.5 - dy);
+                        let v = srgb_to_linear(
+                            (0.5 + (luma709(a[0], a[1], a[2]) - luma709(bq[0], bq[1], bq[2]))
+                                * contrast
+                                * 2.0)
+                                .clamp(0.0, 1.0),
+                        );
+                        let o = src.get(x, y);
+                        for k in 0..3 {
+                            row[x * 4 + k] = v * o[3] * (1.0 - blend) + o[k] * blend;
+                        }
                     }
-                }
-            });
+                });
         }
         "replicate" => {
             let n = f(e, "count", cx).clamp(1.0, 16.0) as usize;
             let src = img.clone();
             let (w, h) = (img.w, img.h);
-            img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w {
-                    let u = (x * n) % w;
-                    let v = (y * n) % h;
-                    let s = src.sample_bilinear_clamped((u as f32 + 0.5) + (n as f32 - 1.0) * 0.5 / n as f32, v as f32 + 0.5);
-                    row[x * 4..x * 4 + 4].copy_from_slice(&s);
-                }
-            });
+            img.px
+                .par_chunks_mut(w * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w {
+                        let u = (x * n) % w;
+                        let v = (y * n) % h;
+                        let s = src.sample_bilinear_clamped(
+                            (u as f32 + 0.5) + (n as f32 - 1.0) * 0.5 / n as f32,
+                            v as f32 + 0.5,
+                        );
+                        row[x * 4..x * 4 + 4].copy_from_slice(&s);
+                    }
+                });
         }
         "strobe" => {
             let period = f(e, "period", cx).max(0.001) as f64;
@@ -229,7 +296,13 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 let c = color(e, "color", cx);
                 let blend = f(e, "blend", cx) / 100.0;
                 let lc = dec([c[0], c[1], c[2]]);
-                img.map_rgb(|o, _, _| [lc[0] + (o[0] - lc[0]) * blend, lc[1] + (o[1] - lc[1]) * blend, lc[2] + (o[2] - lc[2]) * blend]);
+                img.map_rgb(|o, _, _| {
+                    [
+                        lc[0] + (o[0] - lc[0]) * blend,
+                        lc[1] + (o[1] - lc[1]) * blend,
+                        lc[2] + (o[2] - lc[2]) * blend,
+                    ]
+                });
             }
         }
         "twirl" => {
@@ -337,18 +410,23 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let src = img.clone();
             let (lx, ly) = (ang.cos() as f32, -ang.sin() as f32);
             let w = img.w;
-            img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w {
-                    let a = |dx: f32, dy: f32| src.sample_bilinear_clamped(x as f32 + 0.5 + dx, y as f32 + 0.5 + dy)[3];
-                    let gx = a(th, 0.0) - a(-th, 0.0);
-                    let gy = a(0.0, th) - a(0.0, -th);
-                    let shade = -(gx * lx + gy * ly) * inten;
-                    let p = &mut row[x * 4..x * 4 + 4];
-                    for k in 0..3 {
-                        p[k] = (p[k] + shade * p[3]).clamp(0.0, p[3]);
+            img.px
+                .par_chunks_mut(w * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w {
+                        let a = |dx: f32, dy: f32| {
+                            src.sample_bilinear_clamped(x as f32 + 0.5 + dx, y as f32 + 0.5 + dy)[3]
+                        };
+                        let gx = a(th, 0.0) - a(-th, 0.0);
+                        let gy = a(0.0, th) - a(0.0, -th);
+                        let shade = -(gx * lx + gy * ly) * inten;
+                        let p = &mut row[x * 4..x * 4 + 4];
+                        for k in 0..3 {
+                            p[k] = (p[k] + shade * p[3]).clamp(0.0, p[3]);
+                        }
                     }
-                }
-            });
+                });
         }
         "ultra_key" | "color_key" => key(img, e, cx),
         "luma_key" => {
@@ -372,10 +450,20 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             });
         }
         "four_color_gradient" => {
-            let cs = [color(e, "c1", cx), color(e, "c2", cx), color(e, "c3", cx), color(e, "c4", cx)];
+            let cs = [
+                color(e, "c1", cx),
+                color(e, "c2", cx),
+                color(e, "c3", cx),
+                color(e, "c4", cx),
+            ];
             let op = f(e, "opacity", cx) / 100.0;
             let (w, h) = (img.w as f32, img.h as f32);
-            let pts = [(0.25 * w, 0.25 * h), (0.75 * w, 0.25 * h), (0.25 * w, 0.75 * h), (0.75 * w, 0.75 * h)];
+            let pts = [
+                (0.25 * w, 0.25 * h),
+                (0.75 * w, 0.25 * h),
+                (0.25 * w, 0.75 * h),
+                (0.75 * w, 0.75 * h),
+            ];
             let blend_exp = 1.0 + f(e, "blend", cx) / 100.0;
             fill_over(img, op, |x, y| {
                 let mut acc = [0.0f32; 3];
@@ -407,7 +495,11 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                     (((x as f64 - s.x) * vx + (y as f64 - s.y) * vy) / len2) as f32
                 }
                 .clamp(0.0, 1.0);
-                dec([sc[0] + (ec[0] - sc[0]) * t, sc[1] + (ec[1] - sc[1]) * t, sc[2] + (ec[2] - sc[2]) * t])
+                dec([
+                    sc[0] + (ec[0] - sc[0]) * t,
+                    sc[1] + (ec[1] - sc[1]) * t,
+                    sc[2] + (ec[2] - sc[2]) * t,
+                ])
             });
         }
         "circle" => {
@@ -417,19 +509,22 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let op = f(e, "opacity", cx) / 100.0;
             let lc = dec([col[0], col[1], col[2]]);
             let w = img.w;
-            img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w {
-                    let d = ((x as f64 + 0.5 - c.x).hypot(y as f64 + 0.5 - c.y)) as f32;
-                    let a = (r - d + 0.5).clamp(0.0, 1.0) * op;
-                    if a > 0.0 {
-                        let p = &mut row[x * 4..x * 4 + 4];
-                        for k in 0..3 {
-                            p[k] = lc[k] * a + p[k] * (1.0 - a);
+            img.px
+                .par_chunks_mut(w * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w {
+                        let d = ((x as f64 + 0.5 - c.x).hypot(y as f64 + 0.5 - c.y)) as f32;
+                        let a = (r - d + 0.5).clamp(0.0, 1.0) * op;
+                        if a > 0.0 {
+                            let p = &mut row[x * 4..x * 4 + 4];
+                            for k in 0..3 {
+                                p[k] = lc[k] * a + p[k] * (1.0 - a);
+                            }
+                            p[3] = a + p[3] * (1.0 - a);
                         }
-                        p[3] = a + p[3] * (1.0 - a);
                     }
-                }
-            });
+                });
         }
         "grid" => {
             let size = (f(e, "size", cx) * cx.px_scale).max(1.0);
@@ -439,20 +534,25 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let lc = dec([col[0], col[1], col[2]]);
             let w = img.w;
             let (ox, oy) = (img.w as f32 / 2.0, img.h as f32 / 2.0);
-            img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w {
-                    let gx = ((x as f32 - ox).rem_euclid(size)).min(size - (x as f32 - ox).rem_euclid(size));
-                    let gy = ((y as f32 - oy).rem_euclid(size)).min(size - (y as f32 - oy).rem_euclid(size));
-                    let a = ((border * 0.5 - gx.min(gy) + 0.5).clamp(0.0, 1.0)) * op;
-                    if a > 0.0 {
-                        let p = &mut row[x * 4..x * 4 + 4];
-                        for k in 0..3 {
-                            p[k] = lc[k] * a + p[k] * (1.0 - a);
+            img.px
+                .par_chunks_mut(w * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w {
+                        let gx = ((x as f32 - ox).rem_euclid(size))
+                            .min(size - (x as f32 - ox).rem_euclid(size));
+                        let gy = ((y as f32 - oy).rem_euclid(size))
+                            .min(size - (y as f32 - oy).rem_euclid(size));
+                        let a = ((border * 0.5 - gx.min(gy) + 0.5).clamp(0.0, 1.0)) * op;
+                        if a > 0.0 {
+                            let p = &mut row[x * 4..x * 4 + 4];
+                            for k in 0..3 {
+                                p[k] = lc[k] * a + p[k] * (1.0 - a);
+                            }
+                            p[3] = a + p[3] * (1.0 - a);
                         }
-                        p[3] = a + p[3] * (1.0 - a);
                     }
-                }
-            });
+                });
         }
         "lens_flare" => {
             let c = point(e, "center", cx, img);
@@ -462,34 +562,54 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let (mx, my) = (w / 2.0, h / 2.0);
             let scale = w.max(h);
             let wi = img.w;
-            img.px.par_chunks_mut(wi * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..wi {
-                    let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
-                    let d = (px - c.x).hypot(py - c.y) / scale;
-                    let mut add = [1.0f32, 0.9, 0.7].map(|k| k * (0.35 * (-d * 18.0).exp() + 0.08 * (-d * 3.0).exp()) as f32);
-                    for (i, (t, rad, tint)) in [(0.5, 0.05, [0.4f32, 0.6, 1.0]), (1.3, 0.03, [1.0, 0.5, 0.3]), (1.7, 0.08, [0.4, 1.0, 0.5])].iter().enumerate()
-                    {
-                        let gx = c.x + (mx - c.x) * 2.0 * t / 2.0 * 2.0;
-                        let gy = c.y + (my - c.y) * 2.0 * t / 2.0 * 2.0;
-                        let dd = (px - gx).hypot(py - gy) / scale;
-                        let ring = (1.0 - ((dd - rad) / 0.01).abs()).max(0.0) as f32 * 0.15 + if dd < *rad { 0.06 } else { 0.0 };
-                        let _ = i;
+            img.px
+                .par_chunks_mut(wi * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..wi {
+                        let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
+                        let d = (px - c.x).hypot(py - c.y) / scale;
+                        let mut add = [1.0f32, 0.9, 0.7].map(|k| {
+                            k * (0.35 * (-d * 18.0).exp() + 0.08 * (-d * 3.0).exp()) as f32
+                        });
+                        for (i, (t, rad, tint)) in [
+                            (0.5, 0.05, [0.4f32, 0.6, 1.0]),
+                            (1.3, 0.03, [1.0, 0.5, 0.3]),
+                            (1.7, 0.08, [0.4, 1.0, 0.5]),
+                        ]
+                        .iter()
+                        .enumerate()
+                        {
+                            let gx = c.x + (mx - c.x) * 2.0 * t / 2.0 * 2.0;
+                            let gy = c.y + (my - c.y) * 2.0 * t / 2.0 * 2.0;
+                            let dd = (px - gx).hypot(py - gy) / scale;
+                            let ring = (1.0 - ((dd - rad) / 0.01).abs()).max(0.0) as f32 * 0.15
+                                + if dd < *rad { 0.06 } else { 0.0 };
+                            let _ = i;
+                            for k in 0..3 {
+                                add[k] += tint[k] * ring;
+                            }
+                        }
+                        let p = &mut row[x * 4..x * 4 + 4];
                         for k in 0..3 {
-                            add[k] += tint[k] * ring;
+                            p[k] += add[k] * br * (1.0 - blend) * p[3].max(0.0);
                         }
                     }
-                    let p = &mut row[x * 4..x * 4 + 4];
-                    for k in 0..3 {
-                        p[k] += add[k] * br * (1.0 - blend) * p[3].max(0.0);
-                    }
-                }
-            });
+                });
         }
         "timecode" | "clip_name" => {
-            let (text, family) = if e.effect == "timecode" { (cx.timecode.to_string(), "JetBrains Mono") } else { (cx.clip_name.to_string(), "Inter") };
+            let (text, family) = if e.effect == "timecode" {
+                (cx.timecode.to_string(), "JetBrains Mono")
+            } else {
+                (cx.clip_name.to_string(), "Inter")
+            };
             let pos = point(e, "position", cx, img);
             let px = (f(e, "size", cx) / 100.0 * img.h as f32 * 0.5).max(6.0);
-            let box_alpha = if e.effect == "timecode" { (f(e, "opacity", cx) / 100.0).clamp(0.0, 1.0) * 0.8 } else { 0.8 };
+            let box_alpha = if e.effect == "timecode" {
+                (f(e, "opacity", cx) / 100.0).clamp(0.0, 1.0) * 0.8
+            } else {
+                0.8
+            };
             crate::graphics::burn_text(img, &text, family, pos, px, box_alpha);
         }
         _ => {}
@@ -499,16 +619,19 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
 /// Fill an opaque generated colour over the image at `op` opacity (Generate category).
 pub(crate) fn fill_over(img: &mut Image, op: f32, f: impl Fn(f32, f32) -> [f32; 3] + Sync) {
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let c = f(x as f32 + 0.5, y as f32 + 0.5);
-            let p = &mut row[x * 4..x * 4 + 4];
-            for k in 0..3 {
-                p[k] = c[k] * op + p[k] * (1.0 - op);
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let c = f(x as f32 + 0.5, y as f32 + 0.5);
+                let p = &mut row[x * 4..x * 4 + 4];
+                for k in 0..3 {
+                    p[k] = c[k] * op + p[k] * (1.0 - op);
+                }
+                p[3] = op + p[3] * (1.0 - op);
             }
-            p[3] = op + p[3] * (1.0 - op);
-        }
-    });
+        });
 }
 
 pub(crate) fn warp(img: &mut Image, f: impl Fn(f64, f64) -> (f64, f64) + Sync) {
@@ -518,50 +641,82 @@ pub(crate) fn warp(img: &mut Image, f: impl Fn(f64, f64) -> (f64, f64) + Sync) {
 pub(crate) fn warp_opt(img: &mut Image, f: impl Fn(f64, f64) -> Option<(f64, f64)> + Sync) {
     let src = img.clone();
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let p = match f(x as f64 + 0.5, y as f64 + 0.5) {
-                Some((u, v)) => src.sample_bilinear(u as f32, v as f32),
-                None => [0.0; 4],
-            };
-            row[x * 4..x * 4 + 4].copy_from_slice(&p);
-        }
-    });
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let p = match f(x as f64 + 0.5, y as f64 + 0.5) {
+                    Some((u, v)) => src.sample_bilinear(u as f32, v as f32),
+                    None => [0.0; 4],
+                };
+                row[x * 4..x * 4 + 4].copy_from_slice(&p);
+            }
+        });
 }
 
 pub(crate) fn crop(img: &mut Image, l: f32, t: f32, r: f32, b: f32, feather: f32) {
     let (w, h) = (img.w as f32, img.h as f32);
-    crop_px(img, l * w, w * (1.0 - r), t * h, h * (1.0 - b), feather.max(0.0));
+    crop_px(
+        img,
+        l * w,
+        w * (1.0 - r),
+        t * h,
+        h * (1.0 - b),
+        feather.max(0.0),
+    );
 }
 
 /// Fade alpha towards the edges of the rectangle x0..x1 × y0..y1 (working pixels): over `fe`
 /// pixels inside it, or a half-pixel antialiased edge when `fe` is 0.
 pub(crate) fn crop_px(img: &mut Image, x0: f32, x1: f32, y0: f32, y1: f32, fe: f32) {
     let wi = img.w;
-    img.px.par_chunks_mut(wi * 4).enumerate().for_each(|(y, row)| {
-        let py = y as f32 + 0.5;
-        for x in 0..wi {
-            let px = x as f32 + 0.5;
-            let d = (px - x0).min(x1 - px).min(py - y0).min(y1 - py);
-            let a = if fe > 0.0 { (d / fe).clamp(0.0, 1.0) } else { (d + 0.5).clamp(0.0, 1.0) };
-            if a < 1.0 {
-                for v in &mut row[x * 4..x * 4 + 4] {
-                    *v *= a;
+    img.px
+        .par_chunks_mut(wi * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let py = y as f32 + 0.5;
+            for x in 0..wi {
+                let px = x as f32 + 0.5;
+                let d = (px - x0).min(x1 - px).min(py - y0).min(y1 - py);
+                let a = if fe > 0.0 {
+                    (d / fe).clamp(0.0, 1.0)
+                } else {
+                    (d + 0.5).clamp(0.0, 1.0)
+                };
+                if a < 1.0 {
+                    for v in &mut row[x * 4..x * 4 + 4] {
+                        *v *= a;
+                    }
                 }
             }
-        }
-    });
+        });
 }
 
 pub(crate) fn key(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let ultra = e.effect == "ultra_key";
-    let kc = if ultra { color(e, "key_color", cx) } else { color(e, "color", cx) };
+    let kc = if ultra {
+        color(e, "key_color", cx)
+    } else {
+        color(e, "color", cx)
+    };
     let kycc = filmcraft_color::rgb_to_ycbcr(kc[0], kc[1], kc[2], filmcraft_color::Matrix::Bt709);
     let (tol, soft, spill, output) = if ultra {
-        let tol = 0.05 + f(e, "tolerance", cx) / 100.0 * 0.25 + f(e, "transparency", cx) / 100.0 * 0.05;
-        (tol, 0.05 + f(e, "soften", cx) / 100.0 * 0.2 + f(e, "pedestal", cx) / 100.0 * 0.05, f(e, "spill", cx) / 100.0, choice(e, "output"))
+        let tol =
+            0.05 + f(e, "tolerance", cx) / 100.0 * 0.25 + f(e, "transparency", cx) / 100.0 * 0.05;
+        (
+            tol,
+            0.05 + f(e, "soften", cx) / 100.0 * 0.2 + f(e, "pedestal", cx) / 100.0 * 0.05,
+            f(e, "spill", cx) / 100.0,
+            choice(e, "output"),
+        )
     } else {
-        (f(e, "tolerance", cx) / 255.0 * 0.6 + 0.01, f(e, "feather", cx) / 50.0 * 0.2 + 0.01, 0.0, 0)
+        (
+            f(e, "tolerance", cx) / 255.0 * 0.6 + 0.01,
+            f(e, "feather", cx) / 50.0 * 0.2 + 0.01,
+            0.0,
+            0,
+        )
     };
     let dom = if kc[1] >= kc[0] && kc[1] >= kc[2] {
         1
@@ -576,7 +731,8 @@ pub(crate) fn key(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         }
         let c = enc([p[0] / p[3], p[1] / p[3], p[2] / p[3]]);
         let ycc = filmcraft_color::rgb_to_ycbcr(c[0], c[1], c[2], filmcraft_color::Matrix::Bt709);
-        let d = ((ycc[1] - kycc[1]).powi(2) + (ycc[2] - kycc[2]).powi(2)).sqrt() + (ycc[0] - kycc[0]).abs() * 0.15;
+        let d = ((ycc[1] - kycc[1]).powi(2) + (ycc[2] - kycc[2]).powi(2)).sqrt()
+            + (ycc[0] - kycc[0]).abs() * 0.15;
         let alpha = ((d - tol) / soft).clamp(0.0, 1.0);
         let mut o = c;
         if spill > 0.0 {
@@ -621,8 +777,16 @@ fn within_unit(v: [f32; 3], hdr: bool, f: impl Fn([f32; 3]) -> [f32; 3]) -> [f32
 }
 
 fn lumetri(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
-    let (basic_on, creative_on, vignette_on) = (on(e, "basic_on"), on(e, "creative_on"), on(e, "vignette_on"));
-    let input_lut = if basic_on { crate::luts::resolve(cx.project, text(e, "input_lut")) } else { None };
+    let (basic_on, creative_on, vignette_on) = (
+        on(e, "basic_on"),
+        on(e, "creative_on"),
+        on(e, "vignette_on"),
+    );
+    let input_lut = if basic_on {
+        crate::luts::resolve(cx.project, text(e, "input_lut"))
+    } else {
+        None
+    };
     let bf = |id: &str| if basic_on { f(e, id, cx) } else { 0.0 };
     // HDR: the sliders work on the PQ / HLG signal normalised to HDR White (cd/m²)
     let gs = grade_space(e, cx, "hdr_white");
@@ -636,16 +800,40 @@ fn lumetri(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let sh = bf("shadows") / 100.0;
     let wh = bf("whites") / 100.0;
     let bl = bf("blacks") / 100.0;
-    let sat = if basic_on { f(e, "saturation", cx) / 100.0 } else { 1.0 } * if creative_on { f(e, "creative_sat", cx) / 100.0 } else { 1.0 };
-    let vib = if creative_on { f(e, "vibrance", cx) / 100.0 } else { 0.0 };
-    let faded = if creative_on { f(e, "faded_film", cx) / 100.0 } else { 0.0 };
+    let sat = if basic_on {
+        f(e, "saturation", cx) / 100.0
+    } else {
+        1.0
+    } * if creative_on {
+        f(e, "creative_sat", cx) / 100.0
+    } else {
+        1.0
+    };
+    let vib = if creative_on {
+        f(e, "vibrance", cx) / 100.0
+    } else {
+        0.0
+    };
+    let faded = if creative_on {
+        f(e, "faded_film", cx) / 100.0
+    } else {
+        0.0
+    };
     let st = color(e, "shadow_tint", cx);
     let ht = color(e, "highlight_tint", cx);
-    let va = if vignette_on { f(e, "vignette_amount", cx) } else { 0.0 };
+    let va = if vignette_on {
+        f(e, "vignette_amount", cx)
+    } else {
+        0.0
+    };
     let vmid = f(e, "vignette_midpoint", cx) / 100.0;
     let vround = f(e, "vignette_roundness", cx) / 100.0;
     let vfeather = f(e, "vignette_feather", cx) / 100.0;
-    let sharpen = if creative_on { f(e, "sharpen", cx) / 100.0 } else { 0.0 };
+    let sharpen = if creative_on {
+        f(e, "sharpen", cx) / 100.0
+    } else {
+        0.0
+    };
     let gains = [1.0 + 0.35 * temp, 1.0 - 0.3 * tint, 1.0 - 0.35 * temp];
     let (w, h) = (img.w as f32, img.h as f32);
     let aspect = w / h;
@@ -655,7 +843,11 @@ fn lumetri(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             None => c,
         };
         // white balance + exposure in linear light
-        let lin = [c[0] * gains[0] * exposure, c[1] * gains[1] * exposure, c[2] * gains[2] * exposure];
+        let lin = [
+            c[0] * gains[0] * exposure,
+            c[1] * gains[1] * exposure,
+            c[2] * gains[2] * exposure,
+        ];
         let mut v = gs.encode(lin);
         // whites / blacks: endpoints
         let b0 = -bl * 0.15;
@@ -680,12 +872,22 @@ fn lumetri(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 }
                 let q = q.clamp(0.0, 1.0);
                 let s = q * q * (3.0 - 2.0 * q);
-                if k >= 1.0 { q + (s - q) * (k - 1.0) } else { 0.5 + (q - 0.5) * k }
+                if k >= 1.0 {
+                    q + (s - q) * (k - 1.0)
+                } else {
+                    0.5 + (q - 0.5) * k
+                }
             });
         }
         // HDR Specular: brightness of the highlights above HDR White
         if specular.abs() > 1e-4 {
-            v = v.map(|q| if q > 1.0 { 1.0 + (q - 1.0) * (1.0 + specular).max(0.0) } else { q });
+            v = v.map(|q| {
+                if q > 1.0 {
+                    1.0 + (q - 1.0) * (1.0 + specular).max(0.0)
+                } else {
+                    q
+                }
+            });
         }
         // faded film: lift blacks and compress
         if faded > 0.0 {
@@ -705,13 +907,20 @@ fn lumetri(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         v = v.map(|q| l3 + (q - l3) * s);
         // vignette
         if va.abs() > 1e-4 {
-            let nx = (x as f32 / w - 0.5) * 2.0 * crate::gpufx::lumetri_vignette_aspect(aspect, vround);
+            let nx =
+                (x as f32 / w - 0.5) * 2.0 * crate::gpufx::lumetri_vignette_aspect(aspect, vround);
             let ny = (y as f32 / h - 0.5) * 2.0;
             let d = (nx * nx + ny * ny).sqrt() / std::f32::consts::SQRT_2;
             let edge = ((d - vmid * 0.9) / (vfeather.max(0.01) * 0.9)).clamp(0.0, 1.0);
             let e2 = edge * edge * (3.0 - 2.0 * edge);
             let k = 1.0 + va * 0.2 * e2;
-            v = v.map(|q| if va < 0.0 { q * k.max(0.0) } else { q + (1.0 - q) * (k - 1.0) });
+            v = v.map(|q| {
+                if va < 0.0 {
+                    q * k.max(0.0)
+                } else {
+                    q + (1.0 - q) * (k - 1.0)
+                }
+            });
         }
         gs.decode(v)
     });
@@ -732,9 +941,15 @@ fn boxes_for_gauss(sigma: f32, n: usize) -> Vec<usize> {
         wl -= 1;
     }
     let wu = wl + 2;
-    let mideal = (12.0 * sigma * sigma - (n as i32 * wl * wl) as f32 - 4.0 * n as f32 * wl as f32 - 3.0 * n as f32) / (-4.0 * wl as f32 - 4.0);
+    let mideal = (12.0 * sigma * sigma
+        - (n as i32 * wl * wl) as f32
+        - 4.0 * n as f32 * wl as f32
+        - 3.0 * n as f32)
+        / (-4.0 * wl as f32 - 4.0);
     let m = mideal.round() as i32;
-    (0..n as i32).map(|i| (((if i < m { wl } else { wu }) - 1) / 2).max(0) as usize).collect()
+    (0..n as i32)
+        .map(|i| (((if i < m { wl } else { wu }) - 1) / 2).max(0) as usize)
+        .collect()
 }
 
 fn box_rows(px: &mut [f32], w: usize, r: usize, repeat: bool) {
@@ -746,7 +961,13 @@ fn box_rows(px: &mut [f32], w: usize, r: usize, repeat: bool) {
         |tmp, row| {
             tmp.copy_from_slice(row);
             let inv = 1.0 / (2 * r + 1) as f32;
-            let fetch = |i: isize| -> usize { if repeat { i.clamp(0, w as isize - 1) as usize } else { i as usize } };
+            let fetch = |i: isize| -> usize {
+                if repeat {
+                    i.clamp(0, w as isize - 1) as usize
+                } else {
+                    i as usize
+                }
+            };
             let mut acc = [0f32; 4];
             for i in -(r as isize)..=(r as isize) {
                 if repeat || (i >= 0 && (i as usize) < w) {
@@ -783,18 +1004,21 @@ fn transpose(img: &Image) -> Image {
     let (w, h) = (img.w, img.h);
     let mut out = Image::new(h, w);
     const B: usize = 32;
-    out.px.par_chunks_mut(h * 4 * B).enumerate().for_each(|(bi, chunk)| {
-        let x0 = bi * B;
-        let rows = chunk.len() / (h * 4);
-        for y in 0..h {
-            for dx in 0..rows {
-                let x = x0 + dx;
-                let s = (y * w + x) * 4;
-                let d = (dx * h + y) * 4;
-                chunk[d..d + 4].copy_from_slice(&img.px[s..s + 4]);
+    out.px
+        .par_chunks_mut(h * 4 * B)
+        .enumerate()
+        .for_each(|(bi, chunk)| {
+            let x0 = bi * B;
+            let rows = chunk.len() / (h * 4);
+            for y in 0..h {
+                for dx in 0..rows {
+                    let x = x0 + dx;
+                    let s = (y * w + x) * 4;
+                    let d = (dx * h + y) * 4;
+                    chunk[d..d + 4].copy_from_slice(&img.px[s..s + 4]);
+                }
             }
-        }
-    });
+        });
     out
 }
 
@@ -805,11 +1029,33 @@ pub fn gaussian(img: &mut Image, sigma_x: f32, sigma_y: f32, repeat_edge: bool) 
 }
 
 /// The box radii [`gaussian`] runs on a `w`×`h` image, per axis (empty: that axis is untouched).
-pub(crate) fn gaussian_boxes(w: usize, h: usize, sigma_x: f32, sigma_y: f32) -> (Vec<u32>, Vec<u32>) {
+pub(crate) fn gaussian_boxes(
+    w: usize,
+    h: usize,
+    sigma_x: f32,
+    sigma_y: f32,
+) -> (Vec<u32>, Vec<u32>) {
     // beyond a few image sizes every radius gives the same (flat) result; cap to keep box sizes sane
-    let sigma_x = if sigma_x.is_finite() { sigma_x.min(w.max(8) as f32 * 2.0) } else { 0.0 };
-    let sigma_y = if sigma_y.is_finite() { sigma_y.min(h.max(8) as f32 * 2.0) } else { 0.0 };
-    let radii = |s: f32| if s > 0.3 { boxes_for_gauss(s, 3).into_iter().map(|r| r.min(u32::MAX as usize) as u32).collect() } else { Vec::new() };
+    let sigma_x = if sigma_x.is_finite() {
+        sigma_x.min(w.max(8) as f32 * 2.0)
+    } else {
+        0.0
+    };
+    let sigma_y = if sigma_y.is_finite() {
+        sigma_y.min(h.max(8) as f32 * 2.0)
+    } else {
+        0.0
+    };
+    let radii = |s: f32| {
+        if s > 0.3 {
+            boxes_for_gauss(s, 3)
+                .into_iter()
+                .map(|r| r.min(u32::MAX as usize) as u32)
+                .collect()
+        } else {
+            Vec::new()
+        }
+    };
     (radii(sigma_x), radii(sigma_y))
 }
 
@@ -836,15 +1082,18 @@ pub(crate) fn unsharp(img: &mut Image, radius: f32, amount: f32, threshold: f32)
 pub(crate) fn unsharp_boxes(img: &mut Image, rx: &[u32], ry: &[u32], amount: f32, threshold: f32) {
     let mut blurred = img.clone();
     box_blur(&mut blurred, rx, ry, true);
-    img.px.par_chunks_mut(4).zip(blurred.px.par_chunks(4)).for_each(|(p, bq)| {
-        for k in 0..3 {
-            let d = p[k] - bq[k];
-            if d.abs() >= threshold * p[3] {
-                p[k] = (p[k] + d * amount).clamp(0.0, p[3].max(p[k] + d * amount).max(0.0));
-                p[k] = p[k].max(0.0);
+    img.px
+        .par_chunks_mut(4)
+        .zip(blurred.px.par_chunks(4))
+        .for_each(|(p, bq)| {
+            for k in 0..3 {
+                let d = p[k] - bq[k];
+                if d.abs() >= threshold * p[3] {
+                    p[k] = (p[k] + d * amount).clamp(0.0, p[3].max(p[k] + d * amount).max(0.0));
+                    p[k] = p[k].max(0.0);
+                }
             }
-        }
-    });
+        });
 }
 
 /// Average of `steps` edge-clamped bilinear taps along (dx, dy), centred on each pixel (no-op
@@ -855,41 +1104,48 @@ pub(crate) fn directional_taps(img: &mut Image, dx: f32, dy: f32, steps: usize) 
     }
     let src = img.clone();
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let mut acc = [0f32; 4];
-            for s in 0..steps {
-                let t = s as f32 / (steps - 1) as f32 - 0.5;
-                let p = src.sample_bilinear_clamped(x as f32 + 0.5 + dx * t, y as f32 + 0.5 + dy * t);
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let mut acc = [0f32; 4];
+                for s in 0..steps {
+                    let t = s as f32 / (steps - 1) as f32 - 0.5;
+                    let p = src
+                        .sample_bilinear_clamped(x as f32 + 0.5 + dx * t, y as f32 + 0.5 + dy * t);
+                    for k in 0..4 {
+                        acc[k] += p[k];
+                    }
+                }
                 for k in 0..4 {
-                    acc[k] += p[k];
+                    row[x * 4 + k] = acc[k] / steps as f32;
                 }
             }
-            for k in 0..4 {
-                row[x * 4 + k] = acc[k] / steps as f32;
-            }
-        }
-    });
+        });
 }
 
 pub(crate) fn median(img: &mut Image, r: isize) {
     let src = img.clone();
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each_init(Vec::new, |buf: &mut Vec<f32>, (y, row)| {
-        for x in 0..w {
-            for k in 0..4 {
-                buf.clear();
-                for dy in -r..=r {
-                    for dx in -r..=r {
-                        buf.push(src.get_clamped(x as isize + dx, y as isize + dy)[k]);
+    img.px.par_chunks_mut(w * 4).enumerate().for_each_init(
+        Vec::new,
+        |buf: &mut Vec<f32>, (y, row)| {
+            for x in 0..w {
+                for k in 0..4 {
+                    buf.clear();
+                    for dy in -r..=r {
+                        for dx in -r..=r {
+                            buf.push(src.get_clamped(x as isize + dx, y as isize + dy)[k]);
+                        }
                     }
+                    let mid = buf.len() / 2;
+                    buf.select_nth_unstable_by(mid, |a, b| a.total_cmp(b));
+                    row[x * 4 + k] = buf[mid];
                 }
-                let mid = buf.len() / 2;
-                buf.select_nth_unstable_by(mid, |a, b| a.total_cmp(b));
-                row[x * 4 + k] = buf[mid];
             }
-        }
-    });
+        },
+    );
 }
 
 pub(crate) fn mosaic(img: &mut Image, bx: usize, by: usize) {
@@ -897,14 +1153,17 @@ pub(crate) fn mosaic(img: &mut Image, bx: usize, by: usize) {
     let bw = (w as f32 / bx as f32).max(1.0);
     let bh = (h as f32 / by as f32).max(1.0);
     let src = img.clone();
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        let cy = ((y as f32 / bh).floor() + 0.5) * bh;
-        for x in 0..w {
-            let cxp = ((x as f32 / bw).floor() + 0.5) * bw;
-            let p = src.sample_bilinear_clamped(cxp, cy);
-            row[x * 4..x * 4 + 4].copy_from_slice(&p);
-        }
-    });
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let cy = ((y as f32 / bh).floor() + 0.5) * bh;
+            for x in 0..w {
+                let cxp = ((x as f32 / bw).floor() + 0.5) * bw;
+                let p = src.sample_bilinear_clamped(cxp, cy);
+                row[x * 4..x * 4 + 4].copy_from_slice(&p);
+            }
+        });
 }
 
 #[cfg(test)]
@@ -918,7 +1177,11 @@ mod tests {
         assert_eq!(median_radius(1e9, 1.0, 4096), 100);
         assert_eq!(median_radius(1e9, 0.5, 4096), 50);
         assert_eq!(median_radius(1e9, 1.0, 40), 40);
-        assert_eq!(median_radius(12.0, 1.0, 4096), 12, "Radius above 4 keeps its full size");
+        assert_eq!(
+            median_radius(12.0, 1.0, 4096),
+            12,
+            "Radius above 4 keeps its full size"
+        );
         assert_eq!(median_radius(f32::NAN, 1.0, 4096), 0);
         assert_eq!(median_radius(-3.0, 1.0, 4096), 0);
         assert_eq!(median_radius(8.0, f32::INFINITY, 4096), 8);
@@ -952,7 +1215,8 @@ mod tests {
             // push params away from identity so code paths run
             for (id, p) in e.params.iter_mut() {
                 if let ParamValue::Float(v) = &mut p.value
-                    && let Some(filmcraft_project::ParamKind::Float { soft_max, .. }) = def.param(id).map(|d| &d.kind)
+                    && let Some(filmcraft_project::ParamKind::Float { soft_max, .. }) =
+                        def.param(id).map(|d| &d.kind)
                 {
                     *v = (*v + soft_max * 0.3).min(*soft_max);
                 }
@@ -982,7 +1246,11 @@ mod tests {
     fn flip_and_crop() {
         let mut img = Image::new(4, 1);
         img.px[0..4].copy_from_slice(&[1.0, 0.0, 0.0, 1.0]);
-        apply(&mut img, &find_effect("horizontal_flip").unwrap().instance(), &cx());
+        apply(
+            &mut img,
+            &find_effect("horizontal_flip").unwrap().instance(),
+            &cx(),
+        );
         assert_eq!(img.get(3, 0), [1.0, 0.0, 0.0, 1.0]);
         let mut e = find_effect("crop").unwrap().instance();
         e.params.get_mut("right").unwrap().value = ParamValue::Float(50.0);
@@ -1009,15 +1277,25 @@ pub fn curve_lut(points: &[[f32; 2]], n: usize) -> Vec<f32> {
     pts.dedup_by(|a, b| (a[0] - b[0]).abs() < 1e-6);
     if pts.len() < 2 {
         let y = pts.first().map_or(0.0, |p| p[1]);
-        return if pts.is_empty() { (0..n).map(|i| i as f32 / (n - 1) as f32).collect() } else { vec![y; n] };
+        return if pts.is_empty() {
+            (0..n).map(|i| i as f32 / (n - 1) as f32).collect()
+        } else {
+            vec![y; n]
+        };
     }
     let m = pts.len();
-    let d: Vec<f32> = (0..m - 1).map(|i| (pts[i + 1][1] - pts[i][1]) / (pts[i + 1][0] - pts[i][0]).max(1e-6)).collect();
+    let d: Vec<f32> = (0..m - 1)
+        .map(|i| (pts[i + 1][1] - pts[i][1]) / (pts[i + 1][0] - pts[i][0]).max(1e-6))
+        .collect();
     let mut t = vec![0f32; m];
     t[0] = d[0];
     t[m - 1] = d[m - 2];
     for i in 1..m - 1 {
-        t[i] = if d[i - 1] * d[i] <= 0.0 { 0.0 } else { (d[i - 1] + d[i]) / 2.0 };
+        t[i] = if d[i - 1] * d[i] <= 0.0 {
+            0.0
+        } else {
+            (d[i - 1] + d[i]) / 2.0
+        };
     }
     for i in 0..m - 1 {
         if d[i].abs() < 1e-9 {
@@ -1046,7 +1324,12 @@ pub fn curve_lut(points: &[[f32; 2]], n: usize) -> Vec<f32> {
             let i = pts.partition_point(|p| p[0] <= x) - 1;
             let hh = pts[i + 1][0] - pts[i][0];
             let u = (x - pts[i][0]) / hh;
-            let (h00, h10, h01, h11) = (2.0 * u * u * u - 3.0 * u * u + 1.0, u * u * u - 2.0 * u * u + u, -2.0 * u * u * u + 3.0 * u * u, u * u * u - u * u);
+            let (h00, h10, h01, h11) = (
+                2.0 * u * u * u - 3.0 * u * u + 1.0,
+                u * u * u - 2.0 * u * u + u,
+                -2.0 * u * u * u + 3.0 * u * u,
+                u * u * u - u * u,
+            );
             h00 * pts[i][1] + h10 * hh * t[i] + h01 * pts[i + 1][1] + h11 * hh * t[i + 1]
         })
         .collect()
@@ -1064,12 +1347,18 @@ fn hue_lut(points: &[[f32; 2]], n: usize) -> Option<Vec<f32>> {
             ext.push([p[0] + off, p[1]]);
         }
     }
-    let lut = curve_lut(&ext.iter().map(|p| [(p[0] + 1.0) / 3.0, p[1]]).collect::<Vec<_>>(), n * 3);
+    let lut = curve_lut(
+        &ext.iter()
+            .map(|p| [(p[0] + 1.0) / 3.0, p[1]])
+            .collect::<Vec<_>>(),
+        n * 3,
+    );
     Some(lut[n..2 * n].to_vec())
 }
 
 pub(crate) fn curve_param(e: &EffectInstance, id: &str) -> Option<Vec<[f32; 2]>> {
-    e.param(id).and_then(|p| p.value.as_curve().map(|c| c.to_vec()))
+    e.param(id)
+        .and_then(|p| p.value.as_curve().map(|c| c.to_vec()))
 }
 
 pub(crate) fn is_identity_curve(c: &[[f32; 2]]) -> bool {
@@ -1084,13 +1373,23 @@ pub(crate) fn wheel_rgb(v: Vec2) -> [f32; 3] {
     }
     let a = (v.y).atan2(v.x) as f32;
     let tau = std::f32::consts::TAU;
-    [a.cos() * len, (a - tau / 3.0).cos() * len, (a + tau / 3.0).cos() * len]
+    [
+        a.cos() * len,
+        (a - tau / 3.0).cos() * len,
+        (a + tau / 3.0).cos() * len,
+    ]
 }
 
 /// Looks: our own procedural grades (no third-party LUTs), applied on display-encoded colour.
 pub fn apply_look(look: u32, c: [f32; 3]) -> [f32; 3] {
     let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-    let mix = |a: [f32; 3], b: [f32; 3], k: f32| [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+    let mix = |a: [f32; 3], b: [f32; 3], k: f32| {
+        [
+            a[0] + (b[0] - a[0]) * k,
+            a[1] + (b[1] - a[1]) * k,
+            a[2] + (b[2] - a[2]) * k,
+        ]
+    };
     let s_curve = |v: f32, k: f32| {
         let x = v.clamp(0.0, 1.0);
         x + (x * x * (3.0 - 2.0 * x) - x) * k
@@ -1100,7 +1399,11 @@ pub fn apply_look(look: u32, c: [f32; 3]) -> [f32; 3] {
             // teal shadows, orange highlights
             let shadow = [0.0, 0.08, 0.1];
             let high = [0.1, 0.04, -0.06];
-            let c = [c[0] + shadow[0] * (1.0 - l) + high[0] * l, c[1] + shadow[1] * (1.0 - l) + high[1] * l, c[2] + shadow[2] * (1.0 - l) + high[2] * l];
+            let c = [
+                c[0] + shadow[0] * (1.0 - l) + high[0] * l,
+                c[1] + shadow[1] * (1.0 - l) + high[1] * l,
+                c[2] + shadow[2] * (1.0 - l) + high[2] * l,
+            ];
             c.map(|v| s_curve(v, 0.35))
         }
         2 => {
@@ -1119,19 +1422,57 @@ pub fn apply_look(look: u32, c: [f32; 3]) -> [f32; 3] {
 
 fn lumetri_advanced(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     const N: usize = 1024;
-    let (creative_on, curves_on, wheels_on) = (on(e, "creative_on"), on(e, "curves_on"), on(e, "wheels_on"));
-    let lut = |id: &str| curve_param(e, id).filter(|c| curves_on && !is_identity_curve(c)).map(|c| curve_lut(&c, N));
-    let (luma_c, red_c, green_c, blue_c) = (lut("curve_luma"), lut("curve_red"), lut("curve_green"), lut("curve_blue"));
-    let hue = |id: &str| curve_param(e, id).filter(|_| curves_on).and_then(|c| hue_lut(&c, N));
-    let (hvs, hvh, hvl, lvs, svs) = (hue("hue_vs_sat"), hue("hue_vs_hue"), hue("hue_vs_luma"), hue("luma_vs_sat"), hue("sat_vs_sat"));
+    let (creative_on, curves_on, wheels_on) =
+        (on(e, "creative_on"), on(e, "curves_on"), on(e, "wheels_on"));
+    let lut = |id: &str| {
+        curve_param(e, id)
+            .filter(|c| curves_on && !is_identity_curve(c))
+            .map(|c| curve_lut(&c, N))
+    };
+    let (luma_c, red_c, green_c, blue_c) = (
+        lut("curve_luma"),
+        lut("curve_red"),
+        lut("curve_green"),
+        lut("curve_blue"),
+    );
+    let hue = |id: &str| {
+        curve_param(e, id)
+            .filter(|_| curves_on)
+            .and_then(|c| hue_lut(&c, N))
+    };
+    let (hvs, hvh, hvl, lvs, svs) = (
+        hue("hue_vs_sat"),
+        hue("hue_vs_hue"),
+        hue("hue_vs_luma"),
+        hue("luma_vs_sat"),
+        hue("sat_vs_sat"),
+    );
     // Creative ▸ Look: a LUT ("Browse…" / built-in) takes precedence over the procedural menu
-    let look_lut = if creative_on { crate::luts::resolve(cx.project, text(e, "look_lut")) } else { None };
-    let look = if creative_on && look_lut.is_none() { choice(e, "look") } else { 0 };
+    let look_lut = if creative_on {
+        crate::luts::resolve(cx.project, text(e, "look_lut"))
+    } else {
+        None
+    };
+    let look = if creative_on && look_lut.is_none() {
+        choice(e, "look")
+    } else {
+        0
+    };
     let look_k = f(e, "look_intensity", cx) / 100.0;
     let v2 = |id: &str| e.param(id).map(|p| p.vec2_at(cx.t)).unwrap_or_default();
-    let (ws, wm, wh) = (wheel_rgb(v2("wheel_shadows")), wheel_rgb(v2("wheel_midtones")), wheel_rgb(v2("wheel_highlights")));
-    let (ls, lm, lh) = (f(e, "wheel_shadows_l", cx) / 100.0, f(e, "wheel_midtones_l", cx) / 100.0, f(e, "wheel_highlights_l", cx) / 100.0);
-    let wheels = wheels_on && (ws.iter().chain(&wm).chain(&wh).any(|v| v.abs() > 1e-5) || ls.abs() + lm.abs() + lh.abs() > 1e-5);
+    let (ws, wm, wh) = (
+        wheel_rgb(v2("wheel_shadows")),
+        wheel_rgb(v2("wheel_midtones")),
+        wheel_rgb(v2("wheel_highlights")),
+    );
+    let (ls, lm, lh) = (
+        f(e, "wheel_shadows_l", cx) / 100.0,
+        f(e, "wheel_midtones_l", cx) / 100.0,
+        f(e, "wheel_highlights_l", cx) / 100.0,
+    );
+    let wheels = wheels_on
+        && (ws.iter().chain(&wm).chain(&wh).any(|v| v.abs() > 1e-5)
+            || ls.abs() + lm.abs() + lh.abs() > 1e-5);
     let any = luma_c.is_some()
         || red_c.is_some()
         || green_c.is_some()
@@ -1164,10 +1505,22 @@ fn lumetri_advanced(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         let mut v = gs.encode(c);
         if let Some(l) = &look_lut {
             let lk = within_unit(v, hdr, |u| l.apply(u));
-            v = [v[0] + (lk[0] - v[0]) * look_k, v[1] + (lk[1] - v[1]) * look_k, v[2] + (lk[2] - v[2]) * look_k];
+            v = [
+                v[0] + (lk[0] - v[0]) * look_k,
+                v[1] + (lk[1] - v[1]) * look_k,
+                v[2] + (lk[2] - v[2]) * look_k,
+            ];
         } else if look > 0 {
-            let lk = if hdr { within_unit(v, true, |u| apply_look(look, u)) } else { apply_look(look, v) };
-            v = [v[0] + (lk[0] - v[0]) * look_k, v[1] + (lk[1] - v[1]) * look_k, v[2] + (lk[2] - v[2]) * look_k];
+            let lk = if hdr {
+                within_unit(v, true, |u| apply_look(look, u))
+            } else {
+                apply_look(look, v)
+            };
+            v = [
+                v[0] + (lk[0] - v[0]) * look_k,
+                v[1] + (lk[1] - v[1]) * look_k,
+                v[2] + (lk[2] - v[2]) * look_k,
+            ];
         }
         if wheels {
             let l = (0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]).clamp(0.0, 1.0);
@@ -1228,7 +1581,9 @@ fn hsl_key(v: [f32; 3], hc: f32, hr: f32, smin: f32, lmin: f32, lmax: f32, soft:
     let dh = (h[0] - hc).abs().min(1.0 - (h[0] - hc).abs());
     let mh = 1.0 - ((dh - hr / 2.0) / soft).clamp(0.0, 1.0);
     let ms = ((h[1] - smin) / soft).clamp(0.0, 1.0);
-    let ml = ((h[2] - lmin) / soft).clamp(0.0, 1.0).min(((lmax - h[2]) / soft).clamp(0.0, 1.0));
+    let ml = ((h[2] - lmin) / soft)
+        .clamp(0.0, 1.0)
+        .min(((lmax - h[2]) / soft).clamp(0.0, 1.0));
     mh * ms * ml
 }
 
@@ -1245,13 +1600,27 @@ fn hsl_secondary(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     }
     let gs = grade_space(e, cx, "curves_hdr_range");
     let hdr = gs.is_hdr();
-    let (hc, hr) = (f(e, "hsl_hue", cx) / 360.0, (f(e, "hsl_hue_range", cx) / 360.0).max(1e-3));
-    let (smin, lmin, lmax) = (f(e, "hsl_sat_min", cx) / 100.0, f(e, "hsl_luma_min", cx) / 100.0, f(e, "hsl_luma_max", cx) / 100.0);
+    let (hc, hr) = (
+        f(e, "hsl_hue", cx) / 360.0,
+        (f(e, "hsl_hue_range", cx) / 360.0).max(1e-3),
+    );
+    let (smin, lmin, lmax) = (
+        f(e, "hsl_sat_min", cx) / 100.0,
+        f(e, "hsl_luma_min", cx) / 100.0,
+        f(e, "hsl_luma_max", cx) / 100.0,
+    );
     let soft = (f(e, "hsl_soft", cx) / 100.0 * 0.3).max(0.01);
     let show_mask = choice(e, "hsl_show_mask");
-    let (htemp, htint, hsat, hshift) =
-        (f(e, "hsl_temp", cx) / 100.0, f(e, "hsl_tint", cx) / 100.0, f(e, "hsl_sat", cx) / 100.0, f(e, "hsl_hue_shift", cx) / 360.0);
-    let (denoise, blur) = (f(e, "hsl_denoise", cx).clamp(0.0, 100.0) / 100.0, f(e, "hsl_blur", cx).clamp(0.0, 100.0) / 100.0);
+    let (htemp, htint, hsat, hshift) = (
+        f(e, "hsl_temp", cx) / 100.0,
+        f(e, "hsl_tint", cx) / 100.0,
+        f(e, "hsl_sat", cx) / 100.0,
+        f(e, "hsl_hue_shift", cx) / 360.0,
+    );
+    let (denoise, blur) = (
+        f(e, "hsl_denoise", cx).clamp(0.0, 100.0) / 100.0,
+        f(e, "hsl_blur", cx).clamp(0.0, 100.0) / 100.0,
+    );
     let (w, h) = (img.w, img.h);
     let unit = |c: [f32; 3]| {
         let v = gs.encode(c);
@@ -1266,12 +1635,28 @@ fn hsl_secondary(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let mut mask: Vec<f32> = img
         .px
         .par_chunks(4)
-        .map(|p| if p[3] <= 1e-6 { 0.0 } else { hsl_key(unit(Image::unpremul([p[0], p[1], p[2], p[3]])), hc, hr, smin, lmin, lmax, soft) })
+        .map(|p| {
+            if p[3] <= 1e-6 {
+                0.0
+            } else {
+                hsl_key(
+                    unit(Image::unpremul([p[0], p[1], p[2], p[3]])),
+                    hc,
+                    hr,
+                    smin,
+                    lmin,
+                    lmax,
+                    soft,
+                )
+            }
+        })
         .collect();
     if denoise > 0.0 {
         let r = ((1.0 + 2.0 * denoise) * cx.px_scale).round().max(1.0) as usize;
         let med = median_filter(&mask, w, h, r);
-        mask.iter_mut().zip(med).for_each(|(m, d)| *m += (d - *m) * denoise.min(1.0));
+        mask.iter_mut()
+            .zip(med)
+            .for_each(|(m, d)| *m += (d - *m) * denoise.min(1.0));
     }
     if blur > 0.0 {
         let sigma = blur * 20.0 * cx.px_scale;
@@ -1284,7 +1669,11 @@ fn hsl_secondary(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         let m = mask[y * w + x];
         let v = gs.encode(c);
         let u = unit(c);
-        let scale = if hdr { v[0].max(v[1]).max(v[2]).max(1.0) } else { 1.0 };
+        let scale = if hdr {
+            v[0].max(v[1]).max(v[2]).max(1.0)
+        } else {
+            1.0
+        };
         let out = match show_mask {
             1 => {
                 let g = rgb_to_hsl(u[0], u[1], u[2])[2];
@@ -1300,11 +1689,19 @@ fn hsl_secondary(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 c2[0] *= 1.0 + 0.25 * htemp;
                 c2[2] *= 1.0 - 0.25 * htemp;
                 c2[1] *= 1.0 - 0.2 * htint;
-                [u[0] + (c2[0] - u[0]) * m, u[1] + (c2[1] - u[1]) * m, u[2] + (c2[2] - u[2]) * m]
+                [
+                    u[0] + (c2[0] - u[0]) * m,
+                    u[1] + (c2[1] - u[1]) * m,
+                    u[2] + (c2[2] - u[2]) * m,
+                ]
             }
         };
         // the mask views are display images (no HDR scaling)
-        let out = if show_mask == 0 { out.map(|q| q * scale) } else { out };
+        let out = if show_mask == 0 {
+            out.map(|q| q * scale)
+        } else {
+            out
+        };
         gs.decode(out)
     });
 }
@@ -1402,7 +1799,11 @@ mod lumetri_cpu_parity_tests {
                     2 => [fy, fy, fy],
                     3 => [1.6 * fy, 1.2 * fy, 0.3],
                     _ => {
-                        let rgb = filmcraft_color::hsl_to_rgb(fx, 0.25 + 0.75 * ((y % 5) as f32 / 4.0), 0.1 + 0.8 * fy);
+                        let rgb = filmcraft_color::hsl_to_rgb(
+                            fx,
+                            0.25 + 0.75 * ((y % 5) as f32 / 4.0),
+                            0.1 + 0.8 * fy,
+                        );
                         rgb.map(filmcraft_color::srgb_to_linear)
                     }
                 };
@@ -1421,7 +1822,10 @@ mod lumetri_cpu_parity_tests {
     fn effect(params: &[(&str, ParamValue)]) -> EffectInstance {
         let mut e = find_effect("lumetri").unwrap().instance();
         for (k, v) in params {
-            e.params.get_mut(*k).unwrap_or_else(|| panic!("lumetri.{k}")).value = v.clone();
+            e.params
+                .get_mut(*k)
+                .unwrap_or_else(|| panic!("lumetri.{k}"))
+                .value = v.clone();
         }
         e
     }
@@ -1543,7 +1947,8 @@ mod lumetri_cpu_parity_tests {
 
             lumetri(&mut img_orig, &e, &cx);
 
-            let op = FxOp::eval(&e, &cx, w, h).unwrap_or_else(|| panic!("{name}: eval returned None"));
+            let op =
+                FxOp::eval(&e, &cx, w, h).unwrap_or_else(|| panic!("{name}: eval returned None"));
             assert!(op.gpu_ok(), "{name}: expected gpu_ok == true");
             op.apply(&mut img_copy);
 
@@ -1553,7 +1958,10 @@ mod lumetri_cpu_parity_tests {
                 if diff > max_diff {
                     max_diff = diff;
                 }
-                assert!(diff <= 1e-6, "{name}: sample {i} differed: orig={orig}, copy={copy}, diff={diff:.2e} > 1e-6");
+                assert!(
+                    diff <= 1e-6,
+                    "{name}: sample {i} differed: orig={orig}, copy={copy}, diff={diff:.2e} > 1e-6"
+                );
             }
             eprintln!("{name}: max sample diff vs fn lumetri: {max_diff:.2e}");
         }
@@ -1582,14 +1990,21 @@ mod lumetri_cpu_parity_tests {
                 ("vignette_amount", fl(-3.0)),
                 ("vignette_roundness", fl(roundness)),
             ]);
-            let grey = Image { w, h, px: [0.5, 0.5, 0.5, 1.0].repeat(w * h) };
+            let grey = Image {
+                w,
+                h,
+                px: [0.5, 0.5, 0.5, 1.0].repeat(w * h),
+            };
             let mut cpu = grey.clone();
             lumetri(&mut cpu, &e, &cx);
             let mut op_img = grey;
             let op = FxOp::eval(&e, &cx, w, h).expect("lumetri op");
             op.apply(&mut op_img);
             for (a, b) in cpu.px.iter().zip(&op_img.px) {
-                assert!((a - b).abs() <= 1e-6, "roundness {roundness}: CPU and GPU op disagree");
+                assert!(
+                    (a - b).abs() <= 1e-6,
+                    "roundness {roundness}: CPU and GPU op disagree"
+                );
             }
             cpu
         };
@@ -1598,18 +2013,39 @@ mod lumetri_cpu_parity_tests {
         let (right, below) = ((56, 20), (40, 36));
 
         let ellipse = render(0.0);
-        assert!(red(&ellipse, right.0, right.1) > red(&ellipse, below.0, below.1) + 0.01, "0 follows the frame");
+        assert!(
+            red(&ellipse, right.0, right.1) > red(&ellipse, below.0, below.1) + 0.01,
+            "0 follows the frame"
+        );
 
         let circle = render(100.0);
-        assert_ne!(circle.px, ellipse.px, "positive roundness changes the vignette");
-        let (r, b) = (red(&circle, right.0, right.1), red(&circle, below.0, below.1));
+        assert_ne!(
+            circle.px, ellipse.px,
+            "positive roundness changes the vignette"
+        );
+        let (r, b) = (
+            red(&circle, right.0, right.1),
+            red(&circle, below.0, below.1),
+        );
         assert!((r - b).abs() < 1e-4, "+100 is a circle: {r} vs {b}");
-        assert!(r < red(&ellipse, right.0, right.1), "+100 darkens the sides more than 0");
+        assert!(
+            r < red(&ellipse, right.0, right.1),
+            "+100 darkens the sides more than 0"
+        );
         let half = render(50.0);
-        assert!(red(&half, 70, 20) < red(&ellipse, 70, 20), "+50 darkens the sides more than 0");
-        assert!(red(&half, 70, 20) > red(&circle, 70, 20), "+50 darkens the sides less than +100");
+        assert!(
+            red(&half, 70, 20) < red(&ellipse, 70, 20),
+            "+50 darkens the sides more than 0"
+        );
+        assert!(
+            red(&half, 70, 20) > red(&circle, 70, 20),
+            "+50 darkens the sides less than +100"
+        );
 
         let oval = render(-100.0);
-        assert!(red(&oval, 79, 20) > red(&ellipse, 79, 20), "negative values widen the oval");
+        assert!(
+            red(&oval, 79, 20) > red(&ellipse, 79, 20),
+            "negative values widen the oval"
+        );
     }
 }

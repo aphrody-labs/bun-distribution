@@ -17,28 +17,55 @@ fn task_card_with_auto_layout() {
     let mut c = Client::new();
     let card = c.create(json!({"type": "frame", "name": "Card", "x": 100, "y": 100, "width": 320, "height": 50,
         "props": {"fill": "#FFFFFF", "cornerRadius": 16, "layout": "vertical", "padding": 24, "gap": 12, "sizingV": "hug"}}));
-    let title = c.create(json!({"type": "text", "parent": card, "text": "Ada Lovelace", "props": {"fontSize": 24}}));
+    let title = c.create(
+        json!({"type": "text", "parent": card, "text": "Ada Lovelace", "props": {"fontSize": 24}}),
+    );
     let body = c.create(json!({"type": "text", "parent": card, "text": "First programmer", "props": {"fontSize": 14, "fill": "#666666"}}));
     let button = c.create(json!({"type": "frame", "parent": card, "name": "Button", "height": 44,
         "props": {"fill": "#3B5BDB", "cornerRadius": 8, "layout": "horizontal", "mainAlign": "center", "crossAlign": "center", "sizingH": "fill"}}));
-    c.create(json!({"type": "text", "parent": button, "text": "Follow", "props": {"fill": "#FFFFFF"}}));
+    c.create(
+        json!({"type": "text", "parent": button, "text": "Follow", "props": {"fill": "#FFFFFF"}}),
+    );
 
     let n = c.node(&card);
     assert_eq!(n["layout"]["mode"], "vertical", "{}", n["layout"]);
-    assert_eq!((n["layout"]["gap"].as_f64(), n["layout"]["padding"][0].as_f64()), (Some(12.0), Some(24.0)));
+    assert_eq!(
+        (
+            n["layout"]["gap"].as_f64(),
+            n["layout"]["padding"][0].as_f64()
+        ),
+        (Some(12.0), Some(24.0))
+    );
     let kids = ids(&n["children"]);
     assert_eq!(kids.len(), 3);
     // Children stack top to bottom: padding 24, gap 12.
     let t = c.node(&title);
     let b = c.node(&body);
-    assert!(approx(&t["x"], 24.0) && approx(&t["y"], 24.0), "title at {} {}", t["x"], t["y"]);
+    assert!(
+        approx(&t["x"], 24.0) && approx(&t["y"], 24.0),
+        "title at {} {}",
+        t["x"],
+        t["y"]
+    );
     let want_body_y = 24.0 + t["height"].as_f64().unwrap() + 12.0;
-    assert!(approx(&b["y"], want_body_y), "body y {} want {want_body_y}", b["y"]);
+    assert!(
+        approx(&b["y"], want_body_y),
+        "body y {} want {want_body_y}",
+        b["y"]
+    );
     // The button fills the width (320 - 2*24) and the card hugs its content height.
     let btn = c.node(&button);
-    assert!(approx(&btn["width"], 272.0), "button width {}", btn["width"]);
+    assert!(
+        approx(&btn["width"], 272.0),
+        "button width {}",
+        btn["width"]
+    );
     let bottom = btn["y"].as_f64().unwrap() + btn["height"].as_f64().unwrap() + 24.0;
-    assert!(approx(&n["height"], bottom), "card height {} want {bottom}", n["height"]);
+    assert!(
+        approx(&n["height"], bottom),
+        "card height {} want {bottom}",
+        n["height"]
+    );
     assert_eq!(n["cornerRadius"], json!(16.0));
 }
 
@@ -49,10 +76,21 @@ fn task_component_instances_and_overrides() {
     let frame = c.create(json!({"type": "frame", "name": "Chip", "x": 0, "y": 0, "width": 120, "height": 40, "props": {"fill": "#EEEEEE", "layout": "horizontal", "padding": 8}}));
     let label = c.create(json!({"type": "text", "parent": frame, "text": "Label"}));
     let comp = c.run("component.create", json!({"ids": [frame]}))["id"].clone();
-    assert_eq!(c.node(&comp)["type"].as_str().unwrap().to_lowercase(), "component");
+    assert_eq!(
+        c.node(&comp)["type"].as_str().unwrap().to_lowercase(),
+        "component"
+    );
 
-    let i1 = c.run("instance.create", json!({"component": comp, "x": 0, "y": 100}))["id"].clone();
-    let i2 = c.run("instance.create", json!({"component": comp, "x": 200, "y": 100}))["id"].clone();
+    let i1 = c.run(
+        "instance.create",
+        json!({"component": comp, "x": 0, "y": 100}),
+    )["id"]
+        .clone();
+    let i2 = c.run(
+        "instance.create",
+        json!({"component": comp, "x": 200, "y": 100}),
+    )["id"]
+        .clone();
     for i in [&i1, &i2] {
         let n = c.node(i);
         assert_eq!(n["type"].as_str().unwrap().to_lowercase(), "instance");
@@ -64,14 +102,32 @@ fn task_component_instances_and_overrides() {
     c.ok("type_text", json!({"id": inner1, "text": "Design"}));
     let n1 = c.node(&i1);
     assert_eq!(n1["children"][0]["characters"], "Design");
-    assert!(n1["children"][0]["overrides"].to_string().contains("characters"), "override recorded: {}", n1["children"][0]);
+    assert!(
+        n1["children"][0]["overrides"]
+            .to_string()
+            .contains("characters"),
+        "override recorded: {}",
+        n1["children"][0]
+    );
     // Editing the main component's fill propagates to both instances; the text override survives.
-    c.ok("set_properties", json!({"ids": [comp], "props": {"fill": "#FFD43B"}}));
-    c.ok("set_properties", json!({"ids": [label], "props": {"characters": "Tag"}}));
+    c.ok(
+        "set_properties",
+        json!({"ids": [comp], "props": {"fill": "#FFD43B"}}),
+    );
+    c.ok(
+        "set_properties",
+        json!({"ids": [label], "props": {"characters": "Tag"}}),
+    );
     let n1 = c.node(&i1);
     let n2 = c.node(&i2);
-    assert_eq!(n1["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#FFD43B");
-    assert_eq!(n2["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#FFD43B");
+    assert_eq!(
+        n1["fills"][0]["color"].as_str().unwrap().to_uppercase(),
+        "#FFD43B"
+    );
+    assert_eq!(
+        n2["fills"][0]["color"].as_str().unwrap().to_uppercase(),
+        "#FFD43B"
+    );
     assert_eq!(n1["children"][0]["characters"], "Design");
     assert_eq!(n2["children"][0]["characters"], "Tag");
 }
@@ -108,42 +164,108 @@ fn task_gradient_and_drop_shadow() {
 #[test]
 fn task_paint_style() {
     let mut c = Client::new();
-    let swatch = c.create(json!({"type": "rectangle", "x": 0, "y": 0, "props": {"fill": "#E8590C"}}));
+    let swatch =
+        c.create(json!({"type": "rectangle", "x": 0, "y": 0, "props": {"fill": "#E8590C"}}));
     let a = c.create(json!({"type": "ellipse", "x": 200, "y": 0}));
     let b = c.create(json!({"type": "rectangle", "x": 400, "y": 0}));
-    let style = c.run("style.create", json!({"type": "paint", "name": "Brand/Orange", "from": swatch}))["id"].clone();
-    c.run("style.apply", json!({"ids": [a, b], "style": "Brand/Orange"}));
+    let style = c.run(
+        "style.create",
+        json!({"type": "paint", "name": "Brand/Orange", "from": swatch}),
+    )["id"]
+        .clone();
+    c.run(
+        "style.apply",
+        json!({"ids": [a, b], "style": "Brand/Orange"}),
+    );
     for id in [&a, &b] {
         let n = c.node(id);
-        assert_eq!(n["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#E8590C");
-        assert!(n["styles"].to_string().contains(style.as_str().unwrap()), "style link on {}: {}", id, n["styles"]);
+        assert_eq!(
+            n["fills"][0]["color"].as_str().unwrap().to_uppercase(),
+            "#E8590C"
+        );
+        assert!(
+            n["styles"].to_string().contains(style.as_str().unwrap()),
+            "style link on {}: {}",
+            id,
+            n["styles"]
+        );
     }
     let doc = c.doc();
-    assert!(doc["styles"].as_array().unwrap().iter().any(|s| s["name"] == "Brand/Orange"));
+    assert!(
+        doc["styles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["name"] == "Brand/Orange")
+    );
     // Redefine the style: linked layers follow.
     c.run("style.update", json!({"style": style, "value": [{"type": "solid", "color": {"r": 0.0, "g": 0.0, "b": 1.0}}]}));
-    assert_eq!(c.node(&a)["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#0000FF");
-    assert_eq!(c.node(&b)["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#0000FF");
+    assert_eq!(
+        c.node(&a)["fills"][0]["color"]
+            .as_str()
+            .unwrap()
+            .to_uppercase(),
+        "#0000FF"
+    );
+    assert_eq!(
+        c.node(&b)["fills"][0]["color"]
+            .as_str()
+            .unwrap()
+            .to_uppercase(),
+        "#0000FF"
+    );
 }
 
 /// Task 5: colour variables with Light/Dark modes bound to a frame; switching modes recolours it.
 #[test]
 fn task_variables_light_dark() {
     let mut c = Client::new();
-    let coll = c.run("variable.createCollection", json!({"name": "Theme", "modes": ["Light", "Dark"]}))["id"].clone();
+    let coll = c.run(
+        "variable.createCollection",
+        json!({"name": "Theme", "modes": ["Light", "Dark"]}),
+    )["id"]
+        .clone();
     let bg = c
         .run("variable.create", json!({"collection": coll, "name": "color/bg", "type": "color", "values": {"Light": "#FFFFFF", "Dark": "#111111"}}))
         ["id"]
         .clone();
     let frame = c.create(json!({"type": "frame", "name": "Screen", "width": 300, "height": 200}));
-    c.run("variable.bind", json!({"ids": [frame], "field": "fill", "variable": bg}));
+    c.run(
+        "variable.bind",
+        json!({"ids": [frame], "field": "fill", "variable": bg}),
+    );
     let n = c.node(&frame);
-    assert_eq!(n["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#FFFFFF");
-    assert!(n["boundVariables"].to_string().contains(bg.as_str().unwrap()));
-    c.run("variable.setMode", json!({"ids": [frame], "collection": coll, "mode": "Dark"}));
-    assert_eq!(c.node(&frame)["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#111111");
-    c.run("variable.setMode", json!({"ids": [frame], "collection": coll, "mode": "Light"}));
-    assert_eq!(c.node(&frame)["fills"][0]["color"].as_str().unwrap().to_uppercase(), "#FFFFFF");
+    assert_eq!(
+        n["fills"][0]["color"].as_str().unwrap().to_uppercase(),
+        "#FFFFFF"
+    );
+    assert!(
+        n["boundVariables"]
+            .to_string()
+            .contains(bg.as_str().unwrap())
+    );
+    c.run(
+        "variable.setMode",
+        json!({"ids": [frame], "collection": coll, "mode": "Dark"}),
+    );
+    assert_eq!(
+        c.node(&frame)["fills"][0]["color"]
+            .as_str()
+            .unwrap()
+            .to_uppercase(),
+        "#111111"
+    );
+    c.run(
+        "variable.setMode",
+        json!({"ids": [frame], "collection": coll, "mode": "Light"}),
+    );
+    assert_eq!(
+        c.node(&frame)["fills"][0]["color"]
+            .as_str()
+            .unwrap()
+            .to_uppercase(),
+        "#FFFFFF"
+    );
     let list = c.run("variable.list", json!({}));
     assert!(list.to_string().contains("color/bg"));
 }
@@ -169,7 +291,10 @@ fn task_group_align_distribute() {
     // Equal gaps: (span 10..320 = 310, minus widths 120) / 2 = 95.
     let gap1 = nb["x"].as_f64().unwrap() - (na["x"].as_f64().unwrap() + 40.0);
     let gap2 = nd["x"].as_f64().unwrap() - (nb["x"].as_f64().unwrap() + 60.0);
-    assert!((gap1 - gap2).abs() < 0.5 && (gap1 - 95.0).abs() < 0.5, "gaps {gap1} {gap2}");
+    assert!(
+        (gap1 - gap2).abs() < 0.5 && (gap1 - 95.0).abs() < 0.5,
+        "gaps {gap1} {gap2}"
+    );
     // One undo step for the batch.
     let hist = c.doc()["history"]["undo"].clone();
     assert_eq!(hist[0], "Align + distribute");
@@ -177,7 +302,11 @@ fn task_group_align_distribute() {
     let ng = c.node(&g);
     assert_eq!(ng["type"].as_str().unwrap().to_lowercase(), "group");
     assert_eq!(ng["children"].as_array().unwrap().len(), 3);
-    assert!(approx(&ng["absoluteBounds"]["x"], 10.0) && approx(&ng["absoluteBounds"]["width"], 310.0), "{}", ng["absoluteBounds"]);
+    assert!(
+        approx(&ng["absoluteBounds"]["x"], 10.0) && approx(&ng["absoluteBounds"]["width"], 310.0),
+        "{}",
+        ng["absoluteBounds"]
+    );
     assert_eq!(c.page_children().len(), 1);
 }
 
@@ -189,11 +318,19 @@ fn task_boolean_subtract_then_flatten() {
     let inner = c.create(json!({"type": "ellipse", "x": 25, "y": 25, "width": 50, "height": 50}));
     let bool_id = c.run("bool.subtract", json!({"ids": [outer, inner]}))["id"].clone();
     let n = c.node(&bool_id);
-    assert_eq!(n["booleanOperation"].as_str().unwrap().to_lowercase(), "subtract", "{n}");
+    assert_eq!(
+        n["booleanOperation"].as_str().unwrap().to_lowercase(),
+        "subtract",
+        "{n}"
+    );
     assert_eq!(n["children"].as_array().unwrap().len(), 2);
     assert!(approx(&n["width"], 100.0));
     let flat = c.run("bool.flatten", json!({"ids": [bool_id]}));
-    let vid = flat.get("id").cloned().or_else(|| flat["ids"].get(0).cloned()).unwrap();
+    let vid = flat
+        .get("id")
+        .cloned()
+        .or_else(|| flat["ids"].get(0).cloned())
+        .unwrap();
     let v = c.node(&vid);
     assert_eq!(v["type"].as_str().unwrap().to_lowercase(), "vector", "{v}");
     assert!(approx(&v["width"], 100.0) && approx(&v["height"], 100.0));
@@ -201,9 +338,14 @@ fn task_boolean_subtract_then_flatten() {
     // The hole is really there: the centre pixel is transparent, the ring is painted.
     let shot = c.call("export", json!({"ids": [vid], "format": "png"}));
     use base64::Engine as _;
-    let bytes = base64::engine::general_purpose::STANDARD.decode(shot["content"][0]["data"].as_str().unwrap()).unwrap();
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(shot["content"][0]["data"].as_str().unwrap())
+        .unwrap();
     let (w, h) = figcraft_mcp::png_size(&bytes).unwrap();
-    assert!((100..=101).contains(&w) && (100..=101).contains(&h), "{w}x{h}");
+    assert!(
+        (100..=101).contains(&w) && (100..=101).contains(&h),
+        "{w}x{h}"
+    );
     let img = image::load_from_memory(&bytes).unwrap().to_rgba8();
     assert_eq!(img.get_pixel(w / 2, h / 2)[3], 0, "the hole is transparent");
     assert_eq!(img.get_pixel(w / 2, 10)[3], 255, "the ring is painted");
@@ -219,15 +361,28 @@ fn task_export_png_and_svg() {
     assert_eq!(r["isError"], false);
     assert_eq!(r["content"][0]["type"], "image");
     assert_eq!(r["content"][0]["mimeType"], "image/png");
-    assert_eq!(png_dims(r["content"][0]["data"].as_str().unwrap()), (320, 180));
+    assert_eq!(
+        png_dims(r["content"][0]["data"].as_str().unwrap()),
+        (320, 180)
+    );
     let dir = std::env::temp_dir().join(format!("figcraft-mcp-test-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("banner.png");
-    c.ok("export", json!({"ids": [f], "path": path.to_string_lossy(), "scale": 1}));
-    assert_eq!(figcraft_mcp::png_size(&std::fs::read(&path).unwrap()), Some((160, 90)));
+    c.ok(
+        "export",
+        json!({"ids": [f], "path": path.to_string_lossy(), "scale": 1}),
+    );
+    assert_eq!(
+        figcraft_mcp::png_size(&std::fs::read(&path).unwrap()),
+        Some((160, 90))
+    );
     let svg = c.ok("export", json!({"ids": [f], "format": "svg"}));
     let svg = svg.as_str().unwrap();
-    assert!(svg.starts_with("<svg") || svg.starts_with("<?xml"), "{}", &svg[..svg.len().min(80)]);
+    assert!(
+        svg.starts_with("<svg") || svg.starts_with("<?xml"),
+        "{}",
+        &svg[..svg.len().min(80)]
+    );
     // Whole-page screenshot respects maxSize.
     let shot = c.call("screenshot", json!({"maxSize": 80}));
     let (w, h) = png_dims(shot["content"][0]["data"].as_str().unwrap());
@@ -236,7 +391,11 @@ fn task_export_png_and_svg() {
     let file = dir.join("banner.figcraft");
     c.ok("save_file", json!({"path": file.to_string_lossy()}));
     let opened = c.ok("open_file", json!({"path": file.to_string_lossy()}));
-    assert!(opened["document"]["pages"][0]["children"].to_string().contains("Banner"));
+    assert!(
+        opened["document"]["pages"][0]["children"]
+            .to_string()
+            .contains("Banner")
+    );
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -245,17 +404,31 @@ fn task_export_png_and_svg() {
 fn task_undo_redo() {
     let mut c = Client::new();
     let r = c.create(json!({"type": "rectangle", "x": 0, "y": 0, "width": 100, "height": 100}));
-    c.ok("set_properties", json!({"ids": [r], "props": {"x": 50, "fill": "#00FF00"}}));
+    c.ok(
+        "set_properties",
+        json!({"ids": [r], "props": {"x": 50, "fill": "#00FF00"}}),
+    );
     assert!(approx(&c.node(&r)["x"], 50.0));
     // Drag it with the move tool: one gesture = one undo step.
-    c.ok("pointer", json!({"tool": "move", "kind": "drag", "x": 100, "y": 50, "to": [140, 70]}));
+    c.ok(
+        "pointer",
+        json!({"tool": "move", "kind": "drag", "x": 100, "y": 50, "to": [140, 70]}),
+    );
     let n = c.node(&r);
-    assert!(approx(&n["x"], 90.0) && approx(&n["y"], 20.0), "dragged to {} {}", n["x"], n["y"]);
+    assert!(
+        approx(&n["x"], 90.0) && approx(&n["y"], 20.0),
+        "dragged to {} {}",
+        n["x"],
+        n["y"]
+    );
     assert_eq!(c.ok("undo", json!({}))["undone"], true);
     assert!(approx(&c.node(&r)["x"], 50.0));
     assert_eq!(c.ok("undo", json!({}))["undone"], true);
     let n = c.node(&r);
-    assert!(approx(&n["x"], 0.0) && n["fills"][0]["color"].as_str().unwrap().to_uppercase() != "#00FF00");
+    assert!(
+        approx(&n["x"], 0.0)
+            && n["fills"][0]["color"].as_str().unwrap().to_uppercase() != "#00FF00"
+    );
     assert_eq!(c.ok("redo", json!({}))["redone"], true);
     assert!(approx(&c.node(&r)["x"], 50.0));
     assert_eq!(c.ok("undo", json!({}))["undone"], true);
@@ -272,16 +445,28 @@ fn task_draw_and_type_with_tools() {
     let mut c = Client::new();
     c.ok("key", json!({"key": "R"}));
     assert_eq!(c.ok("inspect_ui", json!({}))["tool"]["tool"], "rectangle");
-    let r = c.ok("pointer", json!({"kind": "drag", "x": 10, "y": 10, "to": [110, 60]}));
+    let r = c.ok(
+        "pointer",
+        json!({"kind": "drag", "x": 10, "y": 10, "to": [110, 60]}),
+    );
     let id = r["selection"][0].clone();
     let n = c.node(&id);
-    assert!(approx(&n["width"], 100.0) && approx(&n["height"], 50.0), "{n}");
+    assert!(
+        approx(&n["width"], 100.0) && approx(&n["height"], 50.0),
+        "{n}"
+    );
     // Text tool: click, type, escape.
-    c.ok("pointer", json!({"tool": "text", "kind": "click", "x": 200, "y": 200}));
+    c.ok(
+        "pointer",
+        json!({"tool": "text", "kind": "click", "x": 200, "y": 200}),
+    );
     c.ok("type_text", json!({"text": "Hi there"}));
     c.ok("key", json!({"key": "Escape"}));
     let kids = c.page_children();
-    let t = kids.iter().find(|k| k["type"].as_str().unwrap().eq_ignore_ascii_case("text")).expect("a text layer");
+    let t = kids
+        .iter()
+        .find(|k| k["type"].as_str().unwrap().eq_ignore_ascii_case("text"))
+        .expect("a text layer");
     assert_eq!(t["characters"], "Hi there");
     // Cmd+A selects all, Delete removes everything.
     c.ok("key", json!({"key": "A", "cmd": true}));
@@ -302,8 +487,19 @@ fn task_vector_edit_keys() {
     c.run("vector.edit.select", json!({"vertices": [1]}));
     c.ok("key", json!({"key": "Delete"}));
     let state = c.run("vector.edit.state", json!({}));
-    assert_eq!(state["network"]["vertices"].as_array().map(Vec::len), Some(3), "Delete removed the point, not the layer");
+    assert_eq!(
+        state["network"]["vertices"].as_array().map(Vec::len),
+        Some(3),
+        "Delete removed the point, not the layer"
+    );
     c.ok("key", json!({"key": "Enter"}));
     assert_eq!(c.page_children().len(), 1);
-    assert!(c.call("run_command", json!({"command": "vector.edit.state", "params": {}}))["isError"] == true, "Enter left edit mode");
+    assert!(
+        c.call(
+            "run_command",
+            json!({"command": "vector.edit.state", "params": {}})
+        )["isError"]
+            == true,
+        "Enter left edit mode"
+    );
 }

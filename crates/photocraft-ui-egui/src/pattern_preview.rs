@@ -15,10 +15,15 @@ pub const MAX_PER_AXIS: i32 = 31;
 /// heights. The document itself (`[0, 0]`) is not listed. Row by row, left to right. When more
 /// than [`MAX_PER_AXIS`] tiles would fit along an axis, the run is centred on the view.
 pub fn copies(visible: [f64; 4], size: [u32; 2]) -> Vec<[i32; 2]> {
-    let (Some(xs), Some(ys)) = (axis(visible[0], visible[2], size[0]), axis(visible[1], visible[3], size[1])) else {
+    let (Some(xs), Some(ys)) = (
+        axis(visible[0], visible[2], size[0]),
+        axis(visible[1], visible[3], size[1]),
+    ) else {
         return Vec::new();
     };
-    ys.flat_map(|j| xs.clone().map(move |i| [i, j])).filter(|&c| c != [0, 0]).collect()
+    ys.flat_map(|j| xs.clone().map(move |i| [i, j]))
+        .filter(|&c| c != [0, 0])
+        .collect()
 }
 
 /// Document offset of copy `c` in pixels of a `size` document.
@@ -59,10 +64,25 @@ mod tests {
     #[test]
     fn fit_view_gets_the_neighbours_that_show() {
         // A 100 × 100 document centred in a view 300 doc px wide and 100 tall: one copy each side.
-        assert_eq!(copies([-100.0, 0.0, 200.0, 100.0], [100, 100]), vec![[-1, 0], [1, 0]]);
+        assert_eq!(
+            copies([-100.0, 0.0, 200.0, 100.0], [100, 100]),
+            vec![[-1, 0], [1, 0]]
+        );
         // A view slightly larger than the document all round: the eight neighbours.
         let c = copies([-10.0, -10.0, 110.0, 110.0], [100, 100]);
-        assert_eq!(c, vec![[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]);
+        assert_eq!(
+            c,
+            vec![
+                [-1, -1],
+                [0, -1],
+                [1, -1],
+                [-1, 0],
+                [1, 0],
+                [-1, 1],
+                [0, 1],
+                [1, 1]
+            ]
+        );
     }
 
     #[test]
@@ -81,7 +101,10 @@ mod tests {
         let c = copies([250.0, 10.0, 450.0, 90.0], [100, 100]);
         assert_eq!(c, vec![[2, 0], [3, 0], [4, 0]]);
         // Panned up-left past the corner.
-        assert_eq!(copies([-150.0, -150.0, -60.0, -60.0], [100, 100]), vec![[-2, -2], [-1, -2], [-2, -1], [-1, -1]]);
+        assert_eq!(
+            copies([-150.0, -150.0, -60.0, -60.0], [100, 100]),
+            vec![[-2, -2], [-1, -2], [-2, -1], [-1, -1]]
+        );
     }
 
     #[test]
@@ -90,11 +113,17 @@ mod tests {
         let c = copies([-2000.0, -1000.0, 2000.0, 1000.0], [1, 1]);
         assert_eq!(c.len(), (MAX_PER_AXIS * MAX_PER_AXIS - 1) as usize);
         let half = MAX_PER_AXIS / 2;
-        assert!(c.iter().all(|&[i, j]| (-half..=half).contains(&i) && (-half..=half).contains(&j)));
+        assert!(
+            c.iter()
+                .all(|&[i, j]| (-half..=half).contains(&i) && (-half..=half).contains(&j))
+        );
         // Panned far away: the run follows the view's centre, not the document.
         let c = copies([1_000_000.0, 0.0, 1_004_000.0, 1.0], [1, 1]);
         assert_eq!(c.len(), MAX_PER_AXIS as usize);
-        assert!(c.iter().all(|&[i, j]| j == 0 && (1_002_000 - half..=1_002_000 + half).contains(&i)));
+        assert!(
+            c.iter()
+                .all(|&[i, j]| j == 0 && (1_002_000 - half..=1_002_000 + half).contains(&i))
+        );
     }
 
     #[test]
@@ -104,6 +133,9 @@ mod tests {
         assert!(copies([0.0, 0.0, f64::INFINITY, 10.0], [10, 10]).is_empty());
         assert!(copies([10.0, 0.0, 0.0, 10.0], [10, 10]).is_empty());
         // Huge but finite: capped, no overflow.
-        assert_eq!(copies([-1e300, -1e300, 1e300, 1e300], [1, 1]).len(), (MAX_PER_AXIS * MAX_PER_AXIS - 1) as usize);
+        assert_eq!(
+            copies([-1e300, -1e300, 1e300, 1e300], [1, 1]).len(),
+            (MAX_PER_AXIS * MAX_PER_AXIS - 1) as usize
+        );
     }
 }

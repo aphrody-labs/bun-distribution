@@ -98,13 +98,37 @@ fn non_luma8_variants_keep_original_conversion() {
     let variants = [
         DynamicImage::ImageRgba8(RgbaImage::from_pixel(3, 2, image::Rgba([200, 30, 90, 0]))),
         DynamicImage::ImageRgb8(image::RgbImage::from_pixel(3, 2, image::Rgb([17, 29, 43]))),
-        DynamicImage::ImageLumaA8(image::GrayAlphaImage::from_pixel(3, 2, image::LumaA([129, 67]))),
+        DynamicImage::ImageLumaA8(image::GrayAlphaImage::from_pixel(
+            3,
+            2,
+            image::LumaA([129, 67]),
+        )),
         DynamicImage::ImageLuma16(image::ImageBuffer::from_pixel(3, 2, image::Luma([129u16]))),
-        DynamicImage::ImageLumaA16(image::ImageBuffer::from_pixel(3, 2, image::LumaA([65406u16, 32896]))),
-        DynamicImage::ImageRgb16(image::ImageBuffer::from_pixel(3, 2, image::Rgb([128u16, 129, 65535]))),
-        DynamicImage::ImageRgba16(image::ImageBuffer::from_pixel(3, 2, image::Rgba([128u16, 129, 65535, 32896]))),
-        DynamicImage::ImageRgb32F(image::ImageBuffer::from_pixel(3, 2, image::Rgb([0.1f32, 0.5, 0.9]))),
-        DynamicImage::ImageRgba32F(image::ImageBuffer::from_pixel(3, 2, image::Rgba([0.1f32, 0.5, 0.9, 0.25]))),
+        DynamicImage::ImageLumaA16(image::ImageBuffer::from_pixel(
+            3,
+            2,
+            image::LumaA([65406u16, 32896]),
+        )),
+        DynamicImage::ImageRgb16(image::ImageBuffer::from_pixel(
+            3,
+            2,
+            image::Rgb([128u16, 129, 65535]),
+        )),
+        DynamicImage::ImageRgba16(image::ImageBuffer::from_pixel(
+            3,
+            2,
+            image::Rgba([128u16, 129, 65535, 32896]),
+        )),
+        DynamicImage::ImageRgb32F(image::ImageBuffer::from_pixel(
+            3,
+            2,
+            image::Rgb([0.1f32, 0.5, 0.9]),
+        )),
+        DynamicImage::ImageRgba32F(image::ImageBuffer::from_pixel(
+            3,
+            2,
+            image::Rgba([0.1f32, 0.5, 0.9, 0.25]),
+        )),
     ];
     for source in variants {
         let old = source.to_rgba8();

@@ -81,7 +81,13 @@ pub enum BevelShape {
 }
 
 impl BevelShape {
-    pub const ALL: [BevelShape; 5] = [Self::Classic, Self::Rounded, Self::Cove, Self::Step, Self::Ogee];
+    pub const ALL: [BevelShape; 5] = [
+        Self::Classic,
+        Self::Rounded,
+        Self::Cove,
+        Self::Step,
+        Self::Ogee,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -153,7 +159,15 @@ pub struct Bevel {
 
 impl Default for Bevel {
     fn default() -> Self {
-        Self { shape: BevelShape::Classic, width: 4.0, height: 4.0, repeat: 1, space: 0.0, inside: false, both_sides: false }
+        Self {
+            shape: BevelShape::Classic,
+            width: 4.0,
+            height: 4.0,
+            repeat: 1,
+            space: 0.0,
+            inside: false,
+            both_sides: false,
+        }
     }
 }
 
@@ -172,7 +186,13 @@ pub struct Extrude {
 
 impl Default for Extrude {
     fn default() -> Self {
-        Self { depth: 50.0, twist: 0.0, taper: 1.0, cap: true, bevel: None }
+        Self {
+            depth: 50.0,
+            twist: 0.0,
+            taper: 1.0,
+            cap: true,
+            bevel: None,
+        }
     }
 }
 
@@ -195,7 +215,14 @@ pub struct Inflate {
 
 impl Default for Inflate {
     fn default() -> Self {
-        Self { depth: 0.0, volume: 50.0, both_sides: false, twist: 0.0, taper: 1.0, cap: true }
+        Self {
+            depth: 0.0,
+            volume: 50.0,
+            both_sides: false,
+            twist: 0.0,
+            taper: 1.0,
+            cap: true,
+        }
     }
 }
 
@@ -211,10 +238,28 @@ impl Facet {
     /// About how thick the facet is across: twice its area over its perimeter (a w × l rectangle
     /// long against its width gives about w).
     pub fn thickness(&self) -> f64 {
-        let area: f64 = self.contours.iter().map(|c| signed_area(c)).sum::<f64>().abs();
-        let perimeter: f64 =
-            self.contours.iter().map(|c| c.iter().zip(c.iter().cycle().skip(1)).take(c.len()).map(|(a, b)| a.distance(*b)).sum::<f64>()).sum();
-        if perimeter > 0.0 { 2.0 * area / perimeter } else { 0.0 }
+        let area: f64 = self
+            .contours
+            .iter()
+            .map(|c| signed_area(c))
+            .sum::<f64>()
+            .abs();
+        let perimeter: f64 = self
+            .contours
+            .iter()
+            .map(|c| {
+                c.iter()
+                    .zip(c.iter().cycle().skip(1))
+                    .take(c.len())
+                    .map(|(a, b)| a.distance(*b))
+                    .sum::<f64>()
+            })
+            .sum();
+        if perimeter > 0.0 {
+            2.0 * area / perimeter
+        } else {
+            0.0
+        }
     }
 
     pub fn path(&self) -> PathData {
@@ -232,7 +277,11 @@ impl Facet {
 }
 
 fn finite(v: f64, fallback: f64, min: f64, max: f64) -> f64 {
-    if v.is_finite() { v.clamp(min, max) } else { fallback }
+    if v.is_finite() {
+        v.clamp(min, max)
+    } else {
+        fallback
+    }
 }
 
 impl Extrude {
@@ -277,7 +326,11 @@ fn pieces(c: vectorcraft_geom::CubicBez, tolerance: f64) -> u32 {
     let d = |a: Point, b: Point, c: Point| (a.to_vec2() - 2.0 * b.to_vec2() + c.to_vec2()).hypot();
     let bend = d(c.p0, c.p1, c.p2).max(d(c.p1, c.p2, c.p3));
     let n = (0.75 * bend / tolerance).sqrt().ceil();
-    if n.is_finite() { (n as u32).clamp(1, 32) } else { 32 }
+    if n.is_finite() {
+        (n as u32).clamp(1, 32)
+    } else {
+        32
+    }
 }
 
 /// The rings of a shape: closed polygons with the filled side on their left, (-dy, dx): outer
@@ -289,7 +342,11 @@ fn rings(path: &PathData, size: f64, limit: usize) -> Result<Vec<Vec<Point>>, St
     let mut count = 0;
     let mut out = vec![];
     for sp in &path.subpaths {
-        let segments = if sp.closed { sp.anchors.len() } else { sp.anchors.len().saturating_sub(1) };
+        let segments = if sp.closed {
+            sp.anchors.len()
+        } else {
+            sp.anchors.len().saturating_sub(1)
+        };
         if segments > limit {
             return Err("The shape is too complex for a 3D effect".into());
         }
@@ -299,7 +356,11 @@ fn rings(path: &PathData, size: f64, limit: usize) -> Result<Vec<Vec<Point>>, St
         }
         for i in 0..segments {
             let curve = sp.segment(i);
-            let samples = if sp.segment_is_line(i) { 1 } else { pieces(curve, tolerance) };
+            let samples = if sp.segment_is_line(i) {
+                1
+            } else {
+                pieces(curve, tolerance)
+            };
             count += samples as usize;
             if count > limit {
                 return Err("The shape is too complex for a 3D effect".into());
@@ -308,11 +369,19 @@ fn rings(path: &PathData, size: f64, limit: usize) -> Result<Vec<Vec<Point>>, St
                 ring.push(curve.eval(f64::from(k) / f64::from(samples)));
             }
         }
-        if ring.iter().any(|p| !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e8 || p.y.abs() > 1e8) {
+        if ring
+            .iter()
+            .any(|p| !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e8 || p.y.abs() > 1e8)
+        {
             return Err("The shape contains invalid coordinates".into());
         }
         ring.dedup_by(|a, b| a.distance(*b) < 1e-9);
-        while ring.len() > 1 && ring.first().zip(ring.last()).is_some_and(|(a, b)| a.distance(*b) < 1e-9) {
+        while ring.len() > 1
+            && ring
+                .first()
+                .zip(ring.last())
+                .is_some_and(|(a, b)| a.distance(*b) < 1e-9)
+        {
             ring.pop();
         }
         if ring.len() >= 3 && signed_area(&ring).abs() > 1e-9 {
@@ -325,7 +394,12 @@ fn rings(path: &PathData, size: f64, limit: usize) -> Result<Vec<Vec<Point>>, St
         .enumerate()
         .map(|(i, r)| {
             let p = r.first().copied().unwrap_or_default();
-            out.iter().enumerate().filter(|(j, o)| *j != i && contains(o, p)).count() % 2 == 1
+            out.iter()
+                .enumerate()
+                .filter(|(j, o)| *j != i && contains(o, p))
+                .count()
+                % 2
+                == 1
         })
         .collect();
     for (r, hole) in out.iter_mut().zip(holes) {
@@ -337,7 +411,12 @@ fn rings(path: &PathData, size: f64, limit: usize) -> Result<Vec<Vec<Point>>, St
 }
 
 fn signed_area(r: &[Point]) -> f64 {
-    r.iter().zip(r.iter().cycle().skip(1)).take(r.len()).map(|(a, b)| a.x * b.y - b.x * a.y).sum::<f64>() / 2.0
+    r.iter()
+        .zip(r.iter().cycle().skip(1))
+        .take(r.len())
+        .map(|(a, b)| a.x * b.y - b.x * a.y)
+        .sum::<f64>()
+        / 2.0
 }
 
 fn contains(r: &[Point], p: Point) -> bool {
@@ -354,7 +433,11 @@ fn contains(r: &[Point], p: Point) -> bool {
 fn left(a: Point, b: Point) -> (f64, f64) {
     let (dx, dy) = (b.x - a.x, b.y - a.y);
     let l = dx.hypot(dy);
-    if l < 1e-12 { (0.0, 0.0) } else { (-dy / l, dx / l) }
+    if l < 1e-12 {
+        (0.0, 0.0)
+    } else {
+        (-dy / l, dx / l)
+    }
 }
 
 /// `ring` moved `w` points towards its filled side (negative: away from it), each corner along
@@ -397,8 +480,16 @@ impl Camera {
     fn new(view: View, bounds: Rect, depth: f64) -> Self {
         let view = view.revolve();
         let [lx, ly, lz] = view.light_direction();
-        let size = (bounds.width() / 2.0).max(bounds.height() / 2.0).max(depth / 2.0).max(1.0);
-        Self { view, origin: bounds.center(), distance: 4.0 * size, light: V3(lx, ly, lz) }
+        let size = (bounds.width() / 2.0)
+            .max(bounds.height() / 2.0)
+            .max(depth / 2.0)
+            .max(1.0);
+        Self {
+            view,
+            origin: bounds.center(),
+            distance: 4.0 * size,
+            light: V3(lx, ly, lz),
+        }
     }
     fn rotate(&self, v: V3) -> V3 {
         self.view.rotate(v)
@@ -414,11 +505,22 @@ impl Camera {
     /// The cosine between a face's outward unit normal `n` and the direction from `at` (both in
     /// view space) to the eye: positive when the face is turned towards the viewer.
     fn facing(&self, at: V3, n: V3) -> f64 {
-        let to_eye = if self.view.perspective > 0.0 { V3(0.0, 0.0, self.distance / self.view.perspective).sub(at).unit() } else { V3(0.0, 0.0, 1.0) };
+        let to_eye = if self.view.perspective > 0.0 {
+            V3(0.0, 0.0, self.distance / self.view.perspective)
+                .sub(at)
+                .unit()
+        } else {
+            V3(0.0, 0.0, 1.0)
+        };
         n.dot(to_eye)
     }
     fn brightness(&self, n: V3) -> f64 {
-        if self.view.shade { (self.view.ambient + self.view.light_intensity * n.dot(self.light).max(0.0)).clamp(0.0, 1.0) } else { 1.0 }
+        if self.view.shade {
+            (self.view.ambient + self.view.light_intensity * n.dot(self.light).max(0.0))
+                .clamp(0.0, 1.0)
+        } else {
+            1.0
+        }
     }
 }
 
@@ -438,8 +540,15 @@ impl Builder<'_> {
         if count < 3 {
             return Ok(());
         }
-        let centre = contours.iter().flatten().fold(V3::default(), |s, v| V3(s.0 + v.0, s.1 + v.1, s.2 + v.2));
-        let centre = V3(centre.0 / count as f64, centre.1 / count as f64, centre.2 / count as f64);
+        let centre = contours
+            .iter()
+            .flatten()
+            .fold(V3::default(), |s, v| V3(s.0 + v.0, s.1 + v.1, s.2 + v.2));
+        let centre = V3(
+            centre.0 / count as f64,
+            centre.1 / count as f64,
+            centre.2 / count as f64,
+        );
         let n = n.unit();
         let facing = self.camera.facing(centre, n);
         // A closed solid hides the faces turned away. One seen almost exactly edge-on is kept but
@@ -454,15 +563,30 @@ impl Builder<'_> {
         } else {
             (V3(-n.0, -n.1, -n.2), false)
         };
-        let contours: Vec<Vec<Point>> = contours.iter().map(|c| c.iter().map(|v| self.camera.project(*v)).collect()).collect();
-        if contours.iter().flatten().any(|p| !p.x.is_finite() || !p.y.is_finite()) {
+        let contours: Vec<Vec<Point>> = contours
+            .iter()
+            .map(|c| c.iter().map(|v| self.camera.project(*v)).collect())
+            .collect();
+        if contours
+            .iter()
+            .flatten()
+            .any(|p| !p.x.is_finite() || !p.y.is_finite())
+        {
             return Err("The 3D projection is not finite".into());
         }
         if contours.iter().map(|c| signed_area(c).abs()).sum::<f64>() < 1e-10 {
             return Ok(());
         }
-        let depth = if behind { centre.2 - 4.0 * self.camera.distance } else { centre.2 };
-        self.facets.push(Facet { contours, depth, brightness: self.camera.brightness(n) });
+        let depth = if behind {
+            centre.2 - 4.0 * self.camera.distance
+        } else {
+            centre.2
+        };
+        self.facets.push(Facet {
+            contours,
+            depth,
+            brightness: self.camera.brightness(n),
+        });
         if self.facets.len() > MAX_FACES {
             return Err("The 3D surface is too complex; simplify the shape".into());
         }
@@ -510,7 +634,10 @@ fn newell(contours: &[Vec<V3>]) -> V3 {
 }
 
 fn check_bounds(b: Rect) -> Result<(), String> {
-    if [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite() && v.abs() <= 1e8) {
+    if [b.x0, b.y0, b.x1, b.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= 1e8)
+    {
         Ok(())
     } else {
         Err("3D effects require finite coordinates within 100 million points".into())
@@ -545,11 +672,22 @@ struct Turn {
 impl Turn {
     fn new(bounds: Rect, twist: f64, taper: f64, t: f64) -> Self {
         let (sin, cos) = (twist * t).to_radians().sin_cos();
-        Self { centre: bounds.center(), sin, cos, scale: 1.0 + (taper - 1.0) * t }
+        Self {
+            centre: bounds.center(),
+            sin,
+            cos,
+            scale: 1.0 + (taper - 1.0) * t,
+        }
     }
     fn apply(&self, p: Point) -> Point {
-        let (x, y) = ((p.x - self.centre.x) * self.scale, (p.y - self.centre.y) * self.scale);
-        Point::new(self.centre.x + x * self.cos - y * self.sin, self.centre.y + x * self.sin + y * self.cos)
+        let (x, y) = (
+            (p.x - self.centre.x) * self.scale,
+            (p.y - self.centre.y) * self.scale,
+        );
+        Point::new(
+            self.centre.x + x * self.cos - y * self.sin,
+            self.centre.y + x * self.sin + y * self.cos,
+        )
     }
 }
 
@@ -568,14 +706,22 @@ fn steps(o: &Extrude) -> Vec<Step> {
     let mut out = vec![];
     let bevel = o.bevel.filter(|b| b.width > 0.0 || b.height > 0.0);
     // A bevel can't be deeper than the extrusion (half of it on each side with both sides).
-    let sides = if bevel.is_some_and(|b| b.both_sides) { 2.0 } else { 1.0 };
+    let sides = if bevel.is_some_and(|b| b.both_sides) {
+        2.0
+    } else {
+        1.0
+    };
     let height = bevel.map_or(0.0, |b| b.height.min(o.depth / sides));
     // The bevel's cross-section across the width: (share across, share down).
     let profile = |b: &Bevel| -> Vec<(f64, f64)> {
         let mut pts = vec![(0.0, 0.0)];
         let n = b.repeat.max(1) as f64;
         let run = (1.0 - b.space) / n;
-        let gap = if b.repeat > 1 { b.space / (n - 1.0) } else { 0.0 };
+        let gap = if b.repeat > 1 {
+            b.space / (n - 1.0)
+        } else {
+            0.0
+        };
         for k in 0..b.repeat.max(1) {
             let start = k as f64 * (run + gap);
             for s in b.shape.samples().into_iter().skip(1) {
@@ -599,24 +745,56 @@ fn steps(o: &Extrude) -> Vec<Step> {
     };
     if let Some(b) = bevel {
         for (x, y) in profile(&b) {
-            let inset = if b.inside { b.width * (1.0 - x) } else { -b.width * x };
-            out.push(Step { inset, t: y * height / d, face: 1.0 });
+            let inset = if b.inside {
+                b.width * (1.0 - x)
+            } else {
+                -b.width * x
+            };
+            out.push(Step {
+                inset,
+                t: y * height / d,
+                face: 1.0,
+            });
         }
     } else {
-        out.push(Step { inset: 0.0, t: 0.0, face: 1.0 });
+        out.push(Step {
+            inset: 0.0,
+            t: 0.0,
+            face: 1.0,
+        });
     }
     // Twist and taper bend the walls: cut them into slices.
-    let slices = if o.twist != 0.0 || o.taper != 1.0 { ((o.twist.abs() / 6.0).ceil() as usize).clamp(8, 64) } else { 1 };
-    let back_height = if bevel.is_some_and(|b| b.both_sides) { height } else { 0.0 };
+    let slices = if o.twist != 0.0 || o.taper != 1.0 {
+        ((o.twist.abs() / 6.0).ceil() as usize).clamp(8, 64)
+    } else {
+        1
+    };
+    let back_height = if bevel.is_some_and(|b| b.both_sides) {
+        height
+    } else {
+        0.0
+    };
     let (t0, t1) = (height / d, 1.0 - back_height / d);
     for k in 0..=slices {
         let t = t0 + (t1 - t0) * k as f64 / slices as f64;
-        out.push(Step { inset: wall, t, face: 0.0 });
+        out.push(Step {
+            inset: wall,
+            t,
+            face: 0.0,
+        });
     }
     if let Some(b) = bevel.filter(|b| b.both_sides) {
         for (x, y) in profile(&b).into_iter().rev() {
-            let inset = if b.inside { b.width * (1.0 - x) } else { -b.width * x };
-            out.push(Step { inset, t: 1.0 - y * height / d, face: -1.0 });
+            let inset = if b.inside {
+                b.width * (1.0 - x)
+            } else {
+                -b.width * x
+            };
+            out.push(Step {
+                inset,
+                t: 1.0 - y * height / d,
+                face: -1.0,
+            });
         }
     }
     out.dedup_by(|a, b| (a.inset - b.inset).abs() < 1e-9 && (a.t - b.t).abs() < 1e-12);
@@ -625,7 +803,12 @@ fn steps(o: &Extrude) -> Vec<Step> {
 
 /// Extrude & Bevel: the shape's outline extruded backwards, with optional twist, taper, bevels
 /// and caps.
-pub fn extrude(path: &PathData, bounds: Rect, options: Extrude, view: View) -> Result<Vec<Facet>, String> {
+pub fn extrude(
+    path: &PathData,
+    bounds: Rect,
+    options: Extrude,
+    view: View,
+) -> Result<Vec<Facet>, String> {
     check_bounds(bounds)?;
     let o = options.sanitized();
     // No depth: the flat shape, seen from either side.
@@ -634,15 +817,25 @@ pub fn extrude(path: &PathData, bounds: Rect, options: Extrude, view: View) -> R
     }
     let rings = rings(path, bounds.width().max(bounds.height()), MAX_SOLID_POINTS)?;
     let camera = Camera::new(view, bounds, o.depth);
-    let mut b = Builder { camera: &camera, closed: o.cap, facets: vec![] };
+    let mut b = Builder {
+        camera: &camera,
+        closed: o.cap,
+        facets: vec![],
+    };
     let steps = steps(&o);
     let z = |t: f64| o.depth / 2.0 - o.depth * t;
-    let ring_at =
-        |ring: &[Point], s: &Step| -> Vec<V3> { section(&inset(ring, s.inset), bounds, &o, s.t).iter().map(|p| camera.place(*p, z(s.t))).collect() };
+    let ring_at = |ring: &[Point], s: &Step| -> Vec<V3> {
+        section(&inset(ring, s.inset), bounds, &o, s.t)
+            .iter()
+            .map(|p| camera.place(*p, z(s.t)))
+            .collect()
+    };
     for ring in &rings {
         let placed: Vec<Vec<V3>> = steps.iter().map(|s| ring_at(ring, s)).collect();
         for (k, pair) in placed.windows(2).enumerate() {
-            let ([a, c], Some(s0), Some(s1)) = (pair, steps.get(k), steps.get(k + 1)) else { continue };
+            let ([a, c], Some(s0), Some(s1)) = (pair, steps.get(k), steps.get(k + 1)) else {
+                continue;
+            };
             // A band between two front bevel steps borders the front, one reaching a back bevel
             // step the back; the rest are walls.
             let face = if s1.face < 0.0 {
@@ -658,7 +851,10 @@ pub fn extrude(path: &PathData, bounds: Rect, options: Extrude, view: View) -> R
     if o.cap {
         for (s, n) in [(steps.first(), 1.0), (steps.last(), -1.0)] {
             let Some(s) = s else { continue };
-            b.face(rings.iter().map(|r| ring_at(r, s)).collect(), camera.rotate(V3(0.0, 0.0, n)))?;
+            b.face(
+                rings.iter().map(|r| ring_at(r, s)).collect(),
+                camera.rotate(V3(0.0, 0.0, n)),
+            )?;
         }
     }
     Ok(b.finish())
@@ -670,8 +866,15 @@ pub fn plane(path: &PathData, bounds: Rect, view: View) -> Result<Vec<Facet>, St
     check_bounds(bounds)?;
     let rings = rings(path, bounds.width().max(bounds.height()), MAX_PLANE_POINTS)?;
     let camera = Camera::new(view, bounds, 0.0);
-    let mut b = Builder { camera: &camera, closed: false, facets: vec![] };
-    let contours: Vec<Vec<V3>> = rings.iter().map(|r| r.iter().map(|p| camera.place(*p, 0.0)).collect()).collect();
+    let mut b = Builder {
+        camera: &camera,
+        closed: false,
+        facets: vec![],
+    };
+    let contours: Vec<Vec<V3>> = rings
+        .iter()
+        .map(|r| r.iter().map(|p| camera.place(*p, 0.0)).collect())
+        .collect();
     b.face(contours, camera.rotate(V3(0.0, 0.0, 1.0)))?;
     Ok(b.finish())
 }
@@ -680,7 +883,11 @@ pub fn plane(path: &PathData, bounds: Rect, view: View) -> Result<Vec<Facet>, St
 fn segment_distance(p: Point, a: Point, b: Point) -> f64 {
     let (dx, dy) = (b.x - a.x, b.y - a.y);
     let l2 = dx * dx + dy * dy;
-    let t = if l2 < 1e-18 { 0.0 } else { (((p.x - a.x) * dx + (p.y - a.y) * dy) / l2).clamp(0.0, 1.0) };
+    let t = if l2 < 1e-18 {
+        0.0
+    } else {
+        (((p.x - a.x) * dx + (p.y - a.y) * dy) / l2).clamp(0.0, 1.0)
+    };
     p.distance(Point::new(a.x + dx * t, a.y + dy * t))
 }
 
@@ -707,23 +914,44 @@ struct Edges {
 impl Edges {
     fn new(rings: &[Vec<Point>]) -> Self {
         const N: usize = 64;
-        let edges: Vec<(Point, Point)> =
-            rings.iter().flat_map(|r| r.iter().zip(r.iter().cycle().skip(1)).take(r.len()).map(|(a, b)| (*a, *b))).collect();
-        let bounds = edges.iter().fold(None, |b: Option<Rect>, (a, c)| Some(b.map_or(Rect::from_points(*a, *c), |b| b.union_pt(*a).union_pt(*c))));
+        let edges: Vec<(Point, Point)> = rings
+            .iter()
+            .flat_map(|r| {
+                r.iter()
+                    .zip(r.iter().cycle().skip(1))
+                    .take(r.len())
+                    .map(|(a, b)| (*a, *b))
+            })
+            .collect();
+        let bounds = edges.iter().fold(None, |b: Option<Rect>, (a, c)| {
+            Some(b.map_or(Rect::from_points(*a, *c), |b| b.union_pt(*a).union_pt(*c)))
+        });
         let bounds = bounds.unwrap_or(Rect::ZERO);
         let size = (bounds.width().max(bounds.height()) / N as f64).max(1e-9);
         let mut buckets = vec![vec![]; N * N];
         let index = |v: f64, o: f64| (((v - o) / size).floor().max(0.0) as usize).min(N - 1);
         for (k, (a, b)) in edges.iter().enumerate() {
-            let (i0, i1) = (index(a.x.min(b.x), bounds.x0), index(a.x.max(b.x), bounds.x0));
-            let (j0, j1) = (index(a.y.min(b.y), bounds.y0), index(a.y.max(b.y), bounds.y0));
+            let (i0, i1) = (
+                index(a.x.min(b.x), bounds.x0),
+                index(a.x.max(b.x), bounds.x0),
+            );
+            let (j0, j1) = (
+                index(a.y.min(b.y), bounds.y0),
+                index(a.y.max(b.y), bounds.y0),
+            );
             for j in j0..=j1 {
                 for i in i0..=i1 {
                     buckets[j * N + i].push(k as u32);
                 }
             }
         }
-        Self { edges, origin: bounds.origin(), size, n: N, buckets }
+        Self {
+            edges,
+            origin: bounds.origin(),
+            size,
+            n: N,
+            buckets,
+        }
     }
 
     /// The bucket row or column of coordinate `v`, from the grid's origin `o` on that axis.
@@ -734,10 +962,21 @@ impl Edges {
     /// Is `p` within `tolerance` of an edge? Only the buckets `p` could share an edge with are
     /// looked at.
     fn near(&self, p: Point, tolerance: f64) -> bool {
-        self.touch(Rect::new(p.x - tolerance, p.y - tolerance, p.x + tolerance, p.y + tolerance)) && {
+        self.touch(Rect::new(
+            p.x - tolerance,
+            p.y - tolerance,
+            p.x + tolerance,
+            p.y + tolerance,
+        )) && {
             let n = self.n as isize;
-            let (i0, i1) = (self.cell(p.x - tolerance, self.origin.x), self.cell(p.x + tolerance, self.origin.x));
-            let (j0, j1) = (self.cell(p.y - tolerance, self.origin.y), self.cell(p.y + tolerance, self.origin.y));
+            let (i0, i1) = (
+                self.cell(p.x - tolerance, self.origin.x),
+                self.cell(p.x + tolerance, self.origin.x),
+            );
+            let (j0, j1) = (
+                self.cell(p.y - tolerance, self.origin.y),
+                self.cell(p.y + tolerance, self.origin.y),
+            );
             (j0..=j1).any(|j| {
                 (i0..=i1).any(|i| {
                     self.buckets[(j * n + i) as usize]
@@ -755,8 +994,15 @@ impl Edges {
         let n = self.n as isize;
         for j in self.cell(r.y0, self.origin.y)..=self.cell(r.y1, self.origin.y) {
             for i in self.cell(r.x0, self.origin.x)..=self.cell(r.x1, self.origin.x) {
-                for (a, b) in self.buckets[(j * n + i) as usize].iter().filter_map(|k| self.edges.get(*k as usize)) {
-                    if a.x.min(b.x) <= r.x1 && a.x.max(b.x) >= r.x0 && a.y.min(b.y) <= r.y1 && a.y.max(b.y) >= r.y0 {
+                for (a, b) in self.buckets[(j * n + i) as usize]
+                    .iter()
+                    .filter_map(|k| self.edges.get(*k as usize))
+                {
+                    if a.x.min(b.x) <= r.x1
+                        && a.x.max(b.x) >= r.x0
+                        && a.y.min(b.y) <= r.y1
+                        && a.y.max(b.y) >= r.y0
+                    {
                         f(*a, *b);
                     }
                 }
@@ -767,14 +1013,25 @@ impl Edges {
     /// Does any edge pass through `r` (its bounding box, at least, overlapping it)?
     fn touch(&self, r: Rect) -> bool {
         let n = self.n as isize;
-        let (i0, i1) = (self.cell(r.x0, self.origin.x), self.cell(r.x1, self.origin.x));
-        let (j0, j1) = (self.cell(r.y0, self.origin.y), self.cell(r.y1, self.origin.y));
+        let (i0, i1) = (
+            self.cell(r.x0, self.origin.x),
+            self.cell(r.x1, self.origin.x),
+        );
+        let (j0, j1) = (
+            self.cell(r.y0, self.origin.y),
+            self.cell(r.y1, self.origin.y),
+        );
         (j0..=j1).any(|j| {
             (i0..=i1).any(|i| {
                 self.buckets[(j * n + i) as usize]
                     .iter()
                     .filter_map(|k| self.edges.get(*k as usize))
-                    .any(|(a, b)| a.x.min(b.x) <= r.x1 && a.x.max(b.x) >= r.x0 && a.y.min(b.y) <= r.y1 && a.y.max(b.y) >= r.y0)
+                    .any(|(a, b)| {
+                        a.x.min(b.x) <= r.x1
+                            && a.x.max(b.x) >= r.x0
+                            && a.y.min(b.y) <= r.y1
+                            && a.y.max(b.y) >= r.y0
+                    })
             })
         })
     }
@@ -782,19 +1039,31 @@ impl Edges {
     /// The distance from `p` to the nearest edge: the buckets are searched in growing squares
     /// around `p`'s, until no unsearched bucket could hold a nearer edge.
     fn distance(&self, p: Point) -> f64 {
-        let (fx, fy) = ((p.x - self.origin.x) / self.size, (p.y - self.origin.y) / self.size);
+        let (fx, fy) = (
+            (p.x - self.origin.x) / self.size,
+            (p.y - self.origin.y) / self.size,
+        );
         if !fx.is_finite() || !fy.is_finite() {
             return f64::INFINITY;
         }
         let n = self.n as isize;
-        let (ci, cj) = ((fx.floor() as isize).clamp(0, n - 1), (fy.floor() as isize).clamp(0, n - 1));
+        let (ci, cj) = (
+            (fx.floor() as isize).clamp(0, n - 1),
+            (fy.floor() as isize).clamp(0, n - 1),
+        );
         // How far `p` is outside the grid: the nearest point of the grid to it lies in `p`'s bucket.
-        let outside = (fx.clamp(0.0, n as f64) - fx).hypot(fy.clamp(0.0, n as f64) - fy) * self.size;
+        let outside =
+            (fx.clamp(0.0, n as f64) - fx).hypot(fy.clamp(0.0, n as f64) - fy) * self.size;
         let mut best = f64::INFINITY;
         for r in 0..n {
             for j in (cj - r)..=(cj + r) {
                 for i in (ci - r)..=(ci + r) {
-                    if (j - cj).abs() != r && (i - ci).abs() != r || i < 0 || j < 0 || i >= n || j >= n {
+                    if (j - cj).abs() != r && (i - ci).abs() != r
+                        || i < 0
+                        || j < 0
+                        || i >= n
+                        || j >= n
+                    {
                         continue;
                     }
                     for k in &self.buckets[(j * n + i) as usize] {
@@ -823,7 +1092,12 @@ fn filled(rings: &[Vec<Point>], p: Point) -> bool {
 /// needn't be).
 fn clip(ring: &[Point], cell: Rect) -> Vec<Point> {
     let mut pts = ring.to_vec();
-    let sides: [fn(Point, Rect) -> f64; 4] = [|p, c| p.x - c.x0, |p, c| c.x1 - p.x, |p, c| p.y - c.y0, |p, c| c.y1 - p.y];
+    let sides: [fn(Point, Rect) -> f64; 4] = [
+        |p, c| p.x - c.x0,
+        |p, c| c.x1 - p.x,
+        |p, c| p.y - c.y0,
+        |p, c| c.y1 - p.y,
+    ];
     for side in sides {
         if pts.is_empty() {
             break;
@@ -841,7 +1115,11 @@ fn clip(ring: &[Point], cell: Rect) -> Vec<Point> {
         pts = out;
     }
     pts.dedup_by(|a, b| a.distance(*b) < 1e-9);
-    if pts.len() >= 3 && signed_area(&pts).abs() > 1e-12 { pts } else { vec![] }
+    if pts.len() >= 3 && signed_area(&pts).abs() > 1e-12 {
+        pts
+    } else {
+        vec![]
+    }
 }
 
 /// The shape's surface as a membrane under pressure, held at zero along its outline (and its
@@ -863,7 +1141,8 @@ struct Membrane {
 impl Membrane {
     fn solve(rings: &[Vec<Point>], origin: Point, step: f64, nx: usize, ny: usize) -> Self {
         let edges = Edges::new(rings);
-        let node = |i: usize, j: usize| Point::new(origin.x + i as f64 * step, origin.y + j as f64 * step);
+        let node =
+            |i: usize, j: usize| Point::new(origin.x + i as f64 * step, origin.y + j as f64 * step);
         let idx = |i: usize, j: usize| j * nx + i;
         // A node on the outline itself is held at zero with the outside.
         let inside: Vec<bool> = (0..nx * ny)
@@ -909,7 +1188,11 @@ impl Membrane {
                     let opp = h[d ^ 1];
                     let w = 2.0 / (h[d] * (h[d] + opp));
                     let (ni, nj) = (i as isize + *dx as isize, j as isize + *dy as isize);
-                    let neighbour = (h[d] >= step && ni >= 0 && nj >= 0 && (ni as usize) < nx && (nj as usize) < ny)
+                    let neighbour = (h[d] >= step
+                        && ni >= 0
+                        && nj >= 0
+                        && (ni as usize) < nx
+                        && (nj as usize) < ny)
                         .then(|| idx(ni as usize, nj as usize))
                         .filter(|n| inside[*n]);
                     stencil[k][d] = (w, neighbour);
@@ -952,7 +1235,12 @@ impl Membrane {
                 let mut slopes = vec![];
                 for (di, dj) in [(1isize, 0isize), (-1, 0), (0, 1), (0, -1)] {
                     let (ni, nj) = (i as isize + di, j as isize + dj);
-                    if ni < 0 || nj < 0 || ni as usize >= nx || nj as usize >= ny || !inside[idx(ni as usize, nj as usize)] {
+                    if ni < 0
+                        || nj < 0
+                        || ni as usize >= nx
+                        || nj as usize >= ny
+                        || !inside[idx(ni as usize, nj as usize)]
+                    {
                         continue;
                     }
                     let d_in = edges.distance(node(ni as usize, nj as usize)).max(1e-9);
@@ -963,14 +1251,24 @@ impl Membrane {
                 }
             }
         }
-        Self { origin, step, nx, ny, phi: ext, peak }
+        Self {
+            origin,
+            step,
+            nx,
+            ny,
+            phi: ext,
+            peak,
+        }
     }
 
     /// φ at `p`, interpolated between the four nodes around it.
     fn at(&self, p: Point) -> f64 {
         let fx = ((p.x - self.origin.x) / self.step).clamp(0.0, (self.nx - 1) as f64);
         let fy = ((p.y - self.origin.y) / self.step).clamp(0.0, (self.ny - 1) as f64);
-        let (i, j) = ((fx.floor() as usize).min(self.nx.saturating_sub(2)), (fy.floor() as usize).min(self.ny.saturating_sub(2)));
+        let (i, j) = (
+            (fx.floor() as usize).min(self.nx.saturating_sub(2)),
+            (fy.floor() as usize).min(self.ny.saturating_sub(2)),
+        );
         let (tx, ty) = (fx - i as f64, fy - j as f64);
         let v = |i: usize, j: usize| self.phi.get(j * self.nx + i).copied().unwrap_or(0.0);
         if self.nx < 2 || self.ny < 2 {
@@ -985,18 +1283,34 @@ impl Membrane {
 /// The part of `outline` inside `cell`, as rings (holes running the other way).
 fn material(outline: &PathData, cell: Rect) -> Option<Vec<Vec<Point>>> {
     let r = PathData::single(vectorcraft_geom::SubPath::polyline(
-        &[Point::new(cell.x0, cell.y0), Point::new(cell.x1, cell.y0), Point::new(cell.x1, cell.y1), Point::new(cell.x0, cell.y1)],
+        &[
+            Point::new(cell.x0, cell.y0),
+            Point::new(cell.x1, cell.y0),
+            Point::new(cell.x1, cell.y1),
+            Point::new(cell.x0, cell.y1),
+        ],
         true,
     ));
     let rule = vectorcraft_geom::FillRule::NonZero;
-    let part =
-        vectorcraft_pathops::try_boolean(&r, rule, outline, rule, vectorcraft_pathops::BoolOp::Intersect, vectorcraft_pathops::DEFAULT_PRECISION)
-            .ok()?;
+    let part = vectorcraft_pathops::try_boolean(
+        &r,
+        rule,
+        outline,
+        rule,
+        vectorcraft_pathops::BoolOp::Intersect,
+        vectorcraft_pathops::DEFAULT_PRECISION,
+    )
+    .ok()?;
     rings(&part, cell.width(), MAX_PLANE_POINTS).ok()
 }
 
 /// Inflate: the shape puffed out like a cushion, its edge kept where the art's outline is.
-pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> Result<Vec<Facet>, String> {
+pub fn inflate(
+    path: &PathData,
+    bounds: Rect,
+    options: Inflate,
+    view: View,
+) -> Result<Vec<Facet>, String> {
     check_bounds(bounds)?;
     let o = options.sanitized();
     let rings = rings(path, bounds.width().max(bounds.height()), MAX_SOLID_POINTS)?;
@@ -1009,10 +1323,18 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
     }
     const CELLS: usize = 48;
     let cell = size / CELLS as f64;
-    let (nx, ny) = (((bounds.width() / cell).ceil() as usize).max(1), ((bounds.height() / cell).ceil() as usize).max(1));
+    let (nx, ny) = (
+        ((bounds.width() / cell).ceil() as usize).max(1),
+        ((bounds.height() / cell).ceil() as usize).max(1),
+    );
     let m = Membrane::solve(&rings, bounds.origin(), cell, nx + 1, ny + 1);
     let edges = Edges::new(&rings);
-    let outline = PathData::new(rings.iter().map(|r| vectorcraft_geom::SubPath::polyline(r, true)).collect());
+    let outline = PathData::new(
+        rings
+            .iter()
+            .map(|r| vectorcraft_geom::SubPath::polyline(r, true))
+            .collect(),
+    );
     // A circle of radius r puffs into a half sphere of radius r at 50 % (its membrane peaks at r²/4).
     let height = 2.0 * m.peak.sqrt() * o.volume / 50.0;
     let lift = |p: Point| {
@@ -1023,7 +1345,11 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
     };
     let camera = Camera::new(view, bounds, o.depth + 2.0 * height);
     // Without its back cap the object is a shell open behind, its inside showing.
-    let mut b = Builder { camera: &camera, closed: o.cap, facets: vec![] };
+    let mut b = Builder {
+        camera: &camera,
+        closed: o.cap,
+        facets: vec![],
+    };
     let half = o.depth / 2.0;
     // The back: turned and scaled by the twist and taper, its puff too.
     let back_turn = Turn::new(bounds, o.twist, o.taper, 1.0);
@@ -1035,30 +1361,62 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
     // no cracks.
     const FINE: usize = 4;
     let unit = cell / FINE as f64;
-    let at = |qx: usize, qy: usize| Point::new(bounds.x0 + qx as f64 * unit, bounds.y0 + qy as f64 * unit);
-    let base = |i: usize, j: usize| Rect::from_points(at(i * FINE, j * FINE), at((i + 1) * FINE, (j + 1) * FINE));
+    let at = |qx: usize, qy: usize| {
+        Point::new(bounds.x0 + qx as f64 * unit, bounds.y0 + qy as f64 * unit)
+    };
+    let base = |i: usize, j: usize| {
+        Rect::from_points(at(i * FINE, j * FINE), at((i + 1) * FINE, (j + 1) * FINE))
+    };
     // The shape's part of a rectangle, as rings.
     let cut = |r: Rect| -> Vec<Vec<Point>> {
         // A cell no edge crosses is wholly inside the shape or wholly outside it.
         if !edges.touch(r) {
-            let corners = vec![Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)];
-            return if filled(&rings, r.center()) { vec![corners] } else { vec![] };
+            let corners = vec![
+                Point::new(r.x0, r.y0),
+                Point::new(r.x1, r.y0),
+                Point::new(r.x1, r.y1),
+                Point::new(r.x0, r.y1),
+            ];
+            return if filled(&rings, r.center()) {
+                vec![corners]
+            } else {
+                vec![]
+            };
         }
-        let pieces: Vec<Vec<Point>> = rings.iter().map(|ring| clip(ring, r)).filter(|c| !c.is_empty()).collect();
+        let pieces: Vec<Vec<Point>> = rings
+            .iter()
+            .map(|ring| clip(ring, r))
+            .filter(|c| !c.is_empty())
+            .collect();
         if pieces.iter().map(|p| signed_area(p)).sum::<f64>() <= 1e-9 * r.area() {
             return vec![];
         }
         // Where a hole's piece cancels part of an outline's, that only holds flat: lifted onto
         // the surface the two no longer meet. Such a cell takes the shape's own part of it.
-        let mixed = pieces.iter().any(|p| signed_area(p) < 0.0) && pieces.iter().any(|p| signed_area(p) > 0.0);
-        if mixed { material(&outline, r).unwrap_or(pieces) } else { pieces }
+        let mixed = pieces.iter().any(|p| signed_area(p) < 0.0)
+            && pieces.iter().any(|p| signed_area(p) > 0.0);
+        if mixed {
+            material(&outline, r).unwrap_or(pieces)
+        } else {
+            pieces
+        }
     };
     // How many times each cell is halved each way (0, 1 or 2), from how steeply it rises.
     let levels: Vec<u32> = (0..nx * ny)
         .map(|k| {
             let pieces = cut(base(k % nx, k / nx));
-            let (lo, hi) = pieces.iter().flatten().map(|q| lift(*q)).fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), h| (lo.min(h), hi.max(h)));
-            let rise = if pieces.is_empty() { 0.0 } else { (hi - lo) / cell };
+            let (lo, hi) = pieces
+                .iter()
+                .flatten()
+                .map(|q| lift(*q))
+                .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), h| {
+                    (lo.min(h), hi.max(h))
+                });
+            let rise = if pieces.is_empty() {
+                0.0
+            } else {
+                (hi - lo) / cell
+            };
             if rise > 6.0 {
                 2
             } else if rise > 2.0 {
@@ -1068,8 +1426,13 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
             }
         })
         .collect();
-    let level =
-        |i: isize, j: isize| -> u32 { if i < 0 || j < 0 || i as usize >= nx || j as usize >= ny { 0 } else { levels[j as usize * nx + i as usize] } };
+    let level = |i: isize, j: isize| -> u32 {
+        if i < 0 || j < 0 || i as usize >= nx || j as usize >= ny {
+            0
+        } else {
+            levels[j as usize * nx + i as usize]
+        }
+    };
     for j in 0..ny {
         for i in 0..nx {
             let l = level(i as isize, j as isize);
@@ -1077,8 +1440,12 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
             // The lattice spacing along each side of this cell: its own or its neighbour's.
             let (ii, jj) = (i as isize, j as isize);
             let side_step = |dl: u32| FINE >> l.max(dl);
-            let (left, right, top, bottom) =
-                (side_step(level(ii - 1, jj)), side_step(level(ii + 1, jj)), side_step(level(ii, jj - 1)), side_step(level(ii, jj + 1)));
+            let (left, right, top, bottom) = (
+                side_step(level(ii - 1, jj)),
+                side_step(level(ii + 1, jj)),
+                side_step(level(ii, jj - 1)),
+                side_step(level(ii, jj + 1)),
+            );
             let (bx0, by0, bx1, by1) = (i * FINE, j * FINE, (i + 1) * FINE, (j + 1) * FINE);
             for sy in (by0..by1).step_by(step) {
                 for sx in (bx0..bx1).step_by(step) {
@@ -1090,7 +1457,10 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
                     // Lattice points along the cell's own border, between each edge's ends.
                     let stitch = |a: Point, b: Point| -> Vec<Point> {
                         let tol = 1e-7 * unit;
-                        let along = |fixed_x: Option<usize>, fixed_y: Option<usize>, every: usize| -> Vec<Point> {
+                        let along = |fixed_x: Option<usize>,
+                                     fixed_y: Option<usize>,
+                                     every: usize|
+                         -> Vec<Point> {
                             let mut out = vec![];
                             match (fixed_x, fixed_y) {
                                 (Some(qx), None) => {
@@ -1119,7 +1489,12 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
                             out
                         };
                         let on = |v: f64, w: f64| (v - w).abs() <= tol;
-                        let (x0, x1, y0, y1) = (at(bx0, by0).x, at(bx1, by1).x, at(bx0, by0).y, at(bx1, by1).y);
+                        let (x0, x1, y0, y1) = (
+                            at(bx0, by0).x,
+                            at(bx1, by1).x,
+                            at(bx0, by0).y,
+                            at(bx1, by1).y,
+                        );
                         if on(a.x, x0) && on(b.x, x0) {
                             along(Some(bx0), None, left)
                         } else if on(a.x, x1) && on(b.x, x1) {
@@ -1143,12 +1518,23 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
                             out
                         })
                         .collect();
-                    let lifts: Vec<Vec<f64>> = pieces.iter().map(|p| p.iter().map(|q| lift(*q)).collect()).collect();
+                    let lifts: Vec<Vec<f64>> = pieces
+                        .iter()
+                        .map(|p| p.iter().map(|q| lift(*q)).collect())
+                        .collect();
                     // Each piece lifted onto the surface. Its normal is the lifted piece's own average
                     // (Newell's), not the slope at one point: near the edge the surface turns
                     // vertical, and a point sample there misjudges which way a whole piece faces.
-                    let front: Vec<Vec<V3>> =
-                        pieces.iter().zip(&lifts).map(|(p, h)| p.iter().zip(h).map(|(q, h)| camera.place(*q, half + h)).collect()).collect();
+                    let front: Vec<Vec<V3>> = pieces
+                        .iter()
+                        .zip(&lifts)
+                        .map(|(p, h)| {
+                            p.iter()
+                                .zip(h)
+                                .map(|(q, h)| camera.place(*q, half + h))
+                                .collect()
+                        })
+                        .collect();
                     let n = newell(&front);
                     b.face(front, n)?;
                     if o.both_sides && o.cap {
@@ -1157,7 +1543,15 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
                         let back: Vec<Vec<V3>> = pieces
                             .iter()
                             .zip(&lifts)
-                            .map(|(p, h)| p.iter().zip(h).map(|(q, h)| camera.place(back_turn.apply(*q), -half - h * back_turn.scale)).collect())
+                            .map(|(p, h)| {
+                                p.iter()
+                                    .zip(h)
+                                    .map(|(q, h)| {
+                                        camera
+                                            .place(back_turn.apply(*q), -half - h * back_turn.scale)
+                                    })
+                                    .collect()
+                            })
                             .collect();
                         let n = newell(&back);
                         b.face(back, V3(-n.0, -n.1, -n.2))?;
@@ -1167,17 +1561,30 @@ pub fn inflate(path: &PathData, bounds: Rect, options: Inflate, view: View) -> R
         }
     }
     if !o.both_sides && o.cap {
-        let back: Vec<Vec<V3>> = rings.iter().map(|r| r.iter().map(|p| camera.place(back_turn.apply(*p), -half)).collect()).collect();
+        let back: Vec<Vec<V3>> = rings
+            .iter()
+            .map(|r| {
+                r.iter()
+                    .map(|p| camera.place(back_turn.apply(*p), -half))
+                    .collect()
+            })
+            .collect();
         b.face(back, camera.rotate(V3(0.0, 0.0, -1.0)))?;
     }
     if o.depth > 0.0 {
         // The sides, cut into slices that follow a twist or taper.
-        let slices = if o.twist != 0.0 || o.taper != 1.0 { ((o.twist.abs() / 6.0).ceil() as usize).clamp(8, 64) } else { 1 };
+        let slices = if o.twist != 0.0 || o.taper != 1.0 {
+            ((o.twist.abs() / 6.0).ceil() as usize).clamp(8, 64)
+        } else {
+            1
+        };
         for ring in &rings {
             let at = |k: usize| -> Vec<V3> {
                 let t = k as f64 / slices as f64;
                 let turn = Turn::new(bounds, o.twist, o.taper, t);
-                ring.iter().map(|p| camera.place(turn.apply(*p), half - o.depth * t)).collect()
+                ring.iter()
+                    .map(|p| camera.place(turn.apply(*p), half - o.depth * t))
+                    .collect()
             };
             for k in 0..slices {
                 b.band(&at(k), &at(k + 1), |i| outward(ring, i, 0.0))?;

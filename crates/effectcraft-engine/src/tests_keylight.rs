@@ -20,7 +20,11 @@ const SKIN: [f32; 3] = [0.86, 0.62, 0.52];
 fn plate(x: u32, y: u32) -> [f32; 3] {
     // Screen: a slightly uneven, noisy green.
     let noise = (((x * 7919 + y * 104_729) % 97) as f32 / 97.0 - 0.5) * 0.02;
-    let screen = [0.18 + noise, 0.66 + (x as f32 / W as f32 - 0.5) * 0.04 + noise, 0.30 - noise];
+    let screen = [
+        0.18 + noise,
+        0.66 + (x as f32 / W as f32 - 0.5) * 0.04 + noise,
+        0.30 - noise,
+    ];
     let r = ((x as f32 + 0.5 - 48.0).powi(2) + (y as f32 + 0.5 - 32.0).powi(2)).sqrt();
     // Subject: skin, with green spill in its outer 3 px and a 3 px soft edge.
     let mut subject = SKIN;
@@ -63,13 +67,27 @@ impl crate::Importer for Probe {
 }
 
 fn keyed() -> (Session, ItemId) {
-    let mut s = Session { footage: Arc::new(Plate), importer: Some(Arc::new(Probe)), ..Default::default() };
-    let item = s.execute("file.import", json!({"paths": ["/plates/greenscreen.png"]})).unwrap()["items"][0].as_u64().unwrap();
-    s.execute("comp.new", json!({"name": "Key", "width": W, "height": H, "frameRate": 24, "duration": 1})).unwrap();
+    let mut s = Session {
+        footage: Arc::new(Plate),
+        importer: Some(Arc::new(Probe)),
+        ..Default::default()
+    };
+    let item = s
+        .execute("file.import", json!({"paths": ["/plates/greenscreen.png"]}))
+        .unwrap()["items"][0]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Key", "width": W, "height": H, "frameRate": 24, "duration": 1}),
+    )
+    .unwrap();
     let c = s.active_comp_id().unwrap();
     s.execute("layer.addItem", json!({"item": item})).unwrap();
     // After Effects' name finds it; MCP's add_effect / list_effects go through the same lookup.
-    let r = s.execute_checked("effect.apply", json!({"effect": "Keylight (1.2)"})).unwrap();
+    let r = s
+        .execute_checked("effect.apply", json!({"effect": "Keylight (1.2)"}))
+        .unwrap();
     assert_eq!(r["effect"], "ec.keying.keylight");
     (s, c)
 }
@@ -80,18 +98,35 @@ fn key_light_removes_a_green_screen() {
     let steps = s.history.undo.len();
     // The default screen colour (pure green) already keys the screen, so the shown frame is
     // transparent there; the eyedropper samples the effect's input instead.
-    let picked = s.execute_checked("effect.pickColor", json!({"effect": 1, "param": "screenColour", "x": 6, "y": 6, "average": true})).unwrap();
-    let col: Vec<f64> = picked["color"].as_array().unwrap().iter().map(|v| v.as_f64().unwrap()).collect();
+    let picked = s
+        .execute_checked(
+            "effect.pickColor",
+            json!({"effect": 1, "param": "screenColour", "x": 6, "y": 6, "average": true}),
+        )
+        .unwrap();
+    let col: Vec<f64> = picked["color"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_f64().unwrap())
+        .collect();
     let want = plate(6, 6);
-    assert!((0..3).all(|i| (col[i] - want[i] as f64).abs() < 0.02), "{col:?} vs {want:?}");
+    assert!(
+        (0..3).all(|i| (col[i] - want[i] as f64).abs() < 0.02),
+        "{col:?} vs {want:?}"
+    );
     let tree = s.execute("layer.tree", json!({})).unwrap().to_string();
     assert!(tree.contains("Screen Colour"), "{tree}");
     // One undo step.
     assert_eq!(s.history.undo.len(), steps + 1);
     // Clean the matte as one does in Screen Matte view: Clip Black for the uneven screen, Clip
     // White for the spill's partial transparency.
-    for (path, v) in [("effects/#1/screenMatte/clipBlack", 10), ("effects/#1/screenMatte/clipWhite", 85)] {
-        s.execute_checked("prop.set", json!({"path": path, "value": v})).unwrap();
+    for (path, v) in [
+        ("effects/#1/screenMatte/clipBlack", 10),
+        ("effects/#1/screenMatte/clipWhite", 85),
+    ] {
+        s.execute_checked("prop.set", json!({"path": path, "value": v}))
+            .unwrap();
     }
 
     let img = s.render(c, Tick::ZERO, RenderOpts::default());
@@ -102,34 +137,82 @@ fn key_light_removes_a_green_screen() {
     }
     // The subject stays, with its colour.
     let fg = px(48, 32);
-    assert!(fg[3] > 0.99 && (0..3).all(|i| (fg[i] - SKIN[i]).abs() < 0.02), "{fg:?}");
+    assert!(
+        fg[3] > 0.99 && (0..3).all(|i| (fg[i] - SKIN[i]).abs() < 0.02),
+        "{fg:?}"
+    );
     // Spill on the subject's edge is suppressed: no green cast left.
     let sp = px(48, 32 - 14);
-    assert!(sp[3] > 0.99 && sp[1] <= 0.5 * (sp[0] + sp[2]) + 0.01, "spill {sp:?}");
+    assert!(
+        sp[3] > 0.99 && sp[1] <= 0.5 * (sp[0] + sp[2]) + 0.01,
+        "spill {sp:?}"
+    );
     // The soft edge keeps partial alpha, and its recovered colour has no green fringe.
     let e = px(48, 32 - 18);
     assert!(e[3] > 0.15 && e[3] < 0.85, "edge {e:?}");
     let a = e[3];
-    assert!(e[1] / a <= 0.5 * (e[0] + e[2]) / a + 0.02, "edge fringe {e:?}");
+    assert!(
+        e[1] / a <= 0.5 * (e[0] + e[2]) / a + 0.02,
+        "edge fringe {e:?}"
+    );
 }
 
 #[test]
 fn pick_color_rejects_bad_targets_and_screen_matte_view_shows_the_key() {
     let (mut s, c) = keyed();
     // Not a colour parameter / outside the layer.
-    assert!(s.execute_checked("effect.pickColor", json!({"effect": 1, "param": "screenGain", "x": 6, "y": 6})).is_err());
-    assert!(s.execute_checked("effect.pickColor", json!({"effect": 1, "param": "screenColour", "x": -50, "y": 6})).is_err());
-    assert!(s.execute_checked("effect.pickColor", json!({"effect": 1, "param": "screenColour", "x": 1e300, "y": -1e300, "average": true})).is_err());
-    assert!(s.execute_checked("effect.pickColor", json!({"effect": 1, "param": "screenColour"})).is_err());
-    s.execute_checked("effect.pickColor", json!({"effect": 1, "param": "screenColour", "x": 90, "y": 60})).unwrap();
+    assert!(
+        s.execute_checked(
+            "effect.pickColor",
+            json!({"effect": 1, "param": "screenGain", "x": 6, "y": 6})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute_checked(
+            "effect.pickColor",
+            json!({"effect": 1, "param": "screenColour", "x": -50, "y": 6})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute_checked(
+            "effect.pickColor",
+            json!({"effect": 1, "param": "screenColour", "x": 1e300, "y": -1e300, "average": true})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute_checked(
+            "effect.pickColor",
+            json!({"effect": 1, "param": "screenColour"})
+        )
+        .is_err()
+    );
+    s.execute_checked(
+        "effect.pickColor",
+        json!({"effect": 1, "param": "screenColour", "x": 90, "y": 60}),
+    )
+    .unwrap();
     // View ▸ Screen Matte: black screen (once Clip Black takes the uneven screen), white subject.
-    for (path, v) in [("effects/#1/view", 4), ("effects/#1/screenMatte/clipBlack", 25)] {
-        s.execute_checked("prop.set", json!({"path": path, "value": v})).unwrap();
+    for (path, v) in [
+        ("effects/#1/view", 4),
+        ("effects/#1/screenMatte/clipBlack", 25),
+    ] {
+        s.execute_checked("prop.set", json!({"path": path, "value": v}))
+            .unwrap();
     }
     let img = s.render(c, Tick::ZERO, RenderOpts::default());
-    assert!(img.get(2, 2)[0] < 0.03 && img.get(48, 32)[0] > 0.97, "{:?} {:?}", img.get(2, 2), img.get(48, 32));
+    assert!(
+        img.get(2, 2)[0] < 0.03 && img.get(48, 32)[0] > 0.97,
+        "{:?} {:?}",
+        img.get(2, 2),
+        img.get(48, 32)
+    );
     // The Effects & Presets / list_effects search finds it by After Effects' name too.
-    let list = s.execute("effect.list", json!({"filter": "Keylight (1.2)"})).unwrap();
+    let list = s
+        .execute("effect.list", json!({"filter": "Keylight (1.2)"}))
+        .unwrap();
     assert_eq!(list.as_array().map(|a| a.len()), Some(1), "{list}");
     assert_eq!(list[0]["id"], "ec.keying.keylight");
 }

@@ -46,7 +46,10 @@ impl Snapshot {
     }
 
     fn matches(&self, s: &Session, comp: ItemId) -> bool {
-        self.revision == s.revision && self.comp == comp && self.time == s.time_of(comp) && Arc::ptr_eq(&self.project, &s.project)
+        self.revision == s.revision
+            && self.comp == comp
+            && self.time == s.time_of(comp)
+            && Arc::ptr_eq(&self.project, &s.project)
     }
 }
 
@@ -70,10 +73,16 @@ impl Request {
         let s = &self.snapshot;
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let comp = s.project.comp(s.comp)?;
-            let ctx = EvalCtx { expr: s.expr.as_deref(), footage: Some(s.footage.as_ref()), ..EvalCtx::new(&s.project, s.comp, comp, s.time) };
+            let ctx = EvalCtx {
+                expr: s.expr.as_deref(),
+                footage: Some(s.footage.as_ref()),
+                ..EvalCtx::new(&s.project, s.comp, comp, s.time)
+            };
             expr_tools::errors_in(&ctx, s.check, || !self.cancelled.load(Ordering::Relaxed))
         }))
-        .map_err(|_| "Expression diagnostics stopped unexpectedly; edit an expression to retry.".to_string());
+        .map_err(|_| {
+            "Expression diagnostics stopped unexpectedly; edit an expression to retry.".to_string()
+        });
         Completed {
             #[cfg(not(target_arch = "wasm32"))]
             comp: s.comp,
@@ -117,16 +126,33 @@ impl Diagnostics {
 
     /// Paint from completed results only. Changes discard stale results immediately, including
     /// errors whose layer/property no longer exists. Pointer interaction and playback defer scans.
-    pub fn errors(&mut self, s: &Session, ctx: &egui::Context, comp: ItemId, interacting: bool) -> Errors {
+    pub fn errors(
+        &mut self,
+        s: &Session,
+        ctx: &egui::Context,
+        comp: ItemId,
+        interacting: bool,
+    ) -> Errors {
         self.update(s, ctx, comp, interacting, Instant::now())
     }
 
-    fn update(&mut self, s: &Session, ctx: &egui::Context, comp: ItemId, interacting: bool, now: Instant) -> Errors {
+    fn update(
+        &mut self,
+        s: &Session,
+        ctx: &egui::Context,
+        comp: ItemId,
+        interacting: bool,
+        now: Instant,
+    ) -> Errors {
         if !s.prefs.scripting.error_banner || s.expr.is_none() {
             self.clear();
             return Arc::from([]);
         }
-        let mut entry = self.entries.iter().position(|e| e.snapshot.comp == comp).and_then(|i| self.entries.remove(i));
+        let mut entry = self
+            .entries
+            .iter()
+            .position(|e| e.snapshot.comp == comp)
+            .and_then(|i| self.entries.remove(i));
         if entry.as_ref().is_none_or(|e| !e.snapshot.matches(s, comp)) {
             entry = Some(Entry {
                 snapshot: Snapshot::new(s, comp),
@@ -136,15 +162,29 @@ impl Diagnostics {
                 errors: Arc::from([]),
             });
         }
-        let Some(mut entry) = entry else { return Arc::from([]) };
+        let Some(mut entry) = entry else {
+            return Arc::from([]);
+        };
         if interacting {
             entry.changed = now;
         }
         #[cfg(not(target_arch = "wasm32"))]
         if let Some(worker) = &self.worker {
-            let done: Vec<_> = worker.shared.completed.lock().unwrap_or_else(PoisonError::into_inner).drain(..).collect();
+            let done: Vec<_> = worker
+                .shared
+                .completed
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .drain(..)
+                .collect();
             for done in done {
-                let target = if done.comp == comp { Some(&mut entry) } else { self.entries.iter_mut().find(|e| e.snapshot.comp == done.comp) };
+                let target = if done.comp == comp {
+                    Some(&mut entry)
+                } else {
+                    self.entries
+                        .iter_mut()
+                        .find(|e| e.snapshot.comp == done.comp)
+                };
                 if let Some(target) = target
                     && Arc::ptr_eq(&target.cancelled, &done.cancelled)
                     && !done.cancelled.load(Ordering::Relaxed)
@@ -174,7 +214,10 @@ impl Diagnostics {
                     if self.worker.is_none() {
                         match Worker::new() {
                             Ok(worker) => self.worker = Some(worker),
-                            Err(e) => self.failure = Some(format!("Could not start expression diagnostics: {e}")),
+                            Err(e) => {
+                                self.failure =
+                                    Some(format!("Could not start expression diagnostics: {e}"))
+                            }
                         }
                     }
                     if let Some(worker) = &self.worker {
@@ -219,40 +262,57 @@ impl Worker {
     fn new() -> std::io::Result<Self> {
         let shared = Arc::new(Shared::default());
         let work = shared.clone();
-        std::thread::Builder::new().name("ec-expression-diagnostics".into()).spawn(move || {
-            loop {
-                let request = {
-                    let mut pending = work.pending.lock().unwrap_or_else(PoisonError::into_inner);
-                    while pending.is_empty() && !work.stopped.load(Ordering::Relaxed) {
-                        pending = work.wake.wait(pending).unwrap_or_else(PoisonError::into_inner);
+        std::thread::Builder::new()
+            .name("ec-expression-diagnostics".into())
+            .spawn(move || {
+                loop {
+                    let request = {
+                        let mut pending =
+                            work.pending.lock().unwrap_or_else(PoisonError::into_inner);
+                        while pending.is_empty() && !work.stopped.load(Ordering::Relaxed) {
+                            pending = work
+                                .wake
+                                .wait(pending)
+                                .unwrap_or_else(PoisonError::into_inner);
+                        }
+                        if work.stopped.load(Ordering::Relaxed) {
+                            return;
+                        }
+                        pending.pop_front()
+                    };
+                    let Some(request) = request else { continue };
+                    if request.cancelled.load(Ordering::Relaxed) {
+                        continue;
                     }
-                    if work.stopped.load(Ordering::Relaxed) {
-                        return;
+                    let result = request.run();
+                    if !result.cancelled.load(Ordering::Relaxed) {
+                        let mut completed = work
+                            .completed
+                            .lock()
+                            .unwrap_or_else(PoisonError::into_inner);
+                        completed.retain(|r| {
+                            r.comp != result.comp && !r.cancelled.load(Ordering::Relaxed)
+                        });
+                        if completed.len() >= MAX_VIEWERS {
+                            completed.pop_front();
+                        }
+                        completed.push_back(result);
                     }
-                    pending.pop_front()
-                };
-                let Some(request) = request else { continue };
-                if request.cancelled.load(Ordering::Relaxed) {
-                    continue;
+                    request.repaint.request_repaint();
                 }
-                let result = request.run();
-                if !result.cancelled.load(Ordering::Relaxed) {
-                    let mut completed = work.completed.lock().unwrap_or_else(PoisonError::into_inner);
-                    completed.retain(|r| r.comp != result.comp && !r.cancelled.load(Ordering::Relaxed));
-                    if completed.len() >= MAX_VIEWERS {
-                        completed.pop_front();
-                    }
-                    completed.push_back(result);
-                }
-                request.repaint.request_repaint();
-            }
-        })?;
+            })?;
         Ok(Self { shared })
     }
 
     fn submit(&self, request: Request) {
-        let mut pending = self.shared.pending.lock().unwrap_or_else(PoisonError::into_inner);
-        pending.retain(|r| r.snapshot.comp != request.snapshot.comp && !r.cancelled.load(Ordering::Relaxed));
+        let mut pending = self
+            .shared
+            .pending
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        pending.retain(|r| {
+            r.snapshot.comp != request.snapshot.comp && !r.cancelled.load(Ordering::Relaxed)
+        });
         if pending.len() >= MAX_VIEWERS {
             pending.pop_front();
         }
@@ -265,7 +325,11 @@ impl Worker {
 impl Drop for Worker {
     fn drop(&mut self) {
         // Hold the predicate lock when waking, so shutdown cannot race with entering wait.
-        let mut pending = self.shared.pending.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut pending = self
+            .shared
+            .pending
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         self.shared.stopped.store(true, Ordering::Relaxed);
         pending.clear();
         self.shared.wake.notify_one();
@@ -292,7 +356,13 @@ mod tests {
         fail: bool,
     }
     impl ExprHost for Host {
-        fn eval(&self, ctx: &EvalCtx, _: &Layer, _: &Property, value: &Value) -> Result<Value, String> {
+        fn eval(
+            &self,
+            ctx: &EvalCtx,
+            _: &Layer,
+            _: &Property,
+            value: &Value,
+        ) -> Result<Value, String> {
             self.calls.fetch_add(1, Ordering::Relaxed);
             if std::thread::current().id() == self.main {
                 self.on_ui.fetch_add(1, Ordering::Relaxed);
@@ -301,9 +371,15 @@ mod tests {
             let _ = self.entered.send(());
             let (lock, wake) = &self.gate;
             let guard = lock.lock().unwrap();
-            let (_guard, timed) = wake.wait_timeout_while(guard, Duration::from_secs(5), |open| !*open).unwrap();
+            let (_guard, timed) = wake
+                .wait_timeout_while(guard, Duration::from_secs(5), |open| !*open)
+                .unwrap();
             assert!(!timed.timed_out(), "test did not release the worker");
-            if self.fail { Err(format!("failure at {}", ctx.time.0)) } else { Ok(value.clone()) }
+            if self.fail {
+                Err(format!("failure at {}", ctx.time.0))
+            } else {
+                Ok(value.clone())
+            }
         }
     }
     impl Host {
@@ -322,19 +398,43 @@ mod tests {
             gate: (Mutex::new(!blocked), std::sync::Condvar::new()),
             fail,
         });
-        let mut s = Session { expr: Some(host.clone()), ..Session::default() };
-        s.execute("comp.new", json!({"width":320,"height":180,"duration":5})).unwrap();
-        let hidden = s.execute("layer.newSolid", json!({"name":"Hidden expression"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("prop.setExpression", json!({"layer":hidden,"path":"transform/opacity","expression":"value"})).unwrap();
-        let visible = s.execute("layer.newSolid", json!({"name":"Solo plate"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("layer.setSwitch", json!({"layers":[visible],"switch":"solo","value":true})).unwrap();
-        s.execute("layer.select", json!({"layers":[visible]})).unwrap();
+        let mut s = Session {
+            expr: Some(host.clone()),
+            ..Session::default()
+        };
+        s.execute("comp.new", json!({"width":320,"height":180,"duration":5}))
+            .unwrap();
+        let hidden = s
+            .execute("layer.newSolid", json!({"name":"Hidden expression"}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "prop.setExpression",
+            json!({"layer":hidden,"path":"transform/opacity","expression":"value"}),
+        )
+        .unwrap();
+        let visible = s
+            .execute("layer.newSolid", json!({"name":"Solo plate"}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "layer.setSwitch",
+            json!({"layers":[visible],"switch":"solo","value":true}),
+        )
+        .unwrap();
+        s.execute("layer.select", json!({"layers":[visible]}))
+            .unwrap();
         (s, host, rx)
     }
     fn wait_done(d: &Diagnostics) {
         let until = Instant::now() + Duration::from_secs(3);
         loop {
-            if d.worker.as_ref().is_some_and(|w| !w.shared.completed.lock().unwrap().is_empty()) {
+            if d.worker
+                .as_ref()
+                .is_some_and(|w| !w.shared.completed.lock().unwrap().is_empty())
+            {
                 return;
             }
             assert!(Instant::now() < until, "diagnostics did not finish");
@@ -350,7 +450,11 @@ mod tests {
     #[test]
     fn successful_hidden_expressions_run_once_off_the_ui_thread() {
         let (s, host, _) = fixture(false, false);
-        let (mut d, ctx, now) = (Diagnostics::default(), egui::Context::default(), Instant::now());
+        let (mut d, ctx, now) = (
+            Diagnostics::default(),
+            egui::Context::default(),
+            Instant::now(),
+        );
         let cid = s.active_comp_id().unwrap();
         start(&mut d, &s, &ctx, now);
         wait_done(&d);
@@ -364,7 +468,11 @@ mod tests {
     #[test]
     fn newest_request_replaces_queued_times_and_discards_stale_errors() {
         let (mut s, host, entered) = fixture(true, true);
-        let (mut d, ctx, now) = (Diagnostics::default(), egui::Context::default(), Instant::now());
+        let (mut d, ctx, now) = (
+            Diagnostics::default(),
+            egui::Context::default(),
+            Instant::now(),
+        );
         let cid = s.active_comp_id().unwrap();
         start(&mut d, &s, &ctx, now);
         entered.recv_timeout(Duration::from_secs(3)).unwrap();
@@ -373,7 +481,17 @@ mod tests {
             start(&mut d, &s, &ctx, now + Duration::from_secs(i));
             assert!(d.entries.back().unwrap().errors.is_empty());
         }
-        assert_eq!(d.worker.as_ref().unwrap().shared.pending.lock().unwrap().len(), 1);
+        assert_eq!(
+            d.worker
+                .as_ref()
+                .unwrap()
+                .shared
+                .pending
+                .lock()
+                .unwrap()
+                .len(),
+            1
+        );
         host.release();
         wait_done(&d);
         let errors = d.update(&s, &ctx, cid, false, now + Duration::from_secs(30));
@@ -386,7 +504,11 @@ mod tests {
     #[test]
     fn warning_preference_and_interaction_prevent_scanning_and_clear_stale_results() {
         let (mut s, host, _) = fixture(true, false);
-        let (mut d, ctx, now) = (Diagnostics::default(), egui::Context::default(), Instant::now());
+        let (mut d, ctx, now) = (
+            Diagnostics::default(),
+            egui::Context::default(),
+            Instant::now(),
+        );
         let cid = s.active_comp_id().unwrap();
         for i in 0..10 {
             d.update(&s, &ctx, cid, true, now + Duration::from_secs(i));
@@ -399,23 +521,37 @@ mod tests {
         s.prefs.scripting.error_banner = true;
         start(&mut d, &s, &ctx, now + Duration::from_secs(11));
         wait_done(&d);
-        assert_eq!(d.update(&s, &ctx, cid, false, now + Duration::from_secs(12)).len(), 1);
+        assert_eq!(
+            d.update(&s, &ctx, cid, false, now + Duration::from_secs(12))
+                .len(),
+            1
+        );
         s.prefs.scripting.error_banner = false;
-        assert!(d.update(&s, &ctx, cid, false, now + Duration::from_secs(13)).is_empty());
+        assert!(
+            d.update(&s, &ctx, cid, false, now + Duration::from_secs(13))
+                .is_empty()
+        );
         assert!(d.entries.is_empty());
     }
 
     #[test]
     fn replacement_project_with_reused_ids_does_not_reuse_errors() {
         let (s, _, _) = fixture(true, false);
-        let (mut d, ctx, now) = (Diagnostics::default(), egui::Context::default(), Instant::now());
+        let (mut d, ctx, now) = (
+            Diagnostics::default(),
+            egui::Context::default(),
+            Instant::now(),
+        );
         let cid = s.active_comp_id().unwrap();
         start(&mut d, &s, &ctx, now);
         wait_done(&d);
         assert_eq!(d.update(&s, &ctx, cid, false, now + QUIET).len(), 1);
         let (replacement, _, _) = fixture(false, false);
         assert_eq!(s.revision, replacement.revision);
-        assert!(d.update(&replacement, &ctx, cid, false, now + QUIET).is_empty());
+        assert!(
+            d.update(&replacement, &ctx, cid, false, now + QUIET)
+                .is_empty()
+        );
     }
 
     #[test]
@@ -424,14 +560,30 @@ mod tests {
         let cid = s.active_comp_id().unwrap();
         let selected = s.state.selected_layers[0];
         s.expr_check = Some(|_| Err("invalid syntax".into()));
-        s.execute("prop.setExpression", json!({"layer":selected.0,"path":"transform/rotation","expression":"bad("})).unwrap();
-        let (mut d, ctx, now) = (Diagnostics::default(), egui::Context::default(), Instant::now());
+        s.execute(
+            "prop.setExpression",
+            json!({"layer":selected.0,"path":"transform/rotation","expression":"bad("}),
+        )
+        .unwrap();
+        let (mut d, ctx, now) = (
+            Diagnostics::default(),
+            egui::Context::default(),
+            Instant::now(),
+        );
         start(&mut d, &s, &ctx, now);
         wait_done(&d);
         let errors = d.update(&s, &ctx, cid, false, now + QUIET);
         assert_eq!(errors.len(), 2);
-        assert!(errors.iter().any(|e| e.disabled && e.message == "invalid syntax"));
-        assert!(errors.iter().any(|e| !e.disabled && e.layer_name == "Hidden expression"));
+        assert!(
+            errors
+                .iter()
+                .any(|e| e.disabled && e.message == "invalid syntax")
+        );
+        assert!(
+            errors
+                .iter()
+                .any(|e| !e.disabled && e.layer_name == "Hidden expression")
+        );
     }
 
     #[test]
@@ -443,30 +595,65 @@ mod tests {
             d.step();
         }
         let now = Instant::now() + Duration::from_secs(1);
-        start(&mut d.app.expression_diagnostics, &d.app.session, &d.ctx, now);
+        start(
+            &mut d.app.expression_diagnostics,
+            &d.app.session,
+            &d.ctx,
+            now,
+        );
         entered.recv_timeout(Duration::from_secs(3)).unwrap();
         let layer = d.app.session.state.selected_layers[0];
         d.app.session.state.snapping = false;
         let handle = format!("viewer.handle.{}.0", layer.0);
         let before = d.app.auto.find(&handle).unwrap().rect;
         let comp_rect = d.app.auto.find("viewer.comp").unwrap().rect;
-        let from = egui::pos2(comp_rect[0] + comp_rect[2] * 0.4, comp_rect[1] + comp_rect[3] * 0.4);
+        let from = egui::pos2(
+            comp_rect[0] + comp_rect[2] * 0.4,
+            comp_rect[1] + comp_rect[3] * 0.4,
+        );
         let to = from + egui::vec2(40., 20.);
         d.step_with(vec![
             egui::Event::PointerMoved(from),
-            egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() },
+            egui::Event::PointerButton {
+                pos: from,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            },
         ]);
         d.step_with(vec![egui::Event::PointerMoved(to)]);
-        d.step_with(vec![egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() }]);
+        d.step_with(vec![egui::Event::PointerButton {
+            pos: to,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: Default::default(),
+        }]);
         d.step();
         let after = d.app.auto.find(&handle).unwrap().rect;
-        assert!(after[0] > before[0] + 30., "selection bounds did not follow the drag: {before:?} -> {after:?}");
+        assert!(
+            after[0] > before[0] + 30.,
+            "selection bounds did not follow the drag: {before:?} -> {after:?}"
+        );
         for warnings in [true, false] {
             d.app.session.prefs.scripting.error_banner = warnings;
             for i in 0..4 {
-                d.app.session.set_time(Tick::from_seconds_f64(i as f64 / 30.));
-                d.app.session.execute("layer.setTransform", json!({"layer":layer.0,"prop":"position","value":[170.+i as f64,90.,0.]})).unwrap();
-                d.app.session.execute("layer.setSwitch", json!({"layers":[layer.0],"switch":"video","value":i%2==0})).unwrap();
+                d.app
+                    .session
+                    .set_time(Tick::from_seconds_f64(i as f64 / 30.));
+                d.app
+                    .session
+                    .execute(
+                        "layer.setTransform",
+                        json!({"layer":layer.0,"prop":"position","value":[170.+i as f64,90.,0.]}),
+                    )
+                    .unwrap();
+                d.app
+                    .session
+                    .execute(
+                        "layer.setSwitch",
+                        json!({"layers":[layer.0],"switch":"video","value":i%2==0}),
+                    )
+                    .unwrap();
                 d.step();
             }
         }

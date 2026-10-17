@@ -42,14 +42,34 @@ impl VideoFeed {
             let (tx, cmd_rx) = std::sync::mpsc::channel::<Cmd>();
             let (frame_tx, rx) = std::sync::mpsc::sync_channel::<(u64, Option<Frame>)>(AHEAD);
             let worker = move || worker(dec, cmd_rx, frame_tx);
-            if let Err(e) = std::thread::Builder::new().name("deckcraft-video-decode".into()).spawn(worker) {
-                return Err(crate::MediaError::Corrupt(format!("couldn't start the decoder: {e}")));
+            if let Err(e) = std::thread::Builder::new()
+                .name("deckcraft-video-decode".into())
+                .spawn(worker)
+            {
+                return Err(crate::MediaError::Corrupt(format!(
+                    "couldn't start the decoder: {e}"
+                )));
             }
-            Ok(VideoFeed { size, current: None, next: None, generation: 0, ended: false, tx, rx })
+            Ok(VideoFeed {
+                size,
+                current: None,
+                next: None,
+                generation: 0,
+                ended: false,
+                tx,
+                rx,
+            })
         }
         #[cfg(target_arch = "wasm32")]
         {
-            Ok(VideoFeed { size, current: None, next: None, generation: 0, ended: false, dec })
+            Ok(VideoFeed {
+                size,
+                current: None,
+                next: None,
+                generation: 0,
+                ended: false,
+                dec,
+            })
         }
     }
 
@@ -96,7 +116,11 @@ impl VideoFeed {
     /// first one while nothing earlier exists. `None` until the first frame has decoded.
     pub fn frame_at(&mut self, t: f64) -> Option<Arc<Frame>> {
         let behind = self.current.as_ref().is_some_and(|c| t + 0.02 < c.time);
-        let far = self.next.as_ref().or(self.current.as_ref()).is_some_and(|c| t > c.time + MAX_CATCH_UP);
+        let far = self
+            .next
+            .as_ref()
+            .or(self.current.as_ref())
+            .is_some_and(|c| t > c.time + MAX_CATCH_UP);
         if behind || far {
             self.seek(t);
         }
@@ -124,7 +148,11 @@ impl VideoFeed {
     }
 
     /// Wait (up to `timeout`) for the frame at `t` — for tests and offline rendering.
-    pub fn frame_at_blocking(&mut self, t: f64, timeout: std::time::Duration) -> Option<Arc<Frame>> {
+    pub fn frame_at_blocking(
+        &mut self,
+        t: f64,
+        timeout: std::time::Duration,
+    ) -> Option<Arc<Frame>> {
         let mut waited = std::time::Duration::ZERO;
         loop {
             let f = self.frame_at(t);
@@ -139,7 +167,11 @@ impl VideoFeed {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn worker(mut dec: VideoDecoder, cmds: std::sync::mpsc::Receiver<Cmd>, frames: std::sync::mpsc::SyncSender<(u64, Option<Frame>)>) {
+fn worker(
+    mut dec: VideoDecoder,
+    cmds: std::sync::mpsc::Receiver<Cmd>,
+    frames: std::sync::mpsc::SyncSender<(u64, Option<Frame>)>,
+) {
     let mut generation = 0u64;
     let mut at_end = false;
     loop {

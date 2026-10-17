@@ -59,7 +59,9 @@ impl Journal {
     }
     /// The kept entries from number `start` on (all kept ones when older ones were let go).
     pub fn since(&self, start: usize) -> &[JournalEntry] {
-        self.entries.get(start.saturating_sub(self.dropped)..).unwrap_or_default()
+        self.entries
+            .get(start.saturating_sub(self.dropped)..)
+            .unwrap_or_default()
     }
     /// Entry number `i`, if kept.
     pub fn get(&self, i: usize) -> Option<&JournalEntry> {
@@ -137,7 +139,10 @@ fn entry_bytes((id, p): &JournalEntry) -> usize {
         match v {
             Value::String(s) => s.capacity(),
             Value::Array(a) => 16 + a.capacity() * VALUE + a.iter().map(json).sum::<usize>(),
-            Value::Object(m) => m.iter().map(|(k, v)| 48 + k.capacity() + VALUE + json(v)).sum(),
+            Value::Object(m) => m
+                .iter()
+                .map(|(k, v)| 48 + k.capacity() + VALUE + json(v))
+                .sum(),
             _ => 0,
         }
     }
@@ -150,7 +155,10 @@ mod tests {
     use serde_json::json;
 
     fn big(i: usize) -> JournalEntry {
-        ("select.set".into(), json!({"ids": (0..50_000u64).collect::<Vec<_>>(), "n": i}))
+        (
+            "select.set".into(),
+            json!({"ids": (0..50_000u64).collect::<Vec<_>>(), "n": i}),
+        )
     }
 
     #[test]
@@ -177,7 +185,11 @@ mod tests {
             j.push(big(i));
         }
         assert_eq!(j.since(start).len(), 200, "nothing recorded was let go");
-        assert_eq!(j.first_kept(), 1, "only what came before the recording may go");
+        assert_eq!(
+            j.first_kept(),
+            1,
+            "only what came before the recording may go"
+        );
         j.hold(None);
         j.push(big(200));
         assert!(j.first_kept() > start);
@@ -192,6 +204,9 @@ mod tests {
         assert_eq!(j.len(), 30_000);
         assert!(j.iter().count() <= Journal::MAX_ENTRIES + Journal::MAX_ENTRIES / 4);
         j.truncate(29_990);
-        assert_eq!((j.len(), j.last().map(|e| e.1["dx"].clone())), (29_990, Some(json!(29_989))));
+        assert_eq!(
+            (j.len(), j.last().map(|e| e.1["dx"].clone())),
+            (29_990, Some(json!(29_989)))
+        );
     }
 }

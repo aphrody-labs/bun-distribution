@@ -3,7 +3,11 @@ use serde_json::json;
 use soundcraft_ui_egui::{Services, SoundApp, midi_editor};
 
 fn frame(ctx: &egui::Context, app: &mut SoundApp, events: Vec<Event>) {
-    let raw = RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 1000.0))), events, ..Default::default() };
+    let raw = RawInput {
+        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 1000.0))),
+        events,
+        ..Default::default()
+    };
     ctx.run_ui(raw, |ui| {
         app.logic(ui.ctx());
         app.ui(ui);
@@ -13,15 +17,25 @@ fn frame(ctx: &egui::Context, app: &mut SoundApp, events: Vec<Event>) {
 }
 
 fn panel(ctx: &egui::Context) -> Rect {
-    ctx.data(|data| data.get_temp::<Rect>(Id::new("soundcraft-midi-body"))).unwrap()
+    ctx.data(|data| data.get_temp::<Rect>(Id::new("soundcraft-midi-body")))
+        .unwrap()
 }
 
 fn button(pos: Pos2, pressed: bool) -> Event {
-    Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Default::default() }
+    Event::PointerButton {
+        pos,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Default::default(),
+    }
 }
 
 fn check_resize(with_clip: bool) {
-    let mut app = SoundApp::new(soundcraft_engine::demo::demo_engine(), None, Services::default());
+    let mut app = SoundApp::new(
+        soundcraft_engine::demo::demo_engine(),
+        None,
+        Services::default(),
+    );
     app.ui.show_midi_editor = true;
     if with_clip {
         app.run("edit.select", json!({"tracks": ["Keys"]})).unwrap();
@@ -32,7 +46,10 @@ fn check_resize(with_clip: bool) {
         frame(&ctx, &mut app, vec![]);
     }
     let initial = panel(&ctx);
-    assert!((initial.height() - 320.0).abs() < 1.0, "initial panel: {initial:?}");
+    assert!(
+        (initial.height() - 320.0).abs() < 1.0,
+        "initial panel: {initial:?}"
+    );
     let notes = app.engine.session().clone();
 
     // Drag the shared boundary up and down, then allow several idle frames
@@ -44,14 +61,21 @@ fn check_resize(with_clip: bool) {
         frame(&ctx, &mut app, vec![Event::PointerMoved(start)]);
         frame(&ctx, &mut app, vec![button(start, true)]);
         for step in 1..=6 {
-            frame(&ctx, &mut app, vec![Event::PointerMoved(start.lerp(end, step as f32 / 6.0))]);
+            frame(
+                &ctx,
+                &mut app,
+                vec![Event::PointerMoved(start.lerp(end, step as f32 / 6.0))],
+            );
         }
         frame(&ctx, &mut app, vec![button(end, false)]);
         for _ in 0..4 {
             frame(&ctx, &mut app, vec![]);
         }
         let after = panel(&ctx);
-        assert!((after.height() - height.max(260.0)).abs() < 1.0, "requested {height}, panel: {after:?}");
+        assert!(
+            (after.height() - height.max(260.0)).abs() < 1.0,
+            "requested {height}, panel: {after:?}"
+        );
         assert!((after.bottom() - initial.bottom()).abs() < 1.0);
         assert!(app.edit_layout.timeline[3] <= after.top());
     }
@@ -100,7 +124,11 @@ fn legacy_visibility_sync_cancels_a_held_midi_divider_without_editing_the_sessio
 }
 
 fn check_held_replacement(operation: &str) {
-    let mut app = SoundApp::new(soundcraft_engine::demo::demo_engine(), None, Services::default());
+    let mut app = SoundApp::new(
+        soundcraft_engine::demo::demo_engine(),
+        None,
+        Services::default(),
+    );
     app.ui.show_midi_editor = true;
     app.run("edit.select", json!({"tracks":["Keys"]})).unwrap();
     app.ui.show_memory_locations = operation == "arrange";
@@ -116,11 +144,17 @@ fn check_held_replacement(operation: &str) {
     let first = start - vec2(0.0, 80.0);
     frame(&ctx, &mut app, vec![Event::PointerMoved(first)]);
     frame(&ctx, &mut app, vec![]);
-    assert!((panel(&ctx).height() - 400.0).abs() < 1.0, "first drag must resize");
+    assert!(
+        (panel(&ctx).height() - 400.0).abs() < 1.0,
+        "first drag must resize"
+    );
     let second = start - vec2(0.0, 120.0);
     frame(&ctx, &mut app, vec![Event::PointerMoved(second)]);
     frame(&ctx, &mut app, vec![]);
-    assert!((panel(&ctx).height() - 440.0).abs() < 1.0, "a normal second held move must continue resizing");
+    assert!(
+        (panel(&ctx).height() - 440.0).abs() < 1.0,
+        "a normal second held move must continue resizing"
+    );
     match operation {
         "reset" => {
             app.run("ui.dock.reset", json!({})).unwrap();
@@ -140,7 +174,11 @@ fn check_held_replacement(operation: &str) {
     let after_reset = start - vec2(0.0, 160.0);
     frame(&ctx, &mut app, vec![Event::PointerMoved(after_reset)]);
     frame(&ctx, &mut app, vec![]);
-    assert_eq!(serde_json::to_value(&app.ui.docking).unwrap(), reset, "old held divider must not resize the replacement layout");
+    assert_eq!(
+        serde_json::to_value(&app.ui.docking).unwrap(),
+        reset,
+        "old held divider must not resize the replacement layout"
+    );
     let expected = if operation == "reset" { 320.0 } else { 440.0 };
     assert!((panel(&ctx).height() - expected).abs() < 1.0);
     frame(&ctx, &mut app, vec![button(after_reset, false)]);

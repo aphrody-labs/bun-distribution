@@ -17,7 +17,9 @@ fn available(id: &str) -> bool {
 }
 
 fn sine(freq: f32, sr: f32, n: usize, phase0: usize) -> Vec<f32> {
-    (0..n).map(|i| (std::f32::consts::TAU * freq * (i + phase0) as f32 / sr).sin() * 0.5).collect()
+    (0..n)
+        .map(|i| (std::f32::consts::TAU * freq * (i + phase0) as f32 / sr).sin() * 0.5)
+        .collect()
 }
 
 fn rms(x: &[f32]) -> f32 {
@@ -49,7 +51,11 @@ fn scan_lists_apple_units() {
     let all = soundcraft_au_host::scan();
     for d in &all {
         assert!(d.id.starts_with(soundcraft_au_host::ID_PREFIX), "{d:?}");
-        assert_eq!(soundcraft_au_host::parse_id(&d.id).map(|(t, s, m)| soundcraft_au_host::format_id(t, s, m)), Some(d.id.clone()));
+        assert_eq!(
+            soundcraft_au_host::parse_id(&d.id)
+                .map(|(t, s, m)| soundcraft_au_host::format_id(t, s, m)),
+            Some(d.id.clone())
+        );
         assert_eq!(d.is_instrument, d.component_type == "aumu");
     }
     if let Some(d) = all.iter().find(|d| d.id == LOWPASS) {
@@ -75,11 +81,18 @@ fn lowpass_attenuates_highs() {
     assert!(!info.params.is_empty(), "AULowpass has a cutoff");
     let mut p = soundcraft_au_host::create(LOWPASS).unwrap();
     p.prepare(48_000.0, 512, 2);
-    let cutoff = info.params.iter().find(|q| q.unit == soundcraft_dsp::Unit::Hz).unwrap();
+    let cutoff = info
+        .params
+        .iter()
+        .find(|q| q.unit == soundcraft_dsp::Unit::Hz)
+        .unwrap();
     assert!(p.set_param(cutoff.id, 500.0));
     assert!((p.param(cutoff.id).unwrap() - 500.0).abs() < 1e-3);
     assert!(!p.set_param("999999", 1.0));
-    assert!(p.set_param(cutoff.id, f32::NAN), "NaN becomes the default, never reaches the unit");
+    assert!(
+        p.set_param(cutoff.id, f32::NAN),
+        "NaN becomes the default, never reaches the unit"
+    );
     assert!(p.set_param(cutoff.id, 500.0));
     let low = run_tone(p.as_mut(), 100.0);
     p.reset();
@@ -92,7 +105,11 @@ fn lowpass_attenuates_highs() {
     let state = p.save_state().expect("ClassInfo");
     assert!(p.set_param(cutoff.id, 5000.0));
     assert!(p.load_state(&state));
-    assert!((p.param(cutoff.id).unwrap() - 500.0).abs() < 1.0, "{:?}", p.param(cutoff.id));
+    assert!(
+        (p.param(cutoff.id).unwrap() - 500.0).abs() < 1.0,
+        "{:?}",
+        p.param(cutoff.id)
+    );
     // Hostile state is rejected without harm.
     assert!(!p.load_state(b""));
     assert!(!p.load_state(b"bplist00 garbage \x00\x01\x02\xff"));
@@ -142,7 +159,13 @@ fn dls_synth_plays_a_note() {
     p.prepare(48_000.0, 512, 2);
     let mut silent = vec![vec![1.0f32; 512]; 2];
     p.process(&mut silent, 512);
-    assert!(silent.iter().flatten().all(|v| v.is_finite() && v.abs() < 1e-3), "instruments replace the buffer");
+    assert!(
+        silent
+            .iter()
+            .flatten()
+            .all(|v| v.is_finite() && v.abs() < 1e-3),
+        "instruments replace the buffer"
+    );
     p.note_on(10, 60, 110);
     p.note_on(0, 200, 110); // ignored
     let mut energy = 0.0f32;

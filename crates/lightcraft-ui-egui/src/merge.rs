@@ -60,7 +60,10 @@ impl Default for MergeDialog {
 
 impl MergeDialog {
     pub fn for_command(command: &str) -> MergeDialog {
-        MergeDialog { command: command.into(), ..Default::default() }
+        MergeDialog {
+            command: command.into(),
+            ..Default::default()
+        }
     }
     pub fn title(&self) -> &'static str {
         match self.command.as_str() {
@@ -119,9 +122,18 @@ impl MergeState {
     }
 }
 
-fn spawn(app: &LightcraftApp, options: &MergeDialog, ids: &[PhotoId], preview: bool) -> Result<MergeTask, String> {
-    let (kind, finish) = lightcraft_engine::merge::parse(&options.command, &options.params()).map_err(|e| e.to_string())?;
-    let job = app.session.plan_merge(kind, finish, ids, preview).map_err(|e| e.to_string())?;
+fn spawn(
+    app: &LightcraftApp,
+    options: &MergeDialog,
+    ids: &[PhotoId],
+    preview: bool,
+) -> Result<MergeTask, String> {
+    let (kind, finish) = lightcraft_engine::merge::parse(&options.command, &options.params())
+        .map_err(|e| e.to_string())?;
+    let job = app
+        .session
+        .plan_merge(kind, finish, ids, preview)
+        .map_err(|e| e.to_string())?;
     let progress = Arc::new(Mutex::new((0.0, "Starting".to_string())));
     let cancel = Arc::new(AtomicBool::new(false));
     let (tx, rx) = channel();
@@ -136,14 +148,26 @@ fn spawn(app: &LightcraftApp, options: &MergeDialog, ids: &[PhotoId], preview: b
             })
         };
         // a panicking merge reports an error instead of leaving "Merging…" up forever
-        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(run)).unwrap_or_else(|_| Err("the merge failed unexpectedly".into()));
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(run))
+            .unwrap_or_else(|_| Err("the merge failed unexpectedly".into()));
         let _ = tx.send(r);
     };
     #[cfg(not(target_arch = "wasm32"))]
-    std::thread::Builder::new().name("photo-merge".into()).spawn(work).map_err(|e| e.to_string())?;
+    std::thread::Builder::new()
+        .name("photo-merge".into())
+        .spawn(work)
+        .map_err(|e| e.to_string())?;
     #[cfg(target_arch = "wasm32")]
     work();
-    Ok(MergeTask { preview, job, options: options.clone(), progress, cancel, rx, guard: None })
+    Ok(MergeTask {
+        preview,
+        job,
+        options: options.clone(),
+        progress,
+        cancel,
+        rx,
+        guard: None,
+    })
 }
 
 /// Open the merge dialog for the selection.
@@ -159,7 +183,9 @@ pub fn open(app: &mut LightcraftApp, command: &str) -> Result<Value, String> {
     if let Some(t) = app.merge.preview_task.take() {
         t.cancel.store(true, Ordering::Relaxed);
     }
-    app.ui.dialog = Some(crate::state::Dialog::Merge { opts: MergeDialog::for_command(command) });
+    app.ui.dialog = Some(crate::state::Dialog::Merge {
+        opts: MergeDialog::for_command(command),
+    });
     Ok(json!({"photos": app.merge.ids.len()}))
 }
 
@@ -173,7 +199,10 @@ pub fn start_final(app: &mut LightcraftApp, opts: &MergeDialog) -> Result<Value,
     }
     let ids = app.merge.ids.clone();
     let mut task = spawn(app, opts, &ids, false)?;
-    let guard = app.session.activity.start("merge", "Merging", Cancel::Flag(task.cancel.clone()));
+    let guard = app
+        .session
+        .activity
+        .start("merge", "Merging", Cancel::Flag(task.cancel.clone()));
     guard.set_unit(Unit::Percent);
     guard.progress(0, 1000);
     task.guard = Some(guard);
@@ -190,7 +219,12 @@ pub fn start_last(app: &mut LightcraftApp, command: &str) -> Result<Value, Strin
         return Err("select at least 2 photos to merge".into());
     }
     app.merge.ids = ids;
-    let opts = app.merge.last.get(command).cloned().unwrap_or_else(|| MergeDialog::for_command(command));
+    let opts = app
+        .merge
+        .last
+        .get(command)
+        .cloned()
+        .unwrap_or_else(|| MergeDialog::for_command(command));
     start_final(app, &opts)
 }
 
@@ -203,7 +237,11 @@ pub fn poll(app: &mut LightcraftApp, ctx: &egui::Context) {
     };
     match &dialog_opts {
         Some(opts) => {
-            let current = app.merge.preview_task.as_ref().map(|t| &t.options).or(app.merge.preview.as_ref().map(|p| &p.2));
+            let current = app.merge.preview_task.as_ref().map(|t| &t.options).or(app
+                .merge
+                .preview
+                .as_ref()
+                .map(|p| &p.2));
             let stale = current != Some(opts) && !last_failed_matches(app, opts);
             if stale {
                 if let Some(t) = app.merge.preview_task.take() {
@@ -231,7 +269,9 @@ pub fn poll(app: &mut LightcraftApp, ctx: &egui::Context) {
     if let Some(t) = &app.merge.preview_task {
         match t.rx.try_recv() {
             Ok(Ok(out)) => {
-                let Some(t) = app.merge.preview_task.take() else { return };
+                let Some(t) = app.merge.preview_task.take() else {
+                    return;
+                };
                 if let Some(mut img) = out.preview {
                     // shown through the monitor profile like every other preview
                     if let Some(d) = app.renderer.display()
@@ -239,14 +279,23 @@ pub fn poll(app: &mut LightcraftApp, ctx: &egui::Context) {
                     {
                         log::warn!("display profile: {e}");
                     }
-                    let color = Arc::new(egui::ColorImage::from_rgba_unmultiplied([img.width, img.height], &img.as_bytes()));
-                    let tex = ctx.load_texture("merge-preview", color.clone(), egui::TextureOptions::LINEAR);
+                    let color = Arc::new(egui::ColorImage::from_rgba_unmultiplied(
+                        [img.width, img.height],
+                        &img.as_bytes(),
+                    ));
+                    let tex = ctx.load_texture(
+                        "merge-preview",
+                        color.clone(),
+                        egui::TextureOptions::LINEAR,
+                    );
                     app.merge.preview_pixels = Some(color);
                     app.merge.preview = Some((tex, [img.width, img.height], t.options, out.info));
                 }
             }
             Ok(Err(e)) => {
-                let Some(t) = app.merge.preview_task.take() else { return };
+                let Some(t) = app.merge.preview_task.take() else {
+                    return;
+                };
                 if e != "cancelled" {
                     app.merge.error = Some(e);
                     app.merge.failed_options = Some(t.options);
@@ -259,7 +308,9 @@ pub fn poll(app: &mut LightcraftApp, ctx: &egui::Context) {
     if let Some(t) = &app.merge.final_task {
         match t.rx.try_recv() {
             Ok(r) => {
-                let Some(t) = app.merge.final_task.take() else { return };
+                let Some(t) = app.merge.final_task.take() else {
+                    return;
+                };
                 let what = crate::i18n::tr(if t.options.command == "merge.panorama" {
                     "Panorama"
                 } else if t.options.command == "merge.hdrPanorama" {
@@ -267,22 +318,38 @@ pub fn poll(app: &mut LightcraftApp, ctx: &egui::Context) {
                 } else {
                     "HDR"
                 });
-                match r.map_err(lightcraft_engine::EngineError::Other).and_then(|out| app.session.finish_merge(&t.job, out)) {
+                match r
+                    .map_err(lightcraft_engine::EngineError::Other)
+                    .and_then(|out| app.session.finish_merge(&t.job, out))
+                {
                     Ok(v) => {
                         app.merge.last_result = Some(v);
-                        app.toast(ctx, crate::i18n::tr_format!("{what} merge added", what = what));
+                        app.toast(
+                            ctx,
+                            crate::i18n::tr_format!("{what} merge added", what = what),
+                        );
                     }
-                    Err(_) if t.cancel.load(Ordering::Relaxed) => app.toast(ctx, crate::i18n::tr_format!("{what} merge cancelled", what = what)),
+                    Err(_) if t.cancel.load(Ordering::Relaxed) => app.toast(
+                        ctx,
+                        crate::i18n::tr_format!("{what} merge cancelled", what = what),
+                    ),
                     Err(e) => {
                         app.ui.status = e.to_string();
-                        app.toast(ctx, crate::i18n::tr_format!("{what} merge failed: {e}", e = e, what = what));
+                        app.toast(
+                            ctx,
+                            crate::i18n::tr_format!("{what} merge failed: {e}", e = e, what = what),
+                        );
                     }
                 }
             }
             Err(_) => {
                 let (f, stage) = t.progress.lock().map(|g| g.clone()).unwrap_or_default();
                 if let Some(guard) = &t.guard {
-                    let f = if f.is_finite() { f.clamp(0.0, 1.0) } else { 0.0 };
+                    let f = if f.is_finite() {
+                        f.clamp(0.0, 1.0)
+                    } else {
+                        0.0
+                    };
                     guard.progress((f * 1000.0) as u64, 1000);
                     guard.detail(crate::i18n::tr(&stage));
                 }
@@ -308,8 +375,16 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, opts: &mut MergeDialog) 
             crate::widgets::register(ui.ctx(), "merge.preview", rect);
             if let Some((tex, size, _, _)) = &app.merge.preview {
                 let s = (box_size.x / size[0] as f32).min(box_size.y / size[1] as f32);
-                let r = egui::Rect::from_center_size(rect.center(), egui::vec2(size[0] as f32 * s, size[1] as f32 * s));
-                ui.painter().image(tex.id(), r, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+                let r = egui::Rect::from_center_size(
+                    rect.center(),
+                    egui::vec2(size[0] as f32 * s, size[1] as f32 * s),
+                );
+                ui.painter().image(
+                    tex.id(),
+                    r,
+                    egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                    egui::Color32::WHITE,
+                );
             }
             if let Some(task) = &app.merge.preview_task {
                 let (f, stage) = task.progress.lock().map(|g| g.clone()).unwrap_or_default();
@@ -322,7 +397,13 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, opts: &mut MergeDialog) 
                 );
             }
             if let Some(e) = &app.merge.error {
-                ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, e, t.font(13.0), t.text);
+                ui.painter().text(
+                    rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    e,
+                    t.font(13.0),
+                    t.text,
+                );
             }
             let info = app.merge.preview.as_ref().map(|p| p.3.clone());
             if let Some(info) = info {
@@ -335,8 +416,15 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, opts: &mut MergeDialog) 
                         info["fov"][1].as_f64().unwrap_or(0.0)
                     )
                 } else {
-                    let ev: Vec<String> =
-                        info["ev"].as_array().map(|a| a.iter().filter_map(Value::as_f64).map(|v| format!("{v:+.1}")).collect()).unwrap_or_default();
+                    let ev: Vec<String> = info["ev"]
+                        .as_array()
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(Value::as_f64)
+                                .map(|v| format!("{v:+.1}"))
+                                .collect()
+                        })
+                        .unwrap_or_default();
                     crate::i18n::tr_format!("{} photos · exposures {} EV", ev.len(), ev.join(" / "))
                 };
                 ui.label(egui::RichText::new(txt).color(t.text_dim));
@@ -348,7 +436,12 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, opts: &mut MergeDialog) 
             ui.set_width(220.0);
             if opts.is_pano() {
                 ui.label(egui::RichText::new(crate::i18n::tr("Projection")).color(t.text_label));
-                for (v, l) in [("auto", "Auto Select"), ("spherical", "Spherical"), ("cylindrical", "Cylindrical"), ("perspective", "Perspective")] {
+                for (v, l) in [
+                    ("auto", "Auto Select"),
+                    ("spherical", "Spherical"),
+                    ("cylindrical", "Cylindrical"),
+                    ("perspective", "Perspective"),
+                ] {
                     if ui.radio(opts.projection == v, crate::i18n::tr(l)).clicked() {
                         opts.projection = v.to_string();
                     }
@@ -364,16 +457,38 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, opts: &mut MergeDialog) 
             }
             if opts.is_hdr() {
                 ui.checkbox(&mut opts.align, crate::i18n::tr("Auto Align"));
-                ui.label(egui::RichText::new(crate::i18n::tr("Deghost Amount")).color(t.text_label));
+                ui.label(
+                    egui::RichText::new(crate::i18n::tr("Deghost Amount")).color(t.text_label),
+                );
                 ui.horizontal(|ui| {
-                    for (i, (v, l)) in [("none", "None"), ("low", "Low"), ("medium", "Med"), ("high", "High")].iter().enumerate() {
-                        if crate::widgets::text_button(ui, &format!("mergeDeghost-{i}"), l, opts.deghost == *v).clicked() {
+                    for (i, (v, l)) in [
+                        ("none", "None"),
+                        ("low", "Low"),
+                        ("medium", "Med"),
+                        ("high", "High"),
+                    ]
+                    .iter()
+                    .enumerate()
+                    {
+                        if crate::widgets::text_button(
+                            ui,
+                            &format!("mergeDeghost-{i}"),
+                            l,
+                            opts.deghost == *v,
+                        )
+                        .clicked()
+                        {
                             opts.deghost = v.to_string();
                         }
                     }
                 });
                 if opts.command == "merge.hdr" {
-                    ui.add_enabled_ui(opts.deghost != "none", |ui| ui.checkbox(&mut opts.show_overlay, crate::i18n::tr("Show Deghost Overlay")));
+                    ui.add_enabled_ui(opts.deghost != "none", |ui| {
+                        ui.checkbox(
+                            &mut opts.show_overlay,
+                            crate::i18n::tr("Show Deghost Overlay"),
+                        )
+                    });
                 }
                 if opts.command == "merge.hdrPanorama" {
                     let mut b = opts.bracket as f64;
@@ -386,7 +501,10 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, opts: &mut MergeDialog) 
             ui.checkbox(&mut opts.auto_settings, crate::i18n::tr("Auto Settings"));
             ui.checkbox(&mut opts.stack, crate::i18n::tr("Create Stack"));
             ui.add_space(8.0);
-            ui.label(egui::RichText::new(crate::i18n::tr_format!("{} photos", app.merge.ids.len())).color(t.text_dim));
+            ui.label(
+                egui::RichText::new(crate::i18n::tr_format!("{} photos", app.merge.ids.len()))
+                    .color(t.text_dim),
+            );
         });
     });
 }

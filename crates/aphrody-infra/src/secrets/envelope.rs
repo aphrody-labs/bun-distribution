@@ -71,7 +71,9 @@ impl EncryptedManifest {
 
     /// Decrypt all secret values inside the manifest into protected SecretStrings.
     pub fn decrypt(&self, passphrase: &str) -> Result<BTreeMap<String, SecretString>> {
-        let salt = B64.decode(&self.crypto.salt).context("failed to decode crypto salt")?;
+        let salt = B64
+            .decode(&self.crypto.salt)
+            .context("failed to decode crypto salt")?;
         let key = derive_key(passphrase, &salt, self.crypto.iterations);
 
         let mut out = BTreeMap::new();
@@ -105,7 +107,7 @@ fn decrypt_value_string(key: &[u8; 32], enc_str: &str) -> Result<Vec<u8>> {
                 "data" => data_b64 = Some(v.trim()),
                 "iv" => iv_b64 = Some(v.trim()),
                 "tag" => tag_b64 = Some(v.trim()),
-                _ => {},
+                _ => {}
             }
         }
     }
@@ -124,7 +126,10 @@ fn decrypt_value_string(key: &[u8; 32], enc_str: &str) -> Result<Vec<u8>> {
         bail!("expected 12-byte IV for AES-256-GCM, got {}", iv_raw.len());
     }
     if tag_raw.len() != 16 {
-        bail!("expected 16-byte tag for AES-256-GCM, got {}", tag_raw.len());
+        bail!(
+            "expected 16-byte tag for AES-256-GCM, got {}",
+            tag_raw.len()
+        );
     }
 
     let mut iv = [0u8; 12];

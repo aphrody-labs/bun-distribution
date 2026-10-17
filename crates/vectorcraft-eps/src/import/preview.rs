@@ -19,13 +19,29 @@ pub(super) struct Preview {
 /// image, else the metafile's vectors, else the EPSI bitmap.
 pub(super) fn preview(bytes: &[u8], ps: &[u8], frame: Rect) -> Option<Preview> {
     const IMAGE: &str = "its preview was placed instead, at screen resolution";
-    if let Some(document) = crate::sections(bytes).and_then(|(_, tiff)| tiff).and_then(tiff_rgba).and_then(|img| image_doc(img, frame)) {
-        return Some(Preview { document, what: IMAGE });
+    if let Some(document) = crate::sections(bytes)
+        .and_then(|(_, tiff)| tiff)
+        .and_then(tiff_rgba)
+        .and_then(|img| image_doc(img, frame))
+    {
+        return Some(Preview {
+            document,
+            what: IMAGE,
+        });
     }
-    if let Some(document) = crate::metafile_preview(bytes).and_then(|wmf| metafile_doc(wmf, frame)) {
-        return Some(Preview { document, what: "its Windows metafile preview was opened instead, which may simplify the art" });
+    if let Some(document) = crate::metafile_preview(bytes).and_then(|wmf| metafile_doc(wmf, frame))
+    {
+        return Some(Preview {
+            document,
+            what: "its Windows metafile preview was opened instead, which may simplify the art",
+        });
     }
-    epsi(ps).and_then(|img| image_doc(img, frame)).map(|document| Preview { document, what: IMAGE })
+    epsi(ps)
+        .and_then(|img| image_doc(img, frame))
+        .map(|document| Preview {
+            document,
+            what: IMAGE,
+        })
 }
 
 fn tiff_rgba(tiff: &[u8]) -> Option<image::RgbaImage> {
@@ -42,14 +58,24 @@ fn image_doc(img: image::RgbaImage, frame: Rect) -> Option<Document> {
         return None;
     }
     let mut png = vec![];
-    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .ok()?;
     let mut doc = Document::new(frame.width(), frame.height());
     let blob = ImageBlob::new("image/png", png);
     let key = blob.content_key();
     doc.images.insert(key.clone(), blob);
     let xf = Affine::scale_non_uniform(frame.width() / f64::from(w), frame.height() / f64::from(h));
-    let mut n =
-        Node::new(doc.alloc_id(), NodeKind::Image(Box::new(ImageObject { key, width: w, height: h, xf, link: None, placement: Default::default() })));
+    let mut n = Node::new(
+        doc.alloc_id(),
+        NodeKind::Image(Box::new(ImageObject {
+            key,
+            width: w,
+            height: h,
+            xf,
+            link: None,
+            placement: Default::default(),
+        })),
+    );
     n.name = Some("Preview".into());
     let layer = doc.layers.first().map(|l| l.id)?;
     doc.insert(Some(layer), 0, n).ok()?;
@@ -75,7 +101,10 @@ fn metafile_doc(wmf: &[u8], frame: Rect) -> Option<Document> {
     if let Some(board) = doc.artboards.first_mut() {
         board.rect = frame;
     }
-    doc.layers.iter().any(|l| l.children().is_some_and(|c| !c.is_empty())).then_some(doc)
+    doc.layers
+        .iter()
+        .any(|l| l.children().is_some_and(|c| !c.is_empty()))
+        .then_some(doc)
 }
 
 /// The EPSI preview in `ps`'s comments (`%%BeginPreview: width height depth lines`, hex rows,
@@ -84,9 +113,17 @@ fn epsi(ps: &[u8]) -> Option<image::RgbaImage> {
     let text = String::from_utf8_lossy(ps);
     let mut lines = text.lines();
     let head = lines.find_map(|l| l.strip_prefix("%%BeginPreview:"))?;
-    let n: Vec<usize> = head.split_whitespace().map_while(|w| w.parse().ok()).collect();
-    let [w, h, depth, ..] = n[..] else { return None };
-    if !(1..=MAX_EPSI).contains(&w) || !(1..=MAX_EPSI).contains(&h) || ![1, 2, 4, 8].contains(&depth) {
+    let n: Vec<usize> = head
+        .split_whitespace()
+        .map_while(|w| w.parse().ok())
+        .collect();
+    let [w, h, depth, ..] = n[..] else {
+        return None;
+    };
+    if !(1..=MAX_EPSI).contains(&w)
+        || !(1..=MAX_EPSI).contains(&h)
+        || ![1, 2, 4, 8].contains(&depth)
+    {
         return None;
     }
     let row = (w * depth).div_ceil(8);

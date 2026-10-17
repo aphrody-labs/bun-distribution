@@ -28,7 +28,7 @@ pub(super) fn into_c_string(value: String) -> *mut c_char {
             let mut bytes = err.into_vec();
             bytes.retain(|byte| *byte != 0);
             CString::new(bytes).unwrap_or_default()
-        },
+        }
     };
     owned.into_raw()
 }

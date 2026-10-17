@@ -120,14 +120,17 @@ impl Property {
         !self.keys.is_empty()
     }
     pub fn has_expression(&self) -> bool {
-        self.expr.as_ref().is_some_and(|e| e.enabled && !e.text.trim().is_empty())
+        self.expr
+            .as_ref()
+            .is_some_and(|e| e.enabled && !e.text.trim().is_empty())
     }
     /// Keyframed value at `t` (no expression).
     pub fn value_at(&self, t: Tick) -> Value {
         if self.keys.is_empty() {
             return self.value.clone();
         }
-        effectcraft_keyframe::evaluate(&self.keys, t, self.spatial).unwrap_or_else(|| self.value.clone())
+        effectcraft_keyframe::evaluate(&self.keys, t, self.spatial)
+            .unwrap_or_else(|| self.value.clone())
     }
     /// Set the value at `t`: adds/replaces a key when animated, else sets the static value.
     pub fn set_value_at(&mut self, t: Tick, v: Value) {
@@ -185,7 +188,9 @@ pub enum GroupKind {
         effect: String,
     },
     /// A motion tracker (Motion Trackers ▸ Tracker n) with its Tracker panel settings.
-    Tracker { settings: Box<crate::tracking::TrackerSettings> },
+    Tracker {
+        settings: Box<crate::tracking::TrackerSettings>,
+    },
     /// The Essential Properties of a precomp layer (master properties): one child per control
     /// of the nested comp's Essential Graphics; `overridden` lists the children (uids) whose
     /// values this instance overrides.
@@ -226,8 +231,15 @@ pub enum MaskMode {
 }
 
 impl MaskMode {
-    pub const ALL: [MaskMode; 7] =
-        [MaskMode::None, MaskMode::Add, MaskMode::Subtract, MaskMode::Intersect, MaskMode::Lighten, MaskMode::Darken, MaskMode::Difference];
+    pub const ALL: [MaskMode; 7] = [
+        MaskMode::None,
+        MaskMode::Add,
+        MaskMode::Subtract,
+        MaskMode::Intersect,
+        MaskMode::Lighten,
+        MaskMode::Darken,
+        MaskMode::Difference,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             MaskMode::None => "None",
@@ -240,7 +252,9 @@ impl MaskMode {
         }
     }
     pub fn from_name(s: &str) -> Option<MaskMode> {
-        MaskMode::ALL.into_iter().find(|m| m.label().eq_ignore_ascii_case(s))
+        MaskMode::ALL
+            .into_iter()
+            .find(|m| m.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -290,13 +304,25 @@ impl Node {
         }
     }
     pub fn as_prop(&self) -> Option<&Property> {
-        if let Node::Prop(p) = self { Some(p) } else { None }
+        if let Node::Prop(p) = self {
+            Some(p)
+        } else {
+            None
+        }
     }
     pub fn as_group(&self) -> Option<&PropGroup> {
-        if let Node::Group(g) = self { Some(g) } else { None }
+        if let Node::Group(g) = self {
+            Some(g)
+        } else {
+            None
+        }
     }
     pub fn as_group_mut(&mut self) -> Option<&mut PropGroup> {
-        if let Node::Group(g) = self { Some(g) } else { None }
+        if let Node::Group(g) = self {
+            Some(g)
+        } else {
+            None
+        }
     }
 }
 
@@ -338,7 +364,14 @@ pub fn parse_path(s: &str) -> Vec<Seg> {
 
 impl PropGroup {
     pub fn new(uid: Uid, match_id: &str, name: &str) -> PropGroup {
-        PropGroup { uid, match_id: match_id.into(), name: name.into(), kind: GroupKind::Plain, enabled: true, children: vec![] }
+        PropGroup {
+            uid,
+            match_id: match_id.into(),
+            name: name.into(),
+            kind: GroupKind::Plain,
+            enabled: true,
+            children: vec![],
+        }
     }
     pub fn with(mut self, n: impl Into<Node>) -> PropGroup {
         self.children.push(n.into());
@@ -349,9 +382,13 @@ impl PropGroup {
         match seg {
             Seg::Uid(u) => self.children.iter().position(|c| c.uid() == *u),
             Seg::Index(i) => (*i >= 1 && *i <= self.children.len()).then(|| i - 1),
-            Seg::Match(m, n) => {
-                self.children.iter().enumerate().filter(|(_, c)| c.match_id() == m || c.name().eq_ignore_ascii_case(m)).nth(n.saturating_sub(1)).map(|(i, _)| i)
-            }
+            Seg::Match(m, n) => self
+                .children
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.match_id() == m || c.name().eq_ignore_ascii_case(m))
+                .nth(n.saturating_sub(1))
+                .map(|(i, _)| i),
         }
     }
 
@@ -399,7 +436,9 @@ impl PropGroup {
     }
     /// Direct child property by match id.
     pub fn get(&self, match_id: &str) -> Option<&Property> {
-        self.children.iter().find_map(|c| c.as_prop().filter(|p| p.match_id == match_id))
+        self.children
+            .iter()
+            .find_map(|c| c.as_prop().filter(|p| p.match_id == match_id))
     }
     pub fn get_mut(&mut self, match_id: &str) -> Option<&mut Property> {
         self.children.iter_mut().find_map(|c| match c {
@@ -408,7 +447,9 @@ impl PropGroup {
         })
     }
     pub fn sub(&self, match_id: &str) -> Option<&PropGroup> {
-        self.children.iter().find_map(|c| c.as_group().filter(|g| g.match_id == match_id))
+        self.children
+            .iter()
+            .find_map(|c| c.as_group().filter(|g| g.match_id == match_id))
     }
     pub fn sub_mut(&mut self, match_id: &str) -> Option<&mut PropGroup> {
         self.children.iter_mut().find_map(|c| match c {
@@ -459,8 +500,16 @@ impl PropGroup {
     /// with `uid`: portable between layers with the same structure (keyframe paste, pick-whip).
     pub fn match_path_of(&self, uid: Uid) -> Option<String> {
         for (i, c) in self.children.iter().enumerate() {
-            let n = self.children[..i].iter().filter(|o| o.match_id() == c.match_id()).count() + 1;
-            let seg = if n == 1 { c.match_id().to_string() } else { format!("{}#{n}", c.match_id()) };
+            let n = self.children[..i]
+                .iter()
+                .filter(|o| o.match_id() == c.match_id())
+                .count()
+                + 1;
+            let seg = if n == 1 {
+                c.match_id().to_string()
+            } else {
+                format!("{}#{n}", c.match_id())
+            };
             if c.uid() == uid {
                 return Some(seg);
             }

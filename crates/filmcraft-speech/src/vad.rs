@@ -84,14 +84,22 @@ mod tests {
     #[test]
     fn silence_is_trimmed_from_words() {
         // 0.0–0.5 silence, 0.5–1.0 tone, 1.0–2.0 silence, 2.0–2.5 tone
-        let mut audio: Vec<f32> = (0..40_000).map(|i| if i % 2 == 0 { 0.0001 } else { 0.0 }).collect();
+        let mut audio: Vec<f32> = (0..40_000)
+            .map(|i| if i % 2 == 0 { 0.0001 } else { 0.0 })
+            .collect();
         for i in (8_000..16_000).chain(32_000..40_000) {
             audio[i] = 0.3 * (i as f32 * 0.2).sin();
         }
-        let mut w = vec![Word::new("a", seconds_tick(0.0), seconds_tick(2.0)), Word::new("b", seconds_tick(2.0), seconds_tick(2.5))];
+        let mut w = vec![
+            Word::new("a", seconds_tick(0.0), seconds_tick(2.0)),
+            Word::new("b", seconds_tick(2.0), seconds_tick(2.5)),
+        ];
         tighten_words(&audio, &mut w);
         assert_eq!(w[0].start, seconds_tick(0.5));
         assert_eq!(w[0].end, seconds_tick(1.0));
-        assert_eq!((w[1].start, w[1].end), (seconds_tick(2.0), seconds_tick(2.5)));
+        assert_eq!(
+            (w[1].start, w[1].end),
+            (seconds_tick(2.0), seconds_tick(2.5))
+        );
     }
 }

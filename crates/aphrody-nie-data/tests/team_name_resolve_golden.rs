@@ -30,7 +30,10 @@ fn team_text() -> Vec<(HashId, String)> {
 fn resolves_real_team_names() {
     let t = team_text();
     assert_eq!(resolve_team_name(&team(0x0000_5001), &t), Some("Raimon"));
-    assert_eq!(resolve_team_name(&team(0x0000_5002), &t), Some("Royal Academy"));
+    assert_eq!(
+        resolve_team_name(&team(0x0000_5002), &t),
+        Some("Royal Academy")
+    );
 }
 
 #[test]

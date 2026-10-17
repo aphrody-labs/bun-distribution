@@ -111,22 +111,38 @@ pub fn always(_: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 pub fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 /// Why [`has_selection`] disables a command. A command that documents `ids` still runs when the
 /// call names its objects (see [`named_targets`]).
 pub const NOTHING_SELECTED: &str = "nothing selected";
 pub fn has_selection(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| !d.selection.items.is_empty()) { Ok(()) } else { Err(NOTHING_SELECTED.into()) }
+    if s.active().is_some_and(|d| !d.selection.items.is_empty()) {
+        Ok(())
+    } else {
+        Err(NOTHING_SELECTED.into())
+    }
 }
 pub fn has_text(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.selection.text.is_some()) { Ok(()) } else { Err("no text insertion point".into()) }
+    if s.active().is_some_and(|d| d.selection.text.is_some()) {
+        Ok(())
+    } else {
+        Err("no text insertion point".into())
+    }
 }
 pub fn has_text_or_frames(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.selection.text.is_some() || d.selection.items.iter().any(|i| d.doc.item(*i).is_some_and(|x| x.is_text_frame()))) {
+    if s.active().is_some_and(|d| {
+        d.selection.text.is_some()
+            || d.selection
+                .items
+                .iter()
+                .any(|i| d.doc.item(*i).is_some_and(|x| x.is_text_frame()))
+    }) {
         Ok(())
     } else {
         Err("select text or a text frame".into())
@@ -215,7 +231,10 @@ pub fn find_command(id: &str) -> Option<&'static CommandSpec> {
 // ---------- param helpers ----------
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 /// `p` with `key` set to `v`. Parameters come from callers (control channel, MCP, scripts) and
 /// may not be an object: `p[key] = v` panics on an array or a string, so start from `{}` then.
@@ -237,13 +256,18 @@ pub(crate) fn str_param<'a>(p: &'a Value, key: &str) -> Option<&'a str> {
 /// `\n`, the paragraph separator, as edit.paste and text import already do. Kept as they were,
 /// the CRs joined the paragraphs into one.
 pub(crate) fn text_param(p: &Value, key: &str) -> String {
-    str_param(p, key).unwrap_or("").replace("\r\n", "\n").replace('\r', "\n")
+    str_param(p, key)
+        .unwrap_or("")
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
 }
 pub(crate) fn id_param(p: &Value, key: &str) -> Option<ItemId> {
     p.get(key).and_then(Value::as_u64).map(ItemId)
 }
 pub(crate) fn ids_param(p: &Value, key: &str) -> Option<Vec<ItemId>> {
-    p.get(key).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(ItemId).collect())
+    p.get(key)
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).map(ItemId).collect())
 }
 pub(crate) fn point_param(p: &Value, key: &str) -> Option<Point> {
     let a = p.get(key)?.as_array()?;
@@ -259,14 +283,28 @@ pub(crate) fn rect_param(p: &Value, key: &str) -> Option<Rect> {
 /// spread got its items on the first page without a word.
 pub(crate) fn spread_param(p: &Value, command: &str) -> Result<SpreadRef> {
     let index = |v: &Value, key: &str| {
-        v.as_u64().and_then(|n| usize::try_from(n).ok()).ok_or_else(|| bad(command, format!("`{key}` must be a non-negative integer")))
+        v.as_u64()
+            .and_then(|n| usize::try_from(n).ok())
+            .ok_or_else(|| bad(command, format!("`{key}` must be a non-negative integer")))
     };
-    let Some(value) = p.get("spread") else { return Ok(SpreadRef::Doc(0)) };
+    let Some(value) = p.get("spread") else {
+        return Ok(SpreadRef::Doc(0));
+    };
     if value.is_number() {
         return Ok(SpreadRef::Doc(index(value, "spread")?));
     }
-    let object = value.as_object().ok_or_else(|| bad(command, "`spread` must be a non-negative integer or {kind: doc|parent, index}"))?;
-    let i = index(object.get("index").ok_or_else(|| bad(command, "missing `spread.index`"))?, "spread.index")?;
+    let object = value.as_object().ok_or_else(|| {
+        bad(
+            command,
+            "`spread` must be a non-negative integer or {kind: doc|parent, index}",
+        )
+    })?;
+    let i = index(
+        object
+            .get("index")
+            .ok_or_else(|| bad(command, "missing `spread.index`"))?,
+        "spread.index",
+    )?;
     match object.get("kind").and_then(Value::as_str) {
         Some("doc") => Ok(SpreadRef::Doc(i)),
         Some("parent") => Ok(SpreadRef::Parent(i)),
@@ -277,7 +315,11 @@ pub(crate) fn spread_param(p: &Value, command: &str) -> Result<SpreadRef> {
 /// The objects a call names with a non-empty `ids` or an `id`, for a command whose params
 /// document `ids` (it acts on [`targets`]). `None` when the call names none.
 pub(crate) fn named_targets(spec: &CommandSpec, p: &Value) -> Option<Vec<ItemId>> {
-    if !spec.params.split(|c: char| !c.is_ascii_alphanumeric()).any(|w| w == "ids") {
+    if !spec
+        .params
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .any(|w| w == "ids")
+    {
         return None;
     }
     // As `targets` reads them: `ids`, when given, wins over `id` (an empty list names nothing).

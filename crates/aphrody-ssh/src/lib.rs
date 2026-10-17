@@ -94,7 +94,13 @@ impl Host {
     #[must_use]
     pub const fn stdin_shell(self) -> &'static [&'static str] {
         if self.is_windows() {
-            &["powershell", "-NoProfile", "-NonInteractive", "-Command", "-"]
+            &[
+                "powershell",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "-",
+            ]
         } else {
             &["bash", "-s"]
         }
@@ -483,8 +489,10 @@ pub const SYSCTL_TARGETS: &[SysctlTarget] = &[
 
 /// Values follow the Aphrody Alpine server profile (91-aphrody-server.conf); hosts short on
 /// RAM override the memory keys.
-pub const SYSCTL_HOST_OVERRIDES: &[(&str, &str, &str)] =
-    &[("dbfr", "vm.swappiness", "20"), ("dbfr", "vm.vfs_cache_pressure", "100")];
+pub const SYSCTL_HOST_OVERRIDES: &[(&str, &str, &str)] = &[
+    ("dbfr", "vm.swappiness", "20"),
+    ("dbfr", "vm.vfs_cache_pressure", "100"),
+];
 
 pub const TUNE_SYSCTL_PATH: &str = "/etc/sysctl.d/95-aphrody-tune.conf";
 const LEGACY_TUNE_SYSCTL_PATH: &str = "/etc/sysctl.d/99-aphrody-tuning.conf";
@@ -588,15 +596,24 @@ pub struct AuditReport {
 }
 
 pub fn validate_unit(unit: &str) -> Result<(), Error> {
-    if unit.is_empty() || !unit.chars().all(|c| c.is_ascii_alphanumeric() || ".@:_-".contains(c)) {
-        return Err(Error::Remote { code: None, stderr: "invalid systemd unit".into() });
+    if unit.is_empty()
+        || !unit
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || ".@:_-".contains(c))
+    {
+        return Err(Error::Remote {
+            code: None,
+            stderr: "invalid systemd unit".into(),
+        });
     }
     Ok(())
 }
 
 pub fn validate_url(url: &str) -> Result<(), Error> {
     if !(url.starts_with("https://") || url.starts_with("http://"))
-        || !url.chars().all(|c| c.is_ascii_alphanumeric() || ":/?#[]@!$&()*+,;=%._~-".contains(c))
+        || !url
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || ":/?#[]@!$&()*+,;=%._~-".contains(c))
     {
         return Err(Error::InvalidUrl(url.into()));
     }
@@ -612,8 +629,13 @@ pub fn validate_services_arg(services: &str) -> Result<(), Error> {
         if trimmed.is_empty() {
             continue;
         }
-        if !trimmed.chars().all(|c| c.is_ascii_alphanumeric() || ".@:_-".contains(c)) {
-            return Err(Error::InvalidInput(format!("invalid service name in list: {trimmed}")));
+        if !trimmed
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || ".@:_-".contains(c))
+        {
+            return Err(Error::InvalidInput(format!(
+                "invalid service name in list: {trimmed}"
+            )));
         }
     }
     Ok(())
@@ -648,10 +670,16 @@ pub fn parse_loadavg(raw: &str) -> LoadAverage {
         let trimmed = line.trim();
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
         if parts.len() >= 3 {
-            if let (Ok(m1), Ok(m5), Ok(m15)) =
-                (parts[0].parse::<f64>(), parts[1].parse::<f64>(), parts[2].parse::<f64>())
-            {
-                return LoadAverage { one_minute: m1, five_minute: m5, fifteen_minute: m15 };
+            if let (Ok(m1), Ok(m5), Ok(m15)) = (
+                parts[0].parse::<f64>(),
+                parts[1].parse::<f64>(),
+                parts[2].parse::<f64>(),
+            ) {
+                return LoadAverage {
+                    one_minute: m1,
+                    five_minute: m5,
+                    fifteen_minute: m15,
+                };
             }
         }
         if let Some(idx) = trimmed.find("load average:") {
@@ -678,8 +706,11 @@ pub fn parse_meminfo(raw: &str) -> (MemoryStats, MemoryStats) {
         let mut parts = line.split(':');
         if let (Some(k), Some(v)) = (parts.next(), parts.next()) {
             let key = k.trim();
-            let val_kb =
-                v.split_whitespace().next().and_then(|n| n.parse::<u64>().ok()).unwrap_or(0);
+            let val_kb = v
+                .split_whitespace()
+                .next()
+                .and_then(|n| n.parse::<u64>().ok())
+                .unwrap_or(0);
             map.insert(key, val_kb * 1024);
         }
     }
@@ -691,7 +722,11 @@ pub fn parse_meminfo(raw: &str) -> (MemoryStats, MemoryStats) {
         (free + buffers + cached).min(total)
     });
     let used = total.saturating_sub(available);
-    let usage_percent = if total > 0 { (used as f64 / total as f64) * 100.0 } else { 0.0 };
+    let usage_percent = if total > 0 {
+        (used as f64 / total as f64) * 100.0
+    } else {
+        0.0
+    };
 
     let ram = MemoryStats {
         total_bytes: total,
@@ -704,8 +739,11 @@ pub fn parse_meminfo(raw: &str) -> (MemoryStats, MemoryStats) {
     let swap_total = *map.get("SwapTotal").unwrap_or(&0);
     let swap_free = *map.get("SwapFree").unwrap_or(&0);
     let swap_used = swap_total.saturating_sub(swap_free);
-    let swap_percent =
-        if swap_total > 0 { (swap_used as f64 / swap_total as f64) * 100.0 } else { 0.0 };
+    let swap_percent = if swap_total > 0 {
+        (swap_used as f64 / swap_total as f64) * 100.0
+    } else {
+        0.0
+    };
 
     let swap = MemoryStats {
         total_bytes: swap_total,
@@ -724,7 +762,11 @@ pub fn parse_cpu_stat(raw: &str) -> f64 {
         return 0.0;
     }
     let parse_line = |l: &str| -> Option<(u64, u64)> {
-        let parts: Vec<u64> = l.split_whitespace().skip(1).filter_map(|p| p.parse().ok()).collect();
+        let parts: Vec<u64> = l
+            .split_whitespace()
+            .skip(1)
+            .filter_map(|p| p.parse().ok())
+            .collect();
         if parts.len() < 4 {
             return None;
         }
@@ -801,7 +843,7 @@ pub fn parse_sockets(raw: &str) -> NetworkSocketsSummary {
                         "estab" => established = parts[1].parse().unwrap_or(0),
                         "timewait" => timewait = parts[1].parse().unwrap_or(0),
                         "closed" => closed = parts[1].parse().unwrap_or(0),
-                        _ => {},
+                        _ => {}
                     }
                 }
             }
@@ -838,7 +880,14 @@ pub fn parse_top_processes(raw: &str, limit: usize) -> Vec<ProcessStat> {
         let status = parts[4].to_string();
         let command = parts[5..].join(" ");
 
-        procs.push(ProcessStat { pid, user, cpu_percent, mem_percent, status, command });
+        procs.push(ProcessStat {
+            pid,
+            user,
+            cpu_percent,
+            mem_percent,
+            status,
+            command,
+        });
         if procs.len() >= limit {
             break;
         }
@@ -848,13 +897,30 @@ pub fn parse_top_processes(raw: &str, limit: usize) -> Vec<ProcessStat> {
 
 pub fn parse_monitor_raw(host: &str, raw: &str, top: usize) -> MonitorReport {
     let sections = extract_sections(raw);
-    let load_average = sections.get("LOADAVG").map(|s| parse_loadavg(s)).unwrap_or_default();
-    let (ram, swap) = sections.get("MEMINFO").map(|s| parse_meminfo(s)).unwrap_or_default();
-    let cpu_usage_percent = sections.get("CPU").map(|s| parse_cpu_stat(s)).unwrap_or(0.0);
-    let disk_io = sections.get("DISKIO").map(|s| parse_diskstats(s)).unwrap_or_default();
-    let network_sockets = sections.get("SOCKETS").map(|s| parse_sockets(s)).unwrap_or_default();
-    let top_processes =
-        sections.get("TOP").map(|s| parse_top_processes(s, top)).unwrap_or_default();
+    let load_average = sections
+        .get("LOADAVG")
+        .map(|s| parse_loadavg(s))
+        .unwrap_or_default();
+    let (ram, swap) = sections
+        .get("MEMINFO")
+        .map(|s| parse_meminfo(s))
+        .unwrap_or_default();
+    let cpu_usage_percent = sections
+        .get("CPU")
+        .map(|s| parse_cpu_stat(s))
+        .unwrap_or(0.0);
+    let disk_io = sections
+        .get("DISKIO")
+        .map(|s| parse_diskstats(s))
+        .unwrap_or_default();
+    let network_sockets = sections
+        .get("SOCKETS")
+        .map(|s| parse_sockets(s))
+        .unwrap_or_default();
+    let top_processes = sections
+        .get("TOP")
+        .map(|s| parse_top_processes(s, top))
+        .unwrap_or_default();
 
     MonitorReport {
         host: host.to_string(),
@@ -881,8 +947,10 @@ pub fn parse_sysctl_query(host: &str, raw: &str, apply: bool) -> TunePlan {
     let mut changes_required = 0;
 
     for target in SYSCTL_TARGETS {
-        let current_value =
-            current_map.get(target.key).cloned().unwrap_or_else(|| "MISSING".to_string());
+        let current_value = current_map
+            .get(target.key)
+            .cloned()
+            .unwrap_or_else(|| "MISSING".to_string());
 
         let recommended = recommended_sysctl(host, target);
         let status = if current_value == recommended {
@@ -1010,15 +1078,25 @@ pub fn parse_audit_raw(host: &str, raw: &str) -> AuditReport {
             let cmd = parts[3..].join(" ");
 
             if stat.contains('Z') || stat.contains('X') || cmd.contains("defunct") {
-                zombie_processes.push(ZombieProcessInfo { pid, ppid, command: cmd });
+                zombie_processes.push(ZombieProcessInfo {
+                    pid,
+                    ppid,
+                    command: cmd,
+                });
             }
         }
     }
-    let process =
-        ProcessAudit { total_processes, warning: !zombie_processes.is_empty(), zombie_processes };
+    let process = ProcessAudit {
+        total_processes,
+        warning: !zombie_processes.is_empty(),
+        zombie_processes,
+    };
 
     // 3. Memory & Swap
-    let (ram, mem_swap) = sections.get("MEMINFO").map(|s| parse_meminfo(s)).unwrap_or_default();
+    let (ram, mem_swap) = sections
+        .get("MEMINFO")
+        .map(|s| parse_meminfo(s))
+        .unwrap_or_default();
     let swap = SwapAudit {
         total_bytes: mem_swap.total_bytes,
         used_bytes: mem_swap.used_bytes,
@@ -1036,11 +1114,16 @@ pub fn parse_audit_raw(host: &str, raw: &str) -> AuditReport {
             }
             let proto = parts[0].to_string();
             let local_addr_port = parts[4];
-            let (addr, port_str) =
-                local_addr_port.rsplit_once(':').unwrap_or((local_addr_port, "0"));
+            let (addr, port_str) = local_addr_port
+                .rsplit_once(':')
+                .unwrap_or((local_addr_port, "0"));
             let port = port_str.parse::<u16>().unwrap_or(0);
             let is_public = addr == "0.0.0.0" || addr == "*" || addr == "::" || addr == "[::]";
-            let process = if parts.len() >= 7 { parts[6..].join(" ") } else { String::new() };
+            let process = if parts.len() >= 7 {
+                parts[6..].join(" ")
+            } else {
+                String::new()
+            };
 
             ports.push(PortAudit {
                 proto,
@@ -1073,10 +1156,18 @@ pub fn parse_audit_raw(host: &str, raw: &str) -> AuditReport {
             if parts.len() >= 2 {
                 let unit = parts[0].to_string();
                 let state = parts[1].to_string();
-                let sub_state =
-                    if parts.len() >= 3 { parts[2].to_string() } else { "unknown".to_string() };
+                let sub_state = if parts.len() >= 3 {
+                    parts[2].to_string()
+                } else {
+                    "unknown".to_string()
+                };
                 let healthy = state == "active";
-                services.push(ServiceAudit { unit, state, sub_state, healthy });
+                services.push(ServiceAudit {
+                    unit,
+                    state,
+                    sub_state,
+                    healthy,
+                });
             }
         }
     }
@@ -1198,7 +1289,11 @@ pub fn monitor_command(top: usize) -> String {
 }
 
 pub fn tune_query_command() -> String {
-    let keys = SYSCTL_TARGETS.iter().map(|t| t.key).collect::<Vec<_>>().join(" ");
+    let keys = SYSCTL_TARGETS
+        .iter()
+        .map(|t| t.key)
+        .collect::<Vec<_>>()
+        .join(" ");
     format!(
         "bash -c 'for k in {keys}; do v=$(sysctl -n \"$k\" 2>/dev/null || echo \"MISSING\"); echo \
          \"$k=$v\"; done'"
@@ -1259,18 +1354,23 @@ pub async fn run_ssh(host: Host, args: &[&str]) -> Result<Output, Error> {
             return Err(Error::InvalidInput(
                 "APHRODY_SSH_COMMAND_TIMEOUT_SECS must be UTF-8".into(),
             ));
-        },
+        }
     };
     let seconds = command_timeout_seconds(configured_timeout.as_deref())?;
     let script = stdin_script(args);
     let mut command = Command::new("ssh");
-    command.args(["-o", "BatchMode=yes", "-o", "ConnectTimeout=10"]).arg(host.alias());
+    command
+        .args(["-o", "BatchMode=yes", "-o", "ConnectTimeout=10"])
+        .arg(host.alias());
     match &script {
         Some(_) => command.args(host.stdin_shell()).stdin(Stdio::piped()),
         None => command.args(args),
     };
-    let mut child =
-        command.stdout(Stdio::piped()).stderr(Stdio::piped()).kill_on_drop(true).spawn()?;
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true)
+        .spawn()?;
     if let (Some(script), Some(mut stdin)) = (script, child.stdin.take()) {
         stdin.write_all(script.as_bytes()).await?;
     }
@@ -1290,7 +1390,10 @@ pub async fn run_ssh(host: Host, args: &[&str]) -> Result<Output, Error> {
             (out, "") => out.to_owned(),
             (out, err) => format!("{out}\n{err}"),
         };
-        return Err(Error::Remote { code: result.exit_code, stderr });
+        return Err(Error::Remote {
+            code: result.exit_code,
+            stderr,
+        });
     }
     Ok(result)
 }
@@ -1313,7 +1416,10 @@ pub async fn local_git(path: &std::path::Path) -> Result<String, Error> {
 
 pub fn render(result: Output, json: bool) {
     if json {
-        println!("{}", serde_json::to_string_pretty(&result).expect("serializable"));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&result).expect("serializable")
+        );
     } else {
         print!("{}", result.stdout);
         if !result.stderr.is_empty() {
@@ -1324,7 +1430,10 @@ pub fn render(result: Output, json: bool) {
 
 pub fn render_monitor(report: &MonitorReport, json: bool) {
     if json {
-        println!("{}", serde_json::to_string_pretty(report).expect("serializable"));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(report).expect("serializable")
+        );
         return;
     }
     println!("=== APHRODY TELEMETRY MONITOR [{}] ===", report.host);
@@ -1389,13 +1498,20 @@ pub fn render_monitor(report: &MonitorReport, json: bool) {
 
 pub fn render_tune(plan: &TunePlan, json: bool) {
     if json {
-        println!("{}", serde_json::to_string_pretty(plan).expect("serializable"));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(plan).expect("serializable")
+        );
         return;
     }
     println!("=== APHRODY SYSTEM TUNING [{}] ===", plan.host);
     println!(
         "Mode:                  {}",
-        if plan.apply { "APPLY (Changes committed)" } else { "DRY-RUN (Planning only)" }
+        if plan.apply {
+            "APPLY (Changes committed)"
+        } else {
+            "DRY-RUN (Planning only)"
+        }
     );
     println!("Pending Modifications: {}", plan.changes_required);
     println!();
@@ -1430,7 +1546,10 @@ pub fn render_tune(plan: &TunePlan, json: bool) {
 
 pub fn render_audit(report: &AuditReport, json: bool) {
     if json {
-        println!("{}", serde_json::to_string_pretty(report).expect("serializable"));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(report).expect("serializable")
+        );
         return;
     }
     let status_badge = match report.status {
@@ -1438,7 +1557,10 @@ pub fn render_audit(report: &AuditReport, json: bool) {
         AuditHealthStatus::Warning => "[WARNING]",
         AuditHealthStatus::Critical => "[CRITICAL]",
     };
-    println!("=== APHRODY HOST AUDIT [{}] {} ===", report.host, status_badge);
+    println!(
+        "=== APHRODY HOST AUDIT [{}] {} ===",
+        report.host, status_badge
+    );
     println!();
     println!("[DISK USAGE]");
     if report.disk.is_empty() {
@@ -1467,7 +1589,11 @@ pub fn render_audit(report: &AuditReport, json: bool) {
         report.ram.available_bytes as f64 / 1_073_741_824.0
     );
     if report.swap.total_bytes > 0 {
-        let swap_flag = if report.swap.warning { "! WARNING" } else { "OK" };
+        let swap_flag = if report.swap.warning {
+            "! WARNING"
+        } else {
+            "OK"
+        };
         println!(
             "  Swap: {:.2} GB / {:.2} GB ({:.1}%) [{}]",
             report.swap.used_bytes as f64 / 1_073_741_824.0,
@@ -1484,10 +1610,17 @@ pub fn render_audit(report: &AuditReport, json: bool) {
         "  Total: {} | Zombie/Defunct: {} [{}]",
         report.process.total_processes,
         report.process.zombie_processes.len(),
-        if report.process.warning { "! WARNING" } else { "OK" }
+        if report.process.warning {
+            "! WARNING"
+        } else {
+            "OK"
+        }
     );
     for z in &report.process.zombie_processes {
-        println!("    - Zombie PID: {} (PPID: {}, Command: {})", z.pid, z.ppid, z.command);
+        println!(
+            "    - Zombie PID: {} (PPID: {}, Command: {})",
+            z.pid, z.ppid, z.command
+        );
     }
     println!();
     println!("[SYSTEMD FAILED UNITS]");
@@ -1518,7 +1651,10 @@ pub fn render_audit(report: &AuditReport, json: bool) {
         println!("  None");
     } else {
         for p in public_ports {
-            println!("  - {:<4} {:<15} port {:<5} {}", p.proto, p.local_address, p.port, p.process);
+            println!(
+                "  - {:<4} {:<15} port {:<5} {}",
+                p.proto, p.local_address, p.port, p.process
+            );
         }
     }
     println!();
@@ -1544,7 +1680,7 @@ where
                 return Err(Error::Clap(e));
             }
             return Ok(());
-        },
+        }
     };
     run(cli).await
 }
@@ -1552,12 +1688,15 @@ where
 /// Entry point of the former `aphrody-ssh` binary, now reached through the `aphrody` multi-call binary.
 /// `args[0]` is the program name (argv convention). Returns the process exit code.
 pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("Error: {error}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run_from_args(args)) {
         Ok(()) => 0,
@@ -1565,7 +1704,7 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
         Err(error) => {
             eprintln!("Error: {error}");
             1
-        },
+        }
     }
 }
 
@@ -1578,12 +1717,29 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                 (None, true) => return Err(Error::InvalidInput("No command specified".into())),
             };
             (host, vec![final_cmd])
-        },
-        Commands::Proxy { host, port, remote, daemon, stop, status, switch } => {
-            handle_proxy(host, port, remote.as_deref(), daemon, stop, status, switch, cli.json)
-                .await?;
+        }
+        Commands::Proxy {
+            host,
+            port,
+            remote,
+            daemon,
+            stop,
+            status,
+            switch,
+        } => {
+            handle_proxy(
+                host,
+                port,
+                remote.as_deref(),
+                daemon,
+                stop,
+                status,
+                switch,
+                cli.json,
+            )
+            .await?;
             return Ok(());
-        },
+        }
         Commands::Status { host } => (
             host,
             vec![
@@ -1596,11 +1752,24 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
         Commands::Logs { host, unit, lines } => {
             validate_unit(&unit)?;
             if !(1..=5000).contains(&lines) {
-                return Err(Error::Remote { code: None, stderr: "lines must be 1..=5000".into() });
+                return Err(Error::Remote {
+                    code: None,
+                    stderr: "lines must be 1..=5000".into(),
+                });
             }
-            (host, vec![format!("sudo -n journalctl -u {unit} -n {lines} --no-pager")])
-        },
-        Commands::Service { host, action, unit, confirm } => {
+            (
+                host,
+                vec![format!(
+                    "sudo -n journalctl -u {unit} -n {lines} --no-pager"
+                )],
+            )
+        }
+        Commands::Service {
+            host,
+            action,
+            unit,
+            confirm,
+        } => {
             validate_unit(&unit)?;
             if matches!(action, ServiceAction::Stop | ServiceAction::Disable) && !confirm {
                 return Err(Error::Remote {
@@ -1608,8 +1777,11 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                     stderr: "stop/disable require --confirm".into(),
                 });
             }
-            (host, vec![format!("sudo -n systemctl {} {unit}", action.as_str())])
-        },
+            (
+                host,
+                vec![format!("sudo -n systemctl {} {unit}", action.as_str())],
+            )
+        }
         Commands::Health { host, url } => {
             validate_url(&url)?;
             (
@@ -1618,11 +1790,17 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                     "curl --fail --silent --show-error --connect-timeout 5 --max-time 20 -I -- '{url}'"
                 )],
             )
-        },
-        Commands::Compare { host, local, remote } => {
+        }
+        Commands::Compare {
+            host,
+            local,
+            remote,
+        } => {
             let local_state = local_git(&local).await?;
-            let remote_cmd =
-                format!("git -C '{}' status --short --branch", remote.replace('\'', "'\\''"));
+            let remote_cmd = format!(
+                "git -C '{}' status --short --branch",
+                remote.replace('\'', "'\\''")
+            );
             let result = run_ssh(host, &[&remote_cmd]).await?;
             if cli.json {
                 println!(
@@ -1639,8 +1817,13 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                 );
             }
             return Ok(());
-        },
-        Commands::Sync { host, source, destination, apply } => {
+        }
+        Commands::Sync {
+            host,
+            source,
+            destination,
+            apply,
+        } => {
             if !destination.starts_with('/')
                 || destination.contains('"')
                 || destination.contains('\n')
@@ -1679,7 +1862,11 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
             if !apply {
                 command.arg("--dry-run");
             }
-            let output = command.stdout(Stdio::piped()).stderr(Stdio::piped()).output().await?;
+            let output = command
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output()
+                .await?;
             let result = Output {
                 host: host.alias().into(),
                 exit_code: output.status.code(),
@@ -1694,7 +1881,7 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
             }
             render(result, cli.json);
             return Ok(());
-        },
+        }
         Commands::Monitor { host, top } => {
             if !(1..=100).contains(&top) {
                 return Err(Error::InvalidInput("top must be between 1 and 100".into()));
@@ -1704,7 +1891,7 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
             let report = parse_monitor_raw(host.alias(), &result.stdout, top);
             render_monitor(&report, cli.json);
             return Ok(());
-        },
+        }
         Commands::Tune { host, apply } => {
             let query_cmd = tune_query_command();
             let result = run_ssh(host, &[&query_cmd]).await?;
@@ -1721,7 +1908,7 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
             }
             render_tune(&plan, cli.json);
             return Ok(());
-        },
+        }
         Commands::Audit { host, services } => {
             validate_services_arg(&services)?;
             let svc_list: Vec<&str> = services
@@ -1734,25 +1921,33 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
             let report = parse_audit_raw(host.alias(), &result.stdout);
             render_audit(&report, cli.json);
             return Ok(());
-        },
+        }
         Commands::Tunnel { args, action } => {
             match action {
                 Some(TunnelAction::Status(status_args)) => {
                     tunnel::run_tunnel_status_command(&status_args, cli.json).await?;
-                },
+                }
                 None => {
                     tunnel::run_tunnel_command(&args, cli.json).await?;
-                },
+                }
             }
             return Ok(());
-        },
-        Commands::Sftp { host, path, cat, tree, depth, get, put, delta } => {
-            let session =
-                in_process::InProcessSshSession::connect_host(host).await.map_err(|e| {
-                    Error::Remote {
-                        code: None,
-                        stderr: format!("In-process SSH connection failed: {e}"),
-                    }
+        }
+        Commands::Sftp {
+            host,
+            path,
+            cat,
+            tree,
+            depth,
+            get,
+            put,
+            delta,
+        } => {
+            let session = in_process::InProcessSshSession::connect_host(host)
+                .await
+                .map_err(|e| Error::Remote {
+                    code: None,
+                    stderr: format!("In-process SSH connection failed: {e}"),
                 })?;
             let sftp = session.sftp().await.map_err(|e| Error::Remote {
                 code: None,
@@ -1770,9 +1965,9 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                         in_process::SftpDriver::upload_differential(&sftp, &content, &path)
                             .await
                             .map_err(|e| Error::Remote {
-                            code: None,
-                            stderr: format!("SFTP differential upload failed: {e}"),
-                        })?;
+                                code: None,
+                                stderr: format!("SFTP differential upload failed: {e}"),
+                            })?;
                     if cli.json {
                         println!(
                             "{}",
@@ -1797,12 +1992,12 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                         );
                     }
                 } else {
-                    in_process::SftpDriver::write_file(&sftp, &path, &content).await.map_err(
-                        |e| Error::Remote {
+                    in_process::SftpDriver::write_file(&sftp, &path, &content)
+                        .await
+                        .map_err(|e| Error::Remote {
                             code: None,
                             stderr: format!("SFTP write_file failed: {e}"),
-                        },
-                    )?;
+                        })?;
                     if cli.json {
                         println!(
                             "{}",
@@ -1826,9 +2021,11 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                     }
                 }
             } else if let Some(local_dst) = get {
-                let content =
-                    in_process::SftpDriver::read_file(&sftp, &path).await.map_err(|e| {
-                        Error::Remote { code: None, stderr: format!("SFTP read_file failed: {e}") }
+                let content = in_process::SftpDriver::read_file(&sftp, &path)
+                    .await
+                    .map_err(|e| Error::Remote {
+                        code: None,
+                        stderr: format!("SFTP read_file failed: {e}"),
                     })?;
                 if let Some(parent) = local_dst.parent() {
                     let _ = std::fs::create_dir_all(parent);
@@ -1858,17 +2055,25 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                     );
                 }
             } else if tree {
-                let root_tree =
-                    in_process::SftpDriver::tree(&sftp, &path, depth).await.map_err(|e| {
-                        Error::Remote { code: None, stderr: format!("SFTP tree failed: {e}") }
+                let root_tree = in_process::SftpDriver::tree(&sftp, &path, depth)
+                    .await
+                    .map_err(|e| Error::Remote {
+                        code: None,
+                        stderr: format!("SFTP tree failed: {e}"),
                     })?;
                 if cli.json {
-                    println!("{}", serde_json::to_string_pretty(&root_tree).expect("serializable"));
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&root_tree).expect("serializable")
+                    );
                 } else {
                     fn print_tree(node: &in_process::SftpTreeNode, indent: usize) {
                         let pad = "  ".repeat(indent);
                         let kind = if node.entry.is_dir { "[D]" } else { "   " };
-                        println!("{}{} {} ({} B)", pad, kind, node.entry.name, node.entry.size);
+                        println!(
+                            "{}{} {} ({} B)",
+                            pad, kind, node.entry.name, node.entry.size
+                        );
                         for child in &node.children {
                             print_tree(child, indent + 1);
                         }
@@ -1877,9 +2082,11 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                     print_tree(&root_tree, 0);
                 }
             } else if let Some(target_file) = cat {
-                let content =
-                    in_process::SftpDriver::read_file(&sftp, &target_file).await.map_err(|e| {
-                        Error::Remote { code: None, stderr: format!("SFTP read_file failed: {e}") }
+                let content = in_process::SftpDriver::read_file(&sftp, &target_file)
+                    .await
+                    .map_err(|e| Error::Remote {
+                        code: None,
+                        stderr: format!("SFTP read_file failed: {e}"),
                     })?;
                 if cli.json {
                     println!(
@@ -1895,9 +2102,12 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                     print!("{}", String::from_utf8_lossy(&content));
                 }
             } else {
-                let list = in_process::SftpDriver::read_dir(&sftp, &path).await.map_err(|e| {
-                    Error::Remote { code: None, stderr: format!("SFTP read_dir failed: {e}") }
-                })?;
+                let list = in_process::SftpDriver::read_dir(&sftp, &path)
+                    .await
+                    .map_err(|e| Error::Remote {
+                        code: None,
+                        stderr: format!("SFTP read_dir failed: {e}"),
+                    })?;
                 if cli.json {
                     println!(
                         "{}",
@@ -1920,7 +2130,7 @@ pub async fn run(cli: Cli) -> Result<(), Error> {
                 }
             }
             return Ok(());
-        },
+        }
     };
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();
     render(run_ssh(host, &refs).await?, cli.json);
@@ -1994,14 +2204,23 @@ async fn handle_proxy(
                 .args([
                     "-NoProfile",
                     "-Command",
-                    &format!("Start-Process ssh -ArgumentList {} -WindowStyle Hidden", arg_list),
+                    &format!(
+                        "Start-Process ssh -ArgumentList {} -WindowStyle Hidden",
+                        arg_list
+                    ),
                 ])
                 .status();
         }
         #[cfg(not(target_os = "windows"))]
         {
             let _ = std::process::Command::new("ssh")
-                .args(["-f", "-N", "-L", &format!("{}:{}", port, remote), host.alias()])
+                .args([
+                    "-f",
+                    "-N",
+                    "-L",
+                    &format!("{}:{}", port, remote),
+                    host.alias(),
+                ])
                 .status();
         }
 
@@ -2122,7 +2341,7 @@ async fn probe_proxy_status(host: Host, port: u16, json: bool) -> Result<(), Err
                     v.get("org").and_then(|x| x.as_str()).unwrap_or("?")
                 );
             }
-        },
+        }
         Err(_) => {
             if json {
                 println!(
@@ -2137,7 +2356,7 @@ async fn probe_proxy_status(host: Host, port: u16, json: bool) -> Result<(), Err
                 println!("[SSH Proxy] Tunnel INACTIF sur 127.0.0.1:{}", port);
                 println!("  Pour le démarrer en arrière-plan : aphrody ssh proxy -d");
             }
-        },
+        }
     }
 
     // Interroger également le statut du VPS
@@ -2180,7 +2399,10 @@ mod tests {
     #[test]
     fn command_timeout_is_finite_and_explicit() {
         assert_eq!(command_timeout_seconds(None).expect("default"), 30);
-        assert_eq!(command_timeout_seconds(Some("14400")).expect("factory duration"), 14_400);
+        assert_eq!(
+            command_timeout_seconds(Some("14400")).expect("factory duration"),
+            14_400
+        );
         for invalid in ["", "0", "86401", "-1", "1.5", "unlimited"] {
             assert!(command_timeout_seconds(Some(invalid)).is_err(), "{invalid}");
         }
@@ -2207,7 +2429,10 @@ mod tests {
         assert_eq!(Host::AphroPc.stdin_shell()[0], "powershell");
         assert_eq!(Host::OmarWslRt.stdin_shell(), ["bash", "-s"]);
         for host in Host::ALL {
-            assert_eq!(<Host as clap::ValueEnum>::from_str(host.alias(), false).unwrap(), host);
+            assert_eq!(
+                <Host as clap::ValueEnum>::from_str(host.alias(), false).unwrap(),
+                host
+            );
         }
     }
 
@@ -2216,7 +2441,7 @@ mod tests {
         let cli =
             Cli::try_parse_from(["aphrody-ssh", "status", "--host", "ovh-vps"]).expect("valid CLI");
         match cli.command {
-            Commands::Status { host: Host::Vps } => {},
+            Commands::Status { host: Host::Vps } => {}
             _ => panic!("ovh-vps must resolve to the VPS host"),
         }
     }
@@ -2379,15 +2604,27 @@ vm.swappiness=60
         let plan = parse_sysctl_query("vps", raw, false);
         assert_eq!(plan.host, "vps");
         assert!(!plan.apply);
-        let somaxconn = plan.items.iter().find(|i| i.key == "net.core.somaxconn").unwrap();
+        let somaxconn = plan
+            .items
+            .iter()
+            .find(|i| i.key == "net.core.somaxconn")
+            .unwrap();
         assert_eq!(somaxconn.current_value, "128");
         assert_eq!(somaxconn.recommended_value, "65535");
         assert_eq!(somaxconn.status, TuneStatus::NeedsUpdate);
 
-        let syn = plan.items.iter().find(|i| i.key == "net.ipv4.tcp_max_syn_backlog").unwrap();
+        let syn = plan
+            .items
+            .iter()
+            .find(|i| i.key == "net.ipv4.tcp_max_syn_backlog")
+            .unwrap();
         assert_eq!(syn.status, TuneStatus::Optimal);
 
-        let swappiness = plan.items.iter().find(|i| i.key == "vm.swappiness").unwrap();
+        let swappiness = plan
+            .items
+            .iter()
+            .find(|i| i.key == "vm.swappiness")
+            .unwrap();
         assert_eq!(swappiness.status, TuneStatus::NeedsUpdate);
 
         assert!(plan.changes_required >= 2);
@@ -2407,9 +2644,17 @@ vm.swappiness=60
     fn sysctl_host_overrides_dbfr() {
         let raw = "vm.swappiness=20\nvm.vfs_cache_pressure=50\n";
         let plan = parse_sysctl_query("dbfr", raw, false);
-        let swappiness = plan.items.iter().find(|i| i.key == "vm.swappiness").unwrap();
+        let swappiness = plan
+            .items
+            .iter()
+            .find(|i| i.key == "vm.swappiness")
+            .unwrap();
         assert_eq!(swappiness.status, TuneStatus::Optimal);
-        let cache = plan.items.iter().find(|i| i.key == "vm.vfs_cache_pressure").unwrap();
+        let cache = plan
+            .items
+            .iter()
+            .find(|i| i.key == "vm.vfs_cache_pressure")
+            .unwrap();
         assert_eq!(cache.recommended_value, "100");
         assert!(plan.sysctl_config.contains("vm.swappiness = 20"));
     }
@@ -2528,14 +2773,20 @@ nginx failed failed
         let mon = Cli::try_parse_from(["aphrody-ssh", "monitor", "--host", "vps", "--top", "10"])
             .unwrap();
         match mon.command {
-            Commands::Monitor { host: Host::Vps, top } => assert_eq!(top, 10),
+            Commands::Monitor {
+                host: Host::Vps,
+                top,
+            } => assert_eq!(top, 10),
             _ => panic!("Expected Monitor command"),
         }
 
         let tune =
             Cli::try_parse_from(["aphrody-ssh", "tune", "--host", "dbfr", "--apply"]).unwrap();
         match tune.command {
-            Commands::Tune { host: Host::Dbfr, apply } => assert!(apply),
+            Commands::Tune {
+                host: Host::Dbfr,
+                apply,
+            } => assert!(apply),
             _ => panic!("Expected Tune command"),
         }
 
@@ -2549,7 +2800,10 @@ nginx failed failed
         ])
         .unwrap();
         match audit.command {
-            Commands::Audit { host: Host::Vps, services } => assert_eq!(services, "nginx,ssh"),
+            Commands::Audit {
+                host: Host::Vps,
+                services,
+            } => assert_eq!(services, "nginx,ssh"),
             _ => panic!("Expected Audit command"),
         }
 
@@ -2564,16 +2818,24 @@ nginx failed failed
         ])
         .unwrap();
         match exec.command {
-            Commands::Exec { host: Host::Vps, command, .. } => {
+            Commands::Exec {
+                host: Host::Vps,
+                command,
+                ..
+            } => {
                 assert_eq!(command, vec!["curl", "-s", "https://ipinfo.io"]);
-            },
+            }
             _ => panic!("Expected Exec command"),
         }
 
         let proxy =
             Cli::try_parse_from(["aphrody-ssh", "proxy", "--host", "vps", "--status"]).unwrap();
         match proxy.command {
-            Commands::Proxy { host: Host::Vps, status, .. } => assert!(status),
+            Commands::Proxy {
+                host: Host::Vps,
+                status,
+                ..
+            } => assert!(status),
             _ => panic!("Expected Proxy command"),
         }
 
@@ -2589,7 +2851,7 @@ nginx failed failed
         match proxy.command {
             Commands::Proxy { remote, .. } => {
                 assert_eq!(remote.as_deref(), Some("socks.internal:1080"));
-            },
+            }
             _ => panic!("Expected Proxy command"),
         }
 
@@ -2618,7 +2880,7 @@ nginx failed failed
                 assert!(args.catalog.is_none());
                 assert!(!args.dry_run);
                 assert!(action.is_none());
-            },
+            }
             _ => panic!("Expected Tunnel command"),
         }
     }
@@ -2647,7 +2909,7 @@ nginx failed failed
                 );
                 assert!(args.dry_run);
                 assert!(action.is_none());
-            },
+            }
             _ => panic!("Expected Tunnel command"),
         }
     }
@@ -2665,9 +2927,12 @@ nginx failed failed
         .unwrap();
         assert!(cli.json);
         match cli.command {
-            Commands::Tunnel { action: Some(TunnelAction::Status(status_args)), .. } => {
+            Commands::Tunnel {
+                action: Some(TunnelAction::Status(status_args)),
+                ..
+            } => {
                 assert_eq!(status_args.services.as_deref(), Some("redis"));
-            },
+            }
             _ => panic!("Expected Tunnel status subcommand"),
         }
     }

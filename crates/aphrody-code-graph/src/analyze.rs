@@ -13,7 +13,8 @@ impl Graph {
         let mut ranked: Vec<(usize, usize)> =
             (0..self.nodes.len()).map(|i| (i, self.degree(i))).collect();
         ranked.sort_by(|a, b| {
-            b.1.cmp(&a.1).then_with(|| self.nodes[a.0].id.cmp(&self.nodes[b.0].id))
+            b.1.cmp(&a.1)
+                .then_with(|| self.nodes[a.0].id.cmp(&self.nodes[b.0].id))
         });
         ranked.truncate(limit);
         ranked
@@ -41,7 +42,13 @@ impl Graph {
         if two_m == 0.0 {
             return 0.0;
         }
-        let label = |i: usize| community.get(i).copied().flatten().unwrap_or(-(i as i64) - 1);
+        let label = |i: usize| {
+            community
+                .get(i)
+                .copied()
+                .flatten()
+                .unwrap_or(-(i as i64) - 1)
+        };
         let mut inside: HashMap<i64, f64> = HashMap::new();
         let mut total: HashMap<i64, f64> = HashMap::new();
         for (i, neighbors) in adj.iter().enumerate() {
@@ -90,7 +97,10 @@ impl Graph {
                     *merged[cu].entry(cv).or_insert(0.0) += w;
                 }
             }
-            level_adj = merged.into_iter().map(|m| m.into_iter().collect()).collect();
+            level_adj = merged
+                .into_iter()
+                .map(|m| m.into_iter().collect())
+                .collect();
             level_to_original = next_members;
             if communities == 1 {
                 break;
@@ -188,12 +198,16 @@ mod tests {
 
     /// Two triangles joined by a single bridge: two communities are the obvious answer.
     fn two_triangles() -> Graph {
-        let nodes: Vec<Node> =
-            (0..6).map(|i| Node::code(&format!("n{i}"), &format!("N{i}"), None)).collect();
+        let nodes: Vec<Node> = (0..6)
+            .map(|i| Node::code(&format!("n{i}"), &format!("N{i}"), None))
+            .collect();
         let pairs = [(0, 1), (1, 2), (0, 2), (3, 4), (4, 5), (3, 5), (2, 3)];
         Graph::from_parts(
             nodes,
-            pairs.iter().map(|&(a, b)| Edge::extracted(a, b, "calls")).collect(),
+            pairs
+                .iter()
+                .map(|&(a, b)| Edge::extracted(a, b, "calls"))
+                .collect(),
         )
     }
 

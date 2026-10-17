@@ -11,7 +11,7 @@ use bevy_ecs::{
     query::{With, Without},
     reflect::{ReflectComponent, ReflectEvent},
     resource::Resource,
-    schedule::{common_conditions::resource_changed, IntoScheduleConfigs},
+    schedule::{IntoScheduleConfigs, common_conditions::resource_changed},
     system::{Commands, Query, Res, ResMut, Single},
 };
 use bevy_input_focus::tab_navigation::TabGroup;

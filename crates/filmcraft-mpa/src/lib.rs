@@ -13,7 +13,17 @@
 //! format (bit rate index 0, whose frame length is only known from the next sync word) and the
 //! CRC (read, not checked, like most decoders).
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod tables;
 
@@ -88,14 +98,22 @@ impl Header {
     /// The first subband coded as intensity stereo (`bound`, §2.4.2.3): `mode_extension` 0-3 gives
     /// 4, 8, 12 or 16 in joint stereo; otherwise every subband is coded per channel.
     fn bound(&self) -> usize {
-        if self.mode == Mode::JointStereo { 4 * (self.mode_extension as usize + 1) } else { 32 }
+        if self.mode == Mode::JointStereo {
+            4 * (self.mode_extension as usize + 1)
+        } else {
+            32
+        }
     }
 }
 
 /// Parse the frame header at the start of `b`.
 pub fn parse_header(b: &[u8]) -> Result<Header> {
     let [0xFF, b1, b2, b3, ..] = *b else {
-        return Err(if b.len() < 4 && b.first().is_none_or(|&x| x == 0xFF) { Error::Invalid("truncated header") } else { Error::NoSync });
+        return Err(if b.len() < 4 && b.first().is_none_or(|&x| x == 0xFF) {
+            Error::Invalid("truncated header")
+        } else {
+            Error::NoSync
+        });
     };
     if b1 & 0xE0 != 0xE0 {
         return Err(Error::NoSync);
@@ -123,7 +141,9 @@ pub fn parse_header(b: &[u8]) -> Result<Header> {
         _ => Mode::Mono,
     };
     let mode_extension = (b3 >> 4) & 3;
-    let base = *tables::SAMPLE_RATES.get(rate_index).ok_or(Error::Invalid("reserved sampling frequency"))?;
+    let base = *tables::SAMPLE_RATES
+        .get(rate_index)
+        .ok_or(Error::Invalid("reserved sampling frequency"))?;
     let sample_rate = match version {
         Version::Mpeg1 => base,
         Version::Mpeg2 => base / 2,
@@ -136,7 +156,9 @@ pub fn parse_header(b: &[u8]) -> Result<Header> {
         (_, 1) => &tables::BITRATES_LSF_L1,
         _ => &tables::BITRATES_LSF_L23,
     };
-    let bitrate_kbps = *rates.get(bitrate_index).ok_or(Error::Invalid("forbidden bit rate index"))?;
+    let bitrate_kbps = *rates
+        .get(bitrate_index)
+        .ok_or(Error::Invalid("forbidden bit rate index"))?;
     // §2.4.3.1: Layer I slots are 4 bytes, 12 slots per 384-sample frame per bit/s over the
     // sampling frequency; Layers II / III have 1-byte slots, 144 per 1152 samples (72 for the
     // 576-sample Layer III frames of MPEG-2).
@@ -148,10 +170,24 @@ pub fn parse_header(b: &[u8]) -> Result<Header> {
     } else if layer == 1 {
         (12 * bits_per_second / rate + pad) * 4
     } else {
-        let slots = if layer == 3 && version != Version::Mpeg1 { 72 } else { 144 };
+        let slots = if layer == 3 && version != Version::Mpeg1 {
+            72
+        } else {
+            144
+        };
         slots * bits_per_second / rate + pad
     };
-    Ok(Header { version, layer, crc, bitrate_kbps, sample_rate, padding, mode, mode_extension, frame_bytes: frame_bytes as usize })
+    Ok(Header {
+        version,
+        layer,
+        crc,
+        bitrate_kbps,
+        sample_rate,
+        padding,
+        mode,
+        mode_extension,
+        frame_bytes: frame_bytes as usize,
+    })
 }
 
 /// One decoded frame.
@@ -181,7 +217,10 @@ impl Default for Decoder {
 
 impl Decoder {
     pub fn new() -> Self {
-        Self { v: [[0.0; 1024]; 2], sb: Box::new([[[0.0; 32]; 36]; 2]) }
+        Self {
+            v: [[0.0; 1024]; 2],
+            sb: Box::new([[[0.0; 32]; 36]; 2]),
+        }
     }
 
     /// Forget the filter history.
@@ -199,9 +238,12 @@ impl Decoder {
         if header.frame_bytes == 0 {
             return Err(Error::Unsupported("free-format bit rate"));
         }
-        let data = frame.get(..header.frame_bytes).ok_or(Error::Invalid("truncated frame"))?;
+        let data = frame
+            .get(..header.frame_bytes)
+            .ok_or(Error::Invalid("truncated frame"))?;
         let mut r = BitReader::new(data);
-        r.skip(32 + if header.crc { 16 } else { 0 }).map_err(|_| Error::Invalid("truncated frame"))?;
+        r.skip(32 + if header.crc { 16 } else { 0 })
+            .map_err(|_| Error::Invalid("truncated frame"))?;
         let nch = header.channels();
         for ch in self.sb.iter_mut() {
             for slot in ch.iter_mut() {
@@ -219,7 +261,9 @@ impl Decoder {
         let matrix = tables::matrix();
         let mut channels = vec![vec![0f32; slots * 32]; nch];
         for (ch, out) in channels.iter_mut().enumerate() {
-            let (Some(v), Some(sb)) = (self.v.get_mut(ch), self.sb.get(ch)) else { continue };
+            let (Some(v), Some(sb)) = (self.v.get_mut(ch), self.sb.get(ch)) else {
+                continue;
+            };
             for (slot, o) in sb.iter().take(slots).zip(out.as_chunks_mut::<32>().0) {
                 synthesize(v, matrix, window, slot, o);
             }
@@ -229,7 +273,8 @@ impl Decoder {
 }
 
 fn read(r: &mut BitReader, n: u32) -> Result<u32> {
-    r.read_bits(n).map_err(|_| Error::Invalid("frame data runs past the frame"))
+    r.read_bits(n)
+        .map_err(|_| Error::Invalid("frame data runs past the frame"))
 }
 
 /// Requantize an `steps`-level code `v` (§2.4.3.3.4 / §2.4.3.4.4): the fractional value with
@@ -317,12 +362,18 @@ fn layer2(r: &mut BitReader, h: &Header, out: &mut Subbands) -> Result<()> {
     // at most 32 for every table (a compile-time check in `tables`); the clamp keeps every
     // `[sb]` below in bounds even so
     let sblimit = table.sblimit().min(tables::SUBBANDS);
-    let bound = if nch == 1 { sblimit } else { h.bound().min(sblimit) };
+    let bound = if nch == 1 {
+        sblimit
+    } else {
+        h.bound().min(sblimit)
+    };
     let mut steps = [[0u16; tables::SUBBANDS]; 2];
     for sb in 0..sblimit {
         let row = table.row(sb);
         let nbal = row.len().trailing_zeros();
-        let pick = |r: &mut BitReader| -> Result<u16> { Ok(row.get(read(r, nbal)? as usize).copied().unwrap_or(0)) };
+        let pick = |r: &mut BitReader| -> Result<u16> {
+            Ok(row.get(read(r, nbal)? as usize).copied().unwrap_or(0))
+        };
         if sb < bound {
             for ch in 0..nch {
                 steps[ch][sb] = pick(r)?;
@@ -393,7 +444,13 @@ fn layer2(r: &mut BitReader, h: &Header, out: &mut Subbands) -> Result<()> {
 
 /// The synthesis subband filter (§2.4.3.2, Figure A.2) for one time slot: 32 subband samples in,
 /// 32 PCM samples out.
-fn synthesize(v: &mut [f32; 1024], n: &[[f32; 32]; 64], d: &[f32; 512], s: &[f32; 32], out: &mut [f32; 32]) {
+fn synthesize(
+    v: &mut [f32; 1024],
+    n: &[[f32; 32]; 64],
+    d: &[f32; 512],
+    s: &[f32; 32],
+    out: &mut [f32; 32],
+) {
     v.copy_within(0..960, 64);
     for (vi, row) in v.iter_mut().zip(n.iter()) {
         *vi = row.iter().zip(s.iter()).map(|(a, b)| a * b).sum();

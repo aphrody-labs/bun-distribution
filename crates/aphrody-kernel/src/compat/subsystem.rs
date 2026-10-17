@@ -93,17 +93,22 @@ impl SystemSubsystem for CompatSubsystem {
                     "dotnet": dotnet,
                     "pwsh": pwsh,
                 }))
-            },
+            }
             "compat_wine_exec" => {
-                let executable =
-                    arguments.get("executable").and_then(Value::as_str).ok_or_else(|| {
+                let executable = arguments
+                    .get("executable")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
                         SubsystemError::InvalidArguments("missing `executable`".into())
                     })?;
                 let args: Vec<String> = arguments
                     .get("args")
                     .and_then(Value::as_array)
                     .map(|arr| {
-                        arr.iter().filter_map(Value::as_str).map(ToString::to_string).collect()
+                        arr.iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect()
                     })
                     .unwrap_or_default();
                 let prefix = arguments.get("prefix").and_then(Value::as_str);
@@ -121,17 +126,22 @@ impl SystemSubsystem for CompatSubsystem {
                     .await
                     .map_err(SubsystemError::Failed)?;
                 Ok(json!(res))
-            },
+            }
             "compat_dotnet_exec" => {
-                let assembly =
-                    arguments.get("assembly_path").and_then(Value::as_str).ok_or_else(|| {
+                let assembly = arguments
+                    .get("assembly_path")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
                         SubsystemError::InvalidArguments("missing `assembly_path`".into())
                     })?;
                 let args: Vec<String> = arguments
                     .get("args")
                     .and_then(Value::as_array)
                     .map(|arr| {
-                        arr.iter().filter_map(Value::as_str).map(ToString::to_string).collect()
+                        arr.iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect()
                     })
                     .unwrap_or_default();
 
@@ -139,7 +149,7 @@ impl SystemSubsystem for CompatSubsystem {
                     .await
                     .map_err(SubsystemError::Failed)?;
                 Ok(json!(res))
-            },
+            }
             "compat_pwsh_eval" => {
                 let script = arguments
                     .get("script")
@@ -147,9 +157,11 @@ impl SystemSubsystem for CompatSubsystem {
                     .ok_or_else(|| SubsystemError::InvalidArguments("missing `script`".into()))?;
                 let cwd = arguments.get("cwd").and_then(Value::as_str);
 
-                let res = pwsh::eval_script(script, cwd).await.map_err(SubsystemError::Failed)?;
+                let res = pwsh::eval_script(script, cwd)
+                    .await
+                    .map_err(SubsystemError::Failed)?;
                 Ok(json!(res))
-            },
+            }
             other => Err(SubsystemError::UnknownTool(other.to_owned())),
         }
     }

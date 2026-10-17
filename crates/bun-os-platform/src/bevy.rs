@@ -114,7 +114,12 @@ fn menu_from(value: &Value) -> Vec<MenuEntry> {
         .into_iter()
         .flatten()
         .map(|e| {
-            let s = |k: &str| e.get(k).and_then(Value::as_str).unwrap_or_default().to_string();
+            let s = |k: &str| {
+                e.get(k)
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string()
+            };
             MenuEntry {
                 plugin: s("plugin"),
                 id: s("id"),
@@ -134,7 +139,10 @@ impl Plugin for PlatformPlugin {
         let (_, locales) = locale::available(&paths);
         let tokens = theme::current(&paths, None, self.reduced_motion).unwrap_or_else(|e| {
             eprintln!("bun-os-platform: theme: {e}");
-            Tokens::resolve(&theme::ThemeFile::default(), theme::ResolveOptions::default())
+            Tokens::resolve(
+                &theme::ThemeFile::default(),
+                theme::ResolveOptions::default(),
+            )
         });
         let service = if self.service {
             match Sidecar::spawn(&paths.repo) {
@@ -149,7 +157,14 @@ impl Plugin for PlatformPlugin {
         };
         let menu = service
             .as_ref()
-            .and_then(|s| s.call("plugins.menu", json!({ "locale": l10n.locale() }), std::time::Duration::from_secs(20)).ok())
+            .and_then(|s| {
+                s.call(
+                    "plugins.menu",
+                    json!({ "locale": l10n.locale() }),
+                    std::time::Duration::from_secs(20),
+                )
+                .ok()
+            })
             .map(|v| menu_from(&v))
             .unwrap_or_default();
         app.insert_resource(I18nState {
@@ -170,7 +185,11 @@ impl Plugin for PlatformPlugin {
     }
 }
 
-fn pump_service(service: Res<PlatformService>, mut out: MessageWriter<PlatformEvent>, mut menu: ResMut<PluginMenu>) {
+fn pump_service(
+    service: Res<PlatformService>,
+    mut out: MessageWriter<PlatformEvent>,
+    mut menu: ResMut<PluginMenu>,
+) {
     let Some(sidecar) = &service.0 else { return };
     for event in sidecar.drain_events() {
         if event.name == "plugins.menu" {
@@ -189,16 +208,27 @@ fn apply_locale(
     mut changed: MessageWriter<LocaleChanged>,
     service: Res<PlatformService>,
 ) {
-    let Some(request) = requests.read().last() else { return };
+    let Some(request) = requests.read().last() else {
+        return;
+    };
     let l10n = i18n::set_locale(request.0.as_deref());
     state.chain = l10n.chain.clone();
     state.version = i18n::version();
-    service.send("plugins.menu", json!({ "locale": l10n.locale(), "push": true }));
+    service.send(
+        "plugins.menu",
+        json!({ "locale": l10n.locale(), "push": true }),
+    );
     changed.write(LocaleChanged(l10n.locale().to_string()));
 }
 
-fn apply_theme(mut requests: MessageReader<SetTheme>, mut tokens: ResMut<ThemeTokens>, mut changed: MessageWriter<ThemeChanged>) {
-    let Some(request) = requests.read().last().cloned() else { return };
+fn apply_theme(
+    mut requests: MessageReader<SetTheme>,
+    mut tokens: ResMut<ThemeTokens>,
+    mut changed: MessageWriter<ThemeChanged>,
+) {
+    let Some(request) = requests.read().last().cloned() else {
+        return;
+    };
     let paths = Paths::discover();
     if let Some(theme) = &request.theme {
         let mut settings = crate::paths::Settings::read(&paths);

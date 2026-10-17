@@ -8,7 +8,7 @@ use std::{
 use bevy_camera::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_log::prelude::*;
-use bevy_math::{dproj, prelude::*, DAffine3, DMat3, DMat4, DQuat, DVec2, DVec3};
+use bevy_math::{DAffine3, DMat3, DMat4, DQuat, DVec2, DVec3, dproj, prelude::*};
 use bevy_platform::time::Instant;
 use bevy_time::prelude::*;
 use bevy_transform::prelude::*;

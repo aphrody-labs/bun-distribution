@@ -2,15 +2,15 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct MediaPostListRawRequest {
-  /// eg. 40
-  pub limit: usize,
-  pub filter: FilterData,
+    /// eg. 40
+    pub limit: usize,
+    pub filter: FilterData,
 }
 
 #[derive(Serialize)]
 pub struct FilterData {
-  /// eg. "MEDIA_POST_SOURCE_LIKED"
-  pub source: String,
+    /// eg. "MEDIA_POST_SOURCE_LIKED"
+    pub source: String,
 }
 
 /*
@@ -21,4 +21,3 @@ pub struct FilterData {
   }
 }
 */
-

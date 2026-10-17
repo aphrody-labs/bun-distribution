@@ -24,10 +24,30 @@ pub struct Link {
 
 /// In the order they are shown. Discord comes first: it is where people get help fastest.
 pub const LINKS: &[Link] = &[
-    Link { command: "help.discord", label: "Join the ArtCraft Discord", url: DISCORD, icon: "messages-square" },
-    Link { command: "help.app_page", label: "PdfCraft web page", url: APP_PAGE, icon: "globe" },
-    Link { command: "help.github", label: "PdfCraft on GitHub", url: GITHUB, icon: "code-xml" },
-    Link { command: "help.website", label: "ArtCraft website", url: WEBSITE, icon: "external-link" },
+    Link {
+        command: "help.discord",
+        label: "Join the ArtCraft Discord",
+        url: DISCORD,
+        icon: "messages-square",
+    },
+    Link {
+        command: "help.app_page",
+        label: "PdfCraft web page",
+        url: APP_PAGE,
+        icon: "globe",
+    },
+    Link {
+        command: "help.github",
+        label: "PdfCraft on GitHub",
+        url: GITHUB,
+        icon: "code-xml",
+    },
+    Link {
+        command: "help.website",
+        label: "ArtCraft website",
+        url: WEBSITE,
+        icon: "external-link",
+    },
 ];
 
 pub fn for_command(id: &str) -> Option<&'static Link> {
@@ -73,8 +93,14 @@ impl std::fmt::Display for BlockedLink {
             Self::Hidden => write!(f, "the address contains hidden or invisible characters"),
             Self::Malformed => write!(f, "the address isn't a complete web or email address"),
             Self::Scheme(s) => write!(f, "it is a “{s}:” address"),
-            Self::MailFile => write!(f, "it asks your email app to attach or insert a file from your computer"),
-            Self::MailEncodedWord => write!(f, "it contains encoded text that some email apps turn into other instructions"),
+            Self::MailFile => write!(
+                f,
+                "it asks your email app to attach or insert a file from your computer"
+            ),
+            Self::MailEncodedWord => write!(
+                f,
+                "it contains encoded text that some email apps turn into other instructions"
+            ),
         }
     }
 }
@@ -104,8 +130,13 @@ pub fn document_url(raw: &str) -> Result<String, BlockedLink> {
     }
     let (scheme, rest) = url.split_once(':').ok_or(BlockedLink::Malformed)?;
     // RFC 3986: ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ).
-    let well_formed = scheme.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
-        && scheme.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
+    let well_formed = scheme
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic())
+        && scheme
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
     if !well_formed {
         return Err(BlockedLink::Malformed);
     }
@@ -154,7 +185,9 @@ impl std::fmt::Display for RemoteDocumentPathError {
         match self {
             Self::Empty => f.write_str("the file specification is empty"),
             Self::TooLong => f.write_str("the file specification is too long"),
-            Self::Hidden => f.write_str("the file specification contains hidden or control characters"),
+            Self::Hidden => {
+                f.write_str("the file specification contains hidden or control characters")
+            }
             Self::UrlOrNetwork => f.write_str("only local document paths are supported"),
             Self::MissingSourcePath => f.write_str("a relative link needs a source document path"),
             Self::NotPdf => f.write_str("the linked file is not a .pdf file"),
@@ -174,7 +207,10 @@ pub fn remote_document_path_is_absolute(raw: &str) -> bool {
 
 /// Resolve a PDF remote-Go-To file specification to a local path without opening it.
 /// Relative paths are based on the source document; an in-memory source has no fallback to CWD.
-pub fn resolve_remote_document_path(source: Option<&Path>, raw: &str) -> Result<PathBuf, RemoteDocumentPathError> {
+pub fn resolve_remote_document_path(
+    source: Option<&Path>,
+    raw: &str,
+) -> Result<PathBuf, RemoteDocumentPathError> {
     if raw.is_empty() || raw.trim().is_empty() {
         return Err(RemoteDocumentPathError::Empty);
     }
@@ -184,14 +220,23 @@ pub fn resolve_remote_document_path(source: Option<&Path>, raw: &str) -> Result<
     if raw.chars().any(hides_text) {
         return Err(RemoteDocumentPathError::Hidden);
     }
-    if raw.starts_with("//") || raw.starts_with("\\\\") || raw.starts_with("/\\") || raw.starts_with("\\/") {
+    if raw.starts_with("//")
+        || raw.starts_with("\\\\")
+        || raw.starts_with("/\\")
+        || raw.starts_with("\\/")
+    {
         return Err(RemoteDocumentPathError::UrlOrNetwork);
     }
     let path = Path::new(raw);
     let drive_absolute = remote_document_path_is_absolute(raw);
     if let Some((scheme, _)) = raw.split_once(':') {
-        let valid_scheme = scheme.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
-            && scheme.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
+        let valid_scheme = scheme
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphabetic())
+            && scheme
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
         let windows_drive = scheme.len() == 1 && drive_absolute;
         if valid_scheme && !windows_drive {
             return Err(RemoteDocumentPathError::UrlOrNetwork);
@@ -201,7 +246,9 @@ pub fn resolve_remote_document_path(source: Option<&Path>, raw: &str) -> Result<
         return Ok(path.to_path_buf());
     }
     let source = source.ok_or(RemoteDocumentPathError::MissingSourcePath)?;
-    let parent = source.parent().ok_or(RemoteDocumentPathError::MissingSourcePath)?;
+    let parent = source
+        .parent()
+        .ok_or(RemoteDocumentPathError::MissingSourcePath)?;
     Ok(parent.join(path))
 }
 
@@ -214,7 +261,9 @@ pub const MAX_REMOTE_DOCUMENT_BYTES: u64 = 1 << 30;
 /// while it is read is refused too.
 pub fn read_remote_document(path: &Path) -> Result<Vec<u8>, RemoteDocumentPathError> {
     use std::io::Read;
-    let is_pdf = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf"));
+    let is_pdf = path
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("pdf"));
     if !is_pdf {
         return Err(RemoteDocumentPathError::NotPdf);
     }
@@ -225,9 +274,12 @@ pub fn read_remote_document(path: &Path) -> Result<Vec<u8>, RemoteDocumentPathEr
     if meta.len() > MAX_REMOTE_DOCUMENT_BYTES {
         return Err(RemoteDocumentPathError::TooLarge);
     }
-    let file = std::fs::File::open(path).map_err(|e| RemoteDocumentPathError::Read(e.to_string()))?;
+    let file =
+        std::fs::File::open(path).map_err(|e| RemoteDocumentPathError::Read(e.to_string()))?;
     let mut bytes = Vec::with_capacity(usize::try_from(meta.len()).unwrap_or(0));
-    file.take(MAX_REMOTE_DOCUMENT_BYTES.saturating_add(1)).read_to_end(&mut bytes).map_err(|e| RemoteDocumentPathError::Read(e.to_string()))?;
+    file.take(MAX_REMOTE_DOCUMENT_BYTES.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(|e| RemoteDocumentPathError::Read(e.to_string()))?;
     if u64::try_from(bytes.len()).map_or(true, |n| n > MAX_REMOTE_DOCUMENT_BYTES) {
         return Err(RemoteDocumentPathError::TooLarge);
     }
@@ -274,11 +326,18 @@ fn check_mail_parameters(rest: &str) -> Result<(), BlockedLink> {
 fn check_mail_layer(text: &str) -> Result<(), BlockedLink> {
     // KMail decodes RFC 2047 encoded words (`=?utf-8?q?attach?=`) across the whole address before
     // reading it, and its decoder is lenient, so any `=?` followed later by `?=` is refused.
-    if text.find("=?").is_some_and(|i| text.get(i + 2..).is_some_and(|after| after.contains("?="))) {
+    if text
+        .find("=?")
+        .is_some_and(|i| text.get(i + 2..).is_some_and(|after| after.contains("?=")))
+    {
         return Err(BlockedLink::MailEncodedWord);
     }
     // xdg-email passes the address through `echo`, which turns `\0141` (octal) or `\x61` into `a`.
-    if text.split('\\').skip(1).any(|after| after.starts_with(|c: char| c.is_ascii_digit() || matches!(c, 'x' | 'X'))) {
+    if text
+        .split('\\')
+        .skip(1)
+        .any(|after| after.starts_with(|c: char| c.is_ascii_digit() || matches!(c, 'x' | 'X')))
+    {
         return Err(BlockedLink::MailEncodedWord);
     }
     let lower = text.to_ascii_lowercase();
@@ -294,7 +353,11 @@ fn check_mail_layer(text: &str) -> Result<(), BlockedLink> {
         let name_end = word.find(|c: char| !is_word(c)).unwrap_or(word.len());
         let (name, after) = word.split_at(name_end);
         let asks = MAIL_FILE_PARAMETERS.iter().any(|p| name.starts_with(p));
-        if asks && after.trim_start_matches([' ', '\t', '+', '\'', '"']).starts_with('=') {
+        if asks
+            && after
+                .trim_start_matches([' ', '\t', '+', '\'', '"'])
+                .starts_with('=')
+        {
             return Err(BlockedLink::MailFile);
         }
     }
@@ -303,7 +366,10 @@ fn check_mail_layer(text: &str) -> Result<(), BlockedLink> {
 
 /// Decode `%XX` escapes. A `%` not followed by two hex digits is kept as it is.
 fn percent_decode(s: &[u8]) -> Vec<u8> {
-    let hex = |b: Option<&u8>| b.and_then(|b| char::from(*b).to_digit(16)).and_then(|d| u8::try_from(d).ok());
+    let hex = |b: Option<&u8>| {
+        b.and_then(|b| char::from(*b).to_digit(16))
+            .and_then(|d| u8::try_from(d).ok())
+    };
     let mut out = Vec::with_capacity(s.len());
     let mut i = 0;
     while let Some(&b) = s.get(i) {
@@ -340,7 +406,10 @@ pub fn host(url: &str) -> Option<&str> {
     let host_port = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
     let host = if host_port.starts_with('[') {
         // An IPv6 literal keeps its brackets; only a port after them is dropped.
-        host_port.find(']').and_then(|i| host_port.get(..=i)).unwrap_or_default()
+        host_port
+            .find(']')
+            .and_then(|i| host_port.get(..=i))
+            .unwrap_or_default()
     } else {
         host_port.split(':').next().unwrap_or_default()
     };
@@ -377,11 +446,19 @@ pub fn display_host(url: &str) -> Option<HostDisplay> {
         url::Host::Ipv6(a) => format!("[{a}]"),
     };
     if !ascii.split('.').any(|label| label.starts_with("xn--")) {
-        return Some(HostDisplay { ascii, international: false, mixed_scripts: false });
+        return Some(HostDisplay {
+            ascii,
+            international: false,
+            mixed_scripts: false,
+        });
     }
     let (unicode, valid) = idna::domain_to_unicode(&ascii);
     let mixed_scripts = valid.is_err() || unicode.split('.').any(mixes_scripts);
-    Some(HostDisplay { ascii, international: true, mixed_scripts })
+    Some(HostDisplay {
+        ascii,
+        international: true,
+        mixed_scripts,
+    })
 }
 
 /// A writing system for comparing the characters of a label. Han characters are written with
@@ -440,7 +517,9 @@ fn mixes_scripts(label: &str) -> bool {
     }
     let latin = Writing::Script(Script::Latin);
     let rest = shared_writing(label, |s| s.contains(&latin)).unwrap_or_default();
-    !rest.iter().any(|w| matches!(w, Writing::Japanese | Writing::Korean | Writing::Chinese))
+    !rest
+        .iter()
+        .any(|w| matches!(w, Writing::Japanese | Writing::Korean | Writing::Chinese))
 }
 
 #[cfg(test)]
@@ -453,15 +532,25 @@ mod tests {
         std::fs::create_dir_all(dir.join("folder.pdf")).unwrap();
         std::fs::write(dir.join("doc.PDF"), b"%PDF-1.7\n").unwrap();
         std::fs::write(dir.join("notes.txt"), b"text").unwrap();
-        assert_eq!(read(&dir.join("doc.PDF")).as_deref(), Ok(&b"%PDF-1.7\n"[..]));
-        assert_eq!(read(&dir.join("folder.pdf")), Err(E::NotAFile), "a directory is refused");
+        assert_eq!(
+            read(&dir.join("doc.PDF")).as_deref(),
+            Ok(&b"%PDF-1.7\n"[..])
+        );
+        assert_eq!(
+            read(&dir.join("folder.pdf")),
+            Err(E::NotAFile),
+            "a directory is refused"
+        );
         assert_eq!(read(&dir.join("notes.txt")), Err(E::NotPdf));
         assert_eq!(read(&dir), Err(E::NotPdf));
         #[cfg(unix)]
         {
             // Sparse: the size guard must reject this without allocating or reading a GiB.
             let large = dir.join("large.pdf");
-            std::fs::File::create(&large).unwrap().set_len(super::MAX_REMOTE_DOCUMENT_BYTES + 1).unwrap();
+            std::fs::File::create(&large)
+                .unwrap()
+                .set_len(super::MAX_REMOTE_DOCUMENT_BYTES + 1)
+                .unwrap();
             assert_eq!(read(&large), Err(E::TooLarge));
         }
         assert!(matches!(read(&dir.join("missing.pdf")), Err(E::Read(_))));
@@ -471,7 +560,11 @@ mod tests {
             std::os::unix::fs::symlink("/dev/zero", dir.join("zero.pdf")).unwrap();
             assert_eq!(read(&dir.join("zero.pdf")), Err(E::NotAFile));
             let fifo = dir.join("pipe.pdf");
-            if std::process::Command::new("mkfifo").arg(&fifo).status().is_ok_and(|s| s.success()) {
+            if std::process::Command::new("mkfifo")
+                .arg(&fifo)
+                .status()
+                .is_ok_and(|s| s.success())
+            {
                 assert_eq!(read(&fifo), Err(E::NotAFile));
             }
         }
@@ -494,7 +587,10 @@ mod tests {
             assert!(absolute(r"C:\manual\target.pdf"));
             assert!(absolute("C:/manual/target.pdf"));
             assert!(!absolute(r"C:target.pdf"), "drive-relative is not absolute");
-            assert!(!absolute(r"\manual\target.pdf"), "rooted without a drive is not absolute");
+            assert!(
+                !absolute(r"\manual\target.pdf"),
+                "rooted without a drive is not absolute"
+            );
         }
     }
 
@@ -504,29 +600,69 @@ mod tests {
         use std::path::Path;
 
         let source = Path::new("/docs/chapter/source.pdf");
-        assert_eq!(resolve(Some(source), "../target.pdf").as_deref(), Ok(Path::new("/docs/chapter/../target.pdf")));
-        assert_eq!(resolve(Some(source), "/manual/target.pdf").as_deref(), Ok(Path::new("/manual/target.pdf")));
+        assert_eq!(
+            resolve(Some(source), "../target.pdf").as_deref(),
+            Ok(Path::new("/docs/chapter/../target.pdf"))
+        );
+        assert_eq!(
+            resolve(Some(source), "/manual/target.pdf").as_deref(),
+            Ok(Path::new("/manual/target.pdf"))
+        );
         assert_eq!(resolve(None, "target.pdf"), Err(E::MissingSourcePath));
         assert_eq!(resolve(Some(source), ""), Err(E::Empty));
         assert_eq!(resolve(Some(source), "   "), Err(E::Empty));
-        for url in ["file:///tmp/a.pdf", "https://example.org/a.pdf", "smb://host/share/a.pdf", "ftp://host/a.pdf", "custom:target.pdf"] {
+        for url in [
+            "file:///tmp/a.pdf",
+            "https://example.org/a.pdf",
+            "smb://host/share/a.pdf",
+            "ftp://host/a.pdf",
+            "custom:target.pdf",
+        ] {
             assert_eq!(resolve(Some(source), url), Err(E::UrlOrNetwork), "{url}");
         }
-        for network_path in ["//server/share/a.pdf", "\\\\server\\share\\a.pdf", "\\\\?\\C:\\a.pdf", "\\\\.\\device\\a.pdf", "/\\server/share/a.pdf"]
-        {
-            assert_eq!(resolve(Some(source), network_path), Err(E::UrlOrNetwork), "{network_path:?}");
+        for network_path in [
+            "//server/share/a.pdf",
+            "\\\\server\\share\\a.pdf",
+            "\\\\?\\C:\\a.pdf",
+            "\\\\.\\device\\a.pdf",
+            "/\\server/share/a.pdf",
+        ] {
+            assert_eq!(
+                resolve(Some(source), network_path),
+                Err(E::UrlOrNetwork),
+                "{network_path:?}"
+            );
         }
-        assert_eq!(resolve(Some(source), "folder/hidden\u{200B}.pdf"), Err(E::Hidden));
-        assert_eq!(resolve(Some(source), &"a".repeat(super::MAX_REMOTE_DOCUMENT_PATH_BYTES + 1)), Err(E::TooLong));
+        assert_eq!(
+            resolve(Some(source), "folder/hidden\u{200B}.pdf"),
+            Err(E::Hidden)
+        );
+        assert_eq!(
+            resolve(
+                Some(source),
+                &"a".repeat(super::MAX_REMOTE_DOCUMENT_PATH_BYTES + 1)
+            ),
+            Err(E::TooLong)
+        );
     }
 
     #[test]
     fn urls_follow_the_artcraft_scheme() {
-        assert_eq!(super::APP_PAGE, format!("{}/apps/{}", super::WEBSITE, super::APP));
-        assert_eq!(super::GITHUB, format!("https://github.com/storytold/{}", super::APP));
+        assert_eq!(
+            super::APP_PAGE,
+            format!("{}/apps/{}", super::WEBSITE, super::APP)
+        );
+        assert_eq!(
+            super::GITHUB,
+            format!("https://github.com/storytold/{}", super::APP)
+        );
         for l in super::LINKS {
             assert!(l.url.starts_with("https://"), "{}", l.url);
-            assert!(crate::commands::command(l.command).is_some(), "{} is a registered command", l.command);
+            assert!(
+                crate::commands::command(l.command).is_some(),
+                "{} is a registered command",
+                l.command
+            );
         }
     }
 
@@ -545,19 +681,35 @@ mod tests {
         ] {
             assert_eq!(document_url(ok).as_deref(), Ok(ok), "{ok}");
         }
-        let multibyte = format!("https://example.org/{}", "é".repeat(super::MAX_DOCUMENT_URL - 20));
-        assert!(document_url(&multibyte).is_ok(), "the limit counts characters, not bytes");
-        assert_eq!(document_url("  https://example.org/ \n").as_deref(), Ok("https://example.org/"), "surrounding whitespace is trimmed");
+        let multibyte = format!(
+            "https://example.org/{}",
+            "é".repeat(super::MAX_DOCUMENT_URL - 20)
+        );
+        assert!(
+            document_url(&multibyte).is_ok(),
+            "the limit counts characters, not bytes"
+        );
+        assert_eq!(
+            document_url("  https://example.org/ \n").as_deref(),
+            Ok("https://example.org/"),
+            "surrounding whitespace is trimmed"
+        );
     }
 
     #[test]
     fn documents_may_not_offer_other_kinds_of_address() {
         use super::{BlockedLink as B, MAX_DOCUMENT_URL, document_url};
         let scheme = |s: &str| Err(B::Scheme(s.into()));
-        assert_eq!(document_url("file:///C:/Windows/System32/calc.exe"), scheme("file"));
+        assert_eq!(
+            document_url("file:///C:/Windows/System32/calc.exe"),
+            scheme("file")
+        );
         assert_eq!(document_url("FILE://server/share/x.exe"), scheme("file"));
         assert_eq!(document_url("javascript:alert(1)"), scheme("javascript"));
-        assert_eq!(document_url("data:text/html,<script>x</script>"), scheme("data"));
+        assert_eq!(
+            document_url("data:text/html,<script>x</script>"),
+            scheme("data")
+        );
         assert_eq!(document_url("ms-settings:privacy"), scheme("ms-settings"));
         assert_eq!(document_url("smb://server/share"), scheme("smb"));
         assert_eq!(document_url(""), Err(B::Empty));
@@ -594,12 +746,24 @@ mod tests {
     fn the_host_shown_is_the_one_the_address_goes_to() {
         use super::host;
         assert_eq!(host("https://example.org/path"), Some("example.org"));
-        assert_eq!(host("https://trusted.example@other.example/"), Some("other.example"));
-        assert_eq!(host("http://user:pw@other.example:8080?x"), Some("other.example"));
+        assert_eq!(
+            host("https://trusted.example@other.example/"),
+            Some("other.example")
+        );
+        assert_eq!(
+            host("http://user:pw@other.example:8080?x"),
+            Some("other.example")
+        );
         assert_eq!(host("https://[::1]:8443/"), Some("[::1]"));
         // Browsers read `\` as `/`, so this goes to other.example, not trusted.example.
-        assert_eq!(host("https://other.example\\@trusted.example/"), Some("other.example"));
-        assert_eq!(host("https://other.example\\x@trusted.example/"), Some("other.example"));
+        assert_eq!(
+            host("https://other.example\\@trusted.example/"),
+            Some("other.example")
+        );
+        assert_eq!(
+            host("https://other.example\\x@trusted.example/"),
+            Some("other.example")
+        );
         assert_eq!(host("mailto:a@example.org"), None);
         assert_eq!(host("https:///nohost"), None);
     }
@@ -608,7 +772,15 @@ mod tests {
     fn addresses_the_url_parser_rejects_are_refused() {
         use super::{BlockedLink as B, document_url};
         // The webbrowser crate would open each of these as a local file path.
-        for bad in ["mailto://a^b/x", "mailto://a:99999/", "mailto://[x]/", "mailto://a\\b/", "mailto://a b/", "https://a^b/", "http://a<b/"] {
+        for bad in [
+            "mailto://a^b/x",
+            "mailto://a:99999/",
+            "mailto://[x]/",
+            "mailto://a\\b/",
+            "mailto://a b/",
+            "https://a^b/",
+            "http://a<b/",
+        ] {
             assert_eq!(document_url(bad), Err(B::Malformed), "{bad}");
         }
         for ok in ["mailto://example.org/x", "mailto:a@example.org?subject=a b"] {
@@ -690,35 +862,91 @@ mod tests {
     #[test]
     fn hosts_are_shown_as_the_browser_receives_them() {
         use super::{BlockedLink as B, HostDisplay, display_host, document_url};
-        let plain = |a: &str| Some(HostDisplay { ascii: a.into(), international: false, mixed_scripts: false });
-        assert_eq!(display_host("https://example.org/path"), plain("example.org"));
-        assert_eq!(display_host("HTTPS://EXAMPLE.ORG/"), plain("example.org"), "lowercased, as the browser does");
+        let plain = |a: &str| {
+            Some(HostDisplay {
+                ascii: a.into(),
+                international: false,
+                mixed_scripts: false,
+            })
+        };
+        assert_eq!(
+            display_host("https://example.org/path"),
+            plain("example.org")
+        );
+        assert_eq!(
+            display_host("HTTPS://EXAMPLE.ORG/"),
+            plain("example.org"),
+            "lowercased, as the browser does"
+        );
         assert_eq!(display_host("https://example.org./"), plain("example.org."));
-        assert_eq!(display_host("https://ex%61mple.org/"), plain("example.org"), "percent-decoded, as the browser does");
-        assert_eq!(display_host("https://ｅｘａｍｐｌｅ。org/"), plain("example.org"), "fullwidth letters and `。` are mapped");
-        assert_eq!(display_host("https://trusted.example@other.example/"), plain("other.example"));
-        assert_eq!(display_host("https://other.example\\@trusted.example/"), plain("other.example"));
+        assert_eq!(
+            display_host("https://ex%61mple.org/"),
+            plain("example.org"),
+            "percent-decoded, as the browser does"
+        );
+        assert_eq!(
+            display_host("https://ｅｘａｍｐｌｅ。org/"),
+            plain("example.org"),
+            "fullwidth letters and `。` are mapped"
+        );
+        assert_eq!(
+            display_host("https://trusted.example@other.example/"),
+            plain("other.example")
+        );
+        assert_eq!(
+            display_host("https://other.example\\@trusted.example/"),
+            plain("other.example")
+        );
         assert_eq!(display_host("mailto:a@example.org"), None);
         // Numeric hosts in the form the browser connects to, so a local address can't hide.
         assert_eq!(display_host("https://[::1]:8443/"), plain("[::1]"));
         assert_eq!(display_host("https://[0:0:0:0:0:0:0:1]/"), plain("[::1]"));
         assert_eq!(display_host("http://3232235777/"), plain("192.168.1.1"));
         assert_eq!(display_host("http://0x7f.1/"), plain("127.0.0.1"));
-        assert_eq!(display_host("http://0300.0250.01.01/"), plain("192.168.1.1"));
+        assert_eq!(
+            display_host("http://0300.0250.01.01/"),
+            plain("192.168.1.1")
+        );
 
         // International hosts are shown in punycode and marked.
         let bucher = display_host("https://bücher.example/").unwrap();
-        assert_eq!(bucher, HostDisplay { ascii: "xn--bcher-kva.example".into(), international: true, mixed_scripts: false });
-        assert!(!display_host("https://ソニーstore.example/").unwrap().mixed_scripts, "Latin with Japanese is normal (UTS #39)");
-        assert!(!display_host("https://example.ελ/").unwrap().mixed_scripts, "scripts are compared within a label, not across labels");
+        assert_eq!(
+            bucher,
+            HostDisplay {
+                ascii: "xn--bcher-kva.example".into(),
+                international: true,
+                mixed_scripts: false
+            }
+        );
+        assert!(
+            !display_host("https://ソニーstore.example/")
+                .unwrap()
+                .mixed_scripts,
+            "Latin with Japanese is normal (UTS #39)"
+        );
+        assert!(
+            !display_host("https://example.ελ/").unwrap().mixed_scripts,
+            "scripts are compared within a label, not across labels"
+        );
         // Cyrillic `а` (U+0430) in a Latin name: punycode, and flagged as mixed.
         let lookalike = display_host("https://p\u{0430}ypal.com/").unwrap();
-        assert_eq!(lookalike, HostDisplay { ascii: "xn--pypal-4ve.com".into(), international: true, mixed_scripts: true });
+        assert_eq!(
+            lookalike,
+            HostDisplay {
+                ascii: "xn--pypal-4ve.com".into(),
+                international: true,
+                mixed_scripts: true
+            }
+        );
         // The same lookalike written in punycode in the document, and upper-case.
         assert_eq!(display_host("https://XN--PYPAL-4VE.com/"), Some(lookalike));
         // A whole-script lookalike (all Cyrillic) isn't mixed, but is still shown in punycode, marked.
-        let cyrillic = display_host("https://\u{0430}\u{0440}\u{0440}\u{04CF}\u{0435}.com/").unwrap();
-        assert!(cyrillic.ascii.starts_with("xn--") && cyrillic.international && !cyrillic.mixed_scripts, "{cyrillic:?}");
+        let cyrillic =
+            display_host("https://\u{0430}\u{0440}\u{0440}\u{04CF}\u{0435}.com/").unwrap();
+        assert!(
+            cyrillic.ascii.starts_with("xn--") && cyrillic.international && !cyrillic.mixed_scripts,
+            "{cyrillic:?}"
+        );
 
         // A host the browser can't turn into an address is refused rather than shown.
         for bad in [

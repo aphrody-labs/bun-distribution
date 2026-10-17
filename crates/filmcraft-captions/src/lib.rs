@@ -15,7 +15,17 @@
 //! - **Burn-in:** [`burn`] lays a caption out with the track style and draws it with the
 //!   `filmcraft-text` engine (Inter SemiBold, shaped and kerned).
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod burn;
 pub mod cea608;
@@ -46,7 +56,15 @@ pub enum Format {
 }
 
 impl Format {
-    pub const ALL: [Format; 7] = [Format::Srt, Format::WebVtt, Format::Scc, Format::Mcc, Format::Stl, Format::Ttml, Format::Dfxp];
+    pub const ALL: [Format; 7] = [
+        Format::Srt,
+        Format::WebVtt,
+        Format::Scc,
+        Format::Mcc,
+        Format::Stl,
+        Format::Ttml,
+        Format::Dfxp,
+    ];
     pub fn name(self) -> &'static str {
         match self {
             Format::Srt => "SubRip (SRT)",
@@ -137,7 +155,9 @@ impl Document {
     pub fn snap_to_frames(&mut self, rate: FrameRate) {
         for c in &mut self.cues {
             c.start = rate.snap_nearest(c.start);
-            c.end = rate.snap_nearest(c.end).max(c.start + rate.frame_duration());
+            c.end = rate
+                .snap_nearest(c.end)
+                .max(c.start + rate.frame_duration());
         }
         self.normalize();
     }
@@ -158,7 +178,10 @@ impl Document {
                     // same start: keep the first, shift this one after it
                     c.start = prev.end;
                     if c.end <= c.start {
-                        self.warnings.push(format!("dropped overlapping cue \"{}\"", c.text.lines().next().unwrap_or("")));
+                        self.warnings.push(format!(
+                            "dropped overlapping cue \"{}\"",
+                            c.text.lines().next().unwrap_or("")
+                        ));
                         continue;
                     }
                 }
@@ -186,13 +209,23 @@ pub fn detect(bytes: &[u8], ext: Option<&str>) -> Option<Format> {
         return Some(Format::Mcc);
     }
     let ext = ext.map(|e| e.trim_start_matches('.').to_ascii_lowercase());
-    if (head.starts_with('<') && (head.contains("<tt ") || head.contains("<tt>") || head.contains(":tt ")))
+    if (head.starts_with('<')
+        && (head.contains("<tt ") || head.contains("<tt>") || head.contains(":tt ")))
         && (head.contains("ns/ttml") || head.contains("ttaf1"))
     {
         let legacy = head.contains("ttaf1") || head.contains("dfxp");
-        return Some(if ext.as_deref() == Some("dfxp") || (legacy && ext.as_deref() != Some("ttml")) { Format::Dfxp } else { Format::Ttml });
+        return Some(
+            if ext.as_deref() == Some("dfxp") || (legacy && ext.as_deref() != Some("ttml")) {
+                Format::Dfxp
+            } else {
+                Format::Ttml
+            },
+        );
     }
-    let has_arrow_timing = head.lines().take(40).any(|l| srt::parse_timing_line(l).is_some());
+    let has_arrow_timing = head
+        .lines()
+        .take(40)
+        .any(|l| srt::parse_timing_line(l).is_some());
     match ext.as_deref() {
         Some("srt") if has_arrow_timing || head.is_empty() => Some(Format::Srt),
         Some("vtt") if has_arrow_timing => Some(Format::WebVtt),
@@ -230,7 +263,10 @@ pub struct WriteOptions {
 
 impl Default for WriteOptions {
     fn default() -> Self {
-        Self { drop_frame: true, rate: None }
+        Self {
+            drop_frame: true,
+            rate: None,
+        }
     }
 }
 
@@ -254,8 +290,18 @@ pub fn decode_text(bytes: &[u8]) -> String {
         String::from_utf8_lossy(rest).into_owned()
     } else if bytes.starts_with(&[0xff, 0xfe]) || bytes.starts_with(&[0xfe, 0xff]) {
         let le = bytes[0] == 0xff;
-        let units: Vec<u16> =
-            bytes[2..].as_chunks::<2>().0.iter().map(|c| if le { u16::from_le_bytes([c[0], c[1]]) } else { u16::from_be_bytes([c[0], c[1]]) }).collect();
+        let units: Vec<u16> = bytes[2..]
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| {
+                if le {
+                    u16::from_le_bytes([c[0], c[1]])
+                } else {
+                    u16::from_be_bytes([c[0], c[1]])
+                }
+            })
+            .collect();
         String::from_utf16_lossy(&units)
     } else {
         match std::str::from_utf8(bytes) {
@@ -264,15 +310,24 @@ pub fn decode_text(bytes: &[u8]) -> String {
         }
     };
     let s = s.strip_prefix('\u{feff}').map(str::to_string).unwrap_or(s);
-    if s.contains('\r') { s.replace("\r\n", "\n").replace('\r', "\n") } else { s }
+    if s.contains('\r') {
+        s.replace("\r\n", "\n").replace('\r', "\n")
+    } else {
+        s
+    }
 }
 
 fn cp1252(b: u8) -> char {
     const HI: [char; 32] = [
-        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8d}', 'Ž', '\u{8f}', '\u{90}', '‘', '’', '“', '”', '•', '–', '—', '˜', '™',
-        'š', '›', 'œ', '\u{9d}', 'ž', 'Ÿ',
+        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8d}', 'Ž',
+        '\u{8f}', '\u{90}', '‘', '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\u{9d}',
+        'ž', 'Ÿ',
     ];
-    if (0x80..0xa0).contains(&b) { HI[(b - 0x80) as usize] } else { b as char }
+    if (0x80..0xa0).contains(&b) {
+        HI[(b - 0x80) as usize]
+    } else {
+        b as char
+    }
 }
 
 pub(crate) const TICKS_PER_MS: i64 = TICKS_PER_SECOND / 1000;
@@ -285,7 +340,13 @@ pub fn parse_clock(s: &str) -> Option<Tick> {
         None => (s, ""),
     };
     let parts: Vec<&str> = hms.split(':').collect();
-    let num = |p: &str| -> Option<i64> { if !p.is_empty() && p.len() <= 9 && p.bytes().all(|b| b.is_ascii_digit()) { p.parse().ok() } else { None } };
+    let num = |p: &str| -> Option<i64> {
+        if !p.is_empty() && p.len() <= 9 && p.bytes().all(|b| b.is_ascii_digit()) {
+            p.parse().ok()
+        } else {
+            None
+        }
+    };
     let (h, m, sec) = match parts.as_slice() {
         [h, m, s] => (num(h)?, num(m)?, num(s)?),
         [m, s] => (0, num(m)?, num(s)?),
@@ -309,12 +370,23 @@ pub fn parse_clock(s: &str) -> Option<Tick> {
 pub fn format_clock(t: Tick, sep: char) -> String {
     // The rounding addition must not overflow for an input-derived Tick near i64::MAX.
     let ms = (i128::from(t.0.max(0)) + i128::from(TICKS_PER_MS) / 2) / i128::from(TICKS_PER_MS);
-    let (h, m, s, f) = (ms / 3_600_000, (ms / 60_000) % 60, (ms / 1000) % 60, ms % 1000);
+    let (h, m, s, f) = (
+        ms / 3_600_000,
+        (ms / 60_000) % 60,
+        (ms / 1000) % 60,
+        ms % 1000,
+    );
     format!("{h:02}:{m:02}:{s:02}{sep}{f:03}")
 }
 
 /// Build a caption track from a document. Ids are allocated with `alloc`.
-pub fn track_from_document(doc: &Document, id: TrackId, name: &str, format: CaptionFormat, alloc: &mut dyn FnMut() -> u64) -> CaptionTrack {
+pub fn track_from_document(
+    doc: &Document,
+    id: TrackId,
+    name: &str,
+    format: CaptionFormat,
+    alloc: &mut dyn FnMut() -> u64,
+) -> CaptionTrack {
     let mut t = CaptionTrack::new(id, name.to_string(), format);
     t.vtt_blocks = doc.blocks.clone();
     t.captions = doc
@@ -363,12 +435,24 @@ mod tests {
 
     #[test]
     fn clock() {
-        assert_eq!(parse_clock("00:00:01,500"), Some(Tick(TICKS_PER_SECOND * 3 / 2)));
-        assert_eq!(parse_clock("01:02.25"), Some(Tick(TICKS_PER_SECOND * 62 + TICKS_PER_SECOND / 4)));
-        assert_eq!(parse_clock("100:00:00.000"), Some(Tick(TICKS_PER_SECOND * 360_000)));
+        assert_eq!(
+            parse_clock("00:00:01,500"),
+            Some(Tick(TICKS_PER_SECOND * 3 / 2))
+        );
+        assert_eq!(
+            parse_clock("01:02.25"),
+            Some(Tick(TICKS_PER_SECOND * 62 + TICKS_PER_SECOND / 4))
+        );
+        assert_eq!(
+            parse_clock("100:00:00.000"),
+            Some(Tick(TICKS_PER_SECOND * 360_000))
+        );
         assert_eq!(parse_clock("00:61:00,000"), None);
         assert_eq!(parse_clock("aa:00:00,000"), None);
-        assert_eq!(format_clock(Tick(TICKS_PER_SECOND * 3723 + TICKS_PER_MS * 45), ','), "01:02:03,045");
+        assert_eq!(
+            format_clock(Tick(TICKS_PER_SECOND * 3723 + TICKS_PER_MS * 45), ','),
+            "01:02:03,045"
+        );
         assert!(format_clock(Tick(i64::MAX), ',').ends_with(",077"));
         assert_eq!(format_clock(Tick(i64::MIN), '.'), "00:00:00.000");
     }
@@ -382,16 +466,34 @@ mod tests {
 
     #[test]
     fn detects() {
-        assert_eq!(detect(b"WEBVTT\n\n00:01.000 --> 00:02.000\nhi\n", Some("vtt")), Some(Format::WebVtt));
-        assert_eq!(detect(b"1\n00:00:01,000 --> 00:00:02,000\nhi\n", Some("srt")), Some(Format::Srt));
-        assert_eq!(detect(b"Scenarist_SCC V1.0\n\n00:00:00;00\t9420\n", Some("scc")), Some(Format::Scc));
+        assert_eq!(
+            detect(b"WEBVTT\n\n00:01.000 --> 00:02.000\nhi\n", Some("vtt")),
+            Some(Format::WebVtt)
+        );
+        assert_eq!(
+            detect(b"1\n00:00:01,000 --> 00:00:02,000\nhi\n", Some("srt")),
+            Some(Format::Srt)
+        );
+        assert_eq!(
+            detect(b"Scenarist_SCC V1.0\n\n00:00:00;00\t9420\n", Some("scc")),
+            Some(Format::Scc)
+        );
         assert_eq!(detect(b"hello", Some("srt")), None);
         assert_eq!(detect(b"<xml/>", None), None);
-        assert_eq!(detect(b"File Format=MacCaption_MCC V1.0\n", Some("mcc")), Some(Format::Mcc));
+        assert_eq!(
+            detect(b"File Format=MacCaption_MCC V1.0\n", Some("mcc")),
+            Some(Format::Mcc)
+        );
         let ttml = b"<?xml version=\"1.0\"?><tt xmlns=\"http://www.w3.org/ns/ttml\"><body/></tt>";
         assert_eq!(detect(ttml, Some("ttml")), Some(Format::Ttml));
         assert_eq!(detect(ttml, Some("dfxp")), Some(Format::Dfxp));
-        assert_eq!(detect(b"<tt xmlns=\"http://www.w3.org/2006/10/ttaf1\"></tt>", Some("xml")), Some(Format::Dfxp));
+        assert_eq!(
+            detect(
+                b"<tt xmlns=\"http://www.w3.org/2006/10/ttaf1\"></tt>",
+                Some("xml")
+            ),
+            Some(Format::Dfxp)
+        );
         let stl = stl::write(&Document::default(), None);
         assert_eq!(detect(&stl, Some("stl")), Some(Format::Stl));
         for f in Format::ALL {
@@ -401,8 +503,16 @@ mod tests {
 
     #[test]
     fn normalize_cuts_overlaps() {
-        let c = |s: i64, e: i64| Cue { start: Tick(s), end: Tick(e), text: "x".into(), ..Default::default() };
-        let mut d = Document { cues: vec![c(10, 20), c(0, 15), c(10, 12)], ..Default::default() };
+        let c = |s: i64, e: i64| Cue {
+            start: Tick(s),
+            end: Tick(e),
+            text: "x".into(),
+            ..Default::default()
+        };
+        let mut d = Document {
+            cues: vec![c(10, 20), c(0, 15), c(10, 12)],
+            ..Default::default()
+        };
         d.normalize();
         let r: Vec<(i64, i64)> = d.cues.iter().map(|c| (c.start.0, c.end.0)).collect();
         assert_eq!(r, vec![(0, 10), (10, 12), (12, 20)]);

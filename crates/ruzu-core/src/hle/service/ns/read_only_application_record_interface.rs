@@ -9,10 +9,10 @@
 use std::collections::BTreeMap;
 
 use crate::hle::result::ResultCode;
-use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
-use crate::hle::service::service::{build_handler_map, FunctionInfo, ServiceFramework};
-use crate::hle::service::ipc_helpers::{RequestParser, ResponseBuilder};
 use crate::hle::result::RESULT_SUCCESS;
+use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
+use crate::hle::service::ipc_helpers::{RequestParser, ResponseBuilder};
+use crate::hle::service::service::{build_handler_map, FunctionInfo, ServiceFramework};
 
 /// IPC command table for IReadOnlyApplicationRecordInterface.
 ///
@@ -51,7 +51,11 @@ impl IReadOnlyApplicationRecordInterface {
                 Some(Self::is_data_corrupted_result_handler),
                 "IsDataCorruptedResult",
             ),
-            (commands::LIST_APPLICATION_RECORD, Some(Self::list_application_record), "ListApplicationRecord"),
+            (
+                commands::LIST_APPLICATION_RECORD,
+                Some(Self::list_application_record),
+                "ListApplicationRecord",
+            ),
         ]);
         Self {
             system,
@@ -104,12 +108,16 @@ impl IReadOnlyApplicationRecordInterface {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         use super::application_manager_interface::IApplicationManagerInterface;
         IApplicationManagerInterface::list_application_record_handler(
-            &IApplicationManagerInterface::new(service.system), ctx);
+            &IApplicationManagerInterface::new(service.system),
+            ctx,
+        );
     }
 }
 
 impl SessionRequestHandler for IReadOnlyApplicationRecordInterface {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, ctx)
     }

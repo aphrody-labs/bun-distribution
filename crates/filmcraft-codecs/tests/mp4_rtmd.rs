@@ -219,14 +219,18 @@ fn rtmd_start_timecode_is_read() {
     let rate = FrameRate::new(60000, 1001);
     let tc = src.info().start_timecode.expect("rtmd start timecode");
     assert_eq!(tc, 781_954);
-    assert_eq!(filmcraft_time::format_timecode_frames(tc, rate, false), "03:37:12:34");
+    assert_eq!(
+        filmcraft_time::format_timecode_frames(tc, rate, false),
+        "03:37:12:34"
+    );
 }
 
 #[test]
 fn rtmd_without_usable_sample_is_ignored() {
     // Too short to carry the timecode block: no start timecode, and no panic.
     let file = file_with_rtmd(&[0u8; 6]);
-    let src = filmcraft_codecs::open_bytes("short.mp4", Arc::from(file.into_boxed_slice())).unwrap();
+    let src =
+        filmcraft_codecs::open_bytes("short.mp4", Arc::from(file.into_boxed_slice())).unwrap();
     assert_eq!(src.info().start_timecode, None);
 }
 
@@ -252,10 +256,12 @@ fn drop_frame_skipped_labels_are_not_published() {
     // 00:01:00;00 at 59.94 fps: frames 00-03 of a non-tenth minute don't exist in drop-frame
     // counting, so this metadata is unusable rather than a start time.
     let file = file_with_rtmd(&rtmd_sample(0, 1, 0, 0, 1));
-    let src = filmcraft_codecs::open_bytes("df_bad.mp4", Arc::from(file.into_boxed_slice())).unwrap();
+    let src =
+        filmcraft_codecs::open_bytes("df_bad.mp4", Arc::from(file.into_boxed_slice())).unwrap();
     assert_eq!(src.info().start_timecode, None);
     // The first real label of that minute (frame 04) is accepted.
     let file = file_with_rtmd(&rtmd_sample(0, 1, 0, 4, 1));
-    let src = filmcraft_codecs::open_bytes("df_ok.mp4", Arc::from(file.into_boxed_slice())).unwrap();
+    let src =
+        filmcraft_codecs::open_bytes("df_ok.mp4", Arc::from(file.into_boxed_slice())).unwrap();
     assert_eq!(src.info().start_timecode, Some(3600));
 }

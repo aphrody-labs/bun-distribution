@@ -64,7 +64,8 @@ impl DotShape {
     /// The shape for tone `t` (0..1) in a cell of side `s` centred on the origin, the screen
     /// running along x.
     fn path(self, t: f64, s: f64) -> PathData {
-        let square = |side: f64| shapes::rectangle(Rect::from_center_size(Point::ZERO, (side, side)));
+        let square =
+            |side: f64| shapes::rectangle(Rect::from_center_size(Point::ZERO, (side, side)));
         match self {
             DotShape::Circle => {
                 let r = s * (t / std::f64::consts::PI).sqrt();
@@ -72,12 +73,19 @@ impl DotShape {
             }
             DotShape::Ellipse => {
                 let r = s * (t / std::f64::consts::PI).sqrt();
-                shapes::ellipse(Rect::from_center_size(Point::ZERO, (2.6 * r, 2.0 * r / 1.3)))
+                shapes::ellipse(Rect::from_center_size(
+                    Point::ZERO,
+                    (2.6 * r, 2.0 * r / 1.3),
+                ))
             }
             DotShape::Square => square(s * t.sqrt()),
-            DotShape::Diamond => square(s * t.sqrt()).transformed(Affine::rotate(std::f64::consts::FRAC_PI_4)),
+            DotShape::Diamond => {
+                square(s * t.sqrt()).transformed(Affine::rotate(std::f64::consts::FRAC_PI_4))
+            }
             // Cells along a row join into a line as thick as the tone.
-            DotShape::Line => shapes::rectangle(Rect::from_center_size(Point::ZERO, (s * 1.001, s * t))),
+            DotShape::Line => {
+                shapes::rectangle(Rect::from_center_size(Point::ZERO, (s * 1.001, s * t)))
+            }
         }
     }
 }
@@ -112,7 +120,11 @@ impl Samples {
         }
         let i = (y as usize * self.w + x as usize) * 4;
         let byte = |k: usize| self.px.get(i + k).copied().unwrap_or(0) as f64 / 255.0;
-        let t = if self.mono { 1.0 - (0.2126 * byte(0) + 0.7152 * byte(1) + 0.0722 * byte(2)) } else { byte(channel) };
+        let t = if self.mono {
+            1.0 - (0.2126 * byte(0) + 0.7152 * byte(1) + 0.0722 * byte(2))
+        } else {
+            byte(channel)
+        };
         if self.invert { 1.0 - t } else { t }
     }
 
@@ -132,7 +144,12 @@ impl Samples {
 fn halftone(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.vectorHalftone";
     let shape = match str_param(p, "shape") {
-        Some(v) => DotShape::parse(v).ok_or_else(|| bad(C, format!("unknown shape `{v}` (circle|ellipse|square|diamond|line)")))?,
+        Some(v) => DotShape::parse(v).ok_or_else(|| {
+            bad(
+                C,
+                format!("unknown shape `{v}` (circle|ellipse|square|diamond|line)"),
+            )
+        })?,
         None => DotShape::Circle,
     };
     let frequency = f64_or(p, "frequency", 20.0);
@@ -152,12 +169,19 @@ fn halftone(s: &mut Session, p: &Value) -> Result<Value> {
         Some(v) => color_value(v).ok_or_else(|| bad(C, "invalid color"))?,
         None => Color::BLACK,
     };
-    let (invert, clip, keep) = (bool_or(p, "invert", false), bool_or(p, "clip", true), bool_or(p, "keepOriginal", false));
+    let (invert, clip, keep) = (
+        bool_or(p, "invert", false),
+        bool_or(p, "clip", true),
+        bool_or(p, "keepOriginal", false),
+    );
     let cell = 72.0 / frequency;
 
     let roots = selected_roots(s)?;
     let st = s.doc()?;
-    let b = st.doc.bounds_of(&roots, true).ok_or_else(|| bad(C, "the selection has no bounds"))?;
+    let b = st
+        .doc
+        .bounds_of(&roots, true)
+        .ok_or_else(|| bad(C, "the selection has no bounds"))?;
     if b.width() <= 0.0 || b.height() <= 0.0 || !b.area().is_finite() {
         return Err(bad(C, "the selection has no area"));
     }
@@ -174,12 +198,17 @@ fn halftone(s: &mut Session, p: &Value) -> Result<Value> {
         })
         .collect();
     let outline = if clip {
-        vectorcraft_render::effects::clip_outline(&Node::group(NodeId(u64::MAX), nodes.iter().cloned().map(Arc::new).collect()))
+        vectorcraft_render::effects::clip_outline(&Node::group(
+            NodeId(u64::MAX),
+            nodes.iter().cloned().map(Arc::new).collect(),
+        ))
     } else {
         None
     };
     // Sample the art at about four pixels per cell.
-    let scale = (4.0 / cell).min((MAX_SAMPLE_PIXELS / b.area()).sqrt()).clamp(0.01, 16.0);
+    let scale = (4.0 / cell)
+        .min((MAX_SAMPLE_PIXELS / b.area()).sqrt())
+        .clamp(0.01, 16.0);
     let region = b.inflate(cell, cell);
     let tmp = isolated_doc(&st.doc, nodes);
     let mut r = vectorcraft_render::Renderer::new();
@@ -188,21 +217,57 @@ fn halftone(s: &mut Session, p: &Value) -> Result<Value> {
     let px = if mono {
         r.render_region(&tmp, region, scale, true).pixels
     } else {
-        r.render_region_inks(&tmp, region, scale, &vectorcraft_render::RenderOptions { skip_templates: true, ..Default::default() })
+        r.render_region_inks(
+            &tmp,
+            region,
+            scale,
+            &vectorcraft_render::RenderOptions {
+                skip_templates: true,
+                ..Default::default()
+            },
+        )
     };
     if px.len() < w * h * 4 {
         return Err(EngineError::Other("the art could not be sampled".into()));
     }
-    let samples = Samples { px, w, h, region, scale, mono, invert };
+    let samples = Samples {
+        px,
+        w,
+        h,
+        region,
+        scale,
+        mono,
+        invert,
+    };
     let screens: Vec<Screen> = if mono {
-        vec![Screen { paint: color, angle, channel: 0 }]
+        vec![Screen {
+            paint: color,
+            angle,
+            channel: 0,
+        }]
     } else {
         // Bottom to top: yellow, magenta, cyan, black.
         vec![
-            Screen { paint: Color::cmyk(0.0, 0.0, 1.0, 0.0), angle: angle - 45.0, channel: 2 },
-            Screen { paint: Color::cmyk(0.0, 1.0, 0.0, 0.0), angle: angle + 30.0, channel: 1 },
-            Screen { paint: Color::cmyk(1.0, 0.0, 0.0, 0.0), angle: angle - 30.0, channel: 0 },
-            Screen { paint: Color::cmyk(0.0, 0.0, 0.0, 1.0), angle, channel: 3 },
+            Screen {
+                paint: Color::cmyk(0.0, 0.0, 1.0, 0.0),
+                angle: angle - 45.0,
+                channel: 2,
+            },
+            Screen {
+                paint: Color::cmyk(0.0, 1.0, 0.0, 0.0),
+                angle: angle + 30.0,
+                channel: 1,
+            },
+            Screen {
+                paint: Color::cmyk(1.0, 0.0, 0.0, 0.0),
+                angle: angle - 30.0,
+                channel: 0,
+            },
+            Screen {
+                paint: Color::cmyk(0.0, 0.0, 0.0, 1.0),
+                angle,
+                channel: 3,
+            },
         ]
     };
     let mut layers = vec![];
@@ -215,14 +280,20 @@ fn halftone(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if layers.is_empty() {
-        return Err(EngineError::Other("the art is too light for any dots".into()));
+        return Err(EngineError::Other(
+            "the art is too light for any dots".into(),
+        ));
     }
     let top = *roots.last().ok_or_else(|| bad(C, "nothing selected"))?;
     let id = s.edit("Vector Halftone", |d, sel| {
         let children = layers
             .into_iter()
             .map(|(path, ink)| {
-                let mut n = Node::path(d.alloc_id(), path, Appearance::basic(Paint::solid(ink), Paint::None, 0.0));
+                let mut n = Node::path(
+                    d.alloc_id(),
+                    path,
+                    Appearance::basic(Paint::solid(ink), Paint::None, 0.0),
+                );
                 if !mono {
                     n.blend = BlendMode::Multiply;
                 }
@@ -245,19 +316,37 @@ fn halftone(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// The dots of one screen over `bounds` as one path, with their count.
-fn screen_dots(samples: &Samples, bounds: Rect, cell: f64, sc: &Screen, shape: DotShape, outline: Option<&(BezPath, FillRule)>) -> (PathData, usize) {
+fn screen_dots(
+    samples: &Samples,
+    bounds: Rect,
+    cell: f64,
+    sc: &Screen,
+    shape: DotShape,
+    outline: Option<&(BezPath, FillRule)>,
+) -> (PathData, usize) {
     let rot = Affine::rotate(sc.angle.to_radians());
     let inv = rot.inverse();
     // The grid covers the bounds in screen space.
-    let corners =
-        [bounds.origin(), Point::new(bounds.x1, bounds.y0), Point::new(bounds.x1, bounds.y1), Point::new(bounds.x0, bounds.y1)].map(|q| inv * q);
+    let corners = [
+        bounds.origin(),
+        Point::new(bounds.x1, bounds.y0),
+        Point::new(bounds.x1, bounds.y1),
+        Point::new(bounds.x0, bounds.y1),
+    ]
+    .map(|q| inv * q);
     let (mut lo, mut hi) = (corners[0], corners[0]);
     for q in &corners[1..] {
         lo = Point::new(lo.x.min(q.x), lo.y.min(q.y));
         hi = Point::new(hi.x.max(q.x), hi.y.max(q.y));
     }
-    let (i0, i1) = ((lo.x / cell).floor() as i64 - 1, (hi.x / cell).ceil() as i64 + 1);
-    let (j0, j1) = ((lo.y / cell).floor() as i64 - 1, (hi.y / cell).ceil() as i64 + 1);
+    let (i0, i1) = (
+        (lo.x / cell).floor() as i64 - 1,
+        (hi.x / cell).ceil() as i64 + 1,
+    );
+    let (j0, j1) = (
+        (lo.y / cell).floor() as i64 - 1,
+        (hi.y / cell).ceil() as i64 + 1,
+    );
     let near = bounds.inflate(cell, cell);
     let (mut inside, mut edge) = (vec![], vec![]);
     for j in j0..=j1 {
@@ -274,12 +363,21 @@ fn screen_dots(samples: &Samples, bounds: Rect, cell: f64, sc: &Screen, shape: D
             let dot = shape.path(t, cell).transformed(place);
             // Dots wholly inside the outline need no clipping.
             let whole = match (outline, dot.control_bounds()) {
-                (Some((bp, rule)), Some(db)) => [db.origin(), Point::new(db.x1, db.y0), Point::new(db.x1, db.y1), Point::new(db.x0, db.y1)]
-                    .iter()
-                    .all(|q| fill_contains(bp, *rule, *q)),
+                (Some((bp, rule)), Some(db)) => [
+                    db.origin(),
+                    Point::new(db.x1, db.y0),
+                    Point::new(db.x1, db.y1),
+                    Point::new(db.x0, db.y1),
+                ]
+                .iter()
+                .all(|q| fill_contains(bp, *rule, *q)),
                 _ => true,
             };
-            if whole { inside.push(dot) } else { edge.push(dot) }
+            if whole {
+                inside.push(dot)
+            } else {
+                edge.push(dot)
+            }
         }
     }
     let count = inside.len() + edge.len();
@@ -288,7 +386,13 @@ fn screen_dots(samples: &Samples, bounds: Rect, cell: f64, sc: &Screen, shape: D
         && !edge.is_empty()
     {
         let edge = PathData::new(edge.into_iter().flat_map(|p| p.subpaths).collect());
-        let clipped = po::boolean(&edge, FillRule::NonZero, &PathData::from_bezpath(bp), *rule, BoolOp::Intersect);
+        let clipped = po::boolean(
+            &edge,
+            FillRule::NonZero,
+            &PathData::from_bezpath(bp),
+            *rule,
+            BoolOp::Intersect,
+        );
         subs.extend(clipped.subpaths);
     } else {
         subs.extend(edge.into_iter().flat_map(|p| p.subpaths));

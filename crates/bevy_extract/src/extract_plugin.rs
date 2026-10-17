@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::sync_world::{despawn_temporary_entities, entity_sync_system, SyncWorldPlugin};
+use crate::sync_world::{SyncWorldPlugin, despawn_temporary_entities, entity_sync_system};
 use bevy_app::{App, AppLabel, Plugin, SubApp};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{

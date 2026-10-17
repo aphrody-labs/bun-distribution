@@ -54,7 +54,12 @@ impl CpkCache {
                 .sum::<usize>()
     }
     fn new(budget: usize) -> Self {
-        Self { map: HashMap::new(), order: VecDeque::new(), bytes: 0, budget }
+        Self {
+            map: HashMap::new(),
+            order: VecDeque::new(),
+            bytes: 0,
+            budget,
+        }
     }
 
     /// Récupère un CPK et le marque comme récemment utilisé.
@@ -240,8 +245,9 @@ impl Vfs {
     /// Mount a shared discovered source; HTTP and SSH never extract a game-data mirror.
     pub fn init_source(&mut self, source: &str) -> Result<(), FormatError> {
         if !crate::game_source::is_remote(source) {
-            let data = crate::game_source::local_data_dir(Path::new(source))
-                .ok_or(FormatError::Corrupt("local game source requires cpk_list.cfg.bin"))?;
+            let data = crate::game_source::local_data_dir(Path::new(source)).ok_or(
+                FormatError::Corrupt("local game source requires cpk_list.cfg.bin"),
+            )?;
             return self.init(data);
         }
         #[cfg(feature = "remote-vfs")]
@@ -255,7 +261,7 @@ impl Vfs {
                     remote = crate::vfs_remote::RemoteStorage::connect(&nested)?;
                     let data = remote.read("cpk_list.cfg.bin").map_err(|second| FormatError::Malformed(format!("remote cpk_list.cfg.bin not readable at root ({first}) or data/ ({second})")))?;
                     (data, nested)
-                },
+                }
             };
             self.index.clear();
             self.index_extra.clear();
@@ -268,7 +274,11 @@ impl Vfs {
             self.index_cpk_list(&data)?;
             let packs = remote.list("packs/")?;
             let pack_set: HashSet<&str> = packs.iter().map(String::as_str).collect();
-            if self.cpk_names.iter().any(|name| !pack_set.contains(name.as_str())) {
+            if self
+                .cpk_names
+                .iter()
+                .any(|name| !pack_set.contains(name.as_str()))
+            {
                 return Err(FormatError::Corrupt(
                     "remote packs directory listing is incomplete or a referenced CPK is missing",
                 ));
@@ -287,14 +297,21 @@ impl Vfs {
                         format!("{}/{}", entry.directory, entry.filename)
                     };
                     if !entry.filename.is_empty() && !self.index.contains_key(&path) {
-                        let size =
-                            if entry.extract_size == 0 { entry.size } else { entry.extract_size };
+                        let size = if entry.extract_size == 0 {
+                            entry.size
+                        } else {
+                            entry.extract_size
+                        };
                         let file_size = u32::try_from(size).map_err(|_| {
                             FormatError::Corrupt("remote TOC entry size exceeds VFS size field")
                         })?;
                         self.index.insert(
                             path.clone(),
-                            VfsEntry { internal_path: path, cpk_filename: name.clone(), file_size },
+                            VfsEntry {
+                                internal_path: path,
+                                cpk_filename: name.clone(),
+                                file_size,
+                            },
                         );
                     }
                 }
@@ -308,7 +325,9 @@ impl Vfs {
             Ok(())
         }
         #[cfg(not(feature = "remote-vfs"))]
-        Err(FormatError::Corrupt("enable remote-vfs to mount HTTP/SSH sources"))
+        Err(FormatError::Corrupt(
+            "enable remote-vfs to mount HTTP/SSH sources",
+        ))
     }
 
     /// Logical transport operations and transferred payload bytes (remote sources only).
@@ -316,7 +335,9 @@ impl Vfs {
     pub fn remote_stats(&self) -> Option<(u64, u64)> {
         #[cfg(feature = "remote-vfs")]
         {
-            self.remote.as_ref().map(crate::vfs_remote::RemoteStorage::stats)
+            self.remote
+                .as_ref()
+                .map(crate::vfs_remote::RemoteStorage::stats)
         }
         #[cfg(not(feature = "remote-vfs"))]
         {
@@ -513,7 +534,11 @@ impl Vfs {
                     let file_size = entree.metadata().map(|m| m.len() as u32).unwrap_or(0);
                     index.insert(
                         internal_path.clone(),
-                        VfsEntry { internal_path, cpk_filename: String::new(), file_size },
+                        VfsEntry {
+                            internal_path,
+                            cpk_filename: String::new(),
+                            file_size,
+                        },
                     );
                 }
             }
@@ -548,8 +573,15 @@ impl Vfs {
     /// mesure, cette consommation est invisible depuis l'extérieur.
     #[must_use]
     pub fn cache_stats(&self) -> CacheCpkStats {
-        let cache = self.cpk_cache.lock().expect("verrou du cache CPK empoisonné");
-        CacheCpkStats { octets: cache.bytes, entrees: cache.map.len(), budget: cache.budget }
+        let cache = self
+            .cpk_cache
+            .lock()
+            .expect("verrou du cache CPK empoisonné");
+        CacheCpkStats {
+            octets: cache.bytes,
+            entrees: cache.map.len(),
+            budget: cache.budget,
+        }
     }
 
     /// Vide le cache CPK et rend les octets libérés.
@@ -558,7 +590,10 @@ impl Vfs {
     /// qui reste vivante jusqu'à la fin de l'extraction. Vider ne fait que relâcher la
     /// référence du cache.
     pub fn vider_cache(&self) -> usize {
-        self.cpk_cache.lock().expect("verrou du cache CPK empoisonné").vider()
+        self.cpk_cache
+            .lock()
+            .expect("verrou du cache CPK empoisonné")
+            .vider()
     }
 
     /// Change le budget du cache CPK et évince immédiatement ce qui dépasse.
@@ -570,7 +605,10 @@ impl Vfs {
     ///
     /// Rend les octets libérés par l'éviction déclenchée.
     pub fn regler_budget_cache(&self, budget: usize) -> usize {
-        let mut cache = self.cpk_cache.lock().expect("verrou du cache CPK empoisonné");
+        let mut cache = self
+            .cpk_cache
+            .lock()
+            .expect("verrou du cache CPK empoisonné");
         let avant = cache.bytes;
         cache.budget = budget;
         cache.evincer();
@@ -623,7 +661,10 @@ impl Vfs {
             let rel = internal_path.strip_prefix("data/").unwrap_or(internal_path);
             return self.game_data_dir.join(rel).is_file();
         }
-        self.game_data_dir.join("packs").join(&entry.cpk_filename).is_file()
+        self.game_data_dir
+            .join("packs")
+            .join(&entry.cpk_filename)
+            .is_file()
     }
 
     /// Chemin disque d'un fichier « loose » — déclaré dans `cpk_list.cfg.bin` avec un CPK vide,
@@ -671,7 +712,11 @@ impl Vfs {
                 candidats.push(c);
             }
         }
-        if candidats.len() == 1 { candidats.pop() } else { None }
+        if candidats.len() == 1 {
+            candidats.pop()
+        } else {
+            None
+        }
     }
 
     /// Lit un fichier complet du VFS.
@@ -796,9 +841,16 @@ impl Vfs {
             match remote.read(relative) {
                 Ok(data) => return Ok(data),
                 Err(first) => {
-                    let tail = relative.split_once('/').map(|(_, tail)| tail).ok_or(first)?;
+                    let tail = relative
+                        .split_once('/')
+                        .map(|(_, tail)| tail)
+                        .ok_or(first)?;
                     let mut found = None;
-                    for root in remote.list("")?.into_iter().filter(|root| root.ends_with('/')) {
+                    for root in remote
+                        .list("")?
+                        .into_iter()
+                        .filter(|root| root.ends_with('/'))
+                    {
                         if let Ok(data) = remote.read(&format!("{root}{tail}")) {
                             if found.is_some() {
                                 return Err(FormatError::Corrupt(
@@ -809,11 +861,13 @@ impl Vfs {
                         }
                     }
                     return found.ok_or(FormatError::Corrupt("remote loose resource not found"));
-                },
+                }
             }
         }
-        let mut cache =
-            self.cpk_cache.lock().map_err(|_| FormatError::Corrupt("VFS cache lock poisoned"))?;
+        let mut cache = self
+            .cpk_cache
+            .lock()
+            .map_err(|_| FormatError::Corrupt("VFS cache lock poisoned"))?;
         let reader = if let Some(reader) = cache.get(cpk) {
             reader
         } else {
@@ -828,7 +882,9 @@ impl Vfs {
         let entry = reader
             .0
             .find_file(internal_path)
-            .ok_or(FormatError::Corrupt("virtual file not present in remote CPK"))?;
+            .ok_or(FormatError::Corrupt(
+                "virtual file not present in remote CPK",
+            ))?;
         reader.0.extract_from_reader(entry, |offset, length| {
             remote.range(&format!("packs/{cpk}"), offset, length)
         })
@@ -913,14 +969,21 @@ impl Vfs {
             // Sur un dump, aucun fichier ne vient d'un pack : tout est servi depuis le disque.
             return self.asset_count();
         }
-        self.index.values().filter(|e| e.cpk_filename.is_empty()).count()
+        self.index
+            .values()
+            .filter(|e| e.cpk_filename.is_empty())
+            .count()
     }
 
     /// Itère sur toutes les entrées indexées (chemin_interne, entrée VFS).
     ///
     /// Sur un dump, itère l'arborescence extraite (index construit au premier appel).
     pub fn iter(&self) -> impl Iterator<Item = (&str, &VfsEntry)> {
-        let index = if self.loose_files { self.loose_index() } else { &self.index };
+        let index = if self.loose_files {
+            self.loose_index()
+        } else {
+            &self.index
+        };
         index.iter().map(|(k, v)| (k.as_str(), v))
     }
 
@@ -937,7 +1000,9 @@ impl Vfs {
     /// ces entrées viennent du sommaire du pack. L'appelant lit la taille dans le TOC au
     /// moment où il ouvre le pack.
     pub fn iter_extra(&self) -> impl Iterator<Item = (&str, &str)> {
-        self.index_extra.iter().map(|(k, v)| (k.as_str(), v.as_str()))
+        self.index_extra
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
     }
 
     /// Ajoute un fichier d'overlay au VFS associant un chemin logique interne à un fichier réel sur disque.
@@ -957,7 +1022,10 @@ impl Vfs {
         let mut count = 0;
         let oc_dir_candidates = [
             self.game_data_dir.join("oc"),
-            self.game_data_dir.parent().map(|p| p.join("data").join("oc")).unwrap_or_default(),
+            self.game_data_dir
+                .parent()
+                .map(|p| p.join("data").join("oc"))
+                .unwrap_or_default(),
             PathBuf::from("data").join("oc"),
         ];
         if let Some(oc_dir) = oc_dir_candidates.into_iter().find(|p| p.is_dir()) {
@@ -967,7 +1035,10 @@ impl Vfs {
         // Découvrir également var/ocgen s'il existe
         let ocgen_candidates = [
             PathBuf::from("var").join("ocgen"),
-            self.game_data_dir.parent().map(|p| p.join("var").join("ocgen")).unwrap_or_default(),
+            self.game_data_dir
+                .parent()
+                .map(|p| p.join("var").join("ocgen"))
+                .unwrap_or_default(),
         ];
         if let Some(ocgen_dir) = ocgen_candidates.into_iter().find(|p| p.is_dir()) {
             count += self.mount_ocgen_artifacts(&ocgen_dir);
@@ -1016,8 +1087,14 @@ impl Vfs {
         let icons_dir = ocgen_dir.join("icons");
         if icons_dir.is_dir() {
             let icon_mappings = [
-                ("c99019010_l.g4tx", "data/dx11/menu/200_icon/10_icon_chr/face/c99019010_l.g4tx"),
-                ("c99019020_l.g4tx", "data/dx11/menu/200_icon/10_icon_chr/face/c99019020_l.g4tx"),
+                (
+                    "c99019010_l.g4tx",
+                    "data/dx11/menu/200_icon/10_icon_chr/face/c99019010_l.g4tx",
+                ),
+                (
+                    "c99019020_l.g4tx",
+                    "data/dx11/menu/200_icon/10_icon_chr/face/c99019020_l.g4tx",
+                ),
             ];
             for (filename, vfs_path) in icon_mappings {
                 let file_path = icons_dir.join(filename);
@@ -1032,9 +1109,18 @@ impl Vfs {
         let text_dir = ocgen_dir.join("text");
         if text_dir.is_dir() {
             let text_mappings = [
-                ("fr/event/ev98_99010.cfg.bin", "data/common/text/fr/event/ev98_99010.cfg.bin"),
-                ("en/event/ev98_99010.cfg.bin", "data/common/text/en/event/ev98_99010.cfg.bin"),
-                ("event/ev98_99010_map.cfg.bin", "data/common/text/event/ev98_99010_map.cfg.bin"),
+                (
+                    "fr/event/ev98_99010.cfg.bin",
+                    "data/common/text/fr/event/ev98_99010.cfg.bin",
+                ),
+                (
+                    "en/event/ev98_99010.cfg.bin",
+                    "data/common/text/en/event/ev98_99010.cfg.bin",
+                ),
+                (
+                    "event/ev98_99010_map.cfg.bin",
+                    "data/common/text/event/ev98_99010_map.cfg.bin",
+                ),
             ];
             for (rel_path, vfs_path) in text_mappings {
                 let file_path = text_dir.join(rel_path.replace('/', std::path::MAIN_SEPARATOR_STR));
@@ -1126,7 +1212,9 @@ impl Vfs {
             .map(|arr| {
                 arr.iter()
                     .filter_map(|c| {
-                        c.get("character_slug").and_then(|s| s.as_str()).map(String::from)
+                        c.get("character_slug")
+                            .and_then(|s| s.as_str())
+                            .map(String::from)
                     })
                     .collect()
             })
@@ -1247,8 +1335,9 @@ pub fn open_game() -> Result<Vfs, FormatError> {
         vfs.init(&data)?;
         return Ok(vfs);
     }
-    let dump = resolve_dump_dir()
-        .ok_or(FormatError::Corrupt("ni installation du jeu ni dump extrait trouves"))?;
+    let dump = resolve_dump_dir().ok_or(FormatError::Corrupt(
+        "ni installation du jeu ni dump extrait trouves",
+    ))?;
     vfs.init_loose(dump)?;
     Ok(vfs)
 }
@@ -1328,7 +1417,10 @@ pub fn resolve_game_dir() -> PathBuf {
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")));
     if let Some(base) = base_donnees {
         let steam = base.join("Steam");
-        for suffixe in ["iecode/inazuma", "steamapps/common/INAZUMA ELEVEN Victory Road"] {
+        for suffixe in [
+            "iecode/inazuma",
+            "steamapps/common/INAZUMA ELEVEN Victory Road",
+        ] {
             let chemin = steam.join(suffixe);
             if chemin.join(MARQUEUR_RACINE).is_file() {
                 return chemin;
@@ -1381,7 +1473,11 @@ mod tests {
         // servirait un contenu faux sous un nom juste — refuser est la seule réponse correcte.
         std::fs::create_dir_all(data.join("dx12/movie")).expect("seconde plateforme");
         std::fs::write(data.join("dx12/movie/intro.usm"), b"autre").expect("vidéo bis");
-        assert_eq!(vfs.resolve_loose_path("data/common/movie/intro.usm"), None, "ambigu : refusé");
+        assert_eq!(
+            vfs.resolve_loose_path("data/common/movie/intro.usm"),
+            None,
+            "ambigu : refusé"
+        );
 
         assert_eq!(vfs.resolve_loose_path("data/common/movie/absent.usm"), None);
         std::fs::remove_dir_all(&base).ok();
@@ -1399,7 +1495,9 @@ mod tests {
     /// prouverait rien de l'API réellement appelée.
     #[test]
     fn le_cache_cpk_est_mesurable_reglable_et_videable() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data = std::path::Path::new(&dir).join("data");
         if !data.join("cpk_list.cfg.bin").exists() {
             eprintln!("skip le_cache_cpk_est_mesurable_reglable_et_videable : jeu absent");
@@ -1408,7 +1506,11 @@ mod tests {
         let mut vfs = Vfs::new();
         vfs.init(&data).expect("Vfs::init");
 
-        assert_eq!(vfs.cache_stats().octets, 0, "cache vide avant toute lecture");
+        assert_eq!(
+            vfs.cache_stats().octets,
+            0,
+            "cache vide avant toute lecture"
+        );
 
         // Une lecture quelconque suffit à charger le CPK qui la porte.
         let Some((chemin, _)) = vfs.iter().find(|(p, _)| p.ends_with(".cfg.bin")) else {
@@ -1428,16 +1530,25 @@ mod tests {
         vfs.regler_budget_cache(1);
         let serre = vfs.cache_stats();
         assert_eq!(serre.budget, 1);
-        assert_eq!(serre.entrees, 1, "le dernier paquet survit au budget dépassé");
+        assert_eq!(
+            serre.entrees, 1,
+            "le dernier paquet survit au budget dépassé"
+        );
 
         // Vider rend tout, et laisse un cache réutilisable.
         let liberes = vfs.vider_cache();
-        assert_eq!(liberes, serre.octets, "les octets rendus sont ceux qui étaient retenus");
+        assert_eq!(
+            liberes, serre.octets,
+            "les octets rendus sont ceux qui étaient retenus"
+        );
         assert_eq!(vfs.cache_stats().octets, 0);
         assert_eq!(vfs.cache_stats().entrees, 0);
 
         vfs.read(&chemin).expect("relecture après vidage");
-        assert!(vfs.cache_stats().octets > 0, "le cache se remplit de nouveau");
+        assert!(
+            vfs.cache_stats().octets > 0,
+            "le cache se remplit de nouveau"
+        );
     }
 
     /// Mount end-to-end du VRAI jeu Steam s'il est présent (sinon skip). Prouve que
@@ -1446,7 +1557,9 @@ mod tests {
     /// fichiers logiques sans panic ni repli.
     #[test]
     fn vfs_init_monte_le_vrai_jeu() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data = std::path::Path::new(&dir).join("data");
         if !data.join("cpk_list.cfg.bin").exists() {
             eprintln!("skip vfs_init_monte_le_vrai_jeu : jeu absent");
@@ -1455,9 +1568,14 @@ mod tests {
         let mut vfs = Vfs::new();
         vfs.init(&data).expect("Vfs::init via cpk_list AES");
         let n = vfs.asset_count();
-        assert!(n > 250_000, "attendu > 250 000 fichiers indexés, obtenu {n}");
+        assert!(
+            n > 250_000,
+            "attendu > 250 000 fichiers indexés, obtenu {n}"
+        );
         // L'index logique contient de vrais chemins (au moins une texture g4tx).
-        let has_g4tx = vfs.iter().any(|(p, _)| p.to_ascii_lowercase().ends_with(".g4tx"));
+        let has_g4tx = vfs
+            .iter()
+            .any(|(p, _)| p.to_ascii_lowercase().ends_with(".g4tx"));
         assert!(has_g4tx, "aucun .g4tx dans l'index VFS");
         eprintln!("VFS monté : {n} fichiers logiques indexés depuis cpk_list.cfg.bin");
     }
@@ -1468,7 +1586,9 @@ mod tests {
     /// puis vérifie que les octets extraits sont non vides et cohérents.
     #[test]
     fn vfs_read_chaine_complete() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data = std::path::Path::new(&dir).join("data");
         if !data.join("cpk_list.cfg.bin").exists() {
             eprintln!("skip vfs_read_chaine_complete : jeu absent");
@@ -1487,7 +1607,9 @@ mod tests {
             if entry.cpk_filename.is_empty() || entry.file_size == 0 {
                 continue;
             }
-            first_path.entry(entry.cpk_filename.clone()).or_insert_with(|| path.to_string());
+            first_path
+                .entry(entry.cpk_filename.clone())
+                .or_insert_with(|| path.to_string());
         }
         let mut best: Option<(u64, String, String)> = None; // (taille_cpk, chemin, cpk)
         for (cpk, path) in &first_path {
@@ -1519,7 +1641,9 @@ mod tests {
     ///   rapporte le nombre exact découvert au lieu de 0.
     #[test]
     fn discover_extra_cpks_retourne_zero_sur_install_complete() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data = std::path::Path::new(&dir).join("data");
         if !data.join("cpk_list.cfg.bin").exists() {
             eprintln!("skip discover_extra_cpks: jeu absent");
@@ -1561,7 +1685,9 @@ mod tests {
     /// avec « impossible d'ouvrir le CPK », et les fichiers étaient inaccessibles.
     #[test]
     fn read_loose_file_avec_cpk_vide() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !data_dir.join("cpk_list.cfg.bin").exists() {
             eprintln!("skip read_loose_file_avec_cpk_vide : jeu absent");
@@ -1591,17 +1717,17 @@ mod tests {
                 Ok(bytes) if !bytes.is_empty() => {
                     eprintln!("  OK  {path} : {} octets", bytes.len());
                     read_ok += 1;
-                },
+                }
                 Ok(_) => {
                     eprintln!("  VIDE {path}");
-                },
+                }
                 Err(crate::FormatError::Corrupt("loose file manquant sur disque")) => {
                     eprintln!("  ABSENT-DISQUE {path}");
                     missing_on_disk += 1;
-                },
+                }
                 Err(e) => {
                     panic!("read({path}) a échoué avec une erreur inattendue : {e}");
-                },
+                }
             }
         }
 
@@ -1644,12 +1770,18 @@ mod tests {
             vfs.find("data/oc/catalog.json").is_some(),
             "data/oc/catalog.json doit être indexé dans le VFS"
         );
-        assert!(vfs.is_readable("data/oc/catalog.json"), "data/oc/catalog.json doit être lisible");
+        assert!(
+            vfs.is_readable("data/oc/catalog.json"),
+            "data/oc/catalog.json doit être lisible"
+        );
         let catalog_bytes = vfs.read("data/oc/catalog.json").expect("read catalog.json");
         assert!(!catalog_bytes.is_empty());
 
         let catalog = vfs.load_oc_catalog().expect("load_oc_catalog");
-        assert_eq!(catalog.get("root").and_then(|v| v.as_str()), Some("data/oc"));
+        assert_eq!(
+            catalog.get("root").and_then(|v| v.as_str()),
+            Some("data/oc")
+        );
 
         // 2. Personnages OC découverts
         let charas = vfs.oc_characters();
@@ -1659,7 +1791,10 @@ mod tests {
         );
 
         // 3. Fichiers OC de contrat et dérivés visuels
-        assert!(vfs.find("data/oc/astro-lor/game/character-contract.json").is_some());
+        assert!(
+            vfs.find("data/oc/astro-lor/game/character-contract.json")
+                .is_some()
+        );
         assert!(vfs.find("data/oc/astro-lor/manifest.json").is_some());
         assert!(vfs.find("data/oc/astro-lor/face-og.webp").is_some());
         assert!(vfs.find("data/oc/astro-lor/face-go.webp").is_some());
@@ -1671,17 +1806,31 @@ mod tests {
         // a silent skip would read exactly like a pass.
         let ocgen = root.join("var").join("ocgen");
         let icons_ready = ocgen.join("icons").join("c99019010_l.g4tx").is_file();
-        let text_ready =
-            ocgen.join("text").join("fr").join("event").join("ev98_99010.cfg.bin").is_file();
-        let models_ready =
-            ocgen.join("chr").join("01_IE1").join("c99019010").join("c99019010.g4md").is_file();
+        let text_ready = ocgen
+            .join("text")
+            .join("fr")
+            .join("event")
+            .join("ev98_99010.cfg.bin")
+            .is_file();
+        let models_ready = ocgen
+            .join("chr")
+            .join("01_IE1")
+            .join("c99019010")
+            .join("c99019010.g4md")
+            .is_file();
 
         // 4. Overlays d'assets de jeu pour Astro Lor
         let icon_og = "data/dx11/menu/200_icon/10_icon_chr/face/c99019010_l.g4tx";
         let icon_vr = "data/dx11/menu/200_icon/10_icon_chr/face/c99019020_l.g4tx";
         if icons_ready {
-            assert!(vfs.find(icon_og).is_some(), "l'icone OG doit etre presente dans le VFS");
-            assert!(vfs.find(icon_vr).is_some(), "l'icone VR doit etre presente dans le VFS");
+            assert!(
+                vfs.find(icon_og).is_some(),
+                "l'icone OG doit etre presente dans le VFS"
+            );
+            assert!(
+                vfs.find(icon_vr).is_some(),
+                "l'icone VR doit etre presente dans le VFS"
+            );
             let bytes_icon = vfs.read(icon_og).expect("lecture icone OG overlay");
             assert_eq!(&bytes_icon[0..4], b"G4TX");
         } else {
@@ -1734,7 +1883,10 @@ mod tests {
         assert!(!Vfs::is_oc_path("data/common/gamedata/item.cfg.bin"));
 
         if icons_ready && text_ready && models_ready {
-            assert!(vfs.overlay_count() >= 46, "au moins 46 entrees d'overlay attendues");
+            assert!(
+                vfs.overlay_count() >= 46,
+                "au moins 46 entrees d'overlay attendues"
+            );
         }
         eprintln!(
             "VFS OC OK : {} overlays montés, {} personnages déclarés",

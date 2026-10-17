@@ -6,11 +6,31 @@ use serde_json::{Value, json};
 use crate::Session;
 use crate::tools::Mods;
 
-const NONE: Mods = Mods { shift: false, alt: false, cmd: false };
-const CTRL: Mods = Mods { shift: false, alt: false, cmd: true };
-const CTRL_SHIFT: Mods = Mods { shift: true, alt: false, cmd: true };
-const SHIFT: Mods = Mods { shift: true, alt: false, cmd: false };
-const ALT: Mods = Mods { shift: false, alt: true, cmd: false };
+const NONE: Mods = Mods {
+    shift: false,
+    alt: false,
+    cmd: false,
+};
+const CTRL: Mods = Mods {
+    shift: false,
+    alt: false,
+    cmd: true,
+};
+const CTRL_SHIFT: Mods = Mods {
+    shift: true,
+    alt: false,
+    cmd: true,
+};
+const SHIFT: Mods = Mods {
+    shift: true,
+    alt: false,
+    cmd: false,
+};
+const ALT: Mods = Mods {
+    shift: false,
+    alt: true,
+    cmd: false,
+};
 
 type Pos = (usize, usize);
 
@@ -24,10 +44,13 @@ fn editing_in(text: &str, at: Pos, rect: [f64; 4]) -> (Session, u32) {
     s.mac_keys = false;
     s.prefs.autocorrect = false;
     s.prefs.smart_quotes = false;
-    s.execute("insert.textBox", &json!({"rect": rect, "text": "x"})).unwrap();
+    s.execute("insert.textBox", &json!({"rect": rect, "text": "x"}))
+        .unwrap();
     let id = s.doc().unwrap().selection.shapes[0].0;
-    s.execute("text.set", &json!({"id": id, "text": text})).unwrap();
-    s.execute("text.edit", &json!({"id": id, "at": [at.0, at.1]})).unwrap();
+    s.execute("text.set", &json!({"id": id, "text": text}))
+        .unwrap();
+    s.execute("text.edit", &json!({"id": id, "at": [at.0, at.1]}))
+        .unwrap();
     (s, id)
 }
 
@@ -47,7 +70,10 @@ fn press(s: &mut Session, key: &str, mods: Mods) -> Value {
 }
 
 fn text(s: &mut Session, id: u32) -> String {
-    s.execute("text.get", &json!({"id": id})).unwrap()["text"].as_str().unwrap().to_string()
+    s.execute("text.get", &json!({"id": id})).unwrap()["text"]
+        .as_str()
+        .unwrap()
+        .to_string()
 }
 
 /// Press `key` until the caret stops moving; the carets visited (in the first paragraph).
@@ -67,7 +93,10 @@ fn walk(s: &mut Session, key: &str, mods: Mods) -> Vec<usize> {
 #[test]
 fn ctrl_arrows_stop_where_powerpoint_does() {
     let t = "Hello, world!  Foo...bar baz-qux it's 3.14 e.g. a_b x@y.com (end) \"q\" end.";
-    let stops = vec![0, 5, 7, 12, 15, 18, 21, 25, 33, 38, 43, 44, 45, 46, 48, 49, 50, 52, 53, 54, 55, 56, 60, 61, 64, 66, 67, 68, 70, 73, 74];
+    let stops = vec![
+        0, 5, 7, 12, 15, 18, 21, 25, 33, 38, 43, 44, 45, 46, 48, 49, 50, 52, 53, 54, 55, 56, 60,
+        61, 64, 66, 67, 68, 70, 73, 74,
+    ];
     let (mut s, _) = editing(t, (0, 0));
     assert_eq!(walk(&mut s, "ArrowRight", CTRL), stops);
     let mut back = stops.clone();
@@ -78,7 +107,10 @@ fn ctrl_arrows_stop_where_powerpoint_does() {
 #[test]
 fn ctrl_arrows_over_cjk_rtl_emoji_and_marks() {
     let (mut s, _) = editing("日本語のテキスト abc 한국어", (0, 0));
-    assert_eq!(walk(&mut s, "Right", CTRL), vec![0, 1, 2, 3, 4, 5, 6, 7, 9, 13, 14, 15, 16]);
+    assert_eq!(
+        walk(&mut s, "Right", CTRL),
+        vec![0, 1, 2, 3, 4, 5, 6, 7, 9, 13, 14, 15, 16]
+    );
     // Arabic and Hebrew words inside a left-to-right paragraph: in logical order.
     let (mut s, _) = editing("Hello مرحبا بالعالم world שלום end", (0, 0));
     assert_eq!(walk(&mut s, "Right", CTRL), vec![0, 6, 12, 20, 26, 31, 34]);
@@ -96,14 +128,37 @@ fn ctrl_arrows_cross_paragraphs_line_breaks_and_tabs() {
         press(&mut s, "Right", CTRL);
         seen.push(caret(&s));
     }
-    assert_eq!(seen, vec![(0, 0), (0, 4), (0, 7), (1, 0), (1, 6), (1, 10), (2, 0), (3, 0), (3, 4), (3, 4)]);
+    assert_eq!(
+        seen,
+        vec![
+            (0, 0),
+            (0, 4),
+            (0, 7),
+            (1, 0),
+            (1, 6),
+            (1, 10),
+            (2, 0),
+            (3, 0),
+            (3, 4),
+            (3, 4)
+        ]
+    );
     // A line break and a tab are stops of their own.
-    s.execute("text.set", &json!({"id": id, "text": "x"})).unwrap();
-    s.execute("text.edit", &json!({"id": id, "at": [0, 0]})).unwrap();
+    s.execute("text.set", &json!({"id": id, "text": "x"}))
+        .unwrap();
+    s.execute("text.edit", &json!({"id": id, "at": [0, 0]}))
+        .unwrap();
     s.execute("text.selectAll", &json!({})).unwrap();
-    s.execute("text.insert", &json!({"text": "Five\u{b}six seven\tTab   x"})).unwrap();
+    s.execute(
+        "text.insert",
+        &json!({"text": "Five\u{b}six seven\tTab   x"}),
+    )
+    .unwrap();
     s.execute("text.move", &json!({"to": "start"})).unwrap();
-    assert_eq!(walk(&mut s, "Right", CTRL), vec![0, 4, 5, 9, 14, 15, 21, 22]);
+    assert_eq!(
+        walk(&mut s, "Right", CTRL),
+        vec![0, 4, 5, 9, 14, 15, 21, 22]
+    );
 }
 
 #[test]
@@ -115,14 +170,20 @@ fn ctrl_shift_arrows_extend_by_words() {
         carets.push(sel(&s));
     }
     let a = (0, 2);
-    assert_eq!(carets.iter().map(|x| x.1).collect::<Vec<_>>(), vec![(0, 6), (0, 13), (0, 16), (0, 18), (0, 21), (1, 0)]);
+    assert_eq!(
+        carets.iter().map(|x| x.1).collect::<Vec<_>>(),
+        vec![(0, 6), (0, 13), (0, 16), (0, 18), (0, 21), (1, 0)]
+    );
     assert!(carets.iter().all(|x| x.0 == a));
     let mut back = vec![];
     for _ in 0..7 {
         press(&mut s, "Left", CTRL_SHIFT);
         back.push(caret(&s));
     }
-    assert_eq!(back, vec![(0, 21), (0, 18), (0, 16), (0, 13), (0, 6), (0, 0), (0, 0)]);
+    assert_eq!(
+        back,
+        vec![(0, 21), (0, 18), (0, 16), (0, 13), (0, 6), (0, 0), (0, 0)]
+    );
     assert_eq!(sel(&s).0, a);
     // From a caret inside a word going left: the word's start, then on.
     let (mut s, _) = editing("Hello world  foo, bar\nnext para", (1, 2));
@@ -135,10 +196,18 @@ fn ctrl_shift_arrows_extend_by_words() {
 fn ctrl_arrows_leave_a_selection_from_its_ends() {
     for (anchor, caret_at) in [((0, 2), (0, 7)), ((0, 7), (0, 2))] {
         let (mut s, _) = editing("Hello world  foo, bar", anchor);
-        s.execute("text.select", &json!({"anchor": [anchor.0, anchor.1], "caret": [caret_at.0, caret_at.1]})).unwrap();
+        s.execute(
+            "text.select",
+            &json!({"anchor": [anchor.0, anchor.1], "caret": [caret_at.0, caret_at.1]}),
+        )
+        .unwrap();
         press(&mut s, "Right", CTRL);
         assert_eq!(sel(&s), ((0, 13), (0, 13)));
-        s.execute("text.select", &json!({"anchor": [anchor.0, anchor.1], "caret": [caret_at.0, caret_at.1]})).unwrap();
+        s.execute(
+            "text.select",
+            &json!({"anchor": [anchor.0, anchor.1], "caret": [caret_at.0, caret_at.1]}),
+        )
+        .unwrap();
         press(&mut s, "Left", CTRL);
         assert_eq!(sel(&s), ((0, 0), (0, 0)));
     }
@@ -151,7 +220,10 @@ fn ctrl_backspace_and_delete() {
     assert_eq!(text(&mut s, id), "Hello foo, bar\nnext para");
     assert_eq!(caret(&s), (0, 6));
     press(&mut s, "Delete", CTRL);
-    assert_eq!(text(&mut s, id), "Hello , bar\nnext para".replace(" ,", ","));
+    assert_eq!(
+        text(&mut s, id),
+        "Hello , bar\nnext para".replace(" ,", ",")
+    );
     assert_eq!(caret(&s), (0, 5));
     // At a paragraph's ends they join paragraphs.
     s.execute("text.move", &json!({"to": "paraEnd"})).unwrap();
@@ -159,13 +231,21 @@ fn ctrl_backspace_and_delete() {
     assert_eq!(text(&mut s, id), "Hello, barnext para");
     // A selection is not deleted: the word goes from its start (PowerPoint for Windows).
     let (mut s, id) = editing("Hello world", (0, 2));
-    s.execute("text.select", &json!({"anchor": [0, 2], "caret": [0, 7]})).unwrap();
+    s.execute("text.select", &json!({"anchor": [0, 2], "caret": [0, 7]}))
+        .unwrap();
     press(&mut s, "Backspace", CTRL);
-    assert_eq!((text(&mut s, id), sel(&s)), ("llo world".into(), ((0, 0), (0, 0))));
+    assert_eq!(
+        (text(&mut s, id), sel(&s)),
+        ("llo world".into(), ((0, 0), (0, 0)))
+    );
     let (mut s, id) = editing("Hello world", (0, 7));
-    s.execute("text.select", &json!({"anchor": [0, 7], "caret": [0, 2]})).unwrap();
+    s.execute("text.select", &json!({"anchor": [0, 7], "caret": [0, 2]}))
+        .unwrap();
     press(&mut s, "Delete", CTRL);
-    assert_eq!((text(&mut s, id), sel(&s)), ("He world".into(), ((0, 2), (0, 2))));
+    assert_eq!(
+        (text(&mut s, id), sel(&s)),
+        ("He world".into(), ((0, 2), (0, 2)))
+    );
     // It is one undo step.
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(text(&mut s, id), "Hello world");
@@ -206,26 +286,57 @@ fn home_end_and_ctrl_home_end() {
     let st = s.doc().unwrap();
     let ts = st.selection.text.clone().unwrap();
     let layout = crate::cmd::text::layout_for(st, &ts).unwrap();
-    let lines: Vec<(usize, usize)> = layout.lines.iter().filter(|l| l.para == 0).map(|l| (l.start, l.end)).collect();
+    let lines: Vec<(usize, usize)> = layout
+        .lines
+        .iter()
+        .filter(|l| l.para == 0)
+        .map(|l| (l.start, l.end))
+        .collect();
     assert!(lines.len() >= 3, "{lines:?}");
     let (l1, l2) = (lines[1], lines[2]);
     // End goes past a wrapped line's trailing space, to where the next line starts, as in
     // PowerPoint, and the caret stays drawn on the line it ended.
     let next = lines[2].0;
-    s.execute("text.edit", &json!({"at": [0, l1.0 + 2]})).unwrap();
+    s.execute("text.edit", &json!({"at": [0, l1.0 + 2]}))
+        .unwrap();
     press(&mut s, "Home", NONE);
     assert_eq!(caret(&s), (0, l1.0));
     press(&mut s, "End", NONE);
     assert_eq!(caret(&s), (0, next));
-    assert!(s.doc().unwrap().selection.text.as_ref().unwrap().at_line_end());
+    assert!(
+        s.doc()
+            .unwrap()
+            .selection
+            .text
+            .as_ref()
+            .unwrap()
+            .at_line_end()
+    );
     let drawn = |s: &Session| {
         let st = s.doc().unwrap();
         let ts = st.selection.text.clone().unwrap();
         let l = crate::cmd::text::layout_for(st, &ts).unwrap();
-        let aff = if ts.at_line_end() { deckcraft_text::Affinity::Upstream } else { deckcraft_text::Affinity::Downstream };
-        l.caret_drawn(deckcraft_text::Pos { para: ts.caret.0, ch: ts.caret.1 }, aff).unwrap()
+        let aff = if ts.at_line_end() {
+            deckcraft_text::Affinity::Upstream
+        } else {
+            deckcraft_text::Affinity::Downstream
+        };
+        l.caret_drawn(
+            deckcraft_text::Pos {
+                para: ts.caret.0,
+                ch: ts.caret.1,
+            },
+            aff,
+        )
+        .unwrap()
     };
-    let line1_top = layout.lines.iter().filter(|l| l.para == 0).nth(1).unwrap().top;
+    let line1_top = layout
+        .lines
+        .iter()
+        .filter(|l| l.para == 0)
+        .nth(1)
+        .unwrap()
+        .top;
     assert_eq!(drawn(&s).1, line1_top);
     // End again stays on the line; Home goes back to its start, not the next line's.
     press(&mut s, "End", NONE);
@@ -252,8 +363,20 @@ fn home_end_and_ctrl_home_end() {
     press(&mut s, "End", CTRL_SHIFT);
     assert_eq!(sel(&s), ((0, 0), (1, 6)));
     // A caret placed anywhere else is drawn at the start of its line again.
-    s.execute("text.select", &json!({"anchor": [0, next], "caret": [0, next]})).unwrap();
-    assert!(!s.doc().unwrap().selection.text.as_ref().unwrap().at_line_end());
+    s.execute(
+        "text.select",
+        &json!({"anchor": [0, next], "caret": [0, next]}),
+    )
+    .unwrap();
+    assert!(
+        !s.doc()
+            .unwrap()
+            .selection
+            .text
+            .as_ref()
+            .unwrap()
+            .at_line_end()
+    );
     assert!(drawn(&s).1 > line1_top);
 }
 
@@ -286,7 +409,8 @@ fn mac_keys() {
     assert_eq!(caret(&s), (1, 4));
     press(&mut s, "Up", CTRL);
     assert_eq!(caret(&s), (0, 0));
-    s.execute("text.edit", &json!({"id": id, "at": [0, 11]})).unwrap();
+    s.execute("text.edit", &json!({"id": id, "at": [0, 11]}))
+        .unwrap();
     press(&mut s, "Backspace", ALT);
     assert_eq!(text(&mut s, id), "Hello  foo\nnext");
     // Ctrl+arrows aren't word moves on the Mac, nor Alt+arrows on Windows.
@@ -299,7 +423,8 @@ fn mac_keys() {
 #[test]
 fn font_size_keys() {
     let (mut s, _) = editing("hello wOrld. foo bar", (0, 0));
-    s.execute("text.select", &json!({"anchor": [0, 0], "caret": [0, 5]})).unwrap();
+    s.execute("text.select", &json!({"anchor": [0, 0], "caret": [0, 5]}))
+        .unwrap();
     let size = |s: &mut Session| s.execute("format.state", &json!({})).unwrap()["size"].as_f64();
     let base = size(&mut s).unwrap_or(18.0);
     // egui names the keys `Period`, `Comma`, `CloseBracket`, `OpenBracket`.
@@ -321,19 +446,53 @@ fn bold_italic_underline_and_clear_on_a_caret_in_a_word() {
     let (mut s, id) = editing("hello wOrld. foo bar", (0, 8));
     let r = press(&mut s, "b", CTRL);
     assert_eq!(r["command"], "format.bold");
-    let body = |s: &Session| s.doc().unwrap().shape(deckcraft_model::ShapeId(id)).unwrap().text.clone().unwrap();
-    let runs: Vec<(String, Option<bool>)> = body(&s).paragraphs[0].runs.iter().map(|r| (r.text.clone(), r.props.bold)).collect();
-    assert_eq!(runs.iter().find(|r| r.1 == Some(true)).map(|r| r.0.as_str()), Some("wOrld"));
+    let body = |s: &Session| {
+        s.doc()
+            .unwrap()
+            .shape(deckcraft_model::ShapeId(id))
+            .unwrap()
+            .text
+            .clone()
+            .unwrap()
+    };
+    let runs: Vec<(String, Option<bool>)> = body(&s).paragraphs[0]
+        .runs
+        .iter()
+        .map(|r| (r.text.clone(), r.props.bold))
+        .collect();
+    assert_eq!(
+        runs.iter()
+            .find(|r| r.1 == Some(true))
+            .map(|r| r.0.as_str()),
+        Some("wOrld")
+    );
     // At a word boundary nothing visible changes.
-    s.execute("text.edit", &json!({"id": id, "at": [0, 5]})).unwrap();
+    s.execute("text.edit", &json!({"id": id, "at": [0, 5]}))
+        .unwrap();
     press(&mut s, "i", CTRL);
-    assert!(body(&s).paragraphs[0].runs.iter().all(|r| r.props.italic != Some(true)));
+    assert!(
+        body(&s).paragraphs[0]
+            .runs
+            .iter()
+            .all(|r| r.props.italic != Some(true))
+    );
     // Ctrl+Space clears the word's formatting.
-    s.execute("text.edit", &json!({"id": id, "at": [0, 8]})).unwrap();
+    s.execute("text.edit", &json!({"id": id, "at": [0, 8]}))
+        .unwrap();
     press(&mut s, "Space", CTRL);
-    assert!(body(&s).paragraphs[0].runs.iter().all(|r| r.props.bold != Some(true)));
+    assert!(
+        body(&s).paragraphs[0]
+            .runs
+            .iter()
+            .all(|r| r.props.bold != Some(true))
+    );
     press(&mut s, "u", CTRL);
-    let under: String = body(&s).paragraphs[0].runs.iter().filter(|r| r.props.underline.is_some()).map(|r| r.text.clone()).collect();
+    let under: String = body(&s).paragraphs[0]
+        .runs
+        .iter()
+        .filter(|r| r.props.underline.is_some())
+        .map(|r| r.text.clone())
+        .collect();
     assert_eq!(under, "wOrld");
 }
 
@@ -357,8 +516,10 @@ fn shift_f3_cycles_case() {
         seen.push(text(&mut s, id));
     }
     assert_eq!(seen, vec!["Hello World", "HELLO WORLD", "hello world"]);
-    s.execute("text.set", &json!({"id": id, "text": "hello wOrld. foo"})).unwrap();
-    s.execute("text.edit", &json!({"id": id, "at": [0, 8]})).unwrap();
+    s.execute("text.set", &json!({"id": id, "text": "hello wOrld. foo"}))
+        .unwrap();
+    s.execute("text.edit", &json!({"id": id, "at": [0, 8]}))
+        .unwrap();
     press(&mut s, "F3", SHIFT);
     assert_eq!(text(&mut s, id), "hello WORLD. foo");
     assert_eq!(sel(&s), ((0, 6), (0, 6)));
@@ -371,24 +532,55 @@ fn shift_enter_and_word_and_paragraph_selection() {
     let (mut s, id) = editing("Hello world,  foo bar\nnext", (0, 7));
     s.execute("text.selectWord", &json!({})).unwrap();
     assert_eq!(sel(&s), ((0, 6), (0, 11)));
-    s.execute("text.selectWord", &json!({"at": [0, 12]})).unwrap();
+    s.execute("text.selectWord", &json!({"at": [0, 12]}))
+        .unwrap();
     assert_eq!(sel(&s), ((0, 11), (0, 12)));
     // Triple-click: the paragraph and its mark.
-    s.execute("text.selectParagraph", &json!({"at": [0, 3]})).unwrap();
+    s.execute("text.selectParagraph", &json!({"at": [0, 3]}))
+        .unwrap();
     assert_eq!(sel(&s), ((0, 0), (1, 0)));
-    s.execute("text.selectParagraph", &json!({"at": [1, 1]})).unwrap();
+    s.execute("text.selectParagraph", &json!({"at": [1, 1]}))
+        .unwrap();
     assert_eq!(sel(&s), ((1, 0), (1, 4)));
-    s.execute("text.edit", &json!({"id": id, "at": [1, 2]})).unwrap();
+    s.execute("text.edit", &json!({"id": id, "at": [1, 2]}))
+        .unwrap();
     press(&mut s, "Enter", SHIFT);
-    let b = s.doc().unwrap().shape(deckcraft_model::ShapeId(id)).unwrap().text.clone().unwrap();
+    let b = s
+        .doc()
+        .unwrap()
+        .shape(deckcraft_model::ShapeId(id))
+        .unwrap()
+        .text
+        .clone()
+        .unwrap();
     assert_eq!(b.paragraphs.len(), 2);
     assert_eq!(b.paragraphs[1].text(), "ne\u{b}xt");
 }
 
 #[test]
 fn keys_never_panic_on_any_text() {
-    let texts = ["", " ", "\u{b}", "\t\t", "👨\u{200d}👩\u{200d}👧", "e\u{301}", "日本", "مرحبا", "a\n\nb", "  x  \n  "];
-    let keys = ["Left", "Right", "Up", "Down", "Home", "End", "Backspace", "Delete"];
+    let texts = [
+        "",
+        " ",
+        "\u{b}",
+        "\t\t",
+        "👨\u{200d}👩\u{200d}👧",
+        "e\u{301}",
+        "日本",
+        "مرحبا",
+        "a\n\nb",
+        "  x  \n  ",
+    ];
+    let keys = [
+        "Left",
+        "Right",
+        "Up",
+        "Down",
+        "Home",
+        "End",
+        "Backspace",
+        "Delete",
+    ];
     for t in texts {
         for k in keys {
             for m in [CTRL, CTRL_SHIFT, NONE, SHIFT, ALT] {

@@ -76,7 +76,9 @@ impl Format {
             #[cfg(not(feature = "heif"))]
             Format::Heif => Some(crate::heif::NOT_IN_BUILD),
             Format::Avif => Some("no pure-Rust, permissively licensed AV1 decoder yet"),
-            Format::RawTiffLike | Format::RawOther => Some("camera raw: decode with lightcraft-raw"),
+            Format::RawTiffLike | Format::RawOther => {
+                Some("camera raw: decode with lightcraft-raw")
+            }
             _ => None,
         }
     }
@@ -105,7 +107,11 @@ pub fn sniff(b: &[u8]) -> Option<Format> {
     if b.len() >= 12 && &b[0..4] == b"RIFF" && &b[8..12] == b"WEBP" {
         return Some(Format::WebP);
     }
-    if b.starts_with(&[0xFF, 0x0A]) || b.starts_with(&[0, 0, 0, 0x0C, b'J', b'X', b'L', b' ', 0x0D, 0x0A, 0x87, 0x0A]) {
+    if b.starts_with(&[0xFF, 0x0A])
+        || b.starts_with(&[
+            0, 0, 0, 0x0C, b'J', b'X', b'L', b' ', 0x0D, 0x0A, 0x87, 0x0A,
+        ])
+    {
         return Some(Format::Jxl);
     }
     if b.starts_with(b"8BPS") && b.len() >= 6 && matches!(u16::from_be_bytes([b[4], b[5]]), 1 | 2) {
@@ -120,12 +126,20 @@ pub fn sniff(b: &[u8]) -> Option<Format> {
     if b.len() >= 12 && &b[4..8] == b"ftyp" {
         return sniff_bmff(b);
     }
-    if b.starts_with(b"IIRO") || b.starts_with(b"IIRS") || b.starts_with(b"MMOR") || b.starts_with(b"IIU\0") {
+    if b.starts_with(b"IIRO")
+        || b.starts_with(b"IIRS")
+        || b.starts_with(b"MMOR")
+        || b.starts_with(b"IIU\0")
+    {
         // Olympus ORF / Panasonic RW2: TIFF-structured with a private magic.
         return Some(Format::RawTiffLike);
     }
     if b.starts_with(b"II*\0") || b.starts_with(b"MM\0*") {
-        return Some(if tiff_is_raw(b) { Format::RawTiffLike } else { Format::Tiff });
+        return Some(if tiff_is_raw(b) {
+            Format::RawTiffLike
+        } else {
+            Format::Tiff
+        });
     }
     if b.starts_with(b"II+\0") || b.starts_with(b"MM\0+") {
         return Some(Format::Tiff);
@@ -158,7 +172,21 @@ fn sniff_bmff(b: &[u8]) -> Option<Format> {
     if has(b"avif") || has(b"avis") {
         return Some(Format::Avif);
     }
-    if [&b"heic"[..], b"heix", b"hevc", b"hevx", b"heim", b"heis", b"hevm", b"hevs", b"mif1", b"msf1"].iter().any(|x| has(x)) {
+    if [
+        &b"heic"[..],
+        b"heix",
+        b"hevc",
+        b"hevx",
+        b"heim",
+        b"heis",
+        b"hevm",
+        b"hevs",
+        b"mif1",
+        b"msf1",
+    ]
+    .iter()
+    .any(|x| has(x))
+    {
         return Some(Format::Heif);
     }
     None
@@ -172,9 +200,16 @@ fn tiff_is_raw(b: &[u8]) -> bool {
         return true;
     }
     let Some(t) = Tiff::new(b) else { return false };
-    let Some(ifd0) = t.first_ifd() else { return false };
+    let Some(ifd0) = t.first_ifd() else {
+        return false;
+    };
     let sony = t.ifd(ifd0).is_some_and(|(entries, _)| {
-        entries.iter().any(|e| e.tag == 0x010f && t.bytes(e).and_then(|v| v.get(..4)).is_some_and(|v| v.eq_ignore_ascii_case(b"SONY")))
+        entries.iter().any(|e| {
+            e.tag == 0x010f
+                && t.bytes(e)
+                    .and_then(|v| v.get(..4))
+                    .is_some_and(|v| v.eq_ignore_ascii_case(b"SONY"))
+        })
     });
     let mut stack = vec![ifd0];
     let mut seen = 0;
@@ -183,18 +218,37 @@ fn tiff_is_raw(b: &[u8]) -> bool {
         if seen > 16 {
             break;
         }
-        let Some((entries, _)) = t.ifd(pos) else { continue };
+        let Some((entries, _)) = t.ifd(pos) else {
+            continue;
+        };
         // Sony M/S lossless ARWs retain a dummy CFA pattern, but store linear YCbCr.
         // Requiring the raw pattern plus this layout keeps ordinary Sony TIFFs as TIFFs.
-        let uint = |tag| entries.iter().find(|e| e.tag == tag).and_then(|e| t.uint(e));
-        if sony && entries.iter().any(|e| e.tag == 0x828e) && uint(0x0103) == Some(7) && uint(0x0106) == Some(6) && uint(0x0115) == Some(3) {
+        let uint = |tag| {
+            entries
+                .iter()
+                .find(|e| e.tag == tag)
+                .and_then(|e| t.uint(e))
+        };
+        if sony
+            && entries.iter().any(|e| e.tag == 0x828e)
+            && uint(0x0103) == Some(7)
+            && uint(0x0106) == Some(6)
+            && uint(0x0115) == Some(3)
+        {
             return true;
         }
         for e in &entries {
             match e.tag {
                 0xC612 => return true, // DNGVersion
                 0x0106 if matches!(t.uint(e), Some(32803 | 34892)) => return true,
-                0x0103 if matches!(t.uint(e), Some(32767 | 32769 | 32770 | 34316 | 34713 | 65000 | 65535)) => return true,
+                0x0103
+                    if matches!(
+                        t.uint(e),
+                        Some(32767 | 32769 | 32770 | 34316 | 34713 | 65000 | 65535)
+                    ) =>
+                {
+                    return true;
+                }
                 0x014A => {
                     // SubIFDs (LONG or IFD type): walk them.
                     let n = e.count.min(8) as usize;
@@ -227,9 +281,18 @@ mod tests {
         assert_eq!(sniff(b"\x89PNG\r\n\x1a\n...."), Some(Format::Png));
         assert_eq!(sniff(b"GIF89a......"), Some(Format::Gif));
         assert_eq!(sniff(b"RIFF\0\0\0\0WEBPVP8 "), Some(Format::WebP));
-        assert_eq!(sniff(b"\0\0\0\x1cftypavif\0\0\0\0avifmif1miaf"), Some(Format::Avif));
-        assert_eq!(sniff(b"\0\0\0\x18ftypheic\0\0\0\0mif1heic"), Some(Format::Heif));
-        assert_eq!(sniff(b"\0\0\0\x18ftypcrx \0\0\0\x01crx isom"), Some(Format::RawOther));
+        assert_eq!(
+            sniff(b"\0\0\0\x1cftypavif\0\0\0\0avifmif1miaf"),
+            Some(Format::Avif)
+        );
+        assert_eq!(
+            sniff(b"\0\0\0\x18ftypheic\0\0\0\0mif1heic"),
+            Some(Format::Heif)
+        );
+        assert_eq!(
+            sniff(b"\0\0\0\x18ftypcrx \0\0\0\x01crx isom"),
+            Some(Format::RawOther)
+        );
         assert_eq!(sniff(&[0xFF, 0x0A, 0xFA, 0x7F]), Some(Format::Jxl));
         assert_eq!(sniff(b"8BPS\0\x01\0\0\0\0\0\0"), Some(Format::Psd));
         assert_eq!(sniff(b"FUJIFILMCCD-RAW 0201"), Some(Format::RawOther));

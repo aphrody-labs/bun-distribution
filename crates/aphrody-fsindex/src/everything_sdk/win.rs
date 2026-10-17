@@ -109,7 +109,7 @@ impl Library {
             match Self::load_from(&candidate) {
                 Ok(lib) => return Ok(lib),
                 Err(e @ EverythingError::MissingSymbol(_)) => symbol_error = Some(e),
-                Err(_) => {},
+                Err(_) => {}
             }
             tried.push(candidate.display().to_string());
         }
@@ -125,7 +125,10 @@ impl Library {
         let name: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
         // SAFETY: `name` is a NUL-terminated UTF-16 string alive for the call.
         let module = unsafe { LoadLibraryW(PCWSTR(name.as_ptr())) }.map_err(|e| {
-            EverythingError::DllLoad { path: path.display().to_string(), reason: e.to_string() }
+            EverythingError::DllLoad {
+                path: path.display().to_string(),
+                reason: e.to_string(),
+            }
         })?;
         match Self::bind(module) {
             Ok(api) => Ok(Self { module, api }),
@@ -134,7 +137,7 @@ impl Library {
                 // A failed release leaves nothing actionable beyond the error already returned.
                 let _ = unsafe { FreeLibrary(module) };
                 Err(e)
-            },
+            }
         }
     }
 
@@ -173,7 +176,9 @@ impl Library {
         // SAFETY: no-argument SDK getter.
         let code = unsafe { (self.api.get_last_error)() };
         // A failed call with no recorded error is reported as "invalid call".
-        EverythingError::Sdk { code: if code == 0 { ERROR_INVALID_CALL } else { code } }
+        EverythingError::Sdk {
+            code: if code == 0 { ERROR_INVALID_CALL } else { code },
+        }
     }
 
     /// `(major, minor, revision)` of the running Everything service. The call
@@ -219,7 +224,11 @@ impl Library {
             (api.set_request_flags)(q.request_flags);
             (api.query_w)(1)
         };
-        if ok == 0 { Err(self.last_error()) } else { Ok(()) }
+        if ok == 0 {
+            Err(self.last_error())
+        } else {
+            Ok(())
+        }
     }
 
     /// Run `q` and return every result row.

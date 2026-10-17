@@ -9,10 +9,18 @@ use super::*;
 fn every_distance_parameter_is_a_parameter() {
     for e in effect_catalog() {
         for k in e.lengths.always.iter().chain(e.lengths.absolute) {
-            assert!(e.defaults.get(*k).is_some() || e.params.contains(&format!("{k}?:")), "{}: `{k}` is not a parameter", e.id);
+            assert!(
+                e.defaults.get(*k).is_some() || e.params.contains(&format!("{k}?:")),
+                "{}: `{k}` is not a parameter",
+                e.id
+            );
         }
         if !e.lengths.absolute.is_empty() {
-            assert!(e.defaults.get("relative").is_some(), "{}: absolute lengths need a `relative` param", e.id);
+            assert!(
+                e.defaults.get("relative").is_some(),
+                "{}: absolute lengths need a `relative` param",
+                e.id
+            );
         }
     }
 }
@@ -21,10 +29,17 @@ fn every_distance_parameter_is_a_parameter() {
 fn scale_effect_scales_distances_only() {
     let mut e = new_effect("stylize.dropShadow", &json!({"x": 3, "y": "4 pt"})).unwrap();
     scale_effect(&mut e, 2.0);
-    assert_eq!((&e.params["x"], &e.params["y"], &e.params["blur"]), (&json!(6.0), &json!(8.0), &json!(10.0)));
+    assert_eq!(
+        (&e.params["x"], &e.params["y"], &e.params["blur"]),
+        (&json!(6.0), &json!(8.0), &json!(10.0))
+    );
     assert_eq!(e.params["opacity"], json!(75.0));
     // Outline Stroke without a weight follows its stroke's: nothing to scale.
-    let mut o = Effect { id: "path.outlineStroke".into(), params: json!(null), visible: true };
+    let mut o = Effect {
+        id: "path.outlineStroke".into(),
+        params: json!(null),
+        visible: true,
+    };
     scale_effect(&mut o, 2.0);
     assert_eq!(o.params, json!(null));
     // Relative tweaks are percentages of the object's size.

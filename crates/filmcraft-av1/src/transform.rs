@@ -4,7 +4,11 @@ use crate::spec_tables::*;
 
 #[inline(always)]
 fn round2_64(x: i64, n: u32) -> i32 {
-    if n == 0 { x as i32 } else { ((x + (1i64 << (n - 1))) >> n) as i32 }
+    if n == 0 {
+        x as i32
+    } else {
+        ((x + (1i64 << (n - 1))) >> n) as i32
+    }
 }
 
 #[inline(always)]
@@ -190,7 +194,13 @@ pub(crate) fn inverse_dct<T: Lane>(t: &mut [T], n: u32, r: u32) {
     if n == 6 {
         for i in 0..4 {
             for j in 0..2 {
-                bf(t, 62 - i * 4 - j, 33 + i * 4 + j, 60 - 16 * brev(2, i) as i32 + 64 * j as i32, true);
+                bf(
+                    t,
+                    62 - i * 4 - j,
+                    33 + i * 4 + j,
+                    60 - 16 * brev(2, i) as i32 + 64 * j as i32,
+                    true,
+                );
             }
         }
     }
@@ -207,7 +217,13 @@ pub(crate) fn inverse_dct<T: Lane>(t: &mut [T], n: u32, r: u32) {
     if n >= 5 {
         for i in 0..2 {
             for j in 0..2 {
-                bf(t, 30 - 4 * i - j, 17 + 4 * i + j, 24 + ((j as i32) << 6) + (((1 - i) as i32) << 5), true);
+                bf(
+                    t,
+                    30 - 4 * i - j,
+                    17 + 4 * i + j,
+                    24 + ((j as i32) << 6) + (((1 - i) as i32) << 5),
+                    true,
+                );
             }
         }
     }
@@ -241,7 +257,13 @@ pub(crate) fn inverse_dct<T: Lane>(t: &mut [T], n: u32, r: u32) {
     if n == 6 {
         for i in 0..2 {
             for j in 0..4 {
-                bf(t, 61 - i * 8 - j, 34 + i * 8 + j, 56 - i as i32 * 32 + (j as i32 >> 1) * 64, true);
+                bf(
+                    t,
+                    61 - i * 8 - j,
+                    34 + i * 8 + j,
+                    56 - i as i32 * 32 + (j as i32 >> 1) * 64,
+                    true,
+                );
             }
         }
     }
@@ -382,7 +404,11 @@ fn adst_out_permute<T: Lane>(t: &mut [T], n: u32) {
         let c = ((i >> 1) & 1) ^ ((i >> 2) & 1);
         let d = (i & 1) ^ ((i >> 1) & 1);
         let idx = ((d << 3) | (c << 2) | (b << 1) | a) >> (4 - n);
-        t[i] = if i & 1 == 1 { copy[idx].neg() } else { copy[idx] };
+        t[i] = if i & 1 == 1 {
+            copy[idx].neg()
+        } else {
+            copy[idx]
+        };
     }
 }
 
@@ -427,7 +453,13 @@ fn inverse_adst16<T: Lane>(t: &mut [T], r: u32) {
     }
     for i in 0..2 {
         for j in 0..2 {
-            bf(t, 4 + 8 * j + 3 * i, 5 + 8 * j + i, 48 - 32 * i as i32, true);
+            bf(
+                t,
+                4 + 8 * j + 3 * i,
+                5 + 8 * j + i,
+                48 - 32 * i as i32,
+                true,
+            );
         }
     }
     for i in 0..2 {
@@ -502,7 +534,8 @@ enum Kind1d {
 fn row_kind(tx_type: usize) -> Kind1d {
     match tx_type {
         DCT_DCT | ADST_DCT | FLIPADST_DCT | H_DCT => Kind1d::Dct,
-        DCT_ADST | ADST_ADST | DCT_FLIPADST | FLIPADST_FLIPADST | ADST_FLIPADST | FLIPADST_ADST | H_ADST | H_FLIPADST => Kind1d::Adst,
+        DCT_ADST | ADST_ADST | DCT_FLIPADST | FLIPADST_FLIPADST | ADST_FLIPADST | FLIPADST_ADST
+        | H_ADST | H_FLIPADST => Kind1d::Adst,
         _ => Kind1d::Identity,
     }
 }
@@ -510,19 +543,31 @@ fn row_kind(tx_type: usize) -> Kind1d {
 fn col_kind(tx_type: usize) -> Kind1d {
     match tx_type {
         DCT_DCT | DCT_ADST | DCT_FLIPADST | V_DCT => Kind1d::Dct,
-        ADST_DCT | ADST_ADST | FLIPADST_DCT | FLIPADST_FLIPADST | ADST_FLIPADST | FLIPADST_ADST | V_ADST | V_FLIPADST => Kind1d::Adst,
+        ADST_DCT | ADST_ADST | FLIPADST_DCT | FLIPADST_FLIPADST | ADST_FLIPADST | FLIPADST_ADST
+        | V_ADST | V_FLIPADST => Kind1d::Adst,
         _ => Kind1d::Identity,
     }
 }
 
 /// 2D inverse transform (7.13.3). `dequant` is 64x64 (row stride 64, only the top-left 32x32
 /// may be non-zero); the residual is written to `residual` with row stride `w`.
-pub(crate) fn inverse_transform_2d(dequant: &[i32], residual: &mut [i32], tx_sz: usize, tx_type: usize, lossless: bool, bit_depth: u32) {
+pub(crate) fn inverse_transform_2d(
+    dequant: &[i32],
+    residual: &mut [i32],
+    tx_sz: usize,
+    tx_type: usize,
+    lossless: bool,
+    bit_depth: u32,
+) {
     let log2w = TX_WIDTH_LOG2[tx_sz] as u32;
     let log2h = TX_HEIGHT_LOG2[tx_sz] as u32;
     let w = 1usize << log2w;
     let h = 1usize << log2h;
-    let row_shift = if lossless { 0 } else { TRANSFORM_ROW_SHIFT[tx_sz] as u32 };
+    let row_shift = if lossless {
+        0
+    } else {
+        TRANSFORM_ROW_SHIFT[tx_sz] as u32
+    };
     let col_shift = if lossless { 0 } else { 4 };
     let row_clamp = bit_depth + 8;
     let col_clamp = (bit_depth + 6).max(16);
@@ -531,7 +576,19 @@ pub(crate) fn inverse_transform_2d(dequant: &[i32], residual: &mut [i32], tx_sz:
     let mut t = [0i32; 64];
     let rect2 = log2w.abs_diff(log2h) == 1;
     if !lossless && bit_depth <= 10 {
-        let p = Tx2d { w, h, log2w, log2h, row_shift, col_shift, row_clamp, col_clamp, rk, ck, rect2 };
+        let p = Tx2d {
+            w,
+            h,
+            log2w,
+            log2h,
+            row_shift,
+            col_shift,
+            row_clamp,
+            col_clamp,
+            rk,
+            ck,
+            rect2,
+        };
         if w >= 8 && h >= 8 {
             transform_lanes::<8>(dequant, residual, &p);
         } else {
@@ -622,14 +679,19 @@ fn transform_lanes<const L: usize>(dequant: &[i32], residual: &mut [i32], p: &Tx
     let mut i0 = 0;
     while i0 < h {
         // Rows without coefficients (and rows 32..63) transform to zeros.
-        if i0 >= 32 || (i0..i0 + L).all(|i| dequant[i * 64..i * 64 + in_w].iter().all(|&v| v == 0)) {
+        if i0 >= 32 || (i0..i0 + L).all(|i| dequant[i * 64..i * 64 + in_w].iter().all(|&v| v == 0))
+        {
             residual[i0 * w..(i0 + L) * w].fill(0);
             i0 += L;
             continue;
         }
         for (j, tj) in t[..w].iter_mut().enumerate() {
             for l in 0..L {
-                tj[l] = if j < in_w { dequant[(i0 + l) * 64 + j] } else { 0 };
+                tj[l] = if j < in_w {
+                    dequant[(i0 + l) * 64 + j]
+                } else {
+                    0
+                };
             }
         }
         if p.rect2 {
@@ -691,9 +753,20 @@ mod tests {
                 t[k] = 1 << 12;
                 inverse_dct(&mut t, n, 24);
                 for x in 0..len {
-                    let c = if k == 0 { std::f64::consts::FRAC_1_SQRT_2 } else { 1.0 };
-                    let want = 4096.0 * c * ((2 * x + 1) as f64 * k as f64 * std::f64::consts::PI / (2 * len) as f64).cos();
-                    assert!((t[x] as f64 - want).abs() < 4.0 + 0.5 * n as f64, "n={n} k={k} x={x}: {} vs {want}", t[x]);
+                    let c = if k == 0 {
+                        std::f64::consts::FRAC_1_SQRT_2
+                    } else {
+                        1.0
+                    };
+                    let want = 4096.0
+                        * c
+                        * ((2 * x + 1) as f64 * k as f64 * std::f64::consts::PI / (2 * len) as f64)
+                            .cos();
+                    assert!(
+                        (t[x] as f64 - want).abs() < 4.0 + 0.5 * n as f64,
+                        "n={n} k={k} x={x}: {} vs {want}",
+                        t[x]
+                    );
                 }
             }
         }
@@ -709,8 +782,15 @@ mod tests {
                 t[k] = 1 << 12;
                 inverse_adst(&mut t, n, 24);
                 for i in 0..len {
-                    let want = 4096.0 * ((std::f64::consts::PI * (2 * i + 1) as f64 * (2 * k + 1) as f64) / (4 * len) as f64).sin();
-                    assert!((t[i] as f64 - want).abs() < 8.0, "n={n} k={k} i={i}: {} vs {want:.1}", t[i]);
+                    let want = 4096.0
+                        * ((std::f64::consts::PI * (2 * i + 1) as f64 * (2 * k + 1) as f64)
+                            / (4 * len) as f64)
+                            .sin();
+                    assert!(
+                        (t[i] as f64 - want).abs() < 8.0,
+                        "n={n} k={k} i={i}: {} vs {want:.1}",
+                        t[i]
+                    );
                 }
             }
         }
@@ -726,7 +806,10 @@ mod tests {
                 inverse_adst(&mut t, n, 24);
                 let energy: f64 = t[..len].iter().map(|&v| (v as f64 / 4096.0).powi(2)).sum();
                 // like the DCT, the AV1 ADST is scaled by sqrt(N / 2)
-                assert!((energy - len as f64 / 2.0).abs() < 0.02, "n={n} k={k} energy {energy}");
+                assert!(
+                    (energy - len as f64 / 2.0).abs() < 0.02,
+                    "n={n} k={k} energy {energy}"
+                );
             }
         }
     }

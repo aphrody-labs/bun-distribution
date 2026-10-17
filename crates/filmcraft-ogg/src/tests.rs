@@ -3,7 +3,15 @@
 use super::*;
 
 /// Write one page holding `segments` (lacing already computed by `lace`).
-fn page(out: &mut Vec<u8>, flags: u8, granule: i64, serial: u32, seq: u32, lacing: &[u8], body: &[u8]) {
+fn page(
+    out: &mut Vec<u8>,
+    flags: u8,
+    granule: i64,
+    serial: u32,
+    seq: u32,
+    lacing: &[u8],
+    body: &[u8],
+) {
     let start = out.len();
     out.extend_from_slice(b"OggS");
     out.push(0);
@@ -139,10 +147,20 @@ fn corrupt_pages_are_skipped_and_truncation_is_safe() {
     let f = opus_file(12, 312, 0);
     // flip a byte inside the third data page's body: that page fails its CRC and is dropped
     let mut g = f.clone();
-    let third = g.windows(4).enumerate().filter(|(_, w)| *w == b"OggS").map(|(i, _)| i).nth(4).unwrap();
+    let third = g
+        .windows(4)
+        .enumerate()
+        .filter(|(_, w)| *w == b"OggS")
+        .map(|(i, _)| i)
+        .nth(4)
+        .unwrap();
     g[third + 40] ^= 0xFF;
     let o = open(&g).unwrap();
-    assert!(o.warnings.iter().any(|w| w.contains("CRC")), "{:?}", o.warnings);
+    assert!(
+        o.warnings.iter().any(|w| w.contains("CRC")),
+        "{:?}",
+        o.warnings
+    );
     assert_eq!(o.streams[0].packets.len(), 9);
     let t = OpusTiming::of(&o.streams[0], 312);
     // the granules after the gap put the later packets at their true positions
@@ -158,7 +176,9 @@ fn corrupt_pages_are_skipped_and_truncation_is_safe() {
     let mut seed = 99u64;
     for _ in 0..300 {
         let mut g = f.clone();
-        seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        seed = seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         let at = (seed >> 33) as usize % g.len();
         g[at] = (seed >> 20) as u8;
         if let Ok(o) = open(&g) {
@@ -167,7 +187,10 @@ fn corrupt_pages_are_skipped_and_truncation_is_safe() {
             }
         }
     }
-    assert!(matches!(open(&b"not ogg at all, no capture pattern".to_vec()), Err(Error::NotOgg)));
+    assert!(matches!(
+        open(&b"not ogg at all, no capture pattern".to_vec()),
+        Err(Error::NotOgg)
+    ));
 }
 
 #[test]

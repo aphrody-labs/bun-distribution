@@ -50,7 +50,11 @@ pub fn of(cursor: Cursor) -> Shown {
         Cursor::Move => System(CursorIcon::Move),
         Cursor::Resize(a) if a.is_finite() => System(resize_icon(a)),
         Cursor::Resize(_) => System(CursorIcon::Default),
-        Cursor::Rotate(a) => Drawn(Glyph::Rotate(if a.is_finite() { a.rem_euclid(360.0) as f32 } else { 0.0 })),
+        Cursor::Rotate(a) => Drawn(Glyph::Rotate(if a.is_finite() {
+            a.rem_euclid(360.0) as f32
+        } else {
+            0.0
+        })),
         Cursor::Grab => System(CursorIcon::Grab),
         Cursor::Grabbing => System(CursorIcon::Grabbing),
         Cursor::Text => System(CursorIcon::Text),
@@ -66,10 +70,23 @@ pub fn of(cursor: Cursor) -> Shown {
 /// What shows on the canvas: panning (Space or the middle button: the open hand, closed while a
 /// button is down) and the zoom tool (Z; `Some(true)`: Alt, zooming out) come before the tool's
 /// cursor.
-pub fn on_canvas(panning: bool, button_down: bool, zoom_out: Option<bool>, cursor: Cursor) -> Shown {
+pub fn on_canvas(
+    panning: bool,
+    button_down: bool,
+    zoom_out: Option<bool>,
+    cursor: Cursor,
+) -> Shown {
     match (panning, zoom_out) {
-        (true, _) => Shown::System(if button_down { CursorIcon::Grabbing } else { CursorIcon::Grab }),
-        (false, Some(out)) => Shown::System(if out { CursorIcon::ZoomOut } else { CursorIcon::ZoomIn }),
+        (true, _) => Shown::System(if button_down {
+            CursorIcon::Grabbing
+        } else {
+            CursorIcon::Grab
+        }),
+        (false, Some(out)) => Shown::System(if out {
+            CursorIcon::ZoomOut
+        } else {
+            CursorIcon::ZoomIn
+        }),
         (false, None) => of(cursor),
     }
 }
@@ -121,7 +138,14 @@ impl Shown {
     pub fn show(self, ctx: &egui::Context, at: Pos2) {
         ctx.set_cursor_icon(self.icon());
         if let Shown::Drawn(g) = self {
-            paint(&ctx.layer_painter(egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("canvas_cursor"))), at, g);
+            paint(
+                &ctx.layer_painter(egui::LayerId::new(
+                    egui::Order::Tooltip,
+                    egui::Id::new("canvas_cursor"),
+                )),
+                at,
+                g,
+            );
         }
     }
 }
@@ -139,7 +163,12 @@ fn line(painter: &Painter, pts: &[Pos2]) {
 /// `icon` in a 16 px box at `min`, with the light edge around it.
 fn icon(painter: &Painter, min: Pos2, icon: Icon) {
     let r = egui::Rect::from_min_size(min, vec2(16.0, 16.0));
-    for d in [vec2(-1.0, 0.0), vec2(1.0, 0.0), vec2(0.0, -1.0), vec2(0.0, 1.0)] {
+    for d in [
+        vec2(-1.0, 0.0),
+        vec2(1.0, 0.0),
+        vec2(0.0, -1.0),
+        vec2(0.0, 1.0),
+    ] {
         icons::paint(painter, r.translate(d), icon, EDGE);
     }
     icons::paint(painter, r, icon, INK);
@@ -147,7 +176,10 @@ fn icon(painter: &Painter, min: Pos2, icon: Icon) {
 
 /// Points of the arc of radius `r` about `c` from angle `a0` to `a1` (radians).
 fn arc(c: Pos2, r: f32, a0: f32, a1: f32) -> Vec<Pos2> {
-    (0..=12).map(|i| a0 + (a1 - a0) * i as f32 / 12.0).map(|a| c + vec2(a.cos(), a.sin()) * r).collect()
+    (0..=12)
+        .map(|i| a0 + (a1 - a0) * i as f32 / 12.0)
+        .map(|a| c + vec2(a.cos(), a.sin()) * r)
+        .collect()
 }
 
 /// Draw `glyph` with its hot spot at `at`.
@@ -164,7 +196,14 @@ pub fn paint(painter: &Painter, at: Pos2, glyph: Glyph) {
                 // Along the arc at its end, pointing onwards.
                 let t = vec2(-end.sin(), end.cos()) * sign;
                 let n = vec2(end.cos(), end.sin());
-                line(painter, &[tip - t * 4.5 + n * 3.5, tip + t * 1.0, tip - t * 4.5 - n * 3.5]);
+                line(
+                    painter,
+                    &[
+                        tip - t * 4.5 + n * 3.5,
+                        tip + t * 1.0,
+                        tip - t * 4.5 - n * 3.5,
+                    ],
+                );
             }
         }
         Glyph::Pen(state) => {
@@ -190,7 +229,10 @@ pub fn paint(painter: &Painter, at: Pos2, glyph: Glyph) {
                     line(painter, &[b - vec2(3.5, 0.0), b + vec2(3.5, 0.0)]);
                     line(painter, &[b - vec2(0.0, 3.5), b + vec2(0.0, 3.5)]);
                 }
-                PenCursor::Bend => line(painter, &arc(b + vec2(-3.5, 3.5), 7.0, -std::f32::consts::FRAC_PI_2, 0.0)),
+                PenCursor::Bend => line(
+                    painter,
+                    &arc(b + vec2(-3.5, 3.5), 7.0, -std::f32::consts::FRAC_PI_2, 0.0),
+                ),
             }
         }
         // The dropper's tip and the pin's tail, at the bottom left of their icons, are the hot spots.

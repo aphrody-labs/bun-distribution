@@ -79,7 +79,10 @@ impl UnitKind {
     /// Vrai si l'unité contient du code exécutable.
     #[must_use]
     pub fn is_code(self) -> bool {
-        matches!(self, Self::Function | Self::CodeFragment | Self::CodeResidue)
+        matches!(
+            self,
+            Self::Function | Self::CodeFragment | Self::CodeResidue
+        )
     }
 }
 
@@ -188,7 +191,11 @@ fn push_residue<F>(
         while end < to && (file[end] == INT3) == is_pad {
             end += 1;
         }
-        let kind = if is_pad { UnitKind::Padding } else { UnitKind::CodeResidue };
+        let kind = if is_pad {
+            UnitKind::Padding
+        } else {
+            UnitKind::CodeResidue
+        };
         let va = sec_va + (pos - sec_start) as u64;
         units.push(mk(kind, Some(section), pos, end - pos, Some(va)));
         pos = end;
@@ -347,8 +354,11 @@ impl Cover {
                 pos = d1;
             }
             // La reprise de code après les données est un fragment du corps.
-            let reprise =
-                if u.kind == UnitKind::Function { UnitKind::CodeFragment } else { u.kind };
+            let reprise = if u.kind == UnitKind::Function {
+                UnitKind::CodeFragment
+            } else {
+                u.kind
+            };
             pousser(reprise, pos, fin, premier);
         }
         self.units = out;
@@ -373,10 +383,10 @@ impl Cover {
                 UnitKind::Overlay => "overlay".to_string(),
                 UnitKind::Function | UnitKind::CodeFragment => {
                     format!("{}.{:x}", kind.tag(), va.unwrap_or_default())
-                },
+                }
                 UnitKind::SectionData => {
                     format!("data.{}", section.unwrap_or("?").trim_start_matches('.'))
-                },
+                }
                 _ => format!(
                     "{}.{}.{off:x}",
                     kind.tag(),
@@ -397,9 +407,21 @@ impl Cover {
         // --- région d'en-tête -------------------------------------------------
         let table_end = img.headers_end() - img.header_padding.len();
         units.push(mk(UnitKind::DosStub, None, 0, img.pe_offset, None));
-        units.push(mk(UnitKind::PeHeaders, None, img.pe_offset, table_end - img.pe_offset, None));
+        units.push(mk(
+            UnitKind::PeHeaders,
+            None,
+            img.pe_offset,
+            table_end - img.pe_offset,
+            None,
+        ));
         if !img.header_padding.is_empty() {
-            units.push(mk(UnitKind::HeaderPad, None, table_end, img.header_padding.len(), None));
+            units.push(mk(
+                UnitKind::HeaderPad,
+                None,
+                table_end,
+                img.header_padding.len(),
+                None,
+            ));
         }
 
         // --- sections ---------------------------------------------------------
@@ -424,14 +446,24 @@ impl Cover {
             let mut add: Vec<pdata::CodeRange> = extra
                 .iter()
                 .filter(|&&(b, l)| l > 0 && !covered(b) && !covered(b + l - 1))
-                .map(|&(b, l)| pdata::CodeRange { begin: b, end: b + l, unwind: 0, chained: false })
+                .map(|&(b, l)| pdata::CodeRange {
+                    begin: b,
+                    end: b + l,
+                    unwind: 0,
+                    chained: false,
+                })
                 .collect();
             merged.append(&mut add);
             merged.sort_unstable();
             merged.dedup_by_key(|r| r.begin);
         }
 
-        let mut secs: Vec<_> = img.sections.iter().filter(|s| s.size_raw > 0).cloned().collect();
+        let mut secs: Vec<_> = img
+            .sections
+            .iter()
+            .filter(|s| s.size_raw > 0)
+            .cloned()
+            .collect();
         secs.sort_by_key(|s| s.ptr_raw);
 
         let mut cursor = img.headers_end();
@@ -457,7 +489,10 @@ impl Cover {
             let name = s.name_str();
             let executable = s.characteristics & 0x2000_0020 != 0; // CNT_CODE | MEM_EXECUTE
             let in_sec: Vec<&CodeRange> = if executable {
-                merged.iter().filter(|r| s.contains_rva(r.begin) && !r.is_empty()).collect()
+                merged
+                    .iter()
+                    .filter(|r| s.contains_rva(r.begin) && !r.is_empty())
+                    .collect()
             } else {
                 Vec::new()
             };
@@ -488,7 +523,11 @@ impl Cover {
                     if f_begin > pos {
                         push_residue(&mut units, &mk, file, &ctx, pos, f_begin);
                     }
-                    let kind = if r.chained { UnitKind::CodeFragment } else { UnitKind::Function };
+                    let kind = if r.chained {
+                        UnitKind::CodeFragment
+                    } else {
+                        UnitKind::Function
+                    };
                     units.push(mk(
                         kind,
                         Some(&name),
@@ -506,10 +545,20 @@ impl Cover {
         }
 
         if cursor < total_len {
-            units.push(mk(UnitKind::Overlay, None, cursor, total_len - cursor, None));
+            units.push(mk(
+                UnitKind::Overlay,
+                None,
+                cursor,
+                total_len - cursor,
+                None,
+            ));
         }
 
-        let cover = Self { total_len, sha256: sha256_hex(file), units };
+        let cover = Self {
+            total_len,
+            sha256: sha256_hex(file),
+            units,
+        };
         cover.validate()?;
         Ok(cover)
     }
@@ -590,7 +639,11 @@ impl Cover {
     /// Masse d'octets par nature.
     #[must_use]
     pub fn bytes_by_kind(&self, kind: UnitKind) -> usize {
-        self.units.iter().filter(|u| u.kind == kind).map(|u| u.len).sum()
+        self.units
+            .iter()
+            .filter(|u| u.kind == kind)
+            .map(|u| u.len)
+            .sum()
     }
 
     /// Retrouve une unité par identifiant.
@@ -602,7 +655,9 @@ impl Cover {
     /// Retrouve l'unité contenant une adresse virtuelle.
     #[must_use]
     pub fn find_va(&self, va: u64) -> Option<&Unit> {
-        self.units.iter().find(|u| u.va.is_some_and(|b| va >= b && va < b + u.len as u64))
+        self.units
+            .iter()
+            .find(|u| u.va.is_some_and(|b| va >= b && va < b + u.len as u64))
     }
 }
 
@@ -649,8 +704,13 @@ mod tests {
         let img = synth_image();
         let cover = Cover::split(&img).expect("split");
         cover.validate().expect("recouvrement total");
-        assert_eq!(cover.units.iter().map(|u| u.len).sum::<usize>(), img.bytes.len());
-        let rebuilt = cover.assemble(|u| Some(img.bytes[u.range()].to_vec())).expect("assemble");
+        assert_eq!(
+            cover.units.iter().map(|u| u.len).sum::<usize>(),
+            img.bytes.len()
+        );
+        let rebuilt = cover
+            .assemble(|u| Some(img.bytes[u.range()].to_vec()))
+            .expect("assemble");
         assert_eq!(rebuilt, img.bytes);
         assert_eq!(sha256_hex(&rebuilt), cover.sha256);
     }
@@ -683,12 +743,21 @@ mod tests {
             sha256: String::new(),
         };
         assert_eq!(pad.emit_rule(), Some(vec![INT3; 7]));
-        let hdrpad = Unit { kind: UnitKind::HeaderPad, ..pad.clone() };
+        let hdrpad = Unit {
+            kind: UnitKind::HeaderPad,
+            ..pad.clone()
+        };
         assert_eq!(hdrpad.emit_rule(), Some(vec![0u8; 7]));
-        for kind in
-            [UnitKind::Function, UnitKind::CodeResidue, UnitKind::SectionData, UnitKind::DosStub]
-        {
-            let u = Unit { kind, ..pad.clone() };
+        for kind in [
+            UnitKind::Function,
+            UnitKind::CodeResidue,
+            UnitKind::SectionData,
+            UnitKind::DosStub,
+        ] {
+            let u = Unit {
+                kind,
+                ..pad.clone()
+            };
             assert_eq!(u.emit_rule(), None, "{kind:?} n'a pas de règle connue");
         }
     }
@@ -707,7 +776,10 @@ mod tests {
             sha256: sha256_hex(&[0x90, 0x90, 0x90, 0x90]),
         };
         assert_eq!(menteuse.emit_rule(), None);
-        let fidele = Unit { sha256: sha256_hex(&[INT3; 4]), ..menteuse };
+        let fidele = Unit {
+            sha256: sha256_hex(&[INT3; 4]),
+            ..menteuse
+        };
         assert_eq!(fidele.emit_rule(), Some(vec![INT3; 4]));
     }
 
@@ -724,11 +796,18 @@ mod tests {
         }
         let img = PeImage::parse(img.bytes).expect("reparse");
         let cover = Cover::split_with(&img, &[(0x1000, 0x10)]).expect("split");
-        let pads: Vec<_> = cover.units.iter().filter(|u| u.kind == UnitKind::Padding).collect();
+        let pads: Vec<_> = cover
+            .units
+            .iter()
+            .filter(|u| u.kind == UnitKind::Padding)
+            .collect();
         assert!(!pads.is_empty(), "le découpage doit isoler le bourrage");
 
         let rebuilt = cover
-            .assemble(|u| u.emit_rule().or_else(|| Some(img.bytes[u.range()].to_vec())))
+            .assemble(|u| {
+                u.emit_rule()
+                    .or_else(|| Some(img.bytes[u.range()].to_vec()))
+            })
             .expect("assemble");
         assert_eq!(rebuilt, img.bytes, "identité préservée par la règle");
     }
@@ -745,12 +824,18 @@ mod tests {
         let morceaux: Vec<_> = cover
             .units
             .iter()
-            .filter(|u| u.va.is_some_and(|v| (0x1_4000_1000..0x1_4000_1100).contains(&v)))
+            .filter(|u| {
+                u.va.is_some_and(|v| (0x1_4000_1000..0x1_4000_1100).contains(&v))
+            })
             .collect();
         let kinds: Vec<_> = morceaux.iter().map(|u| u.kind).collect();
         assert_eq!(
             kinds,
-            vec![UnitKind::Function, UnitKind::InlineData, UnitKind::CodeFragment],
+            vec![
+                UnitKind::Function,
+                UnitKind::InlineData,
+                UnitKind::CodeFragment
+            ],
             "code / donnees / reprise"
         );
         assert_eq!(morceaux[0].len, 0x40);
@@ -762,7 +847,9 @@ mod tests {
         );
         assert!(morceaux.iter().map(|u| u.len).sum::<usize>() == 0x100);
 
-        let rebuilt = cover.assemble(|u| Some(img.bytes[u.range()].to_vec())).expect("assemble");
+        let rebuilt = cover
+            .assemble(|u| Some(img.bytes[u.range()].to_vec()))
+            .expect("assemble");
         assert_eq!(rebuilt, img.bytes);
     }
 

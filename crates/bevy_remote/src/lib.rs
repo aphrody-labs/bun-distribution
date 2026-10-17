@@ -535,7 +535,7 @@
 extern crate alloc;
 
 use async_channel::{Receiver, Sender};
-use bevy_app::{prelude::*, MainScheduleOrder};
+use bevy_app::{MainScheduleOrder, prelude::*};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     entity::Entity,
@@ -552,7 +552,7 @@ use bevy_platform::collections::HashMap;
 #[cfg(feature = "bevy_render")]
 use bevy_render::{Render, RenderApp, RenderScheduleOrder, RenderStartup};
 use bevy_utils::prelude::default;
-use serde::{ser::SerializeMap, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser::SerializeMap};
 use serde_json::Value;
 use std::sync::RwLock;
 

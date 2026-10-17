@@ -10,8 +10,8 @@ use crate::{
 };
 
 use super::{
-    is_apply_deferred, ApplyDeferred, DiGraph, Direction, NodeId, ScheduleBuildError,
-    ScheduleBuildPass, ScheduleGraph,
+    ApplyDeferred, DiGraph, Direction, NodeId, ScheduleBuildError, ScheduleBuildPass,
+    ScheduleGraph, is_apply_deferred,
 };
 
 /// A [`ScheduleBuildPass`] that inserts [`ApplyDeferred`] systems into the schedule graph

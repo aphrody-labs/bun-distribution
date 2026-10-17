@@ -30,15 +30,15 @@ impl WiFi {
                         {
                             self.bb_regs[index as usize] = self.mmio[0x15A];
                         }
-                    },
+                    }
                     6 => self.mmio[0x15C] = self.bb_regs[index as usize],
-                    _ => {},
+                    _ => {}
                 }
-            },
+            }
 
             0x15C..=0x15F => return,
 
-            _ => {},
+            _ => {}
         }
         self.mmio[addr as usize] = value;
     }
@@ -66,7 +66,7 @@ impl WiFi {
                     | (self.read_io::<A>(addr | 1) as u32) << 8
                     | (self.read_io::<A>(addr | 2) as u32) << 16
                     | (self.read_io::<A>(addr | 3) as u32) << 24
-            },
+            }
             2 => self.ram.read_le((addr as usize) & 0x1FFC),
             _ => 0,
         }
@@ -76,7 +76,7 @@ impl WiFi {
         match addr >> 13 & 3 {
             0 | 3 => self.write_io::<A>(addr, value),
             2 => self.ram[(addr as usize) & 0x1FFF] = value,
-            _ => {},
+            _ => {}
         }
     }
 
@@ -85,9 +85,9 @@ impl WiFi {
             0 | 3 => {
                 self.write_io::<A>(addr, value as u8);
                 self.write_io::<A>(addr | 1, (value >> 8) as u8);
-            },
+            }
             2 => self.ram.write_le((addr as usize) & 0x1FFE, value),
-            _ => {},
+            _ => {}
         }
     }
 
@@ -98,9 +98,9 @@ impl WiFi {
                 self.write_io::<A>(addr | 1, (value >> 8) as u8);
                 self.write_io::<A>(addr | 2, (value >> 16) as u8);
                 self.write_io::<A>(addr | 3, (value >> 24) as u8);
-            },
+            }
             2 => self.ram.write_le((addr as usize) & 0x1FFC, value),
-            _ => {},
+            _ => {}
         }
     }
 }

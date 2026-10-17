@@ -295,7 +295,11 @@ impl Container {
         Ok(z_index)
     }
 
-    pub fn set_layer_stack_mask(&self, layer_id: u64, layer_stack_mask: u32) -> Result<(), ResultCode> {
+    pub fn set_layer_stack_mask(
+        &self,
+        layer_id: u64,
+        layer_stack_mask: u32,
+    ) -> Result<(), ResultCode> {
         let inner = self.inner.lock().unwrap();
         let layer = inner
             .layers

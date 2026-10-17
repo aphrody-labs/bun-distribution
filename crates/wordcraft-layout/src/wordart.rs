@@ -34,10 +34,19 @@ pub struct ArtLayer {
 
 /// The outlines of `glyphs` (glyph id, pen x, baseline y in page points) of `face` at `size`, as
 /// one path in page coordinates (slanted for synthetic italics).
-pub fn glyph_path(face: &FaceRef, size: f32, glyphs: &[(u32, f32, f32)], synth_italic: bool) -> BezPath {
+pub fn glyph_path(
+    face: &FaceRef,
+    size: f32,
+    glyphs: &[(u32, f32, f32)],
+    synth_italic: bool,
+) -> BezPath {
     let db = wordcraft_fonts::FontDb::global();
     let k = f64::from(size) / face.upem.max(1.0);
-    let skew = if synth_italic { Affine::new([1.0, 0.0, -0.21, 1.0, 0.0, 0.0]) } else { Affine::IDENTITY };
+    let skew = if synth_italic {
+        Affine::new([1.0, 0.0, -0.21, 1.0, 0.0, 0.0])
+    } else {
+        Affine::IDENTITY
+    };
     let mut out = BezPath::new();
     for &(gid, x, y) in glyphs {
         if !(x.is_finite() && y.is_finite()) {
@@ -64,17 +73,35 @@ fn bbox(path: &BezPath) -> Option<kurbo::Rect> {
 /// opacity.
 pub fn art_layers(path: &BezPath, fx: &TextEffects, color: Rgb, alpha: f32) -> Vec<ArtLayer> {
     let fx = fx.sanitized();
-    let alpha = if alpha.is_finite() { alpha.clamp(0.0, 1.0) } else { 1.0 };
-    let Some(b) = bbox(path) else { return Vec::new() };
+    let alpha = if alpha.is_finite() {
+        alpha.clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
+    let Some(b) = bbox(path) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
-    let fill = fx.fill.clone().unwrap_or(TextFill::Solid { color, transparency: 0.0 });
+    let fill = fx.fill.clone().unwrap_or(TextFill::Solid {
+        color,
+        transparency: 0.0,
+    });
     let fill_paint = |path: &BezPath| -> Option<ArtPaint> {
         match &fill {
             TextFill::None => None,
-            TextFill::Solid { color, transparency } => Some(ArtPaint::Solid(*color, alpha * (1.0 - transparency / 100.0))),
+            TextFill::Solid {
+                color,
+                transparency,
+            } => Some(ArtPaint::Solid(
+                *color,
+                alpha * (1.0 - transparency / 100.0),
+            )),
             TextFill::Gradient { stops, angle } => {
                 let b = bbox(path)?;
-                let (s, c) = (f64::from(*angle).to_radians().sin(), f64::from(*angle).to_radians().cos());
+                let (s, c) = (
+                    f64::from(*angle).to_radians().sin(),
+                    f64::from(*angle).to_radians().cos(),
+                );
                 let d = (b.width() * c.abs() + b.height() * s.abs()) / 2.0;
                 let ctr = b.center();
                 let p0 = ((ctr.x - d * c) as f32, (ctr.y - d * s) as f32);
@@ -82,12 +109,24 @@ pub fn art_layers(path: &BezPath, fx: &TextEffects, color: Rgb, alpha: f32) -> V
                 Some(ArtPaint::Linear {
                     p0,
                     p1,
-                    stops: stops.iter().map(|g| (g.pos / 100.0, g.color, alpha * (1.0 - g.transparency / 100.0))).collect(),
+                    stops: stops
+                        .iter()
+                        .map(|g| {
+                            (
+                                g.pos / 100.0,
+                                g.color,
+                                alpha * (1.0 - g.transparency / 100.0),
+                            )
+                        })
+                        .collect(),
                 })
             }
         }
     };
-    let outline = fx.outline.and_then(|o| o.color.map(|c| (c, o.width.max(0.25), alpha * (1.0 - o.transparency / 100.0))));
+    let outline = fx.outline.and_then(|o| {
+        o.color
+            .map(|c| (c, o.width.max(0.25), alpha * (1.0 - o.transparency / 100.0)))
+    });
     // A colour standing for the letters (shadows and reflections of hollow text use the outline's).
     let ink = fill.main_color().or(outline.map(|o| o.0)).unwrap_or(color);
     if let Some(r) = fx.reflection {
@@ -101,7 +140,11 @@ pub fn art_layers(path: &BezPath, fx: &TextEffects, color: Rgb, alpha: f32) -> V
         let a = alpha * (1.0 - r.transparency / 100.0);
         out.push(ArtLayer {
             path: mirror,
-            paint: ArtPaint::Linear { p0: (x, top), p1: (x, bottom), stops: vec![(0.0, ink, a), (1.0, ink, 0.0)] },
+            paint: ArtPaint::Linear {
+                p0: (x, top),
+                p1: (x, bottom),
+                stops: vec![(0.0, ink, a), (1.0, ink, 0.0)],
+            },
             stroke: None,
         });
     }
@@ -110,24 +153,44 @@ pub fn art_layers(path: &BezPath, fx: &TextEffects, color: Rgb, alpha: f32) -> V
         let moved = Affine::translate((f64::from(dx), f64::from(dy))) * path.clone();
         for (g, a) in wordcraft_doc::effects::bands(0.0, sh.blur / 2.0, sh.opacity() * alpha) {
             let paint = ArtPaint::Solid(sh.color, a);
-            out.push(ArtLayer { path: moved.clone(), paint: paint.clone(), stroke: None });
+            out.push(ArtLayer {
+                path: moved.clone(),
+                paint: paint.clone(),
+                stroke: None,
+            });
             if g > 0.05 {
-                out.push(ArtLayer { path: moved.clone(), paint, stroke: Some(2.0 * g) });
+                out.push(ArtLayer {
+                    path: moved.clone(),
+                    paint,
+                    stroke: Some(2.0 * g),
+                });
             }
         }
     }
     if let Some(gl) = fx.glow {
         for (g, a) in wordcraft_doc::effects::bands(0.0, gl.size, gl.opacity() * alpha) {
             if g > 0.05 {
-                out.push(ArtLayer { path: path.clone(), paint: ArtPaint::Solid(gl.color, a), stroke: Some(2.0 * g) });
+                out.push(ArtLayer {
+                    path: path.clone(),
+                    paint: ArtPaint::Solid(gl.color, a),
+                    stroke: Some(2.0 * g),
+                });
             }
         }
     }
     if let Some(p) = fill_paint(path) {
-        out.push(ArtLayer { path: path.clone(), paint: p, stroke: None });
+        out.push(ArtLayer {
+            path: path.clone(),
+            paint: p,
+            stroke: None,
+        });
     }
     if let Some((c, w, a)) = outline {
-        out.push(ArtLayer { path: path.clone(), paint: ArtPaint::Solid(c, a), stroke: Some(w) });
+        out.push(ArtLayer {
+            path: path.clone(),
+            paint: ArtPaint::Solid(c, a),
+            stroke: Some(w),
+        });
     }
     out
 }
@@ -141,7 +204,11 @@ enum Bend {
     /// Along an ellipse from angle `start` (radians, counter-clockwise from the right, y up)
     /// sweeping `sweep` (negative: clockwise); `outward`: the letters' tops point away from the
     /// centre.
-    Arc { start: f32, sweep: f32, outward: bool },
+    Arc {
+        start: f32,
+        sweep: f32,
+        outward: bool,
+    },
 }
 
 /// A warp fitted to a frame: maps the text's box (`u`, `v` in 0..1, `v` = 0 at the top) onto the
@@ -198,9 +265,14 @@ impl Warp {
             return None;
         }
         // `adj` as a fraction (100000ths) of the frame's height, within `max`, else `dflt`.
-        let frac = |dflt: f32, max: f32| w.adj_value("adj").map_or(dflt, |v| (v as f32 / 100_000.0).clamp(0.0, max));
+        let frac = |dflt: f32, max: f32| {
+            w.adj_value("adj")
+                .map_or(dflt, |v| (v as f32 / 100_000.0).clamp(0.0, max))
+        };
         // `adj` as the angle the arc sweeps (60000ths of a degree), else a half turn.
-        let sweep = w.adj_value("adj").map_or(PI, |v| (v as f32 / 60_000.0).clamp(10.0, 350.0).to_radians());
+        let sweep = w.adj_value("adj").map_or(PI, |v| {
+            (v as f32 / 60_000.0).clamp(10.0, 350.0).to_radians()
+        });
         let edges = |f: fn(f32, f32) -> (f32, f32), k: f32| (Bend::Edges(f), k);
         let (bend, k) = match w.preset.as_str() {
             "textSlantUp" => edges(slant_up, frac(0.4, 0.9)),
@@ -212,37 +284,78 @@ impl Warp {
             "textChevronInverted" => edges(chevron_down, frac(0.4, 0.9)),
             "textTriangle" => edges(triangle_up, frac(0.5, 0.9)),
             "textTriangleInverted" => edges(triangle_down, frac(0.5, 0.9)),
-            "textArchUp" => (Bend::Arc { start: PI / 2.0 + sweep / 2.0, sweep: -sweep, outward: true }, 0.0),
-            "textArchDown" => (Bend::Arc { start: 1.5 * PI - sweep / 2.0, sweep, outward: false }, 0.0),
-            "textCircle" => (Bend::Arc { start: 1.5 * PI - 0.02, sweep: -(2.0 * PI - 0.04), outward: true }, 0.0),
+            "textArchUp" => (
+                Bend::Arc {
+                    start: PI / 2.0 + sweep / 2.0,
+                    sweep: -sweep,
+                    outward: true,
+                },
+                0.0,
+            ),
+            "textArchDown" => (
+                Bend::Arc {
+                    start: 1.5 * PI - sweep / 2.0,
+                    sweep,
+                    outward: false,
+                },
+                0.0,
+            ),
+            "textCircle" => (
+                Bend::Arc {
+                    start: 1.5 * PI - 0.02,
+                    sweep: -(2.0 * PI - 0.04),
+                    outward: true,
+                },
+                0.0,
+            ),
             _ => return None,
         };
         // Along an arc the text keeps its proportions: as thick as its length along the mean
         // radius makes it, within reason.
         let thick = match bend {
             Bend::Arc { sweep, .. } => {
-                let aspect = if aspect.is_finite() { aspect.clamp(0.0, 10.0) } else { 0.2 };
+                let aspect = if aspect.is_finite() {
+                    aspect.clamp(0.0, 10.0)
+                } else {
+                    0.2
+                };
                 (aspect * sweep.abs()).clamp(0.08, 0.6)
             }
             Bend::Edges(_) => 0.0,
         };
-        Some(Warp { frame, bend, k, thick })
+        Some(Warp {
+            frame,
+            bend,
+            k,
+            thick,
+        })
     }
 
     /// The page point for text box point (`u`, `v`).
     pub fn map(&self, u: f32, v: f32) -> (f32, f32) {
-        let (u, v) = (if u.is_finite() { u } else { 0.0 }, if v.is_finite() { v } else { 0.0 });
+        let (u, v) = (
+            if u.is_finite() { u } else { 0.0 },
+            if v.is_finite() { v } else { 0.0 },
+        );
         let f = self.frame;
         match self.bend {
             Bend::Edges(edge) => {
                 let (top, bottom) = edge(u.clamp(-1.0, 2.0), self.k);
                 (f.x + u * f.w, f.y + (top + (bottom - top) * v) * f.h)
             }
-            Bend::Arc { start, sweep, outward } => {
+            Bend::Arc {
+                start,
+                sweep,
+                outward,
+            } => {
                 let (rx, ry) = (f.w / 2.0, f.h / 2.0);
                 let (cx, cy) = (f.x + rx, f.y + ry);
                 let a = start + sweep * u;
-                let rho = if outward { 1.0 - v * self.thick } else { 1.0 - self.thick + v * self.thick };
+                let rho = if outward {
+                    1.0 - v * self.thick
+                } else {
+                    1.0 - self.thick + v * self.thick
+                };
                 (cx + rx * rho * a.cos(), cy - ry * rho * a.sin())
             }
         }
@@ -329,7 +442,10 @@ mod tests {
         let w = Warp::new(&t, frame, f32::NAN).unwrap();
         for (u, v) in [(0.0, 0.0), (1.0, 1.0), (f32::NAN, 0.5)] {
             let (x, y) = w.map(u, v);
-            assert!((0.0..=100.0).contains(&x) && (0.0..=50.0).contains(&y), "{x} {y}");
+            assert!(
+                (0.0..=100.0).contains(&x) && (0.0..=50.0).contains(&y),
+                "{x} {y}"
+            );
         }
     }
 }

@@ -95,7 +95,11 @@ static CHAT_SESSIONS: LazyLock<Mutex<HashMap<String, Arc<Mutex<ChatSession>>>>> 
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 pub fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
-    TOOLS.iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
+    TOOLS
+        .iter()
+        .filter(|tool| !taken(tool.name.as_ref()))
+        .cloned()
+        .collect()
 }
 
 pub fn get(name: &str) -> Option<Tool> {
@@ -129,7 +133,11 @@ fn resolve_cookie_path(input: Option<&str>, cookies: &Path) -> PathBuf {
     }
     let json = cookies.join(format!("{input}.json"));
     let text = cookies.join(format!("{input}.txt"));
-    if !json.is_file() && text.is_file() { text } else { json }
+    if !json.is_file() && text.is_file() {
+        text
+    } else {
+        json
+    }
 }
 
 fn parse_request(args: &Value) -> Result<(&str, &str, Option<&str>), String> {
@@ -138,14 +146,20 @@ fn parse_request(args: &Value) -> Result<(&str, &str, Option<&str>), String> {
         .and_then(Value::as_str)
         .ok_or_else(|| "prompt must be a string".to_owned())?;
     let model = args.get("model").map_or(Ok("flash"), |value| {
-        value.as_str().ok_or_else(|| "model must be a string".to_owned())
+        value
+            .as_str()
+            .ok_or_else(|| "model must be a string".to_owned())
     })?;
     if !matches!(model, "flash" | "flash-lite" | "pro") {
         return Err("model must be flash, flash-lite or pro".to_owned());
     }
     let cookie_path = args
         .get("cookiePath")
-        .map(|value| value.as_str().ok_or_else(|| "cookiePath must be a string".to_owned()))
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "cookiePath must be a string".to_owned())
+        })
         .transpose()?;
     Ok((prompt, model, cookie_path))
 }
@@ -167,7 +181,12 @@ async fn run(args: &Value) -> Result<Value, String> {
         client.ask(prompt, Some(&model.header())).await
     })
     .await
-    .map_err(|_| format!("Gemini request timed out after {}s", GEMINI_TIMEOUT.as_secs()))?
+    .map_err(|_| {
+        format!(
+            "Gemini request timed out after {}s",
+            GEMINI_TIMEOUT.as_secs()
+        )
+    })?
     .map_err(|error| format!("Failed to execute Gemini request: {error}"))?;
     let raw = json!({
         "text": response.text,
@@ -188,7 +207,9 @@ async fn run(args: &Value) -> Result<Value, String> {
 
 fn parse_ask_engine(args: &Value) -> Result<&str, String> {
     let engine = args.get("engine").map_or(Ok("auto"), |value| {
-        value.as_str().ok_or_else(|| "engine must be a string".to_owned())
+        value
+            .as_str()
+            .ok_or_else(|| "engine must be a string".to_owned())
     })?;
     if !matches!(engine, "auto" | "rust" | "web") {
         return Err("engine must be auto, rust or web".to_owned());
@@ -212,11 +233,17 @@ fn parse_chat_request(args: &Value) -> Result<(&str, &str, &str), String> {
         .get("prompt")
         .and_then(Value::as_str)
         .ok_or_else(|| "prompt must be a string".to_owned())?;
-    let conversation_id = args.get("conversationId").map_or(Ok("aphrody-session"), |value| {
-        value.as_str().ok_or_else(|| "conversationId must be a string".to_owned())
-    })?;
+    let conversation_id = args
+        .get("conversationId")
+        .map_or(Ok("aphrody-session"), |value| {
+            value
+                .as_str()
+                .ok_or_else(|| "conversationId must be a string".to_owned())
+        })?;
     let model = args.get("model").map_or(Ok("flash"), |value| {
-        value.as_str().ok_or_else(|| "model must be a string".to_owned())
+        value
+            .as_str()
+            .ok_or_else(|| "model must be a string".to_owned())
     })?;
     if GeminiModel::from_id(model).is_none() {
         return Err("model must be flash, flash-lite or pro".to_owned());
@@ -257,11 +284,14 @@ async fn run_chat(args: &Value) -> Result<Value, String> {
         Ok(Err(error)) => {
             *session = ChatSession::default();
             return Err(format!("Failed to execute Gemini chat: {error}"));
-        },
+        }
         Err(_) => {
             *session = ChatSession::default();
-            return Err(format!("Gemini chat timed out after {}s", GEMINI_TIMEOUT.as_secs()));
-        },
+            return Err(format!(
+                "Gemini chat timed out after {}s",
+                GEMINI_TIMEOUT.as_secs()
+            ));
+        }
     };
     session.metadata = response.metadata;
     Ok(json!({
@@ -274,8 +304,10 @@ async fn run_chat(args: &Value) -> Result<Value, String> {
 
 pub async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
-    let args =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let args = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     let response = match name {
         "aphrody_gemini_rust" => run(&args).await,
         "aphrody_gemini_ask" => run_ask(&args).await,
@@ -291,7 +323,7 @@ pub async fn call(request: &CallToolRequestParams) -> CallToolResult {
                 result.structured_content = Some(value);
             }
             result
-        },
+        }
         Err(error) => CallToolResult::error(vec![ContentBlock::text(format!("{name}: {error}"))]),
     }
 }
@@ -308,7 +340,10 @@ mod tests {
         assert_eq!(TOOLS.len(), 3);
         let schema = serde_json::to_value(get("aphrody_gemini_rust").unwrap()).unwrap();
         assert_eq!(schema["inputSchema"]["required"], json!(["prompt"]));
-        assert_eq!(schema["inputSchema"]["properties"]["model"]["default"], "flash");
+        assert_eq!(
+            schema["inputSchema"]["properties"]["model"]["default"],
+            "flash"
+        );
         let chat = serde_json::to_value(get("aphrody_gemini_chat").unwrap()).unwrap();
         assert_eq!(chat["inputSchema"]["required"], json!(["prompt"]));
         assert_eq!(
@@ -316,24 +351,36 @@ mod tests {
             "aphrody-session"
         );
         let ask = serde_json::to_value(get("aphrody_gemini_ask").unwrap()).unwrap();
-        assert_eq!(ask["inputSchema"]["properties"]["engine"]["default"], "auto");
+        assert_eq!(
+            ask["inputSchema"]["properties"]["engine"]["default"],
+            "auto"
+        );
     }
 
     #[test]
     fn named_cookie_jar_and_explicit_paths_resolve_without_reading_secrets() {
         let dir = Path::new("/tmp/aphrody-cookies");
         assert_eq!(resolve_cookie_path(None, dir), dir.join("gemini.json"));
-        assert_eq!(resolve_cookie_path(Some("google"), dir), dir.join("google.json"));
+        assert_eq!(
+            resolve_cookie_path(Some("google"), dir),
+            dir.join("google.json")
+        );
         assert_eq!(
             resolve_cookie_path(Some("/private/gemini.json"), dir),
             Path::new("/private/gemini.json")
         );
-        assert_eq!(resolve_cookie_path(Some("relative.json"), dir), Path::new("relative.json"));
+        assert_eq!(
+            resolve_cookie_path(Some("relative.json"), dir),
+            Path::new("relative.json")
+        );
     }
 
     #[tokio::test]
     async fn malformed_request_fails_before_cookie_or_network_access() {
-        assert_eq!(run(&json!({})).await.unwrap_err(), "prompt must be a string");
+        assert_eq!(
+            run(&json!({})).await.unwrap_err(),
+            "prompt must be a string"
+        );
         assert!(
             run(&json!({ "prompt": "hello", "model": "invalid" }))
                 .await
@@ -352,7 +399,9 @@ mod tests {
     async fn missing_cookie_file_fails_without_contacting_gemini() {
         let dir = tempfile::tempdir().unwrap();
         let missing = dir.path().join("missing.json");
-        let error = run(&json!({ "prompt": "hello", "cookiePath": missing })).await.unwrap_err();
+        let error = run(&json!({ "prompt": "hello", "cookiePath": missing }))
+            .await
+            .unwrap_err();
         assert!(error.contains("Failed to execute Gemini request"));
     }
 
@@ -370,7 +419,15 @@ mod tests {
     #[tokio::test]
     async fn malformed_ask_engine_fails_before_cookie_or_network_access() {
         assert_eq!(parse_ask_engine(&json!({})).unwrap(), "auto");
-        assert!(run_ask(&json!({ "prompt": "hello", "engine": "bogus" })).await.is_err());
-        assert!(run_ask(&json!({ "prompt": "hello", "engine": 2 })).await.is_err());
+        assert!(
+            run_ask(&json!({ "prompt": "hello", "engine": "bogus" }))
+                .await
+                .is_err()
+        );
+        assert!(
+            run_ask(&json!({ "prompt": "hello", "engine": 2 }))
+                .await
+                .is_err()
+        );
     }
 }

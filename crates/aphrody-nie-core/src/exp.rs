@@ -67,7 +67,10 @@ impl ExpTable {
     /// Source : `getRarityRate` (chara-exp-table.ts L108).
     #[must_use]
     pub fn rarity_rate(&self, growth_rank: u8) -> u8 {
-        self.rarity_rate.get(growth_rank as usize).copied().unwrap_or(1)
+        self.rarity_rate
+            .get(growth_rank as usize)
+            .copied()
+            .unwrap_or(1)
     }
 }
 
@@ -99,13 +102,21 @@ mod loader {
 
             // rarity_rate est stocké [rarity, rate] trié par rarity (0..8) :
             // on l'indexe directement par rarity.
-            let max_rarity = raw.rarity_rate.iter().map(|r| r[0] as usize).max().unwrap_or(0);
+            let max_rarity = raw
+                .rarity_rate
+                .iter()
+                .map(|r| r[0] as usize)
+                .max()
+                .unwrap_or(0);
             let mut rate = vec![1u8; max_rarity + 1];
             for r in &raw.rarity_rate {
                 rate[r[0] as usize] = r[1];
             }
 
-            Self { need_exp: raw.need_exp, rarity_rate: rate }
+            Self {
+                need_exp: raw.need_exp,
+                rarity_rate: rate,
+            }
         }
     }
 }

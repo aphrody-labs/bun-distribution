@@ -33,27 +33,55 @@ impl ITransferTaskListController {
             (2, None, "ListTransferTaskInfoForOcean"),
             (3, None, "DeleteTransferTaskForOcean"),
             (4, None, "RaiseTransferTaskPriorityForOcean"),
-            (5, Some(Self::get_transfer_task_end_event_native_handle_holder), "GetTransferTaskEndEventNativeHandleHolder"),
+            (
+                5,
+                Some(Self::get_transfer_task_end_event_native_handle_holder),
+                "GetTransferTaskEndEventNativeHandleHolder",
+            ),
             (6, None, "GetTransferTaskProgressForOcean"),
             (7, None, "GetTransferTaskLastResultForOcean"),
-            (8, Some(Self::stop_next_transfer_task_execution), "StopNextTransferTaskExecution"),
-            (9, Some(Self::get_transfer_task_start_event_native_handle_holder), "GetTransferTaskStartEventNativeHandleHolder"),
+            (
+                8,
+                Some(Self::stop_next_transfer_task_execution),
+                "StopNextTransferTaskExecution",
+            ),
+            (
+                9,
+                Some(Self::get_transfer_task_start_event_native_handle_holder),
+                "GetTransferTaskStartEventNativeHandleHolder",
+            ),
             (10, None, "SuspendTransferTaskForOcean"),
             (11, None, "GetCurrentTransferTaskInfoForOcean"),
             (12, None, "FindTransferTaskInfoForOcean"),
             (13, None, "CancelCurrentRepairTransferTask"),
             (14, None, "GetRepairTransferTaskProgress"),
             (15, None, "EnsureExecutableForRepairTransferTask"),
-            (16, Some(Self::get_transfer_task_count), "GetTransferTaskCount"),
+            (
+                16,
+                Some(Self::get_transfer_task_count),
+                "GetTransferTaskCount",
+            ),
             (17, None, "GetTransferTaskInfo"),
             (18, None, "ListTransferTaskInfo"),
             (19, None, "DeleteTransferTask"),
             (20, None, "RaiseTransferTaskPriority"),
-            (21, Some(Self::get_transfer_task_progress_handler), "GetTransferTaskProgress"),
+            (
+                21,
+                Some(Self::get_transfer_task_progress_handler),
+                "GetTransferTaskProgress",
+            ),
             (22, None, "GetTransferTaskLastResult"),
             (23, None, "SuspendTransferTask"),
-            (24, Some(Self::get_current_transfer_task_info), "GetCurrentTransferTaskInfo"),
-            (25, Some(Self::find_transfer_task_info), "FindTransferTaskInfo"),
+            (
+                24,
+                Some(Self::get_current_transfer_task_info),
+                "GetCurrentTransferTaskInfo",
+            ),
+            (
+                25,
+                Some(Self::find_transfer_task_info),
+                "FindTransferTaskInfo",
+            ),
             (26, None, "Unknown26"),
             (27, None, "Unknown27"),
             (28, None, "Unknown28"),
@@ -66,21 +94,30 @@ impl ITransferTaskListController {
         }
     }
 
-    fn get_transfer_task_end_event_native_handle_holder(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_transfer_task_end_event_native_handle_holder(
+        _this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let holder = Arc::new(INativeHandleHolder::new());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
         rb.push_result(RESULT_SUCCESS);
         rb.push_ipc_interface(holder);
     }
 
-    fn get_transfer_task_start_event_native_handle_holder(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_transfer_task_start_event_native_handle_holder(
+        _this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let holder = Arc::new(INativeHandleHolder::new());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
         rb.push_result(RESULT_SUCCESS);
         rb.push_ipc_interface(holder);
     }
 
-    fn stop_next_transfer_task_execution(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn stop_next_transfer_task_execution(
+        _this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let stopper = Arc::new(IStopperObject::default());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
         rb.push_result(RESULT_SUCCESS);
@@ -109,12 +146,14 @@ impl ITransferTaskListController {
     }
 
     /// Upstream deliberately returns success without a progress payload.
-    fn get_transfer_task_progress_handler(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_transfer_task_progress_handler(
+        _this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         log::warn!("(STUBBED) GetTransferTaskProgress called");
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
         rb.push_result(RESULT_SUCCESS);
     }
-
 }
 
 impl SessionRequestHandler for ITransferTaskListController {
@@ -156,7 +195,11 @@ mod tests {
         let process = Arc::new(ProcessLock::from_value(KProcess::new()));
         let thread = Arc::new(KThreadLock::new(KThread::new()));
         thread.lock().unwrap().parent = Some(Arc::downgrade(&process));
-        for (command, expected_name) in [(5, "INativeHandleHolder"), (9, "INativeHandleHolder"), (8, "IStopperObject")] {
+        for (command, expected_name) in [
+            (5, "INativeHandleHolder"),
+            (9, "INativeHandleHolder"),
+            (8, "IStopperObject"),
+        ] {
             let mut ctx = HLERequestContext::new_with_thread(thread.clone(), 0);
             ctx.set_session_request_manager(Arc::new(Mutex::new(SessionRequestManager::new())));
             service.handlers()[&command].handler_callback.unwrap()(&service, &mut ctx);
@@ -165,13 +208,20 @@ mod tests {
                 crate::hle::service::hle_ipc::KAutoObjectRef::ObjectId(id) => id,
                 _ => panic!("expected an object-backed child session"),
             };
-            let server = process.lock().unwrap().get_server_session_by_object_id(object_id).unwrap();
+            let server = process
+                .lock()
+                .unwrap()
+                .get_server_session_by_object_id(object_id)
+                .unwrap();
             let manager = server.lock().unwrap().get_manager().unwrap().clone();
             let manager = manager.lock().unwrap();
             let child = manager.session_handler().unwrap();
             assert_eq!(child.service_name(), expected_name);
             if command != 8 {
-                let holder = child.as_any().downcast_ref::<INativeHandleHolder>().unwrap();
+                let holder = child
+                    .as_any()
+                    .downcast_ref::<INativeHandleHolder>()
+                    .unwrap();
                 assert!(holder.get_native_handle().unwrap().is_signaled());
             }
         }
@@ -186,11 +236,16 @@ mod tests {
             service.handlers()[&command].handler_callback.unwrap()(&service, &mut ctx);
             let offset = ctx.get_data_payload_offset() as usize;
             assert_eq!(ctx.write_size as usize, offset + words);
-            assert!(ctx.command_buffer()[offset..offset + words].iter().all(|word| *word == 0));
+            assert!(ctx.command_buffer()[offset..offset + words]
+                .iter()
+                .all(|word| *word == 0));
         }
         assert_eq!(service.handlers().len(), 31);
-        let implemented: Vec<_> = service.handlers().iter()
-            .filter_map(|(&id, info)| info.handler_callback.is_some().then_some(id)).collect();
+        let implemented: Vec<_> = service
+            .handlers()
+            .iter()
+            .filter_map(|(&id, info)| info.handler_callback.is_some().then_some(id))
+            .collect();
         assert_eq!(implemented, [5, 8, 9, 16, 21, 24, 25]);
     }
 

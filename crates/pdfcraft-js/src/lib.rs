@@ -21,7 +21,14 @@
 //! are bounded. Side effects (alerts, field changes, resets, printing, navigation) are returned
 //! in an [`Outcome`] for the caller to apply.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::cell::RefCell;
 use std::collections::BTreeSet;
@@ -29,7 +36,10 @@ use std::collections::BTreeSet;
 use boa_engine::object::builtins::{JsArray, JsFunction};
 use boa_engine::object::{FunctionObjectBuilder, ObjectInitializer};
 use boa_engine::property::Attribute;
-use boa_engine::{Context, JsError, JsNativeError, JsObject, JsResult, JsString, JsValue, NativeFunction, Source, js_string};
+use boa_engine::{
+    Context, JsError, JsNativeError, JsObject, JsResult, JsString, JsValue, NativeFunction, Source,
+    js_string,
+};
 
 /// The kinds of field, as `field.type` names them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -123,12 +133,26 @@ pub struct Event {
 impl Event {
     /// A field event (`event.type` = "Field").
     pub fn field(name: &str, target: &str, value: &str) -> Event {
-        Event { name: name.into(), kind: "Field".into(), target: Some(target.into()), value: value.into(), change: String::new(), will_commit: true }
+        Event {
+            name: name.into(),
+            kind: "Field".into(),
+            target: Some(target.into()),
+            value: value.into(),
+            change: String::new(),
+            will_commit: true,
+        }
     }
 
     /// A document event (`event.type` = "Doc"), e.g. Open or WillSave.
     pub fn doc(name: &str) -> Event {
-        Event { name: name.into(), kind: "Doc".into(), target: None, value: String::new(), change: String::new(), will_commit: false }
+        Event {
+            name: name.into(),
+            kind: "Doc".into(),
+            target: None,
+            value: String::new(),
+            change: String::new(),
+            will_commit: false,
+        }
     }
 }
 
@@ -189,7 +213,10 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits { loop_iterations: 1_000_000, recursion: 256 }
+        Limits {
+            loop_iterations: 1_000_000,
+            recursion: 256,
+        }
     }
 }
 
@@ -206,7 +233,8 @@ type Shared = RefCell<Host>;
 
 /// The host state, installed before scripts run.
 fn host(ctx: &Context) -> JsResult<&Shared> {
-    ctx.get_data::<Shared>().ok_or_else(|| error("the script host is not set up"))
+    ctx.get_data::<Shared>()
+        .ok_or_else(|| error("the script host is not set up"))
 }
 
 fn s(v: &str) -> JsValue {
@@ -231,7 +259,10 @@ fn error(msg: impl Into<String>) -> JsError {
 /// A JavaScript number for a text value that reads as one, as Acrobat's `field.value` gives.
 fn as_number(t: &str) -> Option<f64> {
     let t = t.trim();
-    if t.is_empty() || t.starts_with('+') || t.len() > 1 && t.starts_with('0') && !t.starts_with("0.") {
+    if t.is_empty()
+        || t.starts_with('+')
+        || t.len() > 1 && t.starts_with('0') && !t.starts_with("0.")
+    {
         return None;
     }
     t.parse::<f64>().ok().filter(|v| v.is_finite())
@@ -257,15 +288,28 @@ fn strings(v: &JsValue, ctx: &mut Context) -> JsResult<Vec<String>> {
         }
         return Ok(out);
     }
-    Ok(if v.is_undefined() || v.is_null() { Vec::new() } else { vec![text(v, ctx)?] })
+    Ok(if v.is_undefined() || v.is_null() {
+        Vec::new()
+    } else {
+        vec![text(v, ctx)?]
+    })
 }
 
 fn colour(c: &Option<Vec<String>>, ctx: &mut Context) -> JsValue {
     match c {
         None => JsArray::from_iter([s("T")], ctx).into(),
         Some(parts) => {
-            let vals: Vec<JsValue> =
-                parts.iter().enumerate().map(|(i, p)| if i == 0 { s(p) } else { JsValue::from(p.parse::<f64>().unwrap_or(0.0)) }).collect();
+            let vals: Vec<JsValue> = parts
+                .iter()
+                .enumerate()
+                .map(|(i, p)| {
+                    if i == 0 {
+                        s(p)
+                    } else {
+                        JsValue::from(p.parse::<f64>().unwrap_or(0.0))
+                    }
+                })
+                .collect();
             JsArray::from_iter(vals, ctx).into()
         }
     }
@@ -275,7 +319,12 @@ fn colour(c: &Option<Vec<String>>, ctx: &mut Context) -> JsValue {
 
 fn field_index(ctx: &Context, name: &JsString) -> JsResult<usize> {
     let n = name.to_std_string_escaped();
-    host(ctx)?.borrow().fields.iter().position(|f| f.name == n).ok_or_else(|| error(format!("no field named {n}")))
+    host(ctx)?
+        .borrow()
+        .fields
+        .iter()
+        .position(|f| f.name == n)
+        .ok_or_else(|| error(format!("no field named {n}")))
 }
 
 fn read(ctx: &Context, name: &JsString) -> JsResult<FieldState> {
@@ -293,7 +342,9 @@ fn write(ctx: &Context, name: &JsString, change: impl FnOnce(&mut FieldState)) -
 
 fn value_of(f: &FieldState, ctx: &mut Context) -> JsValue {
     match f.kind {
-        FieldType::CheckBox | FieldType::RadioButton => s(f.value.first().map_or("Off", String::as_str)),
+        FieldType::CheckBox | FieldType::RadioButton => {
+            s(f.value.first().map_or("Off", String::as_str))
+        }
         FieldType::ListBox if f.value.len() > 1 => {
             let vals: Vec<JsValue> = f.value.iter().map(|v| s(v)).collect();
             JsArray::from_iter(vals, ctx).into()
@@ -307,7 +358,11 @@ fn value_of(f: &FieldState, ctx: &mut Context) -> JsValue {
 
 fn set_value(f: &mut FieldState, vals: Vec<String>) {
     f.value = match f.kind {
-        FieldType::CheckBox | FieldType::RadioButton => vals.into_iter().filter(|v| v != "Off" && !v.is_empty()).take(1).collect(),
+        FieldType::CheckBox | FieldType::RadioButton => vals
+            .into_iter()
+            .filter(|v| v != "Off" && !v.is_empty())
+            .take(1)
+            .collect(),
         FieldType::ListBox => vals,
         _ => vals.into_iter().take(1).collect(),
     };
@@ -319,7 +374,10 @@ macro_rules! getter {
             let $f = read($c, name)?;
             Ok($body)
         }
-        function($ctx, NativeFunction::from_copy_closure_with_captures(get, $name.clone()))
+        function(
+            $ctx,
+            NativeFunction::from_copy_closure_with_captures(get, $name.clone()),
+        )
     }};
 }
 
@@ -327,105 +385,209 @@ fn field_object(ctx: &mut Context, name: &str) -> JsObject {
     let n = JsString::from(name);
     let value_get = getter!(ctx, n, |f, c| value_of(&f, c));
     let value_set = {
-        fn set(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+        fn set(
+            _: &JsValue,
+            args: &[JsValue],
+            name: &JsString,
+            c: &mut Context,
+        ) -> JsResult<JsValue> {
             let vals = strings(&arg(args, 0), c)?;
             write(c, name, |f| set_value(f, vals))?;
             Ok(JsValue::undefined())
         }
-        function(ctx, NativeFunction::from_copy_closure_with_captures(set, n.clone()))
+        function(
+            ctx,
+            NativeFunction::from_copy_closure_with_captures(set, n.clone()),
+        )
     };
     let as_string = getter!(ctx, n, |f, _c| s(&match f.kind {
-        FieldType::CheckBox | FieldType::RadioButton => f.value.first().cloned().unwrap_or_else(|| "Off".into()),
+        FieldType::CheckBox | FieldType::RadioButton =>
+            f.value.first().cloned().unwrap_or_else(|| "Off".into()),
         _ => f.value.join(","),
     }));
-    let default = getter!(ctx, n, |f, _c| s(&f.default.first().cloned().unwrap_or_default()));
+    let default = getter!(ctx, n, |f, _c| s(&f
+        .default
+        .first()
+        .cloned()
+        .unwrap_or_default()));
     let kind = getter!(ctx, n, |f, _c| s(f.kind.name()));
     let fname = getter!(ctx, n, |f, _c| s(&f.name));
     let readonly_get = getter!(ctx, n, |f, _c| JsValue::from(f.readonly));
     let readonly_set = {
-        fn set(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+        fn set(
+            _: &JsValue,
+            args: &[JsValue],
+            name: &JsString,
+            c: &mut Context,
+        ) -> JsResult<JsValue> {
             let on = arg(args, 0).to_boolean();
             write(c, name, |f| f.readonly = on)?;
             Ok(JsValue::undefined())
         }
-        function(ctx, NativeFunction::from_copy_closure_with_captures(set, n.clone()))
+        function(
+            ctx,
+            NativeFunction::from_copy_closure_with_captures(set, n.clone()),
+        )
     };
     let required_get = getter!(ctx, n, |f, _c| JsValue::from(f.required));
     let required_set = {
-        fn set(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+        fn set(
+            _: &JsValue,
+            args: &[JsValue],
+            name: &JsString,
+            c: &mut Context,
+        ) -> JsResult<JsValue> {
             let on = arg(args, 0).to_boolean();
             write(c, name, |f| f.required = on)?;
             Ok(JsValue::undefined())
         }
-        function(ctx, NativeFunction::from_copy_closure_with_captures(set, n.clone()))
+        function(
+            ctx,
+            NativeFunction::from_copy_closure_with_captures(set, n.clone()),
+        )
     };
     let display_get = getter!(ctx, n, |f, _c| JsValue::from(f.display));
     let display_set = {
-        fn set(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+        fn set(
+            _: &JsValue,
+            args: &[JsValue],
+            name: &JsString,
+            c: &mut Context,
+        ) -> JsResult<JsValue> {
             let d = arg(args, 0).to_number(c)? as i32;
             write(c, name, |f| f.display = d.clamp(0, 3))?;
             Ok(JsValue::undefined())
         }
-        function(ctx, NativeFunction::from_copy_closure_with_captures(set, n.clone()))
+        function(
+            ctx,
+            NativeFunction::from_copy_closure_with_captures(set, n.clone()),
+        )
     };
     let hidden_get = getter!(ctx, n, |f, _c| JsValue::from(f.display == DISPLAY_HIDDEN));
     let hidden_set = {
-        fn set(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+        fn set(
+            _: &JsValue,
+            args: &[JsValue],
+            name: &JsString,
+            c: &mut Context,
+        ) -> JsResult<JsValue> {
             let on = arg(args, 0).to_boolean();
-            write(c, name, |f| f.display = if on { DISPLAY_HIDDEN } else { DISPLAY_VISIBLE })?;
+            write(c, name, |f| {
+                f.display = if on { DISPLAY_HIDDEN } else { DISPLAY_VISIBLE }
+            })?;
             Ok(JsValue::undefined())
         }
-        function(ctx, NativeFunction::from_copy_closure_with_captures(set, n.clone()))
+        function(
+            ctx,
+            NativeFunction::from_copy_closure_with_captures(set, n.clone()),
+        )
     };
     let num_items = getter!(ctx, n, |f, _c| JsValue::from(f.options.len() as f64));
-    let char_limit = getter!(ctx, n, |f, _c| JsValue::from(f.char_limit.unwrap_or(0) as f64));
+    let char_limit = getter!(ctx, n, |f, _c| JsValue::from(
+        f.char_limit.unwrap_or(0) as f64
+    ));
     let export_values = getter!(ctx, n, |f, c| {
         let vals: Vec<JsValue> = f.options.iter().map(|o| s(&o.0)).collect();
         JsArray::from_iter(vals, c).into()
     });
     let indices = getter!(ctx, n, |f, c| {
-        let idx: Vec<JsValue> = f.options.iter().enumerate().filter(|(_, o)| f.value.contains(&o.0)).map(|(i, _)| JsValue::from(i as f64)).collect();
-        if idx.len() == 1 { idx[0].clone() } else { JsArray::from_iter(idx, c).into() }
+        let idx: Vec<JsValue> = f
+            .options
+            .iter()
+            .enumerate()
+            .filter(|(_, o)| f.value.contains(&o.0))
+            .map(|(i, _)| JsValue::from(i as f64))
+            .collect();
+        if idx.len() == 1 {
+            idx[0].clone()
+        } else {
+            JsArray::from_iter(idx, c).into()
+        }
     });
     let text_color_get = getter!(ctx, n, |f, c| colour(&f.text_color, c));
     let text_color_set = {
-        fn set(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+        fn set(
+            _: &JsValue,
+            args: &[JsValue],
+            name: &JsString,
+            c: &mut Context,
+        ) -> JsResult<JsValue> {
             let v = strings(&arg(args, 0), c)?;
             write(c, name, |f| f.text_color = Some(v))?;
             Ok(JsValue::undefined())
         }
-        function(ctx, NativeFunction::from_copy_closure_with_captures(set, n.clone()))
+        function(
+            ctx,
+            NativeFunction::from_copy_closure_with_captures(set, n.clone()),
+        )
     };
     let fill_color_get = getter!(ctx, n, |f, c| colour(&f.fill_color, c));
     let fill_color_set = {
-        fn set(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+        fn set(
+            _: &JsValue,
+            args: &[JsValue],
+            name: &JsString,
+            c: &mut Context,
+        ) -> JsResult<JsValue> {
             let v = strings(&arg(args, 0), c)?;
             write(c, name, |f| f.fill_color = Some(v))?;
             Ok(JsValue::undefined())
         }
-        function(ctx, NativeFunction::from_copy_closure_with_captures(set, n.clone()))
+        function(
+            ctx,
+            NativeFunction::from_copy_closure_with_captures(set, n.clone()),
+        )
     };
 
-    fn get_item_at(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+    fn get_item_at(
+        _: &JsValue,
+        args: &[JsValue],
+        name: &JsString,
+        c: &mut Context,
+    ) -> JsResult<JsValue> {
         let f = read(c, name)?;
         let i = arg(args, 0).to_number(c)?;
         // bExportValue defaults to true.
         let export = args.get(1).is_none_or(JsValue::to_boolean);
-        let i = if i < 0.0 { f.options.len().saturating_sub(1) } else { i as usize };
-        let o = f.options.get(i).ok_or_else(|| error(format!("{} has no item {i}", f.name)))?;
+        let i = if i < 0.0 {
+            f.options.len().saturating_sub(1)
+        } else {
+            i as usize
+        };
+        let o = f
+            .options
+            .get(i)
+            .ok_or_else(|| error(format!("{} has no item {i}", f.name)))?;
         Ok(s(if export { &o.0 } else { &o.1 }))
     }
-    fn is_box_checked(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+    fn is_box_checked(
+        _: &JsValue,
+        args: &[JsValue],
+        name: &JsString,
+        c: &mut Context,
+    ) -> JsResult<JsValue> {
         let f = read(c, name)?;
         let i = arg(args, 0).to_number(c)? as usize;
-        let on = f.options.get(i).is_some_and(|o| f.value.first() == Some(&o.0));
+        let on = f
+            .options
+            .get(i)
+            .is_some_and(|o| f.value.first() == Some(&o.0));
         Ok(JsValue::from(on))
     }
-    fn check_this_box(_: &JsValue, args: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
+    fn check_this_box(
+        _: &JsValue,
+        args: &[JsValue],
+        name: &JsString,
+        c: &mut Context,
+    ) -> JsResult<JsValue> {
         let f = read(c, name)?;
         let i = arg(args, 0).to_number(c)? as usize;
         let on = args.get(1).is_none_or(JsValue::to_boolean);
-        let export = f.options.get(i).map(|o| o.0.clone()).ok_or_else(|| error(format!("{} has no widget {i}", f.name)))?;
+        let export = f
+            .options
+            .get(i)
+            .map(|o| o.0.clone())
+            .ok_or_else(|| error(format!("{} has no widget {i}", f.name)))?;
         write(c, name, |f| {
             if on {
                 f.value = vec![export];
@@ -435,8 +597,16 @@ fn field_object(ctx: &mut Context, name: &str) -> JsObject {
         })?;
         Ok(JsValue::undefined())
     }
-    fn set_focus(_: &JsValue, _: &[JsValue], name: &JsString, c: &mut Context) -> JsResult<JsValue> {
-        host(c)?.borrow_mut().requests.push(Request::Focus(name.to_std_string_escaped()));
+    fn set_focus(
+        _: &JsValue,
+        _: &[JsValue],
+        name: &JsString,
+        c: &mut Context,
+    ) -> JsResult<JsValue> {
+        host(c)?
+            .borrow_mut()
+            .requests
+            .push(Request::Focus(name.to_std_string_escaped()));
         Ok(JsValue::undefined())
     }
 
@@ -451,16 +621,41 @@ fn field_object(ctx: &mut Context, name: &str) -> JsObject {
         .accessor(js_string!("defaultValue"), Some(default), None, rw)
         .accessor(js_string!("type"), Some(kind), None, rw)
         .accessor(js_string!("name"), Some(fname), None, rw)
-        .accessor(js_string!("readonly"), Some(readonly_get), Some(readonly_set), rw)
-        .accessor(js_string!("required"), Some(required_get), Some(required_set), rw)
-        .accessor(js_string!("display"), Some(display_get), Some(display_set), rw)
+        .accessor(
+            js_string!("readonly"),
+            Some(readonly_get),
+            Some(readonly_set),
+            rw,
+        )
+        .accessor(
+            js_string!("required"),
+            Some(required_get),
+            Some(required_set),
+            rw,
+        )
+        .accessor(
+            js_string!("display"),
+            Some(display_get),
+            Some(display_set),
+            rw,
+        )
         .accessor(js_string!("hidden"), Some(hidden_get), Some(hidden_set), rw)
         .accessor(js_string!("numItems"), Some(num_items), None, rw)
         .accessor(js_string!("charLimit"), Some(char_limit), None, rw)
         .accessor(js_string!("exportValues"), Some(export_values), None, rw)
         .accessor(js_string!("currentValueIndices"), Some(indices), None, rw)
-        .accessor(js_string!("textColor"), Some(text_color_get), Some(text_color_set), rw)
-        .accessor(js_string!("fillColor"), Some(fill_color_get), Some(fill_color_set), rw)
+        .accessor(
+            js_string!("textColor"),
+            Some(text_color_get),
+            Some(text_color_set),
+            rw,
+        )
+        .accessor(
+            js_string!("fillColor"),
+            Some(fill_color_get),
+            Some(fill_color_set),
+            rw,
+        )
         .function(get_item_at, js_string!("getItemAt"), 2)
         .function(is_box_checked, js_string!("isBoxChecked"), 1)
         .function(check_this_box, js_string!("checkThisBox"), 2)
@@ -478,13 +673,22 @@ fn get_field(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsVal
     }
     // A parent name (e.g. "total" for "total.0"): its first kid stands in, as for groups.
     let prefix = format!("{name}.");
-    let kid = host(ctx)?.borrow().fields.iter().find(|f| f.name.starts_with(&prefix)).map(|f| f.name.clone());
+    let kid = host(ctx)?
+        .borrow()
+        .fields
+        .iter()
+        .find(|f| f.name.starts_with(&prefix))
+        .map(|f| f.name.clone());
     Ok(kid.map_or(JsValue::null(), |k| field_object(ctx, &k).into()))
 }
 
 fn get_nth_field_name(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
     let i = arg(args, 0).to_number(ctx)?;
-    let name = host(ctx)?.borrow().fields.get(i.max(0.0) as usize).map(|f| f.name.clone());
+    let name = host(ctx)?
+        .borrow()
+        .fields
+        .get(i.max(0.0) as usize)
+        .map(|f| f.name.clone());
     Ok(name.map_or(JsValue::null(), |n| s(&n)))
 }
 
@@ -594,7 +798,9 @@ fn printf(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue>
     let mut out = String::new();
     let check_output = |len: usize| -> JsResult<()> {
         if len > MAX_PRINTF_OUTPUT_BYTES {
-            return Err(error(format!("util.printf output exceeds {MAX_PRINTF_OUTPUT_BYTES} bytes")));
+            return Err(error(format!(
+                "util.printf output exceeds {MAX_PRINTF_OUTPUT_BYTES} bytes"
+            )));
         }
         Ok(())
     };
@@ -643,8 +849,12 @@ fn printf(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue>
             }
             prec = Some(p);
         }
-        if width > MAX_PRINTF_WIDTH_PRECISION || prec.is_some_and(|p| p > MAX_PRINTF_WIDTH_PRECISION) {
-            return Err(error(format!("util.printf width or precision exceeds {MAX_PRINTF_WIDTH_PRECISION}")));
+        if width > MAX_PRINTF_WIDTH_PRECISION
+            || prec.is_some_and(|p| p > MAX_PRINTF_WIDTH_PRECISION)
+        {
+            return Err(error(format!(
+                "util.printf width or precision exceeds {MAX_PRINTF_WIDTH_PRECISION}"
+            )));
         }
         let conv = chars.next().unwrap_or('s');
         let v = arg(args, next);
@@ -676,7 +886,11 @@ fn printf(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue>
         let pad = width.saturating_sub(body.chars().count());
         check_output(out.len().saturating_add(pad).saturating_add(body.len()))?;
         if zero && matches!(conv, 'd' | 'f') {
-            let (sign, digits) = if body.starts_with(['-', '+', ' ']) { body.split_at(1) } else { ("", body.as_str()) };
+            let (sign, digits) = if body.starts_with(['-', '+', ' ']) {
+                body.split_at(1)
+            } else {
+                ("", body.as_str())
+            };
             out.push_str(sign);
             out.push_str(&"0".repeat(pad));
             out.push_str(digits);
@@ -714,8 +928,29 @@ fn group(t: &str, sep: u8) -> String {
     g
 }
 
-const MONTHS: [&str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+const DAYS: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 
 /// `util.printd(cFormat, oDate)`: yyyy yy mmmm mmm mm m dddd ddd dd d HH H hh h MM M ss s tt,
 /// and the numeric formats 0 (D:yyyymmddHHMMss), 1 (yyyy.mm.dd HH:MM:ss) and 2 (m/d/yy h:MM:ss tt).
@@ -731,18 +966,29 @@ fn printd(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue>
         text(&f, ctx)?
     };
     let d = arg(args, 1);
-    let Some(date) = d.as_object() else { return Err(error("util.printd needs a Date")) };
+    let Some(date) = d.as_object() else {
+        return Err(error("util.printd needs a Date"));
+    };
     let mut part = |m: &str| -> JsResult<i64> {
         let func = date.get(JsString::from(m), ctx)?;
-        let func = func.as_callable().ok_or_else(|| error("util.printd needs a Date"))?;
+        let func = func
+            .as_callable()
+            .ok_or_else(|| error("util.printd needs a Date"))?;
         let v = func.call(&d, &[], ctx)?.to_number(ctx)?;
         if v.is_nan() {
             return Err(error("invalid date"));
         }
         Ok(v as i64)
     };
-    let (y, mo, day, wd, h, mi, sec) =
-        (part("getFullYear")?, part("getMonth")?, part("getDate")?, part("getDay")?, part("getHours")?, part("getMinutes")?, part("getSeconds")?);
+    let (y, mo, day, wd, h, mi, sec) = (
+        part("getFullYear")?,
+        part("getMonth")?,
+        part("getDate")?,
+        part("getDay")?,
+        part("getHours")?,
+        part("getMinutes")?,
+        part("getSeconds")?,
+    );
     let mut out = String::new();
     let b = fmt.as_bytes();
     let mut i = 0;
@@ -873,14 +1119,26 @@ fn color_object(ctx: &mut Context) -> JsObject {
         ("red", vec![s("RGB"), 1.into(), 0.into(), 0.into()]),
         ("green", vec![s("RGB"), 0.into(), 1.into(), 0.into()]),
         ("blue", vec![s("RGB"), 0.into(), 0.into(), 1.into()]),
-        ("cyan", vec![s("CMYK"), 1.into(), 0.into(), 0.into(), 0.into()]),
-        ("magenta", vec![s("CMYK"), 0.into(), 1.into(), 0.into(), 0.into()]),
-        ("yellow", vec![s("CMYK"), 0.into(), 0.into(), 1.into(), 0.into()]),
+        (
+            "cyan",
+            vec![s("CMYK"), 1.into(), 0.into(), 0.into(), 0.into()],
+        ),
+        (
+            "magenta",
+            vec![s("CMYK"), 0.into(), 1.into(), 0.into(), 0.into()],
+        ),
+        (
+            "yellow",
+            vec![s("CMYK"), 0.into(), 0.into(), 1.into(), 0.into()],
+        ),
         ("dkGray", vec![s("G"), JsValue::from(0.25)]),
         ("gray", vec![s("G"), JsValue::from(0.5)]),
         ("ltGray", vec![s("G"), JsValue::from(0.75)]),
     ];
-    let arrays: Vec<(&str, JsValue)> = entries.drain(..).map(|(k, v)| (k, JsArray::from_iter(v, ctx).into())).collect();
+    let arrays: Vec<(&str, JsValue)> = entries
+        .drain(..)
+        .map(|(k, v)| (k, JsArray::from_iter(v, ctx).into()))
+        .collect();
     let mut o = ObjectInitializer::new(ctx);
     for (k, v) in arrays {
         o.property(JsString::from(k), v, Attribute::all());
@@ -891,7 +1149,11 @@ fn color_object(ctx: &mut Context) -> JsObject {
 fn install(ctx: &mut Context) -> JsResult<()> {
     let globals: [(&str, usize, NativeFunction); 9] = [
         ("getField", 1, NativeFunction::from_fn_ptr(get_field)),
-        ("getNthFieldName", 1, NativeFunction::from_fn_ptr(get_nth_field_name)),
+        (
+            "getNthFieldName",
+            1,
+            NativeFunction::from_fn_ptr(get_nth_field_name),
+        ),
         ("resetForm", 1, NativeFunction::from_fn_ptr(reset_form)),
         ("print", 1, NativeFunction::from_fn_ptr(print)),
         ("submitForm", 1, NativeFunction::from_fn_ptr(submit_form)),
@@ -918,8 +1180,19 @@ fn install(ctx: &mut Context) -> JsResult<()> {
     }
     let info = io.build();
     use boa_engine::property::PropertyDescriptor;
-    global.define_property_or_throw(js_string!("numFields"), PropertyDescriptor::builder().get(nf).configurable(true), ctx)?;
-    global.define_property_or_throw(js_string!("pageNum"), PropertyDescriptor::builder().get(pg).set(ps).configurable(true), ctx)?;
+    global.define_property_or_throw(
+        js_string!("numFields"),
+        PropertyDescriptor::builder().get(nf).configurable(true),
+        ctx,
+    )?;
+    global.define_property_or_throw(
+        js_string!("pageNum"),
+        PropertyDescriptor::builder()
+            .get(pg)
+            .set(ps)
+            .configurable(true),
+        ctx,
+    )?;
     ctx.register_global_property(js_string!("numPages"), JsValue::from(pages as f64), rw)?;
     ctx.register_global_property(js_string!("documentFileName"), s(&file), rw)?;
     ctx.register_global_property(js_string!("info"), info, rw)?;
@@ -927,16 +1200,56 @@ fn install(ctx: &mut Context) -> JsResult<()> {
     let app = ObjectInitializer::new(ctx)
         .function(NativeFunction::from_fn_ptr(alert), js_string!("alert"), 1)
         .function(NativeFunction::from_fn_ptr(beep), js_string!("beep"), 0)
-        .function(NativeFunction::from_fn_ptr(response), js_string!("response"), 1)
-        .function(NativeFunction::from_fn_ptr(launch_url), js_string!("launchURL"), 2)
-        .function(NativeFunction::from_fn_ptr(timer), js_string!("setTimeOut"), 2)
-        .function(NativeFunction::from_fn_ptr(timer), js_string!("setInterval"), 2)
-        .function(NativeFunction::from_fn_ptr(noop), js_string!("clearTimeOut"), 1)
-        .function(NativeFunction::from_fn_ptr(noop), js_string!("clearInterval"), 1)
-        .property(js_string!("viewerType"), s("Exchange-Pro"), Attribute::READONLY)
-        .property(js_string!("viewerVariation"), s("Full"), Attribute::READONLY)
-        .property(js_string!("viewerVersion"), JsValue::from(24.0), Attribute::READONLY)
-        .property(js_string!("formsVersion"), JsValue::from(24.0), Attribute::READONLY)
+        .function(
+            NativeFunction::from_fn_ptr(response),
+            js_string!("response"),
+            1,
+        )
+        .function(
+            NativeFunction::from_fn_ptr(launch_url),
+            js_string!("launchURL"),
+            2,
+        )
+        .function(
+            NativeFunction::from_fn_ptr(timer),
+            js_string!("setTimeOut"),
+            2,
+        )
+        .function(
+            NativeFunction::from_fn_ptr(timer),
+            js_string!("setInterval"),
+            2,
+        )
+        .function(
+            NativeFunction::from_fn_ptr(noop),
+            js_string!("clearTimeOut"),
+            1,
+        )
+        .function(
+            NativeFunction::from_fn_ptr(noop),
+            js_string!("clearInterval"),
+            1,
+        )
+        .property(
+            js_string!("viewerType"),
+            s("Exchange-Pro"),
+            Attribute::READONLY,
+        )
+        .property(
+            js_string!("viewerVariation"),
+            s("Full"),
+            Attribute::READONLY,
+        )
+        .property(
+            js_string!("viewerVersion"),
+            JsValue::from(24.0),
+            Attribute::READONLY,
+        )
+        .property(
+            js_string!("formsVersion"),
+            JsValue::from(24.0),
+            Attribute::READONLY,
+        )
         .property(js_string!("platform"), s(platform()), Attribute::READONLY)
         .property(js_string!("language"), s("ENU"), Attribute::READONLY)
         .build();
@@ -948,10 +1261,18 @@ fn install(ctx: &mut Context) -> JsResult<()> {
         .build();
     ctx.register_global_property(js_string!("util"), util, rw)?;
     let console = ObjectInitializer::new(ctx)
-        .function(NativeFunction::from_fn_ptr(println), js_string!("println"), 1)
+        .function(
+            NativeFunction::from_fn_ptr(println),
+            js_string!("println"),
+            1,
+        )
         .function(NativeFunction::from_fn_ptr(noop), js_string!("show"), 0)
         .function(NativeFunction::from_fn_ptr(noop), js_string!("hide"), 0)
-        .function(NativeFunction::from_fn_ptr(console_clear), js_string!("clear"), 0)
+        .function(
+            NativeFunction::from_fn_ptr(console_clear),
+            js_string!("clear"),
+            0,
+        )
         .build();
     ctx.register_global_property(js_string!("console"), console, rw)?;
     let display = ObjectInitializer::new(ctx)
@@ -977,7 +1298,10 @@ fn platform() -> &'static str {
 }
 
 fn event_object(ctx: &mut Context, e: &Event) -> JsObject {
-    let target = e.target.as_ref().map_or(JsValue::null(), |t| field_object(ctx, t).into());
+    let target = e
+        .target
+        .as_ref()
+        .map_or(JsValue::null(), |t| field_object(ctx, t).into());
     ObjectInitializer::new(ctx)
         .property(js_string!("name"), s(&e.name), Attribute::all())
         .property(js_string!("type"), s(&e.kind), Attribute::all())
@@ -987,7 +1311,11 @@ fn event_object(ctx: &mut Context, e: &Event) -> JsObject {
         .property(js_string!("willCommit"), e.will_commit, Attribute::all())
         .property(js_string!("rc"), true, Attribute::all())
         .property(js_string!("target"), target, Attribute::all())
-        .property(js_string!("targetName"), s(e.target.as_deref().unwrap_or("")), Attribute::all())
+        .property(
+            js_string!("targetName"),
+            s(e.target.as_deref().unwrap_or("")),
+            Attribute::all(),
+        )
         .property(js_string!("selStart"), 0, Attribute::all())
         .property(js_string!("selEnd"), 0, Attribute::all())
         .property(js_string!("commitKey"), 0, Attribute::all())
@@ -1029,7 +1357,11 @@ const SCRIPT_STACK: usize = 1 << 30;
 /// errs on the safe side.
 fn refuse(source: &str) -> Option<String> {
     if source.len() > MAX_SCRIPT_BYTES {
-        return Some(format!("the script is too long ({} KiB; the limit is {} KiB)", source.len() / 1024, MAX_SCRIPT_BYTES / 1024));
+        return Some(format!(
+            "the script is too long ({} KiB; the limit is {} KiB)",
+            source.len() / 1024,
+            MAX_SCRIPT_BYTES / 1024
+        ));
     }
     let too_deep = || Some("the script is nested too deeply to run safely".to_string());
     let b = source.as_bytes();
@@ -1095,9 +1427,25 @@ fn refuse(source: &str) -> Option<String> {
 
 /// Run `script` for `event`, after the document-level scripts (`doc_scripts`, which define the
 /// functions field scripts call), with the form's `fields`.
-pub fn run(script: &str, event: &Event, doc: &DocInfo, fields: &[FieldState], doc_scripts: &[String], limits: Limits) -> Outcome {
-    let failed = |why: String| Outcome { rc: true, value: event.value.clone(), change: event.change.clone(), error: Some(why), ..Default::default() };
-    if let Some(why) = std::iter::once(script).chain(doc_scripts.iter().map(String::as_str)).find_map(refuse) {
+pub fn run(
+    script: &str,
+    event: &Event,
+    doc: &DocInfo,
+    fields: &[FieldState],
+    doc_scripts: &[String],
+    limits: Limits,
+) -> Outcome {
+    let failed = |why: String| Outcome {
+        rc: true,
+        value: event.value.clone(),
+        change: event.change.clone(),
+        error: Some(why),
+        ..Default::default()
+    };
+    if let Some(why) = std::iter::once(script)
+        .chain(doc_scripts.iter().map(String::as_str))
+        .find_map(refuse)
+    {
         return failed(why);
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -1106,9 +1454,13 @@ pub fn run(script: &str, event: &Event, doc: &DocInfo, fields: &[FieldState], do
             let spawned = std::thread::Builder::new()
                 .name("pdfcraft-js".into())
                 .stack_size(SCRIPT_STACK)
-                .spawn_scoped(scope, || run_here(script, event, doc, fields, doc_scripts, limits));
+                .spawn_scoped(scope, || {
+                    run_here(script, event, doc, fields, doc_scripts, limits)
+                });
             match spawned {
-                Ok(thread) => thread.join().unwrap_or_else(|_| failed("the script stopped with an internal error".into())),
+                Ok(thread) => thread
+                    .join()
+                    .unwrap_or_else(|_| failed("the script stopped with an internal error".into())),
                 Err(e) => failed(format!("the script engine could not start: {e}")),
             }
         })
@@ -1117,10 +1469,19 @@ pub fn run(script: &str, event: &Event, doc: &DocInfo, fields: &[FieldState], do
     run_here(script, event, doc, fields, doc_scripts, limits)
 }
 
-fn run_here(script: &str, event: &Event, doc: &DocInfo, fields: &[FieldState], doc_scripts: &[String], limits: Limits) -> Outcome {
+fn run_here(
+    script: &str,
+    event: &Event,
+    doc: &DocInfo,
+    fields: &[FieldState],
+    doc_scripts: &[String],
+    limits: Limits,
+) -> Outcome {
     let mut ctx = Context::default();
-    ctx.runtime_limits_mut().set_loop_iteration_limit(limits.loop_iterations);
-    ctx.runtime_limits_mut().set_recursion_limit(limits.recursion);
+    ctx.runtime_limits_mut()
+        .set_loop_iteration_limit(limits.loop_iterations);
+    ctx.runtime_limits_mut()
+        .set_recursion_limit(limits.recursion);
     ctx.insert_data(RefCell::new(Host {
         fields: fields.to_vec(),
         changed: BTreeSet::new(),
@@ -1129,7 +1490,12 @@ fn run_here(script: &str, event: &Event, doc: &DocInfo, fields: &[FieldState], d
         requests: Vec::new(),
         doc: doc.clone(),
     }));
-    let mut out = Outcome { rc: true, value: event.value.clone(), change: event.change.clone(), ..Default::default() };
+    let mut out = Outcome {
+        rc: true,
+        value: event.value.clone(),
+        change: event.change.clone(),
+        ..Default::default()
+    };
     let result = (|| -> JsResult<()> {
         install(&mut ctx)?;
         let ev = event_object(&mut ctx, event);

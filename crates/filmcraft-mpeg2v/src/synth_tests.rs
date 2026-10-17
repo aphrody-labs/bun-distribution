@@ -32,7 +32,11 @@ impl Rng {
 }
 
 fn code_of(table: &[(&'static str, i16)], v: i16) -> &'static str {
-    table.iter().find(|e| e.1 == v).map(|e| e.0).unwrap_or_else(|| panic!("no code for {v}"))
+    table
+        .iter()
+        .find(|e| e.1 == v)
+        .map(|e| e.0)
+        .unwrap_or_else(|| panic!("no code for {v}"))
 }
 
 #[derive(Clone, Copy)]
@@ -110,14 +114,26 @@ const F_CODE: i32 = 2;
 impl Enc {
     fn new(cfg: Cfg) -> Enc {
         let mut dct_codes = [HashMap::new(), HashMap::new()];
-        for (k, t) in [dct_table(DCT_ZERO, DCT_ZERO_LONG), dct_table(DCT_ONE, &[])].into_iter().enumerate() {
+        for (k, t) in [dct_table(DCT_ZERO, DCT_ZERO_LONG), dct_table(DCT_ONE, &[])]
+            .into_iter()
+            .enumerate()
+        {
             for (c, v) in t {
                 if v >= 0 {
                     dct_codes[k].insert(((v & 63) as u32, (v >> 6) as u32), c);
                 }
             }
         }
-        Enc { w: W::new(), rng: Rng(cfg.seed), cfg, mbw: cfg.w.div_ceil(16), mbh: 2 * cfg.h.div_ceil(32), shy: (cfg.chroma == 1) as u32, dct_codes, qs: 2 }
+        Enc {
+            w: W::new(),
+            rng: Rng(cfg.seed),
+            cfg,
+            mbw: cfg.w.div_ceil(16),
+            mbh: 2 * cfg.h.div_ceil(32),
+            shy: (cfg.chroma == 1) as u32,
+            dct_codes,
+            qs: 2,
+        }
     }
 
     fn sequence(&mut self) {
@@ -180,8 +196,16 @@ impl Enc {
         w.put(0, 1);
         w.start(0xB5);
         w.put(8, 4);
-        let fwd = if ptype == PictureType::I && !c.concealment { 15 } else { F_CODE as u32 };
-        let bwd = if ptype == PictureType::B { F_CODE as u32 } else { 15 };
+        let fwd = if ptype == PictureType::I && !c.concealment {
+            15
+        } else {
+            F_CODE as u32
+        };
+        let bwd = if ptype == PictureType::B {
+            F_CODE as u32
+        } else {
+            15
+        };
         for v in [fwd, fwd, bwd, bwd] {
             w.put(v, 4);
         }
@@ -198,15 +222,29 @@ impl Enc {
         w.put(0, 1); // progressive_frame
         w.put(0, 1);
         let lone = tref == 0 && ptype == PictureType::P;
-        let pic = Pic { ptype, structure, parity: (structure == 2) as usize, fpfd: false, lone };
-        let rows = if structure == 3 { self.mbh } else { self.mbh / 2 };
+        let pic = Pic {
+            ptype,
+            structure,
+            parity: (structure == 2) as usize,
+            fpfd: false,
+            lone,
+        };
+        let rows = if structure == 3 {
+            self.mbh
+        } else {
+            self.mbh / 2
+        };
         for r in 0..rows {
             self.slice(&pic, r);
         }
     }
 
     fn set_q(&mut self, code: i32) {
-        self.qs = if self.cfg.q_scale_type { crate::slice::NON_LINEAR_Q[code as usize] as i32 } else { 2 * code };
+        self.qs = if self.cfg.q_scale_type {
+            crate::slice::NON_LINEAR_Q[code as usize] as i32
+        } else {
+            2 * code
+        };
     }
 
     fn dc_reset(&self) -> i32 {
@@ -219,10 +257,18 @@ impl Enc {
         self.set_q(q);
         self.w.put(q as u32, 5);
         self.w.put(0, 1);
-        let mut st = St { pmv: [[[0; 2]; 2]; 2], dc: [self.dc_reset(); 3], last: M::default() };
+        let mut st = St {
+            pmv: [[[0; 2]; 2]; 2],
+            dc: [self.dc_reset(); 3],
+            last: M::default(),
+        };
         let mut skipped = 0;
         for mbx in 0..self.mbw {
-            let can_skip = p.ptype != PictureType::I && !p.lone && mbx > 0 && mbx + 1 < self.mbw && self.rng.chance(15);
+            let can_skip = p.ptype != PictureType::I
+                && !p.lone
+                && mbx > 0
+                && mbx + 1 < self.mbw
+                && self.rng.chance(15);
             if can_skip && self.try_skip(p, &mut st, mbx, row) {
                 skipped += 1;
                 continue;
@@ -243,7 +289,10 @@ impl Enc {
 
     /// Skip the macroblock when its implied prediction stays inside the picture.
     fn try_skip(&mut self, p: &Pic, st: &mut St, mbx: usize, mby: usize) -> bool {
-        let mut m = M { mtype: if p.structure == 3 { 2 } else { 1 }, ..Default::default() };
+        let mut m = M {
+            mtype: if p.structure == 3 { 2 } else { 1 },
+            ..Default::default()
+        };
         match p.ptype {
             PictureType::P => {
                 m.flags = MB_FWD;
@@ -286,9 +335,27 @@ impl Enc {
         let mut out = Vec::new();
         let cbh = 16 >> self.shy;
         let mut add = |field: bool, mv: [i32; 2], lx: i32, ly: i32, lh: i32, cy: i32, ch: i32| {
-            out.push(Req { chroma: false, field, x: lx + (mv[0] >> 1), y: ly + (mv[1] >> 1), hx: mv[0] & 1, hy: mv[1] & 1, w: 16, h: lh });
+            out.push(Req {
+                chroma: false,
+                field,
+                x: lx + (mv[0] >> 1),
+                y: ly + (mv[1] >> 1),
+                hx: mv[0] & 1,
+                hy: mv[1] & 1,
+                w: 16,
+                h: lh,
+            });
             let cmv = [mv[0] / 2, if self.shy == 1 { mv[1] / 2 } else { mv[1] }];
-            out.push(Req { chroma: true, field, x: lx / 2 + (cmv[0] >> 1), y: cy + (cmv[1] >> 1), hx: cmv[0] & 1, hy: cmv[1] & 1, w: 8, h: ch });
+            out.push(Req {
+                chroma: true,
+                field,
+                x: lx / 2 + (cmv[0] >> 1),
+                y: cy + (cmv[1] >> 1),
+                hx: cmv[0] & 1,
+                hy: cmv[1] & 1,
+                w: 8,
+                h: ch,
+            });
         };
         let x = (mbx * 16) as i32;
         for s in 0..2 {
@@ -306,9 +373,21 @@ impl Enc {
                     }
                     3 => {
                         for par in 0..2 {
-                            let (mm, e) = if par == 0 { (if self.cfg.tff { 1 } else { 3 }, -1) } else { (if self.cfg.tff { 3 } else { 1 }, 1) };
+                            let (mm, e) = if par == 0 {
+                                (if self.cfg.tff { 1 } else { 3 }, -1)
+                            } else {
+                                (if self.cfg.tff { 3 } else { 1 }, 1)
+                            };
                             add(true, m.mv[0][s], x, mby * 8, 8, mby * cbh / 2, cbh / 2);
-                            add(true, dual(m.mv[0][s], m.dmv, mm, e), x, mby * 8, 8, mby * cbh / 2, cbh / 2);
+                            add(
+                                true,
+                                dual(m.mv[0][s], m.dmv, mm, e),
+                                x,
+                                mby * 8,
+                                8,
+                                mby * cbh / 2,
+                                cbh / 2,
+                            );
                         }
                     }
                     _ => add(false, m.mv[0][s], x, mby * 16, 16, mby * cbh, cbh),
@@ -317,13 +396,29 @@ impl Enc {
                 match m.mtype {
                     2 => {
                         for r in 0..2 {
-                            add(true, m.mv[r][s], x, mby * 16 + 8 * r as i32, 8, mby * cbh + r as i32 * cbh / 2, cbh / 2);
+                            add(
+                                true,
+                                m.mv[r][s],
+                                x,
+                                mby * 16 + 8 * r as i32,
+                                8,
+                                mby * cbh + r as i32 * cbh / 2,
+                                cbh / 2,
+                            );
                         }
                     }
                     3 => {
                         let e = if p.parity == 1 { 1 } else { -1 };
                         add(true, m.mv[0][s], x, mby * 16, 16, mby * cbh, cbh);
-                        add(true, dual(m.mv[0][s], m.dmv, 1, e), x, mby * 16, 16, mby * cbh, cbh);
+                        add(
+                            true,
+                            dual(m.mv[0][s], m.dmv, 1, e),
+                            x,
+                            mby * 16,
+                            16,
+                            mby * cbh,
+                            cbh,
+                        );
                     }
                     _ => add(true, m.mv[0][s], x, mby * 16, 16, mby * cbh, cbh),
                 }
@@ -367,13 +462,19 @@ impl Enc {
         let intra = flags & MB_INTRA != 0;
         let concealment = intra && self.cfg.concealment;
         // motion description: pick vectors until the prediction fits
-        let mut m = M { flags, ..Default::default() };
+        let mut m = M {
+            flags,
+            ..Default::default()
+        };
         let moving = flags & (MB_FWD | MB_BWD) != 0;
         let mut pmv = st.pmv;
         if moving || concealment {
             let mut ok = false;
             for _ in 0..40 {
-                let mut cand = M { flags, ..Default::default() };
+                let mut cand = M {
+                    flags,
+                    ..Default::default()
+                };
                 cand.mtype = if concealment {
                     if frame_pic { 2 } else { 1 }
                 } else {
@@ -389,7 +490,10 @@ impl Enc {
                 for r in 0..2 {
                     for s in 0..2 {
                         cand.select[r][s] = self.rng.below(2) as usize;
-                        cand.mv[r][s] = [self.rng.range(-spread - 1, spread), self.rng.range(-spread - 1, spread)];
+                        cand.mv[r][s] = [
+                            self.rng.range(-spread - 1, spread),
+                            self.rng.range(-spread - 1, spread),
+                        ];
                     }
                 }
                 cand.dmv = [self.rng.range(-1, 1), self.rng.range(-1, 1)];
@@ -399,7 +503,9 @@ impl Enc {
                 if p.lone {
                     cand.select = [[1 - p.parity; 2]; 2];
                 }
-                if (concealment || self.fits(p, &cand, mbx, mby)) && representable(p, &cand, concealment, pmv) {
+                if (concealment || self.fits(p, &cand, mbx, mby))
+                    && representable(p, &cand, concealment, pmv)
+                {
                     m = cand;
                     ok = true;
                     break;
@@ -407,7 +513,11 @@ impl Enc {
             }
             if !ok && concealment {
                 // a vector the (possibly out-of-range) predictor reaches unambiguously
-                let mut c = M { flags, mtype: if frame_pic { 2 } else { 1 }, ..Default::default() };
+                let mut c = M {
+                    flags,
+                    mtype: if frame_pic { 2 } else { 1 },
+                    ..Default::default()
+                };
                 for t in 0..2 {
                     let pred = pmv[0][0][t];
                     c.mv[0][0][t] = if pred < -32 {
@@ -424,9 +534,19 @@ impl Enc {
                 // predictors) are always representable
                 let sel = if p.lone { 1 - p.parity } else { p.parity };
                 m = if frame_pic {
-                    M { flags, mtype: 1, select: [[0, 0], [1, 1]], ..Default::default() }
+                    M {
+                        flags,
+                        mtype: 1,
+                        select: [[0, 0], [1, 1]],
+                        ..Default::default()
+                    }
                 } else {
-                    M { flags, mtype: 1, select: [[sel; 2]; 2], ..Default::default() }
+                    M {
+                        flags,
+                        mtype: 1,
+                        select: [[sel; 2]; 2],
+                        ..Default::default()
+                    }
                 };
                 assert!(representable(p, &m, concealment, pmv));
             }
@@ -453,7 +573,11 @@ impl Enc {
             (false, _) => (1, true, false),
         };
         for s in 0..2 {
-            let present = if s == 0 { flags & MB_FWD != 0 || concealment } else { flags & MB_BWD != 0 };
+            let present = if s == 0 {
+                flags & MB_FWD != 0 || concealment
+            } else {
+                flags & MB_BWD != 0
+            };
             if !present {
                 continue;
             }
@@ -463,7 +587,11 @@ impl Enc {
                 }
                 for c in 0..2 {
                     let halve = field_fmt && c == 1 && frame_pic;
-                    let pred = if halve { pmv[r][s][c] >> 1 } else { pmv[r][s][c] };
+                    let pred = if halve {
+                        pmv[r][s][c] >> 1
+                    } else {
+                        pmv[r][s][c]
+                    };
                     let v = m.mv[r][s][c];
                     self.motion_code(v - pred);
                     if dualp {
@@ -544,13 +672,24 @@ impl Enc {
             let diff = target - st.dc[cc];
             st.dc[cc] = target;
             let size = 32 - diff.unsigned_abs().leading_zeros();
-            self.w.code(code_of(if cc == 0 { DC_LUMA } else { DC_CHROMA }, size as i16));
+            self.w.code(code_of(
+                if cc == 0 { DC_LUMA } else { DC_CHROMA },
+                size as i16,
+            ));
             if size > 0 {
-                let v = if diff > 0 { diff } else { diff + (1 << size) - 1 };
+                let v = if diff > 0 {
+                    diff
+                } else {
+                    diff + (1 << size) - 1
+                };
                 self.w.put(v as u32, size);
             }
         }
-        let n = if intra { self.rng.below(6) } else { 1 + self.rng.below(6) };
+        let n = if intra {
+            self.rng.below(6)
+        } else {
+            1 + self.rng.below(6)
+        };
         let mut idx: i32 = if intra { 0 } else { -1 };
         for _ in 0..n {
             let run = self.rng.range(0, 6);
@@ -560,13 +699,25 @@ impl Enc {
             idx += run + 1;
             // keep dequantised values within ±300 (W ≤ 83 for the default intra matrix): realistic
             // residuals (extreme ones overflow ffmpeg's integer IDCT, which then differs)
-            let cap = if intra { 300 * 16 / (self.qs * 83) } else { (300 * 32 / (self.qs * 16) - 1) / 2 }.clamp(1, 2047);
-            let mag = if self.rng.chance(8) { self.rng.range(cap.min(20), cap.min(400)) } else { self.rng.range(1, cap.min(4)) };
+            let cap = if intra {
+                300 * 16 / (self.qs * 83)
+            } else {
+                (300 * 32 / (self.qs * 16) - 1) / 2
+            }
+            .clamp(1, 2047);
+            let mag = if self.rng.chance(8) {
+                self.rng.range(cap.min(20), cap.min(400))
+            } else {
+                self.rng.range(1, cap.min(4))
+            };
             let neg = self.rng.chance(50);
             if first && run == 0 && mag == 1 {
                 self.w.code("1");
                 self.w.put(neg as u32, 1);
-            } else if let Some(c) = self.dct_codes[tab].get(&(run as u32, mag as u32)).filter(|_| !self.rng.chance(5)) {
+            } else if let Some(c) = self.dct_codes[tab]
+                .get(&(run as u32, mag as u32))
+                .filter(|_| !self.rng.chance(5))
+            {
                 self.w.code(c);
                 self.w.put(neg as u32, 1);
             } else {
@@ -599,14 +750,22 @@ fn representable(p: &Pic, m: &M, concealment: bool, mut pmv: [[[i32; 2]; 2]; 2])
         (false, _) => (1, true, false),
     };
     for s in 0..2 {
-        let present = if s == 0 { m.flags & MB_FWD != 0 || concealment } else { m.flags & MB_BWD != 0 };
+        let present = if s == 0 {
+            m.flags & MB_FWD != 0 || concealment
+        } else {
+            m.flags & MB_BWD != 0
+        };
         if !present {
             continue;
         }
         for r in 0..count {
             for c in 0..2 {
                 let halve = field_fmt && c == 1 && frame_pic;
-                let pred = if halve { pmv[r][s][c] >> 1 } else { pmv[r][s][c] };
+                let pred = if halve {
+                    pmv[r][s][c] >> 1
+                } else {
+                    pmv[r][s][c]
+                };
                 let v = m.mv[r][s][c];
                 let mut d = v - pred;
                 if d < -16 * f {
@@ -665,7 +824,15 @@ fn stream(cfg: Cfg) -> Vec<u8> {
     for (tref, t) in order {
         if cfg.field_pics {
             e.picture(tref, t, first);
-            e.picture(tref, if t == PictureType::I { PictureType::P } else { t }, second);
+            e.picture(
+                tref,
+                if t == PictureType::I {
+                    PictureType::P
+                } else {
+                    t
+                },
+                second,
+            );
         } else {
             e.picture(tref, t, 3);
         }
@@ -686,17 +853,37 @@ fn check(cfg: Cfg) {
         (out, d.errors())
     };
     assert_eq!(errors, 0, "{}: our decoder reports slice errors", cfg.name);
-    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip(cfg.name) else { return };
-    let path = filmcraft_testkit::fixtures_dir("mpeg2v").join(format!("{}_{:x}.m2v", cfg.name, cfg.seed));
+    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip(cfg.name) else {
+        return;
+    };
+    let path =
+        filmcraft_testkit::fixtures_dir("mpeg2v").join(format!("{}_{:x}.m2v", cfg.name, cfg.seed));
     std::fs::write(&path, &es).unwrap();
-    let fmt = if cfg.chroma == 2 { "yuv422p" } else { "yuv420p" };
+    let fmt = if cfg.chroma == 2 {
+        "yuv422p"
+    } else {
+        "yuv420p"
+    };
     let o = std::process::Command::new(ff)
         .args(["-hide_banner", "-loglevel", "error", "-xerror", "-i"])
         .arg(&path)
-        .args(["-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", fmt, "-"])
+        .args([
+            "-fps_mode",
+            "passthrough",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            fmt,
+            "-",
+        ])
         .output()
         .unwrap();
-    assert!(o.status.success(), "{}: ffmpeg rejects the stream: {}", cfg.name, String::from_utf8_lossy(&o.stderr));
+    assert!(
+        o.status.success(),
+        "{}: ffmpeg rejects the stream: {}",
+        cfg.name,
+        String::from_utf8_lossy(&o.stderr)
+    );
     let raw = o.stdout;
     let (w, h) = (cfg.w, cfg.h);
     let (cw, ch) = (w / 2, if cfg.chroma == 2 { h } else { h / 2 });
@@ -707,7 +894,11 @@ fn check(cfg: Cfg) {
     // (frame, type, macroblock x, y, line) of the first luma difference above 4
     let mut first_bad = None;
     for (i, p) in pics.iter().enumerate() {
-        assert_eq!(p.temporal_reference as usize, i, "{}: display order", cfg.name);
+        assert_eq!(
+            p.temporal_reference as usize, i,
+            "{}: display order",
+            cfg.name
+        );
         assert_eq!(p.top_field_first, cfg.tff);
         let f = &raw[i * fs..(i + 1) * fs];
         if first_bad.is_none()
@@ -724,9 +915,19 @@ fn check(cfg: Cfg) {
         }
     }
     let psnr = 10.0 * (255f64 * 255.0 * n as f64 / sse.max(1e-9)).log10();
-    println!("{}: {} frames, max diff {worst}, {:.3}% differ, PSNR {psnr:.2} dB", cfg.name, pics.len(), 100.0 * differ as f64 / n as f64);
+    println!(
+        "{}: {} frames, max diff {worst}, {:.3}% differ, PSNR {psnr:.2} dB",
+        cfg.name,
+        pics.len(),
+        100.0 * differ as f64 / n as f64
+    );
     // the same criteria as the ffmpeg-encoded fixtures (tests/oracle.rs)
-    assert!(worst <= 4 && psnr >= 58.0, "{} (seed {:#x}): max diff {worst}, PSNR {psnr:.2}, first at {first_bad:?}", cfg.name, cfg.seed);
+    assert!(
+        worst <= 4 && psnr >= 58.0,
+        "{} (seed {:#x}): max diff {worst}, PSNR {psnr:.2}, first at {first_bad:?}",
+        cfg.name,
+        cfg.seed
+    );
 }
 
 const BASE: Cfg = Cfg {
@@ -751,21 +952,54 @@ const BASE: Cfg = Cfg {
 #[test]
 fn seed_sweep() {
     let cfgs = [
-        Cfg { name: "sweep_field_ibp", ..BASE },
-        Cfg { name: "sweep_field_dual_422", b_frames: false, dual: true, chroma: 2, tff: false, frames: 4, ..BASE },
-        Cfg { name: "sweep_frame_dual", field_pics: false, b_frames: false, dual: true, frames: 4, dc_prec: 3, ..BASE },
-        Cfg { name: "sweep_frame_ib_422", field_pics: false, chroma: 2, tff: false, q_scale_type: true, ..BASE },
+        Cfg {
+            name: "sweep_field_ibp",
+            ..BASE
+        },
+        Cfg {
+            name: "sweep_field_dual_422",
+            b_frames: false,
+            dual: true,
+            chroma: 2,
+            tff: false,
+            frames: 4,
+            ..BASE
+        },
+        Cfg {
+            name: "sweep_frame_dual",
+            field_pics: false,
+            b_frames: false,
+            dual: true,
+            frames: 4,
+            dc_prec: 3,
+            ..BASE
+        },
+        Cfg {
+            name: "sweep_frame_ib_422",
+            field_pics: false,
+            chroma: 2,
+            tff: false,
+            q_scale_type: true,
+            ..BASE
+        },
     ];
     for seed in 1..=8u64 {
         for c in cfgs {
-            check(Cfg { seed: seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ c.w as u64, ..c });
+            check(Cfg {
+                seed: seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ c.w as u64,
+                ..c
+            });
         }
     }
 }
 
 #[test]
 fn field_pictures_with_b_and_16x8() {
-    check(Cfg { name: "synth_field_ibp_tff", seed: 0x1234_5678_9abc, ..BASE });
+    check(Cfg {
+        name: "synth_field_ibp_tff",
+        seed: 0x1234_5678_9abc,
+        ..BASE
+    });
     check(Cfg {
         name: "synth_field_ibp_bff_422",
         seed: 0xfeed_beef_1234,
@@ -782,7 +1016,14 @@ fn field_pictures_with_b_and_16x8() {
 
 #[test]
 fn dual_prime_in_field_pictures() {
-    check(Cfg { name: "synth_field_dual_tff", seed: 0x0bad_cafe_0042, b_frames: false, dual: true, frames: 5, ..BASE });
+    check(Cfg {
+        name: "synth_field_dual_tff",
+        seed: 0x0bad_cafe_0042,
+        b_frames: false,
+        dual: true,
+        frames: 5,
+        ..BASE
+    });
     check(Cfg {
         name: "synth_field_dual_bff_422",
         seed: 0x1357_9bdf_2468,
@@ -798,7 +1039,15 @@ fn dual_prime_in_field_pictures() {
 
 #[test]
 fn frame_pictures_field_mc_and_dual_prime() {
-    check(Cfg { name: "synth_frame_dual_tff", seed: 0x5555_aaaa_1111, field_pics: false, b_frames: false, dual: true, frames: 6, ..BASE });
+    check(Cfg {
+        name: "synth_frame_dual_tff",
+        seed: 0x5555_aaaa_1111,
+        field_pics: false,
+        b_frames: false,
+        dual: true,
+        frames: 6,
+        ..BASE
+    });
     check(Cfg {
         name: "synth_frame_dual_bff_422",
         seed: 0x7777_3333_9999,

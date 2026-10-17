@@ -1,7 +1,8 @@
 //! Office Math (OMML, ECMA-376 Part 1 §22.1) → [`wordcraft_doc::math`] tree.
 
 use wordcraft_doc::math::{
-    Arg, BrkBin, BrkBinSub, ColJc, FracKind, LimLoc, MAX_DEPTH, MNode, MRun, MScr, MSty, Math, MathJc, MathProps, ScriptKind, merge_runs,
+    Arg, BrkBin, BrkBinSub, ColJc, FracKind, LimLoc, MAX_DEPTH, MNode, MRun, MScr, MSty, Math,
+    MathJc, MathProps, ScriptKind, merge_runs,
 };
 use wordcraft_doc::props::Rgb;
 
@@ -9,12 +10,21 @@ use crate::xml::El;
 
 /// An `m:oMath` element as an equation (structure plus its source XML).
 pub fn read_omath(e: &El, jc: MathJc) -> Math {
-    Math { nodes: merge_runs(arg(e, 0)), omml: e.to_xml(), jc, linear: false }
+    Math {
+        nodes: merge_runs(arg(e, 0)),
+        omml: e.to_xml(),
+        jc,
+        linear: false,
+    }
 }
 
 /// `m:oMathParaPr/m:jc`.
 pub fn para_jc(para: &El) -> MathJc {
-    match para.child("m:oMathParaPr").and_then(|p| p.child("m:jc")).and_then(|j| j.attr("m:val")) {
+    match para
+        .child("m:oMathParaPr")
+        .and_then(|p| p.child("m:jc"))
+        .and_then(|j| j.attr("m:val"))
+    {
         Some("left") => MathJc::Left,
         Some("right") => MathJc::Right,
         Some("center") => MathJc::Center,
@@ -36,7 +46,11 @@ pub fn read_math_pr(e: &El) -> MathProps {
         Some("+-") => BrkBinSub::PlusMinus,
         _ => BrkBinSub::MinusMinus,
     };
-    if let Some(v) = e.child("m:wrapIndent").and_then(|c| crate::units::tw(c, "m:val")).filter(|v| v.is_finite() && *v >= 0.0) {
+    if let Some(v) = e
+        .child("m:wrapIndent")
+        .and_then(|c| crate::units::tw(c, "m:val"))
+        .filter(|v| v.is_finite() && *v >= 0.0)
+    {
         m.wrap_indent = v.min(1584.0);
     }
     m.wrap_right = prop(pr, "m:wrapRight", false);
@@ -98,7 +112,12 @@ fn node(k: &El, depth: usize, out: &mut Arg) {
         "w:r" => {
             let text = run_text(k);
             if !text.is_empty() {
-                let mut r = MRun { text, nor: true, sty: Some(MSty::Plain), ..Default::default() };
+                let mut r = MRun {
+                    text,
+                    nor: true,
+                    sty: Some(MSty::Plain),
+                    ..Default::default()
+                };
                 wrpr(k.child("w:rPr"), &mut r);
                 out.push(MNode::Run(r));
             }
@@ -111,19 +130,43 @@ fn node(k: &El, depth: usize, out: &mut Arg) {
                 Some("noBar") => FracKind::NoBar,
                 _ => FracKind::Bar,
             };
-            out.push(MNode::Frac { kind, num: sub_arg(k, "m:num", d), den: sub_arg(k, "m:den", d) });
+            out.push(MNode::Frac {
+                kind,
+                num: sub_arg(k, "m:num", d),
+                den: sub_arg(k, "m:den", d),
+            });
         }
-        "m:sSup" => out.push(MNode::Script { kind: ScriptKind::Sup, base: sub_arg(k, "m:e", d), sub: Vec::new(), sup: sub_arg(k, "m:sup", d) }),
-        "m:sSub" => out.push(MNode::Script { kind: ScriptKind::Sub, base: sub_arg(k, "m:e", d), sub: sub_arg(k, "m:sub", d), sup: Vec::new() }),
-        "m:sSubSup" => {
-            out.push(MNode::Script { kind: ScriptKind::SubSup, base: sub_arg(k, "m:e", d), sub: sub_arg(k, "m:sub", d), sup: sub_arg(k, "m:sup", d) })
-        }
-        "m:sPre" => {
-            out.push(MNode::Script { kind: ScriptKind::Pre, base: sub_arg(k, "m:e", d), sub: sub_arg(k, "m:sub", d), sup: sub_arg(k, "m:sup", d) })
-        }
+        "m:sSup" => out.push(MNode::Script {
+            kind: ScriptKind::Sup,
+            base: sub_arg(k, "m:e", d),
+            sub: Vec::new(),
+            sup: sub_arg(k, "m:sup", d),
+        }),
+        "m:sSub" => out.push(MNode::Script {
+            kind: ScriptKind::Sub,
+            base: sub_arg(k, "m:e", d),
+            sub: sub_arg(k, "m:sub", d),
+            sup: Vec::new(),
+        }),
+        "m:sSubSup" => out.push(MNode::Script {
+            kind: ScriptKind::SubSup,
+            base: sub_arg(k, "m:e", d),
+            sub: sub_arg(k, "m:sub", d),
+            sup: sub_arg(k, "m:sup", d),
+        }),
+        "m:sPre" => out.push(MNode::Script {
+            kind: ScriptKind::Pre,
+            base: sub_arg(k, "m:e", d),
+            sub: sub_arg(k, "m:sub", d),
+            sup: sub_arg(k, "m:sup", d),
+        }),
         "m:rad" => {
             let pr = k.child("m:radPr");
-            out.push(MNode::Rad { deg: sub_arg(k, "m:deg", d), deg_hide: prop(pr, "m:degHide", false), e: sub_arg(k, "m:e", d) });
+            out.push(MNode::Rad {
+                deg: sub_arg(k, "m:deg", d),
+                deg_hide: prop(pr, "m:degHide", false),
+                e: sub_arg(k, "m:e", d),
+            });
         }
         "m:nary" => {
             let pr = k.child("m:naryPr");
@@ -156,21 +199,49 @@ fn node(k: &El, depth: usize, out: &mut Arg) {
                 sep,
                 grow: prop(pr, "m:grow", true),
                 shp_match: val(pr, "m:shp") == Some("match"),
-                elems: if elems.is_empty() { vec![Vec::new()] } else { elems },
+                elems: if elems.is_empty() {
+                    vec![Vec::new()]
+                } else {
+                    elems
+                },
             });
         }
-        "m:func" => out.push(MNode::Func { name: sub_arg(k, "m:fName", d), e: sub_arg(k, "m:e", d) }),
-        "m:limLow" => out.push(MNode::Lim { upper: false, e: sub_arg(k, "m:e", d), lim: sub_arg(k, "m:lim", d) }),
-        "m:limUpp" => out.push(MNode::Lim { upper: true, e: sub_arg(k, "m:e", d), lim: sub_arg(k, "m:lim", d) }),
+        "m:func" => out.push(MNode::Func {
+            name: sub_arg(k, "m:fName", d),
+            e: sub_arg(k, "m:e", d),
+        }),
+        "m:limLow" => out.push(MNode::Lim {
+            upper: false,
+            e: sub_arg(k, "m:e", d),
+            lim: sub_arg(k, "m:lim", d),
+        }),
+        "m:limUpp" => out.push(MNode::Lim {
+            upper: true,
+            e: sub_arg(k, "m:e", d),
+            lim: sub_arg(k, "m:lim", d),
+        }),
         "m:acc" => {
-            let c = chr(k.child("m:accPr"), "m:chr").map(|c| c.unwrap_or('\u{302}')).unwrap_or('\u{302}');
-            out.push(MNode::Acc { chr: c, e: sub_arg(k, "m:e", d) });
+            let c = chr(k.child("m:accPr"), "m:chr")
+                .map(|c| c.unwrap_or('\u{302}'))
+                .unwrap_or('\u{302}');
+            out.push(MNode::Acc {
+                chr: c,
+                e: sub_arg(k, "m:e", d),
+            });
         }
-        "m:bar" => out.push(MNode::Bar { top: val(k.child("m:barPr"), "m:pos") == Some("top"), e: sub_arg(k, "m:e", d) }),
+        "m:bar" => out.push(MNode::Bar {
+            top: val(k.child("m:barPr"), "m:pos") == Some("top"),
+            e: sub_arg(k, "m:e", d),
+        }),
         "m:borderBox" => {
             let pr = k.child("m:borderBoxPr");
             out.push(MNode::BorderBox {
-                hide: [prop(pr, "m:hideTop", false), prop(pr, "m:hideBot", false), prop(pr, "m:hideLeft", false), prop(pr, "m:hideRight", false)],
+                hide: [
+                    prop(pr, "m:hideTop", false),
+                    prop(pr, "m:hideBot", false),
+                    prop(pr, "m:hideLeft", false),
+                    prop(pr, "m:hideRight", false),
+                ],
                 strike: [
                     prop(pr, "m:strikeH", false),
                     prop(pr, "m:strikeV", false),
@@ -180,13 +251,23 @@ fn node(k: &El, depth: usize, out: &mut Arg) {
                 e: sub_arg(k, "m:e", d),
             });
         }
-        "m:box" => out.push(MNode::Boxed { e: sub_arg(k, "m:e", d) }),
+        "m:box" => out.push(MNode::Boxed {
+            e: sub_arg(k, "m:e", d),
+        }),
         "m:groupChr" => {
             let pr = k.child("m:groupChrPr");
-            let c = chr(pr, "m:chr").map(|c| c.unwrap_or('\u{23DF}')).unwrap_or('\u{23DF}');
-            out.push(MNode::GroupChr { chr: c, top: val(pr, "m:pos") == Some("top"), e: sub_arg(k, "m:e", d) });
+            let c = chr(pr, "m:chr")
+                .map(|c| c.unwrap_or('\u{23DF}'))
+                .unwrap_or('\u{23DF}');
+            out.push(MNode::GroupChr {
+                chr: c,
+                top: val(pr, "m:pos") == Some("top"),
+                e: sub_arg(k, "m:e", d),
+            });
         }
-        "m:eqArr" => out.push(MNode::EqArr { rows: k.children("m:e").map(|e| arg(e, d)).collect() }),
+        "m:eqArr" => out.push(MNode::EqArr {
+            rows: k.children("m:e").map(|e| arg(e, d)).collect(),
+        }),
         "m:m" => {
             let mut col_jc = Vec::new();
             if let Some(mcs) = k.child("m:mPr").and_then(|p| p.child("m:mcs")) {
@@ -197,7 +278,10 @@ fn node(k: &El, depth: usize, out: &mut Arg) {
                         Some("right") => ColJc::Right,
                         _ => ColJc::Center,
                     };
-                    let count = val(pr, "m:count").and_then(|c| c.trim().parse::<usize>().ok()).unwrap_or(1).clamp(1, 64);
+                    let count = val(pr, "m:count")
+                        .and_then(|c| c.trim().parse::<usize>().ok())
+                        .unwrap_or(1)
+                        .clamp(1, 64);
                     for _ in 0..count {
                         if col_jc.len() < 64 {
                             col_jc.push(jc);
@@ -205,7 +289,11 @@ fn node(k: &El, depth: usize, out: &mut Arg) {
                     }
                 }
             }
-            let rows = k.children("m:mr").take(1000).map(|r| r.children("m:e").take(64).map(|e| arg(e, d)).collect()).collect();
+            let rows = k
+                .children("m:mr")
+                .take(1000)
+                .map(|r| r.children("m:e").take(64).map(|e| arg(e, d)).collect())
+                .collect();
             out.push(MNode::Matrix { rows, col_jc });
         }
         "m:phant" => {
@@ -253,7 +341,10 @@ fn run(r: &El) -> Option<MRun> {
     if text.is_empty() {
         return None;
     }
-    let mut out = MRun { text, ..Default::default() };
+    let mut out = MRun {
+        text,
+        ..Default::default()
+    };
     if let Some(pr) = r.child("m:rPr") {
         out.sty = match pr.child("m:sty").and_then(|s| s.attr("m:val")) {
             Some("p") => Some(MSty::Plain),
@@ -273,7 +364,10 @@ fn run(r: &El) -> Option<MRun> {
         out.nor = pr.child("m:nor").is_some_and(on);
         out.lit = pr.child("m:lit").is_some_and(on);
         if let Some(b) = pr.child("m:brk") {
-            let aln = b.attr("m:alnAt").and_then(|v| v.trim().parse::<u32>().ok()).unwrap_or(0);
+            let aln = b
+                .attr("m:alnAt")
+                .and_then(|v| v.trim().parse::<u32>().ok())
+                .unwrap_or(0);
             out.brk = Some(aln.min(255) as u8);
         }
     }
@@ -284,17 +378,28 @@ fn run(r: &El) -> Option<MRun> {
 /// The run formatting a math run takes from `w:rPr`: size, colour, normal-text font and weight.
 fn wrpr(pr: Option<&El>, out: &mut MRun) {
     let Some(pr) = pr else { return };
-    if let Some(sz) = pr.child("w:sz").and_then(|s| s.attr("w:val")).and_then(|v| v.trim().parse::<f32>().ok()) {
+    if let Some(sz) = pr
+        .child("w:sz")
+        .and_then(|s| s.attr("w:val"))
+        .and_then(|v| v.trim().parse::<f32>().ok())
+    {
         let pt = sz / 2.0;
         if pt.is_finite() && (1.0..=1638.0).contains(&pt) {
             out.size = Some(pt);
         }
     }
-    if let Some(c) = pr.child("w:color").and_then(|c| c.attr("w:val")).and_then(Rgb::parse) {
+    if let Some(c) = pr
+        .child("w:color")
+        .and_then(|c| c.attr("w:val"))
+        .and_then(Rgb::parse)
+    {
         out.color = Some(c);
     }
     if out.nor {
-        if let Some(f) = pr.child("w:rFonts").and_then(|f| f.attr("w:ascii").or_else(|| f.attr("w:hAnsi"))) {
+        if let Some(f) = pr
+            .child("w:rFonts")
+            .and_then(|f| f.attr("w:ascii").or_else(|| f.attr("w:hAnsi")))
+        {
             out.font = Some(f.to_string());
         }
         let bold = pr.child("w:b").is_some_and(crate::units::on_off);
@@ -327,13 +432,26 @@ mod tests {
         );
         let m = read_omath(&e, MathJc::CenterGroup);
         assert_eq!(m.nodes.len(), 2);
-        let MNode::Frac { num, den, kind } = &m.nodes[1] else { panic!("{:#?}", m.nodes) };
+        let MNode::Frac { num, den, kind } = &m.nodes[1] else {
+            panic!("{:#?}", m.nodes)
+        };
         assert_eq!(*kind, FracKind::Bar);
         assert_eq!(den, &vec![MNode::Run(MRun::new("2a"))]);
-        let MNode::Rad { deg_hide, e, .. } = &num[1] else { panic!() };
+        let MNode::Rad { deg_hide, e, .. } = &num[1] else {
+            panic!()
+        };
         assert!(*deg_hide);
-        assert!(matches!(e[0], MNode::Script { kind: ScriptKind::Sup, .. }));
-        assert_eq!(wordcraft_doc::math::to_linear(&m.nodes), "x=(-b±√(b^2-4ac))/2a");
+        assert!(matches!(
+            e[0],
+            MNode::Script {
+                kind: ScriptKind::Sup,
+                ..
+            }
+        ));
+        assert_eq!(
+            wordcraft_doc::math::to_linear(&m.nodes),
+            "x=(-b±√(b^2-4ac))/2a"
+        );
         assert!(m.omml.starts_with("<m:oMath>"));
     }
 
@@ -343,11 +461,27 @@ mod tests {
             r#"<m:nary><m:naryPr><m:chr m:val="∑"/><m:limLoc m:val="undOvr"/></m:naryPr><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup/><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary><m:d><m:dPr><m:begChr m:val="["/><m:endChr m:val=""/></m:dPr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:e><m:r><m:t>b</m:t></m:r></m:e></m:d><m:nary><m:e/></m:nary><m:m><m:mr><m:e/><m:e/></m:mr></m:m>"#,
         );
         let m = read_omath(&e, MathJc::CenterGroup);
-        let MNode::Nary { chr, lim_loc, .. } = &m.nodes[0] else { panic!() };
+        let MNode::Nary { chr, lim_loc, .. } = &m.nodes[0] else {
+            panic!()
+        };
         assert_eq!((*chr, *lim_loc), ('∑', Some(LimLoc::UndOvr)));
-        let MNode::Delim { beg, end, sep, elems, .. } = &m.nodes[1] else { panic!() };
-        assert_eq!((*beg, *end, *sep, elems.len()), (Some('['), None, Some('|'), 2));
+        let MNode::Delim {
+            beg,
+            end,
+            sep,
+            elems,
+            ..
+        } = &m.nodes[1]
+        else {
+            panic!()
+        };
+        assert_eq!(
+            (*beg, *end, *sep, elems.len()),
+            (Some('['), None, Some('|'), 2)
+        );
         assert!(matches!(m.nodes[2], MNode::Nary { chr: '∫', .. }));
-        assert!(matches!(&m.nodes[3], MNode::Matrix { rows, .. } if rows.len() == 1 && rows[0].len() == 2));
+        assert!(
+            matches!(&m.nodes[3], MNode::Matrix { rows, .. } if rows.len() == 1 && rows[0].len() == 2)
+        );
     }
 }

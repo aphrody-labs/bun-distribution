@@ -28,12 +28,24 @@ impl ColorKey {
         let rgb = |x: f32| (x.clamp(0.0, 1.0) * RGB_Q).round() as i32;
         let ink = |x: f32| (x.clamp(0.0, 1.0) * INK_Q).round() as i32;
         match *c {
-            Color::Rgb { r, g, b } => Self { model: 0, v: [rgb(r), rgb(g), rgb(b), 0] },
-            Color::Cmyk { c, m, y, k } => Self { model: 1, v: [ink(c), ink(m), ink(y), ink(k)] },
-            Color::Gray { k } => Self { model: 2, v: [ink(k), 0, 0, 0] },
+            Color::Rgb { r, g, b } => Self {
+                model: 0,
+                v: [rgb(r), rgb(g), rgb(b), 0],
+            },
+            Color::Cmyk { c, m, y, k } => Self {
+                model: 1,
+                v: [ink(c), ink(m), ink(y), ink(k)],
+            },
+            Color::Gray { k } => Self {
+                model: 2,
+                v: [ink(k), 0, 0, 0],
+            },
             Color::Lab { l, a, b } => {
                 let lab = |x: f32| (x * LAB_Q).round() as i32;
-                Self { model: 3, v: [lab(l.clamp(0.0, 100.0)), lab(a), lab(b), 0] }
+                Self {
+                    model: 3,
+                    v: [lab(l.clamp(0.0, 100.0)), lab(a), lab(b), 0],
+                }
             }
         }
     }
@@ -42,10 +54,18 @@ impl ColorKey {
     pub fn color(&self) -> Color {
         let f = |i: usize| self.v[i] as f32 / INK_Q;
         match self.model {
-            0 => Color::rgb(self.v[0] as f32 / RGB_Q, self.v[1] as f32 / RGB_Q, self.v[2] as f32 / RGB_Q),
+            0 => Color::rgb(
+                self.v[0] as f32 / RGB_Q,
+                self.v[1] as f32 / RGB_Q,
+                self.v[2] as f32 / RGB_Q,
+            ),
             1 => Color::cmyk(f(0), f(1), f(2), f(3)),
             2 => Color::gray(f(0)),
-            _ => Color::lab(self.v[0] as f32 / LAB_Q, self.v[1] as f32 / LAB_Q, self.v[2] as f32 / LAB_Q),
+            _ => Color::lab(
+                self.v[0] as f32 / LAB_Q,
+                self.v[1] as f32 / LAB_Q,
+                self.v[2] as f32 / LAB_Q,
+            ),
         }
     }
 
@@ -53,7 +73,9 @@ impl ColorKey {
     pub fn parse(s: &str) -> Option<Self> {
         let mut it = s.split_whitespace();
         let model = it.next()?.to_ascii_lowercase();
-        let nums: Vec<f32> = it.map(|t| t.parse::<f32>().ok().filter(|v| v.is_finite())).collect::<Option<_>>()?;
+        let nums: Vec<f32> = it
+            .map(|t| t.parse::<f32>().ok().filter(|v| v.is_finite()))
+            .collect::<Option<_>>()?;
         let c = match (model.as_str(), nums.as_slice()) {
             ("rgb", [r, g, b]) => Color::rgb(r / 255.0, g / 255.0, b / 255.0),
             ("cmyk", [c, m, y, k]) => Color::cmyk(c / 100.0, m / 100.0, y / 100.0, k / 100.0),
@@ -69,7 +91,12 @@ impl fmt::Display for ColorKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Components are hundredths of the written units: exact with two decimals.
         let num = |q: i32| {
-            let s = format!("{}{}.{:02}", if q < 0 { "-" } else { "" }, q.abs() / 100, q.abs() % 100);
+            let s = format!(
+                "{}{}.{:02}",
+                if q < 0 { "-" } else { "" },
+                q.abs() / 100,
+                q.abs() % 100
+            );
             s.trim_end_matches('0').trim_end_matches('.').to_string()
         };
         let [a, b, c, k] = self.v.map(num);
@@ -101,7 +128,9 @@ impl Neutral {
             Color::Cmyk { k, .. } if k >= 1.0 - E => Some(Neutral::Black),
             Color::Cmyk { c, m, y, .. } => (c.max(m).max(y) <= E).then_some(Neutral::Gray),
             // Lab: lightness at the ends, no chroma between them (to half a unit).
-            Color::Lab { l, a, b } if l >= 99.5 && a.abs().max(b.abs()) <= 0.5 => Some(Neutral::White),
+            Color::Lab { l, a, b } if l >= 99.5 && a.abs().max(b.abs()) <= 0.5 => {
+                Some(Neutral::White)
+            }
             Color::Lab { l, .. } if l <= 0.5 => Some(Neutral::Black),
             Color::Lab { a, b, .. } => (a.abs().max(b.abs()) <= 0.5).then_some(Neutral::Gray),
             Color::Rgb { r, g, b } => {
@@ -128,12 +157,20 @@ pub struct Preserve {
 
 impl Default for Preserve {
     fn default() -> Self {
-        Self { white: true, black: true, grays: false }
+        Self {
+            white: true,
+            black: true,
+            grays: false,
+        }
     }
 }
 
 impl Preserve {
-    pub const NONE: Self = Self { white: false, black: false, grays: false };
+    pub const NONE: Self = Self {
+        white: false,
+        black: false,
+        grays: false,
+    };
 
     /// Whether `c` stays as it is.
     pub fn keeps(&self, c: &Color) -> bool {
@@ -167,7 +204,13 @@ pub enum Method {
 }
 
 impl Method {
-    pub const ALL: [Method; 5] = [Method::Exact, Method::PreserveTints, Method::ScaleTints, Method::TintsShades, Method::HueShift];
+    pub const ALL: [Method; 5] = [
+        Method::Exact,
+        Method::PreserveTints,
+        Method::ScaleTints,
+        Method::TintsShades,
+        Method::HueShift,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -189,16 +232,27 @@ impl Method {
     }
     /// A method from its id or label (case and spaces ignored).
     pub fn parse(s: &str) -> Option<Self> {
-        let key = |x: &str| x.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let key = |x: &str| {
+            x.chars()
+                .filter(|c| c.is_alphanumeric())
+                .collect::<String>()
+                .to_ascii_lowercase()
+        };
         let want = key(s);
-        Self::ALL.into_iter().find(|m| key(m.id()) == want || key(m.label()) == want)
+        Self::ALL
+            .into_iter()
+            .find(|m| key(m.id()) == want || key(m.label()) == want)
     }
 
     /// The colour of `row` the new colour stands for: the most saturated for Hue Shift, the one
     /// of average lightness for Tints and Shades, else the darkest. `None` for an empty row.
     pub fn key_color(self, row: &[Color]) -> Option<Color> {
         let labs: Vec<(Color, Lab)> = row.iter().map(|c| (*c, c.to_lab())).collect();
-        let pick = |score: &dyn Fn(&Lab) -> f32| labs.iter().min_by(|a, b| score(&a.1).total_cmp(&score(&b.1))).map(|x| x.0);
+        let pick = |score: &dyn Fn(&Lab) -> f32| {
+            labs.iter()
+                .min_by(|a, b| score(&a.1).total_cmp(&score(&b.1)))
+                .map(|x| x.0)
+        };
         match self {
             Method::HueShift => pick(&|l| -l.chroma() * 1000.0 + l.l),
             Method::TintsShades => {
@@ -234,7 +288,11 @@ fn dot(a: [f32; 4], b: [f32; 4]) -> f32 {
 pub fn tint_of(c: Color, base: Color) -> f32 {
     let (a, b) = (ink(c, c.model()), ink(base, c.model()));
     let bb = dot(b, b);
-    if bb <= 1e-9 { 1.0 } else { (dot(a, b) / bb).clamp(0.0, 1.0) }
+    if bb <= 1e-9 {
+        1.0
+    } else {
+        (dot(a, b) / bb).clamp(0.0, 1.0)
+    }
 }
 
 /// Whether `c` is a tint of `base` (its ink a fraction of `base`'s).
@@ -271,10 +329,18 @@ impl RowMap {
     pub fn new(method: Method, row: &[Color], to: Color) -> Self {
         let key = method.key_color(row).unwrap_or(to);
         let mean_l = match method {
-            Method::TintsShades => mean_l(&row.iter().map(|c| (*c, c.to_lab())).collect::<Vec<_>>()),
+            Method::TintsShades => {
+                mean_l(&row.iter().map(|c| (*c, c.to_lab())).collect::<Vec<_>>())
+            }
             _ => 0.0,
         };
-        Self { method, to, key, mean_l, turn: to.to_hsb()[0] - key.to_hsb()[0] }
+        Self {
+            method,
+            to,
+            key,
+            mean_l,
+            turn: to.to_hsb()[0] - key.to_hsb()[0],
+        }
     }
 
     /// The colour of the row the new colour stands for.
@@ -292,12 +358,20 @@ impl RowMap {
             Method::ScaleTints => to.tinted(tint_of(c, self.key)),
             Method::TintsShades => {
                 let d = c.to_lab().l - self.mean_l;
-                if d >= 0.0 { to.tinted(1.0 - d / (100.0 - self.mean_l).max(1e-3)) } else { shaded(to, -d / self.mean_l.max(1e-3)) }
+                if d >= 0.0 {
+                    to.tinted(1.0 - d / (100.0 - self.mean_l).max(1e-3))
+                } else {
+                    shaded(to, -d / self.mean_l.max(1e-3))
+                }
             }
             Method::HueShift if c == self.key => to,
             Method::HueShift => {
                 let [h, s, v] = c.to_hsb();
-                if s <= 0.0 { c } else { keep_model(c, Color::from_hsb(h + self.turn, s, v)) }
+                if s <= 0.0 {
+                    c
+                } else {
+                    keep_model(c, Color::from_hsb(h + self.turn, s, v))
+                }
             }
         }
     }
@@ -317,7 +391,9 @@ pub fn cluster(colors: &[Color], weights: &[f32], n: usize) -> Vec<Vec<usize>> {
         })
         .collect();
     let w = |i: usize| weights.get(i).copied().unwrap_or(1.0).max(1e-6);
-    let d2 = |a: &[f32; 3], b: &[f32; 3]| (a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2);
+    let d2 = |a: &[f32; 3], b: &[f32; 3]| {
+        (a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)
+    };
     let n = n.max(1);
     if pts.is_empty() {
         return vec![];
@@ -327,7 +403,10 @@ pub fn cluster(colors: &[Color], weights: &[f32], n: usize) -> Vec<Vec<usize>> {
     let mut centres = vec![pts[first]];
     let mut near: Vec<f32> = pts.iter().map(|p| d2(p, &pts[first])).collect();
     while centres.len() < n {
-        let (i, far) = near.iter().enumerate().fold((0, 0.0f32), |b, (i, d)| if *d > b.1 { (i, *d) } else { b });
+        let (i, far) = near
+            .iter()
+            .enumerate()
+            .fold((0, 0.0f32), |b, (i, d)| if *d > b.1 { (i, *d) } else { b });
         if far <= 1e-6 {
             break;
         }
@@ -336,7 +415,11 @@ pub fn cluster(colors: &[Color], weights: &[f32], n: usize) -> Vec<Vec<usize>> {
             near[j] = near[j].min(d2(p, &pts[i]));
         }
     }
-    let nearest = |p: &[f32; 3], cs: &[[f32; 3]]| (0..cs.len()).min_by(|a, b| d2(p, &cs[*a]).total_cmp(&d2(p, &cs[*b]))).unwrap_or(0);
+    let nearest = |p: &[f32; 3], cs: &[[f32; 3]]| {
+        (0..cs.len())
+            .min_by(|a, b| d2(p, &cs[*a]).total_cmp(&d2(p, &cs[*b])))
+            .unwrap_or(0)
+    };
     let mut of: Vec<usize> = pts.iter().map(|p| nearest(p, &centres)).collect();
     for _ in 0..50 {
         let mut sum = vec![([0.0f32; 3], 0.0f32); centres.len()];
@@ -381,7 +464,10 @@ impl Palette {
     /// The palette colour closest to `c` (CIEDE2000), in its own model; `c` for an empty palette.
     pub fn nearest(&self, c: Color) -> Color {
         let l = c.to_lab();
-        self.0.iter().min_by(|a, b| delta_e2000(a.1, l).total_cmp(&delta_e2000(b.1, l))).map_or(c, |x| x.0)
+        self.0
+            .iter()
+            .min_by(|a, b| delta_e2000(a.1, l).total_cmp(&delta_e2000(b.1, l)))
+            .map_or(c, |x| x.0)
     }
 }
 
@@ -447,17 +533,40 @@ mod tests {
             assert_eq!(ColorKey::parse(&k.to_string()), Some(k), "{k}");
             assert!(close(k.color(), c));
         }
-        assert_eq!(ColorKey::of(&Color::rgb(1.0, 0.5, 0.0)).to_string(), "rgb 255 127.5 0");
-        assert_eq!(ColorKey::of(&Color::cmyk(0.0, 1.0, 1.0, 0.0)).to_string(), "cmyk 0 100 100 0");
+        assert_eq!(
+            ColorKey::of(&Color::rgb(1.0, 0.5, 0.0)).to_string(),
+            "rgb 255 127.5 0"
+        );
+        assert_eq!(
+            ColorKey::of(&Color::cmyk(0.0, 1.0, 1.0, 0.0)).to_string(),
+            "cmyk 0 100 100 0"
+        );
         assert_eq!(ColorKey::of(&Color::gray(0.4)).to_string(), "gray 40");
-        assert_eq!(ColorKey::of(&Color::rgb8(18, 52, 86)).to_string(), "rgb 18 52 86", "8-bit colours read as whole levels");
+        assert_eq!(
+            ColorKey::of(&Color::rgb8(18, 52, 86)).to_string(),
+            "rgb 18 52 86",
+            "8-bit colours read as whole levels"
+        );
         // A CMYK red and an RGB red are different colours.
-        assert_ne!(ColorKey::of(&Color::cmyk(0.0, 1.0, 1.0, 0.0)), ColorKey::of(&Color::rgb(1.0, 0.0, 0.0)));
-        assert_eq!(ColorKey::parse(" CMYK 0 100  100 0 "), ColorKey::parse("cmyk 0 100 100 0"));
+        assert_ne!(
+            ColorKey::of(&Color::cmyk(0.0, 1.0, 1.0, 0.0)),
+            ColorKey::of(&Color::rgb(1.0, 0.0, 0.0))
+        );
+        assert_eq!(
+            ColorKey::parse(" CMYK 0 100  100 0 "),
+            ColorKey::parse("cmyk 0 100 100 0")
+        );
         let lab = Color::lab(55.0, 60.5, -40.25);
         assert_eq!(ColorKey::of(&lab).to_string(), "lab 55 60.5 -40.25");
-        assert_eq!(ColorKey::parse("lab 55 60.5 -40.25").map(|k| k.color()), Some(lab));
-        assert_ne!(ColorKey::of(&lab), ColorKey::of(&keep_model(Color::WHITE, lab)), "a Lab colour isn't its RGB lookalike");
+        assert_eq!(
+            ColorKey::parse("lab 55 60.5 -40.25").map(|k| k.color()),
+            Some(lab)
+        );
+        assert_ne!(
+            ColorKey::of(&lab),
+            ColorKey::of(&keep_model(Color::WHITE, lab)),
+            "a Lab colour isn't its RGB lookalike"
+        );
         assert_eq!(ColorKey::parse("#ff0000"), None);
         assert_eq!(ColorKey::parse("rgb 1 2"), None);
     }
@@ -465,15 +574,34 @@ mod tests {
     #[test]
     fn neutrals_and_preserve() {
         assert_eq!(Neutral::of(&Color::WHITE), Some(Neutral::White));
-        assert_eq!(Neutral::of(&Color::cmyk(0.0, 0.0, 0.0, 0.0)), Some(Neutral::White));
-        assert_eq!(Neutral::of(&Color::cmyk(0.6, 0.4, 0.4, 1.0)), Some(Neutral::Black), "rich black");
+        assert_eq!(
+            Neutral::of(&Color::cmyk(0.0, 0.0, 0.0, 0.0)),
+            Some(Neutral::White)
+        );
+        assert_eq!(
+            Neutral::of(&Color::cmyk(0.6, 0.4, 0.4, 1.0)),
+            Some(Neutral::Black),
+            "rich black"
+        );
         assert_eq!(Neutral::of(&Color::gray(0.5)), Some(Neutral::Gray));
         assert_eq!(Neutral::of(&Color::rgb(0.5, 0.5, 0.5)), Some(Neutral::Gray));
-        assert_eq!(Neutral::of(&Color::cmyk(0.0, 0.0, 0.0, 0.3)), Some(Neutral::Gray));
+        assert_eq!(
+            Neutral::of(&Color::cmyk(0.0, 0.0, 0.0, 0.3)),
+            Some(Neutral::Gray)
+        );
         assert_eq!(Neutral::of(&Color::rgb(0.5, 0.4, 0.5)), None);
-        assert_eq!(Neutral::of(&Color::lab(100.0, 0.0, 0.0)), Some(Neutral::White));
-        assert_eq!(Neutral::of(&Color::lab(0.0, 0.0, 0.0)), Some(Neutral::Black));
-        assert_eq!(Neutral::of(&Color::lab(50.0, 0.2, -0.3)), Some(Neutral::Gray));
+        assert_eq!(
+            Neutral::of(&Color::lab(100.0, 0.0, 0.0)),
+            Some(Neutral::White)
+        );
+        assert_eq!(
+            Neutral::of(&Color::lab(0.0, 0.0, 0.0)),
+            Some(Neutral::Black)
+        );
+        assert_eq!(
+            Neutral::of(&Color::lab(50.0, 0.2, -0.3)),
+            Some(Neutral::Gray)
+        );
         assert_eq!(Neutral::of(&Color::lab(50.0, 20.0, 0.0)), None);
         let p = Preserve::default();
         assert!(p.keeps(&Color::BLACK) && p.keeps(&Color::WHITE) && !p.keeps(&Color::gray(0.5)));
@@ -498,16 +626,28 @@ mod tests {
         let m = RowMap::new(Method::ScaleTints, &row, Color::cmyk(1.0, 0.5, 0.0, 0.0));
         assert!(close(m.key(), red), "the darkest colour is the key");
         assert!(close(m.map(red), Color::cmyk(1.0, 0.5, 0.0, 0.0)));
-        assert!(close(m.map(pink), Color::cmyk(0.4, 0.2, 0.0, 0.0)), "{:?}", m.map(pink));
+        assert!(
+            close(m.map(pink), Color::cmyk(0.4, 0.2, 0.0, 0.0)),
+            "{:?}",
+            m.map(pink)
+        );
         // RGB tints mix toward white.
         let blue = Color::rgb(0.0, 0.0, 1.0);
-        let m = RowMap::new(Method::ScaleTints, &[blue, blue.tinted(0.5)], Color::rgb(1.0, 0.0, 0.0));
+        let m = RowMap::new(
+            Method::ScaleTints,
+            &[blue, blue.tinted(0.5)],
+            Color::rgb(1.0, 0.0, 0.0),
+        );
         assert!(close(m.map(blue.tinted(0.5)), Color::rgb(1.0, 0.5, 0.5)));
         // Lab tints too (toward paper white).
         let base = Color::lab(40.0, 60.0, -20.0);
         let to = Color::lab(50.0, -40.0, 30.0);
         let m = RowMap::new(Method::ScaleTints, &[base, base.tinted(0.25)], to);
-        assert!(close(m.map(base.tinted(0.25)), to.tinted(0.25)), "{:?}", m.map(base.tinted(0.25)));
+        assert!(
+            close(m.map(base.tinted(0.25)), to.tinted(0.25)),
+            "{:?}",
+            m.map(base.tinted(0.25))
+        );
     }
 
     #[test]
@@ -516,7 +656,10 @@ mod tests {
         let other = Color::cmyk(0.0, 0.3, 0.8, 0.0);
         let to = Color::cmyk(1.0, 0.0, 0.0, 0.0);
         let m = RowMap::new(Method::PreserveTints, &[red, red.tinted(0.5), other], to);
-        assert!(close(m.map(red.tinted(0.5)), Color::cmyk(0.5, 0.0, 0.0, 0.0)));
+        assert!(close(
+            m.map(red.tinted(0.5)),
+            Color::cmyk(0.5, 0.0, 0.0, 0.0)
+        ));
         assert!(close(m.map(other), to), "not a tint: exact");
         let s = RowMap::new(Method::ScaleTints, &[red, other], to);
         assert!(!close(s.map(other), to), "Scale Tints scales every colour");
@@ -525,47 +668,85 @@ mod tests {
     #[test]
     fn exact_tints_shades_and_hue_shift() {
         let to = Color::rgb(0.0, 0.4, 1.0);
-        let row = [Color::rgb(0.9, 0.2, 0.2), Color::rgb(0.5, 0.1, 0.1), Color::rgb(1.0, 0.7, 0.7)];
+        let row = [
+            Color::rgb(0.9, 0.2, 0.2),
+            Color::rgb(0.5, 0.1, 0.1),
+            Color::rgb(1.0, 0.7, 0.7),
+        ];
         let e = RowMap::new(Method::Exact, &row, to);
         assert!(row.iter().all(|c| e.map(*c) == to));
         let ts = RowMap::new(Method::TintsShades, &row, to);
         let l = |c: Color| c.to_lab().l;
-        assert!(l(ts.map(row[2])) > l(ts.map(row[0])) && l(ts.map(row[0])) > l(ts.map(row[1])), "lighter stays lighter");
+        assert!(
+            l(ts.map(row[2])) > l(ts.map(row[0])) && l(ts.map(row[0])) > l(ts.map(row[1])),
+            "lighter stays lighter"
+        );
         let hs = RowMap::new(Method::HueShift, &row, to);
         assert_eq!(hs.map(hs.key()), to);
         let [h, s, v] = hs.map(row[1]).to_hsb();
         let [_, s0, v0] = row[1].to_hsb();
-        assert!((h - to.to_hsb()[0]).abs() < 1.0 && (s - s0).abs() < 1e-3 && (v - v0).abs() < 1e-3, "{h} {s} {v}");
+        assert!(
+            (h - to.to_hsb()[0]).abs() < 1.0 && (s - s0).abs() < 1e-3 && (v - v0).abs() < 1e-3,
+            "{h} {s} {v}"
+        );
         // Results keep the model of the colour they replace.
         let m = RowMap::new(Method::Exact, &[Color::gray(0.3)], to);
         assert!(matches!(m.map(Color::gray(0.3)), Color::Gray { .. }));
         let lab = [Color::lab(40.0, 50.0, 30.0), Color::lab(70.0, 20.0, 10.0)];
         for method in Method::ALL {
             let m = RowMap::new(method, &lab, to);
-            assert!(lab.iter().all(|c| matches!(m.map(*c), Color::Lab { .. })), "{}", method.label());
+            assert!(
+                lab.iter().all(|c| matches!(m.map(*c), Color::Lab { .. })),
+                "{}",
+                method.label()
+            );
         }
         assert!(matches!(shaded(lab[0], 0.5), Color::Lab { .. }));
     }
 
     #[test]
     fn clustering_reduces_to_n_rows_of_similar_colours() {
-        let colors =
-            [Color::rgb(1.0, 0.0, 0.0), Color::rgb(0.0, 0.0, 1.0), Color::rgb(0.9, 0.1, 0.05), Color::rgb(0.1, 0.1, 0.9), Color::rgb(1.0, 0.2, 0.2)];
+        let colors = [
+            Color::rgb(1.0, 0.0, 0.0),
+            Color::rgb(0.0, 0.0, 1.0),
+            Color::rgb(0.9, 0.1, 0.05),
+            Color::rgb(0.1, 0.1, 0.9),
+            Color::rgb(1.0, 0.2, 0.2),
+        ];
         let rows = cluster(&colors, &[5.0, 4.0, 1.0, 1.0, 1.0], 2);
         assert_eq!(rows, vec![vec![0, 2, 4], vec![1, 3]]);
-        assert_eq!(cluster(&colors, &[1.0; 5], 9).len(), 5, "never more rows than colours");
+        assert_eq!(
+            cluster(&colors, &[1.0; 5], 9).len(),
+            5,
+            "never more rows than colours"
+        );
         assert_eq!(cluster(&colors, &[1.0; 5], 1), vec![vec![0, 1, 2, 3, 4]]);
-        assert_eq!(cluster(&[Color::WHITE, Color::WHITE], &[1.0, 1.0], 2).len(), 1, "identical colours share a row");
+        assert_eq!(
+            cluster(&[Color::WHITE, Color::WHITE], &[1.0, 1.0], 2).len(),
+            1,
+            "identical colours share a row"
+        );
         assert!(cluster(&[], &[], 3).is_empty());
     }
 
     #[test]
     fn palette_snaps_to_the_nearest_colour() {
-        let p = Palette::new([Color::rgb(1.0, 0.0, 0.0), Color::cmyk(1.0, 0.0, 0.0, 0.0), Color::gray(0.5)]);
-        assert_eq!(p.nearest(Color::rgb(0.9, 0.1, 0.1)), Color::rgb(1.0, 0.0, 0.0));
+        let p = Palette::new([
+            Color::rgb(1.0, 0.0, 0.0),
+            Color::cmyk(1.0, 0.0, 0.0, 0.0),
+            Color::gray(0.5),
+        ]);
+        assert_eq!(
+            p.nearest(Color::rgb(0.9, 0.1, 0.1)),
+            Color::rgb(1.0, 0.0, 0.0)
+        );
         assert_eq!(p.nearest(Color::rgb(0.45, 0.45, 0.45)), Color::gray(0.5));
         let lab = Palette::new([Color::lab(50.0, 70.0, 50.0), Color::lab(50.0, -60.0, 50.0)]);
-        assert_eq!(lab.nearest(Color::rgb(0.9, 0.1, 0.1)), Color::lab(50.0, 70.0, 50.0), "library colours keep their model");
+        assert_eq!(
+            lab.nearest(Color::rgb(0.9, 0.1, 0.1)),
+            Color::lab(50.0, 70.0, 50.0),
+            "library colours keep their model"
+        );
         assert_eq!(Palette::default().nearest(Color::WHITE), Color::WHITE);
     }
 
@@ -580,7 +761,14 @@ mod tests {
         let c = Color::cmyk(0.0, 0.8, 0.9, 0.1);
         let r = Rng::new(3).saturation_brightness(c);
         assert!(matches!(r, Color::Cmyk { .. }));
-        assert!(matches!(Rng::new(3).saturation_brightness(Color::lab(50.0, 40.0, 20.0)), Color::Lab { .. }));
-        assert_eq!(Rng::new(3).saturation_brightness(Color::gray(0.4)).to_hsb()[1], 0.0, "greys stay grey");
+        assert!(matches!(
+            Rng::new(3).saturation_brightness(Color::lab(50.0, 40.0, 20.0)),
+            Color::Lab { .. }
+        ));
+        assert_eq!(
+            Rng::new(3).saturation_brightness(Color::gray(0.4)).to_hsb()[1],
+            0.0,
+            "greys stay grey"
+        );
     }
 }

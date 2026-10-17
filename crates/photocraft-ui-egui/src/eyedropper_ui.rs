@@ -29,7 +29,10 @@ pub fn layer_options() -> [(String, &'static str); 5] {
         ("currentAndBelow".into(), tl!("Current & Below")),
         ("all".into(), tl!("All Layers")),
         ("allNoAdjustments".into(), tl!("All Layers No Adjustments")),
-        ("currentAndBelowNoAdjustments".into(), tl!("Current & Below No Adjustments")),
+        (
+            "currentAndBelowNoAdjustments".into(),
+            tl!("Current & Below No Adjustments"),
+        ),
     ]
 }
 
@@ -42,9 +45,21 @@ fn opt(ui: &mut egui::Ui, text: &str) {
 pub fn options(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let o = &mut app.ui.tool_options;
     opt(ui, tl!("Sample Size:"));
-    widgets::dropdown(ui, "eyedropper-size", &mut o.eyedropper_size, &size_options(), 130.0);
+    widgets::dropdown(
+        ui,
+        "eyedropper-size",
+        &mut o.eyedropper_size,
+        &size_options(),
+        130.0,
+    );
     opt(ui, tl!("Sample:"));
-    widgets::dropdown(ui, "eyedropper-sample", &mut o.eyedropper_sample, &layer_options(), 190.0);
+    widgets::dropdown(
+        ui,
+        "eyedropper-sample",
+        &mut o.eyedropper_sample,
+        &layer_options(),
+        190.0,
+    );
     widgets::checkbox(ui, &mut o.eyedropper_ring, tl!("Show Sampling Ring"));
     widgets::vline(ui, 22.0);
     let t = Tokens::get(ui.ctx());
@@ -70,9 +85,20 @@ mod tests {
 
     /// An app with a 40×40 white document whose top-left 3×3 pixels are black.
     fn app() -> PhotocraftApp {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 40, "height": 40, "background": "white"})).unwrap();
-        app.run("tools.setColors", json!({"foreground": [0.0, 0.0, 0.0, 1.0]})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run(
+            "file.new",
+            json!({"width": 40, "height": 40, "background": "white"}),
+        )
+        .unwrap();
+        app.run(
+            "tools.setColors",
+            json!({"foreground": [0.0, 0.0, 0.0, 1.0]}),
+        )
+        .unwrap();
         app.session
             .edit("paint", |doc, _| {
                 let bg = doc.layers[0].surface_mut().unwrap();
@@ -90,7 +116,15 @@ mod tests {
     }
 
     fn click(app: &mut PhotocraftApp, x: f64, y: f64, mods: egui::Modifiers) {
-        tool_event(app, ToolEvent::Down { x, y, pressure: 1.0 }, mods);
+        tool_event(
+            app,
+            ToolEvent::Down {
+                x,
+                y,
+                pressure: 1.0,
+            },
+            mods,
+        );
         tool_event(app, ToolEvent::Up { x, y }, mods);
     }
 
@@ -133,9 +167,17 @@ mod tests {
         app.run("layer.new.layer", json!({})).unwrap();
         app.ui.tool_options.eyedropper_size = 3;
         app.ui.tool_options.eyedropper_sample = "current".into();
-        app.run("tools.setColors", json!({"foreground": [0.2, 0.4, 0.6, 1.0]})).unwrap();
+        app.run(
+            "tools.setColors",
+            json!({"foreground": [0.2, 0.4, 0.6, 1.0]}),
+        )
+        .unwrap();
         click(&mut app, 10.0, 10.0, egui::Modifiers::NONE);
-        assert_eq!(fg(&app), [0.2, 0.4, 0.6, 1.0], "nothing to sample on an empty layer");
+        assert_eq!(
+            fg(&app),
+            [0.2, 0.4, 0.6, 1.0],
+            "nothing to sample on an empty layer"
+        );
         app.ui.tool_options.eyedropper_sample = "all".into();
         click(&mut app, 10.0, 10.0, egui::Modifiers::NONE);
         assert_eq!(fg(&app), [1.0; 4]);
@@ -144,22 +186,41 @@ mod tests {
     #[test]
     fn tool_options_round_trip_through_serde_with_defaults() {
         let o = crate::state::ToolOptions::default();
-        assert_eq!((o.eyedropper_size, o.eyedropper_sample.as_str(), o.eyedropper_ring), (1, "all", true));
+        assert_eq!(
+            (
+                o.eyedropper_size,
+                o.eyedropper_sample.as_str(),
+                o.eyedropper_ring
+            ),
+            (1, "all", true)
+        );
         // Older saved state without the fields loads with Photoshop's defaults.
-        let old: crate::state::ToolOptions = serde_json::from_value(json!({"tolerance": 12.0})).unwrap();
-        assert_eq!((old.eyedropper_size, old.eyedropper_sample.as_str(), old.eyedropper_ring), (1, "all", true));
+        let old: crate::state::ToolOptions =
+            serde_json::from_value(json!({"tolerance": 12.0})).unwrap();
+        assert_eq!(
+            (
+                old.eyedropper_size,
+                old.eyedropper_sample.as_str(),
+                old.eyedropper_ring
+            ),
+            (1, "all", true)
+        );
         let mut o = o;
         o.eyedropper_size = 31;
         o.eyedropper_sample = "currentAndBelow".into();
         o.eyedropper_ring = false;
-        let back: crate::state::ToolOptions = serde_json::from_value(serde_json::to_value(&o).unwrap()).unwrap();
+        let back: crate::state::ToolOptions =
+            serde_json::from_value(serde_json::to_value(&o).unwrap()).unwrap();
         assert_eq!(back, o);
         // Every menu entry is a size and a layer choice the engine accepts.
         for (size, _) in super::size_options() {
             assert!(photocraft_engine::sample_cmds::SAMPLE_SIZES.contains(&size));
         }
         for (id, _) in super::layer_options() {
-            assert!(photocraft_engine::sample_cmds::SampleLayers::parse(&id).is_some(), "{id}");
+            assert!(
+                photocraft_engine::sample_cmds::SampleLayers::parse(&id).is_some(),
+                "{id}"
+            );
         }
     }
 
@@ -167,21 +228,34 @@ mod tests {
     /// samples that average.
     #[test]
     fn the_options_bar_dropdown_sets_the_sample_size() {
-        let mut h = Harness::builder().with_size(vec2(1400.0, 600.0)).build_ui_state(
-            |ui, app: &mut PhotocraftApp| {
-                if !ui.ctx().fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                    return;
-                }
-                crate::panels::options_bar(app, ui);
-            },
-            app(),
-        );
+        let mut h = Harness::builder()
+            .with_size(vec2(1400.0, 600.0))
+            .build_ui_state(
+                |ui, app: &mut PhotocraftApp| {
+                    if !ui.ctx().fonts(|f| {
+                        f.families()
+                            .contains(&egui::FontFamily::Name("medium".into()))
+                    }) {
+                        return;
+                    }
+                    crate::panels::options_bar(app, ui);
+                },
+                app(),
+            );
         PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::Studio);
         h.run_steps(4);
         for label in ["Sample Size:", "Sample:", "Show Sampling Ring"] {
-            assert!(h.get_by_label(label).rect().is_positive(), "missing Eyedropper option {label}");
+            assert!(
+                h.get_by_label(label).rect().is_positive(),
+                "missing Eyedropper option {label}"
+            );
         }
-        let combo = |h: &Harness<'static, PhotocraftApp>, i: usize| h.get_all_by_role(egui::accesskit::Role::ComboBox).nth(i).unwrap().click();
+        let combo = |h: &Harness<'static, PhotocraftApp>, i: usize| {
+            h.get_all_by_role(egui::accesskit::Role::ComboBox)
+                .nth(i)
+                .unwrap()
+                .click()
+        };
         combo(&h, 0);
         h.run_steps(3);
         h.get_by_label("5 by 5 Average").click();

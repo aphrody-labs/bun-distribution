@@ -11,7 +11,10 @@ use photocraft_geom::Rect;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use super::{Group, Named, always, bad, edit_groups, find, group_index, has_layer, req_str, str_param, unique_name};
+use super::{
+    Group, Named, always, bad, edit_groups, find, group_index, has_layer, req_str, str_param,
+    unique_name,
+};
 use crate::commands::CommandSpec;
 use crate::layer_style::effect_from_params;
 use crate::{EngineError, Result, Session};
@@ -41,9 +44,20 @@ impl StylePreset {
     fn from_spec(name: &str, fx: Value, fill: Option<f32>) -> Self {
         let effects = fx
             .as_array()
-            .map(|a| a.iter().filter_map(|e| effect_from_params(e.get(0)?.as_str()?, e.get(1).unwrap_or(&Value::Null))).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|e| {
+                        effect_from_params(e.get(0)?.as_str()?, e.get(1).unwrap_or(&Value::Null))
+                    })
+                    .collect()
+            })
             .unwrap_or_default();
-        StylePreset { name: name.into(), effects, blend: None, fill_opacity: fill }
+        StylePreset {
+            name: name.into(),
+            effects,
+            blend: None,
+            fill_opacity: fill,
+        }
     }
 
     pub fn to_json(&self) -> Value {
@@ -64,13 +78,41 @@ pub fn builtin() -> Vec<Group<StylePreset>> {
             "Basics",
             vec![
                 s("Default Style (None)", json!([]), None),
-                s("Drop Shadow", json!([["dropShadow", {"distance": 6, "size": 8, "opacity": 60}]]), None),
-                s("Soft Shadow", json!([["dropShadow", {"distance": 2, "size": 16, "opacity": 45}]]), None),
-                s("Black Stroke", json!([["stroke", {"size": 3, "color": "#000000", "position": "outside"}]]), None),
-                s("White Stroke", json!([["stroke", {"size": 3, "color": "#ffffff", "position": "outside"}]]), None),
-                s("Inner Shadow", json!([["innerShadow", {"distance": 4, "size": 6, "opacity": 55}]]), None),
-                s("Outer Glow", json!([["outerGlow", {"size": 14, "color": "#ffe9a8", "opacity": 80}]]), None),
-                s("Emboss", json!([["bevelEmboss", {"style": "emboss", "size": 4, "depth": 120}]]), None),
+                s(
+                    "Drop Shadow",
+                    json!([["dropShadow", {"distance": 6, "size": 8, "opacity": 60}]]),
+                    None,
+                ),
+                s(
+                    "Soft Shadow",
+                    json!([["dropShadow", {"distance": 2, "size": 16, "opacity": 45}]]),
+                    None,
+                ),
+                s(
+                    "Black Stroke",
+                    json!([["stroke", {"size": 3, "color": "#000000", "position": "outside"}]]),
+                    None,
+                ),
+                s(
+                    "White Stroke",
+                    json!([["stroke", {"size": 3, "color": "#ffffff", "position": "outside"}]]),
+                    None,
+                ),
+                s(
+                    "Inner Shadow",
+                    json!([["innerShadow", {"distance": 4, "size": 6, "opacity": 55}]]),
+                    None,
+                ),
+                s(
+                    "Outer Glow",
+                    json!([["outerGlow", {"size": 14, "color": "#ffe9a8", "opacity": 80}]]),
+                    None,
+                ),
+                s(
+                    "Emboss",
+                    json!([["bevelEmboss", {"style": "emboss", "size": 4, "depth": 120}]]),
+                    None,
+                ),
             ],
         ),
         Group::new(
@@ -106,7 +148,11 @@ pub fn builtin() -> Vec<Group<StylePreset>> {
                     json!([["colorOverlay", {"color": "#5b6168"}], ["innerShadow", {"distance": 2, "size": 2, "opacity": 70}], ["dropShadow", {"distance": 1, "size": 0, "color": "#ffffff", "opacity": 60, "blend": "screen", "angle": 90}]]),
                     None,
                 ),
-                s("Hollow", json!([["stroke", {"size": 2, "color": "#222222", "position": "inside"}]]), Some(0.0)),
+                s(
+                    "Hollow",
+                    json!([["stroke", {"size": 2, "color": "#222222", "position": "inside"}]]),
+                    Some(0.0),
+                ),
             ],
         ),
         Group::new(
@@ -132,7 +178,11 @@ pub fn builtin() -> Vec<Group<StylePreset>> {
                     json!([["gradientOverlay", {"from": "#9b1c1c", "to": "#f87171", "angle": 90}], ["bevelEmboss", {"style": "pillow", "size": 6, "depth": 120}], ["dropShadow", {"distance": 2, "size": 4, "opacity": 45}]]),
                     None,
                 ),
-                s("Flat Shadow", json!([["colorOverlay", {"color": "#3b82f6"}], ["dropShadow", {"distance": 5, "size": 0, "opacity": 35, "angle": 90}]]), None),
+                s(
+                    "Flat Shadow",
+                    json!([["colorOverlay", {"color": "#3b82f6"}], ["dropShadow", {"distance": 5, "size": 0, "opacity": 35, "angle": 90}]]),
+                    None,
+                ),
                 s(
                     "Satin Plum",
                     json!([["colorOverlay", {"color": "#7e3a8c"}], ["satin", {"color": "#1b0420", "opacity": 55, "size": 18, "distance": 14}], ["bevelEmboss", {"style": "inner", "size": 4, "depth": 80}]]),
@@ -145,7 +195,8 @@ pub fn builtin() -> Vec<Group<StylePreset>> {
 
 pub fn find_style<'a>(s: &'a Session, p: &Value, cmd: &str) -> Result<&'a StylePreset> {
     let name = req_str(p, "preset", cmd)?;
-    let (gi, ii) = find(&s.presets.styles, name, str_param(p, "group")).ok_or_else(|| bad(cmd, format!("no style \"{name}\" (see style.presets.list)")))?;
+    let (gi, ii) = find(&s.presets.styles, name, str_param(p, "group"))
+        .ok_or_else(|| bad(cmd, format!("no style \"{name}\" (see style.presets.list)")))?;
     Ok(&s.presets.styles[gi].items[ii])
 }
 
@@ -158,7 +209,11 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 /// Target layers: `"layers": [ids]`, `"layer": id`, else every selected layer.
 fn targets(s: &Session, p: &Value) -> Vec<photocraft_doc::LayerId> {
     if let Some(a) = p.get("layers").and_then(Value::as_array) {
-        return a.iter().filter_map(Value::as_u64).map(photocraft_doc::LayerId).collect();
+        return a
+            .iter()
+            .filter_map(Value::as_u64)
+            .map(photocraft_doc::LayerId)
+            .collect();
     }
     if let Some(id) = p.get("layer").and_then(Value::as_u64) {
         return vec![photocraft_doc::LayerId(id)];
@@ -223,8 +278,14 @@ fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let id = crate::commands::layer_param(s, p)?;
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let l = d.doc.layer(id).ok_or(EngineError::NoLayer(id))?;
-    let with_fx = p.get("includeEffects").and_then(Value::as_bool).unwrap_or(true);
-    let with_blend = p.get("includeBlending").and_then(Value::as_bool).unwrap_or(true);
+    let with_fx = p
+        .get("includeEffects")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    let with_blend = p
+        .get("includeBlending")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     if !with_fx && !with_blend {
         return Err(bad(CMD, "include effects and/or blending options"));
     }
@@ -236,8 +297,12 @@ fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
         .map(|list| -> Result<Vec<Effect>> {
             list.iter()
                 .map(|e| {
-                    let kind = e.get(0).and_then(Value::as_str).ok_or_else(|| bad(CMD, "each effect is [kind, params]"))?;
-                    effect_from_params(kind, e.get(1).unwrap_or(&Value::Null)).ok_or_else(|| bad(CMD, format!("unknown effect {kind}")))
+                    let kind = e
+                        .get(0)
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| bad(CMD, "each effect is [kind, params]"))?;
+                    effect_from_params(kind, e.get(1).unwrap_or(&Value::Null))
+                        .ok_or_else(|| bad(CMD, format!("unknown effect {kind}")))
                 })
                 .collect()
         })
@@ -254,8 +319,16 @@ fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
         },
-        blend: p.get("blend").and_then(Value::as_str).and_then(crate::commands::blend_from_str).or_else(|| with_blend.then_some(l.blend)),
-        fill_opacity: p.get("fillOpacity").and_then(Value::as_f64).map(|v| (v / 100.0).clamp(0.0, 1.0) as f32).or_else(|| with_blend.then_some(l.fill_opacity)),
+        blend: p
+            .get("blend")
+            .and_then(Value::as_str)
+            .and_then(crate::commands::blend_from_str)
+            .or_else(|| with_blend.then_some(l.blend)),
+        fill_opacity: p
+            .get("fillOpacity")
+            .and_then(Value::as_f64)
+            .map(|v| (v / 100.0).clamp(0.0, 1.0) as f32)
+            .or_else(|| with_blend.then_some(l.fill_opacity)),
     };
     let gi = group_index(&mut s.presets.styles, str_param(p, "group"));
     let out = json!({"name": style.name, "group": s.presets.styles[gi].name, "effects": style.effects.len()});
@@ -289,7 +362,12 @@ fn reset(s: &mut Session, p: &Value) -> Result<Value> {
 /// transparent around the square).
 pub fn thumbnail(s: &Session, style: &StylePreset, size: u32) -> Vec<u8> {
     let size = size.clamp(8, 256);
-    let mut doc = Document::new("style", Size::new(size, size), ColorMode::Rgb, SampleType::U8);
+    let mut doc = Document::new(
+        "style",
+        Size::new(size, size),
+        ColorMode::Rgb,
+        SampleType::U8,
+    );
     let fmt = doc.pixel_format();
     let mut l = Layer::raster("swatch", fmt);
     let m = (size as f32 * 0.2).round();
@@ -326,7 +404,9 @@ pub fn thumbnail(s: &Session, style: &StylePreset, size: u32) -> Vec<u8> {
         l.fill_opacity = f;
     }
     doc.layers.push(l);
-    photocraft_compose::render(&doc, doc.bounds()).to_rgba8().pixels
+    photocraft_compose::render(&doc, doc.bounds())
+        .to_rgba8()
+        .pixels
 }
 
 pub fn specs() -> Vec<CommandSpec> {

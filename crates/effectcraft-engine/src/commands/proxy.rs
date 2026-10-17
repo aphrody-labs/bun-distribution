@@ -3,7 +3,10 @@
 //! it on or off per item; renders follow Render Settings ▸ Proxy Use (the viewer uses each
 //! item's switch).
 
-use effectcraft_project::render_queue::{Channels, OutputFormat, OutputModule, PostRenderAction, ProResProfile, RenderQuality, RenderQueueItem, TimeSpan};
+use effectcraft_project::render_queue::{
+    Channels, OutputFormat, OutputModule, PostRenderAction, ProResProfile, RenderQuality,
+    RenderQueueItem, TimeSpan,
+};
 use effectcraft_project::render_templates::TemplateSlot;
 use effectcraft_project::{Footage, ItemId, ItemKind, Proxy};
 use effectcraft_time::Tick;
@@ -18,20 +21,39 @@ fn targets(s: &Session, p: &Value) -> Vec<ItemId> {
     let ids: Vec<ItemId> = match p.get("items").or(p.get("item")) {
         Some(Value::Array(a)) => a.iter().filter_map(Value::as_u64).map(ItemId).collect(),
         Some(Value::Number(n)) => n.as_u64().map(ItemId).into_iter().collect(),
-        Some(Value::String(name)) => s.project.find_by_name(name).map(|i| i.id).into_iter().collect(),
+        Some(Value::String(name)) => s
+            .project
+            .find_by_name(name)
+            .map(|i| i.id)
+            .into_iter()
+            .collect(),
         _ => s.state.project_selection.clone(),
     };
-    ids.into_iter().filter(|i| matches!(s.project.item(*i).map(|x| &x.kind), Some(ItemKind::Footage(_) | ItemKind::Comp(_)))).collect()
+    ids.into_iter()
+        .filter(|i| {
+            matches!(
+                s.project.item(*i).map(|x| &x.kind),
+                Some(ItemKind::Footage(_) | ItemKind::Comp(_))
+            )
+        })
+        .collect()
 }
 
 fn has_targets(s: &Session) -> std::result::Result<(), String> {
     has_project_selection(s)?;
-    if targets(s, &Value::Null).is_empty() { Err("select footage or a composition in the Project panel".into()) } else { Ok(()) }
+    if targets(s, &Value::Null).is_empty() {
+        Err("select footage or a composition in the Project panel".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_proxy(s: &Session) -> std::result::Result<(), String> {
     has_targets(s)?;
-    if targets(s, &Value::Null).iter().any(|i| s.project.item(*i).is_some_and(|x| x.proxy.is_some())) {
+    if targets(s, &Value::Null)
+        .iter()
+        .any(|i| s.project.item(*i).is_some_and(|x| x.proxy.is_some()))
+    {
         Ok(())
     } else {
         Err("the selected items have no proxy".into())
@@ -41,10 +63,14 @@ fn has_proxy(s: &Session) -> std::result::Result<(), String> {
 /// Probe a proxy file through the importer.
 fn probe(s: &Session, path: &str, cmd: &str) -> Result<Footage> {
     if s.importer.is_none() {
-        return Err(EngineError::Other("media import is not available in this build".into()));
+        return Err(EngineError::Other(
+            "media import is not available in this build".into(),
+        ));
     }
     // The first frame of a proxy sequence (Create Proxy ▸ Movie renders one) brings the rest.
-    let f = s.probe_footage(path).map_err(|e| bad(cmd, format!("{path}: {e}")))?;
+    let f = s
+        .probe_footage(path)
+        .map_err(|e| bad(cmd, format!("{path}: {e}")))?;
     if !f.has_video {
         return Err(bad(cmd, format!("{path} has no video to use as a proxy")));
     }
@@ -56,7 +82,10 @@ pub(crate) fn set_proxy_footage(s: &mut Session, items: &[ItemId], footage: Foot
     s.edit("Set Proxy", None, |proj, _| {
         for i in items {
             if let Some(it) = proj.item_mut(*i) {
-                it.proxy = Some(Box::new(Proxy { footage: footage.clone(), enabled: true }));
+                it.proxy = Some(Box::new(Proxy {
+                    footage: footage.clone(),
+                    enabled: true,
+                }));
             }
         }
         Ok(())
@@ -69,11 +98,15 @@ fn set_proxy(s: &mut Session, p: &Value) -> Result<Value> {
     if items.is_empty() {
         return Err(bad(C, "select footage or a composition"));
     }
-    let path = str_p(p, "path").ok_or_else(|| bad(C, "missing `path`"))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad(C, "missing `path`"))?
+        .to_string();
     let f = probe(s, &path, C)?;
     let (w, h) = (f.width, f.height);
     set_proxy_footage(s, &items, f)?;
-    Ok(json!({"items": items.iter().map(|i| i.0).collect::<Vec<_>>(), "path": path, "width": w, "height": h}))
+    Ok(
+        json!({"items": items.iter().map(|i| i.0).collect::<Vec<_>>(), "path": path, "width": w, "height": h}),
+    )
 }
 
 fn set_proxy_none(s: &mut Session, p: &Value) -> Result<Value> {
@@ -92,27 +125,45 @@ fn set_proxy_none(s: &mut Session, p: &Value) -> Result<Value> {
 /// The Project panel's proxy switch: use the proxy (filled box) or the full-resolution source.
 fn use_proxy(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "file.useProxy";
-    let items: Vec<ItemId> = targets(s, p).into_iter().filter(|i| s.project.item(*i).is_some_and(|x| x.proxy.is_some())).collect();
+    let items: Vec<ItemId> = targets(s, p)
+        .into_iter()
+        .filter(|i| s.project.item(*i).is_some_and(|x| x.proxy.is_some()))
+        .collect();
     if items.is_empty() {
         return Err(bad(C, "the selected items have no proxy"));
     }
-    let first = s.project.item(items[0]).and_then(|x| x.proxy.as_ref()).is_some_and(|px| px.enabled);
+    let first = s
+        .project
+        .item(items[0])
+        .and_then(|x| x.proxy.as_ref())
+        .is_some_and(|px| px.enabled);
     let on = b_p(p, "on").unwrap_or(!first);
-    s.edit(if on { "Use Proxy" } else { "Use Full Resolution" }, None, |proj, _| {
-        for i in &items {
-            if let Some(px) = proj.item_mut(*i).and_then(|x| x.proxy.as_mut()) {
-                px.enabled = on;
+    s.edit(
+        if on {
+            "Use Proxy"
+        } else {
+            "Use Full Resolution"
+        },
+        None,
+        |proj, _| {
+            for i in &items {
+                if let Some(px) = proj.item_mut(*i).and_then(|x| x.proxy.as_mut()) {
+                    px.enabled = on;
+                }
             }
-        }
-        Ok(())
-    })?;
+            Ok(())
+        },
+    )?;
     Ok(json!({"items": items.iter().map(|i| i.0).collect::<Vec<_>>(), "on": on}))
 }
 
 /// File ▸ Interpret Footage ▸ Proxy: Interpret Footage settings for the proxy file.
 fn interpret_proxy(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "file.interpretProxy";
-    let items: Vec<ItemId> = targets(s, p).into_iter().filter(|i| s.project.item(*i).is_some_and(|x| x.proxy.is_some())).collect();
+    let items: Vec<ItemId> = targets(s, p)
+        .into_iter()
+        .filter(|i| s.project.item(*i).is_some_and(|x| x.proxy.is_some()))
+        .collect();
     if items.is_empty() {
         return Err(bad(C, "the selected items have no proxy"));
     }
@@ -121,7 +172,11 @@ fn interpret_proxy(s: &mut Session, p: &Value) -> Result<Value> {
         .iter()
         .map(|i| {
             let px = s.project.item(*i).and_then(|x| x.proxy.as_ref());
-            match (p.get("alpha").and_then(Value::as_str) == Some("guess") || b_p(p, "guessAlpha") == Some(true), px) {
+            match (
+                p.get("alpha").and_then(Value::as_str) == Some("guess")
+                    || b_p(p, "guessAlpha") == Some(true),
+                px,
+            ) {
                 (true, Some(px)) => super::file_more::guess_alpha(s, *i, &px.footage),
                 _ => None,
             }
@@ -165,14 +220,29 @@ fn create_proxy(s: &mut Session, p: &Value) -> Result<Value> {
     let mut it = RenderQueueItem::new(0, cid);
     // The Movie / Still Proxy Default templates, at draft quality and the proxy resolution.
     let templates = &s.project.render_templates;
-    let slot = if still { TemplateSlot::StillProxy } else { TemplateSlot::MovieProxy };
+    let slot = if still {
+        TemplateSlot::StillProxy
+    } else {
+        TemplateSlot::MovieProxy
+    };
     it.settings = templates.default_render_settings(slot);
     it.settings.quality = RenderQuality::Draft;
-    it.settings.resolution = p.get("resolution").and_then(Value::as_f64).unwrap_or(0.5).clamp(0.05, 1.0);
+    it.settings.resolution = p
+        .get("resolution")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.5)
+        .clamp(0.05, 1.0);
     if still {
         // One frame at the current time (the comp's poster frame when not the active comp).
-        let t = if s.active_comp_id() == Some(cid) { s.time() } else { comp.poster_time };
-        it.settings.time_span = TimeSpan::Custom { start: t, end: t + comp.frame_duration() };
+        let t = if s.active_comp_id() == Some(cid) {
+            s.time()
+        } else {
+            comp.poster_time
+        };
+        it.settings.time_span = TimeSpan::Custom {
+            start: t,
+            end: t + comp.frame_duration(),
+        };
         it.output = templates.default_output_module(slot);
         if !it.output.format.is_sequence() {
             it.output = OutputModule::for_format(OutputFormat::PngSequence);
@@ -198,12 +268,23 @@ fn create_proxy(s: &mut Session, p: &Value) -> Result<Value> {
         proj.render_queue.push(it);
         Ok(id)
     })?;
-    let path = s.project.render_queue.last().and_then(|i| s.resolve_output(i));
-    Ok(json!({"item": id, "comp": cid.0, "kind": if still { "still" } else { "movie" }, "output": path, "time": Tick::ZERO.seconds()}))
+    let path = s
+        .project
+        .render_queue
+        .last()
+        .and_then(|i| s.resolve_output(i));
+    Ok(
+        json!({"item": id, "comp": cid.0, "kind": if still { "still" } else { "movie" }, "output": path, "time": Tick::ZERO.seconds()}),
+    )
 }
 
 fn has_comp_selection(s: &Session) -> std::result::Result<(), String> {
-    if s.state.project_selection.iter().any(|i| s.project.comp(*i).is_some()) || s.active_comp_id().is_some() {
+    if s.state
+        .project_selection
+        .iter()
+        .any(|i| s.project.comp(*i).is_some())
+        || s.active_comp_id().is_some()
+    {
         Ok(())
     } else {
         Err("select a composition".into())
@@ -221,9 +302,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp_selection,
             create_proxy
         ),
-        cmd!("file.setProxy", "File...", ["File", "Set Proxy"], None, "{path, items?|item?}", has_targets, set_proxy),
-        cmd!("file.setProxyNone", "None", ["File", "Set Proxy"], None, "{items?|item?}", has_proxy, set_proxy_none),
-        cmd!("file.useProxy", "Use Proxy", [], None, "{items?|item?, on?}", has_proxy, use_proxy),
+        cmd!(
+            "file.setProxy",
+            "File...",
+            ["File", "Set Proxy"],
+            None,
+            "{path, items?|item?}",
+            has_targets,
+            set_proxy
+        ),
+        cmd!(
+            "file.setProxyNone",
+            "None",
+            ["File", "Set Proxy"],
+            None,
+            "{items?|item?}",
+            has_proxy,
+            set_proxy_none
+        ),
+        cmd!(
+            "file.useProxy",
+            "Use Proxy",
+            [],
+            None,
+            "{items?|item?, on?}",
+            has_proxy,
+            use_proxy
+        ),
         cmd!(
             "file.interpretProxy",
             "Proxy...",

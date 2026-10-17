@@ -22,7 +22,14 @@ pub struct ParseOptions {
 
 impl Default for ParseOptions {
     fn default() -> Self {
-        Self { max_ifds: 1024, max_depth: 10, max_entries: 8192, value_budget: None, follow_children: true, accept_raw_magic: true }
+        Self {
+            max_ifds: 1024,
+            max_depth: 10,
+            max_entries: 8192,
+            value_budget: None,
+            follow_children: true,
+            accept_raw_magic: true,
+        }
     }
 }
 
@@ -39,16 +46,28 @@ fn header_with(data: &[u8], raw_magic: bool) -> Result<(ByteOrder, bool, u64)> {
     };
     let magic = order.read_u16(data, 2).ok_or(TiffError::NotTiff)?;
     match magic {
-        42 => Ok((order, false, order.read_u32(data, 4).ok_or(TiffError::Truncated(4))? as u64)),
+        42 => Ok((
+            order,
+            false,
+            order.read_u32(data, 4).ok_or(TiffError::Truncated(4))? as u64,
+        )),
         43 => {
             let bytesize = order.read_u16(data, 4).ok_or(TiffError::Truncated(4))?;
             let zero = order.read_u16(data, 6).ok_or(TiffError::Truncated(6))?;
             if bytesize != 8 || zero != 0 {
                 return Err(TiffError::NotTiff);
             }
-            Ok((order, true, order.read_u64(data, 8).ok_or(TiffError::Truncated(8))?))
+            Ok((
+                order,
+                true,
+                order.read_u64(data, 8).ok_or(TiffError::Truncated(8))?,
+            ))
         }
-        0x4f52 | 0x5352 | 0x0055 if raw_magic => Ok((order, false, order.read_u32(data, 4).ok_or(TiffError::Truncated(4))? as u64)),
+        0x4f52 | 0x5352 | 0x0055 if raw_magic => Ok((
+            order,
+            false,
+            order.read_u32(data, 4).ok_or(TiffError::Truncated(4))? as u64,
+        )),
         _ => Err(TiffError::NotTiff),
     }
 }
@@ -75,13 +94,24 @@ pub(crate) fn parse(data: &[u8], opts: &ParseOptions) -> Result<Tiff> {
     if ifds.is_empty() {
         return Err(TiffError::Invalid("no IFDs".into()));
     }
-    Ok(Tiff { order, bigtiff: big, ifds })
+    Ok(Tiff {
+        order,
+        bigtiff: big,
+        ifds,
+    })
 }
 
 /// Parse one IFD at absolute `offset` whose value offsets (and child IFD pointers) are relative to
 /// `base` (absolute position = `base + stored offset`). Returns the IFD and the absolute offset of the
 /// next IFD (0 when there is none). Used for maker notes, which often use their own offset base.
-pub fn parse_ifd_at(data: &[u8], offset: u64, order: ByteOrder, base: u64, bigtiff: bool, opts: &ParseOptions) -> Result<(Ifd, u64)> {
+pub fn parse_ifd_at(
+    data: &[u8],
+    offset: u64,
+    order: ByteOrder,
+    base: u64,
+    bigtiff: bool,
+    opts: &ParseOptions,
+) -> Result<(Ifd, u64)> {
     let mut ctx = Ctx::new(data, order, bigtiff, opts);
     ctx.ifd(offset, base, 0)
 }
@@ -97,12 +127,27 @@ struct Ctx<'a> {
 
 impl<'a> Ctx<'a> {
     fn new(data: &'a [u8], order: ByteOrder, big: bool, opts: &'a ParseOptions) -> Self {
-        let budget = opts.value_budget.unwrap_or((data.len() as u64).saturating_mul(8).saturating_add(1 << 20));
-        Self { data, order, big, opts, visited: HashSet::new(), budget }
+        let budget = opts.value_budget.unwrap_or(
+            (data.len() as u64)
+                .saturating_mul(8)
+                .saturating_add(1 << 20),
+        );
+        Self {
+            data,
+            order,
+            big,
+            opts,
+            visited: HashSet::new(),
+            budget,
+        }
     }
 
     fn read_off(&self, pos: usize) -> Option<u64> {
-        if self.big { self.order.read_u64(self.data, pos) } else { self.order.read_u32(self.data, pos).map(|v| v as u64) }
+        if self.big {
+            self.order.read_u64(self.data, pos)
+        } else {
+            self.order.read_u32(self.data, pos).map(|v| v as u64)
+        }
     }
 
     /// Returns (ifd, absolute next offset or 0).
@@ -118,9 +163,23 @@ impl<'a> Ctx<'a> {
         }
         let pos = usize::try_from(offset).map_err(|_| TiffError::Truncated(offset))?;
         let (n, head, entry_size, inline) = if self.big {
-            (self.order.read_u64(self.data, pos).ok_or(TiffError::Truncated(offset))?, 8usize, 20usize, 8usize)
+            (
+                self.order
+                    .read_u64(self.data, pos)
+                    .ok_or(TiffError::Truncated(offset))?,
+                8usize,
+                20usize,
+                8usize,
+            )
         } else {
-            (self.order.read_u16(self.data, pos).ok_or(TiffError::Truncated(offset))? as u64, 2, 12, 4)
+            (
+                self.order
+                    .read_u16(self.data, pos)
+                    .ok_or(TiffError::Truncated(offset))? as u64,
+                2,
+                12,
+                4,
+            )
         };
         let table = pos + head;
         let fit = (self.data.len().saturating_sub(table) / entry_size) as u64;
@@ -149,7 +208,11 @@ impl<'a> Ctx<'a> {
         } else {
             0
         };
-        let mut ifd = Ifd { offset, entries, ..Default::default() };
+        let mut ifd = Ifd {
+            offset,
+            entries,
+            ..Default::default()
+        };
         if self.opts.follow_children {
             self.children(&mut ifd, base, depth);
         }
@@ -184,7 +247,11 @@ impl<'a> Ctx<'a> {
         let o = self.order;
         let tag = o.read_u16(self.data, p)?;
         let typ = FieldType::from_u16(o.read_u16(self.data, p + 2)?)?;
-        let (count, field) = if self.big { (o.read_u64(self.data, p + 4)?, p + 12) } else { (o.read_u32(self.data, p + 4)? as u64, p + 8) };
+        let (count, field) = if self.big {
+            (o.read_u64(self.data, p + 4)?, p + 12)
+        } else {
+            (o.read_u32(self.data, p + 4)? as u64, p + 8)
+        };
         let total = count.checked_mul(typ.size() as u64)?;
         let start = if total <= inline as u64 {
             field as u64
@@ -201,7 +268,11 @@ impl<'a> Ctx<'a> {
         }
         self.budget -= total;
         let bytes = &self.data[start as usize..end as usize];
-        Some(Entry { tag, value: decode(o, typ, bytes), offset: start })
+        Some(Entry {
+            tag,
+            value: decode(o, typ, bytes),
+            offset: start,
+        })
     }
 }
 
@@ -220,19 +291,67 @@ pub(crate) fn decode(o: ByteOrder, typ: FieldType, b: &[u8]) -> Value {
             Value::Ascii(String::from_utf8_lossy(&b[..end]).into_owned())
         }
         FieldType::SByte => Value::SByte(b.iter().map(|&x| x as i8).collect()),
-        FieldType::Short => Value::Short(b.as_chunks::<2>().0.iter().map(|c| o.u16(arr(c))).collect()),
-        FieldType::SShort => Value::SShort(b.as_chunks::<2>().0.iter().map(|c| o.u16(arr(c)) as i16).collect()),
-        FieldType::Long => Value::Long(b.as_chunks::<4>().0.iter().map(|c| o.u32(arr(c))).collect()),
-        FieldType::Ifd => Value::Ifd(b.as_chunks::<4>().0.iter().map(|c| o.u32(arr(c))).collect()),
-        FieldType::SLong => Value::SLong(b.as_chunks::<4>().0.iter().map(|c| o.u32(arr(c)) as i32).collect()),
-        FieldType::Float => Value::Float(b.as_chunks::<4>().0.iter().map(|c| f32::from_bits(o.u32(arr(c)))).collect()),
-        FieldType::Rational => Value::Rational(b.as_chunks::<8>().0.iter().map(|c| (o.u32(arr(&c[..4])), o.u32(arr(&c[4..])))).collect()),
-        FieldType::SRational => {
-            Value::SRational(b.as_chunks::<8>().0.iter().map(|c| (o.u32(arr(&c[..4])) as i32, o.u32(arr(&c[4..])) as i32)).collect())
+        FieldType::Short => {
+            Value::Short(b.as_chunks::<2>().0.iter().map(|c| o.u16(arr(c))).collect())
         }
-        FieldType::Double => Value::Double(b.as_chunks::<8>().0.iter().map(|c| f64::from_bits(o.u64(arr(c)))).collect()),
-        FieldType::Long8 => Value::Long8(b.as_chunks::<8>().0.iter().map(|c| o.u64(arr(c))).collect()),
-        FieldType::Ifd8 => Value::Ifd8(b.as_chunks::<8>().0.iter().map(|c| o.u64(arr(c))).collect()),
-        FieldType::SLong8 => Value::SLong8(b.as_chunks::<8>().0.iter().map(|c| o.u64(arr(c)) as i64).collect()),
+        FieldType::SShort => Value::SShort(
+            b.as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| o.u16(arr(c)) as i16)
+                .collect(),
+        ),
+        FieldType::Long => {
+            Value::Long(b.as_chunks::<4>().0.iter().map(|c| o.u32(arr(c))).collect())
+        }
+        FieldType::Ifd => Value::Ifd(b.as_chunks::<4>().0.iter().map(|c| o.u32(arr(c))).collect()),
+        FieldType::SLong => Value::SLong(
+            b.as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| o.u32(arr(c)) as i32)
+                .collect(),
+        ),
+        FieldType::Float => Value::Float(
+            b.as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| f32::from_bits(o.u32(arr(c))))
+                .collect(),
+        ),
+        FieldType::Rational => Value::Rational(
+            b.as_chunks::<8>()
+                .0
+                .iter()
+                .map(|c| (o.u32(arr(&c[..4])), o.u32(arr(&c[4..]))))
+                .collect(),
+        ),
+        FieldType::SRational => Value::SRational(
+            b.as_chunks::<8>()
+                .0
+                .iter()
+                .map(|c| (o.u32(arr(&c[..4])) as i32, o.u32(arr(&c[4..])) as i32))
+                .collect(),
+        ),
+        FieldType::Double => Value::Double(
+            b.as_chunks::<8>()
+                .0
+                .iter()
+                .map(|c| f64::from_bits(o.u64(arr(c))))
+                .collect(),
+        ),
+        FieldType::Long8 => {
+            Value::Long8(b.as_chunks::<8>().0.iter().map(|c| o.u64(arr(c))).collect())
+        }
+        FieldType::Ifd8 => {
+            Value::Ifd8(b.as_chunks::<8>().0.iter().map(|c| o.u64(arr(c))).collect())
+        }
+        FieldType::SLong8 => Value::SLong8(
+            b.as_chunks::<8>()
+                .0
+                .iter()
+                .map(|c| o.u64(arr(c)) as i64)
+                .collect(),
+        ),
     }
 }

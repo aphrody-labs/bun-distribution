@@ -45,7 +45,9 @@ impl PreloadedVfsBundle {
     /// Parse and fully validate the manifest, entry ranges, ordering and CRC-32 values.
     pub fn parse(bytes: &[u8]) -> Result<Self, String> {
         if bytes.len() > MAX_BUNDLE_BYTES {
-            return Err(format!("preloaded VFS bundle exceeds {MAX_BUNDLE_BYTES} bytes"));
+            return Err(format!(
+                "preloaded VFS bundle exceeds {MAX_BUNDLE_BYTES} bytes"
+            ));
         }
         Self::parse_owned(bytes.to_vec())
     }
@@ -53,7 +55,9 @@ impl PreloadedVfsBundle {
     /// Validate and retain an owned buffer without cloning the archive allocation.
     pub fn parse_owned(bytes: Vec<u8>) -> Result<Self, String> {
         if bytes.len() > MAX_BUNDLE_BYTES {
-            return Err(format!("preloaded VFS bundle exceeds {MAX_BUNDLE_BYTES} bytes"));
+            return Err(format!(
+                "preloaded VFS bundle exceeds {MAX_BUNDLE_BYTES} bytes"
+            ));
         }
         if bytes.len() < HEADER_PREFIX_LEN || bytes.get(..MAGIC.len()) != Some(MAGIC) {
             return Err("invalid preloaded VFS bundle magic".to_owned());
@@ -64,20 +68,25 @@ impl PreloadedVfsBundle {
                 .map_err(|_| "invalid preloaded VFS header length")?,
         ) as usize;
         if header_len == 0 || header_len > MAX_HEADER_BYTES {
-            return Err(format!("preloaded VFS header length must be in 1..={MAX_HEADER_BYTES}"));
+            return Err(format!(
+                "preloaded VFS header length must be in 1..={MAX_HEADER_BYTES}"
+            ));
         }
         let payload_offset = HEADER_PREFIX_LEN
             .checked_add(header_len)
             .ok_or("preloaded VFS header offset overflow")?;
-        let header =
-            bytes.get(HEADER_PREFIX_LEN..payload_offset).ok_or("truncated preloaded VFS header")?;
+        let header = bytes
+            .get(HEADER_PREFIX_LEN..payload_offset)
+            .ok_or("truncated preloaded VFS header")?;
         let manifest: BundleManifest =
             serde_json::from_slice(header).map_err(|error| error.to_string())?;
         if manifest.schema_version != 1 || manifest.kind != "nie.vfs.bundle/v1" {
             return Err("unsupported preloaded VFS manifest".to_owned());
         }
         if manifest.entries.len() > MAX_ENTRIES {
-            return Err(format!("preloaded VFS manifest exceeds {MAX_ENTRIES} entries"));
+            return Err(format!(
+                "preloaded VFS manifest exceeds {MAX_ENTRIES} entries"
+            ));
         }
 
         let payload_len = bytes.len() - payload_offset;
@@ -126,7 +135,12 @@ impl PreloadedVfsBundle {
             ));
         }
 
-        Ok(Self { bytes, payload_offset, manifest, by_path })
+        Ok(Self {
+            bytes,
+            payload_offset,
+            manifest,
+            by_path,
+        })
     }
 
     /// Return one exact VFS file. Paths are case-sensitive and never normalized implicitly.
@@ -166,15 +180,24 @@ impl PreloadedVfsBundle {
         let mut groups = BTreeMap::<String, Vec<(String, Vec<u8>)>>::new();
         for (path, group) in assignments {
             if group.is_empty()
-                || !group.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+                || !group
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
             {
                 return Err(format!("invalid VFS partition name: {group}"));
             }
-            let bytes =
-                self.read(path).ok_or_else(|| format!("unknown VFS partition path: {path}"))?;
-            groups.entry(group.clone()).or_default().push((path.clone(), bytes.to_vec()));
+            let bytes = self
+                .read(path)
+                .ok_or_else(|| format!("unknown VFS partition path: {path}"))?;
+            groups
+                .entry(group.clone())
+                .or_default()
+                .push((path.clone(), bytes.to_vec()));
         }
-        groups.into_iter().map(|(name, files)| Ok((name, pack(files)?))).collect()
+        groups
+            .into_iter()
+            .map(|(name, files)| Ok((name, pack(files)?)))
+            .collect()
     }
 }
 
@@ -184,7 +207,9 @@ fn validate_path(path: &str) -> Result<(), String> {
         || path.starts_with('/')
         || path.ends_with('/')
         || path.contains('\\')
-        || path.split('/').any(|part| part.is_empty() || part == "." || part == "..")
+        || path
+            .split('/')
+            .any(|part| part.is_empty() || part == "." || part == "..")
     {
         return Err(format!("invalid canonical VFS path: {path}"));
     }
@@ -196,7 +221,10 @@ fn validate_path(path: &str) -> Result<(), String> {
 
 /// Exact boot inputs and discovery rules; resource bytes are deliberately absent.
 pub fn startup_plan_json(locale: &str) -> Result<String, String> {
-    if !matches!(locale, "de" | "en" | "es" | "fr" | "it" | "ja" | "pt" | "zh_hans" | "zh_hant") {
+    if !matches!(
+        locale,
+        "de" | "en" | "es" | "fr" | "it" | "ja" | "pt" | "zh_hans" | "zh_hant"
+    ) {
         return Err(format!("unsupported shipped game locale: {locale}"));
     }
     serde_json::to_string(&serde_json::json!({
@@ -272,7 +300,9 @@ pub fn pack(mut files: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, String> {
         .and_then(|prefix| prefix.checked_add(offset as usize))
         .ok_or("preloaded VFS bundle size overflow")?;
     if total_len > MAX_BUNDLE_BYTES {
-        return Err(format!("preloaded VFS bundle exceeds {MAX_BUNDLE_BYTES} bytes"));
+        return Err(format!(
+            "preloaded VFS bundle exceeds {MAX_BUNDLE_BYTES} bytes"
+        ));
     }
     let mut bundle = Vec::with_capacity(total_len);
     bundle.extend_from_slice(MAGIC);
@@ -317,7 +347,11 @@ mod tests {
     fn bundle_rejects_corruption_and_noncanonical_paths() {
         let mut corrupt = pack(vec![("data/a.bin".to_owned(), vec![1, 2, 3])]).unwrap();
         *corrupt.last_mut().unwrap() ^= 0xff;
-        assert!(PreloadedVfsBundle::parse(&corrupt).unwrap_err().contains("CRC-32 mismatch"));
+        assert!(
+            PreloadedVfsBundle::parse(&corrupt)
+                .unwrap_err()
+                .contains("CRC-32 mismatch")
+        );
 
         assert!(
             pack(vec![("data/../secret".to_owned(), vec![1])])
@@ -328,8 +362,11 @@ mod tests {
 
     #[test]
     fn partition_is_complete_disjoint_and_preserves_native_bytes() {
-        let bytes =
-            pack(vec![("data/menu".into(), vec![1, 2]), ("data/table".into(), vec![3])]).unwrap();
+        let bytes = pack(vec![
+            ("data/menu".into(), vec![1, 2]),
+            ("data/table".into(), vec![3]),
+        ])
+        .unwrap();
         let bundle = PreloadedVfsBundle::parse(&bytes).unwrap();
         let assignments = BTreeMap::from([
             ("data/menu".into(), "menu".into()),

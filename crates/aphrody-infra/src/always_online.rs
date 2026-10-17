@@ -62,13 +62,23 @@ impl Paths {
     /// OpenSSH client and WSL of this host.
     #[must_use]
     pub fn detect(aphrody: Option<PathBuf>, identity: Option<PathBuf>) -> Self {
-        let env = |name: &str| std::env::var_os(name).map(PathBuf::from).unwrap_or_default();
-        let aphrody = aphrody
-            .unwrap_or_else(|| env("LOCALAPPDATA").join("Aphrody").join("bin").join("aphrody.exe"));
+        let env = |name: &str| {
+            std::env::var_os(name)
+                .map(PathBuf::from)
+                .unwrap_or_default()
+        };
+        let aphrody = aphrody.unwrap_or_else(|| {
+            env("LOCALAPPDATA")
+                .join("Aphrody")
+                .join("bin")
+                .join("aphrody.exe")
+        });
         let mcp = aphrody.with_file_name("aphrody-mcp.exe");
         // Task Scheduler and cmd.exe want native separators (APHRODY_HOME may use `/`).
         let home = PathBuf::from(
-            aphrody_wireguard::driver::aphrody_home().to_string_lossy().replace('/', "\\"),
+            aphrody_wireguard::driver::aphrody_home()
+                .to_string_lossy()
+                .replace('/', "\\"),
         );
         let mcp_env = Some(home.join("private").join("mcp-http.env")).filter(|p| p.is_file());
         let system_root = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_owned());
@@ -141,7 +151,10 @@ fn task(
         principal,
         highest: true,
         triggers: vec![at, Trigger::Every { minutes: 5 }],
-        settings: Settings { restart: true, time_limit_minutes: None },
+        settings: Settings {
+            restart: true,
+            time_limit_minutes: None,
+        },
     }
 }
 
@@ -188,9 +201,19 @@ pub fn plan(inventory: &Inventory, options: &Options, paths: &Paths) -> Result<P
             Trigger::Logon,
             Principal::Interactive,
             &paths.aphrody,
-            format!("infra remote serve --bind {address}:8795 --vnc-allow {}", allow.join(",")),
+            format!(
+                "infra remote serve --bind {address}:8795 --vnc-allow {}",
+                allow.join(",")
+            ),
         ),
-        task(paths, "Aphrody MCP HTTP".to_owned(), Trigger::Logon, Principal::S4U, &paths.mcp, mcp),
+        task(
+            paths,
+            "Aphrody MCP HTTP".to_owned(),
+            Trigger::Logon,
+            Principal::S4U,
+            &paths.mcp,
+            mcp,
+        ),
     ];
     if !options.no_reverse {
         let hub = inventory
@@ -201,7 +224,10 @@ pub fn plan(inventory: &Inventory, options: &Options, paths: &Paths) -> Result<P
         let forwards: Vec<String> = REVERSE
             .iter()
             .map(|(port, target, to)| {
-                format!("-R 127.0.0.1:{port}:{}:{to}", target.replace("{address}", &address))
+                format!(
+                    "-R 127.0.0.1:{port}:{}:{to}",
+                    target.replace("{address}", &address)
+                )
             })
             .collect();
         // The owner reaches this PC through the hub loopback even without a wg1 handshake.
@@ -234,15 +260,22 @@ pub fn plan(inventory: &Inventory, options: &Options, paths: &Paths) -> Result<P
             ),
         ));
     }
-    Ok(Plan { member: member.to_owned(), address, tasks, wsl })
+    Ok(Plan {
+        member: member.to_owned(),
+        address,
+        tasks,
+        wsl,
+    })
 }
 
 /// `.wslconfig` with mirrored networking and the WSL firewall off (reachable on the tunnel
 /// address); `None` when both keys are already set, whatever their value.
 #[must_use]
 pub fn wslconfig_merge(text: &str) -> Option<String> {
-    let set =
-        |key: &str| text.lines().any(|l| l.split_once('=').is_some_and(|(k, _)| k.trim() == key));
+    let set = |key: &str| {
+        text.lines()
+            .any(|l| l.split_once('=').is_some_and(|(k, _)| k.trim() == key))
+    };
     let missing: Vec<String> = [("networkingMode", "mirrored"), ("firewall", "false")]
         .iter()
         .filter(|(key, _)| !set(key))
@@ -255,14 +288,14 @@ pub fn wslconfig_merge(text: &str) -> Option<String> {
     match lines.iter().position(|l| l.trim() == "[wsl2]") {
         Some(at) => {
             lines.splice(at + 1..at + 1, missing);
-        },
+        }
         None => {
             while lines.last().is_some_and(|l| l.trim().is_empty()) {
                 lines.pop();
             }
             lines.push("[wsl2]".to_owned());
             lines.extend(missing);
-        },
+        }
     }
     Some(lines.join("\n") + "\n")
 }
@@ -297,7 +330,11 @@ fn run(program: &str, args: &[&str]) -> Result<()> {
         .output()
         .with_context(|| format!("{program} {}", args.join(" ")))?;
     if !output.status.success() {
-        bail!("{program} {} : {}", args.join(" "), String::from_utf8_lossy(&output.stdout).trim());
+        bail!(
+            "{program} {} : {}",
+            args.join(" "),
+            String::from_utf8_lossy(&output.stdout).trim()
+        );
     }
     Ok(())
 }
@@ -346,8 +383,17 @@ pub fn apply(plan: &Plan, paths: &Paths) -> Result<Value> {
     }
     let listen = format!("listenaddress={}", plan.address);
     // Replaced, not duplicated: the delete fails harmlessly when the rule does not exist yet.
-    let _absent =
-        run("netsh", &["interface", "portproxy", "delete", "v4tov4", &listen, "listenport=8793"]);
+    let _absent = run(
+        "netsh",
+        &[
+            "interface",
+            "portproxy",
+            "delete",
+            "v4tov4",
+            &listen,
+            "listenport=8793",
+        ],
+    );
     run(
         "netsh",
         &[
@@ -365,7 +411,11 @@ pub fn apply(plan: &Plan, paths: &Paths) -> Result<Value> {
     done.push(format!(
         "portproxy {}:8793 -> 127.0.0.1:8793, iphlpsvc {}",
         plan.address,
-        if service.is_empty() { "inchangé".to_owned() } else { service.join(", ") }
+        if service.is_empty() {
+            "inchangé".to_owned()
+        } else {
+            service.join(", ")
+        }
     ));
     let states: Vec<Value> = plan
         .tasks
@@ -419,7 +469,9 @@ mod tests {
             aphrody: PathBuf::from("C:\\Users\\o\\AppData\\Local\\Aphrody\\bin\\aphrody.exe"),
             mcp: PathBuf::from("C:\\Users\\o\\AppData\\Local\\Aphrody\\bin\\aphrody-mcp.exe"),
             home: PathBuf::from("C:\\Users\\o\\.aphrody"),
-            mcp_env: Some(PathBuf::from("C:\\Users\\o\\.aphrody\\private\\mcp-http.env")),
+            mcp_env: Some(PathBuf::from(
+                "C:\\Users\\o\\.aphrody\\private\\mcp-http.env",
+            )),
             ssh: PathBuf::from("C:\\Windows\\System32\\OpenSSH\\ssh.exe"),
             identity: PathBuf::from("C:\\Users\\o\\.ssh\\id_ed25519"),
             system_root: "C:\\Windows".to_owned(),
@@ -453,7 +505,9 @@ mod tests {
                 "\\Aphrody\\Aphrody WSL sshd",
             ]
         );
-        let [wg, desktop, mcp, reverse, wsl] = plan.tasks.as_slice() else { panic!() };
+        let [wg, desktop, mcp, reverse, wsl] = plan.tasks.as_slice() else {
+            panic!()
+        };
         assert_eq!(wg.principal, Principal::System);
         assert_eq!(wg.triggers, [Trigger::Boot, Trigger::Every { minutes: 5 }]);
         assert!(wg.action.arguments.as_deref().unwrap().contains(
@@ -473,7 +527,10 @@ mod tests {
             )
         );
         let ssh = reverse.action.arguments.as_deref().unwrap();
-        assert!(ssh.contains("-R 127.0.0.1:28795:10.200.77.10:8795"), "{ssh}");
+        assert!(
+            ssh.contains("-R 127.0.0.1:28795:10.200.77.10:8795"),
+            "{ssh}"
+        );
         assert!(ssh.contains("-R 127.0.0.1:22011:127.0.0.1:2222"), "{ssh}");
         assert!(ssh.contains("-R 127.0.0.1:25080:127.0.0.1:50080"), "{ssh}");
         assert!(ssh.ends_with(" omar@51.77.147.152"), "{ssh}");
@@ -504,7 +561,10 @@ mod tests {
             wslconfig_merge("[wsl2]\nmemory=8GB\nfirewall=true\n\n"),
             Some("[wsl2]\nnetworkingMode=mirrored\nmemory=8GB\nfirewall=true\n\n".into())
         );
-        assert_eq!(wslconfig_merge("[wsl2]\nnetworkingMode = nat\nfirewall=false"), None);
+        assert_eq!(
+            wslconfig_merge("[wsl2]\nnetworkingMode = nat\nfirewall=false"),
+            None
+        );
         assert_eq!(
             wslconfig_merge("[experimental]\nsparseVhd=true\n"),
             Some(

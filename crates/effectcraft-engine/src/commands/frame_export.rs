@@ -49,7 +49,14 @@ fn isolate(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Image, Vec<
     let ids: Vec<LayerId> = comp
         .layers
         .iter()
-        .filter(|l| l.has_video() && l.is_active_at(t) && !l.switches.adjustment && !l.switches.guide && !l.environment && (!any_solo || l.switches.solo))
+        .filter(|l| {
+            l.has_video()
+                && l.is_active_at(t)
+                && !l.switches.adjustment
+                && !l.switches.guide
+                && !l.environment
+                && (!any_solo || l.switches.solo)
+        })
         .map(|l| l.id)
         .collect();
     let mut out = vec![];
@@ -61,7 +68,11 @@ fn isolate(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Image, Vec<
             l.switches.solo = l.id == id;
             if l.id == id {
                 let lt = l.layer_time(t);
-                let opacity = l.props.prop("transform/opacity").map(|o| o.value_at(lt).as_f64() / 100.0).unwrap_or(1.0);
+                let opacity = l
+                    .props
+                    .prop("transform/opacity")
+                    .map(|o| o.value_at(lt).as_f64() / 100.0)
+                    .unwrap_or(1.0);
                 info = Some((l.name.clone(), l.blend_mode, opacity.clamp(0.0, 1.0)));
                 l.blend_mode = BlendMode::Normal;
                 if let Some(o) = l.props.prop_mut("transform/opacity") {
@@ -71,24 +82,39 @@ fn isolate(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Image, Vec<
                 }
             }
         }
-        let Some((name, blend, opacity)) = info else { continue };
+        let Some((name, blend, opacity)) = info else {
+            continue;
+        };
         let image = render_with(s, &p, cid, t, scale);
-        out.push(Isolated { name, blend, opacity, image });
+        out.push(Isolated {
+            name,
+            blend,
+            opacity,
+            image,
+        });
     }
     Ok((full, out))
 }
 
 fn straight(p: [f32; 4]) -> [f32; 4] {
-    if p[3] <= 0.0 { [0.0; 4] } else { [p[0] / p[3], p[1] / p[3], p[2] / p[3], p[3].min(1.0)] }
+    if p[3] <= 0.0 {
+        [0.0; 4]
+    } else {
+        [p[0] / p[3], p[1] / p[3], p[2] / p[3], p[3].min(1.0)]
+    }
 }
 
 /// The Photoshop key of a blend mode (Normal for modes Photoshop lacks).
 pub fn psd_blend_key(m: BlendMode) -> [u8; 4] {
     const KEYS: [&[u8; 4]; 26] = [
-        b"diss", b"dark", b"mul ", b"idiv", b"lbrn", b"dkCl", b"lite", b"scrn", b"div ", b"lddg", b"lgCl", b"over", b"sLit", b"hLit", b"vLit", b"lLit",
-        b"pLit", b"hMix", b"diff", b"smud", b"fsub", b"fdiv", b"hue ", b"sat ", b"colr", b"lum ",
+        b"diss", b"dark", b"mul ", b"idiv", b"lbrn", b"dkCl", b"lite", b"scrn", b"div ", b"lddg",
+        b"lgCl", b"over", b"sLit", b"hLit", b"vLit", b"lLit", b"pLit", b"hMix", b"diff", b"smud",
+        b"fsub", b"fdiv", b"hue ", b"sat ", b"colr", b"lum ",
     ];
-    KEYS.iter().find(|k| crate::psd_import::blend_mode(std::str::from_utf8(&k[..]).unwrap_or("")) == m).map(|k| **k).unwrap_or(*b"norm")
+    KEYS.iter()
+        .find(|k| crate::psd_import::blend_mode(std::str::from_utf8(&k[..]).unwrap_or("")) == m)
+        .map(|k| **k)
+        .unwrap_or(*b"norm")
 }
 
 /// The bounding box of non-transparent pixels (`None` when empty).
@@ -108,7 +134,12 @@ fn alpha_bounds(img: &Image) -> Option<(u32, u32, u32, u32)> {
 }
 
 /// The layered PSD bytes of a frame.
-pub fn layered_psd(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Vec<u8>, usize, u32, u32)> {
+pub fn layered_psd(
+    s: &Session,
+    cid: ItemId,
+    t: Tick,
+    scale: f64,
+) -> Result<(Vec<u8>, usize, u32, u32)> {
     use effectcraft_psd::Rect;
     use effectcraft_psd::write::{WDoc, WLayer, write};
     let (full, layers) = isolate(s, cid, t, scale)?;
@@ -124,7 +155,11 @@ pub fn layered_psd(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Vec
                         px.push(straight(l.image.data[(y * l.image.width + x) as usize]));
                     }
                 }
-                WLayer::pixels(&l.name, Rect::new(x0 as i32, y0 as i32, (x1 - x0) as i32, (y1 - y0) as i32), px)
+                WLayer::pixels(
+                    &l.name,
+                    Rect::new(x0 as i32, y0 as i32, (x1 - x0) as i32, (y1 - y0) as i32),
+                    px,
+                )
             }
             None => WLayer::pixels(&l.name, Rect::default(), vec![]),
         };
@@ -137,13 +172,24 @@ pub fn layered_psd(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Vec
 }
 
 fn srgb_to_linear(c: f32) -> f32 {
-    if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+    if c <= 0.04045 {
+        c / 12.92
+    } else {
+        ((c + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 /// A unique EXR layer name (no dots: they separate the layer from the channel).
 fn exr_name(name: &str, used: &mut Vec<String>) -> String {
-    let base: String = name.chars().map(|c| if c == '.' || c.is_control() { '_' } else { c }).collect();
-    let base = if base.trim().is_empty() { "Layer".to_string() } else { base };
+    let base: String = name
+        .chars()
+        .map(|c| if c == '.' || c.is_control() { '_' } else { c })
+        .collect();
+    let base = if base.trim().is_empty() {
+        "Layer".to_string()
+    } else {
+        base
+    };
     let mut n = base.clone();
     let mut k = 2;
     while used.contains(&n) {
@@ -155,7 +201,12 @@ fn exr_name(name: &str, used: &mut Vec<String>) -> String {
 }
 
 /// The multi-layer EXR bytes of a frame and the channel names.
-pub fn layered_exr(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Vec<u8>, Vec<String>, u32, u32)> {
+pub fn layered_exr(
+    s: &Session,
+    cid: ItemId,
+    t: Tick,
+    scale: f64,
+) -> Result<(Vec<u8>, Vec<String>, u32, u32)> {
     use exr::prelude::*;
     let (full, layers) = isolate(s, cid, t, scale)?;
     let (w, h) = (full.width as usize, full.height as usize);
@@ -175,7 +226,11 @@ pub fn layered_exr(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Vec
     let mut names = vec![];
     let mut push = |prefix: &str, img: &effectcraft_raster::Image| {
         for (c, data) in ["R", "G", "B", "A"].iter().zip(planes(img)) {
-            let n = if prefix.is_empty() { c.to_string() } else { format!("{prefix}.{c}") };
+            let n = if prefix.is_empty() {
+                c.to_string()
+            } else {
+                format!("{prefix}.{c}")
+            };
             names.push(n.clone());
             channels.push(AnyChannel::new(n.as_str(), FlatSamples::F32(data)));
         }
@@ -186,16 +241,28 @@ pub fn layered_exr(s: &Session, cid: ItemId, t: Tick, scale: f64) -> Result<(Vec
         let n = exr_name(&l.name, &mut used);
         push(&n, &l.image);
     }
-    let layer = Layer::new((w, h), LayerAttributes::default(), Encoding::SMALL_LOSSLESS, AnyChannels::sort(channels.into()));
+    let layer = Layer::new(
+        (w, h),
+        LayerAttributes::default(),
+        Encoding::SMALL_LOSSLESS,
+        AnyChannels::sort(channels.into()),
+    );
     let mut buf = std::io::Cursor::new(Vec::new());
-    Image::from_layer(layer).write().to_buffered(&mut buf).map_err(|e| EngineError::Other(format!("EXR encoding failed: {e}")))?;
+    Image::from_layer(layer)
+        .write()
+        .to_buffered(&mut buf)
+        .map_err(|e| EngineError::Other(format!("EXR encoding failed: {e}")))?;
     Ok((buf.into_inner(), names, full.width, full.height))
 }
 
 fn frame_args(s: &Session, p: &Value, cmd: &str, ext: &str) -> Result<(String, ItemId, Tick, f64)> {
-    let path = str_p(p, "path").ok_or_else(|| bad(cmd, format!("missing `path` (.{ext})")))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad(cmd, format!("missing `path` (.{ext})")))?
+        .to_string();
     let cid = comp_id(s, p)?;
-    let t = f_p(p, "time").map(Tick::from_seconds_f64).unwrap_or(s.time());
+    let t = f_p(p, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or(s.time());
     let scale = f_p(p, "scale").unwrap_or(1.0).clamp(0.01, 4.0);
     Ok((path, cid, t, scale))
 }
@@ -203,7 +270,9 @@ fn frame_args(s: &Session, p: &Value, cmd: &str, ext: &str) -> Result<(String, I
 fn save_psd(s: &mut Session, p: &Value) -> Result<Value> {
     let (path, cid, t, scale) = frame_args(s, p, "comp.saveFrameAsPsd", "psd")?;
     let (bytes, n, w, h) = layered_psd(s, cid, t, scale)?;
-    s.services.write_file(&path, &bytes).map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
+    s.services
+        .write_file(&path, &bytes)
+        .map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
     s.toast(format!("Saved {n} layers to {path}"));
     Ok(json!({"path": path, "layers": n, "width": w, "height": h, "time": t.seconds()}))
 }
@@ -211,7 +280,9 @@ fn save_psd(s: &mut Session, p: &Value) -> Result<Value> {
 fn save_exr(s: &mut Session, p: &Value) -> Result<Value> {
     let (path, cid, t, scale) = frame_args(s, p, "comp.saveFrameAsExr", "exr")?;
     let (bytes, channels, w, h) = layered_exr(s, cid, t, scale)?;
-    s.services.write_file(&path, &bytes).map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
+    s.services
+        .write_file(&path, &bytes)
+        .map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
     s.toast(format!("Saved a multi-layer EXR to {path}"));
     Ok(json!({"path": path, "channels": channels, "width": w, "height": h, "time": t.seconds()}))
 }

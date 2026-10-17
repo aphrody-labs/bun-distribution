@@ -38,8 +38,14 @@ struct Folder {
 impl Folder {
     /// The folder of the script at `path`.
     fn of(path: &str) -> Self {
-        let dir = std::path::Path::new(path).parent().filter(|d| !d.as_os_str().is_empty()).unwrap_or(std::path::Path::new("."));
-        Folder { real: std::fs::canonicalize(dir).ok(), dir: dir.to_path_buf() }
+        let dir = std::path::Path::new(path)
+            .parent()
+            .filter(|d| !d.as_os_str().is_empty())
+            .unwrap_or(std::path::Path::new("."));
+        Folder {
+            real: std::fs::canonicalize(dir).ok(),
+            dir: dir.to_path_buf(),
+        }
     }
 }
 
@@ -81,18 +87,30 @@ fn check(_: &mut Session, p: &Value) -> Result<Value> {
     // One byte more than a file may have shows that the file is too large.
     let max = limits.file_bytes.saturating_add(1);
     let path = str_param(p, "path");
-    let bytes: std::borrow::Cow<[u8]> = match (path, str_param(p, "data"), str_param(p, "dataBase64")) {
-        (Some(path), ..) => super::fileio::read_file_head(path, max)?.into(),
-        (None, Some(text), _) => text.as_bytes().get(..max).unwrap_or(text.as_bytes()).into(),
-        (None, None, Some(b64)) => decode_head(b64, max).ok_or_else(|| bad(C, "bad dataBase64"))?.into(),
-        _ => return Err(bad(C, "give `path`, `data` or `dataBase64`")),
-    };
+    let bytes: std::borrow::Cow<[u8]> =
+        match (path, str_param(p, "data"), str_param(p, "dataBase64")) {
+            (Some(path), ..) => super::fileio::read_file_head(path, max)?.into(),
+            (None, Some(text), _) => text.as_bytes().get(..max).unwrap_or(text.as_bytes()).into(),
+            (None, None, Some(b64)) => decode_head(b64, max)
+                .ok_or_else(|| bad(C, "bad dataBase64"))?
+                .into(),
+            _ => return Err(bad(C, "give `path`, `data` or `dataBase64`")),
+        };
     let name = super::fileio::file_name(str_param(p, "name").or(path).unwrap_or_default());
     // With a path, the file is checked under its own name, which its includes are followed from;
     // `name` names the reply.
-    let file = path.map(super::fileio::file_name).unwrap_or_else(|| name.clone());
-    let mut folder = path.filter(|_| bool_or(p, "includes", false)).map(Folder::of);
-    let report = vectorcraft_scriptcheck::check(&file, &bytes, folder.as_mut().map(|f| f as &mut dyn Loader), &limits);
+    let file = path
+        .map(super::fileio::file_name)
+        .unwrap_or_else(|| name.clone());
+    let mut folder = path
+        .filter(|_| bool_or(p, "includes", false))
+        .map(Folder::of);
+    let report = vectorcraft_scriptcheck::check(
+        &file,
+        &bytes,
+        folder.as_mut().map(|f| f as &mut dyn Loader),
+        &limits,
+    );
     Ok(report_json(&name, &report))
 }
 
@@ -120,26 +138,74 @@ fn report_json(name: &str, r: &Report) -> Value {
     let directives: Vec<Value> = r
         .directives
         .iter()
-        .map(|d| with(json!({"name": d.name, "value": d.value, "line": d.line, "form": d.form}), "file", d.file.as_deref()))
+        .map(|d| {
+            with(
+                json!({"name": d.name, "value": d.value, "line": d.line, "form": d.form}),
+                "file",
+                d.file.as_deref(),
+            )
+        })
         .collect();
     let includes: Vec<Value> = r
         .includes
         .iter()
-        .map(|i| with(with(json!({"value": i.value, "line": i.line, "status": i.status.id()}), "path", i.path.as_deref()), "file", i.file.as_deref()))
+        .map(|i| {
+            with(
+                with(
+                    json!({"value": i.value, "line": i.line, "status": i.status.id()}),
+                    "path",
+                    i.path.as_deref(),
+                ),
+                "file",
+                i.file.as_deref(),
+            )
+        })
         .collect();
-    let features: Vec<Value> = r.features.iter().map(|f| json!({"id": f.id, "count": f.count, "lines": f.lines})).collect();
-    let members: Vec<Value> = r.members.iter().map(|m| json!({"path": m.name, "count": m.count})).collect();
-    let types: Vec<Value> = r.types.iter().map(|t| json!({"name": t.name, "count": t.count})).collect();
-    let strings: Vec<Value> = r.menu_strings.iter().map(|s| json!({"value": s.value, "count": s.count, "lines": s.lines})).collect();
+    let features: Vec<Value> = r
+        .features
+        .iter()
+        .map(|f| json!({"id": f.id, "count": f.count, "lines": f.lines}))
+        .collect();
+    let members: Vec<Value> = r
+        .members
+        .iter()
+        .map(|m| json!({"path": m.name, "count": m.count}))
+        .collect();
+    let types: Vec<Value> = r
+        .types
+        .iter()
+        .map(|t| json!({"name": t.name, "count": t.count}))
+        .collect();
+    let strings: Vec<Value> = r
+        .menu_strings
+        .iter()
+        .map(|s| json!({"value": s.value, "count": s.count, "lines": s.lines}))
+        .collect();
     let outside: Vec<Value> = r
         .outside
         .iter()
-        .map(|o| with(json!({"id": o.id, "count": o.count, "lines": o.lines}), "modes", Some(&o.modes).filter(|m| !m.is_empty())))
+        .map(|o| {
+            with(
+                json!({"id": o.id, "count": o.count, "lines": o.lines}),
+                "modes",
+                Some(&o.modes).filter(|m| !m.is_empty()),
+            )
+        })
         .collect();
     let problems: Vec<Value> = r
         .problems
         .iter()
-        .map(|p| with(with(with(json!({"code": p.code}), "line", p.line), "file", p.file.as_deref()), "detail", p.detail.as_deref()))
+        .map(|p| {
+            with(
+                with(
+                    with(json!({"code": p.code}), "line", p.line),
+                    "file",
+                    p.file.as_deref(),
+                ),
+                "detail",
+                p.detail.as_deref(),
+            )
+        })
         .collect();
     json!({
         "name": name,

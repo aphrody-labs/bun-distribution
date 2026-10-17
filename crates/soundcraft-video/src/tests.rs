@@ -17,7 +17,13 @@ fn assert_solid(f: &crate::Frame, rgb: [u8; 3], tol: i32) {
     assert_eq!(f.rgba.len(), (f.width * f.height * 4) as usize);
     for px in f.rgba.as_chunks::<4>().0.iter().step_by(37) {
         for c in 0..3 {
-            assert!((i32::from(px[c]) - i32::from(rgb[c])).abs() <= tol, "frame {} pixel {:?} expected {:?}", f.index, px, rgb);
+            assert!(
+                (i32::from(px[c]) - i32::from(rgb[c])).abs() <= tol,
+                "frame {} pixel {:?} expected {:?}",
+                f.index,
+                px,
+                rgb
+            );
         }
         assert_eq!(px[3], 255);
     }
@@ -41,8 +47,14 @@ fn h264_info_and_exact_frames() {
         assert_eq!(f.index, i);
         assert_solid(&f, expected_rgb(i), 1);
     }
-    assert!(m.decoded <= 31, "sequential decode re-decoded frames: {}", m.decoded);
-    assert!(m.frame_at(1.25).is_err() && m.frame_at(-0.1).is_err() && m.frame_at(f64::NAN).is_err());
+    assert!(
+        m.decoded <= 31,
+        "sequential decode re-decoded frames: {}",
+        m.decoded
+    );
+    assert!(
+        m.frame_at(1.25).is_err() && m.frame_at(-0.1).is_err() && m.frame_at(f64::NAN).is_err()
+    );
 }
 
 #[test]
@@ -66,11 +78,17 @@ fn h264_thumbnails_use_keyframes() {
     let th = m.thumbnail_at(0.6, 12).unwrap();
     assert_eq!(th.height, 12);
     assert_eq!(th.width, 16);
-    assert_eq!(th.index, 10, "thumbnail snaps to the keyframe before 0.6 s (frame 14)");
+    assert_eq!(
+        th.index, 10,
+        "thumbnail snaps to the keyframe before 0.6 s (frame 14)"
+    );
     assert_solid(&th, expected_rgb(10), 2);
     let all = m.thumbnails(6, 24);
     assert_eq!(all.len(), 6);
-    assert!(all.iter().all(|(_, r)| r.as_ref().is_ok_and(|f| f.height == 24)));
+    assert!(
+        all.iter()
+            .all(|(_, r)| r.as_ref().is_ok_and(|f| f.height == 24))
+    );
 }
 
 #[test]
@@ -99,19 +117,39 @@ fn prores_and_mjpeg_decode() {
 #[test]
 fn unsupported_codec_opens_but_does_not_decode() {
     let mut mw = Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mp4)).unwrap();
-    let t = mw.add_track(TrackConfig::new(SampleEntry::hevc(Default::default(), 64, 48), 24)).unwrap();
-    mw.write_sample(t, WriteSample { data: &[0, 0, 0, 1, 0x40], duration: 1, composition_offset: 0, is_sync: true }).unwrap();
+    let t = mw
+        .add_track(TrackConfig::new(
+            SampleEntry::hevc(Default::default(), 64, 48),
+            24,
+        ))
+        .unwrap();
+    mw.write_sample(
+        t,
+        WriteSample {
+            data: &[0, 0, 0, 1, 0x40],
+            duration: 1,
+            composition_offset: 0,
+            is_sync: true,
+        },
+    )
+    .unwrap();
     let bytes = mw.finish().unwrap().into_inner();
     let mut m = Movie::open(bytes).unwrap();
     assert_eq!(m.info().codec, "hevc");
     assert!(!m.info().decodable);
     assert!(matches!(m.frame(0), Err(VideoError::Unsupported(_))));
-    assert!(matches!(m.thumbnail_at(0.0, 20), Err(VideoError::Unsupported(_))));
+    assert!(matches!(
+        m.thumbnail_at(0.0, 20),
+        Err(VideoError::Unsupported(_))
+    ));
 }
 
 #[test]
 fn garbage_and_audio_only_are_errors() {
-    assert!(matches!(Movie::open(Vec::new()), Err(VideoError::Container(_))));
+    assert!(matches!(
+        Movie::open(Vec::new()),
+        Err(VideoError::Container(_))
+    ));
     assert!(Movie::open(vec![0u8; 64]).is_err());
     assert!(Movie::open(b"RIFF\0\0\0\0WAVEfmt ".to_vec()).is_err());
 }
@@ -126,7 +164,11 @@ fn rng(seed: &mut u64) -> u64 {
 
 #[test]
 fn mutated_and_truncated_movies_never_panic() {
-    let sources = [h264_mp4(12, 4).unwrap(), prores_mov(3).unwrap(), mjpeg_mov(3).unwrap()];
+    let sources = [
+        h264_mp4(12, 4).unwrap(),
+        prores_mov(3).unwrap(),
+        mjpeg_mov(3).unwrap(),
+    ];
     let mut seed = 0x5eed_u64;
     for src in &sources {
         for round in 0..150 {
@@ -159,8 +201,29 @@ fn ffmpeg_h264_high_with_bframes() {
     let Some(dir) = ffmpeg_dir() else { return };
     let path = dir.join("high_bframes.mp4");
     let ok = std::process::Command::new("ffmpeg")
-        .args(["-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=160x96:rate=24:duration=2", "-c:v", "libx264", "-profile:v", "high"])
-        .args(["-pix_fmt", "yuv420p", "-bf", "3", "-g", "12", "-movflags", "+faststart"])
+        .args([
+            "-v",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=160x96:rate=24:duration=2",
+            "-c:v",
+            "libx264",
+            "-profile:v",
+            "high",
+        ])
+        .args([
+            "-pix_fmt",
+            "yuv420p",
+            "-bf",
+            "3",
+            "-g",
+            "12",
+            "-movflags",
+            "+faststart",
+        ])
         .arg(&path)
         .status()
         .is_ok_and(|s| s.success());
@@ -178,7 +241,10 @@ fn ffmpeg_h264_high_with_bframes() {
     let mut r = Movie::open(bytes).unwrap();
     r.set_cache_frames(1);
     for &i in &[47usize, 13, 0, 25, 24, 11, 36, 2] {
-        assert!(r.frame(i).unwrap().rgba == seq[i], "frame {i} differs after a seek");
+        assert!(
+            r.frame(i).unwrap().rgba == seq[i],
+            "frame {i} differs after a seek"
+        );
     }
     // testsrc2 frames differ from each other.
     assert!(seq[0] != seq[1]);
@@ -186,7 +252,10 @@ fn ffmpeg_h264_high_with_bframes() {
 }
 
 fn ffmpeg_dir() -> Option<std::path::PathBuf> {
-    let found = std::process::Command::new("ffmpeg").arg("-version").output().is_ok_and(|o| o.status.success());
+    let found = std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_ok_and(|o| o.status.success());
     if !found {
         eprintln!("skipping: ffmpeg not on PATH");
         return None;
@@ -199,8 +268,12 @@ fn ffmpeg_dir() -> Option<std::path::PathBuf> {
 #[test]
 fn test_pattern_moves() {
     let mut m = Movie::open(crate::synth::test_pattern_mp4(1).unwrap()).unwrap();
-    assert_eq!((m.info().width, m.info().height, m.info().frame_count), (320, 192, 24));
-    let white_x = |f: &crate::Frame| (0..20).find(|&mx| f.rgba[((9 * 16 + 8) * 320 + mx * 16 + 8) * 4] > 250);
+    assert_eq!(
+        (m.info().width, m.info().height, m.info().frame_count),
+        (320, 192, 24)
+    );
+    let white_x =
+        |f: &crate::Frame| (0..20).find(|&mx| f.rgba[((9 * 16 + 8) * 320 + mx * 16 + 8) * 4] > 250);
     let f3 = m.frame(3).unwrap();
     assert_eq!(white_x(&f3), Some(3));
     let f17 = m.frame_at(17.5 / 24.0).unwrap();

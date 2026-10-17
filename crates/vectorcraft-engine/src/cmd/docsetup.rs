@@ -3,7 +3,10 @@
 
 use serde_json::{Map, Value, json};
 use vectorcraft_doc::setup::{DEFAULT_FLATTENER, GRID_COLOR_PRESETS, LANGUAGES, MAX_BLEED};
-use vectorcraft_doc::{Background, CharPosition, CharStyle, DocSetup, Document, ExportText, GridSize, NodeKind, Quotes, ScriptMetrics};
+use vectorcraft_doc::{
+    Background, CharPosition, CharStyle, DocSetup, Document, ExportText, GridSize, NodeKind,
+    Quotes, ScriptMetrics,
+};
 
 use super::flatten::{FlattenOptions, FlattenerPreset};
 
@@ -65,7 +68,11 @@ fn setup(s: &mut Session, p: &Value) -> Result<Value> {
     let mut units = st.doc.units;
     // The language goes first: it picks its quotes, which `quotes` may then override.
     let current = st.doc.setup.quotes;
-    for (k, v) in o.iter().filter(|(k, _)| *k == "language").chain(o.iter().filter(|(k, _)| *k != "language")) {
+    for (k, v) in o
+        .iter()
+        .filter(|(k, _)| *k == "language")
+        .chain(o.iter().filter(|(k, _)| *k != "language"))
+    {
         // With a language, unchanged quotes (a report fed back) don't undo the language's quotes.
         if k == "quotes" && o.contains_key("language") && quotes_param(v, current)? == current {
             continue;
@@ -77,8 +84,12 @@ fn setup(s: &mut Session, p: &Value) -> Result<Value> {
         return Ok(setup_json(&st.doc));
     }
     s.edit("Document Setup", |d, _| {
-        let scripts_changed =
-            (new.superscript, new.subscript, new.small_caps_size) != (d.setup.superscript, d.setup.subscript, d.setup.small_caps_size);
+        let scripts_changed = (new.superscript, new.subscript, new.small_caps_size)
+            != (
+                d.setup.superscript,
+                d.setup.subscript,
+                d.setup.small_caps_size,
+            );
         d.setup = new;
         d.units = units;
         if scripts_changed {
@@ -90,30 +101,62 @@ fn setup(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn flag(k: &str, v: &Value) -> Result<bool> {
-    v.as_bool().ok_or_else(|| bad(C, format!("{k} must be true or false")))
+    v.as_bool()
+        .ok_or_else(|| bad(C, format!("{k} must be true or false")))
 }
 
 fn percent(k: &str, v: &Value, min: f64, max: f64) -> Result<f64> {
-    v.as_f64().filter(|x| (min..=max).contains(x)).ok_or_else(|| bad(C, format!("{k} must be a number from {min} to {max}")))
+    v.as_f64()
+        .filter(|x| (min..=max).contains(x))
+        .ok_or_else(|| bad(C, format!("{k} must be a number from {min} to {max}")))
 }
 
-fn apply(s: &mut DocSetup, units: &mut vectorcraft_doc::Unit, k: &str, v: &Value, saved: &[FlattenerPreset]) -> Result<()> {
+fn apply(
+    s: &mut DocSetup,
+    units: &mut vectorcraft_doc::Unit,
+    k: &str,
+    v: &Value,
+    saved: &[FlattenerPreset],
+) -> Result<()> {
     match k {
-        "units" => *units = v.as_str().and_then(vectorcraft_doc::Unit::named).ok_or_else(|| bad(C, "unknown units"))?,
+        "units" => {
+            *units = v
+                .as_str()
+                .and_then(vectorcraft_doc::Unit::named)
+                .ok_or_else(|| bad(C, "unknown units"))?
+        }
         "bleed" => s.bleed = bleed_param(v, s.bleed, C)?,
         "outlineImages" => s.outline_images = flag(k, v)?,
         "highlightSubstitutedFonts" => s.highlight_substituted_fonts = flag(k, v)?,
         "highlightSubstitutedGlyphs" => s.highlight_substituted_glyphs = flag(k, v)?,
-        "gridSize" => s.grid_size = v.as_str().and_then(GridSize::parse).ok_or_else(|| bad(C, "gridSize must be small, medium or large"))?,
+        "gridSize" => {
+            s.grid_size = v
+                .as_str()
+                .and_then(GridSize::parse)
+                .ok_or_else(|| bad(C, "gridSize must be small, medium or large"))?
+        }
         "gridColors" => s.grid_colors = grid_colors(v)?,
         "simulatePaper" => s.simulate_paper = flag(k, v)?,
         "flattenerPreset" => s.flattener_preset = flattener_preset(v, saved)?,
         "discardWhiteOverprint" => s.discard_white_overprint = flag(k, v)?,
         "language" => {
             let l = v.as_str().unwrap_or("");
-            let (name, quotes) = LANGUAGES.iter().find(|(n, _)| n.eq_ignore_ascii_case(l)).ok_or_else(|| {
-                bad(C, format!("unknown language `{l}` (one of {})", LANGUAGES.iter().map(|(n, _)| *n).collect::<Vec<_>>().join(", ")))
-            })?;
+            let (name, quotes) = LANGUAGES
+                .iter()
+                .find(|(n, _)| n.eq_ignore_ascii_case(l))
+                .ok_or_else(|| {
+                    bad(
+                        C,
+                        format!(
+                            "unknown language `{l}` (one of {})",
+                            LANGUAGES
+                                .iter()
+                                .map(|(n, _)| *n)
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        ),
+                    )
+                })?;
             s.language = name.to_string();
             s.quotes = *quotes;
         }
@@ -122,7 +165,12 @@ fn apply(s: &mut DocSetup, units: &mut vectorcraft_doc::Unit, k: &str, v: &Value
         "superscript" => s.superscript = script_param(k, v, s.superscript)?,
         "subscript" => s.subscript = script_param(k, v, s.subscript)?,
         "smallCapsSize" => s.small_caps_size = percent(k, v, 1.0, 200.0)?,
-        "exportText" => s.export_text = v.as_str().and_then(ExportText::parse).ok_or_else(|| bad(C, "exportText must be editable or appearance"))?,
+        "exportText" => {
+            s.export_text = v
+                .as_str()
+                .and_then(ExportText::parse)
+                .ok_or_else(|| bad(C, "exportText must be editable or appearance"))?
+        }
         "backgroundContents" => s.background = background_param(v, C)?,
         // Read-only values `document.setup` reports.
         "gridColorsName" => {}
@@ -153,13 +201,22 @@ fn flattener_preset(v: &Value, saved: &[FlattenerPreset]) -> Result<Option<Strin
 
 /// `"transparent"` or `"white"`.
 pub(crate) fn background_param(v: &Value, cmd: &str) -> Result<Background> {
-    v.as_str().and_then(Background::parse).ok_or_else(|| bad(cmd, "backgroundContents must be transparent or white"))
+    v.as_str()
+        .and_then(Background::parse)
+        .ok_or_else(|| bad(cmd, "backgroundContents must be transparent or white"))
 }
 
 /// `pt` (every side), `[top, bottom, left, right]` or `{top?, bottom?, left?, right?}`.
 pub(crate) fn bleed_param(v: &Value, current: [f64; 4], cmd: &str) -> Result<[f64; 4]> {
     let side = |x: &Value| x.as_f64().filter(|b| (0.0..=MAX_BLEED).contains(b));
-    let err = || bad(cmd, format!("bleed must be 0–{MAX_BLEED} pt: a number, [top, bottom, left, right] or {{top, bottom, left, right}}"));
+    let err = || {
+        bad(
+            cmd,
+            format!(
+                "bleed must be 0–{MAX_BLEED} pt: a number, [top, bottom, left, right] or {{top, bottom, left, right}}"
+            ),
+        )
+    };
     match v {
         Value::Number(_) => side(v).map(|b| [b; 4]).ok_or_else(err),
         Value::Array(a) if a.len() == 4 => {
@@ -172,7 +229,10 @@ pub(crate) fn bleed_param(v: &Value, current: [f64; 4], cmd: &str) -> Result<[f6
         Value::Object(o) => {
             let mut out = current;
             for (k, x) in o {
-                let i = ["top", "bottom", "left", "right"].iter().position(|s| s == k).ok_or_else(err)?;
+                let i = ["top", "bottom", "left", "right"]
+                    .iter()
+                    .position(|s| s == k)
+                    .ok_or_else(err)?;
                 out[i] = side(x).ok_or_else(err)?;
             }
             Ok(out)
@@ -183,11 +243,28 @@ pub(crate) fn bleed_param(v: &Value, current: [f64; 4], cmd: &str) -> Result<[f6
 
 fn grid_colors(v: &Value) -> Result<[vectorcraft_color::Color; 2]> {
     if let Some(name) = v.as_str() {
-        return GRID_COLOR_PRESETS.iter().find(|(n, _)| n.eq_ignore_ascii_case(name)).map(|(_, c)| *c).ok_or_else(|| {
-            bad(C, format!("unknown grid colours `{name}` (one of {})", GRID_COLOR_PRESETS.iter().map(|(n, _)| *n).collect::<Vec<_>>().join(", ")))
-        });
+        return GRID_COLOR_PRESETS
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(name))
+            .map(|(_, c)| *c)
+            .ok_or_else(|| {
+                bad(
+                    C,
+                    format!(
+                        "unknown grid colours `{name}` (one of {})",
+                        GRID_COLOR_PRESETS
+                            .iter()
+                            .map(|(n, _)| *n)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ),
+                )
+            });
     }
-    match v.as_array().map(|a| a.iter().map(color_value).collect::<Option<Vec<_>>>()) {
+    match v
+        .as_array()
+        .map(|a| a.iter().map(color_value).collect::<Option<Vec<_>>>())
+    {
         Some(Some(c)) if c.len() == 2 => Ok([c[0], c[1]]),
         _ => Err(bad(C, "gridColors must be a preset name or two colours")),
     }
@@ -197,19 +274,36 @@ fn grid_colors(v: &Value) -> Result<[vectorcraft_color::Color; 2]> {
 fn quote_pair(v: &Value) -> Option<[char; 2]> {
     let chars: Vec<char> = match v {
         Value::String(s) => s.chars().collect(),
-        Value::Array(a) => a.iter().map(|x| x.as_str().and_then(|s| s.chars().next().filter(|_| s.chars().count() == 1))).collect::<Option<_>>()?,
+        Value::Array(a) => a
+            .iter()
+            .map(|x| {
+                x.as_str()
+                    .and_then(|s| s.chars().next().filter(|_| s.chars().count() == 1))
+            })
+            .collect::<Option<_>>()?,
         _ => return None,
     };
     match chars[..] {
-        [a, b] if !a.is_control() && !b.is_control() && !a.is_whitespace() && !b.is_whitespace() => Some([a, b]),
+        [a, b]
+            if !a.is_control() && !b.is_control() && !a.is_whitespace() && !b.is_whitespace() =>
+        {
+            Some([a, b])
+        }
         _ => None,
     }
 }
 
 fn quotes_param(v: &Value, mut q: Quotes) -> Result<Quotes> {
-    let o = v.as_object().ok_or_else(|| bad(C, "quotes must be {double?, single?}"))?;
+    let o = v
+        .as_object()
+        .ok_or_else(|| bad(C, "quotes must be {double?, single?}"))?;
     for (k, x) in o {
-        let pair = quote_pair(x).ok_or_else(|| bad(C, format!("quotes.{k} must be an opening and a closing quote, e.g. \"“”\"")))?;
+        let pair = quote_pair(x).ok_or_else(|| {
+            bad(
+                C,
+                format!("quotes.{k} must be an opening and a closing quote, e.g. \"“”\""),
+            )
+        })?;
         match k.as_str() {
             "double" => q.double = pair,
             "single" => q.single = pair,
@@ -220,7 +314,9 @@ fn quotes_param(v: &Value, mut q: Quotes) -> Result<Quotes> {
 }
 
 fn script_param(k: &str, v: &Value, mut m: ScriptMetrics) -> Result<ScriptMetrics> {
-    let o = v.as_object().ok_or_else(|| bad(C, format!("{k} must be {{size?, position?}}")))?;
+    let o = v
+        .as_object()
+        .ok_or_else(|| bad(C, format!("{k} must be {{size?, position?}}")))?;
     for (key, x) in o {
         match key.as_str() {
             "size" => m.size = percent(&format!("{k}.size"), x, 1.0, 500.0)?,
@@ -233,19 +329,32 @@ fn script_param(k: &str, v: &Value, mut m: ScriptMetrics) -> Result<ScriptMetric
 
 /// `position?: "normal"|"superscript"|"subscript"` and `smallCaps?: bool` from a character
 /// command's params, in the document's Document Setup proportions.
-pub(crate) fn script_params(p: &Value, setup: &DocSetup, cmd: &str) -> Result<(Option<CharPosition>, Option<Option<f64>>)> {
+pub(crate) fn script_params(
+    p: &Value,
+    setup: &DocSetup,
+    cmd: &str,
+) -> Result<(Option<CharPosition>, Option<Option<f64>>)> {
     let position = match p.get("position").filter(|v| !v.is_null()) {
         None => None,
         Some(v) => Some(match v.as_str().map(str::to_ascii_lowercase).as_deref() {
             Some("normal") => CharPosition::Normal,
             Some("superscript") => CharPosition::Superscript(setup.superscript),
             Some("subscript") => CharPosition::Subscript(setup.subscript),
-            _ => return Err(bad(cmd, "position must be normal, superscript or subscript")),
+            _ => {
+                return Err(bad(
+                    cmd,
+                    "position must be normal, superscript or subscript",
+                ));
+            }
         }),
     };
     let small_caps = match p.get("smallCaps").filter(|v| !v.is_null()) {
         None => None,
-        Some(v) => Some(v.as_bool().ok_or_else(|| bad(cmd, "smallCaps must be true or false"))?.then_some(setup.small_caps_size)),
+        Some(v) => Some(
+            v.as_bool()
+                .ok_or_else(|| bad(cmd, "smallCaps must be true or false"))?
+                .then_some(setup.small_caps_size),
+        ),
     };
     Ok((position, small_caps))
 }
@@ -274,7 +383,12 @@ fn restamp_scripts(d: &mut Document) {
     let setup = d.setup.clone();
     for id in ids {
         if let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) {
-            for st in t.runs.iter_mut().map(|r| &mut r.style).filter(|st| uses(st)) {
+            for st in t
+                .runs
+                .iter_mut()
+                .map(|r| &mut r.style)
+                .filter(|st| uses(st))
+            {
                 st.position = position_in(&setup, st.position);
                 st.small_caps = st.small_caps.map(|_| setup.small_caps_size);
             }

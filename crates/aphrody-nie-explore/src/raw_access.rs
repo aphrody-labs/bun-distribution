@@ -72,7 +72,9 @@ impl Token {
         if trimmed.is_empty() {
             return Ok(None);
         }
-        Self::new(trimmed).map(Some).ok_or(TokenTooShort { len: trimmed.len() })
+        Self::new(trimmed)
+            .map(Some)
+            .ok_or(TokenTooShort { len: trimmed.len() })
     }
 
     /// True when `authorization` (the raw `Authorization` header value) carries this token

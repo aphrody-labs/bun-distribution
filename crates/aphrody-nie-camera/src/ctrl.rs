@@ -80,14 +80,21 @@ impl ChaseSoccer {
     /// Décalage d'azimut de la phase courante.
     #[must_use]
     pub fn phase_offset(&self) -> f32 {
-        if self.offence { self.data.offence_offset_rot_y } else { self.data.defence_offset_rot_y }
+        if self.offence {
+            self.data.offence_offset_rot_y
+        } else {
+            self.data.defence_offset_rot_y
+        }
     }
 
     /// Décalage du point visé de la phase courante.
     #[must_use]
     pub fn phase_ref_offset(&self) -> [f32; 3] {
-        let o =
-            if self.offence { self.data.offence_ref_offset } else { self.data.defence_ref_offset };
+        let o = if self.offence {
+            self.data.offence_ref_offset
+        } else {
+            self.data.defence_ref_offset
+        };
         [
             o[0] + self.data.ref_offset[0],
             o[1] + self.data.ref_offset[1],
@@ -115,7 +122,11 @@ impl ChaseSoccer {
         let want_ref = add(target, self.phase_ref_offset());
         cam.ref_pos = approach3(cam.ref_pos, want_ref, self.data.move_interp_rate);
         cam.fov_deg = self.data.fov;
-        cam.set_orbit(self.length, self.azimuth.to_radians(), self.altitude.to_radians());
+        cam.set_orbit(
+            self.length,
+            self.azimuth.to_radians(),
+            self.altitude.to_radians(),
+        );
     }
 }
 
@@ -140,7 +151,12 @@ impl Shake {
     /// Un shake « large » aux valeurs par défaut du jeu.
     #[must_use]
     pub fn large() -> Self {
-        Shake { amplitude: (0.35, 0.35), period: (0.06, 0.05), duration: 0.5, elapsed: 0.0 }
+        Shake {
+            amplitude: (0.35, 0.35),
+            period: (0.06, 0.05),
+            duration: 0.5,
+            elapsed: 0.0,
+        }
     }
 
     /// `true` tant que le shake est actif.
@@ -243,7 +259,13 @@ impl InterPolate {
     /// Nouvelle transition.
     #[must_use]
     pub fn new(from: CameraState, to: CameraState, duration: f32, fade: FadeType) -> Self {
-        InterPolate { from, to, duration, fade, elapsed: 0.0 }
+        InterPolate {
+            from,
+            to,
+            duration,
+            fade,
+            elapsed: 0.0,
+        }
     }
 
     /// `true` tant que la transition n'est pas terminée.
@@ -303,7 +325,11 @@ impl Offset {
     pub fn intensity(&self) -> f32 {
         let t = self.elapsed;
         if t < self.in_time {
-            return if self.in_time <= f32::EPSILON { 1.0 } else { t / self.in_time };
+            return if self.in_time <= f32::EPSILON {
+                1.0
+            } else {
+                t / self.in_time
+            };
         }
         let t = t - self.in_time;
         if t < self.hold_time {
@@ -345,7 +371,11 @@ pub fn chase_from_preset(set: &PropertySet, preset: &str) -> Option<ChaseSoccer>
     if p.is_empty() {
         return None;
     }
-    let f = |k: &str, d: f32| p.get(k).and_then(crate::property::ParamValue::as_f32).unwrap_or(d);
+    let f = |k: &str, d: f32| {
+        p.get(k)
+            .and_then(crate::property::ParamValue::as_f32)
+            .unwrap_or(d)
+    };
     let ref_off = p
         .get("m_vCameraRefOffset")
         .and_then(crate::property::ParamValue::as_vec3)
@@ -448,7 +478,10 @@ mod tests {
     #[test]
     fn interpolation_atteint_la_cible() {
         let a = CameraState::default();
-        let b = CameraState { fov_deg: 90.0, ..CameraState::default() };
+        let b = CameraState {
+            fov_deg: 90.0,
+            ..CameraState::default()
+        };
         let mut it = InterPolate::new(a, b, 1.5, FadeType::from_code(6));
         let mut last = a;
         for _ in 0..100 {
@@ -492,7 +525,10 @@ mod tests {
     #[test]
     fn blender_pondere() {
         let a = CameraState::default();
-        let b = CameraState { fov_deg: 90.0, ..CameraState::default() };
+        let b = CameraState {
+            fov_deg: 90.0,
+            ..CameraState::default()
+        };
         let m = Blender { weight: 0.25 }.blend(&a, &b);
         assert!((m.fov_deg - 56.25).abs() < 1e-4);
     }

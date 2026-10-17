@@ -95,7 +95,10 @@ pub fn flatten_items(root: &Value) -> Vec<TreasureItem> {
         for leaf in r.children() {
             let name = leaf.name();
             if name.starts_with("ITBL_ITEMS_") && !name.contains("LIST") && leaf.var_count() >= 3 {
-                flat.push(TreasureItem { item_id: leaf.hash(0), weight: leaf.int(2) });
+                flat.push(TreasureItem {
+                    item_id: leaf.hash(0),
+                    weight: leaf.int(2),
+                });
             }
         }
     }

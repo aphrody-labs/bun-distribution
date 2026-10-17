@@ -9,7 +9,18 @@ pub use wordcraft_doc::encoding::cp1252;
 use crate::model::{FBlock, ListCounter, from_doc};
 
 fn utf16(b: &[u8], le: bool) -> String {
-    let units: Vec<u16> = b.as_chunks::<2>().0.iter().map(|c| if le { u16::from_le_bytes(*c) } else { u16::from_be_bytes(*c) }).collect();
+    let units: Vec<u16> = b
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| {
+            if le {
+                u16::from_le_bytes(*c)
+            } else {
+                u16::from_be_bytes(*c)
+            }
+        })
+        .collect();
     String::from_utf16_lossy(&units)
 }
 
@@ -21,7 +32,12 @@ fn unmarked_utf16(b: &[u8]) -> Option<bool> {
     }
     let sample = b.get(..b.len().min(512))?;
     let even_zero = sample.iter().step_by(2).filter(|x| **x == 0).count();
-    let odd_zero = sample.iter().skip(1).step_by(2).filter(|x| **x == 0).count();
+    let odd_zero = sample
+        .iter()
+        .skip(1)
+        .step_by(2)
+        .filter(|x| **x == 0)
+        .count();
     let half = sample.len() / 2;
     if odd_zero * 10 >= half * 4 && even_zero * 10 < half {
         return Some(true);
@@ -39,7 +55,10 @@ fn unmarked_utf16(b: &[u8]) -> Option<bool> {
 /// other control characters in its first 64 KB. PDFs are refused by their signature (they
 /// start as text). An empty file is text.
 pub fn is_text(b: &[u8]) -> bool {
-    if b.starts_with(&[0xEF, 0xBB, 0xBF]) || b.starts_with(&[0xFF, 0xFE]) || b.starts_with(&[0xFE, 0xFF]) {
+    if b.starts_with(&[0xEF, 0xBB, 0xBF])
+        || b.starts_with(&[0xFF, 0xFE])
+        || b.starts_with(&[0xFE, 0xFF])
+    {
         return true;
     }
     if b.starts_with(b"%PDF-") {
@@ -48,16 +67,32 @@ pub fn is_text(b: &[u8]) -> bool {
     let sample = b.get(..b.len().min(64 << 10)).unwrap_or(b);
     // Tab, line feed, form feed, carriage return, DOS end-of-file (^Z) and escape appear in text;
     // other controls in more than 1 of 100 characters mean binary.
-    let odd = |c: u32| c == 0 || (c < 0x20 && !matches!(c, 0x09 | 0x0A | 0x0C | 0x0D | 0x1A | 0x1B)) || c == 0x7F;
+    let odd = |c: u32| {
+        c == 0 || (c < 0x20 && !matches!(c, 0x09 | 0x0A | 0x0C | 0x0D | 0x1A | 0x1B)) || c == 0x7F
+    };
     if let Some(le) = unmarked_utf16(sample) {
         let units = sample.as_chunks::<2>().0;
-        let n = units.iter().filter(|c| odd(u32::from(if le { u16::from_le_bytes(**c) } else { u16::from_be_bytes(**c) }))).count();
+        let n = units
+            .iter()
+            .filter(|c| {
+                odd(u32::from(if le {
+                    u16::from_le_bytes(**c)
+                } else {
+                    u16::from_be_bytes(**c)
+                }))
+            })
+            .count();
         return n.saturating_mul(100) <= units.len();
     }
     if sample.contains(&0) {
         return false;
     }
-    sample.iter().filter(|c| odd(u32::from(**c))).count().saturating_mul(100) <= sample.len()
+    sample
+        .iter()
+        .filter(|c| odd(u32::from(**c)))
+        .count()
+        .saturating_mul(100)
+        <= sample.len()
 }
 
 /// Decode text bytes: BOMs first, then UTF-16 without BOM (by its zero bytes), UTF-8, and
@@ -85,7 +120,10 @@ pub fn decode(b: &[u8]) -> String {
 pub fn import(bytes: &[u8]) -> Document {
     let text = decode(bytes);
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
-    let clean: String = text.chars().filter(|c| !c.is_control() || matches!(c, '\n' | '\t' | '\u{000C}')).collect();
+    let clean: String = text
+        .chars()
+        .filter(|c| !c.is_control() || matches!(c, '\n' | '\t' | '\u{000C}'))
+        .collect();
     Document::from_text(&clean)
 }
 
@@ -102,7 +140,11 @@ fn blocks_text(blocks: &[FBlock], out: &mut Vec<String>, lists: &mut ListCounter
                     }
                     None => lists.reset(),
                 }
-                line.push_str(&p.shown_text().replace('\n', "\r\n").replace(['\u{000C}', '\u{000E}'], ""));
+                line.push_str(
+                    &p.shown_text()
+                        .replace('\n', "\r\n")
+                        .replace(['\u{000C}', '\u{000E}'], ""),
+                );
                 out.push(line);
             }
             FBlock::Table(t) => {

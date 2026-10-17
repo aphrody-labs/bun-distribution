@@ -43,8 +43,10 @@ fn build_index(database: &Path, root: &Path) -> Result<usize> {
         .require_git(false)
         .filter_entry(|entry| entry.file_name() != ".git")
         .build();
-    let entries =
-        walker.flatten().filter(|e| e.file_type().is_some_and(|t| t.is_file())).map(|entry| {
+    let entries = walker
+        .flatten()
+        .filter(|e| e.file_type().is_some_and(|t| t.is_file()))
+        .map(|entry| {
             let metadata = entry.metadata().ok();
             PathHit {
                 path: entry.path().display().to_string(),
@@ -62,11 +64,19 @@ fn build_index(database: &Path, root: &Path) -> Result<usize> {
 
 /// Aphrody state directory: `$APHRODY_HOME`, else `~/.aphrody`.
 fn state_dir() -> Option<PathBuf> {
-    let non_empty =
-        |name: &str| std::env::var_os(name).filter(|v| !v.is_empty()).map(PathBuf::from);
+    let non_empty = |name: &str| {
+        std::env::var_os(name)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
     non_empty("APHRODY_HOME").or_else(|| {
-        let home = if cfg!(windows) { non_empty("USERPROFILE") } else { None };
-        home.or_else(|| non_empty("HOME")).map(|home| home.join(".aphrody"))
+        let home = if cfg!(windows) {
+            non_empty("USERPROFILE")
+        } else {
+            None
+        };
+        home.or_else(|| non_empty("HOME"))
+            .map(|home| home.join(".aphrody"))
     })
 }
 
@@ -74,17 +84,28 @@ fn state_dir() -> Option<PathBuf> {
 /// and index outputs never land in the scanned checkout.
 fn repo_state_dir(root: &Path) -> PathBuf {
     let text = root.display().to_string();
-    let text = if cfg!(windows) { text.to_lowercase() } else { text };
-    let hash = text
-        .bytes()
-        .fold(0xcbf2_9ce4_8422_2325_u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3));
-    let name = root.file_name().map_or_else(|| "root".into(), |n| n.to_string_lossy().into_owned());
+    let text = if cfg!(windows) {
+        text.to_lowercase()
+    } else {
+        text
+    };
+    let hash = text.bytes().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
+        (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+    });
+    let name = root
+        .file_name()
+        .map_or_else(|| "root".into(), |n| n.to_string_lossy().into_owned());
     let base = state_dir().unwrap_or_else(|| root.join(".aphrody"));
-    base.join("yolo").join(format!("{name}-{:08x}", hash as u32))
+    base.join("yolo")
+        .join(format!("{name}-{:08x}", hash as u32))
 }
 
 #[derive(Debug, Parser)]
-#[command(name = "aphrody-yolo", version, about = "Aphrody OS native YOLO engine")]
+#[command(
+    name = "aphrody-yolo",
+    version,
+    about = "Aphrody OS native YOLO engine"
+)]
 struct Cli {
     /// Repository root. Defaults to the current directory.
     #[arg(long, global = true, default_value = ".")]
@@ -355,8 +376,14 @@ enum Tier {
 }
 
 impl Tier {
-    const ALL: [Self; 6] =
-        [Self::Tools, Self::Rust, Self::Bun, Self::Uv, Self::Pwsh, Self::Nushell];
+    const ALL: [Self; 6] = [
+        Self::Tools,
+        Self::Rust,
+        Self::Bun,
+        Self::Uv,
+        Self::Pwsh,
+        Self::Nushell,
+    ];
 
     fn name(self) -> &'static str {
         match self {
@@ -380,7 +407,10 @@ fn skip(json: bool, tier: Tier, reason: &str) -> Result<()> {
     if json {
         println!(
             "{}",
-            serde_json::to_string(&SkippedPhase { tier: tier.name(), skipped: reason })?
+            serde_json::to_string(&SkippedPhase {
+                tier: tier.name(),
+                skipped: reason
+            })?
         );
     } else {
         eprintln!("== {}: skipped ({reason})", tier.name());
@@ -426,7 +456,10 @@ fn nushell_scripts(root: &Path) -> Vec<String> {
                 && e.path().extension().is_some_and(|x| x == "nu")
         })
         .filter_map(|e| {
-            e.path().strip_prefix(root).ok().map(|p| p.display().to_string().replace('\\', "/"))
+            e.path()
+                .strip_prefix(root)
+                .ok()
+                .map(|p| p.display().to_string().replace('\\', "/"))
         })
         .collect();
     found.sort();
@@ -455,7 +488,9 @@ fn run_at(cwd: &Path, json: bool, tier: Tier, program: &str, args: &[String]) ->
         // Keep stdout reserved for the phase record; child diagnostics remain on stderr.
         command.stdout(Stdio::null());
     }
-    let status = command.status().with_context(|| format!("failed to start {program}"))?;
+    let status = command
+        .status()
+        .with_context(|| format!("failed to start {program}"))?;
     let result = PhaseResult {
         tier: tier.name(),
         program: program.to_owned(),
@@ -466,7 +501,10 @@ fn run_at(cwd: &Path, json: bool, tier: Tier, program: &str, args: &[String]) ->
         println!("{}", serde_json::to_string(&result)?);
     }
     if !status.success() {
-        bail!("{} tier failed: {program} exited with {status}", tier.name());
+        bail!(
+            "{} tier failed: {program} exited with {status}",
+            tier.name()
+        );
     }
     Ok(())
 }
@@ -487,7 +525,10 @@ fn detect(path: &Path, json: bool) -> Result<()> {
     if json {
         println!("{}", serde_json::to_string(&result)?);
     } else {
-        println!("{}: {} ({})", result.path, result.definition.name, result.definition.mime_type);
+        println!(
+            "{}: {} ({})",
+            result.path, result.definition.name, result.definition.mime_type
+        );
         if let Some(parse) = result.parse {
             println!(
                 "lines: code={} comment={} blank={}",
@@ -505,7 +546,7 @@ fn check_tier(root: &Path, json: bool, tier: Tier, all_docs: bool) -> Result<()>
         Tier::Rust if !root.join("Cargo.toml").is_file() => skip(json, tier, "no Cargo.toml"),
         Tier::Rust if is_bun_source(root) => {
             run(root, json, tier, "bun", &strings(&["run", "rust:check"]))
-        },
+        }
         Tier::Rust => run(
             root,
             json,
@@ -516,12 +557,18 @@ fn check_tier(root: &Path, json: bool, tier: Tier, all_docs: bool) -> Result<()>
         Tier::Bun if !root.join("package.json").is_file() => skip(json, tier, "no package.json"),
         Tier::Bun if is_bun_source(root) => {
             run(root, json, tier, "bun", &strings(&["run", "lint"]))
-        },
+        }
         Tier::Bun => {
-            run(root, json, tier, "bun", &strings(&["install", "--frozen-lockfile"]))?;
+            run(
+                root,
+                json,
+                tier,
+                "bun",
+                &strings(&["install", "--frozen-lockfile"]),
+            )?;
             run(root, json, tier, "bun", &strings(&["run", "test"]))?;
             run(root, json, tier, "bun", &strings(&["run", "lint"]))
-        },
+        }
         Tier::Uv => {
             // Validate every uv project explicitly. `--locked`/`--check` is
             // the dependency gate; the documentation scan remains a separate
@@ -535,21 +582,30 @@ fn check_tier(root: &Path, json: bool, tier: Tier, all_docs: bool) -> Result<()>
             }
             if !root.join("scripts/scan-doc-links.py").is_file() {
                 return if projects.is_empty() {
-                    skip(json, tier, "no pyproject.toml and no scripts/scan-doc-links.py")
+                    skip(
+                        json,
+                        tier,
+                        "no pyproject.toml and no scripts/scan-doc-links.py",
+                    )
                 } else {
                     Ok(())
                 };
             }
-            let mut args =
-                strings(&["run", "--no-project", "python", "scripts/scan-doc-links.py", "--json"]);
+            let mut args = strings(&[
+                "run",
+                "--no-project",
+                "python",
+                "scripts/scan-doc-links.py",
+                "--json",
+            ]);
             if all_docs {
                 args.push("--all".to_owned());
             }
             run(root, json, tier, "uv", &args)
-        },
+        }
         Tier::Pwsh if !root.join("scripts/lint-ps1.ps1").is_file() => {
             skip(json, tier, "no scripts/lint-ps1.ps1")
-        },
+        }
         Tier::Pwsh => run(
             root,
             json,
@@ -569,10 +625,16 @@ fn check_tier(root: &Path, json: bool, tier: Tier, all_docs: bool) -> Result<()>
                 return skip(json, tier, "no .nu scripts under scripts/");
             }
             for script in &scripts {
-                run(root, json, tier, "nu", &strings(&["--ide-check", "100", script]))?;
+                run(
+                    root,
+                    json,
+                    tier,
+                    "nu",
+                    &strings(&["--ide-check", "100", script]),
+                )?;
             }
             Ok(())
-        },
+        }
     }
 }
 
@@ -601,7 +663,7 @@ fn map(root: &Path, out: Option<PathBuf>, map: Option<PathBuf>, command: MapComm
                 out.display()
             );
             Ok(())
-        },
+        }
         MapCommand::Check => {
             let result = mapper::audit::run(root, &out, &map)?;
             if result.status == mapper::core::Status::ProductionReady {
@@ -609,13 +671,16 @@ fn map(root: &Path, out: Option<PathBuf>, map: Option<PathBuf>, command: MapComm
             } else {
                 bail!("map findings detected: {}", result.total_findings)
             }
-        },
+        }
         MapCommand::Watch { debounce_ms } => mapper::watch::run(root, &out, &map, debounce_ms),
     }
 }
 
 fn index_database(root: &Path, database: Option<PathBuf>) -> PathBuf {
-    database.map_or_else(|| repo_state_dir(root).join(FS_INDEX_FILE), |path| root.join(path))
+    database.map_or_else(
+        || repo_state_dir(root).join(FS_INDEX_FILE),
+        |path| root.join(path),
+    )
 }
 
 fn shell(root: &Path, json_output: bool, endpoint: &str, command: ShellCommand) -> Result<()> {
@@ -628,15 +693,17 @@ fn shell(root: &Path, json_output: bool, endpoint: &str, command: ShellCommand) 
             } else {
                 println!("{}", serde_json::to_string_pretty(&value)?);
             }
-        },
+        }
         ShellCommand::Commands { filter } => {
             let commands = kernel_tool_call(endpoint, "nu_commands", json!({ "filter": filter }))?;
             if json_output {
                 println!("{}", serde_json::to_string(&commands)?);
             } else {
                 for command in commands.as_array().into_iter().flatten() {
-                    let name =
-                        command.get("name").and_then(serde_json::Value::as_str).unwrap_or_default();
+                    let name = command
+                        .get("name")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or_default();
                     let description = command
                         .get("description")
                         .and_then(serde_json::Value::as_str)
@@ -644,7 +711,7 @@ fn shell(root: &Path, json_output: bool, endpoint: &str, command: ShellCommand) 
                     println!("{name}: {description}");
                 }
             }
-        },
+        }
         ShellCommand::Describe { command } => {
             let help = kernel_tool_call(endpoint, "nu_help", json!({ "command": command }))?;
             if json_output {
@@ -652,7 +719,7 @@ fn shell(root: &Path, json_output: bool, endpoint: &str, command: ShellCommand) 
             } else {
                 println!("{help}");
             }
-        },
+        }
     }
     Ok(())
 }
@@ -691,8 +758,12 @@ fn filesystem(root: &Path, json_output: bool, command: FsCommand) -> Result<()> 
             } else {
                 println!("indexed {indexed} metadata entries: {}", database.display());
             }
-        },
-        FsCommand::Search { query, limit, database } => {
+        }
+        FsCommand::Search {
+            query,
+            limit,
+            database,
+        } => {
             let database = index_database(root, database);
             existing_index(&database)?;
             let hits = PathIndex::open(&database).search(&query.join(" "), limit)?;
@@ -703,7 +774,7 @@ fn filesystem(root: &Path, json_output: bool, command: FsCommand) -> Result<()> 
                     println!("{}", hit.path);
                 }
             }
-        },
+        }
         FsCommand::Status { database } => {
             let database = index_database(root, database);
             existing_index(&database)?;
@@ -714,7 +785,7 @@ fn filesystem(root: &Path, json_output: bool, command: FsCommand) -> Result<()> 
             } else {
                 println!("{} metadata entries: {}", entries, database.display());
             }
-        },
+        }
     }
     Ok(())
 }
@@ -725,8 +796,9 @@ fn kernel_request(
     params: serde_json::Value,
 ) -> Result<serde_json::Value> {
     let mut options = ClientOptions::new(endpoint);
-    if let Some(token) =
-        std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|token| !token.is_empty())
+    if let Some(token) = std::env::var("APHRODY_OS_AUTH_TOKEN")
+        .ok()
+        .filter(|token| !token.is_empty())
     {
         options = options.with_auth_token(token);
     }
@@ -743,8 +815,11 @@ fn kernel_request(
 }
 
 fn kernel_subsystem_tools(endpoint: &str, subsystem: &str) -> Result<Vec<serde_json::Value>> {
-    let response =
-        kernel_request(endpoint, "system/subsystem_tools", json!({ "name": subsystem }))?;
+    let response = kernel_request(
+        endpoint,
+        "system/subsystem_tools",
+        json!({ "name": subsystem }),
+    )?;
     response
         .get("tools")
         .and_then(serde_json::Value::as_array)
@@ -761,10 +836,16 @@ fn kernel_tool_call(
     tool: &str,
     arguments: serde_json::Value,
 ) -> Result<serde_json::Value> {
-    let result =
-        kernel_request(endpoint, "tools/call", json!({ "name": tool, "arguments": arguments }))?;
+    let result = kernel_request(
+        endpoint,
+        "tools/call",
+        json!({ "name": tool, "arguments": arguments }),
+    )?;
     anyhow::ensure!(
-        !result.get("isError").and_then(serde_json::Value::as_bool).unwrap_or(false),
+        !result
+            .get("isError")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
         "kernel tool failed: {tool}"
     );
     Ok(result.get("structuredContent").cloned().unwrap_or(result))
@@ -821,8 +902,10 @@ fn windows(json_output: bool, endpoint: &str, command: WinCommand) -> Result<()>
                 println!("{}", serde_json::to_string(&tools)?);
             } else {
                 for tool in tools {
-                    let name =
-                        tool.get("name").and_then(serde_json::Value::as_str).unwrap_or_default();
+                    let name = tool
+                        .get("name")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or_default();
                     let description = tool
                         .get("description")
                         .and_then(serde_json::Value::as_str)
@@ -830,7 +913,7 @@ fn windows(json_output: bool, endpoint: &str, command: WinCommand) -> Result<()>
                     println!("{name}: {description}");
                 }
             }
-        },
+        }
         WinCommand::Status => {
             let tools = kernel_admin_tools(endpoint)?;
             let value = json!({
@@ -843,16 +926,19 @@ fn windows(json_output: bool, endpoint: &str, command: WinCommand) -> Result<()>
             } else {
                 println!("{}", serde_json::to_string_pretty(&value)?);
             }
-        },
+        }
         WinCommand::Call { tool, args } => {
             let arguments: serde_json::Value =
                 serde_json::from_str(&args).context("kernel tool arguments must be JSON")?;
-            anyhow::ensure!(arguments.is_object(), "kernel tool arguments must be a JSON object");
             anyhow::ensure!(
-                kernel_admin_tools(endpoint)?
-                    .iter()
-                    .any(|entry| entry.get("name").and_then(serde_json::Value::as_str)
-                        == Some(&tool)),
+                arguments.is_object(),
+                "kernel tool arguments must be a JSON object"
+            );
+            anyhow::ensure!(
+                kernel_admin_tools(endpoint)?.iter().any(|entry| entry
+                    .get("name")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(&tool)),
                 "unknown kernel admin tool: {tool}"
             );
             let result = kernel_request(
@@ -861,7 +947,10 @@ fn windows(json_output: bool, endpoint: &str, command: WinCommand) -> Result<()>
                 json!({ "name": tool, "arguments": arguments }),
             )?;
             anyhow::ensure!(
-                !result.get("isError").and_then(serde_json::Value::as_bool).unwrap_or(false),
+                !result
+                    .get("isError")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
                 "kernel admin tool failed: {tool}"
             );
             if json_output {
@@ -869,7 +958,7 @@ fn windows(json_output: bool, endpoint: &str, command: WinCommand) -> Result<()>
             } else {
                 println!("{}", serde_json::to_string_pretty(&result)?);
             }
-        },
+        }
     }
     Ok(())
 }
@@ -903,7 +992,11 @@ fn root_entries(root: &Path) -> Result<Vec<String>> {
 }
 
 fn has_extension(entries: &[String], extensions: &[&str]) -> bool {
-    entries.iter().any(|entry| extensions.iter().any(|extension| entry.ends_with(extension)))
+    entries.iter().any(|entry| {
+        extensions
+            .iter()
+            .any(|extension| entry.ends_with(extension))
+    })
 }
 
 fn yolo_plan(root: &Path, json: bool) -> Result<()> {
@@ -1063,7 +1156,9 @@ fn yolo_check_resources(root: &Path, yolo_root: &Path, json: bool) -> Result<()>
         "obsolete packages/yolo package must not exist; YOLO belongs to the Aphrody plugin"
     );
     anyhow::ensure!(
-        !root.join("crates/aphrody-yolo/resources/yolo/yolo.json").exists(),
+        !root
+            .join("crates/aphrody-yolo/resources/yolo/yolo.json")
+            .exists(),
         "duplicate YOLO manifest remains under aphrody-yolo resources"
     );
     let manifest_path = yolo_root.join("yolo.json");
@@ -1090,9 +1185,9 @@ fn yolo_check_resources(root: &Path, yolo_root: &Path, json: bool) -> Result<()>
         .and_then(serde_json::Value::as_object)
         .context("YOLO manifest has no entrypoints")?;
     anyhow::ensure!(
-        entrypoints
-            .values()
-            .all(|entry| entry.as_str().is_some_and(|entry| entry.starts_with("aphrody-yolo"))),
+        entrypoints.values().all(|entry| entry
+            .as_str()
+            .is_some_and(|entry| entry.starts_with("aphrody-yolo"))),
         "YOLO entrypoints must use aphrody-yolo"
     );
     let agents = fs::read_dir(yolo_root.join("agents"))?
@@ -1131,11 +1226,18 @@ fn yolo_check_resources(root: &Path, yolo_root: &Path, json: bool) -> Result<()>
         .len();
     anyhow::ensure!(skills > 0, "YOLO has no skills");
 
-    let result = YoloCheck { manifest_id, agents, skills };
+    let result = YoloCheck {
+        manifest_id,
+        agents,
+        skills,
+    };
     if json {
         println!("{}", serde_json::to_string(&result)?);
     } else {
-        println!("YOLO validated: {} agents, {} skills", result.agents, result.skills);
+        println!(
+            "YOLO validated: {} agents, {} skills",
+            result.agents, result.skills
+        );
     }
     Ok(())
 }
@@ -1152,18 +1254,27 @@ fn resolve_yolo_root(
 ) -> Result<PathBuf> {
     let candidates = match override_path {
         Some(path) => {
-            anyhow::ensure!(!path.as_os_str().is_empty(), "APHRODY_YOLO_ROOT cannot be empty");
-            vec![if path.is_absolute() { path.to_path_buf() } else { root.join(path) }]
-        },
+            anyhow::ensure!(
+                !path.as_os_str().is_empty(),
+                "APHRODY_YOLO_ROOT cannot be empty"
+            );
+            vec![if path.is_absolute() {
+                path.to_path_buf()
+            } else {
+                root.join(path)
+            }]
+        }
         None => {
-            let mut list: Vec<PathBuf> =
-                root.ancestors().map(|dir| dir.join("plugins/aphrody")).collect();
+            let mut list: Vec<PathBuf> = root
+                .ancestors()
+                .map(|dir| dir.join("plugins/aphrody"))
+                .collect();
             if let Some(state) = state {
                 list.push(state.join("workspace/plugins/aphrody"));
                 list.push(state.join("plugins/aphrody"));
             }
             list
-        },
+        }
     };
     let path = candidates
         .iter()
@@ -1171,12 +1282,18 @@ fn resolve_yolo_root(
         .with_context(|| {
             format!(
                 "YOLO resources missing: no yolo.json in {} (override: APHRODY_YOLO_ROOT)",
-                candidates.iter().map(|c| c.display().to_string()).collect::<Vec<_>>().join(", ")
+                candidates
+                    .iter()
+                    .map(|c| c.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
             )
         })?;
     let manifest: serde_json::Value = serde_json::from_slice(&fs::read(path.join("yolo.json"))?)
         .with_context(|| format!("invalid YOLO manifest: {}", path.display()))?;
-    let schema = manifest["$schema"].as_str().context("YOLO manifest has no $schema")?;
+    let schema = manifest["$schema"]
+        .as_str()
+        .context("YOLO manifest has no $schema")?;
     anyhow::ensure!(
         path.join(schema).is_file(),
         "YOLO manifest schema does not exist: {}",
@@ -1214,7 +1331,10 @@ fn task_owner(title: &str) -> &'static str {
 
 fn runtime_tasks(root: &Path, goals: &[String]) -> Result<Vec<RuntimeTask>> {
     if !goals.is_empty() {
-        anyhow::ensure!(goals.len() <= 4, "at most four direct missions are supported");
+        anyhow::ensure!(
+            goals.len() <= 4,
+            "at most four direct missions are supported"
+        );
         anyhow::ensure!(
             goals.iter().all(|title| !title.trim().is_empty()),
             "direct missions cannot be empty"
@@ -1256,7 +1376,11 @@ fn runtime_tasks(root: &Path, goals: &[String]) -> Result<Vec<RuntimeTask>> {
         .into_iter()
         .take(4)
         .enumerate()
-        .map(|(index, title)| RuntimeTask { id: index + 1, owner: task_owner(&title), title })
+        .map(|(index, title)| RuntimeTask {
+            id: index + 1,
+            owner: task_owner(&title),
+            title,
+        })
         .collect())
 }
 
@@ -1265,7 +1389,13 @@ fn yolo_grind(root: &Path, json: bool, dry_run: bool, goals: &[String]) -> Resul
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let run_id = format!("tick-{}", chrono::Utc::now().timestamp_millis());
     let tasks = runtime_tasks(root, goals)?;
-    let tick = YoloTick { timestamp, run_id, event: "tick", tasks, coordinated: !dry_run };
+    let tick = YoloTick {
+        timestamp,
+        run_id,
+        event: "tick",
+        tasks,
+        coordinated: !dry_run,
+    };
     if dry_run {
         if json {
             println!("{}", serde_json::to_string(&tick)?);
@@ -1281,7 +1411,10 @@ fn yolo_grind(root: &Path, json: bool, dry_run: bool, goals: &[String]) -> Resul
     fs::create_dir_all(&run)?;
     fs::create_dir_all(&coord)?;
     fs::write(run.join("manifest.json"), serde_json::to_vec_pretty(&tick)?)?;
-    fs::write(state.join("heartbeat.txt"), format!("{} {}\n", tick.timestamp, tick.run_id))?;
+    fs::write(
+        state.join("heartbeat.txt"),
+        format!("{} {}\n", tick.timestamp, tick.run_id),
+    )?;
     let envelope = CoordEnvelope {
         v: 1,
         ts: chrono::Utc::now().to_rfc3339(),
@@ -1301,8 +1434,10 @@ fn yolo_grind(root: &Path, json: bool, dry_run: bool, goals: &[String]) -> Resul
         .append(true)
         .open(coord.join("inbox-from-aphrody-yolo.jsonl"))?;
     writeln!(inbox, "{}", serde_json::to_string(&envelope)?)?;
-    let mut log =
-        fs::OpenOptions::new().create(true).append(true).open(state.join("ticks.jsonl"))?;
+    let mut log = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(state.join("ticks.jsonl"))?;
     writeln!(log, "{}", serde_json::to_string(&tick)?)?;
     if json {
         println!("{}", serde_json::to_string(&tick)?);
@@ -1315,7 +1450,8 @@ fn yolo_grind(root: &Path, json: bool, dry_run: bool, goals: &[String]) -> Resul
 fn select_harness(explicit: Option<String>) -> Result<String> {
     if let Some(candidate) = explicit {
         anyhow::ensure!(
-            ProcessCommand::new(&candidate).no_window()
+            ProcessCommand::new(&candidate)
+                .no_window()
                 .arg("--version")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -1328,7 +1464,8 @@ fn select_harness(explicit: Option<String>) -> Result<String> {
     let mut candidates = ["agy".to_owned(), "claude".to_owned(), "gemini".to_owned()].into_iter();
     candidates
         .find(|candidate| {
-            ProcessCommand::new(candidate).no_window()
+            ProcessCommand::new(candidate)
+                .no_window()
                 .arg("--version")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -1342,7 +1479,8 @@ fn select_auditor() -> Result<String> {
     ["gemini", "claude", "agy"]
         .into_iter()
         .find(|candidate| {
-            ProcessCommand::new(candidate).no_window()
+            ProcessCommand::new(candidate)
+                .no_window()
                 .arg("--version")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -1367,22 +1505,30 @@ fn run_lead_lanes(
              Route Windows administration through the running aphrody-kernel admin subsystem.",
             task.id, task.owner, task.title,
         );
-        let child = ProcessCommand::new(harness).no_window()
+        let child = ProcessCommand::new(harness)
+            .no_window()
             .args(harness_args(harness, &prompt))
             .current_dir(root)
             .spawn()
             .with_context(|| format!("cannot start lead lane {} via {harness}", task.id))?;
         if sequential {
             let mut child = child;
-            let status =
-                child.wait().with_context(|| format!("cannot wait for lead lane {}", task.id))?;
-            anyhow::ensure!(status.success(), "lead lane {} exited with {status}", task.id);
+            let status = child
+                .wait()
+                .with_context(|| format!("cannot wait for lead lane {}", task.id))?;
+            anyhow::ensure!(
+                status.success(),
+                "lead lane {} exited with {status}",
+                task.id
+            );
             continue;
         }
         lanes.push((task.id, child));
     }
     for (id, mut lane) in lanes {
-        let status = lane.wait().with_context(|| format!("cannot wait for lead lane {id}"))?;
+        let status = lane
+            .wait()
+            .with_context(|| format!("cannot wait for lead lane {id}"))?;
         anyhow::ensure!(status.success(), "lead lane {id} exited with {status}");
     }
     Ok(())
@@ -1395,7 +1541,8 @@ fn run_auditor_lane(root: &Path, harness: &str, tick: &YoloTick) -> Result<()> {
          verified FAIT/INCOMPLET/NON_FAIT findings with exact paths and commands.",
         tick.run_id, tick.run_id
     );
-    let status = ProcessCommand::new(harness).no_window()
+    let status = ProcessCommand::new(harness)
+        .no_window()
         .args(harness_args(harness, &prompt))
         .current_dir(root)
         .status()
@@ -1439,7 +1586,11 @@ fn yolo_autopilot(root: &Path, options: AutopilotOptions) -> Result<()> {
 }
 
 fn harness_args<'a>(harness: &str, prompt: &'a str) -> [&'a str; 2] {
-    if harness == "gemini" { ["--prompt", prompt] } else { ["-p", prompt] }
+    if harness == "gemini" {
+        ["--prompt", prompt]
+    } else {
+        ["-p", prompt]
+    }
 }
 
 /// `\\?\C:\x` → `C:\x`; UNC (`\\?\UNC\`) and non-Windows paths are kept.
@@ -1458,29 +1609,42 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return error.exit_code();
-        },
+        }
     };
-    let endpoint = cli.socket.clone().unwrap_or_else(aphrody_kernel_client::default_endpoint);
+    let endpoint = cli
+        .socket
+        .clone()
+        .unwrap_or_else(aphrody_kernel_client::default_endpoint);
     let root = match cli.root.canonicalize().map(strip_verbatim) {
         Ok(root) if root.is_dir() => root,
         Ok(root) => {
             eprintln!("repository root is not a directory: {}", root.display());
             return 2;
-        },
+        }
         Err(error) => {
             eprintln!("cannot resolve repository root: {error}");
             return 2;
-        },
+        }
     };
 
     let result = match cli.command {
         Command::Doctor => doctor(&root, cli.json),
         Command::Detect { path } => detect(&root.join(path), cli.json),
         Command::Verify { tier, all_docs } => {
-            let tiers = if tier.is_empty() { Tier::ALL.to_vec() } else { tier };
-            tiers.into_iter().try_for_each(|tier| check_tier(&root, cli.json, tier, all_docs))
-        },
-        Command::Map { out, map: map_out, command } => map(&root, out, map_out, command),
+            let tiers = if tier.is_empty() {
+                Tier::ALL.to_vec()
+            } else {
+                tier
+            };
+            tiers
+                .into_iter()
+                .try_for_each(|tier| check_tier(&root, cli.json, tier, all_docs))
+        }
+        Command::Map {
+            out,
+            map: map_out,
+            command,
+        } => map(&root, out, map_out, command),
         Command::Shell { command } => shell(&root, cli.json, &endpoint, command),
         Command::Fs { command } => filesystem(&root, cli.json, command),
         Command::Win { command } => windows(cli.json, &endpoint, command),
@@ -1490,7 +1654,7 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
         Command::Grind { dry_run, goal } => {
             let goals = goal.into_iter().collect::<Vec<_>>();
             yolo_grind(&root, cli.json, dry_run, &goals).map(|_| ())
-        },
+        }
         Command::Autopilot {
             once,
             dry_run,
@@ -1567,7 +1731,7 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
         Err(error) => {
             eprintln!("aphrody-yolo: {error:#}");
             1
-        },
+        }
     }
 }
 
@@ -1594,8 +1758,11 @@ mod tests {
             fs::create_dir_all(path.join("skills/yolo")).unwrap();
             fs::write(path.join("yolo.json"), r#"{"$schema":"./schemas/yolo.schema.json","id":"fixture","entrypoints":{"plan":"aphrody-yolo plan"}}"#).unwrap();
             fs::write(path.join("schemas/yolo.schema.json"), "{}").unwrap();
-            fs::write(path.join("agents/lead.md"), "---\nname: lead\ndescription: fixture\n---\n")
-                .unwrap();
+            fs::write(
+                path.join("agents/lead.md"),
+                "---\nname: lead\ndescription: fixture\n---\n",
+            )
+            .unwrap();
             fs::write(path.join("skills/yolo/SKILL.md"), "fixture").unwrap();
             path
         }
@@ -1625,7 +1792,10 @@ mod tests {
             resolve_yolo_root(&fixture.0, Some(Path::new("custom plugin")), None).unwrap(),
             external
         );
-        assert_eq!(resolve_yolo_root(&fixture.0, Some(&external), None).unwrap(), external);
+        assert_eq!(
+            resolve_yolo_root(&fixture.0, Some(&external), None).unwrap(),
+            external
+        );
         assert!(resolve_yolo_root(&fixture.0, Some(Path::new("missing")), None).is_err());
         assert!(resolve_yolo_root(&fixture.0, Some(Path::new("")), None).is_err());
         fs::remove_file(external.join("schemas/yolo.schema.json")).unwrap();
@@ -1646,11 +1816,20 @@ mod tests {
         fs::create_dir_all(&repo).unwrap();
         let state = fixture.0.join("state");
         let installed = fixture.plugin("state/plugins/aphrody");
-        assert_eq!(resolve_yolo_root(&repo, None, Some(&state)).unwrap(), installed);
+        assert_eq!(
+            resolve_yolo_root(&repo, None, Some(&state)).unwrap(),
+            installed
+        );
         let checkout = fixture.plugin("state/workspace/plugins/aphrody");
-        assert_eq!(resolve_yolo_root(&repo, None, Some(&state)).unwrap(), checkout);
+        assert_eq!(
+            resolve_yolo_root(&repo, None, Some(&state)).unwrap(),
+            checkout
+        );
         let ancestor = fixture.plugin("work/plugins/aphrody");
-        assert_eq!(resolve_yolo_root(&repo, None, Some(&state)).unwrap(), ancestor);
+        assert_eq!(
+            resolve_yolo_root(&repo, None, Some(&state)).unwrap(),
+            ancestor
+        );
         let error = resolve_yolo_root(&fixture.0.join("elsewhere"), None, None).unwrap_err();
         assert!(error.to_string().contains("no yolo.json"), "{error}");
     }
@@ -1672,8 +1851,11 @@ mod tests {
     fn the_bun_source_checkout_is_recognised() {
         let fixture = Fixture::new();
         fs::write(fixture.0.join("Cargo.toml"), "[workspace]\n").unwrap();
-        fs::write(fixture.0.join("package.json"), r#"{"name":"bun","scripts":{"bd":"x"}}"#)
-            .unwrap();
+        fs::write(
+            fixture.0.join("package.json"),
+            r#"{"name":"bun","scripts":{"bd":"x"}}"#,
+        )
+        .unwrap();
         assert!(!is_bun_source(&fixture.0));
         fs::write(
             fixture.0.join("package.json"),
@@ -1708,19 +1890,33 @@ mod tests {
                 .search(query, 10)
                 .unwrap()
                 .into_iter()
-                .map(|hit| hit.path.replace('\\', "/").rsplit("repo/").next().unwrap().to_owned())
+                .map(|hit| {
+                    hit.path
+                        .replace('\\', "/")
+                        .rsplit("repo/")
+                        .next()
+                        .unwrap()
+                        .to_owned()
+                })
                 .collect()
         };
         assert_eq!(found("HTTP client"), ["src/http/client.rs"]);
         let mut http = found("http");
         http.sort();
-        assert_eq!(http, ["docs/http.md", "src/http/client.rs", "src/http/server.rs"]);
+        assert_eq!(
+            http,
+            ["docs/http.md", "src/http/client.rs", "src/http/server.rs"]
+        );
         assert!(found("ignored").is_empty());
         assert!(found("config").is_empty());
         assert_eq!(found("workflows"), [".github/workflows/ci.yml"]);
         assert_eq!(index.len().unwrap(), 5);
         assert!(
-            index.search("http", 10).unwrap().iter().all(|hit| hit.size == 1 && hit.modified > 0)
+            index
+                .search("http", 10)
+                .unwrap()
+                .iter()
+                .all(|hit| hit.size == 1 && hit.modified > 0)
         );
 
         let legacy = fixture.0.join("state").join(FS_INDEX_LEGACY);
@@ -1734,10 +1930,16 @@ mod tests {
 
     #[test]
     fn verbatim_prefixes_are_removed_except_unc() {
-        assert_eq!(strip_verbatim(PathBuf::from(r"\\?\C:\bun")), PathBuf::from(r"C:\bun"));
+        assert_eq!(
+            strip_verbatim(PathBuf::from(r"\\?\C:\bun")),
+            PathBuf::from(r"C:\bun")
+        );
         let unc = PathBuf::from(r"\\?\UNC\host\share");
         assert_eq!(strip_verbatim(unc.clone()), unc);
-        assert_eq!(strip_verbatim(PathBuf::from("/data/x")), PathBuf::from("/data/x"));
+        assert_eq!(
+            strip_verbatim(PathBuf::from("/data/x")),
+            PathBuf::from("/data/x")
+        );
     }
 
     #[test]
@@ -1757,7 +1959,10 @@ mod tests {
             .expect("workspace root");
         // plugins/ is its own repository, checked out beside the sources on developer hosts only.
         if !root.join("plugins/aphrody/yolo.json").is_file() {
-            eprintln!("skipped: no plugins/aphrody checkout under {}", root.display());
+            eprintln!(
+                "skipped: no plugins/aphrody checkout under {}",
+                root.display()
+            );
             return;
         }
         yolo_check(root, false).expect("the Aphrody plugin YOLO resources must validate");

@@ -21,7 +21,10 @@ const LINK_PREFIX: &str = "figcraft://comment/";
 const MAX_EMOJI: usize = 32;
 
 pub fn now_secs() -> u64 {
-    web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+    web_time::SystemTime::now()
+        .duration_since(web_time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
 }
 
 /// A thread's link (`comment.open` takes it).
@@ -32,7 +35,11 @@ pub fn link(id: u64) -> String {
 /// The thread id in a link (or a bare id).
 pub fn parse_link(s: &str) -> Option<u64> {
     let s = s.trim();
-    s.strip_prefix(LINK_PREFIX).unwrap_or(s).trim_end_matches('/').parse().ok()
+    s.strip_prefix(LINK_PREFIX)
+        .unwrap_or(s)
+        .trim_end_matches('/')
+        .parse()
+        .ok()
 }
 
 /// Which threads a list shows.
@@ -48,7 +55,13 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub const ALL: [Filter; 5] = [Filter::Open, Filter::Resolved, Filter::Mine, Filter::Unread, Filter::All];
+    pub const ALL: [Filter; 5] = [
+        Filter::Open,
+        Filter::Resolved,
+        Filter::Mine,
+        Filter::Unread,
+        Filter::All,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -71,7 +84,9 @@ impl Filter {
     }
 
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|f| f.id().eq_ignore_ascii_case(s.trim()))
+        Self::ALL
+            .into_iter()
+            .find(|f| f.id().eq_ignore_ascii_case(s.trim()))
     }
 
     pub fn keeps(self, c: &Comment, user: &str) -> bool {
@@ -113,7 +128,9 @@ impl Sort {
     }
 
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|f| f.id().eq_ignore_ascii_case(s.trim()))
+        Self::ALL
+            .into_iter()
+            .find(|f| f.id().eq_ignore_ascii_case(s.trim()))
     }
 }
 
@@ -132,7 +149,13 @@ pub struct Query<'a> {
 
 impl Default for Query<'_> {
     fn default() -> Self {
-        Self { page: None, frame: None, filter: Filter::All, sort: Sort::Date, text: "" }
+        Self {
+            page: None,
+            frame: None,
+            filter: Filter::All,
+            sort: Sort::Date,
+            text: "",
+        }
     }
 }
 
@@ -148,17 +171,36 @@ pub fn query<'a>(doc: &'a Document, q: &Query, user: &str) -> Vec<&'a Comment> {
         .filter(|c| q.frame.is_none_or(|f| frame_of(doc, c) == Some(f)))
         .filter(|c| needle.is_empty() || matches_text(doc, c, &needle))
         .collect();
-    let page_index = |c: &Comment| doc.pages.iter().position(|p| *p == c.page).unwrap_or(usize::MAX);
+    let page_index = |c: &Comment| {
+        doc.pages
+            .iter()
+            .position(|p| *p == c.page)
+            .unwrap_or(usize::MAX)
+    };
     match q.sort {
-        Sort::Date => out.sort_by_key(|c| (std::cmp::Reverse(c.last_activity()), std::cmp::Reverse(c.id))),
-        Sort::Page => out.sort_by_key(|c| (page_index(c), std::cmp::Reverse(c.last_activity()), std::cmp::Reverse(c.id))),
+        Sort::Date => out.sort_by_key(|c| {
+            (
+                std::cmp::Reverse(c.last_activity()),
+                std::cmp::Reverse(c.id),
+            )
+        }),
+        Sort::Page => out.sort_by_key(|c| {
+            (
+                page_index(c),
+                std::cmp::Reverse(c.last_activity()),
+                std::cmp::Reverse(c.id),
+            )
+        }),
     }
     out
 }
 
 fn matches_text(doc: &Document, c: &Comment, needle: &str) -> bool {
     let has = |s: &str| s.to_lowercase().contains(needle);
-    c.messages().any(|m| has(&m.text) || has(&m.author)) || frame_of(doc, c).and_then(|f| doc.node(f)).is_some_and(|n| has(&n.name))
+    c.messages().any(|m| has(&m.text) || has(&m.author))
+        || frame_of(doc, c)
+            .and_then(|f| doc.node(f))
+            .is_some_and(|n| has(&n.name))
 }
 
 /// The top-level frame (or section) a comment is on: its anchor's, else the one under its pin.
@@ -171,19 +213,24 @@ pub fn frame_of(doc: &Document, c: &Comment) -> Option<NodeId> {
     page.children.iter().rev().copied().find(|f| {
         is_frame_or_section(doc, *f)
             && doc.node(*f).is_some_and(|n| n.visible)
-            && doc.world_bounds(*f).is_some_and(|b| b.contains(geom::Point::new(x, y)))
+            && doc
+                .world_bounds(*f)
+                .is_some_and(|b| b.contains(geom::Point::new(x, y)))
     })
 }
 
 fn is_frame_or_section(doc: &Document, id: NodeId) -> bool {
-    doc.node(id).is_some_and(|n| n.kind.is_frame_like() || matches!(n.kind, NodeKind::Section { .. }))
+    doc.node(id)
+        .is_some_and(|n| n.kind.is_frame_like() || matches!(n.kind, NodeKind::Section { .. }))
 }
 
 /// The page child that holds `id` (or `id` itself at the top level).
 fn top_level_of(doc: &Document, id: NodeId) -> Option<NodeId> {
     let mut chain = vec![id];
     chain.extend(doc.ancestors(id));
-    let page = chain.iter().position(|c| doc.node(*c).is_some_and(Node::is_page))?;
+    let page = chain
+        .iter()
+        .position(|c| doc.node(*c).is_some_and(Node::is_page))?;
     chain.get(page.checked_sub(1)?).copied()
 }
 
@@ -204,7 +251,9 @@ pub fn follow_anchors(doc: &mut Document, before: &Document) {
                 continue;
             }
             let pt = before.world_transform(a) * geom::Point::new(c.x, c.y);
-            let parent = before.ancestors(a).into_iter().find(|p| doc.node(*p).is_some_and(|n| !n.is_page()) && doc.page_of(*p) == Some(c.page));
+            let parent = before.ancestors(a).into_iter().find(|p| {
+                doc.node(*p).is_some_and(|n| !n.is_page()) && doc.page_of(*p) == Some(c.page)
+            });
             let (x, y) = local(doc, parent, pt.x, pt.y);
             (next.x, next.y, next.anchor) = (x, y, parent);
         }
@@ -221,7 +270,9 @@ fn req_comment(cmd: &str, s: &Session, p: &Value) -> crate::Result<u64> {
     let id = match get(p, "link").and_then(Value::as_str) {
         Some(l) => parse_link(l).ok_or_else(|| bad(cmd, format!("not a comment link: {l}")))?,
         // Ids made in a live session sit in their creator's id space, far above small indexes.
-        None => id(p, "id").map(|i| i.0).ok_or_else(|| bad(cmd, "`id` must be a comment id"))?,
+        None => id(p, "id")
+            .map(|i| i.0)
+            .ok_or_else(|| bad(cmd, "`id` must be a comment id"))?,
     };
     if s.doc()?.comment(id).is_none() {
         return Err(bad(cmd, format!("no comment {id}")));
@@ -244,12 +295,19 @@ fn message_index(cmd: &str, c: &Comment, p: &Value) -> crate::Result<usize> {
 /// The user's name as comments are signed (the default when it's blank).
 pub fn user_name(s: &Session) -> String {
     let n = s.prefs.user_name.trim();
-    if n.is_empty() { DEFAULT_AUTHOR.into() } else { n.to_string() }
+    if n.is_empty() {
+        DEFAULT_AUTHOR.into()
+    } else {
+        n.to_string()
+    }
 }
 
 /// Who is acting: `author` from the params, else the user.
 fn author(s: &Session, p: &Value) -> String {
-    string(p, "author").map(|a| a.trim().to_string()).filter(|a| !a.is_empty()).unwrap_or_else(|| user_name(s))
+    string(p, "author")
+        .map(|a| a.trim().to_string())
+        .filter(|a| !a.is_empty())
+        .unwrap_or_else(|| user_name(s))
 }
 
 fn text(cmd: &str, p: &Value) -> crate::Result<String> {
@@ -265,7 +323,13 @@ fn own(cmd: &str, m: &Message, who: &str, what: &str) -> crate::Result<()> {
     if m.author == who {
         return Ok(());
     }
-    Err(bad(cmd, format!("only {} can {what} (acting as {who}; pass `author` to act as someone else)", m.author)))
+    Err(bad(
+        cmd,
+        format!(
+            "only {} can {what} (acting as {who}; pass `author` to act as someone else)",
+            m.author
+        ),
+    ))
 }
 
 /// A node to pin to: a node id on `page`, `true` for the innermost frame under the point, else none.
@@ -317,9 +381,14 @@ pub fn comment_json(doc: &Document, c: &Comment, user: &str) -> Value {
 /// Bring a thread into view (`comment.open`): its page, then `how` (fit, center or keep).
 fn reveal(s: &mut Session, id: u64, how: &str) -> crate::Result<()> {
     let doc = s.doc()?;
-    let c = doc.comment(id).ok_or_else(|| bad("comment.open", format!("no comment {id}")))?;
+    let c = doc
+        .comment(id)
+        .ok_or_else(|| bad("comment.open", format!("no comment {id}")))?;
     if !doc.pages.contains(&c.page) {
-        return Err(bad("comment.open", format!("comment {id} is on a deleted page")));
+        return Err(bad(
+            "comment.open",
+            format!("comment {id} is on a deleted page"),
+        ));
     }
     let (x, y) = c.position(doc);
     let frame = frame_of(doc, c).and_then(|f| doc.world_bounds(f));
@@ -335,7 +404,8 @@ fn reveal(s: &mut Session, id: u64, how: &str) -> crate::Result<()> {
     match (how, frame) {
         ("fit", Some(b)) => ds.view.fit(b.union_pt(geom::Point::new(x, y)), 1.0),
         ("fit", None) => {
-            ds.view.set_zoom_at(ds.view.zoom.max(1.0), (ds.view.cx, ds.view.cy));
+            ds.view
+                .set_zoom_at(ds.view.zoom.max(1.0), (ds.view.cx, ds.view.cy));
             (ds.view.cx, ds.view.cy) = (x, y);
         }
         ("center", _) => (ds.view.cx, ds.view.cy) = (x, y),
@@ -355,15 +425,26 @@ fn open(s: &mut Session, id: u64, how: &str, who: &str) -> crate::Result<Value> 
     }
     s.request_ui("comment.open", json!({"id": id}));
     let doc = s.doc()?;
-    let c = doc.comment(id).ok_or_else(|| bad("comment.open", "no comment"))?;
+    let c = doc
+        .comment(id)
+        .ok_or_else(|| bad("comment.open", "no comment"))?;
     Ok(comment_json(doc, c, who))
 }
 
 /// A list's page (None: every page), filter, sort and search text from params.
-fn list_params(cmd: &str, s: &Session, p: &Value) -> crate::Result<(Option<NodeId>, Filter, Sort, String)> {
-    let page = if string(p, "page").is_some_and(|v| v == "all") { None } else { Some(id(p, "page").unwrap_or(s.page()?)) };
+fn list_params(
+    cmd: &str,
+    s: &Session,
+    p: &Value,
+) -> crate::Result<(Option<NodeId>, Filter, Sort, String)> {
+    let page = if string(p, "page").is_some_and(|v| v == "all") {
+        None
+    } else {
+        Some(id(p, "page").unwrap_or(s.page()?))
+    };
     let filter = match string(p, "filter") {
-        Some(f) => Filter::parse(&f).ok_or_else(|| bad(cmd, "`filter` must be all, open, resolved, mine or unread"))?,
+        Some(f) => Filter::parse(&f)
+            .ok_or_else(|| bad(cmd, "`filter` must be all, open, resolved, mine or unread"))?,
         None if boolean(p, "resolved") == Some(false) => Filter::Open,
         None => Filter::All,
     };
@@ -410,34 +491,56 @@ pub fn specs() -> Vec<CommandSpec> {
                 Ok(json!({"id": id, "link": link(id)}))
             }
         ),
-        spec!("comment.reply", "Reply to comment", "{id, text, author?}", true, |s, p| {
-            let id = req_comment("comment.reply", s, p)?;
-            let who = author(s, p);
-            let r = Message::new(who.clone(), text("comment.reply", p)?, now_secs());
-            let c = s.doc_mut()?.comment_mut(id).ok_or_else(|| bad("comment.reply", "no comment"))?;
-            c.replies.push(r);
-            c.resolved = false;
-            c.touched_by(&who);
-            Ok(json!({"reply": c.replies.len() - 1}))
-        }),
-        spec!("comment.edit", "Edit comment", "{id, text, reply? (index; omit for the first message), author?}", true, |s, p| {
-            let id = req_comment("comment.edit", s, p)?;
-            let t = text("comment.edit", p)?;
-            let who = author(s, p);
-            let (i, same) = {
-                let c = s.doc()?.comment(id).ok_or_else(|| bad("comment.edit", "no comment"))?;
-                let i = message_index("comment.edit", c, p)?;
-                let m = c.message(i).ok_or_else(|| bad("comment.edit", "no message"))?;
-                own("comment.edit", m, &who, "edit this message")?;
-                (i, m.text == t)
-            };
-            // The same text is no edit (and no undo step).
-            if !same && let Some(m) = s.doc_mut()?.comment_mut(id).and_then(|c| c.message_mut(i)) {
-                m.text = t;
-                m.edited = now_secs().max(1);
+        spec!(
+            "comment.reply",
+            "Reply to comment",
+            "{id, text, author?}",
+            true,
+            |s, p| {
+                let id = req_comment("comment.reply", s, p)?;
+                let who = author(s, p);
+                let r = Message::new(who.clone(), text("comment.reply", p)?, now_secs());
+                let c = s
+                    .doc_mut()?
+                    .comment_mut(id)
+                    .ok_or_else(|| bad("comment.reply", "no comment"))?;
+                c.replies.push(r);
+                c.resolved = false;
+                c.touched_by(&who);
+                Ok(json!({"reply": c.replies.len() - 1}))
             }
-            ok()
-        }),
+        ),
+        spec!(
+            "comment.edit",
+            "Edit comment",
+            "{id, text, reply? (index; omit for the first message), author?}",
+            true,
+            |s, p| {
+                let id = req_comment("comment.edit", s, p)?;
+                let t = text("comment.edit", p)?;
+                let who = author(s, p);
+                let (i, same) = {
+                    let c = s
+                        .doc()?
+                        .comment(id)
+                        .ok_or_else(|| bad("comment.edit", "no comment"))?;
+                    let i = message_index("comment.edit", c, p)?;
+                    let m = c
+                        .message(i)
+                        .ok_or_else(|| bad("comment.edit", "no message"))?;
+                    own("comment.edit", m, &who, "edit this message")?;
+                    (i, m.text == t)
+                };
+                // The same text is no edit (and no undo step).
+                if !same
+                    && let Some(m) = s.doc_mut()?.comment_mut(id).and_then(|c| c.message_mut(i))
+                {
+                    m.text = t;
+                    m.edited = now_secs().max(1);
+                }
+                ok()
+            }
+        ),
         spec!(
             "comment.react",
             "React to comment",
@@ -446,11 +549,17 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let id = req_comment("comment.react", s, p)?;
                 let emoji = req_string("comment.react", p, "emoji")?.trim().to_string();
-                if emoji.is_empty() || emoji.len() > MAX_EMOJI || emoji.chars().any(|c| c.is_whitespace() || c.is_control()) {
+                if emoji.is_empty()
+                    || emoji.len() > MAX_EMOJI
+                    || emoji.chars().any(|c| c.is_whitespace() || c.is_control())
+                {
                     return Err(bad("comment.react", "`emoji` must be one emoji"));
                 }
                 let who = author(s, p);
-                let c = s.doc()?.comment(id).ok_or_else(|| bad("comment.react", "no comment"))?;
+                let c = s
+                    .doc()?
+                    .comment(id)
+                    .ok_or_else(|| bad("comment.react", "no comment"))?;
                 let i = message_index("comment.react", c, p)?;
                 let has = c.message(i).is_some_and(|m| m.reacted(&emoji, &who));
                 let on = boolean(p, "on").unwrap_or(!has);
@@ -463,14 +572,20 @@ pub fn specs() -> Vec<CommandSpec> {
                 Ok(json!({"on": on}))
             }
         ),
-        spec!("comment.resolve", "Resolve comment", "{id, resolved? (default true)}", true, |s, p| {
-            let id = req_comment("comment.resolve", s, p)?;
-            let v = boolean(p, "resolved").unwrap_or(true);
-            if let Some(c) = s.doc_mut()?.comment_mut(id) {
-                c.resolved = v;
+        spec!(
+            "comment.resolve",
+            "Resolve comment",
+            "{id, resolved? (default true)}",
+            true,
+            |s, p| {
+                let id = req_comment("comment.resolve", s, p)?;
+                let v = boolean(p, "resolved").unwrap_or(true);
+                if let Some(c) = s.doc_mut()?.comment_mut(id) {
+                    c.resolved = v;
+                }
+                ok()
             }
-            ok()
-        }),
+        ),
         spec!(
             "comment.move",
             "Move comment",
@@ -478,10 +593,22 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             |s, p| {
                 let id = req_comment("comment.move", s, p)?;
-                let (x, y) = (req_num("comment.move", p, "x")?, req_num("comment.move", p, "y")?);
+                let (x, y) = (
+                    req_num("comment.move", p, "x")?,
+                    req_num("comment.move", p, "y")?,
+                );
                 let doc = s.doc()?;
-                let page = doc.comment(id).map(|c| c.page).ok_or_else(|| bad("comment.move", "no comment"))?;
-                let anchor = anchor_at(doc, page, x, y, Some(get(p, "anchor").unwrap_or(&Value::Bool(true))));
+                let page = doc
+                    .comment(id)
+                    .map(|c| c.page)
+                    .ok_or_else(|| bad("comment.move", "no comment"))?;
+                let anchor = anchor_at(
+                    doc,
+                    page,
+                    x,
+                    y,
+                    Some(get(p, "anchor").unwrap_or(&Value::Bool(true))),
+                );
                 let (lx, ly) = local(doc, anchor, x, y);
                 if let Some(c) = s.doc_mut()?.comment_mut(id) {
                     (c.x, c.y, c.anchor) = (lx, ly, anchor);
@@ -489,24 +616,34 @@ pub fn specs() -> Vec<CommandSpec> {
                 ok()
             }
         ),
-        spec!("comment.delete", "Delete comment", "{id, reply? (index: delete one reply; omit to delete the thread), author?}", true, |s, p| {
-            let id = req_comment("comment.delete", s, p)?;
-            let who = author(s, p);
-            let doc = s.doc_mut()?;
-            let c = doc.comment_mut(id).ok_or_else(|| bad("comment.delete", "no comment"))?;
-            match message_index("comment.delete", c, p)? {
-                0 => {
-                    own("comment.delete", &c.first, &who, "delete this thread")?;
-                    doc.comments.retain(|c| c.id != id);
+        spec!(
+            "comment.delete",
+            "Delete comment",
+            "{id, reply? (index: delete one reply; omit to delete the thread), author?}",
+            true,
+            |s, p| {
+                let id = req_comment("comment.delete", s, p)?;
+                let who = author(s, p);
+                let doc = s.doc_mut()?;
+                let c = doc
+                    .comment_mut(id)
+                    .ok_or_else(|| bad("comment.delete", "no comment"))?;
+                match message_index("comment.delete", c, p)? {
+                    0 => {
+                        own("comment.delete", &c.first, &who, "delete this thread")?;
+                        doc.comments.retain(|c| c.id != id);
+                    }
+                    i => {
+                        let m = c
+                            .message(i)
+                            .ok_or_else(|| bad("comment.delete", "no message"))?;
+                        own("comment.delete", m, &who, "delete this reply")?;
+                        c.replies.remove(i - 1);
+                    }
                 }
-                i => {
-                    let m = c.message(i).ok_or_else(|| bad("comment.delete", "no message"))?;
-                    own("comment.delete", m, &who, "delete this reply")?;
-                    c.replies.remove(i - 1);
-                }
+                ok()
             }
-            ok()
-        }),
+        ),
         spec!(
             "comment.markRead",
             "Mark comment as read",
@@ -515,14 +652,24 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let read = boolean(p, "read").unwrap_or(true);
                 let who = author(s, p);
-                let only = if get(p, "id").is_some() || get(p, "link").is_some() { Some(req_comment("comment.markRead", s, p)?) } else { None };
-                let wants = |c: &Comment| only.is_none_or(|i| c.id == i) && c.is_unread(&who) == read;
+                let only = if get(p, "id").is_some() || get(p, "link").is_some() {
+                    Some(req_comment("comment.markRead", s, p)?)
+                } else {
+                    None
+                };
+                let wants =
+                    |c: &Comment| only.is_none_or(|i| c.id == i) && c.is_unread(&who) == read;
                 // The document is left alone when nothing changes (no unsaved changes for nothing).
                 if !s.doc()?.comments.iter().any(wants) {
                     return Ok(json!({"changed": 0}));
                 }
                 let mut n = 0;
-                for c in s.doc_mut()?.comments.iter_mut().filter(|c| only.is_none_or(|i| c.id == i)) {
+                for c in s
+                    .doc_mut()?
+                    .comments
+                    .iter_mut()
+                    .filter(|c| only.is_none_or(|i| c.id == i))
+                {
                     n += usize::from(c.set_read(&who, read));
                 }
                 Ok(json!({"changed": n}))
@@ -552,8 +699,20 @@ pub fn specs() -> Vec<CommandSpec> {
                 let doc = s.doc()?;
                 let who = author(s, p);
                 let (page, filter, sort, text) = list_params("comment.next", s, p)?;
-                let ids: Vec<u64> =
-                    query(doc, &Query { page, frame: id(p, "frame"), filter, sort, text: &text }, &who).iter().map(|c| c.id).collect();
+                let ids: Vec<u64> = query(
+                    doc,
+                    &Query {
+                        page,
+                        frame: id(p, "frame"),
+                        filter,
+                        sort,
+                        text: &text,
+                    },
+                    &who,
+                )
+                .iter()
+                .map(|c| c.id)
+                .collect();
                 let at = id(p, "id").and_then(|i| ids.iter().position(|x| *x == i.0));
                 let next = match at {
                     Some(i) if dir < 0.0 => ids.get(i.saturating_sub(1)),
@@ -561,32 +720,65 @@ pub fn specs() -> Vec<CommandSpec> {
                     None if dir < 0.0 => ids.last(),
                     None => ids.first(),
                 };
-                let Some(&next) = next else { return Err(bad("comment.next", "no comments in the list")) };
+                let Some(&next) = next else {
+                    return Err(bad("comment.next", "no comments in the list"));
+                };
                 open(s, next, "center", &who)
             }
         ),
-        spec!("comment.zoom", "Zoom to comments", "{ids (comment ids on the current page)}", false, |s, p| {
-            let doc = s.doc()?;
-            let page = s.page()?;
-            let ids: Vec<u64> = get(p, "ids").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).collect()).unwrap_or_default();
-            let pts: Vec<geom::Point> =
-                ids.iter().filter_map(|i| doc.comment(*i)).filter(|c| c.page == page).map(|c| geom::Point::from(c.position(doc))).collect();
-            let Some(first) = pts.first() else { return Err(bad("comment.zoom", "`ids` names no comment on this page")) };
-            let r = pts.iter().fold(geom::Rect::from_points(*first, *first), |r, pt| r.union_pt(*pt));
-            let v = &mut s.ds_mut()?.view;
-            let zoom = v.zoom;
-            v.fit(r, crate::ViewState::MAX_ZOOM);
-            // Pins at one spot: at least double the zoom so they come apart.
-            if v.zoom < zoom * 2.0 {
-                v.set_zoom_at(zoom * 2.0, (v.cx, v.cy));
+        spec!(
+            "comment.zoom",
+            "Zoom to comments",
+            "{ids (comment ids on the current page)}",
+            false,
+            |s, p| {
+                let doc = s.doc()?;
+                let page = s.page()?;
+                let ids: Vec<u64> = get(p, "ids")
+                    .and_then(Value::as_array)
+                    .map(|a| a.iter().filter_map(Value::as_u64).collect())
+                    .unwrap_or_default();
+                let pts: Vec<geom::Point> = ids
+                    .iter()
+                    .filter_map(|i| doc.comment(*i))
+                    .filter(|c| c.page == page)
+                    .map(|c| geom::Point::from(c.position(doc)))
+                    .collect();
+                let Some(first) = pts.first() else {
+                    return Err(bad("comment.zoom", "`ids` names no comment on this page"));
+                };
+                let r = pts
+                    .iter()
+                    .fold(geom::Rect::from_points(*first, *first), |r, pt| {
+                        r.union_pt(*pt)
+                    });
+                let v = &mut s.ds_mut()?.view;
+                let zoom = v.zoom;
+                v.fit(r, crate::ViewState::MAX_ZOOM);
+                // Pins at one spot: at least double the zoom so they come apart.
+                if v.zoom < zoom * 2.0 {
+                    v.set_zoom_at(zoom * 2.0, (v.cx, v.cy));
+                }
+                Ok(json!({"zoom": v.zoom}))
             }
-            Ok(json!({"zoom": v.zoom}))
-        }),
-        spec!("comment.link", "Copy link to comment", "{id}", false, |s, p| {
-            let id = req_comment("comment.link", s, p)?;
-            Ok(json!({"link": link(id)}))
-        }),
-        spec!("comment.people", "People in comments", "{}", false, |s, _| { Ok(json!({"people": s.doc()?.comment_people(), "you": user_name(s)})) }),
+        ),
+        spec!(
+            "comment.link",
+            "Copy link to comment",
+            "{id}",
+            false,
+            |s, p| {
+                let id = req_comment("comment.link", s, p)?;
+                Ok(json!({"link": link(id)}))
+            }
+        ),
+        spec!(
+            "comment.people",
+            "People in comments",
+            "{}",
+            false,
+            |s, _| { Ok(json!({"people": s.doc()?.comment_people(), "you": user_name(s)})) }
+        ),
         spec!(
             "comment.list",
             "List comments",
@@ -596,8 +788,17 @@ pub fn specs() -> Vec<CommandSpec> {
                 let doc = s.doc()?;
                 let (page, filter, sort, text) = list_params("comment.list", s, p)?;
                 let who = author(s, p);
-                let q = Query { page, frame: id(p, "frame"), filter, sort, text: &text };
-                let list: Vec<Value> = query(doc, &q, &who).into_iter().map(|c| comment_json(doc, c, &who)).collect();
+                let q = Query {
+                    page,
+                    frame: id(p, "frame"),
+                    filter,
+                    sort,
+                    text: &text,
+                };
+                let list: Vec<Value> = query(doc, &q, &who)
+                    .into_iter()
+                    .map(|c| comment_json(doc, c, &who))
+                    .collect();
                 Ok(json!({"comments": list}))
             }
         ),
@@ -638,22 +839,48 @@ mod tests {
     #[test]
     fn comment_thread_lifecycle_and_anchoring() {
         let mut s = Session::new();
-        let f = s.execute("node.create", &json!({"type": "frame", "x": 100, "y": 100, "width": 200, "height": 200})).unwrap();
+        let f = s
+            .execute(
+                "node.create",
+                &json!({"type": "frame", "x": 100, "y": 100, "width": 200, "height": 200}),
+            )
+            .unwrap();
         let fid = crate::params::id_of(&f["id"]).unwrap();
-        let c = s.execute("comment.add", &json!({"x": 150, "y": 160, "text": "Tighten this", "anchor": true})).unwrap();
+        let c = s
+            .execute(
+                "comment.add",
+                &json!({"x": 150, "y": 160, "text": "Tighten this", "anchor": true}),
+            )
+            .unwrap();
         let cid = c["id"].as_u64().unwrap();
         assert_eq!(s.doc().unwrap().comment(cid).unwrap().anchor, Some(fid));
         // The pin follows its frame.
-        s.execute("node.set", &json!({"id": fid, "props": {"x": 300}})).unwrap();
+        s.execute("node.set", &json!({"id": fid, "props": {"x": 300}}))
+            .unwrap();
         let l = s.execute("comment.list", &json!({})).unwrap();
         assert_eq!(l["comments"][0]["x"].as_f64().unwrap(), 350.0);
-        s.execute("comment.reply", &json!({"id": cid, "text": "Done", "author": "Sam"})).unwrap();
+        s.execute(
+            "comment.reply",
+            &json!({"id": cid, "text": "Done", "author": "Sam"}),
+        )
+        .unwrap();
         s.execute("comment.resolve", &json!({"id": cid})).unwrap();
-        let open = s.execute("comment.list", &json!({"resolved": false})).unwrap();
+        let open = s
+            .execute("comment.list", &json!({"resolved": false}))
+            .unwrap();
         assert!(open["comments"].as_array().unwrap().is_empty());
-        assert_eq!(s.doc().unwrap().comment(cid).unwrap().participants(), vec!["You", "Sam"]);
-        assert!(s.execute("comment.add", &json!({"x": 0, "y": 0, "text": "  "})).is_err());
-        assert!(s.execute("comment.reply", &json!({"id": 999, "text": "x"})).is_err());
+        assert_eq!(
+            s.doc().unwrap().comment(cid).unwrap().participants(),
+            vec!["You", "Sam"]
+        );
+        assert!(
+            s.execute("comment.add", &json!({"x": 0, "y": 0, "text": "  "}))
+                .is_err()
+        );
+        assert!(
+            s.execute("comment.reply", &json!({"id": 999, "text": "x"}))
+                .is_err()
+        );
         s.execute("comment.delete", &json!({"id": cid})).unwrap();
         assert!(s.doc().unwrap().comments.is_empty());
         assert!(s.undo().unwrap());

@@ -6,7 +6,14 @@
 //! saved by Affinity 1.x to 3.x (container versions 8 to 12); see the crate README for provenance
 //! and the exact supported subset. Nothing here writes Affinity files.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::fmt;
 

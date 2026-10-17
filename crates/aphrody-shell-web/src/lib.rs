@@ -12,8 +12,8 @@ mod syntax;
 pub mod utils;
 pub mod wire;
 
-use aphrody_shell_session::{ShellSession, SpawnSpec};
 use crate::opfs::SharedOpfsVfs;
+use aphrody_shell_session::{ShellSession, SpawnSpec};
 use aphrody_terminal_core::TerminalState;
 use wasm_bindgen::prelude::*;
 
@@ -28,7 +28,9 @@ impl WebTerminal {
     #[wasm_bindgen(constructor)]
     #[must_use]
     pub fn new(cols: u16, rows: u16) -> Self {
-        Self { state: TerminalState::new(cols, rows) }
+        Self {
+            state: TerminalState::new(cols, rows),
+        }
     }
 
     /// Applies output bytes from the shell.
@@ -139,10 +141,18 @@ impl WebLocalEngine {
     #[wasm_bindgen(constructor)]
     pub fn new(image: &[u8], cols: u16, rows: u16) -> Result<Self, JsValue> {
         let fs = SharedOpfsVfs::from_image(image).map_err(|e| JsValue::from_str(&e.to_string()))?;
-        let spec = SpawnSpec { columns: cols, rows, ..SpawnSpec::default() };
+        let spec = SpawnSpec {
+            columns: cols,
+            rows,
+            ..SpawnSpec::default()
+        };
         let (shell, greeting) = local::LocalShell::with_spec_and_vfs(&spec, Box::new(fs.clone()))
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
-        Ok(Self { shell, fs, greeting })
+        Ok(Self {
+            shell,
+            fs,
+            greeting,
+        })
     }
 
     /// Initial greeting and prompt; called once by the worker.
@@ -160,7 +170,9 @@ impl WebLocalEngine {
     /// # Errors
     /// Returns an error for zero dimensions or an exited shell.
     pub fn resize(&mut self, cols: u16, rows: u16) -> Result<(), JsValue> {
-        self.shell.resize(cols, rows).map_err(|e| JsValue::from_str(&e.to_string()))
+        self.shell
+            .resize(cols, rows)
+            .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     /// Return an image only after a mutating shell command.

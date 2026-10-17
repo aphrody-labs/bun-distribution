@@ -15,8 +15,13 @@ use crate::{Result, Session};
 /// Closed polygons (slide points) describing a filled area (non-zero winding).
 type Area = Vec<Vec<[f64; 2]>>;
 
-pub const OPS: [(&str, &str); 5] =
-    [("union", "Union"), ("combine", "Combine"), ("fragment", "Fragment"), ("intersect", "Intersect"), ("subtract", "Subtract")];
+pub const OPS: [(&str, &str); 5] = [
+    ("union", "Union"),
+    ("combine", "Combine"),
+    ("fragment", "Fragment"),
+    ("intersect", "Intersect"),
+    ("subtract", "Subtract"),
+];
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![cmd!(
@@ -36,7 +41,11 @@ fn area_of(doc: &deckcraft_model::Presentation, sel: &crate::Selection, s: &Shap
     let geo = deckcraft_render::shape_geometry(s, x.w, x.h);
     let a = x.affine();
     let mut out: Area = vec![];
-    for sp in geo.paths.iter().filter(|p| p.fill != deckcraft_geom::preset::FillMode::None) {
+    for sp in geo
+        .paths
+        .iter()
+        .filter(|p| p.fill != deckcraft_geom::preset::FillMode::None)
+    {
         let mut cur: Vec<[f64; 2]> = vec![];
         let flush = |cur: &mut Vec<[f64; 2]>, out: &mut Area| {
             if cur.len() > 2 {
@@ -68,16 +77,27 @@ fn overlay(a: &Area, b: &Area, rule: OverlayRule) -> Area {
         return b.clone();
     }
     if b.is_empty() {
-        return if matches!(rule, OverlayRule::Intersect) { vec![] } else { a.clone() };
+        return if matches!(rule, OverlayRule::Intersect) {
+            vec![]
+        } else {
+            a.clone()
+        };
     }
-    a.overlay(b, rule, FillRule::NonZero).into_iter().flatten().filter(|c| c.len() > 2).collect()
+    a.overlay(b, rule, FillRule::NonZero)
+        .into_iter()
+        .flatten()
+        .filter(|c| c.len() > 2)
+        .collect()
 }
 
 fn area_size(a: &Area) -> f64 {
     a.iter()
         .map(|c| {
             let n = c.len();
-            (0..n).map(|i| c[i][0] * c[(i + 1) % n][1] - c[(i + 1) % n][0] * c[i][1]).sum::<f64>() / 2.0
+            (0..n)
+                .map(|i| c[i][0] * c[(i + 1) % n][1] - c[(i + 1) % n][0] * c[i][1])
+                .sum::<f64>()
+                / 2.0
         })
         .sum::<f64>()
         .abs()
@@ -85,14 +105,21 @@ fn area_size(a: &Area) -> f64 {
 
 /// The merged areas for `op` (one per resulting shape).
 pub fn merge_areas(op: &str, areas: &[Area]) -> Vec<Area> {
-    let Some((first, rest)) = areas.split_first() else { return vec![] };
-    let fold = |rule| rest.iter().fold(first.clone(), |acc, b| overlay(&acc, b, rule));
+    let Some((first, rest)) = areas.split_first() else {
+        return vec![];
+    };
+    let fold = |rule| {
+        rest.iter()
+            .fold(first.clone(), |acc, b| overlay(&acc, b, rule))
+    };
     let out = match op {
         "union" => vec![fold(OverlayRule::Union)],
         "combine" => vec![fold(OverlayRule::Xor)],
         "intersect" => vec![fold(OverlayRule::Intersect)],
         "subtract" => {
-            let others = rest.iter().fold(Area::new(), |acc, b| overlay(&acc, b, OverlayRule::Union));
+            let others = rest
+                .iter()
+                .fold(Area::new(), |acc, b| overlay(&acc, b, OverlayRule::Union));
             vec![overlay(first, &others, OverlayRule::Difference)]
         }
         _ => {
@@ -133,36 +160,63 @@ fn area_geom(area: &Area) -> Option<(Xfrm, Geom)> {
     let mut d = String::new();
     for c in area {
         for (i, p) in c.iter().enumerate() {
-            d += &format!("{}{} {} ", if i == 0 { "M " } else { "L " }, f(p[0] - b.x0), f(p[1] - b.y0));
+            d += &format!(
+                "{}{} {} ",
+                if i == 0 { "M " } else { "L " },
+                f(p[0] - b.x0),
+                f(p[1] - b.y0)
+            );
         }
         d += "Z ";
     }
-    let geom = Geom::Custom { paths: vec![CustomPath { w, h, d: d.trim_end().to_string(), ..Default::default() }] };
+    let geom = Geom::Custom {
+        paths: vec![CustomPath {
+            w,
+            h,
+            d: d.trim_end().to_string(),
+            ..Default::default()
+        }],
+    };
     Some((Xfrm::new(b.x0, b.y0, w, h), geom))
 }
 
 fn merge(s: &mut Session, p: &Value) -> Result<Value> {
     let op = str_param(p, "op").unwrap_or("union").to_ascii_lowercase();
     if !OPS.iter().any(|o| o.0 == op) {
-        return Err(bad("shape.merge", format!("unknown op `{op}` (union, combine, fragment, intersect, subtract)")));
+        return Err(bad(
+            "shape.merge",
+            format!("unknown op `{op}` (union, combine, fragment, intersect, subtract)"),
+        ));
     }
     let ids = targets(s, p)?;
     let st = s.doc()?;
     let shapes: Vec<Shape> = ids.iter().filter_map(|id| st.shape(*id).cloned()).collect();
-    let mergeable = |x: &Shape| matches!(x.kind, ShapeKind::Shape | ShapeKind::Picture { .. }) && !x.is_line();
+    let mergeable =
+        |x: &Shape| matches!(x.kind, ShapeKind::Shape | ShapeKind::Picture { .. }) && !x.is_line();
     if shapes.len() < 2 || !shapes.iter().all(mergeable) {
-        return Err(bad("shape.merge", "select two or more shapes (not lines, groups, tables or charts)"));
+        return Err(bad(
+            "shape.merge",
+            "select two or more shapes (not lines, groups, tables or charts)",
+        ));
     }
-    let areas: Vec<Area> = shapes.iter().map(|x| area_of(&st.doc, &st.selection, x)).collect();
+    let areas: Vec<Area> = shapes
+        .iter()
+        .map(|x| area_of(&st.doc, &st.selection, x))
+        .collect();
     let results = merge_areas(&op, &areas);
     let template = shapes[0].clone();
     let mut new_ids = vec![];
     s.edit(|doc, sel| {
         let list = crate::shapes_mut(doc, sel).ok_or_else(|| bad("shape.merge", "no slide"))?;
-        let at = list.iter().position(|x| x.id == template.id).unwrap_or(list.len());
+        let at = list
+            .iter()
+            .position(|x| x.id == template.id)
+            .unwrap_or(list.len());
         let mut made = vec![];
         for (k, area) in results.iter().enumerate() {
-            let Some((x, geom)) = area_geom(area) else { continue };
+            let Some((x, geom)) = area_geom(area) else {
+                continue;
+            };
             let mut sh = template.clone();
             sh.id = ShapeId(0);
             sh.ph = None;
@@ -214,6 +268,8 @@ mod tests {
         assert_eq!(frags.len(), 3);
         assert!((frags.iter().map(area_size).sum::<f64>() - 175.0).abs() < 1e-6);
         // Disjoint intersect is empty.
-        assert!(merge_areas("intersect", &[square(0.0, 0.0, 1.0), square(5.0, 5.0, 1.0)]).is_empty());
+        assert!(
+            merge_areas("intersect", &[square(0.0, 0.0, 1.0), square(5.0, 5.0, 1.0)]).is_empty()
+        );
     }
 }

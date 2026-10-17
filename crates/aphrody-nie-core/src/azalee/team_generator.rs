@@ -147,7 +147,10 @@ pub fn generate(
     let mut pools = HashMap::new();
     for position in positions {
         pools.entry(position.role.as_str()).or_insert_with(|| {
-            let required = positions.iter().filter(|other| other.role == position.role).count();
+            let required = positions
+                .iter()
+                .filter(|other| other.role == position.role)
+                .count();
             let indices = roster
                 .iter()
                 .enumerate()
@@ -158,13 +161,20 @@ pub fn generate(
             filter_indices(roster, indices, filters, required).indices
         });
     }
-    let mut used = locks.iter().map(|(_, id)| id.as_str()).collect::<HashSet<_>>();
+    let mut used = locks
+        .iter()
+        .map(|(_, id)| id.as_str())
+        .collect::<HashSet<_>>();
     let mut random = CRand::new(seed);
     let mut assignments = Vec::new();
     for position in positions {
         let slot = format!("field-{}", position.index);
         if locks.iter().any(|(locked_slot, _)| *locked_slot == slot) {
-            assignments.push(Assignment { slot, roster_index: None, locked: true });
+            assignments.push(Assignment {
+                slot,
+                roster_index: None,
+                locked: true,
+            });
             continue;
         }
         let available = pools[position.role.as_str()]
@@ -179,7 +189,11 @@ pub fn generate(
             u32::try_from(available.len()).map_err(|_| "Pool exceeds the engine random bound")?;
         let index = available[random.bounded(bound) as usize];
         used.insert(roster[index].id.as_str());
-        assignments.push(Assignment { slot, roster_index: Some(index), locked: false });
+        assignments.push(Assignment {
+            slot,
+            roster_index: Some(index),
+            locked: false,
+        });
     }
     Ok(assignments)
 }
@@ -208,15 +222,36 @@ mod tests {
             candidate("c", "GK"),
         ];
         let positions = vec![
-            FieldSlot { index: 0, role: "FW".into() },
-            FieldSlot { index: 1, role: "FW".into() },
-            FieldSlot { index: 10, role: "GK".into() },
+            FieldSlot {
+                index: 0,
+                role: "FW".into(),
+            },
+            FieldSlot {
+                index: 1,
+                role: "FW".into(),
+            },
+            FieldSlot {
+                index: 10,
+                role: "GK".into(),
+            },
         ];
         let locks = vec![("field-0".into(), "a".into())];
         let expected = vec![
-            Assignment { slot: "field-0".into(), roster_index: None, locked: true },
-            Assignment { slot: "field-1".into(), roster_index: Some(2), locked: false },
-            Assignment { slot: "field-10".into(), roster_index: Some(3), locked: false },
+            Assignment {
+                slot: "field-0".into(),
+                roster_index: None,
+                locked: true,
+            },
+            Assignment {
+                slot: "field-1".into(),
+                roster_index: Some(2),
+                locked: false,
+            },
+            Assignment {
+                slot: "field-10".into(),
+                roster_index: Some(3),
+                locked: false,
+            },
         ];
         assert_eq!(
             generate(&roster, &positions, &Filters::default(), &locks, 5489).unwrap(),
@@ -254,7 +289,10 @@ mod tests {
         );
         assert_eq!(
             filter_candidates(&roster, &filters, 0),
-            FilteredPool { indices: vec![], ignored: vec![] }
+            FilteredPool {
+                indices: vec![],
+                ignored: vec![]
+            }
         );
     }
 }

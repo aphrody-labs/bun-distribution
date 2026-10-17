@@ -19,13 +19,16 @@ fn corpus() -> Option<Vfs> {
         Err(e) => {
             eprintln!("skip : ni installation ni dump ({e:?})");
             None
-        },
+        }
     }
 }
 
 fn chemins(vfs: &Vfs) -> Vec<String> {
-    let mut v: Vec<String> =
-        vfs.iter().map(|(p, _)| p.to_string()).filter(|p| p.ends_with(".g4nv")).collect();
+    let mut v: Vec<String> = vfs
+        .iter()
+        .map(|(p, _)| p.to_string())
+        .filter(|p| p.ends_with(".g4nv"))
+        .collect();
     v.sort_unstable();
     v
 }
@@ -52,7 +55,7 @@ fn navmesh_reels_geometriquement_coherents() {
             Err(e) => {
                 echecs.push(format!("{p} : {e}"));
                 continue;
-            },
+            }
         };
         if let Err(e) = navm::check(&n) {
             echecs.push(format!("{p} : {e}"));
@@ -83,9 +86,13 @@ fn navmesh_reels_geometriquement_coherents() {
                 break;
             };
             let moy = |k: usize| (t[0][k] + t[1][k] + t[2][k]) / 3.0;
-            let ecart = (0..3).map(|k| (moy(k) - poly.center[k]).abs()).fold(0.0f32, f32::max);
+            let ecart = (0..3)
+                .map(|k| (moy(k) - poly.center[k]).abs())
+                .fold(0.0f32, f32::max);
             if ecart > 0.05 {
-                echecs.push(format!("{p} : centroïde du polygone {i} faux (écart {ecart})"));
+                echecs.push(format!(
+                    "{p} : centroïde du polygone {i} faux (écart {ecart})"
+                ));
                 break;
             }
             let r2 = t
@@ -101,13 +108,19 @@ fn navmesh_reels_geometriquement_coherents() {
             }
         }
         if somme_refs != n.edge_refs.len() {
-            echecs.push(format!("{p} : Σ edge_ref_count = {somme_refs} != {}", n.edge_refs.len()));
+            echecs.push(format!(
+                "{p} : Σ edge_ref_count = {somme_refs} != {}",
+                n.edge_refs.len()
+            ));
             continue;
         }
         // le coût d'une arête est la distance entre les centroïdes de ses deux polygones
         for (i, e) in n.edges.iter().enumerate() {
             let (a, b) = (n.polygons[e.poly_a as usize], n.polygons[e.poly_b as usize]);
-            let d = (0..3).map(|k| (a.center[k] - b.center[k]).powi(2)).sum::<f32>().sqrt();
+            let d = (0..3)
+                .map(|k| (a.center[k] - b.center[k]).powi(2))
+                .sum::<f32>()
+                .sqrt();
             if (d - e.cost).abs() > (d * 1e-3).max(0.05) {
                 echecs.push(format!("{p} : coût de l'arête {i} = {} != {d}", e.cost));
                 break;

@@ -10,7 +10,14 @@ use crate::context::{Enc, Params};
 use crate::effects::{GBuf, gaussian_blur};
 
 /// Compute entry points in `fx_extra.wgsl`.
-pub(crate) const KERNELS: &[&str] = &["fxe_circle", "fxe_ellipse", "fxe_iris", "fxe_alpha", "fxe_bevel_alpha", "fxe_bevel_edges"];
+pub(crate) const KERNELS: &[&str] = &[
+    "fxe_circle",
+    "fxe_ellipse",
+    "fxe_iris",
+    "fxe_alpha",
+    "fxe_bevel_alpha",
+    "fxe_bevel_edges",
+];
 
 /// Effect ids implemented here.
 pub(crate) const IDS: &[&str] = &[
@@ -36,7 +43,14 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 }
 
 /// A same-size per-pixel kernel over the buffer.
-fn run(e: &mut Enc, entry: &str, p: &Params, mut b: GBuf, aux: Option<&crate::context::GpuImage>, data: Option<&wgpu::Buffer>) -> Option<GBuf> {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    mut b: GBuf,
+    aux: Option<&crate::context::GpuImage>,
+    data: Option<&wgpu::Buffer>,
+) -> Option<GBuf> {
     let out = e.scratch(b.img.width, b.img.height);
     e.pixels(entry, p, &b.img, aux, &out, data);
     b.img = out;
@@ -74,9 +88,19 @@ fn circle(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (f_out, f_in) = (f_out.max(0.5), f_in.max(0.5));
     let color = pr.color("color");
     let mut p = Params::default();
-    p.u[0] = [crate::fx_generate::gen_mode(pr.e("blendingMode")), ri.is_some() as u32, pr.b("invert") as u32, 0];
+    p.u[0] = [
+        crate::fx_generate::gen_mode(pr.e("blendingMode")),
+        ri.is_some() as u32,
+        pr.b("invert") as u32,
+        0,
+    ];
     p.f[0] = f4([c.0, c.1, ro, ri.unwrap_or(0.0)]);
-    p.f[1] = [f_out as f32, f_in as f32, pr.f("opacity") as f32 / 100.0, 0.0];
+    p.f[1] = [
+        f_out as f32,
+        f_in as f32,
+        pr.f("opacity") as f32 / 100.0,
+        0.0,
+    ];
     p.f[2] = [color[0], color[1], color[2], 0.0];
     run(e, "fxe_circle", &p, b, None, None)
 }
@@ -110,7 +134,11 @@ fn iris_wipe(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     }
     let n = pr.f("points").round().clamp(3.0, 64.0) as usize;
     let star = pr.b("useInnerRadius");
-    let inner = if star { pr.f("innerRadius").max(0.0) * b.scale } else { outer };
+    let inner = if star {
+        pr.f("innerRadius").max(0.0) * b.scale
+    } else {
+        outer
+    };
     let rot = pr.f("rotation").to_radians();
     let c = b.to_px(pr.v2("center"));
     let m = if star { n * 2 } else { n };
@@ -161,7 +189,12 @@ fn bevel_alpha(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 
 fn bevel_edges(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let pr = ctx.params;
-    let (x0, y0, w, h) = (b.offset[0], b.offset[1], ctx.layer_size[0] * b.scale, ctx.layer_size[1] * b.scale);
+    let (x0, y0, w, h) = (
+        b.offset[0],
+        b.offset[1],
+        ctx.layer_size[0] * b.scale,
+        ctx.layer_size[1] * b.scale,
+    );
     let t = pr.f("edgeThickness").clamp(0.0, 0.5) * w.min(h);
     let inten = pr.f("lightIntensity") as f32;
     if t <= 0.0 || inten == 0.0 {

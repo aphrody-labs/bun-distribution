@@ -115,7 +115,11 @@ pub enum SaveError {
 
     /// Intégrité CRC32 échouée.
     #[error("CRC32 invalide : attendu 0x{expected:08X}, calculé 0x{computed:08X} ({context})")]
-    BadCrc { expected: u32, computed: u32, context: &'static str },
+    BadCrc {
+        expected: u32,
+        computed: u32,
+        context: &'static str,
+    },
 
     /// Données corrompues.
     #[error("données corrompues : {0}")]
@@ -376,7 +380,10 @@ impl LivesContainer {
 /// - [`SaveError::Corrupt`] pour toute incohérence structurelle.
 pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
     if data.len() < DATA_START {
-        return Err(SaveError::TooShort { got: data.len(), need: DATA_START });
+        return Err(SaveError::TooShort {
+            got: data.len(),
+            need: DATA_START,
+        });
     }
 
     let key = key_from_filename(filename);
@@ -394,7 +401,10 @@ pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
             .ok_or(SaveError::Corrupt("lecture magic: slice invalide"))?,
     );
     if magic != LIVES_MAGIC {
-        return Err(SaveError::BadMagic { expected: LIVES_MAGIC, got: magic });
+        return Err(SaveError::BadMagic {
+            expected: LIVES_MAGIC,
+            got: magic,
+        });
     }
 
     // Vérifier le CRC32 du header.
@@ -415,7 +425,10 @@ pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
 
     // Lire le nom du slot.
     let slot_name_bytes = &plain[0x10..0x50];
-    let nul = slot_name_bytes.iter().position(|&b| b == 0).unwrap_or(slot_name_bytes.len());
+    let nul = slot_name_bytes
+        .iter()
+        .position(|&b| b == 0)
+        .unwrap_or(slot_name_bytes.len());
     let slot_name = String::from_utf8_lossy(&slot_name_bytes[..nul]).into_owned();
 
     // Parser le répertoire.
@@ -443,7 +456,10 @@ pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
         );
         // Nom : null-terminé dans les 116 octets restants de l'entrée
         let name_slice = &plain[off + 12..off + DIR_ENTRY_STRIDE];
-        let name_nul = name_slice.iter().position(|&b| b == 0).unwrap_or(name_slice.len());
+        let name_nul = name_slice
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(name_slice.len());
         let filename_entry = String::from_utf8_lossy(&name_slice[..name_nul]).into_owned();
 
         // Une entrée avec size=0 ET nom vide = fin du répertoire
@@ -451,7 +467,12 @@ pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
             break;
         }
 
-        entries.push(DirEntry { crc32, size, offset: blob_offset, filename: filename_entry });
+        entries.push(DirEntry {
+            crc32,
+            size,
+            offset: blob_offset,
+            filename: filename_entry,
+        });
         off += DIR_ENTRY_STRIDE;
     }
 
@@ -465,13 +486,18 @@ pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
         // Utiliser checked_add pour éviter l'overflow sur wasm32 (usize = 32 bits).
         let abs_start = DATA_START
             .checked_add(entry.offset as usize)
-            .ok_or(SaveError::Corrupt("dépassement d'offset dans le répertoire"))?;
+            .ok_or(SaveError::Corrupt(
+                "dépassement d'offset dans le répertoire",
+            ))?;
         let abs_end = abs_start
             .checked_add(entry.size as usize)
             .ok_or(SaveError::Corrupt("dépassement de taille de blob"))?;
 
         if abs_end > plain.len() {
-            return Err(SaveError::TooShort { got: plain.len(), need: abs_end });
+            return Err(SaveError::TooShort {
+                got: plain.len(),
+                need: abs_end,
+            });
         }
 
         let blob_bytes = &plain[abs_start..abs_end];
@@ -488,7 +514,10 @@ pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
 
         // Parser l'en-tête du blob (12 octets).
         if blob_bytes.len() < BLOB_HEADER_SIZE {
-            return Err(SaveError::TooShort { got: blob_bytes.len(), need: BLOB_HEADER_SIZE });
+            return Err(SaveError::TooShort {
+                got: blob_bytes.len(),
+                need: BLOB_HEADER_SIZE,
+            });
         }
 
         // blob_bytes.len() >= BLOB_HEADER_SIZE (12) est vérifié juste avant.
@@ -540,7 +569,12 @@ pub fn parse(data: &[u8], filename: &str) -> Result<LivesContainer, SaveError> {
         });
     }
 
-    Ok(LivesContainer { slot_name, key, entries, blobs })
+    Ok(LivesContainer {
+        slot_name,
+        key,
+        entries,
+        blobs,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -598,7 +632,10 @@ impl CharaRef {
     /// Construit un `CharaRef` avec nom résolu.
     #[must_use]
     pub fn with_name(id: body::autosave_roster::CharaId, name: impl Into<String>) -> Self {
-        CharaRef { id, name: Some(name.into()) }
+        CharaRef {
+            id,
+            name: Some(name.into()),
+        }
     }
 }
 
@@ -704,7 +741,10 @@ impl Team {
     /// Construit une `Team` non résolue (état initial — section OPAQUE).
     #[must_use]
     pub fn unresolved() -> Self {
-        Team { members: Vec::new(), resolved: false }
+        Team {
+            members: Vec::new(),
+            resolved: false,
+        }
     }
 }
 
@@ -811,7 +851,10 @@ pub fn summarize(container: &LivesContainer) -> SaveSummary {
         .blob_by_subtype(BlobSubtype::Headersave)
         .and_then(|blob| parse_headersave(&blob.body).ok());
 
-    let player_name = hs.as_ref().map(|h| h.player_name.clone()).unwrap_or_default();
+    let player_name = hs
+        .as_ref()
+        .map(|h| h.player_name.clone())
+        .unwrap_or_default();
     let level_str = hs.as_ref().map(|h| h.level_str.clone()).unwrap_or_default();
     let unique_id = hs.as_ref().map(|h| h.unique_id.clone()).unwrap_or_default();
     let last_save = hs.as_ref().map(|h| h.save_timestamp.clone());
@@ -819,8 +862,9 @@ pub fn summarize(container: &LivesContainer) -> SaveSummary {
     let max_slots_v = hs.as_ref().map(|h| h.max_slots);
 
     // playtime depuis les slots HEADERSAVE si AUTOSAVE ne l'a pas encore
-    let hs_playtime: Option<u32> =
-        hs.as_ref().and_then(|h| h.slots.iter().find_map(|s| s.playtime_secs));
+    let hs_playtime: Option<u32> = hs
+        .as_ref()
+        .and_then(|h| h.slots.iter().find_map(|s| s.playtime_secs));
 
     // --- AUTOSAVE ---
     let autosave = container
@@ -831,7 +875,7 @@ pub fn summarize(container: &LivesContainer) -> SaveSummary {
         Some(r) => {
             let sc = r.scalars;
             (r.owned, r.roster_slots, sc)
-        },
+        }
         None => (Vec::new(), 0, None),
     };
 
@@ -843,7 +887,10 @@ pub fn summarize(container: &LivesContainer) -> SaveSummary {
     let team = Team::unresolved();
 
     // Temps de jeu : scalaire AUTOSAVE prioritaire, sinon slot HEADERSAVE.
-    let playtime_secs = autosave_scalars.as_ref().map(|s| s.playtime_secs).or(hs_playtime);
+    let playtime_secs = autosave_scalars
+        .as_ref()
+        .map(|s| s.playtime_secs)
+        .or(hs_playtime);
 
     SaveSummary {
         slot_name: container.slot_name.clone(),
@@ -939,7 +986,10 @@ mod tests {
         assert_eq!(container.entries[0].filename, "SYSTEM_data.bin");
         assert_eq!(container.blobs.len(), 1);
         assert_eq!(container.blobs[0].header.subtype, BlobSubtype::System);
-        assert_eq!(container.blobs[0].body, vec![0x01, 0x02, 0x03, 0x04, 0xAA, 0xBB, 0xCC, 0xDD]);
+        assert_eq!(
+            container.blobs[0].body,
+            vec![0x01, 0x02, 0x03, 0x04, 0xAA, 0xBB, 0xCC, 0xDD]
+        );
     }
 
     #[test]
@@ -1027,7 +1077,10 @@ mod tests {
             "la modification doit survivre au round-trip"
         );
         // Les autres octets ne doivent pas avoir changé
-        assert_eq!(container2.blobs[0].body[1..], vec![0x02, 0x03, 0x04, 0xAA, 0xBB, 0xCC, 0xDD]);
+        assert_eq!(
+            container2.blobs[0].body[1..],
+            vec![0x02, 0x03, 0x04, 0xAA, 0xBB, 0xCC, 0xDD]
+        );
     }
 
     #[test]
@@ -1210,7 +1263,13 @@ mod tests {
             ],
             total_slots: 6000,
         };
-        roster.resolve(|id| if id == 0xF5E1_E7CD { Some("Max Scara".to_string()) } else { None });
+        roster.resolve(|id| {
+            if id == 0xF5E1_E7CD {
+                Some("Max Scara".to_string())
+            } else {
+                None
+            }
+        });
         assert_eq!(roster.owned[0].name.as_deref(), Some("Max Scara"));
         assert!(roster.owned[1].name.is_none(), "id inconnu → None");
         assert_eq!(roster.count(), 2);
@@ -1244,15 +1303,28 @@ mod tests {
         let container = LivesContainer {
             slot_name: "slot".into(),
             key: 0,
-            entries: vec![DirEntry { crc32: 0, size: 3, offset: 0, filename: "A.bin".into() }],
+            entries: vec![DirEntry {
+                crc32: 0,
+                size: 3,
+                offset: 0,
+                filename: "A.bin".into(),
+            }],
             blobs: vec![Blob {
-                header: BlobHeader { subtype: BlobSubtype::System, payload_size: 3, field8: 0 },
+                header: BlobHeader {
+                    subtype: BlobSubtype::System,
+                    payload_size: 3,
+                    field8: 0,
+                },
                 body: vec![1, 2, 3],
             }],
         };
         assert_eq!(
             list_blobs(&container),
-            vec![BlobInfo { filename: "A.bin".into(), subtype: "System".into(), size: 3 }]
+            vec![BlobInfo {
+                filename: "A.bin".into(),
+                subtype: "System".into(),
+                size: 3
+            }]
         );
         assert_eq!(blob_body(&container, 0), Some(&[1, 2, 3][..]));
         assert_eq!(blob_body(&container, 1), None);

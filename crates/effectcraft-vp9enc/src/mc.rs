@@ -31,7 +31,15 @@ pub struct RefPlane<'a> {
 
 /// The block's motion vector for `plane` in 1/16 samples of that plane, clamped as the
 /// decoder clamps it. `n8`: block size in 8×8 units.
-pub fn clamp_for_plane(mv: Mv, r: usize, c: usize, n8: usize, mi_rows: usize, mi_cols: usize, chroma: bool) -> (i32, i32) {
+pub fn clamp_for_plane(
+    mv: Mv,
+    r: usize,
+    c: usize,
+    n8: usize,
+    mi_rows: usize,
+    mi_cols: usize,
+    chroma: bool,
+) -> (i32, i32) {
     let s = chroma as i32;
     let (r, c, b) = (r as i32, c as i32, n8 as i32);
     let to_top = (-(r * 8 * 16)) >> s;
@@ -52,7 +60,11 @@ pub fn predict(r: &RefPlane, x16: i32, y16: i32, w: usize, h: usize, out: &mut [
     let (lx, ly) = (r.w as i32 - 1, r.h as i32 - 1);
     let inside = x0 - 3 >= 0 && y0 - 3 >= 0 && x0 + w as i32 + 4 <= lx && y0 + h as i32 + 4 <= ly;
     let at = |x: i32, y: i32| -> i32 {
-        if inside { r.data[y as usize * r.stride + x as usize] as i32 } else { r.data[y.clamp(0, ly) as usize * r.stride + x.clamp(0, lx) as usize] as i32 }
+        if inside {
+            r.data[y as usize * r.stride + x as usize] as i32
+        } else {
+            r.data[y.clamp(0, ly) as usize * r.stride + x.clamp(0, lx) as usize] as i32
+        }
     };
     let fh = &SUBPEL_REGULAR[fx];
     let fv = &SUBPEL_REGULAR[fy];
@@ -129,8 +141,18 @@ impl PhasePlanes {
             }
             out
         };
-        let unfiltered: Vec<u8> = (0..rh).flat_map(|y| raw[y * rs + M..y * rs + M + pw].iter().copied()).collect();
-        let h: Vec<Vec<u8>> = (0..4).map(|k| if k == 0 { unfiltered.clone() } else { hpass(k * 4) }).collect();
+        let unfiltered: Vec<u8> = (0..rh)
+            .flat_map(|y| raw[y * rs + M..y * rs + M + pw].iter().copied())
+            .collect();
+        let h: Vec<Vec<u8>> = (0..4)
+            .map(|k| {
+                if k == 0 {
+                    unfiltered.clone()
+                } else {
+                    hpass(k * 4)
+                }
+            })
+            .collect();
         let mut planes = Vec::with_capacity(16);
         for fy in 0..4 {
             for hp in &h {
@@ -152,18 +174,36 @@ impl PhasePlanes {
                 planes.push(out);
             }
         }
-        PhasePlanes { border, stride: pw, rows: ph, planes }
+        PhasePlanes {
+            border,
+            stride: pw,
+            rows: ph,
+            planes,
+        }
     }
 
     /// The prediction of the `n`×`n` block at (`x16`, `y16`) (fractions multiples of 4) as rows of
     /// a phase plane: (plane, offset of the first sample, stride). `None` beyond the border.
     pub fn block(&self, x16: i32, y16: i32, n: usize) -> Option<(&[u8], usize, usize)> {
-        let (x0, y0) = ((x16 >> 4) + self.border as i32, (y16 >> 4) + self.border as i32);
+        let (x0, y0) = (
+            (x16 >> 4) + self.border as i32,
+            (y16 >> 4) + self.border as i32,
+        );
         let (fx, fy) = ((x16 & 15) as usize, (y16 & 15) as usize);
-        if fx % 4 != 0 || fy % 4 != 0 || x0 < 0 || y0 < 0 || x0 as usize + n > self.stride || y0 as usize + n > self.rows {
+        if fx % 4 != 0
+            || fy % 4 != 0
+            || x0 < 0
+            || y0 < 0
+            || x0 as usize + n > self.stride
+            || y0 as usize + n > self.rows
+        {
             return None;
         }
-        Some((&self.planes[(fy / 4) * 4 + fx / 4], y0 as usize * self.stride + x0 as usize, self.stride))
+        Some((
+            &self.planes[(fy / 4) * 4 + fx / 4],
+            y0 as usize * self.stride + x0 as usize,
+            self.stride,
+        ))
     }
 }
 
@@ -173,15 +213,26 @@ mod tests {
     fn phase_planes_match_predict() {
         let (w, h) = (37usize, 29usize);
         let data: Vec<u8> = (0..w * h).map(|i| ((i * 7919) % 251) as u8).collect();
-        let r = RefPlane { data: &data, stride: w, w, h };
+        let r = RefPlane {
+            data: &data,
+            stride: w,
+            w,
+            h,
+        };
         let pp = PhasePlanes::new(&r, 24);
         let mut out = [0u8; 64];
         for y16 in (-20 * 16..(h as i32 + 10) * 16).step_by(4 * 7) {
             for x16 in (-20 * 16..(w as i32 + 10) * 16).step_by(4 * 5) {
-                let Some((p, o, s)) = pp.block(x16, y16, 8) else { continue };
+                let Some((p, o, s)) = pp.block(x16, y16, 8) else {
+                    continue;
+                };
                 predict(&r, x16, y16, 8, 8, &mut out);
                 for i in 0..8 {
-                    assert_eq!(&p[o + i * s..o + i * s + 8], &out[i * 8..i * 8 + 8], "({x16}, {y16}) row {i}");
+                    assert_eq!(
+                        &p[o + i * s..o + i * s + 8],
+                        &out[i * 8..i * 8 + 8],
+                        "({x16}, {y16}) row {i}"
+                    );
                 }
             }
         }
@@ -193,7 +244,12 @@ mod tests {
     fn whole_sample_and_linear_ramps() {
         let (w, h) = (40usize, 30usize);
         let data: Vec<u8> = (0..w * h).map(|i| ((i % w) * 4 + (i / w)) as u8).collect();
-        let r = RefPlane { data: &data, stride: w, w, h };
+        let r = RefPlane {
+            data: &data,
+            stride: w,
+            w,
+            h,
+        };
         let mut out = [0u8; 64];
         predict(&r, 10 << 4, 8 << 4, 8, 8, &mut out);
         assert_eq!(out[0], data[8 * w + 10]);

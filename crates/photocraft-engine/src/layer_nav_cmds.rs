@@ -12,7 +12,11 @@ use crate::{EngineError, Result, Session};
 
 fn has_layers(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.doc.layers.is_empty() { Err("the document has no layers".into()) } else { Ok(()) }
+    if st.doc.layers.is_empty() {
+        Err("the document has no layers".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// The Layers panel's rows, top to bottom: each group before its children, collapsed groups
@@ -37,7 +41,10 @@ pub fn panel_rows(doc: &Document) -> Vec<LayerId> {
 /// nearest enclosing one that has a row).
 fn row_of(doc: &Document, rows: &[LayerId], id: LayerId) -> Option<usize> {
     let path = doc.path_of(id)?;
-    (1..=path.len()).rev().find_map(|n| doc.layer_at(&path[..n]).and_then(|l| rows.iter().position(|r| *r == l.id)))
+    (1..=path.len()).rev().find_map(|n| {
+        doc.layer_at(&path[..n])
+            .and_then(|l| rows.iter().position(|r| *r == l.id))
+    })
 }
 
 #[derive(Clone, Copy)]
@@ -53,7 +60,10 @@ enum Step {
 fn navigate(s: &mut Session, step: Step, add: bool) -> Result<Value> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let rows = panel_rows(&st.doc);
-    let last = rows.len().checked_sub(1).ok_or_else(|| EngineError::Other("the document has no layers".into()))?;
+    let last = rows
+        .len()
+        .checked_sub(1)
+        .ok_or_else(|| EngineError::Other("the document has no layers".into()))?;
     let current = st.active_layer.and_then(|a| row_of(&st.doc, &rows, a));
     let target = match (step, current) {
         (Step::Top, _) | (Step::Above, None) => 0,
@@ -61,7 +71,10 @@ fn navigate(s: &mut Session, step: Step, add: bool) -> Result<Value> {
         (Step::Above, Some(i)) => i.saturating_sub(1),
         (Step::Below, Some(i)) => (i + 1).min(last),
     };
-    let id = rows.get(target).copied().ok_or_else(|| EngineError::Other("no layer there".into()))?;
+    let id = rows
+        .get(target)
+        .copied()
+        .ok_or_else(|| EngineError::Other("no layer there".into()))?;
     if add {
         let mut sel = st.selected_layers();
         if !sel.contains(&id) {
@@ -73,7 +86,9 @@ fn navigate(s: &mut Session, step: Step, add: bool) -> Result<Value> {
         s.select_layer(id)?;
     }
     let st = s.active().ok_or(EngineError::NoDocument)?;
-    Ok(json!({"layer": id.0, "selected": st.selected_layers().iter().map(|l| l.0).collect::<Vec<_>>()}))
+    Ok(
+        json!({"layer": id.0, "selected": st.selected_layers().iter().map(|l| l.0).collect::<Vec<_>>()}),
+    )
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -92,12 +107,48 @@ pub fn specs() -> Vec<CommandSpec> {
         };
     }
     vec![
-        spec!("layer.selectAbove", "Select Layer Above", "Alt+]", Step::Above, false),
-        spec!("layer.selectBelow", "Select Layer Below", "Alt+[", Step::Below, false),
-        spec!("layer.selectTop", "Select Top Layer", "Alt+.", Step::Top, false),
-        spec!("layer.selectBottom", "Select Bottom Layer", "Alt+,", Step::Bottom, false),
-        spec!("layer.addAboveToSelection", "Add Layer Above to Selection", "Alt+Shift+]", Step::Above, true),
-        spec!("layer.addBelowToSelection", "Add Layer Below to Selection", "Alt+Shift+[", Step::Below, true),
+        spec!(
+            "layer.selectAbove",
+            "Select Layer Above",
+            "Alt+]",
+            Step::Above,
+            false
+        ),
+        spec!(
+            "layer.selectBelow",
+            "Select Layer Below",
+            "Alt+[",
+            Step::Below,
+            false
+        ),
+        spec!(
+            "layer.selectTop",
+            "Select Top Layer",
+            "Alt+.",
+            Step::Top,
+            false
+        ),
+        spec!(
+            "layer.selectBottom",
+            "Select Bottom Layer",
+            "Alt+,",
+            Step::Bottom,
+            false
+        ),
+        spec!(
+            "layer.addAboveToSelection",
+            "Add Layer Above to Selection",
+            "Alt+Shift+]",
+            Step::Above,
+            true
+        ),
+        spec!(
+            "layer.addBelowToSelection",
+            "Add Layer Below to Selection",
+            "Alt+Shift+[",
+            Step::Below,
+            true
+        ),
     ]
 }
 
@@ -108,16 +159,28 @@ mod tests {
     /// Bottom to top: Background, A, Group { B, C }, D. Panel rows: D, Group, C, B, A, Background.
     fn session() -> (Session, [LayerId; 6]) {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
+        s.execute("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
         let bg = s.active().unwrap().doc.layers[0].id;
-        let id = |s: &mut Session, cmd: &str, p: Value| LayerId(s.execute(cmd, p).unwrap()["layer"].as_u64().unwrap());
+        let id = |s: &mut Session, cmd: &str, p: Value| {
+            LayerId(s.execute(cmd, p).unwrap()["layer"].as_u64().unwrap())
+        };
         let a = id(&mut s, "layer.new.layer", json!({"name": "A"}));
         let b = id(&mut s, "layer.new.layer", json!({"name": "B"}));
         let c = id(&mut s, "layer.new.layer", json!({"name": "C"}));
         s.execute("layer.select", json!({"layer": b.0})).unwrap();
-        s.execute("layer.select", json!({"layer": c.0, "mode": "add"})).unwrap();
+        s.execute("layer.select", json!({"layer": c.0, "mode": "add"}))
+            .unwrap();
         s.execute("layer.groupLayers", json!({})).unwrap();
-        let group = s.active().unwrap().doc.layers.iter().find(|l| l.is_group()).unwrap().id;
+        let group = s
+            .active()
+            .unwrap()
+            .doc
+            .layers
+            .iter()
+            .find(|l| l.is_group())
+            .unwrap()
+            .id;
         let d = id(&mut s, "layer.new.layer", json!({"name": "D"}));
         (s, [bg, a, group, b, c, d])
     }
@@ -129,7 +192,10 @@ mod tests {
     #[test]
     fn steps_follow_the_panel_rows_and_stop_at_the_ends() {
         let (mut s, [bg, a, group, b, c, d]) = session();
-        assert_eq!(panel_rows(&s.active().unwrap().doc), vec![d, group, c, b, a, bg]);
+        assert_eq!(
+            panel_rows(&s.active().unwrap().doc),
+            vec![d, group, c, b, a, bg]
+        );
         s.execute("layer.select", json!({"layer": d.0})).unwrap();
         for want in [group, c, b, a, bg, bg] {
             s.execute("layer.selectBelow", json!({})).unwrap();
@@ -140,7 +206,10 @@ mod tests {
             assert_eq!(active(&s), want);
         }
         s.execute("layer.selectBottom", json!({})).unwrap();
-        assert_eq!((active(&s), s.active().unwrap().selected_layers()), (bg, vec![bg]));
+        assert_eq!(
+            (active(&s), s.active().unwrap().selected_layers()),
+            (bg, vec![bg])
+        );
         s.execute("layer.selectTop", json!({})).unwrap();
         assert_eq!(active(&s), d);
     }
@@ -168,7 +237,11 @@ mod tests {
         want.sort();
         assert_eq!((active(&s), sel), (d, want));
         s.execute("layer.addBelowToSelection", json!({})).unwrap();
-        assert_eq!(active(&s), group, "the active layer moves; the selection keeps every layer");
+        assert_eq!(
+            active(&s),
+            group,
+            "the active layer moves; the selection keeps every layer"
+        );
         assert_eq!(s.active().unwrap().selected_layers().len(), 3);
     }
 
@@ -177,14 +250,20 @@ mod tests {
         let (mut s, _) = session();
         let st = s.active_mut().unwrap();
         st.saved_revision = st.revision;
-        s.execute("layer.selectTop", json!({"junk": [1, 2]})).unwrap();
-        assert!(!s.active().unwrap().is_dirty(), "selecting a layer is not an edit");
+        s.execute("layer.selectTop", json!({"junk": [1, 2]}))
+            .unwrap();
+        assert!(
+            !s.active().unwrap().is_dirty(),
+            "selecting a layer is not an edit"
+        );
         let mut empty = Session::new();
         for c in specs() {
             assert!(!empty.is_enabled(c.id));
             assert!(empty.execute(c.id, json!({})).is_err());
         }
-        empty.execute("file.new", json!({"width": 4, "height": 4})).unwrap();
+        empty
+            .execute("file.new", json!({"width": 4, "height": 4}))
+            .unwrap();
         empty
             .edit("clear", |doc, active| {
                 doc.layers.clear();
@@ -193,7 +272,11 @@ mod tests {
             })
             .unwrap();
         for c in specs() {
-            assert!(empty.execute(c.id, json!({})).is_err(), "{}: no layers", c.id);
+            assert!(
+                empty.execute(c.id, json!({})).is_err(),
+                "{}: no layers",
+                c.id
+            );
         }
     }
 }

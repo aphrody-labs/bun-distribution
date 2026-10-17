@@ -44,7 +44,10 @@ pub fn sequence_name(files: &[String]) -> Option<String> {
     let (prefix, a) = split_frame_number(stem_of(first))?;
     let (_, b) = split_frame_number(stem_of(last))?;
     let first_name = name(first);
-    let ext = first_name.rsplit_once('.').map(|(_, e)| format!(".{e}")).unwrap_or_default();
+    let ext = first_name
+        .rsplit_once('.')
+        .map(|(_, e)| format!(".{e}"))
+        .unwrap_or_default();
     Some(format!("{prefix}[{a}-{b}]{ext}"))
 }
 
@@ -53,7 +56,10 @@ pub fn missing_frame_ranges(files: &[String]) -> Vec<(i64, i64)> {
     let mut ns: Vec<i64> = files.iter().filter_map(|p| frame_number(p)).collect();
     ns.sort_unstable();
     ns.dedup();
-    ns.windows(2).filter(|w| w[1].saturating_sub(w[0]) > 1).map(|w| (w[0].saturating_add(1), w[1].saturating_sub(1))).collect()
+    ns.windows(2)
+        .filter(|w| w[1].saturating_sub(w[0]) > 1)
+        .map(|w| (w[0].saturating_add(1), w[1].saturating_sub(1)))
+        .collect()
 }
 
 impl Footage {
@@ -74,7 +80,8 @@ impl Footage {
 
     /// Index of the first file numbered `n` or later.
     fn first_file_from(&self, n: i64) -> usize {
-        self.sequence.partition_point(|p| frame_number(p).is_some_and(|x| x < n))
+        self.sequence
+            .partition_point(|p| frame_number(p).is_some_and(|x| x < n))
     }
 
     /// How many frames an image sequence has: the span of its numbering, or its files (Force
@@ -85,7 +92,12 @@ impl Footage {
         }
         let n = match self.numbered() {
             Some(first) => {
-                let last = self.sequence.len().checked_sub(1).and_then(|i| self.file_number(i)).unwrap_or(first);
+                let last = self
+                    .sequence
+                    .len()
+                    .checked_sub(1)
+                    .and_then(|i| self.file_number(i))
+                    .unwrap_or(first);
                 last.saturating_sub(first).saturating_add(1)
             }
             None => self.sequence.len() as i64,
@@ -100,11 +112,17 @@ impl Footage {
             return None;
         }
         let Some(first) = self.numbered() else {
-            return self.sequence.get(usize::try_from(i).ok()?).map(String::as_str);
+            return self
+                .sequence
+                .get(usize::try_from(i).ok()?)
+                .map(String::as_str);
         };
         let n = first.saturating_add(i);
         let k = self.first_file_from(n);
-        self.sequence.get(k).filter(|p| frame_number(p) == Some(n)).map(String::as_str)
+        self.sequence
+            .get(k)
+            .filter(|p| frame_number(p) == Some(n))
+            .map(String::as_str)
     }
 
     /// Set an image sequence's duration to its frames at its frame rate (after its files or
@@ -121,7 +139,14 @@ mod tests {
     use super::*;
 
     fn seq(numbers: &[i64]) -> Footage {
-        Footage { kind: FootageKind::Sequence, sequence: numbers.iter().map(|n| format!("C:\\shots\\a_{n:04}.png")).collect(), ..Default::default() }
+        Footage {
+            kind: FootageKind::Sequence,
+            sequence: numbers
+                .iter()
+                .map(|n| format!("C:\\shots\\a_{n:04}.png"))
+                .collect(),
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -131,8 +156,13 @@ mod tests {
         assert_eq!(split_frame_number("v2_10"), Some(("v2_", "10")));
         assert_eq!(frame_number("/a/v2/shot_0012.exr"), Some(12));
         assert_eq!(frame_number("C:\\a.b\\shot.png"), None);
-        assert_eq!(frame_number("/a/99999999999999999999999.png"), Some(999_999_999_999_999));
-        let files: Vec<String> = ["/s/fx_0998.png", "/s/fx_1002.png"].map(String::from).to_vec();
+        assert_eq!(
+            frame_number("/a/99999999999999999999999.png"),
+            Some(999_999_999_999_999)
+        );
+        let files: Vec<String> = ["/s/fx_0998.png", "/s/fx_1002.png"]
+            .map(String::from)
+            .to_vec();
         assert_eq!(sequence_name(&files).as_deref(), Some("fx_[0998-1002].png"));
         assert_eq!(sequence_name(&["/s/a.png".to_string()]), None);
     }
@@ -143,11 +173,20 @@ mod tests {
         let f = seq(&[1, 2, 5]);
         assert_eq!(f.sequence_frames(), 5);
         let at = |f: &Footage, i| f.sequence_file(i).map(|p| frame_number(p).unwrap_or(-1));
-        assert_eq!((0..5).map(|i| at(&f, i)).collect::<Vec<_>>(), [Some(1), Some(2), None, None, Some(5)]);
+        assert_eq!(
+            (0..5).map(|i| at(&f, i)).collect::<Vec<_>>(),
+            [Some(1), Some(2), None, None, Some(5)]
+        );
         // Force Alphabetical Order: the files play one after another.
-        let s = Footage { alphabetical: true, ..seq(&[1, 2, 5]) };
+        let s = Footage {
+            alphabetical: true,
+            ..seq(&[1, 2, 5])
+        };
         assert_eq!(s.sequence_frames(), 3);
-        assert_eq!((0..3).map(|i| at(&s, i)).collect::<Vec<_>>(), [Some(1), Some(2), Some(5)]);
+        assert_eq!(
+            (0..3).map(|i| at(&s, i)).collect::<Vec<_>>(),
+            [Some(1), Some(2), Some(5)]
+        );
         assert_eq!(missing_frame_ranges(&f.sequence), [(3, 4)]);
     }
 
@@ -160,25 +199,49 @@ mod tests {
         assert!(json.get("alphabetical").is_none(), "{json}");
         let back: Footage = serde_json::from_value(json).unwrap();
         assert_eq!((back.alphabetical, back.sequence_frames()), (false, 5));
-        let alpha = serde_json::to_value(Footage { alphabetical: true, ..seq(&[1, 2, 5]) }).unwrap();
-        assert_eq!(serde_json::from_value::<Footage>(alpha).unwrap().sequence_frames(), 3);
+        let alpha = serde_json::to_value(Footage {
+            alphabetical: true,
+            ..seq(&[1, 2, 5])
+        })
+        .unwrap();
+        assert_eq!(
+            serde_json::from_value::<Footage>(alpha)
+                .unwrap()
+                .sequence_frames(),
+            3
+        );
     }
 
     #[test]
     fn start_timecode_only_relabels_source_time() {
         // Override Start changes the timecode shown, not the frames (After Effects).
         let at = |f: &Footage, i| f.sequence_file(i).map(|p| frame_number(p).unwrap_or(-1));
-        let mut f = Footage { frame_rate: effectcraft_time::FrameRate::from_f64(24.0), ..seq(&[1001, 1002, 1003]) };
+        let mut f = Footage {
+            frame_rate: effectcraft_time::FrameRate::from_f64(24.0),
+            ..seq(&[1001, 1002, 1003])
+        };
         assert_eq!(f.timecode(0), "0:00:00:00");
         f.start_timecode = Some(1001);
-        assert_eq!((f.sequence_frames(), at(&f, 0), at(&f, 2)), (3, Some(1001), Some(1003)));
-        assert_eq!((f.timecode(0).as_str(), f.timecode(2).as_str()), ("0:00:41:17", "0:00:41:19"));
+        assert_eq!(
+            (f.sequence_frames(), at(&f, 0), at(&f, 2)),
+            (3, Some(1001), Some(1003))
+        );
+        assert_eq!(
+            (f.timecode(0).as_str(), f.timecode(2).as_str()),
+            ("0:00:41:17", "0:00:41:19")
+        );
         // Hostile values never panic.
         f.start_timecode = Some(i64::MAX);
         let _ = f.timecode(i64::MAX);
-        assert_eq!((f.sequence_file(i64::MAX), f.sequence_file(-1)), (None, None));
+        assert_eq!(
+            (f.sequence_file(i64::MAX), f.sequence_file(-1)),
+            (None, None)
+        );
         f.alphabetical = true;
-        assert_eq!((f.sequence_frames(), f.sequence_file(-1), f.sequence_file(3)), (3, None, None));
+        assert_eq!(
+            (f.sequence_frames(), f.sequence_file(-1), f.sequence_file(3)),
+            (3, None, None)
+        );
     }
 
     #[test]

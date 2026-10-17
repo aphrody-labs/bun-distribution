@@ -81,7 +81,10 @@ fn texte_contenant<'a>(
     motif: &str,
 ) -> Option<(u32, &'a String)> {
     let m = motif.to_lowercase();
-    textes.iter().find(|(_, t)| t.to_lowercase().contains(&m)).map(|(h, t)| (*h, t))
+    textes
+        .iter()
+        .find(|(_, t)| t.to_lowercase().contains(&m))
+        .map(|(h, t)| (*h, t))
 }
 
 /// Trouve l'index de ligne dont un champ `Hash` vaut `cible`.
@@ -90,7 +93,9 @@ fn ligne_par_hash(data: &[u8], liste: &str, champ: &str, cible: u32) -> Option<u
     let listes = cfgbin::read_values(&rdbn, data);
     let l = listes.iter().find(|l| l.name == liste)?;
     l.rows.iter().position(|r| {
-        r.fields.iter().any(|(k, v)| k == champ && matches!(v, RdbnValue::Hash(h) if *h == cible))
+        r.fields
+            .iter()
+            .any(|(k, v)| k == champ && matches!(v, RdbnValue::Hash(h) if *h == cible))
     })
 }
 
@@ -116,11 +121,20 @@ fn traiter(
     a_blanc: bool,
 ) -> Result<(), String> {
     let chemin_mod = format!("{dir}/{chemin_vfs}");
-    let vanilla = vfs.read(chemin_vfs).map_err(|e| format!("vanilla illisible : {e}"))?;
+    let vanilla = vfs
+        .read(chemin_vfs)
+        .map_err(|e| format!("vanilla illisible : {e}"))?;
     let mut data = std::fs::read(&chemin_mod).map_err(|e| format!("{chemin_mod} : {e}"))?;
 
-    println!("\n╔═ {}", chemin_vfs.trim_start_matches("data/common/gamedata/"));
-    println!("║ vanilla  {} o  sha256 {}", vanilla.len(), &sha256(&vanilla)[..16]);
+    println!(
+        "\n╔═ {}",
+        chemin_vfs.trim_start_matches("data/common/gamedata/")
+    );
+    println!(
+        "║ vanilla  {} o  sha256 {}",
+        vanilla.len(),
+        &sha256(&vanilla)[..16]
+    );
 
     // Localiser d'abord : un offset invalide doit échouer avant d'écrire quoi que ce soit.
     let rdbn = cfgbin::parse(&data).map_err(|e| format!("RDBN illisible : {e}"))?;
@@ -141,14 +155,28 @@ fn traiter(
         .filter(|(_, (a, b))| a != b)
         .map(|(i, _)| i)
         .collect();
-    let attendus: Vec<usize> =
-        cibles.iter().flat_map(|(_, loc, _)| loc.offset..loc.offset + loc.size).collect();
-    let hors_cible: Vec<usize> = diffs.iter().copied().filter(|o| !attendus.contains(o)).collect();
+    let attendus: Vec<usize> = cibles
+        .iter()
+        .flat_map(|(_, loc, _)| loc.offset..loc.offset + loc.size)
+        .collect();
+    let hors_cible: Vec<usize> = diffs
+        .iter()
+        .copied()
+        .filter(|o| !attendus.contains(o))
+        .collect();
 
-    println!("║ patché   {} o  sha256 {}", data.len(), &sha256(&data)[..16]);
+    println!(
+        "║ patché   {} o  sha256 {}",
+        data.len(),
+        &sha256(&data)[..16]
+    );
     println!(
         "║ taille   {}  ({} → {})",
-        if verif.taille_preservee() { "PRÉSERVÉE" } else { "MODIFIÉE — anormal" },
+        if verif.taille_preservee() {
+            "PRÉSERVÉE"
+        } else {
+            "MODIFIÉE — anormal"
+        },
         verif.taille_avant,
         verif.taille_apres
     );
@@ -166,7 +194,10 @@ fn traiter(
     }
 
     if !hors_cible.is_empty() {
-        return Err(format!("{} octet(s) modifiés hors des champs visés", hors_cible.len()));
+        return Err(format!(
+            "{} octet(s) modifiés hors des champs visés",
+            hors_cible.len()
+        ));
     }
 
     if a_blanc {
@@ -192,7 +223,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
 
     // ── 1. Cap de niveau ──────────────────────────────────────────────────────────────────
@@ -275,9 +306,12 @@ fn main() {
     // ── 3. Archon Aphrodite Teita Tanji ───────────────────────────────────────────────────
     let f_pu = "data/common/gamedata/players_universe/players_universe_config_1.03.59.00.cfg.bin";
     let vanilla_pu = vfs.read(f_pu).expect("players_universe lisible");
-    let Some(ligne) =
-        ligne_par_hash(&vanilla_pu, "m_starSignCharaInfoList", "charaParamId", APHRODITE_PARAM_ID)
-    else {
+    let Some(ligne) = ligne_par_hash(
+        &vanilla_pu,
+        "m_starSignCharaInfoList",
+        "charaParamId",
+        APHRODITE_PARAM_ID,
+    ) else {
         eprintln!("charaParamId 0x{APHRODITE_PARAM_ID:08X} introuvable dans players_universe");
         std::process::exit(1);
     };
@@ -309,7 +343,12 @@ fn main() {
             valeur: Val::Bool(true),
         },
     ];
-    for boost in ["charaRateBoostA", "charaRateBoostB", "charaRateBoostC", "charaRateBoostD"] {
+    for boost in [
+        "charaRateBoostA",
+        "charaRateBoostB",
+        "charaRateBoostC",
+        "charaRateBoostD",
+    ] {
         modifs_pu.push(Modif {
             liste: "m_starSignCharaInfoList".into(),
             ligne,
@@ -319,8 +358,11 @@ fn main() {
     }
 
     let mut echecs = 0;
-    for (chemin, modifs) in [(f_level, &modifs_level), (f_story, &modifs_story), (f_pu, &modifs_pu)]
-    {
+    for (chemin, modifs) in [
+        (f_level, &modifs_level),
+        (f_story, &modifs_story),
+        (f_pu, &modifs_pu),
+    ] {
         if let Err(e) = traiter(&vfs, &dir, chemin, modifs, a_blanc) {
             eprintln!("║ ÉCHEC {chemin} : {e}");
             echecs += 1;

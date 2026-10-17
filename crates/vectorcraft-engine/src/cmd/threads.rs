@@ -48,7 +48,12 @@ pub fn specs() -> Vec<CommandSpec> {
 fn has_thread_selection(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
     let st = s.active().ok_or("no document open")?;
-    if st.selection.objects.iter().any(|id| st.doc.text_threads.iter().any(|t| t.contains(id))) {
+    if st
+        .selection
+        .objects
+        .iter()
+        .any(|id| st.doc.text_threads.iter().any(|t| t.contains(id)))
+    {
         Ok(())
     } else {
         Err("no threaded text selected".into())
@@ -68,11 +73,13 @@ pub(crate) fn reflow(before: &Document, doc: &mut Document) {
     let threads = std::mem::take(&mut doc.text_threads);
     let mut kept = vec![];
     for thread in threads {
-        let changed = thread.iter().any(|id| match (before.node(*id), doc.node(*id)) {
-            (Some(a), Some(b)) => !std::ptr::eq(a, b),
-            (None, None) => false,
-            _ => true,
-        });
+        let changed = thread
+            .iter()
+            .any(|id| match (before.node(*id), doc.node(*id)) {
+                (Some(a), Some(b)) => !std::ptr::eq(a, b),
+                (None, None) => false,
+                _ => true,
+            });
         // The story: live frames' runs, plus the text of frames deleted by this edit.
         let mut story: Vec<TextRun> = vec![];
         let mut sources: Vec<TextObject> = vec![];
@@ -108,16 +115,25 @@ pub(crate) fn reflow(before: &Document, doc: &mut Document) {
         if live.len() >= 2 {
             // Threaded frames keep their size: Auto Size is off for them (as in Illustrator).
             for id in &live {
-                if text_of(doc, *id).is_some_and(|t| t.area.fit == vectorcraft_doc::AreaFit::AutoHeight)
+                if text_of(doc, *id)
+                    .is_some_and(|t| t.area.fit == vectorcraft_doc::AreaFit::AutoHeight)
                     && let Some(NodeKind::Text(t)) = doc.node_mut(*id).map(|n| &mut n.kind)
                 {
                     t.area.fit = vectorcraft_doc::AreaFit::None;
                 }
             }
         }
-        let frames: Vec<TextObject> = live.iter().filter_map(|id| text_of(doc, *id).cloned()).collect();
+        let frames: Vec<TextObject> = live
+            .iter()
+            .filter_map(|id| text_of(doc, *id).cloned())
+            .collect();
         let refs: Vec<&TextObject> = frames.iter().collect();
-        let parts = vectorcraft_text::thread::distribute(vectorcraft_text::FontDb::global(), &refs, &story, &paras);
+        let parts = vectorcraft_text::thread::distribute(
+            vectorcraft_text::FontDb::global(),
+            &refs,
+            &story,
+            &paras,
+        );
         for (id, part) in live.iter().zip(parts) {
             if let Some(NodeKind::Text(t)) = doc.node_mut(*id).map(|n| &mut n.kind) {
                 let mut next = (**t).clone();
@@ -140,12 +156,16 @@ pub(crate) fn reflow(before: &Document, doc: &mut Document) {
 
 /// A closed path converted to an empty area-type frame with `style`.
 fn frame_from_path(n: &Node, style: vectorcraft_doc::CharStyle) -> Option<Node> {
-    let NodeKind::Path { path, .. } = &n.kind else { return None };
+    let NodeKind::Path { path, .. } = &n.kind else {
+        return None;
+    };
     if !path.subpaths.first().is_some_and(|s| s.closed) {
         return None;
     }
     let mut t = TextObject::point(vectorcraft_geom::Point::ZERO, "", style);
-    t.kind = TextKind::Area { frame: path.clone() };
+    t.kind = TextKind::Area {
+        frame: path.clone(),
+    };
     t.xf = vectorcraft_geom::Affine::IDENTITY;
     refresh_bounds(&mut t);
     Some(Node::new(n.id, NodeKind::Text(Box::new(t))))
@@ -155,17 +175,29 @@ fn create(s: &mut Session, _: &Value) -> Result<Value> {
     const C: &str = "text.thread.create";
     let ids = selected_roots(s)?;
     let d = &s.doc()?.doc;
-    let style = ids.iter().find_map(|i| text_of(d, *i)).map(|t| t.first_style()).unwrap_or_default();
-    let ok = ids.iter().all(|i| text_of(d, *i).is_some() || d.node(*i).is_some_and(|n| frame_from_path(n, style.clone()).is_some()));
+    let style = ids
+        .iter()
+        .find_map(|i| text_of(d, *i))
+        .map(|t| t.first_style())
+        .unwrap_or_default();
+    let ok = ids.iter().all(|i| {
+        text_of(d, *i).is_some()
+            || d.node(*i)
+                .is_some_and(|n| frame_from_path(n, style.clone()).is_some())
+    });
     if ids.len() < 2 || !ok || !ids.iter().any(|i| text_of(d, *i).is_some()) {
-        return Err(bad(C, "select area type and closed paths (at least one area type object)"));
+        return Err(bad(
+            C,
+            "select area type and closed paths (at least one area type object)",
+        ));
     }
     let out = ids.clone();
     s.edit("Thread Text", |d, _| {
         for id in &ids {
             if text_of(d, *id).is_none() {
                 let n = d.node(*id).cloned().ok_or(EngineError::NoNode(*id))?;
-                let f = frame_from_path(&n, style.clone()).ok_or_else(|| bad(C, "not a closed path"))?;
+                let f = frame_from_path(&n, style.clone())
+                    .ok_or_else(|| bad(C, "not a closed path"))?;
                 *d.node_mut(*id).ok_or(EngineError::NoNode(*id))? = f;
             }
         }
@@ -205,21 +237,30 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
     s.edit("Release Threaded Text", |d, _| {
         // The released frames' text joins the rest of the story (they become empty).
         for thread in d.text_threads.clone() {
-            let (out, keep): (Vec<NodeId>, Vec<NodeId>) = thread.iter().partition(|i| ids.contains(i));
+            let (out, keep): (Vec<NodeId>, Vec<NodeId>) =
+                thread.iter().partition(|i| ids.contains(i));
             if out.is_empty() {
                 continue;
             }
             let mut story: Vec<TextRun> = vec![];
-            let sources: Vec<TextObject> = thread.iter().filter_map(|id| text_of(d, *id).cloned()).collect();
+            let sources: Vec<TextObject> = thread
+                .iter()
+                .filter_map(|id| text_of(d, *id).cloned())
+                .collect();
             for t in &sources {
                 story.extend(t.runs.iter().cloned());
             }
-            let paras = vectorcraft_text::thread::story_paras(&sources.iter().collect::<Vec<_>>(), &[]);
+            let paras =
+                vectorcraft_text::thread::story_paras(&sources.iter().collect::<Vec<_>>(), &[]);
             let style = story.first().map(|r| r.style.clone()).unwrap_or_default();
             let first_para = paras.first().cloned().unwrap_or_default();
             for id in &out {
                 if let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) {
-                    t.runs = vec![TextRun { text: String::new(), style: style.clone(), inline: None }];
+                    t.runs = vec![TextRun {
+                        text: String::new(),
+                        style: style.clone(),
+                        inline: None,
+                    }];
                     t.set_all_paras(first_para.clone());
                     refresh_bounds(t);
                 }
@@ -231,7 +272,11 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
                 t.runs = story;
                 t.set_paragraph_styles(paras);
             }
-            let i = d.text_threads.iter().position(|t| *t == thread).unwrap_or(0);
+            let i = d
+                .text_threads
+                .iter()
+                .position(|t| *t == thread)
+                .unwrap_or(0);
             d.text_threads[i] = keep;
         }
         d.text_threads.retain(|t| t.len() >= 2);
@@ -243,7 +288,8 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
 fn remove(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
     s.edit("Remove Threading", |d, _| {
-        d.text_threads.retain(|t| !t.iter().any(|i| ids.contains(i)));
+        d.text_threads
+            .retain(|t| !t.iter().any(|i| ids.contains(i)));
         Ok(())
     })?;
     ok()
@@ -257,11 +303,19 @@ mod tests {
 
     fn setup() -> (Session, u64, u64) {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 600, "height": 300})).unwrap();
+        s.execute("file.new", &json!({"width": 600, "height": 300}))
+            .unwrap();
         let a = s.execute("text.create", &json!({"x": 10, "y": 10, "text": TEXT.repeat(4), "area": {"width": 150, "height": 60}})).unwrap()["id"]
             .as_u64()
             .unwrap();
-        let b = s.execute("shape.rectangle", &json!({"x": 200, "y": 10, "width": 150, "height": 200})).unwrap()["id"].as_u64().unwrap();
+        let b = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 200, "y": 10, "width": 150, "height": 200}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("select.set", &json!({"ids": [a, b]})).unwrap();
         (s, a, b)
     }
@@ -281,14 +335,24 @@ mod tests {
         assert!(!ta.is_empty() && !tb.is_empty());
         assert_eq!(format!("{ta}{tb}"), TEXT.repeat(4));
         // Editing the first frame re-flows into the second.
-        s.execute("text.editRange", &json!({"id": a, "start": 0, "end": 0, "insert": "NEW "})).unwrap();
-        assert_eq!(format!("{}{}", text(&s, a), text(&s, b)), format!("NEW {}", TEXT.repeat(4)));
+        s.execute(
+            "text.editRange",
+            &json!({"id": a, "start": 0, "end": 0, "insert": "NEW "}),
+        )
+        .unwrap();
+        assert_eq!(
+            format!("{}{}", text(&s, a), text(&s, b)),
+            format!("NEW {}", TEXT.repeat(4))
+        );
         assert_ne!(text(&s, b), tb, "the overflow moved on");
         // Deleting the first frame moves all its text into the second.
         s.execute("select.set", &json!({"ids": [a]})).unwrap();
         s.execute("edit.clear", &json!({})).unwrap();
         assert_eq!(text(&s, b), format!("NEW {}", TEXT.repeat(4)));
-        assert!(s.doc().unwrap().doc.text_threads.is_empty(), "a one-frame thread is no thread");
+        assert!(
+            s.doc().unwrap().doc.text_threads.is_empty(),
+            "a one-frame thread is no thread"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(s.doc().unwrap().doc.text_threads.len(), 1);
     }
@@ -304,8 +368,13 @@ mod tests {
         assert!(s.doc().unwrap().doc.text_threads.is_empty());
         s.execute("edit.undo", &json!({})).unwrap();
         s.execute("select.set", &json!({"ids": [b]})).unwrap();
-        s.execute("text.thread.releaseSelection", &json!({})).unwrap();
+        s.execute("text.thread.releaseSelection", &json!({}))
+            .unwrap();
         assert_eq!(text(&s, b), "");
-        assert_eq!(text(&s, a), TEXT.repeat(4), "the story returns to the remaining frame");
+        assert_eq!(
+            text(&s, a),
+            TEXT.repeat(4),
+            "the story returns to the remaining frame"
+        );
     }
 }

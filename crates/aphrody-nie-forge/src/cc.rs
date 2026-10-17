@@ -87,7 +87,11 @@ pub fn parse_annotations(src: &str) -> anyhow::Result<Vec<Annotated>> {
                     i + 1
                 )
             })?;
-        out.push(Annotated { va, symbol: sym, line: i + 1 });
+        out.push(Annotated {
+            va,
+            symbol: sym,
+            line: i + 1,
+        });
     }
     Ok(out)
 }
@@ -116,7 +120,15 @@ pub fn find_cl(explicit: Option<&Path>) -> anyhow::Result<PathBuf> {
         PathBuf::from(r"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe");
     if vswhere.is_file()
         && let Ok(out) = std::process::Command::new(&vswhere)
-            .args(["-all", "-products", "*", "-format", "value", "-property", "installationPath"])
+            .args([
+                "-all",
+                "-products",
+                "*",
+                "-format",
+                "value",
+                "-property",
+                "installationPath",
+            ])
             .output()
         && out.status.success()
     {
@@ -136,7 +148,12 @@ pub fn find_cl(explicit: Option<&Path>) -> anyhow::Result<PathBuf> {
             continue;
         };
         for e in rd.flatten() {
-            let cl = e.path().join("bin").join("Hostx64").join("x64").join("cl.exe");
+            let cl = e
+                .path()
+                .join("bin")
+                .join("Hostx64")
+                .join("x64")
+                .join("cl.exe");
             if cl.is_file() {
                 found.push(cl);
             }
@@ -148,7 +165,10 @@ pub fn find_cl(explicit: Option<&Path>) -> anyhow::Result<PathBuf> {
         );
     }
     found.sort();
-    let preferred = found.iter().find(|p| p.to_string_lossy().contains("14.44")).cloned();
+    let preferred = found
+        .iter()
+        .find(|p| p.to_string_lossy().contains("14.44"))
+        .cloned();
     Ok(preferred.unwrap_or_else(|| found[0].clone()))
 }
 
@@ -176,8 +196,10 @@ pub fn cl_version(cl: &Path) -> String {
 /// Retourne une erreur si `cl.exe` échoue, en propageant sa sortie.
 pub fn compile(cl: &Path, src: &Path, out_dir: &Path, flags: &[String]) -> anyhow::Result<PathBuf> {
     std::fs::create_dir_all(out_dir)?;
-    let stem =
-        src.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "unite".into());
+    let stem = src
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "unite".into());
     let obj = out_dir.join(format!("{stem}.obj"));
 
     let mut cmd = std::process::Command::new(cl);
@@ -195,7 +217,9 @@ pub fn compile(cl: &Path, src: &Path, out_dir: &Path, flags: &[String]) -> anyho
     cmd.arg(&src_abs);
     cmd.current_dir(out_dir);
 
-    let out = cmd.output().with_context(|| format!("exécution de {}", cl.display()))?;
+    let out = cmd
+        .output()
+        .with_context(|| format!("exécution de {}", cl.display()))?;
     if !out.status.success() {
         bail!(
             "cl.exe a échoué sur {} :\n{}{}",
@@ -265,7 +289,10 @@ void *ret_this_140057350(void *p)
         // Les changer sans re-valider casserait toutes les correspondances.
         let f = default_flags();
         for expected in ["/c", "/O2", "/GS-", "/Gy", "/Zl"] {
-            assert!(f.iter().any(|x| x == expected), "flag manquant : {expected}");
+            assert!(
+                f.iter().any(|x| x == expected),
+                "flag manquant : {expected}"
+            );
         }
     }
 }

@@ -82,13 +82,20 @@ pub fn pick(model: &Model, ray: &Ray) -> Option<Hit> {
     let mut nearest: Option<Hit> = None;
     for (primitive_index, primitive) in model.primitives.iter().enumerate() {
         for (triangle, corners) in primitive.indices.as_chunks::<3>().0.iter().enumerate() {
-            let (ia, ib, ic) = (corners[0] as usize, corners[1] as usize, corners[2] as usize);
+            let (ia, ib, ic) = (
+                corners[0] as usize,
+                corners[1] as usize,
+                corners[2] as usize,
+            );
             let count = primitive.positions.len();
             if ia >= count || ib >= count || ic >= count {
                 continue;
             }
-            let (a, b, c) =
-                (primitive.positions[ia], primitive.positions[ib], primitive.positions[ic]);
+            let (a, b, c) = (
+                primitive.positions[ia],
+                primitive.positions[ib],
+                primitive.positions[ic],
+            );
             let Some(distance) = ray_triangle(ray, a, b, c) else {
                 continue;
             };
@@ -144,7 +151,12 @@ pub fn orbital_basis(center: V3, radius: f32, yaw: f32, pitch: f32, distance: f3
     let forward = crate::vecmath::normv(sub(center, eye));
     let right = crate::vecmath::normv(cross(forward, [0.0, 1.0, 0.0]));
     let up = cross(right, forward);
-    OrbitalBasis { eye, forward, right, up }
+    OrbitalBasis {
+        eye,
+        forward,
+        right,
+        up,
+    }
 }
 
 /// The world-space ray through pixel `(x, y)` for the ORBITAL camera the GPU path uses.
@@ -171,7 +183,10 @@ pub fn ray_for_pixel_orbital(basis: &OrbitalBasis, x: f32, y: f32, w: u32, h: u3
     let direction = std::array::from_fn(|k| {
         basis.right[k].mul_add(across, basis.up[k].mul_add(upwards, basis.forward[k]))
     });
-    Ray { origin: basis.eye, direction }
+    Ray {
+        origin: basis.eye,
+        direction,
+    }
 }
 
 /// The world-space ray through pixel `(x, y)` of a `w`×`h` image of `model` seen at `angle`.
@@ -185,8 +200,13 @@ pub fn ray_for_pixel_orbital(basis: &OrbitalBasis, x: f32, y: f32, w: u32, h: u3
 #[must_use]
 pub fn ray_for_pixel(model: &Model, angle: f32, x: f32, y: f32, w: u32, h: u32) -> Ray {
     let (center, radius) = crate::render::bounds(model);
-    let basis =
-        orbital_basis(center, radius, -angle, crate::render::TILT, crate::render::DISTANCE_CAMERA);
+    let basis = orbital_basis(
+        center,
+        radius,
+        -angle,
+        crate::render::TILT,
+        crate::render::DISTANCE_CAMERA,
+    );
     ray_for_pixel_orbital(&basis, x, y, w, h)
 }
 
@@ -197,7 +217,12 @@ mod tests {
 
     fn quad(z: f32, texture: Option<usize>) -> Primitive {
         Primitive {
-            positions: vec![[-1.0, -1.0, z], [1.0, -1.0, z], [1.0, 1.0, z], [-1.0, 1.0, z]],
+            positions: vec![
+                [-1.0, -1.0, z],
+                [1.0, -1.0, z],
+                [1.0, 1.0, z],
+                [-1.0, 1.0, z],
+            ],
             normals: vec![[0.0, 0.0, 1.0]; 4],
             uv: vec![[0.0, 0.0]; 4],
             indices: vec![0, 1, 2, 0, 2, 3],
@@ -207,14 +232,20 @@ mod tests {
 
     #[test]
     fn un_rayon_traverse_le_triangle_a_la_bonne_distance() {
-        let ray = Ray { origin: [0.0, 0.0, 5.0], direction: [0.0, 0.0, -1.0] };
+        let ray = Ray {
+            origin: [0.0, 0.0, 5.0],
+            direction: [0.0, 0.0, -1.0],
+        };
         let distance = ray_triangle(&ray, [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0], [1.0, 1.0, 0.0]);
         assert!((distance.unwrap() - 5.0).abs() < 1e-5);
     }
 
     #[test]
     fn un_rayon_a_cote_ne_touche_rien() {
-        let ray = Ray { origin: [4.0, 4.0, 5.0], direction: [0.0, 0.0, -1.0] };
+        let ray = Ray {
+            origin: [4.0, 4.0, 5.0],
+            direction: [0.0, 0.0, -1.0],
+        };
         assert!(ray_triangle(&ray, [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0], [1.0, 1.0, 0.0]).is_none());
     }
 
@@ -222,20 +253,32 @@ mod tests {
     fn une_face_arriere_compte_aussi() {
         // Même triangle, parcouru dans l'autre sens : le rastériseur CPU l'écarterait, le
         // viewport GPU le dessine, donc la sélection doit l'atteindre.
-        let ray = Ray { origin: [0.0, 0.0, 5.0], direction: [0.0, 0.0, -1.0] };
+        let ray = Ray {
+            origin: [0.0, 0.0, 5.0],
+            direction: [0.0, 0.0, -1.0],
+        };
         assert!(ray_triangle(&ray, [1.0, 1.0, 0.0], [1.0, -1.0, 0.0], [-1.0, -1.0, 0.0]).is_some());
     }
 
     #[test]
     fn un_triangle_degenere_ne_touche_rien() {
-        let ray = Ray { origin: [0.0, 0.0, 5.0], direction: [0.0, 0.0, -1.0] };
+        let ray = Ray {
+            origin: [0.0, 0.0, 5.0],
+            direction: [0.0, 0.0, -1.0],
+        };
         assert!(ray_triangle(&ray, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]).is_none());
     }
 
     #[test]
     fn ce_qui_est_devant_gagne() {
-        let model = Model { primitives: vec![quad(0.0, None), quad(2.0, None)], textures: vec![] };
-        let ray = Ray { origin: [0.0, 0.0, 5.0], direction: [0.0, 0.0, -1.0] };
+        let model = Model {
+            primitives: vec![quad(0.0, None), quad(2.0, None)],
+            textures: vec![],
+        };
+        let ray = Ray {
+            origin: [0.0, 0.0, 5.0],
+            direction: [0.0, 0.0, -1.0],
+        };
         let hit = pick(&model, &ray).unwrap();
         assert_eq!(hit.primitive, 1);
         assert!((hit.distance - 3.0).abs() < 1e-5);
@@ -246,8 +289,14 @@ mod tests {
     fn un_indice_hors_bornes_est_saute_comme_au_rendu() {
         let mut primitive = quad(0.0, None);
         primitive.indices = vec![0, 1, 99];
-        let model = Model { primitives: vec![primitive], textures: vec![] };
-        let ray = Ray { origin: [0.0, 0.0, 5.0], direction: [0.0, 0.0, -1.0] };
+        let model = Model {
+            primitives: vec![primitive],
+            textures: vec![],
+        };
+        let ray = Ray {
+            origin: [0.0, 0.0, 5.0],
+            direction: [0.0, 0.0, -1.0],
+        };
         assert!(pick(&model, &ray).is_none());
     }
 
@@ -260,7 +309,10 @@ mod tests {
         // rastériseur écarte les faces arrière, et le test mesurerait alors une image vide.
         let mut back = quad(0.0, None);
         back.indices = vec![2, 1, 0, 3, 2, 0];
-        let model = Model { primitives: vec![quad(0.0, None), back], textures: vec![] };
+        let model = Model {
+            primitives: vec![quad(0.0, None), back],
+            textures: vec![],
+        };
         let (w, h) = (64, 48);
         for angle in [0.0_f32, 0.7, -1.3, 2.9] {
             let pixels = crate::render::render(&model, angle, w, h);
@@ -281,7 +333,10 @@ mod tests {
                     }
                 }
             }
-            assert!(peints > 50, "angle {angle} ne dessine presque rien : {peints}");
+            assert!(
+                peints > 50,
+                "angle {angle} ne dessine presque rien : {peints}"
+            );
             // Le rastériseur écarte les faces arrière, la sélection non : tout pixel peint doit
             // être touchable. On tolère le liseré d'anticrénelage du bord.
             assert!(
@@ -307,7 +362,10 @@ mod tests {
 
     #[test]
     fn le_pixel_central_vise_le_centre_du_modele() {
-        let model = Model { primitives: vec![quad(0.0, None)], textures: vec![] };
+        let model = Model {
+            primitives: vec![quad(0.0, None)],
+            textures: vec![],
+        };
         let (center, radius) = crate::render::bounds(&model);
         for (yaw, pitch) in [(0.0_f32, 0.0_f32), (1.1, 0.3), (-2.4, -0.5)] {
             let basis = orbital_basis(center, radius, yaw, pitch, 3.1);
@@ -340,7 +398,10 @@ mod tests {
         // Viewport NON carré, exprès : une erreur d'aspect est invisible en 1:1, et c'est
         // exactement l'écart mesuré entre les deux projections de ce dépôt.
         let (w, h) = (160u32, 90u32);
-        let model = Model { primitives: vec![quad(0.0, None)], textures: vec![] };
+        let model = Model {
+            primitives: vec![quad(0.0, None)],
+            textures: vec![],
+        };
         let (center, radius) = crate::render::bounds(&model);
         for (yaw, pitch) in [(0.0_f32, 0.0_f32), (0.6, 0.2), (-1.2, 0.4), (2.5, -0.3)] {
             let basis = orbital_basis(center, radius, yaw, pitch, 3.1);
@@ -360,7 +421,10 @@ mod tests {
 
     #[test]
     fn un_pixel_du_fond_ne_touche_rien() {
-        let model = Model { primitives: vec![quad(0.0, None)], textures: vec![] };
+        let model = Model {
+            primitives: vec![quad(0.0, None)],
+            textures: vec![],
+        };
         let ray = ray_for_pixel(&model, 0.0, 1.0, 1.0, 64, 48);
         assert!(pick(&model, &ray).is_none());
     }

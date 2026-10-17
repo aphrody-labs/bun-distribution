@@ -9,11 +9,10 @@ use wgpu::ErrorSource;
 pub use wgpu_types::error::ErrorType;
 
 use crate::{
-    insert_future_resources,
+    FutureRenderResources, RenderStartup, insert_future_resources,
     render_resource::PipelineCache,
-    renderer::{wgpu_wrapper, RenderDevice},
+    renderer::{RenderDevice, wgpu_wrapper},
     settings::RenderCreation,
-    FutureRenderResources, RenderStartup,
 };
 
 /// Resource to indicate renderer behavior upon error.

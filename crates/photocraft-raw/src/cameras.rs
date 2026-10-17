@@ -25,10 +25,18 @@
 use crate::color::{Calibration, ColorInfo, IDENTITY, Mat3};
 use crate::sensor::{Rect, Sensor};
 
-const D4_FORWARD: Mat3 = [[0.639454, 0.260359, 0.0643991], [0.273094, 0.796492, -0.0695779], [0.00965321, -0.131427, 0.94699]];
+const D4_FORWARD: Mat3 = [
+    [0.639454, 0.260359, 0.0643991],
+    [0.273094, 0.796492, -0.0695779],
+    [0.00965321, -0.131427, 0.94699],
+];
 /// A third of the 0.1th percentile of the luminance, as Camera Raw renders D4 NEFs by default.
 const D4_BLACK_POINT: f32 = 0.33;
-const D4_COLOR: Mat3 = [[0.895936, -0.218092, -0.185988], [-1.09736, 2.06898, -0.0131889], [-0.26977, 0.393884, 0.687829]];
+const D4_COLOR: Mat3 = [
+    [0.895936, -0.218092, -0.185988],
+    [-1.09736, 2.06898, -0.0131889],
+    [-0.26977, 0.393884, 0.687829],
+];
 const D4_TONE: [[f32; 2]; 53] = [
     [0.00012207031, 7.44377e-05],
     [0.00014516688, 8.44049e-05],
@@ -137,30 +145,60 @@ struct ImageArea {
 }
 
 const IMAGE_AREAS: &[ImageArea] = &[
-    ImageArea { make: "NIKON CORPORATION", model: "NIKON D5100", size: (4992, 3280), crop: (8, 8, 4928, 3264) },
-    ImageArea { make: "NIKON CORPORATION", model: "NIKON D800E", size: (7424, 4924), crop: (8, 6, 7360, 4912) },
-    ImageArea { make: "SONY", model: "ILCE-7", size: (6048, 4024), crop: (12, 12, 6000, 4000) },
+    ImageArea {
+        make: "NIKON CORPORATION",
+        model: "NIKON D5100",
+        size: (4992, 3280),
+        crop: (8, 8, 4928, 3264),
+    },
+    ImageArea {
+        make: "NIKON CORPORATION",
+        model: "NIKON D800E",
+        size: (7424, 4924),
+        crop: (8, 6, 7360, 4912),
+    },
+    ImageArea {
+        make: "SONY",
+        model: "ILCE-7",
+        size: (6048, 4024),
+        crop: (12, 12, 6000, 4000),
+    },
 ];
 
 /// Applies the measured profile of the camera that made `s`, when there is one,
 /// and its measured image area when the profile is not measured yet.
 pub(crate) fn apply(s: &mut Sensor) {
-    let (Some(make), Some(model)) = (s.make.as_deref(), s.model.as_deref()) else { return };
+    let (Some(make), Some(model)) = (s.make.as_deref(), s.model.as_deref()) else {
+        return;
+    };
     let (make, model) = (make.trim(), model.trim());
-    if let Some(a) = IMAGE_AREAS.iter().find(|a| a.make == make && a.model == model && a.size == (s.width, s.height) && s.crop == s.active) {
+    if let Some(a) = IMAGE_AREAS.iter().find(|a| {
+        a.make == make && a.model == model && a.size == (s.width, s.height) && s.crop == s.active
+    }) {
         let (x, y, w, h) = a.crop;
         s.crop = Rect::new(x, y, w, h);
     }
-    let Some(p) = PROFILES.iter().find(|p| make == p.make && model == p.model && (s.width, s.height) == p.size) else { return };
+    let Some(p) = PROFILES
+        .iter()
+        .find(|p| make == p.make && model == p.model && (s.width, s.height) == p.size)
+    else {
+        return;
+    };
     let (x, y, w, h) = p.crop;
     s.crop = Rect::new(x, y, w, h);
     s.white = [p.white; 3];
     if p.black_zero {
-        s.warnings.retain(|w| !w.contains("black level not recorded"));
+        s.warnings
+            .retain(|w| !w.contains("black level not recorded"));
     }
     s.color = ColorInfo {
         // D50 daylight: the matrices are consistent at the camera's daylight neutral.
-        calibrations: vec![Calibration { temperature: 5003.0, color_matrix: p.color, forward_matrix: Some(p.forward), camera_calibration: IDENTITY }],
+        calibrations: vec![Calibration {
+            temperature: 5003.0,
+            color_matrix: p.color,
+            forward_matrix: Some(p.forward),
+            camera_calibration: IDENTITY,
+        }],
         ..ColorInfo::default()
     };
     s.tone_curve = p.tone.to_vec();
@@ -214,7 +252,11 @@ mod tests {
         assert_eq!(s.color.calibrations[0].forward_matrix, Some(D4_FORWARD));
         assert_eq!(s.tone_curve.len(), D4_TONE.len());
         assert_eq!(s.black_point, D4_BLACK_POINT);
-        assert!(s.warnings.is_empty(), "the D4's black level is known: {:?}", s.warnings);
+        assert!(
+            s.warnings.is_empty(),
+            "the D4's black level is known: {:?}",
+            s.warnings
+        );
         // The profile gives a colour conversion for the as-shot white balance.
         assert!(s.color.balanced_to_xyz_d50([0.5, 1.0, 0.7]).is_some());
     }
@@ -267,11 +309,19 @@ mod tests {
 
     #[test]
     fn other_cameras_and_sizes_are_left_alone() {
-        for (model, w, h) in [("NIKON D4S", 4992, 3292), ("NIKON D4", 2496, 1646), ("NIKON D800", 7424, 4924)] {
+        for (model, w, h) in [
+            ("NIKON D4S", 4992, 3292),
+            ("NIKON D4", 2496, 1646),
+            ("NIKON D800", 7424, 4924),
+        ] {
             let mut s = nef(model, w, h);
             apply(&mut s);
             assert_eq!(s.crop, Rect::new(0, 0, w, h), "{model} {w}x{h}");
-            assert!(s.tone_curve.is_empty() && s.color.calibrations.is_empty() && s.white == [16383.0; 3]);
+            assert!(
+                s.tone_curve.is_empty()
+                    && s.color.calibrations.is_empty()
+                    && s.white == [16383.0; 3]
+            );
             assert_eq!(s.warnings.len(), 1);
         }
     }
@@ -279,8 +329,18 @@ mod tests {
     #[test]
     fn d4_forward_matrix_maps_neutral_to_d50_and_curve_reaches_white() {
         let n = mat_apply(&D4_FORWARD, [1.0; 3]);
-        assert!((n[0] - 0.9642).abs() < 1e-3 && (n[1] - 1.0).abs() < 1e-3 && (n[2] - 0.8252).abs() < 1e-3, "{n:?}");
-        assert!(D4_TONE.windows(2).all(|w| w[1][0] > w[0][0] && w[1][1] >= w[0][1]), "increasing");
+        assert!(
+            (n[0] - 0.9642).abs() < 1e-3
+                && (n[1] - 1.0).abs() < 1e-3
+                && (n[2] - 0.8252).abs() < 1e-3,
+            "{n:?}"
+        );
+        assert!(
+            D4_TONE
+                .windows(2)
+                .all(|w| w[1][0] > w[0][0] && w[1][1] >= w[0][1]),
+            "increasing"
+        );
         assert_eq!(D4_TONE.last().map(|p| (p[0], p[1])), Some((1.0, 1.0)));
     }
 }

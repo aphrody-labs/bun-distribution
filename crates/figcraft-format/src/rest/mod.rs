@@ -41,7 +41,8 @@ use std::sync::Arc;
 use figcraft_doc::geom::{Affine, BezPath, Rect, Shape};
 use figcraft_doc::proto::Flow;
 use figcraft_doc::{
-    BoolOp, Document, ImageData, LayoutMode, Node, NodeId, NodeKind, PropDef, Style, StyleKind, VariableType, VectorNetwork, WindingRule,
+    BoolOp, Document, ImageData, LayoutMode, Node, NodeId, NodeKind, PropDef, Style, StyleKind,
+    VariableType, VectorNetwork, WindingRule,
 };
 use serde_json::Value;
 
@@ -106,13 +107,20 @@ pub fn read_variables(v: &Value) -> Option<(figcraft_doc::Variables, Vec<String>
 
 /// Import `bytes` when they are REST API file JSON; `None` when they are something else (the
 /// caller then tries its other formats).
-pub fn try_import(bytes: &[u8], images: ImageResolver) -> Option<Result<(Document, Vec<String>), FormatError>> {
+pub fn try_import(
+    bytes: &[u8],
+    images: ImageResolver,
+) -> Option<Result<(Document, Vec<String>), FormatError>> {
     try_import_with(bytes, None, images)
 }
 
 /// [`try_import`] with the local variables response (or its `meta`) for the file, when the file
 /// JSON doesn't embed it.
-pub fn try_import_with(bytes: &[u8], variables: Option<&Value>, images: ImageResolver) -> Option<Result<(Document, Vec<String>), FormatError>> {
+pub fn try_import_with(
+    bytes: &[u8],
+    variables: Option<&Value>,
+    images: ImageResolver,
+) -> Option<Result<(Document, Vec<String>), FormatError>> {
     let start = bytes.iter().position(|b| !b.is_ascii_whitespace())?;
     if bytes.get(start) != Some(&b'{') {
         return None;
@@ -124,7 +132,9 @@ pub fn try_import_with(bytes: &[u8], variables: Option<&Value>, images: ImageRes
     match serde_json::from_str::<Value>(src) {
         Ok(v) => is_rest_json(&v).then(|| import_with(&v, variables, images)),
         // Broken JSON that names a DOCUMENT root: report it as such.
-        Err(e) => src.contains("\"DOCUMENT\"").then(|| Err(FormatError::Corrupt(format!("REST API file JSON: {e}")))),
+        Err(e) => src
+            .contains("\"DOCUMENT\"")
+            .then(|| Err(FormatError::Corrupt(format!("REST API file JSON: {e}")))),
     }
 }
 
@@ -137,12 +147,24 @@ pub fn import(v: &Value, images: ImageResolver) -> Result<(Document, Vec<String>
 /// [`import`] with the local variables response (or its `meta`) for the file. Variables embedded
 /// in the file JSON (a `meta` with `variableCollections`, or `variableCollections` and
 /// `variables` at the top level) are read too; the first definition of an id wins.
-pub fn import_with(v: &Value, variables: Option<&Value>, images: ImageResolver) -> Result<(Document, Vec<String>), FormatError> {
-    let entries: Vec<&Value> = if is_document(v) { vec![v] } else { nodes_entries(v).collect() };
+pub fn import_with(
+    v: &Value,
+    variables: Option<&Value>,
+    images: ImageResolver,
+) -> Result<(Document, Vec<String>), FormatError> {
+    let entries: Vec<&Value> = if is_document(v) {
+        vec![v]
+    } else {
+        nodes_entries(v).collect()
+    };
     if entries.is_empty() {
-        return Err(FormatError::Corrupt("not a REST API file JSON (no `document`)".into()));
+        return Err(FormatError::Corrupt(
+            "not a REST API file JSON (no `document`)".into(),
+        ));
     }
-    let name = text(v, "name").filter(|n| !n.trim().is_empty()).map_or("Imported file", clip_str);
+    let name = text(v, "name")
+        .filter(|n| !n.trim().is_empty())
+        .map_or("Imported file", clip_str);
     let mut cx = Ctx::new(Document::new(name), images);
     let blank = cx.doc.first_page();
     let mut loose: Option<NodeId> = None;
@@ -150,7 +172,10 @@ pub fn import_with(v: &Value, variables: Option<&Value>, images: ImageResolver) 
         cx.collect_meta(e);
     }
     // Variables first: layers link to them as they are built.
-    for src in [variables::source(v), variables.and_then(variables::source)].into_iter().flatten() {
+    for src in [variables::source(v), variables.and_then(variables::source)]
+        .into_iter()
+        .flatten()
+    {
         cx.variables(src);
     }
     if variables.is_some_and(|x| variables::source(x).is_none()) {
@@ -158,7 +183,9 @@ pub fn import_with(v: &Value, variables: Option<&Value>, images: ImageResolver) 
     }
     cx.style_definitions(v);
     for e in entries {
-        let Some(root) = e.get("document") else { continue };
+        let Some(root) = e.get("document") else {
+            continue;
+        };
         match text(root, "type") {
             Some("DOCUMENT") => {
                 for c in children(root) {
@@ -197,12 +224,16 @@ pub fn import_with(v: &Value, variables: Option<&Value>, images: ImageResolver) 
 fn style_binding(slot: &str, key: &str) -> Option<String> {
     let paints = |rest: &str| format!("fills/{rest}");
     match (slot, key) {
-        ("fill", "fill" | "fills" | "fills/0") | ("stroke", "stroke") => Some("fills/0/color".into()),
+        ("fill", "fill" | "fills" | "fills/0") | ("stroke", "stroke") => {
+            Some("fills/0/color".into())
+        }
         ("fill", k) => k.strip_prefix("fills/").map(paints),
         ("stroke", k) => k.strip_prefix("strokes/").map(paints),
         ("effect", k) if k.starts_with("effects/") => Some(k.into()),
         ("grid", k) if k.starts_with("layoutGrids/") => Some(k.into()),
-        ("text", "fontSize" | "lineHeight" | "letterSpacing" | "fontFamily" | "fontStyle") => Some(key.into()),
+        ("text", "fontSize" | "lineHeight" | "letterSpacing" | "fontFamily" | "fontStyle") => {
+            Some(key.into())
+        }
         _ => None,
     }
 }
@@ -218,7 +249,9 @@ fn restore_stroke(n: &mut Node, original: &Value) {
         strokes: Vec<figcraft_doc::color::Paint>,
         stroke: figcraft_doc::StrokeProps,
     }
-    let Ok(mut o) = serde_json::from_value::<Original>(original.clone()) else { return };
+    let Ok(mut o) = serde_json::from_value::<Original>(original.clone()) else {
+        return;
+    };
     match &mut o.kind {
         NodeKind::Vector { network } => {
             if network.vertices.len() + network.segments.len() > MAX_PATH_ELEMENTS {
@@ -226,7 +259,11 @@ fn restore_stroke(n: &mut Node, original: &Value) {
             }
             network.sanitize();
         }
-        NodeKind::Line | NodeKind::Ellipse { .. } | NodeKind::Polygon { .. } | NodeKind::Star { .. } | NodeKind::Rectangle => {}
+        NodeKind::Line
+        | NodeKind::Ellipse { .. }
+        | NodeKind::Polygon { .. }
+        | NodeKind::Star { .. }
+        | NodeKind::Rectangle => {}
         _ => return,
     }
     let sp = &mut o.stroke;
@@ -240,7 +277,10 @@ fn restore_stroke(n: &mut Node, original: &Value) {
 }
 
 fn children(v: &Value) -> &[Value] {
-    v.get("children").and_then(Value::as_array).map(Vec::as_slice).unwrap_or_default()
+    v.get("children")
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or_default()
 }
 
 /// Distinct warnings in first-seen order, with repeat counts.
@@ -263,7 +303,10 @@ impl Warnings {
     }
 
     fn finish(self) -> Vec<String> {
-        self.list.into_iter().map(|(m, n)| if n > 1 { format!("{m} (×{n})") } else { m }).collect()
+        self.list
+            .into_iter()
+            .map(|(m, n)| if n > 1 { format!("{m} (×{n})") } else { m })
+            .collect()
     }
 }
 
@@ -277,7 +320,10 @@ struct Space {
 
 impl Default for Space {
     fn default() -> Self {
-        Self { world: Affine::IDENTITY, frame: Affine::IDENTITY }
+        Self {
+            world: Affine::IDENTITY,
+            frame: Affine::IDENTITY,
+        }
     }
 }
 
@@ -340,7 +386,11 @@ impl<'a> Ctx<'a> {
     }
 
     fn collect_meta(&mut self, e: &'a Value) {
-        for (key, into) in [("components", &mut self.component_meta), ("componentSets", &mut self.set_meta), ("styles", &mut self.style_meta)] {
+        for (key, into) in [
+            ("components", &mut self.component_meta),
+            ("componentSets", &mut self.set_meta),
+            ("styles", &mut self.style_meta),
+        ] {
             for (k, v) in e.get(key).and_then(Value::as_object).into_iter().flatten() {
                 into.entry(k.as_str()).or_insert(v);
             }
@@ -355,18 +405,24 @@ impl<'a> Ctx<'a> {
             n.var_modes = modes;
         }
         if let Some(bg) = c.get("backgroundColor").and_then(props::color)
-            && let Some(NodeKind::Page { background, .. }) = self.doc.node_mut(page).map(|n| &mut n.kind)
+            && let Some(NodeKind::Page { background, .. }) =
+                self.doc.node_mut(page).map(|n| &mut n.kind)
         {
             *background = bg;
         }
         if let Some(s) = proto::page_settings(c)
-            && let Some(NodeKind::Page { prototype, .. }) = self.doc.node_mut(page).map(|n| &mut n.kind)
+            && let Some(NodeKind::Page { prototype, .. }) =
+                self.doc.node_mut(page).map(|n| &mut n.kind)
         {
             *prototype = s;
         }
         for f in list(c, "flowStartingPoints") {
             if let Some(start) = text(f, "nodeId") {
-                self.flows.push((page, clip_str(text(f, "name").unwrap_or("Flow")).to_string(), start.to_string()));
+                self.flows.push((
+                    page,
+                    clip_str(text(f, "name").unwrap_or("Flow")).to_string(),
+                    start.to_string(),
+                ));
             }
         }
         // The deprecated single starting frame, for files without flows.
@@ -382,13 +438,25 @@ impl<'a> Ctx<'a> {
 
     /// Import layer `j` (and its subtree) under `parent`. `root_abs`: place it by its absolute
     /// bounds (roots of a nodes response, whose parent isn't in the file).
-    fn build(&mut self, j: &'a Value, parent: NodeId, space: Space, parent_mode: Option<LayoutMode>, depth: usize, root_abs: bool) {
+    fn build(
+        &mut self,
+        j: &'a Value,
+        parent: NodeId,
+        space: Space,
+        parent_mode: Option<LayoutMode>,
+        depth: usize,
+        root_abs: bool,
+    ) {
         if depth > MAX_DEPTH {
-            self.warn(format!("layers nested deeper than {MAX_DEPTH} levels were skipped"));
+            self.warn(format!(
+                "layers nested deeper than {MAX_DEPTH} levels were skipped"
+            ));
             return;
         }
         if self.count >= MAX_NODES {
-            self.warn(format!("the file has more than {MAX_NODES} layers; the rest were skipped"));
+            self.warn(format!(
+                "the file has more than {MAX_NODES} layers; the rest were skipped"
+            ));
             return;
         }
         let Some(ty) = text(j, "type") else {
@@ -396,7 +464,10 @@ impl<'a> Ctx<'a> {
             return;
         };
         let Some(kind) = self.kind(ty, j) else {
-            self.warn(format!("{} layers are not supported and were skipped", clip_str(ty)));
+            self.warn(format!(
+                "{} layers are not supported and were skipped",
+                clip_str(ty)
+            ));
             return;
         };
         let (world, w, h) = self.placement(j, space, root_abs);
@@ -405,7 +476,11 @@ impl<'a> Ctx<'a> {
         let mut n = Node::new(id, kind, text(j, "name").map_or(label, clip_str), w, h);
         n.transform = local(space.world, world);
         self.common(&mut n, j, parent_mode);
-        let (container, follows, mode) = (n.kind.is_container(), n.kind.bounds_follow_children(), n.layout.as_ref().map(|l| l.mode));
+        let (container, follows, mode) = (
+            n.kind.is_container(),
+            n.kind.bounds_follow_children(),
+            n.layout.as_ref().map(|l| l.mode),
+        );
         if self.doc.insert(n, parent, None).is_err() {
             return;
         }
@@ -424,7 +499,10 @@ impl<'a> Ctx<'a> {
             self.warn(format!("children of {} layers were skipped", clip_str(ty)));
             return;
         }
-        let inner = Space { world, frame: if follows { space.frame } else { world } };
+        let inner = Space {
+            world,
+            frame: if follows { space.frame } else { world },
+        };
         for c in kids {
             self.build(c, id, inner, mode, depth + 1, false);
         }
@@ -434,31 +512,51 @@ impl<'a> Ctx<'a> {
     }
 
     fn kind(&mut self, ty: &str, j: &'a Value) -> Option<NodeKind> {
-        let point_count = || num(j, "pointCount").filter(|c| *c >= 3.0).map(|c| c.min(1000.0) as u32);
-        let has_geometry = !list(j, "fillGeometry").is_empty() || !list(j, "strokeGeometry").is_empty();
+        let point_count = || {
+            num(j, "pointCount")
+                .filter(|c| *c >= 3.0)
+                .map(|c| c.min(1000.0) as u32)
+        };
+        let has_geometry =
+            !list(j, "fillGeometry").is_empty() || !list(j, "strokeGeometry").is_empty();
         Some(match ty {
             // Instances start as frames; `finish` links them to their main.
             "FRAME" | "INSTANCE" => NodeKind::Frame,
             "GROUP" => NodeKind::Group,
-            "SECTION" => NodeKind::Section { contents_hidden: flag(j, "sectionContentsHidden").unwrap_or(false) },
+            "SECTION" => NodeKind::Section {
+                contents_hidden: flag(j, "sectionContentsHidden").unwrap_or(false),
+            },
             "RECTANGLE" => NodeKind::Rectangle,
             "LINE" => NodeKind::Line,
             "ELLIPSE" => {
                 let a = j.get("arcData");
                 let arc = |k: &str| a.and_then(|a| num(a, k));
                 let start = arc("startingAngle").unwrap_or(0.0).clamp(-1e3, 1e3);
-                let end = arc("endingAngle").map_or(start + std::f64::consts::TAU, |e| e.clamp(-1e3, 1e3));
+                let end = arc("endingAngle")
+                    .map_or(start + std::f64::consts::TAU, |e| e.clamp(-1e3, 1e3));
                 let tau = std::f64::consts::TAU;
-                NodeKind::Ellipse { start, sweep: (end - start).clamp(-tau, tau), inner: arc("innerRadius").unwrap_or(0.0).clamp(0.0, 1.0) }
+                NodeKind::Ellipse {
+                    start,
+                    sweep: (end - start).clamp(-tau, tau),
+                    inner: arc("innerRadius").unwrap_or(0.0).clamp(0.0, 1.0),
+                }
             }
             // Point counts aren't part of the documented JSON: the outline is exact when present.
-            "REGULAR_POLYGON" | "STAR" if point_count().is_none() && has_geometry => NodeKind::Vector { network: VectorNetwork::default() },
-            "REGULAR_POLYGON" => NodeKind::Polygon { count: point_count().unwrap_or_else(|| self.default_count(3)) },
+            "REGULAR_POLYGON" | "STAR" if point_count().is_none() && has_geometry => {
+                NodeKind::Vector {
+                    network: VectorNetwork::default(),
+                }
+            }
+            "REGULAR_POLYGON" => NodeKind::Polygon {
+                count: point_count().unwrap_or_else(|| self.default_count(3)),
+            },
             "STAR" => NodeKind::Star {
                 count: point_count().unwrap_or_else(|| self.default_count(5)),
                 inner_ratio: num(j, "innerRadius").map_or(0.382, |r| r.clamp(0.01, 1.0)),
             },
-            "VECTOR" => NodeKind::Vector { network: VectorNetwork::default() },
+            "VECTOR" => NodeKind::Vector {
+                network: VectorNetwork::default(),
+            },
             "BOOLEAN_OPERATION" => NodeKind::BooleanOp {
                 op: match text(j, "booleanOperation") {
                     Some("SUBTRACT") => BoolOp::Subtract,
@@ -468,15 +566,22 @@ impl<'a> Ctx<'a> {
                 },
             },
             "TEXT" => NodeKind::Text(text::text_data(self, j)),
-            "COMPONENT" => NodeKind::Component { description: description(&self.component_meta, j), props: BTreeMap::new() },
-            "COMPONENT_SET" => NodeKind::ComponentSet { description: description(&self.set_meta, j) },
+            "COMPONENT" => NodeKind::Component {
+                description: description(&self.component_meta, j),
+                props: BTreeMap::new(),
+            },
+            "COMPONENT_SET" => NodeKind::ComponentSet {
+                description: description(&self.set_meta, j),
+            },
             "SLICE" => NodeKind::Slice,
             _ => return None,
         })
     }
 
     fn default_count(&mut self, count: u32) -> u32 {
-        self.warn("stars and polygons without point counts or geometry use the default point count");
+        self.warn(
+            "stars and polygons without point counts or geometry use the default point count",
+        );
         count
     }
 
@@ -492,7 +597,11 @@ impl<'a> Ctx<'a> {
             .unwrap_or((0.0, 0.0));
         let box_rect = Rect::new(0.0, 0.0, w, h);
         // Rotation is counter-clockwise on screen (y down), about the box centre.
-        let from_bbox = |b: Rect| Affine::translate(b.center().to_vec2()) * Affine::rotate(-rot) * Affine::translate((-w / 2.0, -h / 2.0));
+        let from_bbox = |b: Rect| {
+            Affine::translate(b.center().to_vec2())
+                * Affine::rotate(-rot)
+                * Affine::translate((-w / 2.0, -h / 2.0))
+        };
         let world = match (j.get("relativeTransform").and_then(props::transform), bbox) {
             (Some(_), Some(b)) if root_abs => from_bbox(b),
             (Some(rel), Some(b)) => {
@@ -500,7 +609,10 @@ impl<'a> Ctx<'a> {
                 // absolute bounds settle which space the file used.
                 let err = |xf: Affine| {
                     let r = figcraft_doc::geom::transform_rect_bbox(xf, box_rect);
-                    (r.x0 - b.x0).abs() + (r.y0 - b.y0).abs() + (r.x1 - b.x1).abs() + (r.y1 - b.y1).abs()
+                    (r.x0 - b.x0).abs()
+                        + (r.y0 - b.y0).abs()
+                        + (r.x1 - b.x1).abs()
+                        + (r.y1 - b.y1).abs()
                 };
                 let (a, c) = (space.frame * rel, space.world * rel);
                 if err(c) < err(a) { c } else { a }
@@ -553,15 +665,26 @@ impl<'a> Ctx<'a> {
         }
         n.child_layout = props::child_layout(j, n.layout.as_ref().map(|l| l.mode), parent_mode);
         n.exports = props::export_settings(j);
-        for (field, prop) in j.get("componentPropertyReferences").and_then(Value::as_object).into_iter().flatten() {
-            if let (Some(p), true) = (prop.as_str(), matches!(field.as_str(), "visible" | "characters" | "mainComponent")) {
+        for (field, prop) in j
+            .get("componentPropertyReferences")
+            .and_then(Value::as_object)
+            .into_iter()
+            .flatten()
+        {
+            if let (Some(p), true) = (
+                prop.as_str(),
+                matches!(field.as_str(), "visible" | "characters" | "mainComponent"),
+            ) {
                 n.prop_refs.insert(field.clone(), p.to_string());
             }
         }
         if matches!(n.kind, NodeKind::Vector { .. }) {
             self.vector(n, j);
         }
-        if matches!(n.kind, NodeKind::Component { .. } | NodeKind::ComponentSet { .. }) {
+        if matches!(
+            n.kind,
+            NodeKind::Component { .. } | NodeKind::ComponentSet { .. }
+        ) {
             let defs = self.prop_defs(n.id, j);
             match &mut n.kind {
                 NodeKind::Component { props, .. } => *props = defs,
@@ -572,11 +695,19 @@ impl<'a> Ctx<'a> {
         }
         self.link_styles(n, j);
         proto::scrolling(n, j);
-        if !list(j, "interactions").is_empty() || j.get("transitionNodeID").is_some_and(Value::is_string) {
+        if !list(j, "interactions").is_empty()
+            || j.get("transitionNodeID").is_some_and(Value::is_string)
+        {
             self.protos.push((n.id, j));
         }
         if let Some(rid) = text(j, "id")
-            && ["overlayPositionType", "overlayBackground", "overlayBackgroundInteraction"].iter().any(|k| j.get(k).is_some())
+            && [
+                "overlayPositionType",
+                "overlayBackground",
+                "overlayBackgroundInteraction",
+            ]
+            .iter()
+            .any(|k| j.get(k).is_some())
         {
             self.overlay_meta.entry(rid).or_insert(j);
         }
@@ -608,7 +739,9 @@ impl<'a> Ctx<'a> {
             (Some(f), _) => (f, false),
             (None, Some(s)) => (s, true),
             (None, None) => {
-                self.warn("vectors without geometry are empty (export the file JSON with geometry=paths)");
+                self.warn(
+                    "vectors without geometry are empty (export the file JSON with geometry=paths)",
+                );
                 return;
             }
         };
@@ -633,8 +766,15 @@ impl<'a> Ctx<'a> {
                 continue;
             }
             match BezPath::from_svg(d) {
-                Ok(bp) if sane(&bp) && out.elements().len() + bp.elements().len() <= MAX_PATH_ELEMENTS => {
-                    winding.get_or_insert(if text(p, "windingRule") == Some("EVENODD") { WindingRule::EvenOdd } else { WindingRule::NonZero });
+                Ok(bp)
+                    if sane(&bp)
+                        && out.elements().len() + bp.elements().len() <= MAX_PATH_ELEMENTS =>
+                {
+                    winding.get_or_insert(if text(p, "windingRule") == Some("EVENODD") {
+                        WindingRule::EvenOdd
+                    } else {
+                        WindingRule::NonZero
+                    });
                     out.extend(bp);
                 }
                 _ => self.warn("invalid or oversized vector path data was skipped"),
@@ -646,14 +786,25 @@ impl<'a> Ctx<'a> {
     /// Component property definitions (variant ones are implied by the variant names).
     fn prop_defs(&mut self, owner: NodeId, j: &Value) -> BTreeMap<String, PropDef> {
         let mut out = BTreeMap::new();
-        for (name, d) in j.get("componentPropertyDefinitions").and_then(Value::as_object).into_iter().flatten().take(256) {
+        for (name, d) in j
+            .get("componentPropertyDefinitions")
+            .and_then(Value::as_object)
+            .into_iter()
+            .flatten()
+            .take(256)
+        {
             let default = d.get("defaultValue");
             let def = match text(d, "type") {
-                Some("BOOLEAN") => PropDef::Boolean { default: default.and_then(bool_of).unwrap_or(true) },
-                Some("TEXT") => PropDef::Text { default: default.and_then(Value::as_str).unwrap_or("").to_string() },
+                Some("BOOLEAN") => PropDef::Boolean {
+                    default: default.and_then(bool_of).unwrap_or(true),
+                },
+                Some("TEXT") => PropDef::Text {
+                    default: default.and_then(Value::as_str).unwrap_or("").to_string(),
+                },
                 Some("INSTANCE_SWAP") => {
                     if let Some(r) = default.and_then(Value::as_str) {
-                        self.swap_defaults.push((owner, name.clone(), r.to_string()));
+                        self.swap_defaults
+                            .push((owner, name.clone(), r.to_string()));
                     }
                     continue;
                 }
@@ -673,19 +824,36 @@ impl<'a> Ctx<'a> {
     /// the file's order. Layers then link to them; styles that no layer uses come across too.
     fn style_definitions(&mut self, v: &'a Value) {
         for d in list(v, "styleDefinitions").iter().take(MAX_STYLES) {
-            let (Some(id), Some(node)) = (text(d, "id").filter(|i| !i.is_empty()).map(clip_str), d.get("node")) else { continue };
+            let (Some(id), Some(node)) = (
+                text(d, "id").filter(|i| !i.is_empty()).map(clip_str),
+                d.get("node"),
+            ) else {
+                continue;
+            };
             if self.doc.styles.iter().any(|s| s.id == id) {
                 continue;
             }
             let kind = match text(d, "styleType") {
-                Some("FILL") => StyleKind::Paint { paints: props::paints(self, node, "fills").unwrap_or_default() },
-                Some("EFFECT") => StyleKind::Effect { effects: props::effects(self, node) },
-                Some("GRID") => StyleKind::Grid { grids: props::layout_grids(node) },
-                Some("TEXT") => StyleKind::Text { style: text::text_data(self, node).style.as_text_style() },
+                Some("FILL") => StyleKind::Paint {
+                    paints: props::paints(self, node, "fills").unwrap_or_default(),
+                },
+                Some("EFFECT") => StyleKind::Effect {
+                    effects: props::effects(self, node),
+                },
+                Some("GRID") => StyleKind::Grid {
+                    grids: props::layout_grids(node),
+                },
+                Some("TEXT") => StyleKind::Text {
+                    style: text::text_data(self, node).style.as_text_style(),
+                },
                 _ => continue,
             };
-            let name = text(d, "name").filter(|s| !s.is_empty()).map_or_else(|| format!("Style {id}"), |s| clip_str(s).to_string());
-            let description = text(d, "description").map(|s| clip_str(s).to_string()).unwrap_or_default();
+            let name = text(d, "name")
+                .filter(|s| !s.is_empty())
+                .map_or_else(|| format!("Style {id}"), |s| clip_str(s).to_string());
+            let description = text(d, "description")
+                .map(|s| clip_str(s).to_string())
+                .unwrap_or_default();
             // The sample layer's variable bindings on what the style holds are the style's.
             let mut sample = Node::new(NodeId(0), NodeKind::Rectangle, "", 0.0, 0.0);
             let slot = match &kind {
@@ -708,22 +876,64 @@ impl<'a> Ctx<'a> {
                 }
             };
             self.bindings(&mut sample, node);
-            let bound = sample.bound.iter().filter_map(|(k, v)| Some((style_binding(slot, k)?, v.clone()))).collect();
-            self.doc.styles.push(Style { id: id.to_string(), name, description, kind, bound });
+            let bound = sample
+                .bound
+                .iter()
+                .filter_map(|(k, v)| Some((style_binding(slot, k)?, v.clone())))
+                .collect();
+            self.doc.styles.push(Style {
+                id: id.to_string(),
+                name,
+                description,
+                kind,
+                bound,
+            });
         }
     }
 
     /// Shared styles the layer uses: the metadata names them, the layer supplies the values.
     fn link_styles(&mut self, n: &mut Node, j: &Value) {
-        for (slot, sid) in j.get("styles").and_then(Value::as_object).into_iter().flatten() {
-            let Some(sid) = sid.as_str().map(clip_str) else { continue };
+        for (slot, sid) in j
+            .get("styles")
+            .and_then(Value::as_object)
+            .into_iter()
+            .flatten()
+        {
+            let Some(sid) = sid.as_str().map(clip_str) else {
+                continue;
+            };
             let (kind, target) = match slot.as_str() {
-                "fill" | "fills" => (StyleKind::Paint { paints: n.fills.clone() }, &mut n.styles.fill),
-                "stroke" | "strokes" => (StyleKind::Paint { paints: n.strokes.clone() }, &mut n.styles.stroke),
-                "effect" | "effects" => (StyleKind::Effect { effects: n.effects.clone() }, &mut n.styles.effect),
-                "grid" | "grids" => (StyleKind::Grid { grids: n.grids.clone() }, &mut n.styles.grid),
+                "fill" | "fills" => (
+                    StyleKind::Paint {
+                        paints: n.fills.clone(),
+                    },
+                    &mut n.styles.fill,
+                ),
+                "stroke" | "strokes" => (
+                    StyleKind::Paint {
+                        paints: n.strokes.clone(),
+                    },
+                    &mut n.styles.stroke,
+                ),
+                "effect" | "effects" => (
+                    StyleKind::Effect {
+                        effects: n.effects.clone(),
+                    },
+                    &mut n.styles.effect,
+                ),
+                "grid" | "grids" => (
+                    StyleKind::Grid {
+                        grids: n.grids.clone(),
+                    },
+                    &mut n.styles.grid,
+                ),
                 "text" => match &n.kind {
-                    NodeKind::Text(t) => (StyleKind::Text { style: t.style.as_text_style() }, &mut n.styles.text),
+                    NodeKind::Text(t) => (
+                        StyleKind::Text {
+                            style: t.style.as_text_style(),
+                        },
+                        &mut n.styles.text,
+                    ),
                     _ => continue,
                 },
                 _ => continue,
@@ -733,10 +943,21 @@ impl<'a> Ctx<'a> {
                 continue;
             }
             let meta = self.style_meta.get(sid);
-            let name =
-                meta.and_then(|m| text(m, "name")).filter(|s| !s.is_empty()).map_or_else(|| format!("Style {sid}"), |s| clip_str(s).to_string());
-            let description = meta.and_then(|m| text(m, "description")).map(|s| clip_str(s).to_string()).unwrap_or_default();
-            self.doc.styles.push(Style { id: sid.to_string(), name, description, kind, bound: BTreeMap::new() });
+            let name = meta
+                .and_then(|m| text(m, "name"))
+                .filter(|s| !s.is_empty())
+                .map_or_else(|| format!("Style {sid}"), |s| clip_str(s).to_string());
+            let description = meta
+                .and_then(|m| text(m, "description"))
+                .map(|s| clip_str(s).to_string())
+                .unwrap_or_default();
+            self.doc.styles.push(Style {
+                id: sid.to_string(),
+                name,
+                description,
+                kind,
+                bound: BTreeMap::new(),
+            });
         }
     }
 
@@ -744,19 +965,40 @@ impl<'a> Ctx<'a> {
     /// without bindings of its own takes them from the first layer that has some, and the layers
     /// keep none on those fields (the style gives them their values, each in its own modes).
     fn styles_take_bindings(&mut self) {
-        let ids: Vec<NodeId> = self.doc.nodes().filter(|n| !n.styles.is_empty() && !n.bound.is_empty()).map(|n| n.id).collect();
+        let ids: Vec<NodeId> = self
+            .doc
+            .nodes()
+            .filter(|n| !n.styles.is_empty() && !n.bound.is_empty())
+            .map(|n| n.id)
+            .collect();
         for id in ids {
-            let Some((refs, bound)) = self.doc.node(id).map(|n| (n.styles.clone(), n.bound.clone())) else { continue };
+            let Some((refs, bound)) = self
+                .doc
+                .node(id)
+                .map(|n| (n.styles.clone(), n.bound.clone()))
+            else {
+                continue;
+            };
             let mut moved: Vec<String> = Vec::new();
-            for (slot, sid) in [("fill", refs.fill), ("stroke", refs.stroke), ("effect", refs.effect), ("grid", refs.grid), ("text", refs.text)] {
+            for (slot, sid) in [
+                ("fill", refs.fill),
+                ("stroke", refs.stroke),
+                ("effect", refs.effect),
+                ("grid", refs.grid),
+                ("text", refs.text),
+            ] {
                 let Some(sid) = sid else { continue };
-                let found: Vec<(String, String, String)> =
-                    bound.iter().filter_map(|(k, v)| Some((k.clone(), style_binding(slot, k)?, v.clone()))).collect();
+                let found: Vec<(String, String, String)> = bound
+                    .iter()
+                    .filter_map(|(k, v)| Some((k.clone(), style_binding(slot, k)?, v.clone())))
+                    .collect();
                 if found.is_empty() {
                     continue;
                 }
                 // A style that has bindings already keeps them: only what agrees leaves the layer.
-                let Some(st) = self.doc.styles.iter_mut().find(|s| s.id == sid) else { continue };
+                let Some(st) = self.doc.styles.iter_mut().find(|s| s.id == sid) else {
+                    continue;
+                };
                 let takes = st.bound.is_empty();
                 for (key, style_key, var) in found {
                     if takes {
@@ -781,16 +1023,32 @@ impl<'a> Ctx<'a> {
         if let Some(k) = self.image_keys.get(image_ref) {
             return k.clone();
         }
-        let resolved = if image_ref.is_empty() { None } else { (self.images)(image_ref) };
+        let resolved = if image_ref.is_empty() {
+            None
+        } else {
+            (self.images)(image_ref)
+        };
         let key = match resolved.and_then(|b| crate::add_image(&mut self.doc, b).ok()) {
             Some((hash, _, _)) => hash,
             None => {
                 self.missing_images += 1;
-                let key = if image_ref.is_empty() { MISSING_IMAGE } else { clip_str(image_ref) }.to_string();
+                let key = if image_ref.is_empty() {
+                    MISSING_IMAGE
+                } else {
+                    clip_str(image_ref)
+                }
+                .to_string();
                 if !self.doc.images.contains_key(&key)
                     && let Some(png) = placeholder_png()
                 {
-                    self.doc.images.insert(key.clone(), ImageData { bytes: Arc::new(png), width: PLACEHOLDER_SIDE, height: PLACEHOLDER_SIDE });
+                    self.doc.images.insert(
+                        key.clone(),
+                        ImageData {
+                            bytes: Arc::new(png),
+                            width: PLACEHOLDER_SIDE,
+                            height: PLACEHOLDER_SIDE,
+                        },
+                    );
                 }
                 key
             }
@@ -800,12 +1058,17 @@ impl<'a> Ctx<'a> {
     }
 
     fn is_component(&self, id: NodeId) -> bool {
-        self.doc.node(id).is_some_and(|n| matches!(n.kind, NodeKind::Component { .. }))
+        self.doc
+            .node(id)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Component { .. }))
     }
 
     /// The component a REST id names, if it is in the file.
     fn component(&self, rest_id: &str) -> Option<NodeId> {
-        self.ids.get(rest_id).copied().filter(|c| self.is_component(*c))
+        self.ids
+            .get(rest_id)
+            .copied()
+            .filter(|c| self.is_component(*c))
     }
 
     /// Cross-references that need every layer imported first.
@@ -813,8 +1076,15 @@ impl<'a> Ctx<'a> {
         self.resolve_swap_defaults();
         // Variants share their set's property definitions.
         for (set, defs) in std::mem::take(&mut self.set_defs) {
-            for v in self.doc.node(set).map(|s| s.children.clone()).unwrap_or_default() {
-                if let Some(NodeKind::Component { props, .. }) = self.doc.node_mut(v).map(|n| &mut n.kind) {
+            for v in self
+                .doc
+                .node(set)
+                .map(|s| s.children.clone())
+                .unwrap_or_default()
+            {
+                if let Some(NodeKind::Component { props, .. }) =
+                    self.doc.node_mut(v).map(|n| &mut n.kind)
+                {
                     for (k, d) in &defs {
                         props.entry(k.clone()).or_insert_with(|| d.clone());
                     }
@@ -830,11 +1100,18 @@ impl<'a> Ctx<'a> {
             }
         }
         for (page, name, start) in std::mem::take(&mut self.flows) {
-            let Some(&id) = self.ids.get(&start) else { continue };
+            let Some(&id) = self.ids.get(&start) else {
+                continue;
+            };
             if self.doc.page_of(id) == Some(page)
-                && let Some(NodeKind::Page { flows, .. }) = self.doc.node_mut(page).map(|n| &mut n.kind)
+                && let Some(NodeKind::Page { flows, .. }) =
+                    self.doc.node_mut(page).map(|n| &mut n.kind)
             {
-                flows.push(Flow { name, start: id, description: String::new() });
+                flows.push(Flow {
+                    name,
+                    start: id,
+                    description: String::new(),
+                });
             }
         }
         if self.missing_images > 0 {
@@ -844,9 +1121,17 @@ impl<'a> Ctx<'a> {
                 "{n} image{s} without image data {verb} a grey placeholder named by its imageRef (put the downloaded images, named by imageRef, in an `images` folder next to the JSON)"
             ));
         }
-        let unused = self.style_meta.keys().filter(|k| !self.doc.styles.iter().any(|s| s.id == **k)).count();
+        let unused = self
+            .style_meta
+            .keys()
+            .filter(|k| !self.doc.styles.iter().any(|s| s.id == **k))
+            .count();
         if unused > 0 {
-            let (s, verb) = if unused == 1 { ("", "was") } else { ("s", "were") };
+            let (s, verb) = if unused == 1 {
+                ("", "was")
+            } else {
+                ("s", "were")
+            };
             self.warn(format!("{unused} style{s} that no layer uses {verb} skipped (the file JSON carries style values only on layers)"));
         }
     }
@@ -857,10 +1142,15 @@ impl<'a> Ctx<'a> {
                 self.warn("instance swap properties whose default component isn't in the file were skipped");
                 continue;
             };
-            let def = PropDef::InstanceSwap { default: c, preferred: Vec::new() };
+            let def = PropDef::InstanceSwap {
+                default: c,
+                preferred: Vec::new(),
+            };
             if let Some(defs) = self.set_defs.get_mut(&owner) {
                 defs.insert(name, def);
-            } else if let Some(NodeKind::Component { props, .. }) = self.doc.node_mut(owner).map(|n| &mut n.kind) {
+            } else if let Some(NodeKind::Component { props, .. }) =
+                self.doc.node_mut(owner).map(|n| &mut n.kind)
+            {
                 props.insert(name, def);
             }
         }
@@ -873,13 +1163,20 @@ impl<'a> Ctx<'a> {
         let mut links: Vec<(NodeId, NodeId, &'a Value)> = Vec::new();
         for (inst, j) in std::mem::take(&mut self.instances) {
             match text(j, "componentId").and_then(|r| self.component(r)) {
-                None => self.warn("instances of components that aren't in the file were imported as frames"),
-                Some(c) if self.doc.is_ancestor(c, inst) => self.warn("instances inside their own main component were imported as frames"),
+                None => self.warn(
+                    "instances of components that aren't in the file were imported as frames",
+                ),
+                Some(c) if self.doc.is_ancestor(c, inst) => {
+                    self.warn("instances inside their own main component were imported as frames")
+                }
                 Some(c) => links.push((inst, c, j)),
             }
         }
         let owner = |doc: &Document, id: NodeId| {
-            doc.ancestors(id).into_iter().find(|a| doc.node(*a).is_some_and(|n| matches!(n.kind, NodeKind::Component { .. })))
+            doc.ancestors(id).into_iter().find(|a| {
+                doc.node(*a)
+                    .is_some_and(|n| matches!(n.kind, NodeKind::Component { .. }))
+            })
         };
         let mut uses: BTreeMap<NodeId, BTreeSet<NodeId>> = BTreeMap::new();
         for (inst, c, _) in &links {
@@ -890,23 +1187,34 @@ impl<'a> Ctx<'a> {
         let mut linked = Vec::new();
         for (inst, c, j) in links {
             if owner(&self.doc, inst).is_some_and(|o| reaches(&uses, c, o)) {
-                self.warn("instances that would nest a component inside itself were imported as frames");
+                self.warn(
+                    "instances that would nest a component inside itself were imported as frames",
+                );
                 continue;
             }
             let props = self.instance_props(j);
             if let Some(n) = self.doc.node_mut(inst) {
-                n.kind = NodeKind::Instance { component: c, props };
+                n.kind = NodeKind::Instance {
+                    component: c,
+                    props,
+                };
                 linked.push((inst, j));
             }
         }
         // Overridden fields the file lists, on the instance and its layers.
         for (inst, j) in linked {
             for o in list(j, "overrides") {
-                let Some(&id) = text(o, "id").and_then(|r| self.ids.get(r)) else { continue };
+                let Some(&id) = text(o, "id").and_then(|r| self.ids.get(r)) else {
+                    continue;
+                };
                 if !(id == inst || self.doc.is_ancestor(inst, id)) {
                     continue;
                 }
-                let groups: Vec<&'static str> = list(o, "overriddenFields").iter().filter_map(Value::as_str).filter_map(override_group).collect();
+                let groups: Vec<&'static str> = list(o, "overriddenFields")
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .filter_map(override_group)
+                    .collect();
                 if let Some(n) = self.doc.node_mut(id) {
                     n.overrides.extend(groups.into_iter().map(str::to_string));
                 }
@@ -917,12 +1225,23 @@ impl<'a> Ctx<'a> {
     /// An instance's property values (variant values are implied by the main it shows).
     fn instance_props(&self, j: &Value) -> BTreeMap<String, Value> {
         let mut out = BTreeMap::new();
-        for (name, p) in j.get("componentProperties").and_then(Value::as_object).into_iter().flatten().take(256) {
+        for (name, p) in j
+            .get("componentProperties")
+            .and_then(Value::as_object)
+            .into_iter()
+            .flatten()
+            .take(256)
+        {
             let value = p.get("value");
             let v = match text(p, "type") {
                 Some("BOOLEAN") => value.and_then(bool_of).map(Value::Bool),
-                Some("TEXT") => value.and_then(Value::as_str).map(|s| Value::String(s.to_string())),
-                Some("INSTANCE_SWAP") => value.and_then(Value::as_str).and_then(|r| self.component(r)).map(|c| Value::from(c.0)),
+                Some("TEXT") => value
+                    .and_then(Value::as_str)
+                    .map(|s| Value::String(s.to_string())),
+                Some("INSTANCE_SWAP") => value
+                    .and_then(Value::as_str)
+                    .and_then(|r| self.component(r))
+                    .map(|c| Value::from(c.0)),
                 _ => None,
             };
             if let Some(v) = v {
@@ -944,13 +1263,21 @@ impl<'a> Ctx<'a> {
                 _ => Vec::new(),
             };
             for k in keys.into_iter().chain(n.prop_refs.values()) {
-                by_short.entry(short_prop_name(k).to_string()).or_default().insert(k.clone());
+                by_short
+                    .entry(short_prop_name(k).to_string())
+                    .or_default()
+                    .insert(k.clone());
             }
         }
         let rename: BTreeMap<String, String> = by_short
             .into_iter()
             .filter(|(_, raws)| raws.len() == 1)
-            .filter_map(|(short, raws)| raws.into_iter().next().filter(|r| *r != short).map(|r| (r, short)))
+            .filter_map(|(short, raws)| {
+                raws.into_iter()
+                    .next()
+                    .filter(|r| *r != short)
+                    .map(|r| (r, short))
+            })
             .collect();
         if rename.is_empty() {
             return;
@@ -960,20 +1287,36 @@ impl<'a> Ctx<'a> {
             let Some(n) = self.doc.node(id) else { continue };
             let touches = n.prop_refs.values().any(|v| rename.contains_key(v))
                 || match &n.kind {
-                    NodeKind::Component { props, .. } => props.keys().any(|k| rename.contains_key(k)),
-                    NodeKind::Instance { props, .. } => props.keys().any(|k| rename.contains_key(k)),
+                    NodeKind::Component { props, .. } => {
+                        props.keys().any(|k| rename.contains_key(k))
+                    }
+                    NodeKind::Instance { props, .. } => {
+                        props.keys().any(|k| rename.contains_key(k))
+                    }
                     _ => false,
                 };
             if !touches {
                 continue;
             }
-            let Some(n) = self.doc.node_mut(id) else { continue };
+            let Some(n) = self.doc.node_mut(id) else {
+                continue;
+            };
             for v in n.prop_refs.values_mut() {
                 *v = re(v);
             }
             match &mut n.kind {
-                NodeKind::Component { props, .. } => *props = std::mem::take(props).into_iter().map(|(k, d)| (re(&k), d)).collect(),
-                NodeKind::Instance { props, .. } => *props = std::mem::take(props).into_iter().map(|(k, d)| (re(&k), d)).collect(),
+                NodeKind::Component { props, .. } => {
+                    *props = std::mem::take(props)
+                        .into_iter()
+                        .map(|(k, d)| (re(&k), d))
+                        .collect()
+                }
+                NodeKind::Instance { props, .. } => {
+                    *props = std::mem::take(props)
+                        .into_iter()
+                        .map(|(k, d)| (re(&k), d))
+                        .collect()
+                }
                 _ => {}
             }
         }
@@ -983,7 +1326,13 @@ impl<'a> Ctx<'a> {
 /// "Label#12:3" → "Label".
 fn short_prop_name(raw: &str) -> &str {
     match raw.rsplit_once('#') {
-        Some((name, id)) if !name.is_empty() && !id.is_empty() && id.chars().all(|c| c.is_ascii_digit() || c == ':') => name,
+        Some((name, id))
+            if !name.is_empty()
+                && !id.is_empty()
+                && id.chars().all(|c| c.is_ascii_digit() || c == ':') =>
+        {
+            name
+        }
         _ => raw,
     }
 }
@@ -1055,7 +1404,8 @@ fn override_group(field: &str) -> Option<&'static str> {
         | "textDecorationSkipInk"
         | "textDecorationColor" => "textStyle",
         "width" | "height" | "size" => "size",
-        "paddingLeft" | "paddingRight" | "paddingTop" | "paddingBottom" | "horizontalPadding" | "verticalPadding" => "padding",
+        "paddingLeft" | "paddingRight" | "paddingTop" | "paddingBottom" | "horizontalPadding"
+        | "verticalPadding" => "padding",
         "itemSpacing" | "counterAxisSpacing" => "gap",
         "primaryAxisAlignItems" | "counterAxisAlignItems" => "alignment",
         "layoutGrids" | "gridStyleId" => "grids",
@@ -1074,13 +1424,23 @@ fn bool_of(v: &Value) -> Option<bool> {
 }
 
 fn description(meta: &BTreeMap<&str, &Value>, j: &Value) -> String {
-    text(j, "id").and_then(|id| meta.get(id)).and_then(|m| text(m, "description")).map(|d| clip_str(d).to_string()).unwrap_or_default()
+    text(j, "id")
+        .and_then(|id| meta.get(id))
+        .and_then(|m| text(m, "description"))
+        .map(|d| clip_str(d).to_string())
+        .unwrap_or_default()
 }
 
 /// `{x, y, width, height}`.
 fn rect(v: &Value) -> Option<Rect> {
-    let (x, y) = (num(v, "x")?.clamp(-MAX_COORD, MAX_COORD), num(v, "y")?.clamp(-MAX_COORD, MAX_COORD));
-    let (w, h) = (num(v, "width")?.clamp(0.0, MAX_SIZE), num(v, "height")?.clamp(0.0, MAX_SIZE));
+    let (x, y) = (
+        num(v, "x")?.clamp(-MAX_COORD, MAX_COORD),
+        num(v, "y")?.clamp(-MAX_COORD, MAX_COORD),
+    );
+    let (w, h) = (
+        num(v, "width")?.clamp(0.0, MAX_SIZE),
+        num(v, "height")?.clamp(0.0, MAX_SIZE),
+    );
     Some(Rect::new(x, y, x + w, y + h))
 }
 
@@ -1104,8 +1464,16 @@ fn unrotated_size(b: Rect, rot: f64) -> (f64, f64) {
 
 /// `world` expressed in the space whose page transform is `parent`.
 fn local(parent: Affine, world: Affine) -> Affine {
-    let l = if parent.determinant().abs() > 1e-12 { parent.inverse() * world } else { Affine::translate(world.translation() - parent.translation()) };
-    if l.as_coeffs().iter().all(|c| c.is_finite()) { l } else { Affine::IDENTITY }
+    let l = if parent.determinant().abs() > 1e-12 {
+        parent.inverse() * world
+    } else {
+        Affine::translate(world.translation() - parent.translation())
+    };
+    if l.as_coeffs().iter().all(|c| c.is_finite()) {
+        l
+    } else {
+        Affine::IDENTITY
+    }
 }
 
 /// Finite path data within the coordinate cap.
@@ -1113,11 +1481,22 @@ fn local(parent: Affine, world: Affine) -> Affine {
 fn network(v: &Value) -> Option<VectorNetwork> {
     use serde::Deserialize;
     let mut net = VectorNetwork::deserialize(v).ok()?;
-    let entries: usize = net.regions.iter().flat_map(|r| &r.loops).map(Vec::len).sum();
+    let entries: usize = net
+        .regions
+        .iter()
+        .flat_map(|r| &r.loops)
+        .map(Vec::len)
+        .sum();
     let coord = |x: f64| x.is_finite() && x.abs() <= MAX_COORD;
     let fits = net.vertices.len() + net.segments.len() + entries <= MAX_PATH_ELEMENTS
-        && net.vertices.iter().all(|p| coord(p.x) && coord(p.y) && coord(p.radius))
-        && net.segments.iter().all(|s| [s.ta.0, s.ta.1, s.tb.0, s.tb.1].into_iter().all(coord));
+        && net
+            .vertices
+            .iter()
+            .all(|p| coord(p.x) && coord(p.y) && coord(p.radius))
+        && net
+            .segments
+            .iter()
+            .all(|s| [s.ta.0, s.ta.1, s.tb.0, s.tb.1].into_iter().all(coord));
     if !fits {
         return None;
     }
@@ -1130,7 +1509,9 @@ fn network(v: &Value) -> Option<VectorNetwork> {
 
 fn sane(p: &BezPath) -> bool {
     let b = p.bounding_box();
-    [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD)
+    [b.x0, b.y0, b.x1, b.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= MAX_COORD)
 }
 
 /// Side of the placeholder image (large enough that scaling it up stays flat).
@@ -1138,8 +1519,13 @@ const PLACEHOLDER_SIDE: u32 = 64;
 
 /// A light-grey PNG standing in for image fills whose bytes aren't available.
 fn placeholder_png() -> Option<Vec<u8>> {
-    let img = image::RgbaImage::from_pixel(PLACEHOLDER_SIDE, PLACEHOLDER_SIDE, image::Rgba([0xD9, 0xD9, 0xD9, 0xFF]));
+    let img = image::RgbaImage::from_pixel(
+        PLACEHOLDER_SIDE,
+        PLACEHOLDER_SIDE,
+        image::Rgba([0xD9, 0xD9, 0xD9, 0xFF]),
+    );
     let mut out = Vec::new();
-    img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).ok()?;
+    img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .ok()?;
     Some(out)
 }

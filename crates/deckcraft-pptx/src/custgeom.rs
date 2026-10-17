@@ -29,7 +29,11 @@ fn to_ang(r: f64) -> f64 {
 }
 
 fn finite(v: f64) -> f64 {
-    if v.is_finite() { v.clamp(-1.0e15, 1.0e15) } else { 0.0 }
+    if v.is_finite() {
+        v.clamp(-1.0e15, 1.0e15)
+    } else {
+        0.0
+    }
 }
 
 impl Guides {
@@ -125,7 +129,9 @@ impl Guides {
     pub fn eval_list(&mut self, list: Option<&El>) {
         let Some(list) = list else { return };
         for gd in list.children_named("gd").take(5000) {
-            let (Some(name), Some(f)) = (gd.attr("name"), gd.attr("fmla")) else { continue };
+            let (Some(name), Some(f)) = (gd.attr("name"), gd.attr("fmla")) else {
+                continue;
+            };
             let v = self.eval(f);
             self.set(name, v);
         }
@@ -143,19 +149,28 @@ fn num(s: &mut String, v: f64) {
 }
 
 fn pt(g: &Guides, e: &El) -> (f64, f64) {
-    (g.get(e.attr("x").unwrap_or("0")), g.get(e.attr("y").unwrap_or("0")))
+    (
+        g.get(e.attr("x").unwrap_or("0")),
+        g.get(e.attr("y").unwrap_or("0")),
+    )
 }
 
 /// Convert `a:custGeom` to custom paths. `w`/`h` is the shape size in EMU (used for guides and for
 /// paths that don't give their own coordinate space).
 pub fn read_cust_geom(cg: &El, w_emu: f64, h_emu: f64) -> Vec<CustomPath> {
     let mut out = vec![];
-    let Some(pl) = cg.child("pathLst") else { return out };
+    let Some(pl) = cg.child("pathLst") else {
+        return out;
+    };
     for p in pl.children_named("path").take(1000) {
         let pw = p.f64("w").unwrap_or(0.0);
         let ph = p.f64("h").unwrap_or(0.0);
         // Guides are evaluated in the path's own space when it has one.
-        let (gw, gh) = if pw > 0.0 || ph > 0.0 { (pw, ph) } else { (w_emu, h_emu) };
+        let (gw, gh) = if pw > 0.0 || ph > 0.0 {
+            (pw, ph)
+        } else {
+            (w_emu, h_emu)
+        };
         let mut g = Guides::new(gw, gh);
         g.eval_list(cg.child("avLst"));
         g.eval_list(cg.child("gdLst"));
@@ -233,8 +248,18 @@ pub fn read_cust_geom(cg: &El, w_emu: f64, h_emu: f64) -> Vec<CustomPath> {
             "darkenLess" => FillMode::DarkenLess,
             _ => FillMode::Norm,
         };
-        let (ow, oh) = if pw > 0.0 || ph > 0.0 { (pw, ph) } else { (w_emu.max(1.0), h_emu.max(1.0)) };
-        out.push(CustomPath { w: ow, h: oh, d: d.trim_end().to_string(), fill, stroke: p.bool("stroke").unwrap_or(true) });
+        let (ow, oh) = if pw > 0.0 || ph > 0.0 {
+            (pw, ph)
+        } else {
+            (w_emu.max(1.0), h_emu.max(1.0))
+        };
+        out.push(CustomPath {
+            w: ow,
+            h: oh,
+            d: d.trim_end().to_string(),
+            fill,
+            stroke: p.bool("stroke").unwrap_or(true),
+        });
     }
     out
 }
@@ -357,12 +382,19 @@ pub fn write_cust_geom(w: &mut W, paths: &[CustomPath]) {
     w.empty0("a:gdLst");
     w.empty0("a:ahLst");
     w.empty0("a:cxnLst");
-    w.empty("a:rect", A::new().a("l", "l").a("t", "t").a("r", "r").a("b", "b"));
+    w.empty(
+        "a:rect",
+        A::new().a("l", "l").a("t", "t").a("r", "r").a("b", "b"),
+    );
     w.open0("a:pathLst");
     for p in paths {
         let (pw, ph) = (finite(p.w).abs(), finite(p.h).abs());
         let m = pw.max(ph);
-        let k = if m > 0.0 && m < 20_000.0 { 100_000.0 / m } else { 1.0 };
+        let k = if m > 0.0 && m < 20_000.0 {
+            100_000.0 / m
+        } else {
+            1.0
+        };
         let r = |v: f64| (finite(v) * k).round().clamp(-2.0e9, 2.0e9) as i64;
         let fill = match p.fill {
             FillMode::Norm => None,
@@ -372,7 +404,11 @@ pub fn write_cust_geom(w: &mut W, paths: &[CustomPath]) {
             FillMode::Darken => Some("darken"),
             FillMode::DarkenLess => Some("darkenLess"),
         };
-        let a = A::new().a("w", r(pw).max(0)).a("h", r(ph).max(0)).o("fill", fill).o("stroke", (!p.stroke).then_some("0"));
+        let a = A::new()
+            .a("w", r(pw).max(0))
+            .a("h", r(ph).max(0))
+            .o("fill", fill)
+            .o("stroke", (!p.stroke).then_some("0"));
         w.open("a:path", a);
         for (c, v) in parse_path(&p.d) {
             let pts: Vec<(i64, i64)> = v
@@ -450,7 +486,11 @@ mod tests {
         let d = parse(x).unwrap();
         let paths = read_cust_geom(&d.root, 1000.0, 1000.0);
         assert_eq!(paths.len(), 2);
-        assert!(paths[0].d.starts_with("M 0 0 L 100 100 C"), "{}", paths[0].d);
+        assert!(
+            paths[0].d.starts_with("M 0 0 L 100 100 C"),
+            "{}",
+            paths[0].d
+        );
         assert!(paths[0].d.ends_with('Z'));
         // The quarter arc from (100,100) with centre (50,100) ends at (50,150).
         assert!(paths[0].d.contains("50 150"), "{}", paths[0].d);
@@ -461,7 +501,13 @@ mod tests {
 
     #[test]
     fn write_then_read_path() {
-        let p = CustomPath { w: 100.0, h: 50.0, d: "M 0 0 L 100 0 C 100 10 90 50 50 50 Q 0 50 0 0 Z".into(), fill: FillMode::Norm, stroke: true };
+        let p = CustomPath {
+            w: 100.0,
+            h: 50.0,
+            d: "M 0 0 L 100 0 C 100 10 90 50 50 50 Q 0 50 0 0 Z".into(),
+            fill: FillMode::Norm,
+            stroke: true,
+        };
         let mut w = W::frag();
         write_cust_geom(&mut w, std::slice::from_ref(&p));
         let d = parse(w.s.as_bytes()).unwrap();
@@ -469,7 +515,10 @@ mod tests {
         assert_eq!(back.len(), 1);
         // Scaled by 1000 (100 → 100000).
         assert_eq!(back[0].w, 100_000.0);
-        assert_eq!(back[0].d, "M 0 0 L 100000 0 C 100000 10000 90000 50000 50000 50000 Q 0 50000 0 0 Z");
+        assert_eq!(
+            back[0].d,
+            "M 0 0 L 100000 0 C 100000 10000 90000 50000 50000 50000 Q 0 50000 0 0 Z"
+        );
     }
 
     #[test]

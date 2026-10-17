@@ -58,7 +58,15 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Self { seconds: 60.0, entries: 10_000_000, folders: 1_000_000, depth: 64, files: 10_000, per_item: 10, hits: 1_000 }
+        Self {
+            seconds: 60.0,
+            entries: 10_000_000,
+            folders: 1_000_000,
+            depth: 64,
+            files: 10_000,
+            per_item: 10,
+            hits: 1_000,
+        }
     }
 }
 
@@ -145,7 +153,10 @@ pub(crate) struct Pool {
 
 impl Pool {
     pub(crate) const fn new(cap: usize) -> Self {
-        Self { live: AtomicUsize::new(0), cap }
+        Self {
+            live: AtomicUsize::new(0),
+            cap,
+        }
     }
 
     /// Reserve up to `want` threads: as many as are free, none when none is.
@@ -156,7 +167,10 @@ impl Pool {
             if n == 0 {
                 return 0;
             }
-            match self.live.compare_exchange(live, live + n, Ordering::SeqCst, Ordering::SeqCst) {
+            match self
+                .live
+                .compare_exchange(live, live + n, Ordering::SeqCst, Ordering::SeqCst)
+            {
                 Ok(_) => return n,
                 Err(now) => live = now,
             }
@@ -213,13 +227,21 @@ impl Search {
         Progress {
             end: w.end.clone(),
             folder: plain(w.folder.clone()),
-            hits: w.hits.iter().map(|(path, items)| (plain(path.clone()), items.clone())).collect(),
+            hits: w
+                .hits
+                .iter()
+                .map(|(path, items)| (plain(path.clone()), items.clone()))
+                .collect(),
             folders: w.folders,
             files: w.files,
             read: s.read.load(Ordering::Relaxed).min(s.limits.files),
             skipped: w.skipped,
             unreadable: w.unreadable,
-            seconds: if w.end.is_some() { w.seconds } else { s.started.elapsed().as_secs_f64() },
+            seconds: if w.end.is_some() {
+                w.seconds
+            } else {
+                s.started.elapsed().as_secs_f64()
+            },
         }
     }
 }
@@ -259,7 +281,11 @@ pub(crate) fn start_in(
     }
     // The walkers follow no links, so a folder automation may read holds all they read.
     crate::file_access::check_read(&folder.to_string_lossy())?;
-    let seconds = if limits.seconds.is_finite() { limits.seconds.clamp(0.0, 3600.0) } else { 60.0 };
+    let seconds = if limits.seconds.is_finite() {
+        limits.seconds.clamp(0.0, 3600.0)
+    } else {
+        60.0
+    };
     let n = pool.reserve(threads.clamp(1, MAX_THREADS));
     if n == 0 {
         return Err("the search couldn't start: try again in a moment".into());
@@ -276,19 +302,26 @@ pub(crate) fn start_in(
         given: rules,
         rules: OnceLock::new(),
         visitor,
-        walk: Mutex::new(Walk { root: Some(folder), alive: n, found: vec![0; items], ..Walk::default() }),
+        walk: Mutex::new(Walk {
+            root: Some(folder),
+            alive: n,
+            found: vec![0; items],
+            ..Walk::default()
+        }),
         wake: Condvar::new(),
         pool,
     });
     let mut spawned = 0;
     for _ in 0..n {
         let s = shared.clone();
-        let thread = std::thread::Builder::new().name("vectorcraft-find".into()).spawn(move || {
-            let _alive = Alive(s.clone());
-            // A bug in the walk ends this walker and the others go on; when every walker ends this
-            // way, the search fails ([`Alive`]).
-            let _ = crate::guard::catch_panic(|| walker(&s));
-        });
+        let thread = std::thread::Builder::new()
+            .name("vectorcraft-find".into())
+            .spawn(move || {
+                let _alive = Alive(s.clone());
+                // A bug in the walk ends this walker and the others go on; when every walker ends this
+                // way, the search fails ([`Alive`]).
+                let _ = crate::guard::catch_panic(|| walker(&s));
+            });
         if thread.is_ok() {
             spawned += 1;
         }
@@ -392,15 +425,21 @@ impl Shared {
 
     /// Check the picked folder, then queue it.
     fn prepare(&self, root: &Path) {
-        let rules = self.rules.get_or_init(|| self.given.clone().unwrap_or_else(Rules::system));
+        let rules = self
+            .rules
+            .get_or_init(|| self.given.clone().unwrap_or_else(Rules::system));
         let path = root.display();
         let checked = match std::fs::canonicalize(root) {
             Err(e) => Err(format!("{path}: {e}")),
             Ok(folder) if !folder.is_dir() => Err(format!("{path} is not a folder")),
             Ok(folder) => match rules.refusal(&folder) {
                 None => Ok(folder),
-                Some(Refusal::Shared) => Err(format!("VectorCraft doesn't search the Shared or Public folder in Users: {path}")),
-                Some(Refusal::Apps) => Err(format!("VectorCraft doesn't search other apps' or the system's folders: {path}")),
+                Some(Refusal::Shared) => Err(format!(
+                    "VectorCraft doesn't search the Shared or Public folder in Users: {path}"
+                )),
+                Some(Refusal::Apps) => Err(format!(
+                    "VectorCraft doesn't search other apps' or the system's folders: {path}"
+                )),
             },
         };
         let mut w = self.lock();
@@ -415,7 +454,9 @@ impl Shared {
 
     /// List one folder: queue its subfolders, then read the files [`Visitor::wants`] accepts.
     fn list(&self, dir: &Path, depth: u32) {
-        let Some(rules) = self.rules.get() else { return };
+        let Some(rules) = self.rules.get() else {
+            return;
+        };
         let (mut skipped, mut unreadable, mut files) = (0, 0, 0);
         let entries = match std::fs::read_dir(dir) {
             Ok(entries) => entries,
@@ -423,7 +464,10 @@ impl Shared {
                 let mut w = self.lock();
                 // The picked folder itself: the search can't run, and says why.
                 if depth == 0 {
-                    self.finish(&mut w, End::Failed(format!("{}: {e}", plain(dir.to_path_buf()).display())));
+                    self.finish(
+                        &mut w,
+                        End::Failed(format!("{}: {e}", plain(dir.to_path_buf()).display())),
+                    );
                 } else {
                     w.unreadable += 1;
                     w.folders += 1;
@@ -433,7 +477,9 @@ impl Shared {
         };
         let (mut folders, mut siblings, mut candidates) = (vec![], Siblings::default(), vec![]);
         for (n, entry) in entries.enumerate() {
-            if n as u64 % CHECK_EVERY == CHECK_EVERY - 1 && (self.should_stop() || self.too_many_folders(folders.len())) {
+            if n as u64 % CHECK_EVERY == CHECK_EVERY - 1
+                && (self.should_stop() || self.too_many_folders(folders.len()))
+            {
                 break;
             }
             if self.entries.fetch_add(1, Ordering::Relaxed) >= self.limits.entries {
@@ -465,7 +511,10 @@ impl Shared {
             } else if kind.is_file() {
                 files += 1;
                 // At most one file more than the search reads is kept to be read.
-                if (candidates.len() as u64) <= self.limits.files && self.visitor.wants(name) && self.visitor.worth_reading(&entry.path()) {
+                if (candidates.len() as u64) <= self.limits.files
+                    && self.visitor.wants(name)
+                    && self.visitor.worth_reading(&entry.path())
+                {
                     if hidden_and_offline(&entry).1 {
                         // Its contents are in the cloud: counted as unreadable, never read.
                         unreadable += 1;
@@ -484,7 +533,13 @@ impl Shared {
             }
             let path = entry.path();
             let (hidden, offline) = hidden_and_offline(&entry);
-            if depth >= self.limits.depth || name.starts_with('.') || hidden || offline || rules.never_in(&listed, &name) || rules.is_refused(&path) {
+            if depth >= self.limits.depth
+                || name.starts_with('.')
+                || hidden
+                || offline
+                || rules.never_in(&listed, &name)
+                || rules.is_refused(&path)
+            {
                 skipped += 1;
                 continue;
             }
@@ -588,7 +643,10 @@ fn walker(s: &Shared) {
                     s.finish(&mut w, End::Done);
                     return;
                 }
-                w = s.wake.wait_timeout(w, IDLE).map_or_else(|e| e.into_inner().0, |(w, _)| w);
+                w = s
+                    .wake
+                    .wait_timeout(w, IDLE)
+                    .map_or_else(|e| e.into_inner().0, |(w, _)| w);
             }
         };
         // The guard lowers `preparing` or `listing` when the job ends, on a bug too.
@@ -645,7 +703,12 @@ fn hidden_and_offline(entry: &std::fs::DirEntry) -> (bool, bool) {
     use std::os::macos::fs::MetadataExt;
     const UF_HIDDEN: u32 = 0x8000;
     const SF_DATALESS: u32 = 0x4000_0000;
-    entry.metadata().map_or((false, false), |m| (m.st_flags() & UF_HIDDEN != 0, m.st_flags() & SF_DATALESS != 0))
+    entry.metadata().map_or((false, false), |m| {
+        (
+            m.st_flags() & UF_HIDDEN != 0,
+            m.st_flags() & SF_DATALESS != 0,
+        )
+    })
 }
 
 #[cfg(windows)]
@@ -658,7 +721,10 @@ fn hidden_and_offline(entry: &std::fs::DirEntry) -> (bool, bool) {
     const RECALL_ON_DATA_ACCESS: u32 = 0x40_0000;
     entry.metadata().map_or((false, false), |m| {
         let a = m.file_attributes();
-        (a & (HIDDEN | SYSTEM) != 0, a & (OFFLINE | RECALL_ON_OPEN | RECALL_ON_DATA_ACCESS) != 0)
+        (
+            a & (HIDDEN | SYSTEM) != 0,
+            a & (OFFLINE | RECALL_ON_OPEN | RECALL_ON_DATA_ACCESS) != 0,
+        )
     })
 }
 

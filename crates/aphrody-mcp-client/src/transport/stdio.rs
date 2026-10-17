@@ -47,18 +47,32 @@ impl StdioTransport {
             cmd.current_dir(dir);
         }
 
-        cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null()).kill_on_drop(true);
+        cmd.stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .kill_on_drop(true);
 
-        let mut child = cmd
-            .spawn()
-            .map_err(|source| McpClientError::Spawn { command: command.to_owned(), source })?;
+        let mut child = cmd.spawn().map_err(|source| McpClientError::Spawn {
+            command: command.to_owned(),
+            source,
+        })?;
 
-        let stdin = child.stdin.take().ok_or(McpClientError::MissingHandle { handle: "stdin" })?;
-        let stdout =
-            child.stdout.take().ok_or(McpClientError::MissingHandle { handle: "stdout" })?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or(McpClientError::MissingHandle { handle: "stdin" })?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or(McpClientError::MissingHandle { handle: "stdout" })?;
         let lines = BufReader::new(stdout).lines();
 
-        Ok(Self { child: Box::new(child), stdin, lines, next_id: 1 })
+        Ok(Self {
+            child: Box::new(child),
+            stdin,
+            lines,
+            next_id: 1,
+        })
     }
 
     fn next_id(&mut self) -> u64 {
@@ -94,7 +108,7 @@ impl Transport for StdioTransport {
                         return Err(McpClientError::Malformed(
                             "MCP server closed stdout before responding".to_owned(),
                         ));
-                    },
+                    }
                     Err(e) => return Err(McpClientError::Io(e)),
                 };
 
@@ -109,7 +123,11 @@ impl Transport for StdioTransport {
                         if msg_id == id {
                             return parse_response(trimmed);
                         }
-                        debug!(msg_id, expected_id = id, "Ignored response with different id");
+                        debug!(
+                            msg_id,
+                            expected_id = id,
+                            "Ignored response with different id"
+                        );
                     } else if v.get("method").is_some() {
                         // Server-side notification or request, ignore or trace
                         debug!(method = ?v.get("method"), "Received server notification over stdio");
@@ -120,7 +138,10 @@ impl Transport for StdioTransport {
 
         match timeout(timeout_dur, fut).await {
             Ok(res) => res,
-            Err(_) => Err(McpClientError::Timeout { method: method_name, seconds: secs }),
+            Err(_) => Err(McpClientError::Timeout {
+                method: method_name,
+                seconds: secs,
+            }),
         }
     }
 

@@ -7,7 +7,14 @@
 //! [`model::from_doc`] convert to and from the full [`Document`]. All parsers are written from
 //! the public specifications, are lenient by design and never panic on hostile input: nesting is
 //! depth-limited and sizes are capped.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod comments;
 pub mod html;
@@ -22,7 +29,9 @@ pub mod txt;
 use wordcraft_doc::Document;
 
 /// Extensions this crate handles.
-pub const EXTENSIONS: &[&str] = &["txt", "text", "md", "markdown", "html", "htm", "xhtml", "rtf", "odt", "tex", "latex", "ltx"];
+pub const EXTENSIONS: &[&str] = &[
+    "txt", "text", "md", "markdown", "html", "htm", "xhtml", "rtf", "odt", "tex", "latex", "ltx",
+];
 
 /// Import `bytes` in the format named by `ext` (no dot, any case). `None` = not our format.
 pub fn import(ext: &str, bytes: &[u8]) -> Option<Result<Document, String>> {
@@ -66,7 +75,11 @@ pub struct ExportOptions {
 }
 
 /// [`export`] with options.
-pub fn export_with(ext: &str, doc: &Document, opts: &ExportOptions) -> Option<Result<Vec<u8>, String>> {
+pub fn export_with(
+    ext: &str,
+    doc: &Document,
+    opts: &ExportOptions,
+) -> Option<Result<Vec<u8>, String>> {
     let out = export(ext, doc)?;
     if !opts.comments {
         return Some(out);

@@ -10,7 +10,10 @@ use crate::{EngineError, Result, Session, cmd, query};
 /// `item` (id or name) → id.
 fn item_ref(s: &Session, v: &Value, cmd: &str) -> Result<ItemId> {
     match v {
-        Value::Number(n) => n.as_u64().map(ItemId).filter(|i| s.project.item(*i).is_some()),
+        Value::Number(n) => n
+            .as_u64()
+            .map(ItemId)
+            .filter(|i| s.project.item(*i).is_some()),
         Value::String(name) => s.project.find_by_name(name).map(|i| i.id),
         _ => None,
     }
@@ -26,7 +29,10 @@ fn items_p(s: &Session, p: &Value, cmd: &str) -> Result<Vec<ItemId>> {
         return Ok(vec![item_ref(s, v, cmd)?]);
     }
     if s.state.project_selection.is_empty() {
-        return Err(bad(cmd, "no `items` given and nothing selected in the Project panel"));
+        return Err(bad(
+            cmd,
+            "no `items` given and nothing selected in the Project panel",
+        ));
     }
     Ok(s.state.project_selection.clone())
 }
@@ -50,7 +56,10 @@ pub fn is_within(project: &Project, folder: ItemId, item: ItemId) -> bool {
 
 fn select(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = match p.get("items") {
-        Some(Value::Array(a)) => a.iter().map(|v| item_ref(s, v, "project.select")).collect::<Result<Vec<_>>>()?,
+        Some(Value::Array(a)) => a
+            .iter()
+            .map(|v| item_ref(s, v, "project.select"))
+            .collect::<Result<Vec<_>>>()?,
         _ => vec![],
     };
     if b_p(p, "add").unwrap_or(false) {
@@ -62,16 +71,33 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
     } else {
         s.state.project_selection = ids;
     }
-    Ok(json!(s.state.project_selection.iter().map(|i| i.0).collect::<Vec<_>>()))
+    Ok(json!(
+        s.state
+            .project_selection
+            .iter()
+            .map(|i| i.0)
+            .collect::<Vec<_>>()
+    ))
 }
 
 fn rename(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "project.rename";
-    let id =
-        item_ref(s, p.get("item").unwrap_or(&Value::Null), c).or_else(|_| s.state.project_selection.first().copied().ok_or_else(|| bad(c, "no `item`")))?;
-    let name = str_p(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(c, "missing `name`"))?.to_string();
+    let id = item_ref(s, p.get("item").unwrap_or(&Value::Null), c).or_else(|_| {
+        s.state
+            .project_selection
+            .first()
+            .copied()
+            .ok_or_else(|| bad(c, "no `item`"))
+    })?;
+    let name = str_p(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(c, "missing `name`"))?
+        .to_string();
     s.edit("Rename", None, |proj, _| {
-        proj.item_mut(id).ok_or_else(|| bad(c, "item vanished"))?.name = name;
+        proj.item_mut(id)
+            .ok_or_else(|| bad(c, "item vanished"))?
+            .name = name;
         Ok(())
     })?;
     Ok(Value::Null)
@@ -94,7 +120,10 @@ fn move_items(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(f) = folder
         && let Some(bad_id) = ids.iter().find(|i| is_within(&s.project, f, **i))
     {
-        return Err(bad(c, format!("can't move folder {} into itself", bad_id.0)));
+        return Err(bad(
+            c,
+            format!("can't move folder {} into itself", bad_id.0),
+        ));
     }
     s.edit("Move Items", None, |proj, _| {
         for i in &ids {
@@ -111,7 +140,9 @@ fn set_label(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "project.setLabel";
     let ids = items_p(s, p, c)?;
     let lab = match p.get("label") {
-        Some(Value::Number(n)) => effectcraft_color::Label::ALL.get(n.as_u64().unwrap_or(0) as usize).copied(),
+        Some(Value::Number(n)) => effectcraft_color::Label::ALL
+            .get(n.as_u64().unwrap_or(0) as usize)
+            .copied(),
         Some(Value::String(name)) => s.prefs.label_from_name(name),
         _ => None,
     }
@@ -130,10 +161,14 @@ fn set_label(s: &mut Session, p: &Value) -> Result<Value> {
 fn set_comment(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "project.setComment";
     let ids = items_p(s, p, c)?;
-    let text = str_p(p, "comment").ok_or_else(|| bad(c, "missing `comment`"))?.to_string();
+    let text = str_p(p, "comment")
+        .ok_or_else(|| bad(c, "missing `comment`"))?
+        .to_string();
     s.edit("Comment", None, |proj, _| {
         for i in &ids {
-            proj.item_mut(*i).ok_or(EngineError::Other("item vanished".into()))?.comment = text.clone();
+            proj.item_mut(*i)
+                .ok_or(EngineError::Other("item vanished".into()))?
+                .comment = text.clone();
         }
         Ok(())
     })?;
@@ -142,7 +177,12 @@ fn set_comment(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The items deleting `ids` removes: them and, for folders, everything inside.
 fn doomed_items(project: &Project, ids: &[ItemId]) -> Vec<ItemId> {
-    project.items.keys().copied().filter(|id| ids.iter().any(|d| is_within(project, *id, *d))).collect()
+    project
+        .items
+        .keys()
+        .copied()
+        .filter(|id| ids.iter().any(|d| is_within(project, *id, *d)))
+        .collect()
 }
 
 /// What deleting `items` takes with it: (layers using them, in how many comps), counting only
@@ -151,7 +191,11 @@ fn usage_of(project: &Project, items: &[ItemId]) -> (usize, usize) {
     let mut layers = 0;
     let mut comps = 0;
     for (_, comp) in project.comps().filter(|(cid, _)| !items.contains(cid)) {
-        let n = comp.layers.iter().filter(|l| l.source.item().is_some_and(|i| items.contains(&i))).count();
+        let n = comp
+            .layers
+            .iter()
+            .filter(|l| l.source.item().is_some_and(|i| items.contains(&i)))
+            .count();
         layers += n;
         comps += usize::from(n > 0);
     }
@@ -181,13 +225,21 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
         }
         let comp_ids: Vec<ItemId> = proj.comps().map(|(id, _)| *id).collect();
         for cid in comp_ids {
-            let uses = proj.comp(cid).is_some_and(|c| c.layers.iter().any(|l| l.source.item().is_some_and(|i| doomed.contains(&i))));
+            let uses = proj.comp(cid).is_some_and(|c| {
+                c.layers
+                    .iter()
+                    .any(|l| l.source.item().is_some_and(|i| doomed.contains(&i)))
+            });
             if !uses {
                 continue;
             }
             if let Some(comp) = proj.comp_mut(cid) {
-                let gone: Vec<effectcraft_project::LayerId> =
-                    comp.layers.iter().filter(|l| l.source.item().is_some_and(|i| doomed.contains(&i))).map(|l| l.id).collect();
+                let gone: Vec<effectcraft_project::LayerId> = comp
+                    .layers
+                    .iter()
+                    .filter(|l| l.source.item().is_some_and(|i| doomed.contains(&i)))
+                    .map(|l| l.id)
+                    .collect();
                 comp.layers.retain(|l| !gone.contains(&l.id));
                 for l in &mut comp.layers {
                     if l.parent.is_some_and(|x| gone.contains(&x)) {
@@ -215,12 +267,22 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let mut created = vec![];
     s.edit("Duplicate", None, |proj, st| {
         for id in &ids {
-            let it = proj.item(*id).ok_or(EngineError::Other("item vanished".into()))?.clone();
+            let it = proj
+                .item(*id)
+                .ok_or(EngineError::Other("item vanished".into()))?
+                .clone();
             if it.is_folder() {
                 return Err(bad(c, "folders can't be duplicated"));
             }
-            let base = it.name.trim_end_matches(|ch: char| ch.is_ascii_digit()).trim_end().to_string();
-            let name = (2..).map(|i| format!("{base} {i}")).find(|n| proj.find_by_name(n).is_none()).unwrap_or_default();
+            let base = it
+                .name
+                .trim_end_matches(|ch: char| ch.is_ascii_digit())
+                .trim_end()
+                .to_string();
+            let name = (2..)
+                .map(|i| format!("{base} {i}"))
+                .find(|n| proj.find_by_name(n).is_none())
+                .unwrap_or_default();
             let mut kind = it.kind.clone();
             if let effectcraft_project::ItemKind::Comp(comp) = &mut kind {
                 let comp = std::sync::Arc::make_mut(comp);
@@ -251,11 +313,51 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("project.select", "Select Project Items", [], None, "{items: [id|name], add?}", always, select),
-        cmd!("project.rename", "Rename Item", [], None, "{item?: id|name (default: selected), name}", always, rename),
-        cmd!("project.move", "Move to Folder", [], None, "{items?: [id|name] (default: selected), folder: id|name|null (root)}", always, move_items),
-        cmd!("project.setLabel", "Item Label", [], None, "{items?, label: name|index}", always, set_label),
-        cmd!("project.setComment", "Item Comment", [], None, "{items?, comment}", always, set_comment),
+        cmd!(
+            "project.select",
+            "Select Project Items",
+            [],
+            None,
+            "{items: [id|name], add?}",
+            always,
+            select
+        ),
+        cmd!(
+            "project.rename",
+            "Rename Item",
+            [],
+            None,
+            "{item?: id|name (default: selected), name}",
+            always,
+            rename
+        ),
+        cmd!(
+            "project.move",
+            "Move to Folder",
+            [],
+            None,
+            "{items?: [id|name] (default: selected), folder: id|name|null (root)}",
+            always,
+            move_items
+        ),
+        cmd!(
+            "project.setLabel",
+            "Item Label",
+            [],
+            None,
+            "{items?, label: name|index}",
+            always,
+            set_label
+        ),
+        cmd!(
+            "project.setComment",
+            "Item Comment",
+            [],
+            None,
+            "{items?, comment}",
+            always,
+            set_comment
+        ),
         cmd!(
             "project.delete",
             "Delete Project Items",
@@ -265,7 +367,20 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             delete
         ),
-        query!("project.usage", "Project Item Usage", "{items?: [id|name] (default: selected)} → {items, layers, comps} that deleting them removes", usage),
-        cmd!("project.duplicate", "Duplicate Project Items", [], None, "{items?: [id|name] (default: selected)} → {items}", always, duplicate),
+        query!(
+            "project.usage",
+            "Project Item Usage",
+            "{items?: [id|name] (default: selected)} → {items, layers, comps} that deleting them removes",
+            usage
+        ),
+        cmd!(
+            "project.duplicate",
+            "Duplicate Project Items",
+            [],
+            None,
+            "{items?: [id|name] (default: selected)} → {items}",
+            always,
+            duplicate
+        ),
     ]
 }

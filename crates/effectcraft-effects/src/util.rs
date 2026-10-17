@@ -16,11 +16,19 @@ pub struct Plane {
 
 impl Plane {
     pub fn new(w: usize, h: usize) -> Plane {
-        Plane { w, h, data: vec![0.0; w * h] }
+        Plane {
+            w,
+            h,
+            data: vec![0.0; w * h],
+        }
     }
     /// Build from an image by mapping every (premultiplied) pixel.
     pub fn from_image(img: &Image, f: impl Fn(Px) -> f32 + Sync) -> Plane {
-        Plane { w: img.width as usize, h: img.height as usize, data: img.data.par_iter().map(|&p| f(p)).collect() }
+        Plane {
+            w: img.width as usize,
+            h: img.height as usize,
+            data: img.data.par_iter().map(|&p| f(p)).collect(),
+        }
     }
     pub fn alpha(img: &Image) -> Plane {
         Plane::from_image(img, |p| p[3])
@@ -62,11 +70,14 @@ impl Plane {
     pub fn transpose(&self) -> Plane {
         let (w, h) = (self.w, self.h);
         let mut out = Plane::new(h, w);
-        out.data.par_chunks_mut(h.max(1)).enumerate().for_each(|(x, col)| {
-            for y in 0..h {
-                col[y] = self.data[y * w + x];
-            }
-        });
+        out.data
+            .par_chunks_mut(h.max(1))
+            .enumerate()
+            .for_each(|(x, col)| {
+                for y in 0..h {
+                    col[y] = self.data[y * w + x];
+                }
+            });
         out
     }
     /// Apply `f(src_row, dst_row)` to every row in parallel.
@@ -75,15 +86,31 @@ impl Plane {
         if self.w == 0 {
             return out;
         }
-        out.data.par_chunks_mut(self.w).zip(self.data.par_chunks(self.w)).for_each(|(o, s)| f(s, o));
+        out.data
+            .par_chunks_mut(self.w)
+            .zip(self.data.par_chunks(self.w))
+            .for_each(|(o, s)| f(s, o));
         out
     }
     /// Element-wise combination with another plane of the same size.
     pub fn zip_map(&self, other: &Plane, f: impl Fn(f32, f32) -> f32 + Sync) -> Plane {
-        Plane { w: self.w, h: self.h, data: self.data.par_iter().zip(other.data.par_iter()).map(|(&a, &b)| f(a, b)).collect() }
+        Plane {
+            w: self.w,
+            h: self.h,
+            data: self
+                .data
+                .par_iter()
+                .zip(other.data.par_iter())
+                .map(|(&a, &b)| f(a, b))
+                .collect(),
+        }
     }
     pub fn map(&self, f: impl Fn(f32) -> f32 + Sync) -> Plane {
-        Plane { w: self.w, h: self.h, data: self.data.par_iter().map(|&a| f(a)).collect() }
+        Plane {
+            w: self.w,
+            h: self.h,
+            data: self.data.par_iter().map(|&a| f(a)).collect(),
+        }
     }
 }
 
@@ -111,9 +138,16 @@ fn box_row(src: &[f32], dst: &mut [f32], r: usize) {
 
 /// Separable box mean with radii `rx`, `ry` (edges repeated).
 pub fn box_plane(p: &Plane, rx: usize, ry: usize) -> Plane {
-    let mut cur = if rx > 0 { p.map_rows(|s, d| box_row(s, d, rx)) } else { p.clone() };
+    let mut cur = if rx > 0 {
+        p.map_rows(|s, d| box_row(s, d, rx))
+    } else {
+        p.clone()
+    };
     if ry > 0 {
-        cur = cur.transpose().map_rows(|s, d| box_row(s, d, ry)).transpose();
+        cur = cur
+            .transpose()
+            .map_rows(|s, d| box_row(s, d, ry))
+            .transpose();
     }
     cur
 }
@@ -129,9 +163,15 @@ pub fn box_radii(sigma: f64, n: usize) -> Vec<usize> {
         wl -= 1;
     }
     let wu = wl + 2;
-    let m_ideal = (12.0 * sigma * sigma - (n as i64 * wl * wl) as f64 - 4.0 * n as f64 * wl as f64 - 3.0 * n as f64) / (-4.0 * wl as f64 - 4.0);
+    let m_ideal = (12.0 * sigma * sigma
+        - (n as i64 * wl * wl) as f64
+        - 4.0 * n as f64 * wl as f64
+        - 3.0 * n as f64)
+        / (-4.0 * wl as f64 - 4.0);
     let m = m_ideal.round() as i64;
-    (0..n as i64).map(|i| (((if i < m { wl } else { wu }) - 1) / 2).max(0) as usize).collect()
+    (0..n as i64)
+        .map(|i| (((if i < m { wl } else { wu }) - 1) / 2).max(0) as usize)
+        .collect()
 }
 
 /// Approximate Gaussian blur of a plane (3 box passes per axis, edges repeated).
@@ -175,7 +215,11 @@ pub fn minmax_row(src: &[f32], dst: &mut [f32], r: usize, max: bool) {
     }
     for i in (0..len).rev() {
         let v = get(i);
-        hh[i] = if i == len - 1 || (i + 1) % k == 0 { v } else { op(hh[i + 1], v) };
+        hh[i] = if i == len - 1 || (i + 1) % k == 0 {
+            v
+        } else {
+            op(hh[i + 1], v)
+        };
     }
     for x in 0..n {
         dst[x] = op(hh[x], g[x + k - 1]);
@@ -184,9 +228,16 @@ pub fn minmax_row(src: &[f32], dst: &mut [f32], r: usize, max: bool) {
 
 /// Grey-scale erosion (`max = false`) or dilation (`max = true`) with a (2rx+1)×(2ry+1) box.
 pub fn morph_plane(p: &Plane, rx: usize, ry: usize, max: bool) -> Plane {
-    let mut cur = if rx > 0 { p.map_rows(|s, d| minmax_row(s, d, rx, max)) } else { p.clone() };
+    let mut cur = if rx > 0 {
+        p.map_rows(|s, d| minmax_row(s, d, rx, max))
+    } else {
+        p.clone()
+    };
     if ry > 0 {
-        cur = cur.transpose().map_rows(|s, d| minmax_row(s, d, ry, max)).transpose();
+        cur = cur
+            .transpose()
+            .map_rows(|s, d| minmax_row(s, d, ry, max))
+            .transpose();
     }
     cur
 }
@@ -217,16 +268,27 @@ pub fn guided_filter(g: &Plane, p: &Plane, r: usize, eps: f32) -> Plane {
     let n = g.data.len();
     let mut a = Plane::new(g.w, g.h);
     let mut b = Plane::new(g.w, g.h);
-    a.data.par_iter_mut().zip(b.data.par_iter_mut()).enumerate().for_each(|(i, (av, bv))| {
-        let var = corr_gg.data[i] - mean_g.data[i] * mean_g.data[i];
-        let cov = corr_gp.data[i] - mean_g.data[i] * mean_p.data[i];
-        *av = cov / (var + eps);
-        *bv = mean_p.data[i] - *av * mean_g.data[i];
-    });
+    a.data
+        .par_iter_mut()
+        .zip(b.data.par_iter_mut())
+        .enumerate()
+        .for_each(|(i, (av, bv))| {
+            let var = corr_gg.data[i] - mean_g.data[i] * mean_g.data[i];
+            let cov = corr_gp.data[i] - mean_g.data[i] * mean_p.data[i];
+            *av = cov / (var + eps);
+            *bv = mean_p.data[i] - *av * mean_g.data[i];
+        });
     debug_assert_eq!(n, a.data.len());
     let ma = box_plane(&a, r, r);
     let mb = box_plane(&b, r, r);
-    Plane { w: g.w, h: g.h, data: (0..n).into_par_iter().map(|i| ma.data[i] * g.data[i] + mb.data[i]).collect() }
+    Plane {
+        w: g.w,
+        h: g.h,
+        data: (0..n)
+            .into_par_iter()
+            .map(|i| ma.data[i] * g.data[i] + mb.data[i])
+            .collect(),
+    }
 }
 
 /// Split an image into its four premultiplied channel planes.
@@ -248,7 +310,11 @@ pub fn join(ch: &[Plane; 4]) -> Image {
 #[inline]
 pub fn unpremul(p: Px) -> ([f32; 3], f32) {
     let a = p[3];
-    if a > 1e-6 { ([p[0] / a, p[1] / a, p[2] / a], a) } else { ([0.0; 3], a.max(0.0)) }
+    if a > 1e-6 {
+        ([p[0] / a, p[1] / a, p[2] / a], a)
+    } else {
+        ([0.0; 3], a.max(0.0))
+    }
 }
 
 #[inline]
@@ -263,12 +329,21 @@ pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
 
 #[inline]
 pub fn lerp3(a: [f32; 3], b: [f32; 3], t: f32) -> [f32; 3] {
-    [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]
+    [
+        lerp(a[0], b[0], t),
+        lerp(a[1], b[1], t),
+        lerp(a[2], b[2], t),
+    ]
 }
 
 #[inline]
 pub fn lerp4(a: Px, b: Px, t: f32) -> Px {
-    [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t), lerp(a[3], b[3], t)]
+    [
+        lerp(a[0], b[0], t),
+        lerp(a[1], b[1], t),
+        lerp(a[2], b[2], t),
+        lerp(a[3], b[3], t),
+    ]
 }
 
 #[inline]
@@ -321,9 +396,32 @@ pub fn pick(src: Src, c: [f32; 3], a: f32) -> f32 {
 
 /// The common source list in AE order: Red, Green, Blue, Alpha, Luminance, Hue, Lightness,
 /// Saturation, Full, Half, Off.
-pub const SRC_ORDER: [Src; 11] =
-    [Src::Red, Src::Green, Src::Blue, Src::Alpha, Src::Luminance, Src::Hue, Src::Lightness, Src::Saturation, Src::Full, Src::Half, Src::Off];
-pub const SRC_NAMES: [&str; 11] = ["Red", "Green", "Blue", "Alpha", "Luminance", "Hue", "Lightness", "Saturation", "Full", "Half", "Off"];
+pub const SRC_ORDER: [Src; 11] = [
+    Src::Red,
+    Src::Green,
+    Src::Blue,
+    Src::Alpha,
+    Src::Luminance,
+    Src::Hue,
+    Src::Lightness,
+    Src::Saturation,
+    Src::Full,
+    Src::Half,
+    Src::Off,
+];
+pub const SRC_NAMES: [&str; 11] = [
+    "Red",
+    "Green",
+    "Blue",
+    "Alpha",
+    "Luminance",
+    "Hue",
+    "Lightness",
+    "Saturation",
+    "Full",
+    "Half",
+    "Off",
+];
 
 pub fn src_at(i: u32) -> Src {
     SRC_ORDER[(i as usize).min(SRC_ORDER.len() - 1)]
@@ -380,32 +478,44 @@ pub fn gen_image(w: u32, h: u32, f: impl Fn(usize, usize) -> Px + Sync) -> Image
 /// Replace the alpha of `img` with `new_a`, keeping straight colour. Pixels that were (nearly)
 /// transparent take their colour from a small blur of the surroundings.
 pub fn set_alpha(img: &mut Image, new_a: &Plane) {
-    let needs_fill = img.data.par_iter().zip(new_a.data.par_iter()).any(|(p, &a)| p[3] <= 1e-4 && a > 1e-4);
+    let needs_fill = img
+        .data
+        .par_iter()
+        .zip(new_a.data.par_iter())
+        .any(|(p, &a)| p[3] <= 1e-4 && a > 1e-4);
     let fill = if needs_fill {
         let blurred = effectcraft_raster::gaussian_blur(img, 3.0, 3.0, true);
         Some(blurred)
     } else {
         None
     };
-    img.data.par_iter_mut().zip(new_a.data.par_iter()).enumerate().for_each(|(i, (p, &na))| {
-        let na = na.clamp(0.0, 1.0);
-        let (c, a) = unpremul(*p);
-        let c = if a > 1e-4 {
-            c
-        } else if let Some(f) = &fill {
-            unpremul(f.data[i]).0
-        } else {
-            c
-        };
-        *p = premul(c, na);
-    });
+    img.data
+        .par_iter_mut()
+        .zip(new_a.data.par_iter())
+        .enumerate()
+        .for_each(|(i, (p, &na))| {
+            let na = na.clamp(0.0, 1.0);
+            let (c, a) = unpremul(*p);
+            let c = if a > 1e-4 {
+                c
+            } else if let Some(f) = &fill {
+                unpremul(f.data[i]).0
+            } else {
+                c
+            };
+            *p = premul(c, na);
+        });
 }
 
 /// Normalised kernel-free resampling helper: sample an image with bilinear filtering, either
 /// transparent or clamped outside.
 #[inline]
 pub fn sample(img: &Image, x: f64, y: f64, clamp: bool) -> Px {
-    if clamp { img.sample_bilinear_clamped(x, y) } else { img.sample_bilinear(x, y) }
+    if clamp {
+        img.sample_bilinear_clamped(x, y)
+    } else {
+        img.sample_bilinear(x, y)
+    }
 }
 
 /// Inverse-mapped warp: each output pixel samples the source at `f(x, y)` (pixel centres +0.5).
@@ -430,7 +540,12 @@ pub fn layer_rect(ctx: &crate::EffectCtx, b: &crate::Buf) -> (f64, f64, f64, f64
 /// [`layer_rect`] in the pixels of a buffer with `offset` and `scale` (see [`crate::Buf`];
 /// GPU buffers): the layer bounds start at effect-space (0, 0).
 pub fn layer_rect_at(ctx: &crate::EffectCtx, offset: [f64; 2], scale: f64) -> (f64, f64, f64, f64) {
-    (offset[0], offset[1], ctx.layer_size[0] * scale, ctx.layer_size[1] * scale)
+    (
+        offset[0],
+        offset[1],
+        ctx.layer_size[0] * scale,
+        ctx.layer_size[1] * scale,
+    )
 }
 
 /// Transparent pixels to add on every side ([`crate::Buf::pad`]) of a buffer `size` pixels big,
@@ -438,32 +553,66 @@ pub fn layer_rect_at(ctx: &crate::EffectCtx, offset: [f64; 2], scale: f64) -> (f
 /// shape layer's buffer only surrounds its content, but its layer bounds are comp-sized (see
 /// the renderer's `effect_bounds`): an effect that fills the layer, such as CC Tiler, fills
 /// those as in After Effects (#659).
-pub fn layer_cover_pad(ctx: &crate::EffectCtx, size: [u32; 2], offset: [f64; 2], scale: f64) -> u32 {
+pub fn layer_cover_pad(
+    ctx: &crate::EffectCtx,
+    size: [u32; 2],
+    offset: [f64; 2],
+    scale: f64,
+) -> u32 {
     let (x0, y0, w, h) = layer_rect_at(ctx, offset, scale);
-    let need = [-x0, -y0, x0 + w - f64::from(size[0]), y0 + h - f64::from(size[1])].into_iter().fold(0.0, f64::max);
+    let need = [
+        -x0,
+        -y0,
+        x0 + w - f64::from(size[0]),
+        y0 + h - f64::from(size[1]),
+    ]
+    .into_iter()
+    .fold(0.0, f64::max);
     need.ceil().min(4096.0) as u32
 }
 
 /// Resample another layer (a layer parameter) into `b`'s pixel grid. With `stretch` the other
 /// layer is scaled to this layer's size ("Stretch to Fit"); otherwise it is centred.
-pub fn fit_layer(ctx: &crate::EffectCtx, b: &crate::Buf, other: &crate::LayerPixels, stretch: bool) -> Image {
+pub fn fit_layer(
+    ctx: &crate::EffectCtx,
+    b: &crate::Buf,
+    other: &crate::LayerPixels,
+    stretch: bool,
+) -> Image {
     let ls = ctx.layer_size;
     let os = other.size;
-    let (sx, sy) = if stretch && ls[0] > 0.0 && ls[1] > 0.0 { (os[0] / ls[0], os[1] / ls[1]) } else { (1.0, 1.0) };
-    let (dx, dy) = if stretch { (0.0, 0.0) } else { ((os[0] - ls[0]) * 0.5, (os[1] - ls[1]) * 0.5) };
+    let (sx, sy) = if stretch && ls[0] > 0.0 && ls[1] > 0.0 {
+        (os[0] / ls[0], os[1] / ls[1])
+    } else {
+        (1.0, 1.0)
+    };
+    let (dx, dy) = if stretch {
+        (0.0, 0.0)
+    } else {
+        ((os[0] - ls[0]) * 0.5, (os[1] - ls[1]) * 0.5)
+    };
     let inv = 1.0 / b.scale.max(1e-9);
     gen_image(b.img.width, b.img.height, |x, y| {
         let px = (x as f64 + 0.5 - b.offset[0]) * inv;
         let py = (y as f64 + 0.5 - b.offset[1]) * inv;
         let qx = px * sx + dx;
         let qy = py * sy + dy;
-        other.buf.img.sample_bilinear(qx * other.buf.scale + other.buf.offset[0], qy * other.buf.scale + other.buf.offset[1])
+        other.buf.img.sample_bilinear(
+            qx * other.buf.scale + other.buf.offset[0],
+            qy * other.buf.scale + other.buf.offset[1],
+        )
     })
 }
 
 /// Resample a buffer into another buffer's pixel grid without stretching its layer space.
 /// Used to composite the pre-effect image after earlier effects expand or shift the bounds.
-pub fn fit_buffer(source: &crate::Buf, width: u32, height: u32, offset: [f64; 2], scale: f64) -> Image {
+pub fn fit_buffer(
+    source: &crate::Buf,
+    width: u32,
+    height: u32,
+    offset: [f64; 2],
+    scale: f64,
+) -> Image {
     let inv = 1.0 / scale.max(1e-9);
     gen_image(width, height, |x, y| {
         let sx = (x as f64 + 0.5 - offset[0]) * inv * source.scale + source.offset[0];
@@ -474,7 +623,13 @@ pub fn fit_buffer(source: &crate::Buf, width: u32, height: u32, offset: [f64; 2]
 
 /// The layer chosen in layer parameter `id` fitted to `b` (see [`fit_layer`]), or a copy of
 /// `b`'s own pixels when none is chosen / available (After Effects' "self" behaviour).
-pub fn layer_or_self(ctx: &crate::EffectCtx, b: &crate::Buf, id: &str, masks_and_effects: bool, stretch: bool) -> Image {
+pub fn layer_or_self(
+    ctx: &crate::EffectCtx,
+    b: &crate::Buf,
+    id: &str,
+    masks_and_effects: bool,
+    stretch: bool,
+) -> Image {
     match ctx.layer_param(id, masks_and_effects) {
         Some(o) => fit_layer(ctx, b, &o, stretch),
         None => b.img.clone(),
@@ -492,7 +647,12 @@ pub fn params_key(ctx: &crate::EffectCtx, b: &crate::Buf, salt: u64) -> u64 {
 pub fn params_key_except(ctx: &crate::EffectCtx, b: &crate::Buf, salt: u64, skip: &[&str]) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
-    let mut keys: Vec<&String> = ctx.params.values.keys().filter(|k| !skip.iter().any(|s| k.starts_with(s))).collect();
+    let mut keys: Vec<&String> = ctx
+        .params
+        .values
+        .keys()
+        .filter(|k| !skip.iter().any(|s| k.starts_with(s)))
+        .collect();
     keys.sort();
     for k in keys {
         k.hash(&mut h);
@@ -529,19 +689,32 @@ pub const SIM_CHECKPOINT: u64 = 15;
 
 impl<S: Clone> SimCache<S> {
     pub const fn new(cap: usize) -> SimCache<S> {
-        SimCache { inner: std::sync::Mutex::new(Vec::new()), cap }
+        SimCache {
+            inner: std::sync::Mutex::new(Vec::new()),
+            cap,
+        }
     }
 
     /// State after `target` steps. `init` builds step 0; `step(state, i)` advances from step
     /// `i` to `i + 1`.
-    pub fn run(&self, key: u64, target: u64, init: impl FnOnce() -> S, mut step: impl FnMut(&mut S, u64)) -> std::sync::Arc<S> {
+    pub fn run(
+        &self,
+        key: u64,
+        target: u64,
+        init: impl FnOnce() -> S,
+        mut step: impl FnMut(&mut S, u64),
+    ) -> std::sync::Arc<S> {
         use std::sync::Arc;
         let start = {
             let mut g = self.inner.lock().unwrap_or_else(|e| e.into_inner());
             let tick = g.iter().map(|e| e.used).max().unwrap_or(0) + 1;
             g.iter_mut().find(|e| e.key == key).and_then(|e| {
                 e.used = tick;
-                e.checkpoints.iter().filter(|(s, _)| *s <= target).max_by_key(|(s, _)| *s).map(|(s, st)| (*s, st.clone()))
+                e.checkpoints
+                    .iter()
+                    .filter(|(s, _)| *s <= target)
+                    .max_by_key(|(s, _)| *s)
+                    .map(|(s, st)| (*s, st.clone()))
             })
         };
         let had_start = start.is_some();
@@ -569,10 +742,19 @@ impl<S: Clone> SimCache<S> {
             Some(ix) => ix,
             None => {
                 if g.len() >= self.cap.max(1) {
-                    let old = g.iter().enumerate().min_by_key(|(_, e)| e.used).map(|(ix, _)| ix).unwrap_or(0);
+                    let old = g
+                        .iter()
+                        .enumerate()
+                        .min_by_key(|(_, e)| e.used)
+                        .map(|(ix, _)| ix)
+                        .unwrap_or(0);
                     g.remove(old);
                 }
-                g.push(SimEntry { key, used: tick, checkpoints: Vec::new() });
+                g.push(SimEntry {
+                    key,
+                    used: tick,
+                    checkpoints: Vec::new(),
+                });
                 g.len() - 1
             }
         };
@@ -612,7 +794,9 @@ fn sq_dt_1d(f: &[f64], out: &mut [f64]) {
     v[0] = sites[0];
     z[0] = f64::NEG_INFINITY;
     z[1] = f64::INFINITY;
-    let s_of = |q: usize, p: usize| ((f[q] + (q * q) as f64) - (f[p] + (p * p) as f64)) / (2.0 * q as f64 - 2.0 * p as f64);
+    let s_of = |q: usize, p: usize| {
+        ((f[q] + (q * q) as f64) - (f[p] + (p * p) as f64)) / (2.0 * q as f64 - 2.0 * p as f64)
+    };
     for &q in &sites[1..] {
         let mut s = s_of(q, v[k]);
         while s <= z[k] {
@@ -637,7 +821,10 @@ fn sq_dt_1d(f: &[f64], out: &mut [f64]) {
 /// Euclidean distance from every pixel to the nearest `true` pixel of `mask` (`w`×`h`),
 /// infinite when there is none.
 pub fn distance_transform(mask: &[bool], w: usize, h: usize) -> Vec<f32> {
-    let mut g: Vec<f64> = mask.iter().map(|&m| if m { 0.0 } else { f64::INFINITY }).collect();
+    let mut g: Vec<f64> = mask
+        .iter()
+        .map(|&m| if m { 0.0 } else { f64::INFINITY })
+        .collect();
     // Columns, then rows.
     let cols: Vec<Vec<f64>> = (0..w)
         .into_par_iter()
@@ -666,7 +853,15 @@ pub fn signed_distance(inside: &[bool], w: usize, h: usize) -> Plane {
     let outside: Vec<bool> = inside.iter().map(|v| !v).collect();
     let to_in = distance_transform(inside, w, h);
     let to_out = distance_transform(&outside, w, h);
-    Plane { w, h, data: to_in.iter().zip(&to_out).map(|(a, b)| if *a > 0.0 { a - 0.5 } else { -(b - 0.5) }).collect() }
+    Plane {
+        w,
+        h,
+        data: to_in
+            .iter()
+            .zip(&to_out)
+            .map(|(a, b)| if *a > 0.0 { a - 0.5 } else { -(b - 0.5) })
+            .collect(),
+    }
 }
 
 /// Point-in-polygon (even-odd) for a closed polyline.
@@ -703,7 +898,11 @@ pub fn dist_to_poly(pts: &[[f64; 2]], closed: bool, x: f64, y: f64) -> f64 {
         let b = pts[(i + 1) % n];
         let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
         let l2 = dx * dx + dy * dy;
-        let t = if l2 > 0.0 { (((x - a[0]) * dx + (y - a[1]) * dy) / l2).clamp(0.0, 1.0) } else { 0.0 };
+        let t = if l2 > 0.0 {
+            (((x - a[0]) * dx + (y - a[1]) * dy) / l2).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let (px, py) = (a[0] + dx * t, a[1] + dy * t);
         best = best.min((px - x).powi(2) + (py - y).powi(2));
     }
@@ -741,7 +940,11 @@ pub fn poly_point_at(pts: &[[f64; 2]], closed: bool, s: f64) -> ([f64; 2], [f64;
         let l = ((b[0] - a[0]).powi(2) + (b[1] - a[1]).powi(2)).sqrt();
         if rem <= l || i == segs - 1 {
             let t = if l > 0.0 { (rem / l).min(1.0) } else { 0.0 };
-            let d = if l > 0.0 { [(b[0] - a[0]) / l, (b[1] - a[1]) / l] } else { [1.0, 0.0] };
+            let d = if l > 0.0 {
+                [(b[0] - a[0]) / l, (b[1] - a[1]) / l]
+            } else {
+                [1.0, 0.0]
+            };
             return ([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], d);
         }
         rem -= l;
@@ -797,15 +1000,27 @@ mod tests {
 
     #[test]
     fn gauss_plane_preserves_constant() {
-        let p = Plane { w: 20, h: 10, data: vec![0.25; 200] };
+        let p = Plane {
+            w: 20,
+            h: 10,
+            data: vec![0.25; 200],
+        };
         let g = gauss_plane(&p, 3.0, 2.0);
         assert!(g.data.iter().all(|v| (v - 0.25).abs() < 1e-5));
     }
 
     #[test]
     fn guided_filter_keeps_constant() {
-        let g = Plane { w: 16, h: 16, data: (0..256).map(|i| (i % 16) as f32 / 16.0).collect() };
-        let p = Plane { w: 16, h: 16, data: vec![0.7; 256] };
+        let g = Plane {
+            w: 16,
+            h: 16,
+            data: (0..256).map(|i| (i % 16) as f32 / 16.0).collect(),
+        };
+        let p = Plane {
+            w: 16,
+            h: 16,
+            data: vec![0.7; 256],
+        };
         let o = guided_filter(&g, &p, 2, 1e-3);
         assert!(o.data.iter().all(|v| (v - 0.7).abs() < 1e-3));
     }

@@ -58,9 +58,19 @@ pub enum Grab {
 #[derive(Clone, Debug)]
 enum Drag {
     /// Drawing a new gradient, or redrawing the selected one.
-    Draw { from: [f32; 2], to: [f32; 2], redraw: Option<LayerId> },
+    Draw {
+        from: [f32; 2],
+        to: [f32; 2],
+        redraw: Option<LayerId>,
+    },
     /// Editing the selected gradient: the command (and params) to commit on release.
-    Edit { layer: LayerId, grab: Grab, down: [f32; 2], moved: bool, commit: Option<(&'static str, Value)> },
+    Edit {
+        layer: LayerId,
+        grab: Grab,
+        down: [f32; 2],
+        moved: bool,
+        commit: Option<(&'static str, Value)>,
+    },
 }
 
 /// Live-gradient interaction state (not saved).
@@ -112,7 +122,13 @@ fn fill_of(l: &Layer) -> Option<&Fill> {
 }
 
 /// The fill an in-progress edit shows (`None` when it can't apply, e.g. a stale index).
-fn edited_fill(app: &PhotocraftApp, layer: &Layer, canvas: Rect32, cmd: &str, p: &Value) -> Option<Fill> {
+fn edited_fill(
+    app: &PhotocraftApp,
+    layer: &Layer,
+    canvas: Rect32,
+    cmd: &str,
+    p: &Value,
+) -> Option<Fill> {
     let f = fill_of(layer)?;
     let (fg, bg) = (app.session.tools.foreground, app.session.tools.background);
     let edited = match cmd {
@@ -166,7 +182,16 @@ struct Widget {
 
 impl Widget {
     fn new(f: &Fill, frame: Rect32) -> Option<Widget> {
-        let Fill::Gradient { stops, midpoints, reverse, style, .. } = f else { return None };
+        let Fill::Gradient {
+            stops,
+            midpoints,
+            reverse,
+            style,
+            ..
+        } = f
+        else {
+            return None;
+        };
         let (start, end) = gf::fill_handles(f, frame)?;
         let mut st: Vec<(f32, [f32; 4])> = stops
             .iter()
@@ -176,7 +201,14 @@ impl Widget {
             })
             .collect();
         st.sort_by(|a, b| a.0.total_cmp(&b.0));
-        Some(Widget { style: *style, start, end, reverse: *reverse, stops: st, mids: midpoints.clone() })
+        Some(Widget {
+            style: *style,
+            start,
+            end,
+            reverse: *reverse,
+            stops: st,
+            mids: midpoints.clone(),
+        })
     }
 
     /// Fraction along the line of gradient location `t`.
@@ -205,7 +237,9 @@ impl Widget {
         if let Some(i) = self.stops.iter().position(|s| near(self.at(s.0))) {
             return Some(Grab::Stop(i));
         }
-        if let Some(i) = (0..self.stops.len().saturating_sub(1)).find(|i| self.mid_location(*i).is_some_and(|t| near(self.at(t)))) {
+        if let Some(i) = (0..self.stops.len().saturating_sub(1))
+            .find(|i| self.mid_location(*i).is_some_and(|t| near(self.at(t))))
+        {
             return Some(Grab::Mid(i));
         }
         let (u, d) = project(self.start, self.end, p);
@@ -224,10 +258,22 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
         ToolEvent::Down { x, y, .. } => {
             let p = [x as f32, y as f32];
             let active = active_gradient(app);
-            let grab = active.as_ref().and_then(|(l, frame, _)| Widget::new(fill_of(l)?, *frame)?.hit(p, GRAB / zoom));
+            let grab = active
+                .as_ref()
+                .and_then(|(l, frame, _)| Widget::new(fill_of(l)?, *frame)?.hit(p, GRAB / zoom));
             app.gradient.drag = Some(match (grab, active) {
-                (Some(grab), Some((l, ..))) => Drag::Edit { layer: l.id, grab, down: p, moved: false, commit: None },
-                (_, active) => Drag::Draw { from: p, to: p, redraw: active.map(|a| a.0.id) },
+                (Some(grab), Some((l, ..))) => Drag::Edit {
+                    layer: l.id,
+                    grab,
+                    down: p,
+                    moved: false,
+                    commit: None,
+                },
+                (_, active) => Drag::Draw {
+                    from: p,
+                    to: p,
+                    redraw: active.map(|a| a.0.id),
+                },
             });
         }
         ToolEvent::Move { x, y, .. } => drag_to(app, [x as f32, y as f32], mods),
@@ -242,47 +288,74 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
 fn drag_to(app: &mut PhotocraftApp, p: [f32; 2], mods: egui::Modifiers) {
     let zoom = app.point_zoom().max(0.01);
     let active = active_gradient(app);
-    let Some(drag) = app.gradient.drag.as_mut() else { return };
+    let Some(drag) = app.gradient.drag.as_mut() else {
+        return;
+    };
     // ⇧: 45° gradient angles, the same snap as the classic drag (stroke_constraint.rs).
     let snap = |from: [f32; 2], to: [f32; 2]| -> [f32; 2] {
         if !mods.shift {
             return to;
         }
-        let c = crate::stroke_constraint::snap45([f64::from(from[0]), f64::from(from[1])], [f64::from(to[0]), f64::from(to[1])]);
+        let c = crate::stroke_constraint::snap45(
+            [f64::from(from[0]), f64::from(from[1])],
+            [f64::from(to[0]), f64::from(to[1])],
+        );
         [c[0] as f32, c[1] as f32]
     };
     match drag {
         Drag::Draw { from, to, .. } => *to = snap(*from, p),
-        Drag::Edit { layer, grab, down, moved, commit } => {
+        Drag::Edit {
+            layer,
+            grab,
+            down,
+            moved,
+            commit,
+        } => {
             if dist(*down, p) * zoom >= 2.0 {
                 *moved = true;
             }
             if !*moved {
                 return;
             }
-            let Some(w) = active.as_ref().filter(|a| a.0.id == *layer).and_then(|(l, frame, _)| Widget::new(fill_of(l)?, *frame)) else { return };
+            let Some(w) = active
+                .as_ref()
+                .filter(|a| a.0.id == *layer)
+                .and_then(|(l, frame, _)| Widget::new(fill_of(l)?, *frame))
+            else {
+                return;
+            };
             let id = layer.0;
             *commit = match *grab {
                 Grab::Start => Some((cmds::SET, json!({"layer": id, "from": snap(w.end, p)}))),
                 Grab::End => Some((cmds::SET, json!({"layer": id, "to": snap(w.start, p)}))),
                 Grab::Line(_) => {
                     let (dx, dy) = (p[0] - down[0], p[1] - down[1]);
-                    Some((cmds::SET, json!({"layer": id, "from": [w.start[0] + dx, w.start[1] + dy], "to": [w.end[0] + dx, w.end[1] + dy]})))
+                    Some((
+                        cmds::SET,
+                        json!({"layer": id, "from": [w.start[0] + dx, w.start[1] + dy], "to": [w.end[0] + dx, w.end[1] + dy]}),
+                    ))
                 }
                 Grab::Stop(i) => {
                     let (u, d) = project(w.start, w.end, p);
                     if d * zoom > TEAR_OFF && w.stops.len() > 2 {
-                        Some((cmds::STOP, json!({"layer": id, "action": "delete", "index": i})))
+                        Some((
+                            cmds::STOP,
+                            json!({"layer": id, "action": "delete", "index": i}),
+                        ))
                     } else {
-                        Some((cmds::STOP, json!({"layer": id, "action": "move", "index": i, "location": w.u_of(u)})))
+                        Some((
+                            cmds::STOP,
+                            json!({"layer": id, "action": "move", "index": i, "location": w.u_of(u)}),
+                        ))
                     }
                 }
                 Grab::Mid(i) => {
                     let t = w.u_of(project(w.start, w.end, p).0);
                     match (w.stops.get(i), w.stops.get(i + 1)) {
-                        (Some(a), Some(b)) if b.0 - a.0 > 1e-4 => {
-                            Some((cmds::STOP, json!({"layer": id, "action": "midpoint", "index": i, "location": ((t - a.0) / (b.0 - a.0)).clamp(0.05, 0.95)})))
-                        }
+                        (Some(a), Some(b)) if b.0 - a.0 > 1e-4 => Some((
+                            cmds::STOP,
+                            json!({"layer": id, "action": "midpoint", "index": i, "location": ((t - a.0) / (b.0 - a.0)).clamp(0.05, 0.95)}),
+                        )),
                         _ => None,
                     }
                 }
@@ -292,7 +365,9 @@ fn drag_to(app: &mut PhotocraftApp, p: [f32; 2], mods: egui::Modifiers) {
 }
 
 fn finish(app: &mut PhotocraftApp) {
-    let Some(drag) = app.gradient.drag.take() else { return };
+    let Some(drag) = app.gradient.drag.take() else {
+        return;
+    };
     let zoom = app.point_zoom().max(0.01);
     match drag {
         Drag::Draw { from, to, redraw } => {
@@ -307,10 +382,19 @@ fn finish(app: &mut PhotocraftApp) {
                 }
             };
         }
-        Drag::Edit { commit: Some((cmd, p)), moved: true, .. } => {
+        Drag::Edit {
+            commit: Some((cmd, p)),
+            moved: true,
+            ..
+        } => {
             let _ = app.run(cmd, p);
         }
-        Drag::Edit { layer, grab, moved: false, .. } => click(app, layer, grab),
+        Drag::Edit {
+            layer,
+            grab,
+            moved: false,
+            ..
+        } => click(app, layer, grab),
         Drag::Edit { .. } => {}
     }
 }
@@ -319,19 +403,33 @@ fn finish(app: &mut PhotocraftApp) {
 /// handle, for the stop there) opens the Color Picker.
 fn click(app: &mut PhotocraftApp, layer: LayerId, grab: Grab) {
     let now = app.last_frame_time;
-    let double = app.gradient.last_click.is_some_and(|(g, t)| g == grab && now - t <= DOUBLE_CLICK);
+    let double = app
+        .gradient
+        .last_click
+        .is_some_and(|(g, t)| g == grab && now - t <= DOUBLE_CLICK);
     app.gradient.last_click = Some((grab, now));
     match grab {
         Grab::Line(t) => {
-            let _ = app.run(cmds::STOP, json!({"layer": layer.0, "action": "add", "location": t}));
+            let _ = app.run(
+                cmds::STOP,
+                json!({"layer": layer.0, "action": "add", "location": t}),
+            );
         }
         Grab::Stop(i) if double => edit_stop_color(app, layer, i),
         Grab::Start | Grab::End if double => {
-            let Some((l, frame, _)) = active_gradient(app) else { return };
-            let Some(w) = fill_of(&l).and_then(|f| Widget::new(f, frame)) else { return };
+            let Some((l, frame, _)) = active_gradient(app) else {
+                return;
+            };
+            let Some(w) = fill_of(&l).and_then(|f| Widget::new(f, frame)) else {
+                return;
+            };
             // The stop at that end of the line.
             let at_start = (grab == Grab::Start) != w.reverse;
-            let i = if at_start { 0 } else { w.stops.len().saturating_sub(1) };
+            let i = if at_start {
+                0
+            } else {
+                w.stops.len().saturating_sub(1)
+            };
             edit_stop_color(app, layer, i);
         }
         _ => {}
@@ -340,8 +438,12 @@ fn click(app: &mut PhotocraftApp, layer: LayerId, grab: Grab) {
 
 /// Opens the Color Picker on colour stop `i`; OK runs `gradient.fill.stop` (one history step).
 pub fn edit_stop_color(app: &mut PhotocraftApp, layer: LayerId, i: usize) {
-    let Some(st) = app.session.active() else { return };
-    let Some(Fill::Gradient { stops, .. }) = st.doc.layer(layer).and_then(fill_of) else { return };
+    let Some(st) = app.session.active() else {
+        return;
+    };
+    let Some(Fill::Gradient { stops, .. }) = st.doc.layer(layer).and_then(fill_of) else {
+        return;
+    };
     let mut sorted = stops.clone();
     sorted.sort_by(|a, b| a.0.total_cmp(&b.0));
     let Some((_, c)) = sorted.get(i) else { return };
@@ -356,7 +458,11 @@ pub fn edit_stop_color(app: &mut PhotocraftApp, layer: LayerId, i: usize) {
 }
 
 fn preview_key(revision: u64, what: &str) -> u64 {
-    let h = what.bytes().fold(revision.wrapping_mul(0x9e37_79b9_7f4a_7c15), |h, b| h.wrapping_mul(31).wrapping_add(u64::from(b)));
+    let h = what
+        .bytes()
+        .fold(revision.wrapping_mul(0x9e37_79b9_7f4a_7c15), |h, b| {
+            h.wrapping_mul(31).wrapping_add(u64::from(b))
+        });
     (h & (TAG - 1)) | TAG
 }
 
@@ -368,11 +474,18 @@ pub fn display_doc(app: &mut PhotocraftApp, idx: usize) -> Option<(Arc<Document>
     let st = app.session.active()?;
     let (doc, revision) = (st.doc.clone(), st.revision);
     let edit: Option<(LayerId, &'static str, Value)> = match &app.gradient.drag {
-        Some(Drag::Draw { from, to, redraw }) if live_mode(app) && dist(*from, *to) >= 1.0 => match redraw {
-            Some(id) => Some((*id, cmds::SET, json!({"from": from, "to": to}))),
-            None => Some((PREVIEW_LAYER, cmds::CREATE, create_params(app, *from, *to))),
-        },
-        Some(Drag::Edit { layer, commit: Some((cmd, p)), moved: true, .. }) if live_mode(app) => Some((*layer, *cmd, p.clone())),
+        Some(Drag::Draw { from, to, redraw }) if live_mode(app) && dist(*from, *to) >= 1.0 => {
+            match redraw {
+                Some(id) => Some((*id, cmds::SET, json!({"from": from, "to": to}))),
+                None => Some((PREVIEW_LAYER, cmds::CREATE, create_params(app, *from, *to))),
+            }
+        }
+        Some(Drag::Edit {
+            layer,
+            commit: Some((cmd, p)),
+            moved: true,
+            ..
+        }) if live_mode(app) => Some((*layer, *cmd, p.clone())),
         _ => app.gradient.panel.clone(),
     };
     let Some((layer, cmd, p)) = edit else {
@@ -406,17 +519,38 @@ fn shown_fill(app: &PhotocraftApp) -> Option<(Fill, Rect32, Option<Grab>)> {
     let st = app.session.active()?;
     let canvas = st.doc.bounds();
     match &app.gradient.drag {
-        Some(Drag::Draw { from, to, redraw: None }) => {
+        Some(Drag::Draw {
+            from,
+            to,
+            redraw: None,
+        }) => {
             let l = cmds::new_layer(&app.session, &st.doc, &create_params(app, *from, *to)).ok()?;
             let f = fill_of(&l)?.clone();
-            Some((f, photocraft_compose::fill_frame(&l, canvas), Some(Grab::End)))
+            Some((
+                f,
+                photocraft_compose::fill_frame(&l, canvas),
+                Some(Grab::End),
+            ))
         }
-        Some(Drag::Draw { from, to, redraw: Some(id) }) => {
+        Some(Drag::Draw {
+            from,
+            to,
+            redraw: Some(id),
+        }) => {
             let l = st.doc.layer(*id)?;
             let f = edited_fill(app, l, canvas, cmds::SET, &json!({"from": from, "to": to}))?;
-            Some((f, photocraft_compose::fill_frame(l, canvas), Some(Grab::End)))
+            Some((
+                f,
+                photocraft_compose::fill_frame(l, canvas),
+                Some(Grab::End),
+            ))
         }
-        Some(Drag::Edit { layer, grab, commit, .. }) => {
+        Some(Drag::Edit {
+            layer,
+            grab,
+            commit,
+            ..
+        }) => {
             let l = st.doc.layer(*layer)?;
             let f = match commit {
                 Some((cmd, p)) => match edited_fill(app, l, canvas, cmd, p) {
@@ -426,8 +560,14 @@ fn shown_fill(app: &PhotocraftApp) -> Option<(Fill, Rect32, Option<Grab>)> {
                 None => fill_of(l)?.clone(),
             };
             // A torn-off stop no longer exists: highlight nothing.
-            let deleting = commit.as_ref().is_some_and(|(_, p)| p["action"] == "delete");
-            Some((f, photocraft_compose::fill_frame(l, canvas), (!deleting).then_some(*grab)))
+            let deleting = commit
+                .as_ref()
+                .is_some_and(|(_, p)| p["action"] == "delete");
+            Some((
+                f,
+                photocraft_compose::fill_frame(l, canvas),
+                (!deleting).then_some(*grab),
+            ))
         }
         None => {
             let (l, frame, _) = active_gradient(app)?;
@@ -447,8 +587,17 @@ fn line(painter: &egui::Painter, a: Pos2, b: Pos2) {
 }
 
 fn diamond(painter: &egui::Painter, c: Pos2, r: f32, fill: Color32, outline: Color32) {
-    let pts = vec![pos2(c.x, c.y - r), pos2(c.x + r, c.y), pos2(c.x, c.y + r), pos2(c.x - r, c.y)];
-    painter.add(egui::Shape::convex_polygon(pts, fill, Stroke::new(1.0, outline)));
+    let pts = vec![
+        pos2(c.x, c.y - r),
+        pos2(c.x + r, c.y),
+        pos2(c.x, c.y + r),
+        pos2(c.x - r, c.y),
+    ];
+    painter.add(egui::Shape::convex_polygon(
+        pts,
+        fill,
+        Stroke::new(1.0, outline),
+    ));
 }
 
 /// Draws the live gradient widget over the canvas.
@@ -456,8 +605,12 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
     if !live_mode(app) {
         return;
     }
-    let Some((fill, frame, grabbed)) = shown_fill(app) else { return };
-    let Some(w) = Widget::new(&fill, frame) else { return };
+    let Some((fill, frame, grabbed)) = shown_fill(app) else {
+        return;
+    };
+    let Some(w) = Widget::new(&fill, frame) else {
+        return;
+    };
     let accent = Tokens::get(painter.ctx()).accent;
     let sp = |p: [f32; 2]| xf.to_screen(p[0], p[1]);
     let (s, e) = (sp(w.start), sp(w.end));
@@ -478,7 +631,12 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
         }
         GradientStyle::Reflected => {
             let m = s - (e - s);
-            painter.add(egui::Shape::dashed_line(&[s, m], Stroke::new(1.5, Color32::WHITE), 5.0, 4.0));
+            painter.add(egui::Shape::dashed_line(
+                &[s, m],
+                Stroke::new(1.5, Color32::WHITE),
+                5.0,
+                4.0,
+            ));
         }
         GradientStyle::Linear => {}
     }
@@ -487,12 +645,22 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
     for i in 0..w.stops.len().saturating_sub(1) {
         if let Some(t) = w.mid_location(i) {
             let sel = grabbed == Some(Grab::Mid(i));
-            diamond(painter, sp(w.at(t)), 4.5, if sel { accent } else { Color32::WHITE }, Color32::from_black_alpha(160));
+            diamond(
+                painter,
+                sp(w.at(t)),
+                4.5,
+                if sel { accent } else { Color32::WHITE },
+                Color32::from_black_alpha(160),
+            );
         }
     }
     // End handles, then the colour stops (a stop at an end sits inside its handle).
     for (p, g) in [(s, Grab::Start), (e, Grab::End)] {
-        let ring = if grabbed == Some(g) { accent } else { Color32::WHITE };
+        let ring = if grabbed == Some(g) {
+            accent
+        } else {
+            Color32::WHITE
+        };
         painter.circle_stroke(p, 8.0, Stroke::new(3.5, Color32::from_black_alpha(90)));
         painter.circle_stroke(p, 8.0, Stroke::new(2.0, ring));
     }
@@ -500,7 +668,11 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
         let p = sp(w.at(*t));
         let sel = grabbed == Some(Grab::Stop(i));
         painter.circle_filled(p, 5.0, c32(*c));
-        painter.circle_stroke(p, 5.5, Stroke::new(1.5, if sel { accent } else { Color32::WHITE }));
+        painter.circle_stroke(
+            p,
+            5.5,
+            Stroke::new(1.5, if sel { accent } else { Color32::WHITE }),
+        );
         painter.circle_stroke(p, 6.8, Stroke::new(1.0, Color32::from_black_alpha(110)));
     }
 }
@@ -539,7 +711,9 @@ const THUMB_PX: u32 = 64;
 /// scale, offset, reverse, stops, midpoints and opacity) in a square, as Photoshop shows it.
 /// `None` for other fills.
 pub fn thumbnail_image(f: &Fill) -> Option<egui::ColorImage> {
-    let Fill::Gradient { .. } = f else { return None };
+    let Fill::Gradient { .. } = f else {
+        return None;
+    };
     let n = THUMB_PX as i32;
     let square = photocraft_geom::Rect::new(0, 0, n, n);
     // No dither: it is invisible at this size and would only add noise.
@@ -549,7 +723,10 @@ pub fn thumbnail_image(f: &Fill) -> Option<egui::ColorImage> {
     }
     let px = gf::render(&plain, square, square);
     let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    let rgba: Vec<Color32> = px.iter().map(|c| Color32::from_rgba_unmultiplied(q(c[0]), q(c[1]), q(c[2]), q(c[3]))).collect();
+    let rgba: Vec<Color32> = px
+        .iter()
+        .map(|c| Color32::from_rgba_unmultiplied(q(c[0]), q(c[1]), q(c[2]), q(c[3])))
+        .collect();
     Some(egui::ColorImage::new([THUMB_PX as usize; 2], rgba))
 }
 
@@ -565,8 +742,14 @@ pub fn paint_thumbnail(ui: &egui::Ui, layer: LayerId, f: &Fill, rect: Rect) -> b
     let tex = match cached {
         Some((cf, t)) if cf == *f => t,
         _ => {
-            let Some(img) = thumbnail_image(f) else { return false };
-            let t = ctx.load_texture(format!("gradient-thumb-{}", layer.0), img, egui::TextureOptions::LINEAR);
+            let Some(img) = thumbnail_image(f) else {
+                return false;
+            };
+            let t = ctx.load_texture(
+                format!("gradient-thumb-{}", layer.0),
+                img,
+                egui::TextureOptions::LINEAR,
+            );
             ctx.data_mut(|d| d.insert_temp(key, (f.clone(), t.clone())));
             t
         }
@@ -575,7 +758,12 @@ pub fn paint_thumbnail(ui: &egui::Ui, layer: LayerId, f: &Fill, rect: Rect) -> b
         let p = ui.painter();
         crate::solid_fill_ui::thumbnail_frame(ui, rect, |swatch| {
             widgets::checker(p, swatch, 3.0);
-            p.image(tex.id(), swatch, Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
+            p.image(
+                tex.id(),
+                swatch,
+                Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
         });
     }
     true
@@ -586,13 +774,27 @@ pub fn paint_thumbnail(ui: &egui::Ui, layer: LayerId, f: &Fill, rect: Rect) -> b
 /// swatch does. Returns whether it was clicked.
 pub fn preset_swatch(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> bool {
     let t = Tokens::get(ui.ctx());
-    let stops = app.session.presets.gradient.resolve(app.session.tools.foreground, app.session.tools.background);
+    let stops = app
+        .session
+        .presets
+        .gradient
+        .resolve(app.session.tools.foreground, app.session.tools.background);
     let (r, resp) = ui.allocate_exact_size(vec2(96.0, 20.0), Sense::click());
-    paint_ramp(ui.painter(), r, |u| photocraft_algo::paint::sample_stops(&stops, u));
-    ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0, t.field_border), StrokeKind::Outside);
+    paint_ramp(ui.painter(), r, |u| {
+        photocraft_algo::paint::sample_stops(&stops, u)
+    });
+    ui.painter().rect_stroke(
+        r,
+        0.0,
+        Stroke::new(1.0, t.field_border),
+        StrokeKind::Outside,
+    );
     // Name the control for accessibility (and so tests and agents can find it).
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tl!("Gradient picker")));
-    resp.on_hover_text(tl!("Click to edit the gradient")).clicked()
+    resp.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tl!("Gradient picker"))
+    });
+    resp.on_hover_text(tl!("Click to edit the gradient"))
+        .clicked()
 }
 
 /// The selected layer when it is a gradient fill layer. Unlike [`active_gradient`] it does not
@@ -628,7 +830,10 @@ pub fn editor_window(app: &mut PhotocraftApp, ctx: &egui::Context) {
                 // Photoshop's editor edits the gradient the tool paints with, so with no gradient
                 // fill layer around the strip edits the current gradient in place.
                 let t = Tokens::get(ui.ctx());
-                ui.label(egui::RichText::new(tl!("The gradient the Gradient tool paints with")).color(t.text_dim));
+                ui.label(
+                    egui::RichText::new(tl!("The gradient the Gradient tool paints with"))
+                        .color(t.text_dim),
+                );
                 ui.add_space(6.0);
                 preset_stops_editor(app, ui);
                 ui.add_space(6.0);
@@ -658,11 +863,19 @@ pub fn options_changed(app: &mut PhotocraftApp, before: &crate::state::ToolOptio
     if app.ui.tool != Tool::Gradient || o.gradient_classic {
         return;
     }
-    let Some((l, ..)) = active_gradient(app) else { return };
+    let Some((l, ..)) = active_gradient(app) else {
+        return;
+    };
     if o.gradient_blend_mode != before.gradient_blend_mode {
-        let _ = app.run("layer.setProps", json!({"layer": l.id.0, "blend": o.gradient_blend_mode.label()}));
+        let _ = app.run(
+            "layer.setProps",
+            json!({"layer": l.id.0, "blend": o.gradient_blend_mode.label()}),
+        );
     }
-    if o.gradient_style == before.gradient_style && o.gradient_reverse == before.gradient_reverse && o.gradient_dither == before.gradient_dither {
+    if o.gradient_style == before.gradient_style
+        && o.gradient_reverse == before.gradient_reverse
+        && o.gradient_dither == before.gradient_dither
+    {
         return;
     }
     let mut p = json!({"layer": l.id.0});
@@ -776,13 +989,21 @@ fn preset_fill(app: &PhotocraftApp) -> Option<Fill> {
 /// `gradient.presets.stop` (one journal step).
 fn preset_stop_color(app: &mut PhotocraftApp, i: usize) {
     let Some(f) = preset_fill(app) else { return };
-    let Fill::Gradient { stops, .. } = &f else { return };
+    let Fill::Gradient { stops, .. } = &f else {
+        return;
+    };
     let mut sorted = stops.clone();
     sorted.sort_by(|a, b| a.0.total_cmp(&b.0));
     let Some((_, c)) = sorted.get(i) else { return };
     let r = c.to_rgb();
     app.gradient.preset_stop = None;
-    crate::color_picker_ui::open_for_command(app, "Color Picker (Stop Color)", r, gradient_presets::STOP, json!({"action": "color", "index": i}));
+    crate::color_picker_ui::open_for_command(
+        app,
+        "Color Picker (Stop Color)",
+        r,
+        gradient_presets::STOP,
+        json!({"action": "color", "index": i}),
+    );
 }
 
 fn stops_editor_for(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
@@ -796,49 +1017,90 @@ fn stops_editor_for(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: F
 
 /// Keep selection on a stop after the engine sorts its new position.
 fn selection_after_edit(f: &Fill, p: &Value, previous: Option<Marker>) -> Option<Marker> {
-    let Fill::Gradient { stops, opacity_stops, .. } = f else { return previous };
+    let Fill::Gradient {
+        stops,
+        opacity_stops,
+        ..
+    } = f
+    else {
+        return previous;
+    };
     let opacity = p.get("kind").and_then(Value::as_str) == Some("opacity");
     let mut locations: Vec<f32> = if opacity {
-        if opacity_stops.is_empty() { vec![0.0, 1.0] } else { opacity_stops.iter().map(|s| s.0).collect() }
+        if opacity_stops.is_empty() {
+            vec![0.0, 1.0]
+        } else {
+            opacity_stops.iter().map(|s| s.0).collect()
+        }
     } else {
         stops.iter().map(|s| s.0).collect()
     };
     locations.sort_by(f32::total_cmp);
     let action = p.get("action").and_then(Value::as_str);
-    let index = p.get("index").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok());
+    let index = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .and_then(|i| usize::try_from(i).ok());
     let at = match action {
         Some("move" | "add") => {
             let location = p.get("location").and_then(Value::as_f64)? as f32;
             locations
                 .iter()
                 .enumerate()
-                .filter(|(i, value)| Some(*i) != index && (**value < location || (**value == location && index.is_none_or(|old| *i < old))))
+                .filter(|(i, value)| {
+                    Some(*i) != index
+                        && (**value < location
+                            || (**value == location && index.is_none_or(|old| *i < old)))
+                })
                 .count()
         }
         Some("delete") => 0,
         _ => return previous,
     };
-    Some(if opacity { Marker::Opacity(at) } else { Marker::Color(at) })
+    Some(if opacity {
+        Marker::Opacity(at)
+    } else {
+        Marker::Color(at)
+    })
 }
 
 fn stop_strip(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
-    let Fill::Gradient { stops, .. } = &f else { return };
+    let Fill::Gradient { stops, .. } = &f else {
+        return;
+    };
     let t = Tokens::get(ui.ctx());
     let w = ui.available_width().max(120.0);
     let (outer, resp) = ui.allocate_exact_size(vec2(w, 58.0), Sense::click_and_drag());
     // Name the strip for accessibility (and so tests and agents can find it).
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!("Gradient stops")));
+    resp.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::WidgetType::Button,
+            ui.is_enabled(),
+            tl!("Gradient stops"),
+        )
+    });
     let top = outer.top() + 16.0;
-    let bar = Rect::from_min_max(pos2(outer.left() + 8.0, top), pos2(outer.right() - 8.0, top + 24.0));
+    let bar = Rect::from_min_max(
+        pos2(outer.left() + 8.0, top),
+        pos2(outer.right() - 8.0, top + 24.0),
+    );
     let x_of = |loc: f32| bar.left() + loc.clamp(0.0, 1.0) * bar.width();
     let loc_of = |x: f32| ((x - bar.left()) / bar.width().max(1.0)).clamp(0.0, 1.0);
     // The ramp being shown (with a pending drag's edit applied).
     let pending: Option<Value> = match sink {
-        Sink::Layer(id) => app.gradient.panel.clone().filter(|(l, ..)| *l == id).map(|(_, _, p)| p),
+        Sink::Layer(id) => app
+            .gradient
+            .panel
+            .clone()
+            .filter(|(l, ..)| *l == id)
+            .map(|(_, _, p)| p),
         Sink::Preset => app.gradient.preset_stop.clone(),
     };
     let (fg, bg) = (app.session.tools.foreground, app.session.tools.background);
-    let shown = pending.as_ref().and_then(|p| cmds::apply_stop(&f, p, fg, bg).ok()).unwrap_or_else(|| f.clone());
+    let shown = pending
+        .as_ref()
+        .and_then(|p| cmds::apply_stop(&f, p, fg, bg).ok())
+        .unwrap_or_else(|| f.clone());
     let mut track_fill = shown.clone();
     if let Fill::Gradient { reverse, .. } = &mut track_fill {
         // All markers address un-reversed positions; Reverse applies to the canvas output.
@@ -847,14 +1109,28 @@ fn stop_strip(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
     if let Some(ramp) = gf::Ramp::new(&track_fill) {
         paint_ramp(ui.painter(), bar, |u| ramp.sample(u));
     }
-    ui.painter().rect_stroke(bar, 0.0, Stroke::new(1.0, t.field_border), StrokeKind::Outside);
+    ui.painter().rect_stroke(
+        bar,
+        0.0,
+        Stroke::new(1.0, t.field_border),
+        StrokeKind::Outside,
+    );
     let (ss, os, mids) = match &shown {
-        Fill::Gradient { stops, opacity_stops, midpoints, .. } => (stops.clone(), opacity_stops.clone(), midpoints.clone()),
+        Fill::Gradient {
+            stops,
+            opacity_stops,
+            midpoints,
+            ..
+        } => (stops.clone(), opacity_stops.clone(), midpoints.clone()),
         _ => (Vec::new(), Vec::new(), Vec::new()),
     };
     let mut sorted = ss.clone();
     sorted.sort_by(|a, b| a.0.total_cmp(&b.0));
-    let mut ops: Vec<(f32, f32)> = if os.is_empty() { vec![(0.0, 1.0), (1.0, 1.0)] } else { os.clone() };
+    let mut ops: Vec<(f32, f32)> = if os.is_empty() {
+        vec![(0.0, 1.0), (1.0, 1.0)]
+    } else {
+        os.clone()
+    };
     ops.sort_by(|a, b| a.0.total_cmp(&b.0));
     let key = strip_key(app, sink);
     let selection_key = key.with("selection");
@@ -875,7 +1151,12 @@ fn stop_strip(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
             Stroke::NONE,
         ));
         p.rect_filled(body, 1.0, color);
-        p.rect_stroke(body, 1.0, Stroke::new(1.0, if sel { t.accent } else { t.text_dim }), StrokeKind::Outside);
+        p.rect_stroke(
+            body,
+            1.0,
+            Stroke::new(1.0, if sel { t.accent } else { t.text_dim }),
+            StrokeKind::Outside,
+        );
     }
     if sink.midpoints() {
         for i in 0..sorted.len().saturating_sub(1) {
@@ -883,7 +1164,13 @@ fn stop_strip(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
             if b - a > 1e-3 {
                 let m = mids.get(i).copied().unwrap_or(0.5);
                 let sel = dragging.or(selected) == Some(Marker::Mid(i));
-                diamond(p, pos2(x_of(a + (b - a) * m), bar.bottom() + 6.0), 3.0, if sel { t.accent } else { t.text_faint }, t.text_faint);
+                diamond(
+                    p,
+                    pos2(x_of(a + (b - a) * m), bar.bottom() + 6.0),
+                    3.0,
+                    if sel { t.accent } else { t.text_faint },
+                    t.text_faint,
+                );
             }
         }
     }
@@ -894,17 +1181,29 @@ fn stop_strip(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
         let body = Rect::from_center_size(pos2(x, y), vec2(10.0, 10.0));
         let color = Color32::from_gray((a.clamp(0.0, 1.0) * 255.0) as u8);
         p.add(egui::Shape::convex_polygon(
-            vec![pos2(x, bar.top() - 1.0), pos2(x + 5.0, body.bottom()), pos2(x - 5.0, body.bottom())],
+            vec![
+                pos2(x, bar.top() - 1.0),
+                pos2(x + 5.0, body.bottom()),
+                pos2(x - 5.0, body.bottom()),
+            ],
             if sel { t.accent } else { t.text_dim },
             Stroke::NONE,
         ));
         p.rect_filled(body, 1.0, color);
-        p.rect_stroke(body, 1.0, Stroke::new(1.0, if sel { t.accent } else { t.text_dim }), StrokeKind::Outside);
+        p.rect_stroke(
+            body,
+            1.0,
+            Stroke::new(1.0, if sel { t.accent } else { t.text_dim }),
+            StrokeKind::Outside,
+        );
     }
     // Interaction.
     let hit = |pos: Pos2| -> Option<Marker> {
         if pos.y > bar.bottom() {
-            if let Some(i) = sorted.iter().position(|(l, _)| (x_of(*l) - pos.x).abs() <= 6.0 && pos.y >= bar.bottom() + 3.0) {
+            if let Some(i) = sorted
+                .iter()
+                .position(|(l, _)| (x_of(*l) - pos.x).abs() <= 6.0 && pos.y >= bar.bottom() + 3.0)
+            {
                 return Some(Marker::Color(i));
             }
             if !sink.midpoints() {
@@ -913,12 +1212,16 @@ fn stop_strip(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
             return (0..sorted.len().saturating_sub(1))
                 .find(|i| {
                     let (a, b) = (sorted[*i].0, sorted[*i + 1].0);
-                    (x_of(a + (b - a) * mids.get(*i).copied().unwrap_or(0.5)) - pos.x).abs() <= 4.0 && b - a > 1e-3
+                    (x_of(a + (b - a) * mids.get(*i).copied().unwrap_or(0.5)) - pos.x).abs() <= 4.0
+                        && b - a > 1e-3
                 })
                 .map(Marker::Mid);
         }
         if pos.y < bar.top() {
-            return ops.iter().position(|(l, _)| (x_of(*l) - pos.x).abs() <= 6.0).map(Marker::Opacity);
+            return ops
+                .iter()
+                .position(|(l, _)| (x_of(*l) - pos.x).abs() <= 6.0)
+                .map(Marker::Opacity);
         }
         None
     };
@@ -931,15 +1234,28 @@ fn stop_strip(app: &mut PhotocraftApp, ui: &mut egui::Ui, sink: Sink, f: Fill) {
     }
     let dragging: Option<Marker> = ui.data(|d| d.get_temp(key));
     if let (Some(m), Some(pos)) = (dragging, resp.interact_pointer_pos()) {
-        let off = if pos.y > bar.bottom() + 28.0 || pos.y < bar.top() - 26.0 { 1.0 } else { 0.0 };
+        let off = if pos.y > bar.bottom() + 28.0 || pos.y < bar.top() - 26.0 {
+            1.0
+        } else {
+            0.0
+        };
         let loc = loc_of(pos.x);
         let edit = match m {
-            Marker::Color(i) if off > 0.0 && stops.len() > 2 => json!({"action": "delete", "index": i}),
+            Marker::Color(i) if off > 0.0 && stops.len() > 2 => {
+                json!({"action": "delete", "index": i})
+            }
             Marker::Color(i) => json!({"action": "move", "index": i, "location": loc}),
-            Marker::Opacity(i) if off > 0.0 && ops.len() > 2 => json!({"action": "delete", "kind": "opacity", "index": i}),
-            Marker::Opacity(i) => json!({"action": "move", "kind": "opacity", "index": i, "location": loc}),
+            Marker::Opacity(i) if off > 0.0 && ops.len() > 2 => {
+                json!({"action": "delete", "kind": "opacity", "index": i})
+            }
+            Marker::Opacity(i) => {
+                json!({"action": "move", "kind": "opacity", "index": i, "location": loc})
+            }
             Marker::Mid(i) => {
-                let (a, b) = (sorted.get(i).map_or(0.0, |s| s.0), sorted.get(i + 1).map_or(1.0, |s| s.0));
+                let (a, b) = (
+                    sorted.get(i).map_or(0.0, |s| s.0),
+                    sorted.get(i + 1).map_or(1.0, |s| s.0),
+                );
                 json!({"action": "midpoint", "index": i, "location": ((loc - a) / (b - a).max(1e-4)).clamp(0.05, 0.95)})
             }
         };
@@ -1015,8 +1331,12 @@ mod tests {
     use super::*;
 
     fn app_with_gradient(style: &str) -> PhotocraftApp {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 200, "height": 120})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 200, "height": 120}))
+            .unwrap();
         app.ui.tool = Tool::Gradient;
         app.ui.tool_options.gradient_style = style.into();
         app
@@ -1027,9 +1347,33 @@ mod tests {
     }
 
     fn drag(app: &mut PhotocraftApp, a: [f64; 2], b: [f64; 2]) {
-        crate::canvas::tool_event(app, ToolEvent::Down { x: a[0], y: a[1], pressure: 1.0 }, mods());
-        crate::canvas::tool_event(app, ToolEvent::Move { x: (a[0] + b[0]) / 2.0, y: (a[1] + b[1]) / 2.0, pressure: 1.0 }, mods());
-        crate::canvas::tool_event(app, ToolEvent::Move { x: b[0], y: b[1], pressure: 1.0 }, mods());
+        crate::canvas::tool_event(
+            app,
+            ToolEvent::Down {
+                x: a[0],
+                y: a[1],
+                pressure: 1.0,
+            },
+            mods(),
+        );
+        crate::canvas::tool_event(
+            app,
+            ToolEvent::Move {
+                x: (a[0] + b[0]) / 2.0,
+                y: (a[1] + b[1]) / 2.0,
+                pressure: 1.0,
+            },
+            mods(),
+        );
+        crate::canvas::tool_event(
+            app,
+            ToolEvent::Move {
+                x: b[0],
+                y: b[1],
+                pressure: 1.0,
+            },
+            mods(),
+        );
         crate::canvas::tool_event(app, ToolEvent::Up { x: b[0], y: b[1] }, mods());
     }
 
@@ -1041,23 +1385,48 @@ mod tests {
     fn thumbnails_show_the_gradient() {
         use photocraft_color::Color;
         // Black to white, left to right: the left edge is dark, the right light, top = bottom.
-        let f = Fill::gradient(vec![(0.0, Color::BLACK), (1.0, Color::WHITE)], 0.0, 1.0, GradientStyle::Linear, false);
+        let f = Fill::gradient(
+            vec![(0.0, Color::BLACK), (1.0, Color::WHITE)],
+            0.0,
+            1.0,
+            GradientStyle::Linear,
+            false,
+        );
         let img = thumbnail_image(&f).unwrap();
         let n = img.size[0];
         let at = |x: usize, y: usize| img.pixels[y * n + x];
-        assert!(at(0, n / 2).r() < 10 && at(n - 1, n / 2).r() > 245, "{:?} {:?}", at(0, n / 2), at(n - 1, n / 2));
+        assert!(
+            at(0, n / 2).r() < 10 && at(n - 1, n / 2).r() > 245,
+            "{:?} {:?}",
+            at(0, n / 2),
+            at(n - 1, n / 2)
+        );
         assert_eq!(at(n / 3, 0), at(n / 3, n - 1));
         // Reverse flips colour and opacity alike; a transparent stop lets the checkerboard through.
         let mut r = f.clone();
-        if let Fill::Gradient { reverse, opacity_stops, .. } = &mut r {
+        if let Fill::Gradient {
+            reverse,
+            opacity_stops,
+            ..
+        } = &mut r
+        {
             *reverse = true;
             *opacity_stops = vec![(0.0, 1.0), (1.0, 0.0)];
         }
         let img = thumbnail_image(&r).unwrap();
         let (left, right) = (img.pixels[n / 2 * n], img.pixels[n / 2 * n + n - 1]);
-        assert!(left.a() < 10 && right.r() < 10 && right.a() > 245, "{left:?} {right:?}");
+        assert!(
+            left.a() < 10 && right.r() < 10 && right.a() > 245,
+            "{left:?} {right:?}"
+        );
         // A radial thumbnail is centred.
-        let rad = Fill::gradient(vec![(0.0, Color::BLACK), (1.0, Color::WHITE)], 0.0, 1.0, GradientStyle::Radial, false);
+        let rad = Fill::gradient(
+            vec![(0.0, Color::BLACK), (1.0, Color::WHITE)],
+            0.0,
+            1.0,
+            GradientStyle::Radial,
+            false,
+        );
         let img = thumbnail_image(&rad).unwrap();
         assert!(img.pixels[n / 2 * n + n / 2].r() < img.pixels[0].r());
         assert!(thumbnail_image(&Fill::Solid(Color::WHITE)).is_none());
@@ -1067,49 +1436,81 @@ mod tests {
     fn options_bar_swatch_opens_the_editor_and_reaches_the_gradients_panel() {
         use egui_kittest::{Harness, kittest::Queryable};
         let app = app_with_gradient("linear");
-        let mut h = Harness::builder().with_size(vec2(440.0, 560.0)).build_ui_state(
-            |ui, app: &mut PhotocraftApp| {
-                if preset_swatch(app, ui) {
-                    app.ui.panels.gradient_editor = true;
-                }
-                let ctx = ui.ctx().clone();
-                editor_window(app, &ctx);
-            },
-            app,
-        );
+        let mut h = Harness::builder()
+            .with_size(vec2(440.0, 560.0))
+            .build_ui_state(
+                |ui, app: &mut PhotocraftApp| {
+                    if preset_swatch(app, ui) {
+                        app.ui.panels.gradient_editor = true;
+                    }
+                    let ctx = ui.ctx().clone();
+                    editor_window(app, &ctx);
+                },
+                app,
+            );
         PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::Pro);
         h.run_steps(2);
         // The swatch opens the Gradient Editor window (Photoshop's behaviour), not a popup.
         h.get_by_label("Gradient picker").click();
         h.run_steps(2);
-        assert!(h.state().ui.panels.gradient_editor, "the swatch opened the editor window");
+        assert!(
+            h.state().ui.panels.gradient_editor,
+            "the swatch opened the editor window"
+        );
         // Quick preset picking lives in the editor: its Gradients button shows the Gradients panel.
         h.get_by_label("Gradients").click();
         h.run_steps(2);
         assert!(h.state().ui.panels.color, "the Gradients panel opened");
         assert_eq!(h.state().ui.dock_tabs.color, 2, "on the Gradients tab");
-        assert_eq!(h.state().session.active().unwrap().doc.layers.len(), 1, "no document layers edited");
+        assert_eq!(
+            h.state().session.active().unwrap().doc.layers.len(),
+            1,
+            "no document layers edited"
+        );
     }
 
     #[test]
     fn live_drag_creates_a_fill_layer_and_handles_edit_it() {
         let mut app = app_with_gradient("linear");
         drag(&mut app, [20.0, 60.0], [180.0, 60.0]);
-        assert_eq!(app.session.active().unwrap().doc.layers.len(), 2, "a Gradient Fill layer");
+        assert_eq!(
+            app.session.active().unwrap().doc.layers.len(),
+            2,
+            "a Gradient Fill layer"
+        );
         let g = get(&mut app);
         assert!((g["to"][0].as_f64().unwrap() - 180.0).abs() < 1e-3);
         // Drag the end handle: one history step.
         let before = app.session.active().unwrap().history.past_len();
         drag(&mut app, [180.0, 60.0], [150.0, 100.0]);
         let g = get(&mut app);
-        assert!((g["to"][0].as_f64().unwrap() - 150.0).abs() < 1e-3 && (g["to"][1].as_f64().unwrap() - 100.0).abs() < 1e-3, "{g}");
+        assert!(
+            (g["to"][0].as_f64().unwrap() - 150.0).abs() < 1e-3
+                && (g["to"][1].as_f64().unwrap() - 100.0).abs() < 1e-3,
+            "{g}"
+        );
         assert_eq!(app.session.active().unwrap().history.past_len(), before + 1);
         // Click on the line adds a stop; dragging it off the line deletes it.
         let (s, e) = ([20.0, 60.0], [150.0, 100.0]);
         // A third of the way (the midpoint diamond sits half-way).
         let mid = [s[0] + (e[0] - s[0]) / 3.0, s[1] + (e[1] - s[1]) / 3.0];
-        crate::canvas::tool_event(&mut app, ToolEvent::Down { x: mid[0], y: mid[1], pressure: 1.0 }, mods());
-        crate::canvas::tool_event(&mut app, ToolEvent::Up { x: mid[0], y: mid[1] }, mods());
+        crate::canvas::tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: mid[0],
+                y: mid[1],
+                pressure: 1.0,
+            },
+            mods(),
+        );
+        crate::canvas::tool_event(
+            &mut app,
+            ToolEvent::Up {
+                x: mid[0],
+                y: mid[1],
+            },
+            mods(),
+        );
         assert_eq!(get(&mut app)["stops"].as_array().unwrap().len(), 3);
         drag(&mut app, mid, [mid[0], mid[1] - 80.0]);
         assert_eq!(get(&mut app)["stops"].as_array().unwrap().len(), 2);
@@ -1126,7 +1527,11 @@ mod tests {
         // The untouched midpoint sits at the segment centre (doc x = 100). Drag it to a quarter.
         drag(&mut app, [100.0, 60.0], [60.0, 60.0]);
         let g = get(&mut app);
-        assert_eq!(g["stops"].as_array().map(Vec::len), Some(2), "a midpoint drag must not add a stop: {g}");
+        assert_eq!(
+            g["stops"].as_array().map(Vec::len),
+            Some(2),
+            "a midpoint drag must not add a stop: {g}"
+        );
         let m = g["midpoints"][0].as_f64().unwrap_or(f64::NAN);
         assert!((m - 0.25).abs() < 1e-3, "the midpoint did not move: {g}");
     }
@@ -1135,17 +1540,52 @@ mod tests {
     fn shift_snaps_live_drags_to_45_degrees() {
         let mut app = app_with_gradient("linear");
         let shift = egui::Modifiers::SHIFT;
-        crate::canvas::tool_event(&mut app, ToolEvent::Down { x: 20.0, y: 20.0, pressure: 1.0 }, shift);
-        crate::canvas::tool_event(&mut app, ToolEvent::Move { x: 70.0, y: 62.0, pressure: 1.0 }, shift);
+        crate::canvas::tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 20.0,
+                y: 20.0,
+                pressure: 1.0,
+            },
+            shift,
+        );
+        crate::canvas::tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 70.0,
+                y: 62.0,
+                pressure: 1.0,
+            },
+            shift,
+        );
         crate::canvas::tool_event(&mut app, ToolEvent::Up { x: 90.0, y: 84.0 }, shift);
         let g = get(&mut app);
-        let (fx, fy, tx, ty) = (g["from"][0].as_f64().unwrap(), g["from"][1].as_f64().unwrap(), g["to"][0].as_f64().unwrap(), g["to"][1].as_f64().unwrap());
-        assert!(((tx - fx) - (ty - fy)).abs() < 1e-2 && tx > 80.0, "45°: {g}");
+        let (fx, fy, tx, ty) = (
+            g["from"][0].as_f64().unwrap(),
+            g["from"][1].as_f64().unwrap(),
+            g["to"][0].as_f64().unwrap(),
+            g["to"][1].as_f64().unwrap(),
+        );
+        assert!(
+            ((tx - fx) - (ty - fy)).abs() < 1e-2 && tx > 80.0,
+            "45°: {g}"
+        );
         // Dragging the end handle with ⇧ snaps too (horizontal here).
-        crate::canvas::tool_event(&mut app, ToolEvent::Down { x: tx, y: ty, pressure: 1.0 }, shift);
+        crate::canvas::tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: tx,
+                y: ty,
+                pressure: 1.0,
+            },
+            shift,
+        );
         crate::canvas::tool_event(&mut app, ToolEvent::Up { x: 120.0, y: 26.0 }, shift);
         let g = get(&mut app);
-        assert!((g["to"][1].as_f64().unwrap() - fy).abs() < 1e-2, "horizontal: {g}");
+        assert!(
+            (g["to"][1].as_f64().unwrap() - fy).abs() < 1e-2,
+            "horizontal: {g}"
+        );
     }
 
     #[test]
@@ -1153,14 +1593,21 @@ mod tests {
         let mut app = app_with_gradient("linear");
         app.ui.tool_options.gradient_classic = true;
         drag(&mut app, [20.0, 60.0], [180.0, 60.0]);
-        assert_eq!(app.session.active().unwrap().doc.layers.len(), 1, "no fill layer in classic mode");
+        assert_eq!(
+            app.session.active().unwrap().doc.layers.len(),
+            1,
+            "no fill layer in classic mode"
+        );
     }
 
     #[test]
     fn classic_drag_preserves_preset_transparency_at_all_depths() {
         for depth in [8, 16, 32] {
             for reverse in [false, true] {
-                let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+                let mut app = PhotocraftApp::new(
+                    photocraft_engine::Session::new(),
+                    crate::Services::default(),
+                );
                 app.run("file.new", json!({"width": 200, "height": 120, "depth": depth, "background": "transparent"})).unwrap();
                 app.ui.tool = Tool::Gradient;
                 app.ui.tool_options.gradient_classic = true;
@@ -1168,7 +1615,11 @@ mod tests {
                 app.ui.tool_options.gradient_dither = false;
                 app.ui.tool_options.fill_opacity = 50.0;
                 app.session.tools.foreground = [1.0, 0.0, 0.0, 1.0];
-                app.run("gradient.presets.select", json!({"preset": "Foreground to Transparent"})).unwrap();
+                app.run(
+                    "gradient.presets.select",
+                    json!({"preset": "Foreground to Transparent"}),
+                )
+                .unwrap();
                 let before = app.session.active().unwrap().history.past_len();
                 drag(&mut app, [20.0, 60.0], [180.0, 60.0]);
                 let st = app.session.active().unwrap();
@@ -1177,18 +1628,36 @@ mod tests {
                     let u = ((x as f32 - 20.0) / 160.0).clamp(0.0, 1.0);
                     let expected = 0.5 * if reverse { u } else { 1.0 - u };
                     let px = surface.pixel(x, 60);
-                    assert!((px[3] - expected).abs() < 0.01, "depth {depth}, reverse {reverse}, x {x}: {px:?}");
+                    assert!(
+                        (px[3] - expected).abs() < 0.01,
+                        "depth {depth}, reverse {reverse}, x {x}: {px:?}"
+                    );
                     if expected > 0.01 {
-                        assert!(px[0] > 0.99 && px[1] < 0.01 && px[2] < 0.01, "preset colour: {px:?}");
+                        assert!(
+                            px[0] > 0.99 && px[1] < 0.01 && px[2] < 0.01,
+                            "preset colour: {px:?}"
+                        );
                     }
                 }
                 assert_eq!(st.history.past_len(), before + 1);
                 app.run("edit.undo", json!({})).unwrap();
-                assert_eq!(app.session.active().unwrap().doc.layers[0].surface().unwrap().pixel(100, 60)[3], 0.0);
+                assert_eq!(
+                    app.session.active().unwrap().doc.layers[0]
+                        .surface()
+                        .unwrap()
+                        .pixel(100, 60)[3],
+                    0.0
+                );
                 app.run("gradient.presets.select", json!({"stops": [[0, "#00ff00"], [1, "#00ff00"]], "transparency": [[0, 60], [1, 20]]})).unwrap();
                 drag(&mut app, [20.0, 60.0], [180.0, 60.0]);
-                let px = app.session.active().unwrap().doc.layers[0].surface().unwrap().pixel(100, 60);
-                assert!((px[3] - 0.2).abs() < 0.01 && px[1] > 0.99 && px[0] < 0.01, "custom semi-transparent colour: {px:?}");
+                let px = app.session.active().unwrap().doc.layers[0]
+                    .surface()
+                    .unwrap()
+                    .pixel(100, 60);
+                assert!(
+                    (px[3] - 0.2).abs() < 0.01 && px[1] > 0.99 && px[0] < 0.01,
+                    "custom semi-transparent colour: {px:?}"
+                );
             }
         }
     }
@@ -1197,28 +1666,52 @@ mod tests {
     fn sidebar_transparent_preset_reaches_classic_canvas_over_existing_art() {
         use egui_kittest::{Harness, kittest::Queryable};
         let mut app = app_with_gradient("linear");
-        app.run("paint.gradient", json!({"from": [0, 0], "to": [199, 0], "colors": ["#ff0000", "#ff0000"]})).unwrap();
+        app.run(
+            "paint.gradient",
+            json!({"from": [0, 0], "to": [199, 0], "colors": ["#ff0000", "#ff0000"]}),
+        )
+        .unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
         app.ui.tool_options.gradient_classic = true;
         app.ui.tool_options.gradient_dither = false;
-        let mut h = Harness::builder().with_size(vec2(420.0, 600.0)).build_ui_state(|ui, app| crate::preset_panels::gradients_panel(app, ui), app);
+        let mut h = Harness::builder()
+            .with_size(vec2(420.0, 600.0))
+            .build_ui_state(
+                |ui, app| crate::preset_panels::gradients_panel(app, ui),
+                app,
+            );
         h.get_by_label("Foreground to Transparent").click();
         h.run();
-        assert_eq!(h.state().session.presets.gradient.name, "Foreground to Transparent");
+        assert_eq!(
+            h.state().session.presets.gradient.name,
+            "Foreground to Transparent"
+        );
         drag(h.state_mut(), [20.0, 60.0], [180.0, 60.0]);
         let st = h.state().session.active().unwrap();
         assert_eq!(st.doc.layers.len(), 2);
         let surface = st.doc.layers[1].surface().unwrap();
         assert!(surface.pixel(0, 60)[3] > 0.99);
         assert!((surface.pixel(100, 60)[3] - 0.5).abs() < 0.01);
-        assert!(surface.pixel(199, 60)[3] < 0.01, "transparent end reveals existing art");
-        assert_eq!(st.doc.layers[0].surface().unwrap().pixel(100, 60), vec![1.0, 0.0, 0.0, 1.0], "existing art is unchanged");
+        assert!(
+            surface.pixel(199, 60)[3] < 0.01,
+            "transparent end reveals existing art"
+        );
+        assert_eq!(
+            st.doc.layers[0].surface().unwrap().pixel(100, 60),
+            vec![1.0, 0.0, 0.0, 1.0],
+            "existing art is unchanged"
+        );
     }
 
     #[test]
     fn gradient_blend_mode_reaches_live_and_classic_drags() {
         use photocraft_color::BlendMode;
-        for mode in [BlendMode::Difference, BlendMode::Multiply, BlendMode::Screen, BlendMode::Exclusion] {
+        for mode in [
+            BlendMode::Difference,
+            BlendMode::Multiply,
+            BlendMode::Screen,
+            BlendMode::Exclusion,
+        ] {
             let mut live = app_with_gradient("linear");
             live.ui.tool_options.gradient_blend_mode = mode;
             drag(&mut live, [20.0, 60.0], [180.0, 60.0]);
@@ -1260,12 +1753,32 @@ mod tests {
     #[test]
     fn preview_shows_the_drag_before_commit() {
         let mut app = app_with_gradient("radial");
-        crate::canvas::tool_event(&mut app, ToolEvent::Down { x: 100.0, y: 60.0, pressure: 1.0 }, mods());
-        crate::canvas::tool_event(&mut app, ToolEvent::Move { x: 140.0, y: 60.0, pressure: 1.0 }, mods());
+        crate::canvas::tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 100.0,
+                y: 60.0,
+                pressure: 1.0,
+            },
+            mods(),
+        );
+        crate::canvas::tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 140.0,
+                y: 60.0,
+                pressure: 1.0,
+            },
+            mods(),
+        );
         let (doc, key) = display_doc(&mut app, 0).expect("a preview while drawing");
         assert!(key & TAG != 0);
         assert!(doc.layer(PREVIEW_LAYER).is_some(), "the new layer previews");
-        assert_eq!(app.session.active().unwrap().doc.layers.len(), 1, "nothing committed yet");
+        assert_eq!(
+            app.session.active().unwrap().doc.layers.len(),
+            1,
+            "nothing committed yet"
+        );
         crate::canvas::tool_event(&mut app, ToolEvent::Up { x: 140.0, y: 60.0 }, mods());
         assert!(display_doc(&mut app, 0).is_none());
     }
@@ -1281,20 +1794,28 @@ mod tests {
         for classic in [false, true] {
             let mut app = app_with_gradient("linear");
             app.ui.tool_options.gradient_classic = classic;
-            let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 900.0)).build_ui_state(
-                |ui, app: &mut PhotocraftApp| {
-                    crate::panels::options_bar(app, ui);
-                    let ctx = ui.ctx().clone();
-                    editor_window(app, &ctx);
-                },
-                app,
-            );
+            let mut h = egui_kittest::Harness::builder()
+                .with_size(vec2(1400.0, 900.0))
+                .build_ui_state(
+                    |ui, app: &mut PhotocraftApp| {
+                        crate::panels::options_bar(app, ui);
+                        let ctx = ui.ctx().clone();
+                        editor_window(app, &ctx);
+                    },
+                    app,
+                );
             PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::ALL[0]);
             h.run_steps(4);
-            assert!(!h.state().ui.panels.gradient_editor, "classic={classic}: starts closed");
+            assert!(
+                !h.state().ui.panels.gradient_editor,
+                "classic={classic}: starts closed"
+            );
             h.get_by_label("Gradient picker").click();
             h.run_steps(3);
-            assert!(h.state().ui.panels.gradient_editor, "classic={classic}: the swatch opened the editor");
+            assert!(
+                h.state().ui.panels.gradient_editor,
+                "classic={classic}: the swatch opened the editor"
+            );
         }
     }
 
@@ -1312,7 +1833,10 @@ mod tests {
         };
 
         // Nothing selected.
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.ui.panels.gradient_editor = true;
         run(&mut app);
         assert!(app.ui.panels.gradient_editor, "the window stays open");
@@ -1321,7 +1845,10 @@ mod tests {
         // (combined stops and Gradient Options) is what gets built.
         let mut app = app_with_gradient("linear");
         drag(&mut app, [10.0, 10.0], [150.0, 90.0]);
-        assert!(selected_gradient(&app).is_some(), "the drag left a gradient fill layer selected");
+        assert!(
+            selected_gradient(&app).is_some(),
+            "the drag left a gradient fill layer selected"
+        );
         app.ui.panels.gradient_editor = true;
         run(&mut app);
         assert!(app.ui.panels.gradient_editor);
@@ -1341,13 +1868,15 @@ mod tests {
 
         let app = app_with_gradient("linear");
         let before = app.session.presets.gradient.stops.len();
-        let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 900.0)).build_ui_state(
-            |ui, app: &mut PhotocraftApp| {
-                let ctx = ui.ctx().clone();
-                editor_window(app, &ctx);
-            },
-            app,
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(vec2(1400.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut PhotocraftApp| {
+                    let ctx = ui.ctx().clone();
+                    editor_window(app, &ctx);
+                },
+                app,
+            );
         PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::ALL[0]);
         // Open the window once the fonts are bound (the build's first frame runs without them).
         h.run_steps(2);
@@ -1355,7 +1884,11 @@ mod tests {
         h.run_steps(4);
         h.get_by_label("Gradient stops").click();
         h.run_steps(3);
-        assert_eq!(h.state().session.presets.gradient.stops.len(), before + 1, "the click added a stop to the current gradient");
+        assert_eq!(
+            h.state().session.presets.gradient.stops.len(),
+            before + 1,
+            "the click added a stop to the current gradient"
+        );
     }
 
     /// The editor's Save As Preset button files the current gradient into the Gradients panel
@@ -1365,14 +1898,22 @@ mod tests {
         use egui_kittest::kittest::Queryable;
 
         let app = app_with_gradient("linear");
-        let has_custom = |s: &PhotocraftApp| s.session.presets.gradients.iter().any(|g| g.items.iter().any(|p| p.name == "Custom"));
-        let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 900.0)).build_ui_state(
-            |ui, app: &mut PhotocraftApp| {
-                let ctx = ui.ctx().clone();
-                editor_window(app, &ctx);
-            },
-            app,
-        );
+        let has_custom = |s: &PhotocraftApp| {
+            s.session
+                .presets
+                .gradients
+                .iter()
+                .any(|g| g.items.iter().any(|p| p.name == "Custom"))
+        };
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(vec2(1400.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut PhotocraftApp| {
+                    let ctx = ui.ctx().clone();
+                    editor_window(app, &ctx);
+                },
+                app,
+            );
         PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::ALL[0]);
         h.run_steps(2);
         h.state_mut().ui.panels.gradient_editor = true;
@@ -1380,7 +1921,10 @@ mod tests {
         assert!(!has_custom(h.state()), "no Custom preset yet");
         h.get_by_label("Save As Preset").click();
         h.run_steps(3);
-        assert!(has_custom(h.state()), "the button saved the current gradient as a preset");
+        assert!(
+            has_custom(h.state()),
+            "the button saved the current gradient as a preset"
+        );
     }
 
     /// A hidden gradient fill layer is still editable from the editor (the Properties panel edits
@@ -1390,9 +1934,16 @@ mod tests {
         let mut app = app_with_gradient("linear");
         drag(&mut app, [10.0, 10.0], [150.0, 90.0]);
         let id = app.session.active().unwrap().active_layer.unwrap();
-        app.run("layer.setProps", json!({"layer": id.0, "visible": false})).unwrap();
-        assert!(active_gradient(&app).is_none(), "the canvas widget skips a hidden layer");
-        assert!(selected_gradient(&app).is_some(), "the editor still edits it");
+        app.run("layer.setProps", json!({"layer": id.0, "visible": false}))
+            .unwrap();
+        assert!(
+            active_gradient(&app).is_none(),
+            "the canvas widget skips a hidden layer"
+        );
+        assert!(
+            selected_gradient(&app).is_some(),
+            "the editor still edits it"
+        );
     }
 
     /// #4577: the tessellator snaps the checkerboard's rects to whole pixels but leaves the ramp's
@@ -1405,7 +1956,9 @@ mod tests {
             ctx.set_pixels_per_point(ppp);
             let r = Rect::from_min_size(pos2(10.0 + 0.5 / ppp, 7.0 + 0.5 / ppp), vec2(96.0, 20.0));
             // The new scale applies from the next frame.
-            ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+            ctx.run_ui(egui::RawInput::default(), |_| {})
+                .textures_delta
+                .clear();
             let mut painted_at = 0.0;
             let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
                 painted_at = ui.ctx().pixels_per_point();
@@ -1429,7 +1982,11 @@ mod tests {
                     _ => None,
                 })
                 .expect("the ramp mesh");
-            assert_eq!(ramp, checker.round_to_pixels(ppp), "{ppp}x: the ramp covers every pixel of the checker");
+            assert_eq!(
+                ramp,
+                checker.round_to_pixels(ppp),
+                "{ppp}x: the ramp covers every pixel of the checker"
+            );
         }
     }
 }

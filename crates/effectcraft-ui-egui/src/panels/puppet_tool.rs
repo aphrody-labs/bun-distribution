@@ -67,7 +67,13 @@ struct Cached {
 }
 
 /// The deformed mesh of `layer`'s Puppet effect at comp time `t` (cached per project revision).
-pub fn overlay(app: &EffectcraftApp, ctx: &egui::Context, cid: ItemId, layer: &Layer, t: Tick) -> Option<Overlay> {
+pub fn overlay(
+    app: &EffectcraftApp,
+    ctx: &egui::Context,
+    cid: ItemId,
+    layer: &Layer,
+    t: Tick,
+) -> Option<Overlay> {
     let fx = layer.effects()?.groups().find(|g| puppet::is_puppet(g))?;
     let key = (app.session.revision, cid.0, layer.id.0, t.0);
     let id = egui::Id::new(("puppet-overlay", layer.id.0));
@@ -76,9 +82,18 @@ pub fn overlay(app: &EffectcraftApp, ctx: &egui::Context, cid: ItemId, layer: &L
     {
         return Some(c.overlay);
     }
-    let (buf, params) = effectcraft_engine::commands::puppet::puppet_eval(&app.session, cid, layer.id, fx.uid, t)?;
+    let (buf, params) =
+        effectcraft_engine::commands::puppet::puppet_eval(&app.session, cid, layer.id, fx.uid, t)?;
     let overlay: Overlay = Arc::new(puppet::overlay(&buf, &params));
-    ctx.data_mut(|d| d.insert_temp(id, Cached { key, overlay: overlay.clone() }));
+    ctx.data_mut(|d| {
+        d.insert_temp(
+            id,
+            Cached {
+                key,
+                overlay: overlay.clone(),
+            },
+        )
+    });
     Some(overlay)
 }
 
@@ -87,20 +102,35 @@ pub fn overlay(app: &EffectcraftApp, ctx: &egui::Context, cid: ItemId, layer: &L
 /// deformed shape, also where it reaches past the layer's own bounds), else the one whose art is
 /// (a new mesh there). Never a layer without a Puppet effect: the tools stay on the layers being
 /// rigged, as in After Effects (#284).
-pub fn target(ectx: &EvalCtx, layers: &[(&Layer, Overlay)], cpt: [f64; 2], on_art: impl Fn(&Layer) -> bool) -> Option<LayerId> {
+pub fn target(
+    ectx: &EvalCtx,
+    layers: &[(&Layer, Overlay)],
+    cpt: [f64; 2],
+    on_art: impl Fn(&Layer) -> bool,
+) -> Option<LayerId> {
     let on_mesh = |l: &Layer, ov: &Overlay| {
-        let Some(inv) = fx2c(ectx, l).inverse() else { return false };
+        let Some(inv) = fx2c(ectx, l).inverse() else {
+            return false;
+        };
         let p = inv.apply(gv2(cpt[0], cpt[1]));
-        ov.iter().any(|(_, mesh, def, _)| puppet::contains(mesh, def, [p.x, p.y]))
+        ov.iter()
+            .any(|(_, mesh, def, _)| puppet::contains(mesh, def, [p.x, p.y]))
     };
-    layers.iter().find(|(l, ov)| on_mesh(l, ov)).or_else(|| layers.iter().find(|(l, _)| on_art(l))).map(|(l, _)| l.id)
+    layers
+        .iter()
+        .find(|(l, ov)| on_mesh(l, ov))
+        .or_else(|| layers.iter().find(|(l, _)| on_art(l)))
+        .map(|(l, _)| l.id)
 }
 
 /// Keep a pin's keyframed Position in view in the Timeline after placing, moving or recording the
 /// pin in the viewer (#273).
 pub fn reveal_pin(app: &mut EffectcraftApp, layer: LayerId, pin: u64) {
     let comp = app.session.active_comp();
-    let pos = comp.and_then(|c| c.layer(layer)?.props.find_group(pin)?.get("position")).filter(|p| p.is_animated()).map(|p| p.uid);
+    let pos = comp
+        .and_then(|c| c.layer(layer)?.props.find_group(pin)?.get("position"))
+        .filter(|p| p.is_animated())
+        .map(|p| p.uid);
     if let Some(pos) = pos {
         super::timeline::keep_in_view(app, layer, pos);
     }
@@ -118,7 +148,10 @@ pub fn pin_position(mesh: &Mesh, def: &[[f64; 2]], p: &Pin) -> [f64; 2] {
         da.total_cmp(&db)
     });
     match v {
-        Some(v) => [def[v][0] + p.rest[0] - mesh.verts[v][0], def[v][1] + p.rest[1] - mesh.verts[v][1]],
+        Some(v) => [
+            def[v][0] + p.rest[0] - mesh.verts[v][0],
+            def[v][1] + p.rest[1] - mesh.verts[v][1],
+        ],
         None => p.rest,
     }
 }
@@ -183,7 +216,11 @@ pub fn draw(
                 let dir = (scr([at[0] + c, at[1] + s]) - pos).normalized();
                 if dir.x.is_finite() && dir.y.is_finite() {
                     let hp = pos + dir * RING;
-                    painter.rect_filled(egui::Rect::from_center_size(hp, egui::vec2(5.0, 5.0)), 0.0, col);
+                    painter.rect_filled(
+                        egui::Rect::from_center_size(hp, egui::vec2(5.0, 5.0)),
+                        0.0,
+                        col,
+                    );
                     painter.rect_stroke(
                         egui::Rect::from_center_size(hp, egui::vec2(5.0, 5.0)),
                         0.0,
@@ -197,7 +234,12 @@ pub fn draw(
             // Selected pins are filled with their colour and ringed in white; unselected pins are
             // hollow (dark centre, coloured outline), like selected and unselected mask vertices.
             // Drawing only: hit-testing uses `pos` alone.
-            let r = if sel { 5.5 } else { 4.5 } + if hover.is_some_and(|h| h.distance(pos) < 8.0) { 1.5 } else { 0.0 };
+            let r = if sel { 5.5 } else { 4.5 }
+                + if hover.is_some_and(|h| h.distance(pos) < 8.0) {
+                    1.5
+                } else {
+                    0.0
+                };
             if sel {
                 painter.circle_filled(pos, r, col);
                 painter.circle_stroke(pos, r, Stroke::new(1.0, Color32::BLACK));
@@ -206,7 +248,15 @@ pub fn draw(
                 painter.circle_filled(pos, r, Color32::from_black_alpha(160));
                 painter.circle_stroke(pos, r, Stroke::new(1.5, col));
             }
-            hits.push(PinHit { layer: layer.id, pin: pn.uid, kind: pn.kind, pos, rotation: pn.rotation, scale: pn.scale, handle });
+            hits.push(PinHit {
+                layer: layer.id,
+                pin: pn.uid,
+                kind: pn.kind,
+                pos,
+                rotation: pn.rotation,
+                scale: pn.scale,
+                handle,
+            });
         }
     }
     hits

@@ -63,7 +63,9 @@ impl Document {
 
     /// All spread refs: document spreads then parents.
     pub fn spread_refs(&self) -> impl Iterator<Item = SpreadRef> {
-        (0..self.spreads.len()).map(SpreadRef::Doc).chain((0..self.parents.len()).map(SpreadRef::Parent))
+        (0..self.spreads.len())
+            .map(SpreadRef::Doc)
+            .chain((0..self.parents.len()).map(SpreadRef::Parent))
     }
 
     pub fn find(&self, id: ItemId) -> Option<ItemLoc> {
@@ -127,9 +129,16 @@ impl Document {
     }
 
     /// Insert an item into a spread at `index` (None = front).
-    pub fn insert_item(&mut self, r: SpreadRef, item: Item, index: Option<usize>) -> Result<ItemId> {
+    pub fn insert_item(
+        &mut self,
+        r: SpreadRef,
+        item: Item,
+        index: Option<usize>,
+    ) -> Result<ItemId> {
         let id = item.id;
-        let sp = self.spread_mut(r).ok_or_else(|| DocError::Invalid(format!("no spread {r:?}")))?;
+        let sp = self
+            .spread_mut(r)
+            .ok_or_else(|| DocError::Invalid(format!("no spread {r:?}")))?;
         let i = index.unwrap_or(sp.items.len()).min(sp.items.len());
         sp.items.insert(i, Arc::new(item));
         Ok(id)
@@ -174,11 +183,22 @@ impl Document {
     /// The column direction a new story starts with: right to left in a document whose binding is
     /// right to left (Document Setup), else left to right. Stories already made keep theirs.
     pub fn new_story_direction(&self) -> crate::TextDirection {
-        if self.settings.right_to_left_binding { crate::TextDirection::RightToLeft } else { crate::TextDirection::LeftToRight }
+        if self.settings.right_to_left_binding {
+            crate::TextDirection::RightToLeft
+        } else {
+            crate::TextDirection::LeftToRight
+        }
     }
 
     /// Create a text frame with a new (or given) story at `rect` on spread `r`.
-    pub fn add_text_frame(&mut self, r: SpreadRef, rect: Rect, layer: LayerId, text: &str, para: ParaFormat) -> Result<(ItemId, StoryId)> {
+    pub fn add_text_frame(
+        &mut self,
+        r: SpreadRef,
+        rect: Rect,
+        layer: LayerId,
+        text: &str,
+        para: ParaFormat,
+    ) -> Result<(ItemId, StoryId)> {
         let id = ItemId(self.alloc());
         let sid = StoryId(self.alloc());
         let mut story = Story::with_text(sid, text, para);
@@ -187,7 +207,11 @@ impl Document {
         self.stories.insert(sid, Arc::new(story));
         let mut item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(rect));
         item.object_style = self.styles.default_text_frame.clone();
-        if let Some(os) = self.styles.object_style(&self.styles.default_text_frame).cloned() {
+        if let Some(os) = self
+            .styles
+            .object_style(&self.styles.default_text_frame)
+            .cloned()
+        {
             if let Some(f) = os.fill {
                 item.fill = f;
             }
@@ -195,7 +219,10 @@ impl Document {
                 item.stroke = s;
             }
         }
-        item.content = Content::Text(TextFrame { story: sid, options: TextFrameOptions::default() });
+        item.content = Content::Text(TextFrame {
+            story: sid,
+            options: TextFrameOptions::default(),
+        });
         self.insert_item(r, item, None)?;
         Ok((id, sid))
     }
@@ -206,15 +233,25 @@ impl Document {
         if from == to {
             return Err(DocError::Invalid("cannot thread a frame to itself".into()));
         }
-        let fs = self.item(from).and_then(|i| i.text_frame()).map(|t| t.story).ok_or(DocError::NoItem(from))?;
+        let fs = self
+            .item(from)
+            .and_then(|i| i.text_frame())
+            .map(|t| t.story)
+            .ok_or(DocError::NoItem(from))?;
         // Convert unassigned/graphic-less frames into text frames.
         let ts = match self.item(to).ok_or(DocError::NoItem(to))?.content.clone() {
             Content::Text(t) => Some(t.story),
             Content::Unassigned => None,
-            _ => return Err(DocError::Invalid("can only thread to text or empty frames".into())),
+            _ => {
+                return Err(DocError::Invalid(
+                    "can only thread to text or empty frames".into(),
+                ));
+            }
         };
         if ts == Some(fs) {
-            return Err(DocError::Invalid("frames are already in the same story".into()));
+            return Err(DocError::Invalid(
+                "frames are already in the same story".into(),
+            ));
         }
         if let Some(ts) = ts {
             let other = self.stories.remove(&ts).ok_or(DocError::NoStory(ts))?;
@@ -233,11 +270,16 @@ impl Document {
                     if let Some(last) = st.chars.last_mut() {
                         last.len += 1;
                     }
-                    st.chars.extend(other.chars.iter().filter(|r| r.len > 0).cloned());
-                    st.tables.extend(other.tables.iter().map(|(k, v)| (*k, v.clone())));
+                    st.chars
+                        .extend(other.chars.iter().filter(|r| r.len > 0).cloned());
+                    st.tables
+                        .extend(other.tables.iter().map(|(k, v)| (*k, v.clone())));
                     for n in &other.notes {
                         let id = st.next_note_id();
-                        st.notes.push(Arc::new(crate::Footnote { id, text: n.text.clone() }));
+                        st.notes.push(Arc::new(crate::Footnote {
+                            id,
+                            text: n.text.clone(),
+                        }));
                     }
                     st.anchors.extend(other.anchors.iter().cloned());
                     st.xrefs.extend(other.xrefs.iter().cloned());
@@ -245,7 +287,11 @@ impl Document {
                     st.objects.extend(other.objects.iter().cloned());
                     st.rev += 1;
                 }
-                let at = st.frames.iter().position(|f| *f == from).map_or(st.frames.len(), |p| p + 1);
+                let at = st
+                    .frames
+                    .iter()
+                    .position(|f| *f == from)
+                    .map_or(st.frames.len(), |p| p + 1);
                 for (k, f) in after.iter().enumerate() {
                     st.frames.insert(at + k, *f);
                 }
@@ -270,10 +316,17 @@ impl Document {
             }
         } else {
             let st = self.story_mut(fs).ok_or(DocError::NoStory(fs))?;
-            let at = st.frames.iter().position(|f| *f == from).map_or(st.frames.len(), |p| p + 1);
+            let at = st
+                .frames
+                .iter()
+                .position(|f| *f == from)
+                .map_or(st.frames.len(), |p| p + 1);
             st.frames.insert(at, to);
             let it = self.item_mut(to).ok_or(DocError::NoItem(to))?;
-            it.content = Content::Text(TextFrame { story: fs, options: TextFrameOptions::default() });
+            it.content = Content::Text(TextFrame {
+                story: fs,
+                options: TextFrameOptions::default(),
+            });
         }
         if let Some(st) = self.story_mut(fs) {
             st.rev += 1;
@@ -284,10 +337,18 @@ impl Document {
     /// Break the thread after `frame`: the following frames become a new empty story (the text
     /// stays with the first part and may become overset).
     pub fn unthread_after(&mut self, frame: ItemId) -> Result<()> {
-        let sid = self.item(frame).and_then(|i| i.text_frame()).map(|t| t.story).ok_or(DocError::NoItem(frame))?;
+        let sid = self
+            .item(frame)
+            .and_then(|i| i.text_frame())
+            .map(|t| t.story)
+            .ok_or(DocError::NoItem(frame))?;
         let (tail, vertical, direction) = {
             let st = self.story_mut(sid).ok_or(DocError::NoStory(sid))?;
-            let p = st.frames.iter().position(|f| *f == frame).ok_or(DocError::NoItem(frame))?;
+            let p = st
+                .frames
+                .iter()
+                .position(|f| *f == frame)
+                .ok_or(DocError::NoItem(frame))?;
             let tail = st.frames.split_off(p + 1);
             st.rev += 1;
             (tail, st.vertical, st.direction)
@@ -324,13 +385,19 @@ impl Document {
     /// Does this text frame set its text vertically (its story is vertical; type on a path stays
     /// along the path)?
     pub fn frame_vertical(&self, item: &Item) -> bool {
-        item.text_frame().is_some_and(|t| t.options.path.is_none() && self.story(t.story).is_some_and(|s| s.vertical))
+        item.text_frame().is_some_and(|t| {
+            t.options.path.is_none() && self.story(t.story).is_some_and(|s| s.vertical)
+        })
     }
 
     /// Text space → item inner space for a frame's composed text (identity except for vertical
     /// frames).
     pub fn text_local(&self, item: &Item) -> Affine {
-        if self.frame_vertical(item) { crate::item::vertical_text_xf(item.text_area()) } else { Affine::IDENTITY }
+        if self.frame_vertical(item) {
+            crate::item::vertical_text_xf(item.text_area())
+        } else {
+            Affine::IDENTITY
+        }
     }
 
     /// Text space → spread-parent space for a frame's composed text (the item transform, with the
@@ -385,12 +452,24 @@ impl Document {
     /// Replace a story's text and formatting wholesale (agents / import).
     pub fn set_story_text(&mut self, sid: StoryId, text: &str) -> Result<()> {
         let st = self.story_mut(sid).ok_or(DocError::NoStory(sid))?;
-        let para = st.paras.first().cloned().map(|p| ParaFormat { table: None, ..p }).unwrap_or_default();
-        let fmt = st.chars.first().map(|r| r.format.clone()).unwrap_or_default();
+        let para = st
+            .paras
+            .first()
+            .cloned()
+            .map(|p| ParaFormat { table: None, ..p })
+            .unwrap_or_default();
+        let fmt = st
+            .chars
+            .first()
+            .map(|r| r.format.clone())
+            .unwrap_or_default();
         let n = text.matches('\n').count() + 1;
         st.text = text.to_string();
         st.paras = vec![para; n];
-        st.chars = vec![CharRun { len: text.len(), format: fmt }];
+        st.chars = vec![CharRun {
+            len: text.len(),
+            format: fmt,
+        }];
         st.tables.clear();
         st.notes.clear();
         st.fix_notes();
@@ -412,12 +491,21 @@ pub fn item_hit(it: &Item, p: Point, tol: f64) -> bool {
     }
     let inner = it.xf.inverse() * p;
     let bp = it.path.to_bezpath();
-    let area = !it.fill.is_none() || matches!(it.content, Content::Text(_) | Content::Graphic(_)) || it.path.is_closed() && it.shape != Shape::Path;
-    if area && it.path.is_closed() && designcraft_geom::hit::fill_contains(&bp, designcraft_geom::FillRule::NonZero, inner) {
+    let area = !it.fill.is_none()
+        || matches!(it.content, Content::Text(_) | Content::Graphic(_))
+        || it.path.is_closed() && it.shape != Shape::Path;
+    if area
+        && it.path.is_closed()
+        && designcraft_geom::hit::fill_contains(&bp, designcraft_geom::FillRule::NonZero, inner)
+    {
         return true;
     }
     // Type on a path: the letters stand over the path, so a click on them hits it too.
-    let reach = if it.text_frame().is_some_and(|t| t.options.path.is_some()) { PATH_TYPE_REACH } else { 0.0 };
+    let reach = if it.text_frame().is_some_and(|t| t.options.path.is_some()) {
+        PATH_TYPE_REACH
+    } else {
+        0.0
+    };
     designcraft_geom::hit::stroke_contains(&bp, it.stroke.weight.max(1.0), tol + reach, inner)
 }
 

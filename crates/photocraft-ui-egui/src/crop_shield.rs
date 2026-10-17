@@ -79,7 +79,11 @@ impl CropShield {
     /// The opacity as a fraction in 0..=1: a non-finite value (a hand-edited settings file) is
     /// the default, an out-of-range one is clamped.
     pub fn opacity(&self) -> f32 {
-        let o = if self.opacity.is_finite() { self.opacity } else { DEFAULT_OPACITY };
+        let o = if self.opacity.is_finite() {
+            self.opacity
+        } else {
+            DEFAULT_OPACITY
+        };
         o.clamp(0.0, 100.0) / 100.0
     }
 }
@@ -99,7 +103,12 @@ pub fn fill(s: &CropShield, canvas: Color32, editing: bool) -> Option<Color32> {
         ShieldColor::MatchCanvas => [r, g, b],
         ShieldColor::Custom => s.custom_color,
     };
-    let a = s.opacity() * if s.auto_adjust && editing { EDITING_FACTOR } else { 1.0 };
+    let a = s.opacity()
+        * if s.auto_adjust && editing {
+            EDITING_FACTOR
+        } else {
+            1.0
+        };
     let a = (a * 255.0).round().clamp(0.0, 255.0) as u8;
     (a > 0).then(|| Color32::from_rgba_unmultiplied(r, g, b, a))
 }
@@ -111,12 +120,18 @@ pub fn canvas_color(app: &PhotocraftApp, ctx: &egui::Context) -> Color32 {
 
 /// The shield over the pending crop box now ([`fill`]).
 pub fn current(app: &PhotocraftApp, ctx: &egui::Context) -> Option<Color32> {
-    fill(&app.ui.tool_options.crop_shield, canvas_color(app, ctx), app.crop.drag.is_some())
+    fill(
+        &app.ui.tool_options.crop_shield,
+        canvas_color(app, ctx),
+        app.crop.drag.is_some(),
+    )
 }
 
 /// Show Cropped Area is off with the Crop tool showing a box: nothing outside it shows.
 pub fn hides_outside(app: &PhotocraftApp) -> bool {
-    app.ui.tool == Tool::Crop && app.ui.crop_rect.is_some() && !app.ui.tool_options.crop_shield.shows_cropped_area()
+    app.ui.tool == Tool::Crop
+        && app.ui.crop_rect.is_some()
+        && !app.ui.tool_options.crop_shield.shows_cropped_area()
 }
 
 /// H with the Crop tool showing a box and no drag in progress toggles Show Cropped Area (in
@@ -148,67 +163,110 @@ pub fn keys(app: &mut PhotocraftApp, ctx: &egui::Context) -> bool {
 /// Picker ([`pick_custom_color`], which needs the app).
 pub fn options_button(s: &mut CropShield, ui: &mut egui::Ui) -> bool {
     let mut pick = false;
-    let r = crate::icons::button(ui, "settings", 24.0, false, tl!("Set additional Crop options"));
-    egui::Popup::menu(&r).close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside).show(|ui| {
-        ui.set_min_width(240.0);
-        ui.set_max_width(300.0);
-        // Photoshop 25.1's order; Classic Mode greys out the other two (Show Cropped Area then
-        // shows as on, which is how it acts there).
-        ui.horizontal(|ui| {
-            crate::widgets::checkbox(ui, &mut s.classic_mode, tl!("Use Classic Mode"));
-            ui.weak(crate::shortcuts::pretty("P"));
-        });
-        let classic = s.classic_mode;
-        ui.add_enabled_ui(!classic, |ui| {
+    let r = crate::icons::button(
+        ui,
+        "settings",
+        24.0,
+        false,
+        tl!("Set additional Crop options"),
+    );
+    egui::Popup::menu(&r)
+        .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+        .show(|ui| {
+            ui.set_min_width(240.0);
+            ui.set_max_width(300.0);
+            // Photoshop 25.1's order; Classic Mode greys out the other two (Show Cropped Area then
+            // shows as on, which is how it acts there).
             ui.horizontal(|ui| {
-                if classic {
-                    crate::widgets::checkbox(ui, &mut true, tl!("Show Cropped Area"));
-                } else {
-                    crate::widgets::checkbox(ui, &mut s.show_cropped_area, tl!("Show Cropped Area"));
-                }
-                ui.weak(crate::shortcuts::pretty("H"));
+                crate::widgets::checkbox(ui, &mut s.classic_mode, tl!("Use Classic Mode"));
+                ui.weak(crate::shortcuts::pretty("P"));
             });
-            crate::widgets::checkbox(ui, &mut s.auto_center_preview, tl!("Auto Center Preview"));
-        });
-        ui.separator();
-        crate::widgets::checkbox(ui, &mut s.enabled, tl!("Enable Crop Shield"));
-        ui.add_enabled_ui(s.enabled, |ui| {
-            ui.indent("crop-shield", |ui| {
+            let classic = s.classic_mode;
+            ui.add_enabled_ui(!classic, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(tl!("Color:"));
-                    ui.radio_value(&mut s.color, ShieldColor::MatchCanvas, tl!("Match Canvas"));
-                    if ui.radio(s.color == ShieldColor::Custom, tl!("Custom…")).clicked() {
-                        s.color = ShieldColor::Custom;
-                        pick = true;
+                    if classic {
+                        crate::widgets::checkbox(ui, &mut true, tl!("Show Cropped Area"));
+                    } else {
+                        crate::widgets::checkbox(
+                            ui,
+                            &mut s.show_cropped_area,
+                            tl!("Show Cropped Area"),
+                        );
                     }
-                    if s.color == ShieldColor::Custom {
-                        let [r, g, b] = s.custom_color;
-                        if crate::widgets::color_swatch_button(ui, Color32::from_rgb(r, g, b), tl!("Crop Shield color")).clicked() {
+                    ui.weak(crate::shortcuts::pretty("H"));
+                });
+                crate::widgets::checkbox(
+                    ui,
+                    &mut s.auto_center_preview,
+                    tl!("Auto Center Preview"),
+                );
+            });
+            ui.separator();
+            crate::widgets::checkbox(ui, &mut s.enabled, tl!("Enable Crop Shield"));
+            ui.add_enabled_ui(s.enabled, |ui| {
+                ui.indent("crop-shield", |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(tl!("Color:"));
+                        ui.radio_value(&mut s.color, ShieldColor::MatchCanvas, tl!("Match Canvas"));
+                        if ui
+                            .radio(s.color == ShieldColor::Custom, tl!("Custom…"))
+                            .clicked()
+                        {
+                            s.color = ShieldColor::Custom;
                             pick = true;
                         }
+                        if s.color == ShieldColor::Custom {
+                            let [r, g, b] = s.custom_color;
+                            if crate::widgets::color_swatch_button(
+                                ui,
+                                Color32::from_rgb(r, g, b),
+                                tl!("Crop Shield color"),
+                            )
+                            .clicked()
+                            {
+                                pick = true;
+                            }
+                        }
+                    });
+                    if !s.opacity.is_finite() {
+                        s.opacity = DEFAULT_OPACITY;
                     }
+                    crate::widgets::slider_row(
+                        ui,
+                        tl!("Opacity:"),
+                        &mut s.opacity,
+                        0.0..=100.0,
+                        "%",
+                        None,
+                    );
+                    crate::widgets::checkbox(ui, &mut s.auto_adjust, tl!("Auto Adjust Opacity"));
                 });
-                if !s.opacity.is_finite() {
-                    s.opacity = DEFAULT_OPACITY;
-                }
-                crate::widgets::slider_row(ui, tl!("Opacity:"), &mut s.opacity, 0.0..=100.0, "%", None);
-                crate::widgets::checkbox(ui, &mut s.auto_adjust, tl!("Auto Adjust Opacity"));
             });
         });
-    });
     pick
 }
 
 /// Custom…: PhotoCraft's Color Picker on the custom shield colour; OK sets it
 /// (`color_picker_ui::confirm`, target `cropShield`).
 pub fn pick_custom_color(app: &mut PhotocraftApp) -> u64 {
-    let rgb = app.ui.tool_options.crop_shield.custom_color.map(|v| v as f32 / 255.0);
-    crate::color_picker_ui::open_for_target(app, "cropShield", "Color Picker (Crop Shield Color)", rgb)
+    let rgb = app
+        .ui
+        .tool_options
+        .crop_shield
+        .custom_color
+        .map(|v| v as f32 / 255.0);
+    crate::color_picker_ui::open_for_target(
+        app,
+        "cropShield",
+        "Color Picker (Crop Shield Color)",
+        rgb,
+    )
 }
 
 /// The Color Picker's OK for the custom shield colour (`"#rrggbb"`).
 pub fn set_custom_color(app: &mut PhotocraftApp, hex: &str) -> Result<(), String> {
-    let rgb = crate::color_picker_ui::parse_hex(hex).ok_or_else(|| format!("not a colour: {hex}"))?;
+    let rgb =
+        crate::color_picker_ui::parse_hex(hex).ok_or_else(|| format!("not a colour: {hex}"))?;
     let s = &mut app.ui.tool_options.crop_shield;
     s.custom_color = rgb.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8);
     s.color = ShieldColor::Custom;
@@ -226,7 +284,10 @@ mod tests {
         let s = CropShield::default();
         assert!(s.show_cropped_area && s.enabled && s.auto_adjust);
         assert_eq!((s.color, s.opacity), (ShieldColor::MatchCanvas, 75.0));
-        assert_eq!(fill(&s, CANVAS, false), Some(Color32::from_rgba_unmultiplied(40, 40, 40, 191)));
+        assert_eq!(
+            fill(&s, CANVAS, false),
+            Some(Color32::from_rgba_unmultiplied(40, 40, 40, 191))
+        );
     }
 
     #[test]
@@ -237,31 +298,61 @@ mod tests {
         assert!(dragging.a() < still.a(), "{dragging:?} {still:?}");
         assert_eq!(dragging.to_srgba_unmultiplied()[3], 96);
         s.auto_adjust = false;
-        assert_eq!(fill(&s, CANVAS, true), Some(still), "without Auto Adjust the opacity holds");
+        assert_eq!(
+            fill(&s, CANVAS, true),
+            Some(still),
+            "without Auto Adjust the opacity holds"
+        );
     }
 
     #[test]
     fn a_disabled_shield_leaves_the_outside_undimmed() {
-        let s = CropShield { enabled: false, ..Default::default() };
+        let s = CropShield {
+            enabled: false,
+            ..Default::default()
+        };
         assert_eq!(fill(&s, CANVAS, false), None);
         assert_eq!(fill(&s, CANVAS, true), None);
-        let s = CropShield { opacity: 0.0, ..Default::default() };
+        let s = CropShield {
+            opacity: 0.0,
+            ..Default::default()
+        };
         assert_eq!(fill(&s, CANVAS, false), None, "0 % draws nothing");
     }
 
     #[test]
     fn custom_colour_and_match_canvas() {
-        let s = CropShield { color: ShieldColor::Custom, custom_color: [200, 10, 30], opacity: 100.0, ..Default::default() };
-        assert_eq!(fill(&s, CANVAS, false), Some(Color32::from_rgb(200, 10, 30)));
-        let s = CropShield { opacity: 100.0, ..Default::default() };
-        assert_eq!(fill(&s, Color32::from_rgb(184, 184, 184), false), Some(Color32::from_rgb(184, 184, 184)));
+        let s = CropShield {
+            color: ShieldColor::Custom,
+            custom_color: [200, 10, 30],
+            opacity: 100.0,
+            ..Default::default()
+        };
+        assert_eq!(
+            fill(&s, CANVAS, false),
+            Some(Color32::from_rgb(200, 10, 30))
+        );
+        let s = CropShield {
+            opacity: 100.0,
+            ..Default::default()
+        };
+        assert_eq!(
+            fill(&s, Color32::from_rgb(184, 184, 184), false),
+            Some(Color32::from_rgb(184, 184, 184))
+        );
     }
 
     #[test]
     fn hidden_cropped_area_is_opaque_canvas_whatever_the_shield() {
         for enabled in [true, false] {
-            let s =
-                CropShield { show_cropped_area: false, enabled, color: ShieldColor::Custom, custom_color: [255, 0, 0], opacity: 10.0, ..Default::default() };
+            let s = CropShield {
+                show_cropped_area: false,
+                enabled,
+                color: ShieldColor::Custom,
+                custom_color: [255, 0, 0],
+                opacity: 10.0,
+                ..Default::default()
+            };
             assert_eq!(fill(&s, CANVAS, false), Some(CANVAS));
             assert_eq!(fill(&s, CANVAS, true), Some(CANVAS));
         }
@@ -269,10 +360,24 @@ mod tests {
 
     #[test]
     fn stray_opacities_are_clamped() {
-        for (o, want) in [(f32::NAN, 0.75), (f32::INFINITY, 0.75), (f32::NEG_INFINITY, 0.75), (-20.0, 0.0), (250.0, 1.0), (40.0, 0.4)] {
-            let s = CropShield { opacity: o, ..Default::default() };
+        for (o, want) in [
+            (f32::NAN, 0.75),
+            (f32::INFINITY, 0.75),
+            (f32::NEG_INFINITY, 0.75),
+            (-20.0, 0.0),
+            (250.0, 1.0),
+            (40.0, 0.4),
+        ] {
+            let s = CropShield {
+                opacity: o,
+                ..Default::default()
+            };
             assert!((s.opacity() - want).abs() < 1e-6, "{o}");
-            assert_eq!(fill(&s, CANVAS, false).map_or(0, |c| c.to_srgba_unmultiplied()[3]), (want * 255.0f32).round() as u8, "{o}");
+            assert_eq!(
+                fill(&s, CANVAS, false).map_or(0, |c| c.to_srgba_unmultiplied()[3]),
+                (want * 255.0f32).round() as u8,
+                "{o}"
+            );
         }
         // From JSON: out-of-range numbers load and are clamped when drawn.
         let s: CropShield = serde_json::from_str(r#"{"opacity": 1e9}"#).unwrap();
@@ -282,25 +387,47 @@ mod tests {
 
     #[test]
     fn older_settings_without_the_shield_get_the_defaults() {
-        let o: crate::state::ToolOptions = serde_json::from_str(r#"{"crop_delete": false}"#).unwrap();
+        let o: crate::state::ToolOptions =
+            serde_json::from_str(r#"{"crop_delete": false}"#).unwrap();
         assert_eq!(o.crop_shield, CropShield::default());
         assert!(!o.crop_delete);
         let s: CropShield = serde_json::from_str(r#"{"enabled": false}"#).unwrap();
-        assert_eq!(s, CropShield { enabled: false, ..Default::default() });
+        assert_eq!(
+            s,
+            CropShield {
+                enabled: false,
+                ..Default::default()
+            }
+        );
         let back: CropShield = serde_json::from_value(serde_json::to_value(&s).unwrap()).unwrap();
         assert_eq!(back, s);
-        assert_eq!(serde_json::to_value(ShieldColor::MatchCanvas).unwrap(), "matchCanvas");
+        assert_eq!(
+            serde_json::to_value(ShieldColor::MatchCanvas).unwrap(),
+            "matchCanvas"
+        );
     }
 
     fn press_h(app: &mut PhotocraftApp) {
         let ctx = egui::Context::default();
-        ctx.input_mut(|i| i.events.push(egui::Event::Key { key: Key::H, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE }));
+        ctx.input_mut(|i| {
+            i.events.push(egui::Event::Key {
+                key: Key::H,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Modifiers::NONE,
+            })
+        });
         crate::shortcuts::handle(app, &ctx);
     }
 
     fn crop_app() -> PhotocraftApp {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", serde_json::json!({"width": 200, "height": 120})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", serde_json::json!({"width": 200, "height": 120}))
+            .unwrap();
         app.ui.tool = Tool::Crop;
         crate::crop_ui::ensure_frame(&mut app);
         assert!(app.ui.crop_rect.is_some());
@@ -322,7 +449,10 @@ mod tests {
     #[test]
     fn h_stays_the_hand_key_without_a_crop_box() {
         // No document: no box, so H picks the Hand tool.
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.ui.tool = Tool::Crop;
         press_h(&mut app);
         assert_eq!(app.ui.tool, Tool::Hand);
@@ -335,9 +465,20 @@ mod tests {
         assert!(app.ui.tool_options.crop_shield.show_cropped_area);
         // A crop drag in progress.
         let mut app = crop_app();
-        app.crop.drag = Some(crate::crop_ui::CropDrag::Move { start: [0.0, 0.0], rect: [0.0, 0.0, 10.0, 10.0] });
+        app.crop.drag = Some(crate::crop_ui::CropDrag::Move {
+            start: [0.0, 0.0],
+            rect: [0.0, 0.0, 10.0, 10.0],
+        });
         let ctx = egui::Context::default();
-        ctx.input_mut(|i| i.events.push(egui::Event::Key { key: Key::H, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE }));
+        ctx.input_mut(|i| {
+            i.events.push(egui::Event::Key {
+                key: Key::H,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Modifiers::NONE,
+            })
+        });
         assert!(!keys(&mut app, &ctx));
         assert!(app.ui.tool_options.crop_shield.show_cropped_area);
     }
@@ -351,7 +492,10 @@ mod tests {
         f.insert("color".into(), serde_json::json!("#ff8000"));
         crate::color_picker_ui::confirm(&mut app, &f).unwrap();
         let s = &app.ui.tool_options.crop_shield;
-        assert_eq!((s.color, s.custom_color), (ShieldColor::Custom, [255, 128, 0]));
+        assert_eq!(
+            (s.color, s.custom_color),
+            (ShieldColor::Custom, [255, 128, 0])
+        );
         assert!(set_custom_color(&mut app, "nope").is_err());
         assert_eq!(app.ui.tool_options.crop_shield.custom_color, [255, 128, 0]);
     }

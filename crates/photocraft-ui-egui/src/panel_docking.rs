@@ -52,11 +52,20 @@ fn cancel_legacy_drag(app: &mut PhotocraftApp, ctx: &egui::Context) -> bool {
 }
 
 pub(crate) fn normalize(raw: &str) -> Option<&'static str> {
-    PANELS.iter().find(|(id, label, _)| id.eq_ignore_ascii_case(raw.trim()) || label.eq_ignore_ascii_case(raw.trim())).map(|p| p.0)
+    PANELS
+        .iter()
+        .find(|(id, label, _)| {
+            id.eq_ignore_ascii_case(raw.trim()) || label.eq_ignore_ascii_case(raw.trim())
+        })
+        .map(|p| p.0)
 }
 
 pub(crate) fn valid(layout: &Layout<String>) -> bool {
-    layout.validate().is_ok() && layout.panels().iter().all(|id| normalize(id) == Some(id.as_str()))
+    layout.validate().is_ok()
+        && layout
+            .panels()
+            .iter()
+            .all(|id| normalize(id) == Some(id.as_str()))
 }
 
 fn legacy(app: &PhotocraftApp) -> Layout<String> {
@@ -64,12 +73,29 @@ fn legacy(app: &PhotocraftApp) -> Layout<String> {
 }
 
 fn legacy_layout(app: &PhotocraftApp, all: bool) -> Layout<String> {
-    let pro = matches!(app.ui.theme, crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium);
+    let pro = matches!(
+        app.ui.theme,
+        crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium
+    );
     let mut layout = Layout::default();
-    for group in app.ui.dock.order().into_iter().rev().filter(|g| all || g.shown(&app.ui.panels)) {
+    for group in app
+        .ui
+        .dock
+        .order()
+        .into_iter()
+        .rev()
+        .filter(|g| all || g.shown(&app.ui.panels))
+    {
         let labels = group.tabs(pro);
-        let visible = if all { group.tabs(pro).iter().copied().enumerate().collect() } else { app.ui.dock.visible_tabs(group, pro) };
-        let panels: Vec<String> = visible.iter().filter_map(|(_, label)| normalize(label).map(str::to_owned)).collect();
+        let visible = if all {
+            group.tabs(pro).iter().copied().enumerate().collect()
+        } else {
+            app.ui.dock.visible_tabs(group, pro)
+        };
+        let panels: Vec<String> = visible
+            .iter()
+            .filter_map(|(_, label)| normalize(label).map(str::to_owned))
+            .collect();
         if panels.is_empty() {
             continue;
         }
@@ -81,9 +107,17 @@ fn legacy_layout(app: &PhotocraftApp, all: bool) -> Layout<String> {
             Group::History => app.ui.dock_tabs.history,
             Group::Layers => app.ui.dock_tabs.layers,
         };
-        let active = labels.get(selected).and_then(|label| normalize(label)).and_then(|id| panels.iter().position(|p| p == id)).unwrap_or(0);
+        let active = labels
+            .get(selected)
+            .and_then(|label| normalize(label))
+            .and_then(|id| panels.iter().position(|p| p == id))
+            .unwrap_or(0);
         if group == Group::Properties && !pro {
-            layout.floating.push(Floating { panels, active, rect: [120.0, 160.0, 320.0, 440.0] });
+            layout.floating.push(Floating {
+                panels,
+                active,
+                rect: [120.0, 160.0, 320.0, 440.0],
+            });
             continue;
         }
         let node = Node::Tabs { panels, active };
@@ -102,18 +136,36 @@ fn legacy_layout(app: &PhotocraftApp, all: bool) -> Layout<String> {
 
 // Native collapse flags remain app-owned. An intact native tab group keeps its collapsed
 // presentation when the workspace first becomes customizable; mixed custom groups are expanded.
-fn collapsed_members(app: &PhotocraftApp, layout: &Layout<String>) -> std::collections::HashSet<String> {
-    let mut collapsed: std::collections::HashSet<String> = app.ui.docking_collapsed.iter().cloned().collect();
+fn collapsed_members(
+    app: &PhotocraftApp,
+    layout: &Layout<String>,
+) -> std::collections::HashSet<String> {
+    let mut collapsed: std::collections::HashSet<String> =
+        app.ui.docking_collapsed.iter().cloned().collect();
     let mut pending: Vec<_> = layout.root.iter().collect();
     while let Some(node) = pending.pop() {
         match node {
             Node::Split { first, second, .. } => pending.extend([first.as_ref(), second.as_ref()]),
             Node::Tabs { panels, .. } => {
-                let group = panels.first().and_then(|id| PANELS.iter().find(|p| p.0 == id)).map(|p| p.2);
+                let group = panels
+                    .first()
+                    .and_then(|id| PANELS.iter().find(|p| p.0 == id))
+                    .map(|p| p.2);
                 if let Some(group) = group.filter(|group| app.ui.dock.is_collapsed(*group)) {
-                    let pro = matches!(app.ui.theme, crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium);
-                    let native: Vec<_> = app.ui.dock.visible_tabs(group, pro).iter().filter_map(|(_, name)| normalize(name)).collect();
-                    if panels.len() == native.len() && panels.iter().all(|panel| native.contains(&panel.as_str())) {
+                    let pro = matches!(
+                        app.ui.theme,
+                        crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium
+                    );
+                    let native: Vec<_> = app
+                        .ui
+                        .dock
+                        .visible_tabs(group, pro)
+                        .iter()
+                        .filter_map(|(_, name)| normalize(name))
+                        .collect();
+                    if panels.len() == native.len()
+                        && panels.iter().all(|panel| native.contains(&panel.as_str()))
+                    {
                         collapsed.extend(panels.iter().cloned());
                     }
                 }
@@ -125,26 +177,46 @@ fn collapsed_members(app: &PhotocraftApp, layout: &Layout<String>) -> std::colle
 }
 
 fn first_root(layout: &Layout<String>, except: &str) -> Option<String> {
-    let root = Layout { root: layout.root.clone(), floating: Vec::new() };
-    root.panels().into_iter().find(|p| p.as_str() != except).cloned()
+    let root = Layout {
+        root: layout.root.clone(),
+        floating: Vec::new(),
+    };
+    root.panels()
+        .into_iter()
+        .find(|p| p.as_str() != except)
+        .cloned()
 }
 
 fn ensure(layout: &mut Layout<String>, panel: &str) -> Result<(), String> {
     let anchor = first_root(layout, panel);
-    layout.apply(Action::Open { panel: panel.into(), anchor }).map_err(|e| e.to_string())
+    layout
+        .apply(Action::Open {
+            panel: panel.into(),
+            anchor,
+        })
+        .map_err(|e| e.to_string())
 }
 
 fn number(params: &Value, key: &str, default: f32) -> Result<f32, String> {
     match params.get(key) {
         None => Ok(default),
-        Some(v) => v.as_f64().filter(|v| v.is_finite() && v.abs() <= 1_000_000.0).map(|v| v as f32).ok_or_else(|| format!("{key} must be a finite coordinate")),
+        Some(v) => v
+            .as_f64()
+            .filter(|v| v.is_finite() && v.abs() <= 1_000_000.0)
+            .map(|v| v as f32)
+            .ok_or_else(|| format!("{key} must be a finite coordinate")),
     }
 }
 
 fn placement(params: &Value) -> Result<Placement<String>, String> {
     if let Some(before) = params.get("before") {
-        let id = before.as_str().and_then(normalize).ok_or("before must name a panel")?;
-        return Ok(Placement::Tab { before: Some(id.into()) });
+        let id = before
+            .as_str()
+            .and_then(normalize)
+            .ok_or("before must name a panel")?;
+        return Ok(Placement::Tab {
+            before: Some(id.into()),
+        });
     }
     let zone = match params.get("zone") {
         None => "tab",
@@ -161,7 +233,11 @@ fn placement(params: &Value) -> Result<Placement<String>, String> {
     })
 }
 
-pub(crate) fn command(app: &mut PhotocraftApp, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub(crate) fn command(
+    app: &mut PhotocraftApp,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     if id == "window.panel.group" {
         return Some(group_command(app, params));
     }
@@ -170,22 +246,36 @@ pub(crate) fn command(app: &mut PhotocraftApp, id: &str, params: &Value) -> Opti
             params
                 .get("action")
                 .ok_or_else(|| "action is required".to_string())
-                .and_then(|value| serde_json::from_value::<Action<String>>(value.clone()).map_err(|error| error.to_string()))
+                .and_then(|value| {
+                    serde_json::from_value::<Action<String>>(value.clone())
+                        .map_err(|error| error.to_string())
+                })
                 .and_then(|action| apply_action(app, action)),
         );
     }
     if let Some(layout) = &app.ui.docking
-        && let Some(panel) = id.strip_prefix("window.panel.").or_else(|| id.strip_prefix("window.toggle.")).and_then(normalize)
+        && let Some(panel) = id
+            .strip_prefix("window.panel.")
+            .or_else(|| id.strip_prefix("window.toggle."))
+            .and_then(normalize)
     {
         let showing = layout.contains(&panel.to_string());
         let show = match params.get("show").or_else(|| params.get("on")) {
-            None => !showing || !panel_active(layout, panel) || collapsed_members(app, layout).contains(panel),
+            None => {
+                !showing
+                    || !panel_active(layout, panel)
+                    || collapsed_members(app, layout).contains(panel)
+            }
             Some(value) => match value.as_bool() {
                 Some(show) => show,
                 None => return Some(Err("show must be a boolean".into())),
             },
         };
-        return Some(change(app, if show { "activate" } else { "close" }, &json!({"panel":panel})));
+        return Some(change(
+            app,
+            if show { "activate" } else { "close" },
+            &json!({"panel":panel}),
+        ));
     }
     let operation = match id {
         "window.panel.move" => "move",
@@ -201,7 +291,10 @@ pub(crate) fn command(app: &mut PhotocraftApp, id: &str, params: &Value) -> Opti
 
 pub(crate) fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
     let layout = app.ui.docking.as_ref()?;
-    let panel = id.strip_prefix("window.panel.").or_else(|| id.strip_prefix("window.toggle.")).and_then(normalize)?;
+    let panel = id
+        .strip_prefix("window.panel.")
+        .or_else(|| id.strip_prefix("window.toggle."))
+        .and_then(normalize)?;
     Some(layout.contains(&panel.to_string()))
 }
 
@@ -213,7 +306,16 @@ fn apply_action(app: &mut PhotocraftApp, action: Action<String>) -> Result<Value
     }
     let registered = |id: &String| normalize(id) == Some(id.as_str());
     let known = match &action {
-        Action::Move { panel, anchor, placement } | Action::OpenAt { panel, anchor, placement } => {
+        Action::Move {
+            panel,
+            anchor,
+            placement,
+        }
+        | Action::OpenAt {
+            panel,
+            anchor,
+            placement,
+        } => {
             registered(panel)
                 && registered(anchor)
                 && match placement {
@@ -221,7 +323,9 @@ fn apply_action(app: &mut PhotocraftApp, action: Action<String>) -> Result<Value
                     _ => true,
                 }
         }
-        Action::Open { panel, anchor } => registered(panel) && anchor.as_ref().is_none_or(registered),
+        Action::Open { panel, anchor } => {
+            registered(panel) && anchor.as_ref().is_none_or(registered)
+        }
         Action::Float { panel, .. }
         | Action::Close { panel }
         | Action::Activate { panel }
@@ -238,8 +342,15 @@ fn apply_action(app: &mut PhotocraftApp, action: Action<String>) -> Result<Value
     }
     let mut layout = app.ui.docking.clone().unwrap_or_else(|| legacy(app));
     let returning = match &action {
-        Action::Close { panel } => layout.location(panel).ok().map(|location| (panel.clone(), location)),
-        Action::Float { panel, .. } => layout.location(panel).ok().filter(|location| location.floating.is_none()).map(|location| (panel.clone(), location)),
+        Action::Close { panel } => layout
+            .location(panel)
+            .ok()
+            .map(|location| (panel.clone(), location)),
+        Action::Float { panel, .. } => layout
+            .location(panel)
+            .ok()
+            .filter(|location| location.floating.is_none())
+            .map(|location| (panel.clone(), location)),
         _ => None,
     };
     let reveal = match &action {
@@ -274,25 +385,50 @@ fn change(app: &mut PhotocraftApp, operation: &str, params: &Value) -> Result<Va
     if app.session.prefs().workspace_locked && operation != "activate" {
         return Err("workspace is locked".into());
     }
-    let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
+    let panel = params
+        .get("panel")
+        .and_then(Value::as_str)
+        .and_then(normalize)
+        .ok_or("panel must name a registered panel")?;
     if app.ui.docking.as_ref().is_some_and(|layout| !valid(layout)) {
         return Err("saved panel layout is invalid; reset the workspace first".into());
     }
     let mut layout = app.ui.docking.clone().unwrap_or_else(|| legacy(app));
-    let migrated = if app.ui.docking.is_none() { migration_hidden(app, &layout) } else { app.ui.docking_hidden.clone() };
-    let mut hidden: std::collections::BTreeMap<_, _> =
-        migrated.iter().filter(|(id, _)| normalize(id).is_some()).take(64).map(|(id, at)| (id.clone(), at.clone())).collect();
+    let migrated = if app.ui.docking.is_none() {
+        migration_hidden(app, &layout)
+    } else {
+        app.ui.docking_hidden.clone()
+    };
+    let mut hidden: std::collections::BTreeMap<_, _> = migrated
+        .iter()
+        .filter(|(id, _)| normalize(id).is_some())
+        .take(64)
+        .map(|(id, at)| (id.clone(), at.clone()))
+        .collect();
     let mut restored = false;
     if operation == "dock"
-        && params.get("anchor").or_else(|| params.get("onto")).is_none()
+        && params
+            .get("anchor")
+            .or_else(|| params.get("onto"))
+            .is_none()
         && let Some(location) = hidden.get(panel).filter(|location| {
             location.floating.is_none()
-                && location.anchor.as_ref().is_none_or(|anchor| Layout { root: layout.root.clone(), floating: Vec::new() }.contains(anchor))
+                && location.anchor.as_ref().is_none_or(|anchor| {
+                    Layout {
+                        root: layout.root.clone(),
+                        floating: Vec::new(),
+                    }
+                    .contains(anchor)
+                })
         })
     {
         let mut candidate = layout.clone();
         if candidate.contains(&panel.to_string()) {
-            candidate.apply(Action::Close { panel: panel.into() }).map_err(|e| e.to_string())?;
+            candidate
+                .apply(Action::Close {
+                    panel: panel.into(),
+                })
+                .map_err(|e| e.to_string())?;
         }
         if candidate.restore(panel.into(), location).is_ok() {
             layout = candidate;
@@ -303,39 +439,83 @@ fn change(app: &mut PhotocraftApp, operation: &str, params: &Value) -> Result<Va
     match operation {
         "dock" if restored => {}
         "float" => {
-            let rect = [number(params, "x", 400.0)?, number(params, "y", 140.0)?, number(params, "width", 300.0)?, number(params, "height", 400.0)?];
+            let rect = [
+                number(params, "x", 400.0)?,
+                number(params, "y", 140.0)?,
+                number(params, "width", 300.0)?,
+                number(params, "height", 400.0)?,
+            ];
             ensure(&mut layout, panel)?;
             if let Ok(location) = layout.location(&panel.to_string())
                 && location.floating.is_none()
             {
                 hidden.insert(panel.into(), location);
             }
-            layout.apply(Action::Float { panel: panel.into(), rect }).map_err(|e| e.to_string())?;
+            layout
+                .apply(Action::Float {
+                    panel: panel.into(),
+                    rect,
+                })
+                .map_err(|e| e.to_string())?;
         }
         "move" | "dock" => {
-            if operation == "move" && params.get("anchor").or_else(|| params.get("onto")).is_none() {
+            if operation == "move"
+                && params
+                    .get("anchor")
+                    .or_else(|| params.get("onto"))
+                    .is_none()
+            {
                 return Err("move requires a destination panel".into());
             }
             let anchor = match params.get("anchor").or_else(|| params.get("onto")) {
-                Some(v) => Some(v.as_str().and_then(normalize).ok_or("anchor must name a registered panel")?.to_string()),
+                Some(v) => Some(
+                    v.as_str()
+                        .and_then(normalize)
+                        .ok_or("anchor must name a registered panel")?
+                        .to_string(),
+                ),
                 None => first_root(&layout, panel),
             };
             let placement = placement(params)?;
             if let Some(anchor) = anchor {
                 ensure(&mut layout, panel)?;
-                layout.apply(Action::Move { panel: panel.into(), anchor, placement }).map_err(|e| e.to_string())?;
+                layout
+                    .apply(Action::Move {
+                        panel: panel.into(),
+                        anchor,
+                        placement,
+                    })
+                    .map_err(|e| e.to_string())?;
             } else if operation == "dock" {
                 if layout.contains(&panel.to_string()) {
-                    layout.apply(Action::Close { panel: panel.into() }).map_err(|e| e.to_string())?;
+                    layout
+                        .apply(Action::Close {
+                            panel: panel.into(),
+                        })
+                        .map_err(|e| e.to_string())?;
                 }
-                layout.apply(Action::Open { panel: panel.into(), anchor: None }).map_err(|e| e.to_string())?;
+                layout
+                    .apply(Action::Open {
+                        panel: panel.into(),
+                        anchor: None,
+                    })
+                    .map_err(|e| e.to_string())?;
             } else {
                 return Err("move requires an existing destination panel".into());
             }
         }
         "close" => {
-            hidden.insert(panel.into(), layout.location(&panel.to_string()).map_err(|e| e.to_string())?);
-            layout.apply(Action::Close { panel: panel.into() }).map_err(|e| e.to_string())?;
+            hidden.insert(
+                panel.into(),
+                layout
+                    .location(&panel.to_string())
+                    .map_err(|e| e.to_string())?,
+            );
+            layout
+                .apply(Action::Close {
+                    panel: panel.into(),
+                })
+                .map_err(|e| e.to_string())?;
         }
         _ => {
             if !layout.contains(&panel.to_string()) && hidden.contains_key(panel) {
@@ -343,7 +523,11 @@ fn change(app: &mut PhotocraftApp, operation: &str, params: &Value) -> Result<Va
                 restore_hidden(&mut layout, &mut hidden, panel);
             }
             ensure(&mut layout, panel)?;
-            layout.apply(Action::Activate { panel: panel.into() }).map_err(|e| e.to_string())?;
+            layout
+                .apply(Action::Activate {
+                    panel: panel.into(),
+                })
+                .map_err(|e| e.to_string())?;
             hidden.remove(panel);
         }
     }
@@ -363,28 +547,38 @@ fn change(app: &mut PhotocraftApp, operation: &str, params: &Value) -> Result<Va
 
 pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> bool {
     let area = egui::Id::new("photocraft-panel-docking");
-    let stale_origin =
-        ui.ctx().data_mut(|data| data.get_temp::<LegacyDrag>(area.with("legacy-origin")).is_some_and(|origin| origin.generation != app.ui.docking_generation));
+    let stale_origin = ui.ctx().data_mut(|data| {
+        data.get_temp::<LegacyDrag>(area.with("legacy-origin"))
+            .is_some_and(|origin| origin.generation != app.ui.docking_generation)
+    });
     let changed_workspace = ui.ctx().data_mut(|data| {
         let previous = data.get_temp::<u64>(area.with("generation"));
         data.insert_temp(area.with("generation"), app.ui.docking_generation);
         previous.is_some_and(|generation| generation != app.ui.docking_generation)
     });
     if changed_workspace || stale_origin {
-        ui.ctx().data_mut(|data| data.insert_temp(area.with("legacy-suppressed"), true));
+        ui.ctx()
+            .data_mut(|data| data.insert_temp(area.with("legacy-suppressed"), true));
         craft_ui::docking::cancel_drag::<String>(ui.ctx(), area);
-        ui.ctx().data_mut(|data| data.remove::<LegacyDrag>(area.with("legacy-origin")));
+        ui.ctx()
+            .data_mut(|data| data.remove::<LegacyDrag>(area.with("legacy-origin")));
     }
 
-    let cancelled =
-        ui.input(|input| !input.focused || input.key_pressed(egui::Key::Escape) || (!input.pointer.primary_down() && !input.pointer.any_released()));
+    let cancelled = ui.input(|input| {
+        !input.focused
+            || input.key_pressed(egui::Key::Escape)
+            || (!input.pointer.primary_down() && !input.pointer.any_released())
+    });
     if cancelled && cancel_legacy_drag(app, ui.ctx()) {
-        ui.ctx().data_mut(|data| data.insert_temp(area.with("legacy-suppressed"), true));
+        ui.ctx()
+            .data_mut(|data| data.insert_temp(area.with("legacy-suppressed"), true));
         if app.ui.docking.is_none() {
             return false;
         }
     }
-    let Some(layout) = app.ui.docking.as_ref() else { return false };
+    let Some(layout) = app.ui.docking.as_ref() else {
+        return false;
+    };
     if !valid(layout) {
         app.ui.docking = None;
         let message = "Invalid panel layout; restored the default dock";
@@ -396,7 +590,9 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> bool {
     let t = crate::theme::Tokens::get(ui.ctx());
     let locked = app.session.prefs().workspace_locked;
     let collapsed = collapsed_members(app, &layout);
-    let requested_width = ui.ctx().data_mut(|data| data.remove_temp::<f32>(crate::panels::dock_width_id()));
+    let requested_width = ui
+        .ctx()
+        .data_mut(|data| data.remove_temp::<f32>(crate::panels::dock_width_id()));
     let mut commands = Vec::new();
     let mut targets = Vec::new();
     let mut draw = |ui: &mut egui::Ui| {
@@ -406,7 +602,11 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> bool {
         style.background = t.card;
         // Studio themes leave the strip transparent over the dock's card; a floating group has no
         // card behind it, so the canvas showed through its titles (#4509).
-        style.tab_background = if t.tab_strip.a() == 0 { t.card } else { t.tab_strip };
+        style.tab_background = if t.tab_strip.a() == 0 {
+            t.card
+        } else {
+            t.tab_strip
+        };
         style.active_background = t.card;
         style.text = t.text;
         style.inactive_text = t.text_dim;
@@ -426,19 +626,41 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> bool {
             ui,
             &layout,
             &style,
-            |id| PANELS.iter().find(|p| p.0 == id).map(|p| tl!(p.1).to_string()).unwrap_or_else(|| id.clone()),
-            |_| craft_ui::docking::Permissions { movable: !locked, floatable: !locked, closable: !locked, accepts_tabs: !locked },
+            |id| {
+                PANELS
+                    .iter()
+                    .find(|p| p.0 == id)
+                    .map(|p| tl!(p.1).to_string())
+                    .unwrap_or_else(|| id.clone())
+            },
+            |_| craft_ui::docking::Permissions {
+                movable: !locked,
+                floatable: !locked,
+                closable: !locked,
+                accepts_tabs: !locked,
+            },
             |id| {
                 if collapsed.contains(id) {
-                    craft_ui::docking::PanelLimits { min: egui::vec2(220.0, 0.0), max: egui::vec2(1_000_000.0, 0.0) }
+                    craft_ui::docking::PanelLimits {
+                        min: egui::vec2(220.0, 0.0),
+                        max: egui::vec2(1_000_000.0, 0.0),
+                    }
                 } else {
                     // Layers owns its row scroll and footer; leave room for its fixed controls
                     // plus a scrolling row area instead of clipping the footer after a split.
                     let height = if id == "layers" { 220.0 } else { 80.0 };
-                    craft_ui::docking::PanelLimits { min: egui::vec2(220.0, height), ..Default::default() }
+                    craft_ui::docking::PanelLimits {
+                        min: egui::vec2(220.0, height),
+                        ..Default::default()
+                    }
                 }
             },
-            &mut PanelContent { app, collapsed: &collapsed, commands: &mut commands, targets: &mut targets },
+            &mut PanelContent {
+                app,
+                collapsed: &collapsed,
+                commands: &mut commands,
+                targets: &mut targets,
+            },
         )
     };
     let output = if layout.root.is_some() {
@@ -458,23 +680,45 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> bool {
         app.ui.status = error.to_string();
     }
     if ui.input(|input| input.pointer.any_released()) {
-        if !output.actions.iter().any(|action| matches!(action, Action::Move { .. } | Action::Float { .. })) && cancel_legacy_drag(app, ui.ctx()) {
+        if !output
+            .actions
+            .iter()
+            .any(|action| matches!(action, Action::Move { .. } | Action::Float { .. }))
+            && cancel_legacy_drag(app, ui.ctx())
+        {
             return app.ui.docking.is_some();
         }
-        ui.ctx().data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("photocraft-panel-docking").with("legacy-origin")));
+        ui.ctx().data_mut(|data| {
+            data.remove::<LegacyDrag>(
+                egui::Id::new("photocraft-panel-docking").with("legacy-origin"),
+            )
+        });
     }
     if let Some(panel) = output.group_drag.as_ref()
         && let Some(pointer) = ui.ctx().pointer_interact_pos()
     {
         let members = group_members(&layout, panel);
-        let eligible: Vec<_> = targets.iter().filter(|target| !members.contains(&target.anchor)).cloned().collect();
+        let eligible: Vec<_> = targets
+            .iter()
+            .filter(|target| !members.contains(&target.anchor))
+            .cloned()
+            .collect();
         if let Some(proposal) = craft_ui::docking::resolve_drop(panel, pointer, &eligible) {
-            ui.painter().rect_stroke(proposal.preview, 0.0, egui::Stroke::new(2.0, t.accent), egui::StrokeKind::Inside);
+            ui.painter().rect_stroke(
+                proposal.preview,
+                0.0,
+                egui::Stroke::new(2.0, t.accent),
+                egui::StrokeKind::Inside,
+            );
         }
     }
     if let Some((panel, pointer)) = output.group_drop {
         let members = group_members(&layout, &panel);
-        let eligible: Vec<_> = targets.iter().filter(|target| !members.contains(&target.anchor)).cloned().collect();
+        let eligible: Vec<_> = targets
+            .iter()
+            .filter(|target| !members.contains(&target.anchor))
+            .cloned()
+            .collect();
         if let Some(proposal) = craft_ui::docking::resolve_drop(&panel, pointer, &eligible) {
             commands.push(("window.panel.group", json!({"panel":panel,"operation":"move","anchor":proposal.anchor,"placement":proposal.placement})));
         }
@@ -493,30 +737,59 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> bool {
     true
 }
 
-pub(crate) fn legacy_tab(app: &mut PhotocraftApp, ui: &mut egui::Ui, panel: &str, response: &egui::Response) {
+pub(crate) fn legacy_tab(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    panel: &str,
+    response: &egui::Response,
+) {
     let suppressed = egui::Id::new("photocraft-panel-docking").with("legacy-suppressed");
     if ui.input(|input| input.pointer.button_pressed(egui::PointerButton::Primary)) {
         ui.ctx().data_mut(|data| data.remove::<bool>(suppressed));
     }
-    if ui.ctx().data(|data| data.get_temp::<bool>(suppressed)).unwrap_or(false) || app.session.prefs().workspace_locked {
+    if ui
+        .ctx()
+        .data(|data| data.get_temp::<bool>(suppressed))
+        .unwrap_or(false)
+        || app.session.prefs().workspace_locked
+    {
         return;
     }
-    let Some(panel) = normalize(panel) else { return };
+    let Some(panel) = normalize(panel) else {
+        return;
+    };
     // Native tab reordering and vertical whole-group moves stay in the dock.
     // Crossing the dock column horizontally detaches through the shared layout.
-    let strip = egui::Rect::from_min_max(egui::pos2(ui.max_rect().left(), response.rect.top()), egui::pos2(ui.max_rect().right(), response.rect.bottom()));
+    let strip = egui::Rect::from_min_max(
+        egui::pos2(ui.max_rect().left(), response.rect.top()),
+        egui::pos2(ui.max_rect().right(), response.rect.bottom()),
+    );
     if response.dragged()
-        && ui.input(|input| input.focused && input.pointer.primary_down() && !input.key_pressed(egui::Key::Escape))
-        && ui.ctx().pointer_interact_pos().is_some_and(|position| position.x < strip.left() - 24.0 || position.x > strip.right() + 24.0)
+        && ui.input(|input| {
+            input.focused && input.pointer.primary_down() && !input.key_pressed(egui::Key::Escape)
+        })
+        && ui.ctx().pointer_interact_pos().is_some_and(|position| {
+            position.x < strip.left() - 24.0 || position.x > strip.right() + 24.0
+        })
         && let Some(id) = normalize(panel)
     {
         let mut layout = app.ui.docking.clone().unwrap_or_else(|| legacy(app));
         let bounds = ui.max_rect();
         let source = egui::Rect::from_min_size(
             egui::pos2(bounds.left(), response.rect.top()),
-            egui::vec2(bounds.width().clamp(240.0, 600.0), bounds.height().clamp(200.0, 600.0)),
+            egui::vec2(
+                bounds.width().clamp(240.0, 600.0),
+                bounds.height().clamp(200.0, 600.0),
+            ),
         );
-        if ensure(&mut layout, id).is_ok() && craft_ui::docking::begin_drag(ui.ctx(), egui::Id::new("photocraft-panel-docking"), id.to_string(), source) {
+        if ensure(&mut layout, id).is_ok()
+            && craft_ui::docking::begin_drag(
+                ui.ctx(),
+                egui::Id::new("photocraft-panel-docking"),
+                id.to_string(),
+                source,
+            )
+        {
             ui.ctx().data_mut(|data| {
                 data.insert_temp(
                     egui::Id::new("photocraft-panel-docking").with("legacy-origin"),
@@ -537,9 +810,13 @@ pub(crate) fn legacy_tab(app: &mut PhotocraftApp, ui: &mut egui::Ui, panel: &str
 }
 
 fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: &str) {
-    let Some((_, label, group)) = PANELS.iter().find(|p| p.0 == id) else { return };
+    let Some((_, label, group)) = PANELS.iter().find(|p| p.0 == id) else {
+        return;
+    };
     let pro = crate::theme::Tokens::get(ui.ctx()).pro;
-    let Some(tab) = group.tabs(pro).iter().position(|name| name == label) else { return };
+    let Some(tab) = group.tabs(pro).iter().position(|name| name == label) else {
+        return;
+    };
     *group.tab_mut(&mut app.ui.dock_tabs) = tab;
     if group.scrolls_itself(tab) {
         crate::panels::dock_body(app, ui, *group, tab);
@@ -562,12 +839,19 @@ fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: &str) {
 mod tests;
 
 /// Return positions for panels already hidden in a legacy workspace.
-fn migration_hidden(app: &PhotocraftApp, visible: &Layout<String>) -> std::collections::BTreeMap<String, craft_ui::docking::Location<String>> {
+fn migration_hidden(
+    app: &PhotocraftApp,
+    visible: &Layout<String>,
+) -> std::collections::BTreeMap<String, craft_ui::docking::Location<String>> {
     let full = legacy_layout(app, true);
     PANELS
         .iter()
         .filter(|(id, _, _)| !visible.contains(&id.to_string()))
-        .filter_map(|(id, _, _)| full.location(&id.to_string()).ok().map(|at| ((*id).to_owned(), at)))
+        .filter_map(|(id, _, _)| {
+            full.location(&id.to_string())
+                .ok()
+                .map(|at| ((*id).to_owned(), at))
+        })
         .collect()
 }
 
@@ -576,12 +860,21 @@ fn group_members(layout: &Layout<String>, panel: &str) -> Vec<String> {
     while let Some(node) = pending.pop() {
         match node {
             Node::Split { first, second, .. } => pending.extend([second.as_ref(), first.as_ref()]),
-            Node::Tabs { panels, .. } if panels.iter().any(|id| id == panel) => return panels.clone(),
-            Node::Stack { entries } if entries.iter().any(|entry| entry.panel == panel) => return vec![panel.to_owned()],
+            Node::Tabs { panels, .. } if panels.iter().any(|id| id == panel) => {
+                return panels.clone();
+            }
+            Node::Stack { entries } if entries.iter().any(|entry| entry.panel == panel) => {
+                return vec![panel.to_owned()];
+            }
             _ => {}
         }
     }
-    layout.floating.iter().find(|group| group.panels.iter().any(|id| id == panel)).map(|group| group.panels.clone()).unwrap_or_default()
+    layout
+        .floating
+        .iter()
+        .find(|group| group.panels.iter().any(|id| id == panel))
+        .map(|group| group.panels.clone())
+        .unwrap_or_default()
 }
 
 fn reveal_group(app: &mut PhotocraftApp, panel: &str) {
@@ -599,16 +892,27 @@ fn reveal_group(app: &mut PhotocraftApp, panel: &str) {
 pub(crate) fn rail_on(app: &PhotocraftApp, group: Group) -> bool {
     app.ui.docking.as_ref().is_some_and(|layout| {
         let collapsed = collapsed_members(app, layout);
-        PANELS.iter().filter(|p| p.2 == group).any(|p| layout.contains(&p.0.to_owned()) && !collapsed.contains(p.0))
+        PANELS
+            .iter()
+            .filter(|p| p.2 == group)
+            .any(|p| layout.contains(&p.0.to_owned()) && !collapsed.contains(p.0))
     })
 }
 
 pub(crate) fn rail_click(app: &mut PhotocraftApp, group: Group) {
-    let Some(layout) = app.ui.docking.as_ref() else { return };
-    let existing = PANELS.iter().find(|p| p.2 == group && layout.contains(&p.0.to_owned())).map(|p| p.0);
+    let Some(layout) = app.ui.docking.as_ref() else {
+        return;
+    };
+    let existing = PANELS
+        .iter()
+        .find(|p| p.2 == group && layout.contains(&p.0.to_owned()))
+        .map(|p| p.0);
     let panel = existing.or_else(|| {
         group
-            .tabs(matches!(app.ui.theme, crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium))
+            .tabs(matches!(
+                app.ui.theme,
+                crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium
+            ))
             .get(*group.tab_mut(&mut app.ui.dock_tabs))
             .and_then(|label| normalize(label))
     });
@@ -638,8 +942,15 @@ fn root_groups(layout: &Layout<String>) -> Vec<Vec<String>> {
 }
 
 fn group_command(app: &mut PhotocraftApp, params: &Value) -> Result<Value, String> {
-    let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
-    let operation = params.get("operation").and_then(Value::as_str).ok_or("operation is required")?;
+    let panel = params
+        .get("panel")
+        .and_then(Value::as_str)
+        .and_then(normalize)
+        .ok_or("panel must name a registered panel")?;
+    let operation = params
+        .get("operation")
+        .and_then(Value::as_str)
+        .ok_or("operation is required")?;
     if app.session.prefs().workspace_locked {
         return Err("workspace is locked".into());
     }
@@ -651,13 +962,19 @@ fn group_command(app: &mut PhotocraftApp, params: &Value) -> Result<Value, Strin
     if members.is_empty() {
         return Err("panel is hidden".into());
     }
-    let mut hidden = if app.ui.docking.is_none() { migration_hidden(app, &layout) } else { app.ui.docking_hidden.clone() };
+    let mut hidden = if app.ui.docking.is_none() {
+        migration_hidden(app, &layout)
+    } else {
+        app.ui.docking_hidden.clone()
+    };
     let mut collapsed = collapsed_members(app, &layout);
     match operation {
         "close" => {
             for id in &members {
                 hidden.insert(id.clone(), layout.location(id).map_err(|e| e.to_string())?);
-                layout.apply(Action::Close { panel: id.clone() }).map_err(|e| e.to_string())?;
+                layout
+                    .apply(Action::Close { panel: id.clone() })
+                    .map_err(|e| e.to_string())?;
             }
             collapsed.retain(|id| !members.contains(id));
         }
@@ -668,44 +985,93 @@ fn group_command(app: &mut PhotocraftApp, params: &Value) -> Result<Value, Strin
             collapsed.retain(|id| !members.contains(id));
         }
         "move" => {
-            let anchor = params.get("anchor").and_then(Value::as_str).and_then(normalize).ok_or("anchor must name a registered panel")?;
+            let anchor = params
+                .get("anchor")
+                .and_then(Value::as_str)
+                .and_then(normalize)
+                .ok_or("anchor must name a registered panel")?;
             let placement = params
                 .get("placement")
-                .map(|v| serde_json::from_value::<Placement<String>>(v.clone()).map_err(|e| e.to_string()))
+                .map(|v| {
+                    serde_json::from_value::<Placement<String>>(v.clone())
+                        .map_err(|e| e.to_string())
+                })
                 .unwrap_or_else(|| placement(params))?;
             if members.iter().any(|id| id == anchor) {
                 return Err("group cannot be moved into itself".into());
             }
             let first = members.first().ok_or("group is empty")?;
-            layout.apply(Action::Move { panel: first.clone(), anchor: anchor.to_owned(), placement }).map_err(|e| e.to_string())?;
+            layout
+                .apply(Action::Move {
+                    panel: first.clone(),
+                    anchor: anchor.to_owned(),
+                    placement,
+                })
+                .map_err(|e| e.to_string())?;
             let destination = group_members(&layout, first);
-            let before = destination.iter().position(|id| id == first).and_then(|index| destination.get(index + 1)).cloned();
+            let before = destination
+                .iter()
+                .position(|id| id == first)
+                .and_then(|index| destination.get(index + 1))
+                .cloned();
             for id in members.iter().skip(1) {
                 layout
-                    .apply(Action::Move { panel: id.clone(), anchor: first.clone(), placement: Placement::Tab { before: before.clone() } })
+                    .apply(Action::Move {
+                        panel: id.clone(),
+                        anchor: first.clone(),
+                        placement: Placement::Tab {
+                            before: before.clone(),
+                        },
+                    })
                     .map_err(|e| e.to_string())?;
             }
-            layout.apply(Action::Activate { panel: panel.to_owned() }).map_err(|e| e.to_string())?;
+            layout
+                .apply(Action::Activate {
+                    panel: panel.to_owned(),
+                })
+                .map_err(|e| e.to_string())?;
         }
         "up" | "down" => {
             let groups = root_groups(&layout);
-            let index = groups.iter().position(|g| g.contains(&panel.to_owned())).ok_or("floating groups cannot move within the dock")?;
-            let neighbor = if operation == "up" { index.checked_sub(1) } else { index.checked_add(1).filter(|i| *i < groups.len()) };
-            let anchor = neighbor.and_then(|i| groups.get(i)).and_then(|g| g.first()).ok_or("group is already at the edge")?;
+            let index = groups
+                .iter()
+                .position(|g| g.contains(&panel.to_owned()))
+                .ok_or("floating groups cannot move within the dock")?;
+            let neighbor = if operation == "up" {
+                index.checked_sub(1)
+            } else {
+                index.checked_add(1).filter(|i| *i < groups.len())
+            };
+            let anchor = neighbor
+                .and_then(|i| groups.get(i))
+                .and_then(|g| g.first())
+                .ok_or("group is already at the edge")?;
             let first = members.first().ok_or("group is empty")?;
             layout
                 .apply(Action::Move {
                     panel: first.clone(),
                     anchor: anchor.clone(),
-                    placement: Placement::Split(if operation == "up" { Zone::Top } else { Zone::Bottom }),
+                    placement: Placement::Split(if operation == "up" {
+                        Zone::Top
+                    } else {
+                        Zone::Bottom
+                    }),
                 })
                 .map_err(|e| e.to_string())?;
             for id in members.iter().skip(1) {
                 layout
-                    .apply(Action::Move { panel: id.clone(), anchor: first.clone(), placement: Placement::Tab { before: None } })
+                    .apply(Action::Move {
+                        panel: id.clone(),
+                        anchor: first.clone(),
+                        placement: Placement::Tab { before: None },
+                    })
                     .map_err(|e| e.to_string())?;
             }
-            layout.apply(Action::Activate { panel: panel.to_owned() }).map_err(|e| e.to_string())?;
+            layout
+                .apply(Action::Activate {
+                    panel: panel.to_owned(),
+                })
+                .map_err(|e| e.to_string())?;
         }
         _ => return Err("operation must be close, collapse, expand, move, up or down".into()),
     }
@@ -735,7 +1101,9 @@ pub(crate) fn prepare_legacy_update(
     dock: Option<&crate::dock::DockLayout>,
     pro: bool,
 ) -> Result<Option<LegacyUpdate>, String> {
-    let Some(current) = &app.ui.docking else { return Ok(None) };
+    let Some(current) = &app.ui.docking else {
+        return Ok(None);
+    };
     if panels.is_none() && tabs.is_none() && dock.is_none() {
         return Ok(None);
     }
@@ -747,36 +1115,69 @@ pub(crate) fn prepare_legacy_update(
     if let Some(dock) = dock
         && (dock.order != app.ui.dock.order || dock.heights != app.ui.dock.heights)
     {
-        return Err("dock order/heights cannot replace a customized layout; use window.panel.layout".into());
+        return Err(
+            "dock order/heights cannot replace a customized layout; use window.panel.layout".into(),
+        );
     }
     if app.session.prefs().workspace_locked {
         return Err("workspace is locked".into());
     }
-    let clear_collapse: Vec<_> =
-        dock.map(|d| Group::ALL.into_iter().filter(|g| d.is_collapsed(*g) != app.ui.dock.is_collapsed(*g)).collect()).unwrap_or_default();
+    let clear_collapse: Vec<_> = dock
+        .map(|d| {
+            Group::ALL
+                .into_iter()
+                .filter(|g| d.is_collapsed(*g) != app.ui.dock.is_collapsed(*g))
+                .collect()
+        })
+        .unwrap_or_default();
     if !clear_collapse.is_empty()
         && root_groups(current).iter().any(|ids| {
-            let groups: std::collections::HashSet<_> = ids.iter().filter_map(|id| PANELS.iter().find(|p| p.0 == id).map(|p| p.2)).collect();
+            let groups: std::collections::HashSet<_> = ids
+                .iter()
+                .filter_map(|id| PANELS.iter().find(|p| p.0 == id).map(|p| p.2))
+                .collect();
             groups.len() > 1
         })
     {
-        return Err("legacy collapse settings cannot replace mixed custom groups; use window.panel.group".into());
+        return Err(
+            "legacy collapse settings cannot replace mixed custom groups; use window.panel.group"
+                .into(),
+        );
     }
     let mut layout = current.clone();
     let mut hidden = app.ui.docking_hidden.clone();
     for group in Group::ALL {
-        let visibility = request.get("panels").and_then(|p| p.get(group.key())).and_then(Value::as_bool);
-        let selected = request.get("dockTabs").and_then(|p| p.get(group.key())).is_some();
+        let visibility = request
+            .get("panels")
+            .and_then(|p| p.get(group.key()))
+            .and_then(Value::as_bool);
+        let selected = request
+            .get("dockTabs")
+            .and_then(|p| p.get(group.key()))
+            .is_some();
         let group_panels: Vec<_> = PANELS.iter().filter(|p| p.2 == group).collect();
         for &&(id, label, _) in &group_panels {
-            let explicitly_hidden = dock.is_some_and(|d| d.hidden_tabs.get(&group).is_some_and(|names| names.iter().any(|name| name == label)));
+            let explicitly_hidden = dock.is_some_and(|d| {
+                d.hidden_tabs
+                    .get(&group)
+                    .is_some_and(|names| names.iter().any(|name| name == label))
+            });
             let explicitly_shown = dock.is_some() && !explicitly_hidden;
             if visibility == Some(false) || explicitly_hidden {
                 if layout.contains(&id.to_owned()) {
-                    hidden.insert(id.to_owned(), layout.location(&id.to_owned()).map_err(|e| e.to_string())?);
-                    layout.apply(Action::Close { panel: id.to_owned() }).map_err(|e| e.to_string())?;
+                    hidden.insert(
+                        id.to_owned(),
+                        layout.location(&id.to_owned()).map_err(|e| e.to_string())?,
+                    );
+                    layout
+                        .apply(Action::Close {
+                            panel: id.to_owned(),
+                        })
+                        .map_err(|e| e.to_string())?;
                 }
-            } else if (visibility == Some(true) || explicitly_shown) && !layout.contains(&id.to_owned()) {
+            } else if (visibility == Some(true) || explicitly_shown)
+                && !layout.contains(&id.to_owned())
+            {
                 if hidden.contains_key(id) {
                     restore_hidden(&mut layout, &mut hidden, id);
                 }
@@ -793,7 +1194,11 @@ pub(crate) fn prepare_legacy_update(
                 Group::History => tabs.history,
                 Group::Layers => tabs.layers,
             };
-            let id = group.tabs(pro).get(index).and_then(|label| normalize(label)).ok_or("dockTabs index is outside the panel group")?;
+            let id = group
+                .tabs(pro)
+                .get(index)
+                .and_then(|label| normalize(label))
+                .ok_or("dockTabs index is outside the panel group")?;
             if visibility == Some(false) {
                 return Err("cannot select a tab in a hidden group".into());
             }
@@ -803,26 +1208,53 @@ pub(crate) fn prepare_legacy_update(
                 }
                 ensure(&mut layout, id)?;
             }
-            layout.apply(Action::Activate { panel: id.to_owned() }).map_err(|e| e.to_string())?;
+            layout
+                .apply(Action::Activate {
+                    panel: id.to_owned(),
+                })
+                .map_err(|e| e.to_string())?;
         }
     }
-    Ok(Some(LegacyUpdate { layout, hidden, clear_collapse }))
+    Ok(Some(LegacyUpdate {
+        layout,
+        hidden,
+        clear_collapse,
+    }))
 }
 
 pub(crate) fn commit_legacy_update(app: &mut PhotocraftApp, update: LegacyUpdate, request: &Value) {
     for group in update.clear_collapse {
-        let ids: Vec<_> = PANELS.iter().filter(|p| p.2 == group).map(|p| p.0).collect();
-        app.ui.docking_collapsed.retain(|id| !ids.contains(&id.as_str()));
+        let ids: Vec<_> = PANELS
+            .iter()
+            .filter(|p| p.2 == group)
+            .map(|p| p.0)
+            .collect();
+        app.ui
+            .docking_collapsed
+            .retain(|id| !ids.contains(&id.as_str()));
     }
     app.ui.docking = Some(update.layout);
     app.ui.docking_hidden = update.hidden;
     sync_visibility(app);
     for group in Group::ALL {
-        if request.get("dockTabs").and_then(|p| p.get(group.key())).is_some()
-            || request.get("panels").and_then(|p| p.get(group.key())).and_then(Value::as_bool) == Some(true)
+        if request
+            .get("dockTabs")
+            .and_then(|p| p.get(group.key()))
+            .is_some()
+            || request
+                .get("panels")
+                .and_then(|p| p.get(group.key()))
+                .and_then(Value::as_bool)
+                == Some(true)
         {
-            let ids: Vec<_> = PANELS.iter().filter(|p| p.2 == group).map(|p| p.0).collect();
-            app.ui.docking_collapsed.retain(|id| !ids.contains(&id.as_str()));
+            let ids: Vec<_> = PANELS
+                .iter()
+                .filter(|p| p.2 == group)
+                .map(|p| p.0)
+                .collect();
+            app.ui
+                .docking_collapsed
+                .retain(|id| !ids.contains(&id.as_str()));
             app.ui.dock.set_collapsed(group, false);
         }
     }
@@ -865,16 +1297,28 @@ impl craft_ui::docking::DockContent<String> for PanelContent<'_> {
                 strip.min.x = target.rect.left();
                 strip.max.x = target.rect.right();
             }
-            let members = self.app.ui.docking.as_ref().map(|layout| group_members(layout, id)).unwrap_or_default();
+            let members = self
+                .app
+                .ui
+                .docking
+                .as_ref()
+                .map(|layout| group_members(layout, id))
+                .unwrap_or_default();
             target.tabs = members
                 .into_iter()
                 .filter_map(|panel| {
-                    ui.ctx().read_response(egui::Id::new("photocraft-panel-docking").with(("tab", &panel))).map(|response| (panel, response.rect))
+                    ui.ctx()
+                        .read_response(
+                            egui::Id::new("photocraft-panel-docking").with(("tab", &panel)),
+                        )
+                        .map(|response| (panel, response.rect))
                 })
                 .collect();
         }
         if !self.collapsed.contains(id) {
-            egui::Frame::NONE.inner_margin(egui::Margin::same(8)).show(ui, |ui| body(self.app, ui, id));
+            egui::Frame::NONE
+                .inner_margin(egui::Margin::same(8))
+                .show(ui, |ui| body(self.app, ui, id));
         }
     }
     fn panel_menu(&mut self, ui: &mut egui::Ui, id: &String) {
@@ -883,7 +1327,13 @@ impl craft_ui::docking::DockContent<String> for PanelContent<'_> {
     fn group_header_width(&self, _panels: &[String], _active: &String, _floating: bool) -> f32 {
         28.0
     }
-    fn group_header(&mut self, ui: &mut egui::Ui, panels: &[String], active: &String, floating: bool) {
+    fn group_header(
+        &mut self,
+        ui: &mut egui::Ui,
+        panels: &[String],
+        active: &String,
+        floating: bool,
+    ) {
         if !floating {
             let rect = ui.max_rect();
             self.targets.push(craft_ui::docking::DropTarget {
@@ -897,29 +1347,71 @@ impl craft_ui::docking::DockContent<String> for PanelContent<'_> {
         }
         let collapsed = panels.iter().all(|id| self.collapsed.contains(id));
         let locked = self.app.session.prefs().workspace_locked;
-        let resp = crate::icons::button(ui, "ellipsis", ui.available_height().min(28.0), false, tl!("Panel menu"));
+        let resp = crate::icons::button(
+            ui,
+            "ellipsis",
+            ui.available_height().min(28.0),
+            false,
+            tl!("Panel menu"),
+        );
         egui::Popup::menu(&resp).show(|ui| {
             ui.set_min_width(180.0);
             panel_menu(self.app, ui, active);
-            if ui.add_enabled(!locked, egui::Button::new(if collapsed { tl!("Expand Panel Group") } else { tl!("Collapse Panel Group") })).clicked() {
-                self.commands.push(("window.panel.group", json!({"panel":active,"operation":if collapsed {"expand"} else {"collapse"}})));
+            if ui
+                .add_enabled(
+                    !locked,
+                    egui::Button::new(if collapsed {
+                        tl!("Expand Panel Group")
+                    } else {
+                        tl!("Collapse Panel Group")
+                    }),
+                )
+                .clicked()
+            {
+                self.commands.push((
+                    "window.panel.group",
+                    json!({"panel":active,"operation":if collapsed {"expand"} else {"collapse"}}),
+                ));
                 ui.close();
             }
             if !floating {
-                let groups = self.app.ui.docking.as_ref().map(root_groups).unwrap_or_default();
+                let groups = self
+                    .app
+                    .ui
+                    .docking
+                    .as_ref()
+                    .map(root_groups)
+                    .unwrap_or_default();
                 let index = groups.iter().position(|g| g.contains(active));
-                for (operation, label, enabled) in
-                    [("up", tl!("Move Group Up"), index.is_some_and(|i| i > 0)), ("down", tl!("Move Group Down"), index.is_some_and(|i| i + 1 < groups.len()))]
-                {
-                    if ui.add_enabled(!locked && enabled, egui::Button::new(label)).clicked() {
-                        self.commands.push(("window.panel.group", json!({"panel":active,"operation":operation})));
+                for (operation, label, enabled) in [
+                    ("up", tl!("Move Group Up"), index.is_some_and(|i| i > 0)),
+                    (
+                        "down",
+                        tl!("Move Group Down"),
+                        index.is_some_and(|i| i + 1 < groups.len()),
+                    ),
+                ] {
+                    if ui
+                        .add_enabled(!locked && enabled, egui::Button::new(label))
+                        .clicked()
+                    {
+                        self.commands.push((
+                            "window.panel.group",
+                            json!({"panel":active,"operation":operation}),
+                        ));
                         ui.close();
                     }
                 }
             }
             ui.separator();
-            if ui.add_enabled(!locked, egui::Button::new(tl!("Close Tab Group"))).clicked() {
-                self.commands.push(("window.panel.group", json!({"panel":active,"operation":"close"})));
+            if ui
+                .add_enabled(!locked, egui::Button::new(tl!("Close Tab Group")))
+                .clicked()
+            {
+                self.commands.push((
+                    "window.panel.group",
+                    json!({"panel":active,"operation":"close"}),
+                ));
                 ui.close();
             }
         });
@@ -931,9 +1423,15 @@ pub(crate) fn sync_visibility(app: &mut PhotocraftApp) {
         if !valid(layout) {
             return;
         }
-        let pro = matches!(app.ui.theme, crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium);
+        let pro = matches!(
+            app.ui.theme,
+            crate::theme::ThemeKind::Pro | crate::theme::ThemeKind::ProMedium
+        );
         for group in Group::ALL {
-            *group.shown_mut(&mut app.ui.panels) = PANELS.iter().filter(|p| p.2 == group).any(|p| layout.contains(&p.0.to_owned()));
+            *group.shown_mut(&mut app.ui.panels) = PANELS
+                .iter()
+                .filter(|p| p.2 == group)
+                .any(|p| layout.contains(&p.0.to_owned()));
             for (index, label) in group.tabs(pro).iter().enumerate() {
                 if let Some(id) = normalize(label) {
                     if layout.contains(&id.to_owned()) {
@@ -944,8 +1442,15 @@ pub(crate) fn sync_visibility(app: &mut PhotocraftApp) {
                 }
             }
             let previous = *group.tab_mut(&mut app.ui.dock_tabs);
-            if !group.tabs(pro).get(previous).and_then(|name| normalize(name)).is_some_and(|id| panel_active(layout, id))
-                && let Some(selected) = group.tabs(pro).iter().position(|name| normalize(name).is_some_and(|id| panel_active(layout, id)))
+            if !group
+                .tabs(pro)
+                .get(previous)
+                .and_then(|name| normalize(name))
+                .is_some_and(|id| panel_active(layout, id))
+                && let Some(selected) = group
+                    .tabs(pro)
+                    .iter()
+                    .position(|name| normalize(name).is_some_and(|id| panel_active(layout, id)))
             {
                 *group.tab_mut(&mut app.ui.dock_tabs) = selected;
             }
@@ -958,17 +1463,24 @@ fn panel_active(layout: &Layout<String>, panel: &str) -> bool {
     while let Some(node) = pending.pop() {
         match node {
             Node::Split { first, second, .. } => pending.extend([first.as_ref(), second.as_ref()]),
-            Node::Tabs { panels, active } if panels.iter().any(|p| p == panel) => return panels.get(*active).is_some_and(|p| p == panel),
+            Node::Tabs { panels, active } if panels.iter().any(|p| p == panel) => {
+                return panels.get(*active).is_some_and(|p| p == panel);
+            }
             Node::Stack { entries } if entries.iter().any(|e| e.panel == panel) => return true,
             _ => {}
         }
     }
-    layout.floating.iter().any(|g| g.panels.get(g.active).is_some_and(|p| p == panel))
+    layout
+        .floating
+        .iter()
+        .any(|g| g.panels.get(g.active).is_some_and(|p| p == panel))
 }
 
 /// Extra legacy menu choices use the same commands as the customized renderer.
 pub(crate) fn legacy_menu(app: &mut PhotocraftApp, ui: &mut egui::Ui, label: &str) {
-    let Some(panel) = normalize(label) else { return };
+    let Some(panel) = normalize(label) else {
+        return;
+    };
     let locked = app.session.prefs().workspace_locked;
     ui.add_enabled_ui(!locked, |ui| {
         if ui.button(tl!("Float Panel")).clicked() {
@@ -982,7 +1494,9 @@ pub(crate) fn legacy_menu(app: &mut PhotocraftApp, ui: &mut egui::Ui, label: &st
                 if anchor != panel && ui.button(tl!(label)).clicked() {
                     let result = app
                         .run("window.panel.activate", json!({"panel":anchor}))
-                        .and_then(|_| app.run("window.panel.move", json!({"panel":panel,"anchor":anchor})));
+                        .and_then(|_| {
+                            app.run("window.panel.move", json!({"panel":panel,"anchor":anchor}))
+                        });
                     if let Err(error) = result {
                         app.ui.status = error;
                     }
@@ -995,15 +1509,28 @@ pub(crate) fn legacy_menu(app: &mut PhotocraftApp, ui: &mut egui::Ui, label: &st
 
 // A closed group forms a bounded chain of hidden tab neighbors. Restore just the requested
 // panel at the first surviving return position, then let the remaining tabs rejoin it.
-fn restore_hidden(layout: &mut Layout<String>, hidden: &mut std::collections::BTreeMap<String, craft_ui::docking::Location<String>>, panel: &str) {
-    let Some(mut at) = hidden.get(panel).cloned() else { return };
+fn restore_hidden(
+    layout: &mut Layout<String>,
+    hidden: &mut std::collections::BTreeMap<String, craft_ui::docking::Location<String>>,
+    panel: &str,
+) {
+    let Some(mut at) = hidden.get(panel).cloned() else {
+        return;
+    };
     let mut terminal = panel.to_owned();
     let mut seen = vec![terminal.clone()];
-    while let Some(anchor) = at.anchor.as_ref().filter(|id| !layout.contains(id)).cloned() {
+    while let Some(anchor) = at
+        .anchor
+        .as_ref()
+        .filter(|id| !layout.contains(id))
+        .cloned()
+    {
         if seen.len() >= PANELS.len() || seen.contains(&anchor) {
             return;
         }
-        let Some(next) = hidden.get(&anchor).cloned() else { return };
+        let Some(next) = hidden.get(&anchor).cloned() else {
+            return;
+        };
         seen.push(anchor.clone());
         terminal = anchor;
         at = next;

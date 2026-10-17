@@ -2,8 +2,8 @@
 
 use crate::{serialization::SerializationDataDef, where_clause_options::WhereClauseOptions};
 use quote::{quote, quote_spanned};
-use syn::spanned::Spanned;
 use syn::Type;
+use syn::spanned::Spanned;
 
 /// Creates the `GetTypeRegistration` impl for the given type data.
 pub(crate) fn impl_get_type_registration<'a>(

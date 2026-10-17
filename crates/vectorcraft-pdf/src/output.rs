@@ -112,21 +112,33 @@ impl Default for ColorOut {
 /// The profile of `set`'s destination and its colour model; `None` without conversion. A blank
 /// destination is the profile of a document in colour mode `mode`. PDF/X-1a files always convert,
 /// to a CMYK destination: blank, their output intent's profile ([`crate::pdfx::cmyk_destination`]).
-fn destination(set: &PdfSettings, mode: ColorMode, source: &Cms) -> Result<Option<(String, Model)>, PdfError> {
+fn destination(
+    set: &PdfSettings,
+    mode: ColorMode,
+    source: &Cms,
+) -> Result<Option<(String, Model)>, PdfError> {
     let o = &set.output;
     let cmyk_only = set.standard.cmyk_only();
     if o.conversion == ColorConversion::None && !cmyk_only {
         return Ok(None);
     }
     let name = o.destination.trim();
-    let fallback = if cmyk_only { crate::pdfx::cmyk_destination(set, source) } else { String::new() };
+    let fallback = if cmyk_only {
+        crate::pdfx::cmyk_destination(set, source)
+    } else {
+        String::new()
+    };
     let name = match (name.is_empty(), mode) {
         (false, _) => name,
         (true, _) if cmyk_only => fallback.as_str(),
         (true, ColorMode::Cmyk) => source.settings().cmyk.as_str(),
         (true, ColorMode::Rgb) => source.settings().rgb.as_str(),
     };
-    let unknown = || PdfError::BadSetting(format!("output.destination: no RGB or CMYK profile is called “{name}”"));
+    let unknown = || {
+        PdfError::BadSetting(format!(
+            "output.destination: no RGB or CMYK profile is called “{name}”"
+        ))
+    };
     let info = cms::profile(name).ok_or_else(unknown)?;
     let model = match info.kind {
         ProfileKind::Rgb => Model::Rgb,
@@ -134,7 +146,10 @@ fn destination(set: &PdfSettings, mode: ColorMode, source: &Cms) -> Result<Optio
         ProfileKind::Gray => return Err(unknown()),
     };
     if cmyk_only && model != Model::Cmyk {
-        return Err(PdfError::BadSetting(format!("output.destination: {} files are CMYK, and “{name}” is an RGB profile", set.standard.label())));
+        return Err(PdfError::BadSetting(format!(
+            "output.destination: {} files are CMYK, and “{name}” is an RGB profile",
+            set.standard.label()
+        )));
     }
     Ok(Some((info.name, model)))
 }
@@ -161,10 +176,15 @@ pub(crate) fn warnings(set: &PdfSettings) -> Vec<String> {
     }
     let name = o.output_intent.trim();
     if !name.is_empty() && cms::profile(name).is_none() {
-        out.push(format!("no profile is called “{name}”: the output intent names it without embedding it"));
+        out.push(format!(
+            "no profile is called “{name}”: the output intent names it without embedding it"
+        ));
     }
     // PDF/X files always have an output intent.
-    if !asks && !set.standard.is_pdfx() && (!o.output_condition.trim().is_empty() || !o.registry.trim().is_empty()) {
+    if !asks
+        && !set.standard.is_pdfx()
+        && (!o.output_condition.trim().is_empty() || !o.registry.trim().is_empty())
+    {
         out.push("an output intent needs a profile or a condition identifier: the output condition and registry are left out".into());
     }
     out
@@ -182,27 +202,39 @@ impl ColorOut {
                 Model::Cmyk => std::mem::replace(&mut settings.cmyk, name.clone()),
                 _ => std::mem::replace(&mut settings.rgb, name.clone()),
             };
-            let cms = Cms::new(&settings).map_err(|e| PdfError::BadSetting(format!("output.destination: {e}")))?;
+            let cms = Cms::new(&settings)
+                .map_err(|e| PdfError::BadSetting(format!("output.destination: {e}")))?;
             // PDF/X-1a converts without being asked: as Preserve Numbers does.
-            let keep = set.output.conversion != ColorConversion::Destination || cms::canonical_name(&own) == name;
+            let keep = set.output.conversion != ColorConversion::Destination
+                || cms::canonical_name(&own) == name;
             if model == Model::Cmyk {
                 out.cmyk_profile = name.clone();
             }
-            out.dest = Some(Dest { srgb: name == cms::SRGB, cms, model, keep });
+            out.dest = Some(Dest {
+                srgb: name == cms::SRGB,
+                cms,
+                model,
+                keep,
+            });
         }
-        out.tagged = matches!(set.standard, Standard::PdfA2b | Standard::PdfX3 | Standard::PdfX4)
-            || (!set.standard.cmyk_only()
-                && match set.output.profiles {
-                    ProfileInclusion::None => false,
-                    ProfileInclusion::All | ProfileInclusion::Destination => true,
-                    ProfileInclusion::TaggedSource => !doc.color_profiles.is_empty(),
-                });
+        out.tagged = matches!(
+            set.standard,
+            Standard::PdfA2b | Standard::PdfX3 | Standard::PdfX4
+        ) || (!set.standard.cmyk_only()
+            && match set.output.profiles {
+                ProfileInclusion::None => false,
+                ProfileInclusion::All | ProfileInclusion::Destination => true,
+                ProfileInclusion::TaggedSource => !doc.color_profiles.is_empty(),
+            });
         let rgb = match &out.dest {
             Some(d) if d.model == Model::Rgb => (d.srgb, d.cms.settings().rgb.clone()),
             _ => (source.rgb_is_srgb(), st.rgb.clone()),
         };
         if out.tagged && !rgb.0 {
-            out.srgb_note = Some(format!("RGB colours are tagged with the sRGB profile: those of {} are written as their sRGB equivalents", rgb.1));
+            out.srgb_note = Some(format!(
+                "RGB colours are tagged with the sRGB profile: those of {} are written as their sRGB equivalents",
+                rgb.1
+            ));
         }
         out.catalog = catalog(set, &out.cmyk_profile);
         out.standard = set.standard;
@@ -240,7 +272,11 @@ impl ColorOut {
         };
         match c {
             Color::Rgb { r, g, b } if self.srgb_note.is_some() => {
-                let space = self.dest.as_ref().filter(|d| convert && d.model == Model::Rgb).map_or(&**s, |d| &d.cms);
+                let space = self
+                    .dest
+                    .as_ref()
+                    .filter(|d| convert && d.model == Model::Rgb)
+                    .map_or(&**s, |d| &d.cms);
                 let [r, g, b] = space.rgb_to_srgb([r, g, b]);
                 Color::Rgb { r, g, b }
             }
@@ -251,7 +287,9 @@ impl ColorOut {
     /// Ink values of `c` in the CMYK space of the output (a spot colour's alternate).
     pub(crate) fn cmyk(&self, c: &Color, intent: Intent) -> [f32; 4] {
         match &self.dest {
-            Some(d) if d.model == Model::Cmyk => d.cms.to_cmyk(&d.convert(&self.source, c, intent), intent),
+            Some(d) if d.model == Model::Cmyk => {
+                d.cms.to_cmyk(&d.convert(&self.source, c, intent), intent)
+            }
             _ => self.source.to_cmyk(c, intent),
         }
     }
@@ -267,7 +305,11 @@ impl ColorOut {
                         let plane = |k: bool| {
                             ProofLut::build(|rgb| {
                                 let v = d.cms.srgb_to_cmyk(rgb, intent);
-                                if k { [v[3], 0.0, 0.0] } else { [v[0], v[1], v[2]] }
+                                if k {
+                                    [v[3], 0.0, 0.0]
+                                } else {
+                                    [v[0], v[1], v[2]]
+                                }
                             })
                         };
                         Some(Pixels::Cmyk(Box::new([plane(false), plane(true)])))
@@ -275,7 +317,9 @@ impl ColorOut {
                     // Images are sRGB: converted unless the destination is sRGB, they keep their
                     // numbers or RGB is tagged as sRGB.
                     _ if d.srgb || d.keep || self.tagged => None,
-                    _ => Some(Pixels::Rgb(Box::new(ProofLut::build(|rgb| d.cms.srgb_to_rgb(rgb))))),
+                    _ => Some(Pixels::Rgb(Box::new(ProofLut::build(|rgb| {
+                        d.cms.srgb_to_rgb(rgb)
+                    })))),
                 }
             })
             .as_ref()
@@ -286,7 +330,10 @@ impl ColorOut {
     pub(crate) fn cmyk_pixels(&self) -> Option<&CmykPixels> {
         self.cmyk_pixels
             .get_or_init(|| {
-                let d = self.dest.as_ref().filter(|d| !(d.keep && d.model == Model::Cmyk))?;
+                let d = self
+                    .dest
+                    .as_ref()
+                    .filter(|d| !(d.keep && d.model == Model::Cmyk))?;
                 let cmyk = d.model == Model::Cmyk;
                 // Each ink combination as a CMYK colour is written.
                 let lut = CmykLut::build(|[c, m, y, k]| {
@@ -308,41 +355,92 @@ impl ColorOut {
     /// `pdf` with the output intent and Trapped entries, and a PDF/X file's identification
     /// ([`crate::pdfx`]) → (the file, warnings).
     pub(crate) fn write_catalog(&self, pdf: Vec<u8>) -> Result<(Vec<u8>, Vec<String>), PdfError> {
-        let Some(cat) = &self.catalog else { return Ok((pdf, vec![])) };
-        let xref = Xref::read(&pdf).ok_or_else(|| PdfError::Write("the written PDF has no cross-reference table".into()))?;
+        let Some(cat) = &self.catalog else {
+            return Ok((pdf, vec![]));
+        };
+        let xref = Xref::read(&pdf).ok_or_else(|| {
+            PdfError::Write("the written PDF has no cross-reference table".into())
+        })?;
         let mut patch = Patch::new(&xref);
         let mut warnings = vec![];
-        let root = xref.trailer_ref(&pdf, b"/Root").and_then(|n| xref.dict(&pdf, n));
-        let Some(root) = root else { return Err(PdfError::Write("the written PDF has no catalog".into())) };
-        if let Some(OutputIntent { id, condition, registry, info, profile }) = &cat.intent {
-            if crate::lab_spot::find(pdf.get(root.0..root.1).unwrap_or_default(), b"/OutputIntents", 0).is_some() {
-                warnings.push("the file has an output intent already: the one asked for is left out".into());
+        let root = xref
+            .trailer_ref(&pdf, b"/Root")
+            .and_then(|n| xref.dict(&pdf, n));
+        let Some(root) = root else {
+            return Err(PdfError::Write("the written PDF has no catalog".into()));
+        };
+        if let Some(OutputIntent {
+            id,
+            condition,
+            registry,
+            info,
+            profile,
+        }) = &cat.intent
+        {
+            if crate::lab_spot::find(
+                pdf.get(root.0..root.1).unwrap_or_default(),
+                b"/OutputIntents",
+                0,
+            )
+            .is_some()
+            {
+                warnings.push(
+                    "the file has an output intent already: the one asked for is left out".into(),
+                );
             } else {
-                let mut dict = format!("<</Type/OutputIntent/S/GTS_PDFX/OutputConditionIdentifier{}", text_string(id));
-                for (key, v) in [("OutputCondition", condition), ("RegistryName", registry), ("Info", info)] {
+                let mut dict = format!(
+                    "<</Type/OutputIntent/S/GTS_PDFX/OutputConditionIdentifier{}",
+                    text_string(id)
+                );
+                for (key, v) in [
+                    ("OutputCondition", condition),
+                    ("RegistryName", registry),
+                    ("Info", info),
+                ] {
                     if !v.is_empty() {
                         dict.push_str(&format!("/{key}{}", text_string(v)));
                     }
                 }
                 if let Some((name, n)) = profile {
-                    let icc = cms::icc_bytes(name).map_err(|e| PdfError::Write(format!("output intent profile: {e}")))?;
-                    let data = deflate(&icc).map_err(|e| PdfError::Write(format!("output intent profile: {e}")))?;
-                    let mut stream = format!("<</N {n}/Length {}/Filter/FlateDecode>>\nstream\n", data.len()).into_bytes();
+                    let icc = cms::icc_bytes(name)
+                        .map_err(|e| PdfError::Write(format!("output intent profile: {e}")))?;
+                    let data = deflate(&icc)
+                        .map_err(|e| PdfError::Write(format!("output intent profile: {e}")))?;
+                    let mut stream = format!(
+                        "<</N {n}/Length {}/Filter/FlateDecode>>\nstream\n",
+                        data.len()
+                    )
+                    .into_bytes();
                     stream.extend_from_slice(&data);
                     stream.extend_from_slice(b"\nendstream");
-                    dict.push_str(&format!("/DestOutputProfile {} 0 R", patch.add_object(stream)));
+                    dict.push_str(&format!(
+                        "/DestOutputProfile {} 0 R",
+                        patch.add_object(stream)
+                    ));
                 }
                 dict.push_str(">>");
                 let oi = patch.add_object(dict.into_bytes());
-                patch.replace(root.0, root.0, format!("/OutputIntents[{oi} 0 R]").into_bytes());
+                patch.replace(
+                    root.0,
+                    root.0,
+                    format!("/OutputIntents[{oi} 0 R]").into_bytes(),
+                );
             }
         }
-        let info = xref.trailer_ref(&pdf, b"/Info").and_then(|n| xref.dict(&pdf, n));
+        let info = xref
+            .trailer_ref(&pdf, b"/Info")
+            .and_then(|n| xref.dict(&pdf, n));
         let mut entries = String::new();
         if let Some(trapped) = cat.trapped
-            && info.is_none_or(|(s, e)| crate::lab_spot::find(pdf.get(s..e).unwrap_or_default(), b"/Trapped", 0).is_none())
+            && info.is_none_or(|(s, e)| {
+                crate::lab_spot::find(pdf.get(s..e).unwrap_or_default(), b"/Trapped", 0).is_none()
+            })
         {
-            entries.push_str(if trapped { "/Trapped/True" } else { "/Trapped/False" });
+            entries.push_str(if trapped {
+                "/Trapped/True"
+            } else {
+                "/Trapped/False"
+            });
         }
         entries.push_str(&crate::pdfx::info_entries(self.standard));
         match info {
@@ -353,7 +451,14 @@ impl ColorOut {
                 patch.trailer_entry(format!("/Info {n} 0 R").as_bytes());
             }
         }
-        crate::pdfx::xmp(&pdf, &xref, root, &mut patch, self.standard, cat.trapped == Some(true))?;
+        crate::pdfx::xmp(
+            &pdf,
+            &xref,
+            root,
+            &mut patch,
+            self.standard,
+            cat.trapped == Some(true),
+        )?;
         Ok((patch.apply(&pdf, &xref)?, warnings))
     }
 }
@@ -362,7 +467,9 @@ impl Dest {
     /// `c` converted from `source` (see the module documentation).
     fn convert(&self, source: &Cms, c: &Color, intent: Intent) -> Color {
         match (self.model, c) {
-            (_, Color::Gray { .. }) | (Model::Cmyk, Color::Cmyk { .. }) | (Model::Rgb, Color::Rgb { .. })
+            (_, Color::Gray { .. })
+            | (Model::Cmyk, Color::Cmyk { .. })
+            | (Model::Rgb, Color::Rgb { .. })
                 if self.keep || matches!(c, Color::Gray { .. }) =>
             {
                 *c
@@ -509,6 +616,13 @@ impl CmykPixels {
             last = Some((*p, v));
             out.extend_from_slice(v.get(..n).unwrap_or_default());
         }
-        (out, if self.cmyk { ImageColorspace::Cmyk } else { ImageColorspace::Rgb })
+        (
+            out,
+            if self.cmyk {
+                ImageColorspace::Cmyk
+            } else {
+                ImageColorspace::Rgb
+            },
+        )
     }
 }

@@ -57,7 +57,10 @@ fn huge_coordinates_and_dimensions() {
       <sheetViews><sheetView zoomScale="99999"><pane xSplit="1e9" ySplit="-5" state="frozen"/></sheetView></sheetViews>"#;
     let (wb, rep) = read_xlsx(&minimal(body, &[], "", "")).unwrap();
     let s = wb.sheet(0).unwrap();
-    assert_eq!(s.value(gridcraft_core::CellRef::parse("XFD3").unwrap()), gridcraft_core::Value::Number(7.0));
+    assert_eq!(
+        s.value(gridcraft_core::CellRef::parse("XFD3").unwrap()),
+        gridcraft_core::Value::Number(7.0)
+    );
     assert!(s.cells.len() <= 4);
     assert!(s.hyperlinks.len() <= 10_000);
     assert_eq!(s.zoom, 400);
@@ -75,15 +78,34 @@ fn deeply_nested_and_broken_xml() {
     }
     let (wb, rep) = read_xlsx(&minimal(&deep, &[], "", "")).unwrap();
     assert_eq!(wb.sheets.len(), 1);
-    assert!(rep.warnings.iter().any(|w| w.contains("could not be read") || w.contains("damaged")));
+    assert!(
+        rep.warnings
+            .iter()
+            .any(|w| w.contains("could not be read") || w.contains("damaged"))
+    );
     // Truncated sheet XML keeps earlier rows.
-    let (wb, _) = read_xlsx(&minimal(r#"<sheetData><row r="1"><c r="A1"><v>5</v></c></row><row r="2"><c r="A2"><v"#, &[], "", "")).unwrap();
-    assert_eq!(wb.sheet(0).unwrap().value(gridcraft_core::CellRef::new(0, 0)), gridcraft_core::Value::Number(5.0));
+    let (wb, _) = read_xlsx(&minimal(
+        r#"<sheetData><row r="1"><c r="A1"><v>5</v></c></row><row r="2"><c r="A2"><v"#,
+        &[],
+        "",
+        "",
+    ))
+    .unwrap();
+    assert_eq!(
+        wb.sheet(0)
+            .unwrap()
+            .value(gridcraft_core::CellRef::new(0, 0)),
+        gridcraft_core::Value::Number(5.0)
+    );
     // Broken optional parts are warnings.
     let rels = r#"<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>"#;
     let (_, rep) = read_xlsx(&minimal(
         "<sheetData/>",
-        &[("xl/styles.xml", "<styleSheet><<<"), ("xl/theme/theme1.xml", "\u{0}\u{1}"), ("xl/sharedStrings.xml", "<sst><si><t>a</t></si><si><t>")],
+        &[
+            ("xl/styles.xml", "<styleSheet><<<"),
+            ("xl/theme/theme1.xml", "\u{0}\u{1}"),
+            ("xl/sharedStrings.xml", "<sst><si><t>a</t></si><si><t>"),
+        ],
         rels,
         "",
     ))
@@ -111,7 +133,9 @@ fn zip_bomb_is_rejected() {
     // building it takes a while, so test the cap via a declared size instead using a smaller
     // stand-in limit check on the reader path.
     let mut z = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated).large_file(true);
+    let opts = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
     z.start_file("xl/workbook.xml", opts).unwrap();
     let chunk = vec![b' '; 1 << 20];
     for _ in 0..520 {
@@ -130,7 +154,15 @@ fn hostile_threaded_comments_persons_and_note_vml() {
     use gridcraft_model::{Comment, Workbook};
     let mut wb = Workbook::new();
     let s = std::sync::Arc::make_mut(&mut wb.sheets[0]);
-    let c = |threaded| Comment { author: "A".into(), text: "t".into(), replies: vec![], threaded, resolved: false, visible: false, dates: vec![] };
+    let c = |threaded| Comment {
+        author: "A".into(),
+        text: "t".into(),
+        replies: vec![],
+        threaded,
+        resolved: false,
+        visible: false,
+        dates: vec![],
+    };
     s.comments.insert(CellRef::new(0, 0), c(true));
     s.comments.insert(CellRef::new(1, 1), c(false));
     let good = write_xlsx(&wb).unwrap();
@@ -159,7 +191,10 @@ fn hostile_threaded_comments_persons_and_note_vml() {
             *bytes = b"<personList><person".to_vec();
         }
     }
-    let refs: Vec<(&str, &[u8])> = parts.iter().map(|(n, d)| (n.as_str(), d.as_slice())).collect();
+    let refs: Vec<(&str, &[u8])> = parts
+        .iter()
+        .map(|(n, d)| (n.as_str(), d.as_slice()))
+        .collect();
     let (back, _) = read_xlsx(&super::make_zip(&refs)).unwrap();
     let sheet = &back.sheets[0];
     let a1 = &sheet.comments[&CellRef::new(0, 0)];
@@ -174,7 +209,10 @@ fn hostile_threaded_comments_persons_and_note_vml() {
             *bytes = vml.replace(&deep, "").into_bytes();
         }
     }
-    let refs: Vec<(&str, &[u8])> = parts.iter().map(|(n, d)| (n.as_str(), d.as_slice())).collect();
+    let refs: Vec<(&str, &[u8])> = parts
+        .iter()
+        .map(|(n, d)| (n.as_str(), d.as_slice()))
+        .collect();
     let (back, _) = read_xlsx(&super::make_zip(&refs)).unwrap();
     assert!(back.sheets[0].comments[&CellRef::new(1, 1)].visible);
 }
@@ -186,7 +224,10 @@ fn hostile_protected_ranges_stay_locked() {
     let body = r#"<sheetData/><protectedRanges><protectedRange name="bad ref" sqref="ZZZZZ1 A0"/><protectedRange name="hex" sqref="A1" password="XYZ"/><protectedRange name="spin" sqref="B1" algorithmName="SHA-512" hashValue="AAAA" saltValue="AAAA" spinCount="4294967295"/><protectedRange name="half" sqref="C1" hashValue="AAAA"/><protectedRange name="md5" sqref="D1" algorithmName="MD5" hashValue="AAAA" saltValue="AAAA" spinCount="1"/></protectedRanges>"#;
     let (wb, _) = read_xlsx(&minimal(body, &[], "", "")).unwrap();
     let ranges = &wb.sheets[0].edit_ranges;
-    assert_eq!(ranges.iter().map(|r| r.title.as_str()).collect::<Vec<_>>(), ["hex", "spin", "half", "md5"]);
+    assert_eq!(
+        ranges.iter().map(|r| r.title.as_str()).collect::<Vec<_>>(),
+        ["hex", "spin", "half", "md5"]
+    );
     for r in ranges {
         let h = r.password.as_ref().unwrap();
         assert!(!matches!(h.verify(""), Ok(true)), "{}", r.title);
@@ -207,20 +248,34 @@ fn an_overlong_number_format_code_does_not_stop_the_open() {
     let body = r#"<sheetData><row r="1"><c r="A1" s="1"><v>0.5</v></c></row></sheetData>"#;
     let (wb, _) = read_xlsx(&minimal(body, &[("xl/styles.xml", &styles)], rels, "")).unwrap();
     let s = wb.sheet(0).unwrap();
-    let cell = s.cell(gridcraft_core::CellRef::parse("A1").unwrap()).unwrap();
-    assert_eq!(s.value(gridcraft_core::CellRef::parse("A1").unwrap()), gridcraft_core::Value::Number(0.5));
+    let cell = s
+        .cell(gridcraft_core::CellRef::parse("A1").unwrap())
+        .unwrap();
+    assert_eq!(
+        s.value(gridcraft_core::CellRef::parse("A1").unwrap()),
+        gridcraft_core::Value::Number(0.5)
+    );
     assert_eq!(wb.styles.get(cell.style).num_fmt.as_str(), code);
 }
 
 #[test]
 fn hyperlinks_past_the_cell_cap_are_reported() {
     // A styles part, so the only possible warning is the hyperlink one.
-    let parts = [("xl/styles.xml", r#"<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"/>"#)];
+    let parts = [(
+        "xl/styles.xml",
+        r#"<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"/>"#,
+    )];
     let rels = r#"<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>"#;
     let body = r#"<sheetData/><hyperlinks><hyperlink ref="A1:A12000" location="x"/></hyperlinks>"#;
     let (wb, rep) = read_xlsx(&minimal(body, &parts, rels, "")).unwrap();
     assert_eq!(wb.sheet(0).unwrap().hyperlinks.len(), 10_000);
-    assert!(rep.warnings.iter().any(|w| w.contains("hyperlinks past the first 10000 cells were dropped")), "{:?}", rep.warnings);
+    assert!(
+        rep.warnings
+            .iter()
+            .any(|w| w.contains("hyperlinks past the first 10000 cells were dropped")),
+        "{:?}",
+        rep.warnings
+    );
     // A small list reads in full with no warning.
     let body = r#"<sheetData/><hyperlinks><hyperlink ref="A1:A3" location="x"/></hyperlinks>"#;
     let (wb, rep) = read_xlsx(&minimal(body, &parts, rels, "")).unwrap();

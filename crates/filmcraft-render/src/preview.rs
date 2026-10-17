@@ -39,7 +39,9 @@
 //! size and rate match the sequence. Green (a valid preview exists) is decided by the preview
 //! store, which knows which hashes have files.
 
-use filmcraft_project::{ClipId, ItemId, ItemKind, Project, Sequence, TrackItem, TrackKind, Transition};
+use filmcraft_project::{
+    ClipId, ItemId, ItemKind, Project, Sequence, TrackItem, TrackKind, Transition,
+};
 use filmcraft_time::{FrameRate, Tick};
 use serde::Serialize;
 
@@ -104,7 +106,12 @@ fn frame_ceil(rate: FrameRate, t: Tick) -> i64 {
 
 enum Layer<'a> {
     Item(usize, &'a TrackItem),
-    Transition(usize, &'a Transition, Option<&'a TrackItem>, Option<&'a TrackItem>),
+    Transition(
+        usize,
+        &'a Transition,
+        Option<&'a TrackItem>,
+        Option<&'a TrackItem>,
+    ),
 }
 
 fn layers_at<'a>(seq: &'a Sequence, t: Tick) -> Vec<Layer<'a>> {
@@ -130,7 +137,9 @@ fn layers_at<'a>(seq: &'a Sequence, t: Tick) -> Vec<Layer<'a>> {
 
 /// Compute the render-bar segments of sequence `seq_id`.
 pub fn video_segments(project: &Project, seq_id: ItemId) -> Vec<Segment> {
-    let Some(seq) = project.sequence(seq_id) else { return Vec::new() };
+    let Some(seq) = project.sequence(seq_id) else {
+        return Vec::new();
+    };
     let rate = seq.settings.frame_rate;
     let mut cuts: Vec<i64> = Vec::new();
     for tr in seq.video_tracks.iter().filter(|t| t.enabled) {
@@ -197,12 +206,23 @@ pub fn video_segments(project: &Project, seq_id: ItemId) -> Vec<Segment> {
         let budget = rate.frame_duration().seconds() * 1000.0 * REALTIME_BUDGET;
         let need = if cost_ms > budget {
             Need::Render
-        } else if layers.len() == 1 && matches!(layers[0], Layer::Item(_, it) if native(project, seq, it)) {
+        } else if layers.len() == 1
+            && matches!(layers[0], Layer::Item(_, it) if native(project, seq, it))
+        {
             Need::None
         } else {
             Need::Realtime
         };
-        out.push(Segment { first_frame: fa, frames: fb - fa, start: t, end: rate.tick_of(fb), hash: h.hex(), need, cost_ms, clips });
+        out.push(Segment {
+            first_frame: fa,
+            frames: fb - fa,
+            start: t,
+            end: rate.tick_of(fb),
+            hash: h.hex(),
+            need,
+            cost_ms,
+            clips,
+        });
     }
     out
 }
@@ -210,7 +230,9 @@ pub fn video_segments(project: &Project, seq_id: ItemId) -> Vec<Segment> {
 /// The segment containing frame `f` (segments are sorted and disjoint).
 pub fn segment_at(segments: &[Segment], f: i64) -> Option<&Segment> {
     let i = segments.partition_point(|s| s.first_frame <= f);
-    i.checked_sub(1).map(|i| &segments[i]).filter(|s| s.contains_frame(f))
+    i.checked_sub(1)
+        .map(|i| &segments[i])
+        .filter(|s| s.contains_frame(f))
 }
 
 /// A stretch of sequence audio with constant structure (Render Audio), in sequence samples.
@@ -226,11 +248,17 @@ pub struct AudioSegment {
 /// effects) and, per track, the clip or transition heard, relative to the segment start. Effect
 /// tails (delay, reverb) carried across a cut from the previous segment are not part of the hash.
 pub fn audio_segments(project: &Project, seq_id: ItemId) -> Vec<AudioSegment> {
-    let Some(seq) = project.sequence(seq_id) else { return Vec::new() };
+    let Some(seq) = project.sequence(seq_id) else {
+        return Vec::new();
+    };
     let sr = seq.settings.sample_rate.max(1) as i64;
     let ceil = |t: Tick| {
         let s = t.to_units_floor(sr);
-        if Tick::from_units(s, sr) < t { s + 1 } else { s }
+        if Tick::from_units(s, sr) < t {
+            s + 1
+        } else {
+            s
+        }
     };
     let mut cuts: Vec<i64> = Vec::new();
     for tr in &seq.audio_tracks {
@@ -247,9 +275,26 @@ pub fn audio_segments(project: &Project, seq_id: ItemId) -> Vec<AudioSegment> {
     cuts.dedup();
     let any_solo = seq.audio_tracks.iter().any(|t| t.solo);
     let mut global = Fnv128::new();
-    global.json(&(HASH_VERSION, "audio", sr, seq.master_volume_db, &seq.master_effects, &seq.master_mixer, any_solo));
+    global.json(&(
+        HASH_VERSION,
+        "audio",
+        sr,
+        seq.master_volume_db,
+        &seq.master_effects,
+        &seq.master_mixer,
+        any_solo,
+    ));
     for (ti, tr) in seq.audio_tracks.iter().enumerate() {
-        global.json(&(ti, tr.muted, tr.solo, tr.volume_db, tr.pan, tr.channels, &tr.effects, &tr.mixer));
+        global.json(&(
+            ti,
+            tr.muted,
+            tr.solo,
+            tr.volume_db,
+            tr.pan,
+            tr.channels,
+            &tr.effects,
+            &tr.mixer,
+        ));
     }
     // submixes (routing, inserts, automation) affect every segment
     global.json(&seq.submix_tracks);
@@ -290,19 +335,32 @@ pub fn audio_segments(project: &Project, seq_id: ItemId) -> Vec<AudioSegment> {
             }
         }
         if heard {
-            out.push(AudioSegment { first_sample: a, samples: b - a, hash: h.hex() });
+            out.push(AudioSegment {
+                first_sample: a,
+                samples: b - a,
+                hash: h.hex(),
+            });
         }
     }
     out
 }
 
 fn prints_time(it: &TrackItem) -> bool {
-    it.effects.iter().any(|e| e.enabled && e.effect == "timecode")
+    it.effects
+        .iter()
+        .any(|e| e.enabled && e.effect == "timecode")
 }
 
 /// Hash a clip and its source as heard (`kind` Audio) or seen (`kind` Video): a nested sequence
 /// contributes only the tracks of that kind, so editing its picture keeps its sound's previews.
-fn hash_item(h: &mut Fnv128, project: &Project, it: &TrackItem, origin: Tick, kind: TrackKind, depth: u32) {
+fn hash_item(
+    h: &mut Fnv128,
+    project: &Project,
+    it: &TrackItem,
+    origin: Tick,
+    kind: TrackKind,
+    depth: u32,
+) {
     let mut c = it.clone();
     c.id = Default::default();
     c.start -= origin;
@@ -348,9 +406,27 @@ fn hash_source(h: &mut Fnv128, project: &Project, id: ItemId, kind: TrackKind, d
             h.json(&("sequence", &s.settings));
             if kind == TrackKind::Audio {
                 // the nest's sound is the nested sequence's whole mix (see `audio_segments`)
-                h.json(&("mix", s.master_volume_db, &s.master_effects, &s.master_mixer, &s.submix_tracks, &s.multicam));
+                h.json(&(
+                    "mix",
+                    s.master_volume_db,
+                    &s.master_effects,
+                    &s.master_mixer,
+                    &s.submix_tracks,
+                    &s.multicam,
+                ));
                 for (ti, tr) in s.audio_tracks.iter().enumerate() {
-                    h.json(&("track", ti, tr.muted, tr.solo, tr.volume_db, tr.pan, tr.channels, &tr.effects, &tr.mixer, tr.items.len()));
+                    h.json(&(
+                        "track",
+                        ti,
+                        tr.muted,
+                        tr.solo,
+                        tr.volume_db,
+                        tr.pan,
+                        tr.channels,
+                        &tr.effects,
+                        &tr.mixer,
+                        tr.items.len(),
+                    ));
                     for it in &tr.items {
                         hash_item(h, project, it, Tick::ZERO, kind, depth + 1);
                     }
@@ -435,14 +511,18 @@ pub fn effect_cost_ms(id: &str) -> f64 {
 }
 
 fn decode_cost_ms(project: &Project, id: ItemId, depth: u32) -> f64 {
-    let Some(pi) = project.item(id) else { return 0.0 };
+    let Some(pi) = project.item(id) else {
+        return 0.0;
+    };
     match &pi.kind {
         ItemKind::Media(m) => {
             let Some(v) = &m.info.video else { return 0.0 };
             let px = (v.width as f64 * v.height as f64) / HD_PIXELS;
             let c = v.codec.to_ascii_lowercase();
-            let base = if matches!(m.info.kind, filmcraft_media::MediaKind::Still | filmcraft_media::MediaKind::Synthetic)
-                || matches!(m.media, filmcraft_project::MediaRef::Generator(_))
+            let base = if matches!(
+                m.info.kind,
+                filmcraft_media::MediaKind::Still | filmcraft_media::MediaKind::Synthetic
+            ) || matches!(m.media, filmcraft_project::MediaRef::Generator(_))
             {
                 1.0
             } else if c.contains("264") || c.contains("avc") {
@@ -479,22 +559,39 @@ fn decode_cost_ms(project: &Project, id: ItemId, depth: u32) -> f64 {
 }
 
 fn item_fx_cost(it: &TrackItem, px: f64) -> f64 {
-    it.effects.iter().filter(|e| e.enabled && e.def().is_some_and(|d| !d.intrinsic)).map(|e| effect_cost_ms(&e.effect) * px).sum()
+    it.effects
+        .iter()
+        .filter(|e| e.enabled && e.def().is_some_and(|d| !d.intrinsic))
+        .map(|e| effect_cost_ms(&e.effect) * px)
+        .sum()
 }
 
 fn cpu_layer(project: &Project, it: &TrackItem) -> bool {
-    let fx = it.effects.iter().any(|e| e.enabled && e.def().is_some_and(|d| !d.intrinsic)) || it.has_opacity_masks();
+    let fx = it
+        .effects
+        .iter()
+        .any(|e| e.enabled && e.def().is_some_and(|d| !d.intrinsic))
+        || it.has_opacity_masks();
     let blend = crate::opacity_blend(it, it.source_in).1 != crate::Blend::Normal;
-    let nested = project.item(it.item).is_some_and(|p| matches!(p.kind, ItemKind::Sequence(_)));
+    let nested = project
+        .item(it.item)
+        .is_some_and(|p| matches!(p.kind, ItemKind::Sequence(_)));
     fx || blend || nested
 }
 
 fn layer_cost(project: &Project, it: &TrackItem, px: f64, force_cpu: bool) -> f64 {
-    if project.item(it.item).is_some_and(|p| matches!(p.kind, ItemKind::AdjustmentLayer { .. })) {
+    if project
+        .item(it.item)
+        .is_some_and(|p| matches!(p.kind, ItemKind::AdjustmentLayer { .. }))
+    {
         return 10.0 * px + item_fx_cost(it, px);
     }
     let decode = decode_cost_ms(project, it.item, 0);
-    let path = if force_cpu || cpu_layer(project, it) { 10.0 * px } else { 0.5 };
+    let path = if force_cpu || cpu_layer(project, it) {
+        10.0 * px
+    } else {
+        0.5
+    };
     decode + path + item_fx_cost(it, px)
 }
 
@@ -505,8 +602,14 @@ fn estimate_cost(project: &Project, seq: &Sequence, layers: &[Layer]) -> f64 {
         total += match l {
             Layer::Item(_, it) => layer_cost(project, it, px, false),
             Layer::Transition(_, x, a, b) => {
-                let simple = matches!(x.effect.effect.as_str(), "cross_dissolve" | "dip_to_black" | "dip_to_white" | "non_additive_dissolve");
-                let sides: f64 = [a, b].iter().filter_map(|s| s.map(|it| layer_cost(project, it, px, !simple))).sum();
+                let simple = matches!(
+                    x.effect.effect.as_str(),
+                    "cross_dissolve" | "dip_to_black" | "dip_to_white" | "non_additive_dissolve"
+                );
+                let sides: f64 = [a, b]
+                    .iter()
+                    .filter_map(|s| s.map(|it| layer_cost(project, it, px, !simple)))
+                    .sum();
                 sides + if simple { 1.0 } else { 12.0 * px }
             }
         };
@@ -517,13 +620,20 @@ fn estimate_cost(project: &Project, seq: &Sequence, layers: &[Layer]) -> f64 {
 /// A single clip that plays natively: no standard effects, untouched fixed effects, normal speed,
 /// source frame size and rate equal to the sequence's.
 fn native(project: &Project, seq: &Sequence, it: &TrackItem) -> bool {
-    if it.has_standard_effects() || it.has_modified_intrinsics() || (it.speed - 1.0).abs() > 1e-9 || it.reverse || it.frame_hold.is_some() {
+    if it.has_standard_effects()
+        || it.has_modified_intrinsics()
+        || (it.speed - 1.0).abs() > 1e-9
+        || it.reverse
+        || it.frame_hold.is_some()
+    {
         return false;
     }
     match project.item(it.item).map(|p| &p.kind) {
-        Some(ItemKind::Media(m)) => {
-            m.info.video.as_ref().is_some_and(|v| v.width == seq.settings.width && v.height == seq.settings.height && m.frame_rate() == seq.settings.frame_rate)
-        }
+        Some(ItemKind::Media(m)) => m.info.video.as_ref().is_some_and(|v| {
+            v.width == seq.settings.width
+                && v.height == seq.settings.height
+                && m.frame_rate() == seq.settings.frame_rate
+        }),
         _ => false,
     }
 }

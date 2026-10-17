@@ -57,7 +57,11 @@ impl Segment {
 }
 
 fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
@@ -85,11 +89,14 @@ pub fn detect_segments(lum: &Plane) -> Vec<Segment> {
     let mut ang = vec![0.0f32; n]; // level-line angle (gradient + 90°), radians, mod π
     for y in 1..h - 1 {
         for x in 1..w - 1 {
-            let gx = (at(x + 1, y - 1) + 2.0 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2.0 * at(x - 1, y) + at(x - 1, y + 1));
-            let gy = (at(x - 1, y + 1) + 2.0 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2.0 * at(x, y - 1) + at(x + 1, y - 1));
+            let gx = (at(x + 1, y - 1) + 2.0 * at(x + 1, y) + at(x + 1, y + 1))
+                - (at(x - 1, y - 1) + 2.0 * at(x - 1, y) + at(x - 1, y + 1));
+            let gy = (at(x - 1, y + 1) + 2.0 * at(x, y + 1) + at(x + 1, y + 1))
+                - (at(x - 1, y - 1) + 2.0 * at(x, y - 1) + at(x + 1, y - 1));
             let m = gx.hypot(gy) / 8.0;
             mag[y * w + x] = m;
-            ang[y * w + x] = (gy.atan2(gx) + std::f32::consts::FRAC_PI_2).rem_euclid(std::f32::consts::PI);
+            ang[y * w + x] =
+                (gy.atan2(gx) + std::f32::consts::FRAC_PI_2).rem_euclid(std::f32::consts::PI);
         }
     }
     // adaptive threshold: strong edges relative to the image's own contrast
@@ -190,8 +197,14 @@ pub fn detect_segments(lum: &Plane) -> Vec<Segment> {
         if len < min_len || len / width < 5.0 {
             continue;
         }
-        let a = Point::new((mx + 0.5 + ux * lo - cx) / half_long, (my + 0.5 + uy * lo - cy) / half_long);
-        let b = Point::new((mx + 0.5 + ux * hi - cx) / half_long, (my + 0.5 + uy * hi - cy) / half_long);
+        let a = Point::new(
+            (mx + 0.5 + ux * lo - cx) / half_long,
+            (my + 0.5 + uy * lo - cy) / half_long,
+        );
+        let b = Point::new(
+            (mx + 0.5 + ux * hi - cx) / half_long,
+            (my + 0.5 + uy * hi - cy) / half_long,
+        );
         out.push(Segment { a, b });
     }
     out
@@ -208,7 +221,9 @@ fn vp_error(s: &Segment, v: [f64; 3]) -> f64 {
     if d < 1e-12 {
         return 0.0;
     }
-    let c = ((dx * sx + dy * sy) / (d * sx.hypot(sy).max(1e-12))).abs().min(1.0);
+    let c = ((dx * sx + dy * sy) / (d * sx.hypot(sy).max(1e-12)))
+        .abs()
+        .min(1.0);
     c.acos()
 }
 
@@ -251,7 +266,9 @@ fn smallest_eigvec(m: Mat3) -> [f64; 3] {
             row[q] = s * vp + c * vq;
         }
     }
-    let i = (0..3).min_by(|&i, &j| a[i][i].total_cmp(&a[j][j])).unwrap_or(0);
+    let i = (0..3)
+        .min_by(|&i, &j| a[i][i].total_cmp(&a[j][j]))
+        .unwrap_or(0);
     norm([v[0][i], v[1][i], v[2][i]])
 }
 
@@ -277,7 +294,11 @@ pub fn vanishing_point(segs: &[Segment]) -> Option<([f64; 3], f64)> {
         return None;
     }
     let thr = 1.5f64.to_radians();
-    let score = |v: [f64; 3]| -> f64 { segs.iter().map(|s| if vp_error(s, v) < thr { s.len() } else { 0.0 }).sum() };
+    let score = |v: [f64; 3]| -> f64 {
+        segs.iter()
+            .map(|s| if vp_error(s, v) < thr { s.len() } else { 0.0 })
+            .sum()
+    };
     // deterministic pair sampling, longest segments first
     let mut idx: Vec<usize> = (0..segs.len()).collect();
     idx.sort_by(|&a, &b| segs[b].len().total_cmp(&segs[a].len()));
@@ -302,7 +323,11 @@ pub fn vanishing_point(segs: &[Segment]) -> Option<([f64; 3], f64)> {
         return None;
     }
     let v = refine_vp(&inl);
-    let total: f64 = segs.iter().filter(|s| vp_error(s, v) < thr * 2.0).map(|s| s.len()).sum();
+    let total: f64 = segs
+        .iter()
+        .filter(|s| vp_error(s, v) < thr * 2.0)
+        .map(|s| s.len())
+        .sum();
     let count = segs.iter().filter(|s| vp_error(s, v) < thr * 2.0).count();
     (count >= 2).then_some((v, total))
 }
@@ -335,7 +360,9 @@ fn rotation_between(a: [f64; 3], b: [f64; 3]) -> Mat3 {
 }
 
 fn rotation_angle(r: &Mat3) -> f64 {
-    ((r[0][0] + r[1][1] + r[2][2] - 1.0) / 2.0).clamp(-1.0, 1.0).acos()
+    ((r[0][0] + r[1][1] + r[2][2] - 1.0) / 2.0)
+        .clamp(-1.0, 1.0)
+        .acos()
 }
 
 /// Vertical correction: send the vertical vanishing direction to the image y axis.
@@ -370,7 +397,9 @@ fn focal_from_vps(v: [f64; 3], h: [f64; 3]) -> Option<f64> {
     }
     let (vx, vy, hx, hy) = (v[0] / v[2], v[1] / v[2], h[0] / h[2], h[1] / h[2]);
     let f2 = -(vx * hx + vy * hy);
-    (f2 > 0.0).then(|| f2.sqrt()).filter(|f| (0.5..=6.0).contains(f))
+    (f2 > 0.0)
+        .then(|| f2.sqrt())
+        .filter(|f| (0.5..=6.0).contains(f))
 }
 
 /// Pure rotation (degrees, clockwise +) that levels the dominant lines.
@@ -391,7 +420,11 @@ fn level_angle(vert: &[Segment], horiz: &[Segment]) -> Option<f64> {
     };
     let lh: f64 = horiz.iter().map(Segment::len).sum();
     let lv: f64 = vert.iter().map(Segment::len).sum();
-    let (set, vertical) = if lh >= lv * 0.5 && lh > 0.0 { (horiz, false) } else { (vert, true) };
+    let (set, vertical) = if lh >= lv * 0.5 && lh > 0.0 {
+        (horiz, false)
+    } else {
+        (vert, true)
+    };
     if set.is_empty() {
         return None;
     }
@@ -406,7 +439,11 @@ fn level_angle(vert: &[Segment], horiz: &[Segment]) -> Option<f64> {
     })?;
     // consensus: most of the line length must agree with the median within 2°, otherwise the "lines" are scene
     // texture (tree flanks, ridges) rather than a horizon or plumb lines
-    let agree: f64 = v.iter().filter(|(d, _)| (d - median.0).abs() <= 2.0).map(|x| x.1).sum();
+    let agree: f64 = v
+        .iter()
+        .filter(|(d, _)| (d - median.0).abs() <= 2.0)
+        .map(|x| x.1)
+        .sum();
     (agree >= 0.5 * total).then_some(-median.0)
 }
 
@@ -433,7 +470,10 @@ fn reliable(segs: &[Segment], v: [f64; 3], vertical: bool) -> bool {
     let inl: Vec<&Segment> = segs.iter().filter(|s| vp_error(s, v) < thr).collect();
     let total: f64 = inl.iter().map(|s| s.len()).sum();
     let across = |s: &&Segment| if vertical { s.mid().x } else { s.mid().y };
-    let (lo, hi) = inl.iter().map(across).fold((f64::MAX, f64::MIN), |(lo, hi), x| (lo.min(x), hi.max(x)));
+    let (lo, hi) = inl
+        .iter()
+        .map(across)
+        .fold((f64::MAX, f64::MIN), |(lo, hi), x| (lo.min(x), hi.max(x)));
     // consensus: real structure agrees; mirrored flanks (trees, peaks) split the family roughly in half
     let family: f64 = segs.iter().map(Segment::len).sum();
     // a camera-tilt vanishing point lies far outside the frame; one inside or near it is a scene feature
@@ -447,16 +487,37 @@ fn reliable(segs: &[Segment], v: [f64; 3], vertical: bool) -> bool {
 /// Group segments into near-vertical / near-horizontal families and find their vanishing points (only reliable
 /// ones; see [`reliable`]).
 pub fn analyze(segs: &[Segment]) -> Analysis {
-    let vertical: Vec<Segment> = segs.iter().copied().filter(|s| s.tilt_from_vertical() < 30.0).collect();
-    let horizontal: Vec<Segment> = segs.iter().copied().filter(|s| s.tilt_from_vertical() > 60.0).collect();
-    let vertical_vp = vanishing_point(&vertical).map(|v| v.0).filter(|v| reliable(&vertical, *v, true));
-    let horizontal_vp = vanishing_point(&horizontal).map(|v| v.0).filter(|v| reliable(&horizontal, *v, false));
-    Analysis { vertical, horizontal, vertical_vp, horizontal_vp }
+    let vertical: Vec<Segment> = segs
+        .iter()
+        .copied()
+        .filter(|s| s.tilt_from_vertical() < 30.0)
+        .collect();
+    let horizontal: Vec<Segment> = segs
+        .iter()
+        .copied()
+        .filter(|s| s.tilt_from_vertical() > 60.0)
+        .collect();
+    let vertical_vp = vanishing_point(&vertical)
+        .map(|v| v.0)
+        .filter(|v| reliable(&vertical, *v, true));
+    let horizontal_vp = vanishing_point(&horizontal)
+        .map(|v| v.0)
+        .filter(|v| reliable(&horizontal, *v, false));
+    Analysis {
+        vertical,
+        horizontal,
+        vertical_vp,
+        horizontal_vp,
+    }
 }
 
 /// The Upright correction for `mode` from an analysis (lens-corrected → transformed, centred coordinates).
 pub fn solve(mode: Upright, a: &Analysis) -> Homography {
-    let level = || level_angle(&a.vertical, &a.horizontal).map(rot_z_h).unwrap_or(Homography::IDENTITY);
+    let level = || {
+        level_angle(&a.vertical, &a.horizontal)
+            .map(rot_z_h)
+            .unwrap_or(Homography::IDENTITY)
+    };
     let vertical = || a.vertical_vp.map(|v| solve_vertical(v, DEFAULT_FOCAL));
     let full = || {
         let (v, h) = (a.vertical_vp?, a.horizontal_vp?);
@@ -466,20 +527,33 @@ pub fn solve(mode: Upright, a: &Analysis) -> Homography {
     match mode {
         Upright::Off | Upright::Guided => Homography::IDENTITY,
         Upright::Level => level(),
-        Upright::Vertical => vertical().map(|r| recentre(&rotation_homography(&r, DEFAULT_FOCAL))).unwrap_or_else(level),
+        Upright::Vertical => vertical()
+            .map(|r| recentre(&rotation_homography(&r, DEFAULT_FOCAL)))
+            .unwrap_or_else(level),
         Upright::Full => match full() {
             Some((r, f)) => recentre(&rotation_homography(&r, f)),
-            None => vertical().map(|r| recentre(&rotation_homography(&r, DEFAULT_FOCAL))).unwrap_or_else(level),
+            None => vertical()
+                .map(|r| recentre(&rotation_homography(&r, DEFAULT_FOCAL)))
+                .unwrap_or_else(level),
         },
         Upright::Auto => {
             // A vertical family that implies a camera roll must be confirmed by the horizontals (a real roll tilts
             // both); otherwise it is scene structure (e.g. the same-side flanks of many conical trees).
             if let Some(v) = a.vertical_vp {
-                let (x, y) = if v[1] < 0.0 { (-v[0], -v[1]) } else { (v[0], v[1]) };
+                let (x, y) = if v[1] < 0.0 {
+                    (-v[0], -v[1])
+                } else {
+                    (v[0], v[1])
+                };
                 let roll = x.atan2(y).to_degrees();
-                let confirmed = roll.abs() <= 3.0 || level_angle(&[], &a.horizontal).is_some_and(|h| (h - roll).abs() <= 3.0);
+                let confirmed = roll.abs() <= 3.0
+                    || level_angle(&[], &a.horizontal).is_some_and(|h| (h - roll).abs() <= 3.0);
                 if !confirmed {
-                    let weaker = Analysis { vertical_vp: None, horizontal_vp: None, ..a.clone() };
+                    let weaker = Analysis {
+                        vertical_vp: None,
+                        horizontal_vp: None,
+                        ..a.clone()
+                    };
                     return solve(Upright::Auto, &weaker);
                 }
             }
@@ -490,7 +564,10 @@ pub fn solve(mode: Upright, a: &Analysis) -> Homography {
             match vertical().filter(|r| rotation_angle(r) < 25f64.to_radians()) {
                 Some(r) => recentre(&rotation_homography(&r, DEFAULT_FOCAL)),
                 // conservative: only small horizon fixes; bigger tilts are usually intentional or scene lines
-                None => level_angle(&a.vertical, &a.horizontal).filter(|d| d.abs() <= 5.0).map(rot_z_h).unwrap_or(Homography::IDENTITY),
+                None => level_angle(&a.vertical, &a.horizontal)
+                    .filter(|d| d.abs() <= 5.0)
+                    .map(rot_z_h)
+                    .unwrap_or(Homography::IDENTITY),
             }
         }
     }
@@ -499,9 +576,22 @@ pub fn solve(mode: Upright, a: &Analysis) -> Homography {
 /// Guided Upright from user guides (centred coordinates of the lens-corrected image). Guides closer to vertical
 /// define the vertical vanishing point, the others the horizontal one; one guide of a kind only levels.
 pub fn solve_guided(guides: &[Segment]) -> Homography {
-    let guides: Vec<Segment> = guides.iter().copied().filter(|g| g.len() > 1e-6).take(4).collect();
-    let vert: Vec<Segment> = guides.iter().copied().filter(|g| g.tilt_from_vertical() <= 45.0).collect();
-    let horiz: Vec<Segment> = guides.iter().copied().filter(|g| g.tilt_from_vertical() > 45.0).collect();
+    let guides: Vec<Segment> = guides
+        .iter()
+        .copied()
+        .filter(|g| g.len() > 1e-6)
+        .take(4)
+        .collect();
+    let vert: Vec<Segment> = guides
+        .iter()
+        .copied()
+        .filter(|g| g.tilt_from_vertical() <= 45.0)
+        .collect();
+    let horiz: Vec<Segment> = guides
+        .iter()
+        .copied()
+        .filter(|g| g.tilt_from_vertical() > 45.0)
+        .collect();
     let vp = |s: &[Segment]| -> Option<[f64; 3]> {
         if s.len() < 2 {
             return None;
@@ -515,11 +605,20 @@ pub fn solve_guided(guides: &[Segment]) -> Homography {
             let f = focal_from_vps(v, h).unwrap_or(DEFAULT_FOCAL);
             recentre(&rotation_homography(&solve_full(v, h, f), f))
         }
-        (Some(v), None) => recentre(&rotation_homography(&solve_vertical(v, DEFAULT_FOCAL), DEFAULT_FOCAL)),
+        (Some(v), None) => recentre(&rotation_homography(
+            &solve_vertical(v, DEFAULT_FOCAL),
+            DEFAULT_FOCAL,
+        )),
         (None, Some(_)) => {
             // two horizontal guides: make them parallel and horizontal (rotate the problem by 90°)
             let swap = |p: Point| Point::new(p.y, -p.x);
-            let hs: Vec<Segment> = horiz.iter().map(|s| Segment { a: swap(s.a), b: swap(s.b) }).collect();
+            let hs: Vec<Segment> = horiz
+                .iter()
+                .map(|s| Segment {
+                    a: swap(s.a),
+                    b: swap(s.b),
+                })
+                .collect();
             let refs: Vec<&Segment> = hs.iter().collect();
             let r = solve_vertical(refine_vp(&refs), DEFAULT_FOCAL);
             let inner = rotation_homography(&r, DEFAULT_FOCAL);
@@ -527,7 +626,9 @@ pub fn solve_guided(guides: &[Segment]) -> Homography {
             let back = to.inverse().unwrap_or(Homography::IDENTITY);
             recentre(&back.mul(&inner).mul(&to))
         }
-        (None, None) => level_angle(&vert, &horiz).map(rot_z_h).unwrap_or(Homography::IDENTITY),
+        (None, None) => level_angle(&vert, &horiz)
+            .map(rot_z_h)
+            .unwrap_or(Homography::IDENTITY),
     }
 }
 
@@ -544,7 +645,13 @@ pub fn analyze_source(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> A
     base.geometry = Geometry::default();
     base.crop = Crop::default();
     let key = crate::optics::fingerprint(src)
-        ^ lightcraft_develop::DevelopSettings { optics: s.optics, orientation: s.orientation, ..Default::default() }.hash64().rotate_left(17);
+        ^ lightcraft_develop::DevelopSettings {
+            optics: s.optics,
+            orientation: s.orientation,
+            ..Default::default()
+        }
+        .hash64()
+        .rotate_left(17);
     if let Ok(c) = CACHE.lock()
         && let Some((_, a)) = c.iter().find(|(k, _)| *k == key)
     {
@@ -577,7 +684,12 @@ pub fn level_degrees(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> Op
 }
 
 /// The automatic Upright correction for `mode` on `src` (identity for Off and Guided).
-pub fn auto_transform(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, mode: Upright) -> Homography {
+pub fn auto_transform(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    mode: Upright,
+) -> Homography {
     if matches!(mode, Upright::Off | Upright::Guided) {
         return Homography::IDENTITY;
     }
@@ -585,9 +697,16 @@ pub fn auto_transform(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, mode
 }
 
 /// Fill in a missing automatic Upright transform (settings from XMP/CLI that name a mode but carry no analysis).
-pub fn resolve<'a>(src: &Rgb32f, info: &SourceInfo, s: &'a DevelopSettings) -> Cow<'a, DevelopSettings> {
+pub fn resolve<'a>(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &'a DevelopSettings,
+) -> Cow<'a, DevelopSettings> {
     let g = &s.geometry;
-    if matches!(g.upright, Upright::Off | Upright::Guided) || g.upright_transform.is_some() || !s.section_enabled("geometry") {
+    if matches!(g.upright, Upright::Off | Upright::Guided)
+        || g.upright_transform.is_some()
+        || !s.section_enabled("geometry")
+    {
         return Cow::Borrowed(s);
     }
     let mut e = s.clone();
@@ -603,7 +722,11 @@ pub fn homography(g: &Geometry, ow: f64, oh: f64) -> Homography {
         Upright::Guided => {
             let l = ow.max(oh) / 2.0;
             let c = |p: Point| Point::new((p.x * ow - ow / 2.0) / l, (p.y * oh - oh / 2.0) / l);
-            let segs: Vec<Segment> = g.guides.iter().map(|(a, b)| Segment { a: c(*a), b: c(*b) }).collect();
+            let segs: Vec<Segment> = g
+                .guides
+                .iter()
+                .map(|(a, b)| Segment { a: c(*a), b: c(*b) })
+                .collect();
             solve_guided(&segs)
         }
         _ => g.upright_transform.unwrap_or(Homography::IDENTITY),

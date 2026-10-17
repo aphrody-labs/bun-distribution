@@ -14,8 +14,23 @@ use lightcraft_raster::resample::{Filter, fit};
 use crate::media::{DenoiseSpec, FileLoader, FileProbe, PairLoader, PreviewLoader, ProbeInfo};
 
 fn meta_of(m: &lightcraft_meta::Metadata) -> (Meta, Option<String>) {
-    let shutter = m.exposure_time.map(|t| if t >= 1.0 { format!("{t:.0}") } else { format!("1/{:.0}", 1.0 / t) }).unwrap_or_default();
-    let camera = [m.make.clone().unwrap_or_default(), m.model.clone().unwrap_or_default()].join(" ").trim().to_string();
+    let shutter = m
+        .exposure_time
+        .map(|t| {
+            if t >= 1.0 {
+                format!("{t:.0}")
+            } else {
+                format!("1/{:.0}", 1.0 / t)
+            }
+        })
+        .unwrap_or_default();
+    let camera = [
+        m.make.clone().unwrap_or_default(),
+        m.model.clone().unwrap_or_default(),
+    ]
+    .join(" ")
+    .trim()
+    .to_string();
     let meta = Meta {
         camera,
         lens: m.lens_model.clone().unwrap_or_default(),
@@ -48,26 +63,41 @@ fn meta_of(m: &lightcraft_meta::Metadata) -> (Meta, Option<String>) {
 /// raw reader's equivalent of the camera's correction, e.g. Panasonic / Leica RW2 distortion), re-expressed for the
 /// default-cropped, EXIF-oriented image. These are the only "profile" corrections LightCraft applies.
 pub fn embedded_lens(raw: &lightcraft_raw::RawInfo) -> Option<lightcraft_develop::EmbeddedLens> {
-    use lightcraft_develop::{EmbeddedLens, EmbeddedVignette, EmbeddedWarp, EmbeddedWarpStage, WARP_STAGES};
+    use lightcraft_develop::{
+        EmbeddedLens, EmbeddedVignette, EmbeddedWarp, EmbeddedWarpStage, WARP_STAGES,
+    };
     use lightcraft_geom::Point;
     use lightcraft_raw::Opcode;
     let (aw, ah) = (raw.active_area.width as f64, raw.active_area.height as f64);
     if aw < 2.0 || ah < 2.0 {
         return None;
     }
-    let c = raw.crop.clipped(raw.active_area.width, raw.active_area.height);
-    let (cx0, cy0, cw, ch) =
-        if c.width == 0 || c.height == 0 { (0.0, 0.0, aw, ah) } else { (c.x as f64, c.y as f64, c.width as f64, c.height as f64) };
+    let c = raw
+        .crop
+        .clipped(raw.active_area.width, raw.active_area.height);
+    let (cx0, cy0, cw, ch) = if c.width == 0 || c.height == 0 {
+        (0.0, 0.0, aw, ah)
+    } else {
+        (c.x as f64, c.y as f64, c.width as f64, c.height as f64)
+    };
     let long = cw.max(ch);
     // opcode centres are relative to the (uncropped) active area, in pixel-index units
     let centre = |rel: [f64; 2]| -> (Point, f64) {
         let (px, py) = (rel[0] * (aw - 1.0), rel[1] * (ah - 1.0));
-        let m = [(0.0, 0.0), (aw - 1.0, 0.0), (0.0, ah - 1.0), (aw - 1.0, ah - 1.0)]
-            .iter()
-            .map(|&(x, y)| (x - px).hypot(y - py))
-            .fold(0.0, f64::max)
-            .max(1e-9);
-        (Point::new((px + 0.5 - cx0) / cw, (py + 0.5 - cy0) / ch), m / long)
+        let m = [
+            (0.0, 0.0),
+            (aw - 1.0, 0.0),
+            (0.0, ah - 1.0),
+            (aw - 1.0, ah - 1.0),
+        ]
+        .iter()
+        .map(|&(x, y)| (x - px).hypot(y - py))
+        .fold(0.0, f64::max)
+        .max(1e-9);
+        (
+            Point::new((px + 0.5 - cx0) / cw, (py + 0.5 - cy0) / ch),
+            m / long,
+        )
     };
     let mut lens = EmbeddedLens::default();
     // opcodes in list order, minus the ones the DNG 1.6 skip rule drops (a WarpRectilinear that follows an optional
@@ -75,14 +105,26 @@ pub fn embedded_lens(raw: &lightcraft_raw::RawInfo) -> Option<lightcraft_develop
     let ops: Vec<&Opcode> = lightcraft_raw::opcodes::applied_ops(&raw.opcodes.list3).collect();
     // A DNG with a WarpRectilinear2 keeps every warp opcode as a chain of stages (each warps the one before's output);
     // without one the first WarpRectilinear is the lens warp, as it always was.
-    let chain = ops.iter().any(|op| matches!(op, Opcode::WarpRectilinear2 { .. }));
+    let chain = ops
+        .iter()
+        .any(|op| matches!(op, Opcode::WarpRectilinear2 { .. }));
     let mut stages = Vec::new();
     for op in ops {
         match op {
-            Opcode::WarpRectilinear2 { planes, center, reciprocal, .. } if !planes.is_empty() => {
+            Opcode::WarpRectilinear2 {
+                planes,
+                center,
+                reciprocal,
+                ..
+            } if !planes.is_empty() => {
                 let (center, radius) = centre(*center);
                 let p = |i: usize| planes[i.min(planes.len() - 1)];
-                stages.push(EmbeddedWarpStage { planes: [p(0), p(1), p(2)], center, radius, reciprocal: *reciprocal });
+                stages.push(EmbeddedWarpStage {
+                    planes: [p(0), p(1), p(2)],
+                    center,
+                    radius,
+                    reciprocal: *reciprocal,
+                });
             }
             Opcode::WarpRectilinear { planes, center } if chain && !planes.is_empty() => {
                 // WarpRectilinear is the even-power case: kr0 + kr1 r² + kr2 r⁴ + kr3 r⁶, no radius limit
@@ -99,32 +141,59 @@ pub fn embedded_lens(raw: &lightcraft_raw::RawInfo) -> Option<lightcraft_develop
                     s[18] = 1e6;
                     s
                 };
-                stages.push(EmbeddedWarpStage { planes: [p(0), p(1), p(2)], center, radius, reciprocal: false });
+                stages.push(EmbeddedWarpStage {
+                    planes: [p(0), p(1), p(2)],
+                    center,
+                    radius,
+                    reciprocal: false,
+                });
             }
-            Opcode::WarpRectilinear { planes, center } if !chain && !planes.is_empty() && lens.warp.is_none() => {
+            Opcode::WarpRectilinear { planes, center }
+                if !chain && !planes.is_empty() && lens.warp.is_none() =>
+            {
                 let (center, radius) = centre(*center);
                 let p = |i: usize| planes[i.min(planes.len() - 1)];
-                lens.warp = Some(EmbeddedWarp { planes: [p(0), p(1), p(2)], center, radius });
+                lens.warp = Some(EmbeddedWarp {
+                    planes: [p(0), p(1), p(2)],
+                    center,
+                    radius,
+                });
             }
             Opcode::FixVignetteRadial { k, center } if lens.vignette.is_none() => {
                 let (center, radius) = centre(*center);
-                lens.vignette = Some(EmbeddedVignette { k: *k, center, radius });
+                lens.vignette = Some(EmbeddedVignette {
+                    k: *k,
+                    center,
+                    radius,
+                });
             }
             _ => {}
         }
     }
     // (more stages than a lens keeps: the first ones; real files carry two)
-    for (slot, st) in lens.stages.iter_mut().zip(stages.into_iter().take(WARP_STAGES)) {
+    for (slot, st) in lens
+        .stages
+        .iter_mut()
+        .zip(stages.into_iter().take(WARP_STAGES))
+    {
         *slot = Some(st);
     }
     if lens.warp.is_none() && lens.vignette.is_none() && !lens.has_stages() {
         return None;
     }
-    Some(lightcraft_pipeline::optics::reorient_lens(&lens, raw.orientation, cw, ch))
+    Some(lightcraft_pipeline::optics::reorient_lens(
+        &lens,
+        raw.orientation,
+        cw,
+        ch,
+    ))
 }
 
 fn ext_upper(name: &str) -> String {
-    std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_uppercase()).unwrap_or_default()
+    std::path::Path::new(name)
+        .extension()
+        .map(|e| e.to_string_lossy().to_uppercase())
+        .unwrap_or_default()
 }
 
 /// Probe a file's bytes: kind, dimensions (oriented), metadata. No pixel data is decompressed:
@@ -140,7 +209,9 @@ pub fn probe_bytes(name: &str, bytes: &[u8]) -> Result<ProbeInfo, String> {
             Ok(r) => r,
             Err(Ok(why)) => {
                 // a raw variant we can't decode yet: describe it from its embedded preview
-                let (w, h) = embedded_preview_size(bytes).ok_or(format!("unsupported raw ({why}) without an embedded preview"))?;
+                let (w, h) = embedded_preview_size(bytes).ok_or(format!(
+                    "unsupported raw ({why}) without an embedded preview"
+                ))?;
                 return Ok(ProbeInfo {
                     width: w,
                     height: h,
@@ -227,7 +298,9 @@ fn preview_reason(bytes: &[u8], e: lightcraft_raw::RawError) -> Result<String, S
     use lightcraft_raw::RawError;
     match e {
         RawError::Unsupported(why) => Ok(why),
-        e if lightcraft_raw::probe(bytes) == Some(lightcraft_raw::RawFormat::Cr3) => Ok(format!("CR3 {e}")),
+        e if lightcraft_raw::probe(bytes) == Some(lightcraft_raw::RawFormat::Cr3) => {
+            Ok(format!("CR3 {e}"))
+        }
         RawError::NotRaw => Err(RawError::NotRaw.to_string()),
         e => Ok(e.to_string()),
     }
@@ -254,13 +327,24 @@ impl CameraColourModel<'_> {
     /// Rebuild sensor-clipped channels; fully clipped highlights become [`clipped_white`] of the matrix, so they
     /// come out of [`Self::apply`] neutral.
     pub fn rebuild_highlights(&self, img: &mut Rgb32f) {
-        lightcraft_raw::highlight::reconstruct_with(img, self.wb, HIGHLIGHT_CLIP, clipped_white(&self.matrix));
+        lightcraft_raw::highlight::reconstruct_with(
+            img,
+            self.wb,
+            HIGHLIGHT_CLIP,
+            clipped_white(&self.matrix),
+        );
     }
 
     /// [`Self::rebuild_highlights`] for a binned image whose clipped channels `mask` tells
     /// ([`lightcraft_raw::RawImage::develop_binned_masked`]).
     pub fn rebuild_highlights_masked(&self, img: &mut Rgb32f, mask: &[u8]) {
-        lightcraft_raw::highlight::reconstruct_masked(img, self.wb, HIGHLIGHT_CLIP, clipped_white(&self.matrix), mask);
+        lightcraft_raw::highlight::reconstruct_masked(
+            img,
+            self.wb,
+            HIGHLIGHT_CLIP,
+            clipped_white(&self.matrix),
+            mask,
+        );
     }
 
     /// White balance, matrix, tables and baseline exposure, in place.
@@ -277,7 +361,9 @@ impl CameraColourModel<'_> {
                 Some(tables) => tables.apply(rgb, gain),
                 None => rgb.map(|v| v * gain),
             };
-            self.hue_sat.map_or(rgb, |h| h.apply(rgb)).map(|v| v.max(0.0))
+            self.hue_sat
+                .map_or(rgb, |h| h.apply(rgb))
+                .map(|v| v.max(0.0))
         });
     }
 }
@@ -295,15 +381,23 @@ pub(crate) fn clipped_white(model: &lightcraft_color::Mat3) -> [f32; 3] {
     const CONDITION: f64 = 1e3;
     /// Largest factor between the answer and the camera's neutral, per channel.
     const SPREAD: f64 = 4.0;
-    let norm = |m: &lightcraft_color::Mat3| m.0.iter().map(|row| row.iter().map(|v| v.abs()).sum::<f64>()).fold(0.0, f64::max);
-    let Some(inverse) = model.inverse() else { return CAMERA };
+    let norm = |m: &lightcraft_color::Mat3| {
+        m.0.iter()
+            .map(|row| row.iter().map(|v| v.abs()).sum::<f64>())
+            .fold(0.0, f64::max)
+    };
+    let Some(inverse) = model.inverse() else {
+        return CAMERA;
+    };
     let condition = norm(model) * norm(&inverse);
     if !condition.is_finite() || condition > CONDITION {
         return CAMERA;
     }
     let luma = |v: [f64; 3]| {
         let c = model.apply(v);
-        (0..3).map(|i| c[i] * f64::from(lightcraft_color::LUMA_2020[i])).sum::<f64>()
+        (0..3)
+            .map(|i| c[i] * f64::from(lightcraft_color::LUMA_2020[i]))
+            .sum::<f64>()
     };
     let n = inverse.apply([1.0; 3]);
     let (target, own) = (luma([1.0; 3]), luma(n));
@@ -311,15 +405,26 @@ pub(crate) fn clipped_white(model: &lightcraft_color::Mat3) -> [f32; 3] {
         return CAMERA;
     }
     let white = n.map(|v| v * target / own);
-    if !white.iter().all(|v| v.is_finite() && (1.0 / SPREAD..=SPREAD).contains(v)) {
+    if !white
+        .iter()
+        .all(|v| v.is_finite() && (1.0 / SPREAD..=SPREAD).contains(v))
+    {
         return CAMERA;
     }
     let white = white.map(|v| v as f32);
     // neutral through the matrix as the decode applies it
     let m = model.to_f32();
-    let out: [f32; 3] = std::array::from_fn(|i| m[i][0] * white[0] + m[i][1] * white[1] + m[i][2] * white[2]);
-    let (lo, hi) = (out[0].min(out[1]).min(out[2]), out[0].max(out[1]).max(out[2]));
-    if lo > 0.0 && hi.is_finite() && hi - lo <= 1e-3 * hi { white } else { CAMERA }
+    let out: [f32; 3] =
+        std::array::from_fn(|i| m[i][0] * white[0] + m[i][1] * white[1] + m[i][2] * white[2]);
+    let (lo, hi) = (
+        out[0].min(out[1]).min(out[2]),
+        out[0].max(out[1]).max(out[2]),
+    );
+    if lo > 0.0 && hi.is_finite() && hi - lo <= 1e-3 * hi {
+        white
+    } else {
+        CAMERA
+    }
 }
 
 /// The largest block size to bin a raw's mosaic by for a source of at most `max_edge` pixels:
@@ -329,11 +434,19 @@ pub(crate) fn clipped_white(model: &lightcraft_color::Mat3) -> [f32; 3] {
 /// instead of a ~1.2 s full demosaic; zooming in still uses the full-size source).
 /// `None` = demosaic at full size.
 pub fn bin_factor(raw: &lightcraft_raw::RawImage, max_edge: usize) -> Option<usize> {
-    let c = raw.crop.clipped(raw.active_area.width, raw.active_area.height);
-    let long = if c.width > 1 && c.height > 1 { c.width.max(c.height) } else { raw.active_area.width.max(raw.active_area.height) };
+    let c = raw
+        .crop
+        .clipped(raw.active_area.width, raw.active_area.height);
+    let long = if c.width > 1 && c.height > 1 {
+        c.width.max(c.height)
+    } else {
+        raw.active_area.width.max(raw.active_area.height)
+    };
     let need = (max_edge.saturating_mul(9) / 10).max(1);
     let need3 = (max_edge.saturating_mul(3) / 4).max(1);
-    [8usize, 6, 4, 3, 2].into_iter().find(|&k| raw.can_bin(k) && (long / k >= need || (k == 3 && !raw.can_bin(2) && long / k >= need3)))
+    [8usize, 6, 4, 3, 2].into_iter().find(|&k| {
+        raw.can_bin(k) && (long / k >= need || (k == 3 && !raw.can_bin(2) && long / k >= need3))
+    })
 }
 
 /// Decode a file into a linear Rec.2020 image no larger than `max_edge`, oriented.
@@ -342,19 +455,29 @@ pub fn bin_factor(raw: &lightcraft_raw::RawImage, max_edge: usize) -> Option<usi
 /// instead of each one waking the pool from outside and waiting for it (which costs more than the
 /// loops themselves when the machine is busy).
 pub fn load_bytes(bytes: &[u8], max_edge: usize) -> Result<(Rgb32f, SourceInfo), String> {
-    rayon::scope(|_| load_bytes_now(std::borrow::Cow::Borrowed(bytes), max_edge, None).map(|(img, _, info)| (img, info)))
+    rayon::scope(|_| {
+        load_bytes_now(std::borrow::Cow::Borrowed(bytes), max_edge, None)
+            .map(|(img, _, info)| (img, info))
+    })
 }
 
 /// [`load_bytes`] taking the file's bytes: a raw file's bytes are freed as soon as it is decoded
 /// (less memory held while it is developed).
 pub fn load_vec(bytes: Vec<u8>, max_edge: usize) -> Result<(Rgb32f, SourceInfo), String> {
-    rayon::scope(move |_| load_bytes_now(std::borrow::Cow::Owned(bytes), max_edge, None).map(|(img, _, info)| (img, info)))
+    rayon::scope(move |_| {
+        load_bytes_now(std::borrow::Cow::Owned(bytes), max_edge, None)
+            .map(|(img, _, info)| (img, info))
+    })
 }
 
 /// [`load_vec`] that also develops the photo's cached denoised picture (`spec`) from the same decode: the plain
 /// picture, the denoised one (`None` when it cannot be read or does not fit this raw: the plain one is then all
 /// there is) and the source facts. Both pictures are the same size.
-pub fn load_vec_pair(bytes: Vec<u8>, max_edge: usize, spec: &DenoiseSpec) -> Result<(Rgb32f, Option<Rgb32f>, SourceInfo), String> {
+pub fn load_vec_pair(
+    bytes: Vec<u8>,
+    max_edge: usize,
+    spec: &DenoiseSpec,
+) -> Result<(Rgb32f, Option<Rgb32f>, SourceInfo), String> {
     rayon::scope(move |_| load_bytes_now(std::borrow::Cow::Owned(bytes), max_edge, Some(spec)))
 }
 
@@ -362,7 +485,11 @@ pub fn load_vec_pair(bytes: Vec<u8>, max_edge: usize, spec: &DenoiseSpec) -> Res
 /// crop, and `factor` × `factor` blocks averaged into one pixel when the plain one was binned (plain means: the
 /// plain development's clip mask tells highlight reconstruction which of them held clipped samples). `None` when
 /// the product is missing, damaged, made from something else or not the size of this raw's active area.
-fn denoised_camera_rgb(raw: &lightcraft_raw::RawImage, spec: &DenoiseSpec, factor: usize) -> Option<Rgb32f> {
+fn denoised_camera_rgb(
+    raw: &lightcraft_raw::RawImage,
+    spec: &DenoiseSpec,
+    factor: usize,
+) -> Option<Rgb32f> {
     use lightcraft_denoise::product::{self, Window};
     let a = raw.active_area;
     let header = product::read_header_at(&spec.product).ok()?;
@@ -371,7 +498,12 @@ fn denoised_camera_rgb(raw: &lightcraft_raw::RawImage, spec: &DenoiseSpec, facto
     }
     if raw.opcodes.list3.is_empty() {
         let c = raw.develop_crop(a.width, a.height);
-        let window = Window { x: c.x, y: c.y, width: c.width, height: c.height };
+        let window = Window {
+            x: c.x,
+            y: c.y,
+            width: c.width,
+            height: c.height,
+        };
         product::read_window(&spec.product, &spec.key, Some(window), factor, None).ok()
     } else {
         // (the plain development is not binned either when the file has opcodes of this kind: `factor` is 1)
@@ -392,7 +524,9 @@ fn load_bytes_now(
                 // show the camera's embedded JPEG (rendered, not raw) until the variant is supported
                 return load_embedded_preview(&bytes, max_edge)
                     .map(|(img, info)| (img, None, info))
-                    .ok_or(format!("unsupported raw ({why}) without an embedded preview"));
+                    .ok_or(format!(
+                        "unsupported raw ({why}) without an embedded preview"
+                    ));
             }
             Err(Err(e)) => return Err(e),
         };
@@ -405,7 +539,10 @@ fn load_bytes_now(
         // the camera's measured matrices (`Photo::relative_wb` decides the same from the catalog's camera)
         let scale = WbScaleOf::new(raw.format, &raw.color, raw.wb_multipliers, &raw.metadata);
         // the source's segmentation mattes (DNG semantic masks), read while the starting colour is fitted
-        let ((xy, t, camera_look), mattes) = rayon::join(|| crate::camera_preview::starting_colour(&mut raw, &bytes), || dng_mattes(&bytes, &info));
+        let ((xy, t, camera_look), mattes) = rayon::join(
+            || crate::camera_preview::starting_colour(&mut raw, &bytes),
+            || dng_mattes(&bytes, &info),
+        );
         drop(bytes);
         // Previews and thumbnails bin the mosaic straight to (about) the size they need; only
         // larger levels (exports, 1:1) demosaic the whole sensor.
@@ -413,27 +550,48 @@ fn load_bytes_now(
         let bin = bin_factor(&raw, max_edge);
         // (binned: block means, and which colours had a clipped sample in each block)
         let binned = match bin {
-            Some(k) => raw.develop_binned_masked(k, HIGHLIGHT_CLIP).map_err(|e| e.to_string())?,
+            Some(k) => raw
+                .develop_binned_masked(k, HIGHLIGHT_CLIP)
+                .map_err(|e| e.to_string())?,
             None => None,
         };
-        let factor = if binned.is_some() { bin.unwrap_or(1) } else { 1 };
+        let factor = if binned.is_some() {
+            bin.unwrap_or(1)
+        } else {
+            1
+        };
         let (img, clip_mask) = match binned {
             Some((img, mask)) => (img, Some(mask)),
             None => {
-                let method = if max_edge <= 600 { lightcraft_raw::Method::Bilinear } else { lightcraft_raw::Method::Ahd };
+                let method = if max_edge <= 600 {
+                    lightcraft_raw::Method::Bilinear
+                } else {
+                    lightcraft_raw::Method::Ahd
+                };
                 (raw.develop(method).map_err(|e| e.to_string())?, None)
             }
         };
         // the same development from the denoised mosaic, when the photo has been denoised
-        let twin = denoise.and_then(|spec| denoised_camera_rgb(&raw, spec, factor)).filter(|d| d.width == img.width && d.height == img.height);
+        let twin = denoise
+            .and_then(|spec| denoised_camera_rgb(&raw, spec, factor))
+            .filter(|d| d.width == img.width && d.height == img.height);
         // the samples aren't needed any more (the colour model below reads only the tags)
         raw.data = lightcraft_raw::RawData::U16(Vec::new());
-        let hue_sat = camera_look.as_ref().and_then(|p| p.hue_sat.as_ref()).and_then(crate::camera_preview::HueSat::new);
+        let hue_sat = camera_look
+            .as_ref()
+            .and_then(|p| p.hue_sat.as_ref())
+            .and_then(crate::camera_preview::HueSat::new);
         // A DNG's own profile look (hue/saturation map, look table), DNG spec chapter 6.
-        let tables = lightcraft_raw::profile::ProfileTables::new(&raw.color.profile, lightcraft_raw::color::illuminant_weight(&raw.color, xy));
+        let tables = lightcraft_raw::profile::ProfileTables::new(
+            &raw.color.profile,
+            lightcraft_raw::color::illuminant_weight(&raw.color, xy),
+        );
         let colour = CameraColourModel {
             wb: t.wb,
-            matrix: camera_look.as_ref().map(|p| p.matrix.mul(&t.matrix)).unwrap_or(t.matrix),
+            matrix: camera_look
+                .as_ref()
+                .map(|p| p.matrix.mul(&t.matrix))
+                .unwrap_or(t.matrix),
             gain: 2f32.powf(t.baseline_exposure as f32),
             tables: tables.as_ref(),
             hue_sat: hue_sat.as_ref(),
@@ -467,18 +625,36 @@ fn load_bytes_now(
                     format!("{n} {:.1}", d.as_secs_f64() * 1e3)
                 })
                 .collect();
-            eprintln!("[profile] raw source {}×{} (max {max_edge}, ms after decode): {}", img.width, img.height, parts.join(", "));
+            eprintln!(
+                "[profile] raw source {}×{} (max {max_edge}, ms after decode): {}",
+                img.width,
+                img.height,
+                parts.join(", ")
+            );
         }
         let twin = twin.map(|picture| finish(picture).0);
         // White balance re-evaluates the file's own colour model (when it has one and no file-local look matrix sits
         // on top of it). A model's measured matrices never do: they only give the Kelvin scale its numbers, and the
         // picture is adapted from the as-shot white as every fitted look is (so settings from before that scale
         // existed render exactly as they did, `lightcraft_pipeline::local::legacy_white`).
-        let camera_color = (scale.own_matrix && !t.matrix_is_fallback && camera_look.is_none()).then(|| {
-            let tags = lightcraft_raw::ColorData { profile: Default::default(), ..raw.color.clone() };
-            Arc::new(lightcraft_pipeline::CameraColor { tags, developed_for: xy })
+        let camera_color = (scale.own_matrix && !t.matrix_is_fallback && camera_look.is_none())
+            .then(|| {
+                let tags = lightcraft_raw::ColorData {
+                    profile: Default::default(),
+                    ..raw.color.clone()
+                };
+                Arc::new(lightcraft_pipeline::CameraColor {
+                    tags,
+                    developed_for: xy,
+                })
+            });
+        let camera_tone = camera_look.as_ref().map(|p| p.tone).or_else(|| {
+            raw.color
+                .profile
+                .tone_curve
+                .as_ref()
+                .and_then(dng_tone_curve)
         });
-        let camera_tone = camera_look.as_ref().map(|p| p.tone).or_else(|| raw.color.profile.tone_curve.as_ref().and_then(dng_tone_curve));
         let local_tone = local_tone(&raw);
         let (temp, tint) = scale.as_shot(xy);
         return Ok((
@@ -501,8 +677,16 @@ fn load_bytes_now(
     let d = lightcraft_codecs::decode(&bytes, fit_box(max_edge)).map_err(|e| e.to_string())?;
     drop(bytes);
     let img = d.to_working();
-    let img = if img.width.max(img.height) > max_edge { fit(&img, max_edge, max_edge, Filter::Mitchell) } else { img };
-    Ok((img.into_oriented(Orientation::from_exif(d.orientation)), None, SourceInfo::default()))
+    let img = if img.width.max(img.height) > max_edge {
+        fit(&img, max_edge, max_edge, Filter::Mitchell)
+    } else {
+        img
+    };
+    Ok((
+        img.into_oriented(Orientation::from_exif(d.orientation)),
+        None,
+        SourceInfo::default(),
+    ))
 }
 
 /// Which white-balance scale a raw is edited on, decided from the file alone, the way the catalog decides it from
@@ -532,15 +716,24 @@ impl WbScaleOf {
         let own_matrix = lightcraft_raw::color::has_matrix(color);
         let fitted = crate::camera_preview::file_local_look(format) && !own_matrix;
         let model = meta.model.as_deref().filter(|_| fitted);
-        let camera = model.and_then(|model| lightcraft_raw::spectral::find(meta.make.as_deref(), model));
-        let presets = camera.is_none() && model.is_some_and(|model| lightcraft_raw::kelvin_presets::covers(meta.make.as_deref(), model));
+        let camera =
+            model.and_then(|model| lightcraft_raw::spectral::find(meta.make.as_deref(), model));
+        let presets = camera.is_none()
+            && model.is_some_and(|model| {
+                lightcraft_raw::kelvin_presets::covers(meta.make.as_deref(), model)
+            });
         let scale_white = match camera {
             Some(c) => lightcraft_raw::spectral::as_shot_white_through(c, color, wb_multipliers),
             None if presets => lightcraft_raw::kelvin_presets::as_shot_white(color, wb_multipliers),
             None => None,
         };
         let covered = camera.is_some() || presets;
-        WbScaleOf { own_matrix, relative: fitted && !covered, legacy_relative: fitted && covered, scale_white }
+        WbScaleOf {
+            own_matrix,
+            relative: fitted && !covered,
+            legacy_relative: fitted && covered,
+            scale_white,
+        }
     }
     /// The as-shot temperature and tint on the file's scale: the relative scale's reference, the white through
     /// the measured matrices or the presets, else `own` (the white the file's own tags give). Whole numbers, as the
@@ -557,28 +750,48 @@ impl WbScaleOf {
 
 /// The raw's gain table map with where its developed picture (the default crop, oriented) sits in
 /// the active area: rendered when the photo's "Camera local tone mapping" option is on.
-fn local_tone(raw: &lightcraft_raw::RawImage) -> Option<Arc<lightcraft_pipeline::local_tone::LocalTone>> {
+fn local_tone(
+    raw: &lightcraft_raw::RawImage,
+) -> Option<Arc<lightcraft_pipeline::local_tone::LocalTone>> {
     let map = raw.color.profile.gain_table_map.clone()?;
     let a = raw.active_area;
     let (aw, ah) = (a.width.max(1) as f64, a.height.max(1) as f64);
     let c = raw.develop_crop(a.width, a.height);
-    let rect = [c.x as f64 / aw, c.y as f64 / ah, c.width as f64 / aw, c.height as f64 / ah];
-    let placement = lightcraft_raw::gaintable::SourcePlacement { rect, orientation: raw.orientation };
-    Some(Arc::new(lightcraft_pipeline::local_tone::LocalTone { map, placement }))
+    let rect = [
+        c.x as f64 / aw,
+        c.y as f64 / ah,
+        c.width as f64 / aw,
+        c.height as f64 / ah,
+    ];
+    let placement = lightcraft_raw::gaintable::SourcePlacement {
+        rect,
+        orientation: raw.orientation,
+    };
+    Some(Arc::new(lightcraft_pipeline::local_tone::LocalTone {
+        map,
+        placement,
+    }))
 }
 
 /// The semantic masks of a DNG that AI masks understand, over the developed image (default crop,
 /// oriented like it). Person mattes without a confidently selected pixel are left out (the
 /// Subject mask then falls back to its heuristic); a sky matte counts even when empty (no sky).
-fn dng_mattes(bytes: &[u8], raw: &lightcraft_raw::RawInfo) -> Option<Arc<lightcraft_pipeline::masks::Mattes>> {
+fn dng_mattes(
+    bytes: &[u8],
+    raw: &lightcraft_raw::RawInfo,
+) -> Option<Arc<lightcraft_pipeline::masks::Mattes>> {
     use lightcraft_pipeline::masks::{MatteKind, Mattes};
     if raw.format != lightcraft_raw::RawFormat::Dng {
         return None;
     }
     let mut mattes = Mattes::default();
     for m in lightcraft_raw::semantic_masks(bytes) {
-        let Some(kind) = matte_kind(&m.name) else { continue };
-        let Some(img) = m.developed(raw.active_area, raw.crop) else { continue };
+        let Some(kind) = matte_kind(&m.name) else {
+            continue;
+        };
+        let Some(img) = m.developed(raw.active_area, raw.crop) else {
+            continue;
+        };
         if kind != MatteKind::Sky && !img.data.iter().any(|&v| v >= 128) {
             continue;
         }
@@ -591,7 +804,10 @@ fn dng_mattes(bytes: &[u8], raw: &lightcraft_raw::RawInfo) -> Option<Arc<lightcr
 /// their auxiliary image types, `urn:com:apple:photo:<year>:aux:<type>`. Other names: `None`.
 fn matte_kind(name: &str) -> Option<lightcraft_pipeline::masks::MatteKind> {
     use lightcraft_pipeline::masks::MatteKind::*;
-    let kind = name.strip_prefix("urn:com:apple:photo:")?.rsplit(':').next()?;
+    let kind = name
+        .strip_prefix("urn:com:apple:photo:")?
+        .rsplit(':')
+        .next()?;
     Some(match kind {
         "semanticskymatte" => Sky,
         "semanticskinmatte" => Skin,
@@ -606,7 +822,9 @@ fn matte_kind(name: &str) -> Option<lightcraft_pipeline::masks::MatteKind> {
 /// A DNG `ProfileToneCurve` (linear in, linear out, 1.0 = white after exposure compensation) as the
 /// finish stage's camera tone curve: 32 knots, log-spaced over 12 stops below white; above white
 /// the camera tone's shoulder continues it.
-pub(crate) fn dng_tone_curve(curve: &lightcraft_raw::profile::ToneCurve) -> Option<lightcraft_pipeline::tone::CameraTone> {
+pub(crate) fn dng_tone_curve(
+    curve: &lightcraft_raw::profile::ToneCurve,
+) -> Option<lightcraft_pipeline::tone::CameraTone> {
     let knots: [[f32; 2]; 32] = std::array::from_fn(|i| {
         let x = 2f32.powf(-12.0 + 12.0 * i as f32 / 31.0);
         [x, curve.eval(x).min(0.9995)]
@@ -619,7 +837,9 @@ fn preview_orientation(raw_bytes: &[u8], jpeg_orientation: u16) -> Orientation {
     if jpeg_orientation > 1 {
         return Orientation::from_exif(jpeg_orientation);
     }
-    lightcraft_meta::extract(raw_bytes).orientation.unwrap_or(Orientation::Normal)
+    lightcraft_meta::extract(raw_bytes)
+        .orientation
+        .unwrap_or(Orientation::Normal)
 }
 
 /// What stands in for a raw file we can't decode: its largest embedded JPEG, else, for a TIFF-based
@@ -630,12 +850,16 @@ fn stand_in_image(bytes: &[u8]) -> Option<std::borrow::Cow<'_, [u8]>> {
         return Some(std::borrow::Cow::Owned(jpeg));
     }
     let undecodable = lightcraft_raw::probe(bytes).is_some_and(|f| !f.is_supported());
-    (undecodable && lightcraft_codecs::sniff(bytes).is_some_and(|f| f == lightcraft_codecs::Format::Tiff))
-        .then_some(std::borrow::Cow::Borrowed(bytes))
+    (undecodable
+        && lightcraft_codecs::sniff(bytes).is_some_and(|f| f == lightcraft_codecs::Format::Tiff))
+    .then_some(std::borrow::Cow::Borrowed(bytes))
 }
 
 /// Shared colour interpretation for quick previews, unsupported RAW fallback and camera-look fitting.
-pub(crate) fn decode_raw_preview(bytes: &[u8], opts: lightcraft_codecs::DecodeOptions) -> Option<lightcraft_codecs::Decoded> {
+pub(crate) fn decode_raw_preview(
+    bytes: &[u8],
+    opts: lightcraft_codecs::DecodeOptions,
+) -> Option<lightcraft_codecs::Decoded> {
     let jpeg = stand_in_image(bytes)?;
     // the colour space is a property of the JPEG; a TIFF stand-in is read by the TIFF reader
     let is_jpeg = matches!(jpeg, std::borrow::Cow::Owned(_));
@@ -643,7 +867,9 @@ pub(crate) fn decode_raw_preview(bytes: &[u8], opts: lightcraft_codecs::DecodeOp
         Some(space) => {
             let space = match space {
                 lightcraft_raw::PreviewColorSpace::Srgb => lightcraft_codecs::NamedSpace::Srgb,
-                lightcraft_raw::PreviewColorSpace::AdobeRgb => lightcraft_codecs::NamedSpace::AdobeRgb,
+                lightcraft_raw::PreviewColorSpace::AdobeRgb => {
+                    lightcraft_codecs::NamedSpace::AdobeRgb
+                }
             };
             lightcraft_codecs::decode_jpeg_with_fallback(&jpeg, opts, space).ok()
         }
@@ -659,7 +885,8 @@ fn embedded_preview_size(bytes: &[u8]) -> Option<(u32, u32)> {
     let (mut w, mut h, orientation) = match lightcraft_codecs::read_header(&jpeg) {
         Ok(header) => (header.width, header.height, header.orientation),
         Err(_) => {
-            let d = lightcraft_codecs::decode(&jpeg, lightcraft_codecs::DecodeOptions::fit(64, 64)).ok()?;
+            let d = lightcraft_codecs::decode(&jpeg, lightcraft_codecs::DecodeOptions::fit(64, 64))
+                .ok()?;
             (d.source_width, d.source_height, d.orientation)
         }
     };
@@ -673,8 +900,15 @@ fn embedded_preview_size(bytes: &[u8]) -> Option<(u32, u32)> {
 pub fn load_embedded_preview(bytes: &[u8], max_edge: usize) -> Option<(Rgb32f, SourceInfo)> {
     let d = decode_raw_preview(bytes, fit_box(max_edge))?;
     let img = d.to_working();
-    let img = if img.width.max(img.height) > max_edge { fit(&img, max_edge, max_edge, Filter::Mitchell) } else { img };
-    Some((img.oriented(preview_orientation(bytes, d.orientation)), SourceInfo::default()))
+    let img = if img.width.max(img.height) > max_edge {
+        fit(&img, max_edge, max_edge, Filter::Mitchell)
+    } else {
+        img
+    };
+    Some((
+        img.oriented(preview_orientation(bytes, d.orientation)),
+        SourceInfo::default(),
+    ))
 }
 
 /// The embedded preview of a raw file for display (sRGB, oriented, no larger than `max_edge`): the
@@ -705,10 +939,20 @@ fn fit_box(max_edge: usize) -> lightcraft_codecs::DecodeOptions {
 /// the whole file, which is what the decode of one can hold.
 pub fn fs_preview_loader() -> PreviewLoader {
     Arc::new(|path: &str, max_edge: usize| {
-        let len = std::fs::metadata(path).map(|m| usize::try_from(m.len()).unwrap_or(usize::MAX)).unwrap_or(0);
+        let len = std::fs::metadata(path)
+            .map(|m| usize::try_from(m.len()).unwrap_or(usize::MAX))
+            .unwrap_or(0);
         let gate = crate::memory::work_gate();
-        let _permit = if crate::memory::is_background() { gate.acquire(len.saturating_mul(2)) } else { gate.acquire_urgent(len.saturating_mul(2)) };
-        if let Some(image) = preview_window(path).ok().flatten().and_then(|(header, window, _)| quick_image_srgb(&header, &window, max_edge)) {
+        let _permit = if crate::memory::is_background() {
+            gate.acquire(len.saturating_mul(2))
+        } else {
+            gate.acquire_urgent(len.saturating_mul(2))
+        };
+        if let Some(image) = preview_window(path)
+            .ok()
+            .flatten()
+            .and_then(|(header, window, _)| quick_image_srgb(&header, &window, max_edge))
+        {
             return Some(image);
         }
         embedded_preview_srgb(&std::fs::read(path).ok()?, max_edge)
@@ -777,17 +1021,23 @@ pub fn preview_window(path: &str) -> Result<Option<(Vec<u8>, Vec<u8>, PreviewRea
     };
     // A preview at the file's end may have been padded past it: clamp rather than fail.
     let end = range.offset.saturating_add(range.window_len).min(total);
-    let len = usize::try_from(end.saturating_sub(range.offset)).map_err(|_| format!("{path}: preview too large"))?;
+    let len = usize::try_from(end.saturating_sub(range.offset))
+        .map_err(|_| format!("{path}: preview too large"))?;
     // When the prefix already covers the range (the usual case: the prefix was grown to the declared
     // extent), take the window out of it. Reading those bytes twice would double a 5.6 MB preview.
     let prefix_len = prefix.len() as u64;
-    let from_prefix = usize::try_from(range.offset).ok().and_then(|start| prefix.get(start..start.checked_add(len)?)).map(<[u8]>::to_vec);
+    let from_prefix = usize::try_from(range.offset)
+        .ok()
+        .and_then(|start| prefix.get(start..start.checked_add(len)?))
+        .map(<[u8]>::to_vec);
     let (window, bytes_read) = match from_prefix {
         Some(window) => (window, prefix_len),
         None => {
             let mut window = vec![0u8; len];
-            file.seek(SeekFrom::Start(range.offset)).map_err(|e| format!("{path}: {e}"))?;
-            file.read_exact(&mut window).map_err(|e| format!("{path}: {e}"))?;
+            file.seek(SeekFrom::Start(range.offset))
+                .map_err(|e| format!("{path}: {e}"))?;
+            file.read_exact(&mut window)
+                .map_err(|e| format!("{path}: {e}"))?;
             (window, prefix_len + len as u64)
         }
     };
@@ -796,11 +1046,22 @@ pub fn preview_window(path: &str) -> Result<Option<(Vec<u8>, Vec<u8>, PreviewRea
     if lightcraft_raw::embedded_preview_from_range(&window, range).is_none() {
         return Ok(None);
     }
-    let read = PreviewRead { read: bytes_read, total, header_path: true, planned: false };
+    let read = PreviewRead {
+        read: bytes_read,
+        total,
+        header_path: true,
+        planned: false,
+    };
     // On a network share the bytes are the wait, so say what this preview actually cost. A window
     // taken from the prefix cost nothing beyond the prefix itself.
     if lightcraft_pipeline::profiling() {
-        eprintln!("[profile] preview {path}: read {} of {} bytes (header {}, window {})", read.read, total, prefix_len, window.len());
+        eprintln!(
+            "[profile] preview {path}: read {} of {} bytes (header {}, window {})",
+            read.read,
+            total,
+            prefix_len,
+            window.len()
+        );
     }
     Ok(Some((prefix, window, read)))
 }
@@ -838,16 +1099,24 @@ const PLAN_PREFIX: u64 = 64 * 1024;
 /// below). The planner's contract is the one its corpus test asserts over real files (what it loaded
 /// gives what the whole file gives), so a window that still fails to decode ends in the same
 /// whole-file fallback in [`fs_preview_loader`], never in a wrong picture.
-fn planned_preview(file: &mut std::fs::File, path: &str, total: u64) -> Result<Option<(Vec<u8>, Vec<u8>, PreviewRead)>, String> {
+fn planned_preview(
+    file: &mut std::fs::File,
+    path: &str,
+    total: u64,
+) -> Result<Option<(Vec<u8>, Vec<u8>, PreviewRead)>, String> {
     use std::io::{Read, Seek, SeekFrom};
 
     if total > MAX_PREVIEW_PLAN_BYTES {
         return Ok(None);
     }
-    let Ok(len) = usize::try_from(total) else { return Ok(None) };
+    let Ok(len) = usize::try_from(total) else {
+        return Ok(None);
+    };
     let mut buf = vec![0u8; len];
     let header = read_prefix_at(file, path, PLAN_PREFIX.min(total))?;
-    let Some(head) = buf.get_mut(..header.len()) else { return Ok(None) };
+    let Some(head) = buf.get_mut(..header.len()) else {
+        return Ok(None);
+    };
     head.copy_from_slice(&header);
     let mut loaded = lightcraft_raw::sparse::Ranges::new();
     loaded.insert(0, header.len() as u64);
@@ -859,15 +1128,22 @@ fn planned_preview(file: &mut std::fs::File, path: &str, total: u64) -> Result<O
                     return Ok(None);
                 }
                 for &(start, end) in ranges.spans() {
-                    let (Ok(a), Ok(b)) = (usize::try_from(start), usize::try_from(end)) else { return Ok(None) };
-                    let Some(dst) = buf.get_mut(a..b) else { return Ok(None) };
-                    file.seek(SeekFrom::Start(start)).map_err(|e| format!("{path}: {e}"))?;
+                    let (Ok(a), Ok(b)) = (usize::try_from(start), usize::try_from(end)) else {
+                        return Ok(None);
+                    };
+                    let Some(dst) = buf.get_mut(a..b) else {
+                        return Ok(None);
+                    };
+                    file.seek(SeekFrom::Start(start))
+                        .map_err(|e| format!("{path}: {e}"))?;
                     file.read_exact(dst).map_err(|e| format!("{path}: {e}"))?;
                     loaded.insert(start, end);
                 }
             }
             lightcraft_raw::sparse::HeaderPlan::Ready => {
-                let Some(window) = lightcraft_raw::embedded_preview(&buf) else { return Ok(None) };
+                let Some(window) = lightcraft_raw::embedded_preview(&buf) else {
+                    return Ok(None);
+                };
                 // The quick path hands the JPEG to the decoder alone, so what the *container* says
                 // about the preview has to be something the bytes it is handed can show. Two container
                 // facts change the pixels and are not in the JPEG: the preview's colour space (which
@@ -877,7 +1153,9 @@ fn planned_preview(file: &mut std::fs::File, path: &str, total: u64) -> Result<O
                 // it already does for a container-declared colour space. A container that says sRGB
                 // agrees with the JPEG-only decode (its own declaration, else sRGB), so only the other
                 // space declines.
-                if lightcraft_raw::embedded_preview_color_space(&buf) == Some(lightcraft_raw::PreviewColorSpace::AdobeRgb) {
+                if lightcraft_raw::embedded_preview_color_space(&buf)
+                    == Some(lightcraft_raw::PreviewColorSpace::AdobeRgb)
+                {
                     return Ok(None);
                 }
                 // `extract` copies a TIFF's bytes to hand on its Exif block, so ask the cheap side
@@ -888,11 +1166,21 @@ fn planned_preview(file: &mut std::fs::File, path: &str, total: u64) -> Result<O
                 {
                     return Ok(None);
                 }
-                let read = PreviewRead { read: loaded.total(), total, header_path: true, planned: true };
+                let read = PreviewRead {
+                    read: loaded.total(),
+                    total,
+                    header_path: true,
+                    planned: true,
+                };
                 // A plan-driven preview is the one that used to cost the whole file, so it is worth
                 // saying what it cost now too.
                 if lightcraft_pipeline::profiling() {
-                    eprintln!("[profile] preview {path}: read {} of {} bytes (plan, window {})", read.read, total, window.len());
+                    eprintln!(
+                        "[profile] preview {path}: read {} of {} bytes (plan, window {})",
+                        read.read,
+                        total,
+                        window.len()
+                    );
                 }
                 // The planner's buffer is the file's length, so give its pages back the way a decode
                 // does (see `fs_pair_loader`).
@@ -918,8 +1206,10 @@ fn read_prefix_at(file: &mut std::fs::File, path: &str, len: u64) -> Result<Vec<
     use std::io::{Read, Seek, SeekFrom};
     let len = usize::try_from(len).map_err(|_| format!("{path}: file too large"))?;
     let mut prefix = vec![0u8; len];
-    file.seek(SeekFrom::Start(0)).map_err(|e| format!("{path}: {e}"))?;
-    file.read_exact(&mut prefix).map_err(|e| format!("{path}: {e}"))?;
+    file.seek(SeekFrom::Start(0))
+        .map_err(|e| format!("{path}: {e}"))?;
+    file.read_exact(&mut prefix)
+        .map_err(|e| format!("{path}: {e}"))?;
     Ok(prefix)
 }
 
@@ -930,32 +1220,57 @@ fn raf_preview_extent(prefix: &[u8]) -> Option<u64> {
     if !prefix.starts_with(b"FUJIFILMCCD-RAW") {
         return None;
     }
-    let u32_at = |at: usize| prefix.get(at..at + 4).map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]])).map(u64::from);
+    let u32_at = |at: usize| {
+        prefix
+            .get(at..at + 4)
+            .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
+            .map(u64::from)
+    };
     let (offset, len) = (u32_at(84)?, u32_at(88)?);
-    (offset > 0 && len > 0).then(|| offset.checked_add(len)).flatten()
+    (offset > 0 && len > 0)
+        .then(|| offset.checked_add(len))
+        .flatten()
 }
 
 /// The display-ready preview of a raw whose embedded JPEG was already located: the counterpart of
 /// [`embedded_preview_srgb`] for [`preview_window`], which does not re-read the container.
 /// `None` when the bytes are not a decodable image.
-fn quick_image_srgb(header: &[u8], window: &[u8], max_edge: usize) -> Option<lightcraft_raster::Rgba8> {
+fn quick_image_srgb(
+    header: &[u8],
+    window: &[u8],
+    max_edge: usize,
+) -> Option<lightcraft_raster::Rgba8> {
     let mut d = lightcraft_codecs::decode(window, fit_box(max_edge)).ok()?;
     if d.image.width.max(d.image.height) > max_edge {
         d.image = fit(&d.image, max_edge, max_edge, Filter::Box);
         d.alpha = None;
     }
     // The JPEG's own EXIF orientation, else the raw's (from its header), as the whole-file path does
-    Some(d.to_srgb8().oriented(preview_orientation(header, d.orientation)))
+    Some(
+        d.to_srgb8()
+            .oriented(preview_orientation(header, d.orientation)),
+    )
 }
 
 /// The filesystem-backed [`PairLoader`]: the file is read and decoded once, and developed as usual and from the photo's
 /// denoised picture. It holds two pictures at once, so it counts for more at the memory gate than a plain load.
 pub fn fs_pair_loader() -> PairLoader {
     Arc::new(|path: &str, max_edge: usize, spec: &DenoiseSpec| {
-        let len = std::fs::metadata(path).map(|m| m.len() as usize).unwrap_or(0);
-        let weight = len * if max_edge <= crate::media::SourceLevel::Thumb.max_edge() { 4 } else { 10 };
+        let len = std::fs::metadata(path)
+            .map(|m| m.len() as usize)
+            .unwrap_or(0);
+        let weight = len
+            * if max_edge <= crate::media::SourceLevel::Thumb.max_edge() {
+                4
+            } else {
+                10
+            };
         let gate = crate::memory::work_gate();
-        let _permit = if crate::memory::is_background() { gate.acquire(weight) } else { gate.acquire_urgent(weight) };
+        let _permit = if crate::memory::is_background() {
+            gate.acquire(weight)
+        } else {
+            gate.acquire_urgent(weight)
+        };
         let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
         let r = load_vec_pair(bytes, max_edge, spec);
         crate::memory::release();
@@ -972,10 +1287,21 @@ pub fn fs_pair_loader() -> PairLoader {
 /// yields to them.
 pub fn fs_hooks() -> (FileLoader, FileProbe) {
     let loader: FileLoader = Arc::new(|path: &str, max_edge: usize| {
-        let len = std::fs::metadata(path).map(|m| usize::try_from(m.len()).unwrap_or(usize::MAX)).unwrap_or(0);
-        let weight = len * if max_edge <= crate::media::SourceLevel::Thumb.max_edge() { 3 } else { 6 };
+        let len = std::fs::metadata(path)
+            .map(|m| usize::try_from(m.len()).unwrap_or(usize::MAX))
+            .unwrap_or(0);
+        let weight = len
+            * if max_edge <= crate::media::SourceLevel::Thumb.max_edge() {
+                3
+            } else {
+                6
+            };
         let gate = crate::memory::work_gate();
-        let _permit = if crate::memory::is_background() { gate.acquire(weight) } else { gate.acquire_urgent(weight) };
+        let _permit = if crate::memory::is_background() {
+            gate.acquire(weight)
+        } else {
+            gate.acquire_urgent(weight)
+        };
         let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
         let r = load_vec(bytes, max_edge);
         // the file, the samples and the intermediate images are gone: give their pages back
@@ -983,7 +1309,9 @@ pub fn fs_hooks() -> (FileLoader, FileProbe) {
         r
     });
     let probe: FileProbe = Arc::new(|path: &str| {
-        let len = std::fs::metadata(path).map(|m| usize::try_from(m.len()).unwrap_or(usize::MAX)).unwrap_or(0);
+        let len = std::fs::metadata(path)
+            .map(|m| usize::try_from(m.len()).unwrap_or(usize::MAX))
+            .unwrap_or(0);
         let _permit = crate::memory::work_gate().acquire(len);
         let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
         let mut info = probe_bytes(path, &bytes)?;
@@ -1026,11 +1354,19 @@ mod tests {
     #[test]
     fn imported_keywords_keep_their_hierarchy() {
         let m = lightcraft_meta::Metadata {
-            keywords: vec!["Rome".into(), "Italy".into(), "travel".into(), "beach".into()],
+            keywords: vec![
+                "Rome".into(),
+                "Italy".into(),
+                "travel".into(),
+                "beach".into(),
+            ],
             hierarchical_keywords: vec!["travel|Italy|Rome".into()],
             ..Default::default()
         };
-        assert_eq!(super::meta_of(&m).0.keywords, ["travel|Italy|Rome", "beach"]);
+        assert_eq!(
+            super::meta_of(&m).0.keywords,
+            ["travel|Italy|Rome", "beach"]
+        );
     }
 
     use super::*;
@@ -1043,27 +1379,64 @@ mod tests {
     #[test]
     fn white_balance_scale_follows_the_files_matrices_then_the_cameras() {
         use lightcraft_raw::{ColorData, RawFormat};
-        let meta = |make: &str, model: &str| lightcraft_meta::Metadata { make: Some(make.into()), model: Some(model.into()), ..Default::default() };
+        let meta = |make: &str, model: &str| lightcraft_meta::Metadata {
+            make: Some(make.into()),
+            model: Some(model.into()),
+            ..Default::default()
+        };
         let mul = Some([2.2f32, 1.0, 1.6]);
         let d65 = lightcraft_color::D65;
         // a covered camera: Kelvin through the spectral matrices, near the daylight these multipliers describe
-        let a7m3 = WbScaleOf::new(RawFormat::Arw, &ColorData::default(), mul, &meta("SONY", "ILCE-7M3"));
-        assert!(!a7m3.own_matrix && !a7m3.relative && a7m3.legacy_relative && a7m3.scale_white.is_some());
+        let a7m3 = WbScaleOf::new(
+            RawFormat::Arw,
+            &ColorData::default(),
+            mul,
+            &meta("SONY", "ILCE-7M3"),
+        );
+        assert!(
+            !a7m3.own_matrix
+                && !a7m3.relative
+                && a7m3.legacy_relative
+                && a7m3.scale_white.is_some()
+        );
         let (t, tint) = a7m3.as_shot(d65);
-        assert!((3500.0..7000.0).contains(&t) && t != 6500.0 && tint.abs() < 30.0 && t.fract() == 0.0 && tint.fract() == 0.0, "{t} {tint}");
-        assert!(!lightcraft_catalog::relative_wb_camera("ARW", "SONY ILCE-7M3"));
+        assert!(
+            (3500.0..7000.0).contains(&t)
+                && t != 6500.0
+                && tint.abs() < 30.0
+                && t.fract() == 0.0
+                && tint.fract() == 0.0,
+            "{t} {tint}"
+        );
+        assert!(!lightcraft_catalog::relative_wb_camera(
+            "ARW",
+            "SONY ILCE-7M3"
+        ));
         // the same camera without multipliers: the scale is Kelvin still, the white falls back to the tags' (D65)
-        let bare = WbScaleOf::new(RawFormat::Arw, &ColorData::default(), None, &meta("SONY", "ILCE-7M3"));
+        let bare = WbScaleOf::new(
+            RawFormat::Arw,
+            &ColorData::default(),
+            None,
+            &meta("SONY", "ILCE-7M3"),
+        );
         assert!(bare.legacy_relative && bare.scale_white.is_none());
         assert_eq!(bare.as_shot(d65), {
             let (t, tint) = xy_to_temp_tint(d65);
             (t.round(), tint.round())
         });
         // a camera without measured matrices: relative, whatever the multipliers
-        let a7m2 = WbScaleOf::new(RawFormat::Arw, &ColorData::default(), mul, &meta("SONY", "ILCE-7M2"));
+        let a7m2 = WbScaleOf::new(
+            RawFormat::Arw,
+            &ColorData::default(),
+            mul,
+            &meta("SONY", "ILCE-7M2"),
+        );
         assert!(a7m2.relative && !a7m2.legacy_relative && a7m2.scale_white.is_none());
         assert_eq!(a7m2.as_shot(d65), (6500.0, 0.0));
-        assert!(lightcraft_catalog::relative_wb_camera("ARW", "SONY ILCE-7M2"));
+        assert!(lightcraft_catalog::relative_wb_camera(
+            "ARW",
+            "SONY ILCE-7M2"
+        ));
         // a camera without matrices whose presets give the scale: Kelvin through them, Sony's daylight preset as
         // 5500 K or so; without presets in the file the scale is Kelvin still, the white the tags' (D65)
         let g = |r: f32, b: f32| [r / 1024.0, 1.0, b / 1024.0];
@@ -1074,35 +1447,79 @@ mod tests {
             (6000.0, g(2680.0, 1544.0)),
             (8500.0, g(3136.0, 1300.0)),
         ]);
-        let with = ColorData { kelvin_presets: presets, ..Default::default() };
-        let a99m2 = WbScaleOf::new(RawFormat::Arw, &with, Some(g(2500.0, 1668.0)), &meta("SONY", "ILCA-99M2"));
-        assert!(!a99m2.own_matrix && !a99m2.relative && a99m2.legacy_relative && a99m2.scale_white.is_some());
+        let with = ColorData {
+            kelvin_presets: presets,
+            ..Default::default()
+        };
+        let a99m2 = WbScaleOf::new(
+            RawFormat::Arw,
+            &with,
+            Some(g(2500.0, 1668.0)),
+            &meta("SONY", "ILCA-99M2"),
+        );
+        assert!(
+            !a99m2.own_matrix
+                && !a99m2.relative
+                && a99m2.legacy_relative
+                && a99m2.scale_white.is_some()
+        );
         let (t, tint) = a99m2.as_shot(d65);
-        assert!((5000.0..6000.0).contains(&t) && tint.abs() < 10.0 && t.fract() == 0.0, "{t} {tint}");
-        assert!(!lightcraft_catalog::relative_wb_camera("ARW", "SONY ILCA-99M2"));
-        let bare = WbScaleOf::new(RawFormat::Arw, &ColorData::default(), mul, &meta("SONY", "ILCA-99M2"));
+        assert!(
+            (5000.0..6000.0).contains(&t) && tint.abs() < 10.0 && t.fract() == 0.0,
+            "{t} {tint}"
+        );
+        assert!(!lightcraft_catalog::relative_wb_camera(
+            "ARW",
+            "SONY ILCA-99M2"
+        ));
+        let bare = WbScaleOf::new(
+            RawFormat::Arw,
+            &ColorData::default(),
+            mul,
+            &meta("SONY", "ILCA-99M2"),
+        );
         assert!(bare.legacy_relative && bare.scale_white.is_none());
         // presets in a file of a camera not listed: relative, as the catalog decides from the camera alone
         let other = WbScaleOf::new(RawFormat::Arw, &with, mul, &meta("SONY", "ILCE-1"));
         assert!(other.relative && other.scale_white.is_none());
-        let unknown = WbScaleOf::new(RawFormat::Nef, &ColorData::default(), mul, &lightcraft_meta::Metadata::default());
+        let unknown = WbScaleOf::new(
+            RawFormat::Nef,
+            &ColorData::default(),
+            mul,
+            &lightcraft_meta::Metadata::default(),
+        );
         assert!(unknown.relative && unknown.as_shot(d65) == (6500.0, 0.0));
         // a file with matrices of its own (DNG): absolute from them, no matter whose camera
-        let own = ColorData { illuminant: [21, 0], color_matrix: [Some(lightcraft_color::Mat3::IDENTITY), None], ..Default::default() };
+        let own = ColorData {
+            illuminant: [21, 0],
+            color_matrix: [Some(lightcraft_color::Mat3::IDENTITY), None],
+            ..Default::default()
+        };
         let dng = WbScaleOf::new(RawFormat::Dng, &own, mul, &meta("SONY", "ILCE-7M3"));
-        assert!(dng.own_matrix && !dng.relative && !dng.legacy_relative && dng.scale_white.is_none());
+        assert!(
+            dng.own_matrix && !dng.relative && !dng.legacy_relative && dng.scale_white.is_none()
+        );
         let xy = lightcraft_color::cct::temp_tint_to_xy(4200.0, 12.0);
         assert_eq!(dng.as_shot(xy), (4200.0, 12.0));
-        assert!(!lightcraft_catalog::relative_wb_camera("DNG", "SONY ILCE-7M3"));
+        assert!(!lightcraft_catalog::relative_wb_camera(
+            "DNG",
+            "SONY ILCE-7M3"
+        ));
     }
 
     /// A RAF whose preview pointer is in its header, then a large raw tail the reader must not need.
     fn raf_with_embedded_jpeg(jpeg: &[u8], tail: usize) -> Vec<u8> {
         let head = 160;
         let mut f = vec![0u8; head];
-        f.get_mut(..16).expect("head").copy_from_slice(b"FUJIFILMCCD-RAW ");
-        f.get_mut(84..88).expect("jpeg offset").copy_from_slice(&(head as u32).to_be_bytes());
-        f.get_mut(88..92).expect("jpeg length").copy_from_slice(&(jpeg.len() as u32).to_be_bytes());
+        f.get_mut(..16)
+            .expect("head")
+            .copy_from_slice(b"FUJIFILMCCD-RAW ");
+        f.get_mut(84..88)
+            .expect("jpeg offset")
+            .copy_from_slice(&(head as u32).to_be_bytes());
+        f.get_mut(88..92)
+            .expect("jpeg length")
+            .copy_from_slice(&(jpeg.len() as u32).to_be_bytes());
         f.extend_from_slice(jpeg);
         f.extend(std::iter::repeat_n(0x33u8, tail));
         f
@@ -1125,24 +1542,50 @@ mod tests {
         let path = path.to_string_lossy().into_owned();
         let max_edge = 512;
 
-        let (header, window, read) = preview_window(&path).expect("the file reads").expect("it has a preview");
-        assert_eq!(header.len(), lightcraft_raw::PREVIEW_PREFIX, "the header prefix is bounded");
+        let (header, window, read) = preview_window(&path)
+            .expect("the file reads")
+            .expect("it has a preview");
+        assert_eq!(
+            header.len(),
+            lightcraft_raw::PREVIEW_PREFIX,
+            "the header prefix is bounded"
+        );
         assert!(read.header_path, "the header path is what answered");
-        assert!(!read.planned, "a RAF pointer in the header needs no planner");
+        assert!(
+            !read.planned,
+            "a RAF pointer in the header needs no planner"
+        );
         assert_eq!(read.total, file.len() as u64);
-        assert!(read.fraction() < 0.5, "the read is a fraction of the file: {read:?}");
-        assert!(window.len() < file.len() / 2, "the raw tail must not be read: {} of {} bytes", window.len(), file.len());
+        assert!(
+            read.fraction() < 0.5,
+            "the read is a fraction of the file: {read:?}"
+        );
+        assert!(
+            window.len() < file.len() / 2,
+            "the raw tail must not be read: {} of {} bytes",
+            window.len(),
+            file.len()
+        );
 
         // The quick path and the whole-file path agree byte for byte.
-        let quick = quick_image_srgb(&header, &window, max_edge).expect("the window holds a decodable preview");
+        let quick = quick_image_srgb(&header, &window, max_edge)
+            .expect("the window holds a decodable preview");
         let whole = embedded_preview_srgb(&file, max_edge).expect("the whole file decodes too");
-        assert_eq!((quick.width, quick.height), (whole.width, whole.height), "same preview size");
+        assert_eq!(
+            (quick.width, quick.height),
+            (whole.width, whole.height),
+            "same preview size"
+        );
         assert_eq!(quick.data, whole.data, "byte for byte");
 
         // A file with no locatable preview declines (the caller then reads it whole), a missing file errors.
         let plain = dir.join("plain.jpg");
         std::fs::write(&plain, &jpeg).unwrap();
-        assert!(preview_window(&plain.to_string_lossy()).expect("a plain file reads").is_none());
+        assert!(
+            preview_window(&plain.to_string_lossy())
+                .expect("a plain file reads")
+                .is_none()
+        );
         assert!(preview_window(&dir.join("nope.raf").to_string_lossy()).is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1188,14 +1631,22 @@ mod tests {
         preview.set(t::PHOTOMETRIC, Value::Short(vec![t::photometric::RGB]));
         preview.set(t::IMAGE_WIDTH, Value::Long(vec![48]));
         preview.set(t::IMAGE_LENGTH, Value::Long(vec![32]));
-        preview.set_image(ImageData::Strips { rows_per_strip: 32, strips: vec![strip.to_vec()] });
+        preview.set_image(ImageData::Strips {
+            rows_per_strip: 32,
+            strips: vec![strip.to_vec()],
+        });
         let mut raw = IfdBuilder::new();
         raw.set(t::COMPRESSION, Value::Short(vec![1]));
         raw.set(t::PHOTOMETRIC, Value::Short(vec![t::photometric::CFA]));
         raw.set(t::IMAGE_WIDTH, Value::Long(vec![6000]));
         raw.set(t::IMAGE_LENGTH, Value::Long(vec![4000]));
-        raw.set_image(ImageData::Strips { rows_per_strip: 4000, strips: vec![vec![0x33u8; tail]] });
-        TiffWriter::default().write(&[preview, raw]).expect("the fixture writes")
+        raw.set_image(ImageData::Strips {
+            rows_per_strip: 4000,
+            strips: vec![vec![0x33u8; tail]],
+        });
+        TiffWriter::default()
+            .write(&[preview, raw])
+            .expect("the fixture writes")
     }
 
     /// A raw whose preview only its tags locate — a Canon CR3's JPEG track, a TIFF raw whose preview
@@ -1209,32 +1660,62 @@ mod tests {
         let rgb: Vec<u8> = (0..w * h * 3).map(|i| (i * 29 % 241) as u8).collect();
         let img = EncodeImage::new(w, h, 3, Samples::U8(&rgb));
         let jpeg = encode_jpeg(&img, 90, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap();
-        let file = tiff_with_preview_strip(&jpeg, 400_000, Fixture { dng: true, ..Default::default() });
+        let file = tiff_with_preview_strip(
+            &jpeg,
+            400_000,
+            Fixture {
+                dng: true,
+                ..Default::default()
+            },
+        );
         let dir = crate::tests_xmp::temp_dir("preview-plan");
         let path = dir.join("preview.dng");
         std::fs::write(&path, &file).unwrap();
         let path = path.to_string_lossy().into_owned();
         let max_edge = 512;
 
-        let (header, window, read) = preview_window(&path).expect("the file reads").expect("the plan locates its preview");
-        assert_eq!(header.len(), PLAN_PREFIX as usize, "the plan's header is bounded");
+        let (header, window, read) = preview_window(&path)
+            .expect("the file reads")
+            .expect("the plan locates its preview");
+        assert_eq!(
+            header.len(),
+            PLAN_PREFIX as usize,
+            "the plan's header is bounded"
+        );
         assert!(read.planned, "the planner is what answered");
         assert!(read.header_path, "and it is still a bounded read");
         assert_eq!(read.total, file.len() as u64);
-        assert!(read.fraction() < 0.5, "the read is a fraction of the file: {read:?} of {} bytes", file.len());
-        assert!(window.len() < file.len() / 2, "the sensor strip must not be read: {} of {} bytes", window.len(), file.len());
+        assert!(
+            read.fraction() < 0.5,
+            "the read is a fraction of the file: {read:?} of {} bytes",
+            file.len()
+        );
+        assert!(
+            window.len() < file.len() / 2,
+            "the sensor strip must not be read: {} of {} bytes",
+            window.len(),
+            file.len()
+        );
 
         // The plan path and the whole-file path agree byte for byte.
-        let quick = quick_image_srgb(&header, &window, max_edge).expect("the window holds a decodable preview");
+        let quick = quick_image_srgb(&header, &window, max_edge)
+            .expect("the window holds a decodable preview");
         let whole = embedded_preview_srgb(&file, max_edge).expect("the whole file decodes too");
-        assert_eq!((quick.width, quick.height), (whole.width, whole.height), "same preview size");
+        assert_eq!(
+            (quick.width, quick.height),
+            (whole.width, whole.height),
+            "same preview size"
+        );
         assert_eq!(quick.data, whole.data, "byte for byte");
 
         // The same structure without the tag that makes it a raw: the planner declines, and the
         // caller's whole-file read is what answers (no guessing at what a file might hold).
         let not_a_raw = tiff_with_preview_strip(&jpeg, 400_000, Fixture::default());
         std::fs::write(&path, &not_a_raw).unwrap();
-        assert!(preview_window(&path).expect("the file reads").is_none(), "an unknown container falls back");
+        assert!(
+            preview_window(&path).expect("the file reads").is_none(),
+            "an unknown container falls back"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1253,16 +1734,39 @@ mod tests {
         // IFD0 out of its reach; `embedded_preview` trims back to the JPEG's end-of-image
         let mut strip = jpeg.clone();
         strip.extend(std::iter::repeat_n(0u8, PLAN_PREFIX as usize));
-        let file = tiff_with_preview_strip(&strip, 400_000, Fixture { dng: true, orientation: Some(6), ..Default::default() });
+        let file = tiff_with_preview_strip(
+            &strip,
+            400_000,
+            Fixture {
+                dng: true,
+                orientation: Some(6),
+                ..Default::default()
+            },
+        );
         let dir = crate::tests_xmp::temp_dir("preview-plan-orientation");
         let path = dir.join("rotated.dng");
         std::fs::write(&path, &file).unwrap();
         let path = path.to_string_lossy().into_owned();
 
-        assert_eq!(lightcraft_meta::extract(&file).orientation, Some(Orientation::from_exif(6)), "the fixture states an orientation");
-        assert!(lightcraft_meta::extract(&file[..PLAN_PREFIX as usize]).orientation.is_none(), "which the bounded header cannot see");
-        assert!(lightcraft_meta::extract(&jpeg).orientation.is_none(), "and the preview JPEG carries none of its own");
-        assert!(preview_window(&path).expect("the file reads").is_none(), "the whole-file path keeps it");
+        assert_eq!(
+            lightcraft_meta::extract(&file).orientation,
+            Some(Orientation::from_exif(6)),
+            "the fixture states an orientation"
+        );
+        assert!(
+            lightcraft_meta::extract(&file[..PLAN_PREFIX as usize])
+                .orientation
+                .is_none(),
+            "which the bounded header cannot see"
+        );
+        assert!(
+            lightcraft_meta::extract(&jpeg).orientation.is_none(),
+            "and the preview JPEG carries none of its own"
+        );
+        assert!(
+            preview_window(&path).expect("the file reads").is_none(),
+            "the whole-file path keeps it"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1282,15 +1786,44 @@ mod tests {
         let path = dir.join("space.arw");
         let path = path.to_string_lossy().into_owned();
 
-        let adobe = tiff_with_preview_strip(&jpeg, 400_000, Fixture { sony: true, color_space: Some(0xFFFF), ..Default::default() });
-        assert_eq!(lightcraft_raw::embedded_preview_color_space(&adobe), Some(PreviewColorSpace::AdobeRgb), "the fixture declares Adobe RGB");
+        let adobe = tiff_with_preview_strip(
+            &jpeg,
+            400_000,
+            Fixture {
+                sony: true,
+                color_space: Some(0xFFFF),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            lightcraft_raw::embedded_preview_color_space(&adobe),
+            Some(PreviewColorSpace::AdobeRgb),
+            "the fixture declares Adobe RGB"
+        );
         std::fs::write(&path, &adobe).unwrap();
-        assert!(preview_window(&path).expect("the file reads").is_none(), "the whole-file path applies the space");
+        assert!(
+            preview_window(&path).expect("the file reads").is_none(),
+            "the whole-file path applies the space"
+        );
 
-        let srgb = tiff_with_preview_strip(&jpeg, 400_000, Fixture { sony: true, color_space: Some(1), ..Default::default() });
-        assert_eq!(lightcraft_raw::embedded_preview_color_space(&srgb), Some(PreviewColorSpace::Srgb), "the fixture declares sRGB");
+        let srgb = tiff_with_preview_strip(
+            &jpeg,
+            400_000,
+            Fixture {
+                sony: true,
+                color_space: Some(1),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            lightcraft_raw::embedded_preview_color_space(&srgb),
+            Some(PreviewColorSpace::Srgb),
+            "the fixture declares sRGB"
+        );
         std::fs::write(&path, &srgb).unwrap();
-        let (_, window, read) = preview_window(&path).expect("the file reads").expect("sRGB is what the JPEG-only decode assumes");
+        let (_, window, read) = preview_window(&path)
+            .expect("the file reads")
+            .expect("sRGB is what the JPEG-only decode assumes");
         assert!(read.planned, "the plan still answers");
         assert!(window.starts_with(&[0xff, 0xd8]), "and hands on the JPEG");
     }
@@ -1307,7 +1840,13 @@ mod tests {
         let path = dir.join("export.jpg");
         std::fs::write(&path, &jpeg).unwrap();
         let path = path.to_string_lossy().to_string();
-        let mtime = std::fs::metadata(&path).unwrap().modified().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let mtime = std::fs::metadata(&path)
+            .unwrap()
+            .modified()
+            .unwrap()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         let want = crate::import::civil(mtime as i64);
         let (_, probe) = fs_hooks();
         let info = probe(&path).unwrap();
@@ -1316,7 +1855,10 @@ mod tests {
         let mut s = crate::Session::new().with_fs();
         let r = crate::import::import(&mut s, &[path], crate::import::ImportMode::Add).unwrap();
         let id = lightcraft_catalog::PhotoId(r.imported[0]);
-        assert_eq!(s.catalog.photo(id).unwrap().captured.as_deref(), Some(want.as_str()));
+        assert_eq!(
+            s.catalog.photo(id).unwrap().captured.as_deref(),
+            Some(want.as_str())
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1330,22 +1872,42 @@ mod tests {
         let img = EncodeImage::new(w, h, 3, Samples::U8(&rgb));
         for o in [None, Some(1), Some(6), Some(3), Some(8)] {
             let exif = o.map(lightcraft_codecs::exif::minimal_exif);
-            let meta = EncodeMeta { exif: exif.as_deref(), ..Default::default() };
+            let meta = EncodeMeta {
+                exif: exif.as_deref(),
+                ..Default::default()
+            };
             let jpeg = encode_jpeg(&img, 90, ChromaSubsampling::S420, &meta).unwrap();
             let png = lightcraft_codecs::encode_png(&img, &meta).unwrap();
             for (name, bytes) in [("a.jpg", &jpeg), ("a.png", &png)] {
                 let p = probe_bytes(name, bytes).unwrap();
                 // what the probe computed from a decode before
-                let d = lightcraft_codecs::decode(bytes, lightcraft_codecs::DecodeOptions::fit(64, 64)).unwrap();
+                let d =
+                    lightcraft_codecs::decode(bytes, lightcraft_codecs::DecodeOptions::fit(64, 64))
+                        .unwrap();
                 let swap = Orientation::from_exif(d.orientation).swaps_axes();
-                let want = if swap { (d.source_height, d.source_width) } else { (d.source_width, d.source_height) };
+                let want = if swap {
+                    (d.source_height, d.source_width)
+                } else {
+                    (d.source_width, d.source_height)
+                };
                 assert_eq!((p.width, p.height), want, "{name} {o:?}");
-                assert_eq!((p.width, p.height), if matches!(o, Some(6 | 8)) { (h, w) } else { (w, h) }, "{name} {o:?}");
+                assert_eq!(
+                    (p.width, p.height),
+                    if matches!(o, Some(6 | 8)) {
+                        (h, w)
+                    } else {
+                        (w, h)
+                    },
+                    "{name} {o:?}"
+                );
                 assert_eq!(p.kind, MediaKind::Image);
                 assert_eq!(p.format, if name == "a.jpg" { "JPEG" } else { "PNG" });
                 assert_eq!(p.file_size, bytes.len() as u64);
                 assert!(p.content_hash.is_some());
-                assert!(probe_bytes(name, &bytes[..bytes.len() / 2]).is_err(), "{name}: truncated file accepted");
+                assert!(
+                    probe_bytes(name, &bytes[..bytes.len() / 2]).is_err(),
+                    "{name}: truncated file accepted"
+                );
             }
         }
         assert!(probe_bytes("x.jpg", b"not an image").is_err());
@@ -1356,10 +1918,22 @@ mod tests {
     #[test]
     fn transparent_png_develops_on_white() {
         let rgba = [200, 40, 40, 255, 0, 0, 0, 0];
-        let png = lightcraft_codecs::encode_png(&EncodeImage::new(2, 1, 4, Samples::U8(&rgba)), &EncodeMeta::default()).unwrap();
+        let png = lightcraft_codecs::encode_png(
+            &EncodeImage::new(2, 1, 4, Samples::U8(&rgba)),
+            &EncodeMeta::default(),
+        )
+        .unwrap();
         let (img, _) = load_bytes(&png, 64).unwrap();
-        assert!(img.get(0, 0)[0] > 0.3 && img.get(0, 0)[1] < 0.1, "{:?}", img.get(0, 0));
-        assert!(img.get(1, 0).iter().all(|&c| (c - 1.0).abs() < 1e-4), "{:?}", img.get(1, 0));
+        assert!(
+            img.get(0, 0)[0] > 0.3 && img.get(0, 0)[1] < 0.1,
+            "{:?}",
+            img.get(0, 0)
+        );
+        assert!(
+            img.get(1, 0).iter().all(|&c| (c - 1.0).abs() < 1e-4),
+            "{:?}",
+            img.get(1, 0)
+        );
     }
 
     /// Issue #548: a small preview bins the mosaic by 8; specular points that clip a single green sample
@@ -1374,7 +1948,8 @@ mod tests {
         let mut data: Vec<u16> = (0..w * h)
             .map(|i| {
                 let (x, y) = (i % w, i / w);
-                let v = (0.3 + 0.2 * x as f32 / w as f32) * neutral[cfa.color_at(x, y).min(2) as usize];
+                let v =
+                    (0.3 + 0.2 * x as f32 / w as f32) * neutral[cfa.color_at(x, y).min(2) as usize];
                 (256.0 + v * (16000.0 - 256.0)).round() as u16
             })
             .collect();
@@ -1384,13 +1959,21 @@ mod tests {
                 data[(by * 8 + 4) * w + bx * 8 + 5] = 16000;
             }
         }
-        let bytes = crate::tests_xmp::synthetic_dng_of(w, h, "RGGB", data, None, Default::default());
+        let bytes =
+            crate::tests_xmp::synthetic_dng_of(w, h, "RGGB", data, None, Default::default());
         let raw = lightcraft_raw::decode(&bytes).unwrap();
         assert_eq!(bin_factor(&raw, 32), Some(8));
         let (img, _) = load_bytes(&bytes, 32).unwrap();
         assert_eq!((img.width, img.height), (32, 24));
-        let worst = img.data.iter().map(|p| p[1] / ((p[0] + p[2]) / 2.0).max(1e-6)).fold(0.0f32, f32::max);
-        assert!(worst < 1.12, "green speckles: green {worst:.2}× the other channels");
+        let worst = img
+            .data
+            .iter()
+            .map(|p| p[1] / ((p[0] + p[2]) / 2.0).max(1e-6))
+            .fold(0.0f32, f32::max);
+        assert!(
+            worst < 1.12,
+            "green speckles: green {worst:.2}× the other channels"
+        );
     }
 
     #[test]
@@ -1402,8 +1985,13 @@ mod tests {
         let mut raw = lightcraft_raw::decode(&fixture).unwrap();
         raw.orientation = Orientation::Rotate90;
         raw.color.baseline_exposure = 0.5;
-        raw.color.profile.look_table =
-            Some(HsvTable { hue_divisions: 1, sat_divisions: 2, val_divisions: 1, data: vec![[23.0, 0.65, 0.8]; 2], srgb_value: false });
+        raw.color.profile.look_table = Some(HsvTable {
+            hue_divisions: 1,
+            sat_divisions: 2,
+            val_divisions: 1,
+            data: vec![[23.0, 0.65, 0.8]; 2],
+            srgb_value: false,
+        });
         let bytes = write_dng(&raw, &DngWriteOptions::default()).unwrap();
         let decoded = lightcraft_raw::decode(&bytes).unwrap();
         assert!(decoded.color.profile.look_table.is_some());
@@ -1412,15 +2000,30 @@ mod tests {
         let key = "synthetic-color-finish";
         let path = dir.join("same.lcdn");
         product::write(&path, &camera_rgb, key).unwrap();
-        let spec = DenoiseSpec { product: path, key: key.into(), make: None };
+        let spec = DenoiseSpec {
+            product: path,
+            key: key.into(),
+            make: None,
+        };
         let (ordinary, _) = load_bytes(&bytes, 2048).unwrap();
         let (plain, cached, _) = load_vec_pair(bytes, 2048, &spec).unwrap();
-        assert_eq!(plain.data, ordinary.data, "requesting a twin must not change the ordinary path");
+        assert_eq!(
+            plain.data, ordinary.data,
+            "requesting a twin must not change the ordinary path"
+        );
         let cached = cached.unwrap();
         assert_eq!((plain.width, plain.height), (24, 32));
         assert_eq!((cached.width, cached.height), (plain.width, plain.height));
-        let worst = plain.data.iter().zip(&cached.data).flat_map(|(a, b)| a.iter().zip(b).map(|(a, b)| (a - b).abs())).fold(0.0f32, f32::max);
-        assert!(worst < 0.002, "color finish differs beyond cache half-float rounding: {worst}");
+        let worst = plain
+            .data
+            .iter()
+            .zip(&cached.data)
+            .flat_map(|(a, b)| a.iter().zip(b).map(|(a, b)| (a - b).abs()))
+            .fold(0.0f32, f32::max);
+        assert!(
+            worst < 0.002,
+            "color finish differs beyond cache half-float rounding: {worst}"
+        );
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -1431,8 +2034,16 @@ mod tests {
         let mut out = vec![0.0; w * h];
         for y in 0..h {
             for x in 0..w {
-                let (x0, x1, y0, y1) = (x.saturating_sub(4), (x + 5).min(w), y.saturating_sub(4), (y + 5).min(h));
-                let m = (y0..y1).flat_map(|yy| (x0..x1).map(move |xx| (xx, yy))).map(|(xx, yy)| l[yy * w + xx]).sum::<f32>();
+                let (x0, x1, y0, y1) = (
+                    x.saturating_sub(4),
+                    (x + 5).min(w),
+                    y.saturating_sub(4),
+                    (y + 5).min(h),
+                );
+                let m = (y0..y1)
+                    .flat_map(|yy| (x0..x1).map(move |xx| (xx, yy)))
+                    .map(|(xx, yy)| l[yy * w + xx])
+                    .sum::<f32>();
                 out[y * w + x] = l[y * w + x] - m / ((x1 - x0) * (y1 - y0)) as f32;
             }
         }
@@ -1441,7 +2052,14 @@ mod tests {
 
     /// The integer shift (within ±`r` px) of the `p × p` patch of `a` at `(x, y)` that best matches `b`, with its
     /// normalised cross-correlation, or `None` when the patch has too little detail to tell.
-    fn patch_shift(a: &[f32], b: &[f32], w: usize, (x, y): (usize, usize), p: usize, r: i64) -> Option<((i64, i64), f32)> {
+    fn patch_shift(
+        a: &[f32],
+        b: &[f32],
+        w: usize,
+        (x, y): (usize, usize),
+        p: usize,
+        r: i64,
+    ) -> Option<((i64, i64), f32)> {
         let pa: Vec<f32> = (0..p * p).map(|i| a[(y + i / p) * w + x + i % p]).collect();
         let na = pa.iter().map(|v| v * v).sum::<f32>().sqrt();
         if na < 1e-3 * p as f32 {
@@ -1476,13 +2094,19 @@ mod tests {
     fn corpus_rw2_distortion_matches_the_camera_jpeg() {
         let dir = std::env::var_os("LIGHTCRAFT_CORPUS")
             .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus"))
+            .unwrap_or_else(|| {
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus")
+            })
             .join("raw");
         let Ok(gh1) = std::fs::read(dir.join("rw2-panasonic-gh1.rw2")) else {
             eprintln!("skip: {} absent", dir.display());
             return;
         };
-        assert_eq!(probe_bytes("gh1.rw2", &gh1).unwrap().embedded_lens, None, "correction off: nothing to apply");
+        assert_eq!(
+            probe_bytes("gh1.rw2", &gh1).unwrap().embedded_lens,
+            None,
+            "correction off: nothing to apply"
+        );
         assert_eq!(load_bytes(&gh1, 320).unwrap().1.lens, None);
 
         // (file, how far off (px) the uncorrected corners are at the least, if they match within ±R at all)
@@ -1500,15 +2124,35 @@ mod tests {
         for (name, off_at_least) in files {
             let bytes = std::fs::read(dir.join(name)).unwrap();
             let probed = probe_bytes(name, &bytes).unwrap();
-            assert!(probed.embedded_lens.is_some_and(|l| l.warp.is_some()), "{name}: no distortion correction read");
+            assert!(
+                probed.embedded_lens.is_some_and(|l| l.warp.is_some()),
+                "{name}: no distortion correction read"
+            );
             let (src, info) = load_bytes(&bytes, 2 * EDGE).unwrap();
-            assert_eq!(info.lens, probed.embedded_lens, "{name}: probe and decode disagree");
+            assert_eq!(
+                info.lens, probed.embedded_lens,
+                "{name}: probe and decode disagree"
+            );
             // Convert to DNG keeps it: the same correction, as the DNG's own `WarpRectilinear`
-            let dng = lightcraft_raw::write_dng(&lightcraft_raw::decode(&bytes).unwrap(), &Default::default()).unwrap();
-            assert_eq!(probe_bytes("x.dng", &dng).unwrap().embedded_lens, probed.embedded_lens, "{name}: lost in the DNG");
+            let dng = lightcraft_raw::write_dng(
+                &lightcraft_raw::decode(&bytes).unwrap(),
+                &Default::default(),
+            )
+            .unwrap();
+            assert_eq!(
+                probe_bytes("x.dng", &dng).unwrap().embedded_lens,
+                probed.embedded_lens,
+                "{name}: lost in the DNG"
+            );
             let mut s = lightcraft_develop::DevelopSettings::default();
             let render = |s: &lightcraft_develop::DevelopSettings| {
-                lightcraft_pipeline::render(&src, &info, s, &lightcraft_pipeline::RenderRequest::fit(EDGE, EDGE)).image
+                lightcraft_pipeline::render(
+                    &src,
+                    &info,
+                    s,
+                    &lightcraft_pipeline::RenderRequest::fit(EDGE, EDGE),
+                )
+                .image
             };
             let before = render(&s);
             s.optics.lens_profile = true;
@@ -1518,8 +2162,17 @@ mod tests {
             // the camera JPEG shows the whole sensor; a render in an in-camera aspect ratio is its centre
             let (cam, _) = load_embedded_preview(&bytes, 4 * EDGE).unwrap();
             let (cw, ch) = (cam.width as f64, cam.height as f64);
-            let (sw, sh) = if cw / ch > w as f64 / h as f64 { (ch * w as f64 / h as f64, ch) } else { (cw, cw * h as f64 / w as f64) };
-            let cam = cam.crop(((cw - sw) / 2.0).round() as usize, ((ch - sh) / 2.0).round() as usize, sw.round() as usize, sh.round() as usize);
+            let (sw, sh) = if cw / ch > w as f64 / h as f64 {
+                (ch * w as f64 / h as f64, ch)
+            } else {
+                (cw, cw * h as f64 / w as f64)
+            };
+            let cam = cam.crop(
+                ((cw - sw) / 2.0).round() as usize,
+                ((ch - sh) / 2.0).round() as usize,
+                sw.round() as usize,
+                sh.round() as usize,
+            );
             let cam = lightcraft_raster::resample::resize(&cam, w, h, Filter::Mitchell);
             let lin = |v: u8| (v as f32 / 255.0).powf(2.2);
             let lum8 = |im: &lightcraft_raster::Rgba8, x: usize, y: usize| {
@@ -1530,19 +2183,35 @@ mod tests {
                 let p = cam.data[y * w + x];
                 0.3 * p[0] + 0.6 * p[1] + 0.1 * p[2]
             });
-            let (db, da) = (detail(w, h, |x, y| lum8(&before, x, y)), detail(w, h, |x, y| lum8(&after, x, y)));
+            let (db, da) = (
+                detail(w, h, |x, y| lum8(&before, x, y)),
+                detail(w, h, |x, y| lum8(&after, x, y)),
+            );
             let m = R as usize + 4;
-            let corners = [(m, m), (w - m - P, m), (m, h - m - P), (w - m - P, h - m - P)];
+            let corners = [
+                (m, m),
+                (w - m - P, m),
+                (m, h - m - P),
+                (w - m - P, h - m - P),
+            ];
             let mut measured = 0;
             for c in corners {
-                let Some(((dx, dy), ca)) = patch_shift(&da, &reference, w, c, P, R) else { continue };
+                let Some(((dx, dy), ca)) = patch_shift(&da, &reference, w, c, P, R) else {
+                    continue;
+                };
                 measured += 1;
-                assert!(dx.abs() <= 2 && dy.abs() <= 2 && ca >= 0.5, "{name}: corrected corner {c:?} off by ({dx}, {dy}) px, ncc {ca}");
+                assert!(
+                    dx.abs() <= 2 && dy.abs() <= 2 && ca >= 0.5,
+                    "{name}: corrected corner {c:?} off by ({dx}, {dy}) px, ncc {ca}"
+                );
                 if off_at_least > 0
                     && let Some(((bx, by), cb)) = patch_shift(&db, &reference, w, c, P, R)
                 {
                     let off = bx.abs().max(by.abs()) >= off_at_least || cb < 0.3;
-                    assert!(off, "{name}: uncorrected corner {c:?} already within ({bx}, {by}) px, ncc {cb}");
+                    assert!(
+                        off,
+                        "{name}: uncorrected corner {c:?} already within ({bx}, {by}) px, ncc {cb}"
+                    );
                 }
             }
             assert!(measured >= 2, "{name}: only {measured} corners with detail");
@@ -1551,8 +2220,16 @@ mod tests {
 
     /// A CR3-shaped file (not decodable yet) whose only content is a `PRVW` preview box.
     fn cr3_with_preview(w: u32, h: u32) -> Vec<u8> {
-        let px: Vec<u8> = (0..w * h).flat_map(|i| [(i % 251) as u8, 128, 200]).collect();
-        let jpeg = encode_jpeg(&EncodeImage::new(w, h, 3, Samples::U8(&px)), 90, ChromaSubsampling::S444, &EncodeMeta::default()).unwrap();
+        let px: Vec<u8> = (0..w * h)
+            .flat_map(|i| [(i % 251) as u8, 128, 200])
+            .collect();
+        let jpeg = encode_jpeg(
+            &EncodeImage::new(w, h, 3, Samples::U8(&px)),
+            90,
+            ChromaSubsampling::S444,
+            &EncodeMeta::default(),
+        )
+        .unwrap();
         let mut b = b"\0\0\0\x18ftypcrx \0\0\0\x01crx isom".to_vec();
         b.extend_from_slice(&((24 + jpeg.len()) as u32).to_be_bytes());
         b.extend_from_slice(b"PRVW\0\0\0\0\0\x01");
@@ -1567,7 +2244,9 @@ mod tests {
     /// [`cr3_with_preview`] plus a full-size CRX raw track whose `CMP1` coding header is garbage:
     /// the container parses, the raw data doesn't (`RawError::Corrupt`, not `Unsupported`).
     fn cr3_with_corrupt_raw(w: u32, h: u32) -> Vec<u8> {
-        let bx = |kind: &[u8; 4], body: &[u8]| [&((body.len() + 8) as u32).to_be_bytes()[..], kind, body].concat();
+        let bx = |kind: &[u8; 4], body: &[u8]| {
+            [&((body.len() + 8) as u32).to_be_bytes()[..], kind, body].concat()
+        };
         let mut craw = vec![0u8; 82];
         craw[24..26].copy_from_slice(&(w as u16).to_be_bytes());
         craw[26..28].copy_from_slice(&(h as u16).to_be_bytes());
@@ -1588,9 +2267,15 @@ mod tests {
     fn corrupt_cr3_falls_back_to_embedded_preview() {
         let b = cr3_with_corrupt_raw(48, 32);
         let err = lightcraft_raw::decode(&b).expect_err("the fixture's raw data is corrupt");
-        assert!(!matches!(err, lightcraft_raw::RawError::Unsupported(_)), "{err}");
+        assert!(
+            !matches!(err, lightcraft_raw::RawError::Unsupported(_)),
+            "{err}"
+        );
         let p = probe_bytes("x.cr3", &b).unwrap();
-        assert_eq!((p.width, p.height, p.kind, p.format.as_str()), (48, 32, MediaKind::Raw, "CR3"));
+        assert_eq!(
+            (p.width, p.height, p.kind, p.format.as_str()),
+            (48, 32, MediaKind::Raw, "CR3")
+        );
         assert!(p.preview_only.is_some_and(|why| why.contains("CR3")));
         let (img, src) = load_bytes(&b, 24).unwrap();
         assert_eq!((img.width, img.height), (24, 16));
@@ -1609,14 +2294,26 @@ mod tests {
         let plain = crate::tests_xmp::synthetic_dng_with(None, Default::default());
         let mut raw = lightcraft_raw::decode(&plain).unwrap();
         let sat = |img: &Rgb32f| {
-            img.data.iter().map(|p| (p[0].max(p[1]).max(p[2]) - p[0].min(p[1]).min(p[2])) / p[0].max(p[1]).max(p[2]).max(1e-6)).sum::<f32>()
+            img.data
+                .iter()
+                .map(|p| {
+                    (p[0].max(p[1]).max(p[2]) - p[0].min(p[1]).min(p[2]))
+                        / p[0].max(p[1]).max(p[2]).max(1e-6)
+                })
+                .sum::<f32>()
                 / img.data.len() as f32
         };
         let (before, info) = load_bytes(&plain, 64).unwrap();
         assert!(sat(&before) > 0.05, "the synthetic scene is coloured");
         assert!(info.camera_tone.is_none());
         // a map that removes all saturation, and a tone curve
-        let grey = HsvTable { hue_divisions: 4, sat_divisions: 2, val_divisions: 1, data: vec![[0.0, 0.0, 1.0]; 8], srgb_value: false };
+        let grey = HsvTable {
+            hue_divisions: 4,
+            sat_divisions: 2,
+            val_divisions: 1,
+            data: vec![[0.0, 0.0, 1.0]; 8],
+            srgb_value: false,
+        };
         raw.color.profile = ProfileLook {
             hue_sat_map: [Some(grey), None],
             look_table: None,
@@ -1625,25 +2322,66 @@ mod tests {
         };
         let with = lightcraft_raw::write_dng(&raw, &Default::default()).unwrap();
         let (after, info) = load_bytes(&with, 64).unwrap();
-        assert!(sat(&after) < 1e-3, "saturation {} → {}", sat(&before), sat(&after));
+        assert!(
+            sat(&after) < 1e-3,
+            "saturation {} → {}",
+            sat(&before),
+            sat(&after)
+        );
         // a saturation-only map keeps brightness roughly (HSV value is kept in ProPhoto RGB)
-        let mean = |img: &Rgb32f| img.data.iter().map(|p| p[0].max(p[1]).max(p[2])).sum::<f32>() / img.data.len() as f32;
-        assert!((0.8..1.1).contains(&(mean(&after) / mean(&before))), "{} vs {}", mean(&after), mean(&before));
-        let tone = info.camera_tone.expect("the DNG tone curve becomes the camera tone");
-        assert!((tone.apply(0.18) - 0.3).abs() < 0.01, "{}", tone.apply(0.18));
+        let mean = |img: &Rgb32f| {
+            img.data
+                .iter()
+                .map(|p| p[0].max(p[1]).max(p[2]))
+                .sum::<f32>()
+                / img.data.len() as f32
+        };
+        assert!(
+            (0.8..1.1).contains(&(mean(&after) / mean(&before))),
+            "{} vs {}",
+            mean(&after),
+            mean(&before)
+        );
+        let tone = info
+            .camera_tone
+            .expect("the DNG tone curve becomes the camera tone");
+        assert!(
+            (tone.apply(0.18) - 0.3).abs() < 0.01,
+            "{}",
+            tone.apply(0.18)
+        );
         // a look table alone changes the render too (applied after exposure)
         raw.color.profile = ProfileLook {
-            look_table: Some(HsvTable { hue_divisions: 1, sat_divisions: 2, val_divisions: 1, data: vec![[0.0, 1.0, 0.5]; 2], srgb_value: false }),
+            look_table: Some(HsvTable {
+                hue_divisions: 1,
+                sat_divisions: 2,
+                val_divisions: 1,
+                data: vec![[0.0, 1.0, 0.5]; 2],
+                srgb_value: false,
+            }),
             ..Default::default()
         };
-        let (dim, _) = load_bytes(&lightcraft_raw::write_dng(&raw, &Default::default()).unwrap(), 64).unwrap();
-        assert!((mean(&dim) / mean(&before) - 0.5).abs() < 0.02, "{} vs {}", mean(&dim), mean(&before));
+        let (dim, _) = load_bytes(
+            &lightcraft_raw::write_dng(&raw, &Default::default()).unwrap(),
+            64,
+        )
+        .unwrap();
+        assert!(
+            (mean(&dim) / mean(&before) - 0.5).abs() < 0.02,
+            "{} vs {}",
+            mean(&dim),
+            mean(&before)
+        );
     }
 
     /// A look fitted to a camera's JPEG, as `camera_preview` makes them: its rows don't sum to one, so the camera's
     /// own white-balanced neutral comes out yellow (blue 12 % low).
     fn yellowing_look() -> lightcraft_color::Mat3 {
-        lightcraft_color::Mat3([[0.42, 0.548, 0.04], [0.246, 0.728, 0.033], [-0.247, 0.679, 0.447]])
+        lightcraft_color::Mat3([
+            [0.42, 0.548, 0.04],
+            [0.246, 0.728, 0.033],
+            [-0.247, 0.679, 0.447],
+        ])
     }
 
     #[test]
@@ -1652,28 +2390,67 @@ mod tests {
         let look = yellowing_look();
         let white = clipped_white(&look);
         let out = look.apply(white.map(f64::from));
-        assert!(out.iter().all(|v| (v - out[1]).abs() < 1e-5), "{white:?} renders {out:?}");
+        assert!(
+            out.iter().all(|v| (v - out[1]).abs() < 1e-5),
+            "{white:?} renders {out:?}"
+        );
         let luma = |c: [f64; 3]| (0..3).map(|i| c[i] * f64::from(LUMA_2020[i])).sum::<f64>();
-        assert!((luma(out) - luma(look.apply([1.0; 3]))).abs() < 1e-5, "as bright as the camera's neutral");
+        assert!(
+            (luma(out) - luma(look.apply([1.0; 3]))).abs() < 1e-5,
+            "as bright as the camera's neutral"
+        );
         assert_eq!(clipped_white(&Mat3::IDENTITY), [1.0; 3]);
         // a model that can't be inverted, or only just, keeps the camera's neutral
-        assert_eq!(clipped_white(&Mat3([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])), [1.0; 3]);
-        assert_eq!(clipped_white(&Mat3([[1.0, 1.0, 0.0], [1.0, 1.0 + 1e-8, 0.0], [0.0, 0.0, 1.0]])), [1.0; 3]);
+        assert_eq!(
+            clipped_white(&Mat3([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])),
+            [1.0; 3]
+        );
+        assert_eq!(
+            clipped_white(&Mat3([
+                [1.0, 1.0, 0.0],
+                [1.0, 1.0 + 1e-8, 0.0],
+                [0.0, 0.0, 1.0]
+            ])),
+            [1.0; 3]
+        );
         // so does one whose white would overflow the rebuilt highlights (2.5e38 in red here)
-        assert_eq!(clipped_white(&Mat3([[3e-39, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])), [1.0; 3]);
+        assert_eq!(
+            clipped_white(&Mat3([[3e-39, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])),
+            [1.0; 3]
+        );
         // or move the camera's neutral implausibly far
-        assert_eq!(clipped_white(&Mat3([[0.1, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])), [1.0; 3]);
+        assert_eq!(
+            clipped_white(&Mat3([[0.1, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])),
+            [1.0; 3]
+        );
         // what it answers renders neutral through the f32 matrix, and fully clipped highlights stay finite
-        for model in [look, Mat3([[1.9, -0.7, -0.2], [-0.3, 1.4, -0.1], [0.0, -0.4, 1.4]])] {
+        for model in [
+            look,
+            Mat3([[1.9, -0.7, -0.2], [-0.3, 1.4, -0.1], [0.0, -0.4, 1.4]]),
+        ] {
             let w = clipped_white(&model);
             let m = model.to_f32();
-            let out: [f32; 3] = std::array::from_fn(|i| m[i][0] * w[0] + m[i][1] * w[1] + m[i][2] * w[2]);
-            assert!(out.iter().all(|v| (v - out[1]).abs() <= 1e-3 * out[1]), "{w:?} renders {out:?}");
-            let colour = CameraColourModel { wb: [2.5, 1.0, 1.6], matrix: model, gain: 1.0, tables: None, hue_sat: None };
+            let out: [f32; 3] =
+                std::array::from_fn(|i| m[i][0] * w[0] + m[i][1] * w[1] + m[i][2] * w[2]);
+            assert!(
+                out.iter().all(|v| (v - out[1]).abs() <= 1e-3 * out[1]),
+                "{w:?} renders {out:?}"
+            );
+            let colour = CameraColourModel {
+                wb: [2.5, 1.0, 1.6],
+                matrix: model,
+                gain: 1.0,
+                tables: None,
+                hue_sat: None,
+            };
             let mut img = Rgb32f::filled(4, 4, [1.0; 3]);
             colour.rebuild_highlights(&mut img);
             colour.apply(&mut img);
-            assert!(img.data.iter().flatten().all(|v| v.is_finite()), "{:?}", img.get(0, 0));
+            assert!(
+                img.data.iter().flatten().all(|v| v.is_finite()),
+                "{:?}",
+                img.get(0, 0)
+            );
         }
     }
 
@@ -1684,7 +2461,13 @@ mod tests {
     fn clipped_highlights_stay_neutral_when_darkened() {
         use lightcraft_pipeline::{RenderRequest, render};
         let wb = [2.4f32, 1.0, 1.6];
-        let colour = CameraColourModel { wb, matrix: yellowing_look(), gain: 1.0, tables: None, hue_sat: None };
+        let colour = CameraColourModel {
+            wb,
+            matrix: yellowing_look(),
+            gain: 1.0,
+            tables: None,
+            hue_sat: None,
+        };
         // a grey wall (camera neutral) with a fully clipped light and a light clipped in green only
         let mut img = Rgb32f::from_fn(96, 64, |x, y| {
             let d = |cx: f32| ((x as f32 - cx).powi(2) + (y as f32 - 32.0).powi(2)).sqrt();
@@ -1698,10 +2481,20 @@ mod tests {
         });
         colour.rebuild_highlights(&mut img);
         colour.apply(&mut img);
-        let info = SourceInfo { raw: true, ..Default::default() };
+        let info = SourceInfo {
+            raw: true,
+            ..Default::default()
+        };
         let mut issue = lightcraft_develop::DevelopSettings::default();
         let l = &mut issue.light;
-        (l.exposure, l.contrast, l.highlights, l.shadows, l.whites, l.blacks) = (-0.88, 5.0, -75.0, 52.0, 6.0, -37.0);
+        (
+            l.exposure,
+            l.contrast,
+            l.highlights,
+            l.shadows,
+            l.whites,
+            l.blacks,
+        ) = (-0.88, 5.0, -75.0, 52.0, 6.0, -37.0);
         let mut h100 = lightcraft_develop::DevelopSettings::default();
         h100.light.highlights = -100.0;
         for (name, s) in [("Highlights -100", h100), ("#523's edit", issue)] {
@@ -1720,24 +2513,53 @@ mod tests {
     fn darkened_ramp(rows: std::ops::Range<usize>, height: usize) -> ([[u8; 4]; 3], u8) {
         use lightcraft_pipeline::{RenderRequest, render};
         let wb = [2.5f32, 1.0, 1.6];
-        let colour = CameraColourModel { wb, matrix: lightcraft_color::Mat3::IDENTITY, gain: 1.0, tables: None, hue_sat: None };
+        let colour = CameraColourModel {
+            wb,
+            matrix: lightcraft_color::Mat3::IDENTITY,
+            gain: 1.0,
+            tables: None,
+            hue_sat: None,
+        };
         let w = 1600usize;
         let k = |x: usize| 0.8 + 0.55 * x as f32 / (w - 1) as f32;
-        let sensor =
-            Rgb32f::from_fn(w, height, |x, y| if rows.contains(&y) { [0.9 * k(x), k(x), 0.8 * k(x)].map(|v| v.min(1.0)) } else { [0.01; 3] });
+        let sensor = Rgb32f::from_fn(w, height, |x, y| {
+            if rows.contains(&y) {
+                [0.9 * k(x), k(x), 0.8 * k(x)].map(|v| v.min(1.0))
+            } else {
+                [0.01; 3]
+            }
+        });
         let y = (rows.start + rows.end) / 2;
-        let first = (0..w).find(|&x| sensor.get(x, y)[1] >= HIGHLIGHT_CLIP).unwrap();
+        let first = (0..w)
+            .find(|&x| sensor.get(x, y)[1] >= HIGHLIGHT_CLIP)
+            .unwrap();
         let mut img = sensor.clone();
         colour.rebuild_highlights(&mut img);
         colour.apply(&mut img);
         let mut s = lightcraft_develop::DevelopSettings::default();
         s.light.exposure = -2.0;
-        let out = render(&img, &SourceInfo { raw: true, ..Default::default() }, &s, &RenderRequest::fit(w, height)).image;
+        let out = render(
+            &img,
+            &SourceInfo {
+                raw: true,
+                ..Default::default()
+            },
+            &s,
+            &RenderRequest::fit(w, height),
+        )
+        .image;
         let step = |x: usize| {
             let (a, b) = (out.get(x - 1, y), out.get(x, y));
             (0..3).map(|c| a[c].abs_diff(b[c])).max().unwrap_or(0)
         };
-        ([out.get(first - 1, y), out.get(first, y), out.get(first + 1, y)], (1..w).map(step).max().unwrap_or(0))
+        (
+            [
+                out.get(first - 1, y),
+                out.get(first, y),
+                out.get(first + 1, y),
+            ],
+            (1..w).map(step).max().unwrap_or(0),
+        )
     }
 
     /// The darkened pink gradient carries on across the point where green clips: before the fix the fade towards
@@ -1747,8 +2569,14 @@ mod tests {
     fn rendered_colour_is_continuous_where_the_first_channel_clips() {
         let ([a, b, c], worst) = darkened_ramp(0..16, 16);
         let step = |p: [u8; 4], q: [u8; 4]| (0..3).map(|i| p[i].abs_diff(q[i])).max().unwrap_or(0);
-        assert!(step(a, b) <= 1 && step(b, c) <= 1, "at the first clip: {a:?} {b:?} {c:?}");
-        assert!(worst <= 3, "largest step between neighbouring pixels: {worst} levels");
+        assert!(
+            step(a, b) <= 1 && step(b, c) <= 1,
+            "at the first clip: {a:?} {b:?} {c:?}"
+        );
+        assert!(
+            worst <= 3,
+            "largest step between neighbouring pixels: {worst} levels"
+        );
     }
 
     /// The same gradient as a thin bright line on near black: every pixel of it is next to a strong edge, so there
@@ -1763,8 +2591,14 @@ mod tests {
                 let top = (height - width) / 2;
                 let ([a, b, c], worst) = darkened_ramp(top..top + width, height);
                 let case = format!("{width} rows of {height}");
-                assert!(step(a, b) <= 1 && step(b, c) <= 1, "{case}, at the first clip: {a:?} {b:?} {c:?}");
-                assert!(worst <= 3, "{case}: largest step between neighbouring pixels {worst} levels");
+                assert!(
+                    step(a, b) <= 1 && step(b, c) <= 1,
+                    "{case}, at the first clip: {a:?} {b:?} {c:?}"
+                );
+                assert!(
+                    worst <= 3,
+                    "{case}: largest step between neighbouring pixels {worst} levels"
+                );
             }
         }
     }
@@ -1778,7 +2612,13 @@ mod tests {
     fn second_clip(top: usize, strip: usize, band: usize) -> ([[u8; 4]; 2], u8) {
         use lightcraft_pipeline::{RenderRequest, render};
         let wb = [2.5f32, 1.0, 1.6];
-        let colour = CameraColourModel { wb, matrix: lightcraft_color::Mat3::IDENTITY, gain: 1.0, tables: None, hue_sat: None };
+        let colour = CameraColourModel {
+            wb,
+            matrix: lightcraft_color::Mat3::IDENTITY,
+            gain: 1.0,
+            tables: None,
+            hue_sat: None,
+        };
         let (w, h) = (320usize, top + strip + band);
         let sensor = Rgb32f::from_fn(w, h, |x, y| {
             if y < top {
@@ -1790,18 +2630,32 @@ mod tests {
             }
         });
         let y = top + strip + band / 2;
-        let at = (0..w).find(|&x| sensor.get(x, y)[0] >= HIGHLIGHT_CLIP).unwrap();
+        let at = (0..w)
+            .find(|&x| sensor.get(x, y)[0] >= HIGHLIGHT_CLIP)
+            .unwrap();
         let mut img = sensor.clone();
         colour.rebuild_highlights(&mut img);
         colour.apply(&mut img);
         let mut s = lightcraft_develop::DevelopSettings::default();
         s.light.exposure = -2.0;
-        let out = render(&img, &SourceInfo { raw: true, ..Default::default() }, &s, &RenderRequest::fit(w, h)).image;
+        let out = render(
+            &img,
+            &SourceInfo {
+                raw: true,
+                ..Default::default()
+            },
+            &s,
+            &RenderRequest::fit(w, h),
+        )
+        .image;
         let step = |x: usize| {
             let (a, b) = (out.get(x - 1, y), out.get(x, y));
             (0..3).map(|c| a[c].abs_diff(b[c])).max().unwrap_or(0)
         };
-        ([out.get(at - 1, y), out.get(at, y)], (1..w).map(step).max().unwrap_or(0))
+        (
+            [out.get(at - 1, y), out.get(at, y)],
+            (1..w).map(step).max().unwrap_or(0),
+        )
     }
 
     /// Where a second channel clips within reach of the surface's own rim, the rebuilt colour carries on too. The
@@ -1811,12 +2665,22 @@ mod tests {
     /// (without the coloured surface: [198, 195, 178] then [205, 181, 168]).
     #[test]
     fn rendered_colour_is_continuous_where_a_second_channel_clips() {
-        for (top, strip, band) in [(80, 16, 32), (0, 16, 32), (80, 16, 4), (200, 4, 8), (16, 64, 16), (8, 32, 24)] {
+        for (top, strip, band) in [
+            (80, 16, 32),
+            (0, 16, 32),
+            (80, 16, 4),
+            (200, 4, 8),
+            (16, 64, 16),
+            (8, 32, 24),
+        ] {
             let ([a, b], worst) = second_clip(top, strip, band);
             let case = format!("{top} rows of colour, {strip} of rim, {band} of band");
             let step = (0..3).map(|i| a[i].abs_diff(b[i])).max().unwrap_or(0);
             assert!(step <= 1, "{case}: {a:?} then {b:?} where red clips");
-            assert!(worst <= 3, "{case}: largest step between neighbouring pixels {worst} levels");
+            assert!(
+                worst <= 3,
+                "{case}: largest step between neighbouring pixels {worst} levels"
+            );
         }
     }
 
@@ -1827,7 +2691,9 @@ mod tests {
     fn corpus_clipped_sky_beside_a_tree_has_no_coloured_halo() {
         let dir = std::env::var_os("LIGHTCRAFT_CORPUS")
             .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus"))
+            .unwrap_or_else(|| {
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus")
+            })
             .join("raw");
         let Ok(bytes) = std::fs::read(dir.join("arw-sony-a7rm4-14bit-compressed.arw")) else {
             eprintln!("skip: {} absent", dir.display());
@@ -1847,18 +2713,31 @@ mod tests {
         for y in px(0.24, h)..px(0.34, h) {
             let row = &img.data[y * w..(y + 1) * w];
             let sky = lum(row[px(0.2, w)]);
-            let dark: Vec<usize> = (px(0.25, w)..px(0.35, w)).filter(|&x| lum(row[x]) < 0.5 * sky).collect();
-            let (Some(&left), Some(&right)) = (dark.first(), dark.last()) else { continue };
+            let dark: Vec<usize> = (px(0.25, w)..px(0.35, w))
+                .filter(|&x| lum(row[x]) < 0.5 * sky)
+                .collect();
+            let (Some(&left), Some(&right)) = (dark.first(), dark.last()) else {
+                continue;
+            };
             let k = w as f32 / 6000.0;
             let mean = |a: usize, b: usize| {
                 let n = (b - a) as f64;
-                (a..b).map(|x| chroma(row[x])).fold([0f64; 2], |s, c| [s[0] + c[0] as f64 / n, s[1] + c[1] as f64 / n])
+                (a..b).map(|x| chroma(row[x])).fold([0f64; 2], |s, c| {
+                    [s[0] + c[0] as f64 / n, s[1] + c[1] as f64 / n]
+                })
             };
-            let (n0, n1, f0, f1) = (px(8.0 / 6000.0, w).max(2), px(40.0 / 6000.0, w), (200.0 * k) as usize, (320.0 * k) as usize);
-            for (side, (n, f)) in
-                [(mean(left - n1, left - n0), mean(left - f1, left - f0)), (mean(right + n0, right + n1), mean(right + f0, right + f1))]
-                    .into_iter()
-                    .enumerate()
+            let (n0, n1, f0, f1) = (
+                px(8.0 / 6000.0, w).max(2),
+                px(40.0 / 6000.0, w),
+                (200.0 * k) as usize,
+                (320.0 * k) as usize,
+            );
+            for (side, (n, f)) in [
+                (mean(left - n1, left - n0), mean(left - f1, left - f0)),
+                (mean(right + n0, right + n1), mean(right + f0, right + f1)),
+            ]
+            .into_iter()
+            .enumerate()
             {
                 for c in 0..2 {
                     near[side][c] += n[c];
@@ -1869,8 +2748,14 @@ mod tests {
         }
         assert!(rows > 50, "the tree was not found ({rows} rows)");
         for side in 0..2 {
-            let d = (0..2).map(|c| ((near[side][c] - far[side][c]) / rows as f64).abs()).fold(0.0, f64::max);
-            assert!(d < 0.004, "{} of the tree the clipped sky's chromaticity is off by {d:.4}", ["left", "right"][side]);
+            let d = (0..2)
+                .map(|c| ((near[side][c] - far[side][c]) / rows as f64).abs())
+                .fold(0.0, f64::max);
+            assert!(
+                d < 0.004,
+                "{} of the tree the clipped sky's chromaticity is off by {d:.4}",
+                ["left", "right"][side]
+            );
         }
     }
 
@@ -1879,7 +2764,9 @@ mod tests {
     /// heuristic would never look) is used; a matte with an unknown name is ignored.
     #[test]
     fn dng_sky_matte_drives_the_sky_mask() {
-        use lightcraft_develop::{DevelopSettings, LocalAdjustments, Mask, MaskComponent, MaskOp, MaskShape};
+        use lightcraft_develop::{
+            DevelopSettings, LocalAdjustments, Mask, MaskComponent, MaskOp, MaskShape,
+        };
         use lightcraft_pipeline::{RenderRequest, render};
         use lightcraft_tiff::tags::{self as t, photometric};
         use lightcraft_tiff::{ByteOrder, IfdBuilder, ImageData, TiffWriter, Value};
@@ -1890,18 +2777,46 @@ mod tests {
             ifd.set(t::BITS_PER_SAMPLE, Value::Short(vec![bits; cpp as usize]));
             ifd.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![cpp]));
             ifd.set(t::COMPRESSION, Value::Short(vec![1]));
-            ifd.set_image(ImageData::Strips { rows_per_strip: h, strips: vec![data] });
+            ifd.set_image(ImageData::Strips {
+                rows_per_strip: h,
+                strips: vec![data],
+            });
         };
         let mut raw = IfdBuilder::new();
         raw.set(t::NEW_SUBFILE_TYPE, Value::Long(vec![0]));
         raw.set(t::PHOTOMETRIC, Value::Short(vec![photometric::LINEAR_RAW]));
-        image(&mut raw, w, h, 3, 16, 12000u16.to_le_bytes().repeat((w * h * 3) as usize));
+        image(
+            &mut raw,
+            w,
+            h,
+            3,
+            16,
+            12000u16.to_le_bytes().repeat((w * h * 3) as usize),
+        );
         let matte = |name: &str, right: bool| {
             let mut m = IfdBuilder::new();
-            m.set(t::NEW_SUBFILE_TYPE, Value::Long(vec![t::SUBFILE_SEMANTIC_MASK]));
+            m.set(
+                t::NEW_SUBFILE_TYPE,
+                Value::Long(vec![t::SUBFILE_SEMANTIC_MASK]),
+            );
             m.set(t::PHOTOMETRIC, Value::Short(vec![photometric::MASK]));
             m.set(t::SEMANTIC_NAME, Value::Ascii(name.into()));
-            image(&mut m, w / 2, h / 2, 1, 8, (0..w / 2 * h / 2).map(|i| if (i % (w / 2) >= w / 4) == right { 255 } else { 0 }).collect());
+            image(
+                &mut m,
+                w / 2,
+                h / 2,
+                1,
+                8,
+                (0..w / 2 * h / 2)
+                    .map(|i| {
+                        if (i % (w / 2) >= w / 4) == right {
+                            255
+                        } else {
+                            0
+                        }
+                    })
+                    .collect(),
+            );
             m
         };
         let mut ifd0 = IfdBuilder::new();
@@ -1909,31 +2824,72 @@ mod tests {
         ifd0.set(t::DNG_VERSION, Value::Byte(vec![1, 6, 0, 0]));
         ifd0.set(t::MAKE, Value::Ascii("Apple".into()));
         ifd0.set(t::ORIENTATION, Value::Short(vec![6]));
-        ifd0.set(t::COLOR_MATRIX_1, Value::SRational(vec![(1, 1), (0, 1), (0, 1), (0, 1), (1, 1), (0, 1), (0, 1), (0, 1), (1, 1)]));
+        ifd0.set(
+            t::COLOR_MATRIX_1,
+            Value::SRational(vec![
+                (1, 1),
+                (0, 1),
+                (0, 1),
+                (0, 1),
+                (1, 1),
+                (0, 1),
+                (0, 1),
+                (0, 1),
+                (1, 1),
+            ]),
+        );
         ifd0.set(t::CALIBRATION_ILLUMINANT_1, Value::Short(vec![21]));
         ifd0.set(t::PHOTOMETRIC, Value::Short(vec![photometric::RGB]));
         image(&mut ifd0, 4, 2, 3, 8, vec![128; 24]);
         ifd0.add_sub_ifd(raw);
         ifd0.add_sub_ifd(matte("urn:com:apple:photo:2020:aux:semanticskymatte", true));
-        ifd0.add_sub_ifd(matte("urn:com:apple:photo:2020:aux:semanticsomethingelse", false));
-        let bytes = TiffWriter::new(ByteOrder::Little, false).write(&[ifd0]).unwrap();
+        ifd0.add_sub_ifd(matte(
+            "urn:com:apple:photo:2020:aux:semanticsomethingelse",
+            false,
+        ));
+        let bytes = TiffWriter::new(ByteOrder::Little, false)
+            .write(&[ifd0])
+            .unwrap();
 
         let (img, info) = load_bytes(&bytes, 64).unwrap();
         assert_eq!((img.width, img.height), (8, 16));
         assert!(info.mattes.is_some());
         let sky = Mask {
-            components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape: MaskShape::Sky }],
-            adjust: LocalAdjustments { exposure: -3.0, ..Default::default() },
+            components: vec![MaskComponent {
+                name: None,
+                op: MaskOp::Add,
+                invert: false,
+                shape: MaskShape::Sky,
+            }],
+            adjust: LocalAdjustments {
+                exposure: -3.0,
+                ..Default::default()
+            },
             ..Default::default()
         };
-        let s = DevelopSettings { masks: vec![sky], ..Default::default() };
+        let s = DevelopSettings {
+            masks: vec![sky],
+            ..Default::default()
+        };
         let req = RenderRequest::fit(8, 16);
-        let green = |s: &DevelopSettings, info: &SourceInfo, y: usize| render(&img, info, s, &req).image.get(4, y)[1] as i32;
+        let green = |s: &DevelopSettings, info: &SourceInfo, y: usize| {
+            render(&img, info, s, &req).image.get(4, y)[1] as i32
+        };
         let plain = DevelopSettings::default();
-        assert_eq!(green(&s, &info, 2), green(&plain, &info, 2), "no sky at the top");
-        assert!(green(&s, &info, 13) + 40 < green(&plain, &info, 13), "the sky at the bottom is darkened");
+        assert_eq!(
+            green(&s, &info, 2),
+            green(&plain, &info, 2),
+            "no sky at the top"
+        );
+        assert!(
+            green(&s, &info, 13) + 40 < green(&plain, &info, 13),
+            "the sky at the bottom is darkened"
+        );
         // without the matte the heuristic looks at the top of the frame instead
-        let heuristic = SourceInfo { mattes: None, ..info.clone() };
+        let heuristic = SourceInfo {
+            mattes: None,
+            ..info.clone()
+        };
         assert!(green(&s, &heuristic, 2) < green(&plain, &heuristic, 2));
         assert_eq!(green(&s, &heuristic, 13), green(&plain, &heuristic, 13));
     }
@@ -1948,15 +2904,30 @@ mod tests {
         let dng = crate::tests_xmp::synthetic_dng_with(None, Default::default());
         let raw = lightcraft_raw::decode(&dng).unwrap();
         let (img, info) = load_bytes(&dng, 64).unwrap();
-        let cc = info.camera_color.as_ref().expect("a DNG with a colour matrix");
-        assert_eq!(cc.developed_for, lightcraft_raw::color::as_shot_white_xy(&raw));
+        let cc = info
+            .camera_color
+            .as_ref()
+            .expect("a DNG with a colour matrix");
+        assert_eq!(
+            cc.developed_for,
+            lightcraft_raw::color::as_shot_white_xy(&raw)
+        );
         assert!(cc.tags.profile.is_empty());
         assert_eq!(cc.tags.color_matrix, raw.color.color_matrix);
         let mut s = lightcraft_develop::DevelopSettings::default();
         (s.wb.mode, s.wb.temp, s.wb.tint) = (lightcraft_develop::WbMode::Custom, 3000.0, 20.0);
         let req = RenderRequest::fit(32, 32);
         let camera = render(&img, &info, &s, &req).image;
-        let adapted = render(&img, &SourceInfo { camera_color: None, ..info.clone() }, &s, &req).image;
+        let adapted = render(
+            &img,
+            &SourceInfo {
+                camera_color: None,
+                ..info.clone()
+            },
+            &s,
+            &req,
+        )
+        .image;
         assert_ne!(camera.data, adapted.data);
     }
 
@@ -1968,7 +2939,11 @@ mod tests {
         use lightcraft_raw::gaintable::GainTableMap;
         let plain = crate::tests_xmp::synthetic_dng_with(None, Default::default());
         let mut raw = lightcraft_raw::decode(&plain).unwrap();
-        let (before, _) = load_bytes(&lightcraft_raw::write_dng(&raw, &Default::default()).unwrap(), 64).unwrap();
+        let (before, _) = load_bytes(
+            &lightcraft_raw::write_dng(&raw, &Default::default()).unwrap(),
+            64,
+        )
+        .unwrap();
         raw.color.profile.gain_table_map = Some(GainTableMap {
             points_v: 1,
             points_h: 1,
@@ -1982,7 +2957,15 @@ mod tests {
             gains: vec![2.0],
         });
         let with_map = lightcraft_raw::write_dng(&raw, &Default::default()).unwrap();
-        assert!(lightcraft_raw::decode(&with_map).unwrap().color.profile.gain_table_map.is_some(), "the map is kept");
+        assert!(
+            lightcraft_raw::decode(&with_map)
+                .unwrap()
+                .color
+                .profile
+                .gain_table_map
+                .is_some(),
+            "the map is kept"
+        );
         let (after, _) = load_bytes(&with_map, 64).unwrap();
         assert_eq!(before.data, after.data);
     }
@@ -2017,16 +3000,33 @@ mod tests {
         // (darker, so that ×4 never reaches white)
         s.light.exposure = -3.0;
         let off = render(&img, &info, &s, &req).image;
-        assert_eq!(off.data, render(&img, &plain_info, &s, &req).image.data, "off: the map changes nothing");
+        assert_eq!(
+            off.data,
+            render(&img, &plain_info, &s, &req).image.data,
+            "off: the map changes nothing"
+        );
         s.profile.camera_local_tone = true;
-        assert!(s.to_json().to_string().contains("camera_local_tone"), "the option is part of the settings (and their hash)");
+        assert!(
+            s.to_json().to_string().contains("camera_local_tone"),
+            "the option is part of the settings (and their hash)"
+        );
         let on = render(&img, &info, &s, &req).image;
         // brightness gained, per column: none at the left edge, most at the right
-        let column = |im: &lightcraft_raster::Rgba8, x: usize| (0..im.height).map(|y| im.data[y * im.width + x][1] as f32).sum::<f32>();
+        let column = |im: &lightcraft_raster::Rgba8, x: usize| {
+            (0..im.height)
+                .map(|y| im.data[y * im.width + x][1] as f32)
+                .sum::<f32>()
+        };
         let gain = |x: usize| column(&on, x) / column(&off, x).max(1.0);
         let last = on.width - 1;
         assert!((gain(0) - 1.0).abs() < 0.08, "left ×{}", gain(0));
-        assert!(gain(last) > 1.4 && gain(last) > gain(last / 2) && gain(last / 2) > gain(0), "{} {} {}", gain(0), gain(last / 2), gain(last));
+        assert!(
+            gain(last) > 1.4 && gain(last) > gain(last / 2) && gain(last / 2) > gain(0),
+            "{} {} {}",
+            gain(0),
+            gain(last / 2),
+            gain(last)
+        );
         // the photo turned upside down: the map follows the raw, so the brightened side swaps
         s.orientation = lightcraft_geom::Orientation::Rotate180;
         s.profile.camera_local_tone = false;
@@ -2034,9 +3034,17 @@ mod tests {
         s.profile.camera_local_tone = true;
         let on = render(&img, &info, &s, &req).image;
         let gain = |x: usize| column(&on, x) / column(&off, x).max(1.0);
-        assert!(gain(0) > 1.4 && (gain(last) - 1.0).abs() < 0.08, "rotated: {} … {}", gain(0), gain(last));
+        assert!(
+            gain(0) > 1.4 && (gain(last) - 1.0).abs() < 0.08,
+            "rotated: {} … {}",
+            gain(0),
+            gain(last)
+        );
         // a rendered (non-raw) source never gets it
-        let jpeg = SourceInfo { raw: false, ..info.clone() };
+        let jpeg = SourceInfo {
+            raw: false,
+            ..info.clone()
+        };
         assert!(!lightcraft_pipeline::local_tone::enabled(&jpeg, &s));
     }
 
@@ -2044,7 +3052,10 @@ mod tests {
     fn unsupported_raw_falls_back_to_embedded_preview() {
         let b = cr3_with_preview(48, 32);
         let p = probe_bytes("x.cr3", &b).unwrap();
-        assert_eq!((p.width, p.height, p.kind, p.format.as_str()), (48, 32, MediaKind::Raw, "CR3"));
+        assert_eq!(
+            (p.width, p.height, p.kind, p.format.as_str()),
+            (48, 32, MediaKind::Raw, "CR3")
+        );
         let (img, src) = load_bytes(&b, 24).unwrap();
         assert_eq!((img.width, img.height), (24, 16));
         assert!(!src.raw);
@@ -2067,19 +3078,47 @@ mod tests {
         let mut s = crate::Session::new().with_fs();
         s.open_library(&lib, false).unwrap();
         // the import review already says so
-        let scan = s.execute("library.importPreview", &json!({"paths": [path.to_string_lossy()]})).unwrap();
-        assert!(scan["candidates"][0]["previewOnly"].as_str().is_some_and(|w| !w.is_empty()), "{scan}");
-        let r = s.execute("library.import", &json!({"paths": [path.to_string_lossy()]})).unwrap();
+        let scan = s
+            .execute(
+                "library.importPreview",
+                &json!({"paths": [path.to_string_lossy()]}),
+            )
+            .unwrap();
+        assert!(
+            scan["candidates"][0]["previewOnly"]
+                .as_str()
+                .is_some_and(|w| !w.is_empty()),
+            "{scan}"
+        );
+        let r = s
+            .execute(
+                "library.import",
+                &json!({"paths": [path.to_string_lossy()]}),
+            )
+            .unwrap();
         let id = lightcraft_catalog::PhotoId(r["imported"][0].as_u64().unwrap());
         let p = s.catalog.photo(id).unwrap().clone();
         let why = p.preview_only.clone().expect("marked preview only");
-        assert!(why.to_uppercase().contains("CR3"), "the decoder's reason: {why}");
-        assert_eq!(p.kind, MediaKind::Raw, "still a raw file (filters, Convert to DNG…)");
+        assert!(
+            why.to_uppercase().contains("CR3"),
+            "the decoder's reason: {why}"
+        );
+        assert_eq!(
+            p.kind,
+            MediaKind::Raw,
+            "still a raw file (filters, Convert to DNG…)"
+        );
         assert!(!p.develops_raw());
         // rendered like the JPEG it is: relative white balance, display tone curve, no raw defaults
         assert_eq!(crate::media::source_info(&p), SourceInfo::default());
         assert_eq!(*p.develop, lightcraft_develop::DevelopSettings::default());
-        assert!(s.render_job(id, 48, 48, false, true).unwrap().run().rendered.is_ok());
+        assert!(
+            s.render_job(id, 48, 48, false, true)
+                .unwrap()
+                .run()
+                .rendered
+                .is_ok()
+        );
         // agents see it
         let q = s.execute("catalog.query", &json!({"filter": {}})).unwrap();
         assert_eq!(q["photos"][0]["previewOnly"], json!(why), "{q}");
@@ -2090,19 +3129,37 @@ mod tests {
         drop(s);
         let mut s = crate::Session::new().with_fs();
         s.open_library(&lib, false).unwrap();
-        assert_eq!(s.catalog.photo(id).unwrap().preview_only.as_deref(), Some(why.as_str()));
+        assert_eq!(
+            s.catalog.photo(id).unwrap().preview_only.as_deref(),
+            Some(why.as_str())
+        );
         // the file decodes now (here: replaced by a DNG): Reload clears it, undo brings it back
-        std::fs::write(&path, crate::tests_xmp::synthetic_dng_with(None, lightcraft_meta::Metadata::default())).unwrap();
+        std::fs::write(
+            &path,
+            crate::tests_xmp::synthetic_dng_with(None, lightcraft_meta::Metadata::default()),
+        )
+        .unwrap();
         let r = s.execute("photo.reload", &json!({"ids": [id.0]})).unwrap();
         assert_eq!(r["reloaded"], json!([id.0]), "{r}");
         assert!(s.catalog.photo(id).unwrap().develops_raw());
         assert!(crate::media::source_info(s.catalog.photo(id).unwrap()).raw);
         s.execute("edit.undo", &json!({})).unwrap();
-        assert_eq!(s.catalog.photo(id).unwrap().preview_only.as_deref(), Some(why.as_str()));
+        assert_eq!(
+            s.catalog.photo(id).unwrap().preview_only.as_deref(),
+            Some(why.as_str())
+        );
         // relinking to a file that decodes clears it too
         let dng = files.join("DSC_0001.dng");
-        std::fs::write(&dng, crate::tests_xmp::synthetic_dng_with(None, lightcraft_meta::Metadata::default())).unwrap();
-        s.execute("photo.relink", &json!({"id": id.0, "path": dng.to_string_lossy()})).unwrap();
+        std::fs::write(
+            &dng,
+            crate::tests_xmp::synthetic_dng_with(None, lightcraft_meta::Metadata::default()),
+        )
+        .unwrap();
+        s.execute(
+            "photo.relink",
+            &json!({"id": id.0, "path": dng.to_string_lossy()}),
+        )
+        .unwrap();
         assert_eq!(s.catalog.photo(id).unwrap().preview_only, None);
         drop(s);
         let _ = std::fs::remove_dir_all(&dir);
@@ -2119,15 +3176,25 @@ mod tests {
         ifd0.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![3]));
         ifd0.set(t::PHOTOMETRIC, Value::Short(vec![2]));
         ifd0.set(t::COMPRESSION, Value::Short(vec![1]));
-        let px: Vec<u8> = (0..w * h).flat_map(|i| [(i % 251) as u8, 128, 200]).collect();
-        ifd0.set_image(ImageData::Strips { rows_per_strip: h, strips: vec![px] });
+        let px: Vec<u8> = (0..w * h)
+            .flat_map(|i| [(i % 251) as u8, 128, 200])
+            .collect();
+        ifd0.set_image(ImageData::Strips {
+            rows_per_strip: h,
+            strips: vec![px],
+        });
         ifd0.set_child(
             t::EXIF_IFD,
-            IfdBuilder::new().with(t::PIXEL_X_DIMENSION, Value::Long(vec![w * 25])).with(t::PIXEL_Y_DIMENSION, Value::Long(vec![h * 25])),
+            IfdBuilder::new()
+                .with(t::PIXEL_X_DIMENSION, Value::Long(vec![w * 25]))
+                .with(t::PIXEL_Y_DIMENSION, Value::Long(vec![h * 25])),
         );
         let mut b = TiffWriter::default().write(&[ifd0]).unwrap();
         if shell {
-            b.extend(std::iter::repeat_n(0x5au8, (w * h * 625 / 8) as usize + 100));
+            b.extend(std::iter::repeat_n(
+                0x5au8,
+                (w * h * 625 / 8) as usize + 100,
+            ));
         }
         b
     }
@@ -2139,7 +3206,10 @@ mod tests {
     fn thumbnail_only_tiff_raw_is_preview_only_not_a_plain_image() {
         let b = tiff_shell(24, 16, true);
         let p = probe_bytes("IMG_0001.IIQ", &b).unwrap();
-        assert_eq!((p.kind, p.format.as_str(), p.width, p.height), (MediaKind::Raw, "IIQ", 24, 16));
+        assert_eq!(
+            (p.kind, p.format.as_str(), p.width, p.height),
+            (MediaKind::Raw, "IIQ", 24, 16)
+        );
         let why = p.preview_only.expect("marked preview only");
         assert!(why.contains("600x400") && why.contains("24x16"), "{why}");
         let (img, src) = load_bytes(&b, 12).unwrap();
@@ -2147,7 +3217,10 @@ mod tests {
         assert!(embedded_preview_srgb(&b, 12).is_some());
         // the same pixels without the private block are a small ordinary image
         let plain = probe_bytes("small.tif", &tiff_shell(24, 16, false)).unwrap();
-        assert_eq!((plain.kind, plain.preview_only, plain.width, plain.height), (MediaKind::Image, None, 24, 16));
+        assert_eq!(
+            (plain.kind, plain.preview_only, plain.width, plain.height),
+            (MediaKind::Image, None, 24, 16)
+        );
         assert!(lightcraft_raw::probe(&tiff_shell(24, 16, false)).is_none());
 
         // TIFFs preserving camera Make tags (SONY, NIKON, etc.) are ordinary images, not raws (#281)
@@ -2161,13 +3234,26 @@ mod tests {
             ifd0.set(t::PHOTOMETRIC, Value::Short(vec![2]));
             ifd0.set(t::COMPRESSION, Value::Short(vec![1]));
             ifd0.set(t::MAKE, Value::Ascii(make.into()));
-            let px: Vec<u8> = (0..24 * 16).flat_map(|i| [(i % 251) as u8, 128, 200]).collect();
-            ifd0.set_image(ImageData::Strips { rows_per_strip: 16, strips: vec![px] });
+            let px: Vec<u8> = (0..24 * 16)
+                .flat_map(|i| [(i % 251) as u8, 128, 200])
+                .collect();
+            ifd0.set_image(ImageData::Strips {
+                rows_per_strip: 16,
+                strips: vec![px],
+            });
             let bytes = TiffWriter::default().write(&[ifd0]).unwrap();
             let p = probe_bytes("photo.tif", &bytes).unwrap();
-            assert_eq!((p.kind, p.preview_only, p.width, p.height), (MediaKind::Image, None, 24, 16), "make: {make}");
+            assert_eq!(
+                (p.kind, p.preview_only, p.width, p.height),
+                (MediaKind::Image, None, 24, 16),
+                "make: {make}"
+            );
             let (img, src) = load_bytes(&bytes, 24).unwrap();
-            assert_eq!((img.width, img.height, src.raw), (24, 16, false), "make: {make}");
+            assert_eq!(
+                (img.width, img.height, src.raw),
+                (24, 16, false),
+                "make: {make}"
+            );
         }
     }
 
@@ -2175,15 +3261,26 @@ mod tests {
     /// overwritten in the file) import as preview only with the JPEG's size, instead of failing.
     #[test]
     fn undecodable_container_with_a_preview_imports_as_preview_only() {
-        let px: Vec<u8> = (0..40 * 30).flat_map(|i| [(i % 251) as u8, 128, 200]).collect();
-        let mut jpeg = encode_jpeg(&EncodeImage::new(40, 30, 3, Samples::U8(&px)), 90, ChromaSubsampling::S444, &EncodeMeta::default()).unwrap();
+        let px: Vec<u8> = (0..40 * 30)
+            .flat_map(|i| [(i % 251) as u8, 128, 200])
+            .collect();
+        let mut jpeg = encode_jpeg(
+            &EncodeImage::new(40, 30, 3, Samples::U8(&px)),
+            90,
+            ChromaSubsampling::S444,
+            &EncodeMeta::default(),
+        )
+        .unwrap();
         jpeg[0] = 0x02;
         let mut f = b"\0MRM\0\x01\0\0".to_vec();
         f.extend(std::iter::repeat_n(0x11u8, 300));
         f.extend_from_slice(&jpeg);
         f.extend(std::iter::repeat_n(0x22u8, 300));
         let p = probe_bytes("A.MRW", &f).unwrap();
-        assert_eq!((p.kind, p.format.as_str(), p.width, p.height), (MediaKind::Raw, "MRW", 40, 30));
+        assert_eq!(
+            (p.kind, p.format.as_str(), p.width, p.height),
+            (MediaKind::Raw, "MRW", 40, 30)
+        );
         assert!(p.preview_only.is_some_and(|w| w.contains("Mrw")));
         let (img, src) = load_bytes(&f, 20).unwrap();
         assert_eq!((img.width, img.height, src.raw), (20, 15, false));
@@ -2197,8 +3294,16 @@ mod tests {
     #[test]
     fn uncompressed_leaf_mos_imports_as_a_preview_only_raw() {
         use lightcraft_tiff::{IfdBuilder, ImageData, TiffWriter, Value, tags as t};
-        let px: Vec<u8> = (0..40 * 30).flat_map(|i| [(i % 251) as u8, 128, 200]).collect();
-        let jpeg = encode_jpeg(&EncodeImage::new(40, 30, 3, Samples::U8(&px)), 90, ChromaSubsampling::S444, &EncodeMeta::default()).unwrap();
+        let px: Vec<u8> = (0..40 * 30)
+            .flat_map(|i| [(i % 251) as u8, 128, 200])
+            .collect();
+        let jpeg = encode_jpeg(
+            &EncodeImage::new(40, 30, 3, Samples::U8(&px)),
+            90,
+            ChromaSubsampling::S444,
+            &EncodeMeta::default(),
+        )
+        .unwrap();
         let mos = |leaf_data: bool| {
             let mut ifd0 = IfdBuilder::new();
             ifd0.set(t::IMAGE_WIDTH, Value::Long(vec![16]));
@@ -2207,20 +3312,33 @@ mod tests {
             ifd0.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![1]));
             ifd0.set(t::PHOTOMETRIC, Value::Short(vec![1]));
             ifd0.set(t::COMPRESSION, Value::Short(vec![1]));
-            ifd0.set_image(ImageData::Tiles { tile_width: 16, tile_height: 12, tiles: vec![vec![0x30; 16 * 12 * 2]] });
+            ifd0.set_image(ImageData::Tiles {
+                tile_width: 16,
+                tile_height: 12,
+                tiles: vec![vec![0x30; 16 * 12 * 2]],
+            });
             if leaf_data {
-                ifd0.set(0x8606, Value::Undefined([&b"PKTS\0\0\0\x01"[..], &jpeg].concat()));
+                ifd0.set(
+                    0x8606,
+                    Value::Undefined([&b"PKTS\0\0\0\x01"[..], &jpeg].concat()),
+                );
             }
             TiffWriter::default().write(&[ifd0]).unwrap()
         };
         let p = probe_bytes("aptus22.mos", &mos(true)).unwrap();
-        assert_eq!((p.kind, p.format.as_str(), p.width, p.height), (MediaKind::Raw, "MOS", 40, 30));
+        assert_eq!(
+            (p.kind, p.format.as_str(), p.width, p.height),
+            (MediaKind::Raw, "MOS", 40, 30)
+        );
         assert!(p.preview_only.is_some_and(|why| !why.is_empty()));
         let (img, src) = load_bytes(&mos(true), 20).unwrap();
         assert_eq!((img.width, img.height, src.raw), (20, 15, false));
         // the same grey image without Leaf's block is an ordinary 16-bit TIFF
         let plain = probe_bytes("grey.tif", &mos(false)).unwrap();
-        assert_eq!((plain.kind, plain.preview_only, plain.width, plain.height), (MediaKind::Image, None, 16, 12));
+        assert_eq!(
+            (plain.kind, plain.preview_only, plain.width, plain.height),
+            (MediaKind::Image, None, 16, 12)
+        );
     }
 
     /// A GoPro GPR (DNG with VC-5 coded data, no preview anywhere) still imports, described from its
@@ -2239,12 +3357,22 @@ mod tests {
         ifd.set(t::DNG_VERSION, Value::Byte(vec![1, 4, 0, 0]));
         ifd.set(t::CFA_REPEAT_PATTERN_DIM, Value::Short(vec![2, 2]));
         ifd.set(t::CFA_PATTERN_EP, Value::Byte(vec![0, 1, 1, 2]));
-        ifd.set_image(ImageData::Tiles { tile_width: 32, tile_height: 16, tiles: vec![vec![0x5au8; 400]] });
+        ifd.set_image(ImageData::Tiles {
+            tile_width: 32,
+            tile_height: 16,
+            tiles: vec![vec![0x5au8; 400]],
+        });
         let f = TiffWriter::default().write(&[ifd]).unwrap();
         let p = probe_bytes("GOPR0001.GPR", &f).unwrap();
-        assert_eq!((p.kind, p.preview_only, p.width, p.height), (MediaKind::Raw, None, 32, 16));
+        assert_eq!(
+            (p.kind, p.preview_only, p.width, p.height),
+            (MediaKind::Raw, None, 32, 16)
+        );
         let e = load_bytes(&f, 16).unwrap_err();
-        assert!(e.contains("GoPro VC-5") && e.contains("not decoded yet"), "{e}");
+        assert!(
+            e.contains("GoPro VC-5") && e.contains("not decoded yet"),
+            "{e}"
+        );
     }
 
     /// Any failure of a recognised raw (not only an unsupported variant) can fall back to its preview;
@@ -2253,12 +3381,27 @@ mod tests {
     fn decode_failures_of_recognised_raws_may_fall_back_to_the_preview() {
         use lightcraft_raw::RawError;
         let cr3 = b"\0\0\0\x18ftypcrx \0\0\0\x01";
-        assert_eq!(preview_reason(b"x", RawError::Unsupported("x".into())), Ok("x".to_string()));
-        assert!(preview_reason(b"x", RawError::Corrupt("bad strip".into())).is_ok_and(|w| w.contains("bad strip")));
+        assert_eq!(
+            preview_reason(b"x", RawError::Unsupported("x".into())),
+            Ok("x".to_string())
+        );
+        assert!(
+            preview_reason(b"x", RawError::Corrupt("bad strip".into()))
+                .is_ok_and(|w| w.contains("bad strip"))
+        );
         assert!(preview_reason(b"x", RawError::Limit("too big")).is_ok());
-        assert!(preview_reason(b"x", RawError::Tiff(lightcraft_tiff::TiffError::MissingTag(256))).is_ok());
+        assert!(
+            preview_reason(
+                b"x",
+                RawError::Tiff(lightcraft_tiff::TiffError::MissingTag(256))
+            )
+            .is_ok()
+        );
         assert!(preview_reason(b"x", RawError::NotRaw).is_err());
-        assert!(preview_reason(cr3, RawError::Corrupt("bad".into())).is_ok_and(|w| w.starts_with("CR3 ")));
+        assert!(
+            preview_reason(cr3, RawError::Corrupt("bad".into()))
+                .is_ok_and(|w| w.starts_with("CR3 "))
+        );
     }
 
     #[test]
@@ -2269,7 +3412,12 @@ mod tests {
         let path = dir.join("a.cr3");
         std::fs::write(&path, cr3_with_preview(96, 64)).unwrap();
         let mut s = crate::Session::new().with_fs();
-        let r = s.execute("library.import", &serde_json::json!({"paths": [path.to_string_lossy()]})).unwrap();
+        let r = s
+            .execute(
+                "library.import",
+                &serde_json::json!({"paths": [path.to_string_lossy()]}),
+            )
+            .unwrap();
         let id = lightcraft_catalog::PhotoId(r["imported"][0].as_u64().unwrap());
         // loupe: an unedited raw opens on its embedded preview…
         let q = s.quick_view_job(id, 1600, true).unwrap().run();
@@ -2287,13 +3435,24 @@ mod tests {
         let q = s.quick_thumb_job(&job).unwrap().run();
         assert_eq!((q.quick, q.key), (Some(QuickSource::Embedded), job.key));
         drop(job.clone().run());
-        assert_eq!(s.quick_thumb_job(&job).unwrap().run().quick, Some(QuickSource::Cached));
+        assert_eq!(
+            s.quick_thumb_job(&job).unwrap().run().quick,
+            Some(QuickSource::Cached)
+        );
         // an edited raw: no embedded stand-in (it wouldn't show the edit)
-        s.execute("library.select", &serde_json::json!({"ids": [id.0]})).unwrap();
-        s.execute("develop.set", &serde_json::json!({"control": "light.exposure", "value": 1.0})).unwrap();
+        s.execute("library.select", &serde_json::json!({"ids": [id.0]}))
+            .unwrap();
+        s.execute(
+            "develop.set",
+            &serde_json::json!({"control": "light.exposure", "value": 1.0}),
+        )
+        .unwrap();
         let job = s.thumb_job(id, 128).unwrap();
         assert!(s.quick_thumb_job(&job).is_none());
-        assert_eq!(s.quick_view_job(id, 1600, true).unwrap().run().quick, Some(QuickSource::Small));
+        assert_eq!(
+            s.quick_view_job(id, 1600, true).unwrap().run().quick,
+            Some(QuickSource::Small)
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

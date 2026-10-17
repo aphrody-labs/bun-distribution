@@ -19,46 +19,46 @@ use crate::common::responses::user_details_light::UserDetailsLight;
 /// Pagination only — the media class is fixed by the endpoint.
 #[derive(Deserialize, IntoParams)]
 pub struct ListSessionMediaFilesByTypeQueryParams {
-  pub sort_ascending: Option<bool>,
-  pub page_size: Option<usize>,
-  pub cursor: Option<String>,
-  pub cursor_is_reversed: Option<bool>,
+    pub sort_ascending: Option<bool>,
+    pub page_size: Option<usize>,
+    pub cursor: Option<String>,
+    pub cursor_is_reversed: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct SessionMediaFileInfo {
-  /// Primary key identifier
-  pub token: MediaFileToken,
+    /// Primary key identifier
+    pub token: MediaFileToken,
 
-  /// The coarse-grained class of media file.
-  /// Fixed per endpoint (`mesh` or `splat`).
-  pub media_class: MediaFileClass,
+    /// The coarse-grained class of media file.
+    /// Fixed per endpoint (`mesh` or `splat`).
+    pub media_class: MediaFileClass,
 
-  /// Type of media will dictate which fields are populated and what
-  /// the frontend should display (eg. video player vs audio player).
-  /// This is closer in meaning to a "mime type".
-  pub media_type: MediaFileType,
+    /// Type of media will dictate which fields are populated and what
+    /// the frontend should display (eg. video player vs audio player).
+    /// This is closer in meaning to a "mime type".
+    pub media_type: MediaFileType,
 
-  /// Rich CDN links to the media, including thumbnails, previews, and more.
-  pub media_links: MediaLinks,
+    /// Rich CDN links to the media, including thumbnails, previews, and more.
+    pub media_links: MediaLinks,
 
-  /// Information about the cover image. Many media files do not require a cover image,
-  /// e.g. image files, video files with thumbnails, audio files, etc.
-  /// 3D files require them.
-  pub cover_image: MediaFileCoverImageDetails,
+    /// Information about the cover image. Many media files do not require a cover image,
+    /// e.g. image files, video files with thumbnails, audio files, etc.
+    /// 3D files require them.
+    pub cover_image: MediaFileCoverImageDetails,
 
-  /// User info
-  pub maybe_creator_user: Option<UserDetailsLight>,
+    /// User info
+    pub maybe_creator_user: Option<UserDetailsLight>,
 
-  pub creator_set_visibility: Visibility,
+    pub creator_set_visibility: Visibility,
 
-  /// The generation's prompt record, when there is one. Clients resolve it
-  /// to display the original prompt and model.
-  pub maybe_prompt_token: Option<PromptToken>,
+    /// The generation's prompt record, when there is one. Clients resolve it
+    /// to display the original prompt and model.
+    pub maybe_prompt_token: Option<PromptToken>,
 
-  /// The name or title of the media file (optional)
-  pub maybe_title: Option<String>,
+    /// The name or title of the media file (optional)
+    pub maybe_title: Option<String>,
 
-  pub created_at: DateTime<Utc>,
-  pub updated_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

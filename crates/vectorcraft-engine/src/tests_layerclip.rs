@@ -7,11 +7,19 @@ use super::tests_clip::{assert_outputs_agree, hit, id_of, opaque, render, select
 use super::*;
 
 fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64) -> NodeId {
-    id_of(&s.execute("shape.rectangle", &json!({"x": x, "y": y, "width": w, "height": h})).unwrap())
+    id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": y, "width": w, "height": h}),
+        )
+        .unwrap(),
+    )
 }
 
 fn toggle(s: &mut Session) -> bool {
-    s.execute("layer.clippingMask.toggle", &json!({})).unwrap()["clip"].as_bool().unwrap()
+    s.execute("layer.clippingMask.toggle", &json!({})).unwrap()["clip"]
+        .as_bool()
+        .unwrap()
 }
 
 fn layer(s: &Session) -> vectorcraft_doc::Node {
@@ -37,7 +45,10 @@ fn the_top_object_clips_the_layer_and_pressing_again_releases_it() {
     // The clipping path loses its paint and goes to the bottom, so art added on top is clipped.
     let c = &l.children().unwrap()[0];
     assert_eq!(c.id, clip);
-    assert!(c.appearance.fill_paint().is_none() && matches!(c.kind, NodeKind::Path { clipping: true, .. }));
+    assert!(
+        c.appearance.fill_paint().is_none()
+            && matches!(c.kind, NodeKind::Path { clipping: true, .. })
+    );
     let r = render(&s);
     assert!(opaque(&r, 50, 50) && !opaque(&r, 10, 10));
     // Clicks only reach the art inside the clip.
@@ -51,7 +62,16 @@ fn the_top_object_clips_the_layer_and_pressing_again_releases_it() {
     let l = layer(&s);
     assert!(!l.clips());
     let c = &l.children().unwrap()[0];
-    assert!(c.appearance.fill_paint().is_none() && matches!(c.kind, NodeKind::Path { clipping: false, .. }));
+    assert!(
+        c.appearance.fill_paint().is_none()
+            && matches!(
+                c.kind,
+                NodeKind::Path {
+                    clipping: false,
+                    ..
+                }
+            )
+    );
     let r = render(&s);
     assert!(opaque(&r, 10, 10) && opaque(&r, 50, 90));
 }
@@ -63,7 +83,11 @@ fn making_a_layer_clipping_mask_is_one_undo_step() {
     let before = layer(&s);
     toggle(&mut s);
     s.execute("edit.undo", &json!({})).unwrap();
-    assert_eq!(layer(&s), before, "the clip path is back on top with its paint");
+    assert_eq!(
+        layer(&s),
+        before,
+        "the clip path is back on top with its paint"
+    );
     s.execute("edit.redo", &json!({})).unwrap();
     assert!(layer(&s).clips());
     assert_eq!(layer(&s).children().unwrap()[0].id, clip);
@@ -79,7 +103,11 @@ fn layer_clipping_masks_save_and_export() {
     assert!(back.layers[0].clips());
     assert_eq!(back, **doc);
     // An unclipped layer writes no `clip` key (older files stay as they were).
-    let plain = String::from_utf8(vectorcraft_format::save(&session().doc().unwrap().doc, false)).unwrap();
+    let plain = String::from_utf8(vectorcraft_format::save(
+        &session().doc().unwrap().doc,
+        false,
+    ))
+    .unwrap();
     assert!(!plain.contains("\"clip\""), "{plain}");
     // SVG and PDF clip the same way as the canvas.
     assert_outputs_agree(&mut s, &[(50, 50), (10, 10), (30, 30), (80, 80), (74, 26)]);
@@ -111,12 +139,31 @@ fn the_top_object_must_be_able_to_clip() {
     s.execute("object.group", &json!({})).unwrap();
     s.execute("select.none", &json!({})).unwrap();
     let before = layer(&s);
-    assert!(s.execute("layer.clippingMask.toggle", &json!({})).is_err(), "a group on top");
+    assert!(
+        s.execute("layer.clippingMask.toggle", &json!({})).is_err(),
+        "a group on top"
+    );
     assert_eq!(layer(&s), before);
     // An explicit id picks the layer even with a group selected.
     let l = before.id;
-    let sub = id_of(&s.execute("layer.newSublayer", &json!({"parent": l.0})).unwrap());
-    assert_eq!(s.doc().unwrap().doc.node(l).unwrap().children().unwrap().last().unwrap().id, sub, "on top of the layer's contents");
+    let sub = id_of(
+        &s.execute("layer.newSublayer", &json!({"parent": l.0}))
+            .unwrap(),
+    );
+    assert_eq!(
+        s.doc()
+            .unwrap()
+            .doc
+            .node(l)
+            .unwrap()
+            .children()
+            .unwrap()
+            .last()
+            .unwrap()
+            .id,
+        sub,
+        "on top of the layer's contents"
+    );
     let err = s.execute("layer.clippingMask.toggle", &json!({"id": sub.0}));
     assert!(err.is_err(), "an empty sublayer has nothing to clip by");
 }

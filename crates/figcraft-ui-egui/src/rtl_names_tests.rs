@@ -7,22 +7,39 @@ use super::*;
 use crate::theme::regular;
 
 fn frame(ctx: &egui::Context, events: Vec<Event>, mut f: impl FnMut(&mut Ui)) {
-    let input = RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))), events, ..Default::default() };
+    let input = RawInput {
+        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))),
+        events,
+        ..Default::default()
+    };
     ctx.run_ui(input, |ui| f(ui)).textures_delta.clear();
 }
 
 fn key(k: Key, shift: bool) -> Event {
-    Event::Key { key: k, physical_key: None, pressed: true, repeat: false, modifiers: if shift { Modifiers::SHIFT } else { Modifiers::NONE } }
+    Event::Key {
+        key: k,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: if shift {
+            Modifiers::SHIFT
+        } else {
+            Modifiers::NONE
+        },
+    }
 }
 
 fn caret(ctx: &egui::Context, id: Id) -> (usize, usize) {
-    let r = egui::TextEdit::load_state(ctx, id).and_then(|s| s.cursor.char_range()).unwrap_or_default();
+    let r = egui::TextEdit::load_state(ctx, id)
+        .and_then(|s| s.cursor.char_range())
+        .unwrap_or_default();
     (r.primary.index.0, r.secondary.index.0)
 }
 
 fn set_caret(ctx: &egui::Context, id: Id, i: usize) {
     let mut s = egui::TextEdit::load_state(ctx, id).unwrap_or_default();
-    s.cursor.set_char_range(Some(CCursorRange::one(CCursor::new(i))));
+    s.cursor
+        .set_char_range(Some(CCursorRange::one(CCursor::new(i))));
     s.store(ctx, id);
 }
 
@@ -31,7 +48,13 @@ fn names_elide_at_their_end() {
     let ctx = egui::Context::default();
     frame(&ctx, vec![], |ui| {
         let p = ui.painter();
-        let g = name_galley(p, "Rectangle with a rather long name", regular(11.0), Color32::WHITE, 60.0);
+        let g = name_galley(
+            p,
+            "Rectangle with a rather long name",
+            regular(11.0),
+            Color32::WHITE,
+            60.0,
+        );
         assert!(g.elided);
         assert!(g.size().x <= 61.0);
         let g = name_galley(p, "Frame", regular(11.0), Color32::WHITE, 200.0);
@@ -73,7 +96,10 @@ fn rename_caret_moves_visually() {
     // Without Shift a selection collapses to its side.
     run(vec![key(Key::ArrowLeft, false)], &mut text);
     assert_eq!(caret(&ctx, id), (6, 6));
-    run(vec![key(Key::ArrowLeft, false), key(Key::ArrowLeft, false)], &mut text);
+    run(
+        vec![key(Key::ArrowLeft, false), key(Key::ArrowLeft, false)],
+        &mut text,
+    );
     assert_eq!(caret(&ctx, id).0, 3);
     // Typing still goes in at the caret.
     run(vec![Event::Text("ד".into())], &mut text);
@@ -111,12 +137,25 @@ fn clicks_place_the_caret_by_what_is_shown() {
     // The text's right end is its start.
     let galley = ctx.fonts_mut(|f| f.layout_no_wrap("םולש".into(), regular(11.0), Color32::WHITE));
     let right = Pos2::new(rect.min.x + galley.size().x - 1.0, rect.center().y);
-    let press = |p: Pos2, pressed: bool| Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
-    run(vec![Event::PointerMoved(right), press(right, true)], &mut text, &mut rect);
+    let press = |p: Pos2, pressed: bool| Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    };
+    run(
+        vec![Event::PointerMoved(right), press(right, true)],
+        &mut text,
+        &mut rect,
+    );
     run(vec![press(right, false)], &mut text, &mut rect);
     assert_eq!(caret(&ctx, id).0, 0);
     let left = Pos2::new(rect.min.x + 1.0, rect.center().y);
-    run(vec![Event::PointerMoved(left), press(left, true)], &mut text, &mut rect);
+    run(
+        vec![Event::PointerMoved(left), press(left, true)],
+        &mut text,
+        &mut rect,
+    );
     run(vec![press(left, false)], &mut text, &mut rect);
     assert_eq!(caret(&ctx, id).0, 4);
 }
@@ -136,14 +175,27 @@ fn words_for_double_click() {
 fn shown_glyphs_keep_the_visual_order() {
     let ctx = egui::Context::default();
     frame(&ctx, vec![], |ui| {
-        for name in
-            ["\u{05D0}\u{05D1}", "abc \u{05D0}\u{05D1}\u{05D2} (1)", "\u{0633}\u{0644}\u{0627}\u{0645} \u{0639}\u{0644}\u{064A}\u{0643}\u{0645}"]
-        {
+        for name in [
+            "\u{05D0}\u{05D1}",
+            "abc \u{05D0}\u{05D1}\u{05D2} (1)",
+            "\u{0633}\u{0644}\u{0627}\u{0645} \u{0639}\u{0644}\u{064A}\u{0643}\u{0645}",
+        ] {
             let v = display::visual_line(name);
             let g = visual_galley(ui.painter(), &v, &regular(11.0), Color32::WHITE);
-            let glyphs: Vec<(char, f32)> = g.rows.iter().flat_map(|r| r.row.glyphs.iter().map(|gl| (gl.chr, gl.pos.x))).collect();
-            assert_eq!(glyphs.iter().map(|g| g.0).collect::<String>(), v.text, "{name}");
-            assert!(glyphs.windows(2).all(|w| w[0].1 <= w[1].1), "{name}: left to right");
+            let glyphs: Vec<(char, f32)> = g
+                .rows
+                .iter()
+                .flat_map(|r| r.row.glyphs.iter().map(|gl| (gl.chr, gl.pos.x)))
+                .collect();
+            assert_eq!(
+                glyphs.iter().map(|g| g.0).collect::<String>(),
+                v.text,
+                "{name}"
+            );
+            assert!(
+                glyphs.windows(2).all(|w| w[0].1 <= w[1].1),
+                "{name}: left to right"
+            );
         }
     });
 }

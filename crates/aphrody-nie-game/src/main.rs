@@ -212,7 +212,10 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     // La racine du jeu vaut celle passée en argument, sinon celle que le contexte désigne. Elle
     // est résolue une fois ici plutôt qu'à chaque site d'appel.
-    let game_dir = cli.game_dir.clone().unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
+    let game_dir = cli
+        .game_dir
+        .clone()
+        .unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
     info!("racine du jeu : {}", game_dir.display());
 
     // Mode --play : le jeu jouable. Traité en premier — il ne consomme aucune des options de
@@ -294,7 +297,12 @@ fn main() -> Result<()> {
 
     // Render-from-runtime : rogne une région nommée → pixels réels (PNG si --capture).
     if let Some(ref region) = cli.g4tx_region {
-        return cmd_g4tx_region(&game_dir, cli.g4tx.as_deref(), region, cli.capture.as_deref());
+        return cmd_g4tx_region(
+            &game_dir,
+            cli.g4tx.as_deref(),
+            region,
+            cli.capture.as_deref(),
+        );
     }
 
     // Diagnostic C4/D1.d : rend du texte depuis l'atlas de police bitmap réel.
@@ -316,8 +324,10 @@ fn main() -> Result<()> {
         return cmd_compose_layout(&game_dir, &cli.compose_layout, png);
     }
 
-    let n_modes =
-        [cli.capture.is_some(), cli.window, cli.list.is_some()].iter().filter(|&&x| x).count();
+    let n_modes = [cli.capture.is_some(), cli.window, cli.list.is_some()]
+        .iter()
+        .filter(|&&x| x)
+        .count();
     if n_modes == 0 {
         bail!("préciser --capture <PNG>, --window ou --list <N>");
     }
@@ -331,7 +341,10 @@ fn main() -> Result<()> {
 
     let (vfs_path, width, height, rgba) = charger_texture(&game_dir, cli.g4tx.as_deref())?;
 
-    info!("texture chargée : {vfs_path}  {width}x{height}  {} octets RGBA8", rgba.len());
+    info!(
+        "texture chargée : {vfs_path}  {width}x{height}  {} octets RGBA8",
+        rgba.len()
+    );
 
     if let Some(png_out) = cli.capture {
         return cmd_capture(&rgba, width, height, &png_out);
@@ -377,21 +390,21 @@ fn tenter_vfs(data_dir: &Path) -> Option<Vfs> {
         Ok((vfs, Ok(()))) => {
             info!("VFS monté : {} assets", vfs.asset_count());
             Some(vfs)
-        },
+        }
         Ok((_, Err(e))) => {
             warn!(
                 "VFS init échoué (format cpk_list.cfg.bin incompatible : {e}), \
                  repli sur scan CPK direct"
             );
             None
-        },
+        }
         Err(_) => {
             warn!(
                 "VFS init panique intercepté (bug cfgbin.rs parse_t2b overflow, \
                  build debug) — repli sur scan CPK direct"
             );
             None
-        },
+        }
     }
 }
 
@@ -433,7 +446,11 @@ fn scanner_cpks_g4tx(game_dir: &Path) -> Result<Vec<CpkAsset>> {
         .collect();
     cpk_fichiers.sort();
 
-    info!("scan CPK direct : {} archives dans {}", cpk_fichiers.len(), packs_dir.display());
+    info!(
+        "scan CPK direct : {} archives dans {}",
+        cpk_fichiers.len(),
+        packs_dir.display()
+    );
 
     // Taille de lecture partielle : 128 Kio suffisent pour le header + TOC des CPK IEVR
     // (sondé : TOC à offset ~2048, taille ~1416 octets → total ~3.5 Kio seulement).
@@ -444,7 +461,11 @@ fn scanner_cpks_g4tx(game_dir: &Path) -> Result<Vec<CpkAsset>> {
     let mut cpk_scanned = 0usize;
 
     for cpk_path in &cpk_fichiers {
-        let basename = cpk_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let basename = cpk_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
 
         // Lecture partielle du CPK (header + TOC uniquement)
         let donnees = match lire_premiers_octets(cpk_path, LECTURE_PARTIELLE) {
@@ -452,7 +473,7 @@ fn scanner_cpks_g4tx(game_dir: &Path) -> Result<Vec<CpkAsset>> {
             Err(e) => {
                 warn!("skip {basename}: {e}");
                 continue;
-            },
+            }
         };
 
         let reader = match CpkReader::new(&donnees, &basename) {
@@ -466,7 +487,10 @@ fn scanner_cpks_g4tx(game_dir: &Path) -> Result<Vec<CpkAsset>> {
                 continue;
             }
             let path = format!("{}/{}", entry.directory, entry.filename);
-            let asset = CpkAsset { internal_path: path.clone(), cpk_basename: basename.clone() };
+            let asset = CpkAsset {
+                internal_path: path.clone(),
+                cpk_basename: basename.clone(),
+            };
             if est_chemin_prioritaire(&path) {
                 prioritaires.push(asset);
             } else {
@@ -494,7 +518,9 @@ fn lire_premiers_octets(path: &Path, max_bytes: usize) -> Result<Vec<u8>> {
     use std::io::Read;
     let mut f = std::fs::File::open(path).with_context(|| format!("open {}", path.display()))?;
     let mut buf = vec![0u8; max_bytes];
-    let lus = f.read(&mut buf).with_context(|| format!("read {}", path.display()))?;
+    let lus = f
+        .read(&mut buf)
+        .with_context(|| format!("read {}", path.display()))?;
     buf.truncate(lus);
     Ok(buf)
 }
@@ -503,7 +529,10 @@ fn lire_premiers_octets(path: &Path, max_bytes: usize) -> Result<Vec<u8>> {
 fn extraire_g4tx_depuis_cpk(game_dir: &Path, asset: &CpkAsset) -> Result<Vec<u8>> {
     use aphrody_nie_formats::cpk::CpkReader;
 
-    let cpk_path = game_dir.join("data").join("packs").join(&asset.cpk_basename);
+    let cpk_path = game_dir
+        .join("data")
+        .join("packs")
+        .join(&asset.cpk_basename);
 
     info!("lecture CPK complet : {}", asset.cpk_basename);
     let donnees = std::fs::read(&cpk_path)
@@ -521,10 +550,17 @@ fn extraire_g4tx_depuis_cpk(game_dir: &Path, asset: &CpkAsset) -> Result<Vec<u8>
         .iter()
         .find(|e| full_path(e) == asset.internal_path)
         .or_else(|| {
-            reader.entries.iter().find(|e| full_path(e).eq_ignore_ascii_case(&asset.internal_path))
+            reader
+                .entries
+                .iter()
+                .find(|e| full_path(e).eq_ignore_ascii_case(&asset.internal_path))
         })
         .ok_or_else(|| {
-            anyhow::anyhow!("{} non trouvé dans {}", asset.internal_path, asset.cpk_basename)
+            anyhow::anyhow!(
+                "{} non trouvé dans {}",
+                asset.internal_path,
+                asset.cpk_basename
+            )
         })?;
 
     reader
@@ -553,7 +589,9 @@ fn charger_texture(
         };
 
         info!("lecture VFS : {chemin}");
-        let donnees = vfs.read(&chemin).with_context(|| format!("lecture VFS : {chemin}"))?;
+        let donnees = vfs
+            .read(&chemin)
+            .with_context(|| format!("lecture VFS : {chemin}"))?;
         return decoder_g4tx_bytes(&donnees, &chemin);
     }
 
@@ -567,7 +605,10 @@ fn charger_texture(
             .find(|a| a.internal_path == p || a.internal_path.ends_with(p))
             .cloned()
             .ok_or_else(|| {
-                anyhow::anyhow!("chemin '{p}' non trouvé dans les CPK ({} assets)", assets.len())
+                anyhow::anyhow!(
+                    "chemin '{p}' non trouvé dans les CPK ({} assets)",
+                    assets.len()
+                )
             })?
     } else {
         assets
@@ -576,7 +617,10 @@ fn charger_texture(
             .ok_or_else(|| anyhow::anyhow!("aucun .g4tx trouvé dans les CPK"))?
     };
 
-    info!("g4tx choisi : {} (CPK : {})", asset.internal_path, asset.cpk_basename);
+    info!(
+        "g4tx choisi : {} (CPK : {})",
+        asset.internal_path, asset.cpk_basename
+    );
     let donnees = extraire_g4tx_depuis_cpk(game_dir, &asset)?;
     decoder_g4tx_bytes(&donnees, &asset.internal_path)
 }
@@ -592,7 +636,10 @@ fn decoder_g4tx_bytes(donnees: &[u8], chemin: &str) -> Result<(String, u32, u32,
         .max_by_key(|t| (t.width as u64) * (t.height as u64))
         .ok_or_else(|| anyhow::anyhow!("aucune texture DDS dans {chemin}"))?;
 
-    info!("texture : \"{}\" id={} {}x{} DDS", tex.name, tex.id, tex.width, tex.height);
+    info!(
+        "texture : \"{}\" id={} {}x{} DDS",
+        tex.name, tex.id, tex.width, tex.height
+    );
 
     let (w, h, rgba) = g4tx_decode::decode_texture_rgba(donnees, tex)
         .ok_or_else(|| anyhow::anyhow!("échec décodage DDS dans {chemin}"))?;
@@ -622,7 +669,10 @@ fn obtenir_g4tx_bytes(game_dir: &Path, path: &str) -> Result<(String, Vec<u8>)> 
         .find(|a| a.internal_path == path || a.internal_path.ends_with(path))
         .cloned()
         .ok_or_else(|| {
-            anyhow::anyhow!("chemin '{path}' non trouvé (VFS + {} CPK assets)", assets.len())
+            anyhow::anyhow!(
+                "chemin '{path}' non trouvé (VFS + {} CPK assets)",
+                assets.len()
+            )
         })?;
     let donnees = extraire_g4tx_depuis_cpk(game_dir, &asset)?;
     Ok((asset.internal_path, donnees))
@@ -658,7 +708,10 @@ fn cmd_g4tx_regions(game_dir: &Path, g4tx_path: Option<&str>) -> Result<()> {
             t.sub_textures.len()
         );
         for s in &t.sub_textures {
-            println!("  {:<30} x={:>5} y={:>5}  {:>4}x{:<4}", s.name, s.x, s.y, s.width, s.height);
+            println!(
+                "  {:<30} x={:>5} y={:>5}  {:>4}x{:<4}",
+                s.name, s.x, s.y, s.width, s.height
+            );
             n += 1;
         }
     }
@@ -751,8 +804,16 @@ fn cmd_render_text(game_dir: &Path, text: &str, capture: Option<&Path>) -> Resul
         i32::from(metrics.dims.ascent),
         [255, 255, 255, 255],
     );
-    let opaques = canvas.as_chunks::<4>().0.iter().filter(|p| p[3] != 0).count();
-    let resolved = text.chars().filter(|c| metrics.glyph(*c as u32).is_some()).count();
+    let opaques = canvas
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|p| p[3] != 0)
+        .count();
+    let resolved = text
+        .chars()
+        .filter(|c| metrics.glyph(*c as u32).is_some())
+        .count();
     println!(
         "rendu texte {text:?} : atlas '{}' {aw}x{ah} ({} glyphes en table) ; {resolved}/{} codepoints \
          résolus ; avance {advance}px ; {opaques} px opaques",
@@ -767,7 +828,12 @@ fn cmd_render_text(game_dir: &Path, text: &str, capture: Option<&Path>) -> Resul
             &canvas,
             cw,
             ch,
-            (0, 0, w.min(i16::MAX as u32) as i16, ch.min(i16::MAX as u32) as i16),
+            (
+                0,
+                0,
+                w.min(i16::MAX as u32) as i16,
+                ch.min(i16::MAX as u32) as i16,
+            ),
         )
         .unwrap_or((cw, ch, canvas));
         let png = encoder_rgba_png(&rgba, ow, oh)?;
@@ -825,7 +891,11 @@ fn cmd_build_region_index(game_dir: &Path, out: &Path) -> Result<()> {
         .with_context(|| format!("lecture du manifeste d'atlas {}", manifest.display()))?;
     // NB : les chemins VFS commencent par `#` (`#/menu/...`) — on ne peut PAS filtrer les commentaires
     // par `#`. Un atlas valide est une ligne contenant `.g4tx` ; tout le reste (en-tête) est ignoré.
-    let paths: Vec<&str> = liste.lines().map(str::trim).filter(|l| l.contains(".g4tx")).collect();
+    let paths: Vec<&str> = liste
+        .lines()
+        .map(str::trim)
+        .filter(|l| l.contains(".g4tx"))
+        .collect();
 
     let mut index: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
     let mut collisions = 0usize;
@@ -850,16 +920,16 @@ fn cmd_build_region_index(game_dir: &Path, out: &Path) -> Result<()> {
                             }
                         }
                     }
-                },
+                }
                 Err(e) => {
                     ko += 1;
                     warn!("parse g4tx '{logical}' : {e}");
-                },
+                }
             },
             Err(e) => {
                 ko += 1;
                 warn!("chargement '{logical}' : {e}");
-            },
+            }
         }
     }
 
@@ -942,7 +1012,11 @@ fn cmd_compose_layout(game_dir: &Path, json_in: &[PathBuf], png_out: &Path) -> R
             octets.insert(cle, donnees);
         }
     }
-    let police = if layout.has_text_labels() { load_menu_font(game_dir) } else { None };
+    let police = if layout.has_text_labels() {
+        load_menu_font(game_dir)
+    } else {
+        None
+    };
     let assets = AssetsDuJeu { octets, police };
 
     let composee = layout.compose(&assets, W, H);
@@ -950,7 +1024,13 @@ fn cmd_compose_layout(game_dir: &Path, json_in: &[PathBuf], png_out: &Path) -> R
 
     let png = encoder_rgba_png(&composee.rgba, W, H)?;
     std::fs::write(png_out, &png).with_context(|| format!("écriture {}", png_out.display()))?;
-    let opaques = composee.rgba.as_chunks::<4>().0.iter().filter(|p| p[3] != 0).count();
+    let opaques = composee
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|p| p[3] != 0)
+        .count();
     println!(
         "compose-layout : {} éléments ({} sprites statiques + {} régions runtime \
          + {} régions par hash + {} libellés texte) sur {}×{} ; {opaques} px opaques -> {} ({} octets)",
@@ -1027,7 +1107,11 @@ fn cmd_list(game_dir: &Path, n: usize) -> Result<()> {
         generaux.sort();
         let chemins: Vec<String> = prioritaires.into_iter().chain(generaux).take(n).collect();
 
-        println!("=== {} fichiers .g4tx (VFS, sur {} demandés) ===", chemins.len(), n);
+        println!(
+            "=== {} fichiers .g4tx (VFS, sur {} demandés) ===",
+            chemins.len(),
+            n
+        );
         for chemin in &chemins {
             match vfs.read(chemin) {
                 Ok(d) => match g4tx::parse(&d) {
@@ -1045,9 +1129,9 @@ fn cmd_list(game_dir: &Path, n: usize) -> Result<()> {
                                 } else {
                                     println!("{chemin}  (aucune texture)");
                                 }
-                            },
+                            }
                         }
-                    },
+                    }
                     Err(e) => println!("{chemin}  (parse erreur: {e})"),
                 },
                 Err(e) => println!("{chemin}  (lecture erreur: {e})"),
@@ -1060,7 +1144,11 @@ fn cmd_list(game_dir: &Path, n: usize) -> Result<()> {
     let assets = scanner_cpks_g4tx(game_dir)?;
     let selection: Vec<_> = assets.into_iter().take(n).collect();
 
-    println!("=== {} fichiers .g4tx (scan CPK direct, sur {} demandés) ===", selection.len(), n);
+    println!(
+        "=== {} fichiers .g4tx (scan CPK direct, sur {} demandés) ===",
+        selection.len(),
+        n
+    );
 
     for asset in &selection {
         // Extraction pour obtenir les dimensions
@@ -1078,20 +1166,26 @@ fn cmd_list(game_dir: &Path, n: usize) -> Result<()> {
                                 "{}  {}x{}  DDS  [{}]",
                                 asset.internal_path, t.width, t.height, asset.cpk_basename
                             )
-                        },
+                        }
                         None => {
-                            println!("{}  (non-DDS)  [{}]", asset.internal_path, asset.cpk_basename)
-                        },
+                            println!(
+                                "{}  (non-DDS)  [{}]",
+                                asset.internal_path, asset.cpk_basename
+                            )
+                        }
                     }
-                },
+                }
                 Err(e) => println!(
                     "{}  (parse erreur: {e})  [{}]",
                     asset.internal_path, asset.cpk_basename
                 ),
             },
             Err(e) => {
-                println!("{}  (lecture erreur: {e})  [{}]", asset.internal_path, asset.cpk_basename)
-            },
+                println!(
+                    "{}  (lecture erreur: {e})  [{}]",
+                    asset.internal_path, asset.cpk_basename
+                )
+            }
         }
     }
 
@@ -1239,7 +1333,11 @@ fn charger_gpu_texture(
     width: u32,
     height: u32,
 ) -> (wgpu::Texture, wgpu::TextureView, wgpu::Sampler) {
-    let extent = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+    let extent = wgpu::Extent3d {
+        width,
+        height,
+        depth_or_array_layers: 1,
+    };
 
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("g4tx_source"),
@@ -1289,8 +1387,14 @@ fn creer_bind_group(
         label: Some("texture_bind_group"),
         layout: bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(view) },
-            wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(sampler) },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(sampler),
+            },
         ],
     })
 }
@@ -1314,7 +1418,11 @@ fn cmd_capture(rgba: &[u8], width: u32, height: u32, png_out: &Path) -> Result<(
     let bind_group = creer_bind_group(&device, &bgl, &view, &sampler);
 
     // Render target hors-écran
-    let extent = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+    let extent = wgpu::Extent3d {
+        width,
+        height,
+        depth_or_array_layers: 1,
+    };
     let render_tex = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("render_target"),
         size: extent,
@@ -1328,8 +1436,9 @@ fn cmd_capture(rgba: &[u8], width: u32, height: u32, png_out: &Path) -> Result<(
     let render_view = render_tex.create_view(&wgpu::TextureViewDescriptor::default());
 
     // Rendu
-    let mut encoder = device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("capture_encoder") });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        label: Some("capture_encoder"),
+    });
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("capture_pass"),
@@ -1382,8 +1491,10 @@ fn cmd_capture(rgba: &[u8], width: u32, height: u32, png_out: &Path) -> Result<(
     readback.slice(..).map_async(wgpu::MapMode::Read, |_| {});
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
 
-    let mapped =
-        readback.slice(..).get_mapped_range().expect("readback buffer mapping must succeed");
+    let mapped = readback
+        .slice(..)
+        .get_mapped_range()
+        .expect("readback buffer mapping must succeed");
 
     // Suppression du padding ligne par ligne
     let unpadded_bpr = (4 * width) as usize;
@@ -1448,8 +1559,12 @@ fn cmd_play(max_frames: u32) -> Result<()> {
         if vfs.is_dump() { "dump" } else { "packs" },
         vfs.asset_count()
     );
-    let cfg = vfs.read(FONT_CFG).map_err(|e| anyhow::anyhow!("police {FONT_CFG} : {e:?}"))?;
-    let atlas = vfs.read(FONT_G4TX).map_err(|e| anyhow::anyhow!("atlas {FONT_G4TX} : {e:?}"))?;
+    let cfg = vfs
+        .read(FONT_CFG)
+        .map_err(|e| anyhow::anyhow!("police {FONT_CFG} : {e:?}"))?;
+    let atlas = vfs
+        .read(FONT_G4TX)
+        .map_err(|e| anyhow::anyhow!("atlas {FONT_G4TX} : {e:?}"))?;
     let police =
         aphrody_nie_app::Font::from_bytes(&cfg, &atlas).context("chargement de la police")?;
 
@@ -1484,7 +1599,10 @@ fn cmd_play(max_frames: u32) -> Result<()> {
 }
 
 fn cmd_window(rgba: &[u8], width: u32, height: u32, max_frames: u32) -> Result<()> {
-    info!("mode fenêtré : {}x{} pendant {} trames", width, height, max_frames);
+    info!(
+        "mode fenêtré : {}x{} pendant {} trames",
+        width, height, max_frames
+    );
     run_bevy_window(
         AppFenetre {
             rgba: rgba.to_vec(),
@@ -1542,9 +1660,7 @@ struct AppFenetre {
 
 fn setup_bevy_frame(
     mut commands: bevy::ecs::system::Commands,
-    mut images: bevy::ecs::system::ResMut<
-        bevy::asset::Assets<bevy::image::Image>,
-    >,
+    mut images: bevy::ecs::system::ResMut<bevy::asset::Assets<bevy::image::Image>>,
     mut host: bevy::ecs::system::NonSendMut<AppFenetre>,
 ) {
     use bevy::{
@@ -1556,7 +1672,11 @@ fn setup_bevy_frame(
     };
 
     let mut image = Image::new(
-        Extent3d { width: host.tex_width, height: host.tex_height, depth_or_array_layers: 1 },
+        Extent3d {
+            width: host.tex_width,
+            height: host.tex_height,
+            depth_or_array_layers: 1,
+        },
         TextureDimension::D2,
         host.rgba.clone(),
         TextureFormat::Rgba8UnormSrgb,
@@ -1572,15 +1692,9 @@ fn setup_bevy_frame(
 fn update_bevy_frame(
     mut host: bevy::ecs::system::NonSendMut<AppFenetre>,
     time: bevy::ecs::system::Res<bevy::time::Time>,
-    mut keyboard: bevy::ecs::message::MessageReader<
-        bevy::input::keyboard::KeyboardInput,
-    >,
-    mut focus_lost: bevy::ecs::message::MessageReader<
-        bevy::input::keyboard::KeyboardFocusLost,
-    >,
-    mut images: bevy::ecs::system::ResMut<
-        bevy::asset::Assets<bevy::image::Image>,
-    >,
+    mut keyboard: bevy::ecs::message::MessageReader<bevy::input::keyboard::KeyboardInput>,
+    mut focus_lost: bevy::ecs::message::MessageReader<bevy::input::keyboard::KeyboardFocusLost>,
+    mut images: bevy::ecs::system::ResMut<bevy::asset::Assets<bevy::image::Image>>,
     mut exits: bevy::ecs::message::MessageWriter<bevy::app::AppExit>,
 ) {
     use bevy::input::ButtonState;
@@ -1743,13 +1857,21 @@ impl Jeu {
         // Un échec ici n'est pas fatal : l'écran d'information reste affiché, et la raison
         // part dans le journal plutôt que sous les yeux de la joueuse.
         let lignes = match quoi {
-            Onglet::Effectif => aphrody_nie_app::effectif::charger(&self.vfs, 200, "fr")
-                .map(|v| v.iter().map(aphrody_nie_app::effectif::Joueur::ligne).collect()),
-            Onglet::Objets => aphrody_nie_app::effectif::charger_objets(&self.vfs, 200, "fr")
-                .map(|v| v.iter().map(aphrody_nie_app::effectif::Objet::ligne).collect()),
+            Onglet::Effectif => aphrody_nie_app::effectif::charger(&self.vfs, 200, "fr").map(|v| {
+                v.iter()
+                    .map(aphrody_nie_app::effectif::Joueur::ligne)
+                    .collect()
+            }),
+            Onglet::Objets => {
+                aphrody_nie_app::effectif::charger_objets(&self.vfs, 200, "fr").map(|v| {
+                    v.iter()
+                        .map(aphrody_nie_app::effectif::Objet::ligne)
+                        .collect()
+                })
+            }
             Onglet::Texte(fichier) => {
                 aphrody_nie_app::effectif::charger_textes(&self.vfs, fichier, 200, "fr")
-            },
+            }
         }
         .unwrap_or_else(|e| {
             warn!("{titre} indisponible : {e:#}");
@@ -1777,7 +1899,7 @@ impl Jeu {
                     Err(e) => {
                         warn!("vue 3D indisponible : {e:#}");
                         self.modele3d = Some(None);
-                    },
+                    }
                 }
             }
             if let Some(Some(modele)) = &self.modele3d {
@@ -1823,9 +1945,13 @@ fn decrire_ecran(e: &aphrody_nie_app::flow::Screen) -> String {
         S::Menu { sel } => format!("menu[{sel}] {}", aphrody_nie_app::MENU[*sel]),
         S::ModeSelect { sel } => format!("mode[{sel}] {}", aphrody_nie_app::MODES[*sel]),
         S::Match { .. } => "match".into(),
-        S::Story { idx, titre, repliques } => {
+        S::Story {
+            idx,
+            titre,
+            repliques,
+        } => {
             format!("histoire[{idx}] {titre} ({} repliques)", repliques.len())
-        },
+        }
         S::Info { title } => format!("info « {title} »"),
         S::Liste { titre, lignes, sel } => format!("liste « {titre} » [{sel}/{}]", lignes.len()),
     }
@@ -1837,11 +1963,9 @@ fn decrire_ecran(e: &aphrody_nie_app::flow::Screen) -> String {
 /// et une touche. Ce que la touche déclenche est commun aux trois hôtes du dépôt
 /// (`aphrody_nie_app::input::BINDINGS`), parce que cette table-là était écrite trois fois et avait déjà
 /// divergé — `Tab` et `i` n'existaient que dans le navigateur, `NumpadEnter` qu'ici.
-fn touche_neutre(
-    code: bevy::input::keyboard::KeyCode,
-) -> Option<aphrody_nie_app::input::Key> {
-    use bevy::input::keyboard::KeyCode as K;
+fn touche_neutre(code: bevy::input::keyboard::KeyCode) -> Option<aphrody_nie_app::input::Key> {
     use aphrody_nie_app::input::Key as T;
+    use bevy::input::keyboard::KeyCode as K;
     Some(match code {
         K::ArrowUp => T::Up,
         K::ArrowDown => T::Down,
@@ -1904,7 +2028,10 @@ impl MenuVfsLookup {
         for (path, _) in vfs.iter() {
             let path = path.to_string();
             if let Some(basename) = path.rsplit('/').next() {
-                assets.entry(basename.to_owned()).or_default().push(path.clone());
+                assets
+                    .entry(basename.to_owned())
+                    .or_default()
+                    .push(path.clone());
             }
             if path.contains("/menu/obj/") && path.ends_with(".objbin") {
                 objbins.push(path.clone());
@@ -1921,7 +2048,12 @@ impl MenuVfsLookup {
             paths.sort_unstable();
         }
         objbins.sort_unstable();
-        Self { assets, objbins, settings, menu_text: load_menu_text(vfs) }
+        Self {
+            assets,
+            objbins,
+            settings,
+            menu_text: load_menu_text(vfs),
+        }
     }
 
     fn resolve_asset(&self, logical_path: &str, locale: &str) -> Option<String> {
@@ -1982,7 +2114,8 @@ fn build_sprite_list(game_dir: &Path, screen: &str) -> Result<Vec<SpritePosition
     let data_dir = game_dir.join("data");
 
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("VFS init échoué (cpk_list.cfg.bin)")?;
+    vfs.init(&data_dir)
+        .context("VFS init échoué (cpk_list.cfg.bin)")?;
     info!("VFS monté : {} assets", vfs.asset_count());
 
     let screen_lower = screen.to_ascii_lowercase();
@@ -1993,7 +2126,10 @@ fn build_sprite_list(game_dir: &Path, screen: &str) -> Result<Vec<SpritePosition
                 return None;
             }
             let basename = path.rsplit('/').next()?;
-            if basename.to_ascii_lowercase().starts_with(screen_lower.as_str()) {
+            if basename
+                .to_ascii_lowercase()
+                .starts_with(screen_lower.as_str())
+            {
                 Some(path.to_string())
             } else {
                 None
@@ -2005,7 +2141,11 @@ fn build_sprite_list(game_dir: &Path, screen: &str) -> Result<Vec<SpritePosition
     // pour les ex æquo → rendu byte-identique d'un run à l'autre (prérequis du gate pixel-perfect).
     obj_paths.sort_unstable();
 
-    info!("écran '{}' : {} objbin correspondants", screen, obj_paths.len());
+    info!(
+        "écran '{}' : {} objbin correspondants",
+        screen,
+        obj_paths.len()
+    );
 
     // (draw_priority, transform, w, h, rgba)
     let blacklist = screen_lower == "main_menu" || screen_lower.starts_with("mainmenu");
@@ -2019,7 +2159,10 @@ fn build_sprite_list(game_dir: &Path, screen: &str) -> Result<Vec<SpritePosition
     // Tri back-to-front
     sprite_entries.sort_by_key(|(prio, _, _, _, _)| *prio);
 
-    Ok(sprite_entries.into_iter().map(|(_, t, w, h, rgba)| (t, w, h, rgba)).collect())
+    Ok(sprite_entries
+        .into_iter()
+        .map(|(_, t, w, h, rgba)| (t, w, h, rgba))
+        .collect())
 }
 
 /// Traite UN objbin de layer (commun à `build_sprite_list` filtre-par-nom et
@@ -2067,14 +2210,14 @@ fn process_objbin_layer(
         Err(e) => {
             warn!("skip {obj_basename} : lecture erreur : {e}");
             return None;
-        },
+        }
     };
     let obj = match objbin::parse(&obj_bytes) {
         Ok(o) => o,
         Err(e) => {
             warn!("skip {obj_basename} : parse erreur : {e}");
             return None;
-        },
+        }
     };
 
     // Résolution g4pkm
@@ -2083,28 +2226,28 @@ fn process_objbin_layer(
         None => {
             warn!("skip {obj_basename} : pas de g4pkm_path");
             return None;
-        },
+        }
     };
     let g4pkm_vfs = match resolve_vfs_basename(vfs, &g4pkm_logical, MENU_LOCALE) {
         Some(p) => p,
         None => {
             warn!("skip {obj_basename} : g4pkm '{g4pkm_logical}' absent du VFS");
             return None;
-        },
+        }
     };
     let g4pkm_bytes = match vfs.read(&g4pkm_vfs) {
         Ok(d) => d,
         Err(e) => {
             warn!("skip {obj_basename} : lecture g4pkm erreur : {e}");
             return None;
-        },
+        }
     };
     let layout = match g4pkm::parse(&g4pkm_bytes) {
         Ok(l) => l,
         Err(e) => {
             warn!("skip {obj_basename} : parse g4pkm erreur : {e}");
             return None;
-        },
+        }
     };
 
     // Résolution g4tx : param `Texture` explicite OU dérivé co-localisé du g4pkm (D1.c — cas
@@ -2123,7 +2266,7 @@ fn process_objbin_layer(
             None => {
                 warn!("skip {obj_basename} : pas de g4tx_path (ni dérivable du g4pkm)");
                 return None;
-            },
+            }
         },
     };
     let g4tx_vfs = match resolve_vfs_basename(vfs, &g4tx_logical, MENU_LOCALE) {
@@ -2131,21 +2274,21 @@ fn process_objbin_layer(
         None => {
             warn!("skip {obj_basename} : g4tx '{g4tx_logical}' absent du VFS");
             return None;
-        },
+        }
     };
     let g4tx_bytes = match vfs.read(&g4tx_vfs) {
         Ok(d) => d,
         Err(e) => {
             warn!("skip {obj_basename} : lecture g4tx erreur : {e}");
             return None;
-        },
+        }
     };
     let g4tx_parsed = match g4tx::parse(&g4tx_bytes) {
         Ok(p) => p,
         Err(e) => {
             warn!("skip {obj_basename} : parse g4tx erreur : {e}");
             return None;
-        },
+        }
     };
 
     // Basename du conteneur (sans `.g4tx`) pour la résolution par nom (D1.b) :
@@ -2161,14 +2304,14 @@ fn process_objbin_layer(
         None => {
             warn!("skip {obj_basename} : aucune texture DDS dans g4tx");
             return None;
-        },
+        }
     };
     let (w, h, rgba) = match g4tx_decode::decode_texture_rgba(&g4tx_bytes, tex) {
         Some(r) => r,
         None => {
             warn!("skip {obj_basename} : échec décodage DDS ({g4tx_vfs})");
             return None;
-        },
+        }
     };
 
     let positioned = menu::assemble_object(&obj, &layout, w, h);
@@ -2187,7 +2330,8 @@ fn process_objbin_layer(
 fn build_sprite_list_from_setting(game_dir: &Path, setting: &str) -> Result<Vec<SpritePositionne>> {
     let data_dir = game_dir.join("data");
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("VFS init échoué (cpk_list.cfg.bin)")?;
+    vfs.init(&data_dir)
+        .context("VFS init échoué (cpk_list.cfg.bin)")?;
     info!("VFS monté : {} assets", vfs.asset_count());
 
     let obj_paths = setting_objbin_paths(&vfs, setting);
@@ -2215,7 +2359,10 @@ fn build_sprite_list_from_setting(game_dir: &Path, setting: &str) -> Result<Vec<
 
     // Tri back-to-front (stable sur l'ordre du menu_setting pour les ex æquo).
     sprite_entries.sort_by_key(|(prio, _, _, _, _)| *prio);
-    Ok(sprite_entries.into_iter().map(|(_, t, w, h, rgba)| (t, w, h, rgba)).collect())
+    Ok(sprite_entries
+        .into_iter()
+        .map(|(_, t, w, h, rgba)| (t, w, h, rgba))
+        .collect())
 }
 
 /// Résout, dans l'ordre de composition, les chemins VFS des objbin d'un écran depuis sa **définition
@@ -2309,7 +2456,8 @@ fn cmd_export_layout(
 
     let data_dir = game_dir.join("data");
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("VFS init échoué (cpk_list.cfg.bin)")?;
+    vfs.init(&data_dir)
+        .context("VFS init échoué (cpk_list.cfg.bin)")?;
     info!("VFS monté : {} assets", vfs.asset_count());
 
     let (objs, n_sprites) = collect_layout_objects(&vfs, screen, from_setting);
@@ -2340,7 +2488,8 @@ fn cmd_menu_matrix(game_dir: &Path, out: &Path) -> Result<()> {
 
     let data_dir = game_dir.join("data");
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("VFS init échoué (cpk_list.cfg.bin)")?;
+    vfs.init(&data_dir)
+        .context("VFS init échoué (cpk_list.cfg.bin)")?;
     info!("VFS monté : {} assets", vfs.asset_count());
     let lookup = MenuVfsLookup::new(&vfs);
 
@@ -2596,17 +2745,21 @@ fn collect_layout_objects_with_lookup(
                     draw_priority = r.draw_priority;
                     draw_type = r.draw_type;
                     camera = r.camera_name_hash;
-                },
+                }
                 objbin::MenuComponent::Animation(a) => {
                     let hx = |h: u32| {
-                        if h != 0 { json!(format!("0x{h:08X}")) } else { Value::Null }
+                        if h != 0 {
+                            json!(format!("0x{h:08X}"))
+                        } else {
+                            Value::Null
+                        }
                     };
                     anim = json!({
                         "open": hx(a.mot_open_hash),
                         "loop": hx(a.mot_loop_hash),
                         "close": hx(a.mot_close_hash),
                     });
-                },
+                }
                 objbin::MenuComponent::Text(tc) => {
                     // Résolution des libellés STATIQUES : pour chaque slot, le 1ᵉʳ hash présent
                     // dans `menu_text` (pas toujours `hashes[0]` — cf. DESIGN.md §7). Les slots
@@ -2621,7 +2774,7 @@ fn collect_layout_objects_with_lookup(
                             text_labels.push(json!({ "slot": e.key, "text": label }));
                         }
                     }
-                },
+                }
                 objbin::MenuComponent::Primitive(component) => {
                     primitive = json!({
                         "numberSettingHashes": component.number_setting_hashes
@@ -2643,7 +2796,7 @@ fn collect_layout_objects_with_lookup(
                             "missing"
                         },
                     });
-                },
+                }
                 objbin::MenuComponent::Unknown(component) => {
                     if let Some(binding) = component.chara_model_binding() {
                         char_model = json!({
@@ -2656,8 +2809,8 @@ fn collect_layout_objects_with_lookup(
                             "modelStatus": "runtime-model-id-required",
                         });
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -2685,8 +2838,12 @@ fn collect_layout_objects_with_lookup(
             && let Ok(g4tx_bytes) = vfs.read(&g4tx_vfs)
             && let Ok(parsed) = g4tx::parse(&g4tx_bytes)
         {
-            let base =
-                g4tx_vfs.rsplit('/').next().unwrap_or("").strip_suffix(".g4tx").unwrap_or("");
+            let base = g4tx_vfs
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .strip_suffix(".g4tx")
+                .unwrap_or("");
             if let Some(tex) = g4tx::select_main_texture(&parsed, base) {
                 let (w, h) = (tex.width.max(0) as u32, tex.height.max(0) as u32);
                 let st = menu::place_on_canvas(&skel, w, h);
@@ -2698,7 +2855,10 @@ fn collect_layout_objects_with_lookup(
                     });
                 }
                 // logicalPath = chemin VFS sans `data/` ; pngUrl = `/<logical>` en `.png`.
-                let logical = g4tx_vfs.strip_prefix("data/").unwrap_or(&g4tx_vfs).to_string();
+                let logical = g4tx_vfs
+                    .strip_prefix("data/")
+                    .unwrap_or(&g4tx_vfs)
+                    .to_string();
                 let stem = logical.strip_suffix(".g4tx").unwrap_or(&logical);
                 sprite = json!({
                     "logicalPath": logical, "pngUrl": format!("/{stem}.png"), "w": w, "h": h
@@ -2714,7 +2874,11 @@ fn collect_layout_objects_with_lookup(
         // d'une liste), pas un doublon : on en émet une par emplacement.
         let poses_attache: Vec<(f32, f32)> = attaches
             .get(&aphrody_nie_formats::cfgbin::crc32(obj.name.as_bytes()))
-            .map(|v| v.iter().map(aphrody_nie_formats::menu::AttachSlot::to_css).collect())
+            .map(|v| {
+                v.iter()
+                    .map(aphrody_nie_formats::menu::AttachSlot::to_css)
+                    .collect()
+            })
             .unwrap_or_default();
         for (i, (x, y)) in poses_attache.iter().enumerate() {
             let mut t = transform.clone();
@@ -2763,7 +2927,11 @@ fn collect_layout_objects_with_lookup(
             primitive,
             char_model,
             visible: true,
-            text: if text_labels.is_empty() { Value::Null } else { json!(text_labels) },
+            text: if text_labels.is_empty() {
+                Value::Null
+            } else {
+                json!(text_labels)
+            },
             runtime: Value::Null,
         });
     }
@@ -2789,7 +2957,9 @@ fn merge_declared_list_view_count(
     if params.locator_num <= 0 {
         return;
     }
-    let count = counts.entry(cfgbin::crc32(object_name.as_bytes())).or_default();
+    let count = counts
+        .entry(cfgbin::crc32(object_name.as_bytes()))
+        .or_default();
     *count = (*count).max(params.locator_num);
 }
 
@@ -2840,14 +3010,18 @@ fn collect_runtime_list_rings(vfs: &Vfs, screen: &str) -> Vec<RuntimeListRing> {
         let Some(params) = objbin::list_view_params(object) else {
             continue;
         };
-        let Some(component) = object.components.iter().find_map(|component| match component {
-            objbin::MenuComponent::Unknown(component)
-                if component.type_name == "CMenuListViewGallery" =>
-            {
-                Some(component)
-            },
-            _ => None,
-        }) else {
+        let Some(component) = object
+            .components
+            .iter()
+            .find_map(|component| match component {
+                objbin::MenuComponent::Unknown(component)
+                    if component.type_name == "CMenuListViewGallery" =>
+                {
+                    Some(component)
+                }
+                _ => None,
+            })
+        else {
             continue;
         };
         let Some(root_name) = component.str_param("mMatrixLocaterRootBaseName") else {
@@ -2862,8 +3036,10 @@ fn collect_runtime_list_rings(vfs: &Vfs, screen: &str) -> Vec<RuntimeListRing> {
         else {
             continue;
         };
-        let Some(g4pkm_path) =
-            object.g4pkm_path.as_deref().and_then(|path| resolve_menu_path(vfs, None, path))
+        let Some(g4pkm_path) = object
+            .g4pkm_path
+            .as_deref()
+            .and_then(|path| resolve_menu_path(vfs, None, path))
         else {
             continue;
         };
@@ -2939,9 +3115,13 @@ fn collect_item_counts(vfs: &Vfs, screen: &str) -> std::collections::BTreeMap<u3
             continue;
         };
         let retenu = if depuis_setting.is_empty() {
-            basename.to_ascii_lowercase().starts_with(screen_lower.as_str())
+            basename
+                .to_ascii_lowercase()
+                .starts_with(screen_lower.as_str())
         } else {
-            depuis_setting.iter().any(|p| p == path || p.ends_with(basename))
+            depuis_setting
+                .iter()
+                .any(|p| p == path || p.ends_with(basename))
         };
         if !retenu {
             continue;
@@ -2987,7 +3167,9 @@ fn screen_script_needles(screen: &str) -> Vec<String> {
 /// `victory_road_main_menu_0.00.00.00.lua.bin` empty chunk.
 fn script_matches_screen(path: &str, prefixes: &[String]) -> bool {
     let basename = path.rsplit('/').next().unwrap_or(path).to_ascii_lowercase();
-    prefixes.iter().any(|prefix| basename.starts_with(prefix.as_str()))
+    prefixes
+        .iter()
+        .any(|prefix| basename.starts_with(prefix.as_str()))
 }
 
 /// Charge le dictionnaire CRC32→nom reversé du corpus Lua DÉCOMPILÉ
@@ -3006,7 +3188,9 @@ fn load_menu_crc32_dict() -> std::collections::HashMap<u32, String> {
             && let Ok(raw) = serde_json::from_str::<std::collections::HashMap<String, String>>(&txt)
         {
             for (k, v) in raw {
-                if let Some(h) = k.strip_prefix("0x").and_then(|s| u32::from_str_radix(s, 16).ok())
+                if let Some(h) = k
+                    .strip_prefix("0x")
+                    .and_then(|s| u32::from_str_radix(s, 16).ok())
                 {
                     m.insert(h, v);
                 }
@@ -3076,7 +3260,8 @@ fn cmd_export_layout_runtime(
 
     let data_dir = game_dir.join("data");
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("VFS init échoué (cpk_list.cfg.bin)")?;
+    vfs.init(&data_dir)
+        .context("VFS init échoué (cpk_list.cfg.bin)")?;
     info!("VFS monté : {} assets", vfs.asset_count());
 
     // 1) Layout statique de l'écran (placement + sprite) — base à muter par le runtime.
@@ -3085,7 +3270,10 @@ fn cmd_export_layout_runtime(
     // Geometry is exported as evidence but not yet composited: the nested gallery cell state,
     // lock overlay and background layers are unresolved, and activating only the measured base
     // cells regresses the like-for-like Gallery SSIM oracle.
-    let list_ring_instances = list_rings.iter().map(|ring| ring.slots.len()).sum::<usize>();
+    let list_ring_instances = list_rings
+        .iter()
+        .map(|ring| ring.slots.len())
+        .sum::<usize>();
     // La même table alimente le getter général Lua `GetText`, pour les libellés que le script
     // construit dynamiquement (les libellés statiques sont déjà joints dans le layout ci-dessus).
     let menu_text = load_menu_text(&vfs);
@@ -3103,8 +3291,11 @@ fn cmd_export_layout_runtime(
 
     // 3) Scripts candidats pour cet écran (alias vérité terrain + filtrage par sous-chaîne).
     let needles = screen_script_needles(screen);
-    let scripts: Vec<String> =
-        menu_scripts.iter().filter(|path| script_matches_screen(path, &needles)).cloned().collect();
+    let scripts: Vec<String> = menu_scripts
+        .iter()
+        .filter(|path| script_matches_screen(path, &needles))
+        .cloned()
+        .collect();
     if scripts.is_empty() {
         warn!("aucun script .lua.bin pour l'écran '{screen}' (needles={needles:?})");
     }
@@ -3172,11 +3363,11 @@ fn cmd_export_layout_runtime(
             Ok(chunk) => {
                 decoded_scripts += 1;
                 decoded_instructions += chunk.main.total_instructions();
-            },
+            }
             Err(error) => {
                 decode_errors += 1;
                 warn!("décodage Lua {name} : {error}");
-            },
+            }
         }
 
         // Le driver passe par la session persistante publique : index physique/logique, reader
@@ -3190,8 +3381,9 @@ fn cmd_export_layout_runtime(
                 move |path| vfs.read(path).ok()
             })
             .map_err(|e| anyhow::anyhow!("création session Lua VFS : {e}"))?;
-        let state =
-            session.menu_state().ok_or_else(|| anyhow::anyhow!("session Lua sans MenuState"))?;
+        let state = session
+            .menu_state()
+            .ok_or_else(|| anyhow::anyhow!("session Lua sans MenuState"))?;
         {
             let mut state = state.borrow_mut();
             if let Some(observed) = observed_native {
@@ -3212,7 +3404,7 @@ fn cmd_export_layout_runtime(
             Err(e) => {
                 warn!("drive_menu {name} : {e}");
                 continue;
-            },
+            }
         };
         let events =
             aphrody_nie_lua::build_menu_runtime_events(&drive_layers, &item_counts, frames);
@@ -3221,7 +3413,7 @@ fn cmd_export_layout_runtime(
             Err(error) => {
                 warn!("menu events {name} : {error}");
                 continue;
-            },
+            }
         };
         // Refresh the existing driver diagnostics after typed events have run. With an already
         // initialized menu and an empty event set this invokes no lifecycle callback; it only
@@ -3232,7 +3424,7 @@ fn cmd_export_layout_runtime(
                 Err(error) => {
                     warn!("menu diagnostics {name} : {error}");
                     continue;
-                },
+                }
             };
         menu_events_requested += event_report.events_requested;
         menu_events_dispatched += event_report.events_dispatched;
@@ -3268,7 +3460,9 @@ fn cmd_export_layout_runtime(
             e.0 += 1;
         }
         for (c, _, args_repr) in &st.unknown_general_cmd_log {
-            let e = unknown_general_cmds.entry(*c).or_insert((0, args_repr.clone()));
+            let e = unknown_general_cmds
+                .entry(*c)
+                .or_insert((0, args_repr.clone()));
             e.0 += 1;
         }
         // Ventilation des commandes RECONNUES par nom. Un compteur global d'appels connus ne dit
@@ -3278,8 +3472,10 @@ fn cmd_export_layout_runtime(
         for (nom, _) in &st.known_cmd_log {
             *known_by_name.entry(nom.clone()).or_insert(0usize) += 1;
         }
-        runtime_scenes
-            .insert(name.to_string(), aphrody_nie_lua::menu_scene::MenuScene::from_state(&st));
+        runtime_scenes.insert(
+            name.to_string(),
+            aphrody_nie_lua::menu_scene::MenuScene::from_state(&st),
+        );
         // Fusion déterministe (itération BTreeMap ordonnée) : visibilité ET-combinée, premiers
         // sprite/text/number gagnants.
         for (lid, layer) in &st.layers {
@@ -3315,10 +3511,18 @@ fn cmd_export_layout_runtime(
         for path in &diagnostics_report.missing_host_paths {
             *missing_host_paths.entry(path.clone()).or_default() += 1;
         }
-        callback_errors
-            .extend(report.callback_errors.iter().map(|error| format!("{name}: {error}")));
-        callback_errors
-            .extend(event_report.callback_errors.iter().map(|error| format!("{name}: {error}")));
+        callback_errors.extend(
+            report
+                .callback_errors
+                .iter()
+                .map(|error| format!("{name}: {error}")),
+        );
+        callback_errors.extend(
+            event_report
+                .callback_errors
+                .iter()
+                .map(|error| format!("{name}: {error}")),
+        );
         script_reports.push(ScriptRuntimeReport {
             name: name.to_string(),
             layers: n_layers,
@@ -3531,15 +3735,24 @@ fn cmd_export_layout_runtime(
     let json_objects: Vec<Value> = objects.iter().map(LayoutObj::to_json_runtime).collect();
     let n_objects = json_objects.len();
     let n_visible = objects.iter().filter(|o| o.visible).count();
-    let n_primitive_bindings = objects.iter().filter(|object| !object.primitive.is_null()).count();
+    let n_primitive_bindings = objects
+        .iter()
+        .filter(|object| !object.primitive.is_null())
+        .count();
     let n_primitive_g4pkm_paths_resolved = objects
         .iter()
         .filter(|object| {
-            object.primitive.get("g4pkmPathStatus").and_then(Value::as_str) == Some("resolved")
+            object
+                .primitive
+                .get("g4pkmPathStatus")
+                .and_then(Value::as_str)
+                == Some("resolved")
         })
         .count();
-    let n_chara_model_bindings =
-        objects.iter().filter(|object| !object.char_model.is_null()).count();
+    let n_chara_model_bindings = objects
+        .iter()
+        .filter(|object| !object.char_model.is_null())
+        .count();
     let unknown_list: Vec<Value> = unknown_cmds
         .iter()
         .map(|(c, (n, args))| json!({ "cmdId": format!("0x{c:08X}"), "count": n, "args": args }))
@@ -3548,8 +3761,10 @@ fn cmd_export_layout_runtime(
         .iter()
         .map(|(c, (n, args))| json!({ "cmdId": format!("0x{c:08X}"), "count": n, "args": args }))
         .collect();
-    let script_names: Vec<&str> =
-        scripts.iter().map(|s| s.rsplit('/').next().unwrap_or(s)).collect();
+    let script_names: Vec<&str> = scripts
+        .iter()
+        .map(|s| s.rsplit('/').next().unwrap_or(s))
+        .collect();
 
     let layout = json!({
         "screen": screen_name,
@@ -3739,7 +3954,11 @@ fn fill_parallelogram(
             continue;
         }
         // frac : 0 en haut, 1 en bas.
-        let frac = if h > 1 { f64::from(r) / f64::from(h - 1) } else { 0.0 };
+        let frac = if h > 1 {
+            f64::from(r) / f64::from(h - 1)
+        } else {
+            0.0
+        };
         let left = x_bottom + (f64::from(slant) * (1.0 - frac)).round() as i32;
         let col = [
             lerp_u8(top[0], bot[0], frac),
@@ -3762,7 +3981,9 @@ fn fill_parallelogram(
 
 /// Interpolation linéaire `a→b` (octets) au facteur `t∈[0,1]`.
 fn lerp_u8(a: u8, b: u8, t: f64) -> u8 {
-    (f64::from(a) + (f64::from(b) - f64::from(a)) * t).round().clamp(0.0, 255.0) as u8
+    (f64::from(a) + (f64::from(b) - f64::from(a)) * t)
+        .round()
+        .clamp(0.0, 255.0) as u8
 }
 
 /// Pose la RANGÉE D'ICÔNES centrale du menu principal sur `canvas` (`cw×ch`) — FIDÉLITÉ VISUELLE.
@@ -3819,8 +4040,18 @@ fn paint_main_menu_icon_row(game_dir: &Path, canvas: &mut [u8], (cw, ch): (u32, 
         let x_bottom = FIRST_X + i as i32 * STEP;
         let selected = i == 0;
         // 1) Tuile bleue penchée (dégradé). Toujours dessinée, même si la région échoue.
-        let (top, bot) = if selected { (SEL_TOP, SEL_BOT) } else { (TILE_TOP, TILE_BOT) };
-        fill_parallelogram(canvas, (cw, ch), (x_bottom, ROW_Y, TILE_W, TILE_H, SLANT), top, bot);
+        let (top, bot) = if selected {
+            (SEL_TOP, SEL_BOT)
+        } else {
+            (TILE_TOP, TILE_BOT)
+        };
+        fill_parallelogram(
+            canvas,
+            (cw, ch),
+            (x_bottom, ROW_Y, TILE_W, TILE_H, SLANT),
+            top,
+            bot,
+        );
 
         // 2) Glyphe blanc centré sur la tuile (à mi-hauteur, slant/2).
         let center_x = x_bottom + SLANT / 2 + TILE_W as i32 / 2;
@@ -3832,8 +4063,9 @@ fn paint_main_menu_icon_row(game_dir: &Path, canvas: &mut [u8], (cw, ch): (u32, 
             warn!("main_menu : région '{region}' absente de l'atlas — glyphe ignoré");
             continue;
         };
-        let full =
-            decoded.entry(tex.id).or_insert_with(|| g4tx_decode::decode_texture_rgba(&bytes, tex));
+        let full = decoded
+            .entry(tex.id)
+            .or_insert_with(|| g4tx_decode::decode_texture_rgba(&bytes, tex));
         let Some((fw, fh, full)) = full.as_ref() else {
             continue;
         };
@@ -3845,7 +4077,13 @@ fn paint_main_menu_icon_row(game_dir: &Path, canvas: &mut [u8], (cw, ch): (u32, 
         if scaled.is_empty() {
             continue;
         }
-        blit_over(canvas, (cw, ch), &scaled, (ICON_W, ICON_H), (icon_x, icon_y));
+        blit_over(
+            canvas,
+            (cw, ch),
+            &scaled,
+            (ICON_W, ICON_H),
+            (icon_x, icon_y),
+        );
         posed += 1;
     }
     posed
@@ -3888,7 +4126,13 @@ fn paint_main_menu_deluxe_badge(game_dir: &Path, canvas: &mut [u8], (cw, ch): (u
     if scaled.is_empty() {
         return false;
     }
-    blit_over(canvas, (cw, ch), &scaled, (TARGET_W, TARGET_H), (TARGET_X, TARGET_Y));
+    blit_over(
+        canvas,
+        (cw, ch),
+        &scaled,
+        (TARGET_W, TARGET_H),
+        (TARGET_X, TARGET_Y),
+    );
     true
 }
 
@@ -3899,11 +4143,16 @@ fn cmd_menu(game_dir: &Path, screen: &str, png_out: &Path, from_setting: bool) -
     // mélange de tous les objbins par préfixe. On essaie `screen` puis `screen_menu` (convention des
     // settings), enfin on retombe sur le préfixe d'objbin pour les écrans sans setting.
     let _ = from_setting; // le mode setting est désormais l'essai prioritaire dans tous les cas.
-    let try_set =
-        |name: &str| build_sprite_list_from_setting(game_dir, name).ok().filter(|s| !s.is_empty());
+    let try_set = |name: &str| {
+        build_sprite_list_from_setting(game_dir, name)
+            .ok()
+            .filter(|s| !s.is_empty())
+    };
     let sprites = try_set(screen)
         .or_else(|| {
-            (!screen.ends_with("_menu")).then(|| try_set(&format!("{screen}_menu"))).flatten()
+            (!screen.ends_with("_menu"))
+                .then(|| try_set(&format!("{screen}_menu")))
+                .flatten()
         })
         .or_else(|| {
             build_sprite_list(game_dir, screen.strip_suffix("_menu").unwrap_or(screen)).ok()
@@ -3921,7 +4170,12 @@ fn cmd_menu(game_dir: &Path, screen: &str, png_out: &Path, from_setting: bool) -
     // autres écrans (ex. title02, fond = scène 3D / key-art) gardent le canvas transparent d'origine
     // pour ne pas régresser leur plancher SSIM.
     let mut canvas = if screen == "main_menu" {
-        menu::compose_over(paint_menu_background(1280, 720), 1280, 720, &composite_sprites)
+        menu::compose_over(
+            paint_menu_background(1280, 720),
+            1280,
+            720,
+            &composite_sprites,
+        )
     } else {
         menu::compose(1280, 720, &composite_sprites)
     };
@@ -4022,10 +4276,22 @@ fn build_sprite_quad(t: &menu::ScreenTransform, w: u32, h: u32) -> [SpriteVertex
     };
 
     // 4 coins : TL, TR, BL, BR
-    let tl = SpriteVertex { pos: fwd(0.0, 0.0), uv: [0.0, 0.0] };
-    let tr = SpriteVertex { pos: fwd(qw, 0.0), uv: [1.0, 0.0] };
-    let bl = SpriteVertex { pos: fwd(0.0, qh), uv: [0.0, 1.0] };
-    let br = SpriteVertex { pos: fwd(qw, qh), uv: [1.0, 1.0] };
+    let tl = SpriteVertex {
+        pos: fwd(0.0, 0.0),
+        uv: [0.0, 0.0],
+    };
+    let tr = SpriteVertex {
+        pos: fwd(qw, 0.0),
+        uv: [1.0, 0.0],
+    };
+    let bl = SpriteVertex {
+        pos: fwd(0.0, qh),
+        uv: [0.0, 1.0],
+    };
+    let br = SpriteVertex {
+        pos: fwd(qw, qh),
+        uv: [1.0, 1.0],
+    };
 
     // Deux triangles CCW (cull_mode = None donc l'ordre est cosmétique)
     [tl, tr, bl, tr, br, bl]
@@ -4142,7 +4408,11 @@ fn upload_sprite_texture(
     width: u32,
     height: u32,
 ) -> (wgpu::Texture, wgpu::TextureView) {
-    let extent = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+    let extent = wgpu::Extent3d {
+        width,
+        height,
+        depth_or_array_layers: 1,
+    };
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("sprite_tex"),
         size: extent,
@@ -4209,8 +4479,12 @@ fn unpremultiply_rgba(pixels: &mut [u8]) {
         let a = c[3] as u32;
         // Checked division : a=0 laisse RGB inchangé (pixel transparent, RGB non significatif).
         // Arrondi au plus proche : + a/2 avant la division par a.
-        let div =
-            |v: u8| -> u8 { (v as u32 * 255 + a / 2).checked_div(a).unwrap_or(0).min(255) as u8 };
+        let div = |v: u8| -> u8 {
+            (v as u32 * 255 + a / 2)
+                .checked_div(a)
+                .unwrap_or(0)
+                .min(255) as u8
+        };
         c[0] = div(c[0]);
         c[1] = div(c[1]);
         c[2] = div(c[2]);
@@ -4231,7 +4505,10 @@ fn comparer_cpu_gpu(cpu: &[u8], gpu: &[u8], width: u32, height: u32) -> (u8, f64
     let mut pixels_ok: usize = 0;
 
     for i in (0..cpu.len()).step_by(4) {
-        let d = (0usize..4).map(|c| cpu[i + c].abs_diff(gpu[i + c])).max().unwrap_or(0);
+        let d = (0usize..4)
+            .map(|c| cpu[i + c].abs_diff(gpu[i + c]))
+            .max()
+            .unwrap_or(0);
         if d > max_diff {
             max_diff = d;
         }
@@ -4265,7 +4542,11 @@ fn cmd_menu_gpu(game_dir: &Path, screen: &str, png_out: &Path, verify: bool) -> 
     // ── 3. Render target 1280×720 Rgba8Unorm ─────────────────────────────────
     const CW: u32 = 1280;
     const CH: u32 = 720;
-    let canvas_extent = wgpu::Extent3d { width: CW, height: CH, depth_or_array_layers: 1 };
+    let canvas_extent = wgpu::Extent3d {
+        width: CW,
+        height: CH,
+        depth_or_array_layers: 1,
+    };
     let render_tex = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("menu_rt"),
         size: canvas_extent,
@@ -4308,7 +4589,11 @@ fn cmd_menu_gpu(game_dir: &Path, screen: &str, png_out: &Path, verify: bool) -> 
                 contents: bytemuck::cast_slice(&quad),
                 usage: wgpu::BufferUsages::VERTEX,
             });
-            SpriteDrawData { _tex: tex, bind_group, vbuf }
+            SpriteDrawData {
+                _tex: tex,
+                bind_group,
+                vbuf,
+            }
         })
         .collect();
 
@@ -4325,7 +4610,12 @@ fn cmd_menu_gpu(game_dir: &Path, screen: &str, png_out: &Path, verify: bool) -> 
                 resolve_target: None,
                 ops: wgpu::Operations {
                     // Canvas initialisé transparent (identique au CPU : vec![0u8; …])
-                    load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }),
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 0.0,
+                        g: 0.0,
+                        b: 0.0,
+                        a: 0.0,
+                    }),
                     store: wgpu::StoreOp::Store,
                 },
             })],
@@ -4372,8 +4662,10 @@ fn cmd_menu_gpu(game_dir: &Path, screen: &str, png_out: &Path, verify: bool) -> 
 
     // ── 8a. Lecture readback (valeurs encore pré-multipliées) ────────────────
     let gpu_pixels_pm: Vec<u8> = {
-        let mapped =
-            readback.slice(..).get_mapped_range().expect("readback buffer mapping must succeed");
+        let mapped = readback
+            .slice(..)
+            .get_mapped_range()
+            .expect("readback buffer mapping must succeed");
         let unpadded = (4 * CW) as usize;
         let padded = padded_bpr as usize;
         let mut px = Vec::with_capacity(unpadded * CH as usize);
@@ -4483,7 +4775,12 @@ mod tests {
         merge_declared_list_view_count(
             &mut counts,
             "gallery01_01_list_base",
-            Some(ListViewParams { view_start: 1, view_num: 4, line_num: 5, locator_num: 30 }),
+            Some(ListViewParams {
+                view_start: 1,
+                view_num: 4,
+                line_num: 5,
+                locator_num: 30,
+            }),
         );
 
         assert_eq!(
@@ -4505,7 +4802,10 @@ mod tests {
         merge_declared_list_view_count(
             &mut counts,
             "gallery01_01_list_base",
-            Some(ListViewParams { locator_num: 30, ..ListViewParams::default() }),
+            Some(ListViewParams {
+                locator_num: 30,
+                ..ListViewParams::default()
+            }),
         );
         assert_eq!(counts[&crc32(b"gallery01_01_list_base")], 54);
     }
@@ -4518,7 +4818,12 @@ mod tests {
         let ring = RuntimeListRing {
             source_hash: crc32(b"gallery01_01_list_base"),
             target_hash: crc32(target.as_bytes()),
-            params: ListViewParams { view_start: 1, view_num: 1, line_num: 1, locator_num: 2 },
+            params: ListViewParams {
+                view_start: 1,
+                view_num: 1,
+                line_num: 1,
+                locator_num: 2,
+            },
             slots: vec![
                 ListViewRingSlot {
                     index: 0,
@@ -4688,6 +4993,10 @@ mod tests {
         ] {
             assert_eq!(touche_vers_commande(code), Some(attendu), "{code:?}");
         }
-        assert_eq!(touche_vers_commande(K::F13), None, "une touche non liée ne fait rien");
+        assert_eq!(
+            touche_vers_commande(K::F13),
+            None,
+            "une touche non liée ne fait rien"
+        );
     }
 }

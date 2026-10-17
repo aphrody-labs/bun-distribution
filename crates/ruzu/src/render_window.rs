@@ -36,22 +36,34 @@ const NS_BACKING_STORE_BUFFERED: u64 = 2;
 /// to Quartz's primary-display top-left origin before moving the pointer.
 pub unsafe fn warp_render_pointer(window: *mut c_void, x: f64, y: f64) -> bool {
     use core_graphics::{display::CGDisplay, geometry::CGPoint};
-    if window.is_null() { return false; }
+    if window.is_null() {
+        return false;
+    }
     let frame: NSRect = unsafe { msg_send![window as *mut Object, frame] };
     let primary_height = CGDisplay::main().bounds().size.height;
     CGDisplay::warp_mouse_cursor_position(CGPoint::new(
-        frame.origin.x + x, primary_height - frame.origin.y - frame.size.height + y,
-    )).is_ok()
+        frame.origin.x + x,
+        primary_height - frame.origin.y - frame.size.height + y,
+    ))
+    .is_ok()
 }
 
 pub unsafe fn render_pointer_position(window: *mut c_void) -> Option<(f64, f64)> {
-    use core_graphics::{display::CGDisplay, event::CGEvent, event_source::{CGEventSource, CGEventSourceStateID}};
-    if window.is_null() { return None; }
+    use core_graphics::{
+        display::CGDisplay,
+        event::CGEvent,
+        event_source::{CGEventSource, CGEventSourceStateID},
+    };
+    if window.is_null() {
+        return None;
+    }
     let frame: NSRect = unsafe { msg_send![window as *mut Object, frame] };
     let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState).ok()?;
     let point = CGEvent::new(source).ok()?.location();
-    Some((point.x - frame.origin.x,
-        point.y - (CGDisplay::main().bounds().size.height - frame.origin.y - frame.size.height)))
+    Some((
+        point.x - frame.origin.x,
+        point.y - (CGDisplay::main().bounds().size.height - frame.origin.y - frame.size.height),
+    ))
 }
 
 extern "C" {
@@ -146,14 +158,23 @@ pub fn resize_child_window(
 /// Native part of MainWindow::ToggleWindowMode. Keep the child NSWindow,
 /// content view and CAMetalLayer alive while changing the GTK host.
 pub fn reparent_render_window(destination: &gtk::Window, child_window: *mut c_void) -> bool {
-    if child_window.is_null() { return false; }
-    let Some(surface) = destination.surface() else { return false; };
-    let parent = unsafe { gdk_macos_surface_get_native_window(surface.as_ptr().cast()) } as *mut Object;
-    if parent.is_null() { return false; }
+    if child_window.is_null() {
+        return false;
+    }
+    let Some(surface) = destination.surface() else {
+        return false;
+    };
+    let parent =
+        unsafe { gdk_macos_surface_get_native_window(surface.as_ptr().cast()) } as *mut Object;
+    if parent.is_null() {
+        return false;
+    }
     unsafe {
         let child = child_window as *mut Object;
         let old_parent: *mut Object = msg_send![child, parentWindow];
-        if parent == old_parent { return true; }
+        if parent == old_parent {
+            return true;
+        }
         // Keep ownership across removal from the old parent's child list.
         let _: *mut Object = msg_send![child, retain];
         if !old_parent.is_null() {

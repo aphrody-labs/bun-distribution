@@ -14,7 +14,15 @@ const TITLE: &str = "PdfCraft Showcase";
 const AUTHOR: &str = "PdfCraft";
 const SUBJECT: &str = "A specimen document exercising typography, world scripts, vector graphics, \
                        MathML, forms, annotations, layers and attachments.";
-const KEYWORDS: &[&str] = &["PDF", "typography", "OpenType", "AcroForm", "annotations", "optional content", "PdfCraft"];
+const KEYWORDS: &[&str] = &[
+    "PDF",
+    "typography",
+    "OpenType",
+    "AcroForm",
+    "annotations",
+    "optional content",
+    "PdfCraft",
+];
 const CREATOR: &str = "pdfcraft xtask demo-pdf";
 
 /// Chrome-printed page indices (0-based) that the post-processor refers to.
@@ -59,8 +67,13 @@ pub fn enhance(doc: &mut Document, now: Stamp) -> Result<Summary> {
                 continue; // a marker that wrapped onto two lines: keep only the first box
             }
             seen.push(uri.clone());
-            let kind_str = uri[MARKER_PREFIX.len()..].split('/').next().unwrap_or_default();
-            let kind = Kind::from_marker(kind_str).with_context(|| format!("unknown annotation marker {uri} on page {}", index + 1))?;
+            let kind_str = uri[MARKER_PREFIX.len()..]
+                .split('/')
+                .next()
+                .unwrap_or_default();
+            let kind = Kind::from_marker(kind_str).with_context(|| {
+                format!("unknown annotation marker {uri} on page {}", index + 1)
+            })?;
             let struct_parent = doc.get_dictionary(id)?.get(b"StructParent").ok().cloned();
             let built = annotator.build(doc, page, id, kind, r);
             let mut dict = built.dict;
@@ -111,12 +124,20 @@ pub fn enhance(doc: &mut Document, now: Stamp) -> Result<Summary> {
     let form_page = form::build(
         doc,
         &mut annotator,
-        FormInputs { fonts: &fonts, pages_root, contents_page: pages[PAGE_CONTENTS], print_only_ocg: ocg_notes, folio: "10" },
+        FormInputs {
+            fonts: &fonts,
+            pages_root,
+            contents_page: pages[PAGE_CONTENTS],
+            print_only_ocg: ocg_notes,
+            folio: "10",
+        },
     );
     {
         let root = doc.get_dictionary_mut(pages_root)?;
         let count = root.get(b"Count")?.as_i64()?;
-        root.get_mut(b"Kids")?.as_array_mut()?.push(Object::Reference(form_page.page));
+        root.get_mut(b"Kids")?
+            .as_array_mut()?
+            .push(Object::Reference(form_page.page));
         root.set("Count", count + 1);
     }
     annotation_count += 3; // two links and a note (the rest are widgets)
@@ -131,21 +152,35 @@ pub fn enhance(doc: &mut Document, now: Stamp) -> Result<Summary> {
 
     // 5. Embedded file, metadata and catalog entries.
     let csv = include_str!("../../../../assets/pdfcraft/demo/showcase-data.csv");
-    let csv_spec = embedded_file(doc, "showcase-data.csv", "text/csv", csv.as_bytes(), "Sample data behind the charts on page 7", &now);
-    doc.get_dictionary_mut(csv_spec)?.set("AFRelationship", "Data");
+    let csv_spec = embedded_file(
+        doc,
+        "showcase-data.csv",
+        "text/csv",
+        csv.as_bytes(),
+        "Sample data behind the charts on page 7",
+        &now,
+    );
+    doc.get_dictionary_mut(csv_spec)?
+        .set("AFRelationship", "Data");
     add_embedded_file_name(doc, "showcase-data.csv", csv_spec)?;
 
     let producer = producer(doc);
     let info = doc.add_object(info_dict(&producer, &now));
     doc.trailer.set("Info", info);
-    let xmp_stream = Stream::new(dictionary! { "Type" => "Metadata", "Subtype" => "XML" }, xmp(&producer, &now).into_bytes());
+    let xmp_stream = Stream::new(
+        dictionary! { "Type" => "Metadata", "Subtype" => "XML" },
+        xmp(&producer, &now).into_bytes(),
+    );
     let xmp = doc.add_object(xmp_stream.with_compression(false));
 
     let catalog = doc.catalog_mut()?;
     catalog.set("Metadata", xmp);
     catalog.set("AcroForm", acroform);
     catalog.set("PageMode", "UseOutlines");
-    catalog.set("ViewerPreferences", dictionary! { "DisplayDocTitle" => true });
+    catalog.set(
+        "ViewerPreferences",
+        dictionary! { "DisplayDocTitle" => true },
+    );
     catalog.set("AF", vec![Object::Reference(csv_spec)]);
     if !catalog.has(b"Lang") {
         catalog.set("Lang", Object::string_literal("en-US"));
@@ -179,7 +214,12 @@ pub fn enhance(doc: &mut Document, now: Stamp) -> Result<Summary> {
         },
     );
 
-    Ok(Summary { pages: all_pages.len(), annotations: annotation_count, fields: field_count, outline })
+    Ok(Summary {
+        pages: all_pages.len(),
+        annotations: annotation_count,
+        fields: field_count,
+        outline,
+    })
 }
 
 /// If `id` is one of Chrome's link annotations pointing at a marker URI, return it with its rect.
@@ -189,7 +229,10 @@ fn marker_link(doc: &Document, id: ObjectId) -> Option<(String, Rect)> {
         return None;
     }
     let action = dict.get_deref(b"A", doc).and_then(Object::as_dict).ok()?;
-    let uri = action.get_deref(b"URI", doc).and_then(Object::as_str).ok()?;
+    let uri = action
+        .get_deref(b"URI", doc)
+        .and_then(Object::as_str)
+        .ok()?;
     let uri = String::from_utf8_lossy(uri).into_owned();
     if !uri.starts_with(MARKER_PREFIX) {
         return None;
@@ -203,7 +246,11 @@ fn page_annots(doc: &Document, page: ObjectId) -> Result<Vec<ObjectId>> {
     let Ok(obj) = dict.get_deref(b"Annots", doc) else {
         return Ok(Vec::new());
     };
-    Ok(obj.as_array()?.iter().filter_map(|o| o.as_reference().ok()).collect())
+    Ok(obj
+        .as_array()?
+        .iter()
+        .filter_map(|o| o.as_reference().ok())
+        .collect())
 }
 
 fn set_page_annots(doc: &mut Document, page: ObjectId, annots: Vec<ObjectId>) -> Result<()> {
@@ -211,7 +258,13 @@ fn set_page_annots(doc: &mut Document, page: ObjectId, annots: Vec<ObjectId>) ->
     if annots.is_empty() {
         dict.remove(b"Annots");
     } else {
-        dict.set("Annots", annots.into_iter().map(Object::Reference).collect::<Vec<_>>());
+        dict.set(
+            "Annots",
+            annots
+                .into_iter()
+                .map(Object::Reference)
+                .collect::<Vec<_>>(),
+        );
         dict.set("Tabs", "S");
     }
     Ok(())
@@ -221,7 +274,10 @@ fn set_page_annots(doc: &mut Document, page: ObjectId, annots: Vec<ObjectId>) ->
 fn resources_mut(doc: &mut Document, page: ObjectId) -> Result<&mut Dictionary> {
     match doc.get_dictionary(page)?.get(b"Resources").ok().cloned() {
         Some(Object::Reference(id)) => Ok(doc.get_dictionary_mut(id)?),
-        Some(Object::Dictionary(_)) => Ok(doc.get_dictionary_mut(page)?.get_mut(b"Resources")?.as_dict_mut()?),
+        Some(Object::Dictionary(_)) => Ok(doc
+            .get_dictionary_mut(page)?
+            .get_mut(b"Resources")?
+            .as_dict_mut()?),
         _ => {
             let page_dict = doc.get_dictionary_mut(page)?;
             page_dict.set("Resources", Dictionary::new());
@@ -231,7 +287,13 @@ fn resources_mut(doc: &mut Document, page: ObjectId) -> Result<&mut Dictionary> 
 }
 
 /// Insert `key => value` into the `category` sub-dictionary of a page's resources.
-fn add_resource(doc: &mut Document, page: ObjectId, category: &str, key: &str, value: Object) -> Result<()> {
+fn add_resource(
+    doc: &mut Document,
+    page: ObjectId,
+    category: &str,
+    key: &str,
+    value: Object,
+) -> Result<()> {
     let indirect = match resources_mut(doc, page)?.get(category.as_bytes()) {
         Ok(Object::Reference(id)) => Some(*id),
         _ => None,
@@ -253,8 +315,20 @@ fn add_resource(doc: &mut Document, page: ObjectId, category: &str, key: &str, v
 /// Wrap the page's existing content in q/Q and append a diagonal "DRAFT" on layer `ocg`.
 fn add_watermark(doc: &mut Document, page: ObjectId, ocg: ObjectId, fonts: &Fonts) -> Result<()> {
     add_resource(doc, page, "Properties", "PCDraft", Object::Reference(ocg))?;
-    add_resource(doc, page, "Font", "PCDraftFont", Object::Reference(fonts.id(Font::HelvBold)))?;
-    add_resource(doc, page, "ExtGState", "PCDraftGS", dictionary! { "Type" => "ExtGState", "ca" => 0.09, "CA" => 0.09 }.into())?;
+    add_resource(
+        doc,
+        page,
+        "Font",
+        "PCDraftFont",
+        Object::Reference(fonts.id(Font::HelvBold)),
+    )?;
+    add_resource(
+        doc,
+        page,
+        "ExtGState",
+        "PCDraftGS",
+        dictionary! { "Type" => "ExtGState", "ca" => 0.09, "CA" => 0.09 }.into(),
+    )?;
 
     let size = 150.0f32;
     let word = "DRAFT";
@@ -268,7 +342,10 @@ fn add_watermark(doc: &mut Document, page: ObjectId, ocg: ObjectId, fonts: &Font
     c.raw("Q").save();
     c.raw("/OC /PCDraft BDC /Artifact << /Type /Pagination /Subtype /Watermark >> BDC");
     c.gs("PCDraftGS").fill_color(colors::ACCENT);
-    c.raw(&format!("BT /PCDraftFont {size} Tf {cos:.4} {sin:.4} {:.4} {cos:.4} {x:.2} {y:.2} Tm (DRAFT) Tj ET", -sin));
+    c.raw(&format!(
+        "BT /PCDraftFont {size} Tf {cos:.4} {sin:.4} {:.4} {cos:.4} {x:.2} {y:.2} Tm (DRAFT) Tj ET",
+        -sin
+    ));
     c.raw("EMC EMC").restore();
 
     let open = doc.add_object(Stream::new(Dictionary::new(), b"q\n".to_vec()));
@@ -291,13 +368,26 @@ fn add_watermark(doc: &mut Document, page: ObjectId, ocg: ObjectId, fonts: &Font
 /// Keep Chrome's heading-based outline (tidying its titles) and add the form
 /// page next to the other chapters; if Chrome produced none, build one.
 fn extend_outline(doc: &mut Document, pages: &[ObjectId], form_page: ObjectId) -> Result<String> {
-    let dest = |page: ObjectId, top: i64| -> Object { vec![Object::Reference(page), name("XYZ"), 0.into(), top.into(), Object::Null].into() };
+    let dest = |page: ObjectId, top: i64| -> Object {
+        vec![
+            Object::Reference(page),
+            name("XYZ"),
+            0.into(),
+            top.into(),
+            Object::Null,
+        ]
+        .into()
+    };
     let existing = doc
         .catalog()?
         .get(b"Outlines")
         .and_then(Object::as_reference)
         .ok()
-        .filter(|id| doc.get_dictionary(*id).map(|d| d.has(b"First")).unwrap_or(false));
+        .filter(|id| {
+            doc.get_dictionary(*id)
+                .map(|d| d.has(b"First"))
+                .unwrap_or(false)
+        });
 
     let (chapter_parent, description) = match existing {
         Some(root) => {
@@ -306,9 +396,16 @@ fn extend_outline(doc: &mut Document, pages: &[ObjectId], form_page: ObjectId) -
             let mut parent = root;
             for id in items {
                 let dict = doc.get_dictionary_mut(id)?;
-                let title = decode_text(dict.get(b"Title").and_then(Object::as_str).unwrap_or_default());
+                let title = decode_text(
+                    dict.get(b"Title")
+                        .and_then(Object::as_str)
+                        .unwrap_or_default(),
+                );
                 if title == "Review & Markup" {
-                    parent = dict.get(b"Parent").and_then(Object::as_reference).unwrap_or(root);
+                    parent = dict
+                        .get(b"Parent")
+                        .and_then(Object::as_reference)
+                        .unwrap_or(root);
                 }
                 let tidy = tidy_title(&title);
                 if tidy != title {
@@ -341,8 +438,18 @@ fn extend_outline(doc: &mut Document, pages: &[ObjectId], form_page: ObjectId) -
         }
     };
 
-    let form_item = append_outline_item(doc, chapter_parent, "Interactive Form", dest(form_page, 792), Some(colors::ACCENT.array()))?;
-    for (title, top) in [("Contact", 620), ("Preferences", 426), ("Actions & signature", 240)] {
+    let form_item = append_outline_item(
+        doc,
+        chapter_parent,
+        "Interactive Form",
+        dest(form_page, 792),
+        Some(colors::ACCENT.array()),
+    )?;
+    for (title, top) in [
+        ("Contact", 620),
+        ("Preferences", 426),
+        ("Actions & signature", 240),
+    ] {
         append_outline_item(doc, form_item, title, dest(form_page, top), None)?;
     }
     let root = doc.catalog()?.get(b"Outlines")?.as_reference()?;
@@ -352,7 +459,11 @@ fn extend_outline(doc: &mut Document, pages: &[ObjectId], form_page: ObjectId) -
 
 /// Every outline item below `node`, depth first.
 fn collect_outline(doc: &Document, node: ObjectId, out: &mut Vec<ObjectId>) {
-    let next = |id: ObjectId, key: &[u8]| doc.get_dictionary(id).ok().and_then(|d| d.get(key).and_then(Object::as_reference).ok());
+    let next = |id: ObjectId, key: &[u8]| {
+        doc.get_dictionary(id)
+            .ok()
+            .and_then(|d| d.get(key).and_then(Object::as_reference).ok())
+    };
     let mut cur = next(node, b"First");
     while let Some(id) = cur {
         out.push(id);
@@ -364,7 +475,12 @@ fn collect_outline(doc: &Document, node: ObjectId, out: &mut Vec<ObjectId>) {
 /// Decode a PDF text string (UTF-16BE with BOM, else treated as Latin-1).
 fn decode_text(bytes: &[u8]) -> String {
     if let Some(rest) = bytes.strip_prefix(&[0xfe, 0xff]) {
-        let units: Vec<u16> = rest.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+        let units: Vec<u16> = rest
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_be_bytes([c[0], c[1]]))
+            .collect();
         String::from_utf16_lossy(&units)
     } else {
         bytes.iter().map(|&b| b as char).collect()
@@ -394,7 +510,10 @@ fn tidy_title(title: &str) -> String {
             let lower = word.to_lowercase();
             if i == 0 {
                 let mut chars = lower.chars();
-                chars.next().map(|c| c.to_uppercase().chain(chars).collect()).unwrap_or_default()
+                chars
+                    .next()
+                    .map(|c| c.to_uppercase().chain(chars).collect())
+                    .unwrap_or_default()
             } else {
                 lower
             }
@@ -405,8 +524,18 @@ fn tidy_title(title: &str) -> String {
 
 /// Append a child item to outline node `parent`, updating First/Last and the
 /// /Count of every open ancestor.
-fn append_outline_item(doc: &mut Document, parent: ObjectId, title: &str, dest: Object, color: Option<Object>) -> Result<ObjectId> {
-    let last = doc.get_dictionary(parent)?.get(b"Last").and_then(Object::as_reference).ok();
+fn append_outline_item(
+    doc: &mut Document,
+    parent: ObjectId,
+    title: &str,
+    dest: Object,
+    color: Option<Object>,
+) -> Result<ObjectId> {
+    let last = doc
+        .get_dictionary(parent)?
+        .get(b"Last")
+        .and_then(Object::as_reference)
+        .ok();
     let mut item = dictionary! { "Title" => text(title), "Parent" => parent, "Dest" => dest };
     if let Some(color) = color {
         item.set("C", color);
@@ -443,16 +572,26 @@ fn append_outline_item(doc: &mut Document, parent: ObjectId, title: &str, dest: 
 
 fn count_outline(doc: &Document, node: ObjectId) -> usize {
     let mut n = 0;
-    let mut cur = doc.get_dictionary(node).ok().and_then(|d| d.get(b"First").and_then(Object::as_reference).ok());
+    let mut cur = doc
+        .get_dictionary(node)
+        .ok()
+        .and_then(|d| d.get(b"First").and_then(Object::as_reference).ok());
     while let Some(id) = cur {
         n += 1 + count_outline(doc, id);
-        cur = doc.get_dictionary(id).ok().and_then(|d| d.get(b"Next").and_then(Object::as_reference).ok());
+        cur = doc
+            .get_dictionary(id)
+            .ok()
+            .and_then(|d| d.get(b"Next").and_then(Object::as_reference).ok());
     }
     n
 }
 
 fn add_embedded_file_name(doc: &mut Document, file_name: &str, spec: ObjectId) -> Result<()> {
-    let names_ref = doc.catalog()?.get(b"Names").and_then(Object::as_reference).ok();
+    let names_ref = doc
+        .catalog()?
+        .get(b"Names")
+        .and_then(Object::as_reference)
+        .ok();
     let names: &mut Dictionary = match names_ref {
         Some(id) => doc.get_dictionary_mut(id)?,
         None => {
@@ -463,7 +602,10 @@ fn add_embedded_file_name(doc: &mut Document, file_name: &str, spec: ObjectId) -
             catalog.get_mut(b"Names")?.as_dict_mut()?
         }
     };
-    names.set("EmbeddedFiles", dictionary! { "Names" => vec![Object::string_literal(file_name), Object::Reference(spec)] });
+    names.set(
+        "EmbeddedFiles",
+        dictionary! { "Names" => vec![Object::string_literal(file_name), Object::Reference(spec)] },
+    );
     Ok(())
 }
 
@@ -494,7 +636,9 @@ fn info_dict(producer: &str, now: &Stamp) -> Dictionary {
 }
 
 fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 fn xmp(producer: &str, now: &Stamp) -> String {
@@ -503,8 +647,18 @@ fn xmp(producer: &str, now: &Stamp) -> String {
     for b in now.iso.bytes().chain(TITLE.bytes()) {
         h = (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3);
     }
-    let uuid = format!("{:08x}-{:04x}-4{:03x}-8{:03x}-{:012x}", h >> 32, (h >> 16) & 0xffff, h & 0xfff, (h >> 20) & 0xfff, h & 0xffff_ffff_ffff);
-    let keywords: String = KEYWORDS.iter().map(|k| format!("<rdf:li>{}</rdf:li>", xml_escape(k))).collect();
+    let uuid = format!(
+        "{:08x}-{:04x}-4{:03x}-8{:03x}-{:012x}",
+        h >> 32,
+        (h >> 16) & 0xffff,
+        h & 0xfff,
+        (h >> 20) & 0xfff,
+        h & 0xffff_ffff_ffff
+    );
+    let keywords: String = KEYWORDS
+        .iter()
+        .map(|k| format!("<rdf:li>{}</rdf:li>", xml_escape(k)))
+        .collect();
     format!(
         "<?xpacket begin=\"\u{feff}\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n\
 <x:xmpmeta xmlns:x=\"adobe:ns:meta/\">\n\

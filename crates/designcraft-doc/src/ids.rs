@@ -4,7 +4,19 @@ use serde::{Deserialize, Serialize};
 
 macro_rules! id_type {
     ($name:ident, $prefix:literal) => {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, Default)]
+        #[derive(
+            Clone,
+            Copy,
+            Debug,
+            PartialEq,
+            Eq,
+            Hash,
+            PartialOrd,
+            Ord,
+            Serialize,
+            Deserialize,
+            Default,
+        )]
         #[serde(transparent)]
         pub struct $name(pub u64);
         impl std::fmt::Display for $name {

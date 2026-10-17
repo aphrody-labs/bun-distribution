@@ -44,7 +44,10 @@ impl FixCtorZero {
         let mut delinks_map = DelinksMap::from_config(
             &config,
             config_path,
-            DelinksMapOptions { migrate_sections: false, generate_gap_files: false },
+            DelinksMapOptions {
+                migrate_sections: false,
+                generate_gap_files: false,
+            },
         )?;
         let mut symbol_maps = SymbolMaps::from_config(config_path, &config)?;
         let mut relocs_map = RelocationsMap::from_config(&config, config_path)?;
@@ -59,17 +62,19 @@ impl FixCtorZero {
 
             // Truncate section
             let delinks = delinks_map.get_mut(kind).context("Failed to get delinks")?;
-            let base_address =
-                delinks.sections.base_address().context("Failed to get base address")?;
+            let base_address = delinks
+                .sections
+                .base_address()
+                .context("Failed to get base address")?;
             let Some((_, ctor_section)) = delinks.sections.by_name_mut(".ctor") else {
                 match kind {
                     ModuleKind::Arm9 | ModuleKind::Overlay(_) => {
                         log::error!("No .ctor section found in {kind}");
                         error = true;
-                    },
+                    }
                     ModuleKind::Autoload(_) => {
                         log::debug!("Skipping {kind} as it has no .ctor section");
-                    },
+                    }
                 }
                 continue;
             };
@@ -153,12 +158,14 @@ impl FixCtorZero {
 
         // New loop to delete relocations to all symbols in `removed_symbols`
         for (source_kind, _) in config.iter_modules() {
-            let relocs = relocs_map.get_mut(source_kind).context("Failed to find relocations")?;
+            let relocs = relocs_map
+                .get_mut(source_kind)
+                .context("Failed to find relocations")?;
             for (target_kind, symbol) in &removed_symbols {
                 for from in relocs.get_by_to_address(symbol.addr).to_vec() {
                     let reloc = relocs.get_mut(from).unwrap();
                     match reloc.module() {
-                        RelocationModule::None => {},
+                        RelocationModule::None => {}
                         RelocationModule::Overlay { id } => {
                             if let ModuleKind::Overlay(target_id) = *target_kind
                                 && *id == target_id
@@ -173,7 +180,7 @@ impl FixCtorZero {
                                 error = true;
                                 continue;
                             }
-                        },
+                        }
                         RelocationModule::Overlays { ids } => {
                             if let ModuleKind::Overlay(target_id) = *target_kind
                                 && ids.contains(&target_id)
@@ -192,11 +199,11 @@ impl FixCtorZero {
                                     "Removed target overlay {target_id} from relocation from {from:#010x} in {source_kind}"
                                 );
                             }
-                        },
+                        }
                         RelocationModule::Main
                         | RelocationModule::Itcm
                         | RelocationModule::Dtcm
-                        | RelocationModule::Autoload { .. } => {},
+                        | RelocationModule::Autoload { .. } => {}
                     }
                 }
             }

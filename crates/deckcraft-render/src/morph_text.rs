@@ -65,8 +65,18 @@ fn tokens(l: &TextLayout, chars: bool) -> (Vec<Token>, Vec<(usize, usize)>) {
                 tok.glyphs.push((ri, gi));
             }
             _ => {
-                let origin = l.runs.get(ri).and_then(|r| r.glyphs.get(gi)).map(|g| Point::new(g.1, g.2)).unwrap_or(Point::ZERO);
-                out.push(Token { key: ch.to_string(), glyphs: vec![(ri, gi)], origin, run: ri });
+                let origin = l
+                    .runs
+                    .get(ri)
+                    .and_then(|r| r.glyphs.get(gi))
+                    .map(|g| Point::new(g.1, g.2))
+                    .unwrap_or(Point::ZERO);
+                out.push(Token {
+                    key: ch.to_string(),
+                    glyphs: vec![(ri, gi)],
+                    origin,
+                    run: ri,
+                });
             }
         }
         last = Some((para, ci));
@@ -79,7 +89,10 @@ fn matches(a: &[Token], b: &[Token]) -> Vec<Option<usize>> {
     let mut used = vec![false; a.len()];
     b.iter()
         .map(|tb| {
-            let i = a.iter().enumerate().position(|(i, ta)| !used.get(i).copied().unwrap_or(true) && ta.key == tb.key)?;
+            let i = a
+                .iter()
+                .enumerate()
+                .position(|(i, ta)| !used.get(i).copied().unwrap_or(true) && ta.key == tb.key)?;
             if let Some(u) = used.get_mut(i) {
                 *u = true;
             }
@@ -91,7 +104,17 @@ fn matches(a: &[Token], b: &[Token]) -> Vec<Option<usize>> {
 fn layout(ctx: &Ctx, s: &Shape, x: Xfrm, fields: &dyn Fields) -> Option<TextLayout> {
     let body = s.text.as_ref().filter(|b| !b.is_empty())?;
     let rect = shape_geometry(s, x.w, x.h).text_rect;
-    Some(deckcraft_text::layout(ctx, s, body, &Opts { rect, fields, prompt_color: None, no_shrink: false }))
+    Some(deckcraft_text::layout(
+        ctx,
+        s,
+        body,
+        &Opts {
+            rect,
+            fields,
+            prompt_color: None,
+            no_shrink: false,
+        },
+    ))
 }
 
 fn glyph_at(l: &TextLayout, (ri, gi): (usize, usize)) -> Option<(&GlyphRun, u32, Point)> {
@@ -101,7 +124,11 @@ fn glyph_at(l: &TextLayout, (ri, gi): (usize, usize)) -> Option<(&GlyphRun, u32,
 }
 
 fn same_look(a: &GlyphRun, b: &GlyphRun) -> bool {
-    a.face.id() == b.face.id() && a.size == b.size && a.color == b.color && a.alpha == b.alpha && a.outline == b.outline
+    a.face.id() == b.face.id()
+        && a.size == b.size
+        && a.color == b.color
+        && a.alpha == b.alpha
+        && a.outline == b.outline
 }
 
 fn lerp(a: f64, b: f64, t: f64) -> f64 {
@@ -118,12 +145,17 @@ pub(crate) fn draw(
     now: Xfrm,
     view: Affine,
 ) {
-    let t = if m.t.is_finite() { m.t.clamp(0.0, 1.0) } else { 1.0 };
+    let t = if m.t.is_finite() {
+        m.t.clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
     let la = layout(ca, a, m.from, fa);
     let lb = layout(cb, b, m.to, fb);
     let mt = view * now.affine();
     // Rotated (vertical) text: no per-word travel, the two texts cross-fade on the moving box.
-    let rotated = la.as_ref().is_some_and(|l| l.rotation != 0.0) || lb.as_ref().is_some_and(|l| l.rotation != 0.0);
+    let rotated = la.as_ref().is_some_and(|l| l.rotation != 0.0)
+        || lb.as_ref().is_some_and(|l| l.rotation != 0.0);
     if rotated || la.is_none() || lb.is_none() {
         for (l, s, alpha, x) in [(la, a, 1.0 - t, m.from), (lb, b, t, m.to)] {
             if let Some(l) = l
@@ -136,33 +168,52 @@ pub(crate) fn draw(
         }
         return;
     }
-    let (Some(la), Some(lb)) = (la, lb) else { return };
+    let (Some(la), Some(lb)) = (la, lb) else {
+        return;
+    };
     let (ta, loose_a) = tokens(&la, m.chars);
     let (tb, loose_b) = tokens(&lb, m.chars);
     let pairs = matches(&ta, &tb);
     // Flipped boxes keep their text readable, as when drawn (see `text_transform`).
-    let (tra, trb) = (shape_geometry(a, m.from.w, m.from.h).text_rect, shape_geometry(b, m.to.w, m.to.h).text_rect);
-    let (ma, mb) = (text_transform(view * m.from.affine(), tra, 0.0), text_transform(view * m.to.affine(), trb, 0.0));
+    let (tra, trb) = (
+        shape_geometry(a, m.from.w, m.from.h).text_rect,
+        shape_geometry(b, m.to.w, m.to.h).text_rect,
+    );
+    let (ma, mb) = (
+        text_transform(view * m.from.affine(), tra, 0.0),
+        text_transform(view * m.to.affine(), trb, 0.0),
+    );
     let (mta, mtb) = (text_transform(mt, tra, 0.0), text_transform(mt, trb, 0.0));
     let c = mta.as_coeffs();
     let linear = Affine::new([c[0], c[1], c[2], c[3], 0.0, 0.0]);
     let mut moved_a = vec![false; ta.len()];
     // Shared tokens travel.
     for (j, i) in pairs.iter().enumerate() {
-        let (Some(i), Some(tok_b)) = (*i, tb.get(j)) else { continue };
+        let (Some(i), Some(tok_b)) = (*i, tb.get(j)) else {
+            continue;
+        };
         let Some(tok_a) = ta.get(i) else { continue };
         if let Some(f) = moved_a.get_mut(i) {
             *f = true;
         }
-        let (Some(ra), Some(rb)) = (la.runs.get(tok_a.run), lb.runs.get(tok_b.run)) else { continue };
+        let (Some(ra), Some(rb)) = (la.runs.get(tok_a.run), lb.runs.get(tok_b.run)) else {
+            continue;
+        };
         let p = (ma * tok_a.origin).lerp(mb * tok_b.origin, t);
-        let ratio = if ra.size > 0.0 && rb.size > 0.0 { rb.size / ra.size } else { 1.0 };
+        let ratio = if ra.size > 0.0 && rb.size > 0.0 {
+            rb.size / ra.size
+        } else {
+            1.0
+        };
         let same = same_look(ra, rb);
         let alpha_a = if same { 1.0 } else { 1.0 - t };
         let sa = lerp(1.0, ratio, t);
         for &g in &tok_a.glyphs {
             if let Some((run, gid, pos)) = glyph_at(&la, g) {
-                let at = Affine::translate(p.to_vec2()) * linear * Affine::scale(sa) * Affine::translate(pos - tok_a.origin);
+                let at = Affine::translate(p.to_vec2())
+                    * linear
+                    * Affine::scale(sa)
+                    * Affine::translate(pos - tok_a.origin);
                 draw_glyph(ctx, run, gid, at, alpha_a);
             }
         }
@@ -170,7 +221,10 @@ pub(crate) fn draw(
             let sb = lerp(1.0 / ratio, 1.0, t);
             for &g in &tok_b.glyphs {
                 if let Some((run, gid, pos)) = glyph_at(&lb, g) {
-                    let at = Affine::translate(p.to_vec2()) * linear * Affine::scale(sb) * Affine::translate(pos - tok_b.origin);
+                    let at = Affine::translate(p.to_vec2())
+                        * linear
+                        * Affine::scale(sb)
+                        * Affine::translate(pos - tok_b.origin);
                     draw_glyph(ctx, run, gid, at, t);
                 }
             }
@@ -185,13 +239,19 @@ pub(crate) fn draw(
         .filter_map(|(j, i)| {
             let (tok_a, tok_b) = (ta.get((*i)?)?, tb.get(j)?);
             let (ra, rb) = (la.runs.get(tok_a.run)?, lb.runs.get(tok_b.run)?);
-            let ratio = if ra.size > 0.0 && rb.size > 0.0 { rb.size / ra.size } else { 1.0 };
+            let ratio = if ra.size > 0.0 && rb.size > 0.0 {
+                rb.size / ra.size
+            } else {
+                1.0
+            };
             Some((ma * tok_a.origin, mb * tok_b.origin, ratio))
         })
         .collect();
     let n = shared.len() as f64;
     let s = shared.iter().map(|x| x.2).sum::<f64>() / n;
-    let c = shared.iter().fold(Vec2::ZERO, |acc, (pa, pb, _)| acc + (pb.to_vec2() - pa.to_vec2() * s)) / n;
+    let c = shared.iter().fold(Vec2::ZERO, |acc, (pa, pb, _)| {
+        acc + (pb.to_vec2() - pa.to_vec2() * s)
+    }) / n;
     let (place_a, place_b) = if !shared.is_empty() && s.is_finite() && s > 0.0 && c.is_finite() {
         // Old text: p ↦ lerp(p, F(p), t). New text: q ↦ lerp(F⁻¹(q), q, t).
         let a = Affine::translate(c * t) * Affine::scale(lerp(1.0, s, t));
@@ -200,15 +260,27 @@ pub(crate) fn draw(
     } else {
         (mta, mtb)
     };
-    let unmatched_a =
-        ta.iter().enumerate().filter(|(i, _)| !moved_a.get(*i).copied().unwrap_or(false)).flat_map(|(_, tok)| tok.glyphs.iter().copied());
+    let unmatched_a = ta
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !moved_a.get(*i).copied().unwrap_or(false))
+        .flat_map(|(_, tok)| tok.glyphs.iter().copied());
     for g in unmatched_a.chain(loose_a) {
         if let Some((run, gid, pos)) = glyph_at(&la, g) {
-            draw_glyph(ctx, run, gid, place_a * Affine::translate(pos.to_vec2()), 1.0 - t);
+            draw_glyph(
+                ctx,
+                run,
+                gid,
+                place_a * Affine::translate(pos.to_vec2()),
+                1.0 - t,
+            );
         }
     }
-    let unmatched_b =
-        tb.iter().enumerate().filter(|(j, _)| pairs.get(*j).is_none_or(|p| p.is_none())).flat_map(|(_, tok)| tok.glyphs.iter().copied());
+    let unmatched_b = tb
+        .iter()
+        .enumerate()
+        .filter(|(j, _)| pairs.get(*j).is_none_or(|p| p.is_none()))
+        .flat_map(|(_, tok)| tok.glyphs.iter().copied());
     for g in unmatched_b.chain(loose_b) {
         if let Some((run, gid, pos)) = glyph_at(&lb, g) {
             draw_glyph(ctx, run, gid, place_b * Affine::translate(pos.to_vec2()), t);

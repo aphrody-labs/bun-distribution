@@ -50,7 +50,10 @@ pub fn parse_entries(text: &str) -> (Vec<Entry>, Vec<String>) {
             (Some(ctx), Some(src), Some(tr), None) if !src.is_empty() && !tr.is_empty() => {
                 entries.push((unescape(ctx), unescape(src), unescape(tr)));
             }
-            _ => errors.push(format!("line {}: expected `context<TAB>source<TAB>translation`", n + 1)),
+            _ => errors.push(format!(
+                "line {}: expected `context<TAB>source<TAB>translation`",
+                n + 1
+            )),
         }
     }
     (entries, errors)
@@ -74,7 +77,9 @@ impl Catalog {
     }
 
     pub fn contextual(&self, ctx: &str, s: &str) -> Option<&str> {
-        self.contextual.get(&format!("{ctx}\u{1}{s}")).map(String::as_str)
+        self.contextual
+            .get(&format!("{ctx}\u{1}{s}"))
+            .map(String::as_str)
     }
 }
 

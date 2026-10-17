@@ -20,7 +20,11 @@ fn strl(video: bool) -> Vec<u8> {
     let mut strh = vec![0u8; 56];
     strh[..4].copy_from_slice(if video { b"vids" } else { b"auds" });
     strh[4..8].copy_from_slice(if video { b"MJPG" } else { &[0; 4] });
-    let (scale, rate, ss) = if video { (1u32, 25u32, 0u32) } else { (4, 192_000, 4) };
+    let (scale, rate, ss) = if video {
+        (1u32, 25u32, 0u32)
+    } else {
+        (4, 192_000, 4)
+    };
     strh[20..24].copy_from_slice(&scale.to_le_bytes());
     strh[24..28].copy_from_slice(&rate.to_le_bytes());
     strh[44..48].copy_from_slice(&ss.to_le_bytes());
@@ -62,8 +66,13 @@ fn avi(idx1: bool, absolute: bool, rec: bool) -> Vec<u8> {
     hdrl.extend(strl(true));
     hdrl.extend(strl(false));
     let hdrl = list(b"hdrl", &hdrl);
-    let samples: [(&[u8; 4], Vec<u8>, bool); 5] =
-        [(b"00dc", vec![1; 10], true), (b"01wb", vec![2; 16], true), (b"00dc", vec![3; 6], false), (b"01wb", vec![4; 8], true), (b"00dc", vec![5; 7], true)];
+    let samples: [(&[u8; 4], Vec<u8>, bool); 5] = [
+        (b"00dc", vec![1; 10], true),
+        (b"01wb", vec![2; 16], true),
+        (b"00dc", vec![3; 6], false),
+        (b"01wb", vec![4; 8], true),
+        (b"00dc", vec![5; 7], true),
+    ];
     let mut body = Vec::new();
     let mut entries = Vec::new();
     for (id, data, key) in &samples {
@@ -100,7 +109,11 @@ fn avi(idx1: bool, absolute: bool, rec: bool) -> Vec<u8> {
 }
 
 fn table(f: &AviFile, s: usize) -> Vec<(u32, bool)> {
-    f.streams[s].chunks.iter().map(|c| (c.size, c.key)).collect()
+    f.streams[s]
+        .chunks
+        .iter()
+        .map(|c| (c.size, c.key))
+        .collect()
 }
 
 #[test]
@@ -116,15 +129,45 @@ fn headers_and_every_index_path_agree() {
         let f = open(&file).unwrap();
         let what = format!("idx1 {idx1} absolute {absolute} rec {rec}");
         assert_eq!(f.index, want, "{what}");
-        assert_eq!((f.header.width, f.header.height, f.header.total_frames, f.header.micro_sec_per_frame), (64, 48, 3, 40_000));
+        assert_eq!(
+            (
+                f.header.width,
+                f.header.height,
+                f.header.total_frames,
+                f.header.micro_sec_per_frame
+            ),
+            (64, 48, 3, 40_000)
+        );
         let (v, a) = (&f.streams[0], &f.streams[1]);
-        assert_eq!((v.kind, v.handler, v.scale, v.rate, v.name.as_deref()), (StreamKind::Video, *b"MJPG", 1, 25, Some("Camera")));
-        assert_eq!(v.video.as_ref().map(|b| (b.width, b.height, b.bit_count, b.compression)), Some((64, 48, 24, *b"MJPG")));
+        assert_eq!(
+            (v.kind, v.handler, v.scale, v.rate, v.name.as_deref()),
+            (StreamKind::Video, *b"MJPG", 1, 25, Some("Camera"))
+        );
+        assert_eq!(
+            v.video
+                .as_ref()
+                .map(|b| (b.width, b.height, b.bit_count, b.compression)),
+            Some((64, 48, 24, *b"MJPG"))
+        );
         let w = a.audio.as_ref().unwrap();
-        assert_eq!((w.format_tag, w.channels, w.sample_rate, w.block_align, w.bits_per_sample, a.sample_size), (1, 2, 48_000, 4, 16, 4));
+        assert_eq!(
+            (
+                w.format_tag,
+                w.channels,
+                w.sample_rate,
+                w.block_align,
+                w.bits_per_sample,
+                a.sample_size
+            ),
+            (1, 2, 48_000, 4, 16, 4)
+        );
         // the index knows the delta frame; a scan cannot
         let keys = if idx1 { [true, false, true] } else { [true; 3] };
-        assert_eq!(table(&f, 0), vec![(10, keys[0]), (6, keys[1]), (7, keys[2])], "{what}");
+        assert_eq!(
+            table(&f, 0),
+            vec![(10, keys[0]), (6, keys[1]), (7, keys[2])],
+            "{what}"
+        );
         assert_eq!(f.streams[0].keyframes_known, idx1);
         assert_eq!(table(&f, 1), vec![(16, true), (8, true)], "{what}");
         assert_eq!(f.read_chunk(&file, 0, 1).unwrap(), vec![3; 6], "{what}");
@@ -133,7 +176,14 @@ fn headers_and_every_index_path_agree() {
         assert!(f.read_chunk(&file, 0, 3).is_err() && f.read_chunk(&file, 5, 0).is_err());
     }
     // the idx1 path can be skipped
-    let f = open_with(&avi(true, false, false), OpenOptions { ignore_idx1: true, ..Default::default() }).unwrap();
+    let f = open_with(
+        &avi(true, false, false),
+        OpenOptions {
+            ignore_idx1: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     assert_eq!(f.index, IndexSource::Scan);
 }
 
@@ -154,7 +204,11 @@ fn not_avi_and_truncated_recordings() {
 /// whatever opens reads its chunks without panicking.
 #[test]
 fn mutations_never_panic() {
-    for base in [avi(true, false, true), avi(false, false, false), avi(true, true, false)] {
+    for base in [
+        avi(true, false, true),
+        avi(false, false, false),
+        avi(true, true, false),
+    ] {
         for cut in 0..base.len() {
             let b = base[..cut].to_vec();
             if let Ok(f) = open(&b) {
@@ -190,7 +244,12 @@ fn avi_odml(ix_at: [u64; 2]) -> (Vec<u8>, [u64; 2]) {
         b.extend_from_slice(&4u16.to_le_bytes()); // wLongsPerEntry
         b.extend_from_slice(&[0, 0]); // subtype, AVI_INDEX_OF_INDEXES
         b.extend_from_slice(&1u32.to_le_bytes());
-        b.extend_from_slice(&[b'0', b'0' + stream, if stream == 0 { b'd' } else { b'w' }, if stream == 0 { b'c' } else { b'b' }]);
+        b.extend_from_slice(&[
+            b'0',
+            b'0' + stream,
+            if stream == 0 { b'd' } else { b'w' },
+            if stream == 0 { b'c' } else { b'b' },
+        ]);
         b.extend_from_slice(&[0; 12]);
         b.extend_from_slice(&at.to_le_bytes());
         b.extend_from_slice(&0u32.to_le_bytes());
@@ -211,7 +270,13 @@ fn avi_odml(ix_at: [u64; 2]) -> (Vec<u8>, [u64; 2]) {
     let movi_data_at = 8 + riff.len() as u64 + 12; // RIFF hdr, so far, LIST hdr + `movi`
     let mut body = Vec::new();
     let mut at: [Vec<(u64, u32, bool)>; 2] = [Vec::new(), Vec::new()];
-    for (s, data, key) in [(0usize, vec![1u8; 10], true), (1, vec![2; 16], true), (0, vec![3; 6], false), (1, vec![4; 8], true), (0, vec![5; 7], true)] {
+    for (s, data, key) in [
+        (0usize, vec![1u8; 10], true),
+        (1, vec![2; 16], true),
+        (0, vec![3; 6], false),
+        (1, vec![4; 8], true),
+        (0, vec![5; 7], true),
+    ] {
         let id = if s == 0 { b"00dc" } else { b"01wb" };
         at[s].push((movi_data_at + body.len() as u64 + 8, data.len() as u32, key));
         body.extend(chunk(id, &data));
@@ -248,9 +313,27 @@ fn opendml_standard_indexes() {
     assert_eq!(table(&f, 1), vec![(16, true), (8, true)]);
     assert_eq!(f.read_chunk(&file, 0, 2).unwrap(), vec![5; 7]);
     // ignoring the OpenDML index, the scan finds the same chunks (and skips the ix## chunks)
-    let s = open_with(&file, OpenOptions { ignore_odml: true, ..Default::default() }).unwrap();
+    let s = open_with(
+        &file,
+        OpenOptions {
+            ignore_odml: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     assert_eq!(s.index, IndexSource::Scan);
-    assert_eq!(s.streams[0].chunks.iter().map(|c| c.offset).collect::<Vec<_>>(), f.streams[0].chunks.iter().map(|c| c.offset).collect::<Vec<_>>());
+    assert_eq!(
+        s.streams[0]
+            .chunks
+            .iter()
+            .map(|c| c.offset)
+            .collect::<Vec<_>>(),
+        f.streams[0]
+            .chunks
+            .iter()
+            .map(|c| c.offset)
+            .collect::<Vec<_>>()
+    );
     // a broken super index (pointing nowhere) falls back to a scan
     let (bad, _) = avi_odml([3, 5]);
     assert_eq!(open(&bad).unwrap().index, IndexSource::Scan);

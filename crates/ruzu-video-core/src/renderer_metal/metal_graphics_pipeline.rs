@@ -14,8 +14,8 @@ use std::sync::Arc;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_metal::{MTLSamplerState, MTLTexture};
-use shader_recompiler::shader_info::{num_descriptors, Info as ShaderInfo};
 use shader_recompiler::shader_info::TextureType;
+use shader_recompiler::shader_info::{num_descriptors, Info as ShaderInfo};
 use thiserror::Error;
 
 use crate::buffer_cache::buffer_cache_base::BufferCacheRuntime as _;
@@ -25,7 +25,9 @@ use crate::renderer_vulkan::pipeline_helper::{
 };
 use crate::surface::{get_format_type, is_pixel_format_integer, PixelFormat, SurfaceType};
 use crate::texture_cache::texture_cache_base::ImageViewInOut;
-use crate::texture_cache::types::{ImageId, ImageViewId, SamplerId, NULL_IMAGE_ID, NULL_IMAGE_VIEW_ID, NULL_SAMPLER_ID};
+use crate::texture_cache::types::{
+    ImageId, ImageViewId, SamplerId, NULL_IMAGE_ID, NULL_IMAGE_VIEW_ID, NULL_SAMPLER_ID,
+};
 use crate::textures::texture::texture_pair;
 
 use super::metal_buffer::MetalBuffer;
@@ -84,9 +86,18 @@ pub struct MetalStageTextureBinding {
 
 #[derive(Clone, Copy, Debug)]
 pub enum MetalTextureBindingSource {
-    Buffer { is_written: bool },
-    Sampled { view_id: ImageViewId, texture_type: TextureType },
-    Storage { view_id: ImageViewId, texture_type: TextureType, is_written: bool },
+    Buffer {
+        is_written: bool,
+    },
+    Sampled {
+        view_id: ImageViewId,
+        texture_type: TextureType,
+    },
+    Storage {
+        view_id: ImageViewId,
+        texture_type: TextureType,
+        is_written: bool,
+    },
 }
 
 struct PreparedTexture {
@@ -131,38 +142,61 @@ impl MetalPreparedGraphics {
             return Ok(false);
         }
         let image_for_view = |id: ImageViewId| {
-            if !id.is_valid() || id == NULL_IMAGE_VIEW_ID || !cache.base.slot_image_views.contains(id) {
+            if !id.is_valid()
+                || id == NULL_IMAGE_VIEW_ID
+                || !cache.base.slot_image_views.contains(id)
+            {
                 return None;
             }
             let image_id = cache.base.slot_image_views[id].image_id;
-            (image_id != NULL_IMAGE_ID && cache.base.slot_images.contains(image_id)).then_some(image_id)
+            (image_id != NULL_IMAGE_ID && cache.base.slot_images.contains(image_id))
+                .then_some(image_id)
         };
         let Some(depth_image) = image_for_view(cache.base.render_targets.depth_buffer_id) else {
             return Ok(false);
         };
-        let stages = [&self.vertex, &self.control, &self.evaluation, &self.geometry, &self.fragment];
+        let stages = [
+            &self.vertex,
+            &self.control,
+            &self.evaluation,
+            &self.geometry,
+            &self.fragment,
+        ];
         let mut candidates = Vec::new();
         for (stage, bindings) in stages.into_iter().enumerate() {
             for (index, binding) in bindings.textures.iter().enumerate() {
-                if binding.texture.is_none() { continue; }
+                if binding.texture.is_none() {
+                    continue;
+                }
                 match depth_snapshot_candidate(binding.source, depth_image, &image_for_view) {
-                    Ok(Some((view_id, texture_type))) => candidates.push((stage, index, view_id, texture_type)),
-                    Ok(None) => {},
+                    Ok(Some((view_id, texture_type))) => {
+                        candidates.push((stage, index, view_id, texture_type))
+                    }
+                    Ok(None) => {}
                     Err(()) => return Ok(false),
                 }
             }
         }
-        if candidates.is_empty() { return Ok(false); }
+        if candidates.is_empty() {
+            return Ok(false);
+        }
         let mut replacements = Vec::with_capacity(candidates.len());
         for (stage, index, view_id, texture_type) in candidates {
-            let Some(texture) = cache.retained_sampling_snapshot_view(view_id, texture_type)? else {
+            let Some(texture) = cache.retained_sampling_snapshot_view(view_id, texture_type)?
+            else {
                 return Ok(false);
             };
             replacements.push((stage, index, texture));
         }
         // Publish only a complete substitution. Native snapshot copies preserve
         // guest order; original attachments and depth/stencil tests stay bound.
-        let stages = [&mut self.vertex, &mut self.control, &mut self.evaluation, &mut self.geometry, &mut self.fragment];
+        let stages = [
+            &mut self.vertex,
+            &mut self.control,
+            &mut self.evaluation,
+            &mut self.geometry,
+            &mut self.fragment,
+        ];
         for (stage, index, texture) in replacements {
             stages[stage].textures[index].texture = Some(texture);
         }
@@ -177,16 +211,23 @@ fn depth_snapshot_candidate(
 ) -> Result<Option<(ImageViewId, TextureType)>, ()> {
     match source {
         MetalTextureBindingSource::Buffer { .. } => Ok(None),
-        MetalTextureBindingSource::Sampled { view_id, texture_type } => {
+        MetalTextureBindingSource::Sampled {
+            view_id,
+            texture_type,
+        } => {
             let image = image_for_view(view_id).ok_or(())?;
             Ok((image == depth_image).then_some((view_id, texture_type)))
-        },
+        }
         // Even read-only storage views stay on the ordinary path until their
         // format reinterpretation and same-draw access contract are supported.
         MetalTextureBindingSource::Storage { view_id, .. } => {
             let image = image_for_view(view_id).ok_or(())?;
-            if image == depth_image { Err(()) } else { Ok(None) }
-        },
+            if image == depth_image {
+                Err(())
+            } else {
+                Ok(None)
+            }
+        }
     }
 }
 
@@ -443,14 +484,33 @@ pub fn configure_graphics_resources(
     for (index, prepared) in tessellation.iter_mut().enumerate() {
         let stage = index + 1;
         if let Some(tessellation) = stages.tessellation() {
-            let bindings = if stage == 1 { &tessellation.control.bindings }
-                else { &tessellation.evaluation.bindings };
-            *prepared = prepare_stage(device, stage, stages.stage_infos(), bindings, texture_cache,
-                &graphics_buffers, &null_buffer, &views, &sampler_ids, &mut cursors,
-                &mut rescaling, &mut descriptor_binding)?;
+            let bindings = if stage == 1 {
+                &tessellation.control.bindings
+            } else {
+                &tessellation.evaluation.bindings
+            };
+            *prepared = prepare_stage(
+                device,
+                stage,
+                stages.stage_infos(),
+                bindings,
+                texture_cache,
+                &graphics_buffers,
+                &null_buffer,
+                &views,
+                &sampler_ids,
+                &mut cursors,
+                &mut rescaling,
+                &mut descriptor_binding,
+            )?;
         } else {
-            advance_empty_native_stage(stage, &stages.stage_infos()[stage], &mut cursors,
-                &mut rescaling, &mut descriptor_binding);
+            advance_empty_native_stage(
+                stage,
+                &stages.stage_infos()[stage],
+                &mut cursors,
+                &mut rescaling,
+                &mut descriptor_binding,
+            );
         }
     }
     let [control, evaluation] = tessellation;
@@ -688,7 +748,9 @@ fn prepare_stage(
                 .cloned();
             cursors.image_buffer += 1;
             textures.push(PreparedTexture {
-                source: MetalTextureBindingSource::Buffer { is_written: descriptor.is_written },
+                source: MetalTextureBindingSource::Buffer {
+                    is_written: descriptor.is_written,
+                },
                 texture: cached
                     .map(|cached| {
                         cached.buffer.new_texture_view(
@@ -733,11 +795,17 @@ fn prepare_stage(
             // Report the guest view behind Metal's otherwise opaque validation
             // message. Disabled outside explicit API-validation runs.
             static VALIDATION: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-            static REPORTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+            static REPORTED: std::sync::atomic::AtomicBool =
+                std::sync::atomic::AtomicBool::new(false);
             if *VALIDATION.get_or_init(|| std::env::var_os("MTL_DEBUG_LAYER").is_some())
                 && !descriptor.is_integer
-                && texture.as_ref().is_some_and(|texture| matches!(texture.pixelFormat(),
-                    objc2_metal::MTLPixelFormat::X32_Stencil8 | objc2_metal::MTLPixelFormat::Stencil8))
+                && texture.as_ref().is_some_and(|texture| {
+                    matches!(
+                        texture.pixelFormat(),
+                        objc2_metal::MTLPixelFormat::X32_Stencil8
+                            | objc2_metal::MTLPixelFormat::Stencil8
+                    )
+                })
                 && !REPORTED.swap(true, std::sync::atomic::Ordering::Relaxed)
             {
                 log::error!("[METAL_STENCIL_TYPE] stage={stage} descriptor={descriptor:?} tic={} view={:?} info={:?}",
@@ -767,7 +835,8 @@ fn prepare_stage(
             textures.push(PreparedTexture {
                 texture,
                 source: MetalTextureBindingSource::Sampled {
-                    view_id, texture_type: descriptor.texture_type,
+                    view_id,
+                    texture_type: descriptor.texture_type,
                 },
             });
             samplers.push(sampler);
@@ -796,7 +865,8 @@ fn prepare_stage(
             textures.push(PreparedTexture {
                 texture,
                 source: MetalTextureBindingSource::Storage {
-                    view_id, texture_type: descriptor.texture_type,
+                    view_id,
+                    texture_type: descriptor.texture_type,
                     is_written: descriptor.is_written,
                 },
             });
@@ -815,10 +885,17 @@ fn prepare_stage(
 
     let mut prepared = bind_reflected_layout(layout, declarations)?;
     if let Some(arguments) = super::metal_update_descriptor::MetalSamplerArgumentBuffer::new(
-        device, layout, prepared.samplers.iter().map(|sampler| (sampler.index, &sampler.sampler)),
+        device,
+        layout,
+        prepared
+            .samplers
+            .iter()
+            .map(|sampler| (sampler.index, &sampler.sampler)),
     )? {
         prepared.buffers.push(MetalStageBufferBinding {
-            index: arguments.index, buffer: arguments.buffer, offset: 0,
+            index: arguments.index,
+            buffer: arguments.buffer,
+            offset: 0,
         });
         prepared.samplers_in_argument_buffer = true;
     }
@@ -1021,16 +1098,41 @@ mod tests {
     fn depth_snapshot_candidates_reject_storage_aliases_and_missing_views() {
         let depth = ImageId { index: 3 };
         let view_id = ImageViewId { index: 7 };
-        let sampled = MetalTextureBindingSource::Sampled { view_id, texture_type: TextureType::Color2D };
-        assert_eq!(depth_snapshot_candidate(sampled, depth, |_| Some(depth)),
-            Ok(Some((view_id, TextureType::Color2D))));
-        assert_eq!(depth_snapshot_candidate(sampled, depth, |_| Some(ImageId { index: 9 })), Ok(None));
+        let sampled = MetalTextureBindingSource::Sampled {
+            view_id,
+            texture_type: TextureType::Color2D,
+        };
+        assert_eq!(
+            depth_snapshot_candidate(sampled, depth, |_| Some(depth)),
+            Ok(Some((view_id, TextureType::Color2D)))
+        );
+        assert_eq!(
+            depth_snapshot_candidate(sampled, depth, |_| Some(ImageId { index: 9 })),
+            Ok(None)
+        );
         assert_eq!(depth_snapshot_candidate(sampled, depth, |_| None), Err(()));
         for is_written in [false, true] {
-            let storage = MetalTextureBindingSource::Storage { view_id, texture_type: TextureType::Color2D, is_written };
-            assert_eq!(depth_snapshot_candidate(storage, depth, |_| Some(depth)), Err(()));
-            assert_eq!(depth_snapshot_candidate(storage, depth, |_| Some(ImageId { index: 9 })), Ok(None));
-            assert_eq!(depth_snapshot_candidate(MetalTextureBindingSource::Buffer { is_written }, depth, |_| None), Ok(None));
+            let storage = MetalTextureBindingSource::Storage {
+                view_id,
+                texture_type: TextureType::Color2D,
+                is_written,
+            };
+            assert_eq!(
+                depth_snapshot_candidate(storage, depth, |_| Some(depth)),
+                Err(())
+            );
+            assert_eq!(
+                depth_snapshot_candidate(storage, depth, |_| Some(ImageId { index: 9 })),
+                Ok(None)
+            );
+            assert_eq!(
+                depth_snapshot_candidate(
+                    MetalTextureBindingSource::Buffer { is_written },
+                    depth,
+                    |_| None
+                ),
+                Ok(None)
+            );
         }
     }
 
@@ -1038,51 +1140,78 @@ mod tests {
     fn reflected_texture_arrays_preserve_view_identity_and_write_intent() {
         let mut prepared = MetalPreparedStage::default();
         let reflected = MetalResourceBinding {
-            descriptor_set: 0, binding: 3, kind: MetalResourceKind::StorageImage,
-            buffer_index: 0, texture_index: 7, sampler_index: 0,
+            descriptor_set: 0,
+            binding: 3,
+            kind: MetalResourceKind::StorageImage,
+            buffer_index: 0,
+            texture_index: 7,
+            sampler_index: 0,
             count: NonZeroU32::new(2),
         };
         let view_id = ImageViewId { index: 41 };
-        bind_declaration(&mut prepared, &reflected, PreparedDescriptor::Textures(vec![
-            PreparedTexture {
-                texture: None,
-                source: MetalTextureBindingSource::Storage {
-                    view_id, texture_type: TextureType::ColorArray2D, is_written: true,
+        bind_declaration(
+            &mut prepared,
+            &reflected,
+            PreparedDescriptor::Textures(vec![
+                PreparedTexture {
+                    texture: None,
+                    source: MetalTextureBindingSource::Storage {
+                        view_id,
+                        texture_type: TextureType::ColorArray2D,
+                        is_written: true,
+                    },
                 },
-            },
-            PreparedTexture {
-                texture: None,
-                source: MetalTextureBindingSource::Buffer { is_written: false },
-            },
-        ])).unwrap();
+                PreparedTexture {
+                    texture: None,
+                    source: MetalTextureBindingSource::Buffer { is_written: false },
+                },
+            ]),
+        )
+        .unwrap();
         assert_eq!(prepared.textures[0].index, 7);
         assert_eq!(prepared.textures[1].index, 8);
-        assert!(matches!(prepared.textures[0].source,
+        assert!(matches!(
+            prepared.textures[0].source,
             MetalTextureBindingSource::Storage {
                 view_id: ImageViewId { index: 41 },
-                texture_type: TextureType::ColorArray2D, is_written: true,
-            }));
-        assert!(matches!(prepared.textures[1].source,
-            MetalTextureBindingSource::Buffer { is_written: false }));
+                texture_type: TextureType::ColorArray2D,
+                is_written: true,
+            }
+        ));
+        assert!(matches!(
+            prepared.textures[1].source,
+            MetalTextureBindingSource::Buffer { is_written: false }
+        ));
 
         let reflected = MetalResourceBinding {
-            kind: MetalResourceKind::SampledImage, texture_index: 12,
-            count: NonZeroU32::new(1), ..reflected
+            kind: MetalResourceKind::SampledImage,
+            texture_index: 12,
+            count: NonZeroU32::new(1),
+            ..reflected
         };
-        bind_declaration(&mut prepared, &reflected, PreparedDescriptor::Sampled {
-            textures: vec![PreparedTexture {
-                texture: None,
-                source: MetalTextureBindingSource::Sampled {
-                    view_id, texture_type: TextureType::Color2D,
-                },
-            }],
-            samplers: Vec::new(),
-        }).unwrap();
+        bind_declaration(
+            &mut prepared,
+            &reflected,
+            PreparedDescriptor::Sampled {
+                textures: vec![PreparedTexture {
+                    texture: None,
+                    source: MetalTextureBindingSource::Sampled {
+                        view_id,
+                        texture_type: TextureType::Color2D,
+                    },
+                }],
+                samplers: Vec::new(),
+            },
+        )
+        .unwrap();
         assert_eq!(prepared.textures[2].index, 12);
-        assert!(matches!(prepared.textures[2].source,
+        assert!(matches!(
+            prepared.textures[2].source,
             MetalTextureBindingSource::Sampled {
-                view_id: ImageViewId { index: 41 }, texture_type: TextureType::Color2D,
-            }));
+                view_id: ImageViewId { index: 41 },
+                texture_type: TextureType::Color2D,
+            }
+        ));
     }
 
     #[test]

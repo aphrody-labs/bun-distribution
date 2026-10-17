@@ -76,7 +76,7 @@ impl Bluetooth {
                 if self.scanning && !self.connection_requested && !self.connected {
                     self.queue_connection_request();
                 }
-            },
+            }
             OP_ACCEPT_CONNECTION_REQUEST => {
                 tracing::debug!("guest accepted fake Wiimote Bluetooth connection");
                 self.queue_command_status(opcode);
@@ -84,52 +84,55 @@ impl Bluetooth {
                 self.queue_connection_complete();
                 self.connected = true;
                 self.queue_l2cap_connect_request(L2CAP_PSM_HID_CONTROL, L2CAP_CID_HID_CONTROL);
-            },
+            }
             OP_REMOTE_NAME_REQUEST => {
                 self.queue_command_status(opcode);
                 self.queue_remote_name_request_complete();
-            },
+            }
             OP_READ_REMOTE_SUPPORTED_FEATURES => {
                 self.queue_command_status(opcode);
                 self.queue_read_remote_supported_features_complete();
-            },
+            }
             OP_READ_REMOTE_VERSION_INFORMATION => {
                 self.queue_command_status(opcode);
                 self.queue_read_remote_version_information_complete();
-            },
+            }
             OP_READ_CLOCK_OFFSET => {
                 self.queue_command_status(opcode);
                 self.queue_read_clock_offset_complete();
-            },
+            }
             OP_AUTHENTICATION_REQUESTED => {
                 self.queue_command_status(opcode);
                 self.queue_authentication_complete();
-            },
+            }
             OP_CHANGE_CONNECTION_PACKET_TYPE => {
                 self.queue_command_status(opcode);
                 self.queue_connection_packet_type_changed();
-            },
+            }
             OP_SNIFF_MODE => {
                 self.queue_command_status(opcode);
                 self.queue_mode_change();
-            },
+            }
             OP_READ_STORED_LINK_KEY => {
                 self.queue_return_link_keys();
                 self.queue_command_complete(opcode);
-            },
+            }
             OP_WRITE_LINK_SUPERVISION_TIMEOUT => {
                 self.queue_command_complete(opcode);
-            },
+            }
             OP_DISCONNECT => {
                 let reason = params.get(2).copied().unwrap_or(0x13);
-                tracing::warn!(reason = format!("{reason:#04x}"), "guest requested HCI disconnect");
+                tracing::warn!(
+                    reason = format!("{reason:#04x}"),
+                    "guest requested HCI disconnect"
+                );
                 self.queue_command_status(opcode);
                 self.queue_disconnection_complete(reason);
                 self.connected = false;
                 self.host_hid_control_cid = None;
                 self.host_hid_interrupt_cid = None;
                 self.connection_requested = false;
-            },
+            }
             _ => self.queue_command_complete(opcode),
         }
     }
@@ -194,7 +197,10 @@ impl Bluetooth {
     }
 
     fn queue_command_status(&mut self, opcode: u16) {
-        self.queue_hci_event(EV_COMMAND_STATUS, &[0x00, 0x01, opcode as u8, (opcode >> 8) as u8]);
+        self.queue_hci_event(
+            EV_COMMAND_STATUS,
+            &[0x00, 0x01, opcode as u8, (opcode >> 8) as u8],
+        );
     }
 
     fn queue_return_link_keys(&mut self) {
@@ -256,7 +262,9 @@ impl Bluetooth {
     fn queue_read_remote_supported_features_complete(&mut self) {
         self.queue_hci_event(
             EV_READ_REMOTE_SUPPORTED_FEATURES_COMPLETE,
-            &[0x00, 0x00, 0x01, 0xBC, 0x02, 0x04, 0x38, 0x08, 0x00, 0x00, 0x00],
+            &[
+                0x00, 0x00, 0x01, 0xBC, 0x02, 0x04, 0x38, 0x08, 0x00, 0x00, 0x00,
+            ],
         );
     }
 
@@ -268,7 +276,10 @@ impl Bluetooth {
     }
 
     fn queue_read_clock_offset_complete(&mut self) {
-        self.queue_hci_event(EV_READ_CLOCK_OFFSET_COMPLETE, &[0x00, 0x00, 0x01, 0x18, 0x38]);
+        self.queue_hci_event(
+            EV_READ_CLOCK_OFFSET_COMPLETE,
+            &[0x00, 0x00, 0x01, 0x18, 0x38],
+        );
     }
 
     fn queue_authentication_complete(&mut self) {
@@ -276,7 +287,10 @@ impl Bluetooth {
     }
 
     fn queue_connection_packet_type_changed(&mut self) {
-        self.queue_hci_event(EV_CONNECTION_PACKET_TYPE_CHANGED, &[0x00, 0x00, 0x01, 0x18, 0xCC]);
+        self.queue_hci_event(
+            EV_CONNECTION_PACKET_TYPE_CHANGED,
+            &[0x00, 0x00, 0x01, 0x18, 0xCC],
+        );
     }
 
     fn queue_mode_change(&mut self) {

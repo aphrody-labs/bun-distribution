@@ -88,13 +88,22 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Err("training config requires version 1 and a real workload".into());
     }
     if !config.input_path.exists() || !config.gold_path.is_file() {
-        println!("{}", serde_json::json!({"training":"waiting_for_input_or_gold"}));
+        println!(
+            "{}",
+            serde_json::json!({"training":"waiting_for_input_or_gold"})
+        );
         return Ok(());
     }
     if matches!(config.kind, TrainKind::Lora)
-        && config.base_model.as_ref().is_none_or(|path| !std::path::Path::new(path).exists())
+        && config
+            .base_model
+            .as_ref()
+            .is_none_or(|path| !std::path::Path::new(path).exists())
     {
-        println!("{}", serde_json::json!({"training":"waiting_for_base_model"}));
+        println!(
+            "{}",
+            serde_json::json!({"training":"waiting_for_base_model"})
+        );
         return Ok(());
     }
     let snapshot = SyncSnapshot::capture(&workspace)?;
@@ -109,11 +118,18 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         && previous.config_hash == config_hash
         && previous.input_hash == input_hash
     {
-        println!("{}", serde_json::json!({"training":"unchanged","job_id":previous.job_id}));
+        println!(
+            "{}",
+            serde_json::json!({"training":"unchanged","job_id":previous.job_id})
+        );
         return Ok(());
     }
-    let job_id =
-        format!("dbfr-{}-{}-{}", config.kind.as_str(), &snapshot.revision[..8], &input_hash[..8]);
+    let job_id = format!(
+        "dbfr-{}-{}-{}",
+        config.kind.as_str(),
+        &snapshot.revision[..8],
+        &input_hash[..8]
+    );
     let state_dir = root.join(".aphrody/train/dbfr");
     let output = state_dir.join("jobs").join(&job_id);
     let mut job = TrainingJob::new(&job_id, config.kind, output);
@@ -126,15 +142,26 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(&locks_dir)?;
     let outcome = run_training_job(&job, &root.join("aphrody"), &locks_dir).await?;
     let mut after_hasher = blake3::Hasher::new();
-    hash_input(job.input_path.as_ref().expect("validated input"), &mut after_hasher)?;
-    hash_input(job.gold_path.as_ref().expect("validated gold"), &mut after_hasher)?;
+    hash_input(
+        job.input_path.as_ref().expect("validated input"),
+        &mut after_hasher,
+    )?;
+    hash_input(
+        job.gold_path.as_ref().expect("validated gold"),
+        &mut after_hasher,
+    )?;
     if after_hasher.finalize().to_hex().as_str() != input_hash {
         return Err("training input changed during the job; candidate was not accepted".into());
     }
     if let Some(parent) = state_path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let state = State { revision: snapshot.revision, config_hash, input_hash, job_id };
+    let state = State {
+        revision: snapshot.revision,
+        config_hash,
+        input_hash,
+        job_id,
+    };
     let temp = state_path.with_extension("json.tmp");
     fs::write(&temp, serde_json::to_vec_pretty(&state)?)?;
     fs::rename(temp, state_path)?;
@@ -150,18 +177,21 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
 /// through the environment, so the arguments are ignored. Returns the process exit code.
 #[must_use]
 pub fn cli_main(_args: Vec<OsString>) -> i32 {
-    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("aphrody-agent-train: runtime: {error}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run()) {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("aphrody-agent-train: {error}");
             1
-        },
+        }
     }
 }

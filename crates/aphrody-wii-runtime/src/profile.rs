@@ -187,7 +187,15 @@ mod win_sampler {
                 })
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-            Ok(Self { stop, joiner: Some(joiner), counts, deadline, out, hz, sample_total })
+            Ok(Self {
+                stop,
+                joiner: Some(joiner),
+                counts,
+                deadline,
+                out,
+                hz,
+                sample_total,
+            })
         }
 
         pub fn expired(&self) -> bool {

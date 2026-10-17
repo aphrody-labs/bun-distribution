@@ -21,35 +21,40 @@ pub fn show_cpu<const SYSTEM: SystemId>(
                 ui.set_min_width(350.0);
                 ui.set_max_width(350.0);
 
-                Grid::new("special_regs").num_columns(5).striped(true).show(ui, |ui| {
-                    ui.label("PC");
-                    ui.monospace(format!("{:#010X}", cpu.pc));
-                    ui.allocate_space(egui::vec2(16.0, 0.0));
-                    ui.label("CTR");
-                    ui.monospace(format!("{:#010X}", cpu.spr.ctr));
-                    ui.end_row();
+                Grid::new("special_regs")
+                    .num_columns(5)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        ui.label("PC");
+                        ui.monospace(format!("{:#010X}", cpu.pc));
+                        ui.allocate_space(egui::vec2(16.0, 0.0));
+                        ui.label("CTR");
+                        ui.monospace(format!("{:#010X}", cpu.spr.ctr));
+                        ui.end_row();
 
-                    ui.label("LR");
-                    ui.monospace(format!("{:#010X}", cpu.spr.lr));
-                    ui.allocate_space(egui::vec2(16.0, 0.0));
-                    ui.label("MSR");
-                    ui.monospace(format!("{:#010X}", cpu.msr.raw()));
-                    ui.end_row();
+                        ui.label("LR");
+                        ui.monospace(format!("{:#010X}", cpu.spr.lr));
+                        ui.allocate_space(egui::vec2(16.0, 0.0));
+                        ui.label("MSR");
+                        ui.monospace(format!("{:#010X}", cpu.msr.raw()));
+                        ui.end_row();
 
-                    ui.label("XER");
-                    ui.monospace(format!("{:#010X}", cpu.spr.xer.raw()));
-                    ui.allocate_space(egui::vec2(16.0, 0.0));
-                    ui.label("FPSCR");
-                    ui.monospace(format!("{:#010X}", cpu.fpscr.raw()));
-                    ui.end_row();
-                });
+                        ui.label("XER");
+                        ui.monospace(format!("{:#010X}", cpu.spr.xer.raw()));
+                        ui.allocate_space(egui::vec2(16.0, 0.0));
+                        ui.label("FPSCR");
+                        ui.monospace(format!("{:#010X}", cpu.fpscr.raw()));
+                        ui.end_row();
+                    });
 
                 ui.separator();
 
                 ui.scope(|ui| {
-                    Grid::new("cr_fields").num_columns(9).spacing([1.0, 1.0]).striped(true).show(
-                        ui,
-                        |ui| {
+                    Grid::new("cr_fields")
+                        .num_columns(9)
+                        .spacing([1.0, 1.0])
+                        .striped(true)
+                        .show(ui, |ui| {
                             ui.label("");
                             for i in 0..8u8 {
                                 ui.label(format!("CR{i}"));
@@ -85,8 +90,7 @@ pub fn show_cpu<const SYSTEM: SystemId>(
                                 }
                                 ui.end_row();
                             }
-                        },
-                    );
+                        });
                 });
 
                 ui.separator();
@@ -200,13 +204,16 @@ pub fn show_cpu<const SYSTEM: SystemId>(
                         egui::scroll_area::ScrollBarVisibility::VisibleWhenNeeded,
                     )
                     .show(ui, |ui| {
-                        Grid::new("gprs").num_columns(2).striped(true).show(ui, |ui| {
-                            for (i, &val) in cpu.gprs.iter().enumerate() {
-                                ui.label(format!("r{i:<2}"));
-                                ui.monospace(format!("{:#010X}", val));
-                                ui.end_row();
-                            }
-                        });
+                        Grid::new("gprs")
+                            .num_columns(2)
+                            .striped(true)
+                            .show(ui, |ui| {
+                                for (i, &val) in cpu.gprs.iter().enumerate() {
+                                    ui.label(format!("r{i:<2}"));
+                                    ui.monospace(format!("{:#010X}", val));
+                                    ui.end_row();
+                                }
+                            });
                     });
             });
 
@@ -220,13 +227,16 @@ pub fn show_cpu<const SYSTEM: SystemId>(
                         egui::scroll_area::ScrollBarVisibility::VisibleWhenNeeded,
                     )
                     .show(ui, |ui| {
-                        Grid::new("fprs").num_columns(2).striped(true).show(ui, |ui| {
-                            for (i, val) in cpu.fpr_array().into_iter().enumerate() {
-                                ui.label(format!("f{i:<2}"));
-                                ui.monospace(format!("{:+.6e}", val));
-                                ui.end_row();
-                            }
-                        });
+                        Grid::new("fprs")
+                            .num_columns(2)
+                            .striped(true)
+                            .show(ui, |ui| {
+                                for (i, val) in cpu.fpr_array().into_iter().enumerate() {
+                                    ui.label(format!("f{i:<2}"));
+                                    ui.monospace(format!("{:+.6e}", val));
+                                    ui.end_row();
+                                }
+                            });
                     });
             });
         });

@@ -32,9 +32,19 @@ pub struct ControlRequest {
 }
 
 impl ControlRequest {
-    pub fn new(method: impl Into<String>, params: Json) -> (Self, std::sync::mpsc::Receiver<ControlResponse>) {
+    pub fn new(
+        method: impl Into<String>,
+        params: Json,
+    ) -> (Self, std::sync::mpsc::Receiver<ControlResponse>) {
         let (tx, rx) = std::sync::mpsc::channel();
-        (Self { method: method.into(), params, reply: tx }, rx)
+        (
+            Self {
+                method: method.into(),
+                params,
+                reply: tx,
+            },
+            rx,
+        )
     }
 }
 
@@ -133,35 +143,76 @@ fn cell_center(app: &SheetApp, c: CellRef) -> Option<egui::Pos2> {
     Some(geo.screen_cell_rect(sh, c).center())
 }
 
-fn push_click(app: &mut SheetApp, pos: egui::Pos2, button: egui::PointerButton, count: u32, m: egui::Modifiers) {
-    app.synthetic.push_back(vec![egui::Event::PointerMoved(pos)]);
+fn push_click(
+    app: &mut SheetApp,
+    pos: egui::Pos2,
+    button: egui::PointerButton,
+    count: u32,
+    m: egui::Modifiers,
+) {
+    app.synthetic
+        .push_back(vec![egui::Event::PointerMoved(pos)]);
     let mut batch = Vec::new();
     for _ in 0..count.max(1) {
-        batch.push(egui::Event::PointerButton { pos, button, pressed: true, modifiers: m });
-        batch.push(egui::Event::PointerButton { pos, button, pressed: false, modifiers: m });
+        batch.push(egui::Event::PointerButton {
+            pos,
+            button,
+            pressed: true,
+            modifiers: m,
+        });
+        batch.push(egui::Event::PointerButton {
+            pos,
+            button,
+            pressed: false,
+            modifiers: m,
+        });
     }
     app.synthetic.push_back(batch);
 }
 
 fn push_drag(app: &mut SheetApp, a: egui::Pos2, b: egui::Pos2, steps: usize, m: egui::Modifiers) {
     app.synthetic.push_back(vec![egui::Event::PointerMoved(a)]);
-    app.synthetic.push_back(vec![egui::Event::PointerButton { pos: a, button: egui::PointerButton::Primary, pressed: true, modifiers: m }]);
+    app.synthetic.push_back(vec![egui::Event::PointerButton {
+        pos: a,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: m,
+    }]);
     for i in 1..=steps.max(1) {
         let t = i as f32 / steps.max(1) as f32;
-        app.synthetic.push_back(vec![egui::Event::PointerMoved(a + (b - a) * t)]);
+        app.synthetic
+            .push_back(vec![egui::Event::PointerMoved(a + (b - a) * t)]);
     }
-    app.synthetic.push_back(vec![egui::Event::PointerButton { pos: b, button: egui::PointerButton::Primary, pressed: false, modifiers: m }]);
+    app.synthetic.push_back(vec![egui::Event::PointerButton {
+        pos: b,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: m,
+    }]);
 }
 
 /// Keeps the commands whose id, label or ribbon path contains `search` (case-insensitive); `None` keeps all.
 fn filter_commands(commands: Vec<Json>, search: Option<&str>) -> Vec<Json> {
-    let Some(q) = search.map(str::to_ascii_lowercase) else { return commands };
-    let has = |c: &Json, k: &str| c.get(k).and_then(Json::as_str).is_some_and(|v| v.to_ascii_lowercase().contains(&q));
+    let Some(q) = search.map(str::to_ascii_lowercase) else {
+        return commands;
+    };
+    let has = |c: &Json, k: &str| {
+        c.get(k)
+            .and_then(Json::as_str)
+            .is_some_and(|v| v.to_ascii_lowercase().contains(&q))
+    };
     let in_menu = |c: &Json| {
         let menu = c.get("menu").and_then(Json::as_array);
-        menu.is_some_and(|m| m.iter().filter_map(Json::as_str).any(|v| v.to_ascii_lowercase().contains(&q)))
+        menu.is_some_and(|m| {
+            m.iter()
+                .filter_map(Json::as_str)
+                .any(|v| v.to_ascii_lowercase().contains(&q))
+        })
     };
-    commands.into_iter().filter(|c| has(c, "id") || has(c, "label") || in_menu(c)).collect()
+    commands
+        .into_iter()
+        .filter(|c| has(c, "id") || has(c, "label") || in_menu(c))
+        .collect()
 }
 
 pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -> Outcome {
@@ -169,22 +220,45 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
     let f = |k: &str| p.get(k).and_then(Json::as_f64).unwrap_or(0.0) as f32;
     let out = match method {
         "engine.execute" | "command" | "ui.menu.invoke" => {
-            let Some(id) = s("command").or(s("id")) else { return err("missing `command`") };
+            let Some(id) = s("command").or(s("id")) else {
+                return err("missing `command`");
+            };
             let params = p.get("params").cloned().unwrap_or(json!({}));
             wrap(app.run(id, if params.is_null() { json!({}) } else { params }))
         }
         "engine.commands" => {
-            let mut v: Vec<Json> = app.session.commands().into_iter().map(|c| serde_json::to_value(c).unwrap_or_default()).collect();
+            let mut v: Vec<Json> = app
+                .session
+                .commands()
+                .into_iter()
+                .map(|c| serde_json::to_value(c).unwrap_or_default())
+                .collect();
             for (id, label, params) in [
                 ("ui.ribbonTab", "Ribbon Tab", ""),
                 ("view.collapseRibbon", "Collapse Ribbon", ""),
                 ("view.darkMode", "Dark Mode", ""),
                 ("view.theme", "Display Theme", ""),
-                ("view.animations", "Animations", "{on?: bool} (toggles without it) → {on}"),
-                ("options.autoComplete", "Enable AutoComplete for cell values", "{on?: bool} (toggles without it) → {on}"),
-                ("view.interfaceScale", "Interface Size", "{percent: 75–200 | \"auto\"} (100 = auto; clamped)"),
+                (
+                    "view.animations",
+                    "Animations",
+                    "{on?: bool} (toggles without it) → {on}",
+                ),
+                (
+                    "options.autoComplete",
+                    "Enable AutoComplete for cell values",
+                    "{on?: bool} (toggles without it) → {on}",
+                ),
+                (
+                    "view.interfaceScale",
+                    "Interface Size",
+                    "{percent: 75–200 | \"auto\"} (100 = auto; clamped)",
+                ),
                 ("ui.dialog", "Open Dialog", ""),
-                ("ui.backstage", "File (Backstage view)", "{page?: home|new|open|info|saveAs|print|export|options|close}"),
+                (
+                    "ui.backstage",
+                    "File (Backstage view)",
+                    "{page?: home|new|open|info|saveAs|print|export|options|close}",
+                ),
                 (
                     "ui.printSettings",
                     "Print Settings",
@@ -195,7 +269,11 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
                     "Submit Print Job",
                     "existing file.print sheet/pagination params → {printing,bytes,pending}; submits without opening a dialog",
                 ),
-                ("app.language.set", "Interface Language", "{language: \"en\"|\"zh\"|\"ja\"|\"ko\"|\"ru\"|\"pt\"|\"de\"|\"cs\"} (alias: code)"),
+                (
+                    "app.language.set",
+                    "Interface Language",
+                    "{language: \"en\"|\"zh\"|\"ja\"|\"ko\"|\"ru\"|\"pt\"|\"de\"|\"cs\"} (alias: code)",
+                ),
                 ("app.language.english", "Interface Language: English", ""),
                 ("app.language.japanese", "Interface Language: Japanese", ""),
             ] {
@@ -203,8 +281,16 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
             }
             ok(Json::Array(filter_commands(v, s("search"))))
         }
-        "engine.journal" => ok(json!(app.session.journal.iter().map(|(id, p)| json!({"command": id, "params": p})).collect::<Vec<_>>())),
-        "document.inspect" | "sheet.read" | "cell.get" | "selection.stats" => wrap(app.session.run(method, p.clone())),
+        "engine.journal" => ok(json!(
+            app.session
+                .journal
+                .iter()
+                .map(|(id, p)| json!({"command": id, "params": p}))
+                .collect::<Vec<_>>()
+        )),
+        "document.inspect" | "sheet.read" | "cell.get" | "selection.stats" => {
+            wrap(app.session.run(method, p.clone()))
+        }
         "ui.inspect" => ok(inspect(app, ctx)),
         "ui.ribbon" => {
             app.ui.ribbon_tab = s("tab").unwrap_or("Home").to_string();
@@ -237,7 +323,9 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
         }
         "ui.dialog.set" => match app.dialog.as_mut() {
             Some(d) => {
-                let Some(field) = s("field") else { return err("missing `field`") };
+                let Some(field) = s("field") else {
+                    return err("missing `field`");
+                };
                 if field == "tab" {
                     d.tab = s("value").unwrap_or("").to_string();
                 } else if field == "search" {
@@ -297,7 +385,11 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
             if app.commit_edit(dr, dc, false, false) {
                 ok(Json::Null)
             } else {
-                err(app.message.clone().map(|m| m.1).unwrap_or_else(|| "could not commit".into()))
+                err(app
+                    .message
+                    .clone()
+                    .map(|m| m.1)
+                    .unwrap_or_else(|| "could not commit".into()))
             }
         }
         "ui.edit.cancel" => {
@@ -305,25 +397,51 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
             ok(Json::Null)
         }
         "ui.key" => {
-            let Some(k) = s("key").and_then(key_from) else { return err("unknown or missing `key`") };
+            let Some(k) = s("key").and_then(key_from) else {
+                return err("unknown or missing `key`");
+            };
             let m = modifiers(p);
             app.synthetic.push_back(vec![
-                egui::Event::Key { key: k, physical_key: None, pressed: true, repeat: false, modifiers: m },
-                egui::Event::Key { key: k, physical_key: None, pressed: false, repeat: false, modifiers: m },
+                egui::Event::Key {
+                    key: k,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: m,
+                },
+                egui::Event::Key {
+                    key: k,
+                    physical_key: None,
+                    pressed: false,
+                    repeat: false,
+                    modifiers: m,
+                },
             ]);
             ok(Json::Null)
         }
         "ui.text" => {
-            app.synthetic.push_back(vec![egui::Event::Text(s("text").unwrap_or("").to_string())]);
+            app.synthetic
+                .push_back(vec![egui::Event::Text(s("text").unwrap_or("").to_string())]);
             ok(Json::Null)
         }
         "ui.move" => {
-            app.synthetic.push_back(vec![egui::Event::PointerMoved(egui::pos2(f("x"), f("y")))]);
+            app.synthetic
+                .push_back(vec![egui::Event::PointerMoved(egui::pos2(f("x"), f("y")))]);
             ok(Json::Null)
         }
         "ui.click" => {
-            let button = if s("button") == Some("right") { egui::PointerButton::Secondary } else { egui::PointerButton::Primary };
-            push_click(app, egui::pos2(f("x"), f("y")), button, p.get("count").and_then(Json::as_u64).unwrap_or(1) as u32, modifiers(p));
+            let button = if s("button") == Some("right") {
+                egui::PointerButton::Secondary
+            } else {
+                egui::PointerButton::Primary
+            };
+            push_click(
+                app,
+                egui::pos2(f("x"), f("y")),
+                button,
+                p.get("count").and_then(Json::as_u64).unwrap_or(1) as u32,
+                modifiers(p),
+            );
             ok(Json::Null)
         }
         "ui.drag" => {
@@ -337,34 +455,65 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
             ok(Json::Null)
         }
         "ui.cell.click" => {
-            let Some(c) = s("cell").and_then(CellRef::parse) else { return err("missing `cell`") };
-            let Some(pos) = cell_center(app, c) else { return err("no grid yet") };
-            let button = if s("button") == Some("right") { egui::PointerButton::Secondary } else { egui::PointerButton::Primary };
-            push_click(app, pos, button, p.get("count").and_then(Json::as_u64).unwrap_or(1) as u32, modifiers(p));
+            let Some(c) = s("cell").and_then(CellRef::parse) else {
+                return err("missing `cell`");
+            };
+            let Some(pos) = cell_center(app, c) else {
+                return err("no grid yet");
+            };
+            let button = if s("button") == Some("right") {
+                egui::PointerButton::Secondary
+            } else {
+                egui::PointerButton::Primary
+            };
+            push_click(
+                app,
+                pos,
+                button,
+                p.get("count").and_then(Json::as_u64).unwrap_or(1) as u32,
+                modifiers(p),
+            );
             ok(json!({"x": pos.x, "y": pos.y}))
         }
         "ui.cell.drag" => {
-            let (Some(a), Some(b)) = (s("from").and_then(CellRef::parse), s("to").and_then(CellRef::parse)) else {
+            let (Some(a), Some(b)) = (
+                s("from").and_then(CellRef::parse),
+                s("to").and_then(CellRef::parse),
+            ) else {
                 return err("missing `from`/`to`");
             };
-            let (Some(pa), Some(pb)) = (cell_center(app, a), cell_center(app, b)) else { return err("no grid yet") };
+            let (Some(pa), Some(pb)) = (cell_center(app, a), cell_center(app, b)) else {
+                return err("no grid yet");
+            };
             push_drag(app, pa, pb, 8, modifiers(p));
             ok(Json::Null)
         }
         "ui.resize" => {
-            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(f("width").max(400.0), f("height").max(300.0))));
+            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(
+                f("width").max(400.0),
+                f("height").max(300.0),
+            )));
             ok(Json::Null)
         }
         "ui.focus" => {
             ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
             ok(Json::Null)
         }
-        "ui.screenshot" => return Outcome::Screenshot { path: s("path").map(str::to_string) },
+        "ui.screenshot" => {
+            return Outcome::Screenshot {
+                path: s("path").map(str::to_string),
+            };
+        }
         "app.open" => {
-            let Some(path) = s("path") else { return err("missing `path`") };
+            let Some(path) = s("path") else {
+                return err("missing `path`");
+            };
             // Not `open_path`: that asks for a missing password in a dialog, and programmatic
             // calls never open one. A password-protected workbook takes `password` instead.
-            let r = app.run("file.open", json!({"path": path, "password": s("password")}));
+            let r = app.run(
+                "file.open",
+                json!({"path": path, "password": s("password")}),
+            );
             if let Ok(r) = &r {
                 app.after_open(Some(path), r);
             }
@@ -372,7 +521,9 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
             match (r, app.message.take()) {
                 (Err(e), _) => err(crate::clean_error(&e)),
                 (Ok(_), Some((_, m))) => err(m),
-                (Ok(_), None) => ok(json!({"title": app.session.active().map(|d| d.display_title())})),
+                (Ok(_), None) => {
+                    ok(json!({"title": app.session.active().map(|d| d.display_title())}))
+                }
             }
         }
         "app.save" => wrap(app.run("file.save", json!({"path": s("path")}))),
@@ -389,7 +540,9 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
 }
 
 pub fn poll(app: &mut SheetApp, ctx: &egui::Context) {
-    let Some(rx) = app.control_rx.take() else { return };
+    let Some(rx) = app.control_rx.take() else {
+        return;
+    };
     while let Ok(req) = rx.try_recv() {
         let outcome = handle(app, ctx, &req.method, &req.params);
         match outcome {
@@ -400,7 +553,9 @@ pub fn poll(app: &mut SheetApp, ctx: &egui::Context) {
                 app.shots.token += 1;
                 let token = app.shots.token;
                 app.shots.queued.push((token, crate::now_ms() + 100.0, 0));
-                app.shots.pending.push((token, path, req.reply, crate::now_ms() + 8000.0));
+                app.shots
+                    .pending
+                    .push((token, path, req.reply, crate::now_ms() + 8000.0));
             }
         }
     }
@@ -415,7 +570,9 @@ pub fn issue_screenshots(app: &mut SheetApp, ctx: &egui::Context) {
     app.shots.queued.retain_mut(|(token, at, frames)| {
         *frames += 1;
         if now >= *at && *frames >= 3 {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(*token)));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                *token,
+            )));
             false
         } else {
             true
@@ -435,8 +592,14 @@ pub fn collect_screenshots(app: &mut SheetApp, ctx: &egui::Context) {
             .events
             .iter()
             .filter_map(|e| match e {
-                egui::Event::Screenshot { user_data, image, .. } => {
-                    let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                egui::Event::Screenshot {
+                    user_data, image, ..
+                } => {
+                    let token = user_data
+                        .data
+                        .as_ref()
+                        .and_then(|d| d.downcast_ref::<u64>())
+                        .copied()?;
                     Some((token, image.clone()))
                 }
                 _ => None,
@@ -466,9 +629,13 @@ pub fn save_image(image: &egui::ColorImage, path: Option<&str>) -> Json {
     for p in &image.pixels {
         rgba.extend_from_slice(&p.to_array());
     }
-    let Some(img) = image::RgbaImage::from_raw(w as u32, h as u32, rgba) else { return json!({"ok": false, "error": "bad image"}) };
+    let Some(img) = image::RgbaImage::from_raw(w as u32, h as u32, rgba) else {
+        return json!({"ok": false, "error": "bad image"});
+    };
     let mut png = Vec::new();
-    if let Err(e) = image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png) {
+    if let Err(e) = image::DynamicImage::ImageRgba8(img)
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+    {
         return json!({"ok": false, "error": e.to_string()});
     }
     match path {
@@ -476,7 +643,9 @@ pub fn save_image(image: &egui::ColorImage, path: Option<&str>) -> Json {
             Ok(()) => json!({"ok": true, "result": {"path": p, "width": w, "height": h}}),
             Err(e) => json!({"ok": false, "error": e.to_string()}),
         },
-        None => json!({"ok": true, "result": {"base64": gridcraft_engine::io::base64_encode(&png), "width": w, "height": h}}),
+        None => {
+            json!({"ok": true, "result": {"base64": gridcraft_engine::io::base64_encode(&png), "width": w, "height": h}})
+        }
     }
 }
 
@@ -493,15 +662,29 @@ mod tests {
     }
 
     fn ids(v: &[Json]) -> Vec<&str> {
-        v.iter().filter_map(|c| c.get("id").and_then(Json::as_str)).collect()
+        v.iter()
+            .filter_map(|c| c.get("id").and_then(Json::as_str))
+            .collect()
     }
 
     #[test]
     fn search_filters_case_insensitively() {
-        assert_eq!(ids(&filter_commands(sample(), Some("border"))), ["home.borders"]);
-        assert_eq!(filter_commands(sample(), Some("BORDER")), filter_commands(sample(), Some("border")));
-        assert_eq!(ids(&filter_commands(sample(), Some("ribbon"))), ["ui.ribbonTab"]);
-        assert_eq!(ids(&filter_commands(sample(), Some("font"))), ["home.borders", "home.bold"]);
+        assert_eq!(
+            ids(&filter_commands(sample(), Some("border"))),
+            ["home.borders"]
+        );
+        assert_eq!(
+            filter_commands(sample(), Some("BORDER")),
+            filter_commands(sample(), Some("border"))
+        );
+        assert_eq!(
+            ids(&filter_commands(sample(), Some("ribbon"))),
+            ["ui.ribbonTab"]
+        );
+        assert_eq!(
+            ids(&filter_commands(sample(), Some("font"))),
+            ["home.borders", "home.bold"]
+        );
         assert!(filter_commands(sample(), Some("catalog_no_match_7391")).is_empty());
         assert_eq!(filter_commands(sample(), None).len(), 3);
     }
@@ -511,14 +694,37 @@ mod tests {
         let mut session = gridcraft_engine::Session::new();
         session.new_workbook();
         let mut app = SheetApp::new(session, crate::Services::default());
-        let Outcome::Done(reply) = handle(&mut app, &egui::Context::default(), "engine.commands", &json!({"search":"print"})) else {
+        let Outcome::Done(reply) = handle(
+            &mut app,
+            &egui::Context::default(),
+            "engine.commands",
+            &json!({"search":"print"}),
+        ) else {
             panic!("command discovery must return immediately");
         };
         assert_eq!(reply["ok"], true);
         let commands = reply["result"].as_array().unwrap();
         for (id, expected_docs) in [
-            ("ui.printSettings", &["copies", "duplex", "refresh", "discovering", "status", "detail"][..]),
-            ("ui.printSubmit", &["file.print", "pagination", "pending", "without opening a dialog"][..]),
+            (
+                "ui.printSettings",
+                &[
+                    "copies",
+                    "duplex",
+                    "refresh",
+                    "discovering",
+                    "status",
+                    "detail",
+                ][..],
+            ),
+            (
+                "ui.printSubmit",
+                &[
+                    "file.print",
+                    "pagination",
+                    "pending",
+                    "without opening a dialog",
+                ][..],
+            ),
         ] {
             let command = commands.iter().find(|command| command["id"] == id).unwrap();
             assert_eq!(command["ui"], true);

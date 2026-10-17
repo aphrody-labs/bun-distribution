@@ -111,7 +111,14 @@ impl GraphicsProcessor {
         let far = (offset_z / DEPTH_24_BIT_RANGE).clamp(0.0, MAX_EFB_DEPTH);
         let near = ((offset_z - scale_z) / DEPTH_24_BIT_RANGE).clamp(0.0, MAX_EFB_DEPTH);
 
-        self.cur_viewport = draw::Viewport { x, y, w, h, min_depth: near, max_depth: far };
+        self.cur_viewport = draw::Viewport {
+            x,
+            y,
+            w,
+            h,
+            min_depth: near,
+            max_depth: far,
+        };
     }
 
     pub fn rebuild_projection(&mut self) {
@@ -216,11 +223,19 @@ impl GraphicsProcessor {
         };
 
         if let Some(rec) = self.recorder.as_deref_mut() {
-            rec.use_memory(ram, src_addr as u32, n * 4, super::recorder::MemoryUpdateType::XfData);
+            rec.use_memory(
+                ram,
+                src_addr as u32,
+                n * 4,
+                super::recorder::MemoryUpdateType::XfData,
+            );
         }
 
-        let values =
-            src.as_chunks::<4>().0.iter().map(|c| u32::from_be_bytes([c[0], c[1], c[2], c[3]]));
+        let values = src
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|c| u32::from_be_bytes([c[0], c[1], c[2], c[3]]));
 
         let dirty = self.store_xf_regs(dst_addr, values);
 

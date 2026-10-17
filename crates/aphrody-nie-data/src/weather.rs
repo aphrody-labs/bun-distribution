@@ -212,7 +212,10 @@ impl WeatherRegionInfo {
         if schedule_ids.is_empty() {
             return None;
         }
-        Some(Self { region_type, schedule_ids })
+        Some(Self {
+            region_type,
+            schedule_ids,
+        })
     }
 }
 
@@ -304,5 +307,9 @@ pub fn parse_weather_schedule(root: &Value) -> WeatherScheduleConfig {
         }
     });
 
-    WeatherScheduleConfig { schedules, data_entries, region_info }
+    WeatherScheduleConfig {
+        schedules,
+        data_entries,
+        region_info,
+    }
 }

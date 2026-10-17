@@ -114,14 +114,18 @@ fn fetch_sample_word<const SYSTEM: SystemId>(dsp: &Dsp, ram: &RamView<'_>) -> u1
     match dsp.accelerator.format.size() {
         SampleSize::Bits4 => {
             let byte = self::read_source_byte::<SYSTEM>(dsp, ram, addr >> 1);
-            if addr & 1 == 1 { (byte & 0xF) as u16 } else { ((byte >> 4) & 0xF) as u16 }
-        },
+            if addr & 1 == 1 {
+                (byte & 0xF) as u16
+            } else {
+                ((byte >> 4) & 0xF) as u16
+            }
+        }
         SampleSize::Bits8 => self::read_source_byte::<SYSTEM>(dsp, ram, addr) as u16,
         SampleSize::Bits16 => {
             let off = addr.wrapping_mul(2);
             ((self::read_source_byte::<SYSTEM>(dsp, ram, off) as u16) << 8)
                 | (self::read_source_byte::<SYSTEM>(dsp, ram, off.wrapping_add(1)) as u16)
-        },
+        }
         SampleSize::Invalid => 0,
     }
 }
@@ -181,18 +185,23 @@ pub fn read_decoded_sample<const SYSTEM: SystemId>(dsp: &mut Dsp, ram: RamView<'
         SampleMode::Adpcm => decode_adpcm::<SYSTEM>(dsp, &ram, raw_sample, coef1, coef2),
         SampleMode::MmioPcmNoInc | SampleMode::Pcm | SampleMode::MmioPcmInc => {
             decode_pcm(dsp, raw_sample, coef1, coef2, mode)
-        },
+        }
     };
 
     if dsp.accelerator.current_addr
-        == dsp.accelerator.end_addr.wrapping_add(step_size).wrapping_sub(1)
+        == dsp
+            .accelerator
+            .end_addr
+            .wrapping_add(step_size)
+            .wrapping_sub(1)
     {
         dsp.accelerator.current_addr = dsp.accelerator.start_addr;
         dsp.accelerator.reads_stopped = true;
         // TODO: raise DSP exception?
     }
 
-    dsp.accelerator.set_current_addr(dsp.accelerator.current_addr);
+    dsp.accelerator
+        .set_current_addr(dsp.accelerator.current_addr);
     val as u16
 }
 
@@ -280,7 +289,8 @@ pub fn read_raw<const SYSTEM: SystemId>(dsp: &mut Dsp, ram: RamView<'_>) -> u16 
         // TODO: raise DSP exception
     }
 
-    dsp.accelerator.set_current_addr(dsp.accelerator.current_addr);
+    dsp.accelerator
+        .set_current_addr(dsp.accelerator.current_addr);
 
     val
 }

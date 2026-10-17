@@ -58,14 +58,24 @@ fn is_corner(k: &AnchorKind) -> bool {
 impl From<AnchorRepr> for Anchor {
     fn from(r: AnchorRepr) -> Self {
         let p = r.p.0;
-        Self { p, h_in: r.h_in.map_or(p, |h| h.0), h_out: r.h_out.map_or(p, |h| h.0), kind: r.kind }
+        Self {
+            p,
+            h_in: r.h_in.map_or(p, |h| h.0),
+            h_out: r.h_out.map_or(p, |h| h.0),
+            kind: r.kind,
+        }
     }
 }
 
 impl From<Anchor> for AnchorRepr {
     fn from(a: Anchor) -> Self {
         let handle = |h: Point| (h != a.p).then_some(WirePoint(h));
-        Self { p: WirePoint(a.p), h_in: handle(a.h_in), h_out: handle(a.h_out), kind: a.kind }
+        Self {
+            p: WirePoint(a.p),
+            h_in: handle(a.h_in),
+            h_out: handle(a.h_out),
+            kind: a.kind,
+        }
     }
 }
 
@@ -86,12 +96,22 @@ impl<'de> Deserialize<'de> for WirePoint {
             fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 f.write_str("a point as [x, y] or {\"x\": x, \"y\": y}")
             }
-            fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut a: A) -> Result<WirePoint, A::Error> {
-                let x = a.next_element()?.ok_or_else(|| serde::de::Error::invalid_length(0, &self))?;
-                let y = a.next_element()?.ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
+            fn visit_seq<A: serde::de::SeqAccess<'de>>(
+                self,
+                mut a: A,
+            ) -> Result<WirePoint, A::Error> {
+                let x = a
+                    .next_element()?
+                    .ok_or_else(|| serde::de::Error::invalid_length(0, &self))?;
+                let y = a
+                    .next_element()?
+                    .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
                 Ok(WirePoint(Point::new(x, y)))
             }
-            fn visit_map<A: serde::de::MapAccess<'de>>(self, mut a: A) -> Result<WirePoint, A::Error> {
+            fn visit_map<A: serde::de::MapAccess<'de>>(
+                self,
+                mut a: A,
+            ) -> Result<WirePoint, A::Error> {
                 let (mut x, mut y) = (None, None);
                 while let Some(k) = a.next_key::<std::borrow::Cow<'de, str>>()? {
                     match k.as_ref() {
@@ -115,16 +135,35 @@ impl<'de> Deserialize<'de> for WirePoint {
 impl Anchor {
     /// A corner anchor without handles.
     pub fn corner(p: Point) -> Self {
-        Self { p, h_in: p, h_out: p, kind: AnchorKind::Corner }
+        Self {
+            p,
+            h_in: p,
+            h_out: p,
+            kind: AnchorKind::Corner,
+        }
     }
     /// A smooth anchor with a symmetric out handle `out` (the in handle is mirrored).
     pub fn smooth(p: Point, out: Point) -> Self {
-        Self { p, h_in: p - (out - p), h_out: out, kind: AnchorKind::Smooth }
+        Self {
+            p,
+            h_in: p - (out - p),
+            h_out: out,
+            kind: AnchorKind::Smooth,
+        }
     }
     pub fn with_handles(p: Point, h_in: Point, h_out: Point) -> Self {
         let kind =
-            if is_collinear(p, h_in, h_out) && h_in.distance(p) > EPS && h_out.distance(p) > EPS { AnchorKind::Smooth } else { AnchorKind::Corner };
-        Self { p, h_in, h_out, kind }
+            if is_collinear(p, h_in, h_out) && h_in.distance(p) > EPS && h_out.distance(p) > EPS {
+                AnchorKind::Smooth
+            } else {
+                AnchorKind::Corner
+            };
+        Self {
+            p,
+            h_in,
+            h_out,
+            kind,
+        }
     }
     pub fn has_in(&self) -> bool {
         self.h_in.distance(self.p) > EPS
@@ -133,7 +172,12 @@ impl Anchor {
         self.h_out.distance(self.p) > EPS
     }
     pub fn transform(&self, a: Affine) -> Self {
-        Self { p: a * self.p, h_in: a * self.h_in, h_out: a * self.h_out, kind: self.kind }
+        Self {
+            p: a * self.p,
+            h_in: a * self.h_in,
+            h_out: a * self.h_out,
+            kind: self.kind,
+        }
     }
     pub fn translate(&mut self, d: kurbo::Vec2) {
         self.p += d;
@@ -142,7 +186,12 @@ impl Anchor {
     }
     /// Swap handles (used when reversing path direction).
     pub fn reversed(&self) -> Self {
-        Self { p: self.p, h_in: self.h_out, h_out: self.h_in, kind: self.kind }
+        Self {
+            p: self.p,
+            h_in: self.h_out,
+            h_out: self.h_in,
+            kind: self.kind,
+        }
     }
     /// Remove both handles (convert to a sharp corner).
     pub fn retract(&mut self) {
@@ -173,7 +222,10 @@ impl SubPath {
     }
     /// Polyline from points.
     pub fn polyline(points: &[Point], closed: bool) -> Self {
-        Self { anchors: points.iter().map(|&p| Anchor::corner(p)).collect(), closed }
+        Self {
+            anchors: points.iter().map(|&p| Anchor::corner(p)).collect(),
+            closed,
+        }
     }
     /// Number of segments (a closed path has one more, back to the start).
     pub fn segment_count(&self) -> usize {
@@ -201,7 +253,9 @@ impl SubPath {
         !a.has_out() && !b.has_in()
     }
     pub fn to_bezpath_into(&self, out: &mut BezPath) {
-        let Some(first) = self.anchors.first() else { return };
+        let Some(first) = self.anchors.first() else {
+            return;
+        };
         out.move_to(first.p);
         for i in 0..self.segment_count() {
             let c = self.segment(i);
@@ -234,7 +288,12 @@ impl SubPath {
         } else {
             self.anchors[i0].h_out = l.p1;
             self.anchors[i1].h_in = r.p2;
-            Anchor { p: l.p3, h_in: l.p2, h_out: r.p1, kind: AnchorKind::Smooth }
+            Anchor {
+                p: l.p3,
+                h_in: l.p2,
+                h_out: r.p1,
+                kind: AnchorKind::Smooth,
+            }
         };
         self.anchors.insert(seg + 1, mid);
         seg + 1
@@ -286,11 +345,17 @@ impl PathData {
                     {
                         subpaths.push(sp);
                     }
-                    cur = Some(SubPath { anchors: vec![Anchor::corner(p)], closed: false });
+                    cur = Some(SubPath {
+                        anchors: vec![Anchor::corner(p)],
+                        closed: false,
+                    });
                     last = p;
                 }
                 PathEl::LineTo(p) => {
-                    let sp = cur.get_or_insert_with(|| SubPath { anchors: vec![Anchor::corner(last)], closed: false });
+                    let sp = cur.get_or_insert_with(|| SubPath {
+                        anchors: vec![Anchor::corner(last)],
+                        closed: false,
+                    });
                     sp.anchors.push(Anchor::corner(p));
                     last = p;
                 }
@@ -308,7 +373,8 @@ impl PathData {
                     if let Some(mut sp) = cur.take() {
                         // Merge a closing anchor that duplicates the start.
                         if sp.anchors.len() > 1
-                            && let (Some(first), Some(last)) = (sp.anchors.first(), sp.anchors.last())
+                            && let (Some(first), Some(last)) =
+                                (sp.anchors.first(), sp.anchors.last())
                             && first.p.distance(last.p) < 1e-7
                             && let Some(l) = sp.anchors.pop()
                         {
@@ -349,7 +415,11 @@ impl PathData {
     }
     /// Bounds including control handles (used for quick culling).
     pub fn control_bounds(&self) -> Option<Rect> {
-        let mut it = self.subpaths.iter().flat_map(|s| s.anchors.iter()).flat_map(|a| [a.p, a.h_in, a.h_out]);
+        let mut it = self
+            .subpaths
+            .iter()
+            .flat_map(|s| s.anchors.iter())
+            .flat_map(|a| [a.p, a.h_in, a.h_out]);
         let first = it.next()?;
         Some(it.fold(Rect::from_points(first, first), |r, p| r.union_pt(p)))
     }
@@ -386,7 +456,10 @@ impl PathData {
     }
     /// Iterate (subpath index, anchor index, anchor).
     pub fn anchors(&self) -> impl Iterator<Item = (usize, usize, &Anchor)> {
-        self.subpaths.iter().enumerate().flat_map(|(si, s)| s.anchors.iter().enumerate().map(move |(ai, a)| (si, ai, a)))
+        self.subpaths
+            .iter()
+            .enumerate()
+            .flat_map(|(si, s)| s.anchors.iter().enumerate().map(move |(ai, a)| (si, ai, a)))
     }
     pub fn anchor_mut(&mut self, si: usize, ai: usize) -> Option<&mut Anchor> {
         self.subpaths.get_mut(si)?.anchors.get_mut(ai)
@@ -398,16 +471,27 @@ impl PathData {
     }
     /// Total length of all segments.
     pub fn length(&self) -> f64 {
-        self.to_bezpath().segments().map(|s| kurbo::ParamCurveArclen::arclen(&s, 1e-6)).sum()
+        self.to_bezpath()
+            .segments()
+            .map(|s| kurbo::ParamCurveArclen::arclen(&s, 1e-6))
+            .sum()
     }
 }
 
 fn push_curve(cur: &mut Option<SubPath>, last: Point, c1: Point, c2: Point, p: Point) {
-    let sp = cur.get_or_insert_with(|| SubPath { anchors: vec![Anchor::corner(last)], closed: false });
+    let sp = cur.get_or_insert_with(|| SubPath {
+        anchors: vec![Anchor::corner(last)],
+        closed: false,
+    });
     if let Some(a) = sp.anchors.last_mut() {
         a.h_out = c1;
     }
-    sp.anchors.push(Anchor { p, h_in: c2, h_out: p, kind: AnchorKind::Corner });
+    sp.anchors.push(Anchor {
+        p,
+        h_in: c2,
+        h_out: p,
+        kind: AnchorKind::Corner,
+    });
 }
 
 #[cfg(test)]
@@ -415,14 +499,30 @@ mod tests {
     use super::*;
 
     fn square() -> PathData {
-        PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(10.0, 10.0), Point::new(0.0, 10.0)], true))
+        PathData::single(SubPath::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(10.0, 0.0),
+                Point::new(10.0, 10.0),
+                Point::new(0.0, 10.0),
+            ],
+            true,
+        ))
     }
 
     #[test]
     fn anchors_serialize_compactly_and_read_v1_maps() {
         let corner = Anchor::corner(Point::new(1.0, 2.0));
-        assert_eq!(serde_json::to_string(&corner).unwrap(), r#"{"p":[1.0,2.0]}"#);
-        let smooth = Anchor { p: Point::new(1.0, 2.0), h_in: Point::new(0.0, 2.0), h_out: Point::new(2.0, 2.0), kind: AnchorKind::Smooth };
+        assert_eq!(
+            serde_json::to_string(&corner).unwrap(),
+            r#"{"p":[1.0,2.0]}"#
+        );
+        let smooth = Anchor {
+            p: Point::new(1.0, 2.0),
+            h_in: Point::new(0.0, 2.0),
+            h_out: Point::new(2.0, 2.0),
+            kind: AnchorKind::Smooth,
+        };
         let back: Anchor = serde_json::from_str(&serde_json::to_string(&smooth).unwrap()).unwrap();
         assert_eq!(back, smooth);
         let v1 = r#"{"p":{"x":1.0,"y":2.0},"in":{"x":0.0,"y":2.0},"out":{"x":2.0,"y":2.0},"kind":"Smooth"}"#;
@@ -460,7 +560,12 @@ mod tests {
         let b = pd.bounds().unwrap();
         assert!((b.width() - 40.0).abs() < 1e-3);
         // All anchors of a circle are smooth.
-        assert!(pd.subpaths[0].anchors.iter().all(|a| a.kind == AnchorKind::Smooth));
+        assert!(
+            pd.subpaths[0]
+                .anchors
+                .iter()
+                .all(|a| a.kind == AnchorKind::Smooth)
+        );
     }
 
     #[test]
@@ -508,9 +613,17 @@ mod tests {
 
     #[test]
     fn smooth_detection() {
-        let a = Anchor::with_handles(Point::new(0.0, 0.0), Point::new(-1.0, 0.0), Point::new(2.0, 0.0));
+        let a = Anchor::with_handles(
+            Point::new(0.0, 0.0),
+            Point::new(-1.0, 0.0),
+            Point::new(2.0, 0.0),
+        );
         assert_eq!(a.kind, AnchorKind::Smooth);
-        let c = Anchor::with_handles(Point::new(0.0, 0.0), Point::new(-1.0, 0.0), Point::new(0.0, 2.0));
+        let c = Anchor::with_handles(
+            Point::new(0.0, 0.0),
+            Point::new(-1.0, 0.0),
+            Point::new(0.0, 2.0),
+        );
         assert_eq!(c.kind, AnchorKind::Corner);
     }
 

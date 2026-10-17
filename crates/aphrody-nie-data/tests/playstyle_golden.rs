@@ -110,7 +110,10 @@ fn all_six_real_samples_via_walk() {
         .enumerate()
         .map(|(i, (id, ps))| {
             // [id, _, _, _, _, playStyle] : 6 ints, playStyle à l'index 5.
-            int_node(&format!("CHARA_PARAM_INFO_{i}"), &[i64::from(*id), 0, 0, 0, 0, *ps])
+            int_node(
+                &format!("CHARA_PARAM_INFO_{i}"),
+                &[i64::from(*id), 0, 0, 0, 0, *ps],
+            )
         })
         .collect();
 
@@ -122,10 +125,28 @@ fn all_six_real_samples_via_walk() {
     });
 
     let parsed = parse_all_playstyles(&root);
-    assert_eq!(parsed.len(), 6, "6 noeuds CHARA_PARAM_INFO (LIST_BEG exclu)");
+    assert_eq!(
+        parsed.len(),
+        6,
+        "6 noeuds CHARA_PARAM_INFO (LIST_BEG exclu)"
+    );
 
-    let expected_en = ["Counter", "Bond", "Tension", "Rough Play", "Justice", "Freedom"];
-    let expected_fr = ["Contre", "Lien", "Tension", "Jeu violent", "Justice", "Liberté"];
+    let expected_en = [
+        "Counter",
+        "Bond",
+        "Tension",
+        "Rough Play",
+        "Justice",
+        "Freedom",
+    ];
+    let expected_fr = [
+        "Contre",
+        "Lien",
+        "Tension",
+        "Jeu violent",
+        "Justice",
+        "Liberté",
+    ];
     for (e, (id, ps)) in parsed.iter().zip(samples.iter()) {
         assert_eq!(e.chara_param_id, HashId(*id));
         assert_eq!(e.play_style, *ps);
@@ -165,13 +186,19 @@ fn non_int_vars_are_skipped_in_indexing() {
     });
     let e = parse_playstyle_node(&Node::new(&node)).expect("6 ints présents");
     assert_eq!(e.chara_param_id, HashId(100));
-    assert_eq!(e.play_style, 15, "values[5] = 6ᵉ Int (15), pas la var brute #5 (14)");
+    assert_eq!(
+        e.play_style, 15,
+        "values[5] = 6ᵉ Int (15), pas la var brute #5 (14)"
+    );
     assert_eq!(e.label_en(), None, "15 hors 0..=5");
 }
 
 #[test]
 fn entry_is_copy_and_eq() {
-    let a = PlaystyleEntry { chara_param_id: HashId(1), play_style: 2 };
+    let a = PlaystyleEntry {
+        chara_param_id: HashId(1),
+        play_style: 2,
+    };
     let b = a; // Copy
     assert_eq!(a, b);
     assert_eq!(b.label_en(), Some("Tension"));

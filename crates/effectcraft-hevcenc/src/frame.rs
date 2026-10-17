@@ -129,7 +129,8 @@ impl<'a> FrameCoder<'a> {
         let qpi = slice_qp.clamp(-off, 57);
         let qp_c = qpc_420(qpi) + off;
         let base = if kind == SliceKind::I { 0.57 } else { 0.62 };
-        let lambda = base * 2f64.powf((slice_qp as f64 - 12.0) / 3.0) * (1u64 << (2 * (bd - 8))) as f64;
+        let lambda =
+            base * 2f64.powf((slice_qp as f64 - 12.0) / 3.0) * (1u64 << (2 * (bd - 8))) as f64;
         let ctb = 1usize << LOG2_CTB;
         FrameCoder {
             bd,
@@ -174,7 +175,8 @@ impl<'a> FrameCoder<'a> {
             ctb_n < ctb_c
         } else {
             let m = (1 << s) - 1;
-            morton(((xn & m) >> 2) as u32, ((yn & m) >> 2) as u32) <= morton(((xc & m) >> 2) as u32, ((yc & m) >> 2) as u32)
+            morton(((xn & m) >> 2) as u32, ((yn & m) >> 2) as u32)
+                <= morton(((xc & m) >> 2) as u32, ((yc & m) >> 2) as u32)
         }
     }
 
@@ -201,7 +203,9 @@ impl<'a> FrameCoder<'a> {
                 for by in ty / 4..(ty + t) / 4 {
                     self.blk[by * self.w4 + tx / 4].flags |= E_EDGE_V;
                 }
-                for b in &mut self.blk[(ty / 4) * self.w4 + tx / 4..(ty / 4) * self.w4 + (tx + t) / 4] {
+                for b in
+                    &mut self.blk[(ty / 4) * self.w4 + tx / 4..(ty / 4) * self.w4 + (tx + t) / 4]
+                {
                     b.flags |= E_EDGE_H;
                 }
             }
@@ -210,13 +214,24 @@ impl<'a> FrameCoder<'a> {
 
     /// In-loop deblocking of the finished picture.
     pub fn deblock(&mut self) {
-        crate::deblock::deblock(&mut self.rec, &self.blk, self.w, self.h, self.slice_qp, self.bd);
+        crate::deblock::deblock(
+            &mut self.rec,
+            &self.blk,
+            self.w,
+            self.h,
+            self.slice_qp,
+            self.bd,
+        );
     }
 
     fn snap(&self, x: usize, y: usize, n: usize) -> Snap {
         let mut planes: [Vec<u16>; 3] = Default::default();
         for (c, p) in planes.iter_mut().enumerate() {
-            let (px, py, pn, stride) = if c == 0 { (x, y, n, self.w) } else { (x / 2, y / 2, n / 2, self.cw) };
+            let (px, py, pn, stride) = if c == 0 {
+                (x, y, n, self.w)
+            } else {
+                (x / 2, y / 2, n / 2, self.cw)
+            };
             p.reserve(pn * pn);
             for r in 0..pn {
                 p.extend_from_slice(&self.rec[c][(py + r) * stride + px..][..pn]);
@@ -224,22 +239,36 @@ impl<'a> FrameCoder<'a> {
         }
         let mut blk = Vec::with_capacity((n / 4) * (n / 4));
         for by in (y >> 2)..((y + n) >> 2) {
-            blk.extend_from_slice(&self.blk[by * self.w4 + (x >> 2)..by * self.w4 + ((x + n) >> 2)]);
+            blk.extend_from_slice(
+                &self.blk[by * self.w4 + (x >> 2)..by * self.w4 + ((x + n) >> 2)],
+            );
         }
-        Snap { x, y, n, planes, blk }
+        Snap {
+            x,
+            y,
+            n,
+            planes,
+            blk,
+        }
     }
 
     fn restore(&mut self, s: &Snap) {
         let (x, y, n) = (s.x, s.y, s.n);
         for c in 0..3 {
-            let (px, py, pn, stride) = if c == 0 { (x, y, n, self.w) } else { (x / 2, y / 2, n / 2, self.cw) };
+            let (px, py, pn, stride) = if c == 0 {
+                (x, y, n, self.w)
+            } else {
+                (x / 2, y / 2, n / 2, self.cw)
+            };
             for r in 0..pn {
-                self.rec[c][(py + r) * stride + px..][..pn].copy_from_slice(&s.planes[c][r * pn..r * pn + pn]);
+                self.rec[c][(py + r) * stride + px..][..pn]
+                    .copy_from_slice(&s.planes[c][r * pn..r * pn + pn]);
             }
         }
         let bw = n / 4;
         for (i, by) in ((y >> 2)..((y + n) >> 2)).enumerate() {
-            self.blk[by * self.w4 + (x >> 2)..by * self.w4 + (x >> 2) + bw].copy_from_slice(&s.blk[i * bw..i * bw + bw]);
+            self.blk[by * self.w4 + (x >> 2)..by * self.w4 + (x >> 2) + bw]
+                .copy_from_slice(&s.blk[i * bw..i * bw + bw]);
         }
     }
 
@@ -276,7 +305,16 @@ impl<'a> FrameCoder<'a> {
     }
 
     /// Final pass: re-code the decided quadtree with the real arithmetic coder.
-    fn write_cq(&mut self, enc: &mut CabacEncoder, x: usize, y: usize, log2: u32, depth: u32, decs: &[CuDec], idx: &mut usize) {
+    fn write_cq(
+        &mut self,
+        enc: &mut CabacEncoder,
+        x: usize,
+        y: usize,
+        log2: u32,
+        depth: u32,
+        decs: &[CuDec],
+        idx: &mut usize,
+    ) {
         if x >= self.w || y >= self.h {
             return;
         }
@@ -308,7 +346,15 @@ impl<'a> FrameCoder<'a> {
 
     /// Rate-distortion decision for the quadtree node at (x, y); leaves the chosen reconstruction
     /// and block state in place, advances `est` and appends the decided CUs. Returns the RD cost.
-    fn decide(&mut self, x: usize, y: usize, log2: u32, depth: u32, est: &mut Estimator, decs: &mut Vec<CuDec>) -> f64 {
+    fn decide(
+        &mut self,
+        x: usize,
+        y: usize,
+        log2: u32,
+        depth: u32,
+        est: &mut Estimator,
+        decs: &mut Vec<CuDec>,
+    ) -> f64 {
         if x >= self.w || y >= self.h {
             return 0.0;
         }
@@ -323,14 +369,15 @@ impl<'a> FrameCoder<'a> {
             if can_split {
                 self.write_split(&mut e0, x, y, depth, false);
             }
-            let try_mode = |me: &mut Self, mode: CuMode, best: &mut Option<(f64, Estimator, Snap, CuMode)>| {
-                let mut e = e0.clone();
-                let (eff, dist) = me.encode_cu(&mut e, x, y, log2, depth, mode);
-                let cost = me.cost(dist, e.bits - base);
-                if best.as_ref().is_none_or(|b| cost < b.0) {
-                    *best = Some((cost, e, me.snap(x, y, n), eff));
-                }
-            };
+            let try_mode =
+                |me: &mut Self, mode: CuMode, best: &mut Option<(f64, Estimator, Snap, CuMode)>| {
+                    let mut e = e0.clone();
+                    let (eff, dist) = me.encode_cu(&mut e, x, y, log2, depth, mode);
+                    let cost = me.cost(dist, e.bits - base);
+                    if best.as_ref().is_none_or(|b| cost < b.0) {
+                        *best = Some((cost, e, me.snap(x, y, n), eff));
+                    }
+                };
             let mut inter_satd = u64::MAX;
             if self.kind == SliceKind::P {
                 let merge = self.merge_list(x, y, n);
@@ -347,7 +394,14 @@ impl<'a> FrameCoder<'a> {
             if log2 <= LOG2_MAX_TB && !matches!(best, Some((_, _, _, CuMode::Skip { .. }))) {
                 let (mode, satd) = self.search_intra_mode(x, y, log2);
                 if satd < inter_satd {
-                    try_mode(self, CuMode::Intra { nxn: false, modes: [mode as u8; 4] }, &mut best);
+                    try_mode(
+                        self,
+                        CuMode::Intra {
+                            nxn: false,
+                            modes: [mode as u8; 4],
+                        },
+                        &mut best,
+                    );
                     if log2 == LOG2_MIN_CB {
                         let modes = self.search_nxn_modes(x, y);
                         try_mode(self, CuMode::Intra { nxn: true, modes }, &mut best);
@@ -382,10 +436,17 @@ impl<'a> FrameCoder<'a> {
         }
         // A coding unit always has at least one candidate mode (intra, or skip/merge in P
         // slices); without one, report an infinite cost.
-        let Some((cost, e, snap, mode)) = best else { return f64::INFINITY };
+        let Some((cost, e, snap, mode)) = best else {
+            return f64::INFINITY;
+        };
         self.restore(&snap);
         *est = e;
-        decs.push(CuDec { x: x as u32, y: y as u32, log2, mode });
+        decs.push(CuDec {
+            x: x as u32,
+            y: y as u32,
+            log2,
+            mode,
+        });
         cost
     }
 
@@ -406,7 +467,15 @@ impl<'a> FrameCoder<'a> {
 
     /// Predict, transform, quantise and reconstruct one CU and write its syntax into `s`.
     /// Returns the effective mode (a residual-free merge becomes a skip) and the SSE.
-    fn encode_cu<S: Sink>(&mut self, s: &mut S, x: usize, y: usize, log2: u32, depth: u32, mode: CuMode) -> (CuMode, u64) {
+    fn encode_cu<S: Sink>(
+        &mut self,
+        s: &mut S,
+        x: usize,
+        y: usize,
+        log2: u32,
+        depth: u32,
+        mode: CuMode,
+    ) -> (CuMode, u64) {
         let n = 1usize << log2;
         self.tbs.clear();
         self.coefs.clear();
@@ -452,12 +521,18 @@ impl<'a> FrameCoder<'a> {
             }
             _ => {
                 let mv = match mode {
-                    CuMode::Skip { idx } | CuMode::Merge { idx } => self.merge_list(x, y, n)[idx as usize],
+                    CuMode::Skip { idx } | CuMode::Merge { idx } => {
+                        self.merge_list(x, y, n)[idx as usize]
+                    }
                     CuMode::Amvp { mv, .. } => mv,
                     // Handled by the arm above.
                     CuMode::Intra { .. } => [0, 0],
                 };
-                let amvp = if let CuMode::Amvp { .. } = mode { self.amvp(x, y, n) } else { [[0; 2]; 2] };
+                let amvp = if let CuMode::Amvp { .. } = mode {
+                    self.amvp(x, y, n)
+                } else {
+                    [[0; 2]; 2]
+                };
                 let skip = matches!(mode, CuMode::Skip { .. });
                 self.fill(x, y, n, |b| {
                     b.depth = d8;
@@ -490,7 +565,20 @@ impl<'a> FrameCoder<'a> {
                         s.decision(MERGE_FLAG, 1);
                         write_merge_idx(s, idx as usize);
                         let mut ti = 0;
-                        self.write_tt(s, x, y, x, y, log2, 0, 0, [true, true], false, false, &mut ti);
+                        self.write_tt(
+                            s,
+                            x,
+                            y,
+                            x,
+                            y,
+                            log2,
+                            0,
+                            0,
+                            [true, true],
+                            false,
+                            false,
+                            &mut ti,
+                        );
                     }
                     CuMode::Amvp { mv, mvp } => {
                         s.decision(CU_SKIP + skip_ctx, 0);
@@ -503,7 +591,20 @@ impl<'a> FrameCoder<'a> {
                         s.decision(RQT_ROOT_CBF, root as u32);
                         if root {
                             let mut ti = 0;
-                            self.write_tt(s, x, y, x, y, log2, 0, 0, [true, true], false, false, &mut ti);
+                            self.write_tt(
+                                s,
+                                x,
+                                y,
+                                x,
+                                y,
+                                log2,
+                                0,
+                                0,
+                                [true, true],
+                                false,
+                                false,
+                                &mut ti,
+                            );
                         }
                     }
                     // Handled by the arm above.
@@ -531,12 +632,20 @@ impl<'a> FrameCoder<'a> {
     fn cu_dist(&self, x: usize, y: usize, n: usize) -> u64 {
         let mut d = 0u64;
         for c in 0..3 {
-            let (px, py, pn, stride) = if c == 0 { (x, y, n, self.w) } else { (x / 2, y / 2, n / 2, self.cw) };
+            let (px, py, pn, stride) = if c == 0 {
+                (x, y, n, self.w)
+            } else {
+                (x / 2, y / 2, n / 2, self.cw)
+            };
             for r in 0..pn {
                 let o = (py + r) * stride + px;
                 let a = &self.src[c][o..o + pn];
                 let b = &self.rec[c][o..o + pn];
-                d += a.iter().zip(b).map(|(&p, &q)| (p as i64 - q as i64).pow(2) as u64).sum::<u64>();
+                d += a
+                    .iter()
+                    .zip(b)
+                    .map(|(&p, &q)| (p as i64 - q as i64).pow(2) as u64)
+                    .sum::<u64>();
             }
         }
         d
@@ -544,13 +653,29 @@ impl<'a> FrameCoder<'a> {
 
     /// Code one transform block of component `c` at component position (x, y): optional intra
     /// prediction, residual, transform, quantisation and reconstruction.
-    fn code_tb(&mut self, c: usize, x: usize, y: usize, log2: u32, intra_mode: Option<u32>, lpos: (usize, usize)) {
+    fn code_tb(
+        &mut self,
+        c: usize,
+        x: usize,
+        y: usize,
+        log2: u32,
+        intra_mode: Option<u32>,
+        lpos: (usize, usize),
+    ) {
         let n = 1usize << log2;
         let stride = if c == 0 { self.w } else { self.cw };
         if let Some(m) = intra_mode {
             let refs = self.build_refs(c, x, y, log2);
             let bd = self.bd;
-            predict_from_refs(&refs, c, m, n, bd, &mut self.rec[c][y * stride + x..], stride);
+            predict_from_refs(
+                &refs,
+                c,
+                m,
+                n,
+                bd,
+                &mut self.rec[c][y * stride + x..],
+                stride,
+            );
         }
         let mut scr = std::mem::take(&mut self.scratch);
         let [r, coef] = &mut scr;
@@ -592,7 +717,15 @@ impl<'a> FrameCoder<'a> {
         if nz && c == 0 {
             self.fill(x, y, n, |b| b.flags |= F_CBF);
         }
-        self.tbs.push(Tb { c: c as u8, lx: lpos.0 as u32, ly: lpos.1 as u32, log2, nz, off, scan });
+        self.tbs.push(Tb {
+            c: c as u8,
+            lx: lpos.0 as u32,
+            ly: lpos.1 as u32,
+            log2,
+            nz,
+            off,
+            scan,
+        });
     }
 
     /// Reference samples (substituted, unfiltered) of an intra block, as in 8.4.4.2.1 / 8.4.4.2.2.
@@ -645,18 +778,34 @@ impl<'a> FrameCoder<'a> {
         let (xp, yp) = (xp as i32, yp as i32);
         let cand_a = if self.zavail(xp, yp, xp - 1, yp) {
             let b = self.blk_at(xp - 1, yp);
-            if b.flags & F_INTRA != 0 { b.ipm as u32 } else { 1 }
+            if b.flags & F_INTRA != 0 {
+                b.ipm as u32
+            } else {
+                1
+            }
         } else {
             1
         };
         let cand_b = if self.zavail(xp, yp, xp, yp - 1) && yp > ((yp >> LOG2_CTB) << LOG2_CTB) {
             let b = self.blk_at(xp, yp - 1);
-            if b.flags & F_INTRA != 0 { b.ipm as u32 } else { 1 }
+            if b.flags & F_INTRA != 0 {
+                b.ipm as u32
+            } else {
+                1
+            }
         } else {
             1
         };
         if cand_a == cand_b {
-            if cand_a < 2 { [0, 1, 26] } else { [cand_a, 2 + ((cand_a + 29) % 32), 2 + ((cand_a - 2 + 1) % 32)] }
+            if cand_a < 2 {
+                [0, 1, 26]
+            } else {
+                [
+                    cand_a,
+                    2 + ((cand_a + 29) % 32),
+                    2 + ((cand_a - 2 + 1) % 32),
+                ]
+            }
         } else {
             let c = if cand_a != 0 && cand_b != 0 {
                 0
@@ -669,7 +818,15 @@ impl<'a> FrameCoder<'a> {
         }
     }
 
-    fn write_intra_modes<S: Sink>(&self, s: &mut S, x: usize, y: usize, n: usize, nxn: bool, modes: &[u8; 4]) {
+    fn write_intra_modes<S: Sink>(
+        &self,
+        s: &mut S,
+        x: usize,
+        y: usize,
+        n: usize,
+        nxn: bool,
+        modes: &[u8; 4],
+    ) {
         let nb = if nxn { 2 } else { 1 };
         let pb = n / nb;
         let mut codes = [(false, 0u32); 4];
@@ -710,7 +867,14 @@ impl<'a> FrameCoder<'a> {
     }
 
     fn chroma_cbf(&self, c: u8, x0: usize, y0: usize, n: usize) -> bool {
-        self.tbs.iter().any(|t| t.c == c && t.nz && (t.lx as usize) >= x0 && (t.lx as usize) < x0 + n && (t.ly as usize) >= y0 && (t.ly as usize) < y0 + n)
+        self.tbs.iter().any(|t| {
+            t.c == c
+                && t.nz
+                && (t.lx as usize) >= x0
+                && (t.lx as usize) < x0 + n
+                && (t.ly as usize) >= y0
+                && (t.ly as usize) < y0 + n
+        })
     }
 
     /// transform_tree() (7.3.8.8) over the coded transform blocks of the CU; no split flag is ever
@@ -747,7 +911,20 @@ impl<'a> FrameCoder<'a> {
         if split {
             let h = n / 2;
             for (i, (dx, dy)) in [(0, 0), (h, 0), (0, h), (h, h)].into_iter().enumerate() {
-                self.write_tt(s, x0 + dx, y0 + dy, x0, y0, log2 - 1, depth + 1, i as u32, cbf_c, intra, nxn, ti);
+                self.write_tt(
+                    s,
+                    x0 + dx,
+                    y0 + dy,
+                    x0,
+                    y0,
+                    log2 - 1,
+                    depth + 1,
+                    i as u32,
+                    cbf_c,
+                    intra,
+                    nxn,
+                    ti,
+                );
             }
             return;
         }
@@ -762,7 +939,13 @@ impl<'a> FrameCoder<'a> {
         }
         if tb.nz {
             let n2 = 1usize << (2 * tb.log2);
-            residual_coding(s, &self.coefs[tb.off..tb.off + n2], tb.log2, 0, tb.scan as usize);
+            residual_coding(
+                s,
+                &self.coefs[tb.off..tb.off + n2],
+                tb.log2,
+                0,
+                tb.scan as usize,
+            );
         }
         if log2 > 2 || blk_idx == 3 {
             for c in 0..2 {
@@ -772,7 +955,13 @@ impl<'a> FrameCoder<'a> {
                 debug_assert_eq!(tb.nz, cbf_c[c]);
                 if cbf_c[c] {
                     let n2 = 1usize << (2 * tb.log2);
-                    residual_coding(s, &self.coefs[tb.off..tb.off + n2], tb.log2, c + 1, tb.scan as usize);
+                    residual_coding(
+                        s,
+                        &self.coefs[tb.off..tb.off + n2],
+                        tb.log2,
+                        c + 1,
+                        tb.scan as usize,
+                    );
                 }
             }
         }
@@ -834,7 +1023,10 @@ impl<'a> FrameCoder<'a> {
     pub fn amvp(&self, x: usize, y: usize, n: usize) -> [[i16; 2]; 2] {
         let (xp, yp, w, h) = (x as i32, y as i32, n as i32, n as i32);
         let pa = [(xp - 1, yp + h), (xp - 1, yp + h - 1)];
-        let av_a = [self.pb_avail(xp, yp, pa[0].0, pa[0].1), self.pb_avail(xp, yp, pa[1].0, pa[1].1)];
+        let av_a = [
+            self.pb_avail(xp, yp, pa[0].0, pa[0].1),
+            self.pb_avail(xp, yp, pa[1].0, pa[1].1),
+        ];
         let is_scaled = av_a[0] || av_a[1];
         let mut a = None;
         for k in 0..2 {
@@ -871,14 +1063,47 @@ impl<'a> FrameCoder<'a> {
         // Inter modes are only tried in P slices, which have a reference picture.
         let Some(refp) = self.refp else { return };
         for c in 0..3 {
-            let (px, py, pn, pw, ph) = if c == 0 { (x, y, n, self.w, self.h) } else { (x / 2, y / 2, n / 2, self.cw, self.ch) };
-            let pr = PlaneRef { data: &refp[c], w: pw, h: ph };
-            if c == 0 {
-                inter::mc_luma(pr, self.bd, px as i32, py as i32, mv, pn, pn, &mut self.pred);
+            let (px, py, pn, pw, ph) = if c == 0 {
+                (x, y, n, self.w, self.h)
             } else {
-                inter::mc_chroma(pr, self.bd, px as i32, py as i32, mv, pn, pn, &mut self.pred);
+                (x / 2, y / 2, n / 2, self.cw, self.ch)
+            };
+            let pr = PlaneRef {
+                data: &refp[c],
+                w: pw,
+                h: ph,
+            };
+            if c == 0 {
+                inter::mc_luma(
+                    pr,
+                    self.bd,
+                    px as i32,
+                    py as i32,
+                    mv,
+                    pn,
+                    pn,
+                    &mut self.pred,
+                );
+            } else {
+                inter::mc_chroma(
+                    pr,
+                    self.bd,
+                    px as i32,
+                    py as i32,
+                    mv,
+                    pn,
+                    pn,
+                    &mut self.pred,
+                );
             }
-            inter::put_uni(&self.pred, pn, pn, self.bd, &mut self.rec[c][py * pw + px..], pw);
+            inter::put_uni(
+                &self.pred,
+                pn,
+                pn,
+                self.bd,
+                &mut self.rec[c][py * pw + px..],
+                pw,
+            );
         }
     }
 
@@ -886,8 +1111,16 @@ impl<'a> FrameCoder<'a> {
     // estimation helpers
 
     /// Best merge index by SATD of the (approximate) luma prediction.
-    fn best_merge(&self, x: usize, y: usize, n: usize, list: &[[i16; 2]; MAX_MERGE_CAND]) -> (usize, u64) {
-        let Some(me) = self.me else { return (0, u64::MAX / 4) };
+    fn best_merge(
+        &self,
+        x: usize,
+        y: usize,
+        n: usize,
+        list: &[[i16; 2]; MAX_MERGE_CAND],
+    ) -> (usize, u64) {
+        let Some(me) = self.me else {
+            return (0, u64::MAX / 4);
+        };
         let mut buf = vec![0u16; n * n];
         let mut best = (0, u64::MAX);
         for (i, &mv) in list.iter().enumerate() {
@@ -905,15 +1138,30 @@ impl<'a> FrameCoder<'a> {
     }
 
     /// Integer then fractional motion search. Returns (mv, mvp index, SATD cost).
-    fn motion_search(&self, x: usize, y: usize, n: usize, amvp: &[[i16; 2]; 2], merge: &[[i16; 2]; MAX_MERGE_CAND]) -> ([i16; 2], u8, u64) {
-        let Some(me) = self.me else { return (amvp[0], 0, u64::MAX / 4) };
+    fn motion_search(
+        &self,
+        x: usize,
+        y: usize,
+        n: usize,
+        amvp: &[[i16; 2]; 2],
+        merge: &[[i16; 2]; MAX_MERGE_CAND],
+    ) -> ([i16; 2], u8, u64) {
+        let Some(me) = self.me else {
+            return (amvp[0], 0, u64::MAX / 4);
+        };
         let (xi, yi) = (x as i32, y as i32);
         let src = &self.src[0][y * self.w + x..];
         let ls = self.lambda_sad;
-        let mv_bits = |mv: [i32; 2]| -> f64 { amvp.iter().map(|p| mvd_bits(mv[0] - p[0] as i32) + mvd_bits(mv[1] - p[1] as i32)).fold(f64::MAX, f64::min) };
+        let mv_bits = |mv: [i32; 2]| -> f64 {
+            amvp.iter()
+                .map(|p| mvd_bits(mv[0] - p[0] as i32) + mvd_bits(mv[1] - p[1] as i32))
+                .fold(f64::MAX, f64::min)
+        };
         let (lo_x, hi_x, lo_y, hi_y) = me.int_range(xi, yi, n);
         let clamp_i = |v: [i32; 2]| [v[0].clamp(lo_x, hi_x), v[1].clamp(lo_y, hi_y)];
-        let sad_cost = |v: [i32; 2]| -> f64 { me.sad(src, self.w, xi + v[0], yi + v[1], n) as f64 + ls * mv_bits([v[0] * 4, v[1] * 4]) };
+        let sad_cost = |v: [i32; 2]| -> f64 {
+            me.sad(src, self.w, xi + v[0], yi + v[1], n) as f64 + ls * mv_bits([v[0] * 4, v[1] * 4])
+        };
         // starting points
         let mut best = [0i32; 2];
         let mut best_cost = sad_cost(best);
@@ -934,7 +1182,16 @@ impl<'a> FrameCoder<'a> {
                 moved = false;
                 iters += 1;
                 let center = best;
-                for (dx, dy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+                for (dx, dy) in [
+                    (-1, -1),
+                    (0, -1),
+                    (1, -1),
+                    (-1, 0),
+                    (1, 0),
+                    (-1, 1),
+                    (0, 1),
+                    (1, 1),
+                ] {
                     let v = clamp_i([center[0] + dx * step, center[1] + dy * step]);
                     if v == center {
                         continue;
@@ -959,7 +1216,16 @@ impl<'a> FrameCoder<'a> {
         let mut bc = satd_cost(bq);
         for step in [2, 1] {
             let center = bq;
-            for (dx, dy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+            for (dx, dy) in [
+                (-1, -1),
+                (0, -1),
+                (1, -1),
+                (-1, 0),
+                (1, 0),
+                (-1, 1),
+                (0, 1),
+                (1, 1),
+            ] {
                 let v = [center[0] + dx * step, center[1] + dy * step];
                 let c = satd_cost(v);
                 if c < bc {
@@ -970,7 +1236,11 @@ impl<'a> FrameCoder<'a> {
         }
         let mv = [bq[0] as i16, bq[1] as i16];
         let bits = |p: &[i16; 2]| mvd_bits(bq[0] - p[0] as i32) + mvd_bits(bq[1] - p[1] as i32);
-        let mvp = if bits(&amvp[1]) < bits(&amvp[0]) { 1 } else { 0 };
+        let mvp = if bits(&amvp[1]) < bits(&amvp[0]) {
+            1
+        } else {
+            0
+        };
         (mv, mvp, bc as u64)
     }
 
@@ -1040,7 +1310,15 @@ impl<'a> FrameCoder<'a> {
 }
 
 /// Filter (luma) and predict an intra block from substituted references.
-fn predict_from_refs(refs: &Refs, c: usize, mode: u32, n: usize, bd: u32, out: &mut [u16], os: usize) {
+fn predict_from_refs(
+    refs: &Refs,
+    c: usize,
+    mode: u32,
+    n: usize,
+    bd: u32,
+    out: &mut [u16],
+    os: usize,
+) {
     if c == 0 {
         let mut r = refs.clone();
         intra::filter(&mut r, mode, n, true, true, bd);
@@ -1063,7 +1341,11 @@ fn scan_idx_for_mode(m: u32) -> u8 {
 
 /// Approximate bits of one motion vector difference component.
 fn mvd_bits(v: i32) -> f64 {
-    if v == 0 { 1.0 } else { (2 * (32 - (v.unsigned_abs()).leading_zeros()) + 1) as f64 }
+    if v == 0 {
+        1.0
+    } else {
+        (2 * (32 - (v.unsigned_abs()).leading_zeros()) + 1) as f64
+    }
 }
 
 fn write_merge_idx<S: Sink>(s: &mut S, idx: usize) {
@@ -1161,7 +1443,9 @@ fn residual_coding<S: Sink>(s: &mut S, lv: &[i32], log2: u32, c: usize, scan_idx
     let sb_w = 1usize << log2sb;
     let sb_scan = scan_order(log2sb, scan_idx);
     let pos_scan = &SCAN_4[scan_idx];
-    let at = |xs: usize, ys: usize, p: usize| lv[(ys * 4 + pos_scan[p].1 as usize) * n + xs * 4 + pos_scan[p].0 as usize];
+    let at = |xs: usize, ys: usize, p: usize| {
+        lv[(ys * 4 + pos_scan[p].1 as usize) * n + xs * 4 + pos_scan[p].0 as usize]
+    };
     // last significant coefficient in scan order
     let mut last = None;
     'outer: for i in (0..sb_scan.len()).rev() {
@@ -1174,12 +1458,18 @@ fn residual_coding<S: Sink>(s: &mut S, lv: &[i32], log2: u32, c: usize, scan_idx
         }
     }
     // Callers only code blocks with a nonzero level (coded_block_flag = 1).
-    let Some((last_sb, last_pos)) = last else { return };
+    let Some((last_sb, last_pos)) = last else {
+        return;
+    };
     let lx = sb_scan[last_sb].0 as u32 * 4 + pos_scan[last_pos].0 as u32;
     let ly = sb_scan[last_sb].1 as u32 * 4 + pos_scan[last_pos].1 as u32;
     let (cx, cy) = if scan_idx == 2 { (ly, lx) } else { (lx, ly) };
     let cmax = (log2 << 1) - 1;
-    let (off, shift) = if c == 0 { (3 * (log2 - 2) + ((log2 - 1) >> 2), (log2 + 1) >> 2) } else { (15, log2 - 2) };
+    let (off, shift) = if c == 0 {
+        (3 * (log2 - 2) + ((log2 - 1) >> 2), (log2 + 1) >> 2)
+    } else {
+        (15, log2 - 2)
+    };
     let (px, sx, nbx) = last_prefix(cx);
     let (py, sy, nby) = last_prefix(cy);
     for (p, base) in [(px, LAST_X_PREFIX), (py, LAST_Y_PREFIX)] {
@@ -1201,8 +1491,16 @@ fn residual_coding<S: Sink>(s: &mut S, lv: &[i32], log2: u32, c: usize, scan_idx
     let c_off_sig = if c == 0 { 0 } else { 27 };
     for i in (0..=last_sb).rev() {
         let (xs, ys) = (sb_scan[i].0 as usize, sb_scan[i].1 as usize);
-        let right = if xs + 1 < sb_w { csbf[ys * 8 + xs + 1] } else { 0 };
-        let below = if ys + 1 < sb_w { csbf[(ys + 1) * 8 + xs] } else { 0 };
+        let right = if xs + 1 < sb_w {
+            csbf[ys * 8 + xs + 1]
+        } else {
+            0
+        };
+        let below = if ys + 1 < sb_w {
+            csbf[(ys + 1) * 8 + xs]
+        } else {
+            0
+        };
         let mut infer_dc = false;
         if i < last_sb && i > 0 {
             let has = (0..16).any(|p| at(xs, ys, p) != 0);
@@ -1272,7 +1570,11 @@ fn residual_coding<S: Sink>(s: &mut S, lv: &[i32], log2: u32, c: usize, scan_idx
                         if xs + ys > 0 {
                             sc += 3;
                         }
-                        sc += if log2 == 3 { if scan_idx == 0 { 9 } else { 15 } } else { 21 };
+                        sc += if log2 == 3 {
+                            if scan_idx == 0 { 9 } else { 15 }
+                        } else {
+                            21
+                        };
                     } else {
                         sc += if log2 == 3 { 9 } else { 12 };
                     }
@@ -1305,7 +1607,10 @@ fn residual_coding<S: Sink>(s: &mut S, lv: &[i32], log2: u32, c: usize, scan_idx
         let c_off_g1 = if c > 0 { 16 } else { 0 };
         for k in 0..nsig.min(8) {
             let f = abs_at(k) > 1;
-            s.decision(GT1 + ctx_set * 4 + g1ctx.min(3) as usize + c_off_g1, f as u32);
+            s.decision(
+                GT1 + ctx_set * 4 + g1ctx.min(3) as usize + c_off_g1,
+                f as u32,
+            );
             gt1[k] = f as u8;
             if f {
                 g1ctx = 0;
@@ -1331,7 +1636,11 @@ fn residual_coding<S: Sink>(s: &mut S, lv: &[i32], log2: u32, c: usize, scan_idx
         }
         if hidden {
             let sum: u32 = (0..nsig).map(abs_at).sum();
-            debug_assert_eq!(at(xs, ys, sig[nsig - 1] as usize) < 0, sum & 1 == 1, "sign hiding parity");
+            debug_assert_eq!(
+                at(xs, ys, sig[nsig - 1] as usize) < 0,
+                sum & 1 == 1,
+                "sign hiding parity"
+            );
         }
         let mut rice = 0u32;
         for k in 0..nsig {
@@ -1339,7 +1648,11 @@ fn residual_coding<S: Sink>(s: &mut S, lv: &[i32], log2: u32, c: usize, scan_idx
             if Some(k) == first_g1 {
                 base += gt2;
             }
-            let thresh = if k < 8 { if Some(k) == first_g1 { 3 } else { 2 } } else { 1 };
+            let thresh = if k < 8 {
+                if Some(k) == first_g1 { 3 } else { 2 }
+            } else {
+                1
+            };
             if base == thresh {
                 let level = abs_at(k);
                 write_remaining(s, level - base, rice);

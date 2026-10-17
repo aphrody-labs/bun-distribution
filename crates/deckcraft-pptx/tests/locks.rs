@@ -10,12 +10,19 @@ use deckcraft_model::{Presentation, Shape, ShapeId, ShapeKind, Slide, defaults};
 fn png() -> Vec<u8> {
     let img = image::RgbImage::from_pixel(4, 4, image::Rgb([10, 200, 30]));
     let mut out = Cursor::new(vec![]);
-    image::DynamicImage::ImageRgb8(img).write_to(&mut out, image::ImageFormat::Png).expect("png");
+    image::DynamicImage::ImageRgb8(img)
+        .write_to(&mut out, image::ImageFormat::Png)
+        .expect("png");
     out.into_inner()
 }
 
 fn shape(p: &mut Presentation, name: &str, x: f64) -> Shape {
-    Shape { id: ShapeId(p.alloc_id()), name: name.into(), xfrm: Some(Xfrm::new(x, 40.0, 80.0, 60.0)), ..Default::default() }
+    Shape {
+        id: ShapeId(p.alloc_id()),
+        name: name.into(),
+        xfrm: Some(Xfrm::new(x, 40.0, 80.0, 60.0)),
+        ..Default::default()
+    }
 }
 
 /// Slide 1 of a blank deck holds: a locked shape, an unlocked one, a hidden locked text box, a
@@ -43,18 +50,29 @@ fn deck() -> Presentation {
         id: ShapeId(p.alloc_id()),
         name: "Group".into(),
         xfrm: Some(gx),
-        kind: ShapeKind::Group { children: vec![c1, c2, c3], child: gx },
+        kind: ShapeKind::Group {
+            children: vec![c1, c2, c3],
+            child: gx,
+        },
         locked: true,
         ..Default::default()
     };
     g.hidden = false;
     v.push(g);
     let mut pic = shape(&mut p, "Pic", 0.0);
-    pic.kind = ShapeKind::Picture { fill: PictureFill { media: img, ..Default::default() } };
+    pic.kind = ShapeKind::Picture {
+        fill: PictureFill {
+            media: img,
+            ..Default::default()
+        },
+    };
     pic.locked = true;
     v.push(pic);
     let mut cx = shape(&mut p, "Conn", 100.0);
-    cx.kind = ShapeKind::Connector { start: None, end: None };
+    cx.kind = ShapeKind::Connector {
+        start: None,
+        end: None,
+    };
     cx.geom = deckcraft_model::Geom::preset("straightConnector1");
     cx.locked = true;
     v.push(cx);
@@ -102,13 +120,18 @@ fn rezip(es: &[(String, Vec<u8>)]) -> Vec<u8> {
 
 fn slide1_xml(bytes: &[u8]) -> String {
     let es = entries(bytes);
-    let (_, d) = es.iter().find(|(n, _)| n == "ppt/slides/slide1.xml").expect("slide1");
+    let (_, d) = es
+        .iter()
+        .find(|(n, _)| n == "ppt/slides/slide1.xml")
+        .expect("slide1");
     String::from_utf8(d.clone()).expect("utf8")
 }
 
 /// The element following `name="…"` up to the end of the object's non-visual properties.
 fn nv_of<'a>(xml: &'a str, name: &str) -> &'a str {
-    let i = xml.find(&format!("name=\"{name}\"")).unwrap_or_else(|| panic!("no {name}"));
+    let i = xml
+        .find(&format!("name=\"{name}\""))
+        .unwrap_or_else(|| panic!("no {name}"));
     let rest = &xml[i..];
     let j = rest.find("<p:nvPr").unwrap_or(rest.len());
     &rest[..j]
@@ -136,8 +159,23 @@ fn lock_and_hidden_round_trip() {
     }
     // The stacking order of the slide and of the group survives too.
     let names: Vec<&str> = s.shapes.iter().map(|x| x.name.as_str()).collect();
-    assert_eq!(names, ["Locked", "Free", "Hidden text", "Group", "Pic", "Conn", "Tbl"]);
-    let kids: Vec<&str> = find(s, "Group").children().iter().map(|x| x.name.as_str()).collect();
+    assert_eq!(
+        names,
+        [
+            "Locked",
+            "Free",
+            "Hidden text",
+            "Group",
+            "Pic",
+            "Conn",
+            "Tbl"
+        ]
+    );
+    let kids: Vec<&str> = find(s, "Group")
+        .children()
+        .iter()
+        .map(|x| x.name.as_str())
+        .collect();
     assert_eq!(kids, ["Child locked", "Child free", "Child hidden"]);
 }
 
@@ -145,14 +183,39 @@ fn lock_and_hidden_round_trip() {
 fn lock_writes_powerpoints_full_attribute_set() {
     let xml = slide1_xml(&deckcraft_pptx::export(&deck()).expect("export"));
     let sp = r#"noGrp="1" noRot="1" noMove="1" noResize="1" noEditPoints="1" noAdjustHandles="1" noChangeArrowheads="1" noChangeShapeType="1""#;
-    assert!(nv_of(&xml, "Locked").contains(&format!("<a:spLocks {sp}/>")), "{}", nv_of(&xml, "Locked"));
+    assert!(
+        nv_of(&xml, "Locked").contains(&format!("<a:spLocks {sp}/>")),
+        "{}",
+        nv_of(&xml, "Locked")
+    );
     assert!(nv_of(&xml, "Hidden text").contains(&format!("<a:spLocks {sp}/>")));
     assert!(nv_of(&xml, "Hidden text").contains(r#"hidden="1""#));
-    assert!(!nv_of(&xml, "Free").contains("Locks"), "an unlocked shape writes no locks: {}", nv_of(&xml, "Free"));
-    assert!(nv_of(&xml, "Group").contains(r#"<a:grpSpLocks noGrp="1" noUngrp="1" noRot="1" noMove="1" noResize="1"/>"#));
-    assert!(nv_of(&xml, "Conn").contains(&format!("<a:cxnSpLocks {sp}/>")), "{}", nv_of(&xml, "Conn"));
-    assert!(nv_of(&xml, "Pic").contains(&format!(r#"<a:picLocks noChangeAspect="1" {sp} noCrop="1"/>"#)), "{}", nv_of(&xml, "Pic"));
-    assert!(nv_of(&xml, "Tbl").contains(r#"<a:graphicFrameLocks noGrp="1" noDrilldown="1" noMove="1" noResize="1"/>"#));
+    assert!(
+        !nv_of(&xml, "Free").contains("Locks"),
+        "an unlocked shape writes no locks: {}",
+        nv_of(&xml, "Free")
+    );
+    assert!(
+        nv_of(&xml, "Group")
+            .contains(r#"<a:grpSpLocks noGrp="1" noUngrp="1" noRot="1" noMove="1" noResize="1"/>"#)
+    );
+    assert!(
+        nv_of(&xml, "Conn").contains(&format!("<a:cxnSpLocks {sp}/>")),
+        "{}",
+        nv_of(&xml, "Conn")
+    );
+    assert!(
+        nv_of(&xml, "Pic").contains(&format!(
+            r#"<a:picLocks noChangeAspect="1" {sp} noCrop="1"/>"#
+        )),
+        "{}",
+        nv_of(&xml, "Pic")
+    );
+    assert!(
+        nv_of(&xml, "Tbl").contains(
+            r#"<a:graphicFrameLocks noGrp="1" noDrilldown="1" noMove="1" noResize="1"/>"#
+        )
+    );
 }
 
 /// PowerPoint reads Lock only from the whole set: a lone `noMove`/`noResize` (another tool's
@@ -169,7 +232,10 @@ fn partial_locks_are_not_lock() {
         std::sync::Arc::make_mut(s).shapes = vec![a, b, c, d];
     }
     let mut es = entries(&deckcraft_pptx::export(&p).expect("export"));
-    let slide = es.iter_mut().find(|(n, _)| n == "ppt/slides/slide1.xml").expect("slide1");
+    let slide = es
+        .iter_mut()
+        .find(|(n, _)| n == "ppt/slides/slide1.xml")
+        .expect("slide1");
     let xml = String::from_utf8(slide.1.clone()).expect("utf8");
     let swap = |xml: String, name: &str, locks: &str| {
         let i = xml.find(&format!("name=\"{name}\"")).expect("name");
@@ -183,8 +249,11 @@ fn partial_locks_are_not_lock() {
         "B",
         r#"<a:spLocks noRot="1" noMove="1" noResize="1" noEditPoints="1" noAdjustHandles="1" noChangeArrowheads="1" noChangeShapeType="1"/>"#,
     );
-    let xml =
-        swap(xml, "C", r#"<a:spLocks noGrp="1" noRot="1" noMove="1" noResize="1" noEditPoints="1" noAdjustHandles="1" noChangeShapeType="1"/>"#);
+    let xml = swap(
+        xml,
+        "C",
+        r#"<a:spLocks noGrp="1" noRot="1" noMove="1" noResize="1" noEditPoints="1" noAdjustHandles="1" noChangeShapeType="1"/>"#,
+    );
     slide.1 = xml.into_bytes();
     let q = deckcraft_pptx::import(&rezip(&es)).expect("import");
     let s = &q.slides[0];
@@ -203,8 +272,15 @@ fn empty_locks_element_is_unlocked() {
         std::sync::Arc::make_mut(s).shapes = vec![a];
     }
     let mut es = entries(&deckcraft_pptx::export(&p).expect("export"));
-    let slide = es.iter_mut().find(|(n, _)| n == "ppt/slides/slide1.xml").expect("slide1");
-    let xml = String::from_utf8(slide.1.clone()).expect("utf8").replacen("<p:cNvSpPr/>", "<p:cNvSpPr><a:spLocks/></p:cNvSpPr>", 1);
+    let slide = es
+        .iter_mut()
+        .find(|(n, _)| n == "ppt/slides/slide1.xml")
+        .expect("slide1");
+    let xml = String::from_utf8(slide.1.clone()).expect("utf8").replacen(
+        "<p:cNvSpPr/>",
+        "<p:cNvSpPr><a:spLocks/></p:cNvSpPr>",
+        1,
+    );
     slide.1 = xml.into_bytes();
     let q = deckcraft_pptx::import(&rezip(&es)).expect("import");
     assert!(!find(&q.slides[0], "A").locked);

@@ -6,11 +6,26 @@ use effectcraft_keyframe::Value;
 use effectcraft_project::ParamUi;
 use rayon::prelude::*;
 
-use crate::util::{Plane, SRC_NAMES, Src, join, layer_or_self, morph_plane, pick, premul, src_at, unpremul};
+use crate::util::{
+    Plane, SRC_NAMES, Src, join, layer_or_self, morph_plane, pick, premul, src_at, unpremul,
+};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Channel", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Channel",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 /// Route four sources into R, G, B, A (straight colour), premultiplying the result.
@@ -25,14 +40,25 @@ fn route(b: &mut Buf, srcs: [Src; 4]) {
     });
 }
 
-const SET_CHANNEL_LAYERS: [&str; 4] = ["sourceLayer1", "sourceLayer2", "sourceLayer3", "sourceLayer4"];
+const SET_CHANNEL_LAYERS: [&str; 4] = [
+    "sourceLayer1",
+    "sourceLayer2",
+    "sourceLayer3",
+    "sourceLayer4",
+];
 
 fn set_channels(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let s = ["setRedTo", "setGreenTo", "setBlueTo", "setAlphaTo"].map(|id| src_at(ctx.params.e(id)));
+    let s =
+        ["setRedTo", "setGreenTo", "setBlueTo", "setAlphaTo"].map(|id| src_at(ctx.params.e(id)));
     // Source layers default to the effect's own layer ("None").
     let stretch = ctx.params.b("stretchLayersToFit");
-    let layers: Vec<Option<crate::Image>> =
-        SET_CHANNEL_LAYERS.iter().map(|id| ctx.layer_param(id, true).map(|o| crate::util::fit_layer(ctx, &b, &o, stretch))).collect();
+    let layers: Vec<Option<crate::Image>> = SET_CHANNEL_LAYERS
+        .iter()
+        .map(|id| {
+            ctx.layer_param(id, true)
+                .map(|o| crate::util::fit_layer(ctx, &b, &o, stretch))
+        })
+        .collect();
     if layers.iter().all(Option::is_none) {
         route(&mut b, s);
         return b;
@@ -49,12 +75,41 @@ fn set_channels(ctx: &EffectCtx, mut b: Buf) -> Buf {
     b
 }
 
-const SHIFT_ORDER: [Src; 11] =
-    [Src::Alpha, Src::Red, Src::Green, Src::Blue, Src::Luminance, Src::Hue, Src::Lightness, Src::Saturation, Src::Full, Src::Half, Src::Off];
-const SHIFT_NAMES: [&str; 11] = ["Alpha", "Red", "Green", "Blue", "Luminance", "Hue", "Lightness", "Saturation", "Full On", "Half On", "Full Off"];
+const SHIFT_ORDER: [Src; 11] = [
+    Src::Alpha,
+    Src::Red,
+    Src::Green,
+    Src::Blue,
+    Src::Luminance,
+    Src::Hue,
+    Src::Lightness,
+    Src::Saturation,
+    Src::Full,
+    Src::Half,
+    Src::Off,
+];
+const SHIFT_NAMES: [&str; 11] = [
+    "Alpha",
+    "Red",
+    "Green",
+    "Blue",
+    "Luminance",
+    "Hue",
+    "Lightness",
+    "Saturation",
+    "Full On",
+    "Half On",
+    "Full Off",
+];
 
 fn shift_channels(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let s = ["takeRedFrom", "takeGreenFrom", "takeBlueFrom", "takeAlphaFrom"].map(|id| SHIFT_ORDER[(ctx.params.e(id) as usize).min(10)]);
+    let s = [
+        "takeRedFrom",
+        "takeGreenFrom",
+        "takeBlueFrom",
+        "takeAlphaFrom",
+    ]
+    .map(|id| SHIFT_ORDER[(ctx.params.e(id) as usize).min(10)]);
     route(&mut b, s);
     b
 }
@@ -90,8 +145,17 @@ const COMBINER_FROM: [&str; 14] = [
     "Min RGB",
 ];
 /// Channel Combiner's To options (a single value goes into one channel).
-const COMBINER_TO: [&str; 9] =
-    ["Red Only", "Green Only", "Blue Only", "Alpha Only", "Lightness Only", "Hue Only", "Saturation Only", "Grayscale", "Saturation Multiplied"];
+const COMBINER_TO: [&str; 9] = [
+    "Red Only",
+    "Green Only",
+    "Blue Only",
+    "Alpha Only",
+    "Lightness Only",
+    "Hue Only",
+    "Saturation Only",
+    "Grayscale",
+    "Saturation Multiplied",
+];
 
 fn channel_combiner(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let from = ctx.params.e("from");
@@ -99,7 +163,11 @@ fn channel_combiner(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let inv = ctx.params.b("invert");
     let solid = ctx.params.b("solidAlpha");
     // Use 2nd Layer: read the input values from the source layer instead.
-    let second = if ctx.params.b("useSecondLayer") { Some(layer_or_self(ctx, &b, "sourceLayer", true, true)) } else { None };
+    let second = if ctx.params.b("useSecondLayer") {
+        Some(layer_or_self(ctx, &b, "sourceLayer", true, true))
+    } else {
+        None
+    };
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
         let (c, mut a) = unpremul(*px);
         let (sc, sa) = match &second {
@@ -181,14 +249,16 @@ fn channel_combiner(ctx: &EffectCtx, mut b: Buf) -> Buf {
 }
 
 /// Minimax's Direction options.
-pub(crate) const MINIMAX_DIRECTIONS: [&str; 3] = ["Horizontal & Vertical", "Just Horizontal", "Just Vertical"];
+pub(crate) const MINIMAX_DIRECTIONS: [&str; 3] =
+    ["Horizontal & Vertical", "Just Horizontal", "Just Vertical"];
 
 /// `p` with `rx` / `ry` zero pixels added on every side.
 fn pad_plane(p: &Plane, rx: usize, ry: usize) -> Plane {
     let (w, h) = (p.w + 2 * rx, p.h + 2 * ry);
     let mut out = Plane::new(w, h);
     for y in 0..p.h {
-        out.data[(y + ry) * w + rx..(y + ry) * w + rx + p.w].copy_from_slice(&p.data[y * p.w..(y + 1) * p.w]);
+        out.data[(y + ry) * w + rx..(y + ry) * w + rx + p.w]
+            .copy_from_slice(&p.data[y * p.w..(y + 1) * p.w]);
     }
     out
 }
@@ -197,7 +267,8 @@ fn pad_plane(p: &Plane, rx: usize, ry: usize) -> Plane {
 fn crop_plane(p: &Plane, rx: usize, ry: usize, w: usize, h: usize) -> Plane {
     let mut out = Plane::new(w, h);
     for y in 0..h {
-        out.data[y * w..(y + 1) * w].copy_from_slice(&p.data[(y + ry) * p.w + rx..(y + ry) * p.w + rx + w]);
+        out.data[y * w..(y + 1) * w]
+            .copy_from_slice(&p.data[(y + ry) * p.w + rx..(y + ry) * p.w + rx + w]);
     }
     out
 }
@@ -227,21 +298,30 @@ fn minimax(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if sel[3] && op != 0 && !ctx.adjustment {
         b.pad((rx.max(ry)) as u32);
     }
-    let mut planes = [0, 1, 2, 3].map(|k| Plane::from_image(&b.img, |px| if k == 3 { px[3] } else { unpremul(px).0[k] }));
+    let mut planes = [0, 1, 2, 3]
+        .map(|k| Plane::from_image(&b.img, |px| if k == 3 { px[3] } else { unpremul(px).0[k] }));
     for (k, pl) in planes.iter_mut().enumerate() {
         if !sel[k] {
             continue;
         }
         // Beyond the layer edge is empty (0), so Minimum eats into the edges unless Don't
         // Shrink Edges extends the edge pixels instead.
-        let padded = if dont_shrink { pl.clone() } else { pad_plane(pl, rx, ry) };
+        let padded = if dont_shrink {
+            pl.clone()
+        } else {
+            pad_plane(pl, rx, ry)
+        };
         let out = match op {
             0 => morph_plane(&padded, rx, ry, false),
             1 => morph_plane(&padded, rx, ry, true),
             2 => morph_plane(&morph_plane(&padded, rx, ry, false), rx, ry, true),
             _ => morph_plane(&morph_plane(&padded, rx, ry, true), rx, ry, false),
         };
-        *pl = if dont_shrink { out } else { crop_plane(&out, rx, ry, pl.w, pl.h) };
+        *pl = if dont_shrink {
+            out
+        } else {
+            crop_plane(&out, rx, ry, pl.w, pl.h)
+        };
     }
     let mut img = join(&planes);
     img.data.par_iter_mut().for_each(|px| {
@@ -316,8 +396,20 @@ const SOLID_MODES: [BlendMode; 12] = [
     BlendMode::Color,
     BlendMode::Luminosity,
 ];
-const SOLID_MODE_NAMES: [&str; 12] =
-    ["Normal", "Add", "Multiply", "Screen", "Overlay", "Soft Light", "Hard Light", "Darken", "Lighten", "Difference", "Color", "Luminosity"];
+const SOLID_MODE_NAMES: [&str; 12] = [
+    "Normal",
+    "Add",
+    "Multiply",
+    "Screen",
+    "Overlay",
+    "Soft Light",
+    "Hard Light",
+    "Darken",
+    "Lighten",
+    "Difference",
+    "Color",
+    "Luminosity",
+];
 
 fn solid_composite(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let so = ctx.params.f("sourceOpacity") as f32 / 100.0;
@@ -358,7 +450,18 @@ fn remove_color_matting(ctx: &EffectCtx, mut b: Buf) -> Buf {
     b
 }
 
-const MATTE_ORDER: [Src; 10] = [Src::Red, Src::Green, Src::Blue, Src::Alpha, Src::Luminance, Src::Hue, Src::Lightness, Src::Saturation, Src::Full, Src::Off];
+const MATTE_ORDER: [Src; 10] = [
+    Src::Red,
+    Src::Green,
+    Src::Blue,
+    Src::Alpha,
+    Src::Luminance,
+    Src::Hue,
+    Src::Lightness,
+    Src::Saturation,
+    Src::Full,
+    Src::Off,
+];
 
 fn set_matte(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let src = MATTE_ORDER[(ctx.params.e("takeMatteFrom") as usize).min(9)];
@@ -366,7 +469,9 @@ fn set_matte(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let comp = ctx.params.b("compositeMatteWithOriginal");
     let pre = ctx.params.b("premultiplyMatteLayer");
     // Take Matte From Layer: another layer (stretched or centred), else the layer itself.
-    let matte = ctx.layer_param("takeMatteFromLayer", true).map(|o| crate::util::fit_layer(ctx, &b, &o, ctx.params.b("stretchMatteToFit")));
+    let matte = ctx
+        .layer_param("takeMatteFromLayer", true)
+        .map(|o| crate::util::fit_layer(ctx, &b, &o, ctx.params.b("stretchMatteToFit")));
     let own_matte = matte.is_none();
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
         let (c, a) = unpremul(*px);
@@ -381,30 +486,63 @@ fn set_matte(ctx: &EffectCtx, mut b: Buf) -> Buf {
         let m = m.clamp(0.0, 1.0);
         let m = if inv { 1.0 - m } else { m };
         // The layer's own (non-inverted) alpha already is the original matte: don't square it.
-        let na = if comp && (!own_matte || src != Src::Alpha || inv) { a * m } else { m };
+        let na = if comp && (!own_matte || src != Src::Alpha || inv) {
+            a * m
+        } else {
+            m
+        };
         *px = premul(c, na.clamp(0.0, 1.0));
     });
     b
 }
 
 pub fn specs() -> Vec<EffectSpec> {
-    let srcp = |id: &'static str, name: &'static str, d: u32| p(id, name, Value::Enum(d), popup(&SRC_NAMES));
-    let shp = |id: &'static str, name: &'static str, d: u32| p(id, name, Value::Enum(d), popup(&SHIFT_NAMES));
+    let srcp = |id: &'static str, name: &'static str, d: u32| {
+        p(id, name, Value::Enum(d), popup(&SRC_NAMES))
+    };
+    let shp = |id: &'static str, name: &'static str, d: u32| {
+        p(id, name, Value::Enum(d), popup(&SHIFT_NAMES))
+    };
     let v255 = || slider(0.0, 255.0, 0.0, 255.0, 0);
     vec![
         spec(
             "ec.channel.setchannels",
             "Set Channels",
             vec![
-                p("sourceLayer1", "Source Layer 1", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "sourceLayer1",
+                    "Source Layer 1",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 srcp("setRedTo", "Set Red To Source 1's", 0),
-                p("sourceLayer2", "Source Layer 2", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "sourceLayer2",
+                    "Source Layer 2",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 srcp("setGreenTo", "Set Green To Source 2's", 1),
-                p("sourceLayer3", "Source Layer 3", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "sourceLayer3",
+                    "Source Layer 3",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 srcp("setBlueTo", "Set Blue To Source 3's", 2),
-                p("sourceLayer4", "Source Layer 4", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "sourceLayer4",
+                    "Source Layer 4",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 srcp("setAlphaTo", "Set Alpha To Source 4's", 3),
-                p("stretchLayersToFit", "Stretch Layers to Fit", Value::Bool(true), ParamUi::Checkbox),
+                p(
+                    "stretchLayersToFit",
+                    "Stretch Layers to Fit",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
             ],
             set_channels,
         ),
@@ -423,12 +561,27 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.channel.combiner",
             "Channel Combiner",
             vec![
-                p("useSecondLayer", "Use 2nd Layer", Value::Bool(false), ParamUi::Checkbox),
-                p("sourceLayer", "Source Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "useSecondLayer",
+                    "Use 2nd Layer",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "sourceLayer",
+                    "Source Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 p("from", "From", Value::Enum(8), popup(&COMBINER_FROM)),
                 p("to", "To", Value::Enum(4), popup(&COMBINER_TO)),
                 p("invert", "Invert", Value::Bool(false), ParamUi::Checkbox),
-                p("solidAlpha", "Solid Alpha", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "solidAlpha",
+                    "Solid Alpha",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             channel_combiner,
         ),
@@ -436,11 +589,41 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.channel.minimax",
             "Minimax",
             vec![
-                p("operation", "Operation", Value::Enum(1), popup(&["Minimum", "Maximum", "Minimum Then Maximum", "Maximum Then Minimum"])),
-                p("radius", "Radius", num(0.0), slider(0.0, 500.0, 0.0, 100.0, 0)),
-                p("channel", "Channel", Value::Enum(0), popup(&["Color", "Alpha", "Alpha and Color", "Red", "Green", "Blue"])),
-                p("direction", "Direction", Value::Enum(0), popup(&MINIMAX_DIRECTIONS)),
-                p("dontShrinkEdges", "Don't Shrink Edges", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "operation",
+                    "Operation",
+                    Value::Enum(1),
+                    popup(&[
+                        "Minimum",
+                        "Maximum",
+                        "Minimum Then Maximum",
+                        "Maximum Then Minimum",
+                    ]),
+                ),
+                p(
+                    "radius",
+                    "Radius",
+                    num(0.0),
+                    slider(0.0, 500.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "channel",
+                    "Channel",
+                    Value::Enum(0),
+                    popup(&["Color", "Alpha", "Alpha and Color", "Red", "Green", "Blue"]),
+                ),
+                p(
+                    "direction",
+                    "Direction",
+                    Value::Enum(0),
+                    popup(&MINIMAX_DIRECTIONS),
+                ),
+                p(
+                    "dontShrinkEdges",
+                    "Don't Shrink Edges",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             minimax,
         ),
@@ -452,12 +635,31 @@ pub fn specs() -> Vec<EffectSpec> {
                     "operator",
                     "Operator",
                     Value::Enum(3),
-                    popup(&["And", "Or", "Xor", "Add", "Subtract", "Difference", "Min", "Max", "Block Above", "Block Below", "Slice", "Multiply", "Screen"]),
+                    popup(&[
+                        "And",
+                        "Or",
+                        "Xor",
+                        "Add",
+                        "Subtract",
+                        "Difference",
+                        "Min",
+                        "Max",
+                        "Block Above",
+                        "Block Below",
+                        "Slice",
+                        "Multiply",
+                        "Screen",
+                    ]),
                 ),
                 p("redValue", "Red Value", num(0.0), v255()),
                 p("greenValue", "Green Value", num(0.0), v255()),
                 p("blueValue", "Blue Value", num(0.0), v255()),
-                p("clip", "Clip Result Values", Value::Bool(true), ParamUi::Checkbox),
+                p(
+                    "clip",
+                    "Clip Result Values",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
             ],
             arithmetic,
         ),
@@ -465,10 +667,25 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.channel.solidcomposite",
             "Solid Composite",
             vec![
-                p("sourceOpacity", "Source Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "sourceOpacity",
+                    "Source Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
                 p("color", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("blendingMode", "Blending Mode", Value::Enum(0), popup(&SOLID_MODE_NAMES)),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(0),
+                    popup(&SOLID_MODE_NAMES),
+                ),
             ],
             solid_composite,
         ),
@@ -476,8 +693,18 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.channel.removecolormatting",
             "Remove Color Matting",
             vec![
-                p("backgroundColor", "Background Color", col(0.0, 0.0, 0.0), ParamUi::Color),
-                p("clipHdr", "Clip HDR Values", Value::Bool(true), ParamUi::Checkbox),
+                p(
+                    "backgroundColor",
+                    "Background Color",
+                    col(0.0, 0.0, 0.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "clipHdr",
+                    "Clip HDR Values",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
             ],
             remove_color_matting,
         ),
@@ -485,17 +712,53 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.channel.setmatte",
             "Set Matte",
             vec![
-                p("takeMatteFromLayer", "Take Matte From Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "takeMatteFromLayer",
+                    "Take Matte From Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 p(
                     "takeMatteFrom",
                     "Use For Matte",
                     Value::Enum(3),
-                    popup(&["Red", "Green", "Blue", "Alpha", "Luminance", "Hue", "Lightness", "Saturation", "Full", "Off"]),
+                    popup(&[
+                        "Red",
+                        "Green",
+                        "Blue",
+                        "Alpha",
+                        "Luminance",
+                        "Hue",
+                        "Lightness",
+                        "Saturation",
+                        "Full",
+                        "Off",
+                    ]),
                 ),
-                p("invertMatte", "Invert Matte", Value::Bool(false), ParamUi::Checkbox),
-                p("stretchMatteToFit", "Stretch Matte to Fit", Value::Bool(true), ParamUi::Checkbox),
-                p("compositeMatteWithOriginal", "Composite Matte with Original", Value::Bool(true), ParamUi::Checkbox),
-                p("premultiplyMatteLayer", "Premultiply Matte Layer", Value::Bool(true), ParamUi::Checkbox),
+                p(
+                    "invertMatte",
+                    "Invert Matte",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "stretchMatteToFit",
+                    "Stretch Matte to Fit",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "compositeMatteWithOriginal",
+                    "Composite Matte with Original",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "premultiplyMatteLayer",
+                    "Premultiply Matte Layer",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
             ],
             set_matte,
         ),
@@ -510,13 +773,34 @@ mod tests {
 
     fn run(id: &str, over: &[(&str, Value)], img: Image) -> Image {
         let s = find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in over {
             params.values.insert(k.to_string(), v.clone());
         }
-        let ctx =
-            EffectCtx { params: &params, time: 0.0, layer_size: [img.width as f64, img.height as f64], seed: 1, adjustment: true, env: Default::default() };
-        apply(s, &ctx, Buf { img, offset: [0.0, 0.0], scale: 1.0 }).img
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [img.width as f64, img.height as f64],
+            seed: 1,
+            adjustment: true,
+            env: Default::default(),
+        };
+        apply(
+            s,
+            &ctx,
+            Buf {
+                img,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
+        .img
     }
 
     fn sample() -> Image {
@@ -538,20 +822,32 @@ mod tests {
     fn set_channels_defaults_are_identity_and_swap_works() {
         let img = sample();
         assert_eq!(run("ec.channel.setchannels", &[], img.clone()), img);
-        let out = run("ec.channel.setchannels", &[("setRedTo", Value::Enum(2)), ("setBlueTo", Value::Enum(0))], img);
+        let out = run(
+            "ec.channel.setchannels",
+            &[("setRedTo", Value::Enum(2)), ("setBlueTo", Value::Enum(0))],
+            img,
+        );
         assert!(close(out.get(0, 0), [0.9, 0.5, 0.2, 1.0]));
     }
 
     #[test]
     fn shift_channels_takes_red_from_green() {
-        let out = run("ec.channel.shiftchannels", &[("takeRedFrom", Value::Enum(2))], sample());
+        let out = run(
+            "ec.channel.shiftchannels",
+            &[("takeRedFrom", Value::Enum(2))],
+            sample(),
+        );
         assert!(close(out.get(7, 0), [0.25, 0.25, 0.45, 0.5]));
     }
 
     #[test]
     fn channel_combiner_hls_round_trip() {
         let img = sample();
-        let hls = run("ec.channel.combiner", &[("from", Value::Enum(0))], img.clone());
+        let hls = run(
+            "ec.channel.combiner",
+            &[("from", Value::Enum(0))],
+            img.clone(),
+        );
         let back = run("ec.channel.combiner", &[("from", Value::Enum(1))], hls);
         assert!(close(back.get(0, 0), img.get(0, 0)), "{:?}", back.get(0, 0));
     }
@@ -570,9 +866,21 @@ mod tests {
     #[test]
     fn arithmetic_add_and_slice() {
         let img = Image::filled(1, 1, [0.4, 0.4, 0.4, 1.0]);
-        let out = run("ec.channel.arithmetic", &[("redValue", num(51.0))], img.clone());
+        let out = run(
+            "ec.channel.arithmetic",
+            &[("redValue", num(51.0))],
+            img.clone(),
+        );
         assert!((out.get(0, 0)[0] - 0.6).abs() < 1e-5 && (out.get(0, 0)[1] - 0.4).abs() < 1e-6);
-        let out = run("ec.channel.arithmetic", &[("operator", Value::Enum(10)), ("redValue", num(200.0)), ("greenValue", num(10.0))], img);
+        let out = run(
+            "ec.channel.arithmetic",
+            &[
+                ("operator", Value::Enum(10)),
+                ("redValue", num(200.0)),
+                ("greenValue", num(10.0)),
+            ],
+            img,
+        );
         assert_eq!(&out.get(0, 0)[..3], &[0.0, 1.0, 1.0]);
     }
 
@@ -582,7 +890,11 @@ mod tests {
         let (f, a, bg) = ([0.8f32, 0.3, 0.1], 0.4f32, [0.2f32, 0.6, 0.9]);
         let s: Vec<f32> = (0..3).map(|i| f[i] * a + bg[i] * (1.0 - a)).collect();
         let img = Image::filled(1, 1, [s[0] * a, s[1] * a, s[2] * a, a]);
-        let out = run("ec.channel.removecolormatting", &[("backgroundColor", Value::Color([0.2, 0.6, 0.9, 1.0]))], img);
+        let out = run(
+            "ec.channel.removecolormatting",
+            &[("backgroundColor", Value::Color([0.2, 0.6, 0.9, 1.0]))],
+            img,
+        );
         let px = out.get(0, 0);
         for i in 0..3 {
             assert!((px[i] - f[i] * a).abs() < 1e-5, "{px:?}");
@@ -594,7 +906,11 @@ mod tests {
         let mut img = Image::new(2, 1);
         img.set(0, 0, [1.0, 1.0, 1.0, 1.0]);
         img.set(1, 0, [0.0, 0.0, 0.0, 1.0]);
-        let out = run("ec.channel.setmatte", &[("takeMatteFrom", Value::Enum(4))], img);
+        let out = run(
+            "ec.channel.setmatte",
+            &[("takeMatteFrom", Value::Enum(4))],
+            img,
+        );
         assert!((out.get(0, 0)[3] - 1.0).abs() < 1e-5);
         assert_eq!(out.get(1, 0)[3], 0.0);
     }
@@ -604,7 +920,14 @@ mod tests {
     impl crate::EffectHost for OneLayer {
         fn layer(&self, _: u64, _: bool) -> Option<crate::LayerPixels> {
             let (w, h) = (self.0.width as f64, self.0.height as f64);
-            Some(crate::LayerPixels { buf: Buf { img: self.0.clone(), offset: [0.0; 2], scale: 1.0 }, size: [w, h] })
+            Some(crate::LayerPixels {
+                buf: Buf {
+                    img: self.0.clone(),
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+                size: [w, h],
+            })
         }
         fn audio(&self, _: u64, _: f64, _: usize, _: u32) -> Option<Vec<f32>> {
             None
@@ -613,22 +936,56 @@ mod tests {
 
     fn run_host(id: &str, over: &[(&str, Value)], img: Image, other: Image) -> Image {
         let s = find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in over {
             params.values.insert(k.to_string(), v.clone());
         }
         let host = OneLayer(other);
-        let env = crate::EffectEnv { host: Some(&host), ..Default::default() };
-        let ctx = EffectCtx { params: &params, time: 0.0, layer_size: [img.width as f64, img.height as f64], seed: 1, adjustment: true, env };
-        apply(s, &ctx, Buf { img, offset: [0.0, 0.0], scale: 1.0 }).img
+        let env = crate::EffectEnv {
+            host: Some(&host),
+            ..Default::default()
+        };
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [img.width as f64, img.height as f64],
+            seed: 1,
+            adjustment: true,
+            env,
+        };
+        apply(
+            s,
+            &ctx,
+            Buf {
+                img,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
+        .img
     }
 
     #[test]
     fn set_channels_reads_source_layers() {
         let other = Image::filled(8, 8, [0.7, 0.1, 0.3, 1.0]);
-        let out = run_host("ec.channel.setchannels", &[("sourceLayer2", Value::Layer(Some(9)))], sample(), other);
+        let out = run_host(
+            "ec.channel.setchannels",
+            &[("sourceLayer2", Value::Layer(Some(9)))],
+            sample(),
+            other,
+        );
         // Green from the other layer's green; red, blue, alpha from the layer itself.
-        assert!(close(out.get(0, 0), [0.2, 0.1, 0.9, 1.0]), "{:?}", out.get(0, 0));
+        assert!(
+            close(out.get(0, 0), [0.2, 0.1, 0.9, 1.0]),
+            "{:?}",
+            out.get(0, 0)
+        );
     }
 
     #[test]
@@ -636,7 +993,12 @@ mod tests {
         let mut other = Image::new(2, 1);
         other.set(0, 0, [1.0, 1.0, 1.0, 1.0]);
         let img = Image::filled(2, 1, [0.5, 0.5, 0.5, 1.0]);
-        let out = run_host("ec.channel.setmatte", &[("takeMatteFromLayer", Value::Layer(Some(9)))], img, other);
+        let out = run_host(
+            "ec.channel.setmatte",
+            &[("takeMatteFromLayer", Value::Layer(Some(9)))],
+            img,
+            other,
+        );
         assert!((out.get(0, 0)[3] - 1.0).abs() < 1e-5);
         assert_eq!(out.get(1, 0)[3], 0.0);
     }
@@ -645,32 +1007,87 @@ mod tests {
     fn channel_combiner_single_channel_targets() {
         let img = Image::filled(1, 1, [0.2, 0.5, 0.9, 1.0]);
         // Red → Green Only: green gets red's value, the other colour channels go to zero.
-        let out = run("ec.channel.combiner", &[("from", Value::Enum(4)), ("to", Value::Enum(1))], img.clone());
-        assert!(close(out.get(0, 0), [0.0, 0.2, 0.0, 1.0]), "{:?}", out.get(0, 0));
+        let out = run(
+            "ec.channel.combiner",
+            &[("from", Value::Enum(4)), ("to", Value::Enum(1))],
+            img.clone(),
+        );
+        assert!(
+            close(out.get(0, 0), [0.0, 0.2, 0.0, 1.0]),
+            "{:?}",
+            out.get(0, 0)
+        );
         // Lightness Only (the default) gives a grey image.
         let out = run("ec.channel.combiner", &[], img.clone());
         let px = out.get(0, 0);
-        assert!((px[0] - px[1]).abs() < 1e-6 && (px[1] - px[2]).abs() < 1e-6 && (px[0] - 0.55).abs() < 1e-5, "{px:?}");
+        assert!(
+            (px[0] - px[1]).abs() < 1e-6
+                && (px[1] - px[2]).abs() < 1e-6
+                && (px[0] - 0.55).abs() < 1e-5,
+            "{px:?}"
+        );
         // Alpha Only: white with the value as alpha; Solid Alpha forces full opacity.
-        let out = run("ec.channel.combiner", &[("from", Value::Enum(5)), ("to", Value::Enum(3))], img.clone());
-        assert!(close(out.get(0, 0), [0.5, 0.5, 0.5, 0.5]), "{:?}", out.get(0, 0));
-        let out = run("ec.channel.combiner", &[("from", Value::Enum(5)), ("to", Value::Enum(3)), ("solidAlpha", Value::Bool(true))], img);
-        assert!(close(out.get(0, 0), [1.0, 1.0, 1.0, 1.0]), "{:?}", out.get(0, 0));
+        let out = run(
+            "ec.channel.combiner",
+            &[("from", Value::Enum(5)), ("to", Value::Enum(3))],
+            img.clone(),
+        );
+        assert!(
+            close(out.get(0, 0), [0.5, 0.5, 0.5, 0.5]),
+            "{:?}",
+            out.get(0, 0)
+        );
+        let out = run(
+            "ec.channel.combiner",
+            &[
+                ("from", Value::Enum(5)),
+                ("to", Value::Enum(3)),
+                ("solidAlpha", Value::Bool(true)),
+            ],
+            img,
+        );
+        assert!(
+            close(out.get(0, 0), [1.0, 1.0, 1.0, 1.0]),
+            "{:?}",
+            out.get(0, 0)
+        );
     }
 
     #[test]
     fn invert_hls_and_yiq_channels() {
         let img = Image::filled(1, 1, [0.2, 0.4, 0.6, 1.0]);
-        let idx = |n: &str| Value::Enum(crate::INVERT_CHANNELS.iter().position(|o| *o == n).unwrap() as u32);
+        let idx = |n: &str| {
+            Value::Enum(crate::INVERT_CHANNELS.iter().position(|o| *o == n).unwrap() as u32)
+        };
         // Lightness 0.4 → 0.6 keeps hue and saturation: (0.4, 0.6, 0.8).
-        let out = run("ec.channel.invert", &[("channel", idx("Lightness"))], img.clone());
-        assert!(close(out.get(0, 0), [0.4, 0.6, 0.8, 1.0]), "{:?}", out.get(0, 0));
+        let out = run(
+            "ec.channel.invert",
+            &[("channel", idx("Lightness"))],
+            img.clone(),
+        );
+        assert!(
+            close(out.get(0, 0), [0.4, 0.6, 0.8, 1.0]),
+            "{:?}",
+            out.get(0, 0)
+        );
         // Luminance inverts Y and keeps chrominance: Y + Y' = 1.
-        let out = run("ec.channel.invert", &[("channel", idx("Luminance"))], img.clone());
+        let out = run(
+            "ec.channel.invert",
+            &[("channel", idx("Luminance"))],
+            img.clone(),
+        );
         let y = |p: [f32; 4]| 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2];
-        assert!((y(out.get(0, 0)) + y(img.get(0, 0)) - 1.0).abs() < 1e-3, "{:?}", out.get(0, 0));
+        assert!(
+            (y(out.get(0, 0)) + y(img.get(0, 0)) - 1.0).abs() < 1e-3,
+            "{:?}",
+            out.get(0, 0)
+        );
         // Alpha keeps working at its new index.
-        let out = run("ec.channel.invert", &[("channel", Value::Enum(crate::INVERT_ALPHA))], img);
+        let out = run(
+            "ec.channel.invert",
+            &[("channel", Value::Enum(crate::INVERT_ALPHA))],
+            img,
+        );
         assert_eq!(out.get(0, 0)[3], 0.0);
     }
 
@@ -678,16 +1095,29 @@ mod tests {
     fn channel_combiner_uses_second_layer() {
         let img = Image::filled(1, 1, [0.2, 0.5, 0.9, 1.0]);
         let other = Image::filled(1, 1, [0.6, 0.0, 0.0, 1.0]);
-        let over = [("useSecondLayer", Value::Bool(true)), ("sourceLayer", Value::Layer(Some(3))), ("from", Value::Enum(4)), ("to", Value::Enum(0))];
+        let over = [
+            ("useSecondLayer", Value::Bool(true)),
+            ("sourceLayer", Value::Layer(Some(3))),
+            ("from", Value::Enum(4)),
+            ("to", Value::Enum(0)),
+        ];
         let out = run_host("ec.channel.combiner", &over, img, other);
-        assert!(close(out.get(0, 0), [0.6, 0.0, 0.0, 1.0]), "{:?}", out.get(0, 0));
+        assert!(
+            close(out.get(0, 0), [0.6, 0.0, 0.0, 1.0]),
+            "{:?}",
+            out.get(0, 0)
+        );
     }
 
     #[test]
     fn solid_composite_fills_behind() {
         let mut img = Image::new(2, 1);
         img.set(0, 0, [0.0, 0.0, 1.0, 1.0]);
-        let out = run("ec.channel.solidcomposite", &[("color", Value::Color([1.0, 0.0, 0.0, 1.0]))], img);
+        let out = run(
+            "ec.channel.solidcomposite",
+            &[("color", Value::Color([1.0, 0.0, 0.0, 1.0]))],
+            img,
+        );
         assert!(close(out.get(0, 0), [0.0, 0.0, 1.0, 1.0]));
         assert!(close(out.get(1, 0), [1.0, 0.0, 0.0, 1.0]));
     }
@@ -695,10 +1125,22 @@ mod tests {
     #[test]
     fn minimax_shrinks_layer_edges_unless_told_not_to() {
         let img = Image::filled(9, 9, [1.0, 1.0, 1.0, 1.0]);
-        let shrunk = run("ec.channel.minimax", &[("radius", num(2.0)), ("operation", Value::Enum(0))], img.clone());
+        let shrunk = run(
+            "ec.channel.minimax",
+            &[("radius", num(2.0)), ("operation", Value::Enum(0))],
+            img.clone(),
+        );
         assert_eq!(shrunk.get(0, 4)[0], 0.0);
         assert_eq!(shrunk.get(4, 4)[0], 1.0);
-        let kept = run("ec.channel.minimax", &[("radius", num(2.0)), ("operation", Value::Enum(0)), ("dontShrinkEdges", Value::Bool(true))], img);
+        let kept = run(
+            "ec.channel.minimax",
+            &[
+                ("radius", num(2.0)),
+                ("operation", Value::Enum(0)),
+                ("dontShrinkEdges", Value::Bool(true)),
+            ],
+            img,
+        );
         assert_eq!(kept.get(0, 4)[0], 1.0);
     }
 
@@ -706,8 +1148,18 @@ mod tests {
     fn channel_combiner_saturation_multiplied() {
         // From Lightness (0.5) into Saturation Multiplied halves the saturation, keeping hue.
         let red = Image::filled(1, 1, [0.75, 0.25, 0.25, 1.0]);
-        let out = run("ec.channel.combiner", &[("from", Value::Enum(8)), ("to", Value::Enum(8))], red).get(0, 0);
+        let out = run(
+            "ec.channel.combiner",
+            &[("from", Value::Enum(8)), ("to", Value::Enum(8))],
+            red,
+        )
+        .get(0, 0);
         let (h, s, l) = rgb_to_hsl(out[0], out[1], out[2]);
-        assert!((h.abs() < 1e-4 || (h - 1.0).abs() < 1e-4) && (s - 0.25).abs() < 1e-3 && (l - 0.5).abs() < 1e-3, "{h} {s} {l}");
+        assert!(
+            (h.abs() < 1e-4 || (h - 1.0).abs() < 1e-4)
+                && (s - 0.25).abs() < 1e-3
+                && (l - 0.5).abs() < 1e-3,
+            "{h} {s} {l}"
+        );
     }
 }

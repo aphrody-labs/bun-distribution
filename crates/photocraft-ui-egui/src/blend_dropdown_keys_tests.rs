@@ -12,15 +12,22 @@ use crate::state::Tool;
 
 #[test]
 fn arrow_keys_step_the_open_blend_mode_dropdown_without_nudging_the_layer() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).with_max_steps(64).build_eframe(|cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 64, "height": 64})).unwrap();
-        app.run("layer.new.layer", json!({})).unwrap();
-        app.run("edit.fill", json!({"color": "#ff0000"})).unwrap();
-        app.ui.tool = Tool::Move;
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .with_max_steps(64)
+        .build_eframe(|cc| {
+            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            let mut app = PhotocraftApp::new(
+                photocraft_engine::Session::new(),
+                crate::Services::default(),
+            );
+            app.run("file.new", json!({"width": 64, "height": 64}))
+                .unwrap();
+            app.run("layer.new.layer", json!({})).unwrap();
+            app.run("edit.fill", json!({"color": "#ff0000"})).unwrap();
+            app.ui.tool = Tool::Move;
+            app
+        });
     h.run_steps(6);
     let layer = |h: &Harness<'_, PhotocraftApp>| {
         let st = h.state().session.active().unwrap();
@@ -34,13 +41,18 @@ fn arrow_keys_step_the_open_blend_mode_dropdown_without_nudging_the_layer() {
         a.value().as_deref() == Some("Normal") || a.label().as_deref() == Some("Normal")
     };
     let combo = h.query_all_by_role(Role::ComboBox).find(|n| named(n));
-    combo.expect("the Layers panel's Blend Mode dropdown").click();
+    combo
+        .expect("the Layers panel's Blend Mode dropdown")
+        .click();
     h.run_steps(2);
     h.key_press(egui::Key::ArrowDown);
     h.run_steps(2);
     let (blend, moved) = layer(&h);
     assert_ne!(blend, BlendMode::Normal, "↓ picks the next mode");
-    assert_eq!(moved, bounds, "the Move tool's nudge doesn't also take the key");
+    assert_eq!(
+        moved, bounds,
+        "the Move tool's nudge doesn't also take the key"
+    );
     h.key_press(egui::Key::ArrowUp);
     h.run_steps(2);
     assert_eq!(layer(&h).0, BlendMode::Normal);
@@ -50,14 +62,21 @@ fn arrow_keys_step_the_open_blend_mode_dropdown_without_nudging_the_layer() {
 /// Photoshop's pop-up menus) instead of reaching the tool shortcuts, and ↩ closes the list.
 #[test]
 fn letters_pick_blend_modes_in_the_open_list_without_switching_tools() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).with_max_steps(64).build_eframe(|cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 64, "height": 64})).unwrap();
-        app.run("layer.new.layer", json!({})).unwrap();
-        app.ui.tool = Tool::Move;
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .with_max_steps(64)
+        .build_eframe(|cc| {
+            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            let mut app = PhotocraftApp::new(
+                photocraft_engine::Session::new(),
+                crate::Services::default(),
+            );
+            app.run("file.new", json!({"width": 64, "height": 64}))
+                .unwrap();
+            app.run("layer.new.layer", json!({})).unwrap();
+            app.ui.tool = Tool::Move;
+            app
+        });
     h.run_steps(6);
     let blend = |h: &Harness<'_, PhotocraftApp>| {
         let st = h.state().session.active().unwrap();
@@ -72,22 +91,43 @@ fn letters_pick_blend_modes_in_the_open_list_without_switching_tools() {
         let a = n.accesskit_node();
         a.value().as_deref() == Some("Normal") || a.label().as_deref() == Some("Normal")
     };
-    h.query_all_by_role(Role::ComboBox).find(|n| named(n)).expect("the Layers panel's Blend Mode dropdown").click();
+    h.query_all_by_role(Role::ComboBox)
+        .find(|n| named(n))
+        .expect("the Layers panel's Blend Mode dropdown")
+        .click();
     h.run_steps(2);
     type_key(&mut h, egui::Key::M, "m");
     assert_eq!(blend(&h), BlendMode::Multiply, "M picks Multiply");
-    assert_eq!(h.state().ui.tool, Tool::Move, "M doesn't also pick the Marquee tool");
+    assert_eq!(
+        h.state().ui.tool,
+        Tool::Move,
+        "M doesn't also pick the Marquee tool"
+    );
     type_key(&mut h, egui::Key::D, "d");
-    assert_eq!(blend(&h), BlendMode::DarkerColor, "D picks the next mode starting with D");
+    assert_eq!(
+        blend(&h),
+        BlendMode::DarkerColor,
+        "D picks the next mode starting with D"
+    );
     type_key(&mut h, egui::Key::D, "d");
-    assert_eq!(blend(&h), BlendMode::Difference, "D again picks the one after");
+    assert_eq!(
+        blend(&h),
+        BlendMode::Difference,
+        "D again picks the one after"
+    );
     h.key_press(egui::Key::Enter);
     h.run_steps(3);
-    assert!(!crate::widgets::dropdown_list_open(&h.ctx), "↩ closes the list");
+    assert!(
+        !crate::widgets::dropdown_list_open(&h.ctx),
+        "↩ closes the list"
+    );
     assert_eq!(blend(&h), BlendMode::Difference, "↩ keeps the mode");
     // With the list closed the letters are the tools' again.
     h.key_press(egui::Key::M);
     h.event(egui::Event::Text("m".into()));
     h.run_steps(2);
-    assert!(h.state().ui.tool != Tool::Move, "M picks a marquee tool once the list is closed");
+    assert!(
+        h.state().ui.tool != Tool::Move,
+        "M picks a marquee tool once the list is closed"
+    );
 }

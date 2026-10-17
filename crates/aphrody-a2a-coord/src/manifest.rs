@@ -143,7 +143,11 @@ impl AiManifest {
             .and_then(|c| c.mailbox_dir.as_ref())
             .map(|d| {
                 let p = PathBuf::from(d);
-                if p.is_absolute() { p } else { repo_root.join(p) }
+                if p.is_absolute() {
+                    p
+                } else {
+                    repo_root.join(p)
+                }
             })
             .unwrap_or_else(|| repo_root.join(".coord"))
     }
@@ -193,8 +197,12 @@ mod tests {
     #[test]
     fn repo_manifest_parses_without_unqualified_public_endpoint() {
         let manifest: AiManifest =
-            serde_json::from_str(include_str!("../../../docs/aphrody/ai.json")).expect("ai.json parses");
+            serde_json::from_str(include_str!("../../../docs/aphrody/ai.json"))
+                .expect("ai.json parses");
         assert!(manifest.supported_interfaces.is_empty());
-        assert!(manifest.peers.is_empty(), "peer list belongs to tools/config/a2a-peers.json");
+        assert!(
+            manifest.peers.is_empty(),
+            "peer list belongs to tools/config/a2a-peers.json"
+        );
     }
 }

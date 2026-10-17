@@ -14,10 +14,9 @@ impl KMemoryRegionTree {
         let first_index = extents.get_address() / alignment as u64;
         let last_index = extents.get_last_address() / alignment as u64;
         loop {
-            let candidate = super::board::k_system_control::generate_random_range(
-                first_index,
-                last_index,
-            ) * alignment as u64;
+            let candidate =
+                super::board::k_system_control::generate_random_range(first_index, last_index)
+                    * alignment as u64;
             let end = candidate.wrapping_add(size as u64);
             if candidate >= end {
                 continue;
@@ -26,7 +25,9 @@ impl KMemoryRegionTree {
             if last > extents.get_last_address() {
                 continue;
             }
-            let region = self.find(candidate).expect("candidate must belong to the region tree");
+            let region = self
+                .find(candidate)
+                .expect("candidate must belong to the region tree");
             if last <= region.get_last_address() && region.get_type() == type_id {
                 return candidate;
             }
@@ -48,8 +49,8 @@ pub const fn get_maximum_overhead_size(size: usize) -> usize {
 }
 
 pub const MAIN_MEMORY_SIZE: usize = 4 * (1 << 30); // 4 GiB
-// The exposed layouts reach 12 GiB. Eden's older 8 GiB bound undersizes
-// GetMaximumOverheadSize for the two larger layouts.
+                                                   // The exposed layouts reach 12 GiB. Eden's older 8 GiB bound undersizes
+                                                   // GetMaximumOverheadSize for the two larger layouts.
 pub const MAIN_MEMORY_SIZE_MAX: usize = 12 * (1 << 30);
 
 pub const RESERVED_EARLY_DRAM_SIZE: usize = 384 * 1024;
@@ -250,7 +251,6 @@ impl KMemoryLayout {
         }
         (total_size, kernel_size)
     }
-
 }
 
 impl Default for KMemoryLayout {
@@ -282,7 +282,10 @@ mod tests {
         tree.insert_directly(0x3000, 0x3fff, 0, parent);
         tree.insert_directly(0x4000, 0x5fff, 0, parent);
         for _ in 0..32 {
-            assert_eq!(tree.get_random_aligned_region(0x2000, 0x1000, parent), 0x4000);
+            assert_eq!(
+                tree.get_random_aligned_region(0x2000, 0x1000, parent),
+                0x4000
+            );
         }
     }
 
@@ -304,7 +307,10 @@ mod tests {
         // Keep the tree's nonzero-end invariant; the last aligned candidate
         // still wraps when the requested page size is added.
         tree.insert_directly(u64::MAX - 0x1fff, u64::MAX - 1, 0, kind);
-        assert_eq!(tree.get_random_aligned_region(0x1000, 0x1000, kind), u64::MAX - 0x1fff);
+        assert_eq!(
+            tree.get_random_aligned_region(0x1000, 0x1000, kind),
+            u64::MAX - 0x1fff
+        );
     }
 
     #[test]
@@ -312,7 +318,10 @@ mod tests {
         // KMemoryLayout::GetResourceRegionSizeForInit adds the NX board's
         // SecureAppletMemorySize independently of the extra-resource flag.
         let base = KERNEL_RESOURCE_SIZE + 4 * 1024 * 1024;
-        assert_eq!(KMemoryLayout::get_resource_region_size_for_init(false), base);
+        assert_eq!(
+            KMemoryLayout::get_resource_region_size_for_init(false),
+            base
+        );
         assert_eq!(
             KMemoryLayout::get_resource_region_size_for_init(true),
             base + KERNEL_SLAB_HEAP_ADDITIONAL_SIZE + KERNEL_PAGE_BUFFER_ADDITIONAL_SIZE

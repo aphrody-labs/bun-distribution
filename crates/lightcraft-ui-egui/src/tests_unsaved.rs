@@ -46,22 +46,45 @@ impl Store for Flaky {
 fn failed_save_is_reported_and_shown_until_a_save_succeeds() {
     let store = Flaky::default();
     let mut s = lightcraft_engine::Session::new();
-    let stores = LibraryStores { dir: "flaky".into(), catalog: Box::new(store.clone()), files: Box::new(MemStore::new()), on_disk: false };
+    let stores = LibraryStores {
+        dir: "flaky".into(),
+        catalog: Box::new(store.clone()),
+        files: Box::new(MemStore::new()),
+        on_disk: false,
+    };
     s.open_library_in(stores, false).unwrap();
-    let app = LightcraftApp::new(s, Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        s,
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
     h.step();
     let has_indicator = |h: &Headless| h.app.widgets.iter().any(|(w, _)| w == "indicator:unsaved");
     assert!(!has_indicator(&h));
 
     store.fail.store(true, Ordering::SeqCst);
-    let r = h.request("engine.execute", json!({"command": "album.create", "params": {"name": "Kept"}}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": "album.create", "params": {"name": "Kept"}}),
+        T,
+    );
     assert_eq!(r["ok"], false, "{r}");
     assert!(
-        r["error"].as_str().unwrap().contains("saved in memory but not written to disk: ") && r["error"].as_str().unwrap().contains("disk full"),
+        r["error"]
+            .as_str()
+            .unwrap()
+            .contains("saved in memory but not written to disk: ")
+            && r["error"].as_str().unwrap().contains("disk full"),
         "{r}"
     );
-    assert_eq!(h.app.session.catalog.albums().count(), 1, "the change is applied");
+    assert_eq!(
+        h.app.session.catalog.albums().count(),
+        1,
+        "the change is applied"
+    );
     h.step();
     h.step();
     let toast = h.app.ui.toast.clone().map(|t| t.0).unwrap_or_default();
@@ -77,5 +100,8 @@ fn failed_save_is_reported_and_shown_until_a_save_succeeds() {
     h.step();
     h.step();
     assert!(!has_indicator(&h));
-    assert_eq!(h.app.ui.toast.clone().map(|t| t.0).as_deref(), Some("Library saved"));
+    assert_eq!(
+        h.app.ui.toast.clone().map(|t| t.0).as_deref(),
+        Some("Library saved")
+    );
 }

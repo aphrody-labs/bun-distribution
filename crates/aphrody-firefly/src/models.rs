@@ -21,19 +21,34 @@ pub struct Size {
 
 impl Size {
     /// 2048×2048 — the Firefly v3 default square output.
-    pub const SQUARE_2K: Self = Self { width: 2048, height: 2048 };
+    pub const SQUARE_2K: Self = Self {
+        width: 2048,
+        height: 2048,
+    };
     /// 2304×1792 — landscape 4:3-ish.
-    pub const LANDSCAPE: Self = Self { width: 2304, height: 1792 };
+    pub const LANDSCAPE: Self = Self {
+        width: 2304,
+        height: 1792,
+    };
     /// 1792×2304 — portrait.
-    pub const PORTRAIT: Self = Self { width: 1792, height: 2304 };
+    pub const PORTRAIT: Self = Self {
+        width: 1792,
+        height: 2304,
+    };
     /// 2688×1536 — widescreen 16:9-ish.
-    pub const WIDESCREEN: Self = Self { width: 2688, height: 1536 };
+    pub const WIDESCREEN: Self = Self {
+        width: 2688,
+        height: 1536,
+    };
 
     /// Parse an `WxH` string (e.g. `"2048x2048"`).
     #[must_use]
     pub fn parse(s: &str) -> Option<Self> {
         let (w, h) = s.split_once(['x', 'X', '*'])?;
-        Some(Self { width: w.trim().parse().ok()?, height: h.trim().parse().ok()? })
+        Some(Self {
+            width: w.trim().parse().ok()?,
+            height: h.trim().parse().ok()?,
+        })
     }
 }
 
@@ -108,7 +123,10 @@ pub struct GenerateImageRequest {
     pub visual_intensity: Option<u8>,
 
     /// BCP-47 locale used to bias the prompt (e.g. `"en-US"`, `"fr-FR"`).
-    #[serde(rename = "promptBiasingLocaleCode", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "promptBiasingLocaleCode",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub prompt_biasing_locale_code: Option<String>,
 }
 
@@ -181,12 +199,18 @@ impl ImageSourceRef {
     /// Reference an image by pre-signed URL.
     #[must_use]
     pub fn url(u: impl Into<String>) -> Self {
-        Self { url: Some(u.into()), upload_id: None }
+        Self {
+            url: Some(u.into()),
+            upload_id: None,
+        }
     }
     /// Reference an image by Firefly `uploadId`.
     #[must_use]
     pub fn upload(id: impl Into<String>) -> Self {
-        Self { url: None, upload_id: Some(id.into()) }
+        Self {
+            url: None,
+            upload_id: Some(id.into()),
+        }
     }
 }
 
@@ -217,7 +241,12 @@ impl ExpandRequest {
     /// Expand `source` to `size`.
     #[must_use]
     pub fn new(source: ImageSourceRef, size: Size) -> Self {
-        Self { image: ExpandImage { source }, size: Some(size), num_variations: None, prompt: None }
+        Self {
+            image: ExpandImage { source },
+            size: Some(size),
+            num_variations: None,
+            prompt: None,
+        }
     }
     /// Set the number of variations (clamped to 1..=4).
     #[must_use]
@@ -259,7 +288,11 @@ impl FillRequest {
     /// Fill the masked region of `source` (mask from `mask`).
     #[must_use]
     pub fn new(source: ImageSourceRef, mask: ImageSourceRef) -> Self {
-        Self { image: FillImage { source, mask }, prompt: None, num_variations: None }
+        Self {
+            image: FillImage { source, mask },
+            prompt: None,
+            num_variations: None,
+        }
     }
     /// Set the fill prompt.
     #[must_use]
@@ -398,8 +431,18 @@ mod tests {
 
     #[test]
     fn variations_are_clamped() {
-        assert_eq!(GenerateImageRequest::new("x").with_variations(0).num_variations, Some(1));
-        assert_eq!(GenerateImageRequest::new("x").with_variations(9).num_variations, Some(4));
+        assert_eq!(
+            GenerateImageRequest::new("x")
+                .with_variations(0)
+                .num_variations,
+            Some(1)
+        );
+        assert_eq!(
+            GenerateImageRequest::new("x")
+                .with_variations(9)
+                .num_variations,
+            Some(4)
+        );
     }
 
     #[test]
@@ -412,9 +455,27 @@ mod tests {
 
     #[test]
     fn size_parses_various_separators() {
-        assert_eq!(Size::parse("2048x2048"), Some(Size { width: 2048, height: 2048 }));
-        assert_eq!(Size::parse("1024X768"), Some(Size { width: 1024, height: 768 }));
-        assert_eq!(Size::parse("100*200"), Some(Size { width: 100, height: 200 }));
+        assert_eq!(
+            Size::parse("2048x2048"),
+            Some(Size {
+                width: 2048,
+                height: 2048
+            })
+        );
+        assert_eq!(
+            Size::parse("1024X768"),
+            Some(Size {
+                width: 1024,
+                height: 768
+            })
+        );
+        assert_eq!(
+            Size::parse("100*200"),
+            Some(Size {
+                width: 100,
+                height: 200
+            })
+        );
         assert_eq!(Size::parse("garbage"), None);
     }
 

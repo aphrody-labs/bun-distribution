@@ -6,7 +6,9 @@ use soundcraft_dsp::spectrum::{bin_hz, magnitude_db};
 use soundcraft_dsp::{create, db_to_gain, gain_to_db, pan};
 
 fn sine(freq: f32, amp: f32, sr: f32, len: usize) -> Vec<f32> {
-    (0..len).map(|i| amp * (TAU * freq * i as f32 / sr).sin()).collect()
+    (0..len)
+        .map(|i| amp * (TAU * freq * i as f32 / sr).sin())
+        .collect()
 }
 
 fn peak(x: &[f32]) -> f32 {
@@ -17,7 +19,13 @@ fn peak(x: &[f32]) -> f32 {
 fn dominant_hz(x: &[f32], sr: f32) -> f32 {
     let n = 32_768.min(x.len().next_power_of_two() / 2);
     let spec = magnitude_db(&x[x.len() / 2 - n / 2..], n);
-    let k = spec.iter().enumerate().skip(1).max_by(|a, b| a.1.total_cmp(b.1)).unwrap().0;
+    let k = spec
+        .iter()
+        .enumerate()
+        .skip(1)
+        .max_by(|a, b| a.1.total_cmp(b.1))
+        .unwrap()
+        .0;
     let (a, b, c) = (spec[k - 1], spec[k], spec[k + 1]);
     let d = 0.5 * (a - c) / (a - 2.0 * b + c);
     bin_hz(k, n, sr) + d * sr / n as f32
@@ -48,10 +56,26 @@ fn loudness_997hz_minus20_stereo_reads_minus20() {
     let x = sine(997.0, db_to_gain(-20.0), sr, 48_000 * 10);
     let mut m = LoudnessMeter::new(sr, 2);
     m.process(&[x.clone(), x], 48_000 * 10);
-    assert!((m.integrated_lufs() + 20.0).abs() < 0.1, "integrated {}", m.integrated_lufs());
-    assert!((m.momentary_lufs() + 20.0).abs() < 0.1, "momentary {}", m.momentary_lufs());
-    assert!((m.short_term_lufs() + 20.0).abs() < 0.1, "short {}", m.short_term_lufs());
-    assert!((m.true_peak_db() + 20.0).abs() < 0.2, "tp {}", m.true_peak_db());
+    assert!(
+        (m.integrated_lufs() + 20.0).abs() < 0.1,
+        "integrated {}",
+        m.integrated_lufs()
+    );
+    assert!(
+        (m.momentary_lufs() + 20.0).abs() < 0.1,
+        "momentary {}",
+        m.momentary_lufs()
+    );
+    assert!(
+        (m.short_term_lufs() + 20.0).abs() < 0.1,
+        "short {}",
+        m.short_term_lufs()
+    );
+    assert!(
+        (m.true_peak_db() + 20.0).abs() < 0.2,
+        "tp {}",
+        m.true_peak_db()
+    );
 }
 
 #[test]
@@ -61,7 +85,11 @@ fn loudness_full_scale_mono_and_44k() {
         let x = sine(997.0, 1.0, sr, len);
         let mut m = LoudnessMeter::new(sr, 1);
         m.process(&[x], len);
-        assert!((m.integrated_lufs() + 3.01).abs() < 0.1, "{sr}: {}", m.integrated_lufs());
+        assert!(
+            (m.integrated_lufs() + 3.01).abs() < 0.1,
+            "{sr}: {}",
+            m.integrated_lufs()
+        );
     }
 }
 
@@ -72,7 +100,11 @@ fn loudness_gating_ignores_silence() {
     x.extend(std::iter::repeat_n(0.0, 48_000 * 20));
     let mut m = LoudnessMeter::new(sr, 2);
     m.process(&[x.clone(), x], 48_000 * 25);
-    assert!((m.integrated_lufs() + 20.0).abs() < 0.2, "{}", m.integrated_lufs());
+    assert!(
+        (m.integrated_lufs() + 20.0).abs() < 0.2,
+        "{}",
+        m.integrated_lufs()
+    );
     assert!(m.momentary_lufs() < -100.0);
     m.reset();
     assert_eq!(m.integrated_lufs(), -144.0);
@@ -82,7 +114,9 @@ fn loudness_gating_ignores_silence() {
 fn true_peak_catches_intersample_overs() {
     // A sine at fs/4 phased 45° has samples at ±0.707·A but true peak A.
     let sr = 48_000.0;
-    let x: Vec<f32> = (0..48_000).map(|i| (TAU * 0.25 * (i % 4) as f32 + TAU / 8.0).sin()).collect();
+    let x: Vec<f32> = (0..48_000)
+        .map(|i| (TAU * 0.25 * (i % 4) as f32 + TAU / 8.0).sin())
+        .collect();
     assert!(peak(&x) < 0.71);
     let mut m = LoudnessMeter::new(sr, 1);
     m.process(&[x], 48_000);
@@ -95,7 +129,11 @@ fn peak_meter_ballistics() {
     m.process(&[0.5; 480]);
     assert!((m.level_db() + 6.02).abs() < 0.01);
     m.process(&vec![0.0; 48_000]);
-    assert!((m.level_db() - (-6.02 - 20.0)).abs() < 0.1, "{}", m.level_db());
+    assert!(
+        (m.level_db() - (-6.02 - 20.0)).abs() < 0.1,
+        "{}",
+        m.level_db()
+    );
     assert!((m.peak_hold_db() + 6.02).abs() < 0.01);
     assert!(!m.clipped());
     m.process(&[1.0]);
@@ -121,7 +159,11 @@ fn resample_preserves_frequency_and_length() {
     // Content above the new Nyquist is removed.
     let hi = sine(23_000.0, 0.5, 48_000.0, 48_000);
     let down = offline::resample(&[hi], 48_000, 22_050);
-    assert!(peak(&down[0][1000..20_000]) < 0.01, "alias {}", peak(&down[0][1000..20_000]));
+    assert!(
+        peak(&down[0][1000..20_000]) < 0.01,
+        "alias {}",
+        peak(&down[0][1000..20_000])
+    );
     assert_eq!(offline::resample(&[vec![1.0; 10]], 0, 48_000)[0].len(), 10);
 }
 
@@ -157,7 +199,10 @@ fn pitch_shift_preserves_length_and_shifts() {
 
 #[test]
 fn normalize_hits_target_peak() {
-    let mut ch = vec![sine(100.0, 0.2, 48_000.0, 4800), sine(100.0, 0.05, 48_000.0, 4800)];
+    let mut ch = vec![
+        sine(100.0, 0.2, 48_000.0, 4800),
+        sine(100.0, 0.05, 48_000.0, 4800),
+    ];
     offline::normalize(&mut ch, -1.0, false);
     assert!((gain_to_db(peak(&ch[0])) + 1.0).abs() < 0.01);
     assert!((gain_to_db(peak(&ch[1])) + 13.04).abs() < 0.05);
@@ -192,7 +237,10 @@ fn non_silent_ranges_finds_bursts() {
     }
     let r = offline::non_silent_ranges(std::slice::from_ref(&x), -40.0, 480, 100, 200);
     assert_eq!(r.len(), 2, "{r:?}");
-    assert!((r[0].0 as i64 - 9_900).abs() <= 5 && (r[0].1 as i64 - 15_000).abs() <= 5, "{r:?}");
+    assert!(
+        (r[0].0 as i64 - 9_900).abs() <= 5 && (r[0].1 as i64 - 15_000).abs() <= 5,
+        "{r:?}"
+    );
     assert!((r[1].0 as i64 - 29_900).abs() <= 5, "{r:?}");
     // A huge minimum gap merges them.
     let r = offline::non_silent_ranges(&[x], -40.0, 30_000, 0, 0);
@@ -224,7 +272,11 @@ fn signal_generator_offline() {
         let out = offline::signal_generator(w, 1000.0, -6.0, 48_000.0, 4800, 2);
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].len(), 4800);
-        assert!(peak(&out[0]) <= db_to_gain(-6.0) * 1.1 + 1e-3, "{w:?} {}", peak(&out[0]));
+        assert!(
+            peak(&out[0]) <= db_to_gain(-6.0) * 1.1 + 1e-3,
+            "{w:?} {}",
+            peak(&out[0])
+        );
         assert!(peak(&out[0]) > 0.05, "{w:?}");
     }
 }
@@ -236,7 +288,12 @@ fn apply_plugin_compensates_latency() {
     let mut x = vec![vec![0.0f32; 10_000]];
     x[0][2000] = 1.0;
     offline::apply_plugin(&mut x, p.as_mut(), sr);
-    let pos = x[0].iter().enumerate().max_by(|a, b| a.1.abs().total_cmp(&b.1.abs())).unwrap().0;
+    let pos = x[0]
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.abs().total_cmp(&b.1.abs()))
+        .unwrap()
+        .0;
     assert_eq!(pos, 2000);
 
     let mut r = create("room_reverb").unwrap();

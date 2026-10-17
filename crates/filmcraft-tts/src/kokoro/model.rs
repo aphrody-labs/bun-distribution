@@ -49,16 +49,31 @@ impl Albert {
             word: w.shaped("bert.embeddings.word_embeddings.weight", &[178, 128])?,
             pos: w.shaped("bert.embeddings.position_embeddings.weight", &[512, 128])?,
             ttype: w.shaped("bert.embeddings.token_type_embeddings.weight", &[2, 128])?,
-            emb_ln: LayerNorm::load(w, "bert.embeddings.LayerNorm.weight", "bert.embeddings.LayerNorm.bias", 1e-12)?,
+            emb_ln: LayerNorm::load(
+                w,
+                "bert.embeddings.LayerNorm.weight",
+                "bert.embeddings.LayerNorm.bias",
+                1e-12,
+            )?,
             map_in: Linear::load(w, "bert.encoder.embedding_hidden_mapping_in")?,
             q: Linear::load(w, &format!("{l}.attention.query"))?,
             k: Linear::load(w, &format!("{l}.attention.key"))?,
             v: Linear::load(w, &format!("{l}.attention.value"))?,
             dense: Linear::load(w, &format!("{l}.attention.dense"))?,
-            attn_ln: LayerNorm::load(w, &format!("{l}.attention.LayerNorm.weight"), &format!("{l}.attention.LayerNorm.bias"), 1e-12)?,
+            attn_ln: LayerNorm::load(
+                w,
+                &format!("{l}.attention.LayerNorm.weight"),
+                &format!("{l}.attention.LayerNorm.bias"),
+                1e-12,
+            )?,
             ffn: Linear::load(w, &format!("{l}.ffn"))?,
             ffn_out: Linear::load(w, &format!("{l}.ffn_output"))?,
-            full_ln: LayerNorm::load(w, &format!("{l}.full_layer_layer_norm.weight"), &format!("{l}.full_layer_layer_norm.bias"), 1e-12)?,
+            full_ln: LayerNorm::load(
+                w,
+                &format!("{l}.full_layer_layer_norm.weight"),
+                &format!("{l}.full_layer_layer_norm.bias"),
+                1e-12,
+            )?,
         })
     }
 
@@ -67,19 +82,40 @@ impl Albert {
         let t = ids.dim(0).map_err(err)?;
         let e = self.word.index_select(ids, 0).map_err(err)?;
         let e = (e + self.pos.narrow(0, 0, t).map_err(err)?).map_err(err)?;
-        let e = e.broadcast_add(&self.ttype.narrow(0, 0, 1).map_err(err)?).map_err(err)?;
-        let mut x = self.map_in.fwd(&self.emb_ln.fwd(&e)?)?.unsqueeze(0).map_err(err)?; // [1, T, 768]
+        let e = e
+            .broadcast_add(&self.ttype.narrow(0, 0, 1).map_err(err)?)
+            .map_err(err)?;
+        let mut x = self
+            .map_in
+            .fwd(&self.emb_ln.fwd(&e)?)?
+            .unsqueeze(0)
+            .map_err(err)?; // [1, T, 768]
         let hd = 768 / HEADS;
         let scale = 1.0 / (hd as f64).sqrt();
-        let split = |y: Tensor| -> R<Tensor> { y.reshape((1, t, HEADS, hd)).map_err(err)?.transpose(1, 2).map_err(err)?.contiguous().map_err(err) };
+        let split = |y: Tensor| -> R<Tensor> {
+            y.reshape((1, t, HEADS, hd))
+                .map_err(err)?
+                .transpose(1, 2)
+                .map_err(err)?
+                .contiguous()
+                .map_err(err)
+        };
         for _ in 0..LAYERS {
             let q = split(self.q.fwd(&x)?)?;
             let k = split(self.k.fwd(&x)?)?;
             let v = split(self.v.fwd(&x)?)?;
             let att = (q.matmul(&k.t().map_err(err)?).map_err(err)? * scale).map_err(err)?;
             let att = candle_nn::ops::softmax_last_dim(&att).map_err(err)?;
-            let ctx = att.matmul(&v).map_err(err)?.transpose(1, 2).map_err(err)?.reshape((1, t, 768)).map_err(err)?;
-            let a = self.attn_ln.fwd(&(x + self.dense.fwd(&ctx)?).map_err(err)?)?;
+            let ctx = att
+                .matmul(&v)
+                .map_err(err)?
+                .transpose(1, 2)
+                .map_err(err)?
+                .reshape((1, t, 768))
+                .map_err(err)?;
+            let a = self
+                .attn_ln
+                .fwd(&(x + self.dense.fwd(&ctx)?).map_err(err)?)?;
             let f = self.ffn_out.fwd(&self.ffn.fwd(&a)?.gelu().map_err(err)?)?;
             x = self.full_ln.fwd(&(f + a).map_err(err)?)?;
         }
@@ -98,21 +134,42 @@ impl TextEncoder {
         let mut convs = Vec::new();
         for i in 0..3 {
             let c = Conv::same(w, &format!("text_encoder.cnn.{i}.0"), 1)?;
-            let n = LayerNorm::load(w, &format!("text_encoder.cnn.{i}.1.gamma"), &format!("text_encoder.cnn.{i}.1.beta"), 1e-5)?;
+            let n = LayerNorm::load(
+                w,
+                &format!("text_encoder.cnn.{i}.1.gamma"),
+                &format!("text_encoder.cnn.{i}.1.beta"),
+                1e-5,
+            )?;
             convs.push((c, n));
         }
-        Ok(TextEncoder { emb: w.shaped("text_encoder.embedding.weight", &[178, 512])?, convs, lstm: BiLstm::load(w, "text_encoder.lstm")? })
+        Ok(TextEncoder {
+            emb: w.shaped("text_encoder.embedding.weight", &[178, 512])?,
+            convs,
+            lstm: BiLstm::load(w, "text_encoder.lstm")?,
+        })
     }
     /// `[T]` → `[1, 512, T]`.
     fn fwd(&self, ids: &Tensor) -> R<Tensor> {
-        let mut x = self.emb.index_select(ids, 0).map_err(err)?.t().map_err(err)?.unsqueeze(0).map_err(err)?; // [1, 512, T]
+        let mut x = self
+            .emb
+            .index_select(ids, 0)
+            .map_err(err)?
+            .t()
+            .map_err(err)?
+            .unsqueeze(0)
+            .map_err(err)?; // [1, 512, T]
         for (c, n) in &self.convs {
             x = c.fwd(&x)?;
             // layer norm over channels
-            x = n.fwd(&x.transpose(1, 2).map_err(err)?)?.transpose(1, 2).map_err(err)?;
+            x = n
+                .fwd(&x.transpose(1, 2).map_err(err)?)?
+                .transpose(1, 2)
+                .map_err(err)?;
             x = leaky(&x, 0.2)?;
         }
-        let y = self.lstm.fwd(&x.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?)?; // [1, T, 512]
+        let y = self
+            .lstm
+            .fwd(&x.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?)?; // [1, T, 512]
         y.transpose(1, 2).map_err(err)
     }
 }
@@ -134,10 +191,20 @@ impl Predictor {
         let mut dur_lstms = Vec::new();
         let mut dur_norms = Vec::new();
         for i in 0..3 {
-            dur_lstms.push(BiLstm::load(w, &format!("predictor.text_encoder.lstms.{}", 2 * i))?);
-            dur_norms.push(AdaLayerNorm::load(w, &format!("predictor.text_encoder.lstms.{}", 2 * i + 1))?);
+            dur_lstms.push(BiLstm::load(
+                w,
+                &format!("predictor.text_encoder.lstms.{}", 2 * i),
+            )?);
+            dur_norms.push(AdaLayerNorm::load(
+                w,
+                &format!("predictor.text_encoder.lstms.{}", 2 * i + 1),
+            )?);
         }
-        let blocks = |k: &str| -> R<Vec<AdaResBlock>> { (0..3).map(|i| AdaResBlock::load(w, &format!("predictor.{k}.{i}"), i == 1)).collect() };
+        let blocks = |k: &str| -> R<Vec<AdaResBlock>> {
+            (0..3)
+                .map(|i| AdaResBlock::load(w, &format!("predictor.{k}.{i}"), i == 1))
+                .collect()
+        };
         Ok(Predictor {
             dur_lstms,
             dur_norms,
@@ -154,8 +221,25 @@ impl Predictor {
     /// Duration encoder: `d_en` `[1, 512, T]`, style `[1, 128]` → `[1, T, 640]`.
     fn encode(&self, d_en: &Tensor, s: &Tensor) -> R<Tensor> {
         let t = d_en.dim(2).map_err(err)?;
-        let s_t = s.unsqueeze(1).map_err(err)?.broadcast_as((1, t, 128)).map_err(err)?.contiguous().map_err(err)?;
-        let mut x = Tensor::cat(&[&d_en.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?, &s_t], 2).map_err(err)?;
+        let s_t = s
+            .unsqueeze(1)
+            .map_err(err)?
+            .broadcast_as((1, t, 128))
+            .map_err(err)?
+            .contiguous()
+            .map_err(err)?;
+        let mut x = Tensor::cat(
+            &[
+                &d_en
+                    .transpose(1, 2)
+                    .map_err(err)?
+                    .contiguous()
+                    .map_err(err)?,
+                &s_t,
+            ],
+            2,
+        )
+        .map_err(err)?;
         for (l, n) in self.dur_lstms.iter().zip(&self.dur_norms) {
             let y = n.fwd(&l.fwd(&x)?, s)?;
             x = Tensor::cat(&[&y, &s_t], 2).map_err(err)?;
@@ -167,14 +251,27 @@ impl Predictor {
     fn durations(&self, d: &Tensor, speed: f64) -> R<Vec<usize>> {
         let x = self.lstm.fwd(d)?;
         let logits = self.dur_proj.fwd(&x)?;
-        let dur = candle_nn::ops::sigmoid(&logits).map_err(err)?.sum(D::Minus1).map_err(err)?.squeeze(0).map_err(err)?;
+        let dur = candle_nn::ops::sigmoid(&logits)
+            .map_err(err)?
+            .sum(D::Minus1)
+            .map_err(err)?
+            .squeeze(0)
+            .map_err(err)?;
         let v: Vec<f32> = dur.to_vec1().map_err(err)?;
-        Ok(v.iter().map(|d| ((f64::from(*d) / speed).round().clamp(1.0, 200.0)) as usize).collect())
+        Ok(v.iter()
+            .map(|d| ((f64::from(*d) / speed).round().clamp(1.0, 200.0)) as usize)
+            .collect())
     }
 
     /// F0 and N curves `[1, 1, 2F]` from frame features `en` `[1, 640, F]`.
     fn f0_n(&self, en: &Tensor, s: &Tensor) -> R<(Tensor, Tensor)> {
-        let x = self.shared.fwd(&en.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?)?.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?;
+        let x = self
+            .shared
+            .fwd(&en.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?)?
+            .transpose(1, 2)
+            .map_err(err)?
+            .contiguous()
+            .map_err(err)?;
         let mut f = x.clone();
         for b in &self.f0 {
             f = b.fwd(&f, s)?;
@@ -202,10 +299,21 @@ impl Generator {
         let dil = [1, 3, 5];
         Ok(Generator {
             l_linear: Linear::load(w, &format!("{g}.m_source.l_linear"))?,
-            noise_convs: vec![Conv::load(w, &format!("{g}.noise_convs.0"), 3, 6, 1, 1)?, Conv::load(w, &format!("{g}.noise_convs.1"), 0, 1, 1, 1)?],
-            noise_res: vec![SnakeResBlock::load(w, &format!("{g}.noise_res.0"), dil)?, SnakeResBlock::load(w, &format!("{g}.noise_res.1"), dil)?],
-            ups: vec![ConvT::load(w, &format!("{g}.ups.0"), 5, 0, 10, 1)?, ConvT::load(w, &format!("{g}.ups.1"), 3, 0, 6, 1)?],
-            resblocks: (0..6).map(|i| SnakeResBlock::load(w, &format!("{g}.resblocks.{i}"), dil)).collect::<R<_>>()?,
+            noise_convs: vec![
+                Conv::load(w, &format!("{g}.noise_convs.0"), 3, 6, 1, 1)?,
+                Conv::load(w, &format!("{g}.noise_convs.1"), 0, 1, 1, 1)?,
+            ],
+            noise_res: vec![
+                SnakeResBlock::load(w, &format!("{g}.noise_res.0"), dil)?,
+                SnakeResBlock::load(w, &format!("{g}.noise_res.1"), dil)?,
+            ],
+            ups: vec![
+                ConvT::load(w, &format!("{g}.ups.0"), 5, 0, 10, 1)?,
+                ConvT::load(w, &format!("{g}.ups.1"), 3, 0, 6, 1)?,
+            ],
+            resblocks: (0..6)
+                .map(|i| SnakeResBlock::load(w, &format!("{g}.resblocks.{i}"), dil))
+                .collect::<R<_>>()?,
             conv_post: Conv::same(w, &format!("{g}.conv_post"), 1)?,
         })
     }
@@ -221,7 +329,13 @@ impl Generator {
         let har = Tensor::from_vec(har, (1, 2 * super::dsp::BINS, frames), dev).map_err(err)?;
         let mut x = x.clone();
         for i in 0..2 {
-            let (Some(nc), Some(nr), Some(up)) = (self.noise_convs.get(i), self.noise_res.get(i), self.ups.get(i)) else { break };
+            let (Some(nc), Some(nr), Some(up)) = (
+                self.noise_convs.get(i),
+                self.noise_res.get(i),
+                self.ups.get(i),
+            ) else {
+                break;
+            };
             x = leaky(&x, 0.1)?;
             let xs = nr.fwd(&nc.fwd(&har)?, s)?;
             x = up.fwd(&x)?;
@@ -231,10 +345,13 @@ impl Generator {
                 x = Tensor::cat(&[&first, &x], 2).map_err(err)?;
             }
             let t = x.dim(2).map_err(err)?.min(xs.dim(2).map_err(err)?);
-            x = (x.narrow(2, 0, t).map_err(err)? + xs.narrow(2, 0, t).map_err(err)?).map_err(err)?;
+            x = (x.narrow(2, 0, t).map_err(err)? + xs.narrow(2, 0, t).map_err(err)?)
+                .map_err(err)?;
             let mut acc: Option<Tensor> = None;
             for j in 0..3 {
-                let Some(rb) = self.resblocks.get(i * 3 + j) else { break };
+                let Some(rb) = self.resblocks.get(i * 3 + j) else {
+                    break;
+                };
                 let y = rb.fwd(&x, s)?;
                 acc = Some(match acc {
                     Some(a) => (a + y).map_err(err)?,
@@ -246,8 +363,24 @@ impl Generator {
         x = leaky(&x, 0.01)?;
         let y = self.conv_post.fwd(&x)?.squeeze(0).map_err(err)?; // [22, T]
         let bins = super::dsp::BINS;
-        let mag: Vec<f32> = y.narrow(0, 0, bins).map_err(err)?.exp().map_err(err)?.flatten_all().map_err(err)?.to_vec1().map_err(err)?;
-        let ph: Vec<f32> = y.narrow(0, bins, bins).map_err(err)?.sin().map_err(err)?.flatten_all().map_err(err)?.to_vec1().map_err(err)?;
+        let mag: Vec<f32> = y
+            .narrow(0, 0, bins)
+            .map_err(err)?
+            .exp()
+            .map_err(err)?
+            .flatten_all()
+            .map_err(err)?
+            .to_vec1()
+            .map_err(err)?;
+        let ph: Vec<f32> = y
+            .narrow(0, bins, bins)
+            .map_err(err)?
+            .sin()
+            .map_err(err)?
+            .flatten_all()
+            .map_err(err)?
+            .to_vec1()
+            .map_err(err)?;
         Ok(super::dsp::istft(&mag, &ph))
     }
 }
@@ -260,7 +393,9 @@ fn harmonic_source(f0: &[f32], l_linear: &Linear, seed: u64, dev: &Device) -> R<
     let n = f0.len() * HOLD;
     let mut rng = super::dsp::Rng::new(seed);
     // random start phase for the overtones, none for the fundamental
-    let start: Vec<f64> = (0..HARM).map(|h| if h == 0 { 0.0 } else { rng.uniform() }).collect();
+    let start: Vec<f64> = (0..HARM)
+        .map(|h| if h == 0 { 0.0 } else { rng.uniform() })
+        .collect();
     let mut phase = start;
     let mut sines = vec![0f32; n * HARM];
     for (i, row) in sines.as_chunks_mut::<HARM>().0.iter_mut().enumerate() {
@@ -269,12 +404,21 @@ fn harmonic_source(f0: &[f32], l_linear: &Linear, seed: u64, dev: &Device) -> R<
         let noise_amp = if voiced { 0.003 } else { 0.1 / 3.0 };
         for (h, out) in row.iter_mut().enumerate() {
             phase[h] = (phase[h] + f * (h + 1) as f64 / f64::from(SAMPLE_RATE)).fract();
-            let sine = if voiced { 0.1 * (std::f64::consts::TAU * phase[h]).sin() } else { 0.0 };
+            let sine = if voiced {
+                0.1 * (std::f64::consts::TAU * phase[h]).sin()
+            } else {
+                0.0
+            };
             *out = (sine + noise_amp * rng.normal()) as f32;
         }
     }
     let t = Tensor::from_vec(sines, (n, HARM), dev).map_err(err)?;
-    let y = l_linear.fwd(&t)?.tanh().map_err(err)?.flatten_all().map_err(err)?;
+    let y = l_linear
+        .fwd(&t)?
+        .tanh()
+        .map_err(err)?
+        .flatten_all()
+        .map_err(err)?;
     y.to_vec1().map_err(err)
 }
 
@@ -293,7 +437,9 @@ impl Decoder {
             f0_conv: Conv::load(w, "decoder.F0_conv", 1, 2, 1, 1)?,
             n_conv: Conv::load(w, "decoder.N_conv", 1, 2, 1, 1)?,
             encode: AdaResBlock::load(w, "decoder.encode", false)?,
-            decode: (0..4).map(|i| AdaResBlock::load(w, &format!("decoder.decode.{i}"), i == 3)).collect::<R<_>>()?,
+            decode: (0..4)
+                .map(|i| AdaResBlock::load(w, &format!("decoder.decode.{i}"), i == 3))
+                .collect::<R<_>>()?,
             asr_res: Conv::load(w, "decoder.asr_res.0", 0, 1, 1, 1)?,
             vocoder: Generator::load(w)?,
         })
@@ -303,11 +449,17 @@ impl Decoder {
         let f0_curve: Vec<f32> = f0.flatten_all().map_err(err)?.to_vec1().map_err(err)?;
         let f = self.f0_conv.fwd(f0)?;
         let nn = self.n_conv.fwd(n)?;
-        let frames = asr.dim(2).map_err(err)?.min(f.dim(2).map_err(err)?).min(nn.dim(2).map_err(err)?);
+        let frames = asr
+            .dim(2)
+            .map_err(err)?
+            .min(f.dim(2).map_err(err)?)
+            .min(nn.dim(2).map_err(err)?);
         let asr = asr.narrow(2, 0, frames).map_err(err)?;
         let f = f.narrow(2, 0, frames).map_err(err)?;
         let nn = nn.narrow(2, 0, frames).map_err(err)?;
-        let mut x = self.encode.fwd(&Tensor::cat(&[&asr, &f, &nn], 1).map_err(err)?, s)?;
+        let mut x = self
+            .encode
+            .fwd(&Tensor::cat(&[&asr, &f, &nn], 1).map_err(err)?, s)?;
         let res = self.asr_res.fwd(&asr)?;
         let mut concat = true;
         for b in &self.decode {
@@ -350,7 +502,13 @@ impl Model {
     }
 
     /// Phoneme ids (without the boundary tokens; at most 510) and a 256-value style → samples.
-    pub(crate) fn forward(&self, ids: &[u32], style: &Tensor, speed: f64, seed: u64) -> R<Vec<f32>> {
+    pub(crate) fn forward(
+        &self,
+        ids: &[u32],
+        style: &Tensor,
+        speed: f64,
+        seed: u64,
+    ) -> R<Vec<f32>> {
         let mut padded = Vec::with_capacity(ids.len() + 2);
         padded.push(0u32);
         padded.extend_from_slice(ids);
@@ -360,7 +518,13 @@ impl Model {
         let s_dec = style.narrow(1, 0, 128).map_err(err)?;
         let s_pro = style.narrow(1, 128, 128).map_err(err)?;
         let bert = self.albert.fwd(&ids_t)?;
-        let d_en = self.bert_enc.fwd(&bert)?.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?; // [1, 512, T]
+        let d_en = self
+            .bert_enc
+            .fwd(&bert)?
+            .transpose(1, 2)
+            .map_err(err)?
+            .contiguous()
+            .map_err(err)?; // [1, 512, T]
         let d = self.pred.encode(&d_en, &s_pro)?; // [1, T, 640]
         let dur = self.pred.durations(&d, speed)?;
         let frames: usize = dur.iter().sum();
@@ -376,7 +540,13 @@ impl Model {
             at += n;
         }
         let aln = Tensor::from_vec(aln, (1, t, frames), &self.dev).map_err(err)?;
-        let en = d.transpose(1, 2).map_err(err)?.contiguous().map_err(err)?.matmul(&aln).map_err(err)?; // [1, 640, F]
+        let en = d
+            .transpose(1, 2)
+            .map_err(err)?
+            .contiguous()
+            .map_err(err)?
+            .matmul(&aln)
+            .map_err(err)?; // [1, 640, F]
         let (f0, n) = self.pred.f0_n(&en, &s_pro)?;
         let t_en = self.text.fwd(&ids_t)?; // [1, 512, T]
         let asr = t_en.matmul(&aln).map_err(err)?; // [1, 512, F]

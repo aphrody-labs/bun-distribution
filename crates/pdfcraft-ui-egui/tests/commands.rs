@@ -11,12 +11,18 @@ use pdfcraft_ui_egui::{Dialog, PdfCraftApp};
 fn fixture(n: usize) -> Vec<u8> {
     let mut objs: Vec<String> = vec!["<< /Type /Catalog /Pages 2 0 R >>".into()];
     let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 4 + 2 * i)).collect();
-    objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>", kids.join(" ")));
+    objs.push(format!(
+        "<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>",
+        kids.join(" ")
+    ));
     objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into());
     for i in 0..n {
         objs.push(format!("<< /Type /Page /Parent 2 0 R /Contents {} 0 R /Resources << /Font << /F1 3 0 R >> >> >>", 5 + 2 * i));
         let body = format!("BT /F1 24 Tf 20 150 Td (Page {}) Tj ET", i + 1);
-        objs.push(format!("<< /Length {} >>\nstream\n{body}\nendstream", body.len()));
+        objs.push(format!(
+            "<< /Length {} >>\nstream\n{body}\nendstream",
+            body.len()
+        ));
     }
     let mut out = b"%PDF-1.7\n".to_vec();
     let mut offsets = Vec::new();
@@ -29,17 +35,25 @@ fn fixture(n: usize) -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("doc.pdf", None, fixture(3)).unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("doc.pdf", None, fixture(3)).unwrap();
+            app
+        });
     h.run_steps(4);
     h
 }
@@ -75,7 +89,8 @@ fn every_registered_command_is_implemented() {
         let mut app = PdfCraftApp::new();
         app.set_option("language", "en").unwrap();
         if spec.id.starts_with("form.") || spec.id == "comment.flatten" {
-            app.open_bytes("form.pdf", None, include_bytes!("data/form.pdf").to_vec()).unwrap();
+            app.open_bytes("form.pdf", None, include_bytes!("data/form.pdf").to_vec())
+                .unwrap();
         } else if spec.id == "protect.unlock" {
             // Only a permissions password: opens restricted, and can be unlocked.
             let mut doc = pdfcraft_cos::Document::open(std::sync::Arc::new(fixture(3))).unwrap();
@@ -88,36 +103,62 @@ fn every_registered_command_is_implemented() {
                 seed: [5; 32],
             })
             .unwrap();
-            app.open_bytes("restricted.pdf", None, pdfcraft_cos::write_full(&doc, &Default::default()).unwrap()).unwrap();
+            app.open_bytes(
+                "restricted.pdf",
+                None,
+                pdfcraft_cos::write_full(&doc, &Default::default()).unwrap(),
+            )
+            .unwrap();
         } else {
             app.open_bytes("doc.pdf", None, fixture(3)).unwrap();
         }
         // Give undo/redo something to do.
-        app.apply_edit(pdfcraft_engine::Edit::RotatePages { pages: vec![0], degrees: 90 });
+        app.apply_edit(pdfcraft_engine::Edit::RotatePages {
+            pages: vec![0],
+            degrees: 90,
+        });
         if spec.id == "edit.redo" {
             app.undo();
         }
-        if spec.id.starts_with("edit.") && (spec.id.ends_with(".update") || spec.id.ends_with(".remove")) {
+        if spec.id.starts_with("edit.")
+            && (spec.id.ends_with(".update") || spec.id.ends_with(".remove"))
+        {
             use pdfcraft_engine::{Background, Edit, HeaderFooter, Watermark};
             let mut hf = HeaderFooter::default();
             hf.text[1] = "x".into();
-            app.apply_edit(Edit::AddHeaderFooter { pages: vec![0], settings: hf, replace: false });
+            app.apply_edit(Edit::AddHeaderFooter {
+                pages: vec![0],
+                settings: hf,
+                replace: false,
+            });
             app.apply_edit(Edit::AddWatermark {
                 pages: vec![0],
-                settings: Watermark { text: "x".into(), ..Watermark::default() },
+                settings: Watermark {
+                    text: "x".into(),
+                    ..Watermark::default()
+                },
                 replace: false,
                 file: None,
             });
             app.apply_edit(Edit::AddBackground {
                 pages: vec![0],
-                settings: Background { color: [1.0; 3], opacity: 1.0, ..Background::default() },
+                settings: Background {
+                    color: [1.0; 3],
+                    opacity: 1.0,
+                    ..Background::default()
+                },
                 replace: false,
                 file: None,
             });
         }
-        if matches!(spec.id, "comment.flatten" | "comment.export" | "comment.summarize") {
+        if matches!(
+            spec.id,
+            "comment.flatten" | "comment.export" | "comment.summarize"
+        ) {
             use pdfcraft_engine::{Edit, NewAnnotation, Shape, Style};
-            let shape = Shape::Rectangle { rect: [10.0, 10.0, 50.0, 50.0] };
+            let shape = Shape::Rectangle {
+                rect: [10.0, 10.0, 50.0, 50.0],
+            };
             app.apply_edit(Edit::AddAnnotation(NewAnnotation {
                 page: 0,
                 style: Style::default_for(&shape),
@@ -128,8 +169,11 @@ fn every_registered_command_is_implemented() {
         }
         if spec.id.starts_with("redact.") {
             use pdfcraft_engine::{Edit, NewAnnotation, Shape, Style};
-            let shape =
-                Shape::Redact { quads: vec![pdfcraft_engine::rect_quad([10.0, 10.0, 50.0, 50.0])], overlay: String::new(), look: Default::default() };
+            let shape = Shape::Redact {
+                quads: vec![pdfcraft_engine::rect_quad([10.0, 10.0, 50.0, 50.0])],
+                overlay: String::new(),
+                look: Default::default(),
+            };
             app.apply_edit(Edit::AddAnnotation(NewAnnotation {
                 page: 0,
                 style: Style::default_for(&shape),
@@ -139,7 +183,10 @@ fn every_registered_command_is_implemented() {
             }));
         }
         if spec.id == "protect.remove" {
-            let p = pdfcraft_engine::Protection { open_password: Some("pw".into()), ..Default::default() };
+            let p = pdfcraft_engine::Protection {
+                open_password: Some("pw".into()),
+                ..Default::default()
+            };
             app.apply_edit(pdfcraft_engine::Edit::Protect(p));
         }
         // The cover toggle needs two-page view first (it is disabled elsewhere).
@@ -149,7 +196,11 @@ fn every_registered_command_is_implemented() {
         let dir = std::env::temp_dir().join(format!("pdfcraft-cmd-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         app.save_override = Some(dir.join("out.pdf").to_string_lossy().into_owned());
-        assert!(app.execute(spec.id), "{} is registered but not implemented (or wrongly disabled)", spec.id);
+        assert!(
+            app.execute(spec.id),
+            "{} is registered but not implemented (or wrongly disabled)",
+            spec.id
+        );
     }
 }
 
@@ -158,13 +209,22 @@ fn disabled_commands_explain_themselves() {
     let mut app = PdfCraftApp::new();
     app.set_option("language", "en").unwrap();
     assert!(!app.execute("file.save"));
-    assert_eq!(app.toast.as_ref().map(|t| t.0.as_str()), Some("Open a document first"));
+    assert_eq!(
+        app.toast.as_ref().map(|t| t.0.as_str()),
+        Some("Open a document first")
+    );
     app.open_bytes("doc.pdf", None, fixture(2)).unwrap();
     assert!(!app.execute("edit.undo"));
-    assert_eq!(app.toast.as_ref().map(|t| t.0.as_str()), Some("Nothing to undo"));
+    assert_eq!(
+        app.toast.as_ref().map(|t| t.0.as_str()),
+        Some("Nothing to undo")
+    );
     // View state counts too: the cover page exists only in two-page view.
     assert!(!app.execute("view.layout.cover"));
-    assert_eq!(app.toast.as_ref().map(|t| t.0.as_str()), Some("Switch to two-page view first to show the cover page"));
+    assert_eq!(
+        app.toast.as_ref().map(|t| t.0.as_str()),
+        Some("Switch to two-page view first to show the cover page")
+    );
     assert!(!app.execute("no.such.command"));
 }
 
@@ -175,25 +235,38 @@ fn a_tool_chosen_with_no_document_asks_for_one_and_runs_on_it() {
     let path = dir.join("picked.pdf");
     std::fs::write(&path, fixture(2)).unwrap();
     let pick = path.to_string_lossy().into_owned();
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.pick_override = Some(vec![pick]);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.pick_override = Some(vec![pick]);
+            app
+        });
     h.run_steps(2);
     h.state_mut().run_command("export.text");
-    assert!(h.state().toast.as_ref().is_none_or(|t| t.0 != "Open a document first"));
+    assert!(
+        h.state()
+            .toast
+            .as_ref()
+            .is_none_or(|t| t.0 != "Open a document first")
+    );
     h.run_steps(3);
     assert!(h.state().active.is_some(), "the picked file is open");
-    assert!(matches!(h.state().dialog, Some(Dialog::Export(_))), "and the tool runs on it: {:?}", h.state().dialog);
+    assert!(
+        matches!(h.state().dialog, Some(Dialog::Export(_))),
+        "and the tool runs on it: {:?}",
+        h.state().dialog
+    );
     // Cancelled: nothing opens and nothing runs.
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.pick_override = Some(Vec::new());
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.pick_override = Some(Vec::new());
+            app
+        });
     h.run_steps(2);
     h.state_mut().run_command("export.text");
     h.run_steps(3);
@@ -221,13 +294,18 @@ fn shortcuts_run_registered_commands() {
 #[test]
 fn the_palette_lists_commands_with_shortcuts_and_runs_them() {
     let mut h = harness();
-    h.state_mut().set_option("palette", "rotate pages clockwise").unwrap();
+    h.state_mut()
+        .set_option("palette", "rotate pages clockwise")
+        .unwrap();
     h.run_steps(3);
     h.get_by_label("Rotate pages clockwise");
     h.key_press(Key::Enter);
     h.run_steps(3);
     let app = h.state();
-    assert!(!app.palette_open, "Enter runs the top hit and closes the palette");
+    assert!(
+        !app.palette_open,
+        "Enter runs the top hit and closes the palette"
+    );
     let doc = app.session.get(app.views[0].id).unwrap();
     assert_eq!(doc.info.pages[0].rotation, 90);
     assert_eq!(doc.can_undo(), Some("Rotate page"));
@@ -246,7 +324,10 @@ fn palette_arrow_keys_select_results_and_enter_runs_the_selection() {
     h.run_steps(2);
     let app = h.state();
     assert!(!app.palette_open);
-    assert_eq!(app.session.get(app.views[0].id).unwrap().info.pages[0].rotation, 270);
+    assert_eq!(
+        app.session.get(app.views[0].id).unwrap().info.pages[0].rotation,
+        270
+    );
 }
 
 #[test]
@@ -259,7 +340,10 @@ fn the_pages_menu_comes_from_the_registry() {
     h.get_by_label_contains("Delete pages").click();
     h.run_steps(3);
     let app = h.state();
-    assert_eq!(app.session.get(app.views[0].id).unwrap().info.pages.len(), 2);
+    assert_eq!(
+        app.session.get(app.views[0].id).unwrap().info.pages.len(),
+        2
+    );
 }
 
 #[test]
@@ -269,16 +353,23 @@ fn the_open_recent_menu_lists_files_and_opens_one() {
     let path = dir.join("recent.pdf");
     std::fs::write(&path, fixture(2)).unwrap();
     let path = path.to_string_lossy().into_owned();
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe({
-        let path = path.clone();
-        move |_cc| {
-            let mut app = PdfCraftApp::new();
-            app.set_option("language", "en").unwrap();
-            app.open_bytes("doc.pdf", None, fixture(3)).unwrap();
-            app.recent.push(pdfcraft_ui_egui::RecentFile { name: "recent.pdf".into(), path, pages: 2, size: 0 });
-            app
-        }
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe({
+            let path = path.clone();
+            move |_cc| {
+                let mut app = PdfCraftApp::new();
+                app.set_option("language", "en").unwrap();
+                app.open_bytes("doc.pdf", None, fixture(3)).unwrap();
+                app.recent.push(pdfcraft_ui_egui::RecentFile {
+                    name: "recent.pdf".into(),
+                    path,
+                    pages: 2,
+                    size: 0,
+                });
+                app
+            }
+        });
     h.run_steps(4);
     h.get_by_label("Menu").click();
     h.run_steps(2);
@@ -291,7 +382,13 @@ fn the_open_recent_menu_lists_files_and_opens_one() {
     let app = h.state();
     assert_eq!(app.views.len(), 2, "the recent file opened in a new tab");
     let active = app.active.unwrap();
-    assert_eq!(app.session.get(app.views[active].id).and_then(|d| d.path.as_deref()), Some(path.as_str()), "the active tab is the recent file");
+    assert_eq!(
+        app.session
+            .get(app.views[active].id)
+            .and_then(|d| d.path.as_deref()),
+        Some(path.as_str()),
+        "the active tab is the recent file"
+    );
 }
 
 #[test]
@@ -302,24 +399,33 @@ fn the_open_recent_menu_is_disabled_while_the_list_is_empty() {
     h.get_by_label("File ⏵").hover();
     h.run_steps(3);
     assert!(
-        h.query_by(|n| n.label().as_deref() == Some("Open Recent") && n.is_disabled()).is_some(),
+        h.query_by(|n| n.label().as_deref() == Some("Open Recent") && n.is_disabled())
+            .is_some(),
         "Open Recent is disabled while no file has been opened"
     );
 }
 
 fn recent_file(name: &str) -> pdfcraft_ui_egui::RecentFile {
-    pdfcraft_ui_egui::RecentFile { name: name.into(), path: format!("/nowhere/{name}"), pages: 1, size: 0 }
+    pdfcraft_ui_egui::RecentFile {
+        name: name.into(),
+        path: format!("/nowhere/{name}"),
+        pages: 1,
+        size: 0,
+    }
 }
 
 #[test]
 fn clear_recent_files_at_the_foot_of_open_recent_empties_the_list() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("doc.pdf", None, fixture(3)).unwrap();
-        app.recent.extend([recent_file("first.pdf"), recent_file("second.pdf")]);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("doc.pdf", None, fixture(3)).unwrap();
+            app.recent
+                .extend([recent_file("first.pdf"), recent_file("second.pdf")]);
+            app
+        });
     h.run_steps(4);
     h.get_by_label("Menu").click();
     h.run_steps(2);
@@ -334,21 +440,34 @@ fn clear_recent_files_at_the_foot_of_open_recent_empties_the_list() {
     h.run_steps(2);
     h.get_by_label("File ⏵").hover();
     h.run_steps(3);
-    assert!(h.query_by(|n| n.label().as_deref() == Some("Open Recent") && n.is_disabled()).is_some(), "and Open Recent is disabled");
+    assert!(
+        h.query_by(|n| n.label().as_deref() == Some("Open Recent") && n.is_disabled())
+            .is_some(),
+        "and Open Recent is disabled"
+    );
 }
 
 #[test]
 fn clear_recent_files_runs_from_the_palette_and_is_saved() {
     let mut app = PdfCraftApp::new();
-    app.recent.extend([recent_file("first.pdf"), recent_file("second.pdf")]);
+    app.recent
+        .extend([recent_file("first.pdf"), recent_file("second.pdf")]);
     assert!(app.execute("file.clear_recent"));
     assert!(app.recent.is_empty());
     let mut restarted = PdfCraftApp::new();
     restarted.recent.push(recent_file("stale.pdf"));
     restarted.restore(&app.persist());
-    assert!(restarted.recent.is_empty(), "the empty list is what's saved");
+    assert!(
+        restarted.recent.is_empty(),
+        "the empty list is what's saved"
+    );
     app.execute("file.clear_recent");
-    assert!(app.toast.as_ref().is_some_and(|(m, _)| m.contains("No recent files")), "nothing to clear is said, not silent");
+    assert!(
+        app.toast
+            .as_ref()
+            .is_some_and(|(m, _)| m.contains("No recent files")),
+        "nothing to clear is said, not silent"
+    );
 }
 
 #[test]
@@ -366,7 +485,11 @@ fn the_shortcuts_dialog_lists_the_real_bindings() {
     h.get_by_label("Ctrl+G / Ctrl+Shift+G");
     h.get_by_label("← / →, Ctrl+← / Ctrl+→");
     h.get_by_label("Zoom in / out (also pinch or Ctrl-scroll)");
-    assert_eq!(h.query_all_by_label_contains("⌘").count(), 0, "no ⌘ outside macOS");
+    assert_eq!(
+        h.query_all_by_label_contains("⌘").count(),
+        0,
+        "no ⌘ outside macOS"
+    );
     h.ctx.set_os(OperatingSystem::Mac);
     h.run_steps(2);
     h.get_by_label("⇧⌘S");
@@ -394,9 +517,14 @@ fn localized_shortcuts_update_immediately_and_keep_command_ids_and_key_bindings(
     h.ctx.set_os(OperatingSystem::Windows);
     h.key_press_modifiers(Modifiers::CTRL | Modifiers::COMMAND, Key::K);
     h.run_steps(3);
-    assert!(h.state().palette_open, "the localized Strg+K display still binds Ctrl+K");
+    assert!(
+        h.state().palette_open,
+        "the localized Strg+K display still binds Ctrl+K"
+    );
     // Searching by the stable command id still works in a translated interface.
-    h.state_mut().set_option("palette", "view.read_mode").unwrap();
+    h.state_mut()
+        .set_option("palette", "view.read_mode")
+        .unwrap();
     h.run_steps(2);
     h.key_press(Key::Enter);
     h.run_steps(3);
@@ -429,15 +557,27 @@ fn view_menu_and_tooltips_write_shortcuts_for_the_platform() {
     h.get_by_label("Find tools and commands… Ctrl+K");
     h.get_by_label("Zoom in (Ctrl++)");
     h.get_by_label("Print (Ctrl+P)");
-    assert_eq!(h.query_all_by_label_contains("⌘").count(), 0, "no ⌘ outside macOS");
-    assert_eq!(h.query_all_by_label_contains("Fit visible").count(), 1, "View lists Fit visible once");
+    assert_eq!(
+        h.query_all_by_label_contains("⌘").count(),
+        0,
+        "no ⌘ outside macOS"
+    );
+    assert_eq!(
+        h.query_all_by_label_contains("Fit visible").count(),
+        1,
+        "View lists Fit visible once"
+    );
     h.get_by_label("Fit visible Ctrl+3");
 
     let h = view_menu(OperatingSystem::Mac);
     h.get_by_label("Actual size ⌘1");
     h.get_by_label("Fit visible ⌘3");
     h.get_by_label("Rotate view clockwise (⇧⌘+)");
-    assert_eq!(h.query_all_by_label_contains("Ctrl+").count(), 0, "no Ctrl+ on macOS");
+    assert_eq!(
+        h.query_all_by_label_contains("Ctrl+").count(),
+        0,
+        "no Ctrl+ on macOS"
+    );
 }
 
 #[test]
@@ -449,8 +589,16 @@ fn the_top_bar_save_button_names_its_shortcut_not_a_milestone() {
     h.run_steps(2);
     h.get_by_label("Save (Ctrl+S)");
     h.get_by_label("Print (Ctrl+P)");
-    assert_eq!(h.query_all_by_label_contains("(M4)").count(), 0, "no milestone tag in the top bar");
-    assert_eq!(h.query_all_by_label_contains("⌘").count(), 0, "no ⌘ outside macOS");
+    assert_eq!(
+        h.query_all_by_label_contains("(M4)").count(),
+        0,
+        "no milestone tag in the top bar"
+    );
+    assert_eq!(
+        h.query_all_by_label_contains("⌘").count(),
+        0,
+        "no ⌘ outside macOS"
+    );
 
     let mut h = harness();
     h.ctx.set_os(OperatingSystem::Mac);
@@ -485,15 +633,33 @@ fn the_about_dialog_shows_the_running_version() {
 
 #[test]
 fn command_w_closes_empty_macos_window_but_not_an_empty_windows_window() {
-    for (os, should_close) in [(OperatingSystem::Mac, true), (OperatingSystem::Windows, false)] {
-        let mut h = Harness::builder().with_size(egui::vec2(1000.0, 700.0)).build_eframe(|_cc| PdfCraftApp::new());
+    for (os, should_close) in [
+        (OperatingSystem::Mac, true),
+        (OperatingSystem::Windows, false),
+    ] {
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1000.0, 700.0))
+            .build_eframe(|_cc| PdfCraftApp::new());
         h.ctx.set_os(os);
         h.run_steps(4);
         assert!(h.state().views.is_empty());
-        h.event(egui::Event::Key { key: Key::W, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::COMMAND });
+        h.event(egui::Event::Key {
+            key: Key::W,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: Modifiers::COMMAND,
+        });
         h.step();
-        let closes = h.output().viewport_output.values().any(|v| v.commands.iter().any(|c| matches!(c, egui::ViewportCommand::Close)));
-        assert_eq!(closes, should_close, "{os:?}: only an empty macOS window should close");
+        let closes = h.output().viewport_output.values().any(|v| {
+            v.commands
+                .iter()
+                .any(|c| matches!(c, egui::ViewportCommand::Close))
+        });
+        assert_eq!(
+            closes, should_close,
+            "{os:?}: only an empty macOS window should close"
+        );
     }
 }
 
@@ -504,18 +670,33 @@ fn command_w_still_closes_the_document_tab_on_macos() {
     h.run_steps(2);
     h.key_press_modifiers(Modifiers::COMMAND, Key::W);
     h.run_steps(2);
-    assert!(h.state().views.is_empty(), "⌘W closes the clean document tab");
+    assert!(
+        h.state().views.is_empty(),
+        "⌘W closes the clean document tab"
+    );
 }
 
 fn palette_ime_output_requests_interrupt(h: &Harness<'_, PdfCraftApp>, phase: &str) -> bool {
     assert!(h.state().palette_open, "palette closed during {phase}");
-    let ime = h.output().platform_output.ime.as_ref().expect("focused palette advertises IME");
-    eprintln!("{phase}: query={:?}; should_interrupt_composition={}", h.state().palette_query, ime.should_interrupt_composition);
+    let ime = h
+        .output()
+        .platform_output
+        .ime
+        .as_ref()
+        .expect("focused palette advertises IME");
+    eprintln!(
+        "{phase}: query={:?}; should_interrupt_composition={}",
+        h.state().palette_query,
+        ime.should_interrupt_composition
+    );
     ime.should_interrupt_composition
 }
 
 fn palette_ime_output_is_uninterrupted(h: &Harness<'_, PdfCraftApp>, phase: &str) {
-    assert!(!palette_ime_output_requests_interrupt(h, phase), "palette interrupted composition during {phase}");
+    assert!(
+        !palette_ime_output_requests_interrupt(h, phase),
+        "palette interrupted composition during {phase}"
+    );
 }
 
 #[test]
@@ -541,7 +722,10 @@ fn palette_ime_chinese_preedit_commit_and_cancel_remain_uninterrupted() {
     h.state_mut().run_command("view.palette");
     h.run_steps(3);
     for preedit in ["ni", "nih"] {
-        h.event(egui::Event::Ime(egui::ImeEvent::Preedit { text: preedit.into(), active_range_chars: Some(0..preedit.chars().count()) }));
+        h.event(egui::Event::Ime(egui::ImeEvent::Preedit {
+            text: preedit.into(),
+            active_range_chars: Some(0..preedit.chars().count()),
+        }));
         h.step();
         interruptions.push(palette_ime_output_requests_interrupt(&h, preedit));
         h.step();
@@ -554,20 +738,31 @@ fn palette_ime_chinese_preedit_commit_and_cancel_remain_uninterrupted() {
     h.run_steps(2);
     assert_eq!(h.state().palette_query, "你");
     interruptions.push(palette_ime_output_requests_interrupt(&h, "committed idle"));
-    h.event(egui::Event::Ime(egui::ImeEvent::Preedit { text: "hao".into(), active_range_chars: Some(0..3) }));
+    h.event(egui::Event::Ime(egui::ImeEvent::Preedit {
+        text: "hao".into(),
+        active_range_chars: Some(0..3),
+    }));
     h.step();
     interruptions.push(palette_ime_output_requests_interrupt(&h, "second preedit"));
-    h.event(egui::Event::Ime(egui::ImeEvent::Preedit { text: String::new(), active_range_chars: None }));
+    h.event(egui::Event::Ime(egui::ImeEvent::Preedit {
+        text: String::new(),
+        active_range_chars: None,
+    }));
     h.step();
     assert_eq!(h.state().palette_query, "你");
     interruptions.push(palette_ime_output_requests_interrupt(&h, "cancel preedit"));
-    assert!(interruptions.iter().all(|interrupt| !interrupt), "composition interrupted: {interruptions:?}");
+    assert!(
+        interruptions.iter().all(|interrupt| !interrupt),
+        "composition interrupted: {interruptions:?}"
+    );
 }
 
 #[test]
 fn palette_ime_outside_click_closes_without_running_a_command() {
     let mut h = harness();
-    h.state_mut().set_option("palette", "rotate pages clockwise").unwrap();
+    h.state_mut()
+        .set_option("palette", "rotate pages clockwise")
+        .unwrap();
     h.run_steps(3);
     h.event(egui::Event::PointerButton {
         pos: egui::pos2(20.0, 850.0),
@@ -578,5 +773,14 @@ fn palette_ime_outside_click_closes_without_running_a_command() {
     h.step();
     assert!(!h.state().palette_open);
     assert!(h.state().palette_query.is_empty());
-    assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().info.pages[0].rotation, 0);
+    assert_eq!(
+        h.state()
+            .session
+            .get(h.state().views[0].id)
+            .unwrap()
+            .info
+            .pages[0]
+            .rotation,
+        0
+    );
 }

@@ -12,13 +12,16 @@ const W_NS: &str = r#"xmlns:w="http://schemas.openxmlformats.org/wordprocessingm
 const ROOT_RELS: &str = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/></Relationships>"#;
 
 const CITE_A: &str = r#" ADDIN ZOTERO_ITEM CSL_CITATION {"citationID":"k1","properties":{"formattedCitation":"(Doe, 2020)"},"#;
-const CITE_B: &str = r#""citationItems":[{"id":7,"uris":["http://zotero.org/users/local/x/items/ABCD"]}]} "#;
-const BIBL: &str = r#" ADDIN ZOTERO_BIBL {"uncited":[],"omitted":[],"custom":[]} CSL_BIBLIOGRAPHY "#;
+const CITE_B: &str =
+    r#""citationItems":[{"id":7,"uris":["http://zotero.org/users/local/x/items/ABCD"]}]} "#;
+const BIBL: &str =
+    r#" ADDIN ZOTERO_BIBL {"uncited":[],"omitted":[],"custom":[]} CSL_BIBLIOGRAPHY "#;
 
 fn zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut zw = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     for (name, bytes) in entries {
-        zw.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+        zw.start_file(*name, zip::write::SimpleFileOptions::default())
+            .unwrap();
         zw.write_all(bytes).unwrap();
     }
     zw.finish().unwrap().into_inner()
@@ -28,7 +31,12 @@ fn fld(kind: &str) -> String {
     format!(r#"<w:r><w:fldChar w:fldCharType="{kind}"/></w:r>"#)
 }
 fn instr(s: &str) -> String {
-    format!(r#"<w:r><w:instrText xml:space="preserve">{}</w:instrText></w:r>"#, s.replace('&', "&amp;").replace('<', "&lt;").replace('"', "&quot;"))
+    format!(
+        r#"<w:r><w:instrText xml:space="preserve">{}</w:instrText></w:r>"#,
+        s.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('"', "&quot;")
+    )
 }
 fn t(s: &str) -> String {
     format!(r#"<w:r><w:t xml:space="preserve">{s}</w:t></w:r>"#)
@@ -39,20 +47,38 @@ fn ti(s: &str) -> String {
 
 fn custom_xml() -> String {
     let p = |pid: u32, name: &str, v: &str| {
-        format!(r#"<property fmtid="{{D5CDD505-2E9C-101B-9397-08002B2CF9AE}}" pid="{pid}" name="{name}">{v}</property>"#)
+        format!(
+            r#"<property fmtid="{{D5CDD505-2E9C-101B-9397-08002B2CF9AE}}" pid="{pid}" name="{name}">{v}</property>"#
+        )
     };
     format!(
         r#"<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">{}{}{}{}</Properties>"#,
-        p(2, "ZOTERO_PREF_1", r#"<vt:lpwstr>&lt;data data-version="3"&gt;&lt;session id="abc"/&gt;</vt:lpwstr>"#),
-        p(3, "ZOTERO_PREF_2", r#"<vt:lpwstr>&lt;style id="http://www.zotero.org/styles/apa"/&gt;&lt;/data&gt;</vt:lpwstr>"#),
+        p(
+            2,
+            "ZOTERO_PREF_1",
+            r#"<vt:lpwstr>&lt;data data-version="3"&gt;&lt;session id="abc"/&gt;</vt:lpwstr>"#
+        ),
+        p(
+            3,
+            "ZOTERO_PREF_2",
+            r#"<vt:lpwstr>&lt;style id="http://www.zotero.org/styles/apa"/&gt;&lt;/data&gt;</vt:lpwstr>"#
+        ),
         p(4, "Pages", "<vt:i4>12</vt:i4>"),
-        p(5, "Tags", r#"<vt:vector size="2" baseType="lpwstr"><vt:lpwstr>a</vt:lpwstr><vt:lpwstr>b &amp; c</vt:lpwstr></vt:vector>"#),
+        p(
+            5,
+            "Tags",
+            r#"<vt:vector size="2" baseType="lpwstr"><vt:lpwstr>a</vt:lpwstr><vt:lpwstr>b &amp; c</vt:lpwstr></vt:vector>"#
+        ),
     )
 }
 
 fn package(body: &str) -> Vec<u8> {
     let doc = format!(r#"<w:document {W_NS}><w:body>{body}</w:body></w:document>"#);
-    zip(&[("_rels/.rels", ROOT_RELS.as_bytes()), ("word/document.xml", doc.as_bytes()), ("docProps/custom.xml", custom_xml().as_bytes())])
+    zip(&[
+        ("_rels/.rels", ROOT_RELS.as_bytes()),
+        ("word/document.xml", doc.as_bytes()),
+        ("docProps/custom.xml", custom_xml().as_bytes()),
+    ])
 }
 
 /// A cited sentence, a PAGE field, and a bibliography spanning two paragraphs.
@@ -75,14 +101,23 @@ fn zotero_docx() -> Vec<u8> {
         fld("end"),
     ];
     let p0 = format!("<w:p>{}</w:p>", p0.concat());
-    let p1 = format!("<w:p>{}{}{}{}{}</w:p>", fld("begin"), instr(BIBL), fld("separate"), t("Doe, J. (2020). "), ti("A Title"));
+    let p1 = format!(
+        "<w:p>{}{}{}{}{}</w:p>",
+        fld("begin"),
+        instr(BIBL),
+        fld("separate"),
+        t("Doe, J. (2020). "),
+        ti("A Title")
+    );
     let p2 = format!("<w:p>{}{}</w:p>", t("Roe, R. (2019). Other."), fld("end"));
     let p3 = format!("<w:p>{}</w:p>", t("After"));
     package(&format!("{p0}{p1}{p2}{p3}"))
 }
 
 fn para_text(d: &Document, i: usize) -> String {
-    d.para(StoryRef::Body, &Path::top(i)).map(|p| p.plain_text()).unwrap_or_default()
+    d.para(StoryRef::Body, &Path::top(i))
+        .map(|p| p.plain_text())
+        .unwrap_or_default()
 }
 
 fn italic_at(d: &Document, i: usize, needle: &str) -> bool {
@@ -113,13 +148,29 @@ fn check_zotero(d: &Document) {
 
     // Engine fields stay atomic.
     let p0 = d.para(StoryRef::Body, &Path::top(0)).unwrap();
-    assert!(p0.objects.iter().any(|o| matches!(o, InlineObject::Field { instr, .. } if instr == "PAGE")));
+    assert!(
+        p0.objects
+            .iter()
+            .any(|o| matches!(o, InlineObject::Field { instr, .. } if instr == "PAGE"))
+    );
 
     let names: Vec<&str> = d.custom_props.iter().map(|p| p.name.as_str()).collect();
     assert_eq!(names, ["ZOTERO_PREF_1", "ZOTERO_PREF_2", "Pages", "Tags"]);
-    assert_eq!(d.custom_prop("ZOTERO_PREF_1"), Some(r#"<data data-version="3"><session id="abc"/>"#));
-    assert_eq!(d.custom_prop("zotero_pref_2"), Some(r#"<style id="http://www.zotero.org/styles/apa"/></data>"#));
-    assert_eq!((d.custom_props[2].kind.as_str(), d.custom_props[2].value.as_str()), ("i4", "12"));
+    assert_eq!(
+        d.custom_prop("ZOTERO_PREF_1"),
+        Some(r#"<data data-version="3"><session id="abc"/>"#)
+    );
+    assert_eq!(
+        d.custom_prop("zotero_pref_2"),
+        Some(r#"<style id="http://www.zotero.org/styles/apa"/></data>"#)
+    );
+    assert_eq!(
+        (
+            d.custom_props[2].kind.as_str(),
+            d.custom_props[2].value.as_str()
+        ),
+        ("i4", "12")
+    );
     assert_eq!(d.custom_props[3].kind, "raw");
     assert!(d.custom_props[3].value.contains("b &amp; c"));
 }
@@ -152,7 +203,10 @@ fn zotero_fields_and_prefs_round_trip() {
     check_zotero(&d2);
     assert_eq!(d.custom_props, d2.custom_props);
     // And a second generation is stable.
-    assert_eq!(read(&write(&d2).unwrap()).unwrap().custom_props, d.custom_props);
+    assert_eq!(
+        read(&write(&d2).unwrap()).unwrap().custom_props,
+        d.custom_props
+    );
 }
 
 #[test]
@@ -187,10 +241,20 @@ fn unterminated_and_resultless_addin_fields() {
 fn orphan_markers_from_editing_are_dropped_on_save() {
     let mut d = Document::from_text("one\ntwo");
     let c = CharProps::default();
-    d.para_mut(StoryRef::Body, &Path::top(0)).unwrap().insert_object(0, InlineObject::FieldEnd, &c).unwrap();
+    d.para_mut(StoryRef::Body, &Path::top(0))
+        .unwrap()
+        .insert_object(0, InlineObject::FieldEnd, &c)
+        .unwrap();
     d.para_mut(StoryRef::Body, &Path::top(1))
         .unwrap()
-        .insert_object(1, InlineObject::FieldStart { instr: "ADDIN X".into(), locked: true }, &c)
+        .insert_object(
+            1,
+            InlineObject::FieldStart {
+                instr: "ADDIN X".into(),
+                locked: true,
+            },
+            &c,
+        )
         .unwrap();
     let xml = document_xml(&write(&d).unwrap());
     assert_eq!(count(&xml, "begin"), 0);
@@ -204,7 +268,15 @@ fn programmatic_range_field_writes_as_word_field() {
     let mut d = Document::from_text("ab");
     let c = CharProps::default();
     let p = d.para_mut(StoryRef::Body, &Path::top(0)).unwrap();
-    p.insert_object(1, InlineObject::FieldStart { instr: "ADDIN ZOTERO_ITEM {}".into(), locked: false }, &c).unwrap();
+    p.insert_object(
+        1,
+        InlineObject::FieldStart {
+            instr: "ADDIN ZOTERO_ITEM {}".into(),
+            locked: false,
+        },
+        &c,
+    )
+    .unwrap();
     let end = 1 + OBJ.len_utf8() + 1;
     p.insert_object(end, InlineObject::FieldEnd, &c).unwrap();
     d.set_custom_prop("ZOTERO_PREF_1", "<data/>");

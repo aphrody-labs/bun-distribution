@@ -68,8 +68,10 @@ use std::path::{Path, PathBuf};
 
 /// La racine des données du jeu sur ce montage.
 fn depot() -> PathBuf {
-    std::env::var("NIE_GAME_DIR")
-        .map_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."), PathBuf::from)
+    std::env::var("NIE_GAME_DIR").map_or_else(
+        |_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."),
+        PathBuf::from,
+    )
 }
 
 /// La base sous laquelle les scripts suivent l'arborescence du VFS.
@@ -79,10 +81,14 @@ fn depot() -> PathBuf {
 /// candidats sont donc essayés dans l'ordre, et le chemin retenu est celui qui porte réellement
 /// des fichiers — jamais supposé.
 fn base(depot: &Path, sous_dossier: &str) -> Option<PathBuf> {
-    ["data", "data/lua_dump", "data/re/40-derived/dumps/lua-vfs-all"]
-        .into_iter()
-        .map(|candidat| depot.join(candidat))
-        .find(|base| base.join(sous_dossier).is_dir())
+    [
+        "data",
+        "data/lua_dump",
+        "data/re/40-derived/dumps/lua-vfs-all",
+    ]
+    .into_iter()
+    .map(|candidat| depot.join(candidat))
+    .find(|base| base.join(sous_dossier).is_dir())
 }
 
 /// TOUS les scripts du montage, par leur chemin relatif à la base.
@@ -97,7 +103,10 @@ fn tous_les_scripts(racine: &Path) -> Vec<String> {
     let mut chemins: Vec<String> = fichiers
         .into_iter()
         .filter_map(|chemin| {
-            chemin.strip_prefix(racine).ok().map(|relatif| relatif.to_string_lossy().into_owned())
+            chemin
+                .strip_prefix(racine)
+                .ok()
+                .map(|relatif| relatif.to_string_lossy().into_owned())
         })
         .collect();
     chemins.sort();
@@ -124,7 +133,13 @@ fn calques(racine: &Path, ecran: &str) -> Option<Vec<u32>> {
     let octets = std::fs::read(chemin).ok()?;
     let root = aphrody_nie_formats::cfgbin::to_iecode_json(&octets)?;
     let setting = aphrody_nie_data::menu_setting::parse(&root);
-    Some(setting.layers.iter().map(|layer| layer.layer_id.0).collect())
+    Some(
+        setting
+            .layers
+            .iter()
+            .map(|layer| layer.layer_id.0)
+            .collect(),
+    )
 }
 
 #[test]
@@ -132,9 +147,10 @@ fn la_file_dattente_des_globales_hote() {
     let depot = depot();
     // Les scripts et les configurations ne vivent pas forcément sous la même base : sur ce
     // montage les `.lua.bin` sont dans un dump et les `_setting.cfg.bin` dans l'arbre extrait.
-    let (Some(racine), Some(racine_cfg)) =
-        (base(&depot, "common/script/lua/menu"), base(&depot, "common/gamedata/menu/cfg"))
-    else {
+    let (Some(racine), Some(racine_cfg)) = (
+        base(&depot, "common/script/lua/menu"),
+        base(&depot, "common/gamedata/menu/cfg"),
+    ) else {
         eprintln!("aucun montage complet (scripts + configurations) : relevé sauté");
         return;
     };
@@ -197,13 +213,13 @@ fn la_file_dattente_des_globales_hote() {
                     let entree = par_manque.entry(manque).or_insert((0, ecran.clone()));
                     entree.0 += 1;
                 }
-            },
+            }
             Err(erreur) => {
                 if refuses == 0 {
                     eprintln!("premier refus ({chemin}) : {erreur}");
                 }
                 refuses += 1;
-            },
+            }
         }
     }
 
@@ -230,7 +246,11 @@ fn la_file_dattente_des_globales_hote() {
         "écrans rejoués    : {rejoues} (complets : {complets}, refusés : {refuses}, \
          sans _setting : {sans_setting})"
     );
-    eprintln!("scripts fournis   : {} (dont {} écrans de menu)", chemins.len(), ecrans.len());
+    eprintln!(
+        "scripts fournis   : {} (dont {} écrans de menu)",
+        chemins.len(),
+        ecrans.len()
+    );
     eprintln!("sites d'appel     : {}", par_manque.len());
     eprintln!("UNITÉS à reverser : {}", par_commande.len());
     eprintln!("les 20 qui bloquent le plus d'écrans :");
@@ -241,5 +261,8 @@ fn la_file_dattente_des_globales_hote() {
 
     // Le relevé doit porter sur des rejeux réels : zéro écran rejoué rendrait une file vide qui
     // se lirait comme « rien ne manque ».
-    assert!(rejoues > 0, "aucun écran rejoué : la VM ou le montage est cassé");
+    assert!(
+        rejoues > 0,
+        "aucun écran rejoué : la VM ou le montage est cassé"
+    );
 }

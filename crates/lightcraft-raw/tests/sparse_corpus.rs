@@ -14,7 +14,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 fn corpus_root() -> PathBuf {
-    std::env::var_os("LIGHTCRAFT_CORPUS").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus"))
+    std::env::var_os("LIGHTCRAFT_CORPUS")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus"))
 }
 
 /// Run the plan (with the embedded preview when `preview`), loading from `file` what it asks for
@@ -26,7 +28,11 @@ fn run(file: &[u8], fill: u8, preview: bool) -> (HeaderPlan, Vec<u8>, Ranges) {
     buf[..prefix].copy_from_slice(&file[..prefix]);
     loaded.insert(0, prefix as u64);
     for _ in 0..32 {
-        match if preview { preview_plan(&buf, &loaded) } else { header_plan(&buf, &loaded) } {
+        match if preview {
+            preview_plan(&buf, &loaded)
+        } else {
+            header_plan(&buf, &loaded)
+        } {
             HeaderPlan::Need(r) => {
                 for &(a, b) in r.spans() {
                     assert!(!loaded.overlaps(a, b), "asked again for {a}..{b}");
@@ -43,7 +49,12 @@ fn run(file: &[u8], fill: u8, preview: bool) -> (HeaderPlan, Vec<u8>, Ranges) {
 /// What an import learns from a file: the raw description and the metadata.
 fn describe(bytes: &[u8]) -> String {
     let e = lightcraft_meta::embedded(bytes);
-    format!("{:?}\n{:?}\n{:?}", probe_info(bytes), lightcraft_meta::extract(bytes), e.xmp)
+    format!(
+        "{:?}\n{:?}\n{:?}",
+        probe_info(bytes),
+        lightcraft_meta::extract(bytes),
+        e.xmp
+    )
 }
 
 #[test]
@@ -55,7 +66,12 @@ fn partial_reads_describe_raws_as_whole_files_do() {
         .flatten()
         .flatten()
         .map(|e| e.path())
-        .filter(|p| p.is_file() && !p.extension().is_some_and(|e| e == "part" || e == "txt" || e == "md"))
+        .filter(|p| {
+            p.is_file()
+                && !p
+                    .extension()
+                    .is_some_and(|e| e == "part" || e == "txt" || e == "md")
+        })
         .collect();
     if paths.is_empty() {
         eprintln!("skip: {} absent", dir.display());
@@ -75,17 +91,37 @@ fn partial_reads_describe_raws_as_whole_files_do() {
         let header_ready = match run(&file, 0, false) {
             (HeaderPlan::Ready, zeros, loaded) => {
                 let (plan_ff, ones, loaded_ff) = run(&file, 0xff, false);
-                assert_eq!((plan_ff, &loaded_ff), (HeaderPlan::Ready, &loaded), "{name}: the plan read skipped bytes");
-                assert_eq!(describe(&zeros), whole, "{name}: differs from the whole file (skipped bytes 0)");
-                assert_eq!(describe(&ones), whole, "{name}: differs from the whole file (skipped bytes 0xFF)");
+                assert_eq!(
+                    (plan_ff, &loaded_ff),
+                    (HeaderPlan::Ready, &loaded),
+                    "{name}: the plan read skipped bytes"
+                );
+                assert_eq!(
+                    describe(&zeros),
+                    whole,
+                    "{name}: differs from the whole file (skipped bytes 0)"
+                );
+                assert_eq!(
+                    describe(&ones),
+                    whole,
+                    "{name}: differs from the whole file (skipped bytes 0xFF)"
+                );
                 entry.0 += 1;
                 entry.1 += loaded.total();
                 entry.2 += file.len() as u64;
                 if loaded.total() * 4 > file.len() as u64 {
-                    eprintln!("{name}: read {:.0} %", loaded.total() as f64 * 100.0 / file.len() as f64);
+                    eprintln!(
+                        "{name}: read {:.0} %",
+                        loaded.total() as f64 * 100.0 / file.len() as f64
+                    );
                 }
                 if matches!(format.as_str(), "Cr3" | "Dng") && file.len() > 8 << 20 {
-                    assert!(loaded.total() * 4 < file.len() as u64, "{name}: read {} of {} bytes", loaded.total(), file.len());
+                    assert!(
+                        loaded.total() * 4 < file.len() as u64,
+                        "{name}: read {} of {} bytes",
+                        loaded.total(),
+                        file.len()
+                    );
                 }
                 true
             }
@@ -105,12 +141,26 @@ fn partial_reads_describe_raws_as_whole_files_do() {
         match run(&file, 0, true) {
             (HeaderPlan::Ready, buf, loaded_p) => {
                 if header_ready {
-                    assert_eq!(describe(&buf), whole, "{name}: preview plan differs from the whole file");
+                    assert_eq!(
+                        describe(&buf),
+                        whole,
+                        "{name}: preview plan differs from the whole file"
+                    );
                 }
-                assert!(embedded_preview(&buf) == preview, "{name}: a different embedded preview");
+                assert!(
+                    embedded_preview(&buf) == preview,
+                    "{name}: a different embedded preview"
+                );
                 let (plan_ff, buf_ff, loaded_ff) = run(&file, 0xff, true);
-                assert_eq!((plan_ff, loaded_ff.total()), (HeaderPlan::Ready, loaded_p.total()), "{name}: the preview plan read skipped bytes");
-                assert!(embedded_preview(&buf_ff) == preview, "{name}: a different embedded preview (skipped bytes 0xFF)");
+                assert_eq!(
+                    (plan_ff, loaded_ff.total()),
+                    (HeaderPlan::Ready, loaded_p.total()),
+                    "{name}: the preview plan read skipped bytes"
+                );
+                assert!(
+                    embedded_preview(&buf_ff) == preview,
+                    "{name}: a different embedded preview (skipped bytes 0xFF)"
+                );
                 pentry.0 += 1;
                 pentry.1 += loaded_p.total();
                 pentry.2 += file.len() as u64;
@@ -123,7 +173,10 @@ fn partial_reads_describe_raws_as_whole_files_do() {
         }
     }
     for (format, (ready, read, total, whole)) in stats {
-        eprintln!("{format:>10}: {ready} described from {:.1} % of their bytes, {whole} read whole", read as f64 * 100.0 / total.max(1) as f64);
+        eprintln!(
+            "{format:>10}: {ready} described from {:.1} % of their bytes, {whole} read whole",
+            read as f64 * 100.0 / total.max(1) as f64
+        );
     }
     for (format, (ready, read, total, whole)) in preview_stats {
         eprintln!(

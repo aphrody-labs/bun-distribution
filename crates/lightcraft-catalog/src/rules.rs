@@ -59,11 +59,26 @@ pub enum Kind {
 /// each of [`FIELD_GROUPS`]).
 pub const FIELDS: &[(&str, &str, Kind)] = &[
     ("rating", "Rating", Kind::Number),
-    ("flag", "Pick Flag", Kind::Choice(&[("pick", "Picked"), ("reject", "Rejected"), ("none", "Unflagged")])),
+    (
+        "flag",
+        "Pick Flag",
+        Kind::Choice(&[
+            ("pick", "Picked"),
+            ("reject", "Rejected"),
+            ("none", "Unflagged"),
+        ]),
+    ),
     (
         "label",
         "Color Label",
-        Kind::Choice(&[("red", "Red"), ("yellow", "Yellow"), ("green", "Green"), ("blue", "Blue"), ("purple", "Purple"), ("none", "No Label")]),
+        Kind::Choice(&[
+            ("red", "Red"),
+            ("yellow", "Yellow"),
+            ("green", "Green"),
+            ("blue", "Blue"),
+            ("purple", "Purple"),
+            ("none", "No Label"),
+        ]),
     ),
     ("text", "Any Searchable Text", Kind::Text),
     // Source
@@ -75,7 +90,11 @@ pub const FIELDS: &[(&str, &str, Kind)] = &[
     ("fileName", "Filename", Kind::Text),
     ("extension", "File Extension", Kind::Text),
     ("filePath", "File Path", Kind::Text),
-    ("kind", "File Type", Kind::Choice(&[("image", "Image"), ("raw", "Raw"), ("video", "Video")])),
+    (
+        "kind",
+        "File Type",
+        Kind::Choice(&[("image", "Image"), ("raw", "Raw"), ("video", "Video")]),
+    ),
     ("format", "File Format", Kind::Text),
     ("duration", "Video Duration", Kind::Number),
     // Date
@@ -96,7 +115,11 @@ pub const FIELDS: &[(&str, &str, Kind)] = &[
     (
         "copyrightStatus",
         "Copyright Status",
-        Kind::Choice(&[("copyrighted", "Copyrighted"), ("publicDomain", "Public Domain"), ("unknown", "Unknown")]),
+        Kind::Choice(&[
+            ("copyrighted", "Copyrighted"),
+            ("publicDomain", "Public Domain"),
+            ("unknown", "Unknown"),
+        ]),
     ),
     // Camera Info
     ("camera", "Camera", Kind::Text),
@@ -114,12 +137,24 @@ pub const FIELDS: &[(&str, &str, Kind)] = &[
     // Size
     ("longEdge", "Long Edge", Kind::Number),
     ("shortEdge", "Short Edge", Kind::Number),
-    ("aspect", "Aspect Ratio", Kind::Choice(&[("landscape", "Landscape (wide)"), ("portrait", "Portrait (tall)"), ("square", "Square")])),
+    (
+        "aspect",
+        "Aspect Ratio",
+        Kind::Choice(&[
+            ("landscape", "Landscape (wide)"),
+            ("portrait", "Portrait (tall)"),
+            ("square", "Square"),
+        ]),
+    ),
     ("megapixels", "Megapixels", Kind::Number),
     // Develop
     ("edited", "Has Edits", Kind::Bool),
     ("cropped", "Cropped", Kind::Bool),
-    ("treatment", "Treatment", Kind::Choice(&[("color", "In Color"), ("monochrome", "Black & White")])),
+    (
+        "treatment",
+        "Treatment",
+        Kind::Choice(&[("color", "In Color"), ("monochrome", "Black & White")]),
+    ),
     // Assisted Culling
     ("sharpness", "Focus (assisted culling)", Kind::Number),
     ("bestOfGroup", "Best of Similar Shots", Kind::Bool),
@@ -132,12 +167,48 @@ pub const TOP_LEVEL_FIELDS: &[&str] = &["rating", "flag", "label", "text"];
 /// once or in [`TOP_LEVEL_FIELDS`].
 pub const FIELD_GROUPS: &[(&str, &[&str])] = &[
     ("Source", &["album", "virtualCopy", "copyName", "stacked"]),
-    ("File", &["fileName", "extension", "filePath", "kind", "format", "duration"]),
+    (
+        "File",
+        &[
+            "fileName",
+            "extension",
+            "filePath",
+            "kind",
+            "format",
+            "duration",
+        ],
+    ),
     ("Date", &["captureDate", "importDate", "editDate"]),
-    ("Keywords & People", &["keywords", "keywordCount", "person", "personCount"]),
-    ("Description", &["title", "caption", "altText", "creator", "copyright", "copyrightStatus"]),
-    ("Camera Info", &["camera", "lens", "focalLength", "aperture", "shutterSpeed", "iso"]),
-    ("Location", &["location", "city", "state", "country", "hasGps"]),
+    (
+        "Keywords & People",
+        &["keywords", "keywordCount", "person", "personCount"],
+    ),
+    (
+        "Description",
+        &[
+            "title",
+            "caption",
+            "altText",
+            "creator",
+            "copyright",
+            "copyrightStatus",
+        ],
+    ),
+    (
+        "Camera Info",
+        &[
+            "camera",
+            "lens",
+            "focalLength",
+            "aperture",
+            "shutterSpeed",
+            "iso",
+        ],
+    ),
+    (
+        "Location",
+        &["location", "city", "state", "country", "hasGps"],
+    ),
     ("Size", &["longEdge", "shortEdge", "aspect", "megapixels"]),
     ("Develop", &["edited", "cropped", "treatment"]),
     ("Assisted Culling", &["sharpness", "bestOfGroup"]),
@@ -145,7 +216,10 @@ pub const FIELD_GROUPS: &[(&str, &[&str])] = &[
 
 /// The field-menu group `field` sits in; `None` for a top-level or unknown field.
 pub fn field_group(field: &str) -> Option<&'static str> {
-    FIELD_GROUPS.iter().find(|g| g.1.contains(&field)).map(|g| g.0)
+    FIELD_GROUPS
+        .iter()
+        .find(|g| g.1.contains(&field))
+        .map(|g| g.0)
 }
 
 /// A rule that can't mean anything ([`RuleSet::check`]): where it is, what is wrong in English
@@ -163,9 +237,17 @@ pub struct Problem {
 impl std::fmt::Display for Problem {
     /// `rule 2.1: no rating 0–5 is 9` (counting from 1, as people do).
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let at: Vec<String> = self.path.iter().map(|i| (i.saturating_add(1)).to_string()).collect();
+        let at: Vec<String> = self
+            .path
+            .iter()
+            .map(|i| (i.saturating_add(1)).to_string())
+            .collect();
         // a problem with the filter around the rules (its album field) has no rule to point at
-        if at.is_empty() { write!(f, "{}", self.message) } else { write!(f, "rule {}: {}", at.join("."), self.message) }
+        if at.is_empty() {
+            write!(f, "{}", self.message)
+        } else {
+            write!(f, "rule {}: {}", at.join("."), self.message)
+        }
     }
 }
 
@@ -257,28 +339,55 @@ impl Issue {
 type Found = Option<(Issue, String)>;
 
 /// What is wrong with one rule, if anything ([`RuleSet::check`]).
-fn field_problem(field: &str, op: &str, value: &Value, cat: &Catalog, owner: Option<crate::AlbumId>) -> Found {
-    let Some(kind) = field_kind(field) else { return Some((Issue::UnknownField, format!("unknown field `{field}`"))) };
+fn field_problem(
+    field: &str,
+    op: &str,
+    value: &Value,
+    cat: &Catalog,
+    owner: Option<crate::AlbumId>,
+) -> Found {
+    let Some(kind) = field_kind(field) else {
+        return Some((Issue::UnknownField, format!("unknown field `{field}`")));
+    };
     if !ops_for(kind).iter().any(|o| o.0 == op) {
-        return Some((Issue::NoSuchOperator, format!("`{field}` has no operator `{op}`")));
+        return Some((
+            Issue::NoSuchOperator,
+            format!("`{field}` has no operator `{op}`"),
+        ));
     }
     if matches!(op, "isEmpty" | "isNotEmpty") {
         return None;
     }
     match kind {
-        Kind::Bool => bool_value(value).is_none().then(|| (Issue::NotYesNo, format!("`{field}` is yes or no, not {value}"))),
+        Kind::Bool => bool_value(value).is_none().then(|| {
+            (
+                Issue::NotYesNo,
+                format!("`{field}` is yes or no, not {value}"),
+            )
+        }),
         Kind::Album => album_problem(value, cat, owner),
         Kind::Number => {
             let each = match value {
-                Value::Array(a) if op == "between" && a.len() == 2 => a.iter().find_map(|v| number_problem(field, v)),
-                _ if op == "between" => Some((Issue::NeedsTwoValues, format!("`{field}` between needs two values, not {value}"))),
+                Value::Array(a) if op == "between" && a.len() == 2 => {
+                    a.iter().find_map(|v| number_problem(field, v))
+                }
+                _ if op == "between" => Some((
+                    Issue::NeedsTwoValues,
+                    format!("`{field}` between needs two values, not {value}"),
+                )),
                 v => number_problem(field, v),
             };
             // a rating rule no rating could meet ("is 9", "≥ 7"); "< 6" is fine, if broad
             each.or_else(|| {
                 let label = ops_for(kind).iter().find(|o| o.0 == op).map_or(op, |o| o.1);
-                (field == "rating" && !(0..=5).any(|r| num_op(op, Some(f64::from(r)), value)))
-                    .then(|| (Issue::NoRatingMatches, format!("no rating 0–5 {label} {value}")))
+                (field == "rating" && !(0..=5).any(|r| num_op(op, Some(f64::from(r)), value))).then(
+                    || {
+                        (
+                            Issue::NoRatingMatches,
+                            format!("no rating 0–5 {label} {value}"),
+                        )
+                    },
+                )
             })
         }
         Kind::Date => date_problem(field, op, value),
@@ -294,25 +403,43 @@ fn field_problem(field: &str, op: &str, value: &Value, cat: &Catalog, owner: Opt
                     (_, false) => (Issue::NeedsTextOrEmpty, "is empty"),
                     (_, true) => (Issue::NeedsTextOrNotEmpty, "isn't empty"),
                 };
-                Some((issue, format!("`{field}` needs something to look for (or use “{instead}”)")))
+                Some((
+                    issue,
+                    format!("`{field}` needs something to look for (or use “{instead}”)"),
+                ))
             }
             Value::Number(_) => None,
-            other => Some((Issue::NeedsText, format!("`{field}` needs text, not {other}"))),
+            other => Some((
+                Issue::NeedsText,
+                format!("`{field}` needs text, not {other}"),
+            )),
         },
     }
 }
 
 fn number_problem(field: &str, v: &Value) -> Found {
     if field == "shutterSpeed" {
-        return shutter_value(v).is_null().then(|| (Issue::NeedsShutterSpeed, format!("`shutterSpeed` needs a time like 1/250 or 2, not {v}")));
+        return shutter_value(v).is_null().then(|| {
+            (
+                Issue::NeedsShutterSpeed,
+                format!("`shutterSpeed` needs a time like 1/250 or 2, not {v}"),
+            )
+        });
     }
-    number(v).filter(|n| n.is_finite()).is_none().then(|| (Issue::NeedsNumber, format!("`{field}` needs a number, not {v}")))
+    number(v).filter(|n| n.is_finite()).is_none().then(|| {
+        (
+            Issue::NeedsNumber,
+            format!("`{field}` needs a number, not {v}"),
+        )
+    })
 }
 
 /// The album an Album rule names: its id as a whole number, written as a number (`3`, `3.0`) or a
 /// numeric string (`"3"`). The check, the matcher and the editor all read it this way.
 pub fn album_rule_id(value: &Value) -> Option<crate::AlbumId> {
-    number(value).filter(|n| n.is_finite() && *n >= 0.0 && n.fract() == 0.0).map(|n| crate::AlbumId(n as u64))
+    number(value)
+        .filter(|n| n.is_finite() && *n >= 0.0 && n.fract() == 0.0)
+        .map(|n| crate::AlbumId(n as u64))
 }
 
 /// An Album rule's value: an album that exists and holds photos (a plain or a smart album, not a
@@ -324,10 +451,14 @@ fn album_problem(v: &Value, cat: &Catalog, owner: Option<crate::AlbumId>) -> Fou
     }
     match album_rule_id(v).and_then(|id| cat.album(id)) {
         None => Some((Issue::NoSuchAlbum, format!("no album {v}"))),
-        Some(a) if owner.is_some_and(|o| a.id == o || cat.album_reaches(a.id, o)) => {
-            Some((Issue::AlbumLoop, format!("album {v} would make this album include itself")))
-        }
-        Some(a) if a.folder => Some((Issue::FolderAlbum, format!("album {v} is a folder; choose an album in it"))),
+        Some(a) if owner.is_some_and(|o| a.id == o || cat.album_reaches(a.id, o)) => Some((
+            Issue::AlbumLoop,
+            format!("album {v} would make this album include itself"),
+        )),
+        Some(a) if a.folder => Some((
+            Issue::FolderAlbum,
+            format!("album {v} is a folder; choose an album in it"),
+        )),
         Some(_) => None,
     }
 }
@@ -339,10 +470,16 @@ fn album_problem(v: &Value, cat: &Catalog, owner: Option<crate::AlbumId>) -> Fou
 /// and the matcher both read dates this way.
 pub fn rule_date(s: &str) -> Result<String, Issue> {
     const PATTERN: &str = "dddd-dd-ddTdd:dd:dd";
-    let s: String = s.trim().char_indices().map(|(i, c)| if i == 10 && c == ' ' { 'T' } else { c }).collect();
+    let s: String = s
+        .trim()
+        .char_indices()
+        .map(|(i, c)| if i == 10 && c == ' ' { 'T' } else { c })
+        .collect();
     let shaped = |t: &str| {
         matches!(t.len(), 4 | 7 | 10 | 13 | 16 | 19)
-            && t.chars().zip(PATTERN.chars()).all(|(c, p)| if p == 'd' { c.is_ascii_digit() } else { c == p })
+            && t.chars()
+                .zip(PATTERN.chars())
+                .all(|(c, p)| if p == 'd' { c.is_ascii_digit() } else { c == p })
     };
     // after whole seconds, a fraction and a zone as imports write them (.250, +02:00 or Z)
     let tail_ok = |rest: &str| {
@@ -359,7 +496,9 @@ pub fn rule_date(s: &str) -> Result<String, Issue> {
         let zone = after_fraction.as_bytes();
         match zone {
             [] | [b'Z' | b'z'] => true,
-            [b'+' | b'-', h1, h2, b':', m1, m2] => [h1, h2, m1, m2].iter().all(|c| c.is_ascii_digit()),
+            [b'+' | b'-', h1, h2, b':', m1, m2] => {
+                [h1, h2, m1, m2].iter().all(|c| c.is_ascii_digit())
+            }
             _ => false,
         }
     };
@@ -367,38 +506,73 @@ pub fn rule_date(s: &str) -> Result<String, Issue> {
         return Err(Issue::NeedsDate);
     }
     let part = |a: usize, b: usize| s.get(a..b).and_then(|t| t.parse::<u32>().ok());
-    let time_ok = part(11, 13).is_none_or(|h| h < 24) && part(14, 16).is_none_or(|m| m < 60) && part(17, 19).is_none_or(|x| x < 60);
+    let time_ok = part(11, 13).is_none_or(|h| h < 24)
+        && part(14, 16).is_none_or(|m| m < 60)
+        && part(17, 19).is_none_or(|x| x < 60);
     let day = match s.len().min(19) {
         4 => format!("{s}-01-01"),
         7 => format!("{s}-01"),
         _ => s.get(..10).unwrap_or("").to_string(),
     };
-    if time_ok && crate::dates::normalize_iso(&day).is_some() { Ok(s) } else { Err(Issue::NeedsDate) }
+    if time_ok && crate::dates::normalize_iso(&day).is_some() {
+        Ok(s)
+    } else {
+        Err(Issue::NeedsDate)
+    }
 }
 
 fn date_problem(field: &str, op: &str, value: &Value) -> Found {
     let date = |v: &Value| match v.as_str().map(rule_date) {
         Some(Ok(_)) => None,
-        _ => Some((Issue::NeedsDate, format!("`{field}` needs a date like 2026, 2026-08 or 2026-08-14, not {v}"))),
+        _ => Some((
+            Issue::NeedsDate,
+            format!("`{field}` needs a date like 2026, 2026-08 or 2026-08-14, not {v}"),
+        )),
     };
     match op {
         "inLast" | "notInLast" => {
             let (n, unit) = match value {
-                Value::Object(o) => (o.get("n").and_then(number), o.get("unit").cloned().unwrap_or(Value::Null)),
+                Value::Object(o) => (
+                    o.get("n").and_then(number),
+                    o.get("unit").cloned().unwrap_or(Value::Null),
+                ),
                 v => (number(v), Value::Null),
             };
             if !n.is_some_and(|n| n.is_finite() && n > 0.0) {
-                return Some((Issue::NeedsCount, format!("`{field}` needs a number of hours, days, weeks, months or years more than 0")));
+                return Some((
+                    Issue::NeedsCount,
+                    format!(
+                        "`{field}` needs a number of hours, days, weeks, months or years more than 0"
+                    ),
+                ));
             }
-            unit_secs(&unit).is_none().then(|| (Issue::UnknownUnit, format!("`{field}`: unknown unit {unit} (hours, days, weeks, months or years)")))
+            unit_secs(&unit).is_none().then(|| {
+                (
+                    Issue::UnknownUnit,
+                    format!("`{field}`: unknown unit {unit} (hours, days, weeks, months or years)"),
+                )
+            })
         }
         "between" => match value {
             Value::Array(a) if a.len() == 2 => a.iter().find_map(date).or_else(|| {
-                let bound = |i: usize| a.get(i).and_then(Value::as_str).and_then(|d| rule_date(d).ok()).unwrap_or_default();
+                let bound = |i: usize| {
+                    a.get(i)
+                        .and_then(Value::as_str)
+                        .and_then(|d| rule_date(d).ok())
+                        .unwrap_or_default()
+                };
                 let (from, to) = (bound(0), bound(1));
-                (from > to && !from.starts_with(&to)).then(|| (Issue::DatesReversed, format!("`{field}`: the first date is after the second")))
+                (from > to && !from.starts_with(&to)).then(|| {
+                    (
+                        Issue::DatesReversed,
+                        format!("`{field}`: the first date is after the second"),
+                    )
+                })
             }),
-            _ => Some((Issue::NeedsTwoValues, format!("`{field}` between needs two dates, not {value}"))),
+            _ => Some((
+                Issue::NeedsTwoValues,
+                format!("`{field}` between needs two dates, not {value}"),
+            )),
         },
         _ => date(value),
     }
@@ -416,7 +590,12 @@ fn choice_problem(field: &str, value: &Value, choices: &[(&str, &str)], cat: &Ca
             }
     });
     let ids: Vec<&str> = choices.iter().map(|c| c.0).collect();
-    (!known).then(|| (Issue::NotAChoice, format!("`{field}` is one of {}, not {value}", ids.join(", "))))
+    (!known).then(|| {
+        (
+            Issue::NotAChoice,
+            format!("`{field}` is one of {}, not {value}", ids.join(", ")),
+        )
+    })
 }
 
 thread_local! {
@@ -434,7 +613,11 @@ thread_local! {
 
 /// Whether `photo` is in smart album `id`, by `matches` (its rules), remembered for the rest of the
 /// outermost question and guarded by [`evaluating`] (a loop or a chain too deep holds nothing).
-pub(crate) fn smart_album_holds(id: crate::AlbumId, photo: crate::PhotoId, matches: impl FnOnce() -> bool) -> bool {
+pub(crate) fn smart_album_holds(
+    id: crate::AlbumId,
+    photo: crate::PhotoId,
+    matches: impl FnOnce() -> bool,
+) -> bool {
     if let Some(known) = ANSWERS.with_borrow(|a| a.get(&(id, photo)).copied()) {
         return known;
     }
@@ -522,7 +705,9 @@ pub fn bool_label(b: bool) -> &'static str {
 /// The display label of choice `id` of `field` ("Public Domain" for `publicDomain`); `None` when
 /// `field` isn't a choice field or has no such choice.
 pub fn choice_label(field: &str, id: &str) -> Option<&'static str> {
-    let Some(Kind::Choice(choices)) = field_kind(field) else { return None };
+    let Some(Kind::Choice(choices)) = field_kind(field) else {
+        return None;
+    };
     choices.iter().find(|c| c.0 == id).map(|c| c.1)
 }
 
@@ -552,9 +737,15 @@ pub fn ops_for(kind: Kind) -> &'static [(&'static str, &'static str)] {
             ("isEmpty", "are empty"),
             ("isNotEmpty", "aren't empty"),
         ],
-        Kind::Number => {
-            &[("is", "is"), ("isNot", "isn't"), ("gte", "is ≥"), ("lte", "is ≤"), ("gt", "is >"), ("lt", "is <"), ("between", "is between")]
-        }
+        Kind::Number => &[
+            ("is", "is"),
+            ("isNot", "isn't"),
+            ("gte", "is ≥"),
+            ("lte", "is ≤"),
+            ("gt", "is >"),
+            ("lt", "is <"),
+            ("between", "is between"),
+        ],
         Kind::Date => &[
             ("is", "is"),
             ("after", "is after"),
@@ -589,7 +780,10 @@ pub fn now() -> String {
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0);
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
         crate::dates::civil(secs)
     }
     #[cfg(target_arch = "wasm32")]
@@ -629,14 +823,23 @@ fn names_op<S: AsRef<str>>(op: &str, names: &[S], want: &str) -> bool {
         "isEmpty" => names.clone().all(|n| n.trim().is_empty()),
         "isNotEmpty" => names.clone().any(|n| !n.trim().is_empty()),
         "notContains" => !names.clone().any(|n| text_op("contains", n, want)),
-        _ => names.clone().any(|n| text_op(op, n, want) || (op == "is" && n.to_lowercase().split('|').any(|part| part.trim() == want))),
+        _ => names.clone().any(|n| {
+            text_op(op, n, want)
+                || (op == "is" && n.to_lowercase().split('|').any(|part| part.trim() == want))
+        }),
     }
 }
 
 fn number(v: &Value) -> Option<f64> {
     match v {
         Value::Number(n) => n.as_f64(),
-        Value::String(s) => s.trim().trim_start_matches("f/").trim_end_matches("mm").trim().parse().ok(),
+        Value::String(s) => s
+            .trim()
+            .trim_start_matches("f/")
+            .trim_end_matches("mm")
+            .trim()
+            .parse()
+            .ok(),
         _ => None,
     }
 }
@@ -649,7 +852,9 @@ fn num_op(op: &str, have: Option<f64>, value: &Value) -> bool {
         };
         return matches!((have, a, b), (Some(h), Some(a), Some(b)) if h >= a.min(b) && h <= a.max(b));
     }
-    let (Some(h), Some(w)) = (have, number(value)) else { return op == "isNot" && have.is_none() };
+    let (Some(h), Some(w)) = (have, number(value)) else {
+        return op == "isNot" && have.is_none();
+    };
     match op {
         "is" => (h - w).abs() < 1e-6,
         "isNot" => (h - w).abs() >= 1e-6,
@@ -680,7 +885,9 @@ fn aspect((w, h): (f64, f64)) -> Option<&'static str> {
 fn shutter_value(value: &Value) -> Value {
     let secs = |v: &Value| match v {
         Value::String(s) => crate::parse_shutter_seconds(s).map_or(Value::Null, Value::from),
-        other => number(other).filter(|n| n.is_finite() && *n > 0.0).map_or(Value::Null, Value::from),
+        other => number(other)
+            .filter(|n| n.is_finite() && *n > 0.0)
+            .map_or(Value::Null, Value::from),
     };
     match value {
         Value::Array(a) => Value::Array(a.iter().map(secs).collect()),
@@ -716,7 +923,10 @@ const MAX_LAST_SECS: f64 = 10_000.0 * 365.25 * 86_400.0;
 /// is that (so the arithmetic on it can't overflow).
 fn last_secs(value: &Value) -> Option<i64> {
     let (n, unit) = match value {
-        Value::Object(o) => (o.get("n").and_then(number)?, o.get("unit").unwrap_or(&Value::Null)),
+        Value::Object(o) => (
+            o.get("n").and_then(number)?,
+            o.get("unit").unwrap_or(&Value::Null),
+        ),
         v => (number(v)?, &Value::Null),
     };
     let per = unit_secs(unit)?;
@@ -731,9 +941,15 @@ fn date_op(op: &str, have: Option<&str>, value: &Value) -> bool {
     if op == "isEmpty" {
         return have.is_none_or(str::is_empty);
     }
-    let Some(h) = have.filter(|h| !h.is_empty()) else { return op == "notInLast" };
+    let Some(h) = have.filter(|h| !h.is_empty()) else {
+        return op == "notInLast";
+    };
     // the rule's date as the check reads it (a space as the "T"); one it can't read as written
-    let s = |v: &Value| v.as_str().map(|d| rule_date(d).unwrap_or_else(|_| d.trim().to_string())).unwrap_or_default();
+    let s = |v: &Value| {
+        v.as_str()
+            .map(|d| rule_date(d).unwrap_or_else(|_| d.trim().to_string()))
+            .unwrap_or_default()
+    };
     match op {
         // a prefix: 2026, 2026-04, 2026-04-12
         "is" => {
@@ -756,9 +972,13 @@ fn date_op(op: &str, have: Option<&str>, value: &Value) -> bool {
             _ => false,
         },
         "inLast" | "notInLast" => {
-            let Some(secs) = last_secs(value) else { return false };
+            let Some(secs) = last_secs(value) else {
+                return false;
+            };
             // a span reaching before year 0 is "ever": every dated photo is in it
-            let Some(from) = crate::dates::shift_iso(&now(), -secs) else { return op == "inLast" };
+            let Some(from) = crate::dates::shift_iso(&now(), -secs) else {
+                return op == "inLast";
+            };
             (h >= from.as_str()) == (op == "inLast")
         }
         _ => false,
@@ -779,12 +999,20 @@ impl Rule {
             "rating" => num_op(op, Some(p.rating as f64), value),
             "flag" => {
                 let f = format!("{:?}", p.flag).to_lowercase();
-                (f == want || (want == "picked" && f == "pick") || (want == "rejected" && f == "reject")) == (op == "is")
+                (f == want
+                    || (want == "picked" && f == "pick")
+                    || (want == "rejected" && f == "reject"))
+                    == (op == "is")
             }
             "label" => {
-                let l = p.label.map(|l| format!("{l:?}").to_lowercase()).unwrap_or_else(|| "none".into());
+                let l = p
+                    .label
+                    .map(|l| format!("{l:?}").to_lowercase())
+                    .unwrap_or_else(|| "none".into());
                 // custom label names count too
-                let named = p.label.is_some_and(|l| cat.label_name(l).to_lowercase() == want);
+                let named = p
+                    .label
+                    .is_some_and(|l| cat.label_name(l).to_lowercase() == want);
                 (l == want || named) == (op == "is")
             }
             "kind" => (format!("{:?}", p.kind).to_lowercase() == want) == (op == "is"),
@@ -795,7 +1023,11 @@ impl Rule {
             "stacked" => yes(cat.stack_of(p.id).is_some()),
             "cropped" => yes(p.is_cropped()),
             "treatment" => {
-                let t = if p.develop.treatment == lightcraft_develop::Treatment::Bw { "monochrome" } else { "color" };
+                let t = if p.develop.treatment == lightcraft_develop::Treatment::Bw {
+                    "monochrome"
+                } else {
+                    "color"
+                };
                 (t == want) == (op == "is")
             }
             "keywords" => names_op(op, &m.keywords, &want),
@@ -834,8 +1066,12 @@ impl Rule {
                 let want = want.replace('\\', "/");
                 match op {
                     // the whole string, spaces included (not word by word like the other text fields)
-                    "contains" => !want.trim().is_empty() && path.to_lowercase().contains(want.trim()),
-                    "notContains" => want.trim().is_empty() || !path.to_lowercase().contains(want.trim()),
+                    "contains" => {
+                        !want.trim().is_empty() && path.to_lowercase().contains(want.trim())
+                    }
+                    "notContains" => {
+                        want.trim().is_empty() || !path.to_lowercase().contains(want.trim())
+                    }
                     _ => text_op(op, &path, &want),
                 }
             }
@@ -858,13 +1094,28 @@ impl Rule {
             "captureDate" => date_op(op, p.captured.as_deref(), value),
             "importDate" => date_op(op, Some(&p.imported), value),
             "editDate" => date_op(op, p.edited.as_deref(), value),
-            "shutterSpeed" => num_op(op, crate::parse_shutter_seconds(&m.shutter), &shutter_value(value)),
+            "shutterSpeed" => num_op(
+                op,
+                crate::parse_shutter_seconds(&m.shutter),
+                &shutter_value(value),
+            ),
             "iso" => num_op(op, m.iso.map(|v| v as f64), value),
             "aperture" => num_op(op, m.aperture.map(|v| v as f64), value),
             "focalLength" => num_op(op, m.focal_mm.map(|v| v as f64), value),
             "longEdge" | "shortEdge" => {
                 let (w, h) = p.shown_size();
-                num_op(op, Some(if field == "longEdge" { w.max(h) } else { w.min(h) }.round()), value)
+                num_op(
+                    op,
+                    Some(
+                        if field == "longEdge" {
+                            w.max(h)
+                        } else {
+                            w.min(h)
+                        }
+                        .round(),
+                    ),
+                    value,
+                )
             }
             "aspect" => (aspect(p.shown_size()) == Some(want.as_str())) == (op == "is"),
             "megapixels" => {
@@ -911,7 +1162,11 @@ impl RuleSet {
         for rule in &mut self.rules {
             match rule {
                 Rule::Group { group } => group.upgrade(),
-                Rule::Field { field, op, .. } if field == "album" && op != "is" && op != "isNot" => *op = "isNot".into(),
+                Rule::Field { field, op, .. }
+                    if field == "album" && op != "is" && op != "isNot" =>
+                {
+                    *op = "isNot".into()
+                }
                 Rule::Field { .. } => {}
             }
         }
@@ -939,24 +1194,40 @@ impl RuleSet {
         for rule in &self.rules {
             match rule {
                 Rule::Group { group } => out.extend(group.albums_tested()),
-                Rule::Field { field, value, .. } if field == "album" => out.extend(album_rule_id(value)),
+                Rule::Field { field, value, .. } if field == "album" => {
+                    out.extend(album_rule_id(value))
+                }
                 Rule::Field { .. } => {}
             }
         }
         out
     }
 
-    fn check_into(&self, cat: &Catalog, owner: Option<crate::AlbumId>, path: &mut Vec<usize>, out: &mut Vec<Problem>) {
+    fn check_into(
+        &self,
+        cat: &Catalog,
+        owner: Option<crate::AlbumId>,
+        path: &mut Vec<usize>,
+        out: &mut Vec<Problem>,
+    ) {
         for (i, rule) in self.rules.iter().enumerate() {
             path.push(i);
             match rule {
-                Rule::Group { group } if group.rules.is_empty() => {
-                    out.push(Problem { path: path.clone(), field: None, issue: Issue::EmptyGroup, message: "an empty group".into() })
-                }
+                Rule::Group { group } if group.rules.is_empty() => out.push(Problem {
+                    path: path.clone(),
+                    field: None,
+                    issue: Issue::EmptyGroup,
+                    message: "an empty group".into(),
+                }),
                 Rule::Group { group } => group.check_into(cat, owner, path, out),
                 Rule::Field { field, op, value } => {
                     if let Some((issue, message)) = field_problem(field, op, value, cat, owner) {
-                        out.push(Problem { path: path.clone(), field: Some(field.clone()), issue, message });
+                        out.push(Problem {
+                            path: path.clone(),
+                            field: Some(field.clone()),
+                            issue,
+                            message,
+                        });
                     }
                 }
             }
@@ -988,20 +1259,27 @@ impl RuleSet {
                 Rule::Group { group } => format!("({})", group.describe_in(cat)),
                 Rule::Field { field, op, value } => {
                     let label = field_label(field).unwrap_or(field).to_lowercase();
-                    let op = field_kind(field).and_then(|k| ops_for(k).iter().find(|o| o.0 == op)).map_or(op.as_str(), |o| o.1);
+                    let op = field_kind(field)
+                        .and_then(|k| ops_for(k).iter().find(|o| o.0 == op))
+                        .map_or(op.as_str(), |o| o.1);
                     let v = match value {
                         _ if field == "album" && cat.is_some() => album_name(value, cat),
-                        _ if field_kind(field) == Some(Kind::Bool) => {
-                            bool_value(value).map_or_else(|| value.to_string(), |b| bool_label(b).to_lowercase())
+                        _ if field_kind(field) == Some(Kind::Bool) => bool_value(value)
+                            .map_or_else(|| value.to_string(), |b| bool_label(b).to_lowercase()),
+                        Value::String(s) => {
+                            choice_label(field, s).map_or_else(|| s.clone(), str::to_lowercase)
                         }
-                        Value::String(s) => choice_label(field, s).map_or_else(|| s.clone(), str::to_lowercase),
                         Value::Null => String::new(),
                         Value::Object(o) => format!(
                             "{} {}",
                             o.get("n").map(|n| n.to_string()).unwrap_or_default(),
                             o.get("unit").and_then(Value::as_str).unwrap_or("days")
                         ),
-                        Value::Array(a) => a.iter().map(|x| x.as_str().map_or_else(|| x.to_string(), str::to_string)).collect::<Vec<_>>().join(" – "),
+                        Value::Array(a) => a
+                            .iter()
+                            .map(|x| x.as_str().map_or_else(|| x.to_string(), str::to_string))
+                            .collect::<Vec<_>>()
+                            .join(" – "),
                         other => other.to_string(),
                     };
                     format!("{label} {op} {v}").trim().to_string()
@@ -1009,7 +1287,11 @@ impl RuleSet {
             })
             .collect();
         let s = parts.join(join);
-        if self.mode == Match::None { format!("none of: {s}") } else { s }
+        if self.mode == Match::None {
+            format!("none of: {s}")
+        } else {
+            s
+        }
     }
 }
 
@@ -1020,7 +1302,15 @@ mod tests {
     use serde_json::json;
 
     fn photo(id: u64) -> Photo {
-        let mut p = Photo::new(PhotoId(id), Source::Demo { scene: 0 }, "IMG_0042.CR2", "CR2", 6000, 4000, "2026-09-20T10:00:00");
+        let mut p = Photo::new(
+            PhotoId(id),
+            Source::Demo { scene: 0 },
+            "IMG_0042.CR2",
+            "CR2",
+            6000,
+            4000,
+            "2026-09-20T10:00:00",
+        );
         p.rating = 4;
         p.flag = Flag::Pick;
         p.label = Some(ColorLabel::Red);
@@ -1042,36 +1332,62 @@ mod tests {
         let p = photo(1);
         let yes = |v: serde_json::Value| assert!(rs(v.clone()).matches(&p, &cat), "{v}");
         let no = |v: serde_json::Value| assert!(!rs(v.clone()).matches(&p, &cat), "{v}");
-        yes(json!({"rules": [{"field": "rating", "op": "gte", "value": 3}, {"field": "flag", "op": "is", "value": "pick"}]}));
+        yes(
+            json!({"rules": [{"field": "rating", "op": "gte", "value": 3}, {"field": "flag", "op": "is", "value": "pick"}]}),
+        );
         no(json!({"rules": [{"field": "rating", "op": "gt", "value": 4}]}));
-        yes(json!({"match": "any", "rules": [{"field": "rating", "op": "is", "value": 1}, {"field": "label", "op": "is", "value": "red"}]}));
+        yes(
+            json!({"match": "any", "rules": [{"field": "rating", "op": "is", "value": 1}, {"field": "label", "op": "is", "value": "red"}]}),
+        );
         no(json!({"match": "none", "rules": [{"field": "label", "op": "is", "value": "red"}]}));
         yes(json!({"rules": [{"field": "keywords", "op": "is", "value": "italy"}]}));
         yes(
             json!({"rules": [{"field": "keywords", "op": "contains", "value": "ROME"}, {"field": "keywords", "op": "notContains", "value": "beach"}]}),
         );
         no(json!({"rules": [{"field": "keywords", "op": "isEmpty"}]}));
-        yes(json!({"rules": [{"field": "fileName", "op": "startsWith", "value": "img_"}, {"field": "fileName", "op": "endsWith", "value": ".cr2"}]}));
+        yes(
+            json!({"rules": [{"field": "fileName", "op": "startsWith", "value": "img_"}, {"field": "fileName", "op": "endsWith", "value": ".cr2"}]}),
+        );
         // file path: the whole string (spaces included), either separator, case-insensitive
         let mut fp = photo(3);
-        fp.source = Source::File { path: "D:\\Photos\\Lake Como Wedding-Day\\2026\\IMG_0042.CR2".into() };
+        fp.source = Source::File {
+            path: "D:\\Photos\\Lake Como Wedding-Day\\2026\\IMG_0042.CR2".into(),
+        };
         let fpm = |v: serde_json::Value| rs(v).matches(&fp, &cat);
-        assert!(fpm(json!({"rules": [{"field": "filePath", "op": "contains", "value": "/Lake Como Wedding-Day/"}]})));
-        assert!(!fpm(json!({"rules": [{"field": "filePath", "op": "contains", "value": "/Como Lake/"}]})));
-        assert!(!fpm(json!({"rules": [{"field": "filePath", "op": "contains", "value": "Wedding Day"}]})));
-        assert!(fpm(json!({"rules": [{"field": "filePath", "op": "notContains", "value": "/Other/"}]})));
-        assert!(fpm(json!({"rules": [{"field": "filePath", "op": "startsWith", "value": "d:/photos/"}]})));
+        assert!(fpm(
+            json!({"rules": [{"field": "filePath", "op": "contains", "value": "/Lake Como Wedding-Day/"}]})
+        ));
+        assert!(!fpm(
+            json!({"rules": [{"field": "filePath", "op": "contains", "value": "/Como Lake/"}]})
+        ));
+        assert!(!fpm(
+            json!({"rules": [{"field": "filePath", "op": "contains", "value": "Wedding Day"}]})
+        ));
+        assert!(fpm(
+            json!({"rules": [{"field": "filePath", "op": "notContains", "value": "/Other/"}]})
+        ));
+        assert!(fpm(
+            json!({"rules": [{"field": "filePath", "op": "startsWith", "value": "d:/photos/"}]})
+        ));
         no(json!({"rules": [{"field": "filePath", "op": "contains", "value": "/Lake/"}]})); // demo photo has no path
         yes(json!({"rules": [{"field": "filePath", "op": "isEmpty"}]}));
-        yes(json!({"rules": [{"field": "camera", "op": "contains", "value": "x2"}, {"field": "title", "op": "isEmpty"}]}));
-        yes(json!({"rules": [{"field": "iso", "op": "between", "value": [800, 3200]}, {"field": "aperture", "op": "lte", "value": "f/4"}]}));
+        yes(
+            json!({"rules": [{"field": "camera", "op": "contains", "value": "x2"}, {"field": "title", "op": "isEmpty"}]}),
+        );
+        yes(
+            json!({"rules": [{"field": "iso", "op": "between", "value": [800, 3200]}, {"field": "aperture", "op": "lte", "value": "f/4"}]}),
+        );
         yes(json!({"rules": [{"field": "megapixels", "op": "gte", "value": 24}]}));
         yes(
             json!({"rules": [{"field": "captureDate", "op": "is", "value": "2026-08"}, {"field": "captureDate", "op": "before", "value": "2026-09-01"}]}),
         );
-        yes(json!({"rules": [{"field": "captureDate", "op": "between", "value": ["2026-08-01", "2026-08"]}]}));
+        yes(
+            json!({"rules": [{"field": "captureDate", "op": "between", "value": ["2026-08-01", "2026-08"]}]}),
+        );
         no(json!({"rules": [{"field": "captureDate", "op": "after", "value": "2026-08"}]}));
-        yes(json!({"rules": [{"field": "kind", "op": "isNot", "value": "video"}, {"field": "edited", "op": "is", "value": false}]}));
+        yes(
+            json!({"rules": [{"field": "kind", "op": "isNot", "value": "video"}, {"field": "edited", "op": "is", "value": false}]}),
+        );
         // copyright status (unknown until set)
         yes(json!({"rules": [{"field": "copyrightStatus", "op": "is", "value": "unknown"}]}));
         no(json!({"rules": [{"field": "copyrightStatus", "op": "is", "value": "copyrighted"}]}));
@@ -1080,12 +1396,18 @@ mod tests {
         assert!(rs(json!({"rules": [{"field": "copyrightStatus", "op": "is", "value": "publicDomain"}]})).matches(&pd, &cat));
         assert!(rs(json!({"rules": [{"field": "copyrightStatus", "op": "isNot", "value": "copyrighted"}]})).matches(&pd, &cat));
         // nested: rating ≥ 4 and (label is blue or keywords contain food)
-        yes(json!({"rules": [{"field": "rating", "op": "gte", "value": 4}, {"group": {"match": "any", "rules": [
-            {"field": "label", "op": "is", "value": "blue"}, {"field": "keywords", "op": "contains", "value": "food"}]}}]}));
+        yes(
+            json!({"rules": [{"field": "rating", "op": "gte", "value": 4}, {"group": {"match": "any", "rules": [
+            {"field": "label", "op": "is", "value": "blue"}, {"field": "keywords", "op": "contains", "value": "food"}]}}]}),
+        );
         // in the last N days, relative to now
         set_now(Some("2026-09-01T00:00:00".into()));
-        yes(json!({"rules": [{"field": "captureDate", "op": "inLast", "value": {"n": 30, "unit": "days"}}]}));
-        no(json!({"rules": [{"field": "captureDate", "op": "inLast", "value": {"n": 1, "unit": "weeks"}}]}));
+        yes(
+            json!({"rules": [{"field": "captureDate", "op": "inLast", "value": {"n": 30, "unit": "days"}}]}),
+        );
+        no(
+            json!({"rules": [{"field": "captureDate", "op": "inLast", "value": {"n": 1, "unit": "weeks"}}]}),
+        );
         yes(json!({"rules": [{"field": "captureDate", "op": "notInLast", "value": 7}]}));
         set_now(None);
         // an empty rule list: all → everything, any → nothing
@@ -1095,13 +1417,28 @@ mod tests {
 
     #[test]
     fn problems_and_description() {
-        let r = rs(json!({"rules": [{"field": "rating", "op": "contains", "value": 1}, {"group": {"rules": [{"field": "nope", "op": "is"}]}}]}));
-        let messages: Vec<String> = r.check(&Catalog::new()).into_iter().map(|p| p.message).collect();
-        assert_eq!(messages, vec!["`rating` has no operator `contains`".to_string(), "unknown field `nope`".to_string()]);
+        let r = rs(
+            json!({"rules": [{"field": "rating", "op": "contains", "value": 1}, {"group": {"rules": [{"field": "nope", "op": "is"}]}}]}),
+        );
+        let messages: Vec<String> = r
+            .check(&Catalog::new())
+            .into_iter()
+            .map(|p| p.message)
+            .collect();
+        assert_eq!(
+            messages,
+            vec![
+                "`rating` has no operator `contains`".to_string(),
+                "unknown field `nope`".to_string()
+            ]
+        );
         let r = rs(
             json!({"match": "any", "rules": [{"field": "rating", "op": "gte", "value": 3}, {"field": "captureDate", "op": "inLast", "value": {"n": 2, "unit": "weeks"}}]}),
         );
-        assert_eq!(r.describe(), "rating is ≥ 3 or capture date is in the last 2 weeks");
+        assert_eq!(
+            r.describe(),
+            "rating is ≥ 3 or capture date is in the last 2 weeks"
+        );
         // every field has a kind with operators
         for (f, _, k) in FIELDS {
             assert!(!ops_for(*k).is_empty(), "{f}");
@@ -1115,10 +1452,13 @@ mod tests {
         let cat = Catalog::new();
         let mut p = photo(1); // travel|italy|rome, food
         let m = |p: &Photo, op: &str, value: serde_json::Value| {
-            rs(json!({"rules": [{"field": "keywordCount", "op": op, "value": value}]})).matches(p, &cat)
+            rs(json!({"rules": [{"field": "keywordCount", "op": op, "value": value}]}))
+                .matches(p, &cat)
         };
         assert!(m(&p, "gte", json!(2)) && m(&p, "lte", json!(2)) && m(&p, "is", json!(2)));
-        assert!(!m(&p, "gte", json!(3)) && !m(&p, "lt", json!(2)) && m(&p, "between", json!([1, 2])));
+        assert!(
+            !m(&p, "gte", json!(3)) && !m(&p, "lt", json!(2)) && m(&p, "between", json!([1, 2]))
+        );
         p.meta.keywords.push("Food".into());
         assert!(m(&p, "is", json!(2)), "Food and food are one keyword");
         p.meta.keywords.clear();
@@ -1133,7 +1473,12 @@ mod tests {
         use lightcraft_meta::{Rect, Region, RegionKind};
         let cat = Catalog::new();
         let region = |name: Option<&str>, kind: RegionKind| Region {
-            rect: Rect { x0: 0.4, y0: 0.4, x1: 0.6, y1: 0.6 },
+            rect: Rect {
+                x0: 0.4,
+                y0: 0.4,
+                x1: 0.6,
+                y1: 0.6,
+            },
             kind,
             name: name.map(str::to_string),
             description: None,
@@ -1155,7 +1500,10 @@ mod tests {
         assert!(!m(&p, "person", "is", json!("rex")), "a pet isn't a person");
         assert!(m(&p, "person", "notContains", json!("rex")));
         assert!(m(&p, "person", "isNotEmpty", json!(null)));
-        assert!(m(&p, "personCount", "is", json!(2)), "Ana Lima once, Bo; not the pet or the unnamed face");
+        assert!(
+            m(&p, "personCount", "is", json!(2)),
+            "Ana Lima once, Bo; not the pet or the unnamed face"
+        );
         assert_eq!(field_group("person"), Some("Keywords & People"));
     }
 
@@ -1166,13 +1514,21 @@ mod tests {
         let cat = Catalog::new();
         let mut p = photo(1);
         let m = |p: &Photo, op: &str, value: serde_json::Value| {
-            rs(json!({"rules": [{"field": "shutterSpeed", "op": op, "value": value}]})).matches(p, &cat)
+            rs(json!({"rules": [{"field": "shutterSpeed", "op": op, "value": value}]}))
+                .matches(p, &cat)
         };
         assert!(!m(&p, "gte", json!(0)), "no shutter speed recorded");
         p.meta.shutter = "1/250".into();
-        assert!(m(&p, "is", json!("1/250")) && m(&p, "lte", json!("1/60")) && !m(&p, "gte", json!("1/60")));
+        assert!(
+            m(&p, "is", json!("1/250"))
+                && m(&p, "lte", json!("1/60"))
+                && !m(&p, "gte", json!("1/60"))
+        );
         assert!(m(&p, "between", json!(["1/1000", "1/125"])) && m(&p, "lt", json!(0.01)));
-        assert!(!m(&p, "is", json!("1/0")) && !m(&p, "is", json!("fast")), "a value that isn't a time matches nothing");
+        assert!(
+            !m(&p, "is", json!("1/0")) && !m(&p, "is", json!("fast")),
+            "a value that isn't a time matches nothing"
+        );
         p.meta.shutter = "2\"".into();
         assert!(m(&p, "gte", json!("1")) && m(&p, "is", json!(2)));
         assert_eq!(field_group("shutterSpeed"), Some("Camera Info"));
@@ -1180,7 +1536,13 @@ mod tests {
 
     #[test]
     fn shutter_seconds_parses_camera_notation() {
-        for (s, want) in [("1/250", Some(0.004)), (" 1/250 s", Some(0.004)), ("0.5", Some(0.5)), ("2\"", Some(2.0)), ("30s", Some(30.0))] {
+        for (s, want) in [
+            ("1/250", Some(0.004)),
+            (" 1/250 s", Some(0.004)),
+            ("0.5", Some(0.5)),
+            ("2\"", Some(2.0)),
+            ("30s", Some(30.0)),
+        ] {
             assert_eq!(crate::parse_shutter_seconds(s), want, "{s}");
         }
         for s in ["", "1/0", "0", "-1/250", "fast", "inf", "NaN", "1/x"] {
@@ -1200,11 +1562,17 @@ mod tests {
         assert!(m(&p, "extension", "is", json!("cr2")) && m(&p, "extension", "is", json!(".CR2")));
         assert!(!m(&p, "extension", "is", json!("jpg")));
         p.file_name = "README".into();
-        assert!(m(&p, "extension", "isEmpty", json!(null)), "no dot, no extension");
+        assert!(
+            m(&p, "extension", "isEmpty", json!(null)),
+            "no dot, no extension"
+        );
         p.file_name = "archive.tar.gz".into();
         assert!(m(&p, "extension", "is", json!("gz")));
         p.file_name = ".hidden".into();
-        assert!(m(&p, "extension", "isEmpty", json!(null)), "a dot file has no extension");
+        assert!(
+            m(&p, "extension", "isEmpty", json!(null)),
+            "a dot file has no extension"
+        );
         assert!(m(&p, "copyName", "isEmpty", json!(null)));
         p.copy_name = Some("Black and white".into());
         assert!(m(&p, "copyName", "contains", json!("black")));
@@ -1213,9 +1581,19 @@ mod tests {
         p.meta.city = "Porto".into();
         p.meta.state = "Porto District".into();
         p.meta.country = "Portugal".into();
-        assert!(m(&p, "city", "is", json!("porto")) && m(&p, "state", "startsWith", json!("porto")) && m(&p, "country", "is", json!("portugal")));
-        assert!(!m(&p, "city", "is", json!("portugal")), "City tests only the city");
-        assert!(m(&p, "location", "contains", json!("portugal")), "Location still covers the country");
+        assert!(
+            m(&p, "city", "is", json!("porto"))
+                && m(&p, "state", "startsWith", json!("porto"))
+                && m(&p, "country", "is", json!("portugal"))
+        );
+        assert!(
+            !m(&p, "city", "is", json!("portugal")),
+            "City tests only the city"
+        );
+        assert!(
+            m(&p, "location", "contains", json!("portugal")),
+            "Location still covers the country"
+        );
     }
 
     /// In a Stack, Video Duration (seconds; photos have none), Cropped and Treatment.
@@ -1227,31 +1605,51 @@ mod tests {
         let b = photo(2);
         let c = photo(3);
         for p in [&a, &b, &c] {
-            cat.apply(Op::AddPhoto { photo: Box::new(p.clone()) }).unwrap();
+            cat.apply(Op::AddPhoto {
+                photo: Box::new(p.clone()),
+            })
+            .unwrap();
         }
-        cat.apply(Op::AddStack { stack: Stack { id: StackId(1), photos: vec![a.id, b.id], collapsed: false } }).unwrap();
+        cat.apply(Op::AddStack {
+            stack: Stack {
+                id: StackId(1),
+                photos: vec![a.id, b.id],
+                collapsed: false,
+            },
+        })
+        .unwrap();
         let m = |p: &Photo, field: &str, op: &str, value: serde_json::Value| {
             rs(json!({"rules": [{"field": field, "op": op, "value": value}]})).matches(p, &cat)
         };
         assert!(m(&a, "stacked", "is", json!(true)) && m(&b, "stacked", "is", json!(true)));
         assert!(m(&c, "stacked", "is", json!(false)));
         let mut v = photo(4);
-        assert!(!m(&v, "duration", "gte", json!(0)), "a photo has no duration");
+        assert!(
+            !m(&v, "duration", "gte", json!(0)),
+            "a photo has no duration"
+        );
         v.duration = Some(95.0);
-        assert!(m(&v, "duration", "gt", json!(60)) && m(&v, "duration", "between", json!([90, 120])));
+        assert!(
+            m(&v, "duration", "gt", json!(60)) && m(&v, "duration", "between", json!([90, 120]))
+        );
         let mut d = photo(5);
         assert!(m(&d, "cropped", "is", json!(false)) && m(&d, "treatment", "is", json!("color")));
         let mut s = (*d.develop).clone();
         s.crop.geometry.rect = lightcraft_geom::Rect::new(0.1, 0.0, 0.9, 1.0);
         s.treatment = lightcraft_develop::Treatment::Bw;
         d.develop = std::sync::Arc::new(s);
-        assert!(m(&d, "cropped", "is", json!(true)) && m(&d, "treatment", "is", json!("monochrome")));
+        assert!(
+            m(&d, "cropped", "is", json!(true)) && m(&d, "treatment", "is", json!("monochrome"))
+        );
         assert!(m(&d, "treatment", "isNot", json!("color")));
         let mut s = (*d.develop).clone();
         s.crop = Default::default();
         s.crop.geometry.angle = 2.0;
         d.develop = std::sync::Arc::new(s);
-        assert!(m(&d, "cropped", "is", json!(true)), "straightening counts as a crop");
+        assert!(
+            m(&d, "cropped", "is", json!(true)),
+            "straightening counts as a crop"
+        );
     }
 
     /// Size follows the photo as shown: rotated a quarter turn a landscape frame is a portrait, and
@@ -1263,7 +1661,11 @@ mod tests {
         let m = |p: &Photo, field: &str, op: &str, value: serde_json::Value| {
             rs(json!({"rules": [{"field": field, "op": op, "value": value}]})).matches(p, &cat)
         };
-        assert!(m(&p, "aspect", "is", json!("landscape")) && m(&p, "longEdge", "is", json!(6000)) && m(&p, "shortEdge", "is", json!(4000)));
+        assert!(
+            m(&p, "aspect", "is", json!("landscape"))
+                && m(&p, "longEdge", "is", json!(6000))
+                && m(&p, "shortEdge", "is", json!(4000))
+        );
         assert!(m(&p, "megapixels", "is", json!(24)));
         let mut s = (*p.develop).clone();
         s.orientation = lightcraft_geom::Orientation::Rotate90;
@@ -1273,12 +1675,25 @@ mod tests {
         s.crop.geometry.rect = lightcraft_geom::Rect::new(0.0, 1.0 / 6.0, 1.0, 5.0 / 6.0);
         p.develop = std::sync::Arc::new(s);
         assert!(m(&p, "aspect", "is", json!("square")) && m(&p, "longEdge", "is", json!(4000)));
-        assert!(m(&p, "megapixels", "is", json!(16)), "a 4000 × 4000 crop is 16 MP, not the sensor's 24");
+        assert!(
+            m(&p, "megapixels", "is", json!(16)),
+            "a 4000 × 4000 crop is 16 MP, not the sensor's 24"
+        );
         assert!(m(&p, "megapixels", "lt", json!(20)) && !m(&p, "megapixels", "gte", json!(24)));
         assert!(m(&p, "aspect", "isNot", json!("portrait")));
-        let empty = Photo::new(PhotoId(9), Source::Demo { scene: 0 }, "x.jpg", "JPEG", 0, 0, "2026-09-20T10:00:00");
+        let empty = Photo::new(
+            PhotoId(9),
+            Source::Demo { scene: 0 },
+            "x.jpg",
+            "JPEG",
+            0,
+            0,
+            "2026-09-20T10:00:00",
+        );
         assert!(
-            !m(&empty, "aspect", "is", json!("landscape")) && !m(&empty, "aspect", "is", json!("square")) && m(&empty, "longEdge", "is", json!(0))
+            !m(&empty, "aspect", "is", json!("landscape"))
+                && !m(&empty, "aspect", "is", json!("square"))
+                && m(&empty, "longEdge", "is", json!(0))
         );
         assert!(m(&empty, "megapixels", "is", json!(0)));
     }
@@ -1289,14 +1704,22 @@ mod tests {
     fn any_searchable_text_covers_new_fields() {
         let cat = Catalog::new();
         let mut p = photo(1);
-        let m = |p: &Photo, value: &str| rs(json!({"rules": [{"field": "text", "op": "contains", "value": value}]})).matches(p, &cat);
+        let m = |p: &Photo, value: &str| {
+            rs(json!({"rules": [{"field": "text", "op": "contains", "value": value}]}))
+                .matches(p, &cat)
+        };
         for word in ["oregon", "kite", "ana", "bluish"] {
             assert!(!m(&p, word), "{word}");
         }
         p.meta.state = "Oregon".into();
         p.meta.alt_text = "A kite".into();
         p.meta.regions = vec![lightcraft_meta::Region {
-            rect: lightcraft_meta::Rect { x0: 0.4, y0: 0.4, x1: 0.6, y1: 0.6 },
+            rect: lightcraft_meta::Rect {
+                x0: 0.4,
+                y0: 0.4,
+                x1: 0.6,
+                y1: 0.6,
+            },
             kind: lightcraft_meta::RegionKind::Face,
             name: Some("Ana".into()),
             description: None,
@@ -1311,27 +1734,47 @@ mod tests {
     /// "Black & White", never ids like `publicDomain`; rules still store and accept the ids.
     #[test]
     fn choices_have_readable_labels() {
-        assert_eq!(choice_label("copyrightStatus", "publicDomain"), Some("Public Domain"));
-        assert_eq!(choice_label("treatment", "monochrome"), Some("Black & White"));
+        assert_eq!(
+            choice_label("copyrightStatus", "publicDomain"),
+            Some("Public Domain")
+        );
+        assert_eq!(
+            choice_label("treatment", "monochrome"),
+            Some("Black & White")
+        );
         // own labels where a shared word would translate wrongly: "Color" is the colour noun (the
         // Color panel) and "None" agrees with other nouns in gendered languages
         assert_eq!(choice_label("treatment", "color"), Some("In Color"));
         assert_eq!(choice_label("label", "none"), Some("No Label"));
         assert_eq!(choice_label("flag", "pick"), Some("Picked"));
-        assert_eq!(choice_label("aspect", "landscape"), Some("Landscape (wide)"));
+        assert_eq!(
+            choice_label("aspect", "landscape"),
+            Some("Landscape (wide)")
+        );
         assert_eq!(choice_label("flag", "nope"), None);
         assert_eq!(choice_label("rating", "pick"), None, "not a choice field");
         for (field, _, kind) in FIELDS {
-            let Kind::Choice(choices) = kind else { continue };
+            let Kind::Choice(choices) = kind else {
+                continue;
+            };
             for (id, label) in *choices {
-                assert!(!label.is_empty() && label != id, "{field}: {id} has no label of its own");
-                assert!(label.starts_with(|c: char| c.is_uppercase()), "{field}: {label}");
+                assert!(
+                    !label.is_empty() && label != id,
+                    "{field}: {id} has no label of its own"
+                );
+                assert!(
+                    label.starts_with(|c: char| c.is_uppercase()),
+                    "{field}: {label}"
+                );
             }
         }
         let r = rs(
             json!({"rules": [{"field": "copyrightStatus", "op": "is", "value": "publicDomain"}, {"field": "flag", "op": "isNot", "value": "reject"}]}),
         );
-        assert_eq!(r.describe(), "copyright status is public domain and pick flag isn't rejected");
+        assert_eq!(
+            r.describe(),
+            "copyright status is public domain and pick flag isn't rejected"
+        );
         let mut p = photo(1);
         p.meta.copyright_status = crate::CopyrightStatus::PublicDomain;
         assert!(r.matches(&p, &Catalog::new()), "ids still match");
@@ -1342,29 +1785,62 @@ mod tests {
     /// are yes. Anything else is reported, not silently taken as yes.
     #[test]
     fn yes_no_values() {
-        for v in [json!(true), json!("true"), json!("Yes"), json!(1), json!(1.0), json!(null)] {
+        for v in [
+            json!(true),
+            json!("true"),
+            json!("Yes"),
+            json!(1),
+            json!(1.0),
+            json!(null),
+        ] {
             assert_eq!(bool_value(&v), Some(true), "{v}");
         }
-        for v in [json!(false), json!("false"), json!(" NO "), json!(0), json!(0.0)] {
+        for v in [
+            json!(false),
+            json!("false"),
+            json!(" NO "),
+            json!(0),
+            json!(0.0),
+        ] {
             assert_eq!(bool_value(&v), Some(false), "{v}");
         }
-        for v in [json!("maybe"), json!(2), json!(0.5), json!(-1), json!([true]), json!({"x": 1})] {
+        for v in [
+            json!("maybe"),
+            json!(2),
+            json!(0.5),
+            json!(-1),
+            json!([true]),
+            json!({"x": 1}),
+        ] {
             assert_eq!(bool_value(&v), None, "{v}");
         }
         assert_eq!((bool_label(true), bool_label(false)), ("Yes", "No"));
         let cat = Catalog::new();
         let p = photo(1); // unedited
-        assert!(rs(json!({"rules": [{"field": "edited", "op": "is", "value": "false"}]})).matches(&p, &cat), "\"false\" means no");
+        assert!(
+            rs(json!({"rules": [{"field": "edited", "op": "is", "value": "false"}]}))
+                .matches(&p, &cat),
+            "\"false\" means no"
+        );
         assert!(
             !rs(json!({"rules": [{"field": "edited", "op": "is", "value": "false"}, {"field": "hasGps", "op": "is", "value": "yes"}]}))
                 .matches(&p, &cat)
         );
-        assert!(!rs(json!({"rules": [{"field": "edited", "op": "is", "value": "maybe"}]})).matches(&p, &cat), "an unreadable value matches nothing");
-        let r = rs(json!({"rules": [{"field": "edited", "op": "is", "value": true}, {"field": "cropped", "op": "is", "value": "false"}]}));
+        assert!(
+            !rs(json!({"rules": [{"field": "edited", "op": "is", "value": "maybe"}]}))
+                .matches(&p, &cat),
+            "an unreadable value matches nothing"
+        );
+        let r = rs(
+            json!({"rules": [{"field": "edited", "op": "is", "value": true}, {"field": "cropped", "op": "is", "value": "false"}]}),
+        );
         assert_eq!(r.describe(), "has edits is yes and cropped is no");
         let bad = rs(json!({"rules": [{"field": "edited", "op": "is", "value": "maybe"}]}));
         let messages: Vec<String> = bad.check(&cat).into_iter().map(|p| p.message).collect();
-        assert_eq!(messages, vec!["`edited` is yes or no, not \"maybe\"".to_string()]);
+        assert_eq!(
+            messages,
+            vec!["`edited` is yes or no, not \"maybe\"".to_string()]
+        );
     }
 
     /// "In the last N" never overflows, whatever N an agent or a saved file holds: a zero,
@@ -1378,7 +1854,13 @@ mod tests {
         let m = |op: &str, n: serde_json::Value, unit: &str| {
             rs(json!({"rules": [{"field": "captureDate", "op": op, "value": {"n": n, "unit": unit}}]})).matches(&p, &cat)
         };
-        for n in [json!(0), json!(-5), json!(-1e30), json!(-9.3e18), json!("soon")] {
+        for n in [
+            json!(0),
+            json!(-5),
+            json!(-1e30),
+            json!(-9.3e18),
+            json!("soon"),
+        ] {
             for op in ["inLast", "notInLast"] {
                 assert!(!m(op, n.clone(), "years"), "{op} {n}");
             }
@@ -1398,15 +1880,34 @@ mod tests {
     fn values_are_checked_against_their_field() {
         use crate::{Album, AlbumId, Op};
         let mut cat = Catalog::new();
-        cat.apply(Op::AddAlbum { album: Album::new(AlbumId(1), "Trip") }).unwrap();
-        let smart = Album { smart: Some(Box::default()), ..Album::new(AlbumId(2), "Best") };
+        cat.apply(Op::AddAlbum {
+            album: Album::new(AlbumId(1), "Trip"),
+        })
+        .unwrap();
+        let smart = Album {
+            smart: Some(Box::default()),
+            ..Album::new(AlbumId(2), "Best")
+        };
         cat.apply(Op::AddAlbum { album: smart }).unwrap();
-        cat.apply(Op::SetLabelName { label: crate::ColorLabel::Red, name: Some("Client".into()) }).unwrap();
+        cat.apply(Op::SetLabelName {
+            label: crate::ColorLabel::Red,
+            name: Some("Client".into()),
+        })
+        .unwrap();
         let check = |rule: serde_json::Value| rs(json!({"rules": [rule]})).check(&cat);
-        let ok = |rule: serde_json::Value| assert!(check(rule.clone()).is_empty(), "{rule}: {:?}", check(rule.clone()));
+        let ok = |rule: serde_json::Value| {
+            assert!(
+                check(rule.clone()).is_empty(),
+                "{rule}: {:?}",
+                check(rule.clone())
+            )
+        };
         let bad = |rule: serde_json::Value, want: &str| {
             let p = check(rule.clone());
-            assert!(p.iter().any(|p| p.message.contains(want)), "{rule}: wanted {want:?}, got {p:?}");
+            assert!(
+                p.iter().any(|p| p.message.contains(want)),
+                "{rule}: wanted {want:?}, got {p:?}"
+            );
         };
         let r = |field: &str, op: &str, value: serde_json::Value| json!({"field": field, "op": op, "value": value});
         // numbers
@@ -1426,15 +1927,37 @@ mod tests {
             ok(r("captureDate", "is", json!(d)));
         }
         ok(r("captureDate", "between", json!(["2026-01", "2026-12"])));
-        for d in [json!("banana"), json!("2026-13"), json!("2026-02-30"), json!(""), json!(2026)] {
+        for d in [
+            json!("banana"),
+            json!("2026-13"),
+            json!("2026-02-30"),
+            json!(""),
+            json!(2026),
+        ] {
             bad(r("captureDate", "after", d), "needs a date");
         }
-        bad(r("captureDate", "between", json!(["2026-12", "2026-01"])), "after the second");
-        bad(r("captureDate", "between", json!(["", "2026"])), "needs a date");
+        bad(
+            r("captureDate", "between", json!(["2026-12", "2026-01"])),
+            "after the second",
+        );
+        bad(
+            r("captureDate", "between", json!(["", "2026"])),
+            "needs a date",
+        );
         ok(r("captureDate", "inLast", json!({"n": 2, "unit": "weeks"})));
         ok(r("captureDate", "inLast", json!(7)));
-        bad(r("captureDate", "inLast", json!({"n": 0, "unit": "days"})), "more than 0");
-        bad(r("captureDate", "notInLast", json!({"n": 3, "unit": "fortnights"})), "fortnights");
+        bad(
+            r("captureDate", "inLast", json!({"n": 0, "unit": "days"})),
+            "more than 0",
+        );
+        bad(
+            r(
+                "captureDate",
+                "notInLast",
+                json!({"n": 3, "unit": "fortnights"}),
+            ),
+            "fortnights",
+        );
         ok(r("captureDate", "isEmpty", json!(null)));
         // choices: the ids, the flag's aliases and a colour label's custom name
         ok(r("kind", "is", json!("raw")));
@@ -1446,14 +1969,20 @@ mod tests {
         ok(r("title", "contains", json!("kite")));
         ok(r("title", "isEmpty", json!(null)));
         bad(r("title", "contains", json!("  ")), "something to look for");
-        bad(r("keywords", "startsWith", json!("")), "something to look for");
+        bad(
+            r("keywords", "startsWith", json!("")),
+            "something to look for",
+        );
         // albums: one that exists, plain or smart
         ok(r("album", "is", json!(1)));
         bad(r("album", "is", json!(999)), "no album 999");
         ok(r("album", "is", json!(2)));
         // groups: an empty one is a mistake; problems inside one say where they are
         let p = rs(json!({"rules": [r("rating", "gte", json!(3)), {"group": {"match": "any", "rules": []}}]})).check(&cat);
-        assert_eq!(p.iter().map(ToString::to_string).collect::<Vec<_>>(), vec!["rule 2: an empty group".to_string()]);
+        assert_eq!(
+            p.iter().map(ToString::to_string).collect::<Vec<_>>(),
+            vec!["rule 2: an empty group".to_string()]
+        );
         let p = rs(json!({"rules": [r("rating", "gte", json!(3)), {"group": {"rules": [r("iso", "is", json!(100)), r("rating", "is", json!(9))]}}]}))
             .check(&cat);
         assert_eq!(p.len(), 1);
@@ -1472,9 +2001,15 @@ mod tests {
         use crate::Op;
         set_now(Some("2026-09-01T00:00:00".into()));
         let mut cat = Catalog::new();
-        cat.apply(Op::SetLabelName { label: crate::ColorLabel::Red, name: Some("Été".into()) }).unwrap();
+        cat.apply(Op::SetLabelName {
+            label: crate::ColorLabel::Red,
+            name: Some("Été".into()),
+        })
+        .unwrap();
         let p = photo(1); // captured 2026-08-14 (18 days before now), red label, rating 4
-        let rule = |field: &str, op: &str, value: serde_json::Value| rs(json!({"rules": [{"field": field, "op": op, "value": value}]}));
+        let rule = |field: &str, op: &str, value: serde_json::Value| {
+            rs(json!({"rules": [{"field": field, "op": op, "value": value}]}))
+        };
         let valid = |r: &RuleSet| r.check(&cat).is_empty();
         for unit in [json!("Days"), json!("DAY"), json!("days"), json!(null)] {
             let r = rule("captureDate", "inLast", json!({"n": 30, "unit": unit}));
@@ -1483,24 +2018,55 @@ mod tests {
         let r = rule("captureDate", "inLast", json!({"n": 30}));
         assert!(valid(&r) && r.matches(&p, &cat), "no unit is days");
         let week = rule("captureDate", "inLast", json!({"n": 1, "unit": "week"}));
-        assert!(valid(&week) && !week.matches(&p, &cat), "a week, not a day: 18 days ago is outside it");
+        assert!(
+            valid(&week) && !week.matches(&p, &cat),
+            "a week, not a day: 18 days ago is outside it"
+        );
         assert!(rule("captureDate", "inLast", json!({"n": 3, "unit": "Weeks"})).matches(&p, &cat));
-        let odd = rule("captureDate", "inLast", json!({"n": 30, "unit": "fortnights"}));
-        assert!(!valid(&odd) && !odd.matches(&p, &cat), "an unknown unit is refused and matches nothing");
+        let odd = rule(
+            "captureDate",
+            "inLast",
+            json!({"n": 30, "unit": "fortnights"}),
+        );
+        assert!(
+            !valid(&odd) && !odd.matches(&p, &cat),
+            "an unknown unit is refused and matches nothing"
+        );
         // rating: only a rule no rating could meet
-        for (op, v) in [("lt", json!(6)), ("gt", json!(-1)), ("isNot", json!(9)), ("between", json!([3, 8]))] {
+        for (op, v) in [
+            ("lt", json!(6)),
+            ("gt", json!(-1)),
+            ("isNot", json!(9)),
+            ("between", json!([3, 8])),
+        ] {
             assert!(valid(&rule("rating", op, v.clone())), "{op} {v}");
         }
-        for (op, v) in [("is", json!(9)), ("gte", json!(7)), ("gt", json!(5)), ("lt", json!(0)), ("between", json!([6, 9]))] {
+        for (op, v) in [
+            ("is", json!(9)),
+            ("gte", json!(7)),
+            ("gt", json!(5)),
+            ("lt", json!(0)),
+            ("between", json!([6, 9])),
+        ] {
             assert!(!valid(&rule("rating", op, v.clone())), "{op} {v}");
         }
         // a custom label name, any case, accents too
         let r = rule("label", "is", json!("été"));
         assert!(valid(&r) && r.matches(&p, &cat));
         // "isn't" with nothing points at "isn't empty", the others at "is empty"
-        let hint = |op: &str| rule("title", op, json!("")).check(&cat).first().map(|p| p.message.clone()).unwrap_or_default();
+        let hint = |op: &str| {
+            rule("title", op, json!(""))
+                .check(&cat)
+                .first()
+                .map(|p| p.message.clone())
+                .unwrap_or_default()
+        };
         assert!(hint("isNot").contains("isn't empty"), "{}", hint("isNot"));
-        assert!(hint("contains").contains("“is empty”"), "{}", hint("contains"));
+        assert!(
+            hint("contains").contains("“is empty”"),
+            "{}",
+            hint("contains")
+        );
         set_now(None);
     }
 
@@ -1511,7 +2077,10 @@ mod tests {
         let ops: Vec<&str> = ops_for(Kind::Album).iter().map(|o| o.0).collect();
         assert_eq!(ops, ["is", "isNot"]);
         let r = rs(json!({"rules": [{"field": "album", "op": "gte", "value": 1}]}));
-        assert_eq!(r.check(&Catalog::new()).first().map(|p| p.message.as_str()), Some("`album` has no operator `gte`"));
+        assert_eq!(
+            r.check(&Catalog::new()).first().map(|p| p.message.as_str()),
+            Some("`album` has no operator `gte`")
+        );
     }
 
     /// An Album rule names its album by id, written as a number or a numeric string, the same way
@@ -1527,9 +2096,18 @@ mod tests {
             assert_eq!(album_rule_id(&v), None, "{v}");
         }
         let mut cat = Catalog::new();
-        cat.apply(Op::AddAlbum { album: Album { folder: true, ..Album::new(AlbumId(4), "Trips") } }).unwrap();
+        cat.apply(Op::AddAlbum {
+            album: Album {
+                folder: true,
+                ..Album::new(AlbumId(4), "Trips")
+            },
+        })
+        .unwrap();
         let p = rs(json!({"rules": [{"field": "album", "op": "is", "value": 4}]})).check(&cat);
-        assert!(p.first().is_some_and(|p| p.message.contains("folder")), "{p:?}");
+        assert!(
+            p.first().is_some_and(|p| p.message.contains("folder")),
+            "{p:?}"
+        );
     }
 
     /// Album rules saved before Album offered only "is" / "isn't" (≥, between… from when it was a
@@ -1544,10 +2122,22 @@ mod tests {
         ]}));
         r.upgrade();
         let ops = serde_json::to_value(&r).unwrap().to_string();
-        assert!(ops.contains(r#""field":"album","op":"isNot","value":1"#), "{ops}");
-        assert!(ops.contains(r#""field":"album","op":"is","value":1"#), "{ops}");
-        assert!(ops.contains(r#""field":"rating","op":"gte""#), "other fields keep theirs: {ops}");
-        assert!(ops.contains(r#""field":"album","op":"isNot","value":[1,2]"#), "inside groups too: {ops}");
+        assert!(
+            ops.contains(r#""field":"album","op":"isNot","value":1"#),
+            "{ops}"
+        );
+        assert!(
+            ops.contains(r#""field":"album","op":"is","value":1"#),
+            "{ops}"
+        );
+        assert!(
+            ops.contains(r#""field":"rating","op":"gte""#),
+            "other fields keep theirs: {ops}"
+        );
+        assert!(
+            ops.contains(r#""field":"album","op":"isNot","value":[1,2]"#),
+            "inside groups too: {ops}"
+        );
     }
 
     /// Besides its English message (for agents), a problem names its field and the kind of issue,
@@ -1558,17 +2148,34 @@ mod tests {
         let cat = Catalog::new();
         let check = |rules: serde_json::Value| rs(json!({"rules": rules})).check(&cat);
         let p = check(json!([{"field": "title", "op": "contains", "value": ""}]));
-        assert_eq!((p[0].field.as_deref(), p[0].issue), (Some("title"), Issue::NeedsTextOrEmpty));
+        assert_eq!(
+            (p[0].field.as_deref(), p[0].issue),
+            (Some("title"), Issue::NeedsTextOrEmpty)
+        );
         let p = check(json!([{"field": "title", "op": "isNot", "value": ""}]));
         assert_eq!(p[0].issue, Issue::NeedsTextOrNotEmpty);
         // keywords and people say "are empty", and so does their hint
-        let p = check(json!([{"field": "keywords", "op": "contains", "value": ""}, {"field": "person", "op": "notContains", "value": " "}]));
-        assert_eq!((p[0].issue, p[1].issue), (Issue::NeedsNamesOrEmpty, Issue::NeedsNamesOrNotEmpty));
+        let p = check(
+            json!([{"field": "keywords", "op": "contains", "value": ""}, {"field": "person", "op": "notContains", "value": " "}]),
+        );
+        assert_eq!(
+            (p[0].issue, p[1].issue),
+            (Issue::NeedsNamesOrEmpty, Issue::NeedsNamesOrNotEmpty)
+        );
         assert!(p[0].issue.text().contains("“are empty”") && p[0].message.contains("“are empty”"));
-        let p = check(json!([{"field": "rating", "op": "is", "value": 9}, {"group": {"rules": []}}]));
-        assert_eq!((p[0].field.as_deref(), p[0].issue), (Some("rating"), Issue::NoRatingMatches));
-        assert_eq!((p[1].field.as_deref(), p[1].issue), (None, Issue::EmptyGroup));
-        let p = check(json!([{"field": "captureDate", "op": "between", "value": ["2026-12", "2026-01"]}]));
+        let p =
+            check(json!([{"field": "rating", "op": "is", "value": 9}, {"group": {"rules": []}}]));
+        assert_eq!(
+            (p[0].field.as_deref(), p[0].issue),
+            (Some("rating"), Issue::NoRatingMatches)
+        );
+        assert_eq!(
+            (p[1].field.as_deref(), p[1].issue),
+            (None, Issue::EmptyGroup)
+        );
+        let p = check(
+            json!([{"field": "captureDate", "op": "between", "value": ["2026-12", "2026-01"]}]),
+        );
         assert_eq!(p[0].issue, Issue::DatesReversed);
         let p = check(json!([{"field": "album", "op": "is", "value": null}]));
         assert_eq!(p[0].issue, Issue::ChooseAlbum);
@@ -1576,7 +2183,11 @@ mod tests {
         assert!(texts.iter().all(|t| !t.is_empty()));
         texts.sort_unstable();
         texts.dedup();
-        assert_eq!(texts.len(), Issue::ALL.len(), "each issue reads differently");
+        assert_eq!(
+            texts.len(),
+            Issue::ALL.len(),
+            "each issue reads differently"
+        );
     }
 
     /// A rule date reads one way for the check and the matcher: a space works as the "T"
@@ -1588,7 +2199,9 @@ mod tests {
         let cat = Catalog::new();
         let mut p = photo(1);
         p.captured = Some("2026-10-01T10:00:00".into());
-        let rule = |op: &str, v: serde_json::Value| rs(json!({"rules": [{"field": "captureDate", "op": op, "value": v}]}));
+        let rule = |op: &str, v: serde_json::Value| {
+            rs(json!({"rules": [{"field": "captureDate", "op": op, "value": v}]}))
+        };
         for (op, v) in [
             ("is", json!("2026-10-01 10:00")),
             ("is", json!(" 2026-10-01T10 ")),
@@ -1601,11 +2214,19 @@ mod tests {
         // a capture time with a fraction and a zone, as imports write it
         let mut zoned = photo(2);
         zoned.captured = Some("2026-08-14T10:00:00.250+02:00".into());
-        for v in ["2026-08-14T10:00:00.250", "2026-08-14T10:00:00.250+02:00", "2026-08-14T10:00:00"] {
+        for v in [
+            "2026-08-14T10:00:00.250",
+            "2026-08-14T10:00:00.250+02:00",
+            "2026-08-14T10:00:00",
+        ] {
             let r = rule("is", json!(v));
             assert!(r.check(&cat).is_empty() && r.matches(&zoned, &cat), "{v}");
         }
-        assert!(rule("is", json!("2026-08-14T10:00:00Z")).check(&cat).is_empty());
+        assert!(
+            rule("is", json!("2026-08-14T10:00:00Z"))
+                .check(&cat)
+                .is_empty()
+        );
         for v in [
             "2026-8-14",
             "2026-08-14T1",
@@ -1620,7 +2241,10 @@ mod tests {
             let p = rule("is", json!(v)).check(&cat);
             assert_eq!(p.first().map(|p| p.issue), Some(Issue::NeedsDate), "{v}");
         }
-        assert_eq!(rule_date("2026-10-01 10:00"), Ok("2026-10-01T10:00".to_string()));
+        assert_eq!(
+            rule_date("2026-10-01 10:00"),
+            Ok("2026-10-01T10:00".to_string())
+        );
         assert_eq!(rule_date("2026"), Ok("2026".to_string()));
     }
 
@@ -1628,9 +2252,16 @@ mod tests {
     /// and [`FIELDS`] lists them in menu order.
     #[test]
     fn every_field_is_in_the_menu_exactly_once() {
-        let menu: Vec<&str> = TOP_LEVEL_FIELDS.iter().chain(FIELD_GROUPS.iter().flat_map(|g| g.1.iter())).copied().collect();
+        let menu: Vec<&str> = TOP_LEVEL_FIELDS
+            .iter()
+            .chain(FIELD_GROUPS.iter().flat_map(|g| g.1.iter()))
+            .copied()
+            .collect();
         let fields: Vec<&str> = FIELDS.iter().map(|f| f.0).collect();
-        assert_eq!(menu, fields, "the menu and FIELDS list the same fields in the same order");
+        assert_eq!(
+            menu, fields,
+            "the menu and FIELDS list the same fields in the same order"
+        );
         for (label, group) in FIELD_GROUPS {
             assert!(!group.is_empty(), "group {label} is empty");
         }
@@ -1648,15 +2279,51 @@ mod tests {
                 assert_eq!(field_group(f), Some(group), "{f}");
             }
         };
-        same(&["fileName", "extension", "filePath", "kind", "format", "duration"], "File");
+        same(
+            &[
+                "fileName",
+                "extension",
+                "filePath",
+                "kind",
+                "format",
+                "duration",
+            ],
+            "File",
+        );
         same(&["album", "virtualCopy", "copyName", "stacked"], "Source");
         same(&["longEdge", "shortEdge", "aspect", "megapixels"], "Size");
         same(&["edited", "cropped", "treatment"], "Develop");
-        same(&["camera", "lens", "focalLength", "aperture", "shutterSpeed", "iso"], "Camera Info");
+        same(
+            &[
+                "camera",
+                "lens",
+                "focalLength",
+                "aperture",
+                "shutterSpeed",
+                "iso",
+            ],
+            "Camera Info",
+        );
         same(&["captureDate", "importDate", "editDate"], "Date");
-        same(&["keywords", "keywordCount", "person", "personCount"], "Keywords & People");
-        same(&["title", "caption", "altText", "creator", "copyright", "copyrightStatus"], "Description");
-        same(&["location", "city", "state", "country", "hasGps"], "Location");
+        same(
+            &["keywords", "keywordCount", "person", "personCount"],
+            "Keywords & People",
+        );
+        same(
+            &[
+                "title",
+                "caption",
+                "altText",
+                "creator",
+                "copyright",
+                "copyrightStatus",
+            ],
+            "Description",
+        );
+        same(
+            &["location", "city", "state", "country", "hasGps"],
+            "Location",
+        );
         for f in ["rating", "flag", "label", "text"] {
             assert_eq!(field_group(f), None, "{f} stays at the top level");
         }

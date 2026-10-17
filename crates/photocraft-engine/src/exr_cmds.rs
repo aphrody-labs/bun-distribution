@@ -11,7 +11,8 @@ use crate::{EngineError, Result, Session};
 
 fn entries_json(path: &str) -> Result<Value> {
     let bytes = read_file(path)?;
-    let entries = photocraft_io::exr_parts::entries(&bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    let entries = photocraft_io::exr_parts::entries(&bytes)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(json!(entries
         .iter()
         .map(|e| json!({
@@ -35,7 +36,12 @@ fn exr_parts(s: &mut Session, p: &Value) -> Result<Value> {
 /// Collects `part/<name>` and `group/<name>` boolean params into the selection names.
 fn selected(p: &Value, prefix: &str) -> Vec<String> {
     p.as_object()
-        .map(|m| m.iter().filter(|(k, v)| k.starts_with(prefix) && v.as_bool() == Some(true)).map(|(k, _)| k[prefix.len()..].to_string()).collect())
+        .map(|m| {
+            m.iter()
+                .filter(|(k, v)| k.starts_with(prefix) && v.as_bool() == Some(true))
+                .map(|(k, _)| k[prefix.len()..].to_string())
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -43,7 +49,10 @@ fn open_exr_parts(s: &mut Session, p: &Value) -> Result<Value> {
     let path = crate::file_cmds::str_param(p, "path", "file.openExrParts")?.to_string();
     let view = p.get("view").and_then(Value::as_str).unwrap_or("both");
     if !matches!(view, "both" | "left" | "right") {
-        return Err(EngineError::BadParams { cmd: "file.openExrParts".into(), msg: format!("view is \"{view}\"; it is \"both\", \"left\" or \"right\"") });
+        return Err(EngineError::BadParams {
+            cmd: "file.openExrParts".into(),
+            msg: format!("view is \"{view}\"; it is \"both\", \"left\" or \"right\""),
+        });
     }
     let sel = photocraft_io::exr_parts::Selection {
         parts: selected(p, "part/"),
@@ -52,7 +61,8 @@ fn open_exr_parts(s: &mut Session, p: &Value) -> Result<Value> {
         precomp: p.get("precomp").and_then(Value::as_bool).unwrap_or(false),
     };
     let bytes = read_file(&path)?;
-    let r = photocraft_io::exr_parts::import(&stem(&path), &bytes, &sel).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    let r = photocraft_io::exr_parts::import(&stem(&path), &bytes, &sel)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     let (i, color) = s.open_document(r.document, Some(path.clone()));
     Ok(json!({"document": i, "color": color, "warnings": r.warnings}))
 }
@@ -60,11 +70,28 @@ fn open_exr_parts(s: &mut Session, p: &Value) -> Result<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     macro_rules! spec {
         ($id:expr, $label:expr, $menu:expr, $sc:expr, $params:expr, $enabled:expr, $run:expr) => {
-            CommandSpec { id: $id, label: $label, menu: $menu, shortcut: $sc, params: $params, enabled: $enabled, journal: true, run: $run }
+            CommandSpec {
+                id: $id,
+                label: $label,
+                menu: $menu,
+                shortcut: $sc,
+                params: $params,
+                enabled: $enabled,
+                journal: true,
+                run: $run,
+            }
         };
     }
     vec![
-        spec!("file.exrParts", "EXR Parts Info", &[], None, r##"{"path":str (the EXR file)}"##, native, exr_parts),
+        spec!(
+            "file.exrParts",
+            "EXR Parts Info",
+            &[],
+            None,
+            r##"{"path":str (the EXR file)}"##,
+            native,
+            exr_parts
+        ),
         spec!(
             "file.openExrParts",
             "Open EXR Parts…",
@@ -93,18 +120,39 @@ mod tests {
         use exr::prelude::*;
         let (w, h) = (4usize, 4usize);
         let mk = |n: String, v: f32| AnyChannel::new(n.as_str(), FlatSamples::F32(vec![v; w * h]));
-        let beauty = AnyChannels::sort(vec![mk("R".into(), 0.8), mk("G".into(), 0.4), mk("B".into(), 0.2), mk("A".into(), 1.0)].into_iter().collect());
+        let beauty = AnyChannels::sort(
+            vec![
+                mk("R".into(), 0.8),
+                mk("G".into(), 0.4),
+                mk("B".into(), 0.2),
+                mk("A".into(), 1.0),
+            ]
+            .into_iter()
+            .collect(),
+        );
         let z = AnyChannels::sort(vec![mk("Z".into(), 5.0)].into_iter().collect());
         let layer = |name: &str, chans: AnyChannels<FlatSamples>| {
             Layer::new(
                 (w, h),
                 LayerAttributes::named(name),
-                Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+                Encoding {
+                    compression: Compression::Uncompressed,
+                    blocks: Blocks::ScanLines,
+                    line_order: LineOrder::Increasing,
+                },
                 chans,
             )
         };
-        let image = Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer("Z", z), layer("beauty", beauty)]);
-        image.write().to_buffered(&mut std::io::BufWriter::new(std::fs::File::create(path).expect("create fixture"))).expect("write fixture");
+        let image = Image::from_layers(
+            ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+            vec![layer("Z", z), layer("beauty", beauty)],
+        );
+        image
+            .write()
+            .to_buffered(&mut std::io::BufWriter::new(
+                std::fs::File::create(path).expect("create fixture"),
+            ))
+            .expect("write fixture");
     }
 
     fn write_grouped(path: &std::path::Path) {
@@ -129,11 +177,23 @@ mod tests {
         let layer = Layer::new(
             (w, h),
             LayerAttributes::named("main"),
-            Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+            Encoding {
+                compression: Compression::Uncompressed,
+                blocks: Blocks::ScanLines,
+                line_order: LineOrder::Increasing,
+            },
             AnyChannels::sort(list.into_iter().collect()),
         );
-        let image = Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer]);
-        image.write().to_buffered(&mut std::io::BufWriter::new(std::fs::File::create(path).expect("create fixture"))).expect("write fixture");
+        let image = Image::from_layers(
+            ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+            vec![layer],
+        );
+        image
+            .write()
+            .to_buffered(&mut std::io::BufWriter::new(
+                std::fs::File::create(path).expect("create fixture"),
+            ))
+            .expect("write fixture");
     }
 
     #[test]
@@ -143,7 +203,12 @@ mod tests {
         let path = dir.join("aov.exr");
         write_multipart(&path);
         let info = entries_json(path.to_str().unwrap()).unwrap();
-        let kinds: Vec<&str> = info.as_array().unwrap().iter().map(|e| e["kind"].as_str().unwrap()).collect();
+        let kinds: Vec<&str> = info
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["kind"].as_str().unwrap())
+            .collect();
         assert_eq!(kinds, ["part", "part"], "{info}");
         assert_eq!(info[0]["name"], "Z");
         assert_eq!(info[1]["name"], "beauty");
@@ -158,7 +223,12 @@ mod tests {
         let path = dir.join("aov.exr");
         write_multipart(&path);
         let mut s = session();
-        let r = s.execute("file.openExrParts", json!({"path": path.to_str().unwrap(), "part/beauty": true, "part/Z": false})).unwrap();
+        let r = s
+            .execute(
+                "file.openExrParts",
+                json!({"path": path.to_str().unwrap(), "part/beauty": true, "part/Z": false}),
+            )
+            .unwrap();
         assert_eq!(r["warnings"].as_array().unwrap().len(), 0, "{r}");
         let doc = &s.active().unwrap().doc;
         assert_eq!(doc.layers.len(), 1);
@@ -180,9 +250,16 @@ mod tests {
         let path = dir.join("aov.exr");
         write_multipart(&path);
         let mut s = session();
-        let e = s.execute("file.openExrParts", json!({"path": path.to_str().unwrap()})).unwrap_err();
+        let e = s
+            .execute("file.openExrParts", json!({"path": path.to_str().unwrap()}))
+            .unwrap_err();
         assert!(e.to_string().contains("no parts or groups selected"), "{e}");
-        let e = s.execute("file.openExrParts", json!({"path": path.to_str().unwrap(), "part/nope": true})).unwrap_err();
+        let e = s
+            .execute(
+                "file.openExrParts",
+                json!({"path": path.to_str().unwrap(), "part/nope": true}),
+            )
+            .unwrap_err();
         assert!(e.to_string().contains("no flat part named nope"), "{e}");
         std::fs::remove_dir_all(&dir).unwrap();
     }
@@ -194,10 +271,19 @@ mod tests {
         let path = dir.join("grouped.exr");
         write_grouped(&path);
         let info = entries_json(path.to_str().unwrap()).unwrap();
-        let names: Vec<&str> = info.as_array().unwrap().iter().map(|e| e["name"].as_str().unwrap()).collect();
+        let names: Vec<&str> = info
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["name"].as_str().unwrap())
+            .collect();
         assert_eq!(names, ["main", "diffuse", "specular"], "{info}");
         let mut s = session();
-        s.execute("file.openExrParts", json!({"path": path.to_str().unwrap(), "group/diffuse": true})).unwrap();
+        s.execute(
+            "file.openExrParts",
+            json!({"path": path.to_str().unwrap(), "group/diffuse": true}),
+        )
+        .unwrap();
         let doc = &s.active().unwrap().doc;
         assert_eq!(doc.layers.len(), 1);
         assert_eq!(doc.layers[0].name, "diffuse");
@@ -215,15 +301,34 @@ mod tests {
         use exr::prelude::*;
         let (w, h) = (4usize, 4usize);
         let mk = |n: &str, v: f32| AnyChannel::new(n, FlatSamples::F32(vec![v; w * h]));
-        let list = vec![mk("R", 0.7), mk("G", 0.7), mk("B", 0.7), mk("diffuse.R", 0.3), mk("diffuse.G", 0.3), mk("diffuse.B", 0.3)];
+        let list = vec![
+            mk("R", 0.7),
+            mk("G", 0.7),
+            mk("B", 0.7),
+            mk("diffuse.R", 0.3),
+            mk("diffuse.G", 0.3),
+            mk("diffuse.B", 0.3),
+        ];
         let layer = Layer::new(
             (w, h),
             LayerAttributes::default(),
-            Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+            Encoding {
+                compression: Compression::Uncompressed,
+                blocks: Blocks::ScanLines,
+                line_order: LineOrder::Increasing,
+            },
             AnyChannels::sort(list.into_iter().collect()),
         );
-        let image = Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer]);
-        image.write().to_buffered(&mut std::io::BufWriter::new(std::fs::File::create(path).expect("create fixture"))).expect("write fixture");
+        let image = Image::from_layers(
+            ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+            vec![layer],
+        );
+        image
+            .write()
+            .to_buffered(&mut std::io::BufWriter::new(
+                std::fs::File::create(path).expect("create fixture"),
+            ))
+            .expect("write fixture");
     }
 
     #[test]
@@ -234,12 +339,21 @@ mod tests {
         let path = dir.join("unnamed.exr");
         write_unnamed_grouped(&path);
         let info = entries_json(path.to_str().unwrap()).unwrap();
-        let part = info.as_array().unwrap().iter().find(|e| e["kind"] == "part").expect("a part entry");
+        let part = info
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["kind"] == "part")
+            .expect("a part entry");
         let name = part["name"].as_str().unwrap();
         assert_eq!(name, "part 0", "{info}");
         let key = format!("part/{name}");
         let mut s = session();
-        s.execute("file.openExrParts", json!({"path": path.to_str().unwrap(), key: true})).unwrap();
+        s.execute(
+            "file.openExrParts",
+            json!({"path": path.to_str().unwrap(), key: true}),
+        )
+        .unwrap();
         let doc = &s.active().unwrap().doc;
         assert_eq!(doc.layers.len(), 1);
         assert_eq!(doc.layers[0].name, "part 0");
@@ -258,8 +372,16 @@ mod tests {
         write_grouped(&path);
         let mut s = session();
         // diffuse + specular make the set incomplete: emission is missing.
-        let e = s.execute("file.openExrParts", json!({"path": path.to_str().unwrap(), "precomp": true, "group/diffuse": true})).unwrap_err();
-        assert!(e.to_string().contains("missing") && e.to_string().contains("emission"), "{e}");
+        let e = s
+            .execute(
+                "file.openExrParts",
+                json!({"path": path.to_str().unwrap(), "precomp": true, "group/diffuse": true}),
+            )
+            .unwrap_err();
+        assert!(
+            e.to_string().contains("missing") && e.to_string().contains("emission"),
+            "{e}"
+        );
 
         // A complete set: write a file holding direct/indirect diffuse+specular and emission.
         let full = dir.join("full.exr");
@@ -285,16 +407,44 @@ mod tests {
         let layer = Layer::new(
             (w, h),
             LayerAttributes::named("main"),
-            Encoding { compression: Compression::Uncompressed, blocks: Blocks::ScanLines, line_order: LineOrder::Increasing },
+            Encoding {
+                compression: Compression::Uncompressed,
+                blocks: Blocks::ScanLines,
+                line_order: LineOrder::Increasing,
+            },
             AnyChannels::sort(list.into_iter().collect()),
         );
-        let image = Image::from_layers(ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))), vec![layer]);
-        image.write().to_buffered(&mut std::io::BufWriter::new(std::fs::File::create(&full).expect("create fixture"))).expect("write fixture");
+        let image = Image::from_layers(
+            ImageAttributes::new(IntegerBounds::new((0, 0), (w, h))),
+            vec![layer],
+        );
+        image
+            .write()
+            .to_buffered(&mut std::io::BufWriter::new(
+                std::fs::File::create(&full).expect("create fixture"),
+            ))
+            .expect("write fixture");
         let mut s = session();
-        let r = s.execute("file.openExrParts", json!({"path": full.to_str().unwrap(), "precomp": true})).unwrap();
-        assert!(r["warnings"].as_array().unwrap().iter().any(|w| w.as_str().unwrap().contains("precomp")), "{r}");
+        let r = s
+            .execute(
+                "file.openExrParts",
+                json!({"path": full.to_str().unwrap(), "precomp": true}),
+            )
+            .unwrap();
+        assert!(
+            r["warnings"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|w| w.as_str().unwrap().contains("precomp")),
+            "{r}"
+        );
         let doc = &s.active().unwrap().doc;
-        let precomp = doc.layers.iter().find(|l| l.name == "beauty (precomp)").expect("the precomp layer");
+        let precomp = doc
+            .layers
+            .iter()
+            .find(|l| l.name == "beauty (precomp)")
+            .expect("the precomp layer");
         if let photocraft_doc::LayerContent::Raster(surface) = &precomp.content {
             let px = surface.pixel(0, 0);
             assert!((px[0] - expect).abs() < 1e-3, "{:?} vs {expect}", px);

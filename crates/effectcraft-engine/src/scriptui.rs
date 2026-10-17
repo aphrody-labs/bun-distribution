@@ -64,7 +64,14 @@ pub enum WidgetKind {
 
 impl WidgetKind {
     pub fn is_container(self) -> bool {
-        matches!(self, WidgetKind::Window | WidgetKind::Panel | WidgetKind::Group | WidgetKind::TabbedPanel | WidgetKind::Tab)
+        matches!(
+            self,
+            WidgetKind::Window
+                | WidgetKind::Panel
+                | WidgetKind::Group
+                | WidgetKind::TabbedPanel
+                | WidgetKind::Tab
+        )
     }
 }
 
@@ -147,9 +154,16 @@ pub enum PathSeg {
 #[serde(tag = "op", rename_all = "camelCase")]
 pub enum DrawOp {
     /// `fillPath(brush, path)`.
-    Fill { color: Option<[f32; 4]>, path: Vec<PathSeg> },
+    Fill {
+        color: Option<[f32; 4]>,
+        path: Vec<PathSeg>,
+    },
     /// `strokePath(pen, path)`.
-    Stroke { color: Option<[f32; 4]>, width: f64, path: Vec<PathSeg> },
+    Stroke {
+        color: Option<[f32; 4]>,
+        width: f64,
+        path: Vec<PathSeg>,
+    },
     /// `drawString(text, pen, x, y, font)`: `(x, y)` is the text's top-left.
     Text {
         text: String,
@@ -255,7 +269,9 @@ impl PathSeg {
         for (pts, _) in PathSeg::polylines(path, n) {
             for i in 0..pts.len() {
                 let (a, b) = (pts[i], pts[(i + 1) % pts.len()]);
-                if !(a[0].is_finite() && a[1].is_finite() && b[0].is_finite() && b[1].is_finite()) || a[1] == b[1] {
+                if !(a[0].is_finite() && a[1].is_finite() && b[0].is_finite() && b[1].is_finite())
+                    || a[1] == b[1]
+                {
                     continue;
                 }
                 edges.push(if a[1] < b[1] { (a, b, 1) } else { (b, a, -1) });
@@ -264,7 +280,9 @@ impl PathSeg {
         if edges.len() < 2 {
             return vec![];
         }
-        let x_at = |e: &([f64; 2], [f64; 2], i32), y: f64| e.0[0] + (e.1[0] - e.0[0]) * (y - e.0[1]) / (e.1[1] - e.0[1]);
+        let x_at = |e: &([f64; 2], [f64; 2], i32), y: f64| {
+            e.0[0] + (e.1[0] - e.0[0]) * (y - e.0[1]) / (e.1[1] - e.0[1])
+        };
         let mut ys: Vec<f64> = edges.iter().flat_map(|e| [e.0[1], e.1[1]]).collect();
         // Where two edges cross, a band boundary.
         for i in 0..edges.len() {
@@ -288,7 +306,12 @@ impl PathSeg {
             let (ya, yb) = (w[0], w[1]);
             let ym = (ya + yb) * 0.5;
             row.clear();
-            row.extend(edges.iter().filter(|e| e.0[1] < ym && ym < e.1[1]).map(|e| (x_at(e, ym), x_at(e, ya), x_at(e, yb), e.2)));
+            row.extend(
+                edges
+                    .iter()
+                    .filter(|e| e.0[1] < ym && ym < e.1[1])
+                    .map(|e| (x_at(e, ym), x_at(e, ya), x_at(e, yb), e.2)),
+            );
             row.sort_by(|a, b| a.0.total_cmp(&b.0));
             let mut wind = 0;
             for k in 0..row.len().saturating_sub(1) {
@@ -335,7 +358,10 @@ impl Widget {
                 if let Some(n) = s.strip_prefix('#').and_then(|n| n.parse::<u32>().ok()) {
                     return self.find(n);
                 }
-                all.iter().find(|w| !w.name.is_empty() && w.name == *s).or_else(|| all.iter().find(|w| w.id != 0 && w.text == *s)).copied()
+                all.iter()
+                    .find(|w| !w.name.is_empty() && w.name == *s)
+                    .or_else(|| all.iter().find(|w| w.id != 0 && w.text == *s))
+                    .copied()
             }
             _ => None,
         }
@@ -377,7 +403,14 @@ pub struct ScriptUiEvent {
 }
 
 /// The ScriptUI mouse events scripts can listen for (`addEventListener`).
-pub const MOUSE_EVENTS: [&str; 6] = ["mousedown", "mouseup", "mousemove", "mouseover", "mouseout", "click"];
+pub const MOUSE_EVENTS: [&str; 6] = [
+    "mousedown",
+    "mouseup",
+    "mousemove",
+    "mouseover",
+    "mouseout",
+    "click",
+];
 
 /// Hands an event to the script that owns the window; returns what the handler reported
 /// (`{ok, output, error}`) and updates [`Session::script_ui`].
@@ -492,7 +525,13 @@ fn align_children(w: &Widget) -> (String, String) {
         WidgetKind::Group => ("center", "center"),
         _ => ("center", "top"),
     };
-    let a = |i: usize, d: &str| w.align_children.get(i).filter(|s| !s.is_empty()).cloned().unwrap_or_else(|| d.to_string());
+    let a = |i: usize, d: &str| {
+        w.align_children
+            .get(i)
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .unwrap_or_else(|| d.to_string())
+    };
     // A single value applies to the axis it names.
     if w.align_children.len() == 1 {
         let v = w.align_children[0].clone();
@@ -509,24 +548,47 @@ fn align_children(w: &Widget) -> (String, String) {
 pub fn preferred(w: &Widget) -> [f64; 2] {
     let ps = w.preferred_size.unwrap_or([0.0; 2]);
     let content = if w.kind.is_container() {
-        let kids: Vec<[f64; 2]> = w.children.iter().filter(|c| c.visible).map(preferred).collect();
+        let kids: Vec<[f64; 2]> = w
+            .children
+            .iter()
+            .filter(|c| c.visible)
+            .map(preferred)
+            .collect();
         let m = margins(w);
         let sp = spacing(w);
         let n = kids.len() as f64;
         let (cw, ch) = match orientation(w) {
-            "row" => (kids.iter().map(|k| k[0]).sum::<f64>() + sp * (n - 1.0).max(0.0), kids.iter().map(|k| k[1]).fold(0.0, f64::max)),
-            "stack" => (kids.iter().map(|k| k[0]).fold(0.0, f64::max), kids.iter().map(|k| k[1]).fold(0.0, f64::max)),
-            _ => (kids.iter().map(|k| k[0]).fold(0.0, f64::max), kids.iter().map(|k| k[1]).sum::<f64>() + sp * (n - 1.0).max(0.0)),
+            "row" => (
+                kids.iter().map(|k| k[0]).sum::<f64>() + sp * (n - 1.0).max(0.0),
+                kids.iter().map(|k| k[1]).fold(0.0, f64::max),
+            ),
+            "stack" => (
+                kids.iter().map(|k| k[0]).fold(0.0, f64::max),
+                kids.iter().map(|k| k[1]).fold(0.0, f64::max),
+            ),
+            _ => (
+                kids.iter().map(|k| k[0]).fold(0.0, f64::max),
+                kids.iter().map(|k| k[1]).sum::<f64>() + sp * (n - 1.0).max(0.0),
+            ),
         };
-        let title_w = if matches!(w.kind, WidgetKind::Panel) { text_w(&w.text) + 20.0 } else { 0.0 };
+        let title_w = if matches!(w.kind, WidgetKind::Panel) {
+            text_w(&w.text) + 20.0
+        } else {
+            0.0
+        };
         [(cw + m[0] + m[2]).max(title_w), ch + m[1] + m[3]]
     } else {
         match w.kind {
-            WidgetKind::Button | WidgetKind::IconButton => [(text_w(&w.text) + 24.0).max(80.0), 25.0],
+            WidgetKind::Button | WidgetKind::IconButton => {
+                [(text_w(&w.text) + 24.0).max(80.0), 25.0]
+            }
             WidgetKind::StaticText => [text_w(&w.text) + 4.0, LINE_H * lines(&w.text)],
             WidgetKind::EditText => {
                 if w.multiline {
-                    [(text_w(&w.text) + 12.0).max(160.0), (LINE_H * lines(&w.text) + 8.0).max(60.0)]
+                    [
+                        (text_w(&w.text) + 12.0).max(160.0),
+                        (LINE_H * lines(&w.text) + 8.0).max(60.0),
+                    ]
                 } else {
                     [(text_w(&w.text) + 12.0).max(40.0), 22.0]
                 }
@@ -534,12 +596,21 @@ pub fn preferred(w: &Widget) -> [f64; 2] {
             WidgetKind::Checkbox | WidgetKind::RadioButton => [text_w(&w.text) + 24.0, 18.0],
             WidgetKind::Slider | WidgetKind::Scrollbar => [100.0, 22.0],
             WidgetKind::Progressbar => [100.0, 10.0],
-            WidgetKind::DropDownList => [w.items.iter().map(|i| text_w(i)).fold(0.0, f64::max) + 36.0, 22.0],
-            WidgetKind::ListBox => [(w.items.iter().map(|i| text_w(i)).fold(0.0, f64::max) + 24.0).max(80.0), (w.items.len().clamp(3, 10) as f64 * 18.0 + 4.0)],
+            WidgetKind::DropDownList => [
+                w.items.iter().map(|i| text_w(i)).fold(0.0, f64::max) + 36.0,
+                22.0,
+            ],
+            WidgetKind::ListBox => [
+                (w.items.iter().map(|i| text_w(i)).fold(0.0, f64::max) + 24.0).max(80.0),
+                (w.items.len().clamp(3, 10) as f64 * 18.0 + 4.0),
+            ],
             _ => [20.0, 20.0],
         }
     };
-    [if ps[0] > 0.0 { ps[0] } else { content[0] }, if ps[1] > 0.0 { ps[1] } else { content[1] }]
+    [
+        if ps[0] > 0.0 { ps[0] } else { content[0] },
+        if ps[1] > 0.0 { ps[1] } else { content[1] },
+    ]
 }
 
 fn place(w: &mut Widget, x: f64, y: f64, width: f64, height: f64) {
@@ -550,7 +621,12 @@ fn place(w: &mut Widget, x: f64, y: f64, width: f64, height: f64) {
     let m = margins(w);
     let sp = spacing(w);
     let (ah, av) = align_children(w);
-    let inner = [m[0], m[1], (width - m[0] - m[2]).max(0.0), (height - m[1] - m[3]).max(0.0)];
+    let inner = [
+        m[0],
+        m[1],
+        (width - m[0] - m[2]).max(0.0),
+        (height - m[1] - m[3]).max(0.0),
+    ];
     let orient = orientation(w).to_string();
     let mut cursor = 0.0;
     for c in w.children.iter_mut() {
@@ -564,8 +640,18 @@ fn place(w: &mut Widget, x: f64, y: f64, width: f64, height: f64) {
             continue;
         }
         let pref = preferred(c);
-        let h_align = c.alignment.first().filter(|s| !s.is_empty()).cloned().unwrap_or_else(|| ah.clone());
-        let v_align = c.alignment.get(1).filter(|s| !s.is_empty()).cloned().unwrap_or_else(|| av.clone());
+        let h_align = c
+            .alignment
+            .first()
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .unwrap_or_else(|| ah.clone());
+        let v_align = c
+            .alignment
+            .get(1)
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .unwrap_or_else(|| av.clone());
         let along = |a: &str, free: f64| match a {
             "center" => free / 2.0,
             "right" | "bottom" => free,
@@ -582,7 +668,12 @@ fn place(w: &mut Widget, x: f64, y: f64, width: f64, height: f64) {
             "stack" => {
                 let cw = if h_align == "fill" { inner[2] } else { pref[0] };
                 let ch = if v_align == "fill" { inner[3] } else { pref[1] };
-                (inner[0] + along(&h_align, inner[2] - cw), inner[1] + along(&v_align, inner[3] - ch), cw, ch)
+                (
+                    inner[0] + along(&h_align, inner[2] - cw),
+                    inner[1] + along(&v_align, inner[3] - ch),
+                    cw,
+                    ch,
+                )
             }
             _ => {
                 let cw = if h_align == "fill" { inner[2] } else { pref[0] };
@@ -599,7 +690,11 @@ fn place(w: &mut Widget, x: f64, y: f64, width: f64, height: f64) {
         let used = (cursor - sp).max(0.0);
         let shift = along_shift(&ah, inner[2] - used);
         if shift > 0.0 {
-            for c in w.children.iter_mut().filter(|c| c.visible && c.fixed_bounds.is_none()) {
+            for c in w
+                .children
+                .iter_mut()
+                .filter(|c| c.visible && c.fixed_bounds.is_none())
+            {
                 shift_all(c, shift, 0.0);
             }
         }
@@ -609,7 +704,11 @@ fn place(w: &mut Widget, x: f64, y: f64, width: f64, height: f64) {
         let used = (cursor - sp).max(0.0);
         let shift = along_shift(&av, inner[3] - used);
         if shift > 0.0 {
-            for c in w.children.iter_mut().filter(|c| c.visible && c.fixed_bounds.is_none()) {
+            for c in w
+                .children
+                .iter_mut()
+                .filter(|c| c.visible && c.fixed_bounds.is_none())
+            {
                 shift_all(c, 0.0, shift);
             }
         }
@@ -648,22 +747,46 @@ pub fn layout(w: &mut ScriptWindow) {
 fn window_p(s: &Session, p: &Value, cmd: &str) -> Result<u32> {
     let key = p.get("window");
     let w = match key {
-        Some(Value::Number(n)) => n.as_u64().map(|n| n as u32).filter(|n| s.script_ui.window(*n).is_some()),
-        Some(Value::String(t)) => s.script_ui.windows.iter().find(|w| w.title == *t).map(|w| w.id),
+        Some(Value::Number(n)) => n
+            .as_u64()
+            .map(|n| n as u32)
+            .filter(|n| s.script_ui.window(*n).is_some()),
+        Some(Value::String(t)) => s
+            .script_ui
+            .windows
+            .iter()
+            .find(|w| w.title == *t)
+            .map(|w| w.id),
         None if s.script_ui.windows.len() == 1 => s.script_ui.windows.first().map(|w| w.id),
         _ => None,
     };
-    w.ok_or_else(|| crate::commands::bad(cmd, "no such script window (give `window`: id or title from scriptui.list)"))
+    w.ok_or_else(|| {
+        crate::commands::bad(
+            cmd,
+            "no such script window (give `window`: id or title from scriptui.list)",
+        )
+    })
 }
 
 fn widget_p(s: &Session, win: u32, p: &Value, cmd: &str) -> Result<u32> {
-    let w = s.script_ui.window(win).ok_or_else(|| crate::commands::bad(cmd, "window closed"))?;
-    let key = p.get("widget").ok_or_else(|| crate::commands::bad(cmd, "missing `widget` (id, `#id`, properties.name or text)"))?;
-    w.root.lookup(key).map(|w| w.id).ok_or_else(|| crate::commands::bad(cmd, format!("no control {key} in window {win}")))
+    let w = s
+        .script_ui
+        .window(win)
+        .ok_or_else(|| crate::commands::bad(cmd, "window closed"))?;
+    let key = p.get("widget").ok_or_else(|| {
+        crate::commands::bad(cmd, "missing `widget` (id, `#id`, properties.name or text)")
+    })?;
+    w.root
+        .lookup(key)
+        .map(|w| w.id)
+        .ok_or_else(|| crate::commands::bad(cmd, format!("no control {key} in window {win}")))
 }
 
 fn dispatch(s: &mut Session, ev: ScriptUiEvent) -> Result<Value> {
-    let f = s.script_ui.dispatch.ok_or_else(|| EngineError::Other("scripting is not available in this build".into()))?;
+    let f = s
+        .script_ui
+        .dispatch
+        .ok_or_else(|| EngineError::Other("scripting is not available in this build".into()))?;
     // The event may close a ScriptUI panel (its tab, or the script itself): forget it then.
     let open = crate::commands::scripts::open_panel_names(s);
     let r = f(s, &ev).map_err(EngineError::Other);
@@ -693,11 +816,27 @@ pub(crate) fn click(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "scriptui.click";
     let window = window_p(s, p, c)?;
     let widget = widget_p(s, window, p, c)?;
-    let w = s.script_ui.window(window).and_then(|w| w.root.find(widget)).cloned().unwrap_or_default();
+    let w = s
+        .script_ui
+        .window(window)
+        .and_then(|w| w.root.find(widget))
+        .cloned()
+        .unwrap_or_default();
     if !w.enabled {
-        return Err(crate::commands::bad(c, format!("control {widget} is disabled")));
+        return Err(crate::commands::bad(
+            c,
+            format!("control {widget} is disabled"),
+        ));
     }
-    dispatch(s, ScriptUiEvent { window, widget, kind: "click".into(), value: Value::Null })
+    dispatch(
+        s,
+        ScriptUiEvent {
+            window,
+            widget,
+            kind: "click".into(),
+            value: Value::Null,
+        },
+    )
 }
 
 /// `scriptui.set`: set a control's value (edit text, slider, checkbox, list selection) as the
@@ -706,26 +845,52 @@ pub(crate) fn set(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "scriptui.set";
     let window = window_p(s, p, c)?;
     let widget = widget_p(s, window, p, c)?;
-    let w = s.script_ui.window(window).and_then(|w| w.root.find(widget)).cloned().unwrap_or_default();
+    let w = s
+        .script_ui
+        .window(window)
+        .and_then(|w| w.root.find(widget))
+        .cloned()
+        .unwrap_or_default();
     if !w.enabled {
-        return Err(crate::commands::bad(c, format!("control {widget} is disabled")));
+        return Err(crate::commands::bad(
+            c,
+            format!("control {widget} is disabled"),
+        ));
     }
-    let mut value = p.get("value").cloned().ok_or_else(|| crate::commands::bad(c, "missing `value`"))?;
+    let mut value = p
+        .get("value")
+        .cloned()
+        .ok_or_else(|| crate::commands::bad(c, "missing `value`"))?;
     // List selections by item text.
     if matches!(w.kind, WidgetKind::DropDownList | WidgetKind::ListBox)
         && let Value::String(t) = &value
     {
-        let i = w.items.iter().position(|it| it == t).ok_or_else(|| crate::commands::bad(c, format!("no item `{t}` (items: {:?})", w.items)))?;
+        let i = w.items.iter().position(|it| it == t).ok_or_else(|| {
+            crate::commands::bad(c, format!("no item `{t}` (items: {:?})", w.items))
+        })?;
         value = json!(i);
     }
-    let kind = if p.get("changing").and_then(Value::as_bool) == Some(true) { "changing" } else { "change" };
-    dispatch(s, ScriptUiEvent { window, widget, kind: kind.into(), value })
+    let kind = if p.get("changing").and_then(Value::as_bool) == Some(true) {
+        "changing"
+    } else {
+        "change"
+    };
+    dispatch(
+        s,
+        ScriptUiEvent {
+            window,
+            widget,
+            kind: kind.into(),
+            value,
+        },
+    )
 }
 
 /// `script.runTasks`: run the scripts' `app.scheduleTask` tasks that are due now (frontends do
 /// it every frame; headless hosts and agents call this).
 pub(crate) fn run_tasks(s: &mut Session, _: &Value) -> Result<Value> {
-    ScriptUi::run_tasks(s).ok_or_else(|| EngineError::Other("scripting is not available in this build".into()))
+    ScriptUi::run_tasks(s)
+        .ok_or_else(|| EngineError::Other("scripting is not available in this build".into()))
 }
 
 /// `scriptui.mouse`: a mouse event on a control, as the pointer would make it: the script's
@@ -736,19 +901,46 @@ pub(crate) fn mouse(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "scriptui.mouse";
     let window = window_p(s, p, c)?;
     let widget = widget_p(s, window, p, c)?;
-    let ty = p.get("type").and_then(Value::as_str).unwrap_or("click").to_ascii_lowercase();
+    let ty = p
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or("click")
+        .to_ascii_lowercase();
     let Some(ty) = MOUSE_EVENTS.iter().find(|t| **t == ty) else {
-        return Err(crate::commands::bad(c, format!("unknown mouse event `{ty}` (one of {})", MOUSE_EVENTS.join(", "))));
+        return Err(crate::commands::bad(
+            c,
+            format!(
+                "unknown mouse event `{ty}` (one of {})",
+                MOUSE_EVENTS.join(", ")
+            ),
+        ));
     };
-    let w = s.script_ui.window(window).and_then(|w| w.root.find(widget)).cloned().unwrap_or_default();
+    let w = s
+        .script_ui
+        .window(window)
+        .and_then(|w| w.root.find(widget))
+        .cloned()
+        .unwrap_or_default();
     if !w.enabled {
-        return Err(crate::commands::bad(c, format!("control {widget} is disabled")));
+        return Err(crate::commands::bad(
+            c,
+            format!("control {widget} is disabled"),
+        ));
     }
     // Hostile input stays finite and bounded.
     const FAR: f64 = 1.0e6;
-    let num = |k: &str, lo: f64, hi: f64, d: f64| p.get(k).and_then(Value::as_f64).filter(|v| v.is_finite()).map_or(d, |v| v.clamp(lo, hi));
+    let num = |k: &str, lo: f64, hi: f64, d: f64| {
+        p.get(k)
+            .and_then(Value::as_f64)
+            .filter(|v| v.is_finite())
+            .map_or(d, |v| v.clamp(lo, hi))
+    };
     let flag = |k: &str| p.get(k).and_then(Value::as_bool).unwrap_or(false);
-    let clicks = if matches!(*ty, "mousemove" | "mouseover" | "mouseout") { 0.0 } else { 1.0 };
+    let clicks = if matches!(*ty, "mousemove" | "mouseover" | "mouseout") {
+        0.0
+    } else {
+        1.0
+    };
     let value = json!({
         "x": num("x", -FAR, FAR, w.bounds[2] / 2.0),
         "y": num("y", -FAR, FAR, w.bounds[3] / 2.0),
@@ -761,14 +953,30 @@ pub(crate) fn mouse(s: &mut Session, p: &Value) -> Result<Value> {
         "metaKey": flag("metaKey"),
         "shiftKey": flag("shiftKey"),
     });
-    dispatch(s, ScriptUiEvent { window, widget, kind: (*ty).to_string(), value })
+    dispatch(
+        s,
+        ScriptUiEvent {
+            window,
+            widget,
+            kind: (*ty).to_string(),
+            value,
+        },
+    )
 }
 
 /// `scriptui.close`: close a window (a dialog's `show()` returns `result`, default 2 = Cancel).
 pub(crate) fn close(s: &mut Session, p: &Value) -> Result<Value> {
     let window = window_p(s, p, "scriptui.close")?;
     let result = p.get("result").cloned().unwrap_or(json!(2));
-    dispatch(s, ScriptUiEvent { window, widget: 0, kind: "close".into(), value: result })
+    dispatch(
+        s,
+        ScriptUiEvent {
+            window,
+            widget: 0,
+            kind: "close".into(),
+            value: result,
+        },
+    )
 }
 
 #[cfg(test)]
@@ -776,7 +984,13 @@ mod tests {
     use super::*;
 
     fn w(kind: WidgetKind, text: &str) -> Widget {
-        Widget { kind, text: text.into(), enabled: true, visible: true, ..Default::default() }
+        Widget {
+            kind,
+            text: text.into(),
+            enabled: true,
+            visible: true,
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -792,7 +1006,12 @@ mod tests {
         label.id = 4;
         let mut root = w(WidgetKind::Window, "Dialog");
         root.children = vec![label, row];
-        let mut win = ScriptWindow { id: 1, root, visible: true, ..Default::default() };
+        let mut win = ScriptWindow {
+            id: 1,
+            root,
+            visible: true,
+            ..Default::default()
+        };
         layout(&mut win);
         let r = &win.root;
         // Window: 15 px margins, children stacked with 10 px spacing.
@@ -832,31 +1051,61 @@ mod tests {
             PathSeg::L { x: 10.0, y: 0.0 },
             PathSeg::L { x: 10.0, y: 10.0 },
             PathSeg::Z,
-            PathSeg::R { x: 1.0, y: 2.0, w: 3.0, h: 4.0 },
-            PathSeg::E { x: 0.0, y: 0.0, w: 20.0, h: 10.0 },
+            PathSeg::R {
+                x: 1.0,
+                y: 2.0,
+                w: 3.0,
+                h: 4.0,
+            },
+            PathSeg::E {
+                x: 0.0,
+                y: 0.0,
+                w: 20.0,
+                h: 10.0,
+            },
         ];
         let lines = PathSeg::polylines(&path, 16);
         assert_eq!(lines.len(), 3);
-        assert_eq!(lines[0], (vec![[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]], true));
+        assert_eq!(
+            lines[0],
+            (vec![[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]], true)
+        );
         assert_eq!(lines[1].0[2], [4.0, 6.0]);
         assert_eq!(lines[2].0.len(), 16);
         assert!((lines[2].0[0][0] - 20.0).abs() < 1e-9 && (lines[2].0[4][1] - 10.0).abs() < 1e-9);
-        let op = DrawOp::Fill { color: Some([1.0, 0.0, 0.0, 1.0]), path };
+        let op = DrawOp::Fill {
+            color: Some([1.0, 0.0, 0.0, 1.0]),
+            path,
+        };
         let j = serde_json::to_value(&op).unwrap();
         assert_eq!(j["op"], "fill");
         assert_eq!(j["path"][0], json!({"k": "M", "x": 0.0, "y": 0.0}));
         assert_eq!(serde_json::from_value::<DrawOp>(j).unwrap(), op);
-        let t: DrawOp = serde_json::from_value(json!({"op": "text", "text": "Hi", "color": null, "x": 1, "y": 2, "size": 14})).unwrap();
+        let t: DrawOp = serde_json::from_value(
+            json!({"op": "text", "text": "Hi", "color": null, "x": 1, "y": 2, "size": 14}),
+        )
+        .unwrap();
         assert!(matches!(t, DrawOp::Text { size, .. } if size == 14.0));
     }
 
     #[test]
     fn publish_replaces_a_hosts_windows() {
         let mut ui = ScriptUi::default();
-        let win = |id: u32, visible: bool| ScriptWindow { id, visible, root: w(WidgetKind::Window, ""), ..Default::default() };
+        let win = |id: u32, visible: bool| ScriptWindow {
+            id,
+            visible,
+            root: w(WidgetKind::Window, ""),
+            ..Default::default()
+        };
         ui.publish(7, vec![win(1, true), win(2, true)]);
         ui.publish(8, vec![win(3, true)]);
-        assert_eq!(ui.windows.iter().map(|w| (w.id, w.host)).collect::<Vec<_>>(), [(1, 7), (2, 7), (3, 8)]);
+        assert_eq!(
+            ui.windows
+                .iter()
+                .map(|w| (w.id, w.host))
+                .collect::<Vec<_>>(),
+            [(1, 7), (2, 7), (3, 8)]
+        );
         ui.publish(7, vec![win(2, true), win(1, false)]);
         assert_eq!(ui.windows.iter().map(|w| w.id).collect::<Vec<_>>(), [2, 3]);
         let j = serde_json::to_value(&ui).unwrap();
@@ -864,18 +1113,30 @@ mod tests {
     }
 
     fn area(tris: &[[[f64; 2]; 3]]) -> f64 {
-        tris.iter().map(|t| ((t[1][0] - t[0][0]) * (t[2][1] - t[0][1]) - (t[2][0] - t[0][0]) * (t[1][1] - t[0][1])).abs() * 0.5).sum()
+        tris.iter()
+            .map(|t| {
+                ((t[1][0] - t[0][0]) * (t[2][1] - t[0][1])
+                    - (t[2][0] - t[0][0]) * (t[1][1] - t[0][1]))
+                    .abs()
+                    * 0.5
+            })
+            .sum()
     }
 
     fn poly(pts: &[[f64; 2]]) -> Vec<PathSeg> {
-        let mut v = vec![PathSeg::M { x: pts[0][0], y: pts[0][1] }];
+        let mut v = vec![PathSeg::M {
+            x: pts[0][0],
+            y: pts[0][1],
+        }];
         v.extend(pts[1..].iter().map(|p| PathSeg::L { x: p[0], y: p[1] }));
         v.push(PathSeg::Z);
         v
     }
 
     fn covers(tris: &[[[f64; 2]; 3]], p: [f64; 2]) -> bool {
-        let s = |a: [f64; 2], b: [f64; 2]| (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+        let s = |a: [f64; 2], b: [f64; 2]| {
+            (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+        };
         tris.iter().any(|t| {
             let (d0, d1, d2) = (s(t[0], t[1]), s(t[1], t[2]), s(t[2], t[0]));
             (d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0) || (d0 <= 0.0 && d1 <= 0.0 && d2 <= 0.0)
@@ -885,14 +1146,22 @@ mod tests {
     #[test]
     fn concave_self_intersecting_and_holed_fills() {
         // An L (concave): area 3, the notch stays empty.
-        let l = poly(&[[0.0, 0.0], [2.0, 0.0], [2.0, 1.0], [1.0, 1.0], [1.0, 2.0], [0.0, 2.0]]);
+        let l = poly(&[
+            [0.0, 0.0],
+            [2.0, 0.0],
+            [2.0, 1.0],
+            [1.0, 1.0],
+            [1.0, 2.0],
+            [0.0, 2.0],
+        ]);
         let t = PathSeg::fill_triangles(&l, 48, false);
         assert!((area(&t) - 3.0).abs() < 1e-9, "{}", area(&t));
         assert!(covers(&t, [0.5, 1.5]) && !covers(&t, [1.5, 1.5]));
         // A five-pointed star drawn in one stroke: non-zero fills the centre, even-odd doesn't.
         let star: Vec<[f64; 2]> = (0..5)
             .map(|i| {
-                let a = (i * 2 % 5) as f64 * std::f64::consts::TAU / 5.0 - std::f64::consts::FRAC_PI_2;
+                let a =
+                    (i * 2 % 5) as f64 * std::f64::consts::TAU / 5.0 - std::f64::consts::FRAC_PI_2;
                 [50.0 + 40.0 * a.cos(), 50.0 + 40.0 * a.sin()]
             })
             .collect();
@@ -907,10 +1176,27 @@ mod tests {
         let h = PathSeg::fill_triangles(&holed, 48, false);
         assert!((area(&h) - 84.0).abs() < 1e-9 && !covers(&h, [5.0, 5.0]));
         // rectPath + ellipsePath in one path; an unclosed subpath fills as if closed.
-        let shapes = vec![PathSeg::R { x: 0.0, y: 0.0, w: 4.0, h: 2.0 }, PathSeg::E { x: 10.0, y: 0.0, w: 20.0, h: 20.0 }];
+        let shapes = vec![
+            PathSeg::R {
+                x: 0.0,
+                y: 0.0,
+                w: 4.0,
+                h: 2.0,
+            },
+            PathSeg::E {
+                x: 10.0,
+                y: 0.0,
+                w: 20.0,
+                h: 20.0,
+            },
+        ];
         let a = area(&PathSeg::fill_triangles(&shapes, 256, false));
         assert!((a - 8.0 - std::f64::consts::PI * 100.0).abs() < 1.0, "{a}");
-        let open = vec![PathSeg::M { x: 0.0, y: 0.0 }, PathSeg::L { x: 4.0, y: 0.0 }, PathSeg::L { x: 0.0, y: 4.0 }];
+        let open = vec![
+            PathSeg::M { x: 0.0, y: 0.0 },
+            PathSeg::L { x: 4.0, y: 0.0 },
+            PathSeg::L { x: 0.0, y: 4.0 },
+        ];
         assert!((area(&PathSeg::fill_triangles(&open, 48, false)) - 8.0).abs() < 1e-9);
     }
 }

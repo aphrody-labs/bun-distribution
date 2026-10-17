@@ -26,7 +26,10 @@ fn is_safe_public_parsed(url: &reqwest::Url) -> bool {
         return false;
     };
     // IPv6 literals keep their brackets in `host_str`.
-    let literal = host.strip_prefix('[').and_then(|h| h.strip_suffix(']')).unwrap_or(host);
+    let literal = host
+        .strip_prefix('[')
+        .and_then(|h| h.strip_suffix(']'))
+        .unwrap_or(host);
     match literal.parse::<std::net::IpAddr>() {
         Err(_) => {
             let host_lower = host.to_ascii_lowercase();
@@ -35,7 +38,7 @@ fn is_safe_public_parsed(url: &reqwest::Url) -> bool {
                 || host_lower.ends_with(".localhost")
                 || host_lower.ends_with(".local")
                 || host_lower.ends_with(".internal"))
-        },
+        }
         Ok(std::net::IpAddr::V4(v4)) => is_public_v4(v4),
         Ok(std::net::IpAddr::V6(v6)) => {
             if let Some(v4) = v6.to_ipv4_mapped() {
@@ -46,7 +49,7 @@ fn is_safe_public_parsed(url: &reqwest::Url) -> bool {
                 || v6.is_unspecified()
                 || (first & 0xfe00) == 0xfc00 // unique local fc00::/7
                 || (first & 0xffc0) == 0xfe80) // link-local fe80::/10
-        },
+        }
     }
 }
 
@@ -92,7 +95,10 @@ pub async fn fetch_and_extract_web(url: &str) -> Result<WebPageSummary> {
 
     let response = client
         .get(url)
-        .header(reqwest::header::USER_AGENT, "AphrodyWebBot/1.0 (+https://aphrody.com)")
+        .header(
+            reqwest::header::USER_AGENT,
+            "AphrodyWebBot/1.0 (+https://aphrody.com)",
+        )
         .send()
         .await
         .with_context(|| format!("Failed to fetch URL: {url}"))?;
@@ -156,12 +162,18 @@ pub async fn fetch_and_extract_web(url: &str) -> Result<WebPageSummary> {
 /// Builds a rich Discord Embed representing a web page unfurl.
 pub fn build_web_embed(summary: &WebPageSummary) -> Embed {
     let excerpt = if summary.markdown_content.len() > 1500 {
-        format!("{}… *(truncated)*", crate::types::clip(&summary.markdown_content, 1500))
+        format!(
+            "{}… *(truncated)*",
+            crate::types::clip(&summary.markdown_content, 1500)
+        )
     } else {
         summary.markdown_content.clone()
     };
 
-    let thumbnail = summary.image_url.as_ref().map(|url| EmbedThumbnail { url: url.clone() });
+    let thumbnail = summary
+        .image_url
+        .as_ref()
+        .map(|url| EmbedThumbnail { url: url.clone() });
 
     let mut fields = Vec::new();
     if let Some(ref canon) = summary.canonical_url {
@@ -175,7 +187,10 @@ pub fn build_web_embed(summary: &WebPageSummary) -> Embed {
     Embed {
         title: Some(summary.title.clone()),
         url: Some(summary.url.clone()),
-        description: Some(format!("{}\n\n**Article Summary:**\n{}", summary.description, excerpt)),
+        description: Some(format!(
+            "{}\n\n**Article Summary:**\n{}",
+            summary.description, excerpt
+        )),
         color: Some(0x10B981), // Emerald green
         author: Some(EmbedAuthor {
             name: "Aphrody Web Engine".to_string(),
@@ -202,7 +217,9 @@ mod tests {
         assert!(!is_safe_public_url("http://127.0.0.1:3000"));
         assert!(!is_safe_public_url("http://10.200.77.1"));
         assert!(!is_safe_public_url("http://192.168.1.1"));
-        assert!(!is_safe_public_url("http://169.254.169.254/latest/meta-data"));
+        assert!(!is_safe_public_url(
+            "http://169.254.169.254/latest/meta-data"
+        ));
         assert!(!is_safe_public_url("file:///etc/passwd"));
         assert!(!is_safe_public_url("http://[::1]:8080/"));
         assert!(!is_safe_public_url("http://[::ffff:127.0.0.1]/"));
@@ -210,6 +227,8 @@ mod tests {
         assert!(!is_safe_public_url("http://100.64.0.1/"));
         assert!(!is_safe_public_url("http://localhost./"));
         assert!(is_safe_public_url("https://aphrody.com"));
-        assert!(is_safe_public_url("https://github.com/aphrody-labs/aphrody"));
+        assert!(is_safe_public_url(
+            "https://github.com/aphrody-labs/aphrody"
+        ));
     }
 }

@@ -69,12 +69,19 @@ fn classify_pointer_iter_loop(spec: &BlockSpec) -> Option<IdleClass> {
         return None;
     }
     let branch_pc = spec.start_pc.wrapping_add(8);
-    let target = if i2.aa() { i2.bd() as u32 } else { branch_pc.wrapping_add_signed(i2.bd()) };
+    let target = if i2.aa() {
+        i2.bd() as u32
+    } else {
+        branch_pc.wrapping_add_signed(i2.bd())
+    };
     if target != spec.start_pc {
         return None;
     }
 
-    Some(IdleClass::PointerIterLoop { gpr: addi_ra, stride: stride as i32 })
+    Some(IdleClass::PointerIterLoop {
+        gpr: addi_ra,
+        stride: stride as i32,
+    })
 }
 
 fn is_cache_op_no_side_effect(instr: crate::gekko::instruction::Instruction) -> bool {
@@ -96,9 +103,17 @@ fn classify_branch_to_self(spec: &BlockSpec) -> Option<IdleClass> {
     }
 
     let li = instr.li();
-    let target = if instr.aa() { li as u32 } else { spec.start_pc.wrapping_add_signed(li) };
+    let target = if instr.aa() {
+        li as u32
+    } else {
+        spec.start_pc.wrapping_add_signed(li)
+    };
 
-    if target == spec.start_pc { Some(IdleClass::BranchToSelf) } else { None }
+    if target == spec.start_pc {
+        Some(IdleClass::BranchToSelf)
+    } else {
+        None
+    }
 }
 
 fn classify_polling_loop(spec: &BlockSpec) -> bool {
@@ -143,8 +158,11 @@ fn is_idle_loop_terminator(
         return false;
     }
 
-    let target =
-        if instr.aa() { instr.bd() as u32 } else { branch_pc.wrapping_add_signed(instr.bd()) };
+    let target = if instr.aa() {
+        instr.bd() as u32
+    } else {
+        branch_pc.wrapping_add_signed(instr.bd())
+    };
 
     target == block_start_pc
 }
@@ -204,7 +222,7 @@ fn xform_dataflow(instr: crate::gekko::instruction::Instruction) -> Option<(u32,
         266 | 40 | 10 | 138 | 202 | 234 | 8 | 136 | 200 | 232 | 104 | 235 | 75 | 11 | 491 | 459
         | 778 | 552 | 522 | 650 | 714 | 746 | 520 | 648 | 712 | 744 | 616 | 747 | 1003 | 971 => {
             (bit(ra) | bit(rb), bit(rd_or_s))
-        },
+        }
         28 | 60 | 124 | 284 | 316 | 412 | 444 | 476 => (bit(rd_or_s) | bit(rb), bit(ra)),
         26 | 922 | 954 => (bit(rd_or_s), bit(ra)),
         24 | 536 | 792 => (bit(rd_or_s) | bit(rb), bit(ra)),

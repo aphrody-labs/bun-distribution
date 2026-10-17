@@ -57,9 +57,14 @@ pub(super) fn adapt_warning(w: String) -> Option<String> {
     }
     if w.contains("without image data") {
         let count = w.split_whitespace().next().unwrap_or("Some");
-        return Some(format!("{count} image fill(s) whose image isn't in the file show a grey placeholder"));
+        return Some(format!(
+            "{count} image fill(s) whose image isn't in the file show a grey placeholder"
+        ));
     }
-    Some(w.replace("the variables JSON", "the file").replace("the file JSON", "the file"))
+    Some(
+        w.replace("the variables JSON", "the file")
+            .replace("the file JSON", "the file"),
+    )
 }
 
 // ---- small readers ----
@@ -69,7 +74,11 @@ fn num(n: &Kv, k: &str) -> Option<f64> {
 }
 
 fn guid(v: &Kv) -> Option<String> {
-    Some(format!("{}:{}", num(v, "sessionID")? as u64, num(v, "localID")? as u64))
+    Some(format!(
+        "{}:{}",
+        num(v, "sessionID")? as u64,
+        num(v, "localID")? as u64
+    ))
 }
 
 /// A `GUID`-holding reference (`StyleId`, `VariableID`, …): its `guid`.
@@ -88,7 +97,14 @@ fn vec2(v: &Kv) -> Option<Value> {
 
 fn matrix(m: &Kv) -> Option<Affine> {
     let c = |k: &str| num(m, k);
-    let a = Affine::new([c("m00")?, c("m10")?, c("m01")?, c("m11")?, c("m02")?, c("m12")?]);
+    let a = Affine::new([
+        c("m00")?,
+        c("m10")?,
+        c("m01")?,
+        c("m11")?,
+        c("m02")?,
+        c("m12")?,
+    ]);
     a.as_coeffs().iter().all(|x| x.is_finite()).then_some(a)
 }
 
@@ -179,19 +195,26 @@ impl<'a> Mapper<'a> {
         let mut kids: BTreeMap<String, Vec<(&'a str, String)>> = BTreeMap::new();
         let mut prop_defs = BTreeMap::new();
         for n in msg.get("nodeChanges").map(Kv::list).unwrap_or_default() {
-            let Some(id) = n.get("guid").and_then(guid) else { continue };
+            let Some(id) = n.get("guid").and_then(guid) else {
+                continue;
+            };
             if n.get("phase").and_then(Kv::str) == Some("REMOVED") {
                 continue;
             }
             if let Some(p) = n.get("parentIndex")
                 && let Some(parent) = p.get("guid").and_then(guid)
             {
-                kids.entry(parent).or_default().push((p.get("position").and_then(Kv::str).unwrap_or(""), id.clone()));
+                kids.entry(parent).or_default().push((
+                    p.get("position").and_then(Kv::str).unwrap_or(""),
+                    id.clone(),
+                ));
             }
             for d in n.get("componentPropDefs").map(Kv::list).unwrap_or_default() {
-                if let (Some(did), Some(name), Some(ty)) =
-                    (d.get("id").and_then(guid), d.get("name").and_then(Kv::str), d.get("type").and_then(Kv::str))
-                {
+                if let (Some(did), Some(name), Some(ty)) = (
+                    d.get("id").and_then(guid),
+                    d.get("name").and_then(Kv::str),
+                    d.get("type").and_then(Kv::str),
+                ) {
                     prop_defs.insert(did.clone(), (format!("{name}#{did}"), ty));
                 }
             }
@@ -201,9 +224,24 @@ impl<'a> Mapper<'a> {
             list.sort();
             list.dedup_by(|a, b| a.1 == b.1);
         }
-        let blobs =
-            msg.get("blobs").map(Kv::list).unwrap_or_default().iter().map(|b| b.get("bytes").and_then(Kv::bytes).unwrap_or_default()).collect();
-        Self { nodes, kids, blobs, prop_defs, styles: Obj::new(), components: Obj::new(), sets: Obj::new(), warnings: Vec::new(), count: 0 }
+        let blobs = msg
+            .get("blobs")
+            .map(Kv::list)
+            .unwrap_or_default()
+            .iter()
+            .map(|b| b.get("bytes").and_then(Kv::bytes).unwrap_or_default())
+            .collect();
+        Self {
+            nodes,
+            kids,
+            blobs,
+            prop_defs,
+            styles: Obj::new(),
+            components: Obj::new(),
+            sets: Obj::new(),
+            warnings: Vec::new(),
+            count: 0,
+        }
     }
 
     fn warn(&mut self, w: impl Into<String>) {
@@ -214,19 +252,33 @@ impl<'a> Mapper<'a> {
     }
 
     fn children(&self, id: &str) -> Vec<String> {
-        self.kids.get(id).map(|k| k.iter().map(|(_, c)| c.clone()).collect()).unwrap_or_default()
+        self.kids
+            .get(id)
+            .map(|k| k.iter().map(|(_, c)| c.clone()).collect())
+            .unwrap_or_default()
     }
 
     /// The DOCUMENT with its pages.
     fn document(&mut self) -> Value {
-        let doc_id = self.nodes.iter().find(|(_, n)| n.get("type").and_then(Kv::str) == Some("DOCUMENT")).map(|(id, _)| id.clone());
+        let doc_id = self
+            .nodes
+            .iter()
+            .find(|(_, n)| n.get("type").and_then(Kv::str) == Some("DOCUMENT"))
+            .map(|(id, _)| id.clone());
         let pages: Vec<String> = match &doc_id {
             Some(d) => self.children(d),
-            None => self.nodes.iter().filter(|(_, n)| n.get("type").and_then(Kv::str) == Some("CANVAS")).map(|(id, _)| id.clone()).collect(),
+            None => self
+                .nodes
+                .iter()
+                .filter(|(_, n)| n.get("type").and_then(Kv::str) == Some("CANVAS"))
+                .map(|(id, _)| id.clone())
+                .collect(),
         };
         let mut out = Vec::new();
         for p in pages {
-            let Some(&n) = self.nodes.get(&p) else { continue };
+            let Some(&n) = self.nodes.get(&p) else {
+                continue;
+            };
             if n.get("type").and_then(Kv::str) != Some("CANVAS") {
                 self.warn("document children other than pages were skipped");
                 continue;
@@ -259,15 +311,29 @@ impl<'a> Mapper<'a> {
         let mut flows: Vec<(&str, Value)> = Vec::new();
         let mut kids = Vec::new();
         for c in self.children(id) {
-            if let Some(sp) = self.nodes.get(&c).and_then(|k| k.get("prototypeStartingPoint")) {
-                let name = sp.get("name").and_then(Kv::str).filter(|s| !s.is_empty()).unwrap_or("Flow");
-                flows.push((sp.get("position").and_then(Kv::str).unwrap_or(""), json!({"nodeId": c, "name": name})));
+            if let Some(sp) = self
+                .nodes
+                .get(&c)
+                .and_then(|k| k.get("prototypeStartingPoint"))
+            {
+                let name = sp
+                    .get("name")
+                    .and_then(Kv::str)
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or("Flow");
+                flows.push((
+                    sp.get("position").and_then(Kv::str).unwrap_or(""),
+                    json!({"nodeId": c, "name": name}),
+                ));
             }
             kids.extend(self.layer(&c, None, Affine::IDENTITY, None, 0));
         }
         flows.sort_by(|a, b| a.0.cmp(b.0));
         if !flows.is_empty() {
-            o.insert("flowStartingPoints".into(), Value::Array(flows.into_iter().map(|f| f.1).collect()));
+            o.insert(
+                "flowStartingPoints".into(),
+                Value::Array(flows.into_iter().map(|f| f.1).collect()),
+            );
         }
         o.insert("children".into(), Value::Array(kids));
         Value::Object(o)
@@ -276,19 +342,32 @@ impl<'a> Mapper<'a> {
     /// Layer `id` (inside instance `inst` when expanding one) and its subtree. `space`: from the
     /// parent's coordinates to the enclosing frame's (groups and booleans place their children in
     /// the frame's space, like the REST JSON). `parent`: the parent's view (grid tracks).
-    fn layer(&mut self, id: &str, inst: Option<&Inst<'a>>, space: Affine, parent: Option<&View<'a>>, depth: usize) -> Option<Value> {
+    fn layer(
+        &mut self,
+        id: &str,
+        inst: Option<&Inst<'a>>,
+        space: Affine,
+        parent: Option<&View<'a>>,
+        depth: usize,
+    ) -> Option<Value> {
         if depth > MAX_DEPTH {
-            self.warn(format!("layers nested deeper than {MAX_DEPTH} levels were skipped"));
+            self.warn(format!(
+                "layers nested deeper than {MAX_DEPTH} levels were skipped"
+            ));
             return None;
         }
         if self.count >= MAX_NODES {
-            self.warn(format!("the file has more than {MAX_NODES} layers; the rest were skipped"));
+            self.warn(format!(
+                "the file has more than {MAX_NODES} layers; the rest were skipped"
+            ));
             return None;
         }
         let base = *self.nodes.get(id)?;
         let path = inst.map(|i| [i.path.as_slice(), &[id.to_string()]].concat());
         let view = match (inst, &path) {
-            (Some(i), Some(p)) => View::of(base).with(i.overrides.get(p).into_iter().flatten().copied()),
+            (Some(i), Some(p)) => {
+                View::of(base).with(i.overrides.get(p).into_iter().flatten().copied())
+            }
             _ => View::of(base),
         };
         let rest_id = match (inst, &path) {
@@ -306,7 +385,10 @@ impl<'a> Mapper<'a> {
             t => stand.map_or(t, |s| s.0),
         };
         if let Some((_, what)) = stand {
-            self.warn(format!("{} layers import as {what}", own.to_ascii_lowercase().replace('_', " ")));
+            self.warn(format!(
+                "{} layers import as {what}",
+                own.to_ascii_lowercase().replace('_', " ")
+            ));
         }
         self.count += 1;
         let mut o = Obj::new();
@@ -319,14 +401,19 @@ impl<'a> Mapper<'a> {
             "VECTOR" | "STAR" | "REGULAR_POLYGON" => self.geometry(&mut o, &view),
             "ELLIPSE" => {
                 if let Some(a) = view.get("arcData") {
-                    let arc: Obj =
-                        ["startingAngle", "endingAngle", "innerRadius"].iter().filter_map(|k| Some((k.to_string(), json!(num(a, k)?)))).collect();
+                    let arc: Obj = ["startingAngle", "endingAngle", "innerRadius"]
+                        .iter()
+                        .filter_map(|k| Some((k.to_string(), json!(num(a, k)?))))
+                        .collect();
                     o.insert("arcData".into(), Value::Object(arc));
                 }
             }
             "BOOLEAN_OPERATION" => {
                 if let Some(op) = view.str("booleanOperation") {
-                    o.insert("booleanOperation".into(), json!(if op == "XOR" { "EXCLUDE" } else { op }));
+                    o.insert(
+                        "booleanOperation".into(),
+                        json!(if op == "XOR" { "EXCLUDE" } else { op }),
+                    );
                 }
             }
             _ => {}
@@ -367,23 +454,45 @@ impl<'a> Mapper<'a> {
 
     /// A non-rectangular shape-with-text's shape, as a vector under its frame (which gives up its
     /// paints to it).
-    fn shape_with_text(&mut self, o: &mut Obj, v: &View<'a>, own: &str, rest_id: &str) -> Option<Value> {
+    fn shape_with_text(
+        &mut self,
+        o: &mut Obj,
+        v: &View<'a>,
+        own: &str,
+        rest_id: &str,
+    ) -> Option<Value> {
         let shape = v.str("shapeWithTextType").unwrap_or("SQUARE");
         let outlined = !v.list("fillGeometry").is_empty() || !v.list("strokeGeometry").is_empty();
-        if own != "SHAPE_WITH_TEXT" || matches!(shape, "SQUARE" | "ROUNDED_RECTANGLE") || !outlined || self.count >= MAX_NODES {
+        if own != "SHAPE_WITH_TEXT"
+            || matches!(shape, "SQUARE" | "ROUNDED_RECTANGLE")
+            || !outlined
+            || self.count >= MAX_NODES
+        {
             return None;
         }
         let mut s = Obj::new();
         s.insert("id".into(), json!(format!("{rest_id};shape")));
         s.insert("type".into(), json!("VECTOR"));
-        s.insert("name".into(), json!(shape.to_ascii_lowercase().replace('_', " ")));
-        for k in ["size", "strokeWeight", "strokeAlign", "strokeJoin", "strokeDashes"] {
+        s.insert(
+            "name".into(),
+            json!(shape.to_ascii_lowercase().replace('_', " ")),
+        );
+        for k in [
+            "size",
+            "strokeWeight",
+            "strokeAlign",
+            "strokeJoin",
+            "strokeDashes",
+        ] {
             if let Some(x) = o.get(k) {
                 s.insert(k.into(), x.clone());
             }
         }
         for k in ["fills", "strokes"] {
-            s.insert(k.into(), o.insert(k.into(), json!([])).unwrap_or_else(|| json!([])));
+            s.insert(
+                k.into(),
+                o.insert(k.into(), json!([])).unwrap_or_else(|| json!([])),
+            );
         }
         s.insert("relativeTransform".into(), rows(Affine::IDENTITY));
         self.geometry(&mut s, v);
@@ -406,19 +515,38 @@ impl<'a> Mapper<'a> {
             return None;
         }
         self.count += 1;
-        let size = |k: &str| o.get("size").and_then(|s| s.get(k)).and_then(Value::as_f64).unwrap_or(0.0);
+        let size = |k: &str| {
+            o.get("size")
+                .and_then(|s| s.get(k))
+                .and_then(Value::as_f64)
+                .unwrap_or(0.0)
+        };
         let (w, h) = (size("x"), size("y"));
         let pad = (w.min(h) / 4.0).clamp(0.0, 16.0);
         let mut t = Obj::new();
         t.insert("id".into(), json!(format!("{rest_id};text")));
         t.insert("type".into(), json!("TEXT"));
-        t.insert("name".into(), json!(chars.chars().take(40).collect::<String>()));
-        t.insert("size".into(), json!({"x": (w - 2.0 * pad).max(1.0), "y": (h - 2.0 * pad).max(1.0)}));
-        t.insert("relativeTransform".into(), rows(Affine::translate((pad, pad))));
+        t.insert(
+            "name".into(),
+            json!(chars.chars().take(40).collect::<String>()),
+        );
+        t.insert(
+            "size".into(),
+            json!({"x": (w - 2.0 * pad).max(1.0), "y": (h - 2.0 * pad).max(1.0)}),
+        );
+        t.insert(
+            "relativeTransform".into(),
+            rows(Affine::translate((pad, pad))),
+        );
         self.text(&mut t, v);
         if let Some(Value::Object(st)) = t.get_mut("style") {
-            let (hor, ver) = if note { ("LEFT", "TOP") } else { ("CENTER", "CENTER") };
-            st.entry("textAlignHorizontal").or_insert_with(|| json!(hor));
+            let (hor, ver) = if note {
+                ("LEFT", "TOP")
+            } else {
+                ("CENTER", "CENTER")
+            };
+            st.entry("textAlignHorizontal")
+                .or_insert_with(|| json!(hor));
             st.entry("textAlignVertical").or_insert_with(|| json!(ver));
             st.insert("textAutoResize".into(), json!("NONE"));
         }
@@ -428,7 +556,10 @@ impl<'a> Mapper<'a> {
     /// A connector's end caps, and when it has no saved outline or network a straight line
     /// between its ends: free points, or a point (the centre unless given) of a sibling layer.
     fn connector(&mut self, o: &mut Obj, v: &View<'a>, space: Affine) {
-        for (from, to) in [("connectorStartCap", "strokeCapStart"), ("connectorEndCap", "strokeCapEnd")] {
+        for (from, to) in [
+            ("connectorStartCap", "strokeCapStart"),
+            ("connectorEndCap", "strokeCapEnd"),
+        ] {
             if let Some(c) = v.str(from) {
                 o.insert(to.into(), json!(cap_name(c)));
             }
@@ -436,24 +567,46 @@ impl<'a> Mapper<'a> {
         if own_text(v).is_some() {
             self.warn("connector labels were skipped");
         }
-        if ["vectorNetwork", "fillGeometry", "strokeGeometry"].iter().any(|k| o.contains_key(*k)) {
+        if ["vectorNetwork", "fillGeometry", "strokeGeometry"]
+            .iter()
+            .any(|k| o.contains_key(*k))
+        {
             return;
         }
-        let parent = v.get("parentIndex").and_then(|p| p.get("guid")).and_then(guid);
+        let parent = v
+            .get("parentIndex")
+            .and_then(|p| p.get("guid"))
+            .and_then(guid);
         let end = |k: &str| -> Option<Point> {
             let e = v.get(k)?;
-            let p = match e.get("endpointNodeID").and_then(guid).filter(|g| g != NO_STYLE) {
+            let p = match e
+                .get("endpointNodeID")
+                .and_then(guid)
+                .filter(|g| g != NO_STYLE)
+            {
                 Some(id) => {
                     let n = *self.nodes.get(&id)?;
                     // Only siblings share the connector's coordinates.
-                    if n.get("parentIndex").and_then(|p| p.get("guid")).and_then(guid) != parent {
+                    if n.get("parentIndex")
+                        .and_then(|p| p.get("guid"))
+                        .and_then(guid)
+                        != parent
+                    {
                         return None;
                     }
-                    let (w, h) = n.get("size").map_or((0.0, 0.0), |s| (num(s, "x").unwrap_or(0.0), num(s, "y").unwrap_or(0.0)));
-                    let (rx, ry) = e.get("relativePosition").and_then(|r| Some((num(r, "x")?, num(r, "y")?))).unwrap_or((0.5, 0.5));
-                    n.get("transform").and_then(matrix).unwrap_or_default() * Point::new(w * rx, h * ry)
+                    let (w, h) = n.get("size").map_or((0.0, 0.0), |s| {
+                        (num(s, "x").unwrap_or(0.0), num(s, "y").unwrap_or(0.0))
+                    });
+                    let (rx, ry) = e
+                        .get("relativePosition")
+                        .and_then(|r| Some((num(r, "x")?, num(r, "y")?)))
+                        .unwrap_or((0.5, 0.5));
+                    n.get("transform").and_then(matrix).unwrap_or_default()
+                        * Point::new(w * rx, h * ry)
                 }
-                None => e.get("position").and_then(|p| Some(Point::new(num(p, "x")?, num(p, "y")?)))?,
+                None => e
+                    .get("position")
+                    .and_then(|p| Some(Point::new(num(p, "x")?, num(p, "y")?)))?,
             };
             (p.x.is_finite() && p.y.is_finite()).then_some(p)
         };
@@ -462,11 +615,19 @@ impl<'a> Mapper<'a> {
             return;
         };
         if v.str("connectorLineStyle").is_some_and(|s| s != "STRAIGHT") {
-            self.warn("elbowed and curved connectors without a saved path import as straight lines");
+            self.warn(
+                "elbowed and curved connectors without a saved path import as straight lines",
+            );
         }
         let (x0, y0) = (a.x.min(b.x), a.y.min(b.y));
-        o.insert("relativeTransform".into(), rows(space * Affine::translate((x0, y0))));
-        o.insert("size".into(), json!({"x": (a.x - b.x).abs(), "y": (a.y - b.y).abs()}));
+        o.insert(
+            "relativeTransform".into(),
+            rows(space * Affine::translate((x0, y0))),
+        );
+        o.insert(
+            "size".into(),
+            json!({"x": (a.x - b.x).abs(), "y": (a.y - b.y).abs()}),
+        );
         o.insert(
             "vectorNetwork".into(),
             json!({"vertices": [{"x": a.x - x0, "y": a.y - y0}, {"x": b.x - x0, "y": b.y - y0}], "segments": [{"a": 0, "b": 1}]}),
@@ -474,14 +635,28 @@ impl<'a> Mapper<'a> {
     }
 
     /// Fields every layer type shares.
-    fn common(&mut self, o: &mut Obj, v: &View<'a>, ty: &str, space: Affine, parent: Option<&View<'a>>) {
-        for (from, to) in [("visible", "visible"), ("locked", "locked"), ("mask", "isMask")] {
+    fn common(
+        &mut self,
+        o: &mut Obj,
+        v: &View<'a>,
+        ty: &str,
+        space: Affine,
+        parent: Option<&View<'a>>,
+    ) {
+        for (from, to) in [
+            ("visible", "visible"),
+            ("locked", "locked"),
+            ("mask", "isMask"),
+        ] {
             if let Some(b) = v.flag(from) {
                 o.insert(to.into(), json!(b));
             }
         }
         if let Some(m) = v.str("maskType") {
-            o.insert("maskType".into(), json!(if m == "OUTLINE" { "VECTOR" } else { m }));
+            o.insert(
+                "maskType".into(),
+                json!(if m == "OUTLINE" { "VECTOR" } else { m }),
+            );
         }
         copy_num(o, v, "opacity", "opacity");
         if let Some(b) = v.str("blendMode").filter(|b| *b != "UNSET") {
@@ -494,24 +669,78 @@ impl<'a> Mapper<'a> {
         o.insert("relativeTransform".into(), rows(space * t));
         // Paints, from the shared style when one is linked (the layer's own copy can be stale).
         let mut styles = Obj::new();
-        let fill_style = self.style(v, "styleIdForFill", "inheritFillStyleID", "fill", &mut styles);
-        let fills = fill_style.map_or_else(|| v.list("fillPaints"), |s| s.get("fillPaints").map(Kv::list).unwrap_or_default());
-        o.insert("fills".into(), Value::Array(fills.iter().filter_map(paint).collect()));
-        let stroke_style = self.style(v, "styleIdForStrokeFill", "inheritFillStyleIDForStroke", "stroke", &mut styles);
-        let strokes = stroke_style.map_or_else(|| v.list("strokePaints"), |s| s.get("fillPaints").map(Kv::list).unwrap_or_default());
-        o.insert("strokes".into(), Value::Array(strokes.iter().filter_map(paint).collect()));
-        let effect_style = self.style(v, "styleIdForEffect", "inheritEffectStyleID", "effect", &mut styles);
-        let effects = effect_style.map_or_else(|| v.list("effects"), |s| s.get("effects").map(Kv::list).unwrap_or_default());
+        let fill_style = self.style(
+            v,
+            "styleIdForFill",
+            "inheritFillStyleID",
+            "fill",
+            &mut styles,
+        );
+        let fills = fill_style.map_or_else(
+            || v.list("fillPaints"),
+            |s| s.get("fillPaints").map(Kv::list).unwrap_or_default(),
+        );
+        o.insert(
+            "fills".into(),
+            Value::Array(fills.iter().filter_map(paint).collect()),
+        );
+        let stroke_style = self.style(
+            v,
+            "styleIdForStrokeFill",
+            "inheritFillStyleIDForStroke",
+            "stroke",
+            &mut styles,
+        );
+        let strokes = stroke_style.map_or_else(
+            || v.list("strokePaints"),
+            |s| s.get("fillPaints").map(Kv::list).unwrap_or_default(),
+        );
+        o.insert(
+            "strokes".into(),
+            Value::Array(strokes.iter().filter_map(paint).collect()),
+        );
+        let effect_style = self.style(
+            v,
+            "styleIdForEffect",
+            "inheritEffectStyleID",
+            "effect",
+            &mut styles,
+        );
+        let effects = effect_style.map_or_else(
+            || v.list("effects"),
+            |s| s.get("effects").map(Kv::list).unwrap_or_default(),
+        );
         if !effects.is_empty() {
-            o.insert("effects".into(), Value::Array(effects.iter().filter_map(effect).collect()));
+            o.insert(
+                "effects".into(),
+                Value::Array(effects.iter().filter_map(effect).collect()),
+            );
         }
-        let grid_style = self.style(v, "styleIdForGrid", "inheritGridStyleID", "grid", &mut styles);
-        let grids = grid_style.map_or_else(|| v.list("layoutGrids"), |s| s.get("layoutGrids").map(Kv::list).unwrap_or_default());
+        let grid_style = self.style(
+            v,
+            "styleIdForGrid",
+            "inheritGridStyleID",
+            "grid",
+            &mut styles,
+        );
+        let grids = grid_style.map_or_else(
+            || v.list("layoutGrids"),
+            |s| s.get("layoutGrids").map(Kv::list).unwrap_or_default(),
+        );
         if !grids.is_empty() {
-            o.insert("layoutGrids".into(), Value::Array(grids.iter().map(layout_grid).collect()));
+            o.insert(
+                "layoutGrids".into(),
+                Value::Array(grids.iter().map(layout_grid).collect()),
+            );
         }
         if ty == "TEXT" {
-            self.style(v, "styleIdForText", "inheritTextStyleID", "text", &mut styles);
+            self.style(
+                v,
+                "styleIdForText",
+                "inheritTextStyleID",
+                "text",
+                &mut styles,
+            );
         }
         if !styles.is_empty() {
             o.insert("styles".into(), Value::Object(styles));
@@ -531,13 +760,14 @@ impl<'a> Mapper<'a> {
                 ]),
             );
         }
-        let constraint = |k: &str, min: &'static str, max: &'static str, both: &'static str| match v.str(k) {
-            Some("CENTER") => "CENTER",
-            Some("MAX" | "FIXED_MAX") => max,
-            Some("STRETCH") => both,
-            Some("SCALE") => "SCALE",
-            _ => min,
-        };
+        let constraint =
+            |k: &str, min: &'static str, max: &'static str, both: &'static str| match v.str(k) {
+                Some("CENTER") => "CENTER",
+                Some("MAX" | "FIXED_MAX") => max,
+                Some("STRETCH") => both,
+                Some("SCALE") => "SCALE",
+                _ => min,
+            };
         o.insert(
             "constraints".into(),
             json!({
@@ -545,12 +775,22 @@ impl<'a> Mapper<'a> {
                 "vertical": constraint("verticalConstraint", "TOP", "BOTTOM", "TOP_BOTTOM"),
             }),
         );
-        if matches!(ty, "FRAME" | "COMPONENT" | "COMPONENT_SET" | "INSTANCE" | "SECTION") {
-            o.insert("clipsContent".into(), json!(!v.flag("frameMaskDisabled").unwrap_or(false)));
+        if matches!(
+            ty,
+            "FRAME" | "COMPONENT" | "COMPONENT_SET" | "INSTANCE" | "SECTION"
+        ) {
+            o.insert(
+                "clipsContent".into(),
+                json!(!v.flag("frameMaskDisabled").unwrap_or(false)),
+            );
             self.auto_layout(o, v);
         }
         child_layout(o, v, parent);
-        let exports: Vec<Value> = v.list("exportSettings").iter().map(export_setting).collect();
+        let exports: Vec<Value> = v
+            .list("exportSettings")
+            .iter()
+            .map(export_setting)
+            .collect();
         if !exports.is_empty() {
             o.insert("exportSettings".into(), Value::Array(exports));
         }
@@ -563,21 +803,41 @@ impl<'a> Mapper<'a> {
 
     /// The style node a layer links in `key` (or the older `legacy` field), recorded for the REST
     /// `styles` map under `slot`.
-    fn style(&mut self, v: &View<'a>, key: &str, legacy: &str, slot: &str, out: &mut Obj) -> Option<&'a Kv<'a>> {
-        let id = v.get(key).and_then(ref_guid).or_else(|| v.get(legacy).and_then(guid).filter(|g| g != NO_STYLE))?;
+    fn style(
+        &mut self,
+        v: &View<'a>,
+        key: &str,
+        legacy: &str,
+        slot: &str,
+        out: &mut Obj,
+    ) -> Option<&'a Kv<'a>> {
+        let id = v
+            .get(key)
+            .and_then(ref_guid)
+            .or_else(|| v.get(legacy).and_then(guid).filter(|g| g != NO_STYLE))?;
         let node = *self.nodes.get(&id)?;
         node.get("styleType").and_then(Kv::str)?;
         out.insert(slot.into(), json!(id));
         if !self.styles.contains_key(&id) {
             let name = node.get("name").and_then(Kv::str).unwrap_or("Style");
-            let desc = node.get("styleDescription").or_else(|| node.get("description")).and_then(Kv::str).unwrap_or("");
-            self.styles.insert(id, json!({"name": name, "description": desc}));
+            let desc = node
+                .get("styleDescription")
+                .or_else(|| node.get("description"))
+                .and_then(Kv::str)
+                .unwrap_or("");
+            self.styles
+                .insert(id, json!({"name": name, "description": desc}));
         }
         Some(node)
     }
 
     fn auto_layout(&mut self, o: &mut Obj, v: &View<'a>) {
-        let Some(mode) = v.str("stackMode").filter(|m| matches!(*m, "HORIZONTAL" | "VERTICAL" | "GRID")) else { return };
+        let Some(mode) = v
+            .str("stackMode")
+            .filter(|m| matches!(*m, "HORIZONTAL" | "VERTICAL" | "GRID"))
+        else {
+            return;
+        };
         o.insert("layoutMode".into(), json!(mode));
         copy_num(o, v, "stackSpacing", "itemSpacing");
         copy_num(o, v, "stackCounterSpacing", "counterAxisSpacing");
@@ -587,28 +847,57 @@ impl<'a> Mapper<'a> {
         if v.str("stackCounterAlignContent") == Some("SPACE_BETWEEN") {
             o.insert("counterAxisAlignContent".into(), json!("SPACE_BETWEEN"));
         }
-        let (h, vert) = (v.num("stackHorizontalPadding").unwrap_or(0.0), v.num("stackVerticalPadding").unwrap_or(0.0));
+        let (h, vert) = (
+            v.num("stackHorizontalPadding").unwrap_or(0.0),
+            v.num("stackVerticalPadding").unwrap_or(0.0),
+        );
         o.insert("paddingLeft".into(), json!(h));
         o.insert("paddingTop".into(), json!(vert));
-        o.insert("paddingRight".into(), json!(v.num("stackPaddingRight").unwrap_or(h)));
-        o.insert("paddingBottom".into(), json!(v.num("stackPaddingBottom").unwrap_or(vert)));
-        let main = match v.str("stackPrimaryAlignItems").or_else(|| v.str("stackJustify")) {
+        o.insert(
+            "paddingRight".into(),
+            json!(v.num("stackPaddingRight").unwrap_or(h)),
+        );
+        o.insert(
+            "paddingBottom".into(),
+            json!(v.num("stackPaddingBottom").unwrap_or(vert)),
+        );
+        let main = match v
+            .str("stackPrimaryAlignItems")
+            .or_else(|| v.str("stackJustify"))
+        {
             Some("CENTER") => "CENTER",
             Some("MAX") => "MAX",
-            Some("SPACE_BETWEEN" | "SPACE_EVENLY" | "SPACE_AROUND" | "SPACE_EVENLY_CSS") => "SPACE_BETWEEN",
+            Some("SPACE_BETWEEN" | "SPACE_EVENLY" | "SPACE_AROUND" | "SPACE_EVENLY_CSS") => {
+                "SPACE_BETWEEN"
+            }
             _ => "MIN",
         };
         o.insert("primaryAxisAlignItems".into(), json!(main));
-        let cross = match v.str("stackCounterAlignItems").or_else(|| v.str("stackAlign")) {
+        let cross = match v
+            .str("stackCounterAlignItems")
+            .or_else(|| v.str("stackAlign"))
+        {
             Some("CENTER") => "CENTER",
             Some("MAX") => "MAX",
             Some("BASELINE") => "BASELINE",
             _ => "MIN",
         };
         o.insert("counterAxisAlignItems".into(), json!(cross));
-        let sizing = |k: &str| if v.str(k).is_some_and(|s| s.starts_with("RESIZE_TO_FIT")) { "AUTO" } else { "FIXED" };
-        o.insert("primaryAxisSizingMode".into(), json!(sizing("stackPrimarySizing")));
-        o.insert("counterAxisSizingMode".into(), json!(sizing("stackCounterSizing")));
+        let sizing = |k: &str| {
+            if v.str(k).is_some_and(|s| s.starts_with("RESIZE_TO_FIT")) {
+                "AUTO"
+            } else {
+                "FIXED"
+            }
+        };
+        o.insert(
+            "primaryAxisSizingMode".into(),
+            json!(sizing("stackPrimarySizing")),
+        );
+        o.insert(
+            "counterAxisSizingMode".into(),
+            json!(sizing("stackCounterSizing")),
+        );
         if let Some(b) = v.flag("bordersTakeSpace") {
             o.insert("strokesIncludedInLayout".into(), json!(b));
         }
@@ -618,16 +907,27 @@ impl<'a> Mapper<'a> {
         if mode == "GRID" {
             copy_num(o, v, "gridColumnGap", "gridColumnGap");
             copy_num(o, v, "gridRowGap", "gridRowGap");
-            o.insert("gridColumnCount".into(), json!(tracks(v, "gridColumns").len()));
+            o.insert(
+                "gridColumnCount".into(),
+                json!(tracks(v, "gridColumns").len()),
+            );
             o.insert("gridRowCount".into(), json!(tracks(v, "gridRows").len()));
             let sizes = ["gridColumnsSizing", "gridRowsSizing"]
                 .iter()
-                .flat_map(|k| v.get(k).and_then(|m| m.get("entries")).map(Kv::list).unwrap_or_default());
+                .flat_map(|k| {
+                    v.get(k)
+                        .and_then(|m| m.get("entries"))
+                        .map(Kv::list)
+                        .unwrap_or_default()
+                });
             let flexible = sizes.into_iter().all(|e| {
                 let t = e.get("trackSize");
-                ["minSizing", "maxSizing"]
-                    .iter()
-                    .all(|s| t.and_then(|t| t.get(s)).and_then(|s| s.get("type")).and_then(Kv::str).is_none_or(|x| x == "FLEX"))
+                ["minSizing", "maxSizing"].iter().all(|s| {
+                    t.and_then(|t| t.get(s))
+                        .and_then(|s| s.get("type"))
+                        .and_then(Kv::str)
+                        .is_none_or(|x| x == "FLEX")
+                })
             });
             if !flexible {
                 self.warn("grid tracks of fixed or content size import as equal tracks");
@@ -641,31 +941,60 @@ impl<'a> Mapper<'a> {
             .and_then(ref_guid)
             .or_else(|| v.get("inheritTextStyleID").and_then(guid))
             .and_then(|s| self.nodes.get(&s).copied());
-        let sv = v.with(style_node.filter(|s| s.get("styleType").and_then(Kv::str) == Some("TEXT")));
+        let sv =
+            v.with(style_node.filter(|s| s.get("styleType").and_then(Kv::str) == Some("TEXT")));
         let td = v.get("textData");
-        let chars = td.and_then(|t| t.get("characters")).and_then(Kv::str).unwrap_or("");
+        let chars = td
+            .and_then(|t| t.get("characters"))
+            .and_then(Kv::str)
+            .unwrap_or("");
         o.insert("characters".into(), json!(chars));
         let mut style = text_style(&sv, None);
-        for k in ["textAlignHorizontal", "textAlignVertical", "textAutoResize", "textTruncation"] {
+        for k in [
+            "textAlignHorizontal",
+            "textAlignVertical",
+            "textAutoResize",
+            "textTruncation",
+        ] {
             copy_str(&mut style, v, k, k);
         }
         if let Some(n) = v.num("maxLines").filter(|n| *n >= 1.0) {
             style.insert("maxLines".into(), json!(n));
         }
         let size = sv.num("fontSize");
-        if let Some(b) = o.get_mut("style").and_then(|s| s.get_mut("boundVariables")).map(Value::take) {
+        if let Some(b) = o
+            .get_mut("style")
+            .and_then(|s| s.get_mut("boundVariables"))
+            .map(Value::take)
+        {
             style.insert("boundVariables".into(), b);
         }
         o.insert("style".into(), Value::Object(style));
         let Some(td) = td else { return };
-        let ids: Vec<u64> = td.get("characterStyleIDs").map(Kv::list).unwrap_or_default().iter().filter_map(Kv::f64).map(|i| i as u64).collect();
+        let ids: Vec<u64> = td
+            .get("characterStyleIDs")
+            .map(Kv::list)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(Kv::f64)
+            .map(|i| i as u64)
+            .collect();
         if ids.iter().any(|i| *i != 0) {
             let mut table = Obj::new();
-            for e in td.get("styleOverrideTable").map(Kv::list).unwrap_or_default() {
-                let Some(sid) = num(e, "styleID") else { continue };
+            for e in td
+                .get("styleOverrideTable")
+                .map(Kv::list)
+                .unwrap_or_default()
+            {
+                let Some(sid) = num(e, "styleID") else {
+                    continue;
+                };
                 let mut s = text_style(&View::of(e), size);
                 if let Some(fills) = e.get("fillPaints") {
-                    s.insert("fills".into(), Value::Array(fills.list().iter().filter_map(paint).collect()));
+                    s.insert(
+                        "fills".into(),
+                        Value::Array(fills.list().iter().filter_map(paint).collect()),
+                    );
                 }
                 table.insert((sid as u64).to_string(), Value::Object(s));
             }
@@ -693,7 +1022,12 @@ impl<'a> Mapper<'a> {
         for key in ["fillGeometry", "strokeGeometry"] {
             let mut out = Vec::new();
             for p in v.list(key) {
-                let Some(blob) = num(p, "commandsBlob").and_then(|i| self.blobs.get(i as usize)).copied() else { continue };
+                let Some(blob) = num(p, "commandsBlob")
+                    .and_then(|i| self.blobs.get(i as usize))
+                    .copied()
+                else {
+                    continue;
+                };
                 let Some(d) = svg_path(blob) else {
                     self.warn("damaged vector geometry was skipped");
                     continue;
@@ -701,7 +1035,11 @@ impl<'a> Mapper<'a> {
                 if d.is_empty() {
                     continue;
                 }
-                let winding = if p.get("windingRule").and_then(Kv::str) == Some("ODD") { "EVENODD" } else { "NONZERO" };
+                let winding = if p.get("windingRule").and_then(Kv::str) == Some("ODD") {
+                    "EVENODD"
+                } else {
+                    "NONZERO"
+                };
                 out.push(json!({"path": d, "windingRule": winding}));
             }
             if !out.is_empty() {
@@ -709,7 +1047,11 @@ impl<'a> Mapper<'a> {
             }
         }
         let vector = o.get("type").and_then(Value::as_str) == Some("VECTOR");
-        if vector && !self.network(o, v) && !o.contains_key("fillGeometry") && !o.contains_key("strokeGeometry") && v.str("type") != Some("CONNECTOR")
+        if vector
+            && !self.network(o, v)
+            && !o.contains_key("fillGeometry")
+            && !o.contains_key("strokeGeometry")
+            && v.str("type") != Some("CONNECTOR")
         {
             self.warn("vectors without geometry are empty");
         }
@@ -723,24 +1065,45 @@ impl<'a> Mapper<'a> {
     /// scaled to the layer's size, with per-point corner radii, handle mirroring and end caps.
     /// False when there's none or it's damaged (the outlines stand in).
     fn network(&mut self, o: &mut Obj, v: &View<'a>) -> bool {
-        let Some(vd) = v.get("vectorData") else { return false };
-        let Some(blob) = num(vd, "vectorNetworkBlob").and_then(|i| self.blobs.get(i as usize)).copied() else { return false };
+        let Some(vd) = v.get("vectorData") else {
+            return false;
+        };
+        let Some(blob) = num(vd, "vectorNetworkBlob")
+            .and_then(|i| self.blobs.get(i as usize))
+            .copied()
+        else {
+            return false;
+        };
         let Some(net) = network::decode(blob) else {
             self.warn("damaged vector networks import as outlines");
             return false;
         };
         // An open path shows its fill, which regions can't hold: the outline keeps the look.
-        let fills_shown =
-            o.get("fills").and_then(Value::as_array).is_some_and(|f| f.iter().any(|p| p.get("visible").and_then(Value::as_bool) != Some(false)));
-        if net.segments.is_empty() || (net.regions.is_empty() && fills_shown && o.contains_key("fillGeometry")) {
+        let fills_shown = o.get("fills").and_then(Value::as_array).is_some_and(|f| {
+            f.iter()
+                .any(|p| p.get("visible").and_then(Value::as_bool) != Some(false))
+        });
+        if net.segments.is_empty()
+            || (net.regions.is_empty() && fills_shown && o.contains_key("fillGeometry"))
+        {
             return false;
         }
-        let styles: BTreeMap<u64, &Kv> =
-            vd.get("styleOverrideTable").map(Kv::list).unwrap_or_default().iter().filter_map(|s| Some((num(s, "styleID")? as u64, s))).collect();
+        let styles: BTreeMap<u64, &Kv> = vd
+            .get("styleOverrideTable")
+            .map(Kv::list)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|s| Some((num(s, "styleID")? as u64, s)))
+            .collect();
         let style = |id: u32| styles.get(&u64::from(id)).copied().filter(|_| id != 0);
         let scale = |k: &str| {
-            let (size, norm) = (v.get("size").and_then(|s| num(s, k)), vd.get("normalizedSize").and_then(|s| num(s, k)));
-            size.zip(norm).filter(|(s, n)| s.is_finite() && *n > 1e-9).map_or(1.0, |(s, n)| s / n)
+            let (size, norm) = (
+                v.get("size").and_then(|s| num(s, k)),
+                vd.get("normalizedSize").and_then(|s| num(s, k)),
+            );
+            size.zip(norm)
+                .filter(|(s, n)| s.is_finite() && *n > 1e-9)
+                .map_or(1.0, |(s, n)| s / n)
         };
         let (sx, sy) = (scale("x"), scale("y"));
         let vertices: Vec<Value> = net
@@ -765,11 +1128,20 @@ impl<'a> Mapper<'a> {
             net.segments.iter().map(|s| json!({"a": s.a, "b": s.b, "ta": [s.ta.0 * sx, s.ta.1 * sy], "tb": [s.tb.0 * sx, s.tb.1 * sy]})).collect();
         let regions: Vec<Value> =
             net.regions.iter().map(|r| json!({"loops": r.loops, "winding": if r.non_zero { "nonZero" } else { "evenOdd" }})).collect();
-        if net.regions.iter().any(|r| style(r.style).is_some_and(|s| s.get("fillPaints").is_some())) {
+        if net
+            .regions
+            .iter()
+            .any(|r| style(r.style).is_some_and(|s| s.get("fillPaints").is_some()))
+        {
             self.warn("filled areas of a vector with their own fill use the layer's fill");
         }
         let join = v.str("strokeJoin");
-        if net.vertices.iter().any(|p| style(p.style).and_then(|s| s.get("strokeJoin")).and_then(Kv::str).is_some_and(|j| Some(j) != join)) {
+        if net.vertices.iter().any(|p| {
+            style(p.style)
+                .and_then(|s| s.get("strokeJoin"))
+                .and_then(Kv::str)
+                .is_some_and(|j| Some(j) != join)
+        }) {
             self.warn("points with their own stroke join use the layer's");
         }
         // The stroke starts at the first end point and stops at the last (as the editor draws it).
@@ -781,16 +1153,28 @@ impl<'a> Mapper<'a> {
                 }
             }
         }
-        let ends: Vec<usize> = (0..degree.len()).filter(|i| degree.get(*i) == Some(&1)).collect();
-        let cap =
-            |i: Option<&usize>| i.and_then(|i| net.vertices.get(*i)).and_then(|p| style(p.style)).and_then(|s| s.get("strokeCap")).and_then(Kv::str);
+        let ends: Vec<usize> = (0..degree.len())
+            .filter(|i| degree.get(*i) == Some(&1))
+            .collect();
+        let cap = |i: Option<&usize>| {
+            i.and_then(|i| net.vertices.get(*i))
+                .and_then(|p| style(p.style))
+                .and_then(|s| s.get("strokeCap"))
+                .and_then(Kv::str)
+        };
         let (first, last) = (cap(ends.first()), cap(ends.last()));
         if first.is_some() || last.is_some() {
             let node = v.str("strokeCap").unwrap_or("NONE");
-            o.insert("strokeCapStart".into(), json!(cap_name(first.unwrap_or(node))));
+            o.insert(
+                "strokeCapStart".into(),
+                json!(cap_name(first.unwrap_or(node))),
+            );
             o.insert("strokeCapEnd".into(), json!(cap_name(last.unwrap_or(node))));
         }
-        o.insert("vectorNetwork".into(), json!({"vertices": vertices, "segments": segments, "regions": regions}));
+        o.insert(
+            "vectorNetwork".into(),
+            json!({"vertices": vertices, "segments": segments, "regions": regions}),
+        );
         true
     }
 
@@ -801,18 +1185,31 @@ impl<'a> Mapper<'a> {
             if d.get("isDeleted").and_then(Kv::bool) == Some(true) {
                 continue;
             }
-            let Some((name, ty)) = d.get("id").and_then(guid).and_then(|i| self.prop_defs.get(&i).cloned()) else { continue };
+            let Some((name, ty)) = d
+                .get("id")
+                .and_then(guid)
+                .and_then(|i| self.prop_defs.get(&i).cloned())
+            else {
+                continue;
+            };
             let init = d.get("initialValue");
             let def = match ty {
-                "BOOL" => json!({"type": "BOOLEAN", "defaultValue": init.and_then(|i| i.get("boolValue")).and_then(Kv::bool).unwrap_or(true)}),
-                "TEXT" => json!({"type": "TEXT", "defaultValue": init.and_then(prop_text).unwrap_or("")}),
+                "BOOL" => {
+                    json!({"type": "BOOLEAN", "defaultValue": init.and_then(|i| i.get("boolValue")).and_then(Kv::bool).unwrap_or(true)})
+                }
+                "TEXT" => {
+                    json!({"type": "TEXT", "defaultValue": init.and_then(prop_text).unwrap_or("")})
+                }
                 "INSTANCE_SWAP" => match init.and_then(|i| i.get("guidValue")).and_then(guid) {
                     Some(g) => json!({"type": "INSTANCE_SWAP", "defaultValue": g}),
                     None => continue,
                 },
                 "VARIANT" => json!({"type": "VARIANT"}),
                 _ => {
-                    self.warn(format!("{} component properties are not supported and were skipped", ty.to_ascii_lowercase()));
+                    self.warn(format!(
+                        "{} component properties are not supported and were skipped",
+                        ty.to_ascii_lowercase()
+                    ));
                     continue;
                 }
             };
@@ -821,8 +1218,16 @@ impl<'a> Mapper<'a> {
         if !defs.is_empty() {
             o.insert("componentPropertyDefinitions".into(), Value::Object(defs));
         }
-        if let Some(d) = v.str("symbolDescription").or_else(|| v.str("description")).filter(|d| !d.is_empty()) {
-            let into = if o.get("type").and_then(Value::as_str) == Some("COMPONENT_SET") { &mut self.sets } else { &mut self.components };
+        if let Some(d) = v
+            .str("symbolDescription")
+            .or_else(|| v.str("description"))
+            .filter(|d| !d.is_empty())
+        {
+            let into = if o.get("type").and_then(Value::as_str) == Some("COMPONENT_SET") {
+                &mut self.sets
+            } else {
+                &mut self.components
+            };
             into.insert(id.to_string(), json!({"description": d}));
         }
     }
@@ -830,22 +1235,33 @@ impl<'a> Mapper<'a> {
     /// A layer's component property references, and inside an instance the values they take.
     fn prop_refs(&mut self, o: &mut Obj, v: &View<'a>, inst: Option<&Inst<'a>>) {
         let mut refs = Obj::new();
-        for e in v.get("parameterConsumptionMap").and_then(|m| m.get("entries")).map(Kv::list).unwrap_or_default() {
+        for e in v
+            .get("parameterConsumptionMap")
+            .and_then(|m| m.get("entries"))
+            .map(Kv::list)
+            .unwrap_or_default()
+        {
             let field = match e.get("variableField").and_then(Kv::str) {
                 Some("VISIBLE") => "visible",
                 Some("TEXT_DATA") => "characters",
                 Some("OVERRIDDEN_SYMBOL_ID") => "mainComponent",
                 _ => continue,
             };
-            let Some(def) =
-                e.get("variableData").and_then(|d| d.get("value")).and_then(|x| x.get("propRefValue")).and_then(|p| p.get("defId")).and_then(guid)
+            let Some(def) = e
+                .get("variableData")
+                .and_then(|d| d.get("value"))
+                .and_then(|x| x.get("propRefValue"))
+                .and_then(|p| p.get("defId"))
+                .and_then(guid)
             else {
                 continue;
             };
             if let Some((name, _)) = self.prop_defs.get(&def) {
                 refs.insert(field.into(), json!(name));
             }
-            let Some(val) = inst.and_then(|i| i.props.get(&def)) else { continue };
+            let Some(val) = inst.and_then(|i| i.props.get(&def)) else {
+                continue;
+            };
             match field {
                 "visible" => {
                     if let Some(b) = val.get("boolValue").and_then(Kv::bool) {
@@ -866,13 +1282,27 @@ impl<'a> Mapper<'a> {
     }
 
     /// An instance's main and properties; the context its expanded layers are built in.
-    fn instance(&mut self, o: &mut Obj, v: &View<'a>, id: &str, outer: Option<&Inst<'a>>, rest_id: &str) -> Option<(Inst<'a>, String)> {
+    fn instance(
+        &mut self,
+        o: &mut Obj,
+        v: &View<'a>,
+        id: &str,
+        outer: Option<&Inst<'a>>,
+        rest_id: &str,
+    ) -> Option<(Inst<'a>, String)> {
         let sd = v.get("symbolData");
-        let mut sym = v.get("overriddenSymbolID").and_then(guid).or_else(|| sd.and_then(|s| s.get("symbolID")).and_then(guid));
+        let mut sym = v
+            .get("overriddenSymbolID")
+            .and_then(guid)
+            .or_else(|| sd.and_then(|s| s.get("symbolID")).and_then(guid));
         // An instance swap property value picks the main.
         if let Some(i) = outer
             && let Some(def) = prop_ref(v, "OVERRIDDEN_SYMBOL_ID")
-            && let Some(g) = i.props.get(&def).and_then(|p| p.get("guidValue")).and_then(guid)
+            && let Some(g) = i
+                .props
+                .get(&def)
+                .and_then(|p| p.get("guidValue"))
+                .and_then(guid)
         {
             sym = Some(g);
         }
@@ -884,12 +1314,26 @@ impl<'a> Mapper<'a> {
         let assignments = v.list("componentPropAssignments");
         let mut props = Obj::new();
         for a in assignments {
-            let Some((name, ty)) = a.get("defID").and_then(guid).and_then(|d| self.prop_defs.get(&d).cloned()) else { continue };
+            let Some((name, ty)) = a
+                .get("defID")
+                .and_then(guid)
+                .and_then(|d| self.prop_defs.get(&d).cloned())
+            else {
+                continue;
+            };
             let val = a.get("value");
             let p = match ty {
-                "BOOL" => val.and_then(|x| x.get("boolValue")).and_then(Kv::bool).map(|b| json!({"type": "BOOLEAN", "value": b})),
-                "TEXT" => val.and_then(prop_text).map(|t| json!({"type": "TEXT", "value": t})),
-                "INSTANCE_SWAP" => val.and_then(|x| x.get("guidValue")).and_then(guid).map(|g| json!({"type": "INSTANCE_SWAP", "value": g})),
+                "BOOL" => val
+                    .and_then(|x| x.get("boolValue"))
+                    .and_then(Kv::bool)
+                    .map(|b| json!({"type": "BOOLEAN", "value": b})),
+                "TEXT" => val
+                    .and_then(prop_text)
+                    .map(|t| json!({"type": "TEXT", "value": t})),
+                "INSTANCE_SWAP" => val
+                    .and_then(|x| x.get("guidValue"))
+                    .and_then(guid)
+                    .map(|g| json!({"type": "INSTANCE_SWAP", "value": g})),
                 _ => None,
             };
             if let Some(p) = p {
@@ -907,17 +1351,33 @@ impl<'a> Mapper<'a> {
             return None;
         }
         // Overrides by id path below this instance (the instance itself is addressed by its main's id).
-        let own_path: Vec<String> = outer.map(|i| [i.path.as_slice(), &[id.to_string()]].concat()).unwrap_or_default();
-        let mut overrides: BTreeMap<Vec<String>, Vec<&'a Kv<'a>>> = outer.map(|i| (*i.overrides).clone()).unwrap_or_default();
-        let lists = [sd.and_then(|s| s.get("symbolOverrides")).map(Kv::list).unwrap_or_default(), v.list("derivedSymbolData")];
+        let own_path: Vec<String> = outer
+            .map(|i| [i.path.as_slice(), &[id.to_string()]].concat())
+            .unwrap_or_default();
+        let mut overrides: BTreeMap<Vec<String>, Vec<&'a Kv<'a>>> =
+            outer.map(|i| (*i.overrides).clone()).unwrap_or_default();
+        let lists = [
+            sd.and_then(|s| s.get("symbolOverrides"))
+                .map(Kv::list)
+                .unwrap_or_default(),
+            v.list("derivedSymbolData"),
+        ];
         for (layer, list) in lists.into_iter().enumerate() {
             for ov in list {
-                let rel: Vec<String> =
-                    ov.get("guidPath").and_then(|g| g.get("guids")).map(Kv::list).unwrap_or_default().iter().filter_map(guid).collect();
+                let rel: Vec<String> = ov
+                    .get("guidPath")
+                    .and_then(|g| g.get("guids"))
+                    .map(Kv::list)
+                    .unwrap_or_default()
+                    .iter()
+                    .filter_map(guid)
+                    .collect();
                 if rel.is_empty() || rel == [sym.clone()] {
                     continue;
                 }
-                let e = overrides.entry([own_path.as_slice(), &rel].concat()).or_default();
+                let e = overrides
+                    .entry([own_path.as_slice(), &rel].concat())
+                    .or_default();
                 // The outer instance's overrides win over this one's own; derived layout comes last.
                 if layer == 0 && outer.is_some() {
                     e.insert(0, ov);
@@ -926,7 +1386,8 @@ impl<'a> Mapper<'a> {
                 }
             }
         }
-        let mut all_props: BTreeMap<String, &'a Kv<'a>> = outer.map(|i| (*i.props).clone()).unwrap_or_default();
+        let mut all_props: BTreeMap<String, &'a Kv<'a>> =
+            outer.map(|i| (*i.props).clone()).unwrap_or_default();
         for a in assignments {
             if let (Some(d), Some(val)) = (a.get("defID").and_then(guid), a.get("value")) {
                 all_props.entry(d).or_insert(val);
@@ -935,7 +1396,16 @@ impl<'a> Mapper<'a> {
         let mut symbols = outer.map(|i| i.symbols.clone()).unwrap_or_default();
         symbols.push(sym.clone());
         let root = outer.map_or_else(|| rest_id.to_string(), |i| i.root.clone());
-        Some((Inst { root, path: own_path, overrides: Rc::new(overrides), props: Rc::new(all_props), symbols }, sym))
+        Some((
+            Inst {
+                root,
+                path: own_path,
+                overrides: Rc::new(overrides),
+                props: Rc::new(all_props),
+                symbols,
+            },
+            sym,
+        ))
     }
 
     fn prototype(&mut self, o: &mut Obj, v: &View<'a>) {
@@ -969,16 +1439,28 @@ impl<'a> Mapper<'a> {
             o.insert("scrollBehavior".into(), json!(b));
         }
         copy_str(o, v, "overlayPositionType", "overlayPositionType");
-        copy_str(o, v, "overlayBackgroundInteraction", "overlayBackgroundInteraction");
+        copy_str(
+            o,
+            v,
+            "overlayBackgroundInteraction",
+            "overlayBackgroundInteraction",
+        );
         if let Some(a) = v.get("overlayBackgroundAppearance") {
             let ty = a.get("backgroundType").and_then(Kv::str).unwrap_or("NONE");
-            o.insert("overlayBackground".into(), json!({"type": ty, "color": a.get("backgroundColor").map_or(Value::Null, color)}));
+            o.insert(
+                "overlayBackground".into(),
+                json!({"type": ty, "color": a.get("backgroundColor").map_or(Value::Null, color)}),
+            );
         }
     }
 
     fn interaction(&mut self, it: &Kv) -> Option<Value> {
         let ev = it.get("event");
-        let ty = match ev.and_then(|e| e.get("interactionType")).and_then(Kv::str).unwrap_or("ON_CLICK") {
+        let ty = match ev
+            .and_then(|e| e.get("interactionType"))
+            .and_then(Kv::str)
+            .unwrap_or("ON_CLICK")
+        {
             "DRAG" => "ON_DRAG",
             "MOUSE_IN" => "MOUSE_ENTER",
             "MOUSE_OUT" => "MOUSE_LEAVE",
@@ -990,13 +1472,29 @@ impl<'a> Mapper<'a> {
             trigger["timeout"] = json!((t * 1000.0).round());
         }
         if let Some(k) = ev.and_then(|e| e.get("keyTrigger")) {
-            let codes: Vec<f64> = k.get("keyCodes").map(Kv::list).unwrap_or_default().iter().filter_map(Kv::f64).collect();
+            let codes: Vec<f64> = k
+                .get("keyCodes")
+                .map(Kv::list)
+                .unwrap_or_default()
+                .iter()
+                .filter_map(Kv::f64)
+                .collect();
             trigger["keyCodes"] = json!(codes);
             if let Some(d) = k.get("triggerDevice").and_then(Kv::str) {
-                trigger["device"] = json!(if d.contains("KEYBOARD") { "KEYBOARD" } else { d });
+                trigger["device"] = json!(if d.contains("KEYBOARD") {
+                    "KEYBOARD"
+                } else {
+                    d
+                });
             }
         }
-        let actions: Vec<Value> = it.get("actions").map(Kv::list).unwrap_or_default().iter().filter_map(|a| self.action(a, 0)).collect();
+        let actions: Vec<Value> = it
+            .get("actions")
+            .map(Kv::list)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|a| self.action(a, 0))
+            .collect();
         (!actions.is_empty()).then(|| json!({"trigger": trigger, "actions": actions}))
     }
 
@@ -1027,10 +1525,17 @@ impl<'a> Mapper<'a> {
             Some("CLOSE") => json!({"type": "CLOSE"}),
             Some("NONE") => return None,
             Some("SET_VARIABLE") => {
-                let var = a.get("targetVariable").and_then(|t| t.get("id")).and_then(ref_guid).or_else(|| a.get("targetVariableID").and_then(guid));
+                let var = a
+                    .get("targetVariable")
+                    .and_then(|t| t.get("id"))
+                    .and_then(ref_guid)
+                    .or_else(|| a.get("targetVariableID").and_then(guid));
                 // Missing parts are left out: the REST importer skips the action with a warning.
                 let mut act = json!({"type": "SET_VARIABLE", "variableId": var});
-                if let Some(d) = a.get("targetVariableData").and_then(|d| variable_data(d, 0)) {
+                if let Some(d) = a
+                    .get("targetVariableData")
+                    .and_then(|d| variable_data(d, 0))
+                {
                     act["variableValue"] = d;
                 }
                 act
@@ -1042,9 +1547,18 @@ impl<'a> Mapper<'a> {
             }),
             Some("CONDITIONAL") if depth < MAX_ACTION_DEPTH => {
                 let mut blocks = Vec::new();
-                for b in a.get("conditionalActions").map(Kv::list).unwrap_or_default() {
-                    let actions: Vec<Value> =
-                        b.get("actions").map(Kv::list).unwrap_or_default().iter().filter_map(|x| self.action(x, depth + 1)).collect();
+                for b in a
+                    .get("conditionalActions")
+                    .map(Kv::list)
+                    .unwrap_or_default()
+                {
+                    let actions: Vec<Value> = b
+                        .get("actions")
+                        .map(Kv::list)
+                        .unwrap_or_default()
+                        .iter()
+                        .filter_map(|x| self.action(x, depth + 1))
+                        .collect();
                     let mut block = json!({"actions": actions});
                     // A condition that can't be read must not turn the block into an "else".
                     if let Some(c) = b.get("condition") {
@@ -1055,7 +1569,10 @@ impl<'a> Mapper<'a> {
                 json!({"type": "CONDITIONAL", "conditionalBlocks": blocks})
             }
             Some(other) => {
-                self.warn(format!("{} prototype actions are not imported from .fig files yet", other.to_ascii_lowercase().replace('_', " ")));
+                self.warn(format!(
+                    "{} prototype actions are not imported from .fig files yet",
+                    other.to_ascii_lowercase().replace('_', " ")
+                ));
                 return None;
             }
         })
@@ -1064,8 +1581,15 @@ impl<'a> Mapper<'a> {
     fn variable_bindings(&mut self, o: &mut Obj, v: &View<'a>) {
         let mut bound = Obj::new();
         let mut text_bound = Obj::new();
-        for e in v.get("variableConsumptionMap").and_then(|m| m.get("entries")).map(Kv::list).unwrap_or_default() {
-            let Some(var) = alias(e.get("variableData")) else { continue };
+        for e in v
+            .get("variableConsumptionMap")
+            .and_then(|m| m.get("entries"))
+            .map(Kv::list)
+            .unwrap_or_default()
+        {
+            let Some(var) = alias(e.get("variableData")) else {
+                continue;
+            };
             let a = json!({"type": "VARIABLE_ALIAS", "id": var});
             let field = e.get("variableField").and_then(Kv::str).unwrap_or("");
             match (binding_key(field), text_binding_key(field)) {
@@ -1076,7 +1600,12 @@ impl<'a> Mapper<'a> {
                     text_bound.insert(k.into(), a);
                 }
                 _ if field == "CORNER_RADIUS" => {
-                    for k in ["topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"] {
+                    for k in [
+                        "topLeftRadius",
+                        "topRightRadius",
+                        "bottomLeftRadius",
+                        "bottomRightRadius",
+                    ] {
                         bound.insert(k.into(), a.clone());
                     }
                 }
@@ -1094,7 +1623,10 @@ impl<'a> Mapper<'a> {
                     let size = bound.entry("size").or_insert_with(|| json!({}));
                     size[axis] = a;
                 }
-                _ => self.warn(format!("variables bound to {} are not imported from .fig files yet", field.to_ascii_lowercase().replace('_', " "))),
+                _ => self.warn(format!(
+                    "variables bound to {} are not imported from .fig files yet",
+                    field.to_ascii_lowercase().replace('_', " ")
+                )),
             }
         }
         if !bound.is_empty() {
@@ -1105,8 +1637,16 @@ impl<'a> Mapper<'a> {
             o.insert("style".into(), json!({"boundVariables": text_bound}));
         }
         let mut modes = Obj::new();
-        for e in v.get("variableModeBySetMap").and_then(|m| m.get("entries")).map(Kv::list).unwrap_or_default() {
-            if let (Some(set), Some(mode)) = (e.get("variableSetID").and_then(ref_guid), e.get("variableModeID").and_then(guid)) {
+        for e in v
+            .get("variableModeBySetMap")
+            .and_then(|m| m.get("entries"))
+            .map(Kv::list)
+            .unwrap_or_default()
+        {
+            if let (Some(set), Some(mode)) = (
+                e.get("variableSetID").and_then(ref_guid),
+                e.get("variableModeID").and_then(guid),
+            ) {
                 modes.insert(set, json!(mode));
             }
         }
@@ -1120,19 +1660,36 @@ impl<'a> Mapper<'a> {
     fn style_definitions(&mut self) -> Vec<Value> {
         let mut found: Vec<(&'a str, String, &'a Kv<'a>)> = Vec::new();
         for (id, n) in &self.nodes {
-            let live = n.get("isSoftDeleted").and_then(Kv::bool) != Some(true) && n.get("isSoftDeletedStyle").and_then(Kv::bool) != Some(true);
-            if live && n.get("styleType").and_then(Kv::str).is_some_and(|t| matches!(t, "FILL" | "TEXT" | "EFFECT" | "GRID")) {
-                found.push((n.get("sortPosition").and_then(Kv::str).unwrap_or(""), id.clone(), n));
+            let live = n.get("isSoftDeleted").and_then(Kv::bool) != Some(true)
+                && n.get("isSoftDeletedStyle").and_then(Kv::bool) != Some(true);
+            if live
+                && n.get("styleType")
+                    .and_then(Kv::str)
+                    .is_some_and(|t| matches!(t, "FILL" | "TEXT" | "EFFECT" | "GRID"))
+            {
+                found.push((
+                    n.get("sortPosition").and_then(Kv::str).unwrap_or(""),
+                    id.clone(),
+                    n,
+                ));
             }
         }
         found.sort_by(|a, b| (a.0, &a.1).cmp(&(b.0, &b.1)));
         let mut out = Vec::new();
         for (_, id, n) in found {
-            let Some(node) = self.layer(&id, None, Affine::IDENTITY, None, 0) else { break };
+            let Some(node) = self.layer(&id, None, Affine::IDENTITY, None, 0) else {
+                break;
+            };
             let name = n.get("name").and_then(Kv::str).unwrap_or("Style");
-            let desc = n.get("styleDescription").or_else(|| n.get("description")).and_then(Kv::str).unwrap_or("");
+            let desc = n
+                .get("styleDescription")
+                .or_else(|| n.get("description"))
+                .and_then(Kv::str)
+                .unwrap_or("");
             let ty = n.get("styleType").and_then(Kv::str).unwrap_or("");
-            out.push(json!({"id": id, "name": name, "description": desc, "styleType": ty, "node": node}));
+            out.push(
+                json!({"id": id, "name": name, "description": desc, "styleType": ty, "node": node}),
+            );
         }
         out
     }
@@ -1141,12 +1698,24 @@ impl<'a> Mapper<'a> {
     /// file's order (`collectionOrder` and `variableOrder`, our extensions).
     fn variables(&self) -> Option<Value> {
         let of_type = |t: &'static str, key: &'static str| {
-            let live = move |n: &Kv| n.get("type").and_then(Kv::str) == Some(t) && n.get("isSoftDeleted").and_then(Kv::bool) != Some(true);
+            let live = move |n: &Kv| {
+                n.get("type").and_then(Kv::str) == Some(t)
+                    && n.get("isSoftDeleted").and_then(Kv::bool) != Some(true)
+            };
             let mut list: Vec<(&str, &String, &'a Kv<'a>)> = self
                 .nodes
                 .iter()
                 .filter(|(_, n)| live(n))
-                .map(|(id, n)| (n.get(key).and_then(|p| p.get("position").or(Some(p))).and_then(Kv::str).unwrap_or(""), id, *n))
+                .map(|(id, n)| {
+                    (
+                        n.get(key)
+                            .and_then(|p| p.get("position").or(Some(p)))
+                            .and_then(Kv::str)
+                            .unwrap_or(""),
+                        id,
+                        *n,
+                    )
+                })
                 .collect();
             list.sort_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
             list.into_iter().map(|(_, id, n)| (id, n))
@@ -1169,29 +1738,53 @@ impl<'a> Mapper<'a> {
             let default = modes.first().map_or(Value::Null, |m| m.1["modeId"].clone());
             let name = n.get("name").and_then(Kv::str).unwrap_or("Collection");
             let modes: Vec<Value> = modes.into_iter().map(|m| m.1).collect();
-            collections.insert(id.clone(), json!({"id": id, "name": name, "modes": modes, "defaultModeId": default}));
+            collections.insert(
+                id.clone(),
+                json!({"id": id, "name": name, "modes": modes, "defaultModeId": default}),
+            );
         }
         let mut variable_order = Vec::new();
         let mut variables = Obj::new();
         for (id, n) in of_type("VARIABLE", "sortPosition") {
-            let Some(set) = n.get("variableSetID").and_then(ref_guid).filter(|s| collections.contains_key(s)) else { continue };
-            let ty = n.get("variableResolvedType").and_then(Kv::str).unwrap_or("");
+            let Some(set) = n
+                .get("variableSetID")
+                .and_then(ref_guid)
+                .filter(|s| collections.contains_key(s))
+            else {
+                continue;
+            };
+            let ty = n
+                .get("variableResolvedType")
+                .and_then(Kv::str)
+                .unwrap_or("");
             if !matches!(ty, "BOOLEAN" | "FLOAT" | "STRING" | "COLOR") {
                 continue;
             }
             let mut values = Obj::new();
-            for e in n.get("variableDataValues").and_then(|m| m.get("entries")).map(Kv::list).unwrap_or_default() {
-                if let (Some(mode), Some(val)) = (e.get("modeID").and_then(guid), e.get("variableData").and_then(variable_value)) {
+            for e in n
+                .get("variableDataValues")
+                .and_then(|m| m.get("entries"))
+                .map(Kv::list)
+                .unwrap_or_default()
+            {
+                if let (Some(mode), Some(val)) = (
+                    e.get("modeID").and_then(guid),
+                    e.get("variableData").and_then(variable_value),
+                ) {
                     values.insert(mode, val);
                 }
             }
             let name = n.get("name").and_then(Kv::str).unwrap_or("Variable");
             let desc = n.get("description").and_then(Kv::str).unwrap_or("");
-            let mut var =
-                json!({"id": id, "name": name, "variableCollectionId": set, "resolvedType": ty, "valuesByMode": values, "description": desc});
+            let mut var = json!({"id": id, "name": name, "variableCollectionId": set, "resolvedType": ty, "valuesByMode": values, "description": desc});
             // The properties pickers offer the variable for, under the REST names.
             if let Some(scopes) = n.get("variableScopes") {
-                var["scopes"] = scopes.list().iter().filter_map(Kv::str).map(|s| if s == "STROKE" { "STROKE_COLOR" } else { s }).collect();
+                var["scopes"] = scopes
+                    .list()
+                    .iter()
+                    .filter_map(Kv::str)
+                    .map(|s| if s == "STROKE" { "STROKE_COLOR" } else { s })
+                    .collect();
             }
             variable_order.push(json!(id));
             variables.insert(id.clone(), var);
@@ -1252,8 +1845,15 @@ fn stroke(o: &mut Obj, v: &View) {
     // A layer written as the outline of its stroke keeps what it was as plugin data
     // (`outlinedStroke`, our extension of the file JSON).
     let (id, key) = super::export::STASH;
-    let kept = v.list("pluginData").iter().find(|p| p.get("pluginID").and_then(Kv::str) == Some(id) && p.get("key").and_then(Kv::str) == Some(key));
-    if let Some(original) = kept.and_then(|p| p.get("value")).and_then(Kv::str).and_then(|s| serde_json::from_str::<Value>(s).ok()) {
+    let kept = v.list("pluginData").iter().find(|p| {
+        p.get("pluginID").and_then(Kv::str) == Some(id)
+            && p.get("key").and_then(Kv::str) == Some(key)
+    });
+    if let Some(original) = kept
+        .and_then(|p| p.get("value"))
+        .and_then(Kv::str)
+        .and_then(|s| serde_json::from_str::<Value>(s).ok())
+    {
         o.insert("outlinedStroke".into(), original);
     }
     // A variable width: each point's reach on the two sides of the path (shares of the stroke
@@ -1263,7 +1863,11 @@ fn stroke(o: &mut Obj, v: &View) {
         .iter()
         .filter_map(|p| {
             let (left, right) = (num(p, "ascent")?.max(0.0), num(p, "descent")?.max(0.0));
-            let bias = if left + right > 0.0 { (right - left) / (left + right) } else { 0.0 };
+            let bias = if left + right > 0.0 {
+                (right - left) / (left + right)
+            } else {
+                0.0
+            };
             Some(json!([num(p, "position")?, left + right, bias]))
         })
         .collect();
@@ -1276,7 +1880,10 @@ fn stroke(o: &mut Obj, v: &View) {
     }
     // A miter limit L bevels joins sharper than 2·asin(1/L).
     if let Some(l) = v.num("miterLimit").filter(|l| *l > 1.0) {
-        o.insert("strokeMiterAngle".into(), json!((2.0 * (1.0 / l).asin()).to_degrees()));
+        o.insert(
+            "strokeMiterAngle".into(),
+            json!((2.0 * (1.0 / l).asin()).to_degrees()),
+        );
     }
     if v.flag("borderStrokeWeightsIndependent") == Some(true) {
         // A side that isn't written has no border.
@@ -1302,8 +1909,14 @@ fn variable_data(d: &Kv, depth: usize) -> Option<Value> {
                 "DIVIDE" => "DIVISION",
                 f => f,
             };
-            let args = e.get("expressionArguments").map(Kv::list).unwrap_or_default();
-            let args = args.iter().map(|x| variable_data(x, depth + 1)).collect::<Option<Vec<Value>>>()?;
+            let args = e
+                .get("expressionArguments")
+                .map(Kv::list)
+                .unwrap_or_default();
+            let args = args
+                .iter()
+                .map(|x| variable_data(x, depth + 1))
+                .collect::<Option<Vec<Value>>>()?;
             json!({"expressionFunction": function, "expressionArguments": args})
         }
         "BOOLEAN" => json!(v.get("boolValue").and_then(Kv::bool)?),
@@ -1321,7 +1934,10 @@ fn variable_data(d: &Kv, depth: usize) -> Option<Value> {
 
 /// The text a layer that isn't a text layer carries (a note's, a shape's), unless blank.
 fn own_text<'a>(v: &View<'a>) -> Option<&'a str> {
-    v.get("textData").and_then(|t| t.get("characters")).and_then(Kv::str).filter(|c| !c.trim().is_empty())
+    v.get("textData")
+        .and_then(|t| t.get("characters"))
+        .and_then(Kv::str)
+        .filter(|c| !c.trim().is_empty())
 }
 
 /// The REST name of a stroke cap.
@@ -1366,7 +1982,10 @@ fn child_layout(o: &mut Obj, v: &View, parent: Option<&View>) {
     if v.str("stackPositioning") == Some("ABSOLUTE") {
         o.insert("layoutPositioning".into(), json!("ABSOLUTE"));
     }
-    for (k, w, h) in [("minSize", "minWidth", "minHeight"), ("maxSize", "maxWidth", "maxHeight")] {
+    for (k, w, h) in [
+        ("minSize", "minWidth", "minHeight"),
+        ("maxSize", "maxWidth", "maxHeight"),
+    ] {
         if let Some(val) = v.get(k).and_then(|s| s.get("value")) {
             for (axis, to) in [("x", w), ("y", h)] {
                 if let Some(x) = num(val, axis).filter(|x| *x > 0.0 && *x < 1e9) {
@@ -1376,9 +1995,15 @@ fn child_layout(o: &mut Obj, v: &View, parent: Option<&View>) {
         }
     }
     if let Some(p) = parent.filter(|p| p.str("stackMode") == Some("GRID")) {
-        for (anchor, list, to) in [("gridColumnAnchor", "gridColumns", "gridColumnAnchorIndex"), ("gridRowAnchor", "gridRows", "gridRowAnchorIndex")]
-        {
-            if let Some(i) = v.get(anchor).and_then(guid).and_then(|g| tracks(p, list).iter().position(|t| *t == g)) {
+        for (anchor, list, to) in [
+            ("gridColumnAnchor", "gridColumns", "gridColumnAnchorIndex"),
+            ("gridRowAnchor", "gridRows", "gridRowAnchorIndex"),
+        ] {
+            if let Some(i) = v
+                .get(anchor)
+                .and_then(guid)
+                .and_then(|g| tracks(p, list).iter().position(|t| *t == g))
+            {
                 o.insert(to.into(), json!(i));
             }
         }
@@ -1407,14 +2032,23 @@ fn paint(p: &Kv) -> Option<Value> {
                 o.insert("color".into(), color(c));
             }
             if let Some(var) = alias(p.get("colorVar")) {
-                o.insert("boundVariables".into(), json!({"color": {"type": "VARIABLE_ALIAS", "id": var}}));
+                o.insert(
+                    "boundVariables".into(),
+                    json!({"color": {"type": "VARIABLE_ALIAS", "id": var}}),
+                );
             }
         }
         _ if ty.starts_with("GRADIENT_") => {
             // The paint transform maps the layer's unit box to gradient space, where a linear
             // gradient runs from (0, ½) to (1, ½) and the others are centred on (½, ½).
-            let inv = t.filter(|t| t.determinant().abs() > 1e-12).map_or(Affine::IDENTITY, Affine::inverse);
-            let pts = if ty == "GRADIENT_LINEAR" { [(0.0, 0.5), (1.0, 0.5), (0.0, 1.0)] } else { [(0.5, 0.5), (1.0, 0.5), (0.5, 1.0)] };
+            let inv = t
+                .filter(|t| t.determinant().abs() > 1e-12)
+                .map_or(Affine::IDENTITY, Affine::inverse);
+            let pts = if ty == "GRADIENT_LINEAR" {
+                [(0.0, 0.5), (1.0, 0.5), (0.0, 1.0)]
+            } else {
+                [(0.5, 0.5), (1.0, 0.5), (0.5, 1.0)]
+            };
             let handles: Vec<Value> = pts
                 .iter()
                 .map(|(x, y)| {
@@ -1442,8 +2076,14 @@ fn paint(p: &Kv) -> Option<Value> {
             o.insert("gradientStops".into(), Value::Array(stops));
         }
         "IMAGE" => {
-            let hash: String =
-                p.get("image").and_then(|i| i.get("hash")).and_then(Kv::bytes).unwrap_or_default().iter().map(|b| format!("{b:02x}")).collect();
+            let hash: String = p
+                .get("image")
+                .and_then(|i| i.get("hash"))
+                .and_then(Kv::bytes)
+                .unwrap_or_default()
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect();
             o.insert("imageRef".into(), json!(hash));
             let mode = p.get("imageScaleMode").and_then(Kv::str).unwrap_or("FILL");
             o.insert("scaleMode".into(), json!(mode));
@@ -1466,8 +2106,15 @@ fn paint(p: &Kv) -> Option<Value> {
 /// `boundVariables`: `fields` pairs the format's field with the REST name.
 fn bound(v: Option<&Kv>, fields: &[(&str, &str)]) -> Option<Value> {
     let v = v?;
-    let found: Obj =
-        fields.iter().filter_map(|(from, to)| Some((to.to_string(), json!({"type": "VARIABLE_ALIAS", "id": alias(v.get(from))?})))).collect();
+    let found: Obj = fields
+        .iter()
+        .filter_map(|(from, to)| {
+            Some((
+                to.to_string(),
+                json!({"type": "VARIABLE_ALIAS", "id": alias(v.get(from))?}),
+            ))
+        })
+        .collect();
     (!found.is_empty()).then_some(Value::Object(found))
 }
 
@@ -1479,7 +2126,12 @@ fn tracks(v: &View, key: &str) -> Vec<String> {
         .map(Kv::list)
         .unwrap_or_default()
         .iter()
-        .filter_map(|e| Some((e.get("position").and_then(Kv::str).unwrap_or(""), e.get("id").and_then(guid)?)))
+        .filter_map(|e| {
+            Some((
+                e.get("position").and_then(Kv::str).unwrap_or(""),
+                e.get("id").and_then(guid)?,
+            ))
+        })
         .collect();
     t.sort();
     t.into_iter().map(|e| e.1).collect()
@@ -1491,7 +2143,9 @@ fn alias(d: Option<&Kv>) -> Option<String> {
     if d.get("dataType").and_then(Kv::str) != Some("ALIAS") {
         return None;
     }
-    d.get("value").and_then(|v| v.get("alias")).and_then(ref_guid)
+    d.get("value")
+        .and_then(|v| v.get("alias"))
+        .and_then(ref_guid)
 }
 
 fn variable_value(d: &Kv) -> Option<Value> {
@@ -1513,17 +2167,27 @@ fn variable_value(d: &Kv) -> Option<Value> {
 
 /// The text of a component property value.
 fn prop_text<'k>(v: &'k Kv) -> Option<&'k str> {
-    v.get("textValue").and_then(|t| t.get("characters")).and_then(Kv::str)
+    v.get("textValue")
+        .and_then(|t| t.get("characters"))
+        .and_then(Kv::str)
 }
 
 /// The property a layer's `field` is bound to (`parameterConsumptionMap`).
 fn prop_ref(v: &View, field: &str) -> Option<String> {
-    v.get("parameterConsumptionMap")?.get("entries")?.list().iter().find_map(|e| {
-        if e.get("variableField").and_then(Kv::str) != Some(field) {
-            return None;
-        }
-        e.get("variableData")?.get("value")?.get("propRefValue")?.get("defId").and_then(guid)
-    })
+    v.get("parameterConsumptionMap")?
+        .get("entries")?
+        .list()
+        .iter()
+        .find_map(|e| {
+            if e.get("variableField").and_then(Kv::str) != Some(field) {
+                return None;
+            }
+            e.get("variableData")?
+                .get("value")?
+                .get("propRefValue")?
+                .get("defId")
+                .and_then(guid)
+        })
 }
 
 /// The REST TypeStyle fields a node (or text override entry) sets. `size`: the font size that
@@ -1531,10 +2195,21 @@ fn prop_ref(v: &View, field: &str) -> Option<String> {
 fn text_style(v: &View, size: Option<f64>) -> Obj {
     let mut s = Obj::new();
     if let Some(f) = v.get("fontName") {
-        for (from, to) in [("family", "fontFamily"), ("style", "fontStyle"), ("postscript", "fontPostScriptName")] {
+        for (from, to) in [
+            ("family", "fontFamily"),
+            ("style", "fontStyle"),
+            ("postscript", "fontPostScriptName"),
+        ] {
             if let Some(x) = f.get(from).and_then(Kv::str).filter(|x| !x.is_empty()) {
                 // Compact and spaced style names ("SemiBold", "Semi Bold") are the same style.
-                s.insert(to.into(), if from == "style" { json!(super::style_name(x)) } else { json!(x) });
+                s.insert(
+                    to.into(),
+                    if from == "style" {
+                        json!(super::style_name(x))
+                    } else {
+                        json!(x)
+                    },
+                );
             }
         }
     }
@@ -1576,7 +2251,12 @@ fn text_style(v: &View, size: Option<f64>) -> Obj {
             }
         }
     }
-    if let Some(u) = v.get("hyperlink").and_then(|h| h.get("url")).and_then(Kv::str).filter(|u| !u.is_empty()) {
+    if let Some(u) = v
+        .get("hyperlink")
+        .and_then(|h| h.get("url"))
+        .and_then(Kv::str)
+        .filter(|u| !u.is_empty())
+    {
         s.insert("hyperlink".into(), json!({"type": "URL", "url": u}));
     }
     s
@@ -1610,7 +2290,12 @@ fn effect(e: &Kv) -> Option<Value> {
             o.insert(k.into(), color(c));
         }
     }
-    for (from, to) in [("offset", "offset"), ("startOffset", "startOffset"), ("endOffset", "endOffset"), ("noiseSize", "noiseSizeVector")] {
+    for (from, to) in [
+        ("offset", "offset"),
+        ("startOffset", "startOffset"),
+        ("endOffset", "endOffset"),
+        ("noiseSize", "noiseSizeVector"),
+    ] {
         if let Some(p) = e.get(from).and_then(vec2) {
             o.insert(to.into(), p);
         }
@@ -1633,13 +2318,21 @@ fn effect(e: &Kv) -> Option<Value> {
 }
 
 fn layout_grid(g: &Kv) -> Value {
-    let pattern = match (g.get("pattern").and_then(Kv::str), g.get("axis").and_then(Kv::str)) {
+    let pattern = match (
+        g.get("pattern").and_then(Kv::str),
+        g.get("axis").and_then(Kv::str),
+    ) {
         (Some("GRID"), _) => "GRID",
         (_, Some("Y")) => "ROWS",
         _ => "COLUMNS",
     };
     let mut o = json!({"pattern": pattern, "alignment": g.get("type").and_then(Kv::str).unwrap_or("STRETCH")});
-    for (from, to) in [("sectionSize", "sectionSize"), ("numSections", "count"), ("gutterSize", "gutterSize"), ("offset", "offset")] {
+    for (from, to) in [
+        ("sectionSize", "sectionSize"),
+        ("numSections", "count"),
+        ("gutterSize", "gutterSize"),
+        ("offset", "offset"),
+    ] {
         if let Some(x) = num(g, from) {
             o[to] = json!(x);
         }
@@ -1650,7 +2343,12 @@ fn layout_grid(g: &Kv) -> Value {
     if let Some(b) = g.get("visible").and_then(Kv::bool) {
         o["visible"] = json!(b);
     }
-    let vars = [("numSectionsVar", "count"), ("offsetVar", "offset"), ("sectionSizeVar", "sectionSize"), ("gutterSizeVar", "gutterSize")];
+    let vars = [
+        ("numSectionsVar", "count"),
+        ("offsetVar", "offset"),
+        ("sectionSizeVar", "sectionSize"),
+        ("gutterSizeVar", "gutterSize"),
+    ];
     if let Some(b) = bound(Some(g), &vars) {
         o["boundVariables"] = b;
     }
@@ -1688,7 +2386,9 @@ fn transition(a: &Kv) -> Option<Value> {
                 ("SLIDE_OUT_TO_", "SLIDE_OUT"),
                 ("MOVE_OUT_TO_", "MOVE_OUT"),
             ];
-            let (kind, side) = prefixes.iter().find_map(|(p, k)| t.strip_prefix(p).map(|r| (*k, r)))?;
+            let (kind, side) = prefixes
+                .iter()
+                .find_map(|(p, k)| t.strip_prefix(p).map(|r| (*k, r)))?;
             let incoming = matches!(kind, "SLIDE_IN" | "PUSH" | "MOVE_IN");
             let dir = match (side, incoming) {
                 ("LEFT", true) | ("RIGHT", false) => "RIGHT",
@@ -1711,7 +2411,13 @@ fn transition(a: &Kv) -> Option<Value> {
         _ => "EASE_OUT",
     };
     let mut e = json!({"type": easing});
-    let f: Vec<f64> = a.get("easingFunction").map(Kv::list).unwrap_or_default().iter().filter_map(Kv::f64).collect();
+    let f: Vec<f64> = a
+        .get("easingFunction")
+        .map(Kv::list)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(Kv::f64)
+        .collect();
     if let (true, [x1, y1, x2, y2, ..]) = (easing == "CUSTOM_CUBIC_BEZIER", f.as_slice()) {
         e["easingFunctionCubicBezier"] = json!({"x1": x1, "y1": y1, "x2": x2, "y2": y2});
     }

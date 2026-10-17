@@ -11,7 +11,7 @@ impl Audio {
                 1 => return (channel.control().0 >> 8) as u8,
                 2 => return (channel.control().0 >> 16) as u8,
                 3 => return (channel.control().0 >> 24) as u8,
-                _ => {},
+                _ => {}
             }
         } else {
             match addr & 0x1F {
@@ -42,7 +42,7 @@ impl Audio {
 
                 0x02 | 0x03 | 0x06 | 0x07 | 0x16 | 0x17 | 0x1E | 0x1F => return 0,
 
-                _ => {},
+                _ => {}
             }
         }
         #[cfg(feature = "log")]
@@ -59,7 +59,7 @@ impl Audio {
             match addr & 0xE {
                 0 => return channel.control().0 as u16,
                 2 => return (channel.control().0 >> 16) as u16,
-                _ => {},
+                _ => {}
             }
         } else {
             match addr & 0x1E {
@@ -69,7 +69,7 @@ impl Audio {
                 0x08 => {
                     return self.capture[0].control().0 as u16
                         | (self.capture[1].control().0 as u16) << 8;
-                },
+                }
 
                 0x10 => return self.capture[0].dst_addr() as u16,
                 0x12 => return (self.capture[0].dst_addr() >> 16) as u16,
@@ -83,7 +83,7 @@ impl Audio {
 
                 0x2 | 0x6 | 0x16 | 0x1E => return 0,
 
-                _ => {},
+                _ => {}
             }
         }
         #[cfg(feature = "log")]
@@ -108,14 +108,14 @@ impl Audio {
                 0x08 => {
                     return self.capture[0].control().0 as u32
                         | (self.capture[1].control().0 as u32) << 8;
-                },
+                }
 
                 0x10 => return self.capture[0].dst_addr(),
                 0x14 => return self.capture[0].buffer_words() as u32,
                 0x18 => return self.capture[1].dst_addr(),
                 0x1C => return self.capture[1].buffer_words() as u32,
 
-                _ => {},
+                _ => {}
             }
         }
         #[cfg(feature = "log")]
@@ -148,15 +148,15 @@ impl Audio {
                 0x5 => {
                     channel
                         .write_src_addr((channel.src_addr() & 0xFFFF_00FF) | (value as u32) << 8);
-                },
+                }
                 0x6 => {
                     channel
                         .write_src_addr((channel.src_addr() & 0xFF00_FFFF) | (value as u32) << 16);
-                },
+                }
                 0x7 => {
                     channel
                         .write_src_addr((channel.src_addr() & 0x00FF_FFFF) | (value as u32) << 24);
-                },
+                }
 
                 0x8 => {
                     let new_timer_reload = (channel.timer_reload() & 0xFF00) | value as u16;
@@ -164,38 +164,38 @@ impl Audio {
                     match i {
                         1 => self.capture[0].timer_reload = new_timer_reload,
                         3 => self.capture[1].timer_reload = new_timer_reload,
-                        _ => {},
+                        _ => {}
                     }
-                },
+                }
                 0x9 => {
                     let new_timer_reload = (channel.timer_reload() & 0x00FF) | (value as u16) << 8;
                     channel.write_timer_reload(new_timer_reload);
                     match i {
                         1 => self.capture[0].timer_reload = new_timer_reload,
                         3 => self.capture[1].timer_reload = new_timer_reload,
-                        _ => {},
+                        _ => {}
                     }
-                },
+                }
                 0xA => channel.write_loop_start((channel.loop_start() & 0xFF00) | value as u16),
                 0xB => {
                     channel.write_loop_start((channel.loop_start() & 0x00FF) | (value as u16) << 8);
-                },
+                }
 
                 0xC => channel.write_loop_len((channel.loop_len() & 0xFFFF_FF00) | value as u32),
                 0xD => {
                     channel
                         .write_loop_len((channel.loop_len() & 0xFFFF_00FF) | (value as u32) << 8);
-                },
+                }
                 0xE => channel.write_loop_len((channel.loop_len() & 0xFFFF) | (value as u32) << 16),
 
-                _ => {},
+                _ => {}
             }
         } else {
             match addr & 0x1F {
                 0x00 => self.write_control(Control((self.control.0 & 0xFF00) | value as u16)),
                 0x01 => {
                     self.write_control(Control((self.control.0 & 0x00FF) | (value as u16) << 8));
-                },
+                }
 
                 0x04 => self.write_bias((self.bias & 0xFF00) | value as u16),
                 0x05 => self.write_bias((self.bias & 0x00FF) | (value as u16) << 8),
@@ -239,15 +239,20 @@ impl Audio {
                     (self.capture[1].buffer_words() & 0x00FF) | (value as u16) << 8,
                 ),
 
-                0x02 | 0x03 | 0x06 | 0x07 | 0x16 | 0x17 | 0x1E | 0x1F => {},
+                0x02 | 0x03 | 0x06 | 0x07 | 0x16 | 0x17 | 0x1E | 0x1F => {}
 
                 _ =>
                 {
                     #[cfg(feature = "log")]
                     if !A::IS_DEBUG {
-                        slog::warn!(self.logger, "Unknown write8 @ {:#05X}: {:#04X}", addr, value);
+                        slog::warn!(
+                            self.logger,
+                            "Unknown write8 @ {:#05X}: {:#04X}",
+                            addr,
+                            value
+                        );
                     }
-                },
+                }
             }
         }
     }
@@ -269,16 +274,16 @@ impl Audio {
                 0x6 => {
                     channel
                         .write_src_addr((channel.src_addr() & 0x0000_FFFF) | (value as u32) << 16);
-                },
+                }
 
                 0x8 => {
                     channel.write_timer_reload(value);
                     match i {
                         1 => self.capture[0].timer_reload = value,
                         3 => self.capture[1].timer_reload = value,
-                        _ => {},
+                        _ => {}
                     }
-                },
+                }
 
                 0xA => channel.write_loop_start(value),
 
@@ -286,7 +291,7 @@ impl Audio {
                 _ => {
                     channel
                         .write_loop_len((channel.loop_len() & 0x0000_FFFF) | (value as u32) << 16);
-                },
+                }
             }
         } else {
             match addr & 0x1E {
@@ -296,7 +301,7 @@ impl Audio {
                 0x08 => {
                     self.capture[0].write_control(capture::Control(value as u8));
                     self.capture[1].write_control(capture::Control((value >> 8) as u8));
-                },
+                }
 
                 0x10 => self.capture[0]
                     .write_dst_addr((self.capture[0].dst_addr() & 0xFFFF_0000) | value as u32),
@@ -314,15 +319,20 @@ impl Audio {
 
                 0x1C => self.capture[1].write_buffer_words(value),
 
-                0x2 | 0x6 | 0x16 | 0x1E => {},
+                0x2 | 0x6 | 0x16 | 0x1E => {}
 
                 _ =>
                 {
                     #[cfg(feature = "log")]
                     if !A::IS_DEBUG {
-                        slog::warn!(self.logger, "Unknown write16 @ {:#05X}: {:#06X}", addr, value);
+                        slog::warn!(
+                            self.logger,
+                            "Unknown write16 @ {:#05X}: {:#06X}",
+                            addr,
+                            value
+                        );
                     }
-                },
+                }
             }
         }
     }
@@ -341,9 +351,9 @@ impl Audio {
                     match i {
                         1 => self.capture[0].timer_reload = value as u16,
                         3 => self.capture[1].timer_reload = value as u16,
-                        _ => {},
+                        _ => {}
                     }
-                },
+                }
                 _ => channel.write_loop_len(value),
             }
         } else {
@@ -354,7 +364,7 @@ impl Audio {
                 0x08 => {
                     self.capture[0].write_control(capture::Control(value as u8));
                     self.capture[1].write_control(capture::Control((value >> 8) as u8));
-                },
+                }
 
                 0x10 => self.capture[0].write_dst_addr(value),
                 0x14 => self.capture[0].write_buffer_words(value as u16),
@@ -372,7 +382,7 @@ impl Audio {
                             value
                         );
                     }
-                },
+                }
             }
         }
     }

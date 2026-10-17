@@ -8,9 +8,21 @@ const FAMILY: &str = "Sysfont Sans3";
 
 /// A bundled Source Sans 3 file renamed [`FAMILY`] (as long as the original name).
 fn renamed(file: &str) -> Vec<u8> {
-    let mut data = std::fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/designcraft/fonts").join(file)).unwrap();
-    let utf16 = |s: &str| s.encode_utf16().flat_map(u16::to_be_bytes).collect::<Vec<u8>>();
-    for (from, to) in [(utf16("Source Sans 3"), utf16(FAMILY)), (b"Source Sans 3".to_vec(), FAMILY.as_bytes().to_vec())] {
+    let mut data = std::fs::read(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../assets/designcraft/fonts")
+            .join(file),
+    )
+    .unwrap();
+    let utf16 = |s: &str| {
+        s.encode_utf16()
+            .flat_map(u16::to_be_bytes)
+            .collect::<Vec<u8>>()
+    };
+    for (from, to) in [
+        (utf16("Source Sans 3"), utf16(FAMILY)),
+        (b"Source Sans 3".to_vec(), FAMILY.as_bytes().to_vec()),
+    ] {
         let mut i = 0;
         while let Some(at) = data[i..].windows(from.len()).position(|w| w == from) {
             data[i + at..i + at + to.len()].copy_from_slice(&to);
@@ -51,8 +63,16 @@ fn font_dir(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("dc-sysfonts-{}-{name}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("Sub")).unwrap();
-    std::fs::write(dir.join("Sysfont-Regular.ttf"), renamed("SourceSans3-Regular.ttf")).unwrap();
-    std::fs::write(dir.join("Sub/Sysfont-Bold.TTF"), renamed("SourceSans3-Bold.ttf")).unwrap();
+    std::fs::write(
+        dir.join("Sysfont-Regular.ttf"),
+        renamed("SourceSans3-Regular.ttf"),
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("Sub/Sysfont-Bold.TTF"),
+        renamed("SourceSans3-Bold.ttf"),
+    )
+    .unwrap();
     std::fs::write(dir.join("damaged.ttf"), b"ttcf\0\x01\0\0\xff\xff\xff\xff").unwrap();
     std::fs::write(dir.join("readme.txt"), FAMILY).unwrap();
     dir
@@ -84,14 +104,25 @@ fn the_scan_reads_collections_and_loads_fonts_only_when_used() {
     let dir = font_dir("collection");
     std::fs::remove_file(dir.join("Sysfont-Regular.ttf")).unwrap();
     std::fs::remove_file(dir.join("Sub/Sysfont-Bold.TTF")).unwrap();
-    std::fs::write(dir.join("Sysfont.ttc"), collection(&[renamed("SourceSans3-Regular.ttf"), renamed("SourceSans3-Bold.ttf")])).unwrap();
+    std::fs::write(
+        dir.join("Sysfont.ttc"),
+        collection(&[
+            renamed("SourceSans3-Regular.ttf"),
+            renamed("SourceSans3-Bold.ttf"),
+        ]),
+    )
+    .unwrap();
     let db = FontDb::with_font_dirs(vec![dir.clone()]);
     assert_eq!(db.styles(FAMILY), ["Regular", "Bold"]);
     // Cataloged, not loaded.
     assert!(!db.is_loaded(FAMILY));
     let bold = db.face(FAMILY, "Bold");
     assert_eq!((bold.style.as_str(), bold.index()), ("Bold", 1));
-    assert_eq!(db.face(FAMILY, "Regular").index(), 0, "the collection's faces load together");
+    assert_eq!(
+        db.face(FAMILY, "Regular").index(),
+        0,
+        "the collection's faces load together"
+    );
 }
 
 #[test]
@@ -101,8 +132,15 @@ fn rescanning_finds_fonts_installed_since() {
     let db = FontDb::with_font_dirs(vec![later.clone()]);
     assert!(!db.has_family(FAMILY));
     std::fs::create_dir_all(&later).unwrap();
-    std::fs::copy(dir.join("Sysfont-Regular.ttf"), later.join("Sysfont-Regular.ttf")).unwrap();
-    assert!(!db.has_family(FAMILY), "the folders are scanned once, not on every miss");
+    std::fs::copy(
+        dir.join("Sysfont-Regular.ttf"),
+        later.join("Sysfont-Regular.ttf"),
+    )
+    .unwrap();
+    assert!(
+        !db.has_family(FAMILY),
+        "the folders are scanned once, not on every miss"
+    );
     assert_eq!(db.load_system_fonts(), 1);
     assert!(db.has_family(FAMILY) && has(&db.families(), FAMILY));
 }
@@ -114,7 +152,11 @@ fn a_background_scan_serves_the_first_lookup() {
     db.scan_in_background();
     // Waits for the scan when it is still running.
     assert!(has(&db.families(), FAMILY));
-    assert_eq!(db.load_system_fonts(), 2, "a rescan catalogs the two faces again");
+    assert_eq!(
+        db.load_system_fonts(),
+        2,
+        "a rescan catalogs the two faces again"
+    );
 }
 
 #[cfg(unix)]
@@ -139,14 +181,20 @@ fn a_familys_kind_is_read_without_keeping_it_loaded() {
     // A loaded family is asked directly, with the same answer.
     let _ = fonts.face(FAMILY, "Regular");
     assert!(db.is_loaded(FAMILY));
-    assert_eq!(fonts.family_kind(FAMILY).map(|(k, _)| k.class), Some(crate::kind::FontClass::SansSerif));
+    assert_eq!(
+        fonts.family_kind(FAMILY).map(|(k, _)| k.class),
+        Some(crate::kind::FontClass::SansSerif)
+    );
     assert!(fonts.family_kind("No Such Family").is_none());
 }
 
 #[test]
 fn the_scan_reads_names_without_loading_the_font() {
     let dir = font_dir("names");
-    let names: Vec<(String, String)> = file_face_names(&dir.join("Sysfont-Regular.ttf")).into_iter().map(|f| (f.family, f.style)).collect();
+    let names: Vec<(String, String)> = file_face_names(&dir.join("Sysfont-Regular.ttf"))
+        .into_iter()
+        .map(|f| (f.family, f.style))
+        .collect();
     assert_eq!(names, [(FAMILY.to_string(), "Regular".to_string())]);
     assert!(file_face_names(&dir.join("damaged.ttf")).is_empty());
     assert!(file_face_names(&dir.join("readme.txt")).is_empty());
@@ -162,22 +210,57 @@ fn font_menus_group_installed_and_loaded_fonts_without_loading_them() {
     std::fs::create_dir_all(&dir).unwrap();
     let names = |family: &str, lang: u16, native: &str| {
         let font = font_with(family, &['a']).unwrap();
-        with_names(&font, &[(3, 1, 0x409, 1, family), (3, 1, 0x409, 2, "Regular"), (3, 1, lang, 1, native)]).unwrap()
+        with_names(
+            &font,
+            &[
+                (3, 1, 0x409, 1, family),
+                (3, 1, 0x409, 2, "Regular"),
+                (3, 1, lang, 1, native),
+            ],
+        )
+        .unwrap()
     };
-    std::fs::write(dir.join("jp.ttf"), names("Groups Mincho", 0x0411, "グループ明朝")).unwrap();
+    std::fs::write(
+        dir.join("jp.ttf"),
+        names("Groups Mincho", 0x0411, "グループ明朝"),
+    )
+    .unwrap();
     // Declares nothing (no code pages): its kana make it Japanese, read from the cmap.
-    std::fs::write(dir.join("kana.otf"), with_code_pages(font_with("Groups Kana", &['a', 'あ']).unwrap(), 0, 0).unwrap()).unwrap();
+    std::fs::write(
+        dir.join("kana.otf"),
+        with_code_pages(font_with("Groups Kana", &['a', 'あ']).unwrap(), 0, 0).unwrap(),
+    )
+    .unwrap();
     let db = FontDb::with_font_dirs(vec![dir.clone()]);
     db.set_system_fallback(false);
     db.add_font(with_code_pages(font_with("Groups Ming", &['a']).unwrap(), 1 << 20, 0).unwrap());
     let infos = db.scoped(0).family_infos();
-    let find = |f: &str| infos.iter().find(|i| i.family == f).cloned().unwrap_or_else(|| panic!("{f} in {infos:?}"));
-    assert_eq!(find("Groups Mincho"), FamilyInfo { family: "Groups Mincho".into(), group: FontGroup::Japanese, native: Some("グループ明朝".into()) });
+    let find = |f: &str| {
+        infos
+            .iter()
+            .find(|i| i.family == f)
+            .cloned()
+            .unwrap_or_else(|| panic!("{f} in {infos:?}"))
+    };
+    assert_eq!(
+        find("Groups Mincho"),
+        FamilyInfo {
+            family: "Groups Mincho".into(),
+            group: FontGroup::Japanese,
+            native: Some("グループ明朝".into())
+        }
+    );
     assert_eq!(find("Groups Kana").group, FontGroup::Japanese);
     assert_eq!(find("Groups Ming").group, FontGroup::ChineseTraditional);
     assert_eq!(find(crate::DEFAULT_FAMILY).group, FontGroup::Western);
-    assert!(!db.is_loaded("Groups Mincho"), "the scan read its tables, not the font");
+    assert!(
+        !db.is_loaded("Groups Mincho"),
+        "the scan read its tables, not the font"
+    );
     // Families are listed once.
-    assert_eq!(infos.iter().filter(|i| i.family == "Groups Mincho").count(), 1);
+    assert_eq!(
+        infos.iter().filter(|i| i.family == "Groups Mincho").count(),
+        1
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }

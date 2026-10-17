@@ -1,5 +1,5 @@
 use alloc::{collections::BTreeMap, vec::Vec};
-use bevy_math::{ops, Vec2};
+use bevy_math::{Vec2, ops};
 use core::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy)]

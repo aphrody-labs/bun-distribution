@@ -53,7 +53,11 @@ fn watched(s: &Session) -> BTreeSet<String> {
 /// at its recorded index when the name still matches, else the first layer with its name.
 fn psd_layer(s: &Session, path: &str, l: &SourceLayer) -> Option<(u32, Option<(u32, u32)>)> {
     let psd = effectcraft_psd::Psd::parse(s.services.read_file(path).ok()?).ok()?;
-    let found = psd.layers.get(l.index as usize).filter(|x| x.name == l.name).or_else(|| psd.layers.iter().find(|x| x.name == l.name))?;
+    let found = psd
+        .layers
+        .get(l.index as usize)
+        .filter(|x| x.name == l.name)
+        .or_else(|| psd.layers.iter().find(|x| x.name == l.name))?;
     let size = (!found.rect.is_empty()).then(|| (found.rect.width(), found.rect.height()));
     Some((u32::try_from(found.index).ok()?, size))
 }
@@ -120,9 +124,15 @@ pub fn reload_items(s: &mut Session, ids: &[ItemId]) -> crate::Result<usize> {
 /// modifying the project, and an item whose file can't be read now (another app is still
 /// writing it) is left as it was. Returns the number reloaded and the files that couldn't be read
 /// (only without `undoable`).
-fn reload(s: &mut Session, ids: &[ItemId], undoable: bool) -> crate::Result<(usize, BTreeSet<String>)> {
+fn reload(
+    s: &mut Session,
+    ids: &[ItemId],
+    undoable: bool,
+) -> crate::Result<(usize, BTreeSet<String>)> {
     if s.importer.is_none() {
-        return Err(crate::EngineError::Other("media import is not available in this build".into()));
+        return Err(crate::EngineError::Other(
+            "media import is not available in this build".into(),
+        ));
     }
     let mut updates = vec![];
     let mut paths = BTreeSet::new();
@@ -132,7 +142,10 @@ fn reload(s: &mut Session, ids: &[ItemId], undoable: bool) -> crate::Result<(usi
             // Probed the way it imports by default, so a sequence is found as one.
             let nf = match s.probe_footage(&f.path) {
                 Ok(p) => refreshed(s, f, p),
-                Err(_) if undoable => Footage { missing: true, ..f.clone() },
+                Err(_) if undoable => Footage {
+                    missing: true,
+                    ..f.clone()
+                },
                 Err(_) => {
                     failed.insert(f.path.clone());
                     continue;
@@ -213,8 +226,18 @@ pub fn apply_stamps(s: &mut Session, now: Vec<(String, Option<Stamp>)>) -> crate
     if changed.is_empty() {
         return Ok(json!({"files": 0, "reloaded": 0}));
     }
-    let ids: Vec<ItemId> = s.project.items.values().filter(|i| matches!(&i.kind, ItemKind::Footage(f) if changed.contains(&f.path))).map(|i| i.id).collect();
-    let (reloaded, failed) = if ids.is_empty() { (0, BTreeSet::new()) } else { reload(s, &ids, false)? };
+    let ids: Vec<ItemId> = s
+        .project
+        .items
+        .values()
+        .filter(|i| matches!(&i.kind, ItemKind::Footage(f) if changed.contains(&f.path)))
+        .map(|i| i.id)
+        .collect();
+    let (reloaded, failed) = if ids.is_empty() {
+        (0, BTreeSet::new())
+    } else {
+        reload(s, &ids, false)?
+    };
     // Not readable (still being written, or not a file the importer reads): its new stamp is kept,
     // so it is tried again once it changes again, not on every look.
     for p in &failed {
@@ -237,7 +260,10 @@ pub fn apply_stamps(s: &mut Session, now: Vec<(String, Option<Stamp>)>) -> crate
 /// `footage.reloadChanged`: stamp the watched files now and reload the ones that changed.
 pub(crate) fn command(s: &mut Session, _: &Value) -> crate::Result<Value> {
     let services = s.services.clone();
-    let now = watched(s).into_iter().map(|p| (p.clone(), services.stamp(&p))).collect();
+    let now = watched(s)
+        .into_iter()
+        .map(|p| (p.clone(), services.stamp(&p)))
+        .collect();
     apply_stamps(s, now)
 }
 
@@ -254,10 +280,16 @@ pub fn start_scan(s: &mut Session) {
     let services = s.services.clone();
     let slot: Scan = Arc::default();
     let out = slot.clone();
-    let spawned = std::thread::Builder::new().name("footage-watch".into()).spawn(move || {
-        let stamps = paths.into_iter().map(|p| (p.clone(), services.stamp(&p))).collect();
-        *out.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(stamps);
-    });
+    let spawned = std::thread::Builder::new()
+        .name("footage-watch".into())
+        .spawn(move || {
+            let stamps = paths
+                .into_iter()
+                .map(|p| (p.clone(), services.stamp(&p)))
+                .collect();
+            *out.lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(stamps);
+        });
     if spawned.is_ok() {
         s.footage_scan = Some(slot);
     }
@@ -265,7 +297,12 @@ pub fn start_scan(s: &mut Session) {
 
 /// Apply a finished scan (`None` while there is none, or it is still running).
 pub fn poll_scan(s: &mut Session) -> Option<crate::Result<Value>> {
-    let stamps = s.footage_scan.as_ref()?.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()?;
+    let stamps = s
+        .footage_scan
+        .as_ref()?
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .take()?;
     s.footage_scan = None;
     Some(apply_stamps(s, stamps))
 }

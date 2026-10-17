@@ -175,7 +175,9 @@ fn node(b: &[u8]) -> Result<NodeProto> {
             (2, Wire::Bytes(b)) => push(&mut a.output, string(b)?, 2)?,
             (4, Wire::Bytes(b)) => a.op_type = string(b)?,
             (5, Wire::Bytes(b)) => push(&mut a.attribute, attribute(b)?, 16)?,
-            (7, Wire::Bytes(b)) if !b.is_empty() => return Err(NetError::Unsupported("a custom operator domain".into())),
+            (7, Wire::Bytes(b)) if !b.is_empty() => {
+                return Err(NetError::Unsupported("a custom operator domain".into()));
+            }
             _ => {}
         }
     }
@@ -204,7 +206,9 @@ fn tensor(b: &[u8]) -> Result<TensorProto<'_>> {
                 }
                 a.raw_data = b;
             }
-            (13, _) | (14, Wire::Int(1..)) => return Err(NetError::Unsupported("external tensor data".into())),
+            (13, _) | (14, Wire::Int(1..)) => {
+                return Err(NetError::Unsupported("external tensor data".into()));
+            }
             _ => {}
         }
     }
@@ -251,7 +255,10 @@ fn channel_type(b: &[u8]) -> Result<Option<usize>> {
     Ok(None)
 }
 fn value_info(b: &[u8]) -> Result<ValueInfoProto> {
-    let mut out = ValueInfoProto { name: String::new(), channels: None };
+    let mut out = ValueInfoProto {
+        name: String::new(),
+        channels: None,
+    };
     let mut fields = Fields::new(b);
     while let Some((n, w)) = fields.next()? {
         match (n, w) {

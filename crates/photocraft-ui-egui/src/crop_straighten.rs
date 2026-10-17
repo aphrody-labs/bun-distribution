@@ -79,12 +79,16 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: Modifiers) -> bool 
             true
         }
         ToolEvent::Move { x, y, .. } => {
-            let Some(l) = app.crop.straighten.line.as_mut() else { return false };
+            let Some(l) = app.crop.straighten.line.as_mut() else {
+                return false;
+            };
             l[1] = [x, y];
             true
         }
         ToolEvent::Up { x, y } => {
-            let Some([a, _]) = app.crop.straighten.line.take() else { return false };
+            let Some([a, _]) = app.crop.straighten.line.take() else {
+                return false;
+            };
             // One line per click of the button.
             app.crop.straighten.armed = false;
             let zoom = f64::from(app.point_zoom());
@@ -102,9 +106,14 @@ pub fn frame_angle(a: [f64; 2], b: [f64; 2], min_len: f64) -> Option<f64> {
     if !len.is_finite() || len < min_len.max(f64::MIN_POSITIVE) {
         return None;
     }
-    let rot = photocraft_engine::analysis_cmds::straighten_angle(&photocraft_doc::Ruler { start: a, end: b, protractor: None });
+    let rot = photocraft_engine::analysis_cmds::straighten_angle(&photocraft_doc::Ruler {
+        start: a,
+        end: b,
+        protractor: None,
+    });
     // ↵ turns the document back by the frame's angle; turning it by `rot` levels the line.
-    rot.is_finite().then(|| crate::crop_ui::normalized_angle(-rot) + 0.0)
+    rot.is_finite()
+        .then(|| crate::crop_ui::normalized_angle(-rot) + 0.0)
 }
 
 /// The largest frame with the proportions of `w`×`h`, turned `deg` degrees, that stays inside a
@@ -113,7 +122,12 @@ pub fn frame_angle(a: [f64; 2], b: [f64; 2], min_len: f64) -> Option<f64> {
 /// Kept apart on purpose: whether Photoshop's Classic Mode fits the frame exactly this way after
 /// Straighten (keeping the frame's proportions, centred on the image) is not verified.
 pub fn fitted(w: f64, h: f64, cw: f64, ch: f64, deg: f64) -> Option<[f64; 4]> {
-    if ![w, h, cw, ch, deg].iter().all(|v| v.is_finite()) || w <= 0.0 || h <= 0.0 || cw <= 0.0 || ch <= 0.0 {
+    if ![w, h, cw, ch, deg].iter().all(|v| v.is_finite())
+        || w <= 0.0
+        || h <= 0.0
+        || cw <= 0.0
+        || ch <= 0.0
+    {
         return None;
     }
     let (s, c) = deg.to_radians().sin_cos();
@@ -129,13 +143,31 @@ pub fn fitted(w: f64, h: f64, cw: f64, ch: f64, deg: f64) -> Option<[f64; 4]> {
 
 /// The line from `a` to `b` (document px, at `zoom` screen points per px) straightens the frame.
 fn apply(app: &mut PhotocraftApp, a: [f64; 2], b: [f64; 2], zoom: f64) {
-    let min_len = if zoom.is_finite() && zoom > 0.0 { MIN_LINE_PX / zoom } else { MIN_LINE_PX };
-    let Some(deg) = frame_angle(a, b, min_len) else { return };
-    let Some(size) = app.session.active().map(|st| (f64::from(st.doc.size.width), f64::from(st.doc.size.height))) else { return };
+    let min_len = if zoom.is_finite() && zoom > 0.0 {
+        MIN_LINE_PX / zoom
+    } else {
+        MIN_LINE_PX
+    };
+    let Some(deg) = frame_angle(a, b, min_len) else {
+        return;
+    };
+    let Some(size) = app
+        .session
+        .active()
+        .map(|st| (f64::from(st.doc.size.width), f64::from(st.doc.size.height)))
+    else {
+        return;
+    };
     // The frame keeps its proportions (an options-bar ratio is already the frame's); no frame
     // takes the canvas's.
-    let (w, h) = app.ui.crop_rect.filter(|r| r.iter().all(|v| v.is_finite())).map_or(size, |r| (r[2] - r[0], r[3] - r[1]));
-    let Some(r) = fitted(w, h, size.0, size.1, deg) else { return };
+    let (w, h) = app
+        .ui
+        .crop_rect
+        .filter(|r| r.iter().all(|v| v.is_finite()))
+        .map_or(size, |r| (r[2] - r[0], r[3] - r[1]));
+    let Some(r) = fitted(w, h, size.0, size.1, deg) else {
+        return;
+    };
     if app.ui.crop_rect == Some(r) && crate::crop_ui::angle(app) == deg {
         return;
     }
@@ -147,8 +179,20 @@ fn apply(app: &mut PhotocraftApp, a: [f64; 2], b: [f64; 2], zoom: f64) {
 
 /// The line being drawn and its angle beside the pointer. `to_screen` maps document px to the
 /// screen.
-pub fn draw(app: &PhotocraftApp, painter: &egui::Painter, to_screen: impl Fn([f64; 2]) -> Pos2, hover: Option<Pos2>) {
-    let Some([a, b]) = app.crop.straighten.line.filter(|_| app.ui.tool == Tool::Crop) else { return };
+pub fn draw(
+    app: &PhotocraftApp,
+    painter: &egui::Painter,
+    to_screen: impl Fn([f64; 2]) -> Pos2,
+    hover: Option<Pos2>,
+) {
+    let Some([a, b]) = app
+        .crop
+        .straighten
+        .line
+        .filter(|_| app.ui.tool == Tool::Crop)
+    else {
+        return;
+    };
     let t = crate::theme::Tokens::get(painter.ctx());
     let seg = [to_screen(a), to_screen(b)];
     painter.line_segment(seg, egui::Stroke::new(3.0, t.shadow));
@@ -156,13 +200,28 @@ pub fn draw(app: &PhotocraftApp, painter: &egui::Painter, to_screen: impl Fn([f6
     let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
     let deg = (-dy).atan2(dx).to_degrees();
     if let Some(h) = hover.filter(|_| deg.is_finite() && (dx != 0.0 || dy != 0.0)) {
-        crate::canvas::draw_value_readout(app, painter.ctx(), "crop-straighten-readout", h, ["Angle:"], [format!("{deg:.1}°")]);
+        crate::canvas::draw_value_readout(
+            app,
+            painter.ctx(),
+            "crop-straighten-readout",
+            h,
+            ["Angle:"],
+            [format!("{deg:.1}°")],
+        );
     }
 }
 
 /// The options-bar Straighten button (Photoshop's level icon), lit while armed.
 pub fn options_button(s: &mut Straighten, ui: &mut egui::Ui) {
-    if crate::icons::button(ui, "ruler", 24.0, s.armed, tl!("Straighten the image by drawing a line on it")).clicked() {
+    if crate::icons::button(
+        ui,
+        "ruler",
+        24.0,
+        s.armed,
+        tl!("Straighten the image by drawing a line on it"),
+    )
+    .clicked()
+    {
         s.toggle();
     }
 }
@@ -178,7 +237,13 @@ mod tests {
     const CMD: Modifiers = Modifiers::COMMAND;
 
     fn app(depth: SampleType) -> PhotocraftApp {
-        let doc = Document::with_background("straighten", Size::new(200, 100), ColorMode::Rgb, depth, Color::WHITE);
+        let doc = Document::with_background(
+            "straighten",
+            Size::new(200, 100),
+            ColorMode::Rgb,
+            depth,
+            Color::WHITE,
+        );
         let mut s = photocraft_engine::Session::new();
         s.add_document(doc, None);
         let mut app = PhotocraftApp::new(s, crate::Services::default());
@@ -194,11 +259,34 @@ mod tests {
 
     fn drag(app: &mut PhotocraftApp, pts: &[[f64; 2]], mods: Modifiers) {
         let (first, last) = (pts[0], pts[pts.len() - 1]);
-        tool_event(app, ToolEvent::Down { x: first[0], y: first[1], pressure: 1.0 }, mods);
+        tool_event(
+            app,
+            ToolEvent::Down {
+                x: first[0],
+                y: first[1],
+                pressure: 1.0,
+            },
+            mods,
+        );
         for p in &pts[1..] {
-            tool_event(app, ToolEvent::Move { x: p[0], y: p[1], pressure: 1.0 }, mods);
+            tool_event(
+                app,
+                ToolEvent::Move {
+                    x: p[0],
+                    y: p[1],
+                    pressure: 1.0,
+                },
+                mods,
+            );
         }
-        tool_event(app, ToolEvent::Up { x: last[0], y: last[1] }, mods);
+        tool_event(
+            app,
+            ToolEvent::Up {
+                x: last[0],
+                y: last[1],
+            },
+            mods,
+        );
     }
 
     fn near(a: f64, b: f64) -> bool {
@@ -207,19 +295,35 @@ mod tests {
 
     /// Every corner of frame `r` turned `deg` lies inside the `w`×`h` canvas.
     fn inside(r: [f64; 4], deg: f64, w: f64, h: f64) -> bool {
-        crate::crop_ui::corners(r, deg).iter().all(|p| p[0] >= -1e-6 && p[1] >= -1e-6 && p[0] <= w + 1e-6 && p[1] <= h + 1e-6)
+        crate::crop_ui::corners(r, deg)
+            .iter()
+            .all(|p| p[0] >= -1e-6 && p[1] >= -1e-6 && p[0] <= w + 1e-6 && p[1] <= h + 1e-6)
     }
 
     #[test]
     fn the_frame_turns_with_a_horizon_and_nearly_vertical_lines_turn_it_plumb() {
         // A horizon falling 10° to the right: the frame turns 10° clockwise, so ↵ levels it.
         let d = 10.0f64.to_radians();
-        assert!(near(frame_angle([0.0, 0.0], [100.0 * d.cos(), 100.0 * d.sin()], 1.0).unwrap(), 10.0));
+        assert!(near(
+            frame_angle([0.0, 0.0], [100.0 * d.cos(), 100.0 * d.sin()], 1.0).unwrap(),
+            10.0
+        ));
         // Rising to the right: counter-clockwise. Drawn right to left: the same line.
-        assert!(near(frame_angle([0.0, 50.0], [100.0, 40.0], 1.0).unwrap(), -(10.0f64 / 100.0).atan().to_degrees()));
-        assert!(near(frame_angle([100.0, 40.0], [0.0, 50.0], 1.0).unwrap(), -(10.0f64 / 100.0).atan().to_degrees()));
+        assert!(near(
+            frame_angle([0.0, 50.0], [100.0, 40.0], 1.0).unwrap(),
+            -(10.0f64 / 100.0).atan().to_degrees()
+        ));
+        assert!(near(
+            frame_angle([100.0, 40.0], [0.0, 50.0], 1.0).unwrap(),
+            -(10.0f64 / 100.0).atan().to_degrees()
+        ));
         // A wall leaning 5° (nearer vertical) is made plumb, not level.
-        let a = frame_angle([50.0, 0.0], [50.0 + 100.0 * 5.0f64.to_radians().tan(), 100.0], 1.0).unwrap();
+        let a = frame_angle(
+            [50.0, 0.0],
+            [50.0 + 100.0 * 5.0f64.to_radians().tan(), 100.0],
+            1.0,
+        )
+        .unwrap();
         assert!(near(a, -5.0), "{a}");
         // Level and plumb lines need no turn.
         assert_eq!(frame_angle([0.0, 0.0], [40.0, 0.0], 1.0), Some(0.0));
@@ -234,15 +338,29 @@ mod tests {
     #[test]
     fn the_fitted_frame_is_the_largest_of_its_proportions_inside_the_canvas() {
         // Upright, the canvas's own proportions fill it.
-        assert_eq!(fitted(200.0, 100.0, 200.0, 100.0, 0.0), Some([0.0, 0.0, 200.0, 100.0]));
+        assert_eq!(
+            fitted(200.0, 100.0, 200.0, 100.0, 0.0),
+            Some([0.0, 0.0, 200.0, 100.0])
+        );
         for deg in [-45.0, -10.0, 3.0, 10.0, 30.0, 45.0, 90.0] {
             let r = fitted(200.0, 100.0, 200.0, 100.0, deg).unwrap();
             assert!(inside(r, deg, 200.0, 100.0), "{deg}: {r:?}");
-            assert!(near((r[2] - r[0]) / (r[3] - r[1]), 2.0), "keeps 2:1 at {deg}");
-            assert!(near((r[0] + r[2]) / 2.0, 100.0) && near((r[1] + r[3]) / 2.0, 50.0), "centred at {deg}");
+            assert!(
+                near((r[2] - r[0]) / (r[3] - r[1]), 2.0),
+                "keeps 2:1 at {deg}"
+            );
+            assert!(
+                near((r[0] + r[2]) / 2.0, 100.0) && near((r[1] + r[3]) / 2.0, 50.0),
+                "centred at {deg}"
+            );
             // As large as possible: 1% larger would leave the canvas.
             let c = crate::crop_ui::center(r);
-            let g = [c[0] - (c[0] - r[0]) * 1.01, c[1] - (c[1] - r[1]) * 1.01, c[0] + (r[2] - c[0]) * 1.01, c[1] + (r[3] - c[1]) * 1.01];
+            let g = [
+                c[0] - (c[0] - r[0]) * 1.01,
+                c[1] - (c[1] - r[1]) * 1.01,
+                c[0] + (r[2] - c[0]) * 1.01,
+                c[1] + (r[3] - c[1]) * 1.01,
+            ];
             assert!(!inside(g, deg, 200.0, 100.0), "{deg}: not the largest");
         }
         for bad in [
@@ -252,7 +370,11 @@ mod tests {
             [1.0, 1.0, 1.0, 1.0, f64::NAN],
             [f64::INFINITY, 1.0, 1.0, 1.0, 0.0],
         ] {
-            assert_eq!(fitted(bad[0], bad[1], bad[2], bad[3], bad[4]), None, "{bad:?}");
+            assert_eq!(
+                fitted(bad[0], bad[1], bad[2], bad[3], bad[4]),
+                None,
+                "{bad:?}"
+            );
         }
     }
 
@@ -264,18 +386,35 @@ mod tests {
             toggle(&mut app);
             assert!(mode(&app), "armed");
             // A line inside the frame straightens instead of drawing a new frame.
-            drag(&mut app, &[[20.0, 40.0], [100.0, 50.0], [180.0, 60.0]], NONE);
+            drag(
+                &mut app,
+                &[[20.0, 40.0], [100.0, 50.0], [180.0, 60.0]],
+                NONE,
+            );
             let want = (20.0f64 / 160.0).atan().to_degrees();
-            assert!(near(app.ui.crop_angle, want), "{depth:?}: {}", app.ui.crop_angle);
+            assert!(
+                near(app.ui.crop_angle, want),
+                "{depth:?}: {}",
+                app.ui.crop_angle
+            );
             let r = app.ui.crop_rect.unwrap();
-            assert!(inside(r, want, 200.0, 100.0) && near((r[2] - r[0]) / (r[3] - r[1]), 2.0), "{r:?}");
+            assert!(
+                inside(r, want, 200.0, 100.0) && near((r[2] - r[0]) / (r[3] - r[1]), 2.0),
+                "{r:?}"
+            );
             assert!(!app.crop.default_frame && app.crop.editing && crate::crop_ui::pending(&app));
-            assert!(!app.crop.straighten.armed && app.crop.straighten.line.is_none(), "one-shot");
+            assert!(
+                !app.crop.straighten.armed && app.crop.straighten.line.is_none(),
+                "one-shot"
+            );
             // The next drag is a normal crop gesture again: inside the frame it moves it.
             let before = app.ui.crop_rect.unwrap();
             drag(&mut app, &[[100.0, 50.0], [105.0, 50.0]], NONE);
             let after = app.ui.crop_rect.unwrap();
-            assert!(near(after[0] - before[0], 5.0) && near(app.ui.crop_angle, want), "{depth:?}");
+            assert!(
+                near(after[0] - before[0], 5.0) && near(app.ui.crop_angle, want),
+                "{depth:?}"
+            );
             // ↵ commits the turn and the crop in one step.
             let steps = app.session.active().unwrap().history.past_len();
             crate::canvas::commit_crop(&mut app);
@@ -307,22 +446,38 @@ mod tests {
         toggle(&mut app);
         // A click (zero length), then a line under 3 screen points.
         drag(&mut app, &[[50.0, 50.0]], NONE);
-        assert_eq!((app.ui.crop_rect, app.ui.crop_angle), (Some([0.0, 0.0, 200.0, 100.0]), 0.0));
-        assert!(app.crop.default_frame, "the untouched frame stays the default");
+        assert_eq!(
+            (app.ui.crop_rect, app.ui.crop_angle),
+            (Some([0.0, 0.0, 200.0, 100.0]), 0.0)
+        );
+        assert!(
+            app.crop.default_frame,
+            "the untouched frame stays the default"
+        );
         assert!(!app.crop.straighten.armed, "the click used the button");
         let zoom = f64::from(app.point_zoom());
         toggle(&mut app);
-        drag(&mut app, &[[50.0, 50.0], [50.0 + 2.0 / zoom, 50.0 + 1.0 / zoom]], NONE);
+        drag(
+            &mut app,
+            &[[50.0, 50.0], [50.0 + 2.0 / zoom, 50.0 + 1.0 / zoom]],
+            NONE,
+        );
         assert_eq!(app.ui.crop_angle, 0.0);
         assert!(app.ui.crop_rect.unwrap().iter().all(|v| v.is_finite()));
         // An already level line on the default frame leaves it as it is.
         toggle(&mut app);
         drag(&mut app, &[[10.0, 50.0], [190.0, 50.0]], NONE);
-        assert_eq!((app.ui.crop_rect, app.ui.crop_angle), (Some([0.0, 0.0, 200.0, 100.0]), 0.0));
+        assert_eq!(
+            (app.ui.crop_rect, app.ui.crop_angle),
+            (Some([0.0, 0.0, 200.0, 100.0]), 0.0)
+        );
         // Non-finite pointer positions never reach it.
         toggle(&mut app);
         drag(&mut app, &[[f64::NAN, 50.0], [190.0, f64::INFINITY]], NONE);
-        assert!(app.ui.crop_angle.is_finite() && app.ui.crop_rect.unwrap().iter().all(|v| v.is_finite()));
+        assert!(
+            app.ui.crop_angle.is_finite()
+                && app.ui.crop_rect.unwrap().iter().all(|v| v.is_finite())
+        );
     }
 
     #[test]
@@ -330,11 +485,34 @@ mod tests {
         let mut app = app(SampleType::U8);
         set_held(&mut app, true);
         assert!(mode(&app));
-        assert_eq!(crate::crop_ui::cursor(&app, [100.0, 50.0]), Some(egui::CursorIcon::Crosshair));
-        assert_eq!(crate::crop_ui::turn_cursor_dir(&app, [300.0, 50.0]), None, "no turn cursor while straightening");
+        assert_eq!(
+            crate::crop_ui::cursor(&app, [100.0, 50.0]),
+            Some(egui::CursorIcon::Crosshair)
+        );
+        assert_eq!(
+            crate::crop_ui::turn_cursor_dir(&app, [300.0, 50.0]),
+            None,
+            "no turn cursor while straightening"
+        );
         // A ⌘-drag outside the frame draws the line instead of turning the frame about the pointer.
-        tool_event(&mut app, ToolEvent::Down { x: 250.0, y: 60.0, pressure: 1.0 }, CMD);
-        tool_event(&mut app, ToolEvent::Move { x: 150.0, y: 0.0, pressure: 1.0 }, CMD);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 250.0,
+                y: 60.0,
+                pressure: 1.0,
+            },
+            CMD,
+        );
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 150.0,
+                y: 0.0,
+                pressure: 1.0,
+            },
+            CMD,
+        );
         assert!(app.crop.straighten.line.is_some() && app.crop.drag.is_none());
         tool_event(&mut app, ToolEvent::Up { x: 0.0, y: 0.0 }, CMD);
         // From (250, 60) to (0, 0): nearer horizontal, rising to the left.
@@ -344,9 +522,24 @@ mod tests {
         set_held(&mut app, false);
         assert!(!mode(&app));
         drag(&mut app, &[[300.0, 50.0], [300.0, 90.0]], NONE);
-        assert!(app.crop.drag.is_none() && app.ui.crop_angle > want, "{}", app.ui.crop_angle);
+        assert!(
+            app.crop.drag.is_none() && app.ui.crop_angle > want,
+            "{}",
+            app.ui.crop_angle
+        );
         // And a ⌘-drag in the middle of a crop gesture doesn't hijack it.
-        app.crop.drag = Some(CropDrag::Move { start: [100.0, 50.0], rect: app.ui.crop_rect.unwrap() });
-        assert!(!pointer(&mut app, ToolEvent::Down { x: 100.0, y: 50.0, pressure: 1.0 }, CMD));
+        app.crop.drag = Some(CropDrag::Move {
+            start: [100.0, 50.0],
+            rect: app.ui.crop_rect.unwrap(),
+        });
+        assert!(!pointer(
+            &mut app,
+            ToolEvent::Down {
+                x: 100.0,
+                y: 50.0,
+                pressure: 1.0
+            },
+            CMD
+        ));
     }
 }

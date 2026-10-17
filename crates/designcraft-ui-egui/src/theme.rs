@@ -2,7 +2,10 @@
 
 use std::sync::Arc;
 
-use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle, Visuals};
+use egui::{
+    Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle,
+    Visuals,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -17,7 +20,13 @@ pub enum Brightness {
 }
 
 impl Brightness {
-    pub const ALL: [Brightness; 5] = [Brightness::Dark, Brightness::MediumDark, Brightness::MediumLight, Brightness::Light, Brightness::HighContrast];
+    pub const ALL: [Brightness; 5] = [
+        Brightness::Dark,
+        Brightness::MediumDark,
+        Brightness::MediumLight,
+        Brightness::Light,
+        Brightness::HighContrast,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Brightness::Dark => "Dark",
@@ -37,7 +46,9 @@ impl Brightness {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|b| b.id().eq_ignore_ascii_case(s) || b.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|b| b.id().eq_ignore_ascii_case(s) || b.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -266,15 +277,45 @@ pub fn install_fonts(ctx: &egui::Context, lang: &str) {
 fn font_definitions(craft: &'static [designcraft_fonts::CraftFont], lang: &str) -> FontDefinitions {
     let mut fonts = FontDefinitions::default();
     let add = |fonts: &mut FontDefinitions, name: &str, data: &'static [u8]| {
-        fonts.font_data.insert(name.into(), Arc::new(FontData::from_static(data)));
+        fonts
+            .font_data
+            .insert(name.into(), Arc::new(FontData::from_static(data)));
     };
-    add(&mut fonts, "ui", include_bytes!("../../../assets/designcraft/fonts/SourceSans3-Regular.ttf"));
-    add(&mut fonts, "ui-semibold", include_bytes!("../../../assets/designcraft/fonts/SourceSans3-Semibold.ttf"));
-    add(&mut fonts, "mono", include_bytes!("../../../assets/designcraft/fonts/JetBrainsMono-Regular.ttf"));
-    fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "ui".into());
-    fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "mono".into());
-    fonts.families.insert(FontFamily::Name("semibold".into()), vec!["ui-semibold".into(), "ui".into()]);
-    let pick = |script: &str| -> Vec<&designcraft_fonts::CraftFont> { craft.iter().filter(|f| f.scripts.contains(&script)).collect() };
+    add(
+        &mut fonts,
+        "ui",
+        include_bytes!("../../../assets/designcraft/fonts/SourceSans3-Regular.ttf"),
+    );
+    add(
+        &mut fonts,
+        "ui-semibold",
+        include_bytes!("../../../assets/designcraft/fonts/SourceSans3-Semibold.ttf"),
+    );
+    add(
+        &mut fonts,
+        "mono",
+        include_bytes!("../../../assets/designcraft/fonts/JetBrainsMono-Regular.ttf"),
+    );
+    fonts
+        .families
+        .entry(FontFamily::Proportional)
+        .or_default()
+        .insert(0, "ui".into());
+    fonts
+        .families
+        .entry(FontFamily::Monospace)
+        .or_default()
+        .insert(0, "mono".into());
+    fonts.families.insert(
+        FontFamily::Name("semibold".into()),
+        vec!["ui-semibold".into(), "ui".into()],
+    );
+    let pick = |script: &str| -> Vec<&designcraft_fonts::CraftFont> {
+        craft
+            .iter()
+            .filter(|f| f.scripts.contains(&script))
+            .collect()
+    };
     let mut japanese = pick("Jpan");
     // BIZ UDPGothic (the UI face) first, Regular before Bold; the semibold family prefers Bold.
     japanese.sort_by_key(|f| (f.family != "BIZ UDPGothic", f.style != "Regular"));
@@ -297,10 +338,21 @@ fn font_definitions(craft: &'static [designcraft_fonts::CraftFont], lang: &str) 
     }
     // Arabic runs (rtl.rs): the Arabic face first, so letters and spaces shape as one run.
     for family in ["arabic", "arabic-semibold"] {
-        let ui = if family == "arabic" { "ui" } else { "ui-semibold" };
-        let stack = arabic.iter().map(|f| name(f)).chain([ui.to_string(), "ui".to_string()]).chain(japanese.iter().chain(&chinese).map(|f| name(f)));
+        let ui = if family == "arabic" {
+            "ui"
+        } else {
+            "ui-semibold"
+        };
+        let stack = arabic
+            .iter()
+            .map(|f| name(f))
+            .chain([ui.to_string(), "ui".to_string()])
+            .chain(japanese.iter().chain(&chinese).map(|f| name(f)));
         let mut seen = std::collections::HashSet::new();
-        fonts.families.insert(FontFamily::Name(family.into()), stack.filter(|n| seen.insert(n.clone())).collect());
+        fonts.families.insert(
+            FontFamily::Name(family.into()),
+            stack.filter(|n| seen.insert(n.clone())).collect(),
+        );
     }
     fonts
 }
@@ -315,11 +367,18 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
         (TextStyle::Small, FontId::proportional(10.0)),
         (TextStyle::Body, FontId::proportional(11.0)),
         (TextStyle::Button, FontId::proportional(11.0)),
-        (TextStyle::Heading, FontId::new(15.0, FontFamily::Name("semibold".into()))),
+        (
+            TextStyle::Heading,
+            FontId::new(15.0, FontFamily::Name("semibold".into())),
+        ),
         (TextStyle::Monospace, FontId::monospace(11.5)),
     ]
     .into();
-    let mut v = if t.dark { Visuals::dark() } else { Visuals::light() };
+    let mut v = if t.dark {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     let r = CornerRadius::same(t.radius);
     v.panel_fill = t.panel;
     v.window_fill = t.panel;
@@ -332,11 +391,14 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
     v.selection.stroke = Stroke::new(1.0, t.text_strong);
     v.hyperlink_color = t.accent;
     v.override_text_color = Some(t.text);
-    craft_ui::theme::WidgetPalette { noninteractive: t.panel, inactive: t.button, hovered: t.hover, active: t.tool_active, open: t.hover }.apply_to(
-        &mut v.widgets,
-        r,
-        Stroke::new(1.0, t.text),
-    );
+    craft_ui::theme::WidgetPalette {
+        noninteractive: t.panel,
+        inactive: t.button,
+        hovered: t.hover,
+        active: t.tool_active,
+        open: t.hover,
+    }
+    .apply_to(&mut v.widgets, r, Stroke::new(1.0, t.text));
     v.widgets.noninteractive.bg_stroke = Stroke::new(1.0, t.divider);
     v.widgets.inactive.bg_stroke = Stroke::new(1.0, t.field_border);
     v.widgets.hovered.bg_stroke = Stroke::new(1.0, t.field_border);
@@ -344,7 +406,12 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
     // InDesign buttons are outline-only.
     v.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
     v.widgets.inactive.bg_fill = t.input;
-    v.popup_shadow = egui::epaint::Shadow { offset: [0, 4], blur: 12, spread: 0, color: Color32::from_black_alpha(90) };
+    v.popup_shadow = egui::epaint::Shadow {
+        offset: [0, 4],
+        blur: 12,
+        spread: 0,
+        color: Color32::from_black_alpha(90),
+    };
     ctx.set_visuals(v);
     ctx.global_style_mut(|s| {
         s.text_styles = text_styles.clone();
@@ -359,14 +426,19 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
 impl Tokens {
     /// Tokens stored by [`apply`].
     pub fn get(ctx: &egui::Context) -> Tokens {
-        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::NULL)).unwrap_or_else(|| Tokens::for_brightness(Brightness::Dark))
+        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::NULL))
+            .unwrap_or_else(|| Tokens::for_brightness(Brightness::Dark))
     }
 }
 
 #[cfg(test)]
 mod japanese_font_tests {
     fn families() -> [egui::FontFamily; 3] {
-        [egui::FontFamily::Proportional, egui::FontFamily::Monospace, egui::FontFamily::Name("semibold".into())]
+        [
+            egui::FontFamily::Proportional,
+            egui::FontFamily::Monospace,
+            egui::FontFamily::Name("semibold".into()),
+        ]
     }
 
     fn ctx_with(craft: &'static [designcraft_fonts::CraftFont]) -> egui::Context {
@@ -396,7 +468,13 @@ mod japanese_font_tests {
         // The UI face is BIZ UDPGothic, ahead of the Mincho faces.
         let defs = super::font_definitions(designcraft_fonts::CRAFT_FONTS, "ja");
         let stack = &defs.families[&egui::FontFamily::Proportional];
-        assert_eq!(stack.iter().find(|n| n.starts_with("craft-")).map(String::as_str), Some("craft-BIZ UDPGothic-Regular"));
+        assert_eq!(
+            stack
+                .iter()
+                .find(|n| n.starts_with("craft-"))
+                .map(String::as_str),
+            Some("craft-BIZ UDPGothic-Regular")
+        );
     }
 
     #[test]
@@ -409,7 +487,8 @@ mod japanese_font_tests {
             assert!(fonts.has_glyphs(&body, "DesignCraft"));
             for family in families() {
                 let font = egui::FontId::new(13.0, family);
-                let galley = fonts.layout_no_wrap("日本語 DesignCraft".into(), font, egui::Color32::WHITE);
+                let galley =
+                    fonts.layout_no_wrap("日本語 DesignCraft".into(), font, egui::Color32::WHITE);
                 assert!(galley.size().x > 0.0);
             }
         });
@@ -433,14 +512,20 @@ mod ukrainian_font_tests {
             .chain("ҐґЄєІіЇї".chars())
             .filter(|c| matches!(*c, '\u{0400}'..='\u{052f}'))
             .collect();
-        for (name, family, style) in
-            [("ui", "Source Sans 3", "Regular"), ("ui-semibold", "Source Sans 3", "Semibold"), ("mono", "JetBrains Mono", "Regular")]
-        {
+        for (name, family, style) in [
+            ("ui", "Source Sans 3", "Regular"),
+            ("ui-semibold", "Source Sans 3", "Semibold"),
+            ("mono", "JetBrains Mono", "Regular"),
+        ] {
             let data = &definitions.font_data[name].font;
             let face = db.face(family, style);
             assert_eq!(face.data(), data.as_ref(), "configured UI face {name}");
             for character in &characters {
-                assert_ne!(face.glyph_for(*character), 0, "missing {character} in {name}");
+                assert_ne!(
+                    face.glyph_for(*character),
+                    0,
+                    "missing {character} in {name}"
+                );
             }
         }
     }

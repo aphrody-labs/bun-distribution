@@ -73,14 +73,27 @@ pub fn resolve(exe_dir: Option<&Path>) -> Portable {
     };
     let folder = exe_dir.join(DATA_DIR);
     match ensure_writable(&folder) {
-        Ok(()) => Portable { dir: Some(folder), unwritable: None },
-        Err(e) => Portable { dir: None, unwritable: Some(Unwritable { marker, folder, error: e.to_string() }) },
+        Ok(()) => Portable {
+            dir: Some(folder),
+            unwritable: None,
+        },
+        Err(e) => Portable {
+            dir: None,
+            unwritable: Some(Unwritable {
+                marker,
+                folder,
+                error: e.to_string(),
+            }),
+        },
     }
 }
 
 /// The first marker file in `exe_dir`, if any. A folder with a marker's name is not a marker.
 pub fn find_marker(exe_dir: &Path) -> Option<PathBuf> {
-    MARKERS.iter().map(|m| exe_dir.join(m)).find(|p| p.is_file())
+    MARKERS
+        .iter()
+        .map(|m| exe_dir.join(m))
+        .find(|p| p.is_file())
 }
 
 /// Create `dir` and prove a file can be written in it (a folder can exist yet be read-only).
@@ -100,7 +113,11 @@ mod tests {
 
     fn temp(tag: &str) -> PathBuf {
         static N: AtomicUsize = AtomicUsize::new(0);
-        let d = std::env::temp_dir().join(format!("pdfcraft-portable-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!(
+            "pdfcraft-portable-{tag}-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -110,7 +127,10 @@ mod tests {
     fn no_marker_leaves_portable_mode_off() {
         let exe = temp("off");
         assert_eq!(resolve(Some(&exe)), Portable::default());
-        assert!(!exe.join(DATA_DIR).exists(), "no data folder without a marker");
+        assert!(
+            !exe.join(DATA_DIR).exists(),
+            "no data folder without a marker"
+        );
         let _ = std::fs::remove_dir_all(&exe);
     }
 
@@ -124,7 +144,11 @@ mod tests {
             let dir = p.dir.unwrap();
             assert_eq!(dir, exe.join(DATA_DIR));
             assert!(dir.is_dir(), "the data folder is created");
-            assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0, "the write probe is removed");
+            assert_eq!(
+                std::fs::read_dir(&dir).unwrap().count(),
+                0,
+                "the write probe is removed"
+            );
             let _ = std::fs::remove_dir_all(&exe);
         }
     }
@@ -136,7 +160,11 @@ mod tests {
         std::fs::create_dir_all(exe.join(DATA_DIR)).unwrap();
         std::fs::write(exe.join(DATA_DIR).join("app.ron"), b"()").unwrap();
         assert_eq!(resolve(Some(&exe)).dir, Some(exe.join(DATA_DIR)));
-        assert_eq!(std::fs::read(exe.join(DATA_DIR).join("app.ron")).unwrap(), b"()", "existing settings are kept");
+        assert_eq!(
+            std::fs::read(exe.join(DATA_DIR).join("app.ron")).unwrap(),
+            b"()",
+            "existing settings are kept"
+        );
         let _ = std::fs::remove_dir_all(&exe);
     }
 
@@ -160,7 +188,10 @@ mod tests {
         assert_eq!(unwritable.marker, exe.join("portable.txt"));
         assert_eq!(unwritable.folder, exe.join(DATA_DIR));
         let message = unwritable.to_string();
-        assert!(message.contains("portable mode is off") && message.contains("can't be written"), "{message}");
+        assert!(
+            message.contains("portable mode is off") && message.contains("can't be written"),
+            "{message}"
+        );
         let _ = std::fs::remove_dir_all(&exe);
     }
 

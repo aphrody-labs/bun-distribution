@@ -19,7 +19,7 @@
 //! The trailing UUID is a *stable* client/session id (identical across sends in
 //! the captured traffic) — generate once per client and reuse it.
 
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 /// A stable default client UUID. Callers may override per session via
 /// [`GeminiModel::header_with_uuid`]; the web app reuses one UUID across a
@@ -86,7 +86,7 @@ impl GeminiModel {
             "flash-lite" | "flashlite" | "flash_lite" | "3.1-flash-lite" => Some(Self::FlashLite),
             "flash" | "3.5-flash" | "flash-3.5" | "gemini-3.5-flash" | "gemini-flash" => {
                 Some(Self::Flash)
-            },
+            }
             "pro" | "3.1-pro" | "pro-3.1" => Some(Self::Pro),
             _ => None,
         }
@@ -193,7 +193,13 @@ mod tests {
 
     #[test]
     fn deep_think_alias() {
-        assert_eq!(ReasoningLevel::from_id("deep-think"), Some(ReasoningLevel::Extended));
-        assert_eq!(ReasoningLevel::from_id("standard"), Some(ReasoningLevel::Standard));
+        assert_eq!(
+            ReasoningLevel::from_id("deep-think"),
+            Some(ReasoningLevel::Extended)
+        );
+        assert_eq!(
+            ReasoningLevel::from_id("standard"),
+            Some(ReasoningLevel::Standard)
+        );
     }
 }

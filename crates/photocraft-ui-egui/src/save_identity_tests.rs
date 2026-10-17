@@ -10,31 +10,48 @@ fn app() -> PhotocraftApp {
         Session::new(),
         Services {
             import: Some(Box::new(|name, bytes, max_svg_group_depth| {
-                photocraft_io::import_with_svg_group_depth(name, bytes, max_svg_group_depth).map(|r| (r.document, r.warnings)).map_err(|e| e.to_string())
+                photocraft_io::import_with_svg_group_depth(name, bytes, max_svg_group_depth)
+                    .map(|r| (r.document, r.warnings))
+                    .map_err(|e| e.to_string())
             })),
             export: Some(Box::new(|doc, path, _| {
-                photocraft_io::export(doc, path, &Default::default()).map(|r| (r.bytes, r.warnings)).map_err(|e| e.to_string())
+                photocraft_io::export(doc, path, &Default::default())
+                    .map(|r| (r.bytes, r.warnings))
+                    .map_err(|e| e.to_string())
             })),
             write: Some(Box::new(|_, _| Ok(()))),
             automation_write: Some(Box::new(|_, _| Ok(()))),
             ..Default::default()
         },
     );
-    app.run("file.new", json!({"width": 4, "height": 4, "name": "Untitled-1"})).unwrap();
+    app.run(
+        "file.new",
+        json!({"width": 4, "height": 4, "name": "Untitled-1"}),
+    )
+    .unwrap();
     app.run("layer.new.layer", json!({})).unwrap();
     app
 }
 
 fn identity(app: &PhotocraftApp) -> (String, Option<String>, u64, u64) {
     let st = app.session.active().unwrap();
-    (st.doc.name.clone(), st.path.clone(), st.revision, st.saved_revision)
+    (
+        st.doc.name.clone(),
+        st.path.clone(),
+        st.revision,
+        st.saved_revision,
+    )
 }
 
 #[test]
 fn new_document_psd_and_subsequent_save_as_adopt_the_written_file_name() {
     for depth in [8, 16, 32] {
         let mut app = app();
-        app.run("file.new", json!({"width": 4, "height": 4, "depth": depth, "name": "Untitled-1"})).unwrap();
+        app.run(
+            "file.new",
+            json!({"width": 4, "height": 4, "depth": depth, "name": "Untitled-1"}),
+        )
+        .unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
         let bytes = Rc::new(RefCell::new(Vec::new()));
         let written = bytes.clone();
@@ -45,22 +62,51 @@ fn new_document_psd_and_subsequent_save_as_adopt_the_written_file_name() {
         let id = app.session.active().unwrap().doc.id;
         let revision = app.session.active().unwrap().revision;
         let ctx = egui::Context::default();
-        menus::invoke(&mut app, &ctx, "file.saveAs", json!({"path": "作品/My image.PSD"})).unwrap();
-        assert_eq!(identity(&app), ("My image.PSD".into(), Some("作品/My image.PSD".into()), revision, revision));
+        menus::invoke(
+            &mut app,
+            &ctx,
+            "file.saveAs",
+            json!({"path": "作品/My image.PSD"}),
+        )
+        .unwrap();
+        assert_eq!(
+            identity(&app),
+            (
+                "My image.PSD".into(),
+                Some("作品/My image.PSD".into()),
+                revision,
+                revision
+            )
+        );
         assert_eq!(app.session.active().unwrap().doc.id, id);
         let reopened = photocraft_io::import("My image.PSD", &bytes.borrow()).unwrap();
-        assert_eq!(reopened.document.size, app.session.active().unwrap().doc.size);
+        assert_eq!(
+            reopened.document.size,
+            app.session.active().unwrap().doc.size
+        );
         assert_eq!(reopened.document.depth.bits(), depth);
-        menus::invoke(&mut app, &ctx, "file.saveAs", json!({"path": "作品/次の画像.psd"})).unwrap();
+        menus::invoke(
+            &mut app,
+            &ctx,
+            "file.saveAs",
+            json!({"path": "作品/次の画像.psd"}),
+        )
+        .unwrap();
         assert_eq!(app.session.active().unwrap().doc.name, "次の画像.psd");
         menus::invoke(&mut app, &ctx, "file.save", json!({})).unwrap();
-        assert_eq!(app.session.active().unwrap().path.as_deref(), Some("作品/次の画像.psd"));
+        assert_eq!(
+            app.session.active().unwrap().path.as_deref(),
+            Some("作品/次の画像.psd")
+        );
         app.open_bytes("existing.psd", &bytes.borrow()).unwrap();
         let id = app.active_doc_id().unwrap();
         assert_eq!(app.session.active().unwrap().doc.name, "existing.psd");
         app.save_as(Some("renamed existing.psd".into())).unwrap();
         assert_eq!(app.active_doc_id().unwrap(), id);
-        assert_eq!(app.session.active().unwrap().doc.name, "renamed existing.psd");
+        assert_eq!(
+            app.session.active().unwrap().doc.name,
+            "renamed existing.psd"
+        );
     }
 }
 
@@ -94,26 +140,40 @@ fn save_copy_and_export_keep_the_editable_document_identity() {
     app.save_as(Some("original.psd".into())).unwrap();
     app.run("layer.new.layer", json!({})).unwrap();
     let before = identity(&app);
-    app.write_document("copy.psd".into(), &ExportSettings::default(), true).unwrap();
+    app.write_document("copy.psd".into(), &ExportSettings::default(), true)
+        .unwrap();
     assert_eq!(identity(&app), before);
-    let (dialog, _) = crate::file_dialog::fake(vec![Some(crate::file_dialog::FileDialogAnswer::SaveTo("export.png".into()))]);
+    let (dialog, _) = crate::file_dialog::fake(vec![Some(
+        crate::file_dialog::FileDialogAnswer::SaveTo("export.png".into()),
+    )]);
     app.services.file_dialog = Some(dialog);
     let ctx = egui::Context::default();
-    crate::export_dialog::confirm(&mut app, json!({"format": "png", "scale": 100}).as_object().unwrap()).unwrap();
+    crate::export_dialog::confirm(
+        &mut app,
+        json!({"format": "png", "scale": 100}).as_object().unwrap(),
+    )
+    .unwrap();
     app.poll_file_dialog(&ctx, None);
     assert_eq!(identity(&app), before);
-    assert!(app.ui.status.starts_with("Exported export.png"), "{}", app.ui.status);
+    assert!(
+        app.ui.status.starts_with("Exported export.png"),
+        "{}",
+        app.ui.status
+    );
 }
 
 #[test]
 fn web_download_and_automation_saves_use_the_same_identity_completion() {
     let mut app = app();
-    let (dialog, _) = crate::file_dialog::fake(vec![Some(crate::file_dialog::FileDialogAnswer::SaveTo("Untitled-1.psd".into()))]);
+    let (dialog, _) = crate::file_dialog::fake(vec![Some(
+        crate::file_dialog::FileDialogAnswer::SaveTo("Untitled-1.psd".into()),
+    )]);
     app.services.file_dialog = Some(dialog);
     app.save_as(None).unwrap();
     app.poll_file_dialog(&egui::Context::default(), None);
     assert_eq!(app.session.active().unwrap().doc.name, "Untitled-1.psd");
-    app.save_automation(Some("保存/agent save.psd".into())).unwrap();
+    app.save_automation(Some("保存/agent save.psd".into()))
+        .unwrap();
     assert_eq!(app.session.active().unwrap().doc.name, "agent save.psd");
 }
 
@@ -127,7 +187,11 @@ fn save_as_flat_keeps_the_layered_original() {
     for layered in [true, false] {
         let mut app = app();
         if !layered {
-            app.run("file.new", json!({"width": 4, "height": 4, "name": "Untitled-2"})).unwrap();
+            app.run(
+                "file.new",
+                json!({"width": 4, "height": 4, "name": "Untitled-2"}),
+            )
+            .unwrap();
         }
         let written = Rc::new(RefCell::new(Vec::new()));
         let w = written.clone();
@@ -143,7 +207,10 @@ fn save_as_flat_keeps_the_layered_original() {
             assert_eq!(identity(&app), before, "{flat}, layered: {layered}");
         }
         menus::invoke(&mut app, &ctx, "file.save", json!({})).unwrap();
-        assert_eq!(*written.borrow(), ["art.psd", "art.jpg", "art.png", "art.psd"]);
+        assert_eq!(
+            *written.borrow(),
+            ["art.psd", "art.jpg", "art.png", "art.psd"]
+        );
         let st = app.session.active().unwrap();
         assert_eq!(st.saved_revision, st.revision);
     }
@@ -158,12 +225,22 @@ fn save_as_flat_keeps_the_layered_original() {
 #[test]
 fn save_as_flat_retargets_a_flat_document() {
     let mut app = app();
-    app.run("file.new", json!({"width": 4, "height": 4, "name": "Untitled-2"})).unwrap();
+    app.run(
+        "file.new",
+        json!({"width": 4, "height": 4, "name": "Untitled-2"}),
+    )
+    .unwrap();
     app.save_as(Some("shot.png".into())).unwrap();
-    assert_eq!(app.session.active().unwrap().path.as_deref(), Some("shot.png"));
+    assert_eq!(
+        app.session.active().unwrap().path.as_deref(),
+        Some("shot.png")
+    );
     app.save_as(Some("shot.jpg".into())).unwrap();
     let st = app.session.active().unwrap();
-    assert_eq!((st.doc.name.as_str(), st.path.as_deref()), ("shot.jpg", Some("shot.jpg")));
+    assert_eq!(
+        (st.doc.name.as_str(), st.path.as_deref()),
+        ("shot.jpg", Some("shot.jpg"))
+    );
     assert_eq!(st.saved_revision, st.revision);
 }
 
@@ -179,7 +256,10 @@ fn automation_flat_save_is_a_copy() {
     }
     app.save_automation(Some("layers.psd".into())).unwrap();
     let st = app.session.active().unwrap();
-    assert_eq!((st.doc.name.as_str(), st.path.as_deref()), ("layers.psd", Some("layers.psd")));
+    assert_eq!(
+        (st.doc.name.as_str(), st.path.as_deref()),
+        ("layers.psd", Some("layers.psd"))
+    );
     assert_eq!(st.saved_revision, st.revision);
 }
 
@@ -196,11 +276,22 @@ fn image_previews_preference_reaches_the_exporter() {
     }));
     let ctx = egui::Context::default();
     for (value, expect) in [("always", true), ("never", false), ("ask", true)] {
-        app.run("prefs.set", json!({"path": "fileHandling.imagePreviews", "value": value})).unwrap();
+        app.run(
+            "prefs.set",
+            json!({"path": "fileHandling.imagePreviews", "value": value}),
+        )
+        .unwrap();
         seen.borrow_mut().clear();
-        menus::invoke(&mut app, &ctx, "file.saveAs", json!({"path": format!("{value}.psd")})).unwrap();
+        menus::invoke(
+            &mut app,
+            &ctx,
+            "file.saveAs",
+            json!({"path": format!("{value}.psd")}),
+        )
+        .unwrap();
         menus::invoke(&mut app, &ctx, "file.save", json!({})).unwrap();
-        app.save_automation(Some(format!("{value} agent.psd"))).unwrap();
+        app.save_automation(Some(format!("{value} agent.psd")))
+            .unwrap();
         assert_eq!(*seen.borrow(), [expect; 3], "{value}");
     }
 }
@@ -219,11 +310,22 @@ fn maximize_compatibility_preference_reaches_the_exporter() {
     }));
     let ctx = egui::Context::default();
     for (value, expect) in [("always", true), ("never", false), ("ask", true)] {
-        app.run("prefs.set", json!({"path": "fileHandling.maximizePsdCompatibility", "value": value})).unwrap();
+        app.run(
+            "prefs.set",
+            json!({"path": "fileHandling.maximizePsdCompatibility", "value": value}),
+        )
+        .unwrap();
         seen.borrow_mut().clear();
-        menus::invoke(&mut app, &ctx, "file.saveAs", json!({"path": format!("{value}.psd")})).unwrap();
+        menus::invoke(
+            &mut app,
+            &ctx,
+            "file.saveAs",
+            json!({"path": format!("{value}.psd")}),
+        )
+        .unwrap();
         menus::invoke(&mut app, &ctx, "file.save", json!({})).unwrap();
-        app.save_automation(Some(format!("{value} agent.psd"))).unwrap();
+        app.save_automation(Some(format!("{value} agent.psd")))
+            .unwrap();
         assert_eq!(*seen.borrow(), [expect; 3], "{value}");
     }
 }
@@ -233,24 +335,48 @@ fn maximize_compatibility_preference_reaches_the_exporter() {
 #[test]
 fn save_settings_start_at_the_opened_files_encoding() {
     use photocraft_codecs::{ChannelLayout, EncodeOptions, Format, Image, SampleType};
-    let px: Vec<u8> = (0..32u32 * 24).flat_map(|i| [(i * 3) as u8, (i / 32 * 9) as u8, (i % 97) as u8]).collect();
+    let px: Vec<u8> = (0..32u32 * 24)
+        .flat_map(|i| [(i * 3) as u8, (i / 32 * 9) as u8, (i % 97) as u8])
+        .collect();
     let img = Image::from_raw(32, 24, ChannelLayout::Rgb, SampleType::U8, px).unwrap();
     let mut app = app();
     assert_eq!(app.save_settings().jpeg_quality, None);
     assert!(app.save_settings().webp_lossless);
 
-    let jpeg = photocraft_codecs::encode(&img, Format::Jpeg, &EncodeOptions { jpeg_quality: 65, ..Default::default() }).unwrap();
+    let jpeg = photocraft_codecs::encode(
+        &img,
+        Format::Jpeg,
+        &EncodeOptions {
+            jpeg_quality: 65,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     app.open_bytes("photo.jpg", &jpeg).unwrap();
     let q = app.save_settings().jpeg_quality.unwrap();
     assert!(q.abs_diff(65) <= 2, "estimated {q}");
 
-    let lossy = photocraft_codecs::encode(&img, Format::WebP, &EncodeOptions { webp_lossless: false, webp_quality: 80, ..Default::default() }).unwrap();
+    let lossy = photocraft_codecs::encode(
+        &img,
+        Format::WebP,
+        &EncodeOptions {
+            webp_lossless: false,
+            webp_quality: 80,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     app.open_bytes("photo.webp", &lossy).unwrap();
     let s = app.save_settings();
     assert!(!s.webp_lossless);
-    assert!(s.webp_quality.unwrap().abs_diff(80) <= 2, "{:?}", s.webp_quality);
+    assert!(
+        s.webp_quality.unwrap().abs_diff(80) <= 2,
+        "{:?}",
+        s.webp_quality
+    );
 
-    let lossless = photocraft_codecs::encode(&img, Format::WebP, &EncodeOptions::default()).unwrap();
+    let lossless =
+        photocraft_codecs::encode(&img, Format::WebP, &EncodeOptions::default()).unwrap();
     app.open_bytes("art.webp", &lossless).unwrap();
     assert!(app.save_settings().webp_lossless);
 }

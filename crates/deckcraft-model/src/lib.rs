@@ -4,7 +4,14 @@
 //! uses a layout; placeholders on a slide inherit position, formatting and text styles from the
 //! matching placeholder on its layout and master ([`resolve`]). Slides and masters sit behind
 //! `Arc`s so an undo snapshot of the whole deck costs one clone of the slide list.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod anim;
@@ -37,7 +44,19 @@ pub(crate) fn yes() -> bool {
 
 macro_rules! id_type {
     ($name:ident) => {
-        #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        #[derive(
+            Clone,
+            Copy,
+            Debug,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash,
+            Serialize,
+            Deserialize,
+        )]
         #[serde(transparent)]
         pub struct $name(pub u32);
         impl std::fmt::Display for $name {
@@ -154,7 +173,10 @@ impl PhType {
     }
     /// Footer-row placeholders are not shown on slides unless the deck turns them on.
     pub fn is_footer_kind(self) -> bool {
-        matches!(self, PhType::Date | PhType::Footer | PhType::SlideNum | PhType::Header)
+        matches!(
+            self,
+            PhType::Date | PhType::Footer | PhType::SlideNum | PhType::Header
+        )
     }
 }
 
@@ -185,13 +207,19 @@ pub enum Geom {
 
 impl Default for Geom {
     fn default() -> Self {
-        Geom::Preset { name: "rect".into(), adj: vec![] }
+        Geom::Preset {
+            name: "rect".into(),
+            adj: vec![],
+        }
     }
 }
 
 impl Geom {
     pub fn preset(name: &str) -> Self {
-        Geom::Preset { name: name.into(), adj: vec![] }
+        Geom::Preset {
+            name: name.into(),
+            adj: vec![],
+        }
     }
     pub fn preset_name(&self) -> Option<&str> {
         match self {
@@ -215,7 +243,13 @@ pub struct CustomPath {
 
 impl Default for CustomPath {
     fn default() -> Self {
-        CustomPath { w: 0.0, h: 0.0, d: String::new(), fill: deckcraft_geom::preset::FillMode::Norm, stroke: true }
+        CustomPath {
+            w: 0.0,
+            h: 0.0,
+            d: String::new(),
+            fill: deckcraft_geom::preset::FillMode::Norm,
+            stroke: true,
+        }
     }
 }
 
@@ -372,7 +406,11 @@ impl Shape {
     }
     /// Is this a line-like shape (no area)?
     pub fn is_line(&self) -> bool {
-        matches!(self.kind, ShapeKind::Connector { .. }) || self.geom.preset_name().is_some_and(deckcraft_geom::preset::is_line_like)
+        matches!(self.kind, ShapeKind::Connector { .. })
+            || self
+                .geom
+                .preset_name()
+                .is_some_and(deckcraft_geom::preset::is_line_like)
     }
     pub fn kind_name(&self) -> &'static str {
         match &self.kind {
@@ -467,7 +505,12 @@ pub fn sibling_list_mut(shapes: &mut Vec<Shape>, id: ShapeId) -> Option<&mut Vec
 
 /// The group directly holding `id`: `Some(None)` for a top-level shape, `None` when absent.
 pub fn parent_of(shapes: &[Shape], id: ShapeId) -> Option<Option<ShapeId>> {
-    fn rec(shapes: &[Shape], parent: Option<ShapeId>, id: ShapeId, depth: usize) -> Option<Option<ShapeId>> {
+    fn rec(
+        shapes: &[Shape],
+        parent: Option<ShapeId>,
+        id: ShapeId,
+        depth: usize,
+    ) -> Option<Option<ShapeId>> {
         if depth > 64 {
             return None;
         }
@@ -727,12 +770,15 @@ pub fn map_slot(map: &[(String, String)], slot: SchemeSlot) -> SchemeSlot {
         SchemeSlot::Tx2 => "tx2",
         other => return other,
     };
-    map.iter().find(|(k, _)| k == key).and_then(|(_, v)| SchemeSlot::from_xml(v)).unwrap_or(match slot {
-        SchemeSlot::Bg1 => SchemeSlot::Lt1,
-        SchemeSlot::Tx1 => SchemeSlot::Dk1,
-        SchemeSlot::Bg2 => SchemeSlot::Lt2,
-        _ => SchemeSlot::Dk2,
-    })
+    map.iter()
+        .find(|(k, _)| k == key)
+        .and_then(|(_, v)| SchemeSlot::from_xml(v))
+        .unwrap_or(match slot {
+            SchemeSlot::Bg1 => SchemeSlot::Lt1,
+            SchemeSlot::Tx1 => SchemeSlot::Dk1,
+            SchemeSlot::Bg2 => SchemeSlot::Lt2,
+            _ => SchemeSlot::Dk2,
+        })
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -886,21 +932,28 @@ impl Presentation {
         self.slides.iter().find(|s| s.id == id).map(|s| s.as_ref())
     }
     pub fn slide_mut(&mut self, id: SlideId) -> Option<&mut Slide> {
-        self.slides.iter_mut().find(|s| s.id == id).map(Arc::make_mut)
+        self.slides
+            .iter_mut()
+            .find(|s| s.id == id)
+            .map(Arc::make_mut)
     }
     pub fn slide_at(&self, i: usize) -> Option<&Slide> {
         self.slides.get(i).map(|s| s.as_ref())
     }
     /// Master and layout for a layout id.
     pub fn layout(&self, id: LayoutId) -> Option<(&Master, &Layout)> {
-        self.masters.iter().find_map(|m| m.layout(id).map(|l| (m.as_ref(), l)))
+        self.masters
+            .iter()
+            .find_map(|m| m.layout(id).map(|l| (m.as_ref(), l)))
     }
     /// The master (and layout) a slide uses, falling back to the first.
     pub fn master_for(&self, slide: &Slide) -> Option<(&Master, Option<&Layout>)> {
         if let Some((m, l)) = self.layout(slide.layout) {
             return Some((m, Some(l)));
         }
-        self.masters.first().map(|m| (m.as_ref(), m.layouts.first()))
+        self.masters
+            .first()
+            .map(|m| (m.as_ref(), m.layouts.first()))
     }
     pub fn first_master(&self) -> Option<&Master> {
         self.masters.first().map(|m| m.as_ref())
@@ -910,11 +963,21 @@ impl Presentation {
     }
     /// Add media bytes, reusing an identical existing item.
     pub fn add_media(&mut self, name: &str, content_type: &str, data: Vec<u8>) -> MediaId {
-        if let Some(m) = self.media.iter().find(|m| m.data.len() == data.len() && *m.data == data) {
+        if let Some(m) = self
+            .media
+            .iter()
+            .find(|m| m.data.len() == data.len() && *m.data == data)
+        {
             return m.id;
         }
         let id = MediaId(self.alloc_id());
-        self.media.push(MediaItem { id, name: name.into(), content_type: content_type.into(), data: Arc::new(data), link: None });
+        self.media.push(MediaItem {
+            id,
+            name: name.into(),
+            content_type: content_type.into(),
+            data: Arc::new(data),
+            link: None,
+        });
         id
     }
     /// Section index containing a slide (by position), when sections exist.
@@ -923,7 +986,8 @@ impl Presentation {
     }
     /// 1-based slide number as displayed (respects `first_slide_number`).
     pub fn slide_number(&self, index: usize) -> u32 {
-        self.first_slide_number.saturating_add(u32::try_from(index).unwrap_or(u32::MAX))
+        self.first_slide_number
+            .saturating_add(u32::try_from(index).unwrap_or(u32::MAX))
     }
     /// Basic consistency check: unique slide/shape ids, layouts exist. Returns problems found.
     pub fn validate(&self) -> Vec<String> {

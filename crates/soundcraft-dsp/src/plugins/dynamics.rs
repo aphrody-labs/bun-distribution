@@ -5,7 +5,9 @@
 
 use crate::biquad::{Biquad, Coeffs, FilterType};
 use crate::params::{Params, lin, log, param_plumbing, toggle};
-use crate::util::{DelayLine, Smoother, frames_in, ms_to_samples, sane_channels, sane_sr, time_coef};
+use crate::util::{
+    DelayLine, Smoother, frames_in, ms_to_samples, sane_channels, sane_sr, time_coef,
+};
 use crate::{Category, ParamInfo, Plugin, PluginInfo, Unit, db_to_gain, gain_to_db};
 
 /// Static soft-knee gain computer: returns the gain reduction amount in dB (≥ 0).
@@ -107,9 +109,19 @@ impl Compressor {
         self.mix.set(self.p.v(10) / 100.0);
         let f = self.p.v(7);
         for b in &mut self.sc {
-            b.set(FilterType::HighPass, f, std::f32::consts::FRAC_1_SQRT_2, 0.0, sr);
+            b.set(
+                FilterType::HighPass,
+                f,
+                std::f32::consts::FRAC_1_SQRT_2,
+                0.0,
+                sr,
+            );
         }
-        let max = self.delay.first().map(|d| d.max_delay() as usize).unwrap_or(0);
+        let max = self
+            .delay
+            .first()
+            .map(|d| d.max_delay() as usize)
+            .unwrap_or(0);
         self.lookahead = (ms_to_samples(self.p.v(9), sr).round() as usize).min(max);
     }
 
@@ -179,7 +191,9 @@ impl Plugin for Compressor {
             let g = db_to_gain(-gr) * self.makeup.next();
             let m = self.mix.next();
             for c in 0..ch {
-                let (Some(buf), Some(d)) = (io.get_mut(c), self.delay.get_mut(c)) else { continue };
+                let (Some(buf), Some(d)) = (io.get_mut(c), self.delay.get_mut(c)) else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 d.push(*x);
                 let dry = if la == 0 { *x } else { d.tap(la + 1) };
@@ -273,7 +287,11 @@ impl ExpanderGate {
         self.env = level.max(self.env * self.env_rel);
         let ldb = gain_to_db(self.env);
         let thr = self.p.v(0);
-        let mut target = if ldb < thr { ((thr - ldb) * (self.p.v(1) - 1.0)).min(self.p.v(2)) } else { 0.0 };
+        let mut target = if ldb < thr {
+            ((thr - ldb) * (self.p.v(1) - 1.0)).min(self.p.v(2))
+        } else {
+            0.0
+        };
         if target <= 0.0 {
             self.hold_left = self.hold;
         } else if target > self.gr && self.hold_left > 0 {
@@ -312,7 +330,11 @@ impl Plugin for ExpanderGate {
         let frames = frames_in(io, frames, ch);
         let mut max_gr = 0.0f32;
         for n in 0..frames {
-            let level = io.iter().take(ch).filter_map(|b| b.get(n)).fold(0.0f32, |m, v| m.max(v.abs()));
+            let level = io
+                .iter()
+                .take(ch)
+                .filter_map(|b| b.get(n))
+                .fold(0.0f32, |m, v| m.max(v.abs()));
             let gr = self.tick(level);
             max_gr = max_gr.max(gr);
             let g = db_to_gain(-gr);
@@ -393,14 +415,24 @@ impl DeEsser {
         let f = self.p.v(0);
         let sr = self.sr;
         for b in &mut self.hp {
-            b.set(FilterType::HighPass, f, std::f32::consts::FRAC_1_SQRT_2, 0.0, sr);
+            b.set(
+                FilterType::HighPass,
+                f,
+                std::f32::consts::FRAC_1_SQRT_2,
+                0.0,
+                sr,
+            );
         }
         self.set_shelf(self.shelf_gr);
     }
 
     fn set_shelf(&mut self, gr: f32) {
         self.shelf_gr = gr;
-        let c = if gr < 0.01 { Coeffs::IDENTITY } else { Coeffs::design(FilterType::HighShelf, self.p.v(0) * 0.8, 0.8, -gr, self.sr) };
+        let c = if gr < 0.01 {
+            Coeffs::IDENTITY
+        } else {
+            Coeffs::design(FilterType::HighShelf, self.p.v(0) * 0.8, 0.8, -gr, self.sr)
+        };
         for b in &mut self.shelf {
             b.coeffs = c;
         }
@@ -439,7 +471,9 @@ impl Plugin for DeEsser {
             for i in n..n + len {
                 let mut level = 0.0f32;
                 for c in 0..ch {
-                    let (Some(b), Some(f)) = (io.get_mut(c), self.hp.get_mut(c)) else { continue };
+                    let (Some(b), Some(f)) = (io.get_mut(c), self.hp.get_mut(c)) else {
+                        continue;
+                    };
                     let Some(x) = b.get_mut(i) else { continue };
                     let h = f.process_sample(*x);
                     level = level.max(h.abs());
@@ -592,7 +626,9 @@ impl Plugin for Maximizer {
             let ceil = self.ceiling.next();
             let mut peak = 0.0f32;
             for c in 0..ch {
-                let (Some(buf), Some(d)) = (io.get(c), self.delay.get_mut(c)) else { continue };
+                let (Some(buf), Some(d)) = (io.get(c), self.delay.get_mut(c)) else {
+                    continue;
+                };
                 let x = buf.get(n).copied().filter(|v| v.is_finite()).unwrap_or(0.0) * drive;
                 d.push(x);
                 peak = peak.max(x.abs());
@@ -602,7 +638,11 @@ impl Plugin for Maximizer {
                 *r = req;
             }
             let hold = self.req.iter().copied().fold(1.0f32, f32::min);
-            self.held = if hold < self.held { hold } else { hold + (self.held - hold) * self.rel };
+            self.held = if hold < self.held {
+                hold
+            } else {
+                hold + (self.held - hold) * self.rel
+            };
             if let Some(s) = self.smooth.get_mut(self.idx) {
                 self.sum += f64::from(self.held) - f64::from(*s);
                 *s = self.held;
@@ -615,7 +655,9 @@ impl Plugin for Maximizer {
             let g = ((self.sum / la as f64) as f32).clamp(0.0, 1.0);
             min_gain = min_gain.min(g);
             for c in 0..ch {
-                let (Some(buf), Some(d)) = (io.get_mut(c), self.delay.get(c)) else { continue };
+                let (Some(buf), Some(d)) = (io.get_mut(c), self.delay.get(c)) else {
+                    continue;
+                };
                 if let Some(x) = buf.get_mut(n) {
                     *x = (d.tap(la) * g).clamp(-ceil, ceil);
                 }

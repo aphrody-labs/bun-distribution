@@ -52,7 +52,10 @@ fn dispatch_typed_atteint_azalee() {
     use aphrody_nie_data::typed::{decode_by_key, family_key};
     let Some(root) = load() else { return };
     // family_key garde le `.cfg` du nom de fichier inhabituel `talk_select_config.cfg_<ver>.cfg.bin`.
-    assert_eq!(family_key("talk_select_config.cfg_1.01.41.00.cfg.bin"), "talk_select_config.cfg");
+    assert_eq!(
+        family_key("talk_select_config.cfg_1.01.41.00.cfg.bin"),
+        "talk_select_config.cfg"
+    );
     let (label, json) =
         decode_by_key("talk_select_config.cfg", &root).expect("famille typée câblée");
     assert_eq!(label, "talk_select");

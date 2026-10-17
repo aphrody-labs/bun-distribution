@@ -46,24 +46,40 @@ pub(crate) fn discover(
     if let Some(value) = override_value.filter(|v| !v.is_empty()) {
         let path = PathBuf::from(value);
         return if path.is_file() {
-            Ok(Discovered { path, source: BinarySource::Override })
+            Ok(Discovered {
+                path,
+                source: BinarySource::Override,
+            })
         } else {
-            Err(ResolveError::BadOverride { env: tool.executable_env(), path })
+            Err(ResolveError::BadOverride {
+                env: tool.executable_env(),
+                path,
+            })
         };
     }
     if let Some(path_var) = path_var {
         for dir in env::split_paths(&path_var) {
             if let Some(path) = find_in(&dir, tool.executable_name()) {
-                return Ok(Discovered { path, source: BinarySource::Path });
+                return Ok(Discovered {
+                    path,
+                    source: BinarySource::Path,
+                });
             }
         }
     }
     for dir in user_install_dirs(tool) {
         if let Some(path) = find_in(&dir, tool.executable_name()) {
-            return Ok(Discovered { path, source: BinarySource::UserInstall });
+            return Ok(Discovered {
+                path,
+                source: BinarySource::UserInstall,
+            });
         }
     }
-    Err(ResolveError::NotFound { tool, env: tool.executable_env(), name: tool.executable_name() })
+    Err(ResolveError::NotFound {
+        tool,
+        env: tool.executable_env(),
+        name: tool.executable_name(),
+    })
 }
 
 /// Standard per-user install locations (`bun.sh/install`, the uv installer, `cargo install nu`).
@@ -74,8 +90,14 @@ fn user_install_dirs(tool: Toolchain) -> Vec<PathBuf> {
     let home = PathBuf::from(home);
     match tool {
         Toolchain::Bun => vec![home.join(".bun").join("bin")],
-        Toolchain::Uv => vec![home.join(".local").join("bin"), home.join(".cargo").join("bin")],
-        Toolchain::Nu => vec![home.join(".cargo").join("bin"), home.join(".local").join("bin")],
+        Toolchain::Uv => vec![
+            home.join(".local").join("bin"),
+            home.join(".cargo").join("bin"),
+        ],
+        Toolchain::Nu => vec![
+            home.join(".cargo").join("bin"),
+            home.join(".local").join("bin"),
+        ],
     }
 }
 
@@ -84,7 +106,10 @@ pub(crate) fn find_in(dir: &Path, name: &str) -> Option<PathBuf> {
     if dir.as_os_str().is_empty() {
         return None;
     }
-    candidates(name).into_iter().map(|file| dir.join(file)).find(|p| p.is_file())
+    candidates(name)
+        .into_iter()
+        .map(|file| dir.join(file))
+        .find(|p| p.is_file())
 }
 
 fn candidates(name: &str) -> Vec<String> {

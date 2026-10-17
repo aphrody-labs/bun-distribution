@@ -39,7 +39,13 @@ pub struct Params {
 impl Default for Params {
     fn default() -> Self {
         let ms = |m: i64| Tick(m * TICKS_PER_SAMPLE * SAMPLE_RATE as i64 / 1000);
-        Self { chunk_gap: ms(250), min_chunk: ms(700), max_chunk: ms(4000), threshold: 0.4, max_speakers: 6 }
+        Self {
+            chunk_gap: ms(250),
+            min_chunk: ms(700),
+            max_chunk: ms(4000),
+            threshold: 0.4,
+            max_speakers: 6,
+        }
     }
 }
 
@@ -53,7 +59,10 @@ pub fn chunks(t: &Transcript, p: &Params) -> Vec<std::ops::Range<usize>> {
     let mut out: Vec<std::ops::Range<usize>> = Vec::new();
     let mut a = 0;
     for i in 1..=w.len() {
-        if i == w.len() || w[i].start - w[i - 1].end >= p.chunk_gap || w[i].end - w[a].start > p.max_chunk {
+        if i == w.len()
+            || w[i].start - w[i - 1].end >= p.chunk_gap
+            || w[i].end - w[a].start > p.max_chunk
+        {
             if a < i {
                 out.push(a..i);
             }
@@ -116,7 +125,9 @@ pub fn diarize(audio: &[f32], t: &mut Transcript, p: &Params) -> usize {
         return 0;
     }
     let one = |t: &mut Transcript| {
-        t.speakers = vec![Speaker { name: "Speaker 1".into() }];
+        t.speakers = vec![Speaker {
+            name: "Speaker 1".into(),
+        }];
         for w in &mut t.words {
             w.speaker = Some(0);
         }
@@ -132,15 +143,24 @@ pub fn diarize(audio: &[f32], t: &mut Transcript, p: &Params) -> usize {
     let mut weight: Vec<f32> = Vec::new();
     for c in &ch {
         let a = ((t.words[c.start].start.0 / FRAME_TICKS).max(0) as usize).min(frames);
-        let b = ((t.words[c.end - 1].end.0 / FRAME_TICKS).max(0) as usize).min(frames).max(a);
-        let peak = energy[a..b].iter().copied().fold(f32::NEG_INFINITY, f32::max);
+        let b = ((t.words[c.end - 1].end.0 / FRAME_TICKS).max(0) as usize)
+            .min(frames)
+            .max(a);
+        let peak = energy[a..b]
+            .iter()
+            .copied()
+            .fold(f32::NEG_INFINITY, f32::max);
         let voiced: Vec<usize> = (a..b).filter(|&f| energy[f] > peak - 30.0).collect();
         let mut v = vec![0f32; dim];
         if !voiced.is_empty() {
             let n = voiced.len() as f32;
             for k in 1..N_MFCC {
                 let mean = voiced.iter().map(|&f| mfcc[f * N_MFCC + k]).sum::<f32>() / n;
-                let var = voiced.iter().map(|&f| (mfcc[f * N_MFCC + k] - mean).powi(2)).sum::<f32>() / n;
+                let var = voiced
+                    .iter()
+                    .map(|&f| (mfcc[f * N_MFCC + k] - mean).powi(2))
+                    .sum::<f32>()
+                    / n;
                 v[k - 1] = mean;
                 v[N_MFCC - 1 + k - 1] = var.sqrt();
             }
@@ -157,7 +177,13 @@ pub fn diarize(audio: &[f32], t: &mut Transcript, p: &Params) -> usize {
     let nf = all.len().max(1) as f32;
     for k in 1..N_MFCC {
         let mean = all.iter().map(|&f| mfcc[f * N_MFCC + k]).sum::<f32>() / nf;
-        let sd = (all.iter().map(|&f| (mfcc[f * N_MFCC + k] - mean).powi(2)).sum::<f32>() / nf).sqrt().max(1e-6);
+        let sd = (all
+            .iter()
+            .map(|&f| (mfcc[f * N_MFCC + k] - mean).powi(2))
+            .sum::<f32>()
+            / nf)
+            .sqrt()
+            .max(1e-6);
         for v in &mut vecs {
             v[k - 1] = (v[k - 1] - mean) / sd;
             v[N_MFCC - 1 + k - 1] /= sd;
@@ -209,10 +235,14 @@ pub fn diarize(audio: &[f32], t: &mut Transcript, p: &Params) -> usize {
         if clusters.len() <= 1 {
             break;
         }
-        let small = clusters.iter().position(|c| c.iter().map(|&i| weight[i]).sum::<f32>() < 0.05 * total);
+        let small = clusters
+            .iter()
+            .position(|c| c.iter().map(|&i| weight[i]).sum::<f32>() < 0.05 * total);
         let Some(si) = small else { break };
         let s = clusters.remove(si);
-        let near = (0..clusters.len()).min_by(|&a, &b| link(&s, &clusters[a]).total_cmp(&link(&s, &clusters[b]))).unwrap_or(0);
+        let near = (0..clusters.len())
+            .min_by(|&a, &b| link(&s, &clusters[a]).total_cmp(&link(&s, &clusters[b])))
+            .unwrap_or(0);
         clusters[near].extend(s);
     }
     if clusters.len() == 1 {
@@ -237,7 +267,11 @@ pub fn diarize(audio: &[f32], t: &mut Transcript, p: &Params) -> usize {
             w.speaker = Some(sp);
         }
     }
-    t.speakers = (0..order.len()).map(|i| Speaker { name: format!("Speaker {}", i + 1) }).collect();
+    t.speakers = (0..order.len())
+        .map(|i| Speaker {
+            name: format!("Speaker {}", i + 1),
+        })
+        .collect();
     order.len()
 }
 
@@ -297,11 +331,18 @@ mod tests {
             // four 0.5 s "words" per turn
             for w in 0..4 {
                 let s = t0 + w as f64 * 0.5;
-                words.push(Word::new(format!("w{k}.{w}"), seconds_tick(s), seconds_tick(s + 0.45)));
+                words.push(Word::new(
+                    format!("w{k}.{w}"),
+                    seconds_tick(s),
+                    seconds_tick(s + 0.45),
+                ));
             }
             audio.extend(&silence);
         }
-        let mut t = Transcript { words, ..Default::default() };
+        let mut t = Transcript {
+            words,
+            ..Default::default()
+        };
         let n = diarize(&audio, &mut t, &Params::default());
         assert_eq!(n, 2);
         for (k, &is_a) in turns.iter().enumerate() {
@@ -317,8 +358,19 @@ mod tests {
     #[test]
     fn one_voice_is_one_speaker() {
         let audio = voice(140.0, [(500.0, 90.0), (1500.0, 120.0)], 12.0, 1);
-        let words = (0..20).map(|i| Word::new("x", seconds_tick(i as f64 * 0.6), seconds_tick(i as f64 * 0.6 + 0.4))).collect();
-        let mut t = Transcript { words, ..Default::default() };
+        let words = (0..20)
+            .map(|i| {
+                Word::new(
+                    "x",
+                    seconds_tick(i as f64 * 0.6),
+                    seconds_tick(i as f64 * 0.6 + 0.4),
+                )
+            })
+            .collect();
+        let mut t = Transcript {
+            words,
+            ..Default::default()
+        };
         assert_eq!(diarize(&audio, &mut t, &Params::default()), 1);
         assert!(t.words.iter().all(|w| w.speaker == Some(0)));
     }
@@ -326,7 +378,16 @@ mod tests {
     #[test]
     fn chunks_split_at_pauses_and_join_short_ones() {
         let w = |a: f64, b: f64| Word::new("x", seconds_tick(a), seconds_tick(b));
-        let t = Transcript { words: vec![w(0.0, 0.5), w(0.5, 1.0), w(2.0, 2.2), w(3.0, 3.6), w(3.6, 4.4)], ..Default::default() };
+        let t = Transcript {
+            words: vec![
+                w(0.0, 0.5),
+                w(0.5, 1.0),
+                w(2.0, 2.2),
+                w(3.0, 3.6),
+                w(3.6, 4.4),
+            ],
+            ..Default::default()
+        };
         assert_eq!(chunks(&t, &Params::default()), vec![0..3, 3..5]);
     }
 }

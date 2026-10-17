@@ -50,7 +50,9 @@ fn item_fixture() -> serde_json::Value {
         ("String", "btl_re000001"),
     ];
     let to_vars = |arr: &[(&str, &str)]| -> Vec<serde_json::Value> {
-        arr.iter().map(|(t, v)| json!({ "type": t, "value": v })).collect()
+        arr.iter()
+            .map(|(t, v)| json!({ "type": t, "value": v }))
+            .collect()
     };
     json!({
         "entries": [
@@ -63,8 +65,10 @@ fn item_fixture() -> serde_json::Value {
 #[test]
 fn item_shoes_info_0() {
     let items = parse_all_items(&item_fixture());
-    let shoe: &ItemInfo =
-        items.iter().find(|i| i.category == ItemCategory::Shoes).expect("chaussure présente");
+    let shoe: &ItemInfo = items
+        .iter()
+        .find(|i| i.category == ItemCategory::Shoes)
+        .expect("chaussure présente");
 
     assert_eq!(shoe.item_id, HashId::from_signed(1834815904));
     assert_eq!(shoe.item_id.to_hex(), "0x6D5D11A0");
@@ -84,8 +88,10 @@ fn item_shoes_info_0() {
 #[test]
 fn item_consume_info_0_pas_de_stats() {
     let items = parse_all_items(&item_fixture());
-    let con =
-        items.iter().find(|i| i.category == ItemCategory::Consume).expect("consommable présent");
+    let con = items
+        .iter()
+        .find(|i| i.category == ItemCategory::Consume)
+        .expect("consommable présent");
 
     assert_eq!(con.item_id.to_hex(), "0x5F0F1EAC");
     assert_eq!(con.name_id.to_hex(), "0xD069AE1F");

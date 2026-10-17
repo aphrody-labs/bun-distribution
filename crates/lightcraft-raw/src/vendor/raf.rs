@@ -23,7 +23,10 @@
 
 use super::white_from_data;
 use crate::unpack::{unpack_lsb, unpack_words32_msb};
-use crate::{BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result};
+use crate::{
+    BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect,
+    Result,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::{ByteOrder, Ifd, Tiff};
 use rayon::prelude::*;
@@ -43,7 +46,8 @@ pub(crate) struct Header<'a> {
 }
 
 fn be32(b: &[u8], at: usize) -> Option<usize> {
-    b.get(at..at + 4).map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]) as usize)
+    b.get(at..at + 4)
+        .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]) as usize)
 }
 
 fn slice(b: &[u8], off: Option<usize>, len: Option<usize>) -> Option<&[u8]> {
@@ -51,7 +55,8 @@ fn slice(b: &[u8], off: Option<usize>, len: Option<usize>) -> Option<&[u8]> {
     if o == 0 || l == 0 {
         return None;
     }
-    b.get(o..o.checked_add(l)?.min(b.len())).filter(|s| !s.is_empty())
+    b.get(o..o.checked_add(l)?.min(b.len()))
+        .filter(|s| !s.is_empty())
 }
 
 pub(crate) fn header(b: &[u8]) -> Result<Header<'_>> {
@@ -66,8 +71,13 @@ pub(crate) fn header(b: &[u8]) -> Result<Header<'_>> {
         let mut p = 4;
         for _ in 0..n {
             let Some(h) = dir.get(p..p + 4) else { break };
-            let (tag, size) = (u16::from_be_bytes([h[0], h[1]]), u16::from_be_bytes([h[2], h[3]]) as usize);
-            let Some(d) = dir.get(p + 4..p + 4 + size) else { break };
+            let (tag, size) = (
+                u16::from_be_bytes([h[0], h[1]]),
+                u16::from_be_bytes([h[2], h[3]]) as usize,
+            );
+            let Some(d) = dir.get(p + 4..p + 4 + size) else {
+                break;
+            };
             records.push((tag, d));
             p += 4 + size;
         }
@@ -82,13 +92,23 @@ fn record<'a>(h: &Header<'a>, tag: u16) -> Option<&'a [u8]> {
 /// A record holding two big-endian `u16`s.
 fn pair(h: &Header, tag: u16) -> Option<(usize, usize)> {
     let d = record(h, tag).filter(|d| d.len() >= 4)?;
-    Some((u16::from_be_bytes([d[0], d[1]]) as usize, u16::from_be_bytes([d[2], d[3]]) as usize))
+    Some((
+        u16::from_be_bytes([d[0], d[1]]) as usize,
+        u16::from_be_bytes([d[2], d[3]]) as usize,
+    ))
 }
 
 pub(crate) fn raw_ifd(raw: &[u8]) -> Result<Ifd> {
-    let tiff = Tiff::parse(raw).map_err(|_| RawError::Unsupported("RAF without a raw IFD (older FinePix layout)".into()))?;
-    let off = tiff.ifds.first().and_then(|i| i.u64(0xf000)).ok_or_else(|| RawError::Unsupported("RAF without a raw IFD".into()))?;
-    let (ifd, _) = lightcraft_tiff::parse_ifd_at(raw, off, ByteOrder::Little, 0, false, &Default::default())?;
+    let tiff = Tiff::parse(raw).map_err(|_| {
+        RawError::Unsupported("RAF without a raw IFD (older FinePix layout)".into())
+    })?;
+    let off = tiff
+        .ifds
+        .first()
+        .and_then(|i| i.u64(0xf000))
+        .ok_or_else(|| RawError::Unsupported("RAF without a raw IFD".into()))?;
+    let (ifd, _) =
+        lightcraft_tiff::parse_ifd_at(raw, off, ByteOrder::Little, 0, false, &Default::default())?;
     Ok(ifd)
 }
 
@@ -96,13 +116,19 @@ pub(crate) fn raw_ifd(raw: &[u8]) -> Result<Ifd> {
 fn camera_name(b: &[u8]) -> String {
     let name = b.get(28..60).unwrap_or_default();
     let end = name.iter().position(|&c| c == 0).unwrap_or(name.len());
-    String::from_utf8_lossy(name.get(..end).unwrap_or_default()).trim().to_string()
+    String::from_utf8_lossy(name.get(..end).unwrap_or_default())
+        .trim()
+        .to_string()
 }
 
 /// The CFA: X-Trans from the (reversed) layout record, else RGGB.
 fn cfa(h: &Header) -> Cfa {
     match record(h, XTRANS_LAYOUT) {
-        Some(l) if l.len() == 36 && l.iter().all(|&c| c <= 2) => Cfa { width: 6, height: 6, pattern: l.iter().rev().copied().collect() },
+        Some(l) if l.len() == 36 && l.iter().all(|&c| c <= 2) => Cfa {
+            width: 6,
+            height: 6,
+            pattern: l.iter().rev().copied().collect(),
+        },
         _ => Cfa::bayer_static("RGGB"),
     }
 }
@@ -112,7 +138,10 @@ fn cfa(h: &Header) -> Cfa {
 /// LSB-first bit stream, or (other depths) the same 32-bit words.
 pub(crate) fn unpack_row(src: &[u8], bits: u32, words32: bool, out: &mut [u16]) {
     match bits {
-        16 => out.iter_mut().zip(src.as_chunks::<2>().0).for_each(|(o, c)| *o = u16::from_le_bytes([c[0], c[1]])),
+        16 => out
+            .iter_mut()
+            .zip(src.as_chunks::<2>().0)
+            .for_each(|(o, c)| *o = u16::from_le_bytes([c[0], c[1]])),
         12 if !words32 => unpack_lsb(src, 12, out),
         _ => unpack_words32_msb(src, ByteOrder::Little, bits, out),
     }
@@ -120,48 +149,89 @@ pub(crate) fn unpack_row(src: &[u8], bits: u32, words32: bool, out: &mut [u16]) 
 
 pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     let h = header(bytes)?;
-    let raw = h.raw.ok_or_else(|| RawError::Corrupt("RAF without raw data".into()))?;
+    let raw = h
+        .raw
+        .ok_or_else(|| RawError::Corrupt("RAF without raw data".into()))?;
     let ifd = raw_ifd(raw)?;
-    let get = |t: u16| ifd.u64(t).map(|v| usize::try_from(v).map_err(|_| RawError::Limit("RAF IFD value too large"))).transpose();
+    let get = |t: u16| {
+        ifd.u64(t)
+            .map(|v| usize::try_from(v).map_err(|_| RawError::Limit("RAF IFD value too large")))
+            .transpose()
+    };
     let (w, hgt) = (get(0xf001)?.unwrap_or(0), get(0xf002)?.unwrap_or(0));
-    let bits = ifd.u64(0xf003).and_then(|v| u32::try_from(v).ok()).unwrap_or(0);
+    let bits = ifd
+        .u64(0xf003)
+        .and_then(|v| u32::try_from(v).ok())
+        .unwrap_or(0);
     let (off, len) = (get(0xf007)?.unwrap_or(0), get(0xf008)?.unwrap_or(0));
     if w == 0 || hgt == 0 || !(8..=16).contains(&bits) {
-        return Err(RawError::Corrupt(format!("RAF raw IFD: {w}x{hgt}, {bits} bits")));
+        return Err(RawError::Corrupt(format!(
+            "RAF raw IFD: {w}x{hgt}, {bits} bits"
+        )));
     }
-    let n = w.checked_mul(hgt).filter(|n| *n <= crate::MAX_SAMPLES).ok_or(RawError::Limit("image too large"))?;
+    let n = w
+        .checked_mul(hgt)
+        .filter(|n| *n <= crate::MAX_SAMPLES)
+        .ok_or(RawError::Limit("image too large"))?;
     let src = raw
-        .get(off..off.checked_add(len).ok_or_else(|| RawError::Corrupt("RAF strip size overflow".into()))?)
+        .get(
+            off..off
+                .checked_add(len)
+                .ok_or_else(|| RawError::Corrupt("RAF strip size overflow".into()))?,
+        )
         .ok_or_else(|| RawError::Corrupt("RAF strip outside file".into()))?;
     let cfa = cfa(&h);
     let compression = be32(bytes, 108).unwrap_or(0);
     let compressed = match compression {
         0 => false,
         2 | 3 => true,
-        _ => return Err(RawError::Unsupported(format!("Fujifilm RAF compression mode {compression}"))),
+        _ => {
+            return Err(RawError::Unsupported(format!(
+                "Fujifilm RAF compression mode {compression}"
+            )));
+        }
     };
     let mut data = Vec::new();
     if compressed {
         if cfa.width == 6 && cfa != Cfa::xtrans() {
-            return Err(RawError::Unsupported("Fujifilm compressed RAF with an unknown X-Trans layout".into()));
+            return Err(RawError::Unsupported(
+                "Fujifilm compressed RAF with an unknown X-Trans layout".into(),
+            ));
         }
         let flag = if compression == 2 { 1 } else { 0 };
         if src.get(2) != Some(&flag) {
-            return Err(RawError::Corrupt("RAF container and stream compression modes disagree".into()));
+            return Err(RawError::Corrupt(
+                "RAF container and stream compression modes disagree".into(),
+            ));
         }
         data = super::rafc::decode(src, w, hgt, bits, cfa.width == 6, mode)?;
     } else {
         let words32 = ifd.u64(PACKED_WORDS).is_some_and(|v| v != 0);
         // Samples may use 16-bit words (e.g. 14-bit X-T20); otherwise they are packed at `bits`.
-        let store = if len as u64 >= (n as u64) * 2 { 16 } else { bits };
-        let packed_row = w.checked_mul(store as usize).map(|n| n.div_ceil(8)).ok_or(RawError::Limit("RAF row too large"))?;
+        let store = if len as u64 >= (n as u64) * 2 {
+            16
+        } else {
+            bits
+        };
+        let packed_row = w
+            .checked_mul(store as usize)
+            .map(|n| n.div_ceil(8))
+            .ok_or(RawError::Limit("RAF row too large"))?;
         let stride = match get(0xf005)?.unwrap_or(0) {
             0 => packed_row,
-            words => words.checked_mul(4).ok_or(RawError::Limit("RAF stride too large"))?.max(packed_row),
+            words => words
+                .checked_mul(4)
+                .ok_or(RawError::Limit("RAF stride too large"))?
+                .max(packed_row),
         };
-        let required = stride.checked_mul(hgt - 1).and_then(|n| n.checked_add(packed_row)).ok_or(RawError::Limit("RAF strip too large"))?;
+        let required = stride
+            .checked_mul(hgt - 1)
+            .and_then(|n| n.checked_add(packed_row))
+            .ok_or(RawError::Limit("RAF strip too large"))?;
         if len < required {
-            return Err(RawError::Unsupported(format!("Fujifilm RAF packing ({len} bytes for {w}x{hgt} {bits}-bit)")));
+            return Err(RawError::Unsupported(format!(
+                "Fujifilm RAF packing ({len} bytes for {w}x{hgt} {bits}-bit)"
+            )));
         }
         if mode == Mode::Full {
             data = vec![0u16; n];
@@ -174,22 +244,37 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     }
 
     let active = match (pair(&h, CROP_TOP_LEFT), pair(&h, CROPPED_SIZE)) {
-        (Some((top, left)), Some((ch, cw))) if ch > 0 && cw > 0 => Rect::new(left, top, cw, ch).clipped(w, hgt),
+        (Some((top, left)), Some((ch, cw))) if ch > 0 && cw > 0 => {
+            Rect::new(left, top, cw, ch).clipped(w, hgt)
+        }
         _ => Rect::new(0, 0, w, hgt),
     };
-    let active = if active.width == 0 || active.height == 0 { Rect::new(0, 0, w, hgt) } else { active };
+    let active = if active.width == 0 || active.height == 0 {
+        Rect::new(0, 0, w, hgt)
+    } else {
+        active
+    };
     // black levels: one per CFA position, anchored at (0, 0) of the raw data; re-anchor at the active area
     let black = match ifd.f64s(0xf00a) {
         Some(v) if v.len() == cfa.pattern.len() && v.iter().any(|b| *b != v[0]) => {
             let (cw, chh) = (cfa.width, cfa.height);
-            let values = (0..chh * cw).map(|i| v[((i / cw + active.y) % chh) * cw + (i % cw + active.x) % cw] as f32).collect();
-            BlackLevel { repeat_rows: chh, repeat_cols: cw, values, ..Default::default() }
+            let values = (0..chh * cw)
+                .map(|i| v[((i / cw + active.y) % chh) * cw + (i % cw + active.x) % cw] as f32)
+                .collect();
+            BlackLevel {
+                repeat_rows: chh,
+                repeat_cols: cw,
+                values,
+                ..Default::default()
+            }
         }
         Some(v) if !v.is_empty() => BlackLevel::uniform(v[0] as f32),
         _ => BlackLevel::uniform(0.0),
     };
-    let wb =
-        ifd.f64s(0xf00e).filter(|v| v.len() >= 3 && v.iter().take(3).all(|x| *x > 0.0)).map(|v| [(v[1] / v[0]) as f32, 1.0, (v[2] / v[0]) as f32]);
+    let wb = ifd
+        .f64s(0xf00e)
+        .filter(|v| v.len() >= 3 && v.iter().take(3).all(|x| *x > 0.0))
+        .map(|v| [(v[1] / v[0]) as f32, 1.0, (v[2] / v[0]) as f32]);
     let white = white_from_data(&data, bits);
 
     let mut metadata = h.jpeg.map(lightcraft_meta::extract).unwrap_or_default();
@@ -212,7 +297,10 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         color: ColorData::default(),
         wb_multipliers: wb,
         linearized: false,
-        opcodes: OpcodeLists { list3: super::raf_lens::corrections(&camera_name(bytes), &ifd, active), ..Default::default() },
+        opcodes: OpcodeLists {
+            list3: super::raf_lens::corrections(&camera_name(bytes), &ifd, active),
+            ..Default::default()
+        },
         metadata,
     };
     img.validate_for(mode)?;
@@ -224,12 +312,27 @@ pub(super) mod tests {
     use super::*;
 
     /// Build a minimal RAF: header, records, raw block (LE TIFF whose IFD0 points to a 0xf000 raw IFD).
-    pub(crate) fn raf(w: u32, h: u32, bits: u32, strip: Vec<u8>, layout: Option<[u8; 36]>, jpeg: &[u8]) -> Vec<u8> {
+    pub(crate) fn raf(
+        w: u32,
+        h: u32,
+        bits: u32,
+        strip: Vec<u8>,
+        layout: Option<[u8; 36]>,
+        jpeg: &[u8],
+    ) -> Vec<u8> {
         raf_flagged(w, h, bits, strip, layout, jpeg, 0)
     }
 
     /// [`raf`] with the raw IFD's `0xf006` flag set to `words32`.
-    pub(crate) fn raf_flagged(w: u32, h: u32, bits: u32, strip: Vec<u8>, layout: Option<[u8; 36]>, jpeg: &[u8], words32: u32) -> Vec<u8> {
+    pub(crate) fn raf_flagged(
+        w: u32,
+        h: u32,
+        bits: u32,
+        strip: Vec<u8>,
+        layout: Option<[u8; 36]>,
+        jpeg: &[u8],
+        words32: u32,
+    ) -> Vec<u8> {
         raf_full(w, h, bits, strip, layout, jpeg, words32, "TEST", &[])
     }
 
@@ -321,7 +424,17 @@ pub(super) mod tests {
         let jpeg_off = 160u32;
         let dir_off = jpeg_off + jpeg.len() as u32;
         let raw_off = dir_off + dir.len() as u32;
-        for (i, v) in [jpeg_off, jpeg.len() as u32, dir_off, dir.len() as u32, raw_off, block.len() as u32].iter().enumerate() {
+        for (i, v) in [
+            jpeg_off,
+            jpeg.len() as u32,
+            dir_off,
+            dir.len() as u32,
+            raw_off,
+            block.len() as u32,
+        ]
+        .iter()
+        .enumerate()
+        {
             out[84 + i * 4..88 + i * 4].copy_from_slice(&v.to_be_bytes());
         }
         out.resize(160, 0);
@@ -358,7 +471,10 @@ pub(super) mod tests {
                     bitsv.push((acc << (8 - n)) as u8);
                 }
                 bitsv.resize(bitsv.len().div_ceil(4) * 4, 0);
-                bitsv.chunks(4).flat_map(|c| [c[3], c[2], c[1], c[0]]).collect()
+                bitsv
+                    .chunks(4)
+                    .flat_map(|c| [c[3], c[2], c[1], c[0]])
+                    .collect()
             }
         }
     }
@@ -367,9 +483,18 @@ pub(super) mod tests {
     fn decodes_all_packings() {
         let (w, h) = (16u32, 6u32);
         for (bits, store) in [(12u32, 12u32), (14, 14), (14, 16), (16, 16)] {
-            let px: Vec<u16> = (0..w * h).map(|i| ((i * 977) % (1 << bits.min(14))) as u16).collect();
+            let px: Vec<u16> = (0..w * h)
+                .map(|i| ((i * 977) % (1 << bits.min(14))) as u16)
+                .collect();
             let layout: [u8; 36] = std::array::from_fn(|i| Cfa::xtrans().pattern[35 - i]);
-            let bytes = raf(w, h, bits, pack(&px, store), Some(layout), b"\xff\xd8\xff\xd9");
+            let bytes = raf(
+                w,
+                h,
+                bits,
+                pack(&px, store),
+                Some(layout),
+                b"\xff\xd8\xff\xd9",
+            );
             assert_eq!(crate::probe(&bytes), Some(RawFormat::Raf));
             let r = crate::decode(&bytes).unwrap_or_else(|e| panic!("{bits}: {e}"));
             assert_eq!(crate::probe_info(&bytes).unwrap(), r.info());
@@ -388,7 +513,10 @@ pub(super) mod tests {
         assert_eq!(crate::decode(&bytes).unwrap().data, RawData::U16(px));
         // too little data for the size: compressed
         let bytes = raf(w, h, 14, vec![0; 20], None, b"");
-        assert!(matches!(crate::decode(&bytes), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            crate::decode(&bytes),
+            Err(RawError::Unsupported(_))
+        ));
     }
 
     /// Raw IFD flag `0xf006` selects the 32-bit-word packing at 12 bits; without it 12 bits are an LSB-first stream.
@@ -407,13 +535,25 @@ pub(super) mod tests {
                 n -= 8;
             }
         }
-        let le: Vec<u8> = stream.chunks(4).flat_map(|c| [c[3], c[2], c[1], c[0]]).collect();
+        let le: Vec<u8> = stream
+            .chunks(4)
+            .flat_map(|c| [c[3], c[2], c[1], c[0]])
+            .collect();
         let decode = |bytes: Vec<u8>| crate::decode(&bytes).unwrap().data;
-        assert_eq!(decode(raf_flagged(w, h, 12, le.clone(), None, b"", 1)), RawData::U16(px.clone()));
+        assert_eq!(
+            decode(raf_flagged(w, h, 12, le.clone(), None, b"", 1)),
+            RawData::U16(px.clone())
+        );
         // flag clear: the same bytes are read as the LSB-first stream, which gives other samples
-        assert_ne!(decode(raf_flagged(w, h, 12, le, None, b"", 0)), RawData::U16(px.clone()));
+        assert_ne!(
+            decode(raf_flagged(w, h, 12, le, None, b"", 0)),
+            RawData::U16(px.clone())
+        );
         // flag clear: the LSB-first stream still decodes
-        assert_eq!(decode(raf_flagged(w, h, 12, pack(&px, 12), None, b"", 0)), RawData::U16(px));
+        assert_eq!(
+            decode(raf_flagged(w, h, 12, pack(&px, 12), None, b"", 0)),
+            RawData::U16(px)
+        );
     }
 
     /// The lens tables of the raw IFD reach `Mode::Header` and `Mode::Full` alike, only for validated cameras,
@@ -422,8 +562,22 @@ pub(super) mod tests {
     fn lens_tables_become_opcodes_for_validated_cameras() {
         let (w, h) = (16u32, 6u32);
         let half = 12.0f64.hypot(4.0) / 2.0;
-        let rat = |v: &[f64]| -> Vec<(i32, i32)> { v.iter().map(|x| ((x * 1.0e6).round() as i32, 1_000_000)).collect() };
-        let knots = [0.3535211268, 0.5, 0.6126760563, 0.7070422535, 0.7908450704, 0.8661971831, 0.9352112676, 1.0, 1.06056338];
+        let rat = |v: &[f64]| -> Vec<(i32, i32)> {
+            v.iter()
+                .map(|x| ((x * 1.0e6).round() as i32, 1_000_000))
+                .collect()
+        };
+        let knots = [
+            0.3535211268,
+            0.5,
+            0.6126760563,
+            0.7070422535,
+            0.7908450704,
+            0.8661971831,
+            0.9352112676,
+            1.0,
+            1.06056338,
+        ];
         let table = |values: &[f64]| {
             let mut v = vec![half / 9.0];
             v.extend_from_slice(&knots);
@@ -433,25 +587,74 @@ pub(super) mod tests {
         let dist = [-1.2, -2.4, -3.5, -4.4, -5.3, -5.9, -6.3, -6.4, -6.4];
         let vig = [98.5, 96.9, 94.9, 91.0, 84.7, 78.4, 73.0, 67.5, 67.5];
         // the colour-plane table is present in real files and ignored
-        let ca = [-0.00003, -0.00009, -0.00015, -0.0002, -0.00027, -0.00034, -0.00046, -0.0006, -0.0006];
-        let extra = vec![(0xf00b, table(&dist)), (0xf00f, table(&ca)), (0xf010, table(&vig))];
-        for (model, expected) in [("X-T4", 2), ("GFX 100", 2), ("X-T6", 0), ("X-T4 II", 0), ("", 0)] {
+        let ca = [
+            -0.00003, -0.00009, -0.00015, -0.0002, -0.00027, -0.00034, -0.00046, -0.0006, -0.0006,
+        ];
+        let extra = vec![
+            (0xf00b, table(&dist)),
+            (0xf00f, table(&ca)),
+            (0xf010, table(&vig)),
+        ];
+        for (model, expected) in [
+            ("X-T4", 2),
+            ("GFX 100", 2),
+            ("X-T6", 0),
+            ("X-T4 II", 0),
+            ("", 0),
+        ] {
             let bytes = raf_full(w, h, 16, pack(&[1000; 96], 16), None, b"", 0, model, &extra);
             let header = decode(&bytes, Mode::Header).unwrap();
             let full = crate::decode(&bytes).unwrap();
             assert_eq!(header.info(), full.info(), "{model}");
             assert_eq!(full.opcodes.list3.len(), expected, "{model}");
-            let Some(crate::Opcode::WarpRectilinear { planes, center }) = full.opcodes.list3.first() else { continue };
+            let Some(crate::Opcode::WarpRectilinear { planes, center }) =
+                full.opcodes.list3.first()
+            else {
+                continue;
+            };
             assert_eq!((planes.len(), *center), (1, [0.5, 0.5]), "{model}");
-            assert!(matches!(full.opcodes.list3[1], crate::Opcode::FixVignetteRadial { .. }));
+            assert!(matches!(
+                full.opcodes.list3[1],
+                crate::Opcode::FixVignetteRadial { .. }
+            ));
             let dng = crate::write_dng(&full, &Default::default()).unwrap();
-            assert_eq!(crate::decode(&dng).unwrap().opcodes.list3, full.opcodes.list3, "{model}");
+            assert_eq!(
+                crate::decode(&dng).unwrap().opcodes.list3,
+                full.opcodes.list3,
+                "{model}"
+            );
         }
         // a table in another scale is left alone, and so is a file without tables
-        let wrong: Vec<(u16, Vec<(i32, i32)>)> =
-            extra.iter().map(|(t, v)| (*t, v.iter().map(|&(n, d)| if n == v[0].0 { (n * 2, d) } else { (n, d) }).collect())).collect();
-        let bytes = raf_full(w, h, 16, pack(&[1000; 96], 16), None, b"", 0, "X-T4", &wrong);
-        assert!(crate::decode(&bytes).unwrap().opcodes.list3.iter().all(|o| !matches!(o, crate::Opcode::WarpRectilinear { .. })));
+        let wrong: Vec<(u16, Vec<(i32, i32)>)> = extra
+            .iter()
+            .map(|(t, v)| {
+                (
+                    *t,
+                    v.iter()
+                        .map(|&(n, d)| if n == v[0].0 { (n * 2, d) } else { (n, d) })
+                        .collect(),
+                )
+            })
+            .collect();
+        let bytes = raf_full(
+            w,
+            h,
+            16,
+            pack(&[1000; 96], 16),
+            None,
+            b"",
+            0,
+            "X-T4",
+            &wrong,
+        );
+        assert!(
+            crate::decode(&bytes)
+                .unwrap()
+                .opcodes
+                .list3
+                .iter()
+                .all(|o| !matches!(o, crate::Opcode::WarpRectilinear { .. }))
+        );
         let bytes = raf_full(w, h, 16, pack(&[1000; 96], 16), None, b"", 0, "X-T4", &[]);
         assert!(crate::decode(&bytes).unwrap().opcodes.list3.is_empty());
     }

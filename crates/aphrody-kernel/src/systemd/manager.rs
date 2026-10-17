@@ -43,7 +43,10 @@ impl Default for ServiceManager {
 impl ServiceManager {
     #[must_use]
     pub fn new(journal: Arc<Journal>) -> Self {
-        let manager = Self { units: RwLock::new(HashMap::new()), journal };
+        let manager = Self {
+            units: RwLock::new(HashMap::new()),
+            journal,
+        };
         manager.register_default_units();
         manager
     }
@@ -62,8 +65,10 @@ impl ServiceManager {
         let mut graphical_target =
             Unit::new("graphical.target", UnitType::Target, "Graphical Interface");
         graphical_target.after = vec!["multi-user.target".to_owned()];
-        graphical_target.wants =
-            vec!["multi-user.target".to_owned(), "aphrody-shell.service".to_owned()];
+        graphical_target.wants = vec![
+            "multi-user.target".to_owned(),
+            "aphrody-shell.service".to_owned(),
+        ];
         graphical_target.state = ActiveState::Active;
         graphical_target.sub_state = "active".to_owned();
 
@@ -81,7 +86,10 @@ impl ServiceManager {
         kernel_svc.sub_state = "running".to_owned();
         kernel_svc.main_pid = Some(std::process::id());
         kernel_svc.started_at_usec = Some(
-            SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_micros() as u64).unwrap_or(0),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_micros() as u64)
+                .unwrap_or(0),
         );
 
         let mut shell_svc = Unit::new(
@@ -123,13 +131,19 @@ impl ServiceManager {
 
     pub fn list_units(&self) -> Vec<UnitStatus> {
         let units = self.units.read().expect("units read lock");
-        let now_usec =
-            SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_micros() as u64).unwrap_or(0);
+        let now_usec = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_micros() as u64)
+            .unwrap_or(0);
 
         let mut list = Vec::new();
         for unit in units.values() {
             let uptime_secs = unit.started_at_usec.map(|started| {
-                if now_usec > started { (now_usec - started) / 1_000_000 } else { 0 }
+                if now_usec > started {
+                    (now_usec - started) / 1_000_000
+                } else {
+                    0
+                }
             });
 
             let mut dependencies = unit.requires.clone();
@@ -153,13 +167,21 @@ impl ServiceManager {
 
     pub fn get_unit_status(&self, name: &str) -> Result<UnitStatus, String> {
         let units = self.units.read().expect("units read lock");
-        let unit = units.get(name).ok_or_else(|| format!("unit `{name}` not found"))?;
-        let now_usec =
-            SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_micros() as u64).unwrap_or(0);
+        let unit = units
+            .get(name)
+            .ok_or_else(|| format!("unit `{name}` not found"))?;
+        let now_usec = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_micros() as u64)
+            .unwrap_or(0);
 
-        let uptime_secs = unit
-            .started_at_usec
-            .map(|started| if now_usec > started { (now_usec - started) / 1_000_000 } else { 0 });
+        let uptime_secs = unit.started_at_usec.map(|started| {
+            if now_usec > started {
+                (now_usec - started) / 1_000_000
+            } else {
+                0
+            }
+        });
 
         let mut dependencies = unit.requires.clone();
         dependencies.extend(unit.wants.clone());
@@ -220,7 +242,9 @@ impl ServiceManager {
 
     pub fn start_unit(&self, name: &str) -> Result<(), String> {
         let mut units = self.units.write().expect("units write lock");
-        let unit = units.get_mut(name).ok_or_else(|| format!("unit `{name}` not found"))?;
+        let unit = units
+            .get_mut(name)
+            .ok_or_else(|| format!("unit `{name}` not found"))?;
 
         if unit.state == ActiveState::Active {
             return Ok(());
@@ -228,21 +252,31 @@ impl ServiceManager {
 
         unit.state = ActiveState::Activating;
         unit.sub_state = "start-pre".to_owned();
-        self.journal.log(name, LogLevel::Info, None, format!("Starting {name}..."));
+        self.journal
+            .log(name, LogLevel::Info, None, format!("Starting {name}..."));
 
-        let now_usec =
-            SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_micros() as u64).unwrap_or(0);
+        let now_usec = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_micros() as u64)
+            .unwrap_or(0);
 
         unit.state = ActiveState::Active;
         unit.sub_state = "running".to_owned();
         unit.started_at_usec = Some(now_usec);
-        self.journal.log(name, LogLevel::Info, unit.main_pid, format!("Started {name}"));
+        self.journal.log(
+            name,
+            LogLevel::Info,
+            unit.main_pid,
+            format!("Started {name}"),
+        );
         Ok(())
     }
 
     pub fn stop_unit(&self, name: &str) -> Result<(), String> {
         let mut units = self.units.write().expect("units write lock");
-        let unit = units.get_mut(name).ok_or_else(|| format!("unit `{name}` not found"))?;
+        let unit = units
+            .get_mut(name)
+            .ok_or_else(|| format!("unit `{name}` not found"))?;
 
         if unit.state == ActiveState::Inactive {
             return Ok(());
@@ -250,13 +284,19 @@ impl ServiceManager {
 
         unit.state = ActiveState::Deactivating;
         unit.sub_state = "stop-sigterm".to_owned();
-        self.journal.log(name, LogLevel::Info, unit.main_pid, format!("Stopping {name}..."));
+        self.journal.log(
+            name,
+            LogLevel::Info,
+            unit.main_pid,
+            format!("Stopping {name}..."),
+        );
 
         unit.state = ActiveState::Inactive;
         unit.sub_state = "dead".to_owned();
         unit.main_pid = None;
         unit.started_at_usec = None;
-        self.journal.log(name, LogLevel::Info, None, format!("Stopped {name}"));
+        self.journal
+            .log(name, LogLevel::Info, None, format!("Stopped {name}"));
         Ok(())
     }
 
@@ -273,7 +313,9 @@ impl ServiceManager {
 
     pub fn reload_unit(&self, name: &str) -> Result<(), String> {
         let units = self.units.read().expect("units read lock");
-        let _ = units.get(name).ok_or_else(|| format!("unit `{name}` not found"))?;
+        let _ = units
+            .get(name)
+            .ok_or_else(|| format!("unit `{name}` not found"))?;
         self.journal.log(
             name,
             LogLevel::Notice,
@@ -346,7 +388,9 @@ impl HostSystemdBackend {
                 cmd.arg("--user");
             }
             cmd.arg(action).arg(name);
-            let output = cmd.output().map_err(|e| format!("failed to execute systemctl: {e}"))?;
+            let output = cmd
+                .output()
+                .map_err(|e| format!("failed to execute systemctl: {e}"))?;
             if output.status.success() {
                 Ok(())
             } else {
@@ -387,7 +431,11 @@ impl SystemdSupervisor for HostSystemdBackend {
             if self.user_mode {
                 cmd.arg("--user");
             }
-            cmd.args(["show", name, "--property=ActiveState,SubState,MainPID,Description"]);
+            cmd.args([
+                "show",
+                name,
+                "--property=ActiveState,SubState,MainPID,Description",
+            ]);
             let output = cmd.output().ok()?;
             if !output.status.success() {
                 return None;
@@ -447,8 +495,16 @@ impl SystemdSupervisor for HostSystemdBackend {
             if self.user_mode {
                 cmd.arg("--user");
             }
-            cmd.args(["list-units", "--type=service,target", "--all", "--plain", "--no-legend"]);
-            let Ok(output) = cmd.output() else { return Vec::new() };
+            cmd.args([
+                "list-units",
+                "--type=service,target",
+                "--all",
+                "--plain",
+                "--no-legend",
+            ]);
+            let Ok(output) = cmd.output() else {
+                return Vec::new();
+            };
             if !output.status.success() {
                 return Vec::new();
             }

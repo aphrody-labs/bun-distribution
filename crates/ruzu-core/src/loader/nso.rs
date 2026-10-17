@@ -284,8 +284,11 @@ impl AppLoaderNso {
                 nso_header.segments[i].offset as usize,
             );
             if nso_header.is_segment_compressed(i) {
-                data = decompress_segment(&data, nso_header.segments[i].size,
-                    nso_header.is_zbic_compressed())?;
+                data = decompress_segment(
+                    &data,
+                    nso_header.segments[i].size,
+                    nso_header.is_zbic_compressed(),
+                )?;
             }
             log::info!(
                 "NSO segment[{}]: location={:#x} size={:#x} compressed={:#x} data.len={:#x}",
@@ -322,8 +325,11 @@ impl AppLoaderNso {
             let capacity = NSO_ARGUMENT_DATA_ALLOCATION_SIZE as usize
                 - std::mem::size_of::<NsoArgumentHeader>();
             if program_args.len() > capacity {
-                log::error!("NSO arguments exceed the reserved block: {} bytes, maximum {}",
-                    program_args.len(), capacity);
+                log::error!(
+                    "NSO arguments exceed the reserved block: {} bytes, maximum {}",
+                    program_args.len(),
+                    capacity
+                );
                 return None;
             }
             code_set.data_segment_mut().size += NSO_ARGUMENT_DATA_ALLOCATION_SIZE;
@@ -500,14 +506,26 @@ mod tests {
         let zbic_frame = b"ZBIC\x20\x05\x29\x00\x00hello";
         let lz4_frame = lz4_flex::block::compress(b"hello");
         for flags in 0..256 {
-            let header = NsoHeader { flags, ..Default::default() };
+            let header = NsoHeader {
+                flags,
+                ..Default::default()
+            };
             assert_eq!(header.is_zbic_compressed(), flags & 0x80 != 0);
             for segment in 0..3 {
-                assert_eq!(header.is_segment_compressed(segment), flags & (1 << segment) != 0);
+                assert_eq!(
+                    header.is_segment_compressed(segment),
+                    flags & (1 << segment) != 0
+                );
             }
         }
-        assert_eq!(decompress_segment(zbic_frame, 5, true), Some(b"hello".to_vec()));
-        assert_eq!(decompress_segment(&lz4_frame, 5, false), Some(b"hello".to_vec()));
+        assert_eq!(
+            decompress_segment(zbic_frame, 5, true),
+            Some(b"hello".to_vec())
+        );
+        assert_eq!(
+            decompress_segment(&lz4_frame, 5, false),
+            Some(b"hello".to_vec())
+        );
         assert!(decompress_segment(&lz4_frame, 5, true).is_none());
         assert!(decompress_segment(zbic_frame, 5, false).is_none());
         assert!(decompress_segment(&lz4_frame, 6, false).is_none());
@@ -522,68 +540,111 @@ mod tests {
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
                 .args(["--exact", std::thread::current().name().unwrap()])
-                .env(CHILD, "1").status().unwrap().success());
+                .env(CHILD, "1")
+                .status()
+                .unwrap()
+                .success());
             return;
         }
-        std::thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(|| {
-            use common::fs::path_util::{set_ruzu_path, RuzuPath};
-            use crate::file_sys::vfs::vfs_vector::VectorVfsFile;
-            let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-            let directory = std::env::temp_dir().join(format!("ruzu-argument-test-{}-{nonce}", std::process::id()));
-            std::fs::create_dir(&directory).unwrap();
-            std::fs::create_dir(directory.join("sdmc")).unwrap();
-            set_ruzu_path(RuzuPath::LogDir, &directory);
-            set_ruzu_path(RuzuPath::SDMCDir, &directory.join("sdmc"));
-            let mut system = Box::new(System::new(None, None));
-            let mut process = KProcess::new();
-            // Minimal synthetic NSO: empty segments and a zeroed header. Its
-            // layout consists only of the optional argument block and BSS.
-            let mut bytes = vec![0; 0x100];
-            bytes[..4].copy_from_slice(b"NSO0");
-            bytes[0x3C..0x40].copy_from_slice(&1u32.to_le_bytes()); // BSS follows args.
-            let file = VectorVfsFile::new(bytes, "synthetic".into(), None);
-            let capacity = NSO_ARGUMENT_DATA_ALLOCATION_SIZE as usize - 0x20;
-            for text in [String::new(), "--label café".into(), "x".repeat(capacity),
-                "é".repeat(capacity / 2), "x".repeat(capacity + 1), "é".repeat(capacity / 2 + 1)] {
-                common::settings::values_mut().program_args.set_value(text.clone());
-                for pass_arguments in [false, true] {
-                    let result = AppLoaderNso::load_module(&mut process, &mut system, &file,
-                        0x10000, pass_arguments, false, None);
-                    let expected = if !pass_arguments || text.is_empty() {
-                        Some(0x11000)
-                    } else if text.len() <= capacity {
-                        Some(0x1A000)
-                    } else { None };
-                    assert_eq!(result, expected, "{} bytes, pass={pass_arguments}", text.len());
-                }
-            }
-            assert_eq!(std::mem::size_of::<NsoArgumentHeader>(), 0x20);
-            assert_eq!(std::mem::offset_of!(NsoArgumentHeader, actual_size), 4);
-            assert_eq!(std::mem::offset_of!(NsoArgumentHeader, _padding), 8);
-            // Exercise LoadModule's actual flag routing as well as the helper.
-            common::settings::values_mut().program_args.set_value(String::new());
-            for (flags, payload, succeeds) in [
-                (0x81u32, b"ZBIC\x20\x05\x29\x00\x00hello".to_vec(), true),
-                (0x01, lz4_flex::block::compress(b"hello"), true),
-                (0x80, b"hello".to_vec(), true), // flag7 alone does not compress
-                (0x81, b"ZBICbad".to_vec(), false),
-                (0x81, lz4_flex::block::compress(b"hello"), false),
-            ] {
+        std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024)
+            .spawn(|| {
+                use crate::file_sys::vfs::vfs_vector::VectorVfsFile;
+                use common::fs::path_util::{set_ruzu_path, RuzuPath};
+                let nonce = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos();
+                let directory = std::env::temp_dir()
+                    .join(format!("ruzu-argument-test-{}-{nonce}", std::process::id()));
+                std::fs::create_dir(&directory).unwrap();
+                std::fs::create_dir(directory.join("sdmc")).unwrap();
+                set_ruzu_path(RuzuPath::LogDir, &directory);
+                set_ruzu_path(RuzuPath::SDMCDir, &directory.join("sdmc"));
+                let mut system = Box::new(System::new(None, None));
+                let mut process = KProcess::new();
+                // Minimal synthetic NSO: empty segments and a zeroed header. Its
+                // layout consists only of the optional argument block and BSS.
                 let mut bytes = vec![0; 0x100];
                 bytes[..4].copy_from_slice(b"NSO0");
-                bytes[0x0c..0x10].copy_from_slice(&flags.to_le_bytes());
-                bytes[0x10..0x14].copy_from_slice(&0x100u32.to_le_bytes());
-                bytes[0x18..0x1c].copy_from_slice(&5u32.to_le_bytes());
-                bytes[0x60..0x64].copy_from_slice(&(payload.len() as u32).to_le_bytes());
-                bytes.extend(payload);
-                let file = VectorVfsFile::new(bytes, "synthetic-codec".into(), None);
-                let result = AppLoaderNso::load_module(&mut process, &mut system, &file,
-                    0x10000, false, false, None);
-                assert_eq!(result, succeeds.then_some(0x11000), "flags={flags:#x}");
-            }
-            drop(process);
-            drop(system);
-            std::fs::remove_dir_all(directory).unwrap();
-        }).unwrap().join().unwrap();
+                bytes[0x3C..0x40].copy_from_slice(&1u32.to_le_bytes()); // BSS follows args.
+                let file = VectorVfsFile::new(bytes, "synthetic".into(), None);
+                let capacity = NSO_ARGUMENT_DATA_ALLOCATION_SIZE as usize - 0x20;
+                for text in [
+                    String::new(),
+                    "--label café".into(),
+                    "x".repeat(capacity),
+                    "é".repeat(capacity / 2),
+                    "x".repeat(capacity + 1),
+                    "é".repeat(capacity / 2 + 1),
+                ] {
+                    common::settings::values_mut()
+                        .program_args
+                        .set_value(text.clone());
+                    for pass_arguments in [false, true] {
+                        let result = AppLoaderNso::load_module(
+                            &mut process,
+                            &mut system,
+                            &file,
+                            0x10000,
+                            pass_arguments,
+                            false,
+                            None,
+                        );
+                        let expected = if !pass_arguments || text.is_empty() {
+                            Some(0x11000)
+                        } else if text.len() <= capacity {
+                            Some(0x1A000)
+                        } else {
+                            None
+                        };
+                        assert_eq!(
+                            result,
+                            expected,
+                            "{} bytes, pass={pass_arguments}",
+                            text.len()
+                        );
+                    }
+                }
+                assert_eq!(std::mem::size_of::<NsoArgumentHeader>(), 0x20);
+                assert_eq!(std::mem::offset_of!(NsoArgumentHeader, actual_size), 4);
+                assert_eq!(std::mem::offset_of!(NsoArgumentHeader, _padding), 8);
+                // Exercise LoadModule's actual flag routing as well as the helper.
+                common::settings::values_mut()
+                    .program_args
+                    .set_value(String::new());
+                for (flags, payload, succeeds) in [
+                    (0x81u32, b"ZBIC\x20\x05\x29\x00\x00hello".to_vec(), true),
+                    (0x01, lz4_flex::block::compress(b"hello"), true),
+                    (0x80, b"hello".to_vec(), true), // flag7 alone does not compress
+                    (0x81, b"ZBICbad".to_vec(), false),
+                    (0x81, lz4_flex::block::compress(b"hello"), false),
+                ] {
+                    let mut bytes = vec![0; 0x100];
+                    bytes[..4].copy_from_slice(b"NSO0");
+                    bytes[0x0c..0x10].copy_from_slice(&flags.to_le_bytes());
+                    bytes[0x10..0x14].copy_from_slice(&0x100u32.to_le_bytes());
+                    bytes[0x18..0x1c].copy_from_slice(&5u32.to_le_bytes());
+                    bytes[0x60..0x64].copy_from_slice(&(payload.len() as u32).to_le_bytes());
+                    bytes.extend(payload);
+                    let file = VectorVfsFile::new(bytes, "synthetic-codec".into(), None);
+                    let result = AppLoaderNso::load_module(
+                        &mut process,
+                        &mut system,
+                        &file,
+                        0x10000,
+                        false,
+                        false,
+                        None,
+                    );
+                    assert_eq!(result, succeeds.then_some(0x11000), "flags={flags:#x}");
+                }
+                drop(process);
+                drop(system);
+                std::fs::remove_dir_all(directory).unwrap();
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
 }

@@ -31,18 +31,18 @@ mod tests {
         vec::Vec,
     };
     use core::{any::TypeId, f32::consts::PI, ops::RangeInclusive};
-    use serde::{de::DeserializeSeed, Deserialize};
-    use serde::{de::IgnoredAny, Deserializer};
+    use serde::{Deserialize, de::DeserializeSeed};
+    use serde::{Deserializer, de::IgnoredAny};
 
     use bevy_platform::collections::{HashMap, HashSet};
 
     use crate::{
+        FromReflect, PartialReflect, Reflect, ReflectDeserialize, TypeRegistration, TypeRegistry,
         enums::DynamicEnum,
         serde::{
             ReflectDeserializer, ReflectDeserializerProcessor, ReflectSerializer,
             TypedReflectDeserializer,
         },
-        FromReflect, PartialReflect, Reflect, ReflectDeserialize, TypeRegistration, TypeRegistry,
     };
 
     #[derive(Reflect, Debug, PartialEq)]
@@ -471,9 +471,11 @@ mod tests {
         let output = reflect_deserializer.deserialize(&mut deserializer).unwrap();
 
         let expected = DynamicEnum::try_from(MyEnum::Tuple(1.23, 3.21)).unwrap();
-        assert!(expected
-            .reflect_partial_eq(output.as_partial_reflect())
-            .unwrap());
+        assert!(
+            expected
+                .reflect_partial_eq(output.as_partial_reflect())
+                .unwrap()
+        );
 
         // === Struct Variant === //
         let input = r#"{
@@ -489,9 +491,11 @@ mod tests {
             value: String::from("I <3 Enums"),
         })
         .unwrap();
-        assert!(expected
-            .reflect_partial_eq(output.as_partial_reflect())
-            .unwrap());
+        assert!(
+            expected
+                .reflect_partial_eq(output.as_partial_reflect())
+                .unwrap()
+        );
     }
 
     // Regression test for https://github.com/bevyengine/bevy/issues/12462

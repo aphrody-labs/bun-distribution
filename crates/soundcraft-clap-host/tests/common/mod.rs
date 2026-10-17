@@ -29,7 +29,8 @@ pub fn fixture_dir() -> &'static Path {
             "libclap_fixture.so"
         };
         let built = target.join("debug").join(lib);
-        let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("clap-fixture-install-{}", std::process::id()));
+        let dir = Path::new(env!("CARGO_TARGET_TMPDIR"))
+            .join(format!("clap-fixture-install-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         if cfg!(target_os = "macos") {
             // Install as a real macOS bundle to exercise bundle resolution.

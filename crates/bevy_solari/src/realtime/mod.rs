@@ -3,8 +3,8 @@ mod node;
 mod prepare;
 
 use crate::{
-    scene::{prepare_raytracing_scene_resources, RaytracingSceneBindings},
     SolariPlugins,
+    scene::{RaytracingSceneBindings, prepare_raytracing_scene_resources},
 };
 use bevy_app::{App, Plugin, PostUpdate};
 use bevy_asset::embedded_asset;
@@ -26,10 +26,10 @@ use bevy_ecs::{
     system::{Commands, Query},
 };
 use bevy_pbr::DefaultOpaqueRendererMethod;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
-    init_gpu_resource, renderer::RenderDevice, ExtractSchedule, Render, RenderApp, RenderStartup,
-    RenderSystems,
+    ExtractSchedule, Render, RenderApp, RenderStartup, RenderSystems, init_gpu_resource,
+    renderer::RenderDevice,
 };
 use bevy_shader::load_shader_library;
 use extract::extract_solari_lighting;

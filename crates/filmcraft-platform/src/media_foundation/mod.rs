@@ -54,7 +54,9 @@ pub fn stream_info(entry: &filmcraft_isobmff::SampleEntry) -> Option<StreamInfo>
     use filmcraft_codecs::hw::{FrameStreamInfo, NalStreamInfo};
     match NalStreamInfo::from_entry(entry) {
         Some(r) => r.ok().map(StreamInfo::Nal),
-        None => FrameStreamInfo::from_entry(entry)?.ok().map(StreamInfo::Frame),
+        None => FrameStreamInfo::from_entry(entry)?
+            .ok()
+            .map(StreamInfo::Frame),
     }
 }
 
@@ -73,11 +75,21 @@ pub fn capabilities() -> String {
         Err(e) => return format!("no Media Foundation / Direct3D 11 video device: {e}"),
     };
     let mut out = format!("adapter: {}\n", gpu.name());
-    for (name, subtype) in
-        [("H.264", mf::MFVideoFormat_H264), ("HEVC", mf::MFVideoFormat_HEVC), ("VP9", mf::MFVideoFormat_VP90), ("AV1", mf::MFVideoFormat_AV1)]
-    {
+    for (name, subtype) in [
+        ("H.264", mf::MFVideoFormat_H264),
+        ("HEVC", mf::MFVideoFormat_HEVC),
+        ("VP9", mf::MFVideoFormat_VP90),
+        ("AV1", mf::MFVideoFormat_AV1),
+    ] {
         let list = mft::describe(api, subtype);
-        out += &format!("{name} decoder MFTs: {}\n", if list.is_empty() { "none".into() } else { list.join("; ") });
+        out += &format!(
+            "{name} decoder MFTs: {}\n",
+            if list.is_empty() {
+                "none".into()
+            } else {
+                list.join("; ")
+            }
+        );
     }
     let profiles = gpu.profiles();
     for (name, guid) in [
@@ -85,7 +97,10 @@ pub fn capabilities() -> String {
         ("HEVC Main", d3d::D3D11_DECODER_PROFILE_HEVC_VLD_MAIN),
         ("HEVC Main 10", d3d::D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10),
         ("VP9 profile 0", d3d::D3D11_DECODER_PROFILE_VP9_VLD_PROFILE0),
-        ("VP9 profile 2 (10-bit)", d3d::D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2),
+        (
+            "VP9 profile 2 (10-bit)",
+            d3d::D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2,
+        ),
         ("AV1 profile 0", d3d::D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0),
         ("AV1 profile 1", d3d::D3D11_DECODER_PROFILE_AV1_VLD_PROFILE1),
         ("AV1 profile 2", d3d::D3D11_DECODER_PROFILE_AV1_VLD_PROFILE2),
@@ -197,7 +212,13 @@ impl MfDecoder {
             return self.in_flight.swap_remove(i);
         }
         // the MFT restamped it: pictures come out in presentation order, so the earliest
-        match self.in_flight.iter().enumerate().min_by_key(|(_, p)| **p).map(|(i, _)| i) {
+        match self
+            .in_flight
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, p)| **p)
+            .map(|(i, _)| i)
+        {
             Some(i) => self.in_flight.swap_remove(i),
             None => t,
         }
@@ -209,7 +230,10 @@ impl MfDecoder {
         self.size_checked = true;
         let (_, _, w, h) = self.geometry.crop;
         match (&self.stream, self.mft.as_ref().and_then(Mft::output_size)) {
-            (Stream::Frame(_), Some(got)) if got != (w, h) => Err(format!("the decoder outputs {}x{} pictures, the stream says {w}x{h}", got.0, got.1)),
+            (Stream::Frame(_), Some(got)) if got != (w, h) => Err(format!(
+                "the decoder outputs {}x{} pictures, the stream says {w}x{h}",
+                got.0, got.1
+            )),
             _ => Ok(()),
         }
     }
@@ -217,7 +241,9 @@ impl MfDecoder {
     /// Take every picture the decoder has ready (presentation order).
     fn collect(&mut self, out: &mut Vec<DecodedFrame>) -> std::result::Result<(), String> {
         for _ in 0..MAX_OUTPUTS_PER_CALL {
-            let Some(mft) = self.mft.as_ref() else { return Ok(()) };
+            let Some(mft) = self.mft.as_ref() else {
+                return Ok(());
+            };
             match mft.poll()? {
                 Poll::NeedInput => return Ok(()),
                 Poll::FormatChanged => self.size_checked = false,
@@ -237,7 +263,11 @@ impl MfDecoder {
                     self.timings.convert += convert;
                     self.timings.readback += t0.elapsed().saturating_sub(convert);
                     let pts = self.take_pts(t);
-                    out.push(DecodedFrame { pts, frame, draft: false });
+                    out.push(DecodedFrame {
+                        pts,
+                        frame,
+                        draft: false,
+                    });
                 }
             }
         }
@@ -247,14 +277,19 @@ impl MfDecoder {
     fn feed(&mut self, annex_b: &[u8], pts: i64) -> std::result::Result<Vec<DecodedFrame>, String> {
         let mut out = Vec::new();
         for attempt in 0..2 {
-            let Some(mft) = self.mft.as_ref() else { return Err("no decoder".into()) };
+            let Some(mft) = self.mft.as_ref() else {
+                return Err("no decoder".into());
+            };
             if mft.input(self.api, annex_b, pts)? {
                 self.in_flight.push(pts);
                 self.need_headers = false;
                 self.collect(&mut out)?;
                 // a decoder holds back a DPB's worth of pictures at most
                 if self.in_flight.len() > MAX_IN_FLIGHT {
-                    return Err(format!("the decoder holds {} pictures back", self.in_flight.len()));
+                    return Err(format!(
+                        "the decoder holds {} pictures back",
+                        self.in_flight.len()
+                    ));
                 }
                 return Ok(out);
             }
@@ -272,7 +307,9 @@ impl VideoDecoder for MfDecoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
         self.fed += 1;
         if self.fail_after.is_some_and(|n| self.fed > n) {
-            return Err(CodecError::Decode("Media Foundation decoder failed (test hook)".into()));
+            return Err(CodecError::Decode(
+                "Media Foundation decoder failed (test hook)".into(),
+            ));
         }
         gpu::ensure_com().map_err(CodecError::Decode)?;
         if self.drained {
@@ -280,7 +317,9 @@ impl VideoDecoder for MfDecoder {
             // GOP cache seeks (`reset`) after every flush, so this is an error only for callers
             // that continue after one: the hybrid decoder then replays the run in software.
             if !self.stream.is_restart(sample) {
-                return Err(CodecError::Decode("the hardware decoder was drained and restarts only at an IDR picture".into()));
+                return Err(CodecError::Decode(
+                    "the hardware decoder was drained and restarts only at an IDR picture".into(),
+                ));
             }
             self.drained = false;
             self.first = true;
@@ -291,7 +330,10 @@ impl VideoDecoder for MfDecoder {
             let types = info.nal_types(sample);
             if types.iter().any(|t| (16..=23).contains(t)) {
                 // CRA / BLA starting a run: its RASL pictures reference pictures we never decoded.
-                self.skip_rasl = self.first && types.iter().any(|t| (16..=21).contains(t) && !(19..=20).contains(t));
+                self.skip_rasl = self.first
+                    && types
+                        .iter()
+                        .any(|t| (16..=21).contains(t) && !(19..=20).contains(t));
             } else if self.skip_rasl && types.iter().any(|t| matches!(t, 8 | 9)) {
                 self.first = false;
                 return Ok(Vec::new());
@@ -302,9 +344,13 @@ impl VideoDecoder for MfDecoder {
         if let Some(g) = self.stream.declared_picture(sample) {
             self.geometry = g;
         }
-        let annex_b = self.stream.input(sample, self.need_headers).map_err(CodecError::Decode)?;
+        let annex_b = self
+            .stream
+            .input(sample, self.need_headers)
+            .map_err(CodecError::Decode)?;
         if self.mft.is_none() {
-            let mft = Mft::new(self.api, &self.gpu, &self.stream.spec(self.format)).map_err(CodecError::Decode)?;
+            let mft = Mft::new(self.api, &self.gpu, &self.stream.spec(self.format))
+                .map_err(CodecError::Decode)?;
             self.mft = Some(mft);
             self.size_checked = false;
             self.need_headers = true;
@@ -324,7 +370,12 @@ impl VideoDecoder for MfDecoder {
         if gpu::ensure_com().is_err() {
             return out;
         }
-        let drained = self.mft.as_ref().map(Mft::drain).transpose().and_then(|_| self.collect(&mut out));
+        let drained = self
+            .mft
+            .as_ref()
+            .map(Mft::drain)
+            .transpose()
+            .and_then(|_| self.collect(&mut out));
         if let Err(e) = drained {
             log::warn!("{}: {e} while flushing", self.name);
         }

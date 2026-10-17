@@ -31,13 +31,18 @@ struct Checkpoint {
 
 impl std::fmt::Debug for Checkpoint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Checkpoint").field("undo_steps", &self.history.undo.len()).finish_non_exhaustive()
+        f.debug_struct("Checkpoint")
+            .field("undo_steps", &self.history.undo.len())
+            .finish_non_exhaustive()
     }
 }
 
 fn checkpoint(app: &mut EffectcraftApp) -> Checkpoint {
     app.session.history.merge_key = None;
-    Checkpoint { project: app.session.project.clone(), history: app.session.history.clone() }
+    Checkpoint {
+        project: app.session.project.clone(),
+        history: app.session.history.clone(),
+    }
 }
 
 /// Open the dialog on the first selected (or given) layer, showing `style` (a style id;
@@ -50,12 +55,21 @@ pub fn open(app: &mut EffectcraftApp, params: &Value) -> Result<(), String> {
         .or_else(|| app.session.state.selected_layers.first().map(|l| l.0))
         .filter(|l| comp.layer(LayerId(*l)).is_some())
         .ok_or("select a layer first")?;
-    let style = params.get("style").and_then(Value::as_str).unwrap_or(BLENDING).to_string();
+    let style = params
+        .get("style")
+        .and_then(Value::as_str)
+        .unwrap_or(BLENDING)
+        .to_string();
     if style != BLENDING && !STYLES.iter().any(|s| s.0 == style) {
         return Err(format!("unknown layer style `{style}`"));
     }
     let checkpoint = checkpoint(app);
-    app.dialog_state.layer_style = LayerStyleState { layer, selected: style, undo_mark: app.session.history.undo.len(), checkpoint: Some(checkpoint) };
+    app.dialog_state.layer_style = LayerStyleState {
+        layer,
+        selected: style,
+        undo_mark: app.session.history.undo.len(),
+        checkpoint: Some(checkpoint),
+    };
     app.dialog = Some(Dialog::LayerStyles);
     Ok(())
 }
@@ -63,13 +77,20 @@ pub fn open(app: &mut EffectcraftApp, params: &Value) -> Result<(), String> {
 /// Menu routing: choosing one of the Layer ▸ Layer Styles ▸ <style> items (no parameters) adds
 /// the style as usual and opens the dialog on it.
 pub fn route(app: &mut EffectcraftApp, id: &str, params: &Value) -> Result<bool, String> {
-    let Some(style) = id.strip_prefix("layer.style.").filter(|s| STYLES.iter().any(|x| x.0 == *s)) else { return Ok(false) };
+    let Some(style) = id
+        .strip_prefix("layer.style.")
+        .filter(|s| STYLES.iter().any(|x| x.0 == *s))
+    else {
+        return Ok(false);
+    };
     if !params.as_object().is_none_or(|m| m.is_empty()) {
         return Ok(false);
     }
     let mark = app.session.history.undo.len();
     let checkpoint = checkpoint(app);
-    app.session.execute(id, json!({})).map_err(|e| e.to_string())?;
+    app.session
+        .execute(id, json!({}))
+        .map_err(|e| e.to_string())?;
     open(app, &json!({"style": style}))?;
     // Cancel also removes the style just added.
     app.dialog_state.layer_style.undo_mark = mark;
@@ -78,7 +99,10 @@ pub fn route(app: &mut EffectcraftApp, id: &str, params: &Value) -> Result<bool,
 }
 
 fn layer(app: &EffectcraftApp) -> Option<Layer> {
-    app.session.active_comp()?.layer(LayerId(app.dialog_state.layer_style.layer)).cloned()
+    app.session
+        .active_comp()?
+        .layer(LayerId(app.dialog_state.layer_style.layer))
+        .cloned()
 }
 
 /// One control row for a property. Returns the new value when it changed.
@@ -90,23 +114,40 @@ fn control(ui: &mut egui::Ui, p: &Property, v: &KV) -> Option<Value> {
         }
         (KV::Enum(i), ParamUi::Popup { options }) => {
             let mut sel = *i as usize;
-            egui::ComboBox::from_id_salt(("ls-popup", p.uid)).selected_text(options.get(sel).cloned().unwrap_or_default()).show_ui(ui, |ui| {
-                for (k, o) in options.iter().enumerate() {
-                    ui.selectable_value(&mut sel, k, o);
-                }
-            });
+            egui::ComboBox::from_id_salt(("ls-popup", p.uid))
+                .selected_text(options.get(sel).cloned().unwrap_or_default())
+                .show_ui(ui, |ui| {
+                    for (k, o) in options.iter().enumerate() {
+                        ui.selectable_value(&mut sel, k, o);
+                    }
+                });
             (sel != *i as usize).then(|| json!(sel))
         }
         (KV::Scalar(x), ui_kind) => {
             let mut y = *x;
             let r = match ui_kind {
-                ParamUi::Slider { slider_min, slider_max, decimals, .. } => {
-                    ui.add(egui::Slider::new(&mut y, *slider_min..=*slider_max).clamping(egui::SliderClamping::Never).max_decimals(*decimals as usize))
-                }
-                ParamUi::Percent => ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut y).speed(0.5).suffix("%"))),
-                ParamUi::Angle => ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut y).speed(0.5).suffix("°"))),
-                ParamUi::Pixels => ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut y).speed(0.25).suffix(" px"))),
-                _ => ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut y).speed(0.1))),
+                ParamUi::Slider {
+                    slider_min,
+                    slider_max,
+                    decimals,
+                    ..
+                } => ui.add(
+                    egui::Slider::new(&mut y, *slider_min..=*slider_max)
+                        .clamping(egui::SliderClamping::Never)
+                        .max_decimals(*decimals as usize),
+                ),
+                ParamUi::Percent => ui.add(crate::widgets::drag_value(
+                    egui::DragValue::new(&mut y).speed(0.5).suffix("%"),
+                )),
+                ParamUi::Angle => ui.add(crate::widgets::drag_value(
+                    egui::DragValue::new(&mut y).speed(0.5).suffix("°"),
+                )),
+                ParamUi::Pixels => ui.add(crate::widgets::drag_value(
+                    egui::DragValue::new(&mut y).speed(0.25).suffix(" px"),
+                )),
+                _ => ui.add(crate::widgets::drag_value(
+                    egui::DragValue::new(&mut y).speed(0.1),
+                )),
             };
             (r.changed() && y != *x).then(|| json!(y))
         }
@@ -120,7 +161,9 @@ fn control(ui: &mut egui::Ui, p: &Property, v: &KV) -> Option<Value> {
             None
         }
         _ => {
-            ui.label(egui::RichText::new(format!("{v:?}").chars().take(24).collect::<String>()).weak());
+            ui.label(
+                egui::RichText::new(format!("{v:?}").chars().take(24).collect::<String>()).weak(),
+            );
             None
         }
     }
@@ -138,8 +181,13 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
     let lt = l.layer_time(time);
     let mut actions: Vec<(String, Value)> = Vec::new();
     let mut close: Option<bool> = None;
-    super::dialogs::modal(ctx, &format!("Layer Style — {}", l.name), vec2(720.0, 520.0), t, |ui| {
-        ui.horizontal_top(|ui| {
+    super::dialogs::modal(
+        ctx,
+        &format!("Layer Style — {}", l.name),
+        vec2(720.0, 520.0),
+        t,
+        |ui| {
+            ui.horizontal_top(|ui| {
             // Style list.
             ui.vertical(|ui| {
                 ui.set_width(200.0);
@@ -202,21 +250,23 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
                 });
             });
         });
-        ui.add_space(8.0);
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let ok = ui.button(tr("OK"));
-            app.auto.add("dialog.layerStyle.ok", ok.rect, "OK");
-            if ok.clicked() {
-                close = Some(true);
-            }
-            let cancel = ui.button(tr("Cancel"));
-            app.auto.add("dialog.layerStyle.cancel", cancel.rect, "Cancel");
-            if cancel.clicked() {
-                close = Some(false);
-            }
-            let _ = Align2::LEFT_CENTER;
-        });
-    });
+            ui.add_space(8.0);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let ok = ui.button(tr("OK"));
+                app.auto.add("dialog.layerStyle.ok", ok.rect, "OK");
+                if ok.clicked() {
+                    close = Some(true);
+                }
+                let cancel = ui.button(tr("Cancel"));
+                app.auto
+                    .add("dialog.layerStyle.cancel", cancel.rect, "Cancel");
+                if cancel.clicked() {
+                    close = Some(false);
+                }
+                let _ = Align2::LEFT_CENTER;
+            });
+        },
+    );
     for (id, p) in actions {
         if let Err(e) = app.session.execute(&id, p) {
             app.ui.status = e.to_string();

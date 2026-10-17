@@ -24,7 +24,10 @@ impl OpfsVfs {
     /// Create an empty filesystem.
     #[must_use]
     pub fn new() -> Self {
-        Self { inner: MemVfs::new(), dirty: false }
+        Self {
+            inner: MemVfs::new(),
+            dirty: false,
+        }
     }
 
     /// Restore a previously persisted image. An empty byte slice creates a new filesystem.
@@ -77,7 +80,10 @@ impl OpfsVfs {
         if !cursor.done() {
             return Err(VfsError::InvalidInput);
         }
-        Ok(Self { inner: fs, dirty: false })
+        Ok(Self {
+            inner: fs,
+            dirty: false,
+        })
     }
 
     /// Serialize all files and directories. The checksum detects torn writes.
@@ -94,7 +100,9 @@ impl OpfsVfs {
         for (kind, path_bytes, data) in entries {
             let path_len = u32::try_from(path_bytes.len()).map_err(|_| VfsError::QuotaExceeded)?;
             let data_len = u32::try_from(data.len()).map_err(|_| VfsError::QuotaExceeded)?;
-            let entry_len = 9usize.saturating_add(path_bytes.len()).saturating_add(data.len());
+            let entry_len = 9usize
+                .saturating_add(path_bytes.len())
+                .saturating_add(data.len());
             if out.len().saturating_add(entry_len).saturating_add(4) > MAX_IMAGE_BYTES {
                 return Err(VfsError::QuotaExceeded);
             }
@@ -132,7 +140,7 @@ fn collect(
             FileKind::Dir => {
                 entries.push((0, child.clone(), Vec::new()));
                 collect(fs, &child, entries)?;
-            },
+            }
             FileKind::File => entries.push((1, child.clone(), fs.read(&child)?)),
         }
     }
@@ -154,7 +162,11 @@ impl<'a> Cursor<'a> {
         Ok(slice)
     }
     fn u32(&mut self) -> VfsResult<u32> {
-        Ok(u32::from_le_bytes(self.take(4)?.try_into().map_err(|_| VfsError::InvalidInput)?))
+        Ok(u32::from_le_bytes(
+            self.take(4)?
+                .try_into()
+                .map_err(|_| VfsError::InvalidInput)?,
+        ))
     }
     fn done(&self) -> bool {
         self.at == self.bytes.len()
@@ -212,7 +224,11 @@ impl SharedOpfsVfs {
     /// Returns the same size errors as [`OpfsVfs::image`].
     pub fn image_if_dirty(&self) -> VfsResult<Option<Vec<u8>>> {
         let mut fs = self.0.borrow_mut();
-        if fs.dirty() { Ok(Some(fs.image()?)) } else { Ok(None) }
+        if fs.dirty() {
+            Ok(Some(fs.image()?))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Acknowledge successful OPFS flush.
@@ -290,6 +306,9 @@ mod tests {
         let image = shared.image_if_dirty().unwrap().unwrap();
         shared.mark_persisted();
         assert!(shared.image_if_dirty().unwrap().is_none());
-        assert_eq!(OpfsVfs::from_image(&image).unwrap().read(b"/f").unwrap(), b"x");
+        assert_eq!(
+            OpfsVfs::from_image(&image).unwrap().read(b"/f").unwrap(),
+            b"x"
+        );
     }
 }

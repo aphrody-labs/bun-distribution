@@ -19,18 +19,30 @@ fn app(dir: &std::path::Path, web: bool) -> (VectorcraftApp, Log) {
     let (l1, l2) = (log.clone(), log.clone());
     let dir = dir.to_string_lossy().replace('\\', "/");
     let mut services = Services {
-        pick_save: Some(Box::new(move |p: &crate::FilePick| Some(format!("{dir}/{}", p.name)))),
-        open_url: Some(Box::new(move |u: &str| l1.borrow_mut().push(format!("open {u}")))),
+        pick_save: Some(Box::new(move |p: &crate::FilePick| {
+            Some(format!("{dir}/{}", p.name))
+        })),
+        open_url: Some(Box::new(move |u: &str| {
+            l1.borrow_mut().push(format!("open {u}"))
+        })),
         ..Default::default()
     };
     if web {
-        services.download = Some(Box::new(move |name: &str, b: &[u8]| l2.borrow_mut().push(format!("download {name} {}", b.len()))));
+        services.download = Some(Box::new(move |name: &str, b: &[u8]| {
+            l2.borrow_mut().push(format!("download {name} {}", b.len()))
+        }));
     }
     let mut app = VectorcraftApp::new(Session::new(), services);
-    app.run("file.new", json!({"width": 60, "height": 40})).unwrap();
+    app.run("file.new", json!({"width": 60, "height": 40}))
+        .unwrap();
     app.run("paint.setStroke", json!({"none": true})).unwrap();
-    app.run("shape.ellipse", json!({"x": 5, "y": 4, "width": 30, "height": 20})).unwrap();
-    app.run("paint.setFill", json!({"color": "#cc3300"})).unwrap();
+    app.run(
+        "shape.ellipse",
+        json!({"x": 5, "y": 4, "width": 30, "height": 20}),
+    )
+    .unwrap();
+    app.run("paint.setFill", json!({"color": "#cc3300"}))
+        .unwrap();
     (app, log)
 }
 
@@ -38,13 +50,19 @@ fn app(dir: &std::path::Path, web: bool) -> (VectorcraftApp, Log) {
 fn every_view_and_format_draws() {
     let dir = vectorcraft_testkit::temp_dir("sfw-views");
     let (mut app, _) = app(&dir, false);
-    assert_eq!(crate::menus::shortcut_of("file.saveForWeb"), Some("Cmd+Alt+Shift+S"));
+    assert_eq!(
+        crate::menus::shortcut_of("file.saveForWeb"),
+        Some("Cmd+Alt+Shift+S")
+    );
     assert!(crate::menus::enabled(&app, "file.saveForWeb"));
     assert_eq!((spec(save_for_web::KIND).ok_label.unwrap())(&app), "Save…");
     app.run("file.saveForWeb", json!({})).unwrap();
     assert_eq!(kind(&app), Some(save_for_web::KIND));
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("format"), d.str("__view"), d.f64("colors", 0.0)), ("gif".into(), "2up".into(), 128.0));
+    assert_eq!(
+        (d.str("format"), d.str("__view"), d.f64("colors", 0.0)),
+        ("gif".into(), "2up".into(), 128.0)
+    );
     for view in ["original", "optimized", "2up", "4up"] {
         set(&mut app, "__view", json!(view));
         for format in ["gif", "jpg", "png8", "png24"] {
@@ -73,7 +91,10 @@ fn save_remembers_and_writes_and_done_only_remembers() {
     set(&mut app, "preset", json!("JPEG, quality 50"));
     frame(&mut app);
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("format"), d.f64("quality", 0.0)), ("jpg".into(), 50.0));
+    assert_eq!(
+        (d.str("format"), d.f64("quality", 0.0)),
+        ("jpg".into(), 50.0)
+    );
     assert!(!d.fields.contains_key("preset"));
     set(&mut app, "quality", json!(70));
     let r = confirm(&mut app).unwrap();
@@ -89,7 +110,10 @@ fn save_remembers_and_writes_and_done_only_remembers() {
     set(&mut app, "discard", json!(true));
     assert_eq!(confirm(&mut app).unwrap()["remembered"], true);
     assert!(app.ui.dialog.is_none());
-    assert_eq!(app.session.last_web_settings().format, vectorcraft_engine::cmd::webexport::WebFormat::Png24);
+    assert_eq!(
+        app.session.last_web_settings().format,
+        vectorcraft_engine::cmd::webexport::WebFormat::Png24
+    );
     assert!(!dir.join("Untitled-1.png").exists());
     // Bad settings keep the dialog open, with nothing written.
     app.run("file.saveForWeb", json!({})).unwrap();
@@ -102,15 +126,26 @@ fn save_remembers_and_writes_and_done_only_remembers() {
 fn html_output_with_slices_saves_the_page_and_images() {
     let dir = vectorcraft_testkit::temp_dir("sfw-html");
     let (mut app, _) = app(&dir, false);
-    app.run("object.slice.create", json!({"x": 0, "y": 0, "width": 30, "height": 20})).unwrap();
+    app.run(
+        "object.slice.create",
+        json!({"x": 0, "y": 0, "width": 30, "height": 20}),
+    )
+    .unwrap();
     app.run("file.saveForWeb", json!({})).unwrap();
     assert!(app.ui.dialog.as_ref().unwrap().bool("__hasSlices"));
     set(&mut app, "output", json!("html"));
     frame(&mut app);
     let r = confirm(&mut app).unwrap();
-    let n = app.session.execute("slice.list", &json!({})).unwrap()["slices"].as_array().unwrap().len();
+    let n = app.session.execute("slice.list", &json!({})).unwrap()["slices"]
+        .as_array()
+        .unwrap()
+        .len();
     assert_eq!(r["files"].as_array().unwrap().len(), n + 1);
-    assert!(std::fs::read_to_string(dir.join("Untitled-1.html")).unwrap().contains("images/Untitled-1_01.gif"));
+    assert!(
+        std::fs::read_to_string(dir.join("Untitled-1.html"))
+            .unwrap()
+            .contains("images/Untitled-1_01.gif")
+    );
     assert!(dir.join("images/Untitled-1_01.gif").exists());
 }
 
@@ -118,11 +153,26 @@ fn html_output_with_slices_saves_the_page_and_images() {
 fn the_web_downloads_and_has_no_browser_preview() {
     let dir = vectorcraft_testkit::temp_dir("sfw-web");
     let (mut app, log) = app(&dir, true);
-    assert_eq!((spec(save_for_web::KIND).ok_label.unwrap())(&app), "Download");
-    let r = app.run("file.saveForWeb", json!({"format": "png8", "output": "html"})).unwrap();
-    assert_eq!(r["files"], json!(["Untitled-1.html", "images/Untitled-1.png"]));
+    assert_eq!(
+        (spec(save_for_web::KIND).ok_label.unwrap())(&app),
+        "Download"
+    );
+    let r = app
+        .run(
+            "file.saveForWeb",
+            json!({"format": "png8", "output": "html"}),
+        )
+        .unwrap();
+    assert_eq!(
+        r["files"],
+        json!(["Untitled-1.html", "images/Untitled-1.png"])
+    );
     let log = log.borrow().clone();
-    assert!(log[0].starts_with("download Untitled-1.html ") && log[1].starts_with("download Untitled-1.png "), "{log:?}");
+    assert!(
+        log[0].starts_with("download Untitled-1.html ")
+            && log[1].starts_with("download Untitled-1.png "),
+        "{log:?}"
+    );
     assert!(app.run("file.saveForWeb.browser", json!({})).is_err());
 }
 
@@ -130,12 +180,22 @@ fn the_web_downloads_and_has_no_browser_preview() {
 fn preview_in_browser_opens_the_page() {
     let dir = vectorcraft_testkit::temp_dir("sfw-browser");
     let (mut app, log) = app(&dir, false);
-    let r = app.run("file.saveForWeb.browser", json!({"format": "jpg"})).unwrap();
+    let r = app
+        .run("file.saveForWeb.browser", json!({"format": "jpg"}))
+        .unwrap();
     let page = r["path"].as_str().unwrap().to_string();
     assert!(page.ends_with("/Untitled-1.html"));
-    assert!(std::fs::read_to_string(&page).unwrap().contains("images/Untitled-1.jpg"));
+    assert!(
+        std::fs::read_to_string(&page)
+            .unwrap()
+            .contains("images/Untitled-1.jpg")
+    );
     let log = log.borrow();
-    assert!(log.last().unwrap().starts_with("open file://") && log.last().unwrap().ends_with("Untitled-1.html"), "{log:?}");
+    assert!(
+        log.last().unwrap().starts_with("open file://")
+            && log.last().unwrap().ends_with("Untitled-1.html"),
+        "{log:?}"
+    );
 }
 
 #[test]
@@ -144,8 +204,14 @@ fn colour_table_buttons_edit_the_lists() {
     save_for_web::toggle(&mut d, "locked", "#cc3300", true);
     save_for_web::toggle(&mut d, "webShift", "#123456", true);
     save_for_web::toggle(&mut d, "locked", "#CC3300", true);
-    assert_eq!(d.fields["colorTable"], json!({"locked": ["#cc3300"], "webShift": ["#123456"]}));
+    assert_eq!(
+        d.fields["colorTable"],
+        json!({"locked": ["#cc3300"], "webShift": ["#123456"]})
+    );
     save_for_web::toggle(&mut d, "locked", "#cc3300", false);
     save_for_web::set_table(&mut d, "sort", json!("hue"));
-    assert_eq!(d.fields["colorTable"], json!({"locked": [], "webShift": ["#123456"], "sort": "hue"}));
+    assert_eq!(
+        d.fields["colorTable"],
+        json!({"locked": [], "webShift": ["#123456"], "sort": "hue"})
+    );
 }

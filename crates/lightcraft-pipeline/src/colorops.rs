@@ -4,7 +4,9 @@
 use std::f32::consts::{PI, TAU};
 use std::sync::OnceLock;
 
-use lightcraft_color::perceptual::{hsv_to_rgb, lab_to_lch, lch_to_lab, oklab_from_2020, oklab_to_2020};
+use lightcraft_color::perceptual::{
+    hsv_to_rgb, lab_to_lch, lch_to_lab, oklab_from_2020, oklab_to_2020,
+};
 use lightcraft_color::{Mat3, REC2020, SRGB};
 use lightcraft_develop::{Calibration, DevelopSettings, MIXER_HUES, PointColor};
 
@@ -95,7 +97,9 @@ impl PointK {
     }
 
     pub fn words(&self) -> [f32; POINT_WORDS] {
-        [self.l, self.c, self.h, self.dh, self.sat, self.dl, self.var, self.wh, self.wc, self.wl]
+        [
+            self.l, self.c, self.h, self.dh, self.sat, self.dl, self.var, self.wh, self.wc, self.wl,
+        ]
     }
 
     /// How much an OkLCh colour belongs to this sample's range (0..1, soft edges).
@@ -103,7 +107,11 @@ impl PointK {
     pub fn weight(&self, l: f32, c: f32, h: f32) -> f32 {
         // hue is meaningless for near-neutral colours: a chromatic sample ignores them, a
         // near-neutral sample selects by chroma and lightness only
-        let wh = if self.c < 0.02 { 1.0 } else { (1.0 - smooth(0.5 * self.wh, self.wh, wrap(h - self.h).abs())) * smooth(0.005, 0.025, c) };
+        let wh = if self.c < 0.02 {
+            1.0
+        } else {
+            (1.0 - smooth(0.5 * self.wh, self.wh, wrap(h - self.h).abs())) * smooth(0.005, 0.025, c)
+        };
         if wh <= 0.0 {
             return 0.0;
         }
@@ -149,7 +157,11 @@ pub struct ColorOps {
 fn wheel(w: &lightcraft_develop::Wheel) -> WheelK {
     let h = oklch_hue_of_srgb_hue(w.hue);
     let s = (w.sat / 100.0) as f32 * 0.09;
-    WheelK { a: s * h.cos(), b: s * h.sin(), lum: (w.lum / 100.0) as f32 * 0.12 }
+    WheelK {
+        a: s * h.cos(),
+        b: s * h.sin(),
+        lum: (w.lum / 100.0) as f32 * 0.12,
+    }
 }
 
 impl ColorOps {
@@ -166,12 +178,22 @@ impl ColorOps {
             points: if crate::is_bw(s) {
                 Vec::new()
             } else {
-                s.point_colors.iter().take(lightcraft_develop::MAX_POINT_COLORS).filter(|p| !p.is_neutral()).map(PointK::new).collect()
+                s.point_colors
+                    .iter()
+                    .take(lightcraft_develop::MAX_POINT_COLORS)
+                    .filter(|p| !p.is_neutral())
+                    .map(PointK::new)
+                    .collect()
             },
             bw: crate::is_bw(s).then(|| s.bw_mix.bands().map(|v| (v / 100.0) as f32)),
             grading: (!g.is_neutral()).then(|| {
                 (
-                    [wheel(&g.shadows), wheel(&g.midtones), wheel(&g.highlights), wheel(&g.global)],
+                    [
+                        wheel(&g.shadows),
+                        wheel(&g.midtones),
+                        wheel(&g.highlights),
+                        wheel(&g.global),
+                    ],
                     (g.blending / 100.0) as f32,
                     (g.balance / 100.0) as f32,
                 )
@@ -181,7 +203,12 @@ impl ColorOps {
     }
 
     pub fn is_identity(&self) -> bool {
-        self.vibrance == 0.0 && self.saturation == 0.0 && !self.mixer && self.points.is_empty() && self.bw.is_none() && self.grading.is_none()
+        self.vibrance == 0.0
+            && self.saturation == 0.0
+            && !self.mixer
+            && self.points.is_empty()
+            && self.bw.is_none()
+            && self.grading.is_none()
     }
 
     /// `local_sat` (−1..1) and `local_hue` (radians) come from masks.
@@ -199,7 +226,11 @@ impl ColorOps {
             let mut c = c0;
             if self.vibrance != 0.0 {
                 let low = 1.0 - (c / 0.22).clamp(0.0, 1.0);
-                let skin = if self.vibrance > 0.0 { 1.0 - 0.6 * (-(wrap(lab[2].atan2(lab[1]) - self.skin) / 0.35).powi(2)).exp() } else { 1.0 };
+                let skin = if self.vibrance > 0.0 {
+                    1.0 - 0.6 * (-(wrap(lab[2].atan2(lab[1]) - self.skin) / 0.35).powi(2)).exp()
+                } else {
+                    1.0
+                };
                 c *= (1.0 + self.vibrance * low * low * skin * 1.2).max(0.0);
             }
             if self.saturation != 0.0 || local_sat != 0.0 {
@@ -231,7 +262,11 @@ impl ColorOps {
         }
         if self.vibrance != 0.0 {
             let low = 1.0 - (c / 0.22).clamp(0.0, 1.0);
-            let skin = if self.vibrance > 0.0 { 1.0 - 0.6 * (-(wrap(h - self.skin) / 0.35).powi(2)).exp() } else { 1.0 };
+            let skin = if self.vibrance > 0.0 {
+                1.0 - 0.6 * (-(wrap(h - self.skin) / 0.35).powi(2)).exp()
+            } else {
+                1.0
+            };
             c *= (1.0 + self.vibrance * low * low * skin * 1.2).max(0.0);
         }
         if self.saturation != 0.0 || local_sat != 0.0 {
@@ -293,7 +328,9 @@ pub fn calibration_matrix(c: &Calibration) -> Option<[[f32; 3]; 3]> {
     }
     let m = Mat3(p);
     let k = m.inverse()?.apply([1.0, 1.0, 1.0]);
-    Some(std::array::from_fn(|r| std::array::from_fn(|col| (p[r][col] * k[col]) as f32)))
+    Some(std::array::from_fn(|r| {
+        std::array::from_fn(|col| (p[r][col] * k[col]) as f32)
+    }))
 }
 
 /// Shadows-tint strength at ±100: the green channel's relative change in deep shadows.
@@ -353,8 +390,14 @@ mod tests {
         let mut s = DevelopSettings::default();
         s.color.saturation = -100.0;
         let g = ColorOps::new(&s).apply([0.4, 0.1, 0.05], 0.0, 0.0);
-        assert!((g[0] - g[1]).abs() < 1e-3 && (g[1] - g[2]).abs() < 1e-3, "{g:?}");
-        let mut s = DevelopSettings { treatment: lightcraft_develop::Treatment::Bw, ..Default::default() };
+        assert!(
+            (g[0] - g[1]).abs() < 1e-3 && (g[1] - g[2]).abs() < 1e-3,
+            "{g:?}"
+        );
+        let mut s = DevelopSettings {
+            treatment: lightcraft_develop::Treatment::Bw,
+            ..Default::default()
+        };
         let ops = ColorOps::new(&s);
         let b = ops.apply([0.05, 0.1, 0.5], 0.0, 0.0);
         assert!((b[0] - b[2]).abs() < 1e-3);
@@ -381,7 +424,11 @@ mod tests {
     #[test]
     fn calibration_keeps_white_and_moves_primaries() {
         assert!(calibration_matrix(&Calibration::default()).is_none());
-        let cal = Calibration { red_hue: 60.0, blue_sat: -50.0, ..Default::default() };
+        let cal = Calibration {
+            red_hue: 60.0,
+            blue_sat: -50.0,
+            ..Default::default()
+        };
         let m = calibration_matrix(&cal).unwrap();
         let grey = calibrate([0.3, 0.3, 0.3], Some(&m), 0.0);
         assert!(grey.iter().all(|v| (v - 0.3).abs() < 1e-4), "{grey:?}");
@@ -412,8 +459,14 @@ mod tests {
     fn point_color_targets_its_range() {
         let skin = [0.35, 0.16, 0.09];
         let [l, c, h] = lab_to_lch(oklab_from_2020(skin));
-        let sample =
-            PointColor { lum: l as f64, chroma: c as f64, hue: (h as f64).to_degrees(), hue_shift: 60.0, sat_shift: -50.0, ..Default::default() };
+        let sample = PointColor {
+            lum: l as f64,
+            chroma: c as f64,
+            hue: (h as f64).to_degrees(),
+            hue_shift: 60.0,
+            sat_shift: -50.0,
+            ..Default::default()
+        };
         let mut s = DevelopSettings::default();
         s.point_colors.push(sample);
         let ops = ColorOps::new(&s);
@@ -423,24 +476,43 @@ mod tests {
         // far colours are untouched
         for far in [[0.02, 0.05, 0.4], [0.05, 0.3, 0.05], [0.3, 0.3, 0.3]] {
             let o = ops.apply(far, 0.0, 0.0);
-            assert!(far.iter().zip(&o).all(|(a, b)| (a - b).abs() < 1e-4), "{far:?} -> {o:?}");
+            assert!(
+                far.iter().zip(&o).all(|(a, b)| (a - b).abs() < 1e-4),
+                "{far:?} -> {o:?}"
+            );
         }
         // weight: 1 at the sample, falling to 0 outside the range; a wider range reaches further
         let k = PointK::new(&sample);
         assert!((k.weight(l, c, h) - 1.0).abs() < 1e-6);
         assert_eq!(k.weight(l, c, h + 1.0), 0.0);
-        let wide = PointK::new(&PointColor { range: 100.0, ..sample });
+        let wide = PointK::new(&PointColor {
+            range: 100.0,
+            ..sample
+        });
         assert!(wide.weight(l, c, h + 0.45) > k.weight(l, c, h + 0.45));
     }
 
     #[test]
     fn point_color_variance_compresses_towards_the_sample() {
-        let p = PointColor { lum: 0.6, chroma: 0.1, hue: 40.0, variance: -100.0, range: 100.0, ..Default::default() };
+        let p = PointColor {
+            lum: 0.6,
+            chroma: 0.1,
+            hue: 40.0,
+            variance: -100.0,
+            range: 100.0,
+            ..Default::default()
+        };
         let k = PointK::new(&p);
         let (h0, near) = (40f32.to_radians(), 40f32.to_radians() + 0.1);
         let o = k.apply([0.62, 0.11, near]);
-        assert!((o[2] - h0).abs() < 0.1 && (o[1] - 0.1).abs() < 0.01 && (o[0] - 0.6).abs() < 0.02, "{o:?}");
-        let k = PointK::new(&PointColor { variance: 100.0, ..p });
+        assert!(
+            (o[2] - h0).abs() < 0.1 && (o[1] - 0.1).abs() < 0.01 && (o[0] - 0.6).abs() < 0.02,
+            "{o:?}"
+        );
+        let k = PointK::new(&PointColor {
+            variance: 100.0,
+            ..p
+        });
         let o = k.apply([0.62, 0.11, near]);
         assert!(o[2] - h0 > 0.1, "{o:?}");
     }
@@ -448,7 +520,11 @@ mod tests {
     #[test]
     fn grading_tints_shadows_only() {
         let mut s = DevelopSettings::default();
-        s.grading.shadows = lightcraft_develop::Wheel { hue: 220.0, sat: 60.0, lum: 0.0 };
+        s.grading.shadows = lightcraft_develop::Wheel {
+            hue: 220.0,
+            sat: 60.0,
+            lum: 0.0,
+        };
         let ops = ColorOps::new(&s);
         let dark = ops.apply([0.01, 0.01, 0.01], 0.0, 0.0);
         let bright = ops.apply([0.8, 0.8, 0.8], 0.0, 0.0);

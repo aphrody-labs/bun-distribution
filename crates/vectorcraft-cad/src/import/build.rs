@@ -9,7 +9,10 @@ use std::sync::Arc;
 
 use kurbo::BezPath;
 use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{Appearance, AppearanceItem, CharStyle, Dash, Document, LAYER_COLORS, LayerColor, LineCap, Node, NodeKind, Symbol, TextObject};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, CharStyle, Dash, Document, LAYER_COLORS, LayerColor, LineCap, Node,
+    NodeKind, Symbol, TextObject,
+};
 use vectorcraft_geom::{Affine, FillRule, PathData, Point, Rect};
 
 use super::ImportOptions;
@@ -125,15 +128,31 @@ impl<'d, 'a> Build<'d, 'a> {
 
     /// Import `layout`; `natural` and `ratio` are points per drawing unit in the drawing's own
     /// unit and at the scale asked for (fitting computes its own).
-    pub fn run(mut self, layout: &LayoutDef, natural: f64, ratio: f64) -> Result<(Document, Vec<String>), String> {
+    pub fn run(
+        mut self,
+        layout: &LayoutDef,
+        natural: f64,
+        ratio: f64,
+    ) -> Result<(Document, Vec<String>), String> {
         let items = self.conv.items(&self.d.layout_records(layout));
-        let bounds = items.iter().fold(None, |acc, it| vectorcraft_geom::union_opt(acc, self.item_bounds(it, 0)));
+        let bounds = items.iter().fold(None, |acc, it| {
+            vectorcraft_geom::union_opt(acc, self.item_bounds(it, 0))
+        });
         let (k, size, offset) = self.placement(bounds, natural, ratio)?;
         self.map = Affine::new([k, 0.0, 0.0, -k, offset.x, offset.y]);
         self.symbol_map = Affine::new([k, 0.0, 0.0, -k, 0.0, 0.0]);
-        self.lw_scale = if self.o.scale_lineweights { k / natural } else { 1.0 };
+        self.lw_scale = if self.o.scale_lineweights {
+            k / natural
+        } else {
+            1.0
+        };
         let layers = self.layers(&items);
-        let Self { mut doc, conv, warnings: notes, .. } = self;
+        let Self {
+            mut doc,
+            conv,
+            warnings: notes,
+            ..
+        } = self;
         if !layers.is_empty() {
             doc.layers = layers;
         }
@@ -144,8 +163,15 @@ impl<'d, 'a> Build<'d, 'a> {
         let mut warnings = conv.warnings;
         warnings.extend(notes);
         if !conv.skipped.is_empty() {
-            let list: Vec<String> = conv.skipped.iter().map(|(k, n)| format!("{n} {k}")).collect();
-            warnings.push(format!("entities of these types are left out: {}", list.join(", ")));
+            let list: Vec<String> = conv
+                .skipped
+                .iter()
+                .map(|(k, n)| format!("{n} {k}"))
+                .collect();
+            warnings.push(format!(
+                "entities of these types are left out: {}",
+                list.join(", ")
+            ));
         }
         if bounds.is_none() {
             warnings.push(format!("the {} layout has no art", layout.name));
@@ -154,12 +180,21 @@ impl<'d, 'a> Build<'d, 'a> {
     }
 
     /// Points per drawing unit, the artboard's size, and where the drawing's origin goes.
-    fn placement(&self, bounds: Option<Rect>, natural: f64, ratio: f64) -> Result<(f64, vectorcraft_geom::Size, Point), String> {
+    fn placement(
+        &self,
+        bounds: Option<Rect>,
+        natural: f64,
+        ratio: f64,
+    ) -> Result<(f64, vectorcraft_geom::Size, Point), String> {
         let b = bounds.unwrap_or(Rect::ZERO);
         let k = if self.o.fit {
             let (w, h) = self.fit_box(b);
             let ratio = |a: f64, b: f64| (b > 1e-12).then(|| a / b);
-            [ratio(w, b.width()), ratio(h, b.height())].into_iter().flatten().reduce(f64::min).unwrap_or(natural)
+            [ratio(w, b.width()), ratio(h, b.height())]
+                .into_iter()
+                .flatten()
+                .reduce(f64::min)
+                .unwrap_or(natural)
         } else {
             ratio
         };
@@ -175,14 +210,21 @@ impl<'d, 'a> Build<'d, 'a> {
         // Centred: the art's centre on the artboard's; else the drawing's origin (fitted art: its
         // bottom-left corner) on the artboard's bottom-left corner.
         let offset = if self.o.center {
-            Point::new(size.width / 2.0 - b.center().x * k, size.height / 2.0 + b.center().y * k)
+            Point::new(
+                size.width / 2.0 - b.center().x * k,
+                size.height / 2.0 + b.center().y * k,
+            )
         } else if self.o.fit {
             Point::new(-b.x0 * k, size.height + b.y0 * k)
         } else {
             Point::new(0.0, size.height)
         };
-        let corners = [Point::new(b.x0, b.y0), Point::new(b.x1, b.y1)].map(|p| Point::new(p.x * k + offset.x, -p.y * k + offset.y));
-        let fits = corners.iter().all(|p| p.x.abs() <= MAX_EXTENT && p.y.abs() <= MAX_EXTENT) && size.width.max(size.height) <= MAX_EXTENT;
+        let corners = [Point::new(b.x0, b.y0), Point::new(b.x1, b.y1)]
+            .map(|p| Point::new(p.x * k + offset.x, -p.y * k + offset.y));
+        let fits = corners
+            .iter()
+            .all(|p| p.x.abs() <= MAX_EXTENT && p.y.abs() <= MAX_EXTENT)
+            && size.width.max(size.height) <= MAX_EXTENT;
         if !fits {
             let (w, h) = (b.width() * k, b.height() * k);
             return Err(format!(
@@ -195,7 +237,11 @@ impl<'d, 'a> Build<'d, 'a> {
     /// The box Fit to Artboard fills, turned to the art's orientation.
     fn fit_box(&self, b: Rect) -> (f64, f64) {
         let (w, h) = self.o.fit_to;
-        if (b.width() > b.height()) == (w > h) { (w, h) } else { (h, w) }
+        if (b.width() > b.height()) == (w > h) {
+            (w, h)
+        } else {
+            (h, w)
+        }
     }
 
     // ---------- blocks ----------
@@ -234,7 +280,9 @@ impl<'d, 'a> Build<'d, 'a> {
         if !self.enter(name, depth) {
             return None;
         }
-        let b = items.iter().fold(None, |acc, it| vectorcraft_geom::union_opt(acc, self.item_bounds(it, depth + 1)));
+        let b = items.iter().fold(None, |acc, it| {
+            vectorcraft_geom::union_opt(acc, self.item_bounds(it, depth + 1))
+        });
         self.stack.pop();
         let base = self.d.blocks.get(name).map_or(Point::ZERO, |b| b.base);
         let b = b.map(|r| r - base.to_vec2());
@@ -252,7 +300,11 @@ impl<'d, 'a> Build<'d, 'a> {
                 let natural = longest * t.height * 0.9 * t.width;
                 // Fit and aligned text run their span; aligned text's height scales with it.
                 let k = t.span.and_then(|sp| sp.scale(natural)).unwrap_or(1.0);
-                let height = if matches!(t.span, Some(Span::Aligned(_))) { t.height * k } else { t.height };
+                let height = if matches!(t.span, Some(Span::Aligned(_))) {
+                    t.height * k
+                } else {
+                    t.height
+                };
                 let w = natural * k;
                 let x0 = match t.justify {
                     vectorcraft_doc::Justify::Center => -w / 2.0,
@@ -264,9 +316,18 @@ impl<'d, 'a> Build<'d, 'a> {
             }
             Geom::Insert(ins) => {
                 let b = self.block_bounds(&ins.block, depth);
-                let cells = b.into_iter().flat_map(|b| ins.cells.iter().map(move |m| m.transform_rect_bbox(b)));
-                let attribs: Vec<Option<Rect>> = ins.attribs.iter().map(|a| self.item_bounds(a, depth)).collect();
-                cells.map(Some).chain(attribs).fold(None, vectorcraft_geom::union_opt)
+                let cells = b
+                    .into_iter()
+                    .flat_map(|b| ins.cells.iter().map(move |m| m.transform_rect_bbox(b)));
+                let attribs: Vec<Option<Rect>> = ins
+                    .attribs
+                    .iter()
+                    .map(|a| self.item_bounds(a, depth))
+                    .collect();
+                cells
+                    .map(Some)
+                    .chain(attribs)
+                    .fold(None, vectorcraft_geom::union_opt)
             }
         }
         .filter(|r| [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite()))
@@ -277,7 +338,9 @@ impl<'d, 'a> Build<'d, 'a> {
         if let Some(s) = self.sensitive.get(name) {
             return *s;
         }
-        let Some(items) = self.block(name) else { return false };
+        let Some(items) = self.block(name) else {
+            return false;
+        };
         if !self.enter(name, depth) {
             return false;
         }
@@ -285,8 +348,14 @@ impl<'d, 'a> Build<'d, 'a> {
         for it in items.iter() {
             let p = &it.props;
             let on_zero = p.layer == "0";
-            s |= p.color == Col::ByBlock || p.lineweight == Lw::ByBlock || p.linetype == "BYBLOCK" || p.alpha == Alpha::ByBlock;
-            s |= on_zero && (p.color == Col::ByLayer || p.lineweight == Lw::ByLayer || p.linetype == "BYLAYER");
+            s |= p.color == Col::ByBlock
+                || p.lineweight == Lw::ByBlock
+                || p.linetype == "BYBLOCK"
+                || p.alpha == Alpha::ByBlock;
+            s |= on_zero
+                && (p.color == Col::ByLayer
+                    || p.lineweight == Lw::ByLayer
+                    || p.linetype == "BYLAYER");
             if let Geom::Insert(ins) = &it.geom {
                 s |= !ins.attribs.is_empty() || self.is_sensitive(&ins.block, depth + 1);
             }
@@ -313,7 +382,10 @@ impl<'d, 'a> Build<'d, 'a> {
         match p.color {
             Col::Rgb(c) => c,
             Col::ByBlock => inh.color.unwrap_or([0; 3]),
-            Col::ByLayer => self.d.layer(self.layer_name(p, inh)).map_or([0; 3], |l| l.rgb),
+            Col::ByLayer => self
+                .d
+                .layer(self.layer_name(p, inh))
+                .map_or([0; 3], |l| l.rgb),
         }
     }
 
@@ -324,14 +396,22 @@ impl<'d, 'a> Build<'d, 'a> {
             Lw::Hundredths(v) => v,
             Lw::Default => default,
             Lw::ByBlock => inh.lineweight.unwrap_or(default),
-            Lw::ByLayer => self.d.layer(self.layer_name(p, inh)).map(|l| l.lineweight).filter(|v| *v >= 0).unwrap_or(default),
+            Lw::ByLayer => self
+                .d
+                .layer(self.layer_name(p, inh))
+                .map(|l| l.lineweight)
+                .filter(|v| *v >= 0)
+                .unwrap_or(default),
         }
     }
 
     /// The linetype name (upper case) after "by layer" and "by block".
     fn linetype(&self, p: &Props, inh: &Inherit) -> String {
         match p.linetype.as_str() {
-            "BYLAYER" => self.d.layer(self.layer_name(p, inh)).map_or_else(|| "CONTINUOUS".into(), |l| l.linetype.clone()),
+            "BYLAYER" => self
+                .d
+                .layer(self.layer_name(p, inh))
+                .map_or_else(|| "CONTINUOUS".into(), |l| l.linetype.clone()),
             "BYBLOCK" => inh.linetype.clone().unwrap_or_else(|| "CONTINUOUS".into()),
             other => other.to_string(),
         }
@@ -379,8 +459,15 @@ impl<'d, 'a> Build<'d, 'a> {
             out.push(0.0);
         }
         let dots = out.iter().step_by(2).any(|d| *d <= 1e-9);
-        let d = Dash { pattern: out, offset: 0.0, align_corners: false };
-        (d.is_dashed() && d.pattern.iter().skip(1).step_by(2).any(|g| *g > 1e-9) && d.pattern.iter().all(|v| v.is_finite())).then_some((d, dots))
+        let d = Dash {
+            pattern: out,
+            offset: 0.0,
+            align_corners: false,
+        };
+        (d.is_dashed()
+            && d.pattern.iter().skip(1).step_by(2).any(|g| *g > 1e-9)
+            && d.pattern.iter().all(|v| v.is_finite()))
+        .then_some((d, dots))
     }
 
     // ---------- art ----------
@@ -392,8 +479,14 @@ impl<'d, 'a> Build<'d, 'a> {
         let top = Inherit::default();
         let map = self.map;
         for it in items {
-            let Some(node) = self.item(it, map, &top, 0) else { continue };
-            let name = if self.o.merge_layers { "" } else { it.props.layer.as_str() };
+            let Some(node) = self.item(it, map, &top, 0) else {
+                continue;
+            };
+            let name = if self.o.merge_layers {
+                ""
+            } else {
+                it.props.layer.as_str()
+            };
             let i = *index.entry(name.to_uppercase()).or_insert_with(|| {
                 layers.push((name.to_string(), vec![]));
                 layers.len() - 1
@@ -441,7 +534,15 @@ impl<'d, 'a> Build<'d, 'a> {
         Some(node)
     }
 
-    fn path(&mut self, bp: &BezPath, fill: bool, width: f64, p: &Props, map: Affine, inh: &Inherit) -> Option<Node> {
+    fn path(
+        &mut self,
+        bp: &BezPath,
+        fill: bool,
+        width: f64,
+        p: &Props,
+        map: Affine,
+        inh: &Inherit,
+    ) -> Option<Node> {
         let mut bp = bp.clone();
         bp.apply_affine(map);
         super::curve::bounds(&bp)?;
@@ -469,9 +570,19 @@ impl<'d, 'a> Build<'d, 'a> {
             }
             ap
         };
-        let rule = if fill { FillRule::EvenOdd } else { FillRule::NonZero };
+        let rule = if fill {
+            FillRule::EvenOdd
+        } else {
+            FillRule::NonZero
+        };
         let path = PathData::from_bezpath(&bp);
-        let kind = |path: PathData| NodeKind::Path { path, rule, live: None, clipping: false, guide: false };
+        let kind = |path: PathData| NodeKind::Path {
+            path,
+            rule,
+            live: None,
+            clipping: false,
+            guide: false,
+        };
         let mut n = if path.subpaths.len() > 1 {
             // Several loops (a hatch with islands) paint as one compound path.
             let children = path
@@ -498,7 +609,13 @@ impl<'d, 'a> Build<'d, 'a> {
         if !(s > 1e-12 && s.is_finite()) {
             return None;
         }
-        let family = t.family.clone().or_else(|| self.d.styles.get(&t.style).filter(|f| !f.is_empty()).cloned());
+        let family = t.family.clone().or_else(|| {
+            self.d
+                .styles
+                .get(&t.style)
+                .filter(|f| !f.is_empty())
+                .cloned()
+        });
         let default = CharStyle::default();
         let style = CharStyle {
             font_family: family.unwrap_or(default.font_family.clone()),
@@ -514,24 +631,48 @@ impl<'d, 'a> Build<'d, 'a> {
         if let Some(span) = t.span {
             fill_span(&mut obj, span, s);
         }
-        Some(Node::new(self.doc.alloc_id(), NodeKind::Text(Box::new(obj))))
+        Some(Node::new(
+            self.doc.alloc_id(),
+            NodeKind::Text(Box::new(obj)),
+        ))
     }
 
     /// An insert: a symbol instance per copy (anonymous blocks: a group of their art), grouped
     /// with its attributes.
-    fn insert(&mut self, ins: &InsertItem, p: &Props, map: Affine, inh: &Inherit, depth: u32) -> Option<Node> {
+    fn insert(
+        &mut self,
+        ins: &InsertItem,
+        p: &Props,
+        map: Affine,
+        inh: &Inherit,
+        depth: u32,
+    ) -> Option<Node> {
         let child = self.inherit(p, inh);
-        let base = self.d.blocks.get(&ins.block).map_or(Point::ZERO, |b| b.base);
+        let base = self
+            .d
+            .blocks
+            .get(&ins.block)
+            .map_or(Point::ZERO, |b| b.base);
         let unbase = Affine::translate(-base.to_vec2());
         let anonymous = ins.block.starts_with('*');
-        let symbol = if anonymous { None } else { self.symbol(&ins.block, &child, depth) };
+        let symbol = if anonymous {
+            None
+        } else {
+            self.symbol(&ins.block, &child, depth)
+        };
         let mut parts = vec![];
         for cell in &ins.cells {
             let node = match &symbol {
                 Some(name) => {
                     let xf = map * *cell * self.symbol_map.inverse();
                     self.nodes += 1;
-                    Some(Node::new(self.doc.alloc_id(), NodeKind::SymbolInstance { symbol: name.clone(), xf }))
+                    Some(Node::new(
+                        self.doc.alloc_id(),
+                        NodeKind::SymbolInstance {
+                            symbol: name.clone(),
+                            xf,
+                        },
+                    ))
                 }
                 None if anonymous => self.art(&ins.block, map * *cell * unbase, &child, depth),
                 None => None,
@@ -544,7 +685,10 @@ impl<'d, 'a> Build<'d, 'a> {
         let mut node = match parts.len() {
             0 => return None,
             1 => parts.pop()?,
-            _ => Node::group(self.doc.alloc_id(), parts.into_iter().map(Arc::new).collect()),
+            _ => Node::group(
+                self.doc.alloc_id(),
+                parts.into_iter().map(Arc::new).collect(),
+            ),
         };
         node.opacity = self.opacity(p, inh);
         Some(node)
@@ -559,7 +703,12 @@ impl<'d, 'a> Build<'d, 'a> {
         let mut nodes = vec![];
         for it in items.iter() {
             // Art on a hidden layer stays hidden inside blocks.
-            if self.d.layer(self.layer_name(&it.props, inh)).is_some_and(|l| l.hidden) && it.props.layer != "0" {
+            if self
+                .d
+                .layer(self.layer_name(&it.props, inh))
+                .is_some_and(|l| l.hidden)
+                && it.props.layer != "0"
+            {
                 continue;
             }
             nodes.extend(self.item(it, map, inh, depth + 1));
@@ -568,13 +717,20 @@ impl<'d, 'a> Build<'d, 'a> {
         match nodes.len() {
             0 => None,
             1 => nodes.pop(),
-            _ => Some(Node::group(self.doc.alloc_id(), nodes.into_iter().map(Arc::new).collect())),
+            _ => Some(Node::group(
+                self.doc.alloc_id(),
+                nodes.into_iter().map(Arc::new).collect(),
+            )),
         }
     }
 
     /// The symbol for block `name` placed with `inh` (made once per look).
     fn symbol(&mut self, name: &str, inh: &Inherit, depth: u32) -> Option<String> {
-        let inh = if self.is_sensitive(name, depth) { inh.clone() } else { Inherit::default() };
+        let inh = if self.is_sensitive(name, depth) {
+            inh.clone()
+        } else {
+            Inherit::default()
+        };
         let key = (name.to_string(), inh);
         if let Some(s) = self.symbols.get(&key) {
             return s.clone();
@@ -585,7 +741,10 @@ impl<'d, 'a> Build<'d, 'a> {
         let made = art.map(|art| {
             let label = self.d.blocks.get(name).map_or(name, |b| b.name.as_str());
             let symbol = unique(label, |n| self.doc.symbols.iter().any(|s| s.name == n));
-            self.doc.symbols.push(Symbol { name: symbol.clone(), art: Arc::new(art) });
+            self.doc.symbols.push(Symbol {
+                name: symbol.clone(),
+                art: Arc::new(art),
+            });
             symbol
         });
         self.symbols.insert(key, made.clone());
@@ -598,7 +757,9 @@ impl<'d, 'a> Build<'d, 'a> {
 fn fill_span(obj: &mut TextObject, span: Span, s: f64) {
     let layout = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), obj);
     let natural = layout.lines.iter().map(|l| l.x1 - l.x0).fold(0.0, f64::max);
-    let Some(k) = span.scale(natural / s) else { return };
+    let Some(k) = span.scale(natural / s) else {
+        return;
+    };
     for r in &mut obj.runs {
         match span {
             Span::Fit(_) => r.style.h_scale *= k,
@@ -616,5 +777,8 @@ fn unique(base: &str, taken: impl Fn(&str) -> bool) -> String {
     if !taken(base) {
         return base.to_string();
     }
-    (2..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
+    (2..)
+        .map(|i| format!("{base} {i}"))
+        .find(|n| !taken(n))
+        .unwrap_or_else(|| base.to_string())
 }

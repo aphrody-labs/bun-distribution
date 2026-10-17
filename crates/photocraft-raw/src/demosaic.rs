@@ -98,7 +98,12 @@ pub(crate) struct Padded {
 impl Padded {
     pub fn new(w: usize, h: usize) -> Self {
         let stride = w + 2 * PAD;
-        Padded { data: vec![0.0; stride * (h + 2 * PAD)], w, h, stride }
+        Padded {
+            data: vec![0.0; stride * (h + 2 * PAD)],
+            w,
+            h,
+            stride,
+        }
     }
 
     /// From an unpadded plane (tests and small inputs).
@@ -119,7 +124,9 @@ impl Padded {
     pub fn fill_rows(&mut self, rows: usize, f: impl Fn(usize, &mut [f32]) + Sync + Send) {
         let (s, h) = (self.stride, self.h);
         let interior = &mut self.data[PAD * s..(PAD + h) * s];
-        par::chunks_mut(interior, rows.max(1) * s, |b, chunk| f(b * rows.max(1), chunk));
+        par::chunks_mut(interior, rows.max(1) * s, |b, chunk| {
+            f(b * rows.max(1), chunk)
+        });
     }
 
     /// Fills the borders by mirror reflection of the interior.
@@ -153,16 +160,32 @@ fn kernels(phase: [u8; 4], method: Demosaic, stride: usize) -> [[Vec<(isize, f32
             let taps: Vec<(isize, isize, f32)> = if c == own {
                 vec![(0, 0, 1.0)]
             } else if method == Demosaic::Bilinear {
-                let t: Vec<(isize, isize)> =
-                    (-1..=1).flat_map(|dy| (-1..=1).map(move |dx| (dx, dy))).filter(|&(dx, dy)| color(px + dx, py + dy) == c).collect();
+                let t: Vec<(isize, isize)> = (-1..=1)
+                    .flat_map(|dy| (-1..=1).map(move |dx| (dx, dy)))
+                    .filter(|&(dx, dy)| color(px + dx, py + dy) == c)
+                    .collect();
                 let w = 1.0 / t.len().max(1) as f32;
                 t.into_iter().map(|(dx, dy)| (dx, dy, w)).collect()
             } else if c == 1 {
                 // Malvar–He–Cutler (weights / 8): G at R or B.
-                vec![(0, 0, 4.0), (-1, 0, 2.0), (1, 0, 2.0), (0, -1, 2.0), (0, 1, 2.0), (-2, 0, -1.0), (2, 0, -1.0), (0, -2, -1.0), (0, 2, -1.0)]
+                vec![
+                    (0, 0, 4.0),
+                    (-1, 0, 2.0),
+                    (1, 0, 2.0),
+                    (0, -1, 2.0),
+                    (0, 1, 2.0),
+                    (-2, 0, -1.0),
+                    (2, 0, -1.0),
+                    (0, -2, -1.0),
+                    (0, 2, -1.0),
+                ]
             } else if own == 1 {
                 // R or B at G: from the row neighbours or the column neighbours.
-                let (ax, ay) = if color(px + 1, py) == c { (1, 0) } else { (0, 1) };
+                let (ax, ay) = if color(px + 1, py) == c {
+                    (1, 0)
+                } else {
+                    (0, 1)
+                };
                 vec![
                     (0, 0, 5.0),
                     (-ax, -ay, 4.0),
@@ -178,16 +201,38 @@ fn kernels(phase: [u8; 4], method: Demosaic, stride: usize) -> [[Vec<(isize, f32
                 ]
             } else {
                 // R at B or B at R.
-                vec![(0, 0, 6.0), (-1, -1, 2.0), (1, -1, 2.0), (-1, 1, 2.0), (1, 1, 2.0), (-2, 0, -1.5), (2, 0, -1.5), (0, -2, -1.5), (0, 2, -1.5)]
+                vec![
+                    (0, 0, 6.0),
+                    (-1, -1, 2.0),
+                    (1, -1, 2.0),
+                    (-1, 1, 2.0),
+                    (1, 1, 2.0),
+                    (-2, 0, -1.5),
+                    (2, 0, -1.5),
+                    (0, -2, -1.5),
+                    (0, 2, -1.5),
+                ]
             };
-            let norm = if method == Demosaic::Bilinear || c == own { 1.0 } else { 1.0 / 8.0 };
-            taps.into_iter().map(|(dx, dy, w)| (dy * s + dx, w * norm)).collect()
+            let norm = if method == Demosaic::Bilinear || c == own {
+                1.0
+            } else {
+                1.0 / 8.0
+            };
+            taps.into_iter()
+                .map(|(dx, dy, w)| (dy * s + dx, w * norm))
+                .collect()
         })
     })
 }
 
 /// Demosaics a padded CFA plane into interleaved RGB (`w × h × 3`).
-pub(crate) fn demosaic(p: &Padded, phase: [u8; 4], method: Demosaic, to_xyz: &Mat3, ahd_jobs: usize) -> Vec<f32> {
+pub(crate) fn demosaic(
+    p: &Padded,
+    phase: [u8; 4],
+    method: Demosaic,
+    to_xyz: &Mat3,
+    ahd_jobs: usize,
+) -> Vec<f32> {
     let (w, h, s) = (p.w, p.h, p.stride);
     let mut out = vec![0.0f32; w * h * 3];
     if w == 0 || h == 0 || p.data.len() < s * (h + 2 * PAD) {
@@ -220,7 +265,8 @@ pub(crate) fn demosaic(p: &Padded, phase: [u8; 4], method: Demosaic, to_xyz: &Ma
                     } else {
                         o[own] = d[i];
                         o[1] = (n + so + e + wv) * 0.25;
-                        o[2 - own] = (d[i - s - 1] + d[i - s + 1] + d[i + s - 1] + d[i + s + 1]) * 0.25;
+                        o[2 - own] =
+                            (d[i - s - 1] + d[i - s + 1] + d[i + s - 1] + d[i + s + 1]) * 0.25;
                     }
                     continue;
                 }
@@ -250,12 +296,21 @@ impl Pattern {
     /// The repeat of `cfa` starting at data coordinates (`x0`, `y0`).
     pub fn of(cfa: &crate::sensor::Cfa, x0: usize, y0: usize) -> Self {
         let (w, h) = (cfa.width.clamp(1, 16), cfa.height.clamp(1, 16));
-        Pattern { w, h, colors: (0..w * h).map(|i| cfa.color(x0 + i % w, y0 + i / w).min(2)).collect() }
+        Pattern {
+            w,
+            h,
+            colors: (0..w * h)
+                .map(|i| cfa.color(x0 + i % w, y0 + i / w).min(2))
+                .collect(),
+        }
     }
 
     fn at(&self, x: isize, y: isize) -> u8 {
         let (w, h) = (self.w.max(1) as isize, self.h.max(1) as isize);
-        self.colors.get((y.rem_euclid(h) * w + x.rem_euclid(w)) as usize).copied().unwrap_or(1)
+        self.colors
+            .get((y.rem_euclid(h) * w + x.rem_euclid(w)) as usize)
+            .copied()
+            .unwrap_or(1)
     }
 }
 
@@ -285,9 +340,14 @@ struct Taps {
 
 fn phase_taps(pat: &Pattern, px: isize, py: isize) -> Taps {
     let col = |dx: isize, dy: isize| pat.at(px + dx, py + dy);
-    let window: Vec<Off> = (-RADIUS..=RADIUS).flat_map(|dy| (-RADIUS..=RADIUS).map(move |dx| (dx, dy))).collect();
+    let window: Vec<Off> = (-RADIUS..=RADIUS)
+        .flat_map(|dy| (-RADIUS..=RADIUS).map(move |dx| (dx, dy)))
+        .collect();
     let axes = [(1isize, 0isize), (0, 1)].map(|(ax, ay)| {
-        let near = [(ax, ay), (-ax, -ay)].into_iter().filter(|&(dx, dy)| col(dx, dy) == 1).collect();
+        let near = [(ax, ay), (-ax, -ay)]
+            .into_iter()
+            .filter(|&(dx, dy)| col(dx, dy) == 1)
+            .collect();
         let mut pairs = Vec::new();
         for &(dx, dy) in &window {
             // Pairs on the axis line or the lines next to it.
@@ -304,13 +364,30 @@ fn phase_taps(pat: &Pattern, px: isize, py: isize) -> Taps {
         Axis { near, pairs }
     });
     let ring = |r: isize| -> Vec<Off> {
-        window.iter().copied().filter(|&(dx, dy)| dx.abs() <= r && dy.abs() <= r && (dx, dy) != (0, 0) && col(dx, dy) == 1).collect()
+        window
+            .iter()
+            .copied()
+            .filter(|&(dx, dy)| {
+                dx.abs() <= r && dy.abs() <= r && (dx, dy) != (0, 0) && col(dx, dy) == 1
+            })
+            .collect()
     };
-    let greens = Some(ring(1)).filter(|g| !g.is_empty()).unwrap_or_else(|| ring(RADIUS));
+    let greens = Some(ring(1))
+        .filter(|g| !g.is_empty())
+        .unwrap_or_else(|| ring(RADIUS));
     let sites = [0u8, 1, 2].map(|c| {
-        window.iter().filter(|&&(dx, dy)| (dx, dy) != (0, 0) && col(dx, dy) == c).map(|&(dx, dy)| ((dx, dy), 1.0 / (dx * dx + dy * dy) as f32)).collect()
+        window
+            .iter()
+            .filter(|&&(dx, dy)| (dx, dy) != (0, 0) && col(dx, dy) == c)
+            .map(|&(dx, dy)| ((dx, dy), 1.0 / (dx * dx + dy * dy) as f32))
+            .collect()
     });
-    Taps { own: col(0, 0), axes, greens, sites }
+    Taps {
+        own: col(0, 0),
+        axes,
+        greens,
+        sites,
+    }
 }
 
 /// Demosaics a padded plane with any periodic CFA (see the module docs) into
@@ -320,16 +397,32 @@ fn phase_taps(pat: &Pattern, px: isize, py: isize) -> Taps {
 pub(crate) fn demosaic_cfa(p: &Padded, pat: &Pattern) -> Vec<f32> {
     let (w, h, s) = (p.w, p.h, p.stride);
     let mut out = vec![0.0f32; w * h * 3];
-    if w == 0 || h == 0 || pat.w == 0 || pat.h == 0 || pat.colors.len() < pat.w * pat.h || p.data.len() < s * (h + 2 * PAD) {
+    if w == 0
+        || h == 0
+        || pat.w == 0
+        || pat.h == 0
+        || pat.colors.len() < pat.w * pat.h
+        || p.data.len() < s * (h + 2 * PAD)
+    {
         return out;
     }
-    let taps: Vec<Taps> = (0..pat.w * pat.h).map(|i| phase_taps(pat, (i % pat.w) as isize, (i / pat.w) as isize)).collect();
+    let taps: Vec<Taps> = (0..pat.w * pat.h)
+        .map(|i| phase_taps(pat, (i % pat.w) as isize, (i / pat.w) as isize))
+        .collect();
     let tap_at = |x: usize, y: usize| &taps[(y % pat.h) * pat.w + x % pat.w];
     let d = &p.data;
     // Sample at (x + dx, y + dy), or None outside the image.
-    let get = |plane: &[f32], stride: usize, pad: usize, x: usize, y: usize, (dx, dy): Off| -> Option<f32> {
+    let get = |plane: &[f32],
+               stride: usize,
+               pad: usize,
+               x: usize,
+               y: usize,
+               (dx, dy): Off|
+     -> Option<f32> {
         let (xx, yy) = (x.checked_add_signed(dx)?, y.checked_add_signed(dy)?);
-        (xx < w && yy < h).then(|| plane.get((yy + pad) * stride + pad + xx).copied()).flatten()
+        (xx < w && yy < h)
+            .then(|| plane.get((yy + pad) * stride + pad + xx).copied())
+            .flatten()
     };
     let raw = |x: usize, y: usize, o: Off| get(d, s, PAD, x, y, o);
     let band = par::band_rows(w);
@@ -436,11 +529,19 @@ const LABF_RANGE: f32 = 2.0;
 
 impl LabF {
     fn new() -> Self {
-        LabF { table: (0..=LABF_STEPS + 1).map(|i| Self::exact(i as f32 * LABF_RANGE / LABF_STEPS as f32)).collect() }
+        LabF {
+            table: (0..=LABF_STEPS + 1)
+                .map(|i| Self::exact(i as f32 * LABF_RANGE / LABF_STEPS as f32))
+                .collect(),
+        }
     }
 
     fn exact(t: f32) -> f32 {
-        if t > 0.008856 { t.cbrt() } else { 7.787 * t + 16.0 / 116.0 }
+        if t > 0.008856 {
+            t.cbrt()
+        } else {
+            7.787 * t + 16.0 / 116.0
+        }
     }
 
     #[inline]
@@ -463,7 +564,9 @@ const M: usize = 3;
 /// Maximum scratch allocation of one AHD band: two green, RGB and Lab float
 /// planes and two byte homogeneity planes, including their border rows.
 pub(crate) fn ahd_scratch(w: u64, h: u64) -> u64 {
-    w.saturating_add(2 * PAD as u64).saturating_mul(h.min(AHD_BAND as u64).saturating_add(2 * M as u64)).saturating_mul(58)
+    w.saturating_add(2 * PAD as u64)
+        .saturating_mul(h.min(AHD_BAND as u64).saturating_add(2 * M as u64))
+        .saturating_mul(58)
 }
 
 pub(crate) fn ahd_bands(h: usize) -> usize {
@@ -478,7 +581,8 @@ fn ahd(p: &Padded, phase: [u8; 4], to_xyz: &Mat3, out: &mut [f32], jobs: usize) 
     // Colour at padded coordinates (PAD is even, so the phase is unchanged).
     let color = |px: usize, py: usize| phase[(py & 1) * 2 + (px & 1)];
     let white = [0.9642f32, 1.0, 0.8249];
-    let m: [[f32; 3]; 3] = std::array::from_fn(|i| std::array::from_fn(|j| to_xyz[i][j] as f32 / white[i]));
+    let m: [[f32; 3]; 3] =
+        std::array::from_fn(|i| std::array::from_fn(|j| to_xyz[i][j] as f32 / white[i]));
     let labf = LabF::new();
     par::chunks_mut_limited(out, AHD_BAND * w * 3, jobs, |band, chunk| {
         let rows = chunk.len() / (w * 3);
@@ -527,12 +631,19 @@ fn ahd(p: &Padded, phase: [u8; 4], to_xyz: &Mat3, out: &mut [f32], jobs: usize) 
                     } else {
                         let o = usize::from(own).min(2);
                         px[o] = d[y * s + x];
-                        px[2 - o] = gv + 0.25 * (diff(b - 1, x - 1) + diff(b - 1, x + 1) + diff(b + 1, x - 1) + diff(b + 1, x + 1));
+                        px[2 - o] = gv
+                            + 0.25
+                                * (diff(b - 1, x - 1)
+                                    + diff(b - 1, x + 1)
+                                    + diff(b + 1, x - 1)
+                                    + diff(b + 1, x + 1));
                     }
                     let px = px.map(|v| v.clamp(0.0, 1.0));
                     let i = (b * s + x) * 3;
                     rgb_d[i..i + 3].copy_from_slice(&px);
-                    let xyz: [f32; 3] = std::array::from_fn(|k| m[k][0] * px[0] + m[k][1] * px[1] + m[k][2] * px[2]);
+                    let xyz: [f32; 3] = std::array::from_fn(|k| {
+                        m[k][0] * px[0] + m[k][1] * px[1] + m[k][2] * px[2]
+                    });
                     let (fx, fy, fz) = (labf.f(xyz[0]), labf.f(xyz[1]), labf.f(xyz[2]));
                     lab_d[i] = 116.0 * fy - 16.0;
                     lab_d[i + 1] = 500.0 * (fx - fy);
@@ -543,7 +654,12 @@ fn ahd(p: &Padded, phase: [u8; 4], to_xyz: &Mat3, out: &mut [f32], jobs: usize) 
         // 3. Homogeneity maps, band rows 2..n-2, columns 4..s-4.
         let mut hom = [vec![0u8; n * s], vec![0u8; n * s]];
         let at = |l: &[f32], k: usize| (l[k * 3], l[k * 3 + 1], l[k * 3 + 2]);
-        let dist = |a: (f32, f32, f32), c: (f32, f32, f32)| ((a.0 - c.0).abs(), (a.1 - c.1) * (a.1 - c.1) + (a.2 - c.2) * (a.2 - c.2));
+        let dist = |a: (f32, f32, f32), c: (f32, f32, f32)| {
+            (
+                (a.0 - c.0).abs(),
+                (a.1 - c.1) * (a.1 - c.1) + (a.2 - c.2) * (a.2 - c.2),
+            )
+        };
         for b in 2..n - 2 {
             for x in 4..s - 4 {
                 let k = b * s + x;
@@ -554,8 +670,14 @@ fn ahd(p: &Padded, phase: [u8; 4], to_xyz: &Mat3, out: &mut [f32], jobs: usize) 
                 // The horizontal candidate judged along the row, the vertical along the column.
                 let eps_l = dh[0].0.max(dh[1].0).min(dv[2].0.max(dv[3].0));
                 let eps_c = dh[0].1.max(dh[1].1).min(dv[2].1.max(dv[3].1));
-                hom[0][k] = dh.iter().filter(|(l, c)| *l <= eps_l && *c <= eps_c).count() as u8;
-                hom[1][k] = dv.iter().filter(|(l, c)| *l <= eps_l && *c <= eps_c).count() as u8;
+                hom[0][k] = dh
+                    .iter()
+                    .filter(|(l, c)| *l <= eps_l && *c <= eps_c)
+                    .count() as u8;
+                hom[1][k] = dv
+                    .iter()
+                    .filter(|(l, c)| *l <= eps_l && *c <= eps_c)
+                    .count() as u8;
             }
         }
         // 4. Per pixel, the candidate with the larger 3×3 homogeneity sum.
@@ -592,21 +714,34 @@ mod tests {
     #[test]
     fn ahd_band_concurrency_does_not_change_pixels() {
         let (w, h) = (53, 103);
-        let cfa: Vec<f32> = (0..w * h).map(|i| ((i * 97 + i / w * 31) % 1009) as f32 / 1009.0).collect();
+        let cfa: Vec<f32> = (0..w * h)
+            .map(|i| ((i * 97 + i / w * 31) % 1009) as f32 / 1009.0)
+            .collect();
         let p = Padded::from_plane(&cfa, w, h);
         let one = demosaic(&p, [0, 1, 1, 2], Demosaic::Ahd, &IDENTITY, 1);
         for jobs in [2, 3, 4, 128] {
-            assert_eq!(one, demosaic(&p, [0, 1, 1, 2], Demosaic::Ahd, &IDENTITY, jobs));
+            assert_eq!(
+                one,
+                demosaic(&p, [0, 1, 1, 2], Demosaic::Ahd, &IDENTITY, jobs)
+            );
         }
     }
 
     /// Mosaics an RGB image with the given phase.
     fn mosaic(rgb: &[[f32; 3]], w: usize, h: usize, phase: [u8; 4]) -> Vec<f32> {
-        (0..w * h).map(|i| rgb[i][phase[((i / w) & 1) * 2 + ((i % w) & 1)] as usize]).collect()
+        (0..w * h)
+            .map(|i| rgb[i][phase[((i / w) & 1) * 2 + ((i % w) & 1)] as usize])
+            .collect()
     }
 
     fn run(cfa: &[f32], w: usize, h: usize, phase: [u8; 4], m: Demosaic) -> Vec<f32> {
-        demosaic(&Padded::from_plane(cfa, w, h), phase, m, &IDENTITY, par::workers())
+        demosaic(
+            &Padded::from_plane(cfa, w, h),
+            phase,
+            m,
+            &IDENTITY,
+            par::workers(),
+        )
     }
 
     fn psnr(a: &[f32], b: &[[f32; 3]], w: usize, h: usize, border: usize) -> f64 {
@@ -627,11 +762,16 @@ mod tests {
     #[test]
     fn padding_reflects() {
         let p = Padded::from_plane(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 3, 2);
-        let row = |y: usize| p.data[(y + PAD) * p.stride + PAD - 2..(y + PAD) * p.stride + PAD + 5].to_vec();
+        let row = |y: usize| {
+            p.data[(y + PAD) * p.stride + PAD - 2..(y + PAD) * p.stride + PAD + 5].to_vec()
+        };
         assert_eq!(row(0), vec![3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0]);
         // Row −1 mirrors row 1.
         let r = PAD - 1;
-        assert_eq!(p.data[r * p.stride + PAD..r * p.stride + PAD + 3].to_vec(), vec![4.0, 5.0, 6.0]);
+        assert_eq!(
+            p.data[r * p.stride + PAD..r * p.stride + PAD + 3].to_vec(),
+            vec![4.0, 5.0, 6.0]
+        );
     }
 
     #[test]
@@ -643,7 +783,11 @@ mod tests {
                 let out = run(&mosaic(&rgb, w, h, phase), w, h, phase, m);
                 for (i, v) in out.as_chunks::<3>().0.iter().enumerate() {
                     for c in 0..3 {
-                        assert!((v[c] - rgb[i][c]).abs() < 1e-5, "{m:?} {phase:?} px {i} c {c}: {}", v[c]);
+                        assert!(
+                            (v[c] - rgb[i][c]).abs() < 1e-5,
+                            "{m:?} {phase:?} px {i} c {c}: {}",
+                            v[c]
+                        );
                     }
                 }
             }
@@ -662,7 +806,10 @@ mod tests {
             .collect();
         let phase = [0, 1, 1, 2];
         let cfa = mosaic(&rgb, w, h, phase);
-        let p: Vec<f64> = [Demosaic::Bilinear, Demosaic::Mhc, Demosaic::Ahd].iter().map(|&m| psnr(&run(&cfa, w, h, phase, m), &rgb, w, h, 2)).collect();
+        let p: Vec<f64> = [Demosaic::Bilinear, Demosaic::Mhc, Demosaic::Ahd]
+            .iter()
+            .map(|&m| psnr(&run(&cfa, w, h, phase, m), &rgb, w, h, 2))
+            .collect();
         assert!(p.iter().all(|&v| v > 40.0), "{p:?}");
     }
 
@@ -674,7 +821,11 @@ mod tests {
         let rgb: Vec<[f32; 3]> = (0..w * h)
             .map(|i| {
                 let (x, y) = (i % w, i / w);
-                let v = if y < h / 2 { ((x / 3) % 2) as f32 } else { ((y / 3) % 2) as f32 };
+                let v = if y < h / 2 {
+                    ((x / 3) % 2) as f32
+                } else {
+                    ((y / 3) % 2) as f32
+                };
                 [0.1 + 0.8 * v, 0.1 + 0.8 * v, 0.1 + 0.8 * v]
             })
             .collect();
@@ -691,7 +842,9 @@ mod tests {
     fn bilinear_fast_path_matches_kernels() {
         // The direct bilinear code must equal the generic kernel evaluation.
         let (w, h) = (20, 14);
-        let cfa: Vec<f32> = (0..w * h).map(|i| ((i * 7919) % 1000) as f32 / 1000.0).collect();
+        let cfa: Vec<f32> = (0..w * h)
+            .map(|i| ((i * 7919) % 1000) as f32 / 1000.0)
+            .collect();
         for phase in [[0, 1, 1, 2], [1, 2, 0, 1]] {
             let p = Padded::from_plane(&cfa, w, h);
             let fast = demosaic(&p, phase, Demosaic::Bilinear, &IDENTITY, par::workers());
@@ -700,8 +853,14 @@ mod tests {
                 for x in 0..w {
                     let i = (y + PAD) * p.stride + PAD + x;
                     for (c, k) in ks[(y & 1) * 2 + (x & 1)].iter().enumerate() {
-                        let v: f32 = k.iter().map(|&(off, wt)| wt * p.data[(i as isize + off) as usize]).sum();
-                        assert!((fast[(y * w + x) * 3 + c] - v).abs() < 1e-6, "({x},{y}) c{c}");
+                        let v: f32 = k
+                            .iter()
+                            .map(|&(off, wt)| wt * p.data[(i as isize + off) as usize])
+                            .sum();
+                        assert!(
+                            (fast[(y * w + x) * 3 + c] - v).abs() < 1e-6,
+                            "({x},{y}) c{c}"
+                        );
                     }
                 }
             }
@@ -730,11 +889,17 @@ mod tests {
                 _ => 2,
             })
             .collect();
-        Pattern { w: rows[0].len(), h: rows.len(), colors }
+        Pattern {
+            w: rows[0].len(),
+            h: rows.len(),
+            colors,
+        }
     }
 
     fn mosaic_pat(rgb: &[[f32; 3]], w: usize, pat: &Pattern) -> Vec<f32> {
-        (0..rgb.len()).map(|i| rgb[i][usize::from(pat.at((i % w) as isize, (i / w) as isize))]).collect()
+        (0..rgb.len())
+            .map(|i| rgb[i][usize::from(pat.at((i % w) as isize, (i / w) as isize))])
+            .collect()
     }
 
     #[test]
@@ -744,11 +909,23 @@ mod tests {
         let pat = pattern(&XTRANS);
         // Every phase of the pattern at the plane origin.
         for (sx, sy) in [(0, 0), (1, 0), (2, 3), (5, 5)] {
-            let shifted = Pattern { colors: (0..36).map(|i| pat.at((i % 6 + sx) as isize, (i / 6 + sy) as isize)).collect(), ..pat.clone() };
-            let out = demosaic_cfa(&Padded::from_plane(&mosaic_pat(&rgb, w, &shifted), w, h), &shifted);
+            let shifted = Pattern {
+                colors: (0..36)
+                    .map(|i| pat.at((i % 6 + sx) as isize, (i / 6 + sy) as isize))
+                    .collect(),
+                ..pat.clone()
+            };
+            let out = demosaic_cfa(
+                &Padded::from_plane(&mosaic_pat(&rgb, w, &shifted), w, h),
+                &shifted,
+            );
             for (i, v) in out.as_chunks::<3>().0.iter().enumerate() {
                 for c in 0..3 {
-                    assert!((v[c] - rgb[i][c]).abs() < 1e-5, "shift ({sx},{sy}) px {i} c {c}: {}", v[c]);
+                    assert!(
+                        (v[c] - rgb[i][c]).abs() < 1e-5,
+                        "shift ({sx},{sy}) px {i} c {c}: {}",
+                        v[c]
+                    );
                 }
             }
         }
@@ -774,12 +951,22 @@ mod tests {
         let rgb: Vec<[f32; 3]> = (0..w * h)
             .map(|i| {
                 let (x, y) = (i % w, i / w);
-                let v = if y < h / 2 { ((x / 3) % 2) as f32 } else { ((y / 3) % 2) as f32 };
+                let v = if y < h / 2 {
+                    ((x / 3) % 2) as f32
+                } else {
+                    ((y / 3) % 2) as f32
+                };
                 [0.1 + 0.8 * v; 3]
             })
             .collect();
         let cfa = mosaic_pat(&rgb, w, &pat);
-        let adaptive = psnr(&demosaic_cfa(&Padded::from_plane(&cfa, w, h), &pat), &rgb, w, h, 3);
+        let adaptive = psnr(
+            &demosaic_cfa(&Padded::from_plane(&cfa, w, h), &pat),
+            &rgb,
+            w,
+            h,
+            3,
+        );
         // Plain average of the 3×3 greens, colour differences unweighted.
         let plain: Vec<f32> = (0..w * h)
             .flat_map(|i| {
@@ -787,16 +974,29 @@ mod tests {
                 let mean = |c: u8| {
                     let v: Vec<f32> = (-1..=1)
                         .flat_map(|dy| (-1..=1).map(move |dx| (x + dx, y + dy)))
-                        .filter(|&(xx, yy)| xx >= 0 && yy >= 0 && xx < w as isize && yy < h as isize && pat.at(xx, yy) == c)
+                        .filter(|&(xx, yy)| {
+                            xx >= 0
+                                && yy >= 0
+                                && xx < w as isize
+                                && yy < h as isize
+                                && pat.at(xx, yy) == c
+                        })
                         .map(|(xx, yy)| cfa[yy as usize * w + xx as usize])
                         .collect();
-                    if v.is_empty() { 0.5 } else { v.iter().sum::<f32>() / v.len() as f32 }
+                    if v.is_empty() {
+                        0.5
+                    } else {
+                        v.iter().sum::<f32>() / v.len() as f32
+                    }
                 };
                 [mean(0), mean(1), mean(2)]
             })
             .collect();
         let plain = psnr(&plain, &rgb, w, h, 3);
-        assert!(adaptive > plain + 6.0, "adaptive {adaptive:.1} dB vs plain {plain:.1} dB");
+        assert!(
+            adaptive > plain + 6.0,
+            "adaptive {adaptive:.1} dB vs plain {plain:.1} dB"
+        );
     }
 
     #[test]
@@ -811,8 +1011,16 @@ mod tests {
             }
         }
         // A degenerate pattern is rejected, not indexed out of range.
-        let bad = Pattern { w: 6, h: 6, colors: vec![1; 4] };
-        assert!(demosaic_cfa(&Padded::from_plane(&[0.5; 4], 2, 2), &bad).iter().all(|v| *v == 0.0));
+        let bad = Pattern {
+            w: 6,
+            h: 6,
+            colors: vec![1; 4],
+        };
+        assert!(
+            demosaic_cfa(&Padded::from_plane(&[0.5; 4], 2, 2), &bad)
+                .iter()
+                .all(|v| *v == 0.0)
+        );
     }
 
     #[test]

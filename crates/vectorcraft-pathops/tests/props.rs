@@ -13,9 +13,12 @@ const NZ: FillRule = FillRule::NonZero;
 
 fn arb_shape() -> impl Strategy<Value = PathData> {
     prop_oneof![
-        (0.0..50.0f64, 0.0..50.0f64, 1.0..40.0f64, 1.0..40.0f64)
-            .prop_map(|(x, y, w, h)| PathData::from_bezpath(&Rect::new(x, y, x + w, y + h).to_path(1e-6))),
-        (0.0..50.0f64, 0.0..50.0f64, 1.0..25.0f64).prop_map(|(x, y, r)| PathData::from_bezpath(&kurbo::Circle::new((x, y), r).to_path(1e-4))),
+        (0.0..50.0f64, 0.0..50.0f64, 1.0..40.0f64, 1.0..40.0f64).prop_map(|(x, y, w, h)| {
+            PathData::from_bezpath(&Rect::new(x, y, x + w, y + h).to_path(1e-6))
+        }),
+        (0.0..50.0f64, 0.0..50.0f64, 1.0..25.0f64).prop_map(|(x, y, r)| PathData::from_bezpath(
+            &kurbo::Circle::new((x, y), r).to_path(1e-4)
+        )),
     ]
 }
 

@@ -88,7 +88,14 @@ pub struct CircuitPointsTable {
 
 impl Default for CircuitPointsTable {
     fn default() -> Self {
-        Self { first: 100, second: 65, tier34: 40, tier58: 22, tier916: 10, rest: 3 }
+        Self {
+            first: 100,
+            second: 65,
+            tier34: 40,
+            tier58: 22,
+            tier916: 10,
+            rest: 3,
+        }
     }
 }
 
@@ -200,7 +207,11 @@ impl Tournament {
 
     /// Checks in a participant.
     pub fn check_in_player(&mut self, player_id: &str) -> bool {
-        if let Some(p) = self.participants.iter_mut().find(|p| p.player_id == player_id) {
+        if let Some(p) = self
+            .participants
+            .iter_mut()
+            .find(|p| p.player_id == player_id)
+        {
             p.checked_in = true;
             true
         } else {
@@ -293,16 +304,21 @@ impl Tournament {
     }
 
     fn check_round_progression(&mut self) {
-        let current_round_matches: Vec<&TournamentMatch> =
-            self.matches.iter().filter(|m| m.round == self.current_round).collect();
+        let current_round_matches: Vec<&TournamentMatch> = self
+            .matches
+            .iter()
+            .filter(|m| m.round == self.current_round)
+            .collect();
 
         if current_round_matches.is_empty() || !current_round_matches.iter().all(|m| m.is_completed)
         {
             return;
         }
 
-        let winners: Vec<String> =
-            current_round_matches.iter().filter_map(|m| m.winner_id.clone()).collect();
+        let winners: Vec<String> = current_round_matches
+            .iter()
+            .filter_map(|m| m.winner_id.clone())
+            .collect();
 
         if winners.len() <= 1 {
             // Tournament completed!
@@ -395,7 +411,11 @@ mod tests {
         assert!(tourney.report_match_score("tourney_01_r2_m1", 2, 1));
 
         assert_eq!(tourney.status, TournamentStatus::Completed);
-        let champ = tourney.participants.iter().find(|p| p.player_id == "p1").unwrap();
+        let champ = tourney
+            .participants
+            .iter()
+            .find(|p| p.player_id == "p1")
+            .unwrap();
         assert_eq!(champ.final_rank, Some(1));
         assert_eq!(champ.wins, 2);
     }

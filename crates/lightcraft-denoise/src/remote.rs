@@ -55,14 +55,19 @@ fn bad(m: impl Into<String>) -> std::io::Error {
 
 fn read_line(r: &mut impl BufRead) -> std::io::Result<Option<String>> {
     let mut buf = Vec::new();
-    let n = r.by_ref().take(MAX_LINE as u64 + 1).read_until(b'\n', &mut buf)?;
+    let n = r
+        .by_ref()
+        .take(MAX_LINE as u64 + 1)
+        .read_until(b'\n', &mut buf)?;
     if n == 0 {
         return Ok(None);
     }
     if buf.last() != Some(&b'\n') {
         return Err(bad("message header too long or truncated"));
     }
-    String::from_utf8(buf).map(Some).map_err(|_| bad("header is not UTF-8"))
+    String::from_utf8(buf)
+        .map(Some)
+        .map_err(|_| bad("header is not UTF-8"))
 }
 
 /// Samples → half floats → byte-shuffled → deflated.
@@ -78,12 +83,17 @@ pub fn pack(data: &[f32]) -> Vec<u8> {
 
 /// The inverse of [`pack`] for exactly `n` samples; refuses anything that inflates to more.
 pub fn unpack(bytes: &[u8], n: usize) -> std::io::Result<Vec<f32>> {
-    let b = miniz_oxide::inflate::decompress_to_vec_with_limit(bytes, n * 2).map_err(|_| bad("payload doesn't inflate to the tile size"))?;
+    let b = miniz_oxide::inflate::decompress_to_vec_with_limit(bytes, n * 2)
+        .map_err(|_| bad("payload doesn't inflate to the tile size"))?;
     if b.len() != n * 2 {
         return Err(bad("payload size doesn't match the tile"));
     }
     let (lo, hi) = b.split_at(n);
-    Ok(lo.iter().zip(hi).map(|(l, h)| from_f16(u16::from_le_bytes([*l, *h]))).collect())
+    Ok(lo
+        .iter()
+        .zip(hi)
+        .map(|(l, h)| from_f16(u16::from_le_bytes([*l, *h])))
+        .collect())
 }
 
 fn write_payload(w: &mut impl Write, mut header: Value, data: &[f32]) -> std::io::Result<()> {
@@ -105,7 +115,9 @@ fn read_payload(r: &mut impl Read, bytes: usize, n: usize) -> std::io::Result<Ve
 }
 
 fn field(v: &Value, k: &str) -> Option<usize> {
-    v.get(k).and_then(Value::as_u64).and_then(|x| usize::try_from(x).ok())
+    v.get(k)
+        .and_then(Value::as_u64)
+        .and_then(|x| usize::try_from(x).ok())
 }
 
 /// Constant-time comparison (the token must not leak through timing).
@@ -133,7 +145,11 @@ pub struct ServerOptions {
 
 impl Default for ServerOptions {
     fn default() -> Self {
-        ServerOptions { token: String::new(), max_connections: 8, timeout: Duration::from_secs(120) }
+        ServerOptions {
+            token: String::new(),
+            max_connections: 8,
+            timeout: Duration::from_secs(120),
+        }
     }
 }
 
@@ -157,7 +173,10 @@ pub fn serve(
     let shared = Arc::new((model, device));
     for conn in listener.incoming() {
         let Ok(stream) = conn else { continue };
-        let peer = stream.peer_addr().map(|a| a.to_string()).unwrap_or_else(|_| "?".into());
+        let peer = stream
+            .peer_addr()
+            .map(|a| a.to_string())
+            .unwrap_or_else(|_| "?".into());
         if active.load(Ordering::SeqCst) >= opts.max_connections.max(1) {
             let mut s = stream;
             let _ = writeln!(s, "{}", json!({"ok": false, "error": "server busy"}));
@@ -165,13 +184,21 @@ pub fn serve(
             continue;
         }
         active.fetch_add(1, Ordering::SeqCst);
-        let (sh, r, o, l, n) = (shared.clone(), run.clone(), opts.clone(), log.clone(), active.clone());
-        let spawned = std::thread::Builder::new().name(format!("denoise {peer}")).spawn(move || {
-            if let Err(e) = handle(stream, &sh.0, tile, &sh.1, &*r, &o, &*l) {
-                l(&format!("{peer}: {e}"));
-            }
-            n.fetch_sub(1, Ordering::SeqCst);
-        });
+        let (sh, r, o, l, n) = (
+            shared.clone(),
+            run.clone(),
+            opts.clone(),
+            log.clone(),
+            active.clone(),
+        );
+        let spawned = std::thread::Builder::new()
+            .name(format!("denoise {peer}"))
+            .spawn(move || {
+                if let Err(e) = handle(stream, &sh.0, tile, &sh.1, &*r, &o, &*l) {
+                    l(&format!("{peer}: {e}"));
+                }
+                n.fetch_sub(1, Ordering::SeqCst);
+            });
         if spawned.is_err() {
             active.fetch_sub(1, Ordering::SeqCst);
             log("could not start a connection thread");
@@ -192,7 +219,10 @@ fn handle(
     stream.set_read_timeout(Some(opts.timeout))?;
     stream.set_write_timeout(Some(opts.timeout))?;
     stream.set_nodelay(true)?;
-    let peer = stream.peer_addr().map(|a| a.to_string()).unwrap_or_default();
+    let peer = stream
+        .peer_addr()
+        .map(|a| a.to_string())
+        .unwrap_or_default();
     let mut r = BufReader::new(stream.try_clone()?);
     let mut w = stream;
     let mut tiles = 0usize;
@@ -206,20 +236,30 @@ fn handle(
             fail(&mut w, &format!("protocol version {PROTOCOL} only"))?;
             break;
         }
-        if !same(req.get("token").and_then(Value::as_str).unwrap_or(""), &opts.token) {
+        if !same(
+            req.get("token").and_then(Value::as_str).unwrap_or(""),
+            &opts.token,
+        ) {
             fail(&mut w, "bad token")?;
             log(&format!("{peer}: bad token"));
             break;
         }
         match req.get("op").and_then(Value::as_str) {
-            Some("hello") => writeln!(w, "{}", json!({"ok": true, "v": PROTOCOL, "device": device, "model": model, "tile": tile}))?,
+            Some("hello") => writeln!(
+                w,
+                "{}",
+                json!({"ok": true, "v": PROTOCOL, "device": device, "model": model, "tile": tile})
+            )?,
             Some("run") => {
                 let (Some(t), Some(bytes)) = (field(&req, "tile"), field(&req, "bytes")) else {
                     fail(&mut w, "missing tile size or payload size")?;
                     break;
                 };
                 if t != tile {
-                    fail(&mut w, &format!("this server runs {tile}-cell tiles, not {t}"))?;
+                    fail(
+                        &mut w,
+                        &format!("this server runs {tile}-cell tiles, not {t}"),
+                    )?;
                     break;
                 }
                 // the payload is read before any refusal below, so the stream stays in step
@@ -231,7 +271,13 @@ fn handle(
                     }
                 };
                 if req.get("model").and_then(Value::as_str) != Some(model.sha256.as_str()) {
-                    fail(&mut w, &format!("model mismatch: this server runs {} {}", model.id, model.version))?;
+                    fail(
+                        &mut w,
+                        &format!(
+                            "model mismatch: this server runs {} {}",
+                            model.id, model.version
+                        ),
+                    )?;
                     continue;
                 }
                 match run(&input) {
@@ -239,7 +285,10 @@ fn handle(
                         write_payload(&mut w, json!({"ok": true, "tile": t}), &out)?;
                         tiles += 1;
                     }
-                    Ok(_) => fail(&mut w, "the model's answer has the wrong size or numbers that are not finite")?,
+                    Ok(_) => fail(
+                        &mut w,
+                        "the model's answer has the wrong size or numbers that are not finite",
+                    )?,
                     Err(e) => fail(&mut w, &e.to_string())?,
                 }
             }
@@ -286,9 +335,19 @@ pub struct Remote {
 impl Remote {
     /// `address` as `host[:port]` (default port [`DEFAULT_PORT`]; `tcp://` and a trailing `/` are ignored).
     pub fn new(address: &str, token: &str, model_sha256: &str, tile: usize) -> Remote {
-        let a = address.trim().trim_start_matches("tcp://").trim_end_matches('/');
-        let has_port = a.rsplit_once(':').is_some_and(|(h, p)| !h.is_empty() && !h.ends_with(':') && p.parse::<u16>().is_ok()) && !a.ends_with(']');
-        let address = if has_port { a.to_string() } else { format!("{a}:{DEFAULT_PORT}") };
+        let a = address
+            .trim()
+            .trim_start_matches("tcp://")
+            .trim_end_matches('/');
+        let has_port = a
+            .rsplit_once(':')
+            .is_some_and(|(h, p)| !h.is_empty() && !h.ends_with(':') && p.parse::<u16>().is_ok())
+            && !a.ends_with(']');
+        let address = if has_port {
+            a.to_string()
+        } else {
+            format!("{a}:{DEFAULT_PORT}")
+        };
         Remote {
             address,
             token: token.into(),
@@ -328,7 +387,10 @@ impl Remote {
 
     /// Why the last tile failed.
     pub fn last_error(&self) -> Option<String> {
-        self.last_error.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.last_error
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     fn err(&self, reason: impl std::fmt::Display) -> Error {
@@ -336,20 +398,34 @@ impl Remote {
     }
 
     fn connect(&self) -> Result<(BufReader<TcpStream>, TcpStream), Error> {
-        let addr = self.address.to_socket_addrs().map_err(|e| self.err(e))?.next().ok_or_else(|| self.err("the address doesn't resolve"))?;
-        let s = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).map_err(|e| self.err(e))?;
-        s.set_read_timeout(Some(self.timeout)).map_err(|e| self.err(e))?;
-        s.set_write_timeout(Some(self.timeout)).map_err(|e| self.err(e))?;
+        let addr = self
+            .address
+            .to_socket_addrs()
+            .map_err(|e| self.err(e))?
+            .next()
+            .ok_or_else(|| self.err("the address doesn't resolve"))?;
+        let s =
+            TcpStream::connect_timeout(&addr, Duration::from_secs(5)).map_err(|e| self.err(e))?;
+        s.set_read_timeout(Some(self.timeout))
+            .map_err(|e| self.err(e))?;
+        s.set_write_timeout(Some(self.timeout))
+            .map_err(|e| self.err(e))?;
         s.set_nodelay(true).map_err(|e| self.err(e))?;
         let r = BufReader::new(s.try_clone().map_err(|e| self.err(e))?);
         Ok((r, s))
     }
 
     fn reply(&self, r: &mut BufReader<TcpStream>) -> Result<Value, Error> {
-        let line = read_line(r).map_err(|e| self.err(e))?.ok_or_else(|| self.err("the connection closed"))?;
+        let line = read_line(r)
+            .map_err(|e| self.err(e))?
+            .ok_or_else(|| self.err("the connection closed"))?;
         let v: Value = serde_json::from_str(&line).map_err(|_| self.err("malformed reply"))?;
         if v.get("ok").and_then(Value::as_bool) != Some(true) {
-            return Err(self.err(v.get("error").and_then(Value::as_str).unwrap_or("request failed")));
+            return Err(self.err(
+                v.get("error")
+                    .and_then(Value::as_str)
+                    .unwrap_or("request failed"),
+            ));
         }
         Ok(v)
     }
@@ -357,23 +433,41 @@ impl Remote {
     /// Greet the server: its device and model. Fails when it runs another model or tile size than this one.
     pub fn hello(&self) -> Result<ServerInfo, Error> {
         let (mut r, mut s) = self.connect()?;
-        writeln!(s, "{}", json!({"v": PROTOCOL, "token": self.token, "op": "hello"})).map_err(|e| self.err(e))?;
+        writeln!(
+            s,
+            "{}",
+            json!({"v": PROTOCOL, "token": self.token, "op": "hello"})
+        )
+        .map_err(|e| self.err(e))?;
         let v = self.reply(&mut r)?;
         let m = v.get("model").cloned().unwrap_or_default();
         let text = |o: &Value, k: &str| o.get(k).and_then(Value::as_str).unwrap_or("").to_string();
         let info = ServerInfo {
             address: self.address.clone(),
             device: text(&v, "device"),
-            model: ModelId { id: text(&m, "id"), version: text(&m, "version"), sha256: text(&m, "sha256") },
+            model: ModelId {
+                id: text(&m, "id"),
+                version: text(&m, "version"),
+                sha256: text(&m, "sha256"),
+            },
             tile: field(&v, "tile").unwrap_or(0),
         };
         if !info.model.sha256.eq_ignore_ascii_case(&self.model_sha256) {
-            return Err(self.err(format!("it runs another model ({} {})", info.model.id, info.model.version)));
+            return Err(self.err(format!(
+                "it runs another model ({} {})",
+                info.model.id, info.model.version
+            )));
         }
         if info.tile != self.tile {
-            return Err(self.err(format!("it runs {}-cell tiles, this model {}", info.tile, self.tile)));
+            return Err(self.err(format!(
+                "it runs {}-cell tiles, this model {}",
+                info.tile, self.tile
+            )));
         }
-        self.pool.lock().unwrap_or_else(PoisonError::into_inner).push((r, s));
+        self.pool
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push((r, s));
         Ok(info)
     }
 
@@ -391,7 +485,10 @@ impl Remote {
         self.busy.fetch_sub(1, Ordering::SeqCst);
         if let Err(e) = &r {
             self.failures.fetch_add(1, Ordering::Relaxed);
-            *self.last_error.lock().unwrap_or_else(PoisonError::into_inner) = Some(e.to_string());
+            *self
+                .last_error
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = Some(e.to_string());
         }
         Some(r)
     }
@@ -399,9 +496,16 @@ impl Remote {
     fn run_now(&self, input: &[f32]) -> Result<Vec<f32>, Error> {
         let t = self.tile;
         if input.len() != 4 * t * t {
-            return Err(Error::Input(format!("a tile of {} samples for {t}-cell tiles", input.len())));
+            return Err(Error::Input(format!(
+                "a tile of {} samples for {t}-cell tiles",
+                input.len()
+            )));
         }
-        let pooled = self.pool.lock().unwrap_or_else(PoisonError::into_inner).pop();
+        let pooled = self
+            .pool
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .pop();
         let (mut r, mut s) = match pooled {
             Some(c) => c,
             None => self.connect()?,
@@ -415,7 +519,10 @@ impl Remote {
         }
         let bytes = field(&v, "bytes").ok_or_else(|| self.err("an answer without its size"))?;
         let out = read_payload(&mut r, bytes, 3 * 4 * t * t).map_err(|e| self.err(e))?;
-        self.pool.lock().unwrap_or_else(PoisonError::into_inner).push((r, s));
+        self.pool
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push((r, s));
         // the other computer's numbers go straight into the render: NaN or infinity (an f16 can carry
         // both) is a failed tile, which `Shared` runs here instead
         if !out.iter().all(|v| v.is_finite()) {
@@ -465,15 +572,24 @@ mod tests {
     }
 
     fn id(sha: &str) -> ModelId {
-        ModelId { id: "test".into(), version: "1".into(), sha256: sha.into() }
+        ModelId {
+            id: "test".into(),
+            version: "1".into(),
+            sha256: sha.into(),
+        }
     }
 
     fn start(sha: &str, run: RunTile) -> String {
         let l = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = l.local_addr().unwrap().to_string();
-        let opts = ServerOptions { token: TOKEN.into(), ..Default::default() };
+        let opts = ServerOptions {
+            token: TOKEN.into(),
+            ..Default::default()
+        };
         let m = id(sha);
-        std::thread::spawn(move || serve(l, m, T, "CPU (test)".into(), run, opts, Arc::new(|_| {})));
+        std::thread::spawn(move || {
+            serve(l, m, T, "CPU (test)".into(), run, opts, Arc::new(|_| {}))
+        });
         addr
     }
 
@@ -486,7 +602,9 @@ mod tests {
     }
 
     fn tile_input(seed: f32) -> Vec<f32> {
-        (0..4 * T * T).map(|i| (i as f32 * 0.37 + seed).sin() * 0.5 + 0.5).collect()
+        (0..4 * T * T)
+            .map(|i| (i as f32 * 0.37 + seed).sin() * 0.5 + 0.5)
+            .collect()
     }
 
     #[test]
@@ -506,7 +624,10 @@ mod tests {
         let local = Local(model(2.0), AtomicUsize::new(0));
         // nobody listening: every tile runs locally, and after a few the server is given up
         let dead = Remote::new("127.0.0.1:1", TOKEN, "aa11", T);
-        let shared = Shared { remote: &dead, local: &local };
+        let shared = Shared {
+            remote: &dead,
+            local: &local,
+        };
         for i in 0..6 {
             assert!(shared.run(&tile_input(i as f32)).is_ok());
         }
@@ -515,11 +636,30 @@ mod tests {
         // a server with another model is refused at the greeting and per tile
         let addr = start("bb22", model(2.0));
         let other = Remote::new(&addr, TOKEN, "aa11", T);
-        assert!(other.hello().unwrap_err().to_string().contains("another model"));
-        assert!(other.try_run(&tile_input(0.0)).unwrap().unwrap_err().to_string().contains("model mismatch"));
+        assert!(
+            other
+                .hello()
+                .unwrap_err()
+                .to_string()
+                .contains("another model")
+        );
+        assert!(
+            other
+                .try_run(&tile_input(0.0))
+                .unwrap()
+                .unwrap_err()
+                .to_string()
+                .contains("model mismatch")
+        );
         // a wrong token
         let addr = start("aa11", model(2.0));
-        assert!(Remote::new(&addr, "wrong-token-0000000", "aa11", T).hello().unwrap_err().to_string().contains("bad token"));
+        assert!(
+            Remote::new(&addr, "wrong-token-0000000", "aa11", T)
+                .hello()
+                .unwrap_err()
+                .to_string()
+                .contains("bad token")
+        );
         // all slots busy: the tile runs locally without waiting
         let busy = Remote::new(&addr, TOKEN, "aa11", T).with_slots(1);
         busy.busy.store(1, Ordering::SeqCst);
@@ -540,27 +680,52 @@ mod tests {
         assert!(talk(b"not json\n").contains("malformed"));
         let v2 = format!("{}\n", json!({"v": 2, "token": TOKEN, "op": "hello"}));
         assert!(talk(v2.as_bytes()).contains("protocol"));
-        let big = format!("{}\n", json!({"v": 1, "token": TOKEN, "op": "run", "model": "aa11", "tile": 4096, "bytes": 10}));
+        let big = format!(
+            "{}\n",
+            json!({"v": 1, "token": TOKEN, "op": "run", "model": "aa11", "tile": 4096, "bytes": 10})
+        );
         assert!(talk(big.as_bytes()).contains("8-cell"));
         // a payload that inflates past its tile
         let bomb = miniz_oxide::deflate::compress_to_vec(&vec![0u8; 1 << 20], 9);
-        let hdr = format!("{}\n", json!({"v": 1, "token": TOKEN, "op": "run", "model": "aa11", "tile": T, "bytes": bomb.len()}));
+        let hdr = format!(
+            "{}\n",
+            json!({"v": 1, "token": TOKEN, "op": "run", "model": "aa11", "tile": T, "bytes": bomb.len()})
+        );
         assert!(talk(&[hdr.as_bytes(), &bomb].concat()).contains("false"));
         assert!(Remote::new(&addr, TOKEN, "aa11", T).hello().is_ok());
         assert!(same("abc", "abc") && !same("abc", "abd") && !same("abc", "abcd"));
         // a short token is refused when the server starts
         let l = TcpListener::bind("127.0.0.1:0").unwrap();
-        let opts = ServerOptions { token: "short".into(), ..Default::default() };
-        assert!(serve(l, id("aa11"), T, "x".into(), model(1.0), opts, Arc::new(|_| {})).is_err());
+        let opts = ServerOptions {
+            token: "short".into(),
+            ..Default::default()
+        };
+        assert!(
+            serve(
+                l,
+                id("aa11"),
+                T,
+                "x".into(),
+                model(1.0),
+                opts,
+                Arc::new(|_| {})
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn packing_round_trips_and_addresses_are_normalised() {
-        let v: Vec<f32> = (0..4096).map(|i| 0.5 + ((i * 7919 % 101) as f32 - 50.0) * 0.002).collect();
+        let v: Vec<f32> = (0..4096)
+            .map(|i| 0.5 + ((i * 7919 % 101) as f32 - 50.0) * 0.002)
+            .collect();
         let back = unpack(&pack(&v), v.len()).unwrap();
         assert!(v.iter().zip(&back).all(|(a, b)| (a - b).abs() < 1e-3));
         assert!(unpack(&pack(&v), v.len() + 1).is_err());
-        assert_eq!(Remote::new("tcp://100.1.2.3/", TOKEN, "a", T).address(), "100.1.2.3:7990");
+        assert_eq!(
+            Remote::new("tcp://100.1.2.3/", TOKEN, "a", T).address(),
+            "100.1.2.3:7990"
+        );
         assert_eq!(Remote::new("box:8000", TOKEN, "a", T).address(), "box:8000");
         assert_eq!(Remote::new("[::1]", TOKEN, "a", T).address(), "[::1]:7990");
     }

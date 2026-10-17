@@ -315,14 +315,17 @@ impl ComputerBackend for WindowsComputerBackend {
                     "computer: aphrody-winclean backend unavailable ({error}); \
                      update ../aphrody-os and rebuild aphrody"
                 )));
-            },
+            }
         };
 
         match action {
             ComputerAction::Screenshot => {
-                let res =
-                    wc.call_async("computer_capture_screen", &json!({})).await.map_err(|e| {
-                        ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                let res = wc
+                    .call_async("computer_capture_screen", &json!({}))
+                    .await
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
                     })?;
                 let mut images = Vec::new();
                 for img in res.images() {
@@ -336,20 +339,31 @@ impl ComputerBackend for WindowsComputerBackend {
                 });
                 out.images = images;
                 Ok(out)
-            },
-            ComputerAction::Click { x, y, element_id, button } => {
+            }
+            ComputerAction::Click {
+                x,
+                y,
+                element_id,
+                button,
+            } => {
                 if let Some(eid) = element_id {
                     let args = json!({ "elementId": eid });
-                    let res =
-                        wc.call_async("computer_click_element", &args).await.map_err(|e| {
-                            ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    let res = wc
+                        .call_async("computer_click_element", &args)
+                        .await
+                        .map_err(|e| ToolError::Execution {
+                            tool: "computer".into(),
+                            message: e.to_string(),
                         })?;
                     Ok(ToolOutput::ok(res.text()))
                 } else if let (Some(x), Some(y)) = (x, y) {
                     let btn = button.as_deref().unwrap_or("left");
                     let args = json!({ "x": x, "y": y, "button": btn });
                     let res = wc.call_async("computer_click", &args).await.map_err(|e| {
-                        ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                        ToolError::Execution {
+                            tool: "computer".into(),
+                            message: e.to_string(),
+                        }
                     })?;
                     Ok(ToolOutput::ok(res.text()))
                 } else {
@@ -359,22 +373,34 @@ impl ComputerBackend for WindowsComputerBackend {
                             .into(),
                     })
                 }
-            },
+            }
             ComputerAction::DoubleClick { x, y } => {
                 let args = json!({ "x": x, "y": y, "button": "left", "doubleClick": true });
                 let res = wc.call_async("computer_click", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    }
                 })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
+            }
             ComputerAction::Move { x, y } => {
                 let args = json!({ "x": x, "y": y });
-                let res = wc.call_async("mouse_move_smooth", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
-                })?;
+                let res = wc
+                    .call_async("mouse_move_smooth", &args)
+                    .await
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
-            ComputerAction::Drag { start_x, start_y, end_x, end_y } => {
+            }
+            ComputerAction::Drag {
+                start_x,
+                start_y,
+                end_x,
+                end_y,
+            } => {
                 let args = json!({
                     "startX": start_x,
                     "startY": start_y,
@@ -382,11 +408,19 @@ impl ComputerBackend for WindowsComputerBackend {
                     "endY": end_y,
                 });
                 let res = wc.call_async("computer_drag", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    }
                 })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
-            ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
+            }
+            ComputerAction::Scroll {
+                delta_x,
+                delta_y,
+                direction,
+                amount,
+            } => {
                 let dy = delta_y.or_else(|| match direction.as_deref() {
                     Some("up") => Some(-amount.unwrap_or(120)),
                     Some("down") => Some(amount.unwrap_or(120)),
@@ -402,56 +436,84 @@ impl ComputerBackend for WindowsComputerBackend {
                     "deltaY": dy.unwrap_or(0),
                 });
                 let res = wc.call_async("computer_scroll", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    }
                 })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
+            }
             ComputerAction::Type { text } => {
                 let args = json!({ "text": text });
                 let res = wc.call_async("computer_type", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    }
                 })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
+            }
             ComputerAction::Keypress { key } => {
                 let args = json!({ "key": key });
                 let res = wc.call_async("computer_key", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    }
                 })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
+            }
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
                 Ok(ToolOutput::ok(format!("Waited {duration_ms} ms.")))
-            },
+            }
             ComputerAction::Observe { element_id } => {
                 let args = json!({ "elementId": element_id });
-                let res = wc.call_async("computer_observe", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
-                })?;
+                let res = wc
+                    .call_async("computer_observe", &args)
+                    .await
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
+            }
             ComputerAction::ListWindows => {
-                let res = wc.call_async("list_windows", &json!({})).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
-                })?;
+                let res = wc
+                    .call_async("list_windows", &json!({}))
+                    .await
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
-            ComputerAction::FocusWindow { window_title, window_id } => {
+            }
+            ComputerAction::FocusWindow {
+                window_title,
+                window_id,
+            } => {
                 if let Some(title) = window_title {
                     if let Err(denial) = policy.verify_target(title) {
                         return Ok(ToolOutput::error(denial));
                     }
                     let args = json!({ "title": title });
-                    let res = wc.call_async("switch_to_window", &args).await.map_err(|e| {
-                        ToolError::Execution { tool: "computer".into(), message: e.to_string() }
-                    })?;
+                    let res = wc
+                        .call_async("switch_to_window", &args)
+                        .await
+                        .map_err(|e| ToolError::Execution {
+                            tool: "computer".into(),
+                            message: e.to_string(),
+                        })?;
                     Ok(ToolOutput::ok(res.text()))
                 } else if let Some(wid) = window_id {
                     let args = json!({ "windowHandle": wid });
-                    let res = wc.call_async("switch_to_window", &args).await.map_err(|e| {
-                        ToolError::Execution { tool: "computer".into(), message: e.to_string() }
-                    })?;
+                    let res = wc
+                        .call_async("switch_to_window", &args)
+                        .await
+                        .map_err(|e| ToolError::Execution {
+                            tool: "computer".into(),
+                            message: e.to_string(),
+                        })?;
                     Ok(ToolOutput::ok(res.text()))
                 } else {
                     Err(ToolError::InvalidArguments {
@@ -459,7 +521,7 @@ impl ComputerBackend for WindowsComputerBackend {
                         message: "focus_window requires either window_title or window_id".into(),
                     })
                 }
-            },
+            }
         }
     }
 }
@@ -487,9 +549,13 @@ impl ComputerBackend for BrowserComputerBackend {
                     let mut out = ToolOutput::ok("Browser screenshot captured.");
                     out.images = vec![ToolImage::new("image/png", png.trim().to_string())];
                     Ok(out)
-                },
-                Ok(_) => Ok(ToolOutput::error("Browser screenshot returned no PNG data.")),
-                Err(error) => Ok(ToolOutput::error(format!("Browser screenshot error: {error}"))),
+                }
+                Ok(_) => Ok(ToolOutput::error(
+                    "Browser screenshot returned no PNG data.",
+                )),
+                Err(error) => Ok(ToolOutput::error(format!(
+                    "Browser screenshot error: {error}"
+                ))),
             },
             ComputerAction::Click { element_id, .. } => match element_id {
                 Some(selector) => match session::click(selector, long).await {
@@ -511,8 +577,13 @@ impl ComputerBackend for BrowserComputerBackend {
             )),
             ComputerAction::Drag { .. } => {
                 Ok(ToolOutput::error("Native browser drag is not available."))
-            },
-            ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
+            }
+            ComputerAction::Scroll {
+                delta_x,
+                delta_y,
+                direction,
+                amount,
+            } => {
                 let dy = delta_y
                     .or_else(|| match direction.as_deref() {
                         Some("up") => Some(-amount.unwrap_or(120)),
@@ -525,7 +596,7 @@ impl ComputerBackend for BrowserComputerBackend {
                     Ok(text) => Ok(ToolOutput::ok(text)),
                     Err(error) => Ok(ToolOutput::error(format!("Browser scroll error: {error}"))),
                 }
-            },
+            }
             ComputerAction::Type { .. } => Ok(ToolOutput::error(
                 "Browser type error: typing requires an element selector or ref",
             )),
@@ -536,7 +607,7 @@ impl ComputerBackend for BrowserComputerBackend {
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
                 Ok(ToolOutput::ok(format!("Waited {duration_ms} ms.")))
-            },
+            }
             ComputerAction::Observe { element_id } => {
                 if element_id.is_some() {
                     return Ok(ToolOutput::error(
@@ -547,10 +618,12 @@ impl ComputerBackend for BrowserComputerBackend {
                     Ok(text) => Ok(ToolOutput::ok(text)),
                     Err(error) => Ok(ToolOutput::error(format!("Browser observe error: {error}"))),
                 }
-            },
+            }
             ComputerAction::ListWindows => match session::tabs(long).await {
                 Ok(text) => Ok(ToolOutput::ok(text)),
-                Err(error) => Ok(ToolOutput::error(format!("Browser tab listing error: {error}"))),
+                Err(error) => Ok(ToolOutput::error(format!(
+                    "Browser tab listing error: {error}"
+                ))),
             },
             ComputerAction::FocusWindow { window_title, .. } => {
                 if let Some(url) = window_title {
@@ -558,15 +631,15 @@ impl ComputerBackend for BrowserComputerBackend {
                         return Ok(ToolOutput::error(denial));
                     }
                     match session::navigate(url, long).await {
-                        Ok(text) => {
-                            Ok(ToolOutput::ok(format!("Navigated browser to '{url}':\n{text}")))
-                        },
+                        Ok(text) => Ok(ToolOutput::ok(format!(
+                            "Navigated browser to '{url}':\n{text}"
+                        ))),
                         Err(error) => Ok(ToolOutput::error(format!("Navigation error: {error}"))),
                     }
                 } else {
                     Ok(ToolOutput::error("Native browser focus requires a URL."))
                 }
-            },
+            }
         }
     }
 }
@@ -601,17 +674,24 @@ impl TerminalComputerBackend {
         let term = aphrody_term::AphrodyTerm::spawn_pty(
             &program,
             &[],
-            aphrody_term::TermConfig { cols, rows, ..Default::default() },
+            aphrody_term::TermConfig {
+                cols,
+                rows,
+                ..Default::default()
+            },
         )?;
-        Ok(Self { grid: term.grid(), controller: term.computer_use_handle() })
+        Ok(Self {
+            grid: term.grid(),
+            controller: term.computer_use_handle(),
+        })
     }
 
     /// Create a headless backend with no PTY: `screenshot` works, input actions return an error.
     #[must_use]
     pub fn standalone(cols: usize, rows: usize) -> Self {
-        let grid = Arc::new(aphrody_term::FairMutex::new(aphrody_term::TerminalGrid::new(
-            cols, rows, 10_000,
-        )));
+        let grid = Arc::new(aphrody_term::FairMutex::new(
+            aphrody_term::TerminalGrid::new(cols, rows, 10_000),
+        ));
         let controller = Arc::new(aphrody_term::ComputerUseController::new(None));
         Self { grid, controller }
     }
@@ -623,7 +703,10 @@ fn default_shell() -> String {
     let (var, fallback) = ("COMSPEC", "cmd.exe");
     #[cfg(not(windows))]
     let (var, fallback) = ("SHELL", "/bin/sh");
-    std::env::var(var).ok().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| fallback.to_owned())
+    std::env::var(var)
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| fallback.to_owned())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -646,7 +729,7 @@ impl ComputerBackend for TerminalComputerBackend {
                 Ok(ToolOutput::ok(format!(
                     "Terminal buffer (cursor at col {col}, row {row}, visible: {visible}):\n{text}"
                 )))
-            },
+            }
             ComputerAction::Type { text } => {
                 self.controller
                     .dispatch_action(aphrody_term::ComputerAction::TypeText(text.clone()))
@@ -654,8 +737,11 @@ impl ComputerBackend for TerminalComputerBackend {
                         tool: "computer".into(),
                         message: format!("terminal type error: {e}"),
                     })?;
-                Ok(ToolOutput::ok(format!("Typed {} character(s) into terminal.", text.len())))
-            },
+                Ok(ToolOutput::ok(format!(
+                    "Typed {} character(s) into terminal.",
+                    text.len()
+                )))
+            }
             ComputerAction::Keypress { key } => {
                 self.controller
                     .dispatch_action(aphrody_term::ComputerAction::PressKey(key.clone()))
@@ -664,11 +750,11 @@ impl ComputerBackend for TerminalComputerBackend {
                         message: format!("terminal keypress error: {e}"),
                     })?;
                 Ok(ToolOutput::ok(format!("Pressed key '{key}' in terminal.")))
-            },
+            }
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
                 Ok(ToolOutput::ok(format!("Waited {duration_ms} ms.")))
-            },
+            }
             other => Ok(ToolOutput::error(format!(
                 "computer action `{}` is not supported in terminal environment",
                 other.name()
@@ -789,9 +875,16 @@ impl RemoteComputerBackend {
     /// Create a new remote backend for the specified target and mode.
     #[must_use]
     pub fn new(target: RemoteComputerTarget, mode: RemoteComputerMode) -> Self {
-        let client =
-            reqwest::Client::builder().timeout(Duration::from_secs(30)).build().unwrap_or_default();
-        Self { target, mode, client, session: tokio::sync::Mutex::new(None) }
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()
+            .unwrap_or_default();
+        Self {
+            target,
+            mode,
+            client,
+            session: tokio::sync::Mutex::new(None),
+        }
     }
 
     /// Target information.
@@ -841,11 +934,17 @@ impl RemoteComputerBackend {
             }
             return Ok(body.get("result").cloned().unwrap_or(body));
         }
-        Err(self.error(format!("remote MCP session refused by {}", self.target.endpoint)))
+        Err(self.error(format!(
+            "remote MCP session refused by {}",
+            self.target.endpoint
+        )))
     }
 
     fn error(&self, message: String) -> ToolError {
-        ToolError::Execution { tool: "computer".into(), message }
+        ToolError::Execution {
+            tool: "computer".into(),
+            message,
+        }
     }
 
     fn bearer(&self) -> Option<String> {
@@ -888,8 +987,11 @@ impl RemoteComputerBackend {
             ))
         })?;
         let status = resp.status();
-        let session_id =
-            resp.headers().get("mcp-session-id").and_then(|v| v.to_str().ok()).map(str::to_owned);
+        let session_id = resp
+            .headers()
+            .get("mcp-session-id")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned);
         let text = resp
             .text()
             .await
@@ -938,13 +1040,22 @@ impl RemoteComputerBackend {
     ) -> Result<ToolOutput, ToolError> {
         match action {
             ComputerAction::Screenshot => {
-                let res = self.call_remote_tool("computer_capture_screen", &json!({})).await?;
+                let res = self
+                    .call_remote_tool("computer_capture_screen", &json!({}))
+                    .await?;
                 parse_remote_mcp_output(&res, "Screenshot captured from remote PC.")
-            },
-            ComputerAction::Click { x, y, element_id, button } => {
+            }
+            ComputerAction::Click {
+                x,
+                y,
+                element_id,
+                button,
+            } => {
                 if let Some(eid) = element_id {
                     let args = json!({ "elementId": eid });
-                    let res = self.call_remote_tool("computer_click_element", &args).await?;
+                    let res = self
+                        .call_remote_tool("computer_click_element", &args)
+                        .await?;
                     parse_remote_mcp_output(&res, "Clicked remote element.")
                 } else if let (Some(x), Some(y)) = (x, y) {
                     let btn = button.as_deref().unwrap_or("left");
@@ -957,18 +1068,23 @@ impl RemoteComputerBackend {
                         message: "click action requires coordinates (x, y) or an element_id".into(),
                     })
                 }
-            },
+            }
             ComputerAction::DoubleClick { x, y } => {
                 let args = json!({ "x": x, "y": y, "button": "left", "doubleClick": true });
                 let res = self.call_remote_tool("computer_click", &args).await?;
                 parse_remote_mcp_output(&res, "Double clicked on remote PC.")
-            },
+            }
             ComputerAction::Move { x, y } => {
                 let args = json!({ "x": x, "y": y });
                 let res = self.call_remote_tool("mouse_move_smooth", &args).await?;
                 parse_remote_mcp_output(&res, "Moved mouse on remote PC.")
-            },
-            ComputerAction::Drag { start_x, start_y, end_x, end_y } => {
+            }
+            ComputerAction::Drag {
+                start_x,
+                start_y,
+                end_x,
+                end_y,
+            } => {
                 let args = json!({
                     "startX": start_x,
                     "startY": start_y,
@@ -977,8 +1093,13 @@ impl RemoteComputerBackend {
                 });
                 let res = self.call_remote_tool("computer_drag", &args).await?;
                 parse_remote_mcp_output(&res, "Dragged on remote PC.")
-            },
-            ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
+            }
+            ComputerAction::Scroll {
+                delta_x,
+                delta_y,
+                direction,
+                amount,
+            } => {
                 let dy = delta_y.or_else(|| match direction.as_deref() {
                     Some("up") => Some(-amount.unwrap_or(120)),
                     Some("down") => Some(amount.unwrap_or(120)),
@@ -995,31 +1116,36 @@ impl RemoteComputerBackend {
                 });
                 let res = self.call_remote_tool("computer_scroll", &args).await?;
                 parse_remote_mcp_output(&res, "Scrolled on remote PC.")
-            },
+            }
             ComputerAction::Type { text } => {
                 let args = json!({ "text": text });
                 let res = self.call_remote_tool("computer_type", &args).await?;
                 parse_remote_mcp_output(&res, "Typed on remote PC.")
-            },
+            }
             ComputerAction::Keypress { key } => {
                 let args = json!({ "key": key });
                 let res = self.call_remote_tool("computer_key", &args).await?;
                 parse_remote_mcp_output(&res, "Pressed key on remote PC.")
-            },
+            }
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
-                Ok(ToolOutput::ok(format!("Waited {duration_ms} ms on remote target.")))
-            },
+                Ok(ToolOutput::ok(format!(
+                    "Waited {duration_ms} ms on remote target."
+                )))
+            }
             ComputerAction::Observe { element_id } => {
                 let args = json!({ "elementId": element_id });
                 let res = self.call_remote_tool("computer_observe", &args).await?;
                 parse_remote_mcp_output(&res, "Observed remote desktop.")
-            },
+            }
             ComputerAction::ListWindows => {
                 let res = self.call_remote_tool("list_windows", &json!({})).await?;
                 parse_remote_mcp_output(&res, "Listed windows on remote PC.")
-            },
-            ComputerAction::FocusWindow { window_title, window_id } => {
+            }
+            ComputerAction::FocusWindow {
+                window_title,
+                window_id,
+            } => {
                 let args = if let Some(title) = window_title {
                     json!({ "title": title })
                 } else if let Some(wid) = window_id {
@@ -1032,7 +1158,7 @@ impl RemoteComputerBackend {
                 };
                 let res = self.call_remote_tool("switch_to_window", &args).await?;
                 parse_remote_mcp_output(&res, "Focused window on remote PC.")
-            },
+            }
         }
     }
 
@@ -1041,19 +1167,29 @@ impl RemoteComputerBackend {
         action: &ComputerAction,
         _policy: &ComputerPolicy,
     ) -> Result<ToolOutput, ToolError> {
-        let distro =
-            self.target.wsl_distro.as_deref().unwrap_or(RemoteComputerTarget::DEFAULT_WSL_DISTRO);
+        let distro = self
+            .target
+            .wsl_distro
+            .as_deref()
+            .unwrap_or(RemoteComputerTarget::DEFAULT_WSL_DISTRO);
         match action {
             ComputerAction::Screenshot => {
                 // If a visual capture is possible on remote PC, attempt it; otherwise return process telemetry.
-                match self.call_remote_tool("computer_capture_screen", &json!({})).await {
+                match self
+                    .call_remote_tool("computer_capture_screen", &json!({}))
+                    .await
+                {
                     Ok(res)
-                        if res.get("content").and_then(Value::as_array).is_some_and(|c| {
-                            c.iter().any(|b| b.get("type").and_then(Value::as_str) == Some("image"))
-                        }) =>
+                        if res
+                            .get("content")
+                            .and_then(Value::as_array)
+                            .is_some_and(|c| {
+                                c.iter()
+                                    .any(|b| b.get("type").and_then(Value::as_str) == Some("image"))
+                            }) =>
                     {
                         parse_remote_mcp_output(&res, "WSL desktop screenshot captured.")
-                    },
+                    }
                     _ => {
                         let res = self
                             .call_remote_tool(
@@ -1063,16 +1199,16 @@ impl RemoteComputerBackend {
                             .await?;
                         let text = format_wsl_process_list(&res, distro);
                         Ok(ToolOutput::ok(text))
-                    },
+                    }
                 }
-            },
+            }
             ComputerAction::Observe { .. } => {
                 let res = self
                     .call_remote_tool("wsl_list_processes", &json!({ "distribution": distro }))
                     .await?;
                 let text = format_wsl_process_list(&res, distro);
                 Ok(ToolOutput::ok(text))
-            },
+            }
             ComputerAction::Type { text } => {
                 let args = json!({
                     "distribution": distro,
@@ -1081,7 +1217,7 @@ impl RemoteComputerBackend {
                 let res = self.call_remote_tool("wsl_execute", &args).await?;
                 let text = format_wsl_execution_result(&res, distro, text);
                 Ok(ToolOutput::ok(text))
-            },
+            }
             ComputerAction::Keypress { key } => {
                 let sig = match key.to_ascii_uppercase().as_str() {
                     "CTRL+C" | "SIGINT" => "INT",
@@ -1099,20 +1235,24 @@ impl RemoteComputerBackend {
                     &res,
                     &format!("Dispatched signal {sig} to WSL distro {distro}."),
                 )
-            },
+            }
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
-                Ok(ToolOutput::ok(format!("Waited {duration_ms} ms in remote WSL session.")))
-            },
+                Ok(ToolOutput::ok(format!(
+                    "Waited {duration_ms} ms in remote WSL session."
+                )))
+            }
             ComputerAction::ListWindows => {
-                let distros = self.call_remote_tool("wsl_list_distributions", &json!({})).await?;
+                let distros = self
+                    .call_remote_tool("wsl_list_distributions", &json!({}))
+                    .await?;
                 let text = format!(
                     "WSL Distributions on {}:\n{}",
                     self.target.host,
                     serde_json::to_string_pretty(&distros).unwrap_or_default()
                 );
                 Ok(ToolOutput::ok(text))
-            },
+            }
             ComputerAction::FocusWindow { window_title, .. } => {
                 if let Some(target_distro) = window_title {
                     Ok(ToolOutput::ok(format!(
@@ -1125,7 +1265,7 @@ impl RemoteComputerBackend {
                         self.target.host
                     )))
                 }
-            },
+            }
             other => Ok(ToolOutput::error(format!(
                 "computer action `{}` is not supported in WSL environment (use `type` to execute commands, or `observe` to inspect processes)",
                 other.name()
@@ -1148,7 +1288,10 @@ impl ComputerBackend for RemoteComputerBackend {
         action: &ComputerAction,
         policy: &ComputerPolicy,
     ) -> Result<ToolOutput, ToolError> {
-        if let ComputerAction::FocusWindow { window_title: Some(title), .. } = action
+        if let ComputerAction::FocusWindow {
+            window_title: Some(title),
+            ..
+        } = action
             && let Err(denial) = policy.verify_target(title)
         {
             return Ok(ToolOutput::error(denial));
@@ -1180,9 +1323,15 @@ impl VncComputerBackend {
         let t = rd::target::resolve(target, rd::target::TargetKind::Vnc, None)
             .map_err(|e| vnc_error(format!("{e:#}")))?;
         if t.kind != rd::target::TargetKind::Vnc {
-            return Err(vnc_error(format!("{target}: not a VNC target (use vnc://host:port)")));
+            return Err(vnc_error(format!(
+                "{target}: not a VNC target (use vnc://host:port)"
+            )));
         }
-        Ok(Self { target: t, password, session: tokio::sync::Mutex::new(None) })
+        Ok(Self {
+            target: t,
+            password,
+            session: tokio::sync::Mutex::new(None),
+        })
     }
 
     /// Canonical `vnc://` URL of the target.
@@ -1202,7 +1351,9 @@ impl VncComputerBackend {
             *guard =
                 Some(rd::vnc::client::VncSession::connect(&self.target.addr(), password).await?);
         }
-        let Some(vnc) = guard.as_ref() else { anyhow::bail!("VNC session unavailable") };
+        let Some(vnc) = guard.as_ref() else {
+            anyhow::bail!("VNC session unavailable")
+        };
         let out = match action {
             ComputerAction::Screenshot => {
                 let shot = vnc.screenshot(80, 1).await?;
@@ -1215,44 +1366,61 @@ impl VncComputerBackend {
                 ));
                 out.images = vec![ToolImage::new("image/jpeg", b64)];
                 out
-            },
-            ComputerAction::Click { x: Some(x), y: Some(y), element_id: None, button } => {
+            }
+            ComputerAction::Click {
+                x: Some(x),
+                y: Some(y),
+                element_id: None,
+                button,
+            } => {
                 let b = MouseButton::parse(button.as_deref().unwrap_or("left"));
                 vnc.click(*x, *y, b, 1).await?;
                 ToolOutput::ok(format!("Clicked {} at ({x}, {y}).", b.as_str()))
-            },
+            }
             ComputerAction::Click { .. } => ToolOutput::error(
                 "VNC click needs x and y (no accessibility tree over RFB)".to_string(),
             ),
             ComputerAction::DoubleClick { x, y } => {
                 vnc.click(*x, *y, MouseButton::Left, 2).await?;
                 ToolOutput::ok(format!("Double-clicked at ({x}, {y})."))
-            },
+            }
             ComputerAction::Move { x, y } => {
                 vnc.move_to(*x, *y).await?;
                 ToolOutput::ok(format!("Moved to ({x}, {y})."))
-            },
-            ComputerAction::Drag { start_x, start_y, end_x, end_y } => {
+            }
+            ComputerAction::Drag {
+                start_x,
+                start_y,
+                end_x,
+                end_y,
+            } => {
                 vnc.drag((*start_x, *start_y), (*end_x, *end_y)).await?;
-                ToolOutput::ok(format!("Dragged ({start_x}, {start_y}) -> ({end_x}, {end_y})."))
-            },
-            ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
+                ToolOutput::ok(format!(
+                    "Dragged ({start_x}, {start_y}) -> ({end_x}, {end_y})."
+                ))
+            }
+            ComputerAction::Scroll {
+                delta_x,
+                delta_y,
+                direction,
+                amount,
+            } => {
                 let (dx, dy) = scroll_deltas(*delta_x, *delta_y, direction.as_deref(), *amount);
                 vnc.scroll(dx, dy).await?;
                 ToolOutput::ok(format!("Scrolled ({dx}, {dy})."))
-            },
+            }
             ComputerAction::Type { text } => {
                 vnc.type_text(text).await?;
                 ToolOutput::ok(format!("Typed {} character(s).", text.chars().count()))
-            },
+            }
             ComputerAction::Keypress { key } => {
                 vnc.keypress(key).await?;
                 ToolOutput::ok(format!("Pressed {key}."))
-            },
+            }
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
                 ToolOutput::ok(format!("Waited {duration_ms} ms."))
-            },
+            }
             ComputerAction::Observe { .. }
             | ComputerAction::ListWindows
             | ComputerAction::FocusWindow { .. } => ToolOutput::error(format!(
@@ -1286,7 +1454,10 @@ fn scroll_deltas(
 }
 
 fn vnc_error(message: String) -> ToolError {
-    ToolError::Execution { tool: "computer".into(), message }
+    ToolError::Execution {
+        tool: "computer".into(),
+        message,
+    }
 }
 
 #[async_trait::async_trait]
@@ -1308,7 +1479,7 @@ impl ComputerBackend for VncComputerBackend {
                     old.close().await;
                 }
                 Err(vnc_error(format!("VNC {}: {e:#}", self.target.url())))
-            },
+            }
         }
     }
 }
@@ -1323,7 +1494,11 @@ impl WslComputerBackend {
     /// Create a local WSL backend targeting `distro` (defaults to "Ubuntu-24.04").
     #[must_use]
     pub fn new(distro: Option<&str>) -> Self {
-        Self { distro: distro.unwrap_or(RemoteComputerTarget::DEFAULT_WSL_DISTRO).to_string() }
+        Self {
+            distro: distro
+                .unwrap_or(RemoteComputerTarget::DEFAULT_WSL_DISTRO)
+                .to_string(),
+        }
     }
 }
 
@@ -1344,25 +1519,32 @@ impl ComputerBackend for WslComputerBackend {
                 return Ok(ToolOutput::error(format!(
                     "WSL computer use unavailable: aphrody-winclean backend not loaded ({error})"
                 )));
-            },
+            }
         };
 
         match action {
             ComputerAction::Screenshot | ComputerAction::Observe { .. } => {
                 let args = json!({ "distribution": self.distro });
-                let res = wc.call_async("wsl_list_processes", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
-                })?;
+                let res = wc
+                    .call_async("wsl_list_processes", &args)
+                    .await
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    })?;
                 let text = format!("WSL [{}] Processes:\n{}", self.distro, res.text());
                 Ok(ToolOutput::ok(text))
-            },
+            }
             ComputerAction::Type { text } => {
                 let args = json!({
                     "distribution": self.distro,
                     "command": ["/bin/sh", "-lc", text],
                 });
                 let res = wc.call_async("wsl_execute", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    }
                 })?;
                 let out_text = res.text();
                 Ok(ToolOutput::ok(if out_text.is_empty() {
@@ -1370,7 +1552,7 @@ impl ComputerBackend for WslComputerBackend {
                 } else {
                     out_text
                 }))
-            },
+            }
             ComputerAction::Keypress { key } => {
                 let sig = match key.to_ascii_uppercase().as_str() {
                     "CTRL+C" | "SIGINT" => "INT",
@@ -1384,28 +1566,42 @@ impl ComputerBackend for WslComputerBackend {
                     "signal": sig,
                 });
                 let res = wc.call_async("wsl_send_signal", &args).await.map_err(|e| {
-                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
+                    }
                 })?;
                 Ok(ToolOutput::ok(res.text()))
-            },
+            }
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
                 Ok(ToolOutput::ok(format!("Waited {duration_ms} ms in WSL.")))
-            },
+            }
             ComputerAction::ListWindows => {
-                let res =
-                    wc.call_async("wsl_list_distributions", &json!({})).await.map_err(|e| {
-                        ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                let res = wc
+                    .call_async("wsl_list_distributions", &json!({}))
+                    .await
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: e.to_string(),
                     })?;
-                Ok(ToolOutput::ok(format!("WSL Distributions:\n{}", res.text())))
-            },
+                Ok(ToolOutput::ok(format!(
+                    "WSL Distributions:\n{}",
+                    res.text()
+                )))
+            }
             ComputerAction::FocusWindow { window_title, .. } => {
                 if let Some(target) = window_title {
-                    Ok(ToolOutput::ok(format!("Targeted WSL distribution: `{target}`.")))
+                    Ok(ToolOutput::ok(format!(
+                        "Targeted WSL distribution: `{target}`."
+                    )))
                 } else {
-                    Ok(ToolOutput::ok(format!("Active WSL distribution: `{}`.", self.distro)))
+                    Ok(ToolOutput::ok(format!(
+                        "Active WSL distribution: `{}`.",
+                        self.distro
+                    )))
                 }
-            },
+            }
             other => Ok(ToolOutput::error(format!(
                 "computer action `{}` is not supported in WSL environment",
                 other.name()
@@ -1415,7 +1611,10 @@ impl ComputerBackend for WslComputerBackend {
 }
 
 fn parse_remote_mcp_output(value: &Value, fallback_default: &str) -> Result<ToolOutput, ToolError> {
-    let is_error = value.get("isError").and_then(Value::as_bool).unwrap_or(false);
+    let is_error = value
+        .get("isError")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let mut texts = Vec::new();
     let mut images = Vec::new();
 
@@ -1426,15 +1625,17 @@ fn parse_remote_mcp_output(value: &Value, fallback_default: &str) -> Result<Tool
                     if let Some(t) = block.get("text").and_then(Value::as_str) {
                         texts.push(t);
                     }
-                },
+                }
                 Some("image") => {
                     if let Some(data) = block.get("data").and_then(Value::as_str) {
-                        let mime =
-                            block.get("mimeType").and_then(Value::as_str).unwrap_or("image/png");
+                        let mime = block
+                            .get("mimeType")
+                            .and_then(Value::as_str)
+                            .unwrap_or("image/png");
                         images.push(ToolImage::new(mime, data));
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
     }
@@ -1450,7 +1651,11 @@ fn parse_remote_mcp_output(value: &Value, fallback_default: &str) -> Result<Tool
         texts.join("\n")
     };
 
-    let mut out = if is_error { ToolOutput::error(text) } else { ToolOutput::ok(text) };
+    let mut out = if is_error {
+        ToolOutput::error(text)
+    } else {
+        ToolOutput::ok(text)
+    };
     out.images = images;
     Ok(out)
 }
@@ -1475,12 +1680,28 @@ fn format_wsl_process_list(value: &Value, distro: &str) -> String {
 
 fn format_wsl_execution_result(value: &Value, distro: &str, command: &str) -> String {
     let struct_val = value.get("structuredContent").unwrap_or(value);
-    let stdout = struct_val.get("Stdout").and_then(Value::as_str).unwrap_or_default();
-    let stderr = struct_val.get("Stderr").and_then(Value::as_str).unwrap_or_default();
-    let exit_code = struct_val.get("ExitCode").and_then(Value::as_i64).unwrap_or(0);
-    let success = struct_val.get("Success").and_then(Value::as_bool).unwrap_or(exit_code == 0);
+    let stdout = struct_val
+        .get("Stdout")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let stderr = struct_val
+        .get("Stderr")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let exit_code = struct_val
+        .get("ExitCode")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
+    let success = struct_val
+        .get("Success")
+        .and_then(Value::as_bool)
+        .unwrap_or(exit_code == 0);
 
-    let err_str = if stderr.is_empty() { String::new() } else { format!("\n[stderr]: {stderr}") };
+    let err_str = if stderr.is_empty() {
+        String::new()
+    } else {
+        format!("\n[stderr]: {stderr}")
+    };
 
     format!(
         "WSL [{distro}] Execution (exit {exit_code}, success: {success}) for `{command}`:\n{stdout}{err_str}"
@@ -1505,7 +1726,10 @@ impl UnsupportedComputerBackend {
         env: ComputerEnvironment,
         reason: impl Into<std::borrow::Cow<'static, str>>,
     ) -> Self {
-        Self { env, reason: reason.into() }
+        Self {
+            env,
+            reason: reason.into(),
+        }
     }
 }
 
@@ -1542,7 +1766,10 @@ impl MockComputerBackend {
     /// Create a new mock backend.
     #[must_use]
     pub fn new(env: ComputerEnvironment) -> Self {
-        Self { env, recorded: std::sync::Mutex::new(Vec::new()) }
+        Self {
+            env,
+            recorded: std::sync::Mutex::new(Vec::new()),
+        }
     }
 }
 
@@ -1557,7 +1784,10 @@ impl ComputerBackend for MockComputerBackend {
         action: &ComputerAction,
         policy: &ComputerPolicy,
     ) -> Result<ToolOutput, ToolError> {
-        if let ComputerAction::FocusWindow { window_title: Some(title), .. } = action
+        if let ComputerAction::FocusWindow {
+            window_title: Some(title),
+            ..
+        } = action
             && let Err(denial) = policy.verify_target(title)
         {
             return Ok(ToolOutput::error(denial));
@@ -1573,11 +1803,18 @@ impl ComputerBackend for MockComputerBackend {
                 let mut out = ToolOutput::ok("Screenshot captured (1920x1080).");
                 out.images = vec![ToolImage::new("image/png", png_b64)];
                 Ok(out)
-            },
-            ComputerAction::Click { x, y, element_id, button } => {
+            }
+            ComputerAction::Click {
+                x,
+                y,
+                element_id,
+                button,
+            } => {
                 let btn = button.as_deref().unwrap_or("left");
                 if let Some(eid) = element_id {
-                    Ok(ToolOutput::ok(format!("Clicked element '{eid}' with {btn} button.")))
+                    Ok(ToolOutput::ok(format!(
+                        "Clicked element '{eid}' with {btn} button."
+                    )))
                 } else {
                     Ok(ToolOutput::ok(format!(
                         "Clicked at ({}, {}) with {btn} button.",
@@ -1585,35 +1822,46 @@ impl ComputerBackend for MockComputerBackend {
                         y.unwrap_or(0)
                     )))
                 }
-            },
+            }
             ComputerAction::DoubleClick { x, y } => {
                 Ok(ToolOutput::ok(format!("Double clicked at ({x}, {y}).")))
-            },
+            }
             ComputerAction::Move { x, y } => {
                 Ok(ToolOutput::ok(format!("Moved cursor to ({x}, {y}).")))
-            },
-            ComputerAction::Drag { start_x, start_y, end_x, end_y } => Ok(ToolOutput::ok(format!(
+            }
+            ComputerAction::Drag {
+                start_x,
+                start_y,
+                end_x,
+                end_y,
+            } => Ok(ToolOutput::ok(format!(
                 "Dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})."
             ))),
-            ComputerAction::Scroll { delta_x, delta_y, .. } => Ok(ToolOutput::ok(format!(
+            ComputerAction::Scroll {
+                delta_x, delta_y, ..
+            } => Ok(ToolOutput::ok(format!(
                 "Scrolled dx: {}, dy: {}.",
                 delta_x.unwrap_or(0),
                 delta_y.unwrap_or(0)
             ))),
-            ComputerAction::Type { text } => {
-                Ok(ToolOutput::ok(format!("Typed {} character(s).", text.len())))
-            },
+            ComputerAction::Type { text } => Ok(ToolOutput::ok(format!(
+                "Typed {} character(s).",
+                text.len()
+            ))),
             ComputerAction::Keypress { key } => Ok(ToolOutput::ok(format!("Pressed key '{key}'."))),
             ComputerAction::Wait { duration_ms } => {
                 Ok(ToolOutput::ok(format!("Waited {duration_ms} ms.")))
-            },
+            }
             ComputerAction::Observe { .. } => Ok(ToolOutput::ok(
                 r#"[{"id":"@e1","role":"window","name":"Notepad"},{"id":"@e2","role":"edit","name":"Text Editor"}]"#,
             )),
             ComputerAction::ListWindows => Ok(ToolOutput::ok(
                 r#"[{"handle":1001,"title":"Untitled - Notepad","process":"notepad.exe"}]"#,
             )),
-            ComputerAction::FocusWindow { window_title, window_id } => Ok(ToolOutput::ok(format!(
+            ComputerAction::FocusWindow {
+                window_title,
+                window_id,
+            } => Ok(ToolOutput::ok(format!(
                 "Focused window title: {:?}, id: {:?}.",
                 window_title, window_id
             ))),
@@ -1647,7 +1895,11 @@ impl ComputerTool {
     /// Create a new computer tool with an explicit backend and policy.
     #[must_use]
     pub fn new_with_backend(backend: Arc<dyn ComputerBackend>, policy: ComputerPolicy) -> Self {
-        Self { definition: build_definition("computer"), backend, policy }
+        Self {
+            definition: build_definition("computer"),
+            backend,
+            policy,
+        }
     }
 
     /// Create with a custom tool definition name (e.g. `"computer"` or `"computer_use"`).
@@ -1667,7 +1919,10 @@ impl ComputerTool {
     /// Create with native auto-detected backend and default policy.
     #[must_use]
     pub fn auto() -> Self {
-        Self::for_environment(ComputerEnvironment::auto_detect(), ComputerPolicy::default())
+        Self::for_environment(
+            ComputerEnvironment::auto_detect(),
+            ComputerPolicy::default(),
+        )
     }
 
     /// Create the backend that drives `env` on this host, under `policy`.
@@ -1701,7 +1956,7 @@ impl ComputerTool {
                         format!("cannot start a shell in a PTY: {e}"),
                     )),
                 }
-            },
+            }
             #[cfg(target_arch = "wasm32")]
             ComputerEnvironment::Terminal => Arc::new(UnsupportedComputerBackend::new(
                 env,
@@ -1738,14 +1993,20 @@ impl ComputerTool {
         password: Option<String>,
         policy: ComputerPolicy,
     ) -> Result<Self, ToolError> {
-        Ok(Self::new_with_backend(Arc::new(VncComputerBackend::new(target, password)?), policy))
+        Ok(Self::new_with_backend(
+            Arc::new(VncComputerBackend::new(target, password)?),
+            policy,
+        ))
     }
 
     /// Create configured for remote Windows WinClean desktop computer use on an administrator's PC.
     #[must_use]
     pub fn remote_winclean(target: RemoteComputerTarget, policy: ComputerPolicy) -> Self {
         Self::new_with_backend(
-            Arc::new(RemoteComputerBackend::new(target, RemoteComputerMode::WinClean)),
+            Arc::new(RemoteComputerBackend::new(
+                target,
+                RemoteComputerMode::WinClean,
+            )),
             policy,
         )
     }
@@ -1848,9 +2109,11 @@ impl ToolExecutor for ComputerTool {
     }
 
     async fn handle(&self, arguments: Value) -> Result<ToolOutput, ToolError> {
-        let action: ComputerAction = serde_json::from_value(arguments).map_err(|error| {
-            ToolError::InvalidArguments { tool: "computer".into(), message: error.to_string() }
-        })?;
+        let action: ComputerAction =
+            serde_json::from_value(arguments).map_err(|error| ToolError::InvalidArguments {
+                tool: "computer".into(),
+                message: error.to_string(),
+            })?;
 
         self.backend.execute(&action, &self.policy).await
     }
@@ -1866,10 +2129,14 @@ fn build_definition(name: &str) -> ToolDefinition {
                 .into(),
         )),
     );
-    properties
-        .insert("x".into(), JsonSchema::integer(Some("X coordinate in screen pixels.".into())));
-    properties
-        .insert("y".into(), JsonSchema::integer(Some("Y coordinate in screen pixels.".into())));
+    properties.insert(
+        "x".into(),
+        JsonSchema::integer(Some("X coordinate in screen pixels.".into())),
+    );
+    properties.insert(
+        "y".into(),
+        JsonSchema::integer(Some("Y coordinate in screen pixels.".into())),
+    );
     properties.insert(
         "element_id".into(),
         JsonSchema::string(Some(
@@ -1882,31 +2149,50 @@ fn build_definition(name: &str) -> ToolDefinition {
             "Mouse button: 'left', 'right', 'middle' (default 'left').".into(),
         )),
     );
-    properties
-        .insert("text".into(), JsonSchema::string(Some("Text string for 'type' action.".into())));
+    properties.insert(
+        "text".into(),
+        JsonSchema::string(Some("Text string for 'type' action.".into())),
+    );
     properties.insert(
         "key".into(),
         JsonSchema::string(Some(
             "Key name or shortcut for 'keypress' action (e.g. 'Enter', 'ctrl+s').".into(),
         )),
     );
-    properties
-        .insert("start_x".into(), JsonSchema::integer(Some("Drag start X coordinate.".into())));
-    properties
-        .insert("start_y".into(), JsonSchema::integer(Some("Drag start Y coordinate.".into())));
-    properties
-        .insert("end_x".into(), JsonSchema::integer(Some("Drag destination X coordinate.".into())));
-    properties
-        .insert("end_y".into(), JsonSchema::integer(Some("Drag destination Y coordinate.".into())));
-    properties
-        .insert("delta_x".into(), JsonSchema::integer(Some("Horizontal scroll offset.".into())));
-    properties
-        .insert("delta_y".into(), JsonSchema::integer(Some("Vertical scroll offset.".into())));
+    properties.insert(
+        "start_x".into(),
+        JsonSchema::integer(Some("Drag start X coordinate.".into())),
+    );
+    properties.insert(
+        "start_y".into(),
+        JsonSchema::integer(Some("Drag start Y coordinate.".into())),
+    );
+    properties.insert(
+        "end_x".into(),
+        JsonSchema::integer(Some("Drag destination X coordinate.".into())),
+    );
+    properties.insert(
+        "end_y".into(),
+        JsonSchema::integer(Some("Drag destination Y coordinate.".into())),
+    );
+    properties.insert(
+        "delta_x".into(),
+        JsonSchema::integer(Some("Horizontal scroll offset.".into())),
+    );
+    properties.insert(
+        "delta_y".into(),
+        JsonSchema::integer(Some("Vertical scroll offset.".into())),
+    );
     properties.insert(
         "direction".into(),
-        JsonSchema::string(Some("Scroll direction: 'up', 'down', 'left', 'right'.".into())),
+        JsonSchema::string(Some(
+            "Scroll direction: 'up', 'down', 'left', 'right'.".into(),
+        )),
     );
-    properties.insert("amount".into(), JsonSchema::integer(Some("Scroll step amount.".into())));
+    properties.insert(
+        "amount".into(),
+        JsonSchema::integer(Some("Scroll step amount.".into())),
+    );
     properties.insert(
         "duration_ms".into(),
         JsonSchema::integer(Some("Wait duration in milliseconds.".into())),
@@ -1939,7 +2225,10 @@ mod tests {
 
     #[test]
     fn mcp_reply_parses_json_and_sse() {
-        assert_eq!(parse_mcp_reply(r#"{"result":1}"#), Some(json!({"result": 1})));
+        assert_eq!(
+            parse_mcp_reply(r#"{"result":1}"#),
+            Some(json!({"result": 1}))
+        );
         let sse = "id: 0\nevent: message\ndata: {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"ok\":true}}\n\n";
         assert_eq!(parse_mcp_reply(sse).unwrap()["result"]["ok"], json!(true));
         assert_eq!(parse_mcp_reply("  "), None);
@@ -1966,7 +2255,9 @@ mod tests {
         assert!(policy.verify_target("Untitled - Notepad").is_ok());
 
         // Denied app rejected
-        let err = policy.verify_target("Registry Editor - regedit").unwrap_err();
+        let err = policy
+            .verify_target("Registry Editor - regedit")
+            .unwrap_err();
         assert!(err.contains("denied_apps"));
 
         // App outside allowed_apps rejected
@@ -1991,7 +2282,10 @@ mod tests {
         let backend = Arc::new(MockComputerBackend::new(ComputerEnvironment::Mock));
         let tool = ComputerTool::new_with_backend(backend, ComputerPolicy::default());
 
-        let click_out = tool.handle(json!({"action": "click", "element_id": "@e1"})).await.unwrap();
+        let click_out = tool
+            .handle(json!({"action": "click", "element_id": "@e1"}))
+            .await
+            .unwrap();
         assert!(click_out.content.contains("@e1"));
 
         let obs_out = tool.handle(json!({"action": "observe"})).await.unwrap();
@@ -2029,12 +2323,19 @@ mod tests {
         assert!(snap.content.contains("Terminal buffer"));
 
         // Headless backend: no PTY, so input must fail instead of pretending to type.
-        let type_out = tool.handle(json!({"action": "type", "text": "ls -la"})).await;
+        let type_out = tool
+            .handle(json!({"action": "type", "text": "ls -la"}))
+            .await;
         assert!(type_out.is_err());
-        let key_out = tool.handle(json!({"action": "keypress", "key": "Enter"})).await;
+        let key_out = tool
+            .handle(json!({"action": "keypress", "key": "Enter"}))
+            .await;
         assert!(key_out.is_err());
 
-        let wait_out = tool.handle(json!({"action": "wait", "duration_ms": 5})).await.unwrap();
+        let wait_out = tool
+            .handle(json!({"action": "wait", "duration_ms": 5}))
+            .await
+            .unwrap();
         assert!(!wait_out.is_error);
         assert!(wait_out.content.contains("Waited 5 ms"));
     }
@@ -2074,7 +2375,10 @@ mod tests {
         assert_eq!(backend.url(), "vnc://10.200.77.10:5900");
         assert!(VncComputerBackend::new("http://10.200.77.10:8793", None).is_err());
         assert_eq!(scroll_deltas(None, None, Some("up"), None), (0, -120));
-        assert_eq!(scroll_deltas(Some(240), Some(-360), Some("up"), None), (240, -360));
+        assert_eq!(
+            scroll_deltas(Some(240), Some(-360), Some("up"), None),
+            (240, -360)
+        );
         assert_eq!(scroll_deltas(None, None, Some("right"), Some(3)), (3, 0));
     }
 
@@ -2091,7 +2395,10 @@ mod tests {
     #[test]
     fn admin_peer_tool_construction() {
         let winclean_tool = ComputerTool::for_admin_peer("omar", false, ComputerPolicy::default());
-        assert_eq!(winclean_tool.environment(), ComputerEnvironment::RemoteWindows);
+        assert_eq!(
+            winclean_tool.environment(),
+            ComputerEnvironment::RemoteWindows
+        );
 
         let wsl_tool = ComputerTool::for_admin_peer("omar", true, ComputerPolicy::default());
         assert_eq!(wsl_tool.environment(), ComputerEnvironment::RemoteWsl);
@@ -2132,7 +2439,10 @@ mod tests {
                     let session = if initialize {
                         "Mcp-Session-Id: mock-session\r\n"
                     } else {
-                        assert!(req.to_ascii_lowercase().contains("mcp-session-id: mock-session"));
+                        assert!(
+                            req.to_ascii_lowercase()
+                                .contains("mcp-session-id: mock-session")
+                        );
                         ""
                     };
                     let body = if initialize {
@@ -2166,21 +2476,28 @@ mod tests {
 
         // 1. WinClean screenshot
         let win_tool = ComputerTool::remote_winclean(target.clone(), ComputerPolicy::default());
-        let snap_out = win_tool.handle(json!({"action": "screenshot"})).await.unwrap();
+        let snap_out = win_tool
+            .handle(json!({"action": "screenshot"}))
+            .await
+            .unwrap();
         assert!(!snap_out.is_error);
         assert_eq!(snap_out.images.len(), 1);
         assert_eq!(snap_out.images[0].mime, "image/png");
 
         // 2. WSL command execution
         let wsl_tool = ComputerTool::remote_wsl(target.clone(), ComputerPolicy::default());
-        let exec_out =
-            wsl_tool.handle(json!({"action": "type", "text": "uname -a"})).await.unwrap();
+        let exec_out = wsl_tool
+            .handle(json!({"action": "type", "text": "uname -a"}))
+            .await
+            .unwrap();
         assert!(!exec_out.is_error);
         assert!(exec_out.content.contains("Linux omar-wsl"));
 
         // 3. WinClean click
-        let click_out =
-            win_tool.handle(json!({"action": "click", "x": 150, "y": 250})).await.unwrap();
+        let click_out = win_tool
+            .handle(json!({"action": "click", "x": 150, "y": 250}))
+            .await
+            .unwrap();
         assert!(!click_out.is_error);
         assert!(click_out.content.contains("Remote click acknowledged"));
     }

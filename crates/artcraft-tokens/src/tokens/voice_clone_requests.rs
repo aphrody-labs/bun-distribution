@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct VoiceCloneRequestToken(pub String);
 
 impl_string_token!(VoiceCloneRequestToken);
-impl_crockford_generator!(VoiceCloneRequestToken, 32usize, LegacyTokenPrefix::VoiceCloneRequest, CrockfordLower);
+impl_crockford_generator!(
+    VoiceCloneRequestToken,
+    32usize,
+    LegacyTokenPrefix::VoiceCloneRequest,
+    CrockfordLower
+);

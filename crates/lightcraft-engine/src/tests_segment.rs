@@ -20,7 +20,11 @@ fn tmp(name: &str) -> std::path::PathBuf {
 fn damaged_model(name: &str) -> std::path::PathBuf {
     let d = tmp(name);
     std::fs::create_dir_all(&d).unwrap();
-    std::fs::write(d.join("model.safetensors"), b"\x10\x00\x00\x00\x00\x00\x00\x00{not json at all}").unwrap();
+    std::fs::write(
+        d.join("model.safetensors"),
+        b"\x10\x00\x00\x00\x00\x00\x00\x00{not json at all}",
+    )
+    .unwrap();
     std::fs::write(d.join("vocab.json"), b"{}").unwrap();
     std::fs::write(d.join("merges.txt"), b"#version: 0.2\n").unwrap();
     d
@@ -51,23 +55,44 @@ fn status_and_model_commands_without_the_model() {
     assert_eq!(st["download"]["running"], false);
     assert!(st["license"].as_str().unwrap().contains("SAM License"));
     // downloading needs the user's consent, and names the size and the licence
-    let e = s.execute("segment.model.download", &json!({})).unwrap_err().to_string();
-    assert!(e.contains("acknowledged") && e.contains("SAM License") && e.contains("GB"), "{e}");
-    let e = s.execute("segment.model.download", &json!({"acknowledged": "yes"})).unwrap_err().to_string();
+    let e = s
+        .execute("segment.model.download", &json!({}))
+        .unwrap_err()
+        .to_string();
+    assert!(
+        e.contains("acknowledged") && e.contains("SAM License") && e.contains("GB"),
+        "{e}"
+    );
+    let e = s
+        .execute("segment.model.download", &json!({"acknowledged": "yes"}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("acknowledged"), "{e}");
-    assert_eq!(s.execute("segment.model.cancel", &json!({})).unwrap()["cancelled"], false);
+    assert_eq!(
+        s.execute("segment.model.cancel", &json!({})).unwrap()["cancelled"],
+        false
+    );
     if !Segmenter::AVAILABLE {
-        assert!(s.execute("segment.model.download", &json!({"acknowledged": true})).is_err());
+        assert!(
+            s.execute("segment.model.download", &json!({"acknowledged": true}))
+                .is_err()
+        );
         return;
     }
     // no folder, then no download location: clear errors, nothing started
-    let e = s.execute("segment.model.download", &json!({"acknowledged": true})).unwrap_err().to_string();
+    let e = s
+        .execute("segment.model.download", &json!({"acknowledged": true}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("no folder"), "{e}");
     let dir = tmp("nomirrors");
     s.segmenter.dir = Some(dir.clone());
     s.segmenter.mirrors_file = Some(dir.join("none.txt"));
     if s.segmenter.mirrors().is_empty() {
-        let e = s.execute("segment.model.download", &json!({"acknowledged": true})).unwrap_err().to_string();
+        let e = s
+            .execute("segment.model.download", &json!({"acknowledged": true}))
+            .unwrap_err()
+            .to_string();
         assert!(e.contains("LIGHTCRAFT_SAM3_MIRRORS"), "{e}");
     }
     assert!(!s.segmenter.download_status().running);
@@ -97,18 +122,31 @@ fn a_failing_download_ends_with_an_error_and_never_blocks() {
     s.segmenter.dir = Some(dir.clone());
     s.segmenter.mirrors_file = Some(mirrors.clone());
     let t = Instant::now();
-    let r = s.execute("segment.model.download", &json!({"acknowledged": true})).unwrap();
+    let r = s
+        .execute("segment.model.download", &json!({"acknowledged": true}))
+        .unwrap();
     assert_eq!(r["started"], true);
-    assert!(t.elapsed() < Duration::from_secs(1), "starting a download returns at once");
+    assert!(
+        t.elapsed() < Duration::from_secs(1),
+        "starting a download returns at once"
+    );
     // a second request while it runs starts nothing
-    let again = s.execute("segment.model.download", &json!({"acknowledged": true})).unwrap();
+    let again = s
+        .execute("segment.model.download", &json!({"acknowledged": true}))
+        .unwrap();
     assert!(again["started"] == false || again["downloading"] == false);
     let t = Instant::now();
     while s.segmenter.download_status().running {
-        assert!(t.elapsed() < Duration::from_secs(30), "the download never ended");
+        assert!(
+            t.elapsed() < Duration::from_secs(30),
+            "the download never ended"
+        );
         // AI mask requests meanwhile: an error at once, never a wait
         let q = Instant::now();
-        let e = s.execute("mask.add", &json!({"kind": "prompt", "text": "sky"})).unwrap_err().to_string();
+        let e = s
+            .execute("mask.add", &json!({"kind": "prompt", "text": "sky"}))
+            .unwrap_err()
+            .to_string();
         assert!(e.contains(NOT_INSTALLED), "{e}");
         assert!(q.elapsed() < Duration::from_millis(500));
         std::thread::sleep(Duration::from_millis(20));
@@ -119,7 +157,12 @@ fn a_failing_download_ends_with_an_error_and_never_blocks() {
     assert!(e.contains("not found"), "{e}");
     assert!(!s.segmenter.installed());
     // nothing was left behind under a real name, and no error page was saved
-    for f in ["model.safetensors", "vocab.json", "merges.txt", "vocab.json.part"] {
+    for f in [
+        "model.safetensors",
+        "vocab.json",
+        "merges.txt",
+        "vocab.json.part",
+    ] {
         assert!(!dir.join(f).exists(), "{f}");
     }
     let _ = std::fs::remove_dir_all(&dir);
@@ -134,8 +177,11 @@ fn background_requests_never_wait_and_failures_come_back_as_messages() {
     s.segmenter.background = true;
     let id = s.active().unwrap();
     s.segmenter.dir = Some(tmp("missing"));
-    for (cmd, p) in [("mask.add", json!({"kind": "object"})), ("mask.add", json!({"kind": "prompt", "text": "sky"})), ("segment.prepare", json!({}))]
-    {
+    for (cmd, p) in [
+        ("mask.add", json!({"kind": "object"})),
+        ("mask.add", json!({"kind": "prompt", "text": "sky"})),
+        ("segment.prepare", json!({})),
+    ] {
         let t = Instant::now();
         let e = s.execute(cmd, &p).unwrap_err().to_string();
         assert!(t.elapsed() < Duration::from_millis(500), "{cmd}");
@@ -155,23 +201,54 @@ fn background_requests_never_wait_and_failures_come_back_as_messages() {
     assert!(s.segmenter.installed());
     let t = Instant::now();
     s.execute("mask.add", &json!({"kind": "object"})).unwrap();
-    let r = s.execute("mask.objectPoint", &json!({"x": 0.5, "y": 0.5})).unwrap();
+    let r = s
+        .execute("mask.objectPoint", &json!({"x": 0.5, "y": 0.5}))
+        .unwrap();
     assert_eq!(r["pending"], true);
-    assert!(s.segmenter.pending_clicks().is_some_and(|p| p.hint.len() == 1));
+    assert!(
+        s.segmenter
+            .pending_clicks()
+            .is_some_and(|p| p.hint.len() == 1)
+    );
     // a second click while the first is on its way builds on it
-    let r = s.execute("mask.objectPoint", &json!({"x": 0.6, "y": 0.5, "exclude": true})).unwrap();
-    assert_eq!((r["include"].as_u64(), r["exclude"].as_u64()), (Some(1), Some(1)));
-    let r = s.execute("mask.add", &json!({"kind": "prompt", "text": "the sky"})).unwrap();
+    let r = s
+        .execute(
+            "mask.objectPoint",
+            &json!({"x": 0.6, "y": 0.5, "exclude": true}),
+        )
+        .unwrap();
+    assert_eq!(
+        (r["include"].as_u64(), r["exclude"].as_u64()),
+        (Some(1), Some(1))
+    );
+    let r = s
+        .execute("mask.add", &json!({"kind": "prompt", "text": "the sky"}))
+        .unwrap();
     assert_eq!(r["pending"], true);
-    assert!(t.elapsed() < Duration::from_secs(1), "nothing waited for the model: {:?}", t.elapsed());
+    assert!(
+        t.elapsed() < Duration::from_secs(1),
+        "nothing waited for the model: {:?}",
+        t.elapsed()
+    );
     let messages = settle(&mut s, Duration::from_secs(60));
-    assert!(!messages.is_empty() && messages.iter().all(|m| !m.is_empty()), "{messages:?}");
-    assert!(messages.iter().any(|m| m.contains("model.safetensors") || m.contains("SAM 3")), "{messages:?}");
+    assert!(
+        !messages.is_empty() && messages.iter().all(|m| !m.is_empty()),
+        "{messages:?}"
+    );
+    assert!(
+        messages
+            .iter()
+            .any(|m| m.contains("model.safetensors") || m.contains("SAM 3")),
+        "{messages:?}"
+    );
     assert!(s.segmenter.pending_clicks().is_none());
     // the Object mask is there, without a selection; no Describe mask was made from nothing
     let d = s.develop_of(id).unwrap();
     assert_eq!(d.masks.len(), 1);
-    assert!(matches!(&d.masks[0].components[0].shape, lightcraft_develop::MaskShape::Object { seg: None, .. }));
+    assert!(matches!(
+        &d.masks[0].components[0].shape,
+        lightcraft_develop::MaskShape::Object { seg: None, .. }
+    ));
     assert!(!s.segmenter.busy() && !s.segmenter.loaded());
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -186,16 +263,33 @@ fn waiting_requests_with_a_damaged_model_are_errors() {
     let id = s.active().unwrap();
     let dir = damaged_model("damaged-wait");
     s.segmenter.dir = Some(dir.clone());
-    let e = s.execute("mask.add", &json!({"kind": "prompt", "text": "sky"})).unwrap_err().to_string();
-    assert!(e.contains("model.safetensors") || e.contains("SAM 3"), "{e}");
-    let e = s.execute("mask.add", &json!({"kind": "object", "points": [[0.5, 0.5]]})).unwrap_err().to_string();
+    let e = s
+        .execute("mask.add", &json!({"kind": "prompt", "text": "sky"}))
+        .unwrap_err()
+        .to_string();
+    assert!(
+        e.contains("model.safetensors") || e.contains("SAM 3"),
+        "{e}"
+    );
+    let e = s
+        .execute(
+            "mask.add",
+            &json!({"kind": "object", "points": [[0.5, 0.5]]}),
+        )
+        .unwrap_err()
+        .to_string();
     assert!(!e.is_empty());
     assert!(s.develop_of(id).unwrap().masks.is_empty());
     assert!(!s.segmenter.busy());
     // a stored segmentation needs no model at all (replayed or pasted masks)
-    let seg = serde_json::to_value(lightcraft_develop::SegMask::from_logits(4, &[5.0; 16])).unwrap();
+    let seg =
+        serde_json::to_value(lightcraft_develop::SegMask::from_logits(4, &[5.0; 16])).unwrap();
     s.segmenter.dir = None;
-    s.execute("mask.add", &json!({"kind": "prompt", "text": "sky", "seg": seg})).unwrap();
+    s.execute(
+        "mask.add",
+        &json!({"kind": "prompt", "text": "sky", "seg": seg}),
+    )
+    .unwrap();
     assert_eq!(s.develop_of(id).unwrap().masks.len(), 1);
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -219,13 +313,22 @@ fn object_clicks_are_capped() {
             name: None,
             op: lightcraft_develop::MaskOp::Add,
             invert: false,
-            shape: lightcraft_develop::MaskShape::Object { hint: many, exclude: vec![], seg: None, detail: vec![], edge: 0.0 },
+            shape: lightcraft_develop::MaskShape::Object {
+                hint: many,
+                exclude: vec![],
+                seg: None,
+                detail: vec![],
+                edge: 0.0,
+            },
         }],
         ..Default::default()
     });
     s.set_develop(id, d, "test").unwrap();
     s.active_mask = Some(1);
-    let e = s.execute("mask.objectPoint", &json!({"x": 0.5, "y": 0.5})).unwrap_err().to_string();
+    let e = s
+        .execute("mask.objectPoint", &json!({"x": 0.5, "y": 0.5}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("at most"), "{e}");
     assert!(!s.segmenter.busy());
     let _ = std::fs::remove_dir_all(&dir);
@@ -245,7 +348,9 @@ fn a_running_model_download_shows_in_activity_and_cancels() {
             while r.read_line(&mut line).unwrap_or(0) > 2 {
                 line.clear();
             }
-            let _ = c.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 1000000\r\nConnection: close\r\n\r\n");
+            let _ = c.write_all(
+                b"HTTP/1.1 200 OK\r\nContent-Length: 1000000\r\nConnection: close\r\n\r\n",
+            );
             for _ in 0..250 {
                 if c.write_all(&[b' '; 4000]).is_err() {
                     break;
@@ -260,16 +365,31 @@ fn a_running_model_download_shows_in_activity_and_cancels() {
     let mut s = Session::with_demo();
     s.segmenter.dir = Some(dir.clone());
     s.segmenter.mirrors_file = Some(mirrors.clone());
-    assert_eq!(s.execute("segment.model.download", &json!({"acknowledged": true})).unwrap()["started"], true);
+    assert_eq!(
+        s.execute("segment.model.download", &json!({"acknowledged": true}))
+            .unwrap()["started"],
+        true
+    );
     let rows = s.activity.list();
     assert_eq!(rows.len(), 1);
-    assert_eq!((rows[0].kind, rows[0].label.as_str(), rows[0].detail.as_str()), ("download", "Downloading model", "SAM 3"));
+    assert_eq!(
+        (
+            rows[0].kind,
+            rows[0].label.as_str(),
+            rows[0].detail.as_str()
+        ),
+        ("download", "Downloading model", "SAM 3")
+    );
     assert_eq!(rows[0].unit, crate::activity::Unit::Bytes);
     assert!(rows[0].cancellable);
-    s.execute("activity.cancel", &json!({"id": rows[0].id})).unwrap();
+    s.execute("activity.cancel", &json!({"id": rows[0].id}))
+        .unwrap();
     let t = Instant::now();
     while s.segmenter.download_status().running || !s.activity.list().is_empty() {
-        assert!(t.elapsed() < Duration::from_secs(10), "the download never stopped");
+        assert!(
+            t.elapsed() < Duration::from_secs(10),
+            "the download never stopped"
+        );
         std::thread::sleep(Duration::from_millis(10));
     }
     let e = s.segmenter.download_status().error.unwrap_or_default();

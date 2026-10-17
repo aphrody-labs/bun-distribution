@@ -47,8 +47,10 @@ fn advance_to_deadline<const SYSTEM: SystemId>(sys: *mut System<SYSTEM>) {
     {
         IDLE_SKIP_CALLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         if sys.scheduler.cycles < deadline {
-            IDLE_SKIP_CYCLES_ADVANCED
-                .fetch_add(deadline - sys.scheduler.cycles, std::sync::atomic::Ordering::Relaxed);
+            IDLE_SKIP_CYCLES_ADVANCED.fetch_add(
+                deadline - sys.scheduler.cycles,
+                std::sync::atomic::Ordering::Relaxed,
+            );
         }
     }
 
@@ -189,7 +191,7 @@ fn read_spr<const SYSTEM: SystemId>(sys: *mut System<SYSTEM>, num: u32) -> u32 {
         22 => {
             sys.gekko.spr.dec = sys.gekko.dec.read(sys.scheduler.cycles);
             sys.gekko.spr.dec
-        },
+        }
         268 => sys.scheduler.timebase_lower(),
         269 => sys.scheduler.timebase_upper(),
         _ => sys.gekko.spr.read(num),
@@ -208,14 +210,15 @@ fn write_spr<const SYSTEM: SystemId>(sys: *mut System<SYSTEM>, num: u32, val: u3
     let sys = unsafe { &mut *sys };
     match num {
         22 => {
-            sys.scheduler.cancel(crate::scheduler::Handler::DecUnderflow);
+            sys.scheduler
+                .cancel(crate::scheduler::Handler::DecUnderflow);
             sys.gekko.dec.write(sys.scheduler.cycles, val);
             sys.gekko.spr.dec = val;
             sys.scheduler.schedule_in(
                 crate::gekko::dec::cycles_until_underflow(val),
                 crate::scheduler::Handler::DecUnderflow,
             );
-        },
+        }
         284 => sys.scheduler.set_timebase_lower(val),
         285 => sys.scheduler.set_timebase_upper(val),
         923 => {
@@ -228,7 +231,7 @@ fn write_spr<const SYSTEM: SystemId>(sys: *mut System<SYSTEM>, num: u32, val: u3
                 }
                 sys.gekko.spr.dmal.set_trigger(false);
             }
-        },
+        }
         _ => sys.gekko.spr.write(num, val),
     }
 }
@@ -487,20 +490,20 @@ fn psq_quant<const SYSTEM: SystemId>(
         4 => {
             let v = (value as f32 * scale).clamp(u8::MIN as f32, u8::MAX as f32) as u8;
             sys.write_u8(addr, v);
-        },
+        }
         5 => {
             let v = (value as f32 * scale).clamp(u16::MIN as f32, u16::MAX as f32) as u16;
             sys.write_u16(addr, v);
-        },
+        }
         6 => {
             let v = (value as f32 * scale).clamp(i8::MIN as f32, i8::MAX as f32) as i8;
             sys.write_u8(addr, v as u8);
-        },
+        }
         7 => {
             let v = (value as f32 * scale).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
             sys.write_u16(addr, v as u16);
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 

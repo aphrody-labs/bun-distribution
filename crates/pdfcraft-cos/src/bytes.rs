@@ -15,7 +15,10 @@ pub struct Bytes {
 impl Bytes {
     /// `range` of `buf`, without copying; `None` when the range is not within `buf`.
     pub(crate) fn view(buf: &Arc<Vec<u8>>, range: Range<usize>) -> Option<Self> {
-        (range.start <= range.end && range.end <= buf.len()).then(|| Self { buf: buf.clone(), range })
+        (range.start <= range.end && range.end <= buf.len()).then(|| Self {
+            buf: buf.clone(),
+            range,
+        })
     }
 
     /// Whether these bytes keep alive a larger buffer than themselves that isn't `owner`.
@@ -37,7 +40,10 @@ impl Bytes {
 impl From<Vec<u8>> for Bytes {
     fn from(v: Vec<u8>) -> Self {
         let range = 0..v.len();
-        Self { buf: Arc::new(v), range }
+        Self {
+            buf: Arc::new(v),
+            range,
+        }
     }
 }
 
@@ -88,11 +94,17 @@ mod tests {
         assert_eq!(&*view, b"234");
         assert_eq!(view.as_ptr(), file[2..].as_ptr(), "no copy");
         assert_eq!(view, Bytes::from(b"234".to_vec()));
-        assert!(Bytes::view(&file, 5..11).is_none() && Bytes::view(&file, Range { start: 6, end: 5 }).is_none());
+        assert!(
+            Bytes::view(&file, 5..11).is_none()
+                && Bytes::view(&file, Range { start: 6, end: 5 }).is_none()
+        );
         let other = Arc::new(Vec::new());
         assert!(view.borrows_other_than(&other) && !view.borrows_other_than(&file));
         let own = view.detached();
         assert!(!own.borrows_other_than(&other) && own == view && own.as_ptr() != view.as_ptr());
-        assert!(!Bytes::from(file.clone()).borrows_other_than(&other), "a whole buffer is its own");
+        assert!(
+            !Bytes::from(file.clone()).borrows_other_than(&other),
+            "a whole buffer is its own"
+        );
     }
 }

@@ -76,7 +76,13 @@ pub fn compare_draw_vertices(
         cmp4(i, Field::Color1, j.color1, p.color1, &mut out);
 
         for tc in 0..8 {
-            cmp3(i, Field::Texcoord(tc as u8), j.texcoords[tc], p.texcoords[tc], &mut out);
+            cmp3(
+                i,
+                Field::Texcoord(tc as u8),
+                j.texcoords[tc],
+                p.texcoords[tc],
+                &mut out,
+            );
         }
 
         if out.len() >= CAP {
@@ -137,7 +143,11 @@ fn ulp_diff(a: f32, b: f32) -> u32 {
     let bi = b.to_bits() as i32;
 
     fn map(x: i32) -> i64 {
-        if x < 0 { (-(x as i64)) | (1i64 << 31) } else { x as i64 }
+        if x < 0 {
+            (-(x as i64)) | (1i64 << 31)
+        } else {
+            x as i64
+        }
     }
 
     let d = (map(ai) - map(bi)).unsigned_abs();
@@ -159,7 +169,11 @@ pub struct VertexJitValidator {
 
 impl VertexJitValidator {
     pub fn new() -> Self {
-        Self { summary: FxHashMap::default(), draw_seq: 0, interp_scratch: Vec::with_capacity(256) }
+        Self {
+            summary: FxHashMap::default(),
+            draw_seq: 0,
+            interp_scratch: Vec::with_capacity(256),
+        }
     }
 
     pub fn record(&mut self, ctx: &CompareCtx, mismatches: &[Mismatch]) {
@@ -206,7 +220,10 @@ impl VertexJitValidator {
         }
 
         let mut f = std::fs::File::create(path)?;
-        writeln!(f, "vcd_lo,vcd_hi,vat_a,vat_b,vat_c,field,first_seen_draw,total_mismatches")?;
+        writeln!(
+            f,
+            "vcd_lo,vcd_hi,vat_a,vat_b,vat_c,field,first_seen_draw,total_mismatches"
+        )?;
 
         for ((key, field), s) in &self.summary {
             writeln!(

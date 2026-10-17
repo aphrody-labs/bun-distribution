@@ -110,26 +110,45 @@ fn repository_json(info: RepoInfo) -> miette::Result<serde_json::Value> {
         RepoInfo::Dataset(info) => serde_json::to_value(info),
         RepoInfo::Space(info) => serde_json::to_value(info),
         RepoInfo::Kernel(info) => serde_json::to_value(info),
-        _ => return Err(miette::miette!("unsupported Hugging Face repository metadata")),
+        _ => {
+            return Err(miette::miette!(
+                "unsupported Hugging Face repository metadata"
+            ));
+        }
     }
     .map_err(|_| miette::miette!("Hugging Face metadata serialization failed"))
 }
 
 pub(crate) async fn run(action: HubAction) -> miette::Result<()> {
     let (output, value) = match action {
-        HubAction::Search { kind, query, limit, auth, output } => {
+        HubAction::Search {
+            kind,
+            query,
+            limit,
+            auth,
+            output,
+        } => {
             let hub = client(auth.credential_key.as_deref()).await?;
             let rows = hub
                 .search(kind.into(), &query, usize::from(limit))
                 .await
                 .map_err(|e| miette::miette!("{e}"))?;
-            let rows = rows.into_iter().map(repository_json).collect::<miette::Result<Vec<_>>>()?;
+            let rows = rows
+                .into_iter()
+                .map(repository_json)
+                .collect::<miette::Result<Vec<_>>>()?;
             (
                 output,
                 serde_json::json!({"schemaVersion":1,"repositories":rows,"payloadsDownloaded":false}),
             )
-        },
-        HubAction::Info { repo, kind, revision, auth, output } => {
+        }
+        HubAction::Info {
+            repo,
+            kind,
+            revision,
+            auth,
+            output,
+        } => {
             let hub = client(auth.credential_key.as_deref()).await?;
             let info = hub
                 .info(kind.into(), &repo, &revision)
@@ -139,13 +158,22 @@ pub(crate) async fn run(action: HubAction) -> miette::Result<()> {
                 output,
                 serde_json::json!({"schemaVersion":1,"repository":repository_json(info)?,"requestedRevision":revision}),
             )
-        },
+        }
         HubAction::Runtime { repo, auth, output } => {
             let hub = client(auth.credential_key.as_deref()).await?;
-            let status = hub.space_runtime(&repo).await.map_err(|e| miette::miette!("{e}"))?;
-            (output, serde_json::json!({"schemaVersion":1,"runtime":status}))
-        },
-        HubAction::Auth { credential_key, output } => {
+            let status = hub
+                .space_runtime(&repo)
+                .await
+                .map_err(|e| miette::miette!("{e}"))?;
+            (
+                output,
+                serde_json::json!({"schemaVersion":1,"runtime":status}),
+            )
+        }
+        HubAction::Auth {
+            credential_key,
+            output,
+        } => {
             let verified = match client(Some(&credential_key)).await {
                 Ok(hub) => hub.verify_identity().await.is_ok(),
                 Err(_) => false,
@@ -157,9 +185,11 @@ pub(crate) async fn run(action: HubAction) -> miette::Result<()> {
             return if verified {
                 Ok(())
             } else {
-                Err(miette::miette!("Hugging Face identity unavailable or unverified"))
+                Err(miette::miette!(
+                    "Hugging Face identity unavailable or unverified"
+                ))
             };
-        },
+        }
     };
     emit(&output, &value)
 }
@@ -212,15 +242,23 @@ mod tests {
     #[test]
     fn hub_defaults_to_json_and_preserves_explicit_output_formats() {
         assert_eq!(
-            structured_output(&OutputOpts::default()).format().expect("format"),
+            structured_output(&OutputOpts::default())
+                .format()
+                .expect("format"),
             aphrody_models::Format::Json
         );
-        let markdown = OutputOpts { format: Some("markdown".into()), ..OutputOpts::default() };
+        let markdown = OutputOpts {
+            format: Some("markdown".into()),
+            ..OutputOpts::default()
+        };
         assert_eq!(
             structured_output(&markdown).format().expect("format"),
             aphrody_models::Format::Markdown
         );
-        let file = OutputOpts { out: Some("report.md".into()), ..OutputOpts::default() };
+        let file = OutputOpts {
+            out: Some("report.md".into()),
+            ..OutputOpts::default()
+        };
         assert_eq!(
             structured_output(&file).format().expect("format"),
             aphrody_models::Format::Markdown

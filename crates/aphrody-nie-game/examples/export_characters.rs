@@ -92,10 +92,15 @@ fn load_rdbn(vfs: &Vfs, pred: impl Fn(&str) -> bool, what: &str) -> serde_json::
 }
 
 fn main() {
-    let out = std::env::args().nth(1).unwrap_or_else(|| "var/characters-resolved.json".into());
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let out = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "var/characters-resolved.json".into());
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let base_root = load(
         &vfs,
@@ -110,14 +115,21 @@ fn main() {
     let bases = aphrody_nie_data::chara_base::parse_all_chara_base(&base_root);
     let nouns = aphrody_nie_data::chara_text::parse_all_nouns(&load(
         &vfs,
-        |p| p.contains("/fr/") && p.rsplit('/').next().is_some_and(|b| b == "chara_text.cfg.bin"),
+        |p| {
+            p.contains("/fr/")
+                && p.rsplit('/')
+                    .next()
+                    .is_some_and(|b| b == "chara_text.cfg.bin")
+        },
         "chara_text fr",
     ));
     let descs = aphrody_nie_data::chara_description::parse_chara_descriptions(&load(
         &vfs,
         |p| {
             p.contains("/fr/")
-                && p.rsplit('/').next().is_some_and(|b| b == "chara_description_text.cfg.bin")
+                && p.rsplit('/')
+                    .next()
+                    .is_some_and(|b| b == "chara_description_text.cfg.bin")
         },
         "chara_description fr",
     ));

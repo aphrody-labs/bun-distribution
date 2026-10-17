@@ -18,7 +18,17 @@
 //! ```
 
 #![allow(clippy::needless_range_loop, clippy::too_many_arguments)]
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod boolcoder;
 mod decoder;
@@ -59,7 +69,9 @@ pub struct KeyframeInfo {
 /// i.e. a random access point, its stream parameters. Intra-only frames and show_existing_frame
 /// are not random access points.
 pub fn keyframe_info(chunk: &[u8]) -> Option<KeyframeInfo> {
-    let first = header::split_superframe(chunk).into_iter().find(|f| !f.is_empty())?;
+    let first = header::split_superframe(chunk)
+        .into_iter()
+        .find(|f| !f.is_empty())?;
     let mut st = header::HeaderState::default();
     let h = header::parse_uncompressed(first, &mut st, &[None; 8]).ok()?;
     if h.show_existing_frame || h.frame_type != header::KEY_FRAME {
@@ -74,7 +86,10 @@ pub fn keyframe_info(chunk: &[u8]) -> Option<KeyframeInfo> {
         bit_depth: h.color.bit_depth as u32,
         subsampling_x: h.color.subsampling_x,
         subsampling_y: h.color.subsampling_y,
-        color: ColorInfo { color_space: h.color.color_space, full_range: h.color.color_range },
+        color: ColorInfo {
+            color_space: h.color.color_space,
+            full_range: h.color.color_range,
+        },
     })
 }
 

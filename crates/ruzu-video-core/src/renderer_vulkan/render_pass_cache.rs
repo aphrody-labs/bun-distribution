@@ -289,7 +289,6 @@ impl RenderPassCache {
             .stencil_store_op(stencil_store_op)
             .initial_layout(vk::ImageLayout::GENERAL)
             .final_layout(vk::ImageLayout::GENERAL)
-            
     }
 
     fn create_render_pass(&self, key: &RenderPassKey) -> Result<vk::RenderPass, vk::Result> {
@@ -448,7 +447,6 @@ impl RenderPassCache {
                             .stencil_store_op(description.stencil_store_op)
                             .initial_layout(description.initial_layout)
                             .final_layout(description.final_layout)
-                            
                     })
                     .collect();
             let promote = |reference: &vk::AttachmentReference| {
@@ -456,7 +454,6 @@ impl RenderPassCache {
                     .attachment(reference.attachment)
                     .layout(reference.layout)
                     .aspect_mask(vk::ImageAspectFlags::empty())
-                    
             };
             let mut references2 = [vk::AttachmentReference2::default(); 8];
             let mut resolve_references2 = [vk::AttachmentReference2::default(); 8];

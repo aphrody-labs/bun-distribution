@@ -7,7 +7,7 @@
 use core::any::type_name;
 use core::marker::PhantomData;
 
-use crate::{schedule::Core3d, tonemapping::tonemapping, Core3dSystems, FullscreenShader};
+use crate::{Core3dSystems, FullscreenShader, schedule::Core3d, tonemapping::tonemapping};
 use bevy_app::{App, Plugin};
 use bevy_asset::AssetServer;
 use bevy_ecs::{
@@ -20,6 +20,7 @@ use bevy_ecs::{
     system::{BoxedSystem, Commands, Local, Query, Res, ResMut},
 };
 use bevy_render::{
+    Render, RenderApp, RenderStartup, RenderSystems,
     camera::ExtractedCamera,
     diagnostic::RecordDiagnostics,
     extract_component::{
@@ -27,20 +28,19 @@ use bevy_render::{
         UniformComponentPlugin,
     },
     render_resource::{
-        binding_types::{sampler, texture_2d, uniform_buffer},
-        encase::internal::WriteInto,
         BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
         CachedRenderPipelineId, Canonical, ColorTargetState, ColorWrites, FragmentState,
         Operations, PipelineCache, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline,
         RenderPipelineDescriptor, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages,
         ShaderType, Specializer, SpecializerKey, TextureFormat, TextureSampleType, TextureView,
         Variants,
+        binding_types::{sampler, texture_2d, uniform_buffer},
+        encase::internal::WriteInto,
     },
     renderer::{RenderContext, RenderDevice, ViewQuery},
     view::{
         ExtractedView, PostProcessBindGroupCache, PostProcessBindGroupCacheBuilder, ViewTarget,
     },
-    Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_shader::ShaderRef;
 use bevy_utils::default;

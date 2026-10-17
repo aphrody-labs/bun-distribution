@@ -64,12 +64,20 @@ pub(crate) fn decimal_digits(a: f64) -> ([u8; 15], i32) {
 fn significant_digits(a: f64, n: usize) -> (Vec<u8>, i32) {
     let s = format!("{:.*e}", n.saturating_sub(1), a);
     let (mant, exp) = s.split_once('e').unwrap_or((s.as_str(), "0"));
-    (mant.bytes().filter(u8::is_ascii_digit).map(|b| b - b'0').collect(), exp.parse().unwrap_or(0))
+    (
+        mant.bytes()
+            .filter(u8::is_ascii_digit)
+            .map(|b| b - b'0')
+            .collect(),
+        exp.parse().unwrap_or(0),
+    )
 }
 
 /// True when `a`'s exact decimal expansion has a 5 as its 16th significant digit and only zeros after.
 fn is_exact_tie(a: f64) -> bool {
-    let is_tie = |ds: &[u8]| ds.get(15) == Some(&5) && ds.get(16..).is_some_and(|t| t.iter().all(|&d| d == 0));
+    let is_tie = |ds: &[u8]| {
+        ds.get(15) == Some(&5) && ds.get(16..).is_some_and(|t| t.iter().all(|&d| d == 0))
+    };
     // A cheap screen first (30 digits), then the exact expansion: a double has at most 767
     // significant digits and Rust prints every one of them.
     is_tie(&significant_digits(a, 30).0) && is_tie(&significant_digits(a, 800).0)
@@ -82,7 +90,11 @@ pub(crate) fn fixed_from_digits(digits: &[u8; 15], exp: i32, decimals: usize) ->
     let decimals_calc = decimals.min(MAX_DECIMALS);
     let keep = exp as i64 + decimals_calc as i64 + 1;
     let mut m: Vec<u8> = if keep <= 0 {
-        if keep == 0 && digits.first().copied().unwrap_or(0) >= 5 { vec![1] } else { Vec::new() }
+        if keep == 0 && digits.first().copied().unwrap_or(0) >= 5 {
+            vec![1]
+        } else {
+            Vec::new()
+        }
     } else if keep as usize >= digits.len() {
         let mut v = digits.to_vec();
         v.resize(keep as usize, 0);
@@ -116,7 +128,10 @@ pub(crate) fn fixed_from_digits(digits: &[u8; 15], exp: i32, decimals: usize) ->
         (String::new(), f)
     } else {
         let split = m.len() - decimals_calc;
-        (to_s(m.get(..split).unwrap_or(&[])), to_s(m.get(split..).unwrap_or(&[])))
+        (
+            to_s(m.get(..split).unwrap_or(&[])),
+            to_s(m.get(split..).unwrap_or(&[])),
+        )
     };
     if decimals > decimals_calc {
         frac.push_str(&"0".repeat(decimals - decimals_calc));
@@ -184,7 +199,11 @@ pub fn format_general_fit(n: f64, max_chars: usize) -> Option<String> {
             s.push('.');
             s.push_str(mf);
         }
-        s.push_str(&format!("E{}{:02}", if e < 0 { '-' } else { '+' }, e.unsigned_abs()));
+        s.push_str(&format!(
+            "E{}{:02}",
+            if e < 0 { '-' } else { '+' },
+            e.unsigned_abs()
+        ));
         if s.chars().count() <= max_chars {
             return Some(s);
         }
@@ -213,13 +232,28 @@ mod tests {
     #[test]
     fn general_fit() {
         assert_eq!(format_general_fit(1e11, 11).as_deref(), Some("1E+11"));
-        assert_eq!(format_general_fit(12345678901.0, 11).as_deref(), Some("12345678901"));
-        assert_eq!(format_general_fit(123456789012.0, 11).as_deref(), Some("1.23457E+11"));
+        assert_eq!(
+            format_general_fit(12345678901.0, 11).as_deref(),
+            Some("12345678901")
+        );
+        assert_eq!(
+            format_general_fit(123456789012.0, 11).as_deref(),
+            Some("1.23457E+11")
+        );
         assert_eq!(format_general_fit(0.1 + 0.2, 11).as_deref(), Some("0.3"));
-        assert_eq!(format_general_fit(1.0 / 3.0, 11).as_deref(), Some("0.333333333"));
-        assert_eq!(format_general_fit(123456.789012, 11).as_deref(), Some("123456.789"));
+        assert_eq!(
+            format_general_fit(1.0 / 3.0, 11).as_deref(),
+            Some("0.333333333")
+        );
+        assert_eq!(
+            format_general_fit(123456.789012, 11).as_deref(),
+            Some("123456.789")
+        );
         assert_eq!(format_general_fit(1e-10, 11).as_deref(), Some("1E-10"));
-        assert_eq!(format_general_fit(0.0000123456789, 11).as_deref(), Some("1.23457E-05"));
+        assert_eq!(
+            format_general_fit(0.0000123456789, 11).as_deref(),
+            Some("1.23457E-05")
+        );
         assert_eq!(format_general_fit(0.0001, 11).as_deref(), Some("0.0001"));
         assert_eq!(format_general_fit(-5.0, 11).as_deref(), Some("-5"));
         assert_eq!(format_general_fit(0.0, 11).as_deref(), Some("0"));
@@ -229,6 +263,9 @@ mod tests {
         assert_eq!(format_general_fit(123456.0, 3), None);
         assert_eq!(format_general_fit(9.99999999999, 5).as_deref(), Some("10"));
         assert_eq!(format_general_fit(f64::NAN, 11), None);
-        assert_eq!(format_general_fit(1.7976931348623157e308, 11).as_deref(), Some("1.7977E+308"));
+        assert_eq!(
+            format_general_fit(1.7976931348623157e308, 11).as_deref(),
+            Some("1.7977E+308")
+        );
     }
 }

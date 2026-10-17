@@ -23,12 +23,20 @@ pub use photocraft_engine::kys::{KysCommand, KysSet, MAX_BYTES, Plan, parse};
 pub fn plan(app: &PhotocraftApp, set: &KysSet) -> Plan {
     use photocraft_engine::kys::Candidate;
     let items = crate::menus::menu_items(app);
-    let menu = items.iter().filter(|i| i.label != "---" && crate::menus::is_live(&i.id)).map(|i| Candidate {
-        id: i.id.clone(),
-        label: i.label.clone(),
-        default: crate::shortcuts::default_shortcut(&i.id),
-    });
-    let specs = photocraft_engine::kys::command_candidates().into_iter().map(|c| Candidate { default: crate::shortcuts::default_shortcut(&c.id), ..c });
+    let menu = items
+        .iter()
+        .filter(|i| i.label != "---" && crate::menus::is_live(&i.id))
+        .map(|i| Candidate {
+            id: i.id.clone(),
+            label: i.label.clone(),
+            default: crate::shortcuts::default_shortcut(&i.id),
+        });
+    let specs = photocraft_engine::kys::command_candidates()
+        .into_iter()
+        .map(|c| Candidate {
+            default: crate::shortcuts::default_shortcut(&c.id),
+            ..c
+        });
     photocraft_engine::kys::plan(menu.chain(specs), set)
 }
 
@@ -38,27 +46,49 @@ pub fn plan(app: &PhotocraftApp, set: &KysSet) -> Plan {
 pub fn import_text(app: &mut PhotocraftApp, file_name: &str, text: &str) -> Result<Value, String> {
     let set = parse(text).map_err(|e| format!("{file_name}: {e}"))?;
     let plan = plan(app, &set);
-    let id = match app.ui.dialogs.iter().find(|d| d.fields.get("__prefsui").and_then(Value::as_str) == Some("shortcuts")) {
+    let id = match app
+        .ui
+        .dialogs
+        .iter()
+        .find(|d| d.fields.get("__prefsui").and_then(Value::as_str) == Some("shortcuts"))
+    {
         Some(d) => d.id,
         None => crate::prefs_ui::open_shortcuts(app, 0),
     };
-    let f = &mut app.ui.dialog_mut(id).ok_or("the Keyboard Shortcuts dialog is gone")?.fields;
-    let mut overrides: BTreeMap<String, String> = f.get("overrides").and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or_default();
+    let f = &mut app
+        .ui
+        .dialog_mut(id)
+        .ok_or("the Keyboard Shortcuts dialog is gone")?
+        .fields;
+    let mut overrides: BTreeMap<String, String> = f
+        .get("overrides")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
     for (cmd, sc) in &plan.set {
-        let default = crate::shortcuts::default_shortcut(cmd).and_then(|d| photocraft_engine::prefs::normalize_shortcut(&d));
+        let default = crate::shortcuts::default_shortcut(cmd)
+            .and_then(|d| photocraft_engine::prefs::normalize_shortcut(&d));
         if default.as_deref() == Some(sc.as_str()) {
             overrides.remove(cmd);
         } else {
             overrides.insert(cmd.clone(), sc.clone());
         }
     }
-    let shown = std::path::Path::new(file_name).file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| file_name.to_string());
+    let shown = std::path::Path::new(file_name)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| file_name.to_string());
     let n = plan.set.len().to_string();
-    let mut message = crate::i18n::fmt(tl!("Imported {n} shortcuts from {file}. Click OK to keep them."), &[("n", &n), ("file", &shown)]);
+    let mut message = crate::i18n::fmt(
+        tl!("Imported {n} shortcuts from {file}. Click OK to keep them."),
+        &[("n", &n), ("file", &shown)],
+    );
     if !plan.unknown.is_empty() {
         let u = plan.unknown.len().to_string();
         message.push(' ');
-        message.push_str(&crate::i18n::fmt(tl!("{n} commands are not in PhotoCraft."), &[("n", &u)]));
+        message.push_str(&crate::i18n::fmt(
+            tl!("{n} commands are not in PhotoCraft."),
+            &[("n", &u)],
+        ));
     }
     f.insert("tab".into(), json!(0));
     f.insert("overrides".into(), json!(overrides));
@@ -81,9 +111,12 @@ pub fn import_text(app: &mut PhotocraftApp, file_name: &str, text: &str) -> Resu
 /// A `.kys` opened like a document (File › Open, a drop): its bytes are text.
 pub fn open_bytes(app: &mut PhotocraftApp, name: &str, bytes: &[u8]) -> Result<Value, String> {
     if bytes.len() > MAX_BYTES {
-        return Err(format!("{name}: not a keyboard shortcut set (.kys): larger than 4 MiB"));
+        return Err(format!(
+            "{name}: not a keyboard shortcut set (.kys): larger than 4 MiB"
+        ));
     }
-    let text = std::str::from_utf8(bytes).map_err(|_| format!("{name}: not a keyboard shortcut set (.kys): not UTF-8"))?;
+    let text = std::str::from_utf8(bytes)
+        .map_err(|_| format!("{name}: not a keyboard shortcut set (.kys): not UTF-8"))?;
     import_text(app, name, text)
 }
 
@@ -112,12 +145,18 @@ pub struct Offer {
 
 fn remember(app: &mut PhotocraftApp, source: &str, imported: bool) {
     app.session.prefs.edit(|p| {
-        p.dialogs.insert(IMPORTED_PREF.into(), json!({"source": source, "imported": imported}));
+        p.dialogs.insert(
+            IMPORTED_PREF.into(),
+            json!({"source": source, "imported": imported}),
+        );
     });
 }
 
 fn not_imported(app: &mut PhotocraftApp, e: &str) {
-    app.ui.status = crate::i18n::fmt(tl!("The keyboard shortcut set was not imported: {error}"), &[("error", e)]);
+    app.ui.status = crate::i18n::fmt(
+        tl!("The keyboard shortcut set was not imported: {error}"),
+        &[("error", e)],
+    );
     app.ui.status_error = true;
 }
 
@@ -129,7 +168,9 @@ pub fn offer_import(app: &mut PhotocraftApp) {
     if app.session.prefs().dialogs.contains_key(IMPORTED_PREF) {
         return;
     }
-    let Some((source, text)) = app.services.photoshop_shortcuts.as_mut().and_then(|f| f()) else { return };
+    let Some((source, text)) = app.services.photoshop_shortcuts.as_mut().and_then(|f| f()) else {
+        return;
+    };
     if !app.session.prefs().shortcuts.is_empty() {
         return remember(app, &source, false);
     }
@@ -141,18 +182,37 @@ pub fn offer_import(app: &mut PhotocraftApp) {
         }
     };
     let plan = plan(app, &set);
-    let default = |id: &str| crate::shortcuts::default_shortcut(id).and_then(|d| photocraft_engine::prefs::normalize_shortcut(&d));
-    let changes = plan.set.iter().filter(|(id, sc)| default(id).as_deref() != Some(sc.as_str())).count();
+    let default = |id: &str| {
+        crate::shortcuts::default_shortcut(id)
+            .and_then(|d| photocraft_engine::prefs::normalize_shortcut(&d))
+    };
+    let changes = plan
+        .set
+        .iter()
+        .filter(|(id, sc)| default(id).as_deref() != Some(sc.as_str()))
+        .count();
     if changes == 0 {
         return remember(app, &source, false);
     }
-    let name = set.name.unwrap_or_else(|| std::path::Path::new(&source).file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default());
-    app.ui.kys_offer = Some(Offer { source, set: name, changes, text });
+    let name = set.name.unwrap_or_else(|| {
+        std::path::Path::new(&source)
+            .file_name()
+            .map(|f| f.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    });
+    app.ui.kys_offer = Some(Offer {
+        source,
+        set: name,
+        changes,
+        text,
+    });
 }
 
 /// The offer's answer: Import applies the set and says so; either answer is remembered.
 pub fn answer_offer(app: &mut PhotocraftApp, import: bool) {
-    let Some(offer) = app.ui.kys_offer.take() else { return };
+    let Some(offer) = app.ui.kys_offer.take() else {
+        return;
+    };
     remember(app, &offer.source, import);
     if !import {
         return;
@@ -173,13 +233,18 @@ pub fn answer_offer(app: &mut PhotocraftApp, import: bool) {
         None,
     );
     if let Some(n) = app.ui.notices.iter_mut().find(|n| n.id == id) {
-        n.args = vec![("set".to_owned(), offer.set), ("n".to_owned(), changed.to_string())];
+        n.args = vec![
+            ("set".to_owned(), offer.set),
+            ("n".to_owned(), changed.to_string()),
+        ];
     }
 }
 
 /// The first-launch prompt: which set was found, and Import / Don't Import.
 pub fn show_offer(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let Some(offer) = &app.ui.kys_offer else { return };
+    let Some(offer) = &app.ui.kys_offer else {
+        return;
+    };
     let n = offer.changes.to_string();
     let line = crate::i18n::fmt(
         tl!(
@@ -196,12 +261,16 @@ pub fn show_offer(app: &mut PhotocraftApp, ctx: &egui::Context) {
         .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .show(ctx, |ui| {
             ui.label(line);
-            ui.label(tl!("Edit › Keyboard Shortcuts › Reset All to Defaults undoes an import."));
+            ui.label(tl!(
+                "Edit › Keyboard Shortcuts › Reset All to Defaults undoes an import."
+            ));
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 use crate::widgets::{ButtonRole, DialogButton};
-                let buttons =
-                    [DialogButton::new(ButtonRole::Default, tl!("Import"), 100.0), DialogButton::new(ButtonRole::Alternate, tl!("Don't Import"), 120.0)];
+                let buttons = [
+                    DialogButton::new(ButtonRole::Default, tl!("Import"), 100.0),
+                    DialogButton::new(ButtonRole::Alternate, tl!("Don't Import"), 120.0),
+                ];
                 if let Some(role) = crate::widgets::dialog_buttons(ui, &buttons) {
                     answer = Some(role == ButtonRole::Default);
                 }

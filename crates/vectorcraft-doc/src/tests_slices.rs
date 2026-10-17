@@ -9,20 +9,35 @@ use crate::{Appearance, Document, Node, Slice, SliceOptions, SliceSource};
 fn rect(d: &mut Document, r: Rect) -> crate::NodeId {
     let l = d.layers[0].id;
     let id = d.alloc_id();
-    d.insert(Some(l), usize::MAX, Node::path(id, shapes::rectangle(r), Appearance::basic(crate::color::Paint::None, crate::color::Paint::None, 0.0)))
-        .unwrap();
+    d.insert(
+        Some(l),
+        usize::MAX,
+        Node::path(
+            id,
+            shapes::rectangle(r),
+            Appearance::basic(crate::color::Paint::None, crate::color::Paint::None, 0.0),
+        ),
+    )
+    .unwrap();
     id
 }
 
 fn user(d: &mut Document, r: Rect) -> crate::NodeId {
     let id = d.alloc_id();
-    d.slices.push(Slice { id, rect: r, options: SliceOptions::default() });
+    d.slices.push(Slice {
+        id,
+        rect: r,
+        options: SliceOptions::default(),
+    });
     id
 }
 
 /// How many of `rects` hold point `p` (strictly inside).
 fn holders(rects: &[Rect], p: Point) -> usize {
-    rects.iter().filter(|r| r.x0 < p.x && p.x < r.x1 && r.y0 < p.y && p.y < r.y1).count()
+    rects
+        .iter()
+        .filter(|r| r.x0 < p.x && p.x < r.x1 && r.y0 < p.y && p.y < r.y1)
+        .count()
 }
 
 #[test]
@@ -33,15 +48,31 @@ fn an_object_slice_follows_its_object_and_numbers_run_by_rows() {
     d.node_mut(a).unwrap().extras_mut().slice = Some(Box::default());
     let lay = d.slice_layout();
     let own = lay.iter().find(|s| s.id == Some(a)).unwrap();
-    assert_eq!((own.source, own.rect), (SliceSource::Object, Rect::new(100.0, 50.0, 200.0, 150.0)));
+    assert_eq!(
+        (own.source, own.rect),
+        (SliceSource::Object, Rect::new(100.0, 50.0, 200.0, 150.0))
+    );
     // Three rows: the band above, the object's row (left, object, right) and the band below.
     assert_eq!(lay.len(), 5);
-    assert_eq!(lay.iter().map(|s| s.number).collect::<Vec<_>>(), [1, 2, 3, 4, 5]);
+    assert_eq!(
+        lay.iter().map(|s| s.number).collect::<Vec<_>>(),
+        [1, 2, 3, 4, 5]
+    );
     assert_eq!(own.number, 3);
     assert_eq!(d.slice_name(own), "Untitled-1_03");
     // Moving the object moves its slice.
-    d.node_mut(a).unwrap().transform(vectorcraft_geom::Affine::translate((-50.0, 0.0)), crate::Scaling::default());
-    assert_eq!(d.slice_layout().iter().find(|s| s.id == Some(a)).unwrap().rect, Rect::new(50.0, 50.0, 150.0, 150.0));
+    d.node_mut(a).unwrap().transform(
+        vectorcraft_geom::Affine::translate((-50.0, 0.0)),
+        crate::Scaling::default(),
+    );
+    assert_eq!(
+        d.slice_layout()
+            .iter()
+            .find(|s| s.id == Some(a))
+            .unwrap()
+            .rect,
+        Rect::new(50.0, 50.0, 150.0, 150.0)
+    );
     // Hidden objects have no slice.
     d.node_mut(a).unwrap().visible = false;
     assert!(d.slice_layout().is_empty());
@@ -51,11 +82,24 @@ fn an_object_slice_follows_its_object_and_numbers_run_by_rows() {
 fn clip_to_artboard_clips_slices_and_off_covers_the_art() {
     let mut d = Document::new(100.0, 100.0);
     let s = user(&mut d, Rect::new(50.0, 50.0, 150.0, 150.0));
-    let own = |d: &Document| d.slice_layout().into_iter().find(|a| a.id == Some(s)).unwrap().rect;
+    let own = |d: &Document| {
+        d.slice_layout()
+            .into_iter()
+            .find(|a| a.id == Some(s))
+            .unwrap()
+            .rect
+    };
     assert_eq!(own(&d), Rect::new(50.0, 50.0, 100.0, 100.0));
     let lay = d.slice_layout();
-    let autos: Vec<Rect> = lay.iter().filter(|a| a.source == SliceSource::Auto).map(|a| a.rect).collect();
-    assert_eq!(autos.iter().map(|r| r.area()).sum::<f64>(), 100.0 * 100.0 - 50.0 * 50.0);
+    let autos: Vec<Rect> = lay
+        .iter()
+        .filter(|a| a.source == SliceSource::Auto)
+        .map(|a| a.rect)
+        .collect();
+    assert_eq!(
+        autos.iter().map(|r| r.area()).sum::<f64>(),
+        100.0 * 100.0 - 50.0 * 50.0
+    );
     d.slices_clip_to_artboard = false;
     assert_eq!(own(&d), Rect::new(50.0, 50.0, 150.0, 150.0));
     // The region is now the slice itself (no art): nothing left for auto slices.
@@ -69,15 +113,21 @@ fn clip_to_artboard_clips_slices_and_off_covers_the_art() {
 fn slices_survive_a_native_round_trip_and_old_files_load() {
     let mut d = Document::new(100.0, 100.0);
     let a = rect(&mut d, Rect::new(10.0, 10.0, 20.0, 20.0));
-    d.node_mut(a).unwrap().extras_mut().slice =
-        Some(Box::new(SliceOptions { kind: crate::SliceKind::NoImage, text: "<b>hi</b>".into(), ..Default::default() }));
+    d.node_mut(a).unwrap().extras_mut().slice = Some(Box::new(SliceOptions {
+        kind: crate::SliceKind::NoImage,
+        text: "<b>hi</b>".into(),
+        ..Default::default()
+    }));
     let s = user(&mut d, Rect::new(30.0, 30.0, 60.0, 60.0));
     d.slice_mut(s).unwrap().options.url = "https://example.com".into();
     d.slices_clip_to_artboard = false;
     let json = serde_json::to_string(&d).unwrap();
     let back: Document = serde_json::from_str(&json).unwrap();
     assert_eq!(back.slices, d.slices);
-    assert_eq!(back.node(a).unwrap().extras().slice, d.node(a).unwrap().extras().slice);
+    assert_eq!(
+        back.node(a).unwrap().extras().slice,
+        d.node(a).unwrap().extras().slice
+    );
     assert!(!back.slices_clip_to_artboard);
     // A document without slices writes none of the new keys (older readers see what they knew).
     let plain = serde_json::to_string(&Document::new(10.0, 10.0)).unwrap();
@@ -88,17 +138,36 @@ fn slices_survive_a_native_round_trip_and_old_files_load() {
 
 #[test]
 fn auto_slices_fill_around_a_slice_in_rows() {
-    let autos = auto_slices(Rect::new(0.0, 0.0, 90.0, 90.0), &[Rect::new(30.0, 30.0, 60.0, 60.0)]);
-    let mut got: Vec<(f64, f64, f64, f64)> = autos.iter().map(|r| (r.x0, r.y0, r.x1, r.y1)).collect();
+    let autos = auto_slices(
+        Rect::new(0.0, 0.0, 90.0, 90.0),
+        &[Rect::new(30.0, 30.0, 60.0, 60.0)],
+    );
+    let mut got: Vec<(f64, f64, f64, f64)> =
+        autos.iter().map(|r| (r.x0, r.y0, r.x1, r.y1)).collect();
     got.sort_by(|a, b| a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0)));
-    assert_eq!(got, [(0.0, 0.0, 90.0, 30.0), (0.0, 30.0, 30.0, 60.0), (60.0, 30.0, 90.0, 60.0), (0.0, 60.0, 90.0, 90.0)]);
+    assert_eq!(
+        got,
+        [
+            (0.0, 0.0, 90.0, 30.0),
+            (0.0, 30.0, 30.0, 60.0),
+            (60.0, 30.0, 90.0, 60.0),
+            (0.0, 60.0, 90.0, 90.0)
+        ]
+    );
     // Spans that continue down one column merge.
-    let autos = auto_slices(Rect::new(0.0, 0.0, 90.0, 90.0), &[Rect::new(30.0, 0.0, 60.0, 40.0), Rect::new(30.0, 40.0, 60.0, 90.0)]);
+    let autos = auto_slices(
+        Rect::new(0.0, 0.0, 90.0, 90.0),
+        &[
+            Rect::new(30.0, 0.0, 60.0, 40.0),
+            Rect::new(30.0, 40.0, 60.0, 90.0),
+        ],
+    );
     assert_eq!(autos.len(), 2, "{autos:?}");
 }
 
 fn arb_rect() -> impl Strategy<Value = Rect> {
-    (-20.0..120.0f64, -20.0..120.0f64, 1.0..80.0f64, 1.0..80.0f64).prop_map(|(x, y, w, h)| Rect::new(x, y, x + w, y + h))
+    (-20.0..120.0f64, -20.0..120.0f64, 1.0..80.0f64, 1.0..80.0f64)
+        .prop_map(|(x, y, w, h)| Rect::new(x, y, x + w, y + h))
 }
 
 proptest! {

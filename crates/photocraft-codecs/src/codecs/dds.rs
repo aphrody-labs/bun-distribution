@@ -31,14 +31,21 @@ fn unsupported(reason: impl Into<String>) -> CodecError {
     CodecError::unsupported(Format::Dds, reason)
 }
 fn le32(b: &[u8], at: usize) -> Result<u32, CodecError> {
-    let bytes = b.get(at..at + 4).and_then(|s| <[u8; 4]>::try_from(s).ok()).ok_or_else(|| bad("truncated header"))?;
+    let bytes = b
+        .get(at..at + 4)
+        .and_then(|s| <[u8; 4]>::try_from(s).ok())
+        .ok_or_else(|| bad("truncated header"))?;
     Ok(u32::from_le_bytes(bytes))
 }
 
 /// A FourCC as text when it is printable, else as the number legacy writers store there.
 fn fourcc_name(fourcc: u32) -> String {
     let bytes = fourcc.to_le_bytes();
-    if bytes.iter().all(|c| c.is_ascii_graphic() || *c == b' ') { bytes.iter().map(|&c| char::from(c)).collect() } else { fourcc.to_string() }
+    if bytes.iter().all(|c| c.is_ascii_graphic() || *c == b' ') {
+        bytes.iter().map(|&c| char::from(c)).collect()
+    } else {
+        fourcc.to_string()
+    }
 }
 
 /// One channel of an uncompressed pixel: where it sits and its largest value.
@@ -57,7 +64,9 @@ impl Field {
         let shift = mask.trailing_zeros();
         let max = mask >> shift;
         if max & max.wrapping_add(1) != 0 || (bits < 32 && mask >> bits != 0) {
-            return Err(bad(format!("channel mask {mask:#x} is not a contiguous field of a {bits}-bit pixel")));
+            return Err(bad(format!(
+                "channel mask {mask:#x} is not a contiguous field of a {bits}-bit pixel"
+            )));
         }
         Ok(Some(Field { shift, max }))
     }
@@ -90,16 +99,26 @@ impl Encoding {
         for (field, mask) in fields.iter_mut().zip(masks) {
             *field = Field::new(mask, bits)?;
         }
-        let colour = if gray { fields[0].is_some() } else { fields[..3].iter().any(Option::is_some) };
+        let colour = if gray {
+            fields[0].is_some()
+        } else {
+            fields[..3].iter().any(Option::is_some)
+        };
         if !colour {
             return Err(bad("the pixel format has no colour channel masks"));
         }
-        Ok(Encoding::Masks { bytes: bits as usize / 8, gray, fields })
+        Ok(Encoding::Masks {
+            bytes: bits as usize / 8,
+            gray,
+            fields,
+        })
     }
 
     fn layout(&self) -> ChannelLayout {
         match self {
-            Encoding::Masks { gray: true, fields, .. } if fields[3].is_some() => ChannelLayout::GrayA,
+            Encoding::Masks {
+                gray: true, fields, ..
+            } if fields[3].is_some() => ChannelLayout::GrayA,
             Encoding::Masks { gray: true, .. } => ChannelLayout::Gray,
             Encoding::Masks { fields, .. } if fields[3].is_none() => ChannelLayout::Rgb,
             _ => ChannelLayout::Rgba,
@@ -121,36 +140,60 @@ impl Encoding {
 /// The legacy pixel format: a FourCC, or channel masks.
 fn legacy_encoding(b: &[u8]) -> Result<Encoding, CodecError> {
     let (flags, fourcc, bits) = (le32(b, 80)?, le32(b, 84)?, le32(b, 88)?);
-    let alpha = if flags & DDPF_ALPHAPIXELS != 0 { le32(b, 104)? } else { 0 };
+    let alpha = if flags & DDPF_ALPHAPIXELS != 0 {
+        le32(b, 104)?
+    } else {
+        0
+    };
     if flags & DDPF_FOURCC != 0 {
         return match &fourcc.to_le_bytes() {
             b"DXT1" => Ok(Encoding::Bc1),
             b"DXT3" => Ok(Encoding::Bc2),
             b"DXT5" => Ok(Encoding::Bc3),
-            b"DXT2" | b"DXT4" => Err(unsupported("premultiplied-alpha DXT2/DXT4 textures are not supported")),
-            _ => Err(unsupported(format!("compression `{}` is not supported (DXT1, DXT3 and DXT5 are)", fourcc_name(fourcc)))),
+            b"DXT2" | b"DXT4" => Err(unsupported(
+                "premultiplied-alpha DXT2/DXT4 textures are not supported",
+            )),
+            _ => Err(unsupported(format!(
+                "compression `{}` is not supported (DXT1, DXT3 and DXT5 are)",
+                fourcc_name(fourcc)
+            ))),
         };
     }
     if flags & DDPF_RGB != 0 {
-        return Encoding::masks(bits, [le32(b, 92)?, le32(b, 96)?, le32(b, 100)?, alpha], false);
+        return Encoding::masks(
+            bits,
+            [le32(b, 92)?, le32(b, 96)?, le32(b, 100)?, alpha],
+            false,
+        );
     }
     if flags & DDPF_LUMINANCE != 0 {
         return Encoding::masks(bits, [le32(b, 92)?, 0, 0, alpha], true);
     }
-    Err(unsupported(format!("pixel format flags {flags:#x} are not RGB, luminance or a supported compression")))
+    Err(unsupported(format!(
+        "pixel format flags {flags:#x} are not RGB, luminance or a supported compression"
+    )))
 }
 
 /// The DX10 header's DXGI format, refusing anything but a single 2D texture.
 fn dx10_encoding(b: &[u8]) -> Result<Encoding, CodecError> {
-    let (dxgi, dimension, misc, array) = (le32(b, HEADER)?, le32(b, HEADER + 4)?, le32(b, HEADER + 8)?, le32(b, HEADER + 12)?);
+    let (dxgi, dimension, misc, array) = (
+        le32(b, HEADER)?,
+        le32(b, HEADER + 4)?,
+        le32(b, HEADER + 8)?,
+        le32(b, HEADER + 12)?,
+    );
     if misc & MISC_TEXTURECUBE != 0 {
         return Err(unsupported("cubemaps are not supported"));
     }
     if dimension != DIMENSION_TEXTURE2D {
-        return Err(unsupported(format!("only 2D textures are supported (resource dimension {dimension})")));
+        return Err(unsupported(format!(
+            "only 2D textures are supported (resource dimension {dimension})"
+        )));
     }
     if array > 1 {
-        return Err(unsupported(format!("texture arrays are not supported ({array} textures)")));
+        return Err(unsupported(format!(
+            "texture arrays are not supported ({array} textures)"
+        )));
     }
     const RGBA: [u32; 4] = [0xff, 0xff00, 0xff_0000, 0xff00_0000];
     const BGRA: [u32; 4] = [0xff_0000, 0xff00, 0xff, 0xff00_0000];
@@ -162,7 +205,9 @@ fn dx10_encoding(b: &[u8]) -> Result<Encoding, CodecError> {
         70..=72 => Ok(Encoding::Bc1),
         73..=75 => Ok(Encoding::Bc2),
         76..=78 => Ok(Encoding::Bc3),
-        _ => Err(unsupported(format!("DXGI format {dxgi} is not supported (BC1, BC2, BC3 and 8-bit RGBA or BGRA are)"))),
+        _ => Err(unsupported(format!(
+            "DXGI format {dxgi} is not supported (BC1, BC2, BC3 and 8-bit RGBA or BGRA are)"
+        ))),
     }
 }
 
@@ -173,7 +218,13 @@ pub(crate) fn decode(b: &[u8], limits: &Limits) -> Result<Image, CodecError> {
     if le32(b, 4)? != 124 {
         return Err(bad("header size is not 124"));
     }
-    let (flags, height, width, depth, caps2) = (le32(b, 8)?, le32(b, 12)?, le32(b, 16)?, le32(b, 24)?, le32(b, 112)?);
+    let (flags, height, width, depth, caps2) = (
+        le32(b, 8)?,
+        le32(b, 12)?,
+        le32(b, 16)?,
+        le32(b, 24)?,
+        le32(b, 112)?,
+    );
     if caps2 & DDSCAPS2_CUBEMAP != 0 {
         return Err(unsupported("cubemaps are not supported"));
     }
@@ -181,32 +232,68 @@ pub(crate) fn decode(b: &[u8], limits: &Limits) -> Result<Image, CodecError> {
         return Err(unsupported("volume textures are not supported"));
     }
     let dx10 = le32(b, 80)? & DDPF_FOURCC != 0 && &le32(b, 84)?.to_le_bytes() == b"DX10";
-    let (encoding, start) = if dx10 { (dx10_encoding(b)?, HEADER + DX10_HEADER) } else { (legacy_encoding(b)?, HEADER) };
+    let (encoding, start) = if dx10 {
+        (dx10_encoding(b)?, HEADER + DX10_HEADER)
+    } else {
+        (legacy_encoding(b)?, HEADER)
+    };
     let layout = encoding.layout();
     limits.check(width, height, layout, SampleType::U8)?;
-    let size = encoding.level_size(width, height).ok_or_else(|| bad("pixel data size overflow"))?;
-    let data = b.get(start..).and_then(|d| d.get(..size)).ok_or_else(|| bad(format!("truncated pixel data: {size} bytes needed")))?;
+    let size = encoding
+        .level_size(width, height)
+        .ok_or_else(|| bad("pixel data size overflow"))?;
+    let data = b
+        .get(start..)
+        .and_then(|d| d.get(..size))
+        .ok_or_else(|| bad(format!("truncated pixel data: {size} bytes needed")))?;
     let (w, h) = (width as usize, height as usize);
     let channels = layout.channels();
-    let total = w.checked_mul(h).and_then(|n| n.checked_mul(channels)).ok_or_else(|| bad("pixel size overflow"))?;
+    let total = w
+        .checked_mul(h)
+        .and_then(|n| n.checked_mul(channels))
+        .ok_or_else(|| bad("pixel size overflow"))?;
     let mut pixels = vec![0u8; total];
     match encoding {
-        Encoding::Masks { bytes, gray, fields } => {
-            for (src, dst) in data.chunks_exact(bytes).zip(pixels.chunks_exact_mut(channels)) {
-                let pixel = src.iter().rev().fold(0u32, |v, &byte| v << 8 | u32::from(byte));
+        Encoding::Masks {
+            bytes,
+            gray,
+            fields,
+        } => {
+            for (src, dst) in data
+                .chunks_exact(bytes)
+                .zip(pixels.chunks_exact_mut(channels))
+            {
+                let pixel = src
+                    .iter()
+                    .rev()
+                    .fold(0u32, |v, &byte| v << 8 | u32::from(byte));
                 let channel = |i: usize| fields[i].map_or(0, |f| f.get(pixel));
-                let values = if gray { [channel(0), channel(3), 0, 0] } else { [channel(0), channel(1), channel(2), channel(3)] };
+                let values = if gray {
+                    [channel(0), channel(3), 0, 0]
+                } else {
+                    [channel(0), channel(1), channel(2), channel(3)]
+                };
                 dst.copy_from_slice(&values[..channels]);
             }
         }
         Encoding::Bc1 | Encoding::Bc2 | Encoding::Bc3 => {
-            let block_size = if matches!(encoding, Encoding::Bc1) { 8 } else { 16 };
+            let block_size = if matches!(encoding, Encoding::Bc1) {
+                8
+            } else {
+                16
+            };
             let blocks_x = w.div_ceil(4);
             for (i, block) in data.chunks_exact(block_size).enumerate() {
                 let texels = match encoding {
                     Encoding::Bc1 => bc1(block, true),
-                    Encoding::Bc2 => with_alpha(bc1(block.get(8..).unwrap_or_default(), false), bc2_alpha(block)),
-                    _ => with_alpha(bc1(block.get(8..).unwrap_or_default(), false), bc3_alpha(block)),
+                    Encoding::Bc2 => with_alpha(
+                        bc1(block.get(8..).unwrap_or_default(), false),
+                        bc2_alpha(block),
+                    ),
+                    _ => with_alpha(
+                        bc1(block.get(8..).unwrap_or_default(), false),
+                        bc3_alpha(block),
+                    ),
                 };
                 let (bx, by) = ((i % blocks_x) * 4, (i / blocks_x) * 4);
                 for (t, texel) in texels.iter().enumerate() {
@@ -225,15 +312,23 @@ pub(crate) fn decode(b: &[u8], limits: &Limits) -> Result<Image, CodecError> {
 }
 
 fn rgb565(c: u16) -> [u8; 3] {
-    let scale = |v: u16, max: u16| ((u32::from(v) * 255 + u32::from(max) / 2) / u32::from(max)) as u8;
-    [scale(c >> 11, 31), scale((c >> 5) & 63, 63), scale(c & 31, 31)]
+    let scale =
+        |v: u16, max: u16| ((u32::from(v) * 255 + u32::from(max) / 2) / u32::from(max)) as u8;
+    [
+        scale(c >> 11, 31),
+        scale((c >> 5) & 63, 63),
+        scale(c & 31, 31),
+    ]
 }
 
 /// A BC1 colour block. BC2 and BC3 colour blocks always have four colours; only BC1's
 /// `c0 <= c1` order selects three colours and transparent black.
 fn bc1(block: &[u8], one_bit_alpha: bool) -> [[u8; 4]; 16] {
     let byte = |i: usize| block.get(i).copied().unwrap_or(0);
-    let (c0, c1) = (u16::from_le_bytes([byte(0), byte(1)]), u16::from_le_bytes([byte(2), byte(3)]));
+    let (c0, c1) = (
+        u16::from_le_bytes([byte(0), byte(1)]),
+        u16::from_le_bytes([byte(2), byte(3)]),
+    );
     let (a, b) = (rgb565(c0), rgb565(c1));
     let mix = |wa: u32, wb: u32| {
         let d = wa + wb;
@@ -241,9 +336,19 @@ fn bc1(block: &[u8], one_bit_alpha: bool) -> [[u8; 4]; 16] {
         [at(0), at(1), at(2), 255]
     };
     let palette = if c0 > c1 || !one_bit_alpha {
-        [[a[0], a[1], a[2], 255], [b[0], b[1], b[2], 255], mix(2, 1), mix(1, 2)]
+        [
+            [a[0], a[1], a[2], 255],
+            [b[0], b[1], b[2], 255],
+            mix(2, 1),
+            mix(1, 2),
+        ]
     } else {
-        [[a[0], a[1], a[2], 255], [b[0], b[1], b[2], 255], mix(1, 1), [0; 4]]
+        [
+            [a[0], a[1], a[2], 255],
+            [b[0], b[1], b[2], 255],
+            mix(1, 1),
+            [0; 4],
+        ]
     };
     let indices = u32::from_le_bytes([byte(4), byte(5), byte(6), byte(7)]);
     std::array::from_fn(|t| palette[(indices >> (2 * t)) as usize & 3])

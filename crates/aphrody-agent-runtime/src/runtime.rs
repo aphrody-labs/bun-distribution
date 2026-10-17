@@ -77,7 +77,11 @@ impl AgentRuntime {
     async fn open_rollout(&self) -> Result<Option<RolloutRecorder>, RuntimeError> {
         if let Some(path) = &self.resume_path {
             let recorder = RolloutRecorder::reopen(path).await?;
-            if self.session_id.as_deref().is_some_and(|id| id != recorder.session_id()) {
+            if self
+                .session_id
+                .as_deref()
+                .is_some_and(|id| id != recorder.session_id())
+            {
                 recorder.shutdown().await?;
                 return Err(RuntimeError::Config(
                     "resume session id does not match rollout".into(),
@@ -112,7 +116,7 @@ impl AgentRuntime {
                     recorder.flush().await?;
                 }
                 Ok(Some(recorder))
-            },
+            }
             None => Ok(None),
         }
     }
@@ -153,7 +157,9 @@ impl AgentRuntime {
         let mut session = Session::with_history(self.config.to_engine_config(), self.history);
         let (sink, mut rx) = EventSink::unbounded();
 
-        let input = vec![InputItem::Text { text: prompt.into() }];
+        let input = vec![InputItem::Text {
+            text: prompt.into(),
+        }];
 
         // In FullAuto there is no approval gate; in Gated mode a headless caller
         // has no one to ask, so we still pass `None` and the engine denies tool
@@ -181,7 +187,11 @@ impl AgentRuntime {
             rollout.shutdown().await?;
         }
 
-        Ok(RunResult { last_agent_message: outcome.last_agent_message.clone(), events, outcome })
+        Ok(RunResult {
+            last_agent_message: outcome.last_agent_message.clone(),
+            events,
+            outcome,
+        })
     }
 }
 
@@ -263,7 +273,11 @@ impl AgentRuntimeBuilder {
     pub fn build(self) -> Result<AgentRuntime, RuntimeError> {
         self.validate()?;
         let config = self.config.clone().unwrap_or_default();
-        if config.tool_profile.as_ref().is_some_and(|profile| profile.has_mcp_servers()) {
+        if config
+            .tool_profile
+            .as_ref()
+            .is_some_and(|profile| profile.has_mcp_servers())
+        {
             return Err(RuntimeError::Config(
                 "profiled MCP servers require AgentRuntimeBuilder::build_profiled".to_owned(),
             ));
@@ -317,7 +331,9 @@ impl AgentRuntimeBuilder {
             #[cfg(not(feature = "rag"))]
             {
                 let _ = (path, &mut tools);
-                return Err(RuntimeError::Config("RAG requires the `rag` feature".into()));
+                return Err(RuntimeError::Config(
+                    "RAG requires the `rag` feature".into(),
+                ));
             }
             #[cfg(feature = "rag")]
             {

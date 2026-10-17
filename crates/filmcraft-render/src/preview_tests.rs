@@ -2,7 +2,10 @@
 
 use filmcraft_media::generators::GeneratorSource;
 use filmcraft_media::{DemoScene, Generator, MediaSource};
-use filmcraft_project::{ClipId, ItemId, ItemKind, Label, MediaClip, MediaRef, ParamValue, Project, SequenceSettings, TrackKind, find_effect};
+use filmcraft_project::{
+    ClipId, ItemId, ItemKind, Label, MediaClip, MediaRef, ParamValue, Project, SequenceSettings,
+    TrackKind, find_effect,
+};
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, Tick, TimeRange};
 
 use crate::preview::{Need, Segment, audio_segments, effect_cost_ms, segment_at, video_segments};
@@ -31,16 +34,50 @@ fn setup() -> (Project, ItemId, ItemId, ItemId) {
     let mut p = Project::new("r");
     let matte = add_gen(
         &mut p,
-        GeneratorSource::new(Generator::ColorMatte { color: [1.0, 0.0, 0.0, 1.0] }, 1920, 1080, FrameRate::FPS_24, Tick(60 * TICKS_PER_SECOND)),
+        GeneratorSource::new(
+            Generator::ColorMatte {
+                color: [1.0, 0.0, 0.0, 1.0],
+            },
+            1920,
+            1080,
+            FrameRate::FPS_24,
+            Tick(60 * TICKS_PER_SECOND),
+        ),
     );
     let ocean = add_gen(&mut p, GeneratorSource::demo(DemoScene::OceanSunset));
-    let seq = p.new_sequence("s", SequenceSettings { width: 1920, height: 1080, frame_rate: FrameRate::FPS_24, ..Default::default() }, 3, 1, None);
+    let seq = p.new_sequence(
+        "s",
+        SequenceSettings {
+            width: 1920,
+            height: 1080,
+            frame_rate: FrameRate::FPS_24,
+            ..Default::default()
+        },
+        3,
+        1,
+        None,
+    );
     (p, matte, ocean, seq)
 }
 
-fn place(p: &mut Project, seq: ItemId, track: usize, item: ItemId, start_f: i64, dur_f: i64) -> ClipId {
+fn place(
+    p: &mut Project,
+    seq: ItemId,
+    track: usize,
+    item: ItemId,
+    start_f: i64,
+    dur_f: i64,
+) -> ClipId {
     let r = FrameRate::FPS_24;
-    let mut ti = p.make_track_item(item, TrackKind::Video, r.tick_of(start_f), TimeRange::new(Tick::ZERO, r.tick_of(dur_f)), r).unwrap();
+    let mut ti = p
+        .make_track_item(
+            item,
+            TrackKind::Video,
+            r.tick_of(start_f),
+            TimeRange::new(Tick::ZERO, r.tick_of(dur_f)),
+            r,
+        )
+        .unwrap();
     for e in ti.effects.iter_mut() {
         filmcraft_project::resolve_auto_points(e, (1920, 1080), (1920, 1080));
     }
@@ -54,11 +91,19 @@ fn place(p: &mut Project, seq: ItemId, track: usize, item: ItemId, start_f: i64,
 fn add_fx(p: &mut Project, seq: ItemId, clip: ClipId, id: &str) {
     let mut inst = find_effect(id).unwrap().instance();
     filmcraft_project::resolve_auto_points(&mut inst, (1920, 1080), (1920, 1080));
-    p.sequence_mut(seq).unwrap().find_item_mut(clip).unwrap().1.effects.push(inst);
+    p.sequence_mut(seq)
+        .unwrap()
+        .find_item_mut(clip)
+        .unwrap()
+        .1
+        .effects
+        .push(inst);
 }
 
 fn bounds(s: &[Segment]) -> Vec<(i64, i64)> {
-    s.iter().map(|s| (s.first_frame, s.first_frame + s.frames)).collect()
+    s.iter()
+        .map(|s| (s.first_frame, s.first_frame + s.frames))
+        .collect()
 }
 
 fn by_frame(s: &[Segment], f: i64) -> String {
@@ -102,7 +147,9 @@ fn transitions_are_their_own_segments() {
         align: Default::default(),
         reverse: false,
     };
-    p.sequence_mut(seq).unwrap().video_tracks[0].transitions.push(tr);
+    p.sequence_mut(seq).unwrap().video_tracks[0]
+        .transitions
+        .push(tr);
     let s = video_segments(&p, seq);
     assert_eq!(bounds(&s), vec![(0, 36), (36, 48), (48, 60), (60, 96)]);
     assert_eq!(s[1].clips, vec![a, b]);
@@ -120,14 +167,25 @@ fn editing_one_clip_invalidates_only_its_segments() {
     // change a parameter of A's effect
     let q = p.sequence_mut(seq).unwrap();
     let (_, it) = q.find_item_mut(a).unwrap();
-    it.effect_mut("gaussian_blur").unwrap().params.values_mut().next().unwrap().value = ParamValue::Float(42.0);
+    it.effect_mut("gaussian_blur")
+        .unwrap()
+        .params
+        .values_mut()
+        .next()
+        .unwrap()
+        .value = ParamValue::Float(42.0);
     let after = video_segments(&p, seq);
     assert_ne!(by_frame(&before, 10), by_frame(&after, 10), "A changed");
     assert_eq!(by_frame(&before, 60), by_frame(&after, 60), "B untouched");
     // a keyframe on B changes B only
     let q = p.sequence_mut(seq).unwrap();
     let (_, it) = q.find_item_mut(b).unwrap();
-    it.effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().toggle_animation(Tick(1000));
+    it.effect_mut("opacity")
+        .unwrap()
+        .params
+        .get_mut("opacity")
+        .unwrap()
+        .toggle_animation(Tick(1000));
     let kf = video_segments(&p, seq);
     assert_eq!(by_frame(&after, 10), by_frame(&kf, 10));
     assert_ne!(by_frame(&after, 60), by_frame(&kf, 60));
@@ -153,7 +211,11 @@ fn renaming_relabelling_and_moving_keep_hashes() {
         it.start += FrameRate::FPS_24.tick_of(10);
     }
     let after = video_segments(&p, seq);
-    assert_eq!(by_frame(&before, 0), by_frame(&after, 10), "moved segment keeps its preview");
+    assert_eq!(
+        by_frame(&before, 0),
+        by_frame(&after, 10),
+        "moved segment keeps its preview"
+    );
     assert_eq!(by_frame(&before, 50), by_frame(&after, 60));
     let _ = b;
     // trimming B changes B's segment only (its frame count changed)
@@ -175,7 +237,10 @@ fn hashes_are_stable_across_save_and_load() {
     let (_, it) = q.find_item_mut(b).unwrap();
     let m = it.effect_mut("motion").unwrap();
     m.params.get_mut("scale").unwrap().toggle_animation(Tick(0));
-    m.params.get_mut("scale").unwrap().set_at(Tick(TICKS_PER_SECOND), ParamValue::Float(80.0));
+    m.params
+        .get_mut("scale")
+        .unwrap()
+        .set_at(Tick(TICKS_PER_SECOND), ParamValue::Float(80.0));
     let before = video_segments(&p, seq);
     let loaded = Project::from_json(&p.to_json()).unwrap();
     let after = video_segments(&loaded, seq);
@@ -196,16 +261,37 @@ fn need_classification_none_yellow_red() {
     }
     let s = video_segments(&p, seq);
     let need = |f| segment_at(&s, f).unwrap().need;
-    assert_eq!(need(0), Need::None, "untouched clip matching the sequence plays natively");
+    assert_eq!(
+        need(0),
+        Need::None,
+        "untouched clip matching the sequence plays natively"
+    );
     assert_eq!(need(30), Need::Realtime, "one cheap effect: yellow");
-    assert_eq!(need(60), Need::Render, "four heavy effects: red ({} ms)", segment_at(&s, 60).unwrap().cost_ms);
+    assert_eq!(
+        need(60),
+        Need::Render,
+        "four heavy effects: red ({} ms)",
+        segment_at(&s, 60).unwrap().cost_ms
+    );
     let _ = a;
     // a clip at a different frame size than the sequence needs scaling: yellow
     let (mut p, _m, ocean, seq) = setup();
     place(&mut p, seq, 0, ocean, 0, 24);
     let s = video_segments(&p, seq);
-    let ocean_matches = p.item(ocean).unwrap().as_media().unwrap().info.video.as_ref().is_some_and(|v| v.width == 1920 && v.height == 1080);
-    let want = if ocean_matches && p.item(ocean).unwrap().frame_rate() == FrameRate::FPS_24 { Need::None } else { Need::Realtime };
+    let ocean_matches = p
+        .item(ocean)
+        .unwrap()
+        .as_media()
+        .unwrap()
+        .info
+        .video
+        .as_ref()
+        .is_some_and(|v| v.width == 1920 && v.height == 1080);
+    let want = if ocean_matches && p.item(ocean).unwrap().frame_rate() == FrameRate::FPS_24 {
+        Need::None
+    } else {
+        Need::Realtime
+    };
     assert_eq!(s[0].need, want);
 }
 
@@ -223,7 +309,10 @@ fn effect_tiers_are_ordered() {
 fn effect_costs() {
     use crate::effects::{FxCtx, apply};
     let mut rows = Vec::new();
-    for d in filmcraft_project::effect_defs().iter().filter(|d| d.kind == filmcraft_project::EffectKind::Video && !d.intrinsic) {
+    for d in filmcraft_project::effect_defs()
+        .iter()
+        .filter(|d| d.kind == filmcraft_project::EffectKind::Video && !d.intrinsic)
+    {
         let mut img = crate::Image::filled(1920, 1080, [0.4, 0.5, 0.6, 1.0]);
         let e = d.instance();
         let cx = FxCtx {
@@ -251,9 +340,24 @@ fn effect_costs() {
 }
 
 /// Put `item` on track 0 of `kind` in `seq` from frame `start_f` for `dur_f` frames.
-fn place_kind(p: &mut Project, seq: ItemId, kind: TrackKind, item: ItemId, start_f: i64, dur_f: i64) -> ClipId {
+fn place_kind(
+    p: &mut Project,
+    seq: ItemId,
+    kind: TrackKind,
+    item: ItemId,
+    start_f: i64,
+    dur_f: i64,
+) -> ClipId {
     let r = FrameRate::FPS_24;
-    let ti = p.make_track_item(item, kind, r.tick_of(start_f), TimeRange::new(Tick::ZERO, r.tick_of(dur_f)), r).unwrap();
+    let ti = p
+        .make_track_item(
+            item,
+            kind,
+            r.tick_of(start_f),
+            TimeRange::new(Tick::ZERO, r.tick_of(dur_f)),
+            r,
+        )
+        .unwrap();
     let id = ti.id;
     let t = &mut p.sequence_mut(seq).unwrap().tracks_mut(kind)[0];
     t.items.push(ti);
@@ -278,25 +382,53 @@ fn a_nests_audio_previews_follow_the_sound_of_its_sequence() {
     place_kind(&mut p, outer, TrackKind::Audio, inner, 24, 48);
     let top = p.new_sequence("top", settings, 1, 1, None);
     place_kind(&mut p, top, TrackKind::Audio, outer, 12, 72);
-    let (audio, picture, deep) = (audio_hashes(&p, outer), video_segments(&p, outer), audio_hashes(&p, top));
+    let (audio, picture, deep) = (
+        audio_hashes(&p, outer),
+        video_segments(&p, outer),
+        audio_hashes(&p, top),
+    );
     assert_eq!(audio.len(), 1);
 
     // the sound inside the nest changes: the nest's audio preview is stale, its picture is not
-    p.sequence_mut(inner).unwrap().find_item_mut(snd).unwrap().1.gain_db = -12.0;
-    assert_ne!(audio_hashes(&p, outer), audio, "a clip's gain inside the nest");
+    p.sequence_mut(inner)
+        .unwrap()
+        .find_item_mut(snd)
+        .unwrap()
+        .1
+        .gain_db = -12.0;
+    assert_ne!(
+        audio_hashes(&p, outer),
+        audio,
+        "a clip's gain inside the nest"
+    );
     assert_ne!(audio_hashes(&p, top), deep, "a clip's gain two nests down");
     assert_eq!(bounds(&video_segments(&p, outer)), bounds(&picture));
-    assert_eq!(by_frame(&video_segments(&p, outer), 30), by_frame(&picture, 30), "the picture did not change");
+    assert_eq!(
+        by_frame(&video_segments(&p, outer), 30),
+        by_frame(&picture, 30),
+        "the picture did not change"
+    );
     let (audio, deep) = (audio_hashes(&p, outer), audio_hashes(&p, top));
     // the nested sequence's track mix counts too
     p.sequence_mut(inner).unwrap().audio_tracks[0].muted = true;
-    assert_ne!(audio_hashes(&p, outer), audio, "a muted track inside the nest");
+    assert_ne!(
+        audio_hashes(&p, outer),
+        audio,
+        "a muted track inside the nest"
+    );
     p.sequence_mut(inner).unwrap().audio_tracks[0].muted = false;
     assert_eq!(audio_hashes(&p, outer), audio);
 
     // the picture inside the nest changes: its audio preview stays valid
     add_fx(&mut p, inner, pic, "tint");
-    assert_ne!(by_frame(&video_segments(&p, outer), 30), by_frame(&picture, 30));
-    assert_eq!(audio_hashes(&p, outer), audio, "a video effect inside the nest");
+    assert_ne!(
+        by_frame(&video_segments(&p, outer), 30),
+        by_frame(&picture, 30)
+    );
+    assert_eq!(
+        audio_hashes(&p, outer),
+        audio,
+        "a video effect inside the nest"
+    );
     assert_eq!(audio_hashes(&p, top), deep);
 }

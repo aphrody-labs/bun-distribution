@@ -39,9 +39,15 @@ impl LinkRegistrar for Fake {
 }
 
 fn session(installed: bool, registered: bool) -> (Session, Arc<Mutex<State>>) {
-    let state = Arc::new(Mutex::new(State { registered, ..State::default() }));
+    let state = Arc::new(Mutex::new(State {
+        registered,
+        ..State::default()
+    }));
     let mut s = Session::new();
-    s.live.links = Some(Box::new(Fake { installed, state: state.clone() }));
+    s.live.links = Some(Box::new(Fake {
+        installed,
+        state: state.clone(),
+    }));
     (s, state)
 }
 
@@ -50,7 +56,9 @@ fn without_a_registrar_the_command_is_disabled() {
     let mut s = Session::new();
     assert_eq!(s.invite_links_on(), None);
     s.invite_links_startup();
-    let e = s.execute("collab.registerLinks", &json!({"on": true})).unwrap_err();
+    let e = s
+        .execute("collab.registerLinks", &json!({"on": true}))
+        .unwrap_err();
     assert!(matches!(e, EngineError::Disabled(..)), "{e}");
     assert_eq!(s.prefs.invite_links, None, "the preference is untouched");
 }
@@ -86,7 +94,11 @@ fn the_preference_wins_at_startup() {
     let (mut s, state) = session(true, true);
     s.prefs.invite_links = Some(false);
     s.invite_links_startup();
-    assert_eq!(state.lock().unwrap().calls, vec![false], "turned off: this copy's registration is removed");
+    assert_eq!(
+        state.lock().unwrap().calls,
+        vec![false],
+        "turned off: this copy's registration is removed"
+    );
 }
 
 #[test]
@@ -96,7 +108,9 @@ fn the_command_switches_and_remembers() {
     let r = s.execute("collab.registerLinks", &json!({})).unwrap();
     assert_eq!(r, json!({"on": false, "registered": false}));
     assert_eq!(s.prefs.invite_links, Some(false));
-    let r = s.execute("collab.registerLinks", &json!({"on": true})).unwrap();
+    let r = s
+        .execute("collab.registerLinks", &json!({"on": true}))
+        .unwrap();
     assert_eq!(r, json!({"on": true, "registered": true}));
     assert_eq!(s.prefs.invite_links, Some(true));
     assert_eq!(s.invite_links_on(), Some(true));
@@ -107,7 +121,9 @@ fn the_command_switches_and_remembers() {
 fn a_failed_registration_keeps_the_preference() {
     let (mut s, state) = session(true, false);
     state.lock().unwrap().fail = true;
-    let e = s.execute("collab.registerLinks", &json!({"on": true})).unwrap_err();
+    let e = s
+        .execute("collab.registerLinks", &json!({"on": true}))
+        .unwrap_err();
     assert!(e.to_string().contains("access denied"), "{e}");
     assert_eq!(s.prefs.invite_links, None);
     // Startup logs the failure and carries on.
@@ -117,7 +133,13 @@ fn a_failed_registration_keeps_the_preference() {
 #[test]
 fn junk_parameters_never_panic() {
     let (mut s, _) = session(true, false);
-    for p in [json!(null), json!([]), json!({"on": "yes"}), json!({"on": 3}), json!({"on": null})] {
+    for p in [
+        json!(null),
+        json!([]),
+        json!({"on": "yes"}),
+        json!({"on": 3}),
+        json!({"on": null}),
+    ] {
         let _ = s.execute("collab.registerLinks", &p);
     }
 }

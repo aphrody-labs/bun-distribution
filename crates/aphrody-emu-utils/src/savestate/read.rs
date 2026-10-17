@@ -2,7 +2,7 @@ use crate::{Bytes, MemValue, OwnedBytesCellPtr};
 use core::{
     cell::Cell,
     convert::Infallible,
-    mem::{MaybeUninit, size_of},
+    mem::{size_of, MaybeUninit},
     ptr,
     simd::{Simd, SimdElement},
 };
@@ -113,7 +113,11 @@ impl<'a> PersistentReadSavestate<'a> {
         if save.len() > u32::MAX as usize {
             return Err(());
         }
-        Ok(PersistentReadSavestate { save, pos: 0, structs: Vec::new() })
+        Ok(PersistentReadSavestate {
+            save,
+            pos: 0,
+            structs: Vec::new(),
+        })
     }
 }
 
@@ -165,7 +169,10 @@ impl<'a> ReadSavestate for PersistentReadSavestate<'a> {
         let mut fields = Vec::with_capacity(fields_len);
         for _ in 0..fields_len {
             let ident_bytes: &'a [u8] = unsafe { self.save.get_unchecked(pos..) };
-            let len = ident_bytes.iter().position(|b| *b == 0).unwrap_or(ident_bytes.len());
+            let len = ident_bytes
+                .iter()
+                .position(|b| *b == 0)
+                .unwrap_or(ident_bytes.len());
             let ident_bytes = &ident_bytes[..len];
             let ident_end = pos + len + 1;
 
@@ -179,7 +186,11 @@ impl<'a> ReadSavestate for PersistentReadSavestate<'a> {
             }));
         }
 
-        self.structs.push(StructInfo { fields, end: pos as u32, cur_field: 0 });
+        self.structs.push(StructInfo {
+            fields,
+            end: pos as u32,
+            cur_field: 0,
+        });
         Ok(())
     }
 
@@ -189,7 +200,7 @@ impl<'a> ReadSavestate for PersistentReadSavestate<'a> {
             Some(struct_info) => {
                 self.pos = struct_info.end;
                 Ok(())
-            },
+            }
             None => Err(ReadError::NoStructPresent),
         }
     }
@@ -323,7 +334,10 @@ impl_loadable_tuples!(
     (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11),
     (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12),
     (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13),
-    (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13, O, 14),
+    (
+        A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13, O,
+        14
+    ),
     (
         A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13, O,
         14, P, 15
@@ -382,7 +396,9 @@ where
         for elem in &mut result {
             *elem = MaybeUninit::new(save.load()?);
         }
-        Ok(Self::from_array(unsafe { MaybeUninit::array_assume_init(result) }))
+        Ok(Self::from_array(unsafe {
+            MaybeUninit::array_assume_init(result)
+        }))
     }
 }
 
@@ -402,7 +418,8 @@ where
 impl<const LEN: usize> Loadable for Bytes<LEN> {
     #[inline]
     fn load<S: ReadSavestate>(save: &mut S) -> Result<Self, S::Error> {
-        save.load_bytes(LEN).map(|v| unsafe { (*(v as *const Bytes<LEN>)).clone() })
+        save.load_bytes(LEN)
+            .map(|v| unsafe { (*(v as *const Bytes<LEN>)).clone() })
     }
 }
 
@@ -483,7 +500,11 @@ where
 {
     #[inline]
     fn load<S: ReadSavestate>(save: &mut S) -> Result<Self, S::Error> {
-        Ok(if save.load_raw::<u8>()? == 0 { None } else { Some(save.load()?) })
+        Ok(if save.load_raw::<u8>()? == 0 {
+            None
+        } else {
+            Some(save.load()?)
+        })
     }
 }
 

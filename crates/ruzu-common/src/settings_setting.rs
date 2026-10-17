@@ -406,11 +406,16 @@ mod tests {
         let mut plain = Setting::new(Fence::Default, "fence", Category::RendererAdvanced);
         let mut values = crate::settings::Values::default();
         for (input, expected) in [
-            ("4", Fence::Accurate), ("3", Fence::Accurate),
-            ("1", Fence::Immediate), ("-1", Fence::Accurate),
-            ("4294967296", Fence::Default), (" 4 ", Fence::Accurate),
-            (" +4suffix", Fence::Accurate), ("-4294967295", Fence::Immediate),
-            ("9223372036854775808", Fence::Default), ("invalid", Fence::Default),
+            ("4", Fence::Accurate),
+            ("3", Fence::Accurate),
+            ("1", Fence::Immediate),
+            ("-1", Fence::Accurate),
+            ("4294967296", Fence::Default),
+            (" 4 ", Fence::Accurate),
+            (" +4suffix", Fence::Accurate),
+            ("-4294967295", Fence::Immediate),
+            ("9223372036854775808", Fence::Default),
+            ("invalid", Fence::Default),
         ] {
             plain.load_string(input);
             assert_eq!(*plain.get_value(), expected);

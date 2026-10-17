@@ -165,12 +165,16 @@ pub fn read_utf(reader: &mut impl Read) -> anyhow::Result<UtfTable> {
         magic
     );
 
-    let table_len = reader.read_u32::<BigEndian>().context("read @UTF table length")? as usize;
+    let table_len = reader
+        .read_u32::<BigEndian>()
+        .context("read @UTF table length")? as usize;
 
     // Slurp the rest of the table body (table_len bytes) into a Vec so we can
     // random-access the string pool and data pool without seeking.
     let mut body = vec![0u8; table_len];
-    reader.read_exact(&mut body).context("read @UTF table body")?;
+    reader
+        .read_exact(&mut body)
+        .context("read @UTF table body")?;
 
     decode_utf_body(&body)
 }
@@ -200,7 +204,9 @@ pub fn read_cpk_header(reader: &mut impl Read) -> anyhow::Result<CpkHeader> {
 
     // Skip 12 bytes of CPK internal header (revision, unknown fields).
     let mut _skip = [0u8; 12];
-    reader.read_exact(&mut _skip).context("skip CPK internal header")?;
+    reader
+        .read_exact(&mut _skip)
+        .context("skip CPK internal header")?;
 
     // The UTF table starts at offset 0x10.
     let utf = read_utf(reader).context("read UTF table embedded in CPK header")?;
@@ -218,7 +224,11 @@ pub fn read_cpk_header(reader: &mut impl Read) -> anyhow::Result<CpkHeader> {
 /// fields are relative to this origin.
 fn decode_utf_body(body: &[u8]) -> anyhow::Result<UtfTable> {
     // The body header is 0x18 bytes long before the schema entries begin.
-    ensure!(body.len() >= 0x18, "@UTF body too short for header: {} bytes", body.len());
+    ensure!(
+        body.len() >= 0x18,
+        "@UTF body too short for header: {} bytes",
+        body.len()
+    );
 
     let rows_offset = u32::from_be_bytes(body[0x00..0x04].try_into().unwrap()) as usize;
     let strings_offset = u32::from_be_bytes(body[0x04..0x08].try_into().unwrap()) as usize;
@@ -311,7 +321,7 @@ fn decode_utf_body(body: &[u8]) -> anyhow::Result<UtfTable> {
                     .with_context(|| format!("read row {r} column {c} value"))?;
                     row_cursor += consumed;
                     val
-                },
+                }
                 other => bail!("unknown storage class 0x{other:02X} at column {c}"),
             };
             row.push(val);
@@ -319,7 +329,11 @@ fn decode_utf_body(body: &[u8]) -> anyhow::Result<UtfTable> {
         rows.push(row);
     }
 
-    Ok(UtfTable { name: table_name, columns, rows })
+    Ok(UtfTable {
+        name: table_name,
+        columns,
+        rows,
+    })
 }
 
 /// Read a null-terminated UTF-8 string from the string pool.
@@ -395,50 +409,50 @@ fn read_typed_value(
         type_id::U8 => {
             let v = be_slice!(offset, 1)[0];
             (UtfValue::U8(v), 1)
-        },
+        }
         type_id::I8 => {
             let v = be_slice!(offset, 1)[0] as i8;
             (UtfValue::I8(v), 1)
-        },
+        }
         type_id::U16 => {
             let v = u16::from_be_bytes(be_slice!(offset, 2).try_into().unwrap());
             (UtfValue::U16(v), 2)
-        },
+        }
         type_id::I16 => {
             let v = i16::from_be_bytes(be_slice!(offset, 2).try_into().unwrap());
             (UtfValue::I16(v), 2)
-        },
+        }
         type_id::U32 => {
             let v = u32::from_be_bytes(be_slice!(offset, 4).try_into().unwrap());
             (UtfValue::U32(v), 4)
-        },
+        }
         type_id::I32 => {
             let v = i32::from_be_bytes(be_slice!(offset, 4).try_into().unwrap());
             (UtfValue::I32(v), 4)
-        },
+        }
         type_id::U64 => {
             let v = u64::from_be_bytes(be_slice!(offset, 8).try_into().unwrap());
             (UtfValue::U64(v), 8)
-        },
+        }
         type_id::I64 => {
             let v = i64::from_be_bytes(be_slice!(offset, 8).try_into().unwrap());
             (UtfValue::I64(v), 8)
-        },
+        }
         type_id::F32 => {
             let bits = u32::from_be_bytes(be_slice!(offset, 4).try_into().unwrap());
             (UtfValue::F32(f32::from_bits(bits)), 4)
-        },
+        }
         type_id::F64 => {
             let bits = u64::from_be_bytes(be_slice!(offset, 8).try_into().unwrap());
             (UtfValue::F64(f64::from_bits(bits)), 8)
-        },
+        }
         type_id::STRING => {
             // 4-byte offset into the string pool.
             let pool_off = u32::from_be_bytes(be_slice!(offset, 4).try_into().unwrap()) as usize;
             let s = read_cstring(body, strings_offset, pool_off)
                 .context("resolve STRING value from pool")?;
             (UtfValue::String(s), 4)
-        },
+        }
         type_id::BYTES => {
             // 4-byte data-pool offset + 4-byte byte length.
             let blob_off = u32::from_be_bytes(be_slice!(offset, 4).try_into().unwrap()) as usize;
@@ -457,7 +471,7 @@ fn read_typed_value(
             );
             let bytes = body[blob_start..blob_end].to_vec();
             (UtfValue::Bytes(bytes), 8)
-        },
+        }
         other => bail!("unknown type nibble 0x{other:X}"),
     };
     Ok(result)
@@ -632,7 +646,10 @@ mod tests {
         let mut cursor = Cursor::new(&bad);
         let err = read_utf(&mut cursor).unwrap_err();
         let msg = err.to_string();
-        assert!(msg.contains("invalid @UTF magic"), "expected magic error, got: {msg}");
+        assert!(
+            msg.contains("invalid @UTF magic"),
+            "expected magic error, got: {msg}"
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -672,7 +689,10 @@ mod tests {
         let mut cursor = Cursor::new(&bad);
         let err = read_cpk_header(&mut cursor).unwrap_err();
         let msg = err.to_string();
-        assert!(msg.contains("invalid CPK magic"), "expected CPK magic error, got: {msg}");
+        assert!(
+            msg.contains("invalid CPK magic"),
+            "expected CPK magic error, got: {msg}"
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -685,6 +705,9 @@ mod tests {
         // Keep only the first 20 bytes — enough magic+len, body truncated.
         let truncated = &full[..20];
         let mut cursor = Cursor::new(truncated);
-        assert!(read_utf(&mut cursor).is_err(), "truncated stream must not parse successfully");
+        assert!(
+            read_utf(&mut cursor).is_err(),
+            "truncated stream must not parse successfully"
+        );
     }
 }

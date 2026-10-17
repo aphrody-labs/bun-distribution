@@ -34,7 +34,13 @@ pub(crate) const ZIGZAG: [u8; 64] = {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {
     /// HD profile: fixed raster and frame size (Table C.1).
-    Hd { width: u16, height: u16, interlaced: bool, depth: u8, frame_size: u32 },
+    Hd {
+        width: u16,
+        height: u16,
+        interlaced: bool,
+        depth: u8,
+        frame_size: u32,
+    },
     /// Resolution-independent profile (Table C.2): reference frame size C0 for 8160 macroblocks.
     Ri { c0: u32 },
 }
@@ -53,13 +59,44 @@ pub(crate) struct CidInfo {
     pub p: u32,
 }
 
-const fn hd(cid: u32, width: u16, height: u16, interlaced: bool, depth: u8, frame_size: u32, weights: &'static [[u8; 63]; 2], vlc: usize) -> CidInfo {
-    let p = if cid == 1235 || cid == 1241 || cid == 1250 { 8 } else { 32 };
-    CidInfo { cid, kind: Kind::Hd { width, height, interlaced, depth, frame_size }, weights, vlc, p }
+const fn hd(
+    cid: u32,
+    width: u16,
+    height: u16,
+    interlaced: bool,
+    depth: u8,
+    frame_size: u32,
+    weights: &'static [[u8; 63]; 2],
+    vlc: usize,
+) -> CidInfo {
+    let p = if cid == 1235 || cid == 1241 || cid == 1250 {
+        8
+    } else {
+        32
+    };
+    CidInfo {
+        cid,
+        kind: Kind::Hd {
+            width,
+            height,
+            interlaced,
+            depth,
+            frame_size,
+        },
+        weights,
+        vlc,
+        p,
+    }
 }
 
 const fn ri(cid: u32, c0: u32, weights: &'static [[u8; 63]; 2], vlc: usize) -> CidInfo {
-    CidInfo { cid, kind: Kind::Ri { c0 }, weights, vlc, p: 32 }
+    CidInfo {
+        cid,
+        kind: Kind::Ri { c0 },
+        weights,
+        vlc,
+        p: 32,
+    }
 }
 
 /// Every compression ID of SMPTE ST 2019-1:2016 (Tables C.1 and C.2).
@@ -162,7 +199,11 @@ impl Lut {
                 }
             }
         }
-        Lut { primary, secondary, bits }
+        Lut {
+            primary,
+            secondary,
+            bits,
+        }
     }
 }
 
@@ -188,12 +229,23 @@ fn build_set(amp: &[(u16, u8, u8, u8, u8)], run: &[(u16, u8, u8); 62], dc: &[(u1
     let ac: Vec<(u32, u32, u32)> = amp
         .iter()
         .map(|&(c, l, a, fr, fi)| {
-            let v = if a == 0 { AMP_EOB } else { a as u32 | (fr as u32) << 8 | (fi as u32) << 9 };
+            let v = if a == 0 {
+                AMP_EOB
+            } else {
+                a as u32 | (fr as u32) << 8 | (fi as u32) << 9
+            };
             (c as u32, l as u32, v)
         })
         .collect();
-    let rc: Vec<(u32, u32, u32)> = run.iter().map(|&(c, l, r)| (c as u32, l as u32, r as u32)).collect();
-    let dcc: Vec<(u32, u32, u32)> = dc.iter().enumerate().map(|(i, &(c, l))| (c as u32, l as u32, i as u32)).collect();
+    let rc: Vec<(u32, u32, u32)> = run
+        .iter()
+        .map(|&(c, l, r)| (c as u32, l as u32, r as u32))
+        .collect();
+    let dcc: Vec<(u32, u32, u32)> = dc
+        .iter()
+        .enumerate()
+        .map(|(i, &(c, l))| (c as u32, l as u32, i as u32))
+        .collect();
     let mut amp_code = [[[(0u16, 0u8); 64]; 2]; 2];
     let mut eob = (0, 0);
     for &(c, l, a, fr, fi) in amp {
@@ -207,7 +259,15 @@ fn build_set(amp: &[(u16, u8, u8, u8, u8)], run: &[(u16, u8, u8); 62], dc: &[(u1
     for &(c, l, r) in run {
         run_code[r as usize] = (c, l);
     }
-    VlcSet { amp: Lut::build(&ac, 11), run: Lut::build(&rc, 10), dc: Lut::build(&dcc, 8), amp_code, eob, run_code, dc_code: dc.to_vec() }
+    VlcSet {
+        amp: Lut::build(&ac, 11),
+        run: Lut::build(&rc, 10),
+        dc: Lut::build(&dcc, 8),
+        amp_code,
+        eob,
+        run_code,
+        dc_code: dc.to_vec(),
+    }
 }
 
 /// The VLC table set `i` (see [`CidInfo::vlc`]), built on first use.
@@ -225,14 +285,86 @@ pub(crate) fn vlc(i: usize) -> &'static VlcSet {
 
 /// Orthonormal 1-D DCT-II basis: `BASIS[u][x] = C(u)/2 · cos((2x+1)uπ/16)`, `C(0) = 1/√2`.
 pub(crate) const BASIS: [[f32; 8]; 8] = [
-    [0.353_553_39, 0.353_553_39, 0.353_553_39, 0.353_553_39, 0.353_553_39, 0.353_553_39, 0.353_553_39, 0.353_553_39],
-    [0.490_392_64, 0.415_734_8, 0.277_785_12, 0.097_545_16, -0.097_545_16, -0.277_785_12, -0.415_734_8, -0.490_392_64],
-    [0.461_939_77, 0.191_341_72, -0.191_341_72, -0.461_939_77, -0.461_939_77, -0.191_341_72, 0.191_341_72, 0.461_939_77],
-    [0.415_734_8, -0.097_545_16, -0.490_392_64, -0.277_785_12, 0.277_785_12, 0.490_392_64, 0.097_545_16, -0.415_734_8],
-    [0.353_553_39, -0.353_553_39, -0.353_553_39, 0.353_553_39, 0.353_553_39, -0.353_553_39, -0.353_553_39, 0.353_553_39],
-    [0.277_785_12, -0.490_392_64, 0.097_545_16, 0.415_734_8, -0.415_734_8, -0.097_545_16, 0.490_392_64, -0.277_785_12],
-    [0.191_341_72, -0.461_939_77, 0.461_939_77, -0.191_341_72, -0.191_341_72, 0.461_939_77, -0.461_939_77, 0.191_341_72],
-    [0.097_545_16, -0.277_785_12, 0.415_734_8, -0.490_392_64, 0.490_392_64, -0.415_734_8, 0.277_785_12, -0.097_545_16],
+    [
+        0.353_553_39,
+        0.353_553_39,
+        0.353_553_39,
+        0.353_553_39,
+        0.353_553_39,
+        0.353_553_39,
+        0.353_553_39,
+        0.353_553_39,
+    ],
+    [
+        0.490_392_64,
+        0.415_734_8,
+        0.277_785_12,
+        0.097_545_16,
+        -0.097_545_16,
+        -0.277_785_12,
+        -0.415_734_8,
+        -0.490_392_64,
+    ],
+    [
+        0.461_939_77,
+        0.191_341_72,
+        -0.191_341_72,
+        -0.461_939_77,
+        -0.461_939_77,
+        -0.191_341_72,
+        0.191_341_72,
+        0.461_939_77,
+    ],
+    [
+        0.415_734_8,
+        -0.097_545_16,
+        -0.490_392_64,
+        -0.277_785_12,
+        0.277_785_12,
+        0.490_392_64,
+        0.097_545_16,
+        -0.415_734_8,
+    ],
+    [
+        0.353_553_39,
+        -0.353_553_39,
+        -0.353_553_39,
+        0.353_553_39,
+        0.353_553_39,
+        -0.353_553_39,
+        -0.353_553_39,
+        0.353_553_39,
+    ],
+    [
+        0.277_785_12,
+        -0.490_392_64,
+        0.097_545_16,
+        0.415_734_8,
+        -0.415_734_8,
+        -0.097_545_16,
+        0.490_392_64,
+        -0.277_785_12,
+    ],
+    [
+        0.191_341_72,
+        -0.461_939_77,
+        0.461_939_77,
+        -0.191_341_72,
+        -0.191_341_72,
+        0.461_939_77,
+        -0.461_939_77,
+        0.191_341_72,
+    ],
+    [
+        0.097_545_16,
+        -0.277_785_12,
+        0.415_734_8,
+        -0.490_392_64,
+        0.490_392_64,
+        -0.415_734_8,
+        0.277_785_12,
+        -0.097_545_16,
+    ],
 ];
 
 #[cfg(test)]

@@ -6,23 +6,22 @@ use crate::generate::generate_splat::splat_generation_request::SplatGenerationRe
 
 #[derive(Debug, Clone)]
 pub enum SplatGenerationDraftOrRequest {
-  Draft(SplatGenerationDraftRequest),
-  Request(SplatGenerationRequest),
+    Draft(SplatGenerationDraftRequest),
+    Request(SplatGenerationRequest),
 }
 
 impl SplatGenerationDraftOrRequest {
-
-  pub fn get_provider(&self) -> RouterProvider {
-    match self {
-      Self::Draft(draft) => draft.get_provider(),
-      Self::Request(request) => request.get_provider(),
+    pub fn get_provider(&self) -> RouterProvider {
+        match self {
+            Self::Draft(draft) => draft.get_provider(),
+            Self::Request(request) => request.get_provider(),
+        }
     }
-  }
 
-  pub fn estimate_cost(&self) -> Result<SplatGenerationCostEstimate, ArtcraftRouterError> {
-    match self {
-      SplatGenerationDraftOrRequest::Draft(draft) => draft.estimate_cost(),
-      SplatGenerationDraftOrRequest::Request(request) => request.estimate_cost(),
+    pub fn estimate_cost(&self) -> Result<SplatGenerationCostEstimate, ArtcraftRouterError> {
+        match self {
+            SplatGenerationDraftOrRequest::Draft(draft) => draft.estimate_cost(),
+            SplatGenerationDraftOrRequest::Request(request) => request.estimate_cost(),
+        }
     }
-  }
 }

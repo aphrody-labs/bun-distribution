@@ -130,7 +130,9 @@ impl NfcLotteryConfig {
     /// Parse un `nfc_lottery_config.cfg.bin.json` désérialisé (forme iecode `entries`).
     #[must_use]
     pub fn from_root(root: &Value) -> Self {
-        Self { lotteries: parse_nfc_lottery_config(root) }
+        Self {
+            lotteries: parse_nfc_lottery_config(root),
+        }
     }
 
     /// Recherche une loterie par son `lottery_id`. `None` si absente.

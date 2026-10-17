@@ -53,11 +53,15 @@ pub fn run(args: &[String]) -> Result<()> {
     fs::write(build.join("mandelbrot.png"), &png)?;
 
     let source = root.join("assets/demo/showcase.html");
-    let html = fs::read_to_string(&source).with_context(|| format!("reading {}", source.display()))?;
+    let html =
+        fs::read_to_string(&source).with_context(|| format!("reading {}", source.display()))?;
     let html = html
         .replace("{{ASSETS}}", &file_url(&root.join("assets")))
         .replace("{{FONTS}}", &file_url(&fonts))
-        .replace("{{MANDELBROT_PNG}}", &format!("data:image/png;base64,{}", raster::base64(&png)));
+        .replace(
+            "{{MANDELBROT_PNG}}",
+            &format!("data:image/png;base64,{}", raster::base64(&png)),
+        );
     let html_path = build.join("showcase.html");
     fs::write(&html_path, html)?;
 
@@ -67,14 +71,19 @@ pub fn run(args: &[String]) -> Result<()> {
     chrome::print_to_pdf(&chrome, &html_path, &raw, &build.join("chrome.log"))?;
 
     println!("demo-pdf: post-processing");
-    let mut doc = lopdf::Document::load(&raw).with_context(|| format!("loading {}", raw.display()))?;
+    let mut doc =
+        lopdf::Document::load(&raw).with_context(|| format!("loading {}", raw.display()))?;
     let summary = postprocess::enhance(&mut doc, pdf::Stamp::now())?;
     doc.compress();
     let foreign = foreign_fonts(&doc);
     if !foreign.is_empty() {
-        bail!("the PDF embeds fonts that are not in ATTRIBUTION.toml (Chrome fell back to system fonts; AGENTS.md §1): {}", foreign.join(", "));
+        bail!(
+            "the PDF embeds fonts that are not in ATTRIBUTION.toml (Chrome fell back to system fonts; AGENTS.md §1): {}",
+            foreign.join(", ")
+        );
     }
-    doc.save(&out).with_context(|| format!("writing {}", out.display()))?;
+    doc.save(&out)
+        .with_context(|| format!("writing {}", out.display()))?;
 
     println!(
         "demo-pdf: wrote {} ({} pages, {} annotations, {} form fields, outline: {})",
@@ -90,7 +99,9 @@ pub fn run(args: &[String]) -> Result<()> {
 /// The workspace root (the parent of this crate's manifest directory).
 fn repo_root() -> PathBuf {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let manifest = manifest.canonicalize().unwrap_or_else(|_| manifest.to_path_buf());
+    let manifest = manifest
+        .canonicalize()
+        .unwrap_or_else(|_| manifest.to_path_buf());
     manifest.parent().map(Path::to_path_buf).unwrap_or(manifest)
 }
 
@@ -104,10 +115,16 @@ pub(crate) fn file_url(path: &Path) -> String {
     if let Some(rest) = s.strip_prefix("//?/") {
         s = rest.to_string();
     }
-    let mut url = String::from(if s.starts_with('/') { "file://" } else { "file:///" });
+    let mut url = String::from(if s.starts_with('/') {
+        "file://"
+    } else {
+        "file:///"
+    });
     for byte in s.bytes() {
         match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'/' | b'-' | b'_' | b'.' | b'~' | b':' => url.push(byte as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'/' | b'-' | b'_' | b'.' | b'~' | b':' => {
+                url.push(byte as char)
+            }
             _ => url.push_str(&format!("%{byte:02X}")),
         }
     }
@@ -165,10 +182,16 @@ fn foreign_fonts(doc: &lopdf::Document) -> Vec<String> {
         if subtype == b"Type0" {
             continue; // checked through its descendant CIDFont
         }
-        let name = d.get(b"BaseFont").and_then(|n| n.as_name()).map(|n| String::from_utf8_lossy(n).into_owned()).unwrap_or_default();
+        let name = d
+            .get(b"BaseFont")
+            .and_then(|n| n.as_name())
+            .map(|n| String::from_utf8_lossy(n).into_owned())
+            .unwrap_or_default();
         // Strip the subset tag ("ABCDEF+Name").
         let plain = match name.split_once('+') {
-            Some((tag, rest)) if tag.len() == 6 && tag.bytes().all(|b| b.is_ascii_uppercase()) => rest.to_string(),
+            Some((tag, rest)) if tag.len() == 6 && tag.bytes().all(|b| b.is_ascii_uppercase()) => {
+                rest.to_string()
+            }
             _ => name.clone(),
         };
         let embedded = d
@@ -186,7 +209,10 @@ fn foreign_fonts(doc: &lopdf::Document) -> Vec<String> {
             STANDARD_14.contains(&plain.as_str())
         };
         if !allowed {
-            bad.insert(format!("{plain} ({})", if embedded { "embedded" } else { "referenced" }));
+            bad.insert(format!(
+                "{plain} ({})",
+                if embedded { "embedded" } else { "referenced" }
+            ));
         }
     }
     bad.into_iter().collect()

@@ -41,7 +41,16 @@ pub struct CloneSource {
 
 impl Default for CloneSource {
     fn default() -> Self {
-        CloneSource { source: None, anchor: None, layer: None, scale: [100.0, 100.0], rotation: 0.0, flip_h: false, flip_v: false, linked: false }
+        CloneSource {
+            source: None,
+            anchor: None,
+            layer: None,
+            scale: [100.0, 100.0],
+            rotation: 0.0,
+            flip_h: false,
+            flip_v: false,
+            linked: false,
+        }
     }
 }
 
@@ -55,7 +64,10 @@ impl CloneSource {
     }
     /// The panel's Offset X/Y: source − anchor (once a stroke paired them).
     pub fn offset(&self) -> Option<[f64; 2]> {
-        Some([self.source?[0] - self.anchor?[0], self.source?[1] - self.anchor?[1]])
+        Some([
+            self.source?[0] - self.anchor?[0],
+            self.source?[1] - self.anchor?[1],
+        ])
     }
     fn to_json(&self, i: usize) -> Value {
         json!({
@@ -80,7 +92,14 @@ pub struct CloneOverlay {
 
 impl Default for CloneOverlay {
     fn default() -> Self {
-        CloneOverlay { show: true, opacity: 100.0, clipped: true, auto_hide: true, invert: false, blend: "normal".into() }
+        CloneOverlay {
+            show: true,
+            opacity: 100.0,
+            clipped: true,
+            auto_hide: true,
+            invert: false,
+            blend: "normal".into(),
+        }
     }
 }
 
@@ -111,19 +130,34 @@ pub struct Mapping {
 
 impl Mapping {
     pub fn is_translation(&self) -> bool {
-        (self.m[0] - 1.0).abs() < 1e-12 && self.m[1].abs() < 1e-12 && self.m[2].abs() < 1e-12 && (self.m[3] - 1.0).abs() < 1e-12
+        (self.m[0] - 1.0).abs() < 1e-12
+            && self.m[1].abs() < 1e-12
+            && self.m[2].abs() < 1e-12
+            && (self.m[3] - 1.0).abs() < 1e-12
     }
     /// Integer translation (identity transform).
     pub fn offset(&self) -> (i32, i32) {
-        ((self.source.0 - self.anchor.0).round() as i32, (self.source.1 - self.anchor.1).round() as i32)
+        (
+            (self.source.0 - self.anchor.0).round() as i32,
+            (self.source.1 - self.anchor.1).round() as i32,
+        )
     }
     pub fn map(&self, x: f64, y: f64) -> (f64, f64) {
         let (dx, dy) = (x - self.anchor.0, y - self.anchor.1);
-        (self.source.0 + self.m[0] * dx + self.m[1] * dy, self.source.1 + self.m[2] * dx + self.m[3] * dy)
+        (
+            self.source.0 + self.m[0] * dx + self.m[1] * dy,
+            self.source.1 + self.m[2] * dx + self.m[3] * dy,
+        )
     }
     /// Source pixels needed to resample `dst` (with a one-pixel apron for bilinear).
     pub fn source_rect(&self, dst: Rect) -> Rect {
-        let pts = [(dst.x0, dst.y0), (dst.x1, dst.y0), (dst.x0, dst.y1), (dst.x1, dst.y1)].map(|(x, y)| self.map(x as f64, y as f64));
+        let pts = [
+            (dst.x0, dst.y0),
+            (dst.x1, dst.y0),
+            (dst.x0, dst.y1),
+            (dst.x1, dst.y1),
+        ]
+        .map(|(x, y)| self.map(x as f64, y as f64));
         let (mut x0, mut y0, mut x1, mut y1) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
         for (x, y) in pts {
             (x0, y0, x1, y1) = (x0.min(x), y0.min(y), x1.max(x), y1.max(y));
@@ -135,12 +169,22 @@ impl Mapping {
             let v = v.clamp(i32::MIN as f64, i32::MAX as f64);
             (v as i32).saturating_add(pad)
         };
-        Rect::new(apron(x0.floor(), -2), apron(y0.floor(), -2), apron(x1.ceil(), 2), apron(y1.ceil(), 2))
+        Rect::new(
+            apron(x0.floor(), -2),
+            apron(y0.floor(), -2),
+            apron(x1.ceil(), 2),
+            apron(y1.ceil(), 2),
+        )
     }
 }
 
 /// Matrix taking destination offsets to source offsets for a slot's W/H, rotation and flips.
-pub fn transform_matrix(scale: [f64; 2], rotation_deg: f64, flip_h: bool, flip_v: bool) -> [f64; 4] {
+pub fn transform_matrix(
+    scale: [f64; 2],
+    rotation_deg: f64,
+    flip_h: bool,
+    flip_v: bool,
+) -> [f64; 4] {
     let sx = (scale[0] / 100.0).max(1e-3) * if flip_h { -1.0 } else { 1.0 };
     let sy = (scale[1] / 100.0).max(1e-3) * if flip_v { -1.0 } else { 1.0 };
     // Forward (source → destination): rotate after scaling. Rotation is counter-clockwise on
@@ -169,35 +213,78 @@ pub fn mapping(s: &mut Session, p: &Value, first: (f64, f64), cmd: &str) -> Resu
 
 /// [`mapping`] without remembering anything: the mapping, and the anchor an aligned stroke from
 /// the slot stores (a live preview resolves the same mapping the commit will).
-pub fn resolve(s: &Session, p: &Value, first: (f64, f64), cmd: &str) -> Result<(Mapping, Option<[f64; 2]>)> {
+pub fn resolve(
+    s: &Session,
+    p: &Value,
+    first: (f64, f64),
+    cmd: &str,
+) -> Result<(Mapping, Option<[f64; 2]>)> {
     let aligned = p.get("aligned").and_then(Value::as_bool).unwrap_or(true);
     let slot = s.presets.clone.active().clone();
-    let explicit_tf = ["scale", "rotation", "flipH", "flipV"].iter().any(|k| p.get(*k).is_some());
+    let explicit_tf = ["scale", "rotation", "flipH", "flipV"]
+        .iter()
+        .any(|k| p.get(*k).is_some());
     let m = if explicit_tf {
         let sc = p
             .get("scale")
             .and_then(Value::as_array)
-            .map_or([100.0, 100.0], |a| [a.first().and_then(Value::as_f64).unwrap_or(100.0), a.get(1).and_then(Value::as_f64).unwrap_or(100.0)]);
+            .map_or([100.0, 100.0], |a| {
+                [
+                    a.first().and_then(Value::as_f64).unwrap_or(100.0),
+                    a.get(1).and_then(Value::as_f64).unwrap_or(100.0),
+                ]
+            });
         let flag = |k: &str| p.get(k).and_then(Value::as_bool).unwrap_or(false);
-        transform_matrix(sc, p.get("rotation").and_then(Value::as_f64).unwrap_or(0.0), flag("flipH"), flag("flipV"))
+        transform_matrix(
+            sc,
+            p.get("rotation").and_then(Value::as_f64).unwrap_or(0.0),
+            flag("flipH"),
+            flag("flipV"),
+        )
     } else {
         transform_matrix(slot.scale, slot.rotation, slot.flip_h, slot.flip_v)
     };
     let anchor_param = pt(p, "anchor");
     if let Some(off) = pt(p, "offset") {
         let a = anchor_param.unwrap_or(first);
-        return Ok((Mapping { source: (a.0 + off.0, a.1 + off.1), anchor: a, m }, None));
+        return Ok((
+            Mapping {
+                source: (a.0 + off.0, a.1 + off.1),
+                anchor: a,
+                m,
+            },
+            None,
+        ));
     }
     if let Some(src) = pt(p, "source") {
-        return Ok((Mapping { source: src, anchor: anchor_param.unwrap_or(first), m }, None));
+        return Ok((
+            Mapping {
+                source: src,
+                anchor: anchor_param.unwrap_or(first),
+                m,
+            },
+            None,
+        ));
     }
-    let Some(src) = slot.source else { return Err(bad(cmd, "missing `source` ([x,y]) or `offset` ([dx,dy]); or set one with cloneSource.set")) };
+    let Some(src) = slot.source else {
+        return Err(bad(
+            cmd,
+            "missing `source` ([x,y]) or `offset` ([dx,dy]); or set one with cloneSource.set",
+        ));
+    };
     let src = (src[0], src[1]);
     let anchor = match (aligned, slot.anchor) {
         (true, Some(a)) => (a[0], a[1]),
         _ => first,
     };
-    Ok((Mapping { source: src, anchor, m }, aligned.then_some([anchor.0, anchor.1])))
+    Ok((
+        Mapping {
+            source: src,
+            anchor,
+            m,
+        },
+        aligned.then_some([anchor.0, anchor.1]),
+    ))
 }
 
 /// The Clone Source overlay's blend mode applied to one pixel: the source `src` over the image
@@ -240,7 +327,12 @@ pub fn resample(src: &Region, dst: Rect, map: &Mapping, alpha: Option<usize>) ->
             }
         }
     };
-    let mut q = [vec![0.0f32; n], vec![0.0f32; n], vec![0.0f32; n], vec![0.0f32; n]];
+    let mut q = [
+        vec![0.0f32; n],
+        vec![0.0f32; n],
+        vec![0.0f32; n],
+        vec![0.0f32; n],
+    ];
     for (i, px) in out.data.chunks_exact_mut(n).enumerate() {
         let (x, y) = (dst.x0 + (i % w) as i32, dst.y0 + (i / w) as i32);
         let (sx, sy) = map.map(x as f64 + 0.5, y as f64 + 0.5);
@@ -287,7 +379,10 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn select(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "cloneSource.select";
-    let i = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad(CMD, "missing `index`"))? as usize;
+    let i = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(CMD, "missing `index`"))? as usize;
     if i >= SLOTS {
         return Err(bad(CMD, format!("index {i} out of range (0..{SLOTS})")));
     }
@@ -308,12 +403,18 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     }
     if let Some((dx, dy)) = pt(p, "offset") {
         // Offset X/Y fields: keep the anchor (or the source as anchor) and move the source.
-        let a = slot.anchor.or(slot.source).ok_or_else(|| bad(CMD, "set a `source` before an offset"))?;
+        let a = slot
+            .anchor
+            .or(slot.source)
+            .ok_or_else(|| bad(CMD, "set a `source` before an offset"))?;
         slot.anchor = Some(a);
         slot.source = Some([a[0] + dx, a[1] + dy]);
     }
     if let Some(a) = p.get("scale").and_then(Value::as_array) {
-        slot.scale = [a.first().and_then(Value::as_f64).unwrap_or(100.0), a.get(1).and_then(Value::as_f64).unwrap_or(100.0)];
+        slot.scale = [
+            a.first().and_then(Value::as_f64).unwrap_or(100.0),
+            a.get(1).and_then(Value::as_f64).unwrap_or(100.0),
+        ];
     }
     if let Some(b) = p.get("linked").and_then(Value::as_bool) {
         slot.linked = b;
@@ -335,7 +436,11 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
             _ => {}
         }
     }
-    if slot.scale.iter().any(|v| !(1.0..=1000.0).contains(&v.abs())) {
+    if slot
+        .scale
+        .iter()
+        .any(|v| !(1.0..=1000.0).contains(&v.abs()))
+    {
         slot.scale = slot.scale.map(|v| v.clamp(1.0, 1000.0));
     }
     if let Some(r) = num("rotation") {
@@ -383,7 +488,10 @@ fn overlay(s: &mut Session, p: &Value) -> Result<Value> {
     }
     if let Some(m) = p.get("blend").and_then(Value::as_str) {
         if !matches!(m, "normal" | "darken" | "lighten" | "difference") {
-            return Err(bad("cloneSource.overlay", format!("unknown overlay mode `{m}` (normal|darken|lighten|difference)")));
+            return Err(bad(
+                "cloneSource.overlay",
+                format!("unknown overlay mode `{m}` (normal|darken|lighten|difference)"),
+            ));
         }
         o.blend = m.into();
     }
@@ -453,25 +561,57 @@ mod tests {
         // Issue repro: a 3e9 source with a rotation makes the mapping a resample,
         // so source_rect sees mapped coordinates far outside i32. Must clamp, not
         // overflow (debug panic) or wrap (release, inverted rect).
-        let m = Mapping { source: (3_000_000_000.0, 0.0), anchor: (10.0, 10.0), m: transform_matrix([100.0, 100.0], 45.0, false, false) };
+        let m = Mapping {
+            source: (3_000_000_000.0, 0.0),
+            anchor: (10.0, 10.0),
+            m: transform_matrix([100.0, 100.0], 45.0, false, false),
+        };
         let r = m.source_rect(Rect::new(0, 0, 24, 16));
-        assert!(r.x0 <= r.x1 && r.y0 <= r.y1, "rect must stay ordered: {r:?}");
+        assert!(
+            r.x0 <= r.x1 && r.y0 <= r.y1,
+            "rect must stay ordered: {r:?}"
+        );
         // A negative source must clamp the same way.
-        let m = Mapping { source: (-3_000_000_000.0, 0.0), anchor: (10.0, 10.0), m: transform_matrix([100.0, 100.0], 45.0, false, false) };
+        let m = Mapping {
+            source: (-3_000_000_000.0, 0.0),
+            anchor: (10.0, 10.0),
+            m: transform_matrix([100.0, 100.0], 45.0, false, false),
+        };
         let r = m.source_rect(Rect::new(0, 0, 24, 16));
-        assert!(r.x0 <= r.x1 && r.y0 <= r.y1, "rect must stay ordered: {r:?}");
+        assert!(
+            r.x0 <= r.x1 && r.y0 <= r.y1,
+            "rect must stay ordered: {r:?}"
+        );
     }
 
     #[test]
     fn linked_width_and_height_keep_their_ratio() {
         let mut s = Session::new();
-        s.execute("cloneSource.set", json!({"width": 50, "height": 200})).unwrap();
+        s.execute("cloneSource.set", json!({"width": 50, "height": 200}))
+            .unwrap();
         s.execute("cloneSource.set", json!({"width": 100})).unwrap();
-        assert_eq!(s.presets.clone.active().scale, [100.0, 200.0], "unlinked: H stays");
-        let r = s.execute("cloneSource.set", json!({"linked": true, "width": 150})).unwrap();
-        assert_eq!((r["width"].as_f64(), r["height"].as_f64(), r["linked"].as_bool()), (Some(150.0), Some(300.0), Some(true)));
+        assert_eq!(
+            s.presets.clone.active().scale,
+            [100.0, 200.0],
+            "unlinked: H stays"
+        );
+        let r = s
+            .execute("cloneSource.set", json!({"linked": true, "width": 150}))
+            .unwrap();
+        assert_eq!(
+            (
+                r["width"].as_f64(),
+                r["height"].as_f64(),
+                r["linked"].as_bool()
+            ),
+            (Some(150.0), Some(300.0), Some(true))
+        );
         s.execute("cloneSource.set", json!({"height": 60})).unwrap();
-        assert_eq!(s.presets.clone.active().scale, [30.0, 60.0], "linked: W follows H");
+        assert_eq!(
+            s.presets.clone.active().scale,
+            [30.0, 60.0],
+            "linked: W follows H"
+        );
     }
 
     #[test]
@@ -479,15 +619,35 @@ mod tests {
         let (src, dst) = ([0.8, 0.2, 0.5, 1.0], [0.3, 0.6, 0.5, 1.0]);
         let close = |a: [f32; 4], b: [f32; 4]| a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-6);
         assert_eq!(overlay_blend("normal", src, dst), src);
-        assert!(close(overlay_blend("darken", src, dst), [0.3, 0.2, 0.5, 1.0]));
-        assert!(close(overlay_blend("lighten", src, dst), [0.8, 0.6, 0.5, 1.0]));
-        assert!(close(overlay_blend("difference", src, dst), [0.5, 0.4, 0.0, 1.0]));
-        assert_eq!(overlay_blend("difference", src, [0.3, 0.6, 0.5, 0.0]), src, "a transparent image leaves the source as is");
+        assert!(close(
+            overlay_blend("darken", src, dst),
+            [0.3, 0.2, 0.5, 1.0]
+        ));
+        assert!(close(
+            overlay_blend("lighten", src, dst),
+            [0.8, 0.6, 0.5, 1.0]
+        ));
+        assert!(close(
+            overlay_blend("difference", src, dst),
+            [0.5, 0.4, 0.0, 1.0]
+        ));
+        assert_eq!(
+            overlay_blend("difference", src, [0.3, 0.6, 0.5, 0.0]),
+            src,
+            "a transparent image leaves the source as is"
+        );
     }
 
     #[test]
     fn source_rect_normal_case_unchanged() {
-        let m = Mapping { source: (200.0, 0.0), anchor: (10.0, 10.0), m: [1.0, 0.0, 0.0, 1.0] };
-        assert_eq!(m.source_rect(Rect::new(0, 0, 24, 16)), Rect::new(188, -12, 216, 8));
+        let m = Mapping {
+            source: (200.0, 0.0),
+            anchor: (10.0, 10.0),
+            m: [1.0, 0.0, 0.0, 1.0],
+        };
+        assert_eq!(
+            m.source_rect(Rect::new(0, 0, 24, 16)),
+            Rect::new(188, -12, 216, 8)
+        );
     }
 }

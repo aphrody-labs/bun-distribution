@@ -120,8 +120,10 @@ impl MemWatchpointRootTable {
         }
         for root_i in start_addr >> 21..=end_addr >> 21 {
             if let Some(sub_table) = &self.0[root_i as usize] {
-                let (sub_table_start_addr, sub_table_end_addr) =
-                    ((root_i << 21).max(start_addr), (root_i << 21 | 0x1F_FC00).min(end_addr));
+                let (sub_table_start_addr, sub_table_end_addr) = (
+                    (root_i << 21).max(start_addr),
+                    (root_i << 21 | 0x1F_FC00).min(end_addr),
+                );
                 for sub_i in sub_table_start_addr >> 10 & 0x7FF..=sub_table_end_addr >> 10 & 0x7FF {
                     if let Some(leaf_table) = &sub_table.0[sub_i as usize] {
                         let (leaf_table_start_addr, leaf_table_end_addr) = (

@@ -1,7 +1,8 @@
 use std::path::Path;
 
-const BASE_DIRS: [&str; 9] =
-    ["sys", "ticket", "title", "shared1", "shared2", "tmp", "import", "meta", "wfs"];
+const BASE_DIRS: [&str; 9] = [
+    "sys", "ticket", "title", "shared1", "shared2", "tmp", "import", "meta", "wfs",
+];
 
 const SETTING_TXT_PATH: &str = "title/00000001/00000002/data/setting.txt";
 const SETTING_SEED: u32 = 0x73B5_DBFA;
@@ -55,8 +56,11 @@ fn decode_area(data: &[u8]) -> Option<String> {
 }
 
 pub fn ensure_title_dirs(root: &Path, title_id: u64) {
-    let title_dir =
-        root.join(format!("title/{:08x}/{:08x}", (title_id >> 32) as u32, title_id as u32));
+    let title_dir = root.join(format!(
+        "title/{:08x}/{:08x}",
+        (title_id >> 32) as u32,
+        title_id as u32
+    ));
 
     for sub in ["content", "data"] {
         let path = title_dir.join(sub);
@@ -98,12 +102,30 @@ impl RegionSetting {
 
     pub(crate) fn from_game_code(game_code: [u8; 4]) -> Self {
         match game_code[3] {
-            b'J' => Self { area: "JPN", video: "NTSC", code: "JP", game: "LJH" },
-            b'P' | b'D' | b'F' | b'S' | b'I' | b'H' | b'U' | b'X' | b'Y' | b'Z' => {
-                Self { area: "EUR", video: "PAL", code: "EU", game: "LEH" }
+            b'J' => Self {
+                area: "JPN",
+                video: "NTSC",
+                code: "JP",
+                game: "LJH",
             },
-            b'K' | b'Q' | b'T' => Self { area: "KOR", video: "NTSC", code: "KR", game: "LKH" },
-            _ => Self { area: "USA", video: "NTSC", code: "US", game: "LU" },
+            b'P' | b'D' | b'F' | b'S' | b'I' | b'H' | b'U' | b'X' | b'Y' | b'Z' => Self {
+                area: "EUR",
+                video: "PAL",
+                code: "EU",
+                game: "LEH",
+            },
+            b'K' | b'Q' | b'T' => Self {
+                area: "KOR",
+                video: "NTSC",
+                code: "KR",
+                game: "LKH",
+            },
+            _ => Self {
+                area: "USA",
+                video: "NTSC",
+                code: "US",
+                game: "LU",
+            },
         }
     }
 
@@ -130,7 +152,11 @@ struct SettingWriter {
 
 impl SettingWriter {
     fn new() -> Self {
-        Self { buffer: [0u8; 0x100], position: 0, key: SETTING_SEED }
+        Self {
+            buffer: [0u8; 0x100],
+            position: 0,
+            key: SETTING_SEED,
+        }
     }
 
     fn add(&mut self, key: &str, value: &str) {

@@ -18,7 +18,7 @@ use bevy_ecs::{
 use bevy_picking::events::PointerPress;
 use bevy_window::PrimaryWindow;
 
-use crate::{tab_navigation::acquire_focus_tab_index, AcquireFocus, InputFocusVisible};
+use crate::{AcquireFocus, InputFocusVisible, tab_navigation::acquire_focus_tab_index};
 
 /// Observer which requests focus for a clicked entity.
 ///
@@ -103,8 +103,8 @@ impl Plugin for PointerFocusPlugin {
 mod tests {
     use super::*;
     use crate::{
-        tab_navigation::{TabIndex, TabNavigationPlugin},
         AcquireFocus, InputFocus, InputFocusPlugin,
+        tab_navigation::{TabIndex, TabNavigationPlugin},
     };
     use bevy_app::App;
     use bevy_ecs::hierarchy::ChildOf;

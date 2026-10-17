@@ -120,12 +120,14 @@ fn definitions(profile: WebExposureProfile) -> Vec<NativeWebTool> {
 }
 
 fn required<'a>(arguments: &'a Value, name: &str, tool: &str) -> Result<&'a str, ToolError> {
-    arguments.get(name).and_then(Value::as_str).filter(|value| !value.trim().is_empty()).ok_or_else(
-        || ToolError::InvalidArguments {
+    arguments
+        .get(name)
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| ToolError::InvalidArguments {
             tool: tool.to_owned(),
             message: format!("{name} must be a nonempty string"),
-        },
-    )
+        })
 }
 
 #[async_trait::async_trait]
@@ -154,28 +156,28 @@ impl ToolExecutor for NativeWebTool {
                         return Ok(ToolOutput::error(format!(
                             "{tool}: the page produced an empty body"
                         )));
-                    },
+                    }
                     Ok(page) => Ok(page.body),
                     Err(error) => Err(error),
                 }
-            },
+            }
             Operation::Navigate => {
                 session::navigate(required(&arguments, "url", tool)?, budget).await
-            },
+            }
             Operation::Snapshot => session::snapshot(budget).await,
             Operation::Click => {
                 session::click(required(&arguments, "selector", tool)?, budget).await
-            },
+            }
             Operation::Screenshot => {
                 return Ok(match session::screenshot(budget).await {
                     Ok(png) => ToolOutput::ok("Browser screenshot captured.")
                         .with_images(vec![ToolImage::new("image/png", png)]),
                     Err(error) => ToolOutput::error(format!("{tool}: {error}")),
                 });
-            },
+            }
             Operation::PressKey => {
                 session::press_key(required(&arguments, "key", tool)?, budget).await
-            },
+            }
         };
         Ok(match outcome {
             Ok(text) => ToolOutput::ok(text),

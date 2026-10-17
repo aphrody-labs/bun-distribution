@@ -24,18 +24,34 @@ pub(super) fn app(picked: &str) -> (VectorcraftApp, Written) {
         ..Default::default()
     };
     let mut app = VectorcraftApp::new(Session::new(), services);
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 40, "height": 30})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
+    app.run(
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 40, "height": 30}),
+    )
+    .unwrap();
     (app, written)
 }
 
 #[test]
 fn svgz_places_like_svg() {
     let (mut app, _) = app("/tmp/unused.svg");
-    let svg = app.session.execute("document.serialize", &json!({"format": "svg"})).unwrap()["text"].as_str().unwrap().to_string();
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    let svg = app
+        .session
+        .execute("document.serialize", &json!({"format": "svg"}))
+        .unwrap()["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     io::place_bytes(&mut app, "art.svgz", &vectorcraft_svg::compress(&svg)).unwrap();
-    assert_eq!(app.session.doc().unwrap().selection.objects.len(), 1, "the rectangle was placed");
+    assert_eq!(
+        app.session.doc().unwrap().selection.objects.len(),
+        1,
+        "the rectangle was placed"
+    );
 }
 
 #[test]
@@ -46,12 +62,20 @@ fn a_svgz_name_writes_compressed_svg() {
     crate::dialogs::confirm(&mut app).unwrap();
     let (path, bytes) = written.borrow()[0].clone();
     assert_eq!(path, "/tmp/art.svgz");
-    assert!(vectorcraft_svg::text_of(&bytes).unwrap().contains("<style>"), "the SVG Options apply");
+    assert!(
+        vectorcraft_svg::text_of(&bytes)
+            .unwrap()
+            .contains("<style>"),
+        "the SVG Options apply"
+    );
     assert!(vectorcraft_svg::is_svgz(&bytes));
     // Save As .svgz asks for SVG Options, then saves compressed and keeps the path.
     let r = app.run("file.saveAs", Value::Null).unwrap();
     assert_eq!(r["path"], "/tmp/art.svgz");
     crate::dialogs::confirm(&mut app).unwrap();
     assert!(vectorcraft_svg::is_svgz(&written.borrow()[1].1));
-    assert_eq!(app.session.active().unwrap().path.as_deref(), Some("/tmp/art.svgz"));
+    assert_eq!(
+        app.session.active().unwrap().path.as_deref(),
+        Some("/tmp/art.svgz")
+    );
 }

@@ -34,7 +34,9 @@ fn parse_style(style: Option<&str>) -> Result<Style, String> {
         "outlined" => Ok(Style::Outlined),
         "rounded" => Ok(Style::Rounded),
         "sharp" => Ok(Style::Sharp),
-        other => Err(format!("unknown style: {other} (expected outlined|rounded|sharp)")),
+        other => Err(format!(
+            "unknown style: {other} (expected outlined|rounded|sharp)"
+        )),
     }
 }
 
@@ -73,13 +75,17 @@ pub unsafe extern "C" fn bun_rs_icon_svg(request: *const u8, len: usize) -> *mut
     } else {
         // SAFETY: caller guarantees the pointer covers `len` bytes.
         let bytes = unsafe { std::slice::from_raw_parts(request, len) };
-        std::str::from_utf8(bytes).map_err(|e| e.to_string()).and_then(icon_svg_json)
+        std::str::from_utf8(bytes)
+            .map_err(|e| e.to_string())
+            .and_then(icon_svg_json)
     };
     let envelope = match result {
         Ok(svg) => serde_json::json!({ "ok": true, "svg": svg }),
         Err(error) => serde_json::json!({ "ok": false, "error": error }),
     };
-    std::ffi::CString::new(envelope.to_string()).expect("JSON has no NUL").into_raw()
+    std::ffi::CString::new(envelope.to_string())
+        .expect("JSON has no NUL")
+        .into_raw()
 }
 
 /// Lists every known icon name for `style` (`"outlined"|"rounded"|"sharp"`) as a JSON array.
@@ -106,8 +112,10 @@ pub unsafe extern "C" fn bun_rs_icon_names(style: *const u8, len: usize) -> *mut
         Ok(style) => {
             let names: Vec<&str> = crate::icons::icon_names(style).collect();
             serde_json::json!({ "ok": true, "names": names })
-        },
+        }
         Err(error) => serde_json::json!({ "ok": false, "error": error }),
     };
-    std::ffi::CString::new(envelope.to_string()).expect("JSON has no NUL").into_raw()
+    std::ffi::CString::new(envelope.to_string())
+        .expect("JSON has no NUL")
+        .into_raw()
 }

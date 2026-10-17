@@ -16,7 +16,13 @@ fn numeric_font(source: &[u8], style: &str, ps: &str) -> Vec<u8> {
         }
     }
     let legacy = format!("Numeric Test {style}");
-    let names = [(1u16, legacy.as_str()), (2, "Regular"), (6, ps), (16, "Numeric Test"), (17, style)];
+    let names = [
+        (1u16, legacy.as_str()),
+        (2, "Regular"),
+        (6, ps),
+        (16, "Numeric Test"),
+        (17, style),
+    ];
     let mut table = Vec::new();
     let mut strings = Vec::new();
     for value in [0u16, names.len() as u16, (6 + names.len() * 12) as u16] {
@@ -43,18 +49,41 @@ fn numeric_subfamilies_with_identical_weights_select_distinct_faces() {
     db.register_font_data(numeric_font(&INTER_REGULAR, "20", "UnrelatedPS20"));
     db.register_font_data(numeric_font(&INTER_SEMIBOLD, "30", "UnrelatedPS30"));
     let faces = db.faces("Numeric Test");
-    assert_eq!(faces.iter().map(|f| f.style.as_str()).collect::<Vec<_>>(), ["20", "30"]);
+    assert_eq!(
+        faces.iter().map(|f| f.style.as_str()).collect::<Vec<_>>(),
+        ["20", "30"]
+    );
     assert!(faces.iter().all(|f| f.weight == 400.0));
-    assert_eq!(db.resolve_postscript("UnrelatedPS30").family, "Numeric Test");
+    assert_eq!(
+        db.resolve_postscript("UnrelatedPS30").family,
+        "Numeric Test"
+    );
     assert!(db.resolve_postscript("UnrelatedPS30").exact);
-    let mut a = CharStyle { font_family: "Numeric Test".into(), font_style: "20".into(), ..Default::default() };
-    let mut b = CharStyle { font_style: "30".into(), ..a.clone() };
+    let mut a = CharStyle {
+        font_family: "Numeric Test".into(),
+        font_style: "20".into(),
+        ..Default::default()
+    };
+    let mut b = CharStyle {
+        font_style: "30".into(),
+        ..a.clone()
+    };
     db.select_named_face(&mut a);
     db.select_named_face(&mut b);
     assert_ne!(a.font_family, b.font_family);
-    assert_eq!(db.faces(&a.font_family)[0].postscript_name.as_deref(), Some("UnrelatedPS20"));
-    assert_eq!(db.faces(&b.font_family)[0].postscript_name.as_deref(), Some("UnrelatedPS30"));
-    assert!(!db.families().iter().any(|f| f.starts_with(".PhotoCraft-face-")));
+    assert_eq!(
+        db.faces(&a.font_family)[0].postscript_name.as_deref(),
+        Some("UnrelatedPS20")
+    );
+    assert_eq!(
+        db.faces(&b.font_family)[0].postscript_name.as_deref(),
+        Some("UnrelatedPS30")
+    );
+    assert!(
+        !db.families()
+            .iter()
+            .any(|f| f.starts_with(".PhotoCraft-face-"))
+    );
     let alias = b.font_family.clone();
     b.font_family = "Numeric Test".into();
     db.select_named_face(&mut b);
@@ -65,8 +94,12 @@ fn numeric_subfamilies_with_identical_weights_select_distinct_faces() {
 fn numeric_styles_shape_different_outlines_and_keep_psd_identity() {
     use photocraft_doc::{TextLayer, text::TextRun};
     let mut engine = crate::TextEngine::new();
-    engine.fonts.register_font_data(numeric_font(&INTER_REGULAR, "20", "UnrelatedPS20"));
-    engine.fonts.register_font_data(numeric_font(&INTER_SEMIBOLD, "30", "UnrelatedPS30"));
+    engine
+        .fonts
+        .register_font_data(numeric_font(&INTER_REGULAR, "20", "UnrelatedPS20"));
+    engine
+        .fonts
+        .register_font_data(numeric_font(&INTER_SEMIBOLD, "30", "UnrelatedPS30"));
     let layer = |style: &str| TextLayer {
         text: "Hamburgefonstiv".into(),
         runs: vec![TextRun {
@@ -87,7 +120,10 @@ fn numeric_styles_shape_different_outlines_and_keep_psd_identity() {
     let original = layer("30");
     let bytes = crate::psd::build_tysh(&original, 72.0, None);
     let reopened = crate::psd::text_layer_from_tysh(&bytes, 72.0).unwrap();
-    assert_eq!(reopened.char_runs()[0].style.postscript_name.as_deref(), Some("UnrelatedPS30"));
+    assert_eq!(
+        reopened.char_runs()[0].style.postscript_name.as_deref(),
+        Some("UnrelatedPS30")
+    );
     let c = engine.layout(&reopened, 72.0);
     assert!((b.lines[0].x1 - c.lines[0].x1).abs() < 0.01);
 }
@@ -95,7 +131,12 @@ fn numeric_styles_shape_different_outlines_and_keep_psd_identity() {
 #[test]
 fn explicit_weight_is_not_overridden_by_a_stale_style_name() {
     let mut db = FontDb::new();
-    let mut style = CharStyle { font_family: "Inter".into(), font_style: "Regular".into(), weight: 600, ..Default::default() };
+    let mut style = CharStyle {
+        font_family: "Inter".into(),
+        font_style: "Regular".into(),
+        weight: 600,
+        ..Default::default()
+    };
     db.select_named_face(&mut style);
     assert_eq!(style.font_family, "Inter");
     assert_eq!(style.weight, 600);
@@ -107,7 +148,10 @@ fn explicit_weight_is_not_overridden_by_a_stale_style_name() {
 #[test]
 fn collection_isolation_preserves_requested_face() {
     // Two faces with identical attributes: the second must not fall back to the first.
-    let sources = [numeric_font(&INTER_REGULAR, "20", "Collection20"), numeric_font(&INTER_SEMIBOLD, "30", "Collection30")];
+    let sources = [
+        numeric_font(&INTER_REGULAR, "20", "Collection20"),
+        numeric_font(&INTER_SEMIBOLD, "30", "Collection30"),
+    ];
     let mut bytes = b"ttcf\0\x01\0\0\0\0\0\x02".to_vec();
     bytes.extend(20u32.to_be_bytes());
     bytes.extend((20 + sources[0].len() as u32).to_be_bytes());
@@ -125,12 +169,25 @@ fn collection_isolation_preserves_requested_face() {
     assert!(isolated_face(blob.clone(), 2).is_none());
     let mut db = FontDb::new();
     db.register_blob(blob.clone());
-    let mut style = CharStyle { font_family: "Numeric Test".into(), font_style: "30".into(), ..Default::default() };
+    let mut style = CharStyle {
+        font_family: "Numeric Test".into(),
+        font_style: "30".into(),
+        ..Default::default()
+    };
     db.select_named_face(&mut style);
-    assert_eq!(db.faces(&style.font_family)[0].postscript_name.as_deref(), Some("Collection30"));
+    assert_eq!(
+        db.faces(&style.font_family)[0].postscript_name.as_deref(),
+        Some("Collection30")
+    );
     let isolated = isolated_face(blob, 1).unwrap();
     let font = skrifa::FontRef::from_index(isolated.as_ref(), 0).unwrap();
-    assert_eq!(font.localized_strings(StringId::POSTSCRIPT_NAME).english_or_first().unwrap().to_string(), "Collection30");
+    assert_eq!(
+        font.localized_strings(StringId::POSTSCRIPT_NAME)
+            .english_or_first()
+            .unwrap()
+            .to_string(),
+        "Collection30"
+    );
 }
 
 #[test]
@@ -140,11 +197,21 @@ fn installed_yoon_numeric_faces() {
     for family in ["Yoon YoonGothic500", "Yoon YoonMyungjo500"] {
         let faces = db.faces(family);
         for name in ["20", "30", "40", "50"] {
-            let face = faces.iter().find(|f| f.style == name).expect("installed numeric face");
-            let mut style =
-                CharStyle { font_family: family.into(), font_style: name.into(), postscript_name: face.postscript_name.clone(), ..Default::default() };
+            let face = faces
+                .iter()
+                .find(|f| f.style == name)
+                .expect("installed numeric face");
+            let mut style = CharStyle {
+                font_family: family.into(),
+                font_style: name.into(),
+                postscript_name: face.postscript_name.clone(),
+                ..Default::default()
+            };
             db.select_named_face(&mut style);
-            assert_eq!(db.faces(&style.font_family)[0].postscript_name, face.postscript_name);
+            assert_eq!(
+                db.faces(&style.font_family)[0].postscript_name,
+                face.postscript_name
+            );
         }
     }
 }
@@ -153,9 +220,19 @@ fn installed_yoon_numeric_faces() {
 fn localized_font(source: &[u8], english: &str, japanese: &str) -> Vec<u8> {
     let mut bytes = source.to_vec();
     let count = u16::from_be_bytes(bytes[4..6].try_into().unwrap()) as usize;
-    let name_record = (0..count).map(|i| 12 + i * 16).find(|r| &bytes[*r..r + 4] == b"name").unwrap();
+    let name_record = (0..count)
+        .map(|i| 12 + i * 16)
+        .find(|r| &bytes[*r..r + 4] == b"name")
+        .unwrap();
     let ps = english.replace(' ', "");
-    let names = [(0x409u16, 1u16, english), (0x409, 2, "Regular"), (0x409, 6, ps.as_str()), (0x409, 16, english), (0x411, 1, japanese), (0x411, 16, japanese)];
+    let names = [
+        (0x409u16, 1u16, english),
+        (0x409, 2, "Regular"),
+        (0x409, 6, ps.as_str()),
+        (0x409, 16, english),
+        (0x411, 1, japanese),
+        (0x411, 16, japanese),
+    ];
     let mut table = Vec::new();
     let mut strings = Vec::new();
     for value in [0u16, names.len() as u16, (6 + names.len() * 12) as u16] {
@@ -181,10 +258,20 @@ fn localized_font(source: &[u8], english: &str, japanese: &str) -> Vec<u8> {
 #[test]
 fn localized_family_names_map_english_families_to_native_names() {
     let mut db = FontDb::new();
-    assert_eq!(db.register_font_data(localized_font(&INTER_REGULAR, "Gothic Test", "ゴシック テスト")), ["Gothic Test"]);
+    assert_eq!(
+        db.register_font_data(localized_font(
+            &INTER_REGULAR,
+            "Gothic Test",
+            "ゴシック テスト"
+        )),
+        ["Gothic Test"]
+    );
     assert!(db.families().iter().any(|f| f == "Gothic Test"));
     let local = db.localized_family_names();
-    assert_eq!(local.get("Gothic Test").map(String::as_str), Some("ゴシック テスト"));
+    assert_eq!(
+        local.get("Gothic Test").map(String::as_str),
+        Some("ゴシック テスト")
+    );
     assert!(!local.contains_key(DEFAULT_FAMILY));
     assert!(local.values().all(|v| !v.is_empty()));
 }

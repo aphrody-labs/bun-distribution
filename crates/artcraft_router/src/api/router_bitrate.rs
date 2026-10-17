@@ -5,6 +5,6 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum RouterBitrate {
-  Normal,
-  High,
+    Normal,
+    High,
 }

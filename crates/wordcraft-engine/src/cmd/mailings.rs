@@ -5,7 +5,9 @@ use serde_json::{Value, json};
 use wordcraft_doc::para::InlineObject;
 use wordcraft_doc::props::{Align, CharProps};
 use wordcraft_doc::section::{SectionProps, SectionStart};
-use wordcraft_doc::{Block, Blocks, Document, Paragraph, Part, PartKind, Pos, StoryRef, Table, para_block};
+use wordcraft_doc::{
+    Block, Blocks, Document, Paragraph, Part, PartKind, Pos, StoryRef, Table, para_block,
+};
 
 use super::{delete_selection, sel_result};
 use crate::{CmdError, CmdResult, CommandSpec, Selection, Session, p};
@@ -22,17 +24,32 @@ pub struct MergeState {
 }
 
 fn has_recipients(s: &Session) -> Option<&'static str> {
-    if s.merge.rows.is_empty() { Some("select recipients first") } else { None }
+    if s.merge.rows.is_empty() {
+        Some("select recipients first")
+    } else {
+        None
+    }
 }
 
 /// Edit Recipient List needs a list to edit (fields, even with no entries yet).
 fn has_list(s: &Session) -> Option<&'static str> {
-    if s.merge.headers.is_empty() && s.merge.rows.is_empty() { Some("select recipients first") } else { None }
+    if s.merge.headers.is_empty() && s.merge.rows.is_empty() {
+        Some("select recipients first")
+    } else {
+        None
+    }
 }
 
 /// The kinds of document Start Mail Merge makes. `normal` is an ordinary document again; only
 /// `directory` changes how Finish & Merge joins the records (no page break between them).
-pub const MERGE_KINDS: [&str; 6] = ["letters", "emails", "envelopes", "labels", "directory", "normal"];
+pub const MERGE_KINDS: [&str; 6] = [
+    "letters",
+    "emails",
+    "envelopes",
+    "labels",
+    "directory",
+    "normal",
+];
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
@@ -146,7 +163,11 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn quote(f: &str) -> String {
-    if f.contains(' ') { format!("\"{f}\"") } else { f.to_string() }
+    if f.contains(' ') {
+        format!("\"{f}\"")
+    } else {
+        f.to_string()
+    }
 }
 
 fn insert_field(s: &mut Session, instr: &str, placeholder: &str) -> CmdResult {
@@ -154,7 +175,12 @@ fn insert_field(s: &mut Session, instr: &str, placeholder: &str) -> CmdResult {
     let at = delete_selection(s)?;
     let end = s.doc.insert_object(
         &at,
-        InlineObject::Field { instr: instr.to_string(), result: placeholder.to_string(), locked: false, code: false },
+        InlineObject::Field {
+            instr: instr.to_string(),
+            result: placeholder.to_string(),
+            locked: false,
+            code: false,
+        },
         &props,
     )?;
     s.sel = Selection::caret(end);
@@ -165,7 +191,10 @@ fn insert_field(s: &mut Session, instr: &str, placeholder: &str) -> CmdResult {
 /// Parse CSV (RFC 4180-ish: quotes, doubled quotes, commas/semicolons/tabs).
 pub fn parse_csv(text: &str) -> Vec<Vec<String>> {
     let first = text.lines().next().unwrap_or("");
-    let sep = [',', ';', '\t'].into_iter().max_by_key(|c| first.matches(*c).count()).unwrap_or(',');
+    let sep = [',', ';', '\t']
+        .into_iter()
+        .max_by_key(|c| first.matches(*c).count())
+        .unwrap_or(',');
     let mut rows = Vec::new();
     let mut row = Vec::new();
     let mut cell = String::new();
@@ -225,12 +254,21 @@ fn cell(x: &Value) -> String {
 
 /// A recipient table from `rows` (objects keyed by field, or arrays in `fields` order). Without
 /// `fields`, the columns are the objects' keys.
-fn table_from_rows(fields: Option<&Vec<Value>>, arr: &[Value]) -> Result<(Vec<String>, Vec<Vec<String>>), CmdError> {
+fn table_from_rows(
+    fields: Option<&Vec<Value>>,
+    arr: &[Value],
+) -> Result<(Vec<String>, Vec<Vec<String>>), CmdError> {
     let headers: Vec<String> = match fields {
-        Some(f) => f.iter().take(MAX_FIELDS).map(|h| cell(h).trim().to_string()).collect(),
+        Some(f) => f
+            .iter()
+            .take(MAX_FIELDS)
+            .map(|h| cell(h).trim().to_string())
+            .collect(),
         None => {
             if arr.iter().any(Value::is_array) {
-                return Err(CmdError::Params("`fields` is required when `rows` are arrays".into()));
+                return Err(CmdError::Params(
+                    "`fields` is required when `rows` are arrays".into(),
+                ));
             }
             let mut headers: Vec<String> = Vec::new();
             for o in arr.iter().filter_map(Value::as_object) {
@@ -247,8 +285,17 @@ fn table_from_rows(fields: Option<&Vec<Value>>, arr: &[Value]) -> Result<(Vec<St
         .iter()
         .take(MAX_RECORDS)
         .filter_map(|r| match r {
-            Value::Array(cells) => Some((0..headers.len()).map(|i| cells.get(i).map(cell).unwrap_or_default()).collect()),
-            Value::Object(o) => Some(headers.iter().map(|h| o.get(h).map(cell).unwrap_or_default()).collect()),
+            Value::Array(cells) => Some(
+                (0..headers.len())
+                    .map(|i| cells.get(i).map(cell).unwrap_or_default())
+                    .collect(),
+            ),
+            Value::Object(o) => Some(
+                headers
+                    .iter()
+                    .map(|h| o.get(h).map(cell).unwrap_or_default())
+                    .collect(),
+            ),
             _ => None,
         })
         .collect();
@@ -264,22 +311,28 @@ fn recipients(s: &mut Session, v: &Value) -> CmdResult {
             parse_csv(c)
         } else {
             let (bytes, ext) = if let Some(d) = p::str(v, "data") {
-                let b = super::insert::base64_decode(d.trim()).ok_or_else(|| CmdError::Params("`data` isn't valid base64".into()))?;
+                let b = super::insert::base64_decode(d.trim())
+                    .ok_or_else(|| CmdError::Params("`data` isn't valid base64".into()))?;
                 (b, p::str(v, "path").and_then(extension))
             } else if let Some(path) = p::str(v, "path") {
                 (read_file(path)?, extension(path))
             } else {
-                return Err(CmdError::Params("`csv`, `path`, `data` or `rows` required".into()));
+                return Err(CmdError::Params(
+                    "`csv`, `path`, `data` or `rows` required".into(),
+                ));
             };
-            let spreadsheet =
-                ext.as_deref().is_some_and(wordcraft_formats::sheet::is_extension) || wordcraft_formats::sheet::detect(&bytes).is_some();
+            let spreadsheet = ext
+                .as_deref()
+                .is_some_and(wordcraft_formats::sheet::is_extension)
+                || wordcraft_formats::sheet::detect(&bytes).is_some();
             if spreadsheet {
                 use wordcraft_formats::sheet::{Pick, read_rows, sheet_names};
                 let pick = match v.get("sheet") {
                     Some(Value::String(n)) => Pick::Name(n.as_str()),
-                    Some(x) if x.as_u64().is_some_and(|n| n >= 1) => {
-                        Pick::Index(usize::try_from(x.as_u64().unwrap_or(1).saturating_sub(1)).unwrap_or(usize::MAX))
-                    }
+                    Some(x) if x.as_u64().is_some_and(|n| n >= 1) => Pick::Index(
+                        usize::try_from(x.as_u64().unwrap_or(1).saturating_sub(1))
+                            .unwrap_or(usize::MAX),
+                    ),
                     Some(Value::Null) | None => {
                         let names = sheet_names(&bytes).map_err(CmdError::Failed)?;
                         if names.len() > 1 {
@@ -287,14 +340,20 @@ fn recipients(s: &mut Session, v: &Value) -> CmdResult {
                         }
                         Pick::Index(0)
                     }
-                    Some(_) => return Err(CmdError::Params("`sheet` must be a sheet name or number".into())),
+                    Some(_) => {
+                        return Err(CmdError::Params(
+                            "`sheet` must be a sheet name or number".into(),
+                        ));
+                    }
                 };
                 let (names, rows) = read_rows(&bytes, pick).map_err(CmdError::Failed)?;
                 let chosen = match pick {
                     Pick::Index(i) => names.get(i).cloned(),
-                    Pick::Name(n) => {
-                        names.iter().find(|s| s.as_str() == n).or_else(|| names.iter().find(|s| s.eq_ignore_ascii_case(n.trim()))).cloned()
-                    }
+                    Pick::Name(n) => names
+                        .iter()
+                        .find(|s| s.as_str() == n)
+                        .or_else(|| names.iter().find(|s| s.eq_ignore_ascii_case(n.trim())))
+                        .cloned(),
                 };
                 sheet = json!(chosen);
                 rows
@@ -317,7 +376,9 @@ fn recipients(s: &mut Session, v: &Value) -> CmdResult {
 
 /// A file's extension, lower case.
 fn extension(path: &str) -> Option<String> {
-    std::path::Path::new(path).extension().map(|e| e.to_string_lossy().to_ascii_lowercase())
+    std::path::Path::new(path)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
 }
 
 fn read_file(path: &str) -> Result<Vec<u8>, CmdError> {
@@ -327,7 +388,10 @@ fn read_file(path: &str) -> Result<Vec<u8>, CmdError> {
 /// Field names and records from a table's rows: with `headers`, the first row names the fields
 /// (blank names become `Column N`, repeats are numbered); otherwise every row is a record and
 /// the fields are `Column 1`…`Column N`. Records are padded or cut to the fields, and capped.
-fn header_split(mut all: Vec<Vec<String>>, headers: bool) -> Result<(Vec<String>, Vec<Vec<String>>), CmdError> {
+fn header_split(
+    mut all: Vec<Vec<String>>,
+    headers: bool,
+) -> Result<(Vec<String>, Vec<Vec<String>>), CmdError> {
     if all.is_empty() {
         return Err(CmdError::Failed("the recipient list is empty".into()));
     }
@@ -356,7 +420,10 @@ fn step(s: &mut Session, d: i64) -> CmdResult {
 /// Field names used by MERGEFIELD fields in the document (body, headers and footers).
 fn merge_fields(doc: &Document) -> Vec<String> {
     let mut v = Vec::new();
-    for (story, path) in merge_stories(doc).into_iter().flat_map(|st| doc.para_paths(st).into_iter().map(move |p| (st, p))) {
+    for (story, path) in merge_stories(doc)
+        .into_iter()
+        .flat_map(|st| doc.para_paths(st).into_iter().map(move |p| (st, p)))
+    {
         if let Some(p) = doc.para(story, &path) {
             for o in &p.objects {
                 if let InlineObject::Field { instr, .. } = o
@@ -373,13 +440,26 @@ fn merge_fields(doc: &Document) -> Vec<String> {
 
 fn mergefield_name(instr: &str) -> Option<String> {
     let rest = instr.trim().strip_prefix("MERGEFIELD")?.trim();
-    let name = if let Some(r) = rest.strip_prefix('"') { r.split('"').next().unwrap_or("") } else { rest.split_whitespace().next().unwrap_or("") };
+    let name = if let Some(r) = rest.strip_prefix('"') {
+        r.split('"').next().unwrap_or("")
+    } else {
+        rest.split_whitespace().next().unwrap_or("")
+    };
     Some(name.to_string())
 }
 
 /// Which columns hold address parts.
 fn address_map(headers: &[String]) -> Value {
-    let find = |names: &[&str]| headers.iter().find(|h| names.iter().any(|n| h.replace([' ', '_'], "").eq_ignore_ascii_case(n))).cloned();
+    let find = |names: &[&str]| {
+        headers
+            .iter()
+            .find(|h| {
+                names
+                    .iter()
+                    .any(|n| h.replace([' ', '_'], "").eq_ignore_ascii_case(n))
+            })
+            .cloned()
+    };
     json!({
         "firstName": find(&["FirstName", "First", "GivenName"]),
         "lastName": find(&["LastName", "Last", "Surname", "FamilyName"]),
@@ -394,27 +474,72 @@ fn address_map(headers: &[String]) -> Value {
 }
 
 fn value(s: &Session, row: usize, field: &str) -> String {
-    let Some(i) = s.merge.headers.iter().position(|h| h.eq_ignore_ascii_case(field)) else { return String::new() };
-    s.merge.rows.get(row).and_then(|r| r.get(i)).cloned().unwrap_or_default()
+    let Some(i) = s
+        .merge
+        .headers
+        .iter()
+        .position(|h| h.eq_ignore_ascii_case(field))
+    else {
+        return String::new();
+    };
+    s.merge
+        .rows
+        .get(row)
+        .and_then(|r| r.get(i))
+        .cloned()
+        .unwrap_or_default()
 }
 
 fn address_block(s: &Session, row: usize) -> String {
     let m = address_map(&s.merge.headers);
-    let g = |k: &str| m.get(k).and_then(Value::as_str).map(|f| value(s, row, f)).unwrap_or_default();
-    let name = [g("title"), g("firstName"), g("lastName")].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" ");
-    let city_line = [g("city"), [g("state"), g("postal")].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" ")]
+    let g = |k: &str| {
+        m.get(k)
+            .and_then(Value::as_str)
+            .map(|f| value(s, row, f))
+            .unwrap_or_default()
+    };
+    let name = [g("title"), g("firstName"), g("lastName")]
         .into_iter()
         .filter(|x| !x.is_empty())
         .collect::<Vec<_>>()
-        .join(", ");
-    [name, g("company"), g("address"), city_line, g("country")].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join("\n")
+        .join(" ");
+    let city_line = [
+        g("city"),
+        [g("state"), g("postal")]
+            .into_iter()
+            .filter(|x| !x.is_empty())
+            .collect::<Vec<_>>()
+            .join(" "),
+    ]
+    .into_iter()
+    .filter(|x| !x.is_empty())
+    .collect::<Vec<_>>()
+    .join(", ");
+    [name, g("company"), g("address"), city_line, g("country")]
+        .into_iter()
+        .filter(|x| !x.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn greeting(s: &Session, row: usize) -> String {
     let m = address_map(&s.merge.headers);
-    let g = |k: &str| m.get(k).and_then(Value::as_str).map(|f| value(s, row, f)).unwrap_or_default();
-    let name = [g("firstName"), g("lastName")].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" ");
-    if name.is_empty() { "Dear Sir or Madam,".into() } else { format!("Dear {name},") }
+    let g = |k: &str| {
+        m.get(k)
+            .and_then(Value::as_str)
+            .map(|f| value(s, row, f))
+            .unwrap_or_default()
+    };
+    let name = [g("firstName"), g("lastName")]
+        .into_iter()
+        .filter(|x| !x.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    if name.is_empty() {
+        "Dear Sir or Madam,".into()
+    } else {
+        format!("Dear {name},")
+    }
 }
 
 /// What a merge-related field does for the current record.
@@ -430,10 +555,17 @@ enum Act {
 /// Comparison of a rule condition `{ MERGEFIELD X } op "value" …` (IF, SKIPIF, NEXTIF) for
 /// `row`: whether it holds, and the quoted texts after the value (IF's true / false text).
 fn condition<'a>(s: &Session, t: &'a str, row: usize) -> (bool, Vec<&'a str>) {
-    let inner = t.split_once('{').and_then(|(_, r)| r.split('}').next()).unwrap_or("");
+    let inner = t
+        .split_once('{')
+        .and_then(|(_, r)| r.split('}').next())
+        .unwrap_or("");
     let field = mergefield_name(inner).unwrap_or_default();
     let rest = t.split_once('}').map(|(_, r)| r).unwrap_or("");
-    let op: String = rest.trim_start().chars().take_while(|c| matches!(c, '=' | '<' | '>')).collect();
+    let op: String = rest
+        .trim_start()
+        .chars()
+        .take_while(|c| matches!(c, '=' | '<' | '>'))
+        .collect();
     let mut quoted = rest.split('"').skip(1).step_by(2);
     let cmp = quoted.next().unwrap_or("");
     let v = value(s, row, &field);
@@ -456,7 +588,11 @@ fn condition<'a>(s: &Session, t: &'a str, row: usize) -> (bool, Vec<&'a str>) {
 
 /// The first word of a field instruction, upper-cased.
 fn keyword(instr: &str) -> String {
-    instr.split_whitespace().next().unwrap_or("").to_ascii_uppercase()
+    instr
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_uppercase()
 }
 
 /// Evaluate a merge-related field for a record (None = not a merge field).
@@ -476,7 +612,13 @@ fn act(s: &Session, instr: &str, row: usize) -> Option<Act> {
         // IF { MERGEFIELD X } = "v" "then" "else" (an IF on other fields isn't ours to touch).
         "IF" if t.contains("MERGEFIELD") => {
             let (holds, texts) = condition(s, t, row);
-            Act::Text(texts.get(if holds { 0 } else { 1 }).copied().unwrap_or("").to_string())
+            Act::Text(
+                texts
+                    .get(if holds { 0 } else { 1 })
+                    .copied()
+                    .unwrap_or("")
+                    .to_string(),
+            )
         }
         _ => return None,
     })
@@ -498,11 +640,17 @@ fn placeholder(instr: &str) -> Option<String> {
 
 /// The stories a merge resolves: the body, then every header and footer.
 fn merge_stories(doc: &Document) -> Vec<StoryRef> {
-    std::iter::once(StoryRef::Body).chain(header_footer_ids(doc).into_iter().map(StoryRef::Part)).collect()
+    std::iter::once(StoryRef::Body)
+        .chain(header_footer_ids(doc).into_iter().map(StoryRef::Part))
+        .collect()
 }
 
 fn header_footer_ids(doc: &Document) -> Vec<u32> {
-    doc.parts.iter().filter(|(_, p)| matches!(p.kind, PartKind::Header | PartKind::Footer)).map(|(id, _)| *id).collect()
+    doc.parts
+        .iter()
+        .filter(|(_, p)| matches!(p.kind, PartKind::Header | PartKind::Footer))
+        .map(|(id, _)| *id)
+        .collect()
 }
 
 /// Update merge field results: record values when previewing, «Field» placeholders otherwise.
@@ -519,7 +667,9 @@ pub fn refresh(s: &mut Session) {
                     .iter()
                     .enumerate()
                     .filter_map(|(k, o)| {
-                        let InlineObject::Field { instr, .. } = o else { return None };
+                        let InlineObject::Field { instr, .. } = o else {
+                            return None;
+                        };
                         let shown = placeholder(instr)?;
                         if !preview {
                             return Some((k, shown));
@@ -568,12 +718,23 @@ fn finish(s: &mut Session, v: &Value) -> CmdResult {
     let from = (p::u64(v, "from").unwrap_or(1).max(1) as usize).saturating_sub(1);
     let to = (p::u64(v, "to").unwrap_or(n as u64).min(n as u64)) as usize;
     let directory = s.merge.kind == "directory";
-    let hf: Vec<u32> =
-        header_footer_ids(&s.doc).into_iter().filter(|id| s.doc.story(StoryRef::Part(*id)).is_some_and(|b| has_merge_fields(b, 0))).collect();
+    let hf: Vec<u32> = header_footer_ids(&s.doc)
+        .into_iter()
+        .filter(|id| {
+            s.doc
+                .story(StoryRef::Part(*id))
+                .is_some_and(|b| has_merge_fields(b, 0))
+        })
+        .collect();
     let per_record = !directory && !hf.is_empty();
     let mut out = s.doc.clone();
     out.body.clear();
-    let mut next_id = s.doc.parts.keys().next_back().map_or(1, |k| k.saturating_add(1));
+    let mut next_id = s
+        .doc
+        .parts
+        .keys()
+        .next_back()
+        .map_or(1, |k| k.saturating_add(1));
     let mut start = from;
     let mut count = 0usize;
     let mut first_record = None;
@@ -593,14 +754,25 @@ fn finish(s: &mut Session, v: &Value) -> CmdResult {
             // This letter's own header/footer copies, merged with its record.
             let mut map = Vec::new();
             for id in &hf {
-                let Some(part) = s.doc.parts.get(id) else { continue };
+                let Some(part) = s.doc.parts.get(id) else {
+                    continue;
+                };
                 if next_id == u32::MAX {
-                    return Err(CmdError::Failed("too many headers and footers to merge".into()));
+                    return Err(CmdError::Failed(
+                        "too many headers and footers to merge".into(),
+                    ));
                 }
                 let mut blocks = part.blocks.clone();
                 let mut c = record;
                 merge_blocks(s, &mut blocks, &mut c, to, 0);
-                out.parts.insert(next_id, Part { kind: part.kind, blocks, body: part.body });
+                out.parts.insert(
+                    next_id,
+                    Part {
+                        kind: part.kind,
+                        blocks,
+                        body: part.body,
+                    },
+                );
                 map.push((*id, next_id));
                 next_id += 1;
             }
@@ -668,9 +840,14 @@ fn finish(s: &mut Session, v: &Value) -> CmdResult {
 /// Point a letter's section at its own header/footer copies; the letter's first section starts
 /// on a new page.
 fn remap_headers(sp: &mut SectionProps, map: &[(u32, u32)], first: bool) {
-    for slot in
-        [&mut sp.headers.default, &mut sp.headers.first, &mut sp.headers.even, &mut sp.footers.default, &mut sp.footers.first, &mut sp.footers.even]
-    {
+    for slot in [
+        &mut sp.headers.default,
+        &mut sp.headers.first,
+        &mut sp.headers.even,
+        &mut sp.footers.default,
+        &mut sp.footers.first,
+        &mut sp.footers.even,
+    ] {
         if let Some(id) = slot
             && let Some((_, new)) = map.iter().find(|(old, _)| old == id)
         {
@@ -688,15 +865,27 @@ const MAX_DEPTH: usize = 32;
 fn has_merge_fields(blocks: &Blocks, depth: usize) -> bool {
     depth <= MAX_DEPTH
         && blocks.iter().any(|b| match &**b {
-            Block::Para(p) => p.objects.iter().any(|o| matches!(o, InlineObject::Field { instr, .. } if placeholder(instr).is_some())),
-            Block::Table(t) => t.rows.iter().flat_map(|r| &r.cells).any(|c| has_merge_fields(&c.blocks, depth + 1)),
+            Block::Para(p) => p.objects.iter().any(
+                |o| matches!(o, InlineObject::Field { instr, .. } if placeholder(instr).is_some()),
+            ),
+            Block::Table(t) => t
+                .rows
+                .iter()
+                .flat_map(|r| &r.cells)
+                .any(|c| has_merge_fields(&c.blocks, depth + 1)),
         })
 }
 
 /// Replace the merge fields in `blocks` by their text, in document order, starting with record
 /// `*cur`. NEXT moves `*cur` on (records from `end` on are blank). Returns false when a SKIPIF
 /// drops this merged document.
-fn merge_blocks(s: &Session, blocks: &mut Blocks, cur: &mut usize, end: usize, depth: usize) -> bool {
+fn merge_blocks(
+    s: &Session,
+    blocks: &mut Blocks,
+    cur: &mut usize,
+    end: usize,
+    depth: usize,
+) -> bool {
     if depth > MAX_DEPTH {
         return true;
     }
@@ -705,7 +894,9 @@ fn merge_blocks(s: &Session, blocks: &mut Blocks, cur: &mut usize, end: usize, d
             Block::Para(p) => {
                 let mut repl = Vec::new();
                 for off in p.object_offsets() {
-                    let Some(InlineObject::Field { instr, .. }) = p.object_at(off) else { continue };
+                    let Some(InlineObject::Field { instr, .. }) = p.object_at(off) else {
+                        continue;
+                    };
                     let row = if *cur < end { *cur } else { s.merge.rows.len() };
                     match act(s, instr, row) {
                         Some(Act::Text(t)) => repl.push((off, t)),
@@ -756,7 +947,11 @@ fn envelope_size(v: &Value) -> Result<(f32, f32), CmdError> {
     let name = p::str(v, "size").unwrap_or("Envelope #10").trim();
     ENVELOPE_SIZES
         .iter()
-        .find(|(n, ..)| n.eq_ignore_ascii_case(name) || n.strip_prefix("Envelope ").is_some_and(|short| short.eq_ignore_ascii_case(name)))
+        .find(|(n, ..)| {
+            n.eq_ignore_ascii_case(name)
+                || n.strip_prefix("Envelope ")
+                    .is_some_and(|short| short.eq_ignore_ascii_case(name))
+        })
         .map(|(_, w, h)| (*w, *h))
         .ok_or_else(|| CmdError::Params(format!("unknown envelope size `{name}`")))
 }
@@ -764,9 +959,15 @@ fn envelope_size(v: &Value) -> Result<(f32, f32), CmdError> {
 /// Envelopes: a landscape page with the return address at the top left and the delivery address
 /// in the middle. As a new document, or (`add`) as a section of its own at the start of this one.
 fn envelopes(s: &mut Session, v: &Value) -> CmdResult {
-    let delivery = p::str(v, "delivery").map(str::to_string).unwrap_or_else(|| {
-        if s.merge.rows.is_empty() { "Recipient Name\nStreet Address\nCity, ST 00000".into() } else { address_block(s, s.merge.record) }
-    });
+    let delivery = p::str(v, "delivery")
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            if s.merge.rows.is_empty() {
+                "Recipient Name\nStreet Address\nCity, ST 00000".into()
+            } else {
+                address_block(s, s.merge.record)
+            }
+        });
     let ret = p::str(v, "return").unwrap_or("").to_string();
     let (w, h) = envelope_size(v)?;
     let sect = SectionProps {
@@ -780,11 +981,29 @@ fn envelopes(s: &mut Session, v: &Value) -> CmdResult {
         ..Default::default()
     };
     // Addresses are capped: a pasted novel is not an address.
-    let lines = |t: &str| t.split('\n').take(20).map(str::to_string).collect::<Vec<_>>();
+    let lines = |t: &str| {
+        t.split('\n')
+            .take(20)
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+    };
     let mut blocks = Vec::new();
-    let ret_lines = if ret.is_empty() { Vec::new() } else { lines(&ret) };
+    let ret_lines = if ret.is_empty() {
+        Vec::new()
+    } else {
+        lines(&ret)
+    };
     for l in &ret_lines {
-        blocks.push(para_block(Paragraph::with_text(l, CharProps { size: Some(10.0), ..Default::default() }).styled("NoSpacing")));
+        blocks.push(para_block(
+            Paragraph::with_text(
+                l,
+                CharProps {
+                    size: Some(10.0),
+                    ..Default::default()
+                },
+            )
+            .styled("NoSpacing"),
+        ));
     }
     let spacer = (6 - ret_lines.len().min(6)).max(1);
     for _ in 0..spacer + 2 {
@@ -979,7 +1198,8 @@ impl LabelProduct {
 /// label), or (`single`: `{"row", "col"}`, from 1) one label at that place on the sheet.
 fn labels(s: &mut Session, v: &Value) -> CmdResult {
     let prod = match p::str(v, "product") {
-        Some(id) => *LabelProduct::by_id(id).ok_or_else(|| CmdError::Params(format!("unknown label product `{id}`")))?,
+        Some(id) => *LabelProduct::by_id(id)
+            .ok_or_else(|| CmdError::Params(format!("unknown label product `{id}`")))?,
         None => LABEL_PRODUCTS[0],
     };
     let rows = p::u64(v, "rows").map_or(prod.rows, |n| n.clamp(1, 40) as usize);
@@ -988,9 +1208,17 @@ fn labels(s: &mut Session, v: &Value) -> CmdResult {
         let at = |k: &str| x.get(k).and_then(Value::as_u64).unwrap_or(1).max(1) as usize;
         (at("row").min(rows), at("col").min(cols))
     });
-    let from_rec = single.is_none() && p::bool(v, "fromRecipients").unwrap_or(!s.merge.rows.is_empty() && p::str(v, "text").is_none());
-    let text = p::str(v, "text").unwrap_or("Name\nAddress\nCity, ST 00000").to_string();
-    let (page_w, page_h) = if prod.paper == "A4" { (595.3, 841.9) } else { (612.0, 792.0) };
+    let from_rec = single.is_none()
+        && p::bool(v, "fromRecipients")
+            .unwrap_or(!s.merge.rows.is_empty() && p::str(v, "text").is_none());
+    let text = p::str(v, "text")
+        .unwrap_or("Name\nAddress\nCity, ST 00000")
+        .to_string();
+    let (page_w, page_h) = if prod.paper == "A4" {
+        (595.3, 841.9)
+    } else {
+        (612.0, 792.0)
+    };
     let h_gap = (prod.h_pitch - prod.width).max(0.0);
     let v_gap = (prod.v_pitch - prod.height).max(0.0);
     let mut d = Document::new();
@@ -999,18 +1227,37 @@ fn labels(s: &mut Session, v: &Value) -> CmdResult {
     d.last_section.margin_top = prod.top;
     d.last_section.margin_bottom = 0.0;
     d.last_section.margin_left = prod.side;
-    d.last_section.margin_right = (page_w - prod.side - prod.h_pitch * (cols - 1) as f32 - prod.width).max(0.0);
+    d.last_section.margin_right =
+        (page_w - prod.side - prod.h_pitch * (cols - 1) as f32 - prod.width).max(0.0);
     d.last_section.header = 0.0;
     d.last_section.footer = 0.0;
     // Grid columns: label, gap, label, …; rows likewise.
-    let grid_cols: Vec<Option<usize>> = (0..cols).flat_map(|c| [Some(c)].into_iter().chain((c + 1 < cols && h_gap > 0.5).then_some(None))).collect();
-    let grid_rows: Vec<Option<usize>> = (0..rows).flat_map(|r| [Some(r)].into_iter().chain((r + 1 < rows && v_gap > 0.5).then_some(None))).collect();
-    let width: f32 = grid_cols.iter().map(|c| if c.is_some() { prod.width } else { h_gap }).sum();
+    let grid_cols: Vec<Option<usize>> = (0..cols)
+        .flat_map(|c| {
+            [Some(c)]
+                .into_iter()
+                .chain((c + 1 < cols && h_gap > 0.5).then_some(None))
+        })
+        .collect();
+    let grid_rows: Vec<Option<usize>> = (0..rows)
+        .flat_map(|r| {
+            [Some(r)]
+                .into_iter()
+                .chain((r + 1 < rows && v_gap > 0.5).then_some(None))
+        })
+        .collect();
+    let width: f32 = grid_cols
+        .iter()
+        .map(|c| if c.is_some() { prod.width } else { h_gap })
+        .sum();
     let mut t = Table::new(grid_rows.len(), grid_cols.len(), width);
     t.props.style = None;
     t.props.borders = Some(wordcraft_doc::props::Borders::default());
     t.props.fixed = true;
-    t.grid = grid_cols.iter().map(|c| if c.is_some() { prod.width } else { h_gap }).collect();
+    t.grid = grid_cols
+        .iter()
+        .map(|c| if c.is_some() { prod.width } else { h_gap })
+        .collect();
     let mut k = 0usize;
     let mut made = 0usize;
     for (row, r) in t.rows.iter_mut().zip(&grid_rows) {
@@ -1022,7 +1269,11 @@ fn labels(s: &mut Session, v: &Value) -> CmdResult {
             let content = match single {
                 Some((sr, sc)) if (sr, sc) != (r + 1, c + 1) => String::new(),
                 _ if from_rec => {
-                    let rec = if k < s.merge.rows.len() { address_block(s, k) } else { String::new() };
+                    let rec = if k < s.merge.rows.len() {
+                        address_block(s, k)
+                    } else {
+                        String::new()
+                    };
                     k += 1;
                     rec
                 }
@@ -1044,11 +1295,16 @@ fn labels(s: &mut Session, v: &Value) -> CmdResult {
                 .collect();
         }
     }
-    d.body = vec![std::sync::Arc::new(Block::Table(t)), para_block(Paragraph::new())];
+    d.body = vec![
+        std::sync::Arc::new(Block::Table(t)),
+        para_block(Paragraph::new()),
+    ];
     s.set_document(d);
     s.path = None;
     let _ = Pos::body(0, 0);
-    Ok(json!({"labels": if single.is_some() { 1 } else { rows * cols }, "filled": made, "product": prod.id}))
+    Ok(
+        json!({"labels": if single.is_some() { 1 } else { rows * cols }, "filled": made, "product": prod.id}),
+    )
 }
 
 #[cfg(test)]
@@ -1058,21 +1314,38 @@ mod tests {
     #[test]
     fn csv_parsing() {
         let r = parse_csv("Name,City\n\"Smith, Ann\",Paris\r\nBo,\"Oslo \"\"N\"\"\"\n\n");
-        assert_eq!(r, vec![vec!["Name", "City"], vec!["Smith, Ann", "Paris"], vec!["Bo", "Oslo \"N\""]]);
+        assert_eq!(
+            r,
+            vec![
+                vec!["Name", "City"],
+                vec!["Smith, Ann", "Paris"],
+                vec!["Bo", "Oslo \"N\""]
+            ]
+        );
         assert_eq!(parse_csv("a;b\n1;2")[1], vec!["1", "2"]);
     }
 
     #[test]
     fn merge_end_to_end() {
         let mut s = Session::new(Document::new());
-        s.run("mailings.recipients", &json!({"csv": "First Name,Last Name,City\nAda,Lovelace,London\nAlan,Turing,Wilmslow"})).unwrap();
+        s.run(
+            "mailings.recipients",
+            &json!({"csv": "First Name,Last Name,City\nAda,Lovelace,London\nAlan,Turing,Wilmslow"}),
+        )
+        .unwrap();
         s.run("mailings.greetingLine", &json!({})).unwrap();
         s.run("text.newParagraph", &json!({})).unwrap();
-        s.run("text.insert", &json!({"text": "See you in "})).unwrap();
-        s.run("mailings.insertField", &json!({"field": "City"})).unwrap();
+        s.run("text.insert", &json!({"text": "See you in "}))
+            .unwrap();
+        s.run("mailings.insertField", &json!({"field": "City"}))
+            .unwrap();
         assert!(s.doc.plain_text(StoryRef::Body).contains("«City»"));
         s.run("mailings.preview", &json!({"value": true})).unwrap();
-        assert!(s.doc.plain_text(StoryRef::Body).contains("Dear Ada Lovelace,"));
+        assert!(
+            s.doc
+                .plain_text(StoryRef::Body)
+                .contains("Dear Ada Lovelace,")
+        );
         s.run("mailings.next", &json!({})).unwrap();
         assert!(s.doc.plain_text(StoryRef::Body).contains("Wilmslow"));
         let chk = s.run("mailings.checkErrors", &json!({})).unwrap();
@@ -1080,7 +1353,10 @@ mod tests {
         let r = s.run("mailings.finish", &json!({})).unwrap();
         assert_eq!(r["records"], 2);
         let t = s.doc.plain_text(StoryRef::Body);
-        assert!(t.contains("See you in London") && t.contains("Dear Alan Turing,"), "{t}");
+        assert!(
+            t.contains("See you in London") && t.contains("Dear Alan Turing,"),
+            "{t}"
+        );
         assert_eq!(s.layout().pages.len(), 2);
     }
 
@@ -1088,8 +1364,17 @@ mod tests {
     #[test]
     fn recipients_from_a_workbook_ask_for_the_sheet_when_there_are_several() {
         use std::io::Write;
-        let cell = |t: &str| format!(r#"<table:table-cell office:value-type="string"><text:p>{t}</text:p></table:table-cell>"#);
-        let row = |cells: &[&str]| format!("<table:table-row>{}</table:table-row>", cells.iter().map(|c| cell(c)).collect::<String>());
+        let cell = |t: &str| {
+            format!(
+                r#"<table:table-cell office:value-type="string"><text:p>{t}</text:p></table:table-cell>"#
+            )
+        };
+        let row = |cells: &[&str]| {
+            format!(
+                "<table:table-row>{}</table:table-row>",
+                cells.iter().map(|c| cell(c)).collect::<String>()
+            )
+        };
         let content = format!(
             r#"<office:document-content xmlns:office="o" xmlns:table="t" xmlns:text="x"><office:body><office:spreadsheet><table:table table:name="Notes">{}</table:table><table:table table:name="Guests">{}{}{}</table:table></office:spreadsheet></office:body></office:document-content>"#,
             row(&["n"]),
@@ -1098,26 +1383,57 @@ mod tests {
             row(&["Alan", "Wilmslow", "B"]),
         );
         let mut z = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-        for (name, body) in [("mimetype", "application/vnd.oasis.opendocument.spreadsheet"), ("content.xml", content.as_str())] {
-            z.start_file(name, zip::write::SimpleFileOptions::default()).unwrap();
+        for (name, body) in [
+            ("mimetype", "application/vnd.oasis.opendocument.spreadsheet"),
+            ("content.xml", content.as_str()),
+        ] {
+            z.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
             z.write_all(body.as_bytes()).unwrap();
         }
         let data = super::super::insert::base64_encode(&z.finish().unwrap().into_inner());
         let mut s = Session::new(Document::new());
         // Two sheets and none chosen: the names come back and nothing loads.
-        let r = s.run("mailings.recipients", &json!({"data": data})).unwrap();
-        assert_eq!(r, json!({"sheets": ["Notes", "Guests"], "chooseSheet": true}));
+        let r = s
+            .run("mailings.recipients", &json!({"data": data}))
+            .unwrap();
+        assert_eq!(
+            r,
+            json!({"sheets": ["Notes", "Guests"], "chooseSheet": true})
+        );
         assert!(s.merge.headers.is_empty());
-        let r = s.run("mailings.recipients", &json!({"data": data, "sheet": "guests"})).unwrap();
-        assert_eq!(r, json!({"fields": ["Name", "Column 2", "Name 2"], "records": 2, "sheet": "Guests"}));
+        let r = s
+            .run(
+                "mailings.recipients",
+                &json!({"data": data, "sheet": "guests"}),
+            )
+            .unwrap();
+        assert_eq!(
+            r,
+            json!({"fields": ["Name", "Column 2", "Name 2"], "records": 2, "sheet": "Guests"})
+        );
         assert_eq!(s.merge.rows[1], ["Alan", "Wilmslow", "B"]);
         // Without a header row every row is a record.
-        let r = s.run("mailings.recipients", &json!({"data": data, "sheet": 2, "headers": false})).unwrap();
+        let r = s
+            .run(
+                "mailings.recipients",
+                &json!({"data": data, "sheet": 2, "headers": false}),
+            )
+            .unwrap();
         assert_eq!(r["fields"], json!(["Column 1", "Column 2", "Column 3"]));
         assert_eq!(r["records"], 3);
-        assert!(s.run("mailings.recipients", &json!({"data": data, "sheet": 3})).is_err());
-        assert!(s.run("mailings.recipients", &json!({"data": data, "sheet": 0})).is_err());
-        assert!(s.run("mailings.recipients", &json!({"data": "%%%"})).is_err());
+        assert!(
+            s.run("mailings.recipients", &json!({"data": data, "sheet": 3}))
+                .is_err()
+        );
+        assert!(
+            s.run("mailings.recipients", &json!({"data": data, "sheet": 0}))
+                .is_err()
+        );
+        assert!(
+            s.run("mailings.recipients", &json!({"data": "%%%"}))
+                .is_err()
+        );
     }
 
     #[test]
@@ -1126,19 +1442,34 @@ mod tests {
         let r = s
             .run("mailings.recipients", &json!({"fields": ["Last Name", " City ", "Age"], "rows": [["Lovelace", "London", 36], ["Turing"], 7]}))
             .unwrap();
-        assert_eq!(r, json!({"fields": ["Last Name", "City", "Age"], "records": 2}));
+        assert_eq!(
+            r,
+            json!({"fields": ["Last Name", "City", "Age"], "records": 2})
+        );
         assert_eq!(
             s.merge.rows,
-            vec![vec!["Lovelace".to_string(), "London".into(), "36".into()], vec!["Turing".into(), String::new(), String::new()]]
+            vec![
+                vec!["Lovelace".to_string(), "London".into(), "36".into()],
+                vec!["Turing".into(), String::new(), String::new()]
+            ]
         );
         // Objects follow `fields` too; missing and null cells are blank.
-        s.run("mailings.editRecipients", &json!({"fields": ["Name", "City"], "rows": [{"City": "Paris", "Name": null}]})).unwrap();
+        s.run(
+            "mailings.editRecipients",
+            &json!({"fields": ["Name", "City"], "rows": [{"City": "Paris", "Name": null}]}),
+        )
+        .unwrap();
         assert_eq!(s.merge.headers, vec!["Name", "City"]);
         assert_eq!(s.merge.rows, vec![vec![String::new(), "Paris".to_string()]]);
         // Array rows need the field names.
-        let err = s.run("mailings.recipients", &json!({"rows": [["Ada"]]})).unwrap_err();
+        let err = s
+            .run("mailings.recipients", &json!({"rows": [["Ada"]]}))
+            .unwrap_err();
         assert!(matches!(err, CmdError::Params(_)), "{err}");
-        assert!(s.ui_requests.is_empty(), "programmatic calls never open dialogs");
+        assert!(
+            s.ui_requests.is_empty(),
+            "programmatic calls never open dialogs"
+        );
     }
 
     /// Start Mail Merge takes only the kinds it knows; Edit Recipient List needs a list.
@@ -1146,24 +1477,47 @@ mod tests {
     fn merge_kinds_and_edit_list_needs_recipients() {
         let mut s = Session::new(Document::new());
         for k in MERGE_KINDS {
-            assert_eq!(s.run("mailings.start", &json!({"kind": k})).unwrap(), json!({"kind": k}));
+            assert_eq!(
+                s.run("mailings.start", &json!({"kind": k})).unwrap(),
+                json!({"kind": k})
+            );
         }
-        assert_eq!(s.run("mailings.start", &json!({"kind": " Directory "})).unwrap(), json!({"kind": "directory"}));
-        assert!(matches!(s.run("mailings.start", &json!({"kind": "fax"})), Err(CmdError::Params(_))));
-        assert_eq!(s.merge.kind, "directory", "a rejected kind leaves the current one");
-        assert!(matches!(s.run("mailings.editRecipients", &json!({})), Err(CmdError::Disabled(_))));
-        s.run("mailings.recipients", &json!({"csv": "Name\nAda"})).unwrap();
-        assert_eq!(s.run("mailings.editRecipients", &json!({})).unwrap(), json!({"headers": ["Name"], "rows": [["Ada"]]}));
+        assert_eq!(
+            s.run("mailings.start", &json!({"kind": " Directory "}))
+                .unwrap(),
+            json!({"kind": "directory"})
+        );
+        assert!(matches!(
+            s.run("mailings.start", &json!({"kind": "fax"})),
+            Err(CmdError::Params(_))
+        ));
+        assert_eq!(
+            s.merge.kind, "directory",
+            "a rejected kind leaves the current one"
+        );
+        assert!(matches!(
+            s.run("mailings.editRecipients", &json!({})),
+            Err(CmdError::Disabled(_))
+        ));
+        s.run("mailings.recipients", &json!({"csv": "Name\nAda"}))
+            .unwrap();
+        assert_eq!(
+            s.run("mailings.editRecipients", &json!({})).unwrap(),
+            json!({"headers": ["Name"], "rows": [["Ada"]]})
+        );
     }
 
     fn merged_text(rule: Option<Value>, rows: Value) -> String {
         let mut s = Session::new(Document::new());
-        s.run("mailings.recipients", &json!({ "rows": rows })).unwrap();
-        s.run("mailings.start", &json!({"kind": "directory"})).unwrap();
+        s.run("mailings.recipients", &json!({ "rows": rows }))
+            .unwrap();
+        s.run("mailings.start", &json!({"kind": "directory"}))
+            .unwrap();
         if let Some(r) = rule {
             s.run("mailings.rules", &r).unwrap();
         }
-        s.run("mailings.insertField", &json!({"field": "Name"})).unwrap();
+        s.run("mailings.insertField", &json!({"field": "Name"}))
+            .unwrap();
         s.run("mailings.finish", &json!({})).unwrap();
         s.doc.plain_text(StoryRef::Body)
     }
@@ -1186,12 +1540,19 @@ mod tests {
     #[test]
     fn next_record_advances_following_fields() {
         let mut s = Session::new(Document::new());
-        s.run("mailings.recipients", &json!({"rows": [{"Name": "Alpha"}, {"Name": "Beta"}, {"Name": "Gamma"}]})).unwrap();
-        s.run("mailings.start", &json!({"kind": "directory"})).unwrap();
-        s.run("mailings.insertField", &json!({"field": "Name"})).unwrap();
+        s.run(
+            "mailings.recipients",
+            &json!({"rows": [{"Name": "Alpha"}, {"Name": "Beta"}, {"Name": "Gamma"}]}),
+        )
+        .unwrap();
+        s.run("mailings.start", &json!({"kind": "directory"}))
+            .unwrap();
+        s.run("mailings.insertField", &json!({"field": "Name"}))
+            .unwrap();
         s.run("text.insert", &json!({"text": " / "})).unwrap();
         s.run("mailings.rules", &json!({"rule": "NEXT"})).unwrap();
-        s.run("mailings.insertField", &json!({"field": "Name"})).unwrap();
+        s.run("mailings.insertField", &json!({"field": "Name"}))
+            .unwrap();
         s.run("mailings.preview", &json!({"value": true})).unwrap();
         assert_eq!(s.doc.plain_text(StoryRef::Body), "Alpha / Beta");
         s.run("mailings.finish", &json!({})).unwrap();
@@ -1203,8 +1564,13 @@ mod tests {
     #[test]
     fn if_rule_previews_its_result() {
         let mut s = Session::new(Document::new());
-        s.run("mailings.recipients", &json!({"rows": [{"Name": "Alpha", "Flag": "yes"}, {"Name": "Beta", "Flag": "no"}]})).unwrap();
-        s.run("mailings.start", &json!({"kind": "directory"})).unwrap();
+        s.run(
+            "mailings.recipients",
+            &json!({"rows": [{"Name": "Alpha", "Flag": "yes"}, {"Name": "Beta", "Flag": "no"}]}),
+        )
+        .unwrap();
+        s.run("mailings.start", &json!({"kind": "directory"}))
+            .unwrap();
         s.run("mailings.rules", &json!({"rule": "IF", "field": "Flag", "value": "yes", "then": "Selected", "else": "Other"})).unwrap();
         s.run("mailings.preview", &json!({"value": true})).unwrap();
         assert_eq!(s.doc.plain_text(StoryRef::Body), "Selected");
@@ -1221,13 +1587,23 @@ mod tests {
     #[test]
     fn header_and_footer_fields_merge() {
         let mut s = Session::new(Document::new());
-        s.run("mailings.recipients", &json!({"rows": [{"Name": "Alpha"}, {"Name": "Beta"}]})).unwrap();
-        let hdr = s.run("insert.header", &json!({"text": "Recipient: "})).unwrap()["story"].as_u64().unwrap() as u32;
+        s.run(
+            "mailings.recipients",
+            &json!({"rows": [{"Name": "Alpha"}, {"Name": "Beta"}]}),
+        )
+        .unwrap();
+        let hdr = s
+            .run("insert.header", &json!({"text": "Recipient: "}))
+            .unwrap()["story"]
+            .as_u64()
+            .unwrap() as u32;
         s.run("caret.docEnd", &json!({})).unwrap();
-        s.run("mailings.insertField", &json!({"field": "Name"})).unwrap();
+        s.run("mailings.insertField", &json!({"field": "Name"}))
+            .unwrap();
         s.run("insert.closeHeader", &json!({})).unwrap();
         s.run("text.insert", &json!({"text": "Body: "})).unwrap();
-        s.run("mailings.insertField", &json!({"field": "Name"})).unwrap();
+        s.run("mailings.insertField", &json!({"field": "Name"}))
+            .unwrap();
         let header = |s: &Session, id: u32| s.doc.plain_text(StoryRef::Part(id));
         s.run("mailings.preview", &json!({"value": true})).unwrap();
         assert_eq!(header(&s, hdr), "Recipient: Alpha");
@@ -1237,15 +1613,25 @@ mod tests {
         assert_eq!(s.doc.plain_text(StoryRef::Body), "Body: Alpha\nBody: Beta");
         let secs = s.doc.sections();
         assert_eq!(secs.len(), 2, "one section per letter");
-        let texts: Vec<String> = secs.iter().map(|(_, sp)| header(&s, sp.headers.default.unwrap())).collect();
+        let texts: Vec<String> = secs
+            .iter()
+            .map(|(_, sp)| header(&s, sp.headers.default.unwrap()))
+            .collect();
         assert_eq!(texts, ["Recipient: Alpha", "Recipient: Beta"]);
-        assert!(!s.doc.parts.contains_key(&hdr), "the template header is replaced by the letters' copies");
+        assert!(
+            !s.doc.parts.contains_key(&hdr),
+            "the template header is replaced by the letters' copies"
+        );
     }
 
     #[test]
     fn envelopes_and_labels() {
         let mut s = Session::new(Document::new());
-        s.run("mailings.envelopes", &json!({"delivery": "Jo Doe\n1 Main St"})).unwrap();
+        s.run(
+            "mailings.envelopes",
+            &json!({"delivery": "Jo Doe\n1 Main St"}),
+        )
+        .unwrap();
         assert!(s.doc.last_section.page_w > s.doc.last_section.page_h);
         s.run("mailings.labels", &json!({"text": "Hello"})).unwrap();
         assert!(s.doc.plain_text(StoryRef::Body).matches("Hello").count() == 30);
@@ -1257,26 +1643,65 @@ mod tests {
     fn envelope_sizes_add_to_document_and_label_products() {
         let mut s = Session::new(Document::from_text("Dear Jo,"));
         let r = s.run("mailings.envelopes", &json!({"delivery": "Jo Doe\n1 Main St", "return": "Me", "size": "C5", "add": true})).unwrap();
-        assert_eq!((r["width"].as_f64().map(|w| w.round()), r["height"].as_f64().map(|h| h.round())), (Some(649.0), Some(459.0)));
+        assert_eq!(
+            (
+                r["width"].as_f64().map(|w| w.round()),
+                r["height"].as_f64().map(|h| h.round())
+            ),
+            (Some(649.0), Some(459.0))
+        );
         let secs = s.doc.sections();
         assert_eq!(secs.len(), 2, "an envelope section of its own");
         assert!(secs[0].1.landscape && (secs[0].1.page_w - 649.1).abs() < 0.1);
         let text = s.doc.plain_text(StoryRef::Body);
-        assert!(text.starts_with("Me") && text.contains("1 Main St") && text.trim_end().ends_with("Dear Jo,"), "{text}");
-        assert!(s.run("mailings.envelopes", &json!({"size": "Envelope X"})).is_err());
+        assert!(
+            text.starts_with("Me")
+                && text.contains("1 Main St")
+                && text.trim_end().ends_with("Dear Jo,"),
+            "{text}"
+        );
+        assert!(
+            s.run("mailings.envelopes", &json!({"size": "Envelope X"}))
+                .is_err()
+        );
 
-        let r = s.run("mailings.labels", &json!({"text": "Ada", "product": "a4-2x7"})).unwrap();
+        let r = s
+            .run(
+                "mailings.labels",
+                &json!({"text": "Ada", "product": "a4-2x7"}),
+            )
+            .unwrap();
         assert_eq!(r["labels"], 14);
         assert!((s.doc.last_section.page_w - 595.3).abs() < 0.1, "A4 sheet");
-        let Some(Block::Table(t)) = s.doc.body.first().map(|b| &**b) else { panic!("no table") };
-        assert_eq!((t.rows.len(), t.grid.len()), (7, 3), "two label columns and the gap between");
+        let Some(Block::Table(t)) = s.doc.body.first().map(|b| &**b) else {
+            panic!("no table")
+        };
+        assert_eq!(
+            (t.rows.len(), t.grid.len()),
+            (7, 3),
+            "two label columns and the gap between"
+        );
         assert_eq!(s.doc.plain_text(StoryRef::Body).matches("Ada").count(), 14);
-        let r = s.run("mailings.labels", &json!({"text": "Bo", "product": "letter-3x10", "single": {"row": 2, "col": 3}})).unwrap();
+        let r = s
+            .run(
+                "mailings.labels",
+                &json!({"text": "Bo", "product": "letter-3x10", "single": {"row": 2, "col": 3}}),
+            )
+            .unwrap();
         assert_eq!(r["filled"], 1);
-        let Some(Block::Table(t)) = s.doc.body.first().map(|b| &**b) else { panic!("no table") };
+        let Some(Block::Table(t)) = s.doc.body.first().map(|b| &**b) else {
+            panic!("no table")
+        };
         // Row 2, column 3 (grid column 5: label, gap, label, gap, label).
-        let cell = t.rows.get(1).and_then(|r| r.cells.get(4)).and_then(|c| c.blocks.first());
+        let cell = t
+            .rows
+            .get(1)
+            .and_then(|r| r.cells.get(4))
+            .and_then(|c| c.blocks.first());
         assert!(matches!(cell.map(|b| &**b), Some(Block::Para(p)) if p.text == "Bo"));
-        assert!(s.run("mailings.labels", &json!({"product": "nope"})).is_err());
+        assert!(
+            s.run("mailings.labels", &json!({"product": "nope"}))
+                .is_err()
+        );
     }
 }

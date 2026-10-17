@@ -185,11 +185,12 @@ mod tests {
         let instance_entity = app.world_mut().spawn(WorldAssetRoot(handle.clone())).id();
         app.update();
 
-        assert!(app
-            .world()
-            .entity(instance_entity)
-            .get::<Children>()
-            .is_none());
+        assert!(
+            app.world()
+                .entity(instance_entity)
+                .get::<Children>()
+                .is_none()
+        );
 
         let mut world_1 = WorldAsset {
             world: World::new(),
@@ -317,11 +318,12 @@ mod tests {
         let instance_entity = app.world_mut().spawn(DynamicWorldRoot(handle.clone())).id();
         app.update();
 
-        assert!(app
-            .world()
-            .entity(instance_entity)
-            .get::<Children>()
-            .is_none());
+        assert!(
+            app.world()
+                .entity(instance_entity)
+                .get::<Children>()
+                .is_none()
+        );
 
         let create_dynamic_world = |mut world_asset: WorldAsset, world: &World| {
             let type_registry = world.resource::<AppTypeRegistry>().read();

@@ -207,7 +207,10 @@ impl FastTravelConfig {
     /// ```
     #[must_use]
     pub fn find_by_map(&self, map_id: HashId) -> Vec<&FastTravelMapInfo> {
-        self.map_infos.iter().filter(|m| m.map_id == map_id).collect()
+        self.map_infos
+            .iter()
+            .filter(|m| m.map_id == map_id)
+            .collect()
     }
 }
 

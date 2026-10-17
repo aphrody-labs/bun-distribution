@@ -44,9 +44,12 @@ fn load(vfs: &Vfs, pred: impl Fn(&str) -> bool, what: &str) -> serde_json::Value
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let cfg = load(
         &vfs,
@@ -75,15 +78,37 @@ fn main() {
     eprintln!("[skill_text fr] entrées = {}", text.len());
 
     use aphrody_nie_data::aura::{resolve_description, resolve_name};
-    let named = auras.iter().filter(|a| resolve_name(a, &text).is_some()).count();
-    let described = auras.iter().filter(|a| resolve_description(a, &text).is_some()).count();
-    eprintln!("noms d'aura résolus = {named}/{} ; descriptions = {described}", auras.len());
-    assert_eq!(named, auras.len(), "toutes les auras ont un nom (vérifié 443/443)");
+    let named = auras
+        .iter()
+        .filter(|a| resolve_name(a, &text).is_some())
+        .count();
+    let described = auras
+        .iter()
+        .filter(|a| resolve_description(a, &text).is_some())
+        .count();
+    eprintln!(
+        "noms d'aura résolus = {named}/{} ; descriptions = {described}",
+        auras.len()
+    );
+    assert_eq!(
+        named,
+        auras.len(),
+        "toutes les auras ont un nom (vérifié 443/443)"
+    );
 
     for a in auras.iter().take(6) {
         let n = resolve_name(a, &text).unwrap_or("");
         let d = resolve_description(a, &text).map(|s| s.chars().take(40).collect::<String>());
-        eprintln!("  aura {} ({}) → {:?}  desc={:?}", a.aura_id.to_hex(), a.asset_code, n, d);
+        eprintln!(
+            "  aura {} ({}) → {:?}  desc={:?}",
+            a.aura_id.to_hex(),
+            a.asset_code,
+            n,
+            d
+        );
     }
-    eprintln!("✓ END-TO-END OK : {named}/{} noms d'aura (Avatar/Keshin) résolus", auras.len());
+    eprintln!(
+        "✓ END-TO-END OK : {named}/{} noms d'aura (Avatar/Keshin) résolus",
+        auras.len()
+    );
 }

@@ -31,8 +31,13 @@ async fn main() -> Result<(), Error> {
 
 fn public_key() -> Option<&'static VerifyingKey> {
     static KEY: OnceLock<Option<VerifyingKey>> = OnceLock::new();
-    KEY.get_or_init(|| std::env::var("DISCORD_PUBLIC_KEY").ok().as_deref().and_then(parse_public_key))
-        .as_ref()
+    KEY.get_or_init(|| {
+        std::env::var("DISCORD_PUBLIC_KEY")
+            .ok()
+            .as_deref()
+            .and_then(parse_public_key)
+    })
+    .as_ref()
 }
 
 fn http_client() -> &'static reqwest::Client {
@@ -95,7 +100,11 @@ async fn handler(req: Request) -> Result<Response<ResponseBody>, Error> {
         return text_response(401, "invalid request signature");
     }
 
-    let Some(kind) = serde_json::from_slice::<Value>(&body).ok().as_ref().and_then(interaction_kind) else {
+    let Some(kind) = serde_json::from_slice::<Value>(&body)
+        .ok()
+        .as_ref()
+        .and_then(interaction_kind)
+    else {
         return text_response(400, "malformed interaction");
     };
     if kind == interaction_type::PING {

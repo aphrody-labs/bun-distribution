@@ -29,9 +29,11 @@ fn main() -> ExitCode {
         Some("game") => game::main(args),
         #[cfg(not(feature = "assets"))]
         Some("game") => {
-            eprintln!("bunre: this build lacks the `assets` feature (build with --features assets)");
+            eprintln!(
+                "bunre: this build lacks the `assets` feature (build with --features assets)"
+            );
             ExitCode::from(2)
-        },
+        }
         #[cfg(feature = "pipeline")]
         Some("pipeline") => match args
             .map(OsString::into_string)

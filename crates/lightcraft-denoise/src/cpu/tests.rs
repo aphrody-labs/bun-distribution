@@ -16,7 +16,10 @@ fn random(n: usize, seed: u32) -> Vec<f32> {
         .collect()
 }
 fn net(tile: usize, ch: u64, depth: usize, seed: u64) -> Net {
-    let p = std::env::temp_dir().join(format!("lc-purecpu-{}-{tile}-{ch}-{depth}-{seed}.onnx", std::process::id()));
+    let p = std::env::temp_dir().join(format!(
+        "lc-purecpu-{}-{tile}-{ch}-{depth}-{seed}.onnx",
+        std::process::id()
+    ));
     std::fs::write(&p, synthetic::unet_onnx(tile as u64, ch, depth, seed)).unwrap();
     let n = crate::onnx::read(&p).unwrap();
     std::fs::remove_file(p).unwrap();
@@ -31,7 +34,15 @@ fn agree(a: &[f32], b: &[f32]) {
 }
 #[test]
 fn all_operators_match_scalar_on_random_nets_and_odd_and_tiny_shapes() {
-    for (t, ch, d) in [(1, 3, 0), (3, 5, 0), (5, 7, 0), (6, 3, 1), (20, 5, 2), (36, 9, 2), (64, 8, 3)] {
+    for (t, ch, d) in [
+        (1, 3, 0),
+        (3, 5, 0),
+        (5, 7, 0),
+        (6, 3, 1),
+        (20, 5, 2),
+        (36, 9, 2),
+        (64, 8, 3),
+    ] {
         for seed in [1, 73] {
             let n = net(t, ch, d, seed);
             let r = NetRunner::new(&n, t).unwrap();
@@ -56,8 +67,26 @@ fn malformed_values_fail_before_execution_and_workspace_sizes_are_bounded() {
     let n = Net::new(
         4,
         vec![
-            Op::Conv(Conv { src: 0, src2: None, cin: 4, cout: 4096, k: 1, weight: vec![0.1; 4 * 4096], bias: vec![0.0; 4096], leaky: None }),
-            Op::Conv(Conv { src: 1, src2: None, cin: 4096, cout: 12, k: 1, weight: vec![0.1; 4096 * 12], bias: vec![0.0; 12], leaky: None }),
+            Op::Conv(Conv {
+                src: 0,
+                src2: None,
+                cin: 4,
+                cout: 4096,
+                k: 1,
+                weight: vec![0.1; 4 * 4096],
+                bias: vec![0.0; 4096],
+                leaky: None,
+            }),
+            Op::Conv(Conv {
+                src: 1,
+                src2: None,
+                cin: 4096,
+                cout: 12,
+                k: 1,
+                weight: vec![0.1; 4096 * 12],
+                bias: vec![0.0; 12],
+                leaky: None,
+            }),
             Op::DepthToSpace2 { src: 2 },
         ],
     )
@@ -66,7 +95,16 @@ fn malformed_values_fail_before_execution_and_workspace_sizes_are_bounded() {
     let ops = (0..100).map(|i| Op::MaxPool2 { src: i }).collect();
     let n = Net::new(4, ops).unwrap();
     assert!(NetRunner::new(&n, 16).is_err());
-    let c = Conv { src: 0, src2: None, cin: 4, cout: 12, k: 1, weight: vec![0.25; 48], bias: vec![0.0; 12], leaky: None };
+    let c = Conv {
+        src: 0,
+        src2: None,
+        cin: 4,
+        cout: 12,
+        k: 1,
+        weight: vec![0.25; 48],
+        bias: vec![0.0; 12],
+        leaky: None,
+    };
     for mode in 0..6 {
         let mut bad = c.clone();
         match mode {
@@ -82,13 +120,26 @@ fn malformed_values_fail_before_execution_and_workspace_sizes_are_bounded() {
 }
 #[test]
 fn bad_tiles_and_arithmetic_overflow_are_errors_and_do_not_poison_reuse() {
-    let c = Conv { src: 0, src2: None, cin: 4, cout: 12, k: 1, weight: vec![f32::MAX; 48], bias: vec![0.0; 12], leaky: None };
+    let c = Conv {
+        src: 0,
+        src2: None,
+        cin: 4,
+        cout: 12,
+        k: 1,
+        weight: vec![f32::MAX; 48],
+        bias: vec![0.0; 12],
+        leaky: None,
+    };
     let n = Net::new(4, vec![Op::Conv(c), Op::DepthToSpace2 { src: 1 }]).unwrap();
     let r = NetRunner::new(&n, 1).unwrap();
     assert!(r.run(&[]).is_err());
     assert!(r.run(&[f32::NAN; 4]).is_err());
     assert!(r.run(&[f32::INFINITY; 4]).is_err());
-    assert_eq!(r.idle.lock().unwrap().len(), 0, "invalid input never allocates a workspace");
+    assert_eq!(
+        r.idle.lock().unwrap().len(),
+        0,
+        "invalid input never allocates a workspace"
+    );
     assert!(r.run(&[2.0; 4]).is_err());
     assert_eq!(r.run(&[0.0; 4]).unwrap(), vec![0.0; 12]);
     // Matrix shape checks are the boundary in front of the dependency's asserting constructors.
@@ -99,7 +150,10 @@ fn shared_runner_serves_concurrent_tiles_without_cross_contamination() {
     let n = net(12, 5, 1, 97);
     let r = NetRunner::new(&n, 12).unwrap();
     let inputs: Vec<_> = (0..8).map(|s| random(4 * 12 * 12, s)).collect();
-    let answers: Vec<_> = inputs.iter().map(|x| reference::run(&n, 12, x).unwrap()).collect();
+    let answers: Vec<_> = inputs
+        .iter()
+        .map(|x| reference::run(&n, 12, x).unwrap())
+        .collect();
     std::thread::scope(|scope| {
         let mut handles = Vec::new();
         for (x, want) in inputs.iter().zip(&answers) {
@@ -117,17 +171,36 @@ fn shared_runner_serves_concurrent_tiles_without_cross_contamination() {
 }
 #[test]
 fn join_may_read_the_same_tensor_twice_and_leaky_up_convolution_is_supported() {
-    let c = ConvT2 { src: 0, cin: 4, cout: 3, weight: random(48, 2), bias: vec![0.1, -0.1, 0.0], leaky: Some(0.13) };
+    let c = ConvT2 {
+        src: 0,
+        cin: 4,
+        cout: 3,
+        weight: random(48, 2),
+        bias: vec![0.1, -0.1, 0.0],
+        leaky: Some(0.13),
+    };
     let n = Net::new(
         4,
         vec![
             Op::ConvT2(c),
-            Op::Conv(Conv { src: 1, src2: Some(1), cin: 6, cout: 3, k: 3, weight: random(162, 3), bias: vec![0.0; 3], leaky: Some(0.0) }),
+            Op::Conv(Conv {
+                src: 1,
+                src2: Some(1),
+                cin: 6,
+                cout: 3,
+                k: 3,
+                weight: random(162, 3),
+                bias: vec![0.0; 3],
+                leaky: Some(0.0),
+            }),
         ],
     )
     .unwrap();
     let x = random(4 * 3 * 3, 7);
-    agree(&NetRunner::new(&n, 3).unwrap().run(&x).unwrap(), &reference::run(&n, 3, &x).unwrap());
+    agree(
+        &NetRunner::new(&n, 3).unwrap().run(&x).unwrap(),
+        &reference::run(&n, 3, &x).unwrap(),
+    );
 }
 
 #[test]
@@ -135,7 +208,11 @@ fn reused_im2col_clears_all_edge_padding_between_images() {
     for t in [1, 3, 5, 36] {
         let n = net(t, 5, 0, 121);
         let r = NetRunner::new(&n, t).unwrap();
-        for x in [vec![1.0; 4 * t * t], vec![0.0; 4 * t * t], random(4 * t * t, 9)] {
+        for x in [
+            vec![1.0; 4 * t * t],
+            vec![0.0; 4 * t * t],
+            random(4 * t * t, 9),
+        ] {
             agree(&r.run(&x).unwrap(), &reference::run(&n, t, &x).unwrap());
         }
     }

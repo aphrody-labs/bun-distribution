@@ -13,7 +13,18 @@ fn dark(p: &Pixmap, x: u32, y: u32) -> bool {
 }
 
 fn render(d: &Document, p: NodeId) -> Pixmap {
-    render_view(d, p, &View { origin: (0.0, 0.0), scale: 1.0, width: 200, height: 200 }, &Options::default()).unwrap()
+    render_view(
+        d,
+        p,
+        &View {
+            origin: (0.0, 0.0),
+            scale: 1.0,
+            width: 200,
+            height: 200,
+        },
+        &Options::default(),
+    )
+    .unwrap()
 }
 
 /// A boolean group doing `op` over squares 20 wide at x = 10, 25, 40, … (overlapping neighbours),
@@ -21,9 +32,24 @@ fn render(d: &Document, p: NodeId) -> Pixmap {
 fn row_of_squares(op: BoolOp, n: usize) -> (Document, NodeId, NodeId, Vec<NodeId>) {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let b = d.create(p, NodeKind::BooleanOp { op }, "B", 0.0, 0.0, 0.0, 0.0).unwrap();
+    let b = d
+        .create(p, NodeKind::BooleanOp { op }, "B", 0.0, 0.0, 0.0, 0.0)
+        .unwrap();
     d.get_mut(b).unwrap().fills = vec![Paint::solid(Color::BLACK)];
-    let kids = (0..n).map(|i| d.create(b, NodeKind::Rectangle, "R", 10.0 + 15.0 * i as f64, 10.0, 20.0, 20.0).unwrap()).collect();
+    let kids = (0..n)
+        .map(|i| {
+            d.create(
+                b,
+                NodeKind::Rectangle,
+                "R",
+                10.0 + 15.0 * i as f64,
+                10.0,
+                20.0,
+                20.0,
+            )
+            .unwrap()
+        })
+        .collect();
     d.fit_to_children(b).unwrap();
     (d, p, b, kids)
 }
@@ -41,7 +67,11 @@ fn operands_combine_by_their_own_operations() {
     d.get_mut(kids[1]).unwrap().bool_op = Some(BoolOp::Subtract);
     let mixed = outline(&d, b);
     // (A − B) ∪ C: A keeps x 10..25, C is whole (x 40..60).
-    assert!((mixed.area().abs() - 20.0 * (15.0 + 20.0)).abs() < 0.5, "{}", mixed.area());
+    assert!(
+        (mixed.area().abs() - 20.0 * (15.0 + 20.0)).abs() < 0.5,
+        "{}",
+        mixed.area()
+    );
     let pix = render(&d, p);
     assert!(dark(&pix, 15, 20) && !dark(&pix, 32, 20) && dark(&pix, 50, 20));
     // The bottom operand's own operation changes nothing.
@@ -61,11 +91,16 @@ fn editing_one_operand_recombines_only_from_it_up() {
         let _ = outline(d, b);
         boolean_steps() - before
     };
-    assert_eq!(steps(&d), 7, "the first time: every operand above the bottom one");
+    assert_eq!(
+        steps(&d),
+        7,
+        "the first time: every operand above the bottom one"
+    );
     assert_eq!(steps(&d), 0, "unchanged: from the cache");
     // Moving the sixth operand (a drag frame) recombines it and the two above it.
     let mut moved = d.clone();
-    moved.get_mut(kids[5]).unwrap().transform = figcraft_geom::Affine::translate((3.0, 1.5)) * d.node(kids[5]).unwrap().transform;
+    moved.get_mut(kids[5]).unwrap().transform =
+        figcraft_geom::Affine::translate((3.0, 1.5)) * d.node(kids[5]).unwrap().transform;
     assert_eq!(steps(&moved), 3);
     // The top one: one step. Going back: cached.
     let mut top = moved.clone();
@@ -92,7 +127,11 @@ fn other_groups_are_not_recomputed() {
     d.get_mut(kids[3]).unwrap().width = 30.1;
     let _ = outline(&d, b);
     let _ = outline(&d2, b2);
-    assert_eq!(boolean_steps() - before, 1, "only the edited group's top step");
+    assert_eq!(
+        boolean_steps() - before,
+        1,
+        "only the edited group's top step"
+    );
 }
 
 #[test]
@@ -113,7 +152,11 @@ fn caches_drop_the_least_recently_used_half() {
     bad.move_to((f64::NAN, 0.0));
     bad.line_to((1.0, 1.0));
     let sq = figcraft_geom::Rect::new(0.0, 0.0, 1.0, 1.0).to_path(0.1);
-    assert!(fold_cached(&[(sq, BoolOp::Union), (bad, BoolOp::Union)]).elements().is_empty());
+    assert!(
+        fold_cached(&[(sq, BoolOp::Union), (bad, BoolOp::Union)])
+            .elements()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -121,13 +164,23 @@ fn one_sided_widths_paint_one_side() {
     // A line from (10, 100) to (190, 100), 20 wide, all of it on the right (+y, looking along it).
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let l = d.create(p, NodeKind::Line, "L", 10.0, 100.0, 180.0, 0.0).unwrap();
+    let l = d
+        .create(p, NodeKind::Line, "L", 10.0, 100.0, 180.0, 0.0)
+        .unwrap();
     let n = d.get_mut(l).unwrap();
     n.strokes = vec![Paint::solid(Color::BLACK)];
     n.stroke.weight = 20.0;
-    n.stroke.width_profile = Some(WidthProfile { points: vec![WidthPoint::from_sides(0.0, 0.0, 2.0), WidthPoint::from_sides(1.0, 0.0, 2.0)] });
+    n.stroke.width_profile = Some(WidthProfile {
+        points: vec![
+            WidthPoint::from_sides(0.0, 0.0, 2.0),
+            WidthPoint::from_sides(1.0, 0.0, 2.0),
+        ],
+    });
     let pix = render(&d, p);
-    assert!(dark(&pix, 100, 110) && dark(&pix, 100, 118), "the right side, 20 deep");
+    assert!(
+        dark(&pix, 100, 110) && dark(&pix, 100, 118),
+        "the right side, 20 deep"
+    );
     assert!(!dark(&pix, 100, 95), "nothing on the left");
     // The paint bounds reach the widest side.
     let b = d.world_render_bounds(l).unwrap();

@@ -29,7 +29,9 @@ mod lex;
 mod report;
 
 pub use includes::{Loaded, Loader};
-pub use report::{Directive, Feature, Include, IncludeStatus, MenuString, Named, Outside, Problem, Report, Target};
+pub use report::{
+    Directive, Feature, Include, IncludeStatus, MenuString, Named, Outside, Problem, Report, Target,
+};
 
 /// The limits that keep a check small and quick; [`Limits::default`] holds the ones VectorCraft
 /// uses.
@@ -123,7 +125,14 @@ pub enum Need {
 }
 
 impl Need {
-    pub const ALL: [Need; 6] = [Need::Language, Need::Dom, Need::Files, Need::MenuCommands, Need::Dialogs, Need::HostOnly];
+    pub const ALL: [Need; 6] = [
+        Need::Language,
+        Need::Dom,
+        Need::Files,
+        Need::MenuCommands,
+        Need::Dialogs,
+        Need::HostOnly,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -169,7 +178,17 @@ pub fn check(name: &str, bytes: &[u8], loader: Option<&mut dyn Loader>, limits: 
     // With a loader, this first scan finds the includes and what the script's variables hold; its
     // tallies are left out.
     let mut tallies = report::Acc::new(limits);
-    let scan = analyze::scan(&text, None, std::rc::Rc::from([]), &none, if loader.is_some() { &mut tallies } else { &mut acc });
+    let scan = analyze::scan(
+        &text,
+        None,
+        std::rc::Rc::from([]),
+        &none,
+        if loader.is_some() {
+            &mut tallies
+        } else {
+            &mut acc
+        },
+    );
     acc.steps = acc.steps.saturating_add(tallies.steps);
     if scan.module {
         // A module's report holds its kind and its lines, and none of what the scan found.
@@ -183,7 +202,14 @@ pub fn check(name: &str, bytes: &[u8], loader: Option<&mut dyn Loader>, limits: 
         return acc.finish(Kind::Script, scan.lines);
     };
     let mut known = scan.known;
-    let read = includes::follow(&mut acc, scan.includes, loader, name, bytes.len(), &mut known);
+    let read = includes::follow(
+        &mut acc,
+        scan.includes,
+        loader,
+        name,
+        bytes.len(),
+        &mut known,
+    );
     // A variable may get what it holds from another file's variable: the files are scanned again,
     // each with what is known so far, while that grows, at most three more times.
     for _ in 0..3 {
@@ -192,7 +218,14 @@ pub fn check(name: &str, bytes: &[u8], loader: Option<&mut dyn Loader>, limits: 
         let more = analyze::scan(&text, None, std::rc::Rc::from([]), &known, &mut tallies).known;
         known.add(more, limits.entries);
         for file in &read {
-            let more = analyze::scan(&file.text, Some(&file.path), std::rc::Rc::clone(&file.paths), &known, &mut tallies).known;
+            let more = analyze::scan(
+                &file.text,
+                Some(&file.path),
+                std::rc::Rc::clone(&file.paths),
+                &known,
+                &mut tallies,
+            )
+            .known;
             known.add(more, limits.entries);
         }
         acc.steps = acc.steps.saturating_add(tallies.steps);
@@ -219,11 +252,17 @@ pub(crate) fn base_name(name: &str) -> &str {
 /// A compiled script: named `.jsxbin`, or text that starts with `@JSXBIN@` (after a byte order mark
 /// and blanks).
 pub(crate) fn is_compiled(name: &str, bytes: &[u8]) -> bool {
-    if base_name(name).rsplit_once('.').is_some_and(|(_, ext)| ext.eq_ignore_ascii_case("jsxbin")) {
+    if base_name(name)
+        .rsplit_once('.')
+        .is_some_and(|(_, ext)| ext.eq_ignore_ascii_case("jsxbin"))
+    {
         return true;
     }
     let b = bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes);
-    let start = b.iter().position(|c| !c.is_ascii_whitespace()).unwrap_or(b.len());
+    let start = b
+        .iter()
+        .position(|c| !c.is_ascii_whitespace())
+        .unwrap_or(b.len());
     b.get(start..).is_some_and(|b| b.starts_with(b"@JSXBIN@"))
 }
 
@@ -234,7 +273,10 @@ pub(crate) fn is_text(bytes: &[u8]) -> bool {
     if head.contains(&0) {
         return false;
     }
-    let controls = head.iter().filter(|&&b| b < 0x20 && !matches!(b, b'\t' | b'\n' | b'\r' | 0x0b | 0x0c | 0x1b)).count();
+    let controls = head
+        .iter()
+        .filter(|&&b| b < 0x20 && !matches!(b, b'\t' | b'\n' | b'\r' | 0x0b | 0x0c | 0x1b))
+        .count();
     controls * 10 <= head.len()
 }
 

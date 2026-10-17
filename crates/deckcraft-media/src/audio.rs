@@ -35,7 +35,10 @@ impl Pcm {
     /// Sample `frame` of channel `ch` (0 past the end).
     pub fn at(&self, frame: usize, ch: usize) -> f32 {
         let c = self.channels.max(1) as usize;
-        self.samples.get(frame * c + ch.min(c - 1)).copied().unwrap_or(0.0)
+        self.samples
+            .get(frame * c + ch.min(c - 1))
+            .copied()
+            .unwrap_or(0.0)
     }
     /// Root-mean-square level over all samples.
     pub fn rms(&self) -> f32 {
@@ -88,14 +91,20 @@ fn decode_ogg_opus(bytes: &Bytes) -> Option<Result<Pcm>> {
     let s = file.stream_of(filmcraft_ogg::Codec::Opus)?;
     let stream = file.streams.get(s)?;
     Some((|| {
-        let head = stream.headers.first().ok_or(MediaError::Corrupt("Opus header missing".into()))?;
-        let mut dec = filmcraft_opus::Decoder::new(head).map_err(|e| MediaError::Corrupt(e.to_string()))?;
+        let head = stream
+            .headers
+            .first()
+            .ok_or(MediaError::Corrupt("Opus header missing".into()))?;
+        let mut dec =
+            filmcraft_opus::Decoder::new(head).map_err(|e| MediaError::Corrupt(e.to_string()))?;
         dec.set_trim_pre_skip(true);
         let channels = dec.channels() as u16;
         let timing = filmcraft_ogg::OpusTiming::of(stream, dec.pre_skip() as u32);
         let mut out = Vec::new();
         for i in 0..stream.packets.len() {
-            let Ok(p) = file.read_packet(src, s, i) else { continue };
+            let Ok(p) = file.read_packet(src, s, i) else {
+                continue;
+            };
             match dec.decode(Some(&p)) {
                 Ok(planes) => Pcm::push_planar(&planes, &mut out),
                 Err(e) => log::debug!("opus packet {i}: {e}"),
@@ -106,7 +115,11 @@ fn decode_ogg_opus(bytes: &Bytes) -> Option<Result<Pcm>> {
         if total > 0 && total < out.len() {
             out.truncate(total);
         }
-        Ok(Pcm { rate: 48_000, channels, samples: out })
+        Ok(Pcm {
+            rate: 48_000,
+            channels,
+            samples: out,
+        })
     })())
 }
 
@@ -114,24 +127,35 @@ fn decode_ogg_opus(bytes: &Bytes) -> Option<Result<Pcm>> {
 fn decode_mkv_opus(bytes: &Bytes) -> Option<Result<Pcm>> {
     let src: &[u8] = bytes;
     let file = filmcraft_matroska::open(src).ok()?;
-    let (ti, head) = file.tracks.iter().enumerate().find_map(|(i, t)| match &t.codec {
-        filmcraft_matroska::Codec::Opus { head } => Some((i, head.clone())),
-        _ => None,
-    })?;
+    let (ti, head) = file
+        .tracks
+        .iter()
+        .enumerate()
+        .find_map(|(i, t)| match &t.codec {
+            filmcraft_matroska::Codec::Opus { head } => Some((i, head.clone())),
+            _ => None,
+        })?;
     Some((|| {
-        let mut dec = filmcraft_opus::Decoder::new(&head).map_err(|e| MediaError::Corrupt(e.to_string()))?;
+        let mut dec =
+            filmcraft_opus::Decoder::new(&head).map_err(|e| MediaError::Corrupt(e.to_string()))?;
         dec.set_trim_pre_skip(true);
         let channels = dec.channels() as u16;
         let mut out = Vec::new();
         let n = file.tracks.get(ti).map(|t| t.samples.len()).unwrap_or(0);
         for i in 0..n {
-            let Ok(p) = file.read_sample(src, ti, i) else { continue };
+            let Ok(p) = file.read_sample(src, ti, i) else {
+                continue;
+            };
             match dec.decode(Some(&p)) {
                 Ok(planes) => Pcm::push_planar(&planes, &mut out),
                 Err(e) => log::debug!("opus packet {i}: {e}"),
             }
         }
-        Ok(Pcm { rate: 48_000, channels, samples: out })
+        Ok(Pcm {
+            rate: 48_000,
+            channels,
+            samples: out,
+        })
     })())
 }
 
@@ -143,7 +167,10 @@ fn sym_err(e: SymError) -> MediaError {
 }
 
 fn decode_symphonia(bytes: &Bytes, ext: &str) -> Result<Pcm> {
-    let mss = MediaSourceStream::new(Box::new(Cursor::new(Shared(bytes.clone()))), MediaSourceStreamOptions::default());
+    let mss = MediaSourceStream::new(
+        Box::new(Cursor::new(Shared(bytes.clone()))),
+        MediaSourceStreamOptions::default(),
+    );
     let mut hint = Hint::new();
     match ext {
         "unknown" => {}
@@ -154,11 +181,16 @@ fn decode_symphonia(bytes: &Bytes, ext: &str) -> Result<Pcm> {
             hint.with_extension(e);
         }
     }
-    let opts = FormatOptions { enable_gapless: true, ..Default::default() };
-    let probed = symphonia::default::get_probe().format(&hint, mss, &opts, &MetadataOptions::default()).map_err(|e| match e {
-        SymError::Unsupported(_) => MediaError::Unsupported("this audio format".into()),
-        other => sym_err(other),
-    })?;
+    let opts = FormatOptions {
+        enable_gapless: true,
+        ..Default::default()
+    };
+    let probed = symphonia::default::get_probe()
+        .format(&hint, mss, &opts, &MetadataOptions::default())
+        .map_err(|e| match e {
+            SymError::Unsupported(_) => MediaError::Unsupported("this audio format".into()),
+            other => sym_err(other),
+        })?;
     let mut format = probed.format;
     let codecs = symphonia::default::get_codecs();
     // The first track we can decode (a video's audio track follows its video track).
@@ -166,7 +198,12 @@ fn decode_symphonia(bytes: &Bytes, ext: &str) -> Result<Pcm> {
         .tracks()
         .iter()
         .filter(|t| t.codec_params.codec != CODEC_TYPE_NULL)
-        .find_map(|t| codecs.make(&t.codec_params, &DecoderOptions::default()).ok().map(|d| (t.id, d)))
+        .find_map(|t| {
+            codecs
+                .make(&t.codec_params, &DecoderOptions::default())
+                .ok()
+                .map(|d| (t.id, d))
+        })
         .ok_or(MediaError::Missing("audio track we can decode"))?;
     let mut out: Vec<f32> = Vec::new();
     let mut rate = 0;
@@ -202,7 +239,10 @@ fn decode_symphonia(bytes: &Bytes, ext: &str) -> Result<Pcm> {
                     continue;
                 }
                 let need = decoded.capacity() as u64;
-                if buf.as_ref().is_none_or(|b| (b.capacity() as u64) < need * ch as u64) {
+                if buf
+                    .as_ref()
+                    .is_none_or(|b| (b.capacity() as u64) < need * ch as u64)
+                {
                     buf = Some(SampleBuffer::<f32>::new(need, spec));
                 }
                 if let Some(b) = buf.as_mut() {
@@ -223,23 +263,47 @@ fn decode_symphonia(bytes: &Bytes, ext: &str) -> Result<Pcm> {
     if rate == 0 {
         return Err(MediaError::Corrupt("no audio could be decoded".into()));
     }
-    Ok(Pcm { rate, channels: channels.max(1), samples: out })
+    Ok(Pcm {
+        rate,
+        channels: channels.max(1),
+        samples: out,
+    })
 }
 
 /// Sample rate, channels and frame count from symphonia's container probe (no decoding).
 pub(crate) fn probe_symphonia(bytes: &Bytes, ext: &str) -> Option<(String, u32, u16, Option<u64>)> {
-    let mss = MediaSourceStream::new(Box::new(Cursor::new(Shared(bytes.clone()))), MediaSourceStreamOptions::default());
+    let mss = MediaSourceStream::new(
+        Box::new(Cursor::new(Shared(bytes.clone()))),
+        MediaSourceStreamOptions::default(),
+    );
     let mut hint = Hint::new();
     if ext != "unknown" {
         hint.with_extension(ext);
     }
-    let opts = FormatOptions { enable_gapless: true, ..Default::default() };
-    let probed = symphonia::default::get_probe().format(&hint, mss, &opts, &MetadataOptions::default()).ok()?;
+    let opts = FormatOptions {
+        enable_gapless: true,
+        ..Default::default()
+    };
+    let probed = symphonia::default::get_probe()
+        .format(&hint, mss, &opts, &MetadataOptions::default())
+        .ok()?;
     let codecs = symphonia::default::get_codecs();
-    let t = probed.format.tracks().iter().find(|t| t.codec_params.codec != CODEC_TYPE_NULL)?;
+    let t = probed
+        .format
+        .tracks()
+        .iter()
+        .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)?;
     let p = &t.codec_params;
-    let name = codecs.get_codec(p.codec).map(|d| d.short_name.to_string()).unwrap_or_else(|| "unknown".into());
-    Some((name, p.sample_rate.unwrap_or(0), p.channels.map(|c| c.count() as u16).unwrap_or(0), p.n_frames))
+    let name = codecs
+        .get_codec(p.codec)
+        .map(|d| d.short_name.to_string())
+        .unwrap_or_else(|| "unknown".into());
+    Some((
+        name,
+        p.sample_rate.unwrap_or(0),
+        p.channels.map(|c| c.count() as u16).unwrap_or(0),
+        p.n_frames,
+    ))
 }
 
 /// Interleaved PCM resampled (linear) to `rate`.
@@ -262,7 +326,11 @@ pub fn resample(pcm: &Pcm, rate: u32) -> Pcm {
             out.push(a + (b - a) * f);
         }
     }
-    Pcm { rate, channels: pcm.channels, samples: out }
+    Pcm {
+        rate,
+        channels: pcm.channels,
+        samples: out,
+    }
 }
 
 #[cfg(test)]
@@ -271,7 +339,11 @@ mod tests {
 
     #[test]
     fn resample_keeps_duration_and_shape() {
-        let pcm = Pcm { rate: 100, channels: 1, samples: (0..100).map(|i| i as f32 / 100.0).collect() };
+        let pcm = Pcm {
+            rate: 100,
+            channels: 1,
+            samples: (0..100).map(|i| i as f32 / 100.0).collect(),
+        };
         let r = resample(&pcm, 200);
         assert_eq!(r.frames(), 200);
         assert!((r.duration() - 1.0).abs() < 1e-9);
@@ -282,6 +354,9 @@ mod tests {
     fn wma_is_reported_unsupported() {
         let mut b = crate::ASF_HEADER.to_vec();
         b.extend_from_slice(&[0; 64]);
-        assert!(matches!(decode(&std::sync::Arc::new(b)), Err(MediaError::Unsupported(_))));
+        assert!(matches!(
+            decode(&std::sync::Arc::new(b)),
+            Err(MediaError::Unsupported(_))
+        ));
     }
 }

@@ -317,20 +317,51 @@ mod tests {
         program.invocations = 3;
         let mut runtime = RuntimeInfo::default();
         let layout = TessellationControlLayout::new(&program, &runtime).unwrap();
-        assert_eq!((layout.input_stride(), layout.output_stride(), layout.patch_stride()), (16, 64, 24));
-        runtime.previous_stage_stores.set(Attribute::generic(29, 0).0 as usize, true);
-        program.info.stores.set(Attribute::generic(31, 0).0 as usize, true);
+        assert_eq!(
+            (
+                layout.input_stride(),
+                layout.output_stride(),
+                layout.patch_stride()
+            ),
+            (16, 64, 24)
+        );
+        runtime
+            .previous_stage_stores
+            .set(Attribute::generic(29, 0).0 as usize, true);
+        program
+            .info
+            .stores
+            .set(Attribute::generic(31, 0).0 as usize, true);
         program.info.uses_patches[29] = true;
         let layout = TessellationControlLayout::new(&program, &runtime).unwrap();
-        assert_eq!((layout.input_stride(), layout.output_stride(), layout.patch_stride()), (32, 80, 48));
+        assert_eq!(
+            (
+                layout.input_stride(),
+                layout.output_stride(),
+                layout.patch_stride()
+            ),
+            (32, 80, 48)
+        );
         assert_eq!(layout.input_generic_mask(), 1 << 29);
         for index in 0..32 {
-            runtime.previous_stage_stores.set(Attribute::generic(index, 0).0 as usize, true);
-            program.info.stores.set(Attribute::generic(index, 0).0 as usize, true);
+            runtime
+                .previous_stage_stores
+                .set(Attribute::generic(index, 0).0 as usize, true);
+            program
+                .info
+                .stores
+                .set(Attribute::generic(index, 0).0 as usize, true);
         }
         program.info.uses_patches.fill(true);
         let layout = TessellationControlLayout::new(&program, &runtime).unwrap();
-        assert_eq!((layout.input_stride(), layout.output_stride(), layout.patch_stride()), (528, 576, 512));
+        assert_eq!(
+            (
+                layout.input_stride(),
+                layout.output_stride(),
+                layout.patch_stride()
+            ),
+            (528, 576, 512)
+        );
         assert_eq!(layout.input_generic_mask(), u32::MAX);
     }
 
@@ -454,9 +485,16 @@ mod tests {
     fn control_input_transport_keeps_unread_producer_attributes() {
         let mut program = Program::new(Stage::TessellationControl);
         program.invocations = 3;
-        program.info.loads.set(Attribute::generic(7, 0).0 as usize, true);
+        program
+            .info
+            .loads
+            .set(Attribute::generic(7, 0).0 as usize, true);
         let mut runtime = RuntimeInfo::default();
-        for index in [1, 7, 29] { runtime.previous_stage_stores.set(Attribute::generic(index, 0).0 as usize, true); }
+        for index in [1, 7, 29] {
+            runtime
+                .previous_stage_stores
+                .set(Attribute::generic(index, 0).0 as usize, true);
+        }
         let layout = TessellationControlLayout::new(&program, &runtime).unwrap();
         assert_eq!(layout.input_generics, 1 << 7);
         assert_eq!(layout.input_stride(), 64);
@@ -465,11 +503,25 @@ mod tests {
         assert!(input.contains("float4 attr1;"));
         assert!(input.contains("float4 attr7;"));
         assert!(input.contains("float4 attr29;"));
-        assert_eq!(layout.input_expression(Attribute::generic(7, 0), "vertex").unwrap(), "patch_input[vertex].attr7.x");
+        assert_eq!(
+            layout
+                .input_expression(Attribute::generic(7, 0), "vertex")
+                .unwrap(),
+            "patch_input[vertex].attr7.x"
+        );
         runtime.generic_input_types[7] = AttributeType::Disabled;
         let disabled = TessellationControlLayout::new(&program, &runtime).unwrap();
-        assert_eq!(disabled.input_stride(), 64, "disabling a consumer input cannot change producer stride");
-        assert_eq!(disabled.input_expression(Attribute::generic(7, 0), "vertex").unwrap(), "0.0f");
+        assert_eq!(
+            disabled.input_stride(),
+            64,
+            "disabling a consumer input cannot change producer stride"
+        );
+        assert_eq!(
+            disabled
+                .input_expression(Attribute::generic(7, 0), "vertex")
+                .unwrap(),
+            "0.0f"
+        );
     }
 
     #[test]

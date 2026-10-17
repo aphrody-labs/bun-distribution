@@ -240,7 +240,7 @@ pub(crate) use impl_custom_attribute_methods;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{enums::VariantInfo, info::Typed, TypeInfo};
+    use crate::{TypeInfo, enums::VariantInfo, info::Typed};
     use alloc::{format, string::String};
     use core::ops::RangeInclusive;
 
@@ -268,9 +268,11 @@ mod tests {
             .build();
 
         let value = attributes.get_by_id(TypeId::of::<String>()).unwrap();
-        assert!(value
-            .reflect_partial_eq(&String::from("Hello, World!"))
-            .unwrap());
+        assert!(
+            value
+                .reflect_partial_eq(&String::from("Hello, World!"))
+                .unwrap()
+        );
     }
 
     #[test]

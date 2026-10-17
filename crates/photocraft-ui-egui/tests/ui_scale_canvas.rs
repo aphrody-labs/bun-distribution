@@ -17,14 +17,20 @@ type Harness = egui_kittest::Harness<'static, PhotocraftApp>;
 /// The app with the GPU canvas (`gpu`), or without it (the CPU fallback path).
 fn harness(gpu: bool) -> Option<Harness> {
     let built = std::panic::catch_unwind(|| {
-        egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).with_pixels_per_point(1.0).with_max_steps(64).wgpu().build_eframe(|cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-            if let Some(rs) = cc.wgpu_render_state.as_ref().filter(|_| gpu) {
-                app.set_wgpu(rs.clone());
-            }
-            app
-        })
+        egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1200.0, 800.0))
+            .with_pixels_per_point(1.0)
+            .with_max_steps(64)
+            .wgpu()
+            .build_eframe(|cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                let mut app =
+                    PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+                if let Some(rs) = cc.wgpu_render_state.as_ref().filter(|_| gpu) {
+                    app.set_wgpu(rs.clone());
+                }
+                app
+            })
     });
     match built {
         Ok(h) => Some(h),
@@ -90,17 +96,36 @@ fn assert_document_size_is_physical(gpu: bool) {
         {
             let app = h.state_mut();
             while app.session.active().is_some() {
-                app.run("file.close", json!({"discard": true})).expect("close");
+                app.run("file.close", json!({"discard": true}))
+                    .expect("close");
             }
-            app.run("prefs.set", json!({"values": {"interface.uiScale": ui_scale}})).expect("ui scale");
-            app.run("file.new", json!({"width": DOC, "height": DOC, "background": "white"})).expect("new");
-            app.run("edit.fill", json!({"color": "#000000"})).expect("fill");
+            app.run(
+                "prefs.set",
+                json!({"values": {"interface.uiScale": ui_scale}}),
+            )
+            .expect("ui scale");
+            app.run(
+                "file.new",
+                json!({"width": DOC, "height": DOC, "background": "white"}),
+            )
+            .expect("new");
+            app.run("edit.fill", json!({"color": "#000000"}))
+                .expect("fill");
             app.sync_views();
         }
         h.run_steps(6);
-        assert_eq!(h.state().perf.gpu, gpu, "UI Scale {ui_scale}: expected the {} canvas", if gpu { "GPU" } else { "CPU" });
+        assert_eq!(
+            h.state().perf.gpu,
+            gpu,
+            "UI Scale {ui_scale}: expected the {} canvas",
+            if gpu { "GPU" } else { "CPU" }
+        );
         for zoom in [1.0f32, 2.0] {
-            control(&mut h, "ui.set", json!({"zoom": zoom, "center": [DOC as f32 / 2.0, DOC as f32 / 2.0]}));
+            control(
+                &mut h,
+                "ui.set",
+                json!({"zoom": zoom, "center": [DOC as f32 / 2.0, DOC as f32 / 2.0]}),
+            );
             h.run_steps(4);
             let (w, hgt) = document_physical_size(&mut h);
             let want = (DOC as f32 * zoom).round() as i64;

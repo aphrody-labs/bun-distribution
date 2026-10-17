@@ -24,13 +24,27 @@ struct Key {
 
 impl From<RenderRequest> for Key {
     fn from(r: RenderRequest) -> Self {
-        Self { page: r.page, kind: r.kind, tile: r.tile, scale: r.scale.to_bits(), tag: r.tag, preview: r.preview }
+        Self {
+            page: r.page,
+            kind: r.kind,
+            tile: r.tile,
+            scale: r.scale.to_bits(),
+            tag: r.tag,
+            preview: r.preview,
+        }
     }
 }
 
 impl Key {
     fn request(self) -> RenderRequest {
-        RenderRequest { page: self.page, kind: self.kind, tile: self.tile, scale: f32::from_bits(self.scale), tag: self.tag, preview: self.preview }
+        RenderRequest {
+            page: self.page,
+            kind: self.kind,
+            tile: self.tile,
+            scale: f32::from_bits(self.scale),
+            tag: self.tag,
+            preview: self.preview,
+        }
     }
 }
 
@@ -53,8 +67,16 @@ fn result_bytes(page: &RenderedPage) -> usize {
     if let Some(text) = &page.text {
         bytes = bytes
             .saturating_add(std::mem::size_of_val(&**text))
-            .saturating_add(text.glyphs.capacity().saturating_mul(std::mem::size_of::<crate::TextGlyph>()))
-            .saturating_add(text.line_of.capacity().saturating_mul(std::mem::size_of::<u32>()))
+            .saturating_add(
+                text.glyphs
+                    .capacity()
+                    .saturating_mul(std::mem::size_of::<crate::TextGlyph>()),
+            )
+            .saturating_add(
+                text.line_of
+                    .capacity()
+                    .saturating_mul(std::mem::size_of::<u32>()),
+            )
             .saturating_add(text.space_before.capacity());
         for glyph in &text.glyphs {
             bytes = bytes.saturating_add(glyph.text.capacity());
@@ -85,7 +107,13 @@ impl State {
         {
             // Preserve reverse demand order: the pop end belongs to visible work, even
             // when an older background completion needs retrying after parser retirement.
-            let index = self.pending.partition_point(|r| self.desired.get(&Key::from(*r)).copied().unwrap_or(usize::MAX) > priority);
+            let index = self.pending.partition_point(|r| {
+                self.desired
+                    .get(&Key::from(*r))
+                    .copied()
+                    .unwrap_or(usize::MAX)
+                    > priority
+            });
             self.pending.insert(index, req);
         }
     }
@@ -99,7 +127,12 @@ impl State {
                 .results
                 .iter()
                 .enumerate()
-                .min_by_key(|(_, r)| self.desired.get(&Key::from(r.page.request)).copied().unwrap_or(usize::MAX))
+                .min_by_key(|(_, r)| {
+                    self.desired
+                        .get(&Key::from(r.page.request))
+                        .copied()
+                        .unwrap_or(usize::MAX)
+                })
                 .map(|(index, _)| index)?;
             let done = self.results.remove(index)?;
             self.bytes = self.bytes.saturating_sub(done.bytes);
@@ -126,7 +159,12 @@ pub(super) struct WorkQueue {
 
 impl Default for WorkQueue {
     fn default() -> Self {
-        Self { state: Mutex::default(), changed: Condvar::new(), max_bytes: RESULT_BYTES, max_count: RESULT_COUNT }
+        Self {
+            state: Mutex::default(),
+            changed: Condvar::new(),
+            max_bytes: RESULT_BYTES,
+            max_count: RESULT_COUNT,
+        }
     }
 }
 
@@ -137,14 +175,41 @@ impl WorkQueue {
             return Vec::new();
         }
         let mut desired = HashSet::with_capacity(requests.len());
-        let requests: Vec<_> = requests.into_iter().filter(|r| desired.insert(Key::from(*r))).collect();
-        state.results.retain(|r| desired.contains(&Key::from(r.page.request)) && valid(&r.valid));
-        state.bytes = state.results.iter().fold(0usize, |n, r| n.saturating_add(r.bytes));
-        let completed: HashSet<_> = state.results.iter().map(|r| Key::from(r.page.request)).collect();
-        let obsolete = state.active.iter().filter(|key| !desired.contains(key)).copied().map(Key::request).collect();
-        state.desired = requests.iter().enumerate().map(|(priority, req)| (Key::from(*req), priority)).collect();
-        state.pending =
-            requests.into_iter().rev().filter(|r| !state.active.contains(&Key::from(*r)) && !completed.contains(&Key::from(*r))).collect();
+        let requests: Vec<_> = requests
+            .into_iter()
+            .filter(|r| desired.insert(Key::from(*r)))
+            .collect();
+        state
+            .results
+            .retain(|r| desired.contains(&Key::from(r.page.request)) && valid(&r.valid));
+        state.bytes = state
+            .results
+            .iter()
+            .fold(0usize, |n, r| n.saturating_add(r.bytes));
+        let completed: HashSet<_> = state
+            .results
+            .iter()
+            .map(|r| Key::from(r.page.request))
+            .collect();
+        let obsolete = state
+            .active
+            .iter()
+            .filter(|key| !desired.contains(key))
+            .copied()
+            .map(Key::request)
+            .collect();
+        state.desired = requests
+            .iter()
+            .enumerate()
+            .map(|(priority, req)| (Key::from(*req), priority))
+            .collect();
+        state.pending = requests
+            .into_iter()
+            .rev()
+            .filter(|r| {
+                !state.active.contains(&Key::from(*r)) && !completed.contains(&Key::from(*r))
+            })
+            .collect();
         drop(state);
         self.changed.notify_all();
         obsolete
@@ -187,12 +252,20 @@ impl WorkQueue {
     /// A failed shared parser invalidates its token. Such results are retried by a worker
     /// using the pool's fallback parser, including when failure occurs after enqueueing.
     #[cfg(any(test, not(target_arch = "wasm32")))]
-    pub(super) fn send_valid(&self, page: RenderedPage, token: Option<Arc<AtomicBool>>) -> Result<(), ()> {
+    pub(super) fn send_valid(
+        &self,
+        page: RenderedPage,
+        token: Option<Arc<AtomicBool>>,
+    ) -> Result<(), ()> {
         self.send_valid_with_tokens(page, token.into_iter().collect())
     }
 
     #[cfg(any(test, not(target_arch = "wasm32")))]
-    pub(super) fn send_valid_with_tokens(&self, page: RenderedPage, tokens: Vec<Arc<AtomicBool>>) -> Result<(), ()> {
+    pub(super) fn send_valid_with_tokens(
+        &self,
+        page: RenderedPage,
+        tokens: Vec<Arc<AtomicBool>>,
+    ) -> Result<(), ()> {
         let key = Key::from(page.request);
         let bytes = result_bytes(&page);
         let mut state = lock(&self.state);
@@ -210,17 +283,27 @@ impl WorkQueue {
                 self.changed.notify_all();
                 return Ok(());
             }
-            if state.results.len() < self.max_count && (state.results.is_empty() || state.bytes.saturating_add(bytes) <= self.max_bytes) {
+            if state.results.len() < self.max_count
+                && (state.results.is_empty() || state.bytes.saturating_add(bytes) <= self.max_bytes)
+            {
                 state.active.remove(&key);
                 state.bytes = state.bytes.saturating_add(bytes);
-                state.results.push_back(Completed { page, bytes, valid: tokens });
+                state.results.push_back(Completed {
+                    page,
+                    bytes,
+                    valid: tokens,
+                });
                 drop(state);
                 self.changed.notify_all();
                 return Ok(());
             }
             // The parser validity token can change independently of this queue. Bound the
             // wait so failed generations are released even while the consumer is paused.
-            state = self.changed.wait_timeout(state, Duration::from_millis(25)).unwrap_or_else(|p| p.into_inner()).0;
+            state = self
+                .changed
+                .wait_timeout(state, Duration::from_millis(25))
+                .unwrap_or_else(|p| p.into_inner())
+                .0;
         }
     }
 
@@ -243,14 +326,21 @@ impl WorkQueue {
             return;
         }
         let bytes = result_bytes(&page);
-        while !state.results.is_empty() && (state.results.len() >= self.max_count || state.bytes.saturating_add(bytes) > self.max_bytes) {
+        while !state.results.is_empty()
+            && (state.results.len() >= self.max_count
+                || state.bytes.saturating_add(bytes) > self.max_bytes)
+        {
             if let Some(old) = state.results.pop_back() {
                 state.bytes = state.bytes.saturating_sub(old.bytes);
                 state.retry(old.page.request);
             }
         }
         state.bytes = state.bytes.saturating_add(bytes);
-        state.results.push_front(Completed { page, bytes, valid: Vec::new() });
+        state.results.push_front(Completed {
+            page,
+            bytes,
+            valid: Vec::new(),
+        });
         drop(state);
         self.changed.notify_all();
     }
@@ -276,11 +366,18 @@ impl ResultReceiver {
         let closed = state.closed;
         drop(state);
         self.0.changed.notify_all();
-        result.ok_or(if closed { std::sync::mpsc::TryRecvError::Disconnected } else { std::sync::mpsc::TryRecvError::Empty })
+        result.ok_or(if closed {
+            std::sync::mpsc::TryRecvError::Disconnected
+        } else {
+            std::sync::mpsc::TryRecvError::Empty
+        })
     }
 
     #[cfg(test)]
-    pub(super) fn recv_timeout(&self, timeout: Duration) -> Result<RenderedPage, std::sync::mpsc::RecvTimeoutError> {
+    pub(super) fn recv_timeout(
+        &self,
+        timeout: Duration,
+    ) -> Result<RenderedPage, std::sync::mpsc::RecvTimeoutError> {
         let start = std::time::Instant::now();
         loop {
             if let Ok(page) = self.try_recv() {
@@ -306,7 +403,11 @@ mod tests {
     use crate::Pixels;
 
     fn req(page: usize) -> RenderRequest {
-        RenderRequest { page, scale: 1.0, ..Default::default() }
+        RenderRequest {
+            page,
+            scale: 1.0,
+            ..Default::default()
+        }
     }
 
     fn page(req: RenderRequest, bytes: usize) -> RenderedPage {
@@ -337,8 +438,15 @@ mod tests {
         q.replace(vec![req(1)]);
         q.send(page(req(1), 4)).unwrap();
         q.replace(vec![req(0)]);
-        assert!(recv.try_recv().is_err(), "obsolete completion released before delivery");
-        assert_eq!(q.pop(), Some(req(0)), "evicted UI textures can request the same key again");
+        assert!(
+            recv.try_recv().is_err(),
+            "obsolete completion released before delivery"
+        );
+        assert_eq!(
+            q.pop(),
+            Some(req(0)),
+            "evicted UI textures can request the same key again"
+        );
     }
 
     #[test]
@@ -347,13 +455,30 @@ mod tests {
         // awaiting delivery, without conflating different pages, kinds, tiles or tags.
         let q = Arc::new(WorkQueue::default());
         let recv = ResultReceiver(q.clone());
-        let base = RenderRequest { scale: f32::from_bits(0x7fc0_0001), ..req(0) };
+        let base = RenderRequest {
+            scale: f32::from_bits(0x7fc0_0001),
+            ..req(0)
+        };
         let requests = [
             base,
             RenderRequest { page: 1, ..base },
-            RenderRequest { kind: RequestKind::Text, ..base },
-            RenderRequest { tile: Some(Tile { x: 0, y: 0, w: 1, h: 1 }), ..base },
-            RenderRequest { scale: f32::from_bits(0x7fc0_0002), ..base },
+            RenderRequest {
+                kind: RequestKind::Text,
+                ..base
+            },
+            RenderRequest {
+                tile: Some(Tile {
+                    x: 0,
+                    y: 0,
+                    w: 1,
+                    h: 1,
+                }),
+                ..base
+            },
+            RenderRequest {
+                scale: f32::from_bits(0x7fc0_0002),
+                ..base
+            },
             RenderRequest { tag: 1, ..base },
         ];
         let repeated = || requests.into_iter().flat_map(|r| [r, r]).collect();
@@ -367,13 +492,23 @@ mod tests {
             q.send(page(request, 4)).unwrap();
         }
         q.replace(repeated());
-        assert!(q.pop().is_none(), "completed requests remain deduplicated until delivery");
+        assert!(
+            q.pop().is_none(),
+            "completed requests remain deduplicated until delivery"
+        );
         for request in requests {
-            assert_eq!(Key::from(recv.try_recv().unwrap().request), Key::from(request));
+            assert_eq!(
+                Key::from(recv.try_recv().unwrap().request),
+                Key::from(request)
+            );
         }
         assert!(recv.try_recv().is_err());
         q.replace(vec![base]);
-        assert_eq!(q.pop().map(Key::from), Some(Key::from(base)), "delivery releases even a NaN request for a later retry");
+        assert_eq!(
+            q.pop().map(Key::from),
+            Some(Key::from(base)),
+            "delivery releases even a NaN request for a later retry"
+        );
     }
 
     #[test]
@@ -384,7 +519,10 @@ mod tests {
         assert_eq!(q.pop(), Some(req(0)));
         q.replace(Vec::new());
         q.replace(vec![req(0)]);
-        assert!(q.pop().is_none(), "returning to a page reuses its in-flight render");
+        assert!(
+            q.pop().is_none(),
+            "returning to a page reuses its in-flight render"
+        );
         q.send(page(req(0), 4)).unwrap();
         assert_eq!(recv.try_recv().unwrap().request, req(0));
         assert!(recv.try_recv().is_err());
@@ -392,17 +530,30 @@ mod tests {
         q.replace(vec![req(0)]);
         assert_eq!(q.pop(), Some(req(0)));
         q.replace(Vec::new());
-        assert!(q.cancel_obsolete(req(0)), "a worker can cancel before rasterization");
+        assert!(
+            q.cancel_obsolete(req(0)),
+            "a worker can cancel before rasterization"
+        );
         q.replace(vec![req(0)]);
-        assert_eq!(q.pop(), Some(req(0)), "a cancelled render must not suppress later demand");
+        assert_eq!(
+            q.pop(),
+            Some(req(0)),
+            "a cancelled render must not suppress later demand"
+        );
     }
 
     #[test]
     fn delivery_uses_current_priority_for_buffered_and_later_completions() {
         let q = Arc::new(WorkQueue::default());
         let recv = ResultReceiver(q.clone());
-        let text = RenderRequest { kind: RequestKind::Text, ..req(0) };
-        let thumbnail = RenderRequest { tag: 1 << 63, ..req(1) };
+        let text = RenderRequest {
+            kind: RequestKind::Text,
+            ..req(0)
+        };
+        let thumbnail = RenderRequest {
+            tag: 1 << 63,
+            ..req(1)
+        };
         let visible = req(2);
         q.replace(vec![text, thumbnail, visible]);
         for _ in 0..3 {
@@ -419,7 +570,10 @@ mod tests {
         assert_eq!(recv.try_recv().unwrap().request, text);
         assert!(recv.try_recv().is_err());
         assert_eq!(lock(&q.state).bytes, 0);
-        assert!(q.pop().is_none(), "priority changes must not duplicate completed work");
+        assert!(
+            q.pop().is_none(),
+            "priority changes must not duplicate completed work"
+        );
     }
 
     #[test]
@@ -427,7 +581,10 @@ mod tests {
         let q = Arc::new(WorkQueue::default());
         let recv = ResultReceiver(q.clone());
         let token = Arc::new(AtomicBool::new(true));
-        let text = RenderRequest { kind: RequestKind::Text, ..req(0) };
+        let text = RenderRequest {
+            kind: RequestKind::Text,
+            ..req(0)
+        };
         let visible = req(1);
         q.replace(vec![text]);
         assert_eq!(q.pop(), Some(text));
@@ -442,9 +599,15 @@ mod tests {
 
     #[test]
     fn watchdog_eviction_retries_background_work_after_visible_work() {
-        let q = Arc::new(WorkQueue { max_count: 1, ..Default::default() });
+        let q = Arc::new(WorkQueue {
+            max_count: 1,
+            ..Default::default()
+        });
         let recv = ResultReceiver(q.clone());
-        let text = RenderRequest { kind: RequestKind::Text, ..req(0) };
+        let text = RenderRequest {
+            kind: RequestKind::Text,
+            ..req(0)
+        };
         let stuck = req(1);
         let visible = req(2);
         q.replace(vec![text, stuck]);
@@ -463,7 +626,11 @@ mod tests {
 
     #[test]
     fn stalled_consumer_bounds_storage_and_drop_unblocks_publishers() {
-        let q = Arc::new(WorkQueue { max_bytes: 1024, max_count: 2, ..Default::default() });
+        let q = Arc::new(WorkQueue {
+            max_bytes: 1024,
+            max_count: 2,
+            ..Default::default()
+        });
         let recv = ResultReceiver(q.clone());
         q.replace(vec![req(0), req(1), req(2)]);
         assert!(q.pop().is_some());
@@ -483,7 +650,11 @@ mod tests {
 
     #[test]
     fn oversized_completion_is_admitted_alone_and_cancellation_releases_waiters() {
-        let q = Arc::new(WorkQueue { max_bytes: 512, max_count: 2, ..Default::default() });
+        let q = Arc::new(WorkQueue {
+            max_bytes: 512,
+            max_count: 2,
+            ..Default::default()
+        });
         let recv = ResultReceiver(q.clone());
         q.replace(vec![req(0), req(1)]);
         q.pop();
@@ -515,7 +686,11 @@ mod tests {
         assert!(recv.try_recv().is_err());
         assert_eq!(q.pop(), Some(req(0)));
         q.send_valid(page(req(0), 4), Some(token)).unwrap();
-        assert_eq!(q.pop(), Some(req(0)), "invalid pre-publication result retries too");
+        assert_eq!(
+            q.pop(),
+            Some(req(0)),
+            "invalid pre-publication result retries too"
+        );
         q.send(page(req(0), 4)).unwrap();
         assert!(recv.try_recv().unwrap().error.is_none());
     }

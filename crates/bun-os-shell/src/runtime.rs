@@ -19,15 +19,15 @@ use crate::app::{
 use crate::assets::Art;
 use crate::library::{Kind, Library};
 use crate::machine::{self, Suspended};
+use crate::profiles::{FPS_LIMITS, Profile, SCALERS};
+use crate::recorder::Recorder;
+use crate::text::{t, tf};
+use crate::ui::{Activate, Motion};
 use bun_engine::runtime::fsr1::Fsr1Upscale;
 use bun_engine::runtime::{
     InsertMachine, MachineEvent, MachineOptions, MachineScreen, MachineSlot, MachineStatus,
     RemoveMachine,
 };
-use crate::profiles::{FPS_LIMITS, Profile, SCALERS};
-use crate::recorder::Recorder;
-use crate::text::{t, tf};
-use crate::ui::{Activate, Motion};
 
 /// A game running outside the shell process.
 pub struct External {
@@ -156,7 +156,11 @@ fn stop_machine(ctx: &mut Ctx, keep_state: bool) {
     if let Some(active) = ctx.running.machine.as_ref() {
         let key = active.key.clone();
         let seconds = active.started.elapsed().as_secs_f64();
-        let instant = ctx.running.profile.as_ref().is_none_or(|p| p.instant_resume);
+        let instant = ctx
+            .running
+            .profile
+            .as_ref()
+            .is_none_or(|p| p.instant_resume);
         if keep_state && instant {
             if save_now(ctx).is_none() {
                 ctx.shell.toast(t("toast.cannot-save"));
@@ -164,7 +168,11 @@ fn stop_machine(ctx: &mut Ctx, keep_state: bool) {
         } else {
             Suspended::of(&ctx.shell.paths.states(), &key).discard();
         }
-        ctx.shell.store.lock().unwrap().record_session(&key, "machine", seconds);
+        ctx.shell
+            .store
+            .lock()
+            .unwrap()
+            .record_session(&key, "machine", seconds);
     }
     if let Some(recorder) = ctx.running.recorder.take() {
         let _ = recorder.stop();
@@ -186,7 +194,8 @@ pub fn play(ctx: &mut Ctx, index: usize, fresh: bool) {
                 set_paused(ctx, false);
                 ctx.running.suspended = false;
                 ctx.next_screen.set(Screen::Playing);
-                ctx.shell.toast(tf("toast.resumed", &[("title", &game.title)]));
+                ctx.shell
+                    .toast(tf("toast.resumed", &[("title", &game.title)]));
                 return;
             }
             if ctx.running.machine.is_some() {
@@ -237,13 +246,16 @@ pub fn play(ctx: &mut Ctx, index: usize, fresh: bool) {
             if !installed {
                 let uri = format!("steam://nav/games/details/{app_id}");
                 if bun_steam::launch::is_safe_steam_uri(&uri) && open_uri(&uri) {
-                    ctx.shell.toast(tf("toast.steam-page", &[("title", &game.title)]));
+                    ctx.shell
+                        .toast(tf("toast.steam-page", &[("title", &game.title)]));
                 }
                 return;
             }
             if let Some(reason) = busy_reason() {
-                ctx.shell
-                    .toast(tf("toast.not-launched", &[("title", &game.title), ("reason", &reason)]));
+                ctx.shell.toast(tf(
+                    "toast.not-launched",
+                    &[("title", &game.title), ("reason", &reason)],
+                ));
                 return;
             }
             let uri = bun_steam::launch::rungameid_uri(*app_id);
@@ -285,7 +297,8 @@ pub fn play(ctx: &mut Ctx, index: usize, fresh: bool) {
                             window: None,
                             arranged: false,
                         });
-                        ctx.shell.toast(tf("toast.starting", &[("title", &game.title)]));
+                        ctx.shell
+                            .toast(tf("toast.starting", &[("title", &game.title)]));
                     }
                     Err(e) => ctx.shell.toast(format!("{}: {e}", command[0])),
                 }
@@ -476,9 +489,10 @@ fn quick(ctx: &mut Ctx, action: QuickAction) {
             if let Some(recorder) = ctx.running.recorder.take() {
                 let path = recorder.path.clone();
                 match recorder.stop() {
-                    Ok(encoder) => ctx
-                        .shell
-                        .toast(tf("toast.recorded", &[("path", &path.display()), ("encoder", &encoder)])),
+                    Ok(encoder) => ctx.shell.toast(tf(
+                        "toast.recorded",
+                        &[("path", &path.display()), ("encoder", &encoder)],
+                    )),
                     Err(e) => ctx.shell.toast(tf("toast.record-failed", &[("error", &e)])),
                 }
             } else if let Some(active) = &ctx.running.machine {
@@ -496,7 +510,8 @@ fn quick(ctx: &mut Ctx, action: QuickAction) {
                     .first()
                     .cloned()
                     .unwrap_or_else(|| "software H.264".into());
-                ctx.shell.toast(tf("toast.recording", &[("encoder", &encoder)]));
+                ctx.shell
+                    .toast(tf("toast.recording", &[("encoder", &encoder)]));
             } else {
                 ctx.shell.toast(t("toast.record-unavailable"));
             }
@@ -538,7 +553,8 @@ fn quick(ctx: &mut Ctx, action: QuickAction) {
                     if let Some(window) = ext.window {
                         crate::system::close(window);
                     }
-                    ctx.shell.toast(tf("toast.asked-close", &[("title", &ext.title)]));
+                    ctx.shell
+                        .toast(tf("toast.asked-close", &[("title", &ext.title)]));
                 } else {
                     ctx.shell.toast(t("toast.close-steam"));
                 }
@@ -825,7 +841,8 @@ pub fn track_external(mut ctx: Ctx, time: Res<Time>, mut since: Local<f32>) {
             finished = true;
         } else if !ext.seen_running && ext.started.elapsed() > Duration::from_secs(120) {
             finished = true;
-            ctx.shell.toast(tf("toast.not-started", &[("title", &ext.title)]));
+            ctx.shell
+                .toast(tf("toast.not-started", &[("title", &ext.title)]));
         }
     }
     if let Some(child) = ext.child.as_mut()
@@ -874,7 +891,8 @@ pub fn track_external(mut ctx: Ctx, time: Res<Time>, mut since: Local<f32>) {
             .unwrap()
             .record_session(&ext.key, "external", seconds);
         set_shell_minimized(&mut ctx, false);
-        ctx.shell.toast(tf("toast.back-from", &[("title", &ext.title)]));
+        ctx.shell
+            .toast(tf("toast.back-from", &[("title", &ext.title)]));
     } else {
         ctx.running.external = Some(ext);
     }

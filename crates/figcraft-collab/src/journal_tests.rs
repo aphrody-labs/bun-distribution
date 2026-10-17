@@ -10,15 +10,23 @@ use crate::sim_tests::base;
 use crate::{Client, Journal, Limits, NoRecompute, Outgoing, Server, VIEW_ONLY};
 
 fn hello() -> Hello {
-    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "#FF8800") else { panic!("not a hello") };
+    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "#FF8800") else {
+        panic!("not a hello")
+    };
     h
 }
 
 fn join_as(s: &mut Server, access: Access) -> Client {
     let (_, out) = s.join_as(hello(), access).unwrap();
-    let Some(Outgoing::To(_, welcome)) = out.into_iter().next() else { panic!("no welcome") };
+    let Some(Outgoing::To(_, welcome)) = out.into_iter().next() else {
+        panic!("no welcome")
+    };
     let c = Client::join(welcome).unwrap();
-    assert_eq!(c.access(), access, "the welcome says what the client may do");
+    assert_eq!(
+        c.access(),
+        access,
+        "the welcome says what the client may do"
+    );
     c
 }
 
@@ -61,28 +69,51 @@ fn a_viewer_sees_everything_and_changes_nothing() {
     let page = s.document().first_page().unwrap();
     // The editor's edit reaches the viewer.
     let m = edit(&mut editor, |d| {
-        d.create(page, NodeKind::Rectangle, "Card", 0.0, 0.0, 10.0, 10.0).unwrap();
+        d.create(page, NodeKind::Rectangle, "Card", 0.0, 0.0, 10.0, 10.0)
+            .unwrap();
     });
     send(&mut s, editor.id(), m, &mut [&mut editor, &mut viewer]);
     assert_eq!(viewer.view(), s.replica());
     // The viewer's edit is refused with the reason, and rolled back.
     let seq = s.seq();
-    let m = edit(&mut viewer, |d| d.node_mut(page).unwrap().name = "Mine".into());
+    let m = edit(&mut viewer, |d| {
+        d.node_mut(page).unwrap().name = "Mine".into()
+    });
     let out = send(&mut s, viewer.id(), m, &mut [&mut editor, &mut viewer]);
-    assert!(matches!(out.as_slice(), [Outgoing::To(_, ServerMsg::Reject { reason, .. })] if reason == VIEW_ONLY));
+    assert!(
+        matches!(out.as_slice(), [Outgoing::To(_, ServerMsg::Reject { reason, .. })] if reason == VIEW_ONLY)
+    );
     assert_eq!(s.seq(), seq, "nothing accepted");
-    assert_eq!(viewer.view(), s.replica(), "the viewer's copy is the server's again");
-    assert!(viewer.take_notices().iter().any(|n| n.message().contains("view")), "the viewer is told why");
+    assert_eq!(
+        viewer.view(),
+        s.replica(),
+        "the viewer's copy is the server's again"
+    );
+    assert!(
+        viewer
+            .take_notices()
+            .iter()
+            .any(|n| n.message().contains("view")),
+        "the viewer is told why"
+    );
     // Presence still goes both ways.
     let out = s.receive(viewer.id(), ClientMsg::Presence(Default::default()));
-    assert!(matches!(out.as_slice(), [Outgoing::Others(_, ServerMsg::Presence { .. })]));
+    assert!(matches!(
+        out.as_slice(),
+        [Outgoing::Others(_, ServerMsg::Presence { .. })]
+    ));
     // Joining again with an edit link lifts it.
     let id = viewer.id();
     s.leave(id);
     let mut again = join_as(&mut s, Access::Edit);
-    let m = edit(&mut again, |d| d.node_mut(page).unwrap().name = "Now mine".into());
+    let m = edit(&mut again, |d| {
+        d.node_mut(page).unwrap().name = "Now mine".into()
+    });
     let out = s.receive(again.id(), m);
-    assert!(matches!(out.as_slice(), [Outgoing::All(ServerMsg::Changes(_))]));
+    assert!(matches!(
+        out.as_slice(),
+        [Outgoing::All(ServerMsg::Changes(_))]
+    ));
 }
 
 #[test]
@@ -90,7 +121,10 @@ fn managing_messages_are_refused_on_a_session_connection() {
     let mut s = Server::new(base(), "", Limits::default());
     let c = join_as(&mut s, Access::Edit);
     let out = s.receive(c.id(), ClientMsg::Admin(message::Admin::Files));
-    assert!(matches!(out.as_slice(), [Outgoing::To(_, ServerMsg::Refused { .. })]));
+    assert!(matches!(
+        out.as_slice(),
+        [Outgoing::To(_, ServerMsg::Refused { .. })]
+    ));
 }
 
 #[test]
@@ -106,22 +140,57 @@ fn the_journal_replayed_over_the_last_state_restores_the_server() {
     let mut b = join_as(&mut s, Access::Edit);
     for i in 0..5 {
         let m = edit(&mut a, |d| {
-            d.create(page, NodeKind::Rectangle, &format!("A{i}"), f64::from(i), 0.0, 10.0, 10.0).unwrap();
+            d.create(
+                page,
+                NodeKind::Rectangle,
+                &format!("A{i}"),
+                f64::from(i),
+                0.0,
+                10.0,
+                10.0,
+            )
+            .unwrap();
         });
         send(&mut s, a.id(), m, &mut [&mut a, &mut b, &mut v]);
     }
-    let m = edit(&mut b, |d| d.node_mut(page).unwrap().name = "Bo's page".into());
+    let m = edit(&mut b, |d| {
+        d.node_mut(page).unwrap().name = "Bo's page".into()
+    });
     send(&mut s, b.id(), m, &mut [&mut a, &mut b, &mut v]);
-    let m = edit(&mut v, |d| d.node_mut(page).unwrap().name = "Refused".into());
+    let m = edit(&mut v, |d| {
+        d.node_mut(page).unwrap().name = "Refused".into()
+    });
     send(&mut s, v.id(), m, &mut [&mut a, &mut b, &mut v]);
     let journal = s.take_journal();
-    assert_eq!(journal.iter().filter(|j| matches!(j, Journal::Issued { .. })).count(), 1, "b's id");
-    assert_eq!(journal.iter().filter(|j| matches!(j, Journal::Accepted(_))).count(), 6);
-    assert_eq!(journal.iter().filter(|j| matches!(j, Journal::Refused { .. })).count(), 1);
+    assert_eq!(
+        journal
+            .iter()
+            .filter(|j| matches!(j, Journal::Issued { .. }))
+            .count(),
+        1,
+        "b's id"
+    );
+    assert_eq!(
+        journal
+            .iter()
+            .filter(|j| matches!(j, Journal::Accepted(_)))
+            .count(),
+        6
+    );
+    assert_eq!(
+        journal
+            .iter()
+            .filter(|j| matches!(j, Journal::Refused { .. }))
+            .count(),
+        1
+    );
     assert!(s.take_journal().is_empty(), "taken");
     // The entries survive both encodings (the store writes the binary one).
     for j in &journal {
-        assert_eq!(&message::decode::<Journal>(&message::encode(j).unwrap(), usize::MAX).unwrap(), j);
+        assert_eq!(
+            &message::decode::<Journal>(&message::encode(j).unwrap(), usize::MAX).unwrap(),
+            j
+        );
     }
     // Restart: the saved state, then the journal.
     let mut r = Server::restore(saved, "", Limits::default()).unwrap();
@@ -147,7 +216,9 @@ fn the_journal_replayed_over_the_last_state_restores_the_server() {
     // gets an id nobody had.
     for c in [&mut a, &mut b] {
         c.disconnect();
-        let ClientMsg::Hello(h) = c.reconnect(hello()) else { panic!() };
+        let ClientMsg::Hello(h) = c.reconnect(hello()) else {
+            panic!()
+        };
         let (id, out) = r.join(h).unwrap();
         assert_eq!(id, c.id());
         assert!(deliver(c, &out).is_empty());
@@ -168,9 +239,16 @@ fn a_journal_with_a_gap_is_refused() {
         let m = edit(&mut a, |d| d.node_mut(page).unwrap().name = name.into());
         send(&mut s, a.id(), m, &mut [&mut a]);
     }
-    let journal: Vec<Journal> = s.take_journal().into_iter().filter(|j| !matches!(j, Journal::Accepted(acc) if acc.seq == 1)).collect();
+    let journal: Vec<Journal> = s
+        .take_journal()
+        .into_iter()
+        .filter(|j| !matches!(j, Journal::Accepted(acc) if acc.seq == 1))
+        .collect();
     let mut r = Server::restore(saved, "", Limits::default()).unwrap();
-    let errors: Vec<_> = journal.into_iter().filter_map(|j| r.replay(j).err()).collect();
+    let errors: Vec<_> = journal
+        .into_iter()
+        .filter_map(|j| r.replay(j).err())
+        .collect();
     assert_eq!(errors.len(), 1, "the batch after the gap");
     assert_eq!(r.seq(), 0);
 }

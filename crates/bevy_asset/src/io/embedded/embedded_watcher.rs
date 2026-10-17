@@ -1,13 +1,13 @@
 use crate::io::{
-    file::{get_asset_path, get_base_path, new_asset_event_debouncer, FilesystemEventHandler},
-    memory::Dir,
     AssetSourceEvent, AssetWatcher,
+    file::{FilesystemEventHandler, get_asset_path, get_base_path, new_asset_event_debouncer},
+    memory::Dir,
 };
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use bevy_platform::collections::HashMap;
 use bevy_platform::sync::{PoisonError, RwLock};
 use core::time::Duration;
-use notify_debouncer_full::{notify::RecommendedWatcher, Debouncer, RecommendedCache};
+use notify_debouncer_full::{Debouncer, RecommendedCache, notify::RecommendedWatcher};
 use std::{
     fs::File,
     io::{BufReader, Read},

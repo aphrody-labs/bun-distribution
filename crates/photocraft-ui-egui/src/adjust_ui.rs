@@ -12,11 +12,17 @@ use crate::PhotocraftApp;
 use crate::theme::Tokens;
 use crate::widgets;
 
-const RANGE_LABELS: [&str; 9] = ["Reds", "Yellows", "Greens", "Cyans", "Blues", "Magentas", "Whites", "Neutrals", "Blacks"];
+const RANGE_LABELS: [&str; 9] = [
+    "Reds", "Yellows", "Greens", "Cyans", "Blues", "Magentas", "Whites", "Neutrals", "Blacks",
+];
 
 /// The full parameter set of a Selective Color adjustment (every range as `[c, m, y, k]`).
 pub fn selective_values(adj: &Adjustment) -> Value {
-    let Adjustment::SelectiveColor { relative, adjustments } = adj else {
+    let Adjustment::SelectiveColor {
+        relative,
+        adjustments,
+    } = adj
+    else {
         return json!({});
     };
     let mut v = json!({"method": if *relative { "relative" } else { "absolute" }});
@@ -26,7 +32,12 @@ pub fn selective_values(adj: &Adjustment) -> Value {
     v
 }
 
-pub fn selective_color_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: LayerId, adj: &Adjustment) {
+pub fn selective_color_editor(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    id: LayerId,
+    adj: &Adjustment,
+) {
     let t = Tokens::get(ui.ctx());
     let committed = selective_values(adj);
     let mut values = match &app.live_adjust {
@@ -38,14 +49,23 @@ pub fn selective_color_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: La
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(tl!("Colors")).color(t.text_dim));
         let opts: Vec<(usize, &str)> = RANGE_LABELS.iter().copied().enumerate().collect();
-        if widgets::dropdown(ui, &format!("selc-colors-{}", id.0), &mut range, &opts, 150.0) {
+        if widgets::dropdown(
+            ui,
+            &format!("selc-colors-{}", id.0),
+            &mut range,
+            &opts,
+            150.0,
+        ) {
             ui.data_mut(|d| d.insert_temp(key, range));
         }
     });
     ui.add_space(4.0);
     let mut live = false;
     let mut commit = false;
-    for (k, label) in [tl!("Cyan"), tl!("Magenta"), tl!("Yellow"), tl!("Black")].iter().enumerate() {
+    for (k, label) in [tl!("Cyan"), tl!("Magenta"), tl!("Yellow"), tl!("Black")]
+        .iter()
+        .enumerate()
+    {
         let mut v = values[RANGES[range]][k].as_f64().unwrap_or(0.0) as f32;
         let r = widgets::slider_row(ui, label, &mut v, -100.0..=100.0, "%", None);
         if r.changed() {
@@ -84,20 +104,42 @@ fn browse_color_lookup(app: &mut PhotocraftApp, layer: LayerId) -> Result<Value,
     let doc = app.active_doc_id()?;
     app.pick_file_bytes_filtered(&["cube", "3dl", "look"], move |app, file_name, bytes| {
         // Reject invalid UTF-8 instead of silently changing the LUT before parsing.
-        let data = String::from_utf8(bytes).map_err(|_| format!("{file_name}: LUT must contain UTF-8 text"))?;
+        let data = String::from_utf8(bytes)
+            .map_err(|_| format!("{file_name}: LUT must contain UTF-8 text"))?;
         app.refocus(doc)?;
-        app.run("layer.setAdjustment", json!({"layer": layer.0, "fileName": file_name, "data": data}))
+        app.run(
+            "layer.setAdjustment",
+            json!({"layer": layer.0, "fileName": file_name, "data": data}),
+        )
     })
 }
 
-pub fn color_lookup_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: LayerId, adj: &Adjustment) {
+pub fn color_lookup_editor(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    id: LayerId,
+    adj: &Adjustment,
+) {
     let t = Tokens::get(ui.ctx());
-    let Adjustment::ColorLookup { name, lut, size, tetrahedral, dither } = adj else {
+    let Adjustment::ColorLookup {
+        name,
+        lut,
+        size,
+        tetrahedral,
+        dither,
+    } = adj
+    else {
         return;
     };
     let builtins = photocraft_engine::adjust_cmds::LOOKS;
-    let current =
-        if lut.is_none() { "none".to_string() } else { builtins.iter().find(|b| b.1 == name).map_or_else(|| "custom".to_string(), |b| b.0.to_string()) };
+    let current = if lut.is_none() {
+        "none".to_string()
+    } else {
+        builtins
+            .iter()
+            .find(|b| b.1 == name)
+            .map_or_else(|| "custom".to_string(), |b| b.0.to_string())
+    };
     let current = app
         .live_adjust
         .as_ref()
@@ -106,7 +148,10 @@ pub fn color_lookup_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: Layer
         .map(str::to_owned)
         .unwrap_or(current);
     let custom_label = format!("{name} ({size}³)");
-    let mut opts: Vec<(String, &str)> = vec![("load".into(), tl!("Load 3D LUT…")), ("none".into(), tl!("None"))];
+    let mut opts: Vec<(String, &str)> = vec![
+        ("load".into(), tl!("Load 3D LUT…")),
+        ("none".into(), tl!("None")),
+    ];
     opts.extend(builtins.iter().map(|(id, label)| (id.to_string(), *label)));
     if current == "custom" {
         opts.push(("custom".into(), custom_label.as_str()));
@@ -118,13 +163,21 @@ pub fn color_lookup_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: Layer
     let cycle_input = ui.input(|input| {
         input.raw.events.iter().any(|event| {
             matches!(event, egui::Event::MouseWheel { .. })
-                || matches!(event, egui::Event::Key { key: egui::Key::ArrowDown | egui::Key::ArrowUp, pressed: true, .. })
+                || matches!(
+                    event,
+                    egui::Event::Key {
+                        key: egui::Key::ArrowDown | egui::Key::ArrowUp,
+                        pressed: true,
+                        ..
+                    }
+                )
         })
     });
     let mut cycling_preview = false;
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(tl!("3D LUT File")).color(t.text_dim));
-        let (chosen, _) = widgets::dropdown_wheel_hovered(ui, &format!("clrl-{}", id.0), &mut sel, &opts, 170.0);
+        let (chosen, _) =
+            widgets::dropdown_wheel_hovered(ui, &format!("clrl-{}", id.0), &mut sel, &opts, 170.0);
         if !chosen.is_empty() {
             if cycle_input {
                 if sel != "load" && sel != "custom" {
@@ -141,7 +194,8 @@ pub fn color_lookup_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: Layer
     if cycling_preview {
         let now = ui.input(|input| input.time);
         ui.ctx().data_mut(|data| data.insert_temp(cycle_key, now));
-        ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_millis(100));
     } else if let Some(since) = ui.ctx().data(|data| data.get_temp::<f64>(cycle_key)) {
         if ui.input(|input| input.time - since) >= 0.75 {
             if let Some((layer, preview)) = &app.live_adjust
@@ -152,7 +206,8 @@ pub fn color_lookup_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: Layer
             }
             ui.ctx().data_mut(|data| data.remove::<f64>(cycle_key));
         } else {
-            ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_millis(100));
         }
     }
     if browse
@@ -202,17 +257,38 @@ mod lookup_picker_tests {
 
     #[test]
     fn chosen_lut_is_embedded_into_the_requested_adjustment_layer() {
-        let (dialog, asked) = file_dialog::fake(vec![Some(FileDialogAnswer::Contents("custom.cube".into(), CUBE.as_bytes().to_vec()))]);
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services { file_dialog: Some(dialog), ..Default::default() });
-        app.run("file.new", json!({"width": 16, "height": 12})).unwrap();
-        let layer = app.run("layer.newAdjustmentLayer.colorLookup", json!({})).unwrap()["layer"].as_u64().unwrap();
+        let (dialog, asked) = file_dialog::fake(vec![Some(FileDialogAnswer::Contents(
+            "custom.cube".into(),
+            CUBE.as_bytes().to_vec(),
+        ))]);
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services {
+                file_dialog: Some(dialog),
+                ..Default::default()
+            },
+        );
+        app.run("file.new", json!({"width": 16, "height": 12}))
+            .unwrap();
+        let layer = app
+            .run("layer.newAdjustmentLayer.colorLookup", json!({}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
         browse_color_lookup(&mut app, LayerId(layer)).unwrap();
         app.poll_file_dialog(&egui::Context::default(), None);
         assert!(
             matches!(asked.borrow().first(), Some(FileDialogRequest::Open { multiple: false, extensions: Some(exts), .. }) if exts.iter().map(String::as_str).collect::<Vec<_>>() == ["cube", "3dl", "look"])
         );
         app.poll_file_dialog(&egui::Context::default(), None);
-        let adj = &app.session.active().unwrap().doc.layer(LayerId(layer)).unwrap().content;
+        let adj = &app
+            .session
+            .active()
+            .unwrap()
+            .doc
+            .layer(LayerId(layer))
+            .unwrap()
+            .content;
         assert!(
             matches!(adj, photocraft_doc::LayerContent::Adjustment(Adjustment::ColorLookup { name, lut: Some(_), size: 2, .. }) if name == "custom.cube"),
             "{adj:?}"
@@ -221,29 +297,88 @@ mod lookup_picker_tests {
 
     #[test]
     fn invalid_lut_does_not_modify_the_existing_adjustment() {
-        let (dialog, _) = file_dialog::fake(vec![Some(FileDialogAnswer::Contents("broken.cube".into(), b"invalid".to_vec()))]);
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services { file_dialog: Some(dialog), ..Default::default() });
-        app.run("file.new", json!({"width": 16, "height": 12})).unwrap();
-        let layer = app.run("layer.newAdjustmentLayer.colorLookup", json!({})).unwrap()["layer"].as_u64().unwrap();
-        let before = app.session.active().unwrap().doc.layer(LayerId(layer)).unwrap().content.clone();
+        let (dialog, _) = file_dialog::fake(vec![Some(FileDialogAnswer::Contents(
+            "broken.cube".into(),
+            b"invalid".to_vec(),
+        ))]);
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services {
+                file_dialog: Some(dialog),
+                ..Default::default()
+            },
+        );
+        app.run("file.new", json!({"width": 16, "height": 12}))
+            .unwrap();
+        let layer = app
+            .run("layer.newAdjustmentLayer.colorLookup", json!({}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        let before = app
+            .session
+            .active()
+            .unwrap()
+            .doc
+            .layer(LayerId(layer))
+            .unwrap()
+            .content
+            .clone();
         browse_color_lookup(&mut app, LayerId(layer)).unwrap();
         app.poll_file_dialog(&egui::Context::default(), None);
         app.poll_file_dialog(&egui::Context::default(), None);
-        assert_eq!(app.session.active().unwrap().doc.layer(LayerId(layer)).unwrap().content, before);
+        assert_eq!(
+            app.session
+                .active()
+                .unwrap()
+                .doc
+                .layer(LayerId(layer))
+                .unwrap()
+                .content,
+            before
+        );
         assert!(app.ui.status_error && app.ui.status.contains("colorLookup"));
     }
 
     #[test]
     fn cancelling_the_lut_picker_preserves_the_adjustment() {
         let (dialog, _) = file_dialog::fake(vec![None]);
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services { file_dialog: Some(dialog), ..Default::default() });
-        app.run("file.new", json!({"width": 16, "height": 12})).unwrap();
-        let layer = app.run("layer.newAdjustmentLayer.colorLookup", json!({})).unwrap()["layer"].as_u64().unwrap();
-        let before = app.session.active().unwrap().doc.layer(LayerId(layer)).unwrap().content.clone();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services {
+                file_dialog: Some(dialog),
+                ..Default::default()
+            },
+        );
+        app.run("file.new", json!({"width": 16, "height": 12}))
+            .unwrap();
+        let layer = app
+            .run("layer.newAdjustmentLayer.colorLookup", json!({}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        let before = app
+            .session
+            .active()
+            .unwrap()
+            .doc
+            .layer(LayerId(layer))
+            .unwrap()
+            .content
+            .clone();
         browse_color_lookup(&mut app, LayerId(layer)).unwrap();
         app.poll_file_dialog(&egui::Context::default(), None);
         app.poll_file_dialog(&egui::Context::default(), None);
-        assert_eq!(app.session.active().unwrap().doc.layer(LayerId(layer)).unwrap().content, before);
+        assert_eq!(
+            app.session
+                .active()
+                .unwrap()
+                .doc
+                .layer(LayerId(layer))
+                .unwrap()
+                .content,
+            before
+        );
         assert!(!app.ui.status_error);
     }
 }

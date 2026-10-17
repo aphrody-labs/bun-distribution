@@ -17,10 +17,18 @@ impl Automation {
     pub(crate) fn view_reading_colors(&mut self, a: &Args) -> Result<Value> {
         let id = self.doc(a)?.id;
         let Some(mode) = a.opt_str("mode")? else {
-            return Err(ToolError::InvalidArgs(format!("mode is required (one of: {MODES})")));
+            return Err(ToolError::InvalidArgs(format!(
+                "mode is required (one of: {MODES})"
+            )));
         };
-        let colors = ReadingColors::parse(mode, a.opt_str("text")?, a.opt_str("background")?, a.opt_bool("only_black")?, a.opt_bool("line_art")?)
-            .map_err(ToolError::InvalidArgs)?;
+        let colors = ReadingColors::parse(
+            mode,
+            a.opt_str("text")?,
+            a.opt_str("background")?,
+            a.opt_bool("only_black")?,
+            a.opt_bool("line_art")?,
+        )
+        .map_err(ToolError::InvalidArgs)?;
         if self.session.set_reading_colors(id, colors) {
             // Cached renderers baked the old setting into their config; page_render must re-read it.
             self.renderers.remove(&id);

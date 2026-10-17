@@ -230,7 +230,10 @@ impl Sheet {
             (0, 0),
             (self.width.saturating_sub(patch), 0),
             (0, self.height.saturating_sub(patch)),
-            (self.width.saturating_sub(patch), self.height.saturating_sub(patch)),
+            (
+                self.width.saturating_sub(patch),
+                self.height.saturating_sub(patch),
+            ),
         ] {
             let mut y = oy;
             while y < (oy + patch).min(self.height) {
@@ -413,9 +416,12 @@ fn dominant_cluster(samples: &[[f32; 3]]) -> ([f32; 3], f32, f32) {
     let spread = match members.is_empty() {
         true => 0.0,
         false => {
-            members.iter().map(|sample| distance2(*sample, center).sqrt()).sum::<f32>()
+            members
+                .iter()
+                .map(|sample| distance2(*sample, center).sqrt())
+                .sum::<f32>()
                 / members.len() as f32
-        },
+        }
     };
     let share = members.len() as f32 / samples.len() as f32;
     (center, share, spread)

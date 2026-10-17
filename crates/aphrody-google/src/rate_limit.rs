@@ -19,7 +19,12 @@ pub struct RateLimitConfig {
 
 impl Default for RateLimitConfig {
     fn default() -> Self {
-        Self { capacity: 10.0, refill_per_sec: 2.0, min_rate: 0.25, max_rate: 10.0 }
+        Self {
+            capacity: 10.0,
+            refill_per_sec: 2.0,
+            min_rate: 0.25,
+            max_rate: 10.0,
+        }
     }
 }
 
@@ -53,7 +58,9 @@ impl AdaptiveTokenBucket {
         Ok(Self {
             state: Arc::new(Mutex::new(BucketState {
                 tokens: config.capacity,
-                refill_rate: config.refill_per_sec.clamp(config.min_rate, config.max_rate),
+                refill_rate: config
+                    .refill_per_sec
+                    .clamp(config.min_rate, config.max_rate),
                 last_refill: Instant::now(),
             })),
             config,
@@ -64,7 +71,10 @@ impl AdaptiveTokenBucket {
     pub async fn acquire(&self) {
         loop {
             let wait = {
-                let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                let mut state = self
+                    .state
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
                 self.refill(&mut state);
                 if state.tokens >= 1.0 {
                     state.tokens -= 1.0;
@@ -77,21 +87,27 @@ impl AdaptiveTokenBucket {
     }
 
     pub fn observe(&self, status: u16) {
-        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         self.refill(&mut state);
         match status {
             429 | 503 => {
                 state.refill_rate = (state.refill_rate / 2.0).max(self.config.min_rate);
                 state.tokens = 0.0;
-            },
+            }
             403 => state.refill_rate = (state.refill_rate * 0.7).max(self.config.min_rate),
             200..=299 => state.refill_rate = (state.refill_rate * 1.1).min(self.config.max_rate),
-            _ => {},
+            _ => {}
         }
     }
 
     pub fn current_rate(&self) -> f64 {
-        self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).refill_rate
+        self.state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .refill_rate
     }
 
     fn refill(&self, state: &mut BucketState) {
@@ -140,7 +156,10 @@ mod tests {
         assert!(is_rate_limited(429, false));
         assert!(is_rate_limited(403, true));
         assert!(!is_rate_limited(403, false));
-        assert_eq!(retry_after("10", SystemTime::UNIX_EPOCH), Some(Duration::from_secs(10)));
+        assert_eq!(
+            retry_after("10", SystemTime::UNIX_EPOCH),
+            Some(Duration::from_secs(10))
+        );
         assert_eq!(
             retry_after("Thu, 01 Jan 1970 00:00:10 +0000", SystemTime::UNIX_EPOCH),
             Some(Duration::from_secs(10))

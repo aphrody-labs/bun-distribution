@@ -13,7 +13,10 @@ const REGULAR: &[(&str, u32)] = &[
     ("/usr/share/fonts/TTF/DejaVuSans.ttf", 0),
     ("/usr/share/fonts/dejavu/DejaVuSans.ttf", 0),
     ("/usr/local/share/fonts/dejavu/DejaVuSans.ttf", 0),
-    ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", 0),
+    (
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        0,
+    ),
 ];
 const BOLD: &[(&str, u32)] = &[
     ("/System/Library/Fonts/HelveticaNeue.ttc", 1),
@@ -23,15 +26,25 @@ const BOLD: &[(&str, u32)] = &[
     ("/usr/share/fonts/TTF/DejaVuSans-Bold.ttf", 0),
     ("/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf", 0),
     ("/usr/local/share/fonts/dejavu/DejaVuSans-Bold.ttf", 0),
-    ("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 0),
+    (
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        0,
+    ),
 ];
 
 /// Asks fontconfig for the desktop's UI font. Only TrueType/OpenType results are used: egui cannot
 /// read Type 1 or bitmap fonts, which `fc-match` may return on minimal systems.
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 fn load_from_fontconfig(bold: bool) -> Option<FontData> {
-    let pattern = if bold { "sans-serif:style=Bold" } else { "sans-serif" };
-    let output = std::process::Command::new("fc-match").args(["--format=%{file}\\n%{index}\\n", pattern]).output().ok()?;
+    let pattern = if bold {
+        "sans-serif:style=Bold"
+    } else {
+        "sans-serif"
+    };
+    let output = std::process::Command::new("fc-match")
+        .args(["--format=%{file}\\n%{index}\\n", pattern])
+        .output()
+        .ok()?;
     if !output.status.success() {
         return None;
     }
@@ -41,7 +54,10 @@ fn load_from_fontconfig(bold: bool) -> Option<FontData> {
     // The upper 16 bits carry a variable font's named instance; the face index is the lower 16.
     let index = lines.next()?.trim().parse::<u32>().ok()? & 0xFFFF;
     let bytes = std::fs::read(path).ok()?;
-    let sfnt = matches!(bytes.get(..4), Some(b"\0\x01\0\0" | b"OTTO" | b"true" | b"ttcf"));
+    let sfnt = matches!(
+        bytes.get(..4),
+        Some(b"\0\x01\0\0" | b"OTTO" | b"true" | b"ttcf")
+    );
     if !sfnt {
         return None;
     }
@@ -78,10 +94,16 @@ fn load(_: &[(&str, u32)], _: bool) -> Option<FontData> {
 
 pub fn definitions() -> FontDefinitions {
     let mut fonts = FontDefinitions::default();
-    let base: Vec<String> = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
+    let base: Vec<String> = fonts
+        .families
+        .get(&FontFamily::Proportional)
+        .cloned()
+        .unwrap_or_default();
     let mut bold_family = base.clone();
     if let Some(reg) = load(REGULAR, false) {
-        fonts.font_data.insert("system-regular".into(), Arc::new(reg));
+        fonts
+            .font_data
+            .insert("system-regular".into(), Arc::new(reg));
         if let Some(f) = fonts.families.get_mut(&FontFamily::Proportional) {
             f.insert(0, "system-regular".into());
         }
@@ -92,7 +114,9 @@ pub fn definitions() -> FontDefinitions {
     } else if fonts.font_data.contains_key("system-regular") {
         bold_family.insert(0, "system-regular".into());
     }
-    fonts.families.insert(FontFamily::Name("bold".into()), bold_family);
+    fonts
+        .families
+        .insert(FontFamily::Name("bold".into()), bold_family);
     fonts
 }
 

@@ -19,7 +19,11 @@ impl crate::PdfCraftApp {
                 #[cfg(not(target_arch = "wasm32"))]
                 if let Some(path) = self.closed_tabs.last().cloned() {
                     // A tab may already have been reopened through File > Open.
-                    if let Some(index) = self.views.iter().position(|v| self.session.get(v.id).is_some_and(|d| d.path.as_deref() == Some(&path))) {
+                    if let Some(index) = self.views.iter().position(|v| {
+                        self.session
+                            .get(v.id)
+                            .is_some_and(|d| d.path.as_deref() == Some(&path))
+                    }) {
                         self.active = Some(index);
                         self.closed_tabs.pop();
                     } else {
@@ -56,16 +60,22 @@ fn reveal(path: &std::path::Path) -> Result<(), String> {
     }
     let platform = std::env::consts::OS;
     let run = |program: &str, args: &[std::ffi::OsString]| {
-        std::process::Command::new(program).args(args).output().map(|o| o.status.success()).map_err(|e| e.to_string())
+        std::process::Command::new(program)
+            .args(args)
+            .output()
+            .map(|o| o.status.success())
+            .map_err(|e| e.to_string())
     };
     if matches!(platform, "linux" | "freebsd") {
         // `dbus-send --print-reply` waits up to 2 s for the file manager (then xdg-open may run),
         // so it runs off the UI thread; a failure there is only logged.
-        let spawned = std::thread::Builder::new().name("pdfcraft-reveal".into()).spawn(move || {
-            if let Err(e) = reveal_via(platform, &path, run) {
-                log::warn!("reveal {}: {e}", path.display());
-            }
-        });
+        let spawned = std::thread::Builder::new()
+            .name("pdfcraft-reveal".into())
+            .spawn(move || {
+                if let Err(e) = reveal_via(platform, &path, run) {
+                    log::warn!("reveal {}: {e}", path.display());
+                }
+            });
         return spawned.map(|_| ()).map_err(|e| e.to_string());
     }
     reveal_via(platform, &path, run)
@@ -92,7 +102,10 @@ fn reveal_via(
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn reveal_command(platform: &str, path: &std::path::Path) -> Result<(&'static str, Vec<std::ffi::OsString>), String> {
+fn reveal_command(
+    platform: &str,
+    path: &std::path::Path,
+) -> Result<(&'static str, Vec<std::ffi::OsString>), String> {
     match platform {
         "windows" => {
             // Explorer uses /select,<object>, rather than a separate option value.
@@ -137,10 +150,20 @@ mod tests {
     #[test]
     fn confirmed_close_uses_id_and_cancel_keeps_history_empty() {
         let mut app = crate::PdfCraftApp::new();
-        app.open_bytes("first.pdf", Some("/tmp/first.pdf".into()), PDF.to_vec()).unwrap();
+        app.open_bytes("first.pdf", Some("/tmp/first.pdf".into()), PDF.to_vec())
+            .unwrap();
         let first = app.views[0].id;
         app.open_bytes("second.pdf", None, PDF.to_vec()).unwrap();
-        app.session.apply(first, pdfcraft_engine::Edit::InsertBlankPage { at: 0, width: 300.0, height: 400.0 }).unwrap();
+        app.session
+            .apply(
+                first,
+                pdfcraft_engine::Edit::InsertBlankPage {
+                    at: 0,
+                    width: 300.0,
+                    height: 400.0,
+                },
+            )
+            .unwrap();
         app.tab_action(Action::Close(first));
         assert_eq!(app.views.len(), 2);
         assert!(app.closed_tabs.is_empty());
@@ -158,9 +181,19 @@ mod tests {
     #[test]
     fn reopen_reads_saved_file_and_history_is_bounded() {
         use std::io::Write as _;
-        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let path = std::env::temp_dir().join(format!("pdfcraft-tab-{}-{nonce}-年度 report.pdf", std::process::id()));
-        let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&path).unwrap();
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "pdfcraft-tab-{}-{nonce}-年度 report.pdf",
+            std::process::id()
+        ));
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)
+            .unwrap();
         file.write_all(PDF).unwrap();
         drop(file);
         let mut app = crate::PdfCraftApp::new();
@@ -182,10 +215,18 @@ mod tests {
     #[test]
     fn failed_reopen_keeps_history_and_retry_does_not_duplicate_tabs() {
         use std::io::Write as _;
-        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let path = std::env::temp_dir().join(format!("pdfcraft-retry-{}-{nonce}.pdf", std::process::id()));
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path =
+            std::env::temp_dir().join(format!("pdfcraft-retry-{}-{nonce}.pdf", std::process::id()));
         let text = path.to_str().unwrap();
-        let mut file = std::fs::OpenOptions::new().create_new(true).write(true).open(&path).unwrap();
+        let mut file = std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)
+            .unwrap();
         file.write_all(PDF).unwrap();
         drop(file);
         let mut app = crate::PdfCraftApp::new();
@@ -201,7 +242,11 @@ mod tests {
         assert!(app.closed_tabs.is_empty());
         app.closed_tabs.push(text.into());
         app.tab_action(Action::Reopen);
-        assert_eq!(app.views.len(), 1, "an already-open file is selected, not duplicated");
+        assert_eq!(
+            app.views.len(),
+            1,
+            "an already-open file is selected, not duplicated"
+        );
         assert!(app.closed_tabs.is_empty());
         std::fs::remove_file(path).unwrap();
     }
@@ -212,11 +257,21 @@ mod tests {
         let mut calls = Vec::new();
         reveal_via("linux", path, |program, args| {
             calls.push((program.to_string(), args.to_vec()));
-            if program == "dbus-send" { Err("FileManager1 unavailable".into()) } else { Ok(true) }
+            if program == "dbus-send" {
+                Err("FileManager1 unavailable".into())
+            } else {
+                Ok(true)
+            }
         })
         .unwrap();
         assert_eq!(calls.len(), 2);
-        assert_eq!(calls[1], ("xdg-open".into(), vec![std::ffi::OsString::from("/tmp/年度 & reports")]));
+        assert_eq!(
+            calls[1],
+            (
+                "xdg-open".into(),
+                vec![std::ffi::OsString::from("/tmp/年度 & reports")]
+            )
+        );
         assert!(reveal_via("linux", path, |_, _| Ok(false)).is_err());
         assert!(reveal_via("linux", path, |_, _| Err("command missing".into())).is_err());
     }
@@ -226,18 +281,36 @@ mod tests {
         let path = std::path::Path::new("/tmp/年度 report.pdf");
         let (exe, args) = reveal_command("macos", path).unwrap();
         assert_eq!(exe, "open");
-        assert_eq!(args, [std::ffi::OsString::from("-R"), path.as_os_str().into()]);
+        assert_eq!(
+            args,
+            [std::ffi::OsString::from("-R"), path.as_os_str().into()]
+        );
         let (exe, args) = reveal_command("windows", path).unwrap();
         assert_eq!(exe, "explorer.exe");
-        assert_eq!(args, [std::ffi::OsString::from("/select,/tmp/年度 report.pdf")]);
+        assert_eq!(
+            args,
+            [std::ffi::OsString::from("/select,/tmp/年度 report.pdf")]
+        );
         let special = std::path::Path::new(r"C:\Reports\年度 report, #1 & (draft).pdf");
         let (_, windows) = reveal_command("windows", special).unwrap();
-        assert_eq!(windows, [std::ffi::OsString::from(r"/select,C:\Reports\年度 report, #1 & (draft).pdf")]);
+        assert_eq!(
+            windows,
+            [std::ffi::OsString::from(
+                r"/select,C:\Reports\年度 report, #1 & (draft).pdf"
+            )]
+        );
         let (exe, args) = reveal_command("linux", path).unwrap();
         assert_eq!(exe, "dbus-send");
-        assert_eq!(args[6], "array:string:file:///tmp/%E5%B9%B4%E5%BA%A6%20report.pdf");
-        let (_, args) = reveal_command("linux", std::path::Path::new("/tmp/年度 report,#&'$.pdf")).unwrap();
-        assert_eq!(args[6], "array:string:file:///tmp/%E5%B9%B4%E5%BA%A6%20report%2C%23%26%27%24.pdf");
+        assert_eq!(
+            args[6],
+            "array:string:file:///tmp/%E5%B9%B4%E5%BA%A6%20report.pdf"
+        );
+        let (_, args) =
+            reveal_command("linux", std::path::Path::new("/tmp/年度 report,#&'$.pdf")).unwrap();
+        assert_eq!(
+            args[6],
+            "array:string:file:///tmp/%E5%B9%B4%E5%BA%A6%20report%2C%23%26%27%24.pdf"
+        );
         assert_eq!(args[5], "org.freedesktop.FileManager1.ShowItems");
         assert_eq!(args[7], "string:");
     }
@@ -253,24 +326,43 @@ mod ui_tests {
 
     #[test]
     fn inactive_tab_menu_closes_target_and_disables_unavailable_actions() {
-        let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_| {
-            let mut app = PdfCraftApp::new();
-            app.set_option("language", "en").unwrap();
-            for name in ["first.pdf", "second.pdf"] {
-                app.open_bytes(name, None, include_bytes!("../tests/data/form.pdf").to_vec()).unwrap();
-            }
-            app
-        });
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1400.0, 900.0))
+            .build_eframe(|_| {
+                let mut app = PdfCraftApp::new();
+                app.set_option("language", "en").unwrap();
+                for name in ["first.pdf", "second.pdf"] {
+                    app.open_bytes(
+                        name,
+                        None,
+                        include_bytes!("../tests/data/form.pdf").to_vec(),
+                    )
+                    .unwrap();
+                }
+                app
+            });
         h.run_steps(8);
-        h.get_by_role_and_label(egui::accesskit::Role::Tab, "first.pdf").click_secondary();
+        h.get_by_role_and_label(egui::accesskit::Role::Tab, "first.pdf")
+            .click_secondary();
         h.run_steps(2);
-        assert!(h.get_by_label("Reopen Closed Tab").accesskit_node().is_disabled());
-        let reveal_label = if cfg!(target_os = "macos") { "Reveal in Finder" } else { "Reveal in File Explorer" };
+        assert!(
+            h.get_by_label("Reopen Closed Tab")
+                .accesskit_node()
+                .is_disabled()
+        );
+        let reveal_label = if cfg!(target_os = "macos") {
+            "Reveal in Finder"
+        } else {
+            "Reveal in File Explorer"
+        };
         assert!(h.get_by_label(reveal_label).accesskit_node().is_disabled());
         assert_eq!(h.state().active, Some(1));
         h.get_by_label("Close Tab").click();
         h.run_steps(3);
         assert_eq!(h.state().views.len(), 1);
-        assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().name, "second.pdf");
+        assert_eq!(
+            h.state().session.get(h.state().views[0].id).unwrap().name,
+            "second.pdf"
+        );
     }
 }

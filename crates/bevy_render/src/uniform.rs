@@ -1,7 +1,7 @@
 use crate::{
-    render_resource::{encase::internal::WriteInto, DynamicUniformBuffer, ShaderType},
-    renderer::{RenderDevice, RenderQueue},
     GpuResourceAppExt, Render, RenderApp, RenderSystems,
+    render_resource::{DynamicUniformBuffer, ShaderType, encase::internal::WriteInto},
+    renderer::{RenderDevice, RenderQueue},
 };
 use bevy_app::{App, Plugin};
 use bevy_ecs::{component::Component, prelude::*};

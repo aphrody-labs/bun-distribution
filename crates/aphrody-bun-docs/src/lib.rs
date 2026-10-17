@@ -41,15 +41,24 @@ pub const REF_ENV: &str = "APHRODY_BUN_DOCS_REF";
 /// Git URL of the Bun fork.
 pub const FORK_URL: &str = "https://github.com/aphrody-labs/bun.git";
 /// Paths of the fork checked out by the download: `docs/` without its image directories.
-const SPARSE_PATTERNS: [&str; 5] =
-    ["/docs/", "!/docs/images/", "!/docs/icons/", "!/docs/logo/", "/LICENSE.md"];
+const SPARSE_PATTERNS: [&str; 5] = [
+    "/docs/",
+    "!/docs/images/",
+    "!/docs/icons/",
+    "!/docs/logo/",
+    "/LICENSE.md",
+];
 /// `docs/reference/upstream-bun/SOURCE.json`: the fork commit Aphrody is pinned to.
 const PIN: &str = include_str!("../../../docs/aphrody/reference/upstream-bun/SOURCE.json");
 
 /// Fork commit pinned by `bun run docs:bun:update`.
 #[must_use]
 pub fn pinned_commit() -> Option<String> {
-    serde_json::from_str::<Value>(PIN).ok()?.get("commit")?.as_str().map(str::to_owned)
+    serde_json::from_str::<Value>(PIN)
+        .ok()?
+        .get("commit")?
+        .as_str()
+        .map(str::to_owned)
 }
 
 const DEFAULT_LIMIT: usize = 8;
@@ -83,7 +92,9 @@ impl DocPage {
                 .map(|value| value.trim().trim_matches(['"', '\'']).to_owned())
                 .unwrap_or_default()
         };
-        let headings = headings(body).map(|(_, text)| text.to_owned()).collect::<Vec<_>>();
+        let headings = headings(body)
+            .map(|(_, text)| text.to_owned())
+            .collect::<Vec<_>>();
         let mut title = field("title");
         if title.is_empty() {
             title = headings.first().cloned().unwrap_or_else(|| slug.to_owned());
@@ -101,7 +112,11 @@ impl DocPage {
     #[must_use]
     pub fn url(&self) -> String {
         let slug = self.slug.strip_suffix("/index").unwrap_or(&self.slug);
-        if slug == "index" { DOCS_BASE_URL.to_owned() } else { format!("{DOCS_BASE_URL}/{slug}") }
+        if slug == "index" {
+            DOCS_BASE_URL.to_owned()
+        } else {
+            format!("{DOCS_BASE_URL}/{slug}")
+        }
     }
 
     /// The body, or only the section whose heading contains `section` (case-insensitive):
@@ -119,7 +134,7 @@ impl DocPage {
                 match start {
                     Some((from, open)) if level <= open => return Some(&self.body[from..offset]),
                     None if text.to_lowercase().contains(&needle) => start = Some((offset, level)),
-                    _ => {},
+                    _ => {}
                 }
             }
             offset += line.len();
@@ -264,12 +279,19 @@ impl DocsIndex {
             .filter(|_| slug.contains("://"))
             .map_or(slug, |(_, rest)| rest);
         let slug = slug.trim_matches('/');
-        let slug = slug.strip_suffix(".mdx").or_else(|| slug.strip_suffix(".md")).unwrap_or(slug);
+        let slug = slug
+            .strip_suffix(".mdx")
+            .or_else(|| slug.strip_suffix(".md"))
+            .unwrap_or(slug);
         let slug = slug.split(['#', '?']).next().unwrap_or(slug);
         self.pages
             .iter()
             .find(|page| page.slug == slug)
-            .or_else(|| self.pages.iter().find(|page| page.slug == format!("{slug}/index")))
+            .or_else(|| {
+                self.pages
+                    .iter()
+                    .find(|page| page.slug == format!("{slug}/index"))
+            })
     }
 
     /// Rank pages for `query`: title, slug, headings and description weigh more than the
@@ -284,7 +306,11 @@ impl DocsIndex {
         let idf: HashMap<&str, f64> = terms
             .iter()
             .map(|term| {
-                let df = self.lower.iter().filter(|page| page.body.contains(term.as_str())).count();
+                let df = self
+                    .lower
+                    .iter()
+                    .filter(|page| page.body.contains(term.as_str()))
+                    .count();
                 (term.as_str(), (1.0 + total / (1.0 + df as f64)).ln())
             })
             .collect();
@@ -317,11 +343,17 @@ impl DocsIndex {
                 {
                     score *= 1.5;
                 }
-                Some(Hit { page, score, snippet: snippet(&page.body, &terms) })
+                Some(Hit {
+                    page,
+                    score,
+                    snippet: snippet(&page.body, &terms),
+                })
             })
             .collect();
         hits.sort_by(|a, b| {
-            b.score.total_cmp(&a.score).then_with(|| a.page.slug.cmp(&b.page.slug))
+            b.score
+                .total_cmp(&a.score)
+                .then_with(|| a.page.slug.cmp(&b.page.slug))
         });
         hits.truncate(limit);
         hits
@@ -335,7 +367,10 @@ fn collect(dir: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
         let path = entry.path();
         if entry.file_type()?.is_dir() {
             collect(&path, files)?;
-        } else if matches!(path.extension().and_then(|e| e.to_str()), Some("md" | "mdx")) {
+        } else if matches!(
+            path.extension().and_then(|e| e.to_str()),
+            Some("md" | "mdx")
+        ) {
             files.push(path);
         }
     }
@@ -353,7 +388,11 @@ fn snippet(body: &str, terms: &[String]) -> String {
         })
         .unwrap_or_default();
     let (text, cut) = truncate(line, SNIPPET_CHARS);
-    if cut { format!("{text}…") } else { text.to_owned() }
+    if cut {
+        format!("{text}…")
+    } else {
+        text.to_owned()
+    }
 }
 
 /// Docs root: `APHRODY_BUN_DOCS`, the fork checkout's `docs/`, installed corpora, then a previous
@@ -369,15 +408,19 @@ pub fn resolve_root() -> Option<PathBuf> {
     let configured = std::env::var_os(ROOT_ENV).map(PathBuf::from);
     let executable = std::env::current_exe().ok();
     let data = data_dir();
-    let mut candidates: Vec<PathBuf> =
-        fork_docs(
-            std::env::var_os(CHECKOUT_ENV).filter(|value| !value.is_empty()).map(PathBuf::from).as_deref(),
-            std::env::var_os("APHRODY_WORKSPACE_ROOT").filter(|value| !value.is_empty())
-                .or_else(|| std::env::var_os("APHRODY_ROOT").filter(|value| !value.is_empty()))
-                .map(PathBuf::from).as_deref(),
-        )
-            .into_iter()
-            .collect();
+    let mut candidates: Vec<PathBuf> = fork_docs(
+        std::env::var_os(CHECKOUT_ENV)
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .as_deref(),
+        std::env::var_os("APHRODY_WORKSPACE_ROOT")
+            .filter(|value| !value.is_empty())
+            .or_else(|| std::env::var_os("APHRODY_ROOT").filter(|value| !value.is_empty()))
+            .map(PathBuf::from)
+            .as_deref(),
+    )
+    .into_iter()
+    .collect();
     candidates.extend(installed_roots(executable.as_deref(), data.as_deref()));
     if let Some(data) = &data {
         candidates.extend(
@@ -413,7 +456,13 @@ fn download_ref() -> String {
 fn download_dir(data: &Path, reference: &str) -> PathBuf {
     let name: String = reference
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') {
+                c
+            } else {
+                '_'
+            }
+        })
         .take(12)
         .collect();
     data.join("aphrody/bun").join(format!("docs-{name}"))
@@ -483,8 +532,18 @@ fn download_into(url: &str, reference: &str, dest: &Path) -> Result<PathBuf, Str
         args.extend(SPARSE_PATTERNS);
         git(Some(&staging), &args)
     })
-    .and_then(|()| git(Some(&staging), &["fetch", "--quiet", "--depth", "1", "origin", reference]))
-    .and_then(|()| git(Some(&staging), &["checkout", "--quiet", "--detach", "FETCH_HEAD"]))
+    .and_then(|()| {
+        git(
+            Some(&staging),
+            &["fetch", "--quiet", "--depth", "1", "origin", reference],
+        )
+    })
+    .and_then(|()| {
+        git(
+            Some(&staging),
+            &["checkout", "--quiet", "--detach", "FETCH_HEAD"],
+        )
+    })
     .and_then(|()| {
         if staging.join("docs/docs.json").is_file() {
             Ok(())
@@ -503,8 +562,11 @@ fn download_into(url: &str, reference: &str, dest: &Path) -> Result<PathBuf, Str
 
 /// Read a configured fork or its sibling layout without assuming any host drive.
 fn fork_docs(checkout: Option<&Path>, workspace: Option<&Path>) -> Option<PathBuf> {
-    let checkout = checkout.map(Path::to_path_buf)
-        .or_else(|| workspace.and_then(Path::parent).map(|parent| parent.join("bun")))?;
+    let checkout = checkout.map(Path::to_path_buf).or_else(|| {
+        workspace
+            .and_then(Path::parent)
+            .map(|parent| parent.join("bun"))
+    })?;
     let docs = checkout.join("docs");
     docs.join("docs.json").is_file().then_some(docs)
 }
@@ -539,7 +601,12 @@ pub fn node_equivalents(query: &str, limit: usize) -> Vec<Value> {
     if needle.is_empty() {
         return Vec::new();
     }
-    let module_name = |module: &str| module.strip_prefix("node:").unwrap_or(module).to_lowercase();
+    let module_name = |module: &str| {
+        module
+            .strip_prefix("node:")
+            .unwrap_or(module)
+            .to_lowercase()
+    };
     let mut out = Vec::new();
     let mut modules = MODULES
         .iter()
@@ -559,20 +626,23 @@ pub fn node_equivalents(query: &str, limit: usize) -> Vec<Value> {
             "notes": entry.docs,
         })
     }));
-    out.extend(PACKAGES.iter().filter(|entry| entry.package.to_lowercase().contains(&needle)).map(
-        |entry| {
-            json!({
-                "kind": "package",
-                "id": entry.id,
-                "node": entry.package,
-                "bun": entry.replacement,
-                "strategy": entry.strategy.map(|s| format!("{s:?}").to_lowercase()),
-                "apis": entry.apis,
-                "hint": entry.note,
-                "notes": entry.docs,
-            })
-        },
-    ));
+    out.extend(
+        PACKAGES
+            .iter()
+            .filter(|entry| entry.package.to_lowercase().contains(&needle))
+            .map(|entry| {
+                json!({
+                    "kind": "package",
+                    "id": entry.id,
+                    "node": entry.package,
+                    "bun": entry.replacement,
+                    "strategy": entry.strategy.map(|s| format!("{s:?}").to_lowercase()),
+                    "apis": entry.apis,
+                    "hint": entry.note,
+                    "notes": entry.docs,
+                })
+            }),
+    );
     out.extend(
         APIS.iter()
             .filter(|entry| {
@@ -611,7 +681,10 @@ impl BunDocsSubsystem {
     /// A subsystem reading an explicit docs root.
     #[must_use]
     pub fn with_root(root: impl Into<PathBuf>) -> Self {
-        Self { root: Some(root.into()), index: OnceLock::new() }
+        Self {
+            root: Some(root.into()),
+            index: OnceLock::new(),
+        }
     }
 
     /// The index, built on first call.
@@ -762,7 +835,7 @@ impl SystemSubsystem for BunDocsSubsystem {
                             == Some(true) =>
                     {
                         Some(page_content(hit.page, None, max_chars)?)
-                    },
+                    }
                     _ => None,
                 };
                 Ok(json!({
@@ -777,7 +850,7 @@ impl SystemSubsystem for BunDocsSubsystem {
                     })).collect::<Vec<_>>(),
                     "top": top,
                 }))
-            },
+            }
             "bun_docs_read" => {
                 let index = self.index()?;
                 let slug = text_arg(&arguments, "slug")?;
@@ -801,7 +874,7 @@ impl SystemSubsystem for BunDocsSubsystem {
                     section,
                     usize_arg(&arguments, "max_chars", DEFAULT_MAX_CHARS, usize::MAX),
                 )
-            },
+            }
             "bun_docs_list" => {
                 let index = self.index()?;
                 let prefix = arguments
@@ -818,7 +891,7 @@ impl SystemSubsystem for BunDocsSubsystem {
                 Ok(
                     json!({ "root": index.root().display().to_string(), "count": pages.len(), "pages": pages }),
                 )
-            },
+            }
             "bun_node_equivalent" => {
                 let query = text_arg(&arguments, "query")?;
                 let limit = usize_arg(&arguments, "limit", DEFAULT_LIMIT, MAX_LIMIT);
@@ -836,7 +909,7 @@ impl SystemSubsystem for BunDocsSubsystem {
                     },
                 );
                 Ok(json!({ "query": query, "equivalents": equivalents, "docs": docs }))
-            },
+            }
             other => Err(SubsystemError::UnknownTool(other.to_owned())),
         }
     }
@@ -890,8 +963,14 @@ mod tests {
         assert_eq!(page.headings, ["Reading files", "Streams", "Writing files"]);
         assert!(page.body.starts_with("Intro"));
         assert_eq!(page.url(), "https://bun.com/docs/runtime/file-io");
-        assert_eq!(fixture().get("index").map(DocPage::url).as_deref(), Some(DOCS_BASE_URL));
-        assert_eq!(fixture().get("index").map(|p| p.title.as_str()), Some("Welcome"));
+        assert_eq!(
+            fixture().get("index").map(DocPage::url).as_deref(),
+            Some(DOCS_BASE_URL)
+        );
+        assert_eq!(
+            fixture().get("index").map(|p| p.title.as_str()),
+            Some("Welcome")
+        );
     }
 
     #[test]
@@ -923,7 +1002,11 @@ mod tests {
             "/runtime/file-io.mdx",
             "https://bun.com/docs/runtime/file-io#streams",
         ] {
-            assert_eq!(index.get(key).map(|p| p.slug.as_str()), Some("runtime/file-io"), "{key}");
+            assert_eq!(
+                index.get(key).map(|p| p.slug.as_str()),
+                Some("runtime/file-io"),
+                "{key}"
+            );
         }
         assert!(index.get("runtime/nope").is_none());
     }
@@ -933,7 +1016,11 @@ mod tests {
         let fs = node_equivalents("node:fs", 50);
         assert!(!fs.is_empty());
         assert_eq!(fs[0]["kind"], "module");
-        assert!(node_equivalents("dotenv", 10).iter().any(|e| e["kind"] == "package"));
+        assert!(
+            node_equivalents("dotenv", 10)
+                .iter()
+                .any(|e| e["kind"] == "package")
+        );
         assert!(node_equivalents("", 10).is_empty());
     }
 
@@ -960,10 +1047,19 @@ mod tests {
         for root in &installed {
             std::fs::create_dir_all(root).expect("bundle directory");
         }
-        assert_eq!(resolve_root_from(None, &installed), Some(installed[0].clone()));
+        assert_eq!(
+            resolve_root_from(None, &installed),
+            Some(installed[0].clone())
+        );
         std::fs::remove_dir(&installed[0]).expect("remove portable bundle");
-        assert_eq!(resolve_root_from(None, &installed), Some(installed[1].clone()));
-        assert_eq!(installed[1], temp.path().join("prefix/share/aphrody/bun/docs"));
+        assert_eq!(
+            resolve_root_from(None, &installed),
+            Some(installed[1].clone())
+        );
+        assert_eq!(
+            installed[1],
+            temp.path().join("prefix/share/aphrody/bun/docs")
+        );
         assert!(resolve_root_from(None, &[temp.path().join("absent")]).is_none());
     }
 
@@ -973,7 +1069,10 @@ mod tests {
         assert_eq!(fork_docs(Some(temp.path()), None), None);
         std::fs::create_dir_all(temp.path().join("docs")).expect("docs directory");
         std::fs::write(temp.path().join("docs/docs.json"), "{}").expect("docs.json");
-        assert_eq!(fork_docs(Some(temp.path()), None), Some(temp.path().join("docs")));
+        assert_eq!(
+            fork_docs(Some(temp.path()), None),
+            Some(temp.path().join("docs"))
+        );
         assert_eq!(fork_docs(None, None), None);
     }
 
@@ -989,13 +1088,19 @@ mod tests {
     #[test]
     fn download_is_pinned_and_versioned() {
         let commit = pinned_commit().expect("SOURCE.json pins a commit");
-        assert!(commit.len() == 40 && commit.bytes().all(|b| b.is_ascii_hexdigit()), "{commit}");
+        assert!(
+            commit.len() == 40 && commit.bytes().all(|b| b.is_ascii_hexdigit()),
+            "{commit}"
+        );
         let data = Path::new("data");
         assert_eq!(
             download_dir(data, &commit),
             data.join(format!("aphrody/bun/docs-{}", &commit[..12]))
         );
-        assert_eq!(download_dir(data, "feature/x"), data.join("aphrody/bun/docs-feature_x"));
+        assert_eq!(
+            download_dir(data, "feature/x"),
+            data.join("aphrody/bun/docs-feature_x")
+        );
     }
 
     #[test]
@@ -1023,10 +1128,17 @@ mod tests {
         ];
         git(Some(&fork), &["init", "--quiet"]).expect("init");
         git(Some(&fork), &["config", "uploadpack.allowFilter", "true"]).expect("filter");
-        git(Some(&fork), &["config", "uploadpack.allowAnySHA1InWant", "true"]).expect("want");
+        git(
+            Some(&fork),
+            &["config", "uploadpack.allowAnySHA1InWant", "true"],
+        )
+        .expect("want");
         git(Some(&fork), &["add", "."]).expect("add");
-        git(Some(&fork), &[&id[..], &["commit", "--quiet", "-m", "docs"]].concat())
-            .expect("commit");
+        git(
+            Some(&fork),
+            &[&id[..], &["commit", "--quiet", "-m", "docs"]].concat(),
+        )
+        .expect("commit");
         let head = std::process::Command::new("git")
             .arg("-C")
             .arg(&fork)
@@ -1047,14 +1159,29 @@ mod tests {
         assert!(dest.join("LICENSE.md").is_file());
         assert!(!docs.join("images").exists() && !dest.join("src").exists());
         assert_eq!(
-            DocsIndex::load(&docs).expect("index").search("Bun.file", 1)[0].page.slug,
+            DocsIndex::load(&docs).expect("index").search("Bun.file", 1)[0]
+                .page
+                .slug,
             "runtime/file-io"
         );
-        assert_eq!(download_into("file:///absent", &head, &dest).expect("cached"), docs);
-        let failed =
-            download_into("file:///absent-fork", "main", &temp.path().join("other/docs-x"));
+        assert_eq!(
+            download_into("file:///absent", &head, &dest).expect("cached"),
+            docs
+        );
+        let failed = download_into(
+            "file:///absent-fork",
+            "main",
+            &temp.path().join("other/docs-x"),
+        );
         assert!(failed.is_err_and(|error| error.contains("git clone")));
-        assert!(!temp.path().join("other").read_dir().expect("parent").any(|_| true));
+        assert!(
+            !temp
+                .path()
+                .join("other")
+                .read_dir()
+                .expect("parent")
+                .any(|_| true)
+        );
     }
 
     #[tokio::test]
@@ -1065,7 +1192,10 @@ mod tests {
         };
         let docs = BunDocsSubsystem::with_root(root);
         let found = docs
-            .call("bun_docs_search", json!({"query": "Bun.file write", "include_content": true}))
+            .call(
+                "bun_docs_search",
+                json!({"query": "Bun.file write", "include_content": true}),
+            )
             .await
             .expect("search");
         let slugs: Vec<&str> = found["results"]
@@ -1075,19 +1205,38 @@ mod tests {
             .filter_map(|r| r["slug"].as_str())
             .collect();
         assert!(slugs.contains(&"runtime/file-io"), "{slugs:?}");
-        assert!(found["top"]["content"].as_str().is_some_and(|c| !c.is_empty()));
+        assert!(
+            found["top"]["content"]
+                .as_str()
+                .is_some_and(|c| !c.is_empty())
+        );
         let read = docs
-            .call("bun_docs_read", json!({"slug": "runtime/file-io", "section": "Writing files"}))
+            .call(
+                "bun_docs_read",
+                json!({"slug": "runtime/file-io", "section": "Writing files"}),
+            )
             .await
             .expect("read");
-        assert!(read["content"].as_str().expect("content").contains("Bun.write"));
-        let list = docs.call("bun_docs_list", json!({"prefix": "runtime/"})).await.expect("list");
+        assert!(
+            read["content"]
+                .as_str()
+                .expect("content")
+                .contains("Bun.write")
+        );
+        let list = docs
+            .call("bun_docs_list", json!({"prefix": "runtime/"}))
+            .await
+            .expect("list");
         assert!(list["count"].as_u64().expect("count") > 20);
-        let eq =
-            docs.call("bun_node_equivalent", json!({"query": "child_process"})).await.expect("eq");
+        let eq = docs
+            .call("bun_node_equivalent", json!({"query": "child_process"}))
+            .await
+            .expect("eq");
         assert!(!eq["equivalents"].as_array().expect("eq").is_empty());
-        let err =
-            docs.call("bun_docs_read", json!({"slug": "runtime/nope"})).await.expect_err("missing");
+        let err = docs
+            .call("bun_docs_read", json!({"slug": "runtime/nope"}))
+            .await
+            .expect_err("missing");
         assert!(matches!(err, SubsystemError::InvalidArguments(_)));
     }
 
@@ -1096,9 +1245,18 @@ mod tests {
         let docs = BunDocsSubsystem::new();
         let tools = docs.tools();
         assert_eq!(tools.len(), 4);
-        assert!(tools.iter().all(|tool| tool.read_only && tool.name.starts_with("bun_")));
+        assert!(
+            tools
+                .iter()
+                .all(|tool| tool.read_only && tool.name.starts_with("bun_"))
+        );
         for skill in docs.skills() {
-            assert!(skill.steps.iter().all(|step| tools.iter().any(|t| t.name == step.tool)));
+            assert!(
+                skill
+                    .steps
+                    .iter()
+                    .all(|step| tools.iter().any(|t| t.name == step.tool))
+            );
         }
     }
 }

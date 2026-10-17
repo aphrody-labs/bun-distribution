@@ -34,20 +34,20 @@ pub fn read_bg_text_tiles<
         match bg_control.size_key() {
             0 | 1 => {
                 map_base |= (y & 0xF8) << 3;
-            },
+            }
             2 => {
                 map_base += (y & 0x1F8) << 3;
                 if R::IS_A {
                     map_base &= R::BG_VRAM_MASK;
                 }
-            },
+            }
             _ => {
                 map_base |= (y & 0xF8) << 3;
                 map_base += (y & 0x100) << 4;
                 if R::IS_A {
                     map_base &= R::BG_VRAM_MASK;
                 }
-            },
+            }
         }
         map_base
     };
@@ -62,7 +62,9 @@ pub fn read_bg_text_tiles<
             tiles.0[..32].assume_init_ref()
         } else {
             (tiles.0.as_mut_ptr().add(32) as *mut usize).copy_from_nonoverlapping(
-                bg_vram.as_ptr().add(((map_base + 0x800) & R::BG_VRAM_MASK) as usize)
+                bg_vram
+                    .as_ptr()
+                    .add(((map_base + 0x800) & R::BG_VRAM_MASK) as usize)
                     as *const usize,
                 64 / mem::size_of::<usize>(),
             );

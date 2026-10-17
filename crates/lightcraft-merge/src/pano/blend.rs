@@ -20,7 +20,12 @@ pub struct Buf {
 
 impl Buf {
     pub fn new(w: usize, h: usize, c: usize) -> Buf {
-        Buf { w, h, c, data: vec![0.0; w * h * c] }
+        Buf {
+            w,
+            h,
+            c,
+            data: vec![0.0; w * h * c],
+        }
     }
     #[inline]
     fn at(&self, x: isize, y: isize, ch: usize) -> f32 {
@@ -37,56 +42,65 @@ pub fn down(b: &Buf) -> Buf {
     let (w2, h2) = (b.w.div_ceil(2), b.h.div_ceil(2));
     // horizontal pass at decimated x
     let mut tmp = Buf::new(w2, b.h, b.c);
-    tmp.data.par_chunks_mut(w2 * b.c).enumerate().for_each(|(y, row)| {
-        for x in 0..w2 {
-            for ch in 0..b.c {
-                let mut s = 0.0;
-                for (k, wk) in K.iter().enumerate() {
-                    s += wk * b.at(2 * x as isize + k as isize - 2, y as isize, ch);
+    tmp.data
+        .par_chunks_mut(w2 * b.c)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w2 {
+                for ch in 0..b.c {
+                    let mut s = 0.0;
+                    for (k, wk) in K.iter().enumerate() {
+                        s += wk * b.at(2 * x as isize + k as isize - 2, y as isize, ch);
+                    }
+                    row[x * b.c + ch] = s;
                 }
-                row[x * b.c + ch] = s;
             }
-        }
-    });
+        });
     let mut out = Buf::new(w2, h2, b.c);
-    out.data.par_chunks_mut(w2 * b.c).enumerate().for_each(|(y, row)| {
-        for x in 0..w2 {
-            for ch in 0..b.c {
-                let mut s = 0.0;
-                for (k, wk) in K.iter().enumerate() {
-                    s += wk * tmp.at(x as isize, 2 * y as isize + k as isize - 2, ch);
+    out.data
+        .par_chunks_mut(w2 * b.c)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w2 {
+                for ch in 0..b.c {
+                    let mut s = 0.0;
+                    for (k, wk) in K.iter().enumerate() {
+                        s += wk * tmp.at(x as isize, 2 * y as isize + k as isize - 2, ch);
+                    }
+                    row[x * b.c + ch] = s;
                 }
-                row[x * b.c + ch] = s;
             }
-        }
-    });
+        });
     out
 }
 
 /// Expand to `w × h` (bilinear, pixel-centre aligned with [`down`]'s grid).
 pub fn up(b: &Buf, w: usize, h: usize) -> Buf {
     let mut out = Buf::new(w, h, b.c);
-    out.data.par_chunks_mut(w * b.c).enumerate().for_each(|(y, row)| {
-        let fy = (y as f32 + 0.5) / 2.0 - 0.5;
-        let y0 = fy.floor();
-        let ty = fy - y0;
-        let y0 = y0 as isize;
-        for x in 0..w {
-            let fx = (x as f32 + 0.5) / 2.0 - 0.5;
-            let x0 = fx.floor();
-            let tx = fx - x0;
-            let x0 = x0 as isize;
-            for ch in 0..b.c {
-                let a = b.at(x0, y0, ch);
-                let bb = b.at(x0 + 1, y0, ch);
-                let c = b.at(x0, y0 + 1, ch);
-                let d = b.at(x0 + 1, y0 + 1, ch);
-                let top = a + (bb - a) * tx;
-                let bot = c + (d - c) * tx;
-                row[x * b.c + ch] = top + (bot - top) * ty;
+    out.data
+        .par_chunks_mut(w * b.c)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let fy = (y as f32 + 0.5) / 2.0 - 0.5;
+            let y0 = fy.floor();
+            let ty = fy - y0;
+            let y0 = y0 as isize;
+            for x in 0..w {
+                let fx = (x as f32 + 0.5) / 2.0 - 0.5;
+                let x0 = fx.floor();
+                let tx = fx - x0;
+                let x0 = x0 as isize;
+                for ch in 0..b.c {
+                    let a = b.at(x0, y0, ch);
+                    let bb = b.at(x0 + 1, y0, ch);
+                    let c = b.at(x0, y0 + 1, ch);
+                    let d = b.at(x0 + 1, y0 + 1, ch);
+                    let top = a + (bb - a) * tx;
+                    let bot = c + (d - c) * tx;
+                    row[x * b.c + ch] = top + (bot - top) * ty;
+                }
             }
-        }
-    });
+        });
     out
 }
 
@@ -118,7 +132,11 @@ pub fn push_pull(vals: &mut Buf, wgt: &[f32]) {
         for i in 0..l.w * l.h {
             let a = l.data[i * (c + 1) + c];
             for ch in 0..c {
-                f.data[i * c + ch] = if a > 1e-12 { l.data[i * (c + 1) + ch] / a } else { 0.0 };
+                f.data[i * c + ch] = if a > 1e-12 {
+                    l.data[i * (c + 1) + ch] / a
+                } else {
+                    0.0
+                };
             }
         }
         f
@@ -129,7 +147,11 @@ pub fn push_pull(vals: &mut Buf, wgt: &[f32]) {
         for i in 0..l.w * l.h {
             let a = l.data[i * (c + 1) + c].min(1.0);
             for ch in 0..c {
-                let v = if a > 1e-12 { l.data[i * (c + 1) + ch] / l.data[i * (c + 1) + c] } else { 0.0 };
+                let v = if a > 1e-12 {
+                    l.data[i * (c + 1) + ch] / l.data[i * (c + 1) + c]
+                } else {
+                    0.0
+                };
                 f.data[i * c + ch] = v * a + coarse.data[i * c + ch] * (1.0 - a);
             }
         }
@@ -162,7 +184,13 @@ impl Blender {
             acc.push(Buf::new(w >> l, h >> l, 3));
             wsum.push(Buf::new(w >> l, h >> l, 1));
         }
-        Blender { levels, w, h, acc, wsum }
+        Blender {
+            levels,
+            w,
+            h,
+            acc,
+            wsum,
+        }
     }
 
     /// Add a tile at canvas offset (`x0`, `y0`) (multiples of 2^levels; tile size too): `vals`
@@ -172,7 +200,11 @@ impl Blender {
         let mut m = mask;
         for l in 0..=self.levels {
             let (ox, oy) = (x0 >> l, y0 >> l);
-            let (gn, mn) = if l < self.levels { (Some(down(&g)), Some(down(&m))) } else { (None, None) };
+            let (gn, mn) = if l < self.levels {
+                (Some(down(&g)), Some(down(&m)))
+            } else {
+                (None, None)
+            };
             let lap = match &gn {
                 Some(gn) => {
                     let u = up(gn, g.w, g.h);
@@ -187,26 +219,30 @@ impl Blender {
             let (acc, ws) = (&mut self.acc[l], &mut self.wsum[l]);
             let aw = acc.w;
             let tw = lap.w;
-            acc.data.par_chunks_mut(aw * 3).zip(ws.data.par_chunks_mut(aw)).enumerate().for_each(|(y, (arow, wrow))| {
-                if y < oy || y >= oy + lap.h {
-                    return;
-                }
-                let ty = y - oy;
-                for tx in 0..tw {
-                    let x = ox + tx;
-                    if x >= aw {
-                        break;
+            acc.data
+                .par_chunks_mut(aw * 3)
+                .zip(ws.data.par_chunks_mut(aw))
+                .enumerate()
+                .for_each(|(y, (arow, wrow))| {
+                    if y < oy || y >= oy + lap.h {
+                        return;
                     }
-                    let mk = m.data[ty * tw + tx];
-                    if mk <= 0.0 {
-                        continue;
+                    let ty = y - oy;
+                    for tx in 0..tw {
+                        let x = ox + tx;
+                        if x >= aw {
+                            break;
+                        }
+                        let mk = m.data[ty * tw + tx];
+                        if mk <= 0.0 {
+                            continue;
+                        }
+                        for ch in 0..3 {
+                            arow[x * 3 + ch] += lap.data[(ty * tw + tx) * 3 + ch] * mk;
+                        }
+                        wrow[x] += mk;
                     }
-                    for ch in 0..3 {
-                        arow[x * 3 + ch] += lap.data[(ty * tw + tx) * 3 + ch] * mk;
-                    }
-                    wrow[x] += mk;
-                }
-            });
+                });
             if let (Some(gn), Some(mn)) = (gn, mn) {
                 g = gn;
                 m = mn;
@@ -223,7 +259,11 @@ impl Blender {
             for i in 0..b.w * b.h {
                 let s = ws.data[i];
                 for ch in 0..3 {
-                    b.data[i * 3 + ch] = if s > 1e-8 { b.data[i * 3 + ch] / s } else { 0.0 };
+                    b.data[i * 3 + ch] = if s > 1e-8 {
+                        b.data[i * 3 + ch] / s
+                    } else {
+                        0.0
+                    };
                 }
             }
             if let Some(r) = res {
@@ -271,14 +311,21 @@ mod tests {
             let mut m = Buf::new(w, h, 1);
             for y in 0..h {
                 for x in 0..w {
-                    m.data[y * w + x] = if (x >= w / 2) == (side == 1) { 1.0 } else { 0.0 };
+                    m.data[y * w + x] = if (x >= w / 2) == (side == 1) {
+                        1.0
+                    } else {
+                        0.0
+                    };
                 }
             }
             b.add(0, 0, v, m);
         }
         let out = b.finish();
         let row: Vec<f32> = (0..w).map(|x| out.data[(16 * w + x) * 3]).collect();
-        let max_step = row.windows(2).map(|p| (p[1] - p[0]).abs()).fold(0.0, f32::max);
+        let max_step = row
+            .windows(2)
+            .map(|p| (p[1] - p[0]).abs())
+            .fold(0.0, f32::max);
         assert!(max_step < 0.15, "max step {max_step}");
         assert!(row[2].abs() < 0.02 && (row[w - 3] - 1.0).abs() < 0.02);
     }

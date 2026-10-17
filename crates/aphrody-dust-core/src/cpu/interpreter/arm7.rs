@@ -52,9 +52,12 @@ macro_rules! get_next_breakpoint {
         #[cfg(feature = "debugger-hooks")]
         if !$emu.arm7.debug.breakpoints.is_empty() {
             let (Ok(i) | Err(i)) = $emu.arm7.debug.breakpoints.binary_search(&$addr);
-            $emu.arm7.engine_data.next_breakpoint_addr = $emu.arm7.debug.breakpoints
-                [if i >= $emu.arm7.debug.breakpoints.len() { 0 } else { i }]
-                & !$mask;
+            $emu.arm7.engine_data.next_breakpoint_addr =
+                $emu.arm7.debug.breakpoints[if i >= $emu.arm7.debug.breakpoints.len() {
+                    0
+                } else {
+                    i
+                }] & !$mask;
         }
     };
 }
@@ -66,7 +69,9 @@ fn multiply_cycles(mut op: u32) -> RawTimestamp {
 
 #[inline]
 fn add_cycles(emu: &mut Emu<Interpreter>, cycles: RawTimestamp) {
-    emu.arm7.schedule.set_cur_time(emu.arm7.schedule.cur_time() + Timestamp(cycles));
+    emu.arm7
+        .schedule
+        .set_cur_time(emu.arm7.schedule.cur_time() + Timestamp(cycles));
 }
 
 fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) {
@@ -83,7 +88,7 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
                 emu.arm7.engine_data.r15_increment = 4 >> thumb as u8;
             }
             thumb
-        },
+        }
         StateSource::Cpsr => emu.arm7.engine_data.regs.cpsr.thumb_state(),
     } {
         addr &= !1;
@@ -110,7 +115,10 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
         #[cfg(not(feature = "interp-pipeline"))]
         {
             let code_timings = emu.arm7.bus_timings.get(addr);
-            add_cycles(emu, code_timings.n16 as RawTimestamp + code_timings.s16 as RawTimestamp);
+            add_cycles(
+                emu,
+                code_timings.n16 as RawTimestamp + code_timings.s16 as RawTimestamp,
+            );
             reg!(emu.arm7, 15) = addr.wrapping_add(4);
         }
     } else {
@@ -138,7 +146,10 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
         #[cfg(not(feature = "interp-pipeline"))]
         {
             let code_timings = emu.arm7.bus_timings.get(addr);
-            add_cycles(emu, code_timings.n32 as RawTimestamp + code_timings.s32 as RawTimestamp);
+            add_cycles(
+                emu,
+                code_timings.n32 as RawTimestamp + code_timings.s32 as RawTimestamp,
+            );
             reg!(emu.arm7, 15) = addr.wrapping_add(8);
         }
     }
@@ -147,8 +158,13 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
 fn set_cpsr_update_control(emu: &mut Emu<Interpreter>, value: Psr) {
     let prev_value = emu.arm7.engine_data.regs.cpsr;
     emu.arm7.engine_data.regs.cpsr = value;
-    emu.arm7.irqs.set_enabled_in_cpsr(!value.irqs_disabled(), &mut emu.arm7.schedule);
-    emu.arm7.engine_data.regs.update_mode::<false>(prev_value.mode(), value.mode());
+    emu.arm7
+        .irqs
+        .set_enabled_in_cpsr(!value.irqs_disabled(), &mut emu.arm7.schedule);
+    emu.arm7
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_value.mode(), value.mode());
 }
 
 fn restore_spsr(emu: &mut Emu<Interpreter>) {
@@ -174,7 +190,9 @@ fn handle_undefined<const THUMB: bool>(emu: &mut Emu<Interpreter>, _instr: u32) 
     #[cfg(feature = "debugger-hooks")]
     if let Some(undef_hook) = emu.arm7.undef_hook() {
         if unsafe { undef_hook.get()(emu, _instr, THUMB) } {
-            emu.arm7.schedule.set_target_time(emu.arm7.schedule.cur_time());
+            emu.arm7
+                .schedule
+                .set_target_time(emu.arm7.schedule.cur_time());
             emu.arm7.was_stopped_by_debug_hook = true;
             emu.arm7.is_stopped = true;
         }
@@ -193,7 +211,10 @@ fn handle_undefined<const THUMB: bool>(emu: &mut Emu<Interpreter>, _instr: u32) 
     {
         emu.arm7.engine_data.r15_increment = 4;
     }
-    emu.arm7.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::UNDEFINED);
+    emu.arm7
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::UNDEFINED);
     emu.arm7.engine_data.regs.spsr = prev_cpsr;
     reg!(emu.arm7, 14) = reg!(emu.arm7, 15).wrapping_sub(4 >> THUMB as u8);
     reg!(emu.arm7, 15) = 0x0000_0004;
@@ -204,26 +225,37 @@ fn handle_swi<const THUMB: bool>(emu: &mut Emu<Interpreter>, number: u8) {
     #[cfg(feature = "debugger-hooks")]
     if let Some(swi_hook) = emu.arm7.swi_hook() {
         if unsafe { swi_hook.get()(emu, number) } {
-            emu.arm7.schedule.set_target_time(emu.arm7.schedule.cur_time());
+            emu.arm7
+                .schedule
+                .set_target_time(emu.arm7.schedule.cur_time());
             emu.arm7.was_stopped_by_debug_hook = true;
             emu.arm7.is_stopped = true;
         }
     }
 
     if emu.arm7.hle_bios_enabled() {
-        enter_hle_swi::<true>(emu, number, reg!(emu.arm7, 15).wrapping_sub(4 >> THUMB as u8));
+        enter_hle_swi::<true>(
+            emu,
+            number,
+            reg!(emu.arm7, 15).wrapping_sub(4 >> THUMB as u8),
+        );
         return;
     }
 
     let prev_cpsr = emu.arm7.engine_data.regs.cpsr;
-    emu.arm7.engine_data.regs.cpsr =
-        prev_cpsr.with_mode(Mode::SUPERVISOR).with_thumb_state(false).with_irqs_disabled(true);
+    emu.arm7.engine_data.regs.cpsr = prev_cpsr
+        .with_mode(Mode::SUPERVISOR)
+        .with_thumb_state(false)
+        .with_irqs_disabled(true);
     emu.arm7.irqs.set_enabled_in_cpsr(false, ());
     #[cfg(feature = "interp-pipeline-accurate-reloads")]
     {
         emu.arm7.engine_data.r15_increment = 4;
     }
-    emu.arm7.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
+    emu.arm7
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
     emu.arm7.engine_data.regs.spsr = prev_cpsr;
     reg!(emu.arm7, 14) = reg!(emu.arm7, 15).wrapping_sub(4 >> THUMB as u8);
     reg!(emu.arm7, 15) = 0x0000_0008;
@@ -235,21 +267,33 @@ fn enter_hle_swi<const FROM_USER_CODE: bool>(
     number: u8,
     return_addr: u32,
 ) {
-    let spsr = if FROM_USER_CODE { emu.arm7.engine_data.regs.cpsr } else { spsr!(emu.arm7) };
+    let spsr = if FROM_USER_CODE {
+        emu.arm7.engine_data.regs.cpsr
+    } else {
+        spsr!(emu.arm7)
+    };
 
     if FROM_USER_CODE {
         let prev_mode = emu.arm7.engine_data.regs.cpsr.mode();
         emu.arm7.engine_data.regs.cpsr.set_mode(Mode::SUPERVISOR);
-        emu.arm7.engine_data.regs.update_mode::<false>(prev_mode, Mode::SUPERVISOR);
+        emu.arm7
+            .engine_data
+            .regs
+            .update_mode::<false>(prev_mode, Mode::SUPERVISOR);
         reg!(emu.arm7, 14) = return_addr;
         emu.arm7.engine_data.regs.spsr = spsr;
     }
 
     reg!(emu.arm7, 13) = reg!(emu.arm7, 13).wrapping_sub(0x10);
     let base_addr = reg!(emu.arm7, 13);
-    for (i, value) in [spsr.raw(), reg!(emu.arm7, 11), reg!(emu.arm7, 12), reg!(emu.arm7, 14)]
-        .into_iter()
-        .enumerate()
+    for (i, value) in [
+        spsr.raw(),
+        reg!(emu.arm7, 11),
+        reg!(emu.arm7, 12),
+        reg!(emu.arm7, 14),
+    ]
+    .into_iter()
+    .enumerate()
     {
         bus::write_32::<CpuAccess, _>(emu, base_addr.wrapping_add((i << 2) as u32), value);
     }
@@ -281,7 +325,10 @@ fn return_from_hle_swi(emu: &mut Emu<Interpreter>) {
 
     let prev_cpsr = emu.arm7.engine_data.regs.cpsr;
     emu.arm7.engine_data.regs.cpsr = prev_cpsr.with_mode(Mode::SUPERVISOR);
-    emu.arm7.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
+    emu.arm7
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
 
     let base_addr = reg!(emu.arm7, 13);
     reg!(emu.arm7, 13) = base_addr.wrapping_add(0x10);
@@ -302,7 +349,10 @@ fn enter_hle_irq<const FROM_USER_CODE: bool>(emu: &mut Emu<Interpreter>, return_
         let prev_cpsr = emu.arm7.engine_data.regs.cpsr;
         emu.arm7.engine_data.regs.cpsr = prev_cpsr.with_mode(Mode::IRQ).with_irqs_disabled(true);
         emu.arm7.irqs.set_enabled_in_cpsr(false, ());
-        emu.arm7.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
+        emu.arm7
+            .engine_data
+            .regs
+            .update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
         emu.arm7.engine_data.regs.spsr = prev_cpsr;
     }
 
@@ -343,7 +393,10 @@ impl CoreData for EngineData {
     fn setup_direct_boot(emu: &mut Emu<Interpreter>, entry_addr: u32) {
         let prev_mode = emu.arm7.engine_data.regs.cpsr.mode();
         emu.arm7.engine_data.regs.cpsr.set_mode(Mode::SYSTEM);
-        emu.arm7.engine_data.regs.update_mode::<false>(prev_mode, Mode::SYSTEM);
+        emu.arm7
+            .engine_data
+            .regs
+            .update_mode::<false>(prev_mode, Mode::SYSTEM);
         for reg in 0..12 {
             reg!(emu.arm7, reg) = 0;
         }
@@ -545,14 +598,19 @@ impl Arm7Data for EngineData {
                     {
                         emu.arm7.engine_data.r15_increment = 4;
                     }
-                    emu.arm7.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
+                    emu.arm7
+                        .engine_data
+                        .regs
+                        .update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
                     emu.arm7.engine_data.regs.spsr = prev_cpsr;
                     reg!(emu.arm7, 14) = return_addr;
                     reg!(emu.arm7, 15) = 0x0000_0018;
                     reload_pipeline::<{ StateSource::Arm }>(emu);
                 }
             } else if emu.arm7.irqs.halted() {
-                emu.arm7.schedule.set_cur_time(emu.arm7.schedule.target_time());
+                emu.arm7
+                    .schedule
+                    .set_cur_time(emu.arm7.schedule.target_time());
                 continue;
             }
             while emu.arm7.schedule.cur_time() < emu.arm7.schedule.target_time() {
@@ -563,7 +621,9 @@ impl Arm7Data for EngineData {
                     if emu.arm7.engine_data.next_breakpoint_addr == r15 {
                         if let Some(breakpoint_hook) = emu.arm7.breakpoint_hook().as_ref() {
                             if unsafe { breakpoint_hook.get()(emu, r15) } {
-                                emu.arm7.schedule.set_target_time(emu.arm7.schedule.cur_time());
+                                emu.arm7
+                                    .schedule
+                                    .set_target_time(emu.arm7.schedule.cur_time());
                                 emu.arm7.was_stopped_by_debug_hook = true;
                                 emu.arm7.is_stopped = true;
                                 return;
@@ -574,7 +634,9 @@ impl Arm7Data for EngineData {
                         if emu.arm7.debug.single_step_started {
                             emu.arm7.debug.single_step = false;
                             emu.arm7.debug.single_step_started = false;
-                            emu.arm7.schedule.set_target_time(emu.arm7.schedule.cur_time());
+                            emu.arm7
+                                .schedule
+                                .set_target_time(emu.arm7.schedule.cur_time());
                             emu.arm7.was_stopped_by_debug_hook = true;
                             emu.arm7.is_stopped = true;
                             return;

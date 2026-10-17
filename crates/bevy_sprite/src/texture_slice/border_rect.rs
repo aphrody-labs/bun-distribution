@@ -1,5 +1,5 @@
 use bevy_math::Vec2;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 
 /// Defines border insets that shrink a rectangle from its minimum and maximum corners.
 ///

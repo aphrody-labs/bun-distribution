@@ -210,8 +210,9 @@ impl RequiredComponents {
         // If already registered as a direct required component then bail.
         let entry = match self.direct.entry(component_id) {
             indexmap::map::Entry::Vacant(entry) => entry,
-            indexmap::map::Entry::Occupied(_) =>
-                panic!("Error while registering required component {component_id:?}: already directly required"),
+            indexmap::map::Entry::Occupied(_) => panic!(
+                "Error while registering required component {component_id:?}: already directly required"
+            ),
         };
 
         // Insert into `direct`.
@@ -528,7 +529,9 @@ pub enum RequiredComponentsError {
     #[error("Component {0:?} already directly requires component {1:?}")]
     DuplicateRegistration(ComponentId, ComponentId),
     /// Adding the given requirement would create a cycle.
-    #[error("Cyclic requirement found: the requiree component {0:?} is required by the required component {1:?}")]
+    #[error(
+        "Cyclic requirement found: the requiree component {0:?} is required by the required component {1:?}"
+    )]
     CyclicRequirement(ComponentId, ComponentId),
     /// An archetype with the component that requires other components already exists
     #[error("An archetype with the component {0:?} that requires other components already exists")]
@@ -1240,8 +1243,8 @@ mod tests {
     }
 
     #[test]
-    fn runtime_required_components_deep_require_does_not_override_shallow_require_deep_subtree_after_shallow(
-    ) {
+    fn runtime_required_components_deep_require_does_not_override_shallow_require_deep_subtree_after_shallow()
+     {
         #[derive(Component)]
         struct A;
         #[derive(Component, Default)]
@@ -1527,20 +1530,24 @@ mod tests {
         world.register_required_components::<L1, L2>();
         world.register_required_components::<L3, L4>();
         let e = world.spawn(L0).id();
-        assert!(world
-            .query::<(&L0, &L1, &L2, &L3, &L4, &L5)>()
-            .get(&world, e)
-            .is_ok());
+        assert!(
+            world
+                .query::<(&L0, &L1, &L2, &L3, &L4, &L5)>()
+                .get(&world, e)
+                .is_ok()
+        );
 
         // Repeat but in the opposite order
         let mut world = World::new();
         world.register_required_components::<L3, L4>();
         world.register_required_components::<L1, L2>();
         let e = world.spawn(L0).id();
-        assert!(world
-            .query::<(&L0, &L1, &L2, &L3, &L4, &L5)>()
-            .get(&world, e)
-            .is_ok());
+        assert!(
+            world
+                .query::<(&L0, &L1, &L2, &L3, &L4, &L5)>()
+                .get(&world, e)
+                .is_ok()
+        );
     }
 
     #[test]
@@ -1567,20 +1574,24 @@ mod tests {
         world.register_required_components::<L1, L2>();
         world.register_required_components::<L2, L3>();
         let e = world.spawn(L0).id();
-        assert!(world
-            .query::<(&L0, &L1, &L2, &L3, &L4)>()
-            .get(&world, e)
-            .is_ok());
+        assert!(
+            world
+                .query::<(&L0, &L1, &L2, &L3, &L4)>()
+                .get(&world, e)
+                .is_ok()
+        );
 
         // Repeat but in the opposite order
         let mut world = World::new();
         world.register_required_components::<L2, L3>();
         world.register_required_components::<L1, L2>();
         let e = world.spawn(L0).id();
-        assert!(world
-            .query::<(&L0, &L1, &L2, &L3, &L4)>()
-            .get(&world, e)
-            .is_ok());
+        assert!(
+            world
+                .query::<(&L0, &L1, &L2, &L3, &L4)>()
+                .get(&world, e)
+                .is_ok()
+        );
     }
 
     #[test]

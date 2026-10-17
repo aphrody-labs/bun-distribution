@@ -2,8 +2,9 @@
 
 use designcraft_color::BlendMode;
 use designcraft_doc::{
-    Align, Arrowhead, AutoSize, Cap, Capitalization, FirstBaseline, Join, Leading, NumberStyle, Position, StartParagraph, StrokeAlign, StrokeType,
-    TabAlign, VerticalJustification, WrapMode, WrapSide,
+    Align, Arrowhead, AutoSize, Cap, Capitalization, FirstBaseline, Join, Leading, NumberStyle,
+    Position, StartParagraph, StrokeAlign, StrokeType, TabAlign, VerticalJustification, WrapMode,
+    WrapSide,
 };
 use designcraft_geom::Unit;
 use designcraft_geom::corners::CornerShape;
@@ -21,7 +22,10 @@ const ANCHORS: [&str; 9] = [
     "BottomRightAnchor",
 ];
 
-pub fn anchor_rel_out(r: designcraft_doc::anchored::AnchorRelative, vertical: bool) -> &'static str {
+pub fn anchor_rel_out(
+    r: designcraft_doc::anchored::AnchorRelative,
+    vertical: bool,
+) -> &'static str {
     use designcraft_doc::anchored::AnchorRelative as R;
     match r {
         R::Anchor if vertical => "LineBaseline",
@@ -78,20 +82,35 @@ pub fn escape_id(s: &str) -> String {
     s.replace('%', "%25").replace(':', "%3a")
 }
 pub fn unescape_id(s: &str) -> String {
-    s.replace("%3a", ":").replace("%3A", ":").replace("%25", "%")
+    s.replace("%3a", ":")
+        .replace("%3A", ":")
+        .replace("%25", "%")
 }
 
 /// Built-in style names: (ours, IDML `Name`).
-pub const PARA_BUILTINS: &[(&str, &str)] = &[("[No Paragraph Style]", "$ID/[No paragraph style]"), ("[Basic Paragraph]", "$ID/NormalParagraphStyle")];
+pub const PARA_BUILTINS: &[(&str, &str)] = &[
+    ("[No Paragraph Style]", "$ID/[No paragraph style]"),
+    ("[Basic Paragraph]", "$ID/NormalParagraphStyle"),
+];
 pub const CHAR_BUILTINS: &[(&str, &str)] = &[("[None]", "$ID/[No character style]")];
 pub const CELL_BUILTINS: &[(&str, &str)] = &[("[None]", "$ID/[None]")];
-pub const TABLE_BUILTINS: &[(&str, &str)] = &[("[Basic Table]", "$ID/[Basic Table]"), ("[No table style]", "$ID/[No table style]")];
-pub const OBJECT_BUILTINS: &[(&str, &str)] =
-    &[("[None]", "$ID/[None]"), ("[Basic Graphics Frame]", "$ID/[Normal Graphics Frame]"), ("[Basic Text Frame]", "$ID/[Normal Text Frame]")];
+pub const TABLE_BUILTINS: &[(&str, &str)] = &[
+    ("[Basic Table]", "$ID/[Basic Table]"),
+    ("[No table style]", "$ID/[No table style]"),
+];
+pub const OBJECT_BUILTINS: &[(&str, &str)] = &[
+    ("[None]", "$ID/[None]"),
+    ("[Basic Graphics Frame]", "$ID/[Normal Graphics Frame]"),
+    ("[Basic Text Frame]", "$ID/[Normal Text Frame]"),
+];
 
 /// Our style name → IDML `Name` (groups: `A/B` → `A:B`).
 pub fn style_name_out(builtins: &[(&str, &str)], name: &str) -> String {
-    builtins.iter().find(|(o, _)| *o == name).map(|(_, i)| i.to_string()).unwrap_or_else(|| name.replace('/', ":"))
+    builtins
+        .iter()
+        .find(|(o, _)| *o == name)
+        .map(|(_, i)| i.to_string())
+        .unwrap_or_else(|| name.replace('/', ":"))
 }
 /// IDML `Name` → our style name.
 pub fn style_name_in(builtins: &[(&str, &str)], name: &str) -> String {
@@ -131,9 +150,14 @@ pub fn caps_out(c: Capitalization) -> &'static str {
     }
 }
 pub fn caps_in(s: &str) -> Option<Capitalization> {
-    [Capitalization::Normal, Capitalization::AllCaps, Capitalization::SmallCaps, Capitalization::OpenTypeAllSmallCaps]
-        .into_iter()
-        .find(|c| caps_out(*c) == s)
+    [
+        Capitalization::Normal,
+        Capitalization::AllCaps,
+        Capitalization::SmallCaps,
+        Capitalization::OpenTypeAllSmallCaps,
+    ]
+    .into_iter()
+    .find(|c| caps_out(*c) == s)
 }
 
 pub fn position_out(p: Position) -> &'static str {
@@ -208,7 +232,11 @@ pub fn leading_out(l: Leading) -> (String, &'static str) {
     }
 }
 pub fn leading_in(s: &str) -> Option<Leading> {
-    if s == "Auto" { Some(Leading::Auto) } else { s.trim().parse().ok().map(Leading::Points) }
+    if s == "Auto" {
+        Some(Leading::Auto)
+    } else {
+        s.trim().parse().ok().map(Leading::Points)
+    }
 }
 
 pub fn stroke_align_out(a: StrokeAlign) -> &'static str {
@@ -275,14 +303,28 @@ pub fn stroke_type_out(t: &StrokeType) -> String {
     s.to_string()
 }
 pub fn stroke_type_in(s: &str) -> StrokeType {
-    for prefix in ["StripedStrokeStyle/", "DashedStrokeStyle/", "DottedStrokeStyle/", "CustomStrokeStyle/"] {
+    for prefix in [
+        "StripedStrokeStyle/",
+        "DashedStrokeStyle/",
+        "DottedStrokeStyle/",
+        "CustomStrokeStyle/",
+    ] {
         if let Some(name) = s.strip_prefix(prefix) {
-            return StrokeType::Style { name: name.to_string() };
+            return StrokeType::Style {
+                name: name.to_string(),
+            };
         }
     }
-    let n = s.rsplit('/').next().unwrap_or(s).replace([' ', '-'], "").to_ascii_lowercase();
+    let n = s
+        .rsplit('/')
+        .next()
+        .unwrap_or(s)
+        .replace([' ', '-'], "")
+        .to_ascii_lowercase();
     match n.as_str() {
-        "dashed" | "dashed(3and2)" | "dashed(4and4)" | "canneddashed3x2" | "canneddashed4x4" => StrokeType::Dashed { pattern: vec![] },
+        "dashed" | "dashed(3and2)" | "dashed(4and4)" | "canneddashed3x2" | "canneddashed4x4" => {
+            StrokeType::Dashed { pattern: vec![] }
+        }
         "dotted" | "japanesedots" | "canneddotted" => StrokeType::Dotted,
         "thickthin" => StrokeType::ThickThin,
         "thinthick" => StrokeType::ThinThick,
@@ -342,7 +384,10 @@ pub fn corner_out(c: CornerShape) -> &'static str {
     }
 }
 pub fn corner_in(s: &str) -> CornerShape {
-    CornerShape::ALL.into_iter().find(|c| corner_out(*c) == s).unwrap_or(CornerShape::None)
+    CornerShape::ALL
+        .into_iter()
+        .find(|c| corner_out(*c) == s)
+        .unwrap_or(CornerShape::None)
 }
 
 pub fn blend_out(b: BlendMode) -> &'static str {
@@ -366,7 +411,10 @@ pub fn blend_out(b: BlendMode) -> &'static str {
     }
 }
 pub fn blend_in(s: &str) -> BlendMode {
-    BlendMode::ALL.into_iter().find(|b| blend_out(*b) == s).unwrap_or_default()
+    BlendMode::ALL
+        .into_iter()
+        .find(|b| blend_out(*b) == s)
+        .unwrap_or_default()
 }
 
 pub fn wrap_mode_out(m: WrapMode) -> &'static str {
@@ -379,10 +427,15 @@ pub fn wrap_mode_out(m: WrapMode) -> &'static str {
     }
 }
 pub fn wrap_mode_in(s: &str) -> WrapMode {
-    [WrapMode::BoundingBox, WrapMode::Contour, WrapMode::JumpObject, WrapMode::JumpToNextColumn]
-        .into_iter()
-        .find(|m| wrap_mode_out(*m) == s)
-        .unwrap_or(WrapMode::None)
+    [
+        WrapMode::BoundingBox,
+        WrapMode::Contour,
+        WrapMode::JumpObject,
+        WrapMode::JumpToNextColumn,
+    ]
+    .into_iter()
+    .find(|m| wrap_mode_out(*m) == s)
+    .unwrap_or(WrapMode::None)
 }
 pub fn wrap_side_out(s: WrapSide) -> &'static str {
     match s {
@@ -395,10 +448,16 @@ pub fn wrap_side_out(s: WrapSide) -> &'static str {
     }
 }
 pub fn wrap_side_in(s: &str) -> WrapSide {
-    [WrapSide::RightSide, WrapSide::LeftSide, WrapSide::TowardsSpine, WrapSide::AwayFromSpine, WrapSide::LargestArea]
-        .into_iter()
-        .find(|m| wrap_side_out(*m) == s)
-        .unwrap_or(WrapSide::BothSides)
+    [
+        WrapSide::RightSide,
+        WrapSide::LeftSide,
+        WrapSide::TowardsSpine,
+        WrapSide::AwayFromSpine,
+        WrapSide::LargestArea,
+    ]
+    .into_iter()
+    .find(|m| wrap_side_out(*m) == s)
+    .unwrap_or(WrapSide::BothSides)
 }
 
 pub fn vj_out(v: VerticalJustification) -> &'static str {
@@ -427,10 +486,15 @@ pub fn first_baseline_out(f: FirstBaseline) -> &'static str {
     }
 }
 pub fn first_baseline_in(s: &str) -> FirstBaseline {
-    [FirstBaseline::CapHeight, FirstBaseline::Leading, FirstBaseline::XHeight, FirstBaseline::Fixed]
-        .into_iter()
-        .find(|m| first_baseline_out(*m) == s)
-        .unwrap_or(FirstBaseline::Ascent)
+    [
+        FirstBaseline::CapHeight,
+        FirstBaseline::Leading,
+        FirstBaseline::XHeight,
+        FirstBaseline::Fixed,
+    ]
+    .into_iter()
+    .find(|m| first_baseline_out(*m) == s)
+    .unwrap_or(FirstBaseline::Ascent)
 }
 pub fn auto_size_out(a: AutoSize) -> &'static str {
     match a {
@@ -442,10 +506,15 @@ pub fn auto_size_out(a: AutoSize) -> &'static str {
     }
 }
 pub fn auto_size_in(s: &str) -> AutoSize {
-    [AutoSize::HeightOnly, AutoSize::WidthOnly, AutoSize::HeightAndWidth, AutoSize::HeightAndWidthProportionally]
-        .into_iter()
-        .find(|m| auto_size_out(*m) == s)
-        .unwrap_or(AutoSize::Off)
+    [
+        AutoSize::HeightOnly,
+        AutoSize::WidthOnly,
+        AutoSize::HeightAndWidth,
+        AutoSize::HeightAndWidthProportionally,
+    ]
+    .into_iter()
+    .find(|m| auto_size_out(*m) == s)
+    .unwrap_or(AutoSize::Off)
 }
 /// Auto-size reference points in our 0..9 order (row-major, top-left first).
 pub const REF_POINTS: [&str; 9] = [
@@ -462,7 +531,10 @@ pub const REF_POINTS: [&str; 9] = [
 
 pub fn number_style_out(n: NumberStyle) -> &'static str {
     match n {
-        NumberStyle::Arabic | NumberStyle::ArabicLeadingZero | NumberStyle::ArabicThreeDigits | NumberStyle::ArabicFourDigits => "Arabic",
+        NumberStyle::Arabic
+        | NumberStyle::ArabicLeadingZero
+        | NumberStyle::ArabicThreeDigits
+        | NumberStyle::ArabicFourDigits => "Arabic",
         NumberStyle::UpperRoman => "UpperRoman",
         NumberStyle::LowerRoman => "LowerRoman",
         NumberStyle::UpperLetters => "UpperLetters",
@@ -517,10 +589,16 @@ pub fn unit_in(s: &str) -> Unit {
 
 /// IDML layer colour enumeration names for our layer colour table.
 pub fn layer_color_out(c: [u8; 3]) -> Option<String> {
-    designcraft_doc::LAYER_COLORS.iter().find(|(_, v)| *v == c).map(|(n, _)| n.replace(' ', ""))
+    designcraft_doc::LAYER_COLORS
+        .iter()
+        .find(|(_, v)| *v == c)
+        .map(|(n, _)| n.replace(' ', ""))
 }
 pub fn layer_color_in(s: &str) -> Option<[u8; 3]> {
-    designcraft_doc::LAYER_COLORS.iter().find(|(n, _)| n.replace(' ', "") == s).map(|(_, v)| *v)
+    designcraft_doc::LAYER_COLORS
+        .iter()
+        .find(|(n, _)| n.replace(' ', "") == s)
+        .map(|(_, v)| *v)
 }
 
 /// Format a number compactly (no trailing zeros, no `-0`).
@@ -598,11 +676,17 @@ pub const NOTE_RESTART: [(designcraft_doc::notes::NoteRestart, &str); 4] = [
     (designcraft_doc::notes::NoteRestart::Never, "DontRestart"),
     (designcraft_doc::notes::NoteRestart::Page, "PageRestart"),
     (designcraft_doc::notes::NoteRestart::Spread, "SpreadRestart"),
-    (designcraft_doc::notes::NoteRestart::Section, "SectionRestart"),
+    (
+        designcraft_doc::notes::NoteRestart::Section,
+        "SectionRestart",
+    ),
 ];
 pub const NOTE_AFFIX: [(designcraft_doc::notes::AffixIn, &str); 4] = [
     (designcraft_doc::notes::AffixIn::None, "NoPrefixSuffix"),
-    (designcraft_doc::notes::AffixIn::Reference, "PrefixSuffixReference"),
+    (
+        designcraft_doc::notes::AffixIn::Reference,
+        "PrefixSuffixReference",
+    ),
     (designcraft_doc::notes::AffixIn::Text, "PrefixSuffixMarker"),
     (designcraft_doc::notes::AffixIn::Both, "PrefixSuffixBoth"),
 ];
@@ -687,5 +771,13 @@ pub fn digits_out(d: designcraft_doc::Digits) -> &'static str {
 }
 pub fn digits_in(s: &str) -> Option<designcraft_doc::Digits> {
     use designcraft_doc::Digits;
-    [Digits::Default, Digits::Arabic, Digits::Hindi, Digits::Farsi, Digits::Native].into_iter().find(|d| digits_out(*d) == s)
+    [
+        Digits::Default,
+        Digits::Arabic,
+        Digits::Hindi,
+        Digits::Farsi,
+        Digits::Native,
+    ]
+    .into_iter()
+    .find(|d| digits_out(*d) == s)
 }

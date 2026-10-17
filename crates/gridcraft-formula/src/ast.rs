@@ -227,12 +227,19 @@ impl Expr {
     /// Rewrites every node bottom-up.
     pub fn map(self, f: &mut dyn FnMut(Expr) -> Expr) -> Expr {
         let e = match self {
-            Expr::Array(rows) => Expr::Array(rows.into_iter().map(|r| r.into_iter().map(|e| e.map(f)).collect()).collect()),
+            Expr::Array(rows) => Expr::Array(
+                rows.into_iter()
+                    .map(|r| r.into_iter().map(|e| e.map(f)).collect())
+                    .collect(),
+            ),
             Expr::Unary(op, e) => Expr::Unary(op, Box::new(e.map(f))),
             Expr::Paren(e) => Expr::Paren(Box::new(e.map(f))),
             Expr::Binary(op, a, b) => Expr::Binary(op, Box::new(a.map(f)), Box::new(b.map(f))),
             Expr::Call(n, args) => Expr::Call(n, args.into_iter().map(|e| e.map(f)).collect()),
-            Expr::Invoke(c, args) => Expr::Invoke(Box::new(c.map(f)), args.into_iter().map(|e| e.map(f)).collect()),
+            Expr::Invoke(c, args) => Expr::Invoke(
+                Box::new(c.map(f)),
+                args.into_iter().map(|e| e.map(f)).collect(),
+            ),
             other => other,
         };
         f(e)
@@ -260,5 +267,9 @@ impl Expr {
 }
 
 pub(crate) fn clamp_anchor(row: i64, col: i64) -> Option<(u32, u32)> {
-    if (0..MAX_ROWS as i64).contains(&row) && (0..MAX_COLS as i64).contains(&col) { Some((row as u32, col as u32)) } else { None }
+    if (0..MAX_ROWS as i64).contains(&row) && (0..MAX_COLS as i64).contains(&col) {
+        Some((row as u32, col as u32))
+    } else {
+        None
+    }
 }

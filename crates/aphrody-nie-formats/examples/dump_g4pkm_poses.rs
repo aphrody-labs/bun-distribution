@@ -42,7 +42,7 @@ fn main() {
         let note = match target {
             Some((tw, th)) if wp.scale_x > 1.0 && wp.scale_y > 1.0 => {
                 format!("  ratio={:.3}x{:.3}", wp.scale_x / tw, wp.scale_y / th)
-            },
+            }
             _ => String::new(),
         };
         let lp = bone.local_bind_pose;

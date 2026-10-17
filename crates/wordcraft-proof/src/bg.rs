@@ -21,7 +21,10 @@ fn is_vowel(c: char) -> bool {
 
 /// Consonants that may start a syllable before `р` or `л` (`бр`, `пл`, `тр`, `гл` …).
 fn is_obstruent(c: char) -> bool {
-    matches!(c, 'б' | 'в' | 'г' | 'д' | 'з' | 'к' | 'п' | 'с' | 'т' | 'ф' | 'х')
+    matches!(
+        c,
+        'б' | 'в' | 'г' | 'д' | 'з' | 'к' | 'п' | 'с' | 'т' | 'ф' | 'х'
+    )
 }
 
 /// A lowercase Bulgarian letter (the words [`points`] splits).
@@ -107,6 +110,9 @@ mod tests {
     fn non_bulgarian_letters_are_left_alone() {
         assert!(points(&"word".chars().collect::<Vec<_>>()).is_empty());
         assert!(points(&"съобщение1".chars().collect::<Vec<_>>()).is_empty());
-        assert!(points(&"объём".chars().collect::<Vec<_>>()).is_empty(), "Russian ё is not a Bulgarian letter");
+        assert!(
+            points(&"объём".chars().collect::<Vec<_>>()).is_empty(),
+            "Russian ё is not a Bulgarian letter"
+        );
     }
 }

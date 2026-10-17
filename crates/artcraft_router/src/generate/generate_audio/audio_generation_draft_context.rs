@@ -10,27 +10,33 @@ use crate::errors::client_error::ClientError;
 
 #[derive(Clone, Default)]
 pub struct AudioGenerationDraftContext<'a> {
-  /// Optional: the router client, needed for providers that require authentication.
-  pub client: Option<&'a RouterClient>,
+    /// Optional: the router client, needed for providers that require authentication.
+    pub client: Option<&'a RouterClient>,
 
-  /// Optional context: a map of Media File Tokens to their ArtCraft URLs
-  /// Only needed if we have to fetch these assets and upload them to another provider.
-  pub media_file_to_artcraft_url_map: Option<&'a HashMap<MediaFileToken, String>>,
+    /// Optional context: a map of Media File Tokens to their ArtCraft URLs
+    /// Only needed if we have to fetch these assets and upload them to another provider.
+    pub media_file_to_artcraft_url_map: Option<&'a HashMap<MediaFileToken, String>>,
 }
 
-impl <'a> AudioGenerationDraftContext<'a> {
-  pub fn get_kinovi_web_client_ref(&self) -> Result<&RouterKinoviWebClient, ArtcraftRouterError> {
-    let client = self.client.ok_or(ArtcraftRouterError::Client(ClientError::RouterClientNotProvided))?;
-    client.get_kinovi_web_client_ref()
-      .map_err(|err| ArtcraftRouterError::Client(err))
-  }
+impl<'a> AudioGenerationDraftContext<'a> {
+    pub fn get_kinovi_web_client_ref(&self) -> Result<&RouterKinoviWebClient, ArtcraftRouterError> {
+        let client = self.client.ok_or(ArtcraftRouterError::Client(
+            ClientError::RouterClientNotProvided,
+        ))?;
+        client
+            .get_kinovi_web_client_ref()
+            .map_err(|err| ArtcraftRouterError::Client(err))
+    }
 }
 
 impl Debug for AudioGenerationDraftContext<'_> {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("AudioGenerationDraftContext")
-      .field("client", &self.client.is_some())
-      .field("media_file_to_artcraft_url_map", &self.media_file_to_artcraft_url_map)
-      .finish()
-  }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AudioGenerationDraftContext")
+            .field("client", &self.client.is_some())
+            .field(
+                "media_file_to_artcraft_url_map",
+                &self.media_file_to_artcraft_url_map,
+            )
+            .finish()
+    }
 }

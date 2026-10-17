@@ -29,9 +29,17 @@ pub struct TimestampQuery {
 impl TimestampQuery {
     pub fn new(digest: DigestAlg, imprint: Vec<u8>) -> Result<Self, SignError> {
         if imprint.len() != digest.digest(&[&[]]).len() {
-            return Err(SignError::Malformed("RFC 3161 imprint length does not match its digest algorithm".into()));
+            return Err(SignError::Malformed(
+                "RFC 3161 imprint length does not match its digest algorithm".into(),
+            ));
         }
-        Ok(Self { digest, imprint, policy: None, nonce: None, certificate_request: true })
+        Ok(Self {
+            digest,
+            imprint,
+            policy: None,
+            nonce: None,
+            certificate_request: true,
+        })
     }
 
     /// Encode a DER `TimeStampReq` (RFC 3161 §2.4.1).
@@ -79,7 +87,9 @@ pub trait TimestampAuthority {
 
 /// The certificates carried inside a token's CMS (for trust anchoring at validation time).
 pub fn token_certs(raw: &[u8]) -> Vec<Certificate> {
-    SignedData::parse(raw).map(|sd| sd.certificates).unwrap_or_default()
+    SignedData::parse(raw)
+        .map(|sd| sd.certificates)
+        .unwrap_or_default()
 }
 
 fn bad(message: impl Into<String>) -> SignError {
@@ -91,14 +101,30 @@ pub fn parse_request(bytes: &[u8]) -> Result<TimestampQuery, SignError> {
     if bytes.is_empty() || bytes.len() > MAX_REQUEST {
         return Err(bad("request is empty or exceeds the 1 MiB limit"));
     }
-    let fields = Tlv::parse_all(bytes)?.expect(tag::SEQUENCE, "TimeStampReq")?.children()?;
+    let fields = Tlv::parse_all(bytes)?
+        .expect(tag::SEQUENCE, "TimeStampReq")?
+        .children()?;
     let mut it = fields.into_iter();
     let _version = it.next().ok_or_else(|| bad("missing version"))?.u64()?;
-    let imprint = it.next().ok_or_else(|| bad("missing message imprint"))?.children()?;
-    let alg_oid =
-        imprint.first().ok_or_else(|| bad("missing imprint algorithm"))?.children()?.first().ok_or_else(|| bad("missing algorithm OID"))?.oid()?;
-    let digest = DigestAlg::from_oid(&alg_oid).ok_or_else(|| bad("unsupported imprint digest algorithm"))?;
-    let hash = imprint.get(1).ok_or_else(|| bad("missing imprint digest"))?.expect(tag::OCTET_STRING, "imprint digest")?.value.to_vec();
+    let imprint = it
+        .next()
+        .ok_or_else(|| bad("missing message imprint"))?
+        .children()?;
+    let alg_oid = imprint
+        .first()
+        .ok_or_else(|| bad("missing imprint algorithm"))?
+        .children()?
+        .first()
+        .ok_or_else(|| bad("missing algorithm OID"))?
+        .oid()?;
+    let digest =
+        DigestAlg::from_oid(&alg_oid).ok_or_else(|| bad("unsupported imprint digest algorithm"))?;
+    let hash = imprint
+        .get(1)
+        .ok_or_else(|| bad("missing imprint digest"))?
+        .expect(tag::OCTET_STRING, "imprint digest")?
+        .value
+        .to_vec();
     let mut q = TimestampQuery::new(digest, hash)?;
     for f in it {
         match f.tag {
@@ -122,36 +148,68 @@ pub fn parse_token(raw: &[u8]) -> Result<TimestampToken, SignError> {
     if token.signer.content_type.as_deref() != Some(TST_INFO) {
         return Err(bad("token content is not TSTInfo"));
     }
-    let info = token.content.as_deref().ok_or_else(|| bad("token has no TSTInfo content"))?;
-    let fields = Tlv::parse_all(info)?.expect(tag::SEQUENCE, "TSTInfo")?.children()?;
-    let policy = fields.get(1).ok_or_else(|| bad("TSTInfo has no policy"))?.oid()?;
-    let imprint_fields = fields.get(2).ok_or_else(|| bad("TSTInfo has no message imprint"))?.children()?;
-    let alg_fields = imprint_fields.first().ok_or_else(|| bad("message imprint has no algorithm"))?.children()?;
+    let info = token
+        .content
+        .as_deref()
+        .ok_or_else(|| bad("token has no TSTInfo content"))?;
+    let fields = Tlv::parse_all(info)?
+        .expect(tag::SEQUENCE, "TSTInfo")?
+        .children()?;
+    let policy = fields
+        .get(1)
+        .ok_or_else(|| bad("TSTInfo has no policy"))?
+        .oid()?;
+    let imprint_fields = fields
+        .get(2)
+        .ok_or_else(|| bad("TSTInfo has no message imprint"))?
+        .children()?;
+    let alg_fields = imprint_fields
+        .first()
+        .ok_or_else(|| bad("message imprint has no algorithm"))?
+        .children()?;
     let digest = alg_fields
         .first()
         .ok_or_else(|| bad("message imprint has no digest algorithm"))?
         .oid()
-        .and_then(|o| DigestAlg::from_oid(&o).ok_or_else(|| bad("unsupported imprint digest algorithm")))?;
+        .and_then(|o| {
+            DigestAlg::from_oid(&o).ok_or_else(|| bad("unsupported imprint digest algorithm"))
+        })?;
     let imprint = imprint_fields
         .get(1)
         .ok_or_else(|| bad("message imprint has no digest"))?
         .expect(tag::OCTET_STRING, "message imprint digest")?
         .value
         .to_vec();
-    let serial = fields.get(3).ok_or_else(|| bad("TSTInfo has no serial number"))?.uint_bytes().to_vec();
-    let gen_time = fields.get(4).ok_or_else(|| bad("TSTInfo has no generation time"))?.time()?;
+    let serial = fields
+        .get(3)
+        .ok_or_else(|| bad("TSTInfo has no serial number"))?
+        .uint_bytes()
+        .to_vec();
+    let gen_time = fields
+        .get(4)
+        .ok_or_else(|| bad("TSTInfo has no generation time"))?
+        .time()?;
     // The signed messageDigest uses the SignerInfo's digest algorithm, which need not be the
     // imprint's (RFC 5652 §5.4).
     let content_digest = token.signer.digest.digest(&[info]);
     if token.signer.message_digest.as_deref() != Some(content_digest.as_slice()) {
         return Err(bad("token signed message digest does not match TSTInfo"));
     }
-    let cert = token.signer_certificate().ok_or_else(|| bad("TSA certificate is missing"))?;
+    let cert = token
+        .signer_certificate()
+        .ok_or_else(|| bad("TSA certificate is missing"))?;
     // An algorithm that can't be checked stays `Unsupported` rather than reading as invalid.
     if !token.verify_signature(cert, &content_digest)? {
         return Err(bad("TSA signature is invalid"));
     }
-    Ok(TimestampToken { raw: raw.to_vec(), digest, imprint, policy, serial, gen_time })
+    Ok(TimestampToken {
+        raw: raw.to_vec(),
+        digest,
+        imprint,
+        policy,
+        serial,
+        gen_time,
+    })
 }
 
 /// Parse and validate a `TimeStampResp`, including the CMS signature and message imprint.
@@ -159,13 +217,23 @@ pub fn parse_response(bytes: &[u8], query: &TimestampQuery) -> Result<TimestampT
     if bytes.is_empty() || bytes.len() > MAX_RESPONSE {
         return Err(bad("response is empty or exceeds the 4 MiB limit"));
     }
-    let fields = Tlv::parse_all(bytes)?.expect(tag::SEQUENCE, "TimeStampResp")?.children()?;
-    let status_info = fields.first().ok_or_else(|| bad("missing status"))?.children()?;
-    let status = status_info.first().ok_or_else(|| bad("missing status value"))?.u64()?;
+    let fields = Tlv::parse_all(bytes)?
+        .expect(tag::SEQUENCE, "TimeStampResp")?
+        .children()?;
+    let status_info = fields
+        .first()
+        .ok_or_else(|| bad("missing status"))?
+        .children()?;
+    let status = status_info
+        .first()
+        .ok_or_else(|| bad("missing status value"))?
+        .u64()?;
     if status != 0 && status != 1 {
         return Err(bad(format!("TSA rejected the request (status {status})")));
     }
-    let token = fields.get(1).ok_or_else(|| bad("granted response has no time-stamp token"))?;
+    let token = fields
+        .get(1)
+        .ok_or_else(|| bad("granted response has no time-stamp token"))?;
     let token = parse_token(token.raw)?;
     if token.digest != query.digest || token.imprint != query.imprint {
         return Err(bad("message imprint does not match the requested digest"));

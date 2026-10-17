@@ -20,11 +20,17 @@ use serde_json::{Value, json};
 pub type Values = BTreeMap<String, XmpValue>;
 
 /// The containers this module reads.
-pub const CONTAINERS: [&str; 4] =
-    ["crs:MaskGroupBasedCorrections", "crs:GradientBasedCorrections", "crs:CircularGradientBasedCorrections", "crs:PaintBasedCorrections"];
+pub const CONTAINERS: [&str; 4] = [
+    "crs:MaskGroupBasedCorrections",
+    "crs:GradientBasedCorrections",
+    "crs:CircularGradientBasedCorrections",
+    "crs:PaintBasedCorrections",
+];
 
 fn text<'a>(v: &'a XmpValue, k: &str) -> Option<&'a str> {
-    v.field(k).and_then(XmpValue::text).filter(|s| !s.is_empty())
+    v.field(k)
+        .and_then(XmpValue::text)
+        .filter(|s| !s.is_empty())
 }
 
 fn num(v: &XmpValue, k: &str) -> Option<f64> {
@@ -108,7 +114,11 @@ fn component(m: &XmpValue, aspect: f64) -> Result<Value, String> {
     };
     let invert = flag(m, "crs:MaskInverted").unwrap_or(false);
     // positions are fractions of the image's width / height; our radii are in long-edge units
-    let (sx, sy) = if aspect >= 1.0 { (1.0, 1.0 / aspect) } else { (aspect, 1.0) };
+    let (sx, sy) = if aspect >= 1.0 {
+        (1.0, 1.0 / aspect)
+    } else {
+        (aspect, 1.0)
+    };
     let shape = match what {
         "Mask/Gradient" => {
             let g = |k: &str, d: f64| num(m, &format!("crs:{k}")).unwrap_or(d);
@@ -116,7 +126,12 @@ fn component(m: &XmpValue, aspect: f64) -> Result<Value, String> {
         }
         "Mask/CircularGradient" => {
             let g = |k: &str, d: f64| num(m, &format!("crs:{k}")).unwrap_or(d);
-            let (l, r, t, b) = (g("Left", 0.25), g("Right", 0.75), g("Top", 0.25), g("Bottom", 0.75));
+            let (l, r, t, b) = (
+                g("Left", 0.25),
+                g("Right", 0.75),
+                g("Top", 0.25),
+                g("Bottom", 0.75),
+            );
             json!({
                 "kind": "radial",
                 "center": pt((l + r) / 2.0, (t + b) / 2.0),
@@ -135,7 +150,10 @@ fn component(m: &XmpValue, aspect: f64) -> Result<Value, String> {
                 .iter()
                 .filter_map(XmpValue::text)
                 .filter_map(|d| {
-                    let mut it = d.split_whitespace().skip(1).filter_map(|v| v.parse::<f64>().ok());
+                    let mut it = d
+                        .split_whitespace()
+                        .skip(1)
+                        .filter_map(|v| v.parse::<f64>().ok());
                     Some(pt(it.next()?, it.next()?))
                 })
                 .collect();
@@ -161,20 +179,43 @@ fn component(m: &XmpValue, aspect: f64) -> Result<Value, String> {
             let r = m.field("crs:CorrectionRangeMask").unwrap_or(m);
             match text(r, "crs:Type") {
                 Some("2") => {
-                    let q: Vec<f64> = text(r, "crs:LumRange").unwrap_or("0 0 1 1").split_whitespace().filter_map(|v| v.parse().ok()).collect();
-                    let [a, b, c, d] = q[..] else { return Err("luminance range".into()) };
-                    let (a, b, c, d) = (lightness_to_range(a), lightness_to_range(b), lightness_to_range(c), lightness_to_range(d));
+                    let q: Vec<f64> = text(r, "crs:LumRange")
+                        .unwrap_or("0 0 1 1")
+                        .split_whitespace()
+                        .filter_map(|v| v.parse().ok())
+                        .collect();
+                    let [a, b, c, d] = q[..] else {
+                        return Err("luminance range".into());
+                    };
+                    let (a, b, c, d) = (
+                        lightness_to_range(a),
+                        lightness_to_range(b),
+                        lightness_to_range(c),
+                        lightness_to_range(d),
+                    );
                     json!({"kind": "luminanceRange", "lo": b, "hi": c, "lo_feather": (b - a).max(0.0), "hi_feather": (d - c).max(0.0)})
                 }
                 Some("3") => {
-                    let q: Vec<f64> = text(r, "crs:DepthRange").unwrap_or("0 0 1 1").split_whitespace().filter_map(|v| v.parse().ok()).collect();
-                    let [a, b, c, _] = q[..] else { return Err("depth range".into()) };
+                    let q: Vec<f64> = text(r, "crs:DepthRange")
+                        .unwrap_or("0 0 1 1")
+                        .split_whitespace()
+                        .filter_map(|v| v.parse().ok())
+                        .collect();
+                    let [a, b, c, _] = q[..] else {
+                        return Err("depth range".into());
+                    };
                     json!({"kind": "depthRange", "lo": b, "hi": c, "feather": (b - a).max(0.0)})
                 }
                 _ => return Err("colour range".into()),
             }
         }
-        other => return Err(if other.is_empty() { "unknown mask".into() } else { other.trim_start_matches("Mask/").to_string() }),
+        other => {
+            return Err(if other.is_empty() {
+                "unknown mask".into()
+            } else {
+                other.trim_start_matches("Mask/").to_string()
+            });
+        }
     };
     Ok(json!({"op": op, "invert": invert, "shape": shape}))
 }
@@ -185,12 +226,17 @@ pub fn masks(values: &Values, aspect: f64) -> (Vec<Value>, Vec<String>) {
     let mut out = Vec::new();
     let mut skipped = Vec::new();
     for container in CONTAINERS {
-        let Some(list) = values.get(container) else { continue };
+        let Some(list) = values.get(container) else {
+            continue;
+        };
         for c in list.items() {
             if flag(c, "crs:CorrectionActive") == Some(false) {
                 continue;
             }
-            let comps = c.field("crs:CorrectionMasks").map(XmpValue::items).unwrap_or_default();
+            let comps = c
+                .field("crs:CorrectionMasks")
+                .map(XmpValue::items)
+                .unwrap_or_default();
             let mut parts = Vec::new();
             for m in comps {
                 match component(m, aspect) {
@@ -206,8 +252,13 @@ pub fn masks(values: &Values, aspect: f64) -> (Vec<Value>, Vec<String>) {
             for p in parts {
                 let is_brush = p["shape"]["kind"] == "brush";
                 if is_brush
-                    && let Some(prev) = merged.iter_mut().find(|q| q["shape"]["kind"] == "brush" && q["op"] == p["op"])
-                    && let (Some(a), Some(b)) = (prev["shape"]["strokes"].as_array_mut(), p["shape"]["strokes"].as_array())
+                    && let Some(prev) = merged
+                        .iter_mut()
+                        .find(|q| q["shape"]["kind"] == "brush" && q["op"] == p["op"])
+                    && let (Some(a), Some(b)) = (
+                        prev["shape"]["strokes"].as_array_mut(),
+                        p["shape"]["strokes"].as_array(),
+                    )
                 {
                     a.extend(b.iter().cloned());
                     continue;
@@ -215,7 +266,9 @@ pub fn masks(values: &Values, aspect: f64) -> (Vec<Value>, Vec<String>) {
                 merged.push(p);
             }
             let n = out.len() + 1;
-            let name = text(c, "crs:CorrectionName").map(str::to_string).unwrap_or_else(|| format!("Mask {n}"));
+            let name = text(c, "crs:CorrectionName")
+                .map(str::to_string)
+                .unwrap_or_else(|| format!("Mask {n}"));
             out.push(json!({"id": n, "name": name, "visible": true, "invert": false, "components": merged, "adjust": adjust(c)}));
         }
     }
@@ -237,23 +290,38 @@ fn spot(item: &XmpValue, aspect: f64) -> Result<Value, String> {
         Some("clone") => "clone",
         _ => "heal",
     };
-    let comps = item.field("crs:Masks").map(XmpValue::items).unwrap_or_default();
-    let Some(m) = comps.first() else { return Err("spot without a mask".into()) };
+    let comps = item
+        .field("crs:Masks")
+        .map(XmpValue::items)
+        .unwrap_or_default();
+    let Some(m) = comps.first() else {
+        return Err("spot without a mask".into());
+    };
     let width_to_long = aspect.min(1.0);
     let (points, size) = match text(m, "crs:What").unwrap_or("") {
         // a circle: centre + half-sizes in image fractions
         "Mask/Ellipse" => {
-            let (Some(x), Some(y), Some(sx)) = (num(m, "crs:X"), num(m, "crs:Y"), num(m, "crs:SizeX")) else {
+            let (Some(x), Some(y), Some(sx)) =
+                (num(m, "crs:X"), num(m, "crs:Y"), num(m, "crs:SizeX"))
+            else {
                 return Err("ellipse spot".into());
             };
             (vec![pt(x, y)], sx * width_to_long)
         }
         // the shape exiftool's schema also allows for a spot
         "Mask/CircularGradient" => {
-            let (Some(t), Some(l), Some(b), Some(r)) = (num(m, "crs:Top"), num(m, "crs:Left"), num(m, "crs:Bottom"), num(m, "crs:Right")) else {
+            let (Some(t), Some(l), Some(b), Some(r)) = (
+                num(m, "crs:Top"),
+                num(m, "crs:Left"),
+                num(m, "crs:Bottom"),
+                num(m, "crs:Right"),
+            ) else {
                 return Err("circular spot".into());
             };
-            (vec![pt((l + r) / 2.0, (t + b) / 2.0)], (r - l).abs() / 2.0 * width_to_long)
+            (
+                vec![pt((l + r) / 2.0, (t + b) / 2.0)],
+                (r - l).abs() / 2.0 * width_to_long,
+            )
         }
         // a brushed removal: the dabs are the path
         "Mask/Paint" => {
@@ -264,7 +332,10 @@ fn spot(item: &XmpValue, aspect: f64) -> Result<Value, String> {
                 .iter()
                 .filter_map(XmpValue::text)
                 .filter_map(|d| {
-                    let mut it = d.split_whitespace().skip(1).filter_map(|v| v.parse::<f64>().ok());
+                    let mut it = d
+                        .split_whitespace()
+                        .skip(1)
+                        .filter_map(|v| v.parse::<f64>().ok());
                     Some(pt(it.next()?, it.next()?))
                 })
                 .collect();
@@ -273,15 +344,28 @@ fn spot(item: &XmpValue, aspect: f64) -> Result<Value, String> {
             }
             (pts, num(m, "crs:Radius").unwrap_or(0.02))
         }
-        other => return Err(if other.is_empty() { "unknown spot".into() } else { other.trim_start_matches("Mask/").to_string() }),
+        other => {
+            return Err(if other.is_empty() {
+                "unknown spot".into()
+            } else {
+                other.trim_start_matches("Mask/").to_string()
+            });
+        }
     };
     let size = size.clamp(0.001, 0.25);
     // the source is stored as its absolute position (`SourceX`, and `OffsetY` despite the name);
     // ours is the offset from the target; anything but an explicit source leaves it automatic
     let explicit = text(item, "crs:SourceState").is_none_or(|s| s == "sourceSetExplicitly");
-    let source_offset = match (explicit, num(item, "crs:SourceX"), num(item, "crs:OffsetY"), points.first()) {
+    let source_offset = match (
+        explicit,
+        num(item, "crs:SourceX"),
+        num(item, "crs:OffsetY"),
+        points.first(),
+    ) {
         (true, Some(sx), Some(sy), Some(p)) => {
-            let (Some(x), Some(y)) = (p["x"].as_f64(), p["y"].as_f64()) else { return Err("spot centre".into()) };
+            let (Some(x), Some(y)) = (p["x"].as_f64(), p["y"].as_f64()) else {
+                return Err("spot centre".into());
+            };
             let (dx, dy) = (sx - x, sy - y);
             (dx.is_finite() && dy.is_finite() && (dx != 0.0 || dy != 0.0)).then(|| pt(dx, dy))
         }
@@ -289,7 +373,9 @@ fn spot(item: &XmpValue, aspect: f64) -> Result<Value, String> {
     };
     let feather = (num(item, "crs:Feather").unwrap_or(0.0) * 100.0).clamp(0.0, 100.0);
     let opacity = (num(item, "crs:Opacity").unwrap_or(1.0) * 100.0).clamp(0.0, 100.0);
-    Ok(json!({"mode": mode, "points": points, "size": size, "feather": feather, "opacity": opacity, "source_offset": source_offset}))
+    Ok(
+        json!({"mode": mode, "points": points, "size": size, "feather": feather, "opacity": opacity, "source_offset": source_offset}),
+    )
 }
 
 /// One `RetouchInfo` line (`centerX = 0.5, centerY = 0.5, radius = 0.01, sourceState = …,
@@ -301,10 +387,20 @@ fn legacy_spot(line: &str, aspect: f64) -> Option<Value> {
             kv.insert(k.trim().to_string(), v.trim().to_string());
         }
     }
-    let f = |k: &str| kv.get(k).and_then(|s| s.parse::<f64>().ok()).filter(|x| x.is_finite());
+    let f = |k: &str| {
+        kv.get(k)
+            .and_then(|s| s.parse::<f64>().ok())
+            .filter(|x| x.is_finite())
+    };
     let (x, y, r) = (f("centerX")?, f("centerY")?, f("radius")?);
-    let mode = if kv.get("spotType").is_some_and(|s| s == "clone") { "clone" } else { "heal" };
-    let explicit = kv.get("sourceState").is_none_or(|s| s == "sourceSetExplicitly");
+    let mode = if kv.get("spotType").is_some_and(|s| s == "clone") {
+        "clone"
+    } else {
+        "heal"
+    };
+    let explicit = kv
+        .get("sourceState")
+        .is_none_or(|s| s == "sourceSetExplicitly");
     let source_offset = match (explicit, f("sourceX"), f("sourceY")) {
         (true, Some(sx), Some(sy)) if sx != x || sy != y => Some(pt(sx - x, sy - y)),
         _ => None,
@@ -331,7 +427,12 @@ pub fn spots(values: &Values, aspect: f64) -> (Vec<Value>, Vec<String>) {
     if out.is_empty()
         && let Some(list) = values.get("crs:RetouchInfo")
     {
-        out.extend(list.items().iter().filter_map(XmpValue::text).filter_map(|l| legacy_spot(l, aspect)));
+        out.extend(
+            list.items()
+                .iter()
+                .filter_map(XmpValue::text)
+                .filter_map(|l| legacy_spot(l, aspect)),
+        );
     }
     skipped.sort();
     skipped.dedup();
@@ -346,8 +447,14 @@ pub fn from_lua(v: &crate::preset_import::Lua) -> XmpValue {
         Lua::Bool(b) => XmpValue::Text(if *b { "true" } else { "false" }.into()),
         Lua::Num(n) => XmpValue::Text(format!("{n}")),
         Lua::Str(s) => XmpValue::Text(s.clone()),
-        Lua::Table(arr, map) if map.is_empty() => XmpValue::Array(arr.iter().map(from_lua).collect()),
-        Lua::Table(_, map) => XmpValue::Struct(map.iter().map(|(k, v)| (format!("crs:{k}"), from_lua(v))).collect()),
+        Lua::Table(arr, map) if map.is_empty() => {
+            XmpValue::Array(arr.iter().map(from_lua).collect())
+        }
+        Lua::Table(_, map) => XmpValue::Struct(
+            map.iter()
+                .map(|(k, v)| (format!("crs:{k}"), from_lua(v)))
+                .collect(),
+        ),
     }
 }
 
@@ -358,7 +465,9 @@ pub const DEFAULT_ASPECT: f64 = 1.5;
 pub fn refit_radials(partial: &mut Value, from: f64, to: f64) {
     let scale = |a: f64| if a >= 1.0 { (1.0, 1.0 / a) } else { (a, 1.0) };
     let ((fx, fy), (tx, ty)) = (scale(from), scale(to));
-    let Some(masks) = partial.get_mut("masks").and_then(Value::as_array_mut) else { return };
+    let Some(masks) = partial.get_mut("masks").and_then(Value::as_array_mut) else {
+        return;
+    };
     for m in masks {
         for c in m["components"].as_array_mut().into_iter().flatten() {
             let s = &mut c["shape"];
@@ -412,35 +521,99 @@ mod tests {
 
     fn settings() -> (DevelopSettings, Vec<String>) {
         let d = lightcraft_meta::parse_xmp(PACKET).unwrap();
-        let (partial, unmapped) = crate::crs::to_partial_report(&d.properties, Some(&d.values), crate::crs::Target::Any, 1.5);
-        (DevelopSettings::default().merged(&partial).expect("valid settings"), unmapped)
+        let (partial, unmapped) = crate::crs::to_partial_report(
+            &d.properties,
+            Some(&d.values),
+            crate::crs::Target::Any,
+            1.5,
+        );
+        (
+            DevelopSettings::default()
+                .merged(&partial)
+                .expect("valid settings"),
+            unmapped,
+        )
     }
 
     #[test]
     fn corrections_become_masks() {
         let (s, unmapped) = settings();
         assert_eq!(s.light.exposure, 0.2, "global settings still map");
-        assert_eq!(s.masks.len(), 3, "inactive corrections are skipped: {:?}", s.masks);
+        assert_eq!(
+            s.masks.len(),
+            3,
+            "inactive corrections are skipped: {:?}",
+            s.masks
+        );
         let sky = &s.masks[0];
         assert_eq!(sky.name, "Darker sky");
-        assert_eq!((sky.adjust.exposure, sky.adjust.saturation, sky.adjust.temp, sky.adjust.amount), (-1.0, 30.0, -10.0, 100.0));
+        assert_eq!(
+            (
+                sky.adjust.exposure,
+                sky.adjust.saturation,
+                sky.adjust.temp,
+                sky.adjust.amount
+            ),
+            (-1.0, 30.0, -10.0, 100.0)
+        );
         assert_eq!(sky.components[0].shape, MaskShape::Sky);
         assert_eq!(sky.components[1].op, MaskOp::Intersect);
-        let MaskShape::Linear { start, end } = &sky.components[1].shape else { panic!() };
-        assert_eq!((start.y, end.y), (0.0, 0.6), "full effect at the Full point");
+        let MaskShape::Linear { start, end } = &sky.components[1].shape else {
+            panic!()
+        };
+        assert_eq!(
+            (start.y, end.y),
+            (0.0, 0.6),
+            "full effect at the Full point"
+        );
         let rad = &s.masks[1];
-        assert_eq!((rad.name.as_str(), rad.adjust.contrast, rad.adjust.amount), ("Mask 2", 20.0, 50.0));
-        let MaskShape::Radial { center, rx, ry, angle, feather, invert } = &rad.components[0].shape else { panic!() };
+        assert_eq!(
+            (rad.name.as_str(), rad.adjust.contrast, rad.adjust.amount),
+            ("Mask 2", 20.0, 50.0)
+        );
+        let MaskShape::Radial {
+            center,
+            rx,
+            ry,
+            angle,
+            feather,
+            invert,
+        } = &rad.components[0].shape
+        else {
+            panic!()
+        };
         assert!((center.x - 0.5).abs() < 1e-9 && (center.y - 0.5).abs() < 1e-9);
-        assert!((rx - 0.3).abs() < 1e-9 && (ry - 0.2 / 1.5).abs() < 1e-9, "radii in long-edge units: {rx} {ry}");
+        assert!(
+            (rx - 0.3).abs() < 1e-9 && (ry - 0.2 / 1.5).abs() < 1e-9,
+            "radii in long-edge units: {rx} {ry}"
+        );
         assert_eq!((*angle, *feather, *invert), (10.0, 40.0, true));
-        let MaskShape::LuminanceRange { lo, hi, lo_feather, .. } = &rad.components[1].shape else { panic!() };
+        let MaskShape::LuminanceRange {
+            lo, hi, lo_feather, ..
+        } = &rad.components[1].shape
+        else {
+            panic!()
+        };
         assert!(lo < hi && *lo_feather > 0.0);
         let brush = &s.masks[2];
         assert_eq!(brush.adjust.clarity, 40.0);
-        assert_eq!(brush.components.len(), 1, "the brush's dab runs are one component");
-        let MaskShape::Brush { strokes } = &brush.components[0].shape else { panic!() };
-        assert_eq!((strokes.len(), strokes[0].points.len(), strokes[0].flow, strokes[0].feather), (2, 2, 80.0, 30.0));
+        assert_eq!(
+            brush.components.len(),
+            1,
+            "the brush's dab runs are one component"
+        );
+        let MaskShape::Brush { strokes } = &brush.components[0].shape else {
+            panic!()
+        };
+        assert_eq!(
+            (
+                strokes.len(),
+                strokes[0].points.len(),
+                strokes[0].flow,
+                strokes[0].feather
+            ),
+            (2, 2, 80.0, 30.0)
+        );
         assert_eq!(unmapped, vec!["Mask: AI mask (9)".to_string()]);
     }
 
@@ -449,9 +622,23 @@ mod tests {
         let (s, _) = settings();
         let img = lightcraft_scenes::demo_library()[0].render(96, 64);
         let render = |d: &DevelopSettings| {
-            lightcraft_pipeline::render(&img, &Default::default(), d, &lightcraft_pipeline::RenderRequest::fit(96, 64)).image.data
+            lightcraft_pipeline::render(
+                &img,
+                &Default::default(),
+                d,
+                &lightcraft_pipeline::RenderRequest::fit(96, 64),
+            )
+            .image
+            .data
         };
-        assert_ne!(render(&DevelopSettings { light: s.light, ..Default::default() }), render(&s), "the masks change the picture");
+        assert_ne!(
+            render(&DevelopSettings {
+                light: s.light,
+                ..Default::default()
+            }),
+            render(&s),
+            "the masks change the picture"
+        );
     }
 
     #[test]
@@ -461,7 +648,9 @@ mod tests {
                 { What = "Mask/Gradient", ZeroX = 0.5, ZeroY = 0.5, FullX = 0.5, FullY = 0, MaskValue = 1 } } } } } } }"#;
         let v = crate::preset_import::read_presets("Grad.lrtemplate", t.as_bytes(), None).unwrap();
         assert!(v[0].unmapped.is_empty(), "{:?}", v[0].unmapped);
-        let s = DevelopSettings::default().merged(&v[0].preset.settings).unwrap();
+        let s = DevelopSettings::default()
+            .merged(&v[0].preset.settings)
+            .unwrap();
         assert_eq!(s.masks.len(), 1);
         assert_eq!(s.masks[0].adjust.exposure, -2.0);
     }
@@ -469,15 +658,30 @@ mod tests {
     #[test]
     fn presets_add_masks_once() {
         let (s, _) = settings();
-        let partial = json!({"masks": serde_json::to_value(&s.masks).unwrap(), "light": {"exposure": 0.5}});
-        let p =
-            lightcraft_develop::Preset { id: "t".into(), name: "t".into(), group: "g".into(), settings: partial, favorite: false, builtin: false };
+        let partial =
+            json!({"masks": serde_json::to_value(&s.masks).unwrap(), "light": {"exposure": 0.5}});
+        let p = lightcraft_develop::Preset {
+            id: "t".into(),
+            name: "t".into(),
+            group: "g".into(),
+            settings: partial,
+            favorite: false,
+            builtin: false,
+        };
         let mut mine = DevelopSettings::default();
-        mine.masks.push(lightcraft_develop::Mask { id: 7, name: "Mine".into(), ..Default::default() });
+        mine.masks.push(lightcraft_develop::Mask {
+            id: 7,
+            name: "Mine".into(),
+            ..Default::default()
+        });
         let once = p.apply(&mine, 1.0);
         assert_eq!(once.masks.len(), 4, "added to the photo's own mask");
         assert_eq!(once.masks[1].id, 8, "fresh ids");
-        assert_eq!(p.apply(&once, 1.0).masks.len(), 4, "applying again adds nothing");
+        assert_eq!(
+            p.apply(&once, 1.0).masks.len(),
+            4,
+            "applying again adds nothing"
+        );
         let half = p.apply(&mine, 0.5);
         assert_eq!(half.masks[1].adjust.amount, 50.0, "amount scales the masks");
     }
@@ -488,7 +692,10 @@ mod tests {
         refit_radials(&mut v, 1.5, 1.0);
         let s = &v["masks"][0]["components"][0]["shape"];
         assert!((s["rx"].as_f64().unwrap() - 0.3).abs() < 1e-9);
-        assert!((s["ry"].as_f64().unwrap() - 0.3).abs() < 1e-9, "square photo: y radius = its box half-height");
+        assert!(
+            (s["ry"].as_f64().unwrap() - 0.3).abs() < 1e-9,
+            "square photo: y radius = its box half-height"
+        );
     }
 
     /// Spot removal in the shape Lightroom Classic writes it (values written for this test):
@@ -523,45 +730,98 @@ mod tests {
     fn retouch_areas_become_spots() {
         use lightcraft_develop::SpotMode;
         let d = lightcraft_meta::parse_xmp(SPOTS).unwrap();
-        let (partial, unmapped) = crate::crs::to_partial_report(&d.properties, Some(&d.values), crate::crs::Target::Any, 1.5);
-        let s = DevelopSettings::default().merged(&partial).expect("valid settings");
+        let (partial, unmapped) = crate::crs::to_partial_report(
+            &d.properties,
+            Some(&d.values),
+            crate::crs::Target::Any,
+            1.5,
+        );
+        let s = DevelopSettings::default()
+            .merged(&partial)
+            .expect("valid settings");
         assert_eq!(s.light.exposure, 0.1, "global settings still map");
-        assert_eq!(s.spots.len(), 4, "the gradient 'spot' is skipped: {:?}", s.spots);
+        assert_eq!(
+            s.spots.len(),
+            4,
+            "the gradient 'spot' is skipped: {:?}",
+            s.spots
+        );
         let heal = &s.spots[0];
-        assert_eq!((heal.mode, heal.points.len(), heal.opacity, heal.feather), (SpotMode::Heal, 1, 100.0, 0.0));
+        assert_eq!(
+            (heal.mode, heal.points.len(), heal.opacity, heal.feather),
+            (SpotMode::Heal, 1, 100.0, 0.0)
+        );
         assert!((heal.points[0].x - 0.4).abs() < 1e-9 && (heal.points[0].y - 0.3).abs() < 1e-9);
-        assert!((heal.size - 0.01).abs() < 1e-9, "a landscape target: width fractions are long-edge fractions");
+        assert!(
+            (heal.size - 0.01).abs() < 1e-9,
+            "a landscape target: width fractions are long-edge fractions"
+        );
         let src = heal.source_offset.expect("explicit source");
-        assert!((src.x - 0.05).abs() < 1e-9 && src.y.abs() < 1e-9, "source stored absolute, ours an offset: {src:?}");
+        assert!(
+            (src.x - 0.05).abs() < 1e-9 && src.y.abs() < 1e-9,
+            "source stored absolute, ours an offset: {src:?}"
+        );
         let clone = &s.spots[1];
-        assert_eq!((clone.mode, clone.opacity, clone.feather, clone.source_offset), (SpotMode::Clone, 50.0, 25.0, None));
+        assert_eq!(
+            (
+                clone.mode,
+                clone.opacity,
+                clone.feather,
+                clone.source_offset
+            ),
+            (SpotMode::Clone, 50.0, 25.0, None)
+        );
         let brushed = &s.spots[2];
         assert_eq!((brushed.points.len(), brushed.size), (3, 0.03));
         let src = brushed.source_offset.expect("explicit source");
         assert!((src.x - 0.1).abs() < 1e-9 && (src.y - 0.1).abs() < 1e-9);
         let circ = &s.spots[3];
-        assert!((circ.points[0].x - 0.5).abs() < 1e-9 && (circ.points[0].y - 0.5).abs() < 1e-9 && (circ.size - 0.01).abs() < 1e-9);
+        assert!(
+            (circ.points[0].x - 0.5).abs() < 1e-9
+                && (circ.points[0].y - 0.5).abs() < 1e-9
+                && (circ.size - 0.01).abs() < 1e-9
+        );
         assert_eq!(unmapped, vec!["Spot: Gradient".to_string()], "{unmapped:?}");
     }
 
     #[test]
     fn portrait_target_scales_spot_sizes() {
         let d = lightcraft_meta::parse_xmp(SPOTS).unwrap();
-        let (partial, _) = crate::crs::to_partial_report(&d.properties, Some(&d.values), crate::crs::Target::Any, 2.0 / 3.0);
+        let (partial, _) = crate::crs::to_partial_report(
+            &d.properties,
+            Some(&d.values),
+            crate::crs::Target::Any,
+            2.0 / 3.0,
+        );
         let s = DevelopSettings::default().merged(&partial).unwrap();
-        assert!((s.spots[0].size - 0.01 * 2.0 / 3.0).abs() < 1e-9, "a width fraction on a portrait target: {}", s.spots[0].size);
+        assert!(
+            (s.spots[0].size - 0.01 * 2.0 / 3.0).abs() < 1e-9,
+            "a width fraction on a portrait target: {}",
+            s.spots[0].size
+        );
     }
 
     #[test]
     fn legacy_retouch_info_is_read_on_its_own() {
         let packet = SPOTS.replace("crs:RetouchAreas", "crs:Ignored");
         let d = lightcraft_meta::parse_xmp(&packet).unwrap();
-        let (partial, unmapped) = crate::crs::to_partial_report(&d.properties, Some(&d.values), crate::crs::Target::Any, 1.5);
+        let (partial, unmapped) = crate::crs::to_partial_report(
+            &d.properties,
+            Some(&d.values),
+            crate::crs::Target::Any,
+            1.5,
+        );
         let s = DevelopSettings::default().merged(&partial).unwrap();
         assert_eq!(s.spots.len(), 1, "{:?}", s.spots);
         assert_eq!(s.spots[0].mode, lightcraft_develop::SpotMode::Heal);
-        assert!((s.spots[0].points[0].x - 0.4).abs() < 1e-9 && (s.spots[0].size - 0.01).abs() < 1e-9);
-        assert!(s.spots[0].source_offset.is_some_and(|o| (o.x - 0.05).abs() < 1e-9));
+        assert!(
+            (s.spots[0].points[0].x - 0.4).abs() < 1e-9 && (s.spots[0].size - 0.01).abs() < 1e-9
+        );
+        assert!(
+            s.spots[0]
+                .source_offset
+                .is_some_and(|o| (o.x - 0.05).abs() < 1e-9)
+        );
         assert!(unmapped.iter().any(|u| u == "Ignored"), "{unmapped:?}");
         assert!(!unmapped.iter().any(|u| u == "RetouchInfo"), "{unmapped:?}");
     }
@@ -569,12 +829,31 @@ mod tests {
     #[test]
     fn spots_render() {
         let d = lightcraft_meta::parse_xmp(SPOTS).unwrap();
-        let (partial, _) = crate::crs::to_partial_report(&d.properties, Some(&d.values), crate::crs::Target::Any, 1.5);
+        let (partial, _) = crate::crs::to_partial_report(
+            &d.properties,
+            Some(&d.values),
+            crate::crs::Target::Any,
+            1.5,
+        );
         let s = DevelopSettings::default().merged(&partial).unwrap();
         let img = lightcraft_scenes::demo_library()[0].render(96, 64);
         let render = |d: &DevelopSettings| {
-            lightcraft_pipeline::render(&img, &Default::default(), d, &lightcraft_pipeline::RenderRequest::fit(96, 64)).image.data
+            lightcraft_pipeline::render(
+                &img,
+                &Default::default(),
+                d,
+                &lightcraft_pipeline::RenderRequest::fit(96, 64),
+            )
+            .image
+            .data
         };
-        assert_ne!(render(&DevelopSettings { light: s.light, ..Default::default() }), render(&s), "the spots change the picture");
+        assert_ne!(
+            render(&DevelopSettings {
+                light: s.light,
+                ..Default::default()
+            }),
+            render(&s),
+            "the spots change the picture"
+        );
     }
 }

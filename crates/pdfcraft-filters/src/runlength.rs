@@ -81,7 +81,10 @@ mod tests {
 
     #[test]
     fn vectors() {
-        assert_eq!(dec(&[2, b'a', b'b', b'c', 254, b'x', 128]).unwrap(), b"abcxxx");
+        assert_eq!(
+            dec(&[2, b'a', b'b', b'c', 254, b'x', 128]).unwrap(),
+            b"abcxxx"
+        );
         assert_eq!(dec(&[129, 7, 128]).unwrap(), [7; 128]);
         assert!(dec(&[127]).is_err());
         assert_eq!(dec(&[0, b'q']).unwrap(), b"q"); // missing EOD
@@ -94,13 +97,22 @@ mod tests {
         let f = decode(&[4, b'a', b'b'], 100).err().unwrap();
         assert!(matches!(f.error, FilterError::Corrupt { .. }));
         assert_eq!(f.partial, b"ab");
-        assert!(matches!(dec(&[0, b'a', 200]), Err(FilterError::Corrupt { .. })));
+        assert!(matches!(
+            dec(&[0, b'a', 200]),
+            Err(FilterError::Corrupt { .. })
+        ));
     }
 
     #[test]
     fn limit() {
-        assert!(matches!(decode(&[129, 0, 129, 0], 200).map_err(|f| f.error), Err(FilterError::LimitExceeded(200))));
-        assert!(matches!(decode(&[3, 1, 2, 3, 4], 3).map_err(|f| f.error), Err(FilterError::LimitExceeded(3))));
+        assert!(matches!(
+            decode(&[129, 0, 129, 0], 200).map_err(|f| f.error),
+            Err(FilterError::LimitExceeded(200))
+        ));
+        assert!(matches!(
+            decode(&[3, 1, 2, 3, 4], 3).map_err(|f| f.error),
+            Err(FilterError::LimitExceeded(3))
+        ));
         assert_eq!(decode(&[129, 0, 129, 0], 256).ok().unwrap().len(), 256);
     }
 

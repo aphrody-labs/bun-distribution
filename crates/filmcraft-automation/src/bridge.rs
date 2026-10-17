@@ -16,7 +16,10 @@ const JOB_POLL: Duration = Duration::from_millis(250);
 /// Idle connections kept for reuse; the app serves at most 16 at once.
 const MAX_IDLE: usize = 4;
 
-type Conn = (BufReader<tokio::net::tcp::OwnedReadHalf>, tokio::net::tcp::OwnedWriteHalf);
+type Conn = (
+    BufReader<tokio::net::tcp::OwnedReadHalf>,
+    tokio::net::tcp::OwnedWriteHalf,
+);
 
 pub struct BridgeClient {
     addr: String,
@@ -33,9 +36,15 @@ impl BridgeClient {
         let addr = addr.into();
         let host = addr.rsplit_once(':').map(|(h, _)| h).unwrap_or(&addr);
         if !matches!(host, "127.0.0.1" | "localhost" | "[::1]" | "::1") {
-            return Err(AutomationError::BadRequest(format!("bridge address must be loopback, got `{addr}`")));
+            return Err(AutomationError::BadRequest(format!(
+                "bridge address must be loopback, got `{addr}`"
+            )));
         }
-        Ok(Self { addr, idle: Mutex::new(Vec::new()), next_id: AtomicU64::new(1) })
+        Ok(Self {
+            addr,
+            idle: Mutex::new(Vec::new()),
+            next_id: AtomicU64::new(1),
+        })
     }
 
     /// Run engine command `id` in the app. A blocking export (`file.exportMedia` with
@@ -46,17 +55,32 @@ impl BridgeClient {
     /// export's error.
     pub async fn execute(&self, id: &str, mut params: Value) -> Result<Value, AutomationError> {
         if !crate::long_job::is_long(id, &params) {
-            return self.call("engine.execute", json!({"command": id, "params": params})).await;
+            return self
+                .call("engine.execute", json!({"command": id, "params": params}))
+                .await;
         }
         if let Some(p) = params.as_object_mut() {
             p.insert("wait".into(), json!(false));
         }
-        let mut start = self.call("engine.execute", json!({"command": id, "params": params})).await?;
-        let Some(job) = start.get("job").and_then(Value::as_u64) else { return Ok(start) };
+        let mut start = self
+            .call("engine.execute", json!({"command": id, "params": params}))
+            .await?;
+        let Some(job) = start.get("job").and_then(Value::as_u64) else {
+            return Ok(start);
+        };
         let (result, offline) = loop {
             tokio::time::sleep(JOB_POLL).await;
-            let jobs = self.call("engine.execute", json!({"command": "jobs.list", "params": {}})).await?;
-            let Some(j) = jobs.as_array().and_then(|a| a.iter().find(|j| j["id"].as_u64() == Some(job))).cloned() else {
+            let jobs = self
+                .call(
+                    "engine.execute",
+                    json!({"command": "jobs.list", "params": {}}),
+                )
+                .await?;
+            let Some(j) = jobs
+                .as_array()
+                .and_then(|a| a.iter().find(|j| j["id"].as_u64() == Some(job)))
+                .cloned()
+            else {
                 break (Value::Null, None);
             };
             if j["finished"].as_bool() == Some(true) {
@@ -79,21 +103,32 @@ impl BridgeClient {
     pub async fn call(&self, method: &str, params: Value) -> Result<Value, AutomationError> {
         for attempt in 0..2 {
             // A retry gets a fresh connection: the failed one may have been closed by an app restart.
-            let idle = if attempt == 0 { self.idle.lock().await.pop() } else { None };
+            let idle = if attempt == 0 {
+                self.idle.lock().await.pop()
+            } else {
+                None
+            };
             let mut conn = match idle {
                 Some(c) => c,
                 None => self.connect().await?,
             };
             let id = self.next_id.fetch_add(1, Ordering::Relaxed);
-            let line = format!("{}\n", json!({"id": id, "method": method, "params": params}));
+            let line = format!(
+                "{}\n",
+                json!({"id": id, "method": method, "params": params})
+            );
             let res: Result<Value, AutomationError> = async {
-                conn.1.write_all(line.as_bytes()).await.map_err(|e| AutomationError::Bridge(e.to_string()))?;
+                conn.1
+                    .write_all(line.as_bytes())
+                    .await
+                    .map_err(|e| AutomationError::Bridge(e.to_string()))?;
                 let mut buf = String::new();
                 tokio::time::timeout(Duration::from_secs(90), conn.0.read_line(&mut buf))
                     .await
                     .map_err(|_| AutomationError::Bridge("timeout".into()))?
                     .map_err(|e| AutomationError::Bridge(e.to_string()))?;
-                serde_json::from_str(&buf).map_err(|e| AutomationError::Bridge(format!("bad reply: {e}")))
+                serde_json::from_str(&buf)
+                    .map_err(|e| AutomationError::Bridge(format!("bad reply: {e}")))
             }
             .await;
             match res {
@@ -106,7 +141,12 @@ impl BridgeClient {
                     return if v.get("ok").and_then(Value::as_bool) == Some(true) {
                         Ok(v.get("result").cloned().unwrap_or(Value::Null))
                     } else {
-                        Err(AutomationError::App(v.get("error").and_then(Value::as_str).unwrap_or("error").to_string()))
+                        Err(AutomationError::App(
+                            v.get("error")
+                                .and_then(Value::as_str)
+                                .unwrap_or("error")
+                                .to_string(),
+                        ))
                     };
                 }
                 Err(_) if attempt == 0 => {}
@@ -120,7 +160,12 @@ impl BridgeClient {
         let s = tokio::time::timeout(Duration::from_secs(5), TcpStream::connect(&self.addr))
             .await
             .map_err(|_| AutomationError::Bridge(format!("timed out connecting to {}", self.addr)))?
-            .map_err(|e| AutomationError::Bridge(format!("cannot connect to {} ({e}); start the app with `filmcraft --control <port>`", self.addr)))?;
+            .map_err(|e| {
+                AutomationError::Bridge(format!(
+                    "cannot connect to {} ({e}); start the app with `filmcraft --control <port>`",
+                    self.addr
+                ))
+            })?;
         let (r, w) = s.into_split();
         Ok((BufReader::new(r), w))
     }
@@ -139,7 +184,10 @@ mod tests {
     }
 
     /// [`fake_app`] whose finished job also lists `offline` as its `offlineMedia`.
-    async fn fake_app_with(result: Value, offline: Option<Value>) -> (String, Arc<Mutex<Vec<Value>>>) {
+    async fn fake_app_with(
+        result: Value,
+        offline: Option<Value>,
+    ) -> (String, Arc<Mutex<Vec<Value>>>) {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap().to_string();
         let seen = Arc::new(Mutex::new(Vec::new()));
@@ -165,7 +213,10 @@ mod tests {
                     }
                     _ => json!(null),
                 };
-                let line = format!("{}\n", json!({"id": req["id"], "ok": true, "result": reply}));
+                let line = format!(
+                    "{}\n",
+                    json!({"id": req["id"], "ok": true, "result": reply})
+                );
                 w.write_all(line.as_bytes()).await.unwrap();
             }
         });
@@ -179,13 +230,36 @@ mod tests {
     async fn a_blocking_export_is_polled_as_a_job() {
         let (addr, seen) = fake_app(json!({"frames": 642})).await;
         let b = BridgeClient::new(addr).unwrap();
-        let r = b.execute("file.exportMedia", json!({"path": "/tmp/out.mov", "wait": true})).await.unwrap();
-        assert_eq!(r, json!({"job": 7, "path": "/tmp/out.mov", "result": {"frames": 642}}));
+        let r = b
+            .execute(
+                "file.exportMedia",
+                json!({"path": "/tmp/out.mov", "wait": true}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            r,
+            json!({"job": 7, "path": "/tmp/out.mov", "result": {"frames": 642}})
+        );
         let seen = seen.lock().await;
         assert_eq!(seen[0]["params"]["params"]["wait"], json!(false));
-        assert!(seen.iter().all(|q| q["params"]["params"]["wait"] != json!(true)));
-        assert_eq!(seen.iter().filter(|q| q["params"]["command"] == "file.exportMedia").count(), 1, "started once");
-        assert_eq!(seen.iter().filter(|q| q["params"]["command"] == "jobs.list").count(), 3);
+        assert!(
+            seen.iter()
+                .all(|q| q["params"]["params"]["wait"] != json!(true))
+        );
+        assert_eq!(
+            seen.iter()
+                .filter(|q| q["params"]["command"] == "file.exportMedia")
+                .count(),
+            1,
+            "started once"
+        );
+        assert_eq!(
+            seen.iter()
+                .filter(|q| q["params"]["command"] == "jobs.list")
+                .count(),
+            3
+        );
     }
 
     /// The offline media a polled export drew comes back as in a blocking export's reply (#1054).
@@ -194,7 +268,13 @@ mod tests {
         let off = json!([{"item": 8, "status": "missing"}]);
         let (addr, _) = fake_app_with(json!({"frames": 3}), Some(off.clone())).await;
         let b = BridgeClient::new(addr).unwrap();
-        let r = b.execute("file.exportMedia", json!({"path": "/tmp/out.mov", "wait": true})).await.unwrap();
+        let r = b
+            .execute(
+                "file.exportMedia",
+                json!({"path": "/tmp/out.mov", "wait": true}),
+            )
+            .await
+            .unwrap();
         assert_eq!(r["offlineMedia"], off, "{r}");
     }
 
@@ -202,14 +282,25 @@ mod tests {
     async fn a_failed_blocking_export_is_an_error() {
         let (addr, _) = fake_app(json!({"error": "encode: disk full"})).await;
         let b = BridgeClient::new(addr).unwrap();
-        let e = b.execute("file.exportMedia", json!({"path": "/tmp/out.mov", "wait": true})).await.unwrap_err();
-        assert!(e.to_string().contains("export failed: encode: disk full"), "{e}");
+        let e = b
+            .execute(
+                "file.exportMedia",
+                json!({"path": "/tmp/out.mov", "wait": true}),
+            )
+            .await
+            .unwrap_err();
+        assert!(
+            e.to_string().contains("export failed: encode: disk full"),
+            "{e}"
+        );
     }
 
     /// A stand-in for the app that serves any number of connections and answers each request on
     /// its own, as the app does: `slow` after `slow_reply` (never when `None`), anything else at
     /// once with its command id. The ids of the requests it receives are sent to the returned channel.
-    async fn slow_app(slow_reply: Option<Duration>) -> (String, tokio::sync::mpsc::UnboundedReceiver<String>) {
+    async fn slow_app(
+        slow_reply: Option<Duration>,
+    ) -> (String, tokio::sync::mpsc::UnboundedReceiver<String>) {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap().to_string();
         let (seen, rx) = tokio::sync::mpsc::unbounded_channel();
@@ -222,14 +313,24 @@ mod tests {
                     let mut lines = BufReader::new(r).lines();
                     while let Ok(Some(line)) = lines.next_line().await {
                         let req: Value = serde_json::from_str(&line).unwrap();
-                        let cmd = req["params"]["command"].as_str().unwrap_or_default().to_string();
+                        let cmd = req["params"]["command"]
+                            .as_str()
+                            .unwrap_or_default()
+                            .to_string();
                         let _ = seen.send(cmd.clone());
-                        let delay = if cmd == "slow" { slow_reply } else { Some(Duration::ZERO) };
+                        let delay = if cmd == "slow" {
+                            slow_reply
+                        } else {
+                            Some(Duration::ZERO)
+                        };
                         let w = w.clone();
                         tokio::spawn(async move {
                             let Some(d) = delay else { return };
                             tokio::time::sleep(d).await;
-                            let line = format!("{}\n", json!({"id": req["id"], "ok": true, "result": cmd}));
+                            let line = format!(
+                                "{}\n",
+                                json!({"id": req["id"], "ok": true, "result": cmd})
+                            );
                             let _ = w.lock().await.write_all(line.as_bytes()).await;
                         });
                     }
@@ -251,7 +352,11 @@ mod tests {
         });
         assert_eq!(seen.recv().await.as_deref(), Some("slow"));
         let fast = tokio::time::timeout(Duration::from_secs(5), b.execute("fast", json!({}))).await;
-        assert_eq!(fast.expect("the later call waited on the slow one").unwrap(), json!("fast"));
+        assert_eq!(
+            fast.expect("the later call waited on the slow one")
+                .unwrap(),
+            json!("fast")
+        );
         slow.abort();
     }
 
@@ -276,7 +381,9 @@ mod tests {
     async fn other_commands_are_forwarded() {
         let (addr, seen) = fake_app(Value::Null).await;
         let b = BridgeClient::new(addr).unwrap();
-        b.execute("file.exportMedia", json!({"path": "/tmp/out.mov"})).await.unwrap();
+        b.execute("file.exportMedia", json!({"path": "/tmp/out.mov"}))
+            .await
+            .unwrap();
         b.execute("sequence.inspect", json!({})).await.unwrap();
         let seen = seen.lock().await;
         assert_eq!(seen.len(), 2);

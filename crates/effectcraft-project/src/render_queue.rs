@@ -54,7 +54,12 @@ pub enum ProxyUse {
 }
 
 impl ProxyUse {
-    pub const ALL: [ProxyUse; 4] = [ProxyUse::CurrentSettings, ProxyUse::UseAll, ProxyUse::UseCompOnly, ProxyUse::UseNone];
+    pub const ALL: [ProxyUse; 4] = [
+        ProxyUse::CurrentSettings,
+        ProxyUse::UseAll,
+        ProxyUse::UseCompOnly,
+        ProxyUse::UseNone,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             ProxyUse::CurrentSettings => "Current Settings",
@@ -67,7 +72,9 @@ impl ProxyUse {
         match s.to_ascii_lowercase().replace([' ', '_', '-'], "").as_str() {
             "current" | "currentsettings" => Some(ProxyUse::CurrentSettings),
             "all" | "useall" | "useallproxies" => Some(ProxyUse::UseAll),
-            "comp" | "componly" | "usecompproxiesonly" | "usecomponly" => Some(ProxyUse::UseCompOnly),
+            "comp" | "componly" | "usecompproxiesonly" | "usecomponly" => {
+                Some(ProxyUse::UseCompOnly)
+            }
             "none" | "usenone" | "usenoproxies" => Some(ProxyUse::UseNone),
             _ => None,
         }
@@ -96,7 +103,11 @@ pub enum FieldRender {
 }
 
 impl FieldRender {
-    pub const ALL: [FieldRender; 3] = [FieldRender::Off, FieldRender::UpperFirst, FieldRender::LowerFirst];
+    pub const ALL: [FieldRender; 3] = [
+        FieldRender::Off,
+        FieldRender::UpperFirst,
+        FieldRender::LowerFirst,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             FieldRender::Off => "Off",
@@ -115,7 +126,8 @@ impl FieldRender {
 }
 
 fn norm(s: &str) -> String {
-    s.to_ascii_lowercase().replace([' ', '_', '-', '.', ':', '&'], "")
+    s.to_ascii_lowercase()
+        .replace([' ', '_', '-', '.', ':', '&'], "")
 }
 
 /// Render Settings ▸ 3:2 Pulldown: with field rendering, four film frames (at 4/5 of the output
@@ -136,7 +148,14 @@ pub enum Pulldown {
 const CADENCE: [i64; 10] = [0, 0, 1, 1, 1, 2, 2, 3, 3, 3];
 
 impl Pulldown {
-    pub const ALL: [Pulldown; 6] = [Pulldown::Off, Pulldown::Wssww, Pulldown::Sswww, Pulldown::Swwws, Pulldown::Wwwss, Pulldown::Wwssw];
+    pub const ALL: [Pulldown; 6] = [
+        Pulldown::Off,
+        Pulldown::Wssww,
+        Pulldown::Sswww,
+        Pulldown::Swwws,
+        Pulldown::Wwwss,
+        Pulldown::Wwssw,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Pulldown::Off => "Off",
@@ -152,7 +171,9 @@ impl Pulldown {
         if matches!(n.as_str(), "off" | "none") {
             return Some(Pulldown::Off);
         }
-        Pulldown::ALL.into_iter().find(|p| p.label().eq_ignore_ascii_case(&n))
+        Pulldown::ALL
+            .into_iter()
+            .find(|p| p.label().eq_ignore_ascii_case(&n))
     }
     /// Offset (in frames) into the WWSSW base cadence.
     fn rotation(self) -> Option<i64> {
@@ -176,7 +197,9 @@ impl Pulldown {
     }
     /// The W/S pattern of five consecutive output frames.
     pub fn pattern(self) -> String {
-        (0..5).filter_map(|k| self.fields(k).map(|(a, b)| if a == b { 'W' } else { 'S' })).collect()
+        (0..5)
+            .filter_map(|k| self.fields(k).map(|(a, b)| if a == b { 'W' } else { 'S' }))
+            .collect()
     }
 }
 
@@ -192,7 +215,11 @@ pub enum SwitchOverride {
 }
 
 impl SwitchOverride {
-    pub const ALL: [SwitchOverride; 3] = [SwitchOverride::Current, SwitchOverride::OnForChecked, SwitchOverride::OffForAll];
+    pub const ALL: [SwitchOverride; 3] = [
+        SwitchOverride::Current,
+        SwitchOverride::OnForChecked,
+        SwitchOverride::OffForAll,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             SwitchOverride::Current => "Current Settings",
@@ -203,7 +230,9 @@ impl SwitchOverride {
     pub fn parse(s: &str) -> Option<SwitchOverride> {
         match norm(s).as_str() {
             "current" | "currentsettings" => Some(SwitchOverride::Current),
-            "on" | "onforchecked" | "onforcheckedlayers" | "true" => Some(SwitchOverride::OnForChecked),
+            "on" | "onforchecked" | "onforcheckedlayers" | "true" => {
+                Some(SwitchOverride::OnForChecked)
+            }
             "off" | "offforall" | "offforalllayers" | "false" => Some(SwitchOverride::OffForAll),
             _ => None,
         }
@@ -220,7 +249,11 @@ pub enum EffectsMode {
 }
 
 impl EffectsMode {
-    pub const ALL: [EffectsMode; 3] = [EffectsMode::Current, EffectsMode::AllOn, EffectsMode::AllOff];
+    pub const ALL: [EffectsMode; 3] = [
+        EffectsMode::Current,
+        EffectsMode::AllOn,
+        EffectsMode::AllOff,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             EffectsMode::Current => "Current Settings",
@@ -274,7 +307,12 @@ pub enum ColorDepth {
 }
 
 impl ColorDepth {
-    pub const ALL: [ColorDepth; 4] = [ColorDepth::Current, ColorDepth::Bpc8, ColorDepth::Bpc16, ColorDepth::Bpc32];
+    pub const ALL: [ColorDepth; 4] = [
+        ColorDepth::Current,
+        ColorDepth::Bpc8,
+        ColorDepth::Bpc16,
+        ColorDepth::Bpc32,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             ColorDepth::Current => "Current Settings",
@@ -386,7 +424,11 @@ impl Default for RenderSettings {
 impl RenderSettings {
     /// Effective Motion Blur override.
     pub fn motion_blur_override(&self) -> SwitchOverride {
-        if self.motion_blur { self.motion_blur_mode } else { SwitchOverride::OffForAll }
+        if self.motion_blur {
+            self.motion_blur_mode
+        } else {
+            SwitchOverride::OffForAll
+        }
     }
     /// How output frame `i` is sampled (field rendering and 3:2 pulldown).
     pub fn sample(&self, comp: &Comp, i: u64) -> FrameSample {
@@ -400,12 +442,20 @@ impl RenderSettings {
             // Film frames at 4/5 of the output rate, from the first one starting in the span.
             let film = FrameRate::new(r.num * 4, r.den * 5);
             let f0 = Self::ceil_frame(film, self.span(comp).0);
-            return FrameSample::Fields { first: film.tick_of(f0 + a), second: film.tick_of(f0 + b), upper_first };
+            return FrameSample::Fields {
+                first: film.tick_of(f0 + a),
+                second: film.tick_of(f0 + b),
+                upper_first,
+            };
         }
         let f = self.first_frame(comp) + i as i64;
         let t = r.tick_of(f);
         let half = Tick((r.tick_of(f + 1).0 - t.0) / 2);
-        FrameSample::Fields { first: t, second: Tick(t.0 + half.0), upper_first }
+        FrameSample::Fields {
+            first: t,
+            second: Tick(t.0 + half.0),
+            upper_first,
+        }
     }
     /// The comp-time span `[start, end)` to render.
     pub fn span(&self, comp: &Comp) -> (Tick, Tick) {
@@ -421,7 +471,11 @@ impl RenderSettings {
     /// The output frame rate: the Frame Rate override, unless the comp preserves its frame rate
     /// (Composition Settings ▸ Preserve frame rate when nested or in render queue).
     pub fn rate(&self, comp: &Comp) -> FrameRate {
-        if comp.preserve_frame_rate { comp.frame_rate } else { self.frame_rate.unwrap_or(comp.frame_rate) }
+        if comp.preserve_frame_rate {
+            comp.frame_rate
+        } else {
+            self.frame_rate.unwrap_or(comp.frame_rate)
+        }
     }
     /// First output-rate frame starting at or after `t`.
     fn ceil_frame(r: FrameRate, t: Tick) -> i64 {
@@ -444,7 +498,10 @@ impl RenderSettings {
     }
     pub fn output_size(&self, comp: &Comp) -> (u32, u32) {
         let s = self.resolution.clamp(0.01, 4.0);
-        (((comp.width as f64 * s).round() as u32).max(1), ((comp.height as f64 * s).round() as u32).max(1))
+        (
+            ((comp.width as f64 * s).round() as u32).max(1),
+            ((comp.height as f64 * s).round() as u32).max(1),
+        )
     }
     pub fn resolution_label(&self) -> &'static str {
         match self.resolution {
@@ -460,7 +517,11 @@ impl RenderSettings {
         if !self.name.is_empty() {
             return self.name.clone();
         }
-        let q = if self.quality == RenderQuality::Best { "Best Settings" } else { "Draft Settings" };
+        let q = if self.quality == RenderQuality::Best {
+            "Best Settings"
+        } else {
+            "Draft Settings"
+        };
         format!("{q} · {}", self.resolution_label())
     }
     /// Every setting as `(label, value)` lines (render logs, the settings dialog).
@@ -468,7 +529,9 @@ impl RenderSettings {
         let span = match self.time_span {
             TimeSpan::WorkArea => "Work Area Only".to_string(),
             TimeSpan::LengthOfComp => "Length of Comp".to_string(),
-            TimeSpan::Custom { start, end } => format!("Custom ({:.3}s – {:.3}s)", start.seconds(), end.seconds()),
+            TimeSpan::Custom { start, end } => {
+                format!("Custom ({:.3}s – {:.3}s)", start.seconds(), end.seconds())
+            }
         };
         let rate = match (self.frame_rate, comp) {
             (Some(r), _) => format!("{:.3} fps", r.as_f64()),
@@ -476,9 +539,19 @@ impl RenderSettings {
             (None, None) => "Use comp's frame rate".into(),
         };
         vec![
-            ("Template", if self.name.is_empty() { "Custom".into() } else { self.name.clone() }),
+            (
+                "Template",
+                if self.name.is_empty() {
+                    "Custom".into()
+                } else {
+                    self.name.clone()
+                },
+            ),
             ("Quality", format!("{:?}", self.quality)),
-            ("Resolution", format!("{} ({:.3})", self.resolution_label(), self.resolution)),
+            (
+                "Resolution",
+                format!("{} ({:.3})", self.resolution_label(), self.resolution),
+            ),
             ("Proxy Use", self.proxy_use.label().into()),
             ("Effects", self.effects.label().into()),
             ("Solo Switches", self.solo.label().into()),
@@ -490,8 +563,14 @@ impl RenderSettings {
             ("Motion Blur", self.motion_blur_override().label().into()),
             ("Time Span", span),
             ("Frame Rate", rate),
-            ("Skip Existing Files", if self.skip_existing { "On" } else { "Off" }.into()),
-            ("Use Storage Overflow", if self.storage_overflow { "On" } else { "Off" }.into()),
+            (
+                "Skip Existing Files",
+                if self.skip_existing { "On" } else { "Off" }.into(),
+            ),
+            (
+                "Use Storage Overflow",
+                if self.storage_overflow { "On" } else { "Off" }.into(),
+            ),
         ]
     }
 }
@@ -577,10 +656,24 @@ impl OutputFormat {
         }
     }
     pub fn is_sequence(self) -> bool {
-        matches!(self, OutputFormat::PngSequence | OutputFormat::JpegSequence | OutputFormat::TiffSequence | OutputFormat::ExrSequence)
+        matches!(
+            self,
+            OutputFormat::PngSequence
+                | OutputFormat::JpegSequence
+                | OutputFormat::TiffSequence
+                | OutputFormat::ExrSequence
+        )
     }
     pub fn is_movie(self) -> bool {
-        matches!(self, OutputFormat::H264 | OutputFormat::ProRes | OutputFormat::Uncompressed | OutputFormat::WebM | OutputFormat::Hevc | OutputFormat::Av1)
+        matches!(
+            self,
+            OutputFormat::H264
+                | OutputFormat::ProRes
+                | OutputFormat::Uncompressed
+                | OutputFormat::WebM
+                | OutputFormat::Hevc
+                | OutputFormat::Av1
+        )
     }
     /// Formats whose video codec options live in [`OutputModule::codec`] (HEVC, AV1).
     pub fn has_codec_options(self) -> bool {
@@ -591,7 +684,15 @@ impl OutputFormat {
         matches!(self, OutputFormat::Wav | OutputFormat::Aiff)
     }
     pub fn supports_alpha(self) -> bool {
-        !matches!(self, OutputFormat::H264 | OutputFormat::Hevc | OutputFormat::Av1 | OutputFormat::JpegSequence | OutputFormat::Wav | OutputFormat::Aiff)
+        !matches!(
+            self,
+            OutputFormat::H264
+                | OutputFormat::Hevc
+                | OutputFormat::Av1
+                | OutputFormat::JpegSequence
+                | OutputFormat::Wav
+                | OutputFormat::Aiff
+        )
     }
     pub fn supports_audio(self) -> bool {
         self.is_movie() || self.is_audio_only()
@@ -600,12 +701,19 @@ impl OutputFormat {
     /// at least 2).
     pub fn coded_size(self, w: u32, h: u32) -> (u32, u32) {
         let even = |v: u32| if v < 2 { 2 } else { v & !1 };
-        if matches!(self, OutputFormat::H264 | OutputFormat::Hevc) { (even(w), even(h)) } else { (w, h) }
+        if matches!(self, OutputFormat::H264 | OutputFormat::Hevc) {
+            (even(w), even(h))
+        } else {
+            (w, h)
+        }
     }
     /// Parse a format name: `h264`, `mp4`, `prores`, `mov`, `uncompressed`, `png`, `jpeg`/`jpg`,
     /// `tiff`/`tif`, `exr`, `gif`, or a label.
     pub fn from_name(s: &str) -> Option<OutputFormat> {
-        let n = s.trim().to_ascii_lowercase().replace([' ', '.', '-', '_'], "");
+        let n = s
+            .trim()
+            .to_ascii_lowercase()
+            .replace([' ', '.', '-', '_'], "");
         Some(match n.as_str() {
             "h264" | "mp4" | "avc" => OutputFormat::H264,
             "hevc" | "h265" | "hevch265" | "hvc1" | "x265" => OutputFormat::Hevc,
@@ -625,7 +733,10 @@ impl OutputFormat {
     }
     /// Guess from a file name's extension.
     pub fn from_path(path: &str) -> Option<OutputFormat> {
-        let ext = std::path::Path::new(path).extension()?.to_string_lossy().to_ascii_lowercase();
+        let ext = std::path::Path::new(path)
+            .extension()?
+            .to_string_lossy()
+            .to_ascii_lowercase();
         OutputFormat::from_name(&ext)
     }
     /// An output `path` without its extensions, for this format to add its own: the project
@@ -635,7 +746,8 @@ impl OutputFormat {
     /// stays part of the name (`logo.png.mov`).
     pub fn output_stem(self, path: &str) -> &str {
         let stem = without_project_extension(path);
-        let mut stem = strip_extension(stem, |e| OutputFormat::from_name(e).is_some()).unwrap_or(stem);
+        let mut stem =
+            strip_extension(stem, |e| OutputFormat::from_name(e).is_some()).unwrap_or(stem);
         while let Some(s) = strip_extension(stem, |e| e.eq_ignore_ascii_case(self.extension())) {
             stem = s;
         }
@@ -649,7 +761,11 @@ impl OutputFormat {
             return path.to_string();
         }
         let fixed = format!("{}.{}", self.output_stem(path), self.extension());
-        if fixed.eq_ignore_ascii_case(path) { path.to_string() } else { fixed }
+        if fixed.eq_ignore_ascii_case(path) {
+            path.to_string()
+        } else {
+            fixed
+        }
     }
 }
 
@@ -660,7 +776,9 @@ const PROJECT_EXTENSIONS: [&str; 2] = ["ecproj", "ecprojx"];
 /// to it (`Comp 1.mov.ecproj` → `Comp 1.mov`, #293).
 pub fn without_project_extension(path: &str) -> &str {
     let mut p = path;
-    while let Some(s) = strip_extension(p, |e| PROJECT_EXTENSIONS.iter().any(|x| e.eq_ignore_ascii_case(x))) {
+    while let Some(s) = strip_extension(p, |e| {
+        PROJECT_EXTENSIONS.iter().any(|x| e.eq_ignore_ascii_case(x))
+    }) {
         p = s;
     }
     p
@@ -803,7 +921,13 @@ pub struct Resize {
 
 impl Default for Resize {
     fn default() -> Self {
-        Resize { enabled: false, width: 1920, height: 1080, lock_aspect: true, quality: ResizeQuality::High }
+        Resize {
+            enabled: false,
+            width: 1920,
+            height: 1080,
+            lock_aspect: true,
+            quality: ResizeQuality::High,
+        }
     }
 }
 
@@ -826,7 +950,11 @@ pub fn post_render_parse(s: &str) -> Option<PostRenderAction> {
     match norm(s).as_str() {
         "none" => Some(PostRenderAction::None),
         "import" => Some(PostRenderAction::Import),
-        "importreplace" | "importandreplace" | "importandreplaceusage" | "importreplaceusage" | "replace" => Some(PostRenderAction::ImportAndReplace),
+        "importreplace"
+        | "importandreplace"
+        | "importandreplaceusage"
+        | "importreplaceusage"
+        | "replace" => Some(PostRenderAction::ImportAndReplace),
         "setproxy" | "proxy" => Some(PostRenderAction::SetProxy),
         _ => None,
     }
@@ -845,8 +973,14 @@ pub enum ProResProfile {
 }
 
 impl ProResProfile {
-    pub const ALL: [ProResProfile; 6] =
-        [ProResProfile::Proxy, ProResProfile::Lt, ProResProfile::Standard, ProResProfile::Hq, ProResProfile::P4444, ProResProfile::P4444Xq];
+    pub const ALL: [ProResProfile; 6] = [
+        ProResProfile::Proxy,
+        ProResProfile::Lt,
+        ProResProfile::Standard,
+        ProResProfile::Hq,
+        ProResProfile::P4444,
+        ProResProfile::P4444Xq,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             ProResProfile::Proxy => "Apple ProRes 422 Proxy",
@@ -864,7 +998,9 @@ impl ProResProfile {
         let n = s.to_ascii_lowercase().replace([' ', '-', '_'], "");
         ProResProfile::ALL.into_iter().find(|p| {
             let l = p.label().to_ascii_lowercase().replace(' ', "");
-            l == n || l.trim_start_matches("appleprores") == n.trim_start_matches("appleprores") || format!("{p:?}").to_ascii_lowercase() == n
+            l == n
+                || l.trim_start_matches("appleprores") == n.trim_start_matches("appleprores")
+                || format!("{p:?}").to_ascii_lowercase() == n
         })
     }
 }
@@ -939,7 +1075,12 @@ pub struct VideoCodecOptions {
 
 impl Default for VideoCodecOptions {
     fn default() -> Self {
-        VideoCodecOptions { profile: CodecProfile::Main, level: None, rate_control: RateControlMode::Bitrate, quality: 70 }
+        VideoCodecOptions {
+            profile: CodecProfile::Main,
+            level: None,
+            rate_control: RateControlMode::Bitrate,
+            quality: 70,
+        }
     }
 }
 
@@ -962,7 +1103,8 @@ impl VideoCodecOptions {
     }
     /// AV1 `seq_level_idx`: (major − 2) × 4 + minor.
     pub fn av1_level_idx(&self) -> Option<u8> {
-        self.level.map(|l| ((l / 10).clamp(2, 7) - 2) * 4 + (l % 10).min(3))
+        self.level
+            .map(|l| ((l / 10).clamp(2, 7) - 2) * 4 + (l % 10).min(3))
     }
     pub fn level_label(&self) -> String {
         match self.level {
@@ -977,7 +1119,11 @@ impl VideoCodecOptions {
             return Some(None);
         }
         let v: f64 = s.trim_start_matches('l').parse().ok()?;
-        let l = if v >= 10.0 { v.round() } else { (v * 10.0).round() };
+        let l = if v >= 10.0 {
+            v.round()
+        } else {
+            (v * 10.0).round()
+        };
         (10.0..=73.0).contains(&l).then_some(Some(l as u8))
     }
 }
@@ -1118,7 +1264,14 @@ impl OutputModule {
     /// Every setting as `(label, value)` lines (render logs).
     pub fn describe(&self) -> Vec<(&'static str, String)> {
         let mut v = vec![
-            ("Template", if self.name.is_empty() { "Custom".into() } else { self.name.clone() }),
+            (
+                "Template",
+                if self.name.is_empty() {
+                    "Custom".into()
+                } else {
+                    self.name.clone()
+                },
+            ),
             ("Format", self.format.label().into()),
             ("Channels", self.channels.label().into()),
             ("Output To", self.output.clone()),
@@ -1129,20 +1282,37 @@ impl OutputModule {
         match self.format {
             OutputFormat::H264 => v.push(("Bitrate", format!("{} kbps", self.bitrate_kbps))),
             OutputFormat::ProRes => v.push(("Codec", self.prores_profile.label().into())),
-            OutputFormat::WebM if self.webm_bitrate => v.push(("Bitrate", format!("{} kbps", self.bitrate_kbps))),
-            OutputFormat::WebM | OutputFormat::JpegSequence => v.push(("Quality", self.quality.to_string())),
+            OutputFormat::WebM if self.webm_bitrate => {
+                v.push(("Bitrate", format!("{} kbps", self.bitrate_kbps)))
+            }
+            OutputFormat::WebM | OutputFormat::JpegSequence => {
+                v.push(("Quality", self.quality.to_string()))
+            }
             _ => {}
         }
         if self.crop.enabled {
             let c = &self.crop;
             v.push((
                 "Crop",
-                if c.use_roi { format!("Region of Interest {:?}", c.roi) } else { format!("T {} L {} B {} R {}", c.top, c.left, c.bottom, c.right) },
+                if c.use_roi {
+                    format!("Region of Interest {:?}", c.roi)
+                } else {
+                    format!("T {} L {} B {} R {}", c.top, c.left, c.bottom, c.right)
+                },
             ));
         }
         if self.resize.enabled {
             let r = &self.resize;
-            v.push(("Resize", format!("{}×{} ({:?} quality{})", r.width, r.height, r.quality, if r.lock_aspect { ", aspect locked" } else { "" })));
+            v.push((
+                "Resize",
+                format!(
+                    "{}×{} ({:?} quality{})",
+                    r.width,
+                    r.height,
+                    r.quality,
+                    if r.lock_aspect { ", aspect locked" } else { "" }
+                ),
+            ));
         }
         if self.format.supports_audio() {
             v.push((
@@ -1151,16 +1321,31 @@ impl OutputModule {
                     "{:?} · {} Hz · {} · {}",
                     self.audio,
                     self.audio_sample_rate,
-                    if self.audio_channels == 1 { "Mono" } else { "Stereo" },
+                    if self.audio_channels == 1 {
+                        "Mono"
+                    } else {
+                        "Stereo"
+                    },
                     self.audio_format.label()
                 ),
             ));
         }
-        v.push(("Include Project Link", if self.include_project_link { "On" } else { "Off" }.into()));
+        v.push((
+            "Include Project Link",
+            if self.include_project_link {
+                "On"
+            } else {
+                "Off"
+            }
+            .into(),
+        ));
         v
     }
     pub fn for_format(format: OutputFormat) -> OutputModule {
-        let mut m = OutputModule { format, ..Default::default() };
+        let mut m = OutputModule {
+            format,
+            ..Default::default()
+        };
         if format.is_sequence() {
             m.output = DEFAULT_SEQUENCE_TEMPLATE.into();
         }
@@ -1175,7 +1360,9 @@ impl OutputModule {
         }
         if self.output.contains("[fileExtension]") {
             if format.is_sequence() && !self.output.contains('#') {
-                self.output = self.output.replace(".[fileExtension]", "_[#####].[fileExtension]");
+                self.output = self
+                    .output
+                    .replace(".[fileExtension]", "_[#####].[fileExtension]");
             } else if !format.is_sequence() && old.is_sequence() {
                 self.output = self.output.replace("_[#####]", "").replace("[#####]", "");
             }
@@ -1191,11 +1378,16 @@ impl OutputModule {
     }
     /// Whether this module can write alpha (the format can, and WebM uses VP9).
     pub fn supports_alpha(&self) -> bool {
-        self.format.supports_alpha() && !(self.format == OutputFormat::WebM && self.webm_codec == WebmVideoCodec::Av1)
+        self.format.supports_alpha()
+            && !(self.format == OutputFormat::WebM && self.webm_codec == WebmVideoCodec::Av1)
     }
     /// The key-frame interval in frames at `fps` ([`OutputModule::keyframe_interval`]; automatic: 2 s).
     pub fn keyint(&self, fps: f64) -> u32 {
-        if self.keyframe_interval > 0 { self.keyframe_interval } else { (fps * 2.0).round().max(1.0) as u32 }
+        if self.keyframe_interval > 0 {
+            self.keyframe_interval
+        } else {
+            (fps * 2.0).round().max(1.0) as u32
+        }
     }
     /// Codec options summary: `Main · 10000 kbps · Level Auto · Key every auto`.
     fn codec_summary(&self) -> String {
@@ -1204,8 +1396,16 @@ impl OutputModule {
             RateControlMode::Bitrate => format!("{} kbps", self.bitrate_kbps),
             RateControlMode::Quality => format!("Quality {}", c.quality),
         };
-        let gop = if self.keyframe_interval == 0 { "auto".to_string() } else { self.keyframe_interval.to_string() };
-        format!("{} · {rate} · Level {} · Key every {gop}", c.profile.label(), c.level_label())
+        let gop = if self.keyframe_interval == 0 {
+            "auto".to_string()
+        } else {
+            self.keyframe_interval.to_string()
+        };
+        format!(
+            "{} · {rate} · Level {} · Key every {gop}",
+            c.profile.label(),
+            c.level_label()
+        )
     }
     /// One-line summary shown next to "Output Module:".
     pub fn summary(&self) -> String {
@@ -1217,11 +1417,21 @@ impl OutputModule {
             OutputFormat::H264 => format!("H.264 · {} kbps", self.bitrate_kbps),
             OutputFormat::ProRes => format!(
                 "{} · {ch}",
-                if self.channels == Channels::Rgba && !self.prores_profile.is_4444() { "Apple ProRes 4444" } else { self.prores_profile.label() }
+                if self.channels == Channels::Rgba && !self.prores_profile.is_4444() {
+                    "Apple ProRes 4444"
+                } else {
+                    self.prores_profile.label()
+                }
             ),
-            OutputFormat::Hevc | OutputFormat::Av1 => format!("{} · {}", self.format.label(), self.codec_summary()),
+            OutputFormat::Hevc | OutputFormat::Av1 => {
+                format!("{} · {}", self.format.label(), self.codec_summary())
+            }
             OutputFormat::WebM if self.webm_codec == WebmVideoCodec::Av1 => {
-                format!("WebM (AV1 + Opus {} kbps) · {}", self.opus_bitrate_kbps, self.codec_summary())
+                format!(
+                    "WebM (AV1 + Opus {} kbps) · {}",
+                    self.opus_bitrate_kbps,
+                    self.codec_summary()
+                )
             }
             f => format!("{} · {ch}", f.label()),
         }
@@ -1303,7 +1513,11 @@ pub enum RenderLog {
 }
 
 impl RenderLog {
-    pub const ALL: [RenderLog; 3] = [RenderLog::ErrorsOnly, RenderLog::PlusSettings, RenderLog::PlusPerFrameInfo];
+    pub const ALL: [RenderLog; 3] = [
+        RenderLog::ErrorsOnly,
+        RenderLog::PlusSettings,
+        RenderLog::PlusPerFrameInfo,
+    ];
     pub fn is_default(&self) -> bool {
         *self == RenderLog::ErrorsOnly
     }
@@ -1318,7 +1532,9 @@ impl RenderLog {
         match norm(s).as_str() {
             "errors" | "errorsonly" => Some(RenderLog::ErrorsOnly),
             "settings" | "plussettings" => Some(RenderLog::PlusSettings),
-            "perframe" | "plusperframe" | "plusperframeinfo" | "frames" => Some(RenderLog::PlusPerFrameInfo),
+            "perframe" | "plusperframe" | "plusperframeinfo" | "frames" => {
+                Some(RenderLog::PlusPerFrameInfo)
+            }
             _ => None,
         }
     }
@@ -1328,16 +1544,26 @@ impl RenderLog {
 /// frame-number run is dropped).
 pub fn log_path(output: &str) -> String {
     let p = std::path::Path::new(output);
-    let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+    let stem = p
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
     let mut stem = stem;
     if let Some(i) = stem.find('#') {
         // The run of `#`s, with its brackets when it has them (`[###]`, `[#####]`).
         let n = stem[i..].chars().take_while(|c| *c == '#').count();
-        let (a, b) = if stem[..i].ends_with('[') && stem[i + n..].starts_with(']') { (i - 1, i + n + 1) } else { (i, i + n) };
+        let (a, b) = if stem[..i].ends_with('[') && stem[i + n..].starts_with(']') {
+            (i - 1, i + n + 1)
+        } else {
+            (i, i + n)
+        };
         stem.replace_range(a..b, "");
     }
     let stem = stem.trim_end_matches(['_', '.', ' ']);
-    let name = format!("{}_RenderLog.txt", if stem.is_empty() { "Render" } else { stem });
+    let name = format!(
+        "{}_RenderLog.txt",
+        if stem.is_empty() { "Render" } else { stem }
+    );
     match p.parent().filter(|d| !d.as_os_str().is_empty()) {
         Some(d) => d.join(name).to_string_lossy().to_string(),
         None => name,
@@ -1435,7 +1661,11 @@ pub struct TemplateVars<'a> {
 
 /// Expand template tokens (all but the `#` frame-number run).
 pub fn expand_template(template: &str, format: OutputFormat, v: &TemplateVars) -> String {
-    let fps = if (v.frame_rate - v.frame_rate.round()).abs() < 1e-6 { format!("{}", v.frame_rate.round() as i64) } else { format!("{:.2}", v.frame_rate) };
+    let fps = if (v.frame_rate - v.frame_rate.round()).abs() < 1e-6 {
+        format!("{}", v.frame_rate.round() as i64)
+    } else {
+        format!("{:.2}", v.frame_rate)
+    };
     template
         .replace("[compName]", &sanitize(v.comp_name))
         .replace("[projectName]", &sanitize(v.project_name))
@@ -1462,14 +1692,26 @@ pub fn sequence_path(path: &str, frame: i64) -> String {
     }
     let p = std::path::Path::new(path);
     match p.extension() {
-        Some(ext) => format!("{}_{frame:05}.{}", p.with_extension("").to_string_lossy(), ext.to_string_lossy()),
+        Some(ext) => format!(
+            "{}_{frame:05}.{}",
+            p.with_extension("").to_string_lossy(),
+            ext.to_string_lossy()
+        ),
         None => format!("{path}_{frame:05}"),
     }
 }
 
 /// Make a name safe as a file name component.
 pub fn sanitize(name: &str) -> String {
-    name.chars().map(|c| if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') { '_' } else { c }).collect()
+    name.chars()
+        .map(|c| {
+            if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -1478,9 +1720,27 @@ mod tests {
 
     #[test]
     fn templates_and_sequences() {
-        let v = TemplateVars { comp_name: "Main/Title", project_name: "P", width: 1920, height: 1080, frame_rate: 29.97, start_frame: 0, end_frame: 9 };
-        assert_eq!(expand_template(DEFAULT_TEMPLATE, OutputFormat::H264, &v), "Main_Title.mp4");
-        assert_eq!(expand_template("[compName]_[width]x[height]@[frameRate].[fileExtension]", OutputFormat::Gif, &v), "Main_Title_1920x1080@29.97.gif");
+        let v = TemplateVars {
+            comp_name: "Main/Title",
+            project_name: "P",
+            width: 1920,
+            height: 1080,
+            frame_rate: 29.97,
+            start_frame: 0,
+            end_frame: 9,
+        };
+        assert_eq!(
+            expand_template(DEFAULT_TEMPLATE, OutputFormat::H264, &v),
+            "Main_Title.mp4"
+        );
+        assert_eq!(
+            expand_template(
+                "[compName]_[width]x[height]@[frameRate].[fileExtension]",
+                OutputFormat::Gif,
+                &v
+            ),
+            "Main_Title_1920x1080@29.97.gif"
+        );
         assert_eq!(sequence_path("out/a_[#####].png", 42), "out/a_00042.png");
         assert_eq!(sequence_path("a###.tif", 7), "a007.tif");
         assert_eq!(sequence_path("a.png", 3), "a_00003.png");
@@ -1496,7 +1756,10 @@ mod tests {
         m.output = "/tmp/x.mov".into();
         m.set_format(OutputFormat::JpegSequence);
         assert_eq!(m.output, "/tmp/x_[#####].jpg");
-        assert_eq!(OutputFormat::from_name("TIFF"), Some(OutputFormat::TiffSequence));
+        assert_eq!(
+            OutputFormat::from_name("TIFF"),
+            Some(OutputFormat::TiffSequence)
+        );
         assert_eq!(ProResProfile::from_name("4444"), Some(ProResProfile::P4444));
         assert_eq!(ProResProfile::from_name("hq"), Some(ProResProfile::Hq));
     }
@@ -1509,24 +1772,42 @@ mod tests {
         use OutputFormat::*;
         for (path, format, want) in [
             ("/out/Comp 1.mov.ecproj", ProRes, "/out/Comp 1.mov"),
-            ("/out/Comp 1_[#####].png.ecproj", PngSequence, "/out/Comp 1_[#####].png"),
+            (
+                "/out/Comp 1_[#####].png.ecproj",
+                PngSequence,
+                "/out/Comp 1_[#####].png",
+            ),
             ("/out/Comp 1.mov.ecprojx.ecproj", ProRes, "/out/Comp 1.mov"),
             ("/out/Comp 2.mov.mov", ProRes, "/out/Comp 2.mov"),
             ("/out/Comp 2.mov.mov.mov", ProRes, "/out/Comp 2.mov"),
             ("/out/render", ProRes, "/out/render.mov"),
-            ("/out/frames_[#####]", PngSequence, "/out/frames_[#####].png"),
+            (
+                "/out/frames_[#####]",
+                PngSequence,
+                "/out/frames_[#####].png",
+            ),
             ("/out/logo.png.mov", ProRes, "/out/logo.png.mov"),
             ("/out/v1.2", H264, "/out/v1.2.mp4"),
             ("/my.folder/Clip.MOV", ProRes, "/my.folder/Clip.MOV"),
             ("/out/x.mp4", Hevc, "/out/x.mp4"),
-            ("[compName].[fileExtension]", ProRes, "[compName].[fileExtension]"),
+            (
+                "[compName].[fileExtension]",
+                ProRes,
+                "[compName].[fileExtension]",
+            ),
         ] {
             assert_eq!(format.with_extension(path), want, "{path} as {format:?}");
         }
-        assert_eq!(without_project_extension("C:/out/Comp 1.mov.ecproj"), "C:/out/Comp 1.mov");
+        assert_eq!(
+            without_project_extension("C:/out/Comp 1.mov.ecproj"),
+            "C:/out/Comp 1.mov"
+        );
         assert_eq!(without_project_extension("Comp 1.mov"), "Comp 1.mov");
         // Changing the format replaces one extension and drops the project one.
-        let mut m = OutputModule { output: "/out/Comp 1.mov.ecproj".into(), ..OutputModule::for_format(ProRes) };
+        let mut m = OutputModule {
+            output: "/out/Comp 1.mov.ecproj".into(),
+            ..OutputModule::for_format(ProRes)
+        };
         m.set_format(H264);
         assert_eq!(m.output, "/out/Comp 1.mp4");
         m.output = "/out/Comp 2.mov.mov".into();
@@ -1551,9 +1832,15 @@ mod tests {
                 fields.extend([a, b]);
             }
             assert_eq!(fields[0], 0, "{p:?}");
-            assert!(fields.windows(2).all(|w| w[1] == w[0] || w[1] == w[0] + 1), "{p:?}: {fields:?}");
+            assert!(
+                fields.windows(2).all(|w| w[1] == w[0] || w[1] == w[0] + 1),
+                "{p:?}: {fields:?}"
+            );
             // 20 fields = 8 film frames' worth of cadence (a phase may start or end mid-frame).
-            assert!((7..=8).contains(&(*fields.last().unwrap() - fields[0])), "{p:?} {fields:?}");
+            assert!(
+                (7..=8).contains(&(*fields.last().unwrap() - fields[0])),
+                "{p:?} {fields:?}"
+            );
             // Each film frame appears in 2 or 3 consecutive fields, alternating.
             let mut runs = vec![];
             let mut n = 1;
@@ -1565,18 +1852,42 @@ mod tests {
                     n = 1;
                 }
             }
-            assert!(runs[1..].iter().all(|r| *r == 2 || *r == 3), "{p:?}: {runs:?}");
-            assert!(runs[1..].windows(2).all(|w| w[0] != w[1]), "2 and 3 alternate: {p:?}: {runs:?}");
+            assert!(
+                runs[1..].iter().all(|r| *r == 2 || *r == 3),
+                "{p:?}: {runs:?}"
+            );
+            assert!(
+                runs[1..].windows(2).all(|w| w[0] != w[1]),
+                "2 and 3 alternate: {p:?}: {runs:?}"
+            );
         }
         assert_eq!(Pulldown::parse("sswww"), Some(Pulldown::Sswww));
         // With field rendering at 29.97, film frames are 23.976 fps.
-        let c = Comp::new(64, 48, FrameRate::new(30000, 1001), Tick::from_seconds_f64(2.0));
-        let s = RenderSettings { field_render: FieldRender::UpperFirst, pulldown: Pulldown::Wssww, time_span: TimeSpan::LengthOfComp, ..Default::default() };
+        let c = Comp::new(
+            64,
+            48,
+            FrameRate::new(30000, 1001),
+            Tick::from_seconds_f64(2.0),
+        );
+        let s = RenderSettings {
+            field_render: FieldRender::UpperFirst,
+            pulldown: Pulldown::Wssww,
+            time_span: TimeSpan::LengthOfComp,
+            ..Default::default()
+        };
         let film = FrameRate::new(24000, 1001);
         match s.sample(&c, 1) {
-            FrameSample::Fields { first, second, upper_first } => {
+            FrameSample::Fields {
+                first,
+                second,
+                upper_first,
+            } => {
                 assert!(upper_first);
-                assert_eq!((first, second), (film.tick_of(0), film.tick_of(1)), "WSSWW: frame 1 is split between film frames 0 and 1");
+                assert_eq!(
+                    (first, second),
+                    (film.tick_of(0), film.tick_of(1)),
+                    "WSSWW: frame 1 is split between film frames 0 and 1"
+                );
             }
             f => panic!("{f:?}"),
         }
@@ -1585,41 +1896,112 @@ mod tests {
     #[test]
     fn field_samples_are_half_a_frame_apart() {
         let c = Comp::new(64, 48, FrameRate::new(25, 1), Tick::from_seconds_f64(2.0));
-        let s = RenderSettings { field_render: FieldRender::LowerFirst, time_span: TimeSpan::LengthOfComp, ..Default::default() };
-        assert_eq!(s.sample(&c, 3), FrameSample::Fields { first: Tick::from_seconds_f64(0.12), second: Tick::from_seconds_f64(0.14), upper_first: false });
-        let p = RenderSettings { time_span: TimeSpan::LengthOfComp, ..Default::default() };
-        assert_eq!(p.sample(&c, 3), FrameSample::Progressive(Tick::from_seconds_f64(0.12)));
+        let s = RenderSettings {
+            field_render: FieldRender::LowerFirst,
+            time_span: TimeSpan::LengthOfComp,
+            ..Default::default()
+        };
+        assert_eq!(
+            s.sample(&c, 3),
+            FrameSample::Fields {
+                first: Tick::from_seconds_f64(0.12),
+                second: Tick::from_seconds_f64(0.14),
+                upper_first: false
+            }
+        );
+        let p = RenderSettings {
+            time_span: TimeSpan::LengthOfComp,
+            ..Default::default()
+        };
+        assert_eq!(
+            p.sample(&c, 3),
+            FrameSample::Progressive(Tick::from_seconds_f64(0.12))
+        );
     }
 
     #[test]
     fn crop_and_resize_sizes() {
-        let c = Comp::new(1920, 1080, FrameRate::new(25, 1), Tick::from_seconds_f64(1.0));
+        let c = Comp::new(
+            1920,
+            1080,
+            FrameRate::new(25, 1),
+            Tick::from_seconds_f64(1.0),
+        );
         let rs = RenderSettings::default();
         let mut m = OutputModule::default();
         assert_eq!(m.output_size(&c, &rs), (1920, 1080));
-        m.crop = Crop { enabled: true, top: 10, left: 20, bottom: 30, right: 41, ..Default::default() };
-        assert_eq!(m.output_size(&c, &rs), (1858, 1040), "H.264 rounds the odd width down");
+        m.crop = Crop {
+            enabled: true,
+            top: 10,
+            left: 20,
+            bottom: 30,
+            right: 41,
+            ..Default::default()
+        };
+        assert_eq!(
+            m.output_size(&c, &rs),
+            (1858, 1040),
+            "H.264 rounds the odd width down"
+        );
         m.format = OutputFormat::PngSequence;
         assert_eq!(m.output_size(&c, &rs), (1859, 1040));
         // Region of interest, at half resolution.
-        m.crop = Crop { enabled: true, use_roi: true, roi: Some([100.0, 50.0, 800.0, 400.0]), ..Default::default() };
-        let half = RenderSettings { resolution: 0.5, ..Default::default() };
+        m.crop = Crop {
+            enabled: true,
+            use_roi: true,
+            roi: Some([100.0, 50.0, 800.0, 400.0]),
+            ..Default::default()
+        };
+        let half = RenderSettings {
+            resolution: 0.5,
+            ..Default::default()
+        };
         assert_eq!(m.output_size(&c, &half), (400, 200));
         // Negative crop pads.
-        m.crop = Crop { enabled: true, top: -10, bottom: -10, ..Default::default() };
+        m.crop = Crop {
+            enabled: true,
+            top: -10,
+            bottom: -10,
+            ..Default::default()
+        };
         assert_eq!(m.output_size(&c, &rs), (1920, 1100));
         // Resize: fixed, and with the aspect locked to the (cropped) frame.
         m.crop = Crop::default();
-        m.resize = Resize { enabled: true, width: 1280, height: 999, lock_aspect: false, quality: ResizeQuality::High };
+        m.resize = Resize {
+            enabled: true,
+            width: 1280,
+            height: 999,
+            lock_aspect: false,
+            quality: ResizeQuality::High,
+        };
         assert_eq!(m.output_size(&c, &rs), (1280, 999));
         m.resize.lock_aspect = true;
         assert_eq!(m.output_size(&c, &rs), (1280, 720));
-        m.crop = Crop { enabled: true, left: 480, right: 480, ..Default::default() };
-        assert_eq!(m.output_size(&c, &rs), (1280, 1440), "960×1080 cropped, then 1280 wide at 8:9");
-        assert_eq!(std::path::PathBuf::from(log_path("/out/Main_[#####].png")), std::path::PathBuf::from("/out/Main_RenderLog.txt"));
-        assert_eq!(std::path::PathBuf::from(log_path("/out/a.mov")), std::path::PathBuf::from("/out/a_RenderLog.txt"));
+        m.crop = Crop {
+            enabled: true,
+            left: 480,
+            right: 480,
+            ..Default::default()
+        };
+        assert_eq!(
+            m.output_size(&c, &rs),
+            (1280, 1440),
+            "960×1080 cropped, then 1280 wide at 8:9"
+        );
+        assert_eq!(
+            std::path::PathBuf::from(log_path("/out/Main_[#####].png")),
+            std::path::PathBuf::from("/out/Main_RenderLog.txt")
+        );
+        assert_eq!(
+            std::path::PathBuf::from(log_path("/out/a.mov")),
+            std::path::PathBuf::from("/out/a_RenderLog.txt")
+        );
         assert_eq!(log_path("seq###.tif"), "seq_RenderLog.txt");
-        assert_eq!(std::path::PathBuf::from(log_path("gen/g_[###].png")), std::path::PathBuf::from("gen/g_RenderLog.txt"), "any bracketed run (M13.15)");
+        assert_eq!(
+            std::path::PathBuf::from(log_path("gen/g_[###].png")),
+            std::path::PathBuf::from("gen/g_RenderLog.txt"),
+            "any bracketed run (M13.15)"
+        );
     }
 
     #[test]
@@ -1636,8 +2018,19 @@ mod tests {
         s.resolution = 0.5;
         assert_eq!(s.output_size(&c), (50, 25));
         // NTSC: 1 s – 2 s holds the 30 frames that start inside it.
-        let c = Comp::new(100, 50, FrameRate::new(30000, 1001), Tick::from_seconds_f64(4.0));
-        let s = RenderSettings { time_span: TimeSpan::Custom { start: Tick::from_seconds_f64(1.0), end: Tick::from_seconds_f64(2.0) }, ..Default::default() };
+        let c = Comp::new(
+            100,
+            50,
+            FrameRate::new(30000, 1001),
+            Tick::from_seconds_f64(4.0),
+        );
+        let s = RenderSettings {
+            time_span: TimeSpan::Custom {
+                start: Tick::from_seconds_f64(1.0),
+                end: Tick::from_seconds_f64(2.0),
+            },
+            ..Default::default()
+        };
         assert_eq!(s.frame_count(&c), 30);
         assert_eq!(s.first_frame(&c), 30);
         assert!(s.frame_time(&c, 0) >= Tick::from_seconds_f64(1.0));
@@ -1657,9 +2050,15 @@ mod tests {
         m.output = "/out/Comp 1.mov".into();
         m.channels = Channels::Rgba;
         m.set_format(f);
-        assert_eq!((m.output.as_str(), m.channels), ("/out/Comp 1.mov", Channels::Rgba));
+        assert_eq!(
+            (m.output.as_str(), m.channels),
+            ("/out/Comp 1.mov", Channels::Rgba)
+        );
         let json = serde_json::to_string(&m).unwrap();
-        assert_eq!(serde_json::from_str::<OutputModule>(&json).unwrap().format, f);
+        assert_eq!(
+            serde_json::from_str::<OutputModule>(&json).unwrap().format,
+            f
+        );
     }
 
     #[test]
@@ -1669,13 +2068,23 @@ mod tests {
         assert_eq!(OutputFormat::from_name("AV1"), Some(OutputFormat::Av1));
         assert_eq!(OutputFormat::Hevc.coded_size(33, 17), (32, 16));
         assert_eq!(OutputFormat::Av1.coded_size(33, 17), (33, 17));
-        assert!(!OutputFormat::Hevc.supports_alpha() && OutputFormat::Av1.is_movie() && OutputFormat::Av1.supports_audio());
+        assert!(
+            !OutputFormat::Hevc.supports_alpha()
+                && OutputFormat::Av1.is_movie()
+                && OutputFormat::Av1.supports_audio()
+        );
         assert_eq!(VideoCodecOptions::parse_level("4.1"), Some(Some(41)));
         assert_eq!(VideoCodecOptions::parse_level("51"), Some(Some(51)));
         assert_eq!(VideoCodecOptions::parse_level("auto"), Some(None));
         assert_eq!(VideoCodecOptions::parse_level("9"), None);
-        let mut o = VideoCodecOptions { level: Some(41), ..Default::default() };
-        assert_eq!((o.hevc_level_idc(), o.av1_level_idx()), (Some(123), Some(9)));
+        let mut o = VideoCodecOptions {
+            level: Some(41),
+            ..Default::default()
+        };
+        assert_eq!(
+            (o.hevc_level_idc(), o.av1_level_idx()),
+            (Some(123), Some(9))
+        );
         o.level = Some(20);
         assert_eq!(o.av1_level_idx(), Some(0));
         o.quality = 100;
@@ -1688,15 +2097,26 @@ mod tests {
         assert!(m.supports_alpha());
         m.webm_codec = WebmVideoCodec::Av1;
         assert!(!m.supports_alpha());
-        assert!(m.summary().starts_with("WebM (AV1 + Opus 192 kbps)"), "{}", m.summary());
+        assert!(
+            m.summary().starts_with("WebM (AV1 + Opus 192 kbps)"),
+            "{}",
+            m.summary()
+        );
         let mut h = OutputModule::for_format(OutputFormat::Hevc);
         assert_eq!(h.keyint(29.97), 60);
         h.keyframe_interval = 1;
         assert_eq!(h.keyint(29.97), 1);
         h.keyframe_interval = 0;
-        assert_eq!(h.summary(), "HEVC (H.265) · Main · 10000 kbps · Level Auto · Key every auto");
+        assert_eq!(
+            h.summary(),
+            "HEVC (H.265) · Main · 10000 kbps · Level Auto · Key every auto"
+        );
         // Older projects (no codec fields) load with the defaults.
-        let old: OutputModule = serde_json::from_str(r#"{"format":"H264","bitrate_kbps":5000}"#).unwrap();
-        assert_eq!((old.codec, old.webm_codec, old.opus_bitrate_kbps), (VideoCodecOptions::default(), WebmVideoCodec::Vp9, 192));
+        let old: OutputModule =
+            serde_json::from_str(r#"{"format":"H264","bitrate_kbps":5000}"#).unwrap();
+        assert_eq!(
+            (old.codec, old.webm_codec, old.opus_bitrate_kbps),
+            (VideoCodecOptions::default(), WebmVideoCodec::Vp9, 192)
+        );
     }
 }

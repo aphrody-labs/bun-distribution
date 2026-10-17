@@ -14,7 +14,9 @@ struct Builder {
 
 impl Builder {
     fn new() -> Self {
-        Builder { objects: Vec::new() }
+        Builder {
+            objects: Vec::new(),
+        }
     }
 
     fn add(&mut self, body: &str) -> usize {
@@ -110,17 +112,29 @@ fn faux_redaction_is_found() {
     let f = &findings[0];
     assert_eq!(f.page, 0);
     assert_eq!(f.kind, FindingKind::CoveredText);
-    assert!(f.covered_text.contains("SECRET"), "covered_text was {:?}", f.covered_text);
+    assert!(
+        f.covered_text.contains("SECRET"),
+        "covered_text was {:?}",
+        f.covered_text
+    );
 }
 
 #[test]
 fn identity_matrix_between_rectangle_and_fill_still_covers_text() {
     // A no-op `cm` inside the path must not drop the pending rectangle (#1333).
-    for cover in [&b"0 g\n100 688 220 32 re 1 0 0 1 0 0 cm f\n"[..], b"0 g\n1 0 0 1 0 0 cm 100 688 220 32 re f\n"] {
+    for cover in [
+        &b"0 g\n100 688 220 32 re 1 0 0 1 0 0 cm f\n"[..],
+        b"0 g\n1 0 0 1 0 0 cm 100 688 220 32 re f\n",
+    ] {
         let mut content = b"BT /F1 24 Tf 100 700 Td (SECRET DATA 123) Tj ET\n".to_vec();
         content.extend_from_slice(cover);
         let findings = audit_redactions(&open(one_page(&content, ""))).expect("audit must run");
-        assert_eq!(findings.len(), 1, "{:?}: {findings:?}", String::from_utf8_lossy(cover));
+        assert_eq!(
+            findings.len(),
+            1,
+            "{:?}: {findings:?}",
+            String::from_utf8_lossy(cover)
+        );
         assert_eq!(findings[0].kind, FindingKind::CoveredText);
         assert_eq!(findings[0].rect, [100.0, 688.0, 320.0, 720.0]);
         assert_eq!(findings[0].covered_text, "SECRET DATA 123");
@@ -145,12 +159,15 @@ fn black_box_without_text_is_not_a_finding() {
 #[test]
 fn translucent_cover_is_not_flagged() {
     // A rectangle drawn with a translucent ExtGState does not hide the text.
-    let content = b"/GS1 gs\nBT /F1 24 Tf 100 700 Td (SECRET DATA 123) Tj ET\n0 g\n100 688 220 32 re f\n";
+    let content =
+        b"/GS1 gs\nBT /F1 24 Tf 100 700 Td (SECRET DATA 123) Tj ET\n0 g\n100 688 220 32 re f\n";
     let page_extra = "/Resources << /Font << /F1 5 0 R >> /ExtGState << /GS1 6 0 R >> >>";
     let mut b = Builder::new();
     b.add("<< /Type /Catalog /Pages 2 0 R >>");
     b.add("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
-    b.add(&format!("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R {page_extra} >>"));
+    b.add(&format!(
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R {page_extra} >>"
+    ));
     b.add_stream(content);
     b.add(FONT);
     b.add("<< /Type /ExtGState /ca 0.5 >>");
@@ -225,7 +242,10 @@ fn self_drawing_form_fails_the_audit() {
     );
     b.add(FONT);
     let result = audit_redactions(&open(b.build()));
-    assert!(matches!(result, Err(crate::AuditError::TooDeep)), "{result:?}");
+    assert!(
+        matches!(result, Err(crate::AuditError::TooDeep)),
+        "{result:?}"
+    );
 }
 
 #[test]
@@ -243,7 +263,12 @@ fn rectangle_drawn_as_a_path_covers_text_like_re() {
         let mut content = b"BT /F1 24 Tf 100 700 Td (SECRET DATA 123) Tj ET\n".to_vec();
         content.extend_from_slice(cover);
         let findings = audit_redactions(&open(one_page(&content, ""))).expect("audit must run");
-        assert_eq!(findings.len(), 1, "{:?}: {findings:?}", String::from_utf8_lossy(cover));
+        assert_eq!(
+            findings.len(),
+            1,
+            "{:?}: {findings:?}",
+            String::from_utf8_lossy(cover)
+        );
         assert_eq!(findings[0].kind, FindingKind::CoveredText);
         assert_eq!(findings[0].rect, [100.0, 688.0, 320.0, 720.0]);
         assert_eq!(findings[0].covered_text, "SECRET DATA 123");
@@ -269,6 +294,10 @@ fn non_rectangular_path_is_not_a_cover() {
         let mut content = b"BT /F1 24 Tf 100 700 Td (SECRET DATA 123) Tj ET\n".to_vec();
         content.extend_from_slice(cover);
         let findings = audit_redactions(&open(one_page(&content, ""))).expect("audit must run");
-        assert!(findings.is_empty(), "{:?}: {findings:?}", String::from_utf8_lossy(cover));
+        assert!(
+            findings.is_empty(),
+            "{:?}: {findings:?}",
+            String::from_utf8_lossy(cover)
+        );
     }
 }

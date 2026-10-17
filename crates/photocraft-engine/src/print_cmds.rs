@@ -23,7 +23,10 @@ use crate::file_cmds::{file_name, join, native_doc, read_file, stem, write_file}
 use crate::{EngineError, Result, Session};
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 fn other(e: impl std::fmt::Display) -> EngineError {
     EngineError::Other(e.to_string())
@@ -101,9 +104,16 @@ fn deflate(data: &[u8]) -> Vec<u8> {
 fn marks_ops(m: Marks, (x, y, w, h): (f64, f64, f64, f64)) -> String {
     let mut s = String::from("q 0 G 0.3 w\n");
     let (gap, len) = (6.0, 18.0);
-    let line = |s: &mut String, x0: f64, y0: f64, x1: f64, y1: f64| s.push_str(&format!("{x0:.2} {y0:.2} m {x1:.2} {y1:.2} l S\n"));
+    let line = |s: &mut String, x0: f64, y0: f64, x1: f64, y1: f64| {
+        s.push_str(&format!("{x0:.2} {y0:.2} m {x1:.2} {y1:.2} l S\n"))
+    };
     if m.corner_crop {
-        for (cx, cy, dx, dy) in [(x, y, -1.0, -1.0), (x + w, y, 1.0, -1.0), (x, y + h, -1.0, 1.0), (x + w, y + h, 1.0, 1.0)] {
+        for (cx, cy, dx, dy) in [
+            (x, y, -1.0, -1.0),
+            (x + w, y, 1.0, -1.0),
+            (x, y + h, -1.0, 1.0),
+            (x + w, y + h, 1.0, 1.0),
+        ] {
             line(&mut s, cx + dx * gap, cy, cx + dx * (gap + len), cy);
             line(&mut s, cx, cy + dy * gap, cx, cy + dy * (gap + len));
         }
@@ -118,7 +128,12 @@ fn marks_ops(m: Marks, (x, y, w, h): (f64, f64, f64, f64)) -> String {
     if m.registration {
         let r = 5.0;
         let off = gap + len / 2.0;
-        for (cx, cy) in [(x + w / 2.0, y - off), (x + w / 2.0, y + h + off), (x - off, y + h / 2.0), (x + w + off, y + h / 2.0)] {
+        for (cx, cy) in [
+            (x + w / 2.0, y - off),
+            (x + w / 2.0, y + h + off),
+            (x - off, y + h / 2.0),
+            (x + w + off, y + h / 2.0),
+        ] {
             // Circle (four Béziers) plus crosshair.
             let k = 0.5523 * r;
             s.push_str(&format!(
@@ -166,10 +181,20 @@ pub fn print_pdf(page: &PrintPage) -> Vec<u8> {
     let any_marks = page.marks.corner_crop || page.marks.center_crop || page.marks.registration;
     let pad = if any_marks { 30.0 } else { 6.0 };
     if let Some(l) = page.label.as_deref().filter(|l| !l.is_empty()) {
-        content.push_str(&format!("BT /F1 8 Tf 0 g {:.2} {:.2} Td {} Tj ET\n", x, y + h + pad, pdf_string(l)));
+        content.push_str(&format!(
+            "BT /F1 8 Tf 0 g {:.2} {:.2} Td {} Tj ET\n",
+            x,
+            y + h + pad,
+            pdf_string(l)
+        ));
     }
     if let Some(d) = page.description.as_deref().filter(|d| !d.is_empty()) {
-        content.push_str(&format!("BT /F1 8 Tf 0 g {:.2} {:.2} Td {} Tj ET\n", x, y - pad - 8.0, pdf_string(d)));
+        content.push_str(&format!(
+            "BT /F1 8 Tf 0 g {:.2} {:.2} Td {} Tj ET\n",
+            x,
+            y - pad - 8.0,
+            pdf_string(d)
+        ));
     }
     if page.emulsion_down {
         content.push_str("Q\n");
@@ -184,7 +209,11 @@ pub fn print_pdf(page: &PrintPage) -> Vec<u8> {
         4 => "/DeviceCMYK",
         _ => "/DeviceRGB",
     };
-    let cs = if img.icc.is_some() { "[/ICCBased 7 0 R]".to_string() } else { device.to_string() };
+    let cs = if img.icc.is_some() {
+        "[/ICCBased 7 0 R]".to_string()
+    } else {
+        device.to_string()
+    };
     let z = deflate(&img.data);
     let mut body = format!(
         "<< /Type /XObject /Subtype /Image /Width {} /Height {} /ColorSpace {cs} /BitsPerComponent 8 /Filter /FlateDecode /Length {} >>\nstream\n",
@@ -196,20 +225,36 @@ pub fn print_pdf(page: &PrintPage) -> Vec<u8> {
     body.extend_from_slice(&z);
     body.extend_from_slice(b"\nendstream");
     obj(&mut out, &body);
-    obj(&mut out, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+    obj(
+        &mut out,
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    );
     if let Some(icc) = &img.icc {
         let z = deflate(icc);
-        let mut body = format!("<< /N {} /Alternate {device} /Filter /FlateDecode /Length {} >>\nstream\n", img.channels, z.len()).into_bytes();
+        let mut body = format!(
+            "<< /N {} /Alternate {device} /Filter /FlateDecode /Length {} >>\nstream\n",
+            img.channels,
+            z.len()
+        )
+        .into_bytes();
         body.extend_from_slice(&z);
         body.extend_from_slice(b"\nendstream");
         obj(&mut out, &body);
     }
     let xref = out.len();
-    out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", offsets.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!("xref\n0 {}\n0000000000 65535 f \n", offsets.len() + 1).as_bytes(),
+    );
     for o in &offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", offsets.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            offsets.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -219,42 +264,92 @@ pub fn print_pdf(page: &PrintPage) -> Vec<u8> {
 fn print_image(doc: &Document, p: &Value, cmd: &str) -> Result<(PrintImage, Value)> {
     let mut t = Session::new();
     t.add_document(doc.clone(), None);
-    let handling = p.get("colorHandling").and_then(Value::as_str).unwrap_or("printerManages");
+    let handling = p
+        .get("colorHandling")
+        .and_then(Value::as_str)
+        .unwrap_or("printerManages");
     let mut info = json!({"colorHandling": handling});
-    if !matches!(doc.mode, ColorMode::Rgb | ColorMode::Grayscale | ColorMode::Cmyk) {
+    if !matches!(
+        doc.mode,
+        ColorMode::Rgb | ColorMode::Grayscale | ColorMode::Cmyk
+    ) {
         t.execute("image.mode.rgb", json!({}))?;
     }
     match handling {
         "photocraftManages" | "photoshopManages" => {
-            let profile = p.get("printerProfile").and_then(Value::as_str).ok_or_else(|| bad(cmd, "\"photocraftManages\" needs a \"printerProfile\""))?;
-            let intent = p.get("intent").and_then(Value::as_str).unwrap_or("relative");
+            let profile = p
+                .get("printerProfile")
+                .and_then(Value::as_str)
+                .ok_or_else(|| bad(cmd, "\"photocraftManages\" needs a \"printerProfile\""))?;
+            let intent = p
+                .get("intent")
+                .and_then(Value::as_str)
+                .unwrap_or("relative");
             let bpc = p.get("bpc").and_then(Value::as_bool).unwrap_or(true);
-            t.execute("edit.convertToProfile", json!({"profile": profile, "intent": intent, "bpc": bpc}))?;
+            t.execute(
+                "edit.convertToProfile",
+                json!({"profile": profile, "intent": intent, "bpc": bpc}),
+            )?;
             info["printerProfile"] = json!(profile);
             info["intent"] = json!(intent);
             info["bpc"] = json!(bpc);
         }
         "printerManages" | "noColorManagement" => {}
-        "separations" => return Err(bad(cmd, "Separations printing is not supported; use photocraftManages with a CMYK printer profile")),
-        h => return Err(bad(cmd, format!("unknown colorHandling `{h}` (printerManages|photocraftManages|noColorManagement)"))),
+        "separations" => {
+            return Err(bad(
+                cmd,
+                "Separations printing is not supported; use photocraftManages with a CMYK printer profile",
+            ));
+        }
+        h => {
+            return Err(bad(
+                cmd,
+                format!(
+                    "unknown colorHandling `{h}` (printerManages|photocraftManages|noColorManagement)"
+                ),
+            ));
+        }
     }
     let d = &t.active().ok_or(EngineError::NoDocument)?.doc;
-    let icc = if handling == "noColorManagement" { None } else { d.icc_profile.as_ref().map(|v| v.to_vec()) };
+    let icc = if handling == "noColorManagement" {
+        None
+    } else {
+        d.icc_profile.as_ref().map(|v| v.to_vec())
+    };
     // RGB and Grayscale: the composite over white is the print image (no layer flatten).
     if matches!(d.mode, ColorMode::Rgb | ColorMode::Grayscale) {
         let gray = d.mode == ColorMode::Grayscale;
         let buf = photocraft_compose::flatten(d).over_background([1.0, 1.0, 1.0]);
         let to8 = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-        let data: Vec<u8> =
-            if gray { buf.px.iter().map(|p| to8(p[0])).collect() } else { buf.px.iter().flat_map(|p| [to8(p[0]), to8(p[1]), to8(p[2])]).collect() };
-        return Ok((PrintImage { width: d.size.width, height: d.size.height, channels: if gray { 1 } else { 3 }, data, icc }, info));
+        let data: Vec<u8> = if gray {
+            buf.px.iter().map(|p| to8(p[0])).collect()
+        } else {
+            buf.px
+                .iter()
+                .flat_map(|p| [to8(p[0]), to8(p[1]), to8(p[2])])
+                .collect()
+        };
+        return Ok((
+            PrintImage {
+                width: d.size.width,
+                height: d.size.height,
+                channels: if gray { 1 } else { 3 },
+                data,
+                icc,
+            },
+            info,
+        ));
     }
     t.execute("layer.flattenImage", json!({}))?;
     let d = &t.active().ok_or(EngineError::NoDocument)?.doc;
     let fmt = d.pixel_format();
     let k = fmt.mode.color_channels();
     let n = fmt.channels();
-    let surf = d.layers.first().and_then(|l| l.surface()).ok_or_else(|| other("nothing to print"))?;
+    let surf = d
+        .layers
+        .first()
+        .and_then(|l| l.surface())
+        .ok_or_else(|| other("nothing to print"))?;
     let vals = surf.read_region(d.bounds());
     let mut data = Vec::with_capacity(vals.len() / n * k);
     for px in vals.chunks_exact(n) {
@@ -262,7 +357,16 @@ fn print_image(doc: &Document, p: &Value, cmd: &str) -> Result<(PrintImage, Valu
             data.push((v.clamp(0.0, 1.0) * 255.0).round() as u8);
         }
     }
-    Ok((PrintImage { width: d.size.width, height: d.size.height, channels: k, data, icc }, info))
+    Ok((
+        PrintImage {
+            width: d.size.width,
+            height: d.size.height,
+            channels: k,
+            data,
+            icc,
+        },
+        info,
+    ))
 }
 
 fn paper(p: &Value, cmd: &str) -> Result<(f64, f64)> {
@@ -272,14 +376,27 @@ fn paper(p: &Value, cmd: &str) -> Result<(f64, f64)> {
             .iter()
             .find(|(n, _, _)| n.eq_ignore_ascii_case(name))
             .map(|(_, w, h)| (*w, *h))
-            .ok_or_else(|| bad(cmd, format!("unknown paper `{name}` ({})", PAPERS.map(|p| p.0).join("|"))))?,
-        Some(Value::Array(a)) if a.len() == 2 => (a[0].as_f64().unwrap_or(0.0), a[1].as_f64().unwrap_or(0.0)),
+            .ok_or_else(|| {
+                bad(
+                    cmd,
+                    format!("unknown paper `{name}` ({})", PAPERS.map(|p| p.0).join("|")),
+                )
+            })?,
+        Some(Value::Array(a)) if a.len() == 2 => {
+            (a[0].as_f64().unwrap_or(0.0), a[1].as_f64().unwrap_or(0.0))
+        }
         _ => return Err(bad(cmd, "paper is a name or [width, height] in points")),
     };
     if !(w > 36.0 && h > 36.0) {
         return Err(bad(cmd, "paper is too small"));
     }
-    Ok(if p.get("orientation").and_then(Value::as_str) == Some("landscape") { (h.max(w), w.min(h)) } else { (w, h) })
+    Ok(
+        if p.get("orientation").and_then(Value::as_str) == Some("landscape") {
+            (h.max(w), w.min(h))
+        } else {
+            (w, h)
+        },
+    )
 }
 
 /// Where the image lands on the paper.
@@ -300,18 +417,41 @@ pub struct PrintLayout {
 pub fn layout(doc: &Document, p: &Value, cmd: &str) -> Result<PrintLayout> {
     let (pw, ph) = paper(p, cmd)?;
     let dpi = f64::from(doc.resolution_dpi.max(1.0));
-    let (iw, ih) = (f64::from(doc.size.width) * 72.0 / dpi, f64::from(doc.size.height) * 72.0 / dpi);
+    let (iw, ih) = (
+        f64::from(doc.size.width) * 72.0 / dpi,
+        f64::from(doc.size.height) * 72.0 / dpi,
+    );
     let marks = Marks {
-        corner_crop: p.get("cornerCropMarks").and_then(Value::as_bool).unwrap_or(false),
-        center_crop: p.get("centerCropMarks").and_then(Value::as_bool).unwrap_or(false),
-        registration: p.get("registrationMarks").and_then(Value::as_bool).unwrap_or(false),
+        corner_crop: p
+            .get("cornerCropMarks")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        center_crop: p
+            .get("centerCropMarks")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        registration: p
+            .get("registrationMarks")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
     };
-    let margin = if marks.corner_crop || marks.center_crop || marks.registration { 36.0 } else { 18.0 };
-    let fit = p.get("scaleToFit").and_then(Value::as_bool).unwrap_or(false);
+    let margin = if marks.corner_crop || marks.center_crop || marks.registration {
+        36.0
+    } else {
+        18.0
+    };
+    let fit = p
+        .get("scaleToFit")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let scale = if fit {
         ((pw - 2.0 * margin) / iw).min((ph - 2.0 * margin) / ih)
     } else {
-        p.get("scale").and_then(Value::as_f64).filter(|v| *v > 0.0).unwrap_or(100.0) / 100.0
+        p.get("scale")
+            .and_then(Value::as_f64)
+            .filter(|v| *v > 0.0)
+            .unwrap_or(100.0)
+            / 100.0
     };
     let (w, h) = (iw * scale, ih * scale);
     let center = p.get("center").and_then(Value::as_bool).unwrap_or(true);
@@ -323,14 +463,29 @@ pub fn layout(doc: &Document, p: &Value, cmd: &str) -> Result<PrintLayout> {
         let left = p.get("left").and_then(Value::as_f64).unwrap_or(0.0) * 72.0;
         (left, ph - top - h)
     };
-    let emulsion_down = p.get("emulsionDown").and_then(Value::as_bool).unwrap_or(false);
-    Ok(PrintLayout { paper: (pw, ph), rect: (x, y, w, h), scale, marks, emulsion_down })
+    let emulsion_down = p
+        .get("emulsionDown")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    Ok(PrintLayout {
+        paper: (pw, ph),
+        rect: (x, y, w, h),
+        scale,
+        marks,
+        emulsion_down,
+    })
 }
 
 /// Lays out, renders and (unless dry-run) spools a print. Shared by Print and Print One Copy.
 fn do_print(s: &mut Session, p: &Value, cmd: &str) -> Result<Value> {
-    let output = p.get("output").and_then(Value::as_str).filter(|v| !v.is_empty());
-    let send = p.get("send").and_then(Value::as_bool).unwrap_or(output.is_none());
+    let output = p
+        .get("output")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty());
+    let send = p
+        .get("send")
+        .and_then(Value::as_bool)
+        .unwrap_or(output.is_none());
     let dry = p.get("dryRun").and_then(Value::as_bool).unwrap_or(false);
     if !dry && !send && output.is_none() {
         return Err(bad(cmd, "send: false needs an output path or dryRun: true"));
@@ -360,7 +515,9 @@ fn do_print(s: &mut Session, p: &Value, cmd: &str) -> Result<Value> {
                 if let Some(index) = s.documents().iter().position(|st| st.doc.id == doc_id) {
                     s.set_active(index);
                     crate::automate_cmds::fire_event(s, "print");
-                    if let Some(index) = viewed.and_then(|id| s.documents().iter().position(|st| st.doc.id == id)) {
+                    if let Some(index) =
+                        viewed.and_then(|id| s.documents().iter().position(|st| st.doc.id == id))
+                    {
                         s.set_active(index);
                     }
                 }
@@ -375,22 +532,56 @@ fn do_print(s: &mut Session, p: &Value, cmd: &str) -> Result<Value> {
 }
 
 fn render_and_spool(doc: &Document, p: &Value, cmd: &str) -> Result<Value> {
-    let PrintLayout { paper: (pw, ph), rect: (x, y, w, h), scale, marks, emulsion_down } = layout(doc, p, cmd)?;
+    let PrintLayout {
+        paper: (pw, ph),
+        rect: (x, y, w, h),
+        scale,
+        marks,
+        emulsion_down,
+    } = layout(doc, p, cmd)?;
     let (img, color) = print_image(doc, p, cmd)?;
     let description = p
         .get("description")
         .and_then(Value::as_bool)
         .unwrap_or(false)
-        .then(|| crate::file_cmds::read_file_info(doc.metadata.xmp.as_deref())["description"].as_str().unwrap_or_default().to_string());
-    let label = p.get("labels").and_then(Value::as_bool).unwrap_or(false).then(|| doc.name.clone());
-    let page = PrintPage { paper: (pw, ph), image: img, rect: (x, y, w, h), marks, description, label, emulsion_down };
-    let output = p.get("output").and_then(Value::as_str).filter(|v| !v.is_empty()).map(str::to_string);
-    let send = p.get("send").and_then(Value::as_bool).unwrap_or(output.is_none());
+        .then(|| {
+            crate::file_cmds::read_file_info(doc.metadata.xmp.as_deref())["description"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string()
+        });
+    let label = p
+        .get("labels")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+        .then(|| doc.name.clone());
+    let page = PrintPage {
+        paper: (pw, ph),
+        image: img,
+        rect: (x, y, w, h),
+        marks,
+        description,
+        label,
+        emulsion_down,
+    };
+    let output = p
+        .get("output")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+        .map(str::to_string);
+    let send = p
+        .get("send")
+        .and_then(Value::as_bool)
+        .unwrap_or(output.is_none());
     let copies = crate::commands::int(p, "copies").unwrap_or(1).clamp(1, 999) as u32;
     let dry = p.get("dryRun").and_then(Value::as_bool).unwrap_or(false);
     let pdf = print_pdf(&page);
     let job = craft_print::Job {
-        printer: p.get("printer").and_then(Value::as_str).filter(|v| !v.is_empty()).map(str::to_string),
+        printer: p
+            .get("printer")
+            .and_then(Value::as_str)
+            .filter(|v| !v.is_empty())
+            .map(str::to_string),
         copies,
         title: doc.name.clone(),
         // PhotoCraft already placed and scaled the image on its physical sheet. Scaling again
@@ -398,7 +589,11 @@ fn render_and_spool(doc: &Document, p: &Value, cmd: &str) -> Result<Value> {
         scaling: craft_print::Scaling::Exact,
         ..Default::default()
     };
-    let command = if send { json!(craft_print::command_preview(&job).map_err(other)?) } else { Value::Null };
+    let command = if send {
+        json!(craft_print::command_preview(&job).map_err(other)?)
+    } else {
+        Value::Null
+    };
     let pdf_path = match output {
         Some(path) => {
             write_file(&path, &pdf)?;
@@ -447,7 +642,8 @@ pub fn disable_printing() {
 
 /// Whether spooling is blocked by [`disable_printing`] or `PHOTOCRAFT_NO_PRINT`.
 pub fn printing_disabled() -> bool {
-    PRINTING_DISABLED.load(std::sync::atomic::Ordering::Relaxed) || std::env::var_os("PHOTOCRAFT_NO_PRINT").is_some_and(|v| !v.is_empty() && v != "0")
+    PRINTING_DISABLED.load(std::sync::atomic::Ordering::Relaxed)
+        || std::env::var_os("PHOTOCRAFT_NO_PRINT").is_some_and(|v| !v.is_empty() && v != "0")
 }
 
 /// The printers the system spooler knows (Print's Printer menu): CUPS queues and driverless
@@ -455,7 +651,10 @@ pub fn printing_disabled() -> bool {
 fn printers(_: &mut Session, _: &Value) -> Result<Value> {
     let list = craft_print::printers();
     let default = list.iter().find(|p| p.default).map(|p| p.name.clone());
-    let printers: Vec<Value> = list.into_iter().map(|p| json!({"name": p.name, "default": p.default})).collect();
+    let printers: Vec<Value> = list
+        .into_iter()
+        .map(|p| json!({"name": p.name, "default": p.default}))
+        .collect();
     Ok(json!({"printers": printers, "default": default}))
 }
 
@@ -478,7 +677,11 @@ fn print_one_copy(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn package(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "file.package";
-    let dir = p.get("dir").and_then(Value::as_str).filter(|v| !v.is_empty()).ok_or_else(|| bad(cmd, "missing \"dir\" (where to create the package folder)"))?;
+    let dir = p
+        .get("dir")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+        .ok_or_else(|| bad(cmd, "missing \"dir\" (where to create the package folder)"))?;
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let doc = (*d.doc).clone();
     let name = stem(&d.path.clone().unwrap_or_else(|| doc.name.clone()));
@@ -486,7 +689,12 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     // file) support yet, so a PSD package would embed or flatten them.
     let ext = match p.get("format").and_then(Value::as_str) {
         Some(f @ ("psd" | "psb" | "pcraft")) => f.to_string(),
-        Some(f) => return Err(bad(cmd, format!("unknown package format `{f}` (pcraft|psd|psb)"))),
+        Some(f) => {
+            return Err(bad(
+                cmd,
+                format!("unknown package format `{f}` (pcraft|psd|psb)"),
+            ));
+        }
         None => "pcraft".into(),
     };
     let folder = join(dir, &crate::file_cmds::sanitize(&name));
@@ -496,8 +704,12 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     let mut relinks: Vec<(photocraft_doc::LayerId, String)> = Vec::new();
     let mut missing = Vec::new();
     for (_, _, l) in doc.walk() {
-        let LayerContent::Smart(so) = &l.content else { continue };
-        let SmartSource::Linked { path } = &so.source else { continue };
+        let LayerContent::Smart(so) = &l.content else {
+            continue;
+        };
+        let SmartSource::Linked { path } = &so.source else {
+            continue;
+        };
         let target = match copied.iter().find(|(src, _)| src == path) {
             Some((_, t)) => t.clone(),
             None => {
@@ -524,12 +736,20 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     let mut t = Session::new();
     t.add_document(doc, None);
     for (id, path) in &relinks {
-        t.execute("layer.smartObjects.relinkToFile", json!({"layer": id.0, "path": path}))?;
+        t.execute(
+            "layer.smartObjects.relinkToFile",
+            json!({"layer": id.0, "path": path}),
+        )?;
     }
-    let out = join(&folder, &format!("{}.{ext}", crate::file_cmds::sanitize(&name)));
+    let out = join(
+        &folder,
+        &format!("{}.{ext}", crate::file_cmds::sanitize(&name)),
+    );
     let pdoc = t.active().ok_or(EngineError::NoDocument)?.doc.clone();
     let warnings = crate::file_cmds::save_doc(&pdoc, &out, None)?;
-    Ok(json!({"folder": folder, "document": out, "links": copied.iter().map(|(_, t)| t).collect::<Vec<_>>(), "missing": missing, "warnings": warnings}))
+    Ok(
+        json!({"folder": folder, "document": out, "links": copied.iter().map(|(_, t)| t).collect::<Vec<_>>(), "missing": missing, "warnings": warnings}),
+    )
 }
 
 // ---------- Paths to Illustrator ----------
@@ -539,7 +759,10 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
 pub fn paths_to_ai(doc: &Document, which: &str) -> Result<(String, usize)> {
     let dpi = f64::from(doc.resolution_dpi.max(1.0));
     let k = 72.0 / dpi;
-    let (w, h) = (f64::from(doc.size.width) * k, f64::from(doc.size.height) * k);
+    let (w, h) = (
+        f64::from(doc.size.width) * k,
+        f64::from(doc.size.height) * k,
+    );
     let mut chosen: Vec<(String, &photocraft_doc::Path)> = Vec::new();
     match which {
         "all" => {
@@ -549,21 +772,35 @@ pub fn paths_to_ai(doc: &Document, which: &str) -> Result<(String, usize)> {
             }
         }
         "work" => chosen.extend(doc.work_path.iter().map(|wp| ("Work Path".to_string(), wp))),
-        name => chosen.extend(doc.paths.iter().filter(|p| p.name == name).map(|p| (p.name.clone(), &p.path))),
+        name => chosen.extend(
+            doc.paths
+                .iter()
+                .filter(|p| p.name == name)
+                .map(|p| (p.name.clone(), &p.path)),
+        ),
     }
     let mut s = String::new();
     s.push_str("%!PS-Adobe-2.0 EPSF-1.2\n%%Creator: PhotoCraft\n");
-    s.push_str(&format!("%%Title: ({})\n", doc.name.replace([')', '('], "_")));
+    s.push_str(&format!(
+        "%%Title: ({})\n",
+        doc.name.replace([')', '('], "_")
+    ));
     s.push_str(&format!(
         "%%BoundingBox: 0 0 {} {}\n%%HiResBoundingBox: 0 0 {w:.4} {h:.4}\n%AI3_Cropmarks: 0 0 {w:.4} {h:.4}\n",
         w.ceil() as i64,
         h.ceil() as i64
     ));
-    s.push_str("%%DocumentProcessColors: Black\n%%EndComments\n%%EndProlog\n%%BeginSetup\n%%EndSetup\n");
+    s.push_str(
+        "%%DocumentProcessColors: Black\n%%EndComments\n%%EndProlog\n%%BeginSetup\n%%EndSetup\n",
+    );
     let pt = |x: f64, y: f64| (x * k, h - y * k);
     let mut n = 0;
     for (name, path) in &chosen {
-        let subs: Vec<_> = path.subpaths.iter().filter(|sp| !sp.knots.is_empty()).collect();
+        let subs: Vec<_> = path
+            .subpaths
+            .iter()
+            .filter(|sp| !sp.knots.is_empty())
+            .collect();
         if subs.is_empty() {
             continue;
         }
@@ -585,7 +822,9 @@ pub fn paths_to_ai(doc: &Document, which: &str) -> Result<(String, usize)> {
                 } else {
                     let (x1, y1) = pt(c1.x, c1.y);
                     let (x2, y2) = pt(c2.x, c2.y);
-                    s.push_str(&format!("{x1:.4} {y1:.4} {x2:.4} {y2:.4} {bx:.4} {by:.4} C\n"));
+                    s.push_str(&format!(
+                        "{x1:.4} {y1:.4} {x2:.4} {y2:.4} {bx:.4} {by:.4} C\n"
+                    ));
                 }
             }
             // Unpainted: `n` closes the path, `N` leaves it open.
@@ -607,7 +846,11 @@ fn paths_to_illustrator(s: &mut Session, p: &Value) -> Result<Value> {
     if n == 0 {
         return Err(bad(cmd, format!("no paths match `{which}`")));
     }
-    match p.get("path").and_then(Value::as_str).filter(|v| !v.is_empty()) {
+    match p
+        .get("path")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+    {
         Some(path) => {
             write_file(path, text.as_bytes())?;
             Ok(json!({"path": path, "paths": n}))
@@ -618,18 +861,39 @@ fn paths_to_illustrator(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn has_paths(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    if d.doc.paths.is_empty() && d.doc.work_path.is_none() { Err("the document has no paths".into()) } else { Ok(()) }
+    if d.doc.paths.is_empty() && d.doc.work_path.is_none() {
+        Err("the document has no paths".into())
+    } else {
+        Ok(())
+    }
 }
 
 pub fn specs() -> Vec<CommandSpec> {
     macro_rules! spec {
         ($id:expr, $label:expr, $menu:expr, $sc:expr, $params:expr, $enabled:expr, $run:expr) => {
-            CommandSpec { id: $id, label: $label, menu: $menu, shortcut: $sc, params: $params, enabled: $enabled, journal: true, run: $run }
+            CommandSpec {
+                id: $id,
+                label: $label,
+                menu: $menu,
+                shortcut: $sc,
+                params: $params,
+                enabled: $enabled,
+                journal: true,
+                run: $run,
+            }
         };
     }
     const PRINT_PARAMS: &str = r##"{"printer":name? (default printer),"copies":1..999=1,"paper":"letter|legal|tabloid|a3|a4|a5|4x6|5x7"|[w,h] pt="letter","orientation":"portrait|landscape"="portrait","center":bool=true,"top":in?,"left":in?,"scale":%=100,"scaleToFit":bool=false,"colorHandling":"printerManages|photocraftManages|noColorManagement"="printerManages","printerProfile":profile? (photocraftManages),"intent":"perceptual|relative|saturation|absolute"="relative","bpc":bool=true,"cornerCropMarks":bool,"centerCropMarks":bool,"registrationMarks":bool,"description":bool,"labels":bool,"emulsionDown":bool=false (mirror the page left to right, for sublimation and other transfer printing),"output":pdf path? (print to PDF; then "send" defaults to false),"send":bool?,"dryRun":bool=false (render the PDF, report the backend command, don't spool; write a PDF only at an explicit output path)} → {pdf:path|null (null without explicit output), imageRect, command:diagnostic array|null, sent}"##;
     vec![
-        spec!("file.print", "Print…", &["File"], Some("Cmd+P"), PRINT_PARAMS, native_doc, print),
+        spec!(
+            "file.print",
+            "Print…",
+            &["File"],
+            Some("Cmd+P"),
+            PRINT_PARAMS,
+            native_doc,
+            print
+        ),
         CommandSpec {
             id: "file.printers",
             label: "Printers",

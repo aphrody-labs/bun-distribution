@@ -19,11 +19,15 @@ struct CellNoise {
 
 impl CellNoise {
     fn at(&mut self, salt: u64, q: Point) -> f64 {
-        let (Some(i), Some(j)) = (cell(q.x), cell(q.y)) else { return 0.0 };
+        let (Some(i), Some(j)) = (cell(q.x), cell(q.y)) else {
+            return 0.0;
+        };
         let corners = match self.last {
             Some((x, y, values)) if x == i && y == j => values,
             _ => {
-                let at = |di: i64, dj: i64| 2.0 * rand(salt, i.wrapping_add(di), j.wrapping_add(dj), 0) - 1.0;
+                let at = |di: i64, dj: i64| {
+                    2.0 * rand(salt, i.wrapping_add(di), j.wrapping_add(dj), 0) - 1.0
+                };
                 let values = [at(0, 0), at(1, 0), at(0, 1), at(1, 1)];
                 self.last = Some((i, j, values));
                 values
@@ -51,13 +55,17 @@ impl FilmNoise {
     fn at(&mut self, q: Point) -> f32 {
         // Fixed independent rotations (0.6 and -0.35 radians) and a second-octave offset
         // keep the two lattices from lining up with pixel rows or with each other.
-        let low = Point::new(0.8253356149096783 * q.x - 0.5646424733950354 * q.y, 0.5646424733950354 * q.x + 0.8253356149096783 * q.y);
+        let low = Point::new(
+            0.8253356149096783 * q.x - 0.5646424733950354 * q.y,
+            0.5646424733950354 * q.x + 0.8253356149096783 * q.y,
+        );
         let high = Point::new(
             2.0 * (0.9393727128473789 * q.x + 0.34289780745545134 * q.y) + 0.37,
             2.0 * (-0.34289780745545134 * q.x + 0.9393727128473789 * q.y) - 0.37,
         );
         // Normalising the blend can exceed the corner range, so bound the final field.
-        (0.8 * (0.65 * self.low.at(SALT_FILM, low) + 0.35 * self.high.at(SALT_FILM + 1, high))).clamp(-1.0, 1.0) as f32
+        (0.8 * (0.65 * self.low.at(SALT_FILM, low) + 0.35 * self.high.at(SALT_FILM + 1, high)))
+            .clamp(-1.0, 1.0) as f32
     }
 }
 
@@ -91,11 +99,21 @@ fn grain_at(place: &Place, field: &mut FilmNoise, x: usize, y: usize) -> f32 {
 /// bounds' centre, following translations and redraws; changing the bounds shifts the pattern.
 /// Its scale is in document units; minification uses bounded approximate footprint filtering.
 /// Coverage is preserved, including fully transparent pixels. Constant work and no allocations.
-pub(super) fn film_grain(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, grain: f64, highlight: f64, intensity: f64) {
+pub(super) fn film_grain(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    grain: f64,
+    highlight: f64,
+    intensity: f64,
+) {
     if ![grain, highlight, intensity].iter().all(|v| v.is_finite()) {
         return;
     }
-    let Some(place) = Place::new(space, w, h) else { return };
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let grain = (grain / 20.0).clamp(0.0, 1.0) as f32;
     let highlight = (highlight / 20.0).clamp(0.0, 1.0) as f32;
     let intensity = (intensity / 10.0).clamp(0.0, 1.0) as f32;
@@ -121,7 +139,9 @@ pub(super) fn film_grain(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSp
         // proprietary transfer function. Shared offsets stay neutral until a channel clips.
         let upper = ((brightness - 0.5) * 2.0).clamp(0.0, 1.0);
         let upper = upper * upper * (3.0 - 2.0 * upper);
-        let amplitude = (0.4 * (1.0 - upper * (0.5 + 0.5 * intensity))).max(0.1).min(1.0 - brightness);
+        let amplitude = (0.4 * (1.0 - upper * (0.5 + 0.5 * intensity)))
+            .max(0.1)
+            .min(1.0 - brightness);
         let strength = amplitude * grain * (1.0 - light);
         // With no highlight lift the starting premultiplied channels are whole bytes. A
         // bounded offset below half a byte cannot change rounding, so avoid hashing it.
@@ -129,7 +149,11 @@ pub(super) fn film_grain(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSp
         if light == 0.0 && strength * f32::from(p[3]) < 0.45 {
             return;
         }
-        let noise = if strength > 0.0 { grain_at(&place, &mut field, x, y) * strength } else { 0.0 };
+        let noise = if strength > 0.0 {
+            grain_at(&place, &mut field, x, y) * strength
+        } else {
+            0.0
+        };
         let c = c.map(|v| v + (1.0 - v) * light + noise);
         *p = premultiply(c, f32::from(p[3]) / 255.0);
     });

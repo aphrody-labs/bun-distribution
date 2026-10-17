@@ -75,7 +75,10 @@ pub struct OcReference {
 /// Portable OC draft produced by Chara Edit. Importing it never writes into `data/oc`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "camelCase", deny_unknown_fields))]
+#[cfg_attr(
+    feature = "serde",
+    serde(rename_all = "camelCase", deny_unknown_fields)
+)]
 pub struct OcAvatarDocument {
     pub schema: String,
     pub slug: String,
@@ -95,7 +98,10 @@ pub struct OcAvatarDocument {
 /// already-validated avatar state so browser code never owns the JSON schema.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase", deny_unknown_fields))]
+#[cfg_attr(
+    feature = "serde",
+    serde(default, rename_all = "camelCase", deny_unknown_fields)
+)]
 pub struct OcAvatarExportMetadata {
     pub slug: String,
     pub internal_code: Option<String>,
@@ -168,7 +174,7 @@ impl fmt::Display for AvatarReferenceError {
             Self::InvalidReference => f.write_str("Avatar reference is invalid"),
             Self::MissingShareSpec => {
                 f.write_str("Avatar catalogue has no share-code specification")
-            },
+            }
             Self::InvalidShareSpec => f.write_str("Avatar share-code specification is invalid"),
             Self::InvalidShareCode => f.write_str("Avatar share code is invalid"),
             Self::InvalidProject => f.write_str("NIE avatar project is invalid"),
@@ -206,7 +212,10 @@ fn valid_file_metadata(reference: &OcReference, maximum: usize) -> bool {
 fn validate_oc_document(document: &OcAvatarDocument) -> bool {
     document.schema == "nie.oc.avatar-document/v1"
         && valid_player_identifier(&document.slug)
-        && document.internal_code.as_deref().is_none_or(valid_zukan_code)
+        && document
+            .internal_code
+            .as_deref()
+            .is_none_or(valid_zukan_code)
         && document.references.len() <= 32
         && document.provenance.len() <= 32
         && document.references.iter().all(|reference| {
@@ -215,24 +224,27 @@ fn validate_oc_document(document: &OcAvatarDocument) -> bool {
                     reference.raw_slots.is_none()
                         && safe_asset_reference(&reference.value)
                         && valid_file_metadata(reference, 32 * 1024 * 1024)
-                },
+                }
                 OcReferenceKind::Glb => {
                     reference.raw_slots.is_none()
                         && safe_asset_reference(&reference.value)
                         && valid_file_metadata(reference, 64 * 1024 * 1024)
-                },
+                }
                 OcReferenceKind::ShareCode => {
                     reference.bytes.is_none()
                         && reference.sha256.is_none()
-                        && reference.raw_slots.as_ref().is_some_and(|slots| !slots.is_empty())
-                },
+                        && reference
+                            .raw_slots
+                            .as_ref()
+                            .is_some_and(|slots| !slots.is_empty())
+                }
                 OcReferenceKind::Zukan
                 | OcReferenceKind::Azalee
                 | OcReferenceKind::NieCharacter => {
                     reference.bytes.is_none()
                         && reference.sha256.is_none()
                         && reference.raw_slots.is_none()
-                },
+                }
             };
             metadata_matches_kind
                 && !reference.value.is_empty()
@@ -260,7 +272,9 @@ fn safe_asset_reference(value: &str) -> bool {
         return false;
     }
     if value.starts_with("data/") {
-        return !value.bytes().any(|byte| matches!(byte, b'\\' | b'?' | b'#'))
+        return !value
+            .bytes()
+            .any(|byte| matches!(byte, b'\\' | b'?' | b'#'))
             && !value.split('/').any(|segment| !safe_vfs_segment(segment));
     }
     if value.starts_with("//") {
@@ -276,7 +290,11 @@ fn safe_asset_reference(value: &str) -> bool {
     }
     // Relative same-origin references are resolved by the host. Any explicit non-HTTP scheme is
     // rejected here before a browser can interpret `file:`, `data:`, `javascript:` or `blob:`.
-    !value.split(['/', '?', '#']).next().unwrap_or_default().contains(':')
+    !value
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or_default()
+        .contains(':')
 }
 
 /// Build and validate the canonical portable OC document without performing filesystem I/O.
@@ -286,8 +304,9 @@ pub fn export_avatar_oc_document(
     state: &AvatarState,
     metadata: OcAvatarExportMetadata,
 ) -> Result<OcAvatarDocument, AvatarReferenceError> {
-    resolve_avatar(catalog, state)
-        .map_err(|error| AvatarReferenceError::InvalidAvatar { reason: error.to_string() })?;
+    resolve_avatar(catalog, state).map_err(|error| AvatarReferenceError::InvalidAvatar {
+        reason: error.to_string(),
+    })?;
     let document = OcAvatarDocument {
         schema: "nie.oc.avatar-document/v1".into(),
         slug: metadata.slug,
@@ -323,12 +342,12 @@ fn percent_decode_path_segment(value: &str) -> Option<String> {
             b'%' if index + 2 < bytes.len() => {
                 output.push((hex_nibble(bytes[index + 1])? << 4) | hex_nibble(bytes[index + 2])?);
                 index += 3;
-            },
+            }
             b'%' => return None,
             byte => {
                 output.push(byte);
                 index += 1;
-            },
+            }
         }
     }
     String::from_utf8(output).ok()
@@ -346,7 +365,9 @@ fn safe_vfs_segment(value: &str) -> bool {
             return !decoded.is_empty()
                 && decoded != "."
                 && decoded != ".."
-                && !decoded.bytes().any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#' | b'\0'));
+                && !decoded
+                    .bytes()
+                    .any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#' | b'\0'));
         }
         decoded = next;
     }
@@ -357,7 +378,9 @@ fn safe_vfs_segment(value: &str) -> bool {
             && !decoded.is_empty()
             && decoded != "."
             && decoded != ".."
-            && !decoded.bytes().any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#' | b'\0'))
+            && !decoded
+                .bytes()
+                .any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#' | b'\0'))
     })
 }
 
@@ -371,16 +394,16 @@ fn percent_decode(value: &str) -> Option<String> {
             b'%' if index + 2 < bytes.len() => {
                 output.push((hex_nibble(bytes[index + 1])? << 4) | hex_nibble(bytes[index + 2])?);
                 index += 3;
-            },
+            }
             b'%' => return None,
             b'+' => {
                 output.push(b' ');
                 index += 1;
-            },
+            }
             byte => {
                 output.push(byte);
                 index += 1;
-            },
+            }
         }
     }
     String::from_utf8(output).ok()
@@ -388,10 +411,15 @@ fn percent_decode(value: &str) -> Option<String> {
 
 #[cfg(feature = "serde")]
 fn query_value(query: &str, key: &str) -> Option<String> {
-    query.split(['?', '#']).nth(1).unwrap_or(query).split('&').find_map(|pair| {
-        let (name, value) = pair.split_once('=')?;
-        (name == key).then(|| percent_decode(value)).flatten()
-    })
+    query
+        .split(['?', '#'])
+        .nth(1)
+        .unwrap_or(query)
+        .split('&')
+        .find_map(|pair| {
+            let (name, value) = pair.split_once('=')?;
+            (name == key).then(|| percent_decode(value)).flatten()
+        })
 }
 
 #[cfg(feature = "serde")]
@@ -420,7 +448,9 @@ fn valid_zukan_query(value: &str) -> bool {
 fn valid_player_identifier(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 120
-        && value.bytes().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
 }
 
 #[cfg(feature = "serde")]
@@ -490,7 +520,10 @@ fn import_share_code(
     catalog: &AvatarCatalog,
     code: &str,
 ) -> Result<AvatarReferenceImport, AvatarReferenceError> {
-    let spec = catalog.share_code.as_ref().ok_or(AvatarReferenceError::MissingShareSpec)?;
+    let spec = catalog
+        .share_code
+        .as_ref()
+        .ok_or(AvatarReferenceError::MissingShareSpec)?;
     Ok(AvatarReferenceImport::ShareCode {
         raw_slots: decode_share_code(spec, code)?,
         reference_only: true,
@@ -520,7 +553,9 @@ pub fn import_avatar_reference(
                 return Err(AvatarReferenceError::InvalidProject);
             }
             resolve_avatar(catalog, &document.avatar_state).map_err(|error| {
-                AvatarReferenceError::InvalidAvatar { reason: error.to_string() }
+                AvatarReferenceError::InvalidAvatar {
+                    reason: error.to_string(),
+                }
             })?;
             return Ok(AvatarReferenceImport::Editable {
                 state: Box::new(document.avatar_state.clone()),
@@ -532,8 +567,11 @@ pub fn import_avatar_reference(
         if project.format != "nie-avatar" || project.version != 1 {
             return Err(AvatarReferenceError::InvalidProject);
         }
-        resolve_avatar(catalog, &project.state)
-            .map_err(|error| AvatarReferenceError::InvalidAvatar { reason: error.to_string() })?;
+        resolve_avatar(catalog, &project.state).map_err(|error| {
+            AvatarReferenceError::InvalidAvatar {
+                reason: error.to_string(),
+            }
+        })?;
         return Ok(AvatarReferenceImport::Editable {
             state: Box::new(project.state),
             document: None,
@@ -547,10 +585,15 @@ pub fn import_avatar_reference(
             if !valid_zukan_query(&query) {
                 return Err(AvatarReferenceError::InvalidReference);
             }
-            return Ok(AvatarReferenceImport::ZukanQuery { query, reference_only: true });
+            return Ok(AvatarReferenceImport::ZukanQuery {
+                query,
+                reference_only: true,
+            });
         }
         if host.eq_ignore_ascii_case("azalee.rosegriffon.fr") {
-            let tail = reference.split_once("://").map_or(reference, |(_, tail)| tail);
+            let tail = reference
+                .split_once("://")
+                .map_or(reference, |(_, tail)| tail);
             let identifier = tail
                 .split(['?', '#'])
                 .next()
@@ -559,13 +602,18 @@ pub fn import_avatar_reference(
                 .collect::<Vec<_>>()
                 .windows(2)
                 .find_map(|segments| {
-                    (segments[0] == "chara").then(|| percent_decode(segments[1])).flatten()
+                    (segments[0] == "chara")
+                        .then(|| percent_decode(segments[1]))
+                        .flatten()
                 })
                 .ok_or(AvatarReferenceError::InvalidReference)?;
             if !valid_player_identifier(&identifier) {
                 return Err(AvatarReferenceError::InvalidReference);
             }
-            return Ok(AvatarReferenceImport::AzaleePlayer { identifier, reference_only: true });
+            return Ok(AvatarReferenceImport::AzaleePlayer {
+                identifier,
+                reference_only: true,
+            });
         }
         return Err(AvatarReferenceError::UnsupportedHost);
     }
@@ -619,7 +667,10 @@ mod tests {
                 },
                 AvatarCategory {
                     setting_type: 9,
-                    parts: vec![AvatarPart { id: "D64E1016".into(), ..AvatarPart::default() }],
+                    parts: vec![AvatarPart {
+                        id: "D64E1016".into(),
+                        ..AvatarPart::default()
+                    }],
                     colors: vec![],
                 },
             ],
@@ -637,10 +688,26 @@ mod tests {
                     .map(|c| c.to_string())
                     .collect(),
                 slots: vec![
-                    AvatarShareSlot { bits: 1, values: 2, ..AvatarShareSlot::default() },
-                    AvatarShareSlot { bits: 1, values: 2, ..AvatarShareSlot::default() },
-                    AvatarShareSlot { bits: 1, values: 2, ..AvatarShareSlot::default() },
-                    AvatarShareSlot { bits: 1, values: 1, ..AvatarShareSlot::default() },
+                    AvatarShareSlot {
+                        bits: 1,
+                        values: 2,
+                        ..AvatarShareSlot::default()
+                    },
+                    AvatarShareSlot {
+                        bits: 1,
+                        values: 2,
+                        ..AvatarShareSlot::default()
+                    },
+                    AvatarShareSlot {
+                        bits: 1,
+                        values: 2,
+                        ..AvatarShareSlot::default()
+                    },
+                    AvatarShareSlot {
+                        bits: 1,
+                        values: 1,
+                        ..AvatarShareSlot::default()
+                    },
                 ],
             }),
             ..AvatarCatalog::default()
@@ -648,7 +715,11 @@ mod tests {
     }
 
     fn part(id: &str) -> AvatarPart {
-        AvatarPart { id: id.into(), resource: id.into(), ..AvatarPart::default() }
+        AvatarPart {
+            id: id.into(),
+            resource: id.into(),
+            ..AvatarPart::default()
+        }
     }
 
     #[test]
@@ -656,7 +727,10 @@ mod tests {
         // Alphabet index 40 = binary 101000. The four measured bits stay four raw values.
         assert_eq!(
             import_avatar_reference(&catalog(), &AvatarState::default(), "e").unwrap(),
-            AvatarReferenceImport::ShareCode { raw_slots: vec![1, 0, 1, 0], reference_only: true }
+            AvatarReferenceImport::ShareCode {
+                raw_slots: vec![1, 0, 1, 0],
+                reference_only: true
+            }
         );
 
         // Four payload bits require exactly one alphabet symbol and two zero padding bits.
@@ -668,8 +742,11 @@ mod tests {
         }
 
         let mut out_of_range = catalog();
-        out_of_range.share_code.as_mut().unwrap().slots =
-            vec![AvatarShareSlot { bits: 2, values: 3, ..AvatarShareSlot::default() }];
+        out_of_range.share_code.as_mut().unwrap().slots = vec![AvatarShareSlot {
+            bits: 2,
+            values: 3,
+            ..AvatarShareSlot::default()
+        }];
         out_of_range.share_code.as_mut().unwrap().bits = 2;
         // Alphabet index 48 is `110000`: value 3 is outside `0..3`, despite canonical padding.
         assert!(matches!(
@@ -688,7 +765,10 @@ mod tests {
                 &format!("https://zukan.inazuma.jp/fr/chara_model_view/?q={query}")
             )
             .unwrap(),
-            AvatarReferenceImport::ZukanQuery { query: query.into(), reference_only: true }
+            AvatarReferenceImport::ZukanQuery {
+                query: query.into(),
+                reference_only: true
+            }
         );
         assert!(matches!(
             import_avatar_reference(
@@ -722,7 +802,11 @@ mod tests {
 
     #[test]
     fn imports_only_versioned_nie_projects_and_validates_the_recipe() {
-        let state = AvatarState { gender: 0, morphology: 0, ..AvatarState::default() };
+        let state = AvatarState {
+            gender: 0,
+            morphology: 0,
+            ..AvatarState::default()
+        };
         let project = format!(
             r#"{{"format":"nie-avatar","version":1,"state":{}}}"#,
             serde_json::to_string(&state).unwrap()
@@ -757,7 +841,11 @@ mod tests {
         });
         let imported =
             import_avatar_reference(&catalog(), &AvatarState::default(), &oc.to_string()).unwrap();
-        let AvatarReferenceImport::Editable { document: Some(document), .. } = imported else {
+        let AvatarReferenceImport::Editable {
+            document: Some(document),
+            ..
+        } = imported
+        else {
             panic!("OC document")
         };
         assert_eq!(document.slug, "new-oc");
@@ -826,20 +914,43 @@ mod tests {
         // fields are mandatory and the positive size bound is specific to the file kind.
         assert!(valid(document("png", "face.png", None, None)));
         assert!(valid(document("png", "face.png", Some(1), Some(SHA256))));
-        assert!(valid(document("png", "face.png", Some(32 * 1024 * 1024), Some(SHA256))));
+        assert!(valid(document(
+            "png",
+            "face.png",
+            Some(32 * 1024 * 1024),
+            Some(SHA256)
+        )));
         assert!(!valid(document("png", "face.png", Some(0), Some(SHA256))));
-        assert!(!valid(document("png", "face.png", Some(32 * 1024 * 1024 + 1), Some(SHA256))));
+        assert!(!valid(document(
+            "png",
+            "face.png",
+            Some(32 * 1024 * 1024 + 1),
+            Some(SHA256)
+        )));
         assert!(!valid(document("png", "face.png", Some(1), None)));
         assert!(!valid(document("png", "face.png", None, Some(SHA256))));
 
         assert!(valid(document("glb", "avatar.glb", None, None)));
         assert!(valid(document("glb", "avatar.glb", Some(1), Some(SHA256))));
-        assert!(valid(document("glb", "avatar.glb", Some(64 * 1024 * 1024), Some(SHA256))));
+        assert!(valid(document(
+            "glb",
+            "avatar.glb",
+            Some(64 * 1024 * 1024),
+            Some(SHA256)
+        )));
         assert!(!valid(document("glb", "avatar.glb", Some(0), Some(SHA256))));
-        assert!(!valid(document("glb", "avatar.glb", Some(64 * 1024 * 1024 + 1), Some(SHA256))));
+        assert!(!valid(document(
+            "glb",
+            "avatar.glb",
+            Some(64 * 1024 * 1024 + 1),
+            Some(SHA256)
+        )));
 
         for (kind, value) in [
-            ("zukan", "https://zukan.inazuma.jp/fr/chara_model_view/?q=reference"),
+            (
+                "zukan",
+                "https://zukan.inazuma.jp/fr/chara_model_view/?q=reference",
+            ),
             ("azalee", "https://azalee.rosegriffon.fr/chara/astro-lor"),
             ("nie_character", "c99019010"),
         ] {

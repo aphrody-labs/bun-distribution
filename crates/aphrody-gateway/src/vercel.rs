@@ -81,7 +81,11 @@ impl VercelAdapter {
         }
         // Validate the base URL parses.
         Url::parse(&base_url)?;
-        Ok(Self { api_key, base_url, client: Some(Client::new()) })
+        Ok(Self {
+            api_key,
+            base_url,
+            client: Some(Client::new()),
+        })
     }
 
     /// Constructs an adapter from the `AI_GATEWAY_API_KEY` environment
@@ -107,12 +111,23 @@ impl VercelAdapter {
 #[async_trait::async_trait]
 impl GatewayAdapter for VercelAdapter {
     async fn chat(&self, req: ChatRequest) -> Result<ChatResponse, GatewayError> {
-        openai_compat::chat(&self.http_client(), self.endpoint_url()?, &self.api_key, req).await
+        openai_compat::chat(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_key,
+            req,
+        )
+        .await
     }
 
     async fn chat_stream(&self, req: ChatRequest) -> Result<ChunkStream, GatewayError> {
-        openai_compat::chat_stream(&self.http_client(), self.endpoint_url()?, &self.api_key, req)
-            .await
+        openai_compat::chat_stream(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_key,
+            req,
+        )
+        .await
     }
 }
 
@@ -140,7 +155,10 @@ mod tests {
         install_rustls_provider();
         let adapter = VercelAdapter::new("key123").expect("construct");
         let url = adapter.endpoint_url().expect("url");
-        assert_eq!(url.as_str(), "https://ai-gateway.vercel.sh/v1/chat/completions");
+        assert_eq!(
+            url.as_str(),
+            "https://ai-gateway.vercel.sh/v1/chat/completions"
+        );
     }
 
     #[test]

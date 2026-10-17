@@ -5,8 +5,8 @@ use effectcraft_color::{BlendMode, Label};
 use effectcraft_keyframe::{Ease, Gradient, Interp, Keyframe, ShapePath, TextDoc, Value};
 use effectcraft_project::build::{self, Ids};
 use effectcraft_project::{
-    AlphaMode, Comp, Expression, Footage, FootageKind, GroupKind, ItemId, ItemKind, Layer, LayerId, LayerSource, Marker, MaskMode, MatteKind, Node, Project,
-    PropGroup, Solid, TrackMatte,
+    AlphaMode, Comp, Expression, Footage, FootageKind, GroupKind, ItemId, ItemKind, Layer, LayerId,
+    LayerSource, Marker, MaskMode, MatteKind, Node, Project, PropGroup, Solid, TrackMatte,
 };
 use effectcraft_render::render_frame;
 use effectcraft_time::{FrameRate, Tick};
@@ -37,17 +37,49 @@ fn push(p: &mut Project, cid: ItemId, l: Layer) -> LayerId {
 
 fn solid_layer(p: &mut Project, cid: ItemId, color: [f32; 3], w: u32, h: u32) -> Layer {
     let c = comp(p, cid);
-    let sid = p.add_item("Solid", Label::Red, None, ItemKind::Solid(Solid { color, width: w, height: h, pixel_aspect: 1.0 }));
-    build::layer(p, &c, "Solid", LayerSource::Solid { item: sid }, (w, h), None)
+    let sid = p.add_item(
+        "Solid",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color,
+            width: w,
+            height: h,
+            pixel_aspect: 1.0,
+        }),
+    );
+    build::layer(
+        p,
+        &c,
+        "Solid",
+        LayerSource::Solid { item: sid },
+        (w, h),
+        None,
+    )
 }
 
-fn shape_layer(p: &mut Project, cid: ItemId, items: impl FnOnce(&mut Ids) -> Vec<PropGroup>) -> Layer {
+fn shape_layer(
+    p: &mut Project,
+    cid: ItemId,
+    items: impl FnOnce(&mut Ids) -> Vec<PropGroup>,
+) -> Layer {
     let c = comp(p, cid);
-    let mut l = build::layer(p, &c, "Shape Layer 1", LayerSource::Shape, (c.width, c.height), None);
+    let mut l = build::layer(
+        p,
+        &c,
+        "Shape Layer 1",
+        LayerSource::Shape,
+        (c.width, c.height),
+        None,
+    );
     let mut next = p.next_id;
     let groups = items(&mut Ids(&mut next));
     p.next_id = next;
-    l.props.sub_mut("contents").unwrap().children.extend(groups.into_iter().map(Node::Group));
+    l.props
+        .sub_mut("contents")
+        .unwrap()
+        .children
+        .extend(groups.into_iter().map(Node::Group));
     l
 }
 
@@ -56,7 +88,11 @@ fn no_read(_: &str) -> Option<Vec<u8>> {
 }
 
 /// Export comp `cid`, serialise, import into a fresh project.
-fn roundtrip(p: &Project, cid: ItemId, opts: &ExportOptions) -> (Project, ItemId, Vec<String>, Json) {
+fn roundtrip(
+    p: &Project,
+    cid: ItemId,
+    opts: &ExportOptions,
+) -> (Project, ItemId, Vec<String>, Json) {
     let res = export_comp(p, cid, opts, &no_read).unwrap();
     let text = res.to_string_compact();
     let mut q = Project::default();
@@ -68,13 +104,26 @@ fn close(a: &Value, b: &Value, tol: f64) -> bool {
     let near = |x: f64, y: f64| (x - y).abs() <= tol * (1.0 + x.abs().max(y.abs()) * 1e-3);
     match (a, b) {
         (Value::Path(p), Value::Path(q)) => {
-            let pts = |u: &[[f64; 2]], v: &[[f64; 2]]| u.len() == v.len() && u.iter().zip(v).all(|(m, n)| near(m[0], n[0]) && near(m[1], n[1]));
-            p.closed == q.closed && pts(&p.vertices, &q.vertices) && pts(&p.in_tangents, &q.in_tangents) && pts(&p.out_tangents, &q.out_tangents)
+            let pts = |u: &[[f64; 2]], v: &[[f64; 2]]| {
+                u.len() == v.len()
+                    && u.iter()
+                        .zip(v)
+                        .all(|(m, n)| near(m[0], n[0]) && near(m[1], n[1]))
+            };
+            p.closed == q.closed
+                && pts(&p.vertices, &q.vertices)
+                && pts(&p.in_tangents, &q.in_tangents)
+                && pts(&p.out_tangents, &q.out_tangents)
         }
         (Value::Gradient(g), Value::Gradient(h)) => {
             g.colors.len() == h.colors.len()
-                && g.colors.iter().zip(&h.colors).all(|(x, y)| near(x.0, y.0) && (0..3).all(|i| near(x.1[i] as f64, y.1[i] as f64)))
-                && g.opacities.iter().zip(&h.opacities).all(|(x, y)| near(x.0, y.0) && near(x.1 as f64, y.1 as f64))
+                && g.colors.iter().zip(&h.colors).all(|(x, y)| {
+                    near(x.0, y.0) && (0..3).all(|i| near(x.1[i] as f64, y.1[i] as f64))
+                })
+                && g.opacities
+                    .iter()
+                    .zip(&h.opacities)
+                    .all(|(x, y)| near(x.0, y.0) && near(x.1 as f64, y.1 as f64))
         }
         (Value::Text(x), Value::Text(y)) => x == y,
         _ => {
@@ -89,8 +138,16 @@ fn close(a: &Value, b: &Value, tol: f64) -> bool {
 fn compare_tree(a: &PropGroup, b: &PropGroup, times: &[Tick], path: &str) -> usize {
     let mut n = 0;
     for (i, c) in a.children.iter().enumerate() {
-        let occ = a.children[..i].iter().filter(|o| o.match_id() == c.match_id()).count();
-        let Some(other) = b.children.iter().filter(|o| o.match_id() == c.match_id()).nth(occ) else {
+        let occ = a.children[..i]
+            .iter()
+            .filter(|o| o.match_id() == c.match_id())
+            .count();
+        let Some(other) = b
+            .children
+            .iter()
+            .filter(|o| o.match_id() == c.match_id())
+            .nth(occ)
+        else {
             continue;
         };
         let here = format!("{path}/{}", c.match_id());
@@ -98,13 +155,33 @@ fn compare_tree(a: &PropGroup, b: &PropGroup, times: &[Tick], path: &str) -> usi
             (Node::Prop(x), Node::Prop(y)) => {
                 for t in times {
                     let (va, vb) = (x.value_at(*t), y.value_at(*t));
-                    assert!(close(&va, &vb, 1e-3), "{here} at {:.3}s: {va:?} != {vb:?}", t.seconds());
+                    assert!(
+                        close(&va, &vb, 1e-3),
+                        "{here} at {:.3}s: {va:?} != {vb:?}",
+                        t.seconds()
+                    );
                 }
-                assert_eq!(x.expr.as_ref().map(|e| &e.text), y.expr.as_ref().map(|e| &e.text), "{here}: expression");
+                assert_eq!(
+                    x.expr.as_ref().map(|e| &e.text),
+                    y.expr.as_ref().map(|e| &e.text),
+                    "{here}: expression"
+                );
                 n += 1;
             }
             (Node::Group(x), Node::Group(y)) => {
-                if let (GroupKind::Mask { mode: m1, inverted: i1, .. }, GroupKind::Mask { mode: m2, inverted: i2, .. }) = (&x.kind, &y.kind) {
+                if let (
+                    GroupKind::Mask {
+                        mode: m1,
+                        inverted: i1,
+                        ..
+                    },
+                    GroupKind::Mask {
+                        mode: m2,
+                        inverted: i2,
+                        ..
+                    },
+                ) = (&x.kind, &y.kind)
+                {
                     assert_eq!((m1, i1), (m2, i2), "{here}: mask mode");
                 }
                 assert_eq!(x.enabled, y.enabled, "{here}: enabled");
@@ -123,18 +200,40 @@ fn sample_times(c: &Comp) -> Vec<Tick> {
 /// Compare layers (timing, switches, mattes, parents, properties).
 fn compare_comps(p: &Project, a: ItemId, q: &Project, b: ItemId) -> usize {
     let (ca, cb) = (p.comp(a).unwrap(), q.comp(b).unwrap());
-    assert_eq!((ca.width, ca.height, ca.frame_rate, ca.duration), (cb.width, cb.height, cb.frame_rate, cb.duration));
+    assert_eq!(
+        (ca.width, ca.height, ca.frame_rate, ca.duration),
+        (cb.width, cb.height, cb.frame_rate, cb.duration)
+    );
     assert_eq!(ca.layers.len(), cb.layers.len(), "layer count");
     let times = sample_times(ca);
     let mut n = 0;
     for (la, lb) in ca.layers.iter().zip(&cb.layers) {
         assert_eq!(la.name, lb.name);
         assert_eq!(la.source.type_name(), lb.source.type_name(), "{}", la.name);
-        assert_eq!((la.in_point, la.out_point, la.start_time), (lb.in_point, lb.out_point, lb.start_time), "{}: timing", la.name);
-        assert!((la.stretch - lb.stretch).abs() < 1e-9, "{}: stretch", la.name);
+        assert_eq!(
+            (la.in_point, la.out_point, la.start_time),
+            (lb.in_point, lb.out_point, lb.start_time),
+            "{}: timing",
+            la.name
+        );
+        assert!(
+            (la.stretch - lb.stretch).abs() < 1e-9,
+            "{}: stretch",
+            la.name
+        );
         assert_eq!(la.blend_mode, lb.blend_mode, "{}: blend", la.name);
-        assert_eq!(la.parent.and_then(|x| ca.index_of(x)), lb.parent.and_then(|x| cb.index_of(x)), "{}: parent", la.name);
-        assert_eq!(la.track_matte.map(|m| (ca.index_of(m.layer), m.kind)), lb.track_matte.map(|m| (cb.index_of(m.layer), m.kind)), "{}: matte", la.name);
+        assert_eq!(
+            la.parent.and_then(|x| ca.index_of(x)),
+            lb.parent.and_then(|x| cb.index_of(x)),
+            "{}: parent",
+            la.name
+        );
+        assert_eq!(
+            la.track_matte.map(|m| (ca.index_of(m.layer), m.kind)),
+            lb.track_matte.map(|m| (cb.index_of(m.layer), m.kind)),
+            "{}: matte",
+            la.name
+        );
         n += compare_tree(&la.props, &lb.props, &times, &la.name);
     }
     n
@@ -143,7 +242,10 @@ fn compare_comps(p: &Project, a: ItemId, q: &Project, b: ItemId) -> usize {
 /// Rendered frames must agree within a small tolerance.
 fn compare_renders(p: &Project, a: ItemId, q: &Project, b: ItemId, tol: f32) {
     let c = p.comp(a).unwrap();
-    assert!(sample_times(c).into_iter().any(|t| not_blank(p, a, t)), "nothing rendered");
+    assert!(
+        sample_times(c).into_iter().any(|t| not_blank(p, a, t)),
+        "nothing rendered"
+    );
     for t in sample_times(c).into_iter().step_by(3) {
         let (x, y) = (render_frame(p, a, t, 0.5), render_frame(q, b, t, 0.5));
         assert_eq!((x.width, x.height), (y.width, y.height));
@@ -156,12 +258,19 @@ fn compare_renders(p: &Project, a: ItemId, q: &Project, b: ItemId, tol: f32) {
                 bad += 1;
             }
         }
-        assert!(bad * 200 <= x.data.len(), "at {:.2}s: {bad} pixels differ by more than {tol} (worst {worst})", t.seconds());
+        assert!(
+            bad * 200 <= x.data.len(),
+            "at {:.2}s: {bad} pixels differ by more than {tol} (worst {worst})",
+            t.seconds()
+        );
     }
 }
 
 fn not_blank(p: &Project, cid: ItemId, t: Tick) -> bool {
-    render_frame(p, cid, t, 0.5).data.iter().any(|px| px[3] > 0.5)
+    render_frame(p, cid, t, 0.5)
+        .data
+        .iter()
+        .any(|px| px[3] > 0.5)
 }
 
 // ---------------------------------------------------------------- easing math
@@ -175,10 +284,16 @@ fn easing_converts_exactly_both_ways() {
     let rot = tr.get_mut("rotation").unwrap();
     let mut a = Keyframe::new(s(0.0), Value::Scalar(0.0));
     a.out_interp = Interp::Bezier;
-    a.out_ease = vec![Ease { speed: 300.0, influence: 0.6 }];
+    a.out_ease = vec![Ease {
+        speed: 300.0,
+        influence: 0.6,
+    }];
     let mut b = Keyframe::new(s(0.8), Value::Scalar(180.0));
     b.in_interp = Interp::Bezier;
-    b.in_ease = vec![Ease { speed: -50.0, influence: 0.2 }];
+    b.in_ease = vec![Ease {
+        speed: -50.0,
+        influence: 0.2,
+    }];
     b.out_interp = Interp::Hold;
     let c = Keyframe::new(s(1.2), Value::Scalar(90.0)).eased();
     let mut d = Keyframe::new(s(1.6), Value::Scalar(45.0));
@@ -188,8 +303,21 @@ fn easing_converts_exactly_both_ways() {
     let e = Keyframe::new(s(1.9), Value::Scalar(0.0));
     rot.keys = vec![a, b, c, d, e];
     let sc = tr.get_mut("scale").unwrap();
-    sc.keys = vec![Keyframe::new(s(0.0), Value::Vec3([100.0, 50.0, 100.0])).eased(), Keyframe::new(s(1.0), Value::Vec3([20.0, 150.0, 100.0])).eased()];
-    sc.keys[0].out_ease = vec![Ease { speed: 10.0, influence: 0.9 }, Ease { speed: 0.0, influence: 0.1 }, Ease::EASY];
+    sc.keys = vec![
+        Keyframe::new(s(0.0), Value::Vec3([100.0, 50.0, 100.0])).eased(),
+        Keyframe::new(s(1.0), Value::Vec3([20.0, 150.0, 100.0])).eased(),
+    ];
+    sc.keys[0].out_ease = vec![
+        Ease {
+            speed: 10.0,
+            influence: 0.9,
+        },
+        Ease {
+            speed: 0.0,
+            influence: 0.1,
+        },
+        Ease::EASY,
+    ];
     push(&mut p, cid, l);
     let (q, nc, _, json) = roundtrip(&p, cid, &ExportOptions::default());
     // The Lottie tangents of the first rotation segment: o = (0.6, 300·0.6·0.8/180).
@@ -203,7 +331,12 @@ fn easing_converts_exactly_both_ways() {
     assert!((scale["o"]["y"][0].as_f64().unwrap() + 0.1125).abs() < 1e-9);
     let rq = &q.comp(nc).unwrap().layers[0];
     let rk = &rq.props.prop("transform/rotation").unwrap().keys;
-    assert!((rk[0].out_ease[0].speed - 300.0).abs() < 1e-3 && (rk[0].out_ease[0].influence - 0.6).abs() < 1e-6, "{:?}", rk[0].out_ease);
+    assert!(
+        (rk[0].out_ease[0].speed - 300.0).abs() < 1e-3
+            && (rk[0].out_ease[0].influence - 0.6).abs() < 1e-6,
+        "{:?}",
+        rk[0].out_ease
+    );
     assert!((rk[1].in_ease[0].speed + 50.0).abs() < 1e-3);
     assert_eq!(rk[1].out_interp, Interp::Hold);
     assert!(compare_comps(&p, cid, &q, nc) > 5);
@@ -226,15 +359,30 @@ fn spatial_tangents_and_separated_dimensions() {
     let mut next = p.next_id;
     let tr = l2.props.sub_mut("transform").unwrap();
     for (m, name, keys) in [
-        ("positionY", "Y Position", vec![Keyframe::new(s(0.0), Value::Scalar(10.0)).eased(), Keyframe::new(s(2.0), Value::Scalar(110.0))]),
-        ("positionX", "X Position", vec![Keyframe::new(s(0.5), Value::Scalar(30.0)), Keyframe::new(s(1.5), Value::Scalar(170.0)).eased()]),
+        (
+            "positionY",
+            "Y Position",
+            vec![
+                Keyframe::new(s(0.0), Value::Scalar(10.0)).eased(),
+                Keyframe::new(s(2.0), Value::Scalar(110.0)),
+            ],
+        ),
+        (
+            "positionX",
+            "X Position",
+            vec![
+                Keyframe::new(s(0.5), Value::Scalar(30.0)),
+                Keyframe::new(s(1.5), Value::Scalar(170.0)).eased(),
+            ],
+        ),
     ] {
         let mut pr = effectcraft_project::Property::new(next, m, name, Value::Scalar(0.0));
         next += 1;
         pr.keys = keys;
         tr.children.insert(2, Node::Prop(pr));
     }
-    let mut pz = effectcraft_project::Property::new(next, "positionZ", "Z Position", Value::Scalar(0.0));
+    let mut pz =
+        effectcraft_project::Property::new(next, "positionZ", "Z Position", Value::Scalar(0.0));
     pz.three_d_only = true;
     next += 1;
     tr.children.insert(4, Node::Prop(pz));
@@ -255,7 +403,10 @@ fn shape_contents_roundtrip() {
     let (mut p, cid) = setup();
     let l = shape_layer(&mut p, cid, |ids| {
         let mut rect = build::shape_rect(ids, [60.0, 40.0], [0.0, 0.0], 6.0);
-        rect.get_mut("size").unwrap().keys = vec![Keyframe::new(s(0.0), Value::Vec2([60.0, 40.0])).eased(), Keyframe::new(s(1.5), Value::Vec2([90.0, 20.0]))];
+        rect.get_mut("size").unwrap().keys = vec![
+            Keyframe::new(s(0.0), Value::Vec2([60.0, 40.0])).eased(),
+            Keyframe::new(s(1.5), Value::Vec2([90.0, 20.0])),
+        ];
         let ell = build::shape_ellipse(ids, [30.0, 30.0], [20.0, 10.0]);
         let mut stroke = build::shape_stroke(ids, [0.0, 0.0, 1.0, 1.0], 3.0);
         {
@@ -266,15 +417,25 @@ fn shape_contents_roundtrip() {
         stroke.get_mut("cap").unwrap().value = Value::Enum(1);
         stroke.get_mut("join").unwrap().value = Value::Enum(2);
         let mut fill = build::shape_fill(ids, [1.0, 0.2, 0.2, 1.0]);
-        fill.get_mut("color").unwrap().keys =
-            vec![Keyframe::new(s(0.0), Value::Color([1.0, 0.2, 0.2, 1.0])).hold(), Keyframe::new(s(1.0), Value::Color([0.2, 1.0, 0.2, 1.0])).hold()];
+        fill.get_mut("color").unwrap().keys = vec![
+            Keyframe::new(s(0.0), Value::Color([1.0, 0.2, 0.2, 1.0])).hold(),
+            Keyframe::new(s(1.0), Value::Color([0.2, 1.0, 0.2, 1.0])).hold(),
+        ];
         fill.get_mut("rule").unwrap().value = Value::Enum(1);
         let mut g = build::shape_group(ids, "Group A", vec![rect, ell, stroke, fill]);
         let tr = g.sub_mut("transform").unwrap();
-        tr.get_mut("position").unwrap().keys = vec![Keyframe::new(s(0.0), Value::Vec2([60.0, 60.0])), Keyframe::new(s(2.0), Value::Vec2([90.0, 50.0]))];
+        tr.get_mut("position").unwrap().keys = vec![
+            Keyframe::new(s(0.0), Value::Vec2([60.0, 60.0])),
+            Keyframe::new(s(2.0), Value::Vec2([90.0, 50.0])),
+        ];
         tr.get_mut("rotation").unwrap().value = Value::Scalar(15.0);
         tr.get_mut("skew").unwrap().value = Value::Scalar(10.0);
-        g.get_mut("blend").unwrap().value = Value::Enum(BlendMode::ALL.iter().position(|b| *b == BlendMode::Screen).unwrap() as u32);
+        g.get_mut("blend").unwrap().value = Value::Enum(
+            BlendMode::ALL
+                .iter()
+                .position(|b| *b == BlendMode::Screen)
+                .unwrap() as u32,
+        );
         let star = build::shape_star(ids, true, 5.0, [150.0, 40.0], 30.0, 12.0);
         let poly = build::shape_star(ids, false, 6.0, [150.0, 95.0], 20.0, 0.0);
         let path = build::shape_path(
@@ -288,11 +449,17 @@ fn shape_contents_roundtrip() {
             },
         );
         let grad = Gradient {
-            colors: vec![(0.0, [1.0, 1.0, 0.0, 1.0]), (0.5, [0.0, 1.0, 1.0, 1.0]), (1.0, [1.0, 0.0, 1.0, 1.0])],
+            colors: vec![
+                (0.0, [1.0, 1.0, 0.0, 1.0]),
+                (0.5, [0.0, 1.0, 1.0, 1.0]),
+                (1.0, [1.0, 0.0, 1.0, 1.0]),
+            ],
             opacities: vec![(0.0, 1.0), (1.0, 0.5)],
         };
-        let gfill = build::shape_gradient_fill(ids, true, [150.0, 40.0], [180.0, 40.0], grad.clone());
-        let gstroke = build::shape_gradient_stroke(ids, false, [130.0, 95.0], [170.0, 95.0], grad, 4.0);
+        let gfill =
+            build::shape_gradient_fill(ids, true, [150.0, 40.0], [180.0, 40.0], grad.clone());
+        let gstroke =
+            build::shape_gradient_stroke(ids, false, [130.0, 95.0], [170.0, 95.0], grad, 4.0);
         let mut g2 = build::shape_group(ids, "Group B", vec![star, gfill, poly, gstroke]);
         g2.enabled = true;
         let mut fill2 = build::shape_fill(ids, [0.9, 0.9, 0.1, 1.0]);
@@ -312,14 +479,17 @@ fn path_operators_roundtrip() {
     let (mut p, cid) = setup();
     let l = shape_layer(&mut p, cid, |ids| {
         let mut out = vec![];
-        for (k, (x, y)) in ["round", "offset", "pucker", "twist", "zigzag", "merge"].iter().zip([
-            (30.0, 30.0),
-            (90.0, 30.0),
-            (150.0, 30.0),
-            (30.0, 90.0),
-            (90.0, 90.0),
-            (150.0, 90.0),
-        ]) {
+        for (k, (x, y)) in ["round", "offset", "pucker", "twist", "zigzag", "merge"]
+            .iter()
+            .zip([
+                (30.0, 30.0),
+                (90.0, 30.0),
+                (150.0, 30.0),
+                (30.0, 90.0),
+                (90.0, 90.0),
+                (150.0, 90.0),
+            ])
+        {
             let rect = build::shape_rect(ids, [36.0, 30.0], [x, y], 0.0);
             let ell = build::shape_ellipse(ids, [20.0, 20.0], [x + 10.0, y]);
             let mut op = build::shape_simple_op(ids, k).unwrap();
@@ -337,7 +507,10 @@ fn path_operators_roundtrip() {
         // Trim paths (animated) and a repeater.
         let ell = build::shape_ellipse(ids, [50.0, 50.0], [100.0, 60.0]);
         let mut trim = build::shape_trim(ids, 0.0, 100.0, 0.0);
-        trim.get_mut("end").unwrap().keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)).eased(), Keyframe::new(s(1.5), Value::Scalar(100.0)).eased()];
+        trim.get_mut("end").unwrap().keys = vec![
+            Keyframe::new(s(0.0), Value::Scalar(0.0)).eased(),
+            Keyframe::new(s(1.5), Value::Scalar(100.0)).eased(),
+        ];
         trim.get_mut("mode").unwrap().value = Value::Enum(1);
         let st = build::shape_stroke(ids, [1.0, 1.0, 1.0, 1.0], 4.0);
         out.push(build::shape_group(ids, "Trim", vec![ell, trim, st]));
@@ -366,7 +539,10 @@ fn layers_parenting_timing_mattes_masks_and_blend_modes() {
     let c = comp(&p, cid);
     // Null parent with rotation; child solid.
     let mut null = build::layer(&mut p, &c, "Null 1", LayerSource::Null, (100, 100), None);
-    null.props.prop_mut("transform/rotation").unwrap().keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)), Keyframe::new(s(2.0), Value::Scalar(90.0))];
+    null.props.prop_mut("transform/rotation").unwrap().keys = vec![
+        Keyframe::new(s(0.0), Value::Scalar(0.0)),
+        Keyframe::new(s(2.0), Value::Scalar(90.0)),
+    ];
     let null_id = null.id;
     let mut child = solid_layer(&mut p, cid, [1.0, 1.0, 0.0], 40, 20);
     child.parent = Some(null_id);
@@ -376,7 +552,10 @@ fn layers_parenting_timing_mattes_masks_and_blend_modes() {
     child.out_point = s(1.8);
     child.start_time = s(0.1);
     child.stretch = 200.0;
-    child.props.prop_mut("transform/opacity").unwrap().keys = vec![Keyframe::new(s(0.0), Value::Scalar(20.0)), Keyframe::new(s(0.8), Value::Scalar(100.0))];
+    child.props.prop_mut("transform/opacity").unwrap().keys = vec![
+        Keyframe::new(s(0.0), Value::Scalar(20.0)),
+        Keyframe::new(s(0.8), Value::Scalar(100.0)),
+    ];
     // Matte (ellipse shape) over a solid with masks and a blend mode.
     let matte = shape_layer(&mut p, cid, |ids| {
         let e = build::shape_ellipse(ids, [120.0, 80.0], [100.0, 60.0]);
@@ -390,19 +569,46 @@ fn layers_parenting_timing_mattes_masks_and_blend_modes() {
     let mut masked = solid_layer(&mut p, cid, [0.2, 0.4, 1.0], 200, 120);
     masked.name = "Masked".into();
     masked.blend_mode = BlendMode::Multiply;
-    masked.track_matte = Some(TrackMatte { layer: matte_id, kind: MatteKind::Alpha });
+    masked.track_matte = Some(TrackMatte {
+        layer: matte_id,
+        kind: MatteKind::Alpha,
+    });
     let mut next = p.next_id;
     {
         let mut ids = Ids(&mut next);
-        let mut m1 = build::mask(&mut ids, "Mask 1", ShapePath::rect([100.0, 60.0], 150.0, 90.0), MaskMode::Add, [255, 0, 0]);
+        let mut m1 = build::mask(
+            &mut ids,
+            "Mask 1",
+            ShapePath::rect([100.0, 60.0], 150.0, 90.0),
+            MaskMode::Add,
+            [255, 0, 0],
+        );
         m1.get_mut("expansion").unwrap().value = Value::Scalar(-5.0);
         m1.get_mut("path").unwrap().keys = vec![
-            Keyframe::new(s(0.0), Value::Path(ShapePath::rect([100.0, 60.0], 150.0, 90.0))),
-            Keyframe::new(s(2.0), Value::Path(ShapePath::rect([90.0, 60.0], 120.0, 80.0))),
+            Keyframe::new(
+                s(0.0),
+                Value::Path(ShapePath::rect([100.0, 60.0], 150.0, 90.0)),
+            ),
+            Keyframe::new(
+                s(2.0),
+                Value::Path(ShapePath::rect([90.0, 60.0], 120.0, 80.0)),
+            ),
         ];
-        let mut m2 = build::mask(&mut ids, "Mask 2", ShapePath::ellipse([100.0, 60.0], 40.0, 40.0), MaskMode::Subtract, [0, 255, 0]);
+        let mut m2 = build::mask(
+            &mut ids,
+            "Mask 2",
+            ShapePath::ellipse([100.0, 60.0], 40.0, 40.0),
+            MaskMode::Subtract,
+            [0, 255, 0],
+        );
         m2.get_mut("opacity").unwrap().value = Value::Scalar(60.0);
-        let mut m3 = build::mask(&mut ids, "Mask 3", ShapePath::rect([30.0, 30.0], 20.0, 20.0), MaskMode::Add, [0, 0, 255]);
+        let mut m3 = build::mask(
+            &mut ids,
+            "Mask 3",
+            ShapePath::rect([30.0, 30.0], 20.0, 20.0),
+            MaskMode::Add,
+            [0, 0, 255],
+        );
         if let GroupKind::Mask { inverted, .. } = &mut m3.kind {
             *inverted = true;
         }
@@ -418,13 +624,24 @@ fn layers_parenting_timing_mattes_masks_and_blend_modes() {
     let luma_id = luma.id;
     let mut bg = solid_layer(&mut p, cid, [0.9, 0.1, 0.1], 200, 120);
     bg.name = "Bg".into();
-    bg.track_matte = Some(TrackMatte { layer: luma_id, kind: MatteKind::LumaInverted });
+    bg.track_matte = Some(TrackMatte {
+        layer: luma_id,
+        kind: MatteKind::LumaInverted,
+    });
     for l in [null, child, matte, masked, luma, bg] {
         push(&mut p, cid, l);
     }
-    p.comp_mut(cid).unwrap().markers.push(Marker { time: s(1.0), duration: s(0.5), comment: "beat".into(), ..Default::default() });
+    p.comp_mut(cid).unwrap().markers.push(Marker {
+        time: s(1.0),
+        duration: s(0.5),
+        comment: "beat".into(),
+        ..Default::default()
+    });
     let (q, nc, warnings, json) = roundtrip(&p, cid, &ExportOptions::default());
-    assert!(warnings.iter().any(|w| w.contains("feather")), "{warnings:?}");
+    assert!(
+        warnings.iter().any(|w| w.contains("feather")),
+        "{warnings:?}"
+    );
     assert_eq!(json["layers"][2]["td"], json!(1));
     assert_eq!(json["layers"][3]["tt"], json!(1));
     assert_eq!(json["layers"][3]["masksProperties"][1]["mode"], json!("s"));
@@ -438,19 +655,37 @@ fn layers_parenting_timing_mattes_masks_and_blend_modes() {
 #[test]
 fn precomp_with_time_remap() {
     let (mut p, cid) = setup();
-    let inner = p.add_item("Inner", Label::Sandstone, None, ItemKind::Comp(Comp::new(100, 100, FrameRate::FPS_30, s(2.0)).into()));
+    let inner = p.add_item(
+        "Inner",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(Comp::new(100, 100, FrameRate::FPS_30, s(2.0)).into()),
+    );
     let sl = shape_layer(&mut p, inner, |ids| {
         let mut r = build::shape_rect(ids, [40.0, 40.0], [0.0, 0.0], 0.0);
-        r.get_mut("position").unwrap().keys = vec![Keyframe::new(s(0.0), Value::Vec2([-20.0, 0.0])), Keyframe::new(s(2.0), Value::Vec2([60.0, 0.0]))];
+        r.get_mut("position").unwrap().keys = vec![
+            Keyframe::new(s(0.0), Value::Vec2([-20.0, 0.0])),
+            Keyframe::new(s(2.0), Value::Vec2([60.0, 0.0])),
+        ];
         let f = build::shape_fill(ids, [0.0, 1.0, 0.5, 1.0]);
         vec![build::shape_group(ids, "Box", vec![r, f])]
     });
     push(&mut p, inner, sl);
     let c = comp(&p, cid);
-    let mut pre = build::layer(&mut p, &c, "Inner", LayerSource::Comp { item: inner }, (100, 100), None);
+    let mut pre = build::layer(
+        &mut p,
+        &c,
+        "Inner",
+        LayerSource::Comp { item: inner },
+        (100, 100),
+        None,
+    );
     let mut next = p.next_id;
     let mut tr = Ids(&mut next).prop("timeRemap", "Time Remap", Value::Scalar(0.0));
-    tr.keys = vec![Keyframe::new(s(0.0), Value::Scalar(1.5)), Keyframe::new(s(2.0), Value::Scalar(0.0))];
+    tr.keys = vec![
+        Keyframe::new(s(0.0), Value::Scalar(1.5)),
+        Keyframe::new(s(2.0), Value::Scalar(0.0)),
+    ];
     p.next_id = next;
     pre.props.children.insert(0, Node::Prop(tr));
     push(&mut p, cid, pre);
@@ -470,12 +705,31 @@ fn precomp_with_time_remap() {
 fn text_layers_roundtrip_as_text_and_as_shapes() {
     let (mut p, cid) = setup();
     let c = comp(&p, cid);
-    let mut l = build::layer(&mut p, &c, "Title", LayerSource::Text, (c.width, c.height), None);
-    let doc = TextDoc { text: "Hi\nthere".into(), size: 30.0, fill: [1.0, 0.8, 0.1, 1.0], tracking: 20.0, ..Default::default() };
-    let doc2 = TextDoc { text: "Bye".into(), ..doc.clone() };
+    let mut l = build::layer(
+        &mut p,
+        &c,
+        "Title",
+        LayerSource::Text,
+        (c.width, c.height),
+        None,
+    );
+    let doc = TextDoc {
+        text: "Hi\nthere".into(),
+        size: 30.0,
+        fill: [1.0, 0.8, 0.1, 1.0],
+        tracking: 20.0,
+        ..Default::default()
+    };
+    let doc2 = TextDoc {
+        text: "Bye".into(),
+        ..doc.clone()
+    };
     let st = l.props.prop_mut("text/sourceText").unwrap();
     st.value = Value::Text(Box::new(doc.clone()));
-    st.keys = vec![Keyframe::new(s(0.0), Value::Text(Box::new(doc))).hold(), Keyframe::new(s(1.5), Value::Text(Box::new(doc2))).hold()];
+    st.keys = vec![
+        Keyframe::new(s(0.0), Value::Text(Box::new(doc))).hold(),
+        Keyframe::new(s(1.5), Value::Text(Box::new(doc2))).hold(),
+    ];
     l.props.prop_mut("transform/position").unwrap().value = Value::Vec3([30.0, 50.0, 0.0]);
     let mut next = p.next_id;
     {
@@ -486,29 +740,69 @@ fn text_layers_roundtrip_as_text_and_as_shapes() {
         let pr = a.sub_mut("properties").unwrap();
         pr.get_mut("opacity").unwrap().value = Value::Scalar(0.0);
         pr.get_mut("position").unwrap().value = Value::Vec3([0.0, 20.0, 0.0]);
-        let sel = a.sub_mut("selectors").unwrap().children[0].as_group_mut().unwrap();
-        sel.get_mut("start").unwrap().keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)), Keyframe::new(s(1.0), Value::Scalar(100.0))];
-        sel.sub_mut("advanced").unwrap().get_mut("shape").unwrap().value = Value::Enum(1);
-        l.props.group_mut("text/animators").unwrap().children.push(Node::Group(a));
+        let sel = a.sub_mut("selectors").unwrap().children[0]
+            .as_group_mut()
+            .unwrap();
+        sel.get_mut("start").unwrap().keys = vec![
+            Keyframe::new(s(0.0), Value::Scalar(0.0)),
+            Keyframe::new(s(1.0), Value::Scalar(100.0)),
+        ];
+        sel.sub_mut("advanced")
+            .unwrap()
+            .get_mut("shape")
+            .unwrap()
+            .value = Value::Enum(1);
+        l.props
+            .group_mut("text/animators")
+            .unwrap()
+            .children
+            .push(Node::Group(a));
     }
     p.next_id = next;
     push(&mut p, cid, l);
     let (q, nc, _, json) = roundtrip(&p, cid, &ExportOptions::default());
     assert_eq!(json["layers"][0]["ty"], json!(5));
-    assert_eq!(json["layers"][0]["t"]["d"]["k"][0]["s"]["t"], json!("Hi\rthere"));
+    assert_eq!(
+        json["layers"][0]["t"]["d"]["k"][0]["s"]["t"],
+        json!("Hi\rthere")
+    );
     assert_eq!(json["fonts"]["list"][0]["fFamily"], json!("Inter"));
     assert!(compare_comps(&p, cid, &q, nc) > 10);
     compare_renders(&p, cid, &q, nc, 2.0 / 255.0);
     // As glyph shapes: the static look at time 0 survives (animators baked out).
-    p.comp_mut(cid).unwrap().layers[0].props.group_mut("text/animators").unwrap().children.clear();
-    let opts = ExportOptions { text_as_shapes: true, ..Default::default() };
+    p.comp_mut(cid).unwrap().layers[0]
+        .props
+        .group_mut("text/animators")
+        .unwrap()
+        .children
+        .clear();
+    let opts = ExportOptions {
+        text_as_shapes: true,
+        ..Default::default()
+    };
     let res = export_comp(&p, cid, &opts, &no_read).unwrap();
     assert_eq!(res.json["layers"][0]["ty"], json!(4));
     let mut q2 = Project::default();
-    let imp = import(&mut q2, res.to_string_compact().as_bytes(), "x", "", &mut |_| None).unwrap();
-    let (a, b) = (render_frame(&p, cid, s(0.5), 1.0), render_frame(&q2, imp.comp, s(0.5), 1.0));
-    let (ca, cb) = (a.data.iter().map(|px| px[3] as f64).sum::<f64>(), b.data.iter().map(|px| px[3] as f64).sum::<f64>());
-    assert!(ca > 50.0 && (ca - cb).abs() / ca < 0.05, "glyph coverage {ca} vs {cb}");
+    let imp = import(
+        &mut q2,
+        res.to_string_compact().as_bytes(),
+        "x",
+        "",
+        &mut |_| None,
+    )
+    .unwrap();
+    let (a, b) = (
+        render_frame(&p, cid, s(0.5), 1.0),
+        render_frame(&q2, imp.comp, s(0.5), 1.0),
+    );
+    let (ca, cb) = (
+        a.data.iter().map(|px| px[3] as f64).sum::<f64>(),
+        b.data.iter().map(|px| px[3] as f64).sum::<f64>(),
+    );
+    assert!(
+        ca > 50.0 && (ca - cb).abs() / ca < 0.05,
+        "glyph coverage {ca} vs {cb}"
+    );
 }
 
 #[test]
@@ -519,11 +813,21 @@ fn effects_expressions_and_warnings() {
     {
         let mut ids = Ids(&mut next);
         let fx = l.props.sub_mut("effects").unwrap();
-        for id in ["ec.blur.gaussian", "ec.color.tint", "ec.perspective.dropshadow", "ec.control.slider", "ec.distort.twirl"] {
+        for id in [
+            "ec.blur.gaussian",
+            "ec.color.tint",
+            "ec.perspective.dropshadow",
+            "ec.control.slider",
+            "ec.distort.twirl",
+        ] {
             if let Some(spec) = effectcraft_effects::find(id) {
-                let mut g = effectcraft_effects::instantiate(spec, &mut ids, spec.name, [80.0, 60.0]);
+                let mut g =
+                    effectcraft_effects::instantiate(spec, &mut ids, spec.name, [80.0, 60.0]);
                 if let Some(b) = g.get_mut("blurriness") {
-                    b.keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)), Keyframe::new(s(1.0), Value::Scalar(8.0))];
+                    b.keys = vec![
+                        Keyframe::new(s(0.0), Value::Scalar(0.0)),
+                        Keyframe::new(s(1.0), Value::Scalar(8.0)),
+                    ];
                 }
                 if let Some(o) = g.get_mut("opacity") {
                     o.value = Value::Scalar(40.0);
@@ -539,10 +843,20 @@ fn effects_expressions_and_warnings() {
         }
     }
     p.next_id = next;
-    l.props.prop_mut("transform/rotation").unwrap().expr = Some(Expression { text: "time * 90".into(), enabled: true });
+    l.props.prop_mut("transform/rotation").unwrap().expr = Some(Expression {
+        text: "time * 90".into(),
+        enabled: true,
+    });
     push(&mut p, cid, l);
     let c = comp(&p, cid);
-    let cam = build::layer(&mut p, &c, "Camera 1", LayerSource::Camera, (c.width, c.height), None);
+    let cam = build::layer(
+        &mut p,
+        &c,
+        "Camera 1",
+        LayerSource::Camera,
+        (c.width, c.height),
+        None,
+    );
     push(&mut p, cid, cam);
     // Without the expression flag: warned and dropped.
     let res = export_comp(&p, cid, &ExportOptions::default(), &no_read).unwrap();
@@ -552,23 +866,52 @@ fn effects_expressions_and_warnings() {
     assert!(w.contains("effect not supported by Lottie"), "{w}");
     assert!(w.contains("cameras and lights"), "{w}");
     // With it: `x` strings, and supported effects survive.
-    let opts = ExportOptions { include_expressions: true, ..Default::default() };
+    let opts = ExportOptions {
+        include_expressions: true,
+        ..Default::default()
+    };
     let res = export_comp(&p, cid, &opts, &no_read).unwrap();
     assert_eq!(res.json["layers"][0]["ks"]["r"]["x"], json!("time * 90"));
     let ef = res.json["layers"][0]["ef"].as_array().unwrap();
-    assert_eq!(ef.iter().map(|e| e["ty"].as_u64().unwrap()).collect::<Vec<_>>(), vec![29, 20, 25, 5]);
+    assert_eq!(
+        ef.iter()
+            .map(|e| e["ty"].as_u64().unwrap())
+            .collect::<Vec<_>>(),
+        vec![29, 20, 25, 5]
+    );
     assert!((ef[2]["ef"][1]["v"]["k"].as_f64().unwrap() - 40.0 * 2.55).abs() < 1e-9);
     let mut q = Project::default();
-    let imp = import(&mut q, res.to_string_compact().as_bytes(), "x", "", &mut |_| None).unwrap();
+    let imp = import(
+        &mut q,
+        res.to_string_compact().as_bytes(),
+        "x",
+        "",
+        &mut |_| None,
+    )
+    .unwrap();
     let lq = &q.comp(imp.comp).unwrap().layers[0];
     let fxq: Vec<&PropGroup> = lq.effects().unwrap().groups().collect();
     assert_eq!(fxq.len(), 4);
     assert!((fxq[2].get("opacity").unwrap().value.as_f64() - 40.0).abs() < 1e-9);
     assert_eq!(fxq[3].get("slider").unwrap().value, Value::Scalar(12.5));
-    assert_eq!(lq.props.prop("transform/rotation").unwrap().expr.as_ref().unwrap().text, "time * 90");
+    assert_eq!(
+        lq.props
+            .prop("transform/rotation")
+            .unwrap()
+            .expr
+            .as_ref()
+            .unwrap()
+            .text,
+        "time * 90"
+    );
     let lp = &p.comp(cid).unwrap().layers[0];
     let times = sample_times(p.comp(cid).unwrap());
-    compare_tree(lp.effects().unwrap().groups().next().unwrap(), fxq[0], &times, "blur");
+    compare_tree(
+        lp.effects().unwrap().groups().next().unwrap(),
+        fxq[0],
+        &times,
+        "blur",
+    );
 }
 
 #[test]
@@ -601,27 +944,53 @@ fn images_embed_as_base64_and_come_back() {
         }),
     );
     let c = comp(&p, cid);
-    let l = build::layer(&mut p, &c, "pic.png", LayerSource::Footage { item: fid }, (64, 32), None);
+    let l = build::layer(
+        &mut p,
+        &c,
+        "pic.png",
+        LayerSource::Footage { item: fid },
+        (64, 32),
+        None,
+    );
     push(&mut p, cid, l);
     let bytes = png.clone();
     let read = move |path: &str| (path == "/virtual/pic.png").then(|| bytes.clone());
     let res = export_comp(&p, cid, &ExportOptions::default(), &read).unwrap();
     let asset = &res.json["assets"][0];
-    assert!(asset["p"].as_str().unwrap().starts_with("data:image/png;base64,"));
+    assert!(
+        asset["p"]
+            .as_str()
+            .unwrap()
+            .starts_with("data:image/png;base64,")
+    );
     assert_eq!(res.json["layers"][0]["ty"], json!(2));
     let mut q = Project::default();
     let mut stored = vec![];
-    let imp = import(&mut q, res.to_string_compact().as_bytes(), "x", "", &mut |img| {
-        stored.push(img.bytes.clone());
-        Some(format!("/tmp/{}.{}", img.id, img.ext))
-    })
+    let imp = import(
+        &mut q,
+        res.to_string_compact().as_bytes(),
+        "x",
+        "",
+        &mut |img| {
+            stored.push(img.bytes.clone());
+            Some(format!("/tmp/{}.{}", img.id, img.ext))
+        },
+    )
     .unwrap();
     assert_eq!(stored, vec![png]);
     let l = &q.comp(imp.comp).unwrap().layers[0];
-    let LayerSource::Footage { item } = l.source else { panic!("not footage") };
-    let ItemKind::Footage(f) = &q.item(item).unwrap().kind else { panic!() };
+    let LayerSource::Footage { item } = l.source else {
+        panic!("not footage")
+    };
+    let ItemKind::Footage(f) = &q.item(item).unwrap().kind else {
+        panic!()
+    };
     assert_eq!((f.width, f.height), (64, 32));
-    assert!(f.path.starts_with("/tmp/image_") && f.path.ends_with(".png"), "{}", f.path);
+    assert!(
+        f.path.starts_with("/tmp/image_") && f.path.ends_with(".png"),
+        "{}",
+        f.path
+    );
 }
 
 #[test]
@@ -643,7 +1012,8 @@ fn fixture(name: &str) -> (Project, ItemId, Vec<String>) {
     let path = format!("{}/tests/fixtures/{name}", env!("CARGO_MANIFEST_DIR"));
     let bytes = std::fs::read(&path).unwrap();
     let mut q = Project::default();
-    let imp = import(&mut q, &bytes, name, "", &mut |_| None).unwrap_or_else(|e| panic!("{name}: {e}"));
+    let imp =
+        import(&mut q, &bytes, name, "", &mut |_| None).unwrap_or_else(|e| panic!("{name}: {e}"));
     (q, imp.comp, imp.warnings)
 }
 
@@ -652,7 +1022,10 @@ fn fixture_bouncing_ball() {
     let (q, c, w) = fixture("bouncing-ball.json");
     assert!(w.is_empty(), "{w:?}");
     let comp = q.comp(c).unwrap();
-    assert_eq!((comp.width, comp.height, comp.frame_rate), (200, 200, FrameRate::FPS_30));
+    assert_eq!(
+        (comp.width, comp.height, comp.frame_rate),
+        (200, 200, FrameRate::FPS_30)
+    );
     let l = &comp.layers[0];
     let pos = l.props.prop("transform/position").unwrap();
     assert_eq!(pos.keys.len(), 3);
@@ -668,7 +1041,12 @@ fn fixture_shapes_and_gradients() {
     let l = &q.comp(c).unwrap().layers[0];
     let contents = l.props.sub("contents").unwrap();
     let g = contents.groups().next().unwrap();
-    let kinds: Vec<&str> = g.sub("contents").unwrap().groups().map(|x| x.match_id.as_str()).collect();
+    let kinds: Vec<&str> = g
+        .sub("contents")
+        .unwrap()
+        .groups()
+        .map(|x| x.match_id.as_str())
+        .collect();
     assert_eq!(kinds, ["star", "rect", "gfill", "stroke", "trim"]);
     assert!(not_blank(&q, c, s(0.5)));
 }
@@ -681,10 +1059,15 @@ fn fixture_precomp_matte_text() {
     assert_eq!(comp.layers.len(), 4);
     let matte = &comp.layers[0];
     assert!(!matte.switches.video);
-    assert_eq!(comp.layers[1].track_matte.map(|m| (m.layer, m.kind)), Some((matte.id, MatteKind::Alpha)));
+    assert_eq!(
+        comp.layers[1].track_matte.map(|m| (m.layer, m.kind)),
+        Some((matte.id, MatteKind::Alpha))
+    );
     assert!(matches!(comp.layers[1].source, LayerSource::Comp { .. }));
     assert_eq!(comp.layers[2].parent, Some(comp.layers[3].id));
-    let Value::Text(doc) = &comp.layers[2].props.prop("text/sourceText").unwrap().value else { panic!() };
+    let Value::Text(doc) = &comp.layers[2].props.prop("text/sourceText").unwrap().value else {
+        panic!()
+    };
     assert_eq!(doc.text, "Hello\nLottie");
     assert_eq!(doc.justify, effectcraft_keyframe::Justify::Center);
     assert!(not_blank(&q, c, s(0.5)));
@@ -702,7 +1085,14 @@ fn fixture_legacy_keyframes_and_masks() {
     assert_eq!(o.keys[1].value, Value::Scalar(100.0));
     let masks: Vec<_> = l.masks().unwrap().groups().collect();
     assert_eq!(masks.len(), 2);
-    assert!(matches!(masks[1].kind, GroupKind::Mask { mode: MaskMode::Subtract, inverted: true, .. }));
+    assert!(matches!(
+        masks[1].kind,
+        GroupKind::Mask {
+            mode: MaskMode::Subtract,
+            inverted: true,
+            ..
+        }
+    ));
     assert!(not_blank(&q, c, s(0.9)));
 }
 
@@ -710,8 +1100,20 @@ fn fixture_legacy_keyframes_and_masks() {
 fn text_style_runs_export_as_range_animators() {
     let (mut p, cid) = setup();
     let c = comp(&p, cid);
-    let mut l = build::layer(&mut p, &c, "Runs", LayerSource::Text, (c.width, c.height), None);
-    let mut doc = TextDoc { text: "Hello".into(), size: 30.0, fill: [1.0, 1.0, 1.0, 1.0], ..Default::default() };
+    let mut l = build::layer(
+        &mut p,
+        &c,
+        "Runs",
+        LayerSource::Text,
+        (c.width, c.height),
+        None,
+    );
+    let mut doc = TextDoc {
+        text: "Hello".into(),
+        size: 30.0,
+        fill: [1.0, 1.0, 1.0, 1.0],
+        ..Default::default()
+    };
     doc.apply_style(1..3, |st| {
         st.fill = [1.0, 0.0, 0.0, 1.0];
         st.baseline_shift = 6.0;
@@ -734,7 +1136,10 @@ fn text_style_runs_export_as_range_animators() {
 fn extreme_enum_numbers_do_not_overflow() {
     // Line cap / join / merge mode / text-selector enums are 1-based; a huge negative number
     // (-1e308 rounds to i64::MIN) overflowed the `- 1`.
-    let path = format!("{}/tests/fixtures/shapes-gradient.json", env!("CARGO_MANIFEST_DIR"));
+    let path = format!(
+        "{}/tests/fixtures/shapes-gradient.json",
+        env!("CARGO_MANIFEST_DIR")
+    );
     let mut doc: Json = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
     let mut hits = 0;
     fn patch(j: &mut Json, hits: &mut usize) {

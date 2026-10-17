@@ -17,7 +17,10 @@ pub fn qr_path(text: &str, r: Rect) -> Option<PathData> {
     let quiet = 2;
     let side = r.width().min(r.height());
     let m = side / (n + 2 * quiet) as f64;
-    let origin = Point::new(r.center().x - side / 2.0 + quiet as f64 * m, r.center().y - side / 2.0 + quiet as f64 * m);
+    let origin = Point::new(
+        r.center().x - side / 2.0 + quiet as f64 * m,
+        r.center().y - side / 2.0 + quiet as f64 * m,
+    );
     let mut subpaths = Vec::new();
     for y in 0..n {
         let mut x = 0;
@@ -32,7 +35,15 @@ pub fn qr_path(text: &str, r: Rect) -> Option<PathData> {
             }
             let (a, b) = (origin.x + x0 as f64 * m, origin.x + x as f64 * m);
             let (t, u) = (origin.y + y as f64 * m, origin.y + (y + 1) as f64 * m);
-            subpaths.push(SubPath::polyline(&[Point::new(a, t), Point::new(b, t), Point::new(b, u), Point::new(a, u)], true));
+            subpaths.push(SubPath::polyline(
+                &[
+                    Point::new(a, t),
+                    Point::new(b, t),
+                    Point::new(b, u),
+                    Point::new(a, u),
+                ],
+                true,
+            ));
         }
     }
     Some(PathData::new(subpaths))
@@ -40,7 +51,9 @@ pub fn qr_path(text: &str, r: Rect) -> Option<PathData> {
 
 /// The modules per side for `text` (the version's size), if it can be encoded.
 pub fn qr_size(text: &str) -> Option<i32> {
-    qrcodegen::QrCode::encode_text(text, ECC).ok().map(|q| q.size())
+    qrcodegen::QrCode::encode_text(text, ECC)
+        .ok()
+        .map(|q| q.size())
 }
 
 #[cfg(test)]

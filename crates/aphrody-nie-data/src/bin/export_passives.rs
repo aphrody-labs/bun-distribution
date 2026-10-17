@@ -36,8 +36,10 @@ fn default_data_root() -> String {
 
 fn main() {
     // Chemins par défaut (peuvent être surchargés par les args)
-    let data_root =
-        std::env::args().skip_while(|a| a != "--data").nth(1).unwrap_or_else(default_data_root);
+    let data_root = std::env::args()
+        .skip_while(|a| a != "--data")
+        .nth(1)
+        .unwrap_or_else(default_data_root);
 
     let out_path = std::env::args()
         .skip_while(|a| a != "--out")
@@ -77,7 +79,10 @@ fn main() {
     eprintln!("[export_passives] passive_skill_config → {passive_cfg:?}");
     let passive_root = read_json(&passive_cfg);
     let player = parse_player_passives(&passive_root, &text_fr, &text_en, &text_ja);
-    eprintln!("[export_passives] passives joueur parsés : {}", player.len());
+    eprintln!(
+        "[export_passives] passives joueur parsés : {}",
+        player.len()
+    );
 
     // ── 3. Textes team passives ───────────────────────────────────────────────
     let team_text_ja = load_text_json(
@@ -85,30 +90,52 @@ fn main() {
         "ja/soccer_team_passive_text",
         load_team_passive_texts,
     );
-    eprintln!("[export_passives] soccer_team_passive_text (ja) : {} entrées", team_text_ja.len());
+    eprintln!(
+        "[export_passives] soccer_team_passive_text (ja) : {} entrées",
+        team_text_ja.len()
+    );
 
     // ── 4. Parse des team passives ────────────────────────────────────────────
-    let team_cfg = find_cfg(&data_root, "common/gamedata/soccer", "soccer_team_passive_config_");
+    let team_cfg = find_cfg(
+        &data_root,
+        "common/gamedata/soccer",
+        "soccer_team_passive_config_",
+    );
     eprintln!("[export_passives] soccer_team_passive_config → {team_cfg:?}");
     let team_root = read_json(&team_cfg);
     let team = parse_team_passives(&team_root, &team_text_ja);
     eprintln!("[export_passives] team passives parsés : {}", team.len());
 
     // ── 5. Parse des lots ─────────────────────────────────────────────────────
-    let lot_cfg =
-        find_cfg(&data_root, "common/gamedata/character", "team_passive_lot_table_config_");
+    let lot_cfg = find_cfg(
+        &data_root,
+        "common/gamedata/character",
+        "team_passive_lot_table_config_",
+    );
     eprintln!("[export_passives] team_passive_lot_table_config → {lot_cfg:?}");
     let lot_root = read_json(&lot_cfg);
     let lots = parse_lots(&lot_root);
     eprintln!("[export_passives] lots parsés : {}", lots.len());
 
     // ── 6. Calcul des métriques ───────────────────────────────────────────────
-    let unique_effect_count =
-        player.iter().map(|p| p.effect_id.get()).collect::<BTreeSet<_>>().len();
-    let unique_string_id_count =
-        player.iter().map(|p| p.string_id.as_str()).collect::<BTreeSet<_>>().len();
+    let unique_effect_count = player
+        .iter()
+        .map(|p| p.effect_id.get())
+        .collect::<BTreeSet<_>>()
+        .len();
+    let unique_string_id_count = player
+        .iter()
+        .map(|p| p.string_id.as_str())
+        .collect::<BTreeSet<_>>()
+        .len();
 
-    let db = UnifiedPassiveDb { unique_effect_count, unique_string_id_count, player, team, lots };
+    let db = UnifiedPassiveDb {
+        unique_effect_count,
+        unique_string_id_count,
+        player,
+        team,
+        lots,
+    };
 
     // ── 7. Sérialisation JSON ─────────────────────────────────────────────────
     let json_val = build_json(&db);
@@ -172,12 +199,12 @@ where
             Err(e) => {
                 eprintln!("[export_passives] WARN parse {label}: {e}");
                 Default::default()
-            },
+            }
         },
         Err(e) => {
             eprintln!("[export_passives] WARN lecture {label} ({path:?}): {e}");
             Default::default()
-        },
+        }
     }
 }
 

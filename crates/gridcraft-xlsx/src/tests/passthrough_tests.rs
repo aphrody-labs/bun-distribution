@@ -21,11 +21,23 @@ const CUSTOM_XML: &str = r#"<?xml version="1.0"?><root xmlns="urn:example:data">
 const CUSTOM_PROPS: &str = r#"<?xml version="1.0"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"/>"#;
 
 fn rels(items: &[(&str, &str, &str)]) -> String {
-    let mut s = String::from(r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">"#);
+    let mut s = String::from(
+        r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">"#,
+    );
     for (id, ty, target) in items {
-        let ty = if ty.starts_with("http") { ty.to_string() } else { format!("{NS_R}/{ty}") };
-        let ext = if target.contains("://") { r#" TargetMode="External""# } else { "" };
-        s.push_str(&format!(r#"<Relationship Id="{id}" Type="{ty}" Target="{target}"{ext}/>"#));
+        let ty = if ty.starts_with("http") {
+            ty.to_string()
+        } else {
+            format!("{NS_R}/{ty}")
+        };
+        let ext = if target.contains("://") {
+            r#" TargetMode="External""#
+        } else {
+            ""
+        };
+        s.push_str(&format!(
+            r#"<Relationship Id="{id}" Type="{ty}" Target="{target}"{ext}/>"#
+        ));
     }
     s.push_str("</Relationships>");
     s
@@ -60,9 +72,14 @@ fn rich_package_with(content_types: &str, twin: bool) -> Vec<u8> {
     let sheet2 = if twin {
         sheet1.clone()
     } else {
-        format!(r#"<?xml version="1.0"?><worksheet xmlns="{NS_MAIN}"><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#)
+        format!(
+            r#"<?xml version="1.0"?><worksheet xmlns="{NS_MAIN}"><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#
+        )
     };
-    let root_rels = rels(&[("rId1", "officeDocument", "xl/workbook.xml"), ("rId2", "custom-properties", "docProps/custom.xml")]);
+    let root_rels = rels(&[
+        ("rId1", "officeDocument", "xl/workbook.xml"),
+        ("rId2", "custom-properties", "docProps/custom.xml"),
+    ]);
     let wb_rels = rels(&[
         ("rId1", "worksheet", "worksheets/sheet1.xml"),
         ("rId2", "worksheet", "worksheets/sheet2.xml"),
@@ -71,16 +88,28 @@ fn rich_package_with(content_types: &str, twin: bool) -> Vec<u8> {
         ("rId5", "connections", "connections.xml"),
     ]);
     let sheet1_rels = rels(&[
-        ("rId1", "printerSettings", "../printerSettings/printerSettings1.bin"),
+        (
+            "rId1",
+            "printerSettings",
+            "../printerSettings/printerSettings1.bin",
+        ),
         ("rId2", "vmlDrawing", "../drawings/vmlDrawing1.vml"),
         ("rId3", "oleObject", "../embeddings/oleObject1.bin"),
         ("rId4", "image", "../media/image1.emf"),
-        ("rId5", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/ctrlProp", "../ctrlProps/ctrlProp1.xml"),
+        (
+            "rId5",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/ctrlProp",
+            "../ctrlProps/ctrlProp1.xml",
+        ),
         ("rId6", "queryTable", "../queryTables/queryTable1.xml"),
         ("rId7", "comments", "../comments1.xml"),
     ]);
     let custom_rels = rels(&[("rId1", "customXmlProps", "itemProps1.xml")]);
-    let link_rels = rels(&[("rId1", "externalLinkPath", "file:///C:/never/opened/Book2.xlsx")]);
+    let link_rels = rels(&[(
+        "rId1",
+        "externalLinkPath",
+        "file:///C:/never/opened/Book2.xlsx",
+    )]);
     let vml_rels = rels(&[("rId1", "image", "../media/image1.emf")]);
     let item_props = r#"<?xml version="1.0"?><ds:datastoreItem ds:itemID="{11111111-2222-3333-4444-555555555555}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml"/>"#;
     let mut files: Vec<(&str, &[u8])> = vec![
@@ -91,10 +120,16 @@ fn rich_package_with(content_types: &str, twin: bool) -> Vec<u8> {
         ("xl/_rels/workbook.xml.rels", wb_rels.as_bytes()),
         ("xl/worksheets/sheet1.xml", sheet1.as_bytes()),
         ("xl/worksheets/sheet2.xml", sheet2.as_bytes()),
-        ("xl/worksheets/_rels/sheet1.xml.rels", sheet1_rels.as_bytes()),
+        (
+            "xl/worksheets/_rels/sheet1.xml.rels",
+            sheet1_rels.as_bytes(),
+        ),
         ("xl/printerSettings/printerSettings1.bin", PRINTER),
         ("xl/drawings/vmlDrawing1.vml", VML.as_bytes()),
-        ("xl/drawings/_rels/vmlDrawing1.vml.rels", vml_rels.as_bytes()),
+        (
+            "xl/drawings/_rels/vmlDrawing1.vml.rels",
+            vml_rels.as_bytes(),
+        ),
         ("xl/embeddings/oleObject1.bin", OLE),
         ("xl/media/image1.emf", EMF),
         ("xl/ctrlProps/ctrlProp1.xml", CTRL_PROP.as_bytes()),
@@ -103,12 +138,21 @@ fn rich_package_with(content_types: &str, twin: bool) -> Vec<u8> {
         ("customXml/item1.xml", CUSTOM_XML.as_bytes()),
         ("customXml/_rels/item1.xml.rels", custom_rels.as_bytes()),
         ("customXml/itemProps1.xml", item_props.as_bytes()),
-        ("xl/externalLinks/externalLink1.xml", EXTERNAL_LINK.as_bytes()),
-        ("xl/externalLinks/_rels/externalLink1.xml.rels", link_rels.as_bytes()),
+        (
+            "xl/externalLinks/externalLink1.xml",
+            EXTERNAL_LINK.as_bytes(),
+        ),
+        (
+            "xl/externalLinks/_rels/externalLink1.xml.rels",
+            link_rels.as_bytes(),
+        ),
         ("xl/connections.xml", CONNECTIONS.as_bytes()),
     ];
     if twin {
-        files.push(("xl/worksheets/_rels/sheet2.xml.rels", sheet1_rels.as_bytes()));
+        files.push((
+            "xl/worksheets/_rels/sheet2.xml.rels",
+            sheet1_rels.as_bytes(),
+        ));
     }
     make_zip(&files)
 }
@@ -134,47 +178,88 @@ impl Unpacked {
         Unpacked { parts }
     }
     fn text(&self, name: &str) -> String {
-        String::from_utf8(self.parts.get(name).unwrap_or_else(|| panic!("no part {name}")).clone()).unwrap()
+        String::from_utf8(
+            self.parts
+                .get(name)
+                .unwrap_or_else(|| panic!("no part {name}"))
+                .clone(),
+        )
+        .unwrap()
     }
     fn rels(&self, part: &str) -> RelList {
         let (dir, file) = split_dir(part);
-        let name = if dir.is_empty() { format!("_rels/{file}.rels") } else { format!("{dir}/_rels/{file}.rels") };
-        let Some(b) = self.parts.get(&name) else { return vec![] };
+        let name = if dir.is_empty() {
+            format!("_rels/{file}.rels")
+        } else {
+            format!("{dir}/_rels/{file}.rels")
+        };
+        let Some(b) = self.parts.get(&name) else {
+            return vec![];
+        };
         let root = xml::parse(b).unwrap();
         root.kids("Relationship")
             .map(|r| {
                 let ext = r.attr("TargetMode") == Some("External");
                 let t = r.attr("Target").unwrap();
-                (r.attr("Id").unwrap().into(), r.attr("Type").unwrap().into(), if ext { t.into() } else { resolve(dir, t) }, ext)
+                (
+                    r.attr("Id").unwrap().into(),
+                    r.attr("Type").unwrap().into(),
+                    if ext { t.into() } else { resolve(dir, t) },
+                    ext,
+                )
             })
             .collect()
     }
     fn target(&self, part: &str, id: &str) -> (String, String) {
-        let r = self.rels(part).into_iter().find(|r| r.0 == id).unwrap_or_else(|| panic!("{part}: no relationship {id}"));
+        let r = self
+            .rels(part)
+            .into_iter()
+            .find(|r| r.0 == id)
+            .unwrap_or_else(|| panic!("{part}: no relationship {id}"));
         (r.1, r.2)
     }
     /// Every part has a content type, every internal relationship target exists, rel ids are
     /// unique per part.
     fn assert_valid(&self) {
         let types = xml::parse(self.parts.get("[Content_Types].xml").unwrap()).unwrap();
-        let defaults: Vec<String> = types.kids("Default").map(|d| d.attr("Extension").unwrap().to_ascii_lowercase()).collect();
-        let overrides: Vec<String> = types.kids("Override").map(|d| normalize(d.attr("PartName").unwrap())).collect();
+        let defaults: Vec<String> = types
+            .kids("Default")
+            .map(|d| d.attr("Extension").unwrap().to_ascii_lowercase())
+            .collect();
+        let overrides: Vec<String> = types
+            .kids("Override")
+            .map(|d| normalize(d.attr("PartName").unwrap()))
+            .collect();
         let mut seen_override = std::collections::HashSet::new();
         for o in &overrides {
             assert!(seen_override.insert(o.clone()), "duplicate override {o}");
-            assert!(self.parts.keys().any(|p| normalize(p) == *o), "override for a missing part {o}");
+            assert!(
+                self.parts.keys().any(|p| normalize(p) == *o),
+                "override for a missing part {o}"
+            );
         }
         for name in self.parts.keys().filter(|n| *n != "[Content_Types].xml") {
             let ext = name.rsplit('.').next().unwrap().to_ascii_lowercase();
-            assert!(overrides.contains(&normalize(name)) || defaults.contains(&ext), "{name} has no content type");
+            assert!(
+                overrides.contains(&normalize(name)) || defaults.contains(&ext),
+                "{name} has no content type"
+            );
             if name.ends_with(".rels") {
-                let source = name.replace("_rels/", "").trim_end_matches(".rels").to_string();
+                let source = name
+                    .replace("_rels/", "")
+                    .trim_end_matches(".rels")
+                    .to_string();
                 let rels = self.rels(&source);
                 let mut ids = std::collections::HashSet::new();
                 for (id, _, target, ext) in rels {
                     assert!(ids.insert(id.clone()), "{name}: duplicate id {id}");
                     if !ext {
-                        assert!(self.parts.keys().any(|p| normalize(p) == normalize(&target)), "{name}: {id} → missing {target}");
+                        assert!(
+                            self.parts
+                                .keys()
+                                .any(|p| normalize(p) == normalize(&target)),
+                            "{name}: {id} → missing {target}"
+                        );
                     }
                 }
             }
@@ -182,15 +267,25 @@ impl Unpacked {
     }
     /// The part holding exactly `data`.
     fn find(&self, data: &[u8]) -> Vec<&String> {
-        self.parts.iter().filter(|(_, v)| v.as_slice() == data).map(|(k, _)| k).collect()
+        self.parts
+            .iter()
+            .filter(|(_, v)| v.as_slice() == data)
+            .map(|(k, _)| k)
+            .collect()
     }
 }
 
 /// The value of attribute `attr` of the first `<tag …>` in `x` (`r:id` of `<pageSetup`).
 fn attr_of(x: &str, tag: &str, attr: &str) -> String {
-    let i = x.find(&format!("<{tag} ")).unwrap_or_else(|| panic!("no <{tag}> in {x}"));
+    let i = x
+        .find(&format!("<{tag} "))
+        .unwrap_or_else(|| panic!("no <{tag}> in {x}"));
     let head = &x[i..i + x[i..].find('>').unwrap()];
-    let j = head.find(&format!(" {attr}=\"")).unwrap_or_else(|| panic!("no {attr} in {head}")) + attr.len() + 3;
+    let j = head
+        .find(&format!(" {attr}=\""))
+        .unwrap_or_else(|| panic!("no {attr} in {head}"))
+        + attr.len()
+        + 3;
     head[j..j + head[j..].find('"').unwrap()].to_string()
 }
 
@@ -207,7 +302,11 @@ fn unmodelled_parts_survive_a_round_trip() {
     assert!(wb.preserved.is_some(), "{:?}", rep.warnings);
     let data = wb.sheet(0).unwrap();
     assert!(data.preserved.is_some(), "{:?}", rep.warnings);
-    assert!(!rep.warnings.iter().any(|w| w.contains("dropped")), "{:?}", rep.warnings);
+    assert!(
+        !rep.warnings.iter().any(|w| w.contains("dropped")),
+        "{:?}",
+        rep.warnings
+    );
     assert_eq!(data.comments.len(), 1, "the note is modelled");
 
     let out = write_xlsx(&wb).unwrap();
@@ -225,10 +324,20 @@ fn unmodelled_parts_survive_a_round_trip() {
         QUERY_TABLE.as_bytes(),
         CTRL_PROP.as_bytes(),
     ] {
-        assert_eq!(u.find(d).len(), 1, "kept part missing or duplicated: {}", String::from_utf8_lossy(d));
+        assert_eq!(
+            u.find(d).len(),
+            1,
+            "kept part missing or duplicated: {}",
+            String::from_utf8_lossy(d)
+        );
     }
     // Package root: custom properties.
-    assert!(u.rels("").iter().any(|r| r.1.ends_with("/custom-properties") && u.parts.get(&r.2).is_some_and(|b| b == CUSTOM_PROPS.as_bytes())));
+    assert!(u.rels("").iter().any(|r| {
+        r.1.ends_with("/custom-properties")
+            && u.parts
+                .get(&r.2)
+                .is_some_and(|b| b == CUSTOM_PROPS.as_bytes())
+    }));
     // Workbook: external link in <externalReferences>, its path kept as an external target.
     let wbx = u.text("xl/workbook.xml");
     let link_id = attr_of(&wbx, "externalReference", "r:id");
@@ -237,12 +346,19 @@ fn unmodelled_parts_survive_a_round_trip() {
     assert_eq!(u.parts.get(&link).unwrap(), EXTERNAL_LINK.as_bytes());
     let path = u.rels(&link);
     assert_eq!(path.len(), 1);
-    assert_eq!((path[0].0.as_str(), path[0].2.as_str(), path[0].3), ("rId1", "file:///C:/never/opened/Book2.xlsx", true));
+    assert_eq!(
+        (path[0].0.as_str(), path[0].2.as_str(), path[0].3),
+        ("rId1", "file:///C:/never/opened/Book2.xlsx", true)
+    );
     assert!(wbx.find("</sheets>").unwrap() < wbx.find("<externalReferences").unwrap());
     assert!(wbx.find("<externalReferences").unwrap() < wbx.find("<definedNames").unwrap());
     // The custom XML item keeps its properties part.
     let item = u.find(CUSTOM_XML.as_bytes())[0].clone();
-    assert!(u.rels(&item).iter().any(|r| r.1.ends_with("/customXmlProps")));
+    assert!(
+        u.rels(&item)
+            .iter()
+            .any(|r| r.1.ends_with("/customXmlProps"))
+    );
     // Formulas using the link are written as they were.
     let sheet = sheet_part(&u, "Data");
     let sx = u.text(&sheet);
@@ -259,31 +375,59 @@ fn unmodelled_parts_survive_a_round_trip() {
     let preview = attr_of(&sx, "objectPr", "r:id");
     assert_eq!(u.parts.get(&u.target(&sheet, &preview).1).unwrap(), EMF);
     // Namespace declarations travel with the fragment.
-    assert_eq!(attr_of(&sx, "mc:AlternateContent", "xmlns:mc"), "http://schemas.openxmlformats.org/markup-compatibility/2006");
-    assert_eq!(attr_of(&sx, "mc:AlternateContent", "xmlns:x14"), "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main");
+    assert_eq!(
+        attr_of(&sx, "mc:AlternateContent", "xmlns:mc"),
+        "http://schemas.openxmlformats.org/markup-compatibility/2006"
+    );
+    assert_eq!(
+        attr_of(&sx, "mc:AlternateContent", "xmlns:x14"),
+        "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"
+    );
     // The form control.
     let ctrl = attr_of(&sx, "control", "r:id");
-    assert_eq!(u.parts.get(&u.target(&sheet, &ctrl).1).unwrap(), CTRL_PROP.as_bytes());
+    assert_eq!(
+        u.parts.get(&u.target(&sheet, &ctrl).1).unwrap(),
+        CTRL_PROP.as_bytes()
+    );
     // Schema order: pageSetup < legacyDrawing < oleObjects < controls.
     let pos = |t: &str| sx.find(t).unwrap_or_else(|| panic!("no {t}"));
-    assert!(pos("<pageSetup") < pos("<legacyDrawing") && pos("<legacyDrawing") < pos("<oleObjects") && pos("<oleObjects") < pos("<controls"));
+    assert!(
+        pos("<pageSetup") < pos("<legacyDrawing")
+            && pos("<legacyDrawing") < pos("<oleObjects")
+            && pos("<oleObjects") < pos("<controls")
+    );
     // Query table: a sheet relationship only.
-    assert!(u.rels(&sheet).iter().any(|r| r.1.ends_with("/queryTable") && u.parts.get(&r.2).is_some_and(|b| b == QUERY_TABLE.as_bytes())));
+    assert!(u.rels(&sheet).iter().any(|r| {
+        r.1.ends_with("/queryTable")
+            && u.parts
+                .get(&r.2)
+                .is_some_and(|b| b == QUERY_TABLE.as_bytes())
+    }));
     // One VML drawing: the kept control shapes plus GridCraft's note, in a fresh shape block.
     let vml_id = attr_of(&sx, "legacyDrawing", "r:id");
     let vml_part = u.target(&sheet, &vml_id).1;
     let vml = u.text(&vml_part);
     assert!(vml.contains("_x0000_s1025") && vml.contains("_x0000_s1026"));
-    assert!(!vml.contains("old note") && !vml.contains("_x0000_s1027"), "the source's note shape is replaced");
+    assert!(
+        !vml.contains("old note") && !vml.contains("_x0000_s1027"),
+        "the source's note shape is replaced"
+    );
     assert_eq!(vml.matches("ObjectType=\"Note\"").count(), 1);
-    assert!(vml.contains("_x0000_s2049") && vml.contains("data=\"1,2\""), "{vml}");
+    assert!(
+        vml.contains("_x0000_s2049") && vml.contains("data=\"1,2\""),
+        "{vml}"
+    );
     let img = u.rels(&vml_part);
     assert_eq!(img.len(), 1);
     assert_eq!(u.parts.get(&img[0].2).unwrap(), EMF);
 
     // Reading the output keeps the same content again.
     let (wb2, rep2) = read_xlsx(&out).unwrap();
-    assert!(!rep2.warnings.iter().any(|w| w.contains("dropped")), "{:?}", rep2.warnings);
+    assert!(
+        !rep2.warnings.iter().any(|w| w.contains("dropped")),
+        "{:?}",
+        rep2.warnings
+    );
     let a = wb.sheet(0).unwrap().preserved.as_deref().unwrap();
     let b = wb2.sheet(0).unwrap().preserved.as_deref().unwrap();
     let mut da: Vec<&[u8]> = a.parts.iter().map(|p| &*p.data).collect();
@@ -292,7 +436,10 @@ fn unmodelled_parts_survive_a_round_trip() {
     db.sort();
     assert_eq!(da, db);
     assert_eq!(a.elements.len(), b.elements.len());
-    assert_eq!(wb.preserved.as_deref().unwrap().parts.len(), wb2.preserved.as_deref().unwrap().parts.len());
+    assert_eq!(
+        wb.preserved.as_deref().unwrap().parts.len(),
+        wb2.preserved.as_deref().unwrap().parts.len()
+    );
     u.assert_valid();
 }
 
@@ -304,28 +451,55 @@ fn edited_workbooks_keep_consistent_relationships() {
     let s = wb.sheet_mut(1).unwrap();
     s.name = "Renamed".into();
     s.comments.clear();
-    s.set_value(gridcraft_core::CellRef::new(5, 5), gridcraft_core::Value::Number(3.0));
+    s.set_value(
+        gridcraft_core::CellRef::new(5, 5),
+        gridcraft_core::Value::Number(3.0),
+    );
     let u = Unpacked::new(&write_xlsx(&wb).unwrap());
     u.assert_valid();
     let sheet = sheet_part(&u, "Renamed");
     assert_eq!(sheet, "xl/worksheets/sheet2.xml");
     let sx = u.text(&sheet);
-    assert_eq!(u.parts.get(&u.target(&sheet, &attr_of(&sx, "pageSetup", "r:id")).1).unwrap(), PRINTER);
-    assert_eq!(u.parts.get(&u.target(&sheet, &attr_of(&sx, "control", "r:id")).1).unwrap(), CTRL_PROP.as_bytes());
+    assert_eq!(
+        u.parts
+            .get(&u.target(&sheet, &attr_of(&sx, "pageSetup", "r:id")).1)
+            .unwrap(),
+        PRINTER
+    );
+    assert_eq!(
+        u.parts
+            .get(&u.target(&sheet, &attr_of(&sx, "control", "r:id")).1)
+            .unwrap(),
+        CTRL_PROP.as_bytes()
+    );
     // Without notes the kept VML is written on its own, still without the old note.
     let vml = u.text(&u.target(&sheet, &attr_of(&sx, "legacyDrawing", "r:id")).1);
     assert!(vml.contains("_x0000_s1026") && !vml.contains("ObjectType=\"Note\""));
-    assert!(!u.text("xl/worksheets/sheet1.xml").contains("pageSetup orientation=\"landscape\" r:id"));
+    assert!(
+        !u.text("xl/worksheets/sheet1.xml")
+            .contains("pageSetup orientation=\"landscape\" r:id")
+    );
 
     // Deleting the sheet drops its content; workbook-level content stays.
     wb.sheets.remove(1);
     wb.names.clear();
     let u = Unpacked::new(&write_xlsx(&wb).unwrap());
     u.assert_valid();
-    for d in [PRINTER, OLE, EMF, QUERY_TABLE.as_bytes(), CTRL_PROP.as_bytes()] {
+    for d in [
+        PRINTER,
+        OLE,
+        EMF,
+        QUERY_TABLE.as_bytes(),
+        CTRL_PROP.as_bytes(),
+    ] {
         assert!(u.find(d).is_empty());
     }
-    for d in [CUSTOM_XML.as_bytes(), EXTERNAL_LINK.as_bytes(), CONNECTIONS.as_bytes(), CUSTOM_PROPS.as_bytes()] {
+    for d in [
+        CUSTOM_XML.as_bytes(),
+        EXTERNAL_LINK.as_bytes(),
+        CONNECTIONS.as_bytes(),
+        CUSTOM_PROPS.as_bytes(),
+    ] {
         assert_eq!(u.find(d).len(), 1);
     }
 }
@@ -337,22 +511,44 @@ fn printer_settings_and_page_setup_id_survive_save() {
     let bin: Vec<u8> = (0..=255u8).cycle().take(1024).collect();
     let pkg = super::minimal(
         r#"<sheetData><row r="1"><c r="A1"><v>42.1</v></c></row></sheetData><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/><pageSetup orientation="landscape" r:id="rIdPs1"/>"#,
-        &[("xl/worksheets/_rels/sheet1.xml.rels", &rels(&[("rIdPs1", "printerSettings", "../printerSettings/printerSettings1.bin")]))],
+        &[(
+            "xl/worksheets/_rels/sheet1.xml.rels",
+            &rels(&[(
+                "rIdPs1",
+                "printerSettings",
+                "../printerSettings/printerSettings1.bin",
+            )]),
+        )],
         "",
         "",
     );
     // Swap in content types that know `.bin`, and add the binary part.
     let mut u = Unpacked::new(&pkg);
-    u.parts.insert("[Content_Types].xml".into(), ct.as_bytes().to_vec());
-    u.parts.insert("xl/printerSettings/printerSettings1.bin".into(), bin.clone());
-    let list: Vec<(&str, &[u8])> = u.parts.iter().map(|(k, v)| (k.as_str(), v.as_slice())).collect();
+    u.parts
+        .insert("[Content_Types].xml".into(), ct.as_bytes().to_vec());
+    u.parts.insert(
+        "xl/printerSettings/printerSettings1.bin".into(),
+        bin.clone(),
+    );
+    let list: Vec<(&str, &[u8])> = u
+        .parts
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_slice()))
+        .collect();
     let (wb, rep) = read_xlsx(&make_zip(&list)).unwrap();
-    assert!(rep.warnings.iter().all(|w| !w.contains("printer")), "{:?}", rep.warnings);
+    assert!(
+        rep.warnings.iter().all(|w| !w.contains("printer")),
+        "{:?}",
+        rep.warnings
+    );
     let out = Unpacked::new(&write_xlsx(&wb).unwrap());
     out.assert_valid();
     let sx = out.text("xl/worksheets/sheet1.xml");
     assert!(sx.contains("orientation=\"landscape\""));
-    let (ty, target) = out.target("xl/worksheets/sheet1.xml", &attr_of(&sx, "pageSetup", "r:id"));
+    let (ty, target) = out.target(
+        "xl/worksheets/sheet1.xml",
+        &attr_of(&sx, "pageSetup", "r:id"),
+    );
     assert!(ty.ends_with("/printerSettings"));
     assert_eq!(target, "xl/printerSettings/printerSettings1.bin");
     assert_eq!(out.parts.get(&target).unwrap(), &bin);
@@ -360,7 +556,10 @@ fn printer_settings_and_page_setup_id_survive_save() {
 
 #[test]
 fn damaged_kept_content_is_dropped_without_failing_the_read() {
-    let ct = CONTENT_TYPES.replace("</Types>", r#"<Override PartName="/customXml/item2.xml" ContentType="application/xml"/></Types>"#);
+    let ct = CONTENT_TYPES.replace(
+        "</Types>",
+        r#"<Override PartName="/customXml/item2.xml" ContentType="application/xml"/></Types>"#,
+    );
     let workbook = format!(
         r#"<?xml version="1.0"?><workbook xmlns="{NS_MAIN}" xmlns:r="{NS_R}"><sheets><sheet name="Data" sheetId="1" r:id="rId1"/></sheets><externalReferences><externalReference r:id="rId3"/><externalReference r:id="rId99"/></externalReferences></workbook>"#
     );
@@ -390,7 +589,10 @@ fn damaged_kept_content_is_dropped_without_failing_the_read() {
         ("xl/_rels/workbook.xml.rels", wb_rels.as_bytes()),
         ("xl/worksheets/sheet1.xml", sheet.as_bytes()),
         ("xl/worksheets/_rels/sheet1.xml.rels", sheet_rels.as_bytes()),
-        ("xl/externalLinks/externalLink1.xml", EXTERNAL_LINK.as_bytes()),
+        (
+            "xl/externalLinks/externalLink1.xml",
+            EXTERNAL_LINK.as_bytes(),
+        ),
         ("customXml/item1.xml", CUSTOM_XML.as_bytes()),
         ("customXml/_rels/item1.xml.rels", cyclic.as_bytes()),
         ("customXml/itemProps1.xml", b"<p/>"),
@@ -404,7 +606,10 @@ fn damaged_kept_content_is_dropped_without_failing_the_read() {
     let w = rep.warnings.join("\n");
     assert!(w.contains("customXml/missing.xml is missing"), "{w}");
     assert!(w.contains("refers to worksheet"), "{w}");
-    assert!(w.contains("links to external workbooks were dropped"), "a link without a part drops all links: {w}");
+    assert!(
+        w.contains("links to external workbooks were dropped"),
+        "a link without a part drops all links: {w}"
+    );
     assert!(w.contains("printer settings were dropped"), "{w}");
     assert!(w.contains("dropped: the sheet has no VML drawing"), "{w}");
     let p = wb.preserved.as_deref().unwrap();
@@ -423,11 +628,15 @@ fn damaged_kept_content_is_dropped_without_failing_the_read() {
 fn oversized_kept_parts_are_dropped() {
     let big = vec![0u8; crate::passthrough::MAX_KEPT_PART as usize + 1];
     let ct = CONTENT_TYPES;
-    let wb_rels = rels(&[("rId1", "worksheet", "worksheets/sheet1.xml"), ("rId2", "customXml", "../customXml/item1.xml")]);
+    let wb_rels = rels(&[
+        ("rId1", "worksheet", "worksheets/sheet1.xml"),
+        ("rId2", "customXml", "../customXml/item1.xml"),
+    ]);
     let workbook = format!(
         r#"<?xml version="1.0"?><workbook xmlns="{NS_MAIN}" xmlns:r="{NS_R}"><sheets><sheet name="A" sheetId="1" r:id="rId1"/></sheets></workbook>"#
     );
-    let sheet = format!(r#"<?xml version="1.0"?><worksheet xmlns="{NS_MAIN}"><sheetData/></worksheet>"#);
+    let sheet =
+        format!(r#"<?xml version="1.0"?><worksheet xmlns="{NS_MAIN}"><sheetData/></worksheet>"#);
     let bytes = make_zip(&[
         ("[Content_Types].xml", ct.as_bytes()),
         ("_rels/.rels", super::ROOT_RELS.as_bytes()),
@@ -439,22 +648,42 @@ fn oversized_kept_parts_are_dropped() {
     drop(big);
     let (wb, rep) = read_xlsx(&bytes).unwrap();
     assert!(wb.preserved.is_none());
-    assert!(rep.warnings.iter().any(|w| w.contains("customXml") && w.contains("dropped")), "{:?}", rep.warnings);
+    assert!(
+        rep.warnings
+            .iter()
+            .any(|w| w.contains("customXml") && w.contains("dropped")),
+        "{:?}",
+        rep.warnings
+    );
 }
 
 #[test]
 fn kept_content_types_are_escaped_on_save() {
     // A content type holding `"` and `<` (legal once unescaped by the XML reader) must not break
     // out of the attribute in the saved [Content_Types].xml.
-    let hostile = r#"application/x-test&quot; PartName=&quot;/x&quot;/&gt;&lt;Default Extension=&quot;evil"#;
-    let ct = CONTENT_TYPES.replace("application/vnd.openxmlformats-officedocument.customXmlProperties+xml", hostile);
+    let hostile =
+        r#"application/x-test&quot; PartName=&quot;/x&quot;/&gt;&lt;Default Extension=&quot;evil"#;
+    let ct = CONTENT_TYPES.replace(
+        "application/vnd.openxmlformats-officedocument.customXmlProperties+xml",
+        hostile,
+    );
     let (wb, rep) = read_xlsx(&rich_package_with(&ct, false)).unwrap();
     assert!(wb.preserved.is_some(), "{:?}", rep.warnings);
     let u = Unpacked::new(&write_xlsx(&wb).unwrap());
     let types = xml::parse(u.text("[Content_Types].xml").as_bytes()).unwrap();
-    assert!(!types.kids("Default").any(|d| d.attr("Extension") == Some("evil")));
-    let item = types.kids("Override").find(|o| o.attr("PartName") == Some("/customXml/itemProps1.xml")).unwrap();
-    assert_eq!(item.attr("ContentType"), Some(r#"application/x-test" PartName="/x"/><Default Extension="evil"#));
+    assert!(
+        !types
+            .kids("Default")
+            .any(|d| d.attr("Extension") == Some("evil"))
+    );
+    let item = types
+        .kids("Override")
+        .find(|o| o.attr("PartName") == Some("/customXml/itemProps1.xml"))
+        .unwrap();
+    assert_eq!(
+        item.attr("ContentType"),
+        Some(r#"application/x-test" PartName="/x"/><Default Extension="evil"#)
+    );
     // And the saved file reads back.
     read_xlsx(&write_xlsx(&wb).unwrap()).unwrap();
 }
@@ -464,8 +693,17 @@ fn kept_vml_drawings_are_charged_to_the_kept_total() {
     // How much one sheet's kept content costs, with the default allowance.
     let one = {
         let (wb, rep) = read_xlsx(&rich_package()).unwrap();
-        assert!(!rep.warnings.iter().any(|w| w.contains("dropped")), "{:?}", rep.warnings);
-        wb.preserved.as_ref().map_or(0, |p| p.byte_len()) + wb.sheets.iter().filter_map(|s| s.preserved.as_ref()).map(|p| p.byte_len()).sum::<usize>()
+        assert!(
+            !rep.warnings.iter().any(|w| w.contains("dropped")),
+            "{:?}",
+            rep.warnings
+        );
+        wb.preserved.as_ref().map_or(0, |p| p.byte_len())
+            + wb.sheets
+                .iter()
+                .filter_map(|s| s.preserved.as_ref())
+                .map(|p| p.byte_len())
+                .sum::<usize>()
     };
     // Two sheets share one VML drawing: each would keep its own copy. With room for one sheet's
     // content only, the second sheet's VML (and the controls drawn from it) is dropped.
@@ -474,14 +712,40 @@ fn kept_vml_drawings_are_charged_to_the_kept_total() {
     crate::passthrough::KEPT_TOTAL_FOR_TEST.with(|c| c.set(crate::passthrough::MAX_KEPT_TOTAL));
     let (wb, rep) = read.unwrap();
     let kept = wb.preserved.as_ref().map_or(0, |p| p.byte_len())
-        + wb.sheets.iter().filter_map(|s| s.preserved.as_ref()).map(|p| p.byte_len()).sum::<usize>();
+        + wb.sheets
+            .iter()
+            .filter_map(|s| s.preserved.as_ref())
+            .map(|p| p.byte_len())
+            .sum::<usize>();
     assert!(kept <= one + VML.len() / 2, "kept {kept} bytes");
-    assert!(wb.sheet(0).unwrap().preserved.as_ref().is_some_and(|p| p.vml.is_some()));
-    assert!(!wb.sheet(1).unwrap().preserved.as_ref().is_some_and(|p| p.vml.is_some()));
-    assert!(rep.warnings.iter().any(|w| w.contains("\"Other\"") && w.contains("too large")), "{:?}", rep.warnings);
+    assert!(
+        wb.sheet(0)
+            .unwrap()
+            .preserved
+            .as_ref()
+            .is_some_and(|p| p.vml.is_some())
+    );
+    assert!(
+        !wb.sheet(1)
+            .unwrap()
+            .preserved
+            .as_ref()
+            .is_some_and(|p| p.vml.is_some())
+    );
+    assert!(
+        rep.warnings
+            .iter()
+            .any(|w| w.contains("\"Other\"") && w.contains("too large")),
+        "{:?}",
+        rep.warnings
+    );
     // Both sheets keep their drawings when there is room.
     let (wb, _) = read_xlsx(&rich_package_with(CONTENT_TYPES, true)).unwrap();
-    assert!(wb.sheets.iter().all(|s| s.preserved.as_ref().is_some_and(|p| p.vml.is_some())));
+    assert!(
+        wb.sheets
+            .iter()
+            .all(|s| s.preserved.as_ref().is_some_and(|p| p.vml.is_some()))
+    );
 }
 
 const XML_MAPS: &str = r#"<?xml version="1.0"?><MapInfo xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" SelectionNamespaces=""><Schema ID="Schema1"><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"><xsd:element name="DataList"><xsd:complexType><xsd:sequence><xsd:element name="ItemList"><xsd:complexType><xsd:sequence><xsd:element name="TableID" type="xsd:integer"/><xsd:element name="Item" maxOccurs="unbounded"><xsd:complexType><xsd:sequence><xsd:element name="No" type="xsd:string"/><xsd:element name="Blocked" type="xsd:boolean"/></xsd:sequence></xsd:complexType></xsd:element></xsd:sequence></xsd:complexType></xsd:element></xsd:sequence></xsd:complexType></xsd:element></xsd:schema></Schema><Map ID="1" Name="DataList_Map" RootElement="DataList" SchemaID="Schema1" ShowImportExportValidationErrors="0" AutoFit="1" Append="0" PreserveSortAFLayout="1" PreserveFormat="1"><DataBinding FileBinding="1" ConnectionID="1" DataBindingLoadMode="1"/></Map></MapInfo>"#;
@@ -502,9 +766,19 @@ fn xml_map_package() -> Vec<u8> {
         r#"<?xml version="1.0"?><table xmlns="{NS_MAIN}" id="1" name="Table1" displayName="Table1" ref="A3:B4" tableType="xml" connectionId="1" totalsRowShown="0"><autoFilter ref="A3:B4"/><tableColumns count="2"><tableColumn id="1" uniqueName="No" name="No."><xmlColumnPr mapId="1" xpath="/DataList/ItemList/Item/No" xmlDataType="string"/></tableColumn><tableColumn id="2" uniqueName="Blocked" name="Blocked"><xmlColumnPr mapId="1" xpath="/DataList/ItemList/Item/Blocked" xmlDataType="boolean"/></tableColumn></tableColumns><tableStyleInfo name="TableStyleMedium2" showRowStripes="1"/></table>"#
     );
     let root_rels = rels(&[("rId1", "officeDocument", "xl/workbook.xml")]);
-    let wb_rels =
-        rels(&[("rId1", "worksheet", "worksheets/sheet1.xml"), ("rId2", "xmlMaps", "xmlMaps.xml"), ("rId3", "connections", "connections.xml")]);
-    let sheet_rels = rels(&[("rId1", "tableSingleCells", "../tables/tableSingleCells1.xml"), ("rId2", "table", "../tables/table1.xml")]);
+    let wb_rels = rels(&[
+        ("rId1", "worksheet", "worksheets/sheet1.xml"),
+        ("rId2", "xmlMaps", "xmlMaps.xml"),
+        ("rId3", "connections", "connections.xml"),
+    ]);
+    let sheet_rels = rels(&[
+        (
+            "rId1",
+            "tableSingleCells",
+            "../tables/tableSingleCells1.xml",
+        ),
+        ("rId2", "table", "../tables/table1.xml"),
+    ]);
     make_zip(&[
         ("[Content_Types].xml", types.as_bytes()),
         ("_rels/.rels", root_rels.as_bytes()),
@@ -522,13 +796,27 @@ fn xml_map_package() -> Vec<u8> {
 #[test]
 fn xml_maps_and_their_bindings_survive_a_round_trip() {
     let (wb, rep) = read_xlsx(&xml_map_package()).unwrap();
-    assert!(!rep.warnings.iter().any(|w| w.contains("dropped")), "{:?}", rep.warnings);
+    assert!(
+        !rep.warnings.iter().any(|w| w.contains("dropped")),
+        "{:?}",
+        rep.warnings
+    );
     let out = write_xlsx(&wb).unwrap();
     let u = Unpacked::new(&out);
     u.assert_valid();
     // The map keeps its name (its ids are what the bindings point at) and its relationship.
-    assert_eq!(u.parts.get("xl/xmlMaps.xml").map(|b| String::from_utf8_lossy(b)).as_deref(), Some(XML_MAPS));
-    assert!(u.rels("xl/workbook.xml").iter().any(|r| r.1.ends_with("/xmlMaps") && r.2 == "xl/xmlMaps.xml"));
+    assert_eq!(
+        u.parts
+            .get("xl/xmlMaps.xml")
+            .map(|b| String::from_utf8_lossy(b))
+            .as_deref(),
+        Some(XML_MAPS)
+    );
+    assert!(
+        u.rels("xl/workbook.xml")
+            .iter()
+            .any(|r| r.1.ends_with("/xmlMaps") && r.2 == "xl/xmlMaps.xml")
+    );
     let types = u.text("[Content_Types].xml");
     assert!(
         types.contains(r#"PartName="/xl/xmlMaps.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.xmlMaps+xml""#),
@@ -536,24 +824,56 @@ fn xml_maps_and_their_bindings_survive_a_round_trip() {
     );
     // The single mapped cell hangs off the sheet.
     let sheet = sheet_part(&u, "Item");
-    assert!(u.rels(&sheet).iter().any(|r| r.1.ends_with("/tableSingleCells") && u.parts.get(&r.2).is_some_and(|b| b == SINGLE_CELLS.as_bytes())));
+    assert!(u.rels(&sheet).iter().any(|r| {
+        r.1.ends_with("/tableSingleCells")
+            && u.parts
+                .get(&r.2)
+                .is_some_and(|b| b == SINGLE_CELLS.as_bytes())
+    }));
     // The table stays an XML table, its columns keep their XPaths.
-    let (_, table) = u.rels(&sheet).into_iter().map(|r| (r.1, r.2)).find(|(ty, _)| ty.ends_with("/table")).unwrap();
+    let (_, table) = u
+        .rels(&sheet)
+        .into_iter()
+        .map(|r| (r.1, r.2))
+        .find(|(ty, _)| ty.ends_with("/table"))
+        .unwrap();
     let t = xml::parse(u.text(&table).as_bytes()).unwrap();
-    assert_eq!((t.attr("tableType"), t.attr("connectionId")), (Some("xml"), Some("1")));
-    let cols: Vec<_> = t.child("tableColumns").unwrap().kids("tableColumn").collect();
+    assert_eq!(
+        (t.attr("tableType"), t.attr("connectionId")),
+        (Some("xml"), Some("1"))
+    );
+    let cols: Vec<_> = t
+        .child("tableColumns")
+        .unwrap()
+        .kids("tableColumn")
+        .collect();
     let mapped: Vec<_> = cols
         .iter()
         .map(|c| {
             let x = c.child("xmlColumnPr").unwrap();
-            (c.attr("uniqueName"), x.attr("mapId"), x.attr("xpath"), x.attr("xmlDataType"))
+            (
+                c.attr("uniqueName"),
+                x.attr("mapId"),
+                x.attr("xpath"),
+                x.attr("xmlDataType"),
+            )
         })
         .collect();
     assert_eq!(
         mapped,
         [
-            (Some("No"), Some("1"), Some("/DataList/ItemList/Item/No"), Some("string")),
-            (Some("Blocked"), Some("1"), Some("/DataList/ItemList/Item/Blocked"), Some("boolean")),
+            (
+                Some("No"),
+                Some("1"),
+                Some("/DataList/ItemList/Item/No"),
+                Some("string")
+            ),
+            (
+                Some("Blocked"),
+                Some("1"),
+                Some("/DataList/ItemList/Item/Blocked"),
+                Some("boolean")
+            ),
         ]
     );
 }
@@ -574,29 +894,63 @@ fn rebased(target: &str, from: &str, to: &str) -> String {
         rels: vec![link("externalLinkPath"), link("hyperlink")],
     };
     let mut wb = gridcraft_model::Workbook::new();
-    wb.preserved = Some(Arc::new(gridcraft_model::Preserved { parts: vec![part], ..Default::default() }));
+    wb.preserved = Some(Arc::new(gridcraft_model::Preserved {
+        parts: vec![part],
+        ..Default::default()
+    }));
     wb.source_dir = Some(from.into());
-    let Some(out) = crate::rebase_links(&wb, std::path::Path::new(to)) else { return target.into() };
+    let Some(out) = crate::rebase_links(&wb, std::path::Path::new(to)) else {
+        return target.into();
+    };
     let rels = &out.preserved.as_ref().unwrap().parts[0].rels;
-    assert_eq!(rels[1].target, target, "only paths of linked workbooks change");
+    assert_eq!(
+        rels[1].target, target,
+        "only paths of linked workbooks change"
+    );
     rels[0].target.clone()
 }
 
 #[test]
 #[cfg(unix)]
 fn saving_into_another_folder_rebases_relative_links_to_workbooks() {
-    assert_eq!(rebased("Source.xlsx", "/links", "/links/move2"), "../Source.xlsx");
-    assert_eq!(rebased("Source.xlsx", "/links", "/other/deeper"), "../../links/Source.xlsx");
-    assert_eq!(rebased("../Source.xlsx", "/links/move2", "/links"), "Source.xlsx");
-    assert_eq!(rebased("sub\\Source.xlsx", "/links", "/links/sub"), "Source.xlsx");
-    assert_eq!(rebased("./sub/../Source.xlsx", "/links", "/links/sub/"), "../Source.xlsx");
+    assert_eq!(
+        rebased("Source.xlsx", "/links", "/links/move2"),
+        "../Source.xlsx"
+    );
+    assert_eq!(
+        rebased("Source.xlsx", "/links", "/other/deeper"),
+        "../../links/Source.xlsx"
+    );
+    assert_eq!(
+        rebased("../Source.xlsx", "/links/move2", "/links"),
+        "Source.xlsx"
+    );
+    assert_eq!(
+        rebased("sub\\Source.xlsx", "/links", "/links/sub"),
+        "Source.xlsx"
+    );
+    assert_eq!(
+        rebased("./sub/../Source.xlsx", "/links", "/links/sub/"),
+        "../Source.xlsx"
+    );
     // Folder names from the file system are written as a URI path; the target's own spelling stays.
-    assert_eq!(rebased("My%20Book.xlsx", "/links/q2 data", "/links"), "q2%20data/My%20Book.xlsx");
+    assert_eq!(
+        rebased("My%20Book.xlsx", "/links/q2 data", "/links"),
+        "q2%20data/My%20Book.xlsx"
+    );
     assert_eq!(rebased("Résumé.xlsx", "/a/Été", "/a"), "Été/Résumé.xlsx");
     // The same folder, absolute paths, URLs and paths above the root are kept as they are.
-    assert_eq!(rebased("Source.xlsx", "/links/", "/links/x/.."), "Source.xlsx");
-    for target in ["/links/Source.xlsx", "file:///C:/links/Source.xlsx", "C:\\links\\Source.xlsx", "https://example.com/Source.xlsx", "../../x.xlsx"]
-    {
+    assert_eq!(
+        rebased("Source.xlsx", "/links/", "/links/x/.."),
+        "Source.xlsx"
+    );
+    for target in [
+        "/links/Source.xlsx",
+        "file:///C:/links/Source.xlsx",
+        "C:\\links\\Source.xlsx",
+        "https://example.com/Source.xlsx",
+        "../../x.xlsx",
+    ] {
         assert_eq!(rebased(target, "/links", "/links/move2"), target);
     }
     // Without the folder it was read from, nothing to rebase.
@@ -647,10 +1001,17 @@ fn chartsheet_package() -> Vec<u8> {
     let (cs1, cs2) = (chartsheet_xml("first"), chartsheet_xml("last"));
     let (d1, d2) = (drawing_xml("first"), drawing_xml("last"));
     let (c1, c2) = (chart_xml("Data!$A$1:$A$3"), chart_xml("'More'!$A$1"));
-    let (s1, s2, s3) = (worksheet_xml("data"), worksheet_xml("more"), worksheet_xml("spare"));
+    let (s1, s2, s3) = (
+        worksheet_xml("data"),
+        worksheet_xml("more"),
+        worksheet_xml("spare"),
+    );
     make_zip(&[
         ("[Content_Types].xml", content_types.as_bytes()),
-        ("_rels/.rels", rels(&[("rId1", "officeDocument", "xl/workbook.xml")]).as_bytes()),
+        (
+            "_rels/.rels",
+            rels(&[("rId1", "officeDocument", "xl/workbook.xml")]).as_bytes(),
+        ),
         ("xl/workbook.xml", workbook.as_bytes()),
         (
             "xl/_rels/workbook.xml.rels",
@@ -670,15 +1031,31 @@ fn chartsheet_package() -> Vec<u8> {
         ("xl/chartsheets/sheet2.xml", cs2.as_bytes()),
         (
             "xl/chartsheets/_rels/sheet1.xml.rels",
-            rels(&[("rId1", "drawing", "../drawings/drawing1.xml"), ("rId2", "printerSettings", "../printerSettings/printerSettings1.bin")])
-                .as_bytes(),
+            rels(&[
+                ("rId1", "drawing", "../drawings/drawing1.xml"),
+                (
+                    "rId2",
+                    "printerSettings",
+                    "../printerSettings/printerSettings1.bin",
+                ),
+            ])
+            .as_bytes(),
         ),
-        ("xl/chartsheets/_rels/sheet2.xml.rels", rels(&[("rId1", "drawing", "../drawings/drawing2.xml")]).as_bytes()),
+        (
+            "xl/chartsheets/_rels/sheet2.xml.rels",
+            rels(&[("rId1", "drawing", "../drawings/drawing2.xml")]).as_bytes(),
+        ),
         ("xl/printerSettings/printerSettings1.bin", PRINTER),
         ("xl/drawings/drawing1.xml", d1.as_bytes()),
         ("xl/drawings/drawing2.xml", d2.as_bytes()),
-        ("xl/drawings/_rels/drawing1.xml.rels", rels(&[("rId1", "chart", "../charts/chart1.xml")]).as_bytes()),
-        ("xl/drawings/_rels/drawing2.xml.rels", rels(&[("rId1", "chart", "../charts/chart2.xml")]).as_bytes()),
+        (
+            "xl/drawings/_rels/drawing1.xml.rels",
+            rels(&[("rId1", "chart", "../charts/chart1.xml")]).as_bytes(),
+        ),
+        (
+            "xl/drawings/_rels/drawing2.xml.rels",
+            rels(&[("rId1", "chart", "../charts/chart2.xml")]).as_bytes(),
+        ),
         ("xl/charts/chart1.xml", c1.as_bytes()),
         ("xl/charts/chart2.xml", c2.as_bytes()),
     ])
@@ -687,27 +1064,64 @@ fn chartsheet_package() -> Vec<u8> {
 /// The sheets of a written workbook: (name, state) in file order.
 fn written_sheets(u: &Unpacked) -> Vec<(String, String)> {
     let wb = xml::parse(u.parts.get("xl/workbook.xml").unwrap()).unwrap();
-    wb.child("sheets").unwrap().kids("sheet").map(|s| (s.attr("name").unwrap().to_string(), s.attr("state").unwrap_or("").to_string())).collect()
+    wb.child("sheets")
+        .unwrap()
+        .kids("sheet")
+        .map(|s| {
+            (
+                s.attr("name").unwrap().to_string(),
+                s.attr("state").unwrap_or("").to_string(),
+            )
+        })
+        .collect()
 }
 
 /// The part a written chart sheet is in, found through the workbook relationship; its drawing and
 /// that drawing's chart, followed through relationships.
 fn chart_sheet_chain(u: &Unpacked, name: &str) -> (String, String, String) {
     let wb = xml::parse(u.parts.get("xl/workbook.xml").unwrap()).unwrap();
-    let id = wb.child("sheets").unwrap().kids("sheet").find(|s| s.attr("name") == Some(name)).unwrap().attr("id").unwrap().to_string();
+    let id = wb
+        .child("sheets")
+        .unwrap()
+        .kids("sheet")
+        .find(|s| s.attr("name") == Some(name))
+        .unwrap()
+        .attr("id")
+        .unwrap()
+        .to_string();
     let (ty, part) = u.target("xl/workbook.xml", &id);
     assert!(ty.ends_with("/chartsheet"), "{ty}");
-    let drawing = u.rels(&part).into_iter().find(|r| r.1.ends_with("/drawing")).unwrap().2;
-    let chart = u.rels(&drawing).into_iter().find(|r| r.1.ends_with("/chart")).unwrap().2;
+    let drawing = u
+        .rels(&part)
+        .into_iter()
+        .find(|r| r.1.ends_with("/drawing"))
+        .unwrap()
+        .2;
+    let chart = u
+        .rels(&drawing)
+        .into_iter()
+        .find(|r| r.1.ends_with("/chart"))
+        .unwrap()
+        .2;
     (part, drawing, chart)
 }
 
 #[test]
 fn chart_sheets_survive_a_round_trip_in_place() {
     let (wb, rep) = read_xlsx(&chartsheet_package()).unwrap();
-    assert!(!rep.warnings.iter().any(|w| w.contains("skipped") || w.contains("dropped")), "{:?}", rep.warnings);
+    assert!(
+        !rep.warnings
+            .iter()
+            .any(|w| w.contains("skipped") || w.contains("dropped")),
+        "{:?}",
+        rep.warnings
+    );
     let names: Vec<&str> = wb.sheets.iter().map(|s| s.name.as_str()).collect();
-    assert_eq!(names, ["Data", "More", "Spare"], "chart sheets are not worksheets");
+    assert_eq!(
+        names,
+        ["Data", "More", "Spare"],
+        "chart sheets are not worksheets"
+    );
 
     let out = write_xlsx(&wb).unwrap();
     let u = Unpacked::new(&out);
@@ -715,20 +1129,37 @@ fn chart_sheets_survive_a_round_trip_in_place() {
     // Same order, same visibility, the way Excel shows the tabs.
     assert_eq!(
         written_sheets(&u),
-        [("Data", ""), ("Chart1", ""), ("More", ""), ("Spare", ""), ("Last", "hidden")].map(|(a, b)| (a.to_string(), b.to_string())),
+        [
+            ("Data", ""),
+            ("Chart1", ""),
+            ("More", ""),
+            ("Spare", ""),
+            ("Last", "hidden")
+        ]
+        .map(|(a, b)| (a.to_string(), b.to_string())),
     );
     // Sheet ids are unique.
     let wbx = u.text("xl/workbook.xml");
-    let mut ids: Vec<String> = wbx.match_indices("<sheet ").map(|(i, _)| attr_of(&wbx[i..], "sheet", "sheetId")).collect();
+    let mut ids: Vec<String> = wbx
+        .match_indices("<sheet ")
+        .map(|(i, _)| attr_of(&wbx[i..], "sheet", "sheetId"))
+        .collect();
     ids.sort();
     ids.dedup();
     assert_eq!(ids.len(), 5, "{wbx}");
     // Positions in the file, not in the model, for the active tab and the print area.
-    assert_eq!(attr_of(&wbx, "workbookView", "activeTab"), "2", "More is the third tab");
+    assert_eq!(
+        attr_of(&wbx, "workbookView", "activeTab"),
+        "2",
+        "More is the third tab"
+    );
     assert_eq!(attr_of(&wbx, "definedName", "localSheetId"), "2", "{wbx}");
 
     // Every part of both chart sheets is in the output, byte for byte, behind the same chain.
-    for (name, cs, drawing, chart) in [("Chart1", "first", "first", "Data!$A$1:$A$3"), ("Last", "last", "last", "'More'!$A$1")] {
+    for (name, cs, drawing, chart) in [
+        ("Chart1", "first", "first", "Data!$A$1:$A$3"),
+        ("Last", "last", "last", "'More'!$A$1"),
+    ] {
         let (cs_part, d_part, c_part) = chart_sheet_chain(&u, name);
         assert_eq!(u.text(&cs_part), chartsheet_xml(cs), "{name}");
         assert_eq!(u.text(&d_part), drawing_xml(drawing), "{name}");
@@ -742,7 +1173,14 @@ fn chart_sheets_survive_a_round_trip_in_place() {
 
     // Reading the output again finds the same two chart sheets, and a second save is stable.
     let (wb2, rep2) = read_xlsx(&out).unwrap();
-    assert!(!rep2.warnings.iter().any(|w| w.contains("skipped") || w.contains("dropped")), "{:?}", rep2.warnings);
+    assert!(
+        !rep2
+            .warnings
+            .iter()
+            .any(|w| w.contains("skipped") || w.contains("dropped")),
+        "{:?}",
+        rep2.warnings
+    );
     let again = Unpacked::new(&write_xlsx(&wb2).unwrap());
     again.assert_valid();
     assert_eq!(written_sheets(&again), written_sheets(&u));
@@ -755,7 +1193,13 @@ fn a_chart_sheet_whose_data_sheet_was_renamed_is_dropped_with_its_parts() {
     let u = Unpacked::new(&write_xlsx(&wb).unwrap());
     u.assert_valid();
     // "Chart1" plots Data, which is gone under that name; "Last" plots More, which is not.
-    assert_eq!(written_sheets(&u).iter().map(|s| s.0.as_str()).collect::<Vec<_>>(), ["Renamed", "More", "Spare", "Last"]);
+    assert_eq!(
+        written_sheets(&u)
+            .iter()
+            .map(|s| s.0.as_str())
+            .collect::<Vec<_>>(),
+        ["Renamed", "More", "Spare", "Last"]
+    );
     assert!(u.find(chart_xml("Data!$A$1:$A$3").as_bytes()).is_empty());
     assert!(u.find(drawing_xml("first").as_bytes()).is_empty());
     assert!(u.find(PRINTER).is_empty());
@@ -771,7 +1215,13 @@ fn a_chart_sheet_whose_name_a_worksheet_took_is_dropped() {
     wb.sheet_mut(2).unwrap().name = "LAST".into();
     let u = Unpacked::new(&write_xlsx(&wb).unwrap());
     u.assert_valid();
-    assert_eq!(written_sheets(&u).iter().map(|s| s.0.as_str()).collect::<Vec<_>>(), ["Data", "Chart1", "More", "LAST"]);
+    assert_eq!(
+        written_sheets(&u)
+            .iter()
+            .map(|s| s.0.as_str())
+            .collect::<Vec<_>>(),
+        ["Data", "Chart1", "More", "LAST"]
+    );
     assert!(u.find(chart_xml("'More'!$A$1").as_bytes()).is_empty());
     chart_sheet_chain(&u, "Chart1");
 }
@@ -780,8 +1230,14 @@ fn a_chart_sheet_whose_name_a_worksheet_took_is_dropped() {
 fn formulas_name_the_sheets_a_chart_plots() {
     use crate::passthrough::sheet_names_in;
     assert_eq!(sheet_names_in("Data!$A$1:$A$3"), ["Data"]);
-    assert_eq!(sheet_names_in("'My ''Sheet'!$A$1,Data!$B$1"), ["My 'Sheet", "Data"]);
-    assert_eq!(sheet_names_in("SUM(Data!A1:A3,'Other sheet'!B2)"), ["Data", "Other sheet"]);
+    assert_eq!(
+        sheet_names_in("'My ''Sheet'!$A$1,Data!$B$1"),
+        ["My 'Sheet", "Data"]
+    );
+    assert_eq!(
+        sheet_names_in("SUM(Data!A1:A3,'Other sheet'!B2)"),
+        ["Data", "Other sheet"]
+    );
     assert!(sheet_names_in("[1]Ext!A1").is_empty() && sheet_names_in("[1]Ext!A1:A3").is_empty());
     assert!(sheet_names_in("Name").is_empty() && sheet_names_in("").is_empty());
 }
@@ -801,7 +1257,10 @@ fn file_version_and_calc_features_survive_a_save() {
         ("[Content_Types].xml", super::CT.as_bytes()),
         ("_rels/.rels", super::ROOT_RELS.as_bytes()),
         ("xl/workbook.xml", workbook.as_bytes()),
-        ("xl/_rels/workbook.xml.rels", rels(&[("rId1", "worksheet", "worksheets/sheet1.xml")]).as_bytes()),
+        (
+            "xl/_rels/workbook.xml.rels",
+            rels(&[("rId1", "worksheet", "worksheets/sheet1.xml")]).as_bytes(),
+        ),
         ("xl/worksheets/sheet1.xml", sheet.as_bytes()),
     ]);
     let (wb, _) = read_xlsx(&bytes).unwrap();
@@ -813,13 +1272,33 @@ fn file_version_and_calc_features_survive_a_save() {
         let text = u.text("xl/workbook.xml");
         let root = xml::parse(text.as_bytes()).unwrap();
         // Schema order: fileVersion is the first child of <workbook>, extLst the last.
-        assert_eq!(root.children.first().map(|e| e.name.as_str()), Some("fileVersion"), "{text}");
-        assert_eq!(root.children.last().map(|e| e.name.as_str()), Some("extLst"), "{text}");
-        assert!(text.contains(r#"<fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="11008"/>"#), "{text}");
-        assert!(text.contains(&format!("<extLst>{calc_features}</extLst>")), "{text}");
+        assert_eq!(
+            root.children.first().map(|e| e.name.as_str()),
+            Some("fileVersion"),
+            "{text}"
+        );
+        assert_eq!(
+            root.children.last().map(|e| e.name.as_str()),
+            Some("extLst"),
+            "{text}"
+        );
+        assert!(
+            text.contains(
+                r#"<fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="11008"/>"#
+            ),
+            "{text}"
+        );
+        assert!(
+            text.contains(&format!("<extLst>{calc_features}</extLst>")),
+            "{text}"
+        );
     }
 
     // A workbook that had neither gets neither.
-    let plain = Unpacked::new(&write_xlsx(&gridcraft_model::Workbook::new()).unwrap()).text("xl/workbook.xml");
-    assert!(!plain.contains("fileVersion") && !plain.contains("extLst"), "{plain}");
+    let plain = Unpacked::new(&write_xlsx(&gridcraft_model::Workbook::new()).unwrap())
+        .text("xl/workbook.xml");
+    assert!(
+        !plain.contains("fileVersion") && !plain.contains("extLst"),
+        "{plain}"
+    );
 }

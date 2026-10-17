@@ -47,13 +47,19 @@ impl Placement {
         let up = Vec2::new(dir.y, -dir.x);
         let size = ey.dot(up);
         let slant = ey.dot(dir) / size;
-        (origin.is_finite() && size.is_finite() && slant.is_finite() && size > 0.01 && size < 1e5 && upright).then(|| Self {
-            origin,
-            dir,
-            size,
-            h_scale: w / size * 100.0,
-            slant,
-        })
+        (origin.is_finite()
+            && size.is_finite()
+            && slant.is_finite()
+            && size > 0.01
+            && size < 1e5
+            && upright)
+            .then(|| Self {
+                origin,
+                dir,
+                size,
+                h_scale: w / size * 100.0,
+                slant,
+            })
     }
 
     fn up(&self) -> Vec2 {
@@ -95,7 +101,8 @@ impl Look {
             && (self.h_scale - other.h_scale).abs() < 0.5
             && self.fill == other.fill
             && self.overprint_fill == other.overprint_fill
-            && (other.stroke.is_none() || (self.stroke == other.stroke && self.overprint_stroke == other.overprint_stroke))
+            && (other.stroke.is_none()
+                || (self.stroke == other.stroke && self.overprint_stroke == other.overprint_stroke))
     }
 
     fn style(&self) -> CharStyle {
@@ -192,12 +199,20 @@ impl TextLine {
     /// Add glyph `text` set vertically (`upright`) if it continues this column (or makes this
     /// line's single glyph a column): below the last one, in the same column. `false`: it starts
     /// another line.
-    pub fn push_upright(&mut self, look: &Look, at: Placement, opacity: f32, upright: Upright, text: &str) -> bool {
+    pub fn push_upright(
+        &mut self,
+        look: &Look,
+        at: Placement,
+        opacity: f32,
+        upright: Upright,
+        text: &str,
+    ) -> bool {
         let down = -self.at.up();
         let size = self.at.size.max(at.size);
         let Some((last, run)) = self.runs.last_mut() else {
             self.runs.push((look.clone(), text.to_string()));
-            (self.upright, self.next, self.last) = (Some(upright), at.origin + down * at.size, at.origin);
+            (self.upright, self.next, self.last) =
+                (Some(upright), at.origin + down * at.size, at.origin);
             return true;
         };
         let across = (at.origin - self.at.origin).dot(self.at.dir);
@@ -205,7 +220,10 @@ impl TextLine {
         // Only glyphs set vertically (WMode 1) come here, so a second one below the first, one em
         // on or letter-spaced up to another em, makes a column.
         let first_step = (at.origin - self.last).dot(down);
-        let starts_column = !self.column && self.upright.is_some() && first_step > size * 0.95 && first_step < size * 2.0;
+        let starts_column = !self.column
+            && self.upright.is_some()
+            && first_step > size * 0.95
+            && first_step < size * 2.0;
         let in_column = (self.column || starts_column)
             && opacity == self.opacity
             && at.dir.dot(self.at.dir) > 0.9995
@@ -233,7 +251,14 @@ impl TextLine {
 
     /// Add glyph `text` drawn with `look` at `at` (advancing `advance` points) at `opacity` if
     /// it continues this line; `false`: it starts another.
-    pub fn push(&mut self, look: &Look, at: Placement, opacity: f32, advance: f64, text: &str) -> bool {
+    pub fn push(
+        &mut self,
+        look: &Look,
+        at: Placement,
+        opacity: f32,
+        advance: f64,
+        text: &str,
+    ) -> bool {
         // A vertical line (even a single upright glyph) takes no horizontal glyphs.
         if self.column || self.upright.is_some() {
             return false;
@@ -318,8 +343,16 @@ impl TextLine {
     /// A stroke (`stroke`: paint and width) over the glyph just drawn at `at` in `font` (fill
     /// and stroke rendering), which `overprint`s or not: the run is stroked. `false`: it isn't
     /// that glyph.
-    pub fn stroke_last(&mut self, font: u128, at: Placement, stroke: (Paint, f64), overprint: bool) -> bool {
-        let Some((look, _)) = self.runs.last_mut().filter(|(l, _)| l.font == font && (at.origin - self.last).hypot() < self.at.size * 1e-3) else {
+    pub fn stroke_last(
+        &mut self,
+        font: u128,
+        at: Placement,
+        stroke: (Paint, f64),
+        overprint: bool,
+    ) -> bool {
+        let Some((look, _)) = self.runs.last_mut().filter(|(l, _)| {
+            l.font == font && (at.origin - self.last).hypot() < self.at.size * 1e-3
+        }) else {
             return false;
         };
         (look.stroke, look.overprint_stroke) = (Some(stroke), overprint);
@@ -328,10 +361,19 @@ impl TextLine {
 
     /// The point type object, its opacity and what else the line tells.
     pub fn finish(mut self) -> Option<(TextObject, f32, LineFacts)> {
-        let mut facts = LineFacts { ink: std::mem::take(&mut self.ink), ..LineFacts::default() };
+        let mut facts = LineFacts {
+            ink: std::mem::take(&mut self.ink),
+            ..LineFacts::default()
+        };
         // Turned along a curve: type on a path through the glyphs.
-        let path = if self.curved() { self.baseline_path() } else { None };
-        facts.wraps = path.is_none() && self.upright.is_none() && self.runs.last().is_some_and(|(_, t)| t.ends_with(' '));
+        let path = if self.curved() {
+            self.baseline_path()
+        } else {
+            None
+        };
+        facts.wraps = path.is_none()
+            && self.upright.is_none()
+            && self.runs.last().is_some_and(|(_, t)| t.ends_with(' '));
         if let Some((_, last)) = self.runs.last_mut() {
             last.truncate(last.trim_end().len());
         }
@@ -339,7 +381,11 @@ impl TextLine {
         if self.runs.iter().all(|(_, t)| t.trim().is_empty()) {
             return None;
         }
-        let mut runs = self.runs.into_iter().map(|(look, text)| TextRun { text, style: look.style(), inline: None });
+        let mut runs = self.runs.into_iter().map(|(look, text)| TextRun {
+            text,
+            style: look.style(),
+            inline: None,
+        });
         let first = runs.next()?;
         let mut t = TextObject::point(Point::ORIGIN, &first.text, first.style);
         t.runs.extend(runs);
@@ -348,12 +394,23 @@ impl TextLine {
         }
         let angle = self.at.dir.atan2();
         // The glyphs' tops lean along the baseline (+x), up being -y in the type's own space.
-        t.xf = Affine::translate(self.at.origin.to_vec2()) * Affine::rotate(angle) * Affine::skew(-self.at.slant, 0.0);
+        t.xf = Affine::translate(self.at.origin.to_vec2())
+            * Affine::rotate(angle)
+            * Affine::skew(-self.at.slant, 0.0);
         let db = vectorcraft_text::FontDb::global();
         // Glyphs spaced each their own way (character tightening, optical kerning) keep their
         // place: each character its own tracking.
         let own = (self.upright.is_none() && t.para.direction.is_none())
-            .then(|| own_spacing(&t, &self.baseline, &self.advances, path.as_ref(), self.at.dir, self.at.size))
+            .then(|| {
+                own_spacing(
+                    &t,
+                    &self.baseline,
+                    &self.advances,
+                    path.as_ref(),
+                    self.at.dir,
+                    self.at.size,
+                )
+            })
             .flatten();
         if let Some(own) = &own {
             t.runs = tracked_each(std::mem::take(&mut t.runs), own, self.at.size);
@@ -363,7 +420,11 @@ impl TextLine {
             // glyphs' origins, one curve each, to the end of the last glyph, and tracking makes up
             // the difference from the advances.
             if own.is_none() {
-                let length: f64 = path.segments().take(self.baseline.len()).map(|seg| kurbo::ParamCurveArclen::arclen(&seg, 1e-3)).sum();
+                let length: f64 = path
+                    .segments()
+                    .take(self.baseline.len())
+                    .map(|seg| kurbo::ParamCurveArclen::arclen(&seg, 1e-3))
+                    .sum();
                 let laid = vectorcraft_text::layout(db, &t);
                 let natural: f64 = laid.glyphs.iter().map(|g| g.advance).sum();
                 let chars: usize = t.runs.iter().map(|r| r.text.chars().count()).sum();
@@ -373,7 +434,11 @@ impl TextLine {
                     t.runs = tracked(std::mem::take(&mut t.runs), tracking, &spaces);
                 }
             }
-            t.kind = TextKind::OnPath { path: vectorcraft_geom::PathData::from_bezpath(&path), start: 0.0, end: None };
+            t.kind = TextKind::OnPath {
+                path: vectorcraft_geom::PathData::from_bezpath(&path),
+                start: 0.0,
+                end: None,
+            };
             t.xf = Affine::IDENTITY;
             t.cached_bounds = Some(vectorcraft_text::layout(db, &t).bounds);
             return Some((t, self.opacity, facts));
@@ -401,11 +466,18 @@ impl TextLine {
         let chars: usize = t.runs.iter().map(|r| r.text.chars().count()).sum();
         let size = self.at.size;
         let mut bounds = laid.bounds;
-        if own.is_none() && chars > 1 && length.is_finite() && (length - natural).abs() > size * 0.01 {
+        if own.is_none()
+            && chars > 1
+            && length.is_finite()
+            && (length - natural).abs() > size * 0.01
+        {
             // The spaces read from gaps keep their own place only in text left in the file's order.
             let total: usize = t.runs.iter().map(|r| r.text.len()).sum();
-            let gaps: Vec<(usize, f64)> =
-                if t.para.direction.is_none() { self.gaps.into_iter().filter(|(b, _)| *b < total).collect() } else { vec![] };
+            let gaps: Vec<(usize, f64)> = if t.para.direction.is_none() {
+                self.gaps.into_iter().filter(|(b, _)| *b < total).collect()
+            } else {
+                vec![]
+            };
             let (tracking, spaces) = spacing(&laid, &gaps, length - natural, chars, size);
             t.runs = tracked(std::mem::take(&mut t.runs), tracking, &spaces);
             // Tracked: laid out again for its bounds.
@@ -423,7 +495,14 @@ impl TextLine {
 /// glyphs can't be matched to the characters one to one (spaces, ligatures), or when the font
 /// laid out isn't the file's (its advances differ from `advances`): spacing measured against a
 /// stand-in's widths would keep the stand-in's differences once the font is installed.
-fn own_spacing(t: &TextObject, baseline: &[Point], advances: &[f64], path: Option<&BezPath>, dir: Vec2, size: f64) -> Option<Vec<f64>> {
+fn own_spacing(
+    t: &TextObject,
+    baseline: &[Point],
+    advances: &[f64],
+    path: Option<&BezPath>,
+    dir: Vec2,
+    size: f64,
+) -> Option<Vec<f64>> {
     let text: String = t.runs.iter().map(|r| r.text.as_str()).collect();
     let chars = text.chars().count();
     if chars < 3 || text.contains(' ') || baseline.len() != chars || advances.len() != chars {
@@ -431,12 +510,24 @@ fn own_spacing(t: &TextObject, baseline: &[Point], advances: &[f64], path: Optio
     }
     let laid = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
     let advs: Vec<f64> = laid.glyphs.iter().map(|g| g.advance).collect();
-    if advs.len() != chars || advs.iter().zip(advances).any(|(a, b)| (a - b).abs() > size * 0.01) {
+    if advs.len() != chars
+        || advs
+            .iter()
+            .zip(advances)
+            .any(|(a, b)| (a - b).abs() > size * 0.01)
+    {
         return None;
     }
     let dist: Vec<f64> = match path {
-        Some(bp) => bp.segments().take(chars - 1).map(|seg| kurbo::ParamCurveArclen::arclen(&seg, 1e-3)).collect(),
-        None => baseline.windows(2).map(|w| (w[1] - w[0]).dot(dir)).collect(),
+        Some(bp) => bp
+            .segments()
+            .take(chars - 1)
+            .map(|seg| kurbo::ParamCurveArclen::arclen(&seg, 1e-3))
+            .collect(),
+        None => baseline
+            .windows(2)
+            .map(|w| (w[1] - w[0]).dot(dir))
+            .collect(),
     };
     if dist.len() != chars - 1 {
         return None;
@@ -458,11 +549,18 @@ fn tracked_each(runs: Vec<TextRun>, own: &[f64], size: f64) -> Vec<TextRun> {
     let mut k = 0;
     for r in runs {
         for c in r.text.chars() {
-            let style = CharStyle { tracking: own.get(k).map_or(0.0, |e| em(*e)), ..r.style.clone() };
+            let style = CharStyle {
+                tracking: own.get(k).map_or(0.0, |e| em(*e)),
+                ..r.style.clone()
+            };
             k += 1;
             match out.last_mut() {
                 Some(last) if last.style == style && last.inline == r.inline => last.text.push(c),
-                _ => out.push(TextRun { text: c.to_string(), style, inline: r.inline.clone() }),
+                _ => out.push(TextRun {
+                    text: c.to_string(),
+                    style,
+                    inline: r.inline.clone(),
+                }),
             }
         }
     }
@@ -474,28 +572,51 @@ fn tracked_each(runs: Vec<TextRun>, own: &[f64], size: f64) -> Vec<TextRun> {
 /// the spaces read from gaps (`gaps`: byte offset, gap in points) where that would put the glyphs
 /// after them more than a tenth of an em off (a barcode's digits, set in groups apart). Those take
 /// their own tracking, given with their byte offsets.
-fn spacing(laid: &TextLayout, gaps: &[(usize, f64)], extra: f64, chars: usize, size: f64) -> (f64, Vec<(usize, f64)>) {
+fn spacing(
+    laid: &TextLayout,
+    gaps: &[(usize, f64)],
+    extra: f64,
+    chars: usize,
+    size: f64,
+) -> (f64, Vec<(usize, f64)>) {
     let pairs = chars.saturating_sub(1).max(1) as f64;
     // The space and the character before it take `need` (the gap less the space) between them;
     // tracking gives them twice its share.
     let space = |b: usize| laid.glyphs.iter().find(|g| g.byte == b).map(|g| g.advance);
-    let needs: Vec<(usize, f64)> = gaps.iter().filter_map(|&(b, gap)| Some((b, gap - space(b)?))).collect();
+    let needs: Vec<(usize, f64)> = gaps
+        .iter()
+        .filter_map(|&(b, gap)| Some((b, gap - space(b)?)))
+        .collect();
     let mut own: Vec<(usize, f64)> = vec![];
     let mut tracking = extra / pairs;
     // Each space taken apart changes the others' share: until no more are.
     loop {
-        let more: Vec<(usize, f64)> =
-            needs.iter().filter(|(b, need)| !own.iter().any(|(o, _)| o == b) && (need - 2.0 * tracking).abs() > size * 0.1).copied().collect();
+        let more: Vec<(usize, f64)> = needs
+            .iter()
+            .filter(|(b, need)| {
+                !own.iter().any(|(o, _)| o == b) && (need - 2.0 * tracking).abs() > size * 0.1
+            })
+            .copied()
+            .collect();
         if more.is_empty() {
             break;
         }
         own.extend(more);
         let rest = pairs - 2.0 * own.len() as f64;
-        tracking = if rest >= 1.0 { (extra - own.iter().map(|(_, need)| need).sum::<f64>()) / rest } else { 0.0 };
+        tracking = if rest >= 1.0 {
+            (extra - own.iter().map(|(_, need)| need).sum::<f64>()) / rest
+        } else {
+            0.0
+        };
     }
     own.sort_by_key(|(b, _)| *b);
     let em = |pts: f64| (pts / size * 1000.0).clamp(-1000.0, 1000.0).round();
-    (em(tracking), own.into_iter().map(|(b, need)| (b, em(need - tracking))).collect())
+    (
+        em(tracking),
+        own.into_iter()
+            .map(|(b, need)| (b, em(need - tracking)))
+            .collect(),
+    )
 }
 
 /// `runs` with tracking `tracking`, and each space at a byte offset of `spaces` (in order) a run
@@ -504,20 +625,40 @@ fn tracked(runs: Vec<TextRun>, tracking: f64, spaces: &[(usize, f64)]) -> Vec<Te
     let mut out = Vec::with_capacity(runs.len() + 2 * spaces.len());
     let mut off = 0;
     for r in runs {
-        let style = CharStyle { tracking, ..r.style };
+        let style = CharStyle {
+            tracking,
+            ..r.style
+        };
         let end = off + r.text.len();
         let mut from = 0;
         for &(b, own) in spaces.iter().filter(|(b, _)| (off..end).contains(b)) {
             let at = b - off;
-            let (Some(before), Some(space)) = (r.text.get(from..at), r.text.get(at..at + 1)) else { continue };
+            let (Some(before), Some(space)) = (r.text.get(from..at), r.text.get(at..at + 1)) else {
+                continue;
+            };
             if !before.is_empty() {
-                out.push(TextRun { text: before.to_string(), style: style.clone(), inline: None });
+                out.push(TextRun {
+                    text: before.to_string(),
+                    style: style.clone(),
+                    inline: None,
+                });
             }
-            out.push(TextRun { text: space.to_string(), style: CharStyle { tracking: own, ..style.clone() }, inline: None });
+            out.push(TextRun {
+                text: space.to_string(),
+                style: CharStyle {
+                    tracking: own,
+                    ..style.clone()
+                },
+                inline: None,
+            });
             from = at + 1;
         }
         if let Some(rest) = r.text.get(from..).filter(|t| !t.is_empty()) {
-            out.push(TextRun { text: rest.to_string(), style, inline: None });
+            out.push(TextRun {
+                text: rest.to_string(),
+                style,
+                inline: None,
+            });
         }
         off = end;
     }
@@ -530,7 +671,10 @@ fn round(v: f64) -> f64 {
 
 /// Lower-case letters and digits only (`"Source Sans 3"` → `"sourcesans3"`).
 fn norm(s: &str) -> String {
-    s.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase()).collect()
+    s.chars()
+        .filter(char::is_ascii_alphanumeric)
+        .map(|c| c.to_ascii_lowercase())
+        .collect()
 }
 
 /// `"TimesNewRoman"` → `"Times New Roman"`, `"SourceSans3"` → `"Source Sans 3"`.
@@ -539,7 +683,8 @@ fn spaced(s: &str) -> String {
     let mut prev: Option<char> = None;
     for c in s.chars() {
         if let Some(p) = prev
-            && ((p.is_ascii_lowercase() && c.is_ascii_uppercase()) || (p.is_ascii_alphabetic() && c.is_ascii_digit()))
+            && ((p.is_ascii_lowercase() && c.is_ascii_uppercase())
+                || (p.is_ascii_alphabetic() && c.is_ascii_digit()))
         {
             out.push(' ');
         }
@@ -551,7 +696,10 @@ fn spaced(s: &str) -> String {
 
 /// `name` without a PostScript name's trailing `PSMT`, `MT` or `PS`.
 fn strip_ps(name: &str) -> &str {
-    ["PSMT", "MT", "PS"].iter().find_map(|s| name.strip_suffix(s).filter(|r| !r.is_empty())).unwrap_or(name)
+    ["PSMT", "MT", "PS"]
+        .iter()
+        .find_map(|s| name.strip_suffix(s).filter(|r| !r.is_empty()))
+        .unwrap_or(name)
 }
 
 /// The families available, by [`norm`]ed name.
@@ -559,7 +707,13 @@ pub(crate) struct Families(HashMap<String, String>);
 
 impl Families {
     pub fn available() -> Self {
-        Self(vectorcraft_text::FontDb::global().families().into_iter().map(|f| (norm(&f), f)).collect())
+        Self(
+            vectorcraft_text::FontDb::global()
+                .families()
+                .into_iter()
+                .map(|f| (norm(&f), f))
+                .collect(),
+        )
     }
 
     /// The family and style of a font with base (PostScript) name `name`, or of weight `weight`
@@ -567,7 +721,9 @@ impl Families {
     pub fn resolve(&self, name: &str, weight: Option<u32>, italic: bool) -> (String, String, bool) {
         // A subset's six-letter tag.
         let name = match name.split_once('+') {
-            Some((tag, rest)) if tag.len() == 6 && tag.chars().all(|c| c.is_ascii_uppercase()) => rest,
+            Some((tag, rest)) if tag.len() == 6 && tag.chars().all(|c| c.is_ascii_uppercase()) => {
+                rest
+            }
             _ => name,
         };
         // An installed face of that exact PostScript name: its own family and style.
@@ -575,9 +731,14 @@ impl Families {
             return (family, style, true);
         }
         let (fam, style) = name.split_once(['-', ',']).unwrap_or((name, ""));
-        let found = [fam, strip_ps(fam)].iter().find_map(|f| self.0.get(&norm(f)).cloned());
+        let found = [fam, strip_ps(fam)]
+            .iter()
+            .find_map(|f| self.0.get(&norm(f)).cloned());
         let style = match spaced(strip_ps(style)).as_str() {
-            "" | "Roman" | "Book" | "Normal" | "Plain" => match (weight.is_some_and(|w| w >= 600) || style.contains("Bold"), italic) {
+            "" | "Roman" | "Book" | "Normal" | "Plain" => match (
+                weight.is_some_and(|w| w >= 600) || style.contains("Bold"),
+                italic,
+            ) {
                 (true, true) => "Bold Italic".to_string(),
                 (true, false) => "Bold".to_string(),
                 (false, true) => "Italic".to_string(),
@@ -595,8 +756,15 @@ impl Families {
 /// Hebrew or Arabic comes from a PDF in visual order (each glyph where it is drawn): put `t`'s text
 /// back in logical order, with the paragraph direction that shows it as drawn.
 fn to_logical(t: &mut TextObject) {
-    let Some((order, rtl)) = vectorcraft_text::logical_order(&t.plain_text()) else { return };
-    let chars: Vec<(char, usize)> = t.runs.iter().enumerate().flat_map(|(i, r)| r.text.chars().map(move |c| (c, i))).collect();
+    let Some((order, rtl)) = vectorcraft_text::logical_order(&t.plain_text()) else {
+        return;
+    };
+    let chars: Vec<(char, usize)> = t
+        .runs
+        .iter()
+        .enumerate()
+        .flat_map(|(i, r)| r.text.chars().map(move |c| (c, i)))
+        .collect();
     let mut runs: Vec<(usize, String)> = Vec::with_capacity(t.runs.len());
     for &(c, i) in order.iter().filter_map(|&k| chars.get(k)) {
         match runs.last_mut() {
@@ -604,7 +772,20 @@ fn to_logical(t: &mut TextObject) {
             _ => runs.push((i, c.to_string())),
         }
     }
-    let runs = runs.into_iter().filter_map(|(i, text)| Some(TextRun { text, style: t.runs.get(i)?.style.clone(), inline: None })).collect();
+    let runs = runs
+        .into_iter()
+        .filter_map(|(i, text)| {
+            Some(TextRun {
+                text,
+                style: t.runs.get(i)?.style.clone(),
+                inline: None,
+            })
+        })
+        .collect();
     t.runs = runs;
-    t.para.direction = Some(if rtl { ParaDirection::RightToLeft } else { ParaDirection::LeftToRight });
+    t.para.direction = Some(if rtl {
+        ParaDirection::RightToLeft
+    } else {
+        ParaDirection::LeftToRight
+    });
 }

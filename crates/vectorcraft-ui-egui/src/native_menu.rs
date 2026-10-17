@@ -48,8 +48,17 @@ pub const MINIMIZE: &str = "window.minimize";
 
 /// The labels the Mac layout adds to the menus (translated like every menu string:
 /// [`crate::menus::menu_strings`]).
-pub const MAC_LABELS: &[&str] =
-    &["Settings", "Appearance", "Services", "Hide VectorCraft", "Hide Others", "Show All", "Minimize", "Zoom", "Bring All to Front"];
+pub const MAC_LABELS: &[&str] = &[
+    "Settings",
+    "Appearance",
+    "Services",
+    "Hide VectorCraft",
+    "Hide Others",
+    "Show All",
+    "Minimize",
+    "Zoom",
+    "Bring All to Front",
+];
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct MenuBar {
@@ -129,8 +138,21 @@ impl Standard {
 impl Item {
     /// An item of the layout's own (Hide, Minimize…): always enabled, `shortcut` unless a command
     /// has it.
-    fn system(command: &'static str, source: &'static str, shortcut: Option<&'static str>, lang: Lang) -> Item {
-        Item { command: Some(command), params: Value::Null, source, label: tr(lang, source).into(), shortcut, enabled: true, checked: None }
+    fn system(
+        command: &'static str,
+        source: &'static str,
+        shortcut: Option<&'static str>,
+        lang: Lang,
+    ) -> Item {
+        Item {
+            command: Some(command),
+            params: Value::Null,
+            source,
+            label: tr(lang, source).into(),
+            shortcut,
+            enabled: true,
+            checked: None,
+        }
     }
 }
 
@@ -168,7 +190,10 @@ pub fn from_tree(app: &VectorcraftApp, tree: &[(&'static str, Vec<menus::Item>)]
             .map(|e| match e {
                 Entry::Sep => Node::Separator,
                 Entry::Header(h) => Node::Header(h.to_string()),
-                Entry::Sub(label, children) => Node::Submenu { label: label.to_string(), children: level(app, children) },
+                Entry::Sub(label, children) => Node::Submenu {
+                    label: label.to_string(),
+                    children: level(app, children),
+                },
                 Entry::Item(row) => Node::Item(Item {
                     command: row.command.map(|(id, _)| id),
                     params: row.command.map_or(Value::Null, |(_, p)| p.clone()),
@@ -193,7 +218,11 @@ pub fn from_tree(app: &VectorcraftApp, tree: &[(&'static str, Vec<menus::Item>)]
                 "Help" => MenuRole::Help,
                 _ => MenuRole::Normal,
             };
-            Menu { title: crate::i18n::t(title).to_string(), role, children: level(app, items) }
+            Menu {
+                title: crate::i18n::t(title).to_string(),
+                role,
+                children: level(app, items),
+            }
         })
         .collect();
     MenuBar { menus }
@@ -204,7 +233,10 @@ fn tidy(nodes: Vec<Node>) -> Vec<Node> {
     let mut out: Vec<Node> = Vec::with_capacity(nodes.len());
     for n in nodes {
         let n = match n {
-            Node::Submenu { label, children } => Node::Submenu { label, children: tidy(children) },
+            Node::Submenu { label, children } => Node::Submenu {
+                label,
+                children: tidy(children),
+            },
             other => other,
         };
         if matches!(n, Node::Separator) && matches!(out.last(), None | Some(Node::Separator)) {
@@ -225,7 +257,14 @@ pub fn structure_key(bar: &MenuBar) -> u64 {
     fn walk(nodes: &[Node], h: &mut DefaultHasher) {
         for n in nodes {
             match n {
-                Node::Item(it) => ('i', it.command, it.params.to_string(), it.checked.is_some(), it.shortcut).hash(h),
+                Node::Item(it) => (
+                    'i',
+                    it.command,
+                    it.params.to_string(),
+                    it.checked.is_some(),
+                    it.shortcut,
+                )
+                    .hash(h),
                 Node::Separator => '-'.hash(h),
                 Node::Header(label) => ('h', label).hash(h),
                 Node::Submenu { label, children } => {
@@ -251,11 +290,17 @@ pub fn structure_key(bar: &MenuBar) -> u64 {
 /// bare keys and ⌥/⇧ chords are typing (⌥ types accented letters), which AppKit would otherwise
 /// take from a text field.
 pub fn native_ok(sc: &KeyboardShortcut) -> bool {
-    sc.modifiers.command || sc.modifiers.mac_cmd || sc.modifiers.ctrl || is_function_key(sc.logical_key)
+    sc.modifiers.command
+        || sc.modifiers.mac_cmd
+        || sc.modifiers.ctrl
+        || is_function_key(sc.logical_key)
 }
 
 pub fn is_function_key(key: Key) -> bool {
-    key.name().strip_prefix('F').and_then(|n| n.parse::<u8>().ok()).is_some_and(|n| (1..=24).contains(&n))
+    key.name()
+        .strip_prefix('F')
+        .and_then(|n| n.parse::<u8>().ok())
+        .is_some_and(|n| (1..=24).contains(&n))
 }
 
 /// The input egui's window integration would have made of a press of `sc` (key and modifiers
@@ -263,13 +308,29 @@ pub fn is_function_key(key: Key) -> bool {
 /// (Paste with the clipboard's text, from `paste_text`). A paste's release is left to the window's
 /// own key-up: one without a press or a Paste event is how a paste of a picture or a PDF is told
 /// apart ([`crate::shortcuts`]).
-pub fn key_events(sc: KeyboardShortcut, paste_text: impl FnOnce() -> Option<String>) -> Vec<egui::Event> {
-    let key = |pressed| egui::Event::Key { key: sc.logical_key, physical_key: None, pressed, repeat: false, modifiers: sc.modifiers };
+pub fn key_events(
+    sc: KeyboardShortcut,
+    paste_text: impl FnOnce() -> Option<String>,
+) -> Vec<egui::Event> {
+    let key = |pressed| egui::Event::Key {
+        key: sc.logical_key,
+        physical_key: None,
+        pressed,
+        repeat: false,
+        modifiers: sc.modifiers,
+    };
     if sc.modifiers.command {
         match sc.logical_key {
             Key::X => return vec![egui::Event::Cut, key(false)],
             Key::C => return vec![egui::Event::Copy, key(false)],
-            Key::V => return paste_text().map(|t| t.replace("\r\n", "\n")).filter(|t| !t.is_empty()).map(egui::Event::Paste).into_iter().collect(),
+            Key::V => {
+                return paste_text()
+                    .map(|t| t.replace("\r\n", "\n"))
+                    .filter(|t| !t.is_empty())
+                    .map(egui::Event::Paste)
+                    .into_iter()
+                    .collect();
+            }
             _ => {}
         }
     }
@@ -306,14 +367,23 @@ pub fn mac_layout(app: &VectorcraftApp, bar: &MenuBar, lang: Lang) -> Layout {
         let chord = crate::shortcuts::parse(sc)?;
         match bound.iter().find(|(b, ..)| *b == chord) {
             Some((_, command, _)) => {
-                clashes.push(Clash { shortcut: sc, system, command });
+                clashes.push(Clash {
+                    shortcut: sc,
+                    system,
+                    command,
+                });
                 None
             }
             None => Some(sc),
         }
     };
     let hide = Item::system(HIDE, "Hide VectorCraft", key("Ctrl+Cmd+H", "Hide"), lang);
-    let hide_others = Item::system(HIDE_OTHERS, "Hide Others", key("Cmd+Alt+H", "Hide Others"), lang);
+    let hide_others = Item::system(
+        HIDE_OTHERS,
+        "Hide Others",
+        key("Cmd+Alt+H", "Hide Others"),
+        lang,
+    );
     let minimize = Item::system(MINIMIZE, "Minimize", key("Ctrl+Cmd+M", "Minimize"), lang);
 
     // What the application menu takes from the others (every copy: About is in Help too, Settings
@@ -323,32 +393,60 @@ pub fn mac_layout(app: &VectorcraftApp, bar: &MenuBar, lang: Lang) -> Layout {
     let quit = take_items(&mut bar, "app.quit").into_iter().next();
     // Language and UI Brightness live only in the App menu: taken from the tree when it carries
     // them, else synthesized here (the in-window bar has neither).
-    let language = take_submenu(&mut bar, "app.language").or_else(|| Some(language_node(app, lang)));
-    let appearance = take_submenu(&mut bar, "window.brightness").or_else(|| Some(appearance_node(app, lang)));
+    let language =
+        take_submenu(&mut bar, "app.language").or_else(|| Some(language_node(app, lang)));
+    let appearance =
+        take_submenu(&mut bar, "window.brightness").or_else(|| Some(appearance_node(app, lang)));
     // Its other items (Join Our Discord) stay where the in-window bar also has them: Help.
     bar.menus.retain(|m| m.role != MenuRole::App);
 
     let mut app = Vec::new();
     app.extend(about.map(Node::Item));
     app.push(Node::Separator);
-    app.extend(settings.map(|s| Node::Submenu { label: tr(lang, "Settings").into(), children: settings_pages(&s, lang) }));
+    app.extend(settings.map(|s| Node::Submenu {
+        label: tr(lang, "Settings").into(),
+        children: settings_pages(&s, lang),
+    }));
     app.extend(language);
     app.extend(appearance.map(|n| match n {
         // The theme, as Mac apps call it.
-        Node::Submenu { children, .. } => Node::Submenu { label: tr_ctx(lang, "theme", "Appearance").into(), children },
+        Node::Submenu { children, .. } => Node::Submenu {
+            label: tr_ctx(lang, "theme", "Appearance").into(),
+            children,
+        },
         other => other,
     }));
-    app.extend([Node::Separator, Node::Standard(Standard::Services), Node::Separator]);
-    app.extend([Node::Item(hide), Node::Item(hide_others), Node::Standard(Standard::ShowAll), Node::Separator]);
+    app.extend([
+        Node::Separator,
+        Node::Standard(Standard::Services),
+        Node::Separator,
+    ]);
+    app.extend([
+        Node::Item(hide),
+        Node::Item(hide_others),
+        Node::Standard(Standard::ShowAll),
+        Node::Separator,
+    ]);
     // Quit is File › Exit in the window; in the App menu it reads as a Mac Quit item.
     app.extend(quit.map(|mut q| {
         q.label = tr(lang, "Quit VectorCraft").into();
         Node::Item(q)
     }));
-    bar.menus.insert(0, Menu { title: APP_NAME.into(), role: MenuRole::App, children: app });
+    bar.menus.insert(
+        0,
+        Menu {
+            title: APP_NAME.into(),
+            role: MenuRole::App,
+            children: app,
+        },
+    );
 
     if let Some(window) = bar.menus.iter_mut().find(|m| m.role == MenuRole::Window) {
-        let mut children = vec![Node::Item(minimize), Node::Standard(Standard::Zoom), Node::Separator];
+        let mut children = vec![
+            Node::Item(minimize),
+            Node::Standard(Standard::Zoom),
+            Node::Separator,
+        ];
         children.append(&mut window.children);
         children.extend([Node::Separator, Node::Standard(Standard::BringAllToFront)]);
         window.children = children;
@@ -357,28 +455,64 @@ pub fn mac_layout(app: &VectorcraftApp, bar: &MenuBar, lang: Lang) -> Layout {
         m.children = tidy(std::mem::take(&mut m.children));
     }
     // A menu the moves emptied goes away (Help stays: it has the search field).
-    bar.menus.retain(|m| !m.children.is_empty() || m.role == MenuRole::Help);
+    bar.menus
+        .retain(|m| !m.children.is_empty() || m.role == MenuRole::Help);
     Layout { bar, clashes }
 }
 
 /// Language in the app menu, after Settings: Automatic, then every UI language in its own name,
 /// with the `interfaceLanguage` preference checked.
 fn language_node(app: &VectorcraftApp, lang: Lang) -> Node {
-    let mut children = vec![Node::Item(native_item(app, "Automatic", "app.language", json!({"lang": "auto"}))), Node::Separator];
-    children.extend(Lang::all().map(|l| Node::Item(native_item(app, l.name(), "app.language", json!({"lang": l.code()})))));
-    Node::Submenu { label: tr(lang, "Language").into(), children }
+    let mut children = vec![
+        Node::Item(native_item(
+            app,
+            "Automatic",
+            "app.language",
+            json!({"lang": "auto"}),
+        )),
+        Node::Separator,
+    ];
+    children.extend(Lang::all().map(|l| {
+        Node::Item(native_item(
+            app,
+            l.name(),
+            "app.language",
+            json!({"lang": l.code()}),
+        ))
+    }));
+    Node::Submenu {
+        label: tr(lang, "Language").into(),
+        children,
+    }
 }
 
 /// Appearance in the app menu (the UI-brightness theme, as Mac apps call it).
 fn appearance_node(app: &VectorcraftApp, lang: Lang) -> Node {
-    let children =
-        Brightness::ALL.iter().map(|b| Node::Item(native_item(app, b.label(), "window.brightness", json!({"brightness": b.id()})))).collect();
-    Node::Submenu { label: tr_ctx(lang, "theme", "Appearance").into(), children }
+    let children = Brightness::ALL
+        .iter()
+        .map(|b| {
+            Node::Item(native_item(
+                app,
+                b.label(),
+                "window.brightness",
+                json!({"brightness": b.id()}),
+            ))
+        })
+        .collect();
+    Node::Submenu {
+        label: tr_ctx(lang, "theme", "Appearance").into(),
+        children,
+    }
 }
 
 /// A native item running `command`, built like [`from_tree`] builds it (translated label,
 /// shortcut, enabled and checked as they read now).
-fn native_item(app: &VectorcraftApp, label: &'static str, command: &'static str, params: Value) -> Item {
+fn native_item(
+    app: &VectorcraftApp,
+    label: &'static str,
+    command: &'static str,
+    params: Value,
+) -> Item {
     let item = menus::Item::Cmd(label, command, params);
     match menus::entry(app, &item) {
         Some(Entry::Item(row)) => Item {
@@ -391,7 +525,15 @@ fn native_item(app: &VectorcraftApp, label: &'static str, command: &'static str,
             checked: row.checked,
         },
         // The commands always show; the fallback keeps the structure.
-        _ => Item { command: Some(command), params: Value::Null, source: label, label: label.into(), shortcut: None, enabled: true, checked: None },
+        _ => Item {
+            command: Some(command),
+            params: Value::Null,
+            source: label,
+            label: label.into(),
+            shortcut: None,
+            enabled: true,
+            checked: None,
+        },
     }
 }
 
@@ -423,7 +565,10 @@ fn take_items(bar: &mut MenuBar, command: &str) -> Vec<Item> {
         for n in std::mem::take(nodes) {
             match n {
                 Node::Item(it) if it.command == Some(command) => out.push(it),
-                Node::Submenu { label, mut children } => {
+                Node::Submenu {
+                    label,
+                    mut children,
+                } => {
                     walk(&mut children, command, out);
                     kept.push(Node::Submenu { label, children });
                 }
@@ -451,14 +596,24 @@ fn take_submenu(bar: &mut MenuBar, command: &str) -> Option<Node> {
             _ => None,
         })
     }
-    let sub = bar.menus.iter_mut().find_map(|m| find(&mut m.children, command));
+    let sub = bar
+        .menus
+        .iter_mut()
+        .find_map(|m| find(&mut m.children, command));
     take_items(bar, command);
     sub
 }
 
 /// VectorCraft's menus as a Mac menu bar, as they show now.
 pub fn layout(app: &VectorcraftApp) -> Layout {
-    let mut layout = mac_layout(app, &from_tree(app, &menus::menu_tree_named(app.session.prefs.font_names_in_english)), crate::i18n::current());
+    let mut layout = mac_layout(
+        app,
+        &from_tree(
+            app,
+            &menus::menu_tree_named(app.session.prefs.font_names_in_english),
+        ),
+        crate::i18n::current(),
+    );
     if app.file_dialog_open() {
         for menu in &mut layout.bar.menus {
             inert(&mut menu.children);
@@ -520,7 +675,13 @@ pub struct NativeMenu {
 
 impl NativeMenu {
     pub fn new(backend: Box<dyn Backend>) -> NativeMenu {
-        NativeMenu { backend, state: None, clicks: Vec::new(), dirty: true, logged: false }
+        NativeMenu {
+            backend,
+            state: None,
+            clicks: Vec::new(),
+            dirty: true,
+            logged: false,
+        }
     }
 
     /// The key equivalents pressed since the last frame, for [`key_events`]; clicks wait for
@@ -541,7 +702,9 @@ impl NativeMenu {
 /// Run the items clicked in the native menu since the last frame, like in-window menu clicks.
 pub fn run(app: &mut VectorcraftApp, ctx: &egui::Context) {
     let picking = app.file_dialog_open();
-    let Some(menu) = app.services.native_menu.as_mut() else { return };
+    let Some(menu) = app.services.native_menu.as_mut() else {
+        return;
+    };
     for it in std::mem::take(&mut menu.clicks) {
         // A click that raced the menu going inert under a file dialog.
         if picking && !modal_allows(&it) {
@@ -564,18 +727,34 @@ pub fn run(app: &mut VectorcraftApp, ctx: &egui::Context) {
 /// do the previews of an open interaction (the steps of a move, scale or shape drag, a dialog's
 /// preview), whose new revisions [`state_hash`] leaves out.
 pub fn sync(app: &mut VectorcraftApp, ctx: &egui::Context) {
-    let Some(menu) = app.services.native_menu.as_ref() else { return };
-    let input = ctx
-        .input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Key { pressed: true, .. } | egui::Event::PointerButton { pressed: false, .. })));
+    let Some(menu) = app.services.native_menu.as_ref() else {
+        return;
+    };
+    let input = ctx.input(|i| {
+        i.events.iter().any(|e| {
+            matches!(
+                e,
+                egui::Event::Key { pressed: true, .. }
+                    | egui::Event::PointerButton { pressed: false, .. }
+            )
+        })
+    });
     let state = state_hash(app, input.then_some(app.frame));
     if menu.state == Some(state) && !menu.dirty {
         return;
     }
     let layout = layout(app);
-    let Some(menu) = app.services.native_menu.as_mut() else { return };
+    let Some(menu) = app.services.native_menu.as_mut() else {
+        return;
+    };
     if !menu.logged {
         for c in &layout.clashes {
-            log::info!("menu: {} is {} on macOS and {} in VectorCraft, which keeps it", c.shortcut, c.system, c.command);
+            log::info!(
+                "menu: {} is {} on macOS and {} in VectorCraft, which keeps it",
+                c.shortcut,
+                c.system,
+                c.command
+            );
         }
         menu.logged = true;
     }
@@ -596,14 +775,37 @@ fn state_hash(app: &VectorcraftApp, input: Option<u64>) -> u64 {
     input.hash(&mut h);
     app.run_count.hash(&mut h);
     let s = &app.session;
-    (s.journal.len(), s.active_index(), s.clipboard.is_empty(), s.tool_composing()).hash(&mut h);
+    (
+        s.journal.len(),
+        s.active_index(),
+        s.clipboard.is_empty(),
+        s.tool_composing(),
+    )
+        .hash(&mut h);
     if let Some(d) = s.active() {
         let revision = d.interaction.is_none().then_some(d.revision);
-        (d.uid, revision, d.history.undo.len(), d.history.redo.len(), d.transparency_grid, d.print_tiling).hash(&mut h);
+        (
+            d.uid,
+            revision,
+            d.history.undo.len(),
+            d.history.redo.len(),
+            d.transparency_grid,
+            d.print_tiling,
+        )
+            .hash(&mut h);
     }
-    (app.system_paste, app.last_effect.is_some(), app.ui.recent_files.len(), app.ui.recent_files.first(), app.recent_fonts().len()).hash(&mut h);
+    (
+        app.system_paste,
+        app.last_effect.is_some(),
+        app.ui.recent_files.len(),
+        app.ui.recent_files.first(),
+        app.recent_fonts().len(),
+    )
+        .hash(&mut h);
     app.file_dialog_open().hash(&mut h);
     (crate::i18n::current().code(), menus::plugin_revision()).hash(&mut h);
-    crate::shortcut_editor::GENERATION.load(std::sync::atomic::Ordering::Relaxed).hash(&mut h);
+    crate::shortcut_editor::GENERATION
+        .load(std::sync::atomic::Ordering::Relaxed)
+        .hash(&mut h);
     h.finish()
 }

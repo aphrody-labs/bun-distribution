@@ -98,7 +98,9 @@ impl Descriptor {
         if let (Some(r), Some(g), Some(b)) = (c.num("Rd  "), c.num("Grn "), c.num("Bl  ")) {
             return Some([r / 255.0, g / 255.0, b / 255.0]);
         }
-        if let (Some(r), Some(g), Some(b)) = (c.num("redFloat"), c.num("greenFloat"), c.num("blueFloat")) {
+        if let (Some(r), Some(g), Some(b)) =
+            (c.num("redFloat"), c.num("greenFloat"), c.num("blueFloat"))
+        {
             return Some([r, g, b]);
         }
         c.num("Gry ").map(|g| {
@@ -149,7 +151,11 @@ fn read_descriptor_at(r: &mut Reader, depth: usize) -> Result<Descriptor> {
         let v = read_value(r, &ty, depth)?;
         items.push((key, v));
     }
-    Ok(Descriptor { class_name, class_id, items })
+    Ok(Descriptor {
+        class_name,
+        class_id,
+        items,
+    })
 }
 
 fn read_value(r: &mut Reader, ty: &[u8; 4], depth: usize) -> Result<DValue> {
@@ -237,12 +243,22 @@ fn read_value(r: &mut Reader, ty: &[u8; 4], depth: usize) -> Result<DValue> {
                         let class = read_id(r)?;
                         RefItem::Name(class, read_unicode(r)?)
                     }
-                    other => return Err(Error::Invalid(format!("reference item `{}`", String::from_utf8_lossy(other)))),
+                    other => {
+                        return Err(Error::Invalid(format!(
+                            "reference item `{}`",
+                            String::from_utf8_lossy(other)
+                        )));
+                    }
                 });
             }
             DValue::Reference(items)
         }
-        other => return Err(Error::Invalid(format!("descriptor type `{}`", String::from_utf8_lossy(other)))),
+        other => {
+            return Err(Error::Invalid(format!(
+                "descriptor type `{}`",
+                String::from_utf8_lossy(other)
+            )));
+        }
     })
 }
 
@@ -406,7 +422,11 @@ fn tag4(s: &str) -> [u8; 4] {
 /// Builder helpers for descriptors (tests and the writer).
 impl Descriptor {
     pub fn new(class_id: &str) -> Descriptor {
-        Descriptor { class_name: String::new(), class_id: class_id.into(), items: vec![] }
+        Descriptor {
+            class_name: String::new(),
+            class_id: class_id.into(),
+            items: vec![],
+        }
     }
     pub fn with(mut self, key: &str, v: DValue) -> Descriptor {
         self.items.push((key.into(), v));
@@ -414,7 +434,10 @@ impl Descriptor {
     }
     /// An `RGBC` colour object from 0..1 values.
     pub fn rgb(c: [f64; 3]) -> Descriptor {
-        Descriptor::new("RGBC").with("Rd  ", DValue::Double(c[0] * 255.0)).with("Grn ", DValue::Double(c[1] * 255.0)).with("Bl  ", DValue::Double(c[2] * 255.0))
+        Descriptor::new("RGBC")
+            .with("Rd  ", DValue::Double(c[0] * 255.0))
+            .with("Grn ", DValue::Double(c[1] * 255.0))
+            .with("Bl  ", DValue::Double(c[2] * 255.0))
     }
 }
 
@@ -427,9 +450,21 @@ mod tests {
         // Each level: empty class name, a 4-byte class id, one item `key` of type `Objc`. The
         // depth limit restarted at every nested descriptor, so 100 000 levels (2.4 MB) recursed
         // until the stack overflowed.
-        let level: Vec<u8> = [&0u32.to_be_bytes()[..], &0u32.to_be_bytes(), b"null", &1u32.to_be_bytes(), &0u32.to_be_bytes(), b"key ", b"Objc"].concat();
+        let level: Vec<u8> = [
+            &0u32.to_be_bytes()[..],
+            &0u32.to_be_bytes(),
+            b"null",
+            &1u32.to_be_bytes(),
+            &0u32.to_be_bytes(),
+            b"key ",
+            b"Objc",
+        ]
+        .concat();
         let bytes = level.repeat(100_000);
-        assert!(matches!(read_descriptor(&mut Reader::new(&bytes)), Err(Error::Invalid(_))));
+        assert!(matches!(
+            read_descriptor(&mut Reader::new(&bytes)),
+            Err(Error::Invalid(_))
+        ));
     }
 
     #[test]
@@ -440,9 +475,18 @@ mod tests {
             .with("Opct", DValue::UnitFloat("#Prc".into(), 75.0))
             .with("Md  ", DValue::Enum("BlnM".into(), "Mltp".into()))
             .with("enab", DValue::Bool(true))
-            .with("longKeyName", DValue::List(vec![DValue::Integer(3), DValue::Double(1.5)]))
+            .with(
+                "longKeyName",
+                DValue::List(vec![DValue::Integer(3), DValue::Double(1.5)]),
+            )
             .with("EngineData", DValue::Raw(b"<< >>".to_vec()))
-            .with("ref", DValue::Reference(vec![RefItem::Enum("Lyr ".into(), "Ordn".into(), "Trgt".into()), RefItem::Index(2)]));
+            .with(
+                "ref",
+                DValue::Reference(vec![
+                    RefItem::Enum("Lyr ".into(), "Ordn".into(), "Trgt".into()),
+                    RefItem::Index(2),
+                ]),
+            );
         let mut out = vec![];
         write_descriptor(&mut out, &d);
         let back = read_descriptor(&mut Reader::new(&out)).unwrap();

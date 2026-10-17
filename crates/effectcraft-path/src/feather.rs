@@ -25,7 +25,10 @@ struct Flat {
 fn cubic(p0: [f64; 2], p1: [f64; 2], p2: [f64; 2], p3: [f64; 2], t: f64) -> [f64; 2] {
     let u = 1.0 - t;
     let (a, b, c, d) = (u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t);
-    [a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1]]
+    [
+        a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0],
+        a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1],
+    ]
 }
 
 fn flatten(sp: &ShapePath, m: &Mat3) -> Flat {
@@ -45,8 +48,16 @@ fn flatten(sp: &ShapePath, m: &Mat3) -> Flat {
         let v1 = sp.vertices[j];
         let o = sp.out_tangents.get(i).copied().unwrap_or([0.0; 2]);
         let it = sp.in_tangents.get(j).copied().unwrap_or([0.0; 2]);
-        let (p0, p1, p2, p3) = (tr(v0), tr([v0[0] + o[0], v0[1] + o[1]]), tr([v1[0] + it[0], v1[1] + it[1]]), tr(v1));
-        let est = ((p1[0] - p0[0]).hypot(p1[1] - p0[1]) + (p2[0] - p1[0]).hypot(p2[1] - p1[1]) + (p3[0] - p2[0]).hypot(p3[1] - p2[1])).max(1.0);
+        let (p0, p1, p2, p3) = (
+            tr(v0),
+            tr([v0[0] + o[0], v0[1] + o[1]]),
+            tr([v1[0] + it[0], v1[1] + it[1]]),
+            tr(v1),
+        );
+        let est = ((p1[0] - p0[0]).hypot(p1[1] - p0[1])
+            + (p2[0] - p1[0]).hypot(p2[1] - p1[1])
+            + (p3[0] - p2[0]).hypot(p3[1] - p2[1]))
+        .max(1.0);
         let k = ((est / 1.5).ceil() as usize).clamp(4, 1024);
         let mut table = Vec::with_capacity(k + 1);
         if pts.is_empty() {
@@ -66,7 +77,12 @@ fn flatten(sp: &ShapePath, m: &Mat3) -> Flat {
         }
         seg_tables.push(table);
     }
-    Flat { pts, s, seg_tables, len: acc }
+    Flat {
+        pts,
+        s,
+        seg_tables,
+        len: acc,
+    }
 }
 
 impl Flat {
@@ -74,9 +90,15 @@ impl Flat {
     fn arc_of(&self, f: &FeatherPoint) -> Option<f64> {
         let table = self.seg_tables.get(f.segment)?;
         let t = f.t.clamp(0.0, 1.0);
-        let i = table.partition_point(|e| e.0 <= t).clamp(1, table.len() - 1);
+        let i = table
+            .partition_point(|e| e.0 <= t)
+            .clamp(1, table.len() - 1);
         let (a, b) = (table[i - 1], table[i]);
-        let u = if b.0 > a.0 { (t - a.0) / (b.0 - a.0) } else { 0.0 };
+        let u = if b.0 > a.0 {
+            (t - a.0) / (b.0 - a.0)
+        } else {
+            0.0
+        };
         Some(a.1 + (b.1 - a.1) * u)
     }
 }
@@ -109,11 +131,19 @@ impl Profile {
         let last = p[p.len() - 1];
         if u < first.0 || u >= last.0 {
             if !self.closed {
-                return if u < first.0 { (first.1, first.2) } else { (last.1, last.2) };
+                return if u < first.0 {
+                    (first.1, first.2)
+                } else {
+                    (last.1, last.2)
+                };
             }
             // Wrap from the last point to the first through the path's start.
             let span = (self.len - last.0) + first.0;
-            let x = if u >= last.0 { u - last.0 } else { u + self.len - last.0 };
+            let x = if u >= last.0 {
+                u - last.0
+            } else {
+                u + self.len - last.0
+            };
             return blend(&last, &first, if span > 1e-9 { x / span } else { 0.0 });
         }
         let i = p.partition_point(|e| e.0 <= u).clamp(1, p.len() - 1);
@@ -126,7 +156,14 @@ impl Profile {
 /// Coverage of a mask path with feather points, transformed by `m` (translate + uniform scale)
 /// into a `w × h` mask. `expansion` (layer pixels) grows (>0) or shrinks the mask first;
 /// `linear` selects the Linear feather falloff instead of Smooth.
-pub fn variable_feather_coverage(sp: &ShapePath, m: &Mat3, w: u32, h: u32, expansion: f64, linear: bool) -> Mask {
+pub fn variable_feather_coverage(
+    sp: &ShapePath,
+    m: &Mat3,
+    w: u32,
+    h: u32,
+    expansion: f64,
+    linear: bool,
+) -> Mask {
     let scale = m.mean_scale();
     let path = to_kurbo(sp);
     let hard = fill_coverage(std::slice::from_ref(&path), m, w, h, FillRule::NonZero);
@@ -144,7 +181,11 @@ pub fn variable_feather_coverage(sp: &ShapePath, m: &Mat3, w: u32, h: u32, expan
         })
         .collect();
     pts.sort_by(|a, b| a.0.total_cmp(&b.0));
-    let prof = Profile { pts, len: flat.len, closed: sp.closed };
+    let prof = Profile {
+        pts,
+        len: flat.len,
+        closed: sp.closed,
+    };
     let rmax = prof.pts.iter().map(|p| p.1.max(p.2)).fold(0.0, f64::max);
     let exp = expansion * scale;
     let reach = rmax + exp.abs() + 2.0;
@@ -166,7 +207,11 @@ pub fn variable_feather_coverage(sp: &ShapePath, m: &Mat3, w: u32, h: u32, expan
         for y in y0..=y1 as usize {
             for x in x0..=x1 as usize {
                 let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
-                let t = if l2 > 0.0 { (((px - a[0]) * dx + (py - a[1]) * dy) / l2).clamp(0.0, 1.0) } else { 0.0 };
+                let t = if l2 > 0.0 {
+                    (((px - a[0]) * dx + (py - a[1]) * dy) / l2).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
                 let (qx, qy) = (a[0] + dx * t - px, a[1] + dy * t - py);
                 let d = (qx * qx + qy * qy).sqrt() as f32;
                 let i = y * wu + x;
@@ -194,7 +239,11 @@ pub fn variable_feather_coverage(sp: &ShapePath, m: &Mat3, w: u32, h: u32, expan
         let sd = if inside { -d } else { d } - exp;
         let (ro, ri) = prof.at(arc[i] as f64);
         let a = if sd > 0.0 {
-            if ro > 0.5 { ramp(1.0 - sd / ro) } else { (0.5 - sd).clamp(0.0, 1.0) }
+            if ro > 0.5 {
+                ramp(1.0 - sd / ro)
+            } else {
+                (0.5 - sd).clamp(0.0, 1.0)
+            }
         } else if ri > 0.5 {
             ramp(-sd / ri)
         } else {
@@ -227,42 +276,97 @@ mod tests {
     #[test]
     fn single_outer_point_feathers_all_around() {
         let mut sp = square();
-        sp.feather = vec![FeatherPoint { segment: 0, t: 0.5, radius: 20.0, tension: 0.0 }];
+        sp.feather = vec![FeatherPoint {
+            segment: 0,
+            t: 0.5,
+            radius: 20.0,
+            tension: 0.0,
+        }];
         let m = variable_feather_coverage(&sp, &Mat3::IDENTITY, 200, 200, 0.0, true);
         // Above the top edge: 1 at the edge falling linearly to 0 at 20 px.
-        assert!((at(&m, 100, 39) - 0.475).abs() < 0.06, "{}", at(&m, 100, 39));
+        assert!(
+            (at(&m, 100, 39) - 0.475).abs() < 0.06,
+            "{}",
+            at(&m, 100, 39)
+        );
         assert!(at(&m, 100, 28) < 0.01);
         assert!(at(&m, 100, 60) > 0.99, "inside stays opaque");
         // One point applies to the whole closed path.
-        assert!((at(&m, 161, 100) - 0.475).abs() < 0.06, "{}", at(&m, 161, 100));
+        assert!(
+            (at(&m, 161, 100) - 0.475).abs() < 0.06,
+            "{}",
+            at(&m, 161, 100)
+        );
     }
 
     #[test]
     fn outer_and_inner_points_vary_along_the_path() {
         let mut sp = square();
         // Outer 20 px in the middle of the top edge, inner 20 px in the middle of the bottom edge.
-        sp.feather = vec![FeatherPoint { segment: 0, t: 0.5, radius: 20.0, tension: 1.0 }, FeatherPoint { segment: 2, t: 0.5, radius: -20.0, tension: 1.0 }];
+        sp.feather = vec![
+            FeatherPoint {
+                segment: 0,
+                t: 0.5,
+                radius: 20.0,
+                tension: 1.0,
+            },
+            FeatherPoint {
+                segment: 2,
+                t: 0.5,
+                radius: -20.0,
+                tension: 1.0,
+            },
+        ];
         let m = variable_feather_coverage(&sp, &Mat3::IDENTITY, 200, 200, 0.0, true);
         // Top: soft outside, hard inside.
-        assert!(at(&m, 100, 45) > 0.6 && at(&m, 100, 45) < 0.8, "{}", at(&m, 100, 45));
+        assert!(
+            at(&m, 100, 45) > 0.6 && at(&m, 100, 45) < 0.8,
+            "{}",
+            at(&m, 100, 45)
+        );
         assert!(at(&m, 100, 52) > 0.99);
         // Bottom: hard outside, soft inside (0 at the edge, 1 at 20 px in).
         assert!(at(&m, 100, 152) < 0.01);
-        assert!((at(&m, 100, 140) - 0.475).abs() < 0.06, "{}", at(&m, 100, 140));
+        assert!(
+            (at(&m, 100, 140) - 0.475).abs() < 0.06,
+            "{}",
+            at(&m, 100, 140)
+        );
         // Half way round (middle of the right edge): both radii are half way, 10 px.
-        assert!((at(&m, 154, 100) - 0.55).abs() < 0.05, "{}", at(&m, 154, 100));
-        assert!((at(&m, 145, 100) - 0.45).abs() < 0.05, "{}", at(&m, 145, 100));
+        assert!(
+            (at(&m, 154, 100) - 0.55).abs() < 0.05,
+            "{}",
+            at(&m, 154, 100)
+        );
+        assert!(
+            (at(&m, 145, 100) - 0.45).abs() < 0.05,
+            "{}",
+            at(&m, 145, 100)
+        );
     }
 
     #[test]
     fn scale_and_expansion() {
         let mut sp = square();
-        sp.feather = vec![FeatherPoint { segment: 0, t: 0.5, radius: 10.0, tension: 0.0 }];
+        sp.feather = vec![FeatherPoint {
+            segment: 0,
+            t: 0.5,
+            radius: 10.0,
+            tension: 0.0,
+        }];
         // Half resolution: the 10 px feather is 5 buffer pixels.
         let m = variable_feather_coverage(&sp, &Mat3::scale(vec2(0.5, 0.5)), 100, 100, 0.0, true);
-        assert!(at(&m, 50, 22) > 0.4 && at(&m, 50, 22) < 0.6, "{}", at(&m, 50, 22));
+        assert!(
+            at(&m, 50, 22) > 0.4 && at(&m, 50, 22) < 0.6,
+            "{}",
+            at(&m, 50, 22)
+        );
         let e = variable_feather_coverage(&sp, &Mat3::IDENTITY, 200, 200, 10.0, true);
-        assert!(at(&e, 100, 41) > 0.99, "expanded by 10 px: {}", at(&e, 100, 41));
+        assert!(
+            at(&e, 100, 41) > 0.99,
+            "expanded by 10 px: {}",
+            at(&e, 100, 41)
+        );
         assert!((at(&e, 100, 34) - 0.45).abs() < 0.05, "{}", at(&e, 100, 34));
     }
 }

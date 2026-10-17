@@ -31,8 +31,8 @@ const EYE_LINE: [usize; 2] = [33, 263];
 /// tracker's landmarks are (inner lips for the mouth, iris centres for the pupils).
 pub const TOPOLOGY: Topology = Topology {
     outline: &[
-        10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162,
-        21, 54, 103, 67, 109,
+        10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377,
+        152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109,
     ],
     landmarks: &[
         ("leftEyebrowInner", 107),
@@ -109,7 +109,10 @@ fn weighted_nms(mut dets: Vec<Detection>) -> Vec<Detection> {
     while let Some(top) = dets.first().copied() {
         // `top` always joins its own cluster: its overlap with itself is 0 for a degenerate box
         // (NaN or zero area), so partitioning it with the rest would never shrink `dets`.
-        let (mut cluster, rest): (Vec<Detection>, Vec<Detection>) = dets.into_iter().skip(1).partition(|d| iou(&d.bbox, &top.bbox) > NMS_IOU);
+        let (mut cluster, rest): (Vec<Detection>, Vec<Detection>) = dets
+            .into_iter()
+            .skip(1)
+            .partition(|d| iou(&d.bbox, &top.bbox) > NMS_IOU);
         dets = rest;
         cluster.insert(0, top);
         let total: f32 = cluster.iter().map(|d| d.score).sum();
@@ -117,7 +120,11 @@ fn weighted_nms(mut dets: Vec<Detection>) -> Vec<Detection> {
             out.push(top);
             continue;
         }
-        let mut avg = Detection { bbox: [0.0; 4], keypoints: [[0.0; 2]; 6], score: top.score };
+        let mut avg = Detection {
+            bbox: [0.0; 4],
+            keypoints: [[0.0; 2]; 6],
+            score: top.score,
+        };
         for d in &cluster {
             let k = d.score / total;
             for i in 0..4 {
@@ -144,9 +151,22 @@ fn roi_of(bbox: [f32; 4], from: [f32; 2], to: [f32; 2]) -> Roi {
 }
 
 fn bounds(points: &[[f32; 2]]) -> [f32; 4] {
-    points
-        .iter()
-        .fold([f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY], |b, p| [b[0].min(p[0]), b[1].min(p[1]), b[2].max(p[0]), b[3].max(p[1])])
+    points.iter().fold(
+        [
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+        ],
+        |b, p| {
+            [
+                b[0].min(p[0]),
+                b[1].min(p[1]),
+                b[2].max(p[0]),
+                b[3].max(p[1]),
+            ]
+        },
+    )
 }
 
 impl FaceLandmarker {
@@ -155,37 +175,63 @@ impl FaceLandmarker {
         let detector = Model::read(&crate::pt::zip_file(bytes, DETECTOR)?)?;
         let mesh = Model::read(&crate::pt::zip_file(bytes, MESH)?)?;
         let anchors = anchors();
-        if detector.input_shape(0) != Some(&[1, DET_SIZE, DET_SIZE, 3]) || detector.output(0).map(|o| o.0) != Some(&[1, anchors.len(), 16]) {
+        if detector.input_shape(0) != Some(&[1, DET_SIZE, DET_SIZE, 3])
+            || detector.output(0).map(|o| o.0) != Some(&[1, anchors.len(), 16])
+        {
             return Err("unexpected face detector".into());
         }
-        if mesh.input_shape(0) != Some(&[1, MESH_SIZE, MESH_SIZE, 3]) || mesh.output(0).map(|o| o.0.iter().product::<usize>()) != Some(MESH_POINTS * 3) {
+        if mesh.input_shape(0) != Some(&[1, MESH_SIZE, MESH_SIZE, 3])
+            || mesh.output(0).map(|o| o.0.iter().product::<usize>()) != Some(MESH_POINTS * 3)
+        {
             return Err("unexpected face mesh".into());
         }
-        Ok(FaceLandmarker { detector, mesh, anchors })
+        Ok(FaceLandmarker {
+            detector,
+            mesh,
+            anchors,
+        })
     }
 
     /// Faces in the square `roi` of a frame (frame pixels), best first.
-    pub fn detect(&self, rgb: &[[f32; 3]], w: usize, h: usize, roi: &Roi) -> Result<Vec<Detection>> {
+    pub fn detect(
+        &self,
+        rgb: &[[f32; 3]],
+        w: usize,
+        h: usize,
+        roi: &Roi,
+    ) -> Result<Vec<Detection>> {
         let x = crop(rgb, w, h, roi, DET_SIZE, [-1.0, 1.0], Border::Zero);
         let out = self.detector.run(&[&x])?;
-        let (Some(reg), Some(cls)) = (out.first(), out.get(1)) else { return Err("face detector: missing outputs".into()) };
+        let (Some(reg), Some(cls)) = (out.first(), out.get(1)) else {
+            return Err("face detector: missing outputs".into());
+        };
         let s = DET_SIZE as f32;
         let mut dets = vec![];
         for (i, a) in self.anchors.iter().enumerate() {
-            let (Some(r), Some(&c)) = (reg.get(i * 16..i * 16 + 16), cls.get(i)) else { break };
+            let (Some(r), Some(&c)) = (reg.get(i * 16..i * 16 + 16), cls.get(i)) else {
+                break;
+            };
             let score = sigmoid(c.clamp(-100.0, 100.0));
             if score < MIN_SCORE {
                 continue;
             }
             let (cx, cy, bw, bh) = (r[0] / s + a[0], r[1] / s + a[1], r[2] / s, r[3] / s);
             let to = |u: f32, v: f32| roi.to_frame(u, v);
-            let corners =
-                [to(cx - bw / 2.0, cy - bh / 2.0), to(cx + bw / 2.0, cy - bh / 2.0), to(cx - bw / 2.0, cy + bh / 2.0), to(cx + bw / 2.0, cy + bh / 2.0)];
+            let corners = [
+                to(cx - bw / 2.0, cy - bh / 2.0),
+                to(cx + bw / 2.0, cy - bh / 2.0),
+                to(cx - bw / 2.0, cy + bh / 2.0),
+                to(cx + bw / 2.0, cy + bh / 2.0),
+            ];
             let mut keypoints = [[0.0f32; 2]; 6];
             for (k, p) in keypoints.iter_mut().enumerate() {
                 *p = to(r[4 + 2 * k] / s + a[0], r[5 + 2 * k] / s + a[1]);
             }
-            dets.push(Detection { bbox: bounds(&corners), keypoints, score });
+            dets.push(Detection {
+                bbox: bounds(&corners),
+                keypoints,
+                score,
+            });
         }
         Ok(weighted_nms(dets))
     }
@@ -194,10 +240,21 @@ impl FaceLandmarker {
     pub fn mesh(&self, rgb: &[[f32; 3]], w: usize, h: usize, roi: &Roi) -> Result<Face> {
         let x = crop(rgb, w, h, roi, MESH_SIZE, [0.0, 1.0], Border::Replicate);
         let out = self.mesh.run(&[&x])?;
-        let (Some(pts), Some(flag)) = (out.first(), out.get(1).and_then(|f| f.first())) else { return Err("face mesh: missing outputs".into()) };
+        let (Some(pts), Some(flag)) = (out.first(), out.get(1).and_then(|f| f.first())) else {
+            return Err("face mesh: missing outputs".into());
+        };
         let s = MESH_SIZE as f32;
-        let points = pts.as_chunks::<3>().0.iter().take(MESH_POINTS).map(|p| roi.to_frame(p[0] / s, p[1] / s)).collect();
-        Ok(Face { points, score: sigmoid(*flag) })
+        let points = pts
+            .as_chunks::<3>()
+            .0
+            .iter()
+            .take(MESH_POINTS)
+            .map(|p| roi.to_frame(p[0] / s, p[1] / s))
+            .collect();
+        Ok(Face {
+            points,
+            score: sigmoid(*flag),
+        })
     }
 
     /// The crop that frames a face found earlier.
@@ -207,14 +264,26 @@ impl FaceLandmarker {
     }
 
     /// The mesh from `roi`, refined once from its own points (a detector box is coarse).
-    fn mesh_refined(&self, rgb: &[[f32; 3]], w: usize, h: usize, roi: &Roi) -> Result<Option<Face>> {
+    fn mesh_refined(
+        &self,
+        rgb: &[[f32; 3]],
+        w: usize,
+        h: usize,
+        roi: &Roi,
+    ) -> Result<Option<Face>> {
         let first = self.mesh(rgb, w, h, roi)?;
         if first.score < MIN_SCORE {
             return Ok(None);
         }
-        let Some(r) = Self::roi_of_face(&first) else { return Ok(None) };
+        let Some(r) = Self::roi_of_face(&first) else {
+            return Ok(None);
+        };
         let refined = self.mesh(rgb, w, h, &r)?;
-        Ok(Some(if refined.score >= MIN_SCORE { refined } else { first }))
+        Ok(Some(if refined.score >= MIN_SCORE {
+            refined
+        } else {
+            first
+        }))
     }
 }
 
@@ -234,21 +303,36 @@ impl FaceModel for FaceLandmarker {
         };
         // Around the region first (a face filling the mask), then the whole frame (a small face).
         let side = (region[2] - region[0]).max(region[3] - region[1]);
-        let around = Roi { center: [(region[0] + region[2]) / 2.0, (region[1] + region[3]) / 2.0], size: side * ROI_SCALE, angle: 0.0 };
-        let whole = Roi { center: [w as f32 / 2.0, h as f32 / 2.0], size: w.max(h) as f32, angle: 0.0 };
+        let around = Roi {
+            center: [(region[0] + region[2]) / 2.0, (region[1] + region[3]) / 2.0],
+            size: side * ROI_SCALE,
+            angle: 0.0,
+        };
+        let whole = Roi {
+            center: [w as f32 / 2.0, h as f32 / 2.0],
+            size: w.max(h) as f32,
+            angle: 0.0,
+        };
         for roi in [around, whole] {
             if !roi.size.is_finite() || roi.size <= 4.0 {
                 continue;
             }
             if let Some(d) = self.detect(rgb, w, h, &roi)?.into_iter().find(inside) {
-                return self.mesh_refined(rgb, w, h, &roi_of(d.bbox, d.keypoints[0], d.keypoints[1]));
+                return self.mesh_refined(
+                    rgb,
+                    w,
+                    h,
+                    &roi_of(d.bbox, d.keypoints[0], d.keypoints[1]),
+                );
             }
         }
         Ok(None)
     }
 
     fn follow(&self, rgb: &[[f32; 3]], w: usize, h: usize, prev: &Face) -> Result<Option<Face>> {
-        let Some(roi) = Self::roi_of_face(prev) else { return Ok(None) };
+        let Some(roi) = Self::roi_of_face(prev) else {
+            return Ok(None);
+        };
         let face = self.mesh(rgb, w, h, &roi)?;
         if face.score >= MIN_SCORE {
             return Ok(Some(face));
@@ -279,7 +363,11 @@ mod tests {
 
     #[test]
     fn nms_averages_overlapping_detections() {
-        let d = |x: f32, s: f32| Detection { bbox: [x, 0.0, x + 10.0, 10.0], keypoints: [[x, 0.0]; 6], score: s };
+        let d = |x: f32, s: f32| Detection {
+            bbox: [x, 0.0, x + 10.0, 10.0],
+            keypoints: [[x, 0.0]; 6],
+            score: s,
+        };
         let out = weighted_nms(vec![d(0.0, 0.9), d(1.0, 0.9), d(50.0, 0.6)]);
         assert_eq!(out.len(), 2);
         assert!((out[0].bbox[0] - 0.5).abs() < 1e-5 && out[0].score == 0.9);
@@ -290,11 +378,23 @@ mod tests {
     /// its own output instead of looping forever (#367).
     #[test]
     fn nms_terminates_on_degenerate_boxes() {
-        let d = Detection { bbox: [f32::NAN; 4], keypoints: [[f32::NAN; 2]; 6], score: 0.7 };
+        let d = Detection {
+            bbox: [f32::NAN; 4],
+            keypoints: [[f32::NAN; 2]; 6],
+            score: 0.7,
+        };
         assert_eq!(weighted_nms(vec![d, d, d]).len(), 3);
-        let z = Detection { bbox: [0.0; 4], keypoints: [[0.0; 2]; 6], score: 0.0 };
+        let z = Detection {
+            bbox: [0.0; 4],
+            keypoints: [[0.0; 2]; 6],
+            score: 0.0,
+        };
         assert_eq!(weighted_nms(vec![z, z]).len(), 2);
-        let n = Detection { bbox: [0.0; 4], keypoints: [[0.0; 2]; 6], score: f32::NAN };
+        let n = Detection {
+            bbox: [0.0; 4],
+            keypoints: [[0.0; 2]; 6],
+            score: f32::NAN,
+        };
         assert_eq!(weighted_nms(vec![n, z, d]).len(), 3);
     }
 
@@ -303,13 +403,19 @@ mod tests {
     /// to record these sums).
     #[test]
     fn matches_tensorflow_lite_on_the_official_weights() {
-        let Some(path) = std::env::var_os("EFFECTCRAFT_FACE_LANDMARKER") else { return };
+        let Some(path) = std::env::var_os("EFFECTCRAFT_FACE_LANDMARKER") else {
+            return;
+        };
         let bytes = std::fs::read(path).unwrap();
         let m = FaceLandmarker::from_task(&bytes).unwrap();
-        let input = |n: usize| -> Vec<f32> { (0..n).map(|i| ((i as f32) * 0.013).sin() * 0.5).collect() };
+        let input =
+            |n: usize| -> Vec<f32> { (0..n).map(|i| ((i as f32) * 0.013).sin() * 0.5).collect() };
         let close = |got: &[f32], want: f64| {
             let s: f64 = got.iter().map(|v| *v as f64).sum();
-            assert!((s - want).abs() <= 1e-5 * want.abs().max(1.0), "{s} vs {want}");
+            assert!(
+                (s - want).abs() <= 1e-5 * want.abs().max(1.0),
+                "{s} vs {want}"
+            );
         };
         let d = m.detector.run(&[&input(DET_SIZE * DET_SIZE * 3)]).unwrap();
         close(&d[0], 54_202.040_273);
@@ -321,7 +427,13 @@ mod tests {
 
     #[test]
     fn topology_indices_are_mesh_points() {
-        assert!(TOPOLOGY.outline.iter().chain(TOPOLOGY.landmarks.iter().map(|l| &l.1)).all(|&i| i < MESH_POINTS));
+        assert!(
+            TOPOLOGY
+                .outline
+                .iter()
+                .chain(TOPOLOGY.landmarks.iter().map(|l| &l.1))
+                .all(|&i| i < MESH_POINTS)
+        );
         assert_eq!(TOPOLOGY.outline.len(), 36);
     }
 }

@@ -1,5 +1,5 @@
 use bevy_asset::{Assets, Handle, RenderAssetUsages};
-use bevy_image::{prelude::*, ImageSampler, ToExtents};
+use bevy_image::{ImageSampler, ToExtents, prelude::*};
 use bevy_math::{UVec2, Vec2};
 use bevy_platform::collections::HashMap;
 use swash::scale::Scaler;
@@ -279,7 +279,7 @@ pub fn get_glyph_atlas_info(
 #[cfg(test)]
 mod allocation_regression_tests {
     use super::*;
-    use swash::{scale::ScaleContext, FontRef};
+    use swash::{FontRef, scale::ScaleContext};
 
     // Regression test for https://github.com/bevyengine/bevy/issues/25224.
     // Atlas sizing must account for the padding used when constructing the atlas.

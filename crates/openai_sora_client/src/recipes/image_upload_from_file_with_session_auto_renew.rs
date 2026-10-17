@@ -10,46 +10,44 @@ use std::path::Path;
 use std::time::Duration;
 
 pub struct ImageUploadFromFileAutoRenewRequest<'a, P: AsRef<Path>> {
-  pub file_path: P,
-  pub credentials: &'a SoraCredentialSet,
-  
-  /// This function can try to upload several times. This is the timeout for *individual* requests.
-  pub request_timeout: Option<Duration>,
+    pub file_path: P,
+    pub credentials: &'a SoraCredentialSet,
+
+    /// This function can try to upload several times. This is the timeout for *individual* requests.
+    pub request_timeout: Option<Duration>,
 }
 
 /// Image upload with retry and session auto-renewal.
 /// If a new sora credential is returned, replace the old one with the new one.
 pub async fn image_upload_from_file_with_session_auto_renew<P: AsRef<Path>>(
-  request: ImageUploadFromFileAutoRenewRequest<'_, P>
+    request: ImageUploadFromFileAutoRenewRequest<'_, P>,
 ) -> Result<(SoraMediaUploadResponse, Option<SoraCredentialSet>), SoraError> {
+    let result = sora_media_upload_from_file(
+        request.file_path.as_ref().clone(), // FIXME(bt): This is horrible, but the client needs to take ownership. :(
+        request.credentials,
+        /// This function can try to upload several times. This is the timeout for *individual* requests.
+        request.request_timeout,
+    )
+    .await;
 
-  let result = sora_media_upload_from_file(
-    request.file_path.as_ref().clone(), // FIXME(bt): This is horrible, but the client needs to take ownership. :(
-    request.credentials,
-    /// This function can try to upload several times. This is the timeout for *individual* requests.
-    request.request_timeout,
-  ).await;
+    let err = match result {
+        Ok(response) => return Ok((response, None)),
+        // We can't retry some errors.
+        Err(err @ SoraError::ApiSpecific(SoraSpecificApiError::SoraUsernameNotYetCreated)) => {
+            return Err(err);
+        }
+        // Retry all other errors.
+        Err(err) => err,
+    };
 
-  let err = match result {
-    Ok(response) => return Ok((response, None)),
-    // We can't retry some errors.
-    Err(err @ SoraError::ApiSpecific(SoraSpecificApiError::SoraUsernameNotYetCreated)) => return Err(err),
-    // Retry all other errors.
-    Err(err) => err,
-  };
+    warn!("Image upload failed: {:?}", err);
 
-  warn!("Image upload failed: {:?}", err);
+    let new_creds = maybe_refresh_credentials_on_sora_error(request.credentials, err).await?;
 
-  let new_creds = maybe_refresh_credentials_on_sora_error(request.credentials, err).await?;
+    info!("Retrying image upload with new credentials...");
 
-  info!("Retrying image upload with new credentials...");
+    let result =
+        sora_media_upload_from_file(request.file_path, &new_creds, request.request_timeout).await?;
 
-  let result = sora_media_upload_from_file(
-    request.file_path,
-    &new_creds,
-    request.request_timeout,
-  ).await?;
-
-  Ok((result, Some(new_creds)))
+    Ok((result, Some(new_creds)))
 }
-

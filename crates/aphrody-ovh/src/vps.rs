@@ -114,7 +114,11 @@ impl VpsHealthStatus {
             alerts.push("État: ARRÊTÉ".to_string());
         }
 
-        Self { service_name, is_healthy: alerts.is_empty(), alerts }
+        Self {
+            service_name,
+            is_healthy: alerts.is_empty(),
+            alerts,
+        }
     }
 }
 
@@ -168,20 +172,52 @@ impl<'a> VpsManager<'a> {
         let model = raw.get("model");
 
         Ok(VpsInfo {
-            name: raw.get("name").and_then(|v| v.as_str()).unwrap_or(service_name).to_string(),
-            display_name: raw.get("displayName").and_then(|v| v.as_str()).map(ToString::to_string),
-            state: raw.get("state").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
-            cluster: raw.get("cluster").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            zone: raw.get("zone").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            name: raw
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or(service_name)
+                .to_string(),
+            display_name: raw
+                .get("displayName")
+                .and_then(|v| v.as_str())
+                .map(ToString::to_string),
+            state: raw
+                .get("state")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string(),
+            cluster: raw
+                .get("cluster")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            zone: raw
+                .get("zone")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
             model: model
                 .and_then(|m| m.get("name"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("vps")
                 .to_string(),
-            memory_mb: model.and_then(|m| m.get("memory")).and_then(|v| v.as_u64()).unwrap_or(0),
-            vcore: model.and_then(|m| m.get("vcore")).and_then(|v| v.as_u64()).unwrap_or(0) as u32,
-            disk_gb: model.and_then(|m| m.get("disk")).and_then(|v| v.as_u64()).unwrap_or(0),
-            sla: if raw.get("slaMonitoring").and_then(|v| v.as_bool()).unwrap_or(false) {
+            memory_mb: model
+                .and_then(|m| m.get("memory"))
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0),
+            vcore: model
+                .and_then(|m| m.get("vcore"))
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as u32,
+            disk_gb: model
+                .and_then(|m| m.get("disk"))
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0),
+            sla: if raw
+                .get("slaMonitoring")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+            {
                 "active".into()
             } else {
                 "standard".into()
@@ -195,8 +231,10 @@ impl<'a> VpsManager<'a> {
 
         for ip in ip_strings {
             let version = if ip.contains(':') { "v6" } else { "v4" };
-            if let Ok(detail) =
-                self.client.get::<serde_json::Value>(&format!("/vps/{service_name}/ips/{ip}")).await
+            if let Ok(detail) = self
+                .client
+                .get::<serde_json::Value>(&format!("/vps/{service_name}/ips/{ip}"))
+                .await
             {
                 ips.push(VpsIp {
                     ip: ip.clone(),
@@ -230,24 +268,40 @@ impl<'a> VpsManager<'a> {
     }
 
     pub async fn get_status(&self, service_name: &str) -> Result<VpsStatus> {
-        let raw: serde_json::Value =
-            self.client.get(&format!("/vps/{service_name}/status")).await?;
+        let raw: serde_json::Value = self
+            .client
+            .get(&format!("/vps/{service_name}/status"))
+            .await?;
         Ok(VpsStatus {
-            state: raw.get("state").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
+            state: raw
+                .get("state")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string(),
             ping: raw.get("ping").and_then(|v| v.as_bool()).unwrap_or(false),
             up: raw.get("up").and_then(|v| v.as_bool()).unwrap_or(false),
         })
     }
 
     pub async fn billing(&self, service_name: &str) -> Result<VpsBilling> {
-        let raw: serde_json::Value =
-            self.client.get(&format!("/vps/{service_name}/serviceInfos")).await?;
+        let raw: serde_json::Value = self
+            .client
+            .get(&format!("/vps/{service_name}/serviceInfos"))
+            .await?;
         let renew = raw.get("renew");
         let flag = |key: &str| renew.and_then(|r| r.get(key)).and_then(|v| v.as_bool());
         Ok(VpsBilling {
             service_id: raw.get("serviceId").and_then(|v| v.as_u64()).unwrap_or(0),
-            status: raw.get("status").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
-            expiration: raw.get("expiration").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            status: raw
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string(),
+            expiration: raw
+                .get("expiration")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
             automatic_renew: flag("automatic").unwrap_or(false),
             delete_at_expiration: flag("deleteAtExpiration").unwrap_or(false),
         })
@@ -255,12 +309,16 @@ impl<'a> VpsManager<'a> {
 
     /// Price one renewal `period` (ISO 8601, e.g. `P1M`) with a dry-run order: nothing is ordered.
     pub async fn renew_quote(&self, service_id: u64, period: &str) -> Result<RenewQuote> {
-        ServicesManager::new(self.client).renew_quote(service_id, Some(period)).await
+        ServicesManager::new(self.client)
+            .renew_quote(service_id, Some(period))
+            .await
     }
 
     /// Create the renewal order of a quote. It stays unpaid until [`Self::pay_order`].
     pub async fn renew(&self, service_id: u64, quote: &RenewQuote) -> Result<RenewOrder> {
-        ServicesManager::new(self.client).renew(service_id, quote).await
+        ServicesManager::new(self.client)
+            .renew(service_id, quote)
+            .await
     }
 
     /// Pay an order with the account's default registered payment method (else the first one).
@@ -272,16 +330,20 @@ impl<'a> VpsManager<'a> {
         if !apply {
             return Ok(None);
         }
-        let task: serde_json::Value =
-            self.client.post(&format!("/vps/{service_name}/reboot"), None).await?;
+        let task: serde_json::Value = self
+            .client
+            .post(&format!("/vps/{service_name}/reboot"), None)
+            .await?;
         let id = task.get("id").and_then(|v| v.as_u64());
         Ok(id)
     }
 
     /// KVM console URL (POST /vps/{serviceName}/getConsoleUrl). The URL embeds a session token.
     pub async fn console_url(&self, service_name: &str) -> Result<String> {
-        let value: serde_json::Value =
-            self.client.post(&format!("/vps/{service_name}/getConsoleUrl"), None).await?;
+        let value: serde_json::Value = self
+            .client
+            .post(&format!("/vps/{service_name}/getConsoleUrl"), None)
+            .await?;
         match value {
             serde_json::Value::String(url) => Ok(url),
             other => other
@@ -307,17 +369,26 @@ impl<'a> VpsManager<'a> {
     /// Current netboot mode (GET /vps/{serviceName}).
     pub async fn netboot(&self, service_name: &str) -> Result<String> {
         let info: serde_json::Value = self.client.get(&format!("/vps/{service_name}")).await?;
-        Ok(info.get("netbootMode").and_then(|v| v.as_str()).unwrap_or("unknown").to_owned())
+        Ok(info
+            .get("netbootMode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_owned())
     }
 
     /// Tasks of a VPS, newest first (GET /vps/{serviceName}/tasks then each task).
     pub async fn tasks(&self, service_name: &str) -> Result<Vec<VpsTask>> {
-        let mut ids: Vec<u64> = self.client.get(&format!("/vps/{service_name}/tasks")).await?;
+        let mut ids: Vec<u64> = self
+            .client
+            .get(&format!("/vps/{service_name}/tasks"))
+            .await?;
         ids.sort_unstable_by(|a, b| b.cmp(a));
         let mut tasks = Vec::with_capacity(ids.len().min(20));
         for id in ids.iter().take(20) {
-            let t: serde_json::Value =
-                self.client.get(&format!("/vps/{service_name}/tasks/{id}")).await?;
+            let t: serde_json::Value = self
+                .client
+                .get(&format!("/vps/{service_name}/tasks/{id}"))
+                .await?;
             let s = |k: &str| t.get(k).and_then(|v| v.as_str()).unwrap_or("-").to_owned();
             tasks.push(VpsTask {
                 id: *id,
@@ -332,8 +403,10 @@ impl<'a> VpsManager<'a> {
 
     /// Start a stopped VPS (POST /vps/{serviceName}/start).
     pub async fn start(&self, service_name: &str) -> Result<Option<u64>> {
-        let task: serde_json::Value =
-            self.client.post(&format!("/vps/{service_name}/start"), None).await?;
+        let task: serde_json::Value = self
+            .client
+            .post(&format!("/vps/{service_name}/start"), None)
+            .await?;
         let id = task.get("id").and_then(|v| v.as_u64());
         Ok(id)
     }
@@ -368,7 +441,10 @@ mod tests {
             redact_console_url("https://kvm.example/vnc_auto.html?token=SECRET"),
             "https://kvm.example/vnc_auto.html?<redacted>"
         );
-        assert_eq!(redact_console_url("https://kvm.example/x"), "https://kvm.example/x");
+        assert_eq!(
+            redact_console_url("https://kvm.example/x"),
+            "https://kvm.example/x"
+        );
     }
 
     #[test]
@@ -396,7 +472,12 @@ mod tests {
         };
         let health = VpsHealthStatus::new("vps-test".to_string(), &billing, Some("running"), 14);
         assert!(!health.is_healthy);
-        assert!(health.alerts.iter().any(|a| a.contains("Renouvellement manuel")));
+        assert!(
+            health
+                .alerts
+                .iter()
+                .any(|a| a.contains("Renouvellement manuel"))
+        );
     }
 
     #[test]
@@ -410,7 +491,12 @@ mod tests {
         };
         let health = VpsHealthStatus::new("vps-test".to_string(), &billing, Some("running"), 14);
         assert!(!health.is_healthy);
-        assert!(health.alerts.iter().any(|a| a.contains("Suppression à expiration")));
+        assert!(
+            health
+                .alerts
+                .iter()
+                .any(|a| a.contains("Suppression à expiration"))
+        );
     }
 
     #[test]

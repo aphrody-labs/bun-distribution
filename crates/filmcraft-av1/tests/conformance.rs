@@ -4,14 +4,21 @@ mod common;
 use common::*;
 
 /// Vectors the decoder handles today (more are added as stages land).
-const VECTORS: &[&str] =
-    &["av1-1-b8-02-allintra.ivf", "av1-1-b8-05-mv.ivf", "av1-1-b8-06-mfmv.ivf", "av1-1-b8-24-monochrome.ivf", "av1-1-b10-23-film_grain-50.ivf"];
+const VECTORS: &[&str] = &[
+    "av1-1-b8-02-allintra.ivf",
+    "av1-1-b8-05-mv.ivf",
+    "av1-1-b8-06-mfmv.ivf",
+    "av1-1-b8-24-monochrome.ivf",
+    "av1-1-b10-23-film_grain-50.ivf",
+];
 
 #[test]
 fn conformance_vectors() {
     let Some(ff) = ffmpeg_dav1d() else { return };
     for name in VECTORS {
-        let Some(path) = test_vector(name) else { return };
+        let Some(path) = test_vector(name) else {
+            return;
+        };
         check_file(&ff, name, &path);
     }
 }
@@ -28,7 +35,9 @@ fn conformance_vectors_extended() {
     };
     let mut failed = Vec::new();
     for name in &list {
-        let Some(path) = test_vector(name) else { continue };
+        let Some(path) = test_vector(name) else {
+            continue;
+        };
         let r = std::panic::catch_unwind(|| check_file(&ff, name, &path));
         if r.is_err() {
             failed.push(name.clone());

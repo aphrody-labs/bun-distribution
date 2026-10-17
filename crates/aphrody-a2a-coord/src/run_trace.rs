@@ -16,8 +16,17 @@ pub(crate) struct RunTrace {
 }
 
 fn git(root: &Path, args: &[&str]) -> Option<String> {
-    let output = Command::new("git").no_window().arg("-C").arg(root).args(args).output().ok()?;
-    output.status.success().then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
+    let output = Command::new("git")
+        .no_window()
+        .arg("-C")
+        .arg(root)
+        .args(args)
+        .output()
+        .ok()?;
+    output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
 impl RunTrace {
@@ -84,11 +93,14 @@ impl RunTrace {
 }
 
 fn codex_thread_id(stdout: &str) -> Option<String> {
-    stdout.lines().filter_map(|line| serde_json::from_str::<Value>(line).ok()).find_map(|event| {
-        (event["type"] == "thread.started")
-            .then(|| event["thread_id"].as_str().map(str::to_owned))
-            .flatten()
-    })
+    stdout
+        .lines()
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .find_map(|event| {
+            (event["type"] == "thread.started")
+                .then(|| event["thread_id"].as_str().map(str::to_owned))
+                .flatten()
+        })
 }
 
 #[cfg(test)]

@@ -59,8 +59,11 @@ impl HostLayout {
     pub fn parse(policy: &str, home: Option<&str>) -> Result<Self, toml::de::Error> {
         let raw = toml::from_str::<PolicyFile>(policy)?.layout;
         let home = home.unwrap_or(&raw.home).to_owned();
-        let mut retired: Vec<(String, String)> =
-            raw.retired.iter().map(|(from, to)| (expand(from, &home), expand(to, &home))).collect();
+        let mut retired: Vec<(String, String)> = raw
+            .retired
+            .iter()
+            .map(|(from, to)| (expand(from, &home), expand(to, &home)))
+            .collect();
         retired.sort_by_key(|r| std::cmp::Reverse(r.0.len()));
         Ok(Self {
             src: expand(&raw.src, &home),
@@ -88,9 +91,12 @@ impl HostLayout {
 
     /// The retired prefix `path` starts with (path-boundary aware).
     pub fn retired_prefix(&self, path: &str) -> Option<&str> {
-        self.retired.iter().map(|(from, _)| from.as_str()).find(|from| {
-            path == *from || path.strip_prefix(from).is_some_and(|r| r.starts_with('/'))
-        })
+        self.retired
+            .iter()
+            .map(|(from, _)| from.as_str())
+            .find(|from| {
+                path == *from || path.strip_prefix(from).is_some_and(|r| r.starts_with('/'))
+            })
     }
 }
 
@@ -114,7 +120,10 @@ mod tests {
         for root in [&l.src, &l.apps, &l.build, &l.archive, &l.state] {
             assert!(root.starts_with("/home/ubuntu/"), "{root}");
         }
-        assert_eq!(l.retired_prefix("/srv/aphrody-build/cache"), Some("/srv/aphrody-build"));
+        assert_eq!(
+            l.retired_prefix("/srv/aphrody-build/cache"),
+            Some("/srv/aphrody-build")
+        );
         assert_eq!(l.retired_prefix("/srv/shenron/shared"), Some("/srv"));
         assert_eq!(l.retired_prefix("/srvx"), None);
         assert_eq!(l.retired_prefix("/home/ubuntu/apps/shenron"), None);

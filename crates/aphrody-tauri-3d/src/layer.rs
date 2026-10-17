@@ -103,7 +103,9 @@ pub struct NativeLayer {
 
 impl std::fmt::Debug for NativeLayer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NativeLayer").field("info", &self.info()).finish_non_exhaustive()
+        f.debug_struct("NativeLayer")
+            .field("info", &self.info())
+            .finish_non_exhaustive()
     }
 }
 
@@ -134,23 +136,31 @@ impl NativeLayer {
         #[cfg(windows)]
         let (surface, composition) = Self::windows_surface(&context, target)?;
         #[cfg(not(windows))]
-        let surface = context.instance.create_surface(target).map_err(|e| e.to_string())?;
+        let surface = context
+            .instance
+            .create_surface(target)
+            .map_err(|e| e.to_string())?;
         let caps = surface.get_capabilities(&context.adapter);
         let format = caps
             .formats
             .iter()
             .copied()
             .find(|f| {
-                matches!(f, wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Rgba8Unorm)
+                matches!(
+                    f,
+                    wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Rgba8Unorm
+                )
             })
             .or_else(|| caps.formats.first().copied())
             .ok_or("the surface reports no formats")?;
-        let alpha_mode =
-            [wgpu::CompositeAlphaMode::PreMultiplied, wgpu::CompositeAlphaMode::Opaque]
-                .into_iter()
-                .find(|m| caps.alpha_modes.contains(m))
-                .or_else(|| caps.alpha_modes.first().copied())
-                .unwrap_or(wgpu::CompositeAlphaMode::Auto);
+        let alpha_mode = [
+            wgpu::CompositeAlphaMode::PreMultiplied,
+            wgpu::CompositeAlphaMode::Opaque,
+        ]
+        .into_iter()
+        .find(|m| caps.alpha_modes.contains(m))
+        .or_else(|| caps.alpha_modes.first().copied())
+        .unwrap_or(wgpu::CompositeAlphaMode::Auto);
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
@@ -227,7 +237,10 @@ impl NativeLayer {
                 return Ok((surface, Some(composition)));
             }
         }
-        let surface = context.instance.create_surface(target).map_err(|e| e.to_string())?;
+        let surface = context
+            .instance
+            .create_surface(target)
+            .map_err(|e| e.to_string())?;
         Ok((surface, None))
     }
 
@@ -262,13 +275,18 @@ impl NativeLayer {
     /// # Errors
     /// Scene validation or surface acquisition failures.
     pub fn render(&mut self) -> Result<(), String> {
-        let [x, y, w, h] = self.viewport.unwrap_or([0, 0, self.config.width, self.config.height]);
+        let [x, y, w, h] = self
+            .viewport
+            .unwrap_or([0, 0, self.config.width, self.config.height]);
         self.scene.width = w.max(1);
         self.scene.height = h.max(1);
         if let Some(orbit) = &self.orbit {
             self.scene.camera = orbit.camera();
         }
-        let prepared = self.renderer.prepare(&self.scene).map_err(|e| e.to_string())?;
+        let prepared = self
+            .renderer
+            .prepare(&self.scene)
+            .map_err(|e| e.to_string())?;
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
@@ -282,14 +300,16 @@ impl NativeLayer {
                     | wgpu::CurrentSurfaceTexture::Occluded => return Ok(()),
                     other => return Err(format!("surface texture unavailable: {other:?}")),
                 }
-            },
+            }
             // Documented handling: skip the frame and try again later.
             wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
                 return Ok(());
-            },
+            }
             other => return Err(format!("surface texture unavailable: {other:?}")),
         };
-        let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
         self.renderer.render_to_view(
             &prepared,
             &view,

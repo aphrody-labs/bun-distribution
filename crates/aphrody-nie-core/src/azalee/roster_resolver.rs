@@ -60,11 +60,18 @@ where
                 .iter()
                 .find(|row| row.id == *id)
                 .cloned()
-                .unwrap_or_else(|| ResolvedChara { id: id.clone(), ..ResolvedChara::default() })
+                .unwrap_or_else(|| ResolvedChara {
+                    id: id.clone(),
+                    ..ResolvedChara::default()
+                })
         })
         .collect::<Vec<_>>();
     let matched = resolved.iter().filter(|row| row.name.is_some()).count();
-    RosterResolution { total: resolved.len(), matched, resolved }
+    RosterResolution {
+        total: resolved.len(),
+        matched,
+        resolved,
+    }
 }
 
 #[cfg(test)]

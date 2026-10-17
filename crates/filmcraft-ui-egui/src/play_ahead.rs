@@ -66,11 +66,17 @@ struct Ring {
 
 impl Ring {
     fn new(samples: usize) -> Self {
-        Self { slots: (0..samples.max(1)).map(|_| AtomicU32::new(0)).collect(), write: AtomicU64::new(0), read: AtomicU64::new(0) }
+        Self {
+            slots: (0..samples.max(1)).map(|_| AtomicU32::new(0)).collect(),
+            write: AtomicU64::new(0),
+            read: AtomicU64::new(0),
+        }
     }
 
     fn len(&self) -> usize {
-        self.write.load(Ordering::Acquire).saturating_sub(self.read.load(Ordering::Acquire)) as usize
+        self.write
+            .load(Ordering::Acquire)
+            .saturating_sub(self.read.load(Ordering::Acquire)) as usize
     }
 
     /// Producer: append as many samples as fit; returns how many were written.
@@ -99,7 +105,9 @@ impl Ring {
         for (f, frame) in dst.chunks_mut(dev_ch.max(1)).take(n).enumerate() {
             for (c, x) in frame.iter_mut().enumerate() {
                 *x = if c < ch {
-                    self.slots.get(((r + (f * ch + c) as u64) % cap as u64) as usize).map_or(0.0, |s| f32::from_bits(s.load(Ordering::Relaxed)))
+                    self.slots
+                        .get(((r + (f * ch + c) as u64) % cap as u64) as usize)
+                        .map_or(0.0, |s| f32::from_bits(s.load(Ordering::Relaxed)))
                 } else {
                     0.0
                 };
@@ -123,7 +131,13 @@ impl Drop for StopOnDrop {
 /// thread, from `start`, and returns the device callback that plays it (`fill(buf, channels)`).
 /// The first block is mixed before this returns, so playback starts with sound. The thread runs
 /// until the returned callback is dropped.
-pub fn spawn<M>(mut mix: M, start: i64, sample_rate: u32, channels: usize, stats: Arc<AudioStats>) -> Box<dyn FnMut(&mut [f32], usize) + Send>
+pub fn spawn<M>(
+    mut mix: M,
+    start: i64,
+    sample_rate: u32,
+    channels: usize,
+    stats: Arc<AudioStats>,
+) -> Box<dyn FnMut(&mut [f32], usize) + Send>
 where
     M: FnMut(i64, &mut [f32], usize) + Send + 'static,
 {
@@ -157,11 +171,13 @@ where
                 ring.push(block.get(drop * ch..).unwrap_or_default());
             }
         };
-        let spawned = std::thread::Builder::new().name("filmcraft-audio-mix".into()).spawn(move || {
-            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(body)).is_err() {
-                log::error!("audio mixing stopped after a panic; playback continues silent");
-            }
-        });
+        let spawned = std::thread::Builder::new()
+            .name("filmcraft-audio-mix".into())
+            .spawn(move || {
+                if std::panic::catch_unwind(std::panic::AssertUnwindSafe(body)).is_err() {
+                    log::error!("audio mixing stopped after a panic; playback continues silent");
+                }
+            });
         if let Err(e) = spawned {
             log::error!("audio mixing thread: {e}");
         }
@@ -181,13 +197,17 @@ where
         let n = buf.len() / dev_ch;
         if have < n {
             stats.underruns.fetch_add(1, Ordering::Relaxed);
-            stats.missing_frames.fetch_add((n - have) as u64, Ordering::Relaxed);
+            stats
+                .missing_frames
+                .fetch_add((n - have) as u64, Ordering::Relaxed);
             skip.fetch_add((n - have) as u64, Ordering::AcqRel);
         }
         let left = ring.len();
         primed |= left + 2 * BLOCK_FRAMES * ch > lead * ch;
         if primed {
-            stats.min_lead_frames.fetch_min((left / ch) as u64, Ordering::Relaxed);
+            stats
+                .min_lead_frames
+                .fetch_min((left / ch) as u64, Ordering::Relaxed);
         }
     })
 }

@@ -1,7 +1,9 @@
 //! Stroke styles drawn as fills: striped strokes (bands across the stroke weight), wavy and
 //! straight-hash strokes. Dashes and dots are ordinary stroke dashes and don't come here.
 
-use kurbo::{BezPath, CubicBez, ParamCurve, ParamCurveArclen, ParamCurveDeriv, PathSeg, Point, Stroke, Vec2};
+use kurbo::{
+    BezPath, CubicBez, ParamCurve, ParamCurveArclen, ParamCurveDeriv, PathSeg, Point, Stroke, Vec2,
+};
 
 /// `bp` offset sideways by `d` (positive = left of the direction of travel, y down).
 pub fn offset_path(bp: &BezPath, d: f64, tol: f64) -> BezPath {
@@ -12,7 +14,12 @@ pub fn offset_path(bp: &BezPath, d: f64, tol: f64) -> BezPath {
     let mut started = false;
     for seg in bp.segments() {
         let c = match seg {
-            PathSeg::Line(l) => CubicBez::new(l.p0, l.p0.lerp(l.p1, 1.0 / 3.0), l.p0.lerp(l.p1, 2.0 / 3.0), l.p1),
+            PathSeg::Line(l) => CubicBez::new(
+                l.p0,
+                l.p0.lerp(l.p1, 1.0 / 3.0),
+                l.p0.lerp(l.p1, 2.0 / 3.0),
+                l.p1,
+            ),
             PathSeg::Quad(q) => q.raise(),
             PathSeg::Cubic(c) => c,
         };
@@ -46,7 +53,9 @@ pub fn stripes(bp: &BezPath, weight: f64, bands: &Bands, tol: f64) -> BezPath {
         // The band's centre line, measured leftwards from the stroke's centre.
         let centre = (0.5 - start - width / 2.0) * weight;
         let line = offset_path(bp, centre, tol);
-        let s = Stroke::new(width * weight).with_caps(kurbo::Cap::Butt).with_join(kurbo::Join::Miter);
+        let s = Stroke::new(width * weight)
+            .with_caps(kurbo::Cap::Butt)
+            .with_join(kurbo::Join::Miter);
         for el in kurbo::stroke(line.iter(), &s, &kurbo::StrokeOpts::default(), tol).elements() {
             out.push(*el);
         }
@@ -91,7 +100,11 @@ pub fn wavy(bp: &BezPath, weight: f64, tol: f64) -> BezPath {
         let normal = Vec2::new(-t.y, t.x);
         let phase = i as f64 / 16.0 * std::f64::consts::TAU;
         let q = *p + normal * (phase.sin() * weight * 0.33);
-        if i == 0 { line.move_to(q) } else { line.line_to(q) }
+        if i == 0 {
+            line.move_to(q)
+        } else {
+            line.line_to(q)
+        }
     }
     let s = Stroke::new(weight / 3.0).with_join(kurbo::Join::Round);
     kurbo::stroke(line.iter(), &s, &kurbo::StrokeOpts::default(), tol)
@@ -131,7 +144,10 @@ mod tests {
         assert!(inside(4.5), "thin band");
         assert!(!inside(7.0), "outside the weight");
         let off = offset_path(&line(), 3.0, 0.01);
-        assert!((off.bounding_box().y0 + 3.0).abs() < 1e-6, "left of travel is −y");
+        assert!(
+            (off.bounding_box().y0 + 3.0).abs() < 1e-6,
+            "left of travel is −y"
+        );
     }
 
     #[test]

@@ -11,8 +11,20 @@ use vectorcraft_text::FontDb;
 /// A document with one text in `family` `style`.
 fn doc(family: &str, style: &str) -> (Document, vectorcraft_doc::NodeId) {
     let mut d = Document::new(300.0, 100.0);
-    let st = CharStyle { font_family: family.into(), font_style: style.into(), size: 24.0, ..CharStyle::default() };
-    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(TextObject::point(Point::new(10.0, 50.0), "Weight", st))));
+    let st = CharStyle {
+        font_family: family.into(),
+        font_style: style.into(),
+        size: 24.0,
+        ..CharStyle::default()
+    };
+    let n = Node::new(
+        d.alloc_id(),
+        NodeKind::Text(Box::new(TextObject::point(
+            Point::new(10.0, 50.0),
+            "Weight",
+            st,
+        ))),
+    );
     let (l, id) = (d.layers[0].id, n.id);
     d.insert(Some(l), 0, n).unwrap();
     (d, id)
@@ -22,9 +34,16 @@ fn doc(family: &str, style: &str) -> (Document, vectorcraft_doc::NodeId) {
 fn weights(style: &str) -> (Option<String>, Option<String>) {
     let (d, id) = doc("Source Sans 3", style);
     let svg = export(&d, &ExportOptions::default());
-    let attr = svg.split("font-weight=\"").nth(1).map(|s| s.split('"').next().unwrap().to_string());
+    let attr = svg
+        .split("font-weight=\"")
+        .nth(1)
+        .map(|s| s.split('"').next().unwrap().to_string());
     let sheet = css_rules(&d, &[id], &CssOptions::default());
-    let css = sheet.rules[0].props.iter().find(|(k, _)| *k == "font-weight").map(|(_, v)| v.clone());
+    let css = sheet.rules[0]
+        .props
+        .iter()
+        .find(|(k, _)| *k == "font-weight")
+        .map(|(_, v)| v.clone());
     (attr, css)
 }
 
@@ -64,12 +83,20 @@ fn every_style_is_written_with_its_numeric_weight() {
 #[test]
 fn numeric_weights_read_back_to_the_style() {
     let db = FontDb::global();
-    for (family, style) in
-        [("Source Sans 3", "Semibold"), ("Source Sans 3", "Bold"), ("Source Sans 3", "Italic"), ("Inter", "Medium"), ("Inter", "SemiBold")]
-    {
+    for (family, style) in [
+        ("Source Sans 3", "Semibold"),
+        ("Source Sans 3", "Bold"),
+        ("Source Sans 3", "Italic"),
+        ("Inter", "Medium"),
+        ("Inter", "SemiBold"),
+    ] {
         let back = style_back(family, style);
         let face = |s: &str| db.face(family, s).map(|f| f.style.clone());
-        assert_eq!(face(&back), face(style), "{family} {style} came back as {back}");
+        assert_eq!(
+            face(&back),
+            face(style),
+            "{family} {style} came back as {back}"
+        );
     }
     // Styles the family doesn't have keep their weight.
     assert_eq!(style_back("Source Sans 3", "Light"), "Light");

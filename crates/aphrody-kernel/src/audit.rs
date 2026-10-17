@@ -45,16 +45,21 @@ impl AuditBridge {
                             task_failures.fetch_add(1, Ordering::Relaxed);
                             tracing::error!(%error, "kernel audit event could not be persisted");
                         }
-                    },
+                    }
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(count)) => {
                         task_lagged.fetch_add(count, Ordering::Relaxed);
                         tracing::error!(dropped = count, "kernel audit bridge fell behind");
-                    },
+                    }
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                 }
             }
         });
-        Self { path, lagged, write_failures, task }
+        Self {
+            path,
+            lagged,
+            write_failures,
+            task,
+        }
     }
 
     pub(crate) fn status(&self) -> serde_json::Value {

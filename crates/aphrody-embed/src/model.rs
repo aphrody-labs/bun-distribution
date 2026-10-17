@@ -77,7 +77,7 @@ impl core::str::FromStr for EmbeddingModelKind {
         match s.trim().to_ascii_lowercase().as_str() {
             "bge-small-en-v1.5" | "bge-small" | "bge-small-en" | "default" => {
                 Ok(Self::BgeSmallEnV15)
-            },
+            }
             "all-minilm-l6-v2" | "minilm" | "all-minilm" | "minilm-l6" => Ok(Self::AllMiniLmL6V2),
             _ => Err(UnknownModel(s.to_owned())),
         }

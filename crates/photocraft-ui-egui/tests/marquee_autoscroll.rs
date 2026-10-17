@@ -19,14 +19,19 @@ fn harness() -> Option<Harness> {
 
 fn harness_with_size(size: egui::Vec2) -> Option<Harness> {
     let built = std::panic::catch_unwind(|| {
-        egui_kittest::Harness::builder().with_size(size).with_max_steps(64).wgpu().build_eframe(|cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-            if let Some(rs) = cc.wgpu_render_state.as_ref() {
-                app.set_wgpu(rs.clone());
-            }
-            app
-        })
+        egui_kittest::Harness::builder()
+            .with_size(size)
+            .with_max_steps(64)
+            .wgpu()
+            .build_eframe(|cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                let mut app =
+                    PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+                if let Some(rs) = cc.wgpu_render_state.as_ref() {
+                    app.set_wgpu(rs.clone());
+                }
+                app
+            })
     });
     match built {
         Ok(h) => Some(h),
@@ -49,13 +54,22 @@ fn setup(h: &mut Harness, tool: &str) {
     {
         let app = h.state_mut();
         while app.session.active().is_some() {
-            app.run("file.close", json!({"discard": true})).expect("close");
+            app.run("file.close", json!({"discard": true}))
+                .expect("close");
         }
-        app.run("file.new", json!({"width": 3000, "height": 2000, "background": "white"})).expect("new");
+        app.run(
+            "file.new",
+            json!({"width": 3000, "height": 2000, "background": "white"}),
+        )
+        .expect("new");
         app.sync_views();
         app.ui.extras.rulers = false;
     }
-    control(h, "ui.set", json!({"tool": tool, "zoom": 1.0, "center": [1500, 1000]}));
+    control(
+        h,
+        "ui.set",
+        json!({"tool": tool, "zoom": 1.0, "center": [1500, 1000]}),
+    );
     h.run_steps(3);
 }
 
@@ -69,7 +83,12 @@ fn pointer_at(h: &mut Harness, p: Pos2) {
 }
 
 fn button_at(h: &mut Harness, p: Pos2, pressed: bool) {
-    h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+    h.event(egui::Event::PointerButton {
+        pos: p,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    });
     h.step();
 }
 
@@ -95,7 +114,10 @@ fn marquee_dragged_past_the_right_edge_scrolls_and_selects_beyond_the_view() {
     button_at(&mut h, from, true);
     for i in 1..=6 {
         let t = i as f32 / 6.0;
-        pointer_at(&mut h, from + egui::vec2((rect.right() - from.x - 10.0) * t, 60.0 * t));
+        pointer_at(
+            &mut h,
+            from + egui::vec2((rect.right() - from.x - 10.0) * t, 60.0 * t),
+        );
     }
     // Past the edge, then held still for a while: the view keeps scrolling.
     let outside = egui::pos2(rect.right() + 40.0, from.y + 60.0);
@@ -104,13 +126,22 @@ fn marquee_dragged_past_the_right_edge_scrolls_and_selects_beyond_the_view() {
         h.step();
     }
     let moved = xf(&h).center[0] - start.center[0];
-    assert!(moved > 50.0, "the view scrolls right while the drag is held past the edge (moved {moved})");
-    assert!((xf(&h).center[1] - start.center[1]).abs() < 1e-3, "and only horizontally");
+    assert!(
+        moved > 50.0,
+        "the view scrolls right while the drag is held past the edge (moved {moved})"
+    );
+    assert!(
+        (xf(&h).center[1] - start.center[1]).abs() < 1e-3,
+        "and only horizontally"
+    );
 
     button_at(&mut h, outside, false);
     h.run_steps(3);
     let sel = selection(&h).expect("a selection");
-    assert!(sel[2] as f64 > visible_right + 50.0, "the selection reaches past the column that was visible at the press: {sel:?} vs {visible_right}");
+    assert!(
+        sel[2] as f64 > visible_right + 50.0,
+        "the selection reaches past the column that was visible at the press: {sel:?} vs {visible_right}"
+    );
 
     // Once released, the view no longer scrolls even with the pointer outside.
     let after = xf(&h).center;
@@ -139,7 +170,9 @@ fn a_drag_inside_the_canvas_does_not_scroll() {
 
 #[test]
 fn rotated_marquee_scrolls_on_the_axis_that_is_visibly_clipped() {
-    let Some(mut h) = harness_with_size(egui::vec2(1200.0, 640.0)) else { return };
+    let Some(mut h) = harness_with_size(egui::vec2(1200.0, 640.0)) else {
+        return;
+    };
     setup(&mut h, "rectMarquee");
     let rect = xf(&h).rect;
     assert!(rect.width() > rect.height());
@@ -149,12 +182,25 @@ fn rotated_marquee_scrolls_on_the_axis_that_is_visibly_clipped() {
     for overscroll in [true, false] {
         {
             let app = h.state_mut();
-            app.run("file.close", json!({"discard": true})).expect("close");
-            app.run("file.new", json!({"width": width, "height": height, "background": "white"})).expect("new");
-            app.run("prefs.set", json!({"path": "tools.overscroll", "value": overscroll})).expect("overscroll");
+            app.run("file.close", json!({"discard": true}))
+                .expect("close");
+            app.run(
+                "file.new",
+                json!({"width": width, "height": height, "background": "white"}),
+            )
+            .expect("new");
+            app.run(
+                "prefs.set",
+                json!({"path": "tools.overscroll", "value": overscroll}),
+            )
+            .expect("overscroll");
             app.sync_views();
         }
-        control(&mut h, "ui.set", json!({"tool": "rectMarquee", "zoom": 1.0, "center": [width / 2, height / 2]}));
+        control(
+            &mut h,
+            "ui.set",
+            json!({"tool": "rectMarquee", "zoom": 1.0, "center": [width / 2, height / 2]}),
+        );
         h.state_mut().ui.views[0].rotation = 90.0;
         h.run_steps(3);
         let start = xf(&h);
@@ -168,11 +214,20 @@ fn rotated_marquee_scrolls_on_the_axis_that_is_visibly_clipped() {
         if let Some(dir) = std::env::var_os("CRAFT_UI_VISUAL_FIXTURES") {
             let dir = std::path::PathBuf::from(dir);
             std::fs::create_dir_all(&dir).expect("fixture directory");
-            h.render().expect("render").save(dir.join(format!("rotated-marquee-overscroll-{overscroll}.png"))).expect("save fixture");
+            h.render()
+                .expect("render")
+                .save(dir.join(format!("rotated-marquee-overscroll-{overscroll}.png")))
+                .expect("save fixture");
         }
-        assert!(moved > 10.0, "rotated vertical overflow must scroll document x, overscroll={overscroll}, moved={moved}");
+        assert!(
+            moved > 10.0,
+            "rotated vertical overflow must scroll document x, overscroll={overscroll}, moved={moved}"
+        );
         let limit = width as f32 - start.rect.height() / (2.0 * start.zoom);
-        assert!((xf(&h).center[0] - limit).abs() < 0.01, "stops at the rotated image edge, overscroll={overscroll}");
+        assert!(
+            (xf(&h).center[0] - limit).abs() < 0.01,
+            "stops at the rotated image edge, overscroll={overscroll}"
+        );
         assert!((xf(&h).center[1] - start.center[1]).abs() < 0.01);
         button_at(&mut h, outside, false);
         h.run_steps(3);

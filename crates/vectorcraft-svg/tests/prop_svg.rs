@@ -15,14 +15,32 @@ use vectorcraft_testkit::strategies::{arb_closed_shape, arb_ops, arb_path_data};
 
 fn all_options() -> Vec<ExportOptions> {
     let mut v = vec![];
-    for styling in [Styling::PresentationAttributes, Styling::InlineStyle, Styling::StyleEntities, Styling::InternalCss] {
-        for (minify, decimals, object_ids, responsive) in
-            [(false, 3, ObjectIds::LayerNames, false), (true, 1, ObjectIds::Minimal, true), (false, 7, ObjectIds::Unique, true)]
-        {
-            v.push(ExportOptions { artboard: Some(0), styling, decimals, object_ids, minify, responsive, ..Default::default() });
+    for styling in [
+        Styling::PresentationAttributes,
+        Styling::InlineStyle,
+        Styling::StyleEntities,
+        Styling::InternalCss,
+    ] {
+        for (minify, decimals, object_ids, responsive) in [
+            (false, 3, ObjectIds::LayerNames, false),
+            (true, 1, ObjectIds::Minimal, true),
+            (false, 7, ObjectIds::Unique, true),
+        ] {
+            v.push(ExportOptions {
+                artboard: Some(0),
+                styling,
+                decimals,
+                object_ids,
+                minify,
+                responsive,
+                ..Default::default()
+            });
         }
     }
-    v.push(ExportOptions { artboard: None, ..Default::default() });
+    v.push(ExportOptions {
+        artboard: None,
+        ..Default::default()
+    });
     v
 }
 
@@ -113,7 +131,11 @@ fn rect_survives_visually_with_stroke() {
     let mut b = DocBuilder::new(100.0, 100.0);
     b.path(
         shapes::rectangle(Rect::new(20.0, 20.0, 80.0, 70.0)),
-        Appearance::basic(Paint::solid(Color::rgb8(30, 120, 200)), Paint::solid(Color::BLACK), 3.0),
+        Appearance::basic(
+            Paint::solid(Color::rgb8(30, 120, 200)),
+            Paint::solid(Color::BLACK),
+            3.0,
+        ),
         |_| {},
     );
     let d = b.build();

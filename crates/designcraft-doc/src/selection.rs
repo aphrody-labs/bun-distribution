@@ -17,7 +17,11 @@ pub struct CellAddr {
 impl CellAddr {
     /// The text of footnote `id` (see [`crate::notes::FOOTNOTE_TABLE`]).
     pub fn footnote(id: u64) -> Self {
-        CellAddr { table: crate::notes::FOOTNOTE_TABLE, row: id as usize, col: 0 }
+        CellAddr {
+            table: crate::notes::FOOTNOTE_TABLE,
+            row: id as usize,
+            col: 0,
+        }
     }
     /// The footnote id when this addresses footnote text.
     pub fn footnote_id(&self) -> Option<u64> {
@@ -51,7 +55,13 @@ pub struct TextSel {
 
 impl TextSel {
     pub fn caret(story: StoryId, pos: usize) -> Self {
-        TextSel { story, anchor: pos, focus: pos, frame: None, cell: None }
+        TextSel {
+            story,
+            anchor: pos,
+            focus: pos,
+            frame: None,
+            cell: None,
+        }
     }
     pub fn range(&self) -> std::ops::Range<usize> {
         self.anchor.min(self.focus)..self.anchor.max(self.focus)
@@ -90,10 +100,16 @@ impl Selection {
         self.items.len()
     }
     pub fn items(ids: Vec<ItemId>) -> Self {
-        Selection { items: ids, ..Default::default() }
+        Selection {
+            items: ids,
+            ..Default::default()
+        }
     }
     pub fn text(t: TextSel) -> Self {
-        Selection { text: Some(t), ..Default::default() }
+        Selection {
+            text: Some(t),
+            ..Default::default()
+        }
     }
     pub fn contains(&self, id: ItemId) -> bool {
         self.items.contains(&id)

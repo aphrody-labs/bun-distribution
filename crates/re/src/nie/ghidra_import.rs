@@ -102,7 +102,9 @@ pub fn ingest_ghidra_csv(
             // fonction Ghidra qui ne coïncide avec rien de connu est plus
             // probablement un désalignement qu'une découverte.
             let existing: Option<(Option<String>, String)> = get
-                .query_row(rusqlite::params![bin, va as i64], |r| Ok((r.get(0)?, r.get(1)?)))
+                .query_row(rusqlite::params![bin, va as i64], |r| {
+                    Ok((r.get(0)?, r.get(1)?))
+                })
                 .ok();
             let Some((cur_name, cur_src)) = existing else {
                 stats.unmatched += 1;
@@ -110,7 +112,7 @@ pub fn ingest_ghidra_csv(
             };
             match cur_name {
                 // Sans nom : on écrit.
-                None => {},
+                None => {}
                 // Nom structurel : le nom Ghidra identifie mieux.
                 Some(_) if is_structural(&cur_src) => stats.replaced_struct += 1,
                 // `strref`, `funclua`, ou un nom déjà issu de Ghidra : on garde.
@@ -146,7 +148,12 @@ mod tests {
 
     #[test]
     fn les_noms_structurels_sont_remplacables_pas_les_semantiques() {
-        for s in ["leaf-shape", "vtable-anon-struct", "vtable-struct", "iat-thunk"] {
+        for s in [
+            "leaf-shape",
+            "vtable-anon-struct",
+            "vtable-struct",
+            "iat-thunk",
+        ] {
             assert!(is_structural(s), "{s} désigne sans identifier");
         }
         // Ceux-là viennent du binaire lui-même : Ghidra ne fait pas mieux.
@@ -158,8 +165,9 @@ mod tests {
     #[test]
     fn le_csv_est_ingere_et_les_noms_par_defaut_ecartes() {
         let mut db = Db::open_in_memory().unwrap();
-        let bin =
-            db.upsert_binary("t.exe", "sha", "x86_64", 64, 0x1_4000_0000, 0, None, None).unwrap();
+        let bin = db
+            .upsert_binary("t.exe", "sha", "x86_64", 64, 0x1_4000_0000, 0, None, None)
+            .unwrap();
         {
             let tx = db.conn_mut().transaction().unwrap();
             // sans nom / nom structurel / nom sémantique

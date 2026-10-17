@@ -14,4 +14,9 @@ pub struct MediaFileToken(pub String);
 
 impl_string_token!(MediaFileToken);
 impl_mysql_token_from_row!(MediaFileToken);
-impl_crockford_generator!(MediaFileToken, 32usize, TokenPrefix::MediaFile, CrockfordLower);
+impl_crockford_generator!(
+    MediaFileToken,
+    32usize,
+    TokenPrefix::MediaFile,
+    CrockfordLower
+);

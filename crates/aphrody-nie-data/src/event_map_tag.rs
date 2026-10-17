@@ -94,7 +94,10 @@ pub fn parse_event_map_tag_config(root: &Value) -> EventMapTagConfig {
     if let Some(values) = list_values(root, "m_mapTagInfoList") {
         for v in values {
             if let Some(data) = field_pair(v, "data") {
-                tag_infos.push(MapTagInfo { id: field_hash(v, "id"), data });
+                tag_infos.push(MapTagInfo {
+                    id: field_hash(v, "id"),
+                    data,
+                });
             }
         }
     }
@@ -115,7 +118,12 @@ pub fn parse_event_map_tag_config(root: &Value) -> EventMapTagConfig {
             }
         }
     }
-    EventMapTagConfig { tag_data, tag_infos, tag_ids, event_settings }
+    EventMapTagConfig {
+        tag_data,
+        tag_infos,
+        tag_ids,
+        event_settings,
+    }
 }
 
 #[cfg(test)]

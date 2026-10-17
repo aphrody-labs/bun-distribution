@@ -3,7 +3,7 @@ use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{component::Component, prelude::ReflectComponent, template::FromTemplate};
 use bevy_mesh::Mesh;
 use bevy_pbr::{MeshMaterial3d, StandardMaterial};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_render::sync_world::SyncToRenderWorld;
 use bevy_transform::components::Transform;
 use derive_more::derive::From;

@@ -29,7 +29,9 @@ struct Exceptions {
 
 fn store() -> MutexGuard<'static, Exceptions> {
     static LOCK: OnceLock<Mutex<Exceptions>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(Exceptions::default())).lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    LOCK.get_or_init(|| Mutex::new(Exceptions::default()))
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn parse_list(source: &str) -> Exceptions {
@@ -45,7 +47,10 @@ fn parse_list(source: &str) -> Exceptions {
         }
         map.insert(word, ex);
     }
-    Exceptions { source: source.to_string(), map }
+    Exceptions {
+        source: source.to_string(),
+        map,
+    }
 }
 
 /// Preferences › Hyphenation › Exceptions: comma-separated words. A word with no hyphens is never
@@ -101,11 +106,16 @@ fn exception_for(word: &str) -> Option<Exception> {
 /// one.
 #[cfg(test)]
 fn exception_for(word: &str) -> Option<Exception> {
-    TEST_OVERRIDE.with(|c| c.borrow().as_ref().and_then(|e| e.map.get(&normalize_word(word)).cloned()))
+    TEST_OVERRIDE.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|e| e.map.get(&normalize_word(word)).cloned())
+    })
 }
 
 fn is_vowel(c: char) -> bool {
-    matches!(c.to_ascii_lowercase(), 'a' | 'e' | 'i' | 'o' | 'u' | 'y') || (c.is_alphabetic() && !c.is_ascii())
+    matches!(c.to_ascii_lowercase(), 'a' | 'e' | 'i' | 'o' | 'u' | 'y')
+        || (c.is_alphabetic() && !c.is_ascii())
 }
 
 /// Consonant pairs that stay together at the start of a syllable ("gra-phy", "tea-cher").
@@ -132,7 +142,11 @@ pub fn hyphen_points(word: &str) -> Vec<usize> {
     }
     let c: Vec<char> = word.chars().collect();
     let n = c.len();
-    if n < MIN_WORD || !c.iter().all(|c| c.is_alphabetic() || matches!(c, '\'' | '’')) {
+    if n < MIN_WORD
+        || !c
+            .iter()
+            .all(|c| c.is_alphabetic() || matches!(c, '\'' | '’'))
+    {
         return vec![];
     }
     // A capitalised run like "NASA" or a proper name stays whole only when all caps.
@@ -210,7 +224,11 @@ mod tests {
 
         // Hyphens mark the only allowed breaks (stricter than the pattern).
         with_exceptions("typo-graphy", || {
-            assert_eq!(hyphen_points("typography"), vec![4], "only the marked break");
+            assert_eq!(
+                hyphen_points("typography"),
+                vec![4],
+                "only the marked break"
+            );
             assert_eq!(hyphenate_word("typography"), "typo-graphy");
         });
 
@@ -218,7 +236,10 @@ mod tests {
         with_exceptions("  , typography , hap-pen ,  ", || {
             assert!(hyphen_points("typography").is_empty());
             assert_eq!(hyphen_points("happen"), vec![3]);
-            assert!(!hyphen_points("hyphenation").is_empty(), "unlisted words still use the pattern");
+            assert!(
+                !hyphen_points("hyphenation").is_empty(),
+                "unlisted words still use the pattern"
+            );
         });
 
         assert_eq!(hyphen_points("typography"), pattern, "override cleared");

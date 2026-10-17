@@ -144,7 +144,10 @@ pub fn upsert_source(
 pub fn index_map(conn: &Connection, source_id: i64) -> Result<IndexStats> {
     let mut st = IndexStats::default();
 
-    conn.execute("DELETE FROM cam_ctrl_class WHERE source_id = ?1", params![source_id])?;
+    conn.execute(
+        "DELETE FROM cam_ctrl_class WHERE source_id = ?1",
+        params![source_id],
+    )?;
     // Deux passes : les classes d'abord sans parent (la colonne `base` se référence
     // elle-même), puis on renseigne le parent une fois toutes les lignes présentes.
     for k in CtrlKind::ALL {
@@ -163,7 +166,13 @@ pub fn index_map(conn: &Connection, source_id: i64) -> Result<IndexStats> {
              ON CONFLICT(cpp_name) DO UPDATE SET
                  source_id = excluded.source_id, short_name = excluded.short_name,
                  depth = excluded.depth, ported = excluded.ported",
-            params![source_id, k.cpp_name(), short, depth, i64::from(k.is_ported())],
+            params![
+                source_id,
+                k.cpp_name(),
+                short,
+                depth,
+                i64::from(k.is_ported())
+            ],
         )?;
         st.ctrl_classes += 1;
     }
@@ -174,7 +183,10 @@ pub fn index_map(conn: &Connection, source_id: i64) -> Result<IndexStats> {
         )?;
     }
 
-    conn.execute("DELETE FROM cam_dispatcher WHERE source_id = ?1", params![source_id])?;
+    conn.execute(
+        "DELETE FROM cam_dispatcher WHERE source_id = ?1",
+        params![source_id],
+    )?;
     for d in map::DISPATCHERS {
         conn.execute(
             "INSERT INTO cam_dispatcher(source_id, name, table_va, cmd_count, is_camera)
@@ -190,7 +202,10 @@ pub fn index_map(conn: &Connection, source_id: i64) -> Result<IndexStats> {
         st.dispatchers += 1;
     }
 
-    conn.execute("DELETE FROM cam_re_symbol WHERE source_id = ?1", params![source_id])?;
+    conn.execute(
+        "DELETE FROM cam_re_symbol WHERE source_id = ?1",
+        params![source_id],
+    )?;
     let symbols: [(&str, u64, &str, &str); 7] = [
         (
             "funcLuaCameraCommand.string",
@@ -228,19 +243,34 @@ pub fn index_map(conn: &Connection, source_id: i64) -> Result<IndexStats> {
             "loader",
             "loader générique des conteneurs G4 — fixe la formule d'offsets du G4CM",
         ),
-        ("g4.magic_table", map::G4_MAGIC_TABLE_VA, "table", "G4MT G4MA G4TP G4CM G4VS G4LA G4BA"),
+        (
+            "g4.magic_table",
+            map::G4_MAGIC_TABLE_VA,
+            "table",
+            "G4MT G4MA G4TP G4CM G4VS G4LA G4BA",
+        ),
     ];
     for (name, va, kind, note) in symbols {
         let off = map::va_to_file_offset(va);
         conn.execute(
             "INSERT INTO cam_re_symbol(source_id, name, va, file_offset, kind, note)
              VALUES(?1, ?2, ?3, ?4, ?5, ?6)",
-            params![source_id, name, va as i64, off.map(|o| o as i64), kind, note],
+            params![
+                source_id,
+                name,
+                va as i64,
+                off.map(|o| o as i64),
+                kind,
+                note
+            ],
         )?;
         st.re_symbols += 1;
     }
 
-    conn.execute("DELETE FROM cam_symbol_list WHERE source_id = ?1", params![source_id])?;
+    conn.execute(
+        "DELETE FROM cam_symbol_list WHERE source_id = ?1",
+        params![source_id],
+    )?;
     for c in map::INPUT_COMMANDS {
         conn.execute(
             "INSERT INTO cam_symbol_list(source_id, kind, name) VALUES(?1, 'input_command', ?2)",
@@ -312,7 +342,10 @@ pub fn classify_param(name: &str) -> &'static str {
 /// # Errors
 /// [`DbError::Sqlite`] en cas d'échec SQL.
 pub fn index_binary_params(conn: &Connection, source_id: i64, exe: &[u8]) -> Result<IndexStats> {
-    conn.execute("DELETE FROM cam_param WHERE source_id = ?1", params![source_id])?;
+    conn.execute(
+        "DELETE FROM cam_param WHERE source_id = ?1",
+        params![source_id],
+    )?;
     let mut st = IndexStats::default();
     let mut stmt = conn.prepare(
         "INSERT INTO cam_param(source_id, name, va, section, domain) VALUES(?1, ?2, ?3, ?4, ?5)
@@ -349,8 +382,8 @@ pub fn index_binary_params(conn: &Connection, source_id: i64, exe: &[u8]) -> Res
                     classify_param(text)
                 ])?;
                 st.params += 1;
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     Ok(st)
@@ -463,7 +496,10 @@ pub fn index_soccer_config(
         "cam_cinematic_data",
         "cam_cinematic_situation",
     ] {
-        conn.execute(&format!("DELETE FROM {t} WHERE asset_id = ?1"), params![asset_id])?;
+        conn.execute(
+            &format!("DELETE FROM {t} WHERE asset_id = ?1"),
+            params![asset_id],
+        )?;
     }
 
     for (i, d) in cfg.camera_data.iter().enumerate() {
@@ -690,8 +726,14 @@ pub fn index_soccer_config(
 }
 
 /// Colonnes typées d'un paramètre de preset : `(ty, v_int, v_f0, v_f1, v_f2, v_text)`.
-type ParamColumns<'a> =
-    (&'static str, Option<i64>, Option<f64>, Option<f64>, Option<f64>, Option<&'a str>);
+type ParamColumns<'a> = (
+    &'static str,
+    Option<i64>,
+    Option<f64>,
+    Option<f64>,
+    Option<f64>,
+    Option<&'a str>,
+);
 
 fn bind_param(
     conn: &Connection,
@@ -722,7 +764,18 @@ fn bind_param(
              ty = excluded.ty, v_int = excluded.v_int, v_f0 = excluded.v_f0,
              v_f1 = excluded.v_f1, v_f2 = excluded.v_f2, v_text = excluded.v_text,
              from_preset = excluded.from_preset",
-        params![preset_id, name, ty, vi, f0, f1, f2, text, i64::from(inherited), from],
+        params![
+            preset_id,
+            name,
+            ty,
+            vi,
+            f0,
+            f1,
+            f2,
+            text,
+            i64::from(inherited),
+            from
+        ],
     )?;
     Ok(())
 }
@@ -743,7 +796,10 @@ pub fn index_property(
              (SELECT id FROM cam_preset WHERE asset_id = ?1)",
         params![asset_id],
     )?;
-    conn.execute("DELETE FROM cam_preset WHERE asset_id = ?1", params![asset_id])?;
+    conn.execute(
+        "DELETE FROM cam_preset WHERE asset_id = ?1",
+        params![asset_id],
+    )?;
 
     for (name, preset) in &set.presets {
         conn.execute(
@@ -818,8 +874,9 @@ pub fn index_anim(
         .and_then(|f| f.to_str())
         .and_then(|f| f.strip_suffix("_camera.g4cm"))
         .map(str::to_string);
-    let (fmin, fmax) =
-        anim.frame_range().map_or((None, None), |(a, b)| (Some(i64::from(a)), Some(i64::from(b))));
+    let (fmin, fmax) = anim.frame_range().map_or((None, None), |(a, b)| {
+        (Some(i64::from(a)), Some(i64::from(b)))
+    });
     let n_samples: usize = anim.channels.iter().map(|c| c.track.len()).sum();
 
     conn.execute(
@@ -897,7 +954,7 @@ pub fn index_anim(
                 } else {
                     ("f32", Some(f64::from(lo)), Some(f64::from(hi)))
                 }
-            },
+            }
             Track::Raw16(_) => ("raw16", None, None),
             Track::Raw8(_) => ("raw8", None, None),
         };
@@ -950,7 +1007,8 @@ mod tests {
 
     fn mem() -> Connection {
         let conn = Connection::open_in_memory().expect("base mémoire");
-        conn.execute_batch(aphrody_nie_index::CAMERA_SCHEMA).expect("migration");
+        conn.execute_batch(aphrody_nie_index::CAMERA_SCHEMA)
+            .expect("migration");
         conn
     }
 
@@ -966,7 +1024,11 @@ mod tests {
             .expect("compte");
         assert_eq!(n, 22, "22 tables cam_*");
         let v: i64 = conn
-            .query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='view'", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='view'",
+                [],
+                |r| r.get(0),
+            )
             .expect("compte");
         assert_eq!(v, 5, "5 vues");
     }
@@ -991,15 +1053,19 @@ mod tests {
 
         // La vue récursive doit couvrir toutes les classes.
         let n: i64 = conn
-            .query_row("SELECT COUNT(*) FROM v_cam_ctrl_hierarchy", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) FROM v_cam_ctrl_hierarchy", [], |r| {
+                r.get(0)
+            })
             .expect("vue");
         assert_eq!(n, 23);
 
         // Le dispatcher caméra est marqué comme tel, avec ses 46 commandes.
         let (name, count): (String, i64) = conn
-            .query_row("SELECT name, cmd_count FROM cam_dispatcher WHERE is_camera = 1", [], |r| {
-                Ok((r.get(0)?, r.get(1)?))
-            })
+            .query_row(
+                "SELECT name, cmd_count FROM cam_dispatcher WHERE is_camera = 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
             .expect("dispatcher caméra");
         assert_eq!(name, "funcLuaCameraCommand");
         assert_eq!(count, 46);
@@ -1015,8 +1081,9 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM cam_dispatcher", [], |r| r.get(0))
             .expect("compte");
         assert_eq!(n, 15, "pas de doublon après réindexation");
-        let s: i64 =
-            conn.query_row("SELECT COUNT(*) FROM cam_source", [], |r| r.get(0)).expect("compte");
+        let s: i64 = conn
+            .query_row("SELECT COUNT(*) FROM cam_source", [], |r| r.get(0))
+            .expect("compte");
         assert_eq!(s, 1);
     }
 
@@ -1024,14 +1091,33 @@ mod tests {
     fn config_soccer_et_vue_resolue() {
         let conn = mem();
         let src = upsert_source(&conn, "vfs", "test", None, None).expect("source");
-        let asset = upsert_asset(&conn, src, "common/x/soccer_camera_config.cfg.bin", None, None)
-            .expect("asset");
+        let asset = upsert_asset(
+            &conn,
+            src,
+            "common/x/soccer_camera_config.cfg.bin",
+            None,
+            None,
+        )
+        .expect("asset");
         let cfg = SoccerCameraConfig {
             camera_data: vec![
-                SoccerCameraInfoData { no: 0, length: 8.0, fov: 45.0, ..Default::default() },
-                SoccerCameraInfoData { no: 1, length: 12.0, fov: 50.0, ..Default::default() },
+                SoccerCameraInfoData {
+                    no: 0,
+                    length: 8.0,
+                    fov: 45.0,
+                    ..Default::default()
+                },
+                SoccerCameraInfoData {
+                    no: 1,
+                    length: 12.0,
+                    fov: 50.0,
+                    ..Default::default()
+                },
             ],
-            cameras: vec![IndexedRef { id: 0xDEAD_BEEF, slice: [1, 1] }],
+            cameras: vec![IndexedRef {
+                id: 0xDEAD_BEEF,
+                slice: [1, 1],
+            }],
             goalnet: vec![GoalnetCameraInfo {
                 id: 0x596C_1326,
                 cam_pos: [14.0, 2.5, 50.0],
@@ -1052,7 +1138,10 @@ mod tests {
             )
             .expect("vue");
         assert_eq!(cam_id, 0xDEAD_BEEF);
-        assert!((length - 12.0).abs() < 1e-6, "la tranche pointe la 2ᵉ ligne");
+        assert!(
+            (length - 12.0).abs() < 1e-6,
+            "la tranche pointe la 2ᵉ ligne"
+        );
     }
 
     #[test]
@@ -1087,9 +1176,11 @@ mod tests {
         // Un asset absent est enregistré comme tel, sans écraser son rôle.
         let missing = upsert_asset(&conn, src, "a/c.cfg.bin", Some("rôle"), None).expect("asset");
         let (present, role): (i64, String) = conn
-            .query_row("SELECT present, role FROM cam_asset WHERE id = ?1", params![missing], |r| {
-                Ok((r.get(0)?, r.get(1)?))
-            })
+            .query_row(
+                "SELECT present, role FROM cam_asset WHERE id = ?1",
+                params![missing],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
             .expect("requête");
         assert_eq!(present, 0);
         assert_eq!(role, "rôle");

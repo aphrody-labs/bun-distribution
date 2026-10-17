@@ -35,28 +35,32 @@ impl DesktopTheme {
     /// and headless screenshots don't, so they never depend on the machine's desktop theme.
     pub fn start(changed: impl Fn() + Send + 'static) -> Self {
         let (tx, rx) = channel();
-        let started = std::thread::Builder::new().name("wordcraft-desktop-theme".into()).spawn(move || {
-            // One session-bus connection for the life of the watcher, opened again only after
-            // it fails.
-            let mut bus = Bus::new();
-            let mut last = read(&mut bus);
-            if tx.send(last).is_err() {
-                return;
-            }
-            changed();
-            loop {
-                std::thread::sleep(POLL);
-                let now = read(&mut bus);
-                if now != last {
-                    last = now;
-                    if tx.send(now).is_err() {
-                        return;
-                    }
-                    changed();
+        let started = std::thread::Builder::new()
+            .name("wordcraft-desktop-theme".into())
+            .spawn(move || {
+                // One session-bus connection for the life of the watcher, opened again only after
+                // it fails.
+                let mut bus = Bus::new();
+                let mut last = read(&mut bus);
+                if tx.send(last).is_err() {
+                    return;
                 }
-            }
-        });
-        Self { changes: started.ok().map(|_| rx) }
+                changed();
+                loop {
+                    std::thread::sleep(POLL);
+                    let now = read(&mut bus);
+                    if now != last {
+                        last = now;
+                        if tx.send(now).is_err() {
+                            return;
+                        }
+                        changed();
+                    }
+                }
+            });
+        Self {
+            changes: started.ok().map(|_| rx),
+        }
     }
 
     /// Whether a watcher thread is running.
@@ -68,7 +72,9 @@ impl DesktopTheme {
     /// Several changes in one frame collapse to the newest, and a desktop that stops answering
     /// leaves the last answer in place.
     pub fn take_change(&mut self) -> Option<bool> {
-        let Some(changes) = &self.changes else { return None };
+        let Some(changes) = &self.changes else {
+            return None;
+        };
         let mut newest = None;
         loop {
             match changes.try_recv() {
@@ -109,18 +115,29 @@ impl Bus {
 fn read(bus: &mut Bus) -> Option<bool> {
     const PORTAL: &str = "org.freedesktop.portal.Desktop";
     const SETTINGS: &str = "org.freedesktop.portal.Settings";
-    const SCHEMAS: [(&str, &str); 2] = [("org.gnome.desktop.interface", "color-scheme"), ("org.freedesktop.interface.color-scheme", "color-scheme")];
+    const SCHEMAS: [(&str, &str); 2] = [
+        ("org.gnome.desktop.interface", "color-scheme"),
+        ("org.freedesktop.interface.color-scheme", "color-scheme"),
+    ];
     if bus.0.is_none() {
         bus.0 = zbus::blocking::Connection::session().ok();
     }
     let connection = bus.0.as_ref()?;
     let mut answered = false;
     for (schema, key) in SCHEMAS {
-        let Ok(reply) = connection.call_method(Some(PORTAL), "/org/freedesktop/portal/desktop", Some(SETTINGS), "ReadOne", &(schema, key)) else {
+        let Ok(reply) = connection.call_method(
+            Some(PORTAL),
+            "/org/freedesktop/portal/desktop",
+            Some(SETTINGS),
+            "ReadOne",
+            &(schema, key),
+        ) else {
             continue;
         };
         answered = true;
-        let Ok((answer,)) = reply.body().deserialize::<(zbus::zvariant::OwnedValue,)>() else { continue };
+        let Ok((answer,)) = reply.body().deserialize::<(zbus::zvariant::OwnedValue,)>() else {
+            continue;
+        };
         if let Ok(scheme) = String::try_from(&*answer) {
             return parse(&scheme);
         }
@@ -179,7 +196,10 @@ mod tests {
     /// headless screenshots never depend on the host's theme or spawn D-Bus pollers.
     #[test]
     fn a_new_app_does_not_watch_the_desktop() {
-        let app = crate::WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Default::default());
+        let app = crate::WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            Default::default(),
+        );
         assert!(!app.desktop_theme.watching());
     }
 }

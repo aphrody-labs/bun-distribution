@@ -67,7 +67,11 @@ impl PageGrid {
         let margins = lay.margins.map(to_layout);
         let band_range = |bands: &[(u32, u32)], lo: u32, hi: u32| {
             let first = bands.iter().position(|b| b.1 >= lo).unwrap_or(0);
-            let last = bands.iter().rposition(|b| b.0 <= hi).unwrap_or(first).max(first);
+            let last = bands
+                .iter()
+                .rposition(|b| b.0 <= hi)
+                .unwrap_or(first)
+                .max(first);
             (first, last)
         };
         let area = printed.area;
@@ -98,7 +102,9 @@ impl PageGrid {
     }
 
     fn band_of(bands: &[(u32, u32)], line: u32) -> usize {
-        bands.partition_point(|b| b.1 < line).min(bands.len().saturating_sub(1))
+        bands
+            .partition_point(|b| b.1 < line)
+            .min(bands.len().saturating_sub(1))
     }
 
     /// Left edge of page column `j` / top edge of page row `i`.
@@ -115,7 +121,12 @@ impl PageGrid {
     /// Where the cells of page `(i, j)` go: inside the margins.
     pub fn content_rect(&self, i: usize, j: usize) -> (f64, f64, f64, f64) {
         let [l, r, t, b, ..] = self.margins;
-        (self.page_x(j) + l, self.page_y(i) + t, (self.page_w - l - r).max(1.0), (self.page_h - t - b).max(1.0))
+        (
+            self.page_x(j) + l,
+            self.page_y(i) + t,
+            (self.page_w - l - r).max(1.0),
+            (self.page_h - t - b).max(1.0),
+        )
     }
 
     /// Left edge of column `col`.
@@ -144,15 +155,27 @@ impl PageGrid {
     /// Column under `x`, clamped to the page's columns (margins and gaps hit the nearest one).
     pub fn col_at(&self, x: f64) -> u32 {
         let j = self.page_col_at(x);
-        let Some(&(a, b)) = self.col_bands.get(j) else { return 0 };
+        let Some(&(a, b)) = self.col_bands.get(j) else {
+            return 0;
+        };
         let local = x - self.page_x(j) - self.margins[0];
-        if local <= 0.0 { a } else { self.ci.at(self.ci.start(a) + local).clamp(a, b) }
+        if local <= 0.0 {
+            a
+        } else {
+            self.ci.at(self.ci.start(a) + local).clamp(a, b)
+        }
     }
     pub fn row_at(&self, y: f64) -> u32 {
         let i = self.page_row_at(y);
-        let Some(&(a, b)) = self.row_bands.get(i) else { return 0 };
+        let Some(&(a, b)) = self.row_bands.get(i) else {
+            return 0;
+        };
         let local = y - self.page_y(i) - self.margins[2];
-        if local <= 0.0 { a } else { self.ri.at(self.ri.start(a) + local).clamp(a, b) }
+        if local <= 0.0 {
+            a
+        } else {
+            self.ri.at(self.ri.start(a) + local).clamp(a, b)
+        }
     }
 
     /// The page `(i, j)` whose paper contains the point, if any.
@@ -164,9 +187,14 @@ impl PageGrid {
 
     /// The point lies on cells (inside a page's margins, on a cell of that page).
     pub fn on_cells(&self, x: f64, y: f64) -> bool {
-        let Some((i, j)) = self.page_at(x, y) else { return false };
+        let Some((i, j)) = self.page_at(x, y) else {
+            return false;
+        };
         let (cx, cy, w, h) = self.content_rect(i, j);
-        let (Some(&(_, c1)), Some(&(_, r1))) = (self.col_bands.get(j), self.row_bands.get(i)) else { return false };
+        let (Some(&(_, c1)), Some(&(_, r1))) = (self.col_bands.get(j), self.row_bands.get(i))
+        else {
+            return false;
+        };
         // Cells end where the band ends (the rest of the printable area stays blank).
         let right = (self.col_x(c1) + self.ci.start(c1 + 1) - self.ci.start(c1)).min(cx + w);
         let bottom = (self.row_y(r1) + self.ri.start(r1 + 1) - self.ri.start(r1)).min(cy + h);
@@ -193,7 +221,8 @@ impl PageGrid {
 
     /// Page `(i, j)` holds printed data (others are "Click to add data" pages).
     pub fn is_data_page(&self, i: usize, j: usize) -> bool {
-        (self.data_rows.0..=self.data_rows.1).contains(&i) && (self.data_cols.0..=self.data_cols.1).contains(&j)
+        (self.data_rows.0..=self.data_rows.1).contains(&i)
+            && (self.data_cols.0..=self.data_cols.1).contains(&j)
     }
     /// Printed page number of page `(i, j)` (down, then over) and the printed page count.
     pub fn page_number(&self, i: usize, j: usize) -> Option<(usize, usize)> {
@@ -202,17 +231,26 @@ impl PageGrid {
         }
         let rows = self.data_rows.1 - self.data_rows.0 + 1;
         let cols = self.data_cols.1 - self.data_cols.0 + 1;
-        Some(((j - self.data_cols.0) * rows + (i - self.data_rows.0) + 1, rows * cols))
+        Some((
+            (j - self.data_cols.0) * rows + (i - self.data_rows.0) + 1,
+            rows * cols,
+        ))
     }
 
     /// Page rows and columns overlapping the layout rectangle `[x0, x1] × [y0, y1]`.
     pub fn pages_in(&self, x0: f64, y0: f64, x1: f64, y1: f64) -> ((usize, usize), (usize, usize)) {
-        ((self.page_row_at(y0), self.page_row_at(y1)), (self.page_col_at(x0), self.page_col_at(x1)))
+        (
+            (self.page_row_at(y0), self.page_row_at(y1)),
+            (self.page_col_at(x0), self.page_col_at(x1)),
+        )
     }
 
     /// Width / height of everything laid out so far.
     pub fn extent(&self) -> (f64, f64) {
-        (self.page_x(self.col_bands.len()), self.page_y(self.row_bands.len()))
+        (
+            self.page_x(self.col_bands.len()),
+            self.page_y(self.row_bands.len()),
+        )
     }
 
     /// Rows `(first, last)` of a page row and columns of a page column.
@@ -228,7 +266,10 @@ impl PageGrid {
 /// layout rectangle up to `(x, y)` is covered. Layout coordinates never run ahead of sheet
 /// coordinates (pages only add margins and gaps), so the sheet position is a safe bound.
 pub fn need_for(sh: &Sheet, x: f64, y: f64) -> (u32, u32) {
-    (sh.row_at(y.max(0.0)).saturating_add(1).min(MAX_ROWS - 1), sh.col_at(x.max(0.0)).saturating_add(1).min(MAX_COLS - 1))
+    (
+        sh.row_at(y.max(0.0)).saturating_add(1).min(MAX_ROWS - 1),
+        sh.col_at(x.max(0.0)).saturating_add(1).min(MAX_COLS - 1),
+    )
 }
 
 #[cfg(test)]
@@ -258,8 +299,14 @@ mod tests {
         // last printed page simply ends with the data).
         let starts = |b: &[(u32, u32)], n: usize| b.iter().take(n).map(|x| x.0).collect::<Vec<_>>();
         assert!(printed.row_bands.len() > 1 && printed.col_bands.len() > 1);
-        assert_eq!(starts(&g.row_bands, printed.row_bands.len()), starts(&printed.row_bands, usize::MAX));
-        assert_eq!(starts(&g.col_bands, printed.col_bands.len()), starts(&printed.col_bands, usize::MAX));
+        assert_eq!(
+            starts(&g.row_bands, printed.row_bands.len()),
+            starts(&printed.row_bands, usize::MAX)
+        );
+        assert_eq!(
+            starts(&g.col_bands, printed.col_bands.len()),
+            starts(&printed.col_bands, usize::MAX)
+        );
         assert_eq!(g.data_rows, (0, printed.row_bands.len() - 1));
         assert!(g.covers(400, 40));
         // Every cell maps to a point inside its own page's margins and back.
@@ -288,9 +335,29 @@ mod tests {
         // A point in the top margin hits the header, thirds pick the section.
         let (px, py, w, h) = g.page_rect(0, 0);
         let mid_top = (px + w / 2.0, py + g.margins[2] / 2.0);
-        assert_eq!(g.hf_zone_at(mid_top.0, mid_top.1), Some(((0, 0), HfZone { footer: false, section: 1 })));
-        assert_eq!(g.hf_zone_at(px + g.margins[0] + 2.0, py + h - 2.0).map(|z| z.1), Some(HfZone { footer: true, section: 0 }));
-        assert_eq!(g.hf_zone_at(px + w - g.margins[1] - 2.0, py + 3.0).map(|z| z.1.section), Some(2));
+        assert_eq!(
+            g.hf_zone_at(mid_top.0, mid_top.1),
+            Some((
+                (0, 0),
+                HfZone {
+                    footer: false,
+                    section: 1
+                }
+            ))
+        );
+        assert_eq!(
+            g.hf_zone_at(px + g.margins[0] + 2.0, py + h - 2.0)
+                .map(|z| z.1),
+            Some(HfZone {
+                footer: true,
+                section: 0
+            })
+        );
+        assert_eq!(
+            g.hf_zone_at(px + w - g.margins[1] - 2.0, py + 3.0)
+                .map(|z| z.1.section),
+            Some(2)
+        );
         assert!(!g.on_cells(mid_top.0, mid_top.1), "margins aren't cells");
         // The gap between pages is no page at all.
         assert_eq!(g.page_at(px + w + g.gap / 2.0, py + 10.0), None);
@@ -316,7 +383,10 @@ mod tests {
         assert!(ex.is_finite() && ey.is_finite());
         assert_eq!(g.row_at(ey * 2.0), MAX_ROWS - 1);
         assert_eq!(g.col_at(-5.0), 0);
-        assert_eq!(need_for(&Sheet::new("S"), f64::MAX, f64::MAX), (MAX_ROWS - 1, MAX_COLS - 1));
+        assert_eq!(
+            need_for(&Sheet::new("S"), f64::MAX, f64::MAX),
+            (MAX_ROWS - 1, MAX_COLS - 1)
+        );
         assert!(PageGrid::build(&wb, 7, 0, 0).is_none());
     }
 }

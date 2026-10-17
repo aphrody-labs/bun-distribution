@@ -99,8 +99,17 @@ impl PdfOptions {
     /// Default options with uncompressed content streams (readable operators, for tests and
     /// debugging).
     pub fn uncompressed() -> Self {
-        let compression = CompressionSettings { compress_text: false, ..Default::default() };
-        Self { settings: PdfSettings { compression, ..Default::default() }, ..Default::default() }
+        let compression = CompressionSettings {
+            compress_text: false,
+            ..Default::default()
+        };
+        Self {
+            settings: PdfSettings {
+                compression,
+                ..Default::default()
+            },
+            ..Default::default()
+        }
     }
 }
 

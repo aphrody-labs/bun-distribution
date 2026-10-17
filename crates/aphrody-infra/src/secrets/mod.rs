@@ -78,7 +78,11 @@ impl SecretsCommand {
     pub fn execute(&self, root: &Path) -> Result<()> {
         match self {
             SecretsCommand::Audit { path, json } => {
-                let target_dir = if path.is_absolute() { path.clone() } else { root.join(path) };
+                let target_dir = if path.is_absolute() {
+                    path.clone()
+                } else {
+                    root.join(path)
+                };
 
                 let scanner = SecretScanner::new();
                 let findings = scanner.scan_directory(&target_dir)?;
@@ -86,7 +90,10 @@ impl SecretsCommand {
                 if *json {
                     println!("{}", serde_json::to_string_pretty(&findings)?);
                 } else {
-                    println!("Scan de sécurité des secrets sur : {}", target_dir.display());
+                    println!(
+                        "Scan de sécurité des secrets sur : {}",
+                        target_dir.display()
+                    );
                     if findings.is_empty() {
                         println!("Statut : AUCUNE FUITE DÉTECTÉE (dépôt propre et conforme)");
                     } else {
@@ -103,13 +110,21 @@ impl SecretsCommand {
                     }
                 }
                 Ok(())
-            },
-            SecretsCommand::Check { service, env_file, json } => {
+            }
+            SecretsCommand::Check {
+                service,
+                env_file,
+                json,
+            } => {
                 let contract_path = root.join("tools/config/secrets-contract.json");
                 let contract = SecretsContract::load(&contract_path)?;
 
                 let env_map = if let Some(p) = env_file {
-                    let target_path = if p.is_absolute() { p.clone() } else { root.join(p) };
+                    let target_path = if p.is_absolute() {
+                        p.clone()
+                    } else {
+                        root.join(p)
+                    };
                     systemd::parse_env_file(&target_path)?
                 } else {
                     // Check standard environment variables in current process
@@ -121,12 +136,18 @@ impl SecretsCommand {
                 if *json {
                     println!("{}", serde_json::to_string_pretty(&report)?);
                 } else {
-                    println!("Vérification du contrat de secrets pour '{}' :", report.service);
+                    println!(
+                        "Vérification du contrat de secrets pour '{}' :",
+                        report.service
+                    );
                     println!("  Statut global       : {}", report.status);
                     println!("  Variables déclarées : {}", report.total_declared);
                     println!("  Variables valides   : {}", report.present_count);
                     if !report.missing_required.is_empty() {
-                        println!("  Variables requises MANQUANTES : {:?}", report.missing_required);
+                        println!(
+                            "  Variables requises MANQUANTES : {:?}",
+                            report.missing_required
+                        );
                     }
                     if !report.empty_values.is_empty() {
                         println!(
@@ -136,12 +157,23 @@ impl SecretsCommand {
                     }
                 }
                 Ok(())
-            },
-            SecretsCommand::Encrypt { service, in_file, out_file, password } => {
-                let in_path =
-                    if in_file.is_absolute() { in_file.clone() } else { root.join(in_file) };
-                let out_path =
-                    if out_file.is_absolute() { out_file.clone() } else { root.join(out_file) };
+            }
+            SecretsCommand::Encrypt {
+                service,
+                in_file,
+                out_file,
+                password,
+            } => {
+                let in_path = if in_file.is_absolute() {
+                    in_file.clone()
+                } else {
+                    root.join(in_file)
+                };
+                let out_path = if out_file.is_absolute() {
+                    out_file.clone()
+                } else {
+                    root.join(out_file)
+                };
 
                 let pwd = match password {
                     Some(p) => p.clone(),
@@ -164,10 +196,17 @@ impl SecretsCommand {
                 println!("  Service : {}", manifest.service);
                 println!("  Clés chiffrées : {}", manifest.data.len());
                 Ok(())
-            },
-            SecretsCommand::Decrypt { in_file, out_file, password } => {
-                let in_path =
-                    if in_file.is_absolute() { in_file.clone() } else { root.join(in_file) };
+            }
+            SecretsCommand::Decrypt {
+                in_file,
+                out_file,
+                password,
+            } => {
+                let in_path = if in_file.is_absolute() {
+                    in_file.clone()
+                } else {
+                    root.join(in_file)
+                };
                 let pwd = match password {
                     Some(p) => p.clone(),
                     None => std::env::var("APHRODY_SECRETS_PASSWORD").context(
@@ -180,26 +219,44 @@ impl SecretsCommand {
                 let manifest: EncryptedManifest = serde_json::from_str(&content)?;
                 let decrypted = manifest.decrypt(&pwd)?;
 
-                println!("Déchiffrement réussi de l'enveloppe '{}' :", manifest.service);
+                println!(
+                    "Déchiffrement réussi de l'enveloppe '{}' :",
+                    manifest.service
+                );
                 println!("  Nombre de secrets déchiffrés : {}", decrypted.len());
                 for (k, v) in &decrypted {
                     println!("  - {:<24} : {}", k, v.masked_preview());
                 }
 
                 if let Some(out_p) = out_file {
-                    let out_path =
-                        if out_p.is_absolute() { out_p.clone() } else { root.join(out_p) };
+                    let out_path = if out_p.is_absolute() {
+                        out_p.clone()
+                    } else {
+                        root.join(out_p)
+                    };
                     systemd::render_env_file(&decrypted, &out_path, true)?;
                     println!("Exporté vers : {:?}", out_path);
                 }
 
                 Ok(())
-            },
-            SecretsCommand::Render { service, in_file, out_file, password, apply } => {
-                let in_path =
-                    if in_file.is_absolute() { in_file.clone() } else { root.join(in_file) };
-                let out_path =
-                    if out_file.is_absolute() { out_file.clone() } else { root.join(out_file) };
+            }
+            SecretsCommand::Render {
+                service,
+                in_file,
+                out_file,
+                password,
+                apply,
+            } => {
+                let in_path = if in_file.is_absolute() {
+                    in_file.clone()
+                } else {
+                    root.join(in_file)
+                };
+                let out_path = if out_file.is_absolute() {
+                    out_file.clone()
+                } else {
+                    root.join(out_file)
+                };
 
                 let pwd = match password {
                     Some(p) => p.clone(),
@@ -225,7 +282,7 @@ impl SecretsCommand {
                 println!("{status_msg}");
 
                 Ok(())
-            },
+            }
         }
     }
 }

@@ -2,7 +2,8 @@
 //! all links. Rectangles are points from the top-left of the displayed page.
 
 use pdfcraft_engine::{
-    Edit, LinkAction, LinkHighlight, LinkStyle, read_remote_document, remote_document_path_is_absolute, resolve_remote_document_path,
+    Edit, LinkAction, LinkHighlight, LinkStyle, read_remote_document,
+    remote_document_path_is_absolute, resolve_remote_document_path,
 };
 use pdfcraft_render::{DestView, LinkTarget, RemoteDestination};
 use serde_json::{Value, json};
@@ -17,12 +18,25 @@ fn bad(m: impl Into<String>) -> ToolError {
 
 impl Automation {
     fn view_rect(&self, a: &Args, page: usize) -> Result<Option<[f64; 4]>> {
-        let Some(v) = a.get("rect") else { return Ok(None) };
-        let r: Vec<f64> = v.as_array().map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
+        let Some(v) = a.get("rect") else {
+            return Ok(None);
+        };
+        let r: Vec<f64> = v
+            .as_array()
+            .map(|x| x.iter().filter_map(Value::as_f64).collect())
+            .unwrap_or_default();
         let r = <[f64; 4]>::try_from(r).map_err(|_| bad("rect must be 4 numbers"))?;
         let p = &self.doc(a)?.info.pages[page];
-        let (u0, u1) = (p.view_to_user(r[0] as f32, r[1] as f32), p.view_to_user(r[2] as f32, r[3] as f32));
-        Ok(Some([u0[0].min(u1[0]) as f64, u0[1].min(u1[1]) as f64, u0[0].max(u1[0]) as f64, u0[1].max(u1[1]) as f64]))
+        let (u0, u1) = (
+            p.view_to_user(r[0] as f32, r[1] as f32),
+            p.view_to_user(r[2] as f32, r[3] as f32),
+        );
+        Ok(Some([
+            u0[0].min(u1[0]) as f64,
+            u0[1].min(u1[1]) as f64,
+            u0[0].max(u1[0]) as f64,
+            u0[1].max(u1[1]) as f64,
+        ]))
     }
 
     fn link_action(&self, a: &Args) -> Result<Option<LinkAction>> {
@@ -87,27 +101,57 @@ impl Automation {
     pub(crate) fn link_open(&mut self, a: &Args) -> Result<Value> {
         let page_number = a.int("page")?;
         let index_number = a.int("index")?;
-        let page = usize::try_from(page_number.checked_sub(1).filter(|n| *n >= 0).ok_or_else(|| bad("page must be 1 or more"))?)
-            .map_err(|_| bad("page is out of range"))?;
-        let index = usize::try_from(index_number.checked_sub(1).filter(|n| *n >= 0).ok_or_else(|| bad("index must be 1 or more"))?)
-            .map_err(|_| bad("index is out of range"))?;
+        let page = usize::try_from(
+            page_number
+                .checked_sub(1)
+                .filter(|n| *n >= 0)
+                .ok_or_else(|| bad("page must be 1 or more"))?,
+        )
+        .map_err(|_| bad("page is out of range"))?;
+        let index = usize::try_from(
+            index_number
+                .checked_sub(1)
+                .filter(|n| *n >= 0)
+                .ok_or_else(|| bad("index must be 1 or more"))?,
+        )
+        .map_err(|_| bad("index is out of range"))?;
         let (source_path, file, destination, new_window) = {
             let source = self.doc(a)?;
             if page >= source.info.pages.len() {
-                return Err(bad(format!("page {page_number} is out of range: the document has {} pages", source.info.pages.len())));
+                return Err(bad(format!(
+                    "page {page_number} is out of range: the document has {} pages",
+                    source.info.pages.len()
+                )));
             }
             let link = source
                 .info
                 .links
                 .iter()
                 .find(|link| link.page == page && link.index == index)
-                .ok_or_else(|| failed(format!("page {page_number} has no link {index_number} (see link_list)")))?;
-            let LinkTarget::RemoteGoTo { file, destination, new_window } = &link.target else {
-                return Err(bad("the selected link is not a supported local PDF GoToR link"));
+                .ok_or_else(|| {
+                    failed(format!(
+                        "page {page_number} has no link {index_number} (see link_list)"
+                    ))
+                })?;
+            let LinkTarget::RemoteGoTo {
+                file,
+                destination,
+                new_window,
+            } = &link.target
+            else {
+                return Err(bad(
+                    "the selected link is not a supported local PDF GoToR link",
+                ));
             };
-            (source.path.clone(), file.clone(), destination.clone(), *new_window)
+            (
+                source.path.clone(),
+                file.clone(),
+                destination.clone(),
+                *new_window,
+            )
         };
-        let path = resolve_remote_document_path(source_path.as_deref().map(Path::new), &file).map_err(failed)?;
+        let path = resolve_remote_document_path(source_path.as_deref().map(Path::new), &file)
+            .map_err(failed)?;
         let allow_absolute = a.opt_bool("allow_absolute")?.unwrap_or(false);
         if remote_document_path_is_absolute(&file) && !allow_absolute {
             return Err(failed(
@@ -115,19 +159,37 @@ impl Automation {
             ));
         }
         let path = self.resolve(&path.to_string_lossy(), false)?;
-        let bytes = read_remote_document(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let id =
-            self.session.open(name, Some(path.to_string_lossy().into_owned()), std::sync::Arc::new(bytes), a.opt_str("password")?).map_err(failed)?;
-        let opened = self.session.get(id).ok_or_else(|| failed("the linked document vanished"))?;
+        let bytes =
+            read_remote_document(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let id = self
+            .session
+            .open(
+                name,
+                Some(path.to_string_lossy().into_owned()),
+                std::sync::Arc::new(bytes),
+                a.opt_str("password")?,
+            )
+            .map_err(failed)?;
+        let opened = self
+            .session
+            .get(id)
+            .ok_or_else(|| failed("the linked document vanished"))?;
         let (destination_applied, destination_value, warning) = match destination {
             RemoteDestination::Default => (true, json!({ "kind": "default" }), None),
-            RemoteDestination::Named(name) => {
-                (false, json!({ "kind": "named", "name": name }), Some("The PDF opened, but the named destination was not applied."))
-            }
-            RemoteDestination::Page { page, view } if page < opened.info.pages.len() => {
-                (true, json!({ "kind": "page", "page": page.saturating_add(1), "view": dest_view_value(view) }), None)
-            }
+            RemoteDestination::Named(name) => (
+                false,
+                json!({ "kind": "named", "name": name }),
+                Some("The PDF opened, but the named destination was not applied."),
+            ),
+            RemoteDestination::Page { page, view } if page < opened.info.pages.len() => (
+                true,
+                json!({ "kind": "page", "page": page.saturating_add(1), "view": dest_view_value(view) }),
+                None,
+            ),
             RemoteDestination::Page { page, view } => (
                 false,
                 json!({ "kind": "page", "page": page.saturating_add(1), "view": dest_view_value(view) }),
@@ -152,10 +214,22 @@ impl Automation {
 
     pub(crate) fn link_add(&mut self, a: &Args) -> Result<Value> {
         let page = self.page(a)?;
-        let rect = self.view_rect(a, page)?.ok_or_else(|| bad("link_add needs rect"))?;
-        let action = self.link_action(a)?.ok_or_else(|| bad("pass url or to_page"))?;
+        let rect = self
+            .view_rect(a, page)?
+            .ok_or_else(|| bad("link_add needs rect"))?;
+        let action = self
+            .link_action(a)?
+            .ok_or_else(|| bad("pass url or to_page"))?;
         let style = self.link_style(a, LinkStyle::default())?;
-        self.apply(a, Edit::AddLink { page, rect, action, style })
+        self.apply(
+            a,
+            Edit::AddLink {
+                page,
+                rect,
+                action,
+                style,
+            },
+        )
     }
 
     fn link_index(&self, a: &Args) -> Result<(usize, usize, LinkStyle)> {
@@ -166,7 +240,12 @@ impl Automation {
             .links
             .iter()
             .find(|l| l.page == page && l.index as i64 + 1 == index)
-            .ok_or_else(|| failed(format!("page {} has no link {index} (see link_list)", page + 1)))?;
+            .ok_or_else(|| {
+                failed(format!(
+                    "page {} has no link {index} (see link_list)",
+                    page + 1
+                ))
+            })?;
         Ok((page, l.index, l.style))
     }
 
@@ -175,7 +254,16 @@ impl Automation {
         let rect = self.view_rect(a, page)?;
         let action = self.link_action(a)?;
         let new_style = self.link_style(a, style)?;
-        self.apply(a, Edit::SetLink { page, index, rect, action, style: (new_style != style).then_some(new_style) })
+        self.apply(
+            a,
+            Edit::SetLink {
+                page,
+                index,
+                rect,
+                action,
+                style: (new_style != style).then_some(new_style),
+            },
+        )
     }
 
     pub(crate) fn link_delete(&mut self, a: &Args) -> Result<Value> {
@@ -190,7 +278,13 @@ impl Automation {
             return Err(failed("no unlinked web addresses were found in the text"));
         }
         let urls: Vec<String> = found.iter().map(|f| f.2.clone()).collect();
-        let mut out = self.apply(a, Edit::AddLinks { links: found, style: LinkStyle::default() })?;
+        let mut out = self.apply(
+            a,
+            Edit::AddLinks {
+                links: found,
+                style: LinkStyle::default(),
+            },
+        )?;
         out["created"] = json!(urls);
         Ok(out)
     }
@@ -201,7 +295,12 @@ impl Automation {
             None => None,
         };
         let before = match &pages {
-            Some(ps) => self.doc(a)?.links.iter().filter(|l| ps.contains(&l.page)).count(),
+            Some(ps) => self
+                .doc(a)?
+                .links
+                .iter()
+                .filter(|l| ps.contains(&l.page))
+                .count(),
             None => self.doc(a)?.links.len(),
         };
         let mut out = self.apply(a, Edit::RemoveLinks { pages })?;
@@ -213,7 +312,9 @@ impl Automation {
 fn dest_view_value(view: DestView) -> Value {
     match view {
         DestView::Top => json!({ "kind": "top" }),
-        DestView::Xyz { left, top, zoom } => json!({ "kind": "xyz", "left": left, "top": top, "zoom": zoom }),
+        DestView::Xyz { left, top, zoom } => {
+            json!({ "kind": "xyz", "left": left, "top": top, "zoom": zoom })
+        }
         DestView::Fit => json!({ "kind": "fit" }),
         DestView::FitH { top } => json!({ "kind": "fit_h", "top": top }),
         DestView::FitV { left } => json!({ "kind": "fit_v", "left": left }),

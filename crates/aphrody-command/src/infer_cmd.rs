@@ -72,9 +72,19 @@ pub(crate) fn run(action: InferAction) -> miette::Result<()> {
     match action {
         InferAction::Runtime { output } => runtime_report(&output),
         InferAction::Llama { output } => llama_report(&output),
-        InferAction::Probe { target, role, require, provider, output } => {
-            probe(&target, role.as_deref(), require.as_deref(), provider.as_deref(), &output)
-        },
+        InferAction::Probe {
+            target,
+            role,
+            require,
+            provider,
+            output,
+        } => probe(
+            &target,
+            role.as_deref(),
+            require.as_deref(),
+            provider.as_deref(),
+            &output,
+        ),
     }
 }
 
@@ -97,11 +107,15 @@ fn runtime_report(output: &OutputOpts) -> miette::Result<()> {
     report.push(vec!["discovered via".into(), source.label().to_owned()]);
     report.push(vec![
         "library".into(),
-        source.path().map_or_else(|| "(platform loader)".to_owned(), |p| p.display().to_string()),
+        source.path().map_or_else(
+            || "(platform loader)".to_owned(),
+            |p| p.display().to_string(),
+        ),
     ]);
     report.push(vec![
         "runtimes dir".into(),
-        dir.as_ref().map_or_else(|| "-".to_owned(), |p| p.display().to_string()),
+        dir.as_ref()
+            .map_or_else(|| "-".to_owned(), |p| p.display().to_string()),
     ]);
     report.push(vec![
         "gpu build".into(),
@@ -127,7 +141,9 @@ fn runtime_report(output: &OutputOpts) -> miette::Result<()> {
     });
     output.emit_report(&report, &json)?;
 
-    load_result.map(|_: RuntimeSource| ()).map_err(|e| miette::miette!("{e}"))
+    load_result
+        .map(|_: RuntimeSource| ())
+        .map_err(|e| miette::miette!("{e}"))
 }
 
 fn llama_report(output: &OutputOpts) -> miette::Result<()> {
@@ -141,7 +157,11 @@ fn llama_report(output: &OutputOpts) -> miette::Result<()> {
     let mut report = Report::new("llama.cpp backend", &["TOOL", "SOURCE", "PATH"])
         .with_summary(format!(
             "Catalog entries needing this backend: {}",
-            if gguf_entries.is_empty() { "none".to_owned() } else { gguf_entries.join(", ") }
+            if gguf_entries.is_empty() {
+                "none".to_owned()
+            } else {
+                gguf_entries.join(", ")
+            }
         ))
         .with_footer(if found.is_empty() {
             "not installed — unpack a llama.cpp release under ~/.aphrody/runtimes/llama-<build>/"
@@ -195,7 +215,9 @@ fn probe(
     } else {
         let path = PathBuf::from(target);
         if !path.is_file() {
-            return Err(miette::miette!("`{target}` is neither a catalog id nor an existing file"));
+            return Err(miette::miette!(
+                "`{target}` is neither a catalog id nor an existing file"
+            ));
         }
         let loaded = aphrody_infer::load(&path, &config).map_err(|e| miette::miette!("{e}"))?;
         (path.display().to_string(), loaded)
@@ -206,10 +228,18 @@ fn probe(
     let mut report =
         Report::new(format!("Probe {label}"), &["FIELD", "VALUE"]).with_summary(format!(
             "Provider chain: {}",
-            config.providers.iter().map(|p| p.as_str()).collect::<Vec<_>>().join(" -> ")
+            config
+                .providers
+                .iter()
+                .map(|p| p.as_str())
+                .collect::<Vec<_>>()
+                .join(" -> ")
         ));
     report.push(vec!["provider".into(), model.provider.to_string()]);
-    report.push(vec!["accelerated".into(), model.is_accelerated().to_string()]);
+    report.push(vec![
+        "accelerated".into(),
+        model.is_accelerated().to_string(),
+    ]);
     report.push(vec!["model".into(), model.path.display().to_string()]);
     report.push(vec!["size".into(), human_bytes(size)]);
     for (name, dtype) in model.inputs() {

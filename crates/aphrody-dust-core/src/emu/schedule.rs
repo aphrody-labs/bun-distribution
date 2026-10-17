@@ -39,7 +39,11 @@ pub struct Schedule {
 
 impl Schedule {
     pub(super) fn new(batch_cycles: Timestamp) -> Self {
-        Schedule { cur_time: Timestamp(0), batch_cycles, schedule: schedule::Schedule::new() }
+        Schedule {
+            cur_time: Timestamp(0),
+            batch_cycles,
+            schedule: schedule::Schedule::new(),
+        }
     }
 
     #[inline]
@@ -59,7 +63,9 @@ impl Schedule {
 
     #[inline]
     pub(super) fn batch_end_time(&self) -> Timestamp {
-        self.schedule.next_event_time().min(self.cur_time + self.batch_cycles)
+        self.schedule
+            .next_event_time()
+            .min(self.cur_time + self.batch_cycles)
     }
 
     #[inline]

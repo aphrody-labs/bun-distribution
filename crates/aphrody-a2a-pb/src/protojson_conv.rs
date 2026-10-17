@@ -27,7 +27,7 @@ impl fmt::Display for ProtoJsonPayloadError {
             Self::Decode(error) => write!(f, "protobuf transcode error: {error}"),
             Self::MissingPayload(type_name) => {
                 write!(f, "ProtoJSON payload missing required data for {type_name}")
-            },
+            }
         }
     }
 }
@@ -223,7 +223,10 @@ impl_protojson_payload!(
     crate::pbconv::from_proto_subscribe_to_task_request
 );
 #[cfg(target_family = "wasm")]
-impl_protojson_payload!(SubscribeToTaskRequest, crate::protojson::SubscribeToTaskRequest);
+impl_protojson_payload!(
+    SubscribeToTaskRequest,
+    crate::protojson::SubscribeToTaskRequest
+);
 
 #[cfg(not(target_family = "wasm"))]
 impl_protojson_payload!(
@@ -234,7 +237,10 @@ impl_protojson_payload!(
     crate::pbconv::from_proto_get_extended_agent_card_request
 );
 #[cfg(target_family = "wasm")]
-impl_protojson_payload!(GetExtendedAgentCardRequest, crate::protojson::GetExtendedAgentCardRequest);
+impl_protojson_payload!(
+    GetExtendedAgentCardRequest,
+    crate::protojson::GetExtendedAgentCardRequest
+);
 
 #[cfg(not(target_family = "wasm"))]
 impl_protojson_payload!(
@@ -287,7 +293,10 @@ impl_protojson_payload!(
     crate::pbconv::from_proto_task_push_notification_config
 );
 #[cfg(target_family = "wasm")]
-impl_protojson_payload!(TaskPushNotificationConfig, crate::protojson::TaskPushNotificationConfig);
+impl_protojson_payload!(
+    TaskPushNotificationConfig,
+    crate::protojson::TaskPushNotificationConfig
+);
 
 #[cfg(not(target_family = "wasm"))]
 impl_protojson_payload!(

@@ -107,7 +107,10 @@ fn resolution_imbriquee_event_aimed_weapon() {
 fn dispatch_typed_atteint_azalee() {
     use aphrody_nie_data::typed::{decode_by_key, family_key};
     let Some(root) = load() else { return };
-    assert_eq!(family_key("happen_event_npc_common.cfg.bin"), "happen_event_npc_common");
+    assert_eq!(
+        family_key("happen_event_npc_common.cfg.bin"),
+        "happen_event_npc_common"
+    );
     let (label, json) =
         decode_by_key("happen_event_npc_common", &root).expect("famille typée câblée");
     assert_eq!(label, "happen_event_npc");
@@ -127,6 +130,12 @@ fn cond_decode_reel() {
     // [14] : opcode 0x17, 4 feuilles = 2 story (b91936da) + 2 event-flag → Composite (story + events).
     let c14 = cfg.common_info[14].decode_cond();
     assert_eq!(c14.kind, UnlockType::Composite);
-    assert!(c14.story_threshold.is_some(), "seuil story présent (2 feuilles story)");
-    assert!(!c14.required_events.is_empty(), "feuilles event-flag présentes");
+    assert!(
+        c14.story_threshold.is_some(),
+        "seuil story présent (2 feuilles story)"
+    );
+    assert!(
+        !c14.required_events.is_empty(),
+        "feuilles event-flag présentes"
+    );
 }

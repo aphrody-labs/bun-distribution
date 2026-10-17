@@ -33,7 +33,10 @@ impl ActiveExecution {
         let (sender, _) = broadcast::channel(EXECUTION_BUFFER_CAPACITY);
         Arc::new(Self {
             sender,
-            state: RwLock::new(ActiveExecutionState { sequence: 0, snapshot_task: Some(task) }),
+            state: RwLock::new(ActiveExecutionState {
+                sequence: 0,
+                snapshot_task: Some(task),
+            }),
         })
     }
 
@@ -54,14 +57,20 @@ impl ActiveExecution {
                 state.snapshot_task = Some(task);
             }
             state.sequence += 1;
-            ExecutionEvent { sequence: state.sequence, result }
+            ExecutionEvent {
+                sequence: state.sequence,
+                result,
+            }
         };
         let _ = self.sender.send(event);
     }
 
     async fn snapshot_is_terminal(&self) -> bool {
         let state = self.state.read().await;
-        state.snapshot_task.as_ref().is_some_and(|task| task.status.state.is_terminal())
+        state
+            .snapshot_task
+            .as_ref()
+            .is_some_and(|task| task.status.state.is_terminal())
     }
 }
 
@@ -101,8 +110,9 @@ impl ExecutionManager {
 
     async fn finish(&self, task_id: &str, active: &Arc<ActiveExecution>) {
         let mut executions = self.executions.write().await;
-        let should_remove =
-            executions.get(task_id).is_some_and(|current| Arc::ptr_eq(current, active));
+        let should_remove = executions
+            .get(task_id)
+            .is_some_and(|current| Arc::ptr_eq(current, active));
         if should_remove {
             executions.remove(task_id);
         }
@@ -145,7 +155,12 @@ fn should_interrupt_non_streaming(
     req: &SendMessageRequest,
     event: &StreamResponse,
 ) -> Option<TaskId> {
-    if req.configuration.as_ref().and_then(|config| config.return_immediately).unwrap_or(false) {
+    if req
+        .configuration
+        .as_ref()
+        .and_then(|config| config.return_immediately)
+        .unwrap_or(false)
+    {
         return match event {
             StreamResponse::Message(_) => None,
             _ => task_id_for_event(event).map(ToOwned::to_owned),
@@ -155,10 +170,10 @@ fn should_interrupt_non_streaming(
     match event {
         StreamResponse::Task(task) if task.status.state == TaskState::AuthRequired => {
             Some(task.id.clone())
-        },
+        }
         StreamResponse::StatusUpdate(update) if update.status.state == TaskState::AuthRequired => {
             Some(update.task_id.clone())
-        },
+        }
         _ => None,
     }
 }
@@ -190,7 +205,7 @@ async fn save_task(task_store: &dyn crate::TaskStore, task: Task) -> Result<Task
         Err(error) if error.code == error_code::TASK_NOT_FOUND => {
             task_store.create(task.clone()).await?;
             Ok(task)
-        },
+        }
         Err(error) => Err(error),
     }
 }
@@ -208,7 +223,7 @@ async fn apply_event_to_task(
                 .ok_or_else(|| A2AError::task_not_found(&update.task_id))?;
             task.status = update.status.clone();
             save_task(task_store, task).await.map(Some)
-        },
+        }
         StreamResponse::ArtifactUpdate(update) => {
             let mut task = current_task
                 .or(task_store.get(&update.task_id).await?)
@@ -216,7 +231,7 @@ async fn apply_event_to_task(
             let artifacts = task.artifacts.get_or_insert_with(Vec::new);
             artifacts.push(update.artifact.clone());
             save_task(task_store, task).await.map(Some)
-        },
+        }
         StreamResponse::Message(_) => Ok(current_task),
     }
 }
@@ -227,7 +242,12 @@ fn subscription_stream(
     min_sequence: u64,
 ) -> BoxStream<'static, Result<StreamResponse, A2AError>> {
     Box::pin(futures::stream::unfold(
-        SubscriptionState { receiver, snapshot_task, min_sequence, done: false },
+        SubscriptionState {
+            receiver,
+            snapshot_task,
+            min_sequence,
+            done: false,
+        },
         |mut state| async move {
             if state.done {
                 return None;
@@ -248,17 +268,19 @@ fn subscription_stream(
                         match &event.result {
                             Ok(item) if is_terminal_event(item) => state.done = true,
                             Err(_) => state.done = true,
-                            _ => {},
+                            _ => {}
                         }
                         return Some((event.result.clone(), state));
-                    },
+                    }
                     Err(broadcast::error::RecvError::Lagged(_)) => {
                         state.done = true;
                         return Some((
-                            Err(A2AError::internal("subscription fell behind active execution")),
+                            Err(A2AError::internal(
+                                "subscription fell behind active execution",
+                            )),
                             state,
                         ));
-                    },
+                    }
                     Err(broadcast::error::RecvError::Closed) => return None,
                 }
             }
@@ -305,17 +327,17 @@ async fn drive_execution(
                         if is_terminal_event(&event) {
                             break;
                         }
-                    },
+                    }
                     Err(error) => {
                         active.publish(Err(error), None).await;
                         break;
-                    },
+                    }
                 }
-            },
+            }
             Err(error) => {
                 active.publish(Err(error), None).await;
                 break;
-            },
+            }
         }
     }
 
@@ -444,11 +466,16 @@ impl DefaultRequestHandler {
     }
 
     fn push_config_store(&self) -> Result<&dyn crate::PushConfigStore, A2AError> {
-        self.push_config_store.as_deref().ok_or_else(A2AError::push_notification_not_supported)
+        self.push_config_store
+            .as_deref()
+            .ok_or_else(A2AError::push_notification_not_supported)
     }
 
     async fn load_task(&self, task_id: &str) -> Result<Task, A2AError> {
-        self.task_store.get(task_id).await?.ok_or_else(|| A2AError::task_not_found(task_id))
+        self.task_store
+            .get(task_id)
+            .await?
+            .ok_or_else(|| A2AError::task_not_found(task_id))
     }
 
     async fn prepare_task_for_execution(
@@ -566,25 +593,27 @@ impl RequestHandler for DefaultRequestHandler {
             let event = item?;
 
             if let Some(interrupt_task_id) = should_interrupt_non_streaming(&req, &event) {
-                return Ok(SendMessageResponse::Task(self.load_task(&interrupt_task_id).await?));
+                return Ok(SendMessageResponse::Task(
+                    self.load_task(&interrupt_task_id).await?,
+                ));
             }
 
             match event {
                 StreamResponse::Message(message) => {
                     return Ok(SendMessageResponse::Message(message));
-                },
+                }
                 other => last_event = Some(other),
             }
         }
 
         match last_event {
             Some(StreamResponse::Task(task)) => Ok(SendMessageResponse::Task(task)),
-            Some(StreamResponse::StatusUpdate(update)) => {
-                Ok(SendMessageResponse::Task(self.load_task(&update.task_id).await?))
-            },
-            Some(StreamResponse::ArtifactUpdate(update)) => {
-                Ok(SendMessageResponse::Task(self.load_task(&update.task_id).await?))
-            },
+            Some(StreamResponse::StatusUpdate(update)) => Ok(SendMessageResponse::Task(
+                self.load_task(&update.task_id).await?,
+            )),
+            Some(StreamResponse::ArtifactUpdate(update)) => Ok(SendMessageResponse::Task(
+                self.load_task(&update.task_id).await?,
+            )),
             Some(StreamResponse::Message(message)) => Ok(SendMessageResponse::Message(message)),
             None => Ok(SendMessageResponse::Task(self.load_task(&task_id).await?)),
         }
@@ -604,7 +633,10 @@ impl RequestHandler for DefaultRequestHandler {
         _params: &ServiceParams,
         req: GetTaskRequest,
     ) -> Result<Task, A2AError> {
-        self.task_store.get(&req.id).await?.ok_or_else(|| A2AError::task_not_found(&req.id))
+        self.task_store
+            .get(&req.id)
+            .await?
+            .ok_or_else(|| A2AError::task_not_found(&req.id))
     }
 
     async fn list_tasks(
@@ -665,13 +697,13 @@ impl RequestHandler for DefaultRequestHandler {
                     if is_terminal_event(&event) {
                         break;
                     }
-                },
+                }
                 Err(error) => {
                     if let Some(active) = &active_execution {
                         active.publish(Err(error.clone()), None).await;
                     }
                     return Err(error);
-                },
+                }
             }
         }
 
@@ -693,9 +725,12 @@ impl RequestHandler for DefaultRequestHandler {
             // A finished task has nothing left to stream: the specification asks for
             // UnsupportedOperationError there, TaskNotFoundError only for an unknown task.
             return Err(match self.task_store.get(&req.id).await? {
-                Some(task) if task.status.state.is_terminal() => A2AError::unsupported_operation(
-                    format!("task {} is in a terminal state and cannot be subscribed to", req.id),
-                ),
+                Some(task) if task.status.state.is_terminal() => {
+                    A2AError::unsupported_operation(format!(
+                        "task {} is in a terminal state and cannot be subscribed to",
+                        req.id
+                    ))
+                }
                 _ => A2AError::task_not_found(&req.id),
             });
         };
@@ -750,7 +785,9 @@ impl RequestHandler for DefaultRequestHandler {
         _params: &ServiceParams,
         req: DeleteTaskPushNotificationConfigRequest,
     ) -> Result<(), A2AError> {
-        self.push_config_store()?.delete(&req.task_id, &req.id).await
+        self.push_config_store()?
+            .delete(&req.task_id, &req.id)
+            .await
     }
 
     async fn get_extended_agent_card(
@@ -828,7 +865,11 @@ mod tests {
             let task = Task {
                 id: ctx.task_id.clone(),
                 context_id: ctx.context_id.clone(),
-                status: TaskStatus { state: TaskState::Canceled, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Canceled,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
@@ -845,7 +886,11 @@ mod tests {
             let working = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
                 task_id: ctx.task_id.clone(),
                 context_id: ctx.context_id.clone(),
-                status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Working,
+                    message: None,
+                    timestamp: None,
+                },
                 metadata: None,
             });
             let completed = StreamResponse::Task(Task {
@@ -871,7 +916,11 @@ mod tests {
             let task = Task {
                 id: ctx.task_id.clone(),
                 context_id: ctx.context_id.clone(),
-                status: TaskStatus { state: TaskState::Canceled, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Canceled,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
@@ -889,7 +938,11 @@ mod tests {
             let working_task = Task {
                 id: ctx.task_id.clone(),
                 context_id: ctx.context_id.clone(),
-                status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Working,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: ctx.stored_task.and_then(|task| task.history),
                 metadata: None,
@@ -897,7 +950,11 @@ mod tests {
             let completed_task = Task {
                 id: working_task.id.clone(),
                 context_id: working_task.context_id.clone(),
-                status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Completed,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: working_task.history.clone(),
                 metadata: None,
@@ -927,7 +984,11 @@ mod tests {
             let task = Task {
                 id: ctx.task_id.clone(),
                 context_id: ctx.context_id.clone(),
-                status: TaskStatus { state: TaskState::Canceled, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Canceled,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
@@ -954,7 +1015,9 @@ mod tests {
         let release = Arc::new(Notify::new());
         (
             DefaultRequestHandler::new(
-                ResumableExecutor { release: release.clone() },
+                ResumableExecutor {
+                    release: release.clone(),
+                },
                 InMemoryTaskStore::new(),
             ),
             release,
@@ -992,7 +1055,9 @@ mod tests {
         tokio::task::JoinHandle<()>,
     ) {
         let (sender, receiver) = mpsc::unbounded_channel();
-        let app = Router::new().route("/", post(capture_push)).with_state(sender);
+        let app = Router::new()
+            .route("/", post(capture_push))
+            .with_state(sender);
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
@@ -1009,7 +1074,10 @@ mod tests {
     }
 
     async fn next_push(receiver: &mut mpsc::UnboundedReceiver<CapturedPush>) -> CapturedPush {
-        timeout(Duration::from_secs(5), receiver.recv()).await.unwrap().unwrap()
+        timeout(Duration::from_secs(5), receiver.recv())
+            .await
+            .unwrap()
+            .unwrap()
     }
 
     #[tokio::test]
@@ -1026,7 +1094,7 @@ mod tests {
         match result {
             SendMessageResponse::Task(task) => {
                 assert_eq!(task.status.state, TaskState::Completed);
-            },
+            }
             _ => panic!("expected Task response"),
         }
     }
@@ -1051,7 +1119,11 @@ mod tests {
     async fn test_get_task_not_found() {
         let handler = make_handler();
         let params = ServiceParams::new();
-        let req = GetTaskRequest { id: "nonexistent".into(), history_length: None, tenant: None };
+        let req = GetTaskRequest {
+            id: "nonexistent".into(),
+            history_length: None,
+            tenant: None,
+        };
         let result = handler.get_task(&params, req).await;
         assert!(result.is_err());
     }
@@ -1063,13 +1135,21 @@ mod tests {
         let mut msg = make_message();
         msg.task_id = Some("t1".into());
         msg.context_id = Some("c1".into());
-        let req =
-            SendMessageRequest { message: msg, configuration: None, metadata: None, tenant: None };
+        let req = SendMessageRequest {
+            message: msg,
+            configuration: None,
+            metadata: None,
+            tenant: None,
+        };
         handler.send_message(&params, req).await.unwrap();
         let task = handler
             .get_task(
                 &params,
-                GetTaskRequest { id: "t1".into(), history_length: None, tenant: None },
+                GetTaskRequest {
+                    id: "t1".into(),
+                    history_length: None,
+                    tenant: None,
+                },
             )
             .await
             .unwrap();
@@ -1098,7 +1178,11 @@ mod tests {
     async fn test_cancel_task_not_found() {
         let handler = make_handler();
         let params = ServiceParams::new();
-        let req = CancelTaskRequest { id: "nonexistent".into(), metadata: None, tenant: None };
+        let req = CancelTaskRequest {
+            id: "nonexistent".into(),
+            metadata: None,
+            tenant: None,
+        };
         let result = handler.cancel_task(&params, req).await;
         assert!(result.is_err());
     }
@@ -1111,13 +1195,21 @@ mod tests {
         let task = Task {
             id: "t2".into(),
             context_id: "c2".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
         };
         handler.task_store.create(task).await.unwrap();
-        let req = CancelTaskRequest { id: "t2".into(), metadata: None, tenant: None };
+        let req = CancelTaskRequest {
+            id: "t2".into(),
+            metadata: None,
+            tenant: None,
+        };
         let result = handler.cancel_task(&params, req).await.unwrap();
         assert_eq!(result.status.state, TaskState::Canceled);
     }
@@ -1129,13 +1221,21 @@ mod tests {
         let task = Task {
             id: "t3".into(),
             context_id: "c3".into(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
         };
         handler.task_store.create(task).await.unwrap();
-        let req = CancelTaskRequest { id: "t3".into(), metadata: None, tenant: None };
+        let req = CancelTaskRequest {
+            id: "t3".into(),
+            metadata: None,
+            tenant: None,
+        };
         let result = handler.cancel_task(&params, req).await;
         assert!(result.is_err());
     }
@@ -1144,7 +1244,10 @@ mod tests {
     async fn test_subscribe_requires_active_execution() {
         let handler = make_handler();
         let params = ServiceParams::new();
-        let req = SubscribeToTaskRequest { id: "t1".into(), tenant: None };
+        let req = SubscribeToTaskRequest {
+            id: "t1".into(),
+            tenant: None,
+        };
         let result = handler.subscribe_to_task(&params, req).await;
         match result {
             Ok(_) => panic!("expected subscribe_to_task to fail"),
@@ -1159,13 +1262,20 @@ mod tests {
         let task = Task {
             id: "done".into(),
             context_id: "c-done".into(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
         };
         handler.task_store.create(task).await.unwrap();
-        let req = SubscribeToTaskRequest { id: "done".into(), tenant: None };
+        let req = SubscribeToTaskRequest {
+            id: "done".into(),
+            tenant: None,
+        };
         match handler.subscribe_to_task(&params, req).await {
             Ok(_) => panic!("expected subscribe_to_task to fail"),
             Err(error) => assert_eq!(error.code, error_code::UNSUPPORTED_OPERATION),
@@ -1203,14 +1313,17 @@ mod tests {
         match response {
             SendMessageResponse::Task(task) => {
                 assert_eq!(task.status.state, TaskState::Working);
-            },
+            }
             _ => panic!("expected Task response"),
         }
 
         let mut subscription = handler
             .subscribe_to_task(
                 &params,
-                SubscribeToTaskRequest { id: "t-resume".into(), tenant: None },
+                SubscribeToTaskRequest {
+                    id: "t-resume".into(),
+                    tenant: None,
+                },
             )
             .await
             .unwrap();
@@ -1234,7 +1347,10 @@ mod tests {
         let result = handler
             .subscribe_to_task(
                 &params,
-                SubscribeToTaskRequest { id: "t-resume".into(), tenant: None },
+                SubscribeToTaskRequest {
+                    id: "t-resume".into(),
+                    tenant: None,
+                },
             )
             .await;
         match result {
@@ -1435,7 +1551,7 @@ mod tests {
             StreamResponse::StatusUpdate(update) => {
                 assert_eq!(update.task_id, "t-push-request");
                 assert_eq!(update.status.state, TaskState::Working);
-            },
+            }
             _ => panic!("expected status update push"),
         }
 
@@ -1446,7 +1562,7 @@ mod tests {
             StreamResponse::Task(task) => {
                 assert_eq!(task.id, "t-push-request");
                 assert_eq!(task.status.state, TaskState::Completed);
-            },
+            }
             _ => panic!("expected final task push"),
         }
 
@@ -1482,7 +1598,12 @@ mod tests {
         let response = handler
             .send_message(
                 &params,
-                SendMessageRequest { message, configuration: None, metadata: None, tenant: None },
+                SendMessageRequest {
+                    message,
+                    configuration: None,
+                    metadata: None,
+                    tenant: None,
+                },
             )
             .await
             .unwrap();
@@ -1498,7 +1619,7 @@ mod tests {
             StreamResponse::StatusUpdate(update) => {
                 assert_eq!(update.task_id, "t-push-stored");
                 assert_eq!(update.status.state, TaskState::Working);
-            },
+            }
             _ => panic!("expected status update push"),
         }
 
@@ -1508,7 +1629,7 @@ mod tests {
             StreamResponse::Task(task) => {
                 assert_eq!(task.id, "t-push-stored");
                 assert_eq!(task.status.state, TaskState::Completed);
-            },
+            }
             _ => panic!("expected final task push"),
         }
 
@@ -1523,7 +1644,10 @@ mod tests {
         let result = handler
             .get_extended_agent_card(&params, GetExtendedAgentCardRequest { tenant: None })
             .await;
-        assert_eq!(result.unwrap_err().code, error_code::EXTENDED_CARD_NOT_CONFIGURED);
+        assert_eq!(
+            result.unwrap_err().code,
+            error_code::EXTENDED_CARD_NOT_CONFIGURED
+        );
     }
 
     #[test]

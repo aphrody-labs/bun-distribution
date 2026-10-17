@@ -44,7 +44,11 @@ fn default_peer() -> String {
 fn log(config: &Config, message: &str) {
     use std::io::Write;
     if let Some(path) = &config.log_file {
-        if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+        {
             let _ = writeln!(file, "{:?} {message}", std::time::SystemTime::now());
         }
     } else {
@@ -55,7 +59,10 @@ fn log(config: &Config, message: &str) {
 fn read_config(
     args: Vec<std::ffi::OsString>,
 ) -> Result<(Config, bool), Box<dyn std::error::Error>> {
-    let mut args = args.into_iter().skip(1).map(|arg| arg.to_string_lossy().into_owned());
+    let mut args = args
+        .into_iter()
+        .skip(1)
+        .map(|arg| arg.to_string_lossy().into_owned());
     if args.next().as_deref() != Some("--config") {
         return Err("usage: aphrody host-service --config <absolute-json-path> [--console]".into());
     }
@@ -85,9 +92,12 @@ fn read_config(
 /// An invalid configuration or an unsupported host platform.
 #[cfg(target_os = "linux")]
 pub async fn run_bridge(path: PathBuf) -> Result<(), String> {
-    let (config, _) =
-        read_config(vec!["aphrody-host-bridge".into(), "--config".into(), path.into_os_string()])
-            .map_err(|error| error.to_string())?;
+    let (config, _) = read_config(vec![
+        "aphrody-host-bridge".into(),
+        "--config".into(),
+        path.into_os_string(),
+    ])
+    .map_err(|error| error.to_string())?;
     run(config).await.map_err(|error| error.to_string())
 }
 
@@ -99,7 +109,7 @@ pub fn host_service_main(args: Vec<std::ffi::OsString>) -> i32 {
         Err(error) => {
             eprintln!("Error: {error}");
             1
-        },
+        }
     }
 }
 
@@ -110,13 +120,18 @@ fn host_service(args: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::error:
         return windows::dispatch(config).map_err(Into::into);
     }
     let _ = console;
-    let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
     runtime.block_on(run(config))
 }
 
 #[cfg(windows)]
 async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-    let auth = config.auth_file.as_ref().ok_or("Windows host requires authFile")?;
+    let auth = config
+        .auth_file
+        .as_ref()
+        .ok_or("Windows host requires authFile")?;
     let kernel = Kernel::with_authentication_file(auth)?;
     kernel.register(Arc::new(crate::AdminSubsystem)).await?;
     if let Some(endpoint) = config.local_endpoint.clone() {
@@ -137,7 +152,10 @@ async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
             if listener.as_ref().is_none_or(|(current, _)| current != &id) {
                 drop(listener.take());
                 let bound = crate::hvsock::HostListener::bind(config.port, vm)?;
-                log(&config, &format!("Hyper-V listener ready: VM {id}, port {}", config.port));
+                log(
+                    &config,
+                    &format!("Hyper-V listener ready: VM {id}, port {}", config.port),
+                );
                 listener = Some((id, bound));
             }
         } else {
@@ -187,16 +205,25 @@ async fn bridge(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
         .as_ref()
         .filter(|token| !token.is_empty())
         .ok_or("Linux bridge requires a token")?;
-    let endpoint = config.local_endpoint.clone().unwrap_or_else(transport::default_endpoint);
+    let endpoint = config
+        .local_endpoint
+        .clone()
+        .unwrap_or_else(transport::default_endpoint);
     let mut local = Client::connect(&endpoint).await?;
     local.initialize("aphrody-host-bridge").await?;
-    let remote_endpoint =
-        config.remote_endpoint.clone().unwrap_or_else(|| format!("vsock://{}", config.port));
+    let remote_endpoint = config
+        .remote_endpoint
+        .clone()
+        .unwrap_or_else(|| format!("vsock://{}", config.port));
     let mut remote = Client::connect(&remote_endpoint).await?;
     remote.request("initialize", json!({"protocolVersion":"2025-03-26", "capabilities":{}, "clientInfo":{"name":"aphrody-host-bridge", "version":env!("CARGO_PKG_VERSION")}, "authToken":token}), Duration::from_secs(5)).await?;
     remote.notify("notifications/initialized", json!({}))?;
-    let local_tools = local.request("tools/list", json!({}), Duration::from_secs(5)).await?;
-    let remote_tools = remote.request("tools/list", json!({}), Duration::from_secs(5)).await?;
+    let local_tools = local
+        .request("tools/list", json!({}), Duration::from_secs(5))
+        .await?;
+    let remote_tools = remote
+        .request("tools/list", json!({}), Duration::from_secs(5))
+        .await?;
     let namespaced = |catalog: &Value, prefix: &str| -> Vec<Value> {
         catalog["tools"]
             .as_array()
@@ -233,12 +260,18 @@ async fn bridge(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
         ),
     );
     for client in [&local, &remote] {
-        client.request("system/subscribe", json!({}), Duration::from_secs(5)).await?;
+        client
+            .request("system/subscribe", json!({}), Duration::from_secs(5))
+            .await?;
     }
-    let mut local_incoming =
-        std::mem::replace(&mut local.incoming, tokio::sync::mpsc::unbounded_channel().1);
-    let mut remote_incoming =
-        std::mem::replace(&mut remote.incoming, tokio::sync::mpsc::unbounded_channel().1);
+    let mut local_incoming = std::mem::replace(
+        &mut local.incoming,
+        tokio::sync::mpsc::unbounded_channel().1,
+    );
+    let mut remote_incoming = std::mem::replace(
+        &mut remote.incoming,
+        tokio::sync::mpsc::unbounded_channel().1,
+    );
     let local = Arc::new(local);
     let remote = Arc::new(remote);
     let mut calls = tokio::task::JoinSet::new();

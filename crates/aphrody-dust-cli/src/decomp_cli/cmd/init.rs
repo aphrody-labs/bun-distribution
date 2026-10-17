@@ -91,17 +91,27 @@ impl Init {
         let overlays = rom
             .arm9_overlays()
             .iter()
-            .map(|ov| Ok(Module::analyze_overlay(ov, &mut symbol_maps, &analysis_options)?))
+            .map(|ov| {
+                Ok(Module::analyze_overlay(
+                    ov,
+                    &mut symbol_maps,
+                    &analysis_options,
+                )?)
+            })
             .collect::<Result<Vec<_>>>()?;
         let autoloads = autoloads
             .iter()
             .map(|autoload| match autoload.kind() {
-                AutoloadKind::Itcm => {
-                    Ok(Module::analyze_itcm(autoload, &mut symbol_maps, &analysis_options)?)
-                },
-                AutoloadKind::Dtcm => {
-                    Ok(Module::analyze_dtcm(autoload, &mut symbol_maps, &analysis_options)?)
-                },
+                AutoloadKind::Itcm => Ok(Module::analyze_itcm(
+                    autoload,
+                    &mut symbol_maps,
+                    &analysis_options,
+                )?),
+                AutoloadKind::Dtcm => Ok(Module::analyze_dtcm(
+                    autoload,
+                    &mut symbol_maps,
+                    &analysis_options,
+                )?),
                 AutoloadKind::Unknown(_) => Ok(Module::analyze_unknown_autoload(
                     autoload,
                     &mut symbol_maps,
@@ -120,10 +130,14 @@ impl Init {
         rom_config.arm9_bin = self.build_path.join("build/arm9.bin");
         rom_config.itcm.bin = self.build_path.join("build/itcm.bin");
         rom_config.dtcm.bin = self.build_path.join("build/dtcm.bin");
-        rom_config.unknown_autoloads.iter_mut().for_each(|autoload| {
-            autoload.files.bin =
-                self.build_path.join(format!("build/autoload_{}.bin", autoload.index));
-        });
+        rom_config
+            .unknown_autoloads
+            .iter_mut()
+            .for_each(|autoload| {
+                autoload.files.bin = self
+                    .build_path
+                    .join(format!("build/autoload_{}.bin", autoload.index));
+            });
         rom_config.arm9_overlays = Some(self.build_path.join("build/arm9_overlays.yaml"));
         let rom_config = rom_config;
 
@@ -148,7 +162,10 @@ impl Init {
         )?;
 
         let enable_dsprot = rom.arm9().dsprot_state().is_present()
-            || rom.arm9_overlays().iter().any(|o| o.dsprot_state().is_present());
+            || rom
+                .arm9_overlays()
+                .iter()
+                .any(|o| o.dsprot_state().is_present());
 
         let config = Config {
             rom_config: Self::make_path(&self.rom_config, &arm9_output_path)?,
@@ -178,7 +195,9 @@ impl Init {
                 base.display()
             );
         };
-        Ok(PathBuf::from(<Cow<'_, str> as AsRef<str>>::as_ref(&diff.to_slash_lossy())))
+        Ok(PathBuf::from(<Cow<'_, str> as AsRef<str>>::as_ref(
+            &diff.to_slash_lossy(),
+        )))
     }
 
     fn arm9_config(
@@ -197,7 +216,10 @@ impl Init {
         if !self.dry {
             let delinks = Delinks::new(module.sections().clone(), Vec::new(), module.kind());
             delinks.to_file(&delinks_path)?;
-            symbol_maps.get(module.kind()).unwrap().to_file(&symbols_path)?;
+            symbol_maps
+                .get(module.kind())
+                .unwrap()
+                .to_file(&symbols_path)?;
             module.relocations().to_file(&relocations_path)?;
         }
 
@@ -229,15 +251,17 @@ impl Init {
                 AutoloadKind::Itcm => ("itcm".into(), &rom_config.itcm.bin),
                 AutoloadKind::Dtcm => ("dtcm".into(), &rom_config.dtcm.bin),
                 AutoloadKind::Unknown(index) => {
-                    let Some(rom_autoload) =
-                        rom_config.unknown_autoloads.iter().find(|a| a.index == index)
+                    let Some(rom_autoload) = rom_config
+                        .unknown_autoloads
+                        .iter()
+                        .find(|a| a.index == index)
                     else {
                         log::error!("Unknown autoload index {index} not found in ROM config file");
                         bail!("Unknown autoload index {index} not found in ROM config file");
                     };
                     let name = format!("autoload_{index}");
                     (name, &rom_autoload.files.bin)
-                },
+                }
             };
 
             let autoload_path = path.join(name);
@@ -250,7 +274,10 @@ impl Init {
             if !self.dry {
                 let delinks = Delinks::new(module.sections().clone(), Vec::new(), module.kind());
                 delinks.to_file(&delinks_path)?;
-                symbol_maps.get(module.kind()).unwrap().to_file(&symbols_path)?;
+                symbol_maps
+                    .get(module.kind())
+                    .unwrap()
+                    .to_file(&symbols_path)?;
                 module.relocations().to_file(&relocs_path)?;
             }
 
@@ -286,8 +313,9 @@ impl Init {
                 bail!("Expected overlay module")
             };
 
-            let code_path =
-                self.build_path.join(format!("build/{processor}_{}.bin", module.name()));
+            let code_path = self
+                .build_path
+                .join(format!("build/{processor}_{}.bin", module.name()));
             let code_hash = fxhash::hash64(module.code());
 
             let overlay_config_path = path.join(module.name());
@@ -300,7 +328,10 @@ impl Init {
             if !self.dry {
                 let delinks = Delinks::new(module.sections().clone(), Vec::new(), module.kind());
                 delinks.to_file(&delinks_path)?;
-                symbol_maps.get(module.kind()).unwrap().to_file(&symbols_path)?;
+                symbol_maps
+                    .get(module.kind())
+                    .unwrap()
+                    .to_file(&symbols_path)?;
                 module.relocations().to_file(&relocs_path)?;
             }
 

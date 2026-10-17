@@ -1079,7 +1079,10 @@ mod tests {
         program.blocks.push(Block::new());
         let mut tv = TranslatorVisitor::new(&mut program, 0);
         tv.translate_instruction(insn);
-        tv.ir.program.blocks[0].iter().map(|inst| inst.opcode).collect()
+        tv.ir.program.blocks[0]
+            .iter()
+            .map(|inst| inst.opcode)
+            .collect()
     }
 
     #[test]

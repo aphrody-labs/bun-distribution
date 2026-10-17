@@ -24,7 +24,12 @@ pub(crate) fn group(name: &str) -> Group {
 
 impl Builder {
     pub fn new() -> Builder {
-        Builder { stack: vec![(group("page"), Kind::Plain)], top_layers: vec![], skipped: vec![], shapes: 0 }
+        Builder {
+            stack: vec![(group("page"), Kind::Plain)],
+            top_layers: vec![],
+            skipped: vec![],
+            shapes: 0,
+        }
     }
 
     pub fn depth(&self) -> usize {
@@ -49,7 +54,9 @@ impl Builder {
     /// Close every group opened above `depth`.
     pub fn close_to(&mut self, depth: usize) {
         while self.stack.len() > depth.max(1) {
-            let Some((g, k)) = self.stack.pop() else { break };
+            let Some((g, k)) = self.stack.pop() else {
+                break;
+            };
             // Empty clipping groups draw nothing.
             if g.children.is_empty() {
                 continue;
@@ -69,7 +76,8 @@ impl Builder {
 
     /// Open an optional-content layer (or a named group).
     pub fn open(&mut self, name: &str, layer: bool) {
-        self.stack.push((group(name), if layer { Kind::Layer } else { Kind::Plain }));
+        self.stack
+            .push((group(name), if layer { Kind::Layer } else { Kind::Plain }));
     }
 
     /// Open a group (blend mode, soft mask) closed with the graphics state.
@@ -82,11 +90,24 @@ impl Builder {
         self.add(n, false);
     }
 
-    pub fn fill_stroke(&mut self, path: BezPath, transform: Affine, fill: Option<(Paint, f64, FillRule)>, stroke: Option<Stroke>) {
+    pub fn fill_stroke(
+        &mut self,
+        path: BezPath,
+        transform: Affine,
+        fill: Option<(Paint, f64, FillRule)>,
+        stroke: Option<Stroke>,
+    ) {
         self.fill_stroke_named("Path", path, transform, fill, stroke);
     }
 
-    pub fn fill_stroke_named(&mut self, name: &str, path: BezPath, transform: Affine, fill: Option<(Paint, f64, FillRule)>, stroke: Option<Stroke>) {
+    pub fn fill_stroke_named(
+        &mut self,
+        name: &str,
+        path: BezPath,
+        transform: Affine,
+        fill: Option<(Paint, f64, FillRule)>,
+        stroke: Option<Stroke>,
+    ) {
         if path.elements().is_empty() || (fill.is_none() && stroke.is_none()) {
             return;
         }
@@ -95,14 +116,27 @@ impl Builder {
             Some((p, o, r)) => (Some(p), o, r),
             None => (None, 1.0, FillRule::NonZero),
         };
-        let s = Shape { name: name.into(), geom: Geom::Path(path), transform, fill: f, fill_opacity: fo, fill_rule: rule, stroke, opacity: 1.0 };
+        let s = Shape {
+            name: name.into(),
+            geom: Geom::Path(path),
+            transform,
+            fill: f,
+            fill_opacity: fo,
+            fill_rule: rule,
+            stroke,
+            opacity: 1.0,
+        };
         self.add(Node::Shape(s), false);
     }
 
     /// The finished top-level nodes and their layer flags.
     pub fn finish(mut self) -> (Vec<Node>, Vec<bool>, Vec<String>) {
         self.close_to(1);
-        let root = self.stack.pop().map(|(g, _)| g.children).unwrap_or_default();
+        let root = self
+            .stack
+            .pop()
+            .map(|(g, _)| g.children)
+            .unwrap_or_default();
         let flags = self.top_layers;
         (root, flags, self.skipped)
     }

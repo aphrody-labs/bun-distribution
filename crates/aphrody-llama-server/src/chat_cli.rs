@@ -107,17 +107,27 @@ struct Args {
 
 impl Args {
     fn models_dir(&self) -> Option<PathBuf> {
-        self.models_dir.clone().or_else(|| self.home.as_ref().map(|home| home.join("models")))
+        self.models_dir
+            .clone()
+            .or_else(|| self.home.as_ref().map(|home| home.join("models")))
     }
 
     fn state_dir(&self) -> Option<PathBuf> {
-        self.state_dir.clone().or_else(|| self.home.as_ref().map(|home| home.join("llama")))
+        self.state_dir
+            .clone()
+            .or_else(|| self.home.as_ref().map(|home| home.join("llama")))
     }
 }
 
 fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
-    let mut args = Args { command: it.next().ok_or("missing command")?, ..Args::default() };
-    if !matches!(args.command.as_str(), "provision" | "serve" | "router" | "status" | "stop") {
+    let mut args = Args {
+        command: it.next().ok_or("missing command")?,
+        ..Args::default()
+    };
+    if !matches!(
+        args.command.as_str(),
+        "provision" | "serve" | "router" | "status" | "stop"
+    ) {
         return Err(format!("unknown command `{}`", args.command));
     }
     while let Some(flag) = it.next() {
@@ -133,17 +143,18 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
                     spec: value()?,
                     sha256: args.model.take().and_then(|m| m.sha256),
                 });
-            },
+            }
             "--model-sha256" => {
                 let sha = value()?;
                 let model = args.model.get_or_insert_with(|| {
                     ArtifactSpec::new(crate::local_chat::DEFAULT_CHAT_MODEL)
                 });
                 model.sha256 = Some(sha);
-            },
-            "--lora" => {
-                args.lora.push(LoraSpec { artifact: ArtifactSpec::new(value()?), scale: 1.0 })
-            },
+            }
+            "--lora" => args.lora.push(LoraSpec {
+                artifact: ArtifactSpec::new(value()?),
+                scale: 1.0,
+            }),
             "--lora-sha256" => {
                 let sha = value()?;
                 args.lora
@@ -151,24 +162,29 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
                     .ok_or("--lora-sha256 needs a preceding --lora")?
                     .artifact
                     .sha256 = Some(sha);
-            },
+            }
             "--lora-scale" => {
                 let text = value()?;
-                let scale = text.parse::<f32>().map_err(|_| format!("--lora-scale: `{text}`"))?;
-                args.lora.last_mut().ok_or("--lora-scale needs a preceding --lora")?.scale = scale;
-            },
+                let scale = text
+                    .parse::<f32>()
+                    .map_err(|_| format!("--lora-scale: `{text}`"))?;
+                args.lora
+                    .last_mut()
+                    .ok_or("--lora-scale needs a preceding --lora")?
+                    .scale = scale;
+            }
             "--force" => args.force = true,
             "--llama-bin" => args.llama_bin = Some(value()?.into()),
             "--ctx" => {
                 args.ctx = Some(u32::try_from(number(value()?)?).map_err(|e| e.to_string())?)
-            },
+            }
             "--parallel" => {
                 args.parallel = Some(u8::try_from(number(value()?)?).map_err(|e| e.to_string())?);
-            },
+            }
             "--margin-mib" => {
                 args.margin_mib =
                     Some(u32::try_from(number(value()?)?).map_err(|e| e.to_string())?);
-            },
+            }
             "--alias" => args.alias = Some(value()?),
             "--ready-timeout" => args.ready_timeout = Some(number(value()?)?),
             "--keep-alive" => args.keep_alive = Some(number(value()?)?),
@@ -176,7 +192,7 @@ fn parse(mut it: impl Iterator<Item = String>) -> Result<Args, String> {
             "--parent-pid" => {
                 args.parent_pid =
                     Some(u32::try_from(number(value()?)?).map_err(|e| e.to_string())?);
-            },
+            }
             "--exit-on-stdin-eof" => args.stdin_eof = true,
             "--config" => args.config = Some(value()?.into()),
             "--bind" => args.bind = Some(value()?),
@@ -210,7 +226,10 @@ fn daemon_command() -> std::io::Result<DaemonCommand> {
     if let Ok(command) = DaemonCommand::sibling_binary() {
         return Ok(command);
     }
-    Ok(DaemonCommand { program: std::env::current_exe()?, args: vec!["llama-daemon".to_owned()] })
+    Ok(DaemonCommand {
+        program: std::env::current_exe()?,
+        args: vec!["llama-daemon".to_owned()],
+    })
 }
 
 fn exe_dir() -> Vec<PathBuf> {
@@ -225,14 +244,21 @@ fn exe_dir() -> Vec<PathBuf> {
 #[must_use]
 pub fn chat_cli_main(args: Vec<OsString>) -> i32 {
     let _ = rustls::crypto::ring::default_provider().install_default();
-    let mut rest = args.into_iter().skip(1).map(|a| a.to_string_lossy().into_owned()).peekable();
+    let mut rest = args
+        .into_iter()
+        .skip(1)
+        .map(|a| a.to_string_lossy().into_owned())
+        .peekable();
     // A link named after this tool re-invoked by the supervisor as its daemon.
     if rest.peek().map(String::as_str) == Some("llama-daemon") {
         let mut argv = vec![OsString::from("aphrody-llama-daemon")];
         argv.extend(rest.skip(1).map(OsString::from));
         return crate::cli_main(argv);
     }
-    if matches!(rest.peek().map(String::as_str), None | Some("-h" | "--help" | "help")) {
+    if matches!(
+        rest.peek().map(String::as_str),
+        None | Some("-h" | "--help" | "help")
+    ) {
         println!("{USAGE}");
         return 0;
     }
@@ -241,9 +267,12 @@ pub fn chat_cli_main(args: Vec<OsString>) -> i32 {
         Err(message) => {
             eprintln!("aphrody llama: {message}\n\n{USAGE}");
             return 2;
-        },
+        }
     };
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => return fail(format!("cannot start the runtime: {error}")),
     };
@@ -303,7 +332,11 @@ async fn serve(args: &Args, state: &Path) -> i32 {
         Ok(daemon) => daemon,
         Err(error) => return fail(format!("no daemon launcher: {error}")),
     };
-    let default_keep_alive = if args.detach { crate::DEFAULT_KEEP_ALIVE.as_secs() } else { 120 };
+    let default_keep_alive = if args.detach {
+        crate::DEFAULT_KEEP_ALIVE.as_secs()
+    } else {
+        120
+    };
     let keep_alive = args.keep_alive.unwrap_or(default_keep_alive);
     let mut options = ChatLaunchOptions {
         ctx: args.ctx,
@@ -425,7 +458,10 @@ async fn route(args: &Args, state: &Path) -> i32 {
         Ok(router) => router,
         Err(error) => return fail(error),
     };
-    let bind = args.bind.clone().unwrap_or_else(|| "127.0.0.1:0".to_owned());
+    let bind = args
+        .bind
+        .clone()
+        .unwrap_or_else(|| "127.0.0.1:0".to_owned());
     let listener = match tokio::net::TcpListener::bind(&bind).await {
         Ok(listener) => listener,
         Err(error) => return fail(format!("cannot bind {bind}: {error}")),
@@ -476,7 +512,10 @@ async fn shutdown_signal() {
 async fn status(state: &Path) -> i32 {
     let inspector = Supervisor::new(
         StateDirs::new(state),
-        DaemonCommand { program: PathBuf::new(), args: Vec::new() },
+        DaemonCommand {
+            program: PathBuf::new(),
+            args: Vec::new(),
+        },
     );
     let Some(run) = inspector.status(Role::Chat) else {
         emit(&json!({ "event": "status", "running": false }));
@@ -512,7 +551,7 @@ async fn stop(state: &Path) -> i32 {
         Ok(stopped) => {
             emit(&json!({ "event": "stopped", "reason": "requested", "stopped": stopped }));
             0
-        },
+        }
         Err(error) => fail(error),
     }
 }

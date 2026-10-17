@@ -12,7 +12,12 @@ pub fn convert_to_shape(id: &str, b: Rect, p: &Value) -> PathData {
     let r = if flag(p, "relative", true) {
         let (ew, eh) = (num(p, "extraW", 18.0), num(p, "extraH", 18.0));
         let r = b.inflate(ew / 2.0, eh / 2.0);
-        Rect::new(r.x0.min(b.center().x), r.y0.min(b.center().y), r.x1.max(b.center().x), r.y1.max(b.center().y))
+        Rect::new(
+            r.x0.min(b.center().x),
+            r.y0.min(b.center().y),
+            r.x1.max(b.center().x),
+            r.y1.max(b.center().y),
+        )
     } else {
         let (w, h) = (num(p, "width", 100.0).abs(), num(p, "height", 100.0).abs());
         Rect::from_center_size(b.center(), (w, h))
@@ -61,7 +66,9 @@ pub fn round_corners(path: &PathData, radius: f64) -> PathData {
                 out.push(a);
                 continue;
             }
-            let d = radius.min(prev.p.distance(a.p) / 2.0).min(next.p.distance(a.p) / 2.0);
+            let d = radius
+                .min(prev.p.distance(a.p) / 2.0)
+                .min(next.p.distance(a.p) / 2.0);
             let pa = a.p + up * d;
             let pb = a.p + un * d;
             let k = d * KAPPA;
@@ -105,9 +112,13 @@ pub fn scribble(path: &PathData, b: Rect, p: &Value) -> PathData {
     let variation = num(p, "variation", 0.5).clamp(0.0, 100.0);
     let seed = seed(p);
     let c = b.center();
-    let to_local = Affine::translate(c.to_vec2()) * Affine::rotate(angle) * Affine::translate(-c.to_vec2());
+    let to_local =
+        Affine::translate(c.to_vec2()) * Affine::rotate(angle) * Affine::translate(-c.to_vec2());
     let from_local = to_local.inverse();
-    let polys: Vec<Vec<Point>> = flatten(path).into_iter().map(|pl| pl.into_iter().map(|q| from_local * q).collect()).collect();
+    let polys: Vec<Vec<Point>> = flatten(path)
+        .into_iter()
+        .map(|pl| pl.into_iter().map(|q| from_local * q).collect())
+        .collect();
     let (mut y0, mut y1) = (f64::INFINITY, f64::NEG_INFINITY);
     for q in polys.iter().flatten() {
         y0 = y0.min(q.y);
@@ -131,13 +142,21 @@ pub fn scribble(path: &PathData, b: Rect, p: &Value) -> PathData {
             }
         }
         xs.sort_by(f64::total_cmp);
-        let mut spans: Vec<(f64, f64)> = xs.as_chunks::<2>().0.iter().map(|s| (s[0] - overlap, s[1] + overlap)).collect();
+        let mut spans: Vec<(f64, f64)> = xs
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|s| (s[0] - overlap, s[1] + overlap))
+            .collect();
         if row % 2 == 1 {
             spans.reverse();
         }
         for (a, bx) in spans {
             let jitter = |k: u64| variation * noise(seed, row, k, 3);
-            let (l, r) = (Point::new(a + jitter(0), y + jitter(1)), Point::new(bx + jitter(2), y + jitter(3)));
+            let (l, r) = (
+                Point::new(a + jitter(0), y + jitter(1)),
+                Point::new(bx + jitter(2), y + jitter(3)),
+            );
             if row.is_multiple_of(2) {
                 pts.push(l);
                 pts.push(r);
@@ -152,10 +171,21 @@ pub fn scribble(path: &PathData, b: Rect, p: &Value) -> PathData {
     if pts.len() < 2 {
         return PathData::default();
     }
-    let line = if curvy > 0.0 { catmull_rom(&pts, false, curvy * 2.0) } else { SubPath::polyline(&pts, false) };
+    let line = if curvy > 0.0 {
+        catmull_rom(&pts, false, curvy * 2.0)
+    } else {
+        SubPath::polyline(&pts, false)
+    };
     let mut center = PathData::single(line);
     center.transform(to_local);
-    let stroke = kurbo::Stroke::new(width).with_join(kurbo::Join::Round).with_caps(kurbo::Cap::Round);
-    let outline = kurbo::stroke(center.to_bezpath(), &stroke, &kurbo::StrokeOpts::default(), 0.05);
+    let stroke = kurbo::Stroke::new(width)
+        .with_join(kurbo::Join::Round)
+        .with_caps(kurbo::Cap::Round);
+    let outline = kurbo::stroke(
+        center.to_bezpath(),
+        &stroke,
+        &kurbo::StrokeOpts::default(),
+        0.05,
+    );
     PathData::from_bezpath(&outline)
 }

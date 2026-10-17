@@ -89,7 +89,12 @@ fn big_tiff_orientation_6_and_8_are_applied_to_decoded_pixels() {
     let upright = [1u8, 2, 3, 4, 5, 6];
 
     for orientation in [6, 8] {
-        let bytes = big_tiff_gray(&stored_for_orientation_6_or_8(orientation), 2, 3, orientation);
+        let bytes = big_tiff_gray(
+            &stored_for_orientation_6_or_8(orientation),
+            2,
+            3,
+            orientation,
+        );
         let image: Image = decode(&bytes).expect("synthetic BigTIFF should decode");
 
         assert_eq!(exif_orientation(&bytes), orientation);
@@ -113,20 +118,27 @@ fn jpeg_compressed_tiff_decodes() {
     // A flat mid-grey 16x16 image as a baseline JPEG stored in one strip (Compression = 7).
     let mut jpeg = Vec::new();
     let gray = vec![100u8; 16 * 16];
-    jpeg_encoder::Encoder::new(&mut jpeg, 95).encode(&gray, 16, 16, jpeg_encoder::ColorType::Luma).expect("encode the JPEG strip");
+    jpeg_encoder::Encoder::new(&mut jpeg, 95)
+        .encode(&gray, 16, 16, jpeg_encoder::ColorType::Luma)
+        .expect("encode the JPEG strip");
     let mut dir = with_compression(strips(16, 16, 8, 1, 1, 16, &[0; 256]), 7);
     dir.chunks = vec![jpeg];
     let bytes = build(true, false, &[dir], &[0]).bytes;
 
     let image = decode(&bytes).expect("a JPEG-compressed TIFF should decode");
     assert_eq!(image.dimensions(), (16, 16));
-    assert!(image.data().iter().all(|&v| v.abs_diff(100) <= 4), "{:?}", image.data().get(..4));
+    assert!(
+        image.data().iter().all(|&v| v.abs_diff(100) <= 4),
+        "{:?}",
+        image.data().get(..4)
+    );
 }
 
 #[test]
 fn ccitt_group4_tiff_decodes() {
     // 8x3 bilevel: a white row, then two black rows. Bits: V0 | H(white 0, black 8) | V0 V0 | EOFB.
-    let bits = "1".to_string() + "001" + "00110101" + "000101" + "11" + "000000000001" + "000000000001";
+    let bits =
+        "1".to_string() + "001" + "00110101" + "000101" + "11" + "000000000001" + "000000000001";
     let mut data = Vec::new();
     for chunk in bits.as_bytes().chunks(8) {
         let mut byte = 0u8;

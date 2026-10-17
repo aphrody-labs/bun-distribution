@@ -10,9 +10,15 @@ use serde_json::json;
 
 fn harness() -> (Harness<'static, EffectcraftApp>, u64) {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Main", "width": 320, "height": 180, "duration": 4, "fps": 24})).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Main", "width": 320, "height": 180, "duration": 4, "fps": 24}),
+    )
+    .unwrap();
     let comp = s.active_comp_id().unwrap().0;
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_eframe(|_| EffectcraftApp::new(s));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(4);
     (h, comp)
 }
@@ -27,8 +33,18 @@ fn click(h: &mut Harness<'_, EffectcraftApp>, p: Pos2, times: usize) {
     h.step();
     // All in one frame (the harness' frames are longer apart than a double-click).
     for _ in 0..times {
-        h.input_mut().events.push(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
-        h.input_mut().events.push(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(Event::PointerButton {
+            pos: p,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        });
+        h.input_mut().events.push(Event::PointerButton {
+            pos: p,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        });
     }
     h.run_steps(3);
 }
@@ -37,24 +53,51 @@ fn click(h: &mut Harness<'_, EffectcraftApp>, p: Pos2, times: usize) {
 fn drag(h: &mut Harness<'_, EffectcraftApp>, from: Pos2, to: Pos2) {
     h.input_mut().events.push(Event::PointerMoved(from));
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: from, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: from,
+        button: PointerButton::Primary,
+        pressed: true,
+        modifiers: Modifiers::NONE,
+    });
     h.step();
     for k in 1..=8 {
-        h.input_mut().events.push(Event::PointerMoved(from + (to - from) * (k as f32 / 8.0)));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(from + (to - from) * (k as f32 / 8.0)));
         h.step();
     }
-    h.input_mut().events.push(Event::PointerButton { pos: to, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: to,
+        button: PointerButton::Primary,
+        pressed: false,
+        modifiers: Modifiers::NONE,
+    });
     h.run_steps(3);
 }
 
 fn key(h: &mut Harness<'_, EffectcraftApp>, key: Key) {
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE });
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    });
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: false,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    });
     h.run_steps(2);
 }
 
 fn type_text(h: &mut Harness<'_, EffectcraftApp>, text: &str) {
-    assert!(h.ctx.egui_wants_keyboard_input(), "the field has the keyboard");
+    assert!(
+        h.ctx.egui_wants_keyboard_input(),
+        "the field has the keyboard"
+    );
     h.input_mut().events.push(Event::Text(text.into()));
     h.step();
 }
@@ -62,14 +105,27 @@ fn type_text(h: &mut Harness<'_, EffectcraftApp>, text: &str) {
 #[test]
 fn project_rename_replaces_the_name() {
     let (mut h, comp) = harness();
-    let name = |h: &Harness<'_, EffectcraftApp>| h.state().session.project.items.values().find(|i| i.id.0 == comp).unwrap().name.clone();
+    let name = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .project
+            .items
+            .values()
+            .find(|i| i.id.0 == comp)
+            .unwrap()
+            .name
+            .clone()
+    };
     let p = center(&h, &format!("project.item.{comp}.name"));
     click(&mut h, p, 1);
     key(&mut h, Key::Enter);
     type_text(&mut h, "Hero");
     key(&mut h, Key::Enter);
     assert_eq!(name(&h), "Hero");
-    assert!(!h.ctx.egui_wants_keyboard_input(), "Enter releases the keyboard");
+    assert!(
+        !h.ctx.egui_wants_keyboard_input(),
+        "Enter releases the keyboard"
+    );
 }
 
 /// #881: Tab in the Project panel's rename field commits the name like Enter and gives the keyboard
@@ -78,9 +134,20 @@ fn project_rename_replaces_the_name() {
 #[test]
 fn tab_in_the_project_rename_field_commits_and_keeps_enter_renaming() {
     let (mut h, comp) = harness();
-    let name = |h: &Harness<'_, EffectcraftApp>| h.state().session.project.items.values().find(|i| i.id.0 == comp).unwrap().name.clone();
+    let name = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .project
+            .items
+            .values()
+            .find(|i| i.id.0 == comp)
+            .unwrap()
+            .name
+            .clone()
+    };
     let edit = format!("project.item.{comp}.nameEdit");
-    let editing = |h: &Harness<'_, EffectcraftApp>| h.state().auto.elements.iter().any(|e| e.id == edit);
+    let editing =
+        |h: &Harness<'_, EffectcraftApp>| h.state().auto.elements.iter().any(|e| e.id == edit);
     let p = center(&h, &format!("project.item.{comp}.name"));
     click(&mut h, p, 1);
     key(&mut h, Key::Enter);
@@ -88,7 +155,11 @@ fn tab_in_the_project_rename_field_commits_and_keeps_enter_renaming() {
     key(&mut h, Key::Tab);
     assert_eq!(name(&h), "Hero", "Tab commits the name");
     assert!(!editing(&h), "Tab closes the rename field");
-    assert_eq!(h.ctx.memory(|m| m.focused()), None, "no other widget takes the keyboard");
+    assert_eq!(
+        h.ctx.memory(|m| m.focused()),
+        None,
+        "no other widget takes the keyboard"
+    );
     key(&mut h, Key::Enter);
     assert!(editing(&h), "Enter renames again");
     type_text(&mut h, "Main");
@@ -99,18 +170,31 @@ fn tab_in_the_project_rename_field_commits_and_keeps_enter_renaming() {
 #[test]
 fn timecode_field_replaces_commits_and_cancels() {
     let (mut h, _) = harness();
-    let frame = |h: &Harness<'_, EffectcraftApp>| h.state().session.active_comp().unwrap().frame_rate.frame_at(h.state().session.time());
+    let frame = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .active_comp()
+            .unwrap()
+            .frame_rate
+            .frame_at(h.state().session.time())
+    };
     let p = center(&h, "timeline.timecode");
     click(&mut h, p, 2);
     type_text(&mut h, "0:00:01:00");
     key(&mut h, Key::Enter);
     assert_eq!(frame(&h), 24, "Enter commits the typed time");
-    assert!(!h.ctx.egui_wants_keyboard_input(), "Enter releases the keyboard");
+    assert!(
+        !h.ctx.egui_wants_keyboard_input(),
+        "Enter releases the keyboard"
+    );
     click(&mut h, p, 2);
     type_text(&mut h, "0:00:02:00");
     key(&mut h, Key::Escape);
     assert_eq!(frame(&h), 24, "Escape cancels");
-    assert!(!h.ctx.egui_wants_keyboard_input(), "Escape releases the keyboard");
+    assert!(
+        !h.ctx.egui_wants_keyboard_input(),
+        "Escape releases the keyboard"
+    );
 }
 
 /// #284: dragging the expression pick whip while the expression is being edited puts the
@@ -121,20 +205,56 @@ fn the_expression_pick_whip_inserts_at_the_cursor_while_editing() {
     let (mut h, _) = harness();
     let (layer, opacity, rotation, transform) = {
         let s = &mut h.state_mut().session;
-        let l = s.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("prop.setExpression", json!({"layer": l, "path": "transform/opacity", "expression": "50 + 0"})).unwrap();
-        let tr = s.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(l)).unwrap().props.sub("transform").unwrap().clone();
-        (l, tr.get("opacity").unwrap().uid, tr.get("rotation").unwrap().uid, tr.uid)
+        let l = s
+            .execute(
+                "layer.newSolid",
+                json!({"name": "Plate", "color": "#406080"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "prop.setExpression",
+            json!({"layer": l, "path": "transform/opacity", "expression": "50 + 0"}),
+        )
+        .unwrap();
+        let tr = s
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(l))
+            .unwrap()
+            .props
+            .sub("transform")
+            .unwrap()
+            .clone();
+        (
+            l,
+            tr.get("opacity").unwrap().uid,
+            tr.get("rotation").unwrap().uid,
+            tr.uid,
+        )
     };
     h.state_mut().ui.timeline.open_layers.insert(layer);
     h.state_mut().ui.timeline.open_groups.insert(transform);
     h.run_steps(3);
     let expr = |h: &Harness<'_, EffectcraftApp>| {
         let comp = h.state().session.active_comp().unwrap();
-        comp.layer(effectcraft_engine::project::LayerId(layer)).unwrap().props.find(opacity).unwrap().expr.as_ref().unwrap().text.clone()
+        comp.layer(effectcraft_engine::project::LayerId(layer))
+            .unwrap()
+            .props
+            .find(opacity)
+            .unwrap()
+            .expr
+            .as_ref()
+            .unwrap()
+            .text
+            .clone()
     };
     let whip = |h: &mut Harness<'_, EffectcraftApp>| {
-        let (from, to) = (center(h, &format!("timeline.prop.{opacity}.pickWhip")), center(h, &format!("timeline.prop.{rotation}.name")));
+        let (from, to) = (
+            center(h, &format!("timeline.prop.{opacity}.pickWhip")),
+            center(h, &format!("timeline.prop.{rotation}.name")),
+        );
         drag(h, from, to);
     };
     // Editing: the cursor at the end after typing " * ".
@@ -147,10 +267,20 @@ fn the_expression_pick_whip_inserts_at_the_cursor_while_editing() {
     // The editor has the keyboard again, its cursor after the reference.
     type_text(&mut h, " + 1");
     // Ctrl/Cmd+Enter commits.
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::COMMAND));
-    h.input_mut().events.push(Event::Key { key: Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::COMMAND });
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::COMMAND));
+    h.input_mut().events.push(Event::Key {
+        key: Key::Enter,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Modifiers::COMMAND,
+    });
     h.step();
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::NONE));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::NONE));
     h.run_steps(3);
     assert_eq!(expr(&h), "50 + 0 * transform.rotation + 1");
     // Not editing: the reference replaces the expression.
@@ -165,26 +295,66 @@ fn the_expression_pick_whip_picks_the_dimension_it_is_dropped_on() {
     let (mut h, _) = harness();
     let (layer, opacity, position, transform) = {
         let s = &mut h.state_mut().session;
-        let l = s.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("prop.setExpression", json!({"layer": l, "path": "transform/opacity", "expression": "50"})).unwrap();
-        let tr = s.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(l)).unwrap().props.sub("transform").unwrap().clone();
-        (l, tr.get("opacity").unwrap().uid, tr.get("position").unwrap().uid, tr.uid)
+        let l = s
+            .execute(
+                "layer.newSolid",
+                json!({"name": "Plate", "color": "#406080"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "prop.setExpression",
+            json!({"layer": l, "path": "transform/opacity", "expression": "50"}),
+        )
+        .unwrap();
+        let tr = s
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(l))
+            .unwrap()
+            .props
+            .sub("transform")
+            .unwrap()
+            .clone();
+        (
+            l,
+            tr.get("opacity").unwrap().uid,
+            tr.get("position").unwrap().uid,
+            tr.uid,
+        )
     };
     h.state_mut().ui.timeline.open_layers.insert(layer);
     h.state_mut().ui.timeline.open_groups.insert(transform);
     h.run_steps(3);
     let expr = |h: &Harness<'_, EffectcraftApp>| {
         let comp = h.state().session.active_comp().unwrap();
-        comp.layer(effectcraft_engine::project::LayerId(layer)).unwrap().props.find(opacity).unwrap().expr.as_ref().unwrap().text.clone()
+        comp.layer(effectcraft_engine::project::LayerId(layer))
+            .unwrap()
+            .props
+            .find(opacity)
+            .unwrap()
+            .expr
+            .as_ref()
+            .unwrap()
+            .text
+            .clone()
     };
     let whip_to = |h: &mut Harness<'_, EffectcraftApp>, target: &str| {
-        let (from, to) = (center(h, &format!("timeline.prop.{opacity}.pickWhip")), center(h, target));
+        let (from, to) = (
+            center(h, &format!("timeline.prop.{opacity}.pickWhip")),
+            center(h, target),
+        );
         drag(h, from, to);
     };
     whip_to(&mut h, &format!("timeline.prop.{position}.value.1"));
     assert_eq!(expr(&h), "transform.position[1]");
     whip_to(&mut h, &format!("timeline.prop.{position}.name"));
-    assert_eq!(expr(&h), "transform.position[0]", "the whole Position into one value: its first, as before");
+    assert_eq!(
+        expr(&h),
+        "transform.position[0]",
+        "the whole Position into one value: its first, as before"
+    );
 }
 
 /// #363: every property has a pick whip in the Parent & Link column (After Effects CC 2018 and
@@ -196,23 +366,64 @@ fn the_property_pick_whip_links_a_property_to_another() {
     let (mut h, _) = harness();
     let (layer, opacity, rotation, position, transform) = {
         let s = &mut h.state_mut().session;
-        let l = s.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
+        let l = s
+            .execute(
+                "layer.newSolid",
+                json!({"name": "Plate", "color": "#406080"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
         s.execute("layer.select", json!({"layers": [l]})).unwrap();
         for fx in ["Slider Control", "Point Control"] {
-            s.execute("effect.apply", json!({"layers": [l], "effect": fx})).unwrap();
+            s.execute("effect.apply", json!({"layers": [l], "effect": fx}))
+                .unwrap();
         }
-        let tr = s.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(l)).unwrap().props.sub("transform").unwrap().clone();
-        (l, tr.get("opacity").unwrap().uid, tr.get("rotation").unwrap().uid, tr.get("position").unwrap().uid, tr.uid)
+        let tr = s
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(l))
+            .unwrap()
+            .props
+            .sub("transform")
+            .unwrap()
+            .clone();
+        (
+            l,
+            tr.get("opacity").unwrap().uid,
+            tr.get("rotation").unwrap().uid,
+            tr.get("position").unwrap().uid,
+            tr.uid,
+        )
     };
     h.state_mut().ui.timeline.open_layers.insert(layer);
     h.state_mut().ui.timeline.open_groups.insert(transform);
-    h.state_mut().show_panel(effectcraft_ui_egui::dock::PanelKind::EffectControls);
+    h.state_mut()
+        .show_panel(effectcraft_ui_egui::dock::PanelKind::EffectControls);
     h.run_steps(3);
-    let props =
-        |h: &Harness<'_, EffectcraftApp>| h.state().session.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(layer)).unwrap().props.clone();
-    let expr = |h: &Harness<'_, EffectcraftApp>| props(h).find(opacity).unwrap().expr.clone().map(|e| (e.text, e.enabled));
+    let props = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(layer))
+            .unwrap()
+            .props
+            .clone()
+    };
+    let expr = |h: &Harness<'_, EffectcraftApp>| {
+        props(h)
+            .find(opacity)
+            .unwrap()
+            .expr
+            .clone()
+            .map(|e| (e.text, e.enabled))
+    };
     let whip_to = |h: &mut Harness<'_, EffectcraftApp>, target: &str| {
-        let (from, to) = (center(h, &format!("timeline.prop.{opacity}.propertyPickWhip")), center(h, target));
+        let (from, to) = (
+            center(h, &format!("timeline.prop.{opacity}.propertyPickWhip")),
+            center(h, target),
+        );
         drag(h, from, to);
     };
     assert_eq!(expr(&h), None);
@@ -223,19 +434,37 @@ fn the_property_pick_whip_links_a_property_to_another() {
     whip_to(&mut h, &format!("timeline.prop.{position}.value.1"));
     assert_eq!(expr(&h), Some(("transform.position[1]".into(), true)));
     // A disabled expression is replaced by the reference, and enabled.
-    h.state_mut().session.execute("prop.setExpression", json!({"layer": layer, "prop": opacity, "expression": "50 + 1", "enabled": false})).unwrap();
+    h.state_mut()
+        .session
+        .execute(
+            "prop.setExpression",
+            json!({"layer": layer, "prop": opacity, "expression": "50 + 1", "enabled": false}),
+        )
+        .unwrap();
     h.run_steps(3);
     whip_to(&mut h, &format!("timeline.prop.{rotation}.name"));
     assert_eq!(expr(&h), Some(("transform.rotation".into(), true)));
     // Onto an effect's property in Effect Controls: its value, then one of a point's values.
-    let (slider, point) = (props(&h).prop("effects/#1/slider").unwrap().uid, props(&h).prop("effects/#2/point").unwrap().uid);
+    let (slider, point) = (
+        props(&h).prop("effects/#1/slider").unwrap().uid,
+        props(&h).prop("effects/#2/point").unwrap().uid,
+    );
     whip_to(&mut h, &format!("effectControls.prop.{slider}.value"));
-    assert_eq!(expr(&h), Some(("effect(\"Slider Control\")(\"Slider\")".into(), true)));
+    assert_eq!(
+        expr(&h),
+        Some(("effect(\"Slider Control\")(\"Slider\")".into(), true))
+    );
     whip_to(&mut h, &format!("effectControls.prop.{point}.value.1"));
-    assert_eq!(expr(&h), Some(("effect(\"Point Control\")(\"Point\")[1]".into(), true)));
+    assert_eq!(
+        expr(&h),
+        Some(("effect(\"Point Control\")(\"Point\")[1]".into(), true))
+    );
     // Onto itself: nothing changes.
     whip_to(&mut h, &format!("timeline.prop.{opacity}.name"));
-    assert_eq!(expr(&h), Some(("effect(\"Point Control\")(\"Point\")[1]".into(), true)));
+    assert_eq!(
+        expr(&h),
+        Some(("effect(\"Point Control\")(\"Point\")[1]".into(), true))
+    );
 }
 
 /// #362: an expression pick whip held near the bottom or top of the Timeline's layers scrolls
@@ -246,11 +475,31 @@ fn the_pick_whip_scrolls_the_timeline_at_its_edges() {
     let (top, opacity, transform) = {
         let s = &mut h.state_mut().session;
         for i in 0..40 {
-            s.execute("layer.newSolid", json!({"name": format!("Layer {i}"), "color": "#406080"})).unwrap();
+            s.execute(
+                "layer.newSolid",
+                json!({"name": format!("Layer {i}"), "color": "#406080"}),
+            )
+            .unwrap();
         }
-        let l = s.execute("layer.newSolid", json!({"name": "Top", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("prop.setExpression", json!({"layer": l, "path": "transform/opacity", "expression": "50"})).unwrap();
-        let tr = s.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(l)).unwrap().props.sub("transform").unwrap().clone();
+        let l = s
+            .execute("layer.newSolid", json!({"name": "Top", "color": "#406080"}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "prop.setExpression",
+            json!({"layer": l, "path": "transform/opacity", "expression": "50"}),
+        )
+        .unwrap();
+        let tr = s
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(l))
+            .unwrap()
+            .props
+            .sub("transform")
+            .unwrap()
+            .clone();
         (l, tr.get("opacity").unwrap().uid, tr.uid)
     };
     h.state_mut().ui.timeline.open_layers.insert(top);
@@ -259,27 +508,51 @@ fn the_pick_whip_scrolls_the_timeline_at_its_edges() {
     let scroll = |h: &Harness<'_, EffectcraftApp>| h.state().ui.timeline.scroll_y;
     let rows = h.state().auto.find("timeline.scroll").unwrap().rect;
     let from = center(&h, &format!("timeline.prop.{opacity}.pickWhip"));
-    let (bottom, upper) = (pos2(from.x, rows[1] + rows[3] - 2.0), pos2(from.x, rows[1] + 2.0));
+    let (bottom, upper) = (
+        pos2(from.x, rows[1] + rows[3] - 2.0),
+        pos2(from.x, rows[1] + 2.0),
+    );
     h.input_mut().events.push(Event::PointerMoved(from));
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: from, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: from,
+        button: PointerButton::Primary,
+        pressed: true,
+        modifiers: Modifiers::NONE,
+    });
     h.step();
     for k in 1..=8 {
-        h.input_mut().events.push(Event::PointerMoved(from + (bottom - from) * (k as f32 / 8.0)));
+        h.input_mut().events.push(Event::PointerMoved(
+            from + (bottom - from) * (k as f32 / 8.0),
+        ));
         h.step();
     }
     h.run_steps(20);
     let down = scroll(&h);
-    assert!(down > 50.0, "held at the bottom edge the layers scroll up: {down}");
+    assert!(
+        down > 50.0,
+        "held at the bottom edge the layers scroll up: {down}"
+    );
     h.input_mut().events.push(Event::PointerMoved(upper));
     h.run_steps(10);
-    assert!(scroll(&h) < down, "and at the top edge back down: {} after {down}", scroll(&h));
-    h.input_mut().events.push(Event::PointerMoved(pos2(from.x, rows[1] + rows[3] / 2.0)));
+    assert!(
+        scroll(&h) < down,
+        "and at the top edge back down: {} after {down}",
+        scroll(&h)
+    );
+    h.input_mut()
+        .events
+        .push(Event::PointerMoved(pos2(from.x, rows[1] + rows[3] / 2.0)));
     h.run_steps(2);
     let still = scroll(&h);
     h.run_steps(10);
     assert_eq!(scroll(&h), still, "away from the edges it stays");
-    h.input_mut().events.push(Event::PointerButton { pos: upper, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: upper,
+        button: PointerButton::Primary,
+        pressed: false,
+        modifiers: Modifiers::NONE,
+    });
     h.run_steps(3);
 }
 
@@ -290,9 +563,28 @@ fn the_expression_field_grows_while_editing_and_drags_taller() {
     let (mut h, _) = harness();
     let (layer, opacity, transform) = {
         let s = &mut h.state_mut().session;
-        let l = s.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("prop.setExpression", json!({"layer": l, "path": "transform/opacity", "expression": "50"})).unwrap();
-        let tr = s.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(l)).unwrap().props.sub("transform").unwrap().clone();
+        let l = s
+            .execute(
+                "layer.newSolid",
+                json!({"name": "Plate", "color": "#406080"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "prop.setExpression",
+            json!({"layer": l, "path": "transform/opacity", "expression": "50"}),
+        )
+        .unwrap();
+        let tr = s
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(l))
+            .unwrap()
+            .props
+            .sub("transform")
+            .unwrap()
+            .clone();
         (l, tr.get("opacity").unwrap().uid, tr.uid)
     };
     h.state_mut().ui.timeline.open_layers.insert(layer);
@@ -310,7 +602,11 @@ fn the_expression_field_grows_while_editing_and_drags_taller() {
         type_text(&mut h, more);
     }
     h.run_steps(2);
-    assert!((height(&h) - one - 2.0 * line).abs() < 0.5, "three lines while editing: {} from {one}", height(&h));
+    assert!(
+        (height(&h) - one - 2.0 * line).abs() < 0.5,
+        "three lines while editing: {} from {one}",
+        height(&h)
+    );
     // Its bottom edge: dragged down 4 lines, then up past the top (one line).
     let edge_id = format!("timeline.prop.{opacity}.expressionHeight");
     let drag_edge = |h: &mut Harness<'_, EffectcraftApp>, dy: f32| {
@@ -318,28 +614,60 @@ fn the_expression_field_grows_while_editing_and_drags_taller() {
         let to = edge + egui::vec2(0.0, dy);
         h.input_mut().events.push(Event::PointerMoved(edge));
         h.step();
-        h.input_mut().events.push(Event::PointerButton { pos: edge, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(Event::PointerButton {
+            pos: edge,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        });
         h.step();
         for k in 1..=6 {
-            h.input_mut().events.push(Event::PointerMoved(edge + (to - edge) * (k as f32 / 6.0)));
+            h.input_mut()
+                .events
+                .push(Event::PointerMoved(edge + (to - edge) * (k as f32 / 6.0)));
             h.step();
         }
-        h.input_mut().events.push(Event::PointerButton { pos: to, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(Event::PointerButton {
+            pos: to,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(3);
     };
     drag_edge(&mut h, 4.0 * line);
     assert_eq!(h.state().ui.timeline.expr_lines.get(&opacity), Some(&7));
-    assert!((height(&h) - one - 6.0 * line).abs() < 0.5, "{}", height(&h));
+    assert!(
+        (height(&h) - one - 6.0 * line).abs() < 0.5,
+        "{}",
+        height(&h)
+    );
     drag_edge(&mut h, -20.0 * line);
     assert_eq!(h.state().ui.timeline.expr_lines.get(&opacity), Some(&1));
 }
 
 fn key_with(h: &mut Harness<'_, EffectcraftApp>, key: Key, modifiers: Modifiers) {
-    h.input_mut().events.push(Event::ModifiersChanged(modifiers));
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers });
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers });
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(modifiers));
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers,
+    });
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: false,
+        repeat: false,
+        modifiers,
+    });
     h.step();
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::NONE));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::NONE));
     h.run_steps(2);
 }
 
@@ -351,21 +679,48 @@ fn tab_commits_a_value_and_moves_to_the_next() {
     let (mut h, _) = harness();
     let (layer, transform) = {
         let s = &mut h.state_mut().session;
-        let l = s.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
+        let l = s
+            .execute(
+                "layer.newSolid",
+                json!({"name": "Plate", "color": "#406080"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
         s.execute("layer.select", json!({"layers": [l]})).unwrap();
         for fx in ["Point Control", "Slider Control"] {
-            s.execute("effect.apply", json!({"layers": [l], "effect": fx})).unwrap();
+            s.execute("effect.apply", json!({"layers": [l], "effect": fx}))
+                .unwrap();
         }
-        let tr = s.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(l)).unwrap().props.sub("transform").unwrap().uid;
+        let tr = s
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(l))
+            .unwrap()
+            .props
+            .sub("transform")
+            .unwrap()
+            .uid;
         (l, tr)
     };
     h.state_mut().ui.timeline.open_layers.insert(layer);
     h.state_mut().ui.timeline.open_groups.insert(transform);
-    h.state_mut().show_panel(effectcraft_ui_egui::dock::PanelKind::EffectControls);
+    h.state_mut()
+        .show_panel(effectcraft_ui_egui::dock::PanelKind::EffectControls);
     h.run_steps(3);
-    let props =
-        |h: &Harness<'_, EffectcraftApp>| h.state().session.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(layer)).unwrap().props.clone();
-    let value = |h: &Harness<'_, EffectcraftApp>, path: &str| props(h).prop(path).unwrap().value.components();
+    let props = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(layer))
+            .unwrap()
+            .props
+            .clone()
+    };
+    let value = |h: &Harness<'_, EffectcraftApp>, path: &str| {
+        props(h).prop(path).unwrap().value.components()
+    };
     let uid = |h: &Harness<'_, EffectcraftApp>, path: &str| props(h).prop(path).unwrap().uid;
     let (position, scale) = (uid(&h, "transform/position"), uid(&h, "transform/scale"));
     let none = Modifiers::NONE;
@@ -405,12 +760,26 @@ fn tab_commits_a_value_and_moves_to_the_next() {
 /// A click at `p` with `modifiers` held.
 fn click_with(h: &mut Harness<'_, EffectcraftApp>, p: Pos2, modifiers: Modifiers) {
     h.input_mut().events.push(Event::PointerMoved(p));
-    h.input_mut().events.push(Event::ModifiersChanged(modifiers));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(modifiers));
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: true, modifiers });
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: false, modifiers });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: PointerButton::Primary,
+        pressed: true,
+        modifiers,
+    });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: PointerButton::Primary,
+        pressed: false,
+        modifiers,
+    });
     h.step();
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::NONE));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::NONE));
     h.run_steps(3);
 }
 
@@ -421,16 +790,24 @@ fn click_with(h: &mut Harness<'_, EffectcraftApp>, p: Pos2, modifiers: Modifiers
 fn ctrl_click_on_the_time_display_toggles_timecode_and_frames() {
     use effectcraft_engine::project::TimeDisplayStyle;
     let (mut h, _) = harness();
-    h.state_mut().session.execute("time.set", json!({"frame": 30})).unwrap();
+    h.state_mut()
+        .session
+        .execute("time.set", json!({"frame": 30}))
+        .unwrap();
     h.run_steps(2);
-    let shown = |h: &Harness<'_, EffectcraftApp>, id: &str| h.state().auto.find(id).unwrap().label.clone();
+    let shown =
+        |h: &Harness<'_, EffectcraftApp>, id: &str| h.state().auto.find(id).unwrap().label.clone();
     let style = |h: &Harness<'_, EffectcraftApp>| h.state().session.project.settings.time_display;
     let undo = h.state().session.history.undo.len();
     let at = center(&h, "timeline.timecode");
     click_with(&mut h, at, Modifiers::COMMAND);
     assert_eq!(style(&h), TimeDisplayStyle::Frames);
     assert_eq!(shown(&h, "timeline.timecode"), "00030");
-    assert_eq!(h.state().session.history.undo.len(), undo + 1, "one undo step");
+    assert_eq!(
+        h.state().session.history.undo.len(),
+        undo + 1,
+        "one undo step"
+    );
     assert!(!h.ctx.egui_wants_keyboard_input(), "no time entry opened");
     let at = center(&h, "viewer.timecode");
     click_with(&mut h, at, Modifiers::COMMAND);
@@ -442,7 +819,10 @@ fn ctrl_click_on_the_time_display_toggles_timecode_and_frames() {
     click_with(&mut h, at, Modifiers::NONE);
     assert_eq!(style(&h), TimeDisplayStyle::Timecode);
     // Feet + Frames goes to Timecode.
-    h.state_mut().session.execute("file.projectSettings", json!({"timeDisplay": "feet35"})).unwrap();
+    h.state_mut()
+        .session
+        .execute("file.projectSettings", json!({"timeDisplay": "feet35"}))
+        .unwrap();
     h.run_steps(2);
     click_with(&mut h, at, Modifiers::COMMAND);
     assert_eq!(style(&h), TimeDisplayStyle::Timecode);
@@ -451,8 +831,17 @@ fn ctrl_click_on_the_time_display_toggles_timecode_and_frames() {
 /// Hold Alt and Shift and let go of them, as Windows' keyboard-layout hotkey does; `shift_first`
 /// releases Shift before Alt.
 fn switch_layout(h: &mut Harness<'_, EffectcraftApp>, shift_first: bool) {
-    let held = if shift_first { Modifiers::ALT } else { Modifiers::SHIFT };
-    for m in [Modifiers::ALT, Modifiers::ALT | Modifiers::SHIFT, held, Modifiers::NONE] {
+    let held = if shift_first {
+        Modifiers::ALT
+    } else {
+        Modifiers::SHIFT
+    };
+    for m in [
+        Modifiers::ALT,
+        Modifiers::ALT | Modifiers::SHIFT,
+        held,
+        Modifiers::NONE,
+    ] {
         h.input_mut().events.push(Event::ModifiersChanged(m));
         h.step();
     }
@@ -466,17 +855,50 @@ fn switch_layout(h: &mut Harness<'_, EffectcraftApp>, shift_first: bool) {
 #[test]
 fn a_layout_switch_keeps_the_name_field_and_arabic_names_are_kept() {
     let (mut h, comp) = harness();
-    let layer = h.state_mut().session.execute("layer.newNull", json!({})).unwrap()["layer"].as_u64().unwrap();
+    let layer = h
+        .state_mut()
+        .session
+        .execute("layer.newNull", json!({}))
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
     h.run_steps(3);
-    let layer_name =
-        |h: &Harness<'_, EffectcraftApp>| h.state().session.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(layer)).unwrap().name.clone();
+    let layer_name = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(layer))
+            .unwrap()
+            .name
+            .clone()
+    };
     let p = center(&h, &format!("timeline.layer.{layer}.row"));
     click(&mut h, p, 2);
-    assert!(h.state().auto.find(&format!("timeline.layer.{layer}.nameEdit")).is_some(), "double-click opened the rename field");
+    assert!(
+        h.state()
+            .auto
+            .find(&format!("timeline.layer.{layer}.nameEdit"))
+            .is_some(),
+        "double-click opened the rename field"
+    );
     for shift_first in [true, false] {
         switch_layout(&mut h, shift_first);
-        assert!(h.state().auto.find(&format!("timeline.layer.{layer}.nameEdit")).is_some(), "the rename field stays open");
-        type_text(&mut h, if shift_first { "طبقة " } else { "مرحبا" });
+        assert!(
+            h.state()
+                .auto
+                .find(&format!("timeline.layer.{layer}.nameEdit"))
+                .is_some(),
+            "the rename field stays open"
+        );
+        type_text(
+            &mut h,
+            if shift_first {
+                "طبقة "
+            } else {
+                "مرحبا"
+            },
+        );
     }
     key(&mut h, Key::Enter);
     assert_eq!(layer_name(&h), "طبقة مرحبا");
@@ -487,14 +909,31 @@ fn a_layout_switch_keeps_the_name_field_and_arabic_names_are_kept() {
     switch_layout(&mut h, true);
     type_text(&mut h, "שכבה नाम ชื่อ");
     key(&mut h, Key::Enter);
-    assert_eq!(h.state().session.project.items.values().find(|i| i.id.0 == comp).unwrap().name, "שכבה नाम ชื่อ");
+    assert_eq!(
+        h.state()
+            .session
+            .project
+            .items
+            .values()
+            .find(|i| i.id.0 == comp)
+            .unwrap()
+            .name,
+        "שכבה नाम ชื่อ"
+    );
     // A plain Alt tap still takes the keyboard to the menu bar (#279).
     if !cfg!(target_os = "macos") {
-        h.input_mut().events.push(Event::ModifiersChanged(Modifiers::ALT));
+        h.input_mut()
+            .events
+            .push(Event::ModifiersChanged(Modifiers::ALT));
         h.step();
-        h.input_mut().events.push(Event::ModifiersChanged(Modifiers::NONE));
+        h.input_mut()
+            .events
+            .push(Event::ModifiersChanged(Modifiers::NONE));
         h.run_steps(2);
-        let focused = h.query_by(|n| n.is_focused()).and_then(|n| n.accesskit_node().label()).unwrap_or_default();
+        let focused = h
+            .query_by(|n| n.is_focused())
+            .and_then(|n| n.accesskit_node().label())
+            .unwrap_or_default();
         assert_eq!(focused.trim(), "File", "Alt focused the menu bar");
     }
 }
@@ -504,7 +943,17 @@ fn a_layout_switch_keeps_the_name_field_and_arabic_names_are_kept() {
 #[test]
 fn arrow_keys_move_the_caret_in_rename_fields() {
     let (mut h, comp) = harness();
-    let name = |h: &Harness<'_, EffectcraftApp>| h.state().session.project.items.values().find(|i| i.id.0 == comp).unwrap().name.clone();
+    let name = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .project
+            .items
+            .values()
+            .find(|i| i.id.0 == comp)
+            .unwrap()
+            .name
+            .clone()
+    };
     let p = center(&h, &format!("project.item.{comp}.name"));
     click(&mut h, p, 1);
     key(&mut h, Key::Enter);
@@ -523,8 +972,20 @@ fn arrow_keys_move_the_caret_in_rename_fields() {
     key(&mut h, Key::Enter);
     assert_eq!(name(&h), "MYin");
     // The Timeline's layer rename.
-    let layer = h.state_mut().session.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
-    h.state_mut().session.execute("layer.select", json!({"layers": [layer]})).unwrap();
+    let layer = h
+        .state_mut()
+        .session
+        .execute(
+            "layer.newSolid",
+            json!({"name": "Plate", "color": "#406080"}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    h.state_mut()
+        .session
+        .execute("layer.select", json!({"layers": [layer]}))
+        .unwrap();
     h.run_steps(3);
     let p = center(&h, &format!("timeline.layer.{layer}.row"));
     click(&mut h, p, 1);
@@ -536,6 +997,14 @@ fn arrow_keys_move_the_caret_in_rename_fields() {
     key(&mut h, Key::ArrowLeft);
     type_text(&mut h, "-");
     key(&mut h, Key::Enter);
-    let layer_name = h.state().session.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(layer)).unwrap().name.clone();
+    let layer_name = h
+        .state()
+        .session
+        .active_comp()
+        .unwrap()
+        .layer(effectcraft_engine::project::LayerId(layer))
+        .unwrap()
+        .name
+        .clone();
     assert_eq!(layer_name, "Pla-te");
 }

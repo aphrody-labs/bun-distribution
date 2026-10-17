@@ -10,7 +10,17 @@
 use std::fs;
 use std::path::Path;
 
-const TABS: &[&str] = &["Home", "Insert", "Draw", "Page Layout", "Formulas", "Data", "Review", "View", "Automate"];
+const TABS: &[&str] = &[
+    "Home",
+    "Insert",
+    "Draw",
+    "Page Layout",
+    "Formulas",
+    "Data",
+    "Review",
+    "View",
+    "Automate",
+];
 
 /// Commands whose empty-params behaviour depends on the host machine (e.g. the
 /// system dictionary). These are never probed; their tests assert "invoked
@@ -29,11 +39,21 @@ fn rustfmt(src: &str) -> Result<String, String> {
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|e| format!("spawn rustfmt: {e}"))?;
-    let stdin = child.stdin.as_mut().ok_or("rustfmt: failed to open stdin")?;
-    stdin.write_all(src.as_bytes()).map_err(|e| format!("write rustfmt stdin: {e}"))?;
-    let out = child.wait_with_output().map_err(|e| format!("wait rustfmt: {e}"))?;
+    let stdin = child
+        .stdin
+        .as_mut()
+        .ok_or("rustfmt: failed to open stdin")?;
+    stdin
+        .write_all(src.as_bytes())
+        .map_err(|e| format!("write rustfmt stdin: {e}"))?;
+    let out = child
+        .wait_with_output()
+        .map_err(|e| format!("wait rustfmt: {e}"))?;
     if !out.status.success() {
-        return Err(format!("rustfmt failed: {}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "rustfmt failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
@@ -81,22 +101,35 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
     #[cfg(not(feature = "engine"))]
     {
         let _ = (root, rest);
-        return Err("cargo xtask keytips needs the default `engine` feature to probe the command catalog".into());
+        return Err(
+            "cargo xtask keytips needs the default `engine` feature to probe the command catalog"
+                .into(),
+        );
     }
     #[cfg(feature = "engine")]
     {
         let json_path = root.join("crates/ui-egui/src/keytips/keytips.json");
         let table_path = root.join("crates/ui-egui/src/keytips/keytip_table/generated.rs");
         let tests_path = root.join("crates/ui-egui/tests/keytips_generated.rs");
-        let source = fs::read_to_string(&json_path).map_err(|e| format!("read {}: {e}", json_path.display()))?;
+        let source = fs::read_to_string(&json_path)
+            .map_err(|e| format!("read {}: {e}", json_path.display()))?;
         let (entries, probe) = parse_and_probe(&source)?;
-        let generated =
-            [(table_path.as_path(), rustfmt(&render_table(&entries))?), (tests_path.as_path(), rustfmt(&render_tests(&entries, &probe))?)];
+        let generated = [
+            (table_path.as_path(), rustfmt(&render_table(&entries))?),
+            (
+                tests_path.as_path(),
+                rustfmt(&render_tests(&entries, &probe))?,
+            ),
+        ];
         if rest.contains(&"--check") {
             for (path, expected) in &generated {
-                let on_disk = fs::read_to_string(path).map_err(|e| format!("read {}: {e}", path.display()))?;
+                let on_disk = fs::read_to_string(path)
+                    .map_err(|e| format!("read {}: {e}", path.display()))?;
                 if on_disk != *expected {
-                    return Err(format!("{} is out of date — run `cargo xtask keytips` and commit the result", path.display()));
+                    return Err(format!(
+                        "{} is out of date — run `cargo xtask keytips` and commit the result",
+                        path.display()
+                    ));
                 }
                 println!("keytips: {} up to date", path.display());
             }
@@ -112,22 +145,40 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
 
 #[cfg(feature = "engine")]
 fn parse_and_probe(source: &str) -> Result<(Vec<Entry>, Probe), String> {
-    let doc: serde_json::Value = serde_json::from_str(source).map_err(|e| format!("invalid JSON: {e}"))?;
-    let seqs = doc.get("sequences").and_then(|v| v.as_array()).ok_or("missing `sequences` array")?;
+    let doc: serde_json::Value =
+        serde_json::from_str(source).map_err(|e| format!("invalid JSON: {e}"))?;
+    let seqs = doc
+        .get("sequences")
+        .and_then(|v| v.as_array())
+        .ok_or("missing `sequences` array")?;
 
     let mut entries: Vec<Entry> = Vec::new();
     let mut seen = std::collections::HashSet::new();
     for (i, e) in seqs.iter().enumerate() {
         let at = format!("entry {}", i + 1);
-        let seq = e.get("seq").and_then(|v| v.as_str()).ok_or_else(|| format!("{at}: missing `seq`"))?.to_string();
+        let seq = e
+            .get("seq")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("{at}: missing `seq`"))?
+            .to_string();
         if seq.is_empty() || seq.len() > 6 || !seq.bytes().all(|b| b.is_ascii_alphanumeric()) {
-            return Err(format!("{at}: seq {seq:?} must be 1-6 ASCII letters/digits (Excel's longest are 5, e.g. sparkline paths)"));
+            return Err(format!(
+                "{at}: seq {seq:?} must be 1-6 ASCII letters/digits (Excel's longest are 5, e.g. sparkline paths)"
+            ));
         }
         if !seen.insert(seq.clone()) {
             return Err(format!("{at}: duplicate seq {seq:?}"));
         }
-        let kind = e.get("kind").and_then(|v| v.as_str()).ok_or_else(|| format!("{at}: missing `kind`"))?.to_string();
-        let target = e.get("target").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let kind = e
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("{at}: missing `kind`"))?
+            .to_string();
+        let target = e
+            .get("target")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         let pending = e.get("pending").and_then(|v| v.as_bool()).unwrap_or(false);
         if pending && kind != "command" {
             return Err(format!("{at}: `pending` is only valid with kind `command`"));
@@ -135,7 +186,9 @@ fn parse_and_probe(source: &str) -> Result<(Vec<Entry>, Probe), String> {
         match kind.as_str() {
             "tab" => {
                 if target.is_empty() || !TABS.contains(&target.as_str()) {
-                    return Err(format!("{at}: tab target {target:?} is not one of {TABS:?}"));
+                    return Err(format!(
+                        "{at}: tab target {target:?} is not one of {TABS:?}"
+                    ));
                 }
             }
             "command" | "dialog" | "control" => {
@@ -151,7 +204,9 @@ fn parse_and_probe(source: &str) -> Result<(Vec<Entry>, Probe), String> {
         if matches!(kind.as_str(), "command" | "dialog" | "control") {
             for cut in 1..seq.len() {
                 let prefix = &seq[..cut];
-                if entries.iter().any(|e| e.seq == prefix && matches!(e.kind.as_str(), "command" | "dialog" | "control")) {
+                if entries.iter().any(|e| {
+                    e.seq == prefix && matches!(e.kind.as_str(), "command" | "dialog" | "control")
+                }) {
                     return Err(format!(
                         "{at}: seq {seq:?} is unreachable — {prefix:?} already fires first; the deeper item needs a menu (item-letter), not a trie sequence"
                     ));
@@ -163,8 +218,16 @@ fn parse_and_probe(source: &str) -> Result<(Vec<Entry>, Probe), String> {
             kind,
             target,
             pending,
-            excel: e.get("excel").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            note: e.get("note").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            excel: e
+                .get("excel")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            note: e
+                .get("note")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
         });
     }
     // JSON order is authoritative and curated: the first entry for a tab is its canonical
@@ -302,7 +365,10 @@ fn render_tests(entries: &[Entry], probe: &Probe) -> String {
             // All kinds are validated during parse; anything else cannot occur.
             _ => String::new(),
         };
-        out.push_str(&format!("\n#[test]\nfn {}() {{\n    let mut h = harness(blank());\n    {body}\n}}\n", test_name(&e.seq)));
+        out.push_str(&format!(
+            "\n#[test]\nfn {}() {{\n    let mut h = harness(blank());\n    {body}\n}}\n",
+            test_name(&e.seq)
+        ));
     }
     out.push_str(&format!(
         "\n#[test]\nfn generated_test_count_matches_the_table() {{\n    const EXPECTED: usize = {};\n    assert_eq!(gridcraft_ui_egui::keytips::keytip_table::SEQUENCES.len(), EXPECTED);\n}}\n",

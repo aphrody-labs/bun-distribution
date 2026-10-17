@@ -55,8 +55,18 @@ impl Default for Gradient {
         Self {
             kind: GradientKind::Linear,
             stops: vec![
-                GradientStop { offset: 0.0, color: Color::WHITE, opacity: 1.0, midpoint: 0.5 },
-                GradientStop { offset: 1.0, color: Color::BLACK, opacity: 1.0, midpoint: 0.5 },
+                GradientStop {
+                    offset: 0.0,
+                    color: Color::WHITE,
+                    opacity: 1.0,
+                    midpoint: 0.5,
+                },
+                GradientStop {
+                    offset: 1.0,
+                    color: Color::BLACK,
+                    opacity: 1.0,
+                    midpoint: 0.5,
+                },
             ],
         }
     }
@@ -79,8 +89,15 @@ impl Gradient {
                 let u = (t - a.offset) / span;
                 // Map through the midpoint: u=mid → 0.5.
                 let m = a.midpoint.clamp(0.01, 0.99);
-                let v = if u < m { 0.5 * u / m } else { 0.5 + 0.5 * (u - m) / (1.0 - m) };
-                return (a.color.lerp(&b.color, v), a.opacity + (b.opacity - a.opacity) * v);
+                let v = if u < m {
+                    0.5 * u / m
+                } else {
+                    0.5 + 0.5 * (u - m) / (1.0 - m)
+                };
+                return (
+                    a.color.lerp(&b.color, v),
+                    a.opacity + (b.opacity - a.opacity) * v,
+                );
             }
         }
         match stops.last() {
@@ -105,7 +122,13 @@ impl Gradient {
     }
     pub fn reverse(&mut self) {
         // A midpoint belongs to the segment after its stop, so it moves with that segment and mirrors.
-        let mids: Vec<_> = self.stops.iter().rev().skip(1).map(|s| 1.0 - s.midpoint).collect();
+        let mids: Vec<_> = self
+            .stops
+            .iter()
+            .rev()
+            .skip(1)
+            .map(|s| 1.0 - s.midpoint)
+            .collect();
         self.stops.reverse();
         for (s, m) in self.stops.iter_mut().zip(mids.into_iter().chain([0.5])) {
             s.offset = 1.0 - s.offset;
@@ -139,14 +162,22 @@ impl GradientGeom {
         match kind {
             GradientKind::Radial => {
                 let r = b.width().max(b.height()) / 2.0;
-                Self { start: c, end: c + Vec2::new(r, 0.0), aspect: 1.0 }
+                Self {
+                    start: c,
+                    end: c + Vec2::new(r, 0.0),
+                    aspect: 1.0,
+                }
             }
             _ => {
                 let a = angle_deg.to_radians();
                 let d = Vec2::new(a.cos(), -a.sin());
                 // Project the box corners onto the direction to cover the whole box.
                 let half = (b.width() * d.x.abs() + b.height() * d.y.abs()) / 2.0;
-                Self { start: c - d * half, end: c + d * half, aspect: 1.0 }
+                Self {
+                    start: c - d * half,
+                    end: c + d * half,
+                    aspect: 1.0,
+                }
             }
         }
     }
@@ -179,10 +210,16 @@ pub struct GradientPaint {
 
 impl GradientPaint {
     pub fn new(gradient: Gradient) -> Self {
-        Self { gradient, geom: None, angle: 0.0, swatch: None }
+        Self {
+            gradient,
+            geom: None,
+            angle: 0.0,
+            swatch: None,
+        }
     }
     pub fn resolve(&self, bounds: Rect) -> GradientGeom {
-        self.geom.unwrap_or_else(|| GradientGeom::fit(self.gradient.kind, bounds, self.angle))
+        self.geom
+            .unwrap_or_else(|| GradientGeom::fit(self.gradient.kind, bounds, self.angle))
     }
 }
 
@@ -228,17 +265,34 @@ mod tests {
         assert_eq!(g.stops[0].offset, 0.0);
         // The midpoint moves to its reversed segment and mirrors.
         assert!((g.sample(0.75).0.to_rgb()[0] - 0.5).abs() < 1e-5);
-        assert_eq!(g.stops.iter().map(|s| s.midpoint).collect::<Vec<_>>(), [0.75, 0.5]);
+        assert_eq!(
+            g.stops.iter().map(|s| s.midpoint).collect::<Vec<_>>(),
+            [0.75, 0.5]
+        );
 
         // With several stops, the reversed gradient is the original mirrored.
         let mut g = Gradient::default();
         g.stops[0].midpoint = 0.3;
-        g.stops.insert(1, GradientStop { offset: 0.4, color: Color::rgb(1.0, 0.0, 0.0), opacity: 0.5, midpoint: 0.8 });
+        g.stops.insert(
+            1,
+            GradientStop {
+                offset: 0.4,
+                color: Color::rgb(1.0, 0.0, 0.0),
+                opacity: 0.5,
+                midpoint: 0.8,
+            },
+        );
         let original = g.clone();
         g.reverse();
         for t in [0.1, 0.3, 0.5, 0.7, 0.9] {
             let ((c, o), (want_c, want_o)) = (g.sample(t), original.sample(1.0 - t));
-            assert!(c.to_rgb().iter().zip(want_c.to_rgb()).all(|(a, b)| (a - b).abs() < 1e-5), "colour at {t}");
+            assert!(
+                c.to_rgb()
+                    .iter()
+                    .zip(want_c.to_rgb())
+                    .all(|(a, b)| (a - b).abs() < 1e-5),
+                "colour at {t}"
+            );
             assert!((o - want_o).abs() < 1e-5, "opacity at {t}");
         }
     }

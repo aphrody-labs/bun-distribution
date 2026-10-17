@@ -11,20 +11,26 @@ const ROOT_RELS: &str = r#"<Relationships xmlns="http://schemas.openxmlformats.o
 fn zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut zw = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     for (name, bytes) in entries {
-        zw.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+        zw.start_file(*name, zip::write::SimpleFileOptions::default())
+            .unwrap();
         zw.write_all(bytes).unwrap();
     }
     zw.finish().unwrap().into_inner()
 }
 
 fn doc_zip(document_xml: &[u8]) -> Vec<u8> {
-    zip(&[("_rels/.rels", ROOT_RELS.as_bytes()), ("word/document.xml", document_xml)])
+    zip(&[
+        ("_rels/.rels", ROOT_RELS.as_bytes()),
+        ("word/document.xml", document_xml),
+    ])
 }
 
 fn sample() -> Vec<u8> {
-    let mut d = wordcraft_doc::Document::from_text("Hello world\nSecond paragraph with more text\nThird");
+    let mut d =
+        wordcraft_doc::Document::from_text("Hello world\nSecond paragraph with more text\nThird");
     let t = wordcraft_doc::Table::new(2, 2, 200.0);
-    d.body.insert(1, std::sync::Arc::new(wordcraft_doc::Block::Table(t)));
+    d.body
+        .insert(1, std::sync::Arc::new(wordcraft_doc::Block::Table(t)));
     write(&d).unwrap()
 }
 
@@ -33,7 +39,9 @@ fn random_bytes_and_empty_input() {
     assert!(matches!(read(&[]), Err(DocxError::Zip(_))));
     assert!(read(b"PK\x03\x04garbage").is_err());
     assert!(read(&[0u8; 4096]).is_err());
-    let noise: Vec<u8> = (0..10_000u32).map(|i| (i.wrapping_mul(2_654_435_761) >> 13) as u8).collect();
+    let noise: Vec<u8> = (0..10_000u32)
+        .map(|i| (i.wrapping_mul(2_654_435_761) >> 13) as u8)
+        .collect();
     assert!(read(&noise).is_err());
 }
 
@@ -54,7 +62,10 @@ fn truncated_zip_never_panics() {
 
 #[test]
 fn missing_or_wrong_main_part() {
-    let z = zip(&[("_rels/.rels", ROOT_RELS.as_bytes()), ("word/other.xml", b"<x/>")]);
+    let z = zip(&[
+        ("_rels/.rels", ROOT_RELS.as_bytes()),
+        ("word/other.xml", b"<x/>"),
+    ]);
     assert!(matches!(read(&z), Err(DocxError::MissingPart(_))));
     let z = doc_zip(b"<notword/>");
     assert!(matches!(read(&z), Err(DocxError::NotWord(_))));
@@ -63,7 +74,13 @@ fn missing_or_wrong_main_part() {
     let z = doc_zip(b"\xff\xfe<\0w\0");
     assert!(read(&z).is_err());
     // No root rels at all: falls back to word/document.xml.
-    let z = zip(&[("word/document.xml", format!("<w:document {W_NS}><w:body><w:p><w:r><w:t>ok</w:t></w:r></w:p></w:body></w:document>").as_bytes())]);
+    let z = zip(&[(
+        "word/document.xml",
+        format!(
+            "<w:document {W_NS}><w:body><w:p><w:r><w:t>ok</w:t></w:r></w:p></w:body></w:document>"
+        )
+        .as_bytes(),
+    )]);
     let d = read(&z).unwrap();
     assert_eq!(d.plain_text(wordcraft_doc::StoryRef::Body), "ok");
 }
@@ -75,7 +92,10 @@ fn deep_nesting_is_rejected() {
         x.push_str("<w:sdt><w:sdtContent>");
     }
     x.push_str("</w:body></w:document>");
-    assert!(matches!(read(&doc_zip(x.as_bytes())), Err(DocxError::Limit(_))));
+    assert!(matches!(
+        read(&doc_zip(x.as_bytes())),
+        Err(DocxError::Limit(_))
+    ));
     // Nested tables just under the XML depth limit build without blowing the stack.
     let mut y = format!("<w:document {W_NS}><w:body>");
     for _ in 0..60 {
@@ -91,7 +111,11 @@ fn deep_nesting_is_rejected() {
         for b in bl {
             match &**b {
                 wordcraft_doc::Block::Para(p) => out.push_str(&p.plain_text()),
-                wordcraft_doc::Block::Table(t) => t.rows.iter().flat_map(|r| &r.cells).for_each(|c| all_text(&c.blocks, out)),
+                wordcraft_doc::Block::Table(t) => t
+                    .rows
+                    .iter()
+                    .flat_map(|r| &r.cells)
+                    .for_each(|c| all_text(&c.blocks, out)),
             }
         }
     }
@@ -104,7 +128,9 @@ fn deep_nesting_is_rejected() {
 #[test]
 fn broken_secondary_parts_are_ignored() {
     let rels = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="a" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="b" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/><Relationship Id="c" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/></Relationships>"#;
-    let doc = format!("<w:document {W_NS}><w:body><w:p><w:r><w:t>body</w:t></w:r></w:p></w:body></w:document>");
+    let doc = format!(
+        "<w:document {W_NS}><w:body><w:p><w:r><w:t>body</w:t></w:r></w:p></w:body></w:document>"
+    );
     let z = zip(&[
         ("_rels/.rels", ROOT_RELS.as_bytes()),
         ("word/document.xml", doc.as_bytes()),
@@ -125,10 +151,16 @@ fn many_fields_and_huge_attribute_values() {
     for _ in 0..200 {
         x.push_str(r#"<w:r><w:fldChar w:fldCharType="begin"/></w:r>"#);
     }
-    x.push_str(&format!(r#"<w:r><w:rPr><w:rFonts w:ascii="{}"/></w:rPr><w:t>x</w:t></w:r>"#, "F".repeat(100_000)));
+    x.push_str(&format!(
+        r#"<w:r><w:rPr><w:rFonts w:ascii="{}"/></w:rPr><w:t>x</w:t></w:r>"#,
+        "F".repeat(100_000)
+    ));
     x.push_str("</w:p><w:p><w:r><w:t>later</w:t></w:r></w:p></w:body></w:document>");
     let d = read(&doc_zip(x.as_bytes())).unwrap();
-    assert!(d.plain_text(wordcraft_doc::StoryRef::Body).contains("later"));
+    assert!(
+        d.plain_text(wordcraft_doc::StoryRef::Body)
+            .contains("later")
+    );
 }
 
 /// A small valid document.xml to mutate.
@@ -165,7 +197,9 @@ const SNIPPETS: &[&str] = &[
 
 #[test]
 fn malformed_or_hostile_bibliography_never_panics() {
-    let doc = format!("<w:document {W_NS}><w:body><w:p><w:r><w:t>body</w:t></w:r></w:p></w:body></w:document>");
+    let doc = format!(
+        "<w:document {W_NS}><w:body><w:p><w:r><w:t>body</w:t></w:r></w:p></w:body></w:document>"
+    );
     let cases: &[&[u8]] = &[
         b"<not_sources/>",
         b"<b:Sources xmlns:b=\"http://schemas.openxmlformats.org/officeDocument/2006/bibliography\"><unclosed",
@@ -178,7 +212,11 @@ fn malformed_or_hostile_bibliography_never_panics() {
     ];
     let root_rels_bib = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="customXml/item1.xml"/></Relationships>"#;
     for case in cases {
-        let z = zip(&[("_rels/.rels", root_rels_bib.as_bytes()), ("word/document.xml", doc.as_bytes()), ("customXml/item1.xml", case)]);
+        let z = zip(&[
+            ("_rels/.rels", root_rels_bib.as_bytes()),
+            ("word/document.xml", doc.as_bytes()),
+            ("customXml/item1.xml", case),
+        ]);
         let res = read(&z);
         if let Ok(d) = res {
             let _ = write(&d);
@@ -190,22 +228,40 @@ fn malformed_or_hostile_bibliography_never_panics() {
 /// linear time and keeps at most 10,000 of them.
 #[test]
 fn hostile_bibliography_source_count_is_capped() {
-    let doc = format!("<w:document {W_NS}><w:body><w:p><w:r><w:t>body</w:t></w:r></w:p></w:body></w:document>");
-    let mut sources = String::from(r#"<b:Sources xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" StyleName="MLA">"#);
+    let doc = format!(
+        "<w:document {W_NS}><w:body><w:p><w:r><w:t>body</w:t></w:r></w:p></w:body></w:document>"
+    );
+    let mut sources = String::from(
+        r#"<b:Sources xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" StyleName="MLA">"#,
+    );
     for i in 0..60_000 {
-        sources.push_str(&format!("<b:Source><b:Tag>T{i}</b:Tag><b:Title>Title {i}</b:Title></b:Source>"));
+        sources.push_str(&format!(
+            "<b:Source><b:Tag>T{i}</b:Tag><b:Title>Title {i}</b:Title></b:Source>"
+        ));
         // Untagged duplicates all collapse into one source.
         sources.push_str("<b:Source><b:Title>Same</b:Title></b:Source>");
     }
     sources.push_str("</b:Sources>");
     let root_rels = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="customXml/item1.xml"/></Relationships>"#;
-    let z = zip(&[("_rels/.rels", root_rels.as_bytes()), ("word/document.xml", doc.as_bytes()), ("customXml/item1.xml", sources.as_bytes())]);
+    let z = zip(&[
+        ("_rels/.rels", root_rels.as_bytes()),
+        ("word/document.xml", doc.as_bytes()),
+        ("customXml/item1.xml", sources.as_bytes()),
+    ]);
     let start = std::time::Instant::now();
     let d = read(&z).unwrap();
     assert_eq!(d.sources.len(), 10_000);
-    assert_eq!(d.sources.iter().filter(|s| s.tag.is_empty()).count(), 1, "untagged duplicates are kept once");
+    assert_eq!(
+        d.sources.iter().filter(|s| s.tag.is_empty()).count(),
+        1,
+        "untagged duplicates are kept once"
+    );
     assert_eq!(d.settings.bib_style.as_deref(), Some("MLA"));
-    assert!(start.elapsed() < std::time::Duration::from_secs(30), "took {:?}", start.elapsed());
+    assert!(
+        start.elapsed() < std::time::Duration::from_secs(30),
+        "took {:?}",
+        start.elapsed()
+    );
 }
 
 proptest! {

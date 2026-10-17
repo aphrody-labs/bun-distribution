@@ -235,7 +235,6 @@ fn extract_shared_fonts(system: SystemRef) {
     }
 }
 
-
 fn write_output_tlv(out: &mut [u8], offset: usize, kind: WebArgOutputTlvType, size: u16) {
     out[offset..offset + 2].copy_from_slice(&kind.0.to_le_bytes());
     out[offset + 2..offset + 4].copy_from_slice(&size.to_le_bytes());
@@ -522,7 +521,15 @@ impl WebBrowser {
             Box::new(move || Self::extract_offline_romfs(system, romfs.clone(), &cache_dir)),
             Box::new(move |reason, last_url| {
                 Self::finish(
-                    system, header, version, reason, last_url, &applet, &broker, &complete, Some(&executing),
+                    system,
+                    header,
+                    version,
+                    reason,
+                    last_url,
+                    &applet,
+                    &broker,
+                    &complete,
+                    Some(&executing),
                 )
             }),
         );
@@ -555,7 +562,15 @@ impl WebBrowser {
                     };
                 }
                 Self::finish(
-                    system, header, version, reason, last_url, &applet, &broker, &complete, Some(&executing),
+                    system,
+                    header,
+                    version,
+                    reason,
+                    last_url,
+                    &applet,
+                    &broker,
+                    &complete,
+                    Some(&executing),
                 )
             }),
         );
@@ -699,8 +714,11 @@ mod tests {
             let owner = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), false)));
             let broker = Arc::new(AppletDataBroker::new());
             let mut browser = WebBrowser::new(
-                system_ref, Arc::downgrade(&owner), broker.clone(),
-                LibraryAppletMode::AllForeground, Arc::new(DefaultWebBrowserApplet),
+                system_ref,
+                Arc::downgrade(&owner),
+                broker.clone(),
+                LibraryAppletMode::AllForeground,
+                Arc::new(DefaultWebBrowserApplet),
             );
             browser.web_arg_header.shim_kind = shim;
             let guard = owner.lock().unwrap();
@@ -726,19 +744,34 @@ mod tests {
 
         let system = Box::new(System::new());
         let owner = Arc::new(Mutex::new(Applet::new(
-            SystemRef::from_ref(&system), Process::new(), false,
+            SystemRef::from_ref(&system),
+            Process::new(),
+            false,
         )));
-        let parent = Arc::new(Mutex::new(Applet::new(SystemRef::null(), Process::new(), true)));
+        let parent = Arc::new(Mutex::new(Applet::new(
+            SystemRef::null(),
+            Process::new(),
+            true,
+        )));
         owner.lock().unwrap().caller_applet = Arc::downgrade(&parent);
-        parent.lock().unwrap().child_applets.push(Arc::clone(&owner));
+        parent
+            .lock()
+            .unwrap()
+            .child_applets
+            .push(Arc::clone(&owner));
         let broker = AppletDataBroker::new();
         let complete = AtomicBool::new(false);
         let executing = AtomicBool::new(false);
         WebBrowser::finish(
             SystemRef::null(),
-            WebArgHeader::default(), WebAppletVersion::default(),
-            WebExitReason::WINDOW_CLOSED, String::new(), &Arc::downgrade(&owner),
-            &broker, &complete, Some(&executing),
+            WebArgHeader::default(),
+            WebAppletVersion::default(),
+            WebExitReason::WINDOW_CLOSED,
+            String::new(),
+            &Arc::downgrade(&owner),
+            &broker,
+            &complete,
+            Some(&executing),
         );
         assert!(complete.load(Ordering::Acquire));
         assert!(owner.lock().unwrap().is_completed);

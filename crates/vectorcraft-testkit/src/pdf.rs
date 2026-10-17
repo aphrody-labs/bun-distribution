@@ -24,14 +24,18 @@ pub struct PdfPage {
 impl PdfPage {
     /// A `w` × `h` pt page drawing `content`.
     pub fn new(w: f64, h: f64, content: &str) -> Self {
-        Self { media: [0.0, 0.0, w, h], content: content.into(), ..Default::default() }
+        Self {
+            media: [0.0, 0.0, w, h],
+            content: content.into(),
+            ..Default::default()
+        }
     }
 }
 
 /// Padding of passwords (PDF 1.7, 7.6.3.3).
 const PAD: [u8; 32] = [
-    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08, 0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-    0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
+    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
 ];
 
 fn padded(pw: &str) -> Vec<u8> {
@@ -69,7 +73,12 @@ pub fn pdf_with(pages: &[PdfPage], extra: &[&str], password: Option<&str>) -> Ve
 }
 
 /// [`pdf_with`] with more entries in the catalog (`/OCProperties << … >>`).
-pub fn pdf_with_catalog(pages: &[PdfPage], extra: &[&str], catalog: &str, password: Option<&str>) -> Vec<u8> {
+pub fn pdf_with_catalog(
+    pages: &[PdfPage],
+    extra: &[&str],
+    catalog: &str,
+    password: Option<&str>,
+) -> Vec<u8> {
     let id = md5(b"vectorcraft test file");
     // (O, U, file key) of the standard security handler, revision 2, permissions -4.
     let crypt = password.map(|pw| {
@@ -84,12 +93,31 @@ pub fn pdf_with_catalog(pages: &[PdfPage], extra: &[&str], catalog: &str, passwo
         (o, u, key)
     });
     let mut objects: Vec<Vec<u8>> = vec![];
-    let kids: Vec<String> = (0..pages.len()).map(|i| format!("{} 0 R", 3 + 2 * i)).collect();
+    let kids: Vec<String> = (0..pages.len())
+        .map(|i| format!("{} 0 R", 3 + 2 * i))
+        .collect();
     objects.push(format!("<< /Type /Catalog /Pages 2 0 R {catalog}>>").into_bytes());
-    objects.push(format!("<< /Type /Pages /Kids [{}] /Count {} >>", kids.join(" "), pages.len()).into_bytes());
+    objects.push(
+        format!(
+            "<< /Type /Pages /Kids [{}] /Count {} >>",
+            kids.join(" "),
+            pages.len()
+        )
+        .into_bytes(),
+    );
     for (i, p) in pages.iter().enumerate() {
-        let mut d = format!("<< /Type /Page /Parent 2 0 R /MediaBox {} /Contents {} 0 R /Resources << {} >>", rect(p.media), 4 + 2 * i, p.resources);
-        for (k, r) in [("CropBox", p.crop), ("BleedBox", p.bleed), ("TrimBox", p.trim), ("ArtBox", p.art)] {
+        let mut d = format!(
+            "<< /Type /Page /Parent 2 0 R /MediaBox {} /Contents {} 0 R /Resources << {} >>",
+            rect(p.media),
+            4 + 2 * i,
+            p.resources
+        );
+        for (k, r) in [
+            ("CropBox", p.crop),
+            ("BleedBox", p.bleed),
+            ("TrimBox", p.trim),
+            ("ArtBox", p.art),
+        ] {
             if let Some(r) = r {
                 let _ = write!(d, " /{k} {}", rect(r));
             }
@@ -119,7 +147,14 @@ pub fn pdf_with_catalog(pages: &[PdfPage], extra: &[&str], catalog: &str, passwo
     }
     objects.extend(extra.iter().map(|o| o.as_bytes().to_vec()));
     if let Some((o, u, _)) = &crypt {
-        objects.push(format!("<< /Filter /Standard /V 1 /R 2 /O <{}> /U <{}> /P -4 >>", hex(o), hex(u)).into_bytes());
+        objects.push(
+            format!(
+                "<< /Filter /Standard /V 1 /R 2 /O <{}> /U <{}> /P -4 >>",
+                hex(o),
+                hex(u)
+            )
+            .into_bytes(),
+        );
     }
     let mut out = b"%PDF-1.4\n".to_vec();
     let mut offsets = vec![];
@@ -134,7 +169,11 @@ pub fn pdf_with_catalog(pages: &[PdfPage], extra: &[&str], catalog: &str, passwo
     for off in offsets {
         out.extend(format!("{off:010} 00000 n \n").bytes());
     }
-    let encrypt = if crypt.is_some() { format!(" /Encrypt {} 0 R", objects.len()) } else { String::new() };
+    let encrypt = if crypt.is_some() {
+        format!(" /Encrypt {} 0 R", objects.len())
+    } else {
+        String::new()
+    };
     let (size, id) = (objects.len() + 1, hex(&id));
     out.extend(format!("trailer\n<< /Size {size} /Root 1 0 R /ID [<{id}> <{id}>]{encrypt} >>\nstartxref\n{xref}\n%%EOF\n").bytes());
     out
@@ -162,7 +201,9 @@ fn rc4(key: &[u8], data: &[u8]) -> Vec<u8> {
 /// MD5 of `data` (RFC 1321).
 fn md5(data: &[u8]) -> [u8; 16] {
     const SHIFT: [u32; 16] = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
-    let k: Vec<u32> = (0..64).map(|i| ((i as f64 + 1.0).sin().abs() * 4_294_967_296.0) as u32).collect();
+    let k: Vec<u32> = (0..64)
+        .map(|i| ((i as f64 + 1.0).sin().abs() * 4_294_967_296.0) as u32)
+        .collect();
     let mut h = [0x6745_2301u32, 0xefcd_ab89, 0x98ba_dcfe, 0x1032_5476];
     let mut msg = data.to_vec();
     msg.push(0x80);
@@ -171,7 +212,10 @@ fn md5(data: &[u8]) -> [u8; 16] {
     }
     msg.extend_from_slice(&((data.len() as u64).wrapping_mul(8)).to_le_bytes());
     for chunk in msg.chunks(64) {
-        let m: Vec<u32> = chunk.chunks(4).map(|w| u32::from_le_bytes([w[0], w[1], w[2], w[3]])).collect();
+        let m: Vec<u32> = chunk
+            .chunks(4)
+            .map(|w| u32::from_le_bytes([w[0], w[1], w[2], w[3]]))
+            .collect();
         let [mut a, mut b, mut c, mut d] = h;
         for i in 0..64 {
             let (f, g) = match i / 16 {

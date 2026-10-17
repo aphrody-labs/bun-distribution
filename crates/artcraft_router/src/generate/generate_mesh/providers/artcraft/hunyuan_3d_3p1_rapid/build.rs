@@ -7,8 +7,13 @@ use crate::generate::generate_mesh::mesh_generation_request::MeshGenerationReque
 use crate::generate::generate_mesh::providers::artcraft::build_common::build_artcraft_omni_mesh_request;
 use crate::generate::generate_mesh::providers::artcraft::hunyuan_3d_3p1_rapid::request::ArtcraftHunyuan3d3p1RapidRequestState;
 
-pub fn build_artcraft_hunyuan_3d_3p1_rapid(builder: GenerateMeshRequestBuilder) -> Result<MeshGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_mesh_request(builder, CommonMeshModelEnum::Hunyuan3d3p1Rapid)?;
-  let state = ArtcraftHunyuan3d3p1RapidRequestState { request };
-  Ok(MeshGenerationDraftOrRequest::Request(MeshGenerationRequest::ArtcraftHunyuan3d3p1Rapid(state)))
+pub fn build_artcraft_hunyuan_3d_3p1_rapid(
+    builder: GenerateMeshRequestBuilder,
+) -> Result<MeshGenerationDraftOrRequest, ArtcraftRouterError> {
+    let request =
+        build_artcraft_omni_mesh_request(builder, CommonMeshModelEnum::Hunyuan3d3p1Rapid)?;
+    let state = ArtcraftHunyuan3d3p1RapidRequestState { request };
+    Ok(MeshGenerationDraftOrRequest::Request(
+        MeshGenerationRequest::ArtcraftHunyuan3d3p1Rapid(state),
+    ))
 }

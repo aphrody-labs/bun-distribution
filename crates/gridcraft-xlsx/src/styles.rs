@@ -6,7 +6,8 @@ use std::fmt::Write as _;
 
 use gridcraft_model::style::Protection;
 use gridcraft_model::{
-    Alignment, BorderLine, BorderStyle, Borders, Color, Fill, Font, HAlign, NumFmt, PatternType, Style, Underline, VAlign, VertAlign, Workbook,
+    Alignment, BorderLine, BorderStyle, Borders, Color, Fill, Font, HAlign, NumFmt, PatternType,
+    Style, Underline, VAlign, VertAlign, Workbook,
 };
 
 use crate::tables::{INDEXED, builtin_format, builtin_id};
@@ -39,11 +40,17 @@ pub fn read_color(e: &El, palette: &[u32]) -> Color {
         if t > 11 {
             return Color::Auto;
         }
-        let tint = e.attr_f64("tint").map(|v| (v * 1000.0).round().clamp(-1000.0, 1000.0) as i16).unwrap_or(0);
+        let tint = e
+            .attr_f64("tint")
+            .map(|v| (v * 1000.0).round().clamp(-1000.0, 1000.0) as i16)
+            .unwrap_or(0);
         return Color::Theme(t as u8, tint);
     }
     if let Some(i) = e.attr_u32("indexed") {
-        return palette.get(i as usize).map(|&c| Color::Rgb(c)).unwrap_or(Color::Auto);
+        return palette
+            .get(i as usize)
+            .map(|&c| Color::Rgb(c))
+            .unwrap_or(Color::Auto);
     }
     Color::Auto
 }
@@ -59,7 +66,11 @@ fn bool_prop(e: &El, name: &str) -> bool {
 
 pub fn read_font(e: &El, palette: &[u32]) -> Font {
     let mut f = Font::default();
-    if let Some(n) = e.child("name").or_else(|| e.child("rFont")).and_then(|n| n.attr("val")) {
+    if let Some(n) = e
+        .child("name")
+        .or_else(|| e.child("rFont"))
+        .and_then(|n| n.attr("val"))
+    {
         f.name = n.to_string();
     }
     if let Some(sz) = e.child("sz").and_then(|s| s.attr_f64("val")) {
@@ -208,12 +219,17 @@ fn border_style_name(s: BorderStyle) -> &'static str {
 }
 
 fn read_line(e: Option<&El>, palette: &[u32]) -> BorderLine {
-    let Some(e) = e else { return BorderLine::default() };
+    let Some(e) = e else {
+        return BorderLine::default();
+    };
     let style = border_style(e.attr("style").unwrap_or("none"));
     if style == BorderStyle::None {
         return BorderLine::default();
     }
-    BorderLine { style, color: opt_color(e.child("color"), palette) }
+    BorderLine {
+        style,
+        color: opt_color(e.child("color"), palette),
+    }
 }
 
 pub fn read_border(e: &El, palette: &[u32]) -> Borders {
@@ -223,8 +239,16 @@ pub fn read_border(e: &El, palette: &[u32]) -> Borders {
         right: read_line(e.child("right").or_else(|| e.child("end")), palette),
         top: read_line(e.child("top"), palette),
         bottom: read_line(e.child("bottom"), palette),
-        diag_down: if e.flag("diagonalDown", false) { diag } else { BorderLine::default() },
-        diag_up: if e.flag("diagonalUp", false) { diag } else { BorderLine::default() },
+        diag_down: if e.flag("diagonalDown", false) {
+            diag
+        } else {
+            BorderLine::default()
+        },
+        diag_up: if e.flag("diagonalUp", false) {
+            diag
+        } else {
+            BorderLine::default()
+        },
     }
 }
 
@@ -264,7 +288,10 @@ fn read_alignment(a: &El) -> Alignment {
 }
 
 fn read_protection(p: &El) -> Protection {
-    Protection { locked: p.flag("locked", true), hidden: p.flag("hidden", false) }
+    Protection {
+        locked: p.flag("locked", true),
+        hidden: p.flag("hidden", false),
+    }
 }
 
 fn num_fmt_code(id: u32, custom: &HashMap<u32, String>) -> NumFmt {
@@ -274,7 +301,14 @@ fn num_fmt_code(id: u32, custom: &HashMap<u32, String>) -> NumFmt {
     NumFmt::new(builtin_format(id).unwrap_or("General"))
 }
 
-fn read_xf(xf: &El, fonts: &[Font], fills: &[Fill], borders: &[Borders], fmts: &HashMap<u32, String>, checkboxes: &[bool]) -> Style {
+fn read_xf(
+    xf: &El,
+    fonts: &[Font],
+    fills: &[Fill],
+    borders: &[Borders],
+    fmts: &HashMap<u32, String>,
+    checkboxes: &[bool],
+) -> Style {
     let mut s = Style::default();
     if let Some(f) = xf.attr_u32("fontId").and_then(|i| fonts.get(i as usize)) {
         s.font = f.clone();
@@ -284,7 +318,10 @@ fn read_xf(xf: &El, fonts: &[Font], fills: &[Fill], borders: &[Borders], fmts: &
     if let Some(f) = xf.attr_u32("fillId").and_then(|i| fills.get(i as usize)) {
         s.fill = *f;
     }
-    if let Some(b) = xf.attr_u32("borderId").and_then(|i| borders.get(i as usize)) {
+    if let Some(b) = xf
+        .attr_u32("borderId")
+        .and_then(|i| borders.get(i as usize))
+    {
         s.borders = *b;
     }
     s.num_fmt = num_fmt_code(xf.attr_u32("numFmtId").unwrap_or(0), fmts);
@@ -325,18 +362,45 @@ pub fn read_styles(root: &El, checkboxes: &[bool]) -> StylesIn {
             }
         }
     }
-    let fonts: Vec<Font> = root.child("fonts").map(|f| f.kids("font").map(|e| read_font(e, &palette)).collect()).unwrap_or_default();
-    let fills: Vec<Fill> = root.child("fills").map(|f| f.kids("fill").map(|e| read_fill(e, &palette, false)).collect()).unwrap_or_default();
-    let borders: Vec<Borders> = root.child("borders").map(|f| f.kids("border").map(|e| read_border(e, &palette)).collect()).unwrap_or_default();
-    let xfs =
-        root.child("cellXfs").map(|x| x.kids("xf").map(|xf| read_xf(xf, &fonts, &fills, &borders, &fmts, checkboxes)).collect()).unwrap_or_default();
-    let style_xfs: Vec<Style> =
-        root.child("cellStyleXfs").map(|x| x.kids("xf").map(|xf| read_xf(xf, &fonts, &fills, &borders, &fmts, &[])).collect()).unwrap_or_default();
+    let fonts: Vec<Font> = root
+        .child("fonts")
+        .map(|f| f.kids("font").map(|e| read_font(e, &palette)).collect())
+        .unwrap_or_default();
+    let fills: Vec<Fill> = root
+        .child("fills")
+        .map(|f| {
+            f.kids("fill")
+                .map(|e| read_fill(e, &palette, false))
+                .collect()
+        })
+        .unwrap_or_default();
+    let borders: Vec<Borders> = root
+        .child("borders")
+        .map(|f| f.kids("border").map(|e| read_border(e, &palette)).collect())
+        .unwrap_or_default();
+    let xfs = root
+        .child("cellXfs")
+        .map(|x| {
+            x.kids("xf")
+                .map(|xf| read_xf(xf, &fonts, &fills, &borders, &fmts, checkboxes))
+                .collect()
+        })
+        .unwrap_or_default();
+    let style_xfs: Vec<Style> = root
+        .child("cellStyleXfs")
+        .map(|x| {
+            x.kids("xf")
+                .map(|xf| read_xf(xf, &fonts, &fills, &borders, &fmts, &[]))
+                .collect()
+        })
+        .unwrap_or_default();
     let mut named = Vec::new();
     if let Some(cs) = root.child("cellStyles") {
         for c in cs.kids("cellStyle") {
-            if let (Some(name), Some(s)) = (c.attr("name"), c.attr_u32("xfId").and_then(|i| style_xfs.get(i as usize)))
-                && name != "Normal"
+            if let (Some(name), Some(s)) = (
+                c.attr("name"),
+                c.attr_u32("xfId").and_then(|i| style_xfs.get(i as usize)),
+            ) && name != "Normal"
             {
                 named.push((name.to_string(), s.clone()));
             }
@@ -351,7 +415,11 @@ pub fn read_styles(root: &El, checkboxes: &[bool]) -> StylesIn {
                     if let Some(f) = x.child("font") {
                         let f = read_font(f, &palette);
                         // Differential fonts rarely name a face; keep the default face and size.
-                        s.font = Font { name: s.font.name.clone(), size: s.font.size, ..f };
+                        s.font = Font {
+                            name: s.font.name.clone(),
+                            size: s.font.size,
+                            ..f
+                        };
                     }
                     if let Some(n) = x.child("numFmt") {
                         if let Some(code) = n.attr("formatCode") {
@@ -377,7 +445,13 @@ pub fn read_styles(root: &El, checkboxes: &[bool]) -> StylesIn {
                 .collect()
         })
         .unwrap_or_default();
-    StylesIn { xfs, dxfs, palette, named, num_fmts: fmts }
+    StylesIn {
+        xfs,
+        dxfs,
+        palette,
+        named,
+        num_fmts: fmts,
+    }
 }
 
 // ---------------------------------------------------------------- writing
@@ -429,7 +503,11 @@ fn font_xml(f: &Font, dxf: bool, minor: bool) -> String {
         s.push_str("<color theme=\"1\"/>");
     }
     if !dxf {
-        let _ = write!(s, "<name val=\"{}\"/><family val=\"2\"/>", esc_attr(&f.name));
+        let _ = write!(
+            s,
+            "<name val=\"{}\"/><family val=\"2\"/>",
+            esc_attr(&f.name)
+        );
         if minor {
             s.push_str("<scheme val=\"minor\"/>");
         }
@@ -444,9 +522,14 @@ fn fill_xml(f: &Fill, dxf: bool) -> String {
     }
     if dxf && f.pattern == PatternType::Solid {
         let c = color_attrs(&f.fg);
-        return format!("<fill><patternFill patternType=\"solid\"><fgColor {c}/><bgColor {c}/></patternFill></fill>");
+        return format!(
+            "<fill><patternFill patternType=\"solid\"><fgColor {c}/><bgColor {c}/></patternFill></fill>"
+        );
     }
-    let mut s = format!("<fill><patternFill patternType=\"{}\">", pattern_name(f.pattern));
+    let mut s = format!(
+        "<fill><patternFill patternType=\"{}\">",
+        pattern_name(f.pattern)
+    );
     if f.fg != Color::Auto {
         let _ = write!(s, "<fgColor {}/>", color_attrs(&f.fg));
     } else if f.pattern != PatternType::Gray125 {
@@ -465,8 +548,15 @@ fn line_xml(tag: &str, l: &BorderLine) -> String {
     if l.is_none() {
         return format!("<{tag}/>");
     }
-    let color = if l.color == Color::Auto { "<color indexed=\"64\"/>".to_string() } else { format!("<color {}/>", color_attrs(&l.color)) };
-    format!("<{tag} style=\"{}\">{color}</{tag}>", border_style_name(l.style))
+    let color = if l.color == Color::Auto {
+        "<color indexed=\"64\"/>".to_string()
+    } else {
+        format!("<color {}/>", color_attrs(&l.color))
+    };
+    format!(
+        "<{tag} style=\"{}\">{color}</{tag}>",
+        border_style_name(l.style)
+    )
 }
 
 fn border_xml(b: &Borders) -> String {
@@ -482,7 +572,11 @@ fn border_xml(b: &Borders) -> String {
     s.push_str(&line_xml("right", &b.right));
     s.push_str(&line_xml("top", &b.top));
     s.push_str(&line_xml("bottom", &b.bottom));
-    let diag = if !b.diag_down.is_none() { b.diag_down } else { b.diag_up };
+    let diag = if !b.diag_down.is_none() {
+        b.diag_down
+    } else {
+        b.diag_up
+    };
     s.push_str(&line_xml("diagonal", &diag));
     s.push_str("</border>");
     s
@@ -542,11 +636,18 @@ fn protection_xml(p: &Protection) -> Option<String> {
     if *p == Protection::default() {
         return None;
     }
-    Some(format!("<protection locked=\"{}\" hidden=\"{}\"/>", p.locked as u8, p.hidden as u8))
+    Some(format!(
+        "<protection locked=\"{}\" hidden=\"{}\"/>",
+        p.locked as u8, p.hidden as u8
+    ))
 }
 
 /// Interns `items` into a deduplicated list, returning the index.
-fn intern<T: Clone + Eq + std::hash::Hash>(list: &mut Vec<T>, map: &mut HashMap<T, u32>, item: &T) -> u32 {
+fn intern<T: Clone + Eq + std::hash::Hash>(
+    list: &mut Vec<T>,
+    map: &mut HashMap<T, u32>,
+    item: &T,
+) -> u32 {
     if let Some(&i) = map.get(item) {
         return i;
     }
@@ -581,16 +682,38 @@ impl NumFmts {
 /// cell's `s` attribute is its style id), plus the given differential formats.
 /// `extra_fmts` are number formats used outside cell styles (PivotTable value fields); the
 /// returned map gives the id of every custom format written.
-pub fn write_styles(wb: &Workbook, dxfs: &[Style], extra_fmts: &[String]) -> (String, HashMap<String, u32>) {
-    let mut nf = NumFmts { custom: vec![], map: HashMap::new() };
+pub fn write_styles(
+    wb: &Workbook,
+    dxfs: &[Style],
+    extra_fmts: &[String],
+) -> (String, HashMap<String, u32>) {
+    let mut nf = NumFmts {
+        custom: vec![],
+        map: HashMap::new(),
+    };
     let mut fonts: Vec<Font> = vec![];
     let mut font_map = HashMap::new();
-    let mut fills: Vec<Fill> = vec![Fill::default(), Fill { pattern: PatternType::Gray125, fg: Color::Auto, bg: Color::Auto }];
-    let mut fill_map: HashMap<Fill, u32> = fills.iter().enumerate().map(|(i, f)| (*f, i as u32)).collect();
+    let mut fills: Vec<Fill> = vec![
+        Fill::default(),
+        Fill {
+            pattern: PatternType::Gray125,
+            fg: Color::Auto,
+            bg: Color::Auto,
+        },
+    ];
+    let mut fill_map: HashMap<Fill, u32> = fills
+        .iter()
+        .enumerate()
+        .map(|(i, f)| (*f, i as u32))
+        .collect();
     let mut borders: Vec<Borders> = vec![Borders::default()];
     let mut border_map: HashMap<Borders, u32> = HashMap::from([(Borders::default(), 0)]);
     // The default style's font is font 0.
-    intern(&mut fonts, &mut font_map, &wb.styles.get(gridcraft_model::StyleId::DEFAULT).font);
+    intern(
+        &mut fonts,
+        &mut font_map,
+        &wb.styles.get(gridcraft_model::StyleId::DEFAULT).font,
+    );
 
     let mut xfs = String::new();
     let mut count = 0;
@@ -600,8 +723,15 @@ pub fn write_styles(wb: &Workbook, dxfs: &[Style], extra_fmts: &[String]) -> (St
         let border = intern(&mut borders, &mut border_map, &st.borders);
         // A checkbox is General plus the feature-property-bag complement (see `feature_bags`).
         let checkbox = st.num_fmt.as_str() == "checkbox";
-        let fmt = if checkbox { 0 } else { nf.id(st.num_fmt.as_str()) };
-        let _ = write!(xfs, "<xf numFmtId=\"{fmt}\" fontId=\"{font}\" fillId=\"{fill}\" borderId=\"{border}\" xfId=\"0\"");
+        let fmt = if checkbox {
+            0
+        } else {
+            nf.id(st.num_fmt.as_str())
+        };
+        let _ = write!(
+            xfs,
+            "<xf numFmtId=\"{fmt}\" fontId=\"{font}\" fillId=\"{fill}\" borderId=\"{border}\" xfId=\"0\""
+        );
         if fmt != 0 {
             xfs.push_str(" applyNumberFormat=\"1\"");
         }
@@ -637,7 +767,8 @@ pub fn write_styles(wb: &Workbook, dxfs: &[Style], extra_fmts: &[String]) -> (St
     }
 
     // Named cell styles.
-    let mut style_xfs = String::from("<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/>");
+    let mut style_xfs =
+        String::from("<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/>");
     let mut cell_styles = String::from("<cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/>");
     let mut named = 1;
     for (name, st) in &wb.cell_styles {
@@ -648,15 +779,27 @@ pub fn write_styles(wb: &Workbook, dxfs: &[Style], extra_fmts: &[String]) -> (St
         let fill = intern(&mut fills, &mut fill_map, &st.fill);
         let border = intern(&mut borders, &mut border_map, &st.borders);
         let fmt = nf.id(st.num_fmt.as_str());
-        let _ = write!(style_xfs, "<xf numFmtId=\"{fmt}\" fontId=\"{font}\" fillId=\"{fill}\" borderId=\"{border}\"");
+        let _ = write!(
+            style_xfs,
+            "<xf numFmtId=\"{fmt}\" fontId=\"{font}\" fillId=\"{fill}\" borderId=\"{border}\""
+        );
         let al = alignment_xml(&st.align);
         let pr = protection_xml(&st.protection);
         if al.is_none() && pr.is_none() {
             style_xfs.push_str("/>");
         } else {
-            let _ = write!(style_xfs, ">{}{}</xf>", al.unwrap_or_default(), pr.unwrap_or_default());
+            let _ = write!(
+                style_xfs,
+                ">{}{}</xf>",
+                al.unwrap_or_default(),
+                pr.unwrap_or_default()
+            );
         }
-        let _ = write!(cell_styles, "<cellStyle name=\"{}\" xfId=\"{named}\" customBuiltin=\"1\"/>", esc_attr(name));
+        let _ = write!(
+            cell_styles,
+            "<cellStyle name=\"{}\" xfId=\"{named}\" customBuiltin=\"1\"/>",
+            esc_attr(name)
+        );
         named += 1;
     }
 
@@ -675,7 +818,11 @@ pub fn write_styles(wb: &Workbook, dxfs: &[Style], extra_fmts: &[String]) -> (St
         }
         if d.num_fmt != def.num_fmt {
             let id = nf.id(d.num_fmt.as_str());
-            let _ = write!(dx, "<numFmt numFmtId=\"{id}\" formatCode=\"{}\"/>", esc_attr(d.num_fmt.as_str()));
+            let _ = write!(
+                dx,
+                "<numFmt numFmtId=\"{id}\" formatCode=\"{}\"/>",
+                esc_attr(d.num_fmt.as_str())
+            );
         }
         if d.fill != def.fill {
             dx.push_str(&fill_xml(&d.fill, true));
@@ -698,7 +845,11 @@ pub fn write_styles(wb: &Workbook, dxfs: &[Style], extra_fmts: &[String]) -> (St
     if !nf.custom.is_empty() {
         let _ = write!(s, "<numFmts count=\"{}\">", nf.custom.len());
         for (id, code) in &nf.custom {
-            let _ = write!(s, "<numFmt numFmtId=\"{id}\" formatCode=\"{}\"/>", esc_attr(code));
+            let _ = write!(
+                s,
+                "<numFmt numFmtId=\"{id}\" formatCode=\"{}\"/>",
+                esc_attr(code)
+            );
         }
         s.push_str("</numFmts>");
     }
@@ -715,9 +866,15 @@ pub fn write_styles(wb: &Workbook, dxfs: &[Style], extra_fmts: &[String]) -> (St
     for b in &borders {
         s.push_str(&border_xml(b));
     }
-    let _ = write!(s, "</borders><cellStyleXfs count=\"{named}\">{style_xfs}</cellStyleXfs>");
+    let _ = write!(
+        s,
+        "</borders><cellStyleXfs count=\"{named}\">{style_xfs}</cellStyleXfs>"
+    );
     let _ = write!(s, "<cellXfs count=\"{count}\">{xfs}</cellXfs>");
-    let _ = write!(s, "<cellStyles count=\"{named}\">{cell_styles}</cellStyles>");
+    let _ = write!(
+        s,
+        "<cellStyles count=\"{named}\">{cell_styles}</cellStyles>"
+    );
     let _ = write!(s, "<dxfs count=\"{}\">{dx}</dxfs>", dxfs.len());
     s.push_str("<tableStyles count=\"0\" defaultTableStyle=\"TableStyleMedium2\" defaultPivotStyle=\"PivotStyleLight16\"/></styleSheet>");
     (s, nf.map)

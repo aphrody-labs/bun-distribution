@@ -319,7 +319,9 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
             tracing::info!(count = blocks.len(), "loaded DSP JIT block cache");
 
             if self.dsp.jit.is_none() {
-                self.dsp.jit = Some(Box::new(crate::flipper::dsp::jit::JitEngine::<SYSTEM>::new()));
+                self.dsp.jit = Some(Box::new(
+                    crate::flipper::dsp::jit::JitEngine::<SYSTEM>::new(),
+                ));
             }
 
             let iram_ptr = self.dsp.iram.as_ptr();
@@ -329,7 +331,12 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
             let iram = unsafe { ::core::slice::from_raw_parts(iram_ptr, iram_len) };
             let irom = unsafe { ::core::slice::from_raw_parts(irom_ptr, irom_len) };
 
-            let (c, s) = self.dsp.jit.as_mut().unwrap().precompile_blocks(iram, irom, &blocks);
+            let (c, s) = self
+                .dsp
+                .jit
+                .as_mut()
+                .unwrap()
+                .precompile_blocks(iram, irom, &blocks);
             dsp_compiled = c;
             dsp_skipped = s;
         }
@@ -342,7 +349,14 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
             vtx_skipped = s;
         }
 
-        (ppc_compiled, ppc_skipped, dsp_compiled, dsp_skipped, vtx_compiled, vtx_skipped)
+        (
+            ppc_compiled,
+            ppc_skipped,
+            dsp_compiled,
+            dsp_skipped,
+            vtx_compiled,
+            vtx_skipped,
+        )
     }
 
     #[cfg(feature = "jit")]
@@ -415,7 +429,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
         let path = self.heatmap.out_dir.join("gx-stats.txt");
         let s = self.gx.stats.clone();
-        let avg_draw_ns = if s.draw_calls > 0 { s.create_draw_call_ns / s.draw_calls } else { 0 };
+        let avg_draw_ns = if s.draw_calls > 0 {
+            s.create_draw_call_ns / s.draw_calls
+        } else {
+            0
+        };
 
         let render = self.render_sink.render_stats();
         let presents = s.xfb_presents.max(1) as f64;
@@ -425,16 +443,20 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         let interval_presents = delta(s.xfb_presents, previous.gx.xfb_presents);
         let interval_divisor = interval_presents.max(1) as f64;
         let interval_renderer_draws = delta(render.draws_encoded, previous.render.draws_encoded);
-        let interval_potential_draws =
-            delta(render.potential_merged_draws, previous.render.potential_merged_draws);
+        let interval_potential_draws = delta(
+            render.potential_merged_draws,
+            previous.render.potential_merged_draws,
+        );
         let interval_reduction_pct = interval_renderer_draws
             .saturating_sub(interval_potential_draws) as f64
             / interval_renderer_draws.max(1) as f64
             * 100.0;
-        let cumulative_reduction_pct =
-            render.draws_encoded.saturating_sub(render.potential_merged_draws) as f64
-                / render.draws_encoded.max(1) as f64
-                * 100.0;
+        let cumulative_reduction_pct = render
+            .draws_encoded
+            .saturating_sub(render.potential_merged_draws)
+            as f64
+            / render.draws_encoded.max(1) as f64
+            * 100.0;
         let result = crate::profile::write_file_atomic(&path, |f| {
             writeln!(
                 f,
@@ -495,34 +517,58 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                 delta(render.draws_encoded, previous.render.draws_encoded) as f64
                     / interval_divisor,
                 delta(s.vertices, previous.gx.vertices) as f64 / interval_divisor,
-                delta(render.draw_render_passes, previous.render.draw_render_passes) as f64
+                delta(
+                    render.draw_render_passes,
+                    previous.render.draw_render_passes
+                ) as f64
                     / interval_divisor,
                 delta(render.pipeline_changes, previous.render.pipeline_changes) as f64
                     / interval_divisor,
                 delta(render.pipelines_created, previous.render.pipelines_created) as f64
                     / interval_divisor,
-                delta(render.pipeline_create_cpu_ns, previous.render.pipeline_create_cpu_ns,)
-                    as f64
+                delta(
+                    render.pipeline_create_cpu_ns,
+                    previous.render.pipeline_create_cpu_ns,
+                ) as f64
                     / interval_divisor
                     / 1_000.0,
-                delta(render.shader_modules_created, previous.render.shader_modules_created,)
-                    as f64
+                delta(
+                    render.shader_modules_created,
+                    previous.render.shader_modules_created,
+                ) as f64
                     / interval_divisor,
-                delta(render.shader_create_cpu_ns, previous.render.shader_create_cpu_ns) as f64
+                delta(
+                    render.shader_create_cpu_ns,
+                    previous.render.shader_create_cpu_ns
+                ) as f64
                     / interval_divisor
                     / 1_000.0,
                 delta(render.bind_group_sets, previous.render.bind_group_sets) as f64
                     / interval_divisor,
-                delta(render.bind_groups_created, previous.render.bind_groups_created) as f64
+                delta(
+                    render.bind_groups_created,
+                    previous.render.bind_groups_created
+                ) as f64
                     / interval_divisor,
-                delta(render.bind_group_key_changes, previous.render.bind_group_key_changes,)
-                    as f64
+                delta(
+                    render.bind_group_key_changes,
+                    previous.render.bind_group_key_changes,
+                ) as f64
                     / interval_divisor,
-                delta(render.frame_uniform_changes, previous.render.frame_uniform_changes,) as f64
+                delta(
+                    render.frame_uniform_changes,
+                    previous.render.frame_uniform_changes,
+                ) as f64
                     / interval_divisor,
-                delta(render.draw_uniform_changes, previous.render.draw_uniform_changes,) as f64
+                delta(
+                    render.draw_uniform_changes,
+                    previous.render.draw_uniform_changes,
+                ) as f64
                     / interval_divisor,
-                delta(render.vertex_stride_changes, previous.render.vertex_stride_changes,) as f64
+                delta(
+                    render.vertex_stride_changes,
+                    previous.render.vertex_stride_changes,
+                ) as f64
                     / interval_divisor,
                 interval_potential_draws as f64 / interval_divisor,
                 interval_reduction_pct,
@@ -530,10 +576,16 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     / interval_divisor,
                 delta(render.scissor_changes, previous.render.scissor_changes) as f64
                     / interval_divisor,
-                delta(render.draw_pass_encode_ns, previous.render.draw_pass_encode_ns) as f64
+                delta(
+                    render.draw_pass_encode_ns,
+                    previous.render.draw_pass_encode_ns
+                ) as f64
                     / interval_divisor
                     / 1_000.0,
-                delta(render.worker_batch_cpu_ns, previous.render.worker_batch_cpu_ns) as f64
+                delta(
+                    render.worker_batch_cpu_ns,
+                    previous.render.worker_batch_cpu_ns
+                ) as f64
                     / interval_divisor
                     / 1_000.0,
                 delta(render.queue_wait_ns, previous.render.queue_wait_ns) as f64
@@ -542,16 +594,28 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                 delta(render.efb_drain_wait_ns, previous.render.efb_drain_wait_ns) as f64
                     / interval_divisor
                     / 1_000.0,
-                delta(render.efb_drain_requests, previous.render.efb_drain_requests) as f64
+                delta(
+                    render.efb_drain_requests,
+                    previous.render.efb_drain_requests
+                ) as f64
                     / interval_divisor,
-                delta(render.efb_drain_nonempty, previous.render.efb_drain_nonempty) as f64
+                delta(
+                    render.efb_drain_nonempty,
+                    previous.render.efb_drain_nonempty
+                ) as f64
                     / interval_divisor,
                 delta(render.efb_writebacks, previous.render.efb_writebacks) as f64
                     / interval_divisor,
-                delta(render.efb_writeback_cpu_ns, previous.render.efb_writeback_cpu_ns) as f64
+                delta(
+                    render.efb_writeback_cpu_ns,
+                    previous.render.efb_writeback_cpu_ns
+                ) as f64
                     / interval_divisor
                     / 1_000.0,
-                delta(render.queue_submit_cpu_ns, previous.render.queue_submit_cpu_ns) as f64
+                delta(
+                    render.queue_submit_cpu_ns,
+                    previous.render.queue_submit_cpu_ns
+                ) as f64
                     / interval_divisor
                     / 1_000.0,
             )?;
@@ -610,8 +674,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         if let Err(err) = result {
             tracing::warn!(?err, "gx-stats write failed");
         } else {
-            self.gx_stats_dump_state =
-                Some(GxStatsDumpState { vsync_count: self.vsync_count, gx: s, render });
+            self.gx_stats_dump_state = Some(GxStatsDumpState {
+                vsync_count: self.vsync_count,
+                gx: s,
+                render,
+            });
         }
     }
 
@@ -653,7 +720,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
         let calls = crate::gekko::jit::runtime::IDLE_SKIP_CALLS.load(Ordering::Relaxed);
         let cycles = crate::gekko::jit::runtime::IDLE_SKIP_CYCLES_ADVANCED.load(Ordering::Relaxed);
-        let avg = if calls > 0 { cycles as f64 / calls as f64 } else { 0.0 };
+        let avg = if calls > 0 {
+            cycles as f64 / calls as f64
+        } else {
+            0.0
+        };
         let dsp_suspends = crate::flipper::dsp::DSP_SUSPEND_COUNT.load(Ordering::Relaxed);
         let dsp_wakes = crate::flipper::dsp::DSP_WAKE_COUNT.load(Ordering::Relaxed);
 
@@ -669,14 +740,26 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         let batch_steps = crate::flipper::dsp::DSP_BATCH_STEPS.load(Ordering::Relaxed);
         let batch_nanos = crate::flipper::dsp::DSP_BATCH_NANOS.load(Ordering::Relaxed);
 
-        let drain_avg_steps =
-            if drain_calls > 0 { drain_steps as f64 / drain_calls as f64 } else { 0.0 };
-        let drain_avg_block =
-            if drain_blocks > 0 { drain_steps as f64 / drain_blocks as f64 } else { 0.0 };
-        let drain_ns_per_step =
-            if drain_steps > 0 { drain_nanos as f64 / drain_steps as f64 } else { 0.0 };
-        let batch_ns_per_step =
-            if batch_steps > 0 { batch_nanos as f64 / batch_steps as f64 } else { 0.0 };
+        let drain_avg_steps = if drain_calls > 0 {
+            drain_steps as f64 / drain_calls as f64
+        } else {
+            0.0
+        };
+        let drain_avg_block = if drain_blocks > 0 {
+            drain_steps as f64 / drain_blocks as f64
+        } else {
+            0.0
+        };
+        let drain_ns_per_step = if drain_steps > 0 {
+            drain_nanos as f64 / drain_steps as f64
+        } else {
+            0.0
+        };
+        let batch_ns_per_step = if batch_steps > 0 {
+            batch_nanos as f64 / batch_steps as f64
+        } else {
+            0.0
+        };
 
         let event_breakdown = self.event_breakdown_top_n(20);
 
@@ -760,7 +843,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                                 "pprof: sampling started",
                             );
                             self.pprof_session = Some(s);
-                        },
+                        }
                         Err(err) => tracing::warn!(?err, "failed to start pprof sampler"),
                     }
                 }
@@ -843,7 +926,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
         self.apply_host_input(&input);
 
-        let rumble = if SYSTEM == WII { self.starlet.wiimote_rumble() } else { self.si.rumble(0) };
+        let rumble = if SYSTEM == WII {
+            self.starlet.wiimote_rumble()
+        } else {
+            self.si.rumble(0)
+        };
 
         if let Some(sink) = self.input_sink.as_mut() {
             sink.set_rumble(0, rumble);
@@ -854,7 +941,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         match input {
             HostInput::Gc(pad) if SYSTEM == GC => {
                 self.si.pad_state[0] = *pad;
-            },
+            }
             HostInput::Wii {
                 wiimote_buttons,
                 wiimote_shake,
@@ -866,10 +953,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
             } if SYSTEM == WII => {
                 self.starlet.set_wiimote_buttons(*wiimote_buttons);
                 self.starlet.set_wiimote_shake(*wiimote_shake);
-                self.starlet.set_nunchuk(*nunchuk_buttons, *nunchuk_stick_x, *nunchuk_stick_y);
+                self.starlet
+                    .set_nunchuk(*nunchuk_buttons, *nunchuk_stick_x, *nunchuk_stick_y);
                 self.starlet.set_ir_pointer(*ir_pointer);
                 self.starlet.set_wiimote_accel(*accel);
-            },
+            }
             _ => unreachable!("invalid host input for system"),
         }
     }
@@ -931,10 +1019,10 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         #[cfg(feature = "hooks-mut-traps")]
         match host.take_pending_hook_state() {
             Ok(Some(state)) => self.apply_hook_state(state),
-            Ok(None) => {},
+            Ok(None) => {}
             Err(err) => {
                 tracing::error!(target: "script", error = %err, "failed to refresh script traps")
-            },
+            }
         }
 
         #[cfg(not(feature = "hooks-mut-traps"))]
@@ -969,11 +1057,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                 self.apply_hook_state(state);
                 self.hook_host = Some(host);
                 Ok(())
-            },
+            }
             Err(err) => {
                 self.hook_host = Some(host);
                 Err(err)
-            },
+            }
         }
     }
 }

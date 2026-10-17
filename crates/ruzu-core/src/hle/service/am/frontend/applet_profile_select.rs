@@ -208,7 +208,6 @@ impl ProfileSelect {
         }
     }
 
-
     fn parameters(&self) -> ProfileSelectParameters {
         match self.profile_select_version {
             version if version == ProfileSelectAppletVersion::Version1 as u32 => {

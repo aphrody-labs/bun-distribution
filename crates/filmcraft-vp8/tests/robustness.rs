@@ -22,11 +22,23 @@ fn decode_all(frames: &[Vec<u8>]) {
 
 #[test]
 fn corrupted_streams_do_not_panic() {
-    for name in ["default", "altref_2pass", "partitions8", "realtime_segments", "version3_fullpixel", "odd_size"] {
+    for name in [
+        "default",
+        "altref_2pass",
+        "partitions8",
+        "realtime_segments",
+        "version3_fullpixel",
+        "odd_size",
+    ] {
         let f = common::fixture(name);
-        let Some((ivf, _)) = common::ensure(f) else { return };
+        let Some((ivf, _)) = common::ensure(f) else {
+            return;
+        };
         let data = std::fs::read(ivf).unwrap();
-        let frames: Vec<Vec<u8>> = common::ivf_frames(&data).into_iter().map(|f| f.to_vec()).collect();
+        let frames: Vec<Vec<u8>> = common::ivf_frames(&data)
+            .into_iter()
+            .map(|f| f.to_vec())
+            .collect();
         let mut seed = 0x9e37_79b9_7f4a_7c15u64 ^ name.len() as u64;
         for round in 0..12 {
             let mut d = frames.clone();
@@ -84,15 +96,23 @@ fn random_bytes_and_tiny_frames_do_not_panic() {
 #[test]
 fn inter_frame_without_key_frame_is_an_error() {
     let f = common::fixture("default");
-    let Some((ivf, _)) = common::ensure(f) else { return };
+    let Some((ivf, _)) = common::ensure(f) else {
+        return;
+    };
     let data = std::fs::read(ivf).unwrap();
     let frames = common::ivf_frames(&data);
     let mut dec = Decoder::new();
-    assert!(matches!(dec.decode(frames[1], 1), Err(Error::MissingReference(_))));
+    assert!(matches!(
+        dec.decode(frames[1], 1),
+        Err(Error::MissingReference(_))
+    ));
     // and decoding works from the next key frame on; after a reset again only from a key frame
     assert!(dec.decode(frames[0], 0).unwrap().is_some());
     assert!(dec.decode(frames[1], 1).unwrap().is_some());
     dec.reset();
-    assert!(matches!(dec.decode(frames[2], 2), Err(Error::MissingReference(_))));
+    assert!(matches!(
+        dec.decode(frames[2], 2),
+        Err(Error::MissingReference(_))
+    ));
     assert!(filmcraft_vp8::is_keyframe(frames[0]) && !filmcraft_vp8::is_keyframe(frames[1]));
 }

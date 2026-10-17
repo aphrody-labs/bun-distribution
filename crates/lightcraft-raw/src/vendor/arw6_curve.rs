@@ -8,7 +8,11 @@ use std::sync::OnceLock;
 
 /// Code of knot `k`, whose output value is 128 k.
 fn knot(k: u32) -> f64 {
-    if k <= 11 { f64::from(128 * k) } else { 356.89 + 655.646 * f64::from(k - 6).ln() }
+    if k <= 11 {
+        f64::from(128 * k)
+    } else {
+        356.89 + 655.646 * f64::from(k - 6).ln()
+    }
 }
 
 fn table() -> &'static [u16; 4096] {
@@ -30,7 +34,10 @@ fn table() -> &'static [u16; 4096] {
 
 /// Companding curve: 12-bit code (clamped to 0..=4095) to output value.
 pub(crate) fn curve(code12: i32) -> u16 {
-    table().get(code12.clamp(0, 4095) as usize).copied().unwrap_or(u16::MAX)
+    table()
+        .get(code12.clamp(0, 4095) as usize)
+        .copied()
+        .unwrap_or(u16::MAX)
 }
 
 #[cfg(test)]
@@ -43,12 +50,28 @@ mod tests {
     fn table_is_pinned() {
         let t = table();
         let sum: u64 = t.iter().map(|&v| u64::from(v)).sum();
-        let weighted: u64 = t.iter().enumerate().map(|(i, &v)| (i as u64 + 1) * u64::from(v)).sum();
+        let weighted: u64 = t
+            .iter()
+            .enumerate()
+            .map(|(i, &v)| (i as u64 + 1) * u64::from(v))
+            .sum();
         assert_eq!((sum, weighted), (27776336, 92792980288));
-        for (c, v) in [(0, 0), (1408, 1408), (1536, 1542), (2048, 2457), (3000, 7979), (3500, 16227), (3977, 32767), (4095, 39077)] {
+        for (c, v) in [
+            (0, 0),
+            (1408, 1408),
+            (1536, 1542),
+            (2048, 2457),
+            (3000, 7979),
+            (3500, 16227),
+            (3977, 32767),
+            (4095, 39077),
+        ] {
             assert_eq!(curve(c), v, "code {c}");
         }
-        assert!((0..=1408).all(|c| curve(c) == c as u16), "identity through 1408");
+        assert!(
+            (0..=1408).all(|c| curve(c) == c as u16),
+            "identity through 1408"
+        );
         assert!(t.windows(2).all(|w| w[0] < w[1]), "strictly increasing");
         assert_eq!((curve(-5), curve(5000)), (0, 39077));
     }

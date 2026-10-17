@@ -7,8 +7,8 @@ use crate::{
         Access, QueryAccessError, ReadOnlyQueryData, ReleaseStateQueryData, SingleEntityQueryData,
     },
     world::{
-        error::EntityComponentError, unsafe_world_cell::UnsafeEntityCell, DynamicComponentFetch,
-        FilteredEntityRef, Ref,
+        DynamicComponentFetch, FilteredEntityRef, Ref, error::EntityComponentError,
+        unsafe_world_cell::UnsafeEntityCell,
     },
 };
 

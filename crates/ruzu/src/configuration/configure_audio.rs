@@ -252,14 +252,20 @@ mod tests {
         values.sink_id.set_value(AudioEngine::Auto);
         values.sink_id.set_global(false);
         values.sink_id.set_value(AudioEngine::Null);
-        for device in [&mut values.audio_output_device_id, &mut values.audio_input_device_id] {
+        for device in [
+            &mut values.audio_output_device_id,
+            &mut values.audio_input_device_id,
+        ] {
             device.set_global(false);
             device.set_value("auto".to_owned());
             // The generic per-game pass restores equal values to global.
             device.set_global(true);
         }
         preserve_device_overrides(&mut values);
-        for device in [&mut values.audio_output_device_id, &mut values.audio_input_device_id] {
+        for device in [
+            &mut values.audio_output_device_id,
+            &mut values.audio_input_device_id,
+        ] {
             assert!(!device.using_global());
             device.set_global(true);
             device.set_value("Global device".to_owned());
@@ -287,7 +293,11 @@ mod tests {
         assert!(!w::SettingEditPolicy::new(&values.audio_input_device_id, false, true).sensitive);
         assert!(w::SettingEditPolicy::new(&values.sink_id, true, true).sensitive);
         assert!(values.audio_muted.runtime_modifiable);
-        assert!(crate::uisettings::Values::default().mute_when_in_background.runtime_modifiable);
+        assert!(
+            crate::uisettings::Values::default()
+                .mute_when_in_background
+                .runtime_modifiable
+        );
         let volume = w::SettingEditPolicy::new(&values.volume, false, true);
         assert!(volume.sensitive);
         volume.apply(&mut values.volume, 42);

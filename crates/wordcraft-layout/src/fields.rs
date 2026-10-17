@@ -51,7 +51,12 @@ impl FieldCtx {
 
 /// The field's name (first word of the instruction, upper-cased).
 pub fn field_name(instr: &str) -> String {
-    instr.split_whitespace().next().unwrap_or("").trim_start_matches('=').to_ascii_uppercase()
+    instr
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .trim_start_matches('=')
+        .to_ascii_uppercase()
 }
 
 /// `\* FORMAT` switch value (Arabic, roman, ROMAN, alphabetic, ALPHABETIC, CardText, Ordinal…).
@@ -95,7 +100,10 @@ pub fn field_text(instr: &str, result: &str, ctx: &FieldCtx) -> (String, bool) {
     match name.as_str() {
         "PAGE" => (fmt.unwrap_or(ctx.page_format).format(ctx.page), true),
         "NUMPAGES" => (fmt.unwrap_or(NumFormat::Decimal).format(ctx.pages), true),
-        "SECTIONPAGES" => (fmt.unwrap_or(NumFormat::Decimal).format(ctx.section_pages), true),
+        "SECTIONPAGES" => (
+            fmt.unwrap_or(NumFormat::Decimal).format(ctx.section_pages),
+            true,
+        ),
         "SECTION" => (fmt.unwrap_or(NumFormat::Decimal).format(ctx.section), true),
         "TITLE" if result.is_empty() => (ctx.title.to_string(), false),
         "AUTHOR" if result.is_empty() => (ctx.author.to_string(), false),
@@ -110,13 +118,20 @@ mod tests {
 
     #[test]
     fn page_fields() {
-        let ctx = FieldCtx { page: 4, pages: 12, ..Default::default() };
+        let ctx = FieldCtx {
+            page: 4,
+            pages: 12,
+            ..Default::default()
+        };
         assert_eq!(field_text("PAGE", "", &ctx), ("4".into(), true));
         assert_eq!(field_text(" PAGE \\* ROMAN ", "", &ctx).0, "IV");
         assert_eq!(field_text("NUMPAGES \\* CardText", "", &ctx).0, "Twelve");
         assert_eq!(field_text("NUMPAGES \\* CHINESENUM1", "", &ctx).0, "十二");
         assert_eq!(field_text("PAGE \\* ChineseNum2", "", &ctx).0, "肆");
-        assert_eq!(field_text("DATE \\@ \"M/d/yyyy\"", "1/2/2026", &ctx), ("1/2/2026".into(), false));
+        assert_eq!(
+            field_text("DATE \\@ \"M/d/yyyy\"", "1/2/2026", &ctx),
+            ("1/2/2026".into(), false)
+        );
         assert_eq!(field_name("=SUM(ABOVE)"), "SUM(ABOVE)");
         assert_eq!(field_code_text(" PAGE \\* ROMAN "), "{ PAGE \\* ROMAN }");
         assert_eq!(field_code_text(""), "{  }");

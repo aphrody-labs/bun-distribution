@@ -14,7 +14,9 @@ use photocraft_psd::ase::{AseColor, AseEntry, AseFile, AseKind, AseSwatch};
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;
-use crate::presets::swatches::{Swatch, SwatchColor, SwatchConv, SwatchKind, builtin, hex, hsb_to_rgb};
+use crate::presets::swatches::{
+    Swatch, SwatchColor, SwatchConv, SwatchKind, builtin, hex, hsb_to_rgb,
+};
 use crate::presets::{Group, bad, find, str_param, unique_name};
 use crate::{Result, Session};
 
@@ -52,11 +54,19 @@ fn always(_: &Session) -> std::result::Result<(), String> {
 }
 
 fn has_swatches(s: &Session) -> std::result::Result<(), String> {
-    if total(&s.presets.swatches) > 0 { Ok(()) } else { Err("the Swatches panel is empty".into()) }
+    if total(&s.presets.swatches) > 0 {
+        Ok(())
+    } else {
+        Err("the Swatches panel is empty".into())
+    }
 }
 
 fn has_groups(s: &Session) -> std::result::Result<(), String> {
-    if s.presets.swatches.is_empty() { Err("there are no swatch groups".into()) } else { Ok(()) }
+    if s.presets.swatches.is_empty() {
+        Err("there are no swatch groups".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn name_param(p: &Value, k: &str, cmd: &str) -> Result<Option<String>> {
@@ -71,10 +81,13 @@ fn name_param(p: &Value, k: &str, cmd: &str) -> Result<Option<String>> {
 fn locate(s: &Session, p: &Value, cmd: &str) -> Result<(usize, usize)> {
     let groups = &s.presets.swatches;
     if let Some(name) = str_param(p, "swatch") {
-        return find(groups, name, str_param(p, "group")).ok_or_else(|| bad(cmd, format!("no swatch \"{name}\" (see swatches.list)")));
+        return find(groups, name, str_param(p, "group"))
+            .ok_or_else(|| bad(cmd, format!("no swatch \"{name}\" (see swatches.list)")));
     }
     if let Some(i) = p.get("index") {
-        let i = i.as_u64().ok_or_else(|| bad(cmd, "`index` must be a non-negative integer"))?;
+        let i = i
+            .as_u64()
+            .ok_or_else(|| bad(cmd, "`index` must be a non-negative integer"))?;
         let mut left = usize::try_from(i).unwrap_or(usize::MAX);
         for (gi, g) in groups.iter().enumerate() {
             if left < g.items.len() {
@@ -82,16 +95,26 @@ fn locate(s: &Session, p: &Value, cmd: &str) -> Result<(usize, usize)> {
             }
             left -= g.items.len();
         }
-        return Err(bad(cmd, format!("no swatch at index {i} (the panel has {})", total(groups))));
+        return Err(bad(
+            cmd,
+            format!("no swatch at index {i} (the panel has {})", total(groups)),
+        ));
     }
     Err(bad(cmd, "give `swatch` (a name) or `index`"))
 }
 
 /// Name → position of the first swatch with that name (optionally only in `group`), so commands
 /// taking lists of names stay linear on big libraries.
-fn index_by_name<'a>(groups: &'a [Group<Swatch>], group: Option<&str>) -> std::collections::HashMap<&'a str, (usize, usize)> {
+fn index_by_name<'a>(
+    groups: &'a [Group<Swatch>],
+    group: Option<&str>,
+) -> std::collections::HashMap<&'a str, (usize, usize)> {
     let mut m = std::collections::HashMap::new();
-    for (gi, g) in groups.iter().enumerate().filter(|(_, g)| group.is_none_or(|n| g.name == n)) {
+    for (gi, g) in groups
+        .iter()
+        .enumerate()
+        .filter(|(_, g)| group.is_none_or(|n| g.name == n))
+    {
         for (ii, sw) in g.items.iter().enumerate() {
             m.entry(sw.name.as_str()).or_insert((gi, ii));
         }
@@ -100,7 +123,11 @@ fn index_by_name<'a>(groups: &'a [Group<Swatch>], group: Option<&str>) -> std::c
 }
 
 fn group_of(s: &Session, name: &str, cmd: &str) -> Result<usize> {
-    s.presets.swatches.iter().position(|g| g.name == name).ok_or_else(|| bad(cmd, format!("no swatch group \"{name}\"")))
+    s.presets
+        .swatches
+        .iter()
+        .position(|g| g.name == name)
+        .ok_or_else(|| bad(cmd, format!("no swatch group \"{name}\"")))
 }
 
 fn unique_group(groups: &[Group<Swatch>], base: &str) -> String {
@@ -131,16 +158,26 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
     let color = match p.get("color") {
         None | Some(Value::Null) => {
             let f = s.tools.foreground;
-            SwatchColor::Rgb([f[0], f[1], f[2]].map(|v| if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 }))
+            SwatchColor::Rgb([f[0], f[1], f[2]].map(|v| {
+                if v.is_finite() {
+                    v.clamp(0.0, 1.0)
+                } else {
+                    0.0
+                }
+            }))
         }
         Some(v) => SwatchColor::from_param(v).map_err(|e| bad(CMD, e))?,
     };
     let kind = match str_param(p, "kind") {
         None => SwatchKind::Process,
-        Some(k) => SwatchKind::parse(k).ok_or_else(|| bad(CMD, format!("unknown kind `{k}` (process|global|spot)")))?,
+        Some(k) => SwatchKind::parse(k)
+            .ok_or_else(|| bad(CMD, format!("unknown kind `{k}` (process|global|spot)")))?,
     };
     if total(&s.presets.swatches) >= MAX_SWATCHES {
-        return Err(bad(CMD, format!("the Swatches panel is full ({MAX_SWATCHES} swatches)")));
+        return Err(bad(
+            CMD,
+            format!("the Swatches panel is full ({MAX_SWATCHES} swatches)"),
+        ));
     }
     let group = name_param(p, "group", CMD)?;
     let explicit = name_param(p, "name", CMD)?;
@@ -150,7 +187,10 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
         // Photoshop's default: "Color Swatch 1", "Color Swatch 2"…
         None => {
             let taken = |n: &str| groups.iter().any(|g| g.items.iter().any(|i| i.name == n));
-            (1..).map(|i| format!("Color Swatch {i}")).find(|n| !taken(n)).unwrap_or_default()
+            (1..)
+                .map(|i| format!("Color Swatch {i}"))
+                .find(|n| !taken(n))
+                .unwrap_or_default()
         }
     };
     let gi = match group {
@@ -174,9 +214,21 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
     let items = &mut groups[gi].items;
     let at = match p.get("index") {
         None | Some(Value::Null) => items.len(),
-        Some(v) => usize::try_from(v.as_u64().ok_or_else(|| bad(CMD, "`index` must be a non-negative integer"))?).unwrap_or(usize::MAX).min(items.len()),
+        Some(v) => usize::try_from(
+            v.as_u64()
+                .ok_or_else(|| bad(CMD, "`index` must be a non-negative integer"))?,
+        )
+        .unwrap_or(usize::MAX)
+        .min(items.len()),
     };
-    items.insert(at, Swatch { name: name.clone(), color, kind });
+    items.insert(
+        at,
+        Swatch {
+            name: name.clone(),
+            color,
+            kind,
+        },
+    );
     let gname = groups[gi].name.clone();
     s.presets_changed();
     Ok(json!({"name": name, "group": gname, "index": at}))
@@ -189,8 +241,12 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
             let ix = index_by_name(&s.presets.swatches, str_param(p, "group"));
             let mut v = Vec::with_capacity(a.len().min(MAX_SWATCHES));
             for n in a {
-                let name = n.as_str().ok_or_else(|| bad(CMD, "`swatch` names must be strings"))?;
-                v.push(*ix.get(name).ok_or_else(|| bad(CMD, format!("no swatch \"{name}\" (see swatches.list)")))?);
+                let name = n
+                    .as_str()
+                    .ok_or_else(|| bad(CMD, "`swatch` names must be strings"))?;
+                v.push(*ix.get(name).ok_or_else(|| {
+                    bad(CMD, format!("no swatch \"{name}\" (see swatches.list)"))
+                })?);
             }
             v
         }
@@ -235,7 +291,13 @@ fn move_swatch(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let at = match p.get("position") {
         None | Some(Value::Null) => None,
-        Some(v) => Some(usize::try_from(v.as_u64().ok_or_else(|| bad(CMD, "`position` must be a non-negative integer"))?).unwrap_or(usize::MAX)),
+        Some(v) => Some(
+            usize::try_from(
+                v.as_u64()
+                    .ok_or_else(|| bad(CMD, "`position` must be a non-negative integer"))?,
+            )
+            .unwrap_or(usize::MAX),
+        ),
     };
     let groups = &mut s.presets.swatches;
     let item = groups[gi].items.remove(ii);
@@ -256,11 +318,18 @@ fn new_group(s: &mut Session, p: &Value) -> Result<Value> {
     // Swatches to move into the new group (Photoshop: New Group from the selected swatches).
     let mut moving: Vec<(usize, usize)> = Vec::new();
     if let Some(a) = p.get("swatches") {
-        let a = a.as_array().ok_or_else(|| bad(CMD, "`swatches` must be a list of names"))?;
+        let a = a
+            .as_array()
+            .ok_or_else(|| bad(CMD, "`swatches` must be a list of names"))?;
         let ix = index_by_name(&s.presets.swatches, None);
         for n in a {
-            let name = n.as_str().ok_or_else(|| bad(CMD, "`swatches` names must be strings"))?;
-            moving.push(*ix.get(name).ok_or_else(|| bad(CMD, format!("no swatch \"{name}\"")))?);
+            let name = n
+                .as_str()
+                .ok_or_else(|| bad(CMD, "`swatches` names must be strings"))?;
+            moving.push(
+                *ix.get(name)
+                    .ok_or_else(|| bad(CMD, format!("no swatch \"{name}\"")))?,
+            );
         }
     }
     moving.sort_unstable();
@@ -296,7 +365,9 @@ fn delete_group(s: &mut Session, p: &Value) -> Result<Value> {
     let g = name_param(p, "group", CMD)?.ok_or_else(|| bad(CMD, "missing `group`"))?;
     let keep = match p.get("keepSwatches") {
         None | Some(Value::Null) => false,
-        Some(v) => v.as_bool().ok_or_else(|| bad(CMD, "`keepSwatches` must be true or false"))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad(CMD, "`keepSwatches` must be true or false"))?,
     };
     let i = group_of(s, &g, CMD)?;
     let groups = &mut s.presets.swatches;
@@ -326,7 +397,12 @@ fn use_swatch(s: &mut Session, p: &Value) -> Result<Value> {
     match target {
         "foreground" => s.tools.foreground = c,
         "background" => s.tools.background = c,
-        t => return Err(bad(CMD, format!("unknown target `{t}` (foreground|background)"))),
+        t => {
+            return Err(bad(
+                CMD,
+                format!("unknown target `{t}` (foreground|background)"),
+            ));
+        }
     }
     Ok(json!({"swatch": sw.name, "target": target, "hex": hex(rgb)}))
 }
@@ -335,11 +411,15 @@ fn reset(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "swatches.reset";
     let append = match p.get("append") {
         None | Some(Value::Null) => false,
-        Some(v) => v.as_bool().ok_or_else(|| bad(CMD, "`append` must be true or false"))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad(CMD, "`append` must be true or false"))?,
     };
     let mut b = builtin();
     if append {
-        if total(&s.presets.swatches) + total(&b) > MAX_SWATCHES || s.presets.swatches.len() + b.len() > MAX_GROUPS {
+        if total(&s.presets.swatches) + total(&b) > MAX_SWATCHES
+            || s.presets.swatches.len() + b.len() > MAX_GROUPS
+        {
             return Err(bad(CMD, "the Swatches panel is full"));
         }
         for g in &mut b {
@@ -386,7 +466,11 @@ fn ext_format(path: Option<&str>) -> Option<Format> {
 }
 
 fn unit(v: f32) -> f32 {
-    if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 }
+    if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
 }
 
 fn q16(v: f32) -> u16 {
@@ -399,7 +483,11 @@ fn from_aco(c: AcoColor) -> SwatchColor {
         AcoColor::Rgb(v) => SwatchColor::Rgb(v.map(f)),
         AcoColor::Hsb([h, sa, b]) => SwatchColor::Hsb([f(h) * 360.0, f(sa), f(b)]),
         AcoColor::Cmyk(v) => SwatchColor::Cmyk(v.map(f)),
-        AcoColor::Lab { l, a, b } => SwatchColor::Lab([f32::from(l.min(10000)) / 100.0, f32::from(a) / 100.0, f32::from(b) / 100.0]),
+        AcoColor::Lab { l, a, b } => SwatchColor::Lab([
+            f32::from(l.min(10000)) / 100.0,
+            f32::from(a) / 100.0,
+            f32::from(b) / 100.0,
+        ]),
         AcoColor::Gray(g) => SwatchColor::Gray(1.0 - f32::from(g.min(10000)) / 10000.0),
         AcoColor::Other { space, values } => SwatchColor::Book { space, values },
     }
@@ -409,13 +497,33 @@ fn to_aco(c: &SwatchColor) -> AcoColor {
     match *c {
         SwatchColor::Rgb(v) => AcoColor::Rgb(v.map(q16)),
         SwatchColor::Hsb([h, sa, b]) => {
-            let h = if h.is_finite() { h.rem_euclid(360.0) } else { 0.0 };
-            AcoColor::Hsb([((h / 360.0) * 65535.0).round().min(65535.0) as u16, q16(sa), q16(b)])
+            let h = if h.is_finite() {
+                h.rem_euclid(360.0)
+            } else {
+                0.0
+            };
+            AcoColor::Hsb([
+                ((h / 360.0) * 65535.0).round().min(65535.0) as u16,
+                q16(sa),
+                q16(b),
+            ])
         }
         SwatchColor::Cmyk(v) => AcoColor::Cmyk(v.map(q16)),
         SwatchColor::Lab([l, a, b]) => {
-            let ab = |v: f32| if v.is_finite() { (v * 100.0).round().clamp(-12800.0, 12700.0) as i16 } else { 0 };
-            AcoColor::Lab { l: (if l.is_finite() { l } else { 0.0 } * 100.0).round().clamp(0.0, 10000.0) as u16, a: ab(a), b: ab(b) }
+            let ab = |v: f32| {
+                if v.is_finite() {
+                    (v * 100.0).round().clamp(-12800.0, 12700.0) as i16
+                } else {
+                    0
+                }
+            };
+            AcoColor::Lab {
+                l: (if l.is_finite() { l } else { 0.0 } * 100.0)
+                    .round()
+                    .clamp(0.0, 10000.0) as u16,
+                a: ab(a),
+                b: ab(b),
+            }
         }
         SwatchColor::Gray(k) => AcoColor::Gray(((1.0 - unit(k)) * 10000.0).round() as u16),
         SwatchColor::Book { space, values } => AcoColor::Other { space, values },
@@ -463,14 +571,29 @@ fn kind_to_ase(k: SwatchKind) -> AseKind {
 }
 
 /// Parse a swatch file into groups (`group` names the group for ungrouped colours).
-pub fn read_file(bytes: &[u8], format: Format, group: &str) -> std::result::Result<(Vec<Group<Swatch>>, Vec<String>), String> {
+pub fn read_file(
+    bytes: &[u8],
+    format: Format,
+    group: &str,
+) -> std::result::Result<(Vec<Group<Swatch>>, Vec<String>), String> {
     let mut warnings = Vec::new();
     let mut out: Vec<Group<Swatch>> = Vec::new();
-    let fallback = |i: usize, name: &str| if name.trim().is_empty() { format!("Swatch {}", i + 1) } else { clip(name.trim()) };
+    let fallback = |i: usize, name: &str| {
+        if name.trim().is_empty() {
+            format!("Swatch {}", i + 1)
+        } else {
+            clip(name.trim())
+        }
+    };
     match format {
         Format::Aco => {
-            let f = photocraft_psd::aco::parse(bytes).map_err(|e| format!("not a readable .aco swatch file: {e}"))?;
-            let books = f.swatches.iter().filter(|s| matches!(s.color, AcoColor::Other { .. })).count();
+            let f = photocraft_psd::aco::parse(bytes)
+                .map_err(|e| format!("not a readable .aco swatch file: {e}"))?;
+            let books = f
+                .swatches
+                .iter()
+                .filter(|s| matches!(s.color, AcoColor::Other { .. }))
+                .count();
             if books > 0 {
                 warnings.push(format!(
                     "{books} swatches use a colour book or colour space PhotoCraft can't show; they are kept (shown gray) and saved back unchanged"
@@ -480,18 +603,27 @@ pub fn read_file(bytes: &[u8], format: Format, group: &str) -> std::result::Resu
                 .swatches
                 .iter()
                 .enumerate()
-                .map(|(i, s)| Swatch { name: fallback(i, &s.name), color: from_aco(s.color), kind: SwatchKind::Process })
+                .map(|(i, s)| Swatch {
+                    name: fallback(i, &s.name),
+                    color: from_aco(s.color),
+                    kind: SwatchKind::Process,
+                })
                 .collect();
             out.push(Group::new(group, items));
         }
         Format::Ase => {
-            let f = photocraft_psd::ase::parse(bytes).map_err(|e| format!("not a readable .ase swatch file: {e}"))?;
+            let f = photocraft_psd::ase::parse(bytes)
+                .map_err(|e| format!("not a readable .ase swatch file: {e}"))?;
             let mut skipped = 0;
             let mut n = 0usize;
             let mut conv = |s: &AseSwatch| -> Option<Swatch> {
                 n += 1;
                 match from_ase(&s.color) {
-                    Some(color) => Some(Swatch { name: fallback(n - 1, &s.name), color, kind: kind_from_ase(s.kind) }),
+                    Some(color) => Some(Swatch {
+                        name: fallback(n - 1, &s.name),
+                        color,
+                        kind: kind_from_ase(s.kind),
+                    }),
                     None => {
                         skipped += 1;
                         None
@@ -504,7 +636,11 @@ pub fn read_file(bytes: &[u8], format: Format, group: &str) -> std::result::Resu
                     AseEntry::Swatch(s) => loose.extend(conv(s)),
                     AseEntry::Group { name, swatches } => {
                         let items: Vec<Swatch> = swatches.iter().filter_map(&mut conv).collect();
-                        let name = if name.trim().is_empty() { group.to_string() } else { clip(name.trim()) };
+                        let name = if name.trim().is_empty() {
+                            group.to_string()
+                        } else {
+                            clip(name.trim())
+                        };
                         out.push(Group::new(&name, items));
                     }
                 }
@@ -513,7 +649,9 @@ pub fn read_file(bytes: &[u8], format: Format, group: &str) -> std::result::Resu
                 out.insert(0, Group::new(group, loose));
             }
             if skipped > 0 {
-                warnings.push(format!("{skipped} swatches in an unknown colour model were skipped"));
+                warnings.push(format!(
+                    "{skipped} swatches in an unknown colour model were skipped"
+                ));
             }
         }
     }
@@ -525,17 +663,34 @@ pub fn read_file(bytes: &[u8], format: Format, group: &str) -> std::result::Resu
 
 /// Encode groups as a swatch file; returns the bytes, the number of swatches written and
 /// warnings about what the format cannot hold.
-pub fn write_file(groups: &[Group<Swatch>], format: Format) -> std::result::Result<(Vec<u8>, usize, Vec<String>), String> {
+pub fn write_file(
+    groups: &[Group<Swatch>],
+    format: Format,
+) -> std::result::Result<(Vec<u8>, usize, Vec<String>), String> {
     let mut warnings = Vec::new();
     match format {
         Format::Aco => {
-            let swatches: Vec<AcoSwatch> =
-                groups.iter().flat_map(|g| g.items.iter()).map(|s| AcoSwatch { name: s.name.clone(), color: to_aco(&s.color) }).collect();
+            let swatches: Vec<AcoSwatch> = groups
+                .iter()
+                .flat_map(|g| g.items.iter())
+                .map(|s| AcoSwatch {
+                    name: s.name.clone(),
+                    color: to_aco(&s.color),
+                })
+                .collect();
             if groups.len() > 1 {
-                warnings.push(".aco files have no groups; the swatches were saved as one list".into());
+                warnings
+                    .push(".aco files have no groups; the swatches were saved as one list".into());
             }
-            if groups.iter().flat_map(|g| g.items.iter()).any(|s| s.kind != SwatchKind::Process) {
-                warnings.push(".aco files don't mark spot or global colours; save as .ase to keep them".into());
+            if groups
+                .iter()
+                .flat_map(|g| g.items.iter())
+                .any(|s| s.kind != SwatchKind::Process)
+            {
+                warnings.push(
+                    ".aco files don't mark spot or global colours; save as .ase to keep them"
+                        .into(),
+                );
             }
             let n = swatches.len();
             let bytes = photocraft_psd::aco::write(&swatches).map_err(|e| e.to_string())?;
@@ -550,7 +705,11 @@ pub fn write_file(groups: &[Group<Swatch>], format: Format) -> std::result::Resu
                     .items
                     .iter()
                     .filter_map(|s| match to_ase(&s.color) {
-                        Some(color) => Some(AseSwatch { name: s.name.clone(), color, kind: kind_to_ase(s.kind) }),
+                        Some(color) => Some(AseSwatch {
+                            name: s.name.clone(),
+                            color,
+                            kind: kind_to_ase(s.kind),
+                        }),
                         None => {
                             books += 1;
                             None
@@ -558,12 +717,16 @@ pub fn write_file(groups: &[Group<Swatch>], format: Format) -> std::result::Resu
                     })
                     .collect();
                 n += swatches.len();
-                entries.push(AseEntry::Group { name: g.name.clone(), swatches });
+                entries.push(AseEntry::Group {
+                    name: g.name.clone(),
+                    swatches,
+                });
             }
             if books > 0 {
                 warnings.push(format!("{books} colour-book swatches can't be stored in an .ase file and were left out (save as .aco to keep them)"));
             }
-            let bytes = photocraft_psd::ase::write(&AseFile { entries }).map_err(|e| e.to_string())?;
+            let bytes =
+                photocraft_psd::ase::write(&AseFile { entries }).map_err(|e| e.to_string())?;
             Ok((bytes, n, warnings))
         }
     }
@@ -573,10 +736,13 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "swatches.import";
     let (bytes, stem) = crate::preset_import_cmds::file_bytes(p, CMD, ".aco or .ase file")?;
     let format = match str_param(p, "format") {
-        Some(f) => Format::parse(f).ok_or_else(|| bad(CMD, format!("unknown format `{f}` (aco|ase)")))?,
+        Some(f) => {
+            Format::parse(f).ok_or_else(|| bad(CMD, format!("unknown format `{f}` (aco|ase)")))?
+        }
         None if bytes.starts_with(photocraft_psd::ase::SIGNATURE) => Format::Ase,
         None if matches!(bytes.get(..2), Some([0, 1] | [0, 2])) => Format::Aco,
-        None => ext_format(str_param(p, "path")).ok_or_else(|| bad(CMD, "not an .aco or .ase swatch file"))?,
+        None => ext_format(str_param(p, "path"))
+            .ok_or_else(|| bad(CMD, "not an .aco or .ase swatch file"))?,
     };
     let mode = str_param(p, "mode").unwrap_or("append");
     let replace = match mode {
@@ -590,23 +756,38 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
         None => "Imported Swatches".into(),
     };
     let (groups, warnings) = read_file(&bytes, format, &group).map_err(|e| bad(CMD, e))?;
-    let base: Vec<Group<Swatch>> = if replace { Vec::new() } else { s.presets.swatches.clone() };
+    let base: Vec<Group<Swatch>> = if replace {
+        Vec::new()
+    } else {
+        s.presets.swatches.clone()
+    };
     if total(&base) + total(&groups) > MAX_SWATCHES || base.len() + groups.len() > MAX_GROUPS {
-        return Err(bad(CMD, format!("too many swatches: the panel holds at most {MAX_SWATCHES} in {MAX_GROUPS} groups")));
+        return Err(bad(
+            CMD,
+            format!(
+                "too many swatches: the panel holds at most {MAX_SWATCHES} in {MAX_GROUPS} groups"
+            ),
+        ));
     }
     let mut lib = base;
     let count = total(&groups);
     let mut names = Vec::with_capacity(groups.len());
     // Names stay unique across the library (agents address swatches by name).
     let mut next: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-    let mut taken: std::collections::HashSet<String> = lib.iter().flat_map(|g| g.items.iter().map(|i| i.name.clone())).collect();
+    let mut taken: std::collections::HashSet<String> = lib
+        .iter()
+        .flat_map(|g| g.items.iter().map(|i| i.name.clone()))
+        .collect();
     for mut g in groups {
         g.name = unique_group(&lib, &g.name);
         for sw in &mut g.items {
             if taken.contains(&sw.name) {
                 // Resume numbering per base name, so a file of identical names stays linear.
                 let from = next.get(&sw.name).copied().unwrap_or(2);
-                let (i, n) = (from..).map(|i| (i, format!("{} {i}", sw.name))).find(|(_, n)| !taken.contains(n)).unwrap_or((from, sw.name.clone()));
+                let (i, n) = (from..)
+                    .map(|i| (i, format!("{} {i}", sw.name)))
+                    .find(|(_, n)| !taken.contains(n))
+                    .unwrap_or((from, sw.name.clone()));
                 next.insert(sw.name.clone(), i + 1);
                 sw.name = n;
             }
@@ -617,14 +798,18 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.presets.swatches = lib;
     s.presets_changed();
-    Ok(json!({"format": format.id(), "mode": mode, "groups": names, "count": count, "warnings": warnings}))
+    Ok(
+        json!({"format": format.id(), "mode": mode, "groups": names, "count": count, "warnings": warnings}),
+    )
 }
 
 fn export(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "swatches.export";
     let path = str_param(p, "path");
     let format = match str_param(p, "format") {
-        Some(f) => Format::parse(f).ok_or_else(|| bad(CMD, format!("unknown format `{f}` (aco|ase)")))?,
+        Some(f) => {
+            Format::parse(f).ok_or_else(|| bad(CMD, format!("unknown format `{f}` (aco|ase)")))?
+        }
         None => ext_format(path).unwrap_or(Format::Aco),
     };
     let mut groups: Vec<Group<Swatch>> = match name_param(p, "group", CMD)? {
@@ -633,12 +818,16 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
     };
     // Only some swatches (Photoshop: Export Selected Swatches).
     if let Some(a) = p.get("swatches") {
-        let a = a.as_array().ok_or_else(|| bad(CMD, "`swatches` must be a list of names"))?;
+        let a = a
+            .as_array()
+            .ok_or_else(|| bad(CMD, "`swatches` must be a list of names"))?;
         let mut want = std::collections::HashSet::with_capacity(a.len().min(MAX_SWATCHES));
         {
             let ix = index_by_name(&groups, None);
             for n in a {
-                let name = n.as_str().ok_or_else(|| bad(CMD, "`swatches` names must be strings"))?;
+                let name = n
+                    .as_str()
+                    .ok_or_else(|| bad(CMD, "`swatches` names must be strings"))?;
                 if !ix.contains_key(name) {
                     return Err(bad(CMD, format!("no swatch \"{name}\"")));
                 }
@@ -654,7 +843,8 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(CMD, "no swatches to export"));
     }
     let (bytes, count, warnings) = write_file(&groups, format).map_err(|e| bad(CMD, e))?;
-    let mut out = json!({"format": format.id(), "count": count, "bytes": bytes.len(), "warnings": warnings});
+    let mut out =
+        json!({"format": format.id(), "count": count, "bytes": bytes.len(), "warnings": warnings});
     match path {
         Some(path) => {
             crate::file_cmds::write_file(path, &bytes)?;
@@ -698,7 +888,9 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Delete Swatch",
             menu: &[],
             shortcut: None,
-            params: leak(format!(r##"{{{target}; "swatch" may be a list of names}} → {{deleted:[names]}}"##)),
+            params: leak(format!(
+                r##"{{{target}; "swatch" may be a list of names}} → {{deleted:[names]}}"##
+            )),
             enabled: has_swatches,
             run: delete,
             journal: true,
@@ -718,7 +910,9 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Move Swatch",
             menu: &[],
             shortcut: None,
-            params: leak(format!(r##"{{{target},"to":group?=its own group,"position":n?=end}} → {{group,position}}"##)),
+            params: leak(format!(
+                r##"{{{target},"to":group?=its own group,"position":n?=end}} → {{group,position}}"##
+            )),
             enabled: has_swatches,
             run: move_swatch,
             journal: true,

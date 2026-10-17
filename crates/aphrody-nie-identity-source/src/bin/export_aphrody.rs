@@ -33,13 +33,31 @@ fn main() {
         .map(PathBuf::from)
         .unwrap_or_else(default_data_root);
     // `--out` sinon à côté des données, dans `export/`.
-    let out_path = std::env::args().skip_while(|a| a != "--out").nth(1).unwrap_or_else(|| {
-        data_root.join("../export/aphrody-dossier.json").to_string_lossy().into_owned()
-    });
+    let out_path = std::env::args()
+        .skip_while(|a| a != "--out")
+        .nth(1)
+        .unwrap_or_else(|| {
+            data_root
+                .join("../export/aphrody-dossier.json")
+                .to_string_lossy()
+                .into_owned()
+        });
 
-    let chara = read_json(&find_cfg(&data_root, "common/gamedata/character", "chara_param_"));
-    let skill = read_json(&find_cfg(&data_root, "common/gamedata/skill", "skill_config_"));
-    let aura = read_json(&find_cfg(&data_root, "common/gamedata/skill", "aura_skill_config_"));
+    let chara = read_json(&find_cfg(
+        &data_root,
+        "common/gamedata/character",
+        "chara_param_",
+    ));
+    let skill = read_json(&find_cfg(
+        &data_root,
+        "common/gamedata/skill",
+        "skill_config_",
+    ));
+    let aura = read_json(&find_cfg(
+        &data_root,
+        "common/gamedata/skill",
+        "aura_skill_config_",
+    ));
 
     let dossier = build_aphrody_dossier(&chara, &skill, &aura);
     let mut json = serde_json::to_value(&dossier).expect("sérialisation dossier");
@@ -53,11 +71,17 @@ fn main() {
     let pet: Value = serde_json::from_str(BUNDLED_PET_JSON).expect("embedded pet manifest");
     let animations: Value =
         serde_json::from_str(BUNDLED_ANIMATIONS_JSON).expect("embedded animation manifest");
-    let identity = json.get("identity").cloned().expect("native dossier identity");
+    let identity = json
+        .get("identity")
+        .cloned()
+        .expect("native dossier identity");
     let stats = json.get("stats").cloned().expect("native dossier stats");
     let series = json.get("series").cloned().expect("native dossier series");
     let assets = json.get("assets").cloned().expect("native dossier assets");
-    let variants = json.get("variants").cloned().expect("native dossier variants");
+    let variants = json
+        .get("variants")
+        .cloned()
+        .expect("native dossier variants");
     let primary = variants
         .as_array()
         .and_then(|items| items.iter().find(|item| item["is_primary"] == true))
@@ -107,7 +131,10 @@ fn main() {
         }
     });
 
-    let variants = json.get("variants").and_then(Value::as_array).map_or(0, Vec::len);
+    let variants = json
+        .get("variants")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
     let bytes = serde_json::to_vec_pretty(&json).expect("to_vec_pretty");
     if let Some(parent) = Path::new(&out_path).parent() {
         fs::create_dir_all(parent).expect("création dossier de sortie");
@@ -115,10 +142,15 @@ fn main() {
     fs::write(&out_path, &bytes).expect("écriture JSON");
     eprintln!(
         "[export_aphrody] OK — {variants} variantes, {} dialogues / {n_lines} répliques, {}o → {out_path}",
-        json.get("dialogues").and_then(Value::as_array).map_or(0, Vec::len),
+        json.get("dialogues")
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len),
         bytes.len()
     );
-    println!("variants={variants} dialogues={n_lines} size={} out={out_path}", bytes.len());
+    println!(
+        "variants={variants} dialogues={n_lines} size={} out={out_path}",
+        bytes.len()
+    );
 }
 
 /// Events de l'histoire où Aphrody apparaît (découverts par `grep アフロディ|亜風炉`

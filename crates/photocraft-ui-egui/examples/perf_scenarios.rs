@@ -28,7 +28,9 @@ use serde_json::{Value, json};
 type Res<T> = Result<T, String>;
 
 fn arg(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1).cloned())
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1).cloned())
 }
 
 fn ms(t: Instant) -> f64 {
@@ -40,7 +42,10 @@ fn exec(s: &mut Session, id: &str, p: Value) -> Res<Value> {
 }
 
 fn active_layer(s: &Session) -> Res<u64> {
-    s.active().and_then(|d| d.active_layer).map(|l| l.0).ok_or_else(|| "no active layer".to_string())
+    s.active()
+        .and_then(|d| d.active_layer)
+        .map(|l| l.0)
+        .ok_or_else(|| "no active layer".to_string())
 }
 
 /// A photo-like RGB image (gradients, soft blobs, fine noise) with a high-contrast disc as the
@@ -49,27 +54,48 @@ fn photo_jpeg(w: u32, h: u32) -> Res<Vec<u8>> {
     use rayon::prelude::*;
     let mut px = vec![0u8; w as usize * h as usize * 3];
     let (cx, cy, r) = (w as f32 * 0.55, h as f32 * 0.5, w.min(h) as f32 / 3.0);
-    px.par_chunks_mut(w as usize * 3).enumerate().for_each(|(y, row)| {
-        for x in 0..w as usize {
-            let (fx, fy) = (x as f32 / w as f32, y as f32 / h as f32);
-            let n = ((x.wrapping_mul(73_856_093) ^ y.wrapping_mul(19_349_663)) % 997) as f32 / 997.0 - 0.5;
-            let blob = (-(((fx - 0.4) * 3.0).powi(2) + ((fy - 0.55) * 4.0).powi(2))).exp();
-            let inside = ((x as f32 - cx).powi(2) + (y as f32 - cy).powi(2)).sqrt() < r;
-            let (r0, g0, b0) = if inside { (0.85, 0.3 + 0.2 * (fx * 40.0).sin(), 0.15) } else { (0.35, 0.45, 0.55) };
-            let rgb = [r0 + 0.1 * blob + n * 0.08, g0 + 0.1 * blob + n * 0.08, b0 + 0.2 * fy + n * 0.08];
-            for (c, v) in rgb.into_iter().enumerate() {
-                row[x * 3 + c] = (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
+    px.par_chunks_mut(w as usize * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w as usize {
+                let (fx, fy) = (x as f32 / w as f32, y as f32 / h as f32);
+                let n = ((x.wrapping_mul(73_856_093) ^ y.wrapping_mul(19_349_663)) % 997) as f32
+                    / 997.0
+                    - 0.5;
+                let blob = (-(((fx - 0.4) * 3.0).powi(2) + ((fy - 0.55) * 4.0).powi(2))).exp();
+                let inside = ((x as f32 - cx).powi(2) + (y as f32 - cy).powi(2)).sqrt() < r;
+                let (r0, g0, b0) = if inside {
+                    (0.85, 0.3 + 0.2 * (fx * 40.0).sin(), 0.15)
+                } else {
+                    (0.35, 0.45, 0.55)
+                };
+                let rgb = [
+                    r0 + 0.1 * blob + n * 0.08,
+                    g0 + 0.1 * blob + n * 0.08,
+                    b0 + 0.2 * fy + n * 0.08,
+                ];
+                for (c, v) in rgb.into_iter().enumerate() {
+                    row[x * 3 + c] = (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
+                }
             }
-        }
-    });
-    let img =
-        photocraft_codecs::Image::from_raw(w, h, photocraft_codecs::ChannelLayout::Rgb, photocraft_codecs::SampleType::U8, px).map_err(|e| e.to_string())?;
-    photocraft_codecs::encode(&img, photocraft_codecs::Format::Jpeg, &Default::default()).map_err(|e| e.to_string())
+        });
+    let img = photocraft_codecs::Image::from_raw(
+        w,
+        h,
+        photocraft_codecs::ChannelLayout::Rgb,
+        photocraft_codecs::SampleType::U8,
+        px,
+    )
+    .map_err(|e| e.to_string())?;
+    photocraft_codecs::encode(&img, photocraft_codecs::Format::Jpeg, &Default::default())
+        .map_err(|e| e.to_string())
 }
 
 fn open_photo(w: u32, h: u32) -> Res<Session> {
     let jpeg = photo_jpeg(w, h)?;
-    let doc = photocraft_io::import("photo.jpg", &jpeg).map_err(|e| e.to_string())?.document;
+    let doc = photocraft_io::import("photo.jpg", &jpeg)
+        .map_err(|e| e.to_string())?
+        .document;
     let mut s = Session::new();
     s.open_document(doc, Some("photo.jpg".into()));
     Ok(s)
@@ -81,7 +107,11 @@ fn reach(layers: &[photocraft_doc::Layer]) -> i32 {
     layers
         .iter()
         .map(|l| {
-            let own = if photocraft_compose::effects::has_effects(l) { photocraft_compose::effects::margin(l) } else { 0 };
+            let own = if photocraft_compose::effects::has_effects(l) {
+                photocraft_compose::effects::margin(l)
+            } else {
+                0
+            };
             let kids = match &l.content {
                 photocraft_doc::LayerContent::Group(g) => reach(&g.children),
                 _ => 0,
@@ -121,7 +151,10 @@ impl Bench {
             match &self.gpu {
                 Some((g, rs)) => {
                     g.refresh(doc.id.0, doc, Some(r), None);
-                    let _ = rs.device.poll(eframe::wgpu::PollType::Wait { submission_index: None, timeout: None });
+                    let _ = rs.device.poll(eframe::wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: None,
+                    });
                 }
                 None => {
                     std::hint::black_box(photocraft_compose::render(doc, r));
@@ -134,12 +167,20 @@ impl Bench {
     fn refresh(&self, s: &Session, full: bool) -> Res<f64> {
         let st = s.active().ok_or("no document")?;
         let doc = &st.doc;
-        let damage = if full { None } else { st.last_damage.map(|r| r.inflate(reach(&doc.layers)).intersect(&doc.bounds())) };
+        let damage = if full {
+            None
+        } else {
+            st.last_damage
+                .map(|r| r.inflate(reach(&doc.layers)).intersect(&doc.bounds()))
+        };
         let t = Instant::now();
         match &self.gpu {
             Some((g, rs)) => {
                 g.refresh(doc.id.0, doc, damage, None);
-                let _ = rs.device.poll(eframe::wgpu::PollType::Wait { submission_index: None, timeout: None });
+                let _ = rs.device.poll(eframe::wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: None,
+                });
             }
             None => {
                 let r = damage.unwrap_or(doc.bounds()).intersect(&doc.bounds());
@@ -157,17 +198,29 @@ impl Bench {
     fn drag_frame(&self, s: &Session, layer: u64, i: usize) -> Res<f64> {
         let doc = s.active().ok_or("no document")?.doc.clone();
         let id = photocraft_doc::LayerId(layer);
-        let all = photocraft_geom::Rect::new(i32::MIN / 2, i32::MIN / 2, i32::MAX / 2, i32::MAX / 2);
-        let was = doc.layer(id).and_then(|l| photocraft_compose::change_bounds(l, all)).ok_or("no bounds")?;
+        let all =
+            photocraft_geom::Rect::new(i32::MIN / 2, i32::MIN / 2, i32::MAX / 2, i32::MAX / 2);
+        let was = doc
+            .layer(id)
+            .and_then(|l| photocraft_compose::change_bounds(l, all))
+            .ok_or("no bounds")?;
         // Frame i shows offset (d, d / 2); the canvas showed the previous frame's.
         let (d, prev) = (3 * i as i32 + 1, if i == 0 { 0 } else { 3 * i as i32 - 2 });
         let t = Instant::now();
-        let shown = photocraft_engine::layer_multi_cmds::moved(&doc, &[id], d, d / 2).map_err(|e| e.to_string())?;
-        let damage = was.translate(prev, prev / 2).union(&was.translate(d, d / 2)).inflate(1).intersect(&doc.bounds());
+        let shown = photocraft_engine::layer_multi_cmds::moved(&doc, &[id], d, d / 2)
+            .map_err(|e| e.to_string())?;
+        let damage = was
+            .translate(prev, prev / 2)
+            .union(&was.translate(d, d / 2))
+            .inflate(1)
+            .intersect(&doc.bounds());
         match &self.gpu {
             Some((g, rs)) => {
                 g.refresh(doc.id.0, &shown, Some(damage), None);
-                let _ = rs.device.poll(eframe::wgpu::PollType::Wait { submission_index: None, timeout: None });
+                let _ = rs.device.poll(eframe::wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: None,
+                });
             }
             None => {
                 std::hint::black_box(photocraft_compose::render(&shown, damage));
@@ -178,13 +231,23 @@ impl Bench {
 
     fn gpu_bytes(&self, s: &Session) -> Option<u64> {
         let (g, _) = self.gpu.as_ref()?;
-        let tex = s.active().and_then(|d| g.texture_info(d.doc.id.0)).map_or(0, |(_, b)| b);
+        let tex = s
+            .active()
+            .and_then(|d| g.texture_info(d.doc.id.0))
+            .map_or(0, |(_, b)| b);
         let (resident, fx) = g.compositor_bytes().unwrap_or((0, 0));
         Some(tex + resident + fx as u64)
     }
 
     /// Times `f` `reps` times after one untimed warm-up run; `f` returns its own time in ms.
-    fn time(&mut self, name: &str, s: &mut Session, reps: usize, warm: bool, mut f: impl FnMut(&Self, &mut Session, usize) -> Res<f64>) {
+    fn time(
+        &mut self,
+        name: &str,
+        s: &mut Session,
+        reps: usize,
+        warm: bool,
+        mut f: impl FnMut(&Self, &mut Session, usize) -> Res<f64>,
+    ) {
         if !self.wanted(name) {
             return;
         }
@@ -229,7 +292,10 @@ impl Bench {
 /// A headless GPU canvas on a device created like the app's.
 fn canvas() -> Option<(GpuCanvas, RenderState)> {
     let setup = photocraft_ui_egui::gpu_canvas::wgpu_setup();
-    let rs = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| egui_kittest::wgpu::create_render_state(setup, Default::default()))).ok()?;
+    let rs = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        egui_kittest::wgpu::create_render_state(setup, Default::default())
+    }))
+    .ok()?;
     eprintln!("adapter: {}", rs.adapter.get_info().name);
     Some((GpuCanvas::new(&rs), rs))
 }
@@ -281,25 +347,61 @@ const QUICK: Sizes = Sizes {
 /// the id of the styled layer the edits target.
 fn layered_doc(w: u32, h: u32) -> Res<(Session, u64)> {
     let mut s = Session::new();
-    exec(&mut s, "file.new", json!({"width": w, "height": h, "background": "white"}))?;
+    exec(
+        &mut s,
+        "file.new",
+        json!({"width": w, "height": h, "background": "white"}),
+    )?;
     let mut target = 0;
     for i in 0..6u32 {
-        exec(&mut s, "layer.new.layer", json!({"name": format!("panel {i}")}))?;
+        exec(
+            &mut s,
+            "layer.new.layer",
+            json!({"name": format!("panel {i}")}),
+        )?;
         let (x, y) = ((i % 3) * w / 3 + w / 24, (i / 3) * h / 2 + h / 16);
-        exec(&mut s, "select.rect", json!({"x": x, "y": y, "width": w / 4, "height": h / 3, "ellipse": i % 2 == 1}))?;
-        exec(&mut s, "edit.fill", json!({"color": format!("#{:02x}6040", 40 + i * 30)}))?;
+        exec(
+            &mut s,
+            "select.rect",
+            json!({"x": x, "y": y, "width": w / 4, "height": h / 3, "ellipse": i % 2 == 1}),
+        )?;
+        exec(
+            &mut s,
+            "edit.fill",
+            json!({"color": format!("#{:02x}6040", 40 + i * 30)}),
+        )?;
         exec(&mut s, "select.deselect", json!({}))?;
-        exec(&mut s, "layer.layerStyle.dropShadow", json!({"distance": 12, "size": 16}))?;
-        exec(&mut s, "layer.layerStyle.stroke", json!({"size": 3, "color": "#202020", "add": true}))?;
+        exec(
+            &mut s,
+            "layer.layerStyle.dropShadow",
+            json!({"distance": 12, "size": 16}),
+        )?;
+        exec(
+            &mut s,
+            "layer.layerStyle.stroke",
+            json!({"size": 3, "color": "#202020", "add": true}),
+        )?;
         if i == 1 {
             target = active_layer(&s)?;
         }
     }
     for i in 0..4u32 {
-        exec(&mut s, "type.create", json!({"x": w / 10 + i * w / 5, "y": h * 9 / 10, "text": format!("Headline {i}"), "size": (h / 30).max(12)}))?;
-        exec(&mut s, "layer.layerStyle.dropShadow", json!({"distance": 6, "size": 8}))?;
+        exec(
+            &mut s,
+            "type.create",
+            json!({"x": w / 10 + i * w / 5, "y": h * 9 / 10, "text": format!("Headline {i}"), "size": (h / 30).max(12)}),
+        )?;
+        exec(
+            &mut s,
+            "layer.layerStyle.dropShadow",
+            json!({"distance": 6, "size": 8}),
+        )?;
     }
-    exec(&mut s, "layer.newAdjustmentLayer.levels", json!({"inBlack": 8, "inWhite": 245, "gamma": 1.05}))?;
+    exec(
+        &mut s,
+        "layer.newAdjustmentLayer.levels",
+        json!({"inBlack": 8, "inWhite": 245, "gamma": 1.05}),
+    )?;
     exec(&mut s, "layer.select", json!({"layer": target}))?;
     Ok((s, target))
 }
@@ -308,20 +410,44 @@ fn layered_doc(w: u32, h: u32) -> Res<(Session, u64)> {
 /// styled.
 fn many_layers_doc(w: u32, h: u32, n: usize) -> Res<(Session, u64)> {
     let mut s = Session::new();
-    exec(&mut s, "file.new", json!({"width": w, "height": h, "background": "white"}))?;
+    exec(
+        &mut s,
+        "file.new",
+        json!({"width": w, "height": h, "background": "white"}),
+    )?;
     let mut mid = 0;
     for i in 0..n as u32 {
         let (x, y) = ((i * 397) % (w - w / 8), (i * 211) % (h - h / 8));
         if i % 5 == 4 {
-            exec(&mut s, "type.create", json!({"x": x, "y": y + 40, "text": format!("Label {i}"), "size": 28}))?;
+            exec(
+                &mut s,
+                "type.create",
+                json!({"x": x, "y": y + 40, "text": format!("Label {i}"), "size": 28}),
+            )?;
         } else {
-            exec(&mut s, "layer.new.layer", json!({"name": format!("item {i}")}))?;
-            exec(&mut s, "select.rect", json!({"x": x, "y": y, "width": w / 10, "height": h / 10}))?;
-            exec(&mut s, "edit.fill", json!({"color": format!("#{:02x}{:02x}80", (i * 37) % 256, (i * 91) % 256)}))?;
+            exec(
+                &mut s,
+                "layer.new.layer",
+                json!({"name": format!("item {i}")}),
+            )?;
+            exec(
+                &mut s,
+                "select.rect",
+                json!({"x": x, "y": y, "width": w / 10, "height": h / 10}),
+            )?;
+            exec(
+                &mut s,
+                "edit.fill",
+                json!({"color": format!("#{:02x}{:02x}80", (i * 37) % 256, (i * 91) % 256)}),
+            )?;
             exec(&mut s, "select.deselect", json!({}))?;
         }
         if i % 7 == 3 {
-            exec(&mut s, "layer.layerStyle.dropShadow", json!({"distance": 6, "size": 8}))?;
+            exec(
+                &mut s,
+                "layer.layerStyle.dropShadow",
+                json!({"distance": 6, "size": 8}),
+            )?;
         }
         if i as usize == n / 2 {
             mid = active_layer(&s)?;
@@ -335,8 +461,15 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let quick = args.iter().any(|a| a == "--quick");
     let sz = if quick { &QUICK } else { &FULL };
-    let reps: usize = arg(&args, "--reps").and_then(|v| v.parse().ok()).unwrap_or(if quick { 7 } else { 15 }).max(1);
-    let gpu = if args.iter().any(|a| a == "--cpu") { None } else { canvas() };
+    let reps: usize = arg(&args, "--reps")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(if quick { 7 } else { 15 })
+        .max(1);
+    let gpu = if args.iter().any(|a| a == "--cpu") {
+        None
+    } else {
+        canvas()
+    };
     let no_reuse = args.iter().any(|a| a == "--no-composite-reuse");
     if no_reuse && let Some((canvas, _)) = &gpu {
         canvas.set_composite_cache_budget(0);
@@ -351,7 +484,12 @@ fn main() {
         errors: Vec::new(),
         current: None,
     };
-    println!("perf_scenarios: {} mode, {} reps, {}", if quick { "quick" } else { "full" }, reps, adapter.as_deref().unwrap_or("CPU canvas"));
+    println!(
+        "perf_scenarios: {} mode, {} reps, {}",
+        if quick { "quick" } else { "full" },
+        reps,
+        adapter.as_deref().unwrap_or("CPU canvas")
+    );
     let t_all = Instant::now();
 
     // A panic in one group (a crash the scenario found) is reported against the row that was
@@ -386,8 +524,18 @@ fn main() {
             }
         }
         if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run(&mut b, sz))) {
-            let msg = e.downcast_ref::<String>().cloned().or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_else(|| "panic".into());
-            let msg = format!("panicked: {}", msg.lines().filter(|l| !l.trim().is_empty()).collect::<Vec<_>>().join(" / "));
+            let msg = e
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string()))
+                .unwrap_or_else(|| "panic".into());
+            let msg = format!(
+                "panicked: {}",
+                msg.lines()
+                    .filter(|l| !l.trim().is_empty())
+                    .collect::<Vec<_>>()
+                    .join(" / ")
+            );
             let row = b.current.take().unwrap_or_else(|| group.to_string());
             println!("{row:<52} ERROR {msg}");
             b.errors.push((row, msg));
@@ -404,7 +552,12 @@ fn main() {
             "group": arg(&args, "--group"),
             "errors": b.errors.iter().map(|(n, e)| json!({"name": n, "error": e})).collect::<Vec<_>>(),
         });
-        let rep = report("perf_scenarios", context, std::mem::take(&mut b.rows), Some(&b.sampler));
+        let rep = report(
+            "perf_scenarios",
+            context,
+            std::mem::take(&mut b.rows),
+            Some(&b.sampler),
+        );
         if let Err(e) = write_report(&out, &rep) {
             eprintln!("{e}");
             std::process::exit(1);
@@ -424,49 +577,111 @@ fn layered_scenarios(b: &mut Bench, sz: &Sizes) {
     };
     let _ = b.refresh(&s, true);
     let reps = b.reps;
-    b.time("move styled layer 10 px + refresh", &mut s, reps, true, |b, s, i| {
-        let d = if i % 2 == 0 { 10 } else { -10 };
-        let t = Instant::now();
-        exec(s, "layer.translate", json!({"layer": target, "dx": d, "dy": d / 2}))?;
-        Ok(ms(t) + b.refresh(s, false)?)
-    });
-    b.time("move tool drag frame, styled layer", &mut s, reps, true, |b, s, i| b.drag_frame(s, target, i));
-    b.time("set layer opacity + refresh", &mut s, reps, true, |b, s, i| {
-        let t = Instant::now();
-        exec(s, "layer.setProps", json!({"layer": target, "opacity": if i % 2 == 0 { 0.6 } else { 0.9 }}))?;
-        Ok(ms(t) + b.refresh(s, false)?)
-    });
+    b.time(
+        "move styled layer 10 px + refresh",
+        &mut s,
+        reps,
+        true,
+        |b, s, i| {
+            let d = if i % 2 == 0 { 10 } else { -10 };
+            let t = Instant::now();
+            exec(
+                s,
+                "layer.translate",
+                json!({"layer": target, "dx": d, "dy": d / 2}),
+            )?;
+            Ok(ms(t) + b.refresh(s, false)?)
+        },
+    );
+    b.time(
+        "move tool drag frame, styled layer",
+        &mut s,
+        reps,
+        true,
+        |b, s, i| b.drag_frame(s, target, i),
+    );
+    b.time(
+        "set layer opacity + refresh",
+        &mut s,
+        reps,
+        true,
+        |b, s, i| {
+            let t = Instant::now();
+            exec(
+                s,
+                "layer.setProps",
+                json!({"layer": target, "opacity": if i % 2 == 0 { 0.6 } else { 0.9 }}),
+            )?;
+            Ok(ms(t) + b.refresh(s, false)?)
+        },
+    );
     b.time("set layer fill + refresh", &mut s, reps, true, |b, s, i| {
         let t = Instant::now();
-        exec(s, "layer.setProps", json!({"layer": target, "fill": if i % 2 == 0 { 0.5 } else { 1.0 }}))?;
+        exec(
+            s,
+            "layer.setProps",
+            json!({"layer": target, "fill": if i % 2 == 0 { 0.5 } else { 1.0 }}),
+        )?;
         Ok(ms(t) + b.refresh(s, false)?)
     });
     b.time("set blend mode + refresh", &mut s, reps, true, |b, s, i| {
         let t = Instant::now();
-        exec(s, "layer.setProps", json!({"layer": target, "blend": if i % 2 == 0 { "Multiply" } else { "Normal" }}))?;
+        exec(
+            s,
+            "layer.setProps",
+            json!({"layer": target, "blend": if i % 2 == 0 { "Multiply" } else { "Normal" }}),
+        )?;
         Ok(ms(t) + b.refresh(s, false)?)
     });
-    b.time("toggle visibility + refresh", &mut s, reps, true, |b, s, i| {
-        let t = Instant::now();
-        exec(s, "layer.setProps", json!({"layer": target, "visible": i % 2 == 0}))?;
-        Ok(ms(t) + b.refresh(s, false)?)
-    });
-    let _ = exec(&mut s, "layer.setProps", json!({"layer": target, "visible": true}));
+    b.time(
+        "toggle visibility + refresh",
+        &mut s,
+        reps,
+        true,
+        |b, s, i| {
+            let t = Instant::now();
+            exec(
+                s,
+                "layer.setProps",
+                json!({"layer": target, "visible": i % 2 == 0}),
+            )?;
+            Ok(ms(t) + b.refresh(s, false)?)
+        },
+    );
+    let _ = exec(
+        &mut s,
+        "layer.setProps",
+        json!({"layer": target, "visible": true}),
+    );
     b.time("undo move + refresh", &mut s, reps, true, |b, s, _| {
-        exec(s, "layer.translate", json!({"layer": target, "dx": 7, "dy": 3}))?;
+        exec(
+            s,
+            "layer.translate",
+            json!({"layer": target, "dx": 7, "dy": 3}),
+        )?;
         b.refresh(s, false)?;
         let t = Instant::now();
         exec(s, "edit.undo", json!({}))?;
         Ok(ms(t) + b.refresh(s, false)?)
     });
-    b.time("redo opacity change + refresh", &mut s, reps, true, |b, s, i| {
-        exec(s, "layer.setProps", json!({"layer": target, "opacity": 0.5 + 0.02 * i as f64}))?;
-        exec(s, "edit.undo", json!({}))?;
-        b.refresh(s, false)?;
-        let t = Instant::now();
-        exec(s, "edit.redo", json!({}))?;
-        Ok(ms(t) + b.refresh(s, false)?)
-    });
+    b.time(
+        "redo opacity change + refresh",
+        &mut s,
+        reps,
+        true,
+        |b, s, i| {
+            exec(
+                s,
+                "layer.setProps",
+                json!({"layer": target, "opacity": 0.5 + 0.02 * i as f64}),
+            )?;
+            exec(s, "edit.undo", json!({}))?;
+            b.refresh(s, false)?;
+            let t = Instant::now();
+            exec(s, "edit.redo", json!({}))?;
+            Ok(ms(t) + b.refresh(s, false)?)
+        },
+    );
 
     // A layer filling the canvas, with a drop shadow (#761) and without (#128): dragged, it
     // overhangs the canvas edge.
@@ -475,16 +690,32 @@ fn layered_scenarios(b: &mut Bench, sz: &Sizes) {
         exec(&mut s, "select.all", json!({}))?;
         exec(&mut s, "edit.fill", json!({"color": "#4080c0"}))?;
         exec(&mut s, "select.deselect", json!({}))?;
-        exec(&mut s, "layer.layerStyle.dropShadow", json!({"distance": 12, "size": 16}))?;
+        exec(
+            &mut s,
+            "layer.layerStyle.dropShadow",
+            json!({"distance": 12, "size": 16}),
+        )?;
         active_layer(&s)
     })();
     match full {
         Ok(full) => {
             let _ = b.refresh(&s, true);
-            b.time("move tool drag frame, full-canvas layer with drop shadow", &mut s, reps, true, |b, s, i| b.drag_frame(s, full, i));
+            b.time(
+                "move tool drag frame, full-canvas layer with drop shadow",
+                &mut s,
+                reps,
+                true,
+                |b, s, i| b.drag_frame(s, full, i),
+            );
             let _ = exec(&mut s, "layer.layerStyle.clear", json!({"layer": full}));
             let _ = b.refresh(&s, true);
-            b.time("move tool drag frame, full-canvas layer", &mut s, reps, true, |b, s, i| b.drag_frame(s, full, i));
+            b.time(
+                "move tool drag frame, full-canvas layer",
+                &mut s,
+                reps,
+                true,
+                |b, s, i| b.drag_frame(s, full, i),
+            );
             let _ = exec(&mut s, "layer.delete", json!({"layer": full}));
         }
         Err(e) => b.errors.push(("full-canvas styled layer".into(), e)),
@@ -495,47 +726,75 @@ fn layered_scenarios(b: &mut Bench, sz: &Sizes) {
     let (lw, lh) = sz.big_layer;
     let fresh_layer = |s: &mut Session| -> Res<u64> {
         exec(s, "layer.new.layer", json!({"name": "12 MP"}))?;
-        exec(s, "select.rect", json!({"x": (w - lw) / 2, "y": (h - lh) / 2, "width": lw, "height": lh}))?;
+        exec(
+            s,
+            "select.rect",
+            json!({"x": (w - lw) / 2, "y": (h - lh) / 2, "width": lw, "height": lh}),
+        )?;
         exec(s, "edit.fill", json!({"color": "#3070a0"}))?;
         exec(s, "select.deselect", json!({}))?;
         active_layer(s)
     };
     let reps_big = reps.min(5);
     let mut src = 0;
-    b.time("duplicate 12 MP layer (first) + refresh", &mut s, reps_big, false, |b, s, _| {
-        src = fresh_layer(s)?;
-        b.refresh(s, false)?;
-        let t = Instant::now();
-        exec(s, "layer.duplicate", json!({"layer": src}))?;
-        Ok(ms(t) + b.refresh(s, false)?)
-    });
-    b.time("duplicate 12 MP layer (repeat) + refresh", &mut s, reps_big, false, |b, s, _| {
-        let t = Instant::now();
-        exec(s, "layer.duplicate", json!({"layer": src}))?;
-        let v = ms(t) + b.refresh(s, false)?;
-        exec(s, "edit.undo", json!({}))?;
-        b.refresh(s, false)?;
-        Ok(v)
-    });
-    b.time("paste 12 MP layer (first) + refresh", &mut s, reps_big, false, |b, s, _| {
-        let id = fresh_layer(s)?;
-        exec(s, "layer.select", json!({"layer": id}))?;
-        exec(s, "select.all", json!({}))?;
-        exec(s, "edit.copy", json!({}))?;
-        exec(s, "select.deselect", json!({}))?;
-        b.refresh(s, false)?;
-        let t = Instant::now();
-        exec(s, "edit.paste", json!({}))?;
-        Ok(ms(t) + b.refresh(s, false)?)
-    });
-    b.time("paste 12 MP layer (repeat) + refresh", &mut s, reps_big, false, |b, s, _| {
-        let t = Instant::now();
-        exec(s, "edit.paste", json!({}))?;
-        let v = ms(t) + b.refresh(s, false)?;
-        exec(s, "edit.undo", json!({}))?;
-        b.refresh(s, false)?;
-        Ok(v)
-    });
+    b.time(
+        "duplicate 12 MP layer (first) + refresh",
+        &mut s,
+        reps_big,
+        false,
+        |b, s, _| {
+            src = fresh_layer(s)?;
+            b.refresh(s, false)?;
+            let t = Instant::now();
+            exec(s, "layer.duplicate", json!({"layer": src}))?;
+            Ok(ms(t) + b.refresh(s, false)?)
+        },
+    );
+    b.time(
+        "duplicate 12 MP layer (repeat) + refresh",
+        &mut s,
+        reps_big,
+        false,
+        |b, s, _| {
+            let t = Instant::now();
+            exec(s, "layer.duplicate", json!({"layer": src}))?;
+            let v = ms(t) + b.refresh(s, false)?;
+            exec(s, "edit.undo", json!({}))?;
+            b.refresh(s, false)?;
+            Ok(v)
+        },
+    );
+    b.time(
+        "paste 12 MP layer (first) + refresh",
+        &mut s,
+        reps_big,
+        false,
+        |b, s, _| {
+            let id = fresh_layer(s)?;
+            exec(s, "layer.select", json!({"layer": id}))?;
+            exec(s, "select.all", json!({}))?;
+            exec(s, "edit.copy", json!({}))?;
+            exec(s, "select.deselect", json!({}))?;
+            b.refresh(s, false)?;
+            let t = Instant::now();
+            exec(s, "edit.paste", json!({}))?;
+            Ok(ms(t) + b.refresh(s, false)?)
+        },
+    );
+    b.time(
+        "paste 12 MP layer (repeat) + refresh",
+        &mut s,
+        reps_big,
+        false,
+        |b, s, _| {
+            let t = Instant::now();
+            exec(s, "edit.paste", json!({}))?;
+            let v = ms(t) + b.refresh(s, false)?;
+            exec(s, "edit.undo", json!({}))?;
+            b.refresh(s, false)?;
+            Ok(v)
+        },
+    );
 }
 
 /// #209: arrow-key nudge in the 150-layer document; #1771: a new layer there.
@@ -560,7 +819,11 @@ fn many_layer_scenarios(b: &mut Bench, sz: &Sizes) {
     let reps = b.reps;
     b.time(&name, &mut s, reps, true, |b, s, i| {
         let t = Instant::now();
-        exec(s, "layer.translate", json!({"layer": mid, "dx": if i % 2 == 0 { 1 } else { -1 }, "dy": 0}))?;
+        exec(
+            s,
+            "layer.translate",
+            json!({"layer": mid, "dx": if i % 2 == 0 { 1 } else { -1 }, "dy": 0}),
+        )?;
         Ok(ms(t) + b.refresh(s, false)?)
     });
     // Layer › New › Layer: as fast at any layer count. Undone (untimed) so the count stays put.
@@ -577,7 +840,10 @@ fn many_layer_scenarios(b: &mut Bench, sz: &Sizes) {
 /// #209: edits on the 15000 × 10000 16-bit document and the 32-bit document with 20 layers.
 fn depth_scenarios(b: &mut Bench, sz: &Sizes) {
     let reps = b.reps;
-    for (label, (w, h), depth, layers) in [("16-bit 15000x10000", sz.huge16, 16, 1u32), ("32-bit 20 layers", sz.float32, 32, 20)] {
+    for (label, (w, h), depth, layers) in [
+        ("16-bit 15000x10000", sz.huge16, 16, 1u32),
+        ("32-bit 20 layers", sz.float32, 32, 20),
+    ] {
         let dab = format!("brush dab 60 px on {label} + refresh");
         let mv = format!("move layer on {label} + refresh");
         if !b.wanted(&dab) && !b.wanted(&mv) {
@@ -585,13 +851,29 @@ fn depth_scenarios(b: &mut Bench, sz: &Sizes) {
         }
         let built = (|| -> Res<(Session, u64)> {
             let mut s = Session::new();
-            exec(&mut s, "file.new", json!({"width": w, "height": h, "depth": depth, "background": "white"}))?;
+            exec(
+                &mut s,
+                "file.new",
+                json!({"width": w, "height": h, "depth": depth, "background": "white"}),
+            )?;
             let mut first = 0;
             for i in 0..layers {
-                exec(&mut s, "layer.new.layer", json!({"name": format!("layer {i}")}))?;
+                exec(
+                    &mut s,
+                    "layer.new.layer",
+                    json!({"name": format!("layer {i}")}),
+                )?;
                 let (x, y) = ((i * 173) % (w * 3 / 4), (i * 97) % (h * 3 / 4));
-                exec(&mut s, "select.rect", json!({"x": x, "y": y, "width": w / 4, "height": h / 4}))?;
-                exec(&mut s, "edit.fill", json!({"color": format!("#{:02x}8060", (i * 41) % 256)}))?;
+                exec(
+                    &mut s,
+                    "select.rect",
+                    json!({"x": x, "y": y, "width": w / 4, "height": h / 4}),
+                )?;
+                exec(
+                    &mut s,
+                    "edit.fill",
+                    json!({"color": format!("#{:02x}8060", (i * 41) % 256)}),
+                )?;
                 exec(&mut s, "select.deselect", json!({}))?;
                 if i == 0 {
                     first = active_layer(&s)?;
@@ -609,14 +891,25 @@ fn depth_scenarios(b: &mut Bench, sz: &Sizes) {
         let _ = b.refresh(&s, true);
         let _ = exec(&mut s, "layer.select", json!({"layer": layer}));
         b.time(&dab, &mut s, reps, true, |b, s, i| {
-            let (x, y) = (200 + (i as u32 * 97) % (w - 400), 200 + (i as u32 * 61) % (h - 400));
+            let (x, y) = (
+                200 + (i as u32 * 97) % (w - 400),
+                200 + (i as u32 * 61) % (h - 400),
+            );
             let t = Instant::now();
-            exec(s, "paint.stroke", json!({"points": [[x, y]], "size": 60, "hardness": 0.8, "color": "#c03020"}))?;
+            exec(
+                s,
+                "paint.stroke",
+                json!({"points": [[x, y]], "size": 60, "hardness": 0.8, "color": "#c03020"}),
+            )?;
             Ok(ms(t) + b.refresh(s, false)?)
         });
         b.time(&mv, &mut s, reps, true, |b, s, i| {
             let t = Instant::now();
-            exec(s, "layer.translate", json!({"layer": layer, "dx": if i % 2 == 0 { 10 } else { -10 }, "dy": 0}))?;
+            exec(
+                s,
+                "layer.translate",
+                json!({"layer": layer, "dx": if i % 2 == 0 { 10 } else { -10 }, "dy": 0}),
+            )?;
             Ok(ms(t) + b.refresh(s, false)?)
         });
     }
@@ -630,13 +923,17 @@ fn job_scenarios(b: &mut Bench, sz: &Sizes) {
         let (w, h) = sz.layered;
         match layered_doc(w, h).and_then(|(s, _)| {
             let d = s.active().ok_or("no document")?.doc.clone();
-            photocraft_io::export(&d, "layered.psd", &Default::default()).map(|o| o.bytes).map_err(|e| e.to_string())
+            photocraft_io::export(&d, "layered.psd", &Default::default())
+                .map(|o| o.bytes)
+                .map_err(|e| e.to_string())
         }) {
             Ok(psd) => {
                 let mut holder = Session::new();
                 b.time(open, &mut holder, reps, true, |b, s, _| {
                     let t = Instant::now();
-                    let d = photocraft_io::import("layered.psd", &psd).map_err(|e| e.to_string())?.document;
+                    let d = photocraft_io::import("layered.psd", &psd)
+                        .map_err(|e| e.to_string())?
+                        .document;
                     *s = Session::new();
                     s.open_document(d, Some("layered.psd".into()));
                     Ok(ms(t) + b.refresh(s, true)?)
@@ -691,7 +988,9 @@ fn wait_job(s: &mut Session, id: photocraft_engine::jobs::JobId) -> Res<()> {
 fn start_job(s: &mut Session, id: &str, p: Value) -> Res<photocraft_engine::jobs::JobId> {
     match s.start(id, p).map_err(|e| format!("{id}: {e}"))? {
         photocraft_engine::jobs::Started::Job(j) => Ok(j),
-        photocraft_engine::jobs::Started::Done(_) => Err(format!("{id} did not run as a background job")),
+        photocraft_engine::jobs::Started::Done(_) => {
+            Err(format!("{id} did not run as a background job"))
+        }
     }
 }
 
@@ -706,17 +1005,31 @@ fn background_job_scenarios(b: &mut Bench, sz: &Sizes) {
     if b.wanted(blur) || b.wanted(caf) {
         match open_photo(w, h) {
             Ok(mut s) => {
-                for (name, cmd, params, select) in
-                    [(blur, "filter.blur.gaussianBlur", json!({"radius": 50}), false), (caf, "edit.contentAwareFill", json!({}), true)]
-                {
-                    if select && let Err(e) = exec(&mut s, "select.rect", json!({"x": w / 3, "y": h / 3, "width": w / 5, "height": h / 4})) {
+                for (name, cmd, params, select) in [
+                    (
+                        blur,
+                        "filter.blur.gaussianBlur",
+                        json!({"radius": 50}),
+                        false,
+                    ),
+                    (caf, "edit.contentAwareFill", json!({}), true),
+                ] {
+                    if select
+                        && let Err(e) = exec(
+                            &mut s,
+                            "select.rect",
+                            json!({"x": w / 3, "y": h / 3, "width": w / 5, "height": h / 4}),
+                        )
+                    {
                         b.errors.push((name.into(), e));
                         continue;
                     }
                     b.time(name, &mut s, reps, false, |_, s, i| {
                         let job = start_job(s, cmd, params.clone())?;
                         // Cancel early, midway and late in the run.
-                        std::thread::sleep(std::time::Duration::from_millis(20 + (i as u64 * 97) % 700));
+                        std::thread::sleep(std::time::Duration::from_millis(
+                            20 + (i as u64 * 97) % 700,
+                        ));
                         let t = Instant::now();
                         s.cancel_job(job);
                         s.join_cancelled_jobs();
@@ -735,12 +1048,20 @@ fn background_job_scenarios(b: &mut Bench, sz: &Sizes) {
         let list: Vec<LegacyBrush> = (0..500)
             .map(|i| {
                 let side = 40 + (i % 60) as u32;
-                let data = (0..side * side).map(|k| ((k * 7 + i as u32) % 255) as u8).collect();
+                let data = (0..side * side)
+                    .map(|k| ((k * 7 + i as u32) % 255) as u8)
+                    .collect();
                 LegacyBrush {
                     name: format!("Brush {i}"),
                     spacing: 25,
                     anti_alias: true,
-                    tip: LegacyTip::Sampled(AbrSample { id: String::new(), width: side, height: side, depth: 8, data }),
+                    tip: LegacyTip::Sampled(AbrSample {
+                        id: String::new(),
+                        width: side,
+                        height: side,
+                        depth: 8,
+                        data,
+                    }),
                 }
             })
             .collect();
@@ -752,7 +1073,11 @@ fn background_job_scenarios(b: &mut Bench, sz: &Sizes) {
                     // The UI thread's work: starting the job, then each frame's poll (the last one
                     // applies the 500 presets).
                     let t = Instant::now();
-                    let job = start_job(s, "brush.presets.importAbr", json!({"data": data, "group": "Bench"}))?;
+                    let job = start_job(
+                        s,
+                        "brush.presets.importAbr",
+                        json!({"data": data, "group": "Bench"}),
+                    )?;
                     let mut worst = ms(t);
                     let t0 = Instant::now();
                     loop {
@@ -787,19 +1112,27 @@ fn frame_scenario(b: &mut Bench, name: &str, w: u32, h: u32) {
         Err(e) => return b.errors.push((name.into(), e)),
     };
     let doc = std::mem::take(&mut s);
-    let mut harness = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).with_max_steps(4).build_eframe(move |cc| {
-        photocraft_ui_egui::PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut app = photocraft_ui_egui::PhotocraftApp::new(doc, photocraft_ui_egui::Services::default());
-        app.background_jobs = true;
-        app
-    });
+    let mut harness = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(1440.0, 900.0))
+        .with_max_steps(4)
+        .build_eframe(move |cc| {
+            photocraft_ui_egui::PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            let mut app = photocraft_ui_egui::PhotocraftApp::new(
+                doc,
+                photocraft_ui_egui::Services::default(),
+            );
+            app.background_jobs = true;
+            app
+        });
     // Warm up: first frames build the canvas cache of the 24 MP document.
     harness.run_steps(6);
     b.current = Some(name.to_string());
     b.sampler.reset();
     let mut samples = Vec::new();
     let run = (|| -> Res<()> {
-        let r = harness.state_mut().run("filter.blur.gaussianBlur", json!({"radius": 50}))?;
+        let r = harness
+            .state_mut()
+            .run("filter.blur.gaussianBlur", json!({"radius": 50}))?;
         if r.get("pending").is_none() {
             return Err("the blur did not start as a job".into());
         }
@@ -836,7 +1169,10 @@ fn algorithm_scenarios(b: &mut Bench, sz: &Sizes) {
         let (w, h) = sz.big_photo;
         match open_photo(w, h) {
             Ok(mut s) => {
-                for (name, op) in [(names[0], "select.modify.smooth"), (names[1], "select.modify.feather")] {
+                for (name, op) in [
+                    (names[0], "select.modify.smooth"),
+                    (names[1], "select.modify.feather"),
+                ] {
                     b.time(name, &mut s, reps, false, |_, s, _| {
                         exec(s, "select.rect", json!({"x": w / 6, "y": h / 6, "width": w * 2 / 3, "height": h * 2 / 3, "ellipse": true}))?;
                         let t = Instant::now();
@@ -856,7 +1192,11 @@ fn algorithm_scenarios(b: &mut Bench, sz: &Sizes) {
                 // One run: today this takes far longer than its budget.
                 b.time(names[3], &mut s, 1, false, |_, s, _| {
                     let t = Instant::now();
-                    exec(s, "edit.contentAwareScale", json!({"scaleX": 90, "scaleY": 100}))?;
+                    exec(
+                        s,
+                        "edit.contentAwareScale",
+                        json!({"scaleX": 90, "scaleY": 100}),
+                    )?;
                     let v = ms(t);
                     exec(s, "edit.undo", json!({}))?;
                     Ok(v)
@@ -879,9 +1219,16 @@ fn algorithm_scenarios(b: &mut Bench, sz: &Sizes) {
         let _ = b.refresh(&s, true);
         let reps = b.reps;
         b.time(cmyk, &mut s, reps, true, |b, s, i| {
-            let (x, y) = (200 + (i as u32 * 97) % (w - 400), 200 + (i as u32 * 61) % (h - 400));
+            let (x, y) = (
+                200 + (i as u32 * 97) % (w - 400),
+                200 + (i as u32 * 61) % (h - 400),
+            );
             let t = Instant::now();
-            exec(s, "paint.stroke", json!({"points": [[x, y]], "size": 40, "hardness": 0.8, "color": "#c03020"}))?;
+            exec(
+                s,
+                "paint.stroke",
+                json!({"points": [[x, y]], "size": 40, "hardness": 0.8, "color": "#c03020"}),
+            )?;
             Ok(ms(t) + b.refresh(s, false)?)
         });
     }
@@ -891,8 +1238,12 @@ fn algorithm_scenarios(b: &mut Bench, sz: &Sizes) {
     if b.wanted(release) {
         let (w, h) = sz.big_photo;
         let mut s = Session::new();
-        if let Err(e) = exec(&mut s, "file.new", json!({"width": w, "height": h, "background": "white"}))
-            .and_then(|_| exec(&mut s, "layer.new.layer", json!({"name": "paint"})))
+        if let Err(e) = exec(
+            &mut s,
+            "file.new",
+            json!({"width": w, "height": h, "background": "white"}),
+        )
+        .and_then(|_| exec(&mut s, "layer.new.layer", json!({"name": "paint"})))
         {
             b.errors.push((release.into(), e));
             return;
@@ -938,7 +1289,10 @@ fn liquify_preview_scenario(b: &mut Bench) {
     }
     let canvas = Rect::new(0, 0, 3500, 2200);
     let view = Rect::new(1150, 700, 2350, 1500);
-    let source = Surface::with_default(PixelFormat::new(ColorMode::Rgb, SampleType::U8, true), &[0.32, 0.48, 0.64, 1.0]);
+    let source = Surface::with_default(
+        PixelFormat::new(ColorMode::Rgb, SampleType::U8, true),
+        &[0.32, 0.48, 0.64, 1.0],
+    );
     let proxy = ProxyImage::new(&source, canvas, 1600);
     let mut low_out = vec![[0u8; 4]; proxy.w * proxy.h];
     let (vw, vh) = (view.width() as usize, view.height() as usize);
@@ -948,7 +1302,11 @@ fn liquify_preview_scenario(b: &mut Bench) {
     stroke.density = 100.0;
     stroke.points = vec![vec![1470.0, 1100.0, 1.0], vec![1530.0, 1100.0, 1.0]];
     let base = LiquifyField::new(canvas, auto_cell(canvas));
-    let update = |field: &mut LiquifyField, out: &mut [[u8; 4]], scratch: &mut Vec<[f32; 4]>, full_res: bool| -> Res<f64> {
+    let update = |field: &mut LiquifyField,
+                  out: &mut [[u8; 4]],
+                  scratch: &mut Vec<[f32; 4]>,
+                  full_res: bool|
+     -> Res<f64> {
         let t = Instant::now();
         let dirty = field.stroke_segment(&stroke, [1470.0, 1100.0, 1.0], [1530.0, 1100.0, 1.0]);
         let ok = if full_res {
@@ -958,7 +1316,9 @@ fn liquify_preview_scenario(b: &mut Bench) {
             true
         };
         if !ok {
-            return Err("full-resolution preview could not allocate or render its visible region".into());
+            return Err(
+                "full-resolution preview could not allocate or render its visible region".into(),
+            );
         }
         Ok(ms(t))
     };

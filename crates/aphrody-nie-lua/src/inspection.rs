@@ -132,11 +132,14 @@ pub fn globals_after_run(
 
     for (name, expression) in overrides {
         let assignment = format!("{name} = {expression}");
-        lua.load(&assignment).set_name("=override").exec().map_err(|error| {
-            crate::LuaError::Vm(mlua::Error::RuntimeError(format!(
-                "override {name} = {expression}: {error}"
-            )))
-        })?;
+        lua.load(&assignment)
+            .set_name("=override")
+            .exec()
+            .map_err(|error| {
+                crate::LuaError::Vm(mlua::Error::RuntimeError(format!(
+                    "override {name} = {expression}: {error}"
+                )))
+            })?;
     }
 
     crate::runtime::install_host_stubs(&lua)?;
@@ -145,7 +148,11 @@ pub fn globals_after_run(
     } else {
         crate::ChunkMode::Text
     };
-    let _ = lua.load(data).set_name(chunk_name.to_string()).set_mode(mode).exec();
+    let _ = lua
+        .load(data)
+        .set_name(chunk_name.to_string())
+        .set_mode(mode)
+        .exec();
 
     Ok(crate::runtime::list_globals(&lua, include_stdlib)
         .into_iter()
@@ -180,7 +187,11 @@ pub fn eval(
         } else {
             crate::ChunkMode::Text
         };
-        let _ = lua.load(data).set_name(chunk_name.to_string()).set_mode(mode).exec();
+        let _ = lua
+            .load(data)
+            .set_name(chunk_name.to_string())
+            .set_mode(mode)
+            .exec();
     }
 
     crate::runtime::eval_expression(&lua, expression)
@@ -201,7 +212,11 @@ mod tests {
         let info = chunk_info(&dumped).expect("info");
         assert_eq!(info.version, 0x52);
         assert!(info.strings.iter().any(|value| value == "hello"));
-        assert!(disassemble(&dumped).expect("disassemble").contains("function main"));
+        assert!(
+            disassemble(&dumped)
+                .expect("disassemble")
+                .contains("function main")
+        );
 
         let output =
             execute(b"print('hello') return 5", "test", false, Some(1_000_000)).expect("execute");
@@ -213,9 +228,15 @@ mod tests {
     fn globals_and_expression_share_the_same_inspection_contract() {
         let globals = globals_after_run(b"hp = 10", "test", false, &[], false).expect("globals");
         assert_eq!(
-            globals.iter().find(|entry| entry.name == "hp").map(|entry| entry.value.as_str()),
+            globals
+                .iter()
+                .find(|entry| entry.name == "hp")
+                .map(|entry| entry.value.as_str()),
             Some("10")
         );
-        assert_eq!(eval(b"total = 6 * 7", "test", "total", false).expect("eval"), "42");
+        assert_eq!(
+            eval(b"total = 6 * 7", "test", "total", false).expect("eval"),
+            "42"
+        );
     }
 }

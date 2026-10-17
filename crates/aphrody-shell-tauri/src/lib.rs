@@ -48,7 +48,9 @@ struct Sessions(
 
 impl Sessions {
     fn owners(&self) -> std::sync::MutexGuard<'_, HashMap<String, Owner>> {
-        self.1.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.1
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Closes `session` only if it is still owned by generation `generation`.
@@ -69,8 +71,11 @@ impl Sessions {
     async fn close_window(&self, label: &str) {
         let ids: Vec<String> = {
             let mut owners = self.owners();
-            let ids: Vec<String> =
-                owners.iter().filter(|(_, (l, _))| l == label).map(|(id, _)| id.clone()).collect();
+            let ids: Vec<String> = owners
+                .iter()
+                .filter(|(_, (l, _))| l == label)
+                .map(|(id, _)| id.clone())
+                .collect();
             for id in &ids {
                 owners.remove(id);
             }
@@ -93,7 +98,12 @@ async fn aphrody_shell_open<R: Runtime>(
     rows: u16,
     shell: Option<String>,
 ) -> Result<(), String> {
-    let cfg = PtyConfig { cols, rows, shell, ..PtyConfig::default() };
+    let cfg = PtyConfig {
+        cols,
+        rows,
+        shell,
+        ..PtyConfig::default()
+    };
     let (tx, mut rx) = mpsc::channel(256);
     let pty = PtySession::spawn(&cfg, tx).map_err(|e| e.to_string())?;
     sessions.owners().remove(&session);
@@ -104,9 +114,15 @@ async fn aphrody_shell_open<R: Runtime>(
     tauri::async_runtime::spawn(async move {
         while let Some(event) = rx.recv().await {
             let payload = match event {
-                PtyEvent::Output(bytes) => Output { session: id.clone(), bytes, exit: None },
-                PtyEvent::Exit { code } => {
-                    Output { session: id.clone(), bytes: Vec::new(), exit: Some(code) }
+                PtyEvent::Output(bytes) => Output {
+                    session: id.clone(),
+                    bytes,
+                    exit: None,
+                },
+                PtyEvent::Exit { code } => Output {
+                    session: id.clone(),
+                    bytes: Vec::new(),
+                    exit: Some(code),
                 },
             };
             if app.emit(OUTPUT_EVENT, payload).is_err() {
@@ -128,9 +144,15 @@ async fn aphrody_shell_open_channel<R: Runtime>(
     shell: Option<String>,
     on_output: Channel<Output>,
 ) -> Result<(), String> {
-    open_channel(webview.label().to_owned(), &sessions, session, cols, rows, shell, move |o| {
-        on_output.send(o).is_ok()
-    })
+    open_channel(
+        webview.label().to_owned(),
+        &sessions,
+        session,
+        cols,
+        rows,
+        shell,
+        move |o| on_output.send(o).is_ok(),
+    )
     .await
 }
 
@@ -144,11 +166,18 @@ async fn open_channel(
     shell: Option<String>,
     send: impl Fn(Output) -> bool + Send + 'static,
 ) -> Result<(), String> {
-    let cfg = PtyConfig { cols, rows, shell, ..PtyConfig::default() };
+    let cfg = PtyConfig {
+        cols,
+        rows,
+        shell,
+        ..PtyConfig::default()
+    };
     let (tx, mut rx) = mpsc::channel(256);
     let pty = PtySession::spawn(&cfg, tx).map_err(|e| e.to_string())?;
     let generation = sessions.2.fetch_add(1, Ordering::Relaxed);
-    sessions.owners().insert(session.clone(), (owner, generation));
+    sessions
+        .owners()
+        .insert(session.clone(), (owner, generation));
     if let Some(old) = sessions.0.lock().await.insert(session.clone(), pty) {
         old.close().await;
     }
@@ -166,13 +195,19 @@ async fn open_channel(
                     PtyEvent::Exit { code } => {
                         exit = Some(code);
                         break;
-                    },
+                    }
                 }
                 if bytes.len() < MAX_FRAME {
                     event = rx.try_recv().ok();
                 }
             }
-            if !bytes.is_empty() && !send(Output { session: id.clone(), bytes, exit: None }) {
+            if !bytes.is_empty()
+                && !send(Output {
+                    session: id.clone(),
+                    bytes,
+                    exit: None,
+                })
+            {
                 break 'outer;
             }
             // Yield so a fast producer cannot starve the IPC loop; the bounded queue stalls the PTY.
@@ -180,7 +215,11 @@ async fn open_channel(
         }
         let alive = exit.is_none();
         if let Some(code) = exit {
-            send(Output { session: id.clone(), bytes: Vec::new(), exit: Some(code) });
+            send(Output {
+                session: id.clone(),
+                bytes: Vec::new(),
+                exit: Some(code),
+            });
         }
         if alive {
             // Receiver gone (webview closed or channel dropped): release the PTY.
@@ -210,7 +249,10 @@ async fn aphrody_shell_resize(
     rows: u16,
 ) -> Result<(), String> {
     let map = sessions.0.lock().await;
-    map.get(&session).ok_or("unknown shell session")?.resize(cols, rows).map_err(|e| e.to_string())
+    map.get(&session)
+        .ok_or("unknown shell session")?
+        .resize(cols, rows)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -242,7 +284,9 @@ pub fn init<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
                 let (map, owners) = (Arc::clone(&sessions.0), Arc::clone(&sessions.1));
                 let label = label.clone();
                 tauri::async_runtime::spawn(async move {
-                    Sessions(map, owners, AtomicU64::new(0)).close_window(&label).await;
+                    Sessions(map, owners, AtomicU64::new(0))
+                        .close_window(&label)
+                        .await;
                 });
             }
         })
@@ -281,15 +325,28 @@ mod tests {
         app.listen(OUTPUT_EVENT, move |event| {
             let v: serde_json::Value = serde_json::from_str(event.payload()).unwrap();
             assert_eq!(v["session"], "t");
-            let bytes = v["bytes"].as_array().unwrap().iter().map(|b| b.as_u64().unwrap() as u8);
+            let bytes = v["bytes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|b| b.as_u64().unwrap() as u8);
             sink.lock().unwrap().extend(bytes);
         });
 
         let sessions = || app.state::<Sessions>();
-        aphrody_shell_open(handle.clone(), sessions(), "t".into(), 80, 24, Some("/bin/sh".into()))
+        aphrody_shell_open(
+            handle.clone(),
+            sessions(),
+            "t".into(),
+            80,
+            24,
+            Some("/bin/sh".into()),
+        )
+        .await
+        .unwrap();
+        aphrody_shell_resize(sessions(), "t".into(), 100, 30)
             .await
             .unwrap();
-        aphrody_shell_resize(sessions(), "t".into(), 100, 30).await.unwrap();
         aphrody_shell_write(sessions(), "t".into(), b"echo tauri-$((40+2))\n".to_vec())
             .await
             .unwrap();
@@ -303,8 +360,16 @@ mod tests {
             }
         }
         aphrody_shell_close(sessions(), "t".into()).await.unwrap();
-        assert!(aphrody_shell_write(sessions(), "t".into(), vec![]).await.is_err());
-        assert!(ok, "output: {:?}", String::from_utf8_lossy(&seen.lock().unwrap()));
+        assert!(
+            aphrody_shell_write(sessions(), "t".into(), vec![])
+                .await
+                .is_err()
+        );
+        assert!(
+            ok,
+            "output: {:?}",
+            String::from_utf8_lossy(&seen.lock().unwrap())
+        );
     }
 
     /// Channel mode: coalesced frames arrive through the sink, the window-destroy sweep closes the
@@ -346,25 +411,46 @@ mod tests {
                 break;
             }
         }
-        assert!(ok, "output: {:?}", String::from_utf8_lossy(&seen.lock().unwrap()));
+        assert!(
+            ok,
+            "output: {:?}",
+            String::from_utf8_lossy(&seen.lock().unwrap())
+        );
 
         // Window destroyed: owned sessions are closed.
         sessions().close_window("main").await;
-        assert!(aphrody_shell_write(sessions(), "c".into(), vec![]).await.is_err());
+        assert!(
+            aphrody_shell_write(sessions(), "c".into(), vec![])
+                .await
+                .is_err()
+        );
 
         // Receiver gone: the forwarder releases the PTY by itself.
-        open_channel("w2".into(), &sessions(), "d".into(), 80, 24, Some("/bin/sh".into()), {
-            let flag = Arc::clone(&alive);
-            move |_| flag.load(Ordering::Relaxed)
-        })
+        open_channel(
+            "w2".into(),
+            &sessions(),
+            "d".into(),
+            80,
+            24,
+            Some("/bin/sh".into()),
+            {
+                let flag = Arc::clone(&alive);
+                move |_| flag.load(Ordering::Relaxed)
+            },
+        )
         .await
         .unwrap();
         alive.store(false, Ordering::Relaxed);
-        aphrody_shell_write(sessions(), "d".into(), b"echo x\n".to_vec()).await.unwrap();
+        aphrody_shell_write(sessions(), "d".into(), b"echo x\n".to_vec())
+            .await
+            .unwrap();
         let mut gone = false;
         for _ in 0..50 {
             tokio::time::sleep(Duration::from_millis(100)).await;
-            if aphrody_shell_write(sessions(), "d".into(), vec![]).await.is_err() {
+            if aphrody_shell_write(sessions(), "d".into(), vec![])
+                .await
+                .is_err()
+            {
                 gone = true;
                 break;
             }

@@ -13,7 +13,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Paste Special…" => "Pegado especial…",
         "Cut (⌘X)" => "Cortar (⌘X)",
         "Copy (⌘C)" => "Copiar (⌘C)",
-        "Format Painter (double-click to keep it on)" => "Copiar formato (doble clic para mantenerlo activo)",
+        "Format Painter (double-click to keep it on)" => {
+            "Copiar formato (doble clic para mantenerlo activo)"
+        }
         "Bold (⌘B)" => "Negrita (⌘B)",
         "Italic (⌘I)" => "Cursiva (⌘I)",
         "Underline (⌘U)" => "Subrayado (⌘U)",
@@ -236,7 +238,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Show All Notes" => "Mostrar todas las notas",
         "Convert to Comments" => "Convertir en comentarios",
         "Checkbox" => "Casilla",
-        "Insert checkboxes in the selected cells" => "Insertar casillas en las celdas seleccionadas",
+        "Insert checkboxes in the selected cells" => {
+            "Insertar casillas en las celdas seleccionadas"
+        }
         "Sheet\nRight-to-Left" => "Hoja de derecha\na izquierda",
         "Sheet Right-to-Left" => "Hoja de derecha a izquierda",
         "Data\nAnalysis" => "Análisis\nde datos",
@@ -299,7 +303,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
             "Un archivo CSV, una página web o un PDF son una copia: el libro conserva su propio archivo."
         }
-        "Save the workbook under another name or in another folder." => "Guarda el libro con otro nombre o en otra carpeta.",
+        "Save the workbook under another name or in another folder." => {
+            "Guarda el libro con otro nombre o en otra carpeta."
+        }
         "Print Active Sheets" => "Imprimir hojas activas",
         "Print Entire Workbook" => "Imprimir todo el libro",
         "Fit Sheet on One Page" => "Ajustar hoja en una página",
@@ -309,20 +315,28 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "Página anterior",
         "Next page" => "Página siguiente",
         "Create PDF" => "Crear PDF",
-        "Save the sheet as a PDF document that keeps its page layout." => "Guarda la hoja como documento PDF conservando el diseño de página.",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "Guarda la hoja como documento PDF conservando el diseño de página."
+        }
         "Change File Type" => "Cambiar el tipo de archivo",
         "CSV (Comma delimited)" => "CSV (delimitado por comas)",
-        "Save the active sheet as comma-separated text." => "Guarda la hoja activa como texto separado por comas.",
+        "Save the active sheet as comma-separated text." => {
+            "Guarda la hoja activa como texto separado por comas."
+        }
         "Web Page (.html)" => "Página web (.html)",
         "Save the workbook as a web page." => "Guarda el libro como página web.",
         "Options|General" => "General",
         "Options|Save" => "Guardar",
         "Show formula bar" => "Mostrar barra de fórmulas",
         "Enable AutoComplete for cell values" => "Habilitar Autocompletar para valores de celda",
-        "Save .xlsx workbooks automatically after every change" => "Guardar automáticamente los libros .xlsx tras cada cambio",
+        "Save .xlsx workbooks automatically after every change" => {
+            "Guardar automáticamente los libros .xlsx tras cada cambio"
+        }
         "Workbook calculation" => "Cálculo del libro",
         "Enable iterative calculation" => "Habilitar cálculo iterativo",
-        "Calculation settings are saved with the workbook." => "La configuración de cálculo se guarda con el libro.",
+        "Calculation settings are saved with the workbook." => {
+            "La configuración de cálculo se guarda con el libro."
+        }
         "Interface size" => "Tamaño de la interfaz",
         "Auto" => "Automático",
         "100%" => "100%",
@@ -381,7 +395,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "Modificar",
         "Point" => "Señalar",
         "Calculate" => "Calcular",
-        "Select destination and press Enter or choose Paste" => "Seleccione el destino y presione Entrar o elija Pegar",
+        "Select destination and press Enter or choose Paste" => {
+            "Seleccione el destino y presione Entrar o elija Pegar"
+        }
         "General" => "General",
         "Number" => "Número",
         "Currency" => "Moneda",
@@ -412,7 +428,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Print" => "Imprimir",
         "PivotTable Fields" => "Campos de tabla dinámica",
         "Choose fields to add to report:" => "Seleccione los campos para agregar al informe:",
-        "Use a field's menu to move it between areas:" => "Use el menú de un campo para moverlo entre áreas:",
+        "Use a field's menu to move it between areas:" => {
+            "Use el menú de un campo para moverlo entre áreas:"
+        }
         "Filters" => "Filtros",
         "Columns" => "Columnas",
         "Rows" => "Filas",

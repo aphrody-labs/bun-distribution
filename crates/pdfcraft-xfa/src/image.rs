@@ -47,12 +47,18 @@ fn header_size(data: &[u8]) -> Option<(u32, u32)> {
             if data.get(12..16)? != b"IHDR" {
                 return None;
             }
-            let be = |at: usize| data.get(at..at + 4).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+            let be = |at: usize| {
+                data.get(at..at + 4)
+                    .map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+            };
             let (w, h) = (be(16)?, be(20)?);
             (w > 0 && h > 0).then_some((w, h))
         }
         Kind::Gif => {
-            let le = |at: usize| data.get(at..at + 2).map(|b| u32::from(u16::from_le_bytes([b[0], b[1]])));
+            let le = |at: usize| {
+                data.get(at..at + 2)
+                    .map(|b| u32::from(u16::from_le_bytes([b[0], b[1]])))
+            };
             let (w, h) = (le(6)?, le(8)?);
             (w > 0 && h > 0).then_some((w, h))
         }
@@ -73,7 +79,10 @@ pub struct Decoded {
 }
 
 fn too_big() -> String {
-    format!("an image has more than {} million pixels and is left out", MAX_PIXELS / 1_000_000)
+    format!(
+        "an image has more than {} million pixels and is left out",
+        MAX_PIXELS / 1_000_000
+    )
 }
 
 /// Decode a PNG or GIF (its first frame). JPEGs are embedded as they are and are not decoded
@@ -94,9 +103,18 @@ pub fn decode(data: &[u8]) -> Result<Decoded, String> {
             if !fits(fw, fh) {
                 return Err(too_big());
             }
-            let mut buf = vec![0; reader.output_buffer_size().ok_or_else(|| bad("image too large".into()))?];
-            let frame = reader.next_frame(&mut buf).map_err(|e| bad(e.to_string()))?;
-            let samples = buf.get(..frame.buffer_size()).ok_or_else(|| bad("short image data".into()))?;
+            let mut buf = vec![
+                0;
+                reader
+                    .output_buffer_size()
+                    .ok_or_else(|| bad("image too large".into()))?
+            ];
+            let frame = reader
+                .next_frame(&mut buf)
+                .map_err(|e| bad(e.to_string()))?;
+            let samples = buf
+                .get(..frame.buffer_size())
+                .ok_or_else(|| bad("short image data".into()))?;
             let (channels, color_space) = match frame.color_type {
                 png::ColorType::Grayscale => (1, "DeviceGray"),
                 png::ColorType::GrayscaleAlpha => (2, "DeviceGray"),
@@ -107,7 +125,11 @@ pub fn decode(data: &[u8]) -> Result<Decoded, String> {
             let has_alpha = channels == 2 || channels == 4;
             let colour_n = channels - usize::from(has_alpha);
             let mut colour = Vec::with_capacity(samples.len() / channels * colour_n);
-            let mut alpha = Vec::with_capacity(if has_alpha { samples.len() / channels } else { 0 });
+            let mut alpha = Vec::with_capacity(if has_alpha {
+                samples.len() / channels
+            } else {
+                0
+            });
             for px in samples.chunks_exact(channels) {
                 colour.extend_from_slice(px.get(..colour_n).unwrap_or_default());
                 if has_alpha && let Some(&a) = px.get(colour_n) {
@@ -115,7 +137,13 @@ pub fn decode(data: &[u8]) -> Result<Decoded, String> {
                 }
             }
             let alpha = (has_alpha && alpha.iter().any(|a| *a != 255)).then_some(alpha);
-            Ok(Decoded { width: frame.width, height: frame.height, color_space, samples: colour, alpha })
+            Ok(Decoded {
+                width: frame.width,
+                height: frame.height,
+                color_space,
+                samples: colour,
+                alpha,
+            })
         }
         Some(Kind::Gif) => {
             // The frame may be larger than the logical screen the header gives: the decoder is
@@ -127,7 +155,13 @@ pub fn decode(data: &[u8]) -> Result<Decoded, String> {
             limits.max_image_height = Some(MAX_SIDE);
             limits.max_alloc = Some(MAX_PIXELS * 4);
             reader.limits(limits);
-            let img = reader.decode().map_err(|e| if matches!(e, image::ImageError::Limits(_)) { too_big() } else { bad(e.to_string()) })?;
+            let img = reader.decode().map_err(|e| {
+                if matches!(e, image::ImageError::Limits(_)) {
+                    too_big()
+                } else {
+                    bad(e.to_string())
+                }
+            })?;
             let rgba = img.into_rgba8();
             let (width, height) = rgba.dimensions();
             if !fits(width, height) {
@@ -135,9 +169,22 @@ pub fn decode(data: &[u8]) -> Result<Decoded, String> {
             }
             let px = rgba.as_raw().as_chunks::<4>().0;
             let gray = px.iter().all(|p| p[0] == p[1] && p[1] == p[2]);
-            let samples: Vec<u8> = if gray { px.iter().map(|p| p[0]).collect() } else { px.iter().flat_map(|p| [p[0], p[1], p[2]]).collect() };
-            let alpha = px.iter().any(|p| p[3] != 255).then(|| px.iter().map(|p| p[3]).collect());
-            Ok(Decoded { width, height, color_space: if gray { "DeviceGray" } else { "DeviceRGB" }, samples, alpha })
+            let samples: Vec<u8> = if gray {
+                px.iter().map(|p| p[0]).collect()
+            } else {
+                px.iter().flat_map(|p| [p[0], p[1], p[2]]).collect()
+            };
+            let alpha = px
+                .iter()
+                .any(|p| p[3] != 255)
+                .then(|| px.iter().map(|p| p[3]).collect());
+            Ok(Decoded {
+                width,
+                height,
+                color_space: if gray { "DeviceGray" } else { "DeviceRGB" },
+                samples,
+                alpha,
+            })
         }
         Some(Kind::Jpeg) | None => Err(bad("not a PNG or GIF".into())),
     }

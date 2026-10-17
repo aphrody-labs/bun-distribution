@@ -405,10 +405,14 @@ impl ControllerSelectorDialog {
             let controller =
                 gtk::DropDown::new(Some(gtk::StringList::new(&refs)), gtk::Expression::NONE);
             controller.set_hexpand(true);
-            player.append(&crate::configuration::shared_widget::popup_safe_dropdown(&controller));
+            player.append(&crate::configuration::shared_widget::popup_safe_dropdown(
+                &controller,
+            ));
 
             let profile = gtk::DropDown::from_strings(&[&crate::i18n::tr("Use Current Config")]);
-            player.append(&crate::configuration::shared_widget::popup_safe_dropdown(&profile));
+            player.append(&crate::configuration::shared_widget::popup_safe_dropdown(
+                &profile,
+            ));
 
             players_grid.attach(&player, (index % 4) as i32, (index / 4) as i32, 1, 1);
 
@@ -841,13 +845,11 @@ impl ControllerSelectorDialog {
         let mut values = common::settings::values_mut();
         let previous = common::settings::is_docked_mode(&values);
         let current = self.docked.is_active();
-        values
-            .use_docked_mode
-            .set_value(if current {
-                ConsoleMode::Docked
-            } else {
-                ConsoleMode::Handheld
-            });
+        values.use_docked_mode.set_value(if current {
+            ConsoleMode::Docked
+        } else {
+            ConsoleMode::Handheld
+        });
         drop(values);
         on_docked_changed(previous, current);
         let mut values = common::settings::values_mut();
@@ -1104,7 +1106,10 @@ fn controller_types(style_tag: NpadStyleTag, player_index: usize) -> Vec<NpadSty
         add(NpadStyleSet::HANDHELD, NpadStyleIndex::Handheld);
     }
     add(NpadStyleSet::GC, NpadStyleIndex::GameCube);
-    if *common::settings::values().enable_all_controllers.get_value() {
+    if *common::settings::values()
+        .enable_all_controllers
+        .get_value()
+    {
         add(NpadStyleSet::PALMA, NpadStyleIndex::Pokeball);
         add(NpadStyleSet::LARK, NpadStyleIndex::NES);
         add(NpadStyleSet::LUCIA, NpadStyleIndex::SNES);
@@ -1151,9 +1156,13 @@ mod tests {
     #[test]
     fn empty_supported_styles_do_not_add_an_unsupported_controller() {
         for player in 0..8 {
-            assert!(super::controller_types(super::NpadStyleTag {
-                raw: super::NpadStyleSet::empty(),
-            }, player).is_empty());
+            assert!(super::controller_types(
+                super::NpadStyleTag {
+                    raw: super::NpadStyleSet::empty(),
+                },
+                player
+            )
+            .is_empty());
         }
     }
     use super::*;

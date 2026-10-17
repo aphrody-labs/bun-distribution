@@ -38,7 +38,12 @@ pub struct PtyController {
 
 impl PtyController {
     /// Spawns a new native PTY session with the specified command and dimensions.
-    pub fn spawn(cmd: &str, args: &[&str], cols: u16, rows: u16) -> Result<(Self, Box<dyn Read + Send>), Box<dyn std::error::Error + Send + Sync>> {
+    pub fn spawn(
+        cmd: &str,
+        args: &[&str],
+        cols: u16,
+        rows: u16,
+    ) -> Result<(Self, Box<dyn Read + Send>), Box<dyn std::error::Error + Send + Sync>> {
         let pty_system = NativePtySystem::default();
         let pair = pty_system.openpty(PtySize {
             rows,
@@ -76,7 +81,11 @@ impl PtyController {
     }
 
     /// Resizes the PTY dimensions.
-    pub fn resize(&self, cols: u16, rows: u16) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub fn resize(
+        &self,
+        cols: u16,
+        rows: u16,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.pair.master.resize(PtySize {
             rows,
             cols,

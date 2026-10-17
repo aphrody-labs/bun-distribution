@@ -123,7 +123,12 @@ impl BudgetWriter {
     /// New writer bounded to `max_chars` scalar values.
     #[must_use]
     pub fn new(max_chars: usize) -> Self {
-        Self { out: String::new(), remaining: max_chars, consumed: 0, truncated: false }
+        Self {
+            out: String::new(),
+            remaining: max_chars,
+            consumed: 0,
+            truncated: false,
+        }
     }
 
     /// Append as much of `text` as fits, on grapheme-cluster boundaries.
@@ -317,7 +322,11 @@ pub fn apply(
 
         files.push(AnalyzedFile {
             name: input.name.clone(),
-            path: if input.path.is_empty() { input.name.clone() } else { input.path.clone() },
+            path: if input.path.is_empty() {
+                input.name.clone()
+            } else {
+                input.path.clone()
+            },
             missing: false,
             raw_chars,
             injected_chars,
@@ -357,7 +366,11 @@ pub fn apply(
 ///
 /// The casts are bounded: `value` is a char budget (well under 2^52) and the
 /// result is non-negative, so the precision/sign lints are not reachable here.
-#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
 fn ceil_mul(value: usize, ratio: f32) -> usize {
     let product = (value as f64) * f64::from(ratio);
     let rounded = product.round();
@@ -372,7 +385,11 @@ fn ceil_mul(value: usize, ratio: f32) -> usize {
 
 /// Rounded percentage of `raw` chars removed, given `injected` survived.
 /// Bounded to `[0, 100]`; the casts are over small char counts (< 2^52).
-#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
 fn percent_removed(raw: usize, injected: usize) -> u64 {
     if raw == 0 || injected >= raw {
         return 0;
@@ -426,8 +443,11 @@ impl TruncationReport {
         if mode != WarningMode::Off {
             append_seen(&mut seen, &signature);
         }
-        let lines =
-            if warning_shown { format_warning_lines(analysis, max_files) } else { Vec::new() };
+        let lines = if warning_shown {
+            format_warning_lines(analysis, max_files)
+        } else {
+            Vec::new()
+        };
         Some(Self {
             signature,
             warning_shown,
@@ -502,7 +522,11 @@ fn serde_cause(c: TruncationCause) -> &'static str {
 
 /// Warning lines (openclaw `formatBootstrapTruncationWarningLines`).
 fn format_warning_lines(analysis: &BudgetAnalysis, max_files: usize) -> Vec<String> {
-    let max_files = if max_files == 0 { DEFAULT_WARNING_MAX_FILES } else { max_files };
+    let max_files = if max_files == 0 {
+        DEFAULT_WARNING_MAX_FILES
+    } else {
+        max_files
+    };
     let truncated = analysis.truncated_files();
     let mut name_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
     for f in &truncated {
@@ -515,7 +539,11 @@ fn format_warning_lines(analysis: &BudgetAnalysis, max_files: usize) -> Vec<Stri
         let cause_text = if f.causes.is_empty() {
             String::new()
         } else {
-            f.causes.iter().map(|c| c.warning_label()).collect::<Vec<_>>().join(", ")
+            f.causes
+                .iter()
+                .map(|c| c.warning_label())
+                .collect::<Vec<_>>()
+                .join(", ")
         };
         let name_label = if name_counts.get(f.name.as_str()).copied().unwrap_or(0) > 1
             && !f.path.trim().is_empty()
@@ -524,15 +552,21 @@ fn format_warning_lines(analysis: &BudgetAnalysis, max_files: usize) -> Vec<Stri
         } else {
             f.name.clone()
         };
-        let cause_suffix =
-            if cause_text.is_empty() { String::new() } else { format!("; {cause_text}") };
+        let cause_suffix = if cause_text.is_empty() {
+            String::new()
+        } else {
+            format!("; {cause_text}")
+        };
         lines.push(format!(
             "{name_label}: {} raw -> {} injected (~{pct}% removed{cause_suffix}).",
             f.raw_chars, f.injected_chars,
         ));
     }
     if truncated.len() > max_files {
-        lines.push(format!("+{} more truncated file(s).", truncated.len() - max_files));
+        lines.push(format!(
+            "+{} more truncated file(s).",
+            truncated.len() - max_files
+        ));
     }
     if truncated.iter().any(|f| is_agents_name(&f.name)) {
         lines.push(
@@ -614,8 +648,11 @@ mod tests {
 
     #[test]
     fn per_file_limit_truncates_and_attributes_cause() {
-        let budget =
-            BootstrapBudget { max_chars: 5, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 5,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let (injected, analysis) = apply(&budget, &[input("SOUL.md", "0123456789")]);
         assert_eq!(injected[0].1, "01234");
         let f = &analysis.files[0];
@@ -626,22 +663,33 @@ mod tests {
 
     #[test]
     fn total_limit_truncates_second_file() {
-        let budget =
-            BootstrapBudget { max_chars: 1000, total_max_chars: 8, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 1000,
+            total_max_chars: 8,
+            near_limit_ratio: 0.85,
+        };
         let (injected, analysis) =
             apply(&budget, &[input("A.md", "12345"), input("B.md", "67890")]);
         assert_eq!(injected[0].1, "12345");
         // Only 3 chars of total budget remain for B.
         assert_eq!(injected[1].1, "678");
         assert!(analysis.files[1].truncated);
-        assert!(analysis.files[1].causes.contains(&TruncationCause::TotalLimit));
+        assert!(
+            analysis.files[1]
+                .causes
+                .contains(&TruncationCause::TotalLimit)
+        );
         assert_eq!(analysis.injected_chars, 8);
     }
 
     #[test]
     fn missing_file_contributes_nothing() {
         let budget = BootstrapBudget::default();
-        let missing = BudgetInput { name: "USER.md".into(), path: "USER.md".into(), content: None };
+        let missing = BudgetInput {
+            name: "USER.md".into(),
+            path: "USER.md".into(),
+            content: None,
+        };
         let (injected, analysis) = apply(&budget, &[missing]);
         assert_eq!(injected[0].1, "");
         assert!(analysis.files[0].missing);
@@ -658,8 +706,11 @@ mod tests {
 
     #[test]
     fn near_limit_flag_trips_at_ratio() {
-        let budget =
-            BootstrapBudget { max_chars: 100, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 100,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         // 85 chars == ceil(100*0.85) -> near limit.
         let content = "x".repeat(85);
         let (_i, a) = apply(&budget, &[input("X.md", &content)]);
@@ -672,8 +723,11 @@ mod tests {
 
     #[test]
     fn signature_is_stable_and_order_independent() {
-        let budget =
-            BootstrapBudget { max_chars: 3, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 3,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let (_i1, a1) = apply(&budget, &[input("A.md", "aaaaaa"), input("B.md", "bbbbbb")]);
         let (_i2, a2) = apply(&budget, &[input("B.md", "bbbbbb"), input("A.md", "aaaaaa")]);
         let s1 = build_signature(&a1);
@@ -684,8 +738,11 @@ mod tests {
 
     #[test]
     fn warning_once_mode_dedups() {
-        let budget =
-            BootstrapBudget { max_chars: 3, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 3,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let (_i, analysis) = apply(&budget, &[input("SOUL.md", "abcdef")]);
         let r1 = TruncationReport::build(&analysis, WarningMode::Once, &[], 3).unwrap();
         assert!(r1.warning_shown);
@@ -698,8 +755,11 @@ mod tests {
 
     #[test]
     fn warning_always_mode_repeats() {
-        let budget =
-            BootstrapBudget { max_chars: 3, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 3,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let (_i, analysis) = apply(&budget, &[input("SOUL.md", "abcdef")]);
         let r1 = TruncationReport::build(&analysis, WarningMode::Always, &[], 3).unwrap();
         let r2 = TruncationReport::build(&analysis, WarningMode::Always, &r1.signatures_seen, 3)
@@ -709,11 +769,19 @@ mod tests {
 
     #[test]
     fn agents_md_truncation_adds_special_line() {
-        let budget =
-            BootstrapBudget { max_chars: 3, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 3,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let (_i, analysis) = apply(&budget, &[input("AGENTS.md", "abcdef")]);
         let report = TruncationReport::build(&analysis, WarningMode::Once, &[], 3).unwrap();
-        assert!(report.lines.iter().any(|l| l.contains("read the full AGENTS.md")));
+        assert!(
+            report
+                .lines
+                .iter()
+                .any(|l| l.contains("read the full AGENTS.md"))
+        );
     }
 
     #[test]
@@ -725,8 +793,11 @@ mod tests {
 
     #[test]
     fn off_mode_never_shows_and_does_not_seed_history() {
-        let budget =
-            BootstrapBudget { max_chars: 3, total_max_chars: 1000, near_limit_ratio: 0.85 };
+        let budget = BootstrapBudget {
+            max_chars: 3,
+            total_max_chars: 1000,
+            near_limit_ratio: 0.85,
+        };
         let (_i, analysis) = apply(&budget, &[input("SOUL.md", "abcdef")]);
         let r = TruncationReport::build(&analysis, WarningMode::Off, &[], 3).unwrap();
         assert!(!r.warning_shown);

@@ -32,6 +32,12 @@ fn export_as_lists_emf_and_wmf_and_writes_them() {
     frame(&mut app);
     confirm(&mut app).unwrap();
     let n = names(&written);
-    assert_eq!(&n[1..], ["/out/Untitled-1-Artboard-1.wmf", "/out/Untitled-1-Artboard-2.wmf"]);
+    assert_eq!(
+        &n[1..],
+        [
+            "/out/Untitled-1-Artboard-1.wmf",
+            "/out/Untitled-1-Artboard-2.wmf"
+        ]
+    );
     assert!(written.borrow()[1..].iter().all(|(_, b)| is_wmf(b)));
 }

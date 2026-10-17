@@ -890,16 +890,27 @@ mod tests {
     #[test]
     fn server_ports_preserve_strtol_conversion() {
         for (port, expected) in [
-            ("26760", Some(26760)), ("+26760", Some(26760)),
-            (" \t26760", Some(26760)), ("-1", Some(65535)),
-            ("-0x1", Some(65535)), ("010", Some(8)),
-            ("0X10", Some(16)), ("65536", Some(0)), ("", Some(0)),
+            ("26760", Some(26760)),
+            ("+26760", Some(26760)),
+            (" \t26760", Some(26760)),
+            ("-1", Some(65535)),
+            ("-0x1", Some(65535)),
+            ("010", Some(8)),
+            ("0X10", Some(16)),
+            ("65536", Some(0)),
+            ("", Some(0)),
             ("999999999999999999999999999", Some(65535)),
             ("-999999999999999999999999999", Some(0)),
-            ("08", None), ("1 ", None), ("+", None), ("0x", None),
+            ("08", None),
+            ("1 ", None),
+            ("+", None),
+            ("0x", None),
         ] {
-            assert_eq!(parse_server(&format!("127.0.0.1:{port}")),
-                expected.map(|value| ("127.0.0.1", value)), "{port:?}");
+            assert_eq!(
+                parse_server(&format!("127.0.0.1:{port}")),
+                expected.map(|value| ("127.0.0.1", value)),
+                "{port:?}"
+            );
         }
         assert_eq!(parse_server("26760"), Some(("26760", 26760)));
         assert_eq!(parse_server("localhost"), None);

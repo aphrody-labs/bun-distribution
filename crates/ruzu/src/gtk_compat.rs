@@ -7,9 +7,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::util::controller_navigation::{ControllerNavigation, NavigationKey};
 use gtk::prelude::*;
 use gtk::{gio, glib, ButtonsType, FileChooserAction, MessageType, ResponseType};
-use crate::util::controller_navigation::{ControllerNavigation, NavigationKey};
 
 /// Open an external URI using the platform's default application.
 ///
@@ -91,11 +91,18 @@ pub fn show_warning<P: IsA<gtk::Window>>(parent: Option<&P>, message: &str, deta
 
 /// QMessageBox::warning with a continuation instead of Qt's nested event loop.
 pub fn show_warning_then<P: IsA<gtk::Window>>(
-    parent: Option<&P>, message: &str, detail: &str, callback: impl FnOnce() + 'static,
+    parent: Option<&P>,
+    message: &str,
+    detail: &str,
+    callback: impl FnOnce() + 'static,
 ) {
     show_pretranslated_message_with_type_then(
-        parent, &crate::i18n::tr(message), &crate::i18n::tr(detail),
-        MessageType::Warning, false, callback,
+        parent,
+        &crate::i18n::tr(message),
+        &crate::i18n::tr(detail),
+        MessageType::Warning,
+        false,
+        callback,
     );
 }
 
@@ -238,7 +245,13 @@ pub fn ask_question<P: IsA<gtk::Window>>(
     callback: impl FnOnce(bool) + 'static,
 ) {
     ask_question_with_navigation(
-        parent, message, detail, cancel_label, accept_label, None, callback,
+        parent,
+        message,
+        detail,
+        cancel_label,
+        accept_label,
+        None,
+        callback,
     );
 }
 
@@ -253,8 +266,16 @@ pub fn ask_question_with_navigation<P: IsA<gtk::Window>>(
     navigation: Option<ControllerNavigation>,
     callback: impl FnOnce(bool) + 'static,
 ) -> gtk::MessageDialog {
-    question_dialog(parent, message, detail, cancel_label, accept_label,
-                    navigation, ResponseType::Accept, callback)
+    question_dialog(
+        parent,
+        message,
+        detail,
+        cancel_label,
+        accept_label,
+        navigation,
+        ResponseType::Accept,
+        callback,
+    )
 }
 
 /// Destructive confirmations start on Cancel, while ordinary applet questions
@@ -268,8 +289,16 @@ pub fn ask_cancel_default_question<P: IsA<gtk::Window>>(
     accept_label: &str,
     callback: impl FnOnce(bool) + 'static,
 ) -> gtk::MessageDialog {
-    question_dialog(parent, message, detail, cancel_label, accept_label,
-                    None, ResponseType::Cancel, callback)
+    question_dialog(
+        parent,
+        message,
+        detail,
+        cancel_label,
+        accept_label,
+        None,
+        ResponseType::Cancel,
+        callback,
+    )
 }
 
 fn question_dialog<P: IsA<gtk::Window>>(
@@ -364,12 +393,16 @@ fn install_question_navigation(dialog: &gtk::MessageDialog, navigation: Controll
 /// Return true after responding, so later queued input cannot reach a closed
 /// dialog or the file chooser/next startup question opened by its continuation.
 fn question_navigation_key(dialog: &gtk::MessageDialog, key: NavigationKey) -> bool {
-    let checkbox = dialog.message_area().last_child()
+    let checkbox = dialog
+        .message_area()
+        .last_child()
         .and_then(|widget| widget.downcast::<gtk::CheckButton>().ok());
     if let Some(checkbox) = checkbox {
         match key {
-            NavigationKey::Up | NavigationKey::Previous
-            | NavigationKey::Down | NavigationKey::Next => {
+            NavigationKey::Up
+            | NavigationKey::Previous
+            | NavigationKey::Down
+            | NavigationKey::Next => {
                 // MessageDialog's built-in traversal can stay confined to its
                 // action area. Include the optional content checkbox explicitly.
                 let controls = [
@@ -378,7 +411,10 @@ fn question_navigation_key(dialog: &gtk::MessageDialog, key: NavigationKey) -> b
                     dialog.widget_for_response(ResponseType::Accept),
                 ];
                 let focus = gtk::prelude::GtkWindowExt::focus(dialog);
-                let current = controls.iter().position(|control| *control == focus).unwrap_or(2);
+                let current = controls
+                    .iter()
+                    .position(|control| *control == focus)
+                    .unwrap_or(2);
                 let next = if matches!(key, NavigationKey::Up | NavigationKey::Previous) {
                     (current + 2) % 3
                 } else {
@@ -473,26 +509,52 @@ mod tests {
         std::fs::create_dir(&child).unwrap();
         std::fs::create_dir(directory.path().join("other")).unwrap();
         let replies = Rc::new(RefCell::new(Vec::new()));
-        run_controller_file_chooser(None::<&gtk::Window>, "Ruzu controller folder test",
-            FileChooserAction::SelectFolder, false, Some(directory.path()), None, &[], None,
-            { let replies = replies.clone(); move |files| replies.borrow_mut().push(files) });
-        let dialog = gtk::Window::list_toplevels().into_iter()
-            .find_map(|w| w.downcast::<gtk::FileChooserDialog>().ok()).unwrap();
+        run_controller_file_chooser(
+            None::<&gtk::Window>,
+            "Ruzu controller folder test",
+            FileChooserAction::SelectFolder,
+            false,
+            Some(directory.path()),
+            None,
+            &[],
+            None,
+            {
+                let replies = replies.clone();
+                move |files| replies.borrow_mut().push(files)
+            },
+        );
+        let dialog = gtk::Window::list_toplevels()
+            .into_iter()
+            .find_map(|w| w.downcast::<gtk::FileChooserDialog>().ok())
+            .unwrap();
         let pump_until = |condition: &dyn Fn() -> bool| {
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
             while !condition() && std::time::Instant::now() < deadline {
                 glib::MainContext::default().iteration(false);
                 std::thread::sleep(std::time::Duration::from_millis(1));
             }
-            assert!(condition(), "GTK chooser did not reach the expected state (desktop focus required)");
+            assert!(
+                condition(),
+                "GTK chooser did not reach the expected state (desktop focus required)"
+            );
         };
-        pump_until(&|| dialog.is_active() && dialog.current_folder().and_then(|f| f.path()).as_deref() == Some(directory.path()));
+        pump_until(&|| {
+            dialog.is_active()
+                && dialog.current_folder().and_then(|f| f.path()).as_deref()
+                    == Some(directory.path())
+        });
         fn find_view(widget: &gtk::Widget) -> Option<gtk::Widget> {
-            if !widget.is_visible() { return None; }
-            if widget.is::<gtk::TreeView>() || widget.is::<gtk::ColumnView>() { return Some(widget.clone()); }
+            if !widget.is_visible() {
+                return None;
+            }
+            if widget.is::<gtk::TreeView>() || widget.is::<gtk::ColumnView>() {
+                return Some(widget.clone());
+            }
             let mut child = widget.first_child();
             while let Some(widget) = child {
-                if let Some(view) = find_view(&widget) { return Some(view); }
+                if let Some(view) = find_view(&widget) {
+                    return Some(view);
+                }
                 child = widget.next_sibling();
             }
             None
@@ -502,7 +564,12 @@ mod tests {
         if let Some(tree) = view.downcast_ref::<gtk::TreeView>() {
             pump_until(&|| tree.model().is_some_and(|m| m.iter_n_children(None) == 2));
             tree.grab_focus();
-            gtk::prelude::TreeViewExt::set_cursor(tree, &gtk::TreePath::from_indices(&[0]), None, false);
+            gtk::prelude::TreeViewExt::set_cursor(
+                tree,
+                &gtk::TreePath::from_indices(&[0]),
+                None,
+                false,
+            );
         } else {
             let column = view.downcast_ref::<gtk::ColumnView>().unwrap();
             pump_until(&|| column.model().is_some_and(|m| m.n_items() == 2));
@@ -514,7 +581,9 @@ mod tests {
             assert!(column.model().unwrap().is_selected(0));
         }
         navigate_window(dialog.upcast_ref(), NavigationKey::Enter);
-        pump_until(&|| dialog.current_folder().and_then(|f| f.path()).as_deref() == Some(child.as_path()));
+        pump_until(&|| {
+            dialog.current_folder().and_then(|f| f.path()).as_deref() == Some(child.as_path())
+        });
         let accept = dialog.widget_for_response(ResponseType::Accept).unwrap();
         accept.grab_focus();
         navigate_window(dialog.upcast_ref(), NavigationKey::Enter);
@@ -527,11 +596,27 @@ mod tests {
         dialog.destroy();
 
         let cancelled = Rc::new(Cell::new(0));
-        run_controller_file_chooser(None::<&gtk::Window>, "Ruzu controller cancel test",
-            FileChooserAction::Open, false, Some(directory.path()), None, &[], None,
-            { let cancelled = cancelled.clone(); move |files| { assert!(files.is_empty()); cancelled.set(cancelled.get() + 1); } });
-        let dialog = gtk::Window::list_toplevels().into_iter()
-            .find_map(|w| w.downcast::<gtk::FileChooserDialog>().ok()).unwrap();
+        run_controller_file_chooser(
+            None::<&gtk::Window>,
+            "Ruzu controller cancel test",
+            FileChooserAction::Open,
+            false,
+            Some(directory.path()),
+            None,
+            &[],
+            None,
+            {
+                let cancelled = cancelled.clone();
+                move |files| {
+                    assert!(files.is_empty());
+                    cancelled.set(cancelled.get() + 1);
+                }
+            },
+        );
+        let dialog = gtk::Window::list_toplevels()
+            .into_iter()
+            .find_map(|w| w.downcast::<gtk::FileChooserDialog>().ok())
+            .unwrap();
         navigate_window(dialog.upcast_ref(), NavigationKey::Escape);
         pump_until(&|| cancelled.get() == 1);
         assert!(!dialog.is_visible());
@@ -547,28 +632,39 @@ mod tests {
         parent.present();
         let replies = Rc::new(RefCell::new(Vec::new()));
         let reply = Rc::clone(&replies);
-        let dialog = ask_cancel_default_question(Some(&parent), "Ruzu",
-            "Are you sure you want to close ruzu?", "Cancel", "Close ruzu",
-            move |accepted| reply.borrow_mut().push(accepted));
+        let dialog = ask_cancel_default_question(
+            Some(&parent),
+            "Ruzu",
+            "Are you sure you want to close ruzu?",
+            "Cancel",
+            "Close ruzu",
+            move |accepted| reply.borrow_mut().push(accepted),
+        );
         let context = glib::MainContext::default();
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
         while std::time::Instant::now() < deadline {
             context.iteration(false);
-            if dialog.is_active() && gtk::prelude::GtkWindowExt::focus(&dialog)
-                == dialog.widget_for_response(ResponseType::Cancel) {
+            if dialog.is_active()
+                && gtk::prelude::GtkWindowExt::focus(&dialog)
+                    == dialog.widget_for_response(ResponseType::Cancel)
+            {
                 break;
             }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
         assert!(dialog.is_active());
-        assert_eq!(gtk::prelude::GtkWindowExt::focus(&dialog),
-                   dialog.widget_for_response(ResponseType::Cancel));
+        assert_eq!(
+            gtk::prelude::GtkWindowExt::focus(&dialog),
+            dialog.widget_for_response(ResponseType::Cancel)
+        );
         assert!(dialog.gets_focus_visible());
         // Subsequent activation notifications must not reset a chosen button.
         focus_question_response(&dialog, ResponseType::Accept);
         dialog.notify("is-active");
-        assert_eq!(gtk::prelude::GtkWindowExt::focus(&dialog),
-                   dialog.widget_for_response(ResponseType::Accept));
+        assert_eq!(
+            gtk::prelude::GtkWindowExt::focus(&dialog),
+            dialog.widget_for_response(ResponseType::Accept)
+        );
         focus_question_response(&dialog, ResponseType::Cancel);
         assert!(question_navigation_key(&dialog, NavigationKey::Enter));
         assert_eq!(&*replies.borrow(), &[false]);
@@ -587,26 +683,51 @@ mod tests {
         for (keys, expected) in [
             (vec![NavigationKey::Enter], true),
             (vec![NavigationKey::Left, NavigationKey::Enter], false),
-            (vec![NavigationKey::Left, NavigationKey::Right, NavigationKey::Enter], true),
-            (vec![NavigationKey::Up, NavigationKey::Down, NavigationKey::Enter], true),
+            (
+                vec![
+                    NavigationKey::Left,
+                    NavigationKey::Right,
+                    NavigationKey::Enter,
+                ],
+                true,
+            ),
+            (
+                vec![NavigationKey::Up, NavigationKey::Down, NavigationKey::Enter],
+                true,
+            ),
             (vec![NavigationKey::Escape], false),
         ] {
             let replies = Rc::new(RefCell::new(Vec::new()));
             let reply = Rc::clone(&replies);
-            ask_question(Some(&parent), "Question navigation test", "Choose an action",
-                         "No", "Yes", move |value| reply.borrow_mut().push(value));
-            let dialog = gtk::Window::list_toplevels().into_iter()
-                .find_map(|widget| widget.downcast::<gtk::MessageDialog>().ok()).unwrap();
+            ask_question(
+                Some(&parent),
+                "Question navigation test",
+                "Choose an action",
+                "No",
+                "Yes",
+                move |value| reply.borrow_mut().push(value),
+            );
+            let dialog = gtk::Window::list_toplevels()
+                .into_iter()
+                .find_map(|widget| widget.downcast::<gtk::MessageDialog>().ok())
+                .unwrap();
             for _ in 0..100 {
-                if !context.pending() { break; }
+                if !context.pending() {
+                    break;
+                }
                 context.iteration(false);
             }
-            assert_eq!(gtk::prelude::GtkWindowExt::focus(&dialog),
-                       dialog.widget_for_response(ResponseType::Accept));
+            assert_eq!(
+                gtk::prelude::GtkWindowExt::focus(&dialog),
+                dialog.widget_for_response(ResponseType::Accept)
+            );
             assert!(dialog.gets_focus_visible());
             for key in keys {
                 let completed = question_navigation_key(&dialog, key);
-                assert_eq!(completed, matches!(key, NavigationKey::Enter | NavigationKey::Escape));
+                assert_eq!(
+                    completed,
+                    matches!(key, NavigationKey::Enter | NavigationKey::Escape)
+                );
             }
             assert_eq!(&*replies.borrow(), &[expected]);
             assert!(!dialog.is_visible());
@@ -616,13 +737,25 @@ mod tests {
         // answering the question; cancelling still completes it exactly once.
         let replies = Rc::new(RefCell::new(Vec::new()));
         let reply = Rc::clone(&replies);
-        let dialog = ask_question_with_navigation(Some(&parent), "Checkbox question test",
-            "Choose an action", "No", "Yes", None,
-            move |accepted| reply.borrow_mut().push(accepted));
+        let dialog = ask_question_with_navigation(
+            Some(&parent),
+            "Checkbox question test",
+            "Choose an action",
+            "No",
+            "Yes",
+            None,
+            move |accepted| reply.borrow_mut().push(accepted),
+        );
         let checkbox = gtk::CheckButton::with_label("Don't show again");
-        dialog.message_area().downcast::<gtk::Box>().unwrap().append(&checkbox);
+        dialog
+            .message_area()
+            .downcast::<gtk::Box>()
+            .unwrap()
+            .append(&checkbox);
         for _ in 0..100 {
-            if !context.pending() { break; }
+            if !context.pending() {
+                break;
+            }
             context.iteration(false);
         }
         focus_question_response(&dialog, ResponseType::Cancel);
@@ -632,12 +765,18 @@ mod tests {
             }
             question_navigation_key(&dialog, NavigationKey::Up);
         }
-        assert_eq!(gtk::prelude::GtkWindowExt::focus(&dialog).as_ref(), Some(checkbox.upcast_ref()));
+        assert_eq!(
+            gtk::prelude::GtkWindowExt::focus(&dialog).as_ref(),
+            Some(checkbox.upcast_ref())
+        );
         assert!(!question_navigation_key(&dialog, NavigationKey::Enter));
         assert!(checkbox.is_active());
         assert!(replies.borrow().is_empty());
         assert!(!question_navigation_key(&dialog, NavigationKey::Down));
-        assert_ne!(gtk::prelude::GtkWindowExt::focus(&dialog).as_ref(), Some(checkbox.upcast_ref()));
+        assert_ne!(
+            gtk::prelude::GtkWindowExt::focus(&dialog).as_ref(),
+            Some(checkbox.upcast_ref())
+        );
         assert!(question_navigation_key(&dialog, NavigationKey::Escape));
         assert_eq!(&*replies.borrow(), &[false]);
         dialog.destroy();
@@ -648,15 +787,25 @@ mod tests {
         input.initialize();
         let hid = std::sync::Arc::new(parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new()));
         hid.lock().reload_input_devices();
-        hid.lock().get_emulated_controller(hid_core::hid_types::NpadIdType::Player1)
-            .lock().set_npad_style_index(hid_core::hid_types::NpadStyleIndex::Fullkey);
+        hid.lock()
+            .get_emulated_controller(hid_core::hid_types::NpadIdType::Player1)
+            .lock()
+            .set_npad_style_index(hid_core::hid_types::NpadStyleIndex::Fullkey);
         let replies = Rc::new(RefCell::new(Vec::new()));
         let reply = Rc::clone(&replies);
-        ask_question_with_navigation(Some(&parent), "Controller question test", "Choose an action",
-            "No", "Yes", Some(ControllerNavigation::new(&hid)),
-            move |value| reply.borrow_mut().push(value));
-        let dialog = gtk::Window::list_toplevels().into_iter()
-            .find_map(|widget| widget.downcast::<gtk::MessageDialog>().ok()).unwrap();
+        ask_question_with_navigation(
+            Some(&parent),
+            "Controller question test",
+            "Choose an action",
+            "No",
+            "Yes",
+            Some(ControllerNavigation::new(&hid)),
+            move |value| reply.borrow_mut().push(value),
+        );
+        let dialog = gtk::Window::list_toplevels()
+            .into_iter()
+            .find_map(|widget| widget.downcast::<gtk::MessageDialog>().ok())
+            .unwrap();
         let pump_until = |condition: &dyn Fn() -> bool| {
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
             while !condition() && std::time::Instant::now() < deadline {
@@ -666,24 +815,45 @@ mod tests {
             assert!(condition());
         };
         pump_until(&|| dialog.is_active());
-        input.get_virtual_gamepad_mut().unwrap().set_button_state(0, VirtualButton::ButtonLeft, true);
-        pump_until(&|| gtk::prelude::GtkWindowExt::focus(&dialog)
-            == dialog.widget_for_response(ResponseType::Cancel));
+        input.get_virtual_gamepad_mut().unwrap().set_button_state(
+            0,
+            VirtualButton::ButtonLeft,
+            true,
+        );
+        pump_until(&|| {
+            gtk::prelude::GtkWindowExt::focus(&dialog)
+                == dialog.widget_for_response(ResponseType::Cancel)
+        });
         assert!(dialog.gets_focus_visible());
-        input.get_virtual_gamepad_mut().unwrap().set_button_state(0, VirtualButton::ButtonLeft, false);
-        input.get_virtual_gamepad_mut().unwrap().set_button_state(0, VirtualButton::ButtonA, true);
+        input.get_virtual_gamepad_mut().unwrap().set_button_state(
+            0,
+            VirtualButton::ButtonLeft,
+            false,
+        );
+        input
+            .get_virtual_gamepad_mut()
+            .unwrap()
+            .set_button_state(0, VirtualButton::ButtonA, true);
         pump_until(&|| !replies.borrow().is_empty());
         assert_eq!(&*replies.borrow(), &[false]);
         assert!(!dialog.is_visible());
-        input.get_virtual_gamepad_mut().unwrap().set_button_state(0, VirtualButton::ButtonA, false);
+        input
+            .get_virtual_gamepad_mut()
+            .unwrap()
+            .set_button_state(0, VirtualButton::ButtonA, false);
         dialog.destroy();
         hid.lock().unload_input_devices();
         input.shutdown();
         // Closing a controller-enabled dialog must not be prevented by the
         // polling callback retaining the GTK window.
         let hid = std::sync::Arc::new(parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new()));
-        let dialog = gtk::MessageDialog::new(None::<&gtk::Window>, gtk::DialogFlags::MODAL,
-                                           MessageType::Question, ButtonsType::None, "Lifecycle");
+        let dialog = gtk::MessageDialog::new(
+            None::<&gtk::Window>,
+            gtk::DialogFlags::MODAL,
+            MessageType::Question,
+            ButtonsType::None,
+            "Lifecycle",
+        );
         let weak = dialog.downgrade();
         install_question_navigation(&dialog, ControllerNavigation::new(&hid));
         dialog.destroy();
@@ -738,8 +908,17 @@ pub fn open_file<P: IsA<gtk::Window>>(
     callback: impl FnOnce(Option<gio::File>) + 'static,
 ) {
     if *common::settings::values().controller_navigation.get_value() {
-        run_controller_file_chooser(parent, title, FileChooserAction::Open, false,
-            None, None, filters, default_filter, move |files| callback(files.into_iter().next()));
+        run_controller_file_chooser(
+            parent,
+            title,
+            FileChooserAction::Open,
+            false,
+            None,
+            None,
+            filters,
+            default_filter,
+            move |files| callback(files.into_iter().next()),
+        );
         return;
     }
     let title = crate::i18n::tr(title);
@@ -782,8 +961,17 @@ pub fn open_files<P: IsA<gtk::Window>>(
     callback: impl FnOnce(Vec<gio::File>) + 'static,
 ) {
     if *common::settings::values().controller_navigation.get_value() {
-        run_controller_file_chooser(parent, title, FileChooserAction::Open, true,
-            initial_folder, None, filters, default_filter, callback);
+        run_controller_file_chooser(
+            parent,
+            title,
+            FileChooserAction::Open,
+            true,
+            initial_folder,
+            None,
+            filters,
+            default_filter,
+            callback,
+        );
         return;
     }
     let title = crate::i18n::tr(title);
@@ -839,9 +1027,17 @@ pub fn save_file<P: IsA<gtk::Window>>(
     callback: impl FnOnce(Option<gio::File>) + 'static,
 ) {
     if *common::settings::values().controller_navigation.get_value() {
-        run_controller_file_chooser(parent, title, FileChooserAction::Save, false,
-            initial_file.parent(), initial_file.file_name().and_then(|name| name.to_str()),
-            filters, default_filter, move |files| callback(files.into_iter().next()));
+        run_controller_file_chooser(
+            parent,
+            title,
+            FileChooserAction::Save,
+            false,
+            initial_file.parent(),
+            initial_file.file_name().and_then(|name| name.to_str()),
+            filters,
+            default_filter,
+            move |files| callback(files.into_iter().next()),
+        );
         return;
     }
     let title = crate::i18n::tr(title);
@@ -889,8 +1085,17 @@ pub fn select_folder<P: IsA<gtk::Window>>(
     callback: impl FnOnce(Option<gio::File>) + 'static,
 ) {
     if *common::settings::values().controller_navigation.get_value() {
-        run_controller_file_chooser(parent, title, FileChooserAction::SelectFolder, false,
-            None, None, &[], None, move |files| callback(files.into_iter().next()));
+        run_controller_file_chooser(
+            parent,
+            title,
+            FileChooserAction::SelectFolder,
+            false,
+            None,
+            None,
+            &[],
+            None,
+            move |files| callback(files.into_iter().next()),
+        );
         return;
     }
     let title = crate::i18n::tr(title);
@@ -921,9 +1126,14 @@ pub fn select_folder<P: IsA<gtk::Window>>(
 /// frontend callers retain installation/scanning and response ownership.
 #[allow(clippy::too_many_arguments)]
 fn run_controller_file_chooser<P: IsA<gtk::Window>>(
-    parent: Option<&P>, title: &str, action: FileChooserAction, multiple: bool,
-    initial_folder: Option<&std::path::Path>, initial_name: Option<&str>,
-    filters: &[gtk::FileFilter], default_filter: Option<&gtk::FileFilter>,
+    parent: Option<&P>,
+    title: &str,
+    action: FileChooserAction,
+    multiple: bool,
+    initial_folder: Option<&std::path::Path>,
+    initial_name: Option<&str>,
+    filters: &[gtk::FileFilter],
+    default_filter: Option<&gtk::FileFilter>,
     callback: impl FnOnce(Vec<gio::File>) + 'static,
 ) {
     let accept = crate::i18n::tr(match action {
@@ -933,21 +1143,32 @@ fn run_controller_file_chooser<P: IsA<gtk::Window>>(
     });
     let cancel = crate::i18n::tr("Cancel");
     let dialog = gtk::FileChooserDialog::new(
-        Some(&crate::i18n::tr(title)), parent, action,
-        &[(&cancel, ResponseType::Cancel), (&accept, ResponseType::Accept)],
+        Some(&crate::i18n::tr(title)),
+        parent,
+        action,
+        &[
+            (&cancel, ResponseType::Cancel),
+            (&accept, ResponseType::Accept),
+        ],
     );
     dialog.set_modal(true);
     dialog.set_default_size(900, 600);
     dialog.set_default_response(ResponseType::Accept);
     dialog.set_select_multiple(multiple);
-    for filter in filters { dialog.add_filter(filter); }
-    if let Some(filter) = default_filter { dialog.set_filter(filter); }
+    for filter in filters {
+        dialog.add_filter(filter);
+    }
+    if let Some(filter) = default_filter {
+        dialog.set_filter(filter);
+    }
     if let Some(folder) = initial_folder {
         if let Err(error) = dialog.set_current_folder(Some(&gio::File::for_path(folder))) {
             log::debug!("Could not select initial file-chooser folder: {error}");
         }
     }
-    if let Some(name) = initial_name { dialog.set_current_name(name); }
+    if let Some(name) = initial_name {
+        dialog.set_current_name(name);
+    }
     let callback = Rc::new(RefCell::new(Some(callback)));
     dialog.connect_response({
         let callback = callback.clone();
@@ -955,22 +1176,33 @@ fn run_controller_file_chooser<P: IsA<gtk::Window>>(
             let files = if response == ResponseType::Accept {
                 let model = dialog.files();
                 (0..model.n_items())
-                    .filter_map(|i| model.item(i)?.downcast::<gio::File>().ok()).collect()
-            } else { Vec::new() };
+                    .filter_map(|i| model.item(i)?.downcast::<gio::File>().ok())
+                    .collect()
+            } else {
+                Vec::new()
+            };
             let callback = callback.borrow_mut().take();
             dialog.close();
-            if let Some(callback) = callback { callback(files); }
+            if let Some(callback) = callback {
+                callback(files);
+            }
         }
     });
     dialog.connect_close_request(move |_| {
         let callback = callback.borrow_mut().take();
-        if let Some(callback) = callback { callback(Vec::new()); }
+        if let Some(callback) = callback {
+            callback(Vec::new());
+        }
         glib::Propagation::Proceed
     });
     dialog.connect_map(|dialog| {
-        glib::idle_add_local_once(glib::clone!(#[weak] dialog, move || {
-            dialog.set_focus_visible(true);
-        }));
+        glib::idle_add_local_once(glib::clone!(
+            #[weak]
+            dialog,
+            move || {
+                dialog.set_focus_visible(true);
+            }
+        ));
     });
     dialog.present();
 }

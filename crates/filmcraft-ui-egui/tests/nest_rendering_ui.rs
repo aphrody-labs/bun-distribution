@@ -21,7 +21,10 @@ impl Driver {
         s.execute("file.openDemoProject", json!({})).unwrap();
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(s).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -57,7 +60,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn app(&mut self) -> &mut FilmcraftApp {
@@ -71,7 +77,14 @@ impl Driver {
     fn peaks_when(&mut self, item: u64, ready: impl Fn(&[(f32, f32)]) -> bool) -> Vec<(f32, f32)> {
         for _ in 0..400 {
             self.frames(1);
-            let got = self.app().tl.peaks.lock().unwrap().get(&(ItemId(item), 0)).cloned();
+            let got = self
+                .app()
+                .tl
+                .peaks
+                .lock()
+                .unwrap()
+                .get(&(ItemId(item), 0))
+                .cloned();
             if let Some(p) = got.filter(|p| ready(p)) {
                 return p.to_vec();
             }
@@ -82,7 +95,9 @@ impl Driver {
 }
 
 fn loudest(peaks: &[(f32, f32)]) -> f32 {
-    peaks.iter().fold(0.0, |m, (lo, hi)| m.max(lo.abs()).max(hi.abs()))
+    peaks
+        .iter()
+        .fold(0.0, |m, (lo, hi)| m.max(lo.abs()).max(hi.abs()))
 }
 
 /// Premiere draws a waveform on the sound clip of a nest. Here it is the nested sequence's mix,
@@ -93,15 +108,23 @@ fn the_sound_clip_of_a_nest_gets_a_waveform_of_its_sequence() {
     let outer = d.app().session.state.active_sequence.unwrap().0;
     let clip = d.app().session.active_sequence().unwrap().video_tracks[0].items[1].clone();
     d.exec("timeline.select", json!({"clips": [clip.id.0]}));
-    let nested = d.exec("clip.nest", json!({"name": "Inner"}))["sequence"].as_u64().unwrap();
+    let nested = d.exec("clip.nest", json!({"name": "Inner"}))["sequence"]
+        .as_u64()
+        .unwrap();
     // one peak per 256 samples at 48 kHz, for the nest's whole length, and not silent
     let peaks = d.peaks_when(nested, |p| !p.is_empty());
     let want = (clip.duration.seconds() * 48_000.0 / 256.0) as usize;
-    assert!(peaks.len().abs_diff(want) <= 2, "{} peaks for {want}", peaks.len());
+    assert!(
+        peaks.len().abs_diff(want) <= 2,
+        "{} peaks for {want}",
+        peaks.len()
+    );
     assert!(loudest(&peaks) > 0.01, "the demo footage has sound");
     // turn the clip inside the nest off: the waveform follows
     d.exec("sequence.open", json!({"item": nested}));
-    let sound = d.app().session.active_sequence().unwrap().audio_tracks[0].items[0].id.0;
+    let sound = d.app().session.active_sequence().unwrap().audio_tracks[0].items[0]
+        .id
+        .0;
     d.exec("timeline.select", json!({"clips": [sound]}));
     d.exec("clip.enable", json!({}));
     d.exec("sequence.open", json!({"item": outer}));

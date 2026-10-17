@@ -8,7 +8,9 @@
 use std::collections::HashSet;
 
 use wordcraft_doc::Blocks;
-use wordcraft_doc::control::{ContentControl, ControlEvent, ControlKind, control_events, pair_events};
+use wordcraft_doc::control::{
+    ContentControl, ControlEvent, ControlKind, control_events, pair_events,
+};
 use wordcraft_doc::para::OBJ;
 
 use crate::xml::W;
@@ -38,7 +40,12 @@ impl Plan<'_> {
     }
     /// The byte offsets of paragraph `i`'s markers that are written inline.
     pub fn inline_in(&self, i: usize) -> Vec<usize> {
-        let mut v: Vec<usize> = self.inline.iter().filter(|(b, _)| *b == i).map(|(_, o)| *o).collect();
+        let mut v: Vec<usize> = self
+            .inline
+            .iter()
+            .filter(|(b, _)| *b == i)
+            .map(|(_, o)| *o)
+            .collect();
         v.sort_unstable();
         v
     }
@@ -54,7 +61,11 @@ enum Mode {
 /// Markers without a partner are not written.
 pub fn plan(bl: &Blocks) -> Plan<'_> {
     let n = bl.len();
-    let mut out = Plan { opens: vec![Vec::new(); n], closes: vec![0; n], inline: HashSet::new() };
+    let mut out = Plan {
+        opens: vec![Vec::new(); n],
+        closes: vec![0; n],
+        inline: HashSet::new(),
+    };
     let events = control_events(bl);
     if events.is_empty() {
         return out;
@@ -83,26 +94,59 @@ pub fn plan(bl: &Blocks) -> Plan<'_> {
     // Only control starts before `off` in the paragraph / only control ends after it.
     let at_start = |b: usize, off: usize| {
         para(b).is_some_and(|p| {
-            p.text.get(..off).is_some_and(|t| t.chars().all(|c| c == OBJ))
-                && (0..off).step_by(OBJ.len_utf8()).all(|o| matches!(p.object_at(o), Some(wordcraft_doc::InlineObject::ControlStart { .. })))
+            p.text
+                .get(..off)
+                .is_some_and(|t| t.chars().all(|c| c == OBJ))
+                && (0..off).step_by(OBJ.len_utf8()).all(|o| {
+                    matches!(
+                        p.object_at(o),
+                        Some(wordcraft_doc::InlineObject::ControlStart { .. })
+                    )
+                })
         })
     };
     let at_end = |b: usize, off: usize| {
         para(b).is_some_and(|p| {
             let from = off + OBJ.len_utf8();
-            p.text.get(from..).is_some_and(|t| t.chars().all(|c| c == OBJ))
-                && (from..p.len()).step_by(OBJ.len_utf8()).all(|o| matches!(p.object_at(o), Some(wordcraft_doc::InlineObject::ControlEnd)))
+            p.text
+                .get(from..)
+                .is_some_and(|t| t.chars().all(|c| c == OBJ))
+                && (from..p.len()).step_by(OBJ.len_utf8()).all(|o| {
+                    matches!(
+                        p.object_at(o),
+                        Some(wordcraft_doc::InlineObject::ControlEnd)
+                    )
+                })
         })
     };
     let mut mode = vec![Mode::Inline; ranges.len()];
     let mut span: Vec<(usize, usize)> = vec![(0, 0); ranges.len()];
     for (k, (o, c)) in ranges.iter().enumerate() {
-        let (Some(ControlEvent::Open { block: sb, off: so, control }), Some(e)) = (events.get(*o), events.get(*c)) else { continue };
+        let (
+            Some(ControlEvent::Open {
+                block: sb,
+                off: so,
+                control,
+            }),
+            Some(e),
+        ) = (events.get(*o), events.get(*c))
+        else {
+            continue;
+        };
         let (eb, eo) = (e.block(), e.off());
         let m = match (so, eo) {
             (Some(so), Some(eo)) if *sb == eb => {
-                let parent_inline = parent.get(k).copied().flatten().and_then(|p| mode.get(p)).is_some_and(|m| *m == Mode::Inline);
-                if !parent_inline && control.block && at_start(*sb, *so) && at_end(eb, eo) { Mode::Block } else { Mode::Inline }
+                let parent_inline = parent
+                    .get(k)
+                    .copied()
+                    .flatten()
+                    .and_then(|p| mode.get(p))
+                    .is_some_and(|m| *m == Mode::Inline);
+                if !parent_inline && control.block && at_start(*sb, *so) && at_end(eb, eo) {
+                    Mode::Block
+                } else {
+                    Mode::Inline
+                }
             }
             _ => Mode::Block,
         };
@@ -119,12 +163,18 @@ pub fn plan(bl: &Blocks) -> Plan<'_> {
         if mode.get(k) != Some(&Mode::Block) {
             continue;
         }
-        let Some(&(o, _)) = ranges.get(k) else { continue };
-        let Some(&(sb, eb)) = span.get(k) else { continue };
-        let clash = ranges
-            .iter()
-            .enumerate()
-            .any(|(q, (_, qc))| q != k && *qc < o && mode.get(q) == Some(&Mode::Block) && span.get(q).is_some_and(|s| s.1 == sb));
+        let Some(&(o, _)) = ranges.get(k) else {
+            continue;
+        };
+        let Some(&(sb, eb)) = span.get(k) else {
+            continue;
+        };
+        let clash = ranges.iter().enumerate().any(|(q, (_, qc))| {
+            q != k
+                && *qc < o
+                && mode.get(q) == Some(&Mode::Block)
+                && span.get(q).is_some_and(|s| s.1 == sb)
+        });
         if clash {
             let to = (sb + 1).min(eb);
             if let Some(s) = span.get_mut(k) {
@@ -133,10 +183,14 @@ pub fn plan(bl: &Blocks) -> Plan<'_> {
         }
     }
     for (k, (o, c)) in ranges.iter().enumerate() {
-        let Some(ControlEvent::Open { control, .. }) = events.get(*o) else { continue };
+        let Some(ControlEvent::Open { control, .. }) = events.get(*o) else {
+            continue;
+        };
         match mode.get(k) {
             Some(Mode::Block) => {
-                let Some(&(sb, eb)) = span.get(k) else { continue };
+                let Some(&(sb, eb)) = span.get(k) else {
+                    continue;
+                };
                 if let Some(v) = out.opens.get_mut(sb) {
                     v.push(control);
                 }
@@ -188,7 +242,12 @@ pub fn open(w: &mut W, c: &ContentControl) {
     on(w, "w:showingPlcHdr", c.showing_placeholder);
     // Kept elements of the schema's sequence before the type, then the type, then the rest.
     let early = |x: &&String| {
-        ["<w:dataBinding", "<w:label", "<w:tabIndex"].iter().any(|n| x.strip_prefix(n).is_some_and(|rest| rest.starts_with([' ', '/', '>'])))
+        ["<w:dataBinding", "<w:label", "<w:tabIndex"]
+            .iter()
+            .any(|n| {
+                x.strip_prefix(n)
+                    .is_some_and(|rest| rest.starts_with([' ', '/', '>']))
+            })
     };
     for x in c.extra.iter().filter(early) {
         w.raw(x);
@@ -217,10 +276,22 @@ fn kind(w: &mut W, k: &ControlKind) {
                 w.empty("w:text", &[]);
             }
         }
-        ControlKind::CheckBox { checked, checked_char, checked_font, unchecked_char, unchecked_font } => {
+        ControlKind::CheckBox {
+            checked,
+            checked_char,
+            checked_font,
+            unchecked_char,
+            unchecked_font,
+        } => {
             w.open("w14:checkbox", &[]);
-            w.empty("w14:checked", &[("w14:val", if *checked { "1" } else { "0" })]);
-            for (tag, ch, font) in [("w14:checkedState", checked_char, checked_font), ("w14:uncheckedState", unchecked_char, unchecked_font)] {
+            w.empty(
+                "w14:checked",
+                &[("w14:val", if *checked { "1" } else { "0" })],
+            );
+            for (tag, ch, font) in [
+                ("w14:checkedState", checked_char, checked_font),
+                ("w14:uncheckedState", unchecked_char, unchecked_font),
+            ] {
                 let hex = format!("{:04X}", u32::from(*ch));
                 if font.is_empty() {
                     w.empty(tag, &[("w14:val", &hex)]);
@@ -230,25 +301,44 @@ fn kind(w: &mut W, k: &ControlKind) {
             }
             w.close("w14:checkbox");
         }
-        ControlKind::ComboBox { items, last_value } | ControlKind::DropDown { items, last_value } => {
-            let tag = if matches!(k, ControlKind::ComboBox { .. }) { "w:comboBox" } else { "w:dropDownList" };
+        ControlKind::ComboBox { items, last_value }
+        | ControlKind::DropDown { items, last_value } => {
+            let tag = if matches!(k, ControlKind::ComboBox { .. }) {
+                "w:comboBox"
+            } else {
+                "w:dropDownList"
+            };
             if last_value.is_empty() {
                 w.open(tag, &[]);
             } else {
                 w.open(tag, &[("w:lastValue", last_value)]);
             }
             for i in items {
-                w.empty("w:listItem", &[("w:displayText", &i.display), ("w:value", i.value())]);
+                w.empty(
+                    "w:listItem",
+                    &[("w:displayText", &i.display), ("w:value", i.value())],
+                );
             }
             w.close(tag);
         }
-        ControlKind::Date { full_date, format, lid, calendar, store_as } => {
+        ControlKind::Date {
+            full_date,
+            format,
+            lid,
+            calendar,
+            store_as,
+        } => {
             if full_date.is_empty() {
                 w.open("w:date", &[]);
             } else {
                 w.open("w:date", &[("w:fullDate", full_date)]);
             }
-            for (tag, v) in [("w:dateFormat", format), ("w:lid", lid), ("w:storeMappedDataAs", store_as), ("w:calendar", calendar)] {
+            for (tag, v) in [
+                ("w:dateFormat", format),
+                ("w:lid", lid),
+                ("w:storeMappedDataAs", store_as),
+                ("w:calendar", calendar),
+            ] {
                 if !v.is_empty() {
                     w.val(tag, v);
                 }
@@ -256,8 +346,17 @@ fn kind(w: &mut W, k: &ControlKind) {
             w.close("w:date");
         }
         ControlKind::Picture => w.empty("w:picture", &[]),
-        ControlKind::Gallery { list, gallery, category, unique } => {
-            let tag = if *list { "w:docPartList" } else { "w:docPartObj" };
+        ControlKind::Gallery {
+            list,
+            gallery,
+            category,
+            unique,
+        } => {
+            let tag = if *list {
+                "w:docPartList"
+            } else {
+                "w:docPartObj"
+            };
             w.open(tag, &[]);
             if !gallery.is_empty() {
                 w.val("w:docPartGallery", gallery);
@@ -268,7 +367,10 @@ fn kind(w: &mut W, k: &ControlKind) {
             on(w, "w:docPartUnique", *unique);
             w.close(tag);
         }
-        ControlKind::RepeatingSection { title, no_insert_delete } => {
+        ControlKind::RepeatingSection {
+            title,
+            no_insert_delete,
+        } => {
             w.open("w15:repeatingSection", &[]);
             if !title.is_empty() {
                 w.val("w15:sectionTitle", title);

@@ -3,7 +3,14 @@
 //!
 //! Sources: GeoNames dump readme (prose); haversine (textbook); cell index own design.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod unzip;
 
@@ -15,7 +22,8 @@ use serde::Serialize;
 /// Lookups farther than this from any place find nothing.
 pub const MAX_KM: f64 = 50.0;
 /// The files the engine downloads (the first comes zipped as `cities15000.zip`).
-pub const GEONAMES_FILES: [&str; 3] = ["cities15000.txt", "admin1CodesASCII.txt", "countryInfo.txt"];
+pub const GEONAMES_FILES: [&str; 3] =
+    ["cities15000.txt", "admin1CodesASCII.txt", "countryInfo.txt"];
 /// The zip holding [`GEONAMES_FILES`]`[0]`.
 pub const GEONAMES_ZIP: &str = "cities15000.zip";
 pub const GEONAMES_BASE: &str = "https://download.geonames.org/export/dump/";
@@ -58,7 +66,10 @@ impl LatLon {
 
     /// Finite and on the globe.
     pub fn is_valid(self) -> bool {
-        self.lat.is_finite() && self.lon.is_finite() && self.lat.abs() <= 90.0 && self.lon.abs() <= 180.0
+        self.lat.is_finite()
+            && self.lon.is_finite()
+            && self.lat.abs() <= 90.0
+            && self.lon.abs() <= 180.0
     }
 }
 
@@ -122,16 +133,29 @@ impl GeoNames {
             }
             let f: Vec<&str> = line.split('\t').collect();
             // columns: 1 name, 4 latitude, 5 longitude, 8 country code, 10 admin1 code
-            let (Some(name), Some(lat), Some(lon), Some(cc)) = (f.get(1), f.get(4), f.get(5), f.get(8)) else { continue };
-            let (Ok(lat), Ok(lon)) = (lat.trim().parse::<f64>(), lon.trim().parse::<f64>()) else { continue };
+            let (Some(name), Some(lat), Some(lon), Some(cc)) =
+                (f.get(1), f.get(4), f.get(5), f.get(8))
+            else {
+                continue;
+            };
+            let (Ok(lat), Ok(lon)) = (lat.trim().parse::<f64>(), lon.trim().parse::<f64>()) else {
+                continue;
+            };
             let at = LatLon::new(lat, lon);
             let name = short(name);
             if !at.is_valid() || name.is_empty() {
                 continue;
             }
-            let Ok(i) = u32::try_from(g.cities.len()) else { break };
+            let Ok(i) = u32::try_from(g.cities.len()) else {
+                break;
+            };
             g.cells.entry(cell(at)).or_default().push(i);
-            g.cities.push(City { name, at, country: short(cc).to_ascii_uppercase(), admin1: f.get(10).map(|s| short(s)).unwrap_or_default() });
+            g.cities.push(City {
+                name,
+                at,
+                country: short(cc).to_ascii_uppercase(),
+                admin1: f.get(10).map(|s| short(s)).unwrap_or_default(),
+            });
         }
         for line in admin1.unwrap_or("").lines() {
             let mut f = line.split('\t');
@@ -139,10 +163,15 @@ impl GeoNames {
                 g.admin1.insert(short(code), short(name));
             }
         }
-        for line in countries.unwrap_or("").lines().filter(|l| !l.starts_with('#')) {
+        for line in countries
+            .unwrap_or("")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
             let f: Vec<&str> = line.split('\t').collect();
             if let (Some(iso), Some(name)) = (f.first(), f.get(4)) {
-                g.countries.insert(short(iso).to_ascii_uppercase(), short(name));
+                g.countries
+                    .insert(short(iso).to_ascii_uppercase(), short(name));
             }
         }
         g
@@ -151,11 +180,20 @@ impl GeoNames {
     /// Load from a folder holding [`GEONAMES_FILES`] (the last two are optional: without them
     /// states stay blank and countries are ISO codes).
     pub fn load(dir: &Path) -> Result<GeoNames, GeocodeError> {
-        let read = |n: &str| std::fs::read(dir.join(n)).map(|b| String::from_utf8_lossy(&b).into_owned());
-        let cities = read(GEONAMES_FILES[0]).map_err(|e| GeocodeError::Missing(format!("the place names aren't downloaded ({e})")))?;
-        let g = GeoNames::parse(&cities, read(GEONAMES_FILES[1]).ok().as_deref(), read(GEONAMES_FILES[2]).ok().as_deref());
+        let read =
+            |n: &str| std::fs::read(dir.join(n)).map(|b| String::from_utf8_lossy(&b).into_owned());
+        let cities = read(GEONAMES_FILES[0]).map_err(|e| {
+            GeocodeError::Missing(format!("the place names aren't downloaded ({e})"))
+        })?;
+        let g = GeoNames::parse(
+            &cities,
+            read(GEONAMES_FILES[1]).ok().as_deref(),
+            read(GEONAMES_FILES[2]).ok().as_deref(),
+        );
         if g.is_empty() {
-            return Err(GeocodeError::Invalid("the place names file holds no places".into()));
+            return Err(GeocodeError::Invalid(
+                "the place names file holds no places".into(),
+            ));
         }
         Ok(g)
     }
@@ -185,7 +223,9 @@ impl GeoNames {
                     x -= 360;
                 }
                 for &i in self.cells.get(&(cy + dy, x)).into_iter().flatten() {
-                    let Some(c) = self.cities.get(i as usize) else { continue };
+                    let Some(c) = self.cities.get(i as usize) else {
+                        continue;
+                    };
                     let d = distance_m(p, c.at);
                     if best.is_none_or(|(b, _)| d < b) {
                         best = Some((d, c));
@@ -197,8 +237,16 @@ impl GeoNames {
         (d <= MAX_KM * 1000.0).then(|| Place {
             sublocation: String::new(),
             city: c.name.clone(),
-            state: self.admin1.get(&format!("{}.{}", c.country, c.admin1)).cloned().unwrap_or_default(),
-            country: self.countries.get(&c.country).cloned().unwrap_or_else(|| c.country.clone()),
+            state: self
+                .admin1
+                .get(&format!("{}.{}", c.country, c.admin1))
+                .cloned()
+                .unwrap_or_default(),
+            country: self
+                .countries
+                .get(&c.country)
+                .cloned()
+                .unwrap_or_else(|| c.country.clone()),
             iso: c.country.clone(),
             distance: d.round(),
         })
@@ -218,14 +266,29 @@ mod tests {
 
     #[test]
     fn nearest_place() {
-        let g = GeoNames::parse(CITIES, Some("FR.11\tÎle-de-France\nGB.ENG\tEngland\n"), Some("#ISO\tx\nFR\tFRA\t250\tFR\tFrance\n"));
+        let g = GeoNames::parse(
+            CITIES,
+            Some("FR.11\tÎle-de-France\nGB.ENG\tEngland\n"),
+            Some("#ISO\tx\nFR\tFRA\t250\tFR\tFrance\n"),
+        );
         assert_eq!(g.len(), 2);
         let p = g.reverse(LatLon::new(48.86, 2.34)).unwrap();
-        assert_eq!((p.city.as_str(), p.state.as_str(), p.country.as_str(), p.iso.as_str()), ("Paris", "Île-de-France", "France", "FR"));
+        assert_eq!(
+            (
+                p.city.as_str(),
+                p.state.as_str(),
+                p.country.as_str(),
+                p.iso.as_str()
+            ),
+            ("Paris", "Île-de-France", "France", "FR")
+        );
         assert!(p.distance > 0.0 && p.distance < 2000.0);
         // no countryInfo row: the ISO code stands in
         let l = g.reverse(LatLon::new(51.5, -0.1)).unwrap();
-        assert_eq!((l.city.as_str(), l.state.as_str(), l.country.as_str()), ("London", "England", "GB"));
+        assert_eq!(
+            (l.city.as_str(), l.state.as_str(), l.country.as_str()),
+            ("London", "England", "GB")
+        );
         // open sea
         assert!(g.reverse(LatLon::new(0.0, 0.0)).is_none());
     }
@@ -233,13 +296,24 @@ mod tests {
     #[test]
     fn hostile_positions_find_nothing() {
         let g = GeoNames::parse(CITIES, None, None);
-        for (la, lo) in [(f64::NAN, 0.0), (0.0, f64::NAN), (f64::INFINITY, 0.0), (91.0, 0.0), (0.0, -180.5), (-1e300, 1e300)] {
+        for (la, lo) in [
+            (f64::NAN, 0.0),
+            (0.0, f64::NAN),
+            (f64::INFINITY, 0.0),
+            (91.0, 0.0),
+            (0.0, -180.5),
+            (-1e300, 1e300),
+        ] {
             assert!(g.reverse(LatLon::new(la, lo)).is_none(), "{la}, {lo}");
         }
         // the poles and the antimeridian are fine
         assert!(g.reverse(LatLon::new(90.0, 180.0)).is_none());
         assert!(g.reverse(LatLon::new(-90.0, -180.0)).is_none());
-        assert!(GeoNames::default().reverse(LatLon::new(48.86, 2.34)).is_none());
+        assert!(
+            GeoNames::default()
+                .reverse(LatLon::new(48.86, 2.34))
+                .is_none()
+        );
     }
 
     #[test]
@@ -253,21 +327,42 @@ mod tests {
         let g = GeoNames::parse("\t\t\t\t\t\n\u{0}\t\u{feff}\n", Some("\n\t\n"), Some("x"));
         assert!(g.is_empty());
         let long = format!("1\t{}\tx\t\t1\t1\tP\tP\tXX\n", "a".repeat(10_000));
-        assert_eq!(GeoNames::parse(&long, None, None).reverse(LatLon::new(1.0, 1.0)).unwrap().city.len(), MAX_NAME);
+        assert_eq!(
+            GeoNames::parse(&long, None, None)
+                .reverse(LatLon::new(1.0, 1.0))
+                .unwrap()
+                .city
+                .len(),
+            MAX_NAME
+        );
     }
 
     #[test]
     fn load_from_a_folder() {
-        let dir = std::env::temp_dir().join(format!("lightcraft-geocode-load-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("lightcraft-geocode-load-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        assert!(matches!(GeoNames::load(&dir), Err(GeocodeError::Missing(_))));
+        assert!(matches!(
+            GeoNames::load(&dir),
+            Err(GeocodeError::Missing(_))
+        ));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join(GEONAMES_FILES[0]), "junk").unwrap();
-        assert!(matches!(GeoNames::load(&dir), Err(GeocodeError::Invalid(_))));
+        assert!(matches!(
+            GeoNames::load(&dir),
+            Err(GeocodeError::Invalid(_))
+        ));
         std::fs::write(dir.join(GEONAMES_FILES[0]), CITIES).unwrap();
-        std::fs::write(dir.join(GEONAMES_FILES[2]), "GB\tGBR\t826\tUK\tUnited Kingdom\n").unwrap();
+        std::fs::write(
+            dir.join(GEONAMES_FILES[2]),
+            "GB\tGBR\t826\tUK\tUnited Kingdom\n",
+        )
+        .unwrap();
         let g = GeoNames::load(&dir).unwrap();
-        assert_eq!(g.reverse(LatLon::new(51.5, -0.1)).unwrap().country, "United Kingdom");
+        assert_eq!(
+            g.reverse(LatLon::new(51.5, -0.1)).unwrap().country,
+            "United Kingdom"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

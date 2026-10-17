@@ -1,6 +1,4 @@
 pub(crate) mod build_common;
-pub(crate) mod request_common;
-pub(crate) mod resolve;
 pub mod hunyuan3d_3;
 pub mod hunyuan3d_3_sketch;
 pub mod hunyuan_3d_2p0;
@@ -10,5 +8,7 @@ pub mod hunyuan_3d_3p1_pro;
 pub mod hunyuan_3d_3p1_rapid;
 pub mod hunyuan_3d_3p1_smart_topology;
 pub mod meshy_v6;
+pub(crate) mod request_common;
+pub(crate) mod resolve;
 pub mod rodin_2p5_fast;
 pub mod tripo3d_h3p1;

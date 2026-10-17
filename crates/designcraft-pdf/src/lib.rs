@@ -26,7 +26,14 @@
 //!   with built-in conformance checks. `designcraft-cli validate-pdf` exposes those checks for CI.
 //!
 //! Not yet: tagged PDF, bookmarks, hyperlinks, overprint, layers as optional content.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod export;
@@ -37,7 +44,10 @@ mod text;
 mod forms;
 mod pdfx;
 mod transitions;
-pub use export::{BookletKind, BookletOptions, booklet_pairs, export_booklet, export_pdf, export_pdf_with_report, merge_pdfs, sheet_spreads};
+pub use export::{
+    BookletKind, BookletOptions, booklet_pairs, export_booklet, export_pdf, export_pdf_with_report,
+    merge_pdfs, sheet_spreads,
+};
 pub use pdfx::{check_pdfx4, cmyk_group_spaces, has_rgb_groups, make_pdfx4};
 pub use transitions::{add_blend_space, add_catalog_entries, add_page_entries, add_transitions};
 
@@ -56,7 +66,11 @@ pub enum Standard {
 impl Standard {
     /// `none`, `x4` / `pdfx4` / `PDF/X-4`, `a2b` / `pdfa2b` / `PDF/A-2b`.
     pub fn parse(s: &str) -> Option<Self> {
-        let k: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let k: String = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
         match k.as_str() {
             "" | "none" => Some(Self::None),
             "x4" | "pdfx4" | "pdfx42008" | "pdfx42010" => Some(Self::PdfX4),
@@ -81,8 +95,20 @@ pub struct Marks {
 }
 
 impl Marks {
-    pub const NONE: Marks = Marks { crop: false, bleed: false, page_info: false, weight: 0.25, offset: 6.0 };
-    pub const ALL: Marks = Marks { crop: true, bleed: true, page_info: true, weight: 0.25, offset: 6.0 };
+    pub const NONE: Marks = Marks {
+        crop: false,
+        bleed: false,
+        page_info: false,
+        weight: 0.25,
+        offset: 6.0,
+    };
+    pub const ALL: Marks = Marks {
+        crop: true,
+        bleed: true,
+        page_info: true,
+        weight: 0.25,
+        offset: 6.0,
+    };
     pub fn any(&self) -> bool {
         self.crop || self.bleed || self.page_info
     }

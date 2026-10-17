@@ -58,8 +58,15 @@ impl Template {
         if !rest.is_empty() {
             pieces.push(Piece::Text(rest.to_string()));
         }
-        let literal = pieces.iter().map(|p| if let Piece::Text(t) = p { t.len() } else { 0 }).sum();
-        (literal > 0).then_some(Template { pieces, literal, translation })
+        let literal = pieces
+            .iter()
+            .map(|p| if let Piece::Text(t) = p { t.len() } else { 0 })
+            .sum();
+        (literal > 0).then_some(Template {
+            pieces,
+            literal,
+            translation,
+        })
     }
 
     /// The placeholder values if `s` is an instance of this template.
@@ -71,10 +78,18 @@ impl Template {
 
 /// Match `s` against `pieces`, a placeholder taking the shortest non-empty text that lets the
 /// rest match (the last one takes what remains).
-fn match_pieces<'p, 'a>(pieces: &'p [Piece], s: &'a str, out: &mut Vec<(&'p str, &'a str)>) -> bool {
-    let Some((first, rest)) = pieces.split_first() else { return s.is_empty() };
+fn match_pieces<'p, 'a>(
+    pieces: &'p [Piece],
+    s: &'a str,
+    out: &mut Vec<(&'p str, &'a str)>,
+) -> bool {
+    let Some((first, rest)) = pieces.split_first() else {
+        return s.is_empty();
+    };
     match first {
-        Piece::Text(t) => s.strip_prefix(t.as_str()).is_some_and(|tail| match_pieces(rest, tail, out)),
+        Piece::Text(t) => s
+            .strip_prefix(t.as_str())
+            .is_some_and(|tail| match_pieces(rest, tail, out)),
         Piece::Hole(name) => {
             let Some((next, after)) = rest.split_first() else {
                 if s.is_empty() {
@@ -83,11 +98,19 @@ fn match_pieces<'p, 'a>(pieces: &'p [Piece], s: &'a str, out: &mut Vec<(&'p str,
                 out.push((name.as_str(), s));
                 return true;
             };
-            let Piece::Text(next) = next else { return false };
+            let Piece::Text(next) = next else {
+                return false;
+            };
             // Every place the next literal occurs, nearest first (the hole is never empty).
             let mut from = s.chars().next().map_or(1, char::len_utf8);
-            while let Some(at) = s.get(from..).and_then(|tail| tail.find(next.as_str())).map(|i| i + from) {
-                let (Some(value), Some(tail)) = (s.get(..at), s.get(at + next.len()..)) else { return false };
+            while let Some(at) = s
+                .get(from..)
+                .and_then(|tail| tail.find(next.as_str()))
+                .map(|i| i + from)
+            {
+                let (Some(value), Some(tail)) = (s.get(..at), s.get(at + next.len()..)) else {
+                    return false;
+                };
                 let mark = out.len();
                 out.push((name.as_str(), value));
                 if match_pieces(after, tail, out) {
@@ -140,7 +163,10 @@ pub fn parse_entries(text: &str) -> (Vec<Entry>, Vec<String>) {
             (Some(ctx), Some(src), Some(tr), None) if !src.is_empty() && !tr.is_empty() => {
                 entries.push((unescape(ctx), unescape(src), unescape(tr)));
             }
-            _ => errors.push(format!("line {}: expected `context<TAB>source<TAB>translation`", n + 1)),
+            _ => errors.push(format!(
+                "line {}: expected `context<TAB>source<TAB>translation`",
+                n + 1
+            )),
         }
     }
     (entries, errors)
@@ -158,7 +184,8 @@ impl Catalog {
                     c.ids.insert(src, tr);
                 }
                 "@plural" => {
-                    c.plurals.insert(src, tr.split('|').map(str::to_string).collect());
+                    c.plurals
+                        .insert(src, tr.split('|').map(str::to_string).collect());
                 }
                 "@msg" => {
                     if src.contains('{') {
@@ -182,7 +209,9 @@ impl Catalog {
     }
 
     pub fn contextual(&self, ctx: &str, s: &str) -> Option<&str> {
-        self.contextual.get(&format!("{ctx}\u{1}{s}")).map(String::as_str)
+        self.contextual
+            .get(&format!("{ctx}\u{1}{s}"))
+            .map(String::as_str)
     }
 
     pub fn id(&self, id: &str) -> Option<&str> {
@@ -199,13 +228,17 @@ impl Catalog {
         if s.len() > MAX_MESSAGE_LEN {
             return None;
         }
-        self.templates.iter().find_map(|t| t.captures(s).map(|caps| (t.translation.as_str(), caps)))
+        self.templates
+            .iter()
+            .find_map(|t| t.captures(s).map(|caps| (t.translation.as_str(), caps)))
     }
 
     /// The plural form `index` of the message whose English forms are `one|other`.
     pub fn plural(&self, one: &str, other: &str, index: usize) -> Option<&str> {
         let forms = self.plurals.get(&format!("{one}|{other}"))?;
-        forms.get(index.min(forms.len().saturating_sub(1))).map(String::as_str)
+        forms
+            .get(index.min(forms.len().saturating_sub(1)))
+            .map(String::as_str)
     }
 }
 

@@ -15,7 +15,9 @@
 //! no-download fallback, not the main voice.
 
 use crate::script::{self, Segment};
-use crate::{Audio, Gender, MAX_SECONDS, Params, SAMPLE_RATE, TtsError, Voice, VoiceInfo, check_text};
+use crate::{
+    Audio, Gender, MAX_SECONDS, Params, SAMPLE_RATE, TtsError, Voice, VoiceInfo, check_text,
+};
 
 /// A built-in voice: catalogue entry plus its speaking parameters.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -110,7 +112,8 @@ impl Voice for FormantVoice {
         }
         let estimate = (total_ms / 1000.0 * f64::from(SAMPLE_RATE)).ceil() as usize;
         let mut out: Vec<f32> = Vec::new();
-        out.try_reserve(estimate.saturating_add(SAMPLE_RATE as usize)).map_err(|e| TtsError::Invalid(format!("unable to allocate the narration: {e}")))?;
+        out.try_reserve(estimate.saturating_add(SAMPLE_RATE as usize))
+            .map_err(|e| TtsError::Invalid(format!("unable to allocate the narration: {e}")))?;
         for piece in &plan {
             match piece {
                 Piece::Pause(ms) => {
@@ -128,9 +131,14 @@ impl Voice for FormantVoice {
                 *s *= g;
             }
         } else if !peak.is_finite() {
-            return Err(TtsError::Invalid("synthesis produced invalid samples".into()));
+            return Err(TtsError::Invalid(
+                "synthesis produced invalid samples".into(),
+            ));
         }
-        Ok(Audio { samples: out, sample_rate: SAMPLE_RATE })
+        Ok(Audio {
+            samples: out,
+            sample_rate: SAMPLE_RATE,
+        })
     }
 }
 
@@ -177,23 +185,50 @@ const BW: [f32; 3] = [80.0, 100.0, 140.0];
 const NEUTRAL: [f32; 3] = [500.0, 1500.0, 2500.0];
 
 fn base(kind: Kind, f: [f32; 3], dur_ms: f32) -> Phone {
-    Phone { kind, f, bw: BW, voice: 0.0, noise: 0.0, noise_f: 3000.0, noise_bw: 2000.0, dur_ms, pitch: 1.0, sentence_end: false }
+    Phone {
+        kind,
+        f,
+        bw: BW,
+        voice: 0.0,
+        noise: 0.0,
+        noise_f: 3000.0,
+        noise_bw: 2000.0,
+        dur_ms,
+        pitch: 1.0,
+        sentence_end: false,
+    }
 }
 
 fn vowel(f: [f32; 3], dur_ms: f32) -> Phone {
-    Phone { voice: 1.0, ..base(Kind::Vowel, f, dur_ms) }
+    Phone {
+        voice: 1.0,
+        ..base(Kind::Vowel, f, dur_ms)
+    }
 }
 
 fn glide(f: [f32; 3]) -> Phone {
-    Phone { voice: 0.8, ..base(Kind::Glide, f, 65.0) }
+    Phone {
+        voice: 0.8,
+        ..base(Kind::Glide, f, 65.0)
+    }
 }
 
 fn nasal(f: [f32; 3]) -> Phone {
-    Phone { voice: 0.45, bw: [60.0, 200.0, 300.0], ..base(Kind::Nasal, f, 75.0) }
+    Phone {
+        voice: 0.45,
+        bw: [60.0, 200.0, 300.0],
+        ..base(Kind::Nasal, f, 75.0)
+    }
 }
 
 fn fricative(noise_f: f32, noise_bw: f32, noise: f32, voiced: bool, dur_ms: f32) -> Phone {
-    Phone { voice: if voiced { 0.35 } else { 0.0 }, noise, noise_f, noise_bw, ..base(Kind::Fricative, NEUTRAL, dur_ms) }
+    Phone {
+        voice: if voiced { 0.35 } else { 0.0 },
+        noise,
+        noise_f,
+        noise_bw,
+        ..base(Kind::Fricative, NEUTRAL, dur_ms)
+    }
 }
 
 fn silence(dur_ms: f32) -> Phone {
@@ -202,8 +237,16 @@ fn silence(dur_ms: f32) -> Phone {
 
 /// A stop: closure then burst.
 fn stop(out: &mut Vec<Phone>, burst_f: f32, voiced: bool) {
-    out.push(Phone { voice: if voiced { 0.12 } else { 0.0 }, ..base(Kind::Closure, NEUTRAL, if voiced { 45.0 } else { 55.0 }) });
-    out.push(Phone { noise: 0.9, noise_f: burst_f, noise_bw: 1800.0, ..base(Kind::Burst, NEUTRAL, if voiced { 15.0 } else { 30.0 }) });
+    out.push(Phone {
+        voice: if voiced { 0.12 } else { 0.0 },
+        ..base(Kind::Closure, NEUTRAL, if voiced { 45.0 } else { 55.0 })
+    });
+    out.push(Phone {
+        noise: 0.9,
+        noise_f: burst_f,
+        noise_bw: 1800.0,
+        ..base(Kind::Burst, NEUTRAL, if voiced { 15.0 } else { 30.0 })
+    });
 }
 
 // Peterson & Barney (1952) adult male averages: F1, F2, F3.
@@ -224,7 +267,9 @@ fn diphthong(out: &mut Vec<Phone>, a: [f32; 3], b: [f32; 3], stressed: bool) {
     out.push(vowel(b, d * 0.8));
 }
 
-const DIGITS: [&str; 10] = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+const DIGITS: [&str; 10] = [
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
 
 fn is_vowel(c: char) -> bool {
     matches!(c, 'a' | 'e' | 'i' | 'o' | 'u')
@@ -258,8 +303,11 @@ fn phones(text: &str) -> Vec<Phone> {
                 if c == '?' {
                     // rise over the last word of the question
                     let n = out.len();
-                    let from =
-                        out.get(question_from..).map_or(n, |s| s.iter().rposition(|p| p.kind == Kind::Silence).map_or(question_from, |i| question_from + i));
+                    let from = out.get(question_from..).map_or(n, |s| {
+                        s.iter()
+                            .rposition(|p| p.kind == Kind::Silence)
+                            .map_or(question_from, |i| question_from + i)
+                    });
                     for p in out.get_mut(from..).into_iter().flatten() {
                         p.pitch *= 1.25;
                     }
@@ -518,7 +566,9 @@ fn speak_word(w: &str, out: &mut Vec<Phone>) {
             }
             _ => 1,
         };
-        let added_vowel = out.get(before..).is_some_and(|s| s.iter().any(|p| p.kind == Kind::Vowel));
+        let added_vowel = out
+            .get(before..)
+            .is_some_and(|s| s.iter().any(|p| p.kind == Kind::Vowel));
         if added_vowel && stressed {
             for p in out.get_mut(before..).into_iter().flatten() {
                 p.pitch *= 1.08;
@@ -552,7 +602,9 @@ impl Resonator {
         let f = f.clamp(50.0, SAMPLE_RATE as f32 * 0.45);
         let bw = bw.clamp(20.0, 8000.0);
         self.c = -(-2.0 * std::f32::consts::PI * bw * t).exp();
-        self.b = 2.0 * (-std::f32::consts::PI * bw * t).exp() * (2.0 * std::f32::consts::PI * f * t).cos();
+        self.b = 2.0
+            * (-std::f32::consts::PI * bw * t).exp()
+            * (2.0 * std::f32::consts::PI * f * t).cos();
         self.a = 1.0 - self.b - self.c;
     }
     fn tick(&mut self, x: f32) -> f32 {
@@ -599,13 +651,21 @@ fn render(spec: &VoiceSpec, ph: &[Phone], params: &Params, out: &mut Vec<f32>) {
     let mut prev_glottal = 0.0f32;
     let mut dc = (0.0f32, 0.0f32);
     // sentence pitch line: from 1.1 down to 0.85 of the base over each sentence
-    let sentence_len = |from: usize| -> f32 { ph.get(from..).map_or(0, |s| s.iter().position(|p| p.sentence_end).map_or(s.len(), |e| e + 1)) as f32 };
+    let sentence_len = |from: usize| -> f32 {
+        ph.get(from..).map_or(0, |s| {
+            s.iter()
+                .position(|p| p.sentence_end)
+                .map_or(s.len(), |e| e + 1)
+        }) as f32
+    };
     let mut sentence_start = 0usize;
     let mut sentence_n = sentence_len(0).max(1.0);
     let mut prev = silence(0.0);
     for (k, p) in ph.iter().enumerate() {
         let n = ((p.dur_ms / pace) / 1000.0 * sr).round().max(1.0) as usize;
-        let trans = ((TRANSITION_MS / pace) / 1000.0 * sr).min(n as f32 * 0.5).max(1.0);
+        let trans = ((TRANSITION_MS / pace) / 1000.0 * sr)
+            .min(n as f32 * 0.5)
+            .max(1.0);
         let line = 1.1 - 0.25 * ((k - sentence_start) as f32 / sentence_n);
         let mut i = 0;
         while i < n {
@@ -614,7 +674,10 @@ fn render(spec: &VoiceSpec, ph: &[Phone], params: &Params, out: &mut Vec<f32>) {
             for (j, r) in res.iter_mut().enumerate() {
                 r.set(f[j], p.bw[j] * fscale.sqrt());
             }
-            nres.set(lerp(prev.noise_f, p.noise_f, t), lerp(prev.noise_bw, p.noise_bw, t));
+            nres.set(
+                lerp(prev.noise_f, p.noise_f, t),
+                lerp(prev.noise_bw, p.noise_bw, t),
+            );
             let voice = lerp(prev.voice, p.voice, t);
             let namp = lerp(prev.noise, p.noise, t);
             let f0 = (f0_base * line * lerp(prev.pitch, p.pitch, t)).clamp(40.0, 600.0);
@@ -625,7 +688,11 @@ fn render(spec: &VoiceSpec, ph: &[Phone], params: &Params, out: &mut Vec<f32>) {
                     phase -= 1.0;
                 }
                 // glottal flow pulse (open 60 % of the period), differentiated for lip radiation
-                let g = if phase < 0.6 { (std::f32::consts::PI * phase / 0.6).sin().powi(2) } else { 0.0 };
+                let g = if phase < 0.6 {
+                    (std::f32::consts::PI * phase / 0.6).sin().powi(2)
+                } else {
+                    0.0
+                };
                 let dg = g - prev_glottal;
                 prev_glottal = g;
                 let breath = noise.next() * spec.breath * g;
@@ -665,8 +732,16 @@ mod tests {
         let sr = f64::from(SAMPLE_RATE);
         let (lo, hi) = ((sr / 500.0) as usize, (sr / 60.0) as usize);
         let best = (lo..hi).max_by(|&a, &b| {
-            let ca: f64 = mid.iter().zip(&mid[a..]).map(|(x, y)| f64::from(x * y)).sum();
-            let cb: f64 = mid.iter().zip(&mid[b..]).map(|(x, y)| f64::from(x * y)).sum();
+            let ca: f64 = mid
+                .iter()
+                .zip(&mid[a..])
+                .map(|(x, y)| f64::from(x * y))
+                .sum();
+            let cb: f64 = mid
+                .iter()
+                .zip(&mid[b..])
+                .map(|(x, y)| f64::from(x * y))
+                .sum();
             ca.total_cmp(&cb)
         });
         sr / best.unwrap() as f64
@@ -674,13 +749,23 @@ mod tests {
 
     #[test]
     fn speaks_deterministically_with_valid_samples() {
-        let a = say("basic-female", "Hello world, this is FilmCraft. Ready?", Params::default());
-        let b = say("basic-female", "Hello world, this is FilmCraft. Ready?", Params::default());
+        let a = say(
+            "basic-female",
+            "Hello world, this is FilmCraft. Ready?",
+            Params::default(),
+        );
+        let b = say(
+            "basic-female",
+            "Hello world, this is FilmCraft. Ready?",
+            Params::default(),
+        );
         assert_eq!(a, b);
         assert_eq!(a.sample_rate, SAMPLE_RATE);
         assert!(a.seconds() > 1.0 && a.seconds() < 8.0, "{}", a.seconds());
         assert!(a.samples.iter().all(|s| s.is_finite() && s.abs() <= 0.8001));
-        let rms = (a.samples.iter().map(|s| f64::from(s * s)).sum::<f64>() / a.samples.len() as f64).sqrt();
+        let rms = (a.samples.iter().map(|s| f64::from(s * s)).sum::<f64>()
+            / a.samples.len() as f64)
+            .sqrt();
         assert!(rms > 0.03, "too quiet: {rms}");
     }
 
@@ -688,17 +773,42 @@ mod tests {
     fn pause_markers_are_exact_silence() {
         let plain = say("basic-male", "One. Two.", Params::default());
         let paused = say("basic-male", "One. [pause 1s] Two.", Params::default());
-        assert_eq!(paused.samples.len(), plain.samples.len() + SAMPLE_RATE as usize);
+        assert_eq!(
+            paused.samples.len(),
+            plain.samples.len() + SAMPLE_RATE as usize
+        );
         let one = say("basic-male", "One. ", Params::default()).samples.len();
-        assert!(paused.samples[one..one + SAMPLE_RATE as usize].iter().all(|&s| s == 0.0));
+        assert!(
+            paused.samples[one..one + SAMPLE_RATE as usize]
+                .iter()
+                .all(|&s| s == 0.0)
+        );
     }
 
     #[test]
     fn pace_scales_duration() {
         let text = "The quick brown fox jumps over the lazy dog.";
         let n1 = say("basic-female", text, Params::default()).samples.len() as f64;
-        let n2 = say("basic-female", text, Params { pace: 2.0, ..Default::default() }).samples.len() as f64;
-        let nh = say("basic-female", text, Params { pace: 0.5, ..Default::default() }).samples.len() as f64;
+        let n2 = say(
+            "basic-female",
+            text,
+            Params {
+                pace: 2.0,
+                ..Default::default()
+            },
+        )
+        .samples
+        .len() as f64;
+        let nh = say(
+            "basic-female",
+            text,
+            Params {
+                pace: 0.5,
+                ..Default::default()
+            },
+        )
+        .samples
+        .len() as f64;
         assert!((n2 / n1 - 0.5).abs() < 0.05, "{}", n2 / n1);
         assert!((nh / n1 - 2.0).abs() < 0.1, "{}", nh / n1);
     }
@@ -708,28 +818,81 @@ mod tests {
         let text = "aaaaaaaaaaaaaaaaaaaa";
         let female = pitch(&say("basic-female", text, Params::default()).samples);
         let male = pitch(&say("basic-male", text, Params::default()).samples);
-        let high = pitch(&say("basic-male", text, Params { semitones: 6.0, ..Default::default() }).samples);
+        let high = pitch(
+            &say(
+                "basic-male",
+                text,
+                Params {
+                    semitones: 6.0,
+                    ..Default::default()
+                },
+            )
+            .samples,
+        );
         assert!(female > male * 1.5, "female {female} male {male}");
-        assert!((high / male - 2f64.powf(0.5)).abs() < 0.12, "high {high} male {male}");
+        assert!(
+            (high / male - 2f64.powf(0.5)).abs() < 0.12,
+            "high {high} male {male}"
+        );
     }
 
     #[test]
     fn refuses_what_it_cannot_say() {
         let v = voice("basic-female").unwrap();
         assert_eq!(v.synthesize("", &Params::default()), Err(TtsError::Empty));
-        assert_eq!(v.synthesize("👍 🎬", &Params::default()), Err(TtsError::Empty));
-        assert_eq!(v.synthesize("日本語", &Params::default()), Err(TtsError::Empty));
-        assert_eq!(v.synthesize("[pause 2s]", &Params::default()), Err(TtsError::Empty));
-        assert!(matches!(v.synthesize("hi", &Params { pace: f64::NAN, ..Default::default() }), Err(TtsError::Invalid(_))));
+        assert_eq!(
+            v.synthesize("👍 🎬", &Params::default()),
+            Err(TtsError::Empty)
+        );
+        assert_eq!(
+            v.synthesize("日本語", &Params::default()),
+            Err(TtsError::Empty)
+        );
+        assert_eq!(
+            v.synthesize("[pause 2s]", &Params::default()),
+            Err(TtsError::Empty)
+        );
+        assert!(matches!(
+            v.synthesize(
+                "hi",
+                &Params {
+                    pace: f64::NAN,
+                    ..Default::default()
+                }
+            ),
+            Err(TtsError::Invalid(_))
+        ));
         // 64 KB of letters would be over the 30-minute limit: refused before rendering
-        assert_eq!(v.synthesize(&"a ".repeat(crate::MAX_TEXT_BYTES / 2), &Params { pace: 0.5, ..Default::default() }), Err(TtsError::AudioTooLong));
+        assert_eq!(
+            v.synthesize(
+                &"a ".repeat(crate::MAX_TEXT_BYTES / 2),
+                &Params {
+                    pace: 0.5,
+                    ..Default::default()
+                }
+            ),
+            Err(TtsError::AudioTooLong)
+        );
     }
 
     #[test]
     fn hostile_scripts_never_panic() {
         let v = voice("basic-male").unwrap();
-        for s in ["a\0b", "x\u{301}y", "'''", "9999999999999999999999", "[pause 1s]a[pause", "Ünïcödé façade", "?!?!?!", "a?b?c?", "zzzzzzzz", "e"] {
-            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| v.synthesize(s, &Params::default())));
+        for s in [
+            "a\0b",
+            "x\u{301}y",
+            "'''",
+            "9999999999999999999999",
+            "[pause 1s]a[pause",
+            "Ünïcödé façade",
+            "?!?!?!",
+            "a?b?c?",
+            "zzzzzzzz",
+            "e",
+        ] {
+            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                v.synthesize(s, &Params::default())
+            }));
             assert!(r.is_ok(), "panicked on {s:?}");
         }
     }

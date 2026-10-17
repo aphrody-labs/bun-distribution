@@ -19,7 +19,10 @@ const NO_VIEW: i64 = 32;
 
 fn nums(doc: &Document, o: Option<&Object>) -> Option<Vec<f64>> {
     let o = doc.resolve(o?);
-    o.as_array()?.iter().map(|x| doc.resolve(x).as_f64()).collect()
+    o.as_array()?
+        .iter()
+        .map(|x| doc.resolve(x).as_f64())
+        .collect()
 }
 
 /// The appearance stream to draw for an annotation, if it has one.
@@ -31,7 +34,11 @@ fn appearance(doc: &Document, d: &Dict) -> Option<ObjRef> {
         _ => {
             let states = doc.resolve(&n);
             let state = d.name(b"AS")?;
-            states.as_dict()?.get(state)?.as_ref().filter(|r| matches!(&*doc.get(*r), Object::Stream(_)))
+            states
+                .as_dict()?
+                .get(state)?
+                .as_ref()
+                .filter(|r| matches!(&*doc.get(*r), Object::Stream(_)))
         }
     }
 }
@@ -39,15 +46,29 @@ fn appearance(doc: &Document, d: &Dict) -> Option<ObjRef> {
 /// Algorithm 8.1: the matrix that maps the form's bounding box onto the annotation rectangle.
 fn placement(doc: &Document, form: &Dict, rect: [f64; 4]) -> Option<[f64; 6]> {
     let bbox = nums(doc, form.get(b"BBox")).filter(|b| b.len() == 4)?;
-    let m = nums(doc, form.get(b"Matrix")).filter(|m| m.len() == 6).unwrap_or_else(|| vec![1.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
-    let pts = [(bbox[0], bbox[1]), (bbox[2], bbox[1]), (bbox[0], bbox[3]), (bbox[2], bbox[3])]
-        .map(|(x, y)| (m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]));
-    let (x0, x1) = pts.iter().fold((f64::MAX, f64::MIN), |(a, b), p| (a.min(p.0), b.max(p.0)));
-    let (y0, y1) = pts.iter().fold((f64::MAX, f64::MIN), |(a, b), p| (a.min(p.1), b.max(p.1)));
+    let m = nums(doc, form.get(b"Matrix"))
+        .filter(|m| m.len() == 6)
+        .unwrap_or_else(|| vec![1.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
+    let pts = [
+        (bbox[0], bbox[1]),
+        (bbox[2], bbox[1]),
+        (bbox[0], bbox[3]),
+        (bbox[2], bbox[3]),
+    ]
+    .map(|(x, y)| (m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]));
+    let (x0, x1) = pts
+        .iter()
+        .fold((f64::MAX, f64::MIN), |(a, b), p| (a.min(p.0), b.max(p.0)));
+    let (y0, y1) = pts
+        .iter()
+        .fold((f64::MAX, f64::MIN), |(a, b), p| (a.min(p.1), b.max(p.1)));
     if x1 - x0 < 1e-9 || y1 - y0 < 1e-9 {
         return None; // empty appearance (e.g. replies): nothing to draw
     }
-    let (sx, sy) = ((rect[2] - rect[0]) / (x1 - x0), (rect[3] - rect[1]) / (y1 - y0));
+    let (sx, sy) = (
+        (rect[2] - rect[0]) / (x1 - x0),
+        (rect[3] - rect[1]) / (y1 - y0),
+    );
     Some([sx, 0.0, 0.0, sy, rect[0] - x0 * sx, rect[1] - y0 * sy])
 }
 
@@ -66,7 +87,10 @@ fn selected(doc: &Document, d: &Dict, which: Which) -> bool {
             let widget = subtype == b"Widget";
             !matches!(subtype, b"Link" | b"Popup") && (!widget || fields) && (widget || comments)
         }
-        Which::FillSign => !matches!(subtype, b"Link" | b"Popup" | b"Widget") && pdfcraft_annot::is_fill_sign(doc, d),
+        Which::FillSign => {
+            !matches!(subtype, b"Link" | b"Popup" | b"Widget")
+                && pdfcraft_annot::is_fill_sign(doc, d)
+        }
     }
 }
 
@@ -86,7 +110,12 @@ fn xobject_name(existing: &Dict, pending: &Dict, n: &mut u32) -> String {
 
 /// Flatten comments and/or form fields on `pages`. Returns how many annotations were merged
 /// into page content.
-pub fn flatten(doc: &mut Document, pages: &[usize], comments: bool, fields: bool) -> Result<usize, EditError> {
+pub fn flatten(
+    doc: &mut Document,
+    pages: &[usize],
+    comments: bool,
+    fields: bool,
+) -> Result<usize, EditError> {
     flatten_which(doc, pages, Which::Comments { comments, fields })
 }
 
@@ -102,18 +131,38 @@ pub fn flatten_fill_sign(doc: &mut Document, pages: &[usize]) -> Result<usize, E
 /// (`pdfcraft_fonts::UNDRAWN_MARK`: a form field's value, a comment's text), or a comment without
 /// an appearance whose text the standard fonts can't draw. Its page (0-based), whether it is a
 /// form field, and the character.
-fn undrawn_on(doc: &Document, all: &[pdfcraft_model::Page], pages: &[usize], which: Which) -> Option<(usize, bool, char)> {
+fn undrawn_on(
+    doc: &Document,
+    all: &[pdfcraft_model::Page],
+    pages: &[usize],
+    which: Which,
+) -> Option<(usize, bool, char)> {
     for &i in pages {
-        let list = all.get(i)?.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default();
+        let list = all
+            .get(i)?
+            .dict
+            .get(b"Annots")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+            .unwrap_or_default();
         for entry in &list {
-            let Some(d) = doc.resolve(entry).as_dict().cloned() else { continue };
-            let flags = d.get(b"F").and_then(|f| doc.resolve(f).as_int()).unwrap_or(0);
+            let Some(d) = doc.resolve(entry).as_dict().cloned() else {
+                continue;
+            };
+            let flags = d
+                .get(b"F")
+                .and_then(|f| doc.resolve(f).as_int())
+                .unwrap_or(0);
             if !selected(doc, &d, which) || flags & (HIDDEN | NO_VIEW) != 0 {
                 continue;
             }
             let widget = d.name(b"Subtype") == Some(b"Widget");
             let drawn = pdfcraft_fonts::undrawn_mark(&d);
-            let would_draw = || (!widget && appearance(doc, &d).is_none()).then(|| pdfcraft_annot::appearance::undrawable_text(&d)).flatten();
+            let would_draw = || {
+                (!widget && appearance(doc, &d).is_none())
+                    .then(|| pdfcraft_annot::appearance::undrawable_text(&d))
+                    .flatten()
+            };
             if let Some(c) = drawn.or_else(|| would_draw().map(|(_, c)| c)) {
                 return Some((i, widget, c));
             }
@@ -141,7 +190,13 @@ fn flatten_which(doc: &mut Document, pages: &[usize], which: Which) -> Result<us
     for &i in pages {
         let page = all[i].clone();
         let annots_obj = page.dict.get(b"Annots").cloned();
-        let Some(list) = annots_obj.as_ref().map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()) else { continue };
+        let Some(list) = annots_obj
+            .as_ref()
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+        else {
+            continue;
+        };
         let mut content = String::new();
         let mut xobjects = Dict::new();
         let mut name_n = 0u32;
@@ -150,7 +205,11 @@ fn flatten_which(doc: &mut Document, pages: &[usize], which: Which) -> Result<us
             .get(b"Resources")
             .map(|r| doc.resolve(r))
             .and_then(|r| r.as_dict().cloned())
-            .and_then(|r| r.get(b"XObject").map(|x| doc.resolve(x)).and_then(|x| x.as_dict().cloned()))
+            .and_then(|r| {
+                r.get(b"XObject")
+                    .map(|x| doc.resolve(x))
+                    .and_then(|x| x.as_dict().cloned())
+            })
             .unwrap_or_default();
         let mut gone: HashSet<ObjRef> = HashSet::new();
         let mut gone_inline: HashSet<usize> = HashSet::new();
@@ -164,7 +223,10 @@ fn flatten_which(doc: &mut Document, pages: &[usize], which: Which) -> Result<us
             if subtype == b"Widget" || !selected(doc, &d, which) {
                 continue;
             }
-            let flags = d.get(b"F").and_then(|f| doc.resolve(f).as_int()).unwrap_or(0);
+            let flags = d
+                .get(b"F")
+                .and_then(|f| doc.resolve(f).as_int())
+                .unwrap_or(0);
             if flags & (HIDDEN | NO_VIEW) != 0 || appearance(doc, &d).is_some() {
                 continue;
             }
@@ -181,17 +243,35 @@ fn flatten_which(doc: &mut Document, pages: &[usize], which: Which) -> Result<us
             if !selected(doc, d, which) {
                 continue;
             }
-            let flags = d.get(b"F").and_then(|f| doc.resolve(f).as_int()).unwrap_or(0);
+            let flags = d
+                .get(b"F")
+                .and_then(|f| doc.resolve(f).as_int())
+                .unwrap_or(0);
             if flags & (HIDDEN | NO_VIEW) != 0 {
                 continue;
             }
-            let rect = nums(doc, d.get(b"Rect")).filter(|r| r.len() == 4).map(|r| [r[0].min(r[2]), r[1].min(r[3]), r[0].max(r[2]), r[1].max(r[3])]);
+            let rect = nums(doc, d.get(b"Rect")).filter(|r| r.len() == 4).map(|r| {
+                [
+                    r[0].min(r[2]),
+                    r[1].min(r[3]),
+                    r[0].max(r[2]),
+                    r[1].max(r[3]),
+                ]
+            });
             let mut drew = false;
             if let (Some(ap), Some(rect)) = (appearance(doc, d), rect) {
                 let form = doc.get(ap).as_dict().cloned().unwrap_or_default();
                 if let Some(m) = placement(doc, &form, rect) {
                     let name = xobject_name(&existing_xo, &xobjects, &mut name_n);
-                    content.push_str(&format!("q {} {} {} {} {} {} cm /{name} Do Q\n", n(m[0]), n(m[1]), n(m[2]), n(m[3]), n(m[4]), n(m[5])));
+                    content.push_str(&format!(
+                        "q {} {} {} {} {} {} cm /{name} Do Q\n",
+                        n(m[0]),
+                        n(m[1]),
+                        n(m[2]),
+                        n(m[3]),
+                        n(m[4]),
+                        n(m[5])
+                    ));
                     xobjects.set(name.into_bytes(), Object::Ref(ap));
                     drawn += 1;
                     drew = true;
@@ -231,23 +311,41 @@ fn flatten_which(doc: &mut Document, pages: &[usize], which: Which) -> Result<us
         let kept: Vec<Object> = list
             .iter()
             .enumerate()
-            .filter(|(k, e)| !gone_inline.contains(k) && !e.as_ref().is_some_and(|r| gone.contains(&r)))
+            .filter(|(k, e)| {
+                !gone_inline.contains(k) && !e.as_ref().is_some_and(|r| gone.contains(&r))
+            })
             .map(|(_, e)| e.clone())
             .collect();
         if !content.is_empty() {
             // The page's own resources, with the appearances as XObjects.
-            let mut res = page.dict.get(b"Resources").map(|r| doc.resolve(r)).and_then(|r| r.as_dict().cloned()).unwrap_or_default();
-            let mut xo = res.get(b"XObject").map(|x| doc.resolve(x)).and_then(|x| x.as_dict().cloned()).unwrap_or_default();
+            let mut res = page
+                .dict
+                .get(b"Resources")
+                .map(|r| doc.resolve(r))
+                .and_then(|r| r.as_dict().cloned())
+                .unwrap_or_default();
+            let mut xo = res
+                .get(b"XObject")
+                .map(|x| doc.resolve(x))
+                .and_then(|x| x.as_dict().cloned())
+                .unwrap_or_default();
             for (k, v) in xobjects.iter() {
                 xo.set(k.clone(), v.clone());
             }
             res.set(b"XObject".to_vec(), Object::Dict(xo));
-            doc.update_dict(page.obj, |d| d.set(b"Resources".to_vec(), Object::Dict(res)))?;
+            doc.update_dict(page.obj, |d| {
+                d.set(b"Resources".to_vec(), Object::Dict(res))
+            })?;
             let page = page_list(doc)[i].clone();
             place_tagged(doc, &page, "Flattened", content.into_bytes(), false)?;
         }
         let page_now = page_list(doc)[i].clone();
-        match page_now.dict.get(b"Annots").and_then(|a| a.as_ref()).filter(|r| doc.get(*r).as_array().is_some()) {
+        match page_now
+            .dict
+            .get(b"Annots")
+            .and_then(|a| a.as_ref())
+            .filter(|r| doc.get(*r).as_array().is_some())
+        {
             Some(r) => doc.set(r, Object::Array(kept)),
             None => doc.update_dict(page.obj, |d| {
                 if kept.is_empty() {
@@ -260,11 +358,17 @@ fn flatten_which(doc: &mut Document, pages: &[usize], which: Which) -> Result<us
     }
     // A field whose widgets are on no page has nothing to draw, but flattening every field of the
     // document must still take it out of the form, or other software keeps seeing one (#1470).
-    let orphans = matches!(which, Which::Comments { fields: true, .. }) && (0..all.len()).all(|i| pages.contains(&i));
+    let orphans = matches!(which, Which::Comments { fields: true, .. })
+        && (0..all.len()).all(|i| pages.contains(&i));
     if !removed_widgets.is_empty() || orphans {
         let on_page: HashSet<ObjRef> = page_list(doc)
             .iter()
-            .filter_map(|p| p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()))
+            .filter_map(|p| {
+                p.dict
+                    .get(b"Annots")
+                    .map(|a| doc.resolve(a))
+                    .and_then(|a| a.as_array().cloned())
+            })
             .flatten()
             .filter_map(|e| e.as_ref())
             .collect();
@@ -275,29 +379,69 @@ fn flatten_which(doc: &mut Document, pages: &[usize], which: Which) -> Result<us
 
 /// Remove flattened widgets from the AcroForm field tree, and fields left without widgets. With
 /// `on_page`, also the widgets (fields without kids) that are on no page.
-fn prune_fields(doc: &mut Document, widgets: &HashSet<ObjRef>, on_page: Option<&HashSet<ObjRef>>) -> Result<(), EditError> {
-    let Some(root) = doc.root() else { return Ok(()) };
-    let Some(af) = doc.get(root).as_dict().and_then(|d| d.get(b"AcroForm").cloned()) else { return Ok(()) };
+fn prune_fields(
+    doc: &mut Document,
+    widgets: &HashSet<ObjRef>,
+    on_page: Option<&HashSet<ObjRef>>,
+) -> Result<(), EditError> {
+    let Some(root) = doc.root() else {
+        return Ok(());
+    };
+    let Some(af) = doc
+        .get(root)
+        .as_dict()
+        .and_then(|d| d.get(b"AcroForm").cloned())
+    else {
+        return Ok(());
+    };
     let af_ref = af.as_ref();
     let mut af_dict = doc.resolve(&af).as_dict().cloned().unwrap_or_default();
-    let fields = af_dict.get(b"Fields").map(|f| doc.resolve(f)).and_then(|f| f.as_array().cloned()).unwrap_or_default();
+    let fields = af_dict
+        .get(b"Fields")
+        .map(|f| doc.resolve(f))
+        .and_then(|f| f.as_array().cloned())
+        .unwrap_or_default();
     // Returns whether the node survives.
-    fn keep(doc: &mut Document, r: ObjRef, widgets: &HashSet<ObjRef>, on_page: Option<&HashSet<ObjRef>>, depth: usize) -> bool {
+    fn keep(
+        doc: &mut Document,
+        r: ObjRef,
+        widgets: &HashSet<ObjRef>,
+        on_page: Option<&HashSet<ObjRef>>,
+        depth: usize,
+    ) -> bool {
         if widgets.contains(&r) || depth > 64 {
             return depth > 64;
         }
-        let Some(d) = doc.get(r).as_dict().cloned() else { return true };
-        let Some(kids) = d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()) else {
+        let Some(d) = doc.get(r).as_dict().cloned() else {
+            return true;
+        };
+        let Some(kids) = d
+            .get(b"Kids")
+            .map(|k| doc.resolve(k))
+            .and_then(|k| k.as_array().cloned())
+        else {
             return on_page.is_none_or(|p| p.contains(&r));
         };
-        let survivors: Vec<Object> =
-            kids.iter().filter(|k| k.as_ref().is_none_or(|kr| keep(doc, kr, widgets, on_page, depth + 1))).cloned().collect();
+        let survivors: Vec<Object> = kids
+            .iter()
+            .filter(|k| {
+                k.as_ref()
+                    .is_none_or(|kr| keep(doc, kr, widgets, on_page, depth + 1))
+            })
+            .cloned()
+            .collect();
         if survivors.len() != kids.len() {
-            let _ = doc.update_dict(r, |d| d.set(b"Kids".to_vec(), Object::Array(survivors.clone())));
+            let _ = doc.update_dict(r, |d| {
+                d.set(b"Kids".to_vec(), Object::Array(survivors.clone()))
+            });
         }
         !survivors.is_empty()
     }
-    let survivors: Vec<Object> = fields.iter().filter(|f| f.as_ref().is_none_or(|r| keep(doc, r, widgets, on_page, 0))).cloned().collect();
+    let survivors: Vec<Object> = fields
+        .iter()
+        .filter(|f| f.as_ref().is_none_or(|r| keep(doc, r, widgets, on_page, 0)))
+        .cloned()
+        .collect();
     if survivors.len() == fields.len() && widgets.is_empty() {
         return Ok(()); // only looked for fields on no page, and there were none
     }

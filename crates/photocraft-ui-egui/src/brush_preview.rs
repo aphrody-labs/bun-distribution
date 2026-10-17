@@ -21,7 +21,10 @@ pub struct SigCache<T> {
 
 impl<T> Default for SigCache<T> {
     fn default() -> Self {
-        Self { slots: HashMap::new(), renders: 0 }
+        Self {
+            slots: HashMap::new(),
+            renders: 0,
+        }
     }
 }
 
@@ -78,15 +81,81 @@ fn tip_shape_sig(h: &mut DefaultHasher, t: &TipShape) {
 /// Cheap signature of everything that changes a brush's stroke preview.
 pub fn preview_sig(b: &BrushSettings) -> u64 {
     let mut h = DefaultHasher::new();
-    js(&mut h, &(b.size, b.hardness, b.spacing, b.opacity, b.flow, b.pressure_size, b.pressure_opacity, b.erase, b.mode, b.angle, b.roundness));
-    js(&mut h, &(b.flip_x, b.flip_y, b.aliased, b.noise, b.wet_edges, b.build_up, b.build_up_rate, b.protect_texture, b.seed));
-    js(&mut h, &(&b.shape_dynamics, &b.scattering, &b.color_dynamics, &b.transfer, &b.pose, &b.smoothing));
+    js(
+        &mut h,
+        &(
+            b.size,
+            b.hardness,
+            b.spacing,
+            b.opacity,
+            b.flow,
+            b.pressure_size,
+            b.pressure_opacity,
+            b.erase,
+            b.mode,
+            b.angle,
+            b.roundness,
+        ),
+    );
+    js(
+        &mut h,
+        &(
+            b.flip_x,
+            b.flip_y,
+            b.aliased,
+            b.noise,
+            b.wet_edges,
+            b.build_up,
+            b.build_up_rate,
+            b.protect_texture,
+            b.seed,
+        ),
+    );
+    js(
+        &mut h,
+        &(
+            &b.shape_dynamics,
+            &b.scattering,
+            &b.color_dynamics,
+            &b.transfer,
+            &b.pose,
+            &b.smoothing,
+        ),
+    );
     tip_shape_sig(&mut h, &b.tip);
     let d = &b.dual_brush;
-    js(&mut h, &(d.enabled, d.mode, d.size, d.hardness, d.roundness, d.angle, d.spacing, d.scatter, d.both_axes, d.count, d.flip));
+    js(
+        &mut h,
+        &(
+            d.enabled,
+            d.mode,
+            d.size,
+            d.hardness,
+            d.roundness,
+            d.angle,
+            d.spacing,
+            d.scatter,
+            d.both_axes,
+            d.count,
+            d.flip,
+        ),
+    );
     tip_shape_sig(&mut h, &d.tip);
     let t = &b.texture;
-    js(&mut h, &(t.enabled, t.invert, t.scale, t.brightness, t.contrast, t.each_tip, t.mode, t.depth, t.depth_jitter));
+    js(
+        &mut h,
+        &(
+            t.enabled,
+            t.invert,
+            t.scale,
+            t.brightness,
+            t.contrast,
+            t.each_tip,
+            t.mode,
+            t.depth,
+            t.depth_jitter,
+        ),
+    );
     match &t.pattern {
         Pattern::Tile(g) => tile_sig(&mut h, g),
         Pattern::Stored(r) => stored_sig(&mut h, r),
@@ -96,10 +165,22 @@ pub fn preview_sig(b: &BrushSettings) -> u64 {
 }
 
 /// Signature of a tip thumbnail's inputs.
-pub fn tip_sig(tip: &TipShape, hardness: f32, angle: f32, roundness: f32, flip: (bool, bool)) -> u64 {
+pub fn tip_sig(
+    tip: &TipShape,
+    hardness: f32,
+    angle: f32,
+    roundness: f32,
+    flip: (bool, bool),
+) -> u64 {
     let mut h = DefaultHasher::new();
     tip_shape_sig(&mut h, tip);
-    (hardness.to_bits(), angle.to_bits(), roundness.to_bits(), flip).hash(&mut h);
+    (
+        hardness.to_bits(),
+        angle.to_bits(),
+        roundness.to_bits(),
+        flip,
+    )
+        .hash(&mut h);
     h.finish()
 }
 
@@ -131,7 +212,9 @@ pub fn preview_pixels(b: &BrushSettings, w: u32, h: u32, color: [f32; 4]) -> Vec
     let r = photocraft_geom::Rect::new(0, 0, w as i32, h as i32);
     let mut px = vec![[0.0f32; 4]; (w * h) as usize];
     s.read_rgba_into(r, &mut px);
-    px.iter().flat_map(|p| p.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)).collect()
+    px.iter()
+        .flat_map(|p| p.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8))
+        .collect()
 }
 
 /// Box-downsample a tip bitmap so its larger side is at most `max` (cheap bilinear lookups after).
@@ -141,7 +224,10 @@ fn shrink(g: &paint::GrayTile, max: u32) -> (u32, u32, Vec<f32>) {
         return (1, 1, vec![0.0]);
     }
     let f = (w.max(h) as f32 / max.max(1) as f32).max(1.0);
-    let (nw, nh) = (((w as f32 / f).ceil() as u32).max(1), ((h as f32 / f).ceil() as u32).max(1));
+    let (nw, nh) = (
+        ((w as f32 / f).ceil() as u32).max(1),
+        ((h as f32 / f).ceil() as u32).max(1),
+    );
     let mut sum = vec![0.0f32; (nw * nh) as usize];
     let mut cnt = vec![0u32; (nw * nh) as usize];
     for y in 0..h {
@@ -153,12 +239,26 @@ fn shrink(g: &paint::GrayTile, max: u32) -> (u32, u32, Vec<f32>) {
             cnt[i] += 1;
         }
     }
-    (nw, nh, sum.iter().zip(&cnt).map(|(s, c)| if *c > 0 { s / *c as f32 } else { 0.0 }).collect())
+    (
+        nw,
+        nh,
+        sum.iter()
+            .zip(&cnt)
+            .map(|(s, c)| if *c > 0 { s / *c as f32 } else { 0.0 })
+            .collect(),
+    )
 }
 
 /// Coverage (0..1) of a brush tip drawn into an `n × n` cell, with the tip's angle, roundness,
 /// flips and (for computed tips) hardness: the Brush Tip Shape grid and Brushes panel thumbnails.
-pub fn tip_alpha(tip: &TipShape, hardness: f32, angle: f32, roundness: f32, flip: (bool, bool), n: u32) -> Vec<f32> {
+pub fn tip_alpha(
+    tip: &TipShape,
+    hardness: f32,
+    angle: f32,
+    roundness: f32,
+    flip: (bool, bool),
+    n: u32,
+) -> Vec<f32> {
     let n = n.clamp(2, 512);
     let c = n as f32 / 2.0;
     let r = c - 1.0;
@@ -204,7 +304,13 @@ fn bilinear(data: &[f32], w: u32, h: u32, x: f32, y: f32) -> f32 {
         return 0.0;
     }
     let at = |xi: i32, yi: i32| -> f32 {
-        if xi < 0 || yi < 0 || xi >= w as i32 || yi >= h as i32 { 0.0 } else { data.get((yi as u32 * w + xi as u32) as usize).copied().unwrap_or(0.0) }
+        if xi < 0 || yi < 0 || xi >= w as i32 || yi >= h as i32 {
+            0.0
+        } else {
+            data.get((yi as u32 * w + xi as u32) as usize)
+                .copied()
+                .unwrap_or(0.0)
+        }
     };
     let (x0, y0) = (x.floor(), y.floor());
     let (fx, fy) = (x - x0, y - y0);
@@ -225,8 +331,13 @@ fn cache_id() -> egui::Id {
 
 /// Run `f` on the context's preview cache. The cache is taken out of egui's memory while `f` runs,
 /// because uploading a texture needs the context (which `data_mut` holds locked).
-pub fn with_cache<R>(ctx: &egui::Context, f: impl FnOnce(&mut SigCache<egui::TextureHandle>) -> R) -> R {
-    let mut cache = ctx.data_mut(|d| std::mem::take(d.get_temp_mut_or_default::<SigCache<egui::TextureHandle>>(cache_id())));
+pub fn with_cache<R>(
+    ctx: &egui::Context,
+    f: impl FnOnce(&mut SigCache<egui::TextureHandle>) -> R,
+) -> R {
+    let mut cache = ctx.data_mut(|d| {
+        std::mem::take(d.get_temp_mut_or_default::<SigCache<egui::TextureHandle>>(cache_id()))
+    });
     let r = f(&mut cache);
     ctx.data_mut(|d| d.insert_temp(cache_id(), cache));
     r
@@ -238,29 +349,57 @@ pub fn render_count(ctx: &egui::Context) -> u64 {
 }
 
 /// The stroke preview of `b` for `slot`, re-rendered only when the brush or size changes.
-pub fn stroke_texture(ctx: &egui::Context, slot: &str, b: &BrushSettings, w: u32, h: u32, color: Color32) -> egui::TextureHandle {
+pub fn stroke_texture(
+    ctx: &egui::Context,
+    slot: &str,
+    b: &BrushSettings,
+    w: u32,
+    h: u32,
+    color: Color32,
+) -> egui::TextureHandle {
     let mut hs = DefaultHasher::new();
     (preview_sig(b), w, h, color).hash(&mut hs);
     let sig = hs.finish();
     with_cache(ctx, |cache| {
         cache.get(slot, sig, || {
             let c = color.to_normalized_gamma_f32();
-            upload(ctx, slot, w, h, &preview_pixels(b, w, h, [c[0], c[1], c[2], 1.0]))
+            upload(
+                ctx,
+                slot,
+                w,
+                h,
+                &preview_pixels(b, w, h, [c[0], c[1], c[2], 1.0]),
+            )
         })
     })
 }
 
 /// A tip thumbnail for `slot` (`n × n`; `shape` is hardness, angle, roundness), re-rendered only
 /// when the tip changes.
-pub fn tip_texture(ctx: &egui::Context, slot: &str, tip: &TipShape, shape: (f32, f32, f32), n: u32, color: Color32) -> egui::TextureHandle {
+pub fn tip_texture(
+    ctx: &egui::Context,
+    slot: &str,
+    tip: &TipShape,
+    shape: (f32, f32, f32),
+    n: u32,
+    color: Color32,
+) -> egui::TextureHandle {
     let (hardness, angle, roundness) = shape;
     let mut hs = DefaultHasher::new();
-    (tip_sig(tip, hardness, angle, roundness, (false, false)), n, color).hash(&mut hs);
+    (
+        tip_sig(tip, hardness, angle, roundness, (false, false)),
+        n,
+        color,
+    )
+        .hash(&mut hs);
     let sig = hs.finish();
     with_cache(ctx, |cache| {
         cache.get(slot, sig, || {
             let a = tip_alpha(tip, hardness, angle, roundness, (false, false), n);
-            let px: Vec<u8> = a.iter().flat_map(|v| [color.r(), color.g(), color.b(), (v * 255.0).round() as u8]).collect();
+            let px: Vec<u8> = a
+                .iter()
+                .flat_map(|v| [color.r(), color.g(), color.b(), (v * 255.0).round() as u8])
+                .collect();
             upload(ctx, slot, n, n, &px)
         })
     })
@@ -288,15 +427,33 @@ mod tests {
         assert_eq!((c.renders, c.len()), (2, 1));
         // Colour and the session's foreground don't matter; the brush's own fields do.
         let base = preview_sig(&BrushSettings::default());
-        assert_eq!(base, preview_sig(&BrushSettings { color: [1.0, 0.0, 0.0, 1.0], ..Default::default() }));
-        assert_ne!(base, preview_sig(&BrushSettings { texture: paint::Texture { enabled: true, ..Default::default() }, ..Default::default() }));
+        assert_eq!(
+            base,
+            preview_sig(&BrushSettings {
+                color: [1.0, 0.0, 0.0, 1.0],
+                ..Default::default()
+            })
+        );
+        assert_ne!(
+            base,
+            preview_sig(&BrushSettings {
+                texture: paint::Texture {
+                    enabled: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+        );
         c.retain(|_| false);
         assert!(c.is_empty());
     }
 
     #[test]
     fn preview_draws_a_stroke_that_fits() {
-        let mut b = BrushSettings { size: 400.0, ..Default::default() };
+        let mut b = BrushSettings {
+            size: 400.0,
+            ..Default::default()
+        };
         let px = preview_pixels(&b, 120, 40, [1.0, 0.0, 0.0, 1.0]);
         assert_eq!(px.len(), 120 * 40 * 4);
         let covered = px.as_chunks::<4>().0.iter().filter(|p| p[3] > 128).count();
@@ -319,18 +476,38 @@ mod tests {
     fn stored_tips_draw_their_saved_preview_until_loaded() {
         // #1843: library presets keep a small preview, and thumbnails never need the full tip.
         let full = paint::GrayTile::from_fn(900, 300, |x, _| if x < 450 { 1.0 } else { 0.4 });
-        let r =
-            paint::StoredTile { key: "k".into(), width: 900, height: 300, preview: std::sync::Arc::new(full.preview(paint::tile::PREVIEW_SIDE)), full: None };
-        let loaded = paint::StoredTile { full: Some(std::sync::Arc::new(full.clone())), ..r.clone() };
+        let r = paint::StoredTile {
+            key: "k".into(),
+            width: 900,
+            height: 300,
+            preview: std::sync::Arc::new(full.preview(paint::tile::PREVIEW_SIDE)),
+            full: None,
+        };
+        let loaded = paint::StoredTile {
+            full: Some(std::sync::Arc::new(full.clone())),
+            ..r.clone()
+        };
         let n = 36;
         let thumb = |t: &TipShape| tip_alpha(t, 1.0, 0.0, 1.0, (false, false), n);
-        let (from_preview, from_full) = (thumb(&TipShape::Stored(r.clone())), thumb(&TipShape::Sampled(full)));
-        let worst = from_preview.iter().zip(&from_full).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max);
+        let (from_preview, from_full) = (
+            thumb(&TipShape::Stored(r.clone())),
+            thumb(&TipShape::Sampled(full)),
+        );
+        let worst = from_preview
+            .iter()
+            .zip(&from_full)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0f32, f32::max);
         assert!(worst < 0.05, "preview thumbnail differs by {worst}");
         // Loading the tip re-renders the thumbnail; the stroke preview paints with the preview.
-        let sig = |t: paint::StoredTile| tip_sig(&TipShape::Stored(t), 1.0, 0.0, 1.0, (false, false));
+        let sig =
+            |t: paint::StoredTile| tip_sig(&TipShape::Stored(t), 1.0, 0.0, 1.0, (false, false));
         assert_ne!(sig(r.clone()), sig(loaded));
-        let b = BrushSettings { tip: TipShape::Stored(r), size: 900.0, ..Default::default() };
+        let b = BrushSettings {
+            tip: TipShape::Stored(r),
+            size: 900.0,
+            ..Default::default()
+        };
         let px = preview_pixels(&b, 120, 40, [1.0, 0.0, 0.0, 1.0]);
         assert!(px.as_chunks::<4>().0.iter().any(|p| p[3] > 128));
     }
@@ -353,7 +530,15 @@ mod tests {
         let s = tip_alpha(&TipShape::Sampled(bar), 1.0, 0.0, 1.0, (false, false), n);
         assert!(at(&s, 3, 16) > 0.9 && at(&s, 16, 2) < 0.01);
         // Degenerate input never panics.
-        let empty = paint::GrayTile { width: 0, height: 0, data: vec![] };
-        assert!(tip_alpha(&TipShape::Sampled(empty), 1.0, 0.0, 0.0, (true, true), 0).iter().all(|v| *v == 0.0));
+        let empty = paint::GrayTile {
+            width: 0,
+            height: 0,
+            data: vec![],
+        };
+        assert!(
+            tip_alpha(&TipShape::Sampled(empty), 1.0, 0.0, 0.0, (true, true), 0)
+                .iter()
+                .all(|v| *v == 0.0)
+        );
     }
 }

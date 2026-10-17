@@ -129,18 +129,25 @@ pub enum ChallengeOp {
 pub async fn exec_net(args: NetArgs) -> Result<()> {
     match args.op {
         NetOp::Server { bind } => {
-            let addr: SocketAddr =
-                bind.parse().with_context(|| format!("invalid socket address '{bind}'"))?;
+            let addr: SocketAddr = bind
+                .parse()
+                .with_context(|| format!("invalid socket address '{bind}'"))?;
             println!(
                 "aphrody-nie-net: starting WebSocket server on ws://{addr} (protocol: {})",
                 aphrody_nie_net::NET_PROTOCOL_VERSION
             );
             let server = aphrody_nie_net::NetServer::new(addr);
             server.run().await?;
-        },
+        }
 
         NetOp::Room { op } => match op {
-            RoomOp::Create { stadium, mode, half_time, password, json } => {
+            RoomOp::Create {
+                stadium,
+                mode,
+                half_time,
+                password,
+                json,
+            } => {
                 let is_2v2 = mode == "2v2";
                 let config = aphrody_nie_net::RoomConfig {
                     name: format!("Salle Inacode ({mode})"),
@@ -157,7 +164,11 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                 };
                 let mut hub = aphrody_nie_net::LobbyHub::new();
                 let (inacode, _info) = hub
-                    .create_room("host_player".to_string(), "Host".to_string(), config.clone())
+                    .create_room(
+                        "host_player".to_string(),
+                        "Host".to_string(),
+                        config.clone(),
+                    )
                     .map_err(|e| anyhow::anyhow!("échec création salle: {e:?}"))?;
                 if json {
                     println!(
@@ -174,7 +185,7 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                     println!("Stade   : {}", config.stadium);
                     println!("Mi-temps: {}s", config.half_time_seconds);
                 }
-            },
+            }
 
             RoomOp::Format { code } => {
                 let formatted = if let Ok(seed) = code.parse::<u64>() {
@@ -183,7 +194,7 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                     aphrody_nie_net::Inacode::new(&code)
                 };
                 println!("{}", formatted.as_str());
-            },
+            }
         },
 
         NetOp::SimMatch { ticks, seed, json } => {
@@ -213,7 +224,9 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
 
                 session.queue_local_input(p0);
                 session.receive_remote_input(p1);
-                session.advance_tick().with_context(|| format!("simulation tick {t} failed"))?;
+                session
+                    .advance_tick()
+                    .with_context(|| format!("simulation tick {t} failed"))?;
             }
 
             let state_hash = session.current_state_hash();
@@ -238,10 +251,17 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                 println!("- FNV-1a Hash    : 0x{state_hash:08X}");
                 println!("- Zéro-Desync    : 100 % Validé");
             }
-        },
+        }
 
         NetOp::Challenge { op } => match op {
-            ChallengeOp::Create { user_id, name, elo, ranked, opponent, json } => {
+            ChallengeOp::Create {
+                user_id,
+                name,
+                elo,
+                ranked,
+                opponent,
+                json,
+            } => {
                 let mut store = aphrody_nie_net::ranked::ChallengeStore::new();
                 let challenge = store.create_challenge(
                     user_id,
@@ -267,11 +287,15 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                     );
                     println!(
                         "Mode                : {}",
-                        if challenge.ranked { "Classé" } else { "Amical" }
+                        if challenge.ranked {
+                            "Classé"
+                        } else {
+                            "Amical"
+                        }
                     );
                     println!("Expire dans         : 30 minutes");
                 }
-            },
+            }
         },
 
         NetOp::Ladder { limit, json } => {
@@ -294,7 +318,10 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
             if json {
                 println!("{}", serde_json::to_string_pretty(&top)?);
             } else {
-                println!("{:<4} {:<20} {:<12} {:<10}", "Rang", "Joueur", "Palier", "Points AP");
+                println!(
+                    "{:<4} {:<20} {:<12} {:<10}",
+                    "Rang", "Joueur", "Palier", "Points AP"
+                );
                 println!("{:-<48}", "");
                 for (i, p) in top.iter().enumerate() {
                     let tier = aphrody_nie_net::RankTier::from_ap(p.current_ap);
@@ -307,7 +334,7 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                     );
                 }
             }
-        },
+        }
 
         NetOp::Clans { limit, json } => {
             let mut registry = aphrody_nie_net::ClanRegistry::new();
@@ -357,9 +384,14 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                     );
                 }
             }
-        },
+        }
 
-        NetOp::CalcElo { elo_a, elo_b, score_a, json } => {
+        NetOp::CalcElo {
+            elo_a,
+            elo_b,
+            score_a,
+            json,
+        } => {
             let is_win_a = score_a >= 0.5;
             let res = if is_win_a {
                 aphrody_nie_net::compute_match_elo(elo_a, elo_b, aphrody_nie_net::DEFAULT_K_FACTOR)
@@ -367,8 +399,16 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                 aphrody_nie_net::compute_match_elo(elo_b, elo_a, aphrody_nie_net::DEFAULT_K_FACTOR)
             };
 
-            let delta_a = if is_win_a { res.winner_gain as i32 } else { -(res.loser_loss as i32) };
-            let delta_b = if is_win_a { -(res.loser_loss as i32) } else { res.winner_gain as i32 };
+            let delta_a = if is_win_a {
+                res.winner_gain as i32
+            } else {
+                -(res.loser_loss as i32)
+            };
+            let delta_b = if is_win_a {
+                -(res.loser_loss as i32)
+            } else {
+                res.winner_gain as i32
+            };
 
             let tier_a = aphrody_nie_net::RankTier::from_ap(elo_a);
             let tier_b = aphrody_nie_net::RankTier::from_ap(elo_b);
@@ -409,7 +449,7 @@ pub async fn exec_net(args: NetArgs) -> Result<()> {
                     (elo_b as i32 + delta_b).max(0) as u32
                 );
             }
-        },
+        }
     }
 
     Ok(())

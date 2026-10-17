@@ -2,7 +2,7 @@ use core::{
     mem::{self, MaybeUninit},
     ptr,
 };
-use std::alloc::{Layout, alloc_zeroed, handle_alloc_error};
+use std::alloc::{alloc_zeroed, handle_alloc_error, Layout};
 
 /// # Safety
 /// Any given byte pattern must be valid when interpreted as `Self`.

@@ -1,6 +1,8 @@
 //! `Vst3Plugin`: a loaded VST3 instance behind the safe `soundcraft_dsp::Plugin` trait.
 
-use crate::ffi::{BusBuffers, EVENT_CAP, EditorLink, HostContext, Instance, NoteEvent, PARAM_QUEUE_CAP};
+use crate::ffi::{
+    BusBuffers, EVENT_CAP, EditorLink, HostContext, Instance, NoteEvent, PARAM_QUEUE_CAP,
+};
 use soundcraft_dsp::{Plugin, PluginEditor, PluginInfo, Unit};
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -50,7 +52,11 @@ pub struct Vst3Plugin {
 
 impl Vst3Plugin {
     pub(crate) fn new(inst: Instance, info: &'static PluginInfo) -> Vst3Plugin {
-        let ids: Vec<u32> = info.params.iter().map(|p| p.id.parse::<u32>().unwrap_or(u32::MAX)).collect();
+        let ids: Vec<u32> = info
+            .params
+            .iter()
+            .map(|p| p.id.parse::<u32>().unwrap_or(u32::MAX))
+            .collect();
         let maps: Vec<Mapping> = info
             .params
             .iter()
@@ -94,8 +100,13 @@ impl Vst3Plugin {
         };
         let values: Vec<f32> = (0..p.ids.len())
             .map(|i| {
-                let (Some(pi), Some(&id)) = (p.info.params.get(i), p.ids.get(i)) else { return 0.0 };
-                p.inst.normalized_value(id).and_then(|n| p.plain_from_normalized(i, n)).map_or(pi.default, |v| pi.clamp(v))
+                let (Some(pi), Some(&id)) = (p.info.params.get(i), p.ids.get(i)) else {
+                    return 0.0;
+                };
+                p.inst
+                    .normalized_value(id)
+                    .and_then(|n| p.plain_from_normalized(i, n))
+                    .map_or(pi.default, |v| pi.clamp(v))
             })
             .collect();
         p.values = values;
@@ -117,7 +128,11 @@ impl Vst3Plugin {
         let pi = self.info.params.get(i)?;
         let id = *self.ids.get(i)?;
         let span = f64::from(pi.max - pi.min);
-        let linear = if span > 0.0 { (f64::from(v) - f64::from(pi.min)) / span } else { 0.0 };
+        let linear = if span > 0.0 {
+            (f64::from(v) - f64::from(pi.min)) / span
+        } else {
+            0.0
+        };
         let n = match self.maps.get(i)? {
             Mapping::Stepped(steps) if *steps > 0.0 => f64::from(v) / steps,
             Mapping::Stepped(_) => 0.0,
@@ -130,15 +145,23 @@ impl Vst3Plugin {
     /// The editor's size in pixels without opening it (creates and releases a view). For
     /// diagnostics and tests; real plugins expect this on the main thread.
     pub fn editor_size(&self) -> Result<(u32, u32), String> {
-        self.inst.editor().ok_or_else(|| "this plugin has no edit controller".to_string())?.probe()
+        self.inst
+            .editor()
+            .ok_or_else(|| "this plugin has no edit controller".to_string())?
+            .probe()
     }
 
     /// Re-reads every parameter value from the controller (after a state load) and drops
     /// changes still queued from before it.
     fn refresh_values(&mut self) {
         for i in 0..self.ids.len() {
-            let (Some(pi), Some(&id)) = (self.info.params.get(i), self.ids.get(i)) else { continue };
-            if let Some(v) = self.inst.normalized_value(id).and_then(|n| self.plain_from_normalized(i, n))
+            let (Some(pi), Some(&id)) = (self.info.params.get(i), self.ids.get(i)) else {
+                continue;
+            };
+            if let Some(v) = self
+                .inst
+                .normalized_value(id)
+                .and_then(|n| self.plain_from_normalized(i, n))
                 && let Some(slot) = self.values.get_mut(i)
             {
                 *slot = pi.clamp(v);
@@ -153,7 +176,11 @@ impl Vst3Plugin {
         if self.notes.len() >= self.notes.capacity() {
             return;
         }
-        let pos = self.notes.iter().rposition(|q| q.time() <= e.time()).map_or(0, |i| i + 1);
+        let pos = self
+            .notes
+            .iter()
+            .rposition(|q| q.time() <= e.time())
+            .map_or(0, |i| i + 1);
         self.notes.insert(pos, e);
     }
 }
@@ -164,7 +191,11 @@ impl Plugin for Vst3Plugin {
     }
 
     fn prepare(&mut self, sample_rate: f32, max_block: usize, channels: usize) {
-        let sr = if sample_rate.is_finite() && sample_rate > 0.0 { f64::from(sample_rate) } else { 48_000.0 };
+        let sr = if sample_rate.is_finite() && sample_rate > 0.0 {
+            f64::from(sample_rate)
+        } else {
+            48_000.0
+        };
         let mb = max_block.clamp(1, MAX_BLOCK);
         self.channels = channels.clamp(1, MAX_CHANNELS);
         self.max_block = 0;
@@ -187,7 +218,12 @@ impl Plugin for Vst3Plugin {
         // Re-send every value so a re-activated plugin matches the session.
         self.pending.clear();
         for i in 0..self.ids.len().min(PARAM_QUEUE_CAP) {
-            if let (Some(&id), Some(n)) = (self.ids.get(i), self.values.get(i).and_then(|&v| self.normalized_from_plain(i, v))) {
+            if let (Some(&id), Some(n)) = (
+                self.ids.get(i),
+                self.values
+                    .get(i)
+                    .and_then(|&v| self.normalized_from_plain(i, v)),
+            ) {
                 self.pending.push((id, n));
             }
         }
@@ -199,13 +235,19 @@ impl Plugin for Vst3Plugin {
     }
 
     fn set_param(&mut self, id: &str, value: f32) -> bool {
-        let Some(i) = self.info.params.iter().position(|p| p.id == id) else { return false };
-        let (Some(pi), Some(&vid)) = (self.info.params.get(i), self.ids.get(i)) else { return false };
+        let Some(i) = self.info.params.iter().position(|p| p.id == id) else {
+            return false;
+        };
+        let (Some(pi), Some(&vid)) = (self.info.params.get(i), self.ids.get(i)) else {
+            return false;
+        };
         let v = pi.clamp(value);
         if let Some(slot) = self.values.get_mut(i) {
             *slot = v;
         }
-        let Some(n) = self.normalized_from_plain(i, v) else { return true };
+        let Some(n) = self.normalized_from_plain(i, v) else {
+            return true;
+        };
         if let Some(e) = self.pending.iter_mut().find(|(pid, _)| *pid == vid) {
             e.1 = n;
         } else if self.pending.len() < self.pending.capacity() {
@@ -228,7 +270,12 @@ impl Plugin for Vst3Plugin {
         if frames == 0 || ch == 0 {
             return;
         }
-        if self.inst.host().latency_changed.swap(false, Ordering::Relaxed) {
+        if self
+            .inst
+            .host()
+            .latency_changed
+            .swap(false, Ordering::Relaxed)
+        {
             self.latency = self.inst.latency() as usize;
         }
         let last = u32::try_from(frames - 1).unwrap_or(u32::MAX);
@@ -245,15 +292,30 @@ impl Plugin for Vst3Plugin {
             if self.has_input {
                 for c in 0..self.inputs.channels(0) {
                     let src = io.get(c.min(ch - 1)).and_then(|s| s.get(start..start + n));
-                    if let (Some(src), Some(dst)) = (src, self.inputs.channel_mut(0, c).and_then(|d| d.get_mut(..n))) {
+                    if let (Some(src), Some(dst)) = (
+                        src,
+                        self.inputs.channel_mut(0, c).and_then(|d| d.get_mut(..n)),
+                    ) {
                         dst.copy_from_slice(src);
                     }
                 }
             }
-            let k = self.notes.iter().position(|e| e.time() >= end).unwrap_or(self.notes.len());
+            let k = self
+                .notes
+                .iter()
+                .position(|e| e.time() >= end)
+                .unwrap_or(self.notes.len());
             let offset = u32::try_from(start).unwrap_or(u32::MAX);
             let notes = self.notes.get(..k).unwrap_or(&[]);
-            let r = self.inst.process(n, &mut self.inputs, &mut self.outputs, &self.pending, notes, offset, self.position);
+            let r = self.inst.process(
+                n,
+                &mut self.inputs,
+                &mut self.outputs,
+                &self.pending,
+                notes,
+                offset,
+                self.position,
+            );
             self.pending.clear();
             self.notes.drain(..k);
             self.position = self.position.saturating_add(i64::try_from(n).unwrap_or(0));
@@ -261,14 +323,22 @@ impl Plugin for Vst3Plugin {
                 Ok(()) if self.has_output => {
                     let oc = self.outputs.channels(0);
                     for (c, dst) in io.iter_mut().take(ch).enumerate() {
-                        let Some(dst) = dst.get_mut(start..start + n) else { continue };
+                        let Some(dst) = dst.get_mut(start..start + n) else {
+                            continue;
+                        };
                         if ch == 1 && oc >= 2 {
-                            if let (Some(l), Some(r)) = (self.outputs.channel(0, 0), self.outputs.channel(0, 1)) {
+                            if let (Some(l), Some(r)) =
+                                (self.outputs.channel(0, 0), self.outputs.channel(0, 1))
+                            {
                                 for ((d, a), b) in dst.iter_mut().zip(l).zip(r) {
                                     *d = 0.5 * (a + b);
                                 }
                             }
-                        } else if let Some(src) = self.outputs.channel(0, c.min(oc.saturating_sub(1))).and_then(|s| s.get(..n)) {
+                        } else if let Some(src) = self
+                            .outputs
+                            .channel(0, c.min(oc.saturating_sub(1)))
+                            .and_then(|s| s.get(..n))
+                        {
                             dst.copy_from_slice(src);
                         }
                     }
@@ -293,7 +363,11 @@ impl Plugin for Vst3Plugin {
             return;
         }
         let time = u32::try_from(offset).unwrap_or(u32::MAX);
-        self.push_note(NoteEvent::On { time, key: note, velocity: f32::from(velocity.min(127)) / 127.0 });
+        self.push_note(NoteEvent::On {
+            time,
+            key: note,
+            velocity: f32::from(velocity.min(127)) / 127.0,
+        });
         if let Some(h) = self.held.get_mut(note as usize) {
             *h = true;
         }
@@ -331,7 +405,10 @@ impl Plugin for Vst3Plugin {
     }
 
     fn open_editor(&mut self) -> Result<(), String> {
-        self.inst.editor().ok_or_else(|| "this plugin has no editor".to_string())?.open(self.info.name)
+        self.inst
+            .editor()
+            .ok_or_else(|| "this plugin has no editor".to_string())?
+            .open(self.info.name)
     }
 
     fn close_editor(&mut self) {
@@ -342,7 +419,13 @@ impl Plugin for Vst3Plugin {
 
     fn editor(&mut self) -> Option<Box<dyn PluginEditor>> {
         let link = self.inst.editor()?;
-        Some(Box::new(Vst3Editor { link, host: self.inst.host_ref(), info: self.info, ids: self.ids.clone(), maps: self.maps.clone() }))
+        Some(Box::new(Vst3Editor {
+            link,
+            host: self.inst.host_ref(),
+            info: self.info,
+            ids: self.ids.clone(),
+            maps: self.maps.clone(),
+        }))
     }
 }
 
@@ -371,7 +454,11 @@ impl Vst3Editor {
         let pi = self.info.params.get(i)?;
         let id = *self.ids.get(i)?;
         let span = f64::from(pi.max - pi.min);
-        let linear = if span > 0.0 { (f64::from(v) - f64::from(pi.min)) / span } else { 0.0 };
+        let linear = if span > 0.0 {
+            (f64::from(v) - f64::from(pi.min)) / span
+        } else {
+            0.0
+        };
         let n = match self.maps.get(i)? {
             Mapping::Stepped(steps) if *steps > 0.0 => f64::from(v) / steps,
             Mapping::Stepped(_) => 0.0,
@@ -401,7 +488,9 @@ impl PluginEditor for Vst3Editor {
         self.link.idle();
         let mut out = Vec::new();
         for (vid, n) in self.host.take_edits() {
-            let Some(i) = self.ids.iter().position(|&x| x == vid) else { continue };
+            let Some(i) = self.ids.iter().position(|&x| x == vid) else {
+                continue;
+            };
             if let (Some(p), Some(v)) = (self.info.params.get(i), self.plain(i, n)) {
                 out.push((p.id.to_string(), v));
             }
@@ -410,7 +499,9 @@ impl PluginEditor for Vst3Editor {
     }
 
     fn set_param(&mut self, id: &str, value: f32) {
-        let Some(i) = self.info.params.iter().position(|p| p.id == id) else { return };
+        let Some(i) = self.info.params.iter().position(|p| p.id == id) else {
+            return;
+        };
         if let (Some(&vid), Some(n)) = (self.ids.get(i), self.normalized(i, value)) {
             self.link.set_normalized(vid, n);
         }

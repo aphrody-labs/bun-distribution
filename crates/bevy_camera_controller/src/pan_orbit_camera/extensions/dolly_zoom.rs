@@ -6,11 +6,11 @@
 use std::time::Duration;
 
 use bevy_app::prelude::*;
-use bevy_camera::{prelude::*, ScalingMode};
+use bevy_camera::{ScalingMode, prelude::*};
 use bevy_curve::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_log::error_once;
-use bevy_math::{prelude::*, DQuat, DVec3};
+use bevy_math::{DQuat, DVec3, prelude::*};
 use bevy_platform::collections::HashMap;
 use bevy_time::{Real, Time, Timer, TimerMode};
 use bevy_transform::components::Transform;
@@ -18,7 +18,7 @@ use bevy_window::RequestRedraw;
 
 use crate::pan_orbit_camera::{
     controller::transform_utils::apply_delta,
-    prelude::{motion::CurrentMotion, EnabledMotion, PanOrbitCamera},
+    prelude::{EnabledMotion, PanOrbitCamera, motion::CurrentMotion},
 };
 
 /// See the [module](self) docs.

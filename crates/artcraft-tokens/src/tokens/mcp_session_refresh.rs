@@ -21,4 +21,9 @@ pub struct McpSessionRefreshToken(pub String);
 
 impl_string_token!(McpSessionRefreshToken);
 impl_mysql_token_from_row!(McpSessionRefreshToken);
-impl_crockford_generator!(McpSessionRefreshToken, 64usize, TokenPrefix::McpSessionRefresh, CrockfordLower);
+impl_crockford_generator!(
+    McpSessionRefreshToken,
+    64usize,
+    TokenPrefix::McpSessionRefresh,
+    CrockfordLower
+);

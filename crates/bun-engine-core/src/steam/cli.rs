@@ -40,25 +40,41 @@ impl Args {
         Self { positional, flags }
     }
     fn get(&self, name: &str) -> Option<&str> {
-        self.flags.iter().find(|(n, _)| n == name).and_then(|(_, v)| v.as_deref())
+        self.flags
+            .iter()
+            .find(|(n, _)| n == name)
+            .and_then(|(_, v)| v.as_deref())
     }
     fn number<T: std::str::FromStr>(&self, name: &str) -> Result<Option<T>, String> {
-        self.get(name).map(|v| v.parse().map_err(|_| format!("--{name}: invalid number {v}"))).transpose()
+        self.get(name)
+            .map(|v| {
+                v.parse()
+                    .map_err(|_| format!("--{name}: invalid number {v}"))
+            })
+            .transpose()
     }
     fn steam(&self) -> Result<Steam, String> {
-        let options = self.number::<u32>("appid")?.map_or_else(SteamOptions::default, SteamOptions::with_app_id);
+        let options = self
+            .number::<u32>("appid")?
+            .map_or_else(SteamOptions::default, SteamOptions::with_app_id);
         Steam::init(&options)
     }
 }
 
 fn print(value: &impl serde::Serialize) {
-    println!("{}", serde_json::to_string_pretty(value).unwrap_or_default());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(value).unwrap_or_default()
+    );
 }
 
 pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
     let mut args = args.peekable();
     let command = args.next().unwrap_or_default();
-    if matches!(command.as_str(), "install-shortcut" | "uninstall-shortcut" | "shortcuts") {
+    if matches!(
+        command.as_str(),
+        "install-shortcut" | "uninstall-shortcut" | "shortcuts"
+    ) {
         return shortcuts(&command, args.collect());
     }
     let args = Args::parse(args);
@@ -69,9 +85,15 @@ pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
             print(&steam.status());
         }
         "presence" => {
-            let [system, game, ..] = args.positional.as_slice() else { return Err(USAGE.into()) };
+            let [system, game, ..] = args.positional.as_slice() else {
+                return Err(USAGE.into());
+            };
             let steam = args.steam()?;
-            let set = steam.set_presence(&Presence { system: system.clone(), game: game.clone(), state: None });
+            let set = steam.set_presence(&Presence {
+                system: system.clone(),
+                game: game.clone(),
+                state: None,
+            });
             let hold = Duration::from_secs_f64(args.number::<f64>("hold")?.unwrap_or(2.0));
             let until = Instant::now() + hold;
             while Instant::now() < until {
@@ -87,14 +109,19 @@ pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
         }
         "cloud" => cloud_command(&args)?,
         "input-manifest" => {
-            let app_id = args.number::<u32>("appid")?.unwrap_or_else(|| SteamOptions::default().app_id);
-            let dir = args.get("out").map_or_else(input::default_dir, PathBuf::from);
+            let app_id = args
+                .number::<u32>("appid")?
+                .unwrap_or_else(|| SteamOptions::default().app_id);
+            let dir = args
+                .get("out")
+                .map_or_else(input::default_dir, PathBuf::from);
             let manifest = input::write_manifest(&dir, app_id)?;
             print(&serde_json::json!({ "manifest": manifest, "dir": dir }));
         }
         "input" => {
             let steam = args.steam()?;
-            let mut steam_input = input::SteamInput::new(&steam.client, steam.app_id, &input::default_dir())?;
+            let mut steam_input =
+                input::SteamInput::new(&steam.client, steam.app_id, &input::default_dir())?;
             let seconds = args.number::<f64>("seconds")?.unwrap_or(0.0);
             let until = Instant::now() + Duration::from_secs_f64(seconds);
             let mut keys = 0;
@@ -129,7 +156,11 @@ pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
 }
 
 fn cloud_command(args: &Args) -> Result<(), String> {
-    let sub = args.positional.first().map(String::as_str).unwrap_or("quota");
+    let sub = args
+        .positional
+        .first()
+        .map(String::as_str)
+        .unwrap_or("quota");
     let steam = args.steam()?;
     steam.pump();
     match sub {
@@ -156,7 +187,9 @@ fn cloud_command(args: &Args) -> Result<(), String> {
         "roundtrip" => {
             let bytes = args.number::<usize>("bytes")?.unwrap_or(256 * 1024);
             let (written, read) = cloud::roundtrip(bytes)?;
-            print(&serde_json::json!({ "bytes": bytes, "written": written, "read": read, "match": written == read }));
+            print(
+                &serde_json::json!({ "bytes": bytes, "written": written, "read": read, "match": written == read }),
+            );
             if written != read {
                 return Err("Steam Cloud round trip hash mismatch".into());
             }
@@ -164,13 +197,20 @@ fn cloud_command(args: &Args) -> Result<(), String> {
         "sync" | "push" | "pull" => {
             let rom = args.positional.get(1).ok_or(USAGE)?;
             let rom_path = Path::new(rom);
-            let hash = super::sha256_hex(&std::fs::read(rom_path).map_err(|e| format!("{rom}: {e}"))?);
+            let hash =
+                super::sha256_hex(&std::fs::read(rom_path).map_err(|e| format!("{rom}: {e}"))?);
             let title = args.get("title").map_or_else(
-                || rom_path.file_stem().map_or_else(String::new, |s| s.to_string_lossy().into_owned()),
+                || {
+                    rom_path
+                        .file_stem()
+                        .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
+                },
                 str::to_string,
             );
             let system = args.get("system").unwrap_or("unknown");
-            let dir = args.get("dir").map_or_else(|| cloud::save_dir(&hash), PathBuf::from);
+            let dir = args
+                .get("dir")
+                .map_or_else(|| cloud::save_dir(&hash), PathBuf::from);
             let direction = match sub {
                 "push" => cloud::Direction::Push,
                 "pull" => cloud::Direction::Pull,
@@ -190,11 +230,17 @@ fn shortcuts_script() -> Option<PathBuf> {
         return Some(PathBuf::from(root).join(RELATIVE));
     }
     let starts = [std::env::current_dir().ok(), std::env::current_exe().ok()];
-    starts.into_iter().flatten().find_map(|start| start.ancestors().map(|d| d.join(RELATIVE)).find(|p| p.is_file()))
+    starts.into_iter().flatten().find_map(|start| {
+        start
+            .ancestors()
+            .map(|d| d.join(RELATIVE))
+            .find(|p| p.is_file())
+    })
 }
 
 fn shortcuts(command: &str, rest: Vec<String>) -> Result<(), String> {
-    let script = shortcuts_script().ok_or("packages/bun-engine/src/steam/shortcuts.ts not found; set BUN_OS_ROOT")?;
+    let script = shortcuts_script()
+        .ok_or("packages/bun-engine/src/steam/shortcuts.ts not found; set BUN_OS_ROOT")?;
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let sub = match command {
         "install-shortcut" => "install",
@@ -209,5 +255,9 @@ fn shortcuts(command: &str, rest: Vec<String>) -> Result<(), String> {
         .args(rest)
         .status()
         .map_err(|e| format!("bun {}: {e}", script.display()))?;
-    if status.success() { Ok(()) } else { Err(format!("shortcuts.ts exited with {status}")) }
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("shortcuts.ts exited with {status}"))
+    }
 }

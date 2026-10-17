@@ -26,17 +26,25 @@ fn form() -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("form.pdf", None, form()).unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("form.pdf", None, form()).unwrap();
+            app
+        });
     h.run_steps(4);
     h
 }
@@ -44,7 +52,15 @@ fn harness() -> Harness<'static, PdfCraftApp> {
 fn value(h: &Harness<'static, PdfCraftApp>, name: &str) -> Vec<String> {
     let app = h.state();
     let id = app.active_ids().unwrap().1;
-    app.session.get(id).unwrap().form.iter().find(|f| f.name == name).unwrap().value.clone()
+    app.session
+        .get(id)
+        .unwrap()
+        .form
+        .iter()
+        .find(|f| f.name == name)
+        .unwrap()
+        .value
+        .clone()
 }
 
 #[test]
@@ -53,12 +69,16 @@ fn console_runs_scripts_against_the_document() {
     assert!(h.state_mut().execute("tools.js_console"));
     h.run_steps(2);
     h.get_by_label("JavaScript Console");
-    h.state_mut().js_console.input = "getField('greeting').value = 'typed'; console.println(numFields); 6 * 7".into();
+    h.state_mut().js_console.input =
+        "getField('greeting').value = 'typed'; console.println(numFields); 6 * 7".into();
     h.get_by_label("Run").click();
     h.run_steps(2);
     assert_eq!(value(&h, "greeting"), ["typed"]);
     let log = h.state().js_console.log.clone();
-    assert!(log.contains(&"2".to_string()) && log.contains(&"42".to_string()), "{log:?}");
+    assert!(
+        log.contains(&"2".to_string()) && log.contains(&"42".to_string()),
+        "{log:?}"
+    );
     h.state_mut().js_console.input = "throw new Error('boom')".into();
     h.run_steps(4);
     h.get_by_label("Run").click();
@@ -67,14 +87,23 @@ fn console_runs_scripts_against_the_document() {
     h.run_steps(4);
     h.get_by_label("Clear").click();
     h.run_steps(2);
-    assert!(h.state().js_console.log.is_empty(), "{:?} {:?}", h.state().js_console.log, h.state().dialog);
+    assert!(
+        h.state().js_console.log.is_empty(),
+        "{:?} {:?}",
+        h.state().js_console.log,
+        h.state().dialog
+    );
 }
 
 #[test]
 fn button_scripts_run_and_alert() {
     let mut h = harness();
     let id = h.state().active_ids().unwrap().1;
-    h.state_mut().run_button_script(id, "hello", "getField('greeting').value = 'Hello from JavaScript'; app.alert('Filled in');");
+    h.state_mut().run_button_script(
+        id,
+        "hello",
+        "getField('greeting').value = 'Hello from JavaScript'; app.alert('Filled in');",
+    );
     h.run_steps(2);
     assert_eq!(value(&h, "greeting"), ["Hello from JavaScript"]);
     assert_eq!(h.state().toast.clone().unwrap().0, "Filled in");
@@ -91,7 +120,10 @@ fn document_scripts_and_preferences() {
     h.get_by_label("Save").click();
     h.run_steps(2);
     let id = h.state().active_ids().unwrap().1;
-    assert_eq!(h.state().session.get(id).unwrap().document_scripts()[0].0, "init");
+    assert_eq!(
+        h.state().session.get(id).unwrap().document_scripts()[0].0,
+        "init"
+    );
     h.state_mut().dialog = Some(Dialog::Preferences);
     h.run_steps(2);
     // Below the fold in a 900-point window: the preferences scroll to it.
@@ -124,19 +156,34 @@ fn merge_data_files_into_a_spreadsheet() {
 
 #[test]
 fn prepare_a_form_detects_fields_on_a_paper_form() {
-    let paper = pdfcraft_engine::Session::new().create_from_text("t", "Name: ____________________\n\nPhone: ____________________").unwrap().to_vec();
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("paper.pdf", None, paper.clone()).unwrap();
-        app
-    });
+    let paper = pdfcraft_engine::Session::new()
+        .create_from_text(
+            "t",
+            "Name: ____________________\n\nPhone: ____________________",
+        )
+        .unwrap()
+        .to_vec();
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("paper.pdf", None, paper.clone()).unwrap();
+            app
+        });
     h.run_steps(4);
     assert!(h.state_mut().execute("form.prepare"));
     h.run_steps(3);
     let app = h.state();
     let id = app.active_ids().unwrap().1;
-    let names: Vec<String> = app.session.get(id).unwrap().form.iter().map(|f| f.name.clone()).collect();
+    let names: Vec<String> = app
+        .session
+        .get(id)
+        .unwrap()
+        .form
+        .iter()
+        .map(|f| f.name.clone())
+        .collect();
     assert_eq!(names, ["Name", "Phone"]);
     assert_eq!(app.toast.clone().unwrap().0, "Detected 2 form fields");
 }

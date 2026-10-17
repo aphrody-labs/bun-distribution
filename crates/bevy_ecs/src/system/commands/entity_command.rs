@@ -20,9 +20,9 @@ use crate::{
     observer::IntoEntityObserver,
     relationship::RelationshipHookMode,
     system::Command,
-    world::{error::EntityMutableFetchError, EntityWorldMut, FromWorld, World},
+    world::{EntityWorldMut, FromWorld, World, error::EntityMutableFetchError},
 };
-use bevy_ptr::{move_as_ptr, OwningPtr};
+use bevy_ptr::{OwningPtr, move_as_ptr};
 
 use bevy_platform::sync::Arc;
 
@@ -389,7 +389,9 @@ pub fn log_components() -> impl EntityCommand {
                 let name = name
                     .map(|name| alloc::format!(" ({name})"))
                     .unwrap_or_default();
-                info!("Entity {id}{name}: {component_count} components. Enable the `debug` feature to log component names.");
+                info!(
+                    "Entity {id}{name}: {component_count} components. Enable the `debug` feature to log component names."
+                );
             }
         }
 

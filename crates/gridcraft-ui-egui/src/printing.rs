@@ -2,7 +2,12 @@
 use craft_ui::printing::Labels;
 pub use craft_ui::printing::{Discover, Duplex, Feedback, Printer, Settings, State, Submit};
 
-pub fn show(state: &mut State, ui: &mut egui::Ui, discover: &Discover, translate: impl Fn(&str) -> String) {
+pub fn show(
+    state: &mut State,
+    ui: &mut egui::Ui,
+    discover: &Discover,
+    translate: impl Fn(&str) -> String,
+) {
     let labels = Labels {
         printer: &translate("Printer"),
         select_printer: &translate("Select a printer"),
@@ -15,7 +20,12 @@ pub fn show(state: &mut State, ui: &mut egui::Ui, discover: &Discover, translate
         short_edge: &translate("Two-sided: short edge"),
         grayscale: &translate("Grayscale"),
     };
-    state.show(ui, egui::Id::new("gridcraft_print_settings"), discover, &labels);
+    state.show(
+        ui,
+        egui::Id::new("gridcraft_print_settings"),
+        discover,
+        &labels,
+    );
     if let Some(message) = &state.message {
         ui.label(feedback(message, translate));
     }
@@ -23,25 +33,45 @@ pub fn show(state: &mut State, ui: &mut egui::Ui, discover: &Discover, translate
 
 /// Read print settings/status, or validate an explicit update before changing anything.
 /// `refresh: true` starts discovery only; this command never submits a job or opens a dialog.
-pub fn settings(state: &mut State, params: &serde_json::Value, discover: Option<&Discover>) -> Result<serde_json::Value, String> {
+pub fn settings(
+    state: &mut State,
+    params: &serde_json::Value,
+    discover: Option<&Discover>,
+) -> Result<serde_json::Value, String> {
     use serde_json::{Value, json};
-    let object = params.as_object().ok_or("print settings must be an object")?;
-    if object.keys().any(|key| !["printer", "copies", "duplex", "grayscale", "refresh"].contains(&key.as_str())) {
-        return Err("unknown print setting; use printer, copies, duplex, grayscale or refresh".into());
+    let object = params
+        .as_object()
+        .ok_or("print settings must be an object")?;
+    if object
+        .keys()
+        .any(|key| !["printer", "copies", "duplex", "grayscale", "refresh"].contains(&key.as_str()))
+    {
+        return Err(
+            "unknown print setting; use printer, copies, duplex, grayscale or refresh".into(),
+        );
     }
     if state.busy() && !object.is_empty() {
         return Err("wait for the active print submission before changing settings".into());
     }
     let mut next = state.settings.clone();
     if let Some(value) = object.get("printer") {
-        let printer = value.as_str().ok_or("printer must be a name from the discovered list")?;
-        if !state.printers.iter().any(|available| available.name == printer) {
+        let printer = value
+            .as_str()
+            .ok_or("printer must be a name from the discovered list")?;
+        if !state
+            .printers
+            .iter()
+            .any(|available| available.name == printer)
+        {
             return Err("printer must be a name from the discovered list".into());
         }
         next.printer = printer.to_owned();
     }
     if let Some(value) = object.get("copies") {
-        let copies = value.as_u64().filter(|copies| (1..=999).contains(copies)).ok_or("copies must be an integer from 1 to 999")?;
+        let copies = value
+            .as_u64()
+            .filter(|copies| (1..=999).contains(copies))
+            .ok_or("copies must be an integer from 1 to 999")?;
         next.copies = copies as u32;
     }
     if let Some(value) = object.get("duplex") {
@@ -57,7 +87,11 @@ pub fn settings(state: &mut State, params: &serde_json::Value, discover: Option<
     if let Some(value) = object.get("grayscale") {
         next.grayscale = value.as_bool().ok_or("grayscale must be a boolean")?;
     }
-    let refresh = object.get("refresh").map(|value| value.as_bool().ok_or("refresh must be a boolean")).transpose()?.unwrap_or(false);
+    let refresh = object
+        .get("refresh")
+        .map(|value| value.as_bool().ok_or("refresh must be a boolean"))
+        .transpose()?
+        .unwrap_or(false);
     if refresh {
         let discover = discover.ok_or("native printer discovery is unavailable here")?;
         if !state.refresh(discover) {
@@ -87,11 +121,17 @@ pub fn settings(state: &mut State, params: &serde_json::Value, discover: Option<
 pub fn feedback(message: &Feedback, translate: impl Fn(&str) -> String) -> String {
     match message {
         Feedback::FindingPrinters => translate("Finding printers…"),
-        Feedback::NoPrinters => translate("No printers found. Configure a system printer or export a PDF."),
+        Feedback::NoPrinters => {
+            translate("No printers found. Configure a system printer or export a PDF.")
+        }
         Feedback::DiscoveryFailed => translate("Printer discovery failed."),
         Feedback::Submitting => translate("Submitting print job…"),
-        Feedback::Submitted(receipt) if receipt.trim().is_empty() => translate("Print job submitted."),
-        Feedback::Submitted(receipt) => translate("Print job submitted: {receipt}").replace("{receipt}", receipt),
+        Feedback::Submitted(receipt) if receipt.trim().is_empty() => {
+            translate("Print job submitted.")
+        }
+        Feedback::Submitted(receipt) => {
+            translate("Print job submitted: {receipt}").replace("{receipt}", receipt)
+        }
         Feedback::Failed(error) => translate("Print failed: {error}").replace("{error}", error),
         Feedback::WorkerStopped => translate("Print failed: the printing worker stopped."),
     }

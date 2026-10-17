@@ -29,14 +29,23 @@ fn variable(d: &Document, it: &Item, xf: designcraft_geom::Affine, name: &str) -
         "path" => asset.and_then(|a| a.link.clone()).unwrap_or_default(),
         "altText" => it.alt_text.clone(),
         "label" => it.label.clone(),
-        "format" => asset.map(|a| a.mime.rsplit('/').next().unwrap_or("").to_uppercase()).unwrap_or_default(),
-        "dimensions" => asset.and_then(|a| a.pixels).map(|(w, h)| format!("{w} × {h}")).unwrap_or_default(),
+        "format" => asset
+            .map(|a| a.mime.rsplit('/').next().unwrap_or("").to_uppercase())
+            .unwrap_or_default(),
+        "dimensions" => asset
+            .and_then(|a| a.pixels)
+            .map(|(w, h)| format!("{w} × {h}"))
+            .unwrap_or_default(),
         "ppi" => match (g, asset.and_then(|a| a.pixels)) {
             (Some(g), Some((w, _))) if g.size.0 > 0.0 => {
                 let m = (xf * g.xf).as_coeffs();
                 let scale = m[0].hypot(m[1]);
                 let inches = g.size.0 * scale / 72.0;
-                if inches > 0.0 { format!("{}", (w as f64 / inches).round()) } else { String::new() }
+                if inches > 0.0 {
+                    format!("{}", (w as f64 / inches).round())
+                } else {
+                    String::new()
+                }
             }
             _ => String::new(),
         },
@@ -44,7 +53,12 @@ fn variable(d: &Document, it: &Item, xf: designcraft_geom::Affine, name: &str) -
     }
 }
 
-pub(crate) fn fill(d: &Document, it: &Item, xf: designcraft_geom::Affine, template: &str) -> String {
+pub(crate) fn fill(
+    d: &Document,
+    it: &Item,
+    xf: designcraft_geom::Affine,
+    template: &str,
+) -> String {
     let mut out = String::new();
     let mut rest = template;
     while let Some(i) = rest.find('{') {
@@ -73,7 +87,11 @@ fn caption(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(ID, format!("unknown position `{pos}`")));
     }
     let offset = p.get("offset").and_then(Value::as_f64).unwrap_or(0.0);
-    let height = p.get("height").and_then(Value::as_f64).unwrap_or(24.0).max(1.0);
+    let height = p
+        .get("height")
+        .and_then(Value::as_f64)
+        .unwrap_or(24.0)
+        .max(1.0);
     let style = str_param(p, "style").map(str::to_string);
     let live = p.get("live").and_then(Value::as_bool).unwrap_or(false);
     if let Some(st) = &style
@@ -96,11 +114,19 @@ fn caption(s: &mut Session, p: &Value) -> Result<Value> {
                 "right" => Rect::new(b.x1 + offset, b.y0, b.x1 + offset + 144.0, b.y1),
                 _ => Rect::new(b.x0, b.y1 + offset, b.x1, b.y1 + offset + height),
             };
-            let para = ParaFormat { style: style.clone().unwrap_or_else(|| d.styles.default_paragraph.clone()), ..Default::default() };
+            let para = ParaFormat {
+                style: style
+                    .clone()
+                    .unwrap_or_else(|| d.styles.default_paragraph.clone()),
+                ..Default::default()
+            };
             let source = *id;
             let (cid, _) = d.add_text_frame(loc.spread, r, lid, &text, para)?;
             if live && let Some(c) = d.item_mut(cid) {
-                c.live_caption = Some(designcraft_doc::LiveCaption { source, template: template.clone() });
+                c.live_caption = Some(designcraft_doc::LiveCaption {
+                    source,
+                    template: template.clone(),
+                });
             }
             made.push(cid);
         }
@@ -118,8 +144,12 @@ pub(crate) fn refresh_live(d: &mut Document) -> bool {
     let mut todo = Vec::new();
     for id in d.all_items() {
         let Some(c) = d.item(id) else { continue };
-        let (Some(lc), Some(tf)) = (&c.live_caption, c.text_frame()) else { continue };
-        let (Some(loc), Some(src)) = (d.find(lc.source), d.item(lc.source)) else { continue };
+        let (Some(lc), Some(tf)) = (&c.live_caption, c.text_frame()) else {
+            continue;
+        };
+        let (Some(loc), Some(src)) = (d.find(lc.source), d.item(lc.source)) else {
+            continue;
+        };
         let text = fill(d, src, d.parent_xf(&loc) * src.xf, &lc.template);
         if d.story(tf.story).is_some_and(|st| st.text != text) {
             todo.push((tf.story, text));
@@ -145,10 +175,24 @@ mod tests {
     fn static_caption_from_metadata() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [72, 72, 272, 172]})).unwrap()["id"].as_u64().unwrap();
-        s.execute("object.altText", &json!({"text": "Harbour at dawn", "ids": [a]})).unwrap();
-        s.execute("object.label", &json!({"label": "fig-1", "ids": [a]})).unwrap();
-        let r = s.execute("object.caption", &json!({"ids": [a], "text": "Figure {label}: {altText}", "offset": 6})).unwrap();
+        let a = s
+            .execute("frame.create", &json!({"rect": [72, 72, 272, 172]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "object.altText",
+            &json!({"text": "Harbour at dawn", "ids": [a]}),
+        )
+        .unwrap();
+        s.execute("object.label", &json!({"label": "fig-1", "ids": [a]}))
+            .unwrap();
+        let r = s
+            .execute(
+                "object.caption",
+                &json!({"ids": [a], "text": "Figure {label}: {altText}", "offset": 6}),
+            )
+            .unwrap();
         let cid = designcraft_doc::ItemId(r["ids"][0].as_u64().unwrap());
         let d = &s.doc().unwrap().doc;
         let c = d.item(cid).unwrap();
@@ -156,23 +200,42 @@ mod tests {
         assert_eq!((b.x0, b.y0, b.x1), (72.0, 178.0, 272.0));
         let sid = c.text_frame().unwrap().story;
         assert_eq!(d.stories[&sid].text, "Figure fig-1: Harbour at dawn");
-        assert!(s.execute("object.caption", &json!({"ids": [a], "position": "sideways"})).is_err());
+        assert!(
+            s.execute(
+                "object.caption",
+                &json!({"ids": [a], "position": "sideways"})
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn live_caption_follows_its_source() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [72, 72, 272, 172]})).unwrap()["id"].as_u64().unwrap();
-        s.execute("object.altText", &json!({"text": "First", "ids": [a]})).unwrap();
-        let r = s.execute("object.caption", &json!({"ids": [a], "text": "Photo: {altText}", "live": true})).unwrap();
+        let a = s
+            .execute("frame.create", &json!({"rect": [72, 72, 272, 172]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute("object.altText", &json!({"text": "First", "ids": [a]}))
+            .unwrap();
+        let r = s
+            .execute(
+                "object.caption",
+                &json!({"ids": [a], "text": "Photo: {altText}", "live": true}),
+            )
+            .unwrap();
         let cid = designcraft_doc::ItemId(r["ids"][0].as_u64().unwrap());
         let text = |s: &Session| {
             let d = &s.doc().unwrap().doc;
-            d.stories[&d.item(cid).unwrap().text_frame().unwrap().story].text.clone()
+            d.stories[&d.item(cid).unwrap().text_frame().unwrap().story]
+                .text
+                .clone()
         };
         assert_eq!(text(&s), "Photo: First");
-        s.execute("object.altText", &json!({"text": "Second", "ids": [a]})).unwrap();
+        s.execute("object.altText", &json!({"text": "Second", "ids": [a]}))
+            .unwrap();
         assert_eq!(text(&s), "Photo: Second", "updated with the source");
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(text(&s), "Photo: First", "one undo step for both");

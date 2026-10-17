@@ -7,14 +7,26 @@ use lightcraft_color::{DISPLAY_P3, REC2020, transfer::srgb_to_linear};
 use lightcraft_raster::Rgba8;
 
 fn gradient(w: usize, h: usize) -> Rgba8 {
-    Rgba8::from_fn(w, h, |x, y| [(x * 255 / w.max(2).saturating_sub(1).max(1)) as u8, (y * 255 / h.max(2)) as u8, ((x + y) % 256) as u8, 255])
+    Rgba8::from_fn(w, h, |x, y| {
+        [
+            (x * 255 / w.max(2).saturating_sub(1).max(1)) as u8,
+            (y * 255 / h.max(2)) as u8,
+            ((x + y) % 256) as u8,
+            255,
+        ]
+    })
 }
 
 fn smooth(w: usize, h: usize) -> Rgba8 {
     Rgba8::from_fn(w, h, |x, y| {
         let fx = x as f32 / w as f32;
         let fy = y as f32 / h as f32;
-        [(fx * 255.0) as u8, (fy * 255.0) as u8, ((1.0 - fx) * 200.0) as u8, (((fx + fy) * 0.5) * 255.0) as u8]
+        [
+            (fx * 255.0) as u8,
+            (fy * 255.0) as u8,
+            ((1.0 - fx) * 200.0) as u8,
+            (((fx + fy) * 0.5) * 255.0) as u8,
+        ]
     })
 }
 
@@ -27,7 +39,11 @@ fn psnr8(a: &Rgba8, b: &Rgba8) -> f64 {
         }
     }
     let mse = se / (a.data.len() * 3) as f64;
-    if mse == 0.0 { f64::INFINITY } else { 10.0 * (255.0 * 255.0 / mse).log10() }
+    if mse == 0.0 {
+        f64::INFINITY
+    } else {
+        10.0 * (255.0 * 255.0 / mse).log10()
+    }
 }
 
 #[test]
@@ -36,8 +52,17 @@ fn jpeg_roundtrip_with_metadata() {
     let icc = write_named(NamedSpace::Srgb);
     let exif = minimal_exif(6);
     let xmp = r#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF/></x:xmpmeta>"#;
-    let meta = EncodeMeta { icc: Some(&icc), exif: Some(&exif), xmp: Some(xmp), ..Default::default() };
-    for sub in [ChromaSubsampling::S444, ChromaSubsampling::S422, ChromaSubsampling::S420] {
+    let meta = EncodeMeta {
+        icc: Some(&icc),
+        exif: Some(&exif),
+        xmp: Some(xmp),
+        ..Default::default()
+    };
+    for sub in [
+        ChromaSubsampling::S444,
+        ChromaSubsampling::S422,
+        ChromaSubsampling::S420,
+    ] {
         let bytes = encode_jpeg(&EncodeImage::rgba8(&img), 95, sub, &meta).unwrap();
         assert_eq!(sniff(&bytes), Some(Format::Jpeg));
         let d = decode(&bytes, DecodeOptions::default()).unwrap();
@@ -58,7 +83,13 @@ fn jpeg_roundtrip_with_metadata() {
 #[test]
 fn jpeg_gray_and_scaled_decode() {
     let g: Vec<u8> = (0..128 * 96).map(|i| (i % 128 * 2) as u8).collect();
-    let bytes = encode_jpeg(&EncodeImage::new(128, 96, 1, Samples::U8(&g)), 90, ChromaSubsampling::S444, &EncodeMeta::default()).unwrap();
+    let bytes = encode_jpeg(
+        &EncodeImage::new(128, 96, 1, Samples::U8(&g)),
+        90,
+        ChromaSubsampling::S444,
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert!(d.grayscale);
     assert_eq!(d.space.origin, SpaceOrigin::Untagged);
@@ -66,7 +97,13 @@ fn jpeg_gray_and_scaled_decode() {
     assert!((p[0] - p[1]).abs() < 1e-6 && (p[1] - p[2]).abs() < 1e-6);
 
     let big = smooth(1000, 600);
-    let bytes = encode_jpeg(&EncodeImage::rgba8(&big), 85, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap();
+    let bytes = encode_jpeg(
+        &EncodeImage::rgba8(&big),
+        85,
+        ChromaSubsampling::S420,
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::fit(100, 100)).unwrap();
     assert_eq!((d.width, d.height), (100, 60));
     assert_eq!((d.source_width, d.source_height), (1000, 600));
@@ -82,11 +119,15 @@ fn jpeg_gray_and_scaled_decode() {
 #[test]
 fn jpeg_cmyk_converts() {
     // 0 = no ink: white, cyan, black.
-    let px: Vec<u8> = [[0u8, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 255]].iter().flat_map(|p| p.repeat(16 * 16)).collect();
+    let px: Vec<u8> = [[0u8, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 255]]
+        .iter()
+        .flat_map(|p| p.repeat(16 * 16))
+        .collect();
     let img: Vec<u8> = px;
     let mut out = Vec::new();
     let enc = jpeg_encoder::Encoder::new(&mut out, 95);
-    enc.encode(&img, 16, 48, jpeg_encoder::ColorType::Cmyk).unwrap();
+    enc.encode(&img, 16, 48, jpeg_encoder::ColorType::Cmyk)
+        .unwrap();
     let d = decode(&out, DecodeOptions::default()).unwrap();
     assert!(d.cmyk);
     assert_eq!(d.space.origin, SpaceOrigin::Naive);
@@ -110,7 +151,11 @@ fn png_8_and_16_bit_exact() {
     // 16-bit: precision preserved exactly through linearization.
     let (w, h) = (64u32, 8u32);
     let data: Vec<u16> = (0..w * h * 3).map(|i| (i * 1021 % 65536) as u16).collect();
-    let bytes = encode_png(&EncodeImage::new(w, h, 3, Samples::U16(&data)), &EncodeMeta::default()).unwrap();
+    let bytes = encode_png(
+        &EncodeImage::new(w, h, 3, Samples::U16(&data)),
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert_eq!(d.bit_depth, 16);
     for (i, p) in d.image.data.iter().enumerate() {
@@ -121,7 +166,11 @@ fn png_8_and_16_bit_exact() {
     }
     // Two adjacent 16-bit codes stay distinct.
     let data = [30000u16, 30000, 30000, 30001, 30001, 30001];
-    let bytes = encode_png(&EncodeImage::new(2, 1, 3, Samples::U16(&data)), &EncodeMeta::default()).unwrap();
+    let bytes = encode_png(
+        &EncodeImage::new(2, 1, 3, Samples::U16(&data)),
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert!(d.image.get(1, 0)[0] > d.image.get(0, 0)[0]);
 }
@@ -130,7 +179,11 @@ fn png_8_and_16_bit_exact() {
 fn png_metadata_and_gray_alpha() {
     let data: Vec<u8> = (0..20 * 10).flat_map(|i| [(i % 256) as u8, 128]).collect();
     let exif = minimal_exif(3);
-    let meta = EncodeMeta { exif: Some(&exif), xmp: Some("<xmp/>"), ..Default::default() };
+    let meta = EncodeMeta {
+        exif: Some(&exif),
+        xmp: Some("<xmp/>"),
+        ..Default::default()
+    };
     let bytes = encode_png(&EncodeImage::new(20, 10, 2, Samples::U8(&data)), &meta).unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert!(d.grayscale && d.has_alpha);
@@ -146,15 +199,33 @@ fn png_metadata_and_gray_alpha() {
 fn png_transparency_develops_on_white() {
     // opaque red, transparent black (as most encoders store it), half-transparent red
     let data = [200, 40, 40, 255, 0, 0, 0, 0, 200, 40, 40, 128];
-    let bytes = encode_png(&EncodeImage::new(3, 1, 4, Samples::U8(&data)), &EncodeMeta::default()).unwrap();
+    let bytes = encode_png(
+        &EncodeImage::new(3, 1, 4, Samples::U8(&data)),
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert!(d.has_alpha);
-    let opaque = encode_png(&EncodeImage::new(1, 1, 3, Samples::U8(&[200, 40, 40])), &EncodeMeta::default()).unwrap();
-    let red = decode(&opaque, DecodeOptions::default()).unwrap().to_working().get(0, 0);
+    let opaque = encode_png(
+        &EncodeImage::new(1, 1, 3, Samples::U8(&[200, 40, 40])),
+        &EncodeMeta::default(),
+    )
+    .unwrap();
+    let red = decode(&opaque, DecodeOptions::default())
+        .unwrap()
+        .to_working()
+        .get(0, 0);
     let w = d.to_working();
     let a = 128.0 / 255.0;
-    for (got, want) in [(w.get(0, 0), red), (w.get(1, 0), [1.0; 3]), (w.get(2, 0), red.map(|c| a * c + (1.0 - a)))] {
-        assert!(got.iter().zip(want).all(|(g, w)| (g - w).abs() < 1e-5), "{got:?} != {want:?}");
+    for (got, want) in [
+        (w.get(0, 0), red),
+        (w.get(1, 0), [1.0; 3]),
+        (w.get(2, 0), red.map(|c| a * c + (1.0 - a))),
+    ] {
+        assert!(
+            got.iter().zip(want).all(|(g, w)| (g - w).abs() < 1e-5),
+            "{got:?} != {want:?}"
+        );
     }
 }
 
@@ -162,13 +233,27 @@ fn png_transparency_develops_on_white() {
 fn p3_icc_to_working() {
     let icc = write_named(NamedSpace::DisplayP3);
     let data = [255u8, 0, 0, 0, 255, 0, 128, 128, 128];
-    let bytes = encode_png(&EncodeImage::new(3, 1, 3, Samples::U8(&data)), &EncodeMeta { icc: Some(&icc), ..Default::default() }).unwrap();
+    let bytes = encode_png(
+        &EncodeImage::new(3, 1, 3, Samples::U8(&data)),
+        &EncodeMeta {
+            icc: Some(&icc),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert_eq!(d.space.named, Some(NamedSpace::DisplayP3));
     assert_eq!(d.space.origin, SpaceOrigin::IccMatrixTrc);
     let wk = to_working(&d);
     let m = DISPLAY_P3.to_space(&REC2020);
-    for (i, px) in [[1.0f32, 0.0, 0.0], [0.0, 1.0, 0.0], [srgb_to_linear(128.0 / 255.0); 3]].iter().enumerate() {
+    for (i, px) in [
+        [1.0f32, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [srgb_to_linear(128.0 / 255.0); 3],
+    ]
+    .iter()
+    .enumerate()
+    {
         let want = m.apply_f32(*px);
         let got = wk.get(i, 0);
         for c in 0..3 {
@@ -192,7 +277,14 @@ fn custom_matrix_icc_is_exact() {
     };
     let icc = icc::write_matrix_trc(&space, &Trc::Gamma(2.0));
     let data = [255u8, 0, 0];
-    let bytes = encode_png(&EncodeImage::new(1, 1, 3, Samples::U8(&data)), &EncodeMeta { icc: Some(&icc), ..Default::default() }).unwrap();
+    let bytes = encode_png(
+        &EncodeImage::new(1, 1, 3, Samples::U8(&data)),
+        &EncodeMeta {
+            icc: Some(&icc),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert_eq!(d.space.named, None);
     let got = to_working(&d).get(0, 0);
@@ -210,8 +302,18 @@ fn tiff_depths_and_compressions() {
     let u16s: Vec<u16> = (0..n * 4).map(|i| (i * 977 % 65536) as u16).collect();
     let f32s: Vec<f32> = (0..n * 3).map(|i| i as f32 / 100.0 - 3.0).collect();
     let icc = write_named(NamedSpace::AdobeRgb);
-    for comp in [TiffCompression::None, TiffCompression::Lzw, TiffCompression::Deflate, TiffCompression::PackBits] {
-        let b = encode_tiff(&EncodeImage::new(w, h, 3, Samples::U8(&u8s)), comp, &EncodeMeta::default()).unwrap();
+    for comp in [
+        TiffCompression::None,
+        TiffCompression::Lzw,
+        TiffCompression::Deflate,
+        TiffCompression::PackBits,
+    ] {
+        let b = encode_tiff(
+            &EncodeImage::new(w, h, 3, Samples::U8(&u8s)),
+            comp,
+            &EncodeMeta::default(),
+        )
+        .unwrap();
         assert_eq!(sniff(&b), Some(Format::Tiff));
         let d = decode(&b, DecodeOptions::default()).unwrap();
         assert_eq!(d.bit_depth, 8);
@@ -219,7 +321,11 @@ fn tiff_depths_and_compressions() {
             assert!((p[1] - srgb_to_linear(u8s[i * 3 + 1] as f32 / 255.0)).abs() < 1e-6);
         }
 
-        let meta = EncodeMeta { icc: Some(&icc), xmp: Some("<x/>"), ..Default::default() };
+        let meta = EncodeMeta {
+            icc: Some(&icc),
+            xmp: Some("<x/>"),
+            ..Default::default()
+        };
         let b = encode_tiff(&EncodeImage::new(w, h, 4, Samples::U16(&u16s)), comp, &meta).unwrap();
         let d = decode(&b, DecodeOptions::default()).unwrap();
         assert_eq!(d.bit_depth, 16);
@@ -230,11 +336,20 @@ fn tiff_depths_and_compressions() {
         for i in 0..n {
             assert!((a.data[i] - u16s[i * 4 + 3] as f32 / 65535.0).abs() < 1e-6);
             let want = Trc::Gamma(563.0 / 256.0).to_linear(u16s[i * 4] as f32 / 65535.0);
-            assert!((d.image.data[i][0] - want).abs() < 1e-4, "{} vs {want}", d.image.data[i][0]);
+            assert!(
+                (d.image.data[i][0] - want).abs() < 1e-4,
+                "{} vs {want}",
+                d.image.data[i][0]
+            );
         }
 
         // Float: exact (untagged float is taken as linear), including out-of-range values.
-        let b = encode_tiff(&EncodeImage::new(w, h, 3, Samples::F32(&f32s)), comp, &EncodeMeta::default()).unwrap();
+        let b = encode_tiff(
+            &EncodeImage::new(w, h, 3, Samples::F32(&f32s)),
+            comp,
+            &EncodeMeta::default(),
+        )
+        .unwrap();
         let d = decode(&b, DecodeOptions::default()).unwrap();
         assert!(d.float);
         assert_eq!(d.bit_depth, 32);
@@ -251,7 +366,9 @@ fn tiff_cmyk_and_orientation() {
     {
         let mut enc = TiffEncoder::new(&mut cur).unwrap();
         let mut im = enc.new_image::<colortype::CMYK8>(2, 1).unwrap();
-        im.encoder().write_tag(tiff::tags::Tag::Orientation, 8u16).unwrap();
+        im.encoder()
+            .write_tag(tiff::tags::Tag::Orientation, 8u16)
+            .unwrap();
         im.write_data(&[0u8, 0, 0, 0, 0, 255, 255, 0]).unwrap();
     }
     let d = decode(&cur.into_inner(), DecodeOptions::default()).unwrap();
@@ -267,8 +384,25 @@ fn tiff_cmyk_and_orientation() {
 /// already packed into `strip`, one padded row after another.
 fn packed_tiff(width: u16, height: u16, bits: u16, photometric: u16, strip: &[u8]) -> Vec<u8> {
     const STRIP_AT: u32 = 8 + 2 + 9 * 12 + 4;
-    let short = |tag: u16, v: u16| [&tag.to_le_bytes()[..], &3u16.to_le_bytes(), &1u32.to_le_bytes(), &v.to_le_bytes(), &[0, 0]].concat();
-    let long = |tag: u16, v: u32| [&tag.to_le_bytes()[..], &4u16.to_le_bytes(), &1u32.to_le_bytes(), &v.to_le_bytes()].concat();
+    let short = |tag: u16, v: u16| {
+        [
+            &tag.to_le_bytes()[..],
+            &3u16.to_le_bytes(),
+            &1u32.to_le_bytes(),
+            &v.to_le_bytes(),
+            &[0, 0],
+        ]
+        .concat()
+    };
+    let long = |tag: u16, v: u32| {
+        [
+            &tag.to_le_bytes()[..],
+            &4u16.to_le_bytes(),
+            &1u32.to_le_bytes(),
+            &v.to_le_bytes(),
+        ]
+        .concat()
+    };
     let mut b = b"II*\0".to_vec();
     b.extend(8u32.to_le_bytes());
     b.extend(9u16.to_le_bytes());
@@ -292,11 +426,21 @@ fn packed_tiff(width: u16, height: u16, bits: u16, photometric: u16, strip: &[u8
 #[test]
 fn tiff_white_is_zero_is_inverted_once() {
     // Two pixels: the lowest sample, then the highest, at 8 and 16 bits.
-    for (bits, strip) in [(8, vec![0u8, 255]), (16, [0u16.to_le_bytes(), 65535u16.to_le_bytes()].concat())] {
+    for (bits, strip) in [
+        (8, vec![0u8, 255]),
+        (16, [0u16.to_le_bytes(), 65535u16.to_le_bytes()].concat()),
+    ] {
         for (photometric, first) in [(0, 1.0), (1, 0.0)] {
-            let d = decode(&packed_tiff(2, 1, bits, photometric, &strip), DecodeOptions::default()).unwrap();
+            let d = decode(
+                &packed_tiff(2, 1, bits, photometric, &strip),
+                DecodeOptions::default(),
+            )
+            .unwrap();
             let (a, b) = (d.image.get(0, 0)[1], d.image.get(1, 0)[1]);
-            assert!((a - first).abs() < 1e-6 && (b - (1.0 - first)).abs() < 1e-6, "{bits}-bit, photometric {photometric}: {a} {b}");
+            assert!(
+                (a - first).abs() < 1e-6 && (b - (1.0 - first)).abs() < 1e-6,
+                "{bits}-bit, photometric {photometric}: {a} {b}"
+            );
         }
     }
 }
@@ -312,29 +456,62 @@ fn tiff_samples_narrower_than_a_byte() {
     let rows = [0b1010_1010, 0b1011_1111, 0b0000_0000, 0b0111_1111];
     // What a set bit decodes to: white for BlackIsZero (1), black for WhiteIsZero (0).
     for (photometric, set_bit) in [(1, 1.0), (0, 0.0)] {
-        let d = decode(&packed_tiff(10, 2, 1, photometric, &rows), DecodeOptions::default()).unwrap();
+        let d = decode(
+            &packed_tiff(10, 2, 1, photometric, &rows),
+            DecodeOptions::default(),
+        )
+        .unwrap();
         assert_eq!((d.image.width, d.image.height, d.bit_depth), (10, 2, 1));
         assert!(d.grayscale);
         let clear_bit = 1.0 - set_bit;
         for x in 0..10 {
-            let want = (if x % 2 == 0 { set_bit } else { clear_bit }, if x == 9 { set_bit } else { clear_bit });
-            assert!((gray(&d, x, 0) - want.0).abs() < 1e-6, "row 0, x {x}, photometric {photometric}");
-            assert!((gray(&d, x, 1) - want.1).abs() < 1e-6, "row 1, x {x}, photometric {photometric}");
+            let want = (
+                if x % 2 == 0 { set_bit } else { clear_bit },
+                if x == 9 { set_bit } else { clear_bit },
+            );
+            assert!(
+                (gray(&d, x, 0) - want.0).abs() < 1e-6,
+                "row 0, x {x}, photometric {photometric}"
+            );
+            assert!(
+                (gray(&d, x, 1) - want.1).abs() < 1e-6,
+                "row 1, x {x}, photometric {photometric}"
+            );
         }
     }
 
     // 2-bit: 0, 1, 2, 3 → 0, 85, 170, 255. 4-bit: 0, 15, 8 → 0, 255, 136 (the row's last nibble is padding).
-    let d = decode(&packed_tiff(4, 1, 2, 1, &[0b00_01_10_11]), DecodeOptions::default()).unwrap();
+    let d = decode(
+        &packed_tiff(4, 1, 2, 1, &[0b00_01_10_11]),
+        DecodeOptions::default(),
+    )
+    .unwrap();
     for (x, v) in [0, 85, 170, 255].into_iter().enumerate() {
-        assert!((gray(&d, x, 0) - srgb_to_linear(v as f32 / 255.0)).abs() < 1e-6, "2-bit x {x}");
+        assert!(
+            (gray(&d, x, 0) - srgb_to_linear(v as f32 / 255.0)).abs() < 1e-6,
+            "2-bit x {x}"
+        );
     }
-    let d = decode(&packed_tiff(3, 1, 4, 1, &[0x0F, 0x8F]), DecodeOptions::default()).unwrap();
+    let d = decode(
+        &packed_tiff(3, 1, 4, 1, &[0x0F, 0x8F]),
+        DecodeOptions::default(),
+    )
+    .unwrap();
     for (x, v) in [0, 255, 136].into_iter().enumerate() {
-        assert!((gray(&d, x, 0) - srgb_to_linear(v as f32 / 255.0)).abs() < 1e-6, "4-bit x {x}");
+        assert!(
+            (gray(&d, x, 0) - srgb_to_linear(v as f32 / 255.0)).abs() < 1e-6,
+            "4-bit x {x}"
+        );
     }
 
     // A strip shorter than its rows is an error, never a panic.
-    assert!(decode(&packed_tiff(10, 2, 1, 1, &rows[..3]), DecodeOptions::default()).is_err());
+    assert!(
+        decode(
+            &packed_tiff(10, 2, 1, 1, &rows[..3]),
+            DecodeOptions::default()
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -342,7 +519,12 @@ fn webp_lossless_exact() {
     let img = gradient(31, 19);
     let icc = write_named(NamedSpace::Srgb);
     let exif = minimal_exif(2);
-    let meta = EncodeMeta { icc: Some(&icc), exif: Some(&exif), xmp: Some("<w/>"), ..Default::default() };
+    let meta = EncodeMeta {
+        icc: Some(&icc),
+        exif: Some(&exif),
+        xmp: Some("<w/>"),
+        ..Default::default()
+    };
     let bytes = encode_webp_lossless(&EncodeImage::rgba8(&img), &meta).unwrap();
     assert_eq!(sniff(&bytes), Some(Format::WebP));
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
@@ -358,7 +540,9 @@ fn gif_and_bmp_decode() {
     let img = gradient(16, 8);
     let rgba = img.as_bytes();
     let mut bmp = Vec::new();
-    image::codecs::bmp::BmpEncoder::new(&mut bmp).write_image(&rgba, 16, 8, image::ExtendedColorType::Rgba8).unwrap();
+    image::codecs::bmp::BmpEncoder::new(&mut bmp)
+        .write_image(&rgba, 16, 8, image::ExtendedColorType::Rgba8)
+        .unwrap();
     assert_eq!(sniff(&bmp), Some(Format::Bmp));
     let d = decode(&bmp, DecodeOptions::default()).unwrap();
     assert_eq!(d.to_srgb8(), img);
@@ -373,7 +557,10 @@ fn gif_and_bmp_decode() {
     assert_eq!(sniff(&gif), Some(Format::Gif));
     let d = decode(&gif, DecodeOptions::default()).unwrap();
     let p = d.to_srgb8().get(3, 3);
-    assert!((p[0] as i32 - 10).abs() <= 2 && (p[1] as i32 - 200).abs() <= 2, "{p:?}");
+    assert!(
+        (p[0] as i32 - 10).abs() <= 2 && (p[1] as i32 - 200).abs() <= 2,
+        "{p:?}"
+    );
 }
 
 /// Hand-built PSD: RGB 8-bit, raw and RLE merged data, ICC resource, negative layer count (alpha).
@@ -410,7 +597,12 @@ fn build_psd(rle: bool, with_alpha: bool, icc: &[u8]) -> Vec<u8> {
     } else {
         b.extend_from_slice(&0u32.to_be_bytes());
     }
-    let planes: Vec<[u8; 6]> = vec![[255, 0, 0, 10, 20, 30], [0, 255, 0, 40, 50, 60], [0, 0, 255, 70, 80, 90], [255, 255, 128, 0, 64, 255]];
+    let planes: Vec<[u8; 6]> = vec![
+        [255, 0, 0, 10, 20, 30],
+        [0, 255, 0, 40, 50, 60],
+        [0, 0, 255, 70, 80, 90],
+        [255, 255, 128, 0, 64, 255],
+    ];
     let planes = &planes[..channels as usize];
     if rle {
         b.extend_from_slice(&1u16.to_be_bytes());
@@ -460,10 +652,24 @@ fn thumbnail_prefers_embedded_exif() {
     // Main image 800x600 with a 200x150 EXIF thumbnail of a different colour.
     let main = Rgba8::filled(800, 600, [200, 30, 30, 255]);
     let thumb = Rgba8::filled(200, 150, [30, 30, 200, 255]);
-    let thumb_jpeg = encode_jpeg(&EncodeImage::rgba8(&thumb), 80, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap();
+    let thumb_jpeg = encode_jpeg(
+        &EncodeImage::rgba8(&thumb),
+        80,
+        ChromaSubsampling::S420,
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let exif = exif_with_thumbnail(&thumb_jpeg, 6);
-    let bytes =
-        encode_jpeg(&EncodeImage::rgba8(&main), 80, ChromaSubsampling::S420, &EncodeMeta { exif: Some(&exif), ..Default::default() }).unwrap();
+    let bytes = encode_jpeg(
+        &EncodeImage::rgba8(&main),
+        80,
+        ChromaSubsampling::S420,
+        &EncodeMeta {
+            exif: Some(&exif),
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     let t = decode_thumbnail(&bytes, 128).unwrap();
     assert_eq!(t.source, ThumbnailSource::ExifThumbnail);
@@ -525,7 +731,10 @@ fn avif_encode_native() {
     if cfg!(feature = "avif") {
         let b = r.unwrap();
         assert_eq!(sniff(&b), Some(Format::Avif));
-        assert!(matches!(decode(&b, DecodeOptions::default()), Err(Error::Unsupported(Format::Avif, _))));
+        assert!(matches!(
+            decode(&b, DecodeOptions::default()),
+            Err(Error::Unsupported(Format::Avif, _))
+        ));
     } else {
         assert!(r.is_err());
     }
@@ -540,20 +749,44 @@ fn raw_routing() {
     b.extend_from_slice(&4u32.to_le_bytes());
     b.extend_from_slice(&[1, 4, 0, 0]);
     b.extend_from_slice(&0u32.to_le_bytes());
-    assert!(matches!(decode(&b, DecodeOptions::default()), Err(Error::Unsupported(Format::RawTiffLike, _))));
+    assert!(matches!(
+        decode(&b, DecodeOptions::default()),
+        Err(Error::Unsupported(Format::RawTiffLike, _))
+    ));
 }
 
 #[test]
 fn thumbnail_accepts_smaller_preview_when_asked() {
     let main = Rgba8::filled(800, 600, [200, 30, 30, 255]);
     let thumb = Rgba8::filled(160, 120, [30, 30, 200, 255]);
-    let thumb_jpeg = encode_jpeg(&EncodeImage::rgba8(&thumb), 80, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap();
+    let thumb_jpeg = encode_jpeg(
+        &EncodeImage::rgba8(&thumb),
+        80,
+        ChromaSubsampling::S420,
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let exif = exif_with_thumbnail(&thumb_jpeg, 1);
-    let bytes =
-        encode_jpeg(&EncodeImage::rgba8(&main), 80, ChromaSubsampling::S420, &EncodeMeta { exif: Some(&exif), ..Default::default() }).unwrap();
+    let bytes = encode_jpeg(
+        &EncodeImage::rgba8(&main),
+        80,
+        ChromaSubsampling::S420,
+        &EncodeMeta {
+            exif: Some(&exif),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let t = decode_thumbnail(&bytes, 256).unwrap();
     assert_eq!(t.source, ThumbnailSource::Scaled);
-    let t = decode_thumbnail_with(&bytes, &ThumbnailOptions { min_embedded_edge: 160, ..ThumbnailOptions::new(256) }).unwrap();
+    let t = decode_thumbnail_with(
+        &bytes,
+        &ThumbnailOptions {
+            min_embedded_edge: 160,
+            ..ThumbnailOptions::new(256)
+        },
+    )
+    .unwrap();
     assert_eq!(t.source, ThumbnailSource::ExifThumbnail);
     assert_eq!((t.image.width, t.image.height), (160, 120));
 }
@@ -562,7 +795,14 @@ fn thumbnail_accepts_smaller_preview_when_asked() {
 fn unusable_icc_falls_back_to_srgb_with_flag() {
     let bogus = vec![0x42u8; 300];
     let data = [128u8, 64, 32];
-    let bytes = encode_png(&EncodeImage::new(1, 1, 3, Samples::U8(&data)), &EncodeMeta { icc: Some(&bogus), ..Default::default() }).unwrap();
+    let bytes = encode_png(
+        &EncodeImage::new(1, 1, 3, Samples::U8(&data)),
+        &EncodeMeta {
+            icc: Some(&bogus),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert_eq!(d.space.origin, SpaceOrigin::IccUnsupported);
     assert_eq!(d.space.named, Some(NamedSpace::Srgb));
@@ -594,7 +834,10 @@ fn with_mpf_preview(primary: &[u8], preview: &[u8]) -> Vec<u8> {
     let primary_len = primary.len() + 2 + seg_len;
     let preview_off = (primary_len - mpf_header_pos) as u32;
     let mut e = Vec::new();
-    for (size, off) in [(primary_len as u32, 0u32), (preview.len() as u32, preview_off)] {
+    for (size, off) in [
+        (primary_len as u32, 0u32),
+        (preview.len() as u32, preview_off),
+    ] {
         e.extend_from_slice(&0u32.to_le_bytes());
         e.extend_from_slice(&size.to_le_bytes());
         e.extend_from_slice(&off.to_le_bytes());
@@ -616,7 +859,15 @@ fn with_mpf_preview(primary: &[u8], preview: &[u8]) -> Vec<u8> {
 fn thumbnail_from_mpf_preview() {
     let main = Rgba8::filled(1600, 1200, [200, 30, 30, 255]);
     let prev = Rgba8::filled(640, 480, [30, 200, 30, 255]);
-    let enc = |i: &Rgba8| encode_jpeg(&EncodeImage::rgba8(i), 80, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap();
+    let enc = |i: &Rgba8| {
+        encode_jpeg(
+            &EncodeImage::rgba8(i),
+            80,
+            ChromaSubsampling::S420,
+            &EncodeMeta::default(),
+        )
+        .unwrap()
+    };
     let bytes = with_mpf_preview(&enc(&main), &enc(&prev));
     // Still a valid JPEG for the full decoder.
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
@@ -631,24 +882,42 @@ fn thumbnail_from_mpf_preview() {
 fn print_resolution_is_written() {
     let data = vec![128u8; 4 * 4 * 3];
     let img = EncodeImage::new(4, 4, 3, Samples::U8(&data));
-    let meta = EncodeMeta { ppi: Some(300), ..Default::default() };
+    let meta = EncodeMeta {
+        ppi: Some(300),
+        ..Default::default()
+    };
     for sub in [ChromaSubsampling::S444, ChromaSubsampling::S422] {
         let j = encode_jpeg(&img, 90, sub, &meta).unwrap();
         // SOI, APP0 "JFIF\0" v1.2, units = 1 (dpi), Xdensity, Ydensity
         assert_eq!(&j[2..4], &[0xFF, 0xE0], "{sub:?}");
         assert_eq!(&j[6..11], b"JFIF\0");
         assert_eq!(&j[13..18], &[1, 1, 44, 1, 44], "{sub:?}");
-        assert_eq!(j.windows(4).filter(|w| *w == [0xFF, 0xE0, 0, 16]).count(), 1, "one APP0");
+        assert_eq!(
+            j.windows(4).filter(|w| *w == [0xFF, 0xE0, 0, 16]).count(),
+            1,
+            "one APP0"
+        );
     }
     let png = encode_png(&img, &meta).unwrap();
-    let i = png.windows(4).position(|w| w == b"pHYs").expect("pHYs chunk");
-    assert_eq!(u32::from_be_bytes(png[i + 4..i + 8].try_into().unwrap()), 11811, "300 ppi in pixels per metre");
+    let i = png
+        .windows(4)
+        .position(|w| w == b"pHYs")
+        .expect("pHYs chunk");
+    assert_eq!(
+        u32::from_be_bytes(png[i + 4..i + 8].try_into().unwrap()),
+        11811,
+        "300 ppi in pixels per metre"
+    );
     assert_eq!(png[i + 12], 1, "unit = metre");
     let tif = encode_tiff(&img, TiffCompression::Deflate, &meta).unwrap();
     let mut d = tiff::decoder::Decoder::new(std::io::Cursor::new(tif)).unwrap();
     let x = d.get_tag(tiff::tags::Tag::XResolution).unwrap();
     assert_eq!(x.into_u32_vec().ok(), Some(vec![300, 1]));
-    assert_eq!(d.get_tag_u32(tiff::tags::Tag::ResolutionUnit).unwrap(), 2, "inch");
+    assert_eq!(
+        d.get_tag_u32(tiff::tags::Tag::ResolutionUnit).unwrap(),
+        2,
+        "inch"
+    );
     // without a ppi: JFIF density stays an aspect ratio
     let j = encode_jpeg(&img, 90, ChromaSubsampling::S444, &EncodeMeta::default()).unwrap();
     assert_eq!(&j[13..18], &[0, 0, 1, 0, 1]);
@@ -665,30 +934,65 @@ fn pq_png_is_16_bit_rec2020_pq_with_cicp_and_content_light() {
         })
         .collect();
     let xmp = r#"<x:xmpmeta xmlns:x="adobe:ns:meta/"/>"#;
-    let bytes = encode_png_pq(w, h, &rgb, &EncodeMeta { xmp: Some(xmp), ppi: Some(240), ..Default::default() }).unwrap();
-    let mut r = png::Decoder::new(std::io::Cursor::new(bytes.as_slice())).read_info().unwrap();
+    let bytes = encode_png_pq(
+        w,
+        h,
+        &rgb,
+        &EncodeMeta {
+            xmp: Some(xmp),
+            ppi: Some(240),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let mut r = png::Decoder::new(std::io::Cursor::new(bytes.as_slice()))
+        .read_info()
+        .unwrap();
     let cicp = r.info().coding_independent_code_points.expect("cICP");
-    assert_eq!((cicp.color_primaries, cicp.transfer_function), (9, 16), "BT.2020, PQ");
+    assert_eq!(
+        (cicp.color_primaries, cicp.transfer_function),
+        (9, 16),
+        "BT.2020, PQ"
+    );
     let mut buf = vec![0; r.output_buffer_size().unwrap()];
     let f = r.next_frame(&mut buf).unwrap();
-    assert_eq!((f.bit_depth, f.color_type, f.width, f.height), (png::BitDepth::Sixteen, png::ColorType::Rgb, w, h));
+    assert_eq!(
+        (f.bit_depth, f.color_type, f.width, f.height),
+        (png::BitDepth::Sixteen, png::ColorType::Rgb, w, h)
+    );
     // every sample decodes back to its luminance
     for x in [0usize, 20, 63] {
         for c in 0..3 {
             let o = (x * 3 + c) * 2;
             let e = u16::from_be_bytes([buf[o], buf[o + 1]]) as f32 / 65535.0;
             let want = rgb[x * 3 + c] * HDR_REFERENCE_WHITE_NITS;
-            assert!((encode::pq_decode(e) - want).abs() <= want * 0.01 + 0.01, "x {x} c {c}: {} vs {want}", encode::pq_decode(e));
+            assert!(
+                (encode::pq_decode(e) - want).abs() <= want * 0.01 + 0.01,
+                "x {x} c {c}: {} vs {want}",
+                encode::pq_decode(e)
+            );
         }
     }
     // cLLI: MaxCLL is the brightest channel, in 0.0001 cd/m²
     let at = bytes.windows(4).position(|w| w == b"cLLI").expect("cLLI");
     let max_cll = u32::from_be_bytes(bytes[at + 4..at + 8].try_into().unwrap()) as f32 / 10_000.0;
     let brightest = rgb.iter().copied().fold(0.0f32, f32::max) * HDR_REFERENCE_WHITE_NITS;
-    assert!((max_cll - brightest.ceil()).abs() <= 1.0, "{max_cll} vs {brightest}");
-    assert!(bytes.windows(17).any(|w| w == b"XML:com.adobe.xmp"), "XMP kept");
-    assert!(bytes.windows(4).any(|w| w == b"pHYs"), "print resolution kept");
-    assert!(!bytes.windows(4).any(|w| w == b"iCCP"), "no ICC profile next to cICP");
+    assert!(
+        (max_cll - brightest.ceil()).abs() <= 1.0,
+        "{max_cll} vs {brightest}"
+    );
+    assert!(
+        bytes.windows(17).any(|w| w == b"XML:com.adobe.xmp"),
+        "XMP kept"
+    );
+    assert!(
+        bytes.windows(4).any(|w| w == b"pHYs"),
+        "print resolution kept"
+    );
+    assert!(
+        !bytes.windows(4).any(|w| w == b"iCCP"),
+        "no ICC profile next to cICP"
+    );
 }
 
 #[test]
@@ -702,7 +1006,11 @@ fn pq_png_rejects_short_buffers_and_survives_hostile_samples() {
 
 /// Largest per-channel difference between two linear images.
 fn max_diff(a: &lightcraft_raster::Rgb32f, b: &lightcraft_raster::Rgb32f) -> f32 {
-    a.data.iter().zip(&b.data).flat_map(|(p, q)| (0..3).map(move |c| (p[c] - q[c]).abs())).fold(0.0, f32::max)
+    a.data
+        .iter()
+        .zip(&b.data)
+        .flat_map(|(p, q)| (0..3).map(move |c| (p[c] - q[c]).abs()))
+        .fold(0.0, f32::max)
 }
 
 #[test]
@@ -712,8 +1020,16 @@ fn jxl_lossless_exact_with_metadata() {
     let icc = write_named(NamedSpace::Srgb);
     let exif = minimal_exif(1);
     let xmp = r#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF/></x:xmpmeta>"#;
-    let meta = EncodeMeta { icc: Some(&icc), exif: Some(&exif), xmp: Some(xmp), ..Default::default() };
-    let o = JxlOptions { lossless: true, ..Default::default() };
+    let meta = EncodeMeta {
+        icc: Some(&icc),
+        exif: Some(&exif),
+        xmp: Some(xmp),
+        ..Default::default()
+    };
+    let o = JxlOptions {
+        lossless: true,
+        ..Default::default()
+    };
     let b = encode_jxl(&EncodeImage::rgba8(&img), &o, &meta).unwrap();
     assert_eq!(sniff(&b), Some(Format::Jxl));
     let d = decode(&b, DecodeOptions::default()).unwrap();
@@ -725,23 +1041,40 @@ fn jxl_lossless_exact_with_metadata() {
     assert_eq!(d.to_srgb8().data, img.data, "lossless round trip is exact");
 
     // 16-bit lossless keeps every code value
-    let px: Vec<u16> = (0..40 * 30 * 3).map(|i| (i as u32 * 2741 % 65536) as u16).collect();
+    let px: Vec<u16> = (0..40 * 30 * 3)
+        .map(|i| (i as u32 * 2741 % 65536) as u16)
+        .collect();
     let b = encode_jxl(&EncodeImage::new(40, 30, 3, Samples::U16(&px)), &o, &meta).unwrap();
     let d = decode(&b, DecodeOptions::default()).unwrap();
     assert_eq!(d.bit_depth, 16);
     let png = encode_png(&EncodeImage::new(40, 30, 3, Samples::U16(&px)), &meta).unwrap();
     let want = decode(&png, DecodeOptions::default()).unwrap();
-    assert!(max_diff(&d.image, &want.image) < 1e-5, "16-bit lossless differs by {}", max_diff(&d.image, &want.image));
+    assert!(
+        max_diff(&d.image, &want.image) < 1e-5,
+        "16-bit lossless differs by {}",
+        max_diff(&d.image, &want.image)
+    );
 }
 
 #[test]
 #[cfg(feature = "jxl")]
 fn jxl_lossy_quality_and_effort() {
     let img = smooth(160, 120);
-    let opaque = Rgba8 { data: img.data.iter().map(|p| [p[0], p[1], p[2], 255]).collect(), ..img.clone() };
-    let enc = |o: JxlOptions| encode_jxl(&EncodeImage::rgba8(&opaque), &o, &EncodeMeta::default()).unwrap();
-    let hi = enc(JxlOptions { quality: 95, ..Default::default() });
-    let lo = enc(JxlOptions { quality: 40, ..Default::default() });
+    let opaque = Rgba8 {
+        data: img.data.iter().map(|p| [p[0], p[1], p[2], 255]).collect(),
+        ..img.clone()
+    };
+    let enc = |o: JxlOptions| {
+        encode_jxl(&EncodeImage::rgba8(&opaque), &o, &EncodeMeta::default()).unwrap()
+    };
+    let hi = enc(JxlOptions {
+        quality: 95,
+        ..Default::default()
+    });
+    let lo = enc(JxlOptions {
+        quality: 40,
+        ..Default::default()
+    });
     assert!(lo.len() < hi.len(), "q40 {} ≥ q95 {}", lo.len(), hi.len());
     for (q, b) in [(95, &hi), (40, &lo)] {
         let d = decode(b, DecodeOptions::default()).unwrap();
@@ -750,8 +1083,15 @@ fn jxl_lossy_quality_and_effort() {
     }
     for effort in [JxlEffort::Fast, JxlEffort::Normal] {
         for progressive in [false, true] {
-            let b = enc(JxlOptions { effort, progressive, ..Default::default() });
-            let p = psnr8(&opaque, &decode(&b, DecodeOptions::default()).unwrap().to_srgb8());
+            let b = enc(JxlOptions {
+                effort,
+                progressive,
+                ..Default::default()
+            });
+            let p = psnr8(
+                &opaque,
+                &decode(&b, DecodeOptions::default()).unwrap().to_srgb8(),
+            );
             assert!(p > 34.0, "{effort:?} progressive={progressive} psnr {p}");
         }
     }
@@ -763,13 +1103,40 @@ fn jxl_lossy_wide_gamut_matches_lossless_icc() {
     // the same display-encoded samples, lossy with the enum encoding and lossless with the ICC
     // profile, decode to the same colours in the working space
     let img = smooth(96, 64);
-    let opaque = Rgba8 { data: img.data.iter().map(|p| [p[0], p[1], p[2], 255]).collect(), ..img.clone() };
-    for (colour, named) in [(JxlColour::DisplayP3, NamedSpace::DisplayP3), (JxlColour::Rec2020, NamedSpace::Rec2020)] {
+    let opaque = Rgba8 {
+        data: img.data.iter().map(|p| [p[0], p[1], p[2], 255]).collect(),
+        ..img.clone()
+    };
+    for (colour, named) in [
+        (JxlColour::DisplayP3, NamedSpace::DisplayP3),
+        (JxlColour::Rec2020, NamedSpace::Rec2020),
+    ] {
         let icc = write_named(named);
-        let meta = EncodeMeta { icc: Some(&icc), ..Default::default() };
+        let meta = EncodeMeta {
+            icc: Some(&icc),
+            ..Default::default()
+        };
         let e = EncodeImage::rgba8(&opaque);
-        let lossy = encode_jxl(&e, &JxlOptions { quality: 98, colour, ..Default::default() }, &meta).unwrap();
-        let exact = encode_jxl(&e, &JxlOptions { lossless: true, colour, ..Default::default() }, &meta).unwrap();
+        let lossy = encode_jxl(
+            &e,
+            &JxlOptions {
+                quality: 98,
+                colour,
+                ..Default::default()
+            },
+            &meta,
+        )
+        .unwrap();
+        let exact = encode_jxl(
+            &e,
+            &JxlOptions {
+                lossless: true,
+                colour,
+                ..Default::default()
+            },
+            &meta,
+        )
+        .unwrap();
         let a = decode(&lossy, DecodeOptions::default()).unwrap();
         assert!(a.icc.is_none(), "lossy files carry the enum encoding");
         let b = decode(&exact, DecodeOptions::default()).unwrap();
@@ -783,15 +1150,33 @@ fn jxl_lossy_wide_gamut_matches_lossless_icc() {
 fn jxl_alpha_and_gray() {
     let mut img = gradient(32, 24);
     img.data[5][3] = 0;
-    let b = encode_jxl(&EncodeImage::rgba8(&img), &JxlOptions { lossless: true, ..Default::default() }, &EncodeMeta::default()).unwrap();
+    let b = encode_jxl(
+        &EncodeImage::rgba8(&img),
+        &JxlOptions {
+            lossless: true,
+            ..Default::default()
+        },
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let d = decode(&b, DecodeOptions::default()).unwrap();
     assert!(d.has_alpha);
     assert_eq!(d.alpha.as_ref().map(|a| a.data[5]), Some(0.0));
     let g: Vec<u8> = (0..32 * 24).map(|i| (i % 256) as u8).collect();
-    let b = encode_jxl(&EncodeImage::new(32, 24, 1, Samples::U8(&g)), &JxlOptions { lossless: true, ..Default::default() }, &EncodeMeta::default())
-        .unwrap();
+    let b = encode_jxl(
+        &EncodeImage::new(32, 24, 1, Samples::U8(&g)),
+        &JxlOptions {
+            lossless: true,
+            ..Default::default()
+        },
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let d = decode(&b, DecodeOptions::default()).unwrap();
-    assert_eq!(d.to_srgb8().data.iter().map(|p| p[0]).collect::<Vec<_>>(), g);
+    assert_eq!(
+        d.to_srgb8().data.iter().map(|p| p[0]).collect::<Vec<_>>(),
+        g
+    );
 }
 
 #[test]
@@ -799,25 +1184,53 @@ fn jxl_alpha_and_gray() {
 fn jxl_hdr_pq() {
     // linear Rec. 2020, SDR white = 1.0: the left half at SDR white, the right half four times brighter
     let (w, h) = (64usize, 32usize);
-    let px: Vec<f32> = (0..w * h).flat_map(|i| [if i % w < w / 2 { 1.0 } else { 4.0 }; 3]).collect();
+    let px: Vec<f32> = (0..w * h)
+        .flat_map(|i| [if i % w < w / 2 { 1.0 } else { 4.0 }; 3])
+        .collect();
     for lossless in [false, true] {
-        let o = JxlOptions { lossless, quality: 95, colour: JxlColour::Rec2020Pq, ..Default::default() };
-        let b = encode_jxl(&EncodeImage::new(w as u32, h as u32, 3, Samples::F32(&px)), &o, &EncodeMeta::default()).unwrap();
+        let o = JxlOptions {
+            lossless,
+            quality: 95,
+            colour: JxlColour::Rec2020Pq,
+            ..Default::default()
+        };
+        let b = encode_jxl(
+            &EncodeImage::new(w as u32, h as u32, 3, Samples::F32(&px)),
+            &o,
+            &EncodeMeta::default(),
+        )
+        .unwrap();
         // the file's own samples: PQ code values for 203 and 812 cd/m²
-        let img = jxl_oxide::JxlImage::builder().read(std::io::Cursor::new(&b)).unwrap();
+        let img = jxl_oxide::JxlImage::builder()
+            .read(std::io::Cursor::new(&b))
+            .unwrap();
         let m = &img.image_header().metadata;
         assert_eq!(m.tone_mapping.intensity_target, 10_000.0);
-        assert!(format!("{:?}", m.colour_encoding).contains("Pq"), "{:?}", m.colour_encoding);
+        assert!(
+            format!("{:?}", m.colour_encoding).contains("Pq"),
+            "{:?}",
+            m.colour_encoding
+        );
         let r = img.render_frame(0).unwrap();
         let fb = r.image_all_channels();
         let at = |x: usize| fb.buf()[((h / 2) * w + x) * fb.channels() + 1];
-        for (x, nits) in [(w / 4, HDR_REFERENCE_WHITE_NITS), (w * 3 / 4, 4.0 * HDR_REFERENCE_WHITE_NITS)] {
+        for (x, nits) in [
+            (w / 4, HDR_REFERENCE_WHITE_NITS),
+            (w * 3 / 4, 4.0 * HDR_REFERENCE_WHITE_NITS),
+        ] {
             let (got, want) = (at(x), lightcraft_codecs::encode::pq_encode(nits));
-            assert!((got - want).abs() < 0.005, "lossless={lossless}: {nits} cd/m² written as {got}, want {want}");
+            assert!(
+                (got - want).abs() < 0.005,
+                "lossless={lossless}: {nits} cd/m² written as {got}, want {want}"
+            );
         }
     }
     // float samples are HDR only
-    let sdr = encode_jxl(&EncodeImage::new(w as u32, h as u32, 3, Samples::F32(&px)), &JxlOptions::default(), &EncodeMeta::default());
+    let sdr = encode_jxl(
+        &EncodeImage::new(w as u32, h as u32, 3, Samples::F32(&px)),
+        &JxlOptions::default(),
+        &EncodeMeta::default(),
+    );
     assert!(matches!(sdr, Err(Error::Encode(_))));
 }
 
@@ -825,11 +1238,32 @@ fn jxl_hdr_pq() {
 #[cfg(feature = "jxl")]
 fn jxl_bad_input_is_an_error() {
     let px = [0u8; 12];
-    assert!(encode_jxl(&EncodeImage::new(4, 4, 3, Samples::U8(&px)), &JxlOptions::default(), &EncodeMeta::default()).is_err());
-    assert!(encode_jxl(&EncodeImage::new(0, 4, 3, Samples::U8(&px)), &JxlOptions::default(), &EncodeMeta::default()).is_err());
+    assert!(
+        encode_jxl(
+            &EncodeImage::new(4, 4, 3, Samples::U8(&px)),
+            &JxlOptions::default(),
+            &EncodeMeta::default()
+        )
+        .is_err()
+    );
+    assert!(
+        encode_jxl(
+            &EncodeImage::new(0, 4, 3, Samples::U8(&px)),
+            &JxlOptions::default(),
+            &EncodeMeta::default()
+        )
+        .is_err()
+    );
     // a 1×1 image and quality 1 still encode
     let one = [10u8, 20, 30];
-    let b =
-        encode_jxl(&EncodeImage::new(1, 1, 3, Samples::U8(&one)), &JxlOptions { quality: 1, ..Default::default() }, &EncodeMeta::default()).unwrap();
+    let b = encode_jxl(
+        &EncodeImage::new(1, 1, 3, Samples::U8(&one)),
+        &JxlOptions {
+            quality: 1,
+            ..Default::default()
+        },
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     assert_eq!(decode(&b, DecodeOptions::default()).unwrap().width, 1);
 }

@@ -149,7 +149,7 @@ fn strip_orphan_brackets(input: &str) -> String {
         match character {
             '[' => stack.push(index),
             ']' if stack.pop().is_none() => dropped[index] = true,
-            _ => {},
+            _ => {}
         }
     }
     for index in stack {
@@ -292,7 +292,10 @@ mod tests {
 
     #[test]
     fn normalizes_spaces_but_keeps_lines_and_cjk_spacing() {
-        assert_eq!(format_game_text("  Deux   mots  \n三　文字  "), " Deux mots\n三　文字");
+        assert_eq!(
+            format_game_text("  Deux   mots  \n三　文字  "),
+            " Deux mots\n三　文字"
+        );
     }
 
     #[test]

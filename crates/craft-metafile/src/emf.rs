@@ -4,7 +4,9 @@
 use std::sync::Arc;
 
 use crate::bytes::Bytes;
-use crate::canvas::{BS_HATCHED, BS_NULL, Brush, Canvas, LogFont, Obj, PS_NULL, PS_STYLE_MASK, Pen, Xform, colorref};
+use crate::canvas::{
+    BS_HATCHED, BS_NULL, Brush, Canvas, LogFont, Obj, PS_NULL, PS_STYLE_MASK, Pen, Xform, colorref,
+};
 use crate::dib::{self, Blend};
 use crate::geom::{self, ArcKind, P};
 use crate::text::{ETO_GLYPH_INDEX, ETO_PDY, Font, MAX_CHARS, decode_bytes, decode_utf16};
@@ -37,7 +39,12 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
     let hsize = input.u32(4).ok_or(Error::BadHeader)? as usize;
     let bounds = rect32(input, 8).ok_or(Error::BadHeader)?;
     let [l, t, r, b] = bounds;
-    let frame = frame_from_header(input).or_else(|| (r > l && b > t).then_some(Frame { rect: [l, t, r - l, b - t], size: None }));
+    let frame = frame_from_header(input).or_else(|| {
+        (r > l && b > t).then_some(Frame {
+            rect: [l, t, r - l, b - t],
+            size: None,
+        })
+    });
     let mut cv = Canvas::new();
     if let Some(px_mm) = device_px_per_mm(input) {
         cv.set_device_mm(px_mm);
@@ -45,18 +52,27 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
     let mut parsed = 0usize;
     let mut pos = hsize.max(88);
     while !cv.full() {
-        let (Some(typ), Some(size)) = (input.u32(pos), pos.checked_add(4).and_then(|o| input.u32(o))) else { break };
+        let (Some(typ), Some(size)) = (
+            input.u32(pos),
+            pos.checked_add(4).and_then(|o| input.u32(o)),
+        ) else {
+            break;
+        };
         let size = size as usize;
         if size < 8 || !size.is_multiple_of(4) {
             break;
         }
-        let Some(rec) = input.slice(pos, size) else { break };
+        let Some(rec) = input.slice(pos, size) else {
+            break;
+        };
         if typ == 14 {
             break;
         }
         record(&mut cv, typ, Bytes(rec));
         parsed += 1;
-        let Some(next) = pos.checked_add(size) else { break };
+        let Some(next) = pos.checked_add(size) else {
+            break;
+        };
         pos = next;
     }
     if parsed == 0 {
@@ -69,7 +85,8 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
 fn device_px_per_mm(input: Bytes) -> Option<(f64, f64)> {
     let (dw, dh) = (input.i32(72)?, input.i32(76)?);
     let (mw, mh) = (input.i32(80)?, input.i32(84)?);
-    (dw > 0 && dh > 0 && mw > 0 && mh > 0).then(|| (f64::from(dw) / f64::from(mw), f64::from(dh) / f64::from(mh)))
+    (dw > 0 && dh > 0 && mw > 0 && mh > 0)
+        .then(|| (f64::from(dw) / f64::from(mw), f64::from(dh) / f64::from(mh)))
 }
 
 /// The frame from `rclFrame` (offset 24), `szlDevice` (72) and `szlMillimeters` (80) in the header.
@@ -82,7 +99,10 @@ fn frame_from_header(input: Bytes) -> Option<Frame> {
     let (px_mm_x, px_mm_y) = device_px_per_mm(input)?;
     let (sx, sy) = (px_mm_x / 100.0, px_mm_y / 100.0);
     let rect = [fl * sx, ft * sy, (fr - fl) * sx, (fb - ft) * sy];
-    Some(Frame { rect, size: Some(((fr - fl) * HMM_TO_PT, (fb - ft) * HMM_TO_PT)) })
+    Some(Frame {
+        rect,
+        size: Some(((fr - fl) * HMM_TO_PT, (fb - ft) * HMM_TO_PT)),
+    })
 }
 
 fn record(cv: &mut Canvas, typ: u32, r: Bytes) {
@@ -103,7 +123,9 @@ fn record(cv: &mut Canvas, typ: u32, r: Bytes) {
         }
         34 => r.i32(8).map(|n| cv.restore_dc(n)),
         35 => xform(r, 8).map(|x| cv.modify_world(x, 4)),
-        36 => xform(r, 8).zip(r.u32(32)).map(|(x, m)| cv.modify_world(x, m)),
+        36 => xform(r, 8)
+            .zip(r.u32(32))
+            .map(|(x, m)| cv.modify_world(x, m)),
         37 => r.u32(8).map(|i| cv.select(i)),
         38 => create_pen(cv, r),
         95 => create_ext_pen(cv, r),
@@ -123,9 +145,15 @@ fn record(cv: &mut Canvas, typ: u32, r: Bytes) {
         43 => rect32(r, 8).map(|[l, t, rr, b]| cv.shape(&geom::rect(l, t, rr, b), true, true)),
         44 => {
             let (cw, ch) = (r.i32(24), r.i32(28));
-            let (Some(cw), Some(ch)) = (cw, ch) else { return };
+            let (Some(cw), Some(ch)) = (cw, ch) else {
+                return;
+            };
             rect32(r, 8).map(|[l, t, rr, b]| {
-                cv.shape(&geom::round_rect(l, t, rr, b, f64::from(cw), f64::from(ch)), true, true);
+                cv.shape(
+                    &geom::round_rect(l, t, rr, b, f64::from(cw), f64::from(ch)),
+                    true,
+                    true,
+                );
             })
         }
         45..=47 => arc32(r).map(|(bounds, s, e)| {
@@ -135,7 +163,11 @@ fn record(cv: &mut Canvas, typ: u32, r: Bytes) {
                 _ => ArcKind::Pie,
             };
             let [l, t, rr, b] = bounds;
-            cv.shape(&geom::arc_shape(l, t, rr, b, s, e, kind), kind != ArcKind::Arc, true);
+            cv.shape(
+                &geom::arc_shape(l, t, rr, b, s, e, kind),
+                kind != ArcKind::Arc,
+                true,
+            );
         }),
         4 | 87 => counted(r, typ == 4).map(|pts| cv.poly(&pts, false, false, true)),
         3 | 86 => counted(r, typ == 3).map(|pts| cv.poly(&pts, true, true, true)),
@@ -148,8 +180,10 @@ fn record(cv: &mut Canvas, typ: u32, r: Bytes) {
             Some(())
         }),
         5 | 88 => counted(r, typ == 5).map(|pts| cv.bezier_to(&pts)),
-        7 | 90 => poly_groups(r, typ == 7).map(|(counts, pts)| cv.shape(&geom::subpaths(&pts, &counts, false), false, true)),
-        8 | 91 => poly_groups(r, typ == 8).map(|(counts, pts)| cv.shape(&geom::subpaths(&pts, &counts, true), true, true)),
+        7 | 90 => poly_groups(r, typ == 7)
+            .map(|(counts, pts)| cv.shape(&geom::subpaths(&pts, &counts, false), false, true)),
+        8 | 91 => poly_groups(r, typ == 8)
+            .map(|(counts, pts)| cv.shape(&geom::subpaths(&pts, &counts, true), true, true)),
         59 => {
             cv.begin_path();
             Some(())
@@ -189,7 +223,12 @@ fn xy32(r: Bytes, off: usize) -> Option<P> {
 
 /// RECTL (left, top, right, bottom) as i32 values widened to f64.
 fn rect32(r: Bytes, off: usize) -> Option<[f64; 4]> {
-    Some([f64::from(r.i32(off)?), f64::from(r.i32(off + 4)?), f64::from(r.i32(off + 8)?), f64::from(r.i32(off + 12)?)])
+    Some([
+        f64::from(r.i32(off)?),
+        f64::from(r.i32(off + 4)?),
+        f64::from(r.i32(off + 8)?),
+        f64::from(r.i32(off + 12)?),
+    ])
 }
 
 /// An i32 field as f64; 0 past the end.
@@ -228,10 +267,17 @@ fn poly_groups(r: Bytes, wide: bool) -> Option<(Vec<usize>, Vec<P>)> {
     let n = budget(r.u32(24)?)?;
     // The record must hold the n counts before anything is allocated for them.
     let raw = r.slice(32, n.checked_mul(4)?)?;
-    let counts: Vec<usize> = raw.as_chunks::<4>().0.iter().map(|c| u32::from_le_bytes(*c) as usize).collect();
+    let counts: Vec<usize> = raw
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| u32::from_le_bytes(*c) as usize)
+        .collect();
     let total = counts.iter().try_fold(0usize, |a, c| a.checked_add(*c))?;
     let total = budget(u32::try_from(total).ok()?)?;
-    let pts = r.tail(n.checked_mul(4)?.checked_add(32)?)?.points(0, total, wide)?;
+    let pts = r
+        .tail(n.checked_mul(4)?.checked_add(32)?)?
+        .points(0, total, wide)?;
     Some((counts, pts))
 }
 
@@ -241,7 +287,14 @@ fn create_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let style = r.u32(12)?;
     let width = r.i32(16)?;
     let color = r.u32(24)?;
-    cv.add_object(Some(slot), Obj::Pen(Pen { style, width: f64::from(width), color: colorref(color) }));
+    cv.add_object(
+        Some(slot),
+        Obj::Pen(Pen {
+            style,
+            width: f64::from(width),
+            color: colorref(color),
+        }),
+    );
     Some(())
 }
 
@@ -251,9 +304,24 @@ fn create_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
 fn create_ext_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let slot = r.u32(8)? as usize;
     let (style, width, brush, color) = (r.u32(28)?, r.u32(32)?, r.u32(36)?, r.u32(40)?);
-    let width = if style & PS_TYPE_MASK == PS_COSMETIC { 0.0 } else { f64::from(width) };
-    let style = if brush == BS_NULL { PS_NULL } else { style & PS_STYLE_MASK };
-    cv.add_object(Some(slot), Obj::Pen(Pen { style, width, color: colorref(color) }));
+    let width = if style & PS_TYPE_MASK == PS_COSMETIC {
+        0.0
+    } else {
+        f64::from(width)
+    };
+    let style = if brush == BS_NULL {
+        PS_NULL
+    } else {
+        style & PS_STYLE_MASK
+    };
+    cv.add_object(
+        Some(slot),
+        Obj::Pen(Pen {
+            style,
+            width,
+            color: colorref(color),
+        }),
+    );
     Some(())
 }
 
@@ -295,7 +363,10 @@ fn create_font(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let escapement = r.i32(20).unwrap_or(0);
     let weight = r.i32(28).unwrap_or(0);
     let byte = |o: usize| r.0.get(o).copied().unwrap_or(0);
-    let units: Vec<u16> = (0..32).map_while(|i| r.u16(40 + 2 * i)).take_while(|u| *u != 0).collect();
+    let units: Vec<u16> = (0..32)
+        .map_while(|i| r.u16(40 + 2 * i))
+        .take_while(|u| *u != 0)
+        .collect();
     let (family, _) = decode_utf16(&units, &[]);
     let font = Font {
         family: family.trim().to_string(),
@@ -307,7 +378,13 @@ fn create_font(cv: &mut Canvas, r: Bytes) -> Option<()> {
         strike: byte(34) != 0,
         charset: byte(35),
     };
-    cv.add_object(Some(slot), Obj::Font(Arc::new(LogFont { font, escapement: f64::from(escapement) })));
+    cv.add_object(
+        Some(slot),
+        Obj::Font(Arc::new(LogFont {
+            font,
+            escapement: f64::from(escapement),
+        })),
+    );
     Some(())
 }
 
@@ -318,7 +395,10 @@ fn dx_array(r: Bytes, off: usize, n: usize, opts: u32) -> Vec<f32> {
     if off == 0 {
         return Vec::new();
     }
-    let dx: Vec<f32> = (0..n).map_while(|i| r.i32(off.checked_add(i.checked_mul(step)?)?)).map(|v| v as f32).collect();
+    let dx: Vec<f32> = (0..n)
+        .map_while(|i| r.i32(off.checked_add(i.checked_mul(step)?)?))
+        .map(|v| v as f32)
+        .collect();
     if dx.len() == n { dx } else { Vec::new() }
 }
 
@@ -331,14 +411,23 @@ fn ext_text_out(cv: &mut Canvas, r: Bytes, wide: bool) -> Option<()> {
     let n = (r.u32(44)? as usize).min(MAX_CHARS);
     let off = r.u32(48)? as usize;
     let opts = r.u32(52)?;
-    let (rect, dx_off) = if opts & ETO_NO_RECT != 0 { (None, r.u32(56)?) } else { (rect32(r, 56), r.u32(72)?) };
+    let (rect, dx_off) = if opts & ETO_NO_RECT != 0 {
+        (None, r.u32(56)?)
+    } else {
+        (rect32(r, 56), r.u32(72)?)
+    };
     if opts & ETO_GLYPH_INDEX != 0 {
         return None;
     }
     let dx = dx_array(r, dx_off as usize, n, opts);
     let (text, dx) = if wide {
         let raw = r.slice(off, n.checked_mul(2)?)?;
-        let units: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
+        let units: Vec<u16> = raw
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes(*c))
+            .collect();
         decode_utf16(&units, &dx)
     } else {
         decode_bytes(r.slice(off, n)?, cv.font_charset(), &dx)
@@ -356,12 +445,21 @@ fn small_text_out(cv: &mut Canvas, r: Bytes) -> Option<()> {
     if opts & ETO_GLYPH_INDEX != 0 {
         return None;
     }
-    let (rect, off) = if opts & ETO_NO_RECT != 0 { (None, 36) } else { (rect32(r, 36), 52) };
+    let (rect, off) = if opts & ETO_NO_RECT != 0 {
+        (None, 36)
+    } else {
+        (rect32(r, 36), 52)
+    };
     let (text, _) = if opts & ETO_SMALL_CHARS != 0 {
         decode_bytes(r.slice(off, n)?, cv.font_charset(), &[])
     } else {
         let raw = r.slice(off, n.checked_mul(2)?)?;
-        let units: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
+        let units: Vec<u16> = raw
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes(*c))
+            .collect();
         decode_utf16(&units, &[])
     };
     cv.text(at, text, Vec::new(), opts, rect);
@@ -377,7 +475,11 @@ fn bitblt(cv: &mut Canvas, r: Bytes, stretch: bool) -> Option<()> {
         cv.fill_rop(dst, rop);
         return Some(());
     }
-    let (sw, sh) = if stretch { (i32s(r, 100), i32s(r, 104)) } else { (dst[2], dst[3]) };
+    let (sw, sh) = if stretch {
+        (i32s(r, 100), i32s(r, 104))
+    } else {
+        (dst[2], dst[3])
+    };
     let src = [i32s(r, 44), i32s(r, 48), sw, sh];
     blit(cv, r, dst, src, (84, 92), Blend::Rop(rop))
 }
@@ -389,7 +491,17 @@ fn alphablend(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let constant = *r.0.get(42)?;
     let per_pixel = (*r.0.get(43)? & 0x01) != 0;
     let src = [i32s(r, 44), i32s(r, 48), i32s(r, 100), i32s(r, 104)];
-    blit(cv, r, dst, src, (84, 92), Blend::Alpha { constant, per_pixel })
+    blit(
+        cv,
+        r,
+        dst,
+        src,
+        (84, 92),
+        Blend::Alpha {
+            constant,
+            per_pixel,
+        },
+    )
 }
 
 /// STRETCHDIBITS: dest x/y at 24, src x/y/w/h at 32..48, bmi offset/size at 48, bits at 56, rop at 68,
@@ -417,7 +529,14 @@ fn set_dibits(cv: &mut Canvas, r: Bytes) -> Option<()> {
 /// Decodes the bitmap at `at` = (offset of the bmi offset/length pair, offset of the bits pair), both
 /// inside the record, and stretches the source rectangle `src` into `dst`. Both are `[x, y, w, h]`; a
 /// non-positive source size means the whole bitmap. `blend` decides how it combines.
-fn blit(cv: &mut Canvas, r: Bytes, dst: [f64; 4], src: [f64; 4], at: (usize, usize), blend: Blend) -> Option<()> {
+fn blit(
+    cv: &mut Canvas,
+    r: Bytes,
+    dst: [f64; 4],
+    src: [f64; 4],
+    at: (usize, usize),
+    blend: Blend,
+) -> Option<()> {
     let (bo, bl) = (r.u32(at.0)? as usize, r.u32(at.0 + 4)? as usize);
     let (po, pl) = (r.u32(at.1)? as usize, r.u32(at.1 + 4)? as usize);
     if pl == 0 {

@@ -49,7 +49,12 @@ pub fn default_search_paths() -> Vec<PathBuf> {
 }
 
 /// The OS-specific standard locations, given the relevant environment values.
-pub fn os_search_paths(os: Os, home: Option<PathBuf>, common_program_files: Option<PathBuf>, local_app_data: Option<PathBuf>) -> Vec<PathBuf> {
+pub fn os_search_paths(
+    os: Os,
+    home: Option<PathBuf>,
+    common_program_files: Option<PathBuf>,
+    local_app_data: Option<PathBuf>,
+) -> Vec<PathBuf> {
     let mut v = Vec::new();
     match os {
         Os::MacOs => {
@@ -79,7 +84,9 @@ pub fn os_search_paths(os: Os, home: Option<PathBuf>, common_program_files: Opti
 
 /// True when the path names a VST3 plugin (`*.vst3`, case-insensitive).
 pub fn is_vst3_path(p: &Path) -> bool {
-    p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("vst3"))
+    p.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("vst3"))
 }
 
 /// Recursively collects `.vst3` bundles and files under `dirs` (missing directories are skipped).
@@ -104,7 +111,9 @@ fn walk(dir: &Path, depth: usize, out: &mut Vec<PathBuf>, budget: &mut usize) {
     if depth > MAX_DEPTH || out.len() >= MAX_BUNDLES {
         return;
     }
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for entry in rd.flatten() {
         if *budget == 0 || out.len() >= MAX_BUNDLES {
             return;
@@ -112,7 +121,9 @@ fn walk(dir: &Path, depth: usize, out: &mut Vec<PathBuf>, budget: &mut usize) {
         *budget -= 1;
         let p = entry.path();
         // `metadata` follows symlinks (plugins are often symlinked in); errors are skipped.
-        let Ok(md) = std::fs::metadata(&p) else { continue };
+        let Ok(md) = std::fs::metadata(&p) else {
+            continue;
+        };
         if is_vst3_path(&p) {
             out.push(p);
         } else if md.is_dir() {
@@ -176,12 +187,20 @@ pub fn bundle_binary_for(os: Os, path: &Path) -> Option<PathBuf> {
         if named.is_file() {
             return Some(named);
         }
-        let Ok(rd) = std::fs::read_dir(&folder) else { continue };
+        let Ok(rd) = std::fs::read_dir(&folder) else {
+            continue;
+        };
         let mut files: Vec<PathBuf> = rd
             .flatten()
             .map(|e| e.path())
             .filter(|p| p.is_file())
-            .filter(|p| ext.is_none_or(|e| p.extension().and_then(|x| x.to_str()).is_some_and(|x| x.eq_ignore_ascii_case(e))))
+            .filter(|p| {
+                ext.is_none_or(|e| {
+                    p.extension()
+                        .and_then(|x| x.to_str())
+                        .is_some_and(|x| x.eq_ignore_ascii_case(e))
+                })
+            })
             .take(64)
             .collect();
         files.sort();
@@ -194,12 +213,20 @@ pub fn bundle_binary_for(os: Os, path: &Path) -> Option<PathBuf> {
 
 /// The `|`-separated VST3 sub-category tokens (`"Fx|Reverb"` → `["Fx", "Reverb"]`).
 pub fn split_sub_categories(s: &str) -> Vec<String> {
-    s.split('|').map(str::trim).filter(|t| !t.is_empty()).take(32).map(str::to_string).collect()
+    s.split('|')
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .take(32)
+        .map(str::to_string)
+        .collect()
 }
 
 /// Maps VST3 sub-categories (`Fx|EQ`, `Instrument|Synth`, …) to a SoundCraft insert-menu category.
 pub fn category_from_sub_categories<S: AsRef<str>>(subs: &[S]) -> Category {
-    let has = |names: &[&str]| subs.iter().any(|f| names.iter().any(|n| f.as_ref().eq_ignore_ascii_case(n)));
+    let has = |names: &[&str]| {
+        subs.iter()
+            .any(|f| names.iter().any(|n| f.as_ref().eq_ignore_ascii_case(n)))
+    };
     if is_instrument(subs) {
         Category::Instrument
     } else if has(&["EQ", "Filter"]) {
@@ -223,7 +250,8 @@ pub fn category_from_sub_categories<S: AsRef<str>>(subs: &[S]) -> Category {
 
 /// True when the sub-categories mark an instrument (`Instrument`, `Instrument|Synth`, …).
 pub fn is_instrument<S: AsRef<str>>(subs: &[S]) -> bool {
-    subs.first().is_some_and(|f| f.as_ref().eq_ignore_ascii_case("Instrument"))
+    subs.first()
+        .is_some_and(|f| f.as_ref().eq_ignore_ascii_case("Instrument"))
 }
 
 #[cfg(test)]
@@ -231,7 +259,10 @@ mod tests {
     use super::*;
 
     fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("soundcraft-vst3-scan-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!(
+            "soundcraft-vst3-scan-{name}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -248,7 +279,15 @@ mod tests {
         std::fs::write(d.join("c.vst3/Contents/MacOS/c"), b"x").unwrap();
         std::fs::write(d.join("c.vst3/Contents/inner.vst3"), b"x").unwrap();
         let found = find_bundles(&[d.clone(), d.join("missing")]);
-        let names: Vec<String> = found.iter().map(|p| p.strip_prefix(&d).unwrap().to_string_lossy().replace('\\', "/")).collect();
+        let names: Vec<String> = found
+            .iter()
+            .map(|p| {
+                p.strip_prefix(&d)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/")
+            })
+            .collect();
         assert_eq!(names, vec!["a.vst3", "c.vst3", "vendor/sub/B.VST3"]);
         assert_eq!(find_bundles(&[d.join("a.vst3")]), vec![d.join("a.vst3")]);
         let _ = std::fs::remove_dir_all(&d);
@@ -261,29 +300,51 @@ mod tests {
         std::fs::create_dir_all(d.join("M.vst3/Contents/MacOS")).unwrap();
         std::fs::write(d.join("M.vst3/Contents/MacOS/M"), b"x").unwrap();
         std::fs::write(d.join("M.vst3/Contents/MacOS/aaa"), b"x").unwrap();
-        assert_eq!(bundle_binary_for(Os::MacOs, &d.join("M.vst3")), Some(d.join("M.vst3/Contents/MacOS/M")));
+        assert_eq!(
+            bundle_binary_for(Os::MacOs, &d.join("M.vst3")),
+            Some(d.join("M.vst3/Contents/MacOS/M"))
+        );
         // macOS fallback: first file when the name differs.
         std::fs::create_dir_all(d.join("N.vst3/Contents/MacOS")).unwrap();
         std::fs::write(d.join("N.vst3/Contents/MacOS/other"), b"x").unwrap();
-        assert_eq!(bundle_binary_for(Os::MacOs, &d.join("N.vst3")), Some(d.join("N.vst3/Contents/MacOS/other")));
+        assert_eq!(
+            bundle_binary_for(Os::MacOs, &d.join("N.vst3")),
+            Some(d.join("N.vst3/Contents/MacOS/other"))
+        );
         // Windows
         let win = arch_dirs(Os::Windows)[0];
         std::fs::create_dir_all(d.join(format!("W.vst3/Contents/{win}"))).unwrap();
         std::fs::write(d.join(format!("W.vst3/Contents/{win}/W.vst3")), b"x").unwrap();
         std::fs::write(d.join(format!("W.vst3/Contents/{win}/helper.dll")), b"x").unwrap();
-        assert_eq!(bundle_binary_for(Os::Windows, &d.join("W.vst3")), Some(d.join(format!("W.vst3/Contents/{win}/W.vst3"))));
+        assert_eq!(
+            bundle_binary_for(Os::Windows, &d.join("W.vst3")),
+            Some(d.join(format!("W.vst3/Contents/{win}/W.vst3")))
+        );
         // Linux
         let lin = arch_dirs(Os::Unix)[0];
         std::fs::create_dir_all(d.join(format!("L.vst3/Contents/{lin}"))).unwrap();
         std::fs::write(d.join(format!("L.vst3/Contents/{lin}/notes.txt")), b"x").unwrap();
-        assert_eq!(bundle_binary_for(Os::Unix, &d.join("L.vst3")), None, "only .so files qualify");
+        assert_eq!(
+            bundle_binary_for(Os::Unix, &d.join("L.vst3")),
+            None,
+            "only .so files qualify"
+        );
         std::fs::write(d.join(format!("L.vst3/Contents/{lin}/Renamed.so")), b"x").unwrap();
-        assert_eq!(bundle_binary_for(Os::Unix, &d.join("L.vst3")), Some(d.join(format!("L.vst3/Contents/{lin}/Renamed.so"))));
+        assert_eq!(
+            bundle_binary_for(Os::Unix, &d.join("L.vst3")),
+            Some(d.join(format!("L.vst3/Contents/{lin}/Renamed.so")))
+        );
         std::fs::write(d.join(format!("L.vst3/Contents/{lin}/L.so")), b"x").unwrap();
-        assert_eq!(bundle_binary_for(Os::Unix, &d.join("L.vst3")), Some(d.join(format!("L.vst3/Contents/{lin}/L.so"))));
+        assert_eq!(
+            bundle_binary_for(Os::Unix, &d.join("L.vst3")),
+            Some(d.join(format!("L.vst3/Contents/{lin}/L.so")))
+        );
         // Single-file plugin, wrong layout, missing.
         std::fs::write(d.join("single.vst3"), b"x").unwrap();
-        assert_eq!(bundle_binary_for(Os::Windows, &d.join("single.vst3")), Some(d.join("single.vst3")));
+        assert_eq!(
+            bundle_binary_for(Os::Windows, &d.join("single.vst3")),
+            Some(d.join("single.vst3"))
+        );
         assert_eq!(bundle_binary_for(Os::Windows, &d.join("M.vst3")), None);
         assert_eq!(bundle_binary_for(Os::MacOs, &d.join("nope.vst3")), None);
         std::fs::create_dir_all(d.join("Empty.vst3")).unwrap();
@@ -294,12 +355,30 @@ mod tests {
     #[test]
     fn os_paths_cover_the_standard_locations() {
         let mac = os_search_paths(Os::MacOs, Some("/Users/u".into()), None, None);
-        assert_eq!(mac, vec![PathBuf::from("/Users/u/Library/Audio/Plug-Ins/VST3"), PathBuf::from("/Library/Audio/Plug-Ins/VST3")]);
-        let win = os_search_paths(Os::Windows, None, Some("C:/CPF".into()), Some("C:/LAD".into()));
+        assert_eq!(
+            mac,
+            vec![
+                PathBuf::from("/Users/u/Library/Audio/Plug-Ins/VST3"),
+                PathBuf::from("/Library/Audio/Plug-Ins/VST3")
+            ]
+        );
+        let win = os_search_paths(
+            Os::Windows,
+            None,
+            Some("C:/CPF".into()),
+            Some("C:/LAD".into()),
+        );
         assert_eq!(win[0], PathBuf::from("C:/CPF").join("VST3"));
         assert_eq!(win.len(), 2);
         let unix = os_search_paths(Os::Unix, Some("/home/u".into()), None, None);
-        assert_eq!(unix, vec![PathBuf::from("/home/u/.vst3"), PathBuf::from("/usr/lib/vst3"), PathBuf::from("/usr/local/lib/vst3")]);
+        assert_eq!(
+            unix,
+            vec![
+                PathBuf::from("/home/u/.vst3"),
+                PathBuf::from("/usr/lib/vst3"),
+                PathBuf::from("/usr/local/lib/vst3")
+            ]
+        );
         assert!(!default_search_paths().is_empty());
     }
 

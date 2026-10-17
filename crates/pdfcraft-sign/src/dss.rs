@@ -21,7 +21,11 @@ pub struct Evidence {
 
 /// Uppercase-hex SHA-1 of a signature's `/Contents` — the `/VRI` key convention.
 fn vri_key(contents: &[u8]) -> String {
-    crate::keys::DigestAlg::Sha1.digest(&[contents]).iter().map(|b| format!("{b:02X}")).collect()
+    crate::keys::DigestAlg::Sha1
+        .digest(&[contents])
+        .iter()
+        .map(|b| format!("{b:02X}"))
+        .collect()
 }
 
 /// Merge `evidence` into the catalog's `/DSS` (deduplicating byte-identical blobs against any
@@ -29,8 +33,15 @@ fn vri_key(contents: &[u8]) -> String {
 /// written incrementally.
 pub fn embed(doc: &Document, evidence: &Evidence) -> Result<Vec<u8>, SignError> {
     let mut doc = doc.clone();
-    let root = doc.root().ok_or_else(|| SignError::Pdf("the document has no catalog".into()))?;
-    let existing = doc.get(root).as_dict().and_then(|c| c.get(b"DSS").cloned()).map(|d| doc.resolve(&d)).and_then(|d| d.as_dict().cloned());
+    let root = doc
+        .root()
+        .ok_or_else(|| SignError::Pdf("the document has no catalog".into()))?;
+    let existing = doc
+        .get(root)
+        .as_dict()
+        .and_then(|c| c.get(b"DSS").cloned())
+        .map(|d| doc.resolve(&d))
+        .and_then(|d| d.as_dict().cloned());
 
     // What is already in the store, so the update only appends new bytes.
     let mut certs: Vec<Vec<u8>> = Vec::new();
@@ -59,23 +70,45 @@ pub fn embed(doc: &Document, evidence: &Evidence) -> Result<Vec<u8>, SignError> 
         return Err(SignError::Pdf("no evidence to embed".into()));
     }
     // New objects for everything we are adding; VRI points at the union.
-    let cert_refs: Vec<Object> = certs.iter().map(|c| Object::Ref(embed_stream(&mut doc, c))).collect();
-    let ocsp_refs: Vec<Object> = ocsps.iter().map(|o| Object::Ref(embed_stream(&mut doc, o))).collect();
-    let crl_refs: Vec<Object> = crls.iter().map(|c| Object::Ref(embed_stream(&mut doc, c))).collect();
+    let cert_refs: Vec<Object> = certs
+        .iter()
+        .map(|c| Object::Ref(embed_stream(&mut doc, c)))
+        .collect();
+    let ocsp_refs: Vec<Object> = ocsps
+        .iter()
+        .map(|o| Object::Ref(embed_stream(&mut doc, o)))
+        .collect();
+    let crl_refs: Vec<Object> = crls
+        .iter()
+        .map(|c| Object::Ref(embed_stream(&mut doc, c)))
+        .collect();
 
     let mut dss = Dict::new();
     dss.set(b"Type".to_vec(), Object::name("DSS"));
     dss.set(b"Filter".to_vec(), Object::name("Adobe.PPKLite"));
-    dss.set(b"Certs".to_vec(), Object::Ref(doc.add(Object::Array(cert_refs.clone()))));
+    dss.set(
+        b"Certs".to_vec(),
+        Object::Ref(doc.add(Object::Array(cert_refs.clone()))),
+    );
     if !ocsp_refs.is_empty() {
-        dss.set(b"OCSPs".to_vec(), Object::Ref(doc.add(Object::Array(ocsp_refs.clone()))));
+        dss.set(
+            b"OCSPs".to_vec(),
+            Object::Ref(doc.add(Object::Array(ocsp_refs.clone()))),
+        );
     }
     if !crl_refs.is_empty() {
-        dss.set(b"CRLs".to_vec(), Object::Ref(doc.add(Object::Array(crl_refs.clone()))));
+        dss.set(
+            b"CRLs".to_vec(),
+            Object::Ref(doc.add(Object::Array(crl_refs.clone()))),
+        );
     }
     // Keep any existing /VRI entries, then cover every signature in the file.
-    let mut vri =
-        existing.as_ref().and_then(|d| d.get(b"VRI").cloned()).map(|v| doc.resolve(&v)).and_then(|v| v.as_dict().cloned()).unwrap_or_default();
+    let mut vri = existing
+        .as_ref()
+        .and_then(|d| d.get(b"VRI").cloned())
+        .map(|v| doc.resolve(&v))
+        .and_then(|v| v.as_dict().cloned())
+        .unwrap_or_default();
     for contents in crate::pdf::signature_contents(&doc) {
         let mut e = Dict::new();
         e.set(b"Type".to_vec(), Object::name("VRI"));
@@ -93,7 +126,10 @@ pub fn embed(doc: &Document, evidence: &Evidence) -> Result<Vec<u8>, SignError> 
     }
     let dss_ref = doc.add(Object::Dict(dss));
     doc.update_dict(root, |c| c.set(b"DSS".to_vec(), Object::Ref(dss_ref)))?;
-    Ok(pdfcraft_cos::write_incremental(&doc, &SaveOptions::default())?)
+    Ok(pdfcraft_cos::write_incremental(
+        &doc,
+        &SaveOptions::default(),
+    )?)
 }
 
 /// Store one DER blob as a `/Type /Embed` stream.
@@ -105,7 +141,11 @@ fn embed_stream(doc: &mut Document, blob: &[u8]) -> pdfcraft_cos::ObjRef {
 
 /// Pull the raw bytes of an existing DSS array into `into`.
 fn pull(doc: &Document, dss: &Dict, key: &[u8], into: &mut Vec<Vec<u8>>) -> Result<(), SignError> {
-    let Some(a) = dss.get(key).map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()) else {
+    let Some(a) = dss
+        .get(key)
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_array().cloned())
+    else {
         return Ok(());
     };
     for item in a {

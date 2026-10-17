@@ -51,9 +51,12 @@ impl EventObserver {
     /// The WindowSystem pointer must remain valid for the lifetime of this
     /// EventObserver (matching upstream lifetime contract).
     pub fn new(window_system: *const WindowSystem) -> Self {
-        let mut context = crate::hle::service::kernel_helpers::ServiceContext::new("am:EventObserver".into());
+        let mut context =
+            crate::hle::service::kernel_helpers::ServiceContext::new("am:EventObserver".into());
         let wakeup_event_handle = context.create_event("Event".into());
-        let wakeup_event = context.get_event(wakeup_event_handle).expect("observer wakeup event must exist");
+        let wakeup_event = context
+            .get_event(wakeup_event_handle)
+            .expect("observer wakeup event must exist");
         let mut observer_state = ObserverState {
             process_holder_list: Vec::new(),
             wakeup_holder: Box::new(MultiWaitHolder::from_event(wakeup_event.clone())),
@@ -184,7 +187,12 @@ impl EventObserver {
             };
             let tag = unsafe { (*holder).get_user_data() };
             if tag != UserDataTag::WakeupEvent as usize {
-                shared.state.lock().unwrap().multi_wait.unlink_holder(holder);
+                shared
+                    .state
+                    .lock()
+                    .unwrap()
+                    .multi_wait
+                    .unlink_holder(holder);
             }
             return Some(holder);
         }

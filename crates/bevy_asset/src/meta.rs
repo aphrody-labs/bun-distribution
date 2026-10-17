@@ -14,12 +14,12 @@ use alloc::{
 use futures_lite::AsyncReadExt;
 
 use crate::{
+    Asset, AssetPath, DeserializeMetaError, VisitAssetDependencies,
     io::{AssetReaderError, Reader},
     loader::AssetLoader,
     processor::Process,
-    Asset, AssetPath, DeserializeMetaError, VisitAssetDependencies,
 };
-use downcast_rs::{impl_downcast, Downcast};
+use downcast_rs::{Downcast, impl_downcast};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use tracing::error;

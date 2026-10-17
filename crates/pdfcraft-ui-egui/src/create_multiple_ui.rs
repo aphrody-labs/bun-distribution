@@ -58,9 +58,15 @@ impl PdfCraftApp {
             let base = if base.is_empty() { "document" } else { &base };
             let mut output = None;
             for number in 1..10_000 {
-                let filename = if number == 1 { format!("{base}.pdf") } else { format!("{base} ({number}).pdf") };
+                let filename = if number == 1 {
+                    format!("{base}.pdf")
+                } else {
+                    format!("{base} ({number}).pdf")
+                };
                 let candidate = dir.as_ref().map(|d| d.join(&filename));
-                if !used.contains(&filename.to_lowercase()) && !candidate.as_ref().is_some_and(|path| path.exists()) {
+                if !used.contains(&filename.to_lowercase())
+                    && !candidate.as_ref().is_some_and(|path| path.exists())
+                {
                     used.insert(filename.to_lowercase());
                     output = Some((filename, candidate));
                     break;
@@ -72,7 +78,8 @@ impl PdfCraftApp {
             };
             #[cfg(not(target_arch = "wasm32"))]
             let result = match target {
-                Some(path) => crate::editing::write_atomically(&path.to_string_lossy(), &pdf).map_err(|e| e.to_string()),
+                Some(path) => crate::editing::write_atomically(&path.to_string_lossy(), &pdf)
+                    .map_err(|e| e.to_string()),
                 None => Err(tl!("no output folder was chosen").to_string()),
             };
             #[cfg(target_arch = "wasm32")]
@@ -88,13 +95,27 @@ impl PdfCraftApp {
         if made > 0 {
             #[cfg(not(target_arch = "wasm32"))]
             if let Some(dir) = &dir {
-                self.notify_fmt("Wrote {n} files to {dir}", &[("n", &made.to_string()), ("dir", &dir.display().to_string())]);
+                self.notify_fmt(
+                    "Wrote {n} files to {dir}",
+                    &[
+                        ("n", &made.to_string()),
+                        ("dir", &dir.display().to_string()),
+                    ],
+                );
             }
             #[cfg(target_arch = "wasm32")]
-            self.notify(crate::i18n::trn(crate::i18n::current(), made as u64, "Downloaded {n} PDF", "Downloaded {n} PDFs"));
+            self.notify(crate::i18n::trn(
+                crate::i18n::current(),
+                made as u64,
+                "Downloaded {n} PDF",
+                "Downloaded {n} PDFs",
+            ));
         }
         if !refused.is_empty() {
-            self.notify(crate::i18n::fmt(tl!("Left out: {names}"), &[("names", &refused.join(", "))]));
+            self.notify(crate::i18n::fmt(
+                tl!("Left out: {names}"),
+                &[("names", &refused.join(", "))],
+            ));
         }
     }
 
@@ -125,11 +146,16 @@ impl PdfCraftApp {
         let bytes = match session.combine_each(sources) {
             Ok(Some(bytes)) => bytes,
             Ok(None) => {
-                self.notify_tr("None of those files can be made into a PDF; use PDFs, images or .txt files");
+                self.notify_tr(
+                    "None of those files can be made into a PDF; use PDFs, images or .txt files",
+                );
                 return;
             }
             Err(Stop::Read { name, error }) => {
-                self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &error)]);
+                self.notify_fmt(
+                    "Couldn't read {name}: {e}",
+                    &[("name", &name), ("e", &error)],
+                );
                 return;
             }
             Err(Stop::Build(e)) => {
@@ -139,7 +165,10 @@ impl PdfCraftApp {
         };
         let n = converted.to_string();
         let message = if !refused.is_empty() {
-            crate::i18n::fmt(tl!("Created a PDF from {n} files; left out: {names}"), &[("n", &n), ("names", &refused.join(", "))])
+            crate::i18n::fmt(
+                tl!("Created a PDF from {n} files; left out: {names}"),
+                &[("n", &n), ("names", &refused.join(", "))],
+            )
         } else {
             crate::i18n::fmt(tl!("Created a PDF from {n} files"), &[("n", &n)])
         };

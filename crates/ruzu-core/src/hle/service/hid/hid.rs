@@ -401,9 +401,7 @@ pub fn loop_process(system: crate::core::SystemRef) {
         {
             let service = Arc::new(super::hidbus::Hidbus::new(system.clone()));
             let factory: SessionRequestHandlerFactory =
-                Box::new(move || -> SessionRequestHandlerPtr {
-                    service.clone()
-                });
+                Box::new(move || -> SessionRequestHandlerPtr { service.clone() });
             server_manager.register_named_service("hidbus", factory, 64);
         }
 

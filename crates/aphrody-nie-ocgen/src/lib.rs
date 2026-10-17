@@ -141,9 +141,10 @@ fn measure_against(
     sheets: &[&palette::Sheet],
     rejection: palette::Rejection,
 ) -> Result<palette::Swatch, Error> {
-    let sheet =
-        sheets.iter().copied().find(|sheet| sheet.name == probe.sheet).ok_or_else(|| {
-            Error::Palette(format!("planche \u{ab} {} \u{bb} absente", probe.sheet))
-        })?;
+    let sheet = sheets
+        .iter()
+        .copied()
+        .find(|sheet| sheet.name == probe.sheet)
+        .ok_or_else(|| Error::Palette(format!("planche \u{ab} {} \u{bb} absente", probe.sheet)))?;
     palette::measure_one(probe, sheet, rejection)
 }

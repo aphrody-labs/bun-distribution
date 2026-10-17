@@ -27,7 +27,8 @@ struct Registry {
     locales: Vec<LocaleInfo>,
 }
 
-const EMBEDDED_REGISTRY: &str = include_str!("../../../packages/bun-os-platform/locales/locales.json");
+const EMBEDDED_REGISTRY: &str =
+    include_str!("../../../packages/bun-os-platform/locales/locales.json");
 
 /// The shipped locales and the default (`en`).
 pub fn available(paths: &Paths) -> (String, Vec<LocaleInfo>) {
@@ -49,9 +50,18 @@ pub fn os_locales() -> Vec<String> {
         let mut size = 0u32;
         // SAFETY: the first call only reports the buffer size; the second fills a buffer of it.
         unsafe {
-            if GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &mut count, None, &mut size).is_ok() && size > 0 {
+            if GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &mut count, None, &mut size).is_ok()
+                && size > 0
+            {
                 let mut buffer = vec![0u16; size as usize];
-                if GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &mut count, Some(PWSTR(buffer.as_mut_ptr())), &mut size).is_ok() {
+                if GetUserPreferredUILanguages(
+                    MUI_LANGUAGE_NAME,
+                    &mut count,
+                    Some(PWSTR(buffer.as_mut_ptr())),
+                    &mut size,
+                )
+                .is_ok()
+                {
                     let list: Vec<String> = String::from_utf16_lossy(&buffer)
                         .split('\0')
                         .filter(|s| !s.is_empty())
@@ -110,14 +120,16 @@ pub fn lookup(requested: &[String], available: &[LocaleInfo]) -> Option<String> 
         let language = parts.next().unwrap_or("").to_ascii_lowercase();
         let region = parts.find(|p| p.len() == 2).map(str::to_ascii_uppercase);
         if let Some(region) = region
-            && let Some(t) = tags.iter().find(|t| t.eq_ignore_ascii_case(&format!("{language}-{region}")))
+            && let Some(t) = tags
+                .iter()
+                .find(|t| t.eq_ignore_ascii_case(&format!("{language}-{region}")))
         {
             return Some((*t).to_string());
         }
-        if let Some(t) = tags
-            .iter()
-            .find(|t| t.eq_ignore_ascii_case(&language) || t.to_ascii_lowercase().starts_with(&format!("{language}-")))
-        {
+        if let Some(t) = tags.iter().find(|t| {
+            t.eq_ignore_ascii_case(&language)
+                || t.to_ascii_lowercase().starts_with(&format!("{language}-"))
+        }) {
             return Some((*t).to_string());
         }
     }
@@ -160,7 +172,11 @@ pub fn negotiate(paths: &Paths, explicit: Option<&str>) -> (Vec<String>, Source)
     let settings = crate::paths::Settings::read(paths);
     let wanted = explicit
         .map(str::to_string)
-        .or_else(|| std::env::var("BUN_OS_LOCALE").ok().filter(|v| !v.is_empty()))
+        .or_else(|| {
+            std::env::var("BUN_OS_LOCALE")
+                .ok()
+                .filter(|v| !v.is_empty())
+        })
         .or(settings.locale);
     if let Some(tag) = wanted.and_then(|w| lookup(&[w], &available)) {
         return (chain(&tag, &available, &default), Source::Override);

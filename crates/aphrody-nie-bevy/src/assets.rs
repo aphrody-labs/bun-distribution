@@ -38,16 +38,21 @@ use crate::NieAssetError;
 /// - il ne porte aucune texture, ou pas celle demandée ([`NieAssetError::Empty`]) ;
 /// - le payload n'est pas un DDS exploitable ([`NieAssetError::Unsupported`]).
 pub fn image_from_g4tx(bytes: &[u8], index: usize) -> Result<Image, NieAssetError> {
-    let atlas = g4tx::parse(bytes)
-        .map_err(|error| NieAssetError::Decode { format: "g4tx", reason: error.to_string() })?;
-
-    let texture = atlas.textures.get(index).ok_or_else(|| NieAssetError::Empty {
+    let atlas = g4tx::parse(bytes).map_err(|error| NieAssetError::Decode {
         format: "g4tx",
-        reason: format!(
-            "texture {index} requested, the container carries {}",
-            atlas.textures.len()
-        ),
+        reason: error.to_string(),
     })?;
+
+    let texture = atlas
+        .textures
+        .get(index)
+        .ok_or_else(|| NieAssetError::Empty {
+            format: "g4tx",
+            reason: format!(
+                "texture {index} requested, the container carries {}",
+                atlas.textures.len()
+            ),
+        })?;
 
     let (width, height, rgba) =
         aphrody_nie_formats::g4tx_decode::decode_texture_rgba(bytes, texture).ok_or_else(|| {
@@ -61,7 +66,11 @@ pub fn image_from_g4tx(bytes: &[u8], index: usize) -> Result<Image, NieAssetErro
         })?;
 
     Ok(Image::new(
-        Extent3d { width, height, depth_or_array_layers: 1 },
+        Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
         TextureDimension::D2,
         rgba,
         TextureFormat::Rgba8UnormSrgb,
@@ -80,7 +89,10 @@ pub fn image_from_g4tx(bytes: &[u8], index: usize) -> Result<Image, NieAssetErro
 pub fn g4tx_texture_count(bytes: &[u8]) -> Result<usize, NieAssetError> {
     g4tx::parse(bytes)
         .map(|atlas| atlas.textures.len())
-        .map_err(|error| NieAssetError::Decode { format: "g4tx", reason: error.to_string() })
+        .map_err(|error| NieAssetError::Decode {
+            format: "g4tx",
+            reason: error.to_string(),
+        })
 }
 
 // ─── Maillages ───────────────────────────────────────────────────────────────────────────────
@@ -180,8 +192,11 @@ pub fn mesh_from_geometry(
             ),
         });
     }
-    if let Some(out_of_range) =
-        geometry.indices.iter().copied().find(|index| *index as usize >= vertex_count)
+    if let Some(out_of_range) = geometry
+        .indices
+        .iter()
+        .copied()
+        .find(|index| *index as usize >= vertex_count)
     {
         return Err(NieAssetError::Unsupported {
             format: "g4mg",
@@ -215,9 +230,12 @@ pub fn mesh_from_geometry(
     }
 
     let positions: Vec<[f32; 3]> = geometry.positions.iter().map(|p| [p.x, p.y, p.z]).collect();
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default())
-        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
-        .with_inserted_indices(Indices::U32(geometry.indices.clone()));
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    )
+    .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+    .with_inserted_indices(Indices::U32(geometry.indices.clone()));
 
     if geometry.normals.len() == vertex_count {
         let normals: Vec<[f32; 3]> = geometry.normals.iter().map(|n| [n.x, n.y, n.z]).collect();
@@ -240,7 +258,10 @@ pub fn mesh_from_geometry(
             weights.push(w);
         }
         // `Uint16x4` n'a pas de `From<Vec<[u16; 4]>>` : la variante doit être nommée.
-        mesh.insert_attribute(Mesh::ATTRIBUTE_JOINT_INDEX, VertexAttributeValues::Uint16x4(joints));
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_JOINT_INDEX,
+            VertexAttributeValues::Uint16x4(joints),
+        );
         mesh.insert_attribute(Mesh::ATTRIBUTE_JOINT_WEIGHT, weights);
     }
 
@@ -259,8 +280,10 @@ pub fn mesh_from_geometry(
 /// - il ne décrit aucune sous-maille ([`NieAssetError::Empty`]) ;
 /// - une sous-maille échoue [`mesh_from_geometry`] — l'erreur porte son index.
 pub fn meshes_from_g4md_g4mg(md: &[u8], mg: &[u8]) -> Result<Vec<Mesh>, NieAssetError> {
-    let descriptor = g4md::parse(md)
-        .map_err(|error| NieAssetError::Decode { format: "g4md", reason: error.to_string() })?;
+    let descriptor = g4md::parse(md).map_err(|error| NieAssetError::Decode {
+        format: "g4md",
+        reason: error.to_string(),
+    })?;
     let geometries = g4mg::extract_geometry(mg, &descriptor);
     if geometries.is_empty() {
         return Err(NieAssetError::Empty {
@@ -284,18 +307,20 @@ pub fn meshes_from_g4md_g4mg(md: &[u8], mg: &[u8]) -> Result<Vec<Mesh>, NieAsset
 /// Comme [`meshes_from_g4md_g4mg`], plus [`NieAssetError::Empty`] si `submesh` dépasse le
 /// nombre de sous-mailles.
 pub fn mesh_from_g4md_g4mg(md: &[u8], mg: &[u8], submesh: usize) -> Result<Mesh, NieAssetError> {
-    let descriptor = g4md::parse(md)
-        .map_err(|error| NieAssetError::Decode { format: "g4md", reason: error.to_string() })?;
+    let descriptor = g4md::parse(md).map_err(|error| NieAssetError::Decode {
+        format: "g4md",
+        reason: error.to_string(),
+    })?;
     let geometries = g4mg::extract_geometry(mg, &descriptor);
-    let geometry =
-        geometries.iter().find(|geometry| geometry.index == submesh).ok_or_else(|| {
-            NieAssetError::Empty {
-                format: "g4mg",
-                reason: format!(
-                    "submesh {submesh} requested, the descriptor lists {}",
-                    geometries.len()
-                ),
-            }
+    let geometry = geometries
+        .iter()
+        .find(|geometry| geometry.index == submesh)
+        .ok_or_else(|| NieAssetError::Empty {
+            format: "g4mg",
+            reason: format!(
+                "submesh {submesh} requested, the descriptor lists {}",
+                geometries.len()
+            ),
         })?;
     let skin = g4mg::extract_skin(mg, &descriptor, submesh);
     mesh_from_geometry(geometry, skin.as_deref())
@@ -314,9 +339,21 @@ mod tests {
             material_index: 0,
             index32: false,
             positions: vec![
-                Vec3 { x: 0.0, y: 0.0, z: 0.0 },
-                Vec3 { x: 1.0, y: 0.0, z: 0.0 },
-                Vec3 { x: 0.0, y: 1.0, z: 0.0 },
+                Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                Vec3 {
+                    x: 1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                Vec3 {
+                    x: 0.0,
+                    y: 1.0,
+                    z: 0.0,
+                },
             ],
             normals: Vec::new(),
             uv0: Vec::new(),
@@ -377,7 +414,10 @@ mod tests {
         let mut geometry = triangle();
         geometry.indices = vec![0, 1, 7];
         let error = mesh_from_geometry(&geometry, None).expect_err("refus attendu");
-        assert!(matches!(error, NieAssetError::Unsupported { format: "g4mg", .. }), "{error}");
+        assert!(
+            matches!(error, NieAssetError::Unsupported { format: "g4mg", .. }),
+            "{error}"
+        );
         assert!(error.to_string().contains('7'), "{error}");
     }
 
@@ -414,14 +454,17 @@ mod tests {
             3
         ];
         let mesh = mesh_from_geometry(&triangle(), Some(&skin)).expect("triangle skinné");
-        let joints = mesh.attribute(Mesh::ATTRIBUTE_JOINT_INDEX).expect("indices de jointure");
+        let joints = mesh
+            .attribute(Mesh::ATTRIBUTE_JOINT_INDEX)
+            .expect("indices de jointure");
         assert!(
             matches!(joints, VertexAttributeValues::Uint16x4(v) if v.len() == 3 && v[0] == [1, 2, 3, 4])
         );
         // `VertexAttributeValues` n'expose `as_float3` que pour les triplets : pour un
         // `Float32x4` il faut nommer la variante.
-        let VertexAttributeValues::Float32x4(weights) =
-            mesh.attribute(Mesh::ATTRIBUTE_JOINT_WEIGHT).expect("poids de jointure")
+        let VertexAttributeValues::Float32x4(weights) = mesh
+            .attribute(Mesh::ATTRIBUTE_JOINT_WEIGHT)
+            .expect("poids de jointure")
         else {
             panic!("les poids de jointure doivent être des Float32x4");
         };
@@ -433,9 +476,15 @@ mod tests {
     #[test]
     fn un_tampon_quelconque_est_refuse_en_nommant_le_format() {
         let error = image_from_g4tx(b"not a g4tx", 0).expect_err("refus attendu");
-        assert!(matches!(error, NieAssetError::Decode { format: "g4tx", .. }), "{error}");
+        assert!(
+            matches!(error, NieAssetError::Decode { format: "g4tx", .. }),
+            "{error}"
+        );
         let error = meshes_from_g4md_g4mg(b"not a g4md", b"").expect_err("refus attendu");
-        assert!(matches!(error, NieAssetError::Decode { format: "g4md", .. }), "{error}");
+        assert!(
+            matches!(error, NieAssetError::Decode { format: "g4md", .. }),
+            "{error}"
+        );
     }
 
     /// Un vrai atlas du jeu devient une [`Image`] Bevy aux dimensions déclarées.
@@ -451,8 +500,10 @@ mod tests {
             eprintln!("SKIP: game VFS unavailable");
             return;
         }
-        let Some(path) =
-            v.iter().map(|(path, _)| path.to_string()).find(|path| path.ends_with(".g4tx"))
+        let Some(path) = v
+            .iter()
+            .map(|(path, _)| path.to_string())
+            .find(|path| path.ends_with(".g4tx"))
         else {
             eprintln!("SKIP: no .g4tx in this VFS");
             return;
@@ -477,10 +528,10 @@ mod tests {
                     "{path} -> Bevy Image {}x{}, {count} textures in the atlas",
                     size.width, size.height
                 );
-            },
+            }
             Err(NieAssetError::Unsupported { .. }) => {
                 eprintln!("SKIP: {path} has no DDS payload")
-            },
+            }
             Err(other) => panic!("{path}: {other}"),
         }
     }
@@ -507,9 +558,10 @@ mod tests {
         let mut present = 0usize;
         let mut converted = 0usize;
         for stem in candidates {
-            let (Ok(md), Ok(mg)) =
-                (v.read(&format!("{stem}.g4md")), v.read(&format!("{stem}.g4mg")))
-            else {
+            let (Ok(md), Ok(mg)) = (
+                v.read(&format!("{stem}.g4md")),
+                v.read(&format!("{stem}.g4mg")),
+            ) else {
                 eprintln!("SKIP: {stem} absent from this VFS");
                 continue;
             };
@@ -526,16 +578,19 @@ mod tests {
                             "{stem}: mesh without normals"
                         );
                     }
-                    eprintln!("{stem} -> {} Bevy meshes, {vertices} vertices", meshes.len());
+                    eprintln!(
+                        "{stem} -> {} Bevy meshes, {vertices} vertices",
+                        meshes.len()
+                    );
                     converted += 1;
-                },
+                }
                 // Deux refus NOMMÉS sont légitimes sur un modèle réel : `Unsupported` quand les
                 // indices sortent de la table, `Empty` quand l'extraction n'en rend aucun — c'est
                 // le cas de `k000010`, dont la géométrie vit dans l'espace global du G4MG. Ce qui
                 // ne serait pas légitime, c'est un panic ou une erreur sans cause lisible.
                 Err(error @ (NieAssetError::Unsupported { .. } | NieAssetError::Empty { .. })) => {
                     eprintln!("{stem}: named refusal, as designed: {error}");
-                },
+                }
                 Err(other) => panic!("{stem}: {other}"),
             }
         }
@@ -543,6 +598,9 @@ mod tests {
             eprintln!("SKIP: no candidate model in this VFS (is NIE_GAME_DIR the game install?)");
             return;
         }
-        assert!(converted > 0, "{present} candidate(s) present, none converted");
+        assert!(
+            converted > 0,
+            "{present} candidate(s) present, none converted"
+        );
     }
 }

@@ -13,7 +13,9 @@ fn test_parse_upstream_example_codexpolicy() {
         .unwrap_or_else(|e| panic!("{} must be readable: {e}", example_path.display()));
 
     let parser = PolicyParser::new();
-    let policy = parser.parse(&content).expect("parsing upstream example.codexpolicy must succeed");
+    let policy = parser
+        .parse(&content)
+        .expect("parsing upstream example.codexpolicy must succeed");
 
     assert!(policy.rule_count() >= 8);
 
@@ -22,15 +24,21 @@ fn test_parse_upstream_example_codexpolicy() {
         .evaluate(&["git".to_string(), "reset".to_string(), "--hard".to_string()])
         .expect("git reset --hard must match");
     assert_eq!(eval_git_reset.decision, Decision::Forbidden);
-    assert_eq!(eval_git_reset.justification.as_deref(), Some("destructive operation"));
+    assert_eq!(
+        eval_git_reset.justification.as_deref(),
+        Some("destructive operation")
+    );
 
     // ls is allowed
-    let eval_ls = policy.evaluate(&["ls".to_string(), "-la".to_string()]).expect("ls must match");
+    let eval_ls = policy
+        .evaluate(&["ls".to_string(), "-la".to_string()])
+        .expect("ls must match");
     assert_eq!(eval_ls.decision, Decision::Allow);
 
     // cat is allowed
-    let eval_cat =
-        policy.evaluate(&["cat".to_string(), "README.md".to_string()]).expect("cat must match");
+    let eval_cat = policy
+        .evaluate(&["cat".to_string(), "README.md".to_string()])
+        .expect("cat must match");
     assert_eq!(eval_cat.decision, Decision::Allow);
 
     // cp is prompt
@@ -45,5 +53,10 @@ fn test_parse_upstream_example_codexpolicy() {
         ApprovalPolicy::Never,
     );
     assert_eq!(no_hitl_eval.decision, Decision::Forbidden);
-    assert!(no_hitl_eval.explanation.expect("must have explanation").contains("No-HITL doctrine"));
+    assert!(
+        no_hitl_eval
+            .explanation
+            .expect("must have explanation")
+            .contains("No-HITL doctrine")
+    );
 }

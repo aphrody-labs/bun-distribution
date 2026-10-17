@@ -76,13 +76,21 @@ pub fn shape_thai(text: &str) -> Result<Vec<ShapedCluster>, GlyphError> {
     shape_script(text, false, ShapedScript::Thai)
 }
 
-fn shape_script(text: &str, rtl: bool, kind: ShapedScript) -> Result<Vec<ShapedCluster>, GlyphError> {
+fn shape_script(
+    text: &str,
+    rtl: bool,
+    kind: ShapedScript,
+) -> Result<Vec<ShapedCluster>, GlyphError> {
     let (font, data) = face(kind).ok_or(GlyphError::NoFont)?;
     let shaper = data.shaper(font).build();
     let scale = 1.0 / f64::from(shaper.units_per_em().max(1));
     let mut buffer = UnicodeBuffer::new();
     buffer.push_str(text);
-    buffer.set_direction(if rtl { Direction::RightToLeft } else { Direction::LeftToRight });
+    buffer.set_direction(if rtl {
+        Direction::RightToLeft
+    } else {
+        Direction::LeftToRight
+    });
     buffer.set_script(match kind {
         ShapedScript::Arabic => script::ARABIC,
         ShapedScript::Thai => script::THAI,
@@ -94,7 +102,11 @@ fn shape_script(text: &str, rtl: bool, kind: ShapedScript) -> Result<Vec<ShapedC
     });
     let shaped = shaper.shape(buffer, ShapeOptions::new());
     // Clusters are byte offsets into `text`; a cluster shows the characters up to the next one.
-    let mut starts: Vec<usize> = shaped.glyph_infos().iter().map(|g| g.cluster as usize).collect();
+    let mut starts: Vec<usize> = shaped
+        .glyph_infos()
+        .iter()
+        .map(|g| g.cluster as usize)
+        .collect();
     starts.sort_unstable();
     starts.dedup();
     let mut out: Vec<(usize, ShapedCluster)> = Vec::new();
@@ -107,15 +119,31 @@ fn shape_script(text: &str, rtl: bool, kind: ShapedScript) -> Result<Vec<ShapedC
         let cluster = match out.last_mut() {
             Some((s, c)) if *s == start => c,
             _ => {
-                let end = starts.get(starts.partition_point(|s| *s <= start)).copied().unwrap_or(text.len());
+                let end = starts
+                    .get(starts.partition_point(|s| *s <= start))
+                    .copied()
+                    .unwrap_or(text.len());
                 let text = text.get(start..end).unwrap_or_default().to_string();
-                out.push((start, ShapedCluster { script: kind, glyphs: Vec::new(), advance: 0.0, text }));
+                out.push((
+                    start,
+                    ShapedCluster {
+                        script: kind,
+                        glyphs: Vec::new(),
+                        advance: 0.0,
+                        text,
+                    },
+                ));
                 // Just pushed.
-                let Some((_, c)) = out.last_mut() else { continue };
+                let Some((_, c)) = out.last_mut() else {
+                    continue;
+                };
                 c
             }
         };
-        let at = [cluster.advance + f64::from(pos.x_offset) * scale, f64::from(pos.y_offset) * scale];
+        let at = [
+            cluster.advance + f64::from(pos.x_offset) * scale,
+            f64::from(pos.y_offset) * scale,
+        ];
         cluster.glyphs.push((info.glyph_id, at));
         cluster.advance += f64::from(pos.x_advance) * scale;
     }
@@ -131,19 +159,30 @@ pub fn arabic_glyph(id: u32) -> Result<GlyphOutline, GlyphError> {
 /// A bounded outline from the same face that produced the shaped glyph id.
 pub fn shaped_glyph(script: ShapedScript, id: u32) -> Result<GlyphOutline, GlyphError> {
     let (font, _) = face(script).ok_or(GlyphError::NoFont)?;
-    if font.maxp().map_or(true, |m| id >= u32::from(m.num_glyphs())) {
+    if font
+        .maxp()
+        .map_or(true, |m| id >= u32::from(m.num_glyphs()))
+    {
         return Err(GlyphError::Missing);
     }
     let gid = GlyphId::new(id);
     let loc = LocationRef::default();
     let scale = 1.0 / font.metrics(Size::unscaled(), loc).units_per_em.max(1) as f64;
-    let width = font.glyph_metrics(Size::unscaled(), loc).advance_width(gid).unwrap_or(0.0) as f64 * scale;
+    let width = font
+        .glyph_metrics(Size::unscaled(), loc)
+        .advance_width(gid)
+        .unwrap_or(0.0) as f64
+        * scale;
     // Marks have no advance; the widest ligatures (U+FDFD) span a few em.
     if !width.is_finite() || !(0.0..=8.0).contains(&width) {
         return Err(GlyphError::Missing);
     }
     if font.outline_glyphs().get(gid).is_none() {
-        return Ok(GlyphOutline { contours: Vec::new(), width, bbox: [0.0, 0.0, width, 0.0] });
+        return Ok(GlyphOutline {
+            contours: Vec::new(),
+            width,
+            bbox: [0.0, 0.0, width, 0.0],
+        });
     }
     crate::script::bounded_outline(font, gid, width)
 }
@@ -154,7 +193,9 @@ mod tests {
 
     fn face_or_skip() -> bool {
         if crate::document_arabic_font().is_none() {
-            eprintln!("skipping the Arabic shaping checks: built without a craft-fonts Arab face (set CRAFT_FONTS_DIR)");
+            eprintln!(
+                "skipping the Arabic shaping checks: built without a craft-fonts Arab face (set CRAFT_FONTS_DIR)"
+            );
             assert_eq!(shape_arabic("ب", true), Err(GlyphError::NoFont));
             assert_eq!(arabic_glyph(1).map(|_| ()), Err(GlyphError::NoFont));
             assert!(!arabic_has('ب'));
@@ -168,15 +209,28 @@ mod tests {
         if !face_or_skip() {
             return;
         }
-        let ids =
-            |s: &str| shape_arabic(s, true).unwrap().iter().flat_map(|c| c.glyphs.iter().map(|g| g.0)).collect::<std::collections::BTreeSet<_>>();
+        let ids = |s: &str| {
+            shape_arabic(s, true)
+                .unwrap()
+                .iter()
+                .flat_map(|c| c.glyphs.iter().map(|g| g.0))
+                .collect::<std::collections::BTreeSet<_>>()
+        };
         let (isolated, joined) = (ids("ب"), ids("ببب"));
         // Initial, medial and final forms are glyphs the isolated letter doesn't use.
-        assert!(joined.difference(&isolated).count() >= 2, "{isolated:?} {joined:?}");
+        assert!(
+            joined.difference(&isolated).count() >= 2,
+            "{isolated:?} {joined:?}"
+        );
         // One cluster per letter, however many glyphs the face draws it with (Noto Sans Arabic:
         // body and dots).
         let c = shape_arabic("ببب", true).unwrap();
-        assert!(c.len() == 3 && c.iter().all(|c| c.text == "ب" && c.advance > 0.0 && !c.glyphs.is_empty()), "{c:?}");
+        assert!(
+            c.len() == 3
+                && c.iter()
+                    .all(|c| c.text == "ب" && c.advance > 0.0 && !c.glyphs.is_empty()),
+            "{c:?}"
+        );
     }
 
     #[test]
@@ -187,7 +241,14 @@ mod tests {
         let g = shape_arabic("سلام", true).unwrap();
         let drawn: String = g.iter().map(|g| g.text.as_str()).collect();
         assert_eq!(drawn.chars().rev().collect::<String>(), "سلام");
-        assert!(shape_arabic("سلام", false).unwrap().iter().map(|g| g.text.as_str()).collect::<String>() == "سلام");
+        assert!(
+            shape_arabic("سلام", false)
+                .unwrap()
+                .iter()
+                .map(|g| g.text.as_str())
+                .collect::<String>()
+                == "سلام"
+        );
     }
 
     #[test]
@@ -200,7 +261,10 @@ mod tests {
         let mark = c.iter().find(|c| c.text == "\u{064E}").unwrap();
         assert_eq!(mark.advance, 0.0);
         let outline = arabic_glyph(mark.glyphs[0].0).unwrap();
-        assert!(!outline.contours.is_empty() && outline.bbox[1] > 0.0, "the fatha sits above the baseline");
+        assert!(
+            !outline.contours.is_empty() && outline.bbox[1] > 0.0,
+            "the fatha sits above the baseline"
+        );
     }
 
     #[test]
@@ -210,7 +274,12 @@ mod tests {
         }
         let space = shape_arabic(" ", true).unwrap();
         assert!(space[0].advance > 0.0);
-        assert!(arabic_glyph(space[0].glyphs[0].0).unwrap().contours.is_empty());
+        assert!(
+            arabic_glyph(space[0].glyphs[0].0)
+                .unwrap()
+                .contours
+                .is_empty()
+        );
         assert!(arabic_has('ب') && !arabic_has('日'));
         assert_eq!(shape_arabic("日", true), Err(GlyphError::Missing));
         assert_eq!(arabic_glyph(u32::MAX).map(|_| ()), Err(GlyphError::Missing));
@@ -232,7 +301,10 @@ mod thai_tests {
         for text in ["น้ำ", "กิ่", "ผู้ใช้", "ปู่", "เก้า", "สวัสดีภาษาไทย", "๑๒๓", ""]
         {
             let clusters = shape_thai(text).unwrap();
-            assert_eq!(clusters.iter().map(|c| c.text.as_str()).collect::<String>(), text);
+            assert_eq!(
+                clusters.iter().map(|c| c.text.as_str()).collect::<String>(),
+                text
+            );
             for c in clusters {
                 assert_eq!(c.script, ShapedScript::Thai);
                 assert!(c.advance.is_finite() && c.advance >= 0.0);
@@ -245,8 +317,16 @@ mod thai_tests {
         let stacked = shape_thai("กิ่").unwrap();
         assert_eq!(stacked.len(), 1, "base, vowel and tone must wrap together");
         assert!(stacked[0].glyphs.len() >= 3);
-        assert!(stacked[0].glyphs.iter().any(|(_, p)| p[0] != 0.0 || p[1] != 0.0));
+        assert!(
+            stacked[0]
+                .glyphs
+                .iter()
+                .any(|(_, p)| p[0] != 0.0 || p[1] != 0.0)
+        );
         assert_eq!(shape_thai("日"), Err(GlyphError::Missing));
-        assert_eq!(shaped_glyph(ShapedScript::Thai, u32::MAX).map(|_| ()), Err(GlyphError::Missing));
+        assert_eq!(
+            shaped_glyph(ShapedScript::Thai, u32::MAX).map(|_| ()),
+            Err(GlyphError::Missing)
+        );
     }
 }

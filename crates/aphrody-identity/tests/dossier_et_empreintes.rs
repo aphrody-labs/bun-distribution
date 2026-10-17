@@ -22,7 +22,16 @@ fn le_dossier_embarque_se_lit_et_porte_ses_blocs() {
     assert_eq!(d.internal_codes.len(), 3);
     assert!(d.internal_codes.iter().all(|c| c.starts_with('c')));
 
-    for bloc in ["identity", "stats", "techniques", "auras", "assets", "sources", "game", "pet"] {
+    for bloc in [
+        "identity",
+        "stats",
+        "techniques",
+        "auras",
+        "assets",
+        "sources",
+        "game",
+        "pet",
+    ] {
         assert!(d.block(bloc).is_some(), "missing block: {bloc}");
     }
 
@@ -63,7 +72,10 @@ fn le_markdown_embarque_est_le_meme_dossier() {
     assert!(BUNDLED_DOSSIER_MD.len() > 1_000);
     // Le Markdown doit parler du même personnage que le JSON.
     let nom = d.identity_string("name_en").expect("name_en");
-    assert!(BUNDLED_DOSSIER_MD.contains(nom), "le Markdown ne mentionne pas {nom}");
+    assert!(
+        BUNDLED_DOSSIER_MD.contains(nom),
+        "le Markdown ne mentionne pas {nom}"
+    );
 }
 
 #[test]

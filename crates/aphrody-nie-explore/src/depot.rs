@@ -182,7 +182,10 @@ impl Depot {
         let reelle = std::fs::canonicalize(racine)
             .with_context(|| format!("racine du dépôt introuvable : {}", racine.display()))?;
         if !reelle.is_dir() {
-            bail!("la racine du dépôt n'est pas un dossier : {}", reelle.display());
+            bail!(
+                "la racine du dépôt n'est pas un dossier : {}",
+                reelle.display()
+            );
         }
         Ok(Self {
             racine: reelle,
@@ -224,8 +227,11 @@ impl Depot {
         }
 
         let demande = Path::new(brut);
-        let absolu =
-            if demande.is_absolute() { demande.to_path_buf() } else { self.racine.join(demande) };
+        let absolu = if demande.is_absolute() {
+            demande.to_path_buf()
+        } else {
+            self.racine.join(demande)
+        };
 
         // Normalisation lexicale : `..` est résolu ici pour être refusé avant tout accès disque.
         let mut normalise = PathBuf::new();
@@ -235,8 +241,8 @@ impl Depot {
                     if !normalise.pop() {
                         bail!("chemin hors du dépôt : {brut}");
                     }
-                },
-                Component::CurDir => {},
+                }
+                Component::CurDir => {}
                 autre => normalise.push(autre.as_os_str()),
             }
         }
@@ -285,7 +291,11 @@ impl Depot {
 
     /// Chemin relatif à la racine, séparateurs `/` — la forme rendue à tous les clients.
     fn relatif(&self, absolu: &Path) -> String {
-        absolu.strip_prefix(&self.racine).unwrap_or(absolu).to_string_lossy().replace('\\', "/")
+        absolu
+            .strip_prefix(&self.racine)
+            .unwrap_or(absolu)
+            .to_string_lossy()
+            .replace('\\', "/")
     }
 
     /// Lit un fichier texte du dépôt, tronqué à `max_octets` (défaut [`OCTETS_DEFAUT`]).
@@ -320,12 +330,17 @@ impl Depot {
             });
         }
 
-        let max = max_octets.filter(|v| *v > 0).unwrap_or(OCTETS_DEFAUT).min(OCTETS_PLAFOND);
+        let max = max_octets
+            .filter(|v| *v > 0)
+            .unwrap_or(OCTETS_DEFAUT)
+            .min(OCTETS_PLAFOND);
         let a_lire = taille.min(max);
         let mut tampon = vec![0_u8; usize::try_from(a_lire).unwrap_or(usize::MAX)];
         let mut f = std::fs::File::open(&reel)
             .with_context(|| format!("ouverture impossible : {chemin}"))?;
-        let lus = f.read(&mut tampon).with_context(|| format!("lecture impossible : {chemin}"))?;
+        let lus = f
+            .read(&mut tampon)
+            .with_context(|| format!("lecture impossible : {chemin}"))?;
         tampon.truncate(lus);
 
         // Détection binaire : un octet nul dans les 8 premiers Kio suffit (même règle que la
@@ -361,8 +376,11 @@ impl Depot {
     /// # Erreurs
     /// Si le chemin est refusé par [`Self::resoudre`], ou ne vise pas un dossier.
     pub fn lister(&self, chemin: &str) -> Result<Vec<EntreeDepot>> {
-        let reel =
-            if chemin.trim().is_empty() { self.racine.clone() } else { self.resoudre(chemin)? };
+        let reel = if chemin.trim().is_empty() {
+            self.racine.clone()
+        } else {
+            self.resoudre(chemin)?
+        };
         if !reel.is_dir() {
             bail!("'{chemin}' n'est pas un dossier");
         }
@@ -419,7 +437,7 @@ impl Depot {
             match rel.components().next() {
                 Some(premier) => {
                     !exclus.contains(&premier.as_os_str().to_string_lossy().to_string())
-                },
+                }
                 None => true,
             }
         });
@@ -434,7 +452,11 @@ impl Depot {
     /// Si un glob est invalide, ou le sous-dossier de départ refusé.
     pub fn trouver(&self, motif: &str, o: &OptionsParcours) -> Result<Vec<String>> {
         let set = construire_globs(&o.globs, &o.extensions)?;
-        let aiguille = if o.sensible_casse { motif.to_string() } else { motif.to_lowercase() };
+        let aiguille = if o.sensible_casse {
+            motif.to_string()
+        } else {
+            motif.to_lowercase()
+        };
 
         let hits: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let vus = Arc::new(AtomicUsize::new(0));
@@ -467,7 +489,11 @@ impl Depot {
                     .to_string_lossy()
                     .replace('\\', "/");
                 if !aiguille.is_empty() {
-                    let foin = if sensible { rel.clone() } else { rel.to_lowercase() };
+                    let foin = if sensible {
+                        rel.clone()
+                    } else {
+                        rel.to_lowercase()
+                    };
                     if !foin.contains(&aiguille) {
                         return WalkState::Continue;
                     }
@@ -642,7 +668,9 @@ mod tests {
     #[test]
     fn lit_un_fichier_du_depot() {
         let d = depot();
-        let f = d.lire("crates/nie/aphrody-nie-explore/Cargo.toml", None).expect("lecture");
+        let f = d
+            .lire("crates/nie/aphrody-nie-explore/Cargo.toml", None)
+            .expect("lecture");
         assert!(!f.binaire, "un Cargo.toml n'est pas binaire");
         assert!(f.contenu.expect("contenu").contains("aphrody-nie-explore"));
         assert_eq!(f.chemin, "crates/nie/aphrody-nie-explore/Cargo.toml");
@@ -659,7 +687,10 @@ mod tests {
     fn refuse_les_dossiers_exclus() {
         let d = depot();
         for interdit in ["data/anime/episodes.db", "target/debug", ".git/HEAD"] {
-            assert!(d.resoudre(interdit).is_err(), "{interdit} aurait dû être refusé");
+            assert!(
+                d.resoudre(interdit).is_err(),
+                "{interdit} aurait dû être refusé"
+            );
         }
     }
 
@@ -687,7 +718,8 @@ mod tests {
         };
         let hits = d.trouver("depot", &o).expect("recherche");
         assert!(
-            hits.iter().any(|h| h.ends_with("aphrody-nie-explore/src/depot.rs")),
+            hits.iter()
+                .any(|h| h.ends_with("aphrody-nie-explore/src/depot.rs")),
             "le module courant doit se trouver lui-même : {hits:?}"
         );
     }
@@ -702,7 +734,10 @@ mod tests {
             ..Default::default()
         };
         let hits = d.chercher("DOSSIERS_EXCLUS", &o).expect("recherche");
-        assert!(!hits.is_empty(), "la constante doit être trouvée dans ce module");
+        assert!(
+            !hits.is_empty(),
+            "la constante doit être trouvée dans ce module"
+        );
         assert!(hits.iter().all(|c| c.ligne >= 1));
     }
 
@@ -711,18 +746,31 @@ mod tests {
         // Le dépôt porte un vrai `.env.local` : sans barrière, `lire` en rendait le contenu.
         let d = depot();
         for secret in [".env.local", ".env", ".env.local", "cle.pem", "id_rsa"] {
-            assert!(d.lire(secret, None).is_err(), "'{secret}' ne doit jamais être lisible");
+            assert!(
+                d.lire(secret, None).is_err(),
+                "'{secret}' ne doit jamais être lisible"
+            );
         }
         assert!(fichier_sensible(".env.production"));
-        assert!(fichier_sensible("serveur.KEY"), "la casse ne doit pas contourner le filtre");
+        assert!(
+            fichier_sensible("serveur.KEY"),
+            "la casse ne doit pas contourner le filtre"
+        );
         assert!(!fichier_sensible("lib.rs"));
-        assert!(!fichier_sensible("environment.ts"), "un nom qui commence par 'env' sans point");
+        assert!(
+            !fichier_sensible("environment.ts"),
+            "un nom qui commence par 'env' sans point"
+        );
     }
 
     #[test]
     fn les_secrets_ne_remontent_pas_dans_une_recherche() {
         let d = depot();
-        let o = OptionsParcours { caches: true, limite: 500, ..Default::default() };
+        let o = OptionsParcours {
+            caches: true,
+            limite: 500,
+            ..Default::default()
+        };
         let hits = d.trouver(".env", &o).expect("recherche");
         assert!(
             hits.iter().all(|h| !h.contains(".env")),

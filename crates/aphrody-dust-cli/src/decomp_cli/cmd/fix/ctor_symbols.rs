@@ -36,7 +36,12 @@ impl FixCtorSymbols {
 
         let rom = config.load_rom(config_path)?;
 
-        self.fix_module(&config.main_module, ModuleKind::Arm9, &mut symbol_maps, &rom)?;
+        self.fix_module(
+            &config.main_module,
+            ModuleKind::Arm9,
+            &mut symbol_maps,
+            &rom,
+        )?;
         for autoload in &config.autoloads {
             self.fix_module(
                 &autoload.module,

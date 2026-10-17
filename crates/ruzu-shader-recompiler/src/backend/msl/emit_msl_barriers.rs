@@ -16,7 +16,9 @@ pub fn emit_barrier(context: &mut MslEmitContext) -> Result<(), MslError> {
     if context.stage() == crate::stage::Stage::TessellationControl {
         // TCS per-vertex and per-patch arrays are device-buffer-backed. All
         // invocations of the patch must rendezvous in the caller's workgroup.
-        context.emit_statement("threadgroup_barrier(mem_flags::mem_device | mem_flags::mem_threadgroup);");
+        context.emit_statement(
+            "threadgroup_barrier(mem_flags::mem_device | mem_flags::mem_threadgroup);",
+        );
     } else {
         context.emit_statement("threadgroup_barrier(mem_flags::mem_threadgroup);");
     }

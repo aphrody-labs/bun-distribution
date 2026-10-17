@@ -22,32 +22,61 @@ fn track_mut(seq: &mut Sequence, id: TrackId) -> Result<&mut CaptionTrack> {
 }
 
 fn owner(seq: &Sequence, id: ClipId) -> Result<TrackId> {
-    seq.find_caption(id).map(|(t, _)| t).ok_or(EditError::NoItem(id))
+    seq.find_caption(id)
+        .map(|(t, _)| t)
+        .ok_or(EditError::NoItem(id))
 }
 
 /// Previous end / next start around caption `id` on its track.
 fn neighbours(t: &CaptionTrack, id: ClipId) -> (Tick, Tick) {
     let i = t.captions.iter().position(|c| c.id == id).unwrap_or(0);
-    let prev = if i > 0 { t.captions[i - 1].end() } else { Tick::ZERO };
+    let prev = if i > 0 {
+        t.captions[i - 1].end()
+    } else {
+        Tick::ZERO
+    };
     let next = t.captions.get(i + 1).map(|c| c.start).unwrap_or(Tick::MAX);
     (prev, next)
 }
 
 /// Add a caption at `start`. The duration is cut short at the next caption; fails if a caption
 /// already covers `start` or less than one frame would remain.
-pub fn add_caption(seq: &mut Sequence, track: TrackId, start: Tick, duration: Tick, text: &str, ctx: &mut EditCtx) -> Result<ClipId> {
+pub fn add_caption(
+    seq: &mut Sequence,
+    track: TrackId,
+    start: Tick,
+    duration: Tick,
+    text: &str,
+    ctx: &mut EditCtx,
+) -> Result<ClipId> {
     let start = start.max(Tick::ZERO);
     let t = track_mut(seq, track)?;
     if t.caption_at(start).is_some() {
-        return Err(EditError::Other("a caption already covers this time".into()));
+        return Err(EditError::Other(
+            "a caption already covers this time".into(),
+        ));
     }
-    let next = t.captions.iter().map(|c| c.start).filter(|s| *s > start).min().unwrap_or(Tick::MAX);
+    let next = t
+        .captions
+        .iter()
+        .map(|c| c.start)
+        .filter(|s| *s > start)
+        .min()
+        .unwrap_or(Tick::MAX);
     let dur = duration.min(next - start);
     if dur < ctx.min_duration {
         return Err(EditError::TooShort);
     }
     let id = ClipId(ctx.alloc());
-    t.captions.push(Caption { id, start, duration: dur, text: text.to_string(), speaker: None, cue_id: None, settings: String::new() });
+    t.captions.push(Caption {
+        id,
+        start,
+        duration: dur,
+        text: text.to_string(),
+        speaker: None,
+        cue_id: None,
+        settings: String::new(),
+    });
     t.sort();
     Ok(id)
 }
@@ -76,14 +105,21 @@ pub fn split_caption(seq: &mut Sequence, id: ClipId, t: Tick, ctx: &mut EditCtx)
 
 /// Split every caption strictly containing `t` on unlocked caption tracks (all when `tracks` is
 /// empty). Returns the new captions.
-pub fn split_captions_at(seq: &mut Sequence, tracks: &[TrackId], t: Tick, ctx: &mut EditCtx) -> Vec<ClipId> {
+pub fn split_captions_at(
+    seq: &mut Sequence,
+    tracks: &[TrackId],
+    t: Tick,
+    ctx: &mut EditCtx,
+) -> Vec<ClipId> {
     let ids: Vec<ClipId> = seq
         .caption_tracks
         .iter()
         .filter(|tr| !tr.locked && (tracks.is_empty() || tracks.contains(&tr.id)))
         .filter_map(|tr| tr.caption_at(t).filter(|c| c.start < t).map(|c| c.id))
         .collect();
-    ids.into_iter().filter_map(|id| split_caption(seq, id, t, ctx).ok()).collect()
+    ids.into_iter()
+        .filter_map(|id| split_caption(seq, id, t, ctx).ok())
+        .collect()
 }
 
 /// Merge captions on one track into the first: it spans from the first start to the last end and
@@ -95,21 +131,32 @@ pub fn merge_captions(seq: &mut Sequence, ids: &[ClipId]) -> Result<ClipId> {
     let tid = owner(seq, ids[0])?;
     for id in ids {
         if owner(seq, *id)? != tid {
-            return Err(EditError::Other("captions to merge must be on one track".into()));
+            return Err(EditError::Other(
+                "captions to merge must be on one track".into(),
+            ));
         }
     }
     let tr = track_mut(seq, tid)?;
-    let mut idx: Vec<usize> = ids.iter().filter_map(|id| tr.captions.iter().position(|c| c.id == *id)).collect();
+    let mut idx: Vec<usize> = ids
+        .iter()
+        .filter_map(|id| tr.captions.iter().position(|c| c.id == *id))
+        .collect();
     idx.sort_unstable();
     idx.dedup();
     if idx.windows(2).any(|w| w[1] != w[0] + 1) {
-        return Err(EditError::Other("captions to merge must be next to each other".into()));
+        return Err(EditError::Other(
+            "captions to merge must be next to each other".into(),
+        ));
     }
     let (Some(&first), Some(&last)) = (idx.first(), idx.last()) else {
         return Err(EditError::Nothing);
     };
     let end = tr.captions[last].end();
-    let text: Vec<String> = idx.iter().map(|&i| tr.captions[i].text.trim().to_string()).filter(|t| !t.is_empty()).collect();
+    let text: Vec<String> = idx
+        .iter()
+        .map(|&i| tr.captions[i].text.trim().to_string())
+        .filter(|t| !t.is_empty())
+        .collect();
     let keep = tr.captions[first].id;
     let c = &mut tr.captions[first];
     c.duration = end - c.start;
@@ -119,26 +166,46 @@ pub fn merge_captions(seq: &mut Sequence, ids: &[ClipId]) -> Result<ClipId> {
 }
 
 /// Change a caption's text and/or speaker.
-pub fn set_caption(seq: &mut Sequence, id: ClipId, text: Option<&str>, speaker: Option<Option<&str>>) -> Result<()> {
+pub fn set_caption(
+    seq: &mut Sequence,
+    id: ClipId,
+    text: Option<&str>,
+    speaker: Option<Option<&str>>,
+) -> Result<()> {
     let tid = owner(seq, id)?;
-    let c = track_mut(seq, tid)?.caption_mut(id).ok_or(EditError::NoItem(id))?;
+    let c = track_mut(seq, tid)?
+        .caption_mut(id)
+        .ok_or(EditError::NoItem(id))?;
     if let Some(t) = text {
         c.text = t.replace("\r\n", "\n");
     }
     if let Some(s) = speaker {
-        c.speaker = s.map(str::trim).filter(|s| !s.is_empty()).map(str::to_string);
+        c.speaker = s
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
     }
     Ok(())
 }
 
 /// Set a caption's in and out points directly (Captions panel timecode fields).
-pub fn set_caption_times(seq: &mut Sequence, id: ClipId, start: Tick, end: Tick, ctx: &EditCtx) -> Result<()> {
+pub fn set_caption_times(
+    seq: &mut Sequence,
+    id: ClipId,
+    start: Tick,
+    end: Tick,
+    ctx: &EditCtx,
+) -> Result<()> {
     let tid = owner(seq, id)?;
     let tr = track_mut(seq, tid)?;
     if end - start < ctx.min_duration || start < Tick::ZERO {
         return Err(EditError::TooShort);
     }
-    if tr.captions.iter().any(|c| c.id != id && c.start < end && start < c.end()) {
+    if tr
+        .captions
+        .iter()
+        .any(|c| c.id != id && c.start < end && start < c.end())
+    {
         return Err(EditError::Other("captions would overlap".into()));
     }
     let c = tr.caption_mut(id).ok_or(EditError::NoItem(id))?;
@@ -150,7 +217,13 @@ pub fn set_caption_times(seq: &mut Sequence, id: ClipId, start: Tick, end: Tick,
 
 /// Trim a caption edge by `delta`, limited by its neighbours and a one-frame minimum. Returns the
 /// delta applied.
-pub fn trim_caption(seq: &mut Sequence, id: ClipId, edge: Edge, delta: Tick, ctx: &EditCtx) -> Result<Tick> {
+pub fn trim_caption(
+    seq: &mut Sequence,
+    id: ClipId,
+    edge: Edge,
+    delta: Tick,
+    ctx: &EditCtx,
+) -> Result<Tick> {
     let tid = owner(seq, id)?;
     let tr = track_mut(seq, tid)?;
     let (prev, next) = neighbours(tr, id);
@@ -206,7 +279,9 @@ pub fn move_captions(seq: &mut Sequence, ids: &[ClipId], delta: Tick) -> Result<
         return Err(EditError::Nothing);
     }
     for tid in tracks {
-        let Some(tr) = seq.caption_track_mut(tid) else { continue };
+        let Some(tr) = seq.caption_track_mut(tid) else {
+            continue;
+        };
         for c in tr.captions.iter_mut().filter(|c| ids.contains(&c.id)) {
             c.start += d;
         }
@@ -225,7 +300,12 @@ pub fn delete_captions(seq: &mut Sequence, ids: &[ClipId], ripple: bool) -> Resu
         }
     }
     for tr in seq.caption_tracks.iter_mut().filter(|t| !t.locked) {
-        let mut removed: Vec<TimeRange> = tr.captions.iter().filter(|c| ids.contains(&c.id)).map(Caption::range).collect();
+        let mut removed: Vec<TimeRange> = tr
+            .captions
+            .iter()
+            .filter(|c| ids.contains(&c.id))
+            .map(Caption::range)
+            .collect();
         if removed.is_empty() {
             continue;
         }
@@ -320,11 +400,21 @@ mod tests {
 
     fn ctx(next: &mut u64) -> EditCtx<'_> {
         static NONE: fn(filmcraft_project::ItemId) -> Option<Tick> = |_| None;
-        EditCtx { next_id: next, media_duration: &NONE, media_start: &|_| Tick::ZERO, min_duration: Tick(10) }
+        EditCtx {
+            next_id: next,
+            media_duration: &NONE,
+            media_start: &|_| Tick::ZERO,
+            min_duration: Tick(10),
+        }
     }
 
     fn spans(seq: &Sequence, tid: TrackId) -> Vec<(i64, i64, String)> {
-        seq.caption_track(tid).unwrap().captions.iter().map(|c| (c.start.0, c.end().0, c.text.clone())).collect()
+        seq.caption_track(tid)
+            .unwrap()
+            .captions
+            .iter()
+            .map(|c| (c.start.0, c.end().0, c.text.clone()))
+            .collect()
     }
 
     #[test]
@@ -334,7 +424,10 @@ mod tests {
         let id = add_caption(&mut seq, tid, Tick(40), Tick(1000), "a", &mut ctx(&mut n)).unwrap();
         assert_eq!(seq.find_caption(id).unwrap().1.end(), Tick(100));
         assert!(add_caption(&mut seq, tid, Tick(120), Tick(10), "x", &mut ctx(&mut n)).is_err());
-        assert!(add_caption(&mut seq, tid, Tick(95), Tick(10), "x", &mut ctx(&mut n)).is_err(), "would be shorter than min");
+        assert!(
+            add_caption(&mut seq, tid, Tick(95), Tick(10), "x", &mut ctx(&mut n)).is_err(),
+            "would be shorter than min"
+        );
         assert!(seq.check().is_ok());
     }
 
@@ -343,11 +436,21 @@ mod tests {
         let (mut seq, tid) = seq_with(&[(0, 100, "hello"), (100, 50, "world")]);
         let mut n = 1;
         let r = split_caption(&mut seq, ClipId(1000), Tick(40), &mut ctx(&mut n)).unwrap();
-        assert_eq!(spans(&seq, tid), vec![(0, 40, "hello".into()), (40, 100, "hello".into()), (100, 150, "world".into())]);
+        assert_eq!(
+            spans(&seq, tid),
+            vec![
+                (0, 40, "hello".into()),
+                (40, 100, "hello".into()),
+                (100, 150, "world".into())
+            ]
+        );
         assert!(split_caption(&mut seq, r, Tick(45), &mut ctx(&mut n)).is_err());
         let m = merge_captions(&mut seq, &[r, ClipId(1001)]).unwrap();
         assert_eq!(m, r);
-        assert_eq!(spans(&seq, tid), vec![(0, 40, "hello".into()), (40, 150, "hello\nworld".into())]);
+        assert_eq!(
+            spans(&seq, tid),
+            vec![(0, 40, "hello".into()), (40, 150, "hello\nworld".into())]
+        );
         // not adjacent
         let (mut seq, _) = seq_with(&[(0, 10, "a"), (20, 10, "b"), (40, 10, "c")]);
         assert!(merge_captions(&mut seq, &[ClipId(1000), ClipId(1002)]).is_err());
@@ -357,17 +460,38 @@ mod tests {
     fn trim_and_move_clamp() {
         let (mut seq, tid) = seq_with(&[(0, 100, "a"), (150, 50, "b"), (300, 50, "c")]);
         let n = &mut 1;
-        assert_eq!(trim_caption(&mut seq, ClipId(1001), Edge::In, Tick(-500), &ctx(n)).unwrap(), Tick(-50));
-        assert_eq!(trim_caption(&mut seq, ClipId(1001), Edge::Out, Tick(500), &ctx(n)).unwrap(), Tick(100));
+        assert_eq!(
+            trim_caption(&mut seq, ClipId(1001), Edge::In, Tick(-500), &ctx(n)).unwrap(),
+            Tick(-50)
+        );
+        assert_eq!(
+            trim_caption(&mut seq, ClipId(1001), Edge::Out, Tick(500), &ctx(n)).unwrap(),
+            Tick(100)
+        );
         assert_eq!(spans(&seq, tid)[1], (100, 300, "b".into()));
-        assert_eq!(trim_caption(&mut seq, ClipId(1001), Edge::Out, Tick(-1000), &ctx(n)).unwrap(), Tick(-190));
+        assert_eq!(
+            trim_caption(&mut seq, ClipId(1001), Edge::Out, Tick(-1000), &ctx(n)).unwrap(),
+            Tick(-190)
+        );
         // move c left: stops at b's end (110)
-        assert_eq!(move_captions(&mut seq, &[ClipId(1002)], Tick(-1000)).unwrap(), Tick(-190));
+        assert_eq!(
+            move_captions(&mut seq, &[ClipId(1002)], Tick(-1000)).unwrap(),
+            Tick(-190)
+        );
         assert_eq!(spans(&seq, tid)[2], (110, 160, "c".into()));
         // a cannot move right (b is flush against it); b and c move together freely
-        assert_eq!(move_captions(&mut seq, &[ClipId(1000)], Tick(5)), Err(EditError::Nothing));
-        assert_eq!(move_captions(&mut seq, &[ClipId(1001), ClipId(1002)], Tick(5)).unwrap(), Tick(5));
-        assert_eq!(spans(&seq, tid)[1..], [(105, 115, "b".into()), (115, 165, "c".into())]);
+        assert_eq!(
+            move_captions(&mut seq, &[ClipId(1000)], Tick(5)),
+            Err(EditError::Nothing)
+        );
+        assert_eq!(
+            move_captions(&mut seq, &[ClipId(1001), ClipId(1002)], Tick(5)).unwrap(),
+            Tick(5)
+        );
+        assert_eq!(
+            spans(&seq, tid)[1..],
+            [(105, 115, "b".into()), (115, 165, "c".into())]
+        );
         assert!(seq.check().is_ok());
     }
 
@@ -375,21 +499,40 @@ mod tests {
     fn delete_ripple_and_sync() {
         let (mut seq, tid) = seq_with(&[(0, 100, "a"), (100, 50, "b"), (200, 50, "c")]);
         delete_captions(&mut seq, &[ClipId(1001)], true).unwrap();
-        assert_eq!(spans(&seq, tid), vec![(0, 100, "a".into()), (150, 200, "c".into())]);
+        assert_eq!(
+            spans(&seq, tid),
+            vec![(0, 100, "a".into()), (150, 200, "c".into())]
+        );
         let mut n = 1;
         let tr = seq.caption_track_mut(tid).unwrap();
         insert_gap(tr, Tick(50), Tick(30), &mut ctx(&mut n));
-        assert_eq!(spans(&seq, tid), vec![(0, 50, "a".into()), (80, 130, "a".into()), (180, 230, "c".into())]);
+        assert_eq!(
+            spans(&seq, tid),
+            vec![
+                (0, 50, "a".into()),
+                (80, 130, "a".into()),
+                (180, 230, "c".into())
+            ]
+        );
         let tr = seq.caption_track_mut(tid).unwrap();
         extract_range(tr, TimeRange::new(Tick(40), Tick(150)));
-        assert_eq!(spans(&seq, tid), vec![(0, 40, "a".into()), (40, 80, "c".into())]);
+        assert_eq!(
+            spans(&seq, tid),
+            vec![(0, 40, "a".into()), (40, 80, "c".into())]
+        );
     }
 
     #[test]
     fn locked_refuses() {
         let (mut seq, tid) = seq_with(&[(0, 100, "a")]);
         seq.caption_track_mut(tid).unwrap().locked = true;
-        assert_eq!(set_caption(&mut seq, ClipId(1000), Some("x"), None), Err(EditError::Locked));
-        assert_eq!(delete_captions(&mut seq, &[ClipId(1000)], false), Err(EditError::Locked));
+        assert_eq!(
+            set_caption(&mut seq, ClipId(1000), Some("x"), None),
+            Err(EditError::Locked)
+        );
+        assert_eq!(
+            delete_captions(&mut seq, &[ClipId(1000)], false),
+            Err(EditError::Locked)
+        );
     }
 }

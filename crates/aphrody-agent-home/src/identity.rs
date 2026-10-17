@@ -36,7 +36,12 @@ pub struct Identity {
 
 impl Default for Identity {
     fn default() -> Self {
-        Self { name: DEFAULT_AGENT_NAME.to_string(), vibe: None, emoji: None, body: String::new() }
+        Self {
+            name: DEFAULT_AGENT_NAME.to_string(),
+            vibe: None,
+            emoji: None,
+            body: String::new(),
+        }
     }
 }
 
@@ -46,22 +51,25 @@ impl Identity {
     #[must_use]
     pub fn parse(content: &str) -> Self {
         let (fm, body) = frontmatter::split(content);
-        let mut id = Identity { body: body.to_string(), ..Identity::default() };
+        let mut id = Identity {
+            body: body.to_string(),
+            ..Identity::default()
+        };
         if let Some(fm) = fm {
             for (key, val) in frontmatter::parse(fm) {
                 match (key.as_str(), val) {
                     ("name", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         id.name = s.trim().to_string();
-                    },
+                    }
                     ("vibe", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         id.vibe = Some(s.trim().to_string());
-                    },
+                    }
                     ("emoji" | "ack" | "ack_reaction", FmValue::Scalar(s))
                         if !s.trim().is_empty() =>
                     {
                         id.emoji = Some(s.trim().to_string());
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
         }

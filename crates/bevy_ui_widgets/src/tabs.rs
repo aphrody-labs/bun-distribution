@@ -15,15 +15,15 @@ use bevy_ecs::{
     template::FromTemplate,
 };
 use bevy_input::{
-    keyboard::{KeyCode, KeyboardInput},
     ButtonState,
+    keyboard::{KeyCode, KeyboardInput},
 };
 use bevy_input_focus::{
-    tab_navigation::TabIndex, FocusCause, FocusedInput, InputFocus, InputFocusSystems,
-    InputFocusVisible,
+    FocusCause, FocusedInput, InputFocus, InputFocusSystems, InputFocusVisible,
+    tab_navigation::TabIndex,
 };
 use bevy_picking::{events::PointerClick, pointer::PointerButton};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_ui::{InteractionDisabled, Selectable, Selected};
 
 use crate::ControlOrientation;
@@ -344,7 +344,7 @@ fn update_tablist_derived_state(
 mod tests {
     use super::*;
     use bevy_ecs::{hierarchy::ChildOf, observer::On, resource::Resource, system::ResMut};
-    use bevy_input::{keyboard::Key, InputPlugin};
+    use bevy_input::{InputPlugin, keyboard::Key};
     use bevy_input_focus::{FocusCause, InputDispatchPlugin, InputFocusPlugin};
     use bevy_math::Vec2;
     use bevy_picking::{

@@ -44,9 +44,17 @@ pub fn initial_box(doc: &Document, image: Rect) -> Rect {
 
 /// The selected image, its bounds and the box over it: `set` kept within the image, or where the
 /// box starts ([`initial_box`]).
-pub fn crop_box(doc: &Document, sel: &Selection, set: Option<Rect>) -> Option<(NodeId, Rect, Rect)> {
+pub fn crop_box(
+    doc: &Document,
+    sel: &Selection,
+    set: Option<Rect>,
+) -> Option<(NodeId, Rect, Rect)> {
     let (id, image) = selected_image(doc, sel)?;
-    Some((id, image, set.map_or_else(|| initial_box(doc, image), |r| within(r, image))))
+    Some((
+        id,
+        image,
+        set.map_or_else(|| initial_box(doc, image), |r| within(r, image)),
+    ))
 }
 
 /// `r` (moved whole) slid back within `image` without changing its size; `r` lies within `image`
@@ -87,7 +95,10 @@ impl CropImageTool {
     /// The selected image, its bounds and the box over it.
     fn current(&self, cx: &ToolContext) -> Option<(NodeId, Rect, Rect)> {
         let (id, _) = selected_image(cx.doc, cx.selection)?;
-        let set = self.rect.filter(|(of, _)| of.is_none_or(|of| of == id)).map(|(_, r)| r);
+        let set = self
+            .rect
+            .filter(|(of, _)| of.is_none_or(|of| of == id))
+            .map(|(_, r)| r);
         crop_box(cx.doc, cx.selection, set)
     }
 
@@ -99,7 +110,10 @@ impl CropImageTool {
         if let Some((_, image, r)) = current
             && !same(r, image)
         {
-            out.push(Action::Exec("object.cropImage".into(), json!({ "rect": [r.x0, r.y0, r.width(), r.height()] })));
+            out.push(Action::Exec(
+                "object.cropImage".into(),
+                json!({ "rect": [r.x0, r.y0, r.width(), r.height()] }),
+            ));
         }
         out.push(Action::SwitchTool("selection".into()));
         out
@@ -113,7 +127,9 @@ impl CropImageTool {
 
 /// Whether two rectangles are the same to a thousandth of a point.
 fn same(a: Rect, b: Rect) -> bool {
-    [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1].iter().all(|d| d.abs() < 1e-3)
+    [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1]
+        .iter()
+        .all(|d| d.abs() < 1e-3)
 }
 
 /// The box `r` with the sides handle `h` holds moved to `p`.
@@ -142,7 +158,9 @@ impl Tool for CropImageTool {
     }
 
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
-        let Some((id, image, r)) = self.current(cx) else { return vec![] };
+        let Some((id, image, r)) = self.current(cx) else {
+            return vec![];
+        };
         match ev.kind {
             PointerKind::Down => {
                 self.drag = match hit_handle(r, ev.pos, cx.tol(5.0)) {
@@ -184,9 +202,18 @@ impl Tool for CropImageTool {
     }
 
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
-        let Some((_, image, r)) = self.current(cx) else { return vec![] };
+        let Some((_, image, r)) = self.current(cx) else {
+            return vec![];
+        };
         let shade = [0, 0, 0, 110];
-        let quad = |x0: f64, y0: f64, x1: f64, y1: f64| [Point::new(x0, y0), Point::new(x1, y0), Point::new(x1, y1), Point::new(x0, y1)];
+        let quad = |x0: f64, y0: f64, x1: f64, y1: f64| {
+            [
+                Point::new(x0, y0),
+                Point::new(x1, y0),
+                Point::new(x1, y1),
+                Point::new(x0, y1),
+            ]
+        };
         // The image outside the box, dimmed: above, below, then left and right of it.
         let mut out: Vec<Overlay> = [
             quad(image.x0, image.y0, image.x1, r.y0),
@@ -198,15 +225,39 @@ impl Tool for CropImageTool {
         .filter(|q| (q[2].x - q[0].x) > 1e-9 && (q[2].y - q[0].y) > 1e-9)
         .map(|quad| Overlay::Highlight { quad, color: shade })
         .collect();
-        let corners = [Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)];
-        out.extend(corners.iter().zip(corners.iter().cycle().skip(1)).map(|(a, b)| Overlay::Line { a: *a, b: *b, color: CYAN, dashed: false }));
-        out.extend(Handle::ALL.iter().map(|h| Overlay::Handle { p: h.pos(r), color: CYAN }));
-        out.push(Overlay::Label { p: Point::new(r.x0, r.y1), text: cx.size_label(r.width(), r.height()), color: CYAN });
+        let corners = [
+            Point::new(r.x0, r.y0),
+            Point::new(r.x1, r.y0),
+            Point::new(r.x1, r.y1),
+            Point::new(r.x0, r.y1),
+        ];
+        out.extend(
+            corners
+                .iter()
+                .zip(corners.iter().cycle().skip(1))
+                .map(|(a, b)| Overlay::Line {
+                    a: *a,
+                    b: *b,
+                    color: CYAN,
+                    dashed: false,
+                }),
+        );
+        out.extend(Handle::ALL.iter().map(|h| Overlay::Handle {
+            p: h.pos(r),
+            color: CYAN,
+        }));
+        out.push(Overlay::Label {
+            p: Point::new(r.x0, r.y1),
+            text: cx.size_label(r.width(), r.height()),
+            color: CYAN,
+        });
         out
     }
 
     fn cursor(&self, cx: &ToolContext, p: Point, _mods: Mods) -> Cursor {
-        let Some((_, _, r)) = self.current(cx) else { return Cursor::Arrow };
+        let Some((_, _, r)) = self.current(cx) else {
+            return Cursor::Arrow;
+        };
         match hit_handle(r, p, cx.tol(5.0)) {
             Some(Handle::Top | Handle::Bottom) => Cursor::ResizeV,
             Some(Handle::Left | Handle::Right) => Cursor::ResizeH,
@@ -273,21 +324,32 @@ mod tests {
             link: None,
             placement: Default::default(),
         };
-        d.insert(Some(l), 0, Node::new(id, NodeKind::Image(Box::new(im)))).unwrap();
+        d.insert(Some(l), 0, Node::new(id, NodeKind::Image(Box::new(im))))
+            .unwrap();
         let mut s = Selection::default();
         s.add(id);
         (d, s)
     }
 
     fn drag(t: &mut CropImageTool, cx: &ToolContext, from: (f64, f64), to: (f64, f64)) {
-        for (kind, (x, y)) in [(PointerKind::Down, from), (PointerKind::Drag, to), (PointerKind::Up, to)] {
+        for (kind, (x, y)) in [
+            (PointerKind::Down, from),
+            (PointerKind::Drag, to),
+            (PointerKind::Up, to),
+        ] {
             assert!(t.pointer(cx, &PointerEvent::new(kind, x, y)).is_empty());
         }
     }
 
     fn crop_rect(acts: &[Action]) -> Option<Vec<f64>> {
         acts.iter().find_map(|a| match a {
-            Action::Exec(c, v) if c == "object.cropImage" => Some(v["rect"].as_array()?.iter().filter_map(Value::as_f64).collect()),
+            Action::Exec(c, v) if c == "object.cropImage" => Some(
+                v["rect"]
+                    .as_array()?
+                    .iter()
+                    .filter_map(Value::as_f64)
+                    .collect(),
+            ),
             _ => None,
         })
     }
@@ -299,8 +361,14 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = CropImageTool::default();
         // An image inside its artboard: the box starts on all of it, and Enter has nothing to cut.
-        assert_eq!(t.cursor(&cx, Point::new(50.0, 60.0), Mods::default()), Cursor::ResizeNwSe);
-        assert_eq!(t.cursor(&cx, Point::new(150.0, 110.0), Mods::default()), Cursor::Move);
+        assert_eq!(
+            t.cursor(&cx, Point::new(50.0, 60.0), Mods::default()),
+            Cursor::ResizeNwSe
+        );
+        assert_eq!(
+            t.cursor(&cx, Point::new(150.0, 110.0), Mods::default()),
+            Cursor::Move
+        );
         assert!(t.claims_key(&cx, ToolKey::Enter));
         // The top-left handle in, then the box dragged left past the image's edge: it stops there.
         drag(&mut t, &cx, (50.0, 60.0), (80.0, 70.0));
@@ -313,14 +381,31 @@ mod tests {
         drag(&mut t, &cx, (51.0, 115.0), (180.0, 115.0));
         // The outside of the box is dimmed, the box drawn with its handles.
         let ov = t.overlays(&cx);
-        assert_eq!(ov.iter().filter(|o| matches!(o, Overlay::Highlight { .. })).count(), 2, "above and right of the box");
-        assert_eq!(ov.iter().filter(|o| matches!(o, Overlay::Handle { .. })).count(), 8);
+        assert_eq!(
+            ov.iter()
+                .filter(|o| matches!(o, Overlay::Highlight { .. }))
+                .count(),
+            2,
+            "above and right of the box"
+        );
+        assert_eq!(
+            ov.iter()
+                .filter(|o| matches!(o, Overlay::Handle { .. }))
+                .count(),
+            8
+        );
         // Enter crops to it and goes back to the Selection tool.
         let acts = t.key(&cx, ToolKey::Enter, Mods::default());
         assert_eq!(crop_rect(&acts), Some(vec![50.0, 70.0, 130.0, 90.0]));
         assert_eq!(acts.last(), Some(&Action::SwitchTool("selection".into())));
-        assert!(t.options().get("rect").is_none(), "the next crop starts afresh");
-        assert!(crop_rect(&t.key(&cx, ToolKey::Enter, Mods::default())).is_none(), "the whole image: nothing to cut");
+        assert!(
+            t.options().get("rect").is_none(),
+            "the next crop starts afresh"
+        );
+        assert!(
+            crop_rect(&t.key(&cx, ToolKey::Enter, Mods::default())).is_none(),
+            "the whole image: nothing to cut"
+        );
     }
 
     #[test]
@@ -331,11 +416,20 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = CropImageTool::default();
         drag(&mut t, &cx, (100.0, 150.0), (110.0, 150.0));
-        assert_eq!(t.key(&cx, ToolKey::Escape, Mods::default()), vec![Action::SwitchTool("selection".into())]);
-        assert_eq!(crop_rect(&t.key(&cx, ToolKey::Enter, Mods::default())), Some(vec![0.0, 100.0, 150.0, 100.0]));
+        assert_eq!(
+            t.key(&cx, ToolKey::Escape, Mods::default()),
+            vec![Action::SwitchTool("selection".into())]
+        );
+        assert_eq!(
+            crop_rect(&t.key(&cx, ToolKey::Enter, Mods::default())),
+            Some(vec![0.0, 100.0, 150.0, 100.0])
+        );
         // The Control bar sets the box; it stays within the image.
         t.set_option("rect", &json!([100, 120, 500, 20]));
-        assert_eq!(crop_rect(&t.key(&cx, ToolKey::Enter, Mods::default())), Some(vec![100.0, 120.0, 50.0, 20.0]));
+        assert_eq!(
+            crop_rect(&t.key(&cx, ToolKey::Enter, Mods::default())),
+            Some(vec![100.0, 120.0, 50.0, 20.0])
+        );
         // Nothing selected: no box, and the keys go elsewhere.
         let none = Selection::default();
         let cx = crate::testutil::cx(&d, &none, &p);
@@ -345,9 +439,17 @@ mod tests {
     #[test]
     fn crop_box_option_requires_exactly_four_finite_numeric_values() {
         let mut tool = CropImageTool::default();
-        for invalid in [json!([10, "ignored", 20, 30, 40]), json!([10, 20, 30, null, 40]), json!([10, 20, 30, 40, 50]), json!("not a rectangle")] {
+        for invalid in [
+            json!([10, "ignored", 20, 30, 40]),
+            json!([10, 20, 30, null, 40]),
+            json!([10, 20, 30, 40, 50]),
+            json!("not a rectangle"),
+        ] {
             tool.set_option("rect", &invalid);
-            assert!(tool.options().get("rect").is_none(), "invalid box should reset crop: {invalid}");
+            assert!(
+                tool.options().get("rect").is_none(),
+                "invalid box should reset crop: {invalid}"
+            );
         }
         tool.set_option("rect", &json!([10, 20, 30, 40]));
         assert_eq!(tool.options()["rect"], json!([10.0, 20.0, 30.0, 40.0]));

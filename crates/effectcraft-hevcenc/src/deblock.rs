@@ -9,7 +9,10 @@ use crate::tables::{BETA_TABLE, TC_TABLE, qpc_420};
 fn tc_beta(q: i32, bs: i32, bd: u32) -> (i32, i32) {
     let qb = q.clamp(0, 51);
     let qt = (q + 2 * (bs - 1)).clamp(0, 53);
-    ((TC_TABLE[qt as usize] as i32) << (bd - 8), (BETA_TABLE[qb as usize] as i32) << (bd - 8))
+    (
+        (TC_TABLE[qt as usize] as i32) << (bd - 8),
+        (BETA_TABLE[qb as usize] as i32) << (bd - 8),
+    )
 }
 
 /// Boundary strength (8.7.2.4) between 4x4 blocks p and q on a transform / prediction edge.
@@ -20,7 +23,8 @@ fn boundary_strength(p: &Blk, q: &Blk) -> i32 {
     if (p.flags | q.flags) & F_CBF != 0 {
         return 1;
     }
-    let far = (p.mv[0] as i32 - q.mv[0] as i32).abs() >= 4 || (p.mv[1] as i32 - q.mv[1] as i32).abs() >= 4;
+    let far = (p.mv[0] as i32 - q.mv[0] as i32).abs() >= 4
+        || (p.mv[1] as i32 - q.mv[1] as i32).abs() >= 4;
     far as i32
 }
 
@@ -109,12 +113,16 @@ fn filter_luma(s: &mut [u16], o: usize, step: usize, along: usize, tc: i32, beta
         let (q0, q1, q2, q3) = (q(0), q(1), q(2), q(3));
         if strong {
             let t2 = 2 * tc;
-            s[base - step] = ((p2 + 2 * p1 + 2 * p0 + 2 * q0 + q1 + 4) >> 3).clamp(p0 - t2, p0 + t2) as u16;
+            s[base - step] =
+                ((p2 + 2 * p1 + 2 * p0 + 2 * q0 + q1 + 4) >> 3).clamp(p0 - t2, p0 + t2) as u16;
             s[base - 2 * step] = ((p2 + p1 + p0 + q0 + 2) >> 2).clamp(p1 - t2, p1 + t2) as u16;
-            s[base - 3 * step] = ((2 * p3 + 3 * p2 + p1 + p0 + q0 + 4) >> 3).clamp(p2 - t2, p2 + t2) as u16;
-            s[base] = ((p1 + 2 * p0 + 2 * q0 + 2 * q1 + q2 + 4) >> 3).clamp(q0 - t2, q0 + t2) as u16;
+            s[base - 3 * step] =
+                ((2 * p3 + 3 * p2 + p1 + p0 + q0 + 4) >> 3).clamp(p2 - t2, p2 + t2) as u16;
+            s[base] =
+                ((p1 + 2 * p0 + 2 * q0 + 2 * q1 + q2 + 4) >> 3).clamp(q0 - t2, q0 + t2) as u16;
             s[base + step] = ((p0 + q0 + q1 + q2 + 2) >> 2).clamp(q1 - t2, q1 + t2) as u16;
-            s[base + 2 * step] = ((p0 + q0 + q1 + 3 * q2 + 2 * q3 + 4) >> 3).clamp(q2 - t2, q2 + t2) as u16;
+            s[base + 2 * step] =
+                ((p0 + q0 + q1 + 3 * q2 + 2 * q3 + 4) >> 3).clamp(q2 - t2, q2 + t2) as u16;
         } else {
             let mut delta = (9 * (q0 - p0) - 3 * (q1 - p1) + 8) >> 4;
             if delta.abs() >= tc * 10 {

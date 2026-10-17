@@ -77,7 +77,10 @@ impl ParamValue {
     }
     /// Whether values of this kind can be interpolated (others hold).
     pub fn interpolates(&self) -> bool {
-        matches!(self, ParamValue::Float(_) | ParamValue::Vec2(_) | ParamValue::Color(_) | ParamValue::Path(_))
+        matches!(
+            self,
+            ParamValue::Float(_) | ParamValue::Vec2(_) | ParamValue::Color(_) | ParamValue::Path(_)
+        )
     }
     pub fn as_path(&self) -> Option<&crate::mask::MaskPath> {
         match self {
@@ -98,7 +101,9 @@ impl ParamValue {
         match template {
             ParamValue::Float(_) => ParamValue::Float(c[0]),
             ParamValue::Vec2(_) => ParamValue::Vec2(Vec2::new(c[0], c[1])),
-            ParamValue::Color(_) => ParamValue::Color([c[0] as f32, c[1] as f32, c[2] as f32, c[3] as f32]),
+            ParamValue::Color(_) => {
+                ParamValue::Color([c[0] as f32, c[1] as f32, c[2] as f32, c[3] as f32])
+            }
             ParamValue::Path(p) => ParamValue::Path(p.with_components(c)),
             other => other.clone(),
         }
@@ -160,7 +165,13 @@ fn default_influence() -> f64 {
 
 impl Keyframe {
     pub fn new(time: Tick, value: ParamValue) -> Self {
-        Self { time, value, interp: Interpolation::Linear, out_influence: default_influence(), in_influence: default_influence() }
+        Self {
+            time,
+            value,
+            interp: Interpolation::Linear,
+            out_influence: default_influence(),
+            in_influence: default_influence(),
+        }
     }
 }
 
@@ -175,7 +186,10 @@ pub struct Param {
 
 impl Param {
     pub fn new(value: ParamValue) -> Self {
-        Self { value, keyframes: Vec::new() }
+        Self {
+            value,
+            keyframes: Vec::new(),
+        }
     }
     pub fn is_animated(&self) -> bool {
         !self.keyframes.is_empty()
@@ -197,7 +211,11 @@ impl Param {
         match self.keyframes.binary_search_by_key(&t, |k| k.time) {
             Ok(i) => self.keyframes[i].value = value,
             Err(i) => {
-                let interp = self.keyframes.get(i.saturating_sub(1)).map(|k| k.interp).unwrap_or_default();
+                let interp = self
+                    .keyframes
+                    .get(i.saturating_sub(1))
+                    .map(|k| k.interp)
+                    .unwrap_or_default();
                 let mut k = Keyframe::new(t, value);
                 k.interp = interp;
                 self.keyframes.insert(i, k);
@@ -328,25 +346,53 @@ impl Param {
 
 /// Temporal easing for u∈[0,1] between two keyframes (1D cubic Bezier in time/value space).
 fn ease(a: &Keyframe, b: &Keyframe, u: f64) -> f64 {
-    let out_ease = matches!(a.interp, Interpolation::Bezier | Interpolation::AutoBezier | Interpolation::ContinuousBezier | Interpolation::EaseOut);
-    let in_ease = matches!(b.interp, Interpolation::Bezier | Interpolation::AutoBezier | Interpolation::ContinuousBezier | Interpolation::EaseIn)
-        || matches!(a.interp, Interpolation::Bezier | Interpolation::ContinuousBezier);
+    let out_ease = matches!(
+        a.interp,
+        Interpolation::Bezier
+            | Interpolation::AutoBezier
+            | Interpolation::ContinuousBezier
+            | Interpolation::EaseOut
+    );
+    let in_ease = matches!(
+        b.interp,
+        Interpolation::Bezier
+            | Interpolation::AutoBezier
+            | Interpolation::ContinuousBezier
+            | Interpolation::EaseIn
+    ) || matches!(
+        a.interp,
+        Interpolation::Bezier | Interpolation::ContinuousBezier
+    );
     if !out_ease && !in_ease {
         return u;
     }
     // Control points in normalized (time, value) space; flat handles = ease (velocity 0).
-    let x1 = if out_ease { a.out_influence.clamp(0.01, 1.0) } else { 1.0 / 3.0 };
+    let x1 = if out_ease {
+        a.out_influence.clamp(0.01, 1.0)
+    } else {
+        1.0 / 3.0
+    };
     let y1 = if out_ease { 0.0 } else { 1.0 / 3.0 };
-    let x2 = if in_ease { 1.0 - b.in_influence.clamp(0.01, 1.0) } else { 2.0 / 3.0 };
+    let x2 = if in_ease {
+        1.0 - b.in_influence.clamp(0.01, 1.0)
+    } else {
+        2.0 / 3.0
+    };
     let y2 = if in_ease { 1.0 } else { 2.0 / 3.0 };
     cubic_bezier_y_for_x(x1, y1, x2, y2, u)
 }
 
 /// Solve a CSS-style cubic-bezier(x1,y1,x2,y2) for y at x (Newton + bisection).
 pub fn cubic_bezier_y_for_x(x1: f64, y1: f64, x2: f64, y2: f64, x: f64) -> f64 {
-    let bx = |s: f64| 3.0 * (1.0 - s) * (1.0 - s) * s * x1 + 3.0 * (1.0 - s) * s * s * x2 + s * s * s;
-    let by = |s: f64| 3.0 * (1.0 - s) * (1.0 - s) * s * y1 + 3.0 * (1.0 - s) * s * s * y2 + s * s * s;
-    let dbx = |s: f64| 3.0 * (1.0 - s) * (1.0 - s) * x1 + 6.0 * (1.0 - s) * s * (x2 - x1) + 3.0 * s * s * (1.0 - x2);
+    let bx =
+        |s: f64| 3.0 * (1.0 - s) * (1.0 - s) * s * x1 + 3.0 * (1.0 - s) * s * s * x2 + s * s * s;
+    let by =
+        |s: f64| 3.0 * (1.0 - s) * (1.0 - s) * s * y1 + 3.0 * (1.0 - s) * s * s * y2 + s * s * s;
+    let dbx = |s: f64| {
+        3.0 * (1.0 - s) * (1.0 - s) * x1
+            + 6.0 * (1.0 - s) * s * (x2 - x1)
+            + 3.0 * s * s * (1.0 - x2)
+    };
     let mut s = x;
     for _ in 0..8 {
         let d = dbx(s);

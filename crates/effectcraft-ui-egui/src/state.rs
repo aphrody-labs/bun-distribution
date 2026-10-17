@@ -53,14 +53,32 @@ impl Tool {
         &[Tool::Dolly],
         &[Tool::Rotate],
         &[Tool::PanBehind],
-        &[Tool::Rectangle, Tool::RoundedRect, Tool::Ellipse, Tool::Polygon, Tool::Star],
-        &[Tool::Pen, Tool::PenAdd, Tool::PenDelete, Tool::PenConvert, Tool::MaskFeather],
+        &[
+            Tool::Rectangle,
+            Tool::RoundedRect,
+            Tool::Ellipse,
+            Tool::Polygon,
+            Tool::Star,
+        ],
+        &[
+            Tool::Pen,
+            Tool::PenAdd,
+            Tool::PenDelete,
+            Tool::PenConvert,
+            Tool::MaskFeather,
+        ],
         &[Tool::Type, Tool::TypeVertical],
         &[Tool::Brush],
         &[Tool::Clone],
         &[Tool::Eraser],
         &[Tool::RotoBrush, Tool::RefineEdge],
-        &[Tool::Puppet, Tool::PuppetStarch, Tool::PuppetBend, Tool::PuppetAdvanced, Tool::PuppetOverlap],
+        &[
+            Tool::Puppet,
+            Tool::PuppetStarch,
+            Tool::PuppetBend,
+            Tool::PuppetAdvanced,
+            Tool::PuppetOverlap,
+        ],
     ];
     pub const ALL: [Tool; 30] = [
         Tool::Selection,
@@ -138,12 +156,20 @@ impl Tool {
             Tool::Dolly => Some("3"),
             Tool::Rotate => Some("W"),
             Tool::PanBehind => Some("Y"),
-            Tool::Rectangle | Tool::RoundedRect | Tool::Ellipse | Tool::Polygon | Tool::Star => Some("Q"),
-            Tool::Pen | Tool::PenAdd | Tool::PenDelete | Tool::PenConvert | Tool::MaskFeather => Some("G"),
+            Tool::Rectangle | Tool::RoundedRect | Tool::Ellipse | Tool::Polygon | Tool::Star => {
+                Some("Q")
+            }
+            Tool::Pen | Tool::PenAdd | Tool::PenDelete | Tool::PenConvert | Tool::MaskFeather => {
+                Some("G")
+            }
             Tool::Type | Tool::TypeVertical => Some("Cmd+T"),
             Tool::Brush | Tool::Clone | Tool::Eraser => Some("Cmd+B"),
             Tool::RotoBrush | Tool::RefineEdge => Some("Alt+W"),
-            Tool::Puppet | Tool::PuppetStarch | Tool::PuppetBend | Tool::PuppetAdvanced | Tool::PuppetOverlap => Some("Cmd+P"),
+            Tool::Puppet
+            | Tool::PuppetStarch
+            | Tool::PuppetBend
+            | Tool::PuppetAdvanced
+            | Tool::PuppetOverlap => Some("Cmd+P"),
         }
     }
     pub fn icon(self) -> Icon {
@@ -182,7 +208,13 @@ impl Tool {
     }
     pub fn from_name(s: &str) -> Option<Tool> {
         let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "");
-        Tool::ALL.into_iter().find(|t| format!("{t:?}").to_ascii_lowercase() == n || t.label().to_ascii_lowercase().replace(' ', "").starts_with(&n))
+        Tool::ALL.into_iter().find(|t| {
+            format!("{t:?}").to_ascii_lowercase() == n
+                || t.label()
+                    .to_ascii_lowercase()
+                    .replace(' ', "")
+                    .starts_with(&n)
+        })
     }
     /// Puppet pin tools, with the pin kind they place (`puppet.addPin` kind).
     pub fn puppet_kind(self) -> Option<&'static str> {
@@ -217,10 +249,16 @@ impl Tool {
     }
     /// The Pen slot's tools (Pen, Add / Delete / Convert Vertex, Mask Feather).
     pub fn is_pen(self) -> bool {
-        matches!(self, Tool::Pen | Tool::PenAdd | Tool::PenDelete | Tool::PenConvert | Tool::MaskFeather)
+        matches!(
+            self,
+            Tool::Pen | Tool::PenAdd | Tool::PenDelete | Tool::PenConvert | Tool::MaskFeather
+        )
     }
     pub fn is_shape(self) -> bool {
-        matches!(self, Tool::Rectangle | Tool::RoundedRect | Tool::Ellipse | Tool::Polygon | Tool::Star)
+        matches!(
+            self,
+            Tool::Rectangle | Tool::RoundedRect | Tool::Ellipse | Tool::Polygon | Tool::Star
+        )
     }
 }
 
@@ -388,7 +426,10 @@ pub struct TimelineState {
 }
 
 pub fn default_tl_columns() -> BTreeSet<String> {
-    ["av", "label", "num", "switches", "parent"].map(String::from).into_iter().collect()
+    ["av", "label", "num", "switches", "parent"]
+        .map(String::from)
+        .into_iter()
+        .collect()
 }
 
 fn auto_graph() -> String {
@@ -435,7 +476,9 @@ fn default_project_sort() -> String {
 }
 
 pub fn default_project_columns() -> Vec<String> {
-    ["type", "size", "duration", "fps"].map(String::from).to_vec()
+    ["type", "size", "duration", "fps"]
+        .map(String::from)
+        .to_vec()
 }
 
 /// What an Effect Controls crosshair / eyedropper click in the viewer sets.
@@ -471,7 +514,11 @@ pub struct EffectsView {
 
 impl Default for EffectsView {
     fn default() -> Self {
-        EffectsView { depth: "all".into(), presets: true, alphabetical: false }
+        EffectsView {
+            depth: "all".into(),
+            presets: true,
+            alphabetical: false,
+        }
     }
 }
 

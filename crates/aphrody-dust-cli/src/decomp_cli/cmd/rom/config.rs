@@ -195,8 +195,13 @@ impl ConfigRom {
                 .with_context(|| format!("Failed to find overlay {} in ROM", overlay.id))?;
 
             let module_name = format!("OV{:03}", overlay.id);
-            let file_name =
-                overlay.module.object.file_name().unwrap().to_string_lossy().to_string();
+            let file_name = overlay
+                .module
+                .object
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
 
             let ctor_start = object_cache
                 .symbols_by_name
@@ -240,7 +245,12 @@ impl ConfigRom {
                 symbol_map,
             )?;
 
-            overlay_configs.push(OverlayConfig { info, signed: overlay.signed, file_name, dsprot });
+            overlay_configs.push(OverlayConfig {
+                info,
+                signed: overlay.signed,
+                file_name,
+                dsprot,
+            });
         }
 
         let original_config = if let Some(arm9_overlays_path) = &rom_paths.arm9_overlays {
@@ -253,7 +263,9 @@ impl ConfigRom {
 
         let overlay_table_config = OverlayTableConfig {
             table_signed: original_config.as_ref().is_some_and(|c| c.table_signed),
-            table_signature: original_config.map(|c| c.table_signature).unwrap_or_default(),
+            table_signature: original_config
+                .map(|c| c.table_signature)
+                .unwrap_or_default(),
             overlays: overlay_configs,
         };
 
@@ -274,7 +286,12 @@ impl ConfigRom {
         rom_paths: &mut RomConfig,
         options: ConfigAutoloadsOptions<'_>,
     ) -> Result<()> {
-        let ConfigAutoloadsOptions { object_cache, config, rom, rom_paths_dir } = options;
+        let ConfigAutoloadsOptions {
+            object_cache,
+            config,
+            rom,
+            rom_paths_dir,
+        } = options;
 
         let config_path = self.config.parent().unwrap();
 
@@ -309,8 +326,10 @@ impl ConfigRom {
                 .map_or(0, |range| range.len() as u32);
 
             if let Some((_, text_section)) = delinks.sections.by_name(".text") {
-                autoload_info.list_entry.code_size =
-                    autoload_info.list_entry.code_size.next_multiple_of(text_section.alignment());
+                autoload_info.list_entry.code_size = autoload_info
+                    .list_entry
+                    .code_size
+                    .next_multiple_of(text_section.alignment());
             }
 
             let yaml_file_name = autoload
@@ -335,11 +354,11 @@ impl ConfigRom {
                 AutoloadKind::Itcm => {
                     rom_paths.itcm.bin = Self::make_path(binary_path, rom_paths_dir);
                     rom_paths.itcm.config = Self::make_path(yaml_path, rom_paths_dir);
-                },
+                }
                 AutoloadKind::Dtcm => {
                     rom_paths.dtcm.bin = Self::make_path(binary_path, rom_paths_dir);
                     rom_paths.dtcm.config = Self::make_path(yaml_path, rom_paths_dir);
-                },
+                }
                 AutoloadKind::Unknown(index) => {
                     let autoload = rom_paths
                         .unknown_autoloads
@@ -350,7 +369,7 @@ impl ConfigRom {
                         })?;
                     autoload.files.bin = Self::make_path(binary_path, rom_paths_dir);
                     autoload.files.config = Self::make_path(yaml_path, rom_paths_dir);
-                },
+                }
             }
         }
 
@@ -358,12 +377,20 @@ impl ConfigRom {
     }
 
     fn config_arm9(&self, rom_paths: &mut RomConfig, options: ConfigArm9Options<'_>) -> Result<()> {
-        let ConfigArm9Options { object_cache, config, rom, rom_paths_dir, symbol_map } = options;
+        let ConfigArm9Options {
+            object_cache,
+            config,
+            rom,
+            rom_paths_dir,
+            symbol_map,
+        } = options;
 
         let config_path = self.config.parent().unwrap();
 
-        let arm9_section =
-            object_cache.sections_by_name.get("ARM9").context("ARM9 section not found")?;
+        let arm9_section = object_cache
+            .sections_by_name
+            .get("ARM9")
+            .context("ARM9 section not found")?;
         let build_info_symbol = object_cache
             .symbols_by_name
             .get(BUILD_INFO_SYMBOL_NAME)
@@ -372,10 +399,13 @@ impl ConfigRom {
             .symbols_by_name
             .get(AUTOLOAD_CALLBACK_SYMBOL_NAME)
             .context("BuildInfo symbol not found")?;
-        let overlay_signatures_symbol =
-            object_cache.symbols_by_name.get(OVERLAY_SIGNATURES_SYMBOL_NAME);
-        let delinks =
-            Delinks::from_file(config_path.join(&config.main_module.delinks), ModuleKind::Arm9)?;
+        let overlay_signatures_symbol = object_cache
+            .symbols_by_name
+            .get(OVERLAY_SIGNATURES_SYMBOL_NAME);
+        let delinks = Delinks::from_file(
+            config_path.join(&config.main_module.delinks),
+            ModuleKind::Arm9,
+        )?;
         let bss_range = Self::section_ranges(&delinks.sections, "ARM9", object_cache, |s| {
             !s.kind().is_initialized()
         })?
@@ -473,7 +503,9 @@ fn create_dsprot_state(
     let Some(dsprot_info) = dsprot_info else {
         return Ok(DsProtState::None);
     };
-    let bss_variable = symbol_map.by_name(DSPROT_BSS_SYMBOL_NAME)?.map(|(_, sym)| sym.addr);
+    let bss_variable = symbol_map
+        .by_name(DSPROT_BSS_SYMBOL_NAME)?
+        .map(|(_, sym)| sym.addr);
     let encrypted_ranges = symbol_map
         .functions()
         .map(|(func, sym)| {
@@ -509,12 +541,15 @@ fn create_dsprot_state(
         .filter_map(|(func, sym)| {
             if let Some(dsprot) = &func.dsprot {
                 let actual_address =
-                    match object_cache.symbols_by_name.get(&sym.name).with_context(|| {
-                        format!(
-                            "Function '{}' not found for DS Protect encrypted function",
-                            sym.name
-                        )
-                    }) {
+                    match object_cache
+                        .symbols_by_name
+                        .get(&sym.name)
+                        .with_context(|| {
+                            format!(
+                                "Function '{}' not found for DS Protect encrypted function",
+                                sym.name
+                            )
+                        }) {
                         Ok(symbol) => symbol.address() as u32,
                         Err(e) => return Some(Err(e)),
                     };

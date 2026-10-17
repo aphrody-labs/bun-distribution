@@ -286,7 +286,9 @@ impl Parser<'_> {
                         Node::Sqrt(idx, Box::new(a))
                     }
                     "text" | "mathrm" | "textrm" | "operatorname" => Node::Text(self.raw_group()),
-                    "sin" | "cos" | "tan" | "log" | "ln" | "exp" | "lim" | "max" | "min" => Node::Text(name),
+                    "sin" | "cos" | "tan" | "log" | "ln" | "exp" | "lim" | "max" | "min" => {
+                        Node::Text(name)
+                    }
                     "," => Node::Space(3.0 / 18.0),
                     ":" | ">" => Node::Space(4.0 / 18.0),
                     ";" => Node::Space(5.0 / 18.0),
@@ -346,12 +348,24 @@ impl Parser<'_> {
                     let node = match base {
                         Node::Scripts { base, sup, sub } => {
                             if up {
-                                Node::Scripts { base, sup: Some(Box::new(a)), sub }
+                                Node::Scripts {
+                                    base,
+                                    sup: Some(Box::new(a)),
+                                    sub,
+                                }
                             } else {
-                                Node::Scripts { base, sup, sub: Some(Box::new(a)) }
+                                Node::Scripts {
+                                    base,
+                                    sup,
+                                    sub: Some(Box::new(a)),
+                                }
                             }
                         }
-                        b => Node::Scripts { base: Box::new(b), sup: up.then(|| Box::new(a.clone())), sub: (!up).then(|| Box::new(a)) },
+                        b => Node::Scripts {
+                            base: Box::new(b),
+                            sup: up.then(|| Box::new(a.clone())),
+                            sub: (!up).then(|| Box::new(a)),
+                        },
                     };
                     out.push(node);
                 }
@@ -375,7 +389,10 @@ impl Parser<'_> {
                 self.i += 6;
                 break;
             }
-            let mut p = Parser { s: self.s, i: self.i };
+            let mut p = Parser {
+                s: self.s,
+                i: self.i,
+            };
             let one = p.list_one();
             self.i = p.i;
             out.extend(one);
@@ -397,9 +414,21 @@ impl Parser<'_> {
                     let a = self.arg();
                     let base = out.pop().unwrap_or(Node::Group(vec![]));
                     out.push(match base {
-                        Node::Scripts { base, sub, .. } if up => Node::Scripts { base, sup: Some(Box::new(a)), sub },
-                        Node::Scripts { base, sup, .. } => Node::Scripts { base, sup, sub: Some(Box::new(a)) },
-                        b => Node::Scripts { base: Box::new(b), sup: up.then(|| Box::new(a.clone())), sub: (!up).then(|| Box::new(a)) },
+                        Node::Scripts { base, sub, .. } if up => Node::Scripts {
+                            base,
+                            sup: Some(Box::new(a)),
+                            sub,
+                        },
+                        Node::Scripts { base, sup, .. } => Node::Scripts {
+                            base,
+                            sup,
+                            sub: Some(Box::new(a)),
+                        },
+                        b => Node::Scripts {
+                            base: Box::new(b),
+                            sup: up.then(|| Box::new(a.clone())),
+                            sub: (!up).then(|| Box::new(a)),
+                        },
                     });
                 }
                 _ => break,
@@ -425,7 +454,11 @@ struct Fonts {
 impl Fonts {
     fn face(&self, c: char, italic: bool) -> &FontFace {
         let f = if italic { &self.italic } else { &self.upright };
-        if f.glyph_for(c) != 0 { f } else { &self.fallback }
+        if f.glyph_for(c) != 0 {
+            f
+        } else {
+            &self.fallback
+        }
     }
     fn width(&self, s: &str, size: f64, italic: bool) -> f64 {
         s.chars()
@@ -442,7 +475,18 @@ const FALLBACK: &str = "Source Sans 3";
 
 fn text_box(f: &Fonts, s: &str, size: f64, italic: bool) -> MBox {
     let w = f.width(s, size, italic);
-    MBox { w, asc: size * 0.72, desc: size * 0.22, els: vec![Elem::Text { x: 0.0, y: 0.0, s: s.to_string(), size, italic }] }
+    MBox {
+        w,
+        asc: size * 0.72,
+        desc: size * 0.22,
+        els: vec![Elem::Text {
+            x: 0.0,
+            y: 0.0,
+            s: s.to_string(),
+            size,
+            italic,
+        }],
+    }
 }
 
 fn hbox(parts: Vec<(MBox, f64)>) -> MBox {
@@ -466,7 +510,10 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
     match n {
         Node::Sym(s, cl) => text_box(f, s, size, *cl == Class::Ident),
         Node::Text(s) => text_box(f, s, size, false),
-        Node::Space(em) => MBox { w: em * size, ..Default::default() },
+        Node::Space(em) => MBox {
+            w: em * size,
+            ..Default::default()
+        },
         Node::Group(list) => {
             let mut parts = Vec::new();
             let mut prev: Option<Class> = None;
@@ -480,7 +527,9 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
                     _ => None,
                 };
                 // A leading + or − (or after another operator) is a sign, not a binary operator.
-                let cl = if cl == Some(Class::Bin) && (k == 0 || matches!(prev, Some(Class::Bin | Class::Rel | Class::Punct))) {
+                let cl = if cl == Some(Class::Bin)
+                    && (k == 0 || matches!(prev, Some(Class::Bin | Class::Rel | Class::Punct)))
+                {
                     Some(Class::Plain)
                 } else {
                     cl
@@ -510,8 +559,18 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
             let gap = size * 0.15;
             let num_base = -(axis + t / 2.0 + gap + na.desc);
             let den_base = -axis + t / 2.0 + gap + nb.asc;
-            let mut out = MBox { w, asc: -num_base + na.asc, desc: den_base + nb.desc, els: Vec::new() };
-            out.els.push(Elem::Rule { x: 0.0, y: -axis - t / 2.0, w, h: t });
+            let mut out = MBox {
+                w,
+                asc: -num_base + na.asc,
+                desc: den_base + nb.desc,
+                els: Vec::new(),
+            };
+            out.els.push(Elem::Rule {
+                x: 0.0,
+                y: -axis - t / 2.0,
+                w,
+                h: t,
+            });
             let (wa, wb) = (na.w, nb.w);
             out.els.extend(na.shifted((w - wa) / 2.0, num_base));
             out.els.extend(nb.shifted((w - wb) / 2.0, den_base));
@@ -524,10 +583,21 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
             let top = inner.asc + gap + t;
             let bottom = inner.desc;
             let hook = size * 0.55;
-            let mut out = MBox { w: hook + inner.w + size * 0.1, asc: top, desc: bottom, els: Vec::new() };
+            let mut out = MBox {
+                w: hook + inner.w + size * 0.1,
+                asc: top,
+                desc: bottom,
+                els: Vec::new(),
+            };
             // The radical: a short rise, the long stroke down, then up to the bar.
             out.els.push(Elem::Line {
-                pts: vec![(0.0, -axis * 0.6), (hook * 0.25, -axis), (hook * 0.55, bottom), (hook, -top + t / 2.0), (out.w, -top + t / 2.0)],
+                pts: vec![
+                    (0.0, -axis * 0.6),
+                    (hook * 0.25, -axis),
+                    (hook * 0.55, bottom),
+                    (hook, -top + t / 2.0),
+                    (out.w, -top + t / 2.0),
+                ],
                 w: t,
             });
             let iw = inner.w;
@@ -536,7 +606,8 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
             if let Some(i) = idx {
                 let ib = layout(f, i, size * 0.55);
                 let (ia, iw2) = (ib.asc, ib.w);
-                out.els.extend(ib.shifted((hook * 0.3 - iw2).max(0.0) - 0.0, -axis - size * 0.1));
+                out.els
+                    .extend(ib.shifted((hook * 0.3 - iw2).max(0.0) - 0.0, -axis - size * 0.1));
                 out.asc = out.asc.max(axis + size * 0.1 + ia);
             }
             out
@@ -558,7 +629,12 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
             let b = layout(f, base, size);
             let s2 = size * 0.7;
             let (bw, basc, bdesc) = (b.w, b.asc, b.desc);
-            let mut out = MBox { w: bw, asc: basc, desc: bdesc, els: b.els };
+            let mut out = MBox {
+                w: bw,
+                asc: basc,
+                desc: bdesc,
+                els: b.els,
+            };
             if big {
                 // Limits above and below.
                 let mut w = bw;
@@ -581,7 +657,16 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
                 // Centre the operator over the widest limit.
                 let dx = (w - bw) / 2.0;
                 let els = std::mem::take(&mut out.els);
-                out = MBox { w, asc: out.asc, desc: out.desc, els: MBox { els, ..Default::default() }.shifted(dx, 0.0) };
+                out = MBox {
+                    w,
+                    asc: out.asc,
+                    desc: out.desc,
+                    els: MBox {
+                        els,
+                        ..Default::default()
+                    }
+                    .shifted(dx, 0.0),
+                };
                 return out;
             }
             let mut w = bw;
@@ -634,22 +719,43 @@ fn layout(f: &Fonts, n: &Node, size: f64) -> MBox {
 /// Typeset `latex` at `size` points: SVG bytes and the size in points.
 pub fn to_svg(latex: &str, size: f64) -> (Vec<u8>, (f64, f64)) {
     let db = FontDb::global();
-    let f = Fonts { upright: db.face(FAMILY, "Regular"), italic: db.face(FAMILY, "Italic"), fallback: db.face(FALLBACK, "Regular") };
+    let f = Fonts {
+        upright: db.face(FAMILY, "Regular"),
+        italic: db.face(FAMILY, "Italic"),
+        fallback: db.face(FALLBACK, "Regular"),
+    };
     let b = layout(&f, &parse(latex), size);
     let pad = size * 0.1;
     let (w, h) = (b.w + 2.0 * pad, b.asc + b.desc + 2.0 * pad);
     let base = pad + b.asc;
     let mut svg = String::new();
-    let _ = write!(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w:.2}pt\" height=\"{h:.2}pt\" viewBox=\"0 0 {w:.3} {h:.3}\">");
-    let esc = |s: &str| s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+    let _ = write!(
+        svg,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w:.2}pt\" height=\"{h:.2}pt\" viewBox=\"0 0 {w:.3} {h:.3}\">"
+    );
+    let esc = |s: &str| {
+        s.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+    };
     for e in &b.els {
         match e {
-            Elem::Text { x, y, s, size, italic } => {
+            Elem::Text {
+                x,
+                y,
+                s,
+                size,
+                italic,
+            } => {
                 // Per character, so each uses a face that has it.
                 let mut cx = *x;
                 for c in s.chars() {
                     let face = f.face(c, *italic);
-                    let fam = if std::ptr::eq(face, &*f.fallback) { FALLBACK } else { FAMILY };
+                    let fam = if std::ptr::eq(face, &*f.fallback) {
+                        FALLBACK
+                    } else {
+                        FAMILY
+                    };
                     let it = *italic && !std::ptr::eq(face, &*f.fallback);
                     let _ = write!(
                         svg,
@@ -663,10 +769,18 @@ pub fn to_svg(latex: &str, size: f64) -> (Vec<u8>, (f64, f64)) {
                 }
             }
             Elem::Rule { x, y, w: rw, h: rh } => {
-                let _ = write!(svg, "<rect x=\"{:.3}\" y=\"{:.3}\" width=\"{rw:.3}\" height=\"{rh:.3}\"/>", pad + x, base + y);
+                let _ = write!(
+                    svg,
+                    "<rect x=\"{:.3}\" y=\"{:.3}\" width=\"{rw:.3}\" height=\"{rh:.3}\"/>",
+                    pad + x,
+                    base + y
+                );
             }
             Elem::Line { pts, w: lw } => {
-                let d: Vec<String> = pts.iter().map(|(x, y)| format!("{:.3},{:.3}", pad + x, base + y)).collect();
+                let d: Vec<String> = pts
+                    .iter()
+                    .map(|(x, y)| format!("{:.3},{:.3}", pad + x, base + y))
+                    .collect();
                 let _ = write!(
                     svg,
                     "<polyline points=\"{}\" fill=\"none\" stroke=\"black\" stroke-width=\"{lw:.3}\" stroke-linejoin=\"round\"/>",
@@ -690,7 +804,9 @@ mod tests {
         assert!(matches!(&v[0], Node::Frac(_, _)));
         let n = parse(r"\sum_{i=1}^{n} i^2 \le \alpha");
         let Node::Group(v) = n else { panic!() };
-        assert!(matches!(&v[0], Node::Scripts { base, sup: Some(_), sub: Some(_) } if matches!(**base, Node::Big(_))));
+        assert!(
+            matches!(&v[0], Node::Scripts { base, sup: Some(_), sub: Some(_) } if matches!(**base, Node::Big(_)))
+        );
         assert!(v.iter().any(|x| *x == Node::Sym("≤".into(), Class::Rel)));
         assert!(v.iter().any(|x| *x == Node::Sym("α".into(), Class::Ident)));
         let n = parse(r"\left( \frac{1}{2} \right) + \text{if } x");
@@ -703,7 +819,9 @@ mod tests {
     fn layout_sizes_and_svg() {
         let (svg, (w, h)) = to_svg(r"E = mc^2", 12.0);
         let s = String::from_utf8(svg).unwrap();
-        assert!(s.starts_with("<svg") && s.contains("font-style=\"italic\">E<") && s.contains(">2<"));
+        assert!(
+            s.starts_with("<svg") && s.contains("font-style=\"italic\">E<") && s.contains(">2<")
+        );
         assert!(w > 30.0 && h > 10.0, "{w} {h}");
         // A fraction is taller than its numerator alone; a big operator with limits taller still.
         let (_, (_, h1)) = to_svg("x", 12.0);

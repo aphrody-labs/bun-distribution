@@ -53,7 +53,11 @@ pub fn stereo_gains(count: usize, aac: bool) -> Vec<Pair> {
     let mut out = raw.to_vec();
     // Channels beyond a known layout (more than 8) are silent.
     out.resize(count, [0.0, 0.0]);
-    let peak = out.iter().map(|g| g[0]).sum::<f32>().max(out.iter().map(|g| g[1]).sum::<f32>());
+    let peak = out
+        .iter()
+        .map(|g| g[0])
+        .sum::<f32>()
+        .max(out.iter().map(|g| g[1]).sum::<f32>());
     // Mono is deliberately left at unity on both sides; so is anything already within range.
     if count > 2 && peak > 1.0 {
         for g in &mut out {
@@ -89,9 +93,15 @@ mod tests {
             for n in 0..40usize {
                 let g = stereo_gains(n, aac);
                 assert_eq!(g.len(), n);
-                let (l, r) = (g.iter().map(|p| p[0]).sum::<f32>(), g.iter().map(|p| p[1]).sum::<f32>());
+                let (l, r) = (
+                    g.iter().map(|p| p[0]).sum::<f32>(),
+                    g.iter().map(|p| p[1]).sum::<f32>(),
+                );
                 if n > 2 {
-                    assert!(l <= 1.0001 && r <= 1.0001, "{n} channels (aac {aac}): {l} {r}");
+                    assert!(
+                        l <= 1.0001 && r <= 1.0001,
+                        "{n} channels (aac {aac}): {l} {r}"
+                    );
                     assert!(l > 0.0 && r > 0.0);
                 }
             }
@@ -103,7 +113,10 @@ mod tests {
         let k = 1.0 / (1.0 + 2.0 * FRAC_1_SQRT_2);
         let g = stereo_gains(6, false);
         assert!((g[0][0] - k).abs() < 1e-6 && g[0][1] == 0.0);
-        assert!((g[2][0] - k * FRAC_1_SQRT_2).abs() < 1e-6 && (g[2][1] - k * FRAC_1_SQRT_2).abs() < 1e-6);
+        assert!(
+            (g[2][0] - k * FRAC_1_SQRT_2).abs() < 1e-6
+                && (g[2][1] - k * FRAC_1_SQRT_2).abs() < 1e-6
+        );
         assert_eq!(g[3], [0.0, 0.0], "LFE is left out");
         assert!((g[4][0] - k * FRAC_1_SQRT_2).abs() < 1e-6 && g[4][1] == 0.0);
         assert!((g[5][1] - k * FRAC_1_SQRT_2).abs() < 1e-6 && g[5][0] == 0.0);
@@ -125,7 +138,18 @@ mod tests {
     fn ragged_and_empty_input_never_panics() {
         let mut out = vec![0.0; 8];
         downmix_into(&[], false, &mut out);
-        downmix_into(&[vec![1.0; 100], vec![1.0; 2], vec![], vec![1.0; 3], vec![1.0; 1], vec![1.0]], true, &mut out);
+        downmix_into(
+            &[
+                vec![1.0; 100],
+                vec![1.0; 2],
+                vec![],
+                vec![1.0; 3],
+                vec![1.0; 1],
+                vec![1.0],
+            ],
+            true,
+            &mut out,
+        );
         assert!(out.iter().all(|v| v.is_finite()));
         let mut none: [f32; 0] = [];
         downmix_into(&vec![vec![1.0; 3]; 7], false, &mut none);

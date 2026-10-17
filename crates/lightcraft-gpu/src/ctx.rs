@@ -36,12 +36,21 @@ const MODULES: &[Module] = &[
     },
     Module {
         src: include_str!("wgsl/resize.wgsl"),
-        bindings: &[("src", false, "f32"), ("table", false, "u32"), ("dst", true, "f32")],
+        bindings: &[
+            ("src", false, "f32"),
+            ("table", false, "u32"),
+            ("dst", true, "f32"),
+        ],
         entries: &["resize_h", "resize_v"],
     },
     Module {
         src: include_str!("wgsl/map.wgsl"),
-        bindings: &[("a", false, "f32"), ("b", false, "f32"), ("c", false, "f32"), ("dst", true, "f32")],
+        bindings: &[
+            ("a", false, "f32"),
+            ("b", false, "f32"),
+            ("c", false, "f32"),
+            ("dst", true, "f32"),
+        ],
         entries: &[
             "log_lum_k",
             "dark_k",
@@ -61,12 +70,22 @@ const MODULES: &[Module] = &[
     },
     Module {
         src: include_str!("wgsl/mask.wgsl"),
-        bindings: &[("img", false, "f32"), ("log_l", false, "f32"), ("aux", false, "f32"), ("c", true, "f32"), ("alpha", true, "f32")],
+        bindings: &[
+            ("img", false, "f32"),
+            ("log_l", false, "f32"),
+            ("aux", false, "f32"),
+            ("c", true, "f32"),
+            ("alpha", true, "f32"),
+        ],
         entries: &["shape", "combine", "finalize"],
     },
     Module {
         src: include_str!("wgsl/geom.wgsl"),
-        bindings: &[("src", false, "f32"), ("dst", true, "f32"), ("coverage", false, "u32")],
+        bindings: &[
+            ("src", false, "f32"),
+            ("dst", true, "f32"),
+            ("coverage", false, "u32"),
+        ],
         entries: &["orient", "sample_affine", "sample_warp"],
     },
 ];
@@ -142,7 +161,9 @@ impl Drop for Retired {
 
 /// This thread's retired buffers (empty during thread teardown).
 fn take_retired() -> Vec<Tracked> {
-    let retired = RETIRED.try_with(|r| std::mem::take(&mut *r.0.borrow_mut())).unwrap_or_default();
+    let retired = RETIRED
+        .try_with(|r| std::mem::take(&mut *r.0.borrow_mut()))
+        .unwrap_or_default();
     RETIRED_BYTES.fetch_sub(retired.iter().map(|b| b.0.size()).sum(), Ordering::Relaxed);
     retired
 }
@@ -219,7 +240,11 @@ pub struct GpuMemory {
 }
 
 pub(crate) fn memory() -> GpuMemory {
-    GpuMemory { allocated: ALLOCATED.load(Ordering::Relaxed), pooled: POOLED.load(Ordering::Relaxed), retired: RETIRED_BYTES.load(Ordering::Relaxed) }
+    GpuMemory {
+        allocated: ALLOCATED.load(Ordering::Relaxed),
+        pooled: POOLED.load(Ordering::Relaxed),
+        retired: RETIRED_BYTES.load(Ordering::Relaxed),
+    }
 }
 
 pub struct Gpu {
@@ -240,8 +265,16 @@ fn constants() -> String {
     use lightcraft_pipeline::tone::{CHROMA_N, LUT_MAX_EV, LUT_MIN_EV, LUT_N};
     let mut s = String::new();
     let [to_lms, from_lms, to_lab, from_lab] = lightcraft_color::perceptual::oklab_matrices();
-    for (name, m) in [("OK_TO_LMS", to_lms), ("OK_FROM_LMS", from_lms), ("OK_TO_LAB", to_lab), ("OK_FROM_LAB", from_lab)] {
-        let rows: Vec<String> = m.iter().map(|r| format!("vec3<f32>({:?}, {:?}, {:?})", r[0], r[1], r[2])).collect();
+    for (name, m) in [
+        ("OK_TO_LMS", to_lms),
+        ("OK_FROM_LMS", from_lms),
+        ("OK_TO_LAB", to_lab),
+        ("OK_FROM_LAB", from_lab),
+    ] {
+        let rows: Vec<String> = m
+            .iter()
+            .map(|r| format!("vec3<f32>({:?}, {:?}, {:?})", r[0], r[1], r[2]))
+            .collect();
         s += &format!("const {name} = array<vec3<f32>, 3>({});\n", rows.join(", "));
     }
     s += &format!(
@@ -249,16 +282,30 @@ fn constants() -> String {
     );
     s += &format!("const TONE_MIN_GAIN: f32 = {:?};\n", 2f32.powf(LUT_MIN_EV));
     let b = lightcraft_pipeline::geometry::BLANK;
-    s += &format!("const BLANK_R: f32 = {:?};\nconst BLANK_G: f32 = {:?};\nconst BLANK_B: f32 = {:?};\n", b[0], b[1], b[2]);
+    s += &format!(
+        "const BLANK_R: f32 = {:?};\nconst BLANK_G: f32 = {:?};\nconst BLANK_B: f32 = {:?};\n",
+        b[0], b[1], b[2]
+    );
     s += &format!(
         "const SRGB_N: u32 = {SRGB_LUT_N}u;\nconst CURVE_N: u32 = {}u;\nconst MASK_TERMS: u32 = {MASK_TERMS}u;\nconst MASK_SUMS: u32 = {MASK_SUMS}u;\n",
         crate::params::CURVE_N
     );
-    s += &format!("const POINT_WORDS: u32 = {}u;\n", lightcraft_pipeline::colorops::POINT_WORDS);
-    s += &format!("const EYE_WORDS: u32 = {}u;\n", lightcraft_pipeline::redeye::EYE_WORDS);
+    s += &format!(
+        "const POINT_WORDS: u32 = {}u;\n",
+        lightcraft_pipeline::colorops::POINT_WORDS
+    );
+    s += &format!(
+        "const EYE_WORDS: u32 = {}u;\n",
+        lightcraft_pipeline::redeye::EYE_WORDS
+    );
     use lightcraft_pipeline::masks::{AUTO_TOL_CHROMA, AUTO_TOL_EV};
-    s += &format!("const AUTO_TOL_EV: f32 = {AUTO_TOL_EV:?};\nconst AUTO_TOL_CHROMA: f32 = {AUTO_TOL_CHROMA:?};\n");
-    s += &format!("const SHADOW_TINT_K: f32 = {:?};\n", lightcraft_pipeline::colorops::SHADOW_TINT);
+    s += &format!(
+        "const AUTO_TOL_EV: f32 = {AUTO_TOL_EV:?};\nconst AUTO_TOL_CHROMA: f32 = {AUTO_TOL_CHROMA:?};\n"
+    );
+    s += &format!(
+        "const SHADOW_TINT_K: f32 = {:?};\n",
+        lightcraft_pipeline::colorops::SHADOW_TINT
+    );
     for (i, h) in GRAIN_HASH.iter().enumerate() {
         s += &format!("const GRAIN_H{i}: u32 = {h}u;\n");
     }
@@ -273,7 +320,10 @@ fn module_source(m: &Module, consts: &str) -> String {
     s += "@group(0) @binding(0) var<storage, read> P: array<u32>;\n";
     for (i, (name, write, ty)) in m.bindings.iter().enumerate() {
         let access = if *write { "read_write" } else { "read" };
-        s += &format!("@group(0) @binding({}) var<storage, {access}> {name}: array<{ty}>;\n", i + 1);
+        s += &format!(
+            "@group(0) @binding({}) var<storage, {access}> {name}: array<{ty}>;\n",
+            i + 1
+        );
     }
     s += include_str!("wgsl/common.wgsl");
     s += m.src;
@@ -291,24 +341,39 @@ impl Gpu {
         // no indirect-call validation pipeline: Intel Metal fails to compile it (#250)
         desc.flags = crate::backend::instance_flags_from_env(desc.flags);
         let instance = wgpu::Instance::new(desc);
-        let adapter = pollster::block_on(
-            instance.request_adapter(&wgpu::RequestAdapterOptions { power_preference: wgpu::PowerPreference::HighPerformance, ..Default::default() }),
-        )
+        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            ..Default::default()
+        }))
         .map_err(|e| format!("no GPU adapter among {backends:?} ({e})"))?;
         let info = adapter.get_info();
         if info.device_type == wgpu::DeviceType::Cpu {
-            log::info!("gpu: only a software adapter ({}), using the CPU pipeline", info.name);
-            return Err(format!("software adapter ({}) skipped: the CPU pipeline is faster", info.name));
+            log::info!(
+                "gpu: only a software adapter ({}), using the CPU pipeline",
+                info.name
+            );
+            return Err(format!(
+                "software adapter ({}) skipped: the CPU pipeline is faster",
+                info.name
+            ));
         }
         let mut limits = adapter.limits();
         if limits.max_storage_buffers_per_shader_stage < 10 {
             log::info!("gpu: {} has too few storage buffers per stage", info.name);
-            return Err(format!("{} has too few storage buffers per shader stage ({} < 10)", info.name, limits.max_storage_buffers_per_shader_stage));
+            return Err(format!(
+                "{} has too few storage buffers per shader stage ({} < 10)",
+                info.name, limits.max_storage_buffers_per_shader_stage
+            ));
         }
         if let Some((binding, buffer)) = limits_override() {
-            limits.max_storage_buffer_binding_size = limits.max_storage_buffer_binding_size.min(binding);
+            limits.max_storage_buffer_binding_size =
+                limits.max_storage_buffer_binding_size.min(binding);
             limits.max_buffer_size = limits.max_buffer_size.min(buffer);
-            log::info!("gpu: LIGHTCRAFT_GPU_LIMITS: storage bindings ≤ {} MiB, buffers ≤ {} MiB", binding >> 20, buffer >> 20);
+            log::info!(
+                "gpu: LIGHTCRAFT_GPU_LIMITS: storage bindings ≤ {} MiB, buffers ≤ {} MiB",
+                binding >> 20,
+                buffer >> 20
+            );
         }
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             label: Some("lightcraft"),
@@ -328,15 +393,29 @@ impl Gpu {
             crate::mark_broken(&format!("device lost ({reason:?}): {msg}"));
         });
         // a kernel the driver's compiler refuses is a validation or an internal error: no GPU, not a half-built one
-        let scopes = [device.push_error_scope(wgpu::ErrorFilter::Validation), device.push_error_scope(wgpu::ErrorFilter::Internal)];
+        let scopes = [
+            device.push_error_scope(wgpu::ErrorFilter::Validation),
+            device.push_error_scope(wgpu::ErrorFilter::Internal),
+        ];
         let consts = constants();
         let mut kernels = HashMap::new();
         for m in MODULES {
             let src = module_source(m, &consts);
-            let module = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: None, source: wgpu::ShaderSource::Wgsl(src.into()) });
+            let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: None,
+                source: wgpu::ShaderSource::Wgsl(src.into()),
+            });
             let mut entries = vec![storage_entry(0, true)];
-            entries.extend(m.bindings.iter().enumerate().map(|(i, (_, w, _))| storage_entry(i as u32 + 1, !w)));
-            let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { label: None, entries: &entries });
+            entries.extend(
+                m.bindings
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (_, w, _))| storage_entry(i as u32 + 1, !w)),
+            );
+            let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: None,
+                entries: &entries,
+            });
             let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: None,
                 bind_group_layouts: &[Some(&layout)],
@@ -351,11 +430,21 @@ impl Gpu {
                     compilation_options: Default::default(),
                     cache: None,
                 });
-                kernels.insert(*e, Kernel { pipeline, layout: layout.clone(), nbuf: m.bindings.len() });
+                kernels.insert(
+                    *e,
+                    Kernel {
+                        pipeline,
+                        layout: layout.clone(),
+                        nbuf: m.bindings.len(),
+                    },
+                );
             }
         }
         let [validation, internal] = scopes;
-        let (internal, validation) = (pollster::block_on(internal.pop()), pollster::block_on(validation.pop()));
+        let (internal, validation) = (
+            pollster::block_on(internal.pop()),
+            pollster::block_on(validation.pop()),
+        );
         if let Some(e) = internal.or(validation) {
             log::error!("gpu: kernels failed to build on {}: {e}", info.name);
             return Err(format!("{}: kernels failed to build ({e})", info.name));
@@ -366,9 +455,24 @@ impl Gpu {
             usage: wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
-        let max_buffer = limits.max_storage_buffer_binding_size.min(limits.max_buffer_size);
-        log::info!("gpu: {} ({:?}), buffers ≤ {} MiB", info.name, info.backend, max_buffer >> 20);
-        Ok(Gpu { device, queue, info, kernels, dummy, free: Default::default(), max_buffer })
+        let max_buffer = limits
+            .max_storage_buffer_binding_size
+            .min(limits.max_buffer_size);
+        log::info!(
+            "gpu: {} ({:?}), buffers ≤ {} MiB",
+            info.name,
+            info.backend,
+            max_buffer >> 20
+        );
+        Ok(Gpu {
+            device,
+            queue,
+            info,
+            kernels,
+            dummy,
+            free: Default::default(),
+            max_buffer,
+        })
     }
 
     /// A buffer of `len` 32-bit values with undefined contents (a recycled one when possible).
@@ -379,7 +483,10 @@ impl Gpu {
         let size = (len.max(1) * 4) as u64;
         if size > self.limit() {
             self.over_limit(size);
-            return Buf { buf: Some(Tracked::new(self.placeholder())), len };
+            return Buf {
+                buf: Some(Tracked::new(self.placeholder())),
+                len,
+            };
         }
         let recycled = {
             let mut f = self.free.lock().unwrap_or_else(|e| e.into_inner());
@@ -401,11 +508,16 @@ impl Gpu {
             Tracked::new(self.device.create_buffer(&wgpu::BufferDescriptor {
                 label: None,
                 size,
-                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+                usage: wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::COPY_SRC
+                    | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }))
         });
-        Buf { buf: Some(buf), len }
+        Buf {
+            buf: Some(buf),
+            len,
+        }
     }
 
     /// Submit command buffers, then make the buffers this thread dropped before reusable.
@@ -459,20 +571,34 @@ impl Gpu {
         }
         if bytes.len() as u64 > self.limit() {
             self.over_limit(bytes.len() as u64);
-            return Buf { buf: Some(Tracked::new(self.placeholder())), len };
+            return Buf {
+                buf: Some(Tracked::new(self.placeholder())),
+                len,
+            };
         }
-        let buf = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytes,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
-        });
-        Buf { buf: Some(Tracked::new(buf)), len }
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: bytes,
+                usage: wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::COPY_SRC
+                    | wgpu::BufferUsages::COPY_DST,
+            });
+        Buf {
+            buf: Some(Tracked::new(buf)),
+            len,
+        }
     }
 
     fn over_limit(&self, size: u64) {
         fail(
             FailKind::Limit,
-            format!("a {} MiB buffer exceeds the device's {} MiB storage-buffer limit", size.div_ceil(1 << 20), self.limit() >> 20),
+            format!(
+                "a {} MiB buffer exceeds the device's {} MiB storage-buffer limit",
+                size.div_ceil(1 << 20),
+                self.limit() >> 20
+            ),
         );
     }
 
@@ -481,7 +607,9 @@ impl Gpu {
         self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("placeholder"),
             size: 16,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         })
     }
@@ -494,15 +622,27 @@ impl Gpu {
     /// Largest buffer a render may use (bytes): the device limit, or a lower one set for the
     /// render on this thread ([`LimitOverride`]).
     pub fn limit(&self) -> u64 {
-        LIMIT.try_with(|l| l.get()).ok().flatten().map_or(self.max_buffer, |l| l.min(self.max_buffer))
+        LIMIT
+            .try_with(|l| l.get())
+            .ok()
+            .flatten()
+            .map_or(self.max_buffer, |l| l.min(self.max_buffer))
     }
 
     pub fn encoder(&self) -> wgpu::CommandEncoder {
-        self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None })
+        self.device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None })
     }
 
     /// Record kernel `name` with parameters `p` over buffers `bufs` (None = unused binding).
-    pub fn run(&self, enc: &mut wgpu::CommandEncoder, name: &str, p: &[u32], bufs: &[Option<&Buf>], groups: [u32; 3]) {
+    pub fn run(
+        &self,
+        enc: &mut wgpu::CommandEncoder,
+        name: &str,
+        p: &[u32],
+        bufs: &[Option<&Buf>],
+        groups: [u32; 3],
+    ) {
         if failed() {
             return; // the render is redone on the CPU: don't spend the GPU on it
         }
@@ -512,18 +652,33 @@ impl Gpu {
             return;
         };
         assert_eq!(bufs.len(), k.nbuf, "{name}: binding count");
-        let params = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(if p.is_empty() { &[0u32] } else { p }),
-            usage: wgpu::BufferUsages::STORAGE,
-        });
-        let mut entries = vec![wgpu::BindGroupEntry { binding: 0, resource: params.as_entire_binding() }];
+        let params = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: bytemuck::cast_slice(if p.is_empty() { &[0u32] } else { p }),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+        let mut entries = vec![wgpu::BindGroupEntry {
+            binding: 0,
+            resource: params.as_entire_binding(),
+        }];
         for (i, b) in bufs.iter().enumerate() {
             let buf = b.map(|b| b.raw()).unwrap_or(&self.dummy);
-            entries.push(wgpu::BindGroupEntry { binding: i as u32 + 1, resource: buf.as_entire_binding() });
+            entries.push(wgpu::BindGroupEntry {
+                binding: i as u32 + 1,
+                resource: buf.as_entire_binding(),
+            });
         }
-        let bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor { label: None, layout: &k.layout, entries: &entries });
-        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor { label: Some(name), timestamp_writes: None });
+        let bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &k.layout,
+            entries: &entries,
+        });
+        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: Some(name),
+            timestamp_writes: None,
+        });
         pass.set_pipeline(&k.pipeline);
         pass.set_bind_group(0, &bg, &[]);
         pass.dispatch_workgroups(groups[0], groups[1], groups[2]);
@@ -534,8 +689,17 @@ impl Gpu {
     /// A failed readback (device lost, map error, timeout) fails the render ([`FailKind::Fatal`])
     /// and returns zeros, which the caller discards; after an earlier failure in the same render
     /// nothing more is submitted.
-    pub fn finish_and_read<T: bytemuck::Pod>(&self, mut enc: wgpu::CommandEncoder, src: &Buf, len: usize) -> Vec<T> {
-        assert!(len <= src.len, "readback of {len} values from a buffer of {}", src.len);
+    pub fn finish_and_read<T: bytemuck::Pod>(
+        &self,
+        mut enc: wgpu::CommandEncoder,
+        src: &Buf,
+        len: usize,
+    ) -> Vec<T> {
+        assert!(
+            len <= src.len,
+            "readback of {len} values from a buffer of {}",
+            src.len
+        );
         let zeros = || vec![<T as bytemuck::Zeroable>::zeroed(); len];
         if failed() {
             return zeros();
@@ -560,7 +724,10 @@ impl Gpu {
         };
         // A lost device makes the wait fail and the map callback never run: checking both keeps
         // this from blocking forever (or handing back an unwritten buffer as the image).
-        if let Err(e) = self.device.poll(wgpu::PollType::Wait { submission_index: None, timeout: Some(READBACK_TIMEOUT) }) {
+        if let Err(e) = self.device.poll(wgpu::PollType::Wait {
+            submission_index: None,
+            timeout: Some(READBACK_TIMEOUT),
+        }) {
             return failed(format!("{e}"));
         }
         // another thread's poll may be the one that runs the callback: allow it a moment
@@ -600,7 +767,12 @@ fn parse_limits(v: &str) -> Option<(u64, u64)> {
             Some((d.max_storage_buffer_binding_size, d.max_buffer_size))
         }
         n => {
-            let mb: u64 = n.trim_end_matches("mib").trim_end_matches("mb").trim().parse().ok()?;
+            let mb: u64 = n
+                .trim_end_matches("mib")
+                .trim_end_matches("mb")
+                .trim()
+                .parse()
+                .ok()?;
             let b = mb.max(1) << 20;
             Some((b, 2 * b))
         }
@@ -695,9 +867,15 @@ impl ErrorScopes {
         let validation = pollster::block_on(validation.pop());
         let oom = pollster::block_on(oom.pop());
         if let Some(e) = oom {
-            return Some(Failure { kind: FailKind::OutOfMemory, reason: format!("out of device memory: {e}") });
+            return Some(Failure {
+                kind: FailKind::OutOfMemory,
+                reason: format!("out of device memory: {e}"),
+            });
         }
-        internal.or(validation).map(|e| Failure { kind: FailKind::Fatal, reason: format!("device error: {e}") })
+        internal.or(validation).map(|e| Failure {
+            kind: FailKind::Fatal,
+            reason: format!("device error: {e}"),
+        })
     }
 }
 
@@ -705,14 +883,22 @@ fn storage_entry(binding: u32, read_only: bool) -> wgpu::BindGroupLayoutEntry {
     wgpu::BindGroupLayoutEntry {
         binding,
         visibility: wgpu::ShaderStages::COMPUTE,
-        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only }, has_dynamic_offset: false, min_binding_size: None },
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Storage { read_only },
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        },
         count: None,
     }
 }
 
 /// Workgroups covering a `w × h` grid with `wg`-sized groups.
 pub fn groups2(w: usize, h: usize, wg: [usize; 2]) -> [u32; 3] {
-    [w.div_ceil(wg[0]).max(1) as u32, h.div_ceil(wg[1]).max(1) as u32, 1]
+    [
+        w.div_ceil(wg[0]).max(1) as u32,
+        h.div_ceil(wg[1]).max(1) as u32,
+        1,
+    ]
 }
 
 /// Workgroups for a 1-D kernel of `n` threads (256 per group) on a 2-D grid (see `lin_index`).
@@ -727,7 +913,10 @@ mod tests {
     #[test]
     fn limits_override_parses() {
         assert_eq!(super::parse_limits("webgpu"), Some((128 << 20, 256 << 20)));
-        assert_eq!(super::parse_limits(" Downlevel "), Some((128 << 20, 256 << 20)));
+        assert_eq!(
+            super::parse_limits(" Downlevel "),
+            Some((128 << 20, 256 << 20))
+        );
         assert_eq!(super::parse_limits("64"), Some((64 << 20, 128 << 20)));
         assert_eq!(super::parse_limits("512MiB"), Some((512 << 20, 1024 << 20)));
         assert_eq!(super::parse_limits(""), None);
@@ -738,6 +927,10 @@ mod tests {
     fn dispatches_stay_within_the_workgroup_limit() {
         // 1-D kernels over a 100 MP image and 2-D ones over 16k × 16k stay under 65535 per axis
         assert!(super::groups1(100_000_000 * 3).iter().all(|g| *g <= 65535));
-        assert!(super::groups2(16384, 16384, [16, 16]).iter().all(|g| *g <= 65535));
+        assert!(
+            super::groups2(16384, 16384, [16, 16])
+                .iter()
+                .all(|g| *g <= 65535)
+        );
     }
 }

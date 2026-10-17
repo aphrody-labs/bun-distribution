@@ -3,7 +3,9 @@ use aphrody_nie_formats::{bitmap_font::BitmapFont, menu_presentation};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = std::path::PathBuf::from(
-        std::env::args().nth(1).ok_or("expected private font fixture directory")?,
+        std::env::args()
+            .nth(1)
+            .ok_or("expected private font fixture directory")?,
     );
     let font = BitmapFont::from_bytes(
         &std::fs::read(root.join("font.cfg.bin"))?,
@@ -30,6 +32,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let checksum = aphrody_nie_formats::cfgbin::crc32(&frame.rgba);
         serde_json::json!({"text": text,"width": frame.width,"height": frame.height,"rgbaCrc32": checksum})
     }).collect();
-    println!("{}", serde_json::json!({"schemaVersion":1,"scenes":scenes,"texts":texts}));
+    println!(
+        "{}",
+        serde_json::json!({"schemaVersion":1,"scenes":scenes,"texts":texts})
+    );
     Ok(())
 }

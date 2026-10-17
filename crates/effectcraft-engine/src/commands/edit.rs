@@ -5,14 +5,24 @@ use effectcraft_project::{Comp, Expression, ItemKind, Layer, LayerId, LayerSourc
 use effectcraft_time::Tick;
 use serde_json::{Value, json};
 
-use super::{CommandSpec, has_comp, has_layers, layers_p, match_path_of, selected_leaf_props, str_p};
+use super::{
+    CommandSpec, has_comp, has_layers, layers_p, match_path_of, selected_leaf_props, str_p,
+};
 use crate::{EngineError, KeyRef, LinkClip, Result, Session, cmd};
 
 fn can_undo(s: &Session) -> std::result::Result<(), String> {
-    if s.history.undo.is_empty() { Err("nothing to undo".into()) } else { Ok(()) }
+    if s.history.undo.is_empty() {
+        Err("nothing to undo".into())
+    } else {
+        Ok(())
+    }
 }
 fn can_redo(s: &Session) -> std::result::Result<(), String> {
-    if s.history.redo.is_empty() { Err("nothing to redo".into()) } else { Ok(()) }
+    if s.history.redo.is_empty() {
+        Err("nothing to redo".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_clip(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
@@ -34,17 +44,33 @@ fn has_clip(s: &Session) -> std::result::Result<(), String> {
 }
 fn has_key_clip(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
-    if s.state.key_clipboard.is_empty() { Err("no keyframes on the clipboard".into()) } else { Ok(()) }
+    if s.state.key_clipboard.is_empty() {
+        Err("no keyframes on the clipboard".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_props_or_layers(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if s.state.selected_layers.is_empty() && s.state.selected_props.is_empty() { Err("select layers or properties first".into()) } else { Ok(()) }
+    if s.state.selected_layers.is_empty() && s.state.selected_props.is_empty() {
+        Err("select layers or properties first".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_props_or_layers_or_items(s: &Session) -> std::result::Result<(), String> {
-    if has_props_or_layers(s).is_ok() || !s.state.project_selection.is_empty() { Ok(()) } else { Err("select layers or project items first".into()) }
+    if has_props_or_layers(s).is_ok() || !s.state.project_selection.is_empty() {
+        Ok(())
+    } else {
+        Err("select layers or project items first".into())
+    }
 }
 fn has_selected_footage(s: &Session) -> std::result::Result<(), String> {
-    if original_path(s).is_some() { Ok(()) } else { Err("select a footage item or layer".into()) }
+    if original_path(s).is_some() {
+        Ok(())
+    } else {
+        Err("select a footage item or layer".into())
+    }
 }
 
 fn undo(s: &mut Session, _: &Value) -> Result<Value> {
@@ -68,7 +94,12 @@ fn select_all(s: &mut Session, _: &Value) -> Result<Value> {
     }
     // Locked layers (and shy layers while they are hidden) can't be selected.
     if let Some(c) = s.active_comp() {
-        s.state.selected_layers = c.layers.iter().filter(|l| super::selectable(c, l)).map(|l| l.id).collect();
+        s.state.selected_layers = c
+            .layers
+            .iter()
+            .filter(|l| super::selectable(c, l))
+            .map(|l| l.id)
+            .collect();
     }
     Ok(json!(s.state.selected_layers.len()))
 }
@@ -84,10 +115,21 @@ fn deselect_all(s: &mut Session, _: &Value) -> Result<Value> {
 /// too, else the layer itself when it is in `comp`, else none. `map`: (original, copy).
 fn relink_copies(comp: &mut Comp, map: &[(LayerId, LayerId)]) {
     let present: Vec<LayerId> = comp.layers.iter().map(|l| l.id).collect();
-    let link = |id: LayerId| map.iter().find(|(o, _)| *o == id).map(|(_, c)| *c).or(present.contains(&id).then_some(id));
-    for l in comp.layers.iter_mut().filter(|l| map.iter().any(|(_, c)| *c == l.id)) {
+    let link = |id: LayerId| {
+        map.iter()
+            .find(|(o, _)| *o == id)
+            .map(|(_, c)| *c)
+            .or(present.contains(&id).then_some(id))
+    };
+    for l in comp
+        .layers
+        .iter_mut()
+        .filter(|l| map.iter().any(|(_, c)| *c == l.id))
+    {
         l.parent = l.parent.and_then(link);
-        l.track_matte = l.track_matte.and_then(|m| link(m.layer).map(|layer| TrackMatte { layer, ..m }));
+        l.track_matte = l
+            .track_matte
+            .and_then(|m| link(m.layer).map(|layer| TrackMatte { layer, ..m }));
     }
 }
 
@@ -123,7 +165,9 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
         let mut created = vec![];
         let mut map = vec![];
         for id in &ids {
-            let Some(i) = comp.layers.iter().position(|l| l.id == *id) else { continue };
+            let Some(i) = comp.layers.iter().position(|l| l.id == *id) else {
+                continue;
+            };
             let mut l = comp.layers[i].clone();
             reid(&mut l, &mut next);
             l.name = comp.unique_layer_name(&l.name);
@@ -158,7 +202,10 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     // (Points selected with their mask, which selecting a mask does: the mask goes, below.)
     let comp = s.active_comp();
     let loose = s.state.selected_vertices.iter().any(|v| {
-        !s.state.selected_props.contains(&(v.layer, v.mask)) && comp.and_then(|c| c.layer(v.layer)).is_some_and(|l| l.props.find_group(v.mask).is_some())
+        !s.state.selected_props.contains(&(v.layer, v.mask))
+            && comp
+                .and_then(|c| c.layer(v.layer))
+                .is_some_and(|l| l.props.find_group(v.mask).is_some())
     });
     if loose && p.get("layers").is_none() {
         return s.execute("mask.deleteVertices", json!({}));
@@ -181,7 +228,12 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = super::unlocked(s, cid, ids, "edit.clear")?;
     // Children of deleted layers are unparented where they are (like After Effects).
     let comp = s.project.comp(cid).ok_or(crate::EngineError::NoComp)?;
-    let orphans: Vec<LayerId> = comp.layers.iter().filter(|l| !ids.contains(&l.id) && l.parent.is_some_and(|p| ids.contains(&p))).map(|l| l.id).collect();
+    let orphans: Vec<LayerId> = comp
+        .layers
+        .iter()
+        .filter(|l| !ids.contains(&l.id) && l.parent.is_some_and(|p| ids.contains(&p)))
+        .map(|l| l.id)
+        .collect();
     let fixes = super::layer::parent_fixes(s, cid, &orphans, None);
     s.edit("Clear", None, |proj, st| {
         let comp = proj.comp_mut(cid).ok_or(crate::EngineError::NoComp)?;
@@ -249,7 +301,12 @@ fn copy(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     s.state.clip_is_keys = false;
     let comp = s.project.comp(cid).ok_or(crate::EngineError::NoComp)?;
-    let layers: Vec<Layer> = comp.layers.iter().filter(|l| ids.contains(&l.id)).cloned().collect();
+    let layers: Vec<Layer> = comp
+        .layers
+        .iter()
+        .filter(|l| ids.contains(&l.id))
+        .cloned()
+        .collect();
     clear_clipboards(s);
     s.state.clipboard = layers;
     Ok(json!(s.state.clipboard.len()))
@@ -260,7 +317,9 @@ fn copy(s: &mut Session, p: &Value) -> Result<Value> {
 /// an unanimated one its value, for Paste onto the same properties of other layers (#493).
 /// `None` when no property (or Transform group) is selected.
 fn copy_properties(s: &mut Session) -> Result<Option<Value>> {
-    let Some(comp) = s.active_comp() else { return Ok(None) };
+    let Some(comp) = s.active_comp() else {
+        return Ok(None);
+    };
     let mut leaves = vec![];
     for (lid, uid) in &s.state.selected_props {
         let Some(l) = comp.layer(*lid) else { continue };
@@ -279,7 +338,9 @@ fn copy_properties(s: &mut Session) -> Result<Option<Value>> {
     let mut values = vec![];
     for (lid, uid) in &leaves {
         let Some(l) = comp.layer(*lid) else { continue };
-        let Some(pr) = l.props.find(*uid) else { continue };
+        let Some(pr) = l.props.find(*uid) else {
+            continue;
+        };
         if pr.keys.is_empty() {
             if let Some(path) = l.props.match_path_of(*uid)
                 && !values.iter().any(|(p, _)| *p == path)
@@ -287,7 +348,11 @@ fn copy_properties(s: &mut Session) -> Result<Option<Value>> {
                 values.push((path, pr.value.clone()));
             }
         } else if !keys.iter().any(|k| k.layer == *lid && k.prop == *uid) {
-            keys.extend(pr.keys.iter().map(|k| KeyRef { layer: *lid, prop: *uid, time: k.time }));
+            keys.extend(pr.keys.iter().map(|k| KeyRef {
+                layer: *lid,
+                prop: *uid,
+                time: k.time,
+            }));
         }
     }
     clear_clipboards(s);
@@ -301,7 +366,11 @@ fn copy_properties(s: &mut Session) -> Result<Option<Value>> {
     let v = values.len();
     s.state.value_clipboard = values;
     // Keys alone answer as `keys.copy` does (their count).
-    Ok(Some(if v == 0 { json!(n) } else { json!({"keys": n, "values": v}) }))
+    Ok(Some(if v == 0 {
+        json!(n)
+    } else {
+        json!({"keys": n, "values": v})
+    }))
 }
 
 /// Paste copied property values (and keyframes, at the CTI) onto the same properties of the
@@ -351,7 +420,12 @@ fn paste_properties(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// The expression accessor for a property, e.g. `comp("Main").layer("Solid").transform("Position")`.
-pub(crate) fn link_expression(s: &Session, lid: LayerId, uid: effectcraft_project::Uid, relative: bool) -> Option<String> {
+pub(crate) fn link_expression(
+    s: &Session,
+    lid: LayerId,
+    uid: effectcraft_project::Uid,
+    relative: bool,
+) -> Option<String> {
     let cid = s.active_comp_id()?;
     let comp = s.project.comp(cid)?;
     let l = comp.layer(lid)?;
@@ -360,7 +434,15 @@ pub(crate) fn link_expression(s: &Session, lid: LayerId, uid: effectcraft_projec
     let names: Vec<&str> = names.split('/').collect();
     let first = matches.split('/').next()?.to_string();
     let q = |x: &str| serde_json::to_string(x).unwrap_or_default();
-    let base = if relative { format!("thisComp.layer({})", q(&l.name)) } else { format!("comp({}).layer({})", q(&s.project.item(cid)?.name), q(&l.name)) };
+    let base = if relative {
+        format!("thisComp.layer({})", q(&l.name))
+    } else {
+        format!(
+            "comp({}).layer({})",
+            q(&s.project.item(cid)?.name),
+            q(&l.name)
+        )
+    };
     let mut out = match first.as_str() {
         "transform" => format!("{base}.transform"),
         "effects" => format!("{base}.effect({})", q(names.get(1)?)),
@@ -369,7 +451,11 @@ pub(crate) fn link_expression(s: &Session, lid: LayerId, uid: effectcraft_projec
         "contents" => format!("{base}.content({})", q(names.get(1)?)),
         _ => return None,
     };
-    let skip = if matches!(first.as_str(), "effects" | "masks" | "contents") { 2 } else { 1 };
+    let skip = if matches!(first.as_str(), "effects" | "masks" | "contents") {
+        2
+    } else {
+        1
+    };
     for n in names.iter().skip(skip) {
         out.push_str(&format!("({})", q(n)));
     }
@@ -396,8 +482,14 @@ fn copy_links(s: &mut Session, p: &Value, relative: bool) -> Result<Value> {
                 }
             }
             for uid in uids {
-                if let (Some(e), Some(pr)) = (link_expression(s, l.id, uid, relative), copy.props.find_mut(uid)) {
-                    pr.expr = Some(Expression { text: e, enabled: true });
+                if let (Some(e), Some(pr)) = (
+                    link_expression(s, l.id, uid, relative),
+                    copy.props.find_mut(uid),
+                ) {
+                    pr.expr = Some(Expression {
+                        text: e,
+                        enabled: true,
+                    });
                 }
             }
             layers.push(copy);
@@ -410,7 +502,9 @@ fn copy_links(s: &mut Session, p: &Value, relative: bool) -> Result<Value> {
     let comp = s.active_comp().ok_or(EngineError::NoComp)?;
     let mut links = vec![];
     for (lid, uid) in &props {
-        let Some(path) = comp.layer(*lid).and_then(|l| match_path_of(&l.props, *uid)) else { continue };
+        let Some(path) = comp.layer(*lid).and_then(|l| match_path_of(&l.props, *uid)) else {
+            continue;
+        };
         if let Some(e) = link_expression(s, *lid, *uid, relative) {
             links.push((path, e));
         }
@@ -433,7 +527,9 @@ fn copy_expression_only(s: &mut Session, _: &Value) -> Result<Value> {
         }
     }
     if out.is_empty() {
-        return Err(EngineError::Other("the selected properties have no expressions".into()));
+        return Err(EngineError::Other(
+            "the selected properties have no expressions".into(),
+        ));
     }
     let n = out.len();
     clear_clipboards(s);
@@ -449,7 +545,18 @@ fn paste_links(s: &mut Session, clip: LinkClip) -> Result<Value> {
         return Err(EngineError::Other("select a layer to paste into".into()));
     }
     let pairs: Vec<(String, Expression)> = match clip {
-        LinkClip::Links { links, .. } => links.into_iter().map(|(p, e)| (p, Expression { text: e, enabled: true })).collect(),
+        LinkClip::Links { links, .. } => links
+            .into_iter()
+            .map(|(p, e)| {
+                (
+                    p,
+                    Expression {
+                        text: e,
+                        enabled: true,
+                    },
+                )
+            })
+            .collect(),
         LinkClip::Expressions(v) => v,
     };
     let n = s.edit("Paste", None, |proj, _| {
@@ -512,7 +619,11 @@ fn paste(s: &mut Session, p: &Value) -> Result<Value> {
     let new = s.edit("Paste", None, |proj, st| {
         let mut next = proj.next_id;
         let comp = proj.comp_mut(cid).ok_or(crate::EngineError::NoComp)?;
-        let at = st.selected_layers.first().and_then(|id| comp.layers.iter().position(|l| l.id == *id)).unwrap_or(0);
+        let at = st
+            .selected_layers
+            .first()
+            .and_then(|id| comp.layers.iter().position(|l| l.id == *id))
+            .unwrap_or(0);
         let mut created = vec![];
         let mut map = vec![];
         for (k, mut l) in clip.into_iter().enumerate() {
@@ -542,12 +653,16 @@ fn paste_svg(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "edit.pasteSvg";
     let text = str_p(p, "svg").ok_or_else(|| super::bad(c, "missing `svg` (SVG markup)"))?;
     if text.len() > MAX_SVG_PASTE {
-        return Err(super::bad(c, format!("the SVG is larger than {} MB", MAX_SVG_PASTE >> 20)));
+        return Err(super::bad(
+            c,
+            format!("the SVG is larger than {} MB", MAX_SVG_PASTE >> 20),
+        ));
     }
     if !crate::vector::is_svg_text(text) {
         return Err(super::bad(c, "the text is not SVG markup"));
     }
-    let doc = effectcraft_svg::parse(text.as_bytes()).map_err(|e| super::bad(c, format!("cannot read the SVG: {e}")))?;
+    let doc = effectcraft_svg::parse(text.as_bytes())
+        .map_err(|e| super::bad(c, format!("cannot read the SVG: {e}")))?;
     if doc.flatten().is_empty() {
         return Err(super::bad(c, "the SVG has no shapes"));
     }
@@ -556,7 +671,11 @@ fn paste_svg(s: &mut Session, p: &Value) -> Result<Value> {
     let name = match str_p(p, "name") {
         Some(n) => n.to_string(),
         None => {
-            let count = comp.layers.iter().filter(|l| matches!(l.source, LayerSource::Shape)).count();
+            let count = comp
+                .layers
+                .iter()
+                .filter(|l| matches!(l.source, LayerSource::Shape))
+                .count();
             comp.unique_layer_name(&format!("Shape Layer {}", count.saturating_add(1)))
         }
     };
@@ -577,7 +696,9 @@ fn split(s: &mut Session, p: &Value) -> Result<Value> {
         let comp = proj.comp_mut(cid).ok_or(crate::EngineError::NoComp)?;
         let mut created = vec![];
         for id in &ids {
-            let Some(i) = comp.layers.iter().position(|l| l.id == *id) else { continue };
+            let Some(i) = comp.layers.iter().position(|l| l.id == *id) else {
+                continue;
+            };
             if !(t > comp.layers[i].in_point && t < comp.layers[i].out_point) {
                 continue;
             }
@@ -598,11 +719,18 @@ fn split(s: &mut Session, p: &Value) -> Result<Value> {
 fn label(s: &mut Session, p: &Value) -> Result<Value> {
     // Keyframe colour labels: selected keyframes take the label (unless layers are named).
     let explicit_layers = p.get("layers").is_some() || p.get("layer").is_some();
-    if p.get("keys").is_some() || (!s.state.selected_keys.is_empty() && !explicit_layers && str_p(p, "target") != Some("layers")) {
+    if p.get("keys").is_some()
+        || (!s.state.selected_keys.is_empty()
+            && !explicit_layers
+            && str_p(p, "target") != Some("layers"))
+    {
         return super::keys_more::label_keys(s, p);
     }
     let name = str_p(p, "label").unwrap_or("Red");
-    let lab = s.prefs.label_from_name(name).ok_or_else(|| super::bad("edit.label", format!("unknown label `{name}`")))?;
+    let lab = s
+        .prefs
+        .label_from_name(name)
+        .ok_or_else(|| super::bad("edit.label", format!("unknown label `{name}`")))?;
     let (cid, ids) = layers_p(s, p)?;
     let items = s.state.project_selection.clone();
     s.edit("Label", None, |proj, _| {
@@ -628,7 +756,11 @@ fn label(s: &mut Session, p: &Value) -> Result<Value> {
 /// (`keys.paste`: at the current time, into the selected or the same properties).
 fn paste_reversed(s: &mut Session, p: &Value) -> Result<Value> {
     let original = s.state.key_clipboard.clone();
-    let span = original.iter().flat_map(|c| c.keys.iter().map(|k| k.time)).max().unwrap_or(Tick::ZERO);
+    let span = original
+        .iter()
+        .flat_map(|c| c.keys.iter().map(|k| k.time))
+        .max()
+        .unwrap_or(Tick::ZERO);
     s.state.key_clipboard = original
         .iter()
         .map(|c| crate::KeyClip {
@@ -664,57 +796,65 @@ fn work_area_cut(s: &mut Session, p: &Value, extract: bool) -> Result<Value> {
         v => v,
     };
     let gap = b - a;
-    s.edit(if extract { "Extract Work Area" } else { "Lift Work Area" }, None, |proj, st| {
-        let mut next = proj.next_id;
-        let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
-        let shift = |l: &mut Layer, d: Tick| {
-            l.start_time += d;
-            l.in_point += d;
-            l.out_point += d;
-        };
-        let mut i = 0;
-        while i < c.layers.len() {
-            if !ids.contains(&c.layers[i].id) || c.layers[i].switches.locked {
-                i += 1;
-                continue;
+    s.edit(
+        if extract {
+            "Extract Work Area"
+        } else {
+            "Lift Work Area"
+        },
+        None,
+        |proj, st| {
+            let mut next = proj.next_id;
+            let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
+            let shift = |l: &mut Layer, d: Tick| {
+                l.start_time += d;
+                l.in_point += d;
+                l.out_point += d;
+            };
+            let mut i = 0;
+            while i < c.layers.len() {
+                if !ids.contains(&c.layers[i].id) || c.layers[i].switches.locked {
+                    i += 1;
+                    continue;
+                }
+                let (lin, lout) = (c.layers[i].in_point, c.layers[i].out_point);
+                if lout <= a {
+                    i += 1;
+                } else if lin >= b {
+                    if extract {
+                        shift(&mut c.layers[i], Tick::ZERO - gap);
+                    }
+                    i += 1;
+                } else if lin >= a && lout <= b {
+                    c.layers.remove(i);
+                } else if lin < a && lout > b {
+                    // Split around the work area: the layer keeps the head, a copy takes the tail.
+                    let mut tail = c.layers[i].clone();
+                    reid(&mut tail, &mut next);
+                    tail.in_point = b;
+                    if extract {
+                        shift(&mut tail, Tick::ZERO - gap);
+                    }
+                    c.layers[i].out_point = a;
+                    c.layers.insert(i, tail);
+                    i += 2;
+                } else if lin < a {
+                    c.layers[i].out_point = a;
+                    i += 1;
+                } else {
+                    c.layers[i].in_point = b;
+                    if extract {
+                        shift(&mut c.layers[i], Tick::ZERO - gap);
+                    }
+                    i += 1;
+                }
             }
-            let (lin, lout) = (c.layers[i].in_point, c.layers[i].out_point);
-            if lout <= a {
-                i += 1;
-            } else if lin >= b {
-                if extract {
-                    shift(&mut c.layers[i], Tick::ZERO - gap);
-                }
-                i += 1;
-            } else if lin >= a && lout <= b {
-                c.layers.remove(i);
-            } else if lin < a && lout > b {
-                // Split around the work area: the layer keeps the head, a copy takes the tail.
-                let mut tail = c.layers[i].clone();
-                reid(&mut tail, &mut next);
-                tail.in_point = b;
-                if extract {
-                    shift(&mut tail, Tick::ZERO - gap);
-                }
-                c.layers[i].out_point = a;
-                c.layers.insert(i, tail);
-                i += 2;
-            } else if lin < a {
-                c.layers[i].out_point = a;
-                i += 1;
-            } else {
-                c.layers[i].in_point = b;
-                if extract {
-                    shift(&mut c.layers[i], Tick::ZERO - gap);
-                }
-                i += 1;
-            }
-        }
-        let alive: Vec<LayerId> = c.layers.iter().map(|l| l.id).collect();
-        st.selected_layers.retain(|l| alive.contains(l));
-        proj.next_id = next;
-        Ok(())
-    })?;
+            let alive: Vec<LayerId> = c.layers.iter().map(|l| l.id).collect();
+            st.selected_layers.retain(|l| alive.contains(l));
+            proj.next_id = next;
+            Ok(())
+        },
+    )?;
     Ok(Value::Null)
 }
 
@@ -727,14 +867,37 @@ fn extract(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn select_label_group(s: &mut Session, _: &Value) -> Result<Value> {
     let comp = s.active_comp().ok_or(EngineError::NoComp)?;
-    let labels: Vec<Label> = s.state.selected_layers.iter().filter_map(|l| comp.layer(*l)).map(|l| l.label).collect();
+    let labels: Vec<Label> = s
+        .state
+        .selected_layers
+        .iter()
+        .filter_map(|l| comp.layer(*l))
+        .map(|l| l.label)
+        .collect();
     if labels.is_empty() {
         // Project panel: items with the same labels.
-        let items: Vec<Label> = s.state.project_selection.iter().filter_map(|i| s.project.item(*i)).map(|i| i.label).collect();
-        s.state.project_selection = s.project.items.values().filter(|i| items.contains(&i.label)).map(|i| i.id).collect();
+        let items: Vec<Label> = s
+            .state
+            .project_selection
+            .iter()
+            .filter_map(|i| s.project.item(*i))
+            .map(|i| i.label)
+            .collect();
+        s.state.project_selection = s
+            .project
+            .items
+            .values()
+            .filter(|i| items.contains(&i.label))
+            .map(|i| i.id)
+            .collect();
         return Ok(json!({"items": s.state.project_selection.len()}));
     }
-    s.state.selected_layers = comp.layers.iter().filter(|l| labels.contains(&l.label)).map(|l| l.id).collect();
+    s.state.selected_layers = comp
+        .layers
+        .iter()
+        .filter(|l| labels.contains(&l.label))
+        .map(|l| l.id)
+        .collect();
     Ok(json!({"layers": s.state.selected_layers.len()}))
 }
 
@@ -756,7 +919,11 @@ fn purge_caches(s: &mut Session, p: &Value) -> Result<Value> {
         dc.clear();
     } else if disk && let Some(h) = &s.storage {
         // The browser's disk cache (Origin Private File System).
-        disk_entries = h.clear("diskCache").ok().and_then(|r| r["entries"].as_u64()).unwrap_or(0) as usize;
+        disk_entries = h
+            .clear("diskCache")
+            .ok()
+            .and_then(|r| r["entries"].as_u64())
+            .unwrap_or(0) as usize;
     }
     if matches!(what.as_str(), "all" | "image" | "memory" | "memoryAndDisk") {
         effectcraft_effects::roto::purge();
@@ -774,7 +941,11 @@ fn purge_caches(s: &mut Session, p: &Value) -> Result<Value> {
 pub(crate) fn disk_stats(s: &mut Session, _: &Value) -> Result<Value> {
     let Some(dc) = &s.disk_cache else {
         // The browser's disk cache (Origin Private File System), when the web app has one.
-        let web = s.storage.as_ref().map(|h| h.info()["diskCache"].clone()).filter(|d| d.is_object());
+        let web = s
+            .storage
+            .as_ref()
+            .map(|h| h.info()["diskCache"].clone())
+            .filter(|d| d.is_object());
         return Ok(web.unwrap_or_else(|| json!({"enabled": false})));
     };
     let st = dc.stats();
@@ -796,10 +967,15 @@ pub(crate) fn disk_stats(s: &mut Session, _: &Value) -> Result<Value> {
 /// Path of the footage behind the selected layer or project item.
 fn original_path(s: &Session) -> Option<String> {
     let comp = s.active_comp();
-    let from_layer = s.state.selected_layers.first().and_then(|l| comp?.layer(*l)).and_then(|l| match l.source {
-        LayerSource::Footage { item } => Some(item),
-        _ => None,
-    });
+    let from_layer = s
+        .state
+        .selected_layers
+        .first()
+        .and_then(|l| comp?.layer(*l))
+        .and_then(|l| match l.source {
+            LayerSource::Footage { item } => Some(item),
+            _ => None,
+        });
     let item = from_layer.or_else(|| s.state.project_selection.first().copied())?;
     match &s.project.item(item)?.kind {
         ItemKind::Footage(f) if !f.path.is_empty() => Some(f.path.clone()),
@@ -808,7 +984,8 @@ fn original_path(s: &Session) -> Option<String> {
 }
 
 fn edit_original(s: &mut Session, _: &Value) -> Result<Value> {
-    let path = original_path(s).ok_or_else(|| super::bad("edit.editOriginal", "select a footage item or layer"))?;
+    let path = original_path(s)
+        .ok_or_else(|| super::bad("edit.editOriginal", "select a footage item or layer"))?;
     let url = super::layer_menu::file_url(&path);
     s.events.push(crate::Event::OpenUrl(url.clone()));
     Ok(json!({"url": url}))
@@ -822,10 +999,42 @@ fn purge(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("edit.undo", "Undo", ["Edit"], Some("Cmd+Z"), "{}", can_undo, undo),
-        cmd!("edit.redo", "Redo", ["Edit"], Some("Cmd+Shift+Z"), "{}", can_redo, redo),
-        cmd!("edit.cut", "Cut", ["Edit"], Some("Cmd+X"), "{layers?} (keyframes, effects or shape items when they are selected)", layers_or_keys, cut),
-        cmd!("edit.copy", "Copy", ["Edit"], Some("Cmd+C"), "{layers?} (keyframes, effects or shape items when they are selected)", layers_or_keys, copy),
+        cmd!(
+            "edit.undo",
+            "Undo",
+            ["Edit"],
+            Some("Cmd+Z"),
+            "{}",
+            can_undo,
+            undo
+        ),
+        cmd!(
+            "edit.redo",
+            "Redo",
+            ["Edit"],
+            Some("Cmd+Shift+Z"),
+            "{}",
+            can_redo,
+            redo
+        ),
+        cmd!(
+            "edit.cut",
+            "Cut",
+            ["Edit"],
+            Some("Cmd+X"),
+            "{layers?} (keyframes, effects or shape items when they are selected)",
+            layers_or_keys,
+            cut
+        ),
+        cmd!(
+            "edit.copy",
+            "Copy",
+            ["Edit"],
+            Some("Cmd+C"),
+            "{layers?} (keyframes, effects or shape items when they are selected)",
+            layers_or_keys,
+            copy
+        ),
         cmd!(
             "edit.copyWithPropertyLinks",
             "Copy with Property Links",
@@ -844,7 +1053,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_props_or_layers,
             |s, p| copy_links(s, p, true)
         ),
-        cmd!("edit.copyExpressionOnly", "Copy Expression Only", ["Edit"], None, "{}", has_props_or_layers, copy_expression_only),
+        cmd!(
+            "edit.copyExpressionOnly",
+            "Copy Expression Only",
+            ["Edit"],
+            None,
+            "{}",
+            has_props_or_layers,
+            copy_expression_only
+        ),
         cmd!(
             "edit.paste",
             "Paste",
@@ -863,20 +1080,124 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             paste_svg
         ),
-        cmd!("edit.pasteReversedKeyframes", "Paste Reversed Keyframes", ["Edit"], None, "{layers?, prop?|path?, time?}", has_key_clip, paste_reversed),
-        cmd!("edit.clear", "Clear", ["Edit"], Some("Delete"), "{layers?}", layers_or_keys, delete),
-        cmd!("edit.duplicate", "Duplicate", ["Edit"], Some("Cmd+D"), "{layers?} (effects or shape items when they are selected)", has_layers, duplicate),
-        cmd!("edit.splitLayer", "Split Layer", ["Edit"], Some("Cmd+Shift+D"), "{layers?}", has_layers, split),
-        cmd!("edit.liftWorkArea", "Lift Work Area", ["Edit"], None, "{layers?}", has_comp, lift),
-        cmd!("edit.extractWorkArea", "Extract Work Area", ["Edit"], None, "{layers?}", has_comp, extract),
-        cmd!("edit.selectAll", "Select All", ["Edit"], Some("Cmd+A"), "{}", has_comp, select_all),
-        cmd!("edit.deselectAll", "Deselect All", ["Edit"], Some("Cmd+Shift+A"), "{}", always_ok, deselect_all),
-        cmd!("edit.label", "Label", ["Edit", "Label"], None, "{label: Red|Yellow|Aqua|…, layers?, keys?, target?: layers}", always_ok, label),
-        cmd!("edit.selectLabelGroup", "Select Label Group", ["Edit", "Label"], None, "{}", has_props_or_layers_or_items, select_label_group),
-        cmd!("edit.purgeUndo", "Undo", ["Edit", "Purge"], None, "{}", always_ok, purge),
-        cmd!("edit.purge", "Purge", [], None, "{what?: all|memoryAndDisk|memory|disk|3d|image|snapshot}", always_ok, purge_caches),
+        cmd!(
+            "edit.pasteReversedKeyframes",
+            "Paste Reversed Keyframes",
+            ["Edit"],
+            None,
+            "{layers?, prop?|path?, time?}",
+            has_key_clip,
+            paste_reversed
+        ),
+        cmd!(
+            "edit.clear",
+            "Clear",
+            ["Edit"],
+            Some("Delete"),
+            "{layers?}",
+            layers_or_keys,
+            delete
+        ),
+        cmd!(
+            "edit.duplicate",
+            "Duplicate",
+            ["Edit"],
+            Some("Cmd+D"),
+            "{layers?} (effects or shape items when they are selected)",
+            has_layers,
+            duplicate
+        ),
+        cmd!(
+            "edit.splitLayer",
+            "Split Layer",
+            ["Edit"],
+            Some("Cmd+Shift+D"),
+            "{layers?}",
+            has_layers,
+            split
+        ),
+        cmd!(
+            "edit.liftWorkArea",
+            "Lift Work Area",
+            ["Edit"],
+            None,
+            "{layers?}",
+            has_comp,
+            lift
+        ),
+        cmd!(
+            "edit.extractWorkArea",
+            "Extract Work Area",
+            ["Edit"],
+            None,
+            "{layers?}",
+            has_comp,
+            extract
+        ),
+        cmd!(
+            "edit.selectAll",
+            "Select All",
+            ["Edit"],
+            Some("Cmd+A"),
+            "{}",
+            has_comp,
+            select_all
+        ),
+        cmd!(
+            "edit.deselectAll",
+            "Deselect All",
+            ["Edit"],
+            Some("Cmd+Shift+A"),
+            "{}",
+            always_ok,
+            deselect_all
+        ),
+        cmd!(
+            "edit.label",
+            "Label",
+            ["Edit", "Label"],
+            None,
+            "{label: Red|Yellow|Aqua|…, layers?, keys?, target?: layers}",
+            always_ok,
+            label
+        ),
+        cmd!(
+            "edit.selectLabelGroup",
+            "Select Label Group",
+            ["Edit", "Label"],
+            None,
+            "{}",
+            has_props_or_layers_or_items,
+            select_label_group
+        ),
+        cmd!(
+            "edit.purgeUndo",
+            "Undo",
+            ["Edit", "Purge"],
+            None,
+            "{}",
+            always_ok,
+            purge
+        ),
+        cmd!(
+            "edit.purge",
+            "Purge",
+            [],
+            None,
+            "{what?: all|memoryAndDisk|memory|disk|3d|image|snapshot}",
+            always_ok,
+            purge_caches
+        ),
         crate::query!("cache.diskStats", "Disk Cache Statistics", "{}", disk_stats),
-        cmd!("edit.editOriginal", "Edit Original...", ["Edit"], Some("Cmd+E"), "{}", has_selected_footage, edit_original),
+        cmd!(
+            "edit.editOriginal",
+            "Edit Original...",
+            ["Edit"],
+            Some("Cmd+E"),
+            "{}",
+            has_selected_footage,
+            edit_original
+        ),
         crate::query!(
             "edit.history.list",
             "History",
@@ -917,9 +1238,15 @@ fn history_goto(s: &mut Session, p: &Value) -> Result<Value> {
         }
     } else {
         let nodes = s.history_tree();
-        let id = match (p.get("id").and_then(Value::as_str), p.get("index").and_then(Value::as_u64)) {
+        let id = match (
+            p.get("id").and_then(Value::as_str),
+            p.get("index").and_then(Value::as_u64),
+        ) {
             (Some(id), _) => id.to_string(),
-            (None, Some(i)) => nodes.get(i as usize).map(|n| n.id.clone()).ok_or_else(|| super::bad(c, format!("no state {i} (0..{})", nodes.len())))?,
+            (None, Some(i)) => nodes
+                .get(i as usize)
+                .map(|n| n.id.clone())
+                .ok_or_else(|| super::bad(c, format!("no state {i} (0..{})", nodes.len())))?,
             _ => return Err(super::bad(c, "give `index`, `id` or `steps`")),
         };
         if !s.goto_history(&id) {
@@ -932,7 +1259,11 @@ fn history_goto(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn layers_or_keys(s: &Session) -> std::result::Result<(), String> {
-    if !s.state.selected_keys.is_empty() || !s.state.selected_vertices.is_empty() { super::has_comp(s) } else { has_layers(s) }
+    if !s.state.selected_keys.is_empty() || !s.state.selected_vertices.is_empty() {
+        super::has_comp(s)
+    } else {
+        has_layers(s)
+    }
 }
 
 fn always_ok(_: &Session) -> std::result::Result<(), String> {
@@ -949,14 +1280,24 @@ mod tests {
         let mut s = crate::Session::default();
         let id = s
             .edit("add", None, |p, _| {
-                let f = effectcraft_project::Footage { path: "/clips/take #1.mov".into(), ..Default::default() };
-                Ok(p.add_item("take", effectcraft_color::Label::Lavender, None, effectcraft_project::ItemKind::Footage(f)))
+                let f = effectcraft_project::Footage {
+                    path: "/clips/take #1.mov".into(),
+                    ..Default::default()
+                };
+                Ok(p.add_item(
+                    "take",
+                    effectcraft_color::Label::Lavender,
+                    None,
+                    effectcraft_project::ItemKind::Footage(f),
+                ))
             })
             .unwrap();
         s.state.project_selection = vec![id];
         s.drain_events();
         let r = s.execute("edit.editOriginal", json!({})).unwrap();
         assert_eq!(r["url"], "file:///clips/take%20%231.mov");
-        assert!(s.drain_events().iter().any(|e| matches!(e, crate::Event::OpenUrl(u) if u == "file:///clips/take%20%231.mov")));
+        assert!(s.drain_events().iter().any(
+            |e| matches!(e, crate::Event::OpenUrl(u) if u == "file:///clips/take%20%231.mov")
+        ));
     }
 }

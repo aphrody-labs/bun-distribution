@@ -6,12 +6,17 @@
 //! a preserved block is written back byte-identical while it still decodes to the layer's
 //! current model; otherwise it is regenerated from the model.
 
-use photocraft_doc::{Fill, FillRule, Knot, LineCap, LineJoin, LiveShape, Path, PathOp, ShapeLayer, ShapeStroke, StrokeAlign, Subpath, VectorMask};
+use photocraft_doc::{
+    Fill, FillRule, Knot, LineCap, LineJoin, LiveShape, Path, PathOp, ShapeLayer, ShapeStroke,
+    StrokeAlign, Subpath, VectorMask,
+};
 use photocraft_geom::Point;
 use photocraft_psd::descriptor::{Descriptor, Id, Value, VersionedDescriptor};
 use photocraft_psd::path::{PathData, PsdKnot, PsdSubpath, VectorMaskBlock};
 
-use crate::blocks::{bool_of, enum_of, fill_from_desc, fill_to_desc, get_desc, num, parse_prefix_versioned};
+use crate::blocks::{
+    bool_of, enum_of, fill_from_desc, fill_to_desc, get_desc, num, parse_prefix_versioned,
+};
 
 /// Saved path resource ids (Adobe spec: 2000–2997).
 pub const SAVED_PATHS: std::ops::RangeInclusive<u16> = 2000..=2997;
@@ -51,10 +56,23 @@ pub fn path_from_records(p: &PathData, w: u32, h: u32) -> Path {
         .map(|s| Subpath {
             closed: s.closed,
             op: op_from_psd(s.operation),
-            knots: s.knots.iter().map(|k| Knot { anchor: pt(k.anchor), in_ctrl: pt(k.pre), out_ctrl: pt(k.post), smooth: k.linked }).collect(),
+            knots: s
+                .knots
+                .iter()
+                .map(|k| Knot {
+                    anchor: pt(k.anchor),
+                    in_ctrl: pt(k.pre),
+                    out_ctrl: pt(k.post),
+                    smooth: k.linked,
+                })
+                .collect(),
         })
         .collect();
-    Path { subpaths, fill_rule: FillRule::NonZero, inverted: p.initial_fill() }
+    Path {
+        subpaths,
+        fill_rule: FillRule::NonZero,
+        inverted: p.initial_fill(),
+    }
 }
 
 /// Model path → path records.
@@ -67,7 +85,16 @@ pub fn path_to_records(p: &Path, w: u32, h: u32) -> PathData {
         .map(|s| PsdSubpath {
             closed: s.closed,
             operation: op_to_psd(s.op),
-            knots: s.knots.iter().map(|k| PsdKnot { linked: k.smooth, pre: fr(k.in_ctrl), anchor: fr(k.anchor), post: fr(k.out_ctrl) }).collect(),
+            knots: s
+                .knots
+                .iter()
+                .map(|k| PsdKnot {
+                    linked: k.smooth,
+                    pre: fr(k.in_ctrl),
+                    anchor: fr(k.anchor),
+                    post: fr(k.out_ctrl),
+                })
+                .collect(),
         })
         .collect();
     PathData::from_subpaths(&subs, p.inverted)
@@ -75,7 +102,9 @@ pub fn path_to_records(p: &Path, w: u32, h: u32) -> PathData {
 
 /// Path from a saved-path / work-path resource.
 pub fn path_from_resource(data: &[u8], w: u32, h: u32) -> Option<Path> {
-    PathData::from_bytes(data).ok().map(|p| path_from_records(&p, w, h))
+    PathData::from_bytes(data)
+        .ok()
+        .map(|p| path_from_records(&p, w, h))
 }
 
 /// Layer vector data (`vmsk`/`vsms`) → model path, with Photoshop's reading of the records
@@ -97,7 +126,10 @@ fn layer_path_from_records(p: &PathData, w: u32, h: u32) -> Path {
     }
     // `path_from_records` maps -1 to `PathOp::Join` (the component's operation is its first
     // subpath's); a leading -1 acts as the first component.
-    path.inverted = path.subpaths.first().is_some_and(|s| s.op == PathOp::Subtract);
+    path.inverted = path
+        .subpaths
+        .first()
+        .is_some_and(|s| s.op == PathOp::Subtract);
     if path.inverted {
         for s in path.subpaths.iter_mut().skip(1) {
             s.op = match s.op {
@@ -141,7 +173,12 @@ pub fn vmsk_bytes(path: &Path, flags: u32, w: u32, h: u32) -> Vec<u8> {
     {
         first.op = PathOp::Combine;
     }
-    VectorMaskBlock { version: 3, flags, path: path_to_records(&p, w, h) }.to_bytes()
+    VectorMaskBlock {
+        version: 3,
+        flags,
+        path: path_to_records(&p, w, h),
+    }
+    .to_bytes()
 }
 
 /// A layer's vector mask from its `vmsk`/`vsms` block. A vector mask without subpaths reveals
@@ -179,7 +216,8 @@ pub fn vector_mask_bytes(m: &VectorMask, w: u32, h: u32) -> Vec<u8> {
 
 /// Compares the parts of a vector mask stored in the block (density/feather live elsewhere).
 pub fn vector_mask_block_matches(data: &[u8], m: &VectorMask, w: u32, h: u32) -> bool {
-    vector_mask_from_block(data, w, h).is_some_and(|b| b.path == m.path && b.enabled == m.enabled && b.linked == m.linked)
+    vector_mask_from_block(data, w, h)
+        .is_some_and(|b| b.path == m.path && b.enabled == m.enabled && b.linked == m.linked)
 }
 
 // ---------------------------------------------------------------------------
@@ -225,8 +263,14 @@ fn content_fill(d: &Descriptor) -> Option<Fill> {
 
 fn unit_px(v: Option<&Value>, dpi: f32) -> Option<f64> {
     match v? {
-        Value::UnitFloat { unit: [b'#', b'P', b'n', b't'], value } => Some(value * f64::from(dpi) / 72.0),
-        Value::UnitFloat { unit: [b'#', b'M', b'l', b'm'], value } => Some(value * f64::from(dpi) / 25.4),
+        Value::UnitFloat {
+            unit: [b'#', b'P', b'n', b't'],
+            value,
+        } => Some(value * f64::from(dpi) / 72.0),
+        Value::UnitFloat {
+            unit: [b'#', b'M', b'l', b'm'],
+            value,
+        } => Some(value * f64::from(dpi) / 25.4),
         other => num(Some(other)),
     }
 }
@@ -235,7 +279,10 @@ pub fn parse_vstk(data: &[u8], dpi: f32) -> Option<VstkInfo> {
     let d = parse_prefix_versioned(data)?;
     let fill_enabled = !matches!(d.get("fillEnabled"), Some(Value::Boolean(false)));
     if !bool_of(&d, "strokeEnabled") {
-        return Some(VstkInfo { stroke: None, fill_enabled });
+        return Some(VstkInfo {
+            stroke: None,
+            fill_enabled,
+        });
     }
     let e = |k: &str| enum_of(&d, k).map(<[u8]>::to_vec).unwrap_or_default();
     let cap = match &e("strokeStyleLineCapType")[..] {
@@ -254,10 +301,16 @@ pub fn parse_vstk(data: &[u8], dpi: f32) -> Option<VstkInfo> {
         _ => StrokeAlign::Center,
     };
     let dashes = match d.get("strokeStyleLineDashSet") {
-        Some(Value::List(l)) => l.iter().filter_map(|v| num(Some(v))).map(|v| v as f32).collect(),
+        Some(Value::List(l)) => l
+            .iter()
+            .filter_map(|v| num(Some(v)))
+            .map(|v| v as f32)
+            .collect(),
         _ => Vec::new(),
     };
-    let paint = get_desc(&d, "strokeStyleContent").and_then(content_fill).unwrap_or(Fill::Solid(photocraft_color::Color::BLACK));
+    let paint = get_desc(&d, "strokeStyleContent")
+        .and_then(content_fill)
+        .unwrap_or(Fill::Solid(photocraft_color::Color::BLACK));
     let stroke = ShapeStroke {
         width: unit_px(d.get("strokeStyleLineWidth"), dpi).unwrap_or(1.0) as f32,
         paint,
@@ -269,11 +322,17 @@ pub fn parse_vstk(data: &[u8], dpi: f32) -> Option<VstkInfo> {
         dashes,
         dash_offset: num(d.get("strokeStyleLineDashOffset")).unwrap_or(0.0) as f32,
     };
-    Some(VstkInfo { stroke: Some(stroke), fill_enabled })
+    Some(VstkInfo {
+        stroke: Some(stroke),
+        fill_enabled,
+    })
 }
 
 fn en(ty: &str, v: &str) -> Value {
-    Value::Enumerated { type_id: Id::new(ty), value: Id::new(v) }
+    Value::Enumerated {
+        type_id: Id::new(ty),
+        value: Id::new(v),
+    }
 }
 
 pub fn vstk_bytes(stroke: Option<&ShapeStroke>, fill_enabled: bool, dpi: f32) -> Vec<u8> {
@@ -285,14 +344,32 @@ pub fn vstk_bytes(stroke: Option<&ShapeStroke>, fill_enabled: bool, dpi: f32) ->
         Fill::Gradient { .. } => "gradientLayer",
         Fill::Pattern { .. } => "patternLayer",
     };
-    let content = Descriptor { class_id: Id::new(class), ..content };
+    let content = Descriptor {
+        class_id: Id::new(class),
+        ..content
+    };
     let d = Descriptor::new("strokeStyle")
         .with("strokeStyleVersion", Value::Integer(2))
         .with("strokeEnabled", Value::Boolean(stroke.is_some()))
         .with("fillEnabled", Value::Boolean(fill_enabled))
-        .with("strokeStyleLineWidth", Value::UnitFloat { unit: *b"#Pxl", value: f64::from(s.width) })
-        .with("strokeStyleLineDashOffset", Value::UnitFloat { unit: *b"#Pnt", value: f64::from(s.dash_offset) })
-        .with("strokeStyleMiterLimit", Value::Double(f64::from(s.miter_limit)))
+        .with(
+            "strokeStyleLineWidth",
+            Value::UnitFloat {
+                unit: *b"#Pxl",
+                value: f64::from(s.width),
+            },
+        )
+        .with(
+            "strokeStyleLineDashOffset",
+            Value::UnitFloat {
+                unit: *b"#Pnt",
+                value: f64::from(s.dash_offset),
+            },
+        )
+        .with(
+            "strokeStyleMiterLimit",
+            Value::Double(f64::from(s.miter_limit)),
+        )
         .with(
             "strokeStyleLineCapType",
             en(
@@ -328,9 +405,26 @@ pub fn vstk_bytes(stroke: Option<&ShapeStroke>, fill_enabled: bool, dpi: f32) ->
         )
         .with("strokeStyleScaleLock", Value::Boolean(false))
         .with("strokeStyleStrokeAdjust", Value::Boolean(false))
-        .with("strokeStyleLineDashSet", Value::List(s.dashes.iter().map(|v| Value::UnitFloat { unit: *b"#Nne", value: f64::from(*v) }).collect()))
+        .with(
+            "strokeStyleLineDashSet",
+            Value::List(
+                s.dashes
+                    .iter()
+                    .map(|v| Value::UnitFloat {
+                        unit: *b"#Nne",
+                        value: f64::from(*v),
+                    })
+                    .collect(),
+            ),
+        )
         .with("strokeStyleBlendMode", en("BlnM", "Nrml"))
-        .with("strokeStyleOpacity", Value::UnitFloat { unit: *b"#Prc", value: f64::from(s.opacity * 100.0) })
+        .with(
+            "strokeStyleOpacity",
+            Value::UnitFloat {
+                unit: *b"#Prc",
+                value: f64::from(s.opacity * 100.0),
+            },
+        )
         .with("strokeStyleContent", Value::Descriptor(content))
         .with("strokeStyleResolution", Value::Double(f64::from(dpi)));
     VersionedDescriptor::new(d).to_bytes()
@@ -342,7 +436,12 @@ pub fn vstk_bytes(stroke: Option<&ShapeStroke>, fill_enabled: bool, dpi: f32) ->
 
 fn rect_of(d: &Descriptor) -> Option<[f64; 4]> {
     let b = get_desc(d, "keyOriginShapeBBox")?;
-    let (t, l, bt, r) = (num(b.get("Top "))?, num(b.get("Left"))?, num(b.get("Btom"))?, num(b.get("Rght"))?);
+    let (t, l, bt, r) = (
+        num(b.get("Top "))?,
+        num(b.get("Left"))?,
+        num(b.get("Btom"))?,
+        num(b.get("Rght"))?,
+    );
     Some([l, t, r - l, bt - t])
 }
 
@@ -355,14 +454,27 @@ fn point_of(d: &Descriptor, key: &str) -> Option<[f64; 2]> {
 /// untransformed origination maps to a [`LiveShape`].
 pub fn live_from_vogk(data: &[u8]) -> Option<LiveShape> {
     let d = parse_prefix_versioned(data.get(4..)?)?;
-    let Some(Value::List(list)) = d.get("keyDescriptorList") else { return None };
-    let [Value::Descriptor(o)] = &list[..] else { return None };
+    let Some(Value::List(list)) = d.get("keyDescriptorList") else {
+        return None;
+    };
+    let [Value::Descriptor(o)] = &list[..] else {
+        return None;
+    };
     if bool_of(o, "keyShapeInvalidated") {
         return None;
     }
     if let Some(t) = get_desc(o, "Trnf") {
         let g = |k: &str, dv: f64| num(t.get(k)).unwrap_or(dv);
-        let ident = [("xx", 1.0), ("xy", 0.0), ("yx", 0.0), ("yy", 1.0), ("tx", 0.0), ("ty", 0.0)].iter().all(|(k, v)| (g(k, *v) - v).abs() < 1e-9);
+        let ident = [
+            ("xx", 1.0),
+            ("xy", 0.0),
+            ("yx", 0.0),
+            ("yy", 1.0),
+            ("tx", 0.0),
+            ("ty", 0.0),
+        ]
+        .iter()
+        .all(|(k, v)| (g(k, *v) - v).abs() < 1e-9);
         if !ident {
             return None;
         }
@@ -372,11 +484,22 @@ pub fn live_from_vogk(data: &[u8]) -> Option<LiveShape> {
         _ => return None,
     };
     match ty {
-        1 => Some(LiveShape::Rect { rect: rect_of(o)?, radii: [0.0; 4] }),
+        1 => Some(LiveShape::Rect {
+            rect: rect_of(o)?,
+            radii: [0.0; 4],
+        }),
         2 => {
             let r = get_desc(o, "keyOriginRRectRadii")?;
             let g = |k: &str| num(r.get(k)).unwrap_or(0.0);
-            Some(LiveShape::Rect { rect: rect_of(o)?, radii: [g("topLeft"), g("topRight"), g("bottomRight"), g("bottomLeft")] })
+            Some(LiveShape::Rect {
+                rect: rect_of(o)?,
+                radii: [
+                    g("topLeft"),
+                    g("topRight"),
+                    g("bottomRight"),
+                    g("bottomLeft"),
+                ],
+            })
         }
         5 => Some(LiveShape::Ellipse { rect: rect_of(o)? }),
         4 => Some(LiveShape::Line {
@@ -389,7 +512,10 @@ pub fn live_from_vogk(data: &[u8]) -> Option<LiveShape> {
 }
 
 fn px(v: f64) -> Value {
-    Value::UnitFloat { unit: *b"#Pxl", value: v }
+    Value::UnitFloat {
+        unit: *b"#Pxl",
+        value: v,
+    }
 }
 
 /// `vogk` for a live shape (None for kinds Photoshop has no origination type for here).
@@ -404,9 +530,15 @@ pub fn vogk_bytes(s: &LiveShape, dpi: f32) -> Option<Vec<u8>> {
                 .with("Rght", px(r[0] + r[2])),
         )
     };
-    let base = |ty: i32| Descriptor::new("null").with("keyOriginType", Value::Integer(ty)).with("keyOriginResolution", Value::Double(f64::from(dpi)));
+    let base = |ty: i32| {
+        Descriptor::new("null")
+            .with("keyOriginType", Value::Integer(ty))
+            .with("keyOriginResolution", Value::Double(f64::from(dpi)))
+    };
     let o = match s {
-        LiveShape::Rect { rect, radii } if radii.iter().all(|r| *r == 0.0) => base(1).with("keyOriginShapeBBox", bbox(*rect)),
+        LiveShape::Rect { rect, radii } if radii.iter().all(|r| *r == 0.0) => {
+            base(1).with("keyOriginShapeBBox", bbox(*rect))
+        }
         LiveShape::Rect { rect, radii } => base(2)
             .with(
                 "keyOriginRRectRadii",
@@ -422,8 +554,19 @@ pub fn vogk_bytes(s: &LiveShape, dpi: f32) -> Option<Vec<u8>> {
             .with("keyOriginShapeBBox", bbox(*rect)),
         LiveShape::Ellipse { rect } => base(5).with("keyOriginShapeBBox", bbox(*rect)),
         LiveShape::Line { from, to, weight } => {
-            let pnt = |p: [f64; 2]| Value::Descriptor(Descriptor::new("Pnt ").with("Hrzn", Value::Double(p[0])).with("Vrtc", Value::Double(p[1])));
-            let r = [from[0].min(to[0]), from[1].min(to[1]), (from[0] - to[0]).abs(), (from[1] - to[1]).abs()];
+            let pnt = |p: [f64; 2]| {
+                Value::Descriptor(
+                    Descriptor::new("Pnt ")
+                        .with("Hrzn", Value::Double(p[0]))
+                        .with("Vrtc", Value::Double(p[1])),
+                )
+            };
+            let r = [
+                from[0].min(to[0]),
+                from[1].min(to[1]),
+                (from[0] - to[0]).abs(),
+                (from[1] - to[1]).abs(),
+            ];
             base(4)
                 .with("keyOriginShapeBBox", bbox(r))
                 .with("keyOriginLineEnd", pnt(*to))
@@ -438,7 +581,8 @@ pub fn vogk_bytes(s: &LiveShape, dpi: f32) -> Option<Vec<u8>> {
         LiveShape::Polygon { .. } => return None,
     };
     let o = o.with("keyOriginIndex", Value::Integer(0));
-    let d = Descriptor::new("null").with("keyDescriptorList", Value::List(vec![Value::Descriptor(o)]));
+    let d =
+        Descriptor::new("null").with("keyDescriptorList", Value::List(vec![Value::Descriptor(o)]));
     let mut out = 1u32.to_be_bytes().to_vec();
     out.extend(VersionedDescriptor::new(d).to_bytes());
     Some(out)
@@ -449,7 +593,13 @@ pub fn vogk_bytes(s: &LiveShape, dpi: f32) -> Option<Vec<u8>> {
 // ---------------------------------------------------------------------------
 
 /// Fills the typed parts of a shape layer from its PSD blocks.
-pub fn shape_from_blocks(sh: &mut ShapeLayer, block: &dyn Fn(&[u8; 4]) -> Option<Vec<u8>>, w: u32, h: u32, dpi: f32) {
+pub fn shape_from_blocks(
+    sh: &mut ShapeLayer,
+    block: &dyn Fn(&[u8; 4]) -> Option<Vec<u8>>,
+    w: u32,
+    h: u32,
+    dpi: f32,
+) {
     if let Some(d) = block(b"vsms").or_else(|| block(b"vmsk"))
         && let Some((p, _)) = path_from_vmsk(&d, w, h)
     {
@@ -478,7 +628,8 @@ fn has_fill_block(raw: &[([u8; 4], Vec<u8>)]) -> bool {
 /// Rewrites the vector blocks of a shape layer in `raw` (key, data) to match the model:
 /// blocks that still decode to the model are kept byte-identical.
 pub fn shape_blocks(sh: &ShapeLayer, raw: &mut Vec<([u8; 4], Vec<u8>)>, w: u32, h: u32, dpi: f32) {
-    let find = |raw: &Vec<([u8; 4], Vec<u8>)>, k: &[u8; 4]| raw.iter().position(|(key, _)| key == k);
+    let find =
+        |raw: &Vec<([u8; 4], Vec<u8>)>, k: &[u8; 4]| raw.iter().position(|(key, _)| key == k);
     // Path.
     let pos = find(raw, b"vsms").or_else(|| find(raw, b"vmsk"));
     let from_raw = |d: &[u8]| path_from_vmsk(d, w, h).map(|(p, _)| p);
@@ -506,19 +657,30 @@ pub fn shape_blocks(sh: &ShapeLayer, raw: &mut Vec<([u8; 4], Vec<u8>)>, w: u32, 
         }
     }
     // Photoshop shapes always carry fill content, even with the fill turned off.
-    let present = raw.iter().any(|(k, _)| matches!(k, b"vscg" | b"SoCo" | b"GdFl" | b"PtFl"));
+    let present = raw
+        .iter()
+        .any(|(k, _)| matches!(k, b"vscg" | b"SoCo" | b"GdFl" | b"PtFl"));
     if sh.fill.is_none() && !present {
-        raw.push((*b"vscg", vscg_bytes(&Fill::Solid(photocraft_color::Color::BLACK))));
+        raw.push((
+            *b"vscg",
+            vscg_bytes(&Fill::Solid(photocraft_color::Color::BLACK)),
+        ));
     }
     // Stroke (+ fill enabled flag). A fill we could not decode counts as unchanged.
     let undecodable_fill = sh.fill.is_none() && present && !has_fill_block(raw);
-    let same = |v: &VstkInfo| v.stroke == sh.stroke && (v.fill_enabled == sh.fill.is_some() || (v.fill_enabled && undecodable_fill));
+    let same = |v: &VstkInfo| {
+        v.stroke == sh.stroke
+            && (v.fill_enabled == sh.fill.is_some() || (v.fill_enabled && undecodable_fill))
+    };
     match find(raw, b"vstk") {
         Some(i) if parse_vstk(&raw[i].1, dpi).as_ref().is_some_and(same) => {}
         Some(i) => raw[i].1 = vstk_bytes(sh.stroke.as_ref(), sh.fill.is_some(), dpi),
         // "No fill" needs a vstk only when a fill block would otherwise paint.
         None if sh.stroke.is_some() || (sh.fill.is_none() && has_fill_block(raw)) => {
-            raw.push((*b"vstk", vstk_bytes(sh.stroke.as_ref(), sh.fill.is_some(), dpi)));
+            raw.push((
+                *b"vstk",
+                vstk_bytes(sh.stroke.as_ref(), sh.fill.is_some(), dpi),
+            ));
         }
         None => {}
     }
@@ -550,7 +712,11 @@ mod tests {
                 op: PathOp::Combine,
                 knots: vec![
                     Knot::corner(10.0, 10.0),
-                    Knot::smooth(Point::new(50.0, 20.0), Point::new(40.0, 10.0), Point::new(60.0, 30.0)),
+                    Knot::smooth(
+                        Point::new(50.0, 20.0),
+                        Point::new(40.0, 10.0),
+                        Point::new(60.0, 30.0),
+                    ),
                     Knot::corner(20.0, 40.0),
                 ],
             },
@@ -566,7 +732,13 @@ mod tests {
         let rec = path_to_records(&p, 64, 64);
         let back = path_from_records(&rec, 64, 64);
         assert_eq!(back, p);
-        for op in [PathOp::Combine, PathOp::Subtract, PathOp::Intersect, PathOp::Exclude, PathOp::Join] {
+        for op in [
+            PathOp::Combine,
+            PathOp::Subtract,
+            PathOp::Intersect,
+            PathOp::Exclude,
+            PathOp::Join,
+        ] {
             assert_eq!(op_from_psd(op_to_psd(op)), op);
         }
         assert_eq!(op_from_psd(-1), PathOp::Join);
@@ -577,10 +749,30 @@ mod tests {
         let square = |x: f64| PsdSubpath {
             closed: true,
             operation: 0,
-            knots: [(x, 0.25), (x + 0.25, 0.25), (x + 0.25, 0.5), (x, 0.5)].iter().map(|&p| PsdKnot { linked: false, pre: p, anchor: p, post: p }).collect(),
+            knots: [(x, 0.25), (x + 0.25, 0.25), (x + 0.25, 0.5), (x, 0.5)]
+                .iter()
+                .map(|&p| PsdKnot {
+                    linked: false,
+                    pre: p,
+                    anchor: p,
+                    post: p,
+                })
+                .collect(),
         };
-        let subs: Vec<PsdSubpath> = ops.iter().enumerate().map(|(i, &op)| PsdSubpath { operation: op, ..square(0.1 * i as f64) }).collect();
-        VectorMaskBlock { version: 3, flags: 0, path: PathData::from_subpaths(&subs, initial_fill) }.to_bytes()
+        let subs: Vec<PsdSubpath> = ops
+            .iter()
+            .enumerate()
+            .map(|(i, &op)| PsdSubpath {
+                operation: op,
+                ..square(0.1 * i as f64)
+            })
+            .collect();
+        VectorMaskBlock {
+            version: 3,
+            flags: 0,
+            path: PathData::from_subpaths(&subs, initial_fill),
+        }
+        .to_bytes()
     }
 
     /// psd-tools vector-mask.psd / vector-mask2.psd / vector-mask3.psd: Photoshop's initial-fill
@@ -594,7 +786,15 @@ mod tests {
         // Leading subtract: everything but the shape; later ops become their complements.
         let (p, _) = path_from_vmsk(&vmsk_with(true, &[2, 1, 2, 0]), 100, 100).unwrap();
         assert!(p.inverted);
-        assert_eq!(p.subpaths.iter().map(|s| s.op).collect::<Vec<_>>(), [PathOp::Combine, PathOp::Subtract, PathOp::Combine, PathOp::Exclude]);
+        assert_eq!(
+            p.subpaths.iter().map(|s| s.op).collect::<Vec<_>>(),
+            [
+                PathOp::Combine,
+                PathOp::Subtract,
+                PathOp::Combine,
+                PathOp::Exclude
+            ]
+        );
         // -1 continues the previous component (filled together with it, then subtracted).
         let (p, _) = path_from_vmsk(&vmsk_with(false, &[1, 2, -1]), 100, 100).unwrap();
         assert_eq!(p.subpaths[2].op, PathOp::Join);
@@ -602,22 +802,44 @@ mod tests {
         // Under a leading subtract the joined subpaths stay with their (first) component.
         let (p, _) = path_from_vmsk(&vmsk_with(false, &[2, -1, 1]), 100, 100).unwrap();
         assert!(p.inverted);
-        assert_eq!(p.subpaths.iter().map(|s| s.op).collect::<Vec<_>>(), [PathOp::Combine, PathOp::Join, PathOp::Subtract]);
+        assert_eq!(
+            p.subpaths.iter().map(|s| s.op).collect::<Vec<_>>(),
+            [PathOp::Combine, PathOp::Join, PathOp::Subtract]
+        );
         // No subpaths: a vector mask with initial fill reveals all, without hides all; a shape
         // with initial fill covers everything.
         let reveal = vector_mask_from_block(&vmsk_with(true, &[]), 100, 100).unwrap();
-        assert_eq!(photocraft_vector::vector_mask_values(&reveal, photocraft_geom::Rect::new(0, 0, 2, 2)), vec![1.0; 4]);
+        assert_eq!(
+            photocraft_vector::vector_mask_values(&reveal, photocraft_geom::Rect::new(0, 0, 2, 2)),
+            vec![1.0; 4]
+        );
         let hide = vector_mask_from_block(&vmsk_with(false, &[]), 100, 100).unwrap();
-        assert_eq!(photocraft_vector::vector_mask_values(&hide, photocraft_geom::Rect::new(0, 0, 2, 2)), vec![0.0; 4]);
-        assert!(path_from_vmsk(&vmsk_with(true, &[]), 100, 100).unwrap().0.inverted);
+        assert_eq!(
+            photocraft_vector::vector_mask_values(&hide, photocraft_geom::Rect::new(0, 0, 2, 2)),
+            vec![0.0; 4]
+        );
+        assert!(
+            path_from_vmsk(&vmsk_with(true, &[]), 100, 100)
+                .unwrap()
+                .0
+                .inverted
+        );
         // Our own writer round-trips each case.
         for m in [reveal, hide] {
-            assert_eq!(vector_mask_from_block(&vector_mask_bytes(&m, 100, 100), 100, 100), Some(m));
+            assert_eq!(
+                vector_mask_from_block(&vector_mask_bytes(&m, 100, 100), 100, 100),
+                Some(m)
+            );
         }
         let mut lead = sample_path();
         lead.subpaths[0].op = PathOp::Subtract;
-        let back = path_from_vmsk(&vmsk_bytes(&lead, 0, 64, 64), 64, 64).unwrap().0;
-        assert!(!back.inverted, "a stored leading subtract is drawn as combine by the model");
+        let back = path_from_vmsk(&vmsk_bytes(&lead, 0, 64, 64), 64, 64)
+            .unwrap()
+            .0;
+        assert!(
+            !back.inverted,
+            "a stored leading subtract is drawn as combine by the model"
+        );
     }
 
     #[test]
@@ -663,15 +885,37 @@ mod tests {
     #[test]
     fn vogk_roundtrip() {
         for s in [
-            LiveShape::Rect { rect: [1.0, 2.0, 30.0, 40.0], radii: [0.0; 4] },
-            LiveShape::Rect { rect: [1.0, 2.0, 30.0, 40.0], radii: [1.0, 2.0, 3.0, 4.0] },
-            LiveShape::Ellipse { rect: [5.0, 6.0, 7.0, 8.0] },
-            LiveShape::Line { from: [0.0, 10.0], to: [20.0, 0.0], weight: 3.0 },
+            LiveShape::Rect {
+                rect: [1.0, 2.0, 30.0, 40.0],
+                radii: [0.0; 4],
+            },
+            LiveShape::Rect {
+                rect: [1.0, 2.0, 30.0, 40.0],
+                radii: [1.0, 2.0, 3.0, 4.0],
+            },
+            LiveShape::Ellipse {
+                rect: [5.0, 6.0, 7.0, 8.0],
+            },
+            LiveShape::Line {
+                from: [0.0, 10.0],
+                to: [20.0, 0.0],
+                weight: 3.0,
+            },
         ] {
             let b = vogk_bytes(&s, 72.0).unwrap();
             assert_eq!(live_from_vogk(&b), Some(s));
         }
-        assert!(vogk_bytes(&LiveShape::Polygon { rect: [0.0; 4], sides: 5, star_ratio: 1.0 }, 72.0).is_none());
+        assert!(
+            vogk_bytes(
+                &LiveShape::Polygon {
+                    rect: [0.0; 4],
+                    sides: 5,
+                    star_ratio: 1.0
+                },
+                72.0
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -680,7 +924,9 @@ mod tests {
             path: sample_path(),
             fill: Some(Fill::Solid(Color::rgb(0.0, 1.0, 0.0))),
             stroke: Some(ShapeStroke::default()),
-            live: Some(LiveShape::Ellipse { rect: [0.0, 0.0, 10.0, 10.0] }),
+            live: Some(LiveShape::Ellipse {
+                rect: [0.0, 0.0, 10.0, 10.0],
+            }),
             ..Default::default()
         };
         let mut raw = Vec::new();
@@ -699,7 +945,11 @@ mod tests {
         // Edit: path changes → vmsk regenerated, live dropped when polygon.
         let mut edited = sh.clone();
         edited.path.subpaths.pop();
-        edited.live = Some(LiveShape::Polygon { rect: [0.0; 4], sides: 3, star_ratio: 1.0 });
+        edited.live = Some(LiveShape::Polygon {
+            rect: [0.0; 4],
+            sides: 3,
+            star_ratio: 1.0,
+        });
         shape_blocks(&edited, &mut raw, 64, 64, 72.0);
         assert!(!raw.iter().any(|(k, _)| k == b"vogk"));
         let (p, _) = path_from_vmsk(&raw[0].1, 64, 64).unwrap();

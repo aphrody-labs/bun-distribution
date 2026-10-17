@@ -8,7 +8,10 @@ use std::path::Path;
 /// The `version = "…"` value inside `[workspace.package]`.
 pub fn read(manifest: &str) -> Result<String, String> {
     let (_, line) = find_line(manifest)?;
-    let v = line.split_once('=').map(|(_, v)| v.trim().trim_matches('"').to_string()).unwrap_or_default();
+    let v = line
+        .split_once('=')
+        .map(|(_, v)| v.trim().trim_matches('"').to_string())
+        .unwrap_or_default();
     if v.is_empty() {
         return Err("empty [workspace.package] version".into());
     }
@@ -45,11 +48,20 @@ pub fn validate(v: &str) -> Result<(), String> {
         None => (v, None),
     };
     let nums: Vec<&str> = core.split('.').collect();
-    if nums.len() != 3 || nums.iter().any(|n| n.is_empty() || !n.bytes().all(|b| b.is_ascii_digit()) || (n.len() > 1 && n.starts_with('0'))) {
+    if nums.len() != 3
+        || nums.iter().any(|n| {
+            n.is_empty()
+                || !n.bytes().all(|b| b.is_ascii_digit())
+                || (n.len() > 1 && n.starts_with('0'))
+        })
+    {
         return bad();
     }
     if let Some(p) = pre
-        && (p.is_empty() || p.split('.').any(|id| id.is_empty() || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')))
+        && (p.is_empty()
+            || p.split('.').any(|id| {
+                id.is_empty() || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+            }))
     {
         return bad();
     }
@@ -77,7 +89,8 @@ fn find_line(manifest: &str) -> Result<(usize, &str), String> {
 
 pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
     let path = root.join("Cargo.toml");
-    let text = std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
+    let text =
+        std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
     match args {
         [] => {
             println!("{}", read(&text)?);
@@ -88,7 +101,8 @@ pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
             let updated = replace(&text, new)?;
             // Write atomically: a half-written root manifest breaks every build in the workspace.
             let tmp = root.join("target").join("Cargo.toml.xtask-version");
-            std::fs::create_dir_all(root.join("target")).map_err(|e| format!("create target/: {e}"))?;
+            std::fs::create_dir_all(root.join("target"))
+                .map_err(|e| format!("create target/: {e}"))?;
             std::fs::write(&tmp, updated).map_err(|e| format!("write {}: {e}", tmp.display()))?;
             std::fs::rename(&tmp, &path).map_err(|e| format!("replace {}: {e}", path.display()))?;
             // Refresh the workspace members' entries in Cargo.lock (no dependency upgrades).
@@ -99,7 +113,14 @@ pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
                     .args(extra)
                     .status()
                     .map_err(|e| format!("cargo update: {e}"))?;
-                if st.success() { Ok(()) } else { Err(format!("cargo update --workspace {} failed", extra.join(" "))) }
+                if st.success() {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "cargo update --workspace {} failed",
+                        extra.join(" ")
+                    ))
+                }
             };
             if cargo_update(&["--offline"]).is_err() {
                 cargo_update(&[])?;
@@ -127,7 +148,10 @@ mod tests {
     fn replaces_only_the_workspace_version() {
         let out = replace(MANIFEST, "1.2.3-rc.1").unwrap();
         assert_eq!(read(&out).unwrap(), "1.2.3-rc.1");
-        assert_eq!(out, MANIFEST.replace("version = \"0.1.0\"", "version = \"1.2.3-rc.1\""));
+        assert_eq!(
+            out,
+            MANIFEST.replace("version = \"0.1.0\"", "version = \"1.2.3-rc.1\"")
+        );
         assert!(out.contains("foo = { version = \"1\" }"));
     }
 
@@ -140,10 +164,26 @@ mod tests {
 
     #[test]
     fn validates_versions() {
-        for ok in ["0.1.0", "1.20.300", "1.0.0-rc.1", "1.0.0-alpha", "1.0.0-x-y.2"] {
+        for ok in [
+            "0.1.0",
+            "1.20.300",
+            "1.0.0-rc.1",
+            "1.0.0-alpha",
+            "1.0.0-x-y.2",
+        ] {
             assert!(validate(ok).is_ok(), "{ok}");
         }
-        for bad in ["1.0", "1.0.0.0", "v1.0.0", "01.0.0", "1.0.0-", "1.0.0-a..b", "1.0.0+meta", "1.a.0", ""] {
+        for bad in [
+            "1.0",
+            "1.0.0.0",
+            "v1.0.0",
+            "01.0.0",
+            "1.0.0-",
+            "1.0.0-a..b",
+            "1.0.0+meta",
+            "1.a.0",
+            "",
+        ] {
             assert!(validate(bad).is_err(), "{bad}");
         }
         assert!(replace(MANIFEST, "nope").is_err());
@@ -157,8 +197,18 @@ mod tests {
 
     /// The `rust-version = "1.NN"` line of a manifest, as the minor number.
     fn minor_of_rust_version(manifest: &str) -> u32 {
-        let line = manifest.lines().find(|l| l.starts_with("rust-version = \"")).unwrap();
-        line.split('"').nth(1).unwrap().split('.').nth(1).unwrap().parse().unwrap()
+        let line = manifest
+            .lines()
+            .find(|l| l.starts_with("rust-version = \""))
+            .unwrap();
+        line.split('"')
+            .nth(1)
+            .unwrap()
+            .split('.')
+            .nth(1)
+            .unwrap()
+            .parse()
+            .unwrap()
     }
 
     #[test]

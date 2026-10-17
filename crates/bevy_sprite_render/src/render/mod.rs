@@ -1,30 +1,27 @@
 use core::ops::Range;
 
-use bevy_asset::{load_embedded_asset, AssetEvent, AssetId, AssetServer, Handle};
+use bevy_asset::{AssetEvent, AssetId, AssetServer, Handle, load_embedded_asset};
 use bevy_camera::CompositingSpace;
 use bevy_color::{ColorToComponents, LinearRgba};
 use bevy_core_pipeline::{
-    core_2d::{Transparent2d, CORE_2D_DEPTH_FORMAT},
+    core_2d::{CORE_2D_DEPTH_FORMAT, Transparent2d},
     tonemapping::{
-        get_lut_bind_group_layout_entries, get_lut_bindings, DebandDither, Tonemapping,
-        TonemappingLuts,
+        DebandDither, Tonemapping, TonemappingLuts, get_lut_bind_group_layout_entries,
+        get_lut_bindings,
     },
 };
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     prelude::*,
     query::ROQueryItem,
-    system::{lifetimeless::*, SystemParamItem},
+    system::{SystemParamItem, lifetimeless::*},
 };
 use bevy_image::Image;
 use bevy_math::{Affine3A, FloatOrd, Quat, Rect, Vec2, Vec4};
 use bevy_mesh::VertexBufferLayout;
 use bevy_platform::collections::HashMap;
 use bevy_render::{
-    camera::ExtractedCamera,
-    view::{RenderVisibleEntities, ResolvedCompositingSpace, RetainedViewEntity},
-};
-use bevy_render::{
+    Extract,
     render_asset::RenderAssets,
     render_phase::{
         DrawFunctions, PhaseItem, PhaseItemExtraIndex, RenderCommand, RenderCommandResult,
@@ -37,10 +34,13 @@ use bevy_render::{
     renderer::{RenderDevice, RenderQueue},
     texture::{FallbackImage, GpuImage},
     view::{
-        texture_format_from_code, texture_format_to_code, ExtractedView, Msaa, ViewUniform,
-        ViewUniformOffset, ViewUniforms,
+        ExtractedView, Msaa, ViewUniform, ViewUniformOffset, ViewUniforms,
+        texture_format_from_code, texture_format_to_code,
     },
-    Extract,
+};
+use bevy_render::{
+    camera::ExtractedCamera,
+    view::{RenderVisibleEntities, ResolvedCompositingSpace, RetainedViewEntity},
 };
 use bevy_shader::{Shader, ShaderDefVal};
 use bevy_sprite::Sprite;

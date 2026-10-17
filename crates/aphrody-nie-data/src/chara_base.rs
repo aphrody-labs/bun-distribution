@@ -104,7 +104,10 @@ pub fn parse_base_node(node: &Node<'_>) -> Option<CharaBase> {
     }
 
     // `[11]` gender : Int si présent, sinon défaut 1.
-    let gender = node.var(11).filter(|v| v.ty == "Int").map_or(1, |v| v.as_i64());
+    let gender = node
+        .var(11)
+        .filter(|v| v.ty == "Int")
+        .map_or(1, |v| v.as_i64());
 
     Some(CharaBase {
         chara_id: v0.as_hash(),
@@ -160,7 +163,8 @@ pub fn resolve_last_name<'a>(
     base: &CharaBase,
     nouns: &'a [crate::chara_text::ParsedNoun],
 ) -> Option<&'a str> {
-    base.last_name_hash.and_then(|h| crate::chara_text::find_name(nouns, h))
+    base.last_name_hash
+        .and_then(|h| crate::chara_text::find_name(nouns, h))
 }
 
 /// Résout la **description** d'un personnage via `chara_description` (`descriptionHash` = `[19]`).
@@ -171,7 +175,8 @@ pub fn resolve_description<'a>(
     base: &CharaBase,
     descriptions: &'a [crate::chara_description::ParsedDescription],
 ) -> Option<&'a str> {
-    base.description_hash.and_then(|h| crate::chara_description::find_by_hash(descriptions, h))
+    base.description_hash
+        .and_then(|h| crate::chara_description::find_by_hash(descriptions, h))
 }
 
 /// Résout le **nom de série FR** d'un personnage : `series_id` (`[15]`) → `chara_series` → type →

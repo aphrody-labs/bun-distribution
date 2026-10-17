@@ -21,8 +21,11 @@ fn test_extract_build() -> Result<()> {
 
         // Extract
         let extension = path.extension().unwrap().to_string_lossy();
-        let base_name =
-            file_name.strip_suffix(extension.as_ref()).unwrap().strip_suffix(".").unwrap();
+        let base_name = file_name
+            .strip_suffix(extension.as_ref())
+            .unwrap()
+            .strip_suffix(".")
+            .unwrap();
         let extract_path = test.roms_dir.join(base_name);
 
         let raw_rom = raw::Rom::from_file(&path)?;
@@ -33,8 +36,13 @@ fn test_extract_build() -> Result<()> {
         let build_path = path.with_file_name(format!("build_{file_name}"));
         let config_path = extract_path.join("config.yaml");
 
-        let rom =
-            Rom::load(&config_path, RomLoadOptions { key: Some(&test.key), ..Default::default() })?;
+        let rom = Rom::load(
+            &config_path,
+            RomLoadOptions {
+                key: Some(&test.key),
+                ..Default::default()
+            },
+        )?;
         let raw_rom = rom.build(Some(&test.key))?;
         raw_rom.save(&build_path)?;
 

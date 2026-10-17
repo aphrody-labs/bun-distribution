@@ -28,7 +28,14 @@ fn map_color(c: &Color, mode: Colorization, key: &Color) -> Color {
             let [kh, _, _] = art_key.to_hsb();
             let [th, _, _] = key.to_hsb();
             let [h, s, v] = c.to_hsb();
-            if (c.to_rgb().iter().zip(art_key.to_rgb()).map(|(a, b)| (a - b).abs()).sum::<f32>()) < 0.02 {
+            if (c
+                .to_rgb()
+                .iter()
+                .zip(art_key.to_rgb())
+                .map(|(a, b)| (a - b).abs())
+                .sum::<f32>())
+                < 0.02
+            {
                 return *key;
             }
             Color::from_hsb((h + th - kh).rem_euclid(360.0), s, v)

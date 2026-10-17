@@ -11,7 +11,10 @@ fn ds_uses_the_linked_dust_runtime_and_retains_melonds_as_reference() {
     assert_eq!(native.platform, Platform::Ds);
     assert_eq!(native.kind, BackendKind::ReferenceOnly);
     assert_eq!(
-        REGISTRY.adapter(Platform::Ds, Capability::Execute).unwrap().status,
+        REGISTRY
+            .adapter(Platform::Ds, Capability::Execute)
+            .unwrap()
+            .status,
         AdapterStatus::Available
     );
 }
@@ -23,7 +26,10 @@ fn three_ds_has_a_native_candidate() {
     assert_eq!(backend.kind, BackendKind::DynamicLibrary);
     assert!(backend.supports(Capability::Execute));
     assert_eq!(
-        REGISTRY.adapter(Platform::ThreeDs, Capability::Execute).unwrap().status,
+        REGISTRY
+            .adapter(Platform::ThreeDs, Capability::Execute)
+            .unwrap()
+            .status,
         AdapterStatus::ReferenceOnly
     );
 }
@@ -39,7 +45,10 @@ fn wii_has_a_rust_candidate_and_a_native_reference() {
     assert_eq!(native.platform, Platform::Wii);
     assert_eq!(native.kind, BackendKind::DynamicLibrary);
     assert_eq!(
-        REGISTRY.adapter(Platform::Wii, Capability::Execute).unwrap().status,
+        REGISTRY
+            .adapter(Platform::Wii, Capability::Execute)
+            .unwrap()
+            .status,
         AdapterStatus::ReferenceOnly
     );
 }
@@ -52,7 +61,10 @@ fn switch_candidate_is_not_claimed_as_integrated() {
     assert!(backend.supports(Capability::Execute));
     assert!(!backend.is_runtime());
     assert_eq!(
-        REGISTRY.adapter(Platform::Switch, Capability::Execute).unwrap().status,
+        REGISTRY
+            .adapter(Platform::Switch, Capability::Execute)
+            .unwrap()
+            .status,
         AdapterStatus::ReferenceOnly
     );
 }
@@ -64,9 +76,16 @@ fn steam_is_a_compatibility_surface_not_a_console_emulator() {
     assert_eq!(backend.kind, BackendKind::ReferenceOnly);
     assert!(backend.supports(Capability::Launch));
     assert!(!backend.supports(Capability::Execute));
-    assert!(REGISTRY.select(Platform::Steam, Capability::Execute).is_none());
+    assert!(
+        REGISTRY
+            .select(Platform::Steam, Capability::Execute)
+            .is_none()
+    );
     assert_eq!(
-        REGISTRY.adapter(Platform::Steam, Capability::Execute).unwrap().status,
+        REGISTRY
+            .adapter(Platform::Steam, Capability::Execute)
+            .unwrap()
+            .status,
         AdapterStatus::Unavailable
     );
 }

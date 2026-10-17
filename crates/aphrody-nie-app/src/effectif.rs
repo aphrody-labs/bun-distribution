@@ -59,7 +59,9 @@ fn element(v: i64) -> &'static str {
 
 /// Lit un `cfg.bin` du VFS et le rend sous la forme JSON qu'attend `aphrody-nie-data`.
 fn charger_json(vfs: &Vfs, chemin: &str) -> Result<serde_json::Value> {
-    let octets = vfs.read(chemin).map_err(|e| anyhow::anyhow!("{chemin} : {e:?}"))?;
+    let octets = vfs
+        .read(chemin)
+        .map_err(|e| anyhow::anyhow!("{chemin} : {e:?}"))?;
     aphrody_nie_formats::cfgbin::to_iecode_json(&octets)
         .with_context(|| format!("décodage de {chemin}"))
 }
@@ -99,8 +101,9 @@ pub fn charger(vfs: &Vfs, max: usize, langue: &str) -> Result<Vec<Joueur>> {
         chara_param::parse_all_chara_params(&charger_json(vfs, &p_param)?);
     let bases: Vec<CharaBase> = chara_base::parse_all_chara_base(&charger_json(vfs, &p_base)?);
     // Les noms sont facultatifs : sans eux on affiche les codes internes plutôt que rien.
-    let noms =
-        charger_json(vfs, &p_text).map(|v| chara_text::parse_all_nouns(&v)).unwrap_or_default();
+    let noms = charger_json(vfs, &p_text)
+        .map(|v| chara_text::parse_all_nouns(&v))
+        .unwrap_or_default();
 
     let mut out = Vec::with_capacity(max);
     for p in &params {
@@ -129,7 +132,10 @@ pub fn charger(vfs: &Vfs, max: usize, langue: &str) -> Result<Vec<Joueur>> {
             break;
         }
     }
-    anyhow::ensure!(!out.is_empty(), "aucun personnage jointable entre chara_param et chara_base");
+    anyhow::ensure!(
+        !out.is_empty(),
+        "aucun personnage jointable entre chara_param et chara_base"
+    );
     Ok(out)
 }
 
@@ -186,8 +192,11 @@ pub fn charger_textes(vfs: &Vfs, fichier: &str, max: usize, langue: &str) -> Res
 pub fn charger_dialogue(vfs: &Vfs, event_id: &str, langue: &str) -> Result<Vec<String>> {
     let chemin = format!("data/common/text/{langue}/event/{event_id}.cfg.bin");
     let entrees = aphrody_nie_data::text::parse_text_file(&charger_json(vfs, &chemin)?);
-    let lignes: Vec<String> =
-        entrees.into_iter().map(|(_, t)| t).filter(|t| !t.trim().is_empty()).collect();
+    let lignes: Vec<String> = entrees
+        .into_iter()
+        .map(|(_, t)| t)
+        .filter(|t| !t.trim().is_empty())
+        .collect();
     anyhow::ensure!(!lignes.is_empty(), "aucune réplique dans {chemin}");
     Ok(lignes)
 }
@@ -209,8 +218,11 @@ pub fn premier_dialogue_traduit(vfs: &Vfs, langue: &str, min_repliques: usize) -
     // Ordre stable : la même scène d'une exécution à l'autre.
     chemins.sort_unstable();
     for chemin in chemins {
-        let id =
-            chemin.rsplit('/').next().and_then(|n| n.strip_suffix(".cfg.bin")).unwrap_or_default();
+        let id = chemin
+            .rsplit('/')
+            .next()
+            .and_then(|n| n.strip_suffix(".cfg.bin"))
+            .unwrap_or_default();
         let Ok(lignes) = charger_dialogue(vfs, id, langue) else {
             continue;
         };
@@ -220,7 +232,10 @@ pub fn premier_dialogue_traduit(vfs: &Vfs, langue: &str, min_repliques: usize) -
         // contenant une lettre latine » a retenu `ev00_00700`, dont la deuxième réplique est
         // « T ». Une réplique de dialogue doit en outre être plus longue qu'un libellé de menu,
         // d'où le seuil supplémentaire.
-        let bonnes = lignes.iter().filter(|t| est_localise(t) && t.chars().count() >= 20).count();
+        let bonnes = lignes
+            .iter()
+            .filter(|t| est_localise(t) && t.chars().count() >= 20)
+            .count();
         // La majorité de la scène doit tenir, pas seulement quelques lignes : une scène à moitié
         // japonaise s'afficherait en caractères manquants une réplique sur deux.
         if bonnes >= min_repliques && bonnes * 2 >= lignes.len() {
@@ -315,7 +330,11 @@ pub fn charger_objets(vfs: &Vfs, max: usize, langue: &str) -> Result<Vec<Objet>>
         } else {
             nom
         };
-        out.push(Objet { nom, categorie: categorie(it.category), prix: it.price });
+        out.push(Objet {
+            nom,
+            categorie: categorie(it.category),
+            prix: it.price,
+        });
         if out.len() >= max {
             break;
         }

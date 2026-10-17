@@ -46,10 +46,18 @@ fn read_all_with(reader: &mut impl Read, size_hint: u64, chunk: usize) -> io::Re
 /// An empty buffer with room for `len` bytes, or an `OutOfMemory` error saying how much was needed.
 pub fn buffer_for(len: u64) -> io::Result<Vec<u8>> {
     let mut buf = Vec::new();
-    let reserved = usize::try_from(len).ok().and_then(|n| buf.try_reserve_exact(n).ok());
+    let reserved = usize::try_from(len)
+        .ok()
+        .and_then(|n| buf.try_reserve_exact(n).ok());
     match reserved {
         Some(()) => Ok(buf),
-        None => Err(io::Error::new(io::ErrorKind::OutOfMemory, format!("not enough memory to read the whole file ({})", size_text(len)))),
+        None => Err(io::Error::new(
+            io::ErrorKind::OutOfMemory,
+            format!(
+                "not enough memory to read the whole file ({})",
+                size_text(len)
+            ),
+        )),
     }
 }
 
@@ -73,7 +81,8 @@ mod tests {
     use super::*;
 
     fn temp(name: &str, bytes: &[u8]) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("photocraft-read-{}-{name}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("photocraft-read-{}-{name}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let p = dir.join("f.bin");
         std::fs::write(&p, bytes).unwrap();
@@ -88,10 +97,18 @@ mod tests {
             assert_eq!(read_file_with(&p, chunk).unwrap(), data, "chunk {chunk}");
         }
         assert_eq!(read_file(&p).unwrap(), data);
-        assert_eq!(read_file_with(&p, 0).unwrap(), data, "a zero chunk still makes progress");
+        assert_eq!(
+            read_file_with(&p, 0).unwrap(),
+            data,
+            "a zero chunk still makes progress"
+        );
         // From an open reader, whatever the hint says.
         for hint in [0, 10, data.len() as u64, 1 << 20] {
-            assert_eq!(read_all(&mut std::io::Cursor::new(&data), hint).unwrap(), data, "hint {hint}");
+            assert_eq!(
+                read_all(&mut std::io::Cursor::new(&data), hint).unwrap(),
+                data,
+                "hint {hint}"
+            );
         }
     }
 
@@ -99,7 +116,10 @@ mod tests {
     fn empty_and_missing_files() {
         assert!(read_file(&temp("empty", b"")).unwrap().is_empty());
         let missing = std::env::temp_dir().join("photocraft-read-does-not-exist.psb");
-        assert_eq!(read_file(&missing).unwrap_err().kind(), io::ErrorKind::NotFound);
+        assert_eq!(
+            read_file(&missing).unwrap_err().kind(),
+            io::ErrorKind::NotFound
+        );
     }
 
     #[test]

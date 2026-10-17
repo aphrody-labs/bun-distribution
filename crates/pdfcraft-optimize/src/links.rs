@@ -8,8 +8,14 @@ use pdfcraft_cos::{Dict, Document, ObjRef, Object, PdfString};
 /// Named destinations: the `/Names /Dests` tree (entries) and the old `/Dests` dictionary.
 fn named_dests(doc: &Document) -> HashSet<Vec<u8>> {
     let mut out = HashSet::new();
-    let Some(cat) = doc.root().and_then(|r| doc.get(r).as_dict().cloned()) else { return out };
-    if let Some(d) = cat.get(b"Dests").map(|d| doc.resolve(d)).and_then(|d| d.as_dict().cloned()) {
+    let Some(cat) = doc.root().and_then(|r| doc.get(r).as_dict().cloned()) else {
+        return out;
+    };
+    if let Some(d) = cat
+        .get(b"Dests")
+        .map(|d| doc.resolve(d))
+        .and_then(|d| d.as_dict().cloned())
+    {
         out.extend(d.iter().map(|(k, _)| k.clone()));
     }
     if let Some(tree) = names_tree(doc, &cat) {
@@ -21,7 +27,10 @@ fn named_dests(doc: &Document) -> HashSet<Vec<u8>> {
 }
 
 fn names_tree(doc: &Document, cat: &Dict) -> Option<Object> {
-    let names = cat.get(b"Names").map(|n| doc.resolve(n)).and_then(|n| n.as_dict().cloned())?;
+    let names = cat
+        .get(b"Names")
+        .map(|n| doc.resolve(n))
+        .and_then(|n| n.as_dict().cloned())?;
     names.get(b"Dests").cloned()
 }
 
@@ -39,8 +48,14 @@ fn tree_entries(doc: &Document, node: &Object) -> Vec<(Vec<u8>, Object)> {
         {
             continue;
         }
-        let Some(d) = doc.resolve(&n).as_dict().cloned() else { continue };
-        if let Some(a) = d.get(b"Names").map(|x| doc.resolve(x)).and_then(|x| x.as_array().cloned()) {
+        let Some(d) = doc.resolve(&n).as_dict().cloned() else {
+            continue;
+        };
+        if let Some(a) = d
+            .get(b"Names")
+            .map(|x| doc.resolve(x))
+            .and_then(|x| x.as_array().cloned())
+        {
             for pair in a.chunks(2) {
                 if let [k, v] = pair
                     && let Some(s) = doc.resolve(k).as_string()
@@ -49,7 +64,11 @@ fn tree_entries(doc: &Document, node: &Object) -> Vec<(Vec<u8>, Object)> {
                 }
             }
         }
-        if let Some(kids) = d.get(b"Kids").map(|x| doc.resolve(x)).and_then(|x| x.as_array().cloned()) {
+        if let Some(kids) = d
+            .get(b"Kids")
+            .map(|x| doc.resolve(x))
+            .and_then(|x| x.as_array().cloned())
+        {
             queue.extend(kids.into_iter().map(|k| (k, depth + 1)));
         }
     }
@@ -61,8 +80,13 @@ fn destination(doc: &Document, d: &Dict) -> Option<Object> {
     if let Some(dest) = d.get(b"Dest") {
         return Some(doc.resolve(dest).as_ref().clone());
     }
-    let a = d.get(b"A").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().cloned())?;
-    (a.name(b"S") == Some(b"GoTo")).then(|| a.get(b"D").map(|x| doc.resolve(x).as_ref().clone())).flatten()
+    let a = d
+        .get(b"A")
+        .map(|a| doc.resolve(a))
+        .and_then(|a| a.as_dict().cloned())?;
+    (a.name(b"S") == Some(b"GoTo"))
+        .then(|| a.get(b"D").map(|x| doc.resolve(x).as_ref().clone()))
+        .flatten()
 }
 
 /// The name a destination refers to, if it is a named one.
@@ -87,13 +111,24 @@ fn valid(o: &Object, pages: &HashSet<ObjRef>, count: usize, names: &HashSet<Vec<
 
 /// Remove links whose destination is missing, and clear the destination of such bookmarks
 /// (they stay, so their children do too). Returns (links, bookmarks).
-pub(crate) fn remove_invalid(doc: &mut Document, pages: &[ObjRef]) -> Result<(usize, usize), pdfcraft_cos::CosError> {
+pub(crate) fn remove_invalid(
+    doc: &mut Document,
+    pages: &[ObjRef],
+) -> Result<(usize, usize), pdfcraft_cos::CosError> {
     let set: HashSet<ObjRef> = pages.iter().copied().collect();
     let names = named_dests(doc);
     let mut links = 0;
     for p in pages {
-        let Some(pd) = doc.get(*p).as_dict().cloned() else { continue };
-        let Some(annots) = pd.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()) else { continue };
+        let Some(pd) = doc.get(*p).as_dict().cloned() else {
+            continue;
+        };
+        let Some(annots) = pd
+            .get(b"Annots")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+        else {
+            continue;
+        };
         let keep: Vec<Object> = annots
             .iter()
             .filter(|x| {
@@ -115,14 +150,20 @@ pub(crate) fn remove_invalid(doc: &mut Document, pages: &[ObjRef]) -> Result<(us
     let first = doc
         .root()
         .and_then(|r| doc.get(r).as_dict().cloned())
-        .and_then(|c| c.get(b"Outlines").map(|o| doc.resolve(o)).and_then(|o| o.as_dict().and_then(|d| d.reference(b"First"))));
+        .and_then(|c| {
+            c.get(b"Outlines")
+                .map(|o| doc.resolve(o))
+                .and_then(|o| o.as_dict().and_then(|d| d.reference(b"First")))
+        });
     let mut stack: Vec<ObjRef> = first.into_iter().collect();
     let mut seen = HashSet::new();
     while let Some(r) = stack.pop() {
         if !seen.insert(r) || seen.len() > 100_000 {
             continue;
         }
-        let Some(d) = doc.get(r).as_dict().cloned() else { continue };
+        let Some(d) = doc.get(r).as_dict().cloned() else {
+            continue;
+        };
         if let Some(n) = d.reference(b"Next") {
             stack.push(n);
         }
@@ -176,14 +217,20 @@ fn referenced_names(doc: &Document) -> HashSet<Vec<u8>> {
 }
 
 /// Remove named destinations nothing refers to. Returns how many went.
-pub(crate) fn remove_unreferenced_dests(doc: &mut Document) -> Result<usize, pdfcraft_cos::CosError> {
+pub(crate) fn remove_unreferenced_dests(
+    doc: &mut Document,
+) -> Result<usize, pdfcraft_cos::CosError> {
     let Some(root) = doc.root() else { return Ok(0) };
     let cat = doc.get(root).as_dict().cloned().unwrap_or_default();
     let used = referenced_names(doc);
     let mut removed = 0;
     if let Some(tree) = names_tree(doc, &cat) {
         let entries = tree_entries(doc, &tree);
-        let keep: Vec<(Vec<u8>, Object)> = entries.iter().filter(|(k, _)| used.contains(k)).cloned().collect();
+        let keep: Vec<(Vec<u8>, Object)> = entries
+            .iter()
+            .filter(|(k, _)| used.contains(k))
+            .cloned()
+            .collect();
         if keep.len() != entries.len() {
             removed += entries.len() - keep.len();
             let mut keep = keep;
@@ -198,7 +245,9 @@ pub(crate) fn remove_unreferenced_dests(doc: &mut Document) -> Result<usize, pdf
             let node = doc.add(Object::Dict(node));
             let names_obj = cat.get(b"Names").cloned();
             match names_obj {
-                Some(Object::Ref(r)) => doc.update_dict(r, |n| n.set(b"Dests".to_vec(), Object::Ref(node)))?,
+                Some(Object::Ref(r)) => {
+                    doc.update_dict(r, |n| n.set(b"Dests".to_vec(), Object::Ref(node)))?
+                }
                 _ => doc.update_dict(root, |c| {
                     if let Some(Object::Dict(n)) = c.get_mut(b"Names") {
                         n.set(b"Dests".to_vec(), Object::Ref(node));

@@ -158,7 +158,10 @@ impl PoseFrame {
     /// Returns a bone pose by identity, without assuming a contiguous native bone table.
     #[must_use]
     pub fn bone(&self, id: BoneId) -> Option<BonePose> {
-        self.bones.iter().find(|(bone, _)| *bone == id).map(|(_, pose)| *pose)
+        self.bones
+            .iter()
+            .find(|(bone, _)| *bone == id)
+            .map(|(_, pose)| *pose)
     }
 
     /// Evaluates world-space transforms of all bones given their parent hierarchy.
@@ -235,7 +238,11 @@ impl BonePose {
             self.scale.z * child.scale.z,
         );
 
-        Self { translation: world_translation, rotation: world_rotation, scale: world_scale }
+        Self {
+            translation: world_translation,
+            rotation: world_rotation,
+            scale: world_scale,
+        }
     }
 }
 
@@ -315,7 +322,11 @@ impl AnimationClip {
             .iter()
             .filter_map(|track| sample_track(track, time).map(|pose| (track.bone, pose)))
             .collect();
-        Some(PoseFrame { skeleton: self.skeleton, time_seconds: time, bones })
+        Some(PoseFrame {
+            skeleton: self.skeleton,
+            time_seconds: time,
+            bones,
+        })
     }
 }
 
@@ -325,7 +336,9 @@ fn sample_track(track: &BoneTrack, time: f32) -> Option<BonePose> {
         return Some(first.pose);
     }
     for pair in track.keyframes.windows(2) {
-        let [a, b] = pair else { unreachable!("windows(2) always has two entries") };
+        let [a, b] = pair else {
+            unreachable!("windows(2) always has two entries")
+        };
         if time <= b.time_seconds {
             let amount = (time - a.time_seconds) / (b.time_seconds - a.time_seconds);
             return Some(BonePose {
@@ -339,7 +352,11 @@ fn sample_track(track: &BoneTrack, time: f32) -> Option<BonePose> {
 }
 
 fn lerp(a: Vec3, b: Vec3, amount: f32) -> Vec3 {
-    Vec3::new(a.x + (b.x - a.x) * amount, a.y + (b.y - a.y) * amount, a.z + (b.z - a.z) * amount)
+    Vec3::new(
+        a.x + (b.x - a.x) * amount,
+        a.y + (b.y - a.y) * amount,
+        a.z + (b.z - a.z) * amount,
+    )
 }
 
 /// Reasons a decoded clip cannot be sampled.
@@ -376,7 +393,11 @@ mod tests {
     fn key(time: f32, x: f32, rotation: Rotation) -> Keyframe {
         Keyframe {
             time_seconds: time,
-            pose: BonePose { translation: Vec3::new(x, 0.0, 0.0), rotation, ..BonePose::default() },
+            pose: BonePose {
+                translation: Vec3::new(x, 0.0, 0.0),
+                rotation,
+                ..BonePose::default()
+            },
         }
     }
 
@@ -496,7 +517,10 @@ mod tests {
             time_seconds: 0.0,
             bones: vec![(BoneId::new(0), parent), (BoneId::new(1), child)],
         };
-        let parents = [(BoneId::new(0), None), (BoneId::new(1), Some(BoneId::new(0)))];
+        let parents = [
+            (BoneId::new(0), None),
+            (BoneId::new(1), Some(BoneId::new(0))),
+        ];
         let world_poses = frame.evaluate_world_poses(&parents);
         assert_eq!(world_poses.len(), 2);
         assert_eq!(world_poses[0].0, BoneId::new(0));

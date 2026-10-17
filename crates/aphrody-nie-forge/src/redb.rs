@@ -46,24 +46,31 @@ impl ReNames {
         let mut names = BTreeMap::new();
         let mut stmt =
             conn.prepare("SELECT vaddr, name FROM function WHERE name IS NOT NULL AND name <> ''")?;
-        let rows =
-            stmt.query_map([], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, String>(1)?)))?;
+        let rows = stmt.query_map([], |r| {
+            Ok((r.get::<_, i64>(0)? as u64, r.get::<_, String>(1)?))
+        })?;
         for row in rows.flatten() {
             names.insert(row.0, row.1);
         }
-        let pdata_roots: i64 =
-            conn.query_row("SELECT count(*) FROM pdata_func", [], |r| r.get(0)).unwrap_or(0);
+        let pdata_roots: i64 = conn
+            .query_row("SELECT count(*) FROM pdata_func", [], |r| r.get(0))
+            .unwrap_or(0);
 
         let mut sized = Vec::new();
         if let Ok(mut q) =
             conn.prepare("SELECT vaddr, size FROM function WHERE size > 0 ORDER BY vaddr")
-            && let Ok(rows) =
-                q.query_map([], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u32)))
+            && let Ok(rows) = q.query_map([], |r| {
+                Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u32))
+            })
         {
             sized.extend(rows.flatten());
         }
 
-        Ok(Self { names, pdata_roots: usize::try_from(pdata_roots).unwrap_or(0), sized })
+        Ok(Self {
+            names,
+            pdata_roots: usize::try_from(pdata_roots).unwrap_or(0),
+            sized,
+        })
     }
 
     /// Nom d'une adresse, s'il est connu.

@@ -4,7 +4,14 @@
 //! ([`props`]). Compositions sit behind `Arc` so undo snapshots share everything that did not
 //! change.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod build;
 pub mod essential;
@@ -22,7 +29,10 @@ use std::sync::Arc;
 pub use effectcraft_color::ColorSpace;
 use effectcraft_color::{BlendMode, Label};
 use effectcraft_time::{FrameRate, Tick};
-pub use props::{Expression, FeatherFalloff, GroupKind, MaskMode, MaskMotionBlur, Node, ParamUi, PropGroup, Property, Uid, parse_path};
+pub use props::{
+    Expression, FeatherFalloff, GroupKind, MaskMode, MaskMotionBlur, Node, ParamUi, PropGroup,
+    Property, Uid, parse_path,
+};
 use serde::{Deserialize, Serialize};
 
 pub use effectcraft_keyframe as keyframe;
@@ -74,30 +84,54 @@ pub fn saved_view(text: &str) -> SavedView {
         #[serde(rename = "openComps", default)]
         open_comps: Option<serde_json::Value>,
     }
-    let Ok(m) = serde_json::from_str::<Meta>(text) else { return SavedView::default() };
+    let Ok(m) = serde_json::from_str::<Meta>(text) else {
+        return SavedView::default();
+    };
     SavedView {
-        active_comp: m.active_comp.as_ref().and_then(serde_json::Value::as_u64).map(ItemId),
+        active_comp: m
+            .active_comp
+            .as_ref()
+            .and_then(serde_json::Value::as_u64)
+            .map(ItemId),
         open_comps: m
             .open_comps
             .as_ref()
             .and_then(serde_json::Value::as_array)
-            .map_or_else(Vec::new, |a| a.iter().filter_map(serde_json::Value::as_u64).map(ItemId).collect()),
+            .map_or_else(Vec::new, |a| {
+                a.iter()
+                    .filter_map(serde_json::Value::as_u64)
+                    .map(ItemId)
+                    .collect()
+            }),
     }
 }
 
 /// Whether version `a` (`major.minor.patch`, pre-release suffixes ignored) is newer than `b`.
 pub fn is_newer_version(a: &str, b: &str) -> bool {
     let parts = |v: &str| -> [u64; 3] {
-        let mut n = v.split(['-', '+']).next().unwrap_or("").split('.').map(|x| x.parse().unwrap_or(0));
-        [n.next().unwrap_or(0), n.next().unwrap_or(0), n.next().unwrap_or(0)]
+        let mut n = v
+            .split(['-', '+'])
+            .next()
+            .unwrap_or("")
+            .split('.')
+            .map(|x| x.parse().unwrap_or(0));
+        [
+            n.next().unwrap_or(0),
+            n.next().unwrap_or(0),
+            n.next().unwrap_or(0),
+        ]
     };
     parts(a) > parts(b)
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub struct ItemId(pub u64);
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub struct LayerId(pub u64);
 
 #[derive(Debug, thiserror::Error)]
@@ -188,11 +222,17 @@ impl TimeDisplayStyle {
         }
     }
     pub fn parse(s: &str) -> Option<TimeDisplayStyle> {
-        let k: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let k: String = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
         match k.as_str() {
             "timecode" => Some(TimeDisplayStyle::Timecode),
             "frames" => Some(TimeDisplayStyle::Frames),
-            "feet35" | "feetframes" | "feetandframes" | "feet35mm" | "35mm" | "feetframes35mm" => Some(TimeDisplayStyle::Feet35),
+            "feet35" | "feetframes" | "feetandframes" | "feet35mm" | "35mm" | "feetframes35mm" => {
+                Some(TimeDisplayStyle::Feet35)
+            }
             "feet16" | "feet16mm" | "16mm" | "feetframes16mm" => Some(TimeDisplayStyle::Feet16),
             _ => None,
         }
@@ -353,7 +393,13 @@ pub enum Resolution {
 }
 
 impl Resolution {
-    pub const ALL: [Resolution; 5] = [Resolution::Auto, Resolution::Full, Resolution::Half, Resolution::Third, Resolution::Quarter];
+    pub const ALL: [Resolution; 5] = [
+        Resolution::Auto,
+        Resolution::Full,
+        Resolution::Half,
+        Resolution::Third,
+        Resolution::Quarter,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Resolution::Auto => "Auto",
@@ -550,19 +596,29 @@ impl Comp {
     }
     /// Any 3D layer present (camera/lights or a 3D switch).
     pub fn has_3d(&self) -> bool {
-        self.layers.iter().any(|l| l.switches.three_d || matches!(l.source, LayerSource::Camera | LayerSource::Light { .. }))
+        self.layers.iter().any(|l| {
+            l.switches.three_d
+                || matches!(l.source, LayerSource::Camera | LayerSource::Light { .. })
+        })
     }
     /// The active camera at `t`: the topmost enabled camera layer active at that time.
     pub fn active_camera(&self, t: Tick) -> Option<&Layer> {
-        self.layers.iter().find(|l| matches!(l.source, LayerSource::Camera) && l.switches.video && l.is_active_at(t))
+        self.layers.iter().find(|l| {
+            matches!(l.source, LayerSource::Camera) && l.switches.video && l.is_active_at(t)
+        })
     }
     /// Unique layer name with a numeric suffix (`Shape Layer 2`).
     pub fn unique_layer_name(&self, base: &str) -> String {
         if !self.layers.iter().any(|l| l.name == base) {
             return base.to_string();
         }
-        let stem = base.trim_end_matches(|c: char| c.is_ascii_digit()).trim_end();
-        (2..).map(|i| format!("{stem} {i}")).find(|n| !self.layers.iter().any(|l| &l.name == n)).unwrap_or_default()
+        let stem = base
+            .trim_end_matches(|c: char| c.is_ascii_digit())
+            .trim_end();
+        (2..)
+            .map(|i| format!("{stem} {i}"))
+            .find(|n| !self.layers.iter().any(|l| &l.name == n))
+            .unwrap_or_default()
     }
 }
 
@@ -577,7 +633,13 @@ pub enum LightKind {
 }
 
 impl LightKind {
-    pub const ALL: [LightKind; 5] = [LightKind::Parallel, LightKind::Spot, LightKind::Point, LightKind::Ambient, LightKind::Environment];
+    pub const ALL: [LightKind; 5] = [
+        LightKind::Parallel,
+        LightKind::Spot,
+        LightKind::Point,
+        LightKind::Ambient,
+        LightKind::Environment,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             LightKind::Parallel => "Parallel",
@@ -602,8 +664,14 @@ pub enum PrimitiveKind {
 }
 
 impl PrimitiveKind {
-    pub const ALL: [PrimitiveKind; 6] =
-        [PrimitiveKind::Cube, PrimitiveKind::Sphere, PrimitiveKind::Plane, PrimitiveKind::Torus, PrimitiveKind::Cone, PrimitiveKind::Cylinder];
+    pub const ALL: [PrimitiveKind; 6] = [
+        PrimitiveKind::Cube,
+        PrimitiveKind::Sphere,
+        PrimitiveKind::Plane,
+        PrimitiveKind::Torus,
+        PrimitiveKind::Cone,
+        PrimitiveKind::Cylinder,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             PrimitiveKind::Cube => "Cube",
@@ -615,7 +683,9 @@ impl PrimitiveKind {
         }
     }
     pub fn parse(s: &str) -> Option<PrimitiveKind> {
-        PrimitiveKind::ALL.into_iter().find(|k| k.label().eq_ignore_ascii_case(s.trim()))
+        PrimitiveKind::ALL
+            .into_iter()
+            .find(|k| k.label().eq_ignore_ascii_case(s.trim()))
     }
 }
 
@@ -655,7 +725,10 @@ pub enum LayerSource {
 impl LayerSource {
     pub fn item(&self) -> Option<ItemId> {
         match self {
-            LayerSource::Footage { item } | LayerSource::Comp { item } | LayerSource::Solid { item } | LayerSource::Model { item } => Some(*item),
+            LayerSource::Footage { item }
+            | LayerSource::Comp { item }
+            | LayerSource::Solid { item }
+            | LayerSource::Model { item } => Some(*item),
             _ => None,
         }
     }
@@ -675,11 +748,17 @@ impl LayerSource {
     }
     /// Layers with pixels (cameras, lights and nulls have none).
     pub fn is_av(&self) -> bool {
-        !matches!(self, LayerSource::Camera | LayerSource::Light { .. } | LayerSource::Null)
+        !matches!(
+            self,
+            LayerSource::Camera | LayerSource::Light { .. } | LayerSource::Null
+        )
     }
     /// A 3D model or primitive layer (meshes; drawn by the Advanced 3D renderer).
     pub fn is_model(&self) -> bool {
-        matches!(self, LayerSource::Model { .. } | LayerSource::Primitive { .. })
+        matches!(
+            self,
+            LayerSource::Model { .. } | LayerSource::Primitive { .. }
+        )
     }
 }
 
@@ -752,7 +831,12 @@ impl Default for Switches {
 impl Switches {
     /// These switches with Audio, Lock and Shy at their defaults.
     pub fn pixels(&self) -> Switches {
-        Switches { audio: true, locked: false, shy: false, ..self.clone() }
+        Switches {
+            audio: true,
+            locked: false,
+            shy: false,
+            ..self.clone()
+        }
     }
 }
 
@@ -868,7 +952,13 @@ impl Comp {
     /// The comp with those switches and the Resolution at their defaults (borrowed when they
     /// already are), for keys that hash the whole comp.
     pub fn pixel_form(&self) -> std::borrow::Cow<'_, Comp> {
-        if !self.hide_shy && self.resolution.is_auto() && self.layers.iter().all(|l| l.switches == l.switches.pixels()) {
+        if !self.hide_shy
+            && self.resolution.is_auto()
+            && self
+                .layers
+                .iter()
+                .all(|l| l.switches == l.switches.pixels())
+        {
             return std::borrow::Cow::Borrowed(self);
         }
         let mut c = self.clone();
@@ -891,7 +981,12 @@ pub enum MatteKind {
 }
 
 impl MatteKind {
-    pub const ALL: [MatteKind; 4] = [MatteKind::Alpha, MatteKind::AlphaInverted, MatteKind::Luma, MatteKind::LumaInverted];
+    pub const ALL: [MatteKind; 4] = [
+        MatteKind::Alpha,
+        MatteKind::AlphaInverted,
+        MatteKind::Luma,
+        MatteKind::LumaInverted,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             MatteKind::Alpha => "Alpha Matte",
@@ -966,11 +1061,19 @@ impl Layer {
     /// Layer time for a comp time (stretch-aware).
     pub fn layer_time(&self, comp_t: Tick) -> Tick {
         let d = comp_t - self.start_time;
-        if (self.stretch - 100.0).abs() < 1e-9 { d } else { Tick((d.0 as f64 * 100.0 / self.stretch) as i64) }
+        if (self.stretch - 100.0).abs() < 1e-9 {
+            d
+        } else {
+            Tick((d.0 as f64 * 100.0 / self.stretch) as i64)
+        }
     }
     /// Comp time for a layer time.
     pub fn comp_time(&self, layer_t: Tick) -> Tick {
-        if (self.stretch - 100.0).abs() < 1e-9 { self.start_time + layer_t } else { self.start_time + Tick((layer_t.0 as f64 * self.stretch / 100.0) as i64) }
+        if (self.stretch - 100.0).abs() < 1e-9 {
+            self.start_time + layer_t
+        } else {
+            self.start_time + Tick((layer_t.0 as f64 * self.stretch / 100.0) as i64)
+        }
     }
     pub fn transform(&self) -> Option<&PropGroup> {
         self.props.sub("transform")
@@ -1161,7 +1264,11 @@ impl Footage {
     /// Source time as the footage's timecode: its frame `frame` from Start Timecode
     /// (`0:00:41:20`), as the Footage panel shows it.
     pub fn timecode(&self, frame: i64) -> String {
-        effectcraft_time::format_timecode_ae(frame.saturating_add(self.start_timecode.unwrap_or(0)), self.frame_rate, false)
+        effectcraft_time::format_timecode_ae(
+            frame.saturating_add(self.start_timecode.unwrap_or(0)),
+            self.frame_rate,
+            false,
+        )
     }
 
     /// The data format of data footage: `json`, `csv` or `tsv` (from the file extension).
@@ -1169,7 +1276,11 @@ impl Footage {
         if self.kind != FootageKind::Data {
             return None;
         }
-        let ext = std::path::Path::new(&self.path).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+        let ext = std::path::Path::new(&self.path)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
         Some(match ext.as_str() {
             "csv" => "csv",
             "tsv" | "tab" => "tsv",
@@ -1264,7 +1375,11 @@ impl Item {
         }
     }
     pub fn as_comp(&self) -> Option<&Comp> {
-        if let ItemKind::Comp(c) = &self.kind { Some(c) } else { None }
+        if let ItemKind::Comp(c) = &self.kind {
+            Some(c)
+        } else {
+            None
+        }
     }
     pub fn is_folder(&self) -> bool {
         matches!(self.kind, ItemKind::Folder)
@@ -1288,7 +1403,11 @@ impl Item {
     pub fn frame_rate(&self) -> Option<FrameRate> {
         match &self.kind {
             ItemKind::Comp(c) => Some(c.frame_rate),
-            ItemKind::Footage(f) if f.kind == FootageKind::Video || f.kind == FootageKind::Sequence => Some(f.frame_rate),
+            ItemKind::Footage(f)
+                if f.kind == FootageKind::Video || f.kind == FootageKind::Sequence =>
+            {
+                Some(f.frame_rate)
+            }
             _ => None,
         }
     }
@@ -1304,10 +1423,16 @@ pub struct Project {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub render_queue: Vec<render_queue::RenderQueueItem>,
     /// Render Settings / Output Module templates and their defaults.
-    #[serde(default, skip_serializing_if = "render_templates::RenderTemplates::is_default")]
+    #[serde(
+        default,
+        skip_serializing_if = "render_templates::RenderTemplates::is_default"
+    )]
     pub render_templates: render_templates::RenderTemplates,
     /// Render Queue preferences (Notify, storage overflow folders).
-    #[serde(default, skip_serializing_if = "render_queue::RenderQueuePrefs::is_default")]
+    #[serde(
+        default,
+        skip_serializing_if = "render_queue::RenderQueuePrefs::is_default"
+    )]
     pub render_prefs: render_queue::RenderQueuePrefs,
 }
 
@@ -1357,38 +1482,70 @@ impl Project {
         }
     }
     /// Adds an item; its size, frame rate and the like are brought within [`limits`] first.
-    pub fn add_item(&mut self, name: &str, label: Label, parent: Option<ItemId>, mut kind: ItemKind) -> ItemId {
+    pub fn add_item(
+        &mut self,
+        name: &str,
+        label: Label,
+        parent: Option<ItemId>,
+        mut kind: ItemKind,
+    ) -> ItemId {
         limits::repair_kind(name, &mut kind, &mut vec![]);
         let id = ItemId(self.alloc());
-        self.items.insert(id, Item { id, name: name.into(), label, comment: String::new(), parent, kind, proxy: None });
+        self.items.insert(
+            id,
+            Item {
+                id,
+                name: name.into(),
+                label,
+                comment: String::new(),
+                parent,
+                kind,
+                proxy: None,
+            },
+        );
         id
     }
     /// Children of a folder (None = root), folders first then by name.
     pub fn children(&self, folder: Option<ItemId>) -> Vec<&Item> {
         let mut v: Vec<&Item> = self.items.values().filter(|i| i.parent == folder).collect();
-        v.sort_by(|a, b| b.is_folder().cmp(&a.is_folder()).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+        v.sort_by(|a, b| {
+            b.is_folder()
+                .cmp(&a.is_folder())
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+        });
         v
     }
     pub fn comps(&self) -> impl Iterator<Item = (&ItemId, &Comp)> {
-        self.items.iter().filter_map(|(id, i)| i.as_comp().map(|c| (id, c)))
+        self.items
+            .iter()
+            .filter_map(|(id, i)| i.as_comp().map(|c| (id, c)))
     }
     pub fn find_by_name(&self, name: &str) -> Option<&Item> {
         self.items.values().find(|i| i.name == name)
     }
     pub fn folder_named(&self, name: &str) -> Option<ItemId> {
-        self.items.values().find(|i| i.is_folder() && i.name == name).map(|i| i.id)
+        self.items
+            .values()
+            .find(|i| i.is_folder() && i.name == name)
+            .map(|i| i.id)
     }
     /// Find the comp that contains `layer`.
     pub fn comp_of_layer(&self, layer: LayerId) -> Option<ItemId> {
-        self.comps().find(|(_, c)| c.layer(layer).is_some()).map(|(id, _)| *id)
+        self.comps()
+            .find(|(_, c)| c.layer(layer).is_some())
+            .map(|(id, _)| *id)
     }
     /// Whether comp `inner` is (transitively) nested inside comp `outer` (to prevent cycles).
     pub fn comp_contains(&self, outer: ItemId, inner: ItemId) -> bool {
         if outer == inner {
             return true;
         }
-        let Some(c) = self.comp(outer) else { return false };
-        c.layers.iter().any(|l| matches!(l.source, LayerSource::Comp { item } if self.comp_contains(item, inner)))
+        let Some(c) = self.comp(outer) else {
+            return false;
+        };
+        c.layers.iter().any(
+            |l| matches!(l.source, LayerSource::Comp { item } if self.comp_contains(item, inner)),
+        )
     }
     /// Make sure `next_id` exceeds every id in the project (after loading or merging).
     pub fn fix_next_id(&mut self) {
@@ -1412,13 +1569,22 @@ impl Project {
                 (ItemKind::Comp(x), ItemKind::Comp(y)) => Arc::ptr_eq(x, y) || x == y,
                 (x, y) => x == y,
             };
-            kind && a.id == b.id && a.name == b.name && a.label == b.label && a.comment == b.comment && a.parent == b.parent && a.proxy == b.proxy
+            kind && a.id == b.id
+                && a.name == b.name
+                && a.label == b.label
+                && a.comment == b.comment
+                && a.parent == b.parent
+                && a.proxy == b.proxy
         };
         self.schema == other.schema
             && self.next_id == other.next_id
             && self.settings == other.settings
             && self.items.len() == other.items.len()
-            && self.items.iter().zip(&other.items).all(|((ka, a), (kb, b))| ka == kb && item_eq(a, b))
+            && self
+                .items
+                .iter()
+                .zip(&other.items)
+                .all(|((ka, a), (kb, b))| ka == kb && item_eq(a, b))
             && self.render_queue == other.render_queue
             && self.render_templates == other.render_templates
             && self.render_prefs == other.render_prefs
@@ -1440,10 +1606,17 @@ impl Project {
             #[serde(flatten)]
             project: &'a Project,
         }
-        let text = serde_json::to_string_pretty(&File { saved_by: APP_VERSION, view, project: self })
-            .map_err(|e| ProjectError::Invalid(format!("the project can't be saved: {e}")))?;
-        Project::from_json(&text)
-            .map_err(|e| ProjectError::Invalid(format!("the project can't be saved: it holds a value a project file can't store ({e})")))?;
+        let text = serde_json::to_string_pretty(&File {
+            saved_by: APP_VERSION,
+            view,
+            project: self,
+        })
+        .map_err(|e| ProjectError::Invalid(format!("the project can't be saved: {e}")))?;
+        Project::from_json(&text).map_err(|e| {
+            ProjectError::Invalid(format!(
+                "the project can't be saved: it holds a value a project file can't store ({e})"
+            ))
+        })?;
         Ok(text)
     }
     pub fn to_json(&self) -> String {
@@ -1460,9 +1633,13 @@ impl Project {
     /// was corrected (a composition of a billion pixels, a zero frame rate…), so a corrupt or
     /// hostile file still opens, within bounds, and the user can be told what changed.
     pub fn from_json_repaired(s: &str) -> Result<(Project, Vec<String>), ProjectError> {
-        let mut p: Project = serde_json::from_str(s).map_err(|e| ProjectError::Invalid(e.to_string()))?;
+        let mut p: Project =
+            serde_json::from_str(s).map_err(|e| ProjectError::Invalid(e.to_string()))?;
         if p.schema > SCHEMA_VERSION {
-            return Err(ProjectError::Invalid(format!("project schema {} is newer than this version supports ({SCHEMA_VERSION})", p.schema)));
+            return Err(ProjectError::Invalid(format!(
+                "project schema {} is newer than this version supports ({SCHEMA_VERSION})",
+                p.schema
+            )));
         }
         p.fix_next_id();
         let mut notes = vec![];

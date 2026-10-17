@@ -59,7 +59,10 @@ impl ChangeAuraSkillData {
     /// `parseContent` (l.54-57) : recopie `id` et `charaParamId` tels quels.
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
-        Self { id: field_hash(v, "id"), chara_param_id: field_hash(v, "charaParamId") }
+        Self {
+            id: field_hash(v, "id"),
+            chara_param_id: field_hash(v, "charaParamId"),
+        }
     }
 
     /// `true` si la règle est générique (`charaParamId == 0x00000000`), c.-à-d. non liée à un
@@ -95,7 +98,10 @@ impl ChangeAuraSkillInfo {
             .and_then(Value::as_array)
             .map(|a| a.iter().map(|x| x.as_i64().unwrap_or(0)).collect())
             .unwrap_or_default();
-        Self { id: field_hash(v, "id"), data }
+        Self {
+            id: field_hash(v, "id"),
+            data,
+        }
     }
 
     /// Offset observé dans `m_ChangeAuraSkillDataList` (`data[0]`, négatif ⇒ 0). Interprétation
@@ -135,7 +141,11 @@ impl ChangeAuraSkillDatabase {
     #[must_use]
     pub fn get_chara_for_skill(&self, skill_id: HashId) -> Option<HashId> {
         let entry = self.data.iter().rev().find(|d| d.id == skill_id)?;
-        if entry.chara_param_id.is_zero() { None } else { Some(entry.chara_param_id) }
+        if entry.chara_param_id.is_zero() {
+            None
+        } else {
+            Some(entry.chara_param_id)
+        }
     }
 
     /// Slice de `m_ChangeAuraSkillDataList` désigné par une info (`[offset, count]`).

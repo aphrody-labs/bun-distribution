@@ -99,7 +99,9 @@ const SORT_INDEX: [i64; 6] = [3, 0, 4, 2, 1, 5];
 
 /// Construit une variable Int au format iecode `{type:"Int", value:"<n>"}`.
 fn int_vars(vals: &[i64]) -> Vec<Value> {
-    vals.iter().map(|v| json!({ "type": "Int", "value": v.to_string() })).collect()
+    vals.iter()
+        .map(|v| json!({ "type": "Int", "value": v.to_string() }))
+        .collect()
 }
 
 /// Reconstruit le noeud racine iecode exact du dump (2 entries, enfants suffixés `_<i>`).
@@ -204,7 +206,10 @@ fn sentinelle_null_filtree() {
     }
     // Les effets 0,1,6,9 n'ont que des sentinelles → 0 condition.
     for &i in &[0usize, 1, 6, 9] {
-        assert!(cfg.effects[i].conditions.is_empty(), "effet {i} sans condition");
+        assert!(
+            cfg.effects[i].conditions.is_empty(),
+            "effet {i} sans condition"
+        );
     }
 }
 
@@ -260,7 +265,10 @@ fn effects_of_resout_la_tranche() {
 
     // Info 3 → effets [6,9[ : 3 effets.
     assert_eq!(cfg.effects_of(3).len(), 3);
-    assert_eq!(cfg.effects_of(3)[0].effect_id, HashId::from_signed(1595804838));
+    assert_eq!(
+        cfg.effects_of(3)[0].effect_id,
+        HashId::from_signed(1595804838)
+    );
 
     // Info 5 → effets [10,11[ : 0x2F74F829 (condition 100).
     let e5 = cfg.effects_of(5);

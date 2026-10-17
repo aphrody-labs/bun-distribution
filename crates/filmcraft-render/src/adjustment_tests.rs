@@ -5,7 +5,9 @@
 use super::*;
 use filmcraft_media::generators::GeneratorSource;
 use filmcraft_media::{DemoScene, Generator, MediaSource};
-use filmcraft_project::{ClipId, Label, Mask, MaskPath, MediaClip, MediaRef, SequenceSettings, TrackKind, find_effect};
+use filmcraft_project::{
+    ClipId, Label, Mask, MaskPath, MediaClip, MediaRef, SequenceSettings, TrackKind, find_effect,
+};
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, TimeRange};
 
 const R: FrameRate = FrameRate::FPS_24;
@@ -40,11 +42,29 @@ fn media(p: &mut Project, map: &mut SourceMap, g: GeneratorSource) -> ItemId {
 }
 
 fn matte(p: &mut Project, map: &mut SourceMap, c: [f32; 4]) -> ItemId {
-    media(p, map, GeneratorSource::new(Generator::ColorMatte { color: c }, 320, 180, R, Tick(10 * TICKS_PER_SECOND)))
+    media(
+        p,
+        map,
+        GeneratorSource::new(
+            Generator::ColorMatte { color: c },
+            320,
+            180,
+            R,
+            Tick(10 * TICKS_PER_SECOND),
+        ),
+    )
 }
 
 fn place(p: &mut Project, seq: ItemId, track: usize, item: ItemId) -> ClipId {
-    let ti = p.make_track_item(item, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, R.tick_of(48)), R).unwrap();
+    let ti = p
+        .make_track_item(
+            item,
+            TrackKind::Video,
+            Tick::ZERO,
+            TimeRange::new(Tick::ZERO, R.tick_of(48)),
+            R,
+        )
+        .unwrap();
     let id = ti.id;
     let mut ti = ti;
     ti.scale_to_frame = true;
@@ -55,14 +75,39 @@ fn place(p: &mut Project, seq: ItemId, track: usize, item: ItemId) -> ClipId {
 }
 
 fn adjustment(p: &mut Project, seq: ItemId, track: usize) -> ClipId {
-    let a = p.add_item("Adjustment Layer", Label::Lavender, ItemKind::AdjustmentLayer { width: 320, height: 180, rate: R, duration: R.tick_of(48) }, None);
+    let a = p.add_item(
+        "Adjustment Layer",
+        Label::Lavender,
+        ItemKind::AdjustmentLayer {
+            width: 320,
+            height: 180,
+            rate: R,
+            duration: R.tick_of(48),
+        },
+        None,
+    );
     place(p, seq, track, a)
 }
 
 fn scene(tracks: usize) -> Scene {
     let mut p = Project::new("adj");
-    let seq = p.new_sequence("s", SequenceSettings { width: 320, height: 180, frame_rate: R, ..Default::default() }, tracks, 0, None);
-    Scene { p, seq, map: SourceMap::default() }
+    let seq = p.new_sequence(
+        "s",
+        SequenceSettings {
+            width: 320,
+            height: 180,
+            frame_rate: R,
+            ..Default::default()
+        },
+        tracks,
+        0,
+        None,
+    );
+    Scene {
+        p,
+        seq,
+        map: SourceMap::default(),
+    }
 }
 
 fn clip(s: &mut Scene, c: ClipId) -> &mut TrackItem {
@@ -72,7 +117,11 @@ fn clip(s: &mut Scene, c: ClipId) -> &mut TrackItem {
 fn fx(s: &mut Scene, c: ClipId, id: &str) {
     let e = find_effect(id).unwrap().instance();
     let it = clip(s, c);
-    let pos = it.effects.iter().position(|e| e.def().is_some_and(|d| d.intrinsic)).unwrap_or(it.effects.len());
+    let pos = it
+        .effects
+        .iter()
+        .position(|e| e.def().is_some_and(|d| d.intrinsic))
+        .unwrap_or(it.effects.len());
     it.effects.insert(pos, e);
 }
 
@@ -93,12 +142,26 @@ fn applies_to_everything_below_but_not_above() {
     let adj = adjustment(&mut s.p, s.seq, 1);
     fx(&mut s, adj, "invert");
     let img = render(&s);
-    assert!(near(img.get(160, 90), [0.0, 1.0, 1.0], 1e-4), "red inverted to cyan: {:?}", img.get(160, 90));
+    assert!(
+        near(img.get(160, 90), [0.0, 1.0, 1.0], 1e-4),
+        "red inverted to cyan: {:?}",
+        img.get(160, 90)
+    );
     // a small blue layer above the adjustment layer is untouched
     let top = place(&mut s.p, s.seq, 2, blue);
-    clip(&mut s, top).effect_mut("motion").unwrap().params.get_mut("scale").unwrap().value = ParamValue::Float(25.0);
+    clip(&mut s, top)
+        .effect_mut("motion")
+        .unwrap()
+        .params
+        .get_mut("scale")
+        .unwrap()
+        .value = ParamValue::Float(25.0);
     let img = render(&s);
-    assert!(near(img.get(160, 90), [0.0, 0.0, 1.0], 1e-4), "{:?}", img.get(160, 90));
+    assert!(
+        near(img.get(160, 90), [0.0, 0.0, 1.0], 1e-4),
+        "{:?}",
+        img.get(160, 90)
+    );
     assert!(near(img.get(10, 10), [0.0, 1.0, 1.0], 1e-4));
 }
 
@@ -109,14 +172,24 @@ fn opacity_and_blend_mode_mix_over_the_original() {
     place(&mut s.p, s.seq, 0, red);
     let adj = adjustment(&mut s.p, s.seq, 1);
     fx(&mut s, adj, "invert");
-    clip(&mut s, adj).effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().value = ParamValue::Float(25.0);
+    clip(&mut s, adj)
+        .effect_mut("opacity")
+        .unwrap()
+        .params
+        .get_mut("opacity")
+        .unwrap()
+        .value = ParamValue::Float(25.0);
     let c = render(&s).get(100, 100);
     assert!(near(c, [0.75, 0.25, 0.25], 1e-3), "{c:?}");
     // Multiply: red × cyan = black at 100 %
     let op = clip(&mut s, adj).effect_mut("opacity").unwrap();
     op.params.get_mut("opacity").unwrap().value = ParamValue::Float(100.0);
-    op.params.get_mut("blend").unwrap().value =
-        ParamValue::Choice(filmcraft_project::effect::BLEND_MODES.iter().position(|b| *b == "Multiply").unwrap() as u32);
+    op.params.get_mut("blend").unwrap().value = ParamValue::Choice(
+        filmcraft_project::effect::BLEND_MODES
+            .iter()
+            .position(|b| *b == "Multiply")
+            .unwrap() as u32,
+    );
     let c = render(&s).get(100, 100);
     assert!(near(c, [0.0, 0.0, 0.0], 1e-3), "{c:?}");
 }
@@ -129,13 +202,37 @@ fn motion_and_masks_restrict_the_region() {
     let adj = adjustment(&mut s.p, s.seq, 1);
     fx(&mut s, adj, "invert");
     // Motion: scaled to 50 % around the centre → only the middle is inverted
-    clip(&mut s, adj).effect_mut("motion").unwrap().params.get_mut("scale").unwrap().value = ParamValue::Float(50.0);
+    clip(&mut s, adj)
+        .effect_mut("motion")
+        .unwrap()
+        .params
+        .get_mut("scale")
+        .unwrap()
+        .value = ParamValue::Float(50.0);
     let img = render(&s);
-    assert!(near(img.get(160, 90), [0.0, 1.0, 1.0], 1e-4), "{:?}", img.get(160, 90));
-    assert!(near(img.get(10, 10), [1.0, 0.0, 0.0], 1e-4), "{:?}", img.get(10, 10));
-    clip(&mut s, adj).effect_mut("motion").unwrap().params.get_mut("scale").unwrap().value = ParamValue::Float(100.0);
+    assert!(
+        near(img.get(160, 90), [0.0, 1.0, 1.0], 1e-4),
+        "{:?}",
+        img.get(160, 90)
+    );
+    assert!(
+        near(img.get(10, 10), [1.0, 0.0, 0.0], 1e-4),
+        "{:?}",
+        img.get(10, 10)
+    );
+    clip(&mut s, adj)
+        .effect_mut("motion")
+        .unwrap()
+        .params
+        .get_mut("scale")
+        .unwrap()
+        .value = ParamValue::Float(100.0);
     // a mask on the adjustment layer's effect (sequence pixels): left half
-    let inv = clip(&mut s, adj).effects.iter_mut().find(|e| e.effect == "invert").unwrap();
+    let inv = clip(&mut s, adj)
+        .effects
+        .iter_mut()
+        .find(|e| e.effect == "invert")
+        .unwrap();
     let mut m = Mask::new("m", MaskPath::rect(0.0, 0.0, 160.0, 180.0));
     m.feather.value = ParamValue::Float(0.0);
     inv.masks.push(m);
@@ -143,7 +240,16 @@ fn motion_and_masks_restrict_the_region() {
     assert!(near(img.get(40, 90), [0.0, 1.0, 1.0], 1e-4));
     assert!(near(img.get(280, 90), [1.0, 0.0, 0.0], 1e-4));
     // the same at half resolution (mask in sequence pixels scales with the output)
-    let half = render_sequence(&s.p, s.seq, R.tick_of(12), RenderOptions { scale: 0.5, ..Default::default() }, &s.map);
+    let half = render_sequence(
+        &s.p,
+        s.seq,
+        R.tick_of(12),
+        RenderOptions {
+            scale: 0.5,
+            ..Default::default()
+        },
+        &s.map,
+    );
     assert!(near(half.get(20, 45), [0.0, 1.0, 1.0], 1e-4));
     assert!(near(half.get(140, 45), [1.0, 0.0, 0.0], 1e-4));
     // an opacity mask on the adjustment layer: right half only (with the effect mask → nothing)
@@ -152,7 +258,11 @@ fn motion_and_masks_restrict_the_region() {
     m.feather.value = ParamValue::Float(0.0);
     op.masks.push(m);
     let img = render(&s);
-    assert!(near(img.get(40, 90), [1.0, 0.0, 0.0], 1e-4), "{:?}", img.get(40, 90));
+    assert!(
+        near(img.get(40, 90), [1.0, 0.0, 0.0], 1e-4),
+        "{:?}",
+        img.get(40, 90)
+    );
     assert!(near(img.get(280, 90), [1.0, 0.0, 0.0], 1e-4));
 }
 
@@ -165,41 +275,105 @@ fn a_transform_replaces_the_picture_below() {
     place(&mut s.p, s.seq, 0, red);
     let adj = adjustment(&mut s.p, s.seq, 1);
     fx(&mut s, adj, "transform");
-    let tf = clip(&mut s, adj).effects.iter_mut().find(|e| e.effect == "transform").unwrap();
+    let tf = clip(&mut s, adj)
+        .effects
+        .iter_mut()
+        .find(|e| e.effect == "transform")
+        .unwrap();
     tf.params.get_mut("scale_height").unwrap().value = ParamValue::Float(50.0);
     let img = render(&s);
-    assert!(near(img.get(160, 90), [1.0, 0.0, 0.0], 1e-4), "{:?}", img.get(160, 90));
-    assert_eq!(img.get(10, 10), [0.0; 4], "the original is gone outside the scaled picture");
+    assert!(
+        near(img.get(160, 90), [1.0, 0.0, 0.0], 1e-4),
+        "{:?}",
+        img.get(160, 90)
+    );
+    assert_eq!(
+        img.get(10, 10),
+        [0.0; 4],
+        "the original is gone outside the scaled picture"
+    );
     // at 50 % opacity: half the original, half the (empty) transformed picture
-    clip(&mut s, adj).effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().value = ParamValue::Float(50.0);
+    clip(&mut s, adj)
+        .effect_mut("opacity")
+        .unwrap()
+        .params
+        .get_mut("opacity")
+        .unwrap()
+        .value = ParamValue::Float(50.0);
     let c = render(&s).get(10, 10);
-    assert!((c[0] - 0.5).abs() < 1e-3 && (c[3] - 0.5).abs() < 1e-3, "{c:?}");
+    assert!(
+        (c[0] - 0.5).abs() < 1e-3 && (c[3] - 0.5).abs() < 1e-3,
+        "{c:?}"
+    );
 }
 
 #[test]
 fn nested_adjustment_layers_stay_in_their_sequence() {
     let mut s = scene(2);
     let red = matte(&mut s.p, &mut s.map, [1.0, 0.0, 0.0, 1.0]);
-    let ocean = media(&mut s.p, &mut s.map, GeneratorSource::demo(DemoScene::OceanSunset));
+    let ocean = media(
+        &mut s.p,
+        &mut s.map,
+        GeneratorSource::demo(DemoScene::OceanSunset),
+    );
     // inner sequence: red + adjustment (invert) → cyan
-    let inner = s.p.new_sequence("inner", SequenceSettings { width: 320, height: 180, frame_rate: R, ..Default::default() }, 2, 0, None);
+    let inner = s.p.new_sequence(
+        "inner",
+        SequenceSettings {
+            width: 320,
+            height: 180,
+            frame_rate: R,
+            ..Default::default()
+        },
+        2,
+        0,
+        None,
+    );
     place(&mut s.p, inner, 0, red);
-    let a = s.p.add_item("Adjustment Layer", Label::Lavender, ItemKind::AdjustmentLayer { width: 320, height: 180, rate: R, duration: R.tick_of(48) }, None);
+    let a = s.p.add_item(
+        "Adjustment Layer",
+        Label::Lavender,
+        ItemKind::AdjustmentLayer {
+            width: 320,
+            height: 180,
+            rate: R,
+            duration: R.tick_of(48),
+        },
+        None,
+    );
     let ac = place(&mut s.p, inner, 1, a);
     {
-        let it = s.p.sequence_mut(inner).unwrap().find_item_mut(ac).unwrap().1;
-        it.effects.insert(0, find_effect("invert").unwrap().instance());
+        let it =
+            s.p.sequence_mut(inner)
+                .unwrap()
+                .find_item_mut(ac)
+                .unwrap()
+                .1;
+        it.effects
+            .insert(0, find_effect("invert").unwrap().instance());
     }
     // outer: ocean on V1, the nested sequence (scaled to 50 %) on V2
     place(&mut s.p, s.seq, 0, ocean);
     let nest = place(&mut s.p, s.seq, 1, inner);
-    clip(&mut s, nest).effect_mut("motion").unwrap().params.get_mut("scale").unwrap().value = ParamValue::Float(50.0);
+    clip(&mut s, nest)
+        .effect_mut("motion")
+        .unwrap()
+        .params
+        .get_mut("scale")
+        .unwrap()
+        .value = ParamValue::Float(50.0);
     let img = render(&s);
-    assert!(near(img.get(160, 90), [0.0, 1.0, 1.0], 1e-4), "inner adjusted: {:?}", img.get(160, 90));
+    assert!(
+        near(img.get(160, 90), [0.0, 1.0, 1.0], 1e-4),
+        "inner adjusted: {:?}",
+        img.get(160, 90)
+    );
     // the outer V1 (outside the nest) is untouched
     let plain = {
         let mut p2 = s.p.clone();
-        p2.sequence_mut(s.seq).unwrap().video_tracks[1].items.clear();
+        p2.sequence_mut(s.seq).unwrap().video_tracks[1]
+            .items
+            .clear();
         render_sequence(&p2, s.seq, R.tick_of(12), RenderOptions::default(), &s.map)
     };
     assert_eq!(img.get(5, 5), plain.get(5, 5));
@@ -215,11 +389,20 @@ fn transform_shutter_on_an_adjustment_layer_spans_one_sequence_frame() {
     s.p.sequence_mut(s.seq).unwrap().settings.frame_rate = r60;
     let red = matte(&mut s.p, &mut s.map, [1.0, 0.0, 0.0, 1.0]);
     let below = place(&mut s.p, s.seq, 0, red);
-    clip(&mut s, below).effect_mut("motion").unwrap().params.get_mut("scale").unwrap().value = ParamValue::Float(25.0);
+    clip(&mut s, below)
+        .effect_mut("motion")
+        .unwrap()
+        .params
+        .get_mut("scale")
+        .unwrap()
+        .value = ParamValue::Float(25.0);
     let adj = adjustment(&mut s.p, s.seq, 1);
     fx(&mut s, adj, "transform");
     let key = |sec: f64, x: f64| {
-        let mut k = Keyframe::new(Tick::from_seconds_f64(sec), ParamValue::Vec2(filmcraft_geom::Vec2::new(x, 90.0)));
+        let mut k = Keyframe::new(
+            Tick::from_seconds_f64(sec),
+            ParamValue::Vec2(filmcraft_geom::Vec2::new(x, 90.0)),
+        );
         k.interp = Interpolation::Linear;
         k
     };
@@ -228,11 +411,28 @@ fn transform_shutter_on_an_adjustment_layer_spans_one_sequence_frame() {
     e.params.get_mut("position").unwrap().keyframes = vec![key(0.5, 160.0), key(1.0, 260.0)];
     let mut diff = |frame: i64| {
         let mut at = |shutter: bool| {
-            clip(&mut s, adj).effect_mut("transform").unwrap().params.get_mut("shutter_override").unwrap().value = ParamValue::Bool(shutter);
-            render_sequence(&s.p, s.seq, r60.tick_of(frame), RenderOptions::default(), &s.map)
+            clip(&mut s, adj)
+                .effect_mut("transform")
+                .unwrap()
+                .params
+                .get_mut("shutter_override")
+                .unwrap()
+                .value = ParamValue::Bool(shutter);
+            render_sequence(
+                &s.p,
+                s.seq,
+                r60.tick_of(frame),
+                RenderOptions::default(),
+                &s.map,
+            )
         };
         let (sharp, blurred) = (at(false), at(true));
-        sharp.px.iter().zip(&blurred.px).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max)
+        sharp
+            .px
+            .iter()
+            .zip(&blurred.px)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0f32, f32::max)
     };
     assert!(diff(29) < 1e-4, "frame before the move is blurred");
     assert!(diff(61) < 1e-4, "frame after the move is blurred");
@@ -250,11 +450,20 @@ fn dissolve(s: &mut Scene, track: usize, from: Option<ClipId>, to: Option<ClipId
         align: Default::default(),
         reverse: false,
     };
-    s.p.sequence_mut(s.seq).unwrap().video_tracks[track].transitions.push(tr);
+    s.p.sequence_mut(s.seq).unwrap().video_tracks[track]
+        .transitions
+        .push(tr);
 }
 
 fn at(s: &Scene, frame: i64) -> [f32; 4] {
-    render_sequence(&s.p, s.seq, R.tick_of(frame), RenderOptions::default(), &s.map).get(160, 90)
+    render_sequence(
+        &s.p,
+        s.seq,
+        R.tick_of(frame),
+        RenderOptions::default(),
+        &s.map,
+    )
+    .get(160, 90)
 }
 
 /// A dissolve at the start of an adjustment layer (Cmd+D) fades its effects in, and one at its
@@ -270,12 +479,28 @@ fn a_dissolve_fades_the_adjustment_layers_effects_in_and_out() {
     dissolve(&mut s, 1, Some(adj), None, 36);
     // fade in over frames 0..12: red → halfway → cyan
     assert!(near(at(&s, 0), [1.0, 0.0, 0.0], 1e-3), "{:?}", at(&s, 0));
-    assert!(near(at(&s, 3), [0.75, 0.25, 0.25], 1e-3), "a quarter in: {:?}", at(&s, 3));
-    assert!(near(at(&s, 6), [0.5, 0.5, 0.5], 1e-3), "halfway in: {:?}", at(&s, 6));
+    assert!(
+        near(at(&s, 3), [0.75, 0.25, 0.25], 1e-3),
+        "a quarter in: {:?}",
+        at(&s, 3)
+    );
+    assert!(
+        near(at(&s, 6), [0.5, 0.5, 0.5], 1e-3),
+        "halfway in: {:?}",
+        at(&s, 6)
+    );
     assert!(near(at(&s, 24), [0.0, 1.0, 1.0], 1e-3), "{:?}", at(&s, 24));
     // fade out over frames 36..48
-    assert!(near(at(&s, 42), [0.5, 0.5, 0.5], 1e-3), "halfway out: {:?}", at(&s, 42));
-    assert!(near(at(&s, 45), [0.75, 0.25, 0.25], 1e-3), "three quarters out: {:?}", at(&s, 45));
+    assert!(
+        near(at(&s, 42), [0.5, 0.5, 0.5], 1e-3),
+        "halfway out: {:?}",
+        at(&s, 42)
+    );
+    assert!(
+        near(at(&s, 45), [0.75, 0.25, 0.25], 1e-3),
+        "three quarters out: {:?}",
+        at(&s, 45)
+    );
 }
 
 /// The layer's own opacity and blend mode still count during the fade.
@@ -286,15 +511,25 @@ fn a_dissolve_on_an_adjustment_layer_keeps_its_opacity_and_blend_mode() {
     place(&mut s.p, s.seq, 0, red);
     let adj = adjustment(&mut s.p, s.seq, 1);
     fx(&mut s, adj, "invert");
-    clip(&mut s, adj).effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().value = ParamValue::Float(50.0);
+    clip(&mut s, adj)
+        .effect_mut("opacity")
+        .unwrap()
+        .params
+        .get_mut("opacity")
+        .unwrap()
+        .value = ParamValue::Float(50.0);
     dissolve(&mut s, 1, None, Some(adj), 0);
     // halfway through the fade, at 50 % opacity: a quarter of the way to cyan
     assert!(near(at(&s, 6), [0.75, 0.25, 0.25], 1e-3), "{:?}", at(&s, 6));
     // Multiply (red × cyan = black) fades from red to black
     let op = clip(&mut s, adj).effect_mut("opacity").unwrap();
     op.params.get_mut("opacity").unwrap().value = ParamValue::Float(100.0);
-    op.params.get_mut("blend").unwrap().value =
-        ParamValue::Choice(filmcraft_project::effect::BLEND_MODES.iter().position(|b| *b == "Multiply").unwrap() as u32);
+    op.params.get_mut("blend").unwrap().value = ParamValue::Choice(
+        filmcraft_project::effect::BLEND_MODES
+            .iter()
+            .position(|b| *b == "Multiply")
+            .unwrap() as u32,
+    );
     assert!(near(at(&s, 6), [0.5, 0.0, 0.0], 1e-3), "{:?}", at(&s, 6));
     assert!(near(at(&s, 24), [0.0, 0.0, 0.0], 1e-3), "{:?}", at(&s, 24));
 }
@@ -310,11 +545,32 @@ fn a_transition_with_an_adjustment_layer_is_not_planned_as_layers() {
     // V2: a blue clip from 0 to 24, then an adjustment layer from 24, a dissolve centred on the cut
     let b = place(&mut s.p, s.seq, 1, blue);
     clip(&mut s, b).duration = R.tick_of(24);
-    let a = s.p.add_item("Adjustment Layer", Label::Lavender, ItemKind::AdjustmentLayer { width: 320, height: 180, rate: R, duration: R.tick_of(48) }, None);
-    let mut ti = s.p.make_track_item(a, TrackKind::Video, R.tick_of(24), TimeRange::new(Tick::ZERO, R.tick_of(24)), R).unwrap();
-    ti.effects.insert(0, find_effect("invert").unwrap().instance());
+    let a = s.p.add_item(
+        "Adjustment Layer",
+        Label::Lavender,
+        ItemKind::AdjustmentLayer {
+            width: 320,
+            height: 180,
+            rate: R,
+            duration: R.tick_of(48),
+        },
+        None,
+    );
+    let mut ti =
+        s.p.make_track_item(
+            a,
+            TrackKind::Video,
+            R.tick_of(24),
+            TimeRange::new(Tick::ZERO, R.tick_of(24)),
+            R,
+        )
+        .unwrap();
+    ti.effects
+        .insert(0, find_effect("invert").unwrap().instance());
     let ac = ti.id;
-    s.p.sequence_mut(s.seq).unwrap().video_tracks[1].items.push(ti);
+    s.p.sequence_mut(s.seq).unwrap().video_tracks[1]
+        .items
+        .push(ti);
     dissolve(&mut s, 1, Some(b), Some(ac), 18);
     let q = s.p.sequence(s.seq).unwrap();
     // frame 20 is still on the blue clip, but the dissolve into the adjustment layer shows

@@ -9,45 +9,48 @@ use log::{error, info, warn};
 
 // TODO: Make other APIs work with this.
 
-pub async fn maybe_refresh_credentials_on_sora_error(creds: &SoraCredentialSet, error: SoraError) -> Result<SoraCredentialSet, SoraError> {
-
-  match error {
-    SoraError::Client(SoraClientError::NoBearerTokenForRequest) => {
-      error!("Previous request failed due to missing bearer token.");
-    }
-    SoraError::ApiSpecific(SoraSpecificApiError::UnauthorizedCookieOrBearerExpired) => {
-      error!("Previous request failed due to invalid bearer token.");
-    }
-    _ => {
-      error!("Previous request failed due to the following error: {:?}", error);
-      return Err(error)
-    }
-  }
-
-  info!("Generating new JWT bearer token...");
-
-  let cookies = creds.cookies.as_str();
-  let response = generate_bearer_jwt_with_cookie(cookies).await;
-
-  let new_bearer = match response {
-    Err(err) => {
-      error!("Error generating new JWT bearer token: {}", err);
-      return Err(err);
-    }
-    Ok(bearer) => {
-      match SoraJwtBearerToken::new(bearer) {
-        Err(err) => {
-          error!("Error parsing new JWT bearer token: {}", err);
-          return Err(err);
+pub async fn maybe_refresh_credentials_on_sora_error(
+    creds: &SoraCredentialSet,
+    error: SoraError,
+) -> Result<SoraCredentialSet, SoraError> {
+    match error {
+        SoraError::Client(SoraClientError::NoBearerTokenForRequest) => {
+            error!("Previous request failed due to missing bearer token.");
         }
-        Ok(bearer) => bearer,
-      }
+        SoraError::ApiSpecific(SoraSpecificApiError::UnauthorizedCookieOrBearerExpired) => {
+            error!("Previous request failed due to invalid bearer token.");
+        }
+        _ => {
+            error!(
+                "Previous request failed due to the following error: {:?}",
+                error
+            );
+            return Err(error);
+        }
     }
-  };
 
-  let mut new_creds = creds.clone();
+    info!("Generating new JWT bearer token...");
 
-  new_creds.jwt_bearer_token = Some(new_bearer);
+    let cookies = creds.cookies.as_str();
+    let response = generate_bearer_jwt_with_cookie(cookies).await;
 
-  Ok(new_creds)
+    let new_bearer = match response {
+        Err(err) => {
+            error!("Error generating new JWT bearer token: {}", err);
+            return Err(err);
+        }
+        Ok(bearer) => match SoraJwtBearerToken::new(bearer) {
+            Err(err) => {
+                error!("Error parsing new JWT bearer token: {}", err);
+                return Err(err);
+            }
+            Ok(bearer) => bearer,
+        },
+    };
+
+    let mut new_creds = creds.clone();
+
+    new_creds.jwt_bearer_token = Some(new_bearer);
+
+    Ok(new_creds)
 }

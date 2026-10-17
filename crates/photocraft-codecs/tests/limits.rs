@@ -5,7 +5,10 @@ use common::*;
 use photocraft_codecs::*;
 
 fn opts(l: Limits) -> DecodeOptions {
-    DecodeOptions { limits: l, ..Default::default() }
+    DecodeOptions {
+        limits: l,
+        ..Default::default()
+    }
 }
 
 fn is_limit(r: Result<Image, CodecError>) -> bool {
@@ -21,17 +24,29 @@ fn encoded(f: Format) -> Vec<u8> {
 fn max_pixels_enforced_for_every_format() {
     for f in rw_formats() {
         let b = encoded(f);
-        let l = Limits { max_pixels: 1000, ..Limits::default() };
+        let l = Limits {
+            max_pixels: 1000,
+            ..Limits::default()
+        };
         assert!(is_limit(decode_with(&b, &opts(l))), "{f:?}");
-        let l = Limits { max_pixels: 64 * 48, ..Limits::default() };
-        assert!(decode_with(&b, &opts(l)).is_ok(), "{f:?} exact limit should pass");
+        let l = Limits {
+            max_pixels: 64 * 48,
+            ..Limits::default()
+        };
+        assert!(
+            decode_with(&b, &opts(l)).is_ok(),
+            "{f:?} exact limit should pass"
+        );
     }
 }
 
 #[test]
 fn max_width_enforced_for_every_format() {
     for f in rw_formats() {
-        let l = Limits { max_width: 63, ..Limits::default() };
+        let l = Limits {
+            max_width: 63,
+            ..Limits::default()
+        };
         assert!(is_limit(decode_with(&encoded(f), &opts(l))), "{f:?}");
     }
 }
@@ -39,7 +54,10 @@ fn max_width_enforced_for_every_format() {
 #[test]
 fn max_height_enforced_for_every_format() {
     for f in rw_formats() {
-        let l = Limits { max_height: 47, ..Limits::default() };
+        let l = Limits {
+            max_height: 47,
+            ..Limits::default()
+        };
         assert!(is_limit(decode_with(&encoded(f), &opts(l))), "{f:?}");
     }
 }
@@ -47,7 +65,10 @@ fn max_height_enforced_for_every_format() {
 #[test]
 fn max_alloc_enforced_for_every_format() {
     for f in rw_formats() {
-        let l = Limits { max_alloc: 64 * 48, ..Limits::default() };
+        let l = Limits {
+            max_alloc: 64 * 48,
+            ..Limits::default()
+        };
         assert!(decode_with(&encoded(f), &opts(l)).is_err(), "{f:?}");
     }
 }
@@ -55,7 +76,10 @@ fn max_alloc_enforced_for_every_format() {
 #[test]
 fn limits_none_accepts() {
     for f in rw_formats() {
-        assert!(decode_with(&encoded(f), &opts(Limits::none())).is_ok(), "{f:?}");
+        assert!(
+            decode_with(&encoded(f), &opts(Limits::none())).is_ok(),
+            "{f:?}"
+        );
     }
 }
 
@@ -74,7 +98,11 @@ fn crc32(d: &[u8]) -> u32 {
     for &b in d {
         c ^= b as u32;
         for _ in 0..8 {
-            c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
+            c = if c & 1 != 0 {
+                0xEDB8_8320 ^ (c >> 1)
+            } else {
+                c >> 1
+            };
         }
     }
     !c
@@ -88,7 +116,10 @@ fn png_bomb_header_rejected_before_alloc() {
     ihdr.extend_from_slice(&[16, 6, 0, 0, 0]);
     let mut b = b"\x89PNG\r\n\x1a\n".to_vec();
     b.extend(png_chunk(b"IHDR", &ihdr));
-    b.extend(png_chunk(b"IDAT", &[0x78, 0x9C, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01]));
+    b.extend(png_chunk(
+        b"IDAT",
+        &[0x78, 0x9C, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01],
+    ));
     b.extend(png_chunk(b"IEND", &[]));
     assert!(is_limit(decode(&b)));
 }
@@ -104,14 +135,23 @@ fn png_header_at_the_default_limit_needs_a_plausible_file_size() {
     ihdr.extend_from_slice(&[16, 6, 0, 0, 0]);
     let mut b = b"\x89PNG\r\n\x1a\n".to_vec();
     b.extend(png_chunk(b"IHDR", &ihdr));
-    b.extend(png_chunk(b"IDAT", &[0x78, 0x9C, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01]));
+    b.extend(png_chunk(
+        b"IDAT",
+        &[0x78, 0x9C, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01],
+    ));
     b.extend(png_chunk(b"IEND", &[]));
     assert!(is_limit(decode(&b)));
 }
 
 #[test]
 fn png_highly_compressible_image_still_decodes() {
-    let img = Image::from_u8(3000, 3000, ChannelLayout::Rgba, vec![255u8; 3000 * 3000 * 4]).unwrap();
+    let img = Image::from_u8(
+        3000,
+        3000,
+        ChannelLayout::Rgba,
+        vec![255u8; 3000 * 3000 * 4],
+    )
+    .unwrap();
     let b = encode(&img, Format::Png, &EncodeOptions::default()).unwrap();
     assert!(b.len() < 100_000, "{}", b.len());
     assert_eq!(decode(&b).unwrap().width(), 3000);
@@ -120,7 +160,13 @@ fn png_highly_compressible_image_still_decodes() {
 const PNG_TEXT_BUDGET: usize = 64 << 10;
 
 fn png_text_decode(bytes: &[u8], max_alloc: usize) -> Result<Image, CodecError> {
-    decode_with(bytes, &opts(Limits { max_alloc: max_alloc as u64, ..Limits::default() }))
+    decode_with(
+        bytes,
+        &opts(Limits {
+            max_alloc: max_alloc as u64,
+            ..Limits::default()
+        }),
+    )
 }
 
 fn zlib(text: &[u8]) -> Vec<u8> {
@@ -145,7 +191,11 @@ fn png_text_stream(ty: &[u8; 4], keyword: &[u8], payload: &[u8]) -> Vec<u8> {
 }
 
 fn png_text(ty: &[u8; 4], keyword: &[u8], text: &[u8]) -> Vec<u8> {
-    if ty == b"tEXt" { png_text_stream(ty, keyword, text) } else { png_text_stream(ty, keyword, &zlib(text)) }
+    if ty == b"tEXt" {
+        png_text_stream(ty, keyword, text)
+    } else {
+        png_text_stream(ty, keyword, &zlib(text))
+    }
 }
 
 fn png_with_text(before_idat: &[Vec<u8>], after_idat: &[Vec<u8>]) -> Vec<u8> {
@@ -190,9 +240,19 @@ fn png_compressed_text_bombs_obey_limits_before_and_after_idat() {
     for ty in [b"zTXt", b"iTXt"] {
         for after_idat in [false, true] {
             let chunks = [png_text(ty, b"Comment", &bomb)];
-            let bytes = if after_idat { png_with_text(&[], &chunks) } else { png_with_text(&chunks, &[]) };
-            assert!(bytes.len() < PNG_TEXT_BUDGET / 2, "fixture must fit comfortably within the compressed-input budget");
-            assert!(is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET)), "{ty:?}, after IDAT={after_idat}");
+            let bytes = if after_idat {
+                png_with_text(&[], &chunks)
+            } else {
+                png_with_text(&chunks, &[])
+            };
+            assert!(
+                bytes.len() < PNG_TEXT_BUDGET / 2,
+                "fixture must fit comfortably within the compressed-input budget"
+            );
+            assert!(
+                is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET)),
+                "{ty:?}, after IDAT={after_idat}"
+            );
         }
     }
 }
@@ -201,15 +261,27 @@ fn png_compressed_text_bombs_obey_limits_before_and_after_idat() {
 fn png_text_chunks_share_an_aggregate_budget() {
     for text_len in [(PNG_TEXT_BUDGET - 3) / 3, PNG_TEXT_BUDGET / 3] {
         let text = vec![b'A'; text_len];
-        let before = [png_text(b"tEXt", b"A", &text), png_text(b"zTXt", b"B", &text)];
+        let before = [
+            png_text(b"tEXt", b"A", &text),
+            png_text(b"zTXt", b"B", &text),
+        ];
         let after = [png_text(b"iTXt", b"C", &text)];
         let result = png_text_decode(&png_with_text(&before, &after), PNG_TEXT_BUDGET);
         if 3 * (text_len + 1) <= PNG_TEXT_BUDGET {
             let image = result.unwrap();
             assert_eq!(image.meta.text.len(), 3);
-            assert!(image.meta.text.iter().all(|(_, value)| value.len() == text_len));
+            assert!(
+                image
+                    .meta
+                    .text
+                    .iter()
+                    .all(|(_, value)| value.len() == text_len)
+            );
         } else {
-            assert!(is_limit(result), "chunks fitting individually must still share a budget");
+            assert!(
+                is_limit(result),
+                "chunks fitting individually must still share a budget"
+            );
         }
     }
 }
@@ -220,8 +292,14 @@ fn png_text_accepts_the_exact_utf8_budget() {
         let text = vec![b'A'; PNG_TEXT_BUDGET - 1];
         let bytes = png_with_text(&[png_text(ty, b"K", &text)], &[]);
         let image = png_text_decode(&bytes, PNG_TEXT_BUDGET).unwrap();
-        assert_eq!(image.meta.text, vec![("K".into(), String::from_utf8(text).unwrap())]);
-        assert!(is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET - 1)), "{ty:?}: keyword and text both count");
+        assert_eq!(
+            image.meta.text,
+            vec![("K".into(), String::from_utf8(text).unwrap())]
+        );
+        assert!(
+            is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET - 1)),
+            "{ty:?}: keyword and text both count"
+        );
     }
 }
 
@@ -231,7 +309,10 @@ fn png_plain_itxt_obeys_the_exact_budget_and_validates_fields() {
     payload.extend_from_slice(&vec![b'A'; PNG_TEXT_BUDGET - 1]);
     let bytes = png_with_text(&[], &[png_chunk(b"iTXt", &payload)]);
     let image = png_text_decode(&bytes, PNG_TEXT_BUDGET).unwrap();
-    assert_eq!(image.meta.text, vec![("K".into(), "A".repeat(PNG_TEXT_BUDGET - 1))]);
+    assert_eq!(
+        image.meta.text,
+        vec![("K".into(), "A".repeat(PNG_TEXT_BUDGET - 1))]
+    );
     assert!(is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET - 1)));
 
     let invalid_fields: &[&[u8]] = &[
@@ -244,7 +325,10 @@ fn png_plain_itxt_obeys_the_exact_budget_and_validates_fields() {
         b"K\0\0\0\0text",       // Missing translated-keyword separator.
     ];
     for fields in invalid_fields {
-        let bytes = png_with_text(&[png_chunk(b"iTXt", fields)], &[png_text(b"tEXt", b"Good", b"retained")]);
+        let bytes = png_with_text(
+            &[png_chunk(b"iTXt", fields)],
+            &[png_text(b"tEXt", b"Good", b"retained")],
+        );
         let image = png_text_decode(&bytes, PNG_TEXT_BUDGET).unwrap();
         assert_eq!(image.meta.text, vec![("Good".into(), "retained".into())]);
     }
@@ -254,11 +338,18 @@ fn png_plain_itxt_obeys_the_exact_budget_and_validates_fields() {
 fn png_latin1_expansion_counts_keyword_and_text_utf8_bytes() {
     let text_len = (PNG_TEXT_BUDGET - 2) / 2;
     for ty in [b"tEXt", b"zTXt", b"iTXt"] {
-        let text = if ty == b"iTXt" { "é".repeat(text_len).into_bytes() } else { vec![0xE9; text_len] };
+        let text = if ty == b"iTXt" {
+            "é".repeat(text_len).into_bytes()
+        } else {
+            vec![0xE9; text_len]
+        };
         let bytes = png_with_text(&[], &[png_text(ty, &[0xE9], &text)]);
         let image = png_text_decode(&bytes, PNG_TEXT_BUDGET).unwrap();
         assert_eq!(image.meta.text, vec![("é".into(), "é".repeat(text_len))]);
-        assert!(is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET - 1)), "{ty:?}: Latin-1 expands when stored as UTF-8");
+        assert!(
+            is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET - 1)),
+            "{ty:?}: Latin-1 expands when stored as UTF-8"
+        );
     }
 }
 
@@ -276,7 +367,10 @@ fn png_duplicate_xmp_chunks_each_consume_budget() {
             assert_eq!(image.meta.xmp, Some(String::from_utf8(last_text).unwrap()));
             assert!(image.meta.text.is_empty());
         } else {
-            assert!(is_limit(result), "replacing an XMP packet must not reset its budget charge");
+            assert!(
+                is_limit(result),
+                "replacing an XMP packet must not reset its budget charge"
+            );
         }
     }
 }
@@ -287,10 +381,21 @@ fn png_xmp_in_all_text_chunk_types_is_preserved() {
     for ty in [b"tEXt", b"zTXt", b"iTXt"] {
         for after_idat in [false, true] {
             let chunks = [png_text(ty, b"XML:com.adobe.xmp", XMP.as_bytes())];
-            let bytes = if after_idat { png_with_text(&[], &chunks) } else { png_with_text(&chunks, &[]) };
+            let bytes = if after_idat {
+                png_with_text(&[], &chunks)
+            } else {
+                png_with_text(&chunks, &[])
+            };
             let image = png_text_decode(&bytes, PNG_TEXT_BUDGET).unwrap();
-            assert_eq!(image.meta.xmp.as_deref(), Some(XMP), "{ty:?}, after IDAT: {after_idat}");
-            assert!(image.meta.text.is_empty(), "XMP must not also be retained as ordinary text");
+            assert_eq!(
+                image.meta.xmp.as_deref(),
+                Some(XMP),
+                "{ty:?}, after IDAT: {after_idat}"
+            );
+            assert!(
+                image.meta.text.is_empty(),
+                "XMP must not also be retained as ordinary text"
+            );
             let saved = encode(&image, Format::Png, &EncodeOptions::default()).unwrap();
             assert_eq!(decode(&saved).unwrap().meta.xmp, image.meta.xmp);
         }
@@ -309,11 +414,18 @@ fn png_mixed_xmp_chunk_types_use_last_packet_and_share_budget() {
             let image = png_text_decode(&bytes, PNG_TEXT_BUDGET).unwrap();
             assert_eq!(image.meta.xmp.as_deref(), Some("last"));
             assert!(image.meta.text.is_empty());
-            let first = png_text(first_ty, b"XML:com.adobe.xmp", &vec![b'A'; PNG_TEXT_BUDGET - budget]);
+            let first = png_text(
+                first_ty,
+                b"XML:com.adobe.xmp",
+                &vec![b'A'; PNG_TEXT_BUDGET - budget],
+            );
             let last = png_text(last_ty, b"XML:com.adobe.xmp", b"last");
             let bytes = png_with_text(&[first], &[last]);
             assert!(png_text_decode(&bytes, PNG_TEXT_BUDGET - b"first".len()).is_ok());
-            assert!(is_limit(png_text_decode(&bytes, PNG_TEXT_BUDGET - b"first".len() - 1)));
+            assert!(is_limit(png_text_decode(
+                &bytes,
+                PNG_TEXT_BUDGET - b"first".len() - 1
+            )));
         }
     }
 }
@@ -345,7 +457,11 @@ fn png_text_with_bad_crc_and_text_after_iend_are_ignored() {
         let mut bad_crc = valid.clone();
         *bad_crc.last_mut().unwrap() ^= 1;
         for after_idat in [false, true] {
-            let bytes = if after_idat { png_with_text(&[], &[bad_crc.clone()]) } else { png_with_text(&[bad_crc.clone()], &[]) };
+            let bytes = if after_idat {
+                png_with_text(&[], &[bad_crc.clone()])
+            } else {
+                png_with_text(&[bad_crc.clone()], &[])
+            };
             let image = png_text_decode(&bytes, PNG_TEXT_BUDGET).unwrap();
             assert!(image.meta.text.is_empty());
         }
@@ -358,9 +474,17 @@ fn png_text_with_bad_crc_and_text_after_iend_are_ignored() {
 
 #[test]
 fn png_malformed_chunk_tails_remain_tolerated_after_pixels() {
-    let base = png_with_text(&[png_text(b"tEXt", b"Good", b"retained")], &[png_chunk(b"vpAg", &[])]);
+    let base = png_with_text(
+        &[png_text(b"tEXt", b"Good", b"retained")],
+        &[png_chunk(b"vpAg", &[])],
+    );
     let iend = base.len() - 12;
-    let tails: &[&[u8]] = &[&[], b"\x00\x00\x00", b"\x00\x00\x00\x10iTXtK\0\0", b"\xFF\xFF\xFF\xFFiTXt"];
+    let tails: &[&[u8]] = &[
+        &[],
+        b"\x00\x00\x00",
+        b"\x00\x00\x00\x10iTXtK\0\0",
+        b"\xFF\xFF\xFF\xFFiTXt",
+    ];
     for tail in tails {
         let mut bytes = base[..iend].to_vec();
         bytes.extend_from_slice(tail);
@@ -373,7 +497,10 @@ fn png_malformed_chunk_tails_remain_tolerated_after_pixels() {
 #[test]
 fn png_invalid_optional_text_does_not_spend_an_exhausted_budget() {
     let full = png_text(b"tEXt", b"K", &vec![b'A'; PNG_TEXT_BUDGET - 1]);
-    let invalid = [png_chunk(b"iTXt", b"Bad\0\0\0\0\0\xFF"), png_text_stream(b"zTXt", b"Bad", b"invalid")];
+    let invalid = [
+        png_chunk(b"iTXt", b"Bad\0\0\0\0\0\xFF"),
+        png_text_stream(b"zTXt", b"Bad", b"invalid"),
+    ];
     let image = png_text_decode(&png_with_text(&[full], &invalid), PNG_TEXT_BUDGET).unwrap();
     assert_eq!(image.meta.text.len(), 1);
     assert_eq!(image.meta.text[0].1.len(), PNG_TEXT_BUDGET - 1);
@@ -382,7 +509,9 @@ fn png_invalid_optional_text_does_not_spend_an_exhausted_budget() {
 #[test]
 fn pnm_bomb_header_rejected() {
     assert!(is_limit(decode(b"P6\n200000 200000\n255\n\0\0\0")));
-    assert!(is_limit(decode(b"P7\nWIDTH 99999\nHEIGHT 99999\nDEPTH 4\nMAXVAL 65535\nTUPLTYPE RGB_ALPHA\nENDHDR\n")));
+    assert!(is_limit(decode(
+        b"P7\nWIDTH 99999\nHEIGHT 99999\nDEPTH 4\nMAXVAL 65535\nTUPLTYPE RGB_ALPHA\nENDHDR\n"
+    )));
     assert!(is_limit(decode(b"PF\n100000 100000\n-1.0\n")));
 }
 
@@ -393,7 +522,12 @@ fn pnm_header_alone_reserves_nothing_without_limits() {
     // 2⁶² bytes before finding the raster missing (an abort).
     let none = opts(Limits::none());
     let side = 1u32 << 31;
-    for f in [format!("P1\n{side} {side}\n"), format!("P2\n{side} {side}\n255\n"), format!("P3\n{side} {side}\n255\n"), format!("P4\n{side} {side}\n")] {
+    for f in [
+        format!("P1\n{side} {side}\n"),
+        format!("P2\n{side} {side}\n255\n"),
+        format!("P3\n{side} {side}\n255\n"),
+        format!("P4\n{side} {side}\n"),
+    ] {
         assert!(decode_with(f.as_bytes(), &none).is_err(), "{f:?}");
     }
 }
@@ -425,8 +559,14 @@ fn ascii_pnm_with_the_tightest_layout_still_decodes() {
 #[test]
 fn jpeg_bomb_header_rejected() {
     // SOI + SOF0 claiming 65535x65535x3 with no scan data.
-    let b = [0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x11, 8, 0xFF, 0xFF, 0xFF, 0xFF, 3, 1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0, 0xFF, 0xD9];
-    let l = Limits { max_pixels: 1 << 24, ..Limits::default() };
+    let b = [
+        0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x11, 8, 0xFF, 0xFF, 0xFF, 0xFF, 3, 1, 0x11, 0, 2, 0x11, 0,
+        3, 0x11, 0, 0xFF, 0xD9,
+    ];
+    let l = Limits {
+        max_pixels: 1 << 24,
+        ..Limits::default()
+    };
     assert!(is_limit(decode_with(&b, &opts(l))));
 }
 
@@ -434,7 +574,14 @@ fn jpeg_bomb_header_rejected() {
 fn tiff_bomb_header_rejected() {
     // Minimal little-endian TIFF claiming 1_000_000 x 1_000_000 8-bit gray.
     let mut b = b"II*\0\x08\0\0\0".to_vec();
-    let entries: [(u16, u16, u32, u32); 6] = [(256, 4, 1, 1_000_000), (257, 4, 1, 1_000_000), (258, 3, 1, 8), (262, 3, 1, 1), (273, 4, 1, 0), (279, 4, 1, 0)];
+    let entries: [(u16, u16, u32, u32); 6] = [
+        (256, 4, 1, 1_000_000),
+        (257, 4, 1, 1_000_000),
+        (258, 3, 1, 8),
+        (262, 3, 1, 1),
+        (273, 4, 1, 0),
+        (279, 4, 1, 0),
+    ];
     b.extend_from_slice(&(entries.len() as u16).to_le_bytes());
     for (tag, ty, count, val) in entries {
         b.extend_from_slice(&tag.to_le_bytes());
@@ -449,10 +596,25 @@ fn tiff_bomb_header_rejected() {
 #[test]
 fn limits_check_api() {
     let l = Limits::default();
-    assert!(l.check(100, 100, ChannelLayout::Rgba, SampleType::F32).is_ok());
-    assert!(matches!(l.check(0, 1, ChannelLayout::Gray, SampleType::U8), Err(CodecError::InvalidImage(_))));
-    assert!(matches!(l.check(u32::MAX, 1, ChannelLayout::Gray, SampleType::U8), Err(CodecError::LimitExceeded(_))));
-    let l = Limits { max_alloc: 399, ..Limits::default() };
-    assert!(l.check(10, 10, ChannelLayout::Rgba, SampleType::U8).is_err());
+    assert!(
+        l.check(100, 100, ChannelLayout::Rgba, SampleType::F32)
+            .is_ok()
+    );
+    assert!(matches!(
+        l.check(0, 1, ChannelLayout::Gray, SampleType::U8),
+        Err(CodecError::InvalidImage(_))
+    ));
+    assert!(matches!(
+        l.check(u32::MAX, 1, ChannelLayout::Gray, SampleType::U8),
+        Err(CodecError::LimitExceeded(_))
+    ));
+    let l = Limits {
+        max_alloc: 399,
+        ..Limits::default()
+    };
+    assert!(
+        l.check(10, 10, ChannelLayout::Rgba, SampleType::U8)
+            .is_err()
+    );
     assert!(l.check(10, 10, ChannelLayout::Rgb, SampleType::U8).is_ok());
 }

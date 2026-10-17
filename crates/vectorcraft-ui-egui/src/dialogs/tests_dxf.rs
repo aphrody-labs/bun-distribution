@@ -19,7 +19,14 @@ fn export_as_dxf_shows_dxf_options_then_writes_and_remembers_them() {
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("dxfOptions"), "DXF Options follow");
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("path"), d.str("version"), d.str("preserve")), ("/out/Untitled-1.dxf".into(), "2018".into(), "appearance".into()));
+    assert_eq!(
+        (d.str("path"), d.str("version"), d.str("preserve")),
+        (
+            "/out/Untitled-1.dxf".into(),
+            "2018".into(),
+            "appearance".into()
+        )
+    );
     frame(&mut app);
     // Every control draws: R12 with true colour shows its note, Maximize Editability frees Outline Text.
     set(&mut app, "version", json!("R12"));
@@ -35,7 +42,10 @@ fn export_as_dxf_shows_dxf_options_then_writes_and_remembers_them() {
     // The next DXF Options start from these choices, but not from this export's path.
     crate::menus::invoke(&mut app, "ui.dxfOptionsDialog", json!({}));
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.str("version"), d.str("unit"), d.str("colors")), ("R12".into(), "Inches".into(), "256".into()));
+    assert_eq!(
+        (d.str("version"), d.str("unit"), d.str("colors")),
+        ("R12".into(), "Inches".into(), "256".into())
+    );
     assert!(!d.fields.contains_key("path"));
     assert!(app.ui.dxf_options.get("useArtboards").is_none());
 }
@@ -43,7 +53,8 @@ fn export_as_dxf_shows_dxf_options_then_writes_and_remembers_them() {
 #[test]
 fn bad_dxf_options_keep_the_dialog_open() {
     let (mut app, written) = app(1);
-    app.run("ui.dxfOptionsDialog", json!({"path": "/out/a.dxf"})).unwrap();
+    app.run("ui.dxfOptionsDialog", json!({"path": "/out/a.dxf"}))
+        .unwrap();
     set(&mut app, "scale", json!(-1));
     assert!(confirm(&mut app).is_err());
     assert_eq!(kind(&app), Some("dxfOptions"));
@@ -68,7 +79,11 @@ fn dwg_is_listed_but_points_to_dxf() {
     frame(&mut app);
     let e = confirm(&mut app).unwrap_err();
     assert!(e.contains("DWG") && e.contains("DXF"), "{e}");
-    assert_eq!(kind(&app), Some("exportAs"), "the dialog stays open to pick DXF");
+    assert_eq!(
+        kind(&app),
+        Some("exportAs"),
+        "the dialog stays open to pick DXF"
+    );
     set(&mut app, "format", json!("dxf"));
     confirm(&mut app).unwrap();
     assert_eq!(kind(&app), Some("dxfOptions"));

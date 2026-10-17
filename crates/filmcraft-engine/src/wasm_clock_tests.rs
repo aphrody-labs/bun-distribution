@@ -19,10 +19,14 @@ fn sources() -> Vec<(String, String)> {
                 continue;
             }
             let name = p.file_name().and_then(|n| n.to_str()).unwrap_or_default();
-            if !name.ends_with(".rs") || name.ends_with("_tests.rs") || name == "media_test_util.rs" {
+            if !name.ends_with(".rs") || name.ends_with("_tests.rs") || name == "media_test_util.rs"
+            {
                 continue;
             }
-            out.push((p.display().to_string(), std::fs::read_to_string(&p).unwrap()));
+            out.push((
+                p.display().to_string(),
+                std::fs::read_to_string(&p).unwrap(),
+            ));
         }
     }
     assert!(out.len() > 20, "found {} source files", out.len());
@@ -35,13 +39,21 @@ fn no_std_instant_in_code_the_web_build_runs() {
     for (path, text) in sources() {
         for (i, line) in text.lines().enumerate() {
             // `use std::time::{.., Instant, ..}` or a fully qualified `std::time::Instant`
-            let names_std_instant = line.contains("std::time::Instant") || (line.contains("use std::time::") && line.contains("Instant"));
-            if names_std_instant && !line.contains("web_time") && !line.trim_start().starts_with("//") {
+            let names_std_instant = line.contains("std::time::Instant")
+                || (line.contains("use std::time::") && line.contains("Instant"));
+            if names_std_instant
+                && !line.contains("web_time")
+                && !line.trim_start().starts_with("//")
+            {
                 hits.push(format!("{path}:{}: {}", i + 1, line.trim()));
             }
         }
     }
-    assert!(hits.is_empty(), "std::time::Instant panics on wasm32; use web_time::Instant:\n{}", hits.join("\n"));
+    assert!(
+        hits.is_empty(),
+        "std::time::Instant panics on wasm32; use web_time::Instant:\n{}",
+        hits.join("\n")
+    );
 }
 
 /// The clock the jobs use works here as well: a job's "Done in 0.0s" report needs an elapsed time.

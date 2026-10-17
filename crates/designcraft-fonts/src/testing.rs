@@ -23,22 +23,39 @@ pub fn font_with_glyph(family: &str, chars: &[char], glyph: char) -> Option<Vec<
 pub fn font_mapping(family: &str, glyphs: &[(char, char)]) -> Option<Vec<u8>> {
     let base = *crate::bundled().first()?;
     let base_cmap = skrifa::FontRef::new(base).ok()?.charmap();
-    let mut map: Vec<(u32, u32)> = glyphs.iter().map(|(c, g)| Some((*c as u32, base_cmap.map(*g)?.to_u32()))).collect::<Option<_>>()?;
+    let mut map: Vec<(u32, u32)> = glyphs
+        .iter()
+        .map(|(c, g)| Some((*c as u32, base_cmap.map(*g)?.to_u32())))
+        .collect::<Option<_>>()?;
     map.sort_unstable();
     map.dedup_by_key(|m| m.0);
     let mut tables = tables_of(base)?;
     tables.retain(|(tag, _)| tag != b"name" && tag != b"cmap");
 
     // `name`: format 0, family (1), subfamily (2) and PostScript name (6), Windows Unicode English.
-    let ps: String = family.chars().filter(char::is_ascii_alphanumeric).chain("-Regular".chars()).collect();
-    let strings: Vec<Vec<u8>> = [family, "Regular", &ps].iter().map(|s| s.encode_utf16().flat_map(u16::to_be_bytes).collect()).collect();
+    let ps: String = family
+        .chars()
+        .filter(char::is_ascii_alphanumeric)
+        .chain("-Regular".chars())
+        .collect();
+    let strings: Vec<Vec<u8>> = [family, "Regular", &ps]
+        .iter()
+        .map(|s| s.encode_utf16().flat_map(u16::to_be_bytes).collect())
+        .collect();
     let mut name = Vec::new();
     for v in [0u16, 3, 6 + 3 * 12] {
         name.extend_from_slice(&v.to_be_bytes());
     }
     let mut at = 0usize;
     for (id, s) in [1u16, 2, 6].iter().zip(&strings) {
-        for v in [3u16, 1, 0x409, *id, u16::try_from(s.len()).ok()?, u16::try_from(at).ok()?] {
+        for v in [
+            3u16,
+            1,
+            0x409,
+            *id,
+            u16::try_from(s.len()).ok()?,
+            u16::try_from(at).ok()?,
+        ] {
             name.extend_from_slice(&v.to_be_bytes());
         }
         at += s.len();
@@ -69,13 +86,24 @@ pub fn font_mapping(family: &str, glyphs: &[(char, char)]) -> Option<Vec<u8>> {
 
 /// Every table of the font file `font`: (tag, bytes).
 fn tables_of(font: &[u8]) -> Option<Vec<([u8; 4], Vec<u8>)>> {
-    let be16 = |b: &[u8], at: usize| b.get(at..at + 2).and_then(|s| s.try_into().ok()).map(u16::from_be_bytes);
-    let be32 = |b: &[u8], at: usize| b.get(at..at + 4).and_then(|s| s.try_into().ok()).map(u32::from_be_bytes);
+    let be16 = |b: &[u8], at: usize| {
+        b.get(at..at + 2)
+            .and_then(|s| s.try_into().ok())
+            .map(u16::from_be_bytes)
+    };
+    let be32 = |b: &[u8], at: usize| {
+        b.get(at..at + 4)
+            .and_then(|s| s.try_into().ok())
+            .map(u32::from_be_bytes)
+    };
     let mut tables = Vec::new();
     for r in 0..usize::from(be16(font, 4)?) {
         let rec = 12 + r * 16;
         let tag: [u8; 4] = font.get(rec..rec + 4)?.try_into().ok()?;
-        let (offset, len) = (be32(font, rec + 8)? as usize, be32(font, rec + 12)? as usize);
+        let (offset, len) = (
+            be32(font, rec + 8)? as usize,
+            be32(font, rec + 12)? as usize,
+        );
         tables.push((tag, font.get(offset..offset.checked_add(len)?)?.to_vec()));
     }
     Some(tables)
@@ -117,13 +145,20 @@ fn with_tables(font: &[u8], tables: Vec<([u8; 4], Vec<u8>)>) -> Option<Vec<u8>> 
 /// `font` with vertical metrics: a `vhea` table and a `vmtx` table that give every glyph `default`
 /// (advance down the line, top side bearing), except the glyphs `overrides` lists (glyph id,
 /// advance, top side bearing). Every glyph has a long metric. `None` if `font` can't be read.
-pub fn with_vmtx(font: &[u8], default: (u16, i16), overrides: &[(u16, u16, i16)]) -> Option<Vec<u8>> {
+pub fn with_vmtx(
+    font: &[u8],
+    default: (u16, i16),
+    overrides: &[(u16, u16, i16)],
+) -> Option<Vec<u8>> {
     use skrifa::raw::TableProvider;
     let glyphs = skrifa::FontRef::new(font).ok()?.maxp().ok()?.num_glyphs();
     let mut vmtx = Vec::with_capacity(usize::from(glyphs) * 4);
     let mut max_advance = 0;
     for gid in 0..glyphs {
-        let (advance, tsb) = overrides.iter().find(|o| o.0 == gid).map_or(default, |o| (o.1, o.2));
+        let (advance, tsb) = overrides
+            .iter()
+            .find(|o| o.0 == gid)
+            .map_or(default, |o| (o.1, o.2));
         max_advance = max_advance.max(advance);
         vmtx.extend_from_slice(&advance.to_be_bytes());
         vmtx.extend_from_slice(&tsb.to_be_bytes());
@@ -166,16 +201,21 @@ pub fn with_vorg(font: &[u8], default: i16, overrides: &[(u16, i16)]) -> Option<
 /// no OS/2 table.
 pub fn with_fs_type(mut font: Vec<u8>, fs_type: u16) -> Option<Vec<u8>> {
     let tables = usize::from(u16::from_be_bytes(font.get(4..6)?.try_into().ok()?));
-    let rec = (0..tables).map(|r| 12 + r * 16).find(|rec| font.get(*rec..rec + 4) == Some(b"OS/2"))?;
+    let rec = (0..tables)
+        .map(|r| 12 + r * 16)
+        .find(|rec| font.get(*rec..rec + 4) == Some(b"OS/2"))?;
     let offset = u32::from_be_bytes(font.get(rec + 8..rec + 12)?.try_into().ok()?) as usize;
-    font.get_mut(offset + 8..offset + 10)?.copy_from_slice(&fs_type.to_be_bytes());
+    font.get_mut(offset + 8..offset + 10)?
+        .copy_from_slice(&fs_type.to_be_bytes());
     Some(font)
 }
 
 /// Offset and length of table `tag` in `font`'s table directory, and where its record is.
 fn table(font: &[u8], tag: &[u8; 4]) -> Option<(usize, usize, usize)> {
     let tables = usize::from(u16::from_be_bytes(font.get(4..6)?.try_into().ok()?));
-    let rec = (0..tables).map(|r| 12 + r * 16).find(|rec| font.get(*rec..rec + 4) == Some(tag))?;
+    let rec = (0..tables)
+        .map(|r| 12 + r * 16)
+        .find(|rec| font.get(*rec..rec + 4) == Some(tag))?;
     let offset = u32::from_be_bytes(font.get(rec + 8..rec + 12)?.try_into().ok()?) as usize;
     let len = u32::from_be_bytes(font.get(rec + 12..rec + 16)?.try_into().ok()?) as usize;
     Some((rec, offset, len))
@@ -185,7 +225,8 @@ fn table(font: &[u8], tag: &[u8; 4]) -> Option<(usize, usize, usize)> {
 /// the font has no such table.
 pub fn with_table_len(mut font: Vec<u8>, tag: &[u8; 4], len: u32) -> Option<Vec<u8>> {
     let (rec, _, _) = table(&font, tag)?;
-    font.get_mut(rec + 12..rec + 16)?.copy_from_slice(&len.to_be_bytes());
+    font.get_mut(rec + 12..rec + 16)?
+        .copy_from_slice(&len.to_be_bytes());
     Some(font)
 }
 
@@ -196,7 +237,8 @@ pub fn with_table_u16(mut font: Vec<u8>, tag: &[u8; 4], at: usize, value: u16) -
     if at + 2 > len {
         return None;
     }
-    font.get_mut(offset + at..offset + at + 2)?.copy_from_slice(&value.to_be_bytes());
+    font.get_mut(offset + at..offset + at + 2)?
+        .copy_from_slice(&value.to_be_bytes());
     Some(font)
 }
 
@@ -216,8 +258,16 @@ pub fn with_empty_notdef(mut font: Vec<u8>) -> Option<Vec<u8>> {
 /// text). Text is written as UTF-16BE on the Unicode and Windows platforms, as its bytes on the
 /// Macintosh platform. `None` if `font` can't be read.
 pub fn with_names(font: &[u8], records: &[(u16, u16, u16, u16, &str)]) -> Option<Vec<u8>> {
-    let strings: Vec<Vec<u8>> =
-        records.iter().map(|r| if r.0 == 1 { r.4.as_bytes().to_vec() } else { r.4.encode_utf16().flat_map(u16::to_be_bytes).collect() }).collect();
+    let strings: Vec<Vec<u8>> = records
+        .iter()
+        .map(|r| {
+            if r.0 == 1 {
+                r.4.as_bytes().to_vec()
+            } else {
+                r.4.encode_utf16().flat_map(u16::to_be_bytes).collect()
+            }
+        })
+        .collect();
     let count = u16::try_from(records.len()).ok()?;
     let mut name = Vec::new();
     for v in [0u16, count, 6 + 12 * count] {
@@ -225,7 +275,14 @@ pub fn with_names(font: &[u8], records: &[(u16, u16, u16, u16, &str)]) -> Option
     }
     let mut at = 0usize;
     for (r, s) in records.iter().zip(&strings) {
-        for v in [r.0, r.1, r.2, r.3, u16::try_from(s.len()).ok()?, u16::try_from(at).ok()?] {
+        for v in [
+            r.0,
+            r.1,
+            r.2,
+            r.3,
+            u16::try_from(s.len()).ok()?,
+            u16::try_from(at).ok()?,
+        ] {
             name.extend_from_slice(&v.to_be_bytes());
         }
         at += s.len();
@@ -246,7 +303,10 @@ pub fn with_code_pages(font: Vec<u8>, range1: u32, range2: u32) -> Option<Vec<u8
 /// `font` with a `meta` table holding `dlng` and `slng` script and language tag lists (as written,
 /// comma-separated), each when given. `None` if `font` can't be read.
 pub fn with_meta(font: &[u8], dlng: Option<&str>, slng: Option<&str>) -> Option<Vec<u8>> {
-    let maps: Vec<(&[u8; 4], &str)> = [(b"dlng", dlng), (b"slng", slng)].into_iter().filter_map(|(t, v)| Some((t, v?))).collect();
+    let maps: Vec<(&[u8; 4], &str)> = [(b"dlng", dlng), (b"slng", slng)]
+        .into_iter()
+        .filter_map(|(t, v)| Some((t, v?)))
+        .collect();
     let count = u32::try_from(maps.len()).ok()?;
     let mut meta = Vec::new();
     for v in [1u32, 0, 0, count] {
@@ -259,6 +319,7 @@ pub fn with_meta(font: &[u8], dlng: Option<&str>, slng: Option<&str>) -> Option<
         meta.extend_from_slice(&u32::try_from(v.len()).ok()?.to_be_bytes());
         at += v.len();
     }
-    maps.iter().for_each(|(_, v)| meta.extend_from_slice(v.as_bytes()));
+    maps.iter()
+        .for_each(|(_, v)| meta.extend_from_slice(v.as_bytes()));
     with_tables(font, vec![(*b"meta", meta)])
 }

@@ -11,7 +11,10 @@ use serde_json::{Value, json};
 use crate::run_code;
 
 fn session() -> Session {
-    let mut s = Session { expr: Some(Arc::new(effectcraft_expr::Expressions)), ..Default::default() };
+    let mut s = Session {
+        expr: Some(Arc::new(effectcraft_expr::Expressions)),
+        ..Default::default()
+    };
     crate::install(&mut s);
     s.config = Some(Arc::new(effectcraft_engine::config::MemoryConfig::default()));
     s
@@ -45,7 +48,12 @@ w.show();
 
 fn lines(r: &Value) -> Vec<String> {
     assert_eq!(r["ok"], true, "{r}");
-    r["output"].as_str().unwrap_or_default().lines().map(str::to_string).collect()
+    r["output"]
+        .as_str()
+        .unwrap_or_default()
+        .lines()
+        .map(str::to_string)
+        .collect()
 }
 
 #[test]
@@ -57,8 +65,15 @@ fn mouse_events_reach_listeners_with_pointer_details() {
     // The published tree says which controls want which mouse events (containers' listeners
     // reach their children: events bubble).
     let pad = w.root.lookup(&json!("pad")).unwrap();
-    assert_eq!(pad.mouse, ["mousedown", "mouseup", "mousemove", "mouseover", "mouseout"]);
-    assert_eq!(w.root.lookup(&json!("snap")).unwrap().mouse, ["mousedown", "click"], "the window's capture listener + its own");
+    assert_eq!(
+        pad.mouse,
+        ["mousedown", "mouseup", "mousemove", "mouseover", "mouseout"]
+    );
+    assert_eq!(
+        w.root.lookup(&json!("snap")).unwrap().mouse,
+        ["mousedown", "click"],
+        "the window's capture listener + its own"
+    );
     assert_eq!(w.root.lookup(&json!("plain")).unwrap().mouse, ["mousedown"]);
     // A press: capture on the window, the target, then bubbling up through the group.
     let r = s
@@ -76,21 +91,55 @@ fn mouse_events_reach_listeners_with_pointer_details() {
         ]
     );
     // Hover and moves carry no click count; x / y default to the control's centre.
-    let r = s.execute("scriptui.mouse", json!({"widget": "pad", "type": "mouseover"})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "pad", "type": "mouseover"}),
+        )
+        .unwrap();
     assert_eq!(lines(&r), ["pad:mouseover@target 60,40 b0 d0 pad"]);
-    let r = s.execute("scriptui.mouse", json!({"widget": "pad", "type": "MouseMove", "x": 3, "y": 4, "altKey": true})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "pad", "type": "MouseMove", "x": 3, "y": 4, "altKey": true}),
+        )
+        .unwrap();
     assert_eq!(lines(&r), ["pad:mousemove@target 3,4 b0 d0 alt pad"]);
     // An event nobody listens for on a control runs nothing (but still answers).
-    let r = s.execute("scriptui.mouse", json!({"widget": "plain", "type": "mouseup"})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "plain", "type": "mouseup"}),
+        )
+        .unwrap();
     assert!(lines(&r).is_empty());
     // A mouse click does what a click does (the checkbox toggles once, onClick runs) and its
     // listeners get the pointer.
-    let r = s.execute("scriptui.mouse", json!({"widget": "snap", "type": "click", "x": 5, "y": 6})).unwrap();
-    assert_eq!(lines(&r), ["onClick true", "box:click@target 5,6 b0 d1 snap"]);
-    assert!(s.script_ui.windows[0].root.lookup(&json!("snap")).unwrap().checked);
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "snap", "type": "click", "x": 5, "y": 6}),
+        )
+        .unwrap();
+    assert_eq!(
+        lines(&r),
+        ["onClick true", "box:click@target 5,6 b0 d1 snap"]
+    );
+    assert!(
+        s.script_ui.windows[0]
+            .root
+            .lookup(&json!("snap"))
+            .unwrap()
+            .checked
+    );
     // Agents' plain click still fires the click listeners.
-    let r = s.execute("scriptui.click", json!({"widget": "snap"})).unwrap();
-    assert_eq!(r["output"].as_str().unwrap_or_default().lines().next(), Some("onClick false"));
+    let r = s
+        .execute("scriptui.click", json!({"widget": "snap"}))
+        .unwrap();
+    assert_eq!(
+        r["output"].as_str().unwrap_or_default().lines().next(),
+        Some("onClick false")
+    );
     s.execute("scriptui.close", json!({})).unwrap();
 }
 
@@ -114,18 +163,43 @@ fn stop_propagation_capture_and_removal() {
     let o = run_code(&mut s, code, "stops.jsx");
     assert!(o.error.is_none(), "{:?}", o.error);
     // A capture listener that stops: the target never hears it.
-    let r = s.execute("scriptui.mouse", json!({"widget": "go", "type": "mouseup"})).unwrap();
+    let r = s
+        .execute("scriptui.mouse", json!({"widget": "go", "type": "mouseup"}))
+        .unwrap();
     assert_eq!(lines(&r), ["capture outer"]);
     // Stopped at the target: no bubbling to the group.
-    let r = s.execute("scriptui.mouse", json!({"widget": "go", "type": "mousedown"})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "go", "type": "mousedown"}),
+        )
+        .unwrap();
     assert_eq!(lines(&r), ["target", "prevented true"]);
     // The group itself as the target.
-    let r = s.execute("scriptui.mouse", json!({"widget": "outer", "type": "mousedown"})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "outer", "type": "mousedown"}),
+        )
+        .unwrap();
     assert_eq!(lines(&r), ["bubble target"]);
     // Removed listeners don't run, and no longer ask for the event.
-    let r = s.execute("scriptui.mouse", json!({"widget": "go", "type": "mousemove"})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "go", "type": "mousemove"}),
+        )
+        .unwrap();
     assert!(lines(&r).is_empty());
-    assert!(!s.script_ui.windows[0].root.lookup(&json!("go")).unwrap().mouse.iter().any(|m| m == "mousemove"));
+    assert!(
+        !s.script_ui.windows[0]
+            .root
+            .lookup(&json!("go"))
+            .unwrap()
+            .mouse
+            .iter()
+            .any(|m| m == "mousemove")
+    );
     s.execute("scriptui.close", json!({})).unwrap();
 }
 
@@ -149,19 +223,61 @@ fn mouse_events_survive_bad_input_and_throwing_listeners() {
     "#;
     let o = run_code(&mut s, code, "bad.jsx");
     assert!(o.error.is_none(), "{:?}", o.error);
-    assert!(s.execute("scriptui.mouse", json!({"widget": "boom", "type": "dblclick"})).is_err());
-    assert!(s.execute("scriptui.mouse", json!({"widget": "off", "type": "mousedown"})).is_err(), "disabled controls get no events");
+    assert!(
+        s.execute(
+            "scriptui.mouse",
+            json!({"widget": "boom", "type": "dblclick"})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute(
+            "scriptui.mouse",
+            json!({"widget": "off", "type": "mousedown"})
+        )
+        .is_err(),
+        "disabled controls get no events"
+    );
     let r = s.execute("scriptui.mouse", json!({"widget": "boom", "type": "mousedown", "x": 1e300, "y": -1e300, "button": 99, "detail": -4})).unwrap();
     assert_eq!(lines(&r), ["at 1000000,-1000000 b2 d0"]);
     // A throwing listener reports its error; the window keeps working.
-    let r = s.execute("scriptui.mouse", json!({"widget": "boom", "type": "mousedown"})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "boom", "type": "mousedown"}),
+        )
+        .unwrap();
     assert_eq!(r["ok"], false, "{r}");
-    assert!(r["error"]["message"].as_str().unwrap_or_default().contains("bad press"), "{r}");
-    let r = s.execute("scriptui.mouse", json!({"widget": "boom", "type": "mousedown"})).unwrap();
-    let at = s.script_ui.windows[0].root.lookup(&json!("boom")).unwrap().bounds;
-    assert_eq!(lines(&r), [format!("at {},{} b0 d1", at[2] / 2.0, at[3] / 2.0)], "x / y default to the centre");
+    assert!(
+        r["error"]["message"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("bad press"),
+        "{r}"
+    );
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "boom", "type": "mousedown"}),
+        )
+        .unwrap();
+    let at = s.script_ui.windows[0]
+        .root
+        .lookup(&json!("boom"))
+        .unwrap()
+        .bounds;
+    assert_eq!(
+        lines(&r),
+        [format!("at {},{} b0 d1", at[2] / 2.0, at[3] / 2.0)],
+        "x / y default to the centre"
+    );
     // A parent cycle made by the script ends instead of hanging.
-    let r = s.execute("scriptui.mouse", json!({"widget": "loop", "type": "mousedown"})).unwrap();
+    let r = s
+        .execute(
+            "scriptui.mouse",
+            json!({"widget": "loop", "type": "mousedown"}),
+        )
+        .unwrap();
     assert!(lines(&r).iter().any(|l| l == "loop ok"), "{r}");
     s.execute("scriptui.close", json!({})).unwrap();
 }

@@ -57,7 +57,10 @@ pub enum FidelityWarning {
 impl FidelityWarning {
     /// `true` for warnings that make encoding fail outright.
     pub fn is_fatal(&self) -> bool {
-        matches!(self, FidelityWarning::WriteUnsupported { .. } | FidelityWarning::DimensionsExceeded { .. })
+        matches!(
+            self,
+            FidelityWarning::WriteUnsupported { .. } | FidelityWarning::DimensionsExceeded { .. }
+        )
     }
 }
 
@@ -77,7 +80,12 @@ impl fmt::Display for FidelityWarning {
             WriteUnsupported { format } => {
                 write!(f, "{} cannot be written in this build", format.name())
             }
-            DepthReduced { from, to } => write!(f, "{} will be reduced to {}", depth_name(*from), depth_name(*to)),
+            DepthReduced { from, to } => write!(
+                f,
+                "{} will be reduced to {}",
+                depth_name(*from),
+                depth_name(*to)
+            ),
             RangeClipped => write!(f, "HDR values outside 0..1 will be clipped"),
             AlphaDiscarded => write!(f, "alpha will be discarded"),
             AlphaBinarized => write!(f, "alpha will be reduced to on/off transparency"),
@@ -92,9 +100,18 @@ impl fmt::Display for FidelityWarning {
             XmpDropped => write!(f, "XMP not supported; it will be dropped"),
             DpiDropped => write!(f, "resolution (DPI) not supported; it will be dropped"),
             TextDropped => write!(f, "text metadata not supported; it will be dropped"),
-            MetadataTooLarge { what, bytes } => write!(f, "{what} ({bytes} bytes) is too large for the format; it will be dropped"),
-            DimensionsExceeded { max_width, max_height } => {
-                write!(f, "image exceeds the format maximum of {max_width}x{max_height}")
+            MetadataTooLarge { what, bytes } => write!(
+                f,
+                "{what} ({bytes} bytes) is too large for the format; it will be dropped"
+            ),
+            DimensionsExceeded {
+                max_width,
+                max_height,
+            } => {
+                write!(
+                    f,
+                    "image exceeds the format maximum of {max_width}x{max_height}"
+                )
             }
         }
     }
@@ -118,7 +135,10 @@ fn pick_sample(src: SampleType, depths: &[SampleType]) -> SampleType {
         SampleType::F16 => &[SampleType::F32, SampleType::U16, SampleType::U8],
         SampleType::F32 => &[SampleType::F16, SampleType::U16, SampleType::U8],
     };
-    pref.iter().copied().find(|s| depths.contains(s)).unwrap_or(depths[0])
+    pref.iter()
+        .copied()
+        .find(|s| depths.contains(s))
+        .unwrap_or(depths[0])
 }
 
 fn pick_layout(src: ChannelLayout, layouts: &[ChannelLayout], alpha: bool) -> ChannelLayout {
@@ -131,7 +151,11 @@ fn pick_layout(src: ChannelLayout, layouts: &[ChannelLayout], alpha: bool) -> Ch
     }
     // CMYK falls back to RGB; gray expands to RGB.
     if cand.is_cmyk() || cand.is_gray() {
-        cand = if cand.has_alpha() { ChannelLayout::Rgba } else { ChannelLayout::Rgb };
+        cand = if cand.has_alpha() {
+            ChannelLayout::Rgba
+        } else {
+            ChannelLayout::Rgb
+        };
     }
     if layouts.contains(&cand) {
         return cand;
@@ -151,14 +175,24 @@ pub(crate) fn plan(image: &Image, format: Format, opts: &EncodeOptions) -> Plan 
     match format {
         // PNM: integer data can use any layout (PAM); float goes to PFM
         // which only has gray and RGB.
-        Format::Pnm if sample.is_float() => Plan { layout: pick_layout(layout, &[ChannelLayout::Gray, ChannelLayout::Rgb], false), sample: SampleType::F32 },
+        Format::Pnm if sample.is_float() => Plan {
+            layout: pick_layout(layout, &[ChannelLayout::Gray, ChannelLayout::Rgb], false),
+            sample: SampleType::F32,
+        },
         // DPX has no luma + alpha descriptor: gray with alpha is written as luma, alpha dropped.
         // The sample type follows the chosen bits (U8 for 8, U16 for 10, 12 and 16).
         Format::Dpx => Plan {
-            layout: if layout == ChannelLayout::GrayA { ChannelLayout::Gray } else { pick_layout(layout, c.layouts, c.alpha) },
+            layout: if layout == ChannelLayout::GrayA {
+                ChannelLayout::Gray
+            } else {
+                pick_layout(layout, c.layouts, c.alpha)
+            },
             sample: crate::codecs::dpx::plan_sample(opts.dpx_bits, sample),
         },
-        _ => Plan { layout: pick_layout(layout, c.layouts, c.alpha), sample: pick_sample(sample, c.depths) },
+        _ => Plan {
+            layout: pick_layout(layout, c.layouts, c.alpha),
+            sample: pick_sample(sample, c.depths),
+        },
     }
 }
 
@@ -168,7 +202,11 @@ pub fn fidelity_warnings(image: &Image, format: Format) -> Vec<FidelityWarning> 
 }
 
 /// Warnings for writing `image` as `format` with the given options.
-pub fn fidelity_warnings_with(image: &Image, format: Format, opts: &EncodeOptions) -> Vec<FidelityWarning> {
+pub fn fidelity_warnings_with(
+    image: &Image,
+    format: Format,
+    opts: &EncodeOptions,
+) -> Vec<FidelityWarning> {
     use FidelityWarning as W;
     let c = caps(format);
     let mut w = Vec::new();
@@ -179,7 +217,10 @@ pub fn fidelity_warnings_with(image: &Image, format: Format, opts: &EncodeOption
     if let Some((mw, mh)) = format.max_dimensions()
         && (image.width() > mw || image.height() > mh)
     {
-        w.push(W::DimensionsExceeded { max_width: mw, max_height: mh });
+        w.push(W::DimensionsExceeded {
+            max_width: mw,
+            max_height: mh,
+        });
     }
     let p = plan(image, format, opts);
     let (sl, ss) = (image.layout(), image.sample_type());
@@ -193,7 +234,10 @@ pub fn fidelity_warnings_with(image: &Image, format: Format, opts: &EncodeOption
         _ => true,
     };
     if lossy_depth {
-        w.push(W::DepthReduced { from: ss, to: p.sample });
+        w.push(W::DepthReduced {
+            from: ss,
+            to: p.sample,
+        });
     }
     if ss.is_float() && !p.sample.is_float() && image.has_out_of_range() {
         w.push(W::RangeClipped);
@@ -233,18 +277,33 @@ pub fn fidelity_warnings_with(image: &Image, format: Format, opts: &EncodeOption
             w.push(W::XmpDropped);
         }
         if format == Format::Jpeg {
-            if let Some(exif) = m.exif.as_deref().filter(|e| crate::codecs::jpeg::exif_segment(e, None).is_none()) {
-                w.push(W::MetadataTooLarge { what: "EXIF", bytes: exif.len() });
+            if let Some(exif) = m
+                .exif
+                .as_deref()
+                .filter(|e| crate::codecs::jpeg::exif_segment(e, None).is_none())
+            {
+                w.push(W::MetadataTooLarge {
+                    what: "EXIF",
+                    bytes: exif.len(),
+                });
             }
-            if let Some(xmp) = m.xmp.as_deref().filter(|x| crate::codecs::jpeg::xmp_segment(x, None).is_none()) {
-                w.push(W::MetadataTooLarge { what: "XMP", bytes: xmp.len() });
+            if let Some(xmp) = m
+                .xmp
+                .as_deref()
+                .filter(|x| crate::codecs::jpeg::xmp_segment(x, None).is_none())
+            {
+                w.push(W::MetadataTooLarge {
+                    what: "XMP",
+                    bytes: xmp.len(),
+                });
             }
         }
         if m.dpi.is_some() && !c.dpi {
             w.push(W::DpiDropped);
         }
         // DPX keeps its own header fields, not free-form text.
-        let text_kept = |k: &str| c.text && (format != Format::Dpx || crate::codecs::dpx::KEYS.contains(&k));
+        let text_kept =
+            |k: &str| c.text && (format != Format::Dpx || crate::codecs::dpx::KEYS.contains(&k));
         if m.text.iter().any(|(k, _)| !text_kept(k)) {
             w.push(W::TextDropped);
         }

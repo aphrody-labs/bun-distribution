@@ -29,7 +29,15 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 };
 
 /// Fields that are not remembered between exports (they belong to one export).
-const PER_EXPORT: [&str; 7] = ["format", "path", "useArtboards", "range", "artboard", "artboards", "selectedOnly"];
+const PER_EXPORT: [&str; 7] = [
+    "format",
+    "path",
+    "useArtboards",
+    "range",
+    "artboard",
+    "artboards",
+    "selectedOnly",
+];
 
 /// The options a first DXF Options dialog starts from (the export's defaults).
 fn defaults() -> Map<String, Value> {
@@ -65,7 +73,10 @@ pub fn open(app: &mut VectorcraftApp, params: &Value) {
 }
 
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    let versions: Vec<(&str, &str)> = DxfVersion::ALL.iter().map(|v| (v.id(), v.label())).collect();
+    let versions: Vec<(&str, &str)> = DxfVersion::ALL
+        .iter()
+        .map(|v| (v.id(), v.label()))
+        .collect();
     choice(ui, d, "version", tl!("Version:"), &versions);
     ui.add_space(4.0);
     scale_row(ui, d);
@@ -74,13 +85,24 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         check(ui, d, "scaleLineweights", tl!("Scale Lineweights"));
     });
     ui.add_space(4.0);
-    let depths: Vec<(&str, &str)> = ColorDepth::ALL.iter().map(|c| (c.id(), c.label())).collect();
+    let depths: Vec<(&str, &str)> = ColorDepth::ALL
+        .iter()
+        .map(|c| (c.id(), c.label()))
+        .collect();
     choice(ui, d, "colors", tl!("Number of Colors:"), &depths);
     let version = DxfVersion::from_id(&d.str("version")).unwrap_or_default();
-    if ColorDepth::from_id(&d.str("colors")) == Some(ColorDepth::True) && version < DxfVersion::R2004 {
-        note(ui, tl!("True colour needs version 2004 or later: the nearest of 256 colours is written."));
+    if ColorDepth::from_id(&d.str("colors")) == Some(ColorDepth::True)
+        && version < DxfVersion::R2004
+    {
+        note(
+            ui,
+            tl!("True colour needs version 2004 or later: the nearest of 256 colours is written."),
+        );
     }
-    let rasters: Vec<(&str, &str)> = RasterFormat::ALL.iter().map(|r| (r.id(), r.label())).collect();
+    let rasters: Vec<(&str, &str)> = RasterFormat::ALL
+        .iter()
+        .map(|r| (r.id(), r.label()))
+        .collect();
     choice(ui, d, "rasterFormat", tl!("Raster File Format:"), &rasters);
     ui.add_space(10.0);
     widgets::subheader(ui, tl!("Export Option"));
@@ -94,22 +116,41 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         }
     });
     ui.add_space(4.0);
-    let selection = app.session.active().is_some_and(|st| !st.selection.is_empty());
-    if widgets::check(ui, tl!("Export Selected Art Only"), d.bool("selectedOnly") && selection, selection) {
-        d.fields.insert("selectedOnly".into(), json!(!d.bool("selectedOnly")));
+    let selection = app
+        .session
+        .active()
+        .is_some_and(|st| !st.selection.is_empty());
+    if widgets::check(
+        ui,
+        tl!("Export Selected Art Only"),
+        d.bool("selectedOnly") && selection,
+        selection,
+    ) {
+        d.fields
+            .insert("selectedOnly".into(), json!(!d.bool("selectedOnly")));
     }
     check(ui, d, "alterPaths", tl!("Alter Paths for Appearance"));
     // Preserve Appearance always outlines type.
     let appearance = preserve == Preserve::Appearance;
-    if widgets::check(ui, tl!("Outline Text"), appearance || d.bool("outlineText"), !appearance) {
-        d.fields.insert("outlineText".into(), json!(!d.bool("outlineText")));
+    if widgets::check(
+        ui,
+        tl!("Outline Text"),
+        appearance || d.bool("outlineText"),
+        !appearance,
+    ) {
+        d.fields
+            .insert("outlineText".into(), json!(!d.bool("outlineText")));
     }
     ui.add_space(8.0);
     super::form::caption(
         ui,
         match preserve {
-            Preserve::Appearance => tl!("Type becomes outlines, and strokes a CAD line can't draw become filled shapes."),
-            Preserve::Editability => tl!("Type stays text, and every stroke is a line with its lineweight and dashes."),
+            Preserve::Appearance => tl!(
+                "Type becomes outlines, and strokes a CAD line can't draw become filled shapes."
+            ),
+            Preserve::Editability => {
+                tl!("Type stays text, and every stroke is a line with its lineweight and dashes.")
+            }
         },
     );
     false
@@ -118,17 +159,26 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 /// Scale: 1 [unit] = [scale] Units (the `unit` and `scale` fields; DXF import reads them too).
 pub(super) fn scale_row(ui: &mut egui::Ui, d: &mut Dialog) {
     let t = crate::theme::Tokens::get(ui.ctx());
-    let units: Vec<&str> = Unit::ALL.iter().filter(|u| **u != Unit::FeetInches).map(|u| u.label()).collect();
+    let units: Vec<&str> = Unit::ALL
+        .iter()
+        .filter(|u| **u != Unit::FeetInches)
+        .map(|u| u.label())
+        .collect();
     let unit = Unit::named(&d.str("unit")).unwrap_or(Unit::Millimeters);
     widgets::label_row(ui, tl!("Scale:"), LABEL, |ui| {
         ui.label(egui::RichText::new("1").color(t.text));
-        if let Some(u) = widgets::dropdown(ui, "dxf-unit", unit.label(), &units, 120.0).and_then(|i| units.get(i)) {
+        if let Some(u) = widgets::dropdown(ui, "dxf-unit", unit.label(), &units, 120.0)
+            .and_then(|i| units.get(i))
+        {
             d.fields.insert("unit".into(), json!(u));
         }
         ui.label(egui::RichText::new("=").color(t.text));
         let scale = d.f64("scale", 1.0);
         if let Some(v) = widgets::plain_field(ui, "dxf-scale", scale, "", 3, 64.0) {
-            let (lo, hi) = (*vectorcraft_cad::SCALE_RANGE.start(), *vectorcraft_cad::SCALE_RANGE.end());
+            let (lo, hi) = (
+                *vectorcraft_cad::SCALE_RANGE.start(),
+                *vectorcraft_cad::SCALE_RANGE.end(),
+            );
             d.fields.insert("scale".into(), json!(v.clamp(lo, hi)));
         }
         ui.label(egui::RichText::new(tl!("Units")).color(t.text));
@@ -151,9 +201,18 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     if let Some(st) = app.session.active() {
         fileio::export_source(st, &params).map_err(|e| e.to_string())?;
     }
-    app.ui.dxf_options =
-        Value::Object(d.fields.iter().filter(|(k, _)| !PER_EXPORT.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())).collect());
+    app.ui.dxf_options = Value::Object(
+        d.fields
+            .iter()
+            .filter(|(k, _)| !PER_EXPORT.contains(&k.as_str()))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
+    );
     app.ui.dialog = None;
-    let path = d.fields.get("path").and_then(Value::as_str).map(str::to_string);
+    let path = d
+        .fields
+        .get("path")
+        .and_then(Value::as_str)
+        .map(str::to_string);
     io::export(app, Some("dxf"), path, &params)
 }

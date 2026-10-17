@@ -14,7 +14,9 @@ use effectcraft_engine::Session;
 use effectcraft_engine::offload::{Inbox, Offload, Post, WorkerRequest};
 use effectcraft_engine::remote::{FrameMsg, FrameReply, FrameServer, Mirror};
 use effectcraft_engine::render::RenderOpts;
-use effectcraft_ui_egui::frames::{FrameImage, FrameKey, Frames, RemoteDone, RemoteFrame, RemoteFrames, RemoteJob, RenderSource};
+use effectcraft_ui_egui::frames::{
+    FrameImage, FrameKey, Frames, RemoteDone, RemoteFrame, RemoteFrames, RemoteJob, RenderSource,
+};
 use effectcraft_ui_egui::{ControlRequest, EffectcraftApp};
 use egui_kittest::Harness;
 use serde_json::json;
@@ -31,7 +33,16 @@ struct FakeWorker {
 
 impl FakeWorker {
     fn new(s: &Session, slots: usize) -> FakeWorker {
-        FakeWorker { slots, state: Mutex::new((Mirror::default(), FrameServer::new(s.footage.clone(), s.expr.clone()), vec![], 0)), syncs: Mutex::default() }
+        FakeWorker {
+            slots,
+            state: Mutex::new((
+                Mirror::default(),
+                FrameServer::new(s.footage.clone(), s.expr.clone()),
+                vec![],
+                0,
+            )),
+            syncs: Mutex::default(),
+        }
     }
     fn pending(&self) -> usize {
         self.state.lock().unwrap().2.len()
@@ -65,7 +76,14 @@ impl RemoteFrames for FakeWorker {
         let mut st = self.state.lock().unwrap();
         let (mirror, server, pending, next) = &mut *st;
         if let Some(m) = mirror.sync(job.revision, &job.project) {
-            self.syncs.lock().unwrap().push(if matches!(m, FrameMsg::Patch { .. }) { "patch" } else { "project" });
+            self.syncs
+                .lock()
+                .unwrap()
+                .push(if matches!(m, FrameMsg::Patch { .. }) {
+                    "patch"
+                } else {
+                    "project"
+                });
             assert!(server.handle(rt(&m)).is_empty());
         }
         *next += 1;
@@ -80,7 +98,20 @@ impl RemoteFrames for FakeWorker {
             prefetch: vec![],
         }));
         match out.into_iter().next() {
-            Some((FrameReply::Frame { width, height, ms, .. }, Some(rgba))) => pending.push((done, RemoteFrame { width, height, rgba, ms })),
+            Some((
+                FrameReply::Frame {
+                    width, height, ms, ..
+                },
+                Some(rgba),
+            )) => pending.push((
+                done,
+                RemoteFrame {
+                    width,
+                    height,
+                    rgba,
+                    ms,
+                },
+            )),
             other => done(Err(format!("{:?}", other.map(|o| o.0)))),
         }
     }
@@ -104,7 +135,11 @@ fn viewer_frames_render_remotely_from_project_diffs() {
     s.execute("file.openDemoProject", json!({})).unwrap();
     let comp = s.active_comp_id().unwrap();
     let c = s.project.comp(comp).unwrap().clone();
-    let opts = RenderOpts { scale: 0.25, guides: true, ..Default::default() };
+    let opts = RenderOpts {
+        scale: 0.25,
+        guides: true,
+        ..Default::default()
+    };
     let key = |s: &Session, f: i64| FrameKey {
         revision: s.revision,
         content: effectcraft_ui_egui::frames::comp_content(&s.project, comp),
@@ -122,7 +157,13 @@ fn viewer_frames_render_remotely_from_project_diffs() {
     for f in 1..=3 {
         frames.request(&source(&s), key(&s, f), comp, c.frame_rate.tick_of(f), opts);
     }
-    frames.request_urgent(&source(&s), key(&s, 10), comp, c.frame_rate.tick_of(10), opts);
+    frames.request_urgent(
+        &source(&s),
+        key(&s, 10),
+        comp,
+        c.frame_rate.tick_of(10),
+        opts,
+    );
     assert_eq!(frames.inflight(), 4);
     // Nothing renders until dispatched (no frame threads with a remote renderer); the viewer's
     // frame goes first, then prefetch in request order.
@@ -130,7 +171,11 @@ fn viewer_frames_render_remotely_from_project_diffs() {
     assert_eq!(frames.remote_busy(), 2);
     assert_eq!(worker.pending(), 2);
     assert_eq!(frames.dispatch_remote(), 0, "both slots are busy");
-    assert_eq!(*worker.syncs.lock().unwrap(), vec!["project"], "the first sync is the whole project");
+    assert_eq!(
+        *worker.syncs.lock().unwrap(),
+        vec!["project"],
+        "the first sync is the whole project"
+    );
     // Frames arrive: the cache holds exactly what the page would have rendered.
     worker.deliver();
     assert_eq!(frames.remote_busy(), 0);
@@ -138,7 +183,11 @@ fn viewer_frames_render_remotely_from_project_diffs() {
         FrameImage::Cpu(c) => c,
         FrameImage::Gpu(_) => unreachable!(),
     };
-    let local = effectcraft_ui_egui::frames::to_color_image(&s.render(comp, c.frame_rate.tick_of(10), opts));
+    let local = effectcraft_ui_egui::frames::to_color_image(&s.render(
+        comp,
+        c.frame_rate.tick_of(10),
+        opts,
+    ));
     assert_eq!(img.size, local.size);
     assert_eq!(img.pixels, local.pixels);
     assert!(frames.is_cached(&key(&s, 1)));
@@ -149,16 +198,35 @@ fn viewer_frames_render_remotely_from_project_diffs() {
     frames.dispatch_remote();
     worker.deliver();
     assert_eq!(frames.inflight(), 0);
-    s.execute("layer.newSolid", json!({"color": "#ff8800"})).unwrap();
-    frames.request_urgent(&source(&s), key(&s, 10), comp, c.frame_rate.tick_of(10), opts);
+    s.execute("layer.newSolid", json!({"color": "#ff8800"}))
+        .unwrap();
+    frames.request_urgent(
+        &source(&s),
+        key(&s, 10),
+        comp,
+        c.frame_rate.tick_of(10),
+        opts,
+    );
     frames.dispatch_remote();
     worker.deliver();
     assert_eq!(worker.syncs.lock().unwrap().last(), Some(&"patch"));
-    let FrameImage::Cpu(img) = frames.get(&key(&s, 10)).unwrap() else { unreachable!() };
-    let local = effectcraft_ui_egui::frames::to_color_image(&s.render(comp, c.frame_rate.tick_of(10), opts));
+    let FrameImage::Cpu(img) = frames.get(&key(&s, 10)).unwrap() else {
+        unreachable!()
+    };
+    let local = effectcraft_ui_egui::frames::to_color_image(&s.render(
+        comp,
+        c.frame_rate.tick_of(10),
+        opts,
+    ));
     assert_eq!(img.pixels, local.pixels);
     // A lost frame is released (requested again later), not cached.
-    frames.request(&source(&s), key(&s, 20), comp, c.frame_rate.tick_of(20), opts);
+    frames.request(
+        &source(&s),
+        key(&s, 20),
+        comp,
+        c.frame_rate.tick_of(20),
+        opts,
+    );
     frames.dispatch_remote();
     worker.lose();
     assert_eq!(frames.inflight(), 0);
@@ -188,22 +256,52 @@ fn exporter() -> Arc<effectcraft_host::FileExporter> {
 #[test]
 fn waiting_commands_reply_when_their_offloaded_job_ends() {
     let off = Arc::new(Manual::default());
-    let mut s = Session { offload: Some(off.clone()), exporter: Some(exporter()), ..Default::default() };
-    s.execute("comp.new", json!({"name": "W", "width": 64, "height": 48, "frameRate": 10, "duration": 1})).unwrap();
-    s.execute("layer.newSolid", json!({"color": "#406080"})).unwrap();
-    s.execute("renderQueue.add", json!({"format": "gif", "output": "/w.gif"})).unwrap();
+    let mut s = Session {
+        offload: Some(off.clone()),
+        exporter: Some(exporter()),
+        ..Default::default()
+    };
+    s.execute(
+        "comp.new",
+        json!({"name": "W", "width": 64, "height": 48, "frameRate": 10, "duration": 1}),
+    )
+    .unwrap();
+    s.execute("layer.newSolid", json!({"color": "#406080"}))
+        .unwrap();
+    s.execute(
+        "renderQueue.add",
+        json!({"format": "gif", "output": "/w.gif"}),
+    )
+    .unwrap();
     let (tx, rx) = std::sync::mpsc::channel();
-    let mut h = Harness::builder().with_size(egui::vec2(1280.0, 800.0)).build_eframe(|_| EffectcraftApp::new(s).with_control(rx));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1280.0, 800.0))
+        .build_eframe(|_| EffectcraftApp::new(s).with_control(rx));
     h.run_steps(2);
     // `renderQueue.render` waits by default: the job goes to the worker, the reply waits.
-    let (req, reply) = ControlRequest::new("engine.execute", json!({"command": "renderQueue.render", "params": {}}));
+    let (req, reply) = ControlRequest::new(
+        "engine.execute",
+        json!({"command": "renderQueue.render", "params": {}}),
+    );
     tx.send(req).unwrap();
     h.run_steps(4);
-    assert_eq!(reply.try_recv().unwrap_err(), TryRecvError::Empty, "no reply while the job runs");
+    assert_eq!(
+        reply.try_recv().unwrap_err(),
+        TryRecvError::Empty,
+        "no reply while the job runs"
+    );
     assert!(h.state().session.is_rendering());
-    let (job, inbox) = off.0.lock().unwrap().pop().expect("the render went to the worker");
+    let (job, inbox) = off
+        .0
+        .lock()
+        .unwrap()
+        .pop()
+        .expect("the render went to the worker");
     // The worker runs it.
-    let mut w = Session { exporter: Some(exporter()), ..Default::default() };
+    let mut w = Session {
+        exporter: Some(exporter()),
+        ..Default::default()
+    };
     let post: Post = std::rc::Rc::new(move |r| inbox.push(r));
     effectcraft_engine::offload::run_request(&mut w, job, &post);
     h.run_steps(4);
@@ -212,8 +310,17 @@ fn waiting_commands_reply_when_their_offloaded_job_ends() {
     assert_eq!(v["result"]["rendering"], false, "{v}");
     assert_eq!(v["result"]["items"][0]["status"], "Done", "{v}");
     // `wait: false` replies at once.
-    h.state_mut().session.execute("renderQueue.add", json!({"format": "gif", "output": "/w2.gif"})).unwrap();
-    let (req, reply) = ControlRequest::new("engine.execute", json!({"command": "renderQueue.render", "params": {"wait": false}}));
+    h.state_mut()
+        .session
+        .execute(
+            "renderQueue.add",
+            json!({"format": "gif", "output": "/w2.gif"}),
+        )
+        .unwrap();
+    let (req, reply) = ControlRequest::new(
+        "engine.execute",
+        json!({"command": "renderQueue.render", "params": {"wait": false}}),
+    );
     tx.send(req).unwrap();
     h.run_steps(2);
     let v = reply.try_recv().expect("immediate reply");

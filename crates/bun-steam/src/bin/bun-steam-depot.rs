@@ -139,7 +139,6 @@ enum Commands {
     },
 }
 
-
 fn main() -> std::process::ExitCode {
     let args: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
     let runtime = match tokio::runtime::Runtime::new() {
@@ -147,14 +146,14 @@ fn main() -> std::process::ExitCode {
         Err(error) => {
             eprintln!("bun-steam-depot: {error}");
             return std::process::ExitCode::FAILURE;
-        },
+        }
     };
     match runtime.block_on(run(args)) {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("bun-steam-depot: {error:#}");
             std::process::ExitCode::FAILURE
-        },
+        }
     }
 }
 
@@ -174,10 +173,12 @@ async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
         )
         .init();
 
-    let cli = Cli::parse_from(std::iter::once(std::ffi::OsString::from("bun-steam-depot")).chain(args));
+    let cli =
+        Cli::parse_from(std::iter::once(std::ffi::OsString::from("bun-steam-depot")).chain(args));
 
-    let token_store_path =
-        cli.token_store.unwrap_or_else(bun_steam::depot::token_store::default_path);
+    let token_store_path = cli
+        .token_store
+        .unwrap_or_else(bun_steam::depot::token_store::default_path);
 
     let make_opts = |app_id: u32, output: PathBuf| -> SteamDownloadOptions {
         SteamDownloadOptions {
@@ -229,7 +230,7 @@ async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
                     );
                 }
             }
-        },
+        }
 
         Commands::Download { app_id, output } => {
             let opts = make_opts(app_id, output);
@@ -248,7 +249,7 @@ async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
                 eprintln!("error={err}");
                 std::process::exit(1);
             }
-        },
+        }
 
         Commands::Sync { output } => {
             let opts = make_opts(IEVR_STEAM_APP_ID, output);
@@ -267,7 +268,7 @@ async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
                 eprintln!("error={err}");
                 std::process::exit(1);
             }
-        },
+        }
 
         Commands::Audit { app_id, output } => {
             let opts = make_opts(app_id, output);
@@ -289,7 +290,7 @@ async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
                 println!("collisions={}", collisions.len());
                 std::process::exit(1);
             }
-        },
+        }
     }
 
     Ok(())

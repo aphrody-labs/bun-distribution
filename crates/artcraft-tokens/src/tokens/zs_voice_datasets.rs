@@ -13,4 +13,9 @@ use crate::prefixes::TokenPrefix;
 pub struct ZsVoiceDatasetToken(pub String);
 
 impl_string_token!(ZsVoiceDatasetToken);
-impl_crockford_generator!(ZsVoiceDatasetToken, 32usize, TokenPrefix::ZsVoiceDataset, CrockfordLower);
+impl_crockford_generator!(
+    ZsVoiceDatasetToken,
+    32usize,
+    TokenPrefix::ZsVoiceDataset,
+    CrockfordLower
+);

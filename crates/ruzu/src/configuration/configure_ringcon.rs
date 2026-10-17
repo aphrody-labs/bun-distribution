@@ -300,11 +300,15 @@ pub fn present(
                 if let Some(popup) = popup.upgrade() {
                     popup.popdown();
                 }
-                if crate::util::inline_menu::enabled() { crate::util::inline_menu::hide_context_menu(); }
+                if crate::util::inline_menu::enabled() {
+                    crate::util::inline_menu::hide_context_menu();
+                }
             });
             actions.append(&action);
         }
-        if !crate::util::inline_menu::enabled() { popup.set_child(Some(&actions)); }
+        if !crate::util::inline_menu::enabled() {
+            popup.set_child(Some(&actions));
+        }
         let gesture = gtk::GestureClick::new();
         gesture.set_button(3);
         let weak = Rc::downgrade(&state);
@@ -315,7 +319,12 @@ pub fn present(
                 if state.capture.get().is_none() {
                     if crate::util::inline_menu::enabled() {
                         if let Some(anchor) = anchor.upgrade() {
-                            crate::util::inline_menu::show_content(anchor.upcast_ref(), &actions, x, y);
+                            crate::util::inline_menu::show_content(
+                                anchor.upcast_ref(),
+                                &actions,
+                                x,
+                                y,
+                            );
                         }
                         return;
                     }

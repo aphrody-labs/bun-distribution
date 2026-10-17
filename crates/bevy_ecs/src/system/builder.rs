@@ -15,7 +15,7 @@ use crate::{
         Local, ParamSet, Query, ReadOnlySystem, System, SystemAccess, SystemInput, SystemMeta,
         SystemParam, SystemParamFunction, SystemParamValidationError,
     },
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, FromWorld, World},
+    world::{DeferredWorld, FromWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 #[expect(deprecated, reason = "`FilteredResources` will be removed.")]
@@ -230,8 +230,8 @@ impl ParamBuilder {
     }
 
     /// Helper method for mutably accessing a [`Resource`] as a param, equivalent to `of::<ResMut<T>>()`
-    pub fn resource_mut<'w, T: Resource<Mutability = Mutable>>(
-    ) -> impl SystemParamBuilder<ResMut<'w, T>> {
+    pub fn resource_mut<'w, T: Resource<Mutability = Mutable>>()
+    -> impl SystemParamBuilder<ResMut<'w, T>> {
         Self
     }
 
@@ -247,8 +247,8 @@ impl ParamBuilder {
     }
 
     /// Helper method for adding a filtered [`Query`] as a param, equivalent to `of::<Query<D, F>>()`
-    pub fn query_filtered<'w, 's, D: QueryData + 'static, F: QueryFilter + 'static>(
-    ) -> impl SystemParamBuilder<Query<'w, 's, D, F>> {
+    pub fn query_filtered<'w, 's, D: QueryData + 'static, F: QueryFilter + 'static>()
+    -> impl SystemParamBuilder<Query<'w, 's, D, F>> {
         Self
     }
 }
@@ -563,12 +563,12 @@ impl<'a, D: QueryData, F: QueryFilter>
 // SAFETY: Any `QueryState<D, F>` for the correct world is valid for `Query::State`,
 // and `QueryBuilder` produces one with the given `world`.
 unsafe impl<
-        'w,
-        's,
-        D: QueryData + 'static,
-        F: QueryFilter + 'static,
-        T: FnOnce(&mut QueryBuilder<D, F>),
-    > SystemParamBuilder<Query<'w, 's, D, F>> for QueryParamBuilder<T>
+    'w,
+    's,
+    D: QueryData + 'static,
+    F: QueryFilter + 'static,
+    T: FnOnce(&mut QueryBuilder<D, F>),
+> SystemParamBuilder<Query<'w, 's, D, F>> for QueryParamBuilder<T>
 {
     fn build(self, world: &mut World) -> QueryState<D, F> {
         let mut builder = QueryBuilder::new(world);

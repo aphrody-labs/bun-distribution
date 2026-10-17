@@ -88,7 +88,11 @@ async fn daemon_tasks(
     // single service runs as root. No other user gets filesystem access.
     let metadata = std::fs::metadata(&config.socket)?;
     if metadata.uid() != config.owner_uid || metadata.gid() != config.owner_gid {
-        std::os::unix::fs::chown(&config.socket, Some(config.owner_uid), Some(config.owner_gid))?;
+        std::os::unix::fs::chown(
+            &config.socket,
+            Some(config.owner_uid),
+            Some(config.owner_gid),
+        )?;
     }
     for path in config.bridges {
         tasks.spawn(aphrody_kernel::host_service::run_bridge(path));
@@ -106,8 +110,9 @@ pub(crate) async fn native_daemon() -> anyhow::Result<tokio::task::JoinSet<Resul
     #[cfg(target_os = "linux")]
     {
         let config = NativeDaemon::read(std::path::Path::new(&path))?;
-        let hosted =
-            kernel().await.ok_or_else(|| anyhow::anyhow!("native OS kernel unavailable"))?;
+        let hosted = kernel()
+            .await
+            .ok_or_else(|| anyhow::anyhow!("native OS kernel unavailable"))?;
         daemon_tasks(config, (*hosted).clone()).await
     }
     #[cfg(not(target_os = "linux"))]
@@ -118,7 +123,9 @@ pub(crate) async fn native_daemon() -> anyhow::Result<tokio::task::JoinSet<Resul
 }
 
 fn imported_native_tool(name: &str) -> bool {
-    ["desktop_", "windows_", "privileged_"].iter().any(|prefix| name.starts_with(prefix))
+    ["desktop_", "windows_", "privileged_"]
+        .iter()
+        .any(|prefix| name.starts_with(prefix))
 }
 
 // A Windows SSH process runs outside the interactive desktop. An explicit protected
@@ -132,7 +139,10 @@ fn native_bridge() -> (String, bool) {
 }
 
 fn desktop_tool(name: &str) -> bool {
-    aphrody_kernel::AdminSubsystem.tools().iter().any(|tool| tool.name == name)
+    aphrody_kernel::AdminSubsystem
+        .tools()
+        .iter()
+        .any(|tool| tool.name == name)
 }
 
 // The owner-only native endpoint imports authenticated Windows/desktop/root bridges.
@@ -149,20 +159,29 @@ async fn bridge_request(
         client.request(method, params, timeout).await
     })
     .await
-    .map_err(|_| ClientError::Timeout { method: method.to_owned() })?
+    .map_err(|_| ClientError::Timeout {
+        method: method.to_owned(),
+    })?
 }
 
 async fn bridge_tools(endpoint: &str, desktop: bool) -> Result<Vec<Tool>, ClientError> {
     let result = bridge_request(endpoint, "tools/list", json!({}), Duration::from_secs(2)).await?;
-    let tools = result.get("tools").and_then(Value::as_array).ok_or_else(|| ClientError::Rpc {
-        code: -32603,
-        message: "native bridge returned an invalid tool catalog".to_owned(),
-    })?;
+    let tools = result
+        .get("tools")
+        .and_then(Value::as_array)
+        .ok_or_else(|| ClientError::Rpc {
+            code: -32603,
+            message: "native bridge returned an invalid tool catalog".to_owned(),
+        })?;
     Ok(tools
         .iter()
         .filter_map(|tool| {
             let name = tool.get("name")?.as_str()?;
-            if if desktop { !desktop_tool(name) } else { !imported_native_tool(name) } {
+            if if desktop {
+                !desktop_tool(name)
+            } else {
+                !imported_native_tool(name)
+            } {
                 return None;
             }
             let mut tool: Tool = serde_json::from_value(tool.clone()).ok()?;
@@ -180,7 +199,10 @@ async fn bridge_call(
     desktop: bool,
 ) -> CallToolResult {
     let name = if desktop {
-        let Some(name) = request.name.strip_prefix("desktop_").filter(|name| desktop_tool(name))
+        let Some(name) = request
+            .name
+            .strip_prefix("desktop_")
+            .filter(|name| desktop_tool(name))
         else {
             return CallToolResult::error(vec![ContentBlock::text("unknown native desktop tool")]);
         };
@@ -188,8 +210,10 @@ async fn bridge_call(
     } else {
         request.name.as_ref()
     };
-    let arguments =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let arguments = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     match bridge_request(
         endpoint,
         "tools/call",
@@ -223,19 +247,28 @@ fn native_capture(name: &str, mut result: CallToolResult) -> CallToolResult {
     {
         return result;
     }
-    let Some(structured) = result.structured_content.as_mut() else { return result };
+    let Some(structured) = result.structured_content.as_mut() else {
+        return result;
+    };
     let image = if raw == "computer_observe" {
         structured.get_mut("image")
     } else {
         Some(&mut *structured)
     };
-    let Some(image) = image.and_then(Value::as_object_mut) else { return result };
+    let Some(image) = image.and_then(Value::as_object_mut) else {
+        return result;
+    };
     if image.get("mimeType").and_then(Value::as_str) != Some("image/png") {
         return result;
     }
-    let Some(Value::String(data)) = image.remove("dataBase64") else { return result };
+    let Some(Value::String(data)) = image.remove("dataBase64") else {
+        return result;
+    };
     let metadata = serde_json::to_string_pretty(structured).unwrap_or_default();
-    result.content = vec![ContentBlock::text(metadata), ContentBlock::image(data, "image/png")];
+    result.content = vec![
+        ContentBlock::text(metadata),
+        ContentBlock::image(data, "image/png"),
+    ];
     result
 }
 
@@ -247,7 +280,7 @@ async fn kernel() -> Option<Arc<Kernel>> {
                 Err(error) => {
                     tracing::warn!(%error, "embedded Aphrody kernel unavailable");
                     None
-                },
+                }
             }
         })
         .await
@@ -283,12 +316,21 @@ pub(crate) async fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
-    CATALOG.read().ok()?.iter().find(|tool| tool.name == name).cloned()
+    CATALOG
+        .read()
+        .ok()?
+        .iter()
+        .find(|tool| tool.name == name)
+        .cloned()
 }
 
 pub(crate) async fn owns(name: &str) -> bool {
     if let Some(kernel) = kernel().await
-        && kernel.tools().await.iter().any(|(_, tool)| tool.name == name)
+        && kernel
+            .tools()
+            .await
+            .iter()
+            .any(|(_, tool)| tool.name == name)
     {
         return true;
     }
@@ -304,7 +346,11 @@ pub(crate) async fn owns(name: &str) -> bool {
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let kernel = kernel().await;
     let embedded_owns = if let Some(kernel) = &kernel {
-        kernel.tools().await.iter().any(|(_, tool)| tool.name == request.name)
+        kernel
+            .tools()
+            .await
+            .iter()
+            .any(|(_, tool)| tool.name == request.name)
     } else {
         false
     };
@@ -315,9 +361,13 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let Some(kernel) = kernel else {
         return CallToolResult::error(vec![ContentBlock::text("Aphrody kernel unavailable")]);
     };
-    let arguments =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
-    let result = kernel.call_tool_result(request.name.as_ref(), arguments).await;
+    let arguments = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let result = kernel
+        .call_tool_result(request.name.as_ref(), arguments)
+        .await;
     serde_json::from_value(result)
         .map(|result| native_capture(request.name.as_ref(), result))
         .unwrap_or_else(|reason| {
@@ -348,8 +398,17 @@ mod tests {
         assert_eq!(image["content"][1]["type"], "image");
         assert_eq!(image["content"][1]["data"], "AQ==");
         assert_eq!(image["structuredContent"]["window"]["Handle"], 42);
-        assert!(image["structuredContent"]["image"].get("dataBase64").is_none());
-        assert!(!image["content"][0]["text"].as_str().unwrap().contains("AQ=="));
+        assert!(
+            image["structuredContent"]["image"]
+                .get("dataBase64")
+                .is_none()
+        );
+        assert!(
+            !image["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("AQ==")
+        );
         let unchanged = serde_json::to_value(native_capture("nu_eval", result())).unwrap();
         assert_eq!(unchanged["content"].as_array().unwrap().len(), 1);
         assert_eq!(unchanged["structuredContent"], metadata);
@@ -364,13 +423,25 @@ mod tests {
         let value = json!({"socket":directory.path().join("os.sock"),"ownerUid":0,"ownerGid":0});
         std::fs::write(&path, value.to_string()).unwrap();
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
-        assert!(NativeDaemon::read(&path).err().unwrap().to_string().contains("private"));
+        assert!(
+            NativeDaemon::read(&path)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("private")
+        );
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
         assert!(NativeDaemon::read(&path).is_ok());
         let mut relative_bridge = value;
         relative_bridge["bridges"] = json!(["desktop.json"]);
         std::fs::write(&path, relative_bridge.to_string()).unwrap();
-        assert!(NativeDaemon::read(&path).err().unwrap().to_string().contains("absolute"));
+        assert!(
+            NativeDaemon::read(&path)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("absolute")
+        );
     }
 
     #[cfg(target_os = "linux")]
@@ -379,7 +450,11 @@ mod tests {
         use std::os::unix::fs::MetadataExt;
         let directory = tempfile::tempdir().unwrap();
         let owner = std::fs::metadata(directory.path()).unwrap();
-        let endpoint = directory.path().join("os.sock").to_string_lossy().into_owned();
+        let endpoint = directory
+            .path()
+            .join("os.sock")
+            .to_string_lossy()
+            .into_owned();
         let config = || NativeDaemon {
             socket: endpoint.clone(),
             owner_uid: owner.uid(),
@@ -390,7 +465,12 @@ mod tests {
         let client = Client::connect(&endpoint).await.unwrap();
         client.initialize("one-native-process-test").await.unwrap();
         assert!(daemon_tasks(config(), Kernel::new()).await.is_err());
-        assert!(client.request("ping", json!({}), Duration::from_secs(2)).await.is_ok());
+        assert!(
+            client
+                .request("ping", json!({}), Duration::from_secs(2))
+                .await
+                .is_ok()
+        );
         drop(client);
         tasks.shutdown().await;
         assert!(Client::connect(&endpoint).await.is_err());
@@ -412,7 +492,9 @@ mod tests {
             while read.read_line(&mut line).await.unwrap() > 0 {
                 let message: Value = serde_json::from_str(&line).unwrap();
                 line.clear();
-                let Some(id) = message.get("id") else { continue };
+                let Some(id) = message.get("id") else {
+                    continue;
+                };
                 let initializing = message["method"] == "initialize";
                 let payload = if initializing {
                     json!({"protocolVersion":"2025-03-26", "capabilities":{}})
@@ -466,7 +548,10 @@ mod tests {
                 serde_json::to_value(bridge_call(&endpoint, &request, false).await).unwrap();
             assert_eq!(returned["content"], result["content"]);
             assert_eq!(returned["isError"], result["isError"]);
-            assert_eq!(returned.get("structuredContent"), result.get("structuredContent"));
+            assert_eq!(
+                returned.get("structuredContent"),
+                result.get("structuredContent")
+            );
             task.await.unwrap();
         }
     }
@@ -492,6 +577,9 @@ mod tests {
         assert_eq!(returned["content"], result["content"]);
         task.await.unwrap();
         let rejected = serde_json::from_value(json!({"name":"desktop_nu_eval"})).unwrap();
-        assert_eq!(bridge_call(&endpoint, &rejected, true).await.is_error, Some(true));
+        assert_eq!(
+            bridge_call(&endpoint, &rejected, true).await.is_error,
+            Some(true)
+        );
     }
 }

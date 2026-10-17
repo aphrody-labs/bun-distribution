@@ -18,7 +18,13 @@ pub(crate) enum Coverage {
 }
 
 type DetailResult = Result<(u64, Surface), String>;
-type OverlayKey = (u64, bool, PixelRect, crate::camera_raw_scope_ui::ClippingMode, crate::theme::ThemeKind);
+type OverlayKey = (
+    u64,
+    bool,
+    PixelRect,
+    crate::camera_raw_scope_ui::ClippingMode,
+    crate::theme::ThemeKind,
+);
 
 pub(crate) struct DetailPreview {
     source: Surface,
@@ -66,12 +72,16 @@ impl DetailPreview {
     }
 
     fn poll(&mut self, revision: u64) {
-        let Some((requested_revision, rx)) = &self.pending else { return };
+        let Some((requested_revision, rx)) = &self.pending else {
+            return;
+        };
         let requested_revision = *requested_revision;
         let result = match rx.try_recv() {
             Ok(result) => result,
             Err(TryRecvError::Empty) => return,
-            Err(TryRecvError::Disconnected) => Err("Camera Raw detail preview worker stopped".into()),
+            Err(TryRecvError::Disconnected) => {
+                Err("Camera Raw detail preview worker stopped".into())
+            }
         };
         self.pending = None;
         match result {
@@ -91,7 +101,10 @@ impl DetailPreview {
     }
 
     fn request(&mut self, ctx: &Context, revision: u64, params: &CameraRaw) {
-        if self.pending.is_some() || self.result.as_ref().is_some_and(|(r, _)| *r == revision) || self.failed_revision == Some(revision) {
+        if self.pending.is_some()
+            || self.result.as_ref().is_some_and(|(r, _)| *r == revision)
+            || self.failed_revision == Some(revision)
+        {
             return;
         }
         self.result = None;
@@ -116,9 +129,11 @@ impl DetailPreview {
             if cancel.load(Ordering::Relaxed) {
                 return;
             }
-            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| develop(&source, area, &params, &coverage)))
-                .map(|surface| (revision, surface))
-                .map_err(|_| "Camera Raw detail preview failed; the proxy remains available".into());
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                develop(&source, area, &params, &coverage)
+            }))
+            .map(|surface| (revision, surface))
+            .map_err(|_| "Camera Raw detail preview failed; the proxy remains available".into());
             if !cancel.load(Ordering::Relaxed) {
                 let _ = tx.send(result);
                 ctx.request_repaint();
@@ -129,10 +144,14 @@ impl DetailPreview {
             // A closed dialog can leave one non-interruptible engine stage finishing. Serialize
             // that work with the next dialog instead of multiplying its peak memory.
             static WORKER: std::sync::Mutex<()> = std::sync::Mutex::new(());
-            match std::thread::Builder::new().name("camera-raw-preview".into()).spawn(move || {
-                let _guard = WORKER.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-                work();
-            }) {
+            match std::thread::Builder::new()
+                .name("camera-raw-preview".into())
+                .spawn(move || {
+                    let _guard = WORKER
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    work();
+                }) {
                 Ok(_) => self.pending = Some((revision, rx)),
                 Err(e) => {
                     self.error = Some(format!("Cannot start Camera Raw preview: {e}"));
@@ -169,7 +188,14 @@ impl DetailPreview {
         if !needed {
             return false;
         }
-        let Some(crop) = visible_pixels(image, ui.clip_rect(), self.area, ui.input(|i| i.max_texture_side)) else { return false };
+        let Some(crop) = visible_pixels(
+            image,
+            ui.clip_rect(),
+            self.area,
+            ui.input(|i| i.max_texture_side),
+        ) else {
+            return false;
+        };
         let original = before || params.is_identity();
         if !original {
             self.request(ui.ctx(), revision, params);
@@ -184,28 +210,53 @@ impl DetailPreview {
         } else {
             return false;
         };
-        let key = (if original { 0 } else { revision }, original, crop, display.key);
+        let key = (
+            if original { 0 } else { revision },
+            original,
+            crop,
+            display.key,
+        );
         if self.crop != Some(key) {
             let color = crop_image(surface, crop, display);
-            let options = TextureOptions { magnification: egui::TextureFilter::Nearest, ..TextureOptions::LINEAR };
+            let options = TextureOptions {
+                magnification: egui::TextureFilter::Nearest,
+                ..TextureOptions::LINEAR
+            };
             match &mut self.texture {
                 Some(t) => t.set(color, options),
-                None => self.texture = Some(ui.ctx().load_texture("cr-detail-preview", color, options)),
+                None => {
+                    self.texture = Some(ui.ctx().load_texture("cr-detail-preview", color, options))
+                }
             }
             self.crop = Some(key);
         }
         if let Some(texture) = &self.texture {
             let scale = image.size() / vec2(self.area.width() as f32, self.area.height() as f32);
             let screen = Rect::from_min_size(
-                image.min + vec2((crop.x0 - self.area.x0) as f32, (crop.y0 - self.area.y0) as f32) * scale,
+                image.min
+                    + vec2(
+                        (crop.x0 - self.area.x0) as f32,
+                        (crop.y0 - self.area.y0) as f32,
+                    ) * scale,
                 vec2(crop.width() as f32, crop.height() as f32) * scale,
             );
-            ui.painter().image(texture.id(), screen, Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
+            ui.painter().image(
+                texture.id(),
+                screen,
+                Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
             self.ready = true;
         }
         true
     }
-    pub(crate) fn sample(&self, p: [f32; 2], revision: u64, before: bool, params: &CameraRaw) -> Option<[f32; 4]> {
+    pub(crate) fn sample(
+        &self,
+        p: [f32; 2],
+        revision: u64,
+        before: bool,
+        params: &CameraRaw,
+    ) -> Option<[f32; 4]> {
         if !self.ready || !p.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v)) {
             return None;
         }
@@ -218,17 +269,27 @@ impl DetailPreview {
         } else {
             return None;
         };
-        let x = self.area.x0 + ((p[0] * self.area.width() as f32) as i32).min((self.area.width() - 1) as i32);
-        let y = self.area.y0 + ((p[1] * self.area.height() as f32) as i32).min((self.area.height() - 1) as i32);
+        let x = self.area.x0
+            + ((p[0] * self.area.width() as f32) as i32).min((self.area.width() - 1) as i32);
+        let y = self.area.y0
+            + ((p[1] * self.area.height() as f32) as i32).min((self.area.height() - 1) as i32);
         Some(source.rgba(x, y))
     }
 
-    pub(crate) fn overlay(&mut self, ui: &egui::Ui, image: Rect, revision: u64, mode: crate::camera_raw_scope_ui::ClippingMode) -> bool {
+    pub(crate) fn overlay(
+        &mut self,
+        ui: &egui::Ui,
+        image: Rect,
+        revision: u64,
+        mode: crate::camera_raw_scope_ui::ClippingMode,
+    ) -> bool {
         use crate::camera_raw_scope_ui::ClippingMode;
         if !self.ready {
             return false;
         }
-        let Some((r, original, crop, _display_key)) = self.crop else { return false };
+        let Some((r, original, crop, _display_key)) = self.crop else {
+            return false;
+        };
         let t = crate::theme::Tokens::get(ui.ctx());
         let key = (r, original, crop, mode, t.kind);
         if self.overlay_key != Some(key) {
@@ -275,17 +336,32 @@ impl DetailPreview {
             let color = ColorImage::new([crop.width() as usize, crop.height() as usize], pixels);
             match &mut self.overlay_texture {
                 Some(t) => t.set(color, TextureOptions::NEAREST),
-                None => self.overlay_texture = Some(ui.ctx().load_texture("cr-detail-clipping", color, TextureOptions::NEAREST)),
+                None => {
+                    self.overlay_texture = Some(ui.ctx().load_texture(
+                        "cr-detail-clipping",
+                        color,
+                        TextureOptions::NEAREST,
+                    ))
+                }
             }
             self.overlay_key = Some(key);
         }
         if let Some(texture) = &self.overlay_texture {
             let scale = image.size() / vec2(self.area.width() as f32, self.area.height() as f32);
             let screen = Rect::from_min_size(
-                image.min + vec2((crop.x0 - self.area.x0) as f32, (crop.y0 - self.area.y0) as f32) * scale,
+                image.min
+                    + vec2(
+                        (crop.x0 - self.area.x0) as f32,
+                        (crop.y0 - self.area.y0) as f32,
+                    ) * scale,
                 vec2(crop.width() as f32, crop.height() as f32) * scale,
             );
-            ui.painter().image(texture.id(), screen, Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
+            ui.painter().image(
+                texture.id(),
+                screen,
+                Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
         }
         true
     }
@@ -304,7 +380,12 @@ fn develop(source: &Surface, area: PixelRect, params: &CameraRaw, coverage: &Cov
         let rect = PixelRect::new(area.x0, y, area.x1, y + 1);
         source.read_region_into(rect, &mut original);
         result.read_region_into(rect, &mut row);
-        for (x, (out, original)) in row.chunks_exact_mut(channels).zip(original.chunks_exact(channels)).take(width).enumerate() {
+        for (x, (out, original)) in row
+            .chunks_exact_mut(channels)
+            .zip(original.chunks_exact(channels))
+            .take(width)
+            .enumerate()
+        {
             let x = area.x0 + x as i32;
             let alpha = match coverage {
                 Coverage::Selection(mask) => mask.sample_channel(x, y, 0),
@@ -321,24 +402,41 @@ fn develop(source: &Surface, area: PixelRect, params: &CameraRaw, coverage: &Cov
     result
 }
 
-fn visible_pixels(image: Rect, viewport: Rect, area: PixelRect, max_side: usize) -> Option<PixelRect> {
+fn visible_pixels(
+    image: Rect,
+    viewport: Rect,
+    area: PixelRect,
+    max_side: usize,
+) -> Option<PixelRect> {
     let visible = image.intersect(viewport);
-    if !image.is_finite() || image.width() <= 0.0 || image.height() <= 0.0 || !visible.is_positive() || area.is_empty() {
+    if !image.is_finite()
+        || image.width() <= 0.0
+        || image.height() <= 0.0
+        || !visible.is_positive()
+        || area.is_empty()
+    {
         return None;
     }
     let scale = vec2(area.width() as f32, area.height() as f32) / image.size();
     let lo = (visible.min - image.min) * scale;
     let hi = (visible.max - image.min) * scale;
     let crop = PixelRect::new(
-        area.x0.saturating_add((lo.x.floor() as i32).saturating_sub(1)),
-        area.y0.saturating_add((lo.y.floor() as i32).saturating_sub(1)),
-        area.x0.saturating_add((hi.x.ceil() as i32).saturating_add(1)),
-        area.y0.saturating_add((hi.y.ceil() as i32).saturating_add(1)),
+        area.x0
+            .saturating_add((lo.x.floor() as i32).saturating_sub(1)),
+        area.y0
+            .saturating_add((lo.y.floor() as i32).saturating_sub(1)),
+        area.x0
+            .saturating_add((hi.x.ceil() as i32).saturating_add(1)),
+        area.y0
+            .saturating_add((hi.y.ceil() as i32).saturating_add(1)),
     )
     .intersect(&area);
     // Proxy is sufficient below its native scale; a larger intermediate should never be
     // allocated if an unusually large viewport exceeds the device's texture limit.
-    (crop.width() as usize <= max_side && crop.height() as usize <= max_side && crop.width() as u64 * crop.height() as u64 <= 16_777_216).then_some(crop)
+    (crop.width() as usize <= max_side
+        && crop.height() as usize <= max_side
+        && crop.width() as u64 * crop.height() as u64 <= 16_777_216)
+        .then_some(crop)
 }
 
 /// Pixels per band [`display_image`] reads and colour-converts at once: at least `photocraft-cms`'s
@@ -346,7 +444,11 @@ fn visible_pixels(image: Rect, viewport: Rect, area: PixelRect, max_side: usize)
 const CROP_BAND_PIXELS: usize = 64 * 1024;
 
 /// The visible pixels of `surface`, as the canvas shows them.
-fn crop_image(surface: &Surface, area: PixelRect, display: &photocraft_engine::display_color::CanvasDisplay) -> ColorImage {
+fn crop_image(
+    surface: &Surface,
+    area: PixelRect,
+    display: &photocraft_engine::display_color::CanvasDisplay,
+) -> ColorImage {
     display_image(area, display, |rect, out| surface.read_rgba_into(rect, out))
 }
 
@@ -368,8 +470,16 @@ pub(crate) fn display_image(
     let band_rows = (CROP_BAND_PIXELS / width).max(1);
     let band = |index: usize, out: &mut [Color32]| {
         let y0 = area.y0.saturating_add((index * band_rows) as i32);
-        let rect = PixelRect::new(area.x0, y0, area.x1, y0.saturating_add((out.len() / width) as i32));
-        let mut buf = photocraft_compose::Buffer { rect, px: vec![[0.0; 4]; out.len()] };
+        let rect = PixelRect::new(
+            area.x0,
+            y0,
+            area.x1,
+            y0.saturating_add((out.len() / width) as i32),
+        );
+        let mut buf = photocraft_compose::Buffer {
+            rect,
+            px: vec![[0.0; 4]; out.len()],
+        };
         read(rect, &mut buf.px);
         let img = display.to_rgba8(&buf);
         for (o, &[r, g, b, a]) in out.iter_mut().zip(img.pixels.as_chunks::<4>().0) {
@@ -379,7 +489,10 @@ pub(crate) fn display_image(
     #[cfg(not(target_arch = "wasm32"))]
     {
         use rayon::prelude::*;
-        pixels.par_chunks_mut(band_rows * width).enumerate().for_each(|(i, out)| band(i, out));
+        pixels
+            .par_chunks_mut(band_rows * width)
+            .enumerate()
+            .for_each(|(i, out)| band(i, out));
     }
     #[cfg(target_arch = "wasm32")]
     for (i, out) in pixels.chunks_mut(band_rows * width).enumerate() {
@@ -401,16 +514,25 @@ mod tests {
             p.copy_from_slice(&[if i % 2 == 0 { 0.1 } else { 0.8 }, 0.3, 0.6, 1.0]);
         }
         source.write_region(area, &values);
-        let params = CameraRaw { exposure: 0.5, texture: 15.0, grain_amount: 30.0, ..Default::default() };
+        let params = CameraRaw {
+            exposure: 0.5,
+            texture: 15.0,
+            grain_amount: 30.0,
+            ..Default::default()
+        };
         let expected = photocraft_engine::lens_cmds::camera_raw_surface(&source, area, &params);
         assert_eq!(develop(&source, area, &params, &Coverage::None), expected);
         let mask = Surface::with_default(PixelFormat::GRAY8, &[0.0]);
-        assert_eq!(develop(&source, area, &params, &Coverage::Selection(mask)), source);
+        assert_eq!(
+            develop(&source, area, &params, &Coverage::Selection(mask)),
+            source
+        );
     }
     #[test]
     fn stale_refinements_and_failed_old_revisions_do_not_replace_new_settings() {
         let source = Surface::with_default(PixelFormat::RGBA8, &[0.2, 0.4, 0.6, 1.0]);
-        let mut preview = DetailPreview::new(source.clone(), PixelRect::new(0, 0, 16, 16), Coverage::None);
+        let mut preview =
+            DetailPreview::new(source.clone(), PixelRect::new(0, 0, 16, 16), Coverage::None);
         let (tx, rx) = std::sync::mpsc::channel();
         preview.pending = Some((1, rx));
         tx.send(Ok((1, source.clone()))).unwrap();
@@ -421,7 +543,11 @@ mod tests {
         preview.pending = Some((1, rx));
         tx.send(Err("old failure".into())).unwrap();
         preview.poll(2);
-        assert_eq!(preview.failed_revision, Some(1), "a failure must not suppress the new revision");
+        assert_eq!(
+            preview.failed_revision,
+            Some(1),
+            "a failure must not suppress the new revision"
+        );
         let (tx, rx) = std::sync::mpsc::channel();
         preview.pending = Some((2, rx));
         tx.send(Ok((2, source))).unwrap();
@@ -435,7 +561,11 @@ mod tests {
         use photocraft_color::{ColorMode, PixelFormat, SampleType};
         for depth in [SampleType::U8, SampleType::U16, SampleType::F32] {
             for mode in [ColorMode::Rgb, ColorMode::Grayscale] {
-                let format = PixelFormat { mode, sample: depth, alpha: true };
+                let format = PixelFormat {
+                    mode,
+                    sample: depth,
+                    alpha: true,
+                };
                 let area = PixelRect::new(-12, 8, 28, 38);
                 let mut source = Surface::new(format);
                 let channels = format.channels();
@@ -445,21 +575,41 @@ mod tests {
                     pixel[channels - 1] = 1.0;
                 }
                 source.write_region(area, &pixels);
-                let params = CameraRaw { exposure: 0.5, sharpen_amount: 20.0, grain_amount: 30.0, ..Default::default() };
+                let params = CameraRaw {
+                    exposure: 0.5,
+                    sharpen_amount: 20.0,
+                    grain_amount: 30.0,
+                    ..Default::default()
+                };
                 let full = develop(&source, area, &params, &Coverage::None);
-                let expected = photocraft_engine::lens_cmds::camera_raw_surface(&source, area, &params);
+                let expected =
+                    photocraft_engine::lens_cmds::camera_raw_surface(&source, area, &params);
                 assert_eq!(full, expected);
                 let mut preview = DetailPreview::new(source, area, Coverage::None);
                 preview.result = Some((1, full));
                 preview.ready = true;
                 let dark = preview.sample([0.0, 0.0], 1, false, &params).unwrap();
-                let light = preview.sample([1.0 / 40.0, 0.0], 1, false, &params).unwrap();
-                assert!(light[0] - dark[0] > 0.5, "native alternating pixels survive: {mode:?}/{depth:?}");
-                let mut doc =
-                    photocraft_doc::Document::new("test", photocraft_geom::Size::new(40, 30), photocraft_doc::ColorMode::Rgb, photocraft_doc::SampleType::U8);
+                let light = preview
+                    .sample([1.0 / 40.0, 0.0], 1, false, &params)
+                    .unwrap();
+                assert!(
+                    light[0] - dark[0] > 0.5,
+                    "native alternating pixels survive: {mode:?}/{depth:?}"
+                );
+                let mut doc = photocraft_doc::Document::new(
+                    "test",
+                    photocraft_geom::Size::new(40, 30),
+                    photocraft_doc::ColorMode::Rgb,
+                    photocraft_doc::SampleType::U8,
+                );
                 doc.icc_profile = Some(photocraft_cms::Builtin::Srgb.profile().to_bytes());
-                let display = photocraft_engine::color_cmds::ColorState::default().canvas_display(&doc).unwrap();
-                assert_eq!(crop_image(&expected, PixelRect::new(-12, 8, -10, 9), &display).size, [2, 1]);
+                let display = photocraft_engine::color_cmds::ColorState::default()
+                    .canvas_display(&doc)
+                    .unwrap();
+                assert_eq!(
+                    crop_image(&expected, PixelRect::new(-12, 8, -10, 9), &display).size,
+                    [2, 1]
+                );
                 assert!(preview.sample([f32::NAN, 0.0], 1, false, &params).is_none());
                 assert!(preview.sample([0.5, 0.5], 2, false, &params).is_none());
             }
@@ -469,23 +619,42 @@ mod tests {
     #[test]
     fn refined_crop_uses_linear_document_display_encoding() {
         let area = PixelRect::new(0, 0, 1, 1);
-        let mut source =
-            Surface::new(photocraft_color::PixelFormat { mode: photocraft_color::ColorMode::Rgb, sample: photocraft_color::SampleType::F32, alpha: true });
+        let mut source = Surface::new(photocraft_color::PixelFormat {
+            mode: photocraft_color::ColorMode::Rgb,
+            sample: photocraft_color::SampleType::F32,
+            alpha: true,
+        });
         source.write_region(area, &[0.25, 0.25, 0.25, 1.0]);
-        let mut doc = photocraft_doc::Document::new("test", photocraft_geom::Size::new(1, 1), photocraft_doc::ColorMode::Rgb, photocraft_doc::SampleType::F32);
+        let mut doc = photocraft_doc::Document::new(
+            "test",
+            photocraft_geom::Size::new(1, 1),
+            photocraft_doc::ColorMode::Rgb,
+            photocraft_doc::SampleType::F32,
+        );
         doc.icc_profile = Some(photocraft_cms::Builtin::LinearSrgb.profile().to_bytes());
         let mut color = photocraft_engine::color_cmds::ColorState::default();
         color.settings.monitor_profile = "srgb".into();
         let display = color.canvas_display(&doc).unwrap();
         let image = crop_image(&source, area, &display);
-        assert!(image.pixels[0].r() > 130, "linear 0.25 should be shown as encoded sRGB");
+        assert!(
+            image.pixels[0].r() > 130,
+            "linear 0.25 should be shown as encoded sRGB"
+        );
     }
 
     #[test]
     fn huge_sparse_images_keep_the_proxy_without_starting_an_unbounded_worker() {
         let source = Surface::new(PixelFormat::RGBA8);
-        let mut preview = DetailPreview::new(source, PixelRect::new(0, 0, 8001, 8000), Coverage::None);
-        preview.request(&Context::default(), 1, &CameraRaw { exposure: 1.0, ..Default::default() });
+        let mut preview =
+            DetailPreview::new(source, PixelRect::new(0, 0, 8001, 8000), Coverage::None);
+        preview.request(
+            &Context::default(),
+            1,
+            &CameraRaw {
+                exposure: 1.0,
+                ..Default::default()
+            },
+        );
         assert!(!preview.pending());
         assert!(preview.error.as_deref().unwrap().contains("64 megapixels"));
         assert_eq!(preview.failed_revision, Some(1));
@@ -498,7 +667,15 @@ mod tests {
         let visible = Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
         let crop = visible_pixels(image, visible, area, 4096).unwrap();
         assert_eq!((crop.width(), crop.height()), (802, 602));
-        assert!(visible_pixels(image, Rect::from_min_size(Pos2::ZERO, vec2(8000.0, 6000.0)), area, 4096).is_none());
+        assert!(
+            visible_pixels(
+                image,
+                Rect::from_min_size(Pos2::ZERO, vec2(8000.0, 6000.0)),
+                area,
+                4096
+            )
+            .is_none()
+        );
         assert!(visible_pixels(Rect::NOTHING, visible, area, 4096).is_none());
     }
 
@@ -507,24 +684,56 @@ mod tests {
         // Several bands, a ragged last one and an area off the image origin, through a real
         // transform (an Adobe RGB document on an sRGB monitor) and without one.
         let area = PixelRect::new(-3, 5, 1021, 5 + 2 * (CROP_BAND_PIXELS / 1024) as i32 + 7);
-        let mut source = Surface::new(PixelFormat { mode: photocraft_color::ColorMode::Rgb, sample: photocraft_color::SampleType::U8, alpha: true });
+        let mut source = Surface::new(PixelFormat {
+            mode: photocraft_color::ColorMode::Rgb,
+            sample: photocraft_color::SampleType::U8,
+            alpha: true,
+        });
         let n = (area.width() * area.height()) as usize;
-        let px: Vec<f32> = (0..n).flat_map(|i| [(i % 251) as f32 / 255.0, (i % 241) as f32 / 255.0, (i % 239) as f32 / 255.0, (i % 7) as f32 / 6.0]).collect();
+        let px: Vec<f32> = (0..n)
+            .flat_map(|i| {
+                [
+                    (i % 251) as f32 / 255.0,
+                    (i % 241) as f32 / 255.0,
+                    (i % 239) as f32 / 255.0,
+                    (i % 7) as f32 / 6.0,
+                ]
+            })
+            .collect();
         source.write_region(area, &px);
-        for profile in [photocraft_cms::Builtin::AdobeRgbCompat, photocraft_cms::Builtin::Srgb] {
-            let mut doc =
-                photocraft_doc::Document::new("test", photocraft_geom::Size::new(1024, 1024), photocraft_doc::ColorMode::Rgb, photocraft_doc::SampleType::U8);
+        for profile in [
+            photocraft_cms::Builtin::AdobeRgbCompat,
+            photocraft_cms::Builtin::Srgb,
+        ] {
+            let mut doc = photocraft_doc::Document::new(
+                "test",
+                photocraft_geom::Size::new(1024, 1024),
+                photocraft_doc::ColorMode::Rgb,
+                photocraft_doc::SampleType::U8,
+            );
             doc.icc_profile = Some(profile.profile().to_bytes());
             let mut color = photocraft_engine::color_cmds::ColorState::default();
             color.settings.monitor_profile = "srgb".into();
             let display = color.canvas_display(&doc).unwrap();
-            assert_eq!(display.transform.is_some(), profile == photocraft_cms::Builtin::AdobeRgbCompat);
-            let mut whole = photocraft_compose::Buffer { rect: area, px: vec![[0.0; 4]; n] };
+            assert_eq!(
+                display.transform.is_some(),
+                profile == photocraft_cms::Builtin::AdobeRgbCompat
+            );
+            let mut whole = photocraft_compose::Buffer {
+                rect: area,
+                px: vec![[0.0; 4]; n],
+            };
             source.read_rgba_into(area, &mut whole.px);
             let expected = display.to_rgba8(&whole);
             let image = crop_image(&source, area, &display);
             assert_eq!(image.size, [area.width() as usize, area.height() as usize]);
-            let expected: Vec<Color32> = expected.pixels.as_chunks::<4>().0.iter().map(|&[r, g, b, a]| Color32::from_rgba_unmultiplied(r, g, b, a)).collect();
+            let expected: Vec<Color32> = expected
+                .pixels
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|&[r, g, b, a]| Color32::from_rgba_unmultiplied(r, g, b, a))
+                .collect();
             assert_eq!(image.pixels, expected, "{profile:?}");
         }
         assert_eq!(

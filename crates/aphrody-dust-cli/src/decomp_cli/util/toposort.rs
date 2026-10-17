@@ -18,7 +18,9 @@ pub fn toposort(graph: &[Vec<usize>]) -> Result<Vec<usize>, Vec<usize>> {
     let mut ret = Vec::new();
     let mut cur = n;
     loop {
-        let State::Active(eind, par) = state[cur] else { panic!("unexpected state 1") };
+        let State::Active(eind, par) = state[cur] else {
+            panic!("unexpected state 1")
+        };
         let adj = if cur == n {
             if eind == n {
                 break;
@@ -38,19 +40,21 @@ pub fn toposort(graph: &[Vec<usize>]) -> Result<Vec<usize>, Vec<usize>> {
             State::Unvisited => {
                 state[adj] = State::Active(0, cur);
                 cur = adj;
-            },
+            }
             State::Active(..) => {
                 let mut cycle = Vec::new();
                 while cur != adj {
                     cycle.push(cur);
-                    let State::Active(_, par) = state[cur] else { panic!("unexpected state 2") };
+                    let State::Active(_, par) = state[cur] else {
+                        panic!("unexpected state 2")
+                    };
                     cur = par;
                 }
                 cycle.push(cur);
                 cycle.reverse();
                 return Err(cycle);
-            },
-            State::Finished => {},
+            }
+            State::Finished => {}
         };
     }
     ret.reverse();
@@ -100,7 +104,7 @@ mod tests {
                             assert!(node_to_order[i] < node_to_order[j]);
                         }
                     }
-                },
+                }
                 Err(cycle) => {
                     // The found cycle should exist in the graph
                     assert!(!cycle.is_empty());
@@ -109,7 +113,7 @@ mod tests {
                         let b = cycle[(i + 1) % cycle.len()];
                         assert!(g_set.contains(&(a, b)));
                     }
-                },
+                }
             }
         }
     }

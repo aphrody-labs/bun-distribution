@@ -15,24 +15,48 @@ use crate::{EngineError, Result, Session, bad, find_command, guard, normalize};
 pub const COMMANDS: [&str; 2] = ["text.preview", "text.endPreview"];
 
 /// What can be previewed: text styles, font styles and axis values.
-pub const PREVIEWABLE: [&str; 4] = ["style.apply", "library.applyStyle", "text.setVariations", "text.style"];
+pub const PREVIEWABLE: [&str; 4] = [
+    "style.apply",
+    "library.applyStyle",
+    "text.setVariations",
+    "text.style",
+];
 
 /// Show `command params` as a live preview (in place of an earlier one).
 pub fn show(s: &mut Session, command: &str, params: &Value) -> Result<()> {
     let cmd = "text.preview";
     if !PREVIEWABLE.contains(&command) {
-        return Err(bad(cmd, format!("`{command}` can't be previewed (one of: {})", PREVIEWABLE.join(", "))));
+        return Err(bad(
+            cmd,
+            format!(
+                "`{command}` can't be previewed (one of: {})",
+                PREVIEWABLE.join(", ")
+            ),
+        ));
     }
-    let spec = find_command(command).ok_or_else(|| EngineError::UnknownCommand(command.to_string()))?;
+    let spec =
+        find_command(command).ok_or_else(|| EngineError::UnknownCommand(command.to_string()))?;
     end(s);
     let ds = s.ds()?;
     if ds.preview.is_some() {
-        return Err(EngineError::Disabled(cmd.into(), crate::PREVIEW_READ_ONLY.into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            crate::PREVIEW_READ_ONLY.into(),
+        ));
     }
-    let (base, selection, text_edit, page, uid) = (ds.doc.clone(), ds.selection.clone(), ds.text_edit.clone(), ds.page, ds.uid);
+    let (base, selection, text_edit, page, uid) = (
+        ds.doc.clone(),
+        ds.selection.clone(),
+        ds.text_edit.clone(),
+        ds.page,
+        ds.uid,
+    );
     let result = guard::run(command, || (spec.run)(s, params))
         // Library copies and instance structure stay as they are, in previews too.
-        .and_then(|v| s.check_instance_structure(command, &Some((base.clone(), selection.clone(), page, uid))).map(|()| v));
+        .and_then(|v| {
+            s.check_instance_structure(command, &Some((base.clone(), selection.clone(), page, uid)))
+                .map(|()| v)
+        });
     let ds = s.ds_mut()?;
     // A preview changes what's shown, never the selection or the text being edited.
     ds.selection = selection;
@@ -55,7 +79,9 @@ pub fn show(s: &mut Session, command: &str, params: &Value) -> Result<()> {
 /// End the live preview, if any: the document is back as it was. Returns whether one was showing.
 pub fn end(s: &mut Session) -> bool {
     let Ok(ds) = s.ds_mut() else { return false };
-    let Some(base) = ds.text_preview.take() else { return false };
+    let Some(base) = ds.text_preview.take() else {
+        return false;
+    };
     ds.doc = base;
     ds.revision += 1;
     true

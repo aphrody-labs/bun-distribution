@@ -100,7 +100,9 @@ impl PdfCraftApp {
             let result = match rx.try_recv() {
                 Ok(r) => r,
                 Err(std::sync::mpsc::TryRecvError::Empty) => return,
-                Err(std::sync::mpsc::TryRecvError::Disconnected) => Err("the update check stopped unexpectedly".into()),
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    Err("the update check stopped unexpectedly".into())
+                }
             };
             self.updates.check = Check::Done(result);
         }
@@ -136,10 +138,18 @@ pub(crate) fn dialog(app: &mut PdfCraftApp, ctx: &egui::Context) {
             }
             Check::Done(Ok(r)) if is_newer(&r.version, current) => {
                 let version = r.version.trim_start_matches(['v', 'V']);
-                ui.label(egui::RichText::new(crate::i18n::fmt(tl!("PdfCraft {v} is available."), &[("v", version)])).strong());
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(
-                        tl!("You have version {c}. Download the new version from its release page."),
+                        tl!("PdfCraft {v} is available."),
+                        &[("v", version)],
+                    ))
+                    .strong(),
+                );
+                ui.label(
+                    egui::RichText::new(crate::i18n::fmt(
+                        tl!(
+                            "You have version {c}. Download the new version from its release page."
+                        ),
                         &[("c", current)],
                     ))
                     .color(t.text_muted),
@@ -147,10 +157,16 @@ pub(crate) fn dialog(app: &mut PdfCraftApp, ctx: &egui::Context) {
                 download = Some(r.url.clone());
             }
             Check::Done(Ok(_)) => {
-                ui.label(crate::i18n::fmt(tl!("PdfCraft {c} is up to date."), &[("c", current)]));
+                ui.label(crate::i18n::fmt(
+                    tl!("PdfCraft {c} is up to date."),
+                    &[("c", current)],
+                ));
             }
             Check::Done(Err(e)) => {
-                ui.label(crate::i18n::fmt(tl!("Couldn't check for updates: {e}"), &[("e", &e.to_string())]));
+                ui.label(crate::i18n::fmt(
+                    tl!("Couldn't check for updates: {e}"),
+                    &[("e", &e.to_string())],
+                ));
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(
                         tl!("You have version {c}. All releases are listed at {page}."),

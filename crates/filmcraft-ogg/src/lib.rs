@@ -14,7 +14,17 @@
 //!
 //! Layer L0: no dependencies beyond `std`, no `unsafe`, builds for `wasm32-unknown-unknown`.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 use std::collections::HashMap;
 use std::fmt;
@@ -36,7 +46,10 @@ impl ByteSource for [u8] {
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> io::Result<()> {
         let eof = || io::Error::new(io::ErrorKind::UnexpectedEof, "read past end");
         let a = usize::try_from(offset).map_err(|_| eof())?;
-        buf.copy_from_slice(self.get(a..a.checked_add(buf.len()).ok_or_else(eof)?).ok_or_else(eof)?);
+        buf.copy_from_slice(
+            self.get(a..a.checked_add(buf.len()).ok_or_else(eof)?)
+                .ok_or_else(eof)?,
+        );
         Ok(())
     }
 }
@@ -100,13 +113,18 @@ pub fn crc32(data: &[u8]) -> u32 {
         for (i, e) in t.iter_mut().enumerate() {
             let mut r = (i as u32) << 24;
             for _ in 0..8 {
-                r = if r & 0x8000_0000 != 0 { (r << 1) ^ 0x04C1_1DB7 } else { r << 1 };
+                r = if r & 0x8000_0000 != 0 {
+                    (r << 1) ^ 0x04C1_1DB7
+                } else {
+                    r << 1
+                };
             }
             *e = r;
         }
         t
     });
-    data.iter().fold(0u32, |c, &b| (c << 8) ^ t[((c >> 24) as u8 ^ b) as usize])
+    data.iter()
+        .fold(0u32, |c, &b| (c << 8) ^ t[((c >> 24) as u8 ^ b) as usize])
 }
 
 /// The codec of a logical bitstream (from its first packet).
@@ -254,7 +272,15 @@ pub fn open(src: &(impl ByteSource + ?Sized)) -> Result<OggFile> {
         let lacing = page[27..27 + nseg].to_vec();
         let body_off = pos + 27 + nseg as u64;
         let si = *by_serial.entry(serial).or_insert_with(|| {
-            streams.push(Stream { serial, codec: Codec::Unknown, headers: Vec::new(), packets: Vec::new(), pages: 0, last_granule: None, saw_eos: false });
+            streams.push(Stream {
+                serial,
+                codec: Codec::Unknown,
+                headers: Vec::new(),
+                packets: Vec::new(),
+                pages: 0,
+                last_granule: None,
+                saw_eos: false,
+            });
             streams.len() - 1
         });
         let st = &mut streams[si];
@@ -283,7 +309,11 @@ pub fn open(src: &(impl ByteSource + ?Sized)) -> Result<OggFile> {
                     }
                     continue;
                 }
-                let p = partial.entry(serial).or_insert_with(|| Partial { parts: Vec::new(), size: 0, prefix: Vec::new() });
+                let p = partial.entry(serial).or_insert_with(|| Partial {
+                    parts: Vec::new(),
+                    size: 0,
+                    prefix: Vec::new(),
+                });
                 if n > 0 {
                     p.parts.push((body_off + a, n as u32));
                     p.size += n as u32;
@@ -295,8 +325,16 @@ pub fn open(src: &(impl ByteSource + ?Sized)) -> Result<OggFile> {
                     && let Some(p) = partial.remove(&serial)
                 {
                     let mut prefix = [0u8; 2];
-                    prefix[..p.prefix.len().min(2)].copy_from_slice(&p.prefix[..p.prefix.len().min(2)]);
-                    completed.push(Packet { parts: p.parts, size: p.size, granule: None, page: page_index, eos: flags & 0x04 != 0, prefix });
+                    prefix[..p.prefix.len().min(2)]
+                        .copy_from_slice(&p.prefix[..p.prefix.len().min(2)]);
+                    completed.push(Packet {
+                        parts: p.parts,
+                        size: p.size,
+                        granule: None,
+                        page: page_index,
+                        eos: flags & 0x04 != 0,
+                        prefix,
+                    });
                 }
             }
         }
@@ -361,8 +399,17 @@ impl OggFile {
         self.streams.iter().position(|s| s.codec == codec)
     }
     /// The bytes of packet `i` of stream `s`.
-    pub fn read_packet(&self, src: &(impl ByteSource + ?Sized), s: usize, i: usize) -> Result<Vec<u8>> {
-        let p = self.streams.get(s).and_then(|st| st.packets.get(i)).ok_or_else(|| Error::Invalid(format!("no packet {i} in stream {s}")))?;
+    pub fn read_packet(
+        &self,
+        src: &(impl ByteSource + ?Sized),
+        s: usize,
+        i: usize,
+    ) -> Result<Vec<u8>> {
+        let p = self
+            .streams
+            .get(s)
+            .and_then(|st| st.packets.get(i))
+            .ok_or_else(|| Error::Invalid(format!("no packet {i} in stream {s}")))?;
         read_parts(src, &p.parts)
     }
 }
@@ -409,7 +456,11 @@ pub struct OpusTiming {
 impl OpusTiming {
     /// Timing of the Opus stream `s` (`pre_skip` from its `OpusHead`).
     pub fn of(stream: &Stream, pre_skip: u32) -> OpusTiming {
-        let durations: Vec<u32> = stream.packets.iter().map(|p| opus_packet_samples(p.prefix, p.size).unwrap_or(0)).collect();
+        let durations: Vec<u32> = stream
+            .packets
+            .iter()
+            .map(|p| opus_packet_samples(p.prefix, p.size).unwrap_or(0))
+            .collect();
         let n = durations.len();
         let mut ends: Vec<Option<i64>> = vec![None; n];
         let mut i = 0;
@@ -430,7 +481,9 @@ impl OpusTiming {
                 }
                 break;
             }
-            let Some(g) = stream.packets[j].granule else { break };
+            let Some(g) = stream.packets[j].granule else {
+                break;
+            };
             let sum: i64 = durations[i..=j].iter().map(|&d| d as i64).sum();
             let forward = cursor.map(|c| c + sum);
             let end = match forward {
@@ -451,13 +504,22 @@ impl OpusTiming {
             cursor = Some(end);
             i = j + 1;
         }
-        let raw_starts: Vec<i64> = ends.iter().zip(&durations).map(|(e, &d)| e.unwrap_or(0) - d as i64).collect();
+        let raw_starts: Vec<i64> = ends
+            .iter()
+            .zip(&durations)
+            .map(|(e, &d)| e.unwrap_or(0) - d as i64)
+            .collect();
         let base = raw_starts.first().copied().unwrap_or(0).max(0);
         let shift = base + pre_skip as i64;
         let starts: Vec<i64> = raw_starts.iter().map(|s| s - shift).collect();
         let end_all = trimmed_end.or(cursor).unwrap_or(0);
         let total = (end_all - shift).max(0);
-        OpusTiming { pre_skip, starts, durations, total }
+        OpusTiming {
+            pre_skip,
+            starts,
+            durations,
+            total,
+        }
     }
 }
 

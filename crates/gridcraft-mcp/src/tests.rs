@@ -20,13 +20,24 @@ fn rpc(s: &mut Server, id: u64, method: &str, params: Value) -> Value {
 }
 
 fn call(s: &mut Server, name: &str, args: Value) -> Value {
-    let v = rpc(s, 99, "tools/call", json!({"name": name, "arguments": args}));
+    let v = rpc(
+        s,
+        99,
+        "tools/call",
+        json!({"name": name, "arguments": args}),
+    );
     assert!(v.get("error").is_none(), "{v}");
     v["result"].clone()
 }
 
 fn text_of(result: &Value) -> String {
-    result["content"].as_array().unwrap().iter().filter(|c| c["type"] == "text").map(|c| c["text"].as_str().unwrap().to_string()).collect()
+    result["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["type"] == "text")
+        .map(|c| c["text"].as_str().unwrap().to_string())
+        .collect()
 }
 
 /// Call a tool that must succeed; returns its JSON payload.
@@ -44,7 +55,9 @@ fn fails(s: &mut Server, name: &str, args: Value) -> String {
 }
 
 fn err_code(v: &Value) -> i64 {
-    v["error"]["code"].as_i64().unwrap_or_else(|| panic!("expected an error: {v}"))
+    v["error"]["code"]
+        .as_i64()
+        .unwrap_or_else(|| panic!("expected an error: {v}"))
 }
 
 fn tmp(name: &str) -> std::path::PathBuf {
@@ -58,8 +71,12 @@ fn tmp(name: &str) -> std::path::PathBuf {
 #[test]
 fn initialize_and_version_negotiation() {
     let mut s = server();
-    let v =
-        rpc(&mut s, 1, "initialize", json!({"protocolVersion": PROTOCOL_VERSION, "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}));
+    let v = rpc(
+        &mut s,
+        1,
+        "initialize",
+        json!({"protocolVersion": PROTOCOL_VERSION, "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}),
+    );
     let r = &v["result"];
     assert_eq!(r["protocolVersion"], PROTOCOL_VERSION);
     assert_eq!(r["serverInfo"]["name"], "gridcraft");
@@ -67,15 +84,31 @@ fn initialize_and_version_negotiation() {
     assert!(r["capabilities"]["resources"].is_object());
     assert!(r["instructions"].as_str().unwrap().contains("headless"));
     // Older supported version is echoed back; unknown versions get ours.
-    let v = rpc(&mut s, 2, "initialize", json!({"protocolVersion": "2024-11-05"}));
+    let v = rpc(
+        &mut s,
+        2,
+        "initialize",
+        json!({"protocolVersion": "2024-11-05"}),
+    );
     assert_eq!(v["result"]["protocolVersion"], "2024-11-05");
-    let v = rpc(&mut s, 3, "initialize", json!({"protocolVersion": "1999-01-01"}));
+    let v = rpc(
+        &mut s,
+        3,
+        "initialize",
+        json!({"protocolVersion": "1999-01-01"}),
+    );
     assert_eq!(v["result"]["protocolVersion"], PROTOCOL_VERSION);
     assert!(!s.is_initialized());
-    assert_eq!(s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#), None);
+    assert_eq!(
+        s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#),
+        None
+    );
     assert!(s.is_initialized());
     assert_eq!(rpc(&mut s, 4, "ping", json!({}))["result"], json!({}));
-    assert_eq!(rpc(&mut s, 5, "prompts/list", json!({}))["result"]["prompts"], json!([]));
+    assert_eq!(
+        rpc(&mut s, 5, "prompts/list", json!({}))["result"]["prompts"],
+        json!([])
+    );
 }
 
 #[test]
@@ -113,9 +146,21 @@ fn tools_list_has_schemas() {
         assert_eq!(t["inputSchema"]["type"], "object", "{t}");
         assert!(t["description"].as_str().unwrap().len() > 20, "{t}");
         let name = t["name"].as_str().unwrap();
-        assert!(name.chars().all(|c| c.is_ascii_lowercase() || c == '_'), "{name} is not snake_case");
-        for r in t["inputSchema"]["required"].as_array().into_iter().flatten() {
-            assert!(t["inputSchema"]["properties"].get(r.as_str().unwrap()).is_some(), "{name}: required {r} not in properties");
+        assert!(
+            name.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+            "{name} is not snake_case"
+        );
+        for r in t["inputSchema"]["required"]
+            .as_array()
+            .into_iter()
+            .flatten()
+        {
+            assert!(
+                t["inputSchema"]["properties"]
+                    .get(r.as_str().unwrap())
+                    .is_some(),
+                "{name}: required {r} not in properties"
+            );
         }
     }
     assert_eq!(tools.len(), tool_definitions().len());
@@ -125,45 +170,159 @@ fn tools_list_has_schemas() {
 fn malformed_input_never_panics() {
     let mut s = server();
     assert_eq!(s.handle_line("   "), None);
-    let parse = |s: &mut Server, l: &str| -> Value { serde_json::from_str(&s.handle_line(l).unwrap()).unwrap() };
+    let parse = |s: &mut Server, l: &str| -> Value {
+        serde_json::from_str(&s.handle_line(l).unwrap()).unwrap()
+    };
     assert_eq!(err_code(&parse(&mut s, "{not json")), -32700);
     assert_eq!(err_code(&parse(&mut s, "\"just a string\"")), -32600);
     assert_eq!(err_code(&parse(&mut s, "[]")), -32600);
-    assert_eq!(err_code(&parse(&mut s, r#"{"jsonrpc":"2.0","id":1}"#)), -32600);
-    assert_eq!(err_code(&parse(&mut s, r#"{"jsonrpc":"2.0","id":{"x":1},"method":"ping"}"#)), -32600);
-    assert_eq!(err_code(&parse(&mut s, r#"{"jsonrpc":"2.0","id":1,"method":"ping","params":[1,2]}"#)), -32602);
+    assert_eq!(
+        err_code(&parse(&mut s, r#"{"jsonrpc":"2.0","id":1}"#)),
+        -32600
+    );
+    assert_eq!(
+        err_code(&parse(
+            &mut s,
+            r#"{"jsonrpc":"2.0","id":{"x":1},"method":"ping"}"#
+        )),
+        -32600
+    );
+    assert_eq!(
+        err_code(&parse(
+            &mut s,
+            r#"{"jsonrpc":"2.0","id":1,"method":"ping","params":[1,2]}"#
+        )),
+        -32602
+    );
     // Unknown method.
     assert_eq!(err_code(&rpc(&mut s, 1, "nope/nothing", json!({}))), -32601);
     // Bad tools/call params.
     assert_eq!(err_code(&rpc(&mut s, 2, "tools/call", json!({}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 3, "tools/call", json!({"name": "no_such_tool"}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 4, "tools/call", json!({"name": "set_cell", "arguments": "x"}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 5, "tools/call", json!({"name": "set_cell", "arguments": {"cell": "A1"}}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 6, "tools/call", json!({"name": "set_cell", "arguments": {"cell": 5, "input": "x"}}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 7, "tools/call", json!({"name": "insert_chart", "arguments": {"range": "A1", "type": "piechart"}}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 8, "tools/call", json!({"name": "get_cell", "arguments": {"cell": "A1", "bogus": 1}}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 9, "resources/read", json!({}))), -32602);
-    assert_eq!(err_code(&rpc(&mut s, 10, "resources/read", json!({"uri": "gridcraft://nope"}))), -32002);
+    assert_eq!(
+        err_code(&rpc(
+            &mut s,
+            3,
+            "tools/call",
+            json!({"name": "no_such_tool"})
+        )),
+        -32602
+    );
+    assert_eq!(
+        err_code(&rpc(
+            &mut s,
+            4,
+            "tools/call",
+            json!({"name": "set_cell", "arguments": "x"})
+        )),
+        -32602
+    );
+    assert_eq!(
+        err_code(&rpc(
+            &mut s,
+            5,
+            "tools/call",
+            json!({"name": "set_cell", "arguments": {"cell": "A1"}})
+        )),
+        -32602
+    );
+    assert_eq!(
+        err_code(&rpc(
+            &mut s,
+            6,
+            "tools/call",
+            json!({"name": "set_cell", "arguments": {"cell": 5, "input": "x"}})
+        )),
+        -32602
+    );
+    assert_eq!(
+        err_code(&rpc(
+            &mut s,
+            7,
+            "tools/call",
+            json!({"name": "insert_chart", "arguments": {"range": "A1", "type": "piechart"}})
+        )),
+        -32602
+    );
+    assert_eq!(
+        err_code(&rpc(
+            &mut s,
+            8,
+            "tools/call",
+            json!({"name": "get_cell", "arguments": {"cell": "A1", "bogus": 1}})
+        )),
+        -32602
+    );
+    assert_eq!(
+        err_code(&rpc(&mut s, 9, "resources/read", json!({}))),
+        -32602
+    );
+    assert_eq!(
+        err_code(&rpc(
+            &mut s,
+            10,
+            "resources/read",
+            json!({"uri": "gridcraft://nope"})
+        )),
+        -32002
+    );
     // Responses and unknown notifications are ignored.
-    assert_eq!(s.handle_line(r#"{"jsonrpc":"2.0","id":7,"result":{}}"#), None);
-    assert_eq!(s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/whatever"}"#), None);
+    assert_eq!(
+        s.handle_line(r#"{"jsonrpc":"2.0","id":7,"result":{}}"#),
+        None
+    );
+    assert_eq!(
+        s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/whatever"}"#),
+        None
+    );
     // A batch still gets answers.
-    let v = parse(&mut s, r#"[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","method":"notifications/initialized"}]"#);
+    let v = parse(
+        &mut s,
+        r#"[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","method":"notifications/initialized"}]"#,
+    );
     assert_eq!(v.as_array().unwrap().len(), 1);
     // Tool-level errors are isError results, not protocol errors.
-    assert!(fails(&mut s, "set_cell", json!({"cell": "not a cell!!", "input": "1"})).contains("set_cell"));
-    assert!(fails(&mut s, "execute_command", json!({"command": "no.such.command"})).contains("unknown command"));
-    fails(&mut s, "read_range", json!({"range": "ZZZZZZZZ99999999999"}));
+    assert!(
+        fails(
+            &mut s,
+            "set_cell",
+            json!({"cell": "not a cell!!", "input": "1"})
+        )
+        .contains("set_cell")
+    );
+    assert!(
+        fails(
+            &mut s,
+            "execute_command",
+            json!({"command": "no.such.command"})
+        )
+        .contains("unknown command")
+    );
+    fails(
+        &mut s,
+        "read_range",
+        json!({"range": "ZZZZZZZZ99999999999"}),
+    );
     fails(&mut s, "format_range", json!({"range": "A1"}));
     fails(&mut s, "sort_range", json!({"keys": []}));
-    fails(&mut s, "open_workbook", json!({"path": "/definitely/not/here.xlsx"}));
+    fails(
+        &mut s,
+        "open_workbook",
+        json!({"path": "/definitely/not/here.xlsx"}),
+    );
     fails(&mut s, "save_workbook", json!({}));
-    assert!(fails(&mut s, "screenshot", json!({"path": "/tmp/x.png"})).contains("no UI in headless mode"));
+    assert!(
+        fails(&mut s, "screenshot", json!({"path": "/tmp/x.png"}))
+            .contains("no UI in headless mode")
+    );
 }
 
 #[test]
 fn every_tool_survives_hostile_arguments() {
-    let hostile = [json!({}), json!({"range": "A1:XFD1048576"}), json!({"range": "", "cell": "", "path": "", "formula": "", "command": ""})];
+    let hostile = [
+        json!({}),
+        json!({"range": "A1:XFD1048576"}),
+        json!({"range": "", "cell": "", "path": "", "formula": "", "command": ""}),
+    ];
     for t in tool_definitions() {
         let name = t["name"].as_str().unwrap();
         for args in &hostile {
@@ -179,41 +338,97 @@ fn every_tool_survives_hostile_arguments() {
 fn resources() {
     let mut s = server();
     let v = rpc(&mut s, 1, "resources/list", json!({}));
-    let uris: Vec<&str> = v["result"]["resources"].as_array().unwrap().iter().map(|r| r["uri"].as_str().unwrap()).collect();
-    assert_eq!(uris, ["gridcraft://workbook", "gridcraft://commands", "gridcraft://functions"]);
+    let uris: Vec<&str> = v["result"]["resources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["uri"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        uris,
+        [
+            "gridcraft://workbook",
+            "gridcraft://commands",
+            "gridcraft://functions"
+        ]
+    );
     for uri in uris {
         let v = rpc(&mut s, 2, "resources/read", json!({"uri": uri}));
         let text = v["result"]["contents"][0]["text"].as_str().unwrap();
         let parsed: Value = serde_json::from_str(text).unwrap();
         assert!(!parsed.is_null(), "{uri}");
     }
-    let v = rpc(&mut s, 3, "resources/read", json!({"uri": "gridcraft://functions"}));
-    assert!(v["result"]["contents"][0]["text"].as_str().unwrap().contains("VLOOKUP"));
+    let v = rpc(
+        &mut s,
+        3,
+        "resources/read",
+        json!({"uri": "gridcraft://functions"}),
+    );
+    assert!(
+        v["result"]["contents"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("VLOOKUP")
+    );
 }
 
 #[test]
 fn basic_tools() {
     let mut s = server();
     let cmds = ok(&mut s, "list_commands", json!({"search": "bold"}));
-    assert!(cmds.as_array().unwrap().iter().any(|c| c["id"] == "home.bold"));
+    assert!(
+        cmds.as_array()
+            .unwrap()
+            .iter()
+            .any(|c| c["id"] == "home.bold")
+    );
     let all = ok(&mut s, "list_commands", json!({}));
     assert!(all.as_array().unwrap().len() > 100);
     let f = ok(&mut s, "list_functions", json!({"search": "vlookup"}));
     assert!(f.as_array().unwrap().iter().any(|x| x["name"] == "VLOOKUP"));
-    assert_eq!(ok(&mut s, "evaluate_formula", json!({"formula": "SUM(1,2,3)"}))["result"], json!(6.0));
+    assert_eq!(
+        ok(&mut s, "evaluate_formula", json!({"formula": "SUM(1,2,3)"}))["result"],
+        json!(6.0)
+    );
     ok(&mut s, "set_cell", json!({"cell": "A1", "input": "5"}));
     // #697: a number for `input` is entered, not rejected or cleared.
     ok(&mut s, "set_cell", json!({"cell": "B1", "input": 42.5}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "B1"}))["value"], json!(42.5));
-    ok(&mut s, "execute_command", json!({"command": "cell.set", "params": {"cell": "A2", "input": "=A1*2"}}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "A2"}))["value"], json!(10.0));
-    assert_eq!(ok(&mut s, "evaluate_formula", json!({"formula": "=A1+A2", "cell": "C1"}))["result"], json!(15.0));
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "B1"}))["value"],
+        json!(42.5)
+    );
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "cell.set", "params": {"cell": "A2", "input": "=A1*2"}}),
+    );
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "A2"}))["value"],
+        json!(10.0)
+    );
+    assert_eq!(
+        ok(
+            &mut s,
+            "evaluate_formula",
+            json!({"formula": "=A1+A2", "cell": "C1"})
+        )["result"],
+        json!(15.0)
+    );
     ok(&mut s, "undo", json!({}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "A2"}))["value"], Value::Null);
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "A2"}))["value"],
+        Value::Null
+    );
     ok(&mut s, "redo", json!({}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "A2"}))["value"], json!(10.0));
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "A2"}))["value"],
+        json!(10.0)
+    );
     ok(&mut s, "select", json!({"range": "A1:A2"}));
-    assert_eq!(ok(&mut s, "inspect_workbook", json!({}))["selection"], "A1:A2");
+    assert_eq!(
+        ok(&mut s, "inspect_workbook", json!({}))["selection"],
+        "A1:A2"
+    );
     ok(&mut s, "new_workbook", json!({"sample": "sales"}));
     let info = ok(&mut s, "inspect_workbook", json!({}));
     assert!(info["sheets"][0]["cells"].as_u64().unwrap() > 10, "{info}");
@@ -222,14 +437,30 @@ fn basic_tools() {
 #[test]
 fn sort_and_filter() {
     let mut s = server();
-    ok(&mut s, "write_range", json!({"range": "A1", "values": [["Name", "Score"], ["b", 2], ["c", 3], ["a", 1]]}));
-    ok(&mut s, "sort_range", json!({"range": "A1:B4", "keys": [{"column": "B", "order": "desc"}], "header": true}));
+    ok(
+        &mut s,
+        "write_range",
+        json!({"range": "A1", "values": [["Name", "Score"], ["b", 2], ["c", 3], ["a", 1]]}),
+    );
+    ok(
+        &mut s,
+        "sort_range",
+        json!({"range": "A1:B4", "keys": [{"column": "B", "order": "desc"}], "header": true}),
+    );
     let v = ok(&mut s, "read_range", json!({"range": "A2:A4"}));
     assert_eq!(v["values"], json!([["c"], ["b"], ["a"]]));
-    ok(&mut s, "sort_range", json!({"range": "A1:B4", "keys": ["A"], "header": true}));
+    ok(
+        &mut s,
+        "sort_range",
+        json!({"range": "A1:B4", "keys": ["A"], "header": true}),
+    );
     let v = ok(&mut s, "read_range", json!({"range": "A2:A4"}));
     assert_eq!(v["values"], json!([["a"], ["b"], ["c"]]));
-    ok(&mut s, "filter", json!({"range": "A1:B4", "column": "A", "values": ["a", "c"]}));
+    ok(
+        &mut s,
+        "filter",
+        json!({"range": "A1:B4", "column": "A", "values": ["a", "c"]}),
+    );
     let info = ok(&mut s, "inspect_workbook", json!({}));
     assert_eq!(info["sheets"][0]["autofilter"], "A1:B4");
 }
@@ -237,14 +468,22 @@ fn sort_and_filter() {
 #[test]
 fn save_and_open_roundtrip() {
     let mut s = server();
-    ok(&mut s, "write_range", json!({"range": "B2", "values": [[1, 2], [3, "=SUM(B2:C2)+B3"]]}));
+    ok(
+        &mut s,
+        "write_range",
+        json!({"range": "B2", "values": [[1, 2], [3, "=SUM(B2:C2)+B3"]]}),
+    );
     let path = tmp("roundtrip.xlsx");
     let p = path.to_string_lossy().to_string();
     ok(&mut s, "save_workbook", json!({"path": p}));
     ok(&mut s, "save_workbook", json!({}));
     ok(&mut s, "new_workbook", json!({}));
     ok(&mut s, "open_workbook", json!({"path": p}));
-    let v = ok(&mut s, "read_range", json!({"range": "B2:C3", "formulas": true}));
+    let v = ok(
+        &mut s,
+        "read_range",
+        json!({"range": "B2:C3", "formulas": true}),
+    );
     assert_eq!(v["values"], json!([[1.0, 2.0], [3.0, "=SUM(B2:C2)+B3"]]));
     let v = ok(&mut s, "read_range", json!({"range": "C3"}));
     assert_eq!(v["values"], json!([[6.0]]));
@@ -255,7 +494,12 @@ fn save_and_open_roundtrip() {
 #[test]
 fn agent_builds_a_budget() {
     let mut s = server();
-    rpc(&mut s, 1, "initialize", json!({"protocolVersion": PROTOCOL_VERSION, "capabilities": {}, "clientInfo": {"name": "agent", "version": "1"}}));
+    rpc(
+        &mut s,
+        1,
+        "initialize",
+        json!({"protocolVersion": PROTOCOL_VERSION, "capabilities": {}, "clientInfo": {"name": "agent", "version": "1"}}),
+    );
     s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#);
 
     ok(
@@ -271,23 +515,50 @@ fn agent_builds_a_budget() {
     );
     ok(&mut s, "set_cell", json!({"cell": "A6", "input": "Total"}));
     for col in ["B", "C", "D"] {
-        ok(&mut s, "set_cell", json!({"cell": format!("{col}6"), "input": format!("=SUM({col}2:{col}5)")}));
+        ok(
+            &mut s,
+            "set_cell",
+            json!({"cell": format!("{col}6"), "input": format!("=SUM({col}2:{col}5)")}),
+        );
     }
-    ok(&mut s, "set_cell", json!({"cell": "E1", "input": "Quarter"}));
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "E1", "input": "Quarter"}),
+    );
     ok(
         &mut s,
         "write_range",
         json!({"range": "E2", "values": [["=SUM(B2:D2)"], ["=SUM(B3:D3)"], ["=SUM(B4:D4)"], ["=SUM(B5:D5)"], ["=SUM(B6:D6)"]]}),
     );
 
-    let fmt =
-        ok(&mut s, "format_range", json!({"range": "A1:E1", "bold": true, "fillColor": "#DDEBF7", "horizontalAlign": "center", "borders": "bottom"}));
+    let fmt = ok(
+        &mut s,
+        "format_range",
+        json!({"range": "A1:E1", "bold": true, "fillColor": "#DDEBF7", "horizontalAlign": "center", "borders": "bottom"}),
+    );
     assert_eq!(fmt["applied"].as_array().unwrap().len(), 4, "{fmt}");
-    ok(&mut s, "format_range", json!({"range": "B2:E6", "numberFormat": "#,##0.00"}));
-    ok(&mut s, "format_range", json!({"range": "A6:E6", "bold": true, "borders": {"preset": "top", "style": "double"}}));
+    ok(
+        &mut s,
+        "format_range",
+        json!({"range": "B2:E6", "numberFormat": "#,##0.00"}),
+    );
+    ok(
+        &mut s,
+        "format_range",
+        json!({"range": "A6:E6", "bold": true, "borders": {"preset": "top", "style": "double"}}),
+    );
 
-    ok(&mut s, "create_table", json!({"range": "A1:E5", "style": "TableStyleLight9"}));
-    ok(&mut s, "insert_chart", json!({"range": "A1:D5", "type": "column", "title": "Monthly spend", "at": "G2"}));
+    ok(
+        &mut s,
+        "create_table",
+        json!({"range": "A1:E5", "style": "TableStyleLight9"}),
+    );
+    ok(
+        &mut s,
+        "insert_chart",
+        json!({"range": "A1:D5", "type": "column", "title": "Monthly spend", "at": "G2"}),
+    );
 
     // Read back computed values.
     let totals = ok(&mut s, "read_range", json!({"range": "B6:E6"}));
@@ -297,9 +568,17 @@ fn agent_builds_a_budget() {
     assert!((nums[1] - 1836.25).abs() < 1e-9, "{nums:?}");
     assert!((nums[2] - 1902.0).abs() < 1e-9, "{nums:?}");
     assert!((nums[3] - 5588.75).abs() < 1e-9, "{nums:?}");
-    let shown = ok(&mut s, "read_range", json!({"range": "E6", "formatted": true}));
+    let shown = ok(
+        &mut s,
+        "read_range",
+        json!({"range": "E6", "formatted": true}),
+    );
     assert_eq!(shown["values"][0][0], "5,588.75");
-    let formulas = ok(&mut s, "read_range", json!({"range": "B6", "formulas": true}));
+    let formulas = ok(
+        &mut s,
+        "read_range",
+        json!({"range": "B6", "formulas": true}),
+    );
     assert_eq!(formulas["values"][0][0], "=SUM(B2:B5)");
     let cell = ok(&mut s, "get_cell", json!({"cell": "A1"}));
     assert_eq!(cell["style"]["font"]["bold"], true, "{cell}");
@@ -316,7 +595,11 @@ fn agent_builds_a_budget() {
     let v = ok(&mut s, "read_range", json!({"range": "E6"}));
     assert!((v["values"][0][0].as_f64().unwrap() - 5688.75).abs() < 1e-9);
     // And the whole thing evaluates without touching the sheet.
-    let v = ok(&mut s, "evaluate_formula", json!({"formula": "=AVERAGE(B6:D6)"}));
+    let v = ok(
+        &mut s,
+        "evaluate_formula",
+        json!({"formula": "=AVERAGE(B6:D6)"}),
+    );
     assert!((v["result"].as_f64().unwrap() - (1950.5 + 1836.25 + 1902.0) / 3.0).abs() < 1e-9);
 }
 
@@ -336,21 +619,45 @@ fn serve_loop_over_buffers() {
     let mut out = Vec::new();
     let mut s = server();
     s.serve(input.as_bytes(), &mut out).unwrap();
-    let lines: Vec<Value> = String::from_utf8(out).unwrap().lines().map(|l| serde_json::from_str(l).unwrap()).collect();
+    let lines: Vec<Value> = String::from_utf8(out)
+        .unwrap()
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
     assert_eq!(lines.len(), 3);
     assert_eq!(lines[1]["error"]["code"], -32700);
-    assert!(lines[2]["result"]["content"][0]["text"].as_str().unwrap().contains("42"));
+    assert!(
+        lines[2]["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("42")
+    );
 }
 
 #[test]
 fn cell_set_without_input_is_error() {
     let mut s = server();
     ok(&mut s, "set_cell", json!({"cell": "B2", "input": "keep"}));
-    fails(&mut s, "execute_command", json!({"command": "cell.set", "params": {"cell": "B2"}}));
-    fails(&mut s, "execute_command", json!({"command": "cell.set", "params": {}}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "B2"}))["text"], "keep");
+    fails(
+        &mut s,
+        "execute_command",
+        json!({"command": "cell.set", "params": {"cell": "B2"}}),
+    );
+    fails(
+        &mut s,
+        "execute_command",
+        json!({"command": "cell.set", "params": {}}),
+    );
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "B2"}))["text"],
+        "keep"
+    );
     // An explicit empty string still clears.
-    ok(&mut s, "execute_command", json!({"command": "cell.set", "params": {"cell": "B2", "input": ""}}));
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "cell.set", "params": {"cell": "B2", "input": ""}}),
+    );
     assert_eq!(ok(&mut s, "get_cell", json!({"cell": "B2"}))["text"], "");
 }
 
@@ -386,10 +693,16 @@ fn remote_backend_over_tcp() {
     let addr = control_addr(&port.to_string());
     assert_eq!(addr, format!("127.0.0.1:{port}"));
     let mut s = Server::new(Box::new(Remote::connect(&addr).unwrap()));
-    assert_eq!(ok(&mut s, "evaluate_formula", json!({"formula": "=1+1"}))["result"], json!(2.0));
+    assert_eq!(
+        ok(&mut s, "evaluate_formula", json!({"formula": "=1+1"}))["result"],
+        json!(2.0)
+    );
     // Second call reconnects transparently.
     ok(&mut s, "set_cell", json!({"cell": "A1", "input": "7"}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "A1"}))["value"], json!(7.0));
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "A1"}))["value"],
+        json!(7.0)
+    );
     let msg = fails(&mut s, "execute_command", json!({"command": "nope"}));
     assert!(msg.contains("unknown command"), "{msg}");
     drop(s);
@@ -401,27 +714,57 @@ fn remote_backend_over_tcp() {
 fn file_commands_without_a_file_fail() {
     let mut s = server();
     // `file.save` on Book1, which has no file yet, would ask for one too.
-    for command in ["file.open", "file.saveAs", "file.save", "data.getData", "data.fromTextCsv"] {
+    for command in [
+        "file.open",
+        "file.saveAs",
+        "file.save",
+        "data.getData",
+        "data.fromTextCsv",
+    ] {
         let msg = fails(&mut s, "execute_command", json!({"command": command}));
-        assert!(msg.contains("missing") && msg.contains("never open dialogs"), "{command}: {msg}");
-        fails(&mut s, "execute_command", json!({"command": command, "params": {}}));
+        assert!(
+            msg.contains("missing") && msg.contains("never open dialogs"),
+            "{command}: {msg}"
+        );
+        fails(
+            &mut s,
+            "execute_command",
+            json!({"command": command, "params": {}}),
+        );
     }
 }
 
 // ---------- cell references ----------
 
 fn cmd_fails(s: &mut Server, command: &str, params: Value) -> String {
-    fails(s, "execute_command", json!({"command": command, "params": params}))
+    fails(
+        s,
+        "execute_command",
+        json!({"command": command, "params": params}),
+    )
 }
 
 fn a1_display(s: &mut Server) -> String {
-    ok(s, "get_cell", json!({"cell": "A1"}))["text"].as_str().unwrap_or("").to_string()
+    ok(s, "get_cell", json!({"cell": "A1"}))["text"]
+        .as_str()
+        .unwrap_or("")
+        .to_string()
 }
 
 #[test]
 fn set_cell_invalid_ref_is_error() {
     let mut s = server();
-    for bad in ["ZZZZ0", "B0", "A", "1", "A1:B2", "not a cell", "", "XFE1", "A1048577"] {
+    for bad in [
+        "ZZZZ0",
+        "B0",
+        "A",
+        "1",
+        "A1:B2",
+        "not a cell",
+        "",
+        "XFE1",
+        "A1048577",
+    ] {
         fails(&mut s, "set_cell", json!({"cell": bad, "input": "x"}));
     }
     assert_eq!(a1_display(&mut s), "");
@@ -432,27 +775,56 @@ fn cell_ref_boundaries_still_work() {
     let mut s = server();
     ok(&mut s, "set_cell", json!({"cell": "A1", "input": "first"}));
     ok(&mut s, "set_cell", json!({"cell": "$B$2", "input": "abs"}));
-    ok(&mut s, "set_cell", json!({"cell": "XFD1048576", "input": "last"}));
-    ok(&mut s, "set_cell", json!({"cell": "xfd1", "input": "lower"}));
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "XFD1048576", "input": "last"}),
+    );
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "xfd1", "input": "lower"}),
+    );
     assert_eq!(ok(&mut s, "get_cell", json!({"cell": "B2"}))["text"], "abs");
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "XFD1048576"}))["text"], "last");
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "XFD1"}))["text"], "lower");
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "XFD1048576"}))["text"],
+        "last"
+    );
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "XFD1"}))["text"],
+        "lower"
+    );
     assert_eq!(a1_display(&mut s), "first");
     // Ranges are still ranges for the commands that take them.
     ok(&mut s, "read_range", json!({"range": "A1:B2"}));
     ok(&mut s, "read_range", json!({"range": "$A$1:$B$2"}));
     // The active sheet's own name is an accepted prefix; an absent cell still means the selection.
-    ok(&mut s, "set_cell", json!({"cell": "Sheet1!C3", "input": "named"}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "C3"}))["text"], "named");
-    ok(&mut s, "execute_command", json!({"command": "formulas.tracePrecedents", "params": {}}));
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "Sheet1!C3", "input": "named"}),
+    );
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "C3"}))["text"],
+        "named"
+    );
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "formulas.tracePrecedents", "params": {}}),
+    );
 }
 
 #[test]
 fn bad_ref_in_command_is_error() {
     let mut s = server();
     ok(&mut s, "set_cell", json!({"cell": "A1", "input": "7"}));
-    for (cmd, key) in [("view.freezePanes", "cell"), ("formulas.tracePrecedents", "cell"), ("formulas.traceDependents", "cell"), ("cell.get", "cell")]
-    {
+    for (cmd, key) in [
+        ("view.freezePanes", "cell"),
+        ("formulas.tracePrecedents", "cell"),
+        ("formulas.traceDependents", "cell"),
+        ("cell.get", "cell"),
+    ] {
         cmd_fails(&mut s, cmd, json!({ key: "B0" }));
         cmd_fails(&mut s, cmd, json!({ key: "nonsense" }));
     }
@@ -462,16 +834,39 @@ fn bad_ref_in_command_is_error() {
 #[test]
 fn other_sheet_prefix_is_error() {
     let mut s = server();
-    ok(&mut s, "execute_command", json!({"command": "home.insertSheet", "params": {"name": "Other"}}));
-    ok(&mut s, "execute_command", json!({"command": "sheet.activate", "params": {"sheet": 0}}));
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "home.insertSheet", "params": {"name": "Other"}}),
+    );
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "sheet.activate", "params": {"sheet": 0}}),
+    );
     fails(&mut s, "set_cell", json!({"cell": "Nope!B2", "input": "x"}));
     // A command that cannot honour a sheet prefix must not drop it and use the active sheet.
     cmd_fails(&mut s, "view.freezePanes", json!({"cell": "Other!B2"}));
-    cmd_fails(&mut s, "formulas.tracePrecedents", json!({"cell": "Other!B2"}));
-    ok(&mut s, "set_cell", json!({"cell": "Sheet1!B2", "input": "here"}));
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "B2"}))["text"], "here");
+    cmd_fails(
+        &mut s,
+        "formulas.tracePrecedents",
+        json!({"cell": "Other!B2"}),
+    );
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "Sheet1!B2", "input": "here"}),
+    );
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "B2"}))["text"],
+        "here"
+    );
     // cell.set resolves another existing sheet itself and writes there, not to the active sheet.
-    ok(&mut s, "set_cell", json!({"cell": "Other!B3", "input": "there"}));
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "Other!B3", "input": "there"}),
+    );
     assert_eq!(ok(&mut s, "get_cell", json!({"cell": "B3"}))["text"], "");
     let r = ok(&mut s, "read_range", json!({"range": "Other!B3"}));
     assert!(r.to_string().contains("there"), "{r}");
@@ -480,69 +875,164 @@ fn other_sheet_prefix_is_error() {
 #[test]
 fn cross_sheet_cell_refs_resolve() {
     let mut s = server();
-    ok(&mut s, "execute_command", json!({"command": "home.insertSheet", "params": {"name": "Other"}}));
-    ok(&mut s, "execute_command", json!({"command": "home.insertSheet", "params": {"name": "My Sheet"}}));
-    ok(&mut s, "execute_command", json!({"command": "sheet.activate", "params": {"sheet": 0}}));
-    ok(&mut s, "set_cell", json!({"cell": "Other!B3", "input": "there"}));
-    ok(&mut s, "set_cell", json!({"cell": "'My Sheet'!A1", "input": "quoted"}));
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "home.insertSheet", "params": {"name": "Other"}}),
+    );
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "home.insertSheet", "params": {"name": "My Sheet"}}),
+    );
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "sheet.activate", "params": {"sheet": 0}}),
+    );
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "Other!B3", "input": "there"}),
+    );
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "'My Sheet'!A1", "input": "quoted"}),
+    );
     // Reads honour the prefix.
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "Other!B3"}))["text"], "there");
-    assert_eq!(ok(&mut s, "get_cell", json!({"cell": "'My Sheet'!A1"}))["text"], "quoted");
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "Other!B3"}))["text"],
+        "there"
+    );
+    assert_eq!(
+        ok(&mut s, "get_cell", json!({"cell": "'My Sheet'!A1"}))["text"],
+        "quoted"
+    );
     assert_eq!(ok(&mut s, "get_cell", json!({"cell": "B3"}))["text"], "");
     // Cell-level commands that resolve their own sheet land on it.
-    ok(&mut s, "execute_command", json!({"command": "review.newComment", "params": {"cell": "Other!B3", "text": "note"}}));
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "review.newComment", "params": {"cell": "Other!B3", "text": "note"}}),
+    );
     let c = ok(&mut s, "get_cell", json!({"cell": "Other!B3"}));
     assert!(c.to_string().contains("note"), "{c}");
     let c = ok(&mut s, "get_cell", json!({"cell": "B3"}));
     assert!(!c.to_string().contains("note"), "{c}");
     // The active sheet may be a quoted name with spaces.
-    ok(&mut s, "execute_command", json!({"command": "sheet.activate", "params": {"sheet": "My Sheet"}}));
-    ok(&mut s, "execute_command", json!({"command": "view.freezePanes", "params": {"cell": "'My Sheet'!B2"}}));
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "sheet.activate", "params": {"sheet": "My Sheet"}}),
+    );
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "view.freezePanes", "params": {"cell": "'My Sheet'!B2"}}),
+    );
     cmd_fails(&mut s, "view.freezePanes", json!({"cell": "Other!B2"}));
     // A prefix naming a different sheet than the `sheet` argument is an error, not resolved in favour of either.
-    cmd_fails(&mut s, "cell.get", json!({"cell": "Other!B3", "sheet": "Sheet1"}));
+    cmd_fails(
+        &mut s,
+        "cell.get",
+        json!({"cell": "Other!B3", "sheet": "Sheet1"}),
+    );
 }
 
 #[test]
 fn text_to_columns_destination_follows_its_sheet() {
     let mut s = server();
-    ok(&mut s, "execute_command", json!({"command": "home.insertSheet", "params": {"name": "Other"}}));
-    ok(&mut s, "execute_command", json!({"command": "sheet.activate", "params": {"sheet": 0}}));
-    ok(&mut s, "set_cell", json!({"cell": "Other!A1", "input": "a,b"}));
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "home.insertSheet", "params": {"name": "Other"}}),
+    );
+    ok(
+        &mut s,
+        "execute_command",
+        json!({"command": "sheet.activate", "params": {"sheet": 0}}),
+    );
+    ok(
+        &mut s,
+        "set_cell",
+        json!({"cell": "Other!A1", "input": "a,b"}),
+    );
     ok(
         &mut s,
         "execute_command",
         json!({"command": "data.textToColumns", "params": {"range": "Other!A1", "delimiters": [","], "destination": "Other!D1"}}),
     );
     let r = ok(&mut s, "read_range", json!({"range": "Other!D1:E1"}));
-    assert!(r.to_string().contains('a') && r.to_string().contains('b'), "{r}");
+    assert!(
+        r.to_string().contains('a') && r.to_string().contains('b'),
+        "{r}"
+    );
     // An unparsable destination and a prefix that contradicts the command's sheet are errors, not A1.
-    cmd_fails(&mut s, "data.textToColumns", json!({"range": "Other!A1", "delimiters": [","], "destination": "D0"}));
-    cmd_fails(&mut s, "data.textToColumns", json!({"range": "Other!A1", "delimiters": [","], "destination": "Sheet1!D1"}));
+    cmd_fails(
+        &mut s,
+        "data.textToColumns",
+        json!({"range": "Other!A1", "delimiters": [","], "destination": "D0"}),
+    );
+    cmd_fails(
+        &mut s,
+        "data.textToColumns",
+        json!({"range": "Other!A1", "delimiters": [","], "destination": "Sheet1!D1"}),
+    );
 }
 
 #[test]
 fn invalid_borders_are_invalid_params() {
     let mut s = server();
     let bad = |s: &mut Server, id: u64, borders: Value| {
-        let v = rpc(s, id, "tools/call", json!({"name": "format_range", "arguments": {"range": "A1", "borders": borders}}));
+        let v = rpc(
+            s,
+            id,
+            "tools/call",
+            json!({"name": "format_range", "arguments": {"range": "A1", "borders": borders}}),
+        );
         assert_eq!(err_code(&v), -32602, "{v}");
     };
     bad(&mut s, 1, json!(123));
     bad(&mut s, 2, json!("bogus"));
     bad(&mut s, 3, json!({"preset": "bogus"}));
     bad(&mut s, 4, json!({"style": "thick"}));
-    ok(&mut s, "format_range", json!({"range": "A1", "borders": "all"}));
-    ok(&mut s, "format_range", json!({"range": "B1", "borders": {"preset": "all", "style": "thick", "color": "#123456"}}));
+    ok(
+        &mut s,
+        "format_range",
+        json!({"range": "A1", "borders": "all"}),
+    );
+    ok(
+        &mut s,
+        "format_range",
+        json!({"range": "B1", "borders": {"preset": "all", "style": "thick", "color": "#123456"}}),
+    );
 }
 
 #[test]
 fn invalid_sort_keys_are_invalid_params() {
     let mut s = server();
-    ok(&mut s, "write_range", json!({"range": "A1", "values": [["b"], ["c"], ["a"]]}));
-    for (id, keys) in [(1, json!([123])), (2, json!([{"order": "desc"}])), (3, json!([{"column": "A", "order": "sideways"}]))] {
-        let v = rpc(&mut s, id, "tools/call", json!({"name": "sort_range", "arguments": {"range": "A1:A3", "keys": keys}}));
+    ok(
+        &mut s,
+        "write_range",
+        json!({"range": "A1", "values": [["b"], ["c"], ["a"]]}),
+    );
+    for (id, keys) in [
+        (1, json!([123])),
+        (2, json!([{"order": "desc"}])),
+        (3, json!([{"column": "A", "order": "sideways"}])),
+    ] {
+        let v = rpc(
+            &mut s,
+            id,
+            "tools/call",
+            json!({"name": "sort_range", "arguments": {"range": "A1:A3", "keys": keys}}),
+        );
         assert_eq!(err_code(&v), -32602, "{v}");
     }
-    ok(&mut s, "sort_range", json!({"range": "A1:A3", "keys": ["A", {"column": "A", "order": "desc"}]}));
+    ok(
+        &mut s,
+        "sort_range",
+        json!({"range": "A1:A3", "keys": ["A", {"column": "A", "order": "desc"}]}),
+    );
 }

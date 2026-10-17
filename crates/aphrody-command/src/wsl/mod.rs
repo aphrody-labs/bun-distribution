@@ -7,9 +7,9 @@ mod runner;
 pub mod wslg;
 pub use cli::cli_main;
 
+use aphrody_proc::NoWindow as _;
 pub use recipes::{Step, Target, plan};
 pub use runner::build;
-use aphrody_proc::NoWindow as _;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -80,12 +80,20 @@ pub struct Config {
 
 /// kernel.org stable tree pinned for the `mainline` target.
 pub const MAINLINE_SOURCE: &str = "linux-stable";
-const SOURCE_NAMES: [&str; 5] = ["WSL", "wslg", "WSL2-Linux-Kernel", "terminal", MAINLINE_SOURCE];
+const SOURCE_NAMES: [&str; 5] = [
+    "WSL",
+    "wslg",
+    "WSL2-Linux-Kernel",
+    "terminal",
+    MAINLINE_SOURCE,
+];
 
 fn simple_name(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 64
-        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_.+".contains(&b))
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-_.+".contains(&b))
 }
 /// Windows executable `relative` to System32: on PATH when interop exposes it, else located with `wslpath`.
 pub fn windows_executable(relative: &str) -> PathBuf {
@@ -98,10 +106,14 @@ pub fn windows_executable(relative: &str) -> PathBuf {
     if cfg!(windows) || on_path {
         return name;
     }
-    match std::process::Command::new("wslpath").no_window().args(["-u", r"C:\Windows\System32"]).output() {
+    match std::process::Command::new("wslpath")
+        .no_window()
+        .args(["-u", r"C:\Windows\System32"])
+        .output()
+    {
         Ok(out) if out.status.success() => {
             PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()).join(relative)
-        },
+        }
         _ => name,
     }
 }
@@ -118,15 +130,21 @@ impl Config {
     /// Parses a configuration whose roots may use `${workspace}`, `${home}` and `${data}`.
     pub fn parse(bytes: &[u8], workspace: &Path) -> Result<Self> {
         let mut config: Self = serde_json::from_slice(bytes)?;
-        let home =
-            std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from);
+        let home = std::env::var_os("HOME")
+            .or_else(|| std::env::var_os("USERPROFILE"))
+            .map(PathBuf::from);
         let data = std::env::var_os("XDG_DATA_HOME")
             .map(PathBuf::from)
             .or_else(|| std::env::var_os("LOCALAPPDATA").map(PathBuf::from))
             .or_else(|| home.as_ref().map(|home| home.join(".local/share")));
-        for root in [&mut config.source_root, &mut config.output_root, &mut config.workspace] {
-            let mut text =
-                root.to_string_lossy().replace("${workspace}", &workspace.to_string_lossy());
+        for root in [
+            &mut config.source_root,
+            &mut config.output_root,
+            &mut config.workspace,
+        ] {
+            let mut text = root
+                .to_string_lossy()
+                .replace("${workspace}", &workspace.to_string_lossy());
             for (token, value) in [("${home}", &home), ("${data}", &data)] {
                 if text.contains(token) {
                     let value = value.as_ref().ok_or_else(|| {
@@ -143,9 +161,13 @@ impl Config {
     pub fn validate(&self) -> Result<()> {
         for path in [&self.source_root, &self.output_root, &self.workspace] {
             if !path.is_absolute()
-                || path.components().any(|c| matches!(c, std::path::Component::ParentDir))
+                || path
+                    .components()
+                    .any(|c| matches!(c, std::path::Component::ParentDir))
             {
-                return Err(Error::Invalid("build roots must be absolute without ..".into()));
+                return Err(Error::Invalid(
+                    "build roots must be absolute without ..".into(),
+                ));
             }
         }
         if self.output_root == self.source_root
@@ -157,12 +179,16 @@ impl Config {
             ));
         }
         if !(1..=64).contains(&self.jobs) || !(1..=86400).contains(&self.timeout_seconds) {
-            return Err(Error::Invalid("jobs must be 1..64 and timeoutSeconds 1..86400".into()));
+            return Err(Error::Invalid(
+                "jobs must be 1..64 and timeoutSeconds 1..86400".into(),
+            ));
         }
         for value in [&self.distribution, &self.suite] {
             if value.is_empty()
                 || value.len() > 64
-                || !value.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
+                || !value
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
             {
                 return Err(Error::Invalid(
                     "distribution and suite must be simple nonempty names".into(),
@@ -193,7 +219,9 @@ impl Config {
             }
         }
         if self.distro.packages.iter().any(|p| !simple_name(p)) {
-            return Err(Error::Invalid("distro packages must be simple names".into()));
+            return Err(Error::Invalid(
+                "distro packages must be simple names".into(),
+            ));
         }
         for repo in &self.distro.repositories {
             if !simple_name(&repo.name)
@@ -211,7 +239,9 @@ impl Config {
             }
         }
         if self.distro.toolchain_manifests.iter().any(|p| {
-            p.is_absolute() || p.components().any(|c| matches!(c, std::path::Component::ParentDir))
+            p.is_absolute()
+                || p.components()
+                    .any(|c| matches!(c, std::path::Component::ParentDir))
         }) {
             return Err(Error::Invalid(
                 "toolchain manifests must be workspace-relative without ..".into(),
@@ -234,8 +264,10 @@ impl Config {
         for manifest in &self.distro.toolchain_manifests {
             let path = self.workspace.join(manifest);
             let value: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
-            let apt =
-                value.pointer("/toolchain/apt").and_then(|v| v.as_array()).ok_or_else(|| {
+            let apt = value
+                .pointer("/toolchain/apt")
+                .and_then(|v| v.as_array())
+                .ok_or_else(|| {
                     Error::Invalid(format!("{} has no toolchain.apt list", path.display()))
                 })?;
             for name in apt {
@@ -259,8 +291,12 @@ fn is_revision(value: &str) -> bool {
 pub fn newest_stable_tag(ls_remote: &str) -> Option<(String, String)> {
     let mut tags = std::collections::BTreeMap::<String, (Option<String>, Option<String>)>::new();
     for line in ls_remote.lines() {
-        let Some((sha, reference)) = line.split_once('\t') else { continue };
-        let Some(name) = reference.strip_prefix("refs/tags/") else { continue };
+        let Some((sha, reference)) = line.split_once('\t') else {
+            continue;
+        };
+        let Some(name) = reference.strip_prefix("refs/tags/") else {
+            continue;
+        };
         let (name, peeled) = match name.strip_suffix("^{}") {
             Some(n) => (n, true),
             None => (name, false),
@@ -305,10 +341,15 @@ pub struct LatestKernel {
 /// Resolves the newest kernel.org stable tag; with `apply`, rewrites only the pinned tag and revision in `config_path`.
 pub fn latest_kernel(config: &Config, config_path: &Path, apply: bool) -> Result<LatestKernel> {
     let source = config.source(MAINLINE_SOURCE)?;
-    let output =
-        Command::new("git").no_window().args(["ls-remote", "--tags", &source.url, "refs/tags/v*"]).output()?;
+    let output = Command::new("git")
+        .no_window()
+        .args(["ls-remote", "--tags", &source.url, "refs/tags/v*"])
+        .output()?;
     if !output.status.success() {
-        return Err(Error::Invalid(format!("git ls-remote {} failed", source.url)));
+        return Err(Error::Invalid(format!(
+            "git ls-remote {} failed",
+            source.url
+        )));
     }
     let (tag, revision) =
         newest_stable_tag(&String::from_utf8_lossy(&output.stdout)).ok_or_else(|| {
@@ -378,9 +419,18 @@ pub fn sources(config: &Config) -> Result<Vec<SourceState>> {
         .collect()
 }
 fn git(path: &Path, args: &[&str]) -> Result<String> {
-    let output = Command::new("git").no_window().arg("-C").arg(path).args(args).output()?;
+    let output = Command::new("git")
+        .no_window()
+        .arg("-C")
+        .arg(path)
+        .args(args)
+        .output()?;
     if !output.status.success() {
-        return Err(Error::Invalid(format!("git {} failed at {}", args.join(" "), path.display())));
+        return Err(Error::Invalid(format!(
+            "git {} failed at {}",
+            args.join(" "),
+            path.display()
+        )));
     }
     Ok(String::from_utf8_lossy(&output.stdout).trim().into())
 }
@@ -397,7 +447,10 @@ pub fn artifact(path: &Path) -> Result<Artifact> {
     let mut file = fs::File::open(path)?;
     let bytes = file.metadata()?.len();
     if bytes == 0 {
-        return Err(Error::Invalid(format!("empty artifact: {}", path.display())));
+        return Err(Error::Invalid(format!(
+            "empty artifact: {}",
+            path.display()
+        )));
     }
     let mut hasher = Sha256::new();
     let mut buffer = vec![0; 1024 * 1024];
@@ -411,7 +464,11 @@ pub fn artifact(path: &Path) -> Result<Artifact> {
     Ok(Artifact {
         path: path.into(),
         bytes,
-        sha256: hasher.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>(),
+        sha256: hasher
+            .finalize()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>(),
     })
 }
 
@@ -419,11 +476,17 @@ pub fn expected_artifacts(config: &Config, target: Target) -> Vec<PathBuf> {
     let root = &config.output_root;
     match target {
         Target::Kernel => {
-            vec![root.join("kernel/arch/x86/boot/bzImage"), root.join("kernel/modules.vhdx")]
-        },
+            vec![
+                root.join("kernel/arch/x86/boot/bzImage"),
+                root.join("kernel/modules.vhdx"),
+            ]
+        }
         Target::Mainline => {
-            vec![root.join("mainline/arch/x86/boot/bzImage"), root.join("mainline/modules.vhdx")]
-        },
+            vec![
+                root.join("mainline/arch/x86/boot/bzImage"),
+                root.join("mainline/modules.vhdx"),
+            ]
+        }
         Target::Wslg => vec![root.join("wslg/system_x64.vhd")],
         Target::Wsl => vec![root.join("wsl/artifacts.json")],
         Target::Distro => vec![
@@ -463,7 +526,10 @@ pub fn doctor(config: &Config) -> Result<serde_json::Value> {
         "wslpath",
     ]
     .into_iter()
-    .map(|name| Dependency { command: name.into(), available: find_executable(name).is_some() })
+    .map(|name| Dependency {
+        command: name.into(),
+        available: find_executable(name).is_some(),
+    })
     .collect::<Vec<_>>();
     let source_state = sources(config);
     Ok(
@@ -472,26 +538,35 @@ pub fn doctor(config: &Config) -> Result<serde_json::Value> {
 }
 pub(crate) fn find_executable(name: &str) -> Option<PathBuf> {
     std::env::var_os("PATH").and_then(|path| {
-        std::env::split_paths(&path).map(|dir| dir.join(name)).find(|p| p.is_file())
+        std::env::split_paths(&path)
+            .map(|dir| dir.join(name))
+            .find(|p| p.is_file())
     })
 }
 
 pub fn import(config: &Config, install_dir: &Path) -> Result<()> {
     config.validate()?;
-    let image = config.output_root.join(format!("distro/{}.wsl", config.distribution));
+    let image = config
+        .output_root
+        .join(format!("distro/{}.wsl", config.distribution));
     artifact(&image)?;
     let windows_path = |path: &Path| -> Result<String> {
         if cfg!(windows) {
             return Ok(path.to_string_lossy().into_owned());
         }
-        let out = Command::new("wslpath").no_window().arg("-w").arg(path).output()?;
+        let out = Command::new("wslpath")
+            .no_window()
+            .arg("-w")
+            .arg(path)
+            .output()?;
         if !out.status.success() {
             return Err(Error::Invalid("wslpath failed".into()));
         }
         Ok(String::from_utf8_lossy(&out.stdout).trim().into())
     };
     let executable = windows_executable("wsl.exe");
-    let status = Command::new(executable).no_window()
+    let status = Command::new(executable)
+        .no_window()
         .args([
             "--import",
             &config.distribution,
@@ -542,7 +617,9 @@ mod tests {
         );
         assert_eq!(newest_stable_tag(&out), Some(("v7.10".into(), c.clone())));
         assert_eq!(
-            newest_stable_tag(&format!("{a}\trefs/tags/v7.2.9\n{b}\trefs/tags/v7.2.9^{{}}\n")),
+            newest_stable_tag(&format!(
+                "{a}\trefs/tags/v7.2.9\n{b}\trefs/tags/v7.2.9^{{}}\n"
+            )),
             Some(("v7.2.9".into(), b))
         );
         assert_eq!(newest_stable_tag("garbage\n"), None);
@@ -559,7 +636,10 @@ mod tests {
         .unwrap();
         c.distro.packages = vec!["rustup".into(), "cosmic-session".into()];
         c.distro.toolchain_manifests = vec!["forge.json".into()];
-        assert_eq!(c.distro_packages().unwrap(), ["rustup", "cosmic-session", "git", "nasm"]);
+        assert_eq!(
+            c.distro_packages().unwrap(),
+            ["rustup", "cosmic-session", "git", "nasm"]
+        );
         c.distro.repositories[0].fingerprint = "short".into();
         assert!(c.validate().is_err());
         c = config();
@@ -573,10 +653,17 @@ mod tests {
         assert!(step.args.iter().any(|a| a.ends_with(MAINLINE_SOURCE)));
         assert_eq!(step.args.last().unwrap(), "rust");
         let mut c = c;
-        c.workspace =
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../apps/aphrody/crates/infra").canonicalize().unwrap();
+        c.workspace = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../../apps/aphrody/crates/infra")
+            .canonicalize()
+            .unwrap();
         let distro = &plan(&c, Target::Distro).unwrap()[0];
-        assert!(distro.args.iter().any(|a| a.contains("cosmic-session") && a.contains("nasm")));
+        assert!(
+            distro
+                .args
+                .iter()
+                .any(|a| a.contains("cosmic-session") && a.contains("nasm"))
+        );
         assert!(
             distro
                 .args

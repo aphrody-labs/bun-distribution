@@ -36,7 +36,8 @@ pub fn set_dry_run(ctx: &egui::Context, on: bool) {
 
 /// The shortcuts dispatched since the last call (command id and outcome), oldest first.
 pub fn take_log(ctx: &egui::Context) -> Vec<(String, Outcome)> {
-    ctx.data_mut(|d| d.remove_temp::<Vec<(String, Outcome)>>(log_id())).unwrap_or_default()
+    ctx.data_mut(|d| d.remove_temp::<Vec<(String, Outcome)>>(log_id()))
+        .unwrap_or_default()
 }
 
 /// Alternative default shortcuts Photoshop gives some commands besides the one its menu shows:
@@ -50,23 +51,50 @@ pub const SECONDARY: &[(&str, &str)] = &[("edit.fill", "Shift+Backspace")];
 /// their overrides apply. Held temporary tools (Space…) are not here: see [`crate::hold_keys`].
 pub fn bindings(app: &PhotocraftApp) -> Vec<(String, KeyboardShortcut)> {
     let prefs = app.session.prefs();
-    let action_ids: Vec<String> = app.session.actions.list.iter().map(|a| crate::actions::shortcut_id(&a.name)).collect();
-    let actions = action_ids.iter().map(|id| (id.as_str(), prefs.shortcut(id, None)));
+    let action_ids: Vec<String> = app
+        .session
+        .actions
+        .list
+        .iter()
+        .map(|a| crate::actions::shortcut_id(&a.name))
+        .collect();
+    let actions = action_ids
+        .iter()
+        .map(|id| (id.as_str(), prefs.shortcut(id, None)));
     // The Keyboard Shortcuts dialog lists Photoshop's Window › <panel> item (`window.panel.*`)
     // in place of the shell command it runs (`window.toggle.*`, see `menus::panel_alias`), so an
     // edit to that row reassigns or removes the shell command's default too (#1272).
     let aliased = |id: &str, sc: Option<&str>| {
         !prefs.shortcuts.contains_key(id)
             && prefs.shortcuts.keys().any(|k| {
-                crate::menus::panel_alias(k) == Some(id) && crate::menu_catalog::CATALOG.iter().any(|c| c.3 == k.as_str() && c.2.is_some() && c.2 == sc)
+                crate::menus::panel_alias(k) == Some(id)
+                    && crate::menu_catalog::CATALOG
+                        .iter()
+                        .any(|c| c.3 == k.as_str() && c.2.is_some() && c.2 == sc)
             })
     };
-    let ui = crate::menus::UI_COMMANDS.iter().map(|(id, _, _, sc)| (*id, if aliased(id, *sc) { None } else { prefs.shortcut(id, *sc) }));
-    let engine = photocraft_engine::command_specs().iter().map(|c| (c.id, prefs.shortcut(c.id, c.shortcut)));
+    let ui = crate::menus::UI_COMMANDS.iter().map(|(id, _, _, sc)| {
+        (
+            *id,
+            if aliased(id, *sc) {
+                None
+            } else {
+                prefs.shortcut(id, *sc)
+            },
+        )
+    });
+    let engine = photocraft_engine::command_specs()
+        .iter()
+        .map(|c| (c.id, prefs.shortcut(c.id, c.shortcut)));
     let own: std::collections::HashSet<&str> = crate::menus::UI_COMMANDS
         .iter()
         .map(|c| c.0)
-        .chain(photocraft_engine::command_specs().iter().filter(|c| c.shortcut.is_some() || prefs.shortcuts.contains_key(c.id)).map(|c| c.id))
+        .chain(
+            photocraft_engine::command_specs()
+                .iter()
+                .filter(|c| c.shortcut.is_some() || prefs.shortcuts.contains_key(c.id))
+                .map(|c| c.id),
+        )
         .collect();
     let catalog = crate::menu_catalog::CATALOG
         .iter()
@@ -84,20 +112,37 @@ pub fn bindings(app: &PhotocraftApp) -> Vec<(String, KeyboardShortcut)> {
         })
         .map(|(id, sc)| (id.as_str(), Some(sc.as_str())));
     // Photoshop's second shortcuts, kept while the command's main one is the default.
-    let secondary = SECONDARY.iter().filter(|(id, _)| !prefs.shortcuts.contains_key(*id)).map(|&(id, sc)| (id, Some(sc)));
+    let secondary = SECONDARY
+        .iter()
+        .filter(|(id, _)| !prefs.shortcuts.contains_key(*id))
+        .map(|&(id, sc)| (id, Some(sc)));
     // A key the user assigned in Edit › Keyboard Shortcuts belongs to that command, ahead of any
     // default that still names it (#1272): OK clears the old owner's row, but that row can be
     // another id for the same item, or a default the dialog doesn't list.
-    let mut candidates: Vec<(&str, Option<&str>)> = actions.chain(ui).chain(engine).chain(catalog).chain(overrides).chain(secondary).collect();
-    candidates.sort_by_key(|(id, sc)| !(sc.is_some() && prefs.shortcuts.get(*id).map(String::as_str) == *sc));
+    let mut candidates: Vec<(&str, Option<&str>)> = actions
+        .chain(ui)
+        .chain(engine)
+        .chain(catalog)
+        .chain(overrides)
+        .chain(secondary)
+        .collect();
+    candidates.sort_by_key(|(id, sc)| {
+        !(sc.is_some() && prefs.shortcuts.get(*id).map(String::as_str) == *sc)
+    });
     let mut all: Vec<(String, KeyboardShortcut)> = Vec::new();
     for (id, sc) in candidates {
-        let Some(sc) = sc.and_then(parse) else { continue };
+        let Some(sc) = sc.and_then(parse) else {
+            continue;
+        };
         if !all.iter().any(|(_, b)| *b == sc) {
             all.push((id.to_string(), sc));
         }
     }
-    all.sort_by_key(|(_, sc)| std::cmp::Reverse(sc.modifiers.shift as u8 + sc.modifiers.alt as u8 + sc.modifiers.command as u8));
+    all.sort_by_key(|(_, sc)| {
+        std::cmp::Reverse(
+            sc.modifiers.shift as u8 + sc.modifiers.alt as u8 + sc.modifiers.command as u8,
+        )
+    });
     all
 }
 
@@ -132,7 +177,11 @@ impl Focus {
             Focus::Text
         } else if ctx.egui_wants_keyboard_input() {
             let owner = ctx.data(|d| d.get_temp::<egui::Id>(delete_owner_id()));
-            if owner.is_some() && ctx.memory(|m| m.focused()) == owner { Focus::DeletingWidget } else { Focus::Widget }
+            if owner.is_some() && ctx.memory(|m| m.focused()) == owner {
+                Focus::DeletingWidget
+            } else {
+                Focus::Widget
+            }
         } else {
             Focus::None
         }
@@ -183,9 +232,12 @@ impl Focus {
         match self {
             Focus::None => true,
             Focus::Widget => sc.modifiers.command || !navigation,
-            Focus::DeletingWidget => sc.modifiers.command || !(navigation || matches!(k, Key::Backspace | Key::Delete)),
+            Focus::DeletingWidget => {
+                sc.modifiers.command || !(navigation || matches!(k, Key::Backspace | Key::Delete))
+            }
             Focus::Text => {
-                let text_edit = !sc.modifiers.alt && matches!(k, Key::A | Key::C | Key::X | Key::V | Key::Z | Key::Y)
+                let text_edit = !sc.modifiers.alt
+                    && matches!(k, Key::A | Key::C | Key::X | Key::V | Key::Z | Key::Y)
                     || navigation
                     || matches!(k, Key::Backspace | Key::Delete);
                 function || (sc.modifiers.command && !text_edit)
@@ -198,7 +250,13 @@ impl Focus {
 /// dialog, the unsaved-changes prompt, a warp or the Filter Gallery, inline type.
 fn key_owner(app: &PhotocraftApp, ctx: &egui::Context) -> (bool, usize, bool, bool, bool) {
     let distort = app.distort.active() || app.distort.gallery.is_some();
-    (crate::menu_nav::is_open(ctx), app.ui.dialogs.len(), app.discard.is_some(), distort, app.ui.text_edit.is_some())
+    (
+        crate::menu_nav::is_open(ctx),
+        app.ui.dialogs.len(),
+        app.discard.is_some(),
+        distort,
+        app.ui.text_edit.is_some(),
+    )
 }
 
 /// Keys whose shortcuts follow the key's position, as in Photoshop: ⇧⌘. is ⇧⌘> on a US layout,
@@ -211,27 +269,65 @@ const POSITIONAL: [Key; 2] = [Key::Period, Key::Comma];
 /// someone else (opens a dialog, a prompt, a menu or inline type), leaving the later presses to
 /// it. While typing (inline type), clipboard and select-all shortcuts belong to the text.
 /// Returns true when a shortcut was dispatched.
-pub fn dispatch_pressed(app: &mut PhotocraftApp, ctx: &egui::Context, focus: Focus, editing: bool) -> bool {
+pub fn dispatch_pressed(
+    app: &mut PhotocraftApp,
+    ctx: &egui::Context,
+    focus: Focus,
+    editing: bool,
+) -> bool {
     // Building the table walks the registry: only do it when a key went down.
-    if !ctx.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Key { pressed: true, .. }))) {
+    if !ctx.input(|i| {
+        i.events
+            .iter()
+            .any(|e| matches!(e, egui::Event::Key { pressed: true, .. }))
+    }) {
         return false;
     }
-    const TEXT_OWNED: [&str; 6] = ["edit.copy", "edit.cut", "edit.paste", "edit.copyMerged", "select.all", "edit.pasteSpecial.pasteInPlace"];
-    let table: Vec<(String, KeyboardShortcut)> =
-        bindings(app).into_iter().filter(|(id, sc)| focus.allows(sc) && !(editing && TEXT_OWNED.contains(&id.as_str()))).collect();
+    const TEXT_OWNED: [&str; 6] = [
+        "edit.copy",
+        "edit.cut",
+        "edit.paste",
+        "edit.copyMerged",
+        "select.all",
+        "edit.pasteSpecial.pasteInPlace",
+    ];
+    let table: Vec<(String, KeyboardShortcut)> = bindings(app)
+        .into_iter()
+        .filter(|(id, sc)| focus.allows(sc) && !(editing && TEXT_OWNED.contains(&id.as_str())))
+        .collect();
     let command = |e: &egui::Event| match e {
-        egui::Event::Key { key, physical_key, pressed: true, modifiers, .. } => {
+        egui::Event::Key {
+            key,
+            physical_key,
+            pressed: true,
+            modifiers,
+            ..
+        } => {
             let by_position = physical_key
                 .filter(|p| POSITIONAL.contains(p))
-                .and_then(|p| table.iter().find(|(_, sc)| sc.logical_key == p && key_matches(sc, p, *modifiers)));
-            by_position.or_else(|| table.iter().find(|(_, sc)| key_matches(sc, *key, *modifiers))).map(|(id, _)| (id.clone(), *key == Key::Tab))
+                .and_then(|p| {
+                    table
+                        .iter()
+                        .find(|(_, sc)| sc.logical_key == p && key_matches(sc, p, *modifiers))
+                });
+            by_position
+                .or_else(|| {
+                    table
+                        .iter()
+                        .find(|(_, sc)| key_matches(sc, *key, *modifiers))
+                })
+                .map(|(id, _)| (id.clone(), *key == Key::Tab))
         }
         _ => None,
     };
     let mut ran = false;
     loop {
         let next = ctx.input_mut(|i| {
-            let (at, hit) = i.events.iter().enumerate().find_map(|(at, e)| Some((at, command(e)?)))?;
+            let (at, hit) = i
+                .events
+                .iter()
+                .enumerate()
+                .find_map(|(at, e)| Some((at, command(e)?)))?;
             i.events.remove(at);
             Some(hit)
         });
@@ -263,19 +359,34 @@ fn delete_key_command(app: &PhotocraftApp, id: String) -> String {
     if id != "edit.clear" {
         return id;
     }
-    let Some(st) = app.session.active() else { return id };
-    let composite = st.channel_view.target == photocraft_engine::channel_cmds::ChannelTarget::Composite && st.doc.quick_mask.is_none();
-    let has_mask = st.active_layer.and_then(|l| st.doc.layer(l)).is_some_and(|l| l.mask.is_some());
-    let colors_off = st.channel_view.visible_colors(photocraft_engine::channel_cmds::color_count(&st.doc)) == 0;
+    let Some(st) = app.session.active() else {
+        return id;
+    };
+    let composite = st.channel_view.target
+        == photocraft_engine::channel_cmds::ChannelTarget::Composite
+        && st.doc.quick_mask.is_none();
+    let has_mask = st
+        .active_layer
+        .and_then(|l| st.doc.layer(l))
+        .is_some_and(|l| l.mask.is_some());
+    let colors_off = st
+        .channel_view
+        .visible_colors(photocraft_engine::channel_cmds::color_count(&st.doc))
+        == 0;
     let alpha_on = (0..st.doc.channels.len()).any(|i| st.channel_view.alpha_shown(i));
     let solo_mask = colors_off && has_mask && !alpha_on && st.doc.quick_mask.is_none();
-    let layer_mask = st.channel_view.target == photocraft_engine::channel_cmds::ChannelTarget::LayerMask;
+    let layer_mask =
+        st.channel_view.target == photocraft_engine::channel_cmds::ChannelTarget::LayerMask;
     let mask = (app.ui.mask_target || solo_mask || layer_mask) && has_mask;
     // Several selected layers outrank the active one's targeted mask (#4025): a new adjustment
     // layer targets its mask, so the first press used to delete only that mask.
     let several = st.selected_layers().len() > 1;
     if mask && (composite || layer_mask) && !(several && composite && st.doc.selection.is_none()) {
-        let cmd = if st.doc.selection.is_some() { "edit.fillBackground" } else { "layer.layerMask.delete" };
+        let cmd = if st.doc.selection.is_some() {
+            "edit.fillBackground"
+        } else {
+            "layer.layerMask.delete"
+        };
         return cmd.into();
     }
     if st.doc.selection.is_some() || !composite {
@@ -286,13 +397,18 @@ fn delete_key_command(app: &PhotocraftApp, id: String) -> String {
 
 /// Why `id` can't run now (the engine's reason when it has one).
 pub fn disabled_reason(app: &PhotocraftApp, id: &str) -> String {
-    photocraft_engine::commands::find(id).and_then(|_| app.session.disabled_reason_with(id, &app.with_mask_target(id, serde_json::Value::Null))).unwrap_or_else(
-        || match id {
-            "tools.decreaseBrushHardness" | "tools.increaseBrushHardness" => "the current tool has no brush tip".into(),
+    photocraft_engine::commands::find(id)
+        .and_then(|_| {
+            app.session
+                .disabled_reason_with(id, &app.with_mask_target(id, serde_json::Value::Null))
+        })
+        .unwrap_or_else(|| match id {
+            "tools.decreaseBrushHardness" | "tools.increaseBrushHardness" => {
+                "the current tool has no brush tip".into()
+            }
             _ if app.session.active().is_none() => "no document open".into(),
             _ => "not available in the current state".into(),
-        },
-    )
+        })
 }
 
 fn label(id: &str) -> String {
@@ -300,7 +416,12 @@ fn label(id: &str) -> String {
         .iter()
         .find(|c| c.3 == id)
         .map(|c| c.1)
-        .or_else(|| crate::menus::UI_COMMANDS.iter().find(|c| c.0 == id).map(|c| c.1))
+        .or_else(|| {
+            crate::menus::UI_COMMANDS
+                .iter()
+                .find(|c| c.0 == id)
+                .map(|c| c.1)
+        })
         .or_else(|| photocraft_engine::commands::find(id).map(|c| c.label))
         .or_else(|| crate::tool_shortcuts::tool(id).map(|tool| tool.label()))
         .unwrap_or(id)
@@ -315,10 +436,22 @@ pub fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str) {
     let outcome = if !crate::menus::is_enabled(app, command_id) {
         let why = disabled_reason(app, command_id);
         let template = "{label} is not available: {reason}";
-        app.ui.status = crate::i18n::fmt(tl!(template), &[("label", crate::i18n::tr_id(crate::i18n::current(), id, &label(id))), ("reason", tl!(&why))]);
+        app.ui.status = crate::i18n::fmt(
+            tl!(template),
+            &[
+                (
+                    "label",
+                    crate::i18n::tr_id(crate::i18n::current(), id, &label(id)),
+                ),
+                ("reason", tl!(&why)),
+            ],
+        );
         app.ui.status_error = true;
         Outcome::Disabled(why)
-    } else if ctx.data(|d| d.get_temp::<bool>(dry_run_id())).unwrap_or(false) {
+    } else if ctx
+        .data(|d| d.get_temp::<bool>(dry_run_id()))
+        .unwrap_or(false)
+    {
         Outcome::Ran
     } else {
         let r = if let Some(name) = action {
@@ -326,7 +459,11 @@ pub fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str) {
             // step must still pass the automation authorizer.
             crate::menus::invoke(app, ctx, "actions.play", json!({"action": name})).and_then(|v| {
                 crate::actions::report_play(app, &v);
-                if v.get("failed").is_some_and(|f| f.is_object()) { Err(app.ui.status.clone()) } else { Ok(v) }
+                if v.get("failed").is_some_and(|f| f.is_object()) {
+                    Err(app.ui.status.clone())
+                } else {
+                    Ok(v)
+                }
             })
         } else if crate::adjust_dialog::has_dialog(id) {
             crate::adjust_dialog::open(app, id);

@@ -23,12 +23,22 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
     let mut search: String = ui.data(|d| d.get_temp(search_id)).unwrap_or_default();
     let mut show_all: bool = ui.data(|d| d.get_temp(all_id)).unwrap_or(false);
     ui.horizontal(|ui| {
-        let r = ui.add(egui::TextEdit::singleline(&mut search).hint_text(crate::i18n::tr("Search commands or keys")).desired_width(220.0));
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut search)
+                .hint_text(crate::i18n::tr("Search commands or keys"))
+                .desired_width(220.0),
+        );
         register(ui.ctx(), "field:shortcutsSearch", r.rect);
-        let r = ui.checkbox(&mut show_all, crate::i18n::tr("Show commands without a shortcut"));
+        let r = ui.checkbox(
+            &mut show_all,
+            crate::i18n::tr("Show commands without a shortcut"),
+        );
         register(ui.ctx(), "check:shortcuts.showAll", r.rect);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let r = ui.add_enabled(!app.ui.settings.keymap.is_empty(), egui::Button::new(crate::i18n::tr("Reset All")));
+            let r = ui.add_enabled(
+                !app.ui.settings.keymap.is_empty(),
+                egui::Button::new(crate::i18n::tr("Reset All")),
+            );
             register(ui.ctx(), "button:shortcutsResetAll", r.rect);
             if r.clicked() {
                 let _ = app.run("app.resetShortcuts", serde_json::json!({}));
@@ -40,19 +50,35 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
         d.insert_temp(search_id, search.clone());
         d.insert_temp(all_id, show_all);
     });
-    ui.label(RichText::new(crate::i18n::tr("Click a shortcut, then press the new keys (Esc cancels).")).size(11.0).color(t.text_dim));
+    ui.label(
+        RichText::new(crate::i18n::tr(
+            "Click a shortcut, then press the new keys (Esc cancels).",
+        ))
+        .size(11.0)
+        .color(t.text_dim),
+    );
     ui.add_space(4.0);
 
     let needle = search.trim().to_lowercase();
     let mut rows: Vec<(&'static Bindable, Option<String>)> = shortcuts::bindable()
         .iter()
-        .map(|b| (b, shortcuts::binding(&app.ui.settings.keymap, b.id, b.default).map(str::to_string)))
-        .filter(|(b, sc)| show_all || sc.is_some() || app.recording_shortcut.as_deref() == Some(b.id))
+        .map(|b| {
+            (
+                b,
+                shortcuts::binding(&app.ui.settings.keymap, b.id, b.default).map(str::to_string),
+            )
+        })
+        .filter(|(b, sc)| {
+            show_all || sc.is_some() || app.recording_shortcut.as_deref() == Some(b.id)
+        })
         .filter(|(b, sc)| {
             needle.is_empty()
                 || crate::i18n::tr(b.label).to_lowercase().contains(&needle)
                 || b.id.to_lowercase().contains(&needle)
-                || sc.as_deref().is_some_and(|sc| sc.to_lowercase().contains(&needle) || menu_text(sc, mac).to_lowercase().contains(&needle))
+                || sc.as_deref().is_some_and(|sc| {
+                    sc.to_lowercase().contains(&needle)
+                        || menu_text(sc, mac).to_lowercase().contains(&needle)
+                })
         })
         .collect();
     rows.sort_by_cached_key(|(b, _)| crate::i18n::tr(b.label).to_lowercase());
@@ -60,18 +86,30 @@ pub fn body(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
     // a fixed height, so the dialog doesn't jump around while the search narrows the list
     // (shorter on a short window, so the dialog fits it)
     let h = crate::panels::dialogs::list_height(ui, 400.0);
-    egui::ScrollArea::vertical().max_height(h).min_scrolled_height(h).auto_shrink([false, false]).id_salt("shortcuts-list").show(ui, |ui| {
-        egui::Grid::new("shortcuts").striped(true).num_columns(4).spacing([12.0, 4.0]).show(ui, |ui| {
-            for (b, sc) in &rows {
-                row(app, ui, t, b, sc.as_deref(), mac);
-            }
-            if rows.is_empty() {
-                ui.label(RichText::new(crate::i18n::tr("No matching commands")).color(t.text_dim));
-                ui.end_row();
-            }
+    egui::ScrollArea::vertical()
+        .max_height(h)
+        .min_scrolled_height(h)
+        .auto_shrink([false, false])
+        .id_salt("shortcuts-list")
+        .show(ui, |ui| {
+            egui::Grid::new("shortcuts")
+                .striped(true)
+                .num_columns(4)
+                .spacing([12.0, 4.0])
+                .show(ui, |ui| {
+                    for (b, sc) in &rows {
+                        row(app, ui, t, b, sc.as_deref(), mac);
+                    }
+                    if rows.is_empty() {
+                        ui.label(
+                            RichText::new(crate::i18n::tr("No matching commands"))
+                                .color(t.text_dim),
+                        );
+                        ui.end_row();
+                    }
+                });
+            fixed_keys(app, ui, t, mac, &needle);
         });
-        fixed_keys(app, ui, t, mac, &needle);
-    });
 }
 
 /// `Cmd+Shift+Z` as menus show it (`⌘⇧Z` on macOS).
@@ -79,7 +117,14 @@ fn menu_text(sc: &str, mac: bool) -> String {
     crate::menubar::shortcut_text(sc, mac)
 }
 
-fn row(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, b: &Bindable, sc: Option<&str>, mac: bool) {
+fn row(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    b: &Bindable,
+    sc: Option<&str>,
+    mac: bool,
+) {
     let changed = app.ui.settings.keymap.contains_key(b.id);
     let mut name = RichText::new(crate::i18n::tr(b.label)).color(t.text);
     if changed {
@@ -87,8 +132,16 @@ fn row(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, b: &Bindable, sc:
     }
     // keys whose command changes in the Library grids (see `shortcuts::handle`)
     let hover = match b.id {
-        "panel.presets" => format!("{} — {}", b.id, crate::i18n::tr("In Photo Grid and Square Grid: Flag as Pick and advance")),
-        "view.softProof" => format!("{} — {}", b.id, crate::i18n::tr("In Photo Grid and Square Grid: expand or collapse the stack")),
+        "panel.presets" => format!(
+            "{} — {}",
+            b.id,
+            crate::i18n::tr("In Photo Grid and Square Grid: Flag as Pick and advance")
+        ),
+        "view.softProof" => format!(
+            "{} — {}",
+            b.id,
+            crate::i18n::tr("In Photo Grid and Square Grid: expand or collapse the stack")
+        ),
         _ => b.id.to_string(),
     };
     ui.label(name).on_hover_text(hover);
@@ -101,25 +154,45 @@ fn row(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, b: &Bindable, sc:
             None => RichText::new("—").color(t.text_dim),
         }
     };
-    let r = ui.add(egui::Button::new(text).min_size(egui::vec2(110.0, 0.0)).selected(recording));
+    let r = ui.add(
+        egui::Button::new(text)
+            .min_size(egui::vec2(110.0, 0.0))
+            .selected(recording),
+    );
     register(ui.ctx(), format!("button:shortcut-{}", b.id), r.rect);
     if r.clicked() {
-        app.recording_shortcut = if recording { None } else { Some(b.id.to_string()) };
+        app.recording_shortcut = if recording {
+            None
+        } else {
+            Some(b.id.to_string())
+        };
     }
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 2.0;
-        let r = ui.add_enabled(sc.is_some(), egui::Button::new("×").small()).on_hover_text(crate::i18n::tr("Remove shortcut"));
+        let r = ui
+            .add_enabled(sc.is_some(), egui::Button::new("×").small())
+            .on_hover_text(crate::i18n::tr("Remove shortcut"));
         register(ui.ctx(), format!("button:shortcutClear-{}", b.id), r.rect);
         if r.clicked() {
-            apply(app, ui.ctx(), serde_json::json!({"id": b.id, "shortcut": null}));
+            apply(
+                app,
+                ui.ctx(),
+                serde_json::json!({"id": b.id, "shortcut": null}),
+            );
         }
-        let r = ui.add_enabled(changed, egui::Button::new("↺").small()).on_hover_text(match b.default {
-            Some(d) => crate::i18n::tr_format!("Restore {}", menu_text(d, mac)),
-            None => crate::i18n::tr("Restore (no shortcut)").to_string(),
-        });
+        let r = ui
+            .add_enabled(changed, egui::Button::new("↺").small())
+            .on_hover_text(match b.default {
+                Some(d) => crate::i18n::tr_format!("Restore {}", menu_text(d, mac)),
+                None => crate::i18n::tr("Restore (no shortcut)").to_string(),
+            });
         register(ui.ctx(), format!("button:shortcutReset-{}", b.id), r.rect);
         if r.clicked() {
-            apply(app, ui.ctx(), serde_json::json!({"id": b.id, "reset": true}));
+            apply(
+                app,
+                ui.ctx(),
+                serde_json::json!({"id": b.id, "reset": true}),
+            );
         }
     });
     ui.label(RichText::new(b.id).size(10.5).color(t.text_dim));
@@ -135,7 +208,17 @@ fn fixed_keys(app: &LightcraftApp, ui: &mut egui::Ui, t: &Tokens, mac: bool, nee
         fixed.push((sc.to_string(), label));
     }
     for n in 0..=5 {
-        fixed.push((n.to_string(), ["Clear rating", "Rate ★", "Rate ★★", "Rate ★★★", "Rate ★★★★", "Rate ★★★★★"][n]));
+        fixed.push((
+            n.to_string(),
+            [
+                "Clear rating",
+                "Rate ★",
+                "Rate ★★",
+                "Rate ★★★",
+                "Rate ★★★★",
+                "Rate ★★★★★",
+            ][n],
+        ));
         fixed.push((
             format!("Shift+{n}"),
             [
@@ -148,32 +231,53 @@ fn fixed_keys(app: &LightcraftApp, ui: &mut egui::Ui, t: &Tokens, mac: bool, nee
             ][n],
         ));
     }
-    for (sc, label) in [("6", "Red label"), ("7", "Yellow label"), ("8", "Green label"), ("9", "Blue label")] {
+    for (sc, label) in [
+        ("6", "Red label"),
+        ("7", "Yellow label"),
+        ("8", "Green label"),
+        ("9", "Blue label"),
+    ] {
         fixed.push((sc.to_string(), label));
     }
     let fixed: Vec<_> = fixed
         .into_iter()
         .filter(|(sc, label)| {
-            needle.is_empty() || crate::i18n::tr(label).to_lowercase().contains(needle) || menu_text(sc, mac).to_lowercase().contains(needle)
+            needle.is_empty()
+                || crate::i18n::tr(label).to_lowercase().contains(needle)
+                || menu_text(sc, mac).to_lowercase().contains(needle)
         })
         .collect();
     if fixed.is_empty() {
         return;
     }
     ui.add_space(8.0);
-    ui.label(RichText::new(crate::i18n::tr("Fixed keys")).font(t.semibold(12.5)).color(t.text));
-    let taken: Vec<_> = app.ui.settings.keymap.values().filter_map(|s| shortcuts::parse(s)).collect();
-    egui::Grid::new("shortcuts-fixed").striped(true).num_columns(2).spacing([12.0, 4.0]).show(ui, |ui| {
-        for (sc, label) in fixed {
-            ui.label(RichText::new(crate::i18n::tr(label)).color(t.text_label));
-            let mut text = RichText::new(menu_text(&sc, mac)).color(t.text_dim);
-            if shortcuts::parse(&sc).is_some_and(|k| taken.contains(&k)) {
-                text = text.strikethrough();
+    ui.label(
+        RichText::new(crate::i18n::tr("Fixed keys"))
+            .font(t.semibold(12.5))
+            .color(t.text),
+    );
+    let taken: Vec<_> = app
+        .ui
+        .settings
+        .keymap
+        .values()
+        .filter_map(|s| shortcuts::parse(s))
+        .collect();
+    egui::Grid::new("shortcuts-fixed")
+        .striped(true)
+        .num_columns(2)
+        .spacing([12.0, 4.0])
+        .show(ui, |ui| {
+            for (sc, label) in fixed {
+                ui.label(RichText::new(crate::i18n::tr(label)).color(t.text_label));
+                let mut text = RichText::new(menu_text(&sc, mac)).color(t.text_dim);
+                if shortcuts::parse(&sc).is_some_and(|k| taken.contains(&k)) {
+                    text = text.strikethrough();
+                }
+                ui.label(text);
+                ui.end_row();
             }
-            ui.label(text);
-            ui.end_row();
-        }
-    });
+        });
 }
 
 /// Run `app.setShortcut` and say what changed (a key taken from another command, or why not).
@@ -185,10 +289,18 @@ fn apply(app: &mut LightcraftApp, ctx: &egui::Context, params: serde_json::Value
                 .into_iter()
                 .flatten()
                 .filter_map(|v| v.as_str())
-                .map(|id| shortcuts::find_bindable(id).map_or(id, |b| crate::i18n::tr(b.label)).to_string())
+                .map(|id| {
+                    shortcuts::find_bindable(id)
+                        .map_or(id, |b| crate::i18n::tr(b.label))
+                        .to_string()
+                })
                 .collect();
             if !lost.is_empty() {
-                app.toast_for(ctx, crate::i18n::tr_format!("Removed from {}", lost.join(", ")), 3.0);
+                app.toast_for(
+                    ctx,
+                    crate::i18n::tr_format!("Removed from {}", lost.join(", ")),
+                    3.0,
+                );
             }
         }
         Err(e) => app.toast_for(ctx, e, 3.0),
@@ -197,11 +309,19 @@ fn apply(app: &mut LightcraftApp, ctx: &egui::Context, params: serde_json::Value
 
 /// While a row is recording: the first key press becomes its shortcut, Esc cancels.
 fn capture(app: &mut LightcraftApp, ctx: &egui::Context) {
-    let Some(id) = app.recording_shortcut.clone() else { return };
+    let Some(id) = app.recording_shortcut.clone() else {
+        return;
+    };
     let pressed = ctx.input(|i| {
         i.events.iter().find_map(|e| match e {
             // ⌘, ⇧, ⌥ and ⌃ on their own arrive as keys too: keep waiting for the key they modify
-            egui::Event::Key { key, pressed: true, repeat: false, modifiers, .. } if !shortcuts::is_modifier(*key) => Some((*key, *modifiers)),
+            egui::Event::Key {
+                key,
+                pressed: true,
+                repeat: false,
+                modifiers,
+                ..
+            } if !shortcuts::is_modifier(*key) => Some((*key, *modifiers)),
             // the windowing layer turns ⌘C / ⌘X / ⌘V (with or without other modifiers) into these
             egui::Event::Copy => Some((egui::Key::C, i.modifiers)),
             egui::Event::Cut => Some((egui::Key::X, i.modifiers)),
@@ -209,11 +329,21 @@ fn capture(app: &mut LightcraftApp, ctx: &egui::Context) {
             _ => None,
         })
     });
-    let Some((key, modifiers)) = pressed else { return };
+    let Some((key, modifiers)) = pressed else {
+        return;
+    };
     // the key press is ours: nothing else (a focused button's Space, Tab navigation) acts on it
     ctx.input_mut(|i| {
-        i.events
-            .retain(|e| !matches!(e, egui::Event::Key { .. } | egui::Event::Text(_) | egui::Event::Copy | egui::Event::Cut | egui::Event::Paste(_)));
+        i.events.retain(|e| {
+            !matches!(
+                e,
+                egui::Event::Key { .. }
+                    | egui::Event::Text(_)
+                    | egui::Event::Copy
+                    | egui::Event::Cut
+                    | egui::Event::Paste(_)
+            )
+        });
     });
     app.recording_shortcut = None;
     if key == egui::Key::Escape && modifiers.is_none() {
@@ -221,6 +351,10 @@ fn capture(app: &mut LightcraftApp, ctx: &egui::Context) {
     }
     match shortcuts::format(modifiers, key) {
         Some(sc) => apply(app, ctx, serde_json::json!({"id": id, "shortcut": sc})),
-        None => app.toast_for(ctx, crate::i18n::tr("That key can't be used as a shortcut"), 3.0),
+        None => app.toast_for(
+            ctx,
+            crate::i18n::tr("That key can't be used as a shortcut"),
+            3.0,
+        ),
     }
 }

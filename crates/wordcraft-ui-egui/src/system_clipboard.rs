@@ -13,7 +13,10 @@ use crate::{WordApp, paste_picture};
 
 /// The commands that paste the clipboard.
 pub(crate) fn is_paste(id: &str) -> bool {
-    matches!(id, "edit.paste" | "edit.pasteText" | "edit.pasteMerge" | "edit.pasteSpecial")
+    matches!(
+        id,
+        "edit.paste" | "edit.pasteText" | "edit.pasteMerge" | "edit.pasteSpecial"
+    )
 }
 
 /// Most format names an error lists.
@@ -25,13 +28,22 @@ const MAX_NAME_CHARS: usize = 60;
 /// context-menu Paste send none), its HTML and RTF, and for Paste Special its picture. Params a
 /// caller already gave are kept. `Some` when the paste was done here instead (copied picture
 /// files, which reach us as their paths).
-pub(crate) fn fill(app: &mut WordApp, id: &str, params: &mut Value) -> Option<Result<Value, String>> {
+pub(crate) fn fill(
+    app: &mut WordApp,
+    id: &str,
+    params: &mut Value,
+) -> Option<Result<Value, String>> {
     if !is_paste(id) {
         return None;
     }
     let o = params.as_object_mut()?;
     if !o.contains_key("text")
-        && let Some(text) = app.services.clipboard_text.as_ref().and_then(|f| f()).filter(|t| !t.is_empty())
+        && let Some(text) = app
+            .services
+            .clipboard_text
+            .as_ref()
+            .and_then(|f| f())
+            .filter(|t| !t.is_empty())
     {
         // Picture files copied in a file manager reach us as their paths: paste the pictures,
         // as Ctrl+V does.
@@ -46,14 +58,30 @@ pub(crate) fn fill(app: &mut WordApp, id: &str, params: &mut Value) -> Option<Re
     }
     // Keep Text Only needs nothing more; a caller that passed formats of its own (an agent, Paste
     // Special's OK) has them already.
-    if id == "edit.pasteText" || ["html", "rtf", "picture"].iter().any(|k| o.contains_key(*k)) {
+    if id == "edit.pasteText"
+        || ["html", "rtf", "picture"]
+            .iter()
+            .any(|k| o.contains_key(*k))
+    {
         return None;
     }
     let fits = |t: &String| !t.trim().is_empty() && t.len() <= MAX_PASTE_BYTES;
-    if let Some(html) = app.services.clipboard_html.as_ref().and_then(|f| f()).filter(fits) {
+    if let Some(html) = app
+        .services
+        .clipboard_html
+        .as_ref()
+        .and_then(|f| f())
+        .filter(fits)
+    {
         o.insert("html".into(), Value::String(html));
     }
-    if let Some(rtf) = app.services.clipboard_rtf.as_ref().and_then(|f| f()).filter(fits) {
+    if let Some(rtf) = app
+        .services
+        .clipboard_rtf
+        .as_ref()
+        .and_then(|f| f())
+        .filter(fits)
+    {
         o.insert("rtf".into(), Value::String(rtf));
     }
     if id == "edit.pasteSpecial"
@@ -71,7 +99,10 @@ pub(crate) fn fill(app: &mut WordApp, id: &str, params: &mut Value) -> Option<Re
 fn shown(name: &str) -> bool {
     let n = name.trim();
     !n.is_empty()
-        && !matches!(n, "TARGETS" | "TIMESTAMP" | "MULTIPLE" | "SAVE_TARGETS" | "DELETE" | "INCR")
+        && !matches!(
+            n,
+            "TARGETS" | "TIMESTAMP" | "MULTIPLE" | "SAVE_TARGETS" | "DELETE" | "INCR"
+        )
         && !n.starts_with("chromium/")
         && !n.starts_with("application/x-qt-")
 }
@@ -79,7 +110,12 @@ fn shown(name: &str) -> bool {
 /// What to say when a paste found nothing it can use: the formats on the clipboard when the
 /// host lists them (#833), else that it is empty.
 pub(crate) fn nothing_to_paste(app: &WordApp) -> String {
-    let names: Vec<String> = app.services.clipboard_formats.as_ref().map(|f| f()).unwrap_or_default();
+    let names: Vec<String> = app
+        .services
+        .clipboard_formats
+        .as_ref()
+        .map(|f| f())
+        .unwrap_or_default();
     let mut shown_names: Vec<String> = Vec::new();
     for n in names.iter().filter(|n| shown(n)) {
         let n: String = n.trim().chars().take(MAX_NAME_CHARS).collect();
@@ -100,7 +136,11 @@ pub(crate) fn nothing_to_paste(app: &WordApp) -> String {
 }
 
 /// A paste that found the clipboard empty, explained (#833): the status bar says what is there.
-pub(crate) fn explain(app: &mut WordApp, id: &str, r: Result<Value, String>) -> Result<Value, String> {
+pub(crate) fn explain(
+    app: &mut WordApp,
+    id: &str,
+    r: Result<Value, String>,
+) -> Result<Value, String> {
     match r {
         Err(e) if is_paste(id) && e == "the clipboard is empty" => {
             let e = nothing_to_paste(app);
@@ -125,12 +165,20 @@ mod tests {
 
     fn first_para(a: &WordApp) -> String {
         let focus = a.session.sel.focus.clone();
-        a.session.doc.para_at(&focus).map(|p| p.text.clone()).unwrap_or_default()
+        a.session
+            .doc
+            .para_at(&focus)
+            .map(|p| p.text.clone())
+            .unwrap_or_default()
     }
 
     fn bold_at(a: &WordApp, off: usize) -> bool {
         let focus = a.session.sel.focus.clone();
-        a.session.doc.para_at(&focus).and_then(|p| p.props_of_char(off).bold).unwrap_or(false)
+        a.session
+            .doc
+            .para_at(&focus)
+            .and_then(|p| p.props_of_char(off).bold)
+            .unwrap_or(false)
     }
 
     /// Ctrl+V (a paste event with the text) and the ribbon's Paste keep another program's
@@ -144,7 +192,8 @@ mod tests {
         };
         let mut a = app(services);
         // Ctrl+V: the paste event carries the text.
-        a.run("edit.paste", json!({"text": "plain strong"})).unwrap();
+        a.run("edit.paste", json!({"text": "plain strong"}))
+            .unwrap();
         assert_eq!(first_para(&a), "plain strong");
         assert!(!bold_at(&a, 0) && bold_at(&a, 7));
         a.run("edit.undo", json!({})).unwrap();
@@ -161,7 +210,12 @@ mod tests {
         assert!(!bold_at(&a, 7));
         // Paste Special lists what is on the system clipboard.
         let r = a.run("edit.pasteSpecial", json!({})).unwrap();
-        let ids: Vec<&str> = r["formats"].as_array().unwrap().iter().filter_map(|f| f["id"].as_str()).collect();
+        let ids: Vec<&str> = r["formats"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|f| f["id"].as_str())
+            .collect();
         assert_eq!(ids, ["html", "text"]);
     }
 
@@ -170,7 +224,9 @@ mod tests {
     fn rtf_and_oversized_clipboard_payloads() {
         let services = Services {
             clipboard_text: Some(Box::new(|| Some("bold".into()))),
-            clipboard_html: Some(Box::new(|| Some(format!("<b>{}</b>", "x".repeat(MAX_PASTE_BYTES))))),
+            clipboard_html: Some(Box::new(|| {
+                Some(format!("<b>{}</b>", "x".repeat(MAX_PASTE_BYTES)))
+            })),
             clipboard_rtf: Some(Box::new(|| Some(r"{\rtf1\ansi {\b bold}}".into()))),
             ..Default::default()
         };
@@ -184,15 +240,28 @@ mod tests {
     #[test]
     fn paste_special_offers_the_clipboard_picture() {
         let services = Services {
-            clipboard_picture: Some(Box::new(|| Some(ClipboardPicture::Pixels { width: 4, height: 4, rgba: vec![200; 64] }))),
+            clipboard_picture: Some(Box::new(|| {
+                Some(ClipboardPicture::Pixels {
+                    width: 4,
+                    height: 4,
+                    rgba: vec![200; 64],
+                })
+            })),
             ..Default::default()
         };
         let mut a = app(services);
         let r = a.run("edit.pasteSpecial", json!({})).unwrap();
-        let ids: Vec<&str> = r["formats"].as_array().unwrap().iter().filter_map(|f| f["id"].as_str()).collect();
+        let ids: Vec<&str> = r["formats"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|f| f["id"].as_str())
+            .collect();
         assert_eq!(ids, ["picture"]);
         // Choosing it in the dialog (or naming it) pastes the picture.
-        let r = a.run("edit.pasteSpecial", json!({"as": "picture"})).unwrap();
+        let r = a
+            .run("edit.pasteSpecial", json!({"as": "picture"}))
+            .unwrap();
         assert_eq!(r["pastedAs"], "picture");
         assert_eq!(a.session.doc.media.len(), 1);
     }
@@ -202,23 +271,46 @@ mod tests {
     #[test]
     fn nothing_to_paste_says_what_the_clipboard_holds() {
         let services = Services {
-            clipboard_formats: Some(Box::new(|| vec!["TARGETS".into(), "image/x-unknown".into(), "text/x-moz-url".into(), "image/x-unknown".into()])),
+            clipboard_formats: Some(Box::new(|| {
+                vec![
+                    "TARGETS".into(),
+                    "image/x-unknown".into(),
+                    "text/x-moz-url".into(),
+                    "image/x-unknown".into(),
+                ]
+            })),
             clipboard_picture: Some(Box::new(|| None)),
             ..Default::default()
         };
         let mut a = app(services);
         let e = a.run("edit.paste", json!({})).unwrap_err();
-        assert_eq!(e, "nothing on the clipboard can be pasted here (it holds image/x-unknown, text/x-moz-url)");
+        assert_eq!(
+            e,
+            "nothing on the clipboard can be pasted here (it holds image/x-unknown, text/x-moz-url)"
+        );
         assert_eq!(a.run("edit.pasteMerge", json!({})).unwrap_err(), e);
-        let many = Services { clipboard_formats: Some(Box::new(|| (0..20).map(|i| format!("f{i}")).collect())), ..Default::default() };
+        let many = Services {
+            clipboard_formats: Some(Box::new(|| (0..20).map(|i| format!("f{i}")).collect())),
+            ..Default::default()
+        };
         assert!(nothing_to_paste(&app(many)).ends_with("f5 and 14 more)"));
         let mut a = app(Services::default());
-        assert_eq!(a.run("edit.paste", json!({})).unwrap_err(), "the clipboard is empty");
+        assert_eq!(
+            a.run("edit.paste", json!({})).unwrap_err(),
+            "the clipboard is empty"
+        );
         let unreadable = Services {
-            clipboard_picture: Some(Box::new(|| Some(ClipboardPicture::Unreadable("its format isn't supported".into())))),
+            clipboard_picture: Some(Box::new(|| {
+                Some(ClipboardPicture::Unreadable(
+                    "its format isn't supported".into(),
+                ))
+            })),
             ..Default::default()
         };
         let e = app(unreadable).run("edit.paste", json!({})).unwrap_err();
-        assert!(e.contains("couldn't be read") && e.contains("isn't supported"), "{e}");
+        assert!(
+            e.contains("couldn't be read") && e.contains("isn't supported"),
+            "{e}"
+        );
     }
 }

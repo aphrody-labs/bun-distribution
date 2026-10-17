@@ -129,7 +129,10 @@ pub fn parse_service_ids(services: Option<&str>) -> Vec<String> {
             .filter(|s| !s.is_empty())
             .map(str::to_string)
             .collect(),
-        _ => DEFAULT_TUNNEL_SERVICE_IDS.iter().map(|s| (*s).to_string()).collect(),
+        _ => DEFAULT_TUNNEL_SERVICE_IDS
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect(),
     }
 }
 
@@ -161,13 +164,19 @@ fn parse_url_authority(url: &str) -> Result<(String, u16), Error> {
 /// Parse a catalog `target` field shaped as `<alias>:<host>:<port>` (e.g. `dbfr:127.0.0.1:5432`).
 fn parse_target(target: &str) -> Result<(String, u16), Error> {
     let (alias, rest) = target.split_once(':').ok_or_else(|| {
-        Error::Catalog(format!("invalid target '{target}': expected 'alias:host:port'"))
+        Error::Catalog(format!(
+            "invalid target '{target}': expected 'alias:host:port'"
+        ))
     })?;
     let (_, port_str) = rest.rsplit_once(':').ok_or_else(|| {
-        Error::Catalog(format!("invalid target '{target}': expected 'alias:host:port'"))
+        Error::Catalog(format!(
+            "invalid target '{target}': expected 'alias:host:port'"
+        ))
     })?;
     let port: u16 = port_str.parse().map_err(|_| {
-        Error::Catalog(format!("invalid target '{target}': invalid port '{port_str}'"))
+        Error::Catalog(format!(
+            "invalid target '{target}': invalid port '{port_str}'"
+        ))
     })?;
     Ok((normalize_alias(alias), port))
 }
@@ -183,12 +192,12 @@ fn resolve_entry(
         None if id == REDIS_SERVICE_ID => {
             owned_builtin = builtin_redis();
             &owned_builtin
-        },
+        }
         None => {
             return Err(Error::Catalog(format!(
                 "service '{id}' not found in the catalog (pass --catalog, or check the id)"
             )));
-        },
+        }
     };
 
     let (alias, remote_port) = if let Some(target) = raw.target.as_deref() {
@@ -213,7 +222,7 @@ fn resolve_entry(
         Some("tcp") => {
             let health = raw.health.as_deref().expect("checked by url_scheme above");
             parse_url_authority(health)?.1
-        },
+        }
         _ => remote_port.checked_add(offset).ok_or_else(|| {
             Error::Catalog(format!(
                 "local port overflow for '{id}': {remote_port} + offset {offset}"
@@ -221,7 +230,12 @@ fn resolve_entry(
         })?,
     };
 
-    Ok(TunnelPlanEntry { id: id.to_string(), alias, local_port, remote_port })
+    Ok(TunnelPlanEntry {
+        id: id.to_string(),
+        alias,
+        local_port,
+        remote_port,
+    })
 }
 
 /// Resolve a tunnel plan for `service_ids` from a raw catalog JSON document.
@@ -232,8 +246,11 @@ pub fn resolve_plan(
 ) -> Result<Vec<TunnelPlanEntry>, Error> {
     let catalog: RawCatalog = serde_json::from_str(catalog_json)
         .map_err(|e| Error::Catalog(format!("invalid service catalog JSON: {e}")))?;
-    let by_id: BTreeMap<&str, &RawService> =
-        catalog.services.iter().map(|s| (s.id.as_str(), s)).collect();
+    let by_id: BTreeMap<&str, &RawService> = catalog
+        .services
+        .iter()
+        .map(|s| (s.id.as_str(), s))
+        .collect();
 
     service_ids
         .iter()
@@ -301,15 +318,20 @@ pub fn group_by_alias(plan: &[TunnelPlanEntry]) -> Vec<TunnelGroup> {
         if !groups.contains_key(&entry.alias) {
             order.push(entry.alias.clone());
         }
-        let group = groups.entry(entry.alias.clone()).or_insert_with(|| TunnelGroup {
-            alias: entry.alias.clone(),
-            ids: Vec::new(),
-            forwards: Vec::new(),
-        });
+        let group = groups
+            .entry(entry.alias.clone())
+            .or_insert_with(|| TunnelGroup {
+                alias: entry.alias.clone(),
+                ids: Vec::new(),
+                forwards: Vec::new(),
+            });
         group.ids.push(entry.id.clone());
         group.forwards.push((entry.local_port, entry.remote_port));
     }
-    order.into_iter().filter_map(|alias| groups.remove(&alias)).collect()
+    order
+        .into_iter()
+        .filter_map(|alias| groups.remove(&alias))
+        .collect()
 }
 
 /// Build the `ssh` argument list for one alias group.
@@ -360,7 +382,9 @@ fn kill_pids(pids: &[u32]) {
     );
     for pid in &wanted {
         if let Some(process) = system.process(*pid) {
-            process.kill_with(Signal::Term).unwrap_or_else(|| process.kill());
+            process
+                .kill_with(Signal::Term)
+                .unwrap_or_else(|| process.kill());
         }
     }
 }
@@ -381,7 +405,10 @@ pub(crate) fn kill_ssh_forwards(forward: &str) -> usize {
         if name != "ssh" && name != "ssh.exe" {
             continue;
         }
-        let matches = process.cmd().iter().any(|arg| arg.to_string_lossy().contains(forward));
+        let matches = process
+            .cmd()
+            .iter()
+            .any(|arg| arg.to_string_lossy().contains(forward));
         if matches && process.kill() {
             killed += 1;
         }
@@ -391,7 +418,10 @@ pub(crate) fn kill_ssh_forwards(forward: &str) -> usize {
 
 fn render_plan(plan: &[TunnelPlanEntry], json: bool) {
     if json {
-        println!("{}", serde_json::to_string_pretty(plan).expect("serializable"));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(plan).expect("serializable")
+        );
         return;
     }
     println!("=== APHRODY SSH TUNNEL PLAN ===");
@@ -405,7 +435,10 @@ fn render_plan(plan: &[TunnelPlanEntry], json: bool) {
 
 fn render_status(statuses: &[TunnelStatusEntry], json: bool) {
     if json {
-        println!("{}", serde_json::to_string_pretty(statuses).expect("serializable"));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(statuses).expect("serializable")
+        );
         return;
     }
     println!("=== APHRODY SSH TUNNEL STATUS ===");
@@ -601,17 +634,26 @@ mod tests {
     fn parse_service_ids_defaults_when_empty() {
         assert_eq!(
             parse_service_ids(None),
-            DEFAULT_TUNNEL_SERVICE_IDS.iter().map(|s| (*s).to_string()).collect::<Vec<_>>()
+            DEFAULT_TUNNEL_SERVICE_IDS
+                .iter()
+                .map(|s| (*s).to_string())
+                .collect::<Vec<_>>()
         );
         assert_eq!(
             parse_service_ids(Some("  ")),
-            DEFAULT_TUNNEL_SERVICE_IDS.iter().map(|s| (*s).to_string()).collect::<Vec<_>>()
+            DEFAULT_TUNNEL_SERVICE_IDS
+                .iter()
+                .map(|s| (*s).to_string())
+                .collect::<Vec<_>>()
         );
     }
 
     #[test]
     fn parse_service_ids_splits_commas_and_spaces() {
-        assert_eq!(parse_service_ids(Some("a, b c ,d")), vec!["a", "b", "c", "d"]);
+        assert_eq!(
+            parse_service_ids(Some("a, b c ,d")),
+            vec!["a", "b", "c", "d"]
+        );
     }
 
     #[test]
@@ -687,8 +729,12 @@ mod tests {
 
     #[test]
     fn resolve_plan_rejects_unknown_service() {
-        let err = resolve_plan(FIXTURE, &["nope-does-not-exist".to_string()], DEFAULT_OFFSET)
-            .unwrap_err();
+        let err = resolve_plan(
+            FIXTURE,
+            &["nope-does-not-exist".to_string()],
+            DEFAULT_OFFSET,
+        )
+        .unwrap_err();
         assert!(matches!(err, Error::Catalog(_)));
     }
 
@@ -739,7 +785,11 @@ mod tests {
     fn automatic_catalog_requires_current_monorepo_layout() {
         let root = std::env::temp_dir().join(format!("ssh-catalog-layout-{}", std::process::id()));
         std::fs::create_dir_all(root.join("aphrody-infra/tools/config")).unwrap();
-        std::fs::write(root.join("aphrody-infra/infra/config/service-catalog.json"), "{}").unwrap();
+        std::fs::write(
+            root.join("aphrody-infra/infra/config/service-catalog.json"),
+            "{}",
+        )
+        .unwrap();
         assert_eq!(find_workspace_catalog(&root), None);
         assert_eq!(find_workspace_catalog(&root.join("aphrody-infra")), None);
         std::fs::create_dir_all(root.join("tools").join("config")).unwrap();
@@ -758,7 +808,10 @@ mod tests {
     #[test]
     fn resolve_catalog_path_prefers_explicit() {
         let explicit = Path::new("some/explicit/catalog.json");
-        assert_eq!(resolve_catalog_path(Some(explicit)).unwrap(), explicit.to_path_buf());
+        assert_eq!(
+            resolve_catalog_path(Some(explicit)).unwrap(),
+            explicit.to_path_buf()
+        );
     }
 
     #[test]

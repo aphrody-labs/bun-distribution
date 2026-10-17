@@ -111,12 +111,16 @@ pub struct VideoWazaDatabase {
 
 /// Lit un champ flottant (les `fede*Time` sont des `Float` RDBN).
 fn field_f64(v: &Value, key: &str) -> f64 {
-    v.get(key).and_then(serde_json::Value::as_f64).unwrap_or(0.0)
+    v.get(key)
+        .and_then(serde_json::Value::as_f64)
+        .unwrap_or(0.0)
 }
 
 /// Lit un champ entier tolérant aux nombres JSON flottants (`220.0` → `220`).
 fn field_num_i64(v: &Value, key: &str) -> i64 {
-    v.get(key).and_then(|x| x.as_i64().or_else(|| x.as_f64().map(|f| f as i64))).unwrap_or(0)
+    v.get(key)
+        .and_then(|x| x.as_i64().or_else(|| x.as_f64().map(|f| f as i64)))
+        .unwrap_or(0)
 }
 
 fn parse_movie(v: &Value) -> EventMovieInfo {
@@ -171,13 +175,20 @@ pub fn parse_video_waza(root: &Value) -> VideoWazaDatabase {
             let caption = if m.caption_id == HashId::ZERO {
                 None
             } else {
-                captions.iter().find(|c| c.caption_id == m.caption_id).cloned()
+                captions
+                    .iter()
+                    .find(|c| c.caption_id == m.caption_id)
+                    .cloned()
             };
             ParsedVideoWaza { movie: m, caption }
         })
         .collect();
 
-    VideoWazaDatabase { videos, subtitles, captions }
+    VideoWazaDatabase {
+        videos,
+        subtitles,
+        captions,
+    }
 }
 
 impl VideoWazaDatabase {

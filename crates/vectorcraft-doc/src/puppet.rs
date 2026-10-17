@@ -36,7 +36,10 @@ impl PuppetPins {
     pub fn holds(&self, doc: &Document, ids: &[NodeId]) -> bool {
         self.ids == ids
             && self.ids.len() == self.result.len()
-            && ids.iter().zip(&self.result).all(|(id, r)| doc.node_arc(*id).is_some_and(|a| Arc::ptr_eq(a, r)))
+            && ids
+                .iter()
+                .zip(&self.result)
+                .all(|(id, r)| doc.node_arc(*id).is_some_and(|a| Arc::ptr_eq(a, r)))
     }
 }
 
@@ -69,10 +72,28 @@ mod tests {
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                id,
+                shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let node = d.node_arc(id).cloned().unwrap();
-        let pin = PuppetPin { rest: Point::new(5.0, 5.0), at: Point::new(6.0, 5.0), angle: Some(0.5) };
-        d.puppet = Some(Arc::new(PuppetPins { ids: vec![id], rest: vec![node.clone()], result: vec![node], pins: vec![pin] }));
+        let pin = PuppetPin {
+            rest: Point::new(5.0, 5.0),
+            at: Point::new(6.0, 5.0),
+            angle: Some(0.5),
+        };
+        d.puppet = Some(Arc::new(PuppetPins {
+            ids: vec![id],
+            rest: vec![node.clone()],
+            result: vec![node],
+            pins: vec![pin],
+        }));
         let pins = d.puppet.clone().unwrap();
         assert!(pins.holds(&d, &[id]));
         assert!(!pins.holds(&d, &[id, l]), "other objects");

@@ -27,7 +27,10 @@ fn aphrody_bin() -> std::path::PathBuf {
         return path.into();
     }
     let exe = std::env::current_exe().expect("current exe");
-    let profile_dir = exe.parent().and_then(std::path::Path::parent).expect("target profile dir");
+    let profile_dir = exe
+        .parent()
+        .and_then(std::path::Path::parent)
+        .expect("target profile dir");
     let bin = profile_dir.join(format!("aphrody{}", std::env::consts::EXE_SUFFIX));
     assert!(
         bin.is_file(),
@@ -62,22 +65,30 @@ fn client_loader_resolves_server_from_mcp_json() {
     assert_eq!(cfg.servers.len(), 3, "three servers expected");
 
     // BTreeMap-driven alphabetical ordering.
-    let bxc = cfg.servers.iter().find(|s| s.name == "bxc").expect("bxc present");
+    let bxc = cfg
+        .servers
+        .iter()
+        .find(|s| s.name == "bxc")
+        .expect("bxc present");
     match &bxc.transport {
         McpTransportConfig::Stdio { command, args, env } => {
             assert_eq!(command, "bxc");
             assert_eq!(args, &vec!["serve".to_owned(), "--stdio".to_owned()]);
             assert_eq!(env.get("BXC_LOG").map(String::as_str), Some("info"));
-        },
+        }
         other => panic!("expected stdio for bxc, got {other:?}"),
     }
 
-    let supa = cfg.servers.iter().find(|s| s.name == "supabase").expect("supabase present");
+    let supa = cfg
+        .servers
+        .iter()
+        .find(|s| s.name == "supabase")
+        .expect("supabase present");
     match &supa.transport {
         McpTransportConfig::Http { url, headers } => {
             assert_eq!(url, "https://mcp.example.org/v1/rpc");
             assert!(headers.contains_key("Authorization"));
-        },
+        }
         other => panic!("expected http for supabase, got {other:?}"),
     }
 
@@ -102,7 +113,7 @@ async fn client_probe_handles_missing_command_gracefully() {
     match result {
         Err(McpError::Spawn { command, .. }) => {
             assert_eq!(command, bogus, "command name must be echoed in error");
-        },
+        }
         Err(other) => panic!("expected Spawn error, got {other:?}"),
         Ok(_) => panic!("phantom binary somehow spawned"),
     }
@@ -149,9 +160,16 @@ async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
         "method": "server/discover",
         "params": {"_meta": request_meta.clone()}
     });
-    stdin.write_all(format!("{discover}\n").as_bytes()).await.expect("write discovery request");
+    stdin
+        .write_all(format!("{discover}\n").as_bytes())
+        .await
+        .expect("write discovery request");
     stdin.flush().await.expect("flush discovery request");
-    let response = lines.next_line().await.expect("read discovery response").expect("response");
+    let response = lines
+        .next_line()
+        .await
+        .expect("read discovery response")
+        .expect("response");
     let discovery: serde_json::Value = serde_json::from_str(&response).expect("valid JSON-RPC");
     assert_eq!(discovery["id"], 1);
     assert_eq!(discovery["result"]["resultType"], "complete");
@@ -175,13 +193,25 @@ async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
         .write_all(format!("{list}\n").as_bytes())
         .await
         .expect("write stateless tools/list request");
-    stdin.flush().await.expect("flush stateless tools/list request");
-    let response = lines.next_line().await.expect("read tools/list response").expect("response");
+    stdin
+        .flush()
+        .await
+        .expect("flush stateless tools/list request");
+    let response = lines
+        .next_line()
+        .await
+        .expect("read tools/list response")
+        .expect("response");
     let tools_response: serde_json::Value =
         serde_json::from_str(&response).expect("valid JSON-RPC");
     assert_eq!(tools_response["id"], 2);
-    let tools = tools_response["result"]["tools"].as_array().expect("tools array");
-    let names: Vec<_> = tools.iter().filter_map(|tool| tool["name"].as_str()).collect();
+    let tools = tools_response["result"]["tools"]
+        .as_array()
+        .expect("tools array");
+    let names: Vec<_> = tools
+        .iter()
+        .filter_map(|tool| tool["name"].as_str())
+        .collect();
     assert!(!names.is_empty(), "stateless tools/list returned no tools");
     // The Dragon Ball tools are served by shenron-mcp (aphrody-labs/shenron), not this server.
     assert!(
@@ -190,7 +220,10 @@ async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
     );
     for tool in tools {
         let name = tool["name"].as_str().unwrap_or_default();
-        assert!(tool["inputSchema"].is_object(), "{name} must publish an object schema");
+        assert!(
+            tool["inputSchema"].is_object(),
+            "{name} must publish an object schema"
+        );
     }
 
     let call = serde_json::json!({
@@ -201,9 +234,16 @@ async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
             "arguments": {"query": "bun:windows", "limit": 1, "include_content": false}
         }
     });
-    stdin.write_all(format!("{call}\n").as_bytes()).await.expect("write tool call");
+    stdin
+        .write_all(format!("{call}\n").as_bytes())
+        .await
+        .expect("write tool call");
     stdin.flush().await.expect("flush tool call");
-    let response = lines.next_line().await.expect("read tool result").expect("response");
+    let response = lines
+        .next_line()
+        .await
+        .expect("read tool result")
+        .expect("response");
     let response: serde_json::Value = serde_json::from_str(&response).expect("tool JSON-RPC");
     assert_eq!(response["id"], 3);
     assert_eq!(response["result"]["resultType"], "complete");

@@ -52,8 +52,12 @@ impl NibbleHuffman {
 
     fn compress_nibble(&self, writer: &mut BitWriter, data: u8) {
         assert!(data < 16);
-        let (_, code) =
-            &self.codes.iter().enumerate().find(|(value, _)| *value as u8 == data).unwrap();
+        let (_, code) = &self
+            .codes
+            .iter()
+            .enumerate()
+            .find(|(value, _)| *value as u8 == data)
+            .unwrap();
         writer.write_u8(code.bits, code.length).unwrap();
     }
 

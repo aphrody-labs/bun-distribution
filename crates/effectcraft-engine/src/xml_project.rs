@@ -43,7 +43,9 @@ fn esc(s: &str, out: &mut String) {
             '>' => out.push_str("&gt;"),
             '"' => out.push_str("&quot;"),
             '\r' => out.push_str("&#13;"),
-            c if (c as u32) < 0x20 && c != '\n' && c != '\t' => out.push_str(&format!("&#{};", c as u32)),
+            c if (c as u32) < 0x20 && c != '\n' && c != '\t' => {
+                out.push_str(&format!("&#{};", c as u32))
+            }
             c => out.push(c),
         }
     }
@@ -92,7 +94,9 @@ fn write(v: &Value, depth: usize, out: &mut String) {
 /// The project JSON as an XML document.
 pub fn to_xml(json: &str) -> Result<String, String> {
     let v: Value = serde_json::from_str(json).map_err(|e| e.to_string())?;
-    let mut out = format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<{ROOT} encoding=\"json\" version=\"1\">\n");
+    let mut out = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<{ROOT} encoding=\"json\" version=\"1\">\n"
+    );
     write(&v, 1, &mut out);
     out.push_str(&format!("</{ROOT}>\n"));
     Ok(out)
@@ -131,7 +135,10 @@ impl<'a> P<'a> {
         if !self.rest().starts_with('<') || self.rest().starts_with("</") {
             return self.err("expected an element");
         }
-        let end = self.rest().find('>').ok_or("XML project: unterminated tag")?;
+        let end = self
+            .rest()
+            .find('>')
+            .ok_or("XML project: unterminated tag")?;
         let inner = &self.rest()[1..end];
         self.i += end + 1;
         let (inner, closed) = match inner.strip_suffix('/') {
@@ -174,7 +181,8 @@ impl<'a> P<'a> {
             ("obj", true) => Value::Object(Map::new()),
             ("str", true) => Value::String(String::new()),
             ("bool", false) => Value::Bool(self.text().trim() == "true"),
-            ("num", false) => serde_json::from_str(self.text().trim()).map_err(|e| format!("XML project: bad number: {e}"))?,
+            ("num", false) => serde_json::from_str(self.text().trim())
+                .map_err(|e| format!("XML project: bad number: {e}"))?,
             ("str", false) => Value::String(self.text()),
             ("arr", false) => {
                 let mut a = vec![];
@@ -230,8 +238,14 @@ fn unesc(s: &str) -> String {
             "gt" => out.push('>'),
             "quot" => out.push('"'),
             "apos" => out.push('\''),
-            n if n.starts_with("#x") => out.extend(u32::from_str_radix(&n[2..], 16).ok().and_then(char::from_u32)),
-            n if n.starts_with('#') => out.extend(n[1..].parse::<u32>().ok().and_then(char::from_u32)),
+            n if n.starts_with("#x") => out.extend(
+                u32::from_str_radix(&n[2..], 16)
+                    .ok()
+                    .and_then(char::from_u32),
+            ),
+            n if n.starts_with('#') => {
+                out.extend(n[1..].parse::<u32>().ok().and_then(char::from_u32))
+            }
             other => {
                 out.push('&');
                 out.push_str(other);
@@ -246,7 +260,10 @@ fn unesc(s: &str) -> String {
 
 /// The project JSON of an XML project document.
 pub fn from_xml(text: &str) -> Result<String, String> {
-    let mut p = P { s: text.trim_start_matches('\u{feff}'), i: 0 };
+    let mut p = P {
+        s: text.trim_start_matches('\u{feff}'),
+        i: 0,
+    };
     let (root, _, _) = p.open()?;
     if root != ROOT {
         return Err(format!("not an EffectCraft XML project (root <{root}>)"));
@@ -275,13 +292,26 @@ mod tests {
     /// stack, which aborts the app; it is now refused. Nesting the JSON reader takes still reads.
     #[test]
     fn deep_nesting_is_refused_not_a_stack_overflow() {
-        let nested = |n: usize| format!("<{ROOT}>{}<null/>{}</{ROOT}>", "<arr>".repeat(n), "</arr>".repeat(n));
+        let nested = |n: usize| {
+            format!(
+                "<{ROOT}>{}<null/>{}</{ROOT}>",
+                "<arr>".repeat(n),
+                "</arr>".repeat(n)
+            )
+        };
         let e = from_xml(&nested(1_000_000)).unwrap_err();
         assert!(e.contains("nested deeper"), "{e}");
         let ok = from_xml(&nested(100)).unwrap();
         assert!(serde_json::from_str::<Value>(&ok).is_ok());
-        let json = format!("{}null{}", "[".repeat(MAX_DEPTH - 1), "]".repeat(MAX_DEPTH - 1));
+        let json = format!(
+            "{}null{}",
+            "[".repeat(MAX_DEPTH - 1),
+            "]".repeat(MAX_DEPTH - 1)
+        );
         let v: Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(serde_json::from_str::<Value>(&from_xml(&to_xml(&json).unwrap()).unwrap()).unwrap(), v);
+        assert_eq!(
+            serde_json::from_str::<Value>(&from_xml(&to_xml(&json).unwrap()).unwrap()).unwrap(),
+            v
+        );
     }
 }

@@ -22,7 +22,11 @@ fn model(node: &[u8], weights: &[Vec<u8>]) -> Vec<u8> {
         len_field(5, t, &mut g);
     }
     for (id, name) in [(11, "x"), (12, "y")] {
-        len_field(id, &value_info_bytes(name, 1, &[Ok(1), Ok(3), Ok(112), Ok(112)]), &mut g);
+        len_field(
+            id,
+            &value_info_bytes(name, 1, &[Ok(1), Ok(3), Ok(112), Ok(112)]),
+            &mut g,
+        );
     }
     let mut ops = Vec::new();
     varint_field(2, 11, &mut ops);
@@ -87,7 +91,12 @@ fn external_sparse_duplicate_custom_domain_and_wrong_dtype_are_errors() {
 }
 #[test]
 fn overflowing_and_cross_boundary_varints_long_strings_and_bad_shapes_are_errors() {
-    assert!(load(&[0x08, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x02]).is_err());
+    assert!(
+        load(&[
+            0x08, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x02
+        ])
+        .is_err()
+    );
     let mut t = Vec::new();
     len_field(1, &[0x80], &mut t);
     varint_field(2, 1, &mut t);

@@ -10,7 +10,8 @@ use super::*;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     s
 }
 
@@ -20,7 +21,15 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 
 /// A rectangle with a `weight` pt stroke (0: no stroke).
 fn rect(s: &mut Session, x: f64, w: f64, weight: f64) -> NodeId {
-    let id = NodeId(run(s, "shape.rectangle", json!({"x": x, "y": 100, "width": w, "height": 50}))["id"].as_u64().unwrap());
+    let id = NodeId(
+        run(
+            s,
+            "shape.rectangle",
+            json!({"x": x, "y": 100, "width": w, "height": 50}),
+        )["id"]
+            .as_u64()
+            .unwrap(),
+    );
     if weight > 0.0 {
         run(s, "stroke.set", json!({"weight": weight}));
     } else {
@@ -30,11 +39,21 @@ fn rect(s: &mut Session, x: f64, w: f64, weight: f64) -> NodeId {
 }
 
 fn geometric(s: &Session, id: NodeId) -> Rect {
-    s.doc().unwrap().doc.node(id).unwrap().geometric_bounds().unwrap()
+    s.doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .unwrap()
+        .geometric_bounds()
+        .unwrap()
 }
 
 fn preview(s: &mut Session, on: bool) {
-    run(s, "prefs.set", json!({"key": "usePreviewBounds", "value": on}));
+    run(
+        s,
+        "prefs.set",
+        json!({"key": "usePreviewBounds", "value": on}),
+    );
 }
 
 /// Two rectangles: one with a 10 pt stroke at x = 100, an unstroked one at x = 20; align left.
@@ -60,7 +79,13 @@ fn align_left_differs_by_half_the_stroke() {
     assert_eq!(aligned_left(false, json!({"bounds": "preview"})), 25.0);
     let mut s = session();
     rect(&mut s, 0.0, 10.0, 0.0);
-    assert!(s.execute("object.align", &json!({"horizontal": "left", "bounds": "visual"})).is_err());
+    assert!(
+        s.execute(
+            "object.align",
+            &json!({"horizontal": "left", "bounds": "visual"})
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -70,7 +95,11 @@ fn distribute_spacing_measures_preview_bounds() {
     let b = rect(&mut s, 200.0, 50.0, 10.0);
     preview(&mut s, true);
     run(&mut s, "select.set", json!({"ids": [a.0, b.0]}));
-    run(&mut s, "object.distributeSpacing", json!({"axis": "horizontal", "spacing": 0}));
+    run(
+        &mut s,
+        "object.distributeSpacing",
+        json!({"axis": "horizontal", "spacing": 0}),
+    );
     // The strokes touch: the paths are a stroke weight apart.
     assert_eq!(geometric(&s, b).x0 - geometric(&s, a).x1, 10.0);
 }
@@ -82,15 +111,29 @@ fn the_w_field_sets_the_visual_width() {
     preview(&mut s, true);
     assert_eq!(s.transform_bounds(&[id]).unwrap().width(), 110.0);
     // Strokes scale: the whole visual box doubles, from its left edge.
-    run(&mut s, "object.setBounds", json!({"width": 220, "reference": 0, "proportional": true, "strokes": true}));
+    run(
+        &mut s,
+        "object.setBounds",
+        json!({"width": 220, "reference": 0, "proportional": true, "strokes": true}),
+    );
     let v = s.transform_bounds(&[id]).unwrap();
-    assert!((v.width() - 220.0).abs() < 1e-9 && (v.x0 - 95.0).abs() < 1e-9, "{v:?}");
+    assert!(
+        (v.width() - 220.0).abs() < 1e-9 && (v.x0 - 95.0).abs() < 1e-9,
+        "{v:?}"
+    );
     assert!((geometric(&s, id).width() - 200.0).abs() < 1e-9);
     run(&mut s, "edit.undo", json!({}));
     // Strokes kept: the path takes the difference.
-    run(&mut s, "object.setBounds", json!({"width": 220, "reference": 0, "strokes": false}));
+    run(
+        &mut s,
+        "object.setBounds",
+        json!({"width": 220, "reference": 0, "strokes": false}),
+    );
     let v = s.transform_bounds(&[id]).unwrap();
-    assert!((v.width() - 220.0).abs() < 1e-9 && (v.x0 - 95.0).abs() < 1e-9, "{v:?}");
+    assert!(
+        (v.width() - 220.0).abs() < 1e-9 && (v.x0 - 95.0).abs() < 1e-9,
+        "{v:?}"
+    );
     assert!((geometric(&s, id).width() - 210.0).abs() < 1e-9);
     // X places the visual box's reference point.
     run(&mut s, "object.setBounds", json!({"x": 0, "reference": 0}));
@@ -107,7 +150,11 @@ fn the_bounding_box_handles_sit_on_the_preview_bounds() {
         preview(&mut s, on);
         let v = ViewInfo::default();
         s.select_tool("selection", v).unwrap();
-        for (k, x) in [(PointerKind::Down, 210.0), (PointerKind::Drag, 310.0), (PointerKind::Up, 310.0)] {
+        for (k, x) in [
+            (PointerKind::Down, 210.0),
+            (PointerKind::Drag, 310.0),
+            (PointerKind::Up, 310.0),
+        ] {
             s.pointer(&PointerEvent::new(k, x, 125.0), v).unwrap();
         }
         geometric(&s, id)

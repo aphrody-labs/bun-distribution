@@ -190,7 +190,7 @@ impl ListScroll {
                     self.selected = remainder - 1;
                 }
                 true
-            },
+            }
             Step::Backward => {
                 let floor = -self.view_start;
                 if self.top <= floor {
@@ -200,7 +200,7 @@ impl ListScroll {
                 self.top = top;
                 self.anchor = top + delta;
                 true
-            },
+            }
         }
     }
 }
@@ -218,7 +218,11 @@ impl ListScroll {
         }
         let quotient = self.total / self.columns;
         let remainder = self.total % self.columns;
-        let rows = if self.selected >= remainder { quotient } else { quotient + 1 };
+        let rows = if self.selected >= remainder {
+            quotient
+        } else {
+            quotient + 1
+        };
 
         match step {
             Step::Forward => {
@@ -247,7 +251,7 @@ impl ListScroll {
                 self.top = top;
                 self.anchor = anchor;
                 true
-            },
+            }
             Step::Backward => {
                 if self.anchor <= 0 {
                     return false;
@@ -268,7 +272,7 @@ impl ListScroll {
                 self.top = top;
                 self.anchor = anchor;
                 true
-            },
+            }
         }
     }
 }
@@ -355,7 +359,11 @@ pub struct CellTransform {
 /// mono-image peut reproduire.
 #[must_use]
 pub fn cell_position(base: [f32; 3], cell: CellTransform) -> [f32; 3] {
-    [base[0] + cell.translation[0], base[1] + cell.translation[1], base[2] + cell.translation[2]]
+    [
+        base[0] + cell.translation[0],
+        base[1] + cell.translation[1],
+        base[2] + cell.translation[2],
+    ]
 }
 
 /// La position d'une cellule sur un écran STABILISÉ — la base y est nulle.
@@ -391,7 +399,9 @@ pub fn cell_ring_slot(top: i32, focus: i32, cells: i32) -> Option<u32> {
     if focus < 0 || cells <= 0 {
         return None;
     }
-    let somme = u32::try_from(top).ok()?.checked_add(u32::try_from(focus).ok()?)?;
+    let somme = u32::try_from(top)
+        .ok()?
+        .checked_add(u32::try_from(focus).ok()?)?;
     Some(somme % u32::try_from(cells).ok()?)
 }
 
@@ -470,10 +480,18 @@ mod tests {
         for (depart, avant, arriere) in cas {
             let mut v = *depart;
             v.step_row(Step::Forward);
-            assert_eq!((v.top, v.anchor, v.selected), *avant, "avant sur {depart:?}");
+            assert_eq!(
+                (v.top, v.anchor, v.selected),
+                *avant,
+                "avant sur {depart:?}"
+            );
             let mut v = *depart;
             v.step_row(Step::Backward);
-            assert_eq!((v.top, v.anchor, v.selected), *arriere, "arriere sur {depart:?}");
+            assert_eq!(
+                (v.top, v.anchor, v.selected),
+                *arriere,
+                "arriere sur {depart:?}"
+            );
         }
     }
 
@@ -512,7 +530,10 @@ mod tests {
             assert!(v.step_row(Step::Forward), "pas vers {attendu}");
             assert_eq!(v.top, attendu);
             assert_eq!(v.anchor - v.top, 2, "l'ancre garde sa distance");
-            assert_eq!(v.selected, 55, "un pas de ligne ne deplace pas la selection");
+            assert_eq!(
+                v.selected, 55,
+                "un pas de ligne ne deplace pas la selection"
+            );
         }
         assert!(!v.step_row(Step::Forward), "top=14 est la butee mesuree");
         assert_eq!((v.top, v.anchor), (14, 16), "rien n'est ecrit en butee");
@@ -530,10 +551,18 @@ mod tests {
         for (depart, avant, arriere) in cas {
             let mut v = *depart;
             v.step_page(Step::Forward);
-            assert_eq!((v.top, v.anchor, v.selected), *avant, "avant sur {depart:?}");
+            assert_eq!(
+                (v.top, v.anchor, v.selected),
+                *avant,
+                "avant sur {depart:?}"
+            );
             let mut v = *depart;
             v.step_page(Step::Backward);
-            assert_eq!((v.top, v.anchor, v.selected), *arriere, "arriere sur {depart:?}");
+            assert_eq!(
+                (v.top, v.anchor, v.selected),
+                *arriere,
+                "arriere sur {depart:?}"
+            );
         }
     }
 
@@ -544,9 +573,16 @@ mod tests {
         assert!(colle.step_page(Step::Forward));
         assert_eq!((colle.top, colle.anchor), (5, 12));
 
-        let mut relatif = ListScroll { keeps_relative_top: true, ..scroll(100, 5, 4, 8, 55, 4, 4) };
+        let mut relatif = ListScroll {
+            keeps_relative_top: true,
+            ..scroll(100, 5, 4, 8, 55, 4, 4)
+        };
         assert!(relatif.step_page(Step::Forward));
-        assert_eq!((relatif.top, relatif.anchor), (8, 12), "trois lignes plus bas");
+        assert_eq!(
+            (relatif.top, relatif.anchor),
+            (8, 12),
+            "trois lignes plus bas"
+        );
     }
 
     /// Une ancre déjà en tête refuse le pas arrière — et n'écrit rien.
@@ -571,7 +607,11 @@ mod tests {
             (4, 8, 4),
         ];
         for (brut, count, attendu) in cas {
-            assert_eq!(cell_index(brut, count), attendu, "brut={brut} count={count}");
+            assert_eq!(
+                cell_index(brut, count),
+                attendu,
+                "brut={brut} count={count}"
+            );
         }
         // La borne basse est l'autre moitié du modulo, lue au même endroit.
         assert_eq!(cell_index(-1, 8), 7);
@@ -596,8 +636,14 @@ mod tests {
     /// Les cas de `scripts/audit/uemu/validate_listview_filter_step.py` : le jeu écrit ces index.
     #[test]
     fn a_filter_list_wraps_where_the_content_list_clamps() {
-        let cas =
-            [(5, 0, 1, 4), (5, 4, 0, 3), (8, 7, 0, 6), (8, 0, 1, 7), (2, 1, 0, 0), (1, 0, 0, 0)];
+        let cas = [
+            (5, 0, 1, 4),
+            (5, 4, 0, 3),
+            (8, 7, 0, 6),
+            (8, 0, 1, 7),
+            (2, 1, 0, 0),
+            (1, 0, 0, 0),
+        ];
         for (count, selected, avant, arriere) in cas {
             assert_eq!(
                 filter_step(count, selected, Step::Forward),
@@ -613,7 +659,11 @@ mod tests {
         // Le contraste, sur un même départ : la vue de contenu ne bouclerait pas.
         let mut vue = scroll(40, 4, 7, 7, 28, 3, 0);
         assert!(!vue.step_row(Step::Forward), "la vue de contenu s'arrete");
-        assert_eq!(filter_step(8, 7, Step::Forward), 0, "le filtre revient au debut");
+        assert_eq!(
+            filter_step(8, 7, Step::Forward),
+            0,
+            "le filtre revient au debut"
+        );
     }
 
     /// Les cas de `scripts/audit/uemu/validate_listview_cell_position.py` : ce que le jeu calcule.
@@ -623,7 +673,11 @@ mod tests {
             ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
             ([0.0, 0.0, 0.0], [10.0, 20.0, 30.0], [10.0, 20.0, 30.0]),
             ([1.0, 2.0, 3.0], [10.0, 20.0, 30.0], [11.0, 22.0, 33.0]),
-            ([0.5, 0.5, 0.5], [100.0, 200.0, 300.0], [100.5, 200.5, 300.5]),
+            (
+                [0.5, 0.5, 0.5],
+                [100.0, 200.0, 300.0],
+                [100.5, 200.5, 300.5],
+            ),
             ([640.0, 100.0, 0.0], [0.0, 216.0, 0.0], [640.0, 316.0, 0.0]),
         ];
         for (base, translation, attendu) in cas {
@@ -638,16 +692,33 @@ mod tests {
     /// vient de la table de descripteurs du binaire, pas d'une lecture des noms.
     #[test]
     fn declared_params_of_the_player_bank_reach_the_model() {
-        let params = DeclaredParams { view_start: 1, view_num: 7, line_num: 6, locator_num: 54 };
+        let params = DeclaredParams {
+            view_start: 1,
+            view_num: 7,
+            line_num: 6,
+            locator_num: 54,
+        };
         let vue = ListScroll::from_declared(params, 600, 6);
         assert_eq!(vue.view_start, 1, "mViewStart -> [0xC0]");
         assert_eq!(vue.view_num, 7, "mViewNum -> [0xC4]");
-        assert_eq!((vue.total, vue.columns), (600, 6), "etat d execution, fourni par l appelant");
-        assert_eq!((vue.top, vue.anchor, vue.selected), (0, 0, 0), "position initiale");
+        assert_eq!(
+            (vue.total, vue.columns),
+            (600, 6),
+            "etat d execution, fourni par l appelant"
+        );
+        assert_eq!(
+            (vue.top, vue.anchor, vue.selected),
+            (0, 0, 0),
+            "position initiale"
+        );
 
         // La butée descendante emploie `mViewStart + mViewNum`, soit 8 lignes ici : un pas est
         // donc refusé dès que la tête atteint `rows - 8`. C'est ce que `step_row` calcule.
-        let mut v = ListScroll { total: 60, columns: 6, ..vue }; // 10 lignes
+        let mut v = ListScroll {
+            total: 60,
+            columns: 6,
+            ..vue
+        }; // 10 lignes
         v.top = 1;
         assert!(v.step_row(Step::Forward), "1 + 8 < 10");
         assert_eq!(v.top, 2);

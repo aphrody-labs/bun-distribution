@@ -21,9 +21,17 @@ fn tool(s: &mut Server, name: &str, args: Value) -> Value {
 #[test]
 fn lifecycle_and_tools() {
     let mut s = Server::new(Box::new(Headless::default()));
-    let init = call(&mut s, 1, "initialize", json!({"protocolVersion": "2025-06-18"}));
+    let init = call(
+        &mut s,
+        1,
+        "initialize",
+        json!({"protocolVersion": "2025-06-18"}),
+    );
     assert_eq!(init["result"]["serverInfo"]["name"], "wordcraft");
-    assert!(s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#).is_none());
+    assert!(
+        s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#)
+            .is_none()
+    );
     let tools = call(&mut s, 2, "tools/list", json!({}));
     assert!(tools["result"]["tools"].as_array().unwrap().len() >= 12);
     let bad = call(&mut s, 3, "nope", json!({}));
@@ -36,12 +44,24 @@ fn agent_writes_a_formatted_document() {
     let mut s = Server::new(Box::new(Headless::default()));
     tool(&mut s, "new_document", json!({}));
     tool(&mut s, "type_text", json!({"text": "Quarterly Report"}));
-    tool(&mut s, "execute", json!({"command": "para.style", "params": {"style": "Heading 1"}}));
+    tool(
+        &mut s,
+        "execute",
+        json!({"command": "para.style", "params": {"style": "Heading 1"}}),
+    );
     tool(&mut s, "execute", json!({"command": "text.newParagraph"}));
-    tool(&mut s, "type_text", json!({"text": "Sales grew strongly this quarter.\nCosts fell.", "paragraphs": true}));
+    tool(
+        &mut s,
+        "type_text",
+        json!({"text": "Sales grew strongly this quarter.\nCosts fell.", "paragraphs": true}),
+    );
     tool(&mut s, "select_text", json!({"text": "strongly"}));
     tool(&mut s, "execute", json!({"command": "format.bold"}));
-    tool(&mut s, "batch", json!({"commands": [{"command": "caret.docEnd"}, {"command": "insert.table", "params": {"rows": 2, "cols": 2}}]}));
+    tool(
+        &mut s,
+        "batch",
+        json!({"commands": [{"command": "caret.docEnd"}, {"command": "insert.table", "params": {"rows": 2, "cols": 2}}]}),
+    );
     let doc = tool(&mut s, "inspect_document", json!({}));
     let blocks = doc["blocks"].as_array().unwrap();
     assert_eq!(blocks[0]["style"], "Heading1");
@@ -51,9 +71,19 @@ fn agent_writes_a_formatted_document() {
     assert!(blocks.iter().any(|b| b["type"] == "table"));
     let text = tool(&mut s, "get_text", json!({}));
     assert!(text["text"].as_str().unwrap().contains("Costs fell."));
-    let r = call(&mut s, 10, "tools/call", json!({"name": "render_page", "arguments": {"page": 1, "scale": 0.5}}));
+    let r = call(
+        &mut s,
+        10,
+        "tools/call",
+        json!({"name": "render_page", "arguments": {"page": 1, "scale": 0.5}}),
+    );
     assert_eq!(r["result"]["content"][0]["type"], "image");
-    let r = call(&mut s, 11, "tools/call", json!({"name": "screenshot", "arguments": {}}));
+    let r = call(
+        &mut s,
+        11,
+        "tools/call",
+        json!({"name": "screenshot", "arguments": {}}),
+    );
     assert_eq!(r["result"]["isError"], true);
     let p = tool(&mut s, "parity", json!({}));
     assert!(p["percent"].as_f64().unwrap() > 50.0);
@@ -64,8 +94,18 @@ fn resources() {
     let mut s = Server::new(Box::new(Headless::default()));
     let l = call(&mut s, 1, "resources/list", json!({}));
     assert_eq!(l["result"]["resources"].as_array().unwrap().len(), 2);
-    let r = call(&mut s, 2, "resources/read", json!({"uri": "wordcraft://document"}));
-    assert!(r["result"]["contents"][0]["text"].as_str().unwrap().contains("blocks"));
+    let r = call(
+        &mut s,
+        2,
+        "resources/read",
+        json!({"uri": "wordcraft://document"}),
+    );
+    assert!(
+        r["result"]["contents"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("blocks")
+    );
 }
 
 /// A backend standing in for a running app: it answers `ui.render` and `ui.screenshot` with a
@@ -76,9 +116,14 @@ struct FakeApp {
 
 impl crate::backend::Backend for FakeApp {
     fn call(&mut self, method: &str, params: Value) -> Result<Value, String> {
-        self.calls.lock().unwrap().push((method.to_string(), params.clone()));
+        self.calls
+            .lock()
+            .unwrap()
+            .push((method.to_string(), params.clone()));
         match method {
-            "ui.render" | "ui.screenshot" => Ok(json!({"png": wordcraft_engine::cmd::insert::base64_encode(b"\x89PNG"), "width": 1, "height": 1})),
+            "ui.render" | "ui.screenshot" => Ok(
+                json!({"png": wordcraft_engine::cmd::insert::base64_encode(b"\x89PNG"), "width": 1, "height": 1}),
+            ),
             other => Err(format!("unexpected {other}")),
         }
     }
@@ -95,16 +140,33 @@ impl crate::backend::Backend for FakeApp {
 #[test]
 fn render_and_screenshot_through_the_app_use_no_temp_file() {
     let calls = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
-    let mut s = Server::new(Box::new(FakeApp { calls: calls.clone() }));
-    for (tool, method) in [("render_page", "ui.render"), ("screenshot", "ui.screenshot")] {
-        let r = call(&mut s, 10, "tools/call", json!({"name": tool, "arguments": {"page": 1}}));
+    let mut s = Server::new(Box::new(FakeApp {
+        calls: calls.clone(),
+    }));
+    for (tool, method) in [
+        ("render_page", "ui.render"),
+        ("screenshot", "ui.screenshot"),
+    ] {
+        let r = call(
+            &mut s,
+            10,
+            "tools/call",
+            json!({"name": tool, "arguments": {"page": 1}}),
+        );
         let content = &r["result"]["content"];
         assert_eq!(r["result"]["isError"], false, "{tool}: {r}");
         assert_eq!(content[0]["type"], "image", "{tool}");
-        assert_eq!(content[0]["data"], wordcraft_engine::cmd::insert::base64_encode(b"\x89PNG"), "{tool}");
+        assert_eq!(
+            content[0]["data"],
+            wordcraft_engine::cmd::insert::base64_encode(b"\x89PNG"),
+            "{tool}"
+        );
         let (m, params) = calls.lock().unwrap().pop().expect("one call");
         assert_eq!(m, method);
-        assert!(params.get("path").is_none(), "{tool} asked for a file: {params}");
+        assert!(
+            params.get("path").is_none(),
+            "{tool} asked for a file: {params}"
+        );
     }
 }
 
@@ -115,7 +177,13 @@ fn headless_sessions_keep_the_dictionary_in_memory() {
     let mut h = Headless::default();
     assert!(h.session.user_dict_path.is_none());
     let mut s = Server::new(Box::new(Headless::default()));
-    tool(&mut s, "execute", json!({"command": "review.addToDictionary", "params": {"word": "zxqmcpword"}}));
-    h.session.run("review.addToDictionary", &json!({"word": "zxqmcpword2"})).expect("added");
+    tool(
+        &mut s,
+        "execute",
+        json!({"command": "review.addToDictionary", "params": {"word": "zxqmcpword"}}),
+    );
+    h.session
+        .run("review.addToDictionary", &json!({"word": "zxqmcpword2"}))
+        .expect("added");
     assert!(h.session.user_dict_path.is_none());
 }

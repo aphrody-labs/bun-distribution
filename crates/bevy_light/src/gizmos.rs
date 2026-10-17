@@ -7,8 +7,8 @@ use bevy_gizmos::primitives::dim3::GizmoPrimitive3d;
 use crate::{DirectionalLight, PointLight, RectLight, SpotLight};
 use bevy_app::{Plugin, PostUpdate};
 use bevy_color::{
-    palettes::basic::{BLUE, GREEN, MAROON, RED},
     Color, Oklcha,
+    palettes::basic::{BLUE, GREEN, MAROON, RED},
 };
 use bevy_ecs::{
     component::Component,
@@ -18,15 +18,15 @@ use bevy_ecs::{
     schedule::IntoScheduleConfigs,
     system::{Query, Res},
 };
-use bevy_math::{ops, Isometry3d, Quat, Vec3};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_math::{Isometry3d, Quat, Vec3, ops};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_shape::{Cone, Sphere};
-use bevy_transform::{components::GlobalTransform, TransformSystems};
+use bevy_transform::{TransformSystems, components::GlobalTransform};
 
 use bevy_gizmos::{
+    AppGizmoBuilder,
     config::{GizmoConfigGroup, GizmoConfigStore},
     gizmos::Gizmos,
-    AppGizmoBuilder,
 };
 
 /// Draws a standard sphere for the radius and an axis sphere for the range.

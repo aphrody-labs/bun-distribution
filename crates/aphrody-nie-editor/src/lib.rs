@@ -45,7 +45,12 @@ impl EditorSession {
     /// Create a session from an already decoded document.
     pub fn new(document: SceneDocumentV2) -> Result<Self> {
         document.validate()?;
-        Ok(Self { document, undo: VecDeque::new(), redo: Vec::new(), selected: None })
+        Ok(Self {
+            document,
+            undo: VecDeque::new(),
+            redo: Vec::new(),
+            selected: None,
+        })
     }
 
     /// Decode a bounded JSON project and validate every object before exposing it.
@@ -53,7 +58,10 @@ impl EditorSession {
     /// Both persisted versions are accepted; a v1 project is migrated on the way in and saved
     /// back as v2.
     pub fn from_json(bytes: &[u8]) -> Result<Self> {
-        ensure!(bytes.len() <= MAX_PROJECT_BYTES, "project exceeds {MAX_PROJECT_BYTES} bytes");
+        ensure!(
+            bytes.len() <= MAX_PROJECT_BYTES,
+            "project exceeds {MAX_PROJECT_BYTES} bytes"
+        );
         Self::new(SceneDocumentV2::from_json(core::str::from_utf8(bytes)?)?)
     }
 
@@ -89,7 +97,10 @@ impl EditorSession {
     /// Select an object, or clear the selection with `None`.
     pub fn select(&mut self, selected: Option<usize>) -> Result<()> {
         if let Some(index) = selected {
-            ensure!(index < self.document.objects.len(), "selection is out of bounds");
+            ensure!(
+                index < self.document.objects.len(),
+                "selection is out of bounds"
+            );
         }
         self.selected = selected;
         Ok(())
@@ -102,8 +113,12 @@ impl EditorSession {
     /// object above is removed while identifiers do not. An identifier the document no longer
     /// holds clears the selection instead of keeping a stale one.
     pub fn select_by_id(&mut self, id: Option<&str>) {
-        self.selected =
-            id.and_then(|id| self.document.objects.iter().position(|object| object.id == id));
+        self.selected = id.and_then(|id| {
+            self.document
+                .objects
+                .iter()
+                .position(|object| object.id == id)
+        });
     }
 
     /// Return whether an undo state is available.
@@ -122,8 +137,12 @@ impl EditorSession {
     /// safe way to add or copy an object. Search starts past the object count because
     /// `SceneDocumentV2::from_v1` mints `object-0..object-n`.
     fn fresh_id(&self) -> String {
-        let taken: std::collections::HashSet<&str> =
-            self.document.objects.iter().map(|object| object.id.as_str()).collect();
+        let taken: std::collections::HashSet<&str> = self
+            .document
+            .objects
+            .iter()
+            .map(|object| object.id.as_str())
+            .collect();
         let mut rank = self.document.objects.len();
         loop {
             let candidate = format!("object-{rank}");
@@ -149,7 +168,7 @@ impl EditorSession {
                 let index = self.document.objects.len() - 1;
                 self.selected = Some(index);
                 Ok(index)
-            },
+            }
             Ok(false) => unreachable!("adding an object always changes the document"),
             Err(error) => Err(error),
         }
@@ -182,7 +201,9 @@ impl EditorSession {
     /// The copy gets a fresh identifier: keeping the original's would make two objects answer to
     /// the same parent link.
     pub fn duplicate_selected(&mut self, offset: [f32; 3]) -> Result<usize> {
-        let index = self.selected.ok_or_else(|| anyhow::anyhow!("no object selected"))?;
+        let index = self
+            .selected
+            .ok_or_else(|| anyhow::anyhow!("no object selected"))?;
         let mut object = self
             .document
             .objects
@@ -198,8 +219,13 @@ impl EditorSession {
 
     /// Remove the selected object and clear the selection.
     pub fn remove_selected(&mut self) -> Result<SceneObjectV2> {
-        let index = self.selected.ok_or_else(|| anyhow::anyhow!("no object selected"))?;
-        ensure!(index < self.document.objects.len(), "selection is out of bounds");
+        let index = self
+            .selected
+            .ok_or_else(|| anyhow::anyhow!("no object selected"))?;
+        ensure!(
+            index < self.document.objects.len(),
+            "selection is out of bounds"
+        );
         let before = self.document.clone();
         let removed = self.document.objects.remove(index);
         self.commit(before)?;
@@ -232,7 +258,8 @@ impl EditorSession {
         let Some(previous) = self.undo.pop_back() else {
             return false;
         };
-        self.redo.push(std::mem::replace(&mut self.document, previous));
+        self.redo
+            .push(std::mem::replace(&mut self.document, previous));
         self.sanitize_selection();
         true
     }
@@ -256,7 +283,10 @@ impl EditorSession {
     }
 
     fn sanitize_selection(&mut self) {
-        if self.selected.is_some_and(|index| index >= self.document.objects.len()) {
+        if self
+            .selected
+            .is_some_and(|index| index >= self.document.objects.len())
+        {
             self.selected = None;
         }
     }
@@ -361,7 +391,10 @@ mod tests {
         assert!((session.document().objects[0].yaw_degrees() - 90.0).abs() < 1e-3);
 
         let bytes = session.to_json_pretty().unwrap();
-        assert_eq!(EditorSession::from_json(&bytes).unwrap().document(), session.document());
+        assert_eq!(
+            EditorSession::from_json(&bytes).unwrap().document(),
+            session.document()
+        );
     }
 
     #[test]
@@ -370,8 +403,12 @@ mod tests {
         session.add_object(object("c01000010")).unwrap();
         session.duplicate_selected([1.0, 0.0, 0.0]).unwrap();
 
-        let ids: Vec<&str> =
-            session.document().objects.iter().map(|object| object.id.as_str()).collect();
+        let ids: Vec<&str> = session
+            .document()
+            .objects
+            .iter()
+            .map(|object| object.id.as_str())
+            .collect();
         assert_eq!(ids.len(), 2);
         assert_ne!(ids[0], ids[1]);
         assert!(ids.iter().all(|id| !id.is_empty()));
@@ -404,7 +441,10 @@ mod tests {
 
         let bytes = session.to_json_pretty().unwrap();
         let restored = EditorSession::from_json(&bytes).unwrap();
-        assert_eq!(restored.document().objects[1].parent.as_deref(), Some("root"));
+        assert_eq!(
+            restored.document().objects[1].parent.as_deref(),
+            Some("root")
+        );
     }
 
     #[test]
@@ -427,7 +467,10 @@ mod tests {
     #[test]
     fn un_objet_illisible_rend_l_erreur_de_la_version_courante() {
         let mut session = EditorSession::default();
-        let error = session.add_object_json("{\"name\":\"a\"}").unwrap_err().to_string();
+        let error = session
+            .add_object_json("{\"name\":\"a\"}")
+            .unwrap_err()
+            .to_string();
         assert!(error.contains("asset"), "{error}");
     }
 
@@ -435,7 +478,9 @@ mod tests {
     fn history_discards_oldest_states_at_the_bound() {
         let mut session = EditorSession::default();
         for step in 0..(MAX_HISTORY_STATES + 5) {
-            session.add_object(object(&format!("object-{step}"))).unwrap();
+            session
+                .add_object(object(&format!("object-{step}")))
+                .unwrap();
             session.remove_selected().unwrap();
         }
 

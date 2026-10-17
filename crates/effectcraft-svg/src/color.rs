@@ -179,41 +179,88 @@ pub fn parse_color(s: &str) -> Option<[f64; 4]> {
             return None;
         }
         let comp = |t: &str| -> Option<f64> {
-            Some(if let Some(p) = t.strip_suffix('%') { p.trim().parse::<f64>().ok()? / 100.0 } else { t.parse::<f64>().ok()? / 255.0 })
+            Some(if let Some(p) = t.strip_suffix('%') {
+                p.trim().parse::<f64>().ok()? / 100.0
+            } else {
+                t.parse::<f64>().ok()? / 255.0
+            })
         };
         let alpha = a.get(3).map_or(Some(1.0), |t| alpha(t))?;
-        return Some([comp(a[0])?.clamp(0.0, 1.0), comp(a[1])?.clamp(0.0, 1.0), comp(a[2])?.clamp(0.0, 1.0), alpha]);
+        return Some([
+            comp(a[0])?.clamp(0.0, 1.0),
+            comp(a[1])?.clamp(0.0, 1.0),
+            comp(a[2])?.clamp(0.0, 1.0),
+            alpha,
+        ]);
     }
     if let Some(args) = func(&lower, "hsla").or_else(|| func(&lower, "hsl")) {
         let a: Vec<&str> = split_args(args);
         if a.len() < 3 {
             return None;
         }
-        let h = a[0].trim_end_matches("deg").parse::<f64>().ok()?.rem_euclid(360.0) / 360.0;
-        let s = a[1].trim_end_matches('%').parse::<f64>().ok()?.clamp(0.0, 100.0) / 100.0;
-        let l = a[2].trim_end_matches('%').parse::<f64>().ok()?.clamp(0.0, 100.0) / 100.0;
+        let h = a[0]
+            .trim_end_matches("deg")
+            .parse::<f64>()
+            .ok()?
+            .rem_euclid(360.0)
+            / 360.0;
+        let s = a[1]
+            .trim_end_matches('%')
+            .parse::<f64>()
+            .ok()?
+            .clamp(0.0, 100.0)
+            / 100.0;
+        let l = a[2]
+            .trim_end_matches('%')
+            .parse::<f64>()
+            .ok()?
+            .clamp(0.0, 100.0)
+            / 100.0;
         let al = a.get(3).map_or(Some(1.0), |t| alpha(t))?;
         let [r, g, b] = hsl(h, s, l);
         return Some([r, g, b, al]);
     }
-    NAMED.iter().find(|(n, _)| *n == lower).map(|(_, v)| [((v >> 16) & 255) as f64 / 255.0, ((v >> 8) & 255) as f64 / 255.0, (v & 255) as f64 / 255.0, 1.0])
+    NAMED.iter().find(|(n, _)| *n == lower).map(|(_, v)| {
+        [
+            ((v >> 16) & 255) as f64 / 255.0,
+            ((v >> 8) & 255) as f64 / 255.0,
+            (v & 255) as f64 / 255.0,
+            1.0,
+        ]
+    })
 }
 
 fn func<'a>(s: &'a str, name: &str) -> Option<&'a str> {
-    s.strip_prefix(name)?.trim_start().strip_prefix('(')?.strip_suffix(')')
+    s.strip_prefix(name)?
+        .trim_start()
+        .strip_prefix('(')?
+        .strip_suffix(')')
 }
 
 fn split_args(s: &str) -> Vec<&str> {
-    s.split(|c: char| c == ',' || c == '/' || c.is_whitespace()).filter(|t| !t.is_empty()).collect()
+    s.split(|c: char| c == ',' || c == '/' || c.is_whitespace())
+        .filter(|t| !t.is_empty())
+        .collect()
 }
 
 fn alpha(t: &str) -> Option<f64> {
-    Some(if let Some(p) = t.strip_suffix('%') { p.parse::<f64>().ok()? / 100.0 } else { t.parse::<f64>().ok()? }.clamp(0.0, 1.0))
+    Some(
+        if let Some(p) = t.strip_suffix('%') {
+            p.parse::<f64>().ok()? / 100.0
+        } else {
+            t.parse::<f64>().ok()?
+        }
+        .clamp(0.0, 1.0),
+    )
 }
 
 /// CSS HSL → RGB (CSS Color 3 §4.2.4).
 fn hsl(h: f64, s: f64, l: f64) -> [f64; 3] {
-    let m2 = if l <= 0.5 { l * (s + 1.0) } else { l + s - l * s };
+    let m2 = if l <= 0.5 {
+        l * (s + 1.0)
+    } else {
+        l + s - l * s
+    };
     let m1 = l * 2.0 - m2;
     let hue = |mut h: f64| {
         if h < 0.0 {
@@ -242,12 +289,24 @@ mod tests {
     #[test]
     fn colors() {
         assert_eq!(parse_color("#f00"), Some([1.0, 0.0, 0.0, 1.0]));
-        assert_eq!(parse_color("#00ff0080").map(|c| (c[1], (c[3] * 255.0).round())), Some((1.0, 128.0)));
+        assert_eq!(
+            parse_color("#00ff0080").map(|c| (c[1], (c[3] * 255.0).round())),
+            Some((1.0, 128.0))
+        );
         assert_eq!(parse_color("rgb(255, 0, 0)"), Some([1.0, 0.0, 0.0, 1.0]));
         assert_eq!(parse_color("rgba(0,0,255,0.5)"), Some([0.0, 0.0, 1.0, 0.5]));
-        assert_eq!(parse_color("rgb(100%, 50%, 0%)"), Some([1.0, 0.5, 0.0, 1.0]));
-        assert_eq!(parse_color("hsl(120, 100%, 50%)"), Some([0.0, 1.0, 0.0, 1.0]));
-        assert_eq!(parse_color("CornflowerBlue"), Some([100.0 / 255.0, 149.0 / 255.0, 237.0 / 255.0, 1.0]));
+        assert_eq!(
+            parse_color("rgb(100%, 50%, 0%)"),
+            Some([1.0, 0.5, 0.0, 1.0])
+        );
+        assert_eq!(
+            parse_color("hsl(120, 100%, 50%)"),
+            Some([0.0, 1.0, 0.0, 1.0])
+        );
+        assert_eq!(
+            parse_color("CornflowerBlue"),
+            Some([100.0 / 255.0, 149.0 / 255.0, 237.0 / 255.0, 1.0])
+        );
         assert_eq!(parse_color("transparent"), Some([0.0; 4]));
         assert_eq!(parse_color("nonsense"), None);
     }

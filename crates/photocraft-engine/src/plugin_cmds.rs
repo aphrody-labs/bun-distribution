@@ -19,7 +19,10 @@ use crate::{EngineError, Result, Session};
 pub const RUN: &str = "plugin.run";
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn err(e: photocraft_plugins::Error) -> EngineError {
@@ -49,7 +52,10 @@ fn plugin_params(p: &Value) -> Value {
     match p {
         Value::Object(m) => Value::Object(
             m.iter()
-                .filter(|(k, _)| !matches!(k.as_str(), "id" | "layer" | "target" | "channel") && !k.starts_with("__"))
+                .filter(|(k, _)| {
+                    !matches!(k.as_str(), "id" | "layer" | "target" | "channel")
+                        && !k.starts_with("__")
+                })
                 .map(|(k, v)| (k.clone(), v.clone()))
                 .collect(),
         ),
@@ -58,7 +64,10 @@ fn plugin_params(p: &Value) -> Value {
 }
 
 fn plugin_by_id(cmd: &str, p: &Value) -> Result<std::sync::Arc<Plugin>> {
-    let id = p.get("id").and_then(Value::as_str).ok_or_else(|| bad(cmd, "missing `id` (see plugin.list)"))?;
+    let id = p
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad(cmd, "missing `id` (see plugin.list)"))?;
     registry::get(id).ok_or_else(|| err(photocraft_plugins::Error::NotFound(id.into())))
 }
 
@@ -66,7 +75,12 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let plugin = plugin_by_id(RUN, p)?;
     let params = plugin_params(p);
     // Bad parameters fail before anything is touched.
-    let resolved = Value::Object(plugin.manifest().resolve_params(&params).map_err(|e| bad(RUN, e.to_string()))?);
+    let resolved = Value::Object(
+        plugin
+            .manifest()
+            .resolve_params(&params)
+            .map_err(|e| bad(RUN, e.to_string()))?,
+    );
     let layer = crate::commands::layer_param(s, p)?;
     let label = plugin.manifest().name.clone();
     let id = plugin.id().to_string();
@@ -74,13 +88,17 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
         let selection = doc.selection.clone();
         let canvas = doc.bounds();
         if let Some(surf) = crate::channel_cmds::channel_surface_for_filter(doc, Some(layer), p)? {
-            *surf = plugin.apply(surf, canvas, selection.as_ref(), &resolved).map_err(err)?;
+            *surf = plugin
+                .apply(surf, canvas, selection.as_ref(), &resolved)
+                .map_err(err)?;
             return Ok(());
         }
         let l = doc.layer_mut(layer).ok_or(EngineError::NoLayer(layer))?;
         match &mut l.content {
             LayerContent::Raster(surf) => {
-                *surf = plugin.apply(surf, canvas, selection.as_ref(), &resolved).map_err(err)?;
+                *surf = plugin
+                    .apply(surf, canvas, selection.as_ref(), &resolved)
+                    .map_err(err)?;
                 Ok(())
             }
             LayerContent::Smart(_) => {
@@ -93,7 +111,11 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
                 };
                 crate::smart_cmds::add_smart_filter(doc, layer, sf, selection.as_ref())
             }
-            other => Err(EngineError::Other(format!("plug-in filters need a pixel layer (active layer is {} {} layer)", other.article(), other.kind_name()))),
+            other => Err(EngineError::Other(format!(
+                "plug-in filters need a pixel layer (active layer is {} {} layer)",
+                other.article(),
+                other.kind_name()
+            ))),
         }
     })?;
     Ok(json!({"layer": layer.0, "plugin": id}))
@@ -102,12 +124,25 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
 /// Smart-filter re-render of a recorded `plugin.run` (see `filters::apply_filter_to_surface`).
 /// `None` when `command` isn't a plug-in run or the plug-in isn't installed (the smart filter is
 /// then skipped, as for other unknown filters) or fails.
-pub(crate) fn apply_to_surface(command: &str, params: &Value, surf: &Surface, selection: Option<&Surface>, canvas: photocraft_geom::Rect) -> Option<Surface> {
+pub(crate) fn apply_to_surface(
+    command: &str,
+    params: &Value,
+    surf: &Surface,
+    selection: Option<&Surface>,
+    canvas: photocraft_geom::Rect,
+) -> Option<Surface> {
     if command != RUN {
         return None;
     }
     let plugin = registry::get(params.get("id")?.as_str()?)?;
-    plugin.apply(surf, canvas, selection, params.get("params").unwrap_or(&Value::Null)).ok()
+    plugin
+        .apply(
+            surf,
+            canvas,
+            selection,
+            params.get("params").unwrap_or(&Value::Null),
+        )
+        .ok()
 }
 
 /// Largest base64 payload `plugin.install` accepts (the module limit, encoded).
@@ -124,7 +159,10 @@ fn b64_decode(s: &str) -> Option<Vec<u8>> {
             _ => return None,
         }))
     };
-    let clean: Vec<u8> = s.bytes().filter(|c| !c.is_ascii_whitespace() && *c != b'=').collect();
+    let clean: Vec<u8> = s
+        .bytes()
+        .filter(|c| !c.is_ascii_whitespace() && *c != b'=')
+        .collect();
     if clean.len() % 4 == 1 {
         return None;
     }
@@ -143,33 +181,51 @@ fn b64_decode(s: &str) -> Option<Vec<u8>> {
 fn install(_s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "plugin.install";
     let plugin = if let Some(data) = p.get("data") {
-        let data = data.as_str().ok_or_else(|| bad(CMD, "`data` must be a base64 string"))?;
+        let data = data
+            .as_str()
+            .ok_or_else(|| bad(CMD, "`data` must be a base64 string"))?;
         if data.len() > MAX_DATA_CHARS {
             return Err(bad(CMD, "`data` is larger than the module limit"));
         }
         let bytes = b64_decode(data).ok_or_else(|| bad(CMD, "`data` is not valid base64"))?;
         Plugin::load(&bytes, photocraft_plugins::Limits::default()).map_err(err)?
     } else if let Some(path) = p.get("path") {
-        let path = path.as_str().filter(|s| !s.is_empty()).ok_or_else(|| bad(CMD, "`path` must be a file path"))?;
+        let path = path
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| bad(CMD, "`path` must be a file path"))?;
         load_path(path)?
     } else {
-        return Err(bad(CMD, "give `path` (a .wasm file) or `data` (the module as base64)"));
+        return Err(bad(
+            CMD,
+            "give `path` (a .wasm file) or `data` (the module as base64)",
+        ));
     };
     let replace = p.get("replace").and_then(Value::as_bool).unwrap_or(true);
     if !replace && registry::get(plugin.id()).is_some() {
-        return Err(bad(CMD, format!("a plug-in with id {:?} is already installed", plugin.id())));
+        return Err(bad(
+            CMD,
+            format!("a plug-in with id {:?} is already installed", plugin.id()),
+        ));
     }
     Ok(describe(&registry::install(plugin)))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn load_path(path: &str) -> Result<Plugin> {
-    registry::load_file(std::path::Path::new(path), photocraft_plugins::Limits::default()).map_err(err)
+    registry::load_file(
+        std::path::Path::new(path),
+        photocraft_plugins::Limits::default(),
+    )
+    .map_err(err)
 }
 
 #[cfg(target_arch = "wasm32")]
 fn load_path(_: &str) -> Result<Plugin> {
-    Err(EngineError::Other("installing from a path is not available on the web; pass the module as base64 `data`".into()))
+    Err(EngineError::Other(
+        "installing from a path is not available on the web; pass the module as base64 `data`"
+            .into(),
+    ))
 }
 
 /// The plug-in folder last loaded from the preferences, and what happened.
@@ -193,7 +249,9 @@ pub(crate) fn sync_prefs(s: &Session) {
 #[cfg(not(target_arch = "wasm32"))]
 fn load_folder(folder: &str) -> Value {
     match registry::load_folder(std::path::Path::new(folder)) {
-        Ok(r) => json!({"folder": folder, "loaded": r.loaded, "failed": r.failed.iter().map(|(f, e)| json!({"file": f, "error": e})).collect::<Vec<_>>()}),
+        Ok(r) => {
+            json!({"folder": folder, "loaded": r.loaded, "failed": r.failed.iter().map(|(f, e)| json!({"file": f, "error": e})).collect::<Vec<_>>()})
+        }
         Err(e) => json!({"folder": folder, "error": e.to_string()}),
     }
 }
@@ -205,11 +263,24 @@ fn load_folder(folder: &str) -> Value {
 
 fn reload(s: &mut Session, p: &Value) -> Result<Value> {
     let folder = match p.get("path") {
-        Some(v) => v.as_str().filter(|f| !f.trim().is_empty()).ok_or_else(|| bad("plugin.reload", "`path` must be a folder"))?.trim().to_string(),
-        None => s.prefs().plug_ins.additional_plugins_folder.trim().to_string(),
+        Some(v) => v
+            .as_str()
+            .filter(|f| !f.trim().is_empty())
+            .ok_or_else(|| bad("plugin.reload", "`path` must be a folder"))?
+            .trim()
+            .to_string(),
+        None => s
+            .prefs()
+            .plug_ins
+            .additional_plugins_folder
+            .trim()
+            .to_string(),
     };
     if folder.is_empty() {
-        return Err(bad("plugin.reload", "no folder: pass `path` or set Preferences › Plug-ins › Additional Plug-ins Folder"));
+        return Err(bad(
+            "plugin.reload",
+            "no folder: pass `path` or set Preferences › Plug-ins › Additional Plug-ins Folder",
+        ));
     }
     let report = load_folder(&folder);
     if let Some(e) = report.get("error").and_then(Value::as_str) {
@@ -230,8 +301,14 @@ pub fn specs() -> Vec<CommandSpec> {
             params: "{}",
             enabled: always,
             run: |_, _| {
-                let folder = FOLDER.lock().unwrap_or_else(|e| e.into_inner()).as_ref().map(|(_, r)| r.clone());
-                Ok(json!({"plugins": registry::list().iter().map(|p| describe(p)).collect::<Vec<_>>(), "folder": folder}))
+                let folder = FOLDER
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .as_ref()
+                    .map(|(_, r)| r.clone());
+                Ok(
+                    json!({"plugins": registry::list().iter().map(|p| describe(p)).collect::<Vec<_>>(), "folder": folder}),
+                )
             },
             journal: false,
         },
@@ -253,8 +330,15 @@ pub fn specs() -> Vec<CommandSpec> {
             params: r##"{"id":text}"##,
             enabled: always,
             run: |_, p| {
-                let id = p.get("id").and_then(Value::as_str).ok_or_else(|| bad("plugin.remove", "missing `id`"))?;
-                if registry::remove(id) { Ok(json!({"removed": id})) } else { Err(err(photocraft_plugins::Error::NotFound(id.into()))) }
+                let id = p
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| bad("plugin.remove", "missing `id`"))?;
+                if registry::remove(id) {
+                    Ok(json!({"removed": id}))
+                } else {
+                    Err(err(photocraft_plugins::Error::NotFound(id.into())))
+                }
             },
             journal: false,
         },

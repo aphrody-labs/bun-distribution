@@ -38,7 +38,12 @@ impl Fixture {
         let home = dir.path().join("home");
         let out = dir.path().join("aphrody").join("sessions");
         let workspace = dir.path().join("work").join("repo").display().to_string();
-        let fixture = Self { _dir: dir, home, out, workspace };
+        let fixture = Self {
+            _dir: dir,
+            home,
+            out,
+            workspace,
+        };
         fixture.write_agy();
         fixture.write_codex();
         fixture.write_claude();
@@ -68,7 +73,11 @@ impl Fixture {
     }
 
     fn claude_transcript(&self) -> PathBuf {
-        self.roots().claude.join("projects").join("C--work-repo").join(format!("{CLAUDE_ID}.jsonl"))
+        self.roots()
+            .claude
+            .join("projects")
+            .join("C--work-repo")
+            .join(format!("{CLAUDE_ID}.jsonl"))
     }
 
     fn mirror(&self, agent: AgentKind, id: &str) -> PathBuf {
@@ -119,7 +128,12 @@ impl Fixture {
             ),
         );
         // An archived rollout must never be read (it would duplicate lines).
-        write(&root.join("archived_sessions").join(format!("rollout-x-{CODEX_ID}.jsonl")), "{}\n");
+        write(
+            &root
+                .join("archived_sessions")
+                .join(format!("rollout-x-{CODEX_ID}.jsonl")),
+            "{}\n",
+        );
         write_lines(
             &self.codex_rollout(),
             &[
@@ -186,7 +200,10 @@ fn write_lines(path: &Path, lines: &[serde_json::Value]) {
 }
 
 fn append(path: &Path, body: &str) {
-    let mut file = OpenOptions::new().append(true).open(path).expect("open for append");
+    let mut file = OpenOptions::new()
+        .append(true)
+        .open(path)
+        .expect("open for append");
     file.write_all(body.as_bytes()).expect("append");
 }
 
@@ -199,7 +216,10 @@ fn read_mirror(path: &Path) -> Vec<ExternalRecord> {
 }
 
 fn roles_and_texts(records: &[ExternalRecord]) -> Vec<(Role, String)> {
-    records.iter().map(|record| (record.role, record.text.clone())).collect()
+    records
+        .iter()
+        .map(|record| (record.role, record.text.clone()))
+        .collect()
 }
 
 #[test]
@@ -213,20 +233,30 @@ fn syncs_all_three_formats() {
         roles_and_texts(&agy),
         vec![
             (Role::User, "explore the docs".to_owned()),
-            (Role::Reasoning, "Listing the repositories first.".to_owned()),
+            (
+                Role::Reasoning,
+                "Listing the repositories first.".to_owned()
+            ),
             (
                 Role::ToolCall,
                 r#"run_command {"CommandLine":"\"ls\"","Cwd":"\"C:\\\\src\""}"#.to_owned()
             ),
-            (Role::ToolResult, "The command exited with code 0.\nOutput: aphrody".to_owned()),
+            (
+                Role::ToolResult,
+                "The command exited with code 0.\nOutput: aphrody".to_owned()
+            ),
             (Role::System, "# Resuming from a compaction".to_owned()),
         ]
     );
     // last_conversations.json outranks the metadata's workspace URI.
     assert!(
-        agy.iter().all(|record| record.workspace.as_deref() == Some(fixture.workspace.as_str()))
+        agy.iter()
+            .all(|record| record.workspace.as_deref() == Some(fixture.workspace.as_str()))
     );
-    assert_eq!(agy[0].ts.map(|ts| ts.to_rfc3339()), Some("2026-09-25T03:37:29+00:00".to_owned()));
+    assert_eq!(
+        agy[0].ts.map(|ts| ts.to_rfc3339()),
+        Some("2026-09-25T03:37:29+00:00".to_owned())
+    );
     assert_eq!(agy[1].offset, agy[2].offset, "one line, two records");
     assert_eq!((agy[1].part, agy[2].part), (0, 1));
 
@@ -243,7 +273,9 @@ fn syncs_all_three_formats() {
         ]
     );
     assert!(
-        codex.iter().all(|record| record.workspace.as_deref() == Some(fixture.workspace.as_str()))
+        codex
+            .iter()
+            .all(|record| record.workspace.as_deref() == Some(fixture.workspace.as_str()))
     );
     assert!(codex.iter().all(|record| record.session_id == CODEX_ID));
 
@@ -255,23 +287,39 @@ fn syncs_all_three_formats() {
             (Role::User, "fix the build".to_owned()),
             (Role::Reasoning, "Check cargo first.".to_owned()),
             (Role::Assistant, "Running the check.".to_owned()),
-            (Role::ToolCall, r#"Bash {"command":"cargo check"}"#.to_owned()),
+            (
+                Role::ToolCall,
+                r#"Bash {"command":"cargo check"}"#.to_owned()
+            ),
             (Role::ToolResult, "Finished dev profile".to_owned()),
         ]
     );
     assert_eq!(claude[3].part, 2);
-    assert_eq!(claude[0].source_path, fixture.claude_transcript().display().to_string());
+    assert_eq!(
+        claude[0].source_path,
+        fixture.claude_transcript().display().to_string()
+    );
 
     assert_eq!(report.records_ingested, 15);
     assert_eq!(report.sources_scanned, 3);
     assert_eq!(report.sources_updated, 3);
     assert_eq!(report.sessions.len(), 3);
     assert!(report.issues.is_empty(), "{:?}", report.issues);
-    let codex_session =
-        report.sessions.iter().find(|session| session.agent == AgentKind::Codex).expect("codex");
-    assert_eq!(codex_session.title.as_deref(), Some("Redesign plan"), "latest index entry wins");
-    let agy_session =
-        report.sessions.iter().find(|session| session.agent == AgentKind::Agy).expect("agy");
+    let codex_session = report
+        .sessions
+        .iter()
+        .find(|session| session.agent == AgentKind::Codex)
+        .expect("codex");
+    assert_eq!(
+        codex_session.title.as_deref(),
+        Some("Redesign plan"),
+        "latest index entry wins"
+    );
+    let agy_session = report
+        .sessions
+        .iter()
+        .find(|session| session.agent == AgentKind::Agy)
+        .expect("agy");
     assert_eq!(agy_session.title.as_deref(), Some("Explore the docs"));
     assert!(report.live_processes.is_none(), "probing is off by default");
 
@@ -289,7 +337,10 @@ fn rerun_without_changes_ingests_nothing() {
     assert_eq!(report.records_ingested, 0);
     assert_eq!(report.sources_updated, 0);
     assert!(report.sessions.is_empty());
-    assert_eq!(fs::read(fixture.mirror(AgentKind::Claude, CLAUDE_ID)).expect("mirror"), before);
+    assert_eq!(
+        fs::read(fixture.mirror(AgentKind::Claude, CLAUDE_ID)).expect("mirror"),
+        before
+    );
 }
 
 #[test]
@@ -299,7 +350,10 @@ fn appended_lines_are_ingested_once_from_the_stored_offset() {
     let state = SyncState::load(&fixture.out.join(STATE_FILE_NAME)).expect("state");
     let key = source_key(&fixture.codex_rollout());
     let first_offset = state.sources[&key].offset;
-    assert_eq!(first_offset, fs::metadata(fixture.codex_rollout()).expect("meta").len());
+    assert_eq!(
+        first_offset,
+        fs::metadata(fixture.codex_rollout()).expect("meta").len()
+    );
 
     let line = json!({"timestamp": "2026-09-25T06:30:00.000Z", "type": "response_item",
                       "payload": {"type": "message", "role": "user",
@@ -342,7 +396,10 @@ fn a_line_still_being_written_is_left_for_the_next_run() {
     let report = sync(&fixture.options()).expect("completed sync");
     assert_eq!(report.records_ingested, 1);
     let claude = read_mirror(&fixture.mirror(AgentKind::Claude, CLAUDE_ID));
-    assert_eq!(claude.last().map(|record| record.text.as_str()), Some("one more thing"));
+    assert_eq!(
+        claude.last().map(|record| record.text.as_str()),
+        Some("one more thing")
+    );
 }
 
 #[test]
@@ -359,10 +416,18 @@ fn an_interrupted_run_leaves_no_duplicate_behind() {
 
     let report = sync(&fixture.options()).expect("sync after crash");
     assert_eq!(report.records_ingested, 1);
-    assert!(report.issues.iter().any(|issue| issue.message.contains("uncommitted")));
+    assert!(
+        report
+            .issues
+            .iter()
+            .any(|issue| issue.message.contains("uncommitted"))
+    );
     let codex = read_mirror(&mirror);
     assert_eq!(codex.len(), 6);
-    assert_eq!(codex.last().map(|record| record.text.as_str()), Some("Shipped."));
+    assert_eq!(
+        codex.last().map(|record| record.text.as_str()),
+        Some("Shipped.")
+    );
 }
 
 #[test]
@@ -384,16 +449,26 @@ fn a_rewritten_source_is_ingested_again_and_its_mirror_rebuilt() {
     sync(&fixture.options()).expect("first sync");
     write_lines(
         &fixture.claude_transcript(),
-        &[json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": fixture.workspace,
-               "message": {"role": "user", "content": "a different conversation, longer than the old head"}})],
+        &[
+            json!({"type": "user", "sessionId": CLAUDE_ID, "cwd": fixture.workspace,
+               "message": {"role": "user", "content": "a different conversation, longer than the old head"}}),
+        ],
     );
     let report = sync(&fixture.options()).expect("resync");
     assert_eq!(report.records_ingested, 1);
-    assert!(report.issues.iter().any(|issue| issue.message.contains("ingesting it again")));
+    assert!(
+        report
+            .issues
+            .iter()
+            .any(|issue| issue.message.contains("ingesting it again"))
+    );
     let claude = read_mirror(&fixture.mirror(AgentKind::Claude, CLAUDE_ID));
     assert_eq!(
         roles_and_texts(&claude),
-        vec![(Role::User, "a different conversation, longer than the old head".to_owned())]
+        vec![(
+            Role::User,
+            "a different conversation, longer than the old head".to_owned()
+        )]
     );
 }
 
@@ -403,9 +478,18 @@ fn a_rejected_batch_is_rolled_back_and_retried() {
     let options = fixture.options().with_agents(vec![AgentKind::Codex]);
     let report = sync_with(&options, |_| Err("memory store offline".to_owned())).expect("sync");
     assert_eq!(report.records_ingested, 0);
-    assert!(report.issues.iter().any(|issue| issue.message.contains("memory store offline")));
+    assert!(
+        report
+            .issues
+            .iter()
+            .any(|issue| issue.message.contains("memory store offline"))
+    );
     let mirror = fixture.mirror(AgentKind::Codex, CODEX_ID);
-    assert_eq!(fs::metadata(&mirror).map(|meta| meta.len()).unwrap_or(0), 0, "rolled back");
+    assert_eq!(
+        fs::metadata(&mirror).map(|meta| meta.len()).unwrap_or(0),
+        0,
+        "rolled back"
+    );
     let state = SyncState::load(&fixture.out.join(STATE_FILE_NAME)).expect("state");
     assert!(state.sources.is_empty(), "offset not committed");
 
@@ -435,8 +519,11 @@ fn malformed_lines_are_counted_and_skipped() {
     let fixture = Fixture::new();
     append(&fixture.claude_transcript(), "{not json\n");
     let report = sync(&fixture.options()).expect("sync");
-    let claude =
-        report.agents.iter().find(|agent| agent.agent == AgentKind::Claude).expect("claude");
+    let claude = report
+        .agents
+        .iter()
+        .find(|agent| agent.agent == AgentKind::Claude)
+        .expect("claude");
     assert_eq!(claude.malformed_lines, 1);
     assert_eq!(claude.records, 5);
 }
@@ -458,17 +545,27 @@ fn long_text_is_cut_on_a_char_boundary_and_flagged() {
     let claude = read_mirror(&fixture.mirror(AgentKind::Claude, CLAUDE_ID));
     let last = claude.last().expect("last");
     assert!(last.truncated);
-    assert_eq!(last.text, "é".repeat(5), "11 bytes round down to 5 two-byte characters");
+    assert_eq!(
+        last.text,
+        "é".repeat(5),
+        "11 bytes round down to 5 two-byte characters"
+    );
     assert!(!claude[0].truncated);
 
-    assert_eq!(truncate_text("abc".to_owned(), 0), ("abc".to_owned(), false), "0 disables the cap");
+    assert_eq!(
+        truncate_text("abc".to_owned(), 0),
+        ("abc".to_owned(), false),
+        "0 disables the cap"
+    );
 }
 
 #[test]
 fn a_missing_home_is_an_empty_run() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let options =
-        SyncOptions::new(AgentRoots::from_home(&dir.path().join("nobody")), dir.path().join("out"));
+    let options = SyncOptions::new(
+        AgentRoots::from_home(&dir.path().join("nobody")),
+        dir.path().join("out"),
+    );
     let report = sync(&options).expect("sync");
     assert_eq!(report.sources_scanned, 0);
     assert!(report.agents.iter().all(|agent| !agent.root_exists));
@@ -486,9 +583,18 @@ fn a_corrupt_state_stops_the_run_instead_of_duplicating_the_mirror() {
 
 #[test]
 fn mirror_names_are_sanitised_and_never_look_like_rollouts() {
-    assert_eq!(mirror_rel(AgentKind::Codex, CODEX_ID), format!("codex/{CODEX_ID}.jsonl"));
-    assert_eq!(mirror_rel(AgentKind::Claude, "../../etc/passwd"), "claude/_.._etc_passwd.jsonl");
-    assert_eq!(mirror_rel(AgentKind::Agy, "rollout-abc"), "agy/ext-rollout-abc.jsonl");
+    assert_eq!(
+        mirror_rel(AgentKind::Codex, CODEX_ID),
+        format!("codex/{CODEX_ID}.jsonl")
+    );
+    assert_eq!(
+        mirror_rel(AgentKind::Claude, "../../etc/passwd"),
+        "claude/_.._etc_passwd.jsonl"
+    );
+    assert_eq!(
+        mirror_rel(AgentKind::Agy, "rollout-abc"),
+        "agy/ext-rollout-abc.jsonl"
+    );
     assert_eq!(mirror_rel(AgentKind::Agy, ".."), "agy/session.jsonl");
     assert_eq!(
         super::codex::session_id_from_file_name(Path::new(&format!(
@@ -505,8 +611,14 @@ fn mirror_names_are_sanitised_and_never_look_like_rollouts() {
 #[test]
 fn agent_names_parse_with_aliases() {
     assert_eq!("agy".parse::<AgentKind>().ok(), Some(AgentKind::Agy));
-    assert_eq!("Antigravity".parse::<AgentKind>().ok(), Some(AgentKind::Agy));
-    assert_eq!("claude-code".parse::<AgentKind>().ok(), Some(AgentKind::Claude));
+    assert_eq!(
+        "Antigravity".parse::<AgentKind>().ok(),
+        Some(AgentKind::Agy)
+    );
+    assert_eq!(
+        "claude-code".parse::<AgentKind>().ok(),
+        Some(AgentKind::Claude)
+    );
     assert_eq!("codex".parse::<AgentKind>().ok(), Some(AgentKind::Codex));
     assert!("cursor".parse::<AgentKind>().is_err());
 }
@@ -519,15 +631,24 @@ fn file_uris_and_workspaces_normalise() {
     } else {
         assert_eq!(decoded, "C:/work/aphrody");
     }
-    assert_eq!(file_uri_to_path("file:///home/me/repo").as_deref(), Some("/home/me/repo"));
+    assert_eq!(
+        file_uri_to_path("file:///home/me/repo").as_deref(),
+        Some("/home/me/repo")
+    );
     assert_eq!(file_uri_to_path("https://example.com"), None);
-    assert_eq!(normalize_workspace("/home/me/repo/"), normalize_workspace("/home/me/repo"));
+    assert_eq!(
+        normalize_workspace("/home/me/repo/"),
+        normalize_workspace("/home/me/repo")
+    );
     if cfg!(windows) {
         assert_eq!(
             normalize_workspace(r"C:\Users\Me\Repo\"),
             normalize_workspace("c:/users/me/repo")
         );
-        assert_eq!(normalize_workspace(r"\\?\C:\x"), normalize_workspace("C:/x"));
+        assert_eq!(
+            normalize_workspace(r"\\?\C:\x"),
+            normalize_workspace("C:/x")
+        );
     }
 }
 
@@ -539,19 +660,36 @@ fn args(list: &[&str]) -> Vec<OsString> {
 fn process_classification_counts_only_agents() {
     // Native executables.
     assert_eq!(
-        classify_process("claude.exe", Some(Path::new("C:/Users/me/.local/bin/claude.exe")), &[]),
+        classify_process(
+            "claude.exe",
+            Some(Path::new("C:/Users/me/.local/bin/claude.exe")),
+            &[]
+        ),
         Some((AgentKind::Claude, false))
     );
-    assert_eq!(classify_process("codex", None, &[]), Some((AgentKind::Codex, false)));
+    assert_eq!(
+        classify_process("codex", None, &[]),
+        Some((AgentKind::Codex, false))
+    );
     assert_eq!(
         classify_process("codex-x86_64-pc-windows-msvc.exe", None, &[]),
         Some((AgentKind::Codex, false))
     );
-    assert_eq!(classify_process("agy.exe", None, &[]), Some((AgentKind::Agy, false)));
-    assert_eq!(classify_process("Antigravity.exe", None, &[]), Some((AgentKind::Agy, false)));
+    assert_eq!(
+        classify_process("agy.exe", None, &[]),
+        Some((AgentKind::Agy, false))
+    );
+    assert_eq!(
+        classify_process("Antigravity.exe", None, &[]),
+        Some((AgentKind::Agy, false))
+    );
     // Electron / Chromium helper processes of the desktop app are not agents.
     assert_eq!(
-        classify_process("Antigravity.exe", None, &args(&["Antigravity.exe", "--type=renderer"])),
+        classify_process(
+            "Antigravity.exe",
+            None,
+            &args(&["Antigravity.exe", "--type=renderer"])
+        ),
         None
     );
     // The Claude Desktop chat app is not Claude Code, in any of its installs.
@@ -567,7 +705,11 @@ fn process_classification_counts_only_agents() {
         );
     }
     assert_eq!(
-        classify_process("claude", Some(Path::new("/home/me/.claude/local/claude")), &[]),
+        classify_process(
+            "claude",
+            Some(Path::new("/home/me/.claude/local/claude")),
+            &[]
+        ),
         Some((AgentKind::Claude, false))
     );
 
@@ -602,7 +744,10 @@ fn process_classification_counts_only_agents() {
         ),
         None
     );
-    assert_eq!(classify_process("node", None, &args(&["node", "vite.js", "--claude"])), None);
+    assert_eq!(
+        classify_process("node", None, &args(&["node", "vite.js", "--claude"])),
+        None
+    );
     assert_eq!(classify_process("node", None, &[]), None);
     assert_eq!(classify_process("cargo.exe", None, &[]), None);
     assert_eq!(classify_process("codex-helper", None, &[]), None);
@@ -615,9 +760,11 @@ fn live_probe_runs_on_this_host() {
     let me = std::process::id();
     assert!(live.iter().all(|process| process.pid != me));
     let dir = tempfile::tempdir().expect("tempdir");
-    let options =
-        SyncOptions::new(AgentRoots::from_home(&dir.path().join("h")), dir.path().join("out"))
-            .with_probe_processes(true);
+    let options = SyncOptions::new(
+        AgentRoots::from_home(&dir.path().join("h")),
+        dir.path().join("out"),
+    )
+    .with_probe_processes(true);
     let report = sync(&options).expect("sync with probing");
     assert!(report.live_processes.is_some());
 }
@@ -633,7 +780,9 @@ fn records_feed_the_memory_provider_idempotently() {
 
     let fixture = Fixture::new();
     let provider = SqliteLocalProvider::open_in_memory().expect("sqlite");
-    let runtime = tokio::runtime::Builder::new_current_thread().build().expect("runtime");
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .build()
+        .expect("runtime");
     let report = sync_into_memory(&fixture.options(), &provider, runtime.handle())
         .expect("sync into memory");
     let memory = report.memory.expect("memory report");
@@ -647,12 +796,18 @@ fn records_feed_the_memory_provider_idempotently() {
     let mut contents: Vec<&str> = codex.iter().map(|record| record.content.as_str()).collect();
     contents.sort_unstable();
     assert_eq!(contents, vec!["Plan written.", "write the plan"]);
-    assert!(codex.iter().all(|record| record.tags.contains(&"external-session".to_owned())));
+    assert!(
+        codex
+            .iter()
+            .all(|record| record.tags.contains(&"external-session".to_owned()))
+    );
     assert_eq!(codex[0].metadata["session_id"], CODEX_ID);
 
     // Feeding the same records again replaces them (deterministic ids).
     let mirror = read_mirror(&fixture.mirror(AgentKind::Codex, CODEX_ID));
-    let fed = runtime.block_on(super::feed_memory(&provider, &mirror)).expect("refeed");
+    let fed = runtime
+        .block_on(super::feed_memory(&provider, &mirror))
+        .expect("refeed");
     assert_eq!(fed, 2);
     let again = runtime
         .block_on(provider.search(MemoryQuery::for_agent(memory_agent_id(AgentKind::Codex))))
@@ -678,16 +833,27 @@ async fn shared_recall_filters_workspace_and_keeps_all_three_owners() {
     use aphrody_memory::{SqliteLocalProvider, provider::MemoryProvider, types::MemoryRecord};
     let provider = SqliteLocalProvider::open_in_memory().unwrap();
     let workspace = tempfile::tempdir().unwrap();
-    for (index, agent) in
-        [AgentKind::Claude, AgentKind::Codex, AgentKind::Agy].into_iter().enumerate()
+    for (index, agent) in [AgentKind::Claude, AgentKind::Codex, AgentKind::Agy]
+        .into_iter()
+        .enumerate()
     {
-        let mut record =
-            MemoryRecord::new(format!("record-{index}"), super::memory_agent_id(agent), "shared");
+        let mut record = MemoryRecord::new(
+            format!("record-{index}"),
+            super::memory_agent_id(agent),
+            "shared",
+        );
         record.created_at_unix_ms = index as u64;
         record.metadata = serde_json::json!({"workspace": workspace.path()});
         provider.add(record).await.unwrap();
     }
-    provider.add(MemoryRecord::new("unknown", "external:codex", "no workspace")).await.unwrap();
+    provider
+        .add(MemoryRecord::new(
+            "unknown",
+            "external:codex",
+            "no workspace",
+        ))
+        .await
+        .unwrap();
     provider
         .add(
             MemoryRecord::new("other", "external:claude", "other repo")
@@ -695,10 +861,18 @@ async fn shared_recall_filters_workspace_and_keeps_all_three_owners() {
         )
         .await
         .unwrap();
-    let records = super::workspace_memory(&provider, workspace.path(), 3).await.unwrap();
+    let records = super::workspace_memory(&provider, workspace.path(), 3)
+        .await
+        .unwrap();
     assert_eq!(records.len(), 3);
     assert_eq!(records[0].agent_id, "external:agy");
     assert_eq!(records[1].agent_id, "external:codex");
     assert_eq!(records[2].agent_id, "external:claude");
-    assert_eq!(super::workspace_memory(&provider, workspace.path(), 1).await.unwrap().len(), 1);
+    assert_eq!(
+        super::workspace_memory(&provider, workspace.path(), 1)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
 }

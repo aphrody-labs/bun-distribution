@@ -27,7 +27,8 @@ fn count(c: usize, side: usize) -> Result<usize> {
 }
 fn zeros(n: usize) -> Result<Vec<f32>> {
     let mut v = Vec::new();
-    v.try_reserve_exact(n).map_err(|_| bad("not enough memory for a denoise tile"))?;
+    v.try_reserve_exact(n)
+        .map_err(|_| bad("not enough memory for a denoise tile"))?;
     v.resize(n, 0.0);
     Ok(v)
 }
@@ -74,7 +75,9 @@ impl NetRunner {
             || net.out_channels() != 3
             || net.shape(0).is_none_or(|s| s.channels != net.in_channels)
         {
-            return Err(bad("the tile or Bayer-to-RGB contract does not fit the network"));
+            return Err(bad(
+                "the tile or Bayer-to-RGB contract does not fit the network",
+            ));
         }
         let mut last = vec![0; net.ops().len() + 1];
         for (i, op) in net.ops().iter().enumerate() {
@@ -83,7 +86,11 @@ impl NetRunner {
                 *last.get_mut(id).ok_or_else(|| bad("missing tensor"))? = i + 1;
             }
         }
-        let mut tensors = vec![Tensor { slot: 0, side: tile, channels: net.in_channels }];
+        let mut tensors = vec![Tensor {
+            slot: 0,
+            side: tile,
+            channels: net.in_channels,
+        }];
         let mut sizes = vec![count(net.in_channels, tile)?];
         let mut busy = vec![true];
         let (mut lower, mut product) = (0, 0);
@@ -100,14 +107,20 @@ impl NetRunner {
                     }
                     (c.cout, a.side)
                 }
-                Op::ConvT2(c) => (c.cout, a.side.checked_mul(2).ok_or_else(|| bad("size overflow"))?),
+                Op::ConvT2(c) => (
+                    c.cout,
+                    a.side.checked_mul(2).ok_or_else(|| bad("size overflow"))?,
+                ),
                 Op::MaxPool2 { .. } => {
                     if a.side < 2 || !a.side.is_multiple_of(2) {
                         return Err(bad("pooling does not divide the tile"));
                     }
                     (a.channels, a.side / 2)
                 }
-                Op::DepthToSpace2 { .. } => (a.channels / 4, a.side.checked_mul(2).ok_or_else(|| bad("size overflow"))?),
+                Op::DepthToSpace2 { .. } => (
+                    a.channels / 4,
+                    a.side.checked_mul(2).ok_or_else(|| bad("size overflow"))?,
+                ),
             };
             let n = count(channels, side)?;
             let slot = busy
@@ -125,7 +138,11 @@ impl NetRunner {
                 *sz = (*sz).max(n);
                 *busy.get_mut(slot).ok_or_else(|| bad("missing buffer"))? = true;
             }
-            tensors.push(Tensor { slot, side, channels });
+            tensors.push(Tensor {
+                slot,
+                side,
+                channels,
+            });
             // Release sources only after the output has its own buffer (also handles reading the same tensor twice).
             for id in std::iter::once(src).chain(src2) {
                 if last.get(id) == Some(&(i + 1)) {
@@ -145,7 +162,8 @@ impl NetRunner {
                 // [cin][cout][dy][dx] -> [cout*4][cin], so an up-convolution is one GEMM and a shuffle.
                 for (ci, row) in c.weight.chunks_exact(c.cout * 4).enumerate() {
                     for (co, &v) in row.iter().enumerate() {
-                        *w.get_mut(co * c.cin + ci).ok_or_else(|| bad("invalid transposed weights"))? = v;
+                        *w.get_mut(co * c.cin + ci)
+                            .ok_or_else(|| bad("invalid transposed weights"))? = v;
                     }
                 }
                 Some(w)
@@ -160,7 +178,17 @@ impl NetRunner {
             .filter(|&n| n <= MAX_VALUES)
             .ok_or_else(|| bad("the tile needs too much working memory"))?;
         let _ = total;
-        Ok(Self { plan: Arc::new(Plan { net: net.clone(), tensors, sizes, lower, product, up_weights }), idle: Arc::new(Mutex::new(Vec::new())) })
+        Ok(Self {
+            plan: Arc::new(Plan {
+                net: net.clone(),
+                tensors,
+                sizes,
+                lower,
+                product,
+                up_weights,
+            }),
+            idle: Arc::new(Mutex::new(Vec::new())),
+        })
     }
     /// Immutable data for the GPU runner, without re-reading the model.
     pub fn net(&self) -> &Net {
@@ -170,11 +198,21 @@ impl NetRunner {
         (self.plan.sizes.iter().sum::<usize>() + self.plan.lower + self.plan.product) * 4
     }
     fn workspace(&self) -> Result<Workspace> {
-        if let Some(w) = self.idle.lock().unwrap_or_else(std::sync::PoisonError::into_inner).pop() {
+        if let Some(w) = self
+            .idle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .pop()
+        {
             return Ok(w);
         }
         Ok(Workspace {
-            buffers: self.plan.sizes.iter().map(|&n| zeros(n)).collect::<Result<_>>()?,
+            buffers: self
+                .plan
+                .sizes
+                .iter()
+                .map(|&n| zeros(n))
+                .collect::<Result<_>>()?,
             lower: zeros(self.plan.lower)?,
             product: zeros(self.plan.product)?,
         })
@@ -182,19 +220,40 @@ impl NetRunner {
     fn execute(&self, input: &[f32], w: &mut Workspace) -> Result<Vec<f32>> {
         let first = self.plan.tensors.first().ok_or_else(|| bad("no input"))?;
         let want = count(first.channels, first.side)?;
-        w.buffers.first_mut().and_then(|b| b.get_mut(..want)).ok_or_else(|| bad("missing input buffer"))?.copy_from_slice(input);
+        w.buffers
+            .first_mut()
+            .and_then(|b| b.get_mut(..want))
+            .ok_or_else(|| bad("missing input buffer"))?
+            .copy_from_slice(input);
         let profile = std::env::var_os("LIGHTCRAFT_PROFILE").is_some();
         for (i, op) in self.plan.net.ops().iter().enumerate() {
             let started = web_time::Instant::now();
-            let out = *self.plan.tensors.get(i + 1).ok_or_else(|| bad("missing output tensor"))?;
-            let (before, rest) = w.buffers.split_at_mut_checked(out.slot).ok_or_else(|| bad("missing output buffer"))?;
-            let (dest, after) = rest.split_first_mut().ok_or_else(|| bad("missing output buffer"))?;
+            let out = *self
+                .plan
+                .tensors
+                .get(i + 1)
+                .ok_or_else(|| bad("missing output tensor"))?;
+            let (before, rest) = w
+                .buffers
+                .split_at_mut_checked(out.slot)
+                .ok_or_else(|| bad("missing output buffer"))?;
+            let (dest, after) = rest
+                .split_first_mut()
+                .ok_or_else(|| bad("missing output buffer"))?;
             let get = |id: usize| -> Result<(&[f32], Tensor)> {
-                let t = *self.plan.tensors.get(id).ok_or_else(|| bad("missing source tensor"))?;
+                let t = *self
+                    .plan
+                    .tensors
+                    .get(id)
+                    .ok_or_else(|| bad("missing source tensor"))?;
                 let data = if t.slot < out.slot {
                     before.get(t.slot)
                 } else {
-                    after.get(t.slot.checked_sub(out.slot + 1).ok_or_else(|| bad("aliased buffers"))?)
+                    after.get(
+                        t.slot
+                            .checked_sub(out.slot + 1)
+                            .ok_or_else(|| bad("aliased buffers"))?,
+                    )
                 }
                 .and_then(|b| b.get(..count(t.channels, t.side).ok()?))
                 .ok_or_else(|| bad("missing source buffer"))?;
@@ -203,7 +262,9 @@ impl NetRunner {
             let (src, src2) = sources(op);
             let (a, shape) = get(src)?;
             let b = src2.map(get).transpose()?.map(|v| v.0);
-            let dest = dest.get_mut(..count(out.channels, out.side)?).ok_or_else(|| bad("short output buffer"))?;
+            let dest = dest
+                .get_mut(..count(out.channels, out.side)?)
+                .ok_or_else(|| bad("short output buffer"))?;
             match op {
                 Op::Conv(c) => conv(c, a, b, shape.side, dest, &mut w.lower, &mut w.product)?,
                 Op::ConvT2(c) => up(
@@ -211,7 +272,11 @@ impl NetRunner {
                     a,
                     shape.side,
                     dest,
-                    self.plan.up_weights.get(i).and_then(Option::as_deref).ok_or_else(|| bad("missing up weights"))?,
+                    self.plan
+                        .up_weights
+                        .get(i)
+                        .and_then(Option::as_deref)
+                        .ok_or_else(|| bad("missing up weights"))?,
                     &mut w.lower,
                     &mut w.product,
                 )?,
@@ -222,11 +287,21 @@ impl NetRunner {
                 return Err(bad("the model produced non-finite values"));
             }
             if profile {
-                eprintln!("[denoise-cpu] layer {i}: {}x{}x{} {:.2} ms", out.channels, out.side, out.side, started.elapsed().as_secs_f64() * 1e3);
+                eprintln!(
+                    "[denoise-cpu] layer {i}: {}x{}x{} {:.2} ms",
+                    out.channels,
+                    out.side,
+                    out.side,
+                    started.elapsed().as_secs_f64() * 1e3
+                );
             }
         }
         let t = self.plan.tensors.last().ok_or_else(|| bad("no output"))?;
-        let data = w.buffers.get(t.slot).and_then(|b| b.get(..count(t.channels, t.side).ok()?)).ok_or_else(|| bad("missing result"))?;
+        let data = w
+            .buffers
+            .get(t.slot)
+            .and_then(|b| b.get(..count(t.channels, t.side).ok()?))
+            .ok_or_else(|| bad("missing result"))?;
         let mut out = zeros(data.len())?;
         out.copy_from_slice(data);
         Ok(out)
@@ -234,14 +309,27 @@ impl NetRunner {
 }
 impl TileRunner for NetRunner {
     fn run(&self, input: &[f32]) -> std::result::Result<Vec<f32>, Error> {
-        let first = self.plan.tensors.first().ok_or_else(|| Error::Runtime("missing input shape".into()))?;
+        let first = self
+            .plan
+            .tensors
+            .first()
+            .ok_or_else(|| Error::Runtime("missing input shape".into()))?;
         let want = count(first.channels, first.side).map_err(|e| Error::Runtime(e.to_string()))?;
         if input.len() != want || input.iter().any(|v| !v.is_finite()) {
-            return Err(Error::Input("the tile has the wrong size or non-finite values".into()));
+            return Err(Error::Input(
+                "the tile has the wrong size or non-finite values".into(),
+            ));
         }
-        let mut w = self.workspace().map_err(|e| Error::Runtime(e.to_string()))?;
-        let result = self.execute(input, &mut w).map_err(|e| Error::Runtime(e.to_string()));
-        let mut idle = self.idle.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut w = self
+            .workspace()
+            .map_err(|e| Error::Runtime(e.to_string()))?;
+        let result = self
+            .execute(input, &mut w)
+            .map_err(|e| Error::Runtime(e.to_string()));
+        let mut idle = self
+            .idle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if idle.len() < MAX_IDLE {
             idle.push(w);
         }
@@ -255,7 +343,13 @@ fn activate(x: f32, bias: f32, alpha: Option<f32>) -> f32 {
 
 /// All views are over exact, checked slices. The matrix library's assertions therefore never see file-derived sizes.
 fn multiply(w: &[f32], x: &[f32], y: &mut [f32], m: usize, k: usize, n: usize) -> Result<()> {
-    if m.checked_mul(k) != Some(w.len()) || k.checked_mul(n) != Some(x.len()) || m.checked_mul(n) != Some(y.len()) || m == 0 || k == 0 || n == 0 {
+    if m.checked_mul(k) != Some(w.len())
+        || k.checked_mul(n) != Some(x.len())
+        || m.checked_mul(n) != Some(y.len())
+        || m == 0
+        || k == 0
+        || n == 0
+    {
         return Err(bad("invalid matrix dimensions"));
     }
     faer::mul::matmul(
@@ -268,36 +362,66 @@ fn multiply(w: &[f32], x: &[f32], y: &mut [f32], m: usize, k: usize, n: usize) -
     );
     Ok(())
 }
-fn lower(a: &[f32], b: Option<&[f32]>, side: usize, k: usize, start: usize, n: usize, dest: &mut [f32]) -> Result<()> {
+fn lower(
+    a: &[f32],
+    b: Option<&[f32]>,
+    side: usize,
+    k: usize,
+    start: usize,
+    n: usize,
+    dest: &mut [f32],
+) -> Result<()> {
     let pad = k / 2;
     let pixels = side * side;
     // Whole row segments are copied, so bounds checks and edge branches stay out of the multiply loop.
-    for (ci, plane) in a.chunks_exact(pixels).chain(b.into_iter().flat_map(|b| b.chunks_exact(pixels))).enumerate() {
+    for (ci, plane) in a
+        .chunks_exact(pixels)
+        .chain(b.into_iter().flat_map(|b| b.chunks_exact(pixels)))
+        .enumerate()
+    {
         for ky in 0..k {
             for kx in 0..k {
                 let row = (ci * k * k + ky * k + kx) * n;
-                let out = dest.get_mut(row..row + n).ok_or_else(|| bad("short im2col buffer"))?;
+                let out = dest
+                    .get_mut(row..row + n)
+                    .ok_or_else(|| bad("short im2col buffer"))?;
                 let mut at = 0;
                 while at < n {
                     let p = start + at;
                     let (y, x) = (p / side, p % side);
                     let len = (side - x).min(n - at);
-                    if let Some(yy) = y.checked_add(ky).and_then(|v| v.checked_sub(pad)).filter(|&v| v < side) {
+                    if let Some(yy) = y
+                        .checked_add(ky)
+                        .and_then(|v| v.checked_sub(pad))
+                        .filter(|&v| v < side)
+                    {
                         let lo = x.max(pad.saturating_sub(kx));
                         let hi = (x + len).min((side + pad).saturating_sub(kx));
                         if lo < hi {
                             let from = yy * side + lo + kx - pad;
                             let to = at + lo - x;
-                            out.get_mut(at..to).ok_or_else(|| bad("short im2col padding"))?.fill(0.0);
+                            out.get_mut(at..to)
+                                .ok_or_else(|| bad("short im2col padding"))?
+                                .fill(0.0);
                             out.get_mut(to..to + hi - lo)
                                 .ok_or_else(|| bad("short im2col row"))?
-                                .copy_from_slice(plane.get(from..from + hi - lo).ok_or_else(|| bad("short source row"))?);
-                            out.get_mut(to + hi - lo..at + len).ok_or_else(|| bad("short im2col padding"))?.fill(0.0);
+                                .copy_from_slice(
+                                    plane
+                                        .get(from..from + hi - lo)
+                                        .ok_or_else(|| bad("short source row"))?,
+                                );
+                            out.get_mut(to + hi - lo..at + len)
+                                .ok_or_else(|| bad("short im2col padding"))?
+                                .fill(0.0);
                         } else {
-                            out.get_mut(at..at + len).ok_or_else(|| bad("short im2col row"))?.fill(0.0);
+                            out.get_mut(at..at + len)
+                                .ok_or_else(|| bad("short im2col row"))?
+                                .fill(0.0);
                         }
                     } else {
-                        out.get_mut(at..at + len).ok_or_else(|| bad("short im2col row"))?.fill(0.0);
+                        out.get_mut(at..at + len)
+                            .ok_or_else(|| bad("short im2col row"))?
+                            .fill(0.0);
                     }
                     at += len;
                 }
@@ -306,17 +430,35 @@ fn lower(a: &[f32], b: Option<&[f32]>, side: usize, k: usize, start: usize, n: u
     }
     Ok(())
 }
-fn conv(c: &crate::net::Conv, a: &[f32], b: Option<&[f32]>, side: usize, dest: &mut [f32], scratch: &mut [f32], product: &mut [f32]) -> Result<()> {
+fn conv(
+    c: &crate::net::Conv,
+    a: &[f32],
+    b: Option<&[f32]>,
+    side: usize,
+    dest: &mut [f32],
+    scratch: &mut [f32],
+    product: &mut [f32],
+) -> Result<()> {
     let pixels = side * side;
     let k = c.cin * c.k * c.k;
     for start in (0..pixels).step_by(BLOCK) {
         let n = BLOCK.min(pixels - start);
-        let x = scratch.get_mut(..k * n).ok_or_else(|| bad("short im2col storage"))?;
+        let x = scratch
+            .get_mut(..k * n)
+            .ok_or_else(|| bad("short im2col storage"))?;
         lower(a, b, side, c.k, start, n, x)?;
-        let y = product.get_mut(..c.cout * n).ok_or_else(|| bad("short product storage"))?;
+        let y = product
+            .get_mut(..c.cout * n)
+            .ok_or_else(|| bad("short product storage"))?;
         multiply(&c.weight, x, y, c.cout, k, n)?;
-        for ((row, &bias), out) in y.chunks_exact(n).zip(&c.bias).zip(dest.chunks_exact_mut(pixels)) {
-            let to = out.get_mut(start..start + n).ok_or_else(|| bad("short convolution output"))?;
+        for ((row, &bias), out) in y
+            .chunks_exact(n)
+            .zip(&c.bias)
+            .zip(dest.chunks_exact_mut(pixels))
+        {
+            let to = out
+                .get_mut(start..start + n)
+                .ok_or_else(|| bad("short convolution output"))?;
             for (d, &v) in to.iter_mut().zip(row) {
                 *d = activate(v, bias, c.leaky);
             }
@@ -324,24 +466,47 @@ fn conv(c: &crate::net::Conv, a: &[f32], b: Option<&[f32]>, side: usize, dest: &
     }
     Ok(())
 }
-fn up(c: &crate::net::ConvT2, a: &[f32], side: usize, dest: &mut [f32], weights: &[f32], scratch: &mut [f32], product: &mut [f32]) -> Result<()> {
+fn up(
+    c: &crate::net::ConvT2,
+    a: &[f32],
+    side: usize,
+    dest: &mut [f32],
+    weights: &[f32],
+    scratch: &mut [f32],
+    product: &mut [f32],
+) -> Result<()> {
     let pixels = side * side;
     let out_side = 2 * side;
     for start in (0..pixels).step_by(BLOCK) {
         let n = BLOCK.min(pixels - start);
-        let x = scratch.get_mut(..c.cin * n).ok_or_else(|| bad("short up input storage"))?;
+        let x = scratch
+            .get_mut(..c.cin * n)
+            .ok_or_else(|| bad("short up input storage"))?;
         for (to, from) in x.chunks_exact_mut(n).zip(a.chunks_exact(pixels)) {
-            to.copy_from_slice(from.get(start..start + n).ok_or_else(|| bad("short up input"))?);
+            to.copy_from_slice(
+                from.get(start..start + n)
+                    .ok_or_else(|| bad("short up input"))?,
+            );
         }
-        let y = product.get_mut(..c.cout * 4 * n).ok_or_else(|| bad("short up product storage"))?;
+        let y = product
+            .get_mut(..c.cout * 4 * n)
+            .ok_or_else(|| bad("short up product storage"))?;
         multiply(weights, x, y, c.cout * 4, c.cin, n)?;
-        for (co, (&bias, out)) in c.bias.iter().zip(dest.chunks_exact_mut(4 * pixels)).enumerate() {
+        for (co, (&bias, out)) in c
+            .bias
+            .iter()
+            .zip(dest.chunks_exact_mut(4 * pixels))
+            .enumerate()
+        {
             for d in 0..4 {
-                let row = y.get((4 * co + d) * n..(4 * co + d + 1) * n).ok_or_else(|| bad("short up product"))?;
+                let row = y
+                    .get((4 * co + d) * n..(4 * co + d + 1) * n)
+                    .ok_or_else(|| bad("short up product"))?;
                 for (j, &v) in row.iter().enumerate() {
                     let p = start + j;
                     let at = (2 * (p / side) + d / 2) * out_side + 2 * (p % side) + d % 2;
-                    *out.get_mut(at).ok_or_else(|| bad("short up output"))? = activate(v, bias, c.leaky);
+                    *out.get_mut(at).ok_or_else(|| bad("short up output"))? =
+                        activate(v, bias, c.leaky);
                 }
             }
         }
@@ -350,11 +515,22 @@ fn up(c: &crate::net::ConvT2, a: &[f32], side: usize, dest: &mut [f32], weights:
 }
 fn pool(a: &[f32], side: usize, dest: &mut [f32]) -> Result<()> {
     let s = side / 2;
-    for (input, out) in a.chunks_exact(side * side).zip(dest.chunks_exact_mut(s * s)) {
+    for (input, out) in a
+        .chunks_exact(side * side)
+        .zip(dest.chunks_exact_mut(s * s))
+    {
         for (y, row) in out.chunks_exact_mut(s).enumerate() {
-            let lo = input.get(2 * y * side..(2 * y + 1) * side).ok_or_else(|| bad("short pool input"))?;
-            let hi = input.get((2 * y + 1) * side..(2 * y + 2) * side).ok_or_else(|| bad("short pool input"))?;
-            for ((d, lo), hi) in row.iter_mut().zip(lo.as_chunks::<2>().0).zip(hi.as_chunks::<2>().0) {
+            let lo = input
+                .get(2 * y * side..(2 * y + 1) * side)
+                .ok_or_else(|| bad("short pool input"))?;
+            let hi = input
+                .get((2 * y + 1) * side..(2 * y + 2) * side)
+                .ok_or_else(|| bad("short pool input"))?;
+            for ((d, lo), hi) in row
+                .iter_mut()
+                .zip(lo.as_chunks::<2>().0)
+                .zip(hi.as_chunks::<2>().0)
+            {
                 let [a, b] = *lo;
                 let [c, e] = *hi;
                 *d = a.max(b).max(c).max(e);
@@ -365,12 +541,19 @@ fn pool(a: &[f32], side: usize, dest: &mut [f32]) -> Result<()> {
 }
 fn shuffle(a: &[f32], side: usize, dest: &mut [f32]) -> Result<()> {
     let pixels = side * side;
-    for (input, out) in a.chunks_exact(4 * pixels).zip(dest.chunks_exact_mut(4 * pixels)) {
+    for (input, out) in a
+        .chunks_exact(4 * pixels)
+        .zip(dest.chunks_exact_mut(4 * pixels))
+    {
         for d in 0..4 {
-            let plane = input.get(d * pixels..(d + 1) * pixels).ok_or_else(|| bad("short shuffle input"))?;
+            let plane = input
+                .get(d * pixels..(d + 1) * pixels)
+                .ok_or_else(|| bad("short shuffle input"))?;
             for (y, row) in plane.chunks_exact(side).enumerate() {
                 let at = (2 * y + d / 2) * 2 * side;
-                let to = out.get_mut(at..at + 2 * side).ok_or_else(|| bad("short shuffle output"))?;
+                let to = out
+                    .get_mut(at..at + 2 * side)
+                    .ok_or_else(|| bad("short shuffle output"))?;
                 for (to, &v) in to.as_chunks_mut::<2>().0.iter_mut().zip(row) {
                     if let Some(t) = to.get_mut(d % 2) {
                         *t = v;

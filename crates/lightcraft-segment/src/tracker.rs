@@ -6,7 +6,9 @@
 //! Team and Meta Platforms, Inc.; translated to Rust on candle and restructured. See NOTICE.
 
 use candle_core::{DType, Device, IndexOp, Module, Tensor};
-use candle_nn::{Conv2d, Conv2dConfig, ConvTranspose2d, ConvTranspose2dConfig, LayerNorm, VarBuilder};
+use candle_nn::{
+    Conv2d, Conv2dConfig, ConvTranspose2d, ConvTranspose2dConfig, LayerNorm, VarBuilder,
+};
 
 use crate::nn::{Attention, FeedForward, TORCH_LN_EPS, ln, ln_channels};
 use crate::vit::{GRID, IMAGE};
@@ -53,11 +55,15 @@ impl Fourier {
         let (cx, cy) = (2.0 * x - 1.0, 2.0 * y - 1.0);
         let proj: Vec<f32> = (0..half)
             .map(|i| {
-                let a = cx * self.pe.get(i).copied().unwrap_or(0.0) + cy * self.pe.get(half + i).copied().unwrap_or(0.0);
+                let a = cx * self.pe.get(i).copied().unwrap_or(0.0)
+                    + cy * self.pe.get(half + i).copied().unwrap_or(0.0);
                 2.0 * std::f32::consts::PI * a
             })
             .collect();
-        proj.iter().map(|a| a.sin()).chain(proj.iter().map(|a| a.cos())).collect()
+        proj.iter()
+            .map(|a| a.sin())
+            .chain(proj.iter().map(|a| a.cos()))
+            .collect()
     }
 }
 
@@ -79,7 +85,13 @@ fn attn(a: &Attention, q: &Tensor, k: &Tensor, v: &Tensor) -> Result<Tensor> {
 }
 
 impl TwoWayBlock {
-    fn forward(&self, queries: &Tensor, keys: &Tensor, qpe: &Tensor, kpe: &Tensor) -> Result<(Tensor, Tensor)> {
+    fn forward(
+        &self,
+        queries: &Tensor,
+        keys: &Tensor,
+        qpe: &Tensor,
+        kpe: &Tensor,
+    ) -> Result<(Tensor, Tensor)> {
         let queries = if self.skip_first_pe {
             attn(&self.self_attn, queries, queries, queries)?
         } else {
@@ -88,10 +100,16 @@ impl TwoWayBlock {
         };
         let queries = self.ln1.forward(&queries)?;
         let (q, k) = ((&queries + qpe)?, (keys + kpe)?);
-        let queries = self.ln2.forward(&(&queries + attn(&self.t2i, &q, &k, keys)?)?)?;
-        let queries = self.ln3.forward(&(&queries + self.mlp.forward(&queries)?)?)?;
+        let queries = self
+            .ln2
+            .forward(&(&queries + attn(&self.t2i, &q, &k, keys)?)?)?;
+        let queries = self
+            .ln3
+            .forward(&(&queries + self.mlp.forward(&queries)?)?)?;
         let (q, k) = ((&queries + qpe)?, (keys + kpe)?);
-        let keys = self.ln4.forward(&(keys + attn(&self.i2t, &k, &q, &queries)?)?)?;
+        let keys = self
+            .ln4
+            .forward(&(keys + attn(&self.i2t, &k, &q, &queries)?)?)?;
         Ok((queries, keys))
     }
 }
@@ -127,12 +145,21 @@ impl Tracker {
         let device = vb.device().clone();
         let pe = vb.pp("prompt_encoder");
         let md = vb.pp("mask_decoder");
-        let image_fourier = Fourier { pe: read_vec(&vb, (2, HIDDEN / 2), "shared_image_embedding.positional_embedding")? };
+        let image_fourier = Fourier {
+            pe: read_vec(
+                &vb,
+                (2, HIDDEN / 2),
+                "shared_image_embedding.positional_embedding",
+            )?,
+        };
         // image-wide positional embedding: pixel centres of the 72 × 72 grid
         let mut grid = Vec::with_capacity(GRID * GRID * HIDDEN);
         for r in 0..GRID {
             for c in 0..GRID {
-                grid.extend(image_fourier.encode((c as f32 + 0.5) / GRID as f32, (r as f32 + 0.5) / GRID as f32));
+                grid.extend(image_fourier.encode(
+                    (c as f32 + 0.5) / GRID as f32,
+                    (r as f32 + 0.5) / GRID as f32,
+                ));
             }
         }
         let image_pe = Tensor::from_vec(grid, (1, GRID * GRID, HIDDEN), &device)?;
@@ -160,14 +187,29 @@ impl Tracker {
             ],
             0,
         )?;
-        let up = ConvTranspose2dConfig { stride: 2, ..Default::default() };
+        let up = ConvTranspose2dConfig {
+            stride: 2,
+            ..Default::default()
+        };
         let one = Conv2dConfig::default();
         Ok(Self {
-            point_pe: Fourier { pe: read_vec(&pe, (2, HIDDEN / 2), "shared_embedding.positional_embedding")? },
+            point_pe: Fourier {
+                pe: read_vec(
+                    &pe,
+                    (2, HIDDEN / 2),
+                    "shared_embedding.positional_embedding",
+                )?,
+            },
             image_pe,
-            point_embed: pe.get((4, HIDDEN), "point_embed.weight")?.to_device(&Device::Cpu)?,
-            not_a_point: pe.get((1, HIDDEN), "not_a_point_embed.weight")?.to_device(&Device::Cpu)?,
-            no_mask: pe.get((1, HIDDEN), "no_mask_embed.weight")?.reshape((1, HIDDEN, 1, 1))?,
+            point_embed: pe
+                .get((4, HIDDEN), "point_embed.weight")?
+                .to_device(&Device::Cpu)?,
+            not_a_point: pe
+                .get((1, HIDDEN), "not_a_point_embed.weight")?
+                .to_device(&Device::Cpu)?,
+            no_mask: pe
+                .get((1, HIDDEN), "no_mask_embed.weight")?
+                .reshape((1, HIDDEN, 1, 1))?,
             conv_s0: candle_nn::conv2d(HIDDEN, HIDDEN / 8, 1, one, md.pp("conv_s0"))?,
             conv_s1: candle_nn::conv2d(HIDDEN, HIDDEN / 4, 1, one, md.pp("conv_s1"))?,
             output_tokens,
@@ -176,11 +218,33 @@ impl Tracker {
             ln_final: ln(HIDDEN, TORCH_LN_EPS, t.pp("layer_norm_final_attn"))?,
             up1: candle_nn::conv_transpose2d(HIDDEN, HIDDEN / 4, 2, up, md.pp("upscale_conv1"))?,
             up_ln: ln(HIDDEN / 4, 1e-6, md.pp("upscale_layer_norm"))?,
-            up2: candle_nn::conv_transpose2d(HIDDEN / 4, HIDDEN / 8, 2, up, md.pp("upscale_conv2"))?,
+            up2: candle_nn::conv_transpose2d(
+                HIDDEN / 4,
+                HIDDEN / 8,
+                2,
+                up,
+                md.pp("upscale_conv2"),
+            )?,
             hyper: (0..MASK_TOKENS)
-                .map(|i| FeedForward::new(HIDDEN, HIDDEN, HIDDEN / 8, 3, false, md.pp(format!("output_hypernetworks_mlps.{i}"))))
+                .map(|i| {
+                    FeedForward::new(
+                        HIDDEN,
+                        HIDDEN,
+                        HIDDEN / 8,
+                        3,
+                        false,
+                        md.pp(format!("output_hypernetworks_mlps.{i}")),
+                    )
+                })
                 .collect::<Result<_>>()?,
-            iou_head: FeedForward::new(HIDDEN, HIDDEN, MASK_TOKENS, 3, true, md.pp("iou_prediction_head"))?,
+            iou_head: FeedForward::new(
+                HIDDEN,
+                HIDDEN,
+                MASK_TOKENS,
+                3,
+                true,
+                md.pp("iou_prediction_head"),
+            )?,
             obj_head: FeedForward::new(HIDDEN, HIDDEN, 1, 3, false, md.pp("pred_obj_score_head"))?,
             device,
         })
@@ -188,8 +252,16 @@ impl Tracker {
 
     /// The decoder's image features from the tracker neck's levels (288, 144, 72 per side).
     pub fn features(&self, levels: &[Tensor]) -> Result<Features> {
-        let [l0, l1, l2, ..] = levels else { return Err(crate::Error::Model("tracker needs three feature levels".into())) };
-        Ok(Features { image: l2.clone(), s0: self.conv_s0.forward(l0)?, s1: self.conv_s1.forward(l1)? })
+        let [l0, l1, l2, ..] = levels else {
+            return Err(crate::Error::Model(
+                "tracker needs three feature levels".into(),
+            ));
+        };
+        Ok(Features {
+            image: l2.clone(),
+            s0: self.conv_s0.forward(l0)?,
+            s1: self.conv_s1.forward(l1)?,
+        })
     }
 
     /// Sparse prompt embeddings `[1, n + 1, 256]` (a padding point closes the list).
@@ -199,13 +271,24 @@ impl Tracker {
         let mut rows = Vec::with_capacity((clicks.len() + 1) * HIDDEN);
         for c in clicks {
             // the reference shifts pixel coordinates (in the 1008² input) by half a pixel
-            let (x, y) = ((c.x * IMAGE as f32 + 0.5) / IMAGE as f32, (c.y * IMAGE as f32 + 0.5) / IMAGE as f32);
+            let (x, y) = (
+                (c.x * IMAGE as f32 + 0.5) / IMAGE as f32,
+                (c.y * IMAGE as f32 + 0.5) / IMAGE as f32,
+            );
             let e = self.point_pe.encode(x, y);
             let label = usize::from(c.positive);
-            rows.extend(e.iter().enumerate().map(|(i, v)| v + point_embed.get(label * HIDDEN + i).copied().unwrap_or(0.0)));
+            rows.extend(
+                e.iter()
+                    .enumerate()
+                    .map(|(i, v)| v + point_embed.get(label * HIDDEN + i).copied().unwrap_or(0.0)),
+            );
         }
         rows.extend_from_slice(&not_a_point);
-        Ok(Tensor::from_vec(rows, (1, clicks.len() + 1, HIDDEN), &self.device)?)
+        Ok(Tensor::from_vec(
+            rows,
+            (1, clicks.len() + 1, HIDDEN),
+            &self.device,
+        )?)
     }
 
     /// Predict masks for `clicks`. `multimask`: the three alternatives (best by predicted IoU is
@@ -222,7 +305,9 @@ impl Tracker {
         }
         let qf = (&q + &tokens)?;
         let kf = (&k + &self.image_pe)?;
-        let q = self.ln_final.forward(&(&q + attn(&self.final_t2i, &qf, &kf, &k)?)?)?;
+        let q = self
+            .ln_final
+            .forward(&(&q + attn(&self.final_t2i, &qf, &kf, &k)?)?)?;
         let iou_token = q.i((.., 1, ..))?;
         let image = k.transpose(1, 2)?.reshape((b, c, h, w))?;
         let up = (self.up1.forward(&image)? + &f.s1)?;
@@ -230,24 +315,60 @@ impl Tracker {
         let up = (self.up2.forward(&up)? + &f.s0)?.gelu_erf()?; // [1, 32, 288, 288]
         let (_, uc, uh, uw) = up.dims4()?;
         let hyper = (0..MASK_TOKENS)
-            .map(|i| self.hyper.get(i).map_or(Err(crate::Error::Model("hypernetwork".into())), |m| m.forward(&q.i((.., 2 + i, ..))?)))
+            .map(|i| {
+                self.hyper
+                    .get(i)
+                    .map_or(Err(crate::Error::Model("hypernetwork".into())), |m| {
+                        m.forward(&q.i((.., 2 + i, ..))?)
+                    })
+            })
             .collect::<Result<Vec<_>>>()?;
         let hyper = Tensor::stack(&hyper, 1)?; // [1, 4, 32]
-        let masks = hyper.matmul(&up.reshape((b, uc, uh * uw))?)?.reshape((b, MASK_TOKENS, uh, uw))?;
+        let masks =
+            hyper
+                .matmul(&up.reshape((b, uc, uh * uw))?)?
+                .reshape((b, MASK_TOKENS, uh, uw))?;
         let iou = to_vec(&self.iou_head.forward(&iou_token)?)?;
-        let object_score = to_vec(&self.obj_head.forward(&q.i((.., 0, ..))?)?)?.first().copied().unwrap_or(0.0);
+        let object_score = to_vec(&self.obj_head.forward(&q.i((.., 0, ..))?)?)?
+            .first()
+            .copied()
+            .unwrap_or(0.0);
         let pick = |i: usize| -> Result<Prediction> {
-            Ok(Prediction { logits: to_vec(&masks.i((0, i))?)?, iou: iou.get(i).copied().unwrap_or(0.0), object_score })
+            Ok(Prediction {
+                logits: to_vec(&masks.i((0, i))?)?,
+                iou: iou.get(i).copied().unwrap_or(0.0),
+                object_score,
+            })
         };
-        let best_multi = || (1..MASK_TOKENS).max_by(|a, b| iou.get(*a).partial_cmp(&iou.get(*b)).unwrap_or(std::cmp::Ordering::Equal)).unwrap_or(1);
+        let best_multi = || {
+            (1..MASK_TOKENS)
+                .max_by(|a, b| {
+                    iou.get(*a)
+                        .partial_cmp(&iou.get(*b))
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
+                .unwrap_or(1)
+        };
         if multimask {
             return pick(best_multi());
         }
         // single-mask output unless it is unstable (area changes > 2 % when the threshold moves ±0.05)
         let single = masks.i((0, 0))?;
-        let inter = single.gt(0.05)?.to_dtype(DType::F32)?.sum_all()?.to_scalar::<f32>()?;
-        let union = single.gt(-0.05)?.to_dtype(DType::F32)?.sum_all()?.to_scalar::<f32>()?;
+        let inter = single
+            .gt(0.05)?
+            .to_dtype(DType::F32)?
+            .sum_all()?
+            .to_scalar::<f32>()?;
+        let union = single
+            .gt(-0.05)?
+            .to_dtype(DType::F32)?
+            .sum_all()?
+            .to_scalar::<f32>()?;
         let stability = if union > 0.0 { inter / union } else { 1.0 };
-        if stability >= 0.98 { pick(0) } else { pick(best_multi()) }
+        if stability >= 0.98 {
+            pick(0)
+        } else {
+            pick(best_multi())
+        }
     }
 }

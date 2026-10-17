@@ -65,7 +65,11 @@ pub const fn block_dims(format: TextureFormat) -> BlockDims {
         TextureFormat::CI8 => (8, 4, 32),
         TextureFormat::CI14 => (4, 4, 32),
     };
-    BlockDims { tile_w: tw, tile_h: th, bytes_per_tile: bb }
+    BlockDims {
+        tile_w: tw,
+        tile_h: th,
+        bytes_per_tile: bb,
+    }
 }
 
 /// Compute the number of raw bytes a GX texture occupies in RAM.
@@ -105,7 +109,8 @@ fn decode_i4(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                         let nibble = if tx & 1 == 0 { byte >> 4 } else { byte & 0x0F };
                         let i = expand_to_8::<4>(nibble);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             [i, i, i, i],
                         );
                     }
@@ -145,7 +150,8 @@ fn decode_i8(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                     unsafe {
                         let i = *src.add(blk + ty * BW + tx);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             [i, i, i, i],
                         );
                     }
@@ -187,7 +193,8 @@ fn decode_ia4(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                         let a = expand_to_8::<4>(packed >> 4);
                         let i = expand_to_8::<4>(packed & 0x0F);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             [i, i, i, a],
                         );
                     }
@@ -230,7 +237,8 @@ fn decode_ia8(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                         let a = *src.add(off);
                         let i = *src.add(off + 1);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             [i, i, i, a],
                         );
                     }
@@ -274,7 +282,8 @@ fn decode_rgb565(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                         ]);
                         let pixel = self::rgb565_to_rgba(packed);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             pixel,
                         );
                     }
@@ -329,7 +338,8 @@ fn decode_rgb5a3(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                             [r, g, b, a]
                         };
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             pixel,
                         );
                     }
@@ -375,7 +385,8 @@ fn decode_rgba8(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                         let g = *src.add(gb);
                         let b = *src.add(gb + 1);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             [r, g, b, a],
                         );
                     }
@@ -429,7 +440,8 @@ fn decode_cmpr(tex: &[u8], rgba: &mut [u8], w: usize, h: usize) {
                         for col in 0..tw {
                             let pi = ((idx >> ((3 - col) * 2)) & 0x03) as usize;
                             std::ptr::write(
-                                dst.add(((sub_y + row) * w + sub_x + col) * 4).cast::<[u8; 4]>(),
+                                dst.add(((sub_y + row) * w + sub_x + col) * 4)
+                                    .cast::<[u8; 4]>(),
                                 palette[pi],
                             );
                         }
@@ -448,7 +460,7 @@ fn tlut_entry_to_rgba(packed: u16, format: TlutFormat) -> [u8; 4] {
             let a = (packed >> 8) as u8;
             let i = (packed & 0xFF) as u8;
             [i, i, i, a]
-        },
+        }
         TlutFormat::RGB565 => self::rgb565_to_rgba(packed),
         TlutFormat::RGB5A3 => {
             if packed & 0x8000 != 0 {
@@ -463,7 +475,7 @@ fn tlut_entry_to_rgba(packed: u16, format: TlutFormat) -> [u8; 4] {
                 let b = expand_to_8::<4>((packed & 0xF) as u8);
                 [r, g, b, a]
             }
-        },
+        }
     }
 }
 
@@ -511,7 +523,8 @@ fn decode_ci4(
                         let nibble = if tx & 1 == 0 { byte >> 4 } else { byte & 0x0F };
                         let pixel = self::palette_lookup(palette, nibble as usize, tlut_format);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             pixel,
                         );
                     }
@@ -558,7 +571,8 @@ fn decode_ci8(
                         let index = *src.add(blk + ty * BW + tx);
                         let pixel = self::palette_lookup(palette, index as usize, tlut_format);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             pixel,
                         );
                     }
@@ -609,7 +623,8 @@ fn decode_ci14(
                         let index = (((hi as u16) << 8) | lo as u16) & 0x3FFF;
                         let pixel = self::palette_lookup(palette, index as usize, tlut_format);
                         std::ptr::write(
-                            dst.add(((base_y + ty) * w + base_x + tx) * 4).cast::<[u8; 4]>(),
+                            dst.add(((base_y + ty) * w + base_x + tx) * 4)
+                                .cast::<[u8; 4]>(),
                             pixel,
                         );
                     }
@@ -674,7 +689,12 @@ fn rgb565_to_rgba(packed: u16) -> [u8; 4] {
     let r = ((packed >> 11) & 0x1F) as u8;
     let g = ((packed >> 5) & 0x3F) as u8;
     let b = (packed & 0x1F) as u8;
-    [expand_to_8::<5>(r), expand_to_8::<6>(g), expand_to_8::<5>(b), 255]
+    [
+        expand_to_8::<5>(r),
+        expand_to_8::<6>(g),
+        expand_to_8::<5>(b),
+        255,
+    ]
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -729,10 +749,16 @@ impl CopyFormat {
             CopyFormat::RGB565 => block_dims(TextureFormat::RGB565),
             CopyFormat::RGB5A3 => block_dims(TextureFormat::RGB5A3),
             CopyFormat::RGBA8 | CopyFormat::Z24X8 => block_dims(TextureFormat::RGBA8),
-            CopyFormat::A8 | CopyFormat::R8 => {
-                BlockDims { tile_w: 8, tile_h: 4, bytes_per_tile: 32 }
+            CopyFormat::A8 | CopyFormat::R8 => BlockDims {
+                tile_w: 8,
+                tile_h: 4,
+                bytes_per_tile: 32,
             },
-            CopyFormat::RG8 => BlockDims { tile_w: 4, tile_h: 4, bytes_per_tile: 32 },
+            CopyFormat::RG8 => BlockDims {
+                tile_w: 4,
+                tile_h: 4,
+                bytes_per_tile: 32,
+            },
         }
     }
 

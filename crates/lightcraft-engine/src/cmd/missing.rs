@@ -28,12 +28,20 @@ pub fn checked_path(p: &Photo) -> Option<&str> {
 
 /// Every in-scope photo's file ([`checked_path`]), without touching the disk.
 pub fn candidates(cat: &Catalog) -> Vec<String> {
-    cat.photos().filter_map(|p| checked_path(p).map(str::to_string)).collect()
+    cat.photos()
+        .filter_map(|p| checked_path(p).map(str::to_string))
+        .collect()
 }
 
 /// [`missing`] with the existence check supplied (tests count the file-system calls).
 pub fn missing_with(cat: &Catalog, mut exists: impl FnMut(&str) -> bool) -> Vec<(PhotoId, String)> {
-    cat.photos().filter_map(|p| checked_path(p).filter(|f| !exists(f)).map(|f| (p.id, f.to_string()))).collect()
+    cat.photos()
+        .filter_map(|p| {
+            checked_path(p)
+                .filter(|f| !exists(f))
+                .map(|f| (p.id, f.to_string()))
+        })
+        .collect()
 }
 
 /// Library photos whose original file can't be found: (id, path).
@@ -48,23 +56,45 @@ pub fn missing(s: &Session) -> Vec<(PhotoId, String)> {
 /// the photos its query already narrowed to). In the app `avail` answers from its cache (files
 /// not checked yet count as present until the background check finds them gone).
 pub fn is_missing(cat: &Catalog, avail: &crate::availability::Availability, id: PhotoId) -> bool {
-    !cfg!(target_arch = "wasm32") && cat.photo(id).and_then(|p| checked_path(p)).is_some_and(|f| avail.is_offline(f))
+    !cfg!(target_arch = "wasm32")
+        && cat
+            .photo(id)
+            .and_then(|p| checked_path(p))
+            .is_some_and(|f| avail.is_offline(f))
 }
 
 pub(crate) fn relink_op(id: PhotoId, path: &str) -> Op {
-    let file_name = Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string());
-    Op::Relink { id, file_name, source: Source::File { path: path.to_string() }, format: None }
+    let file_name = Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.to_string());
+    Op::Relink {
+        id,
+        file_name,
+        source: Source::File {
+            path: path.to_string(),
+        },
+        format: None,
+    }
 }
 
 fn relink(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "photo.relink";
-    let id = p.get("id").and_then(Value::as_u64).map(PhotoId).or(s.active()).ok_or_else(|| bad(C, "no photo (give `id`)"))?;
+    let id = p
+        .get("id")
+        .and_then(Value::as_u64)
+        .map(PhotoId)
+        .or(s.active())
+        .ok_or_else(|| bad(C, "no photo (give `id`)"))?;
     let path = str_param(p, "path").ok_or_else(|| bad(C, "missing `path`"))?;
     let abs = std::path::absolute(path).map_err(|e| bad(C, e.to_string()))?;
     if !abs.is_file() {
         return Err(bad(C, format!("{path}: no such file")));
     }
-    if !matches!(s.catalog.photo(id).map(|p| &p.source), Some(Source::File { .. })) {
+    if !matches!(
+        s.catalog.photo(id).map(|p| &p.source),
+        Some(Source::File { .. })
+    ) {
         return Err(bad(C, "only photos from files can be relinked"));
     }
     let abs = abs.to_string_lossy().to_string();
@@ -72,7 +102,10 @@ fn relink(s: &mut Session, p: &Value) -> Result<Value> {
     // its size, dimensions and preview-only state follow it
     let mut ops = vec![relink_op(id, &abs)];
     if s.media.file_probe.is_some()
-        && let (Some(Ok(info)), Some(ph)) = (crate::import::probe_paths(s, std::slice::from_ref(&abs)).pop(), s.catalog.photo(id))
+        && let (Some(Ok(info)), Some(ph)) = (
+            crate::import::probe_paths(s, std::slice::from_ref(&abs)).pop(),
+            s.catalog.photo(id),
+        )
     {
         ops.extend(crate::cmd::convert::content_op(id, ph, info));
     }
@@ -87,12 +120,17 @@ fn relink(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The stored content hash of a photo, without the `:dupN` suffix duplicates get.
 fn stored_hash(p: &Photo) -> Option<&str> {
-    p.content_hash.as_deref().map(|h| h.split(':').next().unwrap_or(h)).filter(|h| !h.is_empty())
+    p.content_hash
+        .as_deref()
+        .map(|h| h.split(':').next().unwrap_or(h))
+        .filter(|h| !h.is_empty())
 }
 
 /// The content hash of the file at `path` (as import computes it), if it can be read.
 fn file_hash(path: &str) -> Option<String> {
-    std::fs::read(path).ok().map(|b| lightcraft_preview::hash_bytes(&b).to_string())
+    std::fs::read(path)
+        .ok()
+        .map(|b| lightcraft_preview::hash_bytes(&b).to_string())
 }
 
 /// An in-scope photo ([`checked_path`]) as Find Missing Photos sees it: its file, the size and
@@ -111,7 +149,12 @@ pub struct FindCandidate {
 pub fn find_candidates(cat: &Catalog) -> Vec<FindCandidate> {
     cat.photos()
         .filter_map(|p| {
-            checked_path(p).map(|f| FindCandidate { id: p.id, path: f.to_string(), size: p.file_size, hash: stored_hash(p).map(str::to_string) })
+            checked_path(p).map(|f| FindCandidate {
+                id: p.id,
+                path: f.to_string(),
+                size: p.file_size,
+                hash: stored_hash(p).map(str::to_string),
+            })
         })
         .collect()
 }
@@ -165,18 +208,35 @@ impl FindPlan {
     /// `{found: [{id, from, to, by}], missing, ambiguous: [{id, from, candidates}]}` — the
     /// command's result, and what `library.findMissing {found, …}` takes back.
     pub fn to_json(&self) -> Value {
-        let found: Vec<Value> = self.found.iter().map(|f| json!({"id": f.id.0, "from": f.from, "to": f.to, "by": f.by.as_str()})).collect();
-        let ambiguous: Vec<Value> = self.ambiguous.iter().map(|a| json!({"id": a.id.0, "from": a.from, "candidates": a.candidates})).collect();
+        let found: Vec<Value> = self
+            .found
+            .iter()
+            .map(|f| json!({"id": f.id.0, "from": f.from, "to": f.to, "by": f.by.as_str()}))
+            .collect();
+        let ambiguous: Vec<Value> = self
+            .ambiguous
+            .iter()
+            .map(|a| json!({"id": a.id.0, "from": a.from, "candidates": a.candidates}))
+            .collect();
         json!({"found": found, "missing": self.missing, "ambiguous": ambiguous})
     }
 
     /// The inverse of [`FindPlan::to_json`] (entries it can't read are dropped).
     pub fn from_json(v: &Value) -> FindPlan {
-        let list = |k: &str| v.get(k).and_then(Value::as_array).cloned().unwrap_or_default();
+        let list = |k: &str| {
+            v.get(k)
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+        };
         let found = list("found")
             .iter()
             .filter_map(|f| {
-                let by = if f.get("by").and_then(Value::as_str) == Some("content") { MatchBy::Content } else { MatchBy::Name };
+                let by = if f.get("by").and_then(Value::as_str) == Some("content") {
+                    MatchBy::Content
+                } else {
+                    MatchBy::Name
+                };
                 Some(FoundFile {
                     id: PhotoId(f.get("id")?.as_u64()?),
                     from: str_param(f, "from")?.to_string(),
@@ -188,12 +248,28 @@ impl FindPlan {
         let ambiguous = list("ambiguous")
             .iter()
             .filter_map(|a| {
-                let candidates = a.get("candidates")?.as_array()?.iter().filter_map(|c| c.as_str().map(str::to_string)).collect();
-                Some(AmbiguousFile { id: PhotoId(a.get("id")?.as_u64()?), from: str_param(a, "from")?.to_string(), candidates })
+                let candidates = a
+                    .get("candidates")?
+                    .as_array()?
+                    .iter()
+                    .filter_map(|c| c.as_str().map(str::to_string))
+                    .collect();
+                Some(AmbiguousFile {
+                    id: PhotoId(a.get("id")?.as_u64()?),
+                    from: str_param(a, "from")?.to_string(),
+                    candidates,
+                })
             })
             .collect();
-        let missing = v.get("missing").and_then(Value::as_u64).map_or(0, |n| usize::try_from(n).unwrap_or(usize::MAX));
-        FindPlan { found, missing, ambiguous }
+        let missing = v
+            .get("missing")
+            .and_then(Value::as_u64)
+            .map_or(0, |n| usize::try_from(n).unwrap_or(usize::MAX));
+        FindPlan {
+            found,
+            missing,
+            ambiguous,
+        }
     }
 }
 
@@ -212,43 +288,68 @@ impl FindPlan {
 ///
 /// Files that are already some photo's original, or that another photo was just matched with,
 /// are not used.
-pub fn plan_find_missing(candidates: &[FindCandidate], folder: &str) -> std::result::Result<FindPlan, String> {
+pub fn plan_find_missing(
+    candidates: &[FindCandidate],
+    folder: &str,
+) -> std::result::Result<FindPlan, String> {
     if !Path::new(folder).is_dir() {
         return Err(format!("{folder}: not a folder"));
     }
     if cfg!(target_arch = "wasm32") {
         return Ok(FindPlan::default());
     }
-    let lost: Vec<&FindCandidate> = candidates.iter().filter(|c| !Path::new(&c.path).exists()).collect();
+    let lost: Vec<&FindCandidate> = candidates
+        .iter()
+        .filter(|c| !Path::new(&c.path).exists())
+        .collect();
     if lost.is_empty() {
         return Ok(FindPlan::default());
     }
     let in_use: HashSet<&str> = candidates.iter().map(|c| c.path.as_str()).collect();
     // file name (lower case) → candidate paths; size → paths (filled lazily)
     let mut by_name: HashMap<String, Vec<String>> = HashMap::new();
-    let files: Vec<String> = crate::import::expand(&[folder.to_string()], None).into_iter().filter(|f| !in_use.contains(f.as_str())).collect();
+    let files: Vec<String> = crate::import::expand(&[folder.to_string()], None)
+        .into_iter()
+        .filter(|f| !in_use.contains(f.as_str()))
+        .collect();
     for f in &files {
         if let Some(n) = Path::new(f).file_name() {
-            by_name.entry(n.to_string_lossy().to_lowercase()).or_default().push(f.clone());
+            by_name
+                .entry(n.to_string_lossy().to_lowercase())
+                .or_default()
+                .push(f.clone());
         }
     }
     let mut by_size: Option<HashMap<u64, Vec<String>>> = None;
     let mut hashes: HashMap<String, Option<String>> = HashMap::new();
-    let mut hash_of = |f: &str| hashes.entry(f.to_string()).or_insert_with(|| file_hash(f)).clone();
+    let mut hash_of = |f: &str| {
+        hashes
+            .entry(f.to_string())
+            .or_insert_with(|| file_hash(f))
+            .clone()
+    };
     let size_of = |f: &str| std::fs::metadata(f).map(|m| m.len()).ok();
     let mut used: HashSet<String> = HashSet::new();
     let mut plan = FindPlan::default();
     for c in &lost {
-        let name = Path::new(&c.path).file_name().map(|n| n.to_string_lossy().to_lowercase()).unwrap_or_default();
+        let name = Path::new(&c.path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_lowercase())
+            .unwrap_or_default();
         let size = c.size;
         let hash = c.hash.as_deref();
         let named: Vec<&String> = by_name
             .get(&name)
-            .map(|v| v.iter().filter(|f| !used.contains(*f) && (size == 0 || size_of(f) == Some(size))).collect())
+            .map(|v| {
+                v.iter()
+                    .filter(|f| !used.contains(*f) && (size == 0 || size_of(f) == Some(size)))
+                    .collect()
+            })
             .unwrap_or_default();
         // 1. same name and size, confirmed by the content hash
-        let mut hit: Option<(String, MatchBy)> =
-            hash.and_then(|h| named.iter().find(|f| hash_of(f).as_deref() == Some(h))).map(|f| (f.to_string(), MatchBy::Name));
+        let mut hit: Option<(String, MatchBy)> = hash
+            .and_then(|h| named.iter().find(|f| hash_of(f).as_deref() == Some(h)))
+            .map(|f| (f.to_string(), MatchBy::Name));
         // 2. renamed: same size and content
         if hit.is_none()
             && let Some(h) = hash
@@ -265,7 +366,10 @@ pub fn plan_find_missing(candidates: &[FindCandidate], folder: &str) -> std::res
             });
             hit = sizes
                 .get(&size)
-                .and_then(|v| v.iter().find(|f| !used.contains(*f) && hash_of(f).as_deref() == Some(h)))
+                .and_then(|v| {
+                    v.iter()
+                        .find(|f| !used.contains(*f) && hash_of(f).as_deref() == Some(h))
+                })
                 .map(|f| (f.clone(), MatchBy::Content));
         }
         // 3. same name and size only (no hash, or the file was edited in place): one candidate
@@ -275,14 +379,23 @@ pub fn plan_find_missing(candidates: &[FindCandidate], folder: &str) -> std::res
                 [one] => hit = Some(((*one).clone(), MatchBy::Name)),
                 [] => {}
                 _ => {
-                    plan.ambiguous.push(AmbiguousFile { id: c.id, from: c.path.clone(), candidates: named.iter().map(|f| (*f).clone()).collect() });
+                    plan.ambiguous.push(AmbiguousFile {
+                        id: c.id,
+                        from: c.path.clone(),
+                        candidates: named.iter().map(|f| (*f).clone()).collect(),
+                    });
                     continue;
                 }
             }
         }
         let Some((path, by)) = hit else { continue };
         used.insert(path.clone());
-        plan.found.push(FoundFile { id: c.id, from: c.path.clone(), to: path, by });
+        plan.found.push(FoundFile {
+            id: c.id,
+            from: c.path.clone(),
+            to: path,
+            by,
+        });
     }
     plan.missing = lost.len() - plan.found.len();
     Ok(plan)
@@ -295,7 +408,9 @@ pub fn plan_find_missing(candidates: &[FindCandidate], folder: &str) -> std::res
 /// used (that photo stays missing). `missing` is the plan's count, corrected for what changed
 /// among the photos the plan names.
 fn commit_find(s: &mut Session, plan: FindPlan) -> Result<Value> {
-    let still_at = |cat: &Catalog, id: PhotoId, from: &str| cat.photo(id).and_then(|p| checked_path(p)) == Some(from);
+    let still_at = |cat: &Catalog, id: PhotoId, from: &str| {
+        cat.photo(id).and_then(|p| checked_path(p)) == Some(from)
+    };
     let mut in_use: HashSet<String> = candidates(&s.catalog).into_iter().collect();
     let mut found = Vec::new();
     let mut missing = plan.missing;
@@ -311,16 +426,30 @@ fn commit_find(s: &mut Session, plan: FindPlan) -> Result<Value> {
         found.push(f);
     }
     let planned = plan.ambiguous.len();
-    let ambiguous: Vec<AmbiguousFile> = plan.ambiguous.into_iter().filter(|a| still_at(&s.catalog, a.id, &a.from)).collect();
+    let ambiguous: Vec<AmbiguousFile> = plan
+        .ambiguous
+        .into_iter()
+        .filter(|a| still_at(&s.catalog, a.id, &a.from))
+        .collect();
     // ambiguous photos relinked meanwhile aren't missing any more
     missing = missing.saturating_sub(planned - ambiguous.len());
     if !found.is_empty() {
-        s.commit("Find Missing Photos", Op::Batch { ops: found.iter().map(|f| relink_op(f.id, &f.to)).collect() })?;
+        s.commit(
+            "Find Missing Photos",
+            Op::Batch {
+                ops: found.iter().map(|f| relink_op(f.id, &f.to)).collect(),
+            },
+        )?;
         for f in &found {
             s.media.forget(f.id);
         }
     }
-    Ok(FindPlan { found, missing, ambiguous }.to_json())
+    Ok(FindPlan {
+        found,
+        missing,
+        ambiguous,
+    }
+    .to_json())
 }
 
 /// Search `folder` (recursively) for each missing photo's file ([`plan_find_missing`]) and

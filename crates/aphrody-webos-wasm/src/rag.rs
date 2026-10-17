@@ -25,7 +25,9 @@ struct Doc {
 }
 
 fn tokens(text: &str) -> impl Iterator<Item = String> + '_ {
-    text.split(|c: char| !c.is_alphanumeric()).filter(|t| !t.is_empty()).map(str::to_lowercase)
+    text.split(|c: char| !c.is_alphanumeric())
+        .filter(|t| !t.is_empty())
+        .map(str::to_lowercase)
 }
 
 fn collect(fs: &mut impl Vfs, root: &str) -> Vec<Doc> {
@@ -33,7 +35,9 @@ fn collect(fs: &mut impl Vfs, root: &str) -> Vec<Doc> {
     let (mut stack, mut files) = (vec![root.to_owned()], 0usize);
     let opts = ChunkOptions::default();
     while let Some(dir) = stack.pop() {
-        let Ok(entries) = fs.read_dir(dir.as_bytes()) else { continue };
+        let Ok(entries) = fs.read_dir(dir.as_bytes()) else {
+            continue;
+        };
         for entry in entries {
             let Ok(child) = String::from_utf8(vpath::join(dir.as_bytes(), &entry.name)) else {
                 continue;
@@ -41,7 +45,9 @@ fn collect(fs: &mut impl Vfs, root: &str) -> Vec<Doc> {
             match entry.kind {
                 FileKind::Dir => stack.push(child),
                 FileKind::File if files < MAX_FILES => {
-                    if fs.stat(child.as_bytes()).is_ok_and(|s| s.size <= MAX_FILE_BYTES)
+                    if fs
+                        .stat(child.as_bytes())
+                        .is_ok_and(|s| s.size <= MAX_FILE_BYTES)
                         && let Ok(bytes) = fs.read(child.as_bytes())
                         && let Ok(source) = String::from_utf8(bytes)
                     {
@@ -63,8 +69,8 @@ fn collect(fs: &mut impl Vfs, root: &str) -> Vec<Doc> {
                             });
                         }
                     }
-                },
-                FileKind::File => {},
+                }
+                FileKind::File => {}
             }
         }
     }
@@ -134,11 +140,18 @@ mod tests {
     fn ranks_the_relevant_file_first() {
         let mut fs = OpfsVfs::new();
         fs.mkdir_all(b"/home/user").expect("mkdir");
-        fs.write(b"/home/user/cats.md", b"# Cats\n\nCats purr and sleep all day long.\n")
+        fs.write(
+            b"/home/user/cats.md",
+            b"# Cats\n\nCats purr and sleep all day long.\n",
+        )
+        .expect("w");
+        fs.write(
+            b"/home/user/dogs.md",
+            b"# Dogs\n\nDogs bark at the mailman every morning.\n",
+        )
+        .expect("w");
+        fs.write(b"/home/user/bin.dat", &[0xff, 0xfe, 0x00])
             .expect("w");
-        fs.write(b"/home/user/dogs.md", b"# Dogs\n\nDogs bark at the mailman every morning.\n")
-            .expect("w");
-        fs.write(b"/home/user/bin.dat", &[0xff, 0xfe, 0x00]).expect("w");
         let hits = search(&mut fs, "/home/user", "purr", 5);
         let first = &hits["results"][0];
         assert_eq!(first["path"], "/home/user/cats.md");
@@ -148,7 +161,10 @@ mod tests {
         let s = stats(&mut fs, "/home/user");
         assert_eq!(s["documents"], 2);
         assert!(
-            search(&mut fs, "/home/user", "zzzz", 5)["results"].as_array().expect("a").is_empty()
+            search(&mut fs, "/home/user", "zzzz", 5)["results"]
+                .as_array()
+                .expect("a")
+                .is_empty()
         );
     }
 }

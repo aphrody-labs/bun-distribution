@@ -56,7 +56,7 @@ impl ModelFactory {
                             RuntimeError::Config(format!("failed to load Antigravity token: {e}"))
                         })?;
                 Ok(Arc::new(AntigravityModelClient::new(client, model_id)))
-            },
+            }
             WireApi::Responses | WireApi::Chat => {
                 let wire = match info.wire_api {
                     WireApi::Responses => OpenAiWire::Responses,
@@ -66,13 +66,16 @@ impl ModelFactory {
                 let client: Arc<dyn ModelClient> =
                     Arc::new(OpenAiCompatClient::from_provider(runtime, wire, model_id));
                 if info.managed.is_some()
-                    || matches!(provider_id.as_str(), "llama" | "ollama" | "lmstudio" | "vllm")
+                    || matches!(
+                        provider_id.as_str(),
+                        "llama" | "ollama" | "lmstudio" | "vllm"
+                    )
                 {
                     Ok(Arc::new(RepairingModelClient::new(client)))
                 } else {
                     Ok(client)
                 }
-            },
+            }
             WireApi::Anthropic => {
                 let runtime = provider_runtime(config, provider_id, info)?;
                 if runtime.bearer_token.is_none() {
@@ -87,8 +90,10 @@ impl ModelFactory {
                 } else {
                     AnthropicAuth::ApiKey
                 };
-                Ok(Arc::new(AnthropicClient::from_provider(runtime, model_id).with_auth(auth)))
-            },
+                Ok(Arc::new(
+                    AnthropicClient::from_provider(runtime, model_id).with_auth(auth),
+                ))
+            }
         }
     }
 }
@@ -166,7 +171,9 @@ fn provider_runtime(
     let request_max_retries = u32::try_from(info.request_max_retries.unwrap_or(4)).unwrap_or(4);
     let stream_idle_timeout = Duration::from_millis(info.stream_idle_timeout_ms.unwrap_or(300_000));
 
-    let context_window = config.model_context_window.and_then(|w| u64::try_from(w).ok());
+    let context_window = config
+        .model_context_window
+        .and_then(|w| u64::try_from(w).ok());
 
     let capabilities = ModelCapabilities {
         tools: true,
@@ -218,9 +225,13 @@ mod tests {
     fn managed_llama_requires_a_prepared_endpoint() {
         let env = |_: &str| None;
         let builtins = ConfigLayer::new(LayerSource::Builtin, builtin_providers_layer_value(&env));
-        let (config, _) =
-            resolve(vec![builtins], &CliOverrides::default(), "llama", &BTreeMap::new())
-                .expect("resolve");
+        let (config, _) = resolve(
+            vec![builtins],
+            &CliOverrides::default(),
+            "llama",
+            &BTreeMap::new(),
+        )
+        .expect("resolve");
 
         assert!(
             ModelFactory::build(&config)

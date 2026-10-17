@@ -19,7 +19,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             add_element
         ),
-        cmd!("chart.quickLayout", "Quick Layout", ["Chart Design", "Chart Layouts"], None, "{chart?, layout: 1..6}", has_doc, quick_layout),
+        cmd!(
+            "chart.quickLayout",
+            "Quick Layout",
+            ["Chart Design", "Chart Layouts"],
+            None,
+            "{chart?, layout: 1..6}",
+            has_doc,
+            quick_layout
+        ),
         cmd!(
             "chart.changeColors",
             "Change Colors",
@@ -38,8 +46,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             select_data
         ),
-        cmd!("chart.changeType", "Change Chart Type…", ["Chart Design", "Type"], None, "{chart?, type, subtype?}", has_doc, |s, p| s
-            .execute("chart.set", p.clone())),
+        cmd!(
+            "chart.changeType",
+            "Change Chart Type…",
+            ["Chart Design", "Type"],
+            None,
+            "{chart?, type, subtype?}",
+            has_doc,
+            |s, p| s.execute("chart.set", p.clone())
+        ),
         cmd!(
             "chart.move",
             "Move Chart…",
@@ -67,7 +82,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             shape_fill
         ),
-        cmd!("chart.shapeOutline", "Shape Outline", ["Format", "Shape Styles"], None, "{kind: shape, id?, color: hex}", has_doc, shape_outline),
+        cmd!(
+            "chart.shapeOutline",
+            "Shape Outline",
+            ["Format", "Shape Styles"],
+            None,
+            "{kind: shape, id?, color: hex}",
+            has_doc,
+            shape_outline
+        ),
         // Arrange
         cmd!(
             "arrange.bringForward",
@@ -104,7 +127,10 @@ pub fn specs() -> Vec<CommandSpec> {
             None,
             "{kind, ids} (moves objects together: aligns their anchors to the first)",
             has_doc,
-            |s, p| align(s, &super::format::merge_json(p.clone(), &json!({"align": "left"})))
+            |s, p| align(
+                s,
+                &super::format::merge_json(p.clone(), &json!({"align": "left"}))
+            )
         ),
         cmd!(
             "arrange.rotate",
@@ -149,9 +175,24 @@ pub fn specs() -> Vec<CommandSpec> {
         cmd!(noundo "view.ruler", "Ruler", ["View", "Show"], None, "{on?} → {on}: rulers in Page Layout view (an application option)", has_doc, ruler),
         cmd!(query "view.macros", "Macros", ["View", "Macros"], None, "{} → scripts", has_doc, all_scripts),
         // Table tools
-        cmd!("table.resize", "Resize Table", ["Table Design", "Properties"], None, "{table?, range: \"A1:F20\"}", has_doc, table_resize),
-        cmd!("table.removeDuplicates", "Remove Duplicates", ["Table Design", "Tools"], None, "{table?, columns?}", has_doc, |s, p| s
-            .execute("data.removeDuplicates", p.clone())),
+        cmd!(
+            "table.resize",
+            "Resize Table",
+            ["Table Design", "Properties"],
+            None,
+            "{table?, range: \"A1:F20\"}",
+            has_doc,
+            table_resize
+        ),
+        cmd!(
+            "table.removeDuplicates",
+            "Remove Duplicates",
+            ["Table Design", "Tools"],
+            None,
+            "{table?, columns?}",
+            has_doc,
+            |s, p| s.execute("data.removeDuplicates", p.clone())
+        ),
         // Get & Transform
         cmd!(
             "data.fromTextCsv",
@@ -193,8 +234,24 @@ pub fn specs() -> Vec<CommandSpec> {
             new_script
         ),
         cmd!(query "automate.allScripts", "All Scripts", ["Automate", "Scripting Tools"], None, "{} → saved scripts", has_doc, all_scripts),
-        cmd!("automate.runScript", "Run Script", [], None, "{name}", has_doc, run_script),
-        cmd!("automate.deleteScript", "Delete Script", [], None, "{name}", has_doc, delete_script),
+        cmd!(
+            "automate.runScript",
+            "Run Script",
+            [],
+            None,
+            "{name}",
+            has_doc,
+            run_script
+        ),
+        cmd!(
+            "automate.deleteScript",
+            "Delete Script",
+            [],
+            None,
+            "{name}",
+            has_doc,
+            delete_script
+        ),
         // Cell controls, themes, borders, styles
         cmd!(
             "insert.checkbox",
@@ -205,9 +262,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             checkbox
         ),
-        cmd!("cell.toggleCheckbox", "Toggle Checkbox", [], Some("Space"), "{cell?}", has_doc, toggle_checkbox),
-        cmd!("pageLayout.themeColors", "Colors", ["Page Layout", "Themes"], None, "{name: theme name | colors: [12 hex]}", has_doc, theme_colors),
-        cmd!("pageLayout.themeFonts", "Fonts", ["Page Layout", "Themes"], None, "{major, minor}", has_doc, theme_fonts),
+        cmd!(
+            "cell.toggleCheckbox",
+            "Toggle Checkbox",
+            [],
+            Some("Space"),
+            "{cell?}",
+            has_doc,
+            toggle_checkbox
+        ),
+        cmd!(
+            "pageLayout.themeColors",
+            "Colors",
+            ["Page Layout", "Themes"],
+            None,
+            "{name: theme name | colors: [12 hex]}",
+            has_doc,
+            theme_colors
+        ),
+        cmd!(
+            "pageLayout.themeFonts",
+            "Fonts",
+            ["Page Layout", "Themes"],
+            None,
+            "{major, minor}",
+            has_doc,
+            theme_fonts
+        ),
         cmd!(
             "pageLayout.themeEffects",
             "Effects",
@@ -274,13 +355,18 @@ fn find_chart(s: &Session, p: &Json) -> Result<(usize, usize)> {
         Some(id) => sh.charts.iter().position(|c| c.id == id),
         None => sh.charts.len().checked_sub(1),
     };
-    idx.map(|i| (si, i)).ok_or_else(|| bad("chart", "no chart on this sheet"))
+    idx.map(|i| (si, i))
+        .ok_or_else(|| bad("chart", "no chart on this sheet"))
 }
 
 fn with_chart(s: &mut Session, p: &Json, f: impl FnOnce(&mut Chart) -> Result<()>) -> Result<Json> {
     let (si, ci) = find_chart(s, p)?;
     edit(s, |cx| {
-        let c = cx.sheet_mut(si)?.charts.get_mut(ci).ok_or_else(|| bad("chart", "no such chart"))?;
+        let c = cx
+            .sheet_mut(si)?
+            .charts
+            .get_mut(ci)
+            .ok_or_else(|| bad("chart", "no such chart"))?;
         f(c)?;
         Ok(json!({"chart": c.id}))
     })
@@ -292,7 +378,16 @@ fn add_element(s: &mut Session, p: &Json) -> Result<Json> {
     let pos = str_param(p, "position").map(str::to_string);
     with_chart(s, p, |c| {
         match el.as_str() {
-            "title" => c.title = if on { c.title.clone().filter(|t| !t.is_empty()).or(Some("Chart Title".into())) } else { Some(String::new()) },
+            "title" => {
+                c.title = if on {
+                    c.title
+                        .clone()
+                        .filter(|t| !t.is_empty())
+                        .or(Some("Chart Title".into()))
+                } else {
+                    Some(String::new())
+                }
+            }
             "legend" => {
                 c.legend = if !on {
                     LegendPos::None
@@ -321,7 +416,9 @@ fn add_element(s: &mut Session, p: &Json) -> Result<Json> {
                 if only.is_some_and(|i| i >= c.series.len()) {
                     return Err(bad("chart.addElement", "no such series"));
                 }
-                let targets: Vec<usize> = (0..c.series.len()).filter(|i| only.is_none_or(|o| o == *i)).collect();
+                let targets: Vec<usize> = (0..c.series.len())
+                    .filter(|i| only.is_none_or(|o| o == *i))
+                    .collect();
                 if !on {
                     for i in targets {
                         if let Some(se) = c.series.get_mut(i) {
@@ -331,10 +428,19 @@ fn add_element(s: &mut Session, p: &Json) -> Result<Json> {
                     return Ok(());
                 }
                 let t = trendline_param(p)?;
-                let eligible: Vec<usize> =
-                    targets.into_iter().filter(|i| gridcraft_chart::supports_trendline(gridcraft_chart::series_plot_kind(c, *i))).collect();
+                let eligible: Vec<usize> = targets
+                    .into_iter()
+                    .filter(|i| {
+                        gridcraft_chart::supports_trendline(gridcraft_chart::series_plot_kind(
+                            c, *i,
+                        ))
+                    })
+                    .collect();
                 if eligible.is_empty() {
-                    return Err(bad("chart.addElement", "trendlines need a 2-D column, bar, line, area, scatter or bubble series"));
+                    return Err(bad(
+                        "chart.addElement",
+                        "trendlines need a 2-D column, bar, line, area, scatter or bubble series",
+                    ));
                 }
                 for i in eligible {
                     if let Some(se) = c.series.get_mut(i) {
@@ -342,7 +448,12 @@ fn add_element(s: &mut Session, p: &Json) -> Result<Json> {
                     }
                 }
             }
-            other => return Err(bad("chart.addElement", format!("unknown element `{other}`"))),
+            other => {
+                return Err(bad(
+                    "chart.addElement",
+                    format!("unknown element `{other}`"),
+                ));
+            }
         }
         Ok(())
     })
@@ -351,7 +462,11 @@ fn add_element(s: &mut Session, p: &Json) -> Result<Json> {
 /// The trendline described by `chart.addElement`'s trendline parameters (Excel's Add Chart
 /// Element ▸ Trendline choices, plus the Format Trendline options).
 fn trendline_param(p: &Json) -> Result<Trendline> {
-    let num = |k: &str| f64_param(p, k).filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(0.0);
+    let num = |k: &str| {
+        f64_param(p, k)
+            .filter(|v| v.is_finite() && *v >= 0.0)
+            .unwrap_or(0.0)
+    };
     let mut t = Trendline {
         forward: num("forward"),
         backward: num("backward"),
@@ -371,9 +486,18 @@ fn trendline_param(p: &Json) -> Result<Trendline> {
         "exponential" => TrendlineKind::Exponential,
         "logarithmic" => TrendlineKind::Logarithmic,
         "power" => TrendlineKind::Power,
-        "polynomial" => TrendlineKind::Polynomial(u32_param(p, "order").unwrap_or(2).clamp(2, 6) as u8),
-        "movingAverage" => TrendlineKind::MovingAverage(u32_param(p, "period").unwrap_or(2).clamp(2, 255)),
-        other => return Err(bad("chart.addElement", format!("unknown trendline type `{other}`"))),
+        "polynomial" => {
+            TrendlineKind::Polynomial(u32_param(p, "order").unwrap_or(2).clamp(2, 6) as u8)
+        }
+        "movingAverage" => {
+            TrendlineKind::MovingAverage(u32_param(p, "period").unwrap_or(2).clamp(2, 255))
+        }
+        other => {
+            return Err(bad(
+                "chart.addElement",
+                format!("unknown trendline type `{other}`"),
+            ));
+        }
     };
     Ok(t)
 }
@@ -404,18 +528,26 @@ fn quick_layout(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn change_colors(s: &mut Session, p: &Json) -> Result<Json> {
-    let explicit: Option<Vec<Color>> =
-        p.get("colors").and_then(Json::as_array).map(|a| a.iter().filter_map(|c| c.as_str().and_then(Color::from_hex)).collect());
+    let explicit: Option<Vec<Color>> = p.get("colors").and_then(Json::as_array).map(|a| {
+        a.iter()
+            .filter_map(|c| c.as_str().and_then(Color::from_hex))
+            .collect()
+    });
     let palette = str_param(p, "palette").unwrap_or("colorful").to_string();
     with_chart(s, p, |c| {
         for (i, se) in c.series.iter_mut().enumerate() {
             se.color = match &explicit {
                 Some(cols) if !cols.is_empty() => cols.get(i % cols.len()).copied(),
                 _ => match palette.as_str() {
-                    "monochrome" => Some(Color::Theme(4, (-400 + (i as i16 * 200)).clamp(-800, 800))),
+                    "monochrome" => {
+                        Some(Color::Theme(4, (-400 + (i as i16 * 200)).clamp(-800, 800)))
+                    }
                     p if p.starts_with("accent") => {
                         let k: u8 = p.trim_start_matches("accent").parse().unwrap_or(1);
-                        Some(Color::Theme(3 + k.clamp(1, 6), (-500 + i as i16 * 250).clamp(-800, 800)))
+                        Some(Color::Theme(
+                            3 + k.clamp(1, 6),
+                            (-500 + i as i16 * 250).clamp(-800, 800),
+                        ))
                     }
                     _ => None,
                 },
@@ -433,7 +565,10 @@ fn select_data(s: &mut Session, p: &Json) -> Result<Json> {
             let range = range.trim_start_matches('=');
             let (sheet_name, body) = split_sheet(range);
             let src_si = match sheet_name {
-                Some(n) => d.wb.sheet_index(&n).ok_or_else(|| bad("chart.selectData", "no such sheet"))?,
+                Some(n) => {
+                    d.wb.sheet_index(&n)
+                        .ok_or_else(|| bad("chart.selectData", "no such sheet"))?
+                }
                 None => d.wb.active_sheet,
             };
             let r = RangeRef::parse(body).ok_or_else(|| bad("chart.selectData", "not a range"))?;
@@ -443,7 +578,11 @@ fn select_data(s: &mut Session, p: &Json) -> Result<Json> {
             let src = d.wb.sheet(src_si).ok_or(EngineError::NoDocument)?;
             let by_rows = bool_param(p, "byRows").unwrap_or(r.width() > r.height() + 1);
             let series = super::insert::series_from_range(src, r, by_rows);
-            Some((series, format!("{}!{}", gridcraft_formula::quote_sheet(&src.name), r.a1()), by_rows))
+            Some((
+                series,
+                format!("{}!{}", gridcraft_formula::quote_sheet(&src.name), r.a1()),
+                by_rows,
+            ))
         }
         None => None,
     };
@@ -455,24 +594,45 @@ fn select_data(s: &mut Session, p: &Json) -> Result<Json> {
             let t = t.trim().trim_start_matches('=');
             let (sheet_name, body) = split_sheet(t);
             let si = match sheet_name {
-                Some(n) => d.wb.sheet_index(&n).ok_or_else(|| bad("chart.selectData", "no such sheet"))?,
+                Some(n) => {
+                    d.wb.sheet_index(&n)
+                        .ok_or_else(|| bad("chart.selectData", "no such sheet"))?
+                }
                 None => d.wb.active_sheet,
             };
-            let r = RangeRef::parse(body).ok_or_else(|| bad("chart.selectData", "`categories` is not a range"))?;
-            let name = d.wb.sheet(si).map(|sh| sh.name.clone()).ok_or(EngineError::NoDocument)?;
-            let abs = |c: CellRef| format!("${}${}", gridcraft_core::col_to_letters(c.col), c.row + 1);
-            Some(Some(format!("{}!{}:{}", gridcraft_formula::quote_sheet(&name), abs(r.start), abs(r.end))))
+            let r = RangeRef::parse(body)
+                .ok_or_else(|| bad("chart.selectData", "`categories` is not a range"))?;
+            let name =
+                d.wb.sheet(si)
+                    .map(|sh| sh.name.clone())
+                    .ok_or(EngineError::NoDocument)?;
+            let abs =
+                |c: CellRef| format!("${}${}", gridcraft_core::col_to_letters(c.col), c.row + 1);
+            Some(Some(format!(
+                "{}!{}:{}",
+                gridcraft_formula::quote_sheet(&name),
+                abs(r.start),
+                abs(r.end)
+            )))
         }
     };
     let mut remove: Vec<usize> = p
         .get("removeSeries")
         .and_then(Json::as_array)
-        .map(|a| a.iter().filter_map(Json::as_u64).filter_map(|i| usize::try_from(i).ok()).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(Json::as_u64)
+                .filter_map(|i| usize::try_from(i).ok())
+                .collect()
+        })
         .unwrap_or_default();
     remove.sort_unstable();
     remove.dedup();
     if rebuilt.is_none() && categories.is_none() && remove.is_empty() {
-        return Err(bad("chart.selectData", "missing `range`, `categories` or `removeSeries`"));
+        return Err(bad(
+            "chart.selectData",
+            "missing `range`, `categories` or `removeSeries`",
+        ));
     }
     with_chart(s, p, move |c| {
         if let Some((series, source, by_rows)) = rebuilt {
@@ -498,7 +658,12 @@ fn select_data(s: &mut Session, p: &Json) -> Result<Json> {
 fn move_chart(s: &mut Session, p: &Json) -> Result<Json> {
     let (si, ci) = find_chart(s, p)?;
     let target = match p.get("sheet").and_then(Json::as_str) {
-        Some(n) => Some(s.doc()?.wb.sheet_index(n).ok_or_else(|| bad("chart.move", "no such sheet"))?),
+        Some(n) => Some(
+            s.doc()?
+                .wb
+                .sheet_index(n)
+                .ok_or_else(|| bad("chart.move", "no such sheet"))?,
+        ),
         None => None,
     };
     let at = cell_param_on(s, p, "at", target.unwrap_or(si))?;
@@ -526,14 +691,18 @@ fn format_series(s: &mut Session, p: &Json) -> Result<Json> {
 
 fn shape_fill(s: &mut Session, p: &Json) -> Result<Json> {
     if str_param(p, "kind") == Some("shape") {
-        let color = str_param(p, "color").and_then(Color::from_hex).unwrap_or_default();
+        let color = str_param(p, "color")
+            .and_then(Color::from_hex)
+            .unwrap_or_default();
         return with_shape(s, p, |sh| sh.fill = color);
     }
     format_series(s, p)
 }
 
 fn shape_outline(s: &mut Session, p: &Json) -> Result<Json> {
-    let color = str_param(p, "color").and_then(Color::from_hex).unwrap_or_default();
+    let color = str_param(p, "color")
+        .and_then(Color::from_hex)
+        .unwrap_or_default();
     with_shape(s, p, |sh| sh.line = color)
 }
 
@@ -555,7 +724,9 @@ fn with_shape(s: &mut Session, p: &Json, f: impl FnOnce(&mut Shape)) -> Result<J
 fn arrange(s: &mut Session, p: &Json, forward: bool) -> Result<Json> {
     let id = u32_param(p, "id").ok_or_else(|| bad("arrange", "missing `id`"))?;
     let kind = str_param(p, "kind").unwrap_or("shape").to_string();
-    let extreme = bool_param(p, "toFront").or(bool_param(p, "toBack")).unwrap_or(false);
+    let extreme = bool_param(p, "toFront")
+        .or(bool_param(p, "toBack"))
+        .unwrap_or(false);
     let si = s.doc()?.wb.active_sheet;
     fn reorder<T>(v: &mut Vec<T>, i: usize, forward: bool, extreme: bool) {
         if i >= v.len() {
@@ -611,16 +782,35 @@ fn selection_pane(s: &mut Session, _: &Json) -> Result<Json> {
 
 fn anchors_of<'a>(sh: &'a mut Sheet, kind: &str) -> Vec<(u32, &'a mut Anchor)> {
     match kind {
-        "chart" => sh.charts.iter_mut().map(|c| (c.id, &mut c.anchor)).collect(),
-        "image" => sh.images.iter_mut().map(|c| (c.id, &mut c.anchor)).collect(),
-        _ => sh.shapes.iter_mut().map(|c| (c.id, &mut c.anchor)).collect(),
+        "chart" => sh
+            .charts
+            .iter_mut()
+            .map(|c| (c.id, &mut c.anchor))
+            .collect(),
+        "image" => sh
+            .images
+            .iter_mut()
+            .map(|c| (c.id, &mut c.anchor))
+            .collect(),
+        _ => sh
+            .shapes
+            .iter_mut()
+            .map(|c| (c.id, &mut c.anchor))
+            .collect(),
     }
 }
 
 fn align(s: &mut Session, p: &Json) -> Result<Json> {
     let kind = str_param(p, "kind").unwrap_or("shape").to_string();
-    let ids: Vec<u32> =
-        p.get("ids").and_then(Json::as_array).map(|a| a.iter().filter_map(|v| v.as_u64().map(|x| x as u32)).collect()).unwrap_or_default();
+    let ids: Vec<u32> = p
+        .get("ids")
+        .and_then(Json::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_u64().map(|x| x as u32))
+                .collect()
+        })
+        .unwrap_or_default();
     let how = str_param(p, "align").unwrap_or("left").to_string();
     let si = s.doc()?.wb.active_sheet;
     edit(s, |cx| {
@@ -630,19 +820,35 @@ fn align(s: &mut Session, p: &Json) -> Result<Json> {
             anchors_of(sheet, &kind)
                 .into_iter()
                 .filter(|(id, _)| ids.contains(id))
-                .map(|(id, a)| (id, shc.col_left(a.cell.col) + a.dx as f64, shc.row_top(a.cell.row) + a.dy as f64, a.width, a.height))
+                .map(|(id, a)| {
+                    (
+                        id,
+                        shc.col_left(a.cell.col) + a.dx as f64,
+                        shc.row_top(a.cell.row) + a.dy as f64,
+                        a.width,
+                        a.height,
+                    )
+                })
                 .collect()
         };
         if geo.len() < 2 {
             return Ok(Json::Null);
         }
         let left = geo.iter().map(|g| g.1).fold(f64::INFINITY, f64::min);
-        let right = geo.iter().map(|g| g.1 + g.3 as f64).fold(f64::NEG_INFINITY, f64::max);
+        let right = geo
+            .iter()
+            .map(|g| g.1 + g.3 as f64)
+            .fold(f64::NEG_INFINITY, f64::max);
         let top = geo.iter().map(|g| g.2).fold(f64::INFINITY, f64::min);
-        let bottom = geo.iter().map(|g| g.2 + g.4 as f64).fold(f64::NEG_INFINITY, f64::max);
+        let bottom = geo
+            .iter()
+            .map(|g| g.2 + g.4 as f64)
+            .fold(f64::NEG_INFINITY, f64::max);
         let shc = sheet.clone();
         for (id, a) in anchors_of(sheet, &kind) {
-            let Some(g) = geo.iter().find(|g| g.0 == id) else { continue };
+            let Some(g) = geo.iter().find(|g| g.0 == id) else {
+                continue;
+            };
             let (mut x, mut y) = (g.1, g.2);
             match how.as_str() {
                 "left" => x = left,
@@ -662,7 +868,9 @@ fn align(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn rotate(s: &mut Session, p: &Json) -> Result<Json> {
-    with_shape(s, p, |sh| std::mem::swap(&mut sh.anchor.width, &mut sh.anchor.height))
+    with_shape(s, p, |sh| {
+        std::mem::swap(&mut sh.anchor.width, &mut sh.anchor.height)
+    })
 }
 
 /// Switches a sheet's view. Like zoom, the view is saved with the file but is not an edit: it
@@ -696,7 +904,12 @@ fn stash_get(wb: &Workbook, key: &str) -> Json {
     wb.names
         .iter()
         .find(|n| n.name == key)
-        .and_then(|n| n.formula.strip_prefix('"').and_then(|t| t.strip_suffix('"')).map(|t| t.replace("\"\"", "\"")))
+        .and_then(|n| {
+            n.formula
+                .strip_prefix('"')
+                .and_then(|t| t.strip_suffix('"'))
+                .map(|t| t.replace("\"\"", "\""))
+        })
         .and_then(|t| serde_json::from_str(&t).ok())
         .unwrap_or(json!({}))
 }
@@ -711,7 +924,13 @@ fn stash_set(wb: &mut Workbook, key: &str, v: &Json) {
     let text = v.to_string();
     let formula = format!("\"{}\"", text.replace('"', "\"\""));
     wb.names.retain(|n| n.name != key);
-    wb.names.push(DefinedName { name: key.into(), scope: None, formula, comment: String::new(), hidden: true });
+    wb.names.push(DefinedName {
+        name: key.into(),
+        scope: None,
+        formula,
+        comment: String::new(),
+        hidden: true,
+    });
 }
 
 /// The Watch Window list isn't an edit (Excel doesn't undo it): undo and redo keep the current
@@ -739,7 +958,10 @@ fn custom_views(s: &mut Session, p: &Json) -> Result<Json> {
             Ok(())
         })?;
     } else if let Some(name) = str_param(p, "show") {
-        let v = views.get(name).cloned().ok_or_else(|| bad("view.customViews", "no such view"))?;
+        let v = views
+            .get(name)
+            .cloned()
+            .ok_or_else(|| bad("view.customViews", "no such view"))?;
         if let Some(si) = v["sheet"].as_u64() {
             s.execute("sheet.activate", json!({"sheet": si}))?;
         }
@@ -775,12 +997,20 @@ fn custom_views(s: &mut Session, p: &Json) -> Result<Json> {
 
 fn split(s: &mut Session, _: &Json) -> Result<Json> {
     let has = s.doc()?.wb.active().is_some_and(|sh| sh.freeze.is_some());
-    if has { s.execute("view.unfreezePanes", json!({})) } else { s.execute("view.freezePanes", json!({})) }
+    if has {
+        s.execute("view.unfreezePanes", json!({}))
+    } else {
+        s.execute("view.freezePanes", json!({}))
+    }
 }
 
 fn new_window(s: &mut Session, _: &Json) -> Result<Json> {
     let d = s.doc()?.clone();
-    let mut copy = crate::DocState::new((*d.wb).clone(), d.path.clone(), format!("{}:2", d.display_title()));
+    let mut copy = crate::DocState::new(
+        (*d.wb).clone(),
+        d.path.clone(),
+        format!("{}:2", d.display_title()),
+    );
     copy.selection = d.selection.clone();
     let i = s.add_document(copy);
     Ok(json!({"index": i}))
@@ -797,7 +1027,9 @@ fn hide_window(s: &mut Session, _: &Json) -> Result<Json> {
 }
 
 fn unhide_window(s: &mut Session, p: &Json) -> Result<Json> {
-    let i = u32_param(p, "index").map(|v| v as usize).or_else(|| s.hidden_windows.last().copied());
+    let i = u32_param(p, "index")
+        .map(|v| v as usize)
+        .or_else(|| s.hidden_windows.last().copied());
     if let Some(i) = i {
         s.hidden_windows.retain(|x| *x != i);
         s.set_active(i);
@@ -816,19 +1048,32 @@ fn switch_windows(s: &mut Session, _: &Json) -> Result<Json> {
 }
 
 fn table_resize(s: &mut Session, p: &Json) -> Result<Json> {
-    let r = str_param(p, "range").and_then(RangeRef::parse).ok_or_else(|| bad("table.resize", "missing `range`"))?;
+    let r = str_param(p, "range")
+        .and_then(RangeRef::parse)
+        .ok_or_else(|| bad("table.resize", "missing `range`"))?;
     let d = s.doc()?;
     let si = d.wb.active_sheet;
     let sh = d.wb.sheet(si).ok_or(EngineError::NoDocument)?;
     let ti = match str_param(p, "table") {
-        Some(n) => sh.tables.iter().position(|t| t.name.eq_ignore_ascii_case(n)),
-        None => sh.tables.iter().position(|t| t.range.contains(d.selection.active)),
+        Some(n) => sh
+            .tables
+            .iter()
+            .position(|t| t.name.eq_ignore_ascii_case(n)),
+        None => sh
+            .tables
+            .iter()
+            .position(|t| t.range.contains(d.selection.active)),
     }
     .ok_or_else(|| bad("table.resize", "select a cell in a table"))?;
     edit(s, |cx| {
         let sheet = cx.sheet_mut(si)?;
-        let headers: Vec<String> = (r.start.col..=r.end.col).map(|c| sheet.value(CellRef::new(r.start.row, c)).display()).collect();
-        let t = sheet.tables.get_mut(ti).ok_or_else(|| bad("table", "gone"))?;
+        let headers: Vec<String> = (r.start.col..=r.end.col)
+            .map(|c| sheet.value(CellRef::new(r.start.row, c)).display())
+            .collect();
+        let t = sheet
+            .tables
+            .get_mut(ti)
+            .ok_or_else(|| bad("table", "gone"))?;
         if r.start.row != t.range.start.row || !r.intersects(&t.range) {
             return Err(EngineError::Other(
                 "The headers must remain in the same row, and the resulting table range must overlap the original table range.".into(),
@@ -836,8 +1081,16 @@ fn table_resize(s: &mut Session, p: &Json) -> Result<Json> {
         }
         let mut cols = Vec::new();
         for (i, h) in headers.iter().enumerate() {
-            let name = if h.is_empty() { format!("Column{}", i + 1) } else { h.clone() };
-            let existing = t.columns.iter().find(|c| c.name.eq_ignore_ascii_case(&name)).cloned();
+            let name = if h.is_empty() {
+                format!("Column{}", i + 1)
+            } else {
+                h.clone()
+            };
+            let existing = t
+                .columns
+                .iter()
+                .find(|c| c.name.eq_ignore_ascii_case(&name))
+                .cloned();
             cols.push(existing.unwrap_or(TableColumn {
                 name,
                 totals: TotalsFn::None,
@@ -860,62 +1113,90 @@ fn from_csv(s: &mut Session, p: &Json) -> Result<Json> {
     } else if let Some(path) = str_param(p, "path") {
         crate::io::read_file(path)?
     } else {
-        s.ui_requests.push(crate::UiRequest::Dialog("open".into(), json!({})));
+        s.ui_requests
+            .push(crate::UiRequest::Dialog("open".into(), json!({})));
         return ok();
     };
     let text = String::from_utf8_lossy(&bytes);
     // JSON array of objects → rows.
-    let rows: Vec<Vec<Json>> =
-        if text.trim_start().starts_with('[') {
-            let arr: Vec<Json> = serde_json::from_str(&text).map_err(|e| bad("data.getData", e.to_string()))?;
-            let mut keys: Vec<String> = Vec::new();
-            for o in &arr {
-                if let Some(m) = o.as_object() {
-                    for k in m.keys() {
-                        if !keys.contains(k) {
-                            keys.push(k.clone());
-                        }
+    let rows: Vec<Vec<Json>> = if text.trim_start().starts_with('[') {
+        let arr: Vec<Json> =
+            serde_json::from_str(&text).map_err(|e| bad("data.getData", e.to_string()))?;
+        let mut keys: Vec<String> = Vec::new();
+        for o in &arr {
+            if let Some(m) = o.as_object() {
+                for k in m.keys() {
+                    if !keys.contains(k) {
+                        keys.push(k.clone());
                     }
                 }
             }
-            let mut out = vec![keys.iter().map(|k| json!(k)).collect::<Vec<_>>()];
-            for o in &arr {
-                out.push(keys.iter().map(|k| o.get(k).cloned().unwrap_or(Json::Null)).collect());
-            }
-            out
-        } else {
-            let delim = str_param(p, "delimiter")
-                .and_then(|d| d.chars().next())
-                .unwrap_or(if text.lines().next().is_some_and(|l| l.contains('\t')) { '\t' } else { ',' });
-            let opts = gridcraft_xlsx::CsvOptions { delimiter: delim as u8, ..Default::default() };
-            let wb = gridcraft_xlsx::read_csv(&bytes, &opts).map_err(|e| EngineError::Other(e.to_string()))?;
-            let sh = wb.sheet(0).ok_or(EngineError::NoDocument)?;
-            let Some(u) = sh.used_range() else { return Err(EngineError::Other("The file is empty.".into())) };
-            (u.start.row..=u.end.row)
-                .map(|r| {
-                    (u.start.col..=u.end.col)
-                        .map(|c| match sh.value(CellRef::new(r, c)) {
-                            Value::Number(n) => json!(n),
-                            Value::Bool(b) => json!(b),
-                            Value::Empty => Json::Null,
-                            v => json!(v.display()),
-                        })
-                        .collect()
-                })
-                .collect()
+        }
+        let mut out = vec![keys.iter().map(|k| json!(k)).collect::<Vec<_>>()];
+        for o in &arr {
+            out.push(
+                keys.iter()
+                    .map(|k| o.get(k).cloned().unwrap_or(Json::Null))
+                    .collect(),
+            );
+        }
+        out
+    } else {
+        let delim = str_param(p, "delimiter")
+            .and_then(|d| d.chars().next())
+            .unwrap_or(if text.lines().next().is_some_and(|l| l.contains('\t')) {
+                '\t'
+            } else {
+                ','
+            });
+        let opts = gridcraft_xlsx::CsvOptions {
+            delimiter: delim as u8,
+            ..Default::default()
         };
+        let wb = gridcraft_xlsx::read_csv(&bytes, &opts)
+            .map_err(|e| EngineError::Other(e.to_string()))?;
+        let sh = wb.sheet(0).ok_or(EngineError::NoDocument)?;
+        let Some(u) = sh.used_range() else {
+            return Err(EngineError::Other("The file is empty.".into()));
+        };
+        (u.start.row..=u.end.row)
+            .map(|r| {
+                (u.start.col..=u.end.col)
+                    .map(|c| match sh.value(CellRef::new(r, c)) {
+                        Value::Number(n) => json!(n),
+                        Value::Bool(b) => json!(b),
+                        Value::Empty => Json::Null,
+                        v => json!(v.display()),
+                    })
+                    .collect()
+            })
+            .collect()
+    };
     if rows.is_empty() || rows.len() > 1_048_576 {
         return Err(EngineError::Other("Nothing to import.".into()));
     }
     let name = str_param(p, "sheet").map(str::to_string).or_else(|| {
-        str_param(p, "path").and_then(|x| std::path::Path::new(x).file_stem().and_then(|f| f.to_str()).map(|f| f.chars().take(31).collect()))
+        str_param(p, "path").and_then(|x| {
+            std::path::Path::new(x)
+                .file_stem()
+                .and_then(|f| f.to_str())
+                .map(|f| f.chars().take(31).collect())
+        })
     });
-    let r = s.execute("home.insertSheet", json!({"name": name})).or_else(|_| s.execute("home.insertSheet", json!({})))?;
+    let r = s
+        .execute("home.insertSheet", json!({"name": name}))
+        .or_else(|_| s.execute("home.insertSheet", json!({})))?;
     let w = rows.iter().map(Vec::len).max().unwrap_or(1).max(1);
     s.execute("range.setValues", json!({"range": "A1", "values": rows}))?;
-    let range = RangeRef::new(CellRef::new(0, 0), CellRef::new(rows.len() as u32 - 1, w as u32 - 1));
+    let range = RangeRef::new(
+        CellRef::new(0, 0),
+        CellRef::new(rows.len() as u32 - 1, w as u32 - 1),
+    );
     let _ = s.execute("insert.table", json!({"range": range.a1(), "header": true}));
-    let _ = s.execute("home.autofitColumnWidth", json!({"cols": RangeRef::cols(0, w as u32 - 1).a1()}));
+    let _ = s.execute(
+        "home.autofitColumnWidth",
+        json!({"cols": RangeRef::cols(0, w as u32 - 1).a1()}),
+    );
     Ok(json!({"sheet": r["name"], "rows": rows.len(), "cols": w}))
 }
 
@@ -923,9 +1204,16 @@ fn from_table_range(s: &mut Session, p: &Json) -> Result<Json> {
     let r = target_range(s, p)?;
     let d = s.doc()?;
     let sh = d.wb.active().ok_or(EngineError::NoDocument)?;
-    let r = if r.is_single() { crate::selection::current_region(sh, r.start) } else { r };
+    let r = if r.is_single() {
+        crate::selection::current_region(sh, r.start)
+    } else {
+        r
+    };
     let text = crate::display::range_text(&d.wb, d.wb.active_sheet, r);
-    from_csv(s, &json!({"text": text, "delimiter": "\t", "sheet": format!("{} (2)", sh.name).chars().take(31).collect::<String>()}))
+    from_csv(
+        s,
+        &json!({"text": text, "delimiter": "\t", "sheet": format!("{} (2)", sh.name).chars().take(31).collect::<String>()}),
+    )
 }
 
 fn queries(s: &mut Session, _: &Json) -> Result<Json> {
@@ -944,11 +1232,23 @@ fn queries(s: &mut Session, _: &Json) -> Result<Json> {
 
 fn record(s: &mut Session, p: &Json) -> Result<Json> {
     if bool_param(p, "stop").unwrap_or(false) || s.recording.is_some() {
-        let Some(start) = s.recording.take() else { return Ok(json!({"recording": false})) };
-        let cmds: Vec<Json> =
-            s.journal.iter().skip(start).filter(|(id, _)| !id.starts_with("automate.")).map(|(id, p)| json!({"command": id, "params": p})).collect();
-        let name = str_param(p, "name").map(str::to_string).unwrap_or_else(|| format!("Script {}", start));
-        s.execute("automate.newScript", json!({"name": name, "commands": cmds}))?;
+        let Some(start) = s.recording.take() else {
+            return Ok(json!({"recording": false}));
+        };
+        let cmds: Vec<Json> = s
+            .journal
+            .iter()
+            .skip(start)
+            .filter(|(id, _)| !id.starts_with("automate."))
+            .map(|(id, p)| json!({"command": id, "params": p}))
+            .collect();
+        let name = str_param(p, "name")
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("Script {}", start));
+        s.execute(
+            "automate.newScript",
+            json!({"name": name, "commands": cmds}),
+        )?;
         return Ok(json!({"recording": false, "saved": name, "steps": cmds.len()}));
     }
     s.recording = Some(s.journal.len());
@@ -956,7 +1256,9 @@ fn record(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn new_script(s: &mut Session, p: &Json) -> Result<Json> {
-    let name = str_param(p, "name").ok_or_else(|| bad("automate.newScript", "missing `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("automate.newScript", "missing `name`"))?
+        .to_string();
     let cmds = p.get("commands").cloned().unwrap_or(json!([]));
     if !cmds.is_array() {
         return Err(bad("automate.newScript", "`commands` must be an array"));
@@ -972,8 +1274,14 @@ fn new_script(s: &mut Session, p: &Json) -> Result<Json> {
 fn all_scripts(s: &mut Session, _: &Json) -> Result<Json> {
     let wb = &s.doc()?.wb;
     let all = stash_get(wb, SCRIPTS_NAME);
-    let mut list: Vec<Json> =
-        all.as_object().map(|o| o.iter().map(|(k, v)| json!({"name": k, "steps": v.as_array().map_or(0, Vec::len)})).collect()).unwrap_or_default();
+    let mut list: Vec<Json> = all
+        .as_object()
+        .map(|o| {
+            o.iter()
+                .map(|(k, v)| json!({"name": k, "steps": v.as_array().map_or(0, Vec::len)}))
+                .collect()
+        })
+        .unwrap_or_default();
     // A preserved VBA project is reported alongside GridCraft's own scripts; it is carried on
     // save but never executed here, so it has no step count.
     if let Some(bytes) = &wb.vba_project {
@@ -985,7 +1293,11 @@ fn all_scripts(s: &mut Session, _: &Json) -> Result<Json> {
 fn run_script(s: &mut Session, p: &Json) -> Result<Json> {
     let name = str_param(p, "name").ok_or_else(|| bad("automate.runScript", "missing `name`"))?;
     let all = stash_get(&s.doc()?.wb, SCRIPTS_NAME);
-    let steps = all.get(name).and_then(Json::as_array).cloned().ok_or_else(|| bad("automate.runScript", "no such script"))?;
+    let steps = all
+        .get(name)
+        .and_then(Json::as_array)
+        .cloned()
+        .ok_or_else(|| bad("automate.runScript", "no such script"))?;
     let mut n = 0;
     for st in steps.iter().take(100_000) {
         let id = st["command"].as_str().unwrap_or("");
@@ -999,7 +1311,9 @@ fn run_script(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn delete_script(s: &mut Session, p: &Json) -> Result<Json> {
-    let name = str_param(p, "name").ok_or_else(|| bad("automate.deleteScript", "missing `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("automate.deleteScript", "missing `name`"))?
+        .to_string();
     edit(s, |cx| {
         let mut all = stash_map(&cx.wb, SCRIPTS_NAME);
         if let Some(o) = all.as_object_mut() {
@@ -1014,7 +1328,11 @@ fn delete_script(s: &mut Session, p: &Json) -> Result<Json> {
 pub const CHECKBOX_FORMAT: &str = "\"☐\";\"☐\";\"☐\";[=1]\"☑\"";
 
 /// Whether `c` has checkbox formatting.
-pub(crate) fn is_checkbox_cell(wb: &gridcraft_model::Workbook, sh: &gridcraft_model::Sheet, c: CellRef) -> bool {
+pub(crate) fn is_checkbox_cell(
+    wb: &gridcraft_model::Workbook,
+    sh: &gridcraft_model::Sheet,
+    c: CellRef,
+) -> bool {
     wb.styles.get(sh.style_id(c)).num_fmt.as_str() == "checkbox"
 }
 
@@ -1053,11 +1371,19 @@ fn toggle_checkbox(s: &mut Session, p: &Json) -> Result<Json> {
     let d = s.doc()?;
     let cells: Vec<CellRef> = match cell_param_on(s, p, "cell", si)? {
         Some(c) => vec![c],
-        None => d.selection.ranges.iter().flat_map(|r| r.iter().take(100_000).collect::<Vec<_>>()).collect(),
+        None => d
+            .selection
+            .ranges
+            .iter()
+            .flat_map(|r| r.iter().take(100_000).collect::<Vec<_>>())
+            .collect(),
     };
     edit(s, |cx| {
         for c in cells {
-            let checkbox = cx.wb.sheet(si).is_some_and(|sh| is_checkbox_cell(&cx.wb, sh, c));
+            let checkbox = cx
+                .wb
+                .sheet(si)
+                .is_some_and(|sh| is_checkbox_cell(&cx.wb, sh, c));
             let sh = cx.sheet_mut(si)?;
             if let Some(cell) = sh.cells.get_mut(c)
                 && cell.formula.is_none()
@@ -1091,7 +1417,14 @@ fn theme_colors(s: &mut Session, p: &Json) -> Result<Json> {
 
 fn theme_fonts(s: &mut Session, p: &Json) -> Result<Json> {
     let name = s.doc()?.wb.theme.name.clone();
-    let colors: Vec<String> = s.doc()?.wb.theme.colors.iter().map(|c| format!("#{c:06X}")).collect();
+    let colors: Vec<String> = s
+        .doc()?
+        .wb
+        .theme
+        .colors
+        .iter()
+        .map(|c| format!("#{c:06X}"))
+        .collect();
     s.execute("pageLayout.theme", json!({"name": name, "colors": colors, "majorFont": p.get("major"), "minorFont": p.get("minor")}))
 }
 
@@ -1099,7 +1432,9 @@ fn background(s: &mut Session, p: &Json) -> Result<Json> {
     if bool_param(p, "clear").unwrap_or(false) {
         let si = s.doc()?.wb.active_sheet;
         return edit(s, |cx| {
-            cx.sheet_mut(si)?.images.retain(|i| i.alt != "Sheet background");
+            cx.sheet_mut(si)?
+                .images
+                .retain(|i| i.alt != "Sheet background");
             Ok(Json::Null)
         });
     }
@@ -1125,13 +1460,17 @@ fn draw_border(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn new_cell_style(s: &mut Session, p: &Json) -> Result<Json> {
-    let name = str_param(p, "name").ok_or_else(|| bad("home.newCellStyle", "missing `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("home.newCellStyle", "missing `name`"))?
+        .to_string();
     let d = s.doc()?;
     let sh = d.wb.active().ok_or(EngineError::NoDocument)?;
     let c = cell_param(s, p, "fromCell")?.unwrap_or(d.selection.active);
     let style = d.wb.styles.get(sh.style_id(c)).clone();
     edit(s, |cx| {
-        cx.wb.cell_styles.retain(|(n, _)| !n.eq_ignore_ascii_case(&name));
+        cx.wb
+            .cell_styles
+            .retain(|(n, _)| !n.eq_ignore_ascii_case(&name));
         cx.wb.cell_styles.push((name.clone(), style.clone()));
         Ok(json!({"name": name}))
     })
@@ -1159,14 +1498,22 @@ fn recently_used(s: &mut Session, _: &Json) -> Result<Json> {
 }
 
 fn use_in_formula(s: &mut Session, p: &Json) -> Result<Json> {
-    let name = str_param(p, "name").ok_or_else(|| bad("formulas.useInFormula", "missing `name`"))?;
-    s.ui_requests.push(crate::UiRequest::EditCell(Some(format!("={name}"))));
+    let name =
+        str_param(p, "name").ok_or_else(|| bad("formulas.useInFormula", "missing `name`"))?;
+    s.ui_requests
+        .push(crate::UiRequest::EditCell(Some(format!("={name}"))));
     ok()
 }
 
 fn watch_window(s: &mut Session, p: &Json) -> Result<Json> {
-    let mut list: Vec<String> =
-        stash_get(&s.doc()?.wb, WATCH_NAME).as_array().map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()).unwrap_or_default();
+    let mut list: Vec<String> = stash_get(&s.doc()?.wb, WATCH_NAME)
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
     let mut changed = false;
     if let Some(a) = str_param(p, "add") {
         if !list.iter().any(|x| x == a) {

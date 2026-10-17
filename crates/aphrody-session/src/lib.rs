@@ -369,7 +369,12 @@ impl Session {
             ts: started_at,
             metadata: metadata.clone(),
         }];
-        Self { id, started_at, events, metadata }
+        Self {
+            id,
+            started_at,
+            events,
+            metadata,
+        }
     }
 
     /// Append a [`Turn`] to the event log.
@@ -392,7 +397,9 @@ impl Session {
         let mut total: u32 = 0;
         for ev in &self.events {
             if let SessionEvent::Turn(t) = ev {
-                total = total.saturating_add(t.prompt_tokens).saturating_add(t.completion_tokens);
+                total = total
+                    .saturating_add(t.prompt_tokens)
+                    .saturating_add(t.completion_tokens);
             }
         }
         total
@@ -415,7 +422,12 @@ impl Session {
     /// recorded — yielding `Duration::ZERO`).
     #[must_use]
     pub fn duration(&self) -> Duration {
-        let latest = self.events.iter().rev().find_map(event_ts).unwrap_or(self.started_at);
+        let latest = self
+            .events
+            .iter()
+            .rev()
+            .find_map(event_ts)
+            .unwrap_or(self.started_at);
         let delta = latest - self.started_at;
         // chrono::Duration -> std::time::Duration — clamp negatives to zero.
         delta.to_std().unwrap_or(Duration::ZERO)
@@ -482,16 +494,24 @@ impl Session {
             return Err(SessionError::EmptySession);
         }
         let (id, started_at, metadata) = match &events[0] {
-            SessionEvent::SessionStart { session_id, ts, metadata, .. } => {
-                (session_id.clone(), *ts, metadata.clone())
-            },
+            SessionEvent::SessionStart {
+                session_id,
+                ts,
+                metadata,
+                ..
+            } => (session_id.clone(), *ts, metadata.clone()),
             _ => {
                 return Err(SessionError::InvalidJsonl(
                     "first event must be `session_start`".into(),
                 ));
-            },
+            }
         };
-        Ok(Self { id, started_at, events, metadata })
+        Ok(Self {
+            id,
+            started_at,
+            events,
+            metadata,
+        })
     }
 }
 
@@ -684,10 +704,14 @@ mod tests {
         let s = Session::new(id.clone(), serde_json::json!({"k": "v"}));
         assert_eq!(s.events.len(), 1);
         match &s.events[0] {
-            SessionEvent::SessionStart { session_id, metadata, .. } => {
+            SessionEvent::SessionStart {
+                session_id,
+                metadata,
+                ..
+            } => {
                 assert_eq!(session_id, &id);
                 assert_eq!(metadata, &serde_json::json!({"k": "v"}));
-            },
+            }
             other => panic!("unexpected first event: {other:?}"),
         }
     }
@@ -706,10 +730,14 @@ mod tests {
         });
         s.end();
         match s.events.last() {
-            Some(SessionEvent::SessionEnd { total_tokens, total_cost_usd, .. }) => {
+            Some(SessionEvent::SessionEnd {
+                total_tokens,
+                total_cost_usd,
+                ..
+            }) => {
                 assert_eq!(*total_tokens, 15);
                 assert!((*total_cost_usd - 0.0001).abs() < 1e-12);
-            },
+            }
             other => panic!("expected SessionEnd, got {other:?}"),
         }
     }

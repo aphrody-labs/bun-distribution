@@ -17,7 +17,9 @@ impl StillFormat {
             "tif" | "tiff" => Ok(Self::Tiff),
             "bmp" => Ok(Self::Bmp),
             "jpg" | "jpeg" => Ok(Self::Jpeg),
-            _ => Err(ExportError::Unsupported("still format must be png, jpeg, tiff or bmp".into())),
+            _ => Err(ExportError::Unsupported(
+                "still format must be png, jpeg, tiff or bmp".into(),
+            )),
         }
     }
     pub fn label(self) -> &'static str {
@@ -44,13 +46,19 @@ impl StillFormat {
 /// Quantize the original float image directly, never pad an 8-bit image to 16 bits.
 pub fn encode(image: &Image, format: StillFormat, depth: u8) -> Result<Vec<u8>> {
     if !matches!(depth, 8 | 16) || (depth == 16 && !format.supports_16()) {
-        return Err(ExportError::Unsupported("16-bit stills require PNG or TIFF; JPEG and BMP support 8 bits per channel".into()));
+        return Err(ExportError::Unsupported(
+            "16-bit stills require PNG or TIFF; JPEG and BMP support 8 bits per channel".into(),
+        ));
     }
     let bad = || ExportError::Encode("invalid still image dimensions or pixel buffer".into());
     let w = u32::try_from(image.w).map_err(|_| bad())?;
     let h = u32::try_from(image.h).map_err(|_| bad())?;
     filmcraft_project::validate_frame_size(w, h).map_err(|_| bad())?;
-    let samples = image.w.checked_mul(image.h).and_then(|n| n.checked_mul(4)).ok_or_else(bad)?;
+    let samples = image
+        .w
+        .checked_mul(image.h)
+        .and_then(|n| n.checked_mul(4))
+        .ok_or_else(bad)?;
     if image.px.len() != samples {
         return Err(bad());
     }
@@ -68,8 +76,14 @@ pub fn encode(image: &Image, format: StillFormat, depth: u8) -> Result<Vec<u8>> 
                 })
                 .collect();
             let mut out = Vec::new();
-            image::ImageEncoder::write_image(image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 95), &rgb, w, h, image::ExtendedColorType::Rgb8)
-                .map_err(err)?;
+            image::ImageEncoder::write_image(
+                image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 95),
+                &rgb,
+                w,
+                h,
+                image::ExtendedColorType::Rgb8,
+            )
+            .map_err(err)?;
             return Ok(out);
         }
         let f = match format {
@@ -84,23 +98,46 @@ pub fn encode(image: &Image, format: StillFormat, depth: u8) -> Result<Vec<u8>> 
     let mut bytes = Vec::with_capacity(capacity);
     for pixel in image.px.as_chunks::<4>().0 {
         let [r, g, b, a] = *pixel;
-        let a = if a.is_finite() { a.clamp(0.0, 1.0) } else { 0.0 };
+        let a = if a.is_finite() {
+            a.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let encode_channel = |v: f32| {
-            let v = if a > 0.0 && v.is_finite() { filmcraft_color::linear_to_srgb(v / a).clamp(0.0, 1.0) } else { 0.0 };
+            let v = if a > 0.0 && v.is_finite() {
+                filmcraft_color::linear_to_srgb(v / a).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
             (v * 65535.0 + 0.5) as u16
         };
-        for v in [encode_channel(r), encode_channel(g), encode_channel(b), (a * 65535.0 + 0.5) as u16] {
+        for v in [
+            encode_channel(r),
+            encode_channel(g),
+            encode_channel(b),
+            (a * 65535.0 + 0.5) as u16,
+        ] {
             bytes.extend_from_slice(&v.to_ne_bytes());
         }
     }
     let mut out = std::io::Cursor::new(Vec::new());
     match format {
-        StillFormat::Png => {
-            image::ImageEncoder::write_image(image::codecs::png::PngEncoder::new(&mut out), &bytes, w, h, image::ExtendedColorType::Rgba16).map_err(err)?
-        }
-        StillFormat::Tiff => {
-            image::ImageEncoder::write_image(image::codecs::tiff::TiffEncoder::new(&mut out), &bytes, w, h, image::ExtendedColorType::Rgba16).map_err(err)?
-        }
+        StillFormat::Png => image::ImageEncoder::write_image(
+            image::codecs::png::PngEncoder::new(&mut out),
+            &bytes,
+            w,
+            h,
+            image::ExtendedColorType::Rgba16,
+        )
+        .map_err(err)?,
+        StillFormat::Tiff => image::ImageEncoder::write_image(
+            image::codecs::tiff::TiffEncoder::new(&mut out),
+            &bytes,
+            w,
+            h,
+            image::ExtendedColorType::Rgba16,
+        )
+        .map_err(err)?,
         _ => return Err(ExportError::Unsupported("16-bit still format".into())),
     }
     Ok(out.into_inner())
@@ -111,7 +148,20 @@ mod tests {
     use super::*;
     #[test]
     fn sixteen_bit_stills_preserve_sub_eight_bit_precision_and_alpha() {
-        let img = Image { w: 2, h: 1, px: vec![0.101, 0.203, 0.307, 1.0, 0.101 / 2.0, 0.203 / 2.0, 0.307 / 2.0, 0.5] };
+        let img = Image {
+            w: 2,
+            h: 1,
+            px: vec![
+                0.101,
+                0.203,
+                0.307,
+                1.0,
+                0.101 / 2.0,
+                0.203 / 2.0,
+                0.307 / 2.0,
+                0.5,
+            ],
+        };
         for format in [StillFormat::Png, StillFormat::Tiff] {
             let bytes = encode(&img, format, 16).unwrap();
             let decoded = image::load_from_memory(&bytes).unwrap();
@@ -129,10 +179,24 @@ mod tests {
         let image = Image::filled(2, 2, [0.2, 0.3, 0.4, 1.0]);
         for format in [StillFormat::Jpeg, StillFormat::Bmp] {
             let bytes = encode(&image, format, 8).unwrap();
-            assert_eq!(image::load_from_memory(&bytes).unwrap().color(), image::ColorType::Rgb8);
+            assert_eq!(
+                image::load_from_memory(&bytes).unwrap().color(),
+                image::ColorType::Rgb8
+            );
             assert!(encode(&image, format, 16).is_err());
         }
-        assert!(encode(&Image { w: 2, h: 2, px: vec![] }, StillFormat::Png, 16).is_err());
+        assert!(
+            encode(
+                &Image {
+                    w: 2,
+                    h: 2,
+                    px: vec![]
+                },
+                StillFormat::Png,
+                16
+            )
+            .is_err()
+        );
         assert!(encode(&image, StillFormat::Png, 12).is_err());
     }
 }

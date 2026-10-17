@@ -82,7 +82,14 @@ fn favorite_default_is_pixel_perfect() {
     ignore = "Material Symbols not embedded: run `bun packages/m3/scripts/fonts-sync.ts`"
 )]
 fn favorite_fill1_is_pixel_perfect() {
-    assert_pixel_perfect("favorite", "favorite_fill1.svg", Axes { fill: 1.0, ..Axes::default() });
+    assert_pixel_perfect(
+        "favorite",
+        "favorite_fill1.svg",
+        Axes {
+            fill: 1.0,
+            ..Axes::default()
+        },
+    );
 }
 
 #[test]
@@ -92,8 +99,13 @@ fn favorite_fill1_is_pixel_perfect() {
 )]
 fn unknown_icon_name_returns_none() {
     assert!(
-        bun_rs::icons::icon_svg("not-a-real-icon-name", Style::Outlined, Axes::default(), None)
-            .is_none()
+        bun_rs::icons::icon_svg(
+            "not-a-real-icon-name",
+            Style::Outlined,
+            Axes::default(),
+            None
+        )
+        .is_none()
     );
 }
 
@@ -104,8 +116,15 @@ fn unknown_icon_name_returns_none() {
 )]
 fn icon_names_are_sorted_and_nonempty() {
     let names: Vec<&str> = bun_rs::icons::icon_names(Style::Outlined).collect();
-    assert!(names.len() > 3800, "expected thousands of Material Symbols, got {}", names.len());
-    assert!(names.windows(2).all(|w| w[0] < w[1]), "icon_names should be sorted");
+    assert!(
+        names.len() > 3800,
+        "expected thousands of Material Symbols, got {}",
+        names.len()
+    );
+    assert!(
+        names.windows(2).all(|w| w[0] < w[1]),
+        "icon_names should be sorted"
+    );
     assert!(names.contains(&"home"));
 }
 

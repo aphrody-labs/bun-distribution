@@ -4,10 +4,10 @@ use crate::{
     render_resource::{AtomicPod, Buffer},
     renderer::{RenderDevice, RenderQueue},
 };
-use bytemuck::{must_cast_slice, NoUninit};
+use bytemuck::{NoUninit, must_cast_slice};
 use encase::{
-    internal::{WriteInto, Writer},
     ShaderType,
+    internal::{WriteInto, Writer},
 };
 use thiserror::Error;
 use wgpu::{BindingResource, BufferAddress, BufferUsages};

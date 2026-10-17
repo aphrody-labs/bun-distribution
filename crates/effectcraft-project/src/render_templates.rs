@@ -27,7 +27,13 @@ pub enum TemplateSlot {
 }
 
 impl TemplateSlot {
-    pub const ALL: [TemplateSlot; 5] = [TemplateSlot::Movie, TemplateSlot::Still, TemplateSlot::PreRender, TemplateSlot::MovieProxy, TemplateSlot::StillProxy];
+    pub const ALL: [TemplateSlot; 5] = [
+        TemplateSlot::Movie,
+        TemplateSlot::Still,
+        TemplateSlot::PreRender,
+        TemplateSlot::MovieProxy,
+        TemplateSlot::StillProxy,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             TemplateSlot::Movie => "Movie Default",
@@ -125,9 +131,17 @@ pub fn builtin_render_settings() -> Vec<RenderSettings> {
         motion_blur_mode: SwitchOverride::Current,
         ..RenderSettings::default()
     };
-    let dv =
-        RenderSettings { name: "DV Settings".into(), field_render: FieldRender::LowerFirst, frame_rate: Some(FrameRate::new(30000, 1001)), ..best.clone() };
-    let multi = RenderSettings { name: "Multi-Machine Settings".into(), skip_existing: true, ..best.clone() };
+    let dv = RenderSettings {
+        name: "DV Settings".into(),
+        field_render: FieldRender::LowerFirst,
+        frame_rate: Some(FrameRate::new(30000, 1001)),
+        ..best.clone()
+    };
+    let multi = RenderSettings {
+        name: "Multi-Machine Settings".into(),
+        skip_existing: true,
+        ..best.clone()
+    };
     let current = RenderSettings {
         name: "Current Settings".into(),
         proxy_use: ProxyUse::CurrentSettings,
@@ -163,7 +177,10 @@ pub fn builtin_output_modules() -> Vec<OutputModule> {
     lla.channels = Channels::Rgba;
     v.push(lla);
     for mbps in [5u32, 15, 40] {
-        let mut h = om(&format!("H.264 - Match Render Settings - {mbps} Mbps"), OutputFormat::H264);
+        let mut h = om(
+            &format!("H.264 - Match Render Settings - {mbps} Mbps"),
+            OutputFormat::H264,
+        );
         h.bitrate_kbps = mbps * 1000;
         v.push(h);
     }
@@ -201,26 +218,39 @@ impl RenderTemplates {
     }
     /// Every Render Settings template: built-ins (unless overridden), then saved ones.
     pub fn render_settings_list(&self) -> Vec<RenderSettings> {
-        let mut v: Vec<RenderSettings> =
-            builtin_render_settings().into_iter().filter(|b| !self.render_settings.iter().any(|u| same(&u.name, &b.name))).collect();
+        let mut v: Vec<RenderSettings> = builtin_render_settings()
+            .into_iter()
+            .filter(|b| !self.render_settings.iter().any(|u| same(&u.name, &b.name)))
+            .collect();
         v.extend(self.render_settings.iter().cloned());
         v
     }
     pub fn output_module_list(&self) -> Vec<OutputModule> {
-        let mut v: Vec<OutputModule> = builtin_output_modules().into_iter().filter(|b| !self.output_modules.iter().any(|u| same(&u.name, &b.name))).collect();
+        let mut v: Vec<OutputModule> = builtin_output_modules()
+            .into_iter()
+            .filter(|b| !self.output_modules.iter().any(|u| same(&u.name, &b.name)))
+            .collect();
         v.extend(self.output_modules.iter().cloned());
         v
     }
     pub fn render_settings(&self, name: &str) -> Option<RenderSettings> {
-        self.render_settings_list().into_iter().find(|t| same(&t.name, name))
+        self.render_settings_list()
+            .into_iter()
+            .find(|t| same(&t.name, name))
     }
     pub fn output_module(&self, name: &str) -> Option<OutputModule> {
-        self.output_module_list().into_iter().find(|t| same(&t.name, name))
+        self.output_module_list()
+            .into_iter()
+            .find(|t| same(&t.name, name))
     }
     pub fn is_builtin(kind: TemplateKind, name: &str) -> bool {
         match kind {
-            TemplateKind::RenderSettings => builtin_render_settings().iter().any(|t| same(&t.name, name)),
-            TemplateKind::OutputModule => builtin_output_modules().iter().any(|t| same(&t.name, name)),
+            TemplateKind::RenderSettings => builtin_render_settings()
+                .iter()
+                .any(|t| same(&t.name, name)),
+            TemplateKind::OutputModule => {
+                builtin_output_modules().iter().any(|t| same(&t.name, name))
+            }
         }
     }
     /// Save (or replace) a template under `name`.
@@ -245,7 +275,11 @@ impl RenderTemplates {
         if before != (self.render_settings.len(), self.output_modules.len()) {
             return Ok(());
         }
-        if Self::is_builtin(kind, name) { Err(format!("“{name}” is a built-in template")) } else { Err(format!("no template “{name}”")) }
+        if Self::is_builtin(kind, name) {
+            Err(format!("“{name}” is a built-in template"))
+        } else {
+            Err(format!("no template “{name}”"))
+        }
     }
     /// The default template name of a slot.
     pub fn default_name(&self, kind: TemplateKind, slot: TemplateSlot) -> String {
@@ -253,13 +287,28 @@ impl RenderTemplates {
             TemplateKind::RenderSettings => &self.defaults.render_settings,
             TemplateKind::OutputModule => &self.defaults.output_modules,
         };
-        list.iter().find(|(s, _)| *s == slot).map(|(_, n)| n.clone()).unwrap_or_else(|| {
-            let d = TemplateDefaults::default();
-            let l = if kind == TemplateKind::RenderSettings { d.render_settings } else { d.output_modules };
-            l.into_iter().find(|(s, _)| *s == slot).map(|(_, n)| n).unwrap_or_default()
-        })
+        list.iter()
+            .find(|(s, _)| *s == slot)
+            .map(|(_, n)| n.clone())
+            .unwrap_or_else(|| {
+                let d = TemplateDefaults::default();
+                let l = if kind == TemplateKind::RenderSettings {
+                    d.render_settings
+                } else {
+                    d.output_modules
+                };
+                l.into_iter()
+                    .find(|(s, _)| *s == slot)
+                    .map(|(_, n)| n)
+                    .unwrap_or_default()
+            })
     }
-    pub fn set_default(&mut self, kind: TemplateKind, slot: TemplateSlot, name: &str) -> Result<(), String> {
+    pub fn set_default(
+        &mut self,
+        kind: TemplateKind,
+        slot: TemplateSlot,
+        name: &str,
+    ) -> Result<(), String> {
         let exists = match kind {
             TemplateKind::RenderSettings => self.render_settings(name).is_some(),
             TemplateKind::OutputModule => self.output_module(name).is_some(),
@@ -278,10 +327,12 @@ impl RenderTemplates {
     /// The Render Settings a slot starts from (a missing template falls back to the built-in
     /// default).
     pub fn default_render_settings(&self, slot: TemplateSlot) -> RenderSettings {
-        self.render_settings(&self.default_name(TemplateKind::RenderSettings, slot)).unwrap_or_else(|| builtin_render_settings().remove(0))
+        self.render_settings(&self.default_name(TemplateKind::RenderSettings, slot))
+            .unwrap_or_else(|| builtin_render_settings().remove(0))
     }
     pub fn default_output_module(&self, slot: TemplateSlot) -> OutputModule {
-        self.output_module(&self.default_name(TemplateKind::OutputModule, slot)).unwrap_or_default()
+        self.output_module(&self.default_name(TemplateKind::OutputModule, slot))
+            .unwrap_or_default()
     }
 }
 
@@ -292,32 +343,78 @@ mod tests {
     #[test]
     fn builtins_defaults_and_round_trip() {
         let mut t = RenderTemplates::default();
-        let names: Vec<String> = t.render_settings_list().into_iter().map(|s| s.name).collect();
-        assert_eq!(names, ["Best Settings", "Draft Settings", "DV Settings", "Multi-Machine Settings", "Current Settings"]);
-        assert_eq!(t.default_render_settings(TemplateSlot::Movie).name, "Best Settings");
-        assert_eq!(t.default_output_module(TemplateSlot::PreRender).channels, Channels::Rgba);
+        let names: Vec<String> = t
+            .render_settings_list()
+            .into_iter()
+            .map(|s| s.name)
+            .collect();
+        assert_eq!(
+            names,
+            [
+                "Best Settings",
+                "Draft Settings",
+                "DV Settings",
+                "Multi-Machine Settings",
+                "Current Settings"
+            ]
+        );
+        assert_eq!(
+            t.default_render_settings(TemplateSlot::Movie).name,
+            "Best Settings"
+        );
+        assert_eq!(
+            t.default_output_module(TemplateSlot::PreRender).channels,
+            Channels::Rgba
+        );
         let dv = t.render_settings("dv settings").unwrap();
         assert_eq!(dv.field_render, FieldRender::LowerFirst);
         // Save a custom template, make it the movie default, round-trip through JSON.
-        let mut s = RenderSettings { resolution: 0.25, ..Default::default() };
+        let mut s = RenderSettings {
+            resolution: 0.25,
+            ..Default::default()
+        };
         s.color_depth = ColorDepth::Bpc16;
         t.save_render_settings("Quarter 16", s);
-        t.set_default(TemplateKind::RenderSettings, TemplateSlot::Movie, "Quarter 16").unwrap();
+        t.set_default(
+            TemplateKind::RenderSettings,
+            TemplateSlot::Movie,
+            "Quarter 16",
+        )
+        .unwrap();
         let mut m = OutputModule::for_format(OutputFormat::WebM);
-        m.crop = Crop { enabled: true, top: 4, left: 2, ..Default::default() };
+        m.crop = Crop {
+            enabled: true,
+            top: 4,
+            left: 2,
+            ..Default::default()
+        };
         t.save_output_module("Web Crop", m);
         let json = serde_json::to_string(&t).unwrap();
         let back: RenderTemplates = serde_json::from_str(&json).unwrap();
         assert_eq!(back, t);
-        assert_eq!(back.default_render_settings(TemplateSlot::Movie).color_depth, ColorDepth::Bpc16);
+        assert_eq!(
+            back.default_render_settings(TemplateSlot::Movie)
+                .color_depth,
+            ColorDepth::Bpc16
+        );
         assert_eq!(back.output_module("web crop").unwrap().crop.top, 4);
-        assert!(t.delete(TemplateKind::RenderSettings, "Best Settings").is_err());
+        assert!(
+            t.delete(TemplateKind::RenderSettings, "Best Settings")
+                .is_err()
+        );
         t.delete(TemplateKind::OutputModule, "Web Crop").unwrap();
         assert!(t.output_module("Web Crop").is_none());
         // Overriding a built-in, then deleting the override, restores it.
         t.save_output_module("High Quality", OutputModule::for_format(OutputFormat::Gif));
-        assert_eq!(t.output_module("High Quality").unwrap().format, OutputFormat::Gif);
-        t.delete(TemplateKind::OutputModule, "High Quality").unwrap();
-        assert_eq!(t.output_module("High Quality").unwrap().format, OutputFormat::ProRes);
+        assert_eq!(
+            t.output_module("High Quality").unwrap().format,
+            OutputFormat::Gif
+        );
+        t.delete(TemplateKind::OutputModule, "High Quality")
+            .unwrap();
+        assert_eq!(
+            t.output_module("High Quality").unwrap().format,
+            OutputFormat::ProRes
+        );
     }
 }

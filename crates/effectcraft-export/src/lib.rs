@@ -30,7 +30,14 @@
 //! H.264 requires even dimensions: odd output sizes are cropped by one pixel (padded when the
 //! output is a single pixel wide/high).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod encode;
 mod hevc_av1;
@@ -42,7 +49,10 @@ mod webm_av1;
 
 use web_time::Instant;
 
-use effectcraft_project::render_queue::{AudioOutput, Channels, OutputFormat, OutputModule, RenderLog, RenderQuality, RenderSettings, sequence_path};
+use effectcraft_project::render_queue::{
+    AudioOutput, Channels, OutputFormat, OutputModule, RenderLog, RenderQuality, RenderSettings,
+    sequence_path,
+};
 use effectcraft_project::{Comp, ItemId, Project};
 use effectcraft_raster::Image;
 use effectcraft_render::{ExprHost, FootageSource};
@@ -117,11 +127,16 @@ pub struct Progress {
 
 impl Progress {
     pub fn fraction(&self) -> f64 {
-        if self.total == 0 { 0.0 } else { self.done as f64 / self.total as f64 }
+        if self.total == 0 {
+            0.0
+        } else {
+            self.done as f64 / self.total as f64
+        }
     }
     /// Estimated seconds remaining.
     pub fn remaining(&self) -> Option<f64> {
-        (self.done > 0).then(|| self.elapsed / self.done as f64 * self.total.saturating_sub(self.done) as f64)
+        (self.done > 0)
+            .then(|| self.elapsed / self.done as f64 * self.total.saturating_sub(self.done) as f64)
     }
 }
 
@@ -171,7 +186,10 @@ pub fn export(job: &Job, progress: &mut dyn FnMut(&Progress) -> bool) -> Result<
 /// browser worker) every frame renders in passes, awaiting the device in between
 /// ([`effectcraft_render::passes`]); otherwise it never waits and frames render in parallel
 /// batches as in [`export`].
-pub async fn export_async(job: &Job<'_>, progress: &mut dyn FnMut(&Progress) -> bool) -> Result<Report> {
+pub async fn export_async(
+    job: &Job<'_>,
+    progress: &mut dyn FnMut(&Progress) -> bool,
+) -> Result<Report> {
     let t0 = Instant::now();
     let cx = Cx::new(job);
     let mut r = export_with(&cx, progress, t0).await;
@@ -182,21 +200,36 @@ pub async fn export_async(job: &Job<'_>, progress: &mut dyn FnMut(&Progress) -> 
     let log = cx.write_log(&r, t0.elapsed().as_secs_f64());
     if let Ok(rep) = &mut r {
         rep.log = log;
-        rep.overflow = cx.overflowed.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        rep.overflow = cx
+            .overflowed
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
     }
     r
 }
 
-async fn export_with(cx: &Cx<'_>, progress: &mut dyn FnMut(&Progress) -> bool, t0: Instant) -> Result<Report> {
+async fn export_with(
+    cx: &Cx<'_>,
+    progress: &mut dyn FnMut(&Progress) -> bool,
+    t0: Instant,
+) -> Result<Report> {
     let comp = cx.comp().ok_or(ExportError::NoComp)?;
     let total = cx.settings.frame_count(comp);
-    let mut st = State { t0, total, done: 0, progress };
+    let mut st = State {
+        t0,
+        total,
+        done: 0,
+        progress,
+    };
     st.advance(0)?;
     let (w, h) = output_size(comp, cx.settings, cx.output);
     let mut report = match cx.output.format {
-        OutputFormat::H264 | OutputFormat::Hevc | OutputFormat::Av1 | OutputFormat::ProRes | OutputFormat::Uncompressed => {
-            encode::movie(cx, comp, w, h, &mut st).await?
-        }
+        OutputFormat::H264
+        | OutputFormat::Hevc
+        | OutputFormat::Av1
+        | OutputFormat::ProRes
+        | OutputFormat::Uncompressed => encode::movie(cx, comp, w, h, &mut st).await?,
         OutputFormat::Gif => gif_export(cx, comp, w, h, &mut st).await?,
         OutputFormat::WebM => webm::webm(cx, comp, w, h, &mut st).await?,
         OutputFormat::Wav => webm::audio_file(cx, comp, false, &mut st)?,
@@ -219,13 +252,21 @@ pub(crate) struct State<'p> {
 
 impl State<'_> {
     fn snapshot(&self) -> Progress {
-        Progress { done: self.done, total: self.total, elapsed: self.t0.elapsed().as_secs_f64() }
+        Progress {
+            done: self.done,
+            total: self.total,
+            elapsed: self.t0.elapsed().as_secs_f64(),
+        }
     }
     /// Count `n` more frames; `Err(Cancelled)` when the callback says stop.
     pub(crate) fn advance(&mut self, n: u64) -> Result<()> {
         self.done += n;
         let p = self.snapshot();
-        if (self.progress)(&p) { Ok(()) } else { Err(ExportError::Cancelled) }
+        if (self.progress)(&p) {
+            Ok(())
+        } else {
+            Err(ExportError::Cancelled)
+        }
     }
 }
 
@@ -242,7 +283,8 @@ pub(crate) fn fit(px: Vec<u8>, iw: u32, ih: u32, w: u32, h: u32) -> Vec<u8> {
     let mut out = vec![0u8; (w * h * 4) as usize];
     for y in 0..h.min(ih) as usize {
         let n = w.min(iw) as usize * 4;
-        out[y * w as usize * 4..y * w as usize * 4 + n].copy_from_slice(&px[y * iw as usize * 4..y * iw as usize * 4 + n]);
+        out[y * w as usize * 4..y * w as usize * 4 + n]
+            .copy_from_slice(&px[y * iw as usize * 4..y * iw as usize * 4 + n]);
     }
     out
 }
@@ -264,13 +306,28 @@ async fn sequence(cx: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut State<'_>) 
     let mut i = 0;
     while i < st.total {
         let end = (i + batch).min(st.total);
-        let ks: Vec<u64> = (i..end).filter(|k| !(cx.settings.skip_existing && out::exists(cx.sink, &sequence_path(cx.path, f0 + *k as i64)))).collect();
+        let ks: Vec<u64> = (i..end)
+            .filter(|k| {
+                !(cx.settings.skip_existing
+                    && out::exists(cx.sink, &sequence_path(cx.path, f0 + *k as i64)))
+            })
+            .collect();
         let written: Vec<Result<u64>> = cx
             .frames(comp, ks, |k, img| {
                 let path = sequence_path(cx.path, f0 + k as i64);
                 // Encode in memory first: the storage hook decides where it fits.
                 let mut buf = std::io::Cursor::new(Vec::new());
-                write_still(cx, &mut buf, fmt, &img, comp, channels, w, h, cx.output.quality)?;
+                write_still(
+                    cx,
+                    &mut buf,
+                    fmt,
+                    &img,
+                    comp,
+                    channels,
+                    w,
+                    h,
+                    cx.output.quality,
+                )?;
                 let data = buf.into_inner();
                 let path = cx.place(&path, data.len() as u64);
                 let mut f = cx.create(&path)?;
@@ -284,7 +341,17 @@ async fn sequence(cx: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut State<'_>) 
         st.advance(end - i)?;
         i = end;
     }
-    Ok(Report { path: sequence_path(cx.path, f0), frames: 0, width: w, height: h, seconds: 0.0, bytes, audio: false, log: None, overflow: vec![] })
+    Ok(Report {
+        path: sequence_path(cx.path, f0),
+        frames: 0,
+        width: w,
+        height: h,
+        seconds: 0.0,
+        bytes,
+        audio: false,
+        log: None,
+        overflow: vec![],
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -304,11 +371,21 @@ fn write_still<W: std::io::Write + std::io::Seek>(
         OutputFormat::ExrSequence => {
             // Linear light, premultiplied (the EXR convention); RGB keeps alpha = 1 over the background.
             // Colour is floored at 0 but not capped at 1: a 32 bpc frame's over-range values survive (#339).
-            let lin = |v: f32| if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) };
+            let lin = |v: f32| {
+                if v <= 0.04045 {
+                    v / 12.92
+                } else {
+                    ((v + 0.055) / 1.055).powf(2.4)
+                }
+            };
             let mut data = Vec::with_capacity((w * h * 4) as usize);
             for y in 0..h {
                 for x in 0..w {
-                    let p = if x < img.width && y < img.height { img.data[img.idx(x, y)] } else { [0.0; 4] };
+                    let p = if x < img.width && y < img.height {
+                        img.data[img.idx(x, y)]
+                    } else {
+                        [0.0; 4]
+                    };
                     let (c, a) = match channels {
                         Channels::Alpha => {
                             let a = p[3].clamp(0.0, 1.0);
@@ -316,7 +393,13 @@ fn write_still<W: std::io::Write + std::io::Seek>(
                         }
                         Channels::Rgba => {
                             let a = p[3].clamp(0.0, 1.0);
-                            let s = |c: f32| if a > 0.0 { lin((c / a).max(0.0)) * a } else { 0.0 };
+                            let s = |c: f32| {
+                                if a > 0.0 {
+                                    lin((c / a).max(0.0)) * a
+                                } else {
+                                    0.0
+                                }
+                            };
                             ([s(p[0]), s(p[1]), s(p[2])], a)
                         }
                         Channels::Rgb => {
@@ -328,12 +411,30 @@ fn write_still<W: std::io::Write + std::io::Seek>(
                     data.extend_from_slice(&[c[0], c[1], c[2], a]);
                 }
             }
-            let buf = image::Rgba32FImage::from_raw(w, h, data).ok_or_else(|| ExportError::Encode("exr buffer".into()))?;
-            image::DynamicImage::ImageRgba32F(buf).write_to(file, ImageFormat::OpenExr).map_err(|e| ExportError::Encode(e.to_string()))
+            let buf = image::Rgba32FImage::from_raw(w, h, data)
+                .ok_or_else(|| ExportError::Encode("exr buffer".into()))?;
+            image::DynamicImage::ImageRgba32F(buf)
+                .write_to(file, ImageFormat::OpenExr)
+                .map_err(|e| ExportError::Encode(e.to_string()))
         }
         OutputFormat::JpegSequence => {
-            let px = cx.pixels(img, comp, if channels == Channels::Alpha { Channels::Alpha } else { Channels::Rgb }, w, h);
-            let rgb: Vec<u8> = px.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect();
+            let px = cx.pixels(
+                img,
+                comp,
+                if channels == Channels::Alpha {
+                    Channels::Alpha
+                } else {
+                    Channels::Rgb
+                },
+                w,
+                h,
+            );
+            let rgb: Vec<u8> = px
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .flat_map(|p| [p[0], p[1], p[2]])
+                .collect();
             image::codecs::jpeg::JpegEncoder::new_with_quality(file, quality.clamp(1, 100))
                 .write_image(&rgb, w, h, ExtendedColorType::Rgb8)
                 .map_err(|e| ExportError::Encode(e.to_string()))
@@ -342,28 +443,59 @@ fn write_still<W: std::io::Write + std::io::Seek>(
             let px = cx.pixels(img, comp, channels, w, h);
             let (data, ct) = match channels {
                 Channels::Rgba => (px, ExtendedColorType::Rgba8),
-                Channels::Alpha => (px.as_chunks::<4>().0.iter().map(|p| p[0]).collect(), ExtendedColorType::L8),
-                Channels::Rgb => (px.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect(), ExtendedColorType::Rgb8),
+                Channels::Alpha => (
+                    px.as_chunks::<4>().0.iter().map(|p| p[0]).collect(),
+                    ExtendedColorType::L8,
+                ),
+                Channels::Rgb => (
+                    px.as_chunks::<4>()
+                        .0
+                        .iter()
+                        .flat_map(|p| [p[0], p[1], p[2]])
+                        .collect(),
+                    ExtendedColorType::Rgb8,
+                ),
             };
             if fmt == OutputFormat::PngSequence {
-                image::codecs::png::PngEncoder::new(file).write_image(&data, w, h, ct).map_err(|e| ExportError::Encode(e.to_string()))
+                image::codecs::png::PngEncoder::new(file)
+                    .write_image(&data, w, h, ct)
+                    .map_err(|e| ExportError::Encode(e.to_string()))
             } else {
                 // (the TIFF encoder needs Seek)
-                image::codecs::tiff::TiffEncoder::new(file).write_image(&data, w, h, ct).map_err(|e| ExportError::Encode(e.to_string()))
+                image::codecs::tiff::TiffEncoder::new(file)
+                    .write_image(&data, w, h, ct)
+                    .map_err(|e| ExportError::Encode(e.to_string()))
             }
         }
-        f => Err(ExportError::Unsupported(format!("{} is not a still format", f.label()))),
+        f => Err(ExportError::Unsupported(format!(
+            "{} is not a still format",
+            f.label()
+        ))),
     }
 }
 
-async fn gif_export(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut State<'_>) -> Result<Report> {
+async fn gif_export(
+    job: &Cx<'_>,
+    comp: &Comp,
+    w: u32,
+    h: u32,
+    st: &mut State<'_>,
+) -> Result<Report> {
     if w > u16::MAX as u32 || h > u16::MAX as u32 {
-        return Err(ExportError::Unsupported("GIF frames are limited to 65535 px".into()));
+        return Err(ExportError::Unsupported(
+            "GIF frames are limited to 65535 px".into(),
+        ));
     }
     let path = job.place(job.path, 1);
     let mut file = job.create(&path)?;
-    let mut enc = gif::Encoder::new(&mut file, w as u16, h as u16, &[]).map_err(|e| ExportError::Encode(e.to_string()))?;
-    enc.set_repeat(if job.output.gif_loop { gif::Repeat::Infinite } else { gif::Repeat::Finite(0) }).map_err(|e| ExportError::Encode(e.to_string()))?;
+    let mut enc = gif::Encoder::new(&mut file, w as u16, h as u16, &[])
+        .map_err(|e| ExportError::Encode(e.to_string()))?;
+    enc.set_repeat(if job.output.gif_loop {
+        gif::Repeat::Infinite
+    } else {
+        gif::Repeat::Finite(0)
+    })
+    .map_err(|e| ExportError::Encode(e.to_string()))?;
     let rate = job.settings.rate(comp);
     // GIF delays are in 1/100 s: carry the rounding error so long animations keep their timing.
     let cs_per_frame = 100.0 * rate.den as f64 / rate.num as f64;
@@ -387,14 +519,25 @@ async fn gif_export(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut State<'_
             if job.output.channels == Channels::Rgba {
                 f.dispose = gif::DisposalMethod::Background;
             }
-            enc.write_frame(&f).map_err(|e| ExportError::Encode(e.to_string()))?;
+            enc.write_frame(&f)
+                .map_err(|e| ExportError::Encode(e.to_string()))?;
         }
         st.advance(end - i)?;
         i = end;
     }
     drop(enc);
     let bytes = file.finish()?;
-    Ok(Report { path, frames: 0, width: w, height: h, seconds: 0.0, bytes, audio: false, log: None, overflow: vec![] })
+    Ok(Report {
+        path,
+        frames: 0,
+        width: w,
+        height: h,
+        seconds: 0.0,
+        bytes,
+        audio: false,
+        log: None,
+        overflow: vec![],
+    })
 }
 
 #[cfg(test)]

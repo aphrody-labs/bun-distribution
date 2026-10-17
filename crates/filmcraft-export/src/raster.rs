@@ -13,7 +13,10 @@ use crate::{ExportError, ExrCompression, Result};
 
 /// `w * h * 4` when `rgba` holds exactly that many bytes.
 fn checked_len(rgba: &[u8], w: u32, h: u32) -> Result<usize> {
-    let n = (w as usize).checked_mul(h as usize).and_then(|n| n.checked_mul(4)).ok_or_else(|| ExportError::Encode("frame size".into()))?;
+    let n = (w as usize)
+        .checked_mul(h as usize)
+        .and_then(|n| n.checked_mul(4))
+        .ok_or_else(|| ExportError::Encode("frame size".into()))?;
     if w == 0 || h == 0 || rgba.len() != n {
         return Err(ExportError::Encode("frame size".into()));
     }
@@ -23,7 +26,12 @@ fn checked_len(rgba: &[u8], w: u32, h: u32) -> Result<usize> {
 /// The RGB bytes of an RGBA8 frame (alpha dropped).
 pub(crate) fn rgb(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>> {
     checked_len(rgba, w, h)?;
-    Ok(rgba.as_chunks::<4>().0.iter().flat_map(|&[r, g, b, _]| [r, g, b]).collect())
+    Ok(rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .flat_map(|&[r, g, b, _]| [r, g, b])
+        .collect())
 }
 
 /// An uncompressed Targa file: 24-bit BGR, or 32-bit BGRA with `alpha` (straight alpha, as the
@@ -32,7 +40,11 @@ pub(crate) fn tga(rgba: &[u8], w: u32, h: u32, alpha: bool) -> Result<Vec<u8>> {
     checked_len(rgba, w, h)?;
     let (tw, th) = match (u16::try_from(w), u16::try_from(h)) {
         (Ok(tw), Ok(th)) => (tw, th),
-        _ => return Err(ExportError::Unsupported(format!("Targa frames are at most 65535×65535 (got {w}×{h})"))),
+        _ => {
+            return Err(ExportError::Unsupported(format!(
+                "Targa frames are at most 65535×65535 (got {w}×{h})"
+            )));
+        }
     };
     let bpp: usize = if alpha { 4 } else { 3 };
     let row = w as usize * 4;
@@ -66,8 +78,11 @@ const DPX_HEADER: usize = 2048;
 pub(crate) fn dpx(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>> {
     let n = checked_len(rgba, w, h)?;
     // one 32-bit word per pixel; `n` is already `w * h * 4`
-    let size = n.checked_add(DPX_HEADER).ok_or_else(|| ExportError::Encode("frame size".into()))?;
-    let file_size = u32::try_from(size).map_err(|_| ExportError::Unsupported(format!("a {w}×{h} DPX frame exceeds 4 GB")))?;
+    let size = n
+        .checked_add(DPX_HEADER)
+        .ok_or_else(|| ExportError::Encode("frame size".into()))?;
+    let file_size = u32::try_from(size)
+        .map_err(|_| ExportError::Unsupported(format!("a {w}×{h} DPX frame exceeds 4 GB")))?;
     // SMPTE ST 268: undefined numeric fields are all ones, undefined text fields are NUL
     let mut hd = vec![0xFF_u8; DPX_HEADER];
     for (a, b) in [
@@ -86,8 +101,10 @@ pub(crate) fn dpx(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>> {
         let d = 780 + e * 72 + 40;
         hd[d..d + 32].fill(0); // element descriptions
     }
-    let put32 = |hd: &mut Vec<u8>, at: usize, v: u32| hd[at..at + 4].copy_from_slice(&v.to_be_bytes());
-    let put16 = |hd: &mut Vec<u8>, at: usize, v: u16| hd[at..at + 2].copy_from_slice(&v.to_be_bytes());
+    let put32 =
+        |hd: &mut Vec<u8>, at: usize, v: u32| hd[at..at + 4].copy_from_slice(&v.to_be_bytes());
+    let put16 =
+        |hd: &mut Vec<u8>, at: usize, v: u16| hd[at..at + 2].copy_from_slice(&v.to_be_bytes());
     // file information header
     hd[0..4].copy_from_slice(b"SDPX");
     put32(&mut hd, 4, DPX_HEADER as u32); // offset to the image data
@@ -146,7 +163,11 @@ fn half(v: f32) -> u16 {
     // rounds `m >> shift` to nearest, ties to even (`shift` is 1..=24)
     let round = |m: u32, shift: u32| {
         let (q, rem, mid) = (m >> shift, m & ((1 << shift) - 1), 1 << (shift - 1));
-        if rem > mid || (rem == mid && q & 1 == 1) { q + 1 } else { q }
+        if rem > mid || (rem == mid && q & 1 == 1) {
+            q + 1
+        } else {
+            q
+        }
     };
     let e = exp - 127 + 15;
     if e >= 0x1F {
@@ -166,18 +187,31 @@ fn half(v: f32) -> u16 {
 
 /// An OpenEXR file: half-float scene-linear Rec.709 RGB, or RGBA with `alpha` (premultiplied, as
 /// EXR defines alpha; the frame's straight alpha is multiplied in after linearisation).
-pub(crate) fn exr(rgba: &[u8], w: u32, h: u32, alpha: bool, compression: ExrCompression) -> Result<Vec<u8>> {
+pub(crate) fn exr(
+    rgba: &[u8],
+    w: u32,
+    h: u32,
+    alpha: bool,
+    compression: ExrCompression,
+) -> Result<Vec<u8>> {
     let n = checked_len(rgba, w, h)?;
-    let too_large = || ExportError::Unsupported(format!("an OpenEXR frame of {w}×{h} is too large"));
+    let too_large =
+        || ExportError::Unsupported(format!("an OpenEXR frame of {w}×{h} is too large"));
     let (Ok(x_max), Ok(y_max)) = (i32::try_from(w - 1), i32::try_from(h - 1)) else {
         return Err(too_large());
     };
     // channels in the alphabetical order the file layout requires
     let names: &[u8] = if alpha { b"ABGR" } else { b"BGR" };
-    let line = (w as usize).checked_mul(names.len() * 2).ok_or_else(|| ExportError::Encode("frame size".into()))?;
+    let line = (w as usize)
+        .checked_mul(names.len() * 2)
+        .ok_or_else(|| ExportError::Encode("frame size".into()))?;
     // a chunk's byte count is a signed 32-bit field
     let lines = compression.lines();
-    if line.checked_mul(lines).and_then(|c| i32::try_from(c).ok()).is_none() {
+    if line
+        .checked_mul(lines)
+        .and_then(|c| i32::try_from(c).ok())
+        .is_none()
+    {
         return Err(too_large());
     }
 
@@ -202,9 +236,17 @@ pub(crate) fn exr(rgba: &[u8], w: u32, h: u32, alpha: bool, compression: ExrComp
         channels.extend_from_slice(&1_i32.to_le_bytes()); // y sampling
     }
     channels.push(0);
-    let window: Vec<u8> = [0, 0, x_max, y_max].iter().flat_map(|v| v.to_le_bytes()).collect();
+    let window: Vec<u8> = [0, 0, x_max, y_max]
+        .iter()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
     attr(&mut hd, "channels", "chlist", &channels);
-    attr(&mut hd, "chromaticities", "chromaticities", &le(&[0.64, 0.33, 0.30, 0.60, 0.15, 0.06, 0.3127, 0.3290]));
+    attr(
+        &mut hd,
+        "chromaticities",
+        "chromaticities",
+        &le(&[0.64, 0.33, 0.30, 0.60, 0.15, 0.06, 0.3127, 0.3290]),
+    );
     attr(&mut hd, "compression", "compression", &[compression.code()]);
     attr(&mut hd, "dataWindow", "box2i", &window);
     attr(&mut hd, "displayWindow", "box2i", &window);
@@ -218,7 +260,10 @@ pub(crate) fn exr(rgba: &[u8], w: u32, h: u32, alpha: bool, compression: ExrComp
     let chunks = (h as usize).div_ceil(lines);
     let table = chunks.checked_mul(8);
     let body = (h as usize).checked_mul(line + 8);
-    let size = table.zip(body).and_then(|(t, b)| hd.len().checked_add(t)?.checked_add(b)).ok_or_else(|| ExportError::Encode("frame size".into()))?;
+    let size = table
+        .zip(body)
+        .and_then(|(t, b)| hd.len().checked_add(t)?.checked_add(b))
+        .ok_or_else(|| ExportError::Encode("frame size".into()))?;
     // the uncompressed size: compressed chunks only shrink it
     let mut out = Vec::with_capacity(size);
     out.extend_from_slice(&hd);
@@ -240,7 +285,11 @@ pub(crate) fn exr(rgba: &[u8], w: u32, h: u32, alpha: bool, compression: ExrComp
                     let k = f32::from(a) / 255.0;
                     px[x] = half(k);
                     for (c, &v) in rgb.iter().enumerate() {
-                        px[(c + 1) * wn + x] = if a == 255 { opaque[v as usize] } else { half(lin[v as usize] * k) };
+                        px[(c + 1) * wn + x] = if a == 255 {
+                            opaque[v as usize]
+                        } else {
+                            half(lin[v as usize] * k)
+                        };
                     }
                 } else {
                     for (c, &v) in rgb.iter().enumerate() {
@@ -253,10 +302,15 @@ pub(crate) fn exr(rgba: &[u8], w: u32, h: u32, alpha: bool, compression: ExrComp
         let packed = match compression {
             ExrCompression::None => None,
             ExrCompression::Rle => Some(rle(&predict(&raw))),
-            ExrCompression::Zips | ExrCompression::Zip => Some(crate::deflate::zlib(&predict(&raw))),
+            ExrCompression::Zips | ExrCompression::Zip => {
+                Some(crate::deflate::zlib(&predict(&raw)))
+            }
         };
         // a chunk that does not shrink is stored as it is (readers compare the sizes)
-        let data = packed.as_deref().filter(|p| p.len() < raw.len()).unwrap_or(&raw);
+        let data = packed
+            .as_deref()
+            .filter(|p| p.len() < raw.len())
+            .unwrap_or(&raw);
         let offset = (out.len() as u64).to_le_bytes();
         out[table_at + k * 8..table_at + k * 8 + 8].copy_from_slice(&offset);
         out.extend_from_slice(&((k * lines) as i32).to_le_bytes());
@@ -299,7 +353,10 @@ fn rle(src: &[u8]) -> Vec<u8> {
         // literals up to the next run of three (or 127 bytes)
         let s = i;
         while i < src.len() && i - s < 127 {
-            if src.get(i..i + 3).is_some_and(|t| t[0] == t[1] && t[1] == t[2]) {
+            if src
+                .get(i..i + 3)
+                .is_some_and(|t| t[0] == t[1] && t[1] == t[2])
+            {
                 break;
             }
             i += 1;
@@ -331,7 +388,10 @@ mod tests {
         assert_eq!((f[800], f[803]), (50, 10));
         assert_eq!(be32(&f, 2048), 1023 << 22);
         let p = be32(&f, 2052);
-        assert_eq!(((p >> 22) & 1023, (p >> 12) & 1023, (p >> 2) & 1023, p & 3), (4, 514, 1023, 0));
+        assert_eq!(
+            ((p >> 22) & 1023, (p >> 12) & 1023, (p >> 2) & 1023, p & 3),
+            (4, 514, 1023, 0)
+        );
     }
 
     #[test]
@@ -357,8 +417,8 @@ mod tests {
             (0.5, 0x3800),
             (-2.0, 0xC000),
             (65504.0, 0x7BFF),
-            (65520.0, 0x7C00),        // halfway past the largest half: ties to even = infinity
-            (1.0e9, 0x7C00),          // overflow
+            (65520.0, 0x7C00), // halfway past the largest half: ties to even = infinity
+            (1.0e9, 0x7C00),   // overflow
             (6.103_515_6e-5, 0x0400), // smallest normal
             (5.960_464_5e-8, 0x0001), // smallest subnormal, 2^-24
             (2.980_232_2e-8, 0x0000), // 2^-25: halfway to zero, ties to even
@@ -392,9 +452,24 @@ mod tests {
             let ch = find(&f, b"channels\0chlist\0") + 16;
             assert_eq!(le32(&f, ch) as usize, nch * 18 + 1);
             let names: Vec<u8> = (0..nch).map(|i| f[ch + 4 + i * 18]).collect();
-            assert_eq!(names, if alpha { b"ABGR".to_vec() } else { b"BGR".to_vec() });
+            assert_eq!(
+                names,
+                if alpha {
+                    b"ABGR".to_vec()
+                } else {
+                    b"BGR".to_vec()
+                }
+            );
             let dw = find(&f, b"dataWindow\0box2i\0") + 17;
-            assert_eq!((le32(&f, dw), le32(&f, dw + 4), le32(&f, dw + 8), le32(&f, dw + 12)), (16, 0, 0, 1));
+            assert_eq!(
+                (
+                    le32(&f, dw),
+                    le32(&f, dw + 4),
+                    le32(&f, dw + 8),
+                    le32(&f, dw + 12)
+                ),
+                (16, 0, 0, 1)
+            );
             let cmp = find(&f, b"compression\0compression\0") + 24;
             assert_eq!((le32(&f, cmp), f[cmp + 4]), (1, 0));
             // header ends with a NUL; one offset (scan line 0) points at the only chunk
@@ -402,8 +477,13 @@ mod tests {
             assert_eq!(f[end - 1], 0);
             let off = u64::from_le_bytes(f[end..end + 8].try_into().unwrap()) as usize;
             assert_eq!(off, end + 8);
-            assert_eq!((le32(&f, off), le32(&f, off + 4) as usize), (0, 2 * nch * 2));
-            let hv = |c: usize, x: usize| u16::from_le_bytes(f[off + 8 + (c * 2 + x) * 2..][..2].try_into().unwrap());
+            assert_eq!(
+                (le32(&f, off), le32(&f, off + 4) as usize),
+                (0, 2 * nch * 2)
+            );
+            let hv = |c: usize, x: usize| {
+                u16::from_le_bytes(f[off + 8 + (c * 2 + x) * 2..][..2].try_into().unwrap())
+            };
             let (b, g, r) = if alpha { (1, 2, 3) } else { (0, 1, 2) };
             // white is 1.0 everywhere; red is linear 1.0 · alpha (premultiplied) or 1.0 flat
             assert_eq!((hv(b, 0), hv(g, 0), hv(r, 0)), (0x3C00, 0x3C00, 0x3C00));
@@ -432,7 +512,12 @@ mod tests {
                 } else {
                     noise as u8
                 };
-                [r, (y * 7) as u8, ((x + y) * 3) as u8, [255, 128, 0, 64][(x / 10) as usize % 4]]
+                [
+                    r,
+                    (y * 7) as u8,
+                    ((x + y) * 3) as u8,
+                    [255, 128, 0, 64][(x / 10) as usize % 4],
+                ]
             })
             .collect();
         (px, w, h)
@@ -443,7 +528,8 @@ mod tests {
         let end = find(f, b"screenWindowWidth\0float\0") + 24 + 4 + 4 + 1;
         (0..count)
             .map(|k| {
-                let off = u64::from_le_bytes(f[end + k * 8..end + k * 8 + 8].try_into().unwrap()) as usize;
+                let off = u64::from_le_bytes(f[end + k * 8..end + k * 8 + 8].try_into().unwrap())
+                    as usize;
                 let n = le32(f, off + 4) as usize;
                 (le32(f, off), &f[off + 8..off + 8 + n])
             })
@@ -457,7 +543,9 @@ mod tests {
             t[i] = t[i - 1].wrapping_add(t[i]).wrapping_sub(128);
         }
         let half = t.len().div_ceil(2);
-        (0..t.len()).map(|i| t[if i % 2 == 0 { i / 2 } else { half + i / 2 }]).collect()
+        (0..t.len())
+            .map(|i| t[if i % 2 == 0 { i / 2 } else { half + i / 2 }])
+            .collect()
     }
 
     fn unrle(mut s: &[u8]) -> Vec<u8> {
@@ -477,7 +565,14 @@ mod tests {
 
     #[test]
     fn rle_codes_runs_and_literals() {
-        for src in [vec![], vec![5], vec![1, 1], vec![9; 300], (0..=255).collect::<Vec<u8>>(), [vec![1, 2], vec![3; 3], vec![4, 4, 5]].concat()] {
+        for src in [
+            vec![],
+            vec![5],
+            vec![1, 1],
+            vec![9; 300],
+            (0..=255).collect::<Vec<u8>>(),
+            [vec![1, 2], vec![3; 3], vec![4, 4, 5]].concat(),
+        ] {
             assert_eq!(unrle(&rle(&src)), src);
         }
         assert_eq!(rle(&[7; 130]), vec![127, 7, 0xFE, 7, 7]);
@@ -491,16 +586,29 @@ mod tests {
         let (px, w, h) = picture();
         for alpha in [false, true] {
             let plain = exr(&px, w, h, alpha, ExrCompression::None).unwrap();
-            let lines: Vec<&[u8]> = chunks(&plain, h as usize).into_iter().map(|(_, d)| d).collect();
-            for c in [ExrCompression::Rle, ExrCompression::Zips, ExrCompression::Zip] {
+            let lines: Vec<&[u8]> = chunks(&plain, h as usize)
+                .into_iter()
+                .map(|(_, d)| d)
+                .collect();
+            for c in [
+                ExrCompression::Rle,
+                ExrCompression::Zips,
+                ExrCompression::Zip,
+            ] {
                 let f = exr(&px, w, h, alpha, c).unwrap();
                 let cmp = find(&f, b"compression\0compression\0") + 24;
                 assert_eq!(f[cmp + 4], c.code());
-                assert!(f.len() < plain.len() * 3 / 4, "{c:?}: {} vs {}", f.len(), plain.len());
+                assert!(
+                    f.len() < plain.len() * 3 / 4,
+                    "{c:?}: {} vs {}",
+                    f.len(),
+                    plain.len()
+                );
                 let n = (h as usize).div_ceil(c.lines());
                 for (k, (y, data)) in chunks(&f, n).into_iter().enumerate() {
                     assert_eq!(y as usize, k * c.lines());
-                    let want: Vec<u8> = lines[k * c.lines()..((k + 1) * c.lines()).min(h as usize)].concat();
+                    let want: Vec<u8> =
+                        lines[k * c.lines()..((k + 1) * c.lines()).min(h as usize)].concat();
                     let got = if data.len() == want.len() {
                         data.to_vec()
                     } else if c == ExrCompression::Rle {
@@ -518,9 +626,14 @@ mod tests {
     /// light, premultiplied alpha, rows top to bottom; in every compression.
     #[test]
     fn exr_decodes_in_ffmpeg() {
-        let Some(ffmpeg) = filmcraft_testkit::ffmpeg_or_skip("OpenEXR stills") else { return };
+        let Some(ffmpeg) = filmcraft_testkit::ffmpeg_or_skip("OpenEXR stills") else {
+            return;
+        };
         let (px, w, h) = picture();
-        let dir = filmcraft_testkit::fixtures::workspace_root().join("target").join("export-tests").join(format!("exr-{}", std::process::id()));
+        let dir = filmcraft_testkit::fixtures::workspace_root()
+            .join("target")
+            .join("export-tests")
+            .join(format!("exr-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let lin = filmcraft_color::srgb_u8_to_linear_table();
         for c in ExrCompression::ALL {
@@ -533,17 +646,31 @@ mod tests {
                     .args(["-f", "rawvideo", "-pix_fmt", "gbrapf32le", "-"])
                     .output()
                     .unwrap();
-                assert!(out.status.success(), "{c:?}: {}", String::from_utf8_lossy(&out.stderr));
+                assert!(
+                    out.status.success(),
+                    "{c:?}: {}",
+                    String::from_utf8_lossy(&out.stderr)
+                );
                 let n = (w * h) as usize;
                 assert_eq!(out.stdout.len(), n * 4 * 4, "{c:?}");
-                let plane = |p: usize, i: usize| f32::from_le_bytes(out.stdout[(p * n + i) * 4..][..4].try_into().unwrap());
+                let plane = |p: usize, i: usize| {
+                    f32::from_le_bytes(out.stdout[(p * n + i) * 4..][..4].try_into().unwrap())
+                };
                 for (i, &[r, g, b, a]) in px.as_chunks::<4>().0.iter().enumerate() {
                     let k = if alpha { f32::from(a) / 255.0 } else { 1.0 };
                     // gbrap planes: G, B, R, A
-                    let want = [lin[g as usize] * k, lin[b as usize] * k, lin[r as usize] * k, k];
+                    let want = [
+                        lin[g as usize] * k,
+                        lin[b as usize] * k,
+                        lin[r as usize] * k,
+                        k,
+                    ];
                     for (p, want) in want.into_iter().enumerate() {
                         let got = plane(p, i);
-                        assert!((got - want).abs() <= 1e-3 + want * 1e-3, "{c:?}, alpha {alpha}, pixel {i}, plane {p}: {got} vs {want}");
+                        assert!(
+                            (got - want).abs() <= 1e-3 + want * 1e-3,
+                            "{c:?}, alpha {alpha}, pixel {i}, plane {p}: {got} vs {want}"
+                        );
                     }
                 }
             }

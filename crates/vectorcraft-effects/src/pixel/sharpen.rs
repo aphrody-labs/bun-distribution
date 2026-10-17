@@ -5,7 +5,14 @@ use super::{gaussian, to16};
 /// Unsharp Mask: each colour channel pushed away from a Gaussian blur of the pixels (σ = `sigma`
 /// pixels) by `amount` times their difference, where that difference reaches `threshold` levels.
 /// The blur is premultiplied, so edges against transparency don't darken; coverage stays as it is.
-pub(super) fn unsharp(px: &mut [[u8; 4]], w: usize, h: usize, amount: f64, sigma: f64, threshold: f64) {
+pub(super) fn unsharp(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    amount: f64,
+    sigma: f64,
+    threshold: f64,
+) {
     if sigma.is_nan() || sigma < 0.2 || amount.is_nan() || amount <= 0.0 || h == 0 {
         return;
     }
@@ -19,7 +26,11 @@ pub(super) fn unsharp(px: &mut [[u8; 4]], w: usize, h: usize, amount: f64, sigma
         }
         for i in 0..3 {
             let own = p[i] as f32 * 255.0 / a;
-            let around = if b[3] > 0 { b[i] as f32 * 255.0 / b[3] as f32 } else { own };
+            let around = if b[3] > 0 {
+                b[i] as f32 * 255.0 / b[3] as f32
+            } else {
+                own
+            };
             let diff = own - around;
             if diff.abs() < threshold || diff == 0.0 {
                 continue;

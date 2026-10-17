@@ -20,7 +20,11 @@ use super::{Codec, nal_type};
 /// `NV_ENC_LEVEL_HEVC_*` for a level × 10 (4.1 is 41): HEVC levels are numbered `level × 30`.
 /// `None` for a number that is not an HEVC level.
 pub fn level_code(level_x10: u8) -> Option<u8> {
-    matches!(level_x10, 10 | 20 | 21 | 30 | 31 | 40 | 41 | 50 | 51 | 52 | 60 | 61 | 62).then(|| level_x10.saturating_mul(3))
+    matches!(
+        level_x10,
+        10 | 20 | 21 | 30 | 31 | 40 | 41 | 50 | 51 | 52 | 60 | 61 | 62
+    )
+    .then(|| level_x10.saturating_mul(3))
 }
 
 /// The lowest HEVC level (× 10) whose **Main tier** limits take `width × height` pictures at `fps`
@@ -55,7 +59,10 @@ pub fn main_tier_level(width: u32, height: u32, fps: (u32, u32), max_kbps: u32) 
         .iter()
         .find(|(_, max_ps, max_sr, max_br)| {
             // side² ≤ 8 × MaxLumaPs: the dimension limit without a square root
-            ps <= *max_ps && sr <= *max_sr && u64::from(max_kbps) <= *max_br && side.saturating_mul(side) <= max_ps.saturating_mul(8)
+            ps <= *max_ps
+                && sr <= *max_sr
+                && u64::from(max_kbps) <= *max_br
+                && side.saturating_mul(side) <= max_ps.saturating_mul(8)
         })
         .map(|(l, ..)| *l)
 }
@@ -70,7 +77,13 @@ const PTL_LEN: usize = 12;
 /// `sps` and `pps` (NAL units with their headers, without start codes or length prefixes). An error
 /// says why the stream is not the one that was asked for: `bit_depth` 8 is HEVC Main (profile 1),
 /// 10 is Main 10 (profile 2), both 4:2:0 with equal luma and chroma depth; any other depth is refused.
-pub fn hevc_config(vps: &[u8], sps: &[u8], pps: &[u8], size: (u32, u32), bit_depth: u8) -> Result<HevcConfig, String> {
+pub fn hevc_config(
+    vps: &[u8],
+    sps: &[u8],
+    pps: &[u8],
+    size: (u32, u32),
+    bit_depth: u8,
+) -> Result<HevcConfig, String> {
     let (profile_idc, profile_name) = match bit_depth {
         8 => (1u8, "Main"),
         10 => (2, "Main 10"),
@@ -87,18 +100,30 @@ pub fn hevc_config(vps: &[u8], sps: &[u8], pps: &[u8], size: (u32, u32), bit_dep
     }
     let rbsp = unescape_rbsp(sps.get(2..).unwrap_or_default());
     let parsed = Sps::parse(&rbsp).map_err(|e| format!("unreadable HEVC SPS: {e}"))?;
-    let ptl_bytes = rbsp.get(PTL_START..PTL_START + PTL_LEN).ok_or("the HEVC SPS is truncated before its profile / tier / level")?;
+    let ptl_bytes = rbsp
+        .get(PTL_START..PTL_START + PTL_LEN)
+        .ok_or("the HEVC SPS is truncated before its profile / tier / level")?;
     // bytes 5..11 of the record are the 48 general constraint indicator flags
-    let constraints = ptl_bytes.get(5..11).ok_or("the HEVC SPS is truncated before its constraint flags")?;
-    let general_constraint_indicator_flags = constraints.iter().fold(0u64, |acc, b| (acc << 8) | u64::from(*b));
+    let constraints = ptl_bytes
+        .get(5..11)
+        .ok_or("the HEVC SPS is truncated before its constraint flags")?;
+    let general_constraint_indicator_flags = constraints
+        .iter()
+        .fold(0u64, |acc, b| (acc << 8) | u64::from(*b));
     let temporal_id_nested = rbsp.first().is_some_and(|b| b & 1 != 0);
 
     let ptl = &parsed.ptl;
     if ptl.profile_space != 0 || ptl.profile_idc != profile_idc {
-        return Err(format!("the encoder wrote HEVC profile {} (space {}), not {profile_name}", ptl.profile_idc, ptl.profile_space));
+        return Err(format!(
+            "the encoder wrote HEVC profile {} (space {}), not {profile_name}",
+            ptl.profile_idc, ptl.profile_space
+        ));
     }
     let depth = u32::from(bit_depth);
-    if parsed.chroma_format_idc != 1 || parsed.bit_depth_luma != depth || parsed.bit_depth_chroma != depth {
+    if parsed.chroma_format_idc != 1
+        || parsed.bit_depth_luma != depth
+        || parsed.bit_depth_chroma != depth
+    {
         return Err(format!(
             "the encoder wrote chroma format {} at {}/{} bits, not {bit_depth}-bit 4:2:0",
             parsed.chroma_format_idc, parsed.bit_depth_luma, parsed.bit_depth_chroma
@@ -106,7 +131,10 @@ pub fn hevc_config(vps: &[u8], sps: &[u8], pps: &[u8], size: (u32, u32), bit_dep
     }
     let (_, _, w, h) = parsed.crop_rect();
     if (w, h) != size {
-        return Err(format!("the encoder wrote {w}x{h} pictures for a {}x{} export", size.0, size.1));
+        return Err(format!(
+            "the encoder wrote {w}x{h} pictures for a {}x{} export",
+            size.0, size.1
+        ));
     }
     Ok(HevcConfig {
         general_profile_space: ptl.profile_space,
@@ -118,19 +146,34 @@ pub fn hevc_config(vps: &[u8], sps: &[u8], pps: &[u8], size: (u32, u32), bit_dep
         // 0: not specified, which is a valid value for both
         min_spatial_segmentation_idc: 0,
         parallelism_type: 0,
-        chroma_format_idc: u8::try_from(parsed.chroma_format_idc).map_err(|_| "chroma format".to_string())?,
+        chroma_format_idc: u8::try_from(parsed.chroma_format_idc)
+            .map_err(|_| "chroma format".to_string())?,
         bit_depth_luma: u8::try_from(parsed.bit_depth_luma).map_err(|_| "bit depth".to_string())?,
-        bit_depth_chroma: u8::try_from(parsed.bit_depth_chroma).map_err(|_| "bit depth".to_string())?,
+        bit_depth_chroma: u8::try_from(parsed.bit_depth_chroma)
+            .map_err(|_| "bit depth".to_string())?,
         // 0: unspecified average rate, and the frame rate may not be constant
         avg_frame_rate: 0,
         constant_frame_rate: 0,
-        num_temporal_layers: u8::try_from(parsed.max_sub_layers_minus1.saturating_add(1)).map_err(|_| "temporal layers".to_string())?,
+        num_temporal_layers: u8::try_from(parsed.max_sub_layers_minus1.saturating_add(1))
+            .map_err(|_| "temporal layers".to_string())?,
         temporal_id_nested,
         length_size: 4,
         arrays: vec![
-            HevcNalArray { completeness: true, nal_type: 32, nalus: vec![vps.to_vec()] },
-            HevcNalArray { completeness: true, nal_type: 33, nalus: vec![sps.to_vec()] },
-            HevcNalArray { completeness: true, nal_type: 34, nalus: vec![pps.to_vec()] },
+            HevcNalArray {
+                completeness: true,
+                nal_type: 32,
+                nalus: vec![vps.to_vec()],
+            },
+            HevcNalArray {
+                completeness: true,
+                nal_type: 33,
+                nalus: vec![sps.to_vec()],
+            },
+            HevcNalArray {
+                completeness: true,
+                nal_type: 34,
+                nalus: vec![pps.to_vec()],
+            },
         ],
     })
 }
@@ -146,7 +189,10 @@ mod tests {
     const PPS: &str = "4401c1937c0cc9";
 
     fn unhex(h: &str) -> Vec<u8> {
-        (0..h.len()).step_by(2).filter_map(|i| u8::from_str_radix(h.get(i..i + 2)?, 16).ok()).collect()
+        (0..h.len())
+            .step_by(2)
+            .filter_map(|i| u8::from_str_radix(h.get(i..i + 2)?, 16).ok())
+            .collect()
     }
 
     fn record() -> HevcConfig {
@@ -177,16 +223,26 @@ mod tests {
         assert_eq!(main_tier_level(3840, 2160, (60, 1), 60_000), Some(52));
         assert_eq!(main_tier_level(7680, 4320, (30, 1), 60_000), Some(60));
         // 29.97 rounds the sample rate up
-        assert_eq!(main_tier_level(1920, 1080, (30_000, 1_001), 8_000), Some(40));
+        assert_eq!(
+            main_tier_level(1920, 1080, (30_000, 1_001), 8_000),
+            Some(40)
+        );
         // a long thin picture is held by the dimension limit, not the area
         assert_eq!(main_tier_level(8192, 64, (30, 1), 1_000), Some(50));
         // beyond every Main tier level, or nonsense: the encoder chooses
         assert_eq!(main_tier_level(1920, 1080, (30, 1), 300_000), None);
         assert_eq!(main_tier_level(16_384, 16_384, (30, 1), 1_000), None);
         assert_eq!(main_tier_level(1920, 1080, (30, 0), 1_000), None);
-        assert_eq!(main_tier_level(u32::MAX, u32::MAX, (u32::MAX, 1), u32::MAX), None);
+        assert_eq!(
+            main_tier_level(u32::MAX, u32::MAX, (u32::MAX, 1), u32::MAX),
+            None
+        );
         // every answer is a level the encoder takes
-        assert!(main_tier_level(1920, 1080, (30, 1), 18_000).and_then(level_code).is_some());
+        assert!(
+            main_tier_level(1920, 1080, (30, 1), 18_000)
+                .and_then(level_code)
+                .is_some()
+        );
     }
 
     #[test]
@@ -196,15 +252,40 @@ mod tests {
         let rbsp = unescape_rbsp(&sps[2..]);
         // profile / tier / compatibility / constraint flags / level are the SPS's own bytes
         assert_eq!(&c.to_bytes()[1..13], &rbsp[1..13]);
-        assert_eq!((c.general_profile_space, c.general_tier_flag, c.general_profile_idc), (0, false, 1));
-        assert_eq!(c.general_profile_compatibility_flags, 0x6000_0000, "Main and Main 10");
+        assert_eq!(
+            (
+                c.general_profile_space,
+                c.general_tier_flag,
+                c.general_profile_idc
+            ),
+            (0, false, 1)
+        );
+        assert_eq!(
+            c.general_profile_compatibility_flags, 0x6000_0000,
+            "Main and Main 10"
+        );
         // progressive_source_flag and frame_only_constraint_flag
         assert_eq!(c.general_constraint_indicator_flags, 0x9000_0000_0000);
         assert_eq!(c.general_level_idc, 93, "level 3.1");
-        assert_eq!((c.chroma_format_idc, c.bit_depth_luma, c.bit_depth_chroma), (1, 8, 8));
-        assert_eq!((c.num_temporal_layers, c.temporal_id_nested, c.length_size), (1, true, 4));
-        assert_eq!(c.arrays.iter().map(|a| (a.nal_type, a.completeness, a.nalus.len())).collect::<Vec<_>>(), vec![(32, true, 1), (33, true, 1), (34, true, 1)]);
-        assert_eq!((c.vps(), c.sps(), c.pps()), (vec![&unhex(VPS)[..]], vec![&sps[..]], vec![&unhex(PPS)[..]]));
+        assert_eq!(
+            (c.chroma_format_idc, c.bit_depth_luma, c.bit_depth_chroma),
+            (1, 8, 8)
+        );
+        assert_eq!(
+            (c.num_temporal_layers, c.temporal_id_nested, c.length_size),
+            (1, true, 4)
+        );
+        assert_eq!(
+            c.arrays
+                .iter()
+                .map(|a| (a.nal_type, a.completeness, a.nalus.len()))
+                .collect::<Vec<_>>(),
+            vec![(32, true, 1), (33, true, 1), (34, true, 1)]
+        );
+        assert_eq!(
+            (c.vps(), c.sps(), c.pps()),
+            (vec![&unhex(VPS)[..]], vec![&sps[..]], vec![&unhex(PPS)[..]])
+        );
         assert_eq!(HevcConfig::parse(&c.to_bytes()).unwrap(), c);
     }
 
@@ -225,7 +306,11 @@ mod tests {
         let (v, s, p) = (unhex(VPS), unhex(SPS), unhex(PPS));
         let mut other_profile = s.clone();
         other_profile[3] = (other_profile[3] & !0x1f) | 2; // Main 10
-        assert!(hevc_config(&v, &other_profile, &p, (1280, 720), 8).unwrap_err().contains("not Main"));
+        assert!(
+            hevc_config(&v, &other_profile, &p, (1280, 720), 8)
+                .unwrap_err()
+                .contains("not Main")
+        );
         let mut other_space = s.clone();
         other_space[3] |= 0x40;
         assert!(hevc_config(&v, &other_space, &p, (1280, 720), 8).is_err());
@@ -236,7 +321,10 @@ mod tests {
         let (v, s, p) = (unhex(VPS), unhex(SPS), unhex(PPS));
         // every truncation of the SPS
         for n in 0..s.len() {
-            assert!(hevc_config(&v, &s[..n], &p, (1280, 720), 8).is_err(), "SPS cut at {n}");
+            assert!(
+                hevc_config(&v, &s[..n], &p, (1280, 720), 8).is_err(),
+                "SPS cut at {n}"
+            );
         }
         // a bit flip anywhere in the SPS: an error or a record, but never a panic
         for byte in 0..s.len() {
@@ -256,7 +344,10 @@ mod tests {
             (&v, &p, &s),
         ];
         for (v, s, p) in cases {
-            assert!(hevc_config(v, s, p, (64, 64), 8).is_err(), "{v:?} {s:?} {p:?}");
+            assert!(
+                hevc_config(v, s, p, (64, 64), 8).is_err(),
+                "{v:?} {s:?} {p:?}"
+            );
         }
         // a parameter set too long for the record's 16-bit lengths
         let mut huge = s.clone();
@@ -274,11 +365,25 @@ mod tests {
     fn a_main_10_stream_is_accepted_as_main_10_and_refused_as_main() {
         let (v, s, p) = (unhex(VPS10), unhex(SPS10), unhex(PPS10));
         let c = hevc_config(&v, &s, &p, (1280, 720), 10).unwrap();
-        assert_eq!((c.general_profile_space, c.general_tier_flag, c.general_profile_idc), (0, true, 2), "NVENC picked the High tier for level 4 at 12 Mbps");
-        assert_eq!(c.general_profile_compatibility_flags, 0x2000_0000, "Main 10 only");
+        assert_eq!(
+            (
+                c.general_profile_space,
+                c.general_tier_flag,
+                c.general_profile_idc
+            ),
+            (0, true, 2),
+            "NVENC picked the High tier for level 4 at 12 Mbps"
+        );
+        assert_eq!(
+            c.general_profile_compatibility_flags, 0x2000_0000,
+            "Main 10 only"
+        );
         assert_eq!(c.general_constraint_indicator_flags, 0x9000_0000_0000);
         assert_eq!(c.general_level_idc, 120, "level 4");
-        assert_eq!((c.chroma_format_idc, c.bit_depth_luma, c.bit_depth_chroma), (1, 10, 10));
+        assert_eq!(
+            (c.chroma_format_idc, c.bit_depth_luma, c.bit_depth_chroma),
+            (1, 10, 10)
+        );
         assert_eq!(HevcConfig::parse(&c.to_bytes()).unwrap(), c);
         // the same stream where Main (8-bit) was asked for, and the 8-bit stream where Main 10 was asked for
         let e = hevc_config(&v, &s, &p, (1280, 720), 8).unwrap_err();
@@ -287,13 +392,19 @@ mod tests {
         assert!(e.contains("not Main 10"), "{e}");
         // no other depth
         for depth in [0, 7, 9, 12, 16, 255] {
-            assert!(hevc_config(&v, &s, &p, (1280, 720), depth).is_err(), "{depth}");
+            assert!(
+                hevc_config(&v, &s, &p, (1280, 720), depth).is_err(),
+                "{depth}"
+            );
         }
         // a Main 10 profile byte with 8-bit depth (or the reverse) is refused whichever is asked for
         let mut forged = s.clone();
         forged[3] = (forged[3] & !0x1f) | 1; // profile_idc 1 (Main) but a 10-bit SPS
         for depth in [8, 10] {
-            assert!(hevc_config(&v, &forged, &p, (1280, 720), depth).is_err(), "{depth}");
+            assert!(
+                hevc_config(&v, &forged, &p, (1280, 720), depth).is_err(),
+                "{depth}"
+            );
         }
     }
 
@@ -301,13 +412,19 @@ mod tests {
     fn truncated_and_flipped_main_10_parameter_sets_never_panic() {
         let (v, s, p) = (unhex(VPS10), unhex(SPS10), unhex(PPS10));
         for n in 0..s.len() {
-            assert!(hevc_config(&v, &s[..n], &p, (1280, 720), 10).is_err(), "SPS cut at {n}");
+            assert!(
+                hevc_config(&v, &s[..n], &p, (1280, 720), 10).is_err(),
+                "SPS cut at {n}"
+            );
         }
         for byte in 0..s.len() {
             for bit in 0..8 {
                 let mut m = s.clone();
                 m[byte] ^= 1 << bit;
-                assert!(std::panic::catch_unwind(|| hevc_config(&v, &m, &p, (1280, 720), 10)).is_ok(), "panic with bit {bit} of byte {byte} flipped");
+                assert!(
+                    std::panic::catch_unwind(|| hevc_config(&v, &m, &p, (1280, 720), 10)).is_ok(),
+                    "panic with bit {bit} of byte {byte} flipped"
+                );
             }
         }
     }

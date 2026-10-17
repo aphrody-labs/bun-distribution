@@ -52,8 +52,10 @@ pub fn sign_request(
     body: &str,
     timestamp: i64,
 ) -> String {
-    let raw =
-        format!("{app_secret}+{consumer_key}+{}+{url}+{body}+{timestamp}", method.to_uppercase());
+    let raw = format!(
+        "{app_secret}+{consumer_key}+{}+{url}+{body}+{timestamp}",
+        method.to_uppercase()
+    );
     format!("$1${}", sha1_hex(&raw))
 }
 
@@ -128,7 +130,11 @@ impl OvhCredentials {
 
     /// Same credentials restricted to the application key triplet (OAuth2 pair dropped).
     pub fn legacy_only(&self) -> Option<Self> {
-        let legacy = Self { client_id: None, client_secret: None, ..self.clone() };
+        let legacy = Self {
+            client_id: None,
+            client_secret: None,
+            ..self.clone()
+        };
         (legacy.auth_mode() == Some(AuthMode::ApplicationKey)).then_some(legacy)
     }
 }
@@ -167,7 +173,10 @@ impl CachedToken {
 /// Parse the token endpoint answer. Only the OAuth2 error code is ever surfaced, never the body.
 pub fn parse_token_response(status: u16, body: &str) -> Result<(String, Duration)> {
     let json: serde_json::Value = serde_json::from_str(body).unwrap_or(serde_json::Value::Null);
-    let token = json.get("access_token").and_then(|v| v.as_str()).filter(|t| !t.is_empty());
+    let token = json
+        .get("access_token")
+        .and_then(|v| v.as_str())
+        .filter(|t| !t.is_empty());
     match (status, token) {
         (200..=299, Some(token)) => {
             let ttl = json
@@ -176,11 +185,14 @@ pub fn parse_token_response(status: u16, body: &str) -> Result<(String, Duration
                 .filter(|s| *s > 0)
                 .map_or(DEFAULT_TOKEN_TTL, Duration::from_secs);
             Ok((token.to_string(), ttl))
-        },
+        }
         _ => {
-            let code = json.get("error").and_then(|v| v.as_str()).unwrap_or("unexpected_response");
+            let code = json
+                .get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unexpected_response");
             bail!("OVH OAuth2 token request failed: HTTP {status} ({code})")
-        },
+        }
     }
 }
 
@@ -254,7 +266,10 @@ impl OvhClient {
 
     fn cached_token(&self) -> Option<String> {
         let guard = self.token.lock().ok()?;
-        guard.as_ref().filter(|t| t.is_fresh(Instant::now())).map(|t| t.value.clone())
+        guard
+            .as_ref()
+            .filter(|t| t.is_fresh(Instant::now()))
+            .map(|t| t.value.clone())
     }
 
     fn drop_token(&self) {
@@ -288,7 +303,10 @@ impl OvhClient {
         let body = resp.text().await.unwrap_or_default();
         let (value, ttl) = parse_token_response(status, &body)?;
         if let Ok(mut guard) = self.token.lock() {
-            *guard = Some(CachedToken { value: value.clone(), expires_at: Instant::now() + ttl });
+            *guard = Some(CachedToken {
+                value: value.clone(),
+                expires_at: Instant::now() + ttl,
+            });
         }
         Ok(value)
     }
@@ -300,8 +318,10 @@ impl OvhClient {
             && let Ok(text) = res.text().await
             && let Ok(server_time) = text.trim().parse::<i64>()
         {
-            let local_time =
-                SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
+            let local_time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs() as i64;
             let delta = server_time - local_time;
             self.time_delta_sec.store(delta, Ordering::SeqCst);
             self.time_synced.store(true, Ordering::SeqCst);
@@ -311,8 +331,10 @@ impl OvhClient {
     }
 
     pub fn timestamp(&self) -> i64 {
-        let local =
-            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
+        let local = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
         local + self.time_delta_sec.load(Ordering::SeqCst)
     }
 
@@ -322,7 +344,8 @@ impl OvhClient {
         path: &str,
         body: Option<serde_json::Value>,
     ) -> Result<T> {
-        self.request_versioned(ApiVersion::V1, method, path, body).await
+        self.request_versioned(ApiVersion::V1, method, path, body)
+            .await
     }
 
     /// Same as [`Self::request`] on an explicit API generation.
@@ -337,7 +360,8 @@ impl OvhClient {
             let _ = self.sync_time().await;
         }
 
-        self.execute_with_retry::<T>(version, method, path, body, true).await
+        self.execute_with_retry::<T>(version, method, path, body, true)
+            .await
     }
 
     async fn execute_with_retry<T: DeserializeOwned>(
@@ -348,7 +372,11 @@ impl OvhClient {
         body: Option<serde_json::Value>,
         allow_retry: bool,
     ) -> Result<T> {
-        let normalized = if path.starts_with('/') { path.to_string() } else { format!("/{path}") };
+        let normalized = if path.starts_with('/') {
+            path.to_string()
+        } else {
+            format!("/{path}")
+        };
         let root = match version {
             ApiVersion::V1 => &self.base_url,
             ApiVersion::V2 => &self.base_url_v2,
@@ -356,12 +384,14 @@ impl OvhClient {
         let full_url = format!("{root}{normalized}");
         let body_str = body.as_ref().map(|b| b.to_string()).unwrap_or_default();
 
-        let mut req =
-            self.http.request(method.clone(), &full_url).header("Accept", "application/json");
+        let mut req = self
+            .http
+            .request(method.clone(), &full_url)
+            .header("Accept", "application/json");
         match self.mode {
             AuthMode::OAuth2 => {
                 req = req.bearer_auth(self.access_token().await?);
-            },
+            }
             AuthMode::ApplicationKey => {
                 let ts = self.timestamp();
                 let sig = sign_request(
@@ -377,15 +407,19 @@ impl OvhClient {
                     .header("X-Ovh-Consumer", &self.creds.consumer_key)
                     .header("X-Ovh-Timestamp", ts.to_string())
                     .header("X-Ovh-Signature", sig);
-            },
+            }
         }
 
         if !body_str.is_empty() {
-            req = req.header("Content-Type", "application/json").body(body_str.clone());
+            req = req
+                .header("Content-Type", "application/json")
+                .body(body_str.clone());
         }
 
-        let resp =
-            req.send().await.with_context(|| format!("OVH HTTP request failed for {full_url}"))?;
+        let resp = req
+            .send()
+            .await
+            .with_context(|| format!("OVH HTTP request failed for {full_url}"))?;
 
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
@@ -406,7 +440,13 @@ impl OvhClient {
                 return Box::pin(self.execute_with_retry::<T>(version, method, path, body, false))
                     .await;
             }
-            bail!("OVH {} {} -> HTTP {}: {}", method, path, status.as_u16(), text);
+            bail!(
+                "OVH {} {} -> HTTP {}: {}",
+                method,
+                path,
+                status.as_u16(),
+                text
+            );
         }
 
         if text.trim().is_empty() {
@@ -444,7 +484,8 @@ impl OvhClient {
 
     /// GET on the API v2 base (IAM).
     pub async fn get_v2<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
-        self.request_versioned(ApiVersion::V2, reqwest::Method::GET, path, None).await
+        self.request_versioned(ApiVersion::V2, reqwest::Method::GET, path, None)
+            .await
     }
 
     pub async fn post_v2<T: DeserializeOwned>(
@@ -452,7 +493,8 @@ impl OvhClient {
         path: &str,
         body: Option<serde_json::Value>,
     ) -> Result<T> {
-        self.request_versioned(ApiVersion::V2, reqwest::Method::POST, path, body).await
+        self.request_versioned(ApiVersion::V2, reqwest::Method::POST, path, body)
+            .await
     }
 
     pub async fn put_v2<T: DeserializeOwned>(
@@ -460,7 +502,8 @@ impl OvhClient {
         path: &str,
         body: Option<serde_json::Value>,
     ) -> Result<T> {
-        self.request_versioned(ApiVersion::V2, reqwest::Method::PUT, path, body).await
+        self.request_versioned(ApiVersion::V2, reqwest::Method::PUT, path, body)
+            .await
     }
 }
 
@@ -495,9 +538,15 @@ mod tests {
             ..triplet_fixture()
         };
         assert_eq!(both.auth_mode(), Some(AuthMode::OAuth2));
-        assert_eq!(triplet_fixture().auth_mode(), Some(AuthMode::ApplicationKey));
+        assert_eq!(
+            triplet_fixture().auth_mode(),
+            Some(AuthMode::ApplicationKey)
+        );
         assert_eq!(oauth_fixture().auth_mode(), Some(AuthMode::OAuth2));
-        let half = OvhCredentials { client_id: Some("i".into()), ..Default::default() };
+        let half = OvhCredentials {
+            client_id: Some("i".into()),
+            ..Default::default()
+        };
         assert_eq!(half.auth_mode(), None);
         assert!(OvhClient::new(half).is_err());
     }
@@ -532,15 +581,27 @@ mod tests {
 
     #[test]
     fn token_urls_follow_the_official_sdks() {
-        assert_eq!(oauth2_token_url("ovh-eu"), Some("https://www.ovh.com/auth/oauth2/token"));
-        assert_eq!(oauth2_token_url("ovh-ca"), Some("https://ca.ovh.com/auth/oauth2/token"));
-        assert_eq!(oauth2_token_url("ovh-us"), Some("https://us.ovhcloud.com/auth/oauth2/token"));
+        assert_eq!(
+            oauth2_token_url("ovh-eu"),
+            Some("https://www.ovh.com/auth/oauth2/token")
+        );
+        assert_eq!(
+            oauth2_token_url("ovh-ca"),
+            Some("https://ca.ovh.com/auth/oauth2/token")
+        );
+        assert_eq!(
+            oauth2_token_url("ovh-us"),
+            Some("https://us.ovhcloud.com/auth/oauth2/token")
+        );
         assert_eq!(oauth2_token_url("kimsufi-eu"), None);
     }
 
     #[test]
     fn v2_base_replaces_the_version_suffix() {
-        assert_eq!(v2_base_url("https://eu.api.ovh.com/1.0"), "https://eu.api.ovh.com/v2");
+        assert_eq!(
+            v2_base_url("https://eu.api.ovh.com/1.0"),
+            "https://eu.api.ovh.com/v2"
+        );
         assert_eq!(v2_base_url("https://x.test"), "https://x.test");
         let client = OvhClient::new(oauth_fixture()).unwrap();
         assert_eq!(client.base_url(), "https://eu.api.ovh.com/1.0");
@@ -551,11 +612,20 @@ mod tests {
     #[test]
     fn token_is_refreshed_within_the_margin() {
         let now = Instant::now();
-        let fresh = CachedToken { value: "t".into(), expires_at: now + Duration::from_secs(3599) };
+        let fresh = CachedToken {
+            value: "t".into(),
+            expires_at: now + Duration::from_secs(3599),
+        };
         assert!(fresh.is_fresh(now));
-        let almost = CachedToken { value: "t".into(), expires_at: now + Duration::from_secs(60) };
+        let almost = CachedToken {
+            value: "t".into(),
+            expires_at: now + Duration::from_secs(60),
+        };
         assert!(!almost.is_fresh(now));
-        let edge = CachedToken { value: "t".into(), expires_at: now + Duration::from_secs(61) };
+        let edge = CachedToken {
+            value: "t".into(),
+            expires_at: now + Duration::from_secs(61),
+        };
         assert!(edge.is_fresh(now));
         assert!(!fresh.is_fresh(now + Duration::from_secs(3540)));
     }

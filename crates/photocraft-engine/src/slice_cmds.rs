@@ -19,7 +19,10 @@ use crate::commands::{CommandSpec, layer_param};
 use crate::{EngineError, Result, Session};
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn exhausted_id() -> EngineError {
@@ -29,17 +32,27 @@ fn exhausted_id() -> EngineError {
 // ---------- predicates ----------
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn unlocked(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.file_menu.slices_locked { Err("slices are locked (View › Lock Slices)".into()) } else { Ok(()) }
+    if s.file_menu.slices_locked {
+        Err("slices are locked (View › Lock Slices)".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_slices(s: &Session) -> std::result::Result<(), String> {
     unlocked(s)?;
-    if s.active().is_some_and(|d| !d.doc.slices.is_empty()) { Ok(()) } else { Err("the document has no user or layer-based slices".into()) }
+    if s.active().is_some_and(|d| !d.doc.slices.is_empty()) {
+        Ok(())
+    } else {
+        Err("the document has no user or layer-based slices".into())
+    }
 }
 
 fn has_layer_for_slice(s: &Session) -> std::result::Result<(), String> {
@@ -66,15 +79,20 @@ pub fn layer_bounds(l: &Layer) -> Rect {
     let own = match &l.content {
         LayerContent::Group(g) => match &g.artboard {
             Some(a) => a.rect,
-            None => g.children.iter().filter(|c| c.visible).map(layer_bounds).fold(Rect::EMPTY, |a, b| {
-                if a.is_empty() {
-                    b
-                } else if b.is_empty() {
-                    a
-                } else {
-                    a.union(&b)
-                }
-            }),
+            None => g
+                .children
+                .iter()
+                .filter(|c| c.visible)
+                .map(layer_bounds)
+                .fold(Rect::EMPTY, |a, b| {
+                    if a.is_empty() {
+                        b
+                    } else if b.is_empty() {
+                        a
+                    } else {
+                        a.union(&b)
+                    }
+                }),
         },
         _ => photocraft_doc::comps::position_bounds(l),
     };
@@ -88,19 +106,39 @@ fn layer_slice_rect(doc: &Document, s: &Slice) -> Option<Rect> {
     let l = doc.layer(s.layer?)?;
     let b = layer_bounds(l);
     let [t, le, bo, r] = s.outsets;
-    Some(if b.is_empty() { b } else { Rect::new(b.x0.saturating_sub(le), b.y0.saturating_sub(t), b.x1.saturating_add(r), b.y1.saturating_add(bo)) })
+    Some(if b.is_empty() {
+        b
+    } else {
+        Rect::new(
+            b.x0.saturating_sub(le),
+            b.y0.saturating_sub(t),
+            b.x1.saturating_add(r),
+            b.y1.saturating_add(bo),
+        )
+    })
 }
 
 /// Re-fits layer-based slices of the active document to their layers; drops slices whose layer
 /// was deleted (as Photoshop does). Not a history step.
 pub(crate) fn refresh(s: &mut Session) {
     let Some(st) = s.active_mut() else { return };
-    if !st.doc.slices.list.iter().any(|sl| sl.origin == SliceOrigin::Layer) {
+    if !st
+        .doc
+        .slices
+        .list
+        .iter()
+        .any(|sl| sl.origin == SliceOrigin::Layer)
+    {
         return;
     }
     let doc = &st.doc;
     let mut changes: Vec<(u32, Option<Rect>)> = Vec::new();
-    for sl in doc.slices.list.iter().filter(|sl| sl.origin == SliceOrigin::Layer) {
+    for sl in doc
+        .slices
+        .list
+        .iter()
+        .filter(|sl| sl.origin == SliceOrigin::Layer)
+    {
         let r = layer_slice_rect(doc, sl);
         if r != Some(sl.rect) {
             changes.push((sl.id, r));
@@ -125,21 +163,34 @@ pub(crate) fn refresh(s: &mut Session) {
 // ---------- params ----------
 
 pub(crate) fn rect_param(p: &Value) -> Option<Rect> {
-    let f = |v: &Value| v.as_f64().filter(|x| x.is_finite()).map(|x| x.round() as i32);
+    let f = |v: &Value| {
+        v.as_f64()
+            .filter(|x| x.is_finite())
+            .map(|x| x.round() as i32)
+    };
     let rect = |x: i32, y: i32, w: i32, h: i32| {
         if w <= 0 || h <= 0 {
             return None;
         }
         Some(Rect::new(x, y, x.checked_add(w)?, y.checked_add(h)?))
     };
-    if let Some(a) = p.get("rect").and_then(Value::as_array).filter(|a| a.len() == 4) {
+    if let Some(a) = p
+        .get("rect")
+        .and_then(Value::as_array)
+        .filter(|a| a.len() == 4)
+    {
         let v: Vec<i32> = a.iter().filter_map(f).collect();
         if v.len() == 4 {
             return rect(v[0], v[1], v[2], v[3]);
         }
         return None;
     }
-    rect(f(p.get("x")?)?, f(p.get("y")?)?, f(p.get("width")?)?, f(p.get("height")?)?)
+    rect(
+        f(p.get("x")?)?,
+        f(p.get("y")?)?,
+        f(p.get("width")?)?,
+        f(p.get("height")?)?,
+    )
 }
 
 fn hex_color(s: &str) -> Option<[u8; 4]> {
@@ -158,9 +209,20 @@ fn apply_options(sl: &mut Slice, p: &Value, cmd: &str) -> Result<()> {
         sl.name = v;
     }
     if let Some(v) = text("kind").or_else(|| text("type")) {
-        sl.kind = SliceKind::from_id(&v).ok_or_else(|| bad(cmd, format!("unknown slice type `{v}` (image|noImage|table)")))?;
+        sl.kind = SliceKind::from_id(&v).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown slice type `{v}` (image|noImage|table)"),
+            )
+        })?;
     }
-    for (k, slot) in [("url", &mut sl.url), ("target", &mut sl.target), ("message", &mut sl.message), ("alt", &mut sl.alt), ("cellText", &mut sl.cell_text)] {
+    for (k, slot) in [
+        ("url", &mut sl.url),
+        ("target", &mut sl.target),
+        ("message", &mut sl.message),
+        ("alt", &mut sl.alt),
+        ("cellText", &mut sl.cell_text),
+    ] {
         if let Some(v) = text(k) {
             *slot = v;
         }
@@ -168,17 +230,31 @@ fn apply_options(sl: &mut Slice, p: &Value, cmd: &str) -> Result<()> {
     if let Some(b) = p.get("cellTextIsHtml").and_then(Value::as_bool) {
         sl.cell_text_is_html = b;
     }
-    for (k, slot) in [("horizontalAlign", &mut sl.horizontal_align), ("verticalAlign", &mut sl.vertical_align)] {
-        if let Some(v) = crate::commands::int(p, k).filter(|v| *v >= 0).map(|v| v as u64) {
+    for (k, slot) in [
+        ("horizontalAlign", &mut sl.horizontal_align),
+        ("verticalAlign", &mut sl.vertical_align),
+    ] {
+        if let Some(v) = crate::commands::int(p, k)
+            .filter(|v| *v >= 0)
+            .map(|v| v as u64)
+        {
             *slot = v.min(4) as u32;
         }
     }
     match p.get("background").and_then(Value::as_str) {
         Some("none") | Some("") => sl.background = None,
-        Some(c) => sl.background = Some(hex_color(c).ok_or_else(|| bad(cmd, "background is \"none\" or \"#rrggbb\""))?),
+        Some(c) => {
+            sl.background = Some(
+                hex_color(c).ok_or_else(|| bad(cmd, "background is \"none\" or \"#rrggbb\""))?,
+            )
+        }
         None => {}
     }
-    if let Some(a) = p.get("outsets").and_then(Value::as_array).filter(|a| a.len() == 4) {
+    if let Some(a) = p
+        .get("outsets")
+        .and_then(Value::as_array)
+        .filter(|a| a.len() == 4)
+    {
         for (i, v) in a.iter().enumerate() {
             sl.outsets[i] = v.as_i64().unwrap_or(0).clamp(-10_000, 10_000) as i32;
         }
@@ -205,10 +281,20 @@ enum Target {
 fn find(s: &Session, p: &Value, cmd: &str) -> Result<Target> {
     let d = s.active().ok_or(EngineError::NoDocument)?;
     if let Some(id) = crate::commands::u32_id_param(cmd, p, "slice")? {
-        return d.doc.slices.get(id).map(|sl| Target::Stored(sl.id)).ok_or_else(|| bad(cmd, format!("no slice with id {id}")));
+        return d
+            .doc
+            .slices
+            .get(id)
+            .map(|sl| Target::Stored(sl.id))
+            .ok_or_else(|| bad(cmd, format!("no slice with id {id}")));
     }
-    let n = crate::commands::int(p, "number").filter(|v| *v > 0).ok_or_else(|| bad(cmd, "give \"slice\" (id) or \"number\""))? as usize;
-    let r = slices::resolve(&d.doc).into_iter().find(|r| r.number == n).ok_or_else(|| bad(cmd, format!("no slice number {n}")))?;
+    let n = crate::commands::int(p, "number")
+        .filter(|v| *v > 0)
+        .ok_or_else(|| bad(cmd, "give \"slice\" (id) or \"number\""))? as usize;
+    let r = slices::resolve(&d.doc)
+        .into_iter()
+        .find(|r| r.number == n)
+        .ok_or_else(|| bad(cmd, format!("no slice number {n}")))?;
     Ok(match r.id {
         Some(id) => Target::Stored(id),
         None => Target::Auto(r.rect),
@@ -223,7 +309,11 @@ fn store(doc: &mut Document, t: Target) -> Result<u32> {
         Target::Stored(id) => Ok(id),
         Target::Auto(rect) => {
             let id = doc.slices.next_id().ok_or_else(exhausted_id)?;
-            doc.slices.list.push(Slice { id, rect, ..Default::default() });
+            doc.slices.list.push(Slice {
+                id,
+                rect,
+                ..Default::default()
+            });
             Ok(id)
         }
     }
@@ -261,20 +351,29 @@ pub fn resolved_json(doc: &Document, r: &ResolvedSlice) -> Value {
 fn new_slice(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "slice.new";
     let d = s.active().ok_or(EngineError::NoDocument)?;
-    let rect = rect_param(p).ok_or_else(|| bad(cmd, "give \"rect\":[x,y,w,h] (or x, y, width, height)"))?.intersect(&d.doc.bounds());
+    let rect = rect_param(p)
+        .ok_or_else(|| bad(cmd, "give \"rect\":[x,y,w,h] (or x, y, width, height)"))?
+        .intersect(&d.doc.bounds());
     if rect.is_empty() {
         return Err(bad(cmd, "the slice is outside the canvas"));
     }
     let id = s.edit("Slice", |doc, _| {
         let id = doc.slices.next_id().ok_or_else(exhausted_id)?;
-        let mut sl = Slice { id, rect, ..Default::default() };
+        let mut sl = Slice {
+            id,
+            rect,
+            ..Default::default()
+        };
         apply_options(&mut sl, p, cmd)?;
         sl.rect = rect;
         doc.slices.list.push(sl);
         Ok(id)
     })?;
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
-    let number = slices::resolve(doc).iter().find(|r| r.id == Some(id)).map(|r| r.number);
+    let number = slices::resolve(doc)
+        .iter()
+        .find(|r| r.id == Some(id))
+        .map(|r| r.number);
     Ok(json!({"slice": id, "number": number}))
 }
 
@@ -283,10 +382,26 @@ fn from_guides(s: &mut Session) -> Result<Value> {
     let b = d.doc.bounds();
     let mut xs: Vec<i32> = vec![b.x0, b.x1];
     let mut ys: Vec<i32> = vec![b.y0, b.y1];
-    xs.extend(d.doc.guides.vertical.iter().map(|g| g.round() as i32).filter(|x| *x > b.x0 && *x < b.x1));
-    ys.extend(d.doc.guides.horizontal.iter().map(|g| g.round() as i32).filter(|y| *y > b.y0 && *y < b.y1));
+    xs.extend(
+        d.doc
+            .guides
+            .vertical
+            .iter()
+            .map(|g| g.round() as i32)
+            .filter(|x| *x > b.x0 && *x < b.x1),
+    );
+    ys.extend(
+        d.doc
+            .guides
+            .horizontal
+            .iter()
+            .map(|g| g.round() as i32)
+            .filter(|y| *y > b.y0 && *y < b.y1),
+    );
     if xs.len() == 2 && ys.len() == 2 {
-        return Err(EngineError::Other("the document has no guides inside the canvas".into()));
+        return Err(EngineError::Other(
+            "the document has no guides inside the canvas".into(),
+        ));
     }
     xs.sort_unstable();
     xs.dedup();
@@ -304,7 +419,11 @@ fn from_guides(s: &mut Session) -> Result<Value> {
         doc.slices.list.clear();
         for r in rects {
             let id = doc.slices.next_id().ok_or_else(exhausted_id)?;
-            doc.slices.list.push(Slice { id, rect: r, ..Default::default() });
+            doc.slices.list.push(Slice {
+                id,
+                rect: r,
+                ..Default::default()
+            });
         }
         Ok(())
     })?;
@@ -313,15 +432,25 @@ fn from_guides(s: &mut Session) -> Result<Value> {
 
 fn set_slice(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "slice.set";
-    if ["rect", "x", "y", "width", "height"].iter().any(|key| p.get(key).is_some()) && rect_param(p).is_none() {
-        return Err(bad(cmd, "give a finite rectangle with positive dimensions and representable corners"));
+    if ["rect", "x", "y", "width", "height"]
+        .iter()
+        .any(|key| p.get(key).is_some())
+        && rect_param(p).is_none()
+    {
+        return Err(bad(
+            cmd,
+            "give a finite rectangle with positive dimensions and representable corners",
+        ));
     }
     let t = find(s, p, cmd)?;
     // Promoting an auto slice and its options are one user action (one history step), and
     // nothing is committed unless every option is valid and the slice stays on the canvas.
     let id = s.edit("Slice Options", |doc, _| {
         let id = store(doc, t)?;
-        let sl = doc.slices.get_mut(id).ok_or_else(|| bad(cmd, "slice vanished"))?;
+        let sl = doc
+            .slices
+            .get_mut(id)
+            .ok_or_else(|| bad(cmd, "slice vanished"))?;
         apply_options(sl, p, cmd)?;
         if !slices::resolve(doc).iter().any(|r| r.id == Some(id)) {
             return Err(bad(cmd, "slice is off the canvas"));
@@ -329,7 +458,10 @@ fn set_slice(s: &mut Session, p: &Value) -> Result<Value> {
         Ok(id)
     })?;
     let d = s.active().ok_or(EngineError::NoDocument)?;
-    let r = slices::resolve(&d.doc).into_iter().find(|r| r.id == Some(id)).ok_or_else(|| bad(cmd, "slice is off the canvas"))?;
+    let r = slices::resolve(&d.doc)
+        .into_iter()
+        .find(|r| r.id == Some(id))
+        .ok_or_else(|| bad(cmd, "slice is off the canvas"))?;
     Ok(resolved_json(&d.doc, &r))
 }
 
@@ -339,7 +471,10 @@ fn promote(s: &mut Session, p: &Value) -> Result<Value> {
     // Layer-based slices promote too: they stop following their layer.
     let promotes = match t {
         Target::Auto(_) => true,
-        Target::Stored(id) => s.active().and_then(|d| d.doc.slices.get(id)).is_some_and(|sl| sl.origin == SliceOrigin::Layer),
+        Target::Stored(id) => s
+            .active()
+            .and_then(|d| d.doc.slices.get(id))
+            .is_some_and(|sl| sl.origin == SliceOrigin::Layer),
     };
     let id = match t {
         Target::Stored(id) if !promotes => id,
@@ -358,8 +493,14 @@ fn promote(s: &mut Session, p: &Value) -> Result<Value> {
 fn ids_param(s: &mut Session, p: &Value, cmd: &str) -> Result<Vec<u32>> {
     if let Some(a) = p.get("slices").and_then(Value::as_array) {
         let d = s.active().ok_or(EngineError::NoDocument)?;
-        let ids: Vec<u32> = a.iter().map(|v| crate::commands::u32_id(cmd, "slices", v)).collect::<Result<Vec<_>>>()?;
-        let ids: Vec<u32> = ids.into_iter().filter(|id| d.doc.slices.get(*id).is_some()).collect();
+        let ids: Vec<u32> = a
+            .iter()
+            .map(|v| crate::commands::u32_id(cmd, "slices", v))
+            .collect::<Result<Vec<_>>>()?;
+        let ids: Vec<u32> = ids
+            .into_iter()
+            .filter(|id| d.doc.slices.get(*id).is_some())
+            .collect();
         if ids.is_empty() {
             return Err(bad(cmd, "none of the slices exist"));
         }
@@ -386,17 +527,34 @@ const MAX_DIVIDE_PARTS: i32 = 10_000;
 fn divide(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "slice.divide";
     let t = find(s, p, cmd)?;
-    let down = crate::commands::int(p, "horizontal").unwrap_or(1).clamp(1, 1000) as i32;
-    let across = crate::commands::int(p, "vertical").unwrap_or(1).clamp(1, 1000) as i32;
+    let down = crate::commands::int(p, "horizontal")
+        .unwrap_or(1)
+        .clamp(1, 1000) as i32;
+    let across = crate::commands::int(p, "vertical")
+        .unwrap_or(1)
+        .clamp(1, 1000) as i32;
     if down == 1 && across == 1 {
-        return Err(bad(cmd, "give \"horizontal\" (slices down) and/or \"vertical\" (slices across) > 1"));
+        return Err(bad(
+            cmd,
+            "give \"horizontal\" (slices down) and/or \"vertical\" (slices across) > 1",
+        ));
     }
     if down * across > MAX_DIVIDE_PARTS {
-        return Err(bad(cmd, format!("{down} x {across} = {} parts is more than one division makes ({MAX_DIVIDE_PARTS})", down * across)));
+        return Err(bad(
+            cmd,
+            format!(
+                "{down} x {across} = {} parts is more than one division makes ({MAX_DIVIDE_PARTS})",
+                down * across
+            ),
+        ));
     }
     let r = match t {
         Target::Auto(r) => r,
-        Target::Stored(id) => s.active().and_then(|d| d.doc.slices.get(id)).map(|sl| sl.rect).ok_or_else(|| bad(cmd, "no such slice"))?,
+        Target::Stored(id) => s
+            .active()
+            .and_then(|d| d.doc.slices.get(id))
+            .map(|sl| sl.rect)
+            .ok_or_else(|| bad(cmd, "no such slice"))?,
     };
     if r.width() < across as u32 || r.height() < down as u32 {
         return Err(bad(cmd, "the slice is too small to divide that many times"));
@@ -405,8 +563,17 @@ fn divide(s: &mut Session, p: &Value) -> Result<Value> {
     // An auto slice is promoted inside the same step: one undo restores it.
     let ids = s.edit("Divide Slice", |doc, _| {
         let id = store(doc, t)?;
-        let src = doc.slices.get(id).cloned().ok_or_else(|| bad(cmd, "no such slice"))?;
-        let pos = doc.slices.list.iter().position(|sl| sl.id == id).unwrap_or(0);
+        let src = doc
+            .slices
+            .get(id)
+            .cloned()
+            .ok_or_else(|| bad(cmd, "no such slice"))?;
+        let pos = doc
+            .slices
+            .list
+            .iter()
+            .position(|sl| sl.id == id)
+            .unwrap_or(0);
         doc.slices.list.retain(|sl| sl.id != id);
         let mut ids = Vec::new();
         let mut parts = Vec::new();
@@ -414,8 +581,14 @@ fn divide(s: &mut Session, p: &Value) -> Result<Value> {
         for j in 0..down {
             for i in 0..across {
                 // Products can exceed i32 even when every interpolated edge fits the rect.
-                let x = |k: i32| (i64::from(r.x0) + i64::from(r.width()) * i64::from(k) / i64::from(across)) as i32;
-                let y = |k: i32| (i64::from(r.y0) + i64::from(r.height()) * i64::from(k) / i64::from(down)) as i32;
+                let x = |k: i32| {
+                    (i64::from(r.x0) + i64::from(r.width()) * i64::from(k) / i64::from(across))
+                        as i32
+                };
+                let y = |k: i32| {
+                    (i64::from(r.y0) + i64::from(r.height()) * i64::from(k) / i64::from(down))
+                        as i32
+                };
                 let (x0, x1) = (x(i), x(i + 1));
                 let (y0, y1) = (y(j), y(j + 1));
                 let nid = if ids.is_empty() {
@@ -430,12 +603,26 @@ fn divide(s: &mut Session, p: &Value) -> Result<Value> {
                 };
                 ids.push(nid);
                 // The first part keeps the original's options; the others start fresh.
-                let base = if parts.is_empty() { Slice { origin: SliceOrigin::User, layer: None, ..src.clone() } } else { Slice::default() };
-                parts.push(Slice { id: nid, rect: Rect::new(x0, y0, x1, y1), ..base });
+                let base = if parts.is_empty() {
+                    Slice {
+                        origin: SliceOrigin::User,
+                        layer: None,
+                        ..src.clone()
+                    }
+                } else {
+                    Slice::default()
+                };
+                parts.push(Slice {
+                    id: nid,
+                    rect: Rect::new(x0, y0, x1, y1),
+                    ..base
+                });
             }
         }
         for (k, sl) in parts.into_iter().enumerate() {
-            doc.slices.list.insert((pos + k).min(doc.slices.list.len()), sl);
+            doc.slices
+                .list
+                .insert((pos + k).min(doc.slices.list.len()), sl);
         }
         Ok(ids)
     })?;
@@ -444,7 +631,10 @@ fn divide(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn list(s: &mut Session) -> Result<Value> {
     let d = s.active().ok_or(EngineError::NoDocument)?;
-    let all: Vec<Value> = slices::resolve(&d.doc).iter().map(|r| resolved_json(&d.doc, r)).collect();
+    let all: Vec<Value> = slices::resolve(&d.doc)
+        .iter()
+        .map(|r| resolved_json(&d.doc, r))
+        .collect();
     Ok(json!({"slices": all, "locked": s.file_menu.slices_locked}))
 }
 
@@ -458,11 +648,18 @@ fn layer_based(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let rect = layer_bounds(l);
     if rect.is_empty() {
-        return Err(EngineError::Other("Could not create a layer based slice because the layer is empty".into()));
+        return Err(EngineError::Other(
+            "Could not create a layer based slice because the layer is empty".into(),
+        ));
     }
     let id = s.edit("New Layer Based Slice", |doc, _| {
         let id = doc.slices.next_id().ok_or_else(exhausted_id)?;
-        let text = |k: &str| p.get(k).and_then(Value::as_str).unwrap_or_default().to_string();
+        let text = |k: &str| {
+            p.get(k)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string()
+        };
         doc.slices.list.push(Slice {
             id,
             origin: SliceOrigin::Layer,
@@ -479,7 +676,10 @@ fn layer_based(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn lock(s: &mut Session, p: &Value) -> Result<Value> {
-    let on = p.get("on").and_then(Value::as_bool).unwrap_or(!s.file_menu.slices_locked);
+    let on = p
+        .get("on")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.file_menu.slices_locked);
     s.file_menu.slices_locked = on;
     Ok(json!({"locked": on}))
 }
@@ -496,7 +696,16 @@ fn clear(s: &mut Session) -> Result<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     macro_rules! spec {
         ($id:expr, $label:expr, $menu:expr, $params:expr, $enabled:expr, $run:expr) => {
-            CommandSpec { id: $id, label: $label, menu: $menu, shortcut: None, params: $params, enabled: $enabled, journal: true, run: $run }
+            CommandSpec {
+                id: $id,
+                label: $label,
+                menu: $menu,
+                shortcut: None,
+                params: $params,
+                enabled: $enabled,
+                journal: true,
+                run: $run,
+            }
         };
     }
     vec![
@@ -508,9 +717,14 @@ pub fn specs() -> Vec<CommandSpec> {
             unlocked,
             new_slice
         ),
-        spec!("slice.fromGuides", "Slices From Guides", &[], "{} (replaces every slice by the grid of the canvas guides) → {slices}", unlocked, |s, _| {
-            from_guides(s)
-        }),
+        spec!(
+            "slice.fromGuides",
+            "Slices From Guides",
+            &[],
+            "{} (replaces every slice by the grid of the canvas guides) → {slices}",
+            unlocked,
+            |s, _| { from_guides(s) }
+        ),
         spec!(
             "slice.set",
             "Slice Options…",
@@ -519,8 +733,22 @@ pub fn specs() -> Vec<CommandSpec> {
             unlocked,
             set_slice
         ),
-        spec!("slice.promote", "Promote", &[], r##"{"slice":id | "number":n} (auto or layer-based → user slice) → {slice}"##, unlocked, promote),
-        spec!("slice.delete", "Delete Slice", &[], r##"{"slice":id | "number":n | "slices":[id…]} → {deleted}"##, has_slices, delete),
+        spec!(
+            "slice.promote",
+            "Promote",
+            &[],
+            r##"{"slice":id | "number":n} (auto or layer-based → user slice) → {slice}"##,
+            unlocked,
+            promote
+        ),
+        spec!(
+            "slice.delete",
+            "Delete Slice",
+            &[],
+            r##"{"slice":id | "number":n | "slices":[id…]} → {deleted}"##,
+            has_slices,
+            delete
+        ),
         spec!(
             "slice.divide",
             "Divide Slice…",
@@ -547,8 +775,22 @@ pub fn specs() -> Vec<CommandSpec> {
             has_layer_for_slice,
             layer_based
         ),
-        spec!("view.lockSlices", "Lock Slices", &["View"], r##"{"on":bool? (default: toggle)} → {locked}"##, has_doc, lock),
-        spec!("view.clearSlices", "Clear Slices", &["View"], "{} (deletes every user and layer-based slice) → {cleared}", has_slices, |s, _| clear(s)),
+        spec!(
+            "view.lockSlices",
+            "Lock Slices",
+            &["View"],
+            r##"{"on":bool? (default: toggle)} → {locked}"##,
+            has_doc,
+            lock
+        ),
+        spec!(
+            "view.clearSlices",
+            "Clear Slices",
+            &["View"],
+            "{} (deletes every user and layer-based slice) → {cleared}",
+            has_slices,
+            |s, _| clear(s)
+        ),
     ]
 }
 

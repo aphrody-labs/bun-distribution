@@ -83,8 +83,16 @@ async fn sqlite_local() {
     assert_eq!(got.tags, vec!["fact".to_string()]);
 
     // Search by agent_id — must return exactly 3 (agent-B excluded).
-    let hits = provider.search(MemoryQuery::for_agent("agent-A")).await.expect("search agent");
-    assert_eq!(hits.len(), 3, "expected 3 records for agent-A, got {}", hits.len());
+    let hits = provider
+        .search(MemoryQuery::for_agent("agent-A"))
+        .await
+        .expect("search agent");
+    assert_eq!(
+        hits.len(),
+        3,
+        "expected 3 records for agent-A, got {}",
+        hits.len()
+    );
 
     // Search with keyword filter.
     let hits = provider
@@ -114,7 +122,10 @@ async fn sqlite_local() {
 
     // Delete one — must drop count from 3 to 2.
     provider.delete(&id1).await.expect("delete");
-    let hits = provider.search(MemoryQuery::for_agent("agent-A")).await.expect("re-search");
+    let hits = provider
+        .search(MemoryQuery::for_agent("agent-A"))
+        .await
+        .expect("re-search");
     assert_eq!(hits.len(), 2);
 
     // Health must be Ok.
@@ -135,8 +146,10 @@ async fn sqlite_local_profiles_are_physically_isolated() {
     let left = SqliteLocalProvider::open_profile(&left_context).expect("left profile memory");
     let right = SqliteLocalProvider::open_profile(&right_context).expect("right profile memory");
 
-    let id =
-        left.add(MemoryRecord::new("shared-id", "agent", "left-only")).await.expect("insert left");
+    let id = left
+        .add(MemoryRecord::new("shared-id", "agent", "left-only"))
+        .await
+        .expect("insert left");
     assert!(left.get(&id).await.expect("read left").is_some());
     assert!(right.get(&id).await.expect("read right").is_none());
     assert_ne!(left_context.database_path(), right_context.database_path());
@@ -156,8 +169,10 @@ async fn mem0_smoke() {
         headers: HeaderMap,
         Json(body): Json<Value>,
     ) -> Json<Value> {
-        *s.auth.lock().expect("lock") =
-            headers.get("authorization").and_then(|v| v.to_str().ok()).map(str::to_string);
+        *s.auth.lock().expect("lock") = headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
         *s.body.lock().expect("lock") = Some(body);
         Json(json!({ "id": "mem_123" }))
     }
@@ -167,10 +182,15 @@ async fn mem0_smoke() {
         headers: HeaderMap,
         Query(params): Query<Vec<(String, String)>>,
     ) -> Json<Value> {
-        *s.auth.lock().expect("lock") =
-            headers.get("authorization").and_then(|v| v.to_str().ok()).map(str::to_string);
-        let user_id =
-            params.iter().find(|(k, _)| k == "user_id").map(|(_, v)| v.clone()).unwrap_or_default();
+        *s.auth.lock().expect("lock") = headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
+        let user_id = params
+            .iter()
+            .find(|(k, _)| k == "user_id")
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default();
         Json(json!([{
             "id": "mem_456",
             "user_id": user_id,
@@ -205,7 +225,10 @@ async fn mem0_smoke() {
     assert_eq!(body["messages"][0]["content"], "remember this fact");
 
     // Search → must return exactly 1 record.
-    let hits = provider.search(MemoryQuery::for_agent("user-1")).await.expect("search");
+    let hits = provider
+        .search(MemoryQuery::for_agent("user-1"))
+        .await
+        .expect("search");
     assert_eq!(hits.len(), 1);
     assert_eq!(hits[0].id, "mem_456");
     assert_eq!(hits[0].content, "echo back match");
@@ -226,11 +249,14 @@ async fn honcho_smoke() {
         headers: HeaderMap,
         Json(body): Json<Value>,
     ) -> Json<Value> {
-        *s.auth.lock().expect("lock") =
-            headers.get("authorization").and_then(|v| v.to_str().ok()).map(str::to_string);
+        *s.auth.lock().expect("lock") = headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
         *s.body.lock().expect("lock") = Some(body);
-        *s.last_path.lock().expect("lock") =
-            Some(format!("/v1/apps/{app_id}/users/{user_id}/sessions/{session_id}/messages"));
+        *s.last_path.lock().expect("lock") = Some(format!(
+            "/v1/apps/{app_id}/users/{user_id}/sessions/{session_id}/messages"
+        ));
         Json(json!({ "id": "hmsg_999" }))
     }
 
@@ -239,8 +265,10 @@ async fn honcho_smoke() {
         Path((_app, user, _sess)): Path<(String, String, String)>,
         headers: HeaderMap,
     ) -> Json<Value> {
-        *s.auth.lock().expect("lock") =
-            headers.get("authorization").and_then(|v| v.to_str().ok()).map(str::to_string);
+        *s.auth.lock().expect("lock") = headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
         Json(json!({
             "items": [{
                 "id": "hmsg_111",
@@ -277,7 +305,10 @@ async fn honcho_smoke() {
     assert_eq!(body["is_user"], true);
 
     // Search must return exactly 1 record with the fact tag round-tripped.
-    let hits = provider.search(MemoryQuery::for_agent("user-X")).await.expect("search");
+    let hits = provider
+        .search(MemoryQuery::for_agent("user-X"))
+        .await
+        .expect("search");
     assert_eq!(hits.len(), 1);
     assert_eq!(hits[0].id, "hmsg_111");
     assert_eq!(hits[0].tags, vec!["fact".to_string()]);
@@ -296,7 +327,10 @@ async fn dyn_dispatch_works() {
     let id = provider.add(rec).await.expect("dyn add");
     assert!(!id.is_empty());
 
-    let hits = provider.search(MemoryQuery::for_agent("agent-dyn")).await.expect("dyn search");
+    let hits = provider
+        .search(MemoryQuery::for_agent("agent-dyn"))
+        .await
+        .expect("dyn search");
     assert_eq!(hits.len(), 1);
     assert_eq!(hits[0].content, "dispatched record");
 }

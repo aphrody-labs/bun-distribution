@@ -6,7 +6,11 @@ use crate::error::{Result, invalid};
 /// Length in bytes of a VINT whose first byte is `b` (1..=8), or `None` for a zero first byte.
 #[inline]
 pub fn vint_len(b: u8) -> Option<usize> {
-    if b == 0 { None } else { Some(b.leading_zeros() as usize + 1) }
+    if b == 0 {
+        None
+    } else {
+        Some(b.leading_zeros() as usize + 1)
+    }
 }
 
 /// Element data size: known, or "unknown" (all value bits set).
@@ -161,7 +165,11 @@ pub struct Children<'a> {
 
 impl<'a> Children<'a> {
     pub fn new(data: &'a [u8]) -> Self {
-        Self { data, pos: 0, damaged: false }
+        Self {
+            data,
+            pos: 0,
+            damaged: false,
+        }
     }
     /// True if iteration stopped on an undecodable header.
     pub fn damaged(&self) -> bool {
@@ -193,7 +201,14 @@ impl<'a> Iterator for Children<'a> {
             Size::Known(_) => (avail as usize, false, true),
             Size::Unknown => (avail as usize, true, false),
         };
-        let e = Elem { id, offset: self.pos, header_len: hl, data: &rest[hl..hl + len], unknown_size: unknown, truncated };
+        let e = Elem {
+            id,
+            offset: self.pos,
+            header_len: hl,
+            data: &rest[hl..hl + len],
+            unknown_size: unknown,
+            truncated,
+        };
         self.pos += hl + len;
         Some(e)
     }
@@ -212,7 +227,11 @@ pub fn crc32_update(mut crc: u32, data: &[u8]) -> u32 {
         for (i, e) in t.iter_mut().enumerate() {
             let mut c = i as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
+                c = if c & 1 != 0 {
+                    0xEDB8_8320 ^ (c >> 1)
+                } else {
+                    c >> 1
+                };
             }
             *e = c;
         }
@@ -262,7 +281,9 @@ pub fn parse_lacing(lacing: Lacing, data: &[u8]) -> Result<Vec<(usize, usize)>> 
     if lacing == Lacing::None {
         return Ok(vec![(0, data.len())]);
     }
-    let Some(&n1) = data.first() else { return invalid("laced block without frame count") };
+    let Some(&n1) = data.first() else {
+        return invalid("laced block without frame count");
+    };
     let count = n1 as usize + 1;
     let mut pos = 1usize;
     let mut sizes = Vec::with_capacity(count);
@@ -272,7 +293,9 @@ pub fn parse_lacing(lacing: Lacing, data: &[u8]) -> Result<Vec<(usize, usize)>> 
             for _ in 0..count - 1 {
                 let mut s = 0usize;
                 loop {
-                    let Some(&b) = data.get(pos) else { return invalid("truncated Xiph lace header") };
+                    let Some(&b) = data.get(pos) else {
+                        return invalid("truncated Xiph lace header");
+                    };
                     pos += 1;
                     s += b as usize;
                     if b != 255 {
@@ -284,12 +307,16 @@ pub fn parse_lacing(lacing: Lacing, data: &[u8]) -> Result<Vec<(usize, usize)>> 
         }
         Lacing::Ebml => {
             if count > 1 {
-                let Some((first, l, _)) = read_vint(&data[pos..]) else { return invalid("bad EBML lace size") };
+                let Some((first, l, _)) = read_vint(&data[pos..]) else {
+                    return invalid("bad EBML lace size");
+                };
                 pos += l;
                 let mut prev = first as i64;
                 sizes.push(first as usize);
                 for _ in 1..count - 1 {
-                    let Some((d, l)) = read_svint(&data[pos..]) else { return invalid("bad EBML lace delta") };
+                    let Some((d, l)) = read_svint(&data[pos..]) else {
+                        return invalid("bad EBML lace delta");
+                    };
                     pos += l;
                     prev += d;
                     if prev < 0 {
@@ -307,7 +334,10 @@ pub fn parse_lacing(lacing: Lacing, data: &[u8]) -> Result<Vec<(usize, usize)>> 
             sizes.extend(std::iter::repeat_n(rest / count, count - 1));
         }
     }
-    let used: usize = sizes.iter().try_fold(0usize, |a, &s| a.checked_add(s)).unwrap_or(usize::MAX);
+    let used: usize = sizes
+        .iter()
+        .try_fold(0usize, |a, &s| a.checked_add(s))
+        .unwrap_or(usize::MAX);
     if pos > data.len() || used > data.len() - pos {
         return invalid("lace sizes exceed block");
     }
@@ -326,7 +356,18 @@ mod tests {
 
     #[test]
     fn vint_roundtrip() {
-        for &v in &[0u64, 1, 126, 127, 128, 16382, 16383, 16384, 1 << 20, (1 << 56) - 2] {
+        for &v in &[
+            0u64,
+            1,
+            126,
+            127,
+            128,
+            16382,
+            16383,
+            16384,
+            1 << 20,
+            (1 << 56) - 2,
+        ] {
             let mut b = Vec::new();
             write_size(&mut b, v, 1);
             let (s, l) = read_size(&b).unwrap();
@@ -347,7 +388,10 @@ mod tests {
     #[test]
     fn vint_unknown_and_invalid() {
         assert_eq!(read_size(&[0xFF]).unwrap(), (Size::Unknown, 1));
-        assert_eq!(read_size(&[0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]).unwrap(), (Size::Unknown, 8));
+        assert_eq!(
+            read_size(&[0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]).unwrap(),
+            (Size::Unknown, 8)
+        );
         for l in 1..=8 {
             let mut b = Vec::new();
             write_unknown_size(&mut b, l);
@@ -361,7 +405,10 @@ mod tests {
 
     #[test]
     fn ids() {
-        assert_eq!(read_id(&[0x1A, 0x45, 0xDF, 0xA3, 0x99]).unwrap(), (crate::ids::EBML, 4));
+        assert_eq!(
+            read_id(&[0x1A, 0x45, 0xDF, 0xA3, 0x99]).unwrap(),
+            (crate::ids::EBML, 4)
+        );
         assert_eq!(read_id(&[0xA3]).unwrap(), (0xA3, 1));
         assert_eq!(read_id(&[0x42, 0x86]).unwrap(), (0x4286, 2));
         assert!(read_id(&[0xFF]).is_none()); // reserved

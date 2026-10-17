@@ -49,12 +49,19 @@ pub(crate) fn with_missing_fonts(app: &PhotocraftApp, mut warnings: Vec<String>)
 
 /// A dropped file's name ("dropped" when it has none).
 fn dropped_name(f: &egui::DroppedFileHandle) -> String {
-    f.path().file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "dropped".into())
+    f.path()
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "dropped".into())
 }
 
 /// The file name of `path` (the document's display name), or `path` itself when it has none.
 pub fn display_name(path: &str) -> String {
-    std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).filter(|n| !n.is_empty()).unwrap_or_else(|| path.to_string())
+    std::path::Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| path.to_string())
 }
 
 impl PhotocraftApp {
@@ -68,7 +75,12 @@ impl PhotocraftApp {
         }
         if self.background_jobs {
             // The path and Open Recent are recorded when the background open finishes.
-            crate::jobs_ui::start_open(self, &display_name(path), Some(path.to_string()), crate::jobs_ui::bytes(bytes))?;
+            crate::jobs_ui::start_open(
+                self,
+                &display_name(path),
+                Some(path.to_string()),
+                crate::jobs_ui::bytes(bytes),
+            )?;
             return Ok(Vec::new());
         }
         let warnings = self.open_bytes(&display_name(path), bytes)?;
@@ -94,7 +106,10 @@ impl PhotocraftApp {
         if !is_template(name) {
             return name.to_string();
         }
-        untitled_name(tl!("Untitled"), |n| self.session.documents().iter().any(|d| d.doc.name == n) || self.jobs.opens.iter().any(|o| o.name == n))
+        untitled_name(tl!("Untitled"), |n| {
+            self.session.documents().iter().any(|d| d.doc.name == n)
+                || self.jobs.opens.iter().any(|o| o.name == n)
+        })
     }
 
     /// Read and open the file at `path` (see [`open_file`](Self::open_file)).
@@ -102,12 +117,21 @@ impl PhotocraftApp {
     pub fn open_path(&mut self, path: &str) -> Result<Vec<String>, String> {
         // Documents opening in the background are read on the worker too (a 2 GB PSB read
         // would block the window). Preset files (brushes, gradients) go the usual way.
-        let ext = std::path::Path::new(path).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+        let ext = std::path::Path::new(path)
+            .extension()
+            .map(|e| e.to_string_lossy().to_ascii_lowercase())
+            .unwrap_or_default();
         if self.background_jobs && !crate::preset_files_ui::PRESET_EXTS.contains(&ext.as_str()) {
-            crate::jobs_ui::start_open(self, &display_name(path), Some(path.to_string()), photocraft_engine::jobs::OpenSource::Path(path.to_string()))?;
+            crate::jobs_ui::start_open(
+                self,
+                &display_name(path),
+                Some(path.to_string()),
+                photocraft_engine::jobs::OpenSource::Path(path.to_string()),
+            )?;
             return Ok(Vec::new());
         }
-        let bytes = photocraft_format::read_file(std::path::Path::new(path)).map_err(|e| format!("{path}: {e}"))?;
+        let bytes = photocraft_format::read_file(std::path::Path::new(path))
+            .map_err(|e| format!("{path}: {e}"))?;
         self.open_file(path, &bytes)
     }
 
@@ -162,7 +186,12 @@ impl PhotocraftApp {
     /// Files dropped onto the window at `at` (the pointer, when known), routed by [`DropTarget`].
     /// Preset files (brushes, gradients) always go to their libraries. Native drops carry an
     /// absolute path, read in bounded reads (#375) rather than egui's whole-file read.
-    pub fn open_dropped(&mut self, ctx: &egui::Context, files: Vec<egui::DroppedFileHandle>, at: Option<egui::Pos2>) {
+    pub fn open_dropped(
+        &mut self,
+        ctx: &egui::Context,
+        files: Vec<egui::DroppedFileHandle>,
+        at: Option<egui::Pos2>,
+    ) {
         let target = self.drop_target(ctx, at);
         let mut slot = match target {
             DropTarget::Tabs(slot) => Some(slot),
@@ -184,7 +213,10 @@ impl PhotocraftApp {
 
     /// Where a drop at `at` lands. Over a window or dialog it's neither the canvas nor the tabs.
     pub(crate) fn drop_target(&self, ctx: &egui::Context, at: Option<egui::Pos2>) -> DropTarget {
-        let Some(p) = at.filter(|p| ctx.layer_id_at(*p).is_none_or(|l| l.order == egui::Order::Background)) else {
+        let Some(p) = at.filter(|p| {
+            ctx.layer_id_at(*p)
+                .is_none_or(|l| l.order == egui::Order::Background)
+        }) else {
             return DropTarget::Elsewhere;
         };
         if let Some(strip) = self.tab_strip.as_ref().filter(|s| s.rect.contains(p)) {
@@ -199,7 +231,12 @@ impl PhotocraftApp {
 
     /// Open one dropped file; with `slot`, its tab goes there (when it finishes opening, for
     /// background opens). True when it took the slot.
-    fn open_dropped_file(&mut self, f: &egui::DroppedFileHandle, name: &str, slot: Option<usize>) -> Result<bool, String> {
+    fn open_dropped_file(
+        &mut self,
+        f: &egui::DroppedFileHandle,
+        name: &str,
+        slot: Option<usize>,
+    ) -> Result<bool, String> {
         // Opens append: a background open's tab, or a document.
         let (docs, opens) = (self.session.documents().len(), self.jobs.opens.len());
         if f.path().is_absolute() {
@@ -212,18 +249,29 @@ impl PhotocraftApp {
             tab.slot = Some(slot);
             return Ok(true);
         }
-        Ok(self.run("document.move", serde_json::json!({"document": docs, "to": slot})).is_ok())
+        Ok(self
+            .run(
+                "document.move",
+                serde_json::json!({"document": docs, "to": slot}),
+            )
+            .is_ok())
     }
 
     /// Place the next file dropped on the canvas and start Free Transform on it, once no other
     /// transform is in progress (so several files are placed and transformed one after another).
     pub(crate) fn place_next_dropped(&mut self, ctx: &egui::Context) {
         while self.ui.transform.is_none() {
-            let Some(f) = self.drop_places.pop_front() else { return };
+            let Some(f) = self.drop_places.pop_front() else {
+                return;
+            };
             let placed = if f.path().is_absolute() {
-                self.run("file.placeEmbedded", serde_json::json!({"path": f.path().to_string_lossy()}))
+                self.run(
+                    "file.placeEmbedded",
+                    serde_json::json!({"path": f.path().to_string_lossy()}),
+                )
             } else {
-                crate::read_dropped(&*f).and_then(|bytes| self.place_bytes(&dropped_name(&f), bytes, None))
+                crate::read_dropped(&*f)
+                    .and_then(|bytes| self.place_bytes(&dropped_name(&f), bytes, None))
             };
             match placed {
                 Ok(_) => {
@@ -231,22 +279,42 @@ impl PhotocraftApp {
                         self.ui.status = e;
                     }
                 }
-                Err(e) => self.failed(crate::i18n::fmt(tl!("Couldn't place {name}: {error}"), &[("name", &dropped_name(&f)), ("error", &e)])),
+                Err(e) => self.failed(crate::i18n::fmt(
+                    tl!("Couldn't place {name}: {error}"),
+                    &[("name", &dropped_name(&f)), ("error", &e)],
+                )),
             }
         }
     }
 
     /// Place a file's bytes as a smart object layer (File › Place; `linked`: Place Linked, to that
     /// path), for files that weren't read from a path the command can read.
-    pub(crate) fn place_bytes(&mut self, name: &str, bytes: Vec<u8>, linked: Option<String>) -> Result<serde_json::Value, String> {
-        let r = photocraft_engine::file_cmds::place_bytes(&mut self.session, name, bytes, linked, &serde_json::json!({})).map_err(|e| e.to_string());
+    pub(crate) fn place_bytes(
+        &mut self,
+        name: &str,
+        bytes: Vec<u8>,
+        linked: Option<String>,
+    ) -> Result<serde_json::Value, String> {
+        let r = photocraft_engine::file_cmds::place_bytes(
+            &mut self.session,
+            name,
+            bytes,
+            linked,
+            &serde_json::json!({}),
+        )
+        .map_err(|e| e.to_string());
         self.sync_views();
         r
     }
 
     /// Handle the OS requests queued since the last frame.
     pub(crate) fn drain_os_events(&mut self, ctx: &egui::Context) {
-        let events = self.services.os_events.as_mut().map(|f| f()).unwrap_or_default();
+        let events = self
+            .services
+            .os_events
+            .as_mut()
+            .map(|f| f())
+            .unwrap_or_default();
         for e in events {
             match e {
                 OsEvent::Open(paths) => {
@@ -304,7 +372,9 @@ fn digit_run(it: &mut std::iter::Peekable<std::str::Chars>) -> String {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn absolute(p: &str) -> String {
-    std::path::absolute(p).map(|a| a.to_string_lossy().to_string()).unwrap_or_else(|_| p.to_string())
+    std::path::absolute(p)
+        .map(|a| a.to_string_lossy().to_string())
+        .unwrap_or_else(|_| p.to_string())
 }
 
 #[cfg(target_arch = "wasm32")]

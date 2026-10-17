@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct VoiceConversionResultToken(pub String);
 
 impl_string_token!(VoiceConversionResultToken);
-impl_crockford_generator!(VoiceConversionResultToken, 32usize, TokenPrefix::VoiceConversionResult, CrockfordLower);
+impl_crockford_generator!(
+    VoiceConversionResultToken,
+    32usize,
+    TokenPrefix::VoiceConversionResult,
+    CrockfordLower
+);

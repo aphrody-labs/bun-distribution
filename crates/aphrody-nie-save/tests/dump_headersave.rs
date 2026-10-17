@@ -29,7 +29,13 @@ fn dump_headersave_body() {
                     let hex: String = chunk.iter().map(|b| format!("{b:02x} ")).collect();
                     let ascii: String = chunk
                         .iter()
-                        .map(|&b| if (0x20..0x7F).contains(&b) { b as char } else { '.' })
+                        .map(|&b| {
+                            if (0x20..0x7F).contains(&b) {
+                                b as char
+                            } else {
+                                '.'
+                            }
+                        })
                         .collect();
                     println!("{:04x}: {:<48}|{}|", i * 16, hex, ascii);
                 }

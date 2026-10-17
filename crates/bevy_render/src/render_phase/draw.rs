@@ -333,7 +333,7 @@ where
                 QueryEntityError::NotSpawned(_) => return Err(DrawError::ViewEntityNotFound),
                 QueryEntityError::QueryDoesNotMatch(_, _)
                 | QueryEntityError::AliasedMutability(_) => {
-                    return Err(DrawError::InvalidViewQuery)
+                    return Err(DrawError::InvalidViewQuery);
                 }
             },
         };

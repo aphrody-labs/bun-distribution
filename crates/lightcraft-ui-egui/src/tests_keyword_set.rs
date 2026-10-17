@@ -12,13 +12,25 @@ const SETTLE: Duration = Duration::from_secs(120);
 
 /// The Keywords panel with a photo selected, beach and Weddings recently added.
 fn keywords_panel() -> Headless {
-    let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        lightcraft_engine::Session::with_demo(),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1400.0, 1000.0], 1.0);
     let id = h.app.session.visible_cloned()[0].0;
     for (method, params) in [
         ("ui.set", json!({"view": "photoGrid", "right": "keywords"})),
-        ("engine.execute", json!({"command": "library.select", "params": {"ids": [id]}})),
-        ("engine.execute", json!({"command": "photo.setMeta", "params": {"addKeywords": ["beach", "Weddings"]}})),
+        (
+            "engine.execute",
+            json!({"command": "library.select", "params": {"ids": [id]}}),
+        ),
+        (
+            "engine.execute",
+            json!({"command": "photo.setMeta", "params": {"addKeywords": ["beach", "Weddings"]}}),
+        ),
     ] {
         let r = h.request(method, params, T);
         assert_eq!(r["ok"], true, "{r}");
@@ -49,11 +61,27 @@ fn editing_recent_keywords_saves_them_as_a_set() {
     let mut h = keywords_panel();
     let recent = sets(&mut h)["keywords"].clone();
     open_editor(&mut h);
-    let Some(crate::state::Dialog::KeywordSet { replaces, name, slots, .. }) = h.app.ui.dialog.clone() else { panic!("{:?}", h.app.ui.dialog) };
+    let Some(crate::state::Dialog::KeywordSet {
+        replaces,
+        name,
+        slots,
+        ..
+    }) = h.app.ui.dialog.clone()
+    else {
+        panic!("{:?}", h.app.ui.dialog)
+    };
     assert_eq!((replaces, name.as_str()), (None, ""));
-    assert_eq!(json!(slots.iter().filter(|k| !k.is_empty()).collect::<Vec<_>>()), recent, "the current nine");
+    assert_eq!(
+        json!(slots.iter().filter(|k| !k.is_empty()).collect::<Vec<_>>()),
+        recent,
+        "the current nine"
+    );
     ask(&mut h, "ui.text", json!({"text": "Beach Weddings"}));
-    ask(&mut h, "ui.clickWidget", json!({"id": "field:keywordSetSlot:3"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "field:keywordSetSlot:3"}),
+    );
     ask(&mut h, "ui.text", json!({"text": "harbour"}));
     ask(&mut h, "ui.clickWidget", json!({"id": "button:dialogOk"}));
     assert_eq!(h.app.ui.dialog, None);
@@ -66,15 +94,32 @@ fn editing_recent_keywords_saves_them_as_a_set() {
 #[test]
 fn editing_a_named_set_renames_it() {
     let mut h = keywords_panel();
-    h.app.session.execute("keyword.saveSet", &json!({"name": "Weddings", "keywords": ["ceremony", "reception"]})).unwrap();
+    h.app
+        .session
+        .execute(
+            "keyword.saveSet",
+            &json!({"name": "Weddings", "keywords": ["ceremony", "reception"]}),
+        )
+        .unwrap();
     h.settle(SETTLE);
     open_editor(&mut h);
-    let Some(crate::state::Dialog::KeywordSet { replaces, name, .. }) = h.app.ui.dialog.clone() else { panic!("{:?}", h.app.ui.dialog) };
-    assert_eq!((replaces.as_deref(), name.as_str()), (Some("Weddings"), "Weddings"));
+    let Some(crate::state::Dialog::KeywordSet { replaces, name, .. }) = h.app.ui.dialog.clone()
+    else {
+        panic!("{:?}", h.app.ui.dialog)
+    };
+    assert_eq!(
+        (replaces.as_deref(), name.as_str()),
+        (Some("Weddings"), "Weddings")
+    );
     ask(&mut h, "ui.text", json!({"text": "Ceremonies"}));
     ask(&mut h, "ui.key", json!({"key": "Enter"}));
     let s = sets(&mut h);
-    let names: Vec<&str> = s["sets"].as_array().unwrap().iter().map(|x| x["name"].as_str().unwrap()).collect();
+    let names: Vec<&str> = s["sets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x["name"].as_str().unwrap())
+        .collect();
     assert_eq!(names, ["Recent Keywords", "Ceremonies"]);
     assert_eq!(s["keywords"], json!(["ceremony", "reception"]));
 }
@@ -85,7 +130,13 @@ fn a_set_needs_a_name() {
     let mut h = keywords_panel();
     open_editor(&mut h);
     ask(&mut h, "ui.clickWidget", json!({"id": "button:dialogOk"}));
-    assert!(matches!(h.app.ui.dialog, Some(crate::state::Dialog::KeywordSet { .. })), "still open");
+    assert!(
+        matches!(
+            h.app.ui.dialog,
+            Some(crate::state::Dialog::KeywordSet { .. })
+        ),
+        "still open"
+    );
     assert!(h.app.ui.toast.is_some(), "and says why");
 }
 
@@ -93,9 +144,18 @@ fn a_set_needs_a_name() {
 #[test]
 fn an_empty_slot_is_an_idle_button() {
     let mut h = keywords_panel();
-    h.app.session.execute("keyword.saveSet", &json!({"name": "Weddings", "keywords": ["ceremony", "", "reception"]})).unwrap();
+    h.app
+        .session
+        .execute(
+            "keyword.saveSet",
+            &json!({"name": "Weddings", "keywords": ["ceremony", "", "reception"]}),
+        )
+        .unwrap();
     h.settle(SETTLE);
-    assert!(h.app.widgets.iter().any(|(w, _)| w == "kwSetEmpty:2"), "slot 2 is shown empty");
+    assert!(
+        h.app.widgets.iter().any(|(w, _)| w == "kwSetEmpty:2"),
+        "slot 2 is shown empty"
+    );
 }
 
 /// The nine fields are alike and wide enough for a keyword: a grid of equal columns, not one sized
@@ -104,11 +164,23 @@ fn an_empty_slot_is_an_idle_button() {
 fn the_slots_are_alike() {
     let mut h = keywords_panel();
     open_editor(&mut h);
-    let slots: Vec<egui::Rect> =
-        (1..=9).map(|i| h.app.widgets.iter().find(|(w, _)| *w == format!("field:keywordSetSlot:{i}")).map(|(_, r)| *r).expect("slot")).collect();
+    let slots: Vec<egui::Rect> = (1..=9)
+        .map(|i| {
+            h.app
+                .widgets
+                .iter()
+                .find(|(w, _)| *w == format!("field:keywordSetSlot:{i}"))
+                .map(|(_, r)| *r)
+                .expect("slot")
+        })
+        .collect();
     for r in &slots {
         assert!(r.width() >= 100.0, "{r:?}");
-        assert!((r.width() - slots[0].width()).abs() < 1.0, "{r:?} vs {:?}", slots[0]);
+        assert!(
+            (r.width() - slots[0].width()).abs() < 1.0,
+            "{r:?} vs {:?}",
+            slots[0]
+        );
     }
 }
 
@@ -117,17 +189,38 @@ fn the_slots_are_alike() {
 #[test]
 fn a_taken_name_says_so() {
     let mut h = keywords_panel();
-    h.app.session.execute("keyword.saveSet", &json!({"name": "Travel", "keywords": ["harbour"]})).unwrap();
-    h.app.session.execute("keyword.useSet", &json!({"name": "Recent Keywords"})).unwrap();
+    h.app
+        .session
+        .execute(
+            "keyword.saveSet",
+            &json!({"name": "Travel", "keywords": ["harbour"]}),
+        )
+        .unwrap();
+    h.app
+        .session
+        .execute("keyword.useSet", &json!({"name": "Recent Keywords"}))
+        .unwrap();
     h.settle(SETTLE);
     open_editor(&mut h);
     ask(&mut h, "ui.text", json!({"text": "travel"}));
     ask(&mut h, "ui.clickWidget", json!({"id": "button:dialogOk"}));
-    assert!(matches!(h.app.ui.dialog, Some(crate::state::Dialog::KeywordSet { .. })), "still open");
+    assert!(
+        matches!(
+            h.app.ui.dialog,
+            Some(crate::state::Dialog::KeywordSet { .. })
+        ),
+        "still open"
+    );
     let toast = h.app.ui.toast.clone().map(|t| t.0).unwrap_or_default();
     assert!(toast.starts_with("There is a keyword set"), "{toast}");
     let s = sets(&mut h);
-    let travel = s["sets"].as_array().unwrap().iter().find(|x| x["name"] == "Travel").cloned().unwrap();
+    let travel = s["sets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["name"] == "Travel")
+        .cloned()
+        .unwrap();
     assert_eq!(travel["keywords"], json!(["harbour"]), "left alone");
 }
 
@@ -135,10 +228,19 @@ fn a_taken_name_says_so() {
 #[test]
 fn a_set_deleted_meanwhile_is_saved_anew() {
     let mut h = keywords_panel();
-    h.app.session.execute("keyword.saveSet", &json!({"name": "Weddings", "keywords": ["ceremony"]})).unwrap();
+    h.app
+        .session
+        .execute(
+            "keyword.saveSet",
+            &json!({"name": "Weddings", "keywords": ["ceremony"]}),
+        )
+        .unwrap();
     h.settle(SETTLE);
     open_editor(&mut h);
-    h.app.session.execute("keyword.deleteSet", &json!({"name": "Weddings"})).unwrap();
+    h.app
+        .session
+        .execute("keyword.deleteSet", &json!({"name": "Weddings"}))
+        .unwrap();
     ask(&mut h, "ui.clickWidget", json!({"id": "button:dialogOk"}));
     assert_eq!(h.app.ui.dialog, None);
     assert_eq!(sets(&mut h)["current"], "Weddings");
@@ -149,14 +251,29 @@ fn a_set_deleted_meanwhile_is_saved_anew() {
 #[test]
 fn save_as_a_new_set_keeps_the_original() {
     let mut h = keywords_panel();
-    h.app.session.execute("keyword.saveSet", &json!({"name": "Weddings", "keywords": ["ceremony"]})).unwrap();
+    h.app
+        .session
+        .execute(
+            "keyword.saveSet",
+            &json!({"name": "Weddings", "keywords": ["ceremony"]}),
+        )
+        .unwrap();
     h.settle(SETTLE);
     open_editor(&mut h);
     ask(&mut h, "ui.text", json!({"text": "Ceremonies"}));
-    ask(&mut h, "ui.clickWidget", json!({"id": "check:keywordSetAsNew"}));
+    ask(
+        &mut h,
+        "ui.clickWidget",
+        json!({"id": "check:keywordSetAsNew"}),
+    );
     ask(&mut h, "ui.clickWidget", json!({"id": "button:dialogOk"}));
     let s = sets(&mut h);
-    let names: Vec<&str> = s["sets"].as_array().unwrap().iter().map(|x| x["name"].as_str().unwrap()).collect();
+    let names: Vec<&str> = s["sets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x["name"].as_str().unwrap())
+        .collect();
     assert_eq!(names, ["Recent Keywords", "Weddings", "Ceremonies"]);
     assert_eq!(s["current"], "Ceremonies");
 }

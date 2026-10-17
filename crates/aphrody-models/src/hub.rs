@@ -87,7 +87,10 @@ fn validate_token(token: &SecretValue) -> Result<(), HubError> {
     if value.trim().is_empty() {
         return Err(HubError::MissingIdentity);
     }
-    if !value.bytes().all(|b| b.is_ascii_alphanumeric() || b"-._~+/=".contains(&b)) {
+    if !value
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b"-._~+/=".contains(&b))
+    {
         return Err(HubError::InvalidCredential);
     }
     Ok(())
@@ -104,7 +107,9 @@ pub struct Hub {
 
 impl std::fmt::Debug for Hub {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Hub").field("authenticated", &self.authenticated).finish_non_exhaustive()
+        f.debug_struct("Hub")
+            .field("authenticated", &self.authenticated)
+            .finish_non_exhaustive()
     }
 }
 
@@ -158,7 +163,12 @@ impl Hub {
         if !self.authenticated {
             return Err(HubError::MissingIdentity);
         }
-        self.client.whoami().send().await.map(|_| ()).map_err(|_| HubError::Request)
+        self.client
+            .whoami()
+            .send()
+            .await
+            .map(|_| ())
+            .map_err(|_| HubError::Request)
     }
 
     /// Read Space runtime/hardware status without mutating the Space.
@@ -167,7 +177,12 @@ impl Hub {
     /// Invalid ids fail locally; transport and permission failures are redacted.
     pub async fn space_runtime(&self, id: &str) -> Result<hf_hub::spaces::SpaceRuntime, HubError> {
         let (owner, name) = validated_id(id)?;
-        self.client.space(owner, name).runtime().send().await.map_err(|_| HubError::Request)
+        self.client
+            .space(owner, name)
+            .runtime()
+            .send()
+            .await
+            .map_err(|_| HubError::Request)
     }
 
     /// Read model, dataset, Space or kernel metadata at an explicit revision.
@@ -280,7 +295,9 @@ fn validated_id(id: &str) -> Result<(&str, &str), HubError> {
         if component.is_empty()
             || component == "."
             || component == ".."
-            || !component.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
+            || !component
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
         {
             return Err(HubError::InvalidRequest);
         }
@@ -294,10 +311,22 @@ mod tests {
 
     #[test]
     fn rejects_path_and_query_injection() {
-        for id in ["a/b/c", "../b", "a/..", "a/b?token=x", "a/b#x", "/b", "a/", "a/b\n"] {
+        for id in [
+            "a/b/c",
+            "../b",
+            "a/..",
+            "a/b?token=x",
+            "a/b#x",
+            "/b",
+            "a/",
+            "a/b\n",
+        ] {
             assert!(validated_id(id).is_err());
         }
-        assert_eq!(validated_id("org-name/model.v2").unwrap(), ("org-name", "model.v2"));
+        assert_eq!(
+            validated_id("org-name/model.v2").unwrap(),
+            ("org-name", "model.v2")
+        );
     }
 
     #[test]
@@ -313,8 +342,14 @@ mod tests {
     async fn selected_store_is_reused_and_missing_identity_is_explicit() {
         let dir = tempfile::tempdir().unwrap();
         let store = aphrody_secrets::FileSecretStore::new(dir.path().join("test-only.json"));
-        assert!(matches!(resolve_token(&store, "HF_TOKEN").await, Err(HubError::MissingIdentity)));
-        store.set("HF_TOKEN", SecretValue::from("hf_fixture_only")).await.unwrap();
+        assert!(matches!(
+            resolve_token(&store, "HF_TOKEN").await,
+            Err(HubError::MissingIdentity)
+        ));
+        store
+            .set("HF_TOKEN", SecretValue::from("hf_fixture_only"))
+            .await
+            .unwrap();
         let hub = Hub::from_secret_store(&store, "HF_TOKEN").await.unwrap();
         assert!(!format!("{hub:?}").contains("fixture"));
         assert!(hub.authenticated);
@@ -331,7 +366,10 @@ mod tests {
     #[tokio::test]
     async fn anonymous_identity_check_never_contacts_network() {
         let hub = Hub::anonymous().unwrap();
-        assert!(matches!(hub.verify_identity().await, Err(HubError::MissingIdentity)));
+        assert!(matches!(
+            hub.verify_identity().await,
+            Err(HubError::MissingIdentity)
+        ));
     }
 
     #[tokio::test]
@@ -346,13 +384,18 @@ mod tests {
                 match listener.accept() {
                     Ok((socket, _)) => break socket,
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        assert!(std::time::Instant::now() < deadline, "fixture request timed out");
+                        assert!(
+                            std::time::Instant::now() < deadline,
+                            "fixture request timed out"
+                        );
                         std::thread::sleep(std::time::Duration::from_millis(5));
-                    },
+                    }
                     Err(error) => panic!("fixture listener: {error}"),
                 }
             };
-            socket.set_read_timeout(Some(std::time::Duration::from_secs(5))).unwrap();
+            socket
+                .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+                .unwrap();
             let mut request = Vec::new();
             let mut byte = [0];
             while !request.ends_with(b"\r\n\r\n") {

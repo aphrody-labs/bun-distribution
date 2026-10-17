@@ -269,7 +269,6 @@ fn make_application_info(application_name: &CStr) -> vk::ApplicationInfo<'_> {
         .engine_name(application_name)
         .engine_version(vk::make_api_version(0, 1, 3, 0))
         .api_version(vk::API_VERSION_1_3)
-        
 }
 
 /// RAII wrapper around an `ash::Instance`.

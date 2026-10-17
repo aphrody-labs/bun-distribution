@@ -2,7 +2,9 @@
 
 use std::sync::Arc;
 
-use egui::{Color32, Context, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle, Visuals};
+use egui::{
+    Color32, Context, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle, Visuals,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tokens {
@@ -133,7 +135,8 @@ impl Tokens {
     }
 
     pub fn get(ctx: &Context) -> Tokens {
-        ctx.data(|d| d.get_temp::<Tokens>(tokens_id())).unwrap_or_else(Tokens::light)
+        ctx.data(|d| d.get_temp::<Tokens>(tokens_id()))
+            .unwrap_or_else(Tokens::light)
     }
 }
 
@@ -161,22 +164,42 @@ pub fn apply_with(ctx: &Context, t: Tokens, reduce_motion: bool) {
         s.spacing.menu_margin = egui::Margin::same(8);
         s.spacing.window_margin = egui::Margin::same(12);
         s.text_styles = [
-            (TextStyle::Small, FontId::new(10.0, FontFamily::Proportional)),
+            (
+                TextStyle::Small,
+                FontId::new(10.0, FontFamily::Proportional),
+            ),
             (TextStyle::Body, FontId::new(11.0, FontFamily::Proportional)),
-            (TextStyle::Button, FontId::new(11.0, FontFamily::Proportional)),
-            (TextStyle::Heading, FontId::new(13.0, FontFamily::Name("semibold".into()))),
-            (TextStyle::Monospace, FontId::new(11.0, FontFamily::Monospace)),
+            (
+                TextStyle::Button,
+                FontId::new(11.0, FontFamily::Proportional),
+            ),
+            (
+                TextStyle::Heading,
+                FontId::new(13.0, FontFamily::Name("semibold".into())),
+            ),
+            (
+                TextStyle::Monospace,
+                FontId::new(11.0, FontFamily::Monospace),
+            ),
         ]
         .into();
         s.interaction.tooltip_delay = 0.4;
         s.animation_time = if reduce_motion { 0.0 } else { ANIMATION_TIME };
-        s.scroll_animation = if reduce_motion { egui::style::ScrollAnimation::none() } else { egui::style::ScrollAnimation::default() };
+        s.scroll_animation = if reduce_motion {
+            egui::style::ScrollAnimation::none()
+        } else {
+            egui::style::ScrollAnimation::default()
+        };
     });
 }
 
 /// egui visuals for tokens `t`.
 fn visuals(t: Tokens) -> Visuals {
-    let mut v = if t.dark { Visuals::dark() } else { Visuals::light() };
+    let mut v = if t.dark {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     v.panel_fill = t.panel;
     v.window_fill = t.panel;
     v.extreme_bg_color = t.field;
@@ -188,7 +211,13 @@ fn visuals(t: Tokens) -> Visuals {
     v.selection.bg_fill = t.accent.gamma_multiply(0.3);
     v.selection.stroke = Stroke::new(1.0, t.accent);
     v.hyperlink_color = t.accent_text;
-    for w in [&mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open, &mut v.widgets.noninteractive] {
+    for w in [
+        &mut v.widgets.inactive,
+        &mut v.widgets.hovered,
+        &mut v.widgets.active,
+        &mut v.widgets.open,
+        &mut v.widgets.noninteractive,
+    ] {
         w.corner_radius = egui::CornerRadius::same(5);
         w.fg_stroke = Stroke::new(1.0, t.text);
     }
@@ -203,8 +232,18 @@ fn visuals(t: Tokens) -> Visuals {
     v.widgets.active.bg_fill = t.pressed;
     v.widgets.active.weak_bg_fill = t.pressed;
     v.widgets.active.bg_stroke = Stroke::new(1.0, t.accent);
-    v.popup_shadow = egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: t.shadow };
-    v.window_shadow = egui::Shadow { offset: [0, 8], blur: 24, spread: 0, color: t.shadow };
+    v.popup_shadow = egui::Shadow {
+        offset: [0, 4],
+        blur: 16,
+        spread: 0,
+        color: t.shadow,
+    };
+    v.window_shadow = egui::Shadow {
+        offset: [0, 8],
+        blur: 24,
+        spread: 0,
+        color: t.shadow,
+    };
     v.text_cursor.stroke = Stroke::new(1.0, t.accent);
     v
 }
@@ -231,17 +270,26 @@ pub fn on_dark<R>(ui: &mut egui::Ui, f: impl FnOnce(&mut egui::Ui) -> R) -> R {
 /// and faces for the CJK scripts in `cjk` ([`crate::cjk`]).
 pub fn install_fonts(ctx: &Context, system: bool, cjk: u8) {
     let mut fonts = FontDefinitions::default();
-    let find = |family: &str, style: &str| figcraft_text::CRAFT_FONTS.iter().find(|f| f.family == family && f.style == style).map(|f| f.bytes);
+    let find = |family: &str, style: &str| {
+        figcraft_text::CRAFT_FONTS
+            .iter()
+            .find(|f| f.family == family && f.style == style)
+            .map(|f| f.bytes)
+    };
     let regular = find("Inter", "Regular");
     let semibold = find("Inter", "SemiBold").or_else(|| find("Inter", "Bold"));
     if let Some(r) = regular {
-        fonts.font_data.insert("inter".into(), Arc::new(FontData::from_static(r)));
+        fonts
+            .font_data
+            .insert("inter".into(), Arc::new(FontData::from_static(r)));
         if let Some(list) = fonts.families.get_mut(&FontFamily::Proportional) {
             list.insert(0, "inter".into());
         }
     }
     let sb_name = if let Some(sb) = semibold {
-        fonts.font_data.insert("inter-semibold".into(), Arc::new(FontData::from_static(sb)));
+        fonts
+            .font_data
+            .insert("inter-semibold".into(), Arc::new(FontData::from_static(sb)));
         "inter-semibold"
     } else {
         "inter"
@@ -250,18 +298,42 @@ pub fn install_fonts(ctx: &Context, system: bool, cjk: u8) {
     if fonts.font_data.contains_key(sb_name) {
         semi.push(sb_name.into());
     }
-    semi.extend(fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default());
-    fonts.families.insert(FontFamily::Name("semibold".into()), semi);
+    semi.extend(
+        fonts
+            .families
+            .get(&FontFamily::Proportional)
+            .cloned()
+            .unwrap_or_default(),
+    );
+    fonts
+        .families
+        .insert(FontFamily::Name("semibold".into()), semi);
     // CJK and other scripts from craft-fonts as fallbacks (Noto Sans CJK only with FIGCRAFT_EMBED_CJK).
-    const BUILT_IN: [&str; 4] = ["Inter", "BIZ UDPGothic", "Noto Sans CJK SC", "Noto Sans Arabic"];
+    const BUILT_IN: [&str; 4] = [
+        "Inter",
+        "BIZ UDPGothic",
+        "Noto Sans CJK SC",
+        "Noto Sans Arabic",
+    ];
     let lang = crate::i18n::current().map_or("en", |l| l.code);
     // A Chinese UI draws Han in a Chinese face: the built-in Japanese one goes after the system faces.
-    let late = |family: &str| family == "BIZ UDPGothic" && crate::cjk::language(lang) == crate::cjk::HAN;
+    let late =
+        |family: &str| family == "BIZ UDPGothic" && crate::cjk::language(lang) == crate::cjk::HAN;
     let craft = |last: bool| {
         figcraft_text::CRAFT_FONTS
             .iter()
-            .filter(move |f| f.family != "Inter" && f.style == "Regular" && BUILT_IN.contains(&f.family) && late(f.family) == last)
-            .map(|f| (format!("craft-{}", f.family), FontData::from_static(f.bytes)))
+            .filter(move |f| {
+                f.family != "Inter"
+                    && f.style == "Regular"
+                    && BUILT_IN.contains(&f.family)
+                    && late(f.family) == last
+            })
+            .map(|f| {
+                (
+                    format!("craft-{}", f.family),
+                    FontData::from_static(f.bytes),
+                )
+            })
     };
     let mut extra: Vec<(String, FontData)> = craft(false).collect();
     if system {
@@ -274,12 +346,19 @@ pub fn install_fonts(ctx: &Context, system: bool, cjk: u8) {
                 .any(|x| x.has_char(c))
         };
         extra.extend(crate::bidi::script_fallbacks(&embedded));
-        extra.extend(crate::cjk::faces(cjk, lang, &embedded).iter().map(|f| (format!("system-{}-{}", f.family, f.style), font_data(f))));
+        extra.extend(
+            crate::cjk::faces(cjk, lang, &embedded)
+                .iter()
+                .map(|f| (format!("system-{}-{}", f.family, f.style), font_data(f))),
+        );
     }
     extra.extend(craft(true));
     for (key, data) in extra {
         fonts.font_data.insert(key.clone(), Arc::new(data));
-        for fam in [FontFamily::Proportional, FontFamily::Name("semibold".into())] {
+        for fam in [
+            FontFamily::Proportional,
+            FontFamily::Name("semibold".into()),
+        ] {
             if let Some(list) = fonts.families.get_mut(&fam) {
                 list.push(key.clone());
             }
@@ -328,6 +407,7 @@ pub fn set_doc_profile(ctx: &Context, profile: figcraft_color::ColorProfile) {
 /// A document colour (a paint, swatch, background) for the screen: converted from the document's
 /// colour profile to sRGB. UI chrome colours use [`c32`].
 pub fn doc_c32(ctx: &Context, c: figcraft_color::Color) -> Color32 {
-    let conv = ctx.data(|d| d.get_temp::<figcraft_color::ProfileConversion>(screen_conversion_id()));
+    let conv =
+        ctx.data(|d| d.get_temp::<figcraft_color::ProfileConversion>(screen_conversion_id()));
     c32(conv.map_or(c, |k| k.apply(c)))
 }

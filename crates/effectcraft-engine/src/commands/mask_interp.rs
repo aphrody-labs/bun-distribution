@@ -74,14 +74,25 @@ pub(crate) fn mask_uid(s: &Session, layer: &Layer, p: &Value) -> Option<Uid> {
         return match k {
             Value::Number(n) => {
                 let n = n.as_u64()?;
-                masks.groups().find(|g| g.uid == n).or_else(|| masks.groups().nth((n as usize).checked_sub(1)?)).map(|g| g.uid)
+                masks
+                    .groups()
+                    .find(|g| g.uid == n)
+                    .or_else(|| masks.groups().nth((n as usize).checked_sub(1)?))
+                    .map(|g| g.uid)
             }
             Value::String(name) => masks.groups().find(|g| &g.name == name).map(|g| g.uid),
             _ => None,
         };
     }
     let is_mask = |u: Uid| masks.groups().any(|g| g.uid == u);
-    if let Some(u) = s.state.selected_props.iter().filter(|(l, _)| *l == layer.id).map(|(_, u)| *u).find(|u| is_mask(*u)) {
+    if let Some(u) = s
+        .state
+        .selected_props
+        .iter()
+        .filter(|(l, _)| *l == layer.id)
+        .map(|(_, u)| *u)
+        .find(|u| is_mask(*u))
+    {
         return Some(u);
     }
     // A selected Mask Path property selects its mask.
@@ -90,11 +101,21 @@ pub(crate) fn mask_uid(s: &Session, layer: &Layer, p: &Value) -> Option<Uid> {
         .selected_props
         .iter()
         .filter(|(l, _)| *l == layer.id)
-        .find_map(|(_, u)| masks.groups().find(|g| g.get("path").is_some_and(|pr| pr.uid == *u)).map(|g| g.uid))
+        .find_map(|(_, u)| {
+            masks
+                .groups()
+                .find(|g| g.get("path").is_some_and(|pr| pr.uid == *u))
+                .map(|g| g.uid)
+        })
     {
         return Some(u);
     }
-    if let Some(v) = s.state.selected_vertices.iter().find(|v| v.layer == layer.id && is_mask(v.mask)) {
+    if let Some(v) = s
+        .state
+        .selected_vertices
+        .iter()
+        .find(|v| v.layer == layer.id && is_mask(v.mask))
+    {
         return Some(v.mask);
     }
     let mut it = masks.groups();
@@ -109,9 +130,11 @@ pub fn selected_mask(s: &Session) -> Option<(LayerId, Uid)> {
     let comp = s.active_comp()?;
     for lid in &s.state.selected_layers {
         let Some(l) = comp.layer(*lid) else { continue };
-        let explicit =
-            s.state.selected_props.iter().any(|(pl, u)| *pl == *lid && l.masks().is_some_and(|m| m.find_group(*u).is_some() || m.find(*u).is_some()))
-                || s.state.selected_vertices.iter().any(|v| v.layer == *lid);
+        let explicit = s.state.selected_props.iter().any(|(pl, u)| {
+            *pl == *lid
+                && l.masks()
+                    .is_some_and(|m| m.find_group(*u).is_some() || m.find(*u).is_some())
+        }) || s.state.selected_vertices.iter().any(|v| v.layer == *lid);
         if explicit && let Some(u) = mask_uid(s, l, &json!({})) {
             return Some((*lid, u));
         }
@@ -121,7 +144,9 @@ pub fn selected_mask(s: &Session) -> Option<(LayerId, Uid)> {
 
 fn has_mask(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    selected_mask(s).map(|_| ()).ok_or_else(|| "select a mask to track".into())
+    selected_mask(s)
+        .map(|_| ())
+        .ok_or_else(|| "select a mask to track".into())
 }
 
 fn method_p(p: &Value, cmd: &str) -> Result<Option<MaskMethod>> {
@@ -137,7 +162,8 @@ fn method_p(p: &Value, cmd: &str) -> Result<Option<MaskMethod>> {
 }
 
 fn mask_method(s: &mut Session, p: &Value) -> Result<Value> {
-    let m = method_p(p, "track.maskMethod")?.ok_or_else(|| bad("track.maskMethod", "missing `method`"))?;
+    let m = method_p(p, "track.maskMethod")?
+        .ok_or_else(|| bad("track.maskMethod", "missing `method`"))?;
     s.state.mask_track_method = m;
     s.bump();
     Ok(json!(m.id()))
@@ -154,24 +180,58 @@ fn track_mask(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
-    let uid = mask_uid(s, layer, p).ok_or_else(|| bad(CMD, format!("layer `{}` has no such mask (select one or pass `mask`)", layer.name)))?;
-    if !layer.has_video() || matches!(layer.source, effectcraft_project::LayerSource::Text | effectcraft_project::LayerSource::Shape) {
+    let uid = mask_uid(s, layer, p).ok_or_else(|| {
+        bad(
+            CMD,
+            format!(
+                "layer `{}` has no such mask (select one or pass `mask`)",
+                layer.name
+            ),
+        )
+    })?;
+    if !layer.has_video()
+        || matches!(
+            layer.source,
+            effectcraft_project::LayerSource::Text | effectcraft_project::LayerSource::Shape
+        )
+    {
         return Err(bad(CMD, "the layer has no pixels to track"));
     }
     let method = method_p(p, CMD)?.unwrap_or(s.state.mask_track_method);
     let dir = match str_p(p, "direction") {
-        Some(d) => Direction::from_name(d).ok_or_else(|| bad(CMD, "direction: forward|backward|frameForward|frameBackward"))?,
+        Some(d) => Direction::from_name(d).ok_or_else(|| {
+            bad(
+                CMD,
+                "direction: forward|backward|frameForward|frameBackward",
+            )
+        })?,
         None => Direction::Forward,
     };
-    let now = comp.frame_rate.snap_nearest(if s.state.active_comp == Some(cid) { s.time() } else { Tick::ZERO });
+    let now = comp
+        .frame_rate
+        .snap_nearest(if s.state.active_comp == Some(cid) {
+            s.time()
+        } else {
+            Tick::ZERO
+        });
     let start = f_p(p, "start").map(|v| comp.frame_rate.snap_nearest(Tick::from_seconds_f64(v)));
     let end = f_p(p, "end").map(|v| comp.frame_rate.snap_nearest(Tick::from_seconds_f64(v)));
     let times = super::track::analysis_times(comp, layer, dir, now, start, end);
     if times.len() < 2 {
-        return Err(bad(CMD, "nothing to track in that direction (at the layer's end)"));
+        return Err(bad(
+            CMD,
+            "nothing to track in that direction (at the layer's end)",
+        ));
     }
-    let mg = layer.props.find_group(uid).ok_or_else(|| bad(CMD, "no mask"))?;
-    let KV::Path(path) = mg.get("path").map(|pr| pr.value_at(layer.layer_time(times[0]))).unwrap_or(KV::Scalar(0.0)) else {
+    let mg = layer
+        .props
+        .find_group(uid)
+        .ok_or_else(|| bad(CMD, "no mask"))?;
+    let KV::Path(path) = mg
+        .get("path")
+        .map(|pr| pr.value_at(layer.layer_time(times[0])))
+        .unwrap_or(KV::Scalar(0.0))
+    else {
         return Err(bad(CMD, "the mask has no path"));
     };
     if path.len() < 2 {
@@ -187,11 +247,16 @@ fn track_mask(s: &mut Session, p: &Value) -> Result<Value> {
         path,
         method,
         times: times.clone(),
-        face_model: if method.is_face() { s.models.face() } else { None },
+        face_model: if method.is_face() {
+            s.models.face()
+        } else {
+            None
+        },
     };
     s.state.mask_track_method = method;
     let wait = b_p(p, "wait").unwrap_or(false);
-    s.start_mask_track(work, uid, dir, wait).map_err(EngineError::Other)?;
+    s.start_mask_track(work, uid, dir, wait)
+        .map_err(EngineError::Other)?;
     let prog = s.mask_track_progress();
     Ok(json!({
         "mask": uid,
@@ -210,19 +275,30 @@ fn track_mask(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn face_points_layer(s: &Session, p: &Value) -> Option<(effectcraft_project::ItemId, LayerId)> {
     use effectcraft_effects::face_track::POINTS_ID;
-    let has = |l: &Layer| l.effects().is_some_and(|fx| fx.groups().any(|g| g.match_id == POINTS_ID));
+    let has = |l: &Layer| {
+        l.effects()
+            .is_some_and(|fx| fx.groups().any(|g| g.match_id == POINTS_ID))
+    };
     if p.get("layer").is_some() {
         return layer_p(s, p, "track.extractFaceMeasurements").ok();
     }
     let cid = s.active_comp_id()?;
     let comp = s.project.comp(cid)?;
-    let sel = s.state.selected_layers.iter().filter_map(|l| comp.layer(*l)).find(|l| has(l));
-    sel.or_else(|| comp.layers.iter().find(|l| has(l))).map(|l| (cid, l.id))
+    let sel = s
+        .state
+        .selected_layers
+        .iter()
+        .filter_map(|l| comp.layer(*l))
+        .find(|l| has(l));
+    sel.or_else(|| comp.layers.iter().find(|l| has(l)))
+        .map(|l| (cid, l.id))
 }
 
 fn has_face_points(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    face_points_layer(s, &json!({})).map(|_| ()).ok_or_else(|| "no Face Track Points: track a mask with Face Tracking (Detailed Features) first".into())
+    face_points_layer(s, &json!({})).map(|_| ()).ok_or_else(|| {
+        "no Face Track Points: track a mask with Face Tracking (Detailed Features) first".into()
+    })
 }
 
 /// Extract & Copy Face Measurements: measure the Face Track Points at every keyed time, key them
@@ -231,11 +307,23 @@ fn extract_face(s: &mut Session, p: &Value) -> Result<Value> {
     use effectcraft_effects::face_track::{MEASUREMENTS_ID, POINTS_ID};
     use effectcraft_track::face::{LANDMARKS, MEASUREMENTS, N, face_frame, measure};
     const CMD: &str = "track.extractFaceMeasurements";
-    let (cid, lid) = face_points_layer(s, p).ok_or_else(|| bad(CMD, "no Face Track Points: track a mask with Face Tracking (Detailed Features) first"))?;
+    let (cid, lid) = face_points_layer(s, p).ok_or_else(|| {
+        bad(
+            CMD,
+            "no Face Track Points: track a mask with Face Tracking (Detailed Features) first",
+        )
+    })?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
-    let g = layer.effects().and_then(|fx| fx.groups().find(|g| g.match_id == POINTS_ID)).ok_or_else(|| bad(CMD, "the layer has no Face Track Points"))?;
-    let mut times: Vec<Tick> = LANDMARKS.iter().filter_map(|l| g.get(l.0)).flat_map(|pr| pr.keys.iter().map(|k| k.time)).collect();
+    let g = layer
+        .effects()
+        .and_then(|fx| fx.groups().find(|g| g.match_id == POINTS_ID))
+        .ok_or_else(|| bad(CMD, "the layer has no Face Track Points"))?;
+    let mut times: Vec<Tick> = LANDMARKS
+        .iter()
+        .filter_map(|l| g.get(l.0))
+        .flat_map(|pr| pr.keys.iter().map(|k| k.time))
+        .collect();
     times.sort();
     times.dedup();
     if times.is_empty() {
@@ -252,13 +340,21 @@ fn extract_face(s: &mut Session, p: &Value) -> Result<Value> {
             l
         };
         let reference = face_frame(&pts_at(times[0])).1;
-        times.iter().map(|t| (*t, measure(&pts_at(*t), reference))).collect()
+        times
+            .iter()
+            .map(|t| (*t, measure(&pts_at(*t), reference)))
+            .collect()
     };
     let comp_times: Vec<Tick> = times.iter().map(|t| layer.comp_time(*t)).collect();
     let fd = comp.frame_duration();
     let uid = s.edit("Extract Face Measurements", None, |proj, _| {
-        let uid = crate::mask_track::face_effect(proj, cid, lid, MEASUREMENTS_ID).ok_or_else(|| bad(CMD, "Face Measurements is not available"))?;
-        let g = proj.comp_mut(cid).and_then(|c| c.layer_mut(lid)).and_then(|l| l.props.find_group_mut(uid)).ok_or(EngineError::NoComp)?;
+        let uid = crate::mask_track::face_effect(proj, cid, lid, MEASUREMENTS_ID)
+            .ok_or_else(|| bad(CMD, "Face Measurements is not available"))?;
+        let g = proj
+            .comp_mut(cid)
+            .and_then(|c| c.layer_mut(lid))
+            .and_then(|l| l.props.find_group_mut(uid))
+            .ok_or(EngineError::NoComp)?;
         for (k, (id, _)) in MEASUREMENTS.iter().enumerate() {
             let Some(pr) = g.get_mut(id) else { continue };
             pr.keys.clear();
@@ -276,7 +372,9 @@ fn extract_face(s: &mut Session, p: &Value) -> Result<Value> {
     let mut clip = vec![];
     for (id, _) in MEASUREMENTS {
         let Some(pr) = mg.get(id) else { continue };
-        let Some(path) = layer.props.match_path_of(pr.uid) else { continue };
+        let Some(path) = layer.props.match_path_of(pr.uid) else {
+            continue;
+        };
         let keys = pr
             .keys
             .iter()
@@ -286,7 +384,11 @@ fn extract_face(s: &mut Session, p: &Value) -> Result<Value> {
                 k
             })
             .collect();
-        clip.push(crate::KeyClip { layer: lid, path, keys });
+        clip.push(crate::KeyClip {
+            layer: lid,
+            path,
+            keys,
+        });
     }
     s.state.key_clipboard = clip;
     s.state.clip_is_keys = true;
@@ -299,17 +401,27 @@ fn extract_face(s: &mut Session, p: &Value) -> Result<Value> {
     text.push('\n');
     let mut table = vec![];
     for ((_, m), ct) in rows.iter().zip(&comp_times) {
-        let frame = if fd > Tick::ZERO { (ct.seconds() / fd.seconds()).round() as i64 } else { 0 };
+        let frame = if fd > Tick::ZERO {
+            (ct.seconds() / fd.seconds()).round() as i64
+        } else {
+            0
+        };
         text.push_str(&format!("{frame}\t{:.4}", ct.seconds()));
         for v in m {
             text.push_str(&format!("\t{v:.3}"));
         }
         text.push('\n');
-        let obj: serde_json::Map<String, Value> = MEASUREMENTS.iter().zip(m).map(|((id, _), v)| (id.to_string(), json!(v))).collect();
+        let obj: serde_json::Map<String, Value> = MEASUREMENTS
+            .iter()
+            .zip(m)
+            .map(|((id, _), v)| (id.to_string(), json!(v)))
+            .collect();
         table.push(json!({"time": ct.seconds(), "frame": frame, "values": obj}));
     }
     s.bump();
-    Ok(json!({"layer": lid.0, "effect": uid, "frames": rows.len(), "measurements": table, "clipboard": text}))
+    Ok(
+        json!({"layer": lid.0, "effect": uid, "frames": rows.len(), "measurements": table, "clipboard": text}),
+    )
 }
 
 // ---------------------------------------------------------------- mask interpolation
@@ -356,11 +468,13 @@ impl MaskInterpOptions {
             linear: self.linear_vertex_paths,
             bending_resistance: self.bending_resistance.clamp(0.0, 100.0),
             quality: self.quality.clamp(0.0, 100.0),
-            add_vertices: self.add_vertices.map(|v| match self.add_vertices_unit.as_str() {
-                "total" => AddVertices::Total(v.round().max(2.0) as usize),
-                "percent" => AddVertices::Percent(v),
-                _ => AddVertices::Pixels(v),
-            }),
+            add_vertices: self
+                .add_vertices
+                .map(|v| match self.add_vertices_unit.as_str() {
+                    "total" => AddVertices::Total(v.round().max(2.0) as usize),
+                    "percent" => AddVertices::Percent(v),
+                    _ => AddVertices::Pixels(v),
+                }),
             matching: match self.matching_method.as_str() {
                 "curve" => Matching::Curve,
                 "polyline" => Matching::Polyline,
@@ -377,7 +491,14 @@ fn apply_options(o: &mut MaskInterpOptions, p: &Value, cmd: &str) -> Result<()> 
     match p.get("keyframeRate") {
         Some(Value::String(s)) if s.eq_ignore_ascii_case("auto") => o.keyframe_rate = None,
         Some(Value::Null) => o.keyframe_rate = None,
-        Some(v) => o.keyframe_rate = Some(v.as_f64().filter(|r| *r > 0.0).ok_or_else(|| bad(cmd, "keyframeRate: a positive number or \"auto\""))?.min(1000.0)),
+        Some(v) => {
+            o.keyframe_rate = Some(
+                v.as_f64()
+                    .filter(|r| *r > 0.0)
+                    .ok_or_else(|| bad(cmd, "keyframeRate: a positive number or \"auto\""))?
+                    .min(1000.0),
+            )
+        }
         None => {}
     }
     for (k, f) in [
@@ -399,7 +520,13 @@ fn apply_options(o: &mut MaskInterpOptions, p: &Value, cmd: &str) -> Result<()> 
     match p.get("addVertices") {
         Some(Value::Bool(false)) | Some(Value::Null) => o.add_vertices = None,
         Some(Value::Bool(true)) => o.add_vertices = Some(o.add_vertices.unwrap_or(5.0)),
-        Some(v) => o.add_vertices = Some(v.as_f64().filter(|x| *x > 0.0).ok_or_else(|| bad(cmd, "addVertices: a positive number or false"))?),
+        Some(v) => {
+            o.add_vertices = Some(
+                v.as_f64()
+                    .filter(|x| *x > 0.0)
+                    .ok_or_else(|| bad(cmd, "addVertices: a positive number or false"))?,
+            )
+        }
         None => {}
     }
     if let Some(u) = str_p(p, "addVerticesUnit") {
@@ -438,14 +565,21 @@ fn interpolate(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = super::comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let lid = match p.get("layer") {
-        Some(v) => super::resolve_layer(comp, v).ok_or_else(|| bad(CMD, format!("no layer {v}")))?,
-        None => match s.state.selected_keys.iter().find(|k| comp.layer(k.layer).is_some_and(|l| l.masks().is_some_and(|m| m.find(k.prop).is_some()))) {
+        Some(v) => {
+            super::resolve_layer(comp, v).ok_or_else(|| bad(CMD, format!("no layer {v}")))?
+        }
+        None => match s.state.selected_keys.iter().find(|k| {
+            comp.layer(k.layer)
+                .is_some_and(|l| l.masks().is_some_and(|m| m.find(k.prop).is_some()))
+        }) {
             Some(k) => k.layer,
             None => layer_p(s, p, CMD)?.1,
         },
     };
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
-    let masks = layer.masks().ok_or_else(|| bad(CMD, "the layer has no masks"))?;
+    let masks = layer
+        .masks()
+        .ok_or_else(|| bad(CMD, "the layer has no masks"))?;
     let uid = match p.get("mask") {
         Some(_) => mask_uid(s, layer, p),
         None => s
@@ -453,29 +587,75 @@ fn interpolate(s: &mut Session, p: &Value) -> Result<Value> {
             .selected_keys
             .iter()
             .filter(|k| k.layer == lid)
-            .find_map(|k| masks.groups().find(|g| g.get("path").is_some_and(|pr| pr.uid == k.prop)).map(|g| g.uid))
+            .find_map(|k| {
+                masks
+                    .groups()
+                    .find(|g| g.get("path").is_some_and(|pr| pr.uid == k.prop))
+                    .map(|g| g.uid)
+            })
             .or_else(|| mask_uid(s, layer, p)),
     }
-    .ok_or_else(|| bad(CMD, "no such mask (select two Mask Path keyframes or pass `mask`)"))?;
-    let mg = layer.props.find_group(uid).ok_or_else(|| bad(CMD, "no mask"))?;
-    let path_prop = mg.get("path").ok_or_else(|| bad(CMD, "the mask has no path"))?;
+    .ok_or_else(|| {
+        bad(
+            CMD,
+            "no such mask (select two Mask Path keyframes or pass `mask`)",
+        )
+    })?;
+    let mg = layer
+        .props
+        .find_group(uid)
+        .ok_or_else(|| bad(CMD, "no mask"))?;
+    let path_prop = mg
+        .get("path")
+        .ok_or_else(|| bad(CMD, "the mask has no path"))?;
     // Key times (layer time): explicit, else selected keys on this Mask Path.
     let mut times: Vec<Tick> = match p.get("times").and_then(Value::as_array) {
         Some(a) => {
-            let ts: Vec<Tick> = a.iter().filter_map(Value::as_f64).map(|t| layer.layer_time(comp.frame_rate.snap_nearest(Tick::from_seconds_f64(t)))).collect();
-            ts.into_iter().filter_map(|t| path_prop.keys.iter().find(|k| (k.time.0 - t.0).abs() <= comp.frame_duration().0 / 2).map(|k| k.time)).collect()
+            let ts: Vec<Tick> = a
+                .iter()
+                .filter_map(Value::as_f64)
+                .map(|t| layer.layer_time(comp.frame_rate.snap_nearest(Tick::from_seconds_f64(t))))
+                .collect();
+            ts.into_iter()
+                .filter_map(|t| {
+                    path_prop
+                        .keys
+                        .iter()
+                        .find(|k| (k.time.0 - t.0).abs() <= comp.frame_duration().0 / 2)
+                        .map(|k| k.time)
+                })
+                .collect()
         }
-        None => s.state.selected_keys.iter().filter(|k| k.layer == lid && k.prop == path_prop.uid).map(|k| k.time).collect(),
+        None => s
+            .state
+            .selected_keys
+            .iter()
+            .filter(|k| k.layer == lid && k.prop == path_prop.uid)
+            .map(|k| k.time)
+            .collect(),
     };
     times.sort();
     times.dedup();
     if times.len() < 2 {
-        return Err(bad(CMD, "select two or more Mask Path keyframes (or pass `times` of existing keys)"));
+        return Err(bad(
+            CMD,
+            "select two or more Mask Path keyframes (or pass `times` of existing keys)",
+        ));
     }
-    let rate = o.keyframe_rate.unwrap_or_else(|| comp.frame_rate.as_f64()) * if o.keyframe_fields { 2.0 } else { 1.0 };
+    let rate = o.keyframe_rate.unwrap_or_else(|| comp.frame_rate.as_f64())
+        * if o.keyframe_fields { 2.0 } else { 1.0 };
     let step = Tick::from_seconds_f64(1.0 / rate.max(0.01));
     let opts = o.interp();
-    let shapes: Vec<ShapePath> = times.iter().filter_map(|t| path_prop.keys.iter().find(|k| k.time == *t).and_then(|k| k.value.as_path().cloned())).collect();
+    let shapes: Vec<ShapePath> = times
+        .iter()
+        .filter_map(|t| {
+            path_prop
+                .keys
+                .iter()
+                .find(|k| k.time == *t)
+                .and_then(|k| k.value.as_path().cloned())
+        })
+        .collect();
     if shapes.len() != times.len() {
         return Err(bad(CMD, "the selected keys must be Mask Path keys"));
     }
@@ -500,9 +680,14 @@ fn interpolate(s: &mut Session, p: &Value) -> Result<Value> {
     s.state.mask_interp = o;
     s.edit("Mask Interpolation", None, |proj, _| {
         let l = layer_mut(proj, cid, lid)?;
-        let pr = l.props.find_group_mut(uid).and_then(|g| g.get_mut("path")).ok_or_else(|| bad(CMD, "no mask path"))?;
+        let pr = l
+            .props
+            .find_group_mut(uid)
+            .and_then(|g| g.get_mut("path"))
+            .ok_or_else(|| bad(CMD, "no mask path"))?;
         // Keys strictly inside the interpolated span are replaced.
-        pr.keys.retain(|k| k.time <= first || k.time >= last || times.contains(&k.time));
+        pr.keys
+            .retain(|k| k.time <= first || k.time >= last || times.contains(&k.time));
         for (t, sp) in &out {
             effectcraft_keyframe::set_key(&mut pr.keys, Keyframe::new(*t, KV::Path(sp.clone())));
         }

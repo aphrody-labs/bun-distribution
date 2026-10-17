@@ -20,15 +20,18 @@ fn corpus() -> Option<Vfs> {
         Err(e) => {
             eprintln!("skip : ni installation ni dump ({e:?})");
             None
-        },
+        }
     }
 }
 
 /// Échantillon réparti de chemins portant `ext`, pour ne pas lire un dossier entier.
 fn echantillon(vfs: &Vfs, ext: &str, max: usize) -> Vec<String> {
     let suffixe = format!(".{ext}");
-    let mut chemins: Vec<String> =
-        vfs.iter().map(|(p, _)| p.to_string()).filter(|p| p.ends_with(&suffixe)).collect();
+    let mut chemins: Vec<String> = vfs
+        .iter()
+        .map(|(p, _)| p.to_string())
+        .filter(|p| p.ends_with(&suffixe))
+        .collect();
     chemins.sort_unstable();
     if chemins.len() > max {
         let pas = chemins.len().div_ceil(max);
@@ -94,7 +97,11 @@ fn decode_route_les_familles_level5_annexes() {
         eprintln!("skip : le corpus monté ne contient aucune des familles annexes");
         return;
     }
-    assert!(vus.len() >= 4, "corpus trop pauvre pour conclure : {} familles vues", vus.len());
+    assert!(
+        vus.len() >= 4,
+        "corpus trop pauvre pour conclure : {} familles vues",
+        vus.len()
+    );
 }
 
 /// Un `.g4mg` n'est PAS décodable seul, et le dépôt ne doit pas prétendre le contraire.

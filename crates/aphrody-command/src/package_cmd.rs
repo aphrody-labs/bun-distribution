@@ -113,21 +113,29 @@ pub(crate) fn run(action: PackageAction) -> miette::Result<()> {
                 legacy_package(&package)?;
             }
             status(json)
-        },
+        }
         PackageAction::Doctor { json } => doctor(json),
-        PackageAction::Install { package, bin, dry_run } => {
+        PackageAction::Install {
+            package,
+            bin,
+            dry_run,
+        } => {
             if let Some(package) = package {
                 legacy_package(&package)?;
             }
             install(bin, dry_run)
-        },
-        PackageAction::Uninstall { package, yes, dry_run } => {
+        }
+        PackageAction::Uninstall {
+            package,
+            yes,
+            dry_run,
+        } => {
             let names = match package {
                 Some(package) => legacy_package(&package)?,
                 None => all_link_names(),
             };
             uninstall(&names, yes, dry_run)
-        },
+        }
         PackageAction::Update { .. } => Err(miette::miette!(
             "`aphrody package update` est retiré : il n'y a qu'un binaire et plus de sources \
              gérées à tirer. Installer le nouveau binaire (fabrique : `bun \
@@ -151,7 +159,10 @@ fn legacy_package(name: &str) -> miette::Result<Vec<String>> {
 
 /// `aphrody` first, then every former binary name.
 fn all_link_names() -> Vec<String> {
-    std::iter::once("aphrody").chain(multicall::aliases()).map(str::to_owned).collect()
+    std::iter::once("aphrody")
+        .chain(multicall::aliases())
+        .map(str::to_owned)
+        .collect()
 }
 
 fn link_kind(name: &str) -> &'static str {
@@ -220,7 +231,14 @@ fn inspect(path: &Path, binary: &Path) -> (LinkState, Option<PathBuf>) {
         };
         return (state, target);
     }
-    (if same_file(path, binary) { LinkState::Ok } else { LinkState::Foreign }, None)
+    (
+        if same_file(path, binary) {
+            LinkState::Ok
+        } else {
+            LinkState::Foreign
+        },
+        None,
+    )
 }
 
 fn collect_links(link_dir: &Path, binary: &Path, names: &[String]) -> Vec<LinkReport> {
@@ -288,7 +306,12 @@ impl Inventory {
         let binary = running_binary()?;
         let link_dir = link_dir(&binary)?;
         let links = collect_links(&link_dir, &binary, &all_link_names());
-        Ok(Self { on_path: on_path(&link_dir), binary, link_dir, links })
+        Ok(Self {
+            on_path: on_path(&link_dir),
+            binary,
+            link_dir,
+            links,
+        })
     }
 
     fn healthy(&self) -> bool {
@@ -311,18 +334,32 @@ fn status(json: bool) -> miette::Result<()> {
             "links": report.links,
         }));
     }
-    println!("aphrody {}  {}", env!("CARGO_PKG_VERSION"), report.binary.display());
+    println!(
+        "aphrody {}  {}",
+        env!("CARGO_PKG_VERSION"),
+        report.binary.display()
+    );
     for link in &report.links {
-        println!("  {:<26} {:<9} {}", link.name, link.state.label(), link.path);
+        println!(
+            "  {:<26} {:<9} {}",
+            link.name,
+            link.state.label(),
+            link.path
+        );
     }
     Ok(())
 }
 
 fn doctor(json: bool) -> miette::Result<()> {
     let report = Inventory::collect()?;
-    let broken: Vec<&LinkReport> =
-        report.links.iter().filter(|link| link.state != LinkState::Ok).collect();
-    let legacy_state = dirs::home_dir().map(|home| home.join(".bxc")).filter(|path| path.exists());
+    let broken: Vec<&LinkReport> = report
+        .links
+        .iter()
+        .filter(|link| link.state != LinkState::Ok)
+        .collect();
+    let legacy_state = dirs::home_dir()
+        .map(|home| home.join(".bxc"))
+        .filter(|path| path.exists());
     if json {
         print_json(&serde_json::json!({
             "os": std::env::consts::OS,
@@ -338,17 +375,30 @@ fn doctor(json: bool) -> miette::Result<()> {
             "legacy_state": legacy_state.as_ref().map(|path| path.display().to_string()),
         }))?;
     } else {
-        println!("plateforme : {}/{}", std::env::consts::OS, std::env::consts::ARCH);
+        println!(
+            "plateforme : {}/{}",
+            std::env::consts::OS,
+            std::env::consts::ARCH
+        );
         println!("binaire    : {}", report.binary.display());
         println!(
             "liens      : {} ({}), {}/{} sains",
             report.link_dir.display(),
-            if report.on_path { "dans PATH" } else { "hors PATH" },
+            if report.on_path {
+                "dans PATH"
+            } else {
+                "hors PATH"
+            },
             report.links.len() - broken.len(),
             report.links.len()
         );
         for link in &broken {
-            println!("  {:<26} {:<9} {}", link.name, link.state.label(), link.path);
+            println!(
+                "  {:<26} {:<9} {}",
+                link.name,
+                link.state.label(),
+                link.path
+            );
         }
         if let Some(path) = &legacy_state {
             println!(
@@ -372,7 +422,12 @@ fn install(bin: Option<PathBuf>, dry_run: bool) -> miette::Result<()> {
         Some(bin) => bin,
         None => running_binary()?,
     };
-    crate::self_cmd::InstallPathCommand { bin: Some(bin), build_if_missing: false, dry_run }.run()
+    crate::self_cmd::InstallPathCommand {
+        bin: Some(bin),
+        build_if_missing: false,
+        dry_run,
+    }
+    .run()
 }
 
 /// Remove the links in `names` that are ours: pointing at the running binary, or dangling after
@@ -388,13 +443,14 @@ fn remove_links(
         let path = PathBuf::from(&link.path);
         let ours = match link.state {
             LinkState::Ok => true,
-            LinkState::Dangling => {
-                link.target.as_deref().is_some_and(|t| is_aphrody_name(Path::new(t)))
-            },
+            LinkState::Dangling => link
+                .target
+                .as_deref()
+                .is_some_and(|t| is_aphrody_name(Path::new(t))),
             LinkState::Missing => {
                 println!("absent: {}", link.path);
                 continue;
-            },
+            }
             LinkState::Foreign => false,
         };
         if !ours {
@@ -442,7 +498,10 @@ mod tests {
         let all = all_link_names();
         assert_eq!(all[0], "aphrody");
         for compat in COMPAT_NAMES {
-            assert!(all.iter().any(|name| name == compat), "{compat} must be a link");
+            assert!(
+                all.iter().any(|name| name == compat),
+                "{compat} must be a link"
+            );
             assert_eq!(link_kind(compat), "compat");
         }
         assert_eq!(link_kind("aphrody"), "binary");
@@ -458,20 +517,30 @@ mod tests {
         assert_eq!(legacy_package("all").unwrap(), all_link_names());
         assert_eq!(legacy_package("aphrody").unwrap(), all_link_names());
         assert_eq!(legacy_package("n2b").unwrap(), names(&["n2b"]));
-        assert!(legacy_package("bogus").unwrap_err().to_string().contains("paquet inconnu"));
+        assert!(
+            legacy_package("bogus")
+                .unwrap_err()
+                .to_string()
+                .contains("paquet inconnu")
+        );
     }
 
     #[test]
     fn update_is_retired_with_the_replacement() {
-        let error =
-            run(PackageAction::Update { args: vec!["all".to_owned()] }).unwrap_err().to_string();
+        let error = run(PackageAction::Update {
+            args: vec!["all".to_owned()],
+        })
+        .unwrap_err()
+        .to_string();
         assert!(error.contains("retiré"), "{error}");
         assert!(error.contains("aphrody package install"), "{error}");
     }
 
     #[test]
     fn uninstall_needs_yes_unless_it_is_a_dry_run() {
-        let error = uninstall(&names(&["n2b"]), false, false).unwrap_err().to_string();
+        let error = uninstall(&names(&["n2b"]), false, false)
+            .unwrap_err()
+            .to_string();
         assert!(error.contains("--yes"), "{error}");
     }
 
@@ -494,7 +563,11 @@ mod tests {
             let binary = dir.path().join("installed").join("aphrody");
             fs::create_dir_all(binary.parent().unwrap()).unwrap();
             fs::write(&binary, b"binary").unwrap();
-            Fixture { _dir: dir, bin_dir, binary }
+            Fixture {
+                _dir: dir,
+                bin_dir,
+                binary,
+            }
         }
 
         #[test]
@@ -506,14 +579,28 @@ mod tests {
             fs::write(&wrapper, b"#!/bin/sh\n").unwrap();
             symlink(&wrapper, f.bin_dir.join("bxc")).unwrap();
 
-            let reports =
-                collect_links(&f.bin_dir, &f.binary, &names(&["aphrody", "n2b", "bxc", "bxc-mcp"]));
+            let reports = collect_links(
+                &f.bin_dir,
+                &f.binary,
+                &names(&["aphrody", "n2b", "bxc", "bxc-mcp"]),
+            );
             let states: Vec<_> = reports.iter().map(|report| report.state).collect();
             assert_eq!(
                 states,
-                [LinkState::Ok, LinkState::Dangling, LinkState::Foreign, LinkState::Missing]
+                [
+                    LinkState::Ok,
+                    LinkState::Dangling,
+                    LinkState::Foreign,
+                    LinkState::Missing
+                ]
             );
-            assert!(reports[1].target.as_deref().unwrap().ends_with("gone/aphrody"));
+            assert!(
+                reports[1]
+                    .target
+                    .as_deref()
+                    .unwrap()
+                    .ends_with("gone/aphrody")
+            );
         }
 
         #[test]
@@ -534,10 +621,19 @@ mod tests {
             symlink(&wrapper, f.bin_dir.join("bxc-mcp")).unwrap();
 
             let wanted = names(&["bxc", "bxc-mcp", "n2b"]);
-            assert_eq!(remove_links(&f.bin_dir, &f.binary, &wanted, true).unwrap(), 2);
-            assert!(f.bin_dir.join("bxc").symlink_metadata().is_ok(), "a dry run removes nothing");
+            assert_eq!(
+                remove_links(&f.bin_dir, &f.binary, &wanted, true).unwrap(),
+                2
+            );
+            assert!(
+                f.bin_dir.join("bxc").symlink_metadata().is_ok(),
+                "a dry run removes nothing"
+            );
 
-            assert_eq!(remove_links(&f.bin_dir, &f.binary, &wanted, false).unwrap(), 2);
+            assert_eq!(
+                remove_links(&f.bin_dir, &f.binary, &wanted, false).unwrap(),
+                2
+            );
             assert!(f.bin_dir.join("bxc").symlink_metadata().is_err());
             assert!(f.bin_dir.join("n2b").symlink_metadata().is_err());
             assert!(
@@ -551,7 +647,10 @@ mod tests {
         fn a_dangling_link_to_a_foreign_target_is_not_ours() {
             let f = fixture();
             symlink("/nonexistent/bxc-source/bin/bxc", f.bin_dir.join("bxc")).unwrap();
-            assert_eq!(remove_links(&f.bin_dir, &f.binary, &names(&["bxc"]), false).unwrap(), 0);
+            assert_eq!(
+                remove_links(&f.bin_dir, &f.binary, &names(&["bxc"]), false).unwrap(),
+                0
+            );
             assert!(f.bin_dir.join("bxc").symlink_metadata().is_ok());
         }
     }

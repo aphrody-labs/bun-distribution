@@ -24,16 +24,24 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
         let snapshots = std::env::var_os("FILMCRAFT_UI_SNAPSHOT_DIR").map(std::path::PathBuf::from);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if snapshots.is_some() {
             b = b.wgpu();
         }
         let harness = b.build_eframe(move |_cc| app);
-        let mut d = Driver { harness, tx, snapshots };
+        let mut d = Driver {
+            harness,
+            tx,
+            snapshots,
+        };
         d.frames(4);
         d
     }
@@ -67,7 +75,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn click(&mut self, id: &str) {
@@ -79,13 +90,22 @@ impl Driver {
         let v = self.ok("ui.elements", json!({"prefix": id}));
         v.as_array()?.iter().find(|e| e["id"] == id).map(|e| {
             let r = &e["rect"];
-            [r[0].as_f64().unwrap() as f32, r[1].as_f64().unwrap() as f32, r[2].as_f64().unwrap() as f32, r[3].as_f64().unwrap() as f32]
+            [
+                r[0].as_f64().unwrap() as f32,
+                r[1].as_f64().unwrap() as f32,
+                r[2].as_f64().unwrap() as f32,
+                r[3].as_f64().unwrap() as f32,
+            ]
         })
     }
 
     fn ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
 
     fn has(&mut self, id: &str) -> bool {
@@ -94,12 +114,22 @@ impl Driver {
 
     /// Press on `id`, move by (`dx`, `dy`) over `steps` frames, release.
     fn drag(&mut self, id: &str, dx: f32, dy: f32, steps: usize) {
-        let r = self.element(id).unwrap_or_else(|| panic!("no element {id}"));
+        let r = self
+            .element(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
         let mut p = egui::pos2(r[0] + r[2] / 2.0, r[1] + r[3] / 2.0);
         let push = |d: &mut Self, e: egui::Event| d.harness.input_mut().events.push(e);
         push(self, egui::Event::PointerMoved(p));
         self.frames(1);
-        push(self, egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+        push(
+            self,
+            egui::Event::PointerButton {
+                pos: p,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            },
+        );
         self.frames(1);
         for _ in 0..steps {
             p.x += dx / steps as f32;
@@ -107,21 +137,40 @@ impl Driver {
             push(self, egui::Event::PointerMoved(p));
             self.frames(1);
         }
-        push(self, egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+        push(
+            self,
+            egui::Event::PointerButton {
+                pos: p,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers: Default::default(),
+            },
+        );
         self.frames(2);
     }
 
     fn strip(&mut self, r: &str) -> Value {
         let m = self.exec("mixer.inspect", json!({}));
-        m["strips"].as_array().unwrap().iter().find(|s| s["ref"] == r).cloned().unwrap_or(Value::Null)
+        m["strips"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["ref"] == r)
+            .cloned()
+            .unwrap_or(Value::Null)
     }
 
     fn undo_len(&mut self) -> usize {
-        self.exec("history.list", json!({}))["undo"].as_array().unwrap().len()
+        self.exec("history.list", json!({}))["undo"]
+            .as_array()
+            .unwrap()
+            .len()
     }
 
     fn snapshot(&mut self, name: &str) {
-        let Some(dir) = self.snapshots.clone() else { return };
+        let Some(dir) = self.snapshots.clone() else {
+            return;
+        };
         self.frames(2);
         match self.harness.render() {
             Ok(img) => {
@@ -140,10 +189,16 @@ fn surround_panner_puck_and_six_channel_meters() {
     let mut d = Driver::demo();
     d.ok("ui.set", json!({"workspace": "Audio"}));
     d.frames(3);
-    assert!(d.has("mixer.A1.pan") && !d.has("mixer.A1.pan51"), "stereo Mix: pan knob");
+    assert!(
+        d.has("mixer.A1.pan") && !d.has("mixer.A1.pan51"),
+        "stereo Mix: pan knob"
+    );
     d.exec("sequence.settings", json!({"mix": "5.1"}));
     d.frames(3);
-    assert!(d.has("mixer.A1.pan51"), "5.1 Mix: the puck replaces the knob");
+    assert!(
+        d.has("mixer.A1.pan51"),
+        "5.1 Mix: the puck replaces the knob"
+    );
     assert!(!d.has("mixer.A1.pan"));
     for id in ["mixer.A1.pan51.center", "mixer.A1.pan51.lfe"] {
         assert!(d.has(id), "{id} missing");
@@ -152,7 +207,10 @@ fn surround_panner_puck_and_six_channel_meters() {
     let u0 = d.undo_len();
     d.drag("mixer.A1.pan51", -14.0, 10.0, 6);
     let a1 = d.strip("A1");
-    let (x, y) = (a1["pan51"]["x"].as_f64().unwrap(), a1["pan51"]["y"].as_f64().unwrap());
+    let (x, y) = (
+        a1["pan51"]["x"].as_f64().unwrap(),
+        a1["pan51"]["y"].as_f64().unwrap(),
+    );
     assert!(x < -20.0, "puck moved left: {a1}");
     assert!(y < 80.0, "puck moved back: {a1}");
     assert!(d.undo_len() > u0);
@@ -162,10 +220,16 @@ fn surround_panner_puck_and_six_channel_meters() {
     let a1 = d.strip("A1");
     if a1["pan51"]["x"].as_f64() != Some(0.0) {
         // controls without double-click support in this build of the control channel: set by command
-        d.exec("mixer.setValue", json!({"strip": "A1", "lane": "pan51.x", "value": 0.0}));
+        d.exec(
+            "mixer.setValue",
+            json!({"strip": "A1", "lane": "pan51.x", "value": 0.0}),
+        );
     }
     // Center % and LFE from commands show on the strip
-    d.exec("mixer.setValue", json!({"strip": "A1", "lane": "pan51.center", "value": 40.0}));
+    d.exec(
+        "mixer.setValue",
+        json!({"strip": "A1", "lane": "pan51.center", "value": 40.0}),
+    );
     d.frames(2);
     let ids = d.ok("ui.elements", json!({"prefix": "mixer.A1.pan51.center"}));
     assert!(ids.to_string().contains("Center 40 %"), "{ids}");
@@ -190,7 +254,10 @@ fn show_hide_tracks_and_meter_input_only() {
     assert!(!d.has("mixer.A2.fader"), "A2 hidden");
     assert!(d.has("mixer.A1.fader") && d.has("mixer.Mix.fader"));
     let st = d.ok("ui.inspect", json!({}));
-    assert!(st.to_string().contains("mixer_hidden") || st.to_string().contains("mixerHidden"), "UI state is inspectable");
+    assert!(
+        st.to_string().contains("mixer_hidden") || st.to_string().contains("mixerHidden"),
+        "UI state is inspectable"
+    );
     d.click("mixer.showHide.all");
     d.click("mixer.showHide.ok");
     assert!(d.has("mixer.A2.fader"), "shown again");
@@ -198,7 +265,11 @@ fn show_hide_tracks_and_meter_input_only() {
     d.click("mixer.menu");
     d.click("mixer.menu.meterInputOnly");
     let st = d.ok("ui.inspect", json!({})).to_string();
-    assert!(st.contains("\"mixer_meter_input_only\":true") || st.contains("\"mixerMeterInputOnly\":true"), "{st}");
+    assert!(
+        st.contains("\"mixer_meter_input_only\":true")
+            || st.contains("\"mixerMeterInputOnly\":true"),
+        "{st}"
+    );
     // the transport record button is wired to voice-over recording
     assert!(d.has("mixer.transport.voiceover.recordToggle"));
     d.snapshot("audio51-show-hide");
@@ -224,7 +295,15 @@ fn clip_mixer_mode_records_clip_keyframes() {
     assert_eq!(r["written"][0]["clips"], true, "{r}");
     let seq = d.exec("sequence.inspect", json!({}));
     let fx = &seq["audio"][0]["items"][0]["effects"];
-    let vol = fx.as_array().unwrap().iter().find(|e| e["effect"] == "volume").unwrap();
-    assert!(vol["params"]["level"]["keyframes"].as_u64().unwrap_or(0) >= 2, "clip keyframes written: {vol}");
+    let vol = fx
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["effect"] == "volume")
+        .unwrap();
+    assert!(
+        vol["params"]["level"]["keyframes"].as_u64().unwrap_or(0) >= 2,
+        "clip keyframes written: {vol}"
+    );
     d.snapshot("audio51-clip-mixer");
 }

@@ -59,14 +59,19 @@ impl KServerPort {
     ///
     /// Matches upstream `KServerPort::EnqueueSession(KServerSession*)`.
     pub fn enqueue_session(&mut self, session_id: u64) {
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         self.session_list.push_back(session_id);
         if self.session_list.len() == 1 {
             // KServerPort has no numeric object-ID member in the Rust port.
             // Wait selection uses native state identity, not this trace ID.
-            unsafe { super::k_synchronization_object::notify_waiters_on_state(
-                &self.sync_object, 0, crate::hle::result::RESULT_SUCCESS.get_inner_value()); }
+            unsafe {
+                super::k_synchronization_object::notify_waiters_on_state(
+                    &self.sync_object,
+                    0,
+                    crate::hle::result::RESULT_SUCCESS.get_inner_value(),
+                );
+            }
         }
     }
 
@@ -74,12 +79,17 @@ impl KServerPort {
     ///
     /// Matches upstream `KServerPort::EnqueueSession(KLightServerSession*)`.
     pub fn enqueue_light_session(&mut self, session_id: u64) {
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         self.light_session_list.push_back(session_id);
         if self.light_session_list.len() == 1 {
-            unsafe { super::k_synchronization_object::notify_waiters_on_state(
-                &self.sync_object, 0, crate::hle::result::RESULT_SUCCESS.get_inner_value()); }
+            unsafe {
+                super::k_synchronization_object::notify_waiters_on_state(
+                    &self.sync_object,
+                    0,
+                    crate::hle::result::RESULT_SUCCESS.get_inner_value(),
+                );
+            }
         }
     }
 
@@ -87,8 +97,8 @@ impl KServerPort {
     ///
     /// Matches upstream `KServerPort::AcceptSession()`.
     pub fn accept_session(&mut self) -> Option<u64> {
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         self.session_list.pop_front()
     }
 
@@ -96,8 +106,8 @@ impl KServerPort {
     ///
     /// Matches upstream `KServerPort::AcceptLightSession()`.
     pub fn accept_light_session(&mut self) -> Option<u64> {
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         self.light_session_list.pop_front()
     }
 
@@ -105,8 +115,8 @@ impl KServerPort {
     /// switch fibers. The queue operation remains owned by KServerPort.
     pub fn accept_session_arc(port: &Arc<Mutex<super::k_port::KPort>>) -> Option<u64> {
         let mut port = port.lock().unwrap();
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         let session = port.server.accept_session();
         drop(port);
         session
@@ -114,8 +124,8 @@ impl KServerPort {
 
     pub fn accept_light_session_arc(port: &Arc<Mutex<super::k_port::KPort>>) -> Option<u64> {
         let mut port = port.lock().unwrap();
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         let session = port.server.accept_light_session();
         drop(port);
         session

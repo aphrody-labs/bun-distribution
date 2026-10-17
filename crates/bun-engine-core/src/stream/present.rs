@@ -34,7 +34,13 @@ impl Presenter {
     pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, sharpness_stops: f32) -> Self {
         let mut fsr = Fsr1::new(device, format, (HUD_WIDTH, HUD_HEIGHT));
         fsr.sharpness_stops = sharpness_stops;
-        Self { fsr, ring: None, ring_groups: Vec::new(), cpu: None, source: None }
+        Self {
+            fsr,
+            ring: None,
+            ring_groups: Vec::new(),
+            cpu: None,
+            source: None,
+        }
     }
 
     pub fn target_format(&self) -> wgpu::TextureFormat {
@@ -75,12 +81,24 @@ impl Presenter {
     }
 
     /// Upload a CPU NV12 picture (fallback path when NV12 sharing is unavailable).
-    pub fn upload_cpu(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, width: u32, height: u32, pitch: u32, nv12: &[u8]) {
+    pub fn upload_cpu(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        width: u32,
+        height: u32,
+        pitch: u32,
+        nv12: &[u8],
+    ) {
         if self.cpu.as_ref().is_none_or(|c| c.size != (width, height)) {
             let plane = |label, w, h, format| {
                 device.create_texture(&wgpu::TextureDescriptor {
                     label: Some(label),
-                    size: wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+                    size: wgpu::Extent3d {
+                        width: w,
+                        height: h,
+                        depth_or_array_layers: 1,
+                    },
                     mip_level_count: 1,
                     sample_count: 1,
                     dimension: wgpu::TextureDimension::D2,
@@ -90,22 +108,53 @@ impl Presenter {
                 })
             };
             let luma = plane("luma", width, height, wgpu::TextureFormat::R8Unorm);
-            let chroma = plane("chroma", width / 2, height / 2, wgpu::TextureFormat::Rg8Unorm);
-            let group =
-                self.fsr.planes_group(device, &luma.create_view(&Default::default()), &chroma.create_view(&Default::default()));
-            self.cpu = Some(CpuPlanes { luma, chroma, group, size: (width, height) });
+            let chroma = plane(
+                "chroma",
+                width / 2,
+                height / 2,
+                wgpu::TextureFormat::Rg8Unorm,
+            );
+            let group = self.fsr.planes_group(
+                device,
+                &luma.create_view(&Default::default()),
+                &chroma.create_view(&Default::default()),
+            );
+            self.cpu = Some(CpuPlanes {
+                luma,
+                chroma,
+                group,
+                size: (width, height),
+            });
         }
         let cpu = self.cpu.as_ref().unwrap();
         let write = |texture: &wgpu::Texture, offset: u64, w: u32, h: u32| {
             queue.write_texture(
-                wgpu::TexelCopyTextureInfo { texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+                wgpu::TexelCopyTextureInfo {
+                    texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
                 nv12,
-                wgpu::TexelCopyBufferLayout { offset, bytes_per_row: Some(pitch), rows_per_image: Some(h) },
-                wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+                wgpu::TexelCopyBufferLayout {
+                    offset,
+                    bytes_per_row: Some(pitch),
+                    rows_per_image: Some(h),
+                },
+                wgpu::Extent3d {
+                    width: w,
+                    height: h,
+                    depth_or_array_layers: 1,
+                },
             );
         };
         write(&cpu.luma, 0, width, height);
-        write(&cpu.chroma, u64::from(pitch) * u64::from(height), width / 2, height / 2);
+        write(
+            &cpu.chroma,
+            u64::from(pitch) * u64::from(height),
+            width / 2,
+            height / 2,
+        );
         self.source = Some(Source::Cpu);
     }
 
@@ -141,7 +190,17 @@ impl Presenter {
             Some(Source::Cpu) => self.cpu.as_ref().map(|c| &c.group),
             None => None,
         };
-        let source = group.zip(self.stream_size()).map(|(g, size)| (Fsr1Source::Nv12(g), size));
-        self.fsr.encode(device, queue, encoder, source, target, target_size, show_hud);
+        let source = group
+            .zip(self.stream_size())
+            .map(|(g, size)| (Fsr1Source::Nv12(g), size));
+        self.fsr.encode(
+            device,
+            queue,
+            encoder,
+            source,
+            target,
+            target_size,
+            show_hud,
+        );
     }
 }

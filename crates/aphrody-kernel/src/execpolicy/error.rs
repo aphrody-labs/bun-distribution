@@ -19,13 +19,19 @@ pub enum Error {
         "Rule validation failed for pattern '{pattern:?}': match example '{example:?}' did not \
          match"
     )]
-    MatchExampleFailed { pattern: Vec<String>, example: Vec<String> },
+    MatchExampleFailed {
+        pattern: Vec<String>,
+        example: Vec<String>,
+    },
 
     #[error(
         "Rule validation failed for pattern '{pattern:?}': not_match example '{example:?}' \
          matched unexpectedly"
     )]
-    NotMatchExampleMatched { pattern: Vec<String>, example: Vec<String> },
+    NotMatchExampleMatched {
+        pattern: Vec<String>,
+        example: Vec<String>,
+    },
 
     #[error("Empty pattern in prefix_rule")]
     EmptyPattern,

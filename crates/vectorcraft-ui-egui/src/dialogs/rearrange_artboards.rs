@@ -22,8 +22,13 @@ const CMD: &str = "artboard.rearrange";
 /// Width of the label column.
 const LABEL_W: f32 = 96.0;
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Rearrange All Artboards").into(), body, confirm, min_width: 320.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Rearrange All Artboards").into(),
+    body,
+    confirm,
+    min_width: 320.0,
+    ..DialogSpec::FORM
+};
 
 /// The fields a fresh dialog starts with.
 pub fn fields() -> Value {
@@ -44,7 +49,10 @@ fn layout_glyph(l: ArtboardLayout) -> (&'static str, &'static [(u8, u8)]) {
 /// `cells` mirrored left to right when `rtl` (the order the layout toggles preview).
 fn mirrored(cells: &[(u8, u8)], rtl: bool) -> Vec<(u8, u8)> {
     let last = cells.iter().map(|c| c.0).max().unwrap_or(0);
-    cells.iter().map(|&(x, y)| (if rtl { last - x } else { x }, y)).collect()
+    cells
+        .iter()
+        .map(|&(x, y)| (if rtl { last - x } else { x }, y))
+        .collect()
 }
 
 /// `artboard.rearrange` parameters from the fields.
@@ -57,7 +65,10 @@ fn params(d: &Dialog) -> Value {
 
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let unit = app.session.general_unit();
-    let n = app.session.active().map_or(0, |doc| doc.doc.artboards.len());
+    let n = app
+        .session
+        .active()
+        .map_or(0, |doc| doc.doc.artboards.len());
     let layout = ArtboardLayout::parse(&d.str("layout")).unwrap_or_default();
     let rtl = d.str("order") == "rightToLeft";
     widgets::label_row(ui, tl!("Layout:"), LABEL_W, |ui| {
@@ -75,8 +86,16 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         // One column reads the same either way.
         ui.add_enabled_ui(layout != ArtboardLayout::Column, |ui| {
             for (value, cells, tip) in [
-                ("leftToRight", [(0, 0), (1, 0)], tl!("Change to Left-to-Right Layout")),
-                ("rightToLeft", [(1, 0), (0, 0)], tl!("Change to Right-to-Left Layout")),
+                (
+                    "leftToRight",
+                    [(0, 0), (1, 0)],
+                    tl!("Change to Left-to-Right Layout"),
+                ),
+                (
+                    "rightToLeft",
+                    [(1, 0), (0, 0)],
+                    tl!("Change to Right-to-Left Layout"),
+                ),
             ] {
                 if widgets::layout_button(ui, &cells, (value == "rightToLeft") == rtl, tip) {
                     d.fields.insert("order".into(), json!(value));
@@ -86,13 +105,31 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     });
     ui.add_space(4.0);
     // The rows of a grid by column; one row or column has no count to set.
-    let label = if layout == ArtboardLayout::GridByColumn { tl!("Rows:") } else { tl!("Columns:") };
+    let label = if layout == ArtboardLayout::GridByColumn {
+        tl!("Rows:")
+    } else {
+        tl!("Columns:")
+    };
     widgets::label_row(ui, label, LABEL_W, |ui| {
-        let grid = matches!(layout, ArtboardLayout::GridByRow | ArtboardLayout::GridByColumn);
+        let grid = matches!(
+            layout,
+            ArtboardLayout::GridByRow | ArtboardLayout::GridByColumn
+        );
         ui.add_enabled_ui(grid, |ui| {
             let most = n.max(1) as f64;
-            if let Some(v) = widgets::spin_plain(ui, "rearrange-columns", d.f64("columns", 2.0), "", 0, 76.0, 1.0, 1.0, &[]) {
-                d.fields.insert("columns".into(), json!(v.round().clamp(1.0, most)));
+            if let Some(v) = widgets::spin_plain(
+                ui,
+                "rearrange-columns",
+                d.f64("columns", 2.0),
+                "",
+                0,
+                76.0,
+                1.0,
+                1.0,
+                &[],
+            ) {
+                d.fields
+                    .insert("columns".into(), json!(v.round().clamp(1.0, most)));
             }
         });
     });
@@ -105,7 +142,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         form::check(ui, d, "moveArtwork", tl!("Move Artwork with Artboard"));
     });
     ui.add_space(8.0);
-    widgets::dim_label(ui, &crate::i18n::fmt(tl!("Artboards: {n}"), &[("n", &n.to_string())]));
+    widgets::dim_label(
+        ui,
+        &crate::i18n::fmt(tl!("Artboards: {n}"), &[("n", &n.to_string())]),
+    );
     false
 }
 
@@ -120,10 +160,29 @@ mod tests {
 
     /// A frame of the open dialog with `events` → the texts painted. The dialog measures itself on
     /// its first frame, so a fresh context needs two.
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) -> Vec<String> {
-        let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| super::super::show(app, ui.ctx()));
+    fn frame(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        events: Vec<egui::Event>,
+    ) -> Vec<String> {
+        let mut out = ctx.run_ui(
+            egui::RawInput {
+                events,
+                ..Default::default()
+            },
+            |ui| super::super::show(app, ui.ctx()),
+        );
         out.textures_delta.clear();
-        out.shapes.iter().filter_map(|s| if let egui::epaint::Shape::Text(t) = &s.shape { Some(t.galley.text().to_string()) } else { None }).collect()
+        out.shapes
+            .iter()
+            .filter_map(|s| {
+                if let egui::epaint::Shape::Text(t) = &s.shape {
+                    Some(t.galley.text().to_string())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     fn context() -> egui::Context {
@@ -133,7 +192,14 @@ mod tests {
     }
 
     fn origins(app: &VectorcraftApp) -> Vec<(f64, f64)> {
-        app.session.active().unwrap().doc.artboards.iter().map(|a| (a.rect.x0, a.rect.y0)).collect()
+        app.session
+            .active()
+            .unwrap()
+            .doc
+            .artboards
+            .iter()
+            .map(|a| (a.rect.x0, a.rect.y0))
+            .collect()
     }
 
     /// #681: the menu item opens the dialog with the artboard count; Columns reads Rows for a grid
@@ -141,7 +207,11 @@ mod tests {
     #[test]
     fn opens_from_the_menu_and_rearranges_by_layout_and_order() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 100, "height": 50, "artboards": 3})).unwrap();
+        app.run(
+            "file.new",
+            json!({"width": 100, "height": 50, "artboards": 3}),
+        )
+        .unwrap();
         // The menu item has no params of its own: it opens this dialog, not the generic one.
         let (id, p) = crate::menus::click_target("Rearrange All Artboards…", CMD, &Value::Null);
         crate::menus::invoke(&mut app, &id, p);
@@ -149,13 +219,24 @@ mod tests {
         let ctx = context();
         frame(&mut app, &ctx, vec![]);
         let texts = frame(&mut app, &ctx, vec![]);
-        for want in ["Rearrange All Artboards", "Layout:", "Layout Order:", "Columns:", "Spacing:", "Move Artwork with Artboard", "Artboards: 3"] {
+        for want in [
+            "Rearrange All Artboards",
+            "Layout:",
+            "Layout Order:",
+            "Columns:",
+            "Spacing:",
+            "Move Artwork with Artboard",
+            "Artboards: 3",
+        ] {
             assert!(texts.iter().any(|t| t == want), "{want:?} in {texts:?}");
         }
         let d = app.ui.dialog.as_mut().unwrap();
         d.fields.insert("layout".into(), json!("gridByColumn"));
         let texts = frame(&mut app, &ctx, vec![]);
-        assert!(texts.iter().any(|t| t == "Rows:") && !texts.iter().any(|t| t == "Columns:"), "{texts:?}");
+        assert!(
+            texts.iter().any(|t| t == "Rows:") && !texts.iter().any(|t| t == "Columns:"),
+            "{texts:?}"
+        );
         // One row, right to left, 10 pt apart.
         let d = app.ui.dialog.as_mut().unwrap();
         d.fields.insert("layout".into(), json!("row"));
@@ -173,7 +254,11 @@ mod tests {
     #[test]
     fn the_toggles_set_layout_and_order() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 100, "height": 50, "artboards": 4})).unwrap();
+        app.run(
+            "file.new",
+            json!({"width": 100, "height": 50, "artboards": 4}),
+        )
+        .unwrap();
         app.run("ui.menuDialog", json!({ "command": CMD })).unwrap();
         let ctx = context();
         frame(&mut app, &ctx, vec![]);
@@ -185,16 +270,31 @@ mod tests {
                 .widgets
                 .layers()
                 .flat_map(|(_, w)| w.iter())
-                .filter(|w| w.sense.senses_click() && w.rect.width() == 26.0 && w.rect.height() == 26.0)
+                .filter(|w| {
+                    w.sense.senses_click() && w.rect.width() == 26.0 && w.rect.height() == 26.0
+                })
                 .map(|w| w.rect)
                 .collect();
-            r.sort_by(|a, b| a.top().total_cmp(&b.top()).then(a.left().total_cmp(&b.left())));
+            r.sort_by(|a, b| {
+                a.top()
+                    .total_cmp(&b.top())
+                    .then(a.left().total_cmp(&b.left()))
+            });
             r
         });
         assert_eq!(toggles.len(), 6, "{toggles:?}");
-        for (i, key, want) in [(3, "layout", "column"), (1, "layout", "gridByColumn"), (5, "order", "rightToLeft")] {
+        for (i, key, want) in [
+            (3, "layout", "column"),
+            (1, "layout", "gridByColumn"),
+            (5, "order", "rightToLeft"),
+        ] {
             let at = toggles[i].center();
-            let b = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+            let b = |pressed| egui::Event::PointerButton {
+                pos: at,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: Default::default(),
+            };
             frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at), b(true)]);
             frame(&mut app, &ctx, vec![b(false)]);
             assert_eq!(app.ui.dialog.as_ref().unwrap().str(key), want);
@@ -203,6 +303,9 @@ mod tests {
         }
         crate::dialogs::confirm(&mut app).unwrap();
         // Two rows (Columns 2 reads Rows for a grid by column), the first column at the right.
-        assert_eq!(origins(&app), [(120.0, 0.0), (120.0, 70.0), (0.0, 0.0), (0.0, 70.0)]);
+        assert_eq!(
+            origins(&app),
+            [(120.0, 0.0), (120.0, 70.0), (0.0, 0.0), (0.0, 70.0)]
+        );
     }
 }

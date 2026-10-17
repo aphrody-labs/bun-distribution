@@ -194,12 +194,29 @@ impl Hash for TextStyle {
     fn hash<H: Hasher>(&self, h: &mut H) {
         self.family.hash(h);
         self.style.hash(h);
-        for v in [self.size, self.tracking, self.baseline_shift, self.h_scale, self.v_scale, self.tsume] {
+        for v in [
+            self.size,
+            self.tracking,
+            self.baseline_shift,
+            self.h_scale,
+            self.v_scale,
+            self.tsume,
+        ] {
             hf(h, v);
         }
         self.manual_kern.map(f32::to_bits).hash(h);
         self.leading.map(f32::to_bits).hash(h);
-        (self.kerning, self.optical, self.ligatures, self.faux_bold, self.faux_italic, self.caps, self.underline, self.script).hash(h);
+        (
+            self.kerning,
+            self.optical,
+            self.ligatures,
+            self.faux_bold,
+            self.faux_italic,
+            self.caps,
+            self.underline,
+            self.script,
+        )
+            .hash(h);
         self.opentype.hash(h);
         self.vertical.hash(h);
         for (t, v) in &self.variations {
@@ -212,7 +229,14 @@ impl Hash for TextStyle {
 impl Hash for ParagraphStyle {
     fn hash<H: Hasher>(&self, h: &mut H) {
         (self.align, self.justify_last).hash(h);
-        for v in [self.leading, self.indent_start, self.indent_end, self.indent_first, self.space_before, self.space_after] {
+        for v in [
+            self.leading,
+            self.indent_start,
+            self.indent_end,
+            self.indent_first,
+            self.space_before,
+            self.space_after,
+        ] {
             hf(h, v);
         }
         self.width.map(f32::to_bits).hash(h);
@@ -289,13 +313,23 @@ impl Layout {
     /// Caret position `(x, baseline, line)` for byte offset `pos`.
     pub fn caret(&self, pos: usize) -> (f32, f32, usize) {
         let li = self.line_of(pos);
-        let Some(l) = self.lines.get(li) else { return (0.0, 0.0, 0) };
-        let x = l.carets.iter().min_by_key(|(b, _)| b.abs_diff(pos)).map_or(l.x, |c| c.1);
+        let Some(l) = self.lines.get(li) else {
+            return (0.0, 0.0, 0);
+        };
+        let x = l
+            .carets
+            .iter()
+            .min_by_key(|(b, _)| b.abs_diff(pos))
+            .map_or(l.x, |c| c.1);
         (x, l.baseline, li)
     }
     /// Nearest caret byte offset to point `(x, y)`.
     pub fn hit(&self, x: f32, y: f32) -> usize {
-        let Some(l) = self.lines.iter().min_by(|a, b| line_dist(a, y).total_cmp(&line_dist(b, y))) else {
+        let Some(l) = self
+            .lines
+            .iter()
+            .min_by(|a, b| line_dist(a, y).total_cmp(&line_dist(b, y)))
+        else {
             return 0;
         };
         self.hit_line(l, x)
@@ -304,14 +338,24 @@ impl Layout {
     /// before its trailing space, so clicking past it doesn't land on the next line.
     pub fn hit_line(&self, l: &Line, x: f32) -> usize {
         let end = self.line_end(l);
-        l.carets.iter().filter(|c| c.0 <= end).min_by(|a, b| (a.1 - x).abs().total_cmp(&(b.1 - x).abs())).map_or(l.range.start, |c| c.0)
+        l.carets
+            .iter()
+            .filter(|c| c.0 <= end)
+            .min_by(|a, b| (a.1 - x).abs().total_cmp(&(b.1 - x).abs()))
+            .map_or(l.range.start, |c| c.0)
     }
     /// The last caret stop of a line (before a wrapped line's trailing space).
     pub fn line_end(&self, l: &Line) -> usize {
         if l.para_end {
             return l.range.end;
         }
-        l.carets.iter().rev().nth(1).map(|c| c.0).filter(|b| *b >= l.range.start).unwrap_or(l.range.end)
+        l.carets
+            .iter()
+            .rev()
+            .nth(1)
+            .map(|c| c.0)
+            .filter(|b| *b >= l.range.start)
+            .unwrap_or(l.range.end)
     }
     /// Selection highlight rectangles `[x0, y0, x1, y1]` for the byte range `a..b`.
     pub fn selection_rects(&self, a: usize, b: usize) -> Vec<[f32; 4]> {
@@ -323,7 +367,12 @@ impl Layout {
             if s > e || (s == e && !(a < l.range.start && b > l.range.end)) {
                 continue;
             }
-            let xs: Vec<f32> = l.carets.iter().filter(|(p, _)| *p >= s && *p <= e).map(|c| c.1).collect();
+            let xs: Vec<f32> = l
+                .carets
+                .iter()
+                .filter(|(p, _)| *p >= s && *p <= e)
+                .map(|c| c.1)
+                .collect();
             if xs.len() < 2 && b <= l.range.end {
                 continue;
             }
@@ -335,7 +384,12 @@ impl Layout {
             if b > l.range.end && l.para_end {
                 x1 += l.ascent * 0.25; // selected newline
             }
-            out.push([x0.min(x1), l.baseline - l.ascent, x1, l.baseline + l.descent]);
+            out.push([
+                x0.min(x1),
+                l.baseline - l.ascent,
+                x1,
+                l.baseline + l.descent,
+            ]);
         }
         out
     }
@@ -399,7 +453,11 @@ enum Form {
 pub fn feature_substitutes(face: FaceId, tag: &[u8; 4], c: char) -> bool {
     static C: OnceLock<Mutex<HashMap<(FaceId, [u8; 4], char), bool>>> = OnceLock::new();
     let cache = C.get_or_init(Default::default);
-    if let Some(v) = cache.lock().unwrap_or_else(|e| e.into_inner()).get(&(face, *tag, c)) {
+    if let Some(v) = cache
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&(face, *tag, c))
+    {
         return *v;
     }
     let f = fonts::face(face);
@@ -411,7 +469,12 @@ pub fn feature_substitutes(face: FaceId, tag: &[u8; 4], c: char) -> bool {
                     let mut buf = UnicodeBuffer::new();
                     buf.add(c, 0);
                     buf.guess_segment_properties();
-                    shaper.shape(buf, harfrust::ShapeOptions::new().features(feats)).glyph_infos().iter().map(|i| i.glyph_id).collect()
+                    shaper
+                        .shape(buf, harfrust::ShapeOptions::new().features(feats))
+                        .glyph_infos()
+                        .iter()
+                        .map(|i| i.glyph_id)
+                        .collect()
                 };
                 let plain = shape(&[]);
                 let with = shape(&[Feature::new(Tag::new(tag), 1, ..)]);
@@ -437,13 +500,26 @@ fn ink_x(face: FaceId, gid: u32) -> Option<(f32, f32)> {
     Some((r.x0 as f32, r.x1 as f32))
 }
 
-fn shape_item(chars: &[(usize, char, char)], rtl: bool, face: FaceId, size: f32, style: &TextStyle, run: usize, form: Form) -> Vec<ShapedGlyph> {
+fn shape_item(
+    chars: &[(usize, char, char)],
+    rtl: bool,
+    face: FaceId,
+    size: f32,
+    style: &TextStyle,
+    run: usize,
+    form: Form,
+) -> Vec<ShapedGlyph> {
     let f = fonts::face(face);
-    let (Some(font), Some(data)) = (f.font(), f.shaper_data()) else { return Vec::new() };
+    let (Some(font), Some(data)) = (f.font(), f.shaper_data()) else {
+        return Vec::new();
+    };
     let instance = (!style.variations.is_empty()).then(|| {
         harfrust::ShaperInstance::from_variations(
             &font,
-            style.variations.iter().map(|(t, v)| harfrust::Variation { tag: crate::variable::tag_of(t), value: *v }),
+            style.variations.iter().map(|(t, v)| harfrust::Variation {
+                tag: crate::variable::tag_of(t),
+                value: *v,
+            }),
         )
     });
     let shaper = data.shaper(&font).instance(instance.as_ref()).build();
@@ -451,7 +527,11 @@ fn shape_item(chars: &[(usize, char, char)], rtl: bool, face: FaceId, size: f32,
     for &(b, _, sc) in chars {
         buf.add(if sc == '\t' { ' ' } else { sc }, b as u32);
     }
-    buf.set_direction(if rtl { Direction::RightToLeft } else { Direction::LeftToRight });
+    buf.set_direction(if rtl {
+        Direction::RightToLeft
+    } else {
+        Direction::LeftToRight
+    });
     buf.guess_segment_properties();
     let mut feats = Vec::new();
     if style.vertical && chars.first().is_some_and(|(_, c, _)| crate::is_cjk(*c)) {
@@ -486,7 +566,15 @@ fn shape_item(chars: &[(usize, char, char)], rtl: bool, face: FaceId, size: f32,
                 feats.push(Feature::new(Tag::new(b"c2sc"), 1, ..));
             }
         }
-        Form::TrueScript => feats.push(Feature::new(Tag::new(if style.script == Script::Sub { b"subs" } else { b"sups" }), 1, ..)),
+        Form::TrueScript => feats.push(Feature::new(
+            Tag::new(if style.script == Script::Sub {
+                b"subs"
+            } else {
+                b"sups"
+            }),
+            1,
+            ..,
+        )),
         _ => {}
     }
     let out = shaper.shape(buf, harfrust::ShapeOptions::new().features(&feats));
@@ -517,7 +605,12 @@ fn space_item(glyphs: &mut [ShapedGlyph], style: &TextStyle, text: &str, para_st
         let k = g.size / fonts::face(g.face).units_per_em() * style.h_scale;
         Some((x0 * k, g.adv - x1 * k))
     };
-    let is_space = |g: &ShapedGlyph| text[g.cluster..].chars().next().is_none_or(char::is_whitespace);
+    let is_space = |g: &ShapedGlyph| {
+        text[g.cluster..]
+            .chars()
+            .next()
+            .is_none_or(char::is_whitespace)
+    };
     if style.tsume > 0.0 {
         let t = style.tsume.clamp(0.0, 1.0);
         for g in glyphs.iter_mut() {
@@ -532,8 +625,13 @@ fn space_item(glyphs: &mut [ShapedGlyph], style: &TextStyle, text: &str, para_st
     }
     if style.optical && glyphs.len() > 1 {
         // Pull every pair's ink gap halfway toward the item's median gap.
-        let sides: Vec<Option<(f32, f32)>> = glyphs.iter().map(|g| if is_space(g) { None } else { side(g) }).collect();
-        let gaps: Vec<Option<f32>> = (1..glyphs.len()).map(|i| Some(sides[i - 1]?.1 + sides[i]?.0)).collect();
+        let sides: Vec<Option<(f32, f32)>> = glyphs
+            .iter()
+            .map(|g| if is_space(g) { None } else { side(g) })
+            .collect();
+        let gaps: Vec<Option<f32>> = (1..glyphs.len())
+            .map(|i| Some(sides[i - 1]?.1 + sides[i]?.0))
+            .collect();
         let mut sorted: Vec<f32> = gaps.iter().flatten().copied().collect();
         sorted.sort_by(f32::total_cmp);
         if let Some(&median) = sorted.get(sorted.len() / 2) {
@@ -584,7 +682,23 @@ struct ParaLine {
 }
 
 fn is_hanging_close(c: char) -> bool {
-    matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | '-' | '\u{2013}' | '\u{2014}' | '\'' | '"' | '\u{2019}' | '\u{201d}' | ')' | '\u{2026}')
+    matches!(
+        c,
+        '.' | ','
+            | ';'
+            | ':'
+            | '!'
+            | '?'
+            | '-'
+            | '\u{2013}'
+            | '\u{2014}'
+            | '\''
+            | '"'
+            | '\u{2019}'
+            | '\u{201d}'
+            | ')'
+            | '\u{2026}'
+    )
 }
 fn is_hanging_open(c: char) -> bool {
     matches!(c, '"' | '\'' | '\u{2018}' | '\u{201c}' | '(' | '\u{ab}')
@@ -593,15 +707,28 @@ fn is_hanging_open(c: char) -> bool {
 /// The style run index covering global byte `b` (the run before it at a boundary, for empty
 /// paragraphs at the end).
 fn run_at(runs: &[(Range<usize>, TextStyle)], b: usize) -> usize {
-    runs.iter().position(|(r, _)| b >= r.start && b < r.end).unwrap_or_else(|| runs.iter().rposition(|(r, _)| r.start <= b).unwrap_or(0))
+    runs.iter()
+        .position(|(r, _)| b >= r.start && b < r.end)
+        .unwrap_or_else(|| runs.iter().rposition(|(r, _)| r.start <= b).unwrap_or(0))
 }
 
 /// Lay out one paragraph (no newlines) whose text starts at byte `base` of the whole string.
-fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primaries: &[Resolved], para: &ParagraphStyle, width: Option<f32>) -> Vec<ParaLine> {
+fn paragraph(
+    text: &str,
+    base: usize,
+    runs: &[(Range<usize>, TextStyle)],
+    primaries: &[Resolved],
+    para: &ParagraphStyle,
+    width: Option<f32>,
+) -> Vec<ParaLine> {
     let rtl_para = para.rtl == Some(true);
     let margins_for = |first: bool| -> (f32, f32) {
         let fi = if first { para.indent_first } else { 0.0 };
-        if rtl_para { (para.indent_end, para.indent_start + fi) } else { (para.indent_start + fi, para.indent_end) }
+        if rtl_para {
+            (para.indent_end, para.indent_start + fi)
+        } else {
+            (para.indent_start + fi, para.indent_end)
+        }
     };
     let avail_for = |first: bool| -> Option<f32> {
         let (l, r) = margins_for(first);
@@ -613,7 +740,11 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
     };
     let eff_align = |last: bool| -> Align {
         if (last || width.is_none()) && para.align == Align::Justify {
-            if width.is_none() && para.justify_last == Align::Justify { Align::Left } else { para.justify_last }
+            if width.is_none() && para.justify_last == Align::Justify {
+                Align::Left
+            } else {
+                para.justify_last
+            }
         } else {
             para.align
         }
@@ -637,7 +768,9 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
             underline: None,
         }];
     }
-    let default_level = para.rtl.map(|r| if r { Level::rtl() } else { Level::ltr() });
+    let default_level = para
+        .rtl
+        .map(|r| if r { Level::rtl() } else { Level::ltr() });
     let bidi = BidiInfo::new(text, default_level);
     let pinfo = &bidi.paragraphs[0];
     let base_rtl = pinfo.level.is_rtl();
@@ -648,21 +781,33 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
             let si = run_at(runs, base + b);
             let style = &runs[si].1;
             let primary = primaries[si].face;
-            let face_of = |ch: char| if ch.is_whitespace() { primary } else { fonts::fallback_for(ch, primary) };
+            let face_of = |ch: char| {
+                if ch.is_whitespace() {
+                    primary
+                } else {
+                    fonts::fallback_for(ch, primary)
+                }
+            };
             let all_small = style.opentype.all_small_caps && style.caps != Caps::All;
             let small = (style.caps == Caps::Small || all_small) && c.is_lowercase();
             let small_cap = all_small && c.is_uppercase();
             let (sc, mut form) = match style.caps {
                 Caps::All => (upper_single(c), Form::Normal),
                 _ if small && feature_substitutes(face_of(c), b"smcp", c) => (c, Form::TrueSmall),
-                _ if small_cap && feature_substitutes(face_of(c), b"c2sc", c) => (c, Form::TrueSmall),
+                _ if small_cap && feature_substitutes(face_of(c), b"c2sc", c) => {
+                    (c, Form::TrueSmall)
+                }
                 _ if small => (upper_single(c), Form::FauxSmall),
                 _ if small_cap => (c, Form::FauxSmall),
                 _ => (c, Form::Normal),
             };
             let face = face_of(sc);
             if form == Form::Normal && style.script != Script::Normal && !sc.is_whitespace() {
-                let tag = if style.script == Script::Sub { b"subs" } else { b"sups" };
+                let tag = if style.script == Script::Sub {
+                    b"subs"
+                } else {
+                    b"sups"
+                };
                 if feature_substitutes(face, tag, sc) {
                     form = Form::TrueScript;
                 }
@@ -674,8 +819,15 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
     let mut items: Vec<Item> = Vec::new();
     let mut i = 0;
     while i < chars.len() {
-        let key =
-            |c: &(usize, char, char, FaceId, bool, Form, usize)| (c.3, c.4, c.5, c.6, runs.get(c.6).is_some_and(|run| run.1.vertical) && crate::is_cjk(c.1));
+        let key = |c: &(usize, char, char, FaceId, bool, Form, usize)| {
+            (
+                c.3,
+                c.4,
+                c.5,
+                c.6,
+                runs.get(c.6).is_some_and(|run| run.1.vertical) && crate::is_cjk(c.1),
+            )
+        };
         let k0 = key(&chars[i]);
         let mut j = i + 1;
         while j < chars.len() && key(&chars[j]) == k0 {
@@ -691,8 +843,16 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
         };
         let mut glyphs = shape_item(&sub, rtl, face, size, style, si, form);
         space_item(&mut glyphs, style, text, true);
-        let end = if j < chars.len() { chars[j].0 } else { text.len() };
-        items.push(Item { range: chars[i].0..end, rtl, glyphs });
+        let end = if j < chars.len() {
+            chars[j].0
+        } else {
+            text.len()
+        };
+        items.push(Item {
+            range: chars[i].0..end,
+            rtl,
+            glyphs,
+        });
         i = j;
     }
     // advance per char byte (cluster start)
@@ -720,8 +880,16 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
         if !para.hanging || width.is_none() || r.start >= ce {
             return (0.0, 0.0);
         }
-        let first = text[r.start..ce].chars().next().filter(|c| is_hanging_open(*c)).map_or(0.0, |_| char_adv[r.start]);
-        let last = text[r.start..ce].char_indices().next_back().filter(|(_, c)| is_hanging_close(*c)).map_or(0.0, |(b, _)| char_adv[r.start + b]);
+        let first = text[r.start..ce]
+            .chars()
+            .next()
+            .filter(|c| is_hanging_open(*c))
+            .map_or(0.0, |_| char_adv[r.start]);
+        let last = text[r.start..ce]
+            .char_indices()
+            .next_back()
+            .filter(|(_, c)| is_hanging_close(*c))
+            .map_or(0.0, |(b, _)| char_adv[r.start + b]);
         (first, last)
     };
     let fits_w = |r: &Range<usize>| -> f32 {
@@ -734,7 +902,9 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
     match width {
         None => ranges.push(0..text.len()),
         Some(_) => {
-            let opps: Vec<usize> = unicode_linebreak::linebreaks(text).map(|(p, _)| p).collect();
+            let opps: Vec<usize> = unicode_linebreak::linebreaks(text)
+                .map(|(p, _)| p)
+                .collect();
             let avail = |line: usize| avail_for(line == 0).unwrap_or(f32::MAX);
             if para.every_line && opps.len() > 1 && opps.len() <= 1500 {
                 // Minimise the summed squared slack of every line but the last.
@@ -824,7 +994,9 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
         let mut underline: Option<(f32, f32)> = None;
         for run in vruns {
             let rtl = levels[run.start].is_rtl();
-            let mut idx: Vec<usize> = (0..items.len()).filter(|&k| items[k].range.start < run.end && items[k].range.end > run.start).collect();
+            let mut idx: Vec<usize> = (0..items.len())
+                .filter(|&k| items[k].range.start < run.end && items[k].range.end > run.start)
+                .collect();
             if rtl {
                 idx.reverse();
             }
@@ -866,15 +1038,26 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
         let mut carets = Vec::new();
         let mut cluster_starts: Vec<usize> = extents.keys().copied().collect();
         cluster_starts.sort_unstable();
-        let char_bytes: Vec<usize> = text[r.clone()].char_indices().map(|(b, _)| r.start + b).collect();
+        let char_bytes: Vec<usize> = text[r.clone()]
+            .char_indices()
+            .map(|(b, _)| r.start + b)
+            .collect();
         for (ci, &cs) in cluster_starts.iter().enumerate() {
             let (x0, x1, rtl) = extents[&cs];
             let next = cluster_starts.get(ci + 1).copied().unwrap_or(r.end);
-            let members: Vec<usize> = char_bytes.iter().copied().filter(|b| *b >= cs && *b < next).collect();
+            let members: Vec<usize> = char_bytes
+                .iter()
+                .copied()
+                .filter(|b| *b >= cs && *b < next)
+                .collect();
             let n = members.len().max(1) as f32;
             for (mi, b) in members.iter().enumerate() {
                 let f = mi as f32 / n;
-                let x = if rtl { x1 - (x1 - x0) * f } else { x0 + (x1 - x0) * f };
+                let x = if rtl {
+                    x1 - (x1 - x0) * f
+                } else {
+                    x0 + (x1 - x0) * f
+                };
                 carets.push((base + b, x));
             }
         }
@@ -900,7 +1083,11 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
         carets.dedup_by_key(|c| c.0);
         // Line metrics: the tallest face and the largest leading on the line.
         let (mut asc, mut desc, mut adv) = (0.0f32, 0.0f32, 0.0f32);
-        let mut seen: Vec<usize> = chars.iter().filter(|c| c.0 >= r.start && c.0 < r.end).map(|c| c.6).collect();
+        let mut seen: Vec<usize> = chars
+            .iter()
+            .filter(|c| c.0 >= r.start && c.0 < r.end)
+            .map(|c| c.6)
+            .collect();
         seen.sort_unstable();
         seen.dedup();
         if seen.is_empty() {
@@ -920,7 +1107,11 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
                 desc = desc.max(m.descent);
             }
         }
-        let content_w = if space_extra > 0.0 { avail.map_or(content, |a| a + hang.0 + hang.1) } else { content };
+        let content_w = if space_extra > 0.0 {
+            avail.map_or(content, |a| a + hang.0 + hang.1)
+        } else {
+            content
+        };
         out.push(ParaLine {
             range: base + r.start..base + r.end,
             glyphs,
@@ -942,25 +1133,44 @@ fn paragraph(text: &str, base: usize, runs: &[(Range<usize>, TextStyle)], primar
 
 /// Lay out `text` (paragraphs separated by `\n`) in one style.
 pub fn layout_uncached(text: &str, style: &TextStyle, para: &ParagraphStyle) -> Layout {
-    layout_rich_uncached(text, &[(0..text.len(), style.clone())], std::slice::from_ref(para))
+    layout_rich_uncached(
+        text,
+        &[(0..text.len(), style.clone())],
+        std::slice::from_ref(para),
+    )
 }
 
 /// Lay out `text` with character style runs (byte ranges covering the text, in order; at least
 /// one) and paragraph settings (one per `\n`-separated paragraph; the last repeats). The wrap
 /// width is the first paragraph's.
-pub fn layout_rich_uncached(text: &str, runs: &[(Range<usize>, TextStyle)], paras: &[ParagraphStyle]) -> Layout {
+pub fn layout_rich_uncached(
+    text: &str,
+    runs: &[(Range<usize>, TextStyle)],
+    paras: &[ParagraphStyle],
+) -> Layout {
     let fallback = [(0..text.len(), TextStyle::default())];
     let runs = if runs.is_empty() { &fallback[..] } else { runs };
     let default_para = ParagraphStyle::default();
     let para_at = |i: usize| paras.get(i).or(paras.last()).unwrap_or(&default_para);
     let width = para_at(0).width;
-    let primaries: Vec<Resolved> = runs.iter().map(|(_, s)| fonts::resolve(&s.family, &s.style)).collect();
-    let mut lay = Layout { missing_font: primaries.iter().any(|p| p.missing), text_len: text.len(), ..Default::default() };
+    let primaries: Vec<Resolved> = runs
+        .iter()
+        .map(|(_, s)| fonts::resolve(&s.family, &s.style))
+        .collect();
+    let mut lay = Layout {
+        missing_font: primaries.iter().any(|p| p.missing),
+        text_len: text.len(),
+        ..Default::default()
+    };
     let mut base = 0usize;
     let mut plines: Vec<(usize, ParaLine)> = Vec::new();
     for (pi, p) in text.split('\n').enumerate() {
         let p_clean = p.strip_suffix('\r').unwrap_or(p);
-        plines.extend(paragraph(p_clean, base, runs, &primaries, para_at(pi), width).into_iter().map(|l| (pi, l)));
+        plines.extend(
+            paragraph(p_clean, base, runs, &primaries, para_at(pi), width)
+                .into_iter()
+                .map(|l| (pi, l)),
+        );
         base += p.len() + 1;
     }
     let mut baseline = 0.0f32;
@@ -997,7 +1207,12 @@ pub fn layout_rich_uncached(text: &str, runs: &[(Range<usize>, TextStyle)], para
         if let Some((u0, u1)) = pl.underline {
             let si = run_at(runs, pl.range.start);
             let pm = fonts::face(primaries[si].face).metrics(runs[si].1.size);
-            lay.underlines.push([u0 + shift, baseline + pm.underline_pos, u1 + shift, baseline + pm.underline_pos + pm.underline_thickness]);
+            lay.underlines.push([
+                u0 + shift,
+                baseline + pm.underline_pos,
+                u1 + shift,
+                baseline + pm.underline_pos + pm.underline_thickness,
+            ]);
         }
         lay.lines.push(Line {
             range: pl.range,
@@ -1007,13 +1222,20 @@ pub fn layout_rich_uncached(text: &str, runs: &[(Range<usize>, TextStyle)], para
             ascent: pl.ascent,
             descent: pl.descent,
             glyphs: g0..lay.glyphs.len(),
-            carets: pl.carets.into_iter().map(|(b, cx)| (b, cx + shift)).collect(),
+            carets: pl
+                .carets
+                .into_iter()
+                .map(|(b, cx)| (b, cx + shift))
+                .collect(),
             para: pi,
             para_end: false,
         });
     }
     for i in 0..lay.lines.len() {
-        lay.lines[i].para_end = lay.lines.get(i + 1).is_none_or(|n| n.para != lay.lines[i].para);
+        lay.lines[i].para_end = lay
+            .lines
+            .get(i + 1)
+            .is_none_or(|n| n.para != lay.lines[i].para);
     }
     let (mut x0, mut x1) = (f32::MAX, f32::MIN);
     for l in &lay.lines {
@@ -1025,7 +1247,12 @@ pub fn layout_rich_uncached(text: &str, runs: &[(Range<usize>, TextStyle)], para
         x1 = x1.max(w);
     }
     if let (Some(first), Some(last)) = (lay.lines.first(), lay.lines.last()) {
-        lay.bounds = [x0, first.baseline - first.ascent, x1.max(x0), last.baseline + last.descent];
+        lay.bounds = [
+            x0,
+            first.baseline - first.ascent,
+            x1.max(x0),
+            last.baseline + last.descent,
+        ];
     }
     lay
 }
@@ -1037,11 +1264,19 @@ fn cache() -> &'static Mutex<HashMap<u64, (u64, Arc<Layout>)>> {
 
 /// Lay out `text` in one style (cached by text and styles).
 pub fn layout(text: &str, style: &TextStyle, para: &ParagraphStyle) -> Arc<Layout> {
-    layout_rich(text, &[(0..text.len(), style.clone())], std::slice::from_ref(para))
+    layout_rich(
+        text,
+        &[(0..text.len(), style.clone())],
+        std::slice::from_ref(para),
+    )
 }
 
 /// [`layout_rich_uncached`], cached by text, runs and paragraph settings.
-pub fn layout_rich(text: &str, runs: &[(Range<usize>, TextStyle)], paras: &[ParagraphStyle]) -> Arc<Layout> {
+pub fn layout_rich(
+    text: &str,
+    runs: &[(Range<usize>, TextStyle)],
+    paras: &[ParagraphStyle],
+) -> Arc<Layout> {
     let mut h = std::collections::hash_map::DefaultHasher::new();
     text.hash(&mut h);
     runs.hash(&mut h);
@@ -1049,7 +1284,11 @@ pub fn layout_rich(text: &str, runs: &[(Range<usize>, TextStyle)], paras: &[Para
     let key = h.finish();
     static CLOCK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let now = CLOCK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if let Some(e) = cache().lock().unwrap_or_else(|e| e.into_inner()).get_mut(&key) {
+    if let Some(e) = cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get_mut(&key)
+    {
         e.0 = now;
         return e.1.clone();
     }
@@ -1077,11 +1316,18 @@ mod tests {
     use super::*;
 
     fn st(size: f32) -> TextStyle {
-        TextStyle { size, ..Default::default() }
+        TextStyle {
+            size,
+            ..Default::default()
+        }
     }
 
     fn ids(text: &str, s: &TextStyle) -> Vec<u32> {
-        layout_uncached(text, s, &ParagraphStyle::default()).glyphs.iter().map(|g| g.id).collect()
+        layout_uncached(text, s, &ParagraphStyle::default())
+            .glyphs
+            .iter()
+            .map(|g| g.id)
+            .collect()
     }
 
     fn ot(f: impl FnOnce(&mut OpenType)) -> TextStyle {
@@ -1091,7 +1337,10 @@ mod tests {
     }
 
     fn serif() -> TextStyle {
-        TextStyle { family: "Noto Serif".into(), ..st(100.0) }
+        TextStyle {
+            family: "Noto Serif".into(),
+            ..st(100.0)
+        }
     }
 
     #[test]
@@ -1110,15 +1359,46 @@ mod tests {
     fn opentype_features_substitute_glyphs() {
         let plain = st(100.0);
         // Stylistic sets, fractions, ordinals, figure widths and discretionary ligatures.
-        assert_ne!(ids("1234567890", &plain), ids("1234567890", &ot(|o| o.set_stylistic_set(1, true))), "ss01 alternate digits");
-        assert_eq!(ids("1234567890", &plain), ids("1234567890", &ot(|o| o.set_stylistic_set(20, true))), "Inter has no ss20");
-        assert_ne!(ids("1/2", &plain), ids("1/2", &ot(|o| o.fractions = true)), "frac");
-        assert_ne!(ids("1a 2o No", &plain), ids("1a 2o No", &ot(|o| o.ordinals = true)), "ordn");
-        let tab = measure("1111", &ot(|o| o.figure_width = effectcraft_keyframe::FigureWidth::Tabular));
-        let prop = measure("1111", &ot(|o| o.figure_width = effectcraft_keyframe::FigureWidth::Proportional));
-        assert!((tab - prop).abs() > 1.0, "tabular {tab} vs proportional {prop}");
+        assert_ne!(
+            ids("1234567890", &plain),
+            ids("1234567890", &ot(|o| o.set_stylistic_set(1, true))),
+            "ss01 alternate digits"
+        );
+        assert_eq!(
+            ids("1234567890", &plain),
+            ids("1234567890", &ot(|o| o.set_stylistic_set(20, true))),
+            "Inter has no ss20"
+        );
+        assert_ne!(
+            ids("1/2", &plain),
+            ids("1/2", &ot(|o| o.fractions = true)),
+            "frac"
+        );
+        assert_ne!(
+            ids("1a 2o No", &plain),
+            ids("1a 2o No", &ot(|o| o.ordinals = true)),
+            "ordn"
+        );
+        let tab = measure(
+            "1111",
+            &ot(|o| o.figure_width = effectcraft_keyframe::FigureWidth::Tabular),
+        );
+        let prop = measure(
+            "1111",
+            &ot(|o| o.figure_width = effectcraft_keyframe::FigureWidth::Proportional),
+        );
+        assert!(
+            (tab - prop).abs() > 1.0,
+            "tabular {tab} vs proportional {prop}"
+        );
         // Old-style figures (Noto Serif).
-        let old = TextStyle { opentype: OpenType { figure_style: effectcraft_keyframe::FigureStyle::OldStyle, ..Default::default() }, ..serif() };
+        let old = TextStyle {
+            opentype: OpenType {
+                figure_style: effectcraft_keyframe::FigureStyle::OldStyle,
+                ..Default::default()
+            },
+            ..serif()
+        };
         assert_ne!(ids("123", &serif()), ids("123", &old), "onum");
         // Contextual alternates are on by default; turning them off can only keep or change glyphs.
         let no_calt = ot(|o| o.contextual_alternates = false);
@@ -1128,50 +1408,115 @@ mod tests {
     #[test]
     fn true_small_caps_and_superscripts_with_faux_fallback() {
         // Noto Serif has smcp: lowercase letters take their own small-capital glyphs at full size.
-        let sc = TextStyle { caps: Caps::Small, ..serif() };
+        let sc = TextStyle {
+            caps: Caps::Small,
+            ..serif()
+        };
         let l = layout_uncached("Ab", &sc, &ParagraphStyle::default());
         let upper_b = ids("B", &serif())[0];
-        assert_ne!(l.glyphs[1].id, upper_b, "true small cap glyph, not a scaled capital");
+        assert_ne!(
+            l.glyphs[1].id, upper_b,
+            "true small cap glyph, not a scaled capital"
+        );
         assert_eq!(l.glyphs[1].size, 100.0);
         // Inter has no smcp: a capital scaled down.
-        let faux = layout_uncached("Ab", &TextStyle { caps: Caps::Small, ..st(100.0) }, &ParagraphStyle::default());
+        let faux = layout_uncached(
+            "Ab",
+            &TextStyle {
+                caps: Caps::Small,
+                ..st(100.0)
+            },
+            &ParagraphStyle::default(),
+        );
         assert_eq!(faux.glyphs[1].id, ids("B", &st(100.0))[0]);
         assert!((faux.glyphs[1].size - 78.0).abs() < 0.01);
         // All Small Caps: capitals become small capitals too (c2sc).
-        let all = TextStyle { opentype: OpenType { all_small_caps: true, ..Default::default() }, ..serif() };
+        let all = TextStyle {
+            opentype: OpenType {
+                all_small_caps: true,
+                ..Default::default()
+            },
+            ..serif()
+        };
         let a = layout_uncached("AB", &all, &ParagraphStyle::default());
         assert_ne!(a.glyphs[0].id, ids("A", &serif())[0]);
         // Superscript: Inter's sups figures at full size on the baseline; letters it lacks are
         // synthesized (smaller and raised).
-        let sup = TextStyle { script: Script::Super, ..st(100.0) };
+        let sup = TextStyle {
+            script: Script::Super,
+            ..st(100.0)
+        };
         let s2 = layout_uncached("2", &sup, &ParagraphStyle::default());
         assert_ne!(s2.glyphs[0].id, ids("2", &st(100.0))[0]);
         assert_eq!(s2.glyphs[0].size, 100.0);
         assert_eq!(s2.glyphs[0].y, 0.0);
         let sq = layout_uncached("q", &sup, &ParagraphStyle::default());
         if !feature_substitutes(sq.glyphs[0].face, b"sups", 'q') {
-            assert!(sq.glyphs[0].size < 60.0 && sq.glyphs[0].y < -20.0, "{:?}", sq.glyphs[0]);
+            assert!(
+                sq.glyphs[0].size < 60.0 && sq.glyphs[0].y < -20.0,
+                "{:?}",
+                sq.glyphs[0]
+            );
         }
-        let sub = layout_uncached("2", &TextStyle { script: Script::Sub, ..st(100.0) }, &ParagraphStyle::default());
+        let sub = layout_uncached(
+            "2",
+            &TextStyle {
+                script: Script::Sub,
+                ..st(100.0)
+            },
+            &ParagraphStyle::default(),
+        );
         assert_ne!(sub.glyphs[0].id, s2.glyphs[0].id);
     }
 
     #[test]
     fn kerning_and_ligatures_change_advances() {
         let kern = measure("AVAVAV", &st(100.0));
-        let nokern = measure("AVAVAV", &TextStyle { kerning: false, ..st(100.0) });
-        assert!(kern < nokern - 5.0, "kerning tightens AV: {kern} vs {nokern}");
+        let nokern = measure(
+            "AVAVAV",
+            &TextStyle {
+                kerning: false,
+                ..st(100.0)
+            },
+        );
+        assert!(
+            kern < nokern - 5.0,
+            "kerning tightens AV: {kern} vs {nokern}"
+        );
         // tracking adds 1/1000 em per cluster
-        let tracked = measure("AVAVAV", &TextStyle { tracking: 100.0, ..st(100.0) });
-        assert!((tracked - kern - 6.0 * 10.0).abs() < 0.5, "{tracked} {kern}");
+        let tracked = measure(
+            "AVAVAV",
+            &TextStyle {
+                tracking: 100.0,
+                ..st(100.0)
+            },
+        );
+        assert!(
+            (tracked - kern - 6.0 * 10.0).abs() < 0.5,
+            "{tracked} {kern}"
+        );
     }
 
     #[test]
     fn point_text_alignment() {
-        let l = layout("Hello", &st(50.0), &ParagraphStyle { align: Align::Center, ..Default::default() });
+        let l = layout(
+            "Hello",
+            &st(50.0),
+            &ParagraphStyle {
+                align: Align::Center,
+                ..Default::default()
+            },
+        );
         let line = &l.lines[0];
         assert!((line.x + line.width / 2.0).abs() < 0.01);
-        let r = layout("Hello", &st(50.0), &ParagraphStyle { align: Align::Right, ..Default::default() });
+        let r = layout(
+            "Hello",
+            &st(50.0),
+            &ParagraphStyle {
+                align: Align::Right,
+                ..Default::default()
+            },
+        );
         assert!((r.lines[0].x + r.lines[0].width).abs() < 0.01);
         assert_eq!(l.glyphs.len(), 5);
         assert!(l.bounds[1] < -30.0 && l.bounds[3] > 5.0, "{:?}", l.bounds);
@@ -1179,11 +1524,23 @@ mod tests {
 
     #[test]
     fn wraps_area_text_and_justifies() {
-        let p = ParagraphStyle { width: Some(300.0), align: Align::Justify, ..Default::default() };
-        let l = layout("the quick brown fox jumps over the lazy dog again and again", &st(40.0), &p);
+        let p = ParagraphStyle {
+            width: Some(300.0),
+            align: Align::Justify,
+            ..Default::default()
+        };
+        let l = layout(
+            "the quick brown fox jumps over the lazy dog again and again",
+            &st(40.0),
+            &p,
+        );
         assert!(l.lines.len() >= 3, "{}", l.lines.len());
         for line in &l.lines[..l.lines.len() - 1] {
-            assert!((line.width - 300.0).abs() < 0.5, "justified to the box: {}", line.width);
+            assert!(
+                (line.width - 300.0).abs() < 0.5,
+                "justified to the box: {}",
+                line.width
+            );
         }
         // the lines tile the text
         assert_eq!(l.lines[0].range.start, 0);
@@ -1191,7 +1548,14 @@ mod tests {
             assert_eq!(w[0].range.end, w[1].range.start);
             assert!(w[1].baseline > w[0].baseline);
         }
-        let left = layout("the quick brown fox jumps over the lazy dog", &st(40.0), &ParagraphStyle { width: Some(300.0), ..Default::default() });
+        let left = layout(
+            "the quick brown fox jumps over the lazy dog",
+            &st(40.0),
+            &ParagraphStyle {
+                width: Some(300.0),
+                ..Default::default()
+            },
+        );
         assert!(left.lines.iter().all(|l| l.width <= 300.0 + 0.01));
     }
 
@@ -1202,7 +1566,14 @@ mod tests {
         assert_eq!(l.lines[1].range, 4..7);
         assert_eq!(l.lines[2].range, 8..8);
         let gap = l.lines[1].baseline - l.lines[0].baseline;
-        let l2 = layout("one\ntwo", &st(30.0), &ParagraphStyle { leading: 10.0, ..Default::default() });
+        let l2 = layout(
+            "one\ntwo",
+            &st(30.0),
+            &ParagraphStyle {
+                leading: 10.0,
+                ..Default::default()
+            },
+        );
         assert!((l2.lines[1].baseline - l2.lines[0].baseline - gap - 10.0).abs() < 1e-3);
     }
 
@@ -1226,8 +1597,18 @@ mod tests {
     #[test]
     fn bidi_reorders_rtl_runs() {
         // Hebrew letters are laid out right-to-left: the first logical letter is rightmost.
-        let l = layout("ab \u{5d0}\u{5d1}\u{5d2} cd", &st(40.0), &ParagraphStyle::default());
-        let x_of = |byte: usize| l.glyphs.iter().find(|g| g.cluster == byte).map(|g| g.x).unwrap();
+        let l = layout(
+            "ab \u{5d0}\u{5d1}\u{5d2} cd",
+            &st(40.0),
+            &ParagraphStyle::default(),
+        );
+        let x_of = |byte: usize| {
+            l.glyphs
+                .iter()
+                .find(|g| g.cluster == byte)
+                .map(|g| g.x)
+                .unwrap()
+        };
         let alef = "ab ".len();
         let gimel = alef + 4;
         assert!(x_of(alef) > x_of(gimel), "alef right of gimel");
@@ -1238,11 +1619,31 @@ mod tests {
     fn caps_and_small_caps() {
         let s = st(50.0);
         let up = measure("HELLO", &s);
-        let all = measure("hello", &TextStyle { caps: Caps::All, ..s.clone() });
+        let all = measure(
+            "hello",
+            &TextStyle {
+                caps: Caps::All,
+                ..s.clone()
+            },
+        );
         assert!((up - all).abs() < 0.01);
-        let small = measure("hello", &TextStyle { caps: Caps::Small, ..s.clone() });
+        let small = measure(
+            "hello",
+            &TextStyle {
+                caps: Caps::Small,
+                ..s.clone()
+            },
+        );
         assert!(small < up * 0.9 && small > up * 0.6, "{small} {up}");
-        let l = layout("Hi", &TextStyle { baseline_shift: 10.0, underline: true, ..s }, &ParagraphStyle::default());
+        let l = layout(
+            "Hi",
+            &TextStyle {
+                baseline_shift: 10.0,
+                underline: true,
+                ..s
+            },
+            &ParagraphStyle::default(),
+        );
         assert!((l.glyphs[0].y + 10.0).abs() < 1e-3);
         assert_eq!(l.underlines.len(), 1);
     }
@@ -1261,7 +1662,14 @@ mod tests {
     #[test]
     fn fallback_font_for_missing_glyphs() {
         // Inter lacks Devanagari/Hebrew; Noto Serif lacks Hebrew too → glyphs still produced (notdef)
-        let l = layout("A\u{3b1}", &TextStyle { family: "Noto Serif".into(), ..st(40.0) }, &ParagraphStyle::default());
+        let l = layout(
+            "A\u{3b1}",
+            &TextStyle {
+                family: "Noto Serif".into(),
+                ..st(40.0)
+            },
+            &ParagraphStyle::default(),
+        );
         assert_eq!(l.glyphs.len(), 2);
         assert!(l.glyphs.iter().all(|g| g.id != 0));
     }
@@ -1281,18 +1689,33 @@ mod tests {
     #[test]
     fn mixed_sizes_share_a_baseline_and_take_the_largest_leading() {
         let text = "small BIG\nnext";
-        let runs = [(0..6, st(20.0)), (6..9, st(80.0)), (9..text.len(), st(20.0))];
+        let runs = [
+            (0..6, st(20.0)),
+            (6..9, st(80.0)),
+            (9..text.len(), st(20.0)),
+        ];
         let l = rich(text, &runs, ParagraphStyle::default());
         assert_eq!(l.lines.len(), 2);
         let y0 = l.glyphs[0].y;
-        assert!(l.glyphs[..9].iter().all(|g| (g.y - y0).abs() < 1e-3), "one baseline per line");
+        assert!(
+            l.glyphs[..9].iter().all(|g| (g.y - y0).abs() < 1e-3),
+            "one baseline per line"
+        );
         assert!(l.glyphs[7].size > l.glyphs[0].size * 3.0);
         // Line 2's advance is its own leading (20 px text: 24 px); line 1 is as tall as the big run.
-        assert!((l.lines[1].baseline - l.lines[0].baseline - 24.0).abs() < 1e-3, "{}", l.lines[1].baseline);
+        assert!(
+            (l.lines[1].baseline - l.lines[0].baseline - 24.0).abs() < 1e-3,
+            "{}",
+            l.lines[1].baseline
+        );
         assert!(l.lines[0].ascent > 60.0);
         // A big run on the second line pushes it down by its 120% leading.
         let text2 = "aa\nBB";
-        let l2 = rich(text2, &[(0..3, st(20.0)), (3..5, st(80.0))], ParagraphStyle::default());
+        let l2 = rich(
+            text2,
+            &[(0..3, st(20.0)), (3..5, st(80.0))],
+            ParagraphStyle::default(),
+        );
         assert!((l2.lines[1].baseline - 96.0).abs() < 1e-3);
         // Explicit leading wins over auto.
         let mut fixed = st(20.0);
@@ -1304,31 +1727,92 @@ mod tests {
     #[test]
     fn super_subscript_tsume_and_kerning_metrics() {
         let base = st(100.0);
-        let sup = TextStyle { script: Script::Super, ..base.clone() };
-        let sub = TextStyle { script: Script::Sub, ..base.clone() };
+        let sup = TextStyle {
+            script: Script::Super,
+            ..base.clone()
+        };
+        let sub = TextStyle {
+            script: Script::Sub,
+            ..base.clone()
+        };
         // A letter the font has no superior / inferior glyph for: synthesized.
         let inter = fonts::resolve("Inter", "Regular").face;
-        let c = "qwkzvjxyQWK".chars().find(|&c| !feature_substitutes(inter, b"sups", c) && !feature_substitutes(inter, b"subs", c)).unwrap();
+        let c = "qwkzvjxyQWK"
+            .chars()
+            .find(|&c| {
+                !feature_substitutes(inter, b"sups", c) && !feature_substitutes(inter, b"subs", c)
+            })
+            .unwrap();
         let text: String = ['x', c, 'y', c].iter().collect();
-        let l = rich(&text, &[(0..1, base.clone()), (1..2, sup), (2..3, base.clone()), (3..4, sub)], ParagraphStyle::default());
+        let l = rich(
+            &text,
+            &[
+                (0..1, base.clone()),
+                (1..2, sup),
+                (2..3, base.clone()),
+                (3..4, sub),
+            ],
+            ParagraphStyle::default(),
+        );
         let g = &l.glyphs;
         assert!((g[1].size - 58.3).abs() < 0.1);
-        assert!((g[1].y - (g[0].y - 33.3)).abs() < 0.1, "superscript raised by a third of the size");
+        assert!(
+            (g[1].y - (g[0].y - 33.3)).abs() < 0.1,
+            "superscript raised by a third of the size"
+        );
         assert!((g[3].y - (g[2].y + 33.3)).abs() < 0.1, "subscript lowered");
         // Tsume removes side bearings; full tsume is narrower than none.
         let w0 = measure("onion", &base);
-        let w1 = measure("onion", &TextStyle { tsume: 1.0, ..base.clone() });
+        let w1 = measure(
+            "onion",
+            &TextStyle {
+                tsume: 1.0,
+                ..base.clone()
+            },
+        );
         assert!(w1 < w0 - 5.0, "{w1} vs {w0}");
         // Manual kerning: +100/1000 em before each of the 5 later characters of AVAVAV, metrics off.
-        let nokern = measure("AVAVAV", &TextStyle { kerning: false, ..base.clone() });
-        let manual = measure("AVAVAV", &TextStyle { manual_kern: Some(100.0), ..base.clone() });
+        let nokern = measure(
+            "AVAVAV",
+            &TextStyle {
+                kerning: false,
+                ..base.clone()
+            },
+        );
+        let manual = measure(
+            "AVAVAV",
+            &TextStyle {
+                manual_kern: Some(100.0),
+                ..base.clone()
+            },
+        );
         assert!((manual - nokern - 50.0).abs() < 0.5, "{manual} {nokern}");
-        let optical = measure("AVAVAV", &TextStyle { optical: true, ..base.clone() });
+        let optical = measure(
+            "AVAVAV",
+            &TextStyle {
+                optical: true,
+                ..base.clone()
+            },
+        );
         assert!(optical > 0.0 && (optical - nokern).abs() < 100.0);
         // Horizontal scale stretches advances.
-        let wide = measure("onion", &TextStyle { h_scale: 2.0, ..base.clone() });
+        let wide = measure(
+            "onion",
+            &TextStyle {
+                h_scale: 2.0,
+                ..base.clone()
+            },
+        );
         assert!((wide - 2.0 * w0).abs() < 0.5);
-        let l = layout("o", &TextStyle { h_scale: 2.0, v_scale: 0.5, ..base }, &ParagraphStyle::default());
+        let l = layout(
+            "o",
+            &TextStyle {
+                h_scale: 2.0,
+                v_scale: 0.5,
+                ..base
+            },
+            &ParagraphStyle::default(),
+        );
         assert_eq!((l.glyphs[0].h_scale, l.glyphs[0].v_scale), (2.0, 0.5));
     }
 
@@ -1336,11 +1820,31 @@ mod tests {
     fn indents_and_paragraph_spacing() {
         let s = st(20.0);
         let text = "first paragraph here\nsecond one";
-        let p0 = ParagraphStyle { width: Some(400.0), indent_start: 30.0, indent_first: 15.0, space_after: 10.0, ..Default::default() };
-        let p1 = ParagraphStyle { width: Some(400.0), indent_end: 50.0, align: Align::Right, space_before: 7.0, ..Default::default() };
+        let p0 = ParagraphStyle {
+            width: Some(400.0),
+            indent_start: 30.0,
+            indent_first: 15.0,
+            space_after: 10.0,
+            ..Default::default()
+        };
+        let p1 = ParagraphStyle {
+            width: Some(400.0),
+            indent_end: 50.0,
+            align: Align::Right,
+            space_before: 7.0,
+            ..Default::default()
+        };
         let l = layout_rich_uncached(text, &[(0..text.len(), s.clone())], &[p0.clone(), p1]);
-        assert!((l.lines[0].x - 45.0).abs() < 1e-3, "left + first-line indent: {}", l.lines[0].x);
-        assert!((l.lines[1].x + l.lines[1].width - 350.0).abs() < 0.5, "right indent: {}", l.lines[1].x + l.lines[1].width);
+        assert!(
+            (l.lines[0].x - 45.0).abs() < 1e-3,
+            "left + first-line indent: {}",
+            l.lines[0].x
+        );
+        assert!(
+            (l.lines[1].x + l.lines[1].width - 350.0).abs() < 0.5,
+            "right indent: {}",
+            l.lines[1].x + l.lines[1].width
+        );
         assert!((l.lines[1].baseline - l.lines[0].baseline - (24.0 + 10.0 + 7.0)).abs() < 1e-3);
         assert_eq!((l.lines[0].para, l.lines[1].para), (0, 1));
         assert!(l.lines[0].para_end && l.lines[1].para_end);
@@ -1352,7 +1856,15 @@ mod tests {
         assert!(l.lines.iter().all(|ln| ln.x + ln.width <= 400.0 + 0.5));
         assert!(!l.lines[0].para_end);
         // Point text: a right-aligned paragraph's end indent moves it left of the origin.
-        let l = layout_rich_uncached("abc", &[(0..3, s)], &[ParagraphStyle { align: Align::Right, indent_end: 12.0, ..Default::default() }]);
+        let l = layout_rich_uncached(
+            "abc",
+            &[(0..3, s)],
+            &[ParagraphStyle {
+                align: Align::Right,
+                indent_end: 12.0,
+                ..Default::default()
+            }],
+        );
         assert!((l.lines[0].x + l.lines[0].width + 12.0).abs() < 1e-3);
     }
 
@@ -1360,7 +1872,12 @@ mod tests {
     fn justify_last_line_modes_and_every_line_composer() {
         let text = "the quick brown fox jumps over the lazy dog and keeps running far";
         let s = st(30.0);
-        let p = |last: Align| ParagraphStyle { width: Some(320.0), align: Align::Justify, justify_last: last, ..Default::default() };
+        let p = |last: Align| ParagraphStyle {
+            width: Some(320.0),
+            align: Align::Justify,
+            justify_last: last,
+            ..Default::default()
+        };
         let left = layout_rich_uncached(text, &[(0..text.len(), s.clone())], &[p(Align::Left)]);
         let n = left.lines.len();
         assert!(n >= 3);
@@ -1373,12 +1890,40 @@ mod tests {
         let lr = &right.lines[n - 1];
         assert!((lr.x + lr.width - 320.0).abs() < 0.5);
         let all = layout_rich_uncached(text, &[(0..text.len(), s.clone())], &[p(Align::Justify)]);
-        assert!((all.lines[n - 1].width - 320.0).abs() < 0.5, "justify all stretches the last line");
+        assert!(
+            (all.lines[n - 1].width - 320.0).abs() < 0.5,
+            "justify all stretches the last line"
+        );
         // Every-line composer: never worse (summed squared slack) than greedy breaking.
-        let slack = |l: &Layout| -> f32 { l.lines[..l.lines.len() - 1].iter().map(|ln| (320.0 - ln.width).powi(2)).sum() };
-        let greedy = layout_rich_uncached(text, &[(0..text.len(), s.clone())], &[ParagraphStyle { width: Some(320.0), ..Default::default() }]);
-        let every = layout_rich_uncached(text, &[(0..text.len(), s)], &[ParagraphStyle { width: Some(320.0), every_line: true, ..Default::default() }]);
-        assert!(slack(&every) <= slack(&greedy) + 1e-3, "{} vs {}", slack(&every), slack(&greedy));
+        let slack = |l: &Layout| -> f32 {
+            l.lines[..l.lines.len() - 1]
+                .iter()
+                .map(|ln| (320.0 - ln.width).powi(2))
+                .sum()
+        };
+        let greedy = layout_rich_uncached(
+            text,
+            &[(0..text.len(), s.clone())],
+            &[ParagraphStyle {
+                width: Some(320.0),
+                ..Default::default()
+            }],
+        );
+        let every = layout_rich_uncached(
+            text,
+            &[(0..text.len(), s)],
+            &[ParagraphStyle {
+                width: Some(320.0),
+                every_line: true,
+                ..Default::default()
+            }],
+        );
+        assert!(
+            slack(&every) <= slack(&greedy) + 1e-3,
+            "{} vs {}",
+            slack(&every),
+            slack(&greedy)
+        );
         assert!(every.lines.iter().all(|ln| ln.width <= 320.0 + 0.5));
     }
 
@@ -1386,21 +1931,44 @@ mod tests {
     fn hanging_punctuation_overhangs_the_box() {
         let s = st(40.0);
         let text = "\"Hi.\"";
-        let p = ParagraphStyle { width: Some(400.0), hanging: true, ..Default::default() };
+        let p = ParagraphStyle {
+            width: Some(400.0),
+            hanging: true,
+            ..Default::default()
+        };
         let l = layout_rich_uncached(text, &[(0..text.len(), s.clone())], &[p]);
-        assert!(l.lines[0].x < -1.0, "opening quote hangs left: {}", l.lines[0].x);
+        assert!(
+            l.lines[0].x < -1.0,
+            "opening quote hangs left: {}",
+            l.lines[0].x
+        );
         let r = layout_rich_uncached(
             text,
             &[(0..text.len(), s)],
-            &[ParagraphStyle { width: Some(400.0), hanging: true, align: Align::Right, ..Default::default() }],
+            &[ParagraphStyle {
+                width: Some(400.0),
+                hanging: true,
+                align: Align::Right,
+                ..Default::default()
+            }],
         );
-        assert!(r.lines[0].x + r.lines[0].width > 401.0, "closing quote hangs right");
+        assert!(
+            r.lines[0].x + r.lines[0].width > 401.0,
+            "closing quote hangs right"
+        );
     }
 
     #[test]
     fn rtl_paragraph_carets_run_right_to_left() {
         let text = "\u{5d0}\u{5d1}\u{5d2}";
-        let l = layout_rich_uncached(text, &[(0..text.len(), st(40.0))], &[ParagraphStyle { rtl: Some(true), ..Default::default() }]);
+        let l = layout_rich_uncached(
+            text,
+            &[(0..text.len(), st(40.0))],
+            &[ParagraphStyle {
+                rtl: Some(true),
+                ..Default::default()
+            }],
+        );
         let xs: Vec<f32> = l.lines[0].carets.iter().map(|c| c.1).collect();
         assert_eq!(xs.len(), 4);
         assert!(xs.windows(2).all(|w| w[1] < w[0]), "{xs:?}");

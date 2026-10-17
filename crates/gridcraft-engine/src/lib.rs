@@ -3,7 +3,14 @@
 //! Every user-visible action is a command with a stable id (`cell.set`, `home.bold`,
 //! `data.sortAscending`…) and JSON parameters. The egui UI, the CLI, the control channel and MCP
 //! all go through [`Session::execute`], so every action is scriptable and journaled.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod catalog;
@@ -151,8 +158,16 @@ impl DocState {
     pub fn store_view(&mut self, tops: &[(usize, CellRef)]) {
         let active = self.selection.active;
         let si = self.wb.active_sheet;
-        let changed = tops.iter().any(|(i, c)| self.wb.sheets.get(*i).is_some_and(|sh| sh.view_top_left != *c))
-            || self.wb.sheets.get(si).is_some_and(|sh| sh.view_active != active);
+        let changed = tops.iter().any(|(i, c)| {
+            self.wb
+                .sheets
+                .get(*i)
+                .is_some_and(|sh| sh.view_top_left != *c)
+        }) || self
+            .wb
+            .sheets
+            .get(si)
+            .is_some_and(|sh| sh.view_active != active);
         if !changed {
             return;
         }
@@ -300,7 +315,14 @@ impl Session {
     }
     /// A new blank workbook titled `BookN`.
     pub fn new_workbook(&mut self) -> usize {
-        let n = (1..).find(|n| !self.docs.iter().any(|d| d.title == format!("Book{n}") && d.path.is_none())).unwrap_or(1);
+        let n = (1..)
+            .find(|n| {
+                !self
+                    .docs
+                    .iter()
+                    .any(|d| d.title == format!("Book{n}") && d.path.is_none())
+            })
+            .unwrap_or(1);
         let mut wb = Workbook::new();
         for _ in 1..self.prefs.sheets_in_new_workbook.clamp(1, 255) {
             let name = wb.next_sheet_name();
@@ -320,14 +342,24 @@ impl Session {
         if let Err(why) = (spec.enabled)(self) {
             return Err(EngineError::Disabled(id.to_string(), why));
         }
-        let before = self.active().map(|d| (d.uid, d.wb.clone(), d.selection.clone()));
-        let params = if params.is_null() { Json::Object(Default::default()) } else { params };
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, &params)));
+        let before = self
+            .active()
+            .map(|d| (d.uid, d.wb.clone(), d.selection.clone()));
+        let params = if params.is_null() {
+            Json::Object(Default::default())
+        } else {
+            params
+        };
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, &params)));
         let result = match result {
             Ok(r) => r,
             Err(p) => {
-                let msg =
-                    p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into());
+                let msg = p
+                    .downcast_ref::<&str>()
+                    .map(|s| s.to_string())
+                    .or_else(|| p.downcast_ref::<String>().cloned())
+                    .unwrap_or_else(|| "panic".into());
                 // Restore the workbook as it was.
                 if let Some((uid, wb, sel)) = &before
                     && let Some(d) = self.docs.iter_mut().find(|d| d.uid == *uid)
@@ -340,7 +372,8 @@ impl Session {
             }
         };
         if spec.journal && result.is_ok() {
-            self.journal.push((id.to_string(), cmd::journal_params(&params)));
+            self.journal
+                .push((id.to_string(), cmd::journal_params(&params)));
             if self.journal.len() > 10_000 {
                 self.journal.drain(..5_000);
             }
@@ -350,7 +383,11 @@ impl Session {
             && let Some(d) = self.docs.iter_mut().find(|d| d.uid == uid)
             && !Arc::ptr_eq(&d.wb, &wb)
         {
-            d.undo.push(HistoryEntry { label: spec.label.trim_end_matches('…').to_string(), wb, selection: sel });
+            d.undo.push(HistoryEntry {
+                label: spec.label.trim_end_matches('…').to_string(),
+                wb,
+                selection: sel,
+            });
             if d.undo.len() > UNDO_LIMIT {
                 d.undo.remove(0);
             }
@@ -374,7 +411,9 @@ impl Session {
     pub fn execute_headless(&mut self, id: &str, params: Json) -> Result<Json> {
         let r = self.execute(id, params);
         let requests = self.take_ui_requests();
-        let asked_for_file = requests.iter().any(|q| matches!(q, UiRequest::Dialog(name, _) if name == "open" || name == "saveAs"));
+        let asked_for_file = requests
+            .iter()
+            .any(|q| matches!(q, UiRequest::Dialog(name, _) if name == "open" || name == "saveAs"));
         if r.is_ok() && asked_for_file {
             let what = match id {
                 "file.open" => "`path` or `base64`",
@@ -382,7 +421,10 @@ impl Session {
                 _ => "`path`",
             };
             let msg = format!("missing {what}: programmatic calls never open dialogs");
-            return Err(EngineError::BadParams { cmd: id.to_string(), msg });
+            return Err(EngineError::BadParams {
+                cmd: id.to_string(),
+                msg,
+            });
         }
         r
     }

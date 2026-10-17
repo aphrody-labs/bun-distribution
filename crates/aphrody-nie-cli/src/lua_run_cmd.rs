@@ -19,7 +19,8 @@ pub fn run(
 ) -> anyhow::Result<()> {
     let root = game_dir.map(PathBuf::from).unwrap_or_else(resolve_game_dir);
     let mut vfs = Vfs::new();
-    vfs.init(root.join("data")).with_context(|| format!("montage VFS de {}", root.display()))?;
+    vfs.init(root.join("data"))
+        .with_context(|| format!("montage VFS de {}", root.display()))?;
 
     let script_path = Path::new(script);
     let (name, bytes) = if script_path.is_file() {
@@ -36,7 +37,9 @@ pub fn run(
             resolve_script_path(script, &by_base, &by_logical).cloned()
         }
         .ok_or_else(|| anyhow::anyhow!("script Lua introuvable dans le VFS : {script}"))?;
-        let bytes = vfs.read(&resolved).with_context(|| format!("lecture VFS de {resolved}"))?;
+        let bytes = vfs
+            .read(&resolved)
+            .with_context(|| format!("lecture VFS de {resolved}"))?;
         (resolved, bytes)
     };
 
@@ -49,7 +52,10 @@ pub fn run(
         context: Default::default(),
     };
     let decoded = aphrody_nie_lua::bytecode::parse(&bytes);
-    let decoded_instructions = decoded.as_ref().ok().map(|chunk| chunk.main.total_instructions());
+    let decoded_instructions = decoded
+        .as_ref()
+        .ok()
+        .map(|chunk| chunk.main.total_instructions());
     let decode_error = decoded.as_ref().err().map(ToString::to_string);
     let output =
         execute_with_script_paths(&bytes, &options, paths, move |path| vfs.read(path).ok())

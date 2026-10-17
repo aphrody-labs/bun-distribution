@@ -14,7 +14,17 @@
 //!
 //! See `docs/transcripts.md` for the user-facing behaviour and accuracy numbers.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod diarize;
 pub mod mel;
@@ -79,7 +89,11 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Self { language: None, diarize: true, max_speakers: 6 }
+        Self {
+            language: None,
+            diarize: true,
+            max_speakers: 6,
+        }
     }
 }
 
@@ -91,7 +105,12 @@ pub trait Transcriber: Send + Sync {
     /// Stable id of the model (`"whisper-base"`), stored in the transcript's `source`.
     fn id(&self) -> String;
     /// Transcribe mono 16 kHz `audio`. Word times are relative to the first sample.
-    fn transcribe(&self, audio: &[f32], opts: &Options, progress: ProgressFn) -> Result<Transcript, SpeechError>;
+    fn transcribe(
+        &self,
+        audio: &[f32],
+        opts: &Options,
+        progress: ProgressFn,
+    ) -> Result<Transcript, SpeechError>;
 }
 
 /// A transcriber that returns a fixed transcript (tests, demos and agents that bring their own
@@ -105,7 +124,12 @@ impl Transcriber for FixedTranscriber {
     fn id(&self) -> String {
         self.id.clone()
     }
-    fn transcribe(&self, audio: &[f32], _: &Options, progress: ProgressFn) -> Result<Transcript, SpeechError> {
+    fn transcribe(
+        &self,
+        audio: &[f32],
+        _: &Options,
+        progress: ProgressFn,
+    ) -> Result<Transcript, SpeechError> {
         if !progress(0.5, "Transcribing") {
             return Err(SpeechError::Cancelled);
         }
@@ -119,18 +143,26 @@ impl Transcriber for FixedTranscriber {
 }
 
 /// Load the transcriber for catalogue model `id` from `models_dir` (feature `whisper`).
-pub fn load(models_dir: &std::path::Path, id: &str) -> Result<std::sync::Arc<dyn Transcriber>, SpeechError> {
+pub fn load(
+    models_dir: &std::path::Path,
+    id: &str,
+) -> Result<std::sync::Arc<dyn Transcriber>, SpeechError> {
     let m = models::find(id).ok_or_else(|| SpeechError::UnknownModel(id.into()))?;
     if !models::installed(models_dir, m) {
         return Err(SpeechError::NotInstalled(id.into()));
     }
     #[cfg(feature = "whisper")]
     {
-        Ok(std::sync::Arc::new(whisper::Whisper::load(&models::model_dir(models_dir, m), m.id)?))
+        Ok(std::sync::Arc::new(whisper::Whisper::load(
+            &models::model_dir(models_dir, m),
+            m.id,
+        )?))
     }
     #[cfg(not(feature = "whisper"))]
     {
-        Err(SpeechError::Unavailable("built without the `whisper` feature".into()))
+        Err(SpeechError::Unavailable(
+            "built without the `whisper` feature".into(),
+        ))
     }
 }
 
@@ -146,14 +178,19 @@ pub fn downmix(channels: &[Vec<f32>]) -> Vec<f32> {
         return channels[0][..n].to_vec();
     }
     let k = 1.0 / channels.len().max(1) as f32;
-    (0..n).map(|i| channels.iter().map(|c| c[i]).sum::<f32>() * k).collect()
+    (0..n)
+        .map(|i| channels.iter().map(|c| c[i]).sum::<f32>() * k)
+        .collect()
 }
 
 /// Word error rate between a reference and a hypothesis (words compared case-insensitively
 /// without punctuation, hyphenated words split): (substitutions + deletions + insertions) / reference words.
 pub fn word_error_rate(reference: &str, hypothesis: &str) -> f64 {
     let norm = |s: &str| -> Vec<String> {
-        s.split(|c: char| c.is_whitespace() || c == '-').map(filmcraft_project::transcript::normalize_word).filter(|w| !w.is_empty()).collect()
+        s.split(|c: char| c.is_whitespace() || c == '-')
+            .map(filmcraft_project::transcript::normalize_word)
+            .filter(|w| !w.is_empty())
+            .collect()
     };
     let (r, h) = (norm(reference), norm(hypothesis));
     if r.is_empty() {
@@ -185,24 +222,40 @@ mod tests {
     #[test]
     fn wer_counts_edits() {
         assert_eq!(word_error_rate("the cat sat", "The cat, sat."), 0.0);
-        assert!((word_error_rate("the cat sat on the mat", "the cat sat on mat") - 1.0 / 6.0).abs() < 1e-9);
+        assert!(
+            (word_error_rate("the cat sat on the mat", "the cat sat on mat") - 1.0 / 6.0).abs()
+                < 1e-9
+        );
         assert!((word_error_rate("a b", "a x b y") - 1.0).abs() < 1e-9);
     }
 
     #[test]
     fn fixed_transcriber_trims_and_cancels() {
         let mut t = Transcript::default();
-        t.words.push(Word::new("hi", seconds_tick(0.1), seconds_tick(0.3)));
-        t.words.push(Word::new("late", seconds_tick(5.0), seconds_tick(5.5)));
-        let f = FixedTranscriber { transcript: t, id: "fixed".into() };
-        let out = f.transcribe(&vec![0.0; 16_000], &Options::default(), &mut |_, _| true).unwrap();
+        t.words
+            .push(Word::new("hi", seconds_tick(0.1), seconds_tick(0.3)));
+        t.words
+            .push(Word::new("late", seconds_tick(5.0), seconds_tick(5.5)));
+        let f = FixedTranscriber {
+            transcript: t,
+            id: "fixed".into(),
+        };
+        let out = f
+            .transcribe(&vec![0.0; 16_000], &Options::default(), &mut |_, _| true)
+            .unwrap();
         assert_eq!(out.words.len(), 1);
         assert_eq!(out.source, "fixed");
-        assert_eq!(f.transcribe(&[], &Options::default(), &mut |_, _| false), Err(SpeechError::Cancelled));
+        assert_eq!(
+            f.transcribe(&[], &Options::default(), &mut |_, _| false),
+            Err(SpeechError::Cancelled)
+        );
     }
 
     #[test]
     fn downmix_averages() {
-        assert_eq!(downmix(&[vec![1.0, 0.0], vec![0.0, 0.0, 9.0]]), vec![0.5, 0.0]);
+        assert_eq!(
+            downmix(&[vec![1.0, 0.0], vec![0.0, 0.0, 9.0]]),
+            vec![0.5, 0.0]
+        );
     }
 }

@@ -16,7 +16,12 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(x: usize, y: usize, width: usize, height: usize) -> Self {
-        Rect { x, y, width, height }
+        Rect {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
     /// The overlap of two rectangles (may be empty).
@@ -57,7 +62,13 @@ impl Cfa {
                 _ => None,
             })
             .collect::<Option<_>>()?;
-        (colors.len() == 4).then_some(Cfa { width: 2, height: 2, colors, origin_x: 0, origin_y: 0 })
+        (colors.len() == 4).then_some(Cfa {
+            width: 2,
+            height: 2,
+            colors,
+            origin_x: 0,
+            origin_y: 0,
+        })
     }
 
     /// Colour at data coordinates.
@@ -68,17 +79,32 @@ impl Cfa {
                 return None;
             }
             let (v, origin) = (v % period, origin % period);
-            Some(if v >= origin { v - origin } else { period - (origin - v) })
+            Some(if v >= origin {
+                v - origin
+            } else {
+                period - (origin - v)
+            })
         }
-        let Some((cx, cy)) = relative(x, self.origin_x, self.width).zip(relative(y, self.origin_y, self.height)) else {
+        let Some((cx, cy)) =
+            relative(x, self.origin_x, self.width).zip(relative(y, self.origin_y, self.height))
+        else {
             return 1;
         };
-        cy.checked_mul(self.width).and_then(|i| i.checked_add(cx)).and_then(|i| self.colors.get(i)).copied().unwrap_or(1)
+        cy.checked_mul(self.width)
+            .and_then(|i| i.checked_add(cx))
+            .and_then(|i| self.colors.get(i))
+            .copied()
+            .unwrap_or(1)
     }
 
     /// The 2×2 colours seen from data coordinates (`x0`, `y0`), row-major.
     pub fn phase(&self, x0: usize, y0: usize) -> [u8; 4] {
-        [self.color(x0, y0), self.color(x0.saturating_add(1), y0), self.color(x0, y0.saturating_add(1)), self.color(x0.saturating_add(1), y0.saturating_add(1))]
+        [
+            self.color(x0, y0),
+            self.color(x0.saturating_add(1), y0),
+            self.color(x0, y0.saturating_add(1)),
+            self.color(x0.saturating_add(1), y0.saturating_add(1)),
+        ]
     }
 
     /// `true` for a Bayer pattern: a 2×2 period holding one red, one blue and two
@@ -89,9 +115,18 @@ impl Cfa {
         }
         let (ox, oy) = (self.origin_x % self.width, self.origin_y % self.height);
         let p = self.phase(ox, oy);
-        let periodic = (0..self.height).all(|y| (0..self.width).all(|x| self.color(ox + x, oy + y) == p[(y % 2) * 2 + x % 2]));
-        let greens_on_diagonal = (p[0] == 1 && p[3] == 1 && p[1] != 1 && p[2] != 1 && u16::from(p[1]) + u16::from(p[2]) == 2)
-            || (p[1] == 1 && p[2] == 1 && p[0] != 1 && p[3] != 1 && u16::from(p[0]) + u16::from(p[3]) == 2);
+        let periodic = (0..self.height)
+            .all(|y| (0..self.width).all(|x| self.color(ox + x, oy + y) == p[(y % 2) * 2 + x % 2]));
+        let greens_on_diagonal = (p[0] == 1
+            && p[3] == 1
+            && p[1] != 1
+            && p[2] != 1
+            && u16::from(p[1]) + u16::from(p[2]) == 2)
+            || (p[1] == 1
+                && p[2] == 1
+                && p[0] != 1
+                && p[3] != 1
+                && u16::from(p[0]) + u16::from(p[3]) == 2);
         periodic && greens_on_diagonal
     }
 }
@@ -111,7 +146,13 @@ pub struct BlackLevels {
 
 impl BlackLevels {
     pub fn uniform(v: f32) -> Self {
-        BlackLevels { rows: 1, cols: 1, values: vec![v], delta_h: Vec::new(), delta_v: Vec::new() }
+        BlackLevels {
+            rows: 1,
+            cols: 1,
+            values: vec![v],
+            delta_h: Vec::new(),
+            delta_v: Vec::new(),
+        }
     }
 
     /// Black level at active-area coordinates for sample `s` of `spp`.
@@ -119,14 +160,25 @@ impl BlackLevels {
     pub fn at(&self, ax: usize, ay: usize, s: usize, spp: usize) -> f32 {
         let r = ay % self.rows.max(1);
         let c = ax % self.cols.max(1);
-        let index = r.checked_mul(self.cols.max(1)).and_then(|i| i.checked_add(c)).and_then(|i| i.checked_mul(spp)).and_then(|i| i.checked_add(s));
-        let base = index.and_then(|i| self.values.get(i)).or_else(|| self.values.first()).copied().unwrap_or(0.0);
-        base + self.delta_h.get(ax).copied().unwrap_or(0.0) + self.delta_v.get(ay).copied().unwrap_or(0.0)
+        let index = r
+            .checked_mul(self.cols.max(1))
+            .and_then(|i| i.checked_add(c))
+            .and_then(|i| i.checked_mul(spp))
+            .and_then(|i| i.checked_add(s));
+        let base = index
+            .and_then(|i| self.values.get(i))
+            .or_else(|| self.values.first())
+            .copied()
+            .unwrap_or(0.0);
+        base + self.delta_h.get(ax).copied().unwrap_or(0.0)
+            + self.delta_v.get(ay).copied().unwrap_or(0.0)
     }
 
     /// `true` when there is a single black value for everything.
     pub fn is_uniform(&self) -> bool {
-        self.delta_h.iter().all(|v| *v == 0.0) && self.delta_v.iter().all(|v| *v == 0.0) && self.values.windows(2).all(|w| w[0] == w[1])
+        self.delta_h.iter().all(|v| *v == 0.0)
+            && self.delta_v.iter().all(|v| *v == 0.0)
+            && self.values.windows(2).all(|w| w[0] == w[1])
     }
 }
 
@@ -215,14 +267,25 @@ pub(crate) enum JpegLayout {
 const JPEG_XL: u32 = 52546;
 
 /// Reads the (uncompressed, lossless-JPEG or JPEG XL) image of a raw IFD.
-pub(crate) fn read_plane(t: &Tiff, ifd: &Ifd, limits: &Limits, layout: JpegLayout) -> Result<Plane> {
-    let width = t.tag_uint(ifd, tag::IMAGE_WIDTH).ok_or_else(|| RawError::malformed("raw image has no width"))? as usize;
-    let height = t.tag_uint(ifd, tag::IMAGE_LENGTH).ok_or_else(|| RawError::malformed("raw image has no height"))? as usize;
+pub(crate) fn read_plane(
+    t: &Tiff,
+    ifd: &Ifd,
+    limits: &Limits,
+    layout: JpegLayout,
+) -> Result<Plane> {
+    let width = t
+        .tag_uint(ifd, tag::IMAGE_WIDTH)
+        .ok_or_else(|| RawError::malformed("raw image has no width"))? as usize;
+    let height = t
+        .tag_uint(ifd, tag::IMAGE_LENGTH)
+        .ok_or_else(|| RawError::malformed("raw image has no height"))? as usize;
     let samples = t.tag_uint(ifd, tag::SAMPLES_PER_PIXEL).unwrap_or(1) as usize;
     let bits = t.tag_uint(ifd, tag::BITS_PER_SAMPLE).unwrap_or(1);
     let compression = t.tag_uint(ifd, tag::COMPRESSION).unwrap_or(1);
     if !(1..=4).contains(&samples) {
-        return Err(RawError::unsupported(format!("{samples} samples per pixel")));
+        return Err(RawError::unsupported(format!(
+            "{samples} samples per pixel"
+        )));
     }
     if t.tag_uint(ifd, tag::SAMPLE_FORMAT) == Some(3) {
         return Err(RawError::unsupported("floating-point raw data"));
@@ -246,7 +309,9 @@ pub(crate) fn read_plane(t: &Tiff, ifd: &Ifd, limits: &Limits, layout: JpegLayou
     let decoded: Vec<Result<Vec<u16>>> = par::map(segments.len(), |i| {
         let s = &segments[i];
         let rows = s.h.min(height - s.y);
-        let src = t.bytes(s.offset, s.len).ok_or_else(|| RawError::malformed("raw data lies outside the file"))?;
+        let src = t
+            .bytes(s.offset, s.len)
+            .ok_or_else(|| RawError::malformed("raw data lies outside the file"))?;
         // Every branch below sizes at least one buffer from the segment's own geometry, which
         // the file declares independently of the image: a tile can be far larger than the image
         // it belongs to, so the image check above does not bound those buffers. Charge the
@@ -260,23 +325,33 @@ pub(crate) fn read_plane(t: &Tiff, ifd: &Ifd, limits: &Limits, layout: JpegLayou
                 // `unpack` then reads it bit-packed or in 16-bit containers by its length.
                 let too_big = || RawError::malformed("deflate tile is too large");
                 let need =
-                    s.w.checked_mul(rows).and_then(|n| n.checked_mul(samples)).and_then(|n| n.checked_mul((bits as usize).div_ceil(8))).ok_or_else(too_big)?;
+                    s.w.checked_mul(rows)
+                        .and_then(|n| n.checked_mul(samples))
+                        .and_then(|n| n.checked_mul((bits as usize).div_ceil(8)))
+                        .ok_or_else(too_big)?;
                 let mut out = vec![0u8; need];
                 let mut d = flate2::Decompress::new(true);
-                d.decompress(src, &mut out, flate2::FlushDecompress::Finish).map_err(|_| RawError::malformed("deflate tile does not decompress"))?;
+                d.decompress(src, &mut out, flate2::FlushDecompress::Finish)
+                    .map_err(|_| RawError::malformed("deflate tile does not decompress"))?;
                 out.truncate(usize::try_from(d.total_out()).unwrap_or(need).min(need));
                 let v = unpack(&out, s.w, rows, samples, bits, le)?;
                 // The TIFF predictor runs after unpacking, per row, per sample plane.
                 match t.tag_uint(ifd, tag::PREDICTOR).unwrap_or(1) {
                     1 => Ok(v),
                     2 => Ok(undelta(&v, samples, s.w * samples, rows, bits)),
-                    3 => Err(RawError::unsupported("floating-point predictor (compression 8, predictor 3)")),
+                    3 => Err(RawError::unsupported(
+                        "floating-point predictor (compression 8, predictor 3)",
+                    )),
                     p => Err(RawError::malformed(format!("unknown predictor {p}"))),
                 }
             }
             // A JPEG XL segment codes only the rows inside the image (strips) or the whole tile.
             JPEG_XL => {
-                let coded_rows = if t.tag_uint(ifd, tag::TILE_WIDTH).is_some() { s.h } else { rows };
+                let coded_rows = if t.tag_uint(ifd, tag::TILE_WIDTH).is_some() {
+                    s.h
+                } else {
+                    rows
+                };
                 let mut v = jxl::decode(src, s.w, coded_rows, samples, bits, limits)?;
                 v.resize(s.w * s.h * samples, 0);
                 Ok(v)
@@ -290,19 +365,38 @@ pub(crate) fn read_plane(t: &Tiff, ifd: &Ifd, limits: &Limits, layout: JpegLayou
                 let out = match samples {
                     1 => zune_core::colorspace::ColorSpace::Luma,
                     3 => zune_core::colorspace::ColorSpace::RGB,
-                    n => return Err(RawError::unsupported(format!("lossy DNG with {n} samples per pixel (1 or 3 are supported)"))),
+                    n => {
+                        return Err(RawError::unsupported(format!(
+                            "lossy DNG with {n} samples per pixel (1 or 3 are supported)"
+                        )));
+                    }
                 };
-                let options = zune_core::options::DecoderOptions::default().jpeg_set_out_colorspace(out);
-                let mut dec = zune_jpeg::JpegDecoder::new_with_options(zune_core::bytestream::ZCursor::new(src), options);
-                dec.decode_headers().map_err(|e| RawError::malformed(format!("lossy JPEG tile header: {e:?}")))?;
-                let f = dec.info().ok_or_else(|| RawError::malformed("lossy JPEG tile has no header"))?;
+                let options =
+                    zune_core::options::DecoderOptions::default().jpeg_set_out_colorspace(out);
+                let mut dec = zune_jpeg::JpegDecoder::new_with_options(
+                    zune_core::bytestream::ZCursor::new(src),
+                    options,
+                );
+                dec.decode_headers()
+                    .map_err(|e| RawError::malformed(format!("lossy JPEG tile header: {e:?}")))?;
+                let f = dec
+                    .info()
+                    .ok_or_else(|| RawError::malformed("lossy JPEG tile has no header"))?;
                 if (f.width as usize, f.height as usize) != (s.w, rows) {
-                    return Err(RawError::malformed(format!("lossy JPEG tile is {}x{}, expected {}x{}", f.width, f.height, s.w, rows)));
+                    return Err(RawError::malformed(format!(
+                        "lossy JPEG tile is {}x{}, expected {}x{}",
+                        f.width, f.height, s.w, rows
+                    )));
                 }
-                let decoded = dec.decode().map_err(|e| RawError::malformed(format!("lossy JPEG tile: {e:?}")))?;
+                let decoded = dec
+                    .decode()
+                    .map_err(|e| RawError::malformed(format!("lossy JPEG tile: {e:?}")))?;
                 let need = s.w * rows * samples;
                 if decoded.len() != need {
-                    return Err(RawError::malformed(format!("lossy JPEG tile holds {} samples, expected {need}", decoded.len())));
+                    return Err(RawError::malformed(format!(
+                        "lossy JPEG tile holds {} samples, expected {need}",
+                        decoded.len()
+                    )));
                 }
                 // The 8-bit samples widen to the document's 16-bit range (0xFF -> 0xFFFF).
                 Ok(decoded.into_iter().map(|b| u16::from(b) * 257).collect())
@@ -312,14 +406,29 @@ pub(crate) fn read_plane(t: &Tiff, ifd: &Ifd, limits: &Limits, layout: JpegLayou
             // comes out of the same budget. `max_alloc` counts bytes, a sample is two.
             _ => {
                 let need = s.w * rows * samples;
-                let scatter = if layout == JpegLayout::Quads && samples == 1 { s.w.saturating_mul(s.h).saturating_mul(2) as u64 } else { 0 };
-                let budget = usize::try_from(limits.max_alloc.saturating_sub(scatter) / 2).unwrap_or(usize::MAX);
-                let geom = s.w.saturating_mul(s.h).saturating_mul(samples).saturating_mul(4);
+                let scatter = if layout == JpegLayout::Quads && samples == 1 {
+                    s.w.saturating_mul(s.h).saturating_mul(2) as u64
+                } else {
+                    0
+                };
+                let budget = usize::try_from(limits.max_alloc.saturating_sub(scatter) / 2)
+                    .unwrap_or(usize::MAX);
+                let geom =
+                    s.w.saturating_mul(s.h)
+                        .saturating_mul(samples)
+                        .saturating_mul(4);
                 let (f, v) = ljpeg::decode(src, geom.min(budget))?;
                 if v.len() < need {
-                    return Err(RawError::malformed("lossless JPEG tile is smaller than its tile"));
+                    return Err(RawError::malformed(
+                        "lossless JPEG tile is smaller than its tile",
+                    ));
                 }
-                if layout == JpegLayout::Quads && samples == 1 && f.components == 4 && f.width * 2 == s.w && f.height * 2 == s.h {
+                if layout == JpegLayout::Quads
+                    && samples == 1
+                    && f.components == 4
+                    && f.width * 2 == s.w
+                    && f.height * 2 == s.h
+                {
                     let mut tile = vec![0u16; s.w * s.h];
                     for (i, q) in v.as_chunks::<4>().0.iter().enumerate() {
                         let at = 2 * (i / f.width) * s.w + 2 * (i % f.width);
@@ -345,12 +454,21 @@ pub(crate) fn read_plane(t: &Tiff, ifd: &Ifd, limits: &Limits, layout: JpegLayou
             data[at..at + cols * samples].copy_from_slice(src);
         }
     }
-    Ok(Plane { width, height, samples, bits, data })
+    Ok(Plane {
+        width,
+        height,
+        samples,
+        bits,
+        data,
+    })
 }
 
 pub(crate) fn segments(t: &Tiff, ifd: &Ifd, width: usize, height: usize) -> Result<Vec<Segment>> {
     let mut out = Vec::new();
-    if let (Some(tw), Some(th)) = (t.tag_uint(ifd, tag::TILE_WIDTH), t.tag_uint(ifd, tag::TILE_LENGTH)) {
+    if let (Some(tw), Some(th)) = (
+        t.tag_uint(ifd, tag::TILE_WIDTH),
+        t.tag_uint(ifd, tag::TILE_LENGTH),
+    ) {
         let (tw, th) = (tw as usize, th as usize);
         if tw == 0 || th == 0 || tw > 1 << 16 || th > 1 << 16 {
             return Err(RawError::malformed("bad tile size"));
@@ -359,12 +477,21 @@ pub(crate) fn segments(t: &Tiff, ifd: &Ifd, width: usize, height: usize) -> Resu
         let down = height.div_ceil(th);
         let offsets = t.tag_uints(ifd, tag::TILE_OFFSETS);
         let counts = t.tag_uints(ifd, tag::TILE_BYTE_COUNTS);
-        let n = across.checked_mul(down).ok_or_else(|| RawError::malformed("too many tiles"))?;
+        let n = across
+            .checked_mul(down)
+            .ok_or_else(|| RawError::malformed("too many tiles"))?;
         if offsets.len() < n || counts.len() < n {
             return Err(RawError::malformed("missing tile offsets"));
         }
         for i in 0..n {
-            out.push(Segment { x: (i % across) * tw, y: (i / across) * th, w: tw, h: th, offset: offsets[i] as usize, len: counts[i] as usize });
+            out.push(Segment {
+                x: (i % across) * tw,
+                y: (i / across) * th,
+                w: tw,
+                h: th,
+                offset: offsets[i] as usize,
+                len: counts[i] as usize,
+            });
         }
     } else {
         let rps = match t.tag_uint(ifd, tag::ROWS_PER_STRIP) {
@@ -385,7 +512,14 @@ pub(crate) fn segments(t: &Tiff, ifd: &Ifd, width: usize, height: usize) -> Resu
             }
         }
         for i in 0..n {
-            out.push(Segment { x: 0, y: i * rps, w: width, h: rps, offset: offsets[i] as usize, len: counts[i] as usize });
+            out.push(Segment {
+                x: 0,
+                y: i * rps,
+                w: width,
+                h: rps,
+                offset: offsets[i] as usize,
+                len: counts[i] as usize,
+            });
         }
     }
     Ok(out)
@@ -410,15 +544,38 @@ fn undelta(v: &[u16], plane: usize, row_samples: usize, rows: usize, bits: u32) 
 /// MSB-first bit-packed rows padded to a byte (TIFF 6.0). 9–15-bit data
 /// stored in 16-bit containers (common in camera raws) is recognised by its
 /// byte count.
-fn unpack(src: &[u8], w: usize, rows: usize, samples: usize, bits: u32, le: bool) -> Result<Vec<u16>> {
+fn unpack(
+    src: &[u8],
+    w: usize,
+    rows: usize,
+    samples: usize,
+    bits: u32,
+    le: bool,
+) -> Result<Vec<u16>> {
     let n = w * rows * samples;
     let truncated = || RawError::malformed("uncompressed raw data is truncated");
     if bits == 16 || (bits > 8 && src.len() >= n * 2) {
         let b = src.get(..n * 2).ok_or_else(truncated)?;
-        return Ok(b.as_chunks::<2>().0.iter().map(|c| if le { u16::from_le_bytes([c[0], c[1]]) } else { u16::from_be_bytes([c[0], c[1]]) }).collect());
+        return Ok(b
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| {
+                if le {
+                    u16::from_le_bytes([c[0], c[1]])
+                } else {
+                    u16::from_be_bytes([c[0], c[1]])
+                }
+            })
+            .collect());
     }
     if bits == 8 {
-        return Ok(src.get(..n).ok_or_else(truncated)?.iter().map(|&v| u16::from(v)).collect());
+        return Ok(src
+            .get(..n)
+            .ok_or_else(truncated)?
+            .iter()
+            .map(|&v| u16::from(v))
+            .collect());
     }
     let row_bytes = (w * samples * bits as usize).div_ceil(8);
     if src.len() < row_bytes * rows {
@@ -462,9 +619,15 @@ mod tests {
     #[test]
     fn unpack_12_bit() {
         // Two 12-bit samples 0xABC, 0x123 packed MSB first.
-        assert_eq!(unpack(&[0xAB, 0xC1, 0x23], 2, 1, 1, 12, true).unwrap(), vec![0xABC, 0x123]);
+        assert_eq!(
+            unpack(&[0xAB, 0xC1, 0x23], 2, 1, 1, 12, true).unwrap(),
+            vec![0xABC, 0x123]
+        );
         // 12-bit data in 16-bit containers.
-        assert_eq!(unpack(&[0xBC, 0x0A, 0x23, 0x01], 2, 1, 1, 12, true).unwrap(), vec![0xABC, 0x123]);
+        assert_eq!(
+            unpack(&[0xBC, 0x0A, 0x23, 0x01], 2, 1, 1, 12, true).unwrap(),
+            vec![0xABC, 0x123]
+        );
         assert!(unpack(&[0xAB], 2, 1, 1, 12, true).is_err());
     }
 }

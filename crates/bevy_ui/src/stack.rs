@@ -1,16 +1,16 @@
 //! This module contains the systems that update the stored UI nodes stack
 
 use crate::{
-    experimental::{UiChildren, UiRootNodes},
     GlobalZIndex, ZIndex,
+    experimental::{UiChildren, UiRootNodes},
 };
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     entity::{EntityHashMap, EntityHashSet},
     prelude::*,
 };
-use bevy_reflect::std_traits::ReflectDefault;
 use bevy_reflect::Reflect;
+use bevy_reflect::std_traits::ReflectDefault;
 use core::ops::Range;
 
 /// The order of the node in the UI layout.

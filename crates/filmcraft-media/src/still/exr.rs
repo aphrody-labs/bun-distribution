@@ -41,7 +41,10 @@ pub fn sniff(b: &[u8]) -> bool {
 }
 
 /// The colour of EXR frames: scene-linear light, Rec.709 primaries.
-const LINEAR_709: ColorInfo = ColorInfo { transfer: Transfer::Linear, ..ColorInfo::SRGB_FULL };
+const LINEAR_709: ColorInfo = ColorInfo {
+    transfer: Transfer::Linear,
+    ..ColorInfo::SRGB_FULL
+};
 
 /// A decoded EXR picture.
 pub struct Decoded {
@@ -77,7 +80,10 @@ pub fn still(name: &str, bytes: &[u8]) -> Result<StillSource> {
         start_timecode: None,
         file_size: Some(bytes.len() as u64),
     };
-    Ok(StillSource { info, frame: Arc::new(d.frame) })
+    Ok(StillSource {
+        info,
+        frame: Arc::new(d.frame),
+    })
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -164,18 +170,25 @@ fn cstr<'a>(b: &'a [u8], pos: &mut usize) -> Option<&'a str> {
 
 fn window(v: &[u8]) -> Option<Window> {
     let g = |i: usize| le32(v, i * 4).map(|x| x as i32);
-    Some(Window { x0: g(0)?, y0: g(1)?, x1: g(2)?, y1: g(3)? })
+    Some(Window {
+        x0: g(0)?,
+        y0: g(1)?,
+        x1: g(2)?,
+        y1: g(3)?,
+    })
 }
 
 fn channels(v: &[u8]) -> Result<Vec<Channel>> {
     let mut out = Vec::new();
     let mut pos = 0;
     loop {
-        let name = cstr(v, &mut pos).ok_or_else(|| MediaError::Decode("EXR channel list".into()))?;
+        let name =
+            cstr(v, &mut pos).ok_or_else(|| MediaError::Decode("EXR channel list".into()))?;
         if name.is_empty() {
             return Ok(out);
         }
-        let (Some(ty), Some(xs), Some(ys)) = (le32(v, pos), le32(v, pos + 8), le32(v, pos + 12)) else {
+        let (Some(ty), Some(xs), Some(ys)) = (le32(v, pos), le32(v, pos + 8), le32(v, pos + 12))
+        else {
             return Err(MediaError::Decode("EXR channel list".into()));
         };
         pos += 16;
@@ -183,15 +196,24 @@ fn channels(v: &[u8]) -> Result<Vec<Channel>> {
             0 => PixelType::Uint,
             1 => PixelType::Half,
             2 => PixelType::Float,
-            _ => return Err(MediaError::Decode(format!("EXR channel {name}: pixel type {ty}"))),
+            _ => {
+                return Err(MediaError::Decode(format!(
+                    "EXR channel {name}: pixel type {ty}"
+                )));
+            }
         };
         if (xs, ys) != (1, 1) {
-            return Err(MediaError::Unsupported(format!("EXR channel {name} is subsampled ({xs}×{ys})")));
+            return Err(MediaError::Unsupported(format!(
+                "EXR channel {name} is subsampled ({xs}×{ys})"
+            )));
         }
         if out.len() >= MAX_CHANNELS {
             return Err(MediaError::Decode("EXR has too many channels".into()));
         }
-        out.push(Channel { name: name.to_string(), ty });
+        out.push(Channel {
+            name: name.to_string(),
+            ty,
+        });
     }
 }
 
@@ -212,11 +234,16 @@ fn header(name: &str, b: &[u8]) -> Result<Header> {
     }
     let version = le32(b, 4).ok_or_else(|| bad("version"))?;
     if version & 0xFF != 2 {
-        return Err(MediaError::Unsupported(format!("{name}: OpenEXR version {}", version & 0xFF)));
+        return Err(MediaError::Unsupported(format!(
+            "{name}: OpenEXR version {}",
+            version & 0xFF
+        )));
     }
     for (bit, what) in [(0x200, "tiled"), (0x800, "deep"), (0x1000, "multi-part")] {
         if version & bit != 0 {
-            return Err(MediaError::Unsupported(format!("{name}: {what} OpenEXR files are not supported yet")));
+            return Err(MediaError::Unsupported(format!(
+                "{name}: {what} OpenEXR files are not supported yet"
+            )));
         }
     }
     let (mut chans, mut code, mut data, mut display) = (None, None, None, None);
@@ -233,22 +260,40 @@ fn header(name: &str, b: &[u8]) -> Result<Header> {
                 2 | 3 => Compression::Zip,
                 5 => Compression::Pxr24,
                 _ => {
-                    let what = ["PIZ", "PXR24", "B44", "B44A", "DWAA", "DWAB"].get(usize::from(code).wrapping_sub(4)).copied().unwrap_or("unknown");
-                    return Err(MediaError::Unsupported(format!("{name}: {what} compressed OpenEXR is not supported yet")));
+                    let what = ["PIZ", "PXR24", "B44", "B44A", "DWAA", "DWAB"]
+                        .get(usize::from(code).wrapping_sub(4))
+                        .copied()
+                        .unwrap_or("unknown");
+                    return Err(MediaError::Unsupported(format!(
+                        "{name}: {what} compressed OpenEXR is not supported yet"
+                    )));
                 }
             };
-            return Ok(Header { channels, compression, code, data, display: display.unwrap_or(data), end: pos });
+            return Ok(Header {
+                channels,
+                compression,
+                code,
+                data,
+                display: display.unwrap_or(data),
+                end: pos,
+            });
         }
         let ty = cstr(b, &mut pos).ok_or_else(|| bad("header"))?;
         let size = le32(b, pos).ok_or_else(|| bad("header"))? as usize;
         pos += 4;
-        let value = b.get(pos..pos.saturating_add(size)).ok_or_else(|| bad("header"))?;
+        let value = b
+            .get(pos..pos.saturating_add(size))
+            .ok_or_else(|| bad("header"))?;
         pos += size;
         match (attr, ty) {
-            ("channels", "chlist") => chans = Some(channels(value).map_err(|e| bad(&e.to_string()))?),
+            ("channels", "chlist") => {
+                chans = Some(channels(value).map_err(|e| bad(&e.to_string()))?)
+            }
             ("compression", "compression") => code = value.first().copied(),
             ("dataWindow", "box2i") => data = Some(window(value).ok_or_else(|| bad("dataWindow"))?),
-            ("displayWindow", "box2i") => display = Some(window(value).ok_or_else(|| bad("displayWindow"))?),
+            ("displayWindow", "box2i") => {
+                display = Some(window(value).ok_or_else(|| bad("displayWindow"))?)
+            }
             _ => {}
         }
     }
@@ -286,7 +331,11 @@ fn sample(ty: PixelType, s: &[u8]) -> f32 {
         (PixelType::Uint, [a, b, c, d, ..]) => u32::from_le_bytes([*a, *b, *c, *d]) as f32,
         _ => 0.0,
     };
-    if v.is_nan() { 0.0 } else { v.clamp(-65504.0, 65504.0) }
+    if v.is_nan() {
+        0.0
+    } else {
+        v.clamp(-65504.0, 65504.0)
+    }
 }
 
 /// Undo the RLE / ZIP preprocessing: byte differences, then the split into even and odd bytes.
@@ -364,7 +413,9 @@ fn unpxr24(planes: &[u8], channels: &[Channel], width: usize, lines: usize) -> O
                 acc = acc.wrapping_add(d);
                 match c.ty {
                     PixelType::Half => out.extend_from_slice(&(acc as u16).to_le_bytes()),
-                    PixelType::Float => out.extend_from_slice(&((acc & 0xFF_FFFF) << 8).to_le_bytes()),
+                    PixelType::Float => {
+                        out.extend_from_slice(&((acc & 0xFF_FFFF) << 8).to_le_bytes())
+                    }
                     PixelType::Uint => out.extend_from_slice(&acc.to_le_bytes()),
                 }
             }
@@ -377,15 +428,23 @@ fn unpxr24(planes: &[u8], channels: &[Channel], width: usize, lines: usize) -> O
 pub fn decode(name: &str, b: &[u8]) -> Result<Decoded> {
     let h = header(name, b)?;
     let bad = |what: String| MediaError::Decode(format!("{name}: EXR {what}"));
-    let (dw, dh) = h.data.size().ok_or_else(|| bad("data window size".into()))?;
-    let (fw, fh) = h.display.size().ok_or_else(|| bad("display window size".into()))?;
+    let (dw, dh) = h
+        .data
+        .size()
+        .ok_or_else(|| bad("data window size".into()))?;
+    let (fw, fh) = h
+        .display
+        .size()
+        .ok_or_else(|| bad("display window size".into()))?;
     let (Ok(fw32), Ok(fh32)) = (u32::try_from(fw), u32::try_from(fh)) else {
         return Err(bad("display window size".into()));
     };
     // channel → frame component
     let has = |n: &str| h.channels.iter().any(|c| c.name == n);
     if has("RY") || has("BY") {
-        return Err(MediaError::Unsupported(format!("{name}: luminance / chroma OpenEXR is not supported yet")));
+        return Err(MediaError::Unsupported(format!(
+            "{name}: luminance / chroma OpenEXR is not supported yet"
+        )));
     }
     let rgb = has("R") || has("G") || has("B");
     let targets: Vec<Target> = h
@@ -400,9 +459,20 @@ pub fn decode(name: &str, b: &[u8]) -> Result<Decoded> {
             _ => Target::Skip,
         })
         .collect();
-    let used: Vec<PixelType> = h.channels.iter().zip(&targets).filter(|(_, t)| !matches!(t, Target::Skip)).map(|(c, _)| c.ty).collect();
-    if !targets.iter().any(|t| matches!(t, Target::Slot(0..=2) | Target::Grey)) {
-        return Err(MediaError::Unsupported(format!("{name}: EXR has no R, G, B or Y channel")));
+    let used: Vec<PixelType> = h
+        .channels
+        .iter()
+        .zip(&targets)
+        .filter(|(_, t)| !matches!(t, Target::Skip))
+        .map(|(c, _)| c.ty)
+        .collect();
+    if !targets
+        .iter()
+        .any(|t| matches!(t, Target::Slot(0..=2) | Target::Grey))
+    {
+        return Err(MediaError::Unsupported(format!(
+            "{name}: EXR has no R, G, B or Y channel"
+        )));
     }
     let alpha = has("A");
     // byte offset of each channel within a scan line, and the line size
@@ -410,14 +480,24 @@ pub fn decode(name: &str, b: &[u8]) -> Result<Decoded> {
     let mut offs = Vec::with_capacity(h.channels.len());
     for c in &h.channels {
         offs.push(line);
-        line = c.ty.size().checked_mul(dw).and_then(|n| line.checked_add(n)).ok_or_else(|| bad("line size".into()))?;
+        line =
+            c.ty.size()
+                .checked_mul(dw)
+                .and_then(|n| line.checked_add(n))
+                .ok_or_else(|| bad("line size".into()))?;
     }
     let lpc = h.compression.lines_per_chunk(h.code);
     if line.checked_mul(lpc).is_none_or(|n| n > MAX_CHUNK_BYTES) {
-        return Err(MediaError::Unsupported(format!("{name}: EXR scan lines too large ({} channels, {dw} wide)", h.channels.len())));
+        return Err(MediaError::Unsupported(format!(
+            "{name}: EXR scan lines too large ({} channels, {dw} wide)",
+            h.channels.len()
+        )));
     }
     let table = h.end;
-    let px_len = dw.checked_mul(dh).and_then(|n| n.checked_mul(4)).ok_or_else(|| bad("size".into()))?;
+    let px_len = dw
+        .checked_mul(dh)
+        .and_then(|n| n.checked_mul(4))
+        .ok_or_else(|| bad("size".into()))?;
     let mut px = vec![0f32; px_len];
     if !alpha {
         px.par_chunks_mut(4).for_each(|p| {
@@ -427,63 +507,93 @@ pub fn decode(name: &str, b: &[u8]) -> Result<Decoded> {
         });
     }
     let row = dw * 4;
-    px.par_chunks_mut(row * lpc).enumerate().try_for_each(|(i, rows)| -> Result<()> {
-        let n = rows.len() / row;
-        let expected = line.checked_mul(n).ok_or_else(|| bad("chunk size".into()))?;
-        let off = le32(b, table + i * 8).zip(le32(b, table + i * 8 + 4)).map(|(lo, hi)| u64::from(lo) | u64::from(hi) << 32);
-        let off = off.and_then(|o| usize::try_from(o).ok()).ok_or_else(|| bad(format!("offset of chunk {i}")))?;
-        let y = le32(b, off).map(|y| y as i32);
-        let want = i64::from(h.data.y0) + (i * lpc) as i64;
-        if y.map(i64::from) != Some(want) {
-            return Err(bad(format!("chunk {i} is not at line {want}")));
-        }
-        let size = le32(b, off + 4).ok_or_else(|| bad(format!("chunk {i}")))? as usize;
-        let data = b.get(off + 8..(off + 8).saturating_add(size)).ok_or_else(|| bad(format!("chunk {i} is truncated")))?;
-        let raw: std::borrow::Cow<[u8]> = if data.len() == expected {
-            // stored raw when compression would not shrink it
-            data.into()
-        } else {
-            match h.compression {
-                Compression::None => return Err(bad(format!("chunk {i} has the wrong size"))),
-                Compression::Rle => unpredict(unrle(data, expected).ok_or_else(|| bad(format!("chunk {i}: bad RLE data")))?).into(),
-                Compression::Zip => unpredict(inflate::zlib(data, expected).map_err(|e| bad(format!("chunk {i}: {e}")))?).into(),
-                Compression::Pxr24 => {
-                    let per_line = h.channels.iter().try_fold(0usize, |t, c| t.checked_add(plane_count(c.ty).checked_mul(dw)?));
-                    let planes = per_line.and_then(|l| l.checked_mul(n)).ok_or_else(|| bad("chunk size".into()))?;
-                    let inflated = inflate::zlib(data, planes).map_err(|e| bad(format!("chunk {i}: {e}")))?;
-                    unpxr24(&inflated, &h.channels, dw, n).ok_or_else(|| bad(format!("chunk {i}: bad PXR24 data")))?.into()
-                }
+    px.par_chunks_mut(row * lpc)
+        .enumerate()
+        .try_for_each(|(i, rows)| -> Result<()> {
+            let n = rows.len() / row;
+            let expected = line
+                .checked_mul(n)
+                .ok_or_else(|| bad("chunk size".into()))?;
+            let off = le32(b, table + i * 8)
+                .zip(le32(b, table + i * 8 + 4))
+                .map(|(lo, hi)| u64::from(lo) | u64::from(hi) << 32);
+            let off = off
+                .and_then(|o| usize::try_from(o).ok())
+                .ok_or_else(|| bad(format!("offset of chunk {i}")))?;
+            let y = le32(b, off).map(|y| y as i32);
+            let want = i64::from(h.data.y0) + (i * lpc) as i64;
+            if y.map(i64::from) != Some(want) {
+                return Err(bad(format!("chunk {i} is not at line {want}")));
             }
-        };
-        for (l, out) in rows.chunks_exact_mut(row).enumerate() {
-            let src = raw.get(l * line..(l + 1) * line).unwrap_or_default();
-            for ((c, &t), &o) in h.channels.iter().zip(&targets).zip(&offs) {
-                if matches!(t, Target::Skip) {
-                    continue;
+            let size = le32(b, off + 4).ok_or_else(|| bad(format!("chunk {i}")))? as usize;
+            let data = b
+                .get(off + 8..(off + 8).saturating_add(size))
+                .ok_or_else(|| bad(format!("chunk {i} is truncated")))?;
+            let raw: std::borrow::Cow<[u8]> = if data.len() == expected {
+                // stored raw when compression would not shrink it
+                data.into()
+            } else {
+                match h.compression {
+                    Compression::None => return Err(bad(format!("chunk {i} has the wrong size"))),
+                    Compression::Rle => unpredict(
+                        unrle(data, expected)
+                            .ok_or_else(|| bad(format!("chunk {i}: bad RLE data")))?,
+                    )
+                    .into(),
+                    Compression::Zip => unpredict(
+                        inflate::zlib(data, expected)
+                            .map_err(|e| bad(format!("chunk {i}: {e}")))?,
+                    )
+                    .into(),
+                    Compression::Pxr24 => {
+                        let per_line = h.channels.iter().try_fold(0usize, |t, c| {
+                            t.checked_add(plane_count(c.ty).checked_mul(dw)?)
+                        });
+                        let planes = per_line
+                            .and_then(|l| l.checked_mul(n))
+                            .ok_or_else(|| bad("chunk size".into()))?;
+                        let inflated = inflate::zlib(data, planes)
+                            .map_err(|e| bad(format!("chunk {i}: {e}")))?;
+                        unpxr24(&inflated, &h.channels, dw, n)
+                            .ok_or_else(|| bad(format!("chunk {i}: bad PXR24 data")))?
+                            .into()
+                    }
                 }
-                let sz = c.ty.size();
-                let samples = src.get(o..o + sz * dw).unwrap_or_default();
-                for (p, s) in out.as_chunks_mut::<4>().0.iter_mut().zip(samples.chunks_exact(sz)) {
-                    let v = sample(c.ty, s);
-                    match t {
-                        Target::Slot(3) => p[3] = v.clamp(0.0, 1.0),
-                        Target::Slot(k) => {
-                            if let Some(q) = p.get_mut(k) {
-                                *q = v;
+            };
+            for (l, out) in rows.chunks_exact_mut(row).enumerate() {
+                let src = raw.get(l * line..(l + 1) * line).unwrap_or_default();
+                for ((c, &t), &o) in h.channels.iter().zip(&targets).zip(&offs) {
+                    if matches!(t, Target::Skip) {
+                        continue;
+                    }
+                    let sz = c.ty.size();
+                    let samples = src.get(o..o + sz * dw).unwrap_or_default();
+                    for (p, s) in out
+                        .as_chunks_mut::<4>()
+                        .0
+                        .iter_mut()
+                        .zip(samples.chunks_exact(sz))
+                    {
+                        let v = sample(c.ty, s);
+                        match t {
+                            Target::Slot(3) => p[3] = v.clamp(0.0, 1.0),
+                            Target::Slot(k) => {
+                                if let Some(q) = p.get_mut(k) {
+                                    *q = v;
+                                }
                             }
+                            Target::Grey => {
+                                p[0] = v;
+                                p[1] = v;
+                                p[2] = v;
+                            }
+                            Target::Skip => {}
                         }
-                        Target::Grey => {
-                            p[0] = v;
-                            p[1] = v;
-                            p[2] = v;
-                        }
-                        Target::Skip => {}
                     }
                 }
             }
-        }
-        Ok(())
-    })?;
+            Ok(())
+        })?;
     // place the data window into the display window
     let px = if h.data == h.display {
         px
@@ -500,7 +610,10 @@ pub fn decode(name: &str, b: &[u8]) -> Result<Decoded> {
                 }
                 let src = (sy as usize * dw + (x0 - dx) as usize) * 4;
                 let len = (x1 - x0) as usize * 4;
-                if let (Some(d), Some(s)) = (out.get_mut(x0 as usize * 4..x0 as usize * 4 + len), px.get(src..src + len)) {
+                if let (Some(d), Some(s)) = (
+                    out.get_mut(x0 as usize * 4..x0 as usize * 4 + len),
+                    px.get(src..src + len),
+                ) {
                     d.copy_from_slice(s);
                 }
             }
@@ -521,7 +634,11 @@ pub fn decode(name: &str, b: &[u8]) -> Result<Decoded> {
     let pixel_format = format!("{layout} {depth}");
     let mut frame = VideoFrame::rgba_f32(fw32, fh32, px);
     frame.color = LINEAR_709;
-    Ok(Decoded { frame, has_alpha, pixel_format })
+    Ok(Decoded {
+        frame,
+        has_alpha,
+        pixel_format,
+    })
 }
 
 #[cfg(test)]

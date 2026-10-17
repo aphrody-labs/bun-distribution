@@ -101,7 +101,9 @@ pub fn parse_link_next(header: &str) -> Option<String> {
     for part in header.split(',') {
         let part = part.trim();
         let Some(open) = part.find('<') else { continue };
-        let Some(close) = part[open + 1..].find('>') else { continue };
+        let Some(close) = part[open + 1..].find('>') else {
+            continue;
+        };
         let url = &part[open + 1..open + 1 + close];
         let params = &part[open + 1 + close + 1..];
         let is_next = params
@@ -135,7 +137,10 @@ impl JournalConfig {
             .ok_or(FireflyError::MissingCredential("FIREFLY_JOURNAL_URL"))?;
         let ims_org_id = non_empty_env("FIREFLY_IMS_ORG_ID")
             .ok_or(FireflyError::MissingCredential("FIREFLY_IMS_ORG_ID"))?;
-        Ok(Self { journal_url, ims_org_id })
+        Ok(Self {
+            journal_url,
+            ims_org_id,
+        })
     }
 
     /// Origin (`scheme://host[:port]`) of the journal URL, used to resolve
@@ -169,7 +174,11 @@ impl JournalClient {
         let http = reqwest::Client::builder()
             .user_agent(concat!("aphrody-firefly/", env!("CARGO_PKG_VERSION")))
             .build()?;
-        Ok(Self { http, tokens: TokenCache::new(creds), config })
+        Ok(Self {
+            http,
+            tokens: TokenCache::new(creds),
+            config,
+        })
     }
 
     /// Build a consumer entirely from the environment
@@ -191,7 +200,7 @@ impl JournalClient {
             Position::Latest => format!("{}?latest=true", self.config.journal_url),
             Position::Since(p) => {
                 format!("{}?since={}", self.config.journal_url, urlencode(p))
-            },
+            }
         }
     }
 
@@ -259,8 +268,11 @@ impl JournalClient {
             });
         }
 
-        let body: JournalBody = serde_json::from_str(&body_text)
-            .map_err(|source| FireflyError::Decode { endpoint: url, source })?;
+        let body: JournalBody =
+            serde_json::from_str(&body_text).map_err(|source| FireflyError::Decode {
+                endpoint: url,
+                source,
+            })?;
         Ok(JournalBatch {
             events: body.events,
             next,
@@ -321,11 +333,11 @@ fn urlencode(s: &str) -> String {
         match b {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
                 out.push(b as char);
-            },
+            }
             // Writing to a String is infallible.
             _ => {
                 let _ = write!(out, "%{b:02X}");
-            },
+            }
         }
     }
     out
@@ -370,7 +382,10 @@ mod tests {
     fn absolutize_relative_and_absolute() {
         let _ = rustls::crypto::ring::default_provider().install_default();
         let client = JournalClient::new(
-            ImsCredentials { client_id: "k".into(), client_secret: "s".into() },
+            ImsCredentials {
+                client_id: "k".into(),
+                client_secret: "s".into(),
+            },
             JournalConfig {
                 journal_url: "https://events-va6.adobe.io/events/org/1/int/2/r".into(),
                 ims_org_id: "X@AdobeOrg".into(),
@@ -389,17 +404,29 @@ mod tests {
         let _ = rustls::crypto::ring::default_provider().install_default();
         let base = "https://events-va6.adobe.io/events/org/1/int/2/r";
         let client = JournalClient::new(
-            ImsCredentials { client_id: "k".into(), client_secret: "s".into() },
-            JournalConfig { journal_url: base.into(), ims_org_id: "X@AdobeOrg".into() },
+            ImsCredentials {
+                client_id: "k".into(),
+                client_secret: "s".into(),
+            },
+            JournalConfig {
+                journal_url: base.into(),
+                ims_org_id: "X@AdobeOrg".into(),
+            },
         )
         .unwrap();
         assert_eq!(client.url_for(&Position::Oldest), base);
-        assert_eq!(client.url_for(&Position::Latest), format!("{base}?latest=true"));
+        assert_eq!(
+            client.url_for(&Position::Latest),
+            format!("{base}?latest=true")
+        );
         assert_eq!(
             client.url_for(&Position::Since("a:b+c".into())),
             format!("{base}?since=a%3Ab%2Bc")
         );
-        assert_eq!(client.url_for(&Position::NextLink("https://x/n".into())), "https://x/n");
+        assert_eq!(
+            client.url_for(&Position::NextLink("https://x/n".into())),
+            "https://x/n"
+        );
     }
 
     #[test]
@@ -422,7 +449,10 @@ mod tests {
     #[test]
     fn batch_has_more_now_semantics() {
         let with_events = JournalBatch {
-            events: vec![JournalEvent { position: "p".into(), event: serde_json::Value::Null }],
+            events: vec![JournalEvent {
+                position: "p".into(),
+                event: serde_json::Value::Null,
+            }],
             next: Some("n".into()),
             no_content: false,
             retry_after_secs: None,

@@ -19,7 +19,9 @@ use std::sync::Arc;
 
 use vectorcraft_doc::links::hash_bytes;
 use vectorcraft_doc::placed_document::{PREVIEW_MAX, PREVIEW_PX_PER_PT, key_for};
-use vectorcraft_doc::{Document, ImageBlob, LinkInfo, Node, NodeKind, PlacedDocument, PlacementOptions};
+use vectorcraft_doc::{
+    Document, ImageBlob, LinkInfo, Node, NodeKind, PlacedDocument, PlacementOptions,
+};
 use vectorcraft_geom::{Affine, Rect};
 
 use super::super::fileio;
@@ -52,7 +54,14 @@ pub(crate) struct DocumentArt {
 
 /// Artboard `page` (1-based) of the VectorCraft document `name` (`bytes`, read from `path` when
 /// there is one, so its linked images are found), clipped to the artboard unless `bounding`.
-pub(crate) fn document_art(name: &str, bytes: &[u8], path: Option<&str>, page: u32, bounding: bool, cmd: &str) -> Result<DocumentArt> {
+pub(crate) fn document_art(
+    name: &str,
+    bytes: &[u8],
+    path: Option<&str>,
+    page: u32,
+    bounding: bool,
+    cmd: &str,
+) -> Result<DocumentArt> {
     let file = fileio::file_name(name);
     if !is_native(name, bytes) {
         return Err(bad(cmd, format!("`{file}` isn't a VectorCraft document")));
@@ -65,13 +74,31 @@ pub(crate) fn document_art(name: &str, bytes: &[u8], path: Option<&str>, page: u
     super::super::links::resolve(&mut l.doc, path, false);
     l.doc.drop_edit_modes();
     let n = l.doc.artboards.len();
-    let board = (page as usize).checked_sub(1).and_then(|i| l.doc.artboards.get(i)).map(|a| a.rect);
-    let board = board.ok_or_else(|| bad(cmd, format!("page {page}: `{file}` has {n} artboard(s)")))?;
+    let board = (page as usize)
+        .checked_sub(1)
+        .and_then(|i| l.doc.artboards.get(i))
+        .map(|a| a.rect);
+    let board =
+        board.ok_or_else(|| bad(cmd, format!("page {page}: `{file}` has {n} artboard(s)")))?;
     let layers = std::mem::take(&mut l.doc.layers);
     let nodes = super::on_artboard(&layers, board);
-    let frame = if bounding { nodes.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds())) } else { Some(board) };
-    let frame = frame.filter(|r| r.width() > 0.0 || r.height() > 0.0).ok_or_else(|| bad(cmd, format!("`{file}` has no art to place")))?;
-    Ok(DocumentArt { doc: l.doc, nodes, clip: (!bounding).then_some(board), frame, warnings: l.warnings })
+    let frame = if bounding {
+        nodes.iter().fold(None, |acc, n| {
+            vectorcraft_geom::union_opt(acc, n.visual_bounds())
+        })
+    } else {
+        Some(board)
+    };
+    let frame = frame
+        .filter(|r| r.width() > 0.0 || r.height() > 0.0)
+        .ok_or_else(|| bad(cmd, format!("`{file}` has no art to place")))?;
+    Ok(DocumentArt {
+        doc: l.doc,
+        nodes,
+        clip: (!bounding).then_some(board),
+        frame,
+        warnings: l.warnings,
+    })
 }
 
 /// `nodes` as one group, clipped to `clip` (its own ids: what drawing reads).
@@ -80,13 +107,27 @@ fn group(nodes: Vec<Node>, clip: Option<Rect>) -> Node {
     if let Some(r) = clip {
         children.insert(0, Arc::new(super::clip_path(NodeId(0), r)));
     }
-    Node::new(NodeId(0), NodeKind::Group { children, clip: clip.is_some() })
+    Node::new(
+        NodeId(0),
+        NodeKind::Group {
+            children,
+            clip: clip.is_some(),
+        },
+    )
 }
 
 /// `p`'s file (`bytes`) read as the art it shows: how the document model reads placed documents
 /// ([`vectorcraft_doc::placed_document::set_loader`]).
 pub(crate) fn read_document(p: &PlacedDocument, bytes: &[u8]) -> Option<(Document, Node, Rect)> {
-    let a = document_art(p.link.name(), bytes, Some(&p.link.path), p.page(), p.bounding, "draw").ok()?;
+    let a = document_art(
+        p.link.name(),
+        bytes,
+        Some(&p.link.path),
+        p.page(),
+        p.bounding,
+        "draw",
+    )
+    .ok()?;
     Some((a.doc, group(a.nodes, a.clip), a.frame))
 }
 
@@ -94,7 +135,11 @@ pub(crate) fn read_document(p: &PlacedDocument, bytes: &[u8]) -> Option<(Documen
 /// when only the preview is stored, [`vectorcraft_doc::placed_document::set_file_reader`]).
 pub(crate) fn read_file_again(p: &PlacedDocument) -> Option<Vec<u8>> {
     let bytes = fileio::read_file(&p.link.path).ok()?;
-    if p.link.hash.as_ref().is_some_and(|h| *h != hash_bytes(&bytes)) {
+    if p.link
+        .hash
+        .as_ref()
+        .is_some_and(|h| *h != hash_bytes(&bytes))
+    {
         return None;
     }
     Some(bytes)
@@ -114,7 +159,14 @@ pub(crate) struct Source {
 
 /// The VectorCraft document `name` (`bytes`, from `path` when there is one) read for showing
 /// artboard `page` (its art's bounds when `bounding`).
-pub(crate) fn source(name: &str, bytes: &[u8], path: Option<&str>, page: u32, bounding: bool, cmd: &str) -> Result<Source> {
+pub(crate) fn source(
+    name: &str,
+    bytes: &[u8],
+    path: Option<&str>,
+    page: u32,
+    bounding: bool,
+    cmd: &str,
+) -> Result<Source> {
     // The same document placed the same way is read once (placing it again is free).
     let key = key_for(&hash_bytes(bytes), page, bounding);
     if let Some(s) = lock_memo().iter().find(|s| s.key == key).cloned() {
@@ -123,7 +175,10 @@ pub(crate) fn source(name: &str, bytes: &[u8], path: Option<&str>, page: u32, bo
     let a = document_art(name, bytes, path, page, bounding, cmd)?;
     let mut blob = ImageBlob::new(MIME, bytes.to_vec());
     let shown = PlacedDocument {
-        link: LinkInfo { page: Some(page), ..LinkInfo::new(path.unwrap_or(name)) },
+        link: LinkInfo {
+            page: Some(page),
+            ..LinkInfo::new(path.unwrap_or(name))
+        },
         key: key.clone(),
         bounding,
         width: a.frame.width(),
@@ -135,7 +190,12 @@ pub(crate) fn source(name: &str, bytes: &[u8], path: Option<&str>, page: u32, bo
     blob.proxy = preview(&a.doc, &art, a.frame).map(Arc::new);
     // Drawing it needn't read it again.
     vectorcraft_doc::placed_document::prime(&shown, blob.bytes.clone(), (a.doc, art, a.frame));
-    let s = Source { blob, key, frame: a.frame, warnings: a.warnings };
+    let s = Source {
+        blob,
+        key,
+        frame: a.frame,
+        warnings: a.warnings,
+    };
     let mut m = lock_memo();
     if m.len() >= MEMO_SIZE {
         m.remove(0);
@@ -152,7 +212,8 @@ static MEMO: std::sync::Mutex<Vec<Source>> = std::sync::Mutex::new(Vec::new());
 
 fn lock_memo() -> std::sync::MutexGuard<'static, Vec<Source>> {
     // Entries are only pushed and removed: a panic while held leaves it whole.
-    MEMO.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    MEMO.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// The preview of `art` (of document `doc`, showing `frame`): [`PREVIEW_PX_PER_PT`], at most
@@ -161,10 +222,19 @@ fn preview(doc: &Document, art: &Node, frame: Rect) -> Option<Vec<u8>> {
     let k = PREVIEW_PX_PER_PT.min(PREVIEW_MAX as f64 / frame.width().max(frame.height()).max(1e-9));
     let side = |v: f64| (v * k).round().clamp(1.0, PREVIEW_MAX as f64) as u32;
     let (w, h) = (side(frame.width()), side(frame.height()));
-    let view = Affine::scale_non_uniform(w as f64 / frame.width().max(1e-9), h as f64 / frame.height().max(1e-9))
-        * Affine::translate((-frame.x0, -frame.y0));
+    let view = Affine::scale_non_uniform(
+        w as f64 / frame.width().max(1e-9),
+        h as f64 / frame.height().max(1e-9),
+    ) * Affine::translate((-frame.x0, -frame.y0));
     let mut r = vectorcraft_render::Renderer::new();
-    let img = vectorcraft_render::placed_document::render_inside(&mut r, doc, &Arc::new(art.clone()), w as u16, h as u16, view)?;
+    let img = vectorcraft_render::placed_document::render_inside(
+        &mut r,
+        doc,
+        &Arc::new(art.clone()),
+        w as u16,
+        h as u16,
+        view,
+    )?;
     // Premultiplied → straight.
     let px = img
         .pixels
@@ -172,7 +242,13 @@ fn preview(doc: &Document, art: &Node, frame: Rect) -> Option<Vec<u8>> {
         .0
         .iter()
         .flat_map(|&[r, g, b, a]| {
-            let un = |c: u8| if a == 0 { 0 } else { ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8 };
+            let un = |c: u8| {
+                if a == 0 {
+                    0
+                } else {
+                    ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8
+                }
+            };
             [un(r), un(g), un(b), a]
         })
         .collect();
@@ -181,18 +257,26 @@ fn preview(doc: &Document, art: &Node, frame: Rect) -> Option<Vec<u8>> {
     // Opaque but for the edge's anti-aliasing (an artboard drawn to whole pixels) and compositing's
     // rounding: JPEG.
     let inner = |x: u32, y: u32| x > 0 && y > 0 && x + 1 < w && y + 1 < h;
-    if rgba.enumerate_pixels().all(|(x, y, p)| p[3] >= 250 || !inner(x, y)) {
+    if rgba
+        .enumerate_pixels()
+        .all(|(x, y, p)| p[3] >= 250 || !inner(x, y))
+    {
         let rgb = image::DynamicImage::ImageRgba8(rgba).to_rgb8();
-        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 80).encode_image(&rgb).ok()?;
+        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 80)
+            .encode_image(&rgb)
+            .ok()?;
     } else {
-        rgba.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).ok()?;
+        rgba.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+            .ok()?;
     }
     Some(out)
 }
 
 /// `s` stored in `d` (objects showing the same thing share one blob).
 pub(crate) fn store(d: &mut Document, s: &Source) {
-    d.images.entry(s.key.clone()).or_insert_with(|| s.blob.clone());
+    d.images
+        .entry(s.key.clone())
+        .or_insert_with(|| s.blob.clone());
 }
 
 /// A new placed document of `d` showing `s` at 100%, where its art lies in the file.
@@ -215,7 +299,9 @@ pub(crate) fn node(d: &mut Document, s: &Source, link: LinkInfo, bounding: bool)
 pub(crate) fn full_documents(d: &Document) -> (Cow<'_, Document>, Vec<String>) {
     let mut need: Vec<PlacedDocument> = vec![];
     d.visit_placed(|_, p| {
-        if d.images.get(&p.key).is_some_and(ImageBlob::is_proxy) && !need.iter().any(|n| n.key == p.key) {
+        if d.images.get(&p.key).is_some_and(ImageBlob::is_proxy)
+            && !need.iter().any(|n| n.key == p.key)
+        {
             need.push(p.clone());
         }
     });
@@ -225,10 +311,19 @@ pub(crate) fn full_documents(d: &Document) -> (Cow<'_, Document>, Vec<String>) {
     let mut out = d.clone();
     let mut previews = BTreeSet::new();
     for p in need {
-        let Some(blob) = d.images.get(&p.key) else { continue };
+        let Some(blob) = d.images.get(&p.key) else {
+            continue;
+        };
         match vectorcraft_doc::placed_document::full_bytes(&p, blob) {
             Some(bytes) => {
-                out.images.insert(p.key.clone(), ImageBlob { mime: MIME.into(), bytes, proxy: blob.proxy.clone() });
+                out.images.insert(
+                    p.key.clone(),
+                    ImageBlob {
+                        mime: MIME.into(),
+                        bytes,
+                        proxy: blob.proxy.clone(),
+                    },
+                );
             }
             None => {
                 previews.insert(p.key);
@@ -251,19 +346,54 @@ pub(crate) fn full_documents(d: &Document) -> (Cow<'_, Document>, Vec<String>) {
 /// else), keeping the object's id, place, name and transparency: Break Link and Object › Expand.
 pub(crate) fn expand(d: &mut Document, id: NodeId, cmd: &str) -> Result<()> {
     let n = d.node(id).cloned().ok_or(EngineError::NoNode(id))?;
-    let NodeKind::PlacedDocument(p) = &n.kind else { return Err(bad(cmd, format!("object {} is not a placed document", id.0))) };
-    let blob = d.images.get(&p.key).ok_or_else(|| bad(cmd, format!("object {} has lost its file's contents: relink it", id.0)))?;
-    let bytes = vectorcraft_doc::placed_document::full_bytes(p, blob)
-        .ok_or_else(|| bad(cmd, format!("{} can't be read, or changed since it was read: relink or update it first", p.link.path)))?;
-    let a = document_art(p.link.name(), &bytes, Some(&p.link.path), p.page(), p.bounding, cmd)?;
-    let m = p.art_xf(a.frame).ok_or_else(|| bad(cmd, format!("object {} has no size", id.0)))?;
+    let NodeKind::PlacedDocument(p) = &n.kind else {
+        return Err(bad(
+            cmd,
+            format!("object {} is not a placed document", id.0),
+        ));
+    };
+    let blob = d.images.get(&p.key).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("object {} has lost its file's contents: relink it", id.0),
+        )
+    })?;
+    let bytes = vectorcraft_doc::placed_document::full_bytes(p, blob).ok_or_else(|| {
+        bad(
+            cmd,
+            format!(
+                "{} can't be read, or changed since it was read: relink or update it first",
+                p.link.path
+            ),
+        )
+    })?;
+    let a = document_art(
+        p.link.name(),
+        &bytes,
+        Some(&p.link.path),
+        p.page(),
+        p.bounding,
+        cmd,
+    )?;
+    let m = p
+        .art_xf(a.frame)
+        .ok_or_else(|| bad(cmd, format!("object {} has no size", id.0)))?;
     let mut nodes = a.nodes;
     super::adopt::adopt(d, &a.doc, &mut nodes);
     let mut children: Vec<Arc<Node>> = nodes.iter().map(|n| Arc::new(d.reid(n))).collect();
     if let Some(r) = a.clip {
         children.insert(0, Arc::new(super::clip_path(d.alloc_id(), r)));
     }
-    let art = super::transformed(Node::new(d.alloc_id(), NodeKind::Group { children, clip: a.clip.is_some() }), m);
+    let art = super::transformed(
+        Node::new(
+            d.alloc_id(),
+            NodeKind::Group {
+                children,
+                clip: a.clip.is_some(),
+            },
+        ),
+        m,
+    );
     let mut out = n.clone();
     out.kind = art.kind;
     let (par, index, _) = d.position(id).ok_or(EngineError::NoNode(id))?;

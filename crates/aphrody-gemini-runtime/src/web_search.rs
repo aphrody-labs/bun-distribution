@@ -112,7 +112,10 @@ impl WebSearchConfig {
     /// Construct a config from an API key, using all defaults.
     #[must_use]
     pub fn with_api_key(api_key: impl Into<String>) -> Self {
-        Self { api_key: api_key.into(), ..Self::default() }
+        Self {
+            api_key: api_key.into(),
+            ..Self::default()
+        }
     }
 }
 
@@ -234,7 +237,10 @@ pub async fn web_search(
     let status = resp.status().as_u16();
     if !resp.status().is_success() {
         let text = resp.text().await.unwrap_or_default();
-        return Err(WebSearchError::UpstreamStatus { status, body: scrub_api_key(&text) });
+        return Err(WebSearchError::UpstreamStatus {
+            status,
+            body: scrub_api_key(&text),
+        });
     }
 
     let v: serde_json::Value = resp.json().await?;
@@ -263,7 +269,10 @@ pub fn parse_response(query: &str, v: &serde_json::Value) -> Result<SearchResult
             .and_then(serde_json::Value::as_str)
             .unwrap_or("unknown")
             .to_owned();
-        return Err(WebSearchError::Api { code, message: scrub_api_key(&message) });
+        return Err(WebSearchError::Api {
+            code,
+            message: scrub_api_key(&message),
+        });
     }
 
     let candidates = v
@@ -290,7 +299,9 @@ pub fn parse_response(query: &str, v: &serde_json::Value) -> Result<SearchResult
         }
     }
     if text_parts.is_empty() {
-        return Err(WebSearchError::Malformed("no text parts in response".to_owned()));
+        return Err(WebSearchError::Malformed(
+            "no text parts in response".to_owned(),
+        ));
     }
     let joined = text_parts.join("\n");
 
@@ -303,16 +314,25 @@ pub fn parse_response(query: &str, v: &serde_json::Value) -> Result<SearchResult
             arr.iter()
                 .filter_map(|chunk| {
                     let web = chunk.get("web")?;
-                    let url = web.get("uri").and_then(serde_json::Value::as_str)?.to_owned();
-                    let title =
-                        web.get("title").and_then(serde_json::Value::as_str).map(str::to_owned);
+                    let url = web
+                        .get("uri")
+                        .and_then(serde_json::Value::as_str)?
+                        .to_owned();
+                    let title = web
+                        .get("title")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::to_owned);
                     Some(Citation { url, title })
                 })
                 .collect()
         })
         .unwrap_or_default();
 
-    Ok(SearchResults { query: query.to_owned(), content: joined, citations })
+    Ok(SearchResults {
+        query: query.to_owned(),
+        content: joined,
+        citations,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -366,16 +386,27 @@ mod tests {
             "gemini-3-flash-preview",
         )
         .expect("url");
-        assert!(url.as_str().ends_with("/models/gemini-3-flash-preview:generateContent"));
+        assert!(
+            url.as_str()
+                .ends_with("/models/gemini-3-flash-preview:generateContent")
+        );
     }
 
     #[test]
     fn web_search_request_body_no_time_range() {
         let body = build_request_body("rust async traits 2026", None);
-        assert_eq!(body["contents"][0]["parts"][0]["text"], "rust async traits 2026");
+        assert_eq!(
+            body["contents"][0]["parts"][0]["text"],
+            "rust async traits 2026"
+        );
         // Empty google_search object (matches upstream TS behaviour).
         assert!(body["tools"][0]["google_search"].is_object());
-        assert!(body["tools"][0]["google_search"].as_object().unwrap().is_empty());
+        assert!(
+            body["tools"][0]["google_search"]
+                .as_object()
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -442,7 +473,7 @@ mod tests {
                 // Key must be scrubbed.
                 assert!(message.contains("key=***"), "got: {message}");
                 assert!(!message.contains("AIza0123"));
-            },
+            }
             other => panic!("expected Api, got {other:?}"),
         }
     }

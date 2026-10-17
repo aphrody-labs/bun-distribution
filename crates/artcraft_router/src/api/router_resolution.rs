@@ -6,24 +6,24 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RouterResolution {
-  /// Models: Nano Banana Pro
-  OneK,
-  /// Models: Nano Banana Pro
-  TwoK,
-  /// Models: (None)
-  ThreeK,
-  /// Models: Nano Banana Pro
-  FourK,
+    /// Models: Nano Banana Pro
+    OneK,
+    /// Models: Nano Banana Pro
+    TwoK,
+    /// Models: (None)
+    ThreeK,
+    /// Models: Nano Banana Pro
+    FourK,
 
-  /// Used by Nano Banana 2 (and others)
-  HalfK,
+    /// Used by Nano Banana 2 (and others)
+    HalfK,
 
-  /// Used by the Seedance family (and others)
-  FourEightyP,
+    /// Used by the Seedance family (and others)
+    FourEightyP,
 
-  /// Used by the Seedance family (and others)
-  SevenTwentyP,
+    /// Used by the Seedance family (and others)
+    SevenTwentyP,
 
-  /// Used by the Seedance family (and others)
-  TenEightyP,
+    /// Used by the Seedance family (and others)
+    TenEightyP,
 }

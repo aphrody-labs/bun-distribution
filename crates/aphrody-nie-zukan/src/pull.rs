@@ -122,14 +122,14 @@ pub fn pull_chara_list(
             Ok(html) => match parser::parse_chara_list(&html) {
                 Ok((entries, _)) => {
                     all_entries.extend(entries);
-                },
+                }
                 Err(e) => {
                     warn!(lang = %lang, page, error = %e, "parse chara_list échoué");
-                },
+                }
             },
             Err(e) => {
                 warn!(lang = %lang, page, error = %e, "fetch chara_list échoué");
-            },
+            }
         }
     }
 
@@ -137,7 +137,10 @@ pub fn pull_chara_list(
     all_entries.dedup_by(|a, b| a.game_id == b.game_id);
 
     // Sauvegarder la liste des IDs en NDJSON
-    let out_path = config.output_root.join(lang.code()).join("chara_ids.ndjson");
+    let out_path = config
+        .output_root
+        .join(lang.code())
+        .join("chara_ids.ndjson");
     write_ndjson(&out_path, &all_entries)?;
     info!(lang = %lang, path = %out_path.display(), count = all_entries.len(), "chara_ids sauvegardés");
 
@@ -156,11 +159,20 @@ pub fn pull_chara_params(
     entries: &[CharaListEntry],
     config: &PullConfig,
 ) -> Result<usize> {
-    let base = format!("https://zukan.inazuma.jp{}/chara_param/", lang.path_prefix());
+    let base = format!(
+        "https://zukan.inazuma.jp{}/chara_param/",
+        lang.path_prefix()
+    );
 
-    let out_path = config.output_root.join(lang.code()).join("chara_param.ndjson");
+    let out_path = config
+        .output_root
+        .join(lang.code())
+        .join("chara_param.ndjson");
     std::fs::create_dir_all(out_path.parent().unwrap())?;
-    let mut out = std::fs::OpenOptions::new().create(true).append(true).open(&out_path)?;
+    let mut out = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&out_path)?;
 
     // Construire un set des IDs déjà présents dans le ndjson
     let already_done = already_fetched_ids(&out_path, "game_id")?;
@@ -177,7 +189,7 @@ pub fn pull_chara_params(
             Err(e) => {
                 warn!(id = %entry.game_id, error = %e, "forge q chara_param échoué");
                 continue;
-            },
+            }
         };
 
         let cache_path = client.cache_path(lang.code(), "chara_param", &entry.game_id);
@@ -194,14 +206,14 @@ pub fn pull_chara_params(
                     if charas.is_empty() {
                         warn!(id = %entry.game_id, lang = %lang, "aucun chara parsé");
                     }
-                },
+                }
                 Err(e) => {
                     warn!(id = %entry.game_id, lang = %lang, error = %e, "parse chara_param échoué");
-                },
+                }
             },
             Err(e) => {
                 warn!(id = %entry.game_id, lang = %lang, error = %e, "fetch chara_param échoué");
-            },
+            }
         }
     }
 
@@ -227,14 +239,19 @@ pub fn pull_skills(client: &ZukanClient, lang: Lang, config: &PullConfig) -> Res
 
     // Si le fichier existe et n'est pas vide, les skills sont déjà pullés — skip
     if out_path.exists() && std::fs::metadata(&out_path)?.len() > 0 {
-        let count =
-            std::fs::read_to_string(&out_path)?.lines().filter(|l| !l.trim().is_empty()).count();
+        let count = std::fs::read_to_string(&out_path)?
+            .lines()
+            .filter(|l| !l.trim().is_empty())
+            .count();
         info!(lang = %lang, count, "skills déjà en cache → skip");
         return Ok(count);
     }
 
     std::fs::create_dir_all(out_path.parent().unwrap())?;
-    let mut out = std::fs::OpenOptions::new().create(true).append(true).open(&out_path)?;
+    let mut out = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&out_path)?;
 
     // Page 1 sans filtre pour connaître le total de pages
     let cache_path = client.cache_path(lang.code(), "skill", "all_page_1");
@@ -252,7 +269,7 @@ pub fn pull_skills(client: &ZukanClient, lang: Lang, config: &PullConfig) -> Res
             Err(e) => {
                 warn!(lang = %lang, page, error = %e, "fetch skill page échoué");
                 continue;
-            },
+            }
         };
         match crate::parser::parse_skill_list(&html, lang, page) {
             Ok(skills) => {
@@ -261,10 +278,10 @@ pub fn pull_skills(client: &ZukanClient, lang: Lang, config: &PullConfig) -> Res
                     writeln!(out, "{line}")?;
                     count += 1;
                 }
-            },
+            }
             Err(e) => {
                 warn!(lang = %lang, page, error = %e, "parse skill page échoué");
-            },
+            }
         }
     }
 
@@ -292,14 +309,19 @@ pub fn pull_items(client: &ZukanClient, lang: Lang, config: &PullConfig) -> Resu
 
     // Si le fichier existe et n'est pas vide, les items sont déjà pullés — skip
     if out_path.exists() && std::fs::metadata(&out_path)?.len() > 0 {
-        let count =
-            std::fs::read_to_string(&out_path)?.lines().filter(|l| !l.trim().is_empty()).count();
+        let count = std::fs::read_to_string(&out_path)?
+            .lines()
+            .filter(|l| !l.trim().is_empty())
+            .count();
         info!(lang = %lang, count, "items déjà en cache → skip");
         return Ok(count);
     }
 
     std::fs::create_dir_all(out_path.parent().unwrap())?;
-    let mut out = std::fs::OpenOptions::new().create(true).append(true).open(&out_path)?;
+    let mut out = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&out_path)?;
 
     let mut count = 0;
 
@@ -314,7 +336,7 @@ pub fn pull_items(client: &ZukanClient, lang: Lang, config: &PullConfig) -> Resu
             Err(e) => {
                 warn!(lang = %lang, cat = cat_key, error = %e, "fetch item page 1 échoué");
                 continue;
-            },
+            }
         };
         let total_pages = extract_last_page_from_html(&html_p1);
 
@@ -325,10 +347,10 @@ pub fn pull_items(client: &ZukanClient, lang: Lang, config: &PullConfig) -> Resu
                     writeln!(out, "{}", serde_json::to_string(item)?)?;
                     count += 1;
                 }
-            },
+            }
             Err(e) => {
                 warn!(lang = %lang, cat = cat_key, error = %e, "parse item page 1 échoué");
-            },
+            }
         }
 
         // Pages restantes
@@ -343,14 +365,14 @@ pub fn pull_items(client: &ZukanClient, lang: Lang, config: &PullConfig) -> Resu
                             writeln!(out, "{}", serde_json::to_string(item)?)?;
                             count += 1;
                         }
-                    },
+                    }
                     Err(e) => {
                         warn!(lang = %lang, cat = cat_key, page, error = %e, "parse item échoué");
-                    },
+                    }
                 },
                 Err(e) => {
                     warn!(lang = %lang, cat = cat_key, page, error = %e, "fetch item échoué");
-                },
+                }
             }
         }
     }
@@ -398,7 +420,9 @@ fn extract_last_page_from_html(html: &str) -> u32 {
     let mut search = html;
     while let Some(pos) = search.find(prefix) {
         let rest = &search[pos + prefix.len()..];
-        let end = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
+        let end = rest
+            .find(|c: char| !c.is_ascii_digit())
+            .unwrap_or(rest.len());
         if let Ok(n) = rest[..end].parse::<u32>() {
             max = max.max(n);
         }

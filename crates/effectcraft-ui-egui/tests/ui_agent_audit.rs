@@ -21,7 +21,9 @@ fn session() -> Session {
 }
 
 fn harness(s: Session) -> Harness<'static, EffectcraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1680.0, 1020.0)).build_eframe(|_| EffectcraftApp::new(s));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1680.0, 1020.0))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(3);
     h
 }
@@ -39,12 +41,25 @@ fn send(h: &mut Harness<'_, EffectcraftApp>, method: &str, params: Value) -> Val
 fn every_engine_command_is_reachable_over_the_control_channel() {
     let mut h = harness(session());
     let listed = send(&mut h, "engine.commands", json!({}));
-    let ids: std::collections::HashSet<String> = listed["result"].as_array().unwrap().iter().map(|c| c["id"].as_str().unwrap().to_string()).collect();
+    let ids: std::collections::HashSet<String> = listed["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["id"].as_str().unwrap().to_string())
+        .collect();
     for spec in effectcraft_engine::command_specs() {
         assert!(ids.contains(spec.id), "engine.commands misses {}", spec.id);
-        let v = send(&mut h, "engine.execute", json!({"command": spec.id, "params": {"__audit": 1}}));
+        let v = send(
+            &mut h,
+            "engine.execute",
+            json!({"command": spec.id, "params": {"__audit": 1}}),
+        );
         let e = v["error"].as_str().unwrap_or_default();
-        assert!(v["ok"] == false && e.contains("unknown parameter") && e.contains(spec.id), "{}: {v}", spec.id);
+        assert!(
+            v["ok"] == false && e.contains("unknown parameter") && e.contains(spec.id),
+            "{}: {v}",
+            spec.id
+        );
     }
 }
 
@@ -107,66 +122,132 @@ fn gaps_of(h: &mut Harness<'_, EffectcraftApp>, p: PanelKind) -> Vec<String> {
         .previous
         .iter()
         .chain(app.auto.elements.iter())
-        .map(|e| Rect::from_min_size(egui::pos2(e.rect[0], e.rect[1]), egui::vec2(e.rect[2], e.rect[3])))
+        .map(|e| {
+            Rect::from_min_size(
+                egui::pos2(e.rect[0], e.rect[1]),
+                egui::vec2(e.rect[2], e.rect[3]),
+            )
+        })
         .collect();
-    let Some(panel) =
-        app.auto.find(&format!("panel.{}", p.id())).map(|e| Rect::from_min_size(egui::pos2(e.rect[0], e.rect[1]), egui::vec2(e.rect[2], e.rect[3])))
-    else {
+    let Some(panel) = app.auto.find(&format!("panel.{}", p.id())).map(|e| {
+        Rect::from_min_size(
+            egui::pos2(e.rect[0], e.rect[1]),
+            egui::vec2(e.rect[2], e.rect[3]),
+        )
+    }) else {
         return vec![format!("{}: panel.{} not registered", p.title(), p.id())];
     };
     widgets
         .into_iter()
         .filter(|(r, _)| panel.contains(r.center()))
         .filter(|(r, _)| !covered(*r, &elements))
-        .map(|(r, l)| format!("{}: [{:.0},{:.0} {:.0}x{:.0}] {l:?}", p.title(), r.min.x, r.min.y, r.width(), r.height()))
+        .map(|(r, l)| {
+            format!(
+                "{}: [{:.0},{:.0} {:.0}x{:.0}] {l:?}",
+                p.title(),
+                r.min.x,
+                r.min.y,
+                r.width(),
+                r.height()
+            )
+        })
         .collect()
 }
 
 #[test]
-#[cfg_attr(not(debug_assertions), ignore = "egui records widget types only in debug builds")]
+#[cfg_attr(
+    not(debug_assertions),
+    ignore = "egui records widget types only in debug builds"
+)]
 fn every_panel_registers_automation_ids_for_its_widgets() {
     let mut s = session();
     // Content for the selection-driven panels: the title (text with effects), a Render Queue
     // item, a comp marker.
-    s.execute("layer.select", json!({"layers": ["EFFECTCRAFT"]})).unwrap();
-    s.execute("renderQueue.add", json!({"format": "png", "output": "/tmp/ec-audit-[#####].png"})).unwrap();
+    s.execute("layer.select", json!({"layers": ["EFFECTCRAFT"]}))
+        .unwrap();
+    s.execute(
+        "renderQueue.add",
+        json!({"format": "png", "output": "/tmp/ec-audit-[#####].png"}),
+    )
+    .unwrap();
     s.execute("markers.add", json!({})).ok();
-    let title = s.active_comp().unwrap().layers.iter().find(|l| l.name == "EFFECTCRAFT").map(|l| l.id.0).unwrap();
+    let title = s
+        .active_comp()
+        .unwrap()
+        .layers
+        .iter()
+        .find(|l| l.name == "EFFECTCRAFT")
+        .map(|l| l.id.0)
+        .unwrap();
     let mut h = harness(s);
     h.state_mut().ui.layer_panel = Some(title);
     // egui records widget types (to tell labels from controls) with this debug option, which
     // only debug builds have.
     #[cfg(debug_assertions)]
-    h.ctx.all_styles_mut(|st| st.debug.show_interactive_widgets = true);
+    h.ctx
+        .all_styles_mut(|st| st.debug.show_interactive_widgets = true);
     let mut gaps = vec![];
     for p in PanelKind::ALL {
         gaps.extend(gaps_of(&mut h, p));
     }
     // The timeline again with the title twirled open (properties, keys) and in the Graph Editor.
-    send(&mut h, "ui.set", json!({"timeline": {"openLayers": [title]}}));
+    send(
+        &mut h,
+        "ui.set",
+        json!({"timeline": {"openLayers": [title]}}),
+    );
     gaps.extend(gaps_of(&mut h, PanelKind::Timeline));
     send(&mut h, "ui.set", json!({"timeline": {"graphEditor": true}}));
     gaps.extend(gaps_of(&mut h, PanelKind::Timeline));
-    send(&mut h, "ui.set", json!({"timeline": {"graphEditor": false}}));
+    send(
+        &mut h,
+        "ui.set",
+        json!({"timeline": {"graphEditor": false}}),
+    );
     // Outside the panels: the header and the menu bar.
     h.state_mut().ui.maximized = None;
     h.run_steps(3);
     let ctx = h.ctx.clone();
     let widgets = interactive(&ctx);
     let app = h.state();
-    let elements: Vec<Rect> =
-        app.auto.previous.iter().map(|e| Rect::from_min_size(egui::pos2(e.rect[0], e.rect[1]), egui::vec2(e.rect[2], e.rect[3]))).collect();
+    let elements: Vec<Rect> = app
+        .auto
+        .previous
+        .iter()
+        .map(|e| {
+            Rect::from_min_size(
+                egui::pos2(e.rect[0], e.rect[1]),
+                egui::vec2(e.rect[2], e.rect[3]),
+            )
+        })
+        .collect();
     let panels: Vec<Rect> = app
         .auto
         .previous
         .iter()
         .filter(|e| e.id.starts_with("panel.") && e.id.matches('.').count() == 1)
-        .map(|e| Rect::from_min_size(egui::pos2(e.rect[0], e.rect[1]), egui::vec2(e.rect[2], e.rect[3])))
+        .map(|e| {
+            Rect::from_min_size(
+                egui::pos2(e.rect[0], e.rect[1]),
+                egui::vec2(e.rect[2], e.rect[3]),
+            )
+        })
         .collect();
     for (r, l) in widgets {
         if !panels.iter().any(|p| p.contains(r.center())) && !covered(r, &elements) {
-            gaps.push(format!("chrome: [{:.0},{:.0} {:.0}x{:.0}] {l:?}", r.min.x, r.min.y, r.width(), r.height()));
+            gaps.push(format!(
+                "chrome: [{:.0},{:.0} {:.0}x{:.0}] {l:?}",
+                r.min.x,
+                r.min.y,
+                r.width(),
+                r.height()
+            ));
         }
     }
-    assert!(gaps.is_empty(), "{} interactive widgets without an automation id:\n{}", gaps.len(), gaps.join("\n"));
+    assert!(
+        gaps.is_empty(),
+        "{} interactive widgets without an automation id:\n{}",
+        gaps.len(),
+        gaps.join("\n")
+    );
 }

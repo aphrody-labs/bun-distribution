@@ -166,7 +166,12 @@ define_cli_tools!(
         "render",
         "Render GLB assets to PNG or GIF through aphrody-nie-render3d."
     ),
-    (CliLua, "cli_lua", "lua", "Statically inspect Lua source files without executing them."),
+    (
+        CliLua,
+        "cli_lua",
+        "lua",
+        "Statically inspect Lua source files without executing them."
+    ),
     (
         CliLuaRun,
         "cli_lua_run",
@@ -233,7 +238,12 @@ define_cli_tools!(
         "mode",
         "Index, measure, export, or inspect game mode and menu coverage."
     ),
-    (CliIcons, "cli_icons", "icons", "Index, inspect, or extract icon atlas regions."),
+    (
+        CliIcons,
+        "cli_icons",
+        "icons",
+        "Index, inspect, or extract icon atlas regions."
+    ),
     (
         CliAvatar,
         "cli_avatar",
@@ -270,7 +280,12 @@ define_cli_tools!(
         "propagate",
         "Propagate reverse-engineering classifications in the selected database."
     ),
-    (CliRtti, "cli_rtti", "rtti", "Extract and index MSVC RTTI from nie.exe."),
+    (
+        CliRtti,
+        "cli_rtti",
+        "rtti",
+        "Extract and index MSVC RTTI from nie.exe."
+    ),
     (
         CliIndex,
         "cli_index",
@@ -283,7 +298,12 @@ define_cli_tools!(
         "disasm",
         "Disassemble indexed executable functions through iced-x86."
     ),
-    (CliPdata, "cli_pdata", "pdata", "Parse and index the PE exception-function table."),
+    (
+        CliPdata,
+        "cli_pdata",
+        "pdata",
+        "Parse and index the PE exception-function table."
+    ),
     (
         CliRebuild,
         "cli_rebuild",
@@ -308,8 +328,18 @@ define_cli_tools!(
         "wiki",
         "Query characters, skills, items, teams, comparisons, search, SQL, and deterministic team generation."
     ),
-    (CliUniformMap, "cli_uniform_map", "uniform-map", "Build the VFS uniform-to-model mapping."),
-    (CliTextures, "cli_textures", "textures", "Decode or index the game texture corpus."),
+    (
+        CliUniformMap,
+        "cli_uniform_map",
+        "uniform-map",
+        "Build the VFS uniform-to-model mapping."
+    ),
+    (
+        CliTextures,
+        "cli_textures",
+        "textures",
+        "Decode or index the game texture corpus."
+    ),
     (
         CliMenuPredecode,
         "cli_menu_predecode",
@@ -328,8 +358,18 @@ define_cli_tools!(
         "vfs",
         "Run every VFS operation: list, find, stat, read, extract, stats, format parsing, character, and move lookup."
     ),
-    (CliVn, "cli_vn", "vn", "Inspect or export visual-novel casting and assets."),
-    (CliVideo, "cli_video", "video", "Inspect, list, export, or catalogue game videos."),
+    (
+        CliVn,
+        "cli_vn",
+        "vn",
+        "Inspect or export visual-novel casting and assets."
+    ),
+    (
+        CliVideo,
+        "cli_video",
+        "video",
+        "Inspect, list, export, or catalogue game videos."
+    ),
     (
         CliLive,
         "cli_live",
@@ -496,14 +536,19 @@ async fn fetch_model_asset_from(request: AssetRequest, base: &str) -> Compatibil
     use futures_util::StreamExt as _;
 
     let result = async {
-        let cap = request.max_bytes.unwrap_or(256 * 1024).clamp(1, 8 * 1024 * 1024);
+        let cap = request
+            .max_bytes
+            .unwrap_or(256 * 1024)
+            .clamp(1, 8 * 1024 * 1024);
         let raw = request.path.trim();
         anyhow::ensure!(
             !raw.is_empty() && raw.len() <= 1_024 && !raw.contains("..") && !raw.contains('\0'),
             "invalid model code"
         );
-        let without_extension =
-            raw.strip_suffix(".glb").or_else(|| raw.strip_suffix(".GLB")).unwrap_or(raw);
+        let without_extension = raw
+            .strip_suffix(".glb")
+            .or_else(|| raw.strip_suffix(".GLB"))
+            .unwrap_or(raw);
         let code = without_extension.rsplit('/').next().unwrap_or_default();
         anyhow::ensure!(!code.is_empty(), "invalid model code");
         let mut url = reqwest::Url::parse(base.trim_end_matches('/'))?;
@@ -570,11 +615,16 @@ async fn fetch_model_asset_from(request: AssetRequest, base: &str) -> Compatibil
         if !status.is_success() {
             value["note"] = Value::String(format!(
                 "model-serve returned {status}: {}",
-                String::from_utf8_lossy(&bytes).trim().chars().take(300).collect::<String>()
+                String::from_utf8_lossy(&bytes)
+                    .trim()
+                    .chars()
+                    .take(300)
+                    .collect::<String>()
             ));
         } else if truncated {
-            value["note"] =
-                Value::String(format!("content exceeds maxBytes {cap}; use the model-serve URL"));
+            value["note"] = Value::String(format!(
+                "content exceeds maxBytes {cap}; use the model-serve URL"
+            ));
         } else {
             value["base64"] =
                 Value::String(base64::engine::general_purpose::STANDARD.encode(&bytes));
@@ -620,7 +670,10 @@ impl NieMcpServer {
     ) -> CompatibilityResult {
         blocking_json(move || {
             let limit = request.limit.unwrap_or(20);
-            anyhow::ensure!((1..=100).contains(&limit), "Require limit between 1 and 100");
+            anyhow::ensure!(
+                (1..=100).contains(&limit),
+                "Require limit between 1 and 100"
+            );
             anyhow::ensure!(
                 !request.query.trim().is_empty() && request.query.len() <= 256,
                 "Invalid search query"
@@ -663,10 +716,14 @@ impl NieMcpServer {
             .unwrap_or_else(|_| "http://127.0.0.1:8085".to_owned());
         let url = format!("{}/api/v1/health", base.trim_end_matches('/'));
         let result = async {
-            let client =
-                reqwest::Client::builder().timeout(std::time::Duration::from_secs(5)).build()?;
+            let client = reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(5))
+                .build()?;
             let mut response = client.get(&url).send().await;
-            if response.as_ref().map_or(true, |r| r.status().is_server_error()) {
+            if response
+                .as_ref()
+                .map_or(true, |r| r.status().is_server_error())
+            {
                 tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                 if let Ok(retry_resp) = client.get(&url).send().await {
                     response = Ok(retry_resp);
@@ -722,7 +779,10 @@ impl NieMcpServer {
         let limit = request.limit.unwrap_or(100).clamp(1, 2_000);
         let query = request.query.trim().to_owned();
         blocking_json(move || {
-            anyhow::ensure!(!query.is_empty() && query.len() <= 16 * 1024, "invalid query");
+            anyhow::ensure!(
+                !query.is_empty() && query.len() <= 16 * 1024,
+                "invalid query"
+            );
             let vfs = super::open_vfs(None)?;
             aphrody_nie_explore::mcp_vfs::search(&vfs, &query, limit)
         })
@@ -753,7 +813,10 @@ impl NieMcpServer {
         Parameters(request): Parameters<VfsCatRequest>,
     ) -> CompatibilityResult {
         blocking_json(move || {
-            let cap = request.max_bytes.unwrap_or(256 * 1024).clamp(1, 8 * 1024 * 1024);
+            let cap = request
+                .max_bytes
+                .unwrap_or(256 * 1024)
+                .clamp(1, 8 * 1024 * 1024);
             let vfs = super::open_vfs(None)?;
             aphrody_nie_explore::mcp_vfs::cat(&vfs, &request.path, cap)
         })
@@ -773,7 +836,10 @@ impl NieMcpServer {
         }
         blocking_json(move || {
             let decode = request.decode.as_deref().unwrap_or("raw");
-            let cap = request.max_bytes.unwrap_or(256 * 1024).clamp(1, 8 * 1024 * 1024);
+            let cap = request
+                .max_bytes
+                .unwrap_or(256 * 1024)
+                .clamp(1, 8 * 1024 * 1024);
             let vfs = super::open_vfs(None)?;
             aphrody_nie_explore::mcp_vfs::asset(&vfs, &request.path, decode, cap)
         })
@@ -889,7 +955,10 @@ impl NieMcpServer {
         Parameters(request): Parameters<ExplorerNavigateRequest>,
     ) -> CompatibilityResult {
         if request.prefix.contains('\0')
-            || request.select.as_deref().is_some_and(|value| value.contains('\0'))
+            || request
+                .select
+                .as_deref()
+                .is_some_and(|value| value.contains('\0'))
         {
             return Err(error_text("invalid explorer path"));
         }
@@ -982,7 +1051,8 @@ impl NieMcpServer {
 fn launch_game(args: Vec<String>) -> anyhow::Result<Value> {
     anyhow::ensure!(args.len() <= 128, "too many game arguments");
     anyhow::ensure!(
-        args.iter().all(|arg| arg.len() <= 16 * 1024 && !arg.contains('\0')),
+        args.iter()
+            .all(|arg| arg.len() <= 16 * 1024 && !arg.contains('\0')),
         "invalid game argument"
     );
     let root = std::env::var_os("NIE_REPO")
@@ -992,8 +1062,16 @@ fn launch_game(args: Vec<String>) -> anyhow::Result<Value> {
     let configured = std::env::var_os("NIE_GAME_EXE")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| std::path::PathBuf::from("nie.exe"));
-    let executable = if configured.is_absolute() { configured } else { root.join(configured) };
-    anyhow::ensure!(executable.is_file(), "executable not found: {}", executable.display());
+    let executable = if configured.is_absolute() {
+        configured
+    } else {
+        root.join(configured)
+    };
+    anyhow::ensure!(
+        executable.is_file(),
+        "executable not found: {}",
+        executable.display()
+    );
     let mut child = std::process::Command::new(&executable)
         .args(&args)
         .current_dir(&root)
@@ -1002,9 +1080,11 @@ fn launch_game(args: Vec<String>) -> anyhow::Result<Value> {
         .stderr(std::process::Stdio::null())
         .spawn()?;
     let pid = child.id();
-    let _ = std::thread::Builder::new().name(format!("nie-game-reaper-{pid}")).spawn(move || {
-        let _ = child.wait();
-    });
+    let _ = std::thread::Builder::new()
+        .name(format!("nie-game-reaper-{pid}"))
+        .spawn(move || {
+            let _ = child.wait();
+        });
     Ok(json!({
         "ok": true,
         "exe": executable,
@@ -1028,7 +1108,9 @@ impl ServerHandler for NieMcpServer {
 
         let mut info = rmcp::model::ServerConfig::default();
         info.protocol_version = rmcp::model::ProtocolVersion::V_2024_11_05;
-        info.capabilities = rmcp::model::ServerCapabilities::builder().enable_tools().build();
+        info.capabilities = rmcp::model::ServerCapabilities::builder()
+            .enable_tools()
+            .build();
         info.server_info = implementation;
         info.instructions = Some(
             "Native Rust MCP binding for the complete nie CLI. Each cli_* tool executes the corresponding top-level command in process and accepts the exact argument tail in `args`. Responses contain success, stdout, stderr, and error fields. Call tools/list for the authoritative surface."
@@ -1071,7 +1153,11 @@ mod tests {
                 "missing MCP tool for `nie {command}`"
             );
         }
-        assert!(tools.iter().all(|tool| tool.input_schema.contains_key("properties")));
+        assert!(
+            tools
+                .iter()
+                .all(|tool| tool.input_schema.contains_key("properties"))
+        );
     }
 
     #[test]
@@ -1083,7 +1169,10 @@ mod tests {
 
     #[test]
     fn compatibility_paths_keep_the_legacy_vfs_contract() {
-        assert_eq!(safe_vfs_path("data/dx11/file.g4tx"), Ok("data/dx11/file.g4tx"));
+        assert_eq!(
+            safe_vfs_path("data/dx11/file.g4tx"),
+            Ok("data/dx11/file.g4tx")
+        );
         assert!(safe_vfs_path("/data/file.g4tx").is_err());
         assert!(safe_vfs_path("data\\file.g4tx").is_err());
         assert!(safe_vfs_path("data/../file.g4tx").is_err());

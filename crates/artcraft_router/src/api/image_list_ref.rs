@@ -4,6 +4,6 @@ use tokens::tokens::media_files::MediaFileToken;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ImageListRef {
-  MediaFileTokens(Vec<MediaFileToken>),
-  Urls(Vec<String>),
+    MediaFileTokens(Vec<MediaFileToken>),
+    Urls(Vec<String>),
 }

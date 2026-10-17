@@ -19,9 +19,16 @@ fn scan_lists_both_audio_modules_but_not_the_controller_class() {
     assert_eq!(found.len(), 2, "{found:?}");
     let g = found.iter().find(|d| d.name == "Fixture Gain").unwrap();
     // `uid()` lays out the first 8 bytes differently on Windows (COM GUID order).
-    let want = if cfg!(windows) { "vst3:001D0A5C111122223333444455556666" } else { "vst3:5C0A1D00111122223333444455556666" };
+    let want = if cfg!(windows) {
+        "vst3:001D0A5C111122223333444455556666"
+    } else {
+        "vst3:5C0A1D00111122223333444455556666"
+    };
     assert_eq!(g.id, want);
-    assert_eq!(g.vendor, "SoundCraft tests", "factory vendor fills an empty class vendor");
+    assert_eq!(
+        g.vendor, "SoundCraft tests",
+        "factory vendor fills an empty class vendor"
+    );
     assert_eq!(g.version, "1.2.3");
     assert_eq!(g.sdk_version, "VST 3.8.0");
     assert_eq!(g.sub_categories, vec!["Fx"]);
@@ -42,17 +49,30 @@ fn info_exposes_visible_params_with_plain_ranges() {
     assert_eq!(info.id, gain);
     assert_eq!(info.short_name, "Fixture ");
     let ids: Vec<&str> = info.params.iter().map(|p| p.id).collect();
-    assert_eq!(ids, vec!["7", "3", "12"], "hidden 9 and bypass 11 are skipped");
+    assert_eq!(
+        ids,
+        vec!["7", "3", "12"],
+        "hidden 9 and bypass 11 are skipped"
+    );
     let g = info.param("7").unwrap();
-    assert_eq!((g.name, g.min, g.max, g.default, g.unit, g.taper), ("Gain", 0.0, 2.0, 1.0, Unit::Db, Taper::Linear));
+    assert_eq!(
+        (g.name, g.min, g.max, g.default, g.unit, g.taper),
+        ("Gain", 0.0, 2.0, 1.0, Unit::Db, Taper::Linear)
+    );
     let mode = info.param("3").unwrap();
     assert_eq!((mode.unit, mode.min, mode.max), (Unit::Choice, 0.0, 2.0));
     assert_eq!(mode.choices, &["A", "B", "C"]);
     let f = info.param("12").unwrap();
     assert_eq!((f.unit, f.taper), (Unit::Hz, Taper::Log));
-    assert!((f.min - 20.0).abs() < 1e-3 && (f.max - 20_000.0).abs() < 1e-1, "{f:?}");
+    assert!(
+        (f.min - 20.0).abs() < 1e-3 && (f.max - 20_000.0).abs() < 1e-1,
+        "{f:?}"
+    );
     // Cached: the same leaked info every time.
-    assert!(std::ptr::eq(info, soundcraft_vst3_host::plugin_info(&gain).unwrap()));
+    assert!(std::ptr::eq(
+        info,
+        soundcraft_vst3_host::plugin_info(&gain).unwrap()
+    ));
 }
 
 #[test]
@@ -64,7 +84,11 @@ fn gain_processes_audio_and_follows_params() {
     assert_eq!(p.param("7"), Some(0.5));
     let mut io = vec![vec![0.5f32; 256], vec![-0.25f32; 256]];
     p.process(&mut io, 256);
-    assert!(io[0].iter().all(|&x| (x - 0.25).abs() < 1e-6), "{:?}", &io[0][..4]);
+    assert!(
+        io[0].iter().all(|&x| (x - 0.25).abs() < 1e-6),
+        "{:?}",
+        &io[0][..4]
+    );
     assert!(p.set_param("7", 2.0));
     assert!(!p.set_param("9", 1.0), "hidden params are not exposed");
     assert!(!p.set_param("Gain", 1.0), "ids are VST3 ParamIDs");
@@ -83,7 +107,11 @@ fn gain_processes_audio_and_follows_params() {
     p.prepare(48_000.0, 128, 1);
     let mut mono = vec![vec![0.25f32; 128]];
     p.process(&mut mono, 128);
-    assert!(mono[0].iter().all(|&x| (x - 0.5).abs() < 1e-6), "{:?}", &mono[0][..4]);
+    assert!(
+        mono[0].iter().all(|&x| (x - 0.5).abs() < 1e-6),
+        "{:?}",
+        &mono[0][..4]
+    );
     // Hostile shapes don't crash.
     p.process(&mut [], 64);
     let mut short = vec![vec![1.0f32; 4]];
@@ -126,12 +154,17 @@ fn synth_plays_notes_at_their_offsets() {
     let mut io = vec![vec![0.0f32; 96], vec![0.0f32; 96]];
     p.note_on(50, 62, 127);
     p.process(&mut io, 96);
-    assert!(io[0][49].abs() < 1e-6 && (io[0][50] - 1.0).abs() < 1e-6 && (io[0][95] - 1.0).abs() < 1e-6);
+    assert!(
+        io[0][49].abs() < 1e-6 && (io[0][50] - 1.0).abs() < 1e-6 && (io[0][95] - 1.0).abs() < 1e-6
+    );
     // A mono strip downmixes the stereo output.
     p.prepare(48_000.0, 64, 1);
     let mut mono = vec![vec![0.0f32; 64]];
     p.process(&mut mono, 64);
-    assert!(mono[0].iter().all(|&x| (x - 1.0).abs() < 1e-6), "the note is still held");
+    assert!(
+        mono[0].iter().all(|&x| (x - 1.0).abs() < 1e-6),
+        "the note is still held"
+    );
 }
 
 #[test]
@@ -154,11 +187,25 @@ fn installed_plugins_smoke() {
         return;
     }
     for d in soundcraft_vst3_host::scan() {
-        eprintln!("found {} ({}) {:?} [{}] at {}", d.name, d.vendor, d.category, d.sub_categories.join("|"), d.path.display());
+        eprintln!(
+            "found {} ({}) {:?} [{}] at {}",
+            d.name,
+            d.vendor,
+            d.category,
+            d.sub_categories.join("|"),
+            d.path.display()
+        );
         let info = soundcraft_vst3_host::plugin_info(&d.id);
         eprintln!(
             "  info: {:?}",
-            info.map(|i| (i.params.len(), i.params.iter().take(5).map(|p| (p.id, p.name, p.min, p.max, p.unit)).collect::<Vec<_>>()))
+            info.map(|i| (
+                i.params.len(),
+                i.params
+                    .iter()
+                    .take(5)
+                    .map(|p| (p.id, p.name, p.min, p.max, p.unit))
+                    .collect::<Vec<_>>()
+            ))
         );
         match soundcraft_vst3_host::instantiate(&d.id) {
             Ok(mut p) => {
@@ -186,10 +233,18 @@ fn state_saves_component_and_controller_and_restores_them() {
     q.prepare(48_000.0, 64, 2);
     assert_eq!(q.param("7"), Some(0.5));
     assert!(q.load_state(&blob));
-    assert_eq!(q.param("7"), Some(1.5), "controller synced from the restored component state");
+    assert_eq!(
+        q.param("7"),
+        Some(1.5),
+        "controller synced from the restored component state"
+    );
     let mut io = vec![vec![0.5f32; 64]; 2];
     q.process(&mut io, 64);
-    assert!(io[0].iter().all(|&x| (x - 0.75).abs() < 1e-6), "{:?}", &io[0][..4]);
+    assert!(
+        io[0].iter().all(|&x| (x - 0.75).abs() < 1e-6),
+        "{:?}",
+        &io[0][..4]
+    );
     // The controller part (Freq) round-trips too: write one by hand.
     let mut custom = b"SCV3".to_vec();
     custom.extend_from_slice(&8u32.to_le_bytes());
@@ -198,11 +253,21 @@ fn state_saves_component_and_controller_and_restores_them() {
     custom.extend_from_slice(&1.0f64.to_le_bytes());
     assert!(q.load_state(&custom));
     assert_eq!(q.param("7"), Some(0.5));
-    assert!((q.param("12").unwrap() - 20_000.0).abs() < 1.0, "{:?}", q.param("12"));
+    assert!(
+        (q.param("12").unwrap() - 20_000.0).abs() < 1.0,
+        "{:?}",
+        q.param("12")
+    );
     // A bare component state is accepted; hostile blobs are refused.
     assert!(q.load_state(&0.5f64.to_le_bytes()));
     assert_eq!(q.param("7"), Some(1.0));
-    for bad in [&b""[..], b"SCV3", b"SCV3\xff\xff\xff\xff", &[0xffu8; 8][..], b"abc"] {
+    for bad in [
+        &b""[..],
+        b"SCV3",
+        b"SCV3\xff\xff\xff\xff",
+        &[0xffu8; 8][..],
+        b"abc",
+    ] {
         assert!(!q.load_state(bad), "{bad:?}");
     }
     assert_eq!(q.param("7"), Some(1.0));
@@ -223,7 +288,10 @@ fn editor_view_is_probed_and_edits_come_back_as_plain_values() {
     assert_eq!(ed.idle(), vec![("7".to_string(), 1.8)]);
     assert!(ed.idle().is_empty());
     if cfg!(target_os = "macos") {
-        assert!(ed.open().unwrap_err().contains("main thread"), "test threads are not the main thread");
+        assert!(
+            ed.open().unwrap_err().contains("main thread"),
+            "test threads are not the main thread"
+        );
     } else {
         assert!(ed.open().is_err(), "unsupported elsewhere");
     }

@@ -19,7 +19,14 @@
 //! intent, forbidden actions, annotation flags, Interpolate, NeedAppearances, encryption) and
 //! returns what remains. Fonts that aren't embedded can't be fixed here.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod icc;
 mod xmp;
@@ -49,7 +56,11 @@ impl Level {
     }
 
     pub fn from_id(id: &str) -> Option<Level> {
-        match id.to_ascii_lowercase().replace(['/', '-', ' '], "").as_str() {
+        match id
+            .to_ascii_lowercase()
+            .replace(['/', '-', ' '], "")
+            .as_str()
+        {
             "pdfa2b" | "a2b" | "2b" => Some(Level::A2b),
             "pdfa3b" | "a3b" | "3b" => Some(Level::A3b),
             _ => None,
@@ -152,12 +163,25 @@ pub struct Declared {
     pub output_intents: Vec<String>,
 }
 
-const FORBIDDEN_ACTIONS: &[&[u8]] =
-    &[b"JavaScript", b"Launch", b"Sound", b"Movie", b"ResetForm", b"ImportData", b"Hide", b"SetOCGState", b"Rendition", b"Trans", b"GoTo3DView"];
+const FORBIDDEN_ACTIONS: &[&[u8]] = &[
+    b"JavaScript",
+    b"Launch",
+    b"Sound",
+    b"Movie",
+    b"ResetForm",
+    b"ImportData",
+    b"Hide",
+    b"SetOCGState",
+    b"Rendition",
+    b"Trans",
+    b"GoTo3DView",
+];
 const FORBIDDEN_ANNOTS: &[&[u8]] = &[b"Sound", b"Movie", b"Screen", b"3D", b"RichMedia"];
 
 fn catalog(doc: &Document) -> Dict {
-    doc.root().and_then(|r| doc.get(r).as_dict().cloned()).unwrap_or_default()
+    doc.root()
+        .and_then(|r| doc.get(r).as_dict().cloned())
+        .unwrap_or_default()
 }
 
 /// The XMP metadata stream of the catalog, as text.
@@ -165,7 +189,10 @@ fn metadata(doc: &Document) -> Option<String> {
     let cat = catalog(doc);
     let m = doc.resolve(cat.get(b"Metadata")?);
     match &*m {
-        Object::Stream(s) => s.decoded().ok().map(|b| String::from_utf8_lossy(&b).into_owned()),
+        Object::Stream(s) => s
+            .decoded()
+            .ok()
+            .map(|b| String::from_utf8_lossy(&b).into_owned()),
         _ => None,
     }
 }
@@ -180,10 +207,17 @@ pub fn declared(doc: &Document) -> Declared {
         d.pdfua = xmp::value(&x, "pdfuaid:part").and_then(|p| p.parse().ok());
     }
     let cat = catalog(doc);
-    if let Some(list) = cat.get(b"OutputIntents").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()) {
+    if let Some(list) = cat
+        .get(b"OutputIntents")
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_array().cloned())
+    {
         for oi in list {
             if let Some(od) = doc.resolve(&oi).as_dict() {
-                let id = od.get(b"OutputConditionIdentifier").and_then(|v| doc.resolve(v).as_string().map(|s| s.to_text())).unwrap_or_default();
+                let id = od
+                    .get(b"OutputConditionIdentifier")
+                    .and_then(|v| doc.resolve(v).as_string().map(|s| s.to_text()))
+                    .unwrap_or_default();
                 d.output_intents.push(id);
             }
         }
@@ -219,14 +253,20 @@ fn has_pdfa_intent(doc: &Document) -> bool {
 /// `None` when the document has no PDF/A output intent.
 fn pdfa_intent_profile(doc: &Document) -> Option<Option<i64>> {
     let cat = catalog(doc);
-    let list = cat.get(b"OutputIntents").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default();
+    let list = cat
+        .get(b"OutputIntents")
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_array().cloned())
+        .unwrap_or_default();
     list.iter().find_map(|oi| {
         let d = doc.resolve(oi).as_dict().cloned()?;
         if d.name(b"S") != Some(b"GTS_PDFA1") {
             return None;
         }
         let profile = doc.resolve(d.get(b"DestOutputProfile")?);
-        let Object::Stream(s) = &*profile else { return Some(None) };
+        let Object::Stream(s) = &*profile else {
+            return Some(None);
+        };
         Some(s.dict.int(b"N").or_else(|| {
             // ICC.1 header: the data colour space is bytes 16–19.
             match s.decoded().ok()?.get(16..20)? {
@@ -264,7 +304,10 @@ fn uses_device_colour(doc: &Document, objs: &[(ObjRef, std::sync::Arc<Object>)])
         let Some(d) = dict_of(o) else { continue };
         // A resource dictionary's /ColorSpace, whether it is this object or the page's inline
         // /Resources.
-        let resources = d.get(b"Resources").map(|r| doc.resolve(r)).and_then(|r| r.as_dict().cloned());
+        let resources = d
+            .get(b"Resources")
+            .map(|r| doc.resolve(r))
+            .and_then(|r| r.as_dict().cloned());
         for holder in [Some(d), resources.as_ref()].into_iter().flatten() {
             if let Some(spaces) = holder.get(b"ColorSpace").map(|c| doc.resolve(c))
                 && let Some(spaces) = spaces.as_dict()
@@ -283,7 +326,8 @@ fn uses_device_colour(doc: &Document, objs: &[(ObjRef, std::sync::Arc<Object>)])
         }
         if let Object::Stream(s) = &**o
             && d.get(b"Type").is_none()
-            && d.get(b"Subtype").is_none_or(|t| t.as_name() == Some(b"Form"))
+            && d.get(b"Subtype")
+                .is_none_or(|t| t.as_name() == Some(b"Form"))
             && let Ok(data) = s.decoded()
         {
             // Content streams: rg/RG/g/G/k/K operators.
@@ -305,27 +349,58 @@ pub fn verify(doc: &Document, level: Level) -> Vec<Issue> {
     let mut out = Vec::new();
     // Each problem is worded here and named by the document there: the wording goes on the list in
     // `WORDINGS` for an interface to translate, and the name goes in its `{}` as it stands.
-    let mut issue = |clause: &'static str, pattern: &'static str, value: Option<String>, page: Option<usize>, fixable: bool| {
+    let mut issue = |clause: &'static str,
+                     pattern: &'static str,
+                     value: Option<String>,
+                     page: Option<usize>,
+                     fixable: bool| {
         let message = match &value {
             Some(v) => pattern.replacen("{}", v, 1),
             None => pattern.to_owned(),
         };
-        out.push(Issue { clause, message, pattern, value, page, fixable });
+        out.push(Issue {
+            clause,
+            message,
+            pattern,
+            value,
+            page,
+            fixable,
+        });
     };
     let cat = catalog(doc);
     // 6.1.3 / 6.6: identification and metadata.
     match metadata(doc) {
-        None => issue("6.6.2.1", "The document has no XMP metadata", None, None, true),
+        None => issue(
+            "6.6.2.1",
+            "The document has no XMP metadata",
+            None,
+            None,
+            true,
+        ),
         Some(x) => {
             let part = xmp::value(&x, "pdfaid:part");
             let conf = xmp::value(&x, "pdfaid:conformance");
-            if part.as_deref() != Some(&level.part().to_string()) || conf.as_deref().map(str::to_uppercase).as_deref() != Some("B") {
-                issue("6.6.4", "The metadata doesn't identify the file as {}", Some(level.label().to_owned()), None, true);
+            if part.as_deref() != Some(&level.part().to_string())
+                || conf.as_deref().map(str::to_uppercase).as_deref() != Some("B")
+            {
+                issue(
+                    "6.6.4",
+                    "The metadata doesn't identify the file as {}",
+                    Some(level.label().to_owned()),
+                    None,
+                    true,
+                );
             }
             if let Some(title) = info(doc, "Title")
                 && xmp::value(&x, "dc:title").is_some_and(|t| t != title)
             {
-                issue("6.6.3", "The title in the metadata and the document information differ", None, None, true);
+                issue(
+                    "6.6.3",
+                    "The title in the metadata and the document information differ",
+                    None,
+                    None,
+                    true,
+                );
             }
         }
     }
@@ -338,35 +413,81 @@ pub fn verify(doc: &Document, level: Level) -> Vec<Issue> {
     let used = uses_device_colour(doc, &objs);
     match pdfa_intent_profile(doc) {
         None if used.any() => {
-            issue("6.2.3", "Device colour is used, but there is no PDF/A output intent", None, None, !used.cmyk);
+            issue(
+                "6.2.3",
+                "Device colour is used, but there is no PDF/A output intent",
+                None,
+                None,
+                !used.cmyk,
+            );
             if used.cmyk {
-                issue("6.2.4.3", "DeviceCMYK is used: it needs a CMYK output intent (not added automatically)", None, None, false);
+                issue(
+                    "6.2.4.3",
+                    "DeviceCMYK is used: it needs a CMYK output intent (not added automatically)",
+                    None,
+                    None,
+                    false,
+                );
             }
         }
         // 6.2.4.3: DeviceRGB needs an RGB output intent and DeviceCMYK a CMYK one (#667).
         Some(n) => {
             if used.cmyk && !used.default_cmyk && n != Some(4) {
-                issue("6.2.4.3", "DeviceCMYK is used, but the PDF/A output intent isn't a CMYK profile", None, None, false);
+                issue(
+                    "6.2.4.3",
+                    "DeviceCMYK is used, but the PDF/A output intent isn't a CMYK profile",
+                    None,
+                    None,
+                    false,
+                );
             }
             if used.rgb && !used.default_rgb && n != Some(3) {
-                issue("6.2.4.3", "DeviceRGB is used, but the PDF/A output intent isn't an RGB profile", None, None, false);
+                issue(
+                    "6.2.4.3",
+                    "DeviceRGB is used, but the PDF/A output intent isn't an RGB profile",
+                    None,
+                    None,
+                    false,
+                );
             }
         }
         None => {}
     }
     // 6.1.3 / 6.6.1: catalog actions.
     if cat.get(b"AA").is_some() {
-        issue("6.5.2", "The document has additional actions (/AA)", None, None, true);
+        issue(
+            "6.5.2",
+            "The document has additional actions (/AA)",
+            None,
+            None,
+            true,
+        );
     }
     if let Some(names) = cat.get(b"Names").map(|n| doc.resolve(n))
-        && names.as_dict().is_some_and(|n| n.get(b"JavaScript").is_some())
+        && names
+            .as_dict()
+            .is_some_and(|n| n.get(b"JavaScript").is_some())
     {
-        issue("6.5.1", "The document has document-level JavaScript", None, None, true);
+        issue(
+            "6.5.1",
+            "The document has document-level JavaScript",
+            None,
+            None,
+            true,
+        );
     }
     if let Some(af) = cat.get(b"AcroForm").map(|a| doc.resolve(a))
-        && af.as_dict().is_some_and(|a| matches!(a.get(b"NeedAppearances"), Some(Object::Bool(true))))
+        && af
+            .as_dict()
+            .is_some_and(|a| matches!(a.get(b"NeedAppearances"), Some(Object::Bool(true))))
     {
-        issue("6.4.1", "The form asks viewers to make appearances (NeedAppearances)", None, None, true);
+        issue(
+            "6.4.1",
+            "The form asks viewers to make appearances (NeedAppearances)",
+            None,
+            None,
+            true,
+        );
     }
     // Pages: annotations and page actions.
     let pages = pdfcraft_model::pages(doc);
@@ -383,7 +504,13 @@ pub fn verify(doc: &Document, level: Level) -> Vec<Issue> {
     };
     for (i, p) in pages.iter().enumerate() {
         if p.dict.get(b"AA").is_some() {
-            issue("6.5.2", "Page {} has additional actions", Some((i + 1).to_string()), Some(i), true);
+            issue(
+                "6.5.2",
+                "Page {} has additional actions",
+                Some((i + 1).to_string()),
+                Some(i),
+                true,
+            );
         }
     }
     for (r, o) in &objs {
@@ -395,37 +522,86 @@ pub fn verify(doc: &Document, level: Level) -> Vec<Issue> {
             && FORBIDDEN_ACTIONS.contains(&s)
             && is_action(d)
         {
-            issue("6.5.1", "A {} action isn't allowed", Some(String::from_utf8_lossy(s).into_owned()), None, true);
+            issue(
+                "6.5.1",
+                "A {} action isn't allowed",
+                Some(String::from_utf8_lossy(s).into_owned()),
+                None,
+                true,
+            );
         }
         // Annotations.
-        if ty == Some(b"Annot") || (sub.is_some() && d.get(b"Rect").is_some() && d.get(b"P").is_some()) {
+        if ty == Some(b"Annot")
+            || (sub.is_some() && d.get(b"Rect").is_some() && d.get(b"P").is_some())
+        {
             let page = page_of(*r);
-            let name = sub.map(|s| String::from_utf8_lossy(s).into_owned()).unwrap_or_default();
+            let name = sub
+                .map(|s| String::from_utf8_lossy(s).into_owned())
+                .unwrap_or_default();
             if sub.is_some_and(|s| FORBIDDEN_ANNOTS.contains(&s)) {
-                issue("6.3.1", "{} annotations aren't allowed", Some(name), page, true);
+                issue(
+                    "6.3.1",
+                    "{} annotations aren't allowed",
+                    Some(name),
+                    page,
+                    true,
+                );
                 continue;
             }
             let f = d.int(b"F").unwrap_or(0);
             if sub != Some(b"Popup") && (f & 4 == 0 || f & (1 | 2 | 32) != 0) {
-                issue("6.3.2", "A {} annotation isn't set to print, or is hidden", Some(name.clone()), page, true);
+                issue(
+                    "6.3.2",
+                    "A {} annotation isn't set to print, or is hidden",
+                    Some(name.clone()),
+                    page,
+                    true,
+                );
             }
-            let has_ap = d.get(b"AP").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().cloned()).is_some_and(|a| a.get(b"N").is_some());
+            let has_ap = d
+                .get(b"AP")
+                .map(|a| doc.resolve(a))
+                .and_then(|a| a.as_dict().cloned())
+                .is_some_and(|a| a.get(b"N").is_some());
             if !has_ap && !matches!(sub, Some(b"Popup") | Some(b"Link")) {
-                let zero = d.get(b"Rect").map(|x| doc.resolve(x)).and_then(|x| x.as_array().cloned()).is_some_and(|a| {
-                    let v: Vec<f64> = a.iter().filter_map(|n| doc.resolve(n).as_f64()).collect();
-                    v.len() == 4 && (v[2] - v[0]).abs() < 1e-6 && (v[3] - v[1]).abs() < 1e-6
-                });
+                let zero = d
+                    .get(b"Rect")
+                    .map(|x| doc.resolve(x))
+                    .and_then(|x| x.as_array().cloned())
+                    .is_some_and(|a| {
+                        let v: Vec<f64> =
+                            a.iter().filter_map(|n| doc.resolve(n).as_f64()).collect();
+                        v.len() == 4 && (v[2] - v[0]).abs() < 1e-6 && (v[3] - v[1]).abs() < 1e-6
+                    });
                 if !zero {
-                    issue("6.3.3", "A {} annotation has no appearance stream", Some(name.clone()), page, false);
+                    issue(
+                        "6.3.3",
+                        "A {} annotation has no appearance stream",
+                        Some(name.clone()),
+                        page,
+                        false,
+                    );
                 }
             }
             if d.get(b"AA").is_some() {
-                issue("6.5.2", "A {} annotation has additional actions", Some(name), page, true);
+                issue(
+                    "6.5.2",
+                    "A {} annotation has additional actions",
+                    Some(name),
+                    page,
+                    true,
+                );
             }
         }
         // Form fields with additional actions (non-widget fields).
         if d.get(b"FT").is_some() && d.get(b"AA").is_some() && ty != Some(b"Annot") {
-            issue("6.5.2", "A form field has additional actions", None, None, true);
+            issue(
+                "6.5.2",
+                "A form field has additional actions",
+                None,
+                None,
+                true,
+            );
         }
         // Fonts.
         if ty == Some(b"Font") || d.get(b"BaseFont").is_some() && sub.is_some() {
@@ -436,36 +612,81 @@ pub fn verify(doc: &Document, level: Level) -> Vec<Issue> {
             let filters: Vec<Vec<u8>> = match s.dict.get(b"Filter").map(|f| doc.resolve(f)) {
                 Some(f) => match &*f {
                     Object::Name(n) => vec![n.clone()],
-                    Object::Array(a) => a.iter().filter_map(|x| x.as_name().map(<[u8]>::to_vec)).collect(),
+                    Object::Array(a) => a
+                        .iter()
+                        .filter_map(|x| x.as_name().map(<[u8]>::to_vec))
+                        .collect(),
                     _ => Vec::new(),
                 },
                 None => Vec::new(),
             };
             if filters.iter().any(|f| f == b"LZWDecode") {
-                issue("6.1.7.2", "A stream uses LZW compression", None, None, false);
+                issue(
+                    "6.1.7.2",
+                    "A stream uses LZW compression",
+                    None,
+                    None,
+                    false,
+                );
             }
             if s.dict.get(b"F").is_some() || s.dict.get(b"FFilter").is_some() {
-                issue("6.1.7.1", "A stream refers to an external file", None, None, false);
+                issue(
+                    "6.1.7.1",
+                    "A stream refers to an external file",
+                    None,
+                    None,
+                    false,
+                );
             }
             if sub == Some(b"Image") {
                 if matches!(s.dict.get(b"Interpolate"), Some(Object::Bool(true))) {
-                    issue("6.2.8", "An image asks to be interpolated", None, None, true);
+                    issue(
+                        "6.2.8",
+                        "An image asks to be interpolated",
+                        None,
+                        None,
+                        true,
+                    );
                 }
                 if s.dict.get(b"Alternates").is_some() || s.dict.get(b"OPI").is_some() {
-                    issue("6.2.8", "An image has alternates or OPI information", None, None, true);
+                    issue(
+                        "6.2.8",
+                        "An image has alternates or OPI information",
+                        None,
+                        None,
+                        true,
+                    );
                 }
             }
             if sub == Some(b"PS") {
-                issue("6.2.9", "PostScript XObjects aren't allowed", None, None, false);
+                issue(
+                    "6.2.9",
+                    "PostScript XObjects aren't allowed",
+                    None,
+                    None,
+                    false,
+                );
             }
         }
         // Embedded files.
         if ty == Some(b"Filespec") && d.get(b"EF").is_some() {
             match level {
-                Level::A2b => issue("6.8", "Embedded files must be PDF/A files themselves (use PDF/A-3 for others)", None, None, false),
+                Level::A2b => issue(
+                    "6.8",
+                    "Embedded files must be PDF/A files themselves (use PDF/A-3 for others)",
+                    None,
+                    None,
+                    false,
+                ),
                 Level::A3b => {
                     if d.get(b"AFRelationship").is_none() {
-                        issue("6.8", "An embedded file has no AFRelationship", None, None, true);
+                        issue(
+                            "6.8",
+                            "An embedded file has no AFRelationship",
+                            None,
+                            None,
+                            true,
+                        );
                     }
                 }
             }
@@ -477,30 +698,49 @@ pub fn verify(doc: &Document, level: Level) -> Vec<Issue> {
     out
 }
 
-fn check_font(doc: &Document, d: &Dict, issue: &mut impl FnMut(&'static str, &'static str, Option<String>, Option<usize>, bool)) {
+fn check_font(
+    doc: &Document,
+    d: &Dict,
+    issue: &mut impl FnMut(&'static str, &'static str, Option<String>, Option<usize>, bool),
+) {
     let sub = d.name(b"Subtype");
     if sub == Some(b"Type3") {
         return;
     }
-    let name = d.name(b"BaseFont").map(|n| String::from_utf8_lossy(n).into_owned());
+    let name = d
+        .name(b"BaseFont")
+        .map(|n| String::from_utf8_lossy(n).into_owned());
     let descriptor = if sub == Some(b"Type0") {
         d.get(b"DescendantFonts")
             .map(|x| doc.resolve(x))
             .and_then(|a| a.as_array().and_then(|a| a.first().cloned()))
             .map(|f| doc.resolve(&f))
-            .and_then(|f| f.as_dict().and_then(|fd| fd.get(b"FontDescriptor").cloned()))
+            .and_then(|f| {
+                f.as_dict()
+                    .and_then(|fd| fd.get(b"FontDescriptor").cloned())
+            })
     } else {
         d.get(b"FontDescriptor").cloned()
     };
     let embedded = descriptor
         .map(|fd| doc.resolve(&fd))
         .and_then(|fd| fd.as_dict().cloned())
-        .is_some_and(|fd| fd.get(b"FontFile").is_some() || fd.get(b"FontFile2").is_some() || fd.get(b"FontFile3").is_some());
+        .is_some_and(|fd| {
+            fd.get(b"FontFile").is_some()
+                || fd.get(b"FontFile2").is_some()
+                || fd.get(b"FontFile3").is_some()
+        });
     if !embedded {
         // A font the document doesn't name gets a sentence of its own, rather than the word for
         // "a font" put where a name goes, which read badly even in English.
         match name {
-            Some(n) => issue("6.2.11.4", "The font {} isn't embedded", Some(n), None, false),
+            Some(n) => issue(
+                "6.2.11.4",
+                "The font {} isn't embedded",
+                Some(n),
+                None,
+                false,
+            ),
             None => issue("6.2.11.4", "A font isn't embedded", None, None, false),
         }
     }
@@ -508,7 +748,9 @@ fn check_font(doc: &Document, d: &Dict, issue: &mut impl FnMut(&'static str, &'s
 
 fn info(doc: &Document, key: &str) -> Option<String> {
     let i = doc.trailer().get(b"Info").map(|i| doc.resolve(i))?;
-    i.as_dict()?.get(key.as_bytes()).and_then(|v| doc.resolve(v).as_string().map(|s| s.to_text()))
+    i.as_dict()?
+        .get(key.as_bytes())
+        .and_then(|v| doc.resolve(v).as_string().map(|s| s.to_text()))
 }
 
 /// What [`convert`] did.
@@ -552,7 +794,10 @@ pub fn convert(doc: &mut Document, level: Level) -> Result<Report, pdfcraft_cos:
         doc.remove_encryption();
         fixed.push("Removed encryption".into());
     }
-    let root = doc.root().ok_or(pdfcraft_cos::CosError::Syntax { offset: 0, detail: "no catalog".into() })?;
+    let root = doc.root().ok_or(pdfcraft_cos::CosError::Syntax {
+        offset: 0,
+        detail: "no catalog".into(),
+    })?;
     // Catalog: actions, JavaScript, NeedAppearances, output intent, metadata.
     let mut cat = catalog(doc);
     if cat.remove(b"AA").is_some() {
@@ -565,7 +810,10 @@ pub fn convert(doc: &mut Document, level: Level) -> Result<Report, pdfcraft_cos:
         cat.remove(b"OpenAction");
         fixed.push("Removed the open action".into());
     }
-    if let Some(mut names) = cat.get(b"Names").map(|n| doc.resolve(n)).and_then(|n| n.as_dict().cloned())
+    if let Some(mut names) = cat
+        .get(b"Names")
+        .map(|n| doc.resolve(n))
+        .and_then(|n| n.as_dict().cloned())
         && names.remove(b"JavaScript").is_some()
     {
         cat.set(b"Names".to_vec(), Object::Dict(names));
@@ -592,10 +840,17 @@ pub fn convert(doc: &mut Document, level: Level) -> Result<Report, pdfcraft_cos:
         let mut oi = Dict::new();
         oi.set(b"Type".to_vec(), Object::name("OutputIntent"));
         oi.set(b"S".to_vec(), Object::name("GTS_PDFA1"));
-        oi.set(b"OutputConditionIdentifier".to_vec(), PdfString::text("sRGB IEC61966-2.1"));
+        oi.set(
+            b"OutputConditionIdentifier".to_vec(),
+            PdfString::text("sRGB IEC61966-2.1"),
+        );
         oi.set(b"Info".to_vec(), PdfString::text("sRGB IEC61966-2.1"));
         oi.set(b"DestOutputProfile".to_vec(), Object::Ref(profile));
-        let mut list = cat.get(b"OutputIntents").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default();
+        let mut list = cat
+            .get(b"OutputIntents")
+            .map(|o| doc.resolve(o))
+            .and_then(|o| o.as_array().cloned())
+            .unwrap_or_default();
         list.push(Object::Dict(oi));
         cat.set(b"OutputIntents".to_vec(), Object::Array(list));
         fixed.push("Added an sRGB output intent".into());
@@ -607,7 +862,10 @@ pub fn convert(doc: &mut Document, level: Level) -> Result<Report, pdfcraft_cos:
     // Metadata stays uncompressed so other tools can find it.
     let m = doc.add(Object::Stream(Stream::from_raw(md, x.into_bytes())));
     cat.set(b"Metadata".to_vec(), Object::Ref(m));
-    fixed.push(format!("Identified the file as {} in its XMP metadata", level.label()));
+    fixed.push(format!(
+        "Identified the file as {} in its XMP metadata",
+        level.label()
+    ));
     doc.update_dict(root, |c| *c = cat)?;
 
     // Pages, annotations, fields, images, embedded files.
@@ -618,16 +876,30 @@ pub fn convert(doc: &mut Document, level: Level) -> Result<Report, pdfcraft_cos:
         actions += changed as usize;
     }
     for (r, o) in objects(doc) {
-        let Some(d) = dict_of(&o).cloned() else { continue };
+        let Some(d) = dict_of(&o).cloned() else {
+            continue;
+        };
         let ty = d.name(b"Type").map(<[u8]>::to_vec);
         let sub = d.name(b"Subtype").map(<[u8]>::to_vec);
         let is_annot = ty.as_deref() == Some(b"Annot");
-        if is_annot && sub.as_deref().is_some_and(|s| FORBIDDEN_ANNOTS.contains(&s)) {
+        if is_annot
+            && sub
+                .as_deref()
+                .is_some_and(|s| FORBIDDEN_ANNOTS.contains(&s))
+        {
             // Take it off its page.
             for p in pdfcraft_model::pages(doc) {
-                let annots = p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default();
+                let annots = p
+                    .dict
+                    .get(b"Annots")
+                    .map(|a| doc.resolve(a))
+                    .and_then(|a| a.as_array().cloned())
+                    .unwrap_or_default();
                 if annots.iter().any(|a| a.as_ref() == Some(r)) {
-                    let kept: Vec<Object> = annots.into_iter().filter(|a| a.as_ref() != Some(r)).collect();
+                    let kept: Vec<Object> = annots
+                        .into_iter()
+                        .filter(|a| a.as_ref() != Some(r))
+                        .collect();
                     doc.update_dict(p.obj, |pd| pd.set(b"Annots".to_vec(), Object::Array(kept)))?;
                 }
             }
@@ -669,7 +941,11 @@ pub fn convert(doc: &mut Document, level: Level) -> Result<Report, pdfcraft_cos:
             }
             continue;
         }
-        if level == Level::A3b && ty.as_deref() == Some(b"Filespec") && d.get(b"EF").is_some() && d.get(b"AFRelationship").is_none() {
+        if level == Level::A3b
+            && ty.as_deref() == Some(b"Filespec")
+            && d.get(b"EF").is_some()
+            && d.get(b"AFRelationship").is_none()
+        {
             let mut nd = d.clone();
             nd.set(b"AFRelationship".to_vec(), Object::name("Unspecified"));
             doc.set(r, Object::Dict(nd));

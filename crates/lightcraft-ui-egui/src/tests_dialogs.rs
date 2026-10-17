@@ -8,7 +8,10 @@ use std::time::Duration;
 const T: Duration = Duration::from_secs(20);
 
 fn demo(size: [f32; 2], ui: serde_json::Value) -> Headless {
-    let services = Services { png: None, ..Default::default() };
+    let services = Services {
+        png: None,
+        ..Default::default()
+    };
     let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
     let mut h = Headless::new(app, size, 1.0);
     let r = h.request("ui.set", ui, T);
@@ -29,16 +32,25 @@ fn modal_dialogs_block_background_clicks_and_preserve_choices() {
     let r = h.request("ui.clickWidget", json!({"id": "star:bottom:5"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.step();
-    assert_eq!(h.app.session.catalog.photo(active).unwrap().rating, rating, "the dialog blocks background ratings");
+    assert_eq!(
+        h.app.session.catalog.photo(active).unwrap().rating,
+        rating,
+        "the dialog blocks background ratings"
+    );
     let r = h.request("ui.clickWidget", json!({"id": "copyGroup:none"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.step();
     let choices = h.app.ui.dialog.clone();
-    assert!(matches!(&choices, Some(crate::state::Dialog::CopySettings { groups }) if groups.is_empty()));
+    assert!(
+        matches!(&choices, Some(crate::state::Dialog::CopySettings { groups }) if groups.is_empty())
+    );
     let r = h.request("ui.clickWidget", json!({"id": "icon:copyGear"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.step();
-    assert_eq!(h.app.ui.dialog, choices, "a background click cannot reopen the dialog and reset its choices");
+    assert_eq!(
+        h.app.ui.dialog, choices,
+        "a background click cannot reopen the dialog and reset its choices"
+    );
     let r = h.request("ui.clickWidget", json!({"id": "button:dialogCancel"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.step();
@@ -46,7 +58,11 @@ fn modal_dialogs_block_background_clicks_and_preserve_choices() {
     let r = h.request("ui.clickWidget", json!({"id": "star:bottom:5"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.step();
-    assert_eq!(h.app.session.catalog.photo(active).unwrap().rating, 5, "closing restores toolbar input");
+    assert_eq!(
+        h.app.session.catalog.photo(active).unwrap().rating,
+        5,
+        "closing restores toolbar input"
+    );
     // A different dialog uses the same barrier.
     h.app.run("app.settings", json!({})).unwrap();
     h.step();
@@ -82,7 +98,11 @@ fn modal_dialogs_block_background_shortcuts_and_keep_escape() {
     let r = h.request("ui.key", json!({"key": "5"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.step();
-    assert_eq!(h.app.session.catalog.photo(active).unwrap().rating, 5, "closing restores shortcuts");
+    assert_eq!(
+        h.app.session.catalog.photo(active).unwrap().rating,
+        5,
+        "closing restores shortcuts"
+    );
 }
 
 #[test]
@@ -94,5 +114,8 @@ fn modal_dialogs_close_background_menus() {
     assert!(egui::Popup::is_any_open(&h.view.ctx));
     h.app.run("dialog.copySettings", json!({})).unwrap();
     h.step();
-    assert!(!egui::Popup::is_any_open(&h.view.ctx), "background menus cannot remain above the modal window");
+    assert!(
+        !egui::Popup::is_any_open(&h.view.ctx),
+        "background menus cannot remain above the modal window"
+    );
 }

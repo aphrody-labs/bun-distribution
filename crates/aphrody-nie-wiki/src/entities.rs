@@ -96,8 +96,9 @@ pub const PREFIXE_INTERNE: char = '_';
 /// français de la route, le second parce que c'est celui du reste de l'API
 /// (`per_page` is the shared API spelling) et qu'un client qui l'emploie ne doit pas se retrouver avec
 /// un `400` sur une « colonne inconnue `per_page` ».
-pub const PARAMS_RESERVES: [&str; 8] =
-    ["page", "par_page", "per_page", "tri", "ordre", "q", "format", "facets"];
+pub const PARAMS_RESERVES: [&str; 8] = [
+    "page", "par_page", "per_page", "tri", "ordre", "q", "format", "facets",
+];
 
 /// Combien de colonnes une seule demande peut faceter.
 ///
@@ -202,7 +203,9 @@ impl TableServie {
     /// Retrouve une colonne par son nom, sans casse.
     #[must_use]
     pub fn colonne(&self, nom: &str) -> Option<&Colonne> {
-        self.colonnes.iter().find(|c| c.nom.eq_ignore_ascii_case(nom))
+        self.colonnes
+            .iter()
+            .find(|c| c.nom.eq_ignore_ascii_case(nom))
     }
 
     /// Les colonnes sur lesquelles `q` peut chercher.
@@ -466,7 +469,9 @@ pub struct LigneUnique {
 pub fn nom_sql_valide(s: &str) -> bool {
     !s.is_empty()
         && s.len() <= NOM_MAX
-        && s.chars().next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+        && s.chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
         && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
@@ -498,7 +503,10 @@ pub fn cle_primaire(colonnes: &[(String, String, i32)]) -> (String, bool) {
     // Une colonne réellement nommée `rowid` masque le rowid implicite : c'est elle la clé, et
     // `SELECT rowid, *` la dupliquerait.
     for cible in ["rowid", "id"] {
-        if let Some((nom, _, _)) = colonnes.iter().find(|(n, _, _)| n.eq_ignore_ascii_case(cible)) {
+        if let Some((nom, _, _)) = colonnes
+            .iter()
+            .find(|(n, _, _)| n.eq_ignore_ascii_case(cible))
+        {
             return (nom.clone(), false);
         }
     }
@@ -531,8 +539,9 @@ pub fn schema_de(
         "SELECT name FROM sqlite_master WHERE type = 'table' \
          AND name NOT LIKE 'sqlite_%' ORDER BY name",
     )?;
-    let noms: Vec<String> =
-        stmt.query_map([], |r| r.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()?;
+    let noms: Vec<String> = stmt
+        .query_map([], |r| r.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
 
     let mut tables = Vec::with_capacity(noms.len());
     for nom in noms {
@@ -586,7 +595,9 @@ pub fn trouver<'a>(
     demande: &str,
 ) -> Result<&'a TableServie, EntitiesError> {
     if nom_sql_valide(demande)
-        && let Some(t) = catalogue.iter().find(|t| t.nom.eq_ignore_ascii_case(demande))
+        && let Some(t) = catalogue
+            .iter()
+            .find(|t| t.nom.eq_ignore_ascii_case(demande))
     {
         return Ok(t);
     }
@@ -637,7 +648,7 @@ pub fn analyser(
                 )));
             }
             Some(m.to_owned())
-        },
+        }
     };
 
     let tri = match brut.get("tri").map(|v| v.trim()).filter(|v| !v.is_empty()) {
@@ -651,10 +662,14 @@ pub fn analyser(
                 ))
             })?;
             c.nom.clone()
-        },
+        }
     };
 
-    let ordre = match brut.get("ordre").map(|v| v.trim()).filter(|v| !v.is_empty()) {
+    let ordre = match brut
+        .get("ordre")
+        .map(|v| v.trim())
+        .filter(|v| !v.is_empty())
+    {
         None => Ordre::Croissant,
         Some(o) if o.eq_ignore_ascii_case("asc") => Ordre::Croissant,
         Some(o) if o.eq_ignore_ascii_case("desc") => Ordre::Decroissant,
@@ -662,14 +677,18 @@ pub fn analyser(
             return Err(EntitiesError::InvalidRequest(format!(
                 "`ordre={o}` : seuls `asc` et `desc` sont acceptes"
             )));
-        },
+        }
     };
 
     // Les facettes se declarent en UNE liste, pas en un parametre par colonne : un parametre
     // par colonne serait indistinguable d'une egalite (`?element=` est deja refuse comme
     // « valeur de filtre vide »), et le client ne saurait plus ce qu'il demande.
     let mut facets: Vec<String> = Vec::new();
-    if let Some(liste) = brut.get("facets").map(|v| v.trim()).filter(|v| !v.is_empty()) {
+    if let Some(liste) = brut
+        .get("facets")
+        .map(|v| v.trim())
+        .filter(|v| !v.is_empty())
+    {
         for demande in liste.split(',').map(str::trim).filter(|s| !s.is_empty()) {
             let colonne = table.colonne(demande).ok_or_else(|| {
                 EntitiesError::InvalidRequest(format!(
@@ -792,7 +811,17 @@ pub fn analyser(
     bornes.sort_by(|a, b| (&a.0, a.1.suffixe()).cmp(&(&b.0, b.1.suffixe())));
     presences.sort_by(|a, b| a.0.cmp(&b.0));
 
-    Ok(Demande { pagination, q, tri, ordre, egalites, listes, bornes, presences, facets })
+    Ok(Demande {
+        pagination,
+        q,
+        tri,
+        ordre,
+        egalites,
+        listes,
+        bornes,
+        presences,
+        facets,
+    })
 }
 
 /// Construit la clause `WHERE` d'une demande déjà validée.
@@ -823,11 +852,16 @@ fn clause_sauf(table: &TableServie, d: &Demande, sauf: Option<&str>) -> Clause {
         // Les jokers sont échappés : un `%` tapé par un humain est un pourcent, pas « tout ».
         let motif = format!(
             "%{}%",
-            m.to_lowercase().replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
+            m.to_lowercase()
+                .replace('\\', "\\\\")
+                .replace('%', "\\%")
+                .replace('_', "\\_")
         );
         let colonnes = table.colonnes_texte();
-        let ors: Vec<String> =
-            colonnes.iter().map(|c| format!("lower(\"{}\") LIKE ? ESCAPE '\\'", c.nom)).collect();
+        let ors: Vec<String> = colonnes
+            .iter()
+            .map(|c| format!("lower(\"{}\") LIKE ? ESCAPE '\\'", c.nom))
+            .collect();
         if !ors.is_empty() {
             morceaux.push(format!("({})", ors.join(" OR ")));
             for _ in 0..ors.len() {
@@ -850,7 +884,9 @@ fn clause_sauf(table: &TableServie, d: &Demande, sauf: Option<&str>) -> Clause {
         }
         // Autant de `?` que de valeurs : aucune n'entre dans le texte SQL. `valeurs` est non
         // vide et borne par `IN_VALEURS_MAX`, garanti par `analyser`.
-        let trous = std::iter::repeat_n("?", valeurs.len()).collect::<Vec<_>>().join(", ");
+        let trous = std::iter::repeat_n("?", valeurs.len())
+            .collect::<Vec<_>>()
+            .join(", ");
         morceaux.push(format!("\"{colonne}\" IN ({trous})"));
         for v in valeurs {
             params.push(ValeurSql::Text(v.clone()));
@@ -908,15 +944,15 @@ pub fn ligne_en_json(
             rusqlite::types::ValueRef::Integer(n) => ValeurJson::from(n),
             rusqlite::types::ValueRef::Real(x) => {
                 serde_json::Number::from_f64(x).map_or(ValeurJson::Null, ValeurJson::Number)
-            },
+            }
             rusqlite::types::ValueRef::Text(t) => {
                 ValeurJson::String(String::from_utf8_lossy(t).into_owned())
-            },
+            }
             rusqlite::types::ValueRef::Blob(b) => {
                 let mut o = MapJson::new();
                 o.insert("blob_octets".to_owned(), ValeurJson::from(b.len()));
                 ValeurJson::Object(o)
-            },
+            }
         };
         objet.insert(nom.clone(), valeur);
     }
@@ -974,7 +1010,10 @@ fn validate_demand_for_execution(
             .iter()
             .all(|(_, values)| !values.is_empty() && values.len() <= IN_VALEURS_MAX)
         && demand.bornes.iter().all(|(_, _, value)| value.is_finite())
-        && demand.q.as_ref().is_none_or(|_| !table.colonnes_texte().is_empty());
+        && demand
+            .q
+            .as_ref()
+            .is_none_or(|_| !table.colonnes_texte().is_empty());
     if !valid {
         return Err(EntitiesError::InvalidRequest(
             "query does not match the measured SQLite schema".to_owned(),
@@ -1003,9 +1042,15 @@ pub fn catalogue_compte_de(
 ) -> Result<Vec<TableComptee>, EntitiesError> {
     let mut sortie = Vec::new();
     for table in schema_de(c, gisement)? {
-        let n: i64 =
-            c.query_row(&format!("SELECT count(*) FROM \"{}\"", table.nom), [], |r| r.get(0))?;
-        sortie.push(TableComptee { table, lignes: usize::try_from(n).unwrap_or(0) });
+        let n: i64 = c.query_row(
+            &format!("SELECT count(*) FROM \"{}\"", table.nom),
+            [],
+            |r| r.get(0),
+        )?;
+        sortie.push(TableComptee {
+            table,
+            lignes: usize::try_from(n).unwrap_or(0),
+        });
     }
     Ok(sortie)
 }
@@ -1032,7 +1077,11 @@ pub fn page_lignes(
 
     // La clé est projetée explicitement quand elle est implicite : sans elle, la page rend des
     // lignes que `/api/v1/entites/{table}/{id}` ne saurait pas réadresser.
-    let projection = if table.cle_implicite { "\"rowid\" AS \"rowid\", *" } else { "*" };
+    let projection = if table.cle_implicite {
+        "\"rowid\" AS \"rowid\", *"
+    } else {
+        "*"
+    };
     let sql = format!(
         "SELECT {projection} FROM \"{}\"{} ORDER BY \"{}\" {}, {} LIMIT ? OFFSET ?",
         table.nom,
@@ -1045,12 +1094,20 @@ pub fn page_lignes(
     let colonnes: Vec<String> = stmt.column_names().into_iter().map(str::to_owned).collect();
     let mut params = cl.params.clone();
     params.push(ValeurSql::Integer(i64::from(d.pagination.per_page)));
-    params.push(ValeurSql::Integer(i64::try_from(d.pagination.offset()).unwrap_or(i64::MAX)));
+    params.push(ValeurSql::Integer(
+        i64::try_from(d.pagination.offset()).unwrap_or(i64::MAX),
+    ));
     let elements = stmt
-        .query_map(rusqlite::params_from_iter(params.iter()), |r| ligne_en_json(r, &colonnes))?
+        .query_map(rusqlite::params_from_iter(params.iter()), |r| {
+            ligne_en_json(r, &colonnes)
+        })?
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(Page::nouvelle(elements, d.pagination, usize::try_from(total).unwrap_or(0)))
+    Ok(Page::nouvelle(
+        elements,
+        d.pagination,
+        usize::try_from(total).unwrap_or(0),
+    ))
 }
 
 /// Compte les valeurs de chaque colonne facetée, sous les filtres en cours.
@@ -1101,10 +1158,15 @@ pub fn facettes(
         );
         let mut stmt = c.prepare(&sql)?;
         let mut params = cl.params.clone();
-        params.push(ValeurSql::Integer(i64::try_from(FACET_VALEURS_MAX).unwrap_or(i64::MAX)));
+        params.push(ValeurSql::Integer(
+            i64::try_from(FACET_VALEURS_MAX).unwrap_or(i64::MAX),
+        ));
         let values = stmt
             .query_map(rusqlite::params_from_iter(params.iter()), |r| {
-                Ok(FacetValeur { value: r.get::<_, Option<String>>(0)?, count: r.get(1)? })
+                Ok(FacetValeur {
+                    value: r.get::<_, Option<String>>(0)?,
+                    count: r.get(1)?,
+                })
             })?
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -1144,9 +1206,16 @@ pub fn lire_ligne(
         ValeurSql::Text(id.to_owned())
     };
 
-    let projection = if table.cle_implicite { "\"rowid\" AS \"rowid\", *" } else { "*" };
-    let sql =
-        format!("SELECT {projection} FROM \"{}\" WHERE {} = ? LIMIT 1", table.nom, table.cle_sql());
+    let projection = if table.cle_implicite {
+        "\"rowid\" AS \"rowid\", *"
+    } else {
+        "*"
+    };
+    let sql = format!(
+        "SELECT {projection} FROM \"{}\" WHERE {} = ? LIMIT 1",
+        table.nom,
+        table.cle_sql()
+    );
     let mut stmt = c.prepare(&sql)?;
     let colonnes: Vec<String> = stmt.column_names().into_iter().map(str::to_owned).collect();
     let mut lignes = stmt.query(rusqlite::params_from_iter([valeur].iter()))?;
@@ -1178,7 +1247,10 @@ mod tests {
     }
 
     fn parameters(values: &[(&str, &str)]) -> BTreeMap<String, String> {
-        values.iter().map(|(key, value)| ((*key).to_owned(), (*value).to_owned())).collect()
+        values
+            .iter()
+            .map(|(key, value)| ((*key).to_owned(), (*value).to_owned()))
+            .collect()
     }
 
     #[test]
@@ -1248,7 +1320,8 @@ mod tests {
         ));
         assert_eq!(
             connection
-                .query_row("SELECT count(*) FROM characters", [], |row| row.get::<_, i64>(0))
+                .query_row("SELECT count(*) FROM characters", [], |row| row
+                    .get::<_, i64>(0))
                 .unwrap(),
             3
         );

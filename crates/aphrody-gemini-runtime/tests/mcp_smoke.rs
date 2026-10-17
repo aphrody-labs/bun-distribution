@@ -60,7 +60,7 @@ fn mcp_loader_parses_claude_format() {
             assert_eq!(command, "bxc");
             assert_eq!(args, &vec!["serve".to_owned(), "--stdio".to_owned()]);
             assert!(env.is_empty(), "bxc entry sets no env");
-        },
+        }
         other => panic!("bxc must be stdio, got {other:?}"),
     }
 
@@ -69,7 +69,7 @@ fn mcp_loader_parses_claude_format() {
         McpTransportConfig::Stdio { command, env, .. } => {
             assert_eq!(command, "google_mcp");
             assert_eq!(env.get("RUST_LOG").map(String::as_str), Some("info"));
-        },
+        }
         other => panic!("google_mcp must default to stdio, got {other:?}"),
     }
 
@@ -82,8 +82,11 @@ fn mcp_loader_parses_claude_format() {
                 headers.get("Authorization").map(String::as_str),
                 Some("Bearer ${SUPABASE_TOKEN}")
             );
-            assert_eq!(headers.get("X-Org").map(String::as_str), Some("aphrody-code"));
-        },
+            assert_eq!(
+                headers.get("X-Org").map(String::as_str),
+                Some("aphrody-code")
+            );
+        }
         other => panic!("supabase must be http, got {other:?}"),
     }
 
@@ -91,7 +94,7 @@ fn mcp_loader_parses_claude_format() {
     match &cfg.servers[3].transport {
         McpTransportConfig::StreamableHttp { url, .. } => {
             assert_eq!(url, "https://vault.example.com/mcp");
-        },
+        }
         other => panic!("vault must be streamable-http, got {other:?}"),
     }
 }
@@ -121,16 +124,22 @@ async fn tool_trait_web_search_invokes() {
     let descriptor = tool.descriptor();
     assert_eq!(descriptor.name, "web_search");
     assert_eq!(descriptor.input_schema["type"], "object");
-    assert_eq!(descriptor.input_schema["properties"]["query"]["type"], "string");
+    assert_eq!(
+        descriptor.input_schema["properties"]["query"]["type"],
+        "string"
+    );
     assert_eq!(descriptor.input_schema["required"][0], "query");
 
     // ── 2. Bad args (no query)
-    let err = tool.invoke(serde_json::json!({})).await.expect_err("must reject missing query");
+    let err = tool
+        .invoke(serde_json::json!({}))
+        .await
+        .expect_err("must reject missing query");
     match err {
         ToolError::BadArgs { name, reason } => {
             assert_eq!(name, "web_search");
             assert!(reason.contains("query"), "diagnostic mentions field name");
-        },
+        }
         other => panic!("expected BadArgs, got {other:?}"),
     }
 
@@ -142,7 +151,10 @@ async fn tool_trait_web_search_invokes() {
             WebSearchConfig::with_api_key(std::env::var("GEMINI_API_KEY").unwrap()),
         )));
         let res = reg
-            .invoke("web_search", serde_json::json!({"query": "rust async traits 2026"}))
+            .invoke(
+                "web_search",
+                serde_json::json!({"query": "rust async traits 2026"}),
+            )
             .await
             .expect("live call must succeed");
         let content = res
@@ -158,7 +170,10 @@ async fn tool_trait_web_search_invokes() {
 #[tokio::test]
 async fn registry_dispatch_surfaces_not_found() {
     let reg = ToolRegistry::new();
-    let err = reg.invoke("does-not-exist", serde_json::Value::Null).await.unwrap_err();
+    let err = reg
+        .invoke("does-not-exist", serde_json::Value::Null)
+        .await
+        .unwrap_err();
     match err {
         ToolError::NotFound(name) => assert_eq!(name, "does-not-exist"),
         other => panic!("expected NotFound, got {other:?}"),

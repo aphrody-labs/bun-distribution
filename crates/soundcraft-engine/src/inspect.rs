@@ -7,7 +7,16 @@ use soundcraft_time::{TimeFormat, format_position};
 
 fn clip_json(e: &Engine, c: &Clip) -> Value {
     let s = e.session();
-    let fmt = |x| format_position(x, TimeFormat::MinSecs, s.sample_rate, &s.tempo, s.frame_rate, s.timecode_start);
+    let fmt = |x| {
+        format_position(
+            x,
+            TimeFormat::MinSecs,
+            s.sample_rate,
+            &s.tempo,
+            s.frame_rate,
+            s.timecode_start,
+        )
+    };
     let mut v = json!({
         "id": c.id, "name": c.name, "start": c.start, "end": c.end(), "length": c.length,
         "start_time": fmt(c.start), "gain_db": c.gain_db, "muted": c.muted,
@@ -110,7 +119,16 @@ pub fn clip(e: &Engine, id: ClipId) -> Option<Value> {
 /// Plain-text session report (File › Export › Session Info as Text).
 pub fn session_text(e: &Engine) -> String {
     let s = e.session();
-    let fmt = |x| format_position(x, TimeFormat::MinSecs, s.sample_rate, &s.tempo, s.frame_rate, s.timecode_start);
+    let fmt = |x| {
+        format_position(
+            x,
+            TimeFormat::MinSecs,
+            s.sample_rate,
+            &s.tempo,
+            s.frame_rate,
+            s.timecode_start,
+        )
+    };
     let mut out = String::new();
     out.push_str(&format!("SESSION NAME:\t{}\nSAMPLE RATE:\t{}\nBIT DEPTH:\t{:?}\nTIMECODE FORMAT:\t{}\n# OF AUDIO TRACKS:\t{}\n# OF AUDIO CLIPS:\t{}\n# OF AUDIO FILES:\t{}\n\n",
         s.name, s.sample_rate.hz(), s.bit_depth, s.frame_rate.label(),
@@ -167,8 +185,16 @@ mod tests {
         let id = e.session().sources[0].id;
         assert!(e.session_mut().pool.remove(id).is_some());
         let after = session(&e, false);
-        let entry = after["sources"].as_array().unwrap().iter().find(|s| s["id"] == json!(id)).expect("source still listed");
+        let entry = after["sources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["id"] == json!(id))
+            .expect("source still listed");
         assert_eq!(entry["loaded"], false, "{entry}");
-        assert_eq!(entry["path"], before["sources"][0]["path"], "metadata stays even when unloaded");
+        assert_eq!(
+            entry["path"], before["sources"][0]["path"],
+            "metadata stays even when unloaded"
+        );
     }
 }

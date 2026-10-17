@@ -7,7 +7,17 @@
 //!
 //! Time: timeline positions are sequence ticks; `source_in` is media time.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod caption;
 pub mod effect;
@@ -31,11 +41,17 @@ use filmcraft_media::{Generator, MediaInfo};
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, Tick, TimeRange};
 use serde::{Deserialize, Serialize};
 
-pub use caption::{Caption, CaptionAlign, CaptionAnchor, CaptionFormat, CaptionStyle, CaptionTrack, plain_text};
-pub use effect::{EffectDef, EffectInstance, EffectKind, ParamDef, ParamKind, effect_defs, find_effect};
+pub use caption::{
+    Caption, CaptionAlign, CaptionAnchor, CaptionFormat, CaptionStyle, CaptionTrack, plain_text,
+};
+pub use effect::{
+    EffectDef, EffectInstance, EffectKind, ParamDef, ParamKind, effect_defs, find_effect,
+};
 pub use essential::{AudioType, EssentialSound};
 pub use find::{FindOp, FindQuery, FindRow, SearchBin};
-pub use graphic_design::{CharStyle, GraphicMeta, LayerExtra, Pin, PinTarget, Roll, RollMode, SourceGraphic, StyleRun};
+pub use graphic_design::{
+    CharStyle, GraphicMeta, LayerExtra, Pin, PinTarget, Roll, RollMode, SourceGraphic, StyleRun,
+};
 pub use keyframe::{Interpolation, Keyframe, Param, ParamValue};
 pub use mask::{Mask, MaskMode, MaskPath, MaskVertex, TrackMethod};
 pub use mixer::{AutomationMode, InputMap, MixerStrip, TrackSend};
@@ -45,7 +61,19 @@ pub use transcript::{Speaker, Transcript, Word};
 
 macro_rules! id_type {
     ($name:ident) => {
-        #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        #[derive(
+            Clone,
+            Copy,
+            Debug,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash,
+            Serialize,
+            Deserialize,
+        )]
         #[serde(transparent)]
         pub struct $name(pub u64);
     };
@@ -151,7 +179,10 @@ impl Label {
         }
     }
     pub fn from_name(s: &str) -> Option<Label> {
-        Self::ALL.iter().copied().find(|l| l.name().eq_ignore_ascii_case(s))
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|l| l.name().eq_ignore_ascii_case(s))
     }
 }
 
@@ -195,7 +226,10 @@ impl AudioChannelMap {
         let n = channels.max(1);
         let clips = match format {
             AudioChannels::Mono => (0..n).map(|c| vec![c]).collect(),
-            AudioChannels::Stereo => (0..n).step_by(2).map(|c| if c + 1 < n { vec![c, c + 1] } else { vec![c] }).collect(),
+            AudioChannels::Stereo => (0..n)
+                .step_by(2)
+                .map(|c| if c + 1 < n { vec![c, c + 1] } else { vec![c] })
+                .collect(),
             AudioChannels::Surround51 | AudioChannels::Adaptive => vec![(0..n).collect()],
         };
         Self { format, clips }
@@ -247,13 +281,19 @@ mod hex_u64 {
 
 impl MediaClip {
     pub fn frame_rate(&self) -> FrameRate {
-        self.interpret.frame_rate.unwrap_or_else(|| self.info.frame_rate())
+        self.interpret
+            .frame_rate
+            .unwrap_or_else(|| self.info.frame_rate())
     }
     /// Pixel aspect ratio of the picture, in lowest terms: Modify ▸ Interpret Footage's override,
     /// else the file's. A ratio that makes no sense ([`checked_par`]) is ignored: an override in
     /// favour of the file's value, the file's in favour of square pixels.
     pub fn pixel_aspect(&self) -> (u32, u32) {
-        self.interpret.par.and_then(checked_par).or_else(|| self.info.video.as_ref().and_then(|v| checked_par(v.par))).unwrap_or((1, 1))
+        self.interpret
+            .par
+            .and_then(checked_par)
+            .or_else(|| self.info.video.as_ref().and_then(|v| checked_par(v.par)))
+            .unwrap_or((1, 1))
     }
     pub fn duration(&self) -> Tick {
         self.info.duration
@@ -338,7 +378,9 @@ impl ProjectItem {
     pub fn has_video(&self) -> bool {
         match &self.kind {
             ItemKind::Media(m) => m.info.has_video(),
-            ItemKind::Sequence(_) | ItemKind::AdjustmentLayer { .. } | ItemKind::Graphic { .. } => true,
+            ItemKind::Sequence(_) | ItemKind::AdjustmentLayer { .. } | ItemKind::Graphic { .. } => {
+                true
+            }
             ItemKind::Subclip { .. } => true,
         }
     }
@@ -417,25 +459,47 @@ impl Bin {
         if self.id == id {
             return Some(self);
         }
-        self.children.iter().find_map(|c| if let BinEntry::Bin(b) = c { b.find_bin(id) } else { None })
+        self.children.iter().find_map(|c| {
+            if let BinEntry::Bin(b) = c {
+                b.find_bin(id)
+            } else {
+                None
+            }
+        })
     }
     /// Remove an item anywhere in the tree.
     pub fn remove_item(&mut self, id: ItemId) -> bool {
         let before = self.children.len();
-        self.children.retain(|c| !matches!(c, BinEntry::Item(i) if *i == id));
+        self.children
+            .retain(|c| !matches!(c, BinEntry::Item(i) if *i == id));
         if self.children.len() != before {
             return true;
         }
-        self.children.iter_mut().any(|c| if let BinEntry::Bin(b) = c { b.remove_item(id) } else { false })
+        self.children.iter_mut().any(|c| {
+            if let BinEntry::Bin(b) = c {
+                b.remove_item(id)
+            } else {
+                false
+            }
+        })
     }
     /// Take a sub-bin, and everything in it, out of the tree. The bin itself is never removed from itself.
     pub fn remove_bin(&mut self, id: BinId) -> Option<Bin> {
-        if let Some(at) = self.children.iter().position(|c| matches!(c, BinEntry::Bin(b) if b.id == id))
+        if let Some(at) = self
+            .children
+            .iter()
+            .position(|c| matches!(c, BinEntry::Bin(b) if b.id == id))
             && let BinEntry::Bin(b) = self.children.remove(at)
         {
             return Some(b);
         }
-        self.children.iter_mut().find_map(|c| if let BinEntry::Bin(b) = c { b.remove_bin(id) } else { None })
+        self.children.iter_mut().find_map(|c| {
+            if let BinEntry::Bin(b) = c {
+                b.remove_bin(id)
+            } else {
+                None
+            }
+        })
     }
     /// All items in this bin and sub-bins.
     pub fn all_items(&self, out: &mut Vec<ItemId>) {
@@ -584,7 +648,11 @@ pub enum TimeInterpolation {
 }
 
 impl TimeInterpolation {
-    pub const ALL: [TimeInterpolation; 3] = [TimeInterpolation::FrameSampling, TimeInterpolation::FrameBlending, TimeInterpolation::OpticalFlow];
+    pub const ALL: [TimeInterpolation; 3] = [
+        TimeInterpolation::FrameSampling,
+        TimeInterpolation::FrameBlending,
+        TimeInterpolation::OpticalFlow,
+    ];
     pub fn is_default(&self) -> bool {
         *self == TimeInterpolation::FrameSampling
     }
@@ -603,7 +671,9 @@ impl TimeInterpolation {
         }
     }
     pub fn from_name(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|t| t.name().eq_ignore_ascii_case(s) || t.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|t| t.name().eq_ignore_ascii_case(s) || t.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -652,7 +722,9 @@ impl TrackItem {
         let rel = t - self.start;
         let scaled = Tick((rel.0 as f64 * self.speed.abs()).round() as i64);
         if self.reverse {
-            self.source_in + Tick((self.duration.0 as f64 * self.speed.abs()).round() as i64) - scaled - Tick(1)
+            self.source_in + Tick((self.duration.0 as f64 * self.speed.abs()).round() as i64)
+                - scaled
+                - Tick(1)
         } else {
             self.source_in + scaled
         }
@@ -670,10 +742,13 @@ impl TrackItem {
     /// Standard (non-intrinsic) effects applied, for the fx badge.
     /// The Opacity effect has masks (the layer is cut out before Motion).
     pub fn has_opacity_masks(&self) -> bool {
-        self.effect("opacity").is_some_and(|e| e.enabled && e.masks.iter().any(|m| m.mode != mask::MaskMode::None))
+        self.effect("opacity")
+            .is_some_and(|e| e.enabled && e.masks.iter().any(|m| m.mode != mask::MaskMode::None))
     }
     pub fn has_standard_effects(&self) -> bool {
-        self.effects.iter().any(|e| e.def().is_some_and(|d| !d.intrinsic) && !graphic::is_layer(e))
+        self.effects
+            .iter()
+            .any(|e| e.def().is_some_and(|d| !d.intrinsic) && !graphic::is_layer(e))
     }
     /// The graphic layers (text / shape) of a graphic clip, in paint order (first = back).
     pub fn graphic_layers(&self) -> impl Iterator<Item = &EffectInstance> {
@@ -684,7 +759,13 @@ impl TrackItem {
             e.def().is_some_and(|d| d.intrinsic)
                 && (e.is_animated()
                     || !e.masks.is_empty()
-                    || e.def().is_some_and(|d| d.params.iter().any(|p| e.params.get(p.id).is_some_and(|v| !param_eq_default(&v.value, &p.default)))))
+                    || e.def().is_some_and(|d| {
+                        d.params.iter().any(|p| {
+                            e.params
+                                .get(p.id)
+                                .is_some_and(|v| !param_eq_default(&v.value, &p.default))
+                        })
+                    }))
         })
     }
 }
@@ -783,13 +864,19 @@ impl Track {
         }
     }
     pub fn end(&self) -> Tick {
-        self.items.iter().map(|i| i.end()).max().unwrap_or(Tick::ZERO)
+        self.items
+            .iter()
+            .map(|i| i.end())
+            .max()
+            .unwrap_or(Tick::ZERO)
     }
     /// Item covering time `t`.
     pub fn item_at(&self, t: Tick) -> Option<&TrackItem> {
         // items are sorted by start
         let idx = self.items.partition_point(|i| i.start <= t);
-        idx.checked_sub(1).map(|i| &self.items[i]).filter(|i| t < i.end())
+        idx.checked_sub(1)
+            .map(|i| &self.items[i])
+            .filter(|i| t < i.end())
     }
     pub fn item(&self, id: ClipId) -> Option<&TrackItem> {
         self.items.iter().find(|i| i.id == id)
@@ -807,12 +894,18 @@ impl Track {
         self.check_bounds()?;
         for w in self.items.windows(2) {
             if w[0].end() > w[1].start {
-                return Err(format!("{}: items {:?} and {:?} overlap", self.name, w[0].id, w[1].id));
+                return Err(format!(
+                    "{}: items {:?} and {:?} overlap",
+                    self.name, w[0].id, w[1].id
+                ));
             }
         }
         for i in &self.items {
             if i.duration.0 <= 0 {
-                return Err(format!("{}: item {:?} has non-positive duration", self.name, i.id));
+                return Err(format!(
+                    "{}: item {:?} has non-positive duration",
+                    self.name, i.id
+                ));
             }
         }
         Ok(())
@@ -822,12 +915,18 @@ impl Track {
     pub fn check_bounds(&self) -> Result<(), String> {
         for item in &self.items {
             if !bounded_time_range(item.start, item.duration) {
-                return Err(format!("{}: item {:?} is outside supported time bounds", self.name, item.id));
+                return Err(format!(
+                    "{}: item {:?} is outside supported time bounds",
+                    self.name, item.id
+                ));
             }
         }
         for transition in &self.transitions {
             if !bounded_time_range(transition.start, transition.duration) {
-                return Err(format!("{}: transition {:?} is outside supported time bounds", self.name, transition.id));
+                return Err(format!(
+                    "{}: transition {:?} is outside supported time bounds",
+                    self.name, transition.id
+                ));
             }
         }
         Ok(())
@@ -888,8 +987,15 @@ pub const MAX_FRAME_PIXELS: u64 = 268_435_456;
 
 /// Bound working-frame allocations while retaining 16K and wide panoramic frames.
 pub fn validate_frame_size(width: u32, height: u32) -> Result<(), String> {
-    if width == 0 || height == 0 || width > MAX_FRAME_SIDE || height > MAX_FRAME_SIDE || u64::from(width) * u64::from(height) > MAX_FRAME_PIXELS {
-        return Err(format!("frame size must be positive, at most {MAX_FRAME_SIDE} pixels per side and {MAX_FRAME_PIXELS} pixels total"));
+    if width == 0
+        || height == 0
+        || width > MAX_FRAME_SIDE
+        || height > MAX_FRAME_SIDE
+        || u64::from(width) * u64::from(height) > MAX_FRAME_PIXELS
+    {
+        return Err(format!(
+            "frame size must be positive, at most {MAX_FRAME_SIDE} pixels per side and {MAX_FRAME_PIXELS} pixels total"
+        ));
     }
     Ok(())
 }
@@ -935,7 +1041,11 @@ pub fn par_ratio(par: (u32, u32)) -> f64 {
 /// 4:3 pixels covers 1920 x 1080 square pixels.
 pub fn conformed_size(size: (u32, u32), par: (u32, u32), frame_par: (u32, u32)) -> (f64, f64) {
     let (par, frame_par) = (sane_par(par), sane_par(frame_par));
-    let w = if par == frame_par { f64::from(size.0) } else { f64::from(size.0) * par_ratio(par) / par_ratio(frame_par) };
+    let w = if par == frame_par {
+        f64::from(size.0)
+    } else {
+        f64::from(size.0) * par_ratio(par) / par_ratio(frame_par)
+    };
     (w, f64::from(size.1))
 }
 
@@ -947,7 +1057,9 @@ impl SequenceSettings {
             || self.frame_rate.as_f64() > 1000.0
             || self.frame_rate.num > i64::from(u32::MAX)
             || self.frame_rate.den > i64::from(u32::MAX)
-            || (i128::from(TICKS_PER_SECOND) * i128::from(self.frame_rate.den) / i128::from(self.frame_rate.num.max(1))) > i128::from(Tick::MAX.0)
+            || (i128::from(TICKS_PER_SECOND) * i128::from(self.frame_rate.den)
+                / i128::from(self.frame_rate.num.max(1)))
+                > i128::from(Tick::MAX.0)
         {
             return Err("frame rate must be positive, at most 1000 fps, with unsigned 32-bit rational components".into());
         }
@@ -1032,8 +1144,20 @@ impl SplitMarks {
 
 impl Sequence {
     pub fn duration(&self) -> Tick {
-        let media = self.video_tracks.iter().chain(&self.audio_tracks).map(Track::end).max().unwrap_or(Tick::ZERO);
-        media.max(self.caption_tracks.iter().map(CaptionTrack::end).max().unwrap_or(Tick::ZERO))
+        let media = self
+            .video_tracks
+            .iter()
+            .chain(&self.audio_tracks)
+            .map(Track::end)
+            .max()
+            .unwrap_or(Tick::ZERO);
+        media.max(
+            self.caption_tracks
+                .iter()
+                .map(CaptionTrack::end)
+                .max()
+                .unwrap_or(Tick::ZERO),
+        )
     }
     pub fn caption_track(&self, id: TrackId) -> Option<&CaptionTrack> {
         self.caption_tracks.iter().find(|t| t.id == id)
@@ -1043,7 +1167,9 @@ impl Sequence {
     }
     /// Find a caption anywhere: (caption track id, caption).
     pub fn find_caption(&self, id: ClipId) -> Option<(TrackId, &Caption)> {
-        self.caption_tracks.iter().find_map(|t| t.caption(id).map(|c| (t.id, c)))
+        self.caption_tracks
+            .iter()
+            .find_map(|t| t.caption(id).map(|c| (t.id, c)))
     }
     pub fn tracks(&self, kind: TrackKind) -> &Vec<Track> {
         match kind {
@@ -1061,7 +1187,9 @@ impl Sequence {
         self.video_tracks.iter().chain(self.audio_tracks.iter())
     }
     pub fn all_tracks_mut(&mut self) -> impl Iterator<Item = &mut Track> {
-        self.video_tracks.iter_mut().chain(self.audio_tracks.iter_mut())
+        self.video_tracks
+            .iter_mut()
+            .chain(self.audio_tracks.iter_mut())
     }
     pub fn track(&self, id: TrackId) -> Option<&Track> {
         self.all_tracks().find(|t| t.id == id)
@@ -1071,7 +1199,8 @@ impl Sequence {
     }
     /// Find a track item anywhere: (track id, item).
     pub fn find_item(&self, id: ClipId) -> Option<(TrackId, &TrackItem)> {
-        self.all_tracks().find_map(|t| t.item(id).map(|i| (t.id, i)))
+        self.all_tracks()
+            .find_map(|t| t.item(id).map(|i| (t.id, i)))
     }
     pub fn find_item_mut(&mut self, id: ClipId) -> Option<(TrackId, &mut TrackItem)> {
         self.all_tracks_mut().find_map(|t| {
@@ -1084,7 +1213,10 @@ impl Sequence {
     }
     /// Sorted, de-duplicated edit points (clip boundaries) on all tracks.
     pub fn edit_points(&self) -> Vec<Tick> {
-        let mut v: Vec<Tick> = self.all_tracks().flat_map(|t| t.items.iter().flat_map(|i| [i.start, i.end()])).collect();
+        let mut v: Vec<Tick> = self
+            .all_tracks()
+            .flat_map(|t| t.items.iter().flat_map(|i| [i.start, i.end()]))
+            .collect();
         v.sort_unstable();
         v.dedup();
         v
@@ -1104,8 +1236,14 @@ impl Sequence {
     /// overlap written by an older build) still opens, but nothing in it can overflow.
     pub fn check_bounds(&self) -> Result<(), String> {
         self.settings.validate()?;
-        if self.mark_in.into_iter().chain(self.mark_out).any(|t| t < Tick::MIN || t > Tick::MAX)
-            || self.work_area.is_some_and(|r| !bounded_time_range(r.start, r.duration))
+        if self
+            .mark_in
+            .into_iter()
+            .chain(self.mark_out)
+            .any(|t| t < Tick::MIN || t > Tick::MAX)
+            || self
+                .work_area
+                .is_some_and(|r| !bounded_time_range(r.start, r.duration))
         {
             return Err("sequence marks or work area are outside supported time bounds".into());
         }
@@ -1280,7 +1418,14 @@ impl SequenceView {
     /// The view with every number brought into a usable range, or `None` when a number is not
     /// finite. Views are read from project files, so nothing in them is trusted.
     pub fn checked(self) -> Option<SequenceView> {
-        let all = [self.pps, self.scroll, self.v_scroll as f64, self.a_scroll as f64, self.video_track_h as f64, self.audio_track_h as f64];
+        let all = [
+            self.pps,
+            self.scroll,
+            self.v_scroll as f64,
+            self.a_scroll as f64,
+            self.video_track_h as f64,
+            self.audio_track_h as f64,
+        ];
         if all.iter().any(|x| !x.is_finite()) {
             return None;
         }
@@ -1344,7 +1489,11 @@ impl Project {
         Self {
             name: name.into(),
             settings: ProjectSettings::default(),
-            root: Bin { id: BinId(0), name: name.into(), children: Vec::new() },
+            root: Bin {
+                id: BinId(0),
+                name: name.into(),
+                children: Vec::new(),
+            },
             items: BTreeMap::new(),
             next_id: 1,
             luts: Vec::new(),
@@ -1363,10 +1512,27 @@ impl Project {
     }
 
     /// Add an item to a bin (root when None / not found).
-    pub fn add_item(&mut self, name: &str, label: Label, kind: ItemKind, bin: Option<BinId>) -> ItemId {
+    pub fn add_item(
+        &mut self,
+        name: &str,
+        label: Label,
+        kind: ItemKind,
+        bin: Option<BinId>,
+    ) -> ItemId {
         let id = ItemId(self.alloc_id());
         let created = id.0;
-        self.items.insert(id, ProjectItem { id, name: name.into(), label, kind, metadata: BTreeMap::new(), created, split: SplitMarks::default() });
+        self.items.insert(
+            id,
+            ProjectItem {
+                id,
+                name: name.into(),
+                label,
+                kind,
+                metadata: BTreeMap::new(),
+                created,
+                split: SplitMarks::default(),
+            },
+        );
         if let Some(b) = bin.and_then(|b| self.root.find_bin_mut(b)) {
             b.children.push(BinEntry::Item(id));
         } else {
@@ -1377,7 +1543,11 @@ impl Project {
 
     pub fn add_bin(&mut self, name: &str, parent: Option<BinId>) -> BinId {
         let id = BinId(self.alloc_id());
-        let bin = Bin { id, name: name.into(), children: Vec::new() };
+        let bin = Bin {
+            id,
+            name: name.into(),
+            children: Vec::new(),
+        };
         match parent.and_then(|p| self.root.find_bin_mut(p)) {
             Some(p) => p.children.push(BinEntry::Bin(bin)),
             None => self.root.children.push(BinEntry::Bin(bin)),
@@ -1402,10 +1572,17 @@ impl Project {
             } else {
                 let b = BinId(id.0);
                 // never the root, nor a bin that holds the target (or is it)
-                if b == self.root.id || self.root.find_bin(b).is_none_or(|x| x.find_bin(target).is_some()) {
+                if b == self.root.id
+                    || self
+                        .root
+                        .find_bin(b)
+                        .is_none_or(|x| x.find_bin(target).is_some())
+                {
                     continue;
                 }
-                let Some(sub) = self.root.remove_bin(b) else { continue };
+                let Some(sub) = self.root.remove_bin(b) else {
+                    continue;
+                };
                 BinEntry::Bin(sub)
             };
             match self.root.find_bin_mut(target) {
@@ -1428,10 +1605,14 @@ impl Project {
         self.items.get(&id).and_then(ProjectItem::as_sequence)
     }
     pub fn sequence_mut(&mut self, id: ItemId) -> Option<&mut Sequence> {
-        self.items.get_mut(&id).and_then(ProjectItem::as_sequence_mut)
+        self.items
+            .get_mut(&id)
+            .and_then(ProjectItem::as_sequence_mut)
     }
     pub fn sequences(&self) -> impl Iterator<Item = &ProjectItem> {
-        self.items.values().filter(|i| matches!(i.kind, ItemKind::Sequence(_)))
+        self.items
+            .values()
+            .filter(|i| matches!(i.kind, ItemKind::Sequence(_)))
     }
 
     /// The part of a nested-sequence clip's timeline range that lies past the end of the nested
@@ -1457,7 +1638,11 @@ impl Project {
             return None;
         }
         // a reversed clip plays its source's end first
-        Some(if clip.reverse { TimeRange::new(clip.start, len) } else { TimeRange::new(clip.end() - len, len) })
+        Some(if clip.reverse {
+            TimeRange::new(clip.start, len)
+        } else {
+            TimeRange::new(clip.end() - len, len)
+        })
     }
 
     /// A sequence that contains itself, directly or through the sequences nested in it (the lowest
@@ -1467,8 +1652,14 @@ impl Project {
         // each sequence's nested sequences
         let mut nests: BTreeMap<ItemId, Vec<ItemId>> = BTreeMap::new();
         for it in self.items.values() {
-            let ItemKind::Sequence(q) = &it.kind else { continue };
-            let mut inner: Vec<ItemId> = q.all_tracks().flat_map(|t| t.items.iter().map(|i| i.item)).filter(|i| self.sequence(*i).is_some()).collect();
+            let ItemKind::Sequence(q) = &it.kind else {
+                continue;
+            };
+            let mut inner: Vec<ItemId> = q
+                .all_tracks()
+                .flat_map(|t| t.items.iter().map(|i| i.item))
+                .filter(|i| self.sequence(*i).is_some())
+                .collect();
             inner.sort_unstable();
             inner.dedup();
             if !inner.is_empty() {
@@ -1478,7 +1669,11 @@ impl Project {
         // drop sequences whose nests all lead out of the set, until none can be dropped: what is
         // left lies on a cycle or leads into one
         loop {
-            let leaves: Vec<ItemId> = nests.iter().filter(|(_, inner)| inner.iter().all(|i| !nests.contains_key(i))).map(|(id, _)| *id).collect();
+            let leaves: Vec<ItemId> = nests
+                .iter()
+                .filter(|(_, inner)| inner.iter().all(|i| !nests.contains_key(i)))
+                .map(|(id, _)| *id)
+                .collect();
             if leaves.is_empty() {
                 break;
             }
@@ -1504,7 +1699,14 @@ impl Project {
     }
 
     /// Create an empty sequence with `v` video and `a` audio tracks.
-    pub fn new_sequence(&mut self, name: &str, settings: SequenceSettings, v: usize, a: usize, bin: Option<BinId>) -> ItemId {
+    pub fn new_sequence(
+        &mut self,
+        name: &str,
+        settings: SequenceSettings,
+        v: usize,
+        a: usize,
+        bin: Option<BinId>,
+    ) -> ItemId {
         let mut seq = Sequence {
             settings,
             video_tracks: Vec::new(),
@@ -1525,13 +1727,20 @@ impl Project {
         };
         for i in 0..v {
             let id = TrackId(self.alloc_id());
-            seq.video_tracks.push(Track::new(id, TrackKind::Video, format!("Video {}", i + 1)));
+            seq.video_tracks
+                .push(Track::new(id, TrackKind::Video, format!("Video {}", i + 1)));
         }
         for i in 0..a {
             let id = TrackId(self.alloc_id());
-            seq.audio_tracks.push(Track::new(id, TrackKind::Audio, format!("Audio {}", i + 1)));
+            seq.audio_tracks
+                .push(Track::new(id, TrackKind::Audio, format!("Audio {}", i + 1)));
         }
-        self.add_item(name, Label::Forest, ItemKind::Sequence(std::sync::Arc::new(seq)), bin)
+        self.add_item(
+            name,
+            Label::Forest,
+            ItemKind::Sequence(std::sync::Arc::new(seq)),
+            bin,
+        )
     }
 
     /// Re-base an item's media time: whatever was at media time `t` is at `t - delta` afterwards
@@ -1579,7 +1788,14 @@ impl Project {
     }
 
     /// Build a track item for `item` placed at `start` covering `source` range (media time).
-    pub fn make_track_item(&mut self, item: ItemId, kind: TrackKind, start: Tick, source: TimeRange, seq_rate: FrameRate) -> Option<TrackItem> {
+    pub fn make_track_item(
+        &mut self,
+        item: ItemId,
+        kind: TrackKind,
+        start: Tick,
+        source: TimeRange,
+        seq_rate: FrameRate,
+    ) -> Option<TrackItem> {
         let it = self.items.get(&item)?;
         let name = it.name.clone();
         let label = it.label;
@@ -1588,20 +1804,34 @@ impl Project {
             TrackKind::Audio => effect::intrinsic_audio(),
         };
         // a source graphic edits in with its shared layers and settings
-        let source_graphic = self.source_graphics.get(&item).filter(|_| kind == TrackKind::Video).cloned();
+        let source_graphic = self
+            .source_graphics
+            .get(&item)
+            .filter(|_| kind == TrackKind::Video)
+            .cloned();
         if let Some(sg) = &source_graphic {
             effects.extend(sg.layers.iter().cloned());
         }
         // a multi-camera source sequence edits in as a multi-camera clip showing its first angle
-        let multicam =
-            it.as_sequence().and_then(|q| q.multicam.as_ref()).map(|m| MulticamSel { enabled: true, angle: m.first_video_angle().unwrap_or(0) as u32 });
+        let multicam = it
+            .as_sequence()
+            .and_then(|q| q.multicam.as_ref())
+            .map(|m| MulticamSel {
+                enabled: true,
+                angle: m.first_video_angle().unwrap_or(0) as u32,
+            });
         let source_channels = if kind == TrackKind::Audio {
-            self.resolve_media(item).and_then(|(_, m, _)| m.interpret.audio_channels.as_ref()).and_then(|a| a.clips.first().cloned()).unwrap_or_default()
+            self.resolve_media(item)
+                .and_then(|(_, m, _)| m.interpret.audio_channels.as_ref())
+                .and_then(|a| a.clips.first().cloned())
+                .unwrap_or_default()
         } else {
             Vec::new()
         };
         let id = ClipId(self.alloc_id());
-        let dur = seq_rate.snap_nearest(source.duration).max(seq_rate.frame_duration());
+        let dur = seq_rate
+            .snap_nearest(source.duration)
+            .max(seq_rate.frame_duration());
         Some(TrackItem {
             id,
             item,
@@ -1648,10 +1878,16 @@ pub fn resolve_auto_points(e: &mut EffectInstance, frame: (u32, u32), source: (u
 
 /// [`resolve_auto_points`] for a source whose size may not be known yet (`None`): the points
 /// measured in the source (`anchor`) then stay "auto".
-fn resolve_auto_points_sized(e: &mut EffectInstance, frame: (u32, u32), source: Option<(u32, u32)>) {
+fn resolve_auto_points_sized(
+    e: &mut EffectInstance,
+    frame: (u32, u32),
+    source: Option<(u32, u32)>,
+) {
     for (k, p) in e.params.iter_mut() {
         if let ParamValue::Vec2(v) = &mut p.value {
-            let Some((w, h)) = (if k == "anchor" { source } else { Some(frame) }) else { continue };
+            let Some((w, h)) = (if k == "anchor" { source } else { Some(frame) }) else {
+                continue;
+            };
             if let Some((fx, fy)) = effect::auto_point(&e.effect, k) {
                 if v.x.is_nan() {
                     v.x = w as f64 * fx;
@@ -1675,9 +1911,15 @@ impl Project {
     /// Available picture and sound, resolving a subclip to its parent media. Missing parents,
     /// cycles and overly deep subclip chains carry neither stream.
     pub fn source_streams(&self, item: ItemId) -> (bool, bool) {
-        let Some(pi) = self.item(item) else { return (false, false) };
+        let Some(pi) = self.item(item) else {
+            return (false, false);
+        };
         match &pi.kind {
-            ItemKind::Subclip { .. } => self.resolve_media(item).map_or((false, false), |(_, m, _)| (m.info.has_video(), m.info.has_audio())),
+            ItemKind::Subclip { .. } => self
+                .resolve_media(item)
+                .map_or((false, false), |(_, m, _)| {
+                    (m.info.has_video(), m.info.has_audio())
+                }),
             _ => (pi.has_video(), pi.has_audio()),
         }
     }
@@ -1690,7 +1932,11 @@ impl Project {
         for _ in 0..16 {
             match &self.item(id)?.kind {
                 ItemKind::Media(media) => return Some((id, media, range)),
-                ItemKind::Subclip { parent, range: span, .. } => {
+                ItemKind::Subclip {
+                    parent,
+                    range: span,
+                    ..
+                } => {
                     range.get_or_insert(*span);
                     id = *parent;
                 }
@@ -1710,7 +1956,8 @@ impl Project {
             return match &self.item(id)?.kind {
                 ItemKind::Media(m) => m.info.video.as_ref().map(|v| (v.width, v.height)),
                 ItemKind::Sequence(q) => Some((q.settings.width, q.settings.height)),
-                ItemKind::AdjustmentLayer { width, height, .. } | ItemKind::Graphic { width, height, .. } => Some((*width, *height)),
+                ItemKind::AdjustmentLayer { width, height, .. }
+                | ItemKind::Graphic { width, height, .. } => Some((*width, *height)),
                 ItemKind::Subclip { parent, .. } => {
                     id = *parent;
                     continue;
@@ -1746,7 +1993,11 @@ impl Project {
     /// the frame. Items without a pixel aspect of their own take the frame's.
     pub fn conformed_source_size(&self, item: ItemId, frame_par: (u32, u32)) -> Option<(f64, f64)> {
         let size = self.source_size(item)?;
-        Some(conformed_size(size, self.source_par(item).unwrap_or(frame_par), frame_par))
+        Some(conformed_size(
+            size,
+            self.source_par(item).unwrap_or(frame_par),
+            frame_par,
+        ))
     }
 
     /// Resolve the "auto" (NaN) points of the clips in the sequences `sequences` selects, for
@@ -1757,10 +2008,21 @@ impl Project {
     /// subclip); otherwise it stays "auto", which the renderer centres in whatever size the media
     /// turns out to have. Points that are not NaN are never touched, so this can run again when
     /// more sizes are known.
-    pub fn resolve_placed_auto_points(&mut self, sequences: impl Fn(ItemId) -> bool, size_is_final: impl Fn(&ProjectItem) -> bool) {
-        let seq_ids: Vec<ItemId> = self.items.values().filter(|i| matches!(i.kind, ItemKind::Sequence(_)) && sequences(i.id)).map(|i| i.id).collect();
+    pub fn resolve_placed_auto_points(
+        &mut self,
+        sequences: impl Fn(ItemId) -> bool,
+        size_is_final: impl Fn(&ProjectItem) -> bool,
+    ) {
+        let seq_ids: Vec<ItemId> = self
+            .items
+            .values()
+            .filter(|i| matches!(i.kind, ItemKind::Sequence(_)) && sequences(i.id))
+            .map(|i| i.id)
+            .collect();
         for seq_id in seq_ids {
-            let Some(seq) = self.sequence(seq_id) else { continue };
+            let Some(seq) = self.sequence(seq_id) else {
+                continue;
+            };
             // the source size of each clip that has an unresolved point, looked up before the edit
             let sources: BTreeMap<ClipId, Option<(u32, u32)>> = seq
                 .all_tracks()
@@ -1771,10 +2033,14 @@ impl Project {
             if sources.is_empty() {
                 continue;
             }
-            let Some(seq) = self.sequence_mut(seq_id) else { continue };
+            let Some(seq) = self.sequence_mut(seq_id) else {
+                continue;
+            };
             let frame = (seq.settings.width, seq.settings.height);
             for clip in seq.all_tracks_mut().flat_map(|t| t.items.iter_mut()) {
-                let Some(source) = sources.get(&clip.id) else { continue };
+                let Some(source) = sources.get(&clip.id) else {
+                    continue;
+                };
                 for e in &mut clip.effects {
                     resolve_auto_points_sized(e, frame, *source);
                 }
@@ -1784,13 +2050,23 @@ impl Project {
 
     /// [`Project::source_size`] of `item` when the item that carries the size (the media item of
     /// a subclip) passes `size_is_final`.
-    fn final_source_size(&self, item: ItemId, size_is_final: &impl Fn(&ProjectItem) -> bool) -> Option<(u32, u32)> {
+    fn final_source_size(
+        &self,
+        item: ItemId,
+        size_is_final: &impl Fn(&ProjectItem) -> bool,
+    ) -> Option<(u32, u32)> {
         let mut id = item;
         for _ in 0..16 {
             let it = self.item(id)?;
             match &it.kind {
                 ItemKind::Subclip { parent, .. } => id = *parent,
-                _ => return if size_is_final(it) { self.source_size(id) } else { None },
+                _ => {
+                    return if size_is_final(it) {
+                        self.source_size(id)
+                    } else {
+                        None
+                    };
+                }
             }
         }
         None
@@ -1798,7 +2074,9 @@ impl Project {
 }
 
 fn has_auto_point(e: &EffectInstance) -> bool {
-    e.params.values().any(|p| matches!(&p.value, ParamValue::Vec2(v) if v.x.is_nan() || v.y.is_nan()))
+    e.params
+        .values()
+        .any(|p| matches!(&p.value, ParamValue::Vec2(v) if v.x.is_nan() || v.y.is_nan()))
 }
 
 #[cfg(test)]
@@ -1834,7 +2112,15 @@ mod tests {
     fn json_roundtrip() {
         let (mut p, clip, seq) = demo_project();
         let rate = p.sequence(seq).unwrap().settings.frame_rate;
-        let mut ti = p.make_track_item(clip, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, Tick(5 * TICKS_PER_SECOND)), rate).unwrap();
+        let mut ti = p
+            .make_track_item(
+                clip,
+                TrackKind::Video,
+                Tick::ZERO,
+                TimeRange::new(Tick::ZERO, Tick(5 * TICKS_PER_SECOND)),
+                rate,
+            )
+            .unwrap();
         for e in &mut ti.effects {
             resolve_auto_points(e, (1920, 1080), (1920, 1080));
         }
@@ -1847,12 +2133,39 @@ mod tests {
 
     #[test]
     fn hostile_frame_rates_are_rejected_before_frame_arithmetic() {
-        for frame_rate in [FrameRate { num: i64::MAX, den: i64::MAX }, FrameRate { num: 1, den: i64::from(u32::MAX) }] {
-            let settings = SequenceSettings { frame_rate, ..Default::default() };
+        for frame_rate in [
+            FrameRate {
+                num: i64::MAX,
+                den: i64::MAX,
+            },
+            FrameRate {
+                num: 1,
+                den: i64::from(u32::MAX),
+            },
+        ] {
+            let settings = SequenceSettings {
+                frame_rate,
+                ..Default::default()
+            };
             assert!(settings.validate().is_err());
         }
-        for (width, height) in [(7680, 4320), (15360, 8640), (16384, 8192), (16384, 16384), (32768, 8192)] {
-            assert!(SequenceSettings { width, height, ..Default::default() }.validate().is_ok(), "{width}x{height}");
+        for (width, height) in [
+            (7680, 4320),
+            (15360, 8640),
+            (16384, 8192),
+            (16384, 16384),
+            (32768, 8192),
+        ] {
+            assert!(
+                SequenceSettings {
+                    width,
+                    height,
+                    ..Default::default()
+                }
+                .validate()
+                .is_ok(),
+                "{width}x{height}"
+            );
         }
         assert!(validate_frame_size(32768, 16384).is_err());
         assert!(validate_frame_size(65536, 1).is_err());
@@ -1863,8 +2176,12 @@ mod tests {
         let (mut project, media, seq) = demo_project();
         let rate = project.sequence(seq).unwrap().settings.frame_rate;
         let range = TimeRange::new(Tick::ZERO, rate.tick_of(24));
-        let first = project.make_track_item(media, TrackKind::Video, Tick::ZERO, range, rate).unwrap();
-        let second = project.make_track_item(media, TrackKind::Video, rate.tick_of(24), range, rate).unwrap();
+        let first = project
+            .make_track_item(media, TrackKind::Video, Tick::ZERO, range, rate)
+            .unwrap();
+        let second = project
+            .make_track_item(media, TrackKind::Video, rate.tick_of(24), range, rate)
+            .unwrap();
         project.sequence_mut(seq).unwrap().video_tracks[0].items = vec![first, second];
         for start in [Tick(i64::MAX), Tick(i64::MIN), Tick::MAX] {
             project.sequence_mut(seq).unwrap().video_tracks[0].items[0].start = start;
@@ -1884,18 +2201,36 @@ mod tests {
         // serde_json writes NaN as `null`; a point parameter reads it back as NaN ("auto")
         let json = serde_json::to_string(&ParamValue::Vec2(Vec2::new(f64::NAN, 540.0))).unwrap();
         assert_eq!(json, r#"{"Vec2":{"x":null,"y":540.0}}"#);
-        let v = serde_json::from_str::<ParamValue>(&json).unwrap().as_vec2().unwrap();
+        let v = serde_json::from_str::<ParamValue>(&json)
+            .unwrap()
+            .as_vec2()
+            .unwrap();
         assert!(v.x.is_nan() && v.y == 540.0);
-        let both = serde_json::from_str::<ParamValue>(r#"{"Vec2":{"x":null,"y":null}}"#).unwrap().as_vec2().unwrap();
+        let both = serde_json::from_str::<ParamValue>(r#"{"Vec2":{"x":null,"y":null}}"#)
+            .unwrap()
+            .as_vec2()
+            .unwrap();
         assert!(both.x.is_nan() && both.y.is_nan());
-        assert_eq!(serde_json::from_str::<ParamValue>(r#"{"Vec2":{"x":1.5,"y":-2}}"#).unwrap(), ParamValue::Vec2(Vec2::new(1.5, -2.0)));
+        assert_eq!(
+            serde_json::from_str::<ParamValue>(r#"{"Vec2":{"x":1.5,"y":-2}}"#).unwrap(),
+            ParamValue::Vec2(Vec2::new(1.5, -2.0))
+        );
         // anything else is still an error, and so is a missing coordinate
-        for bad in [r#"{"Vec2":{"x":"a","y":0}}"#, r#"{"Vec2":{"x":0}}"#, r#"{"Vec2":null}"#, r#"{"Float":null}"#] {
+        for bad in [
+            r#"{"Vec2":{"x":"a","y":0}}"#,
+            r#"{"Vec2":{"x":0}}"#,
+            r#"{"Vec2":null}"#,
+            r#"{"Float":null}"#,
+        ] {
             assert!(serde_json::from_str::<ParamValue>(bad).is_err(), "{bad}");
         }
         // only point parameters: a `null` coordinate in a mask vertex (or any other point) is damage
         assert!(serde_json::from_str::<Vec2>(r#"{"x":null,"y":0}"#).is_err());
-        let mut path = serde_json::to_value(MaskPath::ellipse(Vec2::new(100.0, 100.0), Vec2::new(50.0, 40.0))).unwrap();
+        let mut path = serde_json::to_value(MaskPath::ellipse(
+            Vec2::new(100.0, 100.0),
+            Vec2::new(50.0, 40.0),
+        ))
+        .unwrap();
         assert!(serde_json::from_value::<MaskPath>(path.clone()).is_ok());
         path["vertices"][0]["p"]["x"] = serde_json::Value::Null;
         assert!(serde_json::from_value::<MaskPath>(path.clone()).is_err());
@@ -1905,48 +2240,127 @@ mod tests {
     #[test]
     fn media_resolution_bounds_depth_and_preserves_the_outer_range() {
         let (mut p, media, _) = demo_project();
-        assert_eq!(p.resolve_media(media).map(|(id, _, range)| (id, range)), Some((media, None)));
+        assert_eq!(
+            p.resolve_media(media).map(|(id, _, range)| (id, range)),
+            Some((media, None))
+        );
         let streams = p.source_streams(media);
         let mut parent = media;
         let mut last_range = TimeRange::default();
         for n in 0..15 {
             last_range = TimeRange::new(Tick(n * 1000), Tick(100));
-            parent = p.add_item("Sub", Label::Iris, ItemKind::Subclip { parent, range: last_range, restrict_trims: false }, None);
+            parent = p.add_item(
+                "Sub",
+                Label::Iris,
+                ItemKind::Subclip {
+                    parent,
+                    range: last_range,
+                    restrict_trims: false,
+                },
+                None,
+            );
         }
-        assert_eq!(p.resolve_media(parent).map(|(id, _, range)| (id, range)), Some((media, Some(last_range))));
+        assert_eq!(
+            p.resolve_media(parent).map(|(id, _, range)| (id, range)),
+            Some((media, Some(last_range)))
+        );
         assert_eq!(p.source_streams(parent), streams);
-        let too_deep = p.add_item("Too deep", Label::Iris, ItemKind::Subclip { parent, range: last_range, restrict_trims: false }, None);
+        let too_deep = p.add_item(
+            "Too deep",
+            Label::Iris,
+            ItemKind::Subclip {
+                parent,
+                range: last_range,
+                restrict_trims: false,
+            },
+            None,
+        );
         assert!(p.resolve_media(too_deep).is_none());
         assert!(p.resolve_media(ItemId(u64::MAX)).is_none());
         assert_eq!(p.source_streams(too_deep), (false, false));
         assert_eq!(p.source_streams(ItemId(u64::MAX)), (false, false));
-        p.item_mut(parent).unwrap().kind = ItemKind::Subclip { parent, range: last_range, restrict_trims: false };
+        p.item_mut(parent).unwrap().kind = ItemKind::Subclip {
+            parent,
+            range: last_range,
+            restrict_trims: false,
+        };
         assert_eq!(p.source_streams(parent), (false, false));
     }
 
     #[test]
     fn placed_auto_points_resolve_once_the_source_size_is_final() {
         let (mut p, clip, seq) = demo_project();
-        let src = p.item(clip).and_then(|i| i.as_media()).and_then(|m| m.info.video.clone()).unwrap();
+        let src = p
+            .item(clip)
+            .and_then(|i| i.as_media())
+            .and_then(|m| m.info.video.clone())
+            .unwrap();
         let rate = p.sequence(seq).unwrap().settings.frame_rate;
         let second = TimeRange::new(Tick::ZERO, Tick(TICKS_PER_SECOND));
-        let sub = p.add_item("Sub", Label::Iris, ItemKind::Subclip { parent: clip, range: second, restrict_trims: true }, None);
-        let sub_of_sub = p.add_item("Sub 2", Label::Iris, ItemKind::Subclip { parent: sub, range: second, restrict_trims: true }, None);
+        let sub = p.add_item(
+            "Sub",
+            Label::Iris,
+            ItemKind::Subclip {
+                parent: clip,
+                range: second,
+                restrict_trims: true,
+            },
+            None,
+        );
+        let sub_of_sub = p.add_item(
+            "Sub 2",
+            Label::Iris,
+            ItemKind::Subclip {
+                parent: sub,
+                range: second,
+                restrict_trims: true,
+            },
+            None,
+        );
         assert_eq!(p.source_size(clip), Some((src.width, src.height)));
-        assert_eq!((p.source_size(sub), p.source_size(sub_of_sub)), (p.source_size(clip), p.source_size(clip)), "a subclip has its parent's size");
+        assert_eq!(
+            (p.source_size(sub), p.source_size(sub_of_sub)),
+            (p.source_size(clip), p.source_size(clip)),
+            "a subclip has its parent's size"
+        );
         assert_eq!(p.source_size(ItemId(987_654_321)), None);
         // clips whose Motion position / anchor were never resolved (as an interchange import builds them)
         let mut ids = Vec::new();
         for (n, item) in [clip, sub, sub_of_sub].into_iter().enumerate() {
-            let ti = p.make_track_item(item, TrackKind::Video, Tick(n as i64 * TICKS_PER_SECOND), second, rate).unwrap();
-            assert!(ti.effect("motion").unwrap().vec2_at("position", Tick::ZERO).x.is_nan());
+            let ti = p
+                .make_track_item(
+                    item,
+                    TrackKind::Video,
+                    Tick(n as i64 * TICKS_PER_SECOND),
+                    second,
+                    rate,
+                )
+                .unwrap();
+            assert!(
+                ti.effect("motion")
+                    .unwrap()
+                    .vec2_at("position", Tick::ZERO)
+                    .x
+                    .is_nan()
+            );
             ids.push(ti.id);
             p.sequence_mut(seq).unwrap().video_tracks[0].items.push(ti);
         }
         let st = p.sequence(seq).unwrap().settings.clone();
-        let point = |p: &Project, id: ClipId, k: &str| p.sequence(seq).unwrap().find_item(id).unwrap().1.effect("motion").unwrap().vec2_at(k, Tick::ZERO);
-        let (frame_centre, source_centre) =
-            (Vec2::new(st.width as f64 / 2.0, st.height as f64 / 2.0), Vec2::new(src.width as f64 / 2.0, src.height as f64 / 2.0));
+        let point = |p: &Project, id: ClipId, k: &str| {
+            p.sequence(seq)
+                .unwrap()
+                .find_item(id)
+                .unwrap()
+                .1
+                .effect("motion")
+                .unwrap()
+                .vec2_at(k, Tick::ZERO)
+        };
+        let (frame_centre, source_centre) = (
+            Vec2::new(st.width as f64 / 2.0, st.height as f64 / 2.0),
+            Vec2::new(src.width as f64 / 2.0, src.height as f64 / 2.0),
+        );
         // sequences that are not selected are left alone
         let mut untouched = p.clone();
         untouched.resolve_placed_auto_points(|_| false, |_| true);
@@ -1964,9 +2378,15 @@ mod tests {
         // final for the media item only: its clip and the clips of its subclips get the source centre
         q.resolve_placed_auto_points(|_| true, |i| i.id == clip);
         for id in &ids {
-            assert_eq!((point(&q, *id, "position"), point(&q, *id, "anchor")), (frame_centre, source_centre));
+            assert_eq!(
+                (point(&q, *id, "position"), point(&q, *id, "anchor")),
+                (frame_centre, source_centre)
+            );
         }
-        assert!(!q.to_json().contains("null}}"), "no NaN point is left to write");
+        assert!(
+            !q.to_json().contains("null}}"),
+            "no NaN point is left to write"
+        );
         // running it again changes nothing
         let once = q.clone();
         q.resolve_placed_auto_points(|_| true, |_| true);
@@ -1977,13 +2397,24 @@ mod tests {
     fn item_at_and_source_time() {
         let (mut p, clip, seq) = demo_project();
         let rate = FrameRate::FPS_24;
-        let mut a = p.make_track_item(clip, TrackKind::Video, Tick(0), TimeRange::new(Tick(1000), rate.tick_of(48)), rate).unwrap();
+        let mut a = p
+            .make_track_item(
+                clip,
+                TrackKind::Video,
+                Tick(0),
+                TimeRange::new(Tick(1000), rate.tick_of(48)),
+                rate,
+            )
+            .unwrap();
         a.speed = 2.0;
         let t = &mut p.sequence_mut(seq).unwrap().video_tracks[0];
         t.items.push(a.clone());
         assert_eq!(t.item_at(rate.tick_of(10)).unwrap().id, a.id);
         assert!(t.item_at(rate.tick_of(48)).is_none());
-        assert_eq!(a.source_time_at(rate.tick_of(10)), Tick(1000) + rate.tick_of(20));
+        assert_eq!(
+            a.source_time_at(rate.tick_of(10)),
+            Tick(1000) + rate.tick_of(20)
+        );
     }
 
     #[test]
@@ -2018,14 +2449,27 @@ mod tests {
         p.sequence_mut(seq).unwrap().caption_tracks.push(ct);
         let q = Project::from_json(&p.to_json()).unwrap();
         assert_eq!(p, q);
-        assert_eq!(q.sequence(seq).unwrap().duration(), Tick(10 + TICKS_PER_SECOND));
+        assert_eq!(
+            q.sequence(seq).unwrap().duration(),
+            Tick(10 + TICKS_PER_SECOND)
+        );
     }
 
     #[test]
     fn bins() {
         let mut p = Project::new("x");
         let b = p.add_bin("Footage", None);
-        let i = p.add_item("a", Label::Iris, ItemKind::AdjustmentLayer { width: 10, height: 10, rate: FrameRate::FPS_24, duration: Tick(1) }, Some(b));
+        let i = p.add_item(
+            "a",
+            Label::Iris,
+            ItemKind::AdjustmentLayer {
+                width: 10,
+                height: 10,
+                rate: FrameRate::FPS_24,
+                duration: Tick(1),
+            },
+            Some(b),
+        );
         assert_eq!(p.root.parent_of(i), Some(b));
         assert!(p.root.remove_item(i));
         assert_eq!(p.root.parent_of(i), None);
@@ -2037,11 +2481,30 @@ mod tests {
         let outer = p.add_bin("Footage", None);
         let inner = p.add_bin("B-Roll", None);
         let deep = p.add_bin("Drone", Some(inner));
-        let i = p.add_item("a", Label::Iris, ItemKind::AdjustmentLayer { width: 10, height: 10, rate: FrameRate::FPS_24, duration: Tick(1) }, Some(deep));
+        let i = p.add_item(
+            "a",
+            Label::Iris,
+            ItemKind::AdjustmentLayer {
+                width: 10,
+                height: 10,
+                rate: FrameRate::FPS_24,
+                duration: Tick(1),
+            },
+            Some(deep),
+        );
         assert_eq!(p.move_to_bin(&[ItemId(inner.0)], Some(outer)), Some(1));
         let o = p.root.find_bin(outer).unwrap();
-        assert!(o.children.iter().any(|c| matches!(c, BinEntry::Bin(b) if b.id == inner)));
-        assert!(!p.root.children.iter().any(|c| matches!(c, BinEntry::Bin(b) if b.id == inner)));
+        assert!(
+            o.children
+                .iter()
+                .any(|c| matches!(c, BinEntry::Bin(b) if b.id == inner))
+        );
+        assert!(
+            !p.root
+                .children
+                .iter()
+                .any(|c| matches!(c, BinEntry::Bin(b) if b.id == inner))
+        );
         assert_eq!(p.root.parent_of(i), Some(deep));
         assert!(o.find_bin(deep).is_some());
         // never into itself or its own sub-bin, and the root never moves
@@ -2051,7 +2514,12 @@ mod tests {
         assert!(p.root.find_bin(outer).unwrap().find_bin(deep).is_some());
         // and back out to the root
         assert_eq!(p.move_to_bin(&[ItemId(inner.0)], None), Some(1));
-        assert!(p.root.children.iter().any(|c| matches!(c, BinEntry::Bin(b) if b.id == inner)));
+        assert!(
+            p.root
+                .children
+                .iter()
+                .any(|c| matches!(c, BinEntry::Bin(b) if b.id == inner))
+        );
     }
 
     #[test]
@@ -2067,13 +2535,25 @@ mod tests {
         let b = p.new_sequence("Sequence 02", SequenceSettings::default(), 1, 1, None);
         let before = p.clone();
 
-        assert!(std::sync::Arc::ptr_eq(sequence_arc(&p, a), sequence_arc(&before, a)));
-        assert!(std::sync::Arc::ptr_eq(sequence_arc(&p, b), sequence_arc(&before, b)));
+        assert!(std::sync::Arc::ptr_eq(
+            sequence_arc(&p, a),
+            sequence_arc(&before, a)
+        ));
+        assert!(std::sync::Arc::ptr_eq(
+            sequence_arc(&p, b),
+            sequence_arc(&before, b)
+        ));
 
         p.sequence_mut(a).unwrap().mark_in = Some(Tick(1));
 
-        assert!(!std::sync::Arc::ptr_eq(sequence_arc(&p, a), sequence_arc(&before, a)));
-        assert!(std::sync::Arc::ptr_eq(sequence_arc(&p, b), sequence_arc(&before, b)));
+        assert!(!std::sync::Arc::ptr_eq(
+            sequence_arc(&p, a),
+            sequence_arc(&before, a)
+        ));
+        assert!(std::sync::Arc::ptr_eq(
+            sequence_arc(&p, b),
+            sequence_arc(&before, b)
+        ));
         assert_eq!(before.sequence(a).unwrap().mark_in, None);
         assert_eq!(Project::from_json(&p.to_json()).unwrap(), p);
     }
@@ -2085,9 +2565,19 @@ mod tests {
         let b = p.new_sequence("b", SequenceSettings::default(), 1, 1, None);
         let c = p.new_sequence("c", SequenceSettings::default(), 1, 1, None);
         let put = |p: &mut Project, outer: ItemId, inner: ItemId| {
-            let it = p.make_track_item(inner, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, rate.tick_of(10)), rate).unwrap();
+            let it = p
+                .make_track_item(
+                    inner,
+                    TrackKind::Video,
+                    Tick::ZERO,
+                    TimeRange::new(Tick::ZERO, rate.tick_of(10)),
+                    rate,
+                )
+                .unwrap();
             let id = it.id;
-            p.sequence_mut(outer).unwrap().video_tracks[0].items.push(it);
+            p.sequence_mut(outer).unwrap().video_tracks[0]
+                .items
+                .push(it);
             id
         };
         // media and a chain of nests (a in b in c, a twice in c) are sound
@@ -2099,7 +2589,9 @@ mod tests {
         // c inside a closes the loop a → c → b → a
         let closing = put(&mut p, a, c);
         assert_eq!(p.nest_cycle(), Some(a));
-        p.sequence_mut(a).unwrap().video_tracks[0].items.retain(|i| i.id != closing);
+        p.sequence_mut(a).unwrap().video_tracks[0]
+            .items
+            .retain(|i| i.id != closing);
         assert_eq!(p.nest_cycle(), None);
         // a sequence directly inside itself; one that only leads into the loop is not reported
         put(&mut p, c, c);
@@ -2114,10 +2606,26 @@ mod tests {
         let rate = p.sequence(a).unwrap().settings.frame_rate;
         let f = |n: i64| rate.tick_of(n);
         // a holds 100 frames of media; b nests a for 150 frames starting at frame 10
-        let media = p.make_track_item(clip, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, f(100)), rate).unwrap();
+        let media = p
+            .make_track_item(
+                clip,
+                TrackKind::Video,
+                Tick::ZERO,
+                TimeRange::new(Tick::ZERO, f(100)),
+                rate,
+            )
+            .unwrap();
         assert_eq!(p.nest_overhang(&media), None, "not a nest");
         p.sequence_mut(a).unwrap().video_tracks[0].items.push(media);
-        let mut nest = p.make_track_item(a, TrackKind::Video, f(10), TimeRange::new(Tick::ZERO, f(150)), rate).unwrap();
+        let mut nest = p
+            .make_track_item(
+                a,
+                TrackKind::Video,
+                f(10),
+                TimeRange::new(Tick::ZERO, f(150)),
+                rate,
+            )
+            .unwrap();
         assert_eq!(p.nest_overhang(&nest), Some(TimeRange::new(f(110), f(50))));
         // within the contents, or exactly to their end: none
         nest.duration = f(100);
@@ -2149,28 +2657,63 @@ mod tests {
         assert_eq!(checked_par((4, 3)), Some((4, 3)));
         assert_eq!(checked_par((40, 30)), Some((4, 3)));
         assert_eq!(checked_par((u32::MAX, u32::MAX)), Some((1, 1)));
-        assert_eq!(checked_par((u32::MAX, u32::MAX - 1)), Some((u32::MAX, u32::MAX - 1)));
+        assert_eq!(
+            checked_par((u32::MAX, u32::MAX - 1)),
+            Some((u32::MAX, u32::MAX - 1))
+        );
         assert_eq!(checked_par((8, 1)), Some((8, 1)));
         assert_eq!(checked_par((1, 8)), Some((1, 8)));
-        for bad in [(0, 0), (0, 1), (1, 0), (9, 1), (1, 9), (u32::MAX, 1), (1, u32::MAX)] {
+        for bad in [
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (9, 1),
+            (1, 9),
+            (u32::MAX, 1),
+            (1, u32::MAX),
+        ] {
             assert_eq!(checked_par(bad), None, "{bad:?}");
             assert_eq!(sane_par(bad), (1, 1), "{bad:?}");
             assert_eq!(par_ratio(bad), 1.0, "{bad:?}");
         }
         assert!((par_ratio((4, 3)) - 4.0 / 3.0).abs() < 1e-12);
         // 1440 x 1080 with 4:3 pixels is 1920 x 1080 square pixels, and itself in a 4:3 frame
-        assert_eq!(conformed_size((1440, 1080), (4, 3), (1, 1)), (1920.0, 1080.0));
-        assert_eq!(conformed_size((1440, 1080), (4, 3), (8, 6)), (1440.0, 1080.0));
-        assert_eq!(conformed_size((1920, 1080), (1, 1), (4, 3)), (1440.0, 1080.0));
-        assert_eq!(conformed_size((u32::MAX, u32::MAX), (8, 1), (1, 8)), (u32::MAX as f64 * 64.0, u32::MAX as f64));
-        assert_eq!(conformed_size((1440, 1080), (0, 0), (u32::MAX, 1)), (1440.0, 1080.0));
+        assert_eq!(
+            conformed_size((1440, 1080), (4, 3), (1, 1)),
+            (1920.0, 1080.0)
+        );
+        assert_eq!(
+            conformed_size((1440, 1080), (4, 3), (8, 6)),
+            (1440.0, 1080.0)
+        );
+        assert_eq!(
+            conformed_size((1920, 1080), (1, 1), (4, 3)),
+            (1440.0, 1080.0)
+        );
+        assert_eq!(
+            conformed_size((u32::MAX, u32::MAX), (8, 1), (1, 8)),
+            (u32::MAX as f64 * 64.0, u32::MAX as f64)
+        );
+        assert_eq!(
+            conformed_size((1440, 1080), (0, 0), (u32::MAX, 1)),
+            (1440.0, 1080.0)
+        );
     }
 
     #[test]
     fn source_par_follows_interpret_footage_subclips_and_sequences() {
         let (mut p, clip, seq) = demo_project();
         assert_eq!(p.source_par(clip), Some((1, 1)));
-        let sub = p.add_item("Sub", Label::Iris, ItemKind::Subclip { parent: clip, range: TimeRange::new(Tick::ZERO, Tick(100)), restrict_trims: false }, None);
+        let sub = p.add_item(
+            "Sub",
+            Label::Iris,
+            ItemKind::Subclip {
+                parent: clip,
+                range: TimeRange::new(Tick::ZERO, Tick(100)),
+                restrict_trims: false,
+            },
+            None,
+        );
         fn media(p: &mut Project, id: ItemId) -> &mut MediaClip {
             match &mut p.item_mut(id).unwrap().kind {
                 ItemKind::Media(m) => m,
@@ -2179,8 +2722,14 @@ mod tests {
         }
         // the file's ratio, reduced
         media(&mut p, clip).info.video.as_mut().unwrap().par = (40, 30);
-        assert_eq!((p.source_par(clip), p.source_par(sub)), (Some((4, 3)), Some((4, 3))));
-        assert_eq!(p.conformed_source_size(clip, (1, 1)), Some((1920.0 * 4.0 / 3.0, 1080.0)));
+        assert_eq!(
+            (p.source_par(clip), p.source_par(sub)),
+            (Some((4, 3)), Some((4, 3)))
+        );
+        assert_eq!(
+            p.conformed_source_size(clip, (1, 1)),
+            Some((1920.0 * 4.0 / 3.0, 1080.0))
+        );
         // Interpret Footage wins over the file
         media(&mut p, clip).interpret.par = Some((2, 1));
         assert_eq!(p.source_par(sub), Some((2, 1)));
@@ -2195,7 +2744,17 @@ mod tests {
         p.sequence_mut(seq).unwrap().settings.par = (8, 6);
         assert_eq!(p.source_par(seq), Some((4, 3)));
         assert_eq!(p.conformed_source_size(seq, (1, 1)), Some((2560.0, 1080.0)));
-        let adj = p.add_item("Adj", Label::Iris, ItemKind::AdjustmentLayer { width: 1440, height: 1080, rate: FrameRate::FPS_24, duration: Tick(100) }, None);
+        let adj = p.add_item(
+            "Adj",
+            Label::Iris,
+            ItemKind::AdjustmentLayer {
+                width: 1440,
+                height: 1080,
+                rate: FrameRate::FPS_24,
+                duration: Tick(100),
+            },
+            None,
+        );
         assert_eq!(p.source_par(adj), None);
         assert_eq!(p.conformed_source_size(adj, (4, 3)), Some((1440.0, 1080.0)));
         assert_eq!(p.source_par(ItemId(987_654_321)), None);

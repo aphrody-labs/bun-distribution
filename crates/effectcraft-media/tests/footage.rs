@@ -21,7 +21,12 @@ fn fixtures() -> PathBuf {
 
 fn have_ffmpeg() -> bool {
     static HAVE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *HAVE.get_or_init(|| Command::new("ffmpeg").arg("-version").output().is_ok_and(|o| o.status.success()))
+    *HAVE.get_or_init(|| {
+        Command::new("ffmpeg")
+            .arg("-version")
+            .output()
+            .is_ok_and(|o| o.status.success())
+    })
 }
 
 /// Run ffmpeg to produce `name` (once; written to a temp name and renamed so concurrent test
@@ -36,9 +41,24 @@ fn ffmpeg_fixture(name: &str, args: &[&str]) -> Option<PathBuf> {
         return Some(out);
     }
     std::fs::create_dir_all(out.parent().expect("parent")).expect("mkdir");
-    let ext = out.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
-    let tmp = out.with_file_name(format!("tmp-{}-{:?}.{ext}", std::process::id(), std::thread::current().id()).replace(['(', ')'], ""));
-    let st = Command::new("ffmpeg").args(["-hide_banner", "-loglevel", "error", "-y"]).args(args).arg(&tmp).status().expect("run ffmpeg");
+    let ext = out
+        .extension()
+        .map(|e| e.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let tmp = out.with_file_name(
+        format!(
+            "tmp-{}-{:?}.{ext}",
+            std::process::id(),
+            std::thread::current().id()
+        )
+        .replace(['(', ')'], ""),
+    );
+    let st = Command::new("ffmpeg")
+        .args(["-hide_banner", "-loglevel", "error", "-y"])
+        .args(args)
+        .arg(&tmp)
+        .status()
+        .expect("run ffmpeg");
     assert!(st.success(), "ffmpeg failed for {name}");
     std::fs::rename(&tmp, &out).expect("rename");
     Some(out)
@@ -140,10 +160,28 @@ fn png_sequence() -> Option<PathBuf> {
     }
     let dir = fixtures().join("seq");
     if !dir.join("seq_0010.png").exists() {
-        let tmp = fixtures().join(format!("seq-tmp-{}-{:?}", std::process::id(), std::thread::current().id()).replace(['(', ')'], ""));
+        let tmp = fixtures().join(
+            format!(
+                "seq-tmp-{}-{:?}",
+                std::process::id(),
+                std::thread::current().id()
+            )
+            .replace(['(', ')'], ""),
+        );
         std::fs::create_dir_all(&tmp).expect("mkdir");
         let st = Command::new("ffmpeg")
-            .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30:duration=1", "-frames:v", "10"])
+            .args([
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=size=320x240:rate=30:duration=1",
+                "-frames:v",
+                "10",
+            ])
             .arg(tmp.join("seq_%04d.png"))
             .status()
             .expect("ffmpeg");
@@ -158,20 +196,54 @@ fn png_sequence() -> Option<PathBuf> {
 fn alpha_png() -> Option<PathBuf> {
     ffmpeg_fixture(
         "alpha.png",
-        &["-f", "lavfi", "-i", "testsrc2=size=256x128:rate=1:duration=1,format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='255*Y/H'", "-frames:v", "1"],
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=256x128:rate=1:duration=1,format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='255*Y/H'",
+            "-frames:v",
+            "1",
+        ],
     )
 }
 
 fn tone_wav() -> Option<PathBuf> {
-    ffmpeg_fixture("tone.wav", &["-f", "lavfi", "-i", "sine=frequency=1000:sample_rate=48000:duration=1", "-ac", "2", "-c:a", "pcm_s16le"])
+    ffmpeg_fixture(
+        "tone.wav",
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=1000:sample_rate=48000:duration=1",
+            "-ac",
+            "2",
+            "-c:a",
+            "pcm_s16le",
+        ],
+    )
 }
 
 /// Frame `n` of `src` as RGBA PNG extracted by ffmpeg (Y'CbCr → RGB with the BT.709 matrix).
 fn reference_frame(src: &Path, n: usize) -> Image {
     let stem = src.file_stem().expect("stem").to_string_lossy().to_string();
     let name = format!("ref_{stem}_{n}.png");
-    let vf = format!("select='eq(n\\,{n})',scale=in_color_matrix=bt709:in_range=auto:out_range=pc:flags=bilinear+accurate_rnd+full_chroma_int,format=rgba");
-    let p = ffmpeg_fixture(&name, &["-i", src.to_str().expect("utf8"), "-vf", &vf, "-fps_mode", "passthrough", "-frames:v", "1"]).expect("ffmpeg");
+    let vf = format!(
+        "select='eq(n\\,{n})',scale=in_color_matrix=bt709:in_range=auto:out_range=pc:flags=bilinear+accurate_rnd+full_chroma_int,format=rgba"
+    );
+    let p = ffmpeg_fixture(
+        &name,
+        &[
+            "-i",
+            src.to_str().expect("utf8"),
+            "-vf",
+            &vf,
+            "-fps_mode",
+            "passthrough",
+            "-frames:v",
+            "1",
+        ],
+    )
+    .expect("ffmpeg");
     load_png(&p)
 }
 
@@ -183,10 +255,19 @@ fn load_png(p: &Path) -> Image {
         .pixels()
         .map(|p| {
             let a = p[3] as f32 / 255.0;
-            [p[0] as f32 / 255.0 * a, p[1] as f32 / 255.0 * a, p[2] as f32 / 255.0 * a, a]
+            [
+                p[0] as f32 / 255.0 * a,
+                p[1] as f32 / 255.0 * a,
+                p[2] as f32 / 255.0 * a,
+                a,
+            ]
         })
         .collect();
-    Image { width: w, height: h, data }
+    Image {
+        width: w,
+        height: h,
+        data,
+    }
 }
 
 fn psnr(a: &Image, b: &Image) -> f64 {
@@ -199,7 +280,11 @@ fn psnr(a: &Image, b: &Image) -> f64 {
         }
     }
     let mse = se / (a.data.len() * 4) as f64;
-    if mse == 0.0 { f64::INFINITY } else { 10.0 * (1.0 / mse).log10() }
+    if mse == 0.0 {
+        f64::INFINITY
+    } else {
+        10.0 * (1.0 / mse).log10()
+    }
 }
 
 fn t_of(rate: FrameRate, n: i64) -> Tick {
@@ -213,7 +298,11 @@ fn h264_mp4_probe_and_frames() {
     assert_eq!(f.kind, FootageKind::Video);
     assert_eq!((f.width, f.height), (1920, 1080));
     assert_eq!(f.frame_rate, FrameRate::FPS_30);
-    assert!((f.duration.seconds() - 2.0).abs() < 0.1, "duration {:?}", f.duration.seconds());
+    assert!(
+        (f.duration.seconds() - 2.0).abs() < 0.1,
+        "duration {:?}",
+        f.duration.seconds()
+    );
     assert!(f.has_video && f.has_audio);
     assert_eq!(f.alpha, AlphaMode::Ignore);
     assert!(!f.codec.is_empty());
@@ -221,13 +310,17 @@ fn h264_mp4_probe_and_frames() {
     let pool = MediaPool::new();
     // sequential, then a backwards seek and a forward jump into the GOP
     for n in [0usize, 1, 2, 3, 45, 10, 59] {
-        let img = pool.frame(ItemId(1), &f, t_of(f.frame_rate, n as i64)).expect("frame");
+        let img = pool
+            .frame(ItemId(1), &f, t_of(f.frame_rate, n as i64))
+            .expect("frame");
         let db = psnr(&img, &reference_frame(&p, n));
         eprintln!("h264 frame {n}: {db:.2} dB");
         assert!(db > 35.0, "frame {n}: {db:.2} dB");
     }
     // clamped past the end: last frame
-    let last = pool.frame_at(&f, Tick(10 * TICKS_PER_SECOND)).expect("frame");
+    let last = pool
+        .frame_at(&f, Tick(10 * TICKS_PER_SECOND))
+        .expect("frame");
     let db = psnr(&last, &reference_frame(&p, 59));
     assert!(db > 35.0, "clamp: {db:.2} dB");
     // cached
@@ -244,7 +337,12 @@ fn h264_frames_at_reduced_sizes() {
     let Some(p) = h264_mp4() else { return };
     let f = probe(&p).expect("probe");
     let pool = MediaPool::new();
-    for (n, (w, h)) in [(0i64, (960, 540)), (1, (640, 360)), (2, (480, 270)), (30, (323, 182))] {
+    for (n, (w, h)) in [
+        (0i64, (960, 540)),
+        (1, (640, 360)),
+        (2, (480, 270)),
+        (30, (323, 182)),
+    ] {
         let t = t_of(f.frame_rate, n);
         let sized = pool.frame_at_size(ItemId(1), &f, t, w, h).expect("frame");
         let full = pool.frame(ItemId(1), &f, t).expect("frame");
@@ -255,7 +353,13 @@ fn h264_frames_at_reduced_sizes() {
         // slightly; how much depends on the encoder that made the fixture (50 dB with x264 from
         // ffmpeg 6.1, above 55 with newer ones), all well past visible.
         assert!(db > 45.0, "frame {n} at {w}×{h}: {db:.2} dB");
-        assert!(Arc::ptr_eq(&sized, &pool.frame_at_size(ItemId(1), &f, t, w, h).expect("frame")), "cached");
+        assert!(
+            Arc::ptr_eq(
+                &sized,
+                &pool.frame_at_size(ItemId(1), &f, t, w, h).expect("frame")
+            ),
+            "cached"
+        );
     }
 }
 
@@ -307,8 +411,17 @@ fn ffmpeg_audio(src: &Path, rate: u32) -> Vec<f32> {
         .args(["-f", "f32le", "-ac", "2", "-ar", &rate.to_string(), "-"])
         .output()
         .expect("ffmpeg");
-    assert!(out.status.success(), "ffmpeg failed to decode {}", src.display());
-    out.stdout.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect()
+    assert!(
+        out.status.success(),
+        "ffmpeg failed to decode {}",
+        src.display()
+    );
+    out.stdout
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect()
 }
 
 /// Footage audio at a rate other than the file's, read in one-frame pieces as export and the
@@ -317,7 +430,9 @@ fn ffmpeg_audio(src: &Path, rate: u32) -> Vec<f32> {
 /// previews and exports (#274).
 #[test]
 fn resampled_audio_read_in_frame_pieces_matches_ffmpeg() {
-    let (Some(a), Some(b)) = (aac_44k_mp4(), h264_mp4()) else { return };
+    let (Some(a), Some(b)) = (aac_44k_mp4(), h264_mp4()) else {
+        return;
+    };
     // 44.1 kHz read at 48 kHz, 48 kHz read at 44.1 kHz; NTSC frames are fractional in samples.
     for (p, rate) in [(a, 48_000u32), (b, 44_100)] {
         let f = probe(&p).expect("probe");
@@ -327,12 +442,25 @@ fn resampled_audio_read_in_frame_pieces_matches_ffmpeg() {
         let (mut got, mut cursor) = (Vec::new(), 0i64);
         for k in 1..=55 {
             let end = fps.tick_of(k).to_units_floor(rate as i64);
-            got.extend(pool.audio_samples(&f, Tick::from_units(cursor, rate as i64), (end - cursor) as usize, rate));
+            got.extend(pool.audio_samples(
+                &f,
+                Tick::from_units(cursor, rate as i64),
+                (end - cursor) as usize,
+                rate,
+            ));
             cursor = end;
         }
-        let worst = got.iter().zip(&want).map(|(g, w)| (g - w).abs()).fold(0.0f32, f32::max);
+        let worst = got
+            .iter()
+            .zip(&want)
+            .map(|(g, w)| (g - w).abs())
+            .fold(0.0f32, f32::max);
         eprintln!("{} at {rate} Hz: max error {worst:.4}", p.display());
-        assert!(want.len() >= got.len() && worst < 0.01, "{} at {rate} Hz: max error {worst}", p.display());
+        assert!(
+            want.len() >= got.len() && worst < 0.01,
+            "{} at {rate} Hz: max error {worst}",
+            p.display()
+        );
     }
 }
 
@@ -365,25 +493,52 @@ fn rotated_mp4_imports_upright() {
     type From = fn(usize, usize, usize, usize) -> (usize, usize);
     let cases: [(&str, [i32; 4], (usize, usize), From); 3] = [
         ("90", [0, one, -one, 0], (h, w), |x, y, _, h| (y, h - 1 - x)),
-        ("180", [-one, 0, 0, -one], (w, h), |x, y, w, h| (w - 1 - x, h - 1 - y)),
-        ("270", [0, -one, one, 0], (h, w), |x, y, w, _| (w - 1 - y, x)),
+        ("180", [-one, 0, 0, -one], (w, h), |x, y, w, h| {
+            (w - 1 - x, h - 1 - y)
+        }),
+        ("270", [0, -one, one, 0], (h, w), |x, y, w, _| {
+            (w - 1 - y, x)
+        }),
     ];
     for (name, matrix, (tw, th), from) in cases {
         let path = format!("turned-{name}.mp4");
         let bytes = turned_mp4(&p, matrix);
         let f = probe_bytes(&path, bytes.clone()).expect("probe");
-        assert_eq!((f.width as usize, f.height as usize), (tw, th), "{name}°: size");
+        assert_eq!(
+            (f.width as usize, f.height as usize),
+            (tw, th),
+            "{name}°: size"
+        );
         pool.add_bytes(&path, bytes);
         let img = pool.frame(ItemId(2), &f, t).expect("frame");
-        assert_eq!((img.width as usize, img.height as usize), (tw, th), "{name}°: frame size");
-        for (x, y) in [(0, 0), (tw - 1, 0), (0, th - 1), (tw - 1, th - 1), (tw / 3, th / 5), (tw / 2, th - 7)] {
+        assert_eq!(
+            (img.width as usize, img.height as usize),
+            (tw, th),
+            "{name}°: frame size"
+        );
+        for (x, y) in [
+            (0, 0),
+            (tw - 1, 0),
+            (0, th - 1),
+            (tw - 1, th - 1),
+            (tw / 3, th / 5),
+            (tw / 2, th - 7),
+        ] {
             let (sx, sy) = from(x, y, w, h);
-            assert_eq!(img.data[y * tw + x], plain.data[sy * w + sx], "{name}°: pixel ({x}, {y})");
+            assert_eq!(
+                img.data[y * tw + x],
+                plain.data[sy * w + sx],
+                "{name}°: pixel ({x}, {y})"
+            );
         }
         // (A reduced-resolution render asks for the turned size.)
         let (hw, hh) = (f.width / 2, f.height / 2);
         let sized = pool.frame_at_size(ItemId(2), &f, t, hw, hh).expect("frame");
-        assert_eq!((sized.width, sized.height), (hw, hh), "{name}°: reduced size");
+        assert_eq!(
+            (sized.width, sized.height),
+            (hw, hh),
+            "{name}°: reduced size"
+        );
         let db = psnr(&sized, &effectcraft_raster::resample(&img, hw, hh));
         assert!(db > 45.0, "{name}° at half size: {db:.2} dB");
     }
@@ -401,7 +556,9 @@ fn prores_4444_with_alpha() {
     eprintln!("prores: codec {:?}", f.codec);
     let pool = MediaPool::new();
     for n in [0usize, 7, 23] {
-        let img = pool.frame_at(&f, t_of(f.frame_rate, n as i64)).expect("frame");
+        let img = pool
+            .frame_at(&f, t_of(f.frame_rate, n as i64))
+            .expect("frame");
         let db = psnr(&img, &reference_frame(&p, n));
         eprintln!("prores frame {n}: {db:.2} dB");
         assert!(db > 35.0, "frame {n}: {db:.2} dB");
@@ -412,7 +569,13 @@ fn prores_4444_with_alpha() {
     // Ignore → opaque
     let mut g = f.clone();
     g.alpha = AlphaMode::Ignore;
-    assert!(pool.frame_at(&g, Tick::ZERO).expect("frame").data.iter().all(|p| p[3] == 1.0));
+    assert!(
+        pool.frame_at(&g, Tick::ZERO)
+            .expect("frame")
+            .data
+            .iter()
+            .all(|p| p[3] == 1.0)
+    );
 }
 
 #[test]
@@ -425,7 +588,9 @@ fn vp9_webm_frames() {
     eprintln!("vp9: codec {:?}", f.codec);
     let pool = MediaPool::new();
     for n in [0usize, 1, 12, 24, 5] {
-        let img = pool.frame_at(&f, t_of(f.frame_rate, n as i64)).expect("frame");
+        let img = pool
+            .frame_at(&f, t_of(f.frame_rate, n as i64))
+            .expect("frame");
         let db = psnr(&img, &reference_frame(&p, n));
         eprintln!("vp9 frame {n}: {db:.2} dB");
         assert!(db > 35.0, "frame {n}: {db:.2} dB");
@@ -468,16 +633,34 @@ fn mpeg2_mxf() -> Option<PathBuf> {
 fn dnxhd_mxf() -> Option<PathBuf> {
     ffmpeg_fixture(
         "testsrc2_dnxhd.mxf",
-        &["-f", "lavfi", "-i", "testsrc2=size=1920x1080:rate=25:duration=1", "-c:v", "dnxhd", "-b:v", "36M", "-pix_fmt", "yuv422p"],
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=1920x1080:rate=25:duration=1",
+            "-c:v",
+            "dnxhd",
+            "-b:v",
+            "36M",
+            "-pix_fmt",
+            "yuv422p",
+        ],
     )
 }
 
 /// MXF is importable footage (After Effects imports it), whatever the extension's case.
 #[test]
 fn mxf_is_importable() {
-    assert!(effectcraft_media::is_importable(Path::new("/media/A001C003.mxf")));
-    assert!(effectcraft_media::is_importable(Path::new("/media/A001C003.MXF")));
-    assert!(!effectcraft_media::is_importable(Path::new("/media/A001C003.avi")), "no AVI demuxer yet");
+    assert!(effectcraft_media::is_importable(Path::new(
+        "/media/A001C003.mxf"
+    )));
+    assert!(effectcraft_media::is_importable(Path::new(
+        "/media/A001C003.MXF"
+    )));
+    assert!(
+        !effectcraft_media::is_importable(Path::new("/media/A001C003.avi")),
+        "no AVI demuxer yet"
+    );
 }
 
 #[test]
@@ -487,13 +670,19 @@ fn mxf_mpeg2_with_pcm_audio() {
     assert_eq!(f.kind, FootageKind::Video);
     assert_eq!((f.width, f.height), (1280, 720));
     assert_eq!(f.frame_rate, FrameRate::FPS_25);
-    assert!((f.duration.seconds() - 2.0).abs() < 0.1, "duration {:?}", f.duration.seconds());
+    assert!(
+        (f.duration.seconds() - 2.0).abs() < 0.1,
+        "duration {:?}",
+        f.duration.seconds()
+    );
     assert!(f.has_video && f.has_audio);
     eprintln!("mxf mpeg-2: codec {:?}", f.codec);
     let pool = MediaPool::new();
     // sequential, a backwards seek, a jump into a GOP (B-frames reordered), the last frame
     for n in [0usize, 1, 2, 3, 30, 7, 49] {
-        let img = pool.frame_at(&f, t_of(f.frame_rate, n as i64)).expect("frame");
+        let img = pool
+            .frame_at(&f, t_of(f.frame_rate, n as i64))
+            .expect("frame");
         let db = psnr(&img, &reference_frame(&p, n));
         eprintln!("mxf mpeg-2 frame {n}: {db:.2} dB");
         assert!(db > 35.0, "frame {n}: {db:.2} dB");
@@ -516,7 +705,9 @@ fn mxf_dnxhd_frames() {
     eprintln!("mxf dnxhd: codec {:?}", f.codec);
     let pool = MediaPool::new();
     for n in [0usize, 12, 24, 3] {
-        let img = pool.frame_at(&f, t_of(f.frame_rate, n as i64)).expect("frame");
+        let img = pool
+            .frame_at(&f, t_of(f.frame_rate, n as i64))
+            .expect("frame");
         let db = psnr(&img, &reference_frame(&p, n));
         eprintln!("mxf dnxhd frame {n}: {db:.2} dB");
         assert!(db > 35.0, "frame {n}: {db:.2} dB");
@@ -530,7 +721,14 @@ fn png_sequence_import() {
     let mut f = probe(&first).expect("probe");
     assert_eq!(f.kind, FootageKind::Still);
     f.kind = FootageKind::Sequence;
-    f.sequence = (1..=10).map(|n| first.with_file_name(format!("seq_{n:04}.png")).to_string_lossy().to_string()).collect();
+    f.sequence = (1..=10)
+        .map(|n| {
+            first
+                .with_file_name(format!("seq_{n:04}.png"))
+                .to_string_lossy()
+                .to_string()
+        })
+        .collect();
     f.sync_sequence_duration();
     assert_eq!((f.width, f.height), (320, 240));
     assert_eq!(f.duration, FrameRate::FPS_30.tick_of(10));
@@ -542,7 +740,9 @@ fn png_sequence_import() {
     assert_eq!(*img, load_png(&first.with_file_name("seq_0010.png")));
     let mut looped = f.clone();
     looped.loop_count = 2;
-    let img = pool.frame_at(&looped, t_of(f.frame_rate, 13)).expect("frame");
+    let img = pool
+        .frame_at(&looped, t_of(f.frame_rate, 13))
+        .expect("frame");
     assert_eq!(*img, load_png(&first.with_file_name("seq_0004.png")));
 }
 
@@ -553,14 +753,19 @@ fn sequence_gaps_show_placeholders() {
     let dir = fixtures().join(format!("gap-seq-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("mkdir");
     // Frames 1, 2 and 4: frame 3 is missing. Each frame is a flat grey of its number.
-    let grey = |n: u8| image::RgbaImage::from_pixel(8, 4, image::Rgba([n * 50, n * 50, n * 50, 255]));
+    let grey =
+        |n: u8| image::RgbaImage::from_pixel(8, 4, image::Rgba([n * 50, n * 50, n * 50, 255]));
     let mut files = vec![];
     for n in [1u8, 2, 4] {
         let p = dir.join(format!("gap_{n:03}.png"));
         grey(n).save(&p).expect("write png");
         files.push(p.to_string_lossy().to_string());
     }
-    let mut f = Footage { kind: FootageKind::Sequence, sequence: files, ..probe(dir.join("gap_001.png")).expect("probe") };
+    let mut f = Footage {
+        kind: FootageKind::Sequence,
+        sequence: files,
+        ..probe(dir.join("gap_001.png")).expect("probe")
+    };
     f.sync_sequence_duration();
     assert_eq!(f.duration, f.frame_rate.tick_of(4), "frames 1-4");
     let pool = MediaPool::new();
@@ -590,7 +795,9 @@ fn png_with_alpha() {
     assert_eq!(f.codec, "PNG");
     let pool = MediaPool::new();
     let a = pool.frame_at(&f, Tick::ZERO).expect("frame");
-    let b = pool.frame_at(&f, Tick(5 * TICKS_PER_SECOND)).expect("frame");
+    let b = pool
+        .frame_at(&f, Tick(5 * TICKS_PER_SECOND))
+        .expect("frame");
     assert!(Arc::ptr_eq(&a, &b), "stills are timeless");
     assert_eq!(*a, load_png(&p));
     assert!(a.data[0][3] == 0.0 && a.data[a.data.len() - 1][3] > 0.98);
@@ -636,7 +843,10 @@ fn cache_budget_evicts() {
         pool.frame_at(&f, t_of(f.frame_rate, n)).expect("frame");
     }
     let st = pool.stats();
-    assert!(st.frames <= 3 && st.bytes <= 3 * frame_bytes + 1024, "{st:?}");
+    assert!(
+        st.frames <= 3 && st.bytes <= 3 * frame_bytes + 1024,
+        "{st:?}"
+    );
     pool.set_budget(0);
     assert_eq!(pool.stats().frames, 1);
 }
@@ -651,7 +861,9 @@ fn concurrent_requests() {
             let (pool, f) = (&pool, &f);
             s.spawn(move || {
                 for n in 0..15 {
-                    let img = pool.frame_at(f, t_of(f.frame_rate, k * 15 + n)).expect("frame");
+                    let img = pool
+                        .frame_at(f, t_of(f.frame_rate, k * 15 + n))
+                        .expect("frame");
                     assert_eq!((img.width, img.height), (1920, 1080));
                 }
             });
@@ -669,8 +881,10 @@ fn perf_sequential_1080p_h264() {
     let src = filmcraft_codecs::open_bytes("a.mp4", bytes).expect("open");
     let t0 = Instant::now();
     for i in 0..n {
-        let t = filmcraft_time::Tick(f.frame_rate.tick_of(i).0 + f.frame_rate.frame_duration().0 / 2);
-        src.video_frame(filmcraft_media::FrameRequest::full(t)).expect("frame");
+        let t =
+            filmcraft_time::Tick(f.frame_rate.tick_of(i).0 + f.frame_rate.frame_duration().0 / 2);
+        src.video_frame(filmcraft_media::FrameRequest::full(t))
+            .expect("frame");
     }
     let raw = n as f64 / t0.elapsed().as_secs_f64();
     // Through the pool (decode + conversion to f32 RGBA), cold cache, without and with read-ahead
@@ -708,7 +922,9 @@ fn exr_still_is_linear_float() {
     let p = dir.join(format!("float-{}.exr", std::process::id()));
     // linear 0.214 ≈ sRGB 0.5 (opaque); premultiplied 2.0 at alpha 0.5
     let px = vec![0.214f32, 0.214, 0.214, 1.0, 2.0, 1.0, 0.5, 0.5];
-    image::DynamicImage::ImageRgba32F(image::ImageBuffer::from_raw(2, 1, px).expect("buf")).save(&p).expect("write exr");
+    image::DynamicImage::ImageRgba32F(image::ImageBuffer::from_raw(2, 1, px).expect("buf"))
+        .save(&p)
+        .expect("write exr");
     let f = probe(&p).expect("probe");
     assert_eq!(f.kind, FootageKind::Still);
     assert_eq!((f.width, f.height), (2, 1));
@@ -729,7 +945,9 @@ fn exr_still_is_linear_float() {
 fn targa_still_matches_ffmpeg() {
     let Some(png) = alpha_png() else { return };
     // ffmpeg's Targa encoder (run-length compressed)
-    let Some(tga) = ffmpeg_fixture("alpha.tga", &["-i", png.to_str().expect("utf8")]) else { return };
+    let Some(tga) = ffmpeg_fixture("alpha.tga", &["-i", png.to_str().expect("utf8")]) else {
+        return;
+    };
     assert!(effectcraft_media::is_importable(&tga));
     let f = probe(&tga).expect("probe");
     assert_eq!(f.kind, FootageKind::Still);
@@ -759,7 +977,9 @@ fn radiance_hdr_still_is_linear_float() {
     std::fs::create_dir_all(&dir).expect("mkdir");
     let p = dir.join(format!("float-{}.hdr", std::process::id()));
     let px = vec![0.214f32, 0.214, 0.214, 4.0, 4.0, 4.0];
-    image::DynamicImage::ImageRgb32F(image::ImageBuffer::from_raw(2, 1, px).expect("buf")).save(&p).expect("write hdr");
+    image::DynamicImage::ImageRgb32F(image::ImageBuffer::from_raw(2, 1, px).expect("buf"))
+        .save(&p)
+        .expect("write hdr");
     assert!(effectcraft_media::is_importable(&p));
     let f = probe(&p).expect("probe");
     assert_eq!(f.kind, FootageKind::Still);
@@ -773,7 +993,19 @@ fn radiance_hdr_still_is_linear_float() {
     assert!(img.data[1][0] > 1.5, "super-white kept: {:?}", img.data[1]);
 
     // ffmpeg's Radiance encoder (run-length compressed scanlines): a mid grey of 0.5 linear
-    let Some(ff) = ffmpeg_fixture("grey.hdr", &["-f", "lavfi", "-i", "color=c=0x808080:size=64x16", "-frames:v", "1", "-pix_fmt", "gbrpf32le"]) else {
+    let Some(ff) = ffmpeg_fixture(
+        "grey.hdr",
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=0x808080:size=64x16",
+            "-frames:v",
+            "1",
+            "-pix_fmt",
+            "gbrpf32le",
+        ],
+    ) else {
         return;
     };
     let f = probe(&ff).expect("probe ffmpeg hdr");
@@ -781,7 +1013,13 @@ fn radiance_hdr_still_is_linear_float() {
     let img = MediaPool::new().frame_at(&f, Tick::ZERO).expect("frame");
     let want = 1.055 * (128.0f32 / 255.0).powf(1.0 / 2.4) - 0.055;
     for q in &img.data {
-        assert!((q[0] - want).abs() < 0.01 && (q[1] - want).abs() < 0.01 && (q[2] - want).abs() < 0.01 && q[3] == 1.0, "{q:?} vs {want}");
+        assert!(
+            (q[0] - want).abs() < 0.01
+                && (q[1] - want).abs() < 0.01
+                && (q[2] - want).abs() < 0.01
+                && q[3] == 1.0,
+            "{q:?} vs {want}"
+        );
     }
 }
 
@@ -790,7 +1028,13 @@ fn radiance_hdr_still_is_linear_float() {
 fn sine_flac(secs: u32, rate: u32, channels: u32, fmt: &str) -> Option<PathBuf> {
     let name = format!("sine_{secs}s_{rate}_{channels}ch_{fmt}.flac");
     let src = format!("sine=frequency=440:sample_rate={rate}:duration={secs}");
-    let pan = format!("pan={channels}c|{}", (0..channels).map(|c| format!("c{c}={}*c0", if c < 2 { "1" } else { "0.5" })).collect::<Vec<_>>().join("|"));
+    let pan = format!(
+        "pan={channels}c|{}",
+        (0..channels)
+            .map(|c| format!("c{c}={}*c0", if c < 2 { "1" } else { "0.5" }))
+            .collect::<Vec<_>>()
+            .join("|")
+    );
     let mut args = vec!["-f", "lavfi", "-i", &src, "-af", &pan, "-sample_fmt", fmt];
     if fmt == "s32" {
         args.extend(["-bits_per_raw_sample", "24"]);
@@ -805,11 +1049,28 @@ fn sine_flac(secs: u32, rate: u32, channels: u32, fmt: &str) -> Option<PathBuf> 
 /// 8-channel files.
 #[test]
 fn flac_audio_of_any_shape_reads_in_device_blocks() {
-    for (secs, rate, channels, fmt) in [(120, 96_000, 6, "s32"), (5, 8_000, 1, "s16"), (5, 11_025, 2, "s16"), (5, 192_000, 2, "s32"), (5, 48_000, 8, "s16")] {
-        let Some(p) = sine_flac(secs, rate, channels, fmt) else { return };
+    for (secs, rate, channels, fmt) in [
+        (120, 96_000, 6, "s32"),
+        (5, 8_000, 1, "s16"),
+        (5, 11_025, 2, "s16"),
+        (5, 192_000, 2, "s32"),
+        (5, 48_000, 8, "s16"),
+    ] {
+        let Some(p) = sine_flac(secs, rate, channels, fmt) else {
+            return;
+        };
         let f = probe(&p).expect("probe");
-        assert!(f.has_audio && f.kind == FootageKind::Audio, "{}", p.display());
-        assert!((f.duration.seconds() - f64::from(secs)).abs() < 0.01, "{}: {}", p.display(), f.duration.seconds());
+        assert!(
+            f.has_audio && f.kind == FootageKind::Audio,
+            "{}",
+            p.display()
+        );
+        assert!(
+            (f.duration.seconds() - f64::from(secs)).abs() < 0.01,
+            "{}: {}",
+            p.display(),
+            f.duration.seconds()
+        );
         let pool = MediaPool::new();
         let mix = 48_000i64;
         let total = f.duration.to_units_floor(mix);
@@ -822,12 +1083,20 @@ fn flac_audio_of_any_shape_reads_in_device_blocks() {
                 worst = worst.max(t.elapsed());
             }
             assert_eq!(s.len(), 2048);
-            assert!(s.iter().all(|v| v.is_finite() && v.abs() <= 1.0), "{} at {at}", p.display());
+            assert!(
+                s.iter().all(|v| v.is_finite() && v.abs() <= 1.0),
+                "{} at {at}",
+                p.display()
+            );
             if at + 1024 <= total {
                 sum += s.iter().map(|v| f64::from(*v) * f64::from(*v)).sum::<f64>();
                 n += s.len();
             } else if at >= total {
-                assert!(s.iter().all(|v| *v == 0.0), "{}: silence past the end", p.display());
+                assert!(
+                    s.iter().all(|v| *v == 0.0),
+                    "{}: silence past the end",
+                    p.display()
+                );
             }
             at += 1024;
         }
@@ -835,11 +1104,25 @@ fn flac_audio_of_any_shape_reads_in_device_blocks() {
         // channels 0 and 1 at full level and the others at half, so a multichannel file sounds as
         // its stereo downmix (tests/downmix.rs checks that matrix channel by channel).
         let gains = effectcraft_media::downmix::stereo_gains(channels as usize, false);
-        let side = |s: usize| gains.iter().enumerate().map(|(c, g)| f64::from(g[s]) * if c < 2 { 1.0 } else { 0.5 }).sum::<f64>();
+        let side = |s: usize| {
+            gains
+                .iter()
+                .enumerate()
+                .map(|(c, g)| f64::from(g[s]) * if c < 2 { 1.0 } else { 0.5 })
+                .sum::<f64>()
+        };
         let want = 0.125 * ((side(0).powi(2) + side(1).powi(2)) / 2.0).sqrt() / 2f64.sqrt();
         let rms = (sum / n.max(1) as f64).sqrt();
-        assert!((rms - want).abs() < 0.003, "{}: rms {rms}, expected {want}", p.display());
-        eprintln!("{}: read {secs} s in {:?}, slowest block after the first {worst:?}", p.display(), t0.elapsed());
+        assert!(
+            (rms - want).abs() < 0.003,
+            "{}: rms {rms}, expected {want}",
+            p.display()
+        );
+        eprintln!(
+            "{}: read {secs} s in {:?}, slowest block after the first {worst:?}",
+            p.display(),
+            t0.elapsed()
+        );
         assert_eq!(pool.stats().opened, 1, "opened once, not per block");
     }
 }
@@ -849,7 +1132,9 @@ fn flac_audio_of_any_shape_reads_in_device_blocks() {
 /// and time grew with the number of threads.
 #[test]
 fn concurrent_first_reads_open_a_file_once() {
-    let Some(p) = sine_flac(60, 44_100, 2, "s16") else { return };
+    let Some(p) = sine_flac(60, 44_100, 2, "s16") else {
+        return;
+    };
     let f = probe(&p).expect("probe");
     let pool = MediaPool::new();
     let start = Arc::new(std::sync::Barrier::new(8));
@@ -871,7 +1156,9 @@ fn concurrent_first_reads_open_a_file_once() {
 /// reads back exactly as the decoder reads.
 #[test]
 fn conformed_flac_audio_reads_back_like_the_decoder() {
-    let Some(p) = sine_flac(5, 44_100, 2, "s16") else { return };
+    let Some(p) = sine_flac(5, 44_100, 2, "s16") else {
+        return;
+    };
     let f = probe(&p).expect("probe");
     let folder = fixtures().join(format!("conformed-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&folder);
@@ -879,18 +1166,28 @@ fn conformed_flac_audio_reads_back_like_the_decoder() {
     let at = Tick::from_seconds_f64(2.5);
     let decoded = pool.audio_samples(&f, at, 4800, 48_000);
     pool.set_conform_folder(Some(folder.clone()));
-    let file = pool.conformed_path(&p.to_string_lossy(), 48_000).expect("a conformed path");
+    let file = pool
+        .conformed_path(&p.to_string_lossy(), 48_000)
+        .expect("a conformed path");
     pool.audio_samples(&f, at, 4800, 48_000);
     let t0 = Instant::now();
     while !file.exists() {
-        assert!(t0.elapsed().as_secs() < 60, "the conformed file was never written");
+        assert!(
+            t0.elapsed().as_secs() < 60,
+            "the conformed file was never written"
+        );
         std::thread::sleep(std::time::Duration::from_millis(20));
     }
     // (Renamed into place once complete.) Raw interleaved stereo f32 at 48 kHz.
     let bytes = std::fs::read(&file).expect("conformed file");
     assert_eq!(bytes.len(), 5 * 48_000 * 8);
     let s0 = at.to_units_floor(48_000) as usize * 8;
-    let conformed: Vec<f32> = bytes[s0..s0 + 4800 * 8].as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect();
+    let conformed: Vec<f32> = bytes[s0..s0 + 4800 * 8]
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect();
     assert_eq!(conformed, decoded);
     assert_eq!(pool.audio_samples(&f, at, 4800, 48_000), decoded);
     let _ = std::fs::remove_dir_all(&folder);
@@ -911,15 +1208,38 @@ fn ffmpeg_rgba(src: &Path, deep: bool) -> Vec<[f32; 4]> {
     let out = Command::new("ffmpeg")
         .args(["-hide_banner", "-loglevel", "error", "-i"])
         .arg(src)
-        .args(["-sws_flags", "accurate_rnd+full_chroma_int+bitexact", "-f", "rawvideo", "-pix_fmt", if deep { "rgba64le" } else { "rgba" }, "-"])
+        .args([
+            "-sws_flags",
+            "accurate_rnd+full_chroma_int+bitexact",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            if deep { "rgba64le" } else { "rgba" },
+            "-",
+        ])
         .output()
         .expect("run ffmpeg");
     assert!(out.status.success(), "ffmpeg decode of {}", src.display());
     let px = |v: [f32; 4]| [v[0] * v[3], v[1] * v[3], v[2] * v[3], v[3]];
     if !deep {
-        return out.stdout.as_chunks::<4>().0.iter().map(|p| px(p.map(|v| v as f32 / 255.0))).collect();
+        return out
+            .stdout
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|p| px(p.map(|v| v as f32 / 255.0)))
+            .collect();
     }
-    out.stdout.as_chunks::<8>().0.iter().map(|p| px(std::array::from_fn(|i| u16::from_le_bytes([p[2 * i], p[2 * i + 1]]) as f32 / 65535.0))).collect()
+    out.stdout
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|p| {
+            px(std::array::from_fn(|i| {
+                u16::from_le_bytes([p[2 * i], p[2 * i + 1]]) as f32 / 65535.0
+            }))
+        })
+        .collect()
 }
 
 /// #756: DPX stills in every layout and depth ffmpeg's encoder writes (8-bit luma / RGB / RGBA /
@@ -944,18 +1264,40 @@ fn dpx_stills_match_ffmpeg() {
     ];
     for (pf, codec, alpha) in formats {
         // 250 px wide: 8-bit and 10-bit lines need padding to a 32-bit word.
-        let Some(p) = ffmpeg_fixture(&format!("dpx-{pf}.dpx"), &["-i", src, "-vf", "scale=250:100", "-pix_fmt", pf]) else { return };
+        let Some(p) = ffmpeg_fixture(
+            &format!("dpx-{pf}.dpx"),
+            &["-i", src, "-vf", "scale=250:100", "-pix_fmt", pf],
+        ) else {
+            return;
+        };
         assert!(effectcraft_media::is_importable(&p));
         let f = probe(&p).expect(pf);
         assert_eq!(f.kind, FootageKind::Still);
         assert_eq!((f.width, f.height), (250, 100), "{pf}");
         // Some ffmpeg builds state the transfer (", linear"), which the codec name then carries.
-        assert!(f.codec == codec || f.codec.starts_with(&format!("{codec}, ")), "{pf}: {}", f.codec);
-        assert_eq!(f.alpha, if alpha { AlphaMode::Straight } else { AlphaMode::Ignore }, "{pf}");
+        assert!(
+            f.codec == codec || f.codec.starts_with(&format!("{codec}, ")),
+            "{pf}: {}",
+            f.codec
+        );
+        assert_eq!(
+            f.alpha,
+            if alpha {
+                AlphaMode::Straight
+            } else {
+                AlphaMode::Ignore
+            },
+            "{pf}"
+        );
         let img = MediaPool::new().frame_at(&f, Tick::ZERO).expect(pf);
         let want = ffmpeg_rgba(&p, !codec.contains("8-bit"));
         assert_eq!(want.len(), img.data.len(), "{pf}");
-        let worst = img.data.iter().zip(&want).flat_map(|(a, b)| (0..4).map(move |k| (a[k] - b[k]).abs())).fold(0.0f32, f32::max);
+        let worst = img
+            .data
+            .iter()
+            .zip(&want)
+            .flat_map(|(a, b)| (0..4).map(move |k| (a[k] - b[k]).abs()))
+            .fold(0.0f32, f32::max);
         // (within one 16-bit step: ffmpeg widens 10/12-bit samples by bit replication)
         assert!(worst < 2.0 / 65535.0, "{pf}: worst difference {worst}");
     }
@@ -964,21 +1306,55 @@ fn dpx_stills_match_ffmpeg() {
 /// #756: a numbered run of DPX files plays as an image sequence.
 #[test]
 fn dpx_sequence_plays() {
-    let Some(first) = ffmpeg_fixture("dpxseq/plate.0001.dpx", &["-f", "lavfi", "-i", "color=c=0x202020:size=32x16", "-frames:v", "1", "-pix_fmt", "gbrp10le"])
-    else {
+    let Some(first) = ffmpeg_fixture(
+        "dpxseq/plate.0001.dpx",
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=0x202020:size=32x16",
+            "-frames:v",
+            "1",
+            "-pix_fmt",
+            "gbrp10le",
+        ],
+    ) else {
         return;
     };
-    let Some(second) = ffmpeg_fixture("dpxseq/plate.0002.dpx", &["-f", "lavfi", "-i", "color=c=0xe0e0e0:size=32x16", "-frames:v", "1", "-pix_fmt", "gbrp10le"])
-    else {
+    let Some(second) = ffmpeg_fixture(
+        "dpxseq/plate.0002.dpx",
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=0xe0e0e0:size=32x16",
+            "-frames:v",
+            "1",
+            "-pix_fmt",
+            "gbrp10le",
+        ],
+    ) else {
         return;
     };
     let mut f = probe(&first).expect("probe");
     f.kind = FootageKind::Sequence;
-    f.sequence = [&first, &second].iter().map(|p| p.to_string_lossy().to_string()).collect();
+    f.sequence = [&first, &second]
+        .iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect();
     f.sync_sequence_duration();
     let pool = MediaPool::new();
-    let level = |n| pool.frame_at(&f, t_of(f.frame_rate, n)).expect("frame").data[0][0];
-    assert!((level(0) - 32.0 / 255.0).abs() < 0.01 && (level(1) - 224.0 / 255.0).abs() < 0.01, "{} {}", level(0), level(1));
+    let level = |n| {
+        pool.frame_at(&f, t_of(f.frame_rate, n))
+            .expect("frame")
+            .data[0][0]
+    };
+    assert!(
+        (level(0) - 32.0 / 255.0).abs() < 0.01 && (level(1) - 224.0 / 255.0).abs() < 0.01,
+        "{} {}",
+        level(0),
+        level(1)
+    );
 }
 
 /// #756: a Kodak Cineon file (no ffmpeg encoder: written here from the spec, 10-bit RGB
@@ -987,7 +1363,13 @@ fn dpx_sequence_plays() {
 #[test]
 fn cineon_still_shows_code_values() {
     let (w, h) = (5u32, 3u32);
-    let code = |x: u32, y: u32| [(x * 37 + y * 101) % 1024, (x * 11 + y * 7 + 300) % 1024, (x * 3 + y * 251 + 700) % 1024];
+    let code = |x: u32, y: u32| {
+        [
+            (x * 37 + y * 101) % 1024,
+            (x * 11 + y * 7 + 300) % 1024,
+            (x * 3 + y * 251 + 700) % 1024,
+        ]
+    };
     let mut b = vec![0u8; 1024];
     b[..4].copy_from_slice(&[0x80, 0x2a, 0x5f, 0xd7]);
     b[4..8].copy_from_slice(&1024u32.to_be_bytes());
@@ -1010,7 +1392,16 @@ fn cineon_still_shows_code_values() {
     }
     let bytes: Arc<[u8]> = b.clone().into();
     let f = effectcraft_media::probe_bytes("scan.cin", bytes.clone()).expect("probe");
-    assert_eq!((f.kind, f.width, f.height, f.codec.as_str(), f.alpha), (FootageKind::Still, 5, 3, "Cineon 10-bit RGB, log", AlphaMode::Ignore));
+    assert_eq!(
+        (f.kind, f.width, f.height, f.codec.as_str(), f.alpha),
+        (
+            FootageKind::Still,
+            5,
+            3,
+            "Cineon 10-bit RGB, log",
+            AlphaMode::Ignore
+        )
+    );
     assert!(effectcraft_media::is_importable(Path::new("scan.cin")));
     let pool = MediaPool::new();
     pool.add_bytes("scan.cin", bytes);
@@ -1019,12 +1410,18 @@ fn cineon_still_shows_code_values() {
         for x in 0..w {
             let want = code(x, y).map(|v| v as f32 / 1023.0);
             let got = img.get(i64::from(x), i64::from(y));
-            assert!((0..3).all(|k| (got[k] - want[k]).abs() < 1e-4) && got[3] == 1.0, "{x},{y}: {got:?} vs {want:?}");
+            assert!(
+                (0..3).all(|k| (got[k] - want[k]).abs() < 1e-4) && got[3] == 1.0,
+                "{x},{y}: {got:?} vs {want:?}"
+            );
         }
     }
     for n in [3, 100, 700, 1024, b.len() - 1] {
         let cut: Arc<[u8]> = b.get(..n).expect("cut").into();
-        assert!(effectcraft_media::probe_bytes("cut.cin", cut).is_err(), "{n}");
+        assert!(
+            effectcraft_media::probe_bytes("cut.cin", cut).is_err(),
+            "{n}"
+        );
     }
 }
 
@@ -1041,7 +1438,10 @@ fn a_called_off_read_does_not_decode() {
     let off = Arc::new(AtomicBool::new(true));
     let mut got = None;
     pool.cancellable(&off, &mut || got = Some(pool.frame(ItemId(1), &f, t)));
-    assert!(got.expect("ran").is_none(), "a called-off read decoded its frame");
+    assert!(
+        got.expect("ran").is_none(),
+        "a called-off read decoded its frame"
+    );
     assert_eq!(pool.stats().frames, 0, "nothing cached for it");
     let on = Arc::new(AtomicBool::new(false));
     let mut got = None;
@@ -1056,13 +1456,28 @@ fn a_called_off_read_does_not_decode() {
 fn an_unsupported_stream_reports_why_it_shows_no_picture() {
     let Some(p) = ffmpeg_fixture(
         "h264_high422_10bit.mp4",
-        &["-f", "lavfi", "-i", "testsrc=size=320x180:rate=24:duration=1", "-c:v", "libx264", "-profile:v", "high422", "-pix_fmt", "yuv422p10le"],
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc=size=320x180:rate=24:duration=1",
+            "-c:v",
+            "libx264",
+            "-profile:v",
+            "high422",
+            "-pix_fmt",
+            "yuv422p10le",
+        ],
     ) else {
         return;
     };
     let f = probe(&p).expect("probe");
     let pool = MediaPool::new();
-    assert_eq!(pool.problem(&f), None, "nothing is wrong before a frame was asked for");
+    assert_eq!(
+        pool.problem(&f),
+        None,
+        "nothing is wrong before a frame was asked for"
+    );
     if pool.frame(ItemId(1), &f, Tick::ZERO).is_some() {
         // a decoder that handles 4:2:2 (FilmCraft's, or a hardware one): no notice
         assert_eq!(pool.problem(&f), None);
@@ -1070,10 +1485,16 @@ fn an_unsupported_stream_reports_why_it_shows_no_picture() {
     }
     let why = pool.problem(&f).expect("a failed frame leaves a reason");
     assert!(why.contains("4:2:2"), "names the stream: {why}");
-    assert!(why.contains("isn't supported"), "says it is unsupported: {why}");
+    assert!(
+        why.contains("isn't supported"),
+        "says it is unsupported: {why}"
+    );
     assert!(!why.contains("decode error"), "no error wrappers: {why}");
     // it stays for the other frames, and is dropped when the file is forgotten
-    assert!(pool.frame(ItemId(1), &f, Tick::from_seconds_f64(0.5)).is_none());
+    assert!(
+        pool.frame(ItemId(1), &f, Tick::from_seconds_f64(0.5))
+            .is_none()
+    );
     assert_eq!(pool.problem(&f).as_deref(), Some(why.as_str()));
     pool.forget(&f.path);
     assert_eq!(pool.problem(&f), None);

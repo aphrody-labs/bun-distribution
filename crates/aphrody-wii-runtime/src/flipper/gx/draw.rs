@@ -28,7 +28,7 @@ impl Primitive {
             _ => {
                 tracing::error!(cmd = format!("{:02X}", cmd), "unknown primitive command");
                 None
-            },
+            }
         }
     }
 }
@@ -61,7 +61,10 @@ pub enum TextureFormat {
 impl TextureFormat {
     #[inline(always)]
     pub fn is_paletted(self) -> bool {
-        matches!(self, TextureFormat::CI4 | TextureFormat::CI8 | TextureFormat::CI14)
+        matches!(
+            self,
+            TextureFormat::CI4 | TextureFormat::CI8 | TextureFormat::CI14
+        )
     }
 }
 
@@ -83,7 +86,7 @@ impl TlutFormat {
             _ => {
                 tracing::error!(val, "invalid TLUT format");
                 Self::IA8
-            },
+            }
         }
     }
 }
@@ -97,7 +100,10 @@ pub struct TlutRef {
 impl TlutRef {
     #[inline(always)]
     pub fn from_raw(val: u32) -> Self {
-        Self { tmem_offset: (val & 0x3FF) as u16, format: TlutFormat::from_raw(val >> 10) }
+        Self {
+            tmem_offset: (val & 0x3FF) as u16,
+            format: TlutFormat::from_raw(val >> 10),
+        }
     }
 }
 
@@ -146,7 +152,12 @@ pub struct Scissor {
 
 impl Default for Scissor {
     fn default() -> Self {
-        Scissor { x: 0, y: 0, w: super::constants::EFB_WIDTH, h: super::constants::EFB_HEIGHT }
+        Scissor {
+            x: 0,
+            y: 0,
+            w: super::constants::EFB_WIDTH,
+            h: super::constants::EFB_HEIGHT,
+        }
     }
 }
 
